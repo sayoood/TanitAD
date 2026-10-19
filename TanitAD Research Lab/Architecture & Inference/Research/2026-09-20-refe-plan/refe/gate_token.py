@@ -41,6 +41,11 @@ TREE_ROOTS = ("refe", "code", "splits")
 _TREE_SUFFIX = (".py", ".sh", ".yaml", ".yml", ".json", ".txt", ".patch")
 _SKIP_DIRS = frozenset({"__pycache__", ".pytest_cache", ".mypy_cache"})
 _DIR_SKIP_NAMES = frozenset({"_v2manifest.pt", "_v2manifest.pt.tmp", "__pycache__"})
+CONTENT_MANIFEST = "content_manifest.json"          # HNSCREEN-CACHE-CONTENT-FP: the build-time sha256-per-file manifest of a data DIRECTORY whose CONTENT the gate must bind (the HN screen's --ctx-cache)
+CONTENT_MANIFEST_TOOL = "content_manifest/1"
+HASH_THREADS_ENV = "TANITAD_GATE_HASH_THREADS"      # worker threads that sha256 the files of a content fingerprint; 1 = serial
+HASH_THREADS_DEFAULT = 4
+CONTENT_MAX_PROBLEMS = 20                            # problems listed in a content fingerprint (the count is exact; the list is the first ones)
 
 
 class GateError(RuntimeError):
@@ -228,7 +233,203 @@ def fp_key(fp: dict) -> str:
         return f"file:{fp.get('sha256')}"
     if fp.get("kind") == "dir":
         return f"dir:{fp.get('n_files')}:{fp.get('bytes')}:{fp.get('listing_sha256')}"
+    if fp.get("kind") == "dir-content":                                     # content_fingerprint(): a valid one is `dirc:`; a directory with ANY problem is `dir-content-INVALID:` and can equal no registered key
+        if fp.get("n_problems") or not fp.get("content_sha256"):
+            return f"dir-content-INVALID:{fp.get('n_problems')}:{sha256_bytes(chr(10).join(str(x) for x in (fp.get('problems') or [])).encode('utf-8'))[:16]}"
+        return f"dirc:{fp.get('n_files')}:{fp.get('bytes')}:{fp.get('content_sha256')}"
     return f"{fp.get('kind')}:{fp.get('sha256', fp.get('why', ''))}"
+
+
+# ------------------------------------------------------------------------------------------ content fingerprints (HNSCREEN-CACHE-CONTENT-FP)
+# `fingerprint(dir)` above is a LISTING (relpath + size): a same-size byte flip INSIDE a file passes it (MEASURED 2026-10-19, raw/2026-10-19-hnscreen-fp/out_probe_dir_fp_limit.log).  A directory whose CONTENT
+# the launch must bind (the P6-HN screen's --ctx-cache) is fingerprinted HERE instead.  The BUILD seals it ONCE (`seal_content_manifest`: sha256 of every file's bytes -> CONTENT_MANIFEST, sorted relpaths); every
+# gate check re-hashes EVERY file against that manifest (`content_fingerprint`) -- there is no way to bind bytes without reading them -- and the fingerprint is the sha256 of the manifest's own canonical bytes,
+# recomputed from the LIVE files (so a hand-edited manifest cannot vouch for itself).  Fail closed: a missing / unreadable / non-canonical manifest, a missing, extra, renamed, resized or changed file all
+# make the fingerprint `dir-content-INVALID:...`, which equals no registered key.  Nothing above changes: `fingerprint` / `fp_key` of every other kind are byte-identical, and a profile opts in PER FLAG
+# (`data_manifest(content_flags=...)`, `verify_token(content_flags=...)`).
+def hash_threads() -> int:
+    """Worker threads that sha256 the files of a content fingerprint (env TANITAD_GATE_HASH_THREADS; 1 = serial).  hashlib drops the GIL on large buffers; the value is the same for every thread count."""
+    try:
+        n = int(os.environ.get(HASH_THREADS_ENV, ""))
+    except ValueError:
+        n = 0
+    return n if n >= 1 else HASH_THREADS_DEFAULT
+
+
+def _sha256_and_size(path, chunk: int = 1 << 22) -> tuple:
+    """(bytes actually read, sha256 hex) of one file: the size recorded is the size HASHED, so a manifest is self-consistent even if a file grows mid-read."""
+    h = hashlib.sha256()
+    buf = bytearray(chunk)
+    mv = memoryview(buf)
+    n = 0
+    with open(path, "rb", buffering=0) as fh:
+        while True:
+            k = fh.readinto(mv)
+            if not k:
+                break
+            h.update(mv[:k])
+            n += k
+    return n, h.hexdigest()
+
+
+def _content_listing(root: Path) -> tuple:
+    """({relpath: size} of EVERY file under `root` except the manifest itself, [problems]).  Unlike the listing fingerprint nothing is pruned (an extra file is a finding), and a directory that cannot be
+    listed is a PROBLEM, never a silent skip (os.walk's default)."""
+    rootp = os.fspath(root)
+    sizes: dict = {}
+    problems: list = []
+
+    def onerr(e):
+        problems.append(f"cannot list {getattr(e, 'filename', '?')}: {type(e).__name__}: {e}")
+    for dirpath, dirnames, filenames in os.walk(rootp, onerror=onerr):
+        dirnames[:] = sorted(dirnames)
+        problems += [f"a symlinked directory is not followed, so its files cannot be bound: {os.path.relpath(os.path.join(dirpath, d), rootp).replace(os.sep, '/')}"
+                     for d in dirnames if os.path.islink(os.path.join(dirpath, d))]
+        for fn in sorted(filenames):
+            full = os.path.join(dirpath, fn)
+            rel = os.path.relpath(full, rootp).replace(os.sep, "/")
+            if rel == CONTENT_MANIFEST:
+                continue
+            try:
+                sizes[rel] = os.stat(full).st_size
+            except OSError as e:
+                problems.append(f"cannot stat {rel}: {type(e).__name__}: {e}")
+    return sizes, problems
+
+
+def manifest_bytes(files: dict) -> bytes:
+    """The canonical bytes of a content manifest over `files` = {relpath: (size, sha256)}: key-sorted JSON, indent 1, LF, UTF-8.  The sha256 of THESE bytes is the directory's content fingerprint."""
+    body = {"tool": CONTENT_MANIFEST_TOOL, "algorithm": "sha256", "n_files": len(files), "bytes": sum(v[0] for v in files.values()),
+            "files": {rel: {"bytes": int(v[0]), "sha256": v[1]} for rel, v in sorted(files.items())}}
+    return (json.dumps(body, sort_keys=True, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
+
+
+def _parse_manifest(raw: bytes) -> tuple:
+    """({relpath: (size, sha256)}, [problems]) of a stored manifest; any malformation is a problem and nothing is trusted."""
+    try:
+        doc = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, ValueError) as e:
+        return None, [f"{CONTENT_MANIFEST} is unreadable: {type(e).__name__}: {str(e)[:100]}"]
+    if not isinstance(doc, dict) or doc.get("tool") != CONTENT_MANIFEST_TOOL or doc.get("algorithm") != "sha256" or not isinstance(doc.get("files"), dict) or not doc["files"]:
+        return None, [f"{CONTENT_MANIFEST} is not a non-empty {CONTENT_MANIFEST_TOOL} (sha256) manifest"]
+    out, bad = {}, []
+    for rel, ent in doc["files"].items():
+        parts = str(rel).split("/")
+        if not rel or rel.startswith("/") or "\\" in rel or "" in parts or ".." in parts or not isinstance(ent, dict) or type(ent.get("bytes")) is not int or ent["bytes"] < 0 \
+                or not re.fullmatch(r"[0-9a-f]{64}", str(ent.get("sha256", ""))):
+            bad.append(str(rel)[:80])
+        else:
+            out[rel] = (ent["bytes"], ent["sha256"])
+    if bad:
+        return None, [f"{CONTENT_MANIFEST} has malformed entries: {bad[:5]}"]
+    return out, []
+
+
+def _hash_files(root: Path, rels: list, pool) -> tuple:
+    """({rel: (size, sha256)}, [problems]) of `rels` under `root`; the files are hashed on `pool`'s workers when given."""
+    live, problems = {}, []
+    futs = [(rel, (pool.submit(_sha256_and_size, root / rel) if pool is not None else None)) for rel in rels]
+    try:
+        for rel, f in futs:
+            try:
+                live[rel] = f.result() if f is not None else _sha256_and_size(root / rel)
+            except OSError as e:
+                problems.append(f"cannot read {rel}: {type(e).__name__}: {e}")
+    finally:
+        for _, f in futs:
+            if f is not None:
+                f.cancel()
+    return live, problems
+
+
+def content_check(root, pool=None) -> dict:
+    """Check directory `root` against its CONTENT_MANIFEST.  {"problems": [...], "live": {rel: (size, sha256)} | None, "manifest_file_sha256": str | None}.  Structural problems (a missing / malformed / non-canonical
+    manifest, a missing / extra / renamed / resized file) end the check BEFORE any byte is hashed (fail fast: a 70 GB cache is not re-read to learn a file is missing); otherwise every file is re-hashed and a
+    byte change at the same size is a problem."""
+    root = Path(root)
+    mp = root / CONTENT_MANIFEST
+    if not mp.is_file():
+        return {"problems": [f"no {CONTENT_MANIFEST} in {root}: the directory was not sealed at build (ctx_cache.finalize writes it; a cache built without it: `python refe/ctx_cache.py seal --dir <dir>`)"],
+                "live": None, "manifest_file_sha256": None}
+    try:
+        raw = mp.read_bytes()
+    except OSError as e:
+        return {"problems": [f"{CONTENT_MANIFEST} cannot be read: {type(e).__name__}: {e}"], "live": None, "manifest_file_sha256": None}
+    stored, problems = _parse_manifest(raw)
+    if stored is not None and raw != manifest_bytes(stored):
+        problems.append(f"{CONTENT_MANIFEST} is not in the canonical form it is written in (edited by hand, or written by another tool)")
+    if stored is None:
+        return {"problems": problems, "live": None, "manifest_file_sha256": sha256_bytes(raw)}
+    sizes, lprobs = _content_listing(root)
+    problems += lprobs
+    problems += [f"file in the manifest is MISSING: {r}" for r in sorted(set(stored) - set(sizes))]
+    problems += [f"file NOT in the manifest (extra, or a renamed file): {r}" for r in sorted(set(sizes) - set(stored))]
+    problems += [f"SIZE changed: {r} (manifest {stored[r][0]} bytes, now {sizes[r]})" for r in sorted(set(stored) & set(sizes)) if stored[r][0] != sizes[r]]
+    if not sizes:
+        problems.append("the directory holds no file besides its manifest")
+    if problems:
+        return {"problems": problems, "live": None, "manifest_file_sha256": sha256_bytes(raw)}
+    live, hprobs = _hash_files(root, sorted(sizes), pool)
+    problems += hprobs
+    problems += [f"BYTES CHANGED at the same size ({live[r][0]}): {r} (sha256 manifest {stored[r][1][:12]}, now {live[r][1][:12]})" for r in sorted(live)
+                 if live[r][1] != stored[r][1] or live[r][0] != stored[r][0]]
+    return {"problems": problems, "live": live if not problems else None, "manifest_file_sha256": sha256_bytes(raw)}
+
+
+def content_fingerprint(path, *, _pool=None) -> dict:
+    """The CONTENT fingerprint of `path`.  A file: `fingerprint` (its sha256).  Missing: missing.  A directory: `kind: dir-content` -- valid only if it carries a CONTENT_MANIFEST that every file's bytes match
+    exactly (no extra, missing, renamed, resized or changed file); then `content_sha256` is the sha256 of the manifest's canonical bytes recomputed from the LIVE files, and `fp_key` is `dirc:<n>:<bytes>:<sha>`.
+    Any problem -> `n_problems > 0` and the key is `dir-content-INVALID:...`.  Every call re-reads every byte (no cache): that is what makes it a content check."""
+    p = Path(path)
+    if p.is_file():
+        return fingerprint(p)
+    if not p.is_dir():
+        return {"kind": "missing"}
+    own = None
+    if _pool is None and hash_threads() > 1:
+        own = _pool = concurrent.futures.ThreadPoolExecutor(max_workers=hash_threads(), thread_name_prefix="fp-hash")
+    try:
+        r = content_check(p, _pool)
+    finally:
+        if own is not None:
+            own.shutdown(wait=True)
+    fp = {"kind": "dir-content", "n_problems": len(r["problems"]), "problems": r["problems"][:CONTENT_MAX_PROBLEMS], "manifest_file_sha256": r["manifest_file_sha256"],
+          "method": "dir-content-v1 (sha256 of the BYTES of every file, all re-read at every check, against the build-time content_manifest.json; the key is the sha256 of the manifest's canonical bytes "
+                    "recomputed from the live files; a missing manifest or any missing / extra / renamed / resized / changed file makes the key INVALID)"}
+    if r["live"] is not None:
+        fp.update(n_files=len(r["live"]), bytes=sum(v[0] for v in r["live"].values()), content_sha256=sha256_bytes(manifest_bytes(r["live"])))
+    return fp
+
+
+def seal_content_manifest(root, *, pool=None) -> dict:
+    """THE BUILD SIDE, run once when a directory is finished: sha256 every file under `root` and write CONTENT_MANIFEST atomically (LF, canonical bytes).  Refuses an empty or unreadable directory.  Re-sealing
+    rewrites it (the old manifest is never one of the files hashed).  -> {"path", "sha256" (of the manifest file == the directory's content fingerprint), "n_files", "bytes"}."""
+    root = Path(root)
+    if not root.is_dir():
+        raise GateError(f"cannot seal {root}: not a directory")
+    tmp = root / (CONTENT_MANIFEST + ".tmp")
+    if tmp.exists():
+        tmp.unlink()                                          # a crashed earlier seal: never one of the files hashed
+    sizes, problems = _content_listing(root)
+    if problems or not sizes:
+        raise GateError(f"cannot seal {root}: " + ("; ".join(problems[:3]) if problems else "no file under it"))
+    own = None
+    if pool is None and hash_threads() > 1:
+        own = pool = concurrent.futures.ThreadPoolExecutor(max_workers=hash_threads(), thread_name_prefix="fp-hash")
+    try:
+        live, problems = _hash_files(root, sorted(sizes), pool)
+    finally:
+        if own is not None:
+            own.shutdown(wait=True)
+    if problems:
+        raise GateError(f"cannot seal {root}: " + "; ".join(problems[:3]))
+    raw = manifest_bytes(live)
+    with open(tmp, "wb") as fh:
+        fh.write(raw)
+        fh.flush()
+        os.fsync(fh.fileno())
+    os.replace(tmp, root / CONTENT_MANIFEST)
+    return {"path": str(root / CONTENT_MANIFEST), "sha256": sha256_bytes(raw), "n_files": len(live), "bytes": sum(v[0] for v in live.values())}
 
 
 def flag_pairs(argv: list) -> list:
@@ -250,43 +451,45 @@ def flag_values(argv: list, flag: str):
     return None
 
 
-def _timed_fingerprint(path, pool=None) -> tuple:
+def _timed_fingerprint(path, pool=None, content=False) -> tuple:
     t0 = time.perf_counter()
-    fp = fingerprint(path, _pool=pool)
+    fp = content_fingerprint(path) if content else fingerprint(path, _pool=pool)       # content: a directory's BYTES are hashed (on its own hash pool); `pool` is the listing's stat pool
     return fp, time.perf_counter() - t0
 
 
-def data_manifest(argv: list, data_flags: Iterable[str], gate_inputs: dict | None = None, path_map=None, timings: dict | None = None) -> dict:
+def data_manifest(argv: list, data_flags: Iterable[str], gate_inputs: dict | None = None, path_map=None, timings: dict | None = None, content_flags: Iterable[str] = ()) -> dict:
     """Every input the launch READS, fingerprinted on THIS host: the value of each data flag in the argv, plus the gate's own inputs
     (`gate:*`).  A data flag that is passed and missing on the host is a finding (`data_problems`).  `timings`, when given, is filled {input: seconds}: evidence of where the
-    time went, never part of the manifest."""
+    time went, never part of the manifest.  `content_flags`: the flags whose DIRECTORY value is fingerprinted by CONTENT (`content_fingerprint`: every byte re-hashed against the build-time manifest)
+    instead of by listing; default (): every flag is fingerprinted exactly as it always was."""
     want = set(data_flags)
-    jobs = []                                                         # (key, extra fields, path to fingerprint), in the order the manifest has always been built
+    cflags = set(content_flags)
+    jobs = []                                                         # (key, extra fields, path to fingerprint, by content?), in the order the manifest has always been built
     for flag, vals in flag_pairs(argv):
         if flag in want and vals:
             local = vals[0]
             for a, b in (path_map or []):
                 if local.startswith(a):
                     local = b + local[len(a):]
-            jobs.append((flag, {"path": vals[0], **({"local": local} if local != vals[0] else {})}, local))
+            jobs.append((flag, {"path": vals[0], **({"local": local} if local != vals[0] else {})}, local, flag in cflags))
     for key, path in sorted((gate_inputs or {}).items()):
-        jobs.append((key, {"path": str(path)}, path))
+        jobs.append((key, {"path": str(path)}, path, False))
     # The inputs are independent: the 1.29 GB checkpoint's sha256 and the 413,184-file image listing do not wait for each other.  Every job still runs (a flag named twice is
     # still fingerprinted twice, the later one wins, a raise still raises); one pool of `fp_threads()` workers serves all the listings.
     nthr = fp_threads()
     man: dict = {}
     if nthr <= 1 or not jobs:
-        for key, extra, path in jobs:
-            fp, dt = _timed_fingerprint(path)
+        for key, extra, path, byc in jobs:
+            fp, dt = _timed_fingerprint(path, None, byc)
             man[key] = {**extra, **fp}
             if timings is not None:
                 timings[key] = round(dt, 2)
         return man
     with concurrent.futures.ThreadPoolExecutor(max_workers=nthr, thread_name_prefix="fp-stat") as stat_pool, \
             concurrent.futures.ThreadPoolExecutor(max_workers=min(len(jobs), 8), thread_name_prefix="fp-job") as job_pool:
-        futs = [job_pool.submit(_timed_fingerprint, path, stat_pool) for _, _, path in jobs]
+        futs = [job_pool.submit(_timed_fingerprint, path, stat_pool, byc) for _, _, path, byc in jobs]
         try:
-            for (key, extra, _), f in zip(jobs, futs):
+            for (key, extra, _, _), f in zip(jobs, futs):
                 fp, dt = f.result()
                 man[key] = {**extra, **fp}
                 if timings is not None:
@@ -299,7 +502,9 @@ def data_manifest(argv: list, data_flags: Iterable[str], gate_inputs: dict | Non
 
 def data_problems(data: dict) -> list:
     return [f"data input {k} ({v.get('path', '')}) is {v.get('kind')} on this host" for k, v in sorted(data.items())
-            if v.get("kind") in ("missing", "unresolved")]
+            if v.get("kind") in ("missing", "unresolved")] + \
+           [f"data input {k} ({v.get('path', '')}) FAILS its content check ({v.get('n_problems')} problem(s)): {'; '.join(str(x) for x in (v.get('problems') or [])[:3])}" for k, v in sorted(data.items())
+            if v.get("kind") == "dir-content" and v.get("n_problems")]
 
 
 # ------------------------------------------------------------------------------------------ the tree
@@ -384,7 +589,7 @@ def mint(*, profile: str, commit: str | None, tree_man: dict, argv: list, traine
 
 
 def verify_token(token_path, argv: list, pkg, *, key: bytes, profile: str | None = None, data_flags: Iterable[str] = (),
-                 commit: str | None = None, path_map=None):
+                 commit: str | None = None, path_map=None, content_flags: Iterable[str] = ()):
     """THE SUPERVISOR'S SIDE.  Every field the token binds is RE-MEASURED here; any difference refuses.  Returns (ok, reasons, info)."""
     reasons: list = []
     info: dict = {"token": str(token_path)}
@@ -422,7 +627,7 @@ def verify_token(token_path, argv: list, pkg, *, key: bytes, profile: str | None
         reasons.append(f"cannot measure the code tree: {e}")
     flags = list(data_flags) or sorted({k for k in (b.get("data") or {}) if k.startswith("--")})
     t_data, dtim = time.perf_counter(), {}
-    data = data_manifest(argv, flags, b.get("gate_inputs") or {}, path_map, timings=dtim)
+    data = data_manifest(argv, flags, b.get("gate_inputs") or {}, path_map, timings=dtim, content_flags=content_flags)
     info.setdefault("timing_s", {})["data_manifest"] = round(time.perf_counter() - t_data, 2)
     info["timing_s"]["data_inputs"] = dict(sorted(dtim.items(), key=lambda kv: -kv[1])[:6])
     want = b.get("data") or {}
@@ -430,6 +635,7 @@ def verify_token(token_path, argv: list, pkg, *, key: bytes, profile: str | None
     info["data_differs"] = d_bad
     if d_bad:
         reasons.append(f"data differs from the gated data on {d_bad[:8]}")
+        reasons += [p_ for p_ in data_problems(data) if "content check" in p_]                  # WHICH file, when the input that differs is a content-fingerprinted directory
     return not reasons, reasons, info
 
 

@@ -68,6 +68,7 @@ RLS1_RECIPE = {"lr": 1e-4, "warmup": 50, "batch": 8, "accum": 8, "max_updates": 
 # mix label sources with the PDM labels; --b-compw / --tau-s belong to other b-modes; --tau-t scales a ListNet term that --lam 0 multiplies by zero.
 AUX_HEAD_FLAGS = ("--aux-drv", "--w-aux-drv", "--aux-drv-tap", "--aux-drv-depth", "--aux-drv-feed", "--aux-drv-labels", "--aux-drv-shuffle-seed", "--aux-drv-lr")
 HNSCREEN_FLAGS = ("--hn-bank", "--ctx-cache")                                           # P6-HN-S (PREREG_P6HN_SCREEN 4.2): the bank and the frozen-trunk context cache; ONLY refe_hnscreen accepts them
+HNSCREEN_CONTENT_FLAGS = ("--ctx-cache",)                                               # HNSCREEN-CACHE-CONTENT-FP: of those, the DIRECTORY whose bytes the gate binds by a per-file sha256 manifest (gate_token.content_fingerprint), not by a size listing
 RLS1_FORBIDDEN = ("--preflight", "--lane-labels-train", "--lane-labels-heldout", "--b-compw", "--tau-s", "--tau-t") + AUX_HEAD_FLAGS + HNSCREEN_FLAGS      # RL-S1 is not the head's experiment, nor the hard-negative screen's
 RLS1_EPO_TERMS = ("epo", "epo_J", "epo_kl", "epo_lam_pg")                              # the trainer's metric rows must emit these on an --epo arm
 RLS1_DATA = ("--ckpt", "--targets", "--images", "--calib", "--onpolicy", "--heldout", "--heldout-logs", "--lane-labels-train", "--lane-labels-heldout",
@@ -187,7 +188,7 @@ HNSCREEN_PATHS = ("--ckpt", "--targets", "--images", "--calib", "--onpolicy", "-
                   "--teacher-lane-train", "--teacher-lane-heldout") + HNSCREEN_FLAGS      # tokens whose VALUE may move (a re-rooted path) but which must be carried exactly once
 HNSCREEN_TERMS = ("hn_rows", "hn_rows_expected", "hn_loss")                              # the trainer's train rows must emit these (D1: the rows that entered the term vs the rows the bank holds)
 HNSCREEN_SUITE = RLS1_SUITE + [{"script": "test_hn_bank.py", "token": "ZZTEST_PASS"}, {"script": "test_ctx_cache.py", "token": "ZZTEST_PASS"},
-                               {"script": "test_hn_screen_wiring.py", "token": "ZZTEST_PASS"}]
+                               {"script": "test_hn_screen_wiring.py", "token": "ZZTEST_PASS"}, {"script": "test_hn_content_fp.py", "token": "ZZTEST_PASS"}]
 
 
 P2_RUN_DIR = "/workspace/data/refe_runs/p2_joint_pdm"
@@ -406,6 +407,13 @@ def pinned_argv_refusals(prof: dict, argv: list) -> list:
     for f in sorted(set(got) - set(want)):
         out.append(f"{name}: the argv carries {f} {' '.join(got[f][0])}, which the profile does not pin (the replicate is P2's argv plus --out and --seed {P2REP_SEED}, and nothing else)")
     return out
+
+
+def content_flags_of(prof: dict) -> tuple:
+    """The data flags the profile fingerprints by CONTENT (every byte of a directory re-hashed against its build-time manifest) instead of by size listing: HNSCREEN_CONTENT_FLAGS under `hn_rules`, nothing for any
+    other profile (their fingerprints are exactly what they always were).  Derived from `hn_rules`, never from a profile key of its own: a key that can be absent is a default that disables the check
+    (HNSCREEN-FP-REQUIRED's class).  The ONE function `run_checks`, `finalize` and `cmd_verify` all take their `content_flags` from."""
+    return HNSCREEN_CONTENT_FLAGS if prof.get("hn_rules") else ()
 
 
 def profile_refusals(prof: dict, argv: list) -> list:
@@ -695,7 +703,8 @@ def _same_vals(a, b) -> bool:
 def hnscreen_refusals(prof: dict, argv: list, mod, parser) -> tuple:
     """(refusals, extra live terms) of the screen's rules, ON TOP of rls1_refusals (class C, the recipe, the registered seed, the lane-head pairing, scorer_finetune's own epo refusals).  PREREG_P6HN_SCREEN 4.2 / 4.4:
     the argv is RL-S1's C1 argv plus --hn-bank and --ctx-cache, each exactly once -- ANY moved, added, dropped or doubled token is a refusal; --seed is named (the pass); path values may move (re-rooted) but their
-    CONTENT fingerprints must equal the registered ones: `fingerprints_expected` MUST cover --hn-bank and --ctx-cache (an unfilled profile REFUSES, HNSCREEN-FP-REQUIRED); the trainer's own `hn_refusals` (--hn-bank with --epo / --lam != 0 / --b-mode != listnet / --aux-drv,
+    CONTENT fingerprints must equal the registered ones: `fingerprints_expected` MUST cover --hn-bank and --ctx-cache (an unfilled profile REFUSES, HNSCREEN-FP-REQUIRED), and --ctx-cache's is a per-file sha256 CONTENT
+    fingerprint (`dirc:`; HNSCREEN-CACHE-CONTENT-FP: a missing manifest, or an extra / missing / renamed / resized / byte-changed file, REFUSES; a size-listing `dir:` pin REFUSES); the trainer's own `hn_refusals` (--hn-bank with --epo / --lam != 0 / --b-mode != listnet / --aux-drv,
     --ctx-cache with --aux-drv) are surfaced, not re-derived."""
     import gate_checks as C
     name, out = prof["name"], []
@@ -733,10 +742,18 @@ def hnscreen_refusals(prof: dict, argv: list, mod, parser) -> tuple:
         if not vals or len(vals) != 1 or len(vals[0]) != 1:
             out.append(f"{name}: {f} is in fingerprints_expected but the argv does not carry it exactly once with one value ({len(vals or ())} found): the content check cannot run")
             continue
+        by_content = f in HNSCREEN_CONTENT_FLAGS
+        if by_content and not (isinstance(want, str) and want.startswith("dirc:")):       # a stale fill: the old size-listing key (`dir:`) can never be equal to a content key -- say so, and do not hash 70 GB to say it
+            out.append(f"{name}: the content fingerprint of {f} cannot be checked: the registered value {str(want)[:24]!r} is not a content fingerprint (dirc:...); refill it with hn_fingerprints.py from the SEALED cache (a size listing cannot see a same-size byte flip)")
+            continue
         try:
-            fk = GT.fp_key(GT.fingerprint(vals[0][0]))
+            fp = GT.content_fingerprint(vals[0][0]) if by_content else GT.fingerprint(vals[0][0])
+            fk = GT.fp_key(fp)
         except (OSError, ValueError, KeyError) as e:
             out.append(f"{name}: cannot fingerprint {f} {vals[0][0]} ({e})")
+            continue
+        if by_content and fp.get("n_problems"):
+            out.append(f"{name}: the content fingerprint of {f} cannot be taken: {fp['n_problems']} problem(s): " + "; ".join(str(x) for x in fp.get("problems", [])[:3]))
             continue
         if fk != want:
             out.append(f"{name}: the content fingerprint of {f} is not the registered one (RL-S1 C1 / C0's token fingerprint)")
@@ -939,7 +956,7 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
     binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
     gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json)
     dtim: dict = {}
-    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim)
+    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof))
     _log_manifest_timing("run", t_tree, time.perf_counter() - t0 - t_tree, dtim)
     rehearsal = bool(prof.get("rehearsal"))
     want = [c for c in (prof["checks"] + tuple(prof.get("na_ok", ()))) if (only is None or c in only)]
@@ -1179,7 +1196,7 @@ def finalize(prof: dict, argv: list, pkg: Path, out_dir: Path, key: bytes, *, p2
     t_tree = time.perf_counter() - t0
     gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json)
     dtim: dict = {}
-    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim)
+    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof))
     _log_manifest_timing("finalize", t_tree, time.perf_counter() - t0 - t_tree, dtim)
     binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
     reasons = profile_refusals(prof, argv) + GT.data_problems(data)
@@ -1321,7 +1338,7 @@ def cmd_verify(a) -> int:
     try:
         key = GT.load_key(a.key_file, create=False, forbid_under=[a.pkg])
         ok, reasons, info = GT.verify_token(a.token, _argv_of(a), a.pkg, key=key, profile=a.profile, data_flags=prof["data_flags"] if prof else (),
-                                            commit=a.commit)
+                                            commit=a.commit, content_flags=content_flags_of(prof) if prof else ())
     except Exception as e:                                                   # noqa: BLE001 -- refuse, never pass
         ok, reasons, info = False, [f"{type(e).__name__}: {e}"], {}
     for r in reasons:

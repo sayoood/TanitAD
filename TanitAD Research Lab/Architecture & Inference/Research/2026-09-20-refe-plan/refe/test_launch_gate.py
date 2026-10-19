@@ -1686,6 +1686,7 @@ def hnscreen_static() -> None:
     bank.write_bytes(b"HNBANK1\n" + bytes(range(200)))
     cache.mkdir()
     (cache / "manifest.json").write_text('{"tool": "ctx_cache/1"}', encoding="utf-8")
+    L.GT.seal_content_manifest(cache)                                                  # HNSCREEN-CACHE-CONTENT-FP: a cache is SEALED at build (ctx_cache.finalize does it); the gate refuses an unsealed one
     sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()                  # noqa: E731
     arms_json = json.loads((PKG / "eval" / "rls1b_arms.json").read_text(encoding="utf-8"))
     c1 = list(arms_json["arms"]["C1"]["argv"])
@@ -1696,7 +1697,7 @@ def hnscreen_static() -> None:
     ns1, err = C.parse_scorer_argv(S.build_parser(), a1)
     ok(err is None, err)
     # HNSCREEN-FP-REQUIRED (MM ruling 6): the shipped profile is UNFILLED and must REFUSE; every "clean" arm below runs against a profile FILLED from its own fixture files (never typed by hand)
-    FP = {"--hn-bank": L.GT.fp_key(L.GT.fingerprint(str(bank))), "--ctx-cache": L.GT.fp_key(L.GT.fingerprint(str(cache)))}
+    FP = {"--hn-bank": L.GT.fp_key(L.GT.fingerprint(str(bank))), "--ctx-cache": L.GT.fp_key(L.GT.content_fingerprint(str(cache)))}       # the cache's pin is its CONTENT fingerprint (dirc:), the bank's is its sha256
     PF = {**P, "fingerprints_expected": dict(FP)}
 
     def refs(argv, arm="S1", prof=None):
@@ -1800,6 +1801,9 @@ def hnscreen_static() -> None:
     ok(all(f in (P.get("fingerprints_expected") or {}) for f in L.HNSCREEN_FLAGS) or any(FP_NF in r for r in shipped), shipped)
     # the other profiles are untouched by this rule: none of them carries `fingerprints_expected` and none runs the hnscreen rules
     ok(all("fingerprints_expected" not in v and not v.get("hn_rules") for k, v in L.PROFILES.items() if k != "refe_hnscreen"))
+    ok(L.content_flags_of(P) == ("--ctx-cache",) == L.HNSCREEN_CONTENT_FLAGS and L.content_flags_of({**P, "hn_rules": False}) == () and L.content_flags_of({k: v for k, v in P.items() if k != "hn_rules"}) == ())     # HNCFP-0: derived from hn_rules, never from a key that can be absent
+    ok(all(L.content_flags_of(v) == () for k, v in L.PROFILES.items() if k != "refe_hnscreen"), [k for k, v in L.PROFILES.items() if L.content_flags_of(v)])      # HNCFP-0b: every other profile fingerprints exactly as before
+    ok(L.GT.fp_key(L.GT.fingerprint(str(cache))).startswith("dir:") and FP["--ctx-cache"].startswith("dirc:"))                           # HNCFP-0c: the two key shapes can never be equal
     # the CLI: the shipped (unfilled) profile REFUSES with rc 5; a FILLED profile is clean
     import contextlib
     import io
@@ -1816,6 +1820,67 @@ def hnscreen_static() -> None:
     finally:
         L.PROFILES["refe_hnscreen"] = P
     ok(rc == 0 and "ZZGATE-CLEANZZ" in buf.getvalue(), buf.getvalue())
+    # ------------------------------------------------------------------ H3c HNSCREEN-CACHE-CONTENT-FP: --ctx-cache is bound by CONTENT.  Every RED arm has its positive twin (`clean(a_c, "S1", PFc)`).  The full matrix, the verify path
+    # and the source mutations are in test_hn_content_fp.py; these arms keep the refusal rule itself in G-SUITE's `test_launch_gate.py --static`.
+    cacheP = td / "cacheP"
+    (cacheP / "units").mkdir(parents=True)
+    (cacheP / "manifest.json").write_text('{"tool": "ctx_cache/1", "n": 2}', encoding="utf-8")
+    (cacheP / "units" / "u0.ctx.u16").write_bytes(bytes(range(256)) * 8)
+    (cacheP / "units" / "u0.fan.f32").write_bytes(bytes(range(256)) * 2)
+    L.GT.seal_content_manifest(cacheP)
+    FPc = L.GT.fp_key(L.GT.content_fingerprint(str(cacheP)))
+    PFc = {**P, "fingerprints_expected": {**FP, "--ctx-cache": FPc}}
+    a_c = C._set(a1, "--ctx-cache", str(cacheP))
+    clean(a_c, "S1", PFc)                                                                                       # the twin
+    CFP = "content fingerprint of --ctx-cache"
+
+    def cache_variant(name, mutate):
+        d = td / name
+        shutil.copytree(cacheP, d)
+        mutate(d)
+        return C._set(a1, "--ctx-cache", str(d))
+
+    def flip(d):
+        b = bytearray((d / "units" / "u0.ctx.u16").read_bytes())
+        b[17] ^= 0x01                                                                                           # ONE bit of ONE payload byte; the size is unchanged
+        (d / "units" / "u0.ctx.u16").write_bytes(bytes(b))
+    a_flip = cache_variant("cP_flip", flip)
+    ok((td / "cP_flip" / "units" / "u0.ctx.u16").stat().st_size == (cacheP / "units" / "u0.ctx.u16").stat().st_size)
+    ok(L.GT.fp_key(L.GT.fingerprint(str(td / "cP_flip"))) == L.GT.fp_key(L.GT.fingerprint(str(cacheP))))        # HNCFP-1 (the DEFECT): the size-listing fingerprint cannot see this flip ...
+    red(a_flip, "BYTES CHANGED at the same size", "S1", PFc)                                                     # ... the content fingerprint does, and names the file
+    red(a_flip, CFP, "S1", PFc)
+    red(cache_variant("cP_ren", lambda d: (d / "units" / "u0.fan.f32").rename(d / "units" / "u0.fan2.f32")), "extra, or a renamed file", "S1", PFc)       # HNCFP-2: a renamed file
+    red(cache_variant("cP_add", lambda d: (d / "units" / "zz.bin").write_bytes(b"x")), "NOT in the manifest", "S1", PFc)                                 # HNCFP-3: an added file
+    red(cache_variant("cP_del", lambda d: (d / "units" / "u0.fan.f32").unlink()), "is MISSING", "S1", PFc)                                                # HNCFP-4: a deleted file
+    red(cache_variant("cP_nom", lambda d: (d / "content_manifest.json").unlink()), "no content_manifest.json", "S1", PFc)                                 # HNCFP-5: an UNSEALED cache (no manifest)
+
+    def stale(d):                                                                                               # HNCFP-6: a unit rebuilt AFTER the seal, at another size, the manifest not regenerated
+        (d / "units" / "u0.ctx.u16").write_bytes(bytes(range(256)) * 9)
+    red(cache_variant("cP_stale", stale), "SIZE changed", "S1", PFc)
+
+    def foreign(d):                                                                                             # HNCFP-6b: the manifest of ANOTHER cache dropped in (canonical, internally valid, not this cache's)
+        shutil.copy(cache / "content_manifest.json", d / "content_manifest.json")
+    red(cache_variant("cP_foreign", foreign), CFP, "S1", PFc)
+
+    def resealed(d):                                                                                            # HNCFP-6c: payload changed AND the manifest regenerated to match: self-consistent, so only the PIN can refuse it
+        flip(d)
+        L.GT.seal_content_manifest(d)
+    a_res = cache_variant("cP_resealed", resealed)
+    ok(L.GT.content_fingerprint(str(td / "cP_resealed"))["n_problems"] == 0)
+    red(a_res, "is not the registered one", "S1", PFc)
+    red(a_c, "is not a content fingerprint", "S1", {**P, "fingerprints_expected": {**FP, "--ctx-cache": L.GT.fp_key(L.GT.fingerprint(str(cacheP)))}})                  # HNCFP-7: a stale fill (the old size-listing pin) is refused, not silently accepted
+    buf = io.StringIO()
+    L.PROFILES["refe_hnscreen"] = PFc
+    try:
+        with contextlib.redirect_stdout(buf):
+            rc_c = L.main(["refusals", "--profile", "refe_hnscreen", "--arm-name", "S1", "--args", " ".join(a_c)])
+            buf2 = io.StringIO()
+        with contextlib.redirect_stdout(buf2):
+            rc_f = L.main(["refusals", "--profile", "refe_hnscreen", "--arm-name", "S1", "--args", " ".join(a_flip)])
+    finally:
+        L.PROFILES["refe_hnscreen"] = P
+    ok(rc_c == 0 and "ZZGATE-CLEANZZ" in buf.getvalue(), buf.getvalue())                                          # HNCFP-8: the CLI entry point: clean twin rc 0 ...
+    ok(rc_f == 5 and "ZZGATE-REFUSEDZZ" in buf2.getvalue() and "BYTES CHANGED at the same size" in buf2.getvalue(), buf2.getvalue())                       # ... a same-size flip rc 5
     # ------------------------------------------------------------------ H3b hn_fingerprints.py (HNSCREEN-FP-REQUIRED): the helper's JSON, never typed, fills the profile -> the gate PASSES; a 1-byte-changed input FAILS
     import hn_fingerprints as HF
     ok(HF.fingerprints_expected(str(bank), str(cache)) == FP and list(FP) == list(L.HNSCREEN_FLAGS), HF.fingerprints_expected(str(bank), str(cache)))     # the gate's own functions, the gate's own key order

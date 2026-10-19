@@ -15,6 +15,10 @@ atomically, carrying the keys, the two sha256s and the trunk fingerprint).  A un
 unit (data without a sidecar, or bytes that no longer hash) is rebuilt; a unit built under ANOTHER trunk fingerprint is a refusal (`StaleCache`), never a silent rebuild.  The GPU is taken only through
 the landed lock (`eval/aux_navtest_forward.py` `gpu_lock`: wait_idle.py + the O_EXCL devbox_gpu.lock), once per unit, so another job interleaves between units.
 
+THE CONTENT MANIFEST (HNSCREEN-CACHE-CONTENT-FP).  `finalize` ends by SEALING the directory: the sha256 of every file's bytes is computed once, here, and written to `content_manifest.json` (`gate_token.seal_content_manifest`).
+The launch gate fingerprints `--ctx-cache` by CONTENT -- it re-hashes every file against that manifest (`gate_token.content_fingerprint`) -- so a same-size byte flip, which the size-listing fingerprint could not see, is refused.
+A cache finalised before this existed is sealed with `python refe/ctx_cache.py seal --dir <cache>`; `check --dir <cache>` prints its content fingerprint and any problem.
+
 THE MANIFEST binds the trunk fingerprint (sha256 over every non-scorer tensor of the checkpoint, so a scorer-only fine-tune does NOT invalidate the cache and any trunk/generator/projection change DOES),
 the scene-list sha256 and the calib sha256.  `CtxCache(dir, expect_trunk_fingerprint=...)` refuses a cache of another trunk; `verify()` re-hashes every unit.
 
@@ -247,7 +251,14 @@ def finalize(out_dir, units, *, trunk_fp, calib_sha256, meta=None):
     man = {"tool": TOOL, "dtype": DTYPE, "n_scenes": len(allkeys), "n_tokens": shp[1], "dim": shp[2], "fan_shape": ent[0]["fan_shape"][1:], "trunk_fingerprint": trunk_fp,
            "scene_list_sha256": keys_sha256(allkeys), "calib_sha256": calib_sha256, "units": ent, **(meta or {})}
     _write_atomic(os.path.join(out_dir, "manifest.json"), json.dumps(man, indent=1, sort_keys=True).encode("utf-8"))
+    seal(out_dir)                                                  # LAST: the per-file sha256 manifest the launch gate re-checks (it hashes manifest.json too, so it must come after it)
     return man
+
+
+def seal(out_dir):
+    """seal `out_dir` (write content_manifest.json: sha256 of every file's bytes, computed once); -> {"path", "sha256", "n_files", "bytes"}.  Re-sealing rewrites it."""
+    import gate_token as GT
+    return GT.seal_content_manifest(out_dir)
 
 
 # ============================================================================================ the reader
@@ -298,6 +309,33 @@ class CtxCache:
         return torch.from_numpy(np.stack(self._rows(keys, "fan")).astype(np.float32))
 
 
+# ============================================================================================ the CLI: seal a finished cache / print its content fingerprint
+def main(argv=None):
+    import argparse
+    import gate_token as GT
+    ap = argparse.ArgumentParser(description="seal / check the content manifest of a finished ctx cache")
+    ap.add_argument("cmd", choices=("seal", "check"))
+    ap.add_argument("--dir", required=True, help="the cache directory (the --ctx-cache value)")
+    a = ap.parse_args(argv)
+    t0 = time.perf_counter()
+    if a.cmd == "seal":
+        if not os.path.isfile(os.path.join(a.dir, "manifest.json")):
+            print(f"REFUSED: {a.dir} has no manifest.json: finalise the cache before sealing it", file=sys.stderr)
+            return 2
+        try:
+            r = seal(a.dir)
+        except GT.GateError as e:
+            print(f"REFUSED: {e}", file=sys.stderr)
+            return 2
+        print(f"ZZCTX_SEALED files {r['n_files']} bytes {r['bytes']} sha256 {r['sha256']} seconds {time.perf_counter() - t0:.1f}")
+        return 0
+    fp = GT.content_fingerprint(a.dir)
+    print(f"{GT.fp_key(fp)}  seconds {time.perf_counter() - t0:.1f}")
+    for pr in fp.get("problems", []):
+        print(f"PROBLEM {pr}", file=sys.stderr)
+    return 0 if fp.get("kind") == "dir-content" and not fp.get("n_problems") else 1
+
+
 # ============================================================================================ the fan check (I6)
 def check_fan(cache, ref_paths, ckpt_step, *, atol, mean_atol, tmp_dir=None):
     """The cached fan against RL-S1's banked frozen fan through the LANDED comparator (`rl_fan_dump.compare_sets`), both registered bounds.  ok <=> every cached scene has a
@@ -324,3 +362,7 @@ def cache_vs_live(cache, keys, live_ctx):
     """G15's raw field: max |cache - live| over the given scenes (live_ctx bf16 [B, P, D] from a fresh trunk forward).  Identity reads exactly 0.0; a row-shuffled cache must read far above it."""
     c = cache.get_ctx(keys).float()
     return float((c - live_ctx.float()).abs().max())
+
+
+if __name__ == "__main__":
+    sys.exit(main())
