@@ -18420,3 +18420,20 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 - Every number and SHIP-R8 stand: they read measured effects, not the mechanism.
 
 **Class:** *a fitted gain read as a scale.* A least-squares gain g\* = r·σ_h/σ_d conflates ALIGNMENT with MAGNITUDE (regression dilution): g\* < 1 is produced equally by a too-large residual and by a right-sized but noisy one. Before naming a mechanism from a fitted gain, decompose it into size (ρ) and alignment (r). Same family as R53 (a threshold read as calibration): state the quantity that would distinguish the mechanism from its nearest alternative, and measure it before writing the mechanism down.
+
+### R56 (2026-10-19) - "The unseen stratum's frames exist only in the S3 `val_camera_{0..11}.zip`; a targeted range fetch through their central directories is THE ROUTE" (L2-FRESH scoping, `READY.md` §I; carried into the BACKLOG row UNSEEN-STRATUM-DATA by the Master Mind)
+
+**Claimed:**
+- The 12 nuPlan val camera archives are zips, so per-jpg range reads through their central directories are possible.
+- They hold the frames of the val-DB logs, U included. `READY.md` named the second half UNVERIFIED; the BACKLOG row stated it as fact.
+
+**Measured (`TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-unseen-stratum-s2s4/RESULT.md`; the MM re-derived the counts from the banked txt):**
+- The archives are TAR (ustar), so there is no central directory.
+- Their index lists 225 logs: 214 navtrain + 11 U.
+- 0 of the 122 fetch-list logs are present.
+
+**Fixed:**
+- `D-DATA-U-FRAMES-1`; UNSEEN-STRATUM-DATA CLOSED; SEARCH-P2-CONFIRM's READ C3 dropped.
+- 0 jpgs fetched; no claim rested on frames.
+
+**Class:** *a container's FORMAT and CONTENTS inferred from its name and its sibling.* The `.zip` suffix was read as a format, and "the archive holds what the DB split holds" was read from a naming convention. A 9 KB index file and one 4 KiB head read refuted both. Before planning a fetch around an index, read the first 4 KiB, and intersect the sample with the release's own log list BEFORE drawing it. Same family as rule 2 of the operating standard (absence or presence at one location is not a fact about another): a DB for a log is not a frame for that log.
