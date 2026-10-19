@@ -5,7 +5,9 @@
 #   2. full4 3000 0.08 50: A0 x2, A2 x2, A1x seed 1 at 3000 (in st3000, beside phase 1/2's runs) + the queue verdict over 9 runs
 #   3. pull the 5 new runs + full4_verdict.json; code/ra1_full_amend1.py reads Amendment 1 -> amend1_final.json
 # Stops on a reboot (waitjob 2), unreachable (3), timeout (4) or any nonzero rc. Script polling, not model turns.
-# Temperature: run ra1runs_guard.sh beside it with RA1_CHAIN_OUT=$L/chain_ra1_full4.out.
+# Temperature: the chain restarts telemetry, STOPS if no fresh sample arrives, and starts ra1runs_guard.sh (RA1_CHAIN_OUT = this log)
+# itself, as the v8F-mini and beta chains do. PI go 2026-10-19: "after rung beta finishes, same safe mode and stop rules, with the
+# temperature guard".
 B=/c/Users/Admin/box2_ship; L=$B/logs; E=$L/ra1_full; mkdir -p $E/runs
 MIRROR=/c/Users/Admin/tanitad-push; BR=agent/arch-inf-20260803
 PKGP="TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-refav1-hj-mini"
@@ -59,6 +61,14 @@ echo "$(date '+%m-%d %H:%M') box 2 code = tip $T (6 key files sha-checked)"
 # the readers run HERE at the same tip: taniteval + the package's code dir, from the archive box 2 got (the reader's parents[5] fallback)
 rm -rf $B/tip4 && mkdir -p $B/tip4 && tar -xf $B/repo_full4_tip.tar -C $B/tip4 taniteval "$PKGP/code" || stop "extract the readers"
 RD="$(cygpath -m "$B/tip4/$PKGP/code")"; [ -f "$RD/ra1_full_amend1.py" ] || stop "the tip has no ra1_full_amend1.py"
+# ---- telemetry + the USB-HDD temperature guard, exactly as the v8F-mini and beta chains do (beta's end leaves telemetry STOPPED):
+#      no fresh samples => STOP, because the guard would be blind
+$SSH "powershell -NoProfile -Command \"if (Test-Path D:/tanitad/logs/telemetry.stop) { Remove-Item D:/tanitad/logs/telemetry.stop }\"" 2>/dev/null
+launch telemetry_long || echo "$(date '+%m-%d %H:%M') telemetry did not launch"
+tl() { $SSH "powershell -NoProfile -Command \"Get-Content D:/tanitad/logs/telemetry_full.csv -Tail 1\"" 2>/dev/null | tr -d '\r'; }
+sleep 45; t1=$(tl); sleep 35; t2=$(tl)
+[[ $t2 == 20* && $t2 != "$t1" ]] || stop "no fresh telemetry ($t1 / $t2): the temperature guard would be blind"
+RA1_CHAIN_OUT=$L/chain_ra1_full4.out bash $B/ra1runs_guard.sh > $L/ra1a1_guard.out 2>&1 &
 # ---- 2. Amendment 1's runs + the queue verdict
 $PY "$(cygpath -m $B)/mk_ra1_job.py" ra1full_p4 full4 $S $BETA $GAMMA >/dev/null && $SCP $B/ra1full_p4.cmd tanitad-box2:D:/tanitad/jobs/ || stop "ship ra1full_p4"
 launch ra1full_p4 || stop "launch ra1full_p4"
@@ -68,5 +78,7 @@ $SCP "tanitad-box2:D:/tanitad/runs/ra1_yaw_full/st$S/full4_verdict.json" $E/ || 
 # ---- 3. the readings
 PYTHONIOENCODING=utf-8 $PY "$RD/ra1_full_amend1.py" --root "$(cygpath -m $E)" --verdict "$(cygpath -m $E/full4_verdict.json)" \
   --S $S --out "$(cygpath -m $E/amend1_final.json)" || stop "amend1 read"
+$SSH "powershell -NoProfile -Command \"New-Item -ItemType File -Force D:/tanitad/logs/telemetry.stop | Out-Null\"" 2>/dev/null
+$SCP tanitad-box2:D:/tanitad/logs/telemetry_full.csv $E/telemetry_amend1.csv 2>/dev/null
 rm -f $B/BOX2_BUSY.txt
 echo "ZZRA1A1-DONE $(date '+%m-%d %H:%M') tip $T: $(PYTHONIOENCODING=utf-8 $PY -c "import json,sys;print(json.load(open(sys.argv[1],encoding='utf-8'))['reading'])" "$(cygpath -m $E/amend1_final.json)") (boot unchanged $BOOT0)"

@@ -252,3 +252,12 @@ Read in this order. A later reading is not made if an earlier one stops.
   * The temperature guard `ra1runs_guard.sh` now takes `RA1_CHAIN_OUT`.
   * Two job helpers that every RA-1 chain used but that lived only on the dev box are now banked: `code/box2_ops/mk_ra1_job.py` and `code/box2_ops/waitjob.sh`.
 * ⛔ **Not armed.** The chain starts only on the PI's go, for the box-2 slot after rung β.
+
+### Amendment 1, PI go (2026-10-19 21:38, still before ANY of its runs)
+
+* **The PI's go (verbatim):** *"Yes, arm RA-1 Amendment 1 (A0 x2, A2 x2, A1x seed 1 at 3000) on box 2 after rung beta finishes, same safe mode and stop rules, with the temperature guard."*
+* **Armed** at 21:38 as `code/box2_ops/chain_ra1_full4.sh`. It waits for rung β's `ZZBETA-DONE` and stops on `ZZBETA-STOP`.
+* **A gap found and fixed before arming:**
+  * As first landed (`dfe2959`), the chain started no telemetry. β's chain STOPS telemetry when it ends, so the guard would have read a stale file and been blind.
+  * The chain now does exactly what the v8F-mini and β chains do: restart telemetry, **STOP if no fresh sample arrives**, start `ra1runs_guard.sh` itself (`RA1_CHAIN_OUT` = its log), and stop telemetry at the end.
+* No reading, bar or arm changes.
