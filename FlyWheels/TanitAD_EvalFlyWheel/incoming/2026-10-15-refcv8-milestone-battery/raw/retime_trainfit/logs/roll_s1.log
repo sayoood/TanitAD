@@ -1,0 +1,162 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from E:/refcv8_eval_kit/data/refcv8_train4572_eval139_extrinsics.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] E:/refcv6_eval_kit/data/refcv6-b1-416x1024-train-a6: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 90 / left 24 / right 25, missing 0 (of 139 clips; md5=b45377a1f25263b5c0f3d318c126b1ac)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_train.jsonl): 23751/23751 windows fed, per-step windows {'30': 7864, '50': 8718, '100': 5984, '120': 1185}, per-clip rows {'30': 1741, '50': 1593, '100': 1014, '120': 224}
+[model] E:/refcv8_eval_kit/ckpt/ckpt_ema_30000.pt step=30000 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-refcv7_loader.build_model (train() replayed; strict; G-EVAL-passed)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav] ⚠️ --no-navshuf: the record is NOT admissible for any nav-conditioned (STRATEGIC) claim
+[nav] ⚠️ --no-navzero: BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm BESIDE the nav-shuffle one; this record carries only the shuffle
+[roll] 4855 windows / 139 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'oracle_sel'] · fed conditionings=['nav_true'] · nav_shuffle changed 2520/4855
+[cost] first forward (1 fed row(s), 1 rows total) took 2.94 s -> ESTIMATED 3.96 h for 4855 windows (forward only; IO/analysis extra)
+  [1/139] 0100ad8d-d47 35 windows 81s
+  [2/139] 037dc0a3-329 35 windows 113s
+  [3/139] 048d59e9-f8c 35 windows 148s
+  [4/139] 04a28d35-392 35 windows 180s
+  [5/139] 06899563-a64 35 windows 213s
+  [6/139] 0a8b84d9-005 35 windows 248s
+  [7/139] 0c0e2323-3da 35 windows 283s
+  [8/139] 0c6086ad-1b8 35 windows 318s
+  [9/139] 0d30e818-7d9 35 windows 351s
+  [10/139] 0df2c3c3-a62 35 windows 384s
+  [11/139] 0e1526b3-d2b 35 windows 416s
+  [12/139] 10c86823-9a2 35 windows 449s
+  [13/139] 11e04101-024 35 windows 481s
+  [14/139] 150f6bb3-dcc 35 windows 514s
+  [15/139] 189c7df7-642 35 windows 547s
+  [16/139] 197d4e07-208 35 windows 580s
+  [17/139] 1c5b4cd5-133 35 windows 612s
+  [18/139] 1c8ef90e-919 35 windows 646s
+  [19/139] 1ca30efd-f44 35 windows 681s
+  [20/139] 1e019656-e1b 35 windows 715s
+  [21/139] 1e8649fb-844 35 windows 750s
+  [22/139] 1ea8a76e-0e1 35 windows 780s
+  [23/139] 1f2cdf49-140 35 windows 803s
+  [24/139] 20f561c1-c08 35 windows 844s
+  [25/139] 2109ed3c-c20 35 windows 887s
+  [26/139] 22e458ce-d53 35 windows 932s
+  [27/139] 23188d5c-524 35 windows 973s
+  [28/139] 2605d28d-4c7 35 windows 1013s
+  [29/139] 267d1b8b-e21 35 windows 1048s
+  [30/139] 31745702-663 35 windows 1081s
+  [31/139] 3356dac5-930 35 windows 1114s
+  [32/139] 361d2176-cfe 35 windows 1149s
+  [33/139] 36d34495-dd7 35 windows 1185s
+  [34/139] 37fc1480-761 35 windows 1222s
+  [35/139] 3c0436af-5a8 35 windows 1257s
+  [36/139] 3cd6e297-eab 35 windows 1292s
+  [37/139] 420d0fd3-f7d 35 windows 1332s
+  [38/139] 42f68c67-d77 35 windows 1367s
+  [39/139] 44604af2-197 35 windows 1401s
+  [40/139] 44c5bd75-a34 35 windows 1439s
+  [41/139] 45081e89-ed9 33 windows 1471s
+  [42/139] 45c5f0a5-b9e 35 windows 1507s
+  [43/139] 466d7c23-c96 35 windows 1542s
+  [44/139] 470fe1fa-f7d 35 windows 1581s
+  [45/139] 48f3a0a8-84e 35 windows 1615s
+  [46/139] 4a3d5c8f-36f 35 windows 1647s
+  [47/139] 4b71a2ac-59f 35 windows 1667s
+  [48/139] 4fd54c21-62e 35 windows 1686s
+  [49/139] 503ff94d-373 35 windows 1704s
+  [50/139] 5205b292-6a3 35 windows 1728s
+  [51/139] 523da701-36c 35 windows 1758s
+  [52/139] 56524fb3-719 35 windows 1789s
+  [53/139] 57c7fcf2-e9c 35 windows 1818s
+  [54/139] 59b57590-48e 35 windows 1848s
+  [55/139] 5a1a0621-acf 35 windows 1872s
+  [56/139] 5ac8c4ce-e1c 35 windows 1892s
+  [57/139] 5b4c60ff-344 35 windows 1911s
+  [58/139] 5c96a68b-ca8 35 windows 1930s
+  [59/139] 5fb2235c-88e 35 windows 1949s
+  [60/139] 612fd302-36d 34 windows 1966s
+  [61/139] 695e62e6-18c 35 windows 1983s
+  [62/139] 69e59aa4-5dc 35 windows 2000s
+  [63/139] 6c8108c7-adf 35 windows 2018s
+  [64/139] 6de5f983-3a5 35 windows 2035s
+  [65/139] 6f1f77f3-779 35 windows 2054s
+  [66/139] 7036fe10-79d 34 windows 2072s
+  [67/139] 703c1ea1-eef 35 windows 2092s
+  [68/139] 7040ba65-441 35 windows 2116s
+  [69/139] 70e1ed21-1fe 35 windows 2137s
+  [70/139] 71415a38-16d 35 windows 2154s
+  [71/139] 736b7080-270 35 windows 2172s
+  [72/139] 7482364b-cb8 35 windows 2193s
+  [73/139] 78a3e6ee-d56 35 windows 2221s
+  [74/139] 7afc6f7d-6e7 35 windows 2246s
+  [75/139] 7bb8bad7-9ec 35 windows 2271s
+  [76/139] 7ca39b92-e2a 35 windows 2288s
+  [77/139] 7f52f02e-0e0 35 windows 2305s
+  [78/139] 831c6156-e39 35 windows 2322s
+  [79/139] 834e68f1-81c 35 windows 2342s
+  [80/139] 83e32d0f-ed1 35 windows 2367s
+  [81/139] 87f81af7-aec 35 windows 2389s
+  [82/139] 87ff4065-7e8 34 windows 2407s
+  [83/139] 882fedb5-0a2 34 windows 2424s
+  [84/139] 89667e59-451 35 windows 2441s
+  [85/139] 8a2b8f2e-8af 35 windows 2458s
+  [86/139] 8cebb40f-a44 35 windows 2475s
+  [87/139] 8dfb4393-a6c 34 windows 2491s
+  [88/139] 8dffcc86-21e 34 windows 2517s
+  [89/139] 8ec3bfee-67a 35 windows 2544s
+  [90/139] 8f387977-408 35 windows 2562s
+  [91/139] 96eb15e9-785 35 windows 2580s
+  [92/139] 970c6741-428 35 windows 2598s
+  [93/139] 9911478a-009 35 windows 2627s
+  [94/139] 99a211a6-0db 35 windows 2658s
+  [95/139] 99e72892-acb 35 windows 2685s
+  [96/139] 9a2d6b76-781 35 windows 2711s
+  [97/139] 9fec3afe-e51 35 windows 2728s
+  [98/139] a3f70ed6-e05 35 windows 2745s
+  [99/139] a4c3c196-bb9 35 windows 2763s
+  [100/139] a54cd4b0-f86 35 windows 2790s
+  [101/139] a67a65b8-03d 35 windows 2818s
+  [102/139] a85f547b-354 35 windows 2854s
+  [103/139] a8649d43-0d0 35 windows 2882s
+  [104/139] b004b2b4-e7d 35 windows 2910s
+  [105/139] b224fa53-691 35 windows 2938s
+  [106/139] b704bd89-f5b 35 windows 2966s
+  [107/139] b8716eba-15e 35 windows 2997s
+  [108/139] b96520f7-36e 35 windows 3027s
+  [109/139] ba56b7ff-2eb 35 windows 3056s
+  [110/139] bd316ec2-fb8 35 windows 3083s
+  [111/139] bf5ec76e-e8b 35 windows 3107s
+  [112/139] c0739f0f-53e 35 windows 3133s
+  [113/139] c1926a5b-470 34 windows 3157s
+  [114/139] c20e501e-b7e 35 windows 3180s
+  [115/139] c44bb8ad-a91 35 windows 3203s
+  [116/139] ca6f21ac-944 35 windows 3227s
+  [117/139] ca9a43ad-e77 35 windows 3245s
+  [118/139] ccaacbfb-ad3 35 windows 3261s
+  [119/139] ce567683-08d 35 windows 3278s
+  [120/139] d3cbeb91-234 35 windows 3294s
+  [121/139] d58663de-2ab 35 windows 3312s
+  [122/139] d705da48-960 35 windows 3330s
+  [123/139] d87291e0-160 35 windows 3348s
+  [124/139] d9d1cd5a-f16 35 windows 3364s
+  [125/139] da0c75ca-22e 34 windows 3380s
+  [126/139] daa59d77-dd3 35 windows 3397s
+  [127/139] dc33ccac-a91 35 windows 3415s
+  [128/139] dc40b0b7-029 35 windows 3433s
+  [129/139] de646aa7-040 35 windows 3450s
+  [130/139] e01160cb-783 35 windows 3467s
+  [131/139] e586b769-af2 35 windows 3485s
+  [132/139] ec9122c6-44e 35 windows 3502s
+  [133/139] f011c927-e2b 35 windows 3521s
+  [134/139] f0d2f7a9-d49 35 windows 3539s
+  [135/139] f16b623e-217 35 windows 3556s
+  [136/139] f50a892a-b65 35 windows 3574s
+  [137/139] f51fcd6f-336 35 windows 3592s
+  [138/139] f5e95d2d-c3b 35 windows 3609s
+  [139/139] f9505b89-da2 35 windows 3626s
+[dump] 4855 windows over 139 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_REAL_CORPUS - ckpt=TRAINED corpus=FULL step=30000 eps=139 windows=4855 anchors=117
+REFCV3_DUMP_DONE
+[dump-only] E:/refcv8_eval_kit/trainfit/step30000ema_train139/dump_s1; analyse later with --analyze-only
+[roll_seed_r8_train] seed 1: 4855 windows / 139 eps -> E:/refcv8_eval_kit/trainfit/step30000ema_train139/roll_s1.json  ZZRTTRAINROLLOKZZ

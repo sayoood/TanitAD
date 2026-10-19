@@ -429,7 +429,9 @@ def cmd_forward(tree: str) -> int:
     p = TF / f"FORWARD_RETIME_{tree}.json"
     res = json.load(open(p, encoding="utf-8"))
     res["role"] = ("DEPLOYABLE TEST (VERDICT TREE): gains fitted on TRAIN clips, frozen, scored on eval139 EMA-30k" if tree == "step30000ema_unc" else
-                   "BESIDE (not in the verdict): the same frozen train gains on another checkpoint of the same run (raw 30k)")
+                   "BESIDE (not in the verdict): the same frozen train gains on another checkpoint of the same run (raw 30k)" if tree == "step30000_unc" else
+                   f"LATER-CHECKPOINT READ: the same frozen train gains (fitted on EMA-30k train rolls), UNCHANGED, on eval139 {tree}; "
+                   "not a re-fit, and not the 30k verdict")
     res["fit_source"], res["fit_guard"], res["prereg_sha256"] = fz["fit_source"], fz["fit_guard"], PREREG_SHA256
     res["note_arm_names"] = ("RETIME_TRAINFIT / GATED_RETIME_TRAINFIT = the arms RT.forward calls *_FROZEN30k, with the TRAIN-fitted tables; "
                              "CONST_G1 / CONST_G0 = known-value controls, CONST_G05 = the no-fit comparator (AMENDMENT 1)")

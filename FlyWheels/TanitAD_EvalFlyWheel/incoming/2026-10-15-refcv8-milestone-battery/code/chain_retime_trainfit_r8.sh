@@ -61,7 +61,7 @@ snap_state() {   # RUNNING | DONE | FAILED | ABSENT, from the markers AFTER the 
 }
 b40_reason() {   # prints the reason to yield, or nothing
   case "$(snap_state)" in
-    RUNNING) echo "G3a snap40k chain alive, no terminal marker yet" ;;
+    RUNNING) : ;;   # 2026-10-19 12:08 orchestrator: G3a removed -- yielding for the whole pre-40k wait idled the GPU ~6 h after the queue reorder; a seed roll is ~45 min, so only G3b (40k banked, its EMA battery not yet run) yields
     DONE) if [ -s "/c/Users/Admin/refcv8_eval_archive/battery/step40000ema_unc/battery_summary.json" ] || [ -s "$KIT/battery/step40000ema_unc/battery_summary.json" ]; then :; else echo "G3b ckpt_full_40000 banked, the 40k battery has not run"; fi ;;
     *) : ;;
   esac
