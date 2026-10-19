@@ -18405,3 +18405,18 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 **Class:** *removing a SIGN is not removing the INFORMATION*. Unsigned columns re-derive a sign through their ORDER relations (|c_t| < |c_min| forces c_min < 0). Admissibility is a property of what a model can COMPUTE from the columns, so it is tested by trying to recompute the label from them on planted and real data, never by inspecting the column definitions. Same family as the PRIVGEOM scalars that contained the label's own test (caught pre-data), now one level deeper.
 
 ⚠️ The fourth Master Mind design error in two days (R51 to R54). All four were in my instrument or reading design, never in an agent's execution. ⇒ Every leak-removal step I specify ships with a planted recompute-the-label check in the same prereg.
+
+### R55 (2026-10-19) - "refcv8's progress runs ~2x too far ahead of its causal prior" (Master Mind reading of H-R8-RS-1 / H-R8-GAINTRAJ-1; repeated in the D-R8-SHIP-RETIME queue item and in chat)
+
+**Claimed:**
+- The least-squares re-timing gain g\* ≈ 0.46 meant the decoder's along-track residual over `ha0_ext_pose` is ~2x too LARGE ("over-scaling").
+
+**Measured (L1 design annex, `Project Steering/refcv9/L1_DESIGN_ANNEX.md` §1, controls pass):**
+- Residual size ρ 0.84 [0.77, 0.92] of the human's; mean unbiased (+0.142 vs +0.143 m at 2 s); alignment r 0.38 [0.34, 0.43].
+- g\* = r/ρ: the 0.46 is the shrink of a NOISY estimate toward the prior, not a scale error.
+
+**Fixed:**
+- Correction row H-R8-ALONG-MECH-1; PLAN_REFCV9 §1 D1 and §2 L1 rewritten (a progress head, not a gain or a penalty).
+- Every number and SHIP-R8 stand: they read measured effects, not the mechanism.
+
+**Class:** *a fitted gain read as a scale.* A least-squares gain g\* = r·σ_h/σ_d conflates ALIGNMENT with MAGNITUDE (regression dilution): g\* < 1 is produced equally by a too-large residual and by a right-sized but noisy one. Before naming a mechanism from a fitted gain, decompose it into size (ρ) and alignment (r). Same family as R53 (a threshold read as calibration): state the quantity that would distinguish the mechanism from its nearest alternative, and measure it before writing the mechanism down.

@@ -2303,3 +2303,5 @@ stage passing at the final checkpoint 48,852. The condition is pre-registered as
 (D-R8-SHIP-RETIME), written before any 40k or 48,852 number exists. The flat-0.5 arm stays printed beside as a
 fallback read only; adopting it would be a new PI decision. ⚠️ Disclosed at decision time: the TACTICAL family had not
 yet been measured on the re-timed plan; SHIP-R8 requires it.
+
+> **Correction to D-R8-SHIP-RETIME's wording (2026-10-19 ~21:00, R55):** refcv8's progress does not "run ahead by about 2x". Its along-track speed choice is about the human's size but poorly aligned with it (r 0.38); the re-timing helps by shrinking that noise toward the prior. The decision, SHIP-R8 and every measured number are unaffected (H-R8-ALONG-MECH-1).
