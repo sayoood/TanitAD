@@ -18437,3 +18437,20 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 - 0 jpgs fetched; no claim rested on frames.
 
 **Class:** *a container's FORMAT and CONTENTS inferred from its name and its sibling.* The `.zip` suffix was read as a format, and "the archive holds what the DB split holds" was read from a naming convention. A 9 KB index file and one 4 KiB head read refuted both. Before planning a fetch around an index, read the first 4 KiB, and intersect the sample with the release's own log list BEFORE drawing it. Same family as rule 2 of the operating standard (absence or presence at one location is not a fact about another): a DB for a log is not a frame for that log.
+
+### R57 (2026-10-20) - "refcv8's battery numbers measure refcv8" (Master Mind; every refcv8 milestone read since 5,000, SHIP-R8 at 30k and 40k, H-R8-ALONG-MECH-1, H-R9-BRAKE-LOCUS-1, H-R9-L2-HEADROOM-1, and the R55 mechanism reading)
+
+**Claimed (implicitly, in every refcv8 battery report):**
+- The battery's `os` arm is refcv8 driven with the inputs it was trained on, so its four-family numbers, the bars E1 / E3 / NR, the refcv8-vs-refcv7 pairs and SHIP-R8 measure the model.
+
+**Measured (R8-EVAL-NAV-FEED-1, `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-19-refcv8-nav-trace/NAV_TRACE.md`):**
+- Training fed the PER-FRAME v9 nav token plus the `r8_nav` args; the battery roll feeds the CLIP-LEVEL v7 token (constant in 139/139 episodes) and never the args. The fed token is wrong on 24.3 % of windows and on 60.5 % of fed-turn windows.
+- On 662 windows the correct token lowers ADE 6 s by −0.524 m [−0.796, −0.237]; the same-token control reads +0.003.
+- Caught only because a video panel printed the nav input beside a false brake (episode 114), and a video agent then counted it per episode.
+
+**Fixed:**
+- Every refcv8 battery number carries the stamp "clip-level nav fed (R8-2 violated at eval)" until re-read. Nothing is deleted.
+- Opt-in per-frame feed in an overlay, pre-registered targeted re-roll queued; PI decision D-R8-NAV-FEED on which feed the 48,852 bars read.
+- The mechanism claims built on the mis-fed plans (R55's "noisy along-track", the brake locus, the L2 headroom) are re-scoped to "of the mis-fed model" until re-read.
+
+**Class:** *an eval harness that rebuilds a model input by its own route instead of reading it from the item the trainer used.* The dataset item carried the right per-frame token; the roll looked it up again from a per-clip table under the same name (`nav_true`), and dropped a second input (`r8_nav`) entirely. Every control in the battery compared arms that ALL received the wrong input, so all of them were blind to it — a check that shares the defect it checks for (CLAUDE.md, four instances 2026-09-07). The G0 gate used the trainer's path and passed, so the two instruments disagreed silently. ⇒ **For any new model input, assert at the roll boundary that the eval tensor EQUALS the training-path tensor for the same window** (a feed-parity control with a literal expectation and a mutation arm), exactly as SHIP-R8 clause (7) does for the prior. Same family as the binding goal-input and vision-only rules: ask what the model is actually given at inference, read from the call site, not from the flag that should have produced it.

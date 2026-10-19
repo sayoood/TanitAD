@@ -2305,3 +2305,25 @@ fallback read only; adopting it would be a new PI decision. ⚠️ Disclosed at 
 yet been measured on the re-timed plan; SHIP-R8 requires it.
 
 > **Correction to D-R8-SHIP-RETIME's wording (2026-10-19 ~21:00, R55):** refcv8's progress does not "run ahead by about 2x". Its along-track speed choice is about the human's size but poorly aligned with it (r 0.38); the re-timing helps by shrinking that noise toward the prior. The decision, SHIP-R8 and every measured number are unaffected (H-R8-ALONG-MECH-1).
+
+## ⏳ OPEN (2026-10-20 ~00:15 Berlin) -- D-R8-NAV-FEED: which nav feed do refcv8's bars (and SHIP-R8) read at 48,852?
+
+**What happened (MEASURED, R8-EVAL-NAV-FEED-1).** refcv8 was trained with the per-frame nav token plus the `r8_nav`
+arguments (R8-2). The evaluation battery feeds it the per-clip token (constant over every eval clip) and no arguments.
+So every refcv8 battery number so far, including SHIP-R8 at 30k and 40k and the fitted re-timing gains, was read on
+an input the model never saw in training. On 662 windows where we can see it, the correct token lowers 6 s ADE by
+−0.52 m [−0.80, −0.24]; a same-token control reads +0.003. The error makes refcv8 look worse, mostly at 3–6 s.
+
+**What is already running (no decision needed):** an opt-in per-frame feed in an overlay (the live chains are not
+touched), a pre-registered targeted re-roll on the EMA-40k checkpoint (~1 GPU-h, queued on the dev-box GPU lock and
+on free disk), and a stamp on every old number. The 48,852 chain still runs as registered (per-clip feed) and is
+kept as the deliberate-regression arm.
+
+**Decision needed BEFORE 48,852 data exist:**
+- **(a) Recommended:** the 48,852 bars and SHIP-R8 read on the per-frame feed (token + arguments, as trained); the
+  per-clip read is printed beside. Because the re-timing gains were fitted on mis-fed plans, D-R8-SHIP-RETIME is
+  re-opened: the stage ships only if it still passes SHIP-R8 on the per-frame feed (gains re-fitted on train under
+  the same feed, the same clauses, the same table form).
+- **(b)** Keep the per-clip read binding as registered; print the per-frame read beside.
+- **Cost of (a):** one extra full battery pass on 48,852 (~3–4 GPU-h on the dev box, ESTIMATED) plus the re-fit
+  (CPU). It delays the SHIP-R8 verdict by about half a day.

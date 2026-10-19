@@ -1,0 +1,163 @@
+[roll_seed_r8] pose_sync policy: OFF (R8_NO_POSE_SYNC)
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from E:/refcv8_eval_kit/data/refcv8_train4572_eval139_extrinsics.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] E:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_eval.jsonl): 23772/23772 windows fed, per-step windows {'30': 8042, '50': 8382, '100': 6153, '120': 1195}, per-clip rows {'30': 49, '50': 52, '100': 39, '120': 7}
+[model] E:/refcv8_eval_kit/ckpt/ckpt_ema_40000.pt step=40000 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-refcv7_loader.build_model (train() replayed; strict; G-EVAL-passed)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav] ⚠️ --no-navshuf: the record is NOT admissible for any nav-conditioned (STRATEGIC) claim
+[nav] ⚠️ --no-navzero: BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm BESIDE the nav-shuffle one; this record carries only the shuffle
+[roll] 4754 windows / 139 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'oracle_sel'] · fed conditionings=['nav_true'] · nav_shuffle changed 2452/4754
+[cost] first forward (1 fed row(s), 1 rows total) took 2.00 s -> ESTIMATED 2.64 h for 4754 windows (forward only; IO/analysis extra)
+  [1/139] <clip> 35 windows 36s
+  [2/139] <clip> 34 windows 54s
+  [3/139] <clip> 34 windows 70s
+  [4/139] <clip> 34 windows 88s
+  [5/139] <clip> 34 windows 105s
+  [6/139] <clip> 35 windows 119s
+  [7/139] <clip> 34 windows 133s
+  [8/139] <clip> 34 windows 148s
+  [9/139] <clip> 34 windows 162s
+  [10/139] <clip> 34 windows 178s
+  [11/139] <clip> 35 windows 195s
+  [12/139] <clip> 34 windows 214s
+  [13/139] <clip> 34 windows 228s
+  [14/139] <clip> 34 windows 242s
+  [15/139] <clip> 34 windows 256s
+  [16/139] <clip> 35 windows 270s
+  [17/139] <clip> 34 windows 284s
+  [18/139] <clip> 34 windows 299s
+  [19/139] <clip> 34 windows 311s
+  [20/139] <clip> 36 windows 329s
+  [21/139] <clip> 34 windows 345s
+  [22/139] <clip> 34 windows 361s
+  [23/139] <clip> 34 windows 377s
+  [24/139] <clip> 34 windows 395s
+  [25/139] <clip> 35 windows 419s
+  [26/139] <clip> 34 windows 439s
+  [27/139] <clip> 34 windows 455s
+  [28/139] <clip> 34 windows 472s
+  [29/139] <clip> 34 windows 491s
+  [30/139] <clip> 34 windows 505s
+  [31/139] <clip> 34 windows 520s
+  [32/139] <clip> 34 windows 535s
+  [33/139] <clip> 34 windows 554s
+  [34/139] <clip> 34 windows 576s
+  [35/139] <clip> 35 windows 598s
+  [36/139] <clip> 34 windows 619s
+  [37/139] <clip> 34 windows 640s
+  [38/139] <clip> 34 windows 657s
+  [39/139] <clip> 34 windows 677s
+  [40/139] <clip> 35 windows 695s
+  [41/139] <clip> 34 windows 715s
+  [42/139] <clip> 34 windows 735s
+  [43/139] <clip> 34 windows 754s
+  [44/139] <clip> 34 windows 774s
+  [45/139] <clip> 35 windows 797s
+  [46/139] <clip> 34 windows 821s
+  [47/139] <clip> 34 windows 842s
+  [48/139] <clip> 34 windows 862s
+  [49/139] <clip> 34 windows 885s
+  [50/139] <clip> 35 windows 906s
+  [51/139] <clip> 34 windows 924s
+  [52/139] <clip> 34 windows 942s
+  [53/139] <clip> 34 windows 960s
+  [54/139] <clip> 34 windows 976s
+  [55/139] <clip> 35 windows 995s
+  [56/139] <clip> 34 windows 1014s
+  [57/139] <clip> 34 windows 1033s
+  [58/139] <clip> 34 windows 1050s
+  [59/139] <clip> 34 windows 1068s
+  [60/139] <clip> 34 windows 1085s
+  [61/139] <clip> 35 windows 1103s
+  [62/139] <clip> 34 windows 1120s
+  [63/139] <clip> 34 windows 1137s
+  [64/139] <clip> 34 windows 1153s
+  [65/139] <clip> 34 windows 1171s
+  [66/139] <clip> 35 windows 1188s
+  [67/139] <clip> 34 windows 1205s
+  [68/139] <clip> 34 windows 1222s
+  [69/139] <clip> 34 windows 1240s
+  [70/139] <clip> 34 windows 1257s
+  [71/139] <clip> 35 windows 1276s
+  [72/139] <clip> 34 windows 1294s
+  [73/139] <clip> 34 windows 1313s
+  [74/139] <clip> 34 windows 1332s
+  [75/139] <clip> 34 windows 1350s
+  [76/139] <clip> 34 windows 1369s
+  [77/139] <clip> 34 windows 1387s
+  [78/139] <clip> 35 windows 1407s
+  [79/139] <clip> 34 windows 1423s
+  [80/139] <clip> 34 windows 1440s
+  [81/139] <clip> 34 windows 1457s
+  [82/139] <clip> 34 windows 1474s
+  [83/139] <clip> 34 windows 1491s
+  [84/139] <clip> 35 windows 1509s
+  [85/139] <clip> 34 windows 1525s
+  [86/139] <clip> 34 windows 1543s
+  [87/139] <clip> 34 windows 1562s
+  [88/139] <clip> 34 windows 1581s
+  [89/139] <clip> 35 windows 1602s
+  [90/139] <clip> 34 windows 1622s
+  [91/139] <clip> 34 windows 1643s
+  [92/139] <clip> 34 windows 1662s
+  [93/139] <clip> 34 windows 1685s
+  [94/139] <clip> 34 windows 1705s
+  [95/139] <clip> 34 windows 1724s
+  [96/139] <clip> 35 windows 1743s
+  [97/139] <clip> 34 windows 1759s
+  [98/139] <clip> 34 windows 1773s
+  [99/139] <clip> 34 windows 1788s
+  [100/139] <clip> 35 windows 1811s
+  [101/139] <clip> 34 windows 1831s
+  [102/139] <clip> 34 windows 1848s
+  [103/139] <clip> 34 windows 1866s
+  [104/139] <clip> 34 windows 1885s
+  [105/139] <clip> 36 windows 1905s
+  [106/139] <clip> 34 windows 1921s
+  [107/139] <clip> 34 windows 1936s
+  [108/139] <clip> 34 windows 1950s
+  [109/139] <clip> 34 windows 1964s
+  [110/139] <clip> 35 windows 1978s
+  [111/139] <clip> 34 windows 1993s
+  [112/139] <clip> 34 windows 2007s
+  [113/139] <clip> 34 windows 2025s
+  [114/139] <clip> 34 windows 2042s
+  [115/139] <clip> 34 windows 2058s
+  [116/139] <clip> 34 windows 2073s
+  [117/139] <clip> 35 windows 2090s
+  [118/139] <clip> 34 windows 2107s
+  [119/139] <clip> 34 windows 2123s
+  [120/139] <clip> 34 windows 2140s
+  [121/139] <clip> 34 windows 2155s
+  [122/139] <clip> 35 windows 2172s
+  [123/139] <clip> 34 windows 2188s
+  [124/139] <clip> 34 windows 2204s
+  [125/139] <clip> 34 windows 2220s
+  [126/139] <clip> 34 windows 2236s
+  [127/139] <clip> 35 windows 2252s
+  [128/139] <clip> 34 windows 2267s
+  [129/139] <clip> 34 windows 2285s
+  [130/139] <clip> 34 windows 2301s
+  [131/139] <clip> 35 windows 2318s
+  [132/139] <clip> 34 windows 2335s
+  [133/139] <clip> 34 windows 2351s
+  [134/139] <clip> 34 windows 2367s
+  [135/139] <clip> 34 windows 2382s
+  [136/139] <clip> 35 windows 2398s
+  [137/139] <clip> 34 windows 2415s
+  [138/139] <clip> 34 windows 2430s
+  [139/139] <clip> 34 windows 2446s
+[dump] 4754 windows over 139 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_REAL_CORPUS - ckpt=TRAINED corpus=FULL step=40000 eps=139 windows=4754 anchors=117
+REFCV3_DUMP_DONE
+[dump-only] C:\Users\Admin\refcv8_eval_archive\battery\step40000ema_unc\dump_s1; analyse later with --analyze-only
+[roll_seed] seed 1 -> C:\Users\Admin\refcv8_eval_archive\battery\step40000ema_unc\roll_s1.json
