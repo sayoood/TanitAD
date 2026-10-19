@@ -1,0 +1,54 @@
+{
+ "n_candidates": 93034,
+ "n_navtrain": 18122,
+ "shares": {
+  "stationary_speed_lt_0.5": {
+   "navtrain": 0.06345877938417394,
+   "all_candidates": 0.308371133134123,
+   "non_navtrain": 0.3676180051260145
+  },
+  "slow_speed_lt_2": {
+   "navtrain": 0.1817128352278998,
+   "all_candidates": 0.37048820861190535,
+   "non_navtrain": 0.41615495514737294
+  },
+  "progress_4s_lt_2m": {
+   "navtrain": 0.02306588676746496,
+   "all_candidates": 0.2932153836231915,
+   "non_navtrain": 0.3585673857325929
+  },
+  "turning_dyaw_gt_15deg": {
+   "navtrain": 0.3629842180774749,
+   "all_candidates": 0.13890620633316852,
+   "non_navtrain": 0.08469938060657839
+  }
+ },
+ "no_tag_share": {
+  "navtrain": 0.4494537026818232,
+  "all_candidates": 0.3034482017326999
+ },
+ "navtrain_density_per_log": {
+  "p5": 0.055707228719544664,
+  "median": 0.1890166376053473,
+  "p95": 0.42284090909090905,
+  "min": 0.020710059171597635,
+  "max": 0.5740740740740741
+ },
+ "auc_navtrain_vs_other_candidates_(5-fold_by_log)": {
+  "speed_only": 0.7331715793781489,
+  "disp_4s_only": 0.7671175926433592,
+  "dyaw_4s_only": 0.8031070637872757,
+  "speed+disp+dyaw+acc": 0.8785145239582675,
+  "all_plus_scenario_tags": 0.882809770829337
+ }
+}
+speed_mps navtrain {'p5': 0.311, 'p25': 2.927, 'p50': 5.419, 'p75': 7.826, 'p95': 10.571, 'mean': 5.409} | all {'p5': 0.0, 'p25': 0.004, 'p50': 4.525, 'p75': 8.147, 'p95': 11.596, 'mean': 4.677}
+disp_4s_m navtrain {'p5': 4.419, 'p25': 12.439, 'p50': 20.034, 'p75': 29.739, 'p95': 40.623, 'mean': 21.277} | all {'p5': 0.0, 'p25': 0.115, 'p50': 17.126, 'p75': 31.349, 'p95': 45.162, 'mean': 18.12}
+abs_dyaw_4s_deg navtrain {'p5': 0.107, 'p25': 1.445, 'p50': 7.888, 'p75': 27.285, 'p95': 64.147, 'mean': 17.498} | all {'p5': 0.001, 'p25': 0.011, 'p50': 0.564, 'p75': 4.33, 'p95': 45.711, 'mean': 7.045}
+abs_acc_x navtrain {'p5': 0.037, 'p25': 0.189, 'p50': 0.418, 'p75': 0.835, 'p95': 1.466, 'mean': 0.553} | all {'p5': 0.002, 'p25': 0.022, 'p50': 0.198, 'p75': 0.55, 'p95': 1.318, 'mean': 0.365}
+none(uniform over candidates) {'share_of_candidates_kept': 1.0, 'navtrain_recall': 1.0, 'navtrain_share_of_kept': 0.195, 'stationary_share_of_kept': 0.308, 'turning_share_kept': 0.139}
+speed>=1 {'share_of_candidates_kept': 0.671, 'navtrain_recall': 0.898, 'navtrain_share_of_kept': 0.261, 'stationary_share_of_kept': 0.0, 'turning_share_kept': 0.192}
+speed>=2 {'share_of_candidates_kept': 0.63, 'navtrain_recall': 0.818, 'navtrain_share_of_kept': 0.253, 'stationary_share_of_kept': 0.0, 'turning_share_kept': 0.187}
+progress_4s>=5m {'share_of_candidates_kept': 0.667, 'navtrain_recall': 0.941, 'navtrain_share_of_kept': 0.275, 'stationary_share_of_kept': 0.03, 'turning_share_kept': 0.204}
+speed>=1 & progress_4s>=5m {'share_of_candidates_kept': 0.638, 'navtrain_recall': 0.852, 'navtrain_share_of_kept': 0.26, 'stationary_share_of_kept': 0.0, 'turning_share_kept': 0.2}
+tags {'stationary': (np.float64(0.044), 0.282), 'on_intersection': (np.float64(0.208), 0.16), 'traversing_intersection': (np.float64(0.162), 0.117), 'medium_magnitude_speed': (np.float64(0.091), 0.101), 'high_magnitude_speed': (np.float64(0.044), 0.096), 'on_traffic_light_intersection': (np.float64(0.088), 0.08), 'on_stopline_traffic_light': (np.float64(0.023), 0.076), 'traversing_traffic_light_intersection': (np.float64(0.1), 0.076), 'on_pickup_dropoff': (np.float64(0.074), 0.064), 'stationary_at_traffic_light_without_lead': (np.float64(0.002), 0.06), 'stationary_in_traffic': (np.float64(0.003), 0.048), 'traversing_pickup_dropoff': (np.float64(0.063), 0.033)}
