@@ -2256,3 +2256,17 @@ Registered as `D-EGO-STATE-T0` in GOALS_AND_CLAIMS.md.
   before final data, with the disclosure that it followed the 30k read. Master Mind recommendation: (b) as the bar,
   (a) printed beside -- a bar that requires beating an input the planner may not have measures the input, not the
   planner. Numbers to decide on: the admissible-reference read, running tonight (`raw/a0k0_headroom/`).
+
+## DECIDED 2026-10-19 ~05:40 Berlin -- E1 / E3 are scored against refcv8's causal prior `ha0_ext_pose` (option b)
+
+PI, verbatim: *"Switch to speed, acceleration and yaw rate"*. Closes the OPEN item in the section above. Registered as
+`D-R8-E1-REF` in GOALS_AND_CLAIMS.md.
+
+* From step 40,000 on, BAR-R8-E1 (S2) and BAR-R8-E3 (S6) use `ha0_ext_pose` (measured v0, backward-difference
+  acceleration, yaw-rate-derived kappa0 at t0). The registered `ha0_ext` read is printed beside it, never dropped.
+* Everything else about the bars is unchanged: EMA weights with raw beside, capped plans on ceiling-compliant windows,
+  both inference seeds, separated, NOT PROVEN inside 2x the inference floor.
+* Disclosure kept with the verdicts: the switch followed the 30k reads. At 30k (EMA, uncapped, compliant) the new
+  reference reads os − ha0_ext_pose −0.0136 [−0.0286, +0.0018] / −0.0127 [−0.0272, +0.0024]: favourable, not separated.
+* Still open from the same night: whether refcv8 may ship with a frozen arc-length re-timing step if the train-clip fit
+  passes (H-R8-RETIME-1), and the dev-box memory blocker.
