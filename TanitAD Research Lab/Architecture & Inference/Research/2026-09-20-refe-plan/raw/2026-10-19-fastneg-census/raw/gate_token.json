@@ -1,0 +1,76 @@
+{
+ "bindings": {
+  "amendment1_sha256": "f53ae097d153681bd2de07ae552a5d48b0b2d47f996408d1a75588c618a40491",
+  "bank_manifest_sha256": "6296dfc0b03905038fbf132f82009f6b6d7e8d61fa9abfb65c9164f487a5f2a1",
+  "code_sha256": {
+   "fastneg_census.py": "2852772d5817e659ed047ae065eb6851c8a9021d0b7eed917a32f1000acc80eb",
+   "fastneg_lib.py": "0c0b399b37a47ee3e17f9d5484bc7f9521ff7dbe6bea37e8c7a38042668667ca",
+   "fastneg_strata.py": "73ec01d7b8cdf9e5da8ab00cc99262e34df2d7773662551dc6e9624a5a1c10ba",
+   "test_fastneg.py": "616b06e4cf2496c7926577d3af764af77884acf36dc60d870c0a813d163fdbbe",
+   "test_fastneg_more.py": "f3260b4307c91ae84330a86ee97260fbecd0af6f086a46354623238f444cee4a"
+  },
+  "config": {
+   "batch_sets": 256,
+   "betas": [
+    0.9,
+    0.999
+   ],
+   "boot_B": 10000,
+   "boot_seed": 20260927,
+   "deficit_margin": 0.02,
+   "epochs": 20,
+   "eps": 1e-08,
+   "feature_dtype": "fp16 -> fp32, detached",
+   "init": "P2 rows 0 (NC) and 1 (DAC) of score_head",
+   "lr": 0.001,
+   "min_avail_gb": 3.0,
+   "n_folds": 5,
+   "null_reps": 5,
+   "null_salt": 7919,
+   "rows": [
+    "nc",
+    "dac"
+   ],
+   "seeds": [
+    0,
+    1
+   ],
+   "sizes": [
+    25,
+    50,
+    100
+   ],
+   "slope_margin": 0.01,
+   "sub_seed_base": 20261019,
+   "sub_seed_mult": 7,
+   "weight_decay": 0.0001
+  },
+  "epr1_sha256": "a751c63eb8e38343a7ec1286114a158046ce4ec13390b2eea0a4b1d2237c38d8",
+  "inputs_report_sha256": "3075009649620147145ddcb889ae355dddee0085e4a380766069a06b3de53f3d",
+  "prereg_sha256": "b6cece236d5aa77dd412b62341ee1691177fd3dabad30b3c297881ad6d9e5634",
+  "strata_json_sha256": "67f43e55dd7c693e31cd991efc3d51fedc278331ba4f8f882e6adbdae8203dc6"
+ },
+ "bindings_sha256": "d6f3da057235356249a90e99fb848afb381358d1e7c92f5a2333e7226106aa25",
+ "checks": {
+  "G-BANK": {
+   "detail": "units sha256-verified 23; join mismatches 0; sets 15808",
+   "pass": true
+  },
+  "G-DVB": {
+   "detail": "built optimiser {'lr': 0.001, 'weight_decay': 0.0001, 'betas': [0.9, 0.999], 'eps': 1e-08} (want {'lr': 0.001, 'weight_decay': 0.0001, 'betas': [0.9, 0.999], 'eps': 1e-08}); fit defaults {'epochs': 20, 'batch_sets': 256}; P2-row init bit-equal True; cold init zero True",
+   "pass": true
+  },
+  "G-LIVE": {
+   "detail": "grads nonzero True; zero-mask control reads exactly 0.0 True; features detached True; F-masked gradient = hand-computed True; 25 % mask partial (982/3957) True; scoring at P2's rows == stored logits bit for bit True",
+   "pass": true
+  },
+  "G-SUITE": {
+   "detail": "{'test_fastneg.py': (0, ['Ran 5 tests in 0.213s', 'OK']), 'test_fastneg_more.py': (0, ['Ran 15 tests in 7.246s', 'OK'])}",
+   "pass": true
+  }
+ },
+ "created": "2026-10-19T08:13:30+02:00",
+ "kind": "gate_token",
+ "pass": true,
+ "schema": "fastneg-census-v1"
+}
