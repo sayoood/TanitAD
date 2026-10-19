@@ -18367,3 +18367,22 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 **Class:** *a null control whose interval is blind to the variance the null itself generates will fire on that variance*. It is the same blind spot as `H-ESTIM-SEED-1` (the bootstrap is blind to training variance), applied to the control instead of the arm.
 
 ⚠️ This is the second control-design error by the Master Mind in two days (R51: a point rule; R52: a training-blind interval). ⇒ Before registering any trained control, SIMULATE its false-fire rate on noise-trained replicates; R51's "compute the false-RED rate" must include TRAINING noise.
+
+### R53 (2026-10-19) - "the NC row is CONFIDENTLY WRONG on exactly the picks an EP-led argmax selects: a winner's-curse / Goodhart effect" (Master Mind, `raw/2026-10-19-pickrule-audit-nc/MM_RULING_PICKRULE.md` §3; carried into GAC `D-REFE-PICKRULE-NC-1`, `H-REFE-RL1-NCRES`, `D-REFE-HEADROW-PROBE-1`)
+
+**Claimed:**
+- Q1 = 0 (no NC-unsafe EP-led pick had NC sigmoid < 0.5; median 0.96) meant the row was confidently wrong at the selected picks.
+
+**Measured (NC-FASTCAL, post-hoc and descriptive, `D-REFE-NCFASTCAL-1`):**
+- Observed / predicted NC-unsafe mass at the EP-led picks = 0.895 [0.664, 1.168]. No overconfidence is visible.
+- A 0.96 sigmoid is a predicted risk of about 4 %. If about 4 % of such picks are unsafe, that is calibration, not error.
+- P2's NC is already calibrated inside every speed stratum.
+
+**Fixed:**
+- The reading is WITHDRAWN to HYPOTHESIS in all three GAC rows; the MEASURED parts stand.
+- Replacement HYPOTHESIS: the EP-led composite accepts a correctly estimated extra risk for an EP gain the slot-prior EP row over-predicts (BACKLOG EP-RELIAB-PICKS).
+- Rule: every future row registration pre-registers a reliability-at-picks diagnostic.
+
+**Class:** *a THRESHOLD SHARE read as a CALIBRATION claim*. "No bad pick scored below 0.5" says nothing about over-confidence; only observed-vs-predicted mass at the picks does. Same family as reading a ranking metric as a calibration metric.
+
+⚠️ It is the third Master Mind error in two days, and all three were in my instrument or reading design, never in an agent's execution (R51 a point rule, R52 a training-blind control, R53 a threshold read as calibration). ⇒ Before writing a mechanism into the register, state the quantity that would distinguish it from the nearest alternative, and check whether that quantity was measured.
