@@ -1,0 +1,151 @@
+{
+ "what": "final L2 EP head: sealed recipe, all 400 Step A tokens, no folds",
+ "seal": {
+  "prereg_sha256": "3592a1039693dcb5cac1df465fa4dd597ee190d80a934d89fc765d223607a983",
+  "recipe_sha256": "c7f5b75b0a8f25f96c00dcc379ac583fa9c80622ce5600ad4af8387159119263",
+  "code": {
+   "l2lib.py": "942033d373868a3028686a564ee99cc476dc8d82b22fc19544afc0052e898b4b",
+   "outcome.py": "418494c22c08e71e571366624d17dc5d50d481a35ea6a128d6930c54e03bef37",
+   "synthetic.py": "a02e032ac747fa9c1b6dd139c3a52010ad09dc7030e7051d67ed910e019e0f85",
+   "gates.py": "9f74763b309700bd2daebbb44a7d2d20e471151392b2252fb7492e2a1a285bc1"
+  },
+  "ok": true
+ },
+ "recipe": {
+  "lr": 0.001,
+  "epochs": 15,
+  "batch": 256,
+  "lam_bce": 10.0,
+  "betas": [
+   0.9,
+   0.999
+  ],
+  "eps": 1e-08,
+  "planted_amp": 10.0,
+  "prox": 0.3
+ },
+ "n_tokens": 400,
+ "n_logs": 24,
+ "n_pairs": 9888,
+ "n_infan_rows": 25600,
+ "evidence": "MEASURED (ours); SEEN-SCENE, SELECTION tier; ONE fit per seed (H-ESTIM-SEED-1 stays open)",
+ "g_live": {
+  "pass": true,
+  "control_mutation_reads_nonzero_on_frozen": true,
+  "h0_lever_reaches": true,
+  "prox_lever_reaches": true
+ },
+ "g_live_batches": [
+  {
+   "mutated": false,
+   "pair_loss": 0.6291117072105408,
+   "bce_loss": 0.421840101480484,
+   "finite": true,
+   "ep_W_grad_abs_sum": 71.1585693359375,
+   "ep_b_grad_abs": 0.14001861214637756,
+   "frozen_W_grad_abs_max": 0.0,
+   "frozen_b_grad_abs_max": 0.0
+  },
+  {
+   "mutated": true,
+   "pair_loss": 0.6291117072105408,
+   "bce_loss": 0.421840101480484,
+   "finite": true,
+   "ep_W_grad_abs_sum": 71.1585693359375,
+   "ep_b_grad_abs": 0.14001861214637756,
+   "frozen_W_grad_abs_max": 2.1979260444641113,
+   "frozen_b_grad_abs_max": 0.5515403151512146
+  },
+  {
+   "mutated": false,
+   "pair_loss": 0.6629816293716431,
+   "bce_loss": 0.39584681391716003,
+   "finite": true,
+   "ep_W_grad_abs_sum": 132.43617248535156,
+   "ep_b_grad_abs": 0.3551172614097595,
+   "frozen_W_grad_abs_max": 0.0,
+   "frozen_b_grad_abs_max": 0.0
+  },
+  {
+   "mutated": true,
+   "pair_loss": 0.6629816293716431,
+   "bce_loss": 0.39584681391716003,
+   "finite": true,
+   "ep_W_grad_abs_sum": 132.43617248535156,
+   "ep_b_grad_abs": 0.3551172614097595,
+   "frozen_W_grad_abs_max": 2.0601375102996826,
+   "frozen_b_grad_abs_max": 0.5146576762199402
+  },
+  {
+   "mutated": false,
+   "pair_loss": 0.6830034255981445,
+   "bce_loss": 0.4079194962978363,
+   "finite": true,
+   "ep_W_grad_abs_sum": 74.87542724609375,
+   "ep_b_grad_abs": 0.2781231701374054,
+   "frozen_W_grad_abs_max": 0.0,
+   "frozen_b_grad_abs_max": 0.0
+  },
+  {
+   "mutated": true,
+   "pair_loss": 0.6830034255981445,
+   "bce_loss": 0.4079194962978363,
+   "finite": true,
+   "ep_W_grad_abs_sum": 74.87542724609375,
+   "ep_b_grad_abs": 0.2781231701374054,
+   "frozen_W_grad_abs_max": 2.2353856563568115,
+   "frozen_b_grad_abs_max": 0.5468628406524658
+  }
+ ],
+ "c_id": {
+  "zero_step_head_equals_P2_bitwise": true,
+  "steps_taken": 0,
+  "max_abs_ep_score_diff_vs_exported_infan_logit": 2.0926362651607633e-06,
+  "pass": true
+ },
+ "heads": {
+  "s0": {
+   "path": "D:/Projects/TanitAD-artifacts/l2_fresh_stepA/heads\\final_head_s0.npz",
+   "sha256": "bded124e1322b56d9bfd749f73b22c86430ef41f6829856927e5a08831320df4",
+   "steps": 585,
+   "min_ep_grad_abs_sum": 21.988590240478516,
+   "frozen_rows_equal_P2_bitwise": true,
+   "ep_row_l2_delta_vs_P2": 0.453019917011261,
+   "ep_row_l2_norm_P2": 0.5538827776908875,
+   "ep_bias_delta_vs_P2": -0.007203808054327965,
+   "loss_trace_last": [
+    551,
+    0.5632489919662476,
+    0.4467008709907532
+   ],
+   "loss_trace_first": [
+    1,
+    0.6343132853507996,
+    0.4707944393157959
+   ]
+  },
+  "s1": {
+   "path": "D:/Projects/TanitAD-artifacts/l2_fresh_stepA/heads\\final_head_s1.npz",
+   "sha256": "86f0b20f6ab0d2c46af6b3ae9874b73cc9d94a8065cf7fc0344acbeadcfd4654",
+   "steps": 585,
+   "min_ep_grad_abs_sum": 22.302364349365234,
+   "frozen_rows_equal_P2_bitwise": true,
+   "ep_row_l2_delta_vs_P2": 0.4462355077266693,
+   "ep_row_l2_norm_P2": 0.5538827776908875,
+   "ep_bias_delta_vs_P2": -0.00871044211089611,
+   "loss_trace_last": [
+    551,
+    0.5525974631309509,
+    0.4306401014328003
+   ],
+   "loss_trace_first": [
+    1,
+    0.6209521889686584,
+    0.4214281141757965
+   ]
+  }
+ },
+ "seed_pair_ep_row_cosine": 0.9962108731269836,
+ "seed_pair_ep_row_l2_diff": 0.06899812817573547,
+ "seconds": 6.9
+}

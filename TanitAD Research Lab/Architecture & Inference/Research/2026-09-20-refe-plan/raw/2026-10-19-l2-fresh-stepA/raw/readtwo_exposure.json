@@ -1,0 +1,612 @@
+{
+ "what": "log-level M-PDM and M-SCENE exposure of universe D's logs (MEASURED, CPU, no label or score read)",
+ "evidence": "MEASURED (ours); sources below",
+ "sources": {
+  "served_keys.tsv.gz path (M-PDM tokens)": "code/fresh_carve.py:34",
+  "navtrain_token_table.tsv.gz path (token -> log)": "code/fresh_carve.py:35",
+  "g0_traingrow_scan2.json path (M-SCENE = train_grow)": "code/fresh_carve.py:36",
+  "M-PDM token set: served keys with heldout_log == 0": "code/fresh_carve.py:104",
+  "M-PDM log set: the token table's log of those tokens": "code/fresh_carve.py:105",
+  "M-SCENE token -> logs": "code/fresh_carve.py:106",
+  "original G0 check (L1 Step A)": "C:/Users/Admin/par18/l1run/code/g0_overlap.py:5 (SOURCE A) and :49 (--scan = the final-run target bank); its output l1run/code/raw/g0_overlap.json"
+ },
+ "carve": {
+  "n_tokens": 99,
+  "n_logs": 84,
+  "tokens_sha256": "80de7dd150cf2e68b3794cf27d155cae5d23acc0c397fa3aadd07ddb0e49b435",
+  "status": "SHORT"
+ },
+ "g0": {
+  "evidence": "MEASURED (ours); manifests = those of g0_overlap.py (L1 Step A)",
+  "n_fit_tokens": 99,
+  "n_fit_logs": 84,
+  "evaluable": true,
+  "M-PDM": {
+   "passed": false,
+   "logs_overlap": 83,
+   "tokens_overlap": 0,
+   "n_fit_tokens": 99,
+   "n_fit_logs": 84,
+   "overlap_log_examples": [
+    "2021.06.07.18.53.26_veh-26_01208_01412",
+    "2021.06.07.19.29.59_veh-38_01025_01274",
+    "2021.06.08.12.00.19_veh-35_02135_02369"
+   ],
+   "overlap_token_examples": []
+  },
+  "M-SCENE": {
+   "passed": false,
+   "logs_overlap": 83,
+   "tokens_overlap": 0,
+   "n_fit_tokens": 99,
+   "n_fit_logs": 84,
+   "overlap_log_examples": [
+    "2021.06.07.18.53.26_veh-26_01208_01412",
+    "2021.06.07.19.29.59_veh-38_01025_01274",
+    "2021.06.08.12.00.19_veh-35_02135_02369"
+   ],
+   "overlap_token_examples": []
+  },
+  "control_deliberate_overlap_on_M-PDM": {
+   "passed": false,
+   "logs_overlap": 83,
+   "tokens_overlap": 1,
+   "n_fit_tokens": 99,
+   "n_fit_logs": 84,
+   "overlap_log_examples": [
+    "2021.06.07.18.53.26_veh-26_01208_01412",
+    "2021.06.07.19.29.59_veh-38_01025_01274",
+    "2021.06.08.12.00.19_veh-35_02135_02369"
+   ],
+   "overlap_token_examples": [
+    "05dc6e420d935b8e"
+   ]
+  },
+  "control_must_fail": true,
+  "A1_2_pass_rule": "G0 PASSES iff the fit logs are disjoint from M-PDM (L1 Amendment A1.2); M-SCENE overlap is a DECLARED EXPOSURE (A1.3)",
+  "A1_2_verdict": "FAIL",
+  "exposure_declared": {
+   "M-SCENE_overlap_tokens": 0,
+   "M-SCENE_overlap_logs": 83
+  },
+  "overlap_with_stepA_sample": {
+   "tokens": 0,
+   "n_stepA": 400
+  }
+ },
+ "logs_with_any_mpdm_token": 83,
+ "logs_with_any_mscene_token": 83,
+ "per_log_distribution": {
+  "mpdm_tokens": {
+   "min": 0,
+   "median": 65,
+   "max": 575,
+   "sum": 8020
+  },
+  "mpdm_sets": {
+   "min": 0,
+   "median": 113,
+   "max": 1025,
+   "sum": 14082
+  },
+  "mscene_tokens": {
+   "min": 0,
+   "median": 67,
+   "max": 582,
+   "sum": 8190
+  },
+  "d_tokens": {
+   "min": 1,
+   "median": 1,
+   "max": 2,
+   "sum": 99
+  }
+ },
+ "reading": "a D log with M-PDM tokens is a log P2's PDM-label loss trained on (through OTHER tokens of that log): the D TOKENS are unseen, the D LOG is not. G0 A1.2 is evaluated on the fit logs; D is not the L2 fit set (the L2 heads' fit logs are the 24 held-out logs, none of which is in D), so what the log-level overlap licenses is a statement about P2's exposure, and about the scene bank, not about the L2 head.",
+ "per_log": {
+  "2021.06.07.18.53.26_veh-26_01208_01412": {
+   "d_tokens": 2,
+   "mpdm_tokens": 54,
+   "mpdm_sets": 100,
+   "mscene_tokens": 55
+  },
+  "2021.06.07.19.29.59_veh-38_01025_01274": {
+   "d_tokens": 2,
+   "mpdm_tokens": 84,
+   "mpdm_sets": 148,
+   "mscene_tokens": 85
+  },
+  "2021.06.08.12.00.19_veh-35_02135_02369": {
+   "d_tokens": 1,
+   "mpdm_tokens": 70,
+   "mpdm_sets": 129,
+   "mscene_tokens": 71
+  },
+  "2021.06.08.12.00.19_veh-35_03655_03792": {
+   "d_tokens": 1,
+   "mpdm_tokens": 38,
+   "mpdm_sets": 72,
+   "mscene_tokens": 38
+  },
+  "2021.06.08.12.00.19_veh-35_04422_04725": {
+   "d_tokens": 1,
+   "mpdm_tokens": 47,
+   "mpdm_sets": 85,
+   "mscene_tokens": 47
+  },
+  "2021.06.08.14.35.24_veh-26_01989_02235": {
+   "d_tokens": 1,
+   "mpdm_tokens": 79,
+   "mpdm_sets": 137,
+   "mscene_tokens": 79
+  },
+  "2021.06.08.18.18.30_veh-38_06017_06142": {
+   "d_tokens": 1,
+   "mpdm_tokens": 47,
+   "mpdm_sets": 74,
+   "mscene_tokens": 48
+  },
+  "2021.06.09.11.54.15_veh-12_03653_03902": {
+   "d_tokens": 1,
+   "mpdm_tokens": 47,
+   "mpdm_sets": 81,
+   "mscene_tokens": 47
+  },
+  "2021.06.09.12.51.31_veh-35_05024_05275": {
+   "d_tokens": 1,
+   "mpdm_tokens": 25,
+   "mpdm_sets": 46,
+   "mscene_tokens": 25
+  },
+  "2021.06.09.14.50.36_veh-26_03061_03152": {
+   "d_tokens": 1,
+   "mpdm_tokens": 5,
+   "mpdm_sets": 10,
+   "mscene_tokens": 5
+  },
+  "2021.06.09.17.37.09_veh-12_02324_02434": {
+   "d_tokens": 1,
+   "mpdm_tokens": 19,
+   "mpdm_sets": 32,
+   "mscene_tokens": 19
+  },
+  "2021.06.09.17.37.09_veh-12_02639_02992": {
+   "d_tokens": 1,
+   "mpdm_tokens": 169,
+   "mpdm_sets": 288,
+   "mscene_tokens": 172
+  },
+  "2021.06.09.17.37.09_veh-12_03219_03372": {
+   "d_tokens": 1,
+   "mpdm_tokens": 70,
+   "mpdm_sets": 121,
+   "mscene_tokens": 71
+  },
+  "2021.06.09.19.40.26_veh-12_00279_01212": {
+   "d_tokens": 1,
+   "mpdm_tokens": 323,
+   "mpdm_sets": 571,
+   "mscene_tokens": 329
+  },
+  "2021.06.09.20.26.11_veh-35_00970_01216": {
+   "d_tokens": 1,
+   "mpdm_tokens": 66,
+   "mpdm_sets": 123,
+   "mscene_tokens": 67
+  },
+  "2021.06.14.13.28.41_veh-12_02414_02601": {
+   "d_tokens": 1,
+   "mpdm_tokens": 65,
+   "mpdm_sets": 114,
+   "mscene_tokens": 66
+  },
+  "2021.06.14.16.32.09_veh-35_03129_03220": {
+   "d_tokens": 1,
+   "mpdm_tokens": 49,
+   "mpdm_sets": 79,
+   "mscene_tokens": 50
+  },
+  "2021.06.14.17.26.26_veh-38_03772_03967": {
+   "d_tokens": 1,
+   "mpdm_tokens": 62,
+   "mpdm_sets": 110,
+   "mscene_tokens": 63
+  },
+  "2021.06.14.18.13.35_veh-26_00863_00924": {
+   "d_tokens": 2,
+   "mpdm_tokens": 34,
+   "mpdm_sets": 64,
+   "mscene_tokens": 34
+  },
+  "2021.06.14.18.42.45_veh-12_02520_02585": {
+   "d_tokens": 1,
+   "mpdm_tokens": 0,
+   "mpdm_sets": 0,
+   "mscene_tokens": 0
+  },
+  "2021.06.14.18.42.45_veh-12_04086_04221": {
+   "d_tokens": 1,
+   "mpdm_tokens": 87,
+   "mpdm_sets": 146,
+   "mscene_tokens": 90
+  },
+  "2021.06.14.18.42.45_veh-12_04838_04927": {
+   "d_tokens": 1,
+   "mpdm_tokens": 28,
+   "mpdm_sets": 52,
+   "mscene_tokens": 28
+  },
+  "2021.06.14.18.42.45_veh-12_05170_05261": {
+   "d_tokens": 1,
+   "mpdm_tokens": 11,
+   "mpdm_sets": 19,
+   "mscene_tokens": 11
+  },
+  "2021.06.23.16.54.19_veh-35_01603_03271": {
+   "d_tokens": 1,
+   "mpdm_tokens": 419,
+   "mpdm_sets": 749,
+   "mscene_tokens": 424
+  },
+  "2021.06.23.16.54.19_veh-35_03299_03425": {
+   "d_tokens": 1,
+   "mpdm_tokens": 60,
+   "mpdm_sets": 111,
+   "mscene_tokens": 61
+  },
+  "2021.06.23.17.31.36_veh-16_00016_00377": {
+   "d_tokens": 1,
+   "mpdm_tokens": 93,
+   "mpdm_sets": 171,
+   "mscene_tokens": 94
+  },
+  "2021.06.23.17.31.36_veh-16_01443_01606": {
+   "d_tokens": 1,
+   "mpdm_tokens": 66,
+   "mpdm_sets": 125,
+   "mscene_tokens": 67
+  },
+  "2021.07.09.17.06.37_veh-35_00049_00237": {
+   "d_tokens": 1,
+   "mpdm_tokens": 96,
+   "mpdm_sets": 169,
+   "mscene_tokens": 97
+  },
+  "2021.07.09.17.06.37_veh-35_00928_02567": {
+   "d_tokens": 1,
+   "mpdm_tokens": 505,
+   "mpdm_sets": 881,
+   "mscene_tokens": 512
+  },
+  "2021.07.16.00.51.05_veh-17_03264_05261": {
+   "d_tokens": 2,
+   "mpdm_tokens": 575,
+   "mpdm_sets": 1025,
+   "mscene_tokens": 582
+  },
+  "2021.07.16.16.08.35_veh-35_02397_02540": {
+   "d_tokens": 1,
+   "mpdm_tokens": 40,
+   "mpdm_sets": 73,
+   "mscene_tokens": 40
+  },
+  "2021.07.16.18.06.21_veh-38_05338_05486": {
+   "d_tokens": 2,
+   "mpdm_tokens": 67,
+   "mpdm_sets": 116,
+   "mscene_tokens": 68
+  },
+  "2021.07.16.18.19.22_veh-35_00255_00418": {
+   "d_tokens": 2,
+   "mpdm_tokens": 48,
+   "mpdm_sets": 84,
+   "mscene_tokens": 51
+  },
+  "2021.07.16.21.17.55_veh-26_03860_03930": {
+   "d_tokens": 1,
+   "mpdm_tokens": 29,
+   "mpdm_sets": 55,
+   "mscene_tokens": 29
+  },
+  "2021.07.24.20.37.45_veh-17_00015_00375": {
+   "d_tokens": 1,
+   "mpdm_tokens": 127,
+   "mpdm_sets": 235,
+   "mscene_tokens": 128
+  },
+  "2021.07.24.22.52.16_veh-35_03236_04096": {
+   "d_tokens": 2,
+   "mpdm_tokens": 304,
+   "mpdm_sets": 528,
+   "mscene_tokens": 309
+  },
+  "2021.08.09.17.55.59_veh-28_00320_00544": {
+   "d_tokens": 1,
+   "mpdm_tokens": 64,
+   "mpdm_sets": 113,
+   "mscene_tokens": 64
+  },
+  "2021.08.09.17.55.59_veh-28_00691_00876": {
+   "d_tokens": 1,
+   "mpdm_tokens": 45,
+   "mpdm_sets": 80,
+   "mscene_tokens": 45
+  },
+  "2021.08.17.13.10.50_veh-08_00313_00564": {
+   "d_tokens": 2,
+   "mpdm_tokens": 92,
+   "mpdm_sets": 147,
+   "mscene_tokens": 96
+  },
+  "2021.08.17.13.15.12_veh-45_00565_00643": {
+   "d_tokens": 2,
+   "mpdm_tokens": 24,
+   "mpdm_sets": 36,
+   "mscene_tokens": 27
+  },
+  "2021.08.17.18.54.02_veh-45_00016_00304": {
+   "d_tokens": 1,
+   "mpdm_tokens": 96,
+   "mpdm_sets": 158,
+   "mscene_tokens": 101
+  },
+  "2021.08.24.17.01.06_veh-45_00228_00689": {
+   "d_tokens": 1,
+   "mpdm_tokens": 174,
+   "mpdm_sets": 319,
+   "mscene_tokens": 177
+  },
+  "2021.08.24.17.01.06_veh-45_01557_01681": {
+   "d_tokens": 1,
+   "mpdm_tokens": 39,
+   "mpdm_sets": 71,
+   "mscene_tokens": 39
+  },
+  "2021.08.24.18.30.46_veh-08_01674_01850": {
+   "d_tokens": 1,
+   "mpdm_tokens": 69,
+   "mpdm_sets": 99,
+   "mscene_tokens": 73
+  },
+  "2021.08.24.19.30.33_veh-45_01391_01523": {
+   "d_tokens": 1,
+   "mpdm_tokens": 74,
+   "mpdm_sets": 136,
+   "mscene_tokens": 74
+  },
+  "2021.08.24.20.03.01_veh-45_00824_00888": {
+   "d_tokens": 1,
+   "mpdm_tokens": 43,
+   "mpdm_sets": 81,
+   "mscene_tokens": 44
+  },
+  "2021.08.31.11.47.30_veh-40_01146_01347": {
+   "d_tokens": 2,
+   "mpdm_tokens": 113,
+   "mpdm_sets": 208,
+   "mscene_tokens": 116
+  },
+  "2021.08.31.12.21.30_veh-40_00056_00155": {
+   "d_tokens": 1,
+   "mpdm_tokens": 60,
+   "mpdm_sets": 105,
+   "mscene_tokens": 60
+  },
+  "2021.08.31.12.21.30_veh-40_00378_00527": {
+   "d_tokens": 1,
+   "mpdm_tokens": 68,
+   "mpdm_sets": 117,
+   "mscene_tokens": 70
+  },
+  "2021.08.31.13.27.52_veh-40_00688_00750": {
+   "d_tokens": 1,
+   "mpdm_tokens": 21,
+   "mpdm_sets": 36,
+   "mscene_tokens": 22
+  },
+  "2021.08.31.14.01.15_veh-40_00573_00681": {
+   "d_tokens": 2,
+   "mpdm_tokens": 22,
+   "mpdm_sets": 41,
+   "mscene_tokens": 22
+  },
+  "2021.08.31.14.01.15_veh-40_00692_00977": {
+   "d_tokens": 2,
+   "mpdm_tokens": 58,
+   "mpdm_sets": 102,
+   "mscene_tokens": 58
+  },
+  "2021.08.31.16.37.21_veh-40_00110_00187": {
+   "d_tokens": 1,
+   "mpdm_tokens": 25,
+   "mpdm_sets": 42,
+   "mscene_tokens": 25
+  },
+  "2021.08.31.16.37.21_veh-40_01101_01177": {
+   "d_tokens": 1,
+   "mpdm_tokens": 16,
+   "mpdm_sets": 28,
+   "mscene_tokens": 16
+  },
+  "2021.08.31.17.42.52_veh-40_00833_00953": {
+   "d_tokens": 1,
+   "mpdm_tokens": 17,
+   "mpdm_sets": 34,
+   "mscene_tokens": 17
+  },
+  "2021.09.14.16.46.51_veh-45_02322_02510": {
+   "d_tokens": 1,
+   "mpdm_tokens": 74,
+   "mpdm_sets": 129,
+   "mscene_tokens": 74
+  },
+  "2021.09.14.18.43.41_veh-45_02296_02477": {
+   "d_tokens": 1,
+   "mpdm_tokens": 78,
+   "mpdm_sets": 130,
+   "mscene_tokens": 84
+  },
+  "2021.09.15.11.49.23_veh-28_00520_00669": {
+   "d_tokens": 1,
+   "mpdm_tokens": 53,
+   "mpdm_sets": 94,
+   "mscene_tokens": 54
+  },
+  "2021.09.15.11.49.23_veh-28_02192_02253": {
+   "d_tokens": 1,
+   "mpdm_tokens": 21,
+   "mpdm_sets": 34,
+   "mscene_tokens": 23
+  },
+  "2021.09.15.14.00.15_veh-28_01611_01874": {
+   "d_tokens": 1,
+   "mpdm_tokens": 90,
+   "mpdm_sets": 167,
+   "mscene_tokens": 91
+  },
+  "2021.09.15.15.02.19_veh-39_00214_00558": {
+   "d_tokens": 1,
+   "mpdm_tokens": 100,
+   "mpdm_sets": 186,
+   "mscene_tokens": 101
+  },
+  "2021.10.01.15.32.11_veh-28_00120_00248": {
+   "d_tokens": 1,
+   "mpdm_tokens": 56,
+   "mpdm_sets": 86,
+   "mscene_tokens": 59
+  },
+  "2021.10.01.17.52.06_veh-28_01289_01353": {
+   "d_tokens": 1,
+   "mpdm_tokens": 9,
+   "mpdm_sets": 10,
+   "mscene_tokens": 10
+  },
+  "2021.10.05.04.03.05_veh-50_00536_00637": {
+   "d_tokens": 2,
+   "mpdm_tokens": 65,
+   "mpdm_sets": 97,
+   "mscene_tokens": 68
+  },
+  "2021.10.05.04.03.05_veh-50_00648_00744": {
+   "d_tokens": 2,
+   "mpdm_tokens": 92,
+   "mpdm_sets": 145,
+   "mscene_tokens": 94
+  },
+  "2021.10.05.04.38.41_veh-50_00441_00515": {
+   "d_tokens": 1,
+   "mpdm_tokens": 44,
+   "mpdm_sets": 85,
+   "mscene_tokens": 44
+  },
+  "2021.10.05.04.38.41_veh-50_00753_00956": {
+   "d_tokens": 1,
+   "mpdm_tokens": 203,
+   "mpdm_sets": 354,
+   "mscene_tokens": 205
+  },
+  "2021.10.05.06.24.06_veh-50_00717_01300": {
+   "d_tokens": 1,
+   "mpdm_tokens": 244,
+   "mpdm_sets": 443,
+   "mscene_tokens": 251
+  },
+  "2021.10.05.06.31.40_veh-52_00355_00454": {
+   "d_tokens": 1,
+   "mpdm_tokens": 13,
+   "mpdm_sets": 25,
+   "mscene_tokens": 14
+  },
+  "2021.10.05.06.57.40_veh-50_00025_00261": {
+   "d_tokens": 1,
+   "mpdm_tokens": 82,
+   "mpdm_sets": 144,
+   "mscene_tokens": 88
+  },
+  "2021.10.05.06.57.40_veh-50_01131_01452": {
+   "d_tokens": 1,
+   "mpdm_tokens": 213,
+   "mpdm_sets": 370,
+   "mscene_tokens": 220
+  },
+  "2021.10.05.07.10.04_veh-52_00418_00563": {
+   "d_tokens": 1,
+   "mpdm_tokens": 47,
+   "mpdm_sets": 79,
+   "mscene_tokens": 50
+  },
+  "2021.10.05.07.10.04_veh-52_00596_00663": {
+   "d_tokens": 1,
+   "mpdm_tokens": 31,
+   "mpdm_sets": 53,
+   "mscene_tokens": 32
+  },
+  "2021.10.05.07.10.04_veh-52_00689_01322": {
+   "d_tokens": 1,
+   "mpdm_tokens": 359,
+   "mpdm_sets": 635,
+   "mscene_tokens": 368
+  },
+  "2021.10.05.07.10.04_veh-52_01442_01802": {
+   "d_tokens": 1,
+   "mpdm_tokens": 276,
+   "mpdm_sets": 489,
+   "mscene_tokens": 283
+  },
+  "2021.10.05.07.38.12_veh-50_00898_01058": {
+   "d_tokens": 2,
+   "mpdm_tokens": 87,
+   "mpdm_sets": 160,
+   "mscene_tokens": 89
+  },
+  "2021.10.05.07.38.12_veh-50_01477_01565": {
+   "d_tokens": 1,
+   "mpdm_tokens": 91,
+   "mpdm_sets": 165,
+   "mscene_tokens": 93
+  },
+  "2021.10.05.07.49.39_veh-52_01417_01574": {
+   "d_tokens": 1,
+   "mpdm_tokens": 63,
+   "mpdm_sets": 102,
+   "mscene_tokens": 68
+  },
+  "2021.10.05.08.11.15_veh-50_00163_00321": {
+   "d_tokens": 1,
+   "mpdm_tokens": 137,
+   "mpdm_sets": 219,
+   "mscene_tokens": 144
+  },
+  "2021.10.05.08.11.15_veh-50_00360_00426": {
+   "d_tokens": 1,
+   "mpdm_tokens": 42,
+   "mpdm_sets": 80,
+   "mscene_tokens": 42
+  },
+  "2021.10.05.08.11.15_veh-50_00970_01211": {
+   "d_tokens": 1,
+   "mpdm_tokens": 169,
+   "mpdm_sets": 292,
+   "mscene_tokens": 174
+  },
+  "2021.10.05.08.11.15_veh-50_01222_01462": {
+   "d_tokens": 1,
+   "mpdm_tokens": 110,
+   "mpdm_sets": 194,
+   "mscene_tokens": 111
+  },
+  "2021.10.11.05.34.05_veh-50_00971_01251": {
+   "d_tokens": 1,
+   "mpdm_tokens": 98,
+   "mpdm_sets": 160,
+   "mscene_tokens": 102
+  },
+  "2021.10.11.07.47.13_veh-50_01190_01452": {
+   "d_tokens": 1,
+   "mpdm_tokens": 45,
+   "mpdm_sets": 79,
+   "mscene_tokens": 46
+  }
+ }
+}
