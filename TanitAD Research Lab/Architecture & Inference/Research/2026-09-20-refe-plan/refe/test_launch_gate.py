@@ -1694,9 +1694,12 @@ def hnscreen_static() -> None:
     a1 = argv_for(1)
     ns1, err = C.parse_scorer_argv(S.build_parser(), a1)
     ok(err is None, err)
+    # HNSCREEN-FP-REQUIRED (MM ruling 6): the shipped profile is UNFILLED and must REFUSE; every "clean" arm below runs against a profile FILLED from its own fixture files (never typed by hand)
+    FP = {"--hn-bank": L.GT.fp_key(L.GT.fingerprint(str(bank))), "--ctx-cache": L.GT.fp_key(L.GT.fingerprint(str(cache)))}
+    PF = {**P, "fingerprints_expected": dict(FP)}
 
     def refs(argv, arm="S1", prof=None):
-        return L.profile_refusals({**(prof or P), "declared_arm": arm}, argv)
+        return L.profile_refusals({**(prof or PF), "declared_arm": arm}, argv)
 
     def clean(argv, arm="S1", prof=None):
         rs = refs(argv, arm, prof)
@@ -1767,21 +1770,99 @@ def hnscreen_static() -> None:
     red(a1, "refe_rls1 FORBIDS", "C1", R)
     red(a1, "refe_aux_s1 FORBIDS", "N-s0", L.PROFILES["refe_aux_s1"])
     clean(L.rls1_control_argv(C._set(c1, "--seed", "1")), "C1", R)                                      # RL-S1's C1 argv is still clean under refe_rls1
-    # content fingerprints of the re-rooted data (the optional registered hook)
-    fk = L.GT.fp_key(L.GT.fingerprint(str(bank)))
-    clean(a1, "S1", {**P, "fingerprints_expected": {"--hn-bank": fk}})
-    red(a1, "content fingerprint of --hn-bank", "S1", {**P, "fingerprints_expected": {"--hn-bank": "0" * 64}})
-    # the CLI
+    # content fingerprints of the re-rooted data: REQUIRED (HNSCREEN-FP-REQUIRED) -- filled and matching is clean, a wrong value is red
+    clean(a1, "S1", PF)
+    red(a1, "content fingerprint of --hn-bank", "S1", {**P, "fingerprints_expected": {**FP, "--hn-bank": "0" * 64}})
+    red(a1, "content fingerprint of --ctx-cache", "S1", {**P, "fingerprints_expected": {**FP, "--ctx-cache": "0" * 64}})
+    # HNFP deliberate-regression arms, one per rule.  Each has its positive twin above (`clean(a1, "S1", PF)`).  The fragments are the gate's own words.
+    FP_NF = "fingerprints_expected not filled"
+    FP_ABSENT = "is in fingerprints_expected but the argv does not carry it exactly once"
+    only_bank, only_cache = {**P, "fingerprints_expected": {"--hn-bank": FP["--hn-bank"]}}, {**P, "fingerprints_expected": {"--ctx-cache": FP["--ctx-cache"]}}
+    red(a1, FP_NF, "S1", {**P, "fingerprints_expected": {}})                                              # HNFP-1: the shipped shape -- an empty dict runs NO content check, so it must REFUSE
+    red(a1, FP_NF, "S1", {k: v for k, v in P.items() if k != "fingerprints_expected"})                     # HNFP-1b: the key absent altogether
+    red(a1, FP_NF, "S1", {**P, "fingerprints_expected": None})                                            # HNFP-1c: None is not a fill
+    red(a1, FP_NF, "S1", {**P, "fingerprints_expected": []})                                              # HNFP-1d: a non-dict is not a fill
+    ok(any(FP_NF in r and "--ctx-cache" in r and "--hn-bank" not in r for r in refs(a1, "S1", only_bank)), refs(a1, "S1", only_bank))     # HNFP-2: the --ctx-cache key missing (the old suite's `{"--hn-bank": fk}` was CLEAN)
+    ok(any(FP_NF in r and "--hn-bank" in r and "--ctx-cache" not in r for r in refs(a1, "S1", only_cache)), refs(a1, "S1", only_cache))   # HNFP-2b: the --hn-bank key missing
+    a_nocache = C._drop(a1, "--ctx-cache", 1)                                                             # HNFP-3: an expected flag ABSENT from the argv (the old `continue`); the rule's own message beside the older DROPPED
+    ok(any("--ctx-cache" in r and FP_ABSENT in r for r in refs(a_nocache)), refs(a_nocache))
+    ok(any("--hn-bank" in r and FP_ABSENT in r for r in refs(C._drop(a1, "--hn-bank", 1))), refs(C._drop(a1, "--hn-bank", 1)))
+    a_dbl = a1 + ["--ctx-cache", str(cache)]                                                              # HNFP-3b: carried twice -> there is no single value to fingerprint
+    ok(any("--ctx-cache" in r and FP_ABSENT in r for r in refs(a_dbl)), refs(a_dbl))
+    i_bank = a1.index("--hn-bank")
+    a_two = a1[:i_bank + 2] + ["extra_value"] + a1[i_bank + 2:]                                           # HNFP-3c: one flag, two values
+    ok(any("--hn-bank needs exactly one value" in r for r in refs(a_two)), refs(a_two))                                              # (the trainer's parser rejects the second value, so the run ends before the fingerprint loop: still a FAIL)
+    P_ghost = {**P, "fingerprints_expected": {**FP, "--not-a-real-flag": "file:" + "0" * 64}}             # HNFP-3d: an expected flag that no older rule polices -- ONLY this rule catches it
+    ok(any("--not-a-real-flag" in r and FP_ABSENT in r for r in refs(a1, "S1", P_ghost)) and refs(a1) == [], refs(a1, "S1", P_ghost))
+    # the shipped profile: whatever it is today it is either FILLED (both keys) or REFUSES -- an unfilled shipped profile can never PASS
+    shipped = refs(a1, "S1", P)
+    ok(all(f in (P.get("fingerprints_expected") or {}) for f in L.HNSCREEN_FLAGS) or any(FP_NF in r for r in shipped), shipped)
+    # the other profiles are untouched by this rule: none of them carries `fingerprints_expected` and none runs the hnscreen rules
+    ok(all("fingerprints_expected" not in v and not v.get("hn_rules") for k, v in L.PROFILES.items() if k != "refe_hnscreen"))
+    # the CLI: the shipped (unfilled) profile REFUSES with rc 5; a FILLED profile is clean
     import contextlib
     import io
+    if not any(f in (P.get("fingerprints_expected") or {}) for f in L.HNSCREEN_FLAGS):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = L.main(["refusals", "--profile", "refe_hnscreen", "--arm-name", "S1", "--args", " ".join(a1)])
+        ok(rc == 5 and "ZZGATE-REFUSEDZZ" in buf.getvalue() and FP_NF in buf.getvalue(), buf.getvalue())
     buf = io.StringIO()
-    with contextlib.redirect_stdout(buf):
-        rc = L.main(["refusals", "--profile", "refe_hnscreen", "--arm-name", "S1", "--args", " ".join(a1)])
+    L.PROFILES["refe_hnscreen"] = PF
+    try:
+        with contextlib.redirect_stdout(buf):
+            rc = L.main(["refusals", "--profile", "refe_hnscreen", "--arm-name", "S1", "--args", " ".join(a1)])
+    finally:
+        L.PROFILES["refe_hnscreen"] = P
     ok(rc == 0 and "ZZGATE-CLEANZZ" in buf.getvalue(), buf.getvalue())
+    # ------------------------------------------------------------------ H3b hn_fingerprints.py (HNSCREEN-FP-REQUIRED): the helper's JSON, never typed, fills the profile -> the gate PASSES; a 1-byte-changed input FAILS
+    import hn_fingerprints as HF
+    ok(HF.fingerprints_expected(str(bank), str(cache)) == FP and list(FP) == list(L.HNSCREEN_FLAGS), HF.fingerprints_expected(str(bank), str(cache)))     # the gate's own functions, the gate's own key order
+    cp = subprocess.run([sys.executable, str(HERE / "hn_fingerprints.py"), "--hn-bank", str(bank), "--ctx-cache", str(cache)], capture_output=True, text=True, timeout=300)
+    ok(cp.returncode == 0 and json.loads(cp.stdout) == FP and "\r" not in cp.stdout, (cp.returncode, cp.stdout, cp.stderr))        # as a process: stdout is exactly the JSON
+    ok("--hn-bank" in cp.stderr and "--ctx-cache" in cp.stderr and "method" in cp.stderr, cp.stderr)                                    # provenance goes to stderr
+    PH = {**P, "fingerprints_expected": json.loads(cp.stdout)}                                                                       # the profile filled from the helper's stdout: nothing hand-typed
+    for s_ in (0, 1, 2):
+        ok(refs(argv_for(s_), f"S{s_}", PH) == [], (s_, refs(argv_for(s_), f"S{s_}", PH)))                                           # twin: every arm of the screen PASSES the refusals
+    bank2 = td / "bank2.hnb"
+    flipped = bytearray(bank.read_bytes())
+    flipped[100] ^= 0x01                                                                                                             # ONE bit of ONE byte, same size: only the sha256 sees it
+    bank2.write_bytes(bytes(flipped))
+    ok(bank2.stat().st_size == bank.stat().st_size)
+    red(C._set(a1, "--hn-bank", str(bank2)), "content fingerprint of --hn-bank", "S1", PH)
+    cache2 = td / "cache2"
+    shutil.copytree(cache, cache2)
+    with open(cache2 / "manifest.json", "ab") as fh:                                                                                 # ONE byte longer: the directory fingerprint is the LISTING (relpath + size)
+        fh.write(b" ")
+    red(C._set(a1, "--ctx-cache", str(cache2)), "content fingerprint of --ctx-cache", "S1", PH)
+    cache3 = td / "cache3"
+    shutil.copytree(cache, cache3)
+    (cache3 / "extra.bin").write_bytes(b"x")                                                                                         # ONE file added
+    red(C._set(a1, "--ctx-cache", str(cache3)), "content fingerprint of --ctx-cache", "S1", PH)
+    ok(refs(a1, "S1", PH) == [])                                                                                                     # the originals are untouched: the twin is still clean
+    # the helper refuses a missing or empty input and prints NOTHING on stdout
+    zero, emptydir = td / "zero.hnb", td / "emptydir"
+    zero.write_bytes(b"")
+    emptydir.mkdir()
+    for bad_args, frag in ((["--hn-bank", str(td / "nope.hnb"), "--ctx-cache", str(cache)], "does not exist"), (["--hn-bank", str(bank), "--ctx-cache", str(td / "nope")], "does not exist"),
+                           (["--hn-bank", str(zero), "--ctx-cache", str(cache)], "ZERO-byte"), (["--hn-bank", str(bank), "--ctx-cache", str(emptydir)], "EMPTY directory")):
+        o_, e_ = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(o_), contextlib.redirect_stderr(e_):
+            rc = HF.main(bad_args)
+        ok(rc == 2 and o_.getvalue() == "" and "REFUSED" in e_.getvalue() and frag in e_.getvalue(), (bad_args, rc, o_.getvalue(), e_.getvalue()))
+    outj = td / "fx.json"
+    o_, e_ = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(o_), contextlib.redirect_stderr(e_):
+        rc = HF.main(["--hn-bank", str(bank), "--ctx-cache", str(cache), "--out", str(outj)])
+    ok(rc == 0 and json.loads(o_.getvalue()) == FP and json.loads(outj.read_text(encoding="utf-8")) == FP and b"\r" not in outj.read_bytes(), (rc, o_.getvalue()))
     buf = io.StringIO()
-    with contextlib.redirect_stdout(buf):
-        rc = L.main(["refusals", "--profile", "refe_hnscreen", "--arm-name", "S1", "--args", " ".join(L.hnscreen_regression_argv(a1, "moved_lever"))])
-    ok(rc == 5 and "ZZGATE-REFUSEDZZ" in buf.getvalue(), buf.getvalue())
+    L.PROFILES["refe_hnscreen"] = PF
+    try:
+        with contextlib.redirect_stdout(buf):
+            rc = L.main(["refusals", "--profile", "refe_hnscreen", "--arm-name", "S1", "--args", " ".join(L.hnscreen_regression_argv(a1, "moved_lever"))])
+    finally:
+        L.PROFILES["refe_hnscreen"] = P
+    ok(rc == 5 and "ZZGATE-REFUSEDZZ" in buf.getvalue() and "MOVED" in buf.getvalue(), buf.getvalue())
     # ------------------------------------------------------------------ H4 G-DVB: the built blocks against the argv and the bytes it names
     k14, k15 = (next(k for k in rls1_gate_keys() if k.startswith(p)) for p in ("G14_", "G15_"))
     man_sha = sha(cache / "manifest.json")
@@ -1860,7 +1941,7 @@ def hnscreen_static() -> None:
             ev = dvb(arm=arm)
             ok(ev["status"] == "FAIL" and frag in " ".join(ev["reasons"]), (arm, ev["reasons"]))
         else:
-            rs = L.profile_refusals({**P, "declared_arm": "S1"}, L.hnscreen_regression_argv(a1, arm))
+            rs = L.profile_refusals({**PF, "declared_arm": "S1"}, L.hnscreen_regression_argv(a1, arm))
             ok(any(frag in r for r in rs), (arm, rs))
     ok(pre()["status"] == "PASS" and dvb()["status"] == "PASS")                                           # the arms left no residue
     for arm in C.HN_ARMS:                                                                                 # an arm never mutates the clean evidence in place

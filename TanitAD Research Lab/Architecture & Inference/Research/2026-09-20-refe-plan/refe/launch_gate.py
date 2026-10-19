@@ -566,7 +566,7 @@ def _same_vals(a, b) -> bool:
 def hnscreen_refusals(prof: dict, argv: list, mod, parser) -> tuple:
     """(refusals, extra live terms) of the screen's rules, ON TOP of rls1_refusals (class C, the recipe, the registered seed, the lane-head pairing, scorer_finetune's own epo refusals).  PREREG_P6HN_SCREEN 4.2 / 4.4:
     the argv is RL-S1's C1 argv plus --hn-bank and --ctx-cache, each exactly once -- ANY moved, added, dropped or doubled token is a refusal; --seed is named (the pass); path values may move (re-rooted) but their
-    CONTENT fingerprints must equal the registered ones when the profile carries `fingerprints_expected`; the trainer's own `hn_refusals` (--hn-bank with --epo / --lam != 0 / --b-mode != listnet / --aux-drv,
+    CONTENT fingerprints must equal the registered ones: `fingerprints_expected` MUST cover --hn-bank and --ctx-cache (an unfilled profile REFUSES, HNSCREEN-FP-REQUIRED); the trainer's own `hn_refusals` (--hn-bank with --epo / --lam != 0 / --b-mode != listnet / --aux-drv,
     --ctx-cache with --aux-drv) are surfaced, not re-derived."""
     import gate_checks as C
     name, out = prof["name"], []
@@ -590,13 +590,19 @@ def hnscreen_refusals(prof: dict, argv: list, mod, parser) -> tuple:
             out.append(f"{name}: {f} needs exactly one value, the argv has {len(got[f][0])}")
     for f in sorted(set(got) - allowed):
         out.append(f"{name}: the argv ADDS {f} {' '.join(got[f][0])}, which the screen does not allow (allowed differences from C1: --seed, --out, --dump-scores, re-rooted data paths, and --hn-bank / --ctx-cache)")
+    fp_exp = prof.get("fingerprints_expected")                                       # HNSCREEN-FP-REQUIRED (MM ruling 6): an UNFILLED profile can never PASS -- a default that disables the check is a launch blocker
+    fp_exp = fp_exp if isinstance(fp_exp, dict) else {}
+    fp_unfilled = [f for f in HNSCREEN_FLAGS if f not in fp_exp]
+    if fp_unfilled:
+        out.append(f"{name}: fingerprints_expected not filled: the content check cannot run (no expected fingerprint for {' '.join(fp_unfilled)}); fill it from the bank/cache builder (hn_fingerprints.py), never by hand")
     ns, err = C.parse_scorer_argv(parser, argv)
     if err:
         return out + [f"{name}: the trainer's parser rejects this argv ({err})"], ()
     out += [f"scorer_finetune refuses this argv: {m}" for m in mod.hn_refusals(ns, parser)]
-    for f, want in sorted((prof.get("fingerprints_expected") or {}).items()):      # content fingerprints of the re-rooted data (UNVERIFIED offline: the registered values live on the run box)
+    for f, want in sorted(fp_exp.items()):      # content fingerprints of the re-rooted data (UNVERIFIED offline: the registered values live on the run box)
         vals = got.get(f)
         if not vals or len(vals) != 1 or len(vals[0]) != 1:
+            out.append(f"{name}: {f} is in fingerprints_expected but the argv does not carry it exactly once with one value ({len(vals or ())} found): the content check cannot run")
             continue
         try:
             fk = GT.fp_key(GT.fingerprint(vals[0][0]))
