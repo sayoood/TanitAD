@@ -611,6 +611,7 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
     (4) OK requires the full token-row count, not only harness PASS.
   - ⚠️ **A failed or partial run must not print its average row.** Two partial averages (88.44, 88.47) were read
     before the full read and had to be disclosed. Keep RAM-heavy sibling jobs off the box while navtest scores.
+  - ⭐ **FIXED UPSTREAM 2026-10-19 (NT-FIX1)** in `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/code/run_v1_fix1.py`, a pinned wrapper (`run_v1.py`'s sha256 is recorded in the Thor admission record, the Colab code manifest and 24 `*.thor.json` stamps, so it is NOT edited). It fixes (1) the cross-drive relpath (absolute path, `csv_path_kind`), (3) stale `*.csv` moved to `quarantine_*` at run start and recorded, and (4) a count- or set-mismatched CSV emitting NO summary/average, printed or stored. Fix (2), the memory gate, stays in the launcher (`nt_run2.py`). 20 tests, one RED arm per fix. ⚠️ **It is inert unless the caller loads `run_v1_fix1.load()`.** Adopted so far ONLY in REFe's `eval/score_navtest_refe.py` (reachability test + RED arm); `score_navtest6/7.py` and the Colab path are still unfixed (BACKLOG `NT-FIX1`). `incoming/2026-10-19-navtest-harness-fix/`
 
 ## Git hygiene — the mistake that has now happened twice
 
