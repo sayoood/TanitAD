@@ -1,0 +1,44 @@
+pair,pdf_page,NC,DAC,TTC,EP,PDMS,EPDMS,NC_relfail,DAC_relfail,TTC_relfail
+hydra: sub-score heads vs overall-PDM-score only,4,0.4,2.8,0.4,2.8,2.8,,-16.0,-25.2,-5.3
+hydra: inference weighting W,4,0.2,4.4,1.0,0.2,2.7,,-9.5,-53.0,-14.1
+hydra: + EP head,4,0.2,-0.1,0.7,0.9,0.8,,-10.5,2.6,-11.5
+hydra++: weighted confidence,7,-0.1,4.0,1.0,0.6,1.5,,4.0,-50.0,-12.2
+hydra++: + perception aux tasks,7,0.0,-0.4,0.2,-0.3,-0.5,,0.0,10.0,-2.9
+hydra++: ResNet34 -> V2-99,7,1.0,2.6,2.0,5.3,4.4,,-41.7,-65.0,-29.0
+drivesuprim R34: recipe vs Hydra-MDP,6,-0.5,1.3,-1.0,8.0,3.4,,29.4,-32.5,18.5
+drivesuprim ViT-L: recipe vs Hydra-MDP,6,0.2,0.9,1.0,6.3,3.6,,-12.5,-39.1,-18.2
+drivesuprim v2: coarse-to-fine,7,0.3,-1.1,-0.1,3.9,,1.0,-10.7,44.0,2.9
+drivesuprim v2: + rotation aug,7,-0.6,0.5,-0.4,0.9,,0.3,24.0,-13.9,11.1
+drivesuprim v2: + self-distillation,7,0.6,-0.4,0.6,0.5,,0.4,-19.4,12.9,-15.0
+wote: trajectory evaluation (no future),7,0.7,1.4,1.6,2.0,2.2,,-19.4,-16.5,-16.5
+wote: + BEV future states,7,0.9,1.8,1.5,1.7,2.4,,-31.0,-25.4,-18.5
+wote: sim-reward only vs imitation-reward only,7,-1.4,2.2,-3.3,1.5,0.1,,66.7,-29.3,50.0
+ipad: ProFormer vs BEVFormer(+refine),8,1.2,3.3,3.5,12.7,10.4,,-38.7,-48.5,-38.0
+ipad: + proposal-centric mapping,8,0.2,1.4,0.1,1.7,0.7,,-10.5,-40.0,-1.8
+ipad: + proposal-centric prediction,8,0.3,0.4,0.5,2.1,1.2,,-17.6,-19.0,-8.9
+safedrive: ProposalNet (traj-guided deformable attn) vs DiffusionDrive head,7,0.1,0.8,-0.7,0.9,0.5,,-8.3,-21.6,16.7
+safedrive: fine-grained vs scene-level safety (sparse world),7,0.3,0.8,0.5,,0.7,,-37.5,-44.4,-15.2
+safedrive: PwNC only vs neither,7,0.3,0.2,1.3,,0.6,,-37.5,-13.3,-32.5
+safedrive: TwDAC only vs neither,7,0.0,0.5,0.7,,0.5,,0.0,-33.3,-17.5
+safedrive: both vs neither,7,0.3,0.5,1.2,,0.7,,-37.5,-33.3,-30.0
+da-wam: action-conditioned future vs none,10,0.43,0.31,0.85,-0.89,0.15,,-27.7,-17.9,-18.8
+da-wam: + hard negatives,10,0.23,0.3,0.48,-0.5,0.22,,-20.5,-21.1,-13.1
+da-wam: hard negatives vs no future,10,0.66,0.61,1.33,-1.39,0.37,,-42.6,-35.3,-29.4
+da-wam: shared global future vs none,10,0.57,0.19,1.06,-2.68,-0.5,,-36.8,-11.0,-23.5
+mm-future: paired future vs history only,6,0.1,0.2,0.5,0.1,0.4,,-8.3,-11.8,-11.1
+flowr2a: wTTC 3 vs default,15,0.3,0.1,1.1,-2.1,-0.2,,-25.0,-5.0,-27.5
+flowr2a: wTTC 2 vs default,15,0.2,0.0,0.8,-1.1,0.0,,-16.7,0.0,-20.0
+ztrs: + progress reward,17,-0.2,-0.1,1.5,20.5,,10.4,14.3,14.3,-40.5
+ztrs: + comfort reward,17,-0.6,0.2,-0.8,0.3,,2.9,37.5,-25.0,36.4
+toad: re-score iPad with DrivoR scorer,15,2.5,2.9,2.9,-6.8,,,-65.8,-56.9,-69.0
+toad: search iPad with GTRS scorer,15,-2.9,-17.1,-1.8,-22.1,,,76.3,335.3,42.9
+toad: search iPad with SparseDriveV2 scorer,15,0.7,-8.0,1.1,-7.3,,,-18.4,156.9,-26.2
+toad: TOAD (DrivoR scorer) on iPad,15,1.5,2.2,2.6,-6.4,,,-39.5,-43.1,-61.9
+gtrs: 2-model ensemble vs best member (Aug),4,-0.5,0.9,-0.3,-0.1,,,38.5,-45.0,23.1
+gtrs: 6-model ensemble vs best member (Aug),4,0.2,1.3,-0.3,-0.7,,,-15.4,-65.0,23.1
+versatile DiffusionDrive: both designs vs plain,8,0.17,0.18,,,,0.34,-10.6,-7.3,
+versatile DiffusionDrive: longitudinal-only vs plain,8,0.15,0.1,,,,0.25,-9.3,-4.0,
+versatile DiffusionDrive: lateral-only vs plain,8,0.08,0.2,,,,0.18,-5.0,-8.1,
+versatile MeanFuser: both designs vs plain,8,0.05,0.32,,,,0.29,-2.8,-15.6,
+versatile MeanFuser: longitudinal-only vs plain,8,0.06,0.06,,,,0.12,-3.4,-2.9,
+versatile MeanFuser: lateral-only vs plain,8,0.04,0.31,,,,0.24,-2.2,-15.1,

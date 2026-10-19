@@ -2152,13 +2152,15 @@
    "tags": [
     "frozen-encoder",
     "jepa-driving",
+    "safety-head-lit",
     "zero-tail"
    ],
-   "note": "Drive-JEPA: V-JEPA driving encoder + light planner, NAVSIM v1 93.3 PDMS / v2 87.8 EPDMS / B2D 64.52, ViT-L 307M, 208h video | Drive-JEPA: V-JEPA video pretraining for end-to-end driving + proposal-centric planner distilling simulator+human trajectories, momentum-aware selection; 93.3 PDMS / 87.8 EPDMS SOTA | Drive-JEPA Tab.1 (navtest): ViT/L NC 99.1 DAC 98.2 PDMS 93.7 vs ViT/L baseline 98.7/96.2/89.0",
+   "note": "Drive-JEPA: V-JEPA driving encoder + light planner, NAVSIM v1 93.3 PDMS / v2 87.8 EPDMS / B2D 64.52, ViT-L 307M, 208h video | Drive-JEPA: V-JEPA video pretraining for end-to-end driving + proposal-centric planner distilling simulator+human trajectories, momentum-aware selection; 93.3 PDMS / 87.8 EPDMS SOTA | Drive-JEPA Tab.1 (navtest): ViT/L NC 99.1 DAC 98.2 PDMS 93.7 vs ViT/L baseline 98.7/96.2/89.0 | NAVSIM generator-scorer safety reasoning / JEPA planner | safety-head-lit: Drive-JEPA, V-JEPA encoder + proposal-centric planner; screened, no sub-score table read for this report",
    "cited_by": [
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-27-jepa-driving-survey/JEPA_DRIVING_SURVEY.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-refav1-motion-inject/SPEC.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-31-refav1-motion-inject/SPEC.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md"
    ]
   },
   "2603.24581": {
@@ -2329,9 +2331,10 @@
     "navsim-v1",
     "nuscenes",
     "resnet-trunk",
+    "safety-head-lit",
     "zero-tail"
    ],
-   "note": "NAVSIM v1 NeurIPS2024: non-reactive pseudo-simulation, PDMS, navtrain/navtest | NAVSIM: ~75% of nuScenes is trivial straight driving; displacement metrics uncorrelated with closed-loop; PDMS alternative | NAVSIM v1: navtrain 103k / navtest 12k, 450GB standalone; PDMS = aggregated post-simulation subscores, aligns with closed-loop better than traditional open-loop metrics | NAVSIM Table 2 sensor ablation: front-only 60deg FOV vs 3-cam concat 140/160deg vs 5-cam 240deg PDMS | resnet-trunk review 2026-09-15: navtrain 103k samples from OpenScene 120 h @2Hz; LTF camera-only 83.8 vs TransFuser 84.0 (Tab.1); no-BEV-seg 84.0->81.6 (Tab.2 E1) | NAVSIM v1.1 navtest reference table re-read 2026-09-19 for W3: Tab.1 p.7 CV 68.0/57.8/50.0/100/19.4/20.6, Human 100/100/100/99.9/87.5/94.8, EgoStatusMLP 93.0/77.3/83.6/100/62.8/65.6; Tab.3 p.9 (NAVSIM 1.1 leaderboard, 3 seeds) TransFuser 83.9+-0.4, LTF 83.5+-0.6, EgoStatusMLP 66.4+-0.9, Hydra-MDP 91.3, CV 20.6; filtering rule p.5: scenes with CV PDMS>0.8 or human<0.8 were REMOVED (W3 control C5) | NAVSIM: NC=0 on at-fault collision, 0.5 on static-object collision; DAC and NC are multiplicative gates in PDMS",
+   "note": "NAVSIM v1 NeurIPS2024: non-reactive pseudo-simulation, PDMS, navtrain/navtest | NAVSIM: ~75% of nuScenes is trivial straight driving; displacement metrics uncorrelated with closed-loop; PDMS alternative | NAVSIM v1: navtrain 103k / navtest 12k, 450GB standalone; PDMS = aggregated post-simulation subscores, aligns with closed-loop better than traditional open-loop metrics | NAVSIM Table 2 sensor ablation: front-only 60deg FOV vs 3-cam concat 140/160deg vs 5-cam 240deg PDMS | resnet-trunk review 2026-09-15: navtrain 103k samples from OpenScene 120 h @2Hz; LTF camera-only 83.8 vs TransFuser 84.0 (Tab.1); no-BEV-seg 84.0->81.6 (Tab.2 E1) | NAVSIM v1.1 navtest reference table re-read 2026-09-19 for W3: Tab.1 p.7 CV 68.0/57.8/50.0/100/19.4/20.6, Human 100/100/100/99.9/87.5/94.8, EgoStatusMLP 93.0/77.3/83.6/100/62.8/65.6; Tab.3 p.9 (NAVSIM 1.1 leaderboard, 3 seeds) TransFuser 83.9+-0.4, LTF 83.5+-0.6, EgoStatusMLP 66.4+-0.9, Hydra-MDP 91.3, CV 20.6; filtering rule p.5: scenes with CV PDMS>0.8 or human<0.8 were REMOVED (W3 control C5) | NAVSIM: NC=0 on at-fault collision, 0.5 on static-object collision; DAC and NC are multiplicative gates in PDMS | safety-head-lit: NAVSIM v1 metric definitions (NC/DAC/TTC/EP/C aggregation) behind every sub-score row",
    "cited_by": [
     "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/RESULT.md",
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
@@ -2341,6 +2344,7 @@
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/SPEC_AUX_DRIVABLE_HEAD.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/PREREG_AUX_DRIVABLE_DRAFT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
@@ -2379,9 +2383,10 @@
     "navsim-scorer-trade",
     "refcv8-tactical-conditioning",
     "resnet-trunk",
+    "safety-head-lit",
     "zero-tail"
    ],
-   "note": "Hydra-MDP++: origin of EPDMS sub-metrics TLC and LK adopted by NAVSIM v2 | Hydra-MDP++: default 256x1024; ResNet-34 PDMS 86.6 vs V2-99 91.0 at the SAME resolution - backbone, not resolution, is the lever | resnet-trunk review 2026-09-15: Hydra-MDP++ camera-only, 'classic pretrained vision encoders'; ResNet-34 86.6 -> V2-99 91.0 (Tab.1); 2 frames Temporal SE; no augmentation | Hydra-MDP++ p4-7: same vocab/losses; ego status ADDED to vocab queries (Eq3) and driving command in input (4.2); weighted-confidence inference 85.0->86.5 PDMS (Table 3) | Hydra-MDP++ Tab.3: weighted-confidence inference lifts DAC 92.0 to 96.0 (R34, single run); Tab.1 V2-99 NC 98.6 DAC 98.6 PDMS 91.0",
+   "note": "Hydra-MDP++: origin of EPDMS sub-metrics TLC and LK adopted by NAVSIM v2 | Hydra-MDP++: default 256x1024; ResNet-34 PDMS 86.6 vs V2-99 91.0 at the SAME resolution - backbone, not resolution, is the lever | resnet-trunk review 2026-09-15: Hydra-MDP++ camera-only, 'classic pretrained vision encoders'; ResNet-34 86.6 -> V2-99 91.0 (Tab.1); 2 frames Temporal SE; no augmentation | Hydra-MDP++ p4-7: same vocab/losses; ego status ADDED to vocab queries (Eq3) and driving command in input (4.2); weighted-confidence inference 85.0->86.5 PDMS (Table 3) | Hydra-MDP++ Tab.3: weighted-confidence inference lifts DAC 92.0 to 96.0 (R34, single run); Tab.1 V2-99 NC 98.6 DAC 98.6 PDMS 91.0 | safety-head-lit: Tab.3 p7 weighted confidence DAC 92.0->96.0; auxiliary perception tasks do not help (DAC 96.0->95.6)",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
@@ -2391,6 +2396,7 @@
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/PREREG_AUX_DRIVABLE_DRAFT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2611,9 +2617,10 @@
     "navsim-scorer-trade",
     "refcv8-tactical-conditioning",
     "resnet-trunk",
+    "safety-head-lit",
     "zero-tail"
    ],
-   "note": "Hydra-MDP: 2024 NAVSIM challenge winner; NavFormer planning head | Hydra-MDP: NAVSIM default input 256x1024 (front + cropped front-left/right concatenated); no matched resolution pair - V2-99@512x2048 scores 90.3 vs ViT-L@256x1024 91.0 | resnet-trunk review 2026-09-15: Hydra-MDP ResNet-34 256x1024 -> 86.5; V2-99 (DD3D-init) at 512x2048 -> 90.3; 91.0 is a 3-model ensemble (Tab.2) | Hydra-MDP p3-4: 4096/8192 K-means vocab, imitation softmax-CE + per-candidate BCE sub-score distillation; V8192 83.0 vs VADv2-V8192 80.9; -W-EP 86.5 | Hydra-MDP: per-metric sub-score heads distilled from PDM-Closed + weighted-confidence selection; Tab.1 distilling only the overall PDM score gives DAC 88.9 vs 91.7 multi-target, +W (up-weighted NC/DAC at inference) DAC 96.1",
+   "note": "Hydra-MDP: 2024 NAVSIM challenge winner; NavFormer planning head | Hydra-MDP: NAVSIM default input 256x1024 (front + cropped front-left/right concatenated); no matched resolution pair - V2-99@512x2048 scores 90.3 vs ViT-L@256x1024 91.0 | resnet-trunk review 2026-09-15: Hydra-MDP ResNet-34 256x1024 -> 86.5; V2-99 (DD3D-init) at 512x2048 -> 90.3; 91.0 is a 3-model ensemble (Tab.2) | Hydra-MDP p3-4: 4096/8192 K-means vocab, imitation softmax-CE + per-candidate BCE sub-score distillation; V8192 83.0 vs VADv2-V8192 80.9; -W-EP 86.5 | Hydra-MDP: per-metric sub-score heads distilled from PDM-Closed + weighted-confidence selection; Tab.1 distilling only the overall PDM score gives DAC 88.9 vs 91.7 multi-target, +W (up-weighted NC/DAC at inference) DAC 96.1 | safety-head-lit: Tab.1 p4 distilling only the overall PDM score drops DAC 91.7->88.9; inference weighting W lifts DAC 91.7->96.1",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
@@ -2621,6 +2628,7 @@
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2678,9 +2686,10 @@
     "ego-input",
     "navsim-scorer-trade",
     "refcv8-tactical-conditioning",
+    "safety-head-lit",
     "zero-tail"
    ],
-   "note": "DriveSuprim: navtest PDMS and navtest-EPDMS single-stage tables | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | DriveSuprim p3-8: coarse-to-fine 8192->256, per-metric BCE (no listwise/pairwise loss), soft-label self-distillation clip 0.15; oracle top-256 98.7 vs top-1 91.9 (Table 1) | DriveSuprim Tab.1: oracle best-of-top-K on predicted ranking, K=1 NC 99.0/DAC 98.7/PDMS 91.9, K=4 99.4/99.6/94.5, K=256 100/100/98.7 (selection ceiling); Tab.2 ViT-L NC 98.6 DAC 98.6 PDMS 93.5",
+   "note": "DriveSuprim: navtest PDMS and navtest-EPDMS single-stage tables | DDv2 analysis 2026-09-05: released code read at 1cd12a1 - see the report | DriveSuprim p3-8: coarse-to-fine 8192->256, per-metric BCE (no listwise/pairwise loss), soft-label self-distillation clip 0.15; oracle top-256 98.7 vs top-1 91.9 (Table 1) | DriveSuprim Tab.1: oracle best-of-top-K on predicted ranking, K=1 NC 99.0/DAC 98.7/PDMS 91.9, K=4 99.4/99.6/94.5, K=256 100/100/98.7 (selection ceiling); Tab.2 ViT-L NC 98.6 DAC 98.6 PDMS 93.5 | safety-head-lit: Tab.5 p7 coarse-to-fine trades DAC -1.1 for EP +3.9; Tab.2 p6 ViT-L recipe raises EP 85.0->91.3 with NC/DAC/TTC up",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
@@ -2688,6 +2697,7 @@
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -2750,15 +2760,17 @@
     "benchmarks",
     "ego-input",
     "resnet-trunk",
+    "safety-head-lit",
     "zero-tail"
    ],
-   "note": "WoTE: navtest PDMS 88.3; its baseline column misattributes VADv2 | resnet-trunk review 2026-09-15: WoTE ResNet-34 TransFuser trunk, 256x1024 + LiDAR, 30 ep bs128, 88.3 PDMS; 18.7 ms L20 (Tab.6) | WoTE Tab.1: BEV world model online trajectory evaluation, NC 98.5 DAC 96.8 PDMS 88.3; Tab.4 simulation rewards raise DAC over imitation reward alone",
+   "note": "WoTE: navtest PDMS 88.3; its baseline column misattributes VADv2 | resnet-trunk review 2026-09-15: WoTE ResNet-34 TransFuser trunk, 256x1024 + LiDAR, 30 ep bs128, 88.3 PDMS; 18.7 ms L20 (Tab.6) | WoTE Tab.1: BEV world model online trajectory evaluation, NC 98.5 DAC 96.8 PDMS 88.3; Tab.4 simulation rewards raise DAC over imitation reward alone | safety-head-lit: Tab.3 p7 predicted future BEV states add NC +0.9 DAC +1.8 TTC +1.5 at the same trajectories; Tab.7 p8 unseen anchors",
    "cited_by": [
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/SPEC_AUX_DRIVABLE_HEAD.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/PREREG_AUX_DRIVABLE_DRAFT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md",
     "products/P7-TanitEval/benchmarks/NAVSIM_PROTOCOL.md"
    ]
   },
@@ -3481,13 +3493,15 @@
     "A5_benchmarks",
     "drivor-analysis",
     "navsim",
+    "safety-head-lit",
     "zero-tail"
    ],
-   "note": "Test-time trajectory optimization: navhard camera-only SOTA context - DrivoR 56.3 EPDMS w/ TTO vs DriveFuture 55.5 learned | TOAD (valeo.ai): CEM test-time search on a FROZEN planner, no retraining; +2.3% (ZTRS) to +43.6% (iPad) EPDMS on NAVSIM-v2. Tables 3/6/7: bare DrivoR (ViT-S) 54.6, DrivoR+TOAD 56.3, DriveFuture 55.5 (strongest LEARNED), PDM-Closed 56.6 (privileged). WARNING for I-1/L-3: 're-ranking the base planner's proposals with the scorer can even hurt performance' - re-ranking is not search, and fan-scoring is re-ranking. | READ 2026-09-13 (v1) Table 2/6: PDM-C navhard-two-stage 56.6 with Stage1 IDENTICAL to 2506.04218 (9/9) and Stage2 NC 90.5 TTC 86.6 LK 74.2 EC 29.7; PDM-C cited to Dauner CoRL'23 which predates navhard | TOAD v1: PDM-C S1+S2 fingerprint = 03/2026 post-fix substrate (positive control 6/7 S1, 7/8 S2) | TOAD Tab.5: test-time CEM against the learned scorer, DAC iPad +1.0 but Hydra-MDP -0.7 and GTRS -0.8, DrivoR/RAP +0.1 PDMS - gains vanish on saturated scorers",
+   "note": "Test-time trajectory optimization: navhard camera-only SOTA context - DrivoR 56.3 EPDMS w/ TTO vs DriveFuture 55.5 learned | TOAD (valeo.ai): CEM test-time search on a FROZEN planner, no retraining; +2.3% (ZTRS) to +43.6% (iPad) EPDMS on NAVSIM-v2. Tables 3/6/7: bare DrivoR (ViT-S) 54.6, DrivoR+TOAD 56.3, DriveFuture 55.5 (strongest LEARNED), PDM-Closed 56.6 (privileged). WARNING for I-1/L-3: 're-ranking the base planner's proposals with the scorer can even hurt performance' - re-ranking is not search, and fan-scoring is re-ranking. | READ 2026-09-13 (v1) Table 2/6: PDM-C navhard-two-stage 56.6 with Stage1 IDENTICAL to 2506.04218 (9/9) and Stage2 NC 90.5 TTC 86.6 LK 74.2 EC 29.7; PDM-C cited to Dauner CoRL'23 which predates navhard | TOAD v1: PDM-C S1+S2 fingerprint = 03/2026 post-fix substrate (positive control 6/7 S1, 7/8 S2) | TOAD Tab.5: test-time CEM against the learned scorer, DAC iPad +1.0 but Hydra-MDP -0.7 and GTRS -0.8, DrivoR/RAP +0.1 PDMS - gains vanish on saturated scorers | safety-head-lit: Tab.7 p15 scorers trained on a fixed vocabulary break under search (iPad+search GTRS DAC 94.9->77.8); sec 4.3 p6-7 generalising scorer",
    "cited_by": [
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-13-pdmc-stage2-provenance/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-28-navsim-v2-camera-lane/RESULT.md",
@@ -3524,14 +3538,16 @@
     "drivor-analysis",
     "navsim",
     "refe-sizing",
+    "safety-head-lit",
     "zero-tail"
    ],
-   "note": "DrivoR (CVPR26, Valeo): camera-only, camera-aware register tokens compress multi-cam ViT features; generate+score decoders; the strongest camera-only NavSim family | DrivoR (CVPR26, Valeo) - the id LEADERBOARD.md:1036 mis-attributes to 2606.07170. Base navhard EPDMS 54.6 per two independent primaries. Parameter count (~40M, backlog row 32) UNVERIFIED - unread as of 2026-09-02. | DrivoR v2 full text: navhard 54.6 = +134k SimScale PDM-C-pseudo-labelled data variant; base ViT-S 48.3 post-fix / 45.3 pre-fix; Stage-2 shift = NAVSIM Issue #151 bug fix | DrivoR (DriveZero ref [34]): registers are APPENDED TO THE ViT INPUT and compressed by the trunk's own self-attention -- NOT a cross-attention block, which the paper explicitly rejects and ablates at 89.3 vs 90.0 PDMS; 'The decoders are 4-layer transformers with an inner dimension of 256. The feed-forward network has a dilation factor of 4'; registers init N(0,1e-6); 16/camera at a 16-32 plateau | DrivoR Tab.6: detached scoring branch (+3.2 PDMS) and six PDM sub-score heads vs one composite (+1.8); Tab.1 train-only NC 98.9 DAC 98.3 PDMS 93.1, +134k SimScale 99.1/99.2/94.6",
+   "note": "DrivoR (CVPR26, Valeo): camera-only, camera-aware register tokens compress multi-cam ViT features; generate+score decoders; the strongest camera-only NavSim family | DrivoR (CVPR26, Valeo) - the id LEADERBOARD.md:1036 mis-attributes to 2606.07170. Base navhard EPDMS 54.6 per two independent primaries. Parameter count (~40M, backlog row 32) UNVERIFIED - unread as of 2026-09-02. | DrivoR v2 full text: navhard 54.6 = +134k SimScale PDM-C-pseudo-labelled data variant; base ViT-S 48.3 post-fix / 45.3 pre-fix; Stage-2 shift = NAVSIM Issue #151 bug fix | DrivoR (DriveZero ref [34]): registers are APPENDED TO THE ViT INPUT and compressed by the trunk's own self-attention -- NOT a cross-attention block, which the paper explicitly rejects and ablates at 89.3 vs 90.0 PDMS; 'The decoders are 4-layer transformers with an inner dimension of 256. The feed-forward network has a dilation factor of 4'; registers init N(0,1e-6); 16/camera at a 16-32 plateau | DrivoR Tab.6: detached scoring branch (+3.2 PDMS) and six PDM sub-score heads vs one composite (+1.8); Tab.1 train-only NC 98.9 DAC 98.3 PDMS 93.1, +134k SimScale 99.1/99.2/94.6 | safety-head-lit: Tab.6 p8 separate+disentangled scoring branch and 6 sub-scores vs 1 (PDMS 90.0 vs 88.2); Fig.6 scoring attends different cameras by trajectory",
    "cited_by": [
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-28-navsim-v2-camera-lane/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-09-02-cw1-resolution-and-evidence-integrity/RESULT.md"
@@ -6163,12 +6179,14 @@
    "banked": "2026-08-30",
    "tags": [
     "closed-loop-wm",
+    "safety-head-lit",
     "zero-tail"
    ],
-   "note": "DA-WAM Tab.3: expert-proximate counterfactual hard negatives in the scorer loss DAC 98.58 to 98.88, NC 98.88 to 99.11, EP -0.5 (single run, matched)",
+   "note": "DA-WAM Tab.3: expert-proximate counterfactual hard negatives in the scorer loss DAC 98.58 to 98.88, NC 98.88 to 99.11, EP -0.5 (single run, matched) | safety-head-lit: Tab.3 p10 action-conditioned future + safety hard negatives: NC +0.66 DAC +0.61 TTC +1.33 vs no-future at EP -1.39",
    "cited_by": [
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md"
    ]
   },
   "2607.05966": {
@@ -10742,13 +10760,15 @@
    "banked": "2026-09-05",
    "tags": [
     "ego-input",
+    "safety-head-lit",
     "zero-tail"
    ],
-   "note": "re-indexed 2026-09-05 after library.json was zeroed by a dying agent; PDF was already on disk | iPad Tab.4: proposal-centric mapping aux (per-proposal on-road/on-route per timestep, HD-map labels at train only, camera-only inference) DAC 96.5 to 97.9; Tab.1 NC 98.6 DAC 98.3 PDMS 91.7",
+   "note": "re-indexed 2026-09-05 after library.json was zeroed by a dying agent; PDF was already on disk | iPad Tab.4: proposal-centric mapping aux (per-proposal on-road/on-route per timestep, HD-map labels at train only, camera-only inference) DAC 96.5 to 97.9; Tab.1 NC 98.6 DAC 98.3 PDMS 91.7 | safety-head-lit: Tab.4 p8 proposal-aware spatial cross-attention (ProFormer) DAC 93.2->96.5 NC 96.9->98.1 TTC 90.8->94.3 vs BEVFormer",
    "cited_by": [
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md"
    ]
   },
   "2510.17191": {
@@ -10805,16 +10825,18 @@
     "ego-input",
     "navsim-scorer-trade",
     "resnet-trunk",
+    "safety-head-lit",
     "vocabulary",
     "zero-tail"
    ],
-   "note": "GTRS: the 16,384-trajectory vocabulary DiffusionDriveV2's selector mixes in (1 %, precomputed PDM sub-scores) as foreign-candidate augmentation | GTRS (Hydra-MDP family, NVlabs/GTRS@92a740d): fixed super-dense k-means vocabulary (4096-16384 metre trajectories, 40x(x,y,heading)); ego status cmd4+vel2+acc2 ADDED to every vocabulary feature AFTER scene cross-attention (dist_status = tr_out + status_encoding); a VOCABULARY dropout exists (random half at train, default off) and there is NO ego dropout | resnet-trunk review 2026-09-15: GTRS camera-only; V2-99 DD3D-init / EVA-ViT-L StreamPETR-init / ViT-L DepthAnything; rotation sensor augmentation | GTRS: super-dense vocabulary with dropout + sensor aug; navhard (NAVSIM v2) only, no navtest NC/DAC; no oracle-selection study",
+   "note": "GTRS: the 16,384-trajectory vocabulary DiffusionDriveV2's selector mixes in (1 %, precomputed PDM sub-scores) as foreign-candidate augmentation | GTRS (Hydra-MDP family, NVlabs/GTRS@92a740d): fixed super-dense k-means vocabulary (4096-16384 metre trajectories, 40x(x,y,heading)); ego status cmd4+vel2+acc2 ADDED to every vocabulary feature AFTER scene cross-attention (dist_status = tr_out + status_encoding); a VOCABULARY dropout exists (random half at train, default off) and there is NO ego dropout | resnet-trunk review 2026-09-15: GTRS camera-only; V2-99 DD3D-init / EVA-ViT-L StreamPETR-init / ViT-L DepthAnything; rotation sensor augmentation | GTRS: super-dense vocabulary with dropout + sensor aug; navhard (NAVSIM v2) only, no navtest NC/DAC; no oracle-selection study | safety-head-lit: Tab.1 p3 super-dense vocabulary + dropout for scorer generalisation off-vocabulary; Tab.2 p4 ensemble DAC 95.8/98.0 -> 99.3",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-diffusiondrive-v2-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md"
    ]
   },
   "2410.23262": {
@@ -13596,12 +13618,14 @@
    "sha256": "6076c14e6654863c235a60270f99a738e4b3a2451473513e1046598f8853724e",
    "banked": "2026-09-06",
    "tags": [
-    "driving-verifier"
+    "driving-verifier",
+    "safety-head-lit"
    ],
-   "note": "DriveVer: lightweight test-time trajectory verifier for driving, dual head evaluation plus geometric refinement",
+   "note": "DriveVer: lightweight test-time trajectory verifier for driving, dual head evaluation plus geometric refinement | safety-head-lit: class-balanced high/low-quality candidate sampling to calibrate the verifier decision boundary (sec. III-B); screened, no sub-score table used",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md"
    ]
   },
   "2606.08525": {
@@ -13660,12 +13684,14 @@
    "tags": [
     "B7",
     "B7-diffusion-flow",
-    "driving-verifier"
+    "driving-verifier",
+    "safety-head-lit"
    ],
-   "note": "FlowR2A: learns a reward-conditioned action distribution over a dense driving action vocabulary from simulation rewards | FlowR2A: flow-matching p(a|reward), 60 proposals 20 Euler steps 91.3 ms; navtest v1 92.8 PDMS, v2 88.9 EPDMS; uses ego status | FlowR2A FULL TEXT: reward-conditioned flow decoder p(a|r); per-timestep reward conditioning TTC 88.8->94.9; without reward noise the reward acts as a trajectory identifier (leak); navtest 92.8 PDMS / 88.9 EPDMS; 91 ms H20",
+   "note": "FlowR2A: learns a reward-conditioned action distribution over a dense driving action vocabulary from simulation rewards | FlowR2A: flow-matching p(a|reward), 60 proposals 20 Euler steps 91.3 ms; navtest v1 92.8 PDMS, v2 88.9 EPDMS; uses ego status | FlowR2A FULL TEXT: reward-conditioned flow decoder p(a|r); per-timestep reward conditioning TTC 88.8->94.9; without reward noise the reward acts as a trajectory identifier (leak); navtest 92.8 PDMS / 88.9 EPDMS; 91 ms H20 | safety-head-lit: continuous TTC label (App F.2.4 p20) + per-timestep aux heads; Tab.7 p15 weights as free EP<->TTC knob",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-vla-design-dialogue/LIT_COT_INFLUENCE_CONSISTENCY.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md",
     "TanitAD Research Lab/Frontier Scan/Daily/2026-09-15/RESULT.md",
     "TanitAD Research Lab/Frontier Scan/Daily/2026-09-18/RESULT.md"
    ]
@@ -14250,15 +14276,17 @@
     "navsim-scorer-trade",
     "recovered-orphan",
     "refe-rl-posttrain",
+    "safety-head-lit",
     "zero-tail"
    ],
-   "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | CLOVER: closed-loop value estimation and ranking for E2E planning, NAVSIM | CLOVER Tab.5: Oracle@64 PDMS 0.9933-0.9976 vs selected 0.9369-0.9448 (gap 0.050-0.056) on 12,146 navtest scenes; Tab.1 NC 99.1 DAC 99.0 PDMS 94.5",
+   "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | CLOVER: closed-loop value estimation and ranking for E2E planning, NAVSIM | CLOVER Tab.5: Oracle@64 PDMS 0.9933-0.9976 vs selected 0.9369-0.9448 (gap 0.050-0.056) on 12,146 navtest scenes; Tab.1 NC 99.1 DAC 99.0 PDMS 94.5 | safety-head-lit: App. p8/p27 scorer calibration (s>=0.95 -> true mean 0.9753), Tab.20 p30 backbone swap moves test top-1 only 92.4->92.7; Tab.10 p16 261-candidate bank families",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-19-drivor-deep-analysis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/RL_POSTTRAIN_REVIEW.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md"
    ]
   },
@@ -15227,14 +15255,16 @@
    "tags": [
     "navsim-scorer-trade",
     "rl-teacher-driving",
+    "safety-head-lit",
     "zero-tail"
    ],
-   "note": "ZTRS: zero-imitation E2E driving with trajectory scoring, RL on REAL images + rule-based rewards, no simulated data; 48.1 EPDMS navhard | ZTRS Tab.4 (EPDMS): RL on enumerated rule rewards vs IL: DAC 98.7 to 99.4, NC 98.5 to 97.8, EP 88.5 to 84.1 - NC/DAC zero proxy unchanged; Tab.8 safety-only reward DAC 99.3 EP 63.3",
+   "note": "ZTRS: zero-imitation E2E driving with trajectory scoring, RL on REAL images + rule-based rewards, no simulated data; 48.1 EPDMS navhard | ZTRS Tab.4 (EPDMS): RL on enumerated rule rewards vs IL: DAC 98.7 to 99.4, NC 98.5 to 97.8, EP 88.5 to 84.1 - NC/DAC zero proxy unchanged; Tab.8 safety-only reward DAC 99.3 EP 63.3 | safety-head-lit: Tab.8 p17 reward composition EP 63.3->83.8 with NC/DAC held; scorer token = 40 steps x 7 per-step features incl. motion differences (p16)",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-drivezero-deep-analysis/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md"
    ]
   },
   "2203.05625": {
@@ -18247,11 +18277,13 @@
    "sha256": "5f3a923f4d39d0808aa70cb505582bcddf87f2e7ab4050bc44242e0f1b282280",
    "banked": "2026-10-18",
    "tags": [
-    "navsim-ep-mechanism"
+    "navsim-ep-mechanism",
+    "safety-head-lit"
    ],
-   "note": "SparseDriveV2: factorized vocabulary (geometric paths x velocity profiles) + coarse-to-fine scoring; 92.0 PDMS on navtest with ResNet-34",
+   "note": "SparseDriveV2: factorized vocabulary (geometric paths x velocity profiles) + coarse-to-fine scoring; 92.0 PDMS on navtest with ResNet-34 | safety-head-lit: Tab.1 p2 denser anchors keep helping (EPDMS 85.02->87.35, no saturation); Tab.6 p15 deformable aggregation vs MHA",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md"
    ]
   },
   "2609.01799": {
@@ -18273,11 +18305,13 @@
    "sha256": "185e67742f954520c3092623a4cfc7c06f1ffe29c374c224fb84fe3f9ea4cccd",
    "banked": "2026-10-18",
    "tags": [
-    "navsim-ep-mechanism"
+    "navsim-ep-mechanism",
+    "safety-head-lit"
    ],
-   "note": "Designing Versatile Samples for Learned Trajectory Scoring (sample/vocabulary design for learned scorers)",
+   "note": "Designing Versatile Samples for Learned Trajectory Scoring (sample/vocabulary design for learned scorers) | safety-head-lit: Tab.5 p8 longitudinal-only designed samples give the NC gain, lateral-only the DAC gain (scorer-only, frozen planners)",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md"
    ]
   },
   "2610.13781": {
@@ -18529,6 +18563,124 @@
    "note": "SafeAlign-VLA: negative-enhanced SFT + anchor-based GRPO over positive/negative anchors; NAVSIM v1 89.1",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md"
+   ]
+  },
+  "2609.36438": {
+   "key": "2609.36438",
+   "kind": "arxiv",
+   "title": "World4Scorer: Outcome-Grounded World Modeling for Autonomous Driving",
+   "authors": [
+    "Jieyuan Pei",
+    "Meiyi Lu",
+    "Sining Ang",
+    "Yubo Zhao",
+    "Zhangyi Hu",
+    "Mingwei Xu",
+    "Haokai Ding",
+    "Wei Li",
+    "Zihan You",
+    "Jianwei Zheng",
+    "Li Yu",
+    "Yifeng Pan"
+   ],
+   "published": "2026-09-29",
+   "abstract": "Autonomous driving requires choosing a safe and efficient plan as surrounding traffic evolves. Generate-and-select planners propose multiple trajectories and score them for execution, and they have outperformed representative direct-prediction baselines on NAVSIM. Their scorer must compare plans that were never executed. Driving logs record the future of only the executed trajectory, so matching the logged future can leave predictions for the alternatives unconstrained; a simulator, in contrast, can label the outcome of every candidate. We introduce World4Scorer, which builds the scorer as a trajectory-conditioned JEPA-style predictor: it predicts a state for each candidate and reads the candidate's scores from that state. Simulator outcome labels supervise the states of all candidates, and the observed future of the executed trajectory anchors the predictor to real scene evolution. Beca",
+   "url": "https://arxiv.org/abs/2609.36438",
+   "path": "TanitAD Research Lab/Library/papers/2609.36438_World4Scorer-Outcome-Grounded-World-Modeling-for-Autonomous.pdf",
+   "bytes": 17290068,
+   "sha256": "e0e4f0409189e96a4b85dc52b04de0419ca688b8ef83a902e3c20853f7971e53",
+   "banked": "2026-10-19",
+   "tags": [
+    "safety-head-lit"
+   ],
+   "note": "World4Scorer / Outcome-Grounded World Modeling: scorer trained on simulator outcomes for every candidate | safety-head-lit: World4Scorer Tab.2 p7 outcome-label pairing control (ordering accuracy 64.2% -> 55.6% when bank labels shuffled); scene-matched bank following CLOVER",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md"
+   ]
+  },
+  "2609.20377": {
+   "key": "2609.20377",
+   "kind": "arxiv",
+   "title": "MM-Future: Multi-Mode Joint World-Action Modeling for Autonomous Driving",
+   "authors": [
+    "Shuai Liu",
+    "Hechangle Gong",
+    "Hao Jiang",
+    "Runlin He",
+    "Junxiang Zhan",
+    "Kai Huang",
+    "Sheng Yang",
+    "Shaoqing Ren"
+   ],
+   "published": "2026-09-17",
+   "abstract": "Autonomous driving involves coupled decision-making and scene evolution under multi-mode uncertainty. To capture this coupling and uncertainty, we introduce MM-Future, a world-action model that generates multiple paired scene-action hypotheses and models bidirectional interaction within each pair. Each hypothesis is initialized from a structured action prior and an independent future scene source, which are then co-evolved through a modality-aware diffusion Transformer. To support efficient multi-mode rollout, MM-Future compresses multi-view video into planning-oriented representations, dubbed MM-Tokens. Finally, a future-conditioned proposal scorer ranks trajectory candidates by shared history context and their paired predicted future. On NAVSIM navtest, MM-Future achieves 94.0 PDMS and 91.5 EPDMS, while attaining a 32.3 HD-Score in zero-shot closed-loop evaluation on HUGSIM. Ablations ",
+   "url": "https://arxiv.org/abs/2609.20377",
+   "path": "TanitAD Research Lab/Library/papers/2609.20377_MM-Future-Multi-Mode-Joint-World-Action-Modeling-for-Autonom.pdf",
+   "bytes": 7730702,
+   "sha256": "5be8cedba70020d5db3bbbb49da9888afd309dd4610dba2ffa49a17e7a2907c3",
+   "banked": "2026-10-19",
+   "tags": [
+    "safety-head-lit"
+   ],
+   "note": "per-candidate future-conditioned scoring (NAVSIM) | safety-head-lit: Tab.3 p6 block C future-conditioned proposal scoring NC +0.1 DAC +0.2 TTC +0.5",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md"
+   ]
+  },
+  "2609.22317": {
+   "key": "2609.22317",
+   "kind": "arxiv",
+   "title": "EditWM: Event-Decomposed World Modeling with Incremental Correction for End-to-End Autonomous Driving",
+   "authors": [
+    "Junjie Yang",
+    "Qingwei Zeng",
+    "Youyou Li",
+    "Zicheng Ding",
+    "Ziyi Shi",
+    "Shuqi Shen",
+    "Hongliang Lu",
+    "Hai Yang"
+   ],
+   "published": "2026-09-15",
+   "abstract": "World models support autonomous driving by predicting the scene evolution associated with candidate trajectories. Driving dynamics differ in predictability, motivating a distinction between regular evolution and event-induced deviations that call for selective correction. We propose EditWM, a world model that decomposes future prediction into normal evolution and event-driven incremental correction in compact visual feature space. A trajectory-conditioned normal predictor provides the base forecast and is then frozen for correction learning. A correction decoder compares this forecast with observation history and planned actions, producing a bounded feature update whose contribution is regulated by a learned gate. The corrected future features condition trajectory scoring through candidate-specific cross-attention, linking world modeling to plan selection. At inference, EditWM uses only ",
+   "url": "https://arxiv.org/abs/2609.22317",
+   "path": "TanitAD Research Lab/Library/papers/2609.22317_EditWM-Event-Decomposed-World-Modeling-with-Incremental-Corr.pdf",
+   "bytes": 4692166,
+   "sha256": "14f919609081c5ff14673b18e7d9e0ee6f702e3f7d091347b7486f2e77c68793",
+   "banked": "2026-10-19",
+   "tags": [
+    "safety-head-lit"
+   ],
+   "note": "per-candidate future-conditioned scoring (NAVSIM) | safety-head-lit: EditWM, candidate-specific cross-attention to corrected future features; screened, no sub-score ablation",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md"
+   ]
+  },
+  "2602.18887": {
+   "key": "2602.18887",
+   "kind": "arxiv",
+   "title": "SafeDrive: Fine-Grained Safety Reasoning for End-to-End Driving in a Sparse World",
+   "authors": [
+    "Jungho Kim",
+    "Jiyong Oh",
+    "Seunghoon Yu",
+    "Hongjae Shin",
+    "Donghyuk Kwak",
+    "Jun Won Choi"
+   ],
+   "published": "2026-02-21",
+   "abstract": "The end-to-end (E2E) paradigm, which maps sensor inputs directly to driving decisions, has recently attracted significant attention due to its unified modeling capability and scalability. However, ensuring safety in this unified framework remains one of the most critical challenges. In this work, we propose SafeDrive, an E2E planning framework designed to perform explicit and interpretable safety reasoning through a trajectory-conditioned Sparse World Model. SafeDrive comprises two complementary networks: the Sparse World Network (SWNet) and the Fine-grained Reasoning Network (FRNet). SWNet constructs trajectory-conditioned sparse worlds that simulate the future behaviors of critical dynamic agents and road entities, providing interaction-centric representations for downstream reasoning. FRNet then evaluates agent-specific collision risks and temporal adherence to drivable regions, enabl",
+   "url": "https://arxiv.org/abs/2602.18887",
+   "path": "TanitAD Research Lab/Library/papers/2602.18887_SafeDrive-Fine-Grained-Safety-Reasoning-for-End-to-End-Drivi.pdf",
+   "bytes": 8700304,
+   "sha256": "a12badef94f4265f6365055aa60664ce818636259d06843e2acc418c1d40ae09",
+   "banked": "2026-10-19",
+   "tags": [
+    "safety-head-lit"
+   ],
+   "note": "NAVSIM generator-scorer safety reasoning / JEPA planner | safety-head-lit: Tab.6 p7 per-agent per-step collision factor and per-step DAC with 9-point drivable-map lookup raise NC/DAC/TTC; Eq.3-4 p5",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md"
    ]
   }
  }
