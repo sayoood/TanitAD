@@ -1,0 +1,75 @@
+F.FFF                                                                    [100%]
+================================== FAILURES ===================================
+_______________________ test_caller_scores_through_fix1 _______________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5812/test_caller_scores_through_fix0')
+fake_governor = {'governed': 1, 'joblock': 1, 'already_scored': 1}
+
+    def test_caller_scores_through_fix1(tmp_path, fake_governor):
+        mod = _caller(_w3(tmp_path))
+        out = tmp_path / "out"
+        seam = tmp_path / "seam.npz"
+        seam.write_bytes(b"")
+        rc = mod.main(["--label", "r7_nt_fix1_probe", "--seam", str(seam), "--out", str(out)])
+        assert rc == 0
+        who = json.load(open(out / "WHO.json", encoding="utf-8"))
+>       assert who["who"] == "FIX1", f"caller scored through {who['who']}, not run_v1_fix1.load()"
+E       AssertionError: caller scored through UNFIXED, not run_v1_fix1.load()
+E       assert 'UNFIXED' == 'FIX1'
+E         
+E         - FIX1
+E         + UNFIXED
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\tests\test_score_navtest7_fix1.py:110: AssertionError
+_____________ test_official_control_path_also_scores_through_fix1 _____________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5812/test_official_control_path_als0')
+fake_governor = {'governed': 1, 'joblock': 0, 'already_scored': 0}
+
+    def test_official_control_path_also_scores_through_fix1(tmp_path, fake_governor):
+        """KH-navtest's ``--official STOP`` path (no seam, so no per-job lock) goes through the same loader."""
+        mod = _caller(_w3(tmp_path))
+        out = tmp_path / "out"
+        rc = mod.main(["--label", "r7_nt_fix1_probe", "--official", "STOP", "--out", str(out)])
+        assert rc == 0
+        who = json.load(open(out / "WHO.json", encoding="utf-8"))
+>       assert who["who"] == "FIX1" and who["arm"] == "STOP"
+E       AssertionError: assert ('UNFIXED' == 'FIX1'
+E         
+E         - FIX1
+E         + UNFIXED)
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\tests\test_score_navtest7_fix1.py:130: AssertionError
+_______________ test_missing_fix1_is_loud_not_a_silent_fallback _______________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-5812/test_missing_fix1_is_loud_not_0')
+fake_governor = {'governed': 1, 'joblock': 1, 'already_scored': 1}
+
+    def test_missing_fix1_is_loud_not_a_silent_fallback(tmp_path, fake_governor):
+        mod = _caller(_w3(tmp_path, with_fix1=False))
+        seam = tmp_path / "seam.npz"
+        seam.write_bytes(b"")
+>       with pytest.raises(SystemExit) as e:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE SystemExit
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\tests\test_score_navtest7_fix1.py:138: Failed
+________ test_caller_source_names_fix1_once_and_no_direct_run_v1_exec _________
+
+    def test_caller_source_names_fix1_once_and_no_direct_run_v1_exec():
+        src = open(CALLER, encoding="utf-8").read()
+>       assert src.count('"run_v1_fix1.py"') == 1
+E       assert 0 == 1
+E        +  where 0 = <built-in method count of str object at 0x0000026BF1488E50>('"run_v1_fix1.py"')
+E        +    where <built-in method count of str object at 0x0000026BF1488E50> = '#!/usr/bin/env python3\n# PORTED from the refcv6 NavSim suite: FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-ref...h, indent=1)\n    except OSError:\n        pass\n    return rc\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n'.count
+
+FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-28-refcv7-standard-tests\navsim\tests\test_score_navtest7_fix1.py:147: AssertionError
+=================================== PASSES ====================================
+=========================== short test summary info ===========================
+PASSED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_score_navtest7_fix1.py::test_fake_governor_was_the_one_used
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_score_navtest7_fix1.py::test_caller_scores_through_fix1
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_score_navtest7_fix1.py::test_official_control_path_also_scores_through_fix1
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_score_navtest7_fix1.py::test_missing_fix1_is_loud_not_a_silent_fallback
+FAILED FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/tests/test_score_navtest7_fix1.py::test_caller_source_names_fix1_once_and_no_direct_run_v1_exec
+4 failed, 1 passed in 0.29s
+rc=1

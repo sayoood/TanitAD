@@ -2,8 +2,9 @@
 
     python colab/navtest/pack_code.py --out <scratch>/p0_code.tgz --evidence colab/raw/<date>-navtest-p0
 
-Carries: this directory's VM scripts; W3's harness driver + wrapper + agents and E1's wrapper (imported unchanged by
-linux_run_v1.py); the REFe seam modules exactly as the dev box's eval runs them; the two venv pin lists; the public-
+Carries: this directory's VM scripts; W3's harness driver + its pinned fix wrapper run_v1_fix1.py (NT-FIX1) + wrapper +
+agents and E1's wrapper (imported by linux_run_v1.py, run_v1 through run_v1_fix1.load()); the REFe seam modules exactly
+as the dev box's eval runs them; the two venv pin lists; the public-
 data fetch manifests; the JPEG decode probe (4 JPEGs of one public navtest token + the dev box's decode hashes);
 signed_pull.py. Writes code_manifest.json (every file's source path, bytes, sha256) into --evidence, so the exact
 code that ran on the VM is on record. No key, token, link or private data is in the bundle.
@@ -34,7 +35,9 @@ def main() -> int:
     a = ap.parse_args()
     files = {f"navtest/{n}": f"{HERE}/{n}" for n in ("vm_p0.py", "linux_run_v1.py", "navsim_v1_linux.py",
                                                       "e6_linux.py", "seam_shards.py", "zip_member_fetch.py")}
-    files.update({f"w3code/{n}": f"{W3C}/{n}" for n in ("run_v1.py", "navsim_v1_win.py", "w3_agents_v1.py")})
+    # NT-FIX1 (2026-10-19): run_v1_fix1.py MUST sit beside run_v1.py (linux_run_v1.py loads run_v1 through it)
+    files.update({f"w3code/{n}": f"{W3C}/{n}" for n in ("run_v1.py", "run_v1_fix1.py", "navsim_v1_win.py",
+                                                         "w3_agents_v1.py")})
     files["e1/navsim_win.py"] = E1
     for m in ("planner", "model", "ckpt_io", "load_dinov3", "navtrain_scenarios", "calib_table"):
         files[f"pkg/refe/{m}.py"] = f"{PKG}/refe/{m}.py"

@@ -2,7 +2,7 @@
 """Score ONE refcv6 seam on NAVSIM v1.1 ``navtest`` with W3's harness, IMPORTED (any python).
 
 W3's ``run_v1.py`` (``…/2026-09-19-navsim-v1-navtest/code/``) is loaded by path and its
-``cmd_score`` is called UNCHANGED — the v1.1 tree ``3e8291b``, W3's Windows wrapper (the loader
+``cmd_score`` is called UNCHANGED (through ``run_v1_fix1.load()``, NT-FIX1) — the v1.1 tree ``3e8291b``, W3's Windows wrapper (the loader
 separator patch, observation-only hooks, RAM guard), W3's ``SeamAgentV1`` (token-keyed,
 fingerprint-checked), the navtest metric cache (12,146 cached), ``PYTHONHASHSEED=1``, and its
 guards: C1 the PDMS identity on every row, C2 log/CSV counts, C3 the token set, the seam call
@@ -39,10 +39,18 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
     if not a.label.startswith("r6"):
         sys.exit("⛔ labels must start with 'r6' so the devkit scratch never collides with W3's")
-    spec = importlib.util.spec_from_file_location("w3_run_v1", os.path.join(W3_CODE, "run_v1.py"))
-    w3 = importlib.util.module_from_spec(spec)
-    sys.modules["w3_run_v1"] = w3
-    spec.loader.exec_module(w3)
+    # NT-FIX1 (2026-10-19): W3's run_v1.py is loaded THROUGH run_v1_fix1.load(), which byte-verifies it
+    # against its pinned sha256 and adds three fixes measured on RL-1's V1 navtest: (A) a cross-drive
+    # os.path.relpath no longer crashes the report, (B) stale *.csv from an earlier attempt are moved to
+    # quarantine_* before scoring, (C) a count-mismatched CSV prints and stores NO summary.
+    # FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-19-navtest-harness-fix/RESULT.md
+    fix1_path = os.path.join(W3_CODE, "run_v1_fix1.py")
+    if not os.path.isfile(fix1_path):
+        sys.exit(f"⛔ {fix1_path} is missing: sync the W3 code dir (run_v1_fix1.py landed 2026-10-19)")
+    spec = importlib.util.spec_from_file_location("w3_run_v1_fix1", fix1_path)
+    fx = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fx)
+    w3 = fx.load()
     os.makedirs(a.out, exist_ok=True)
     w3.RAW = os.path.abspath(a.out)                  # where every artifact lands
     w3.PKG = PKG                                     # only used for a relpath in the counts (C: vs D:)

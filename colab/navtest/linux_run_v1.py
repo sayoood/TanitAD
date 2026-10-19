@@ -2,7 +2,8 @@
 """Linux launcher for W3's NAVSIM v1.1 harness (`run_v1.py`), for Colab/any Linux VM: `score` and `cache`.
 
 Promoted from the plan's banked prototype (`colab/raw/2026-09-27-navtest-plan/linux_score_v1.py`, exercised by the
-2026-09-27 CPU smoke). W3's `run_v1.py` is loaded by path and its `cmd_score` / `cmd_cache` run UNCHANGED; only the
+2026-09-27 CPU smoke). W3's `run_v1.py` is loaded by path THROUGH `run_v1_fix1.load()` (NT-FIX1: byte-pins it and adds
+three report-path fixes) and its `cmd_score` / `cmd_cache` run otherwise UNCHANGED; only the
 Windows path constants are re-pointed (NV_PY, V11_TREE, EXP, DATA, NAVTEST_YAML, WRAP, RAW, PKG and the ENV paths),
 and `WRAP` points at `navsim_v1_linux.py`, which does the same for W3's per-process wrapper and then calls ITS main().
 The devkit, W3's agents, guards C1-C3/C8/C9 and the scoring code are the unchanged files.
@@ -30,10 +31,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def load_w3(a):
-    spec = importlib.util.spec_from_file_location("w3_run_v1", os.path.join(a.w3_code, "run_v1.py"))
-    w3 = importlib.util.module_from_spec(spec)
-    sys.modules["w3_run_v1"] = w3
-    spec.loader.exec_module(w3)
+    # NT-FIX1 (2026-10-19): W3's run_v1.py is loaded THROUGH run_v1_fix1.load() (it sits beside run_v1.py in the
+    # bundle's w3code/), which byte-verifies run_v1.py against its pinned sha256 and adds three fixes measured on
+    # RL-1's V1 navtest: (A) a cross-drive os.path.relpath no longer crashes the report, (B) stale *.csv from an
+    # earlier attempt are moved to quarantine_* before scoring, (C) a count-mismatched CSV prints and stores NO
+    # summary. A missing run_v1_fix1.py is a hard stop, never a fallback to the unfixed module.
+    # FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-19-navtest-harness-fix/RESULT.md
+    fix1_path = os.path.join(a.w3_code, "run_v1_fix1.py")
+    if not os.path.isfile(fix1_path):
+        sys.exit(f"{fix1_path} is missing: pack_code.py must ship run_v1_fix1.py beside run_v1.py in w3code/")
+    spec = importlib.util.spec_from_file_location("w3_run_v1_fix1", fix1_path)
+    fx = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fx)
+    w3 = fx.load()
     w3.NV_PY = a.nv_py
     w3.V11_TREE = a.v11_tree
     w3.EXP = a.exp
