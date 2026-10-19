@@ -2295,3 +2295,11 @@ own path, gains frozen.
 
 **Needed by:** before the 48,852 read is interpreted (~2026-10-20 evening). Nothing waits on it until then; every
 read runs either way.
+
+## ✅ DECIDED (PI, 2026-10-19 ~15:35 Berlin) -- D-R8-SHIP-RETIME: option (a)
+
+Sayed, verbatim: *"(a)"* -- refcv8 ships WITH the frozen train-gain re-timing stage after its planner, conditional on the
+stage passing at the final checkpoint 48,852. The condition is pre-registered as SHIP-R8 in GOALS_AND_CLAIMS
+(D-R8-SHIP-RETIME), written before any 40k or 48,852 number exists. The flat-0.5 arm stays printed beside as a
+fallback read only; adopting it would be a new PI decision. ⚠️ Disclosed at decision time: the TACTICAL family had not
+yet been measured on the re-timed plan; SHIP-R8 requires it.
