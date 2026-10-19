@@ -1,0 +1,4 @@
+        if self.rule == "navsim_v1":
+            # NAVSIM v1 PDMS: NC x DAC x (5 EP + 5 TTC + 2 C) / 12 -- driving direction does not enter
+            w1 = torch.tensor(self.V1_W, device=p.device, dtype=p.dtype)
+            return p[..., 0] * p[..., 1] * (p[..., 2] * w1[0] + p[..., 3] * w1[1] + p[..., 4] * w1[2]) / w1.sum()
