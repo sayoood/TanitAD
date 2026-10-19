@@ -1,0 +1,110 @@
+--- ops1/orig/pgc_read_chain.py	2026-10-20 01:16:30.293140000 +0200
++++ code/pgc_read_chain.py	2026-10-20 01:17:11.342763800 +0200
+@@ -31,6 +31,7 @@
+ RUNPY, EXTRACT = f"{HERE}/pgc_run.py", f"{HERE}/pg_extract.py"
+ N_LOGS, N_WORKERS, MIN_GB = 76, 2, 6.0
+ STALE_MIN, MAX_RESPAWN = 150, 3
++DONE_SLACK_S = 2.0          # filesystem mtime granularity: a done record counts if written at or after (worker start - this)
+ 
+ 
+ def now() -> str:
+@@ -106,11 +107,60 @@
+     return (sum(1 for f in ls if f.endswith(".npz") and ".tmp." not in f), [f for f in ls if f.endswith(".lock")], [f for f in ls if f.endswith(".failed")])
+ 
+ 
++def done_records() -> list:
++    """[(file name, mtime)] of every WORKER_DONE_<pid>.txt in the scalar store.  On Windows the venv `python.exe` that Popen starts is a LAUNCHER: the interpreter that runs pg_extract.py (and writes
++    WORKER_DONE_<its own pid>.txt) has a DIFFERENT pid from `Popen.pid`, so a record can never be looked up by the launcher's pid (OPS1: the first read stopped on exactly that)."""
++    out = []
++    if os.path.isdir(SCAL):
++        for f in os.listdir(SCAL):
++            if f.startswith("WORKER_DONE_") and f.endswith(".txt"):
++                try:
++                    out.append((f, os.path.getmtime(f"{SCAL}/{f}")))
++                except OSError:
++                    pass
++    return out
++
++
++def worker_finished(rc, t_start: float, records: list, claimed: set, n: int, locks: list, failed: list):
++    """(finished, how, record claimed).  A worker that exited rc 0 is FINISHED iff a WORKER_DONE record written at/after its start (under ANY pid, not already claimed by another worker) exists, OR all N_LOGS
++    are extracted with no lock held and no .failed marker.  A nonzero rc, or rc 0 with logs still missing and no done record, is a CRASH."""
++    if rc != 0:
++        return False, f"rc={rc}", None
++    for name, mt in sorted(records, key=lambda r: r[1]):
++        if name not in claimed and mt >= t_start - DONE_SLACK_S:
++            return True, f"done record {name}", name
++    if n >= N_LOGS and not locks and not failed:
++        return True, f"all {N_LOGS} logs extracted, no lock held", None
++    return False, "rc=0 without a done record and with logs missing", None
++
++
++def lock_pid(path: str):
++    try:
++        return int(open(path).read().split()[0])
++    except Exception:                                                                    # noqa: BLE001
++        return None
++
++
++def stale_lock(pid) -> bool:
++    """True iff the lock's owner is gone (no such process, or a process that is not a pg_extract.py).  The lock records the INTERPRETER's pid (os.getpid() in the worker), never the launcher's Popen.pid."""
++    if pid is None:
++        return False                                                                     # empty/unreadable: possibly being written right now -> leave it
++    try:
++        pr = psutil.Process(pid)
++        return not (pr.is_running() and any("pg_extract" in c for c in pr.cmdline()))
++    except psutil.NoSuchProcess:
++        return True
++    except psutil.Error:
++        return False
++
++
+ def spawn(k: int):
+     wait_ram(f"worker{k}")
+     logf = open(f"{RC}/worker{k}.log", "a", encoding="utf-8")
++    t0 = time.time()                                                                     # OPS1: a done record counts for this worker only if written at/after this instant
+     p = subprocess.Popen([PY, "-B", "-W", "ignore", EXTRACT, "work", "--subset", SUBSET, "--out", SCAL], stdout=logf, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                          env=base_env(OMP_NUM_THREADS="1"), cwd=HERE)
++    p.t_start = t0
+     say(f"worker{k} started pid {p.pid} (available RAM {avail():.2f} GB)")
+     return p
+ 
+@@ -144,10 +194,13 @@
+         os.remove(f"{SCAL}/{lk}")
+     say(f"ZZPGC_EXTRACT_START {N_WORKERS} workers; {n0}/{N_LOGS} logs already extracted; RAM start gate {MIN_GB} GB")
+     t_ext = time.time()
+-    workers, respawns = {}, 0
+-    for k in range(1, N_WORKERS + 1):
+-        workers[k] = spawn(k)
+-        time.sleep(90)                                                                   # let the first worker load its engine before the second asks for RAM
++    workers, respawns, claimed = {}, 0, set()
++    if n0 >= N_LOGS:                                                                     # OPS1: a relaunch with every log already extracted (stale locks were removed above) spawns NO worker
++        say(f"extraction already complete ({n0}/{N_LOGS}): no worker spawned")
++    else:
++        for k in range(1, N_WORKERS + 1):
++            workers[k] = spawn(k)
++            time.sleep(90)                                                               # let the first worker load its engine before the second asks for RAM
+     last_state, last_change, last_report = None, time.time(), 0.0
+     while True:
+         n, locks, failed = counts()
+@@ -160,13 +213,16 @@
+             rc = p.poll()
+             if rc is None:
+                 continue
+-            done = os.path.exists(f"{SCAL}/WORKER_DONE_{p.pid}.txt")
+-            if rc == 0 and done:
++            ok, how, rec = worker_finished(rc, p.t_start, done_records(), claimed, n, locks, failed)
++            if ok:
++                if rec:
++                    claimed.add(rec)
++                say(f"worker{k} pid {p.pid} finished ({how})")
+                 del workers[k]
+                 continue
+-            for lk in locks:                                                             # a worker died: free the lock it held so a replacement can take that log
++            for lk in locks:                                                             # a worker died: free the lock(s) whose owner is gone so a replacement can take that log
+                 try:
+-                    if open(f"{SCAL}/{lk}").read().split()[0] == str(p.pid):
++                    if stale_lock(lock_pid(f"{SCAL}/{lk}")):
+                         os.remove(f"{SCAL}/{lk}")
+                 except Exception:                                                        # noqa: BLE001
+                     pass

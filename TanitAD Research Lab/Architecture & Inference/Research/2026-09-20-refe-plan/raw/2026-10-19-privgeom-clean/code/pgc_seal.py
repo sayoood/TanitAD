@@ -11,6 +11,9 @@ What the seal is (every point is a REFUSAL; each has a RED arm in test_pgc_seal.
   4. Every row of the prereg's section-13 pins table equals the sealed pin of that file, and the table covers every sealed pin (the table cannot go stale or omit a file).
   5. The Revision-1 block of the prereg is the MM ruling VERBATIM (de-quoted, it equals MM_RULING_PGCLEAN.md) and that file hashes to its sealed sha256.
   6. Amendments (PREREG_PRIVGEOM_CLEAN_AMENDMENT<k>.md + .sha256) are each verified the same way as the prereg's hash.
+     OPERATIONAL amendments (PREREG_PRIVGEOM_CLEAN_AMENDMENT_OPS<k>.md + .sha256; OPS1) are verified the same way, must read STATUS SEALED, and MAY re-pin a code file between OPS_REPIN_BEGIN / OPS_REPIN_END markers
+     ({"repin": {"code/<f>": {"from": <pin in force>, "to": <sha now on disk>}}}): ONLY the operational files in REPINNABLE (never analysis code, a frozen suite or ref/), and only a chain that starts at the SEALED pin.
+     The sealed prereg, its section-13 table and SEALED_AT.txt are never rewritten: the pin in force is the sealed pin carried forward through the amendments.
   7. With --inputs: the label-free input files (census meta, token bank, coverage, plant calibration, G-LIVE registration) hash to their sealed sha256.
 Hashes are over RAW BYTES (every pinned file is LF-only, so the staged repo copy hashes the same).
 """
@@ -34,6 +37,11 @@ BEGIN, END = "<!-- MM_RULING_VERBATIM_BEGIN -->", "<!-- MM_RULING_VERBATIM_END -
 STATUS_RE = re.compile(r"^\*\*STATUS:\s*([A-Za-z][A-Za-z-]*)", re.M)
 TABLE_RE = re.compile(r"^\|\s*`([^`]+)`\s*\|[^|]*\|\s*`([0-9a-f]{64})`\s*\|\s*$", re.M)
 SELF_DERIVED = ("code/PINS.json",)                 # derived from the pins by pgc_pins.py, so not a row of the prereg table
+OPS_TAG = "_AMENDMENT_OPS"
+REPIN_BEGIN, REPIN_END = "<!-- OPS_REPIN_BEGIN -->", "<!-- OPS_REPIN_END -->"
+SHA_RE = re.compile(r"^[0-9a-f]{64}$")
+# the files an OPERATIONAL amendment may re-pin: the read controller, the seal tool + its derived pin table, and the launch/staging scripts.  NEVER analysis code (pg_*, pgc_lib/admit/run/coverage/design/...), a frozen suite or ref/.
+REPINNABLE = ("code/pgc_read_chain.py", "code/pgc_seal.py", "code/PINS.json", "code/pgc_pins.py", "code/build_package.py", "code/launch.ps1", "code/finish_clean.sh", "code/rehearsal_chain.sh")
 
 
 class SealError(RuntimeError):
@@ -83,6 +91,53 @@ def _verbatim_ok(text: str, ruling_path: str) -> bool:
     return blk is not None and blk.strip("\n") == read_text(ruling_path).strip("\n")
 
 
+def repin_block(text: str, who: str) -> dict:
+    """{file: {"from": sha, "to": sha}} from the OPS_REPIN block of an operational amendment ({} if the amendment carries none)."""
+    a, b = text.find(REPIN_BEGIN), text.find(REPIN_END)
+    if a < 0 and b < 0:
+        return {}
+    if a < 0 or b < a:
+        raise SealError(f"{who}: malformed OPS_REPIN block")
+    body = "\n".join(ln for ln in text[a + len(REPIN_BEGIN):b].strip().splitlines() if not ln.strip().startswith("```"))
+    try:
+        rp = json.loads(body)["repin"]
+    except Exception as e:                                                               # noqa: BLE001
+        raise SealError(f"{who}: unreadable OPS_REPIN block ({type(e).__name__})") from None
+    if not isinstance(rp, dict):
+        raise SealError(f"{who}: OPS_REPIN 'repin' is not an object")
+    return rp
+
+
+def amendments(root: str, prereg_name: str, pins: dict):
+    """-> (pins in force, {amendment key: sha256}, {file: sha256 it was re-pinned to}).  Plain amendments are hash-checked only; operational (OPS) amendments are hash-checked, must read SEALED, and may re-pin REPINNABLE files."""
+    stem, eff, amend, repinned = f"{root}/{prereg_name[:-3]}", dict(pins), {}, {}
+    for tag, key in (("_AMENDMENT", "amend"), (OPS_TAG, "amend_ops")):
+        k = 1
+        while os.path.exists(f"{stem}{tag}{k}.md"):
+            a = f"{stem}{tag}{k}.md"
+            ash = a[:-3] + ".sha256"
+            who = f"Amendment {k}" if tag == "_AMENDMENT" else f"Operational amendment {k}"
+            if not os.path.exists(ash) or sha_file(a) != open(ash, encoding="utf-8").read().split()[0]:
+                raise SealError(f"{who} does not hash to its recorded sha256")
+            amend[f"{key}{k}"] = open(ash, encoding="utf-8").read().split()[0]
+            if tag == OPS_TAG:
+                text = read_text(a)
+                if status_of(text) != "SEALED":
+                    raise SealError(f"{who} status is {status_of(text)!r}, not SEALED: a draft operational amendment re-pins nothing")
+                for name, e in repin_block(text, who).items():
+                    if name not in REPINNABLE:
+                        raise SealError(f"{who}: re-pin of {name} refused (not an operational file; analysis code, frozen suites and ref/ can never be re-pinned by an operational amendment)")
+                    if name not in eff:
+                        raise SealError(f"{who}: {name} is not a sealed pin")
+                    if not (isinstance(e, dict) and SHA_RE.match(str(e.get("from"))) and SHA_RE.match(str(e.get("to"))) and e["from"] != e["to"]):
+                        raise SealError(f"{who}: malformed re-pin entry for {name}")
+                    if e["from"] != eff[name]:
+                        raise SealError(f"{who}: {name} re-pin starts from {e['from'][:12]} but the pin in force is {eff[name][:12]}")
+                    eff[name] = repinned[name] = e["to"]
+            k += 1
+    return eff, amend, repinned
+
+
 def check_seal(root: str = ROOT, *, prereg_name: str = PREREG_NAME, required=(), inputs: bool = False) -> dict:
     """Raise SealError unless the seal holds.  Reads only the prereg, its .sha256, SEALED_AT.txt, the ruling, the pinned files (and the inputs with inputs=True)."""
     prereg = f"{root}/{prereg_name}"
@@ -112,7 +167,8 @@ def check_seal(root: str = ROOT, *, prereg_name: str = PREREG_NAME, required=(),
     miss = [n for n in required if n not in pins]
     if miss:
         raise SealError(f"{SEALED_AT_NAME} does not pin file(s) the read uses: {miss}")
-    bad = [n for n, h in sorted(pins.items()) if not os.path.exists(f"{root}/{n}") or sha_file(f"{root}/{n}") != h]
+    eff, amend, repinned = amendments(root, prereg_name, pins)                           # the pin in force: the sealed pin carried forward through the SEALED operational amendments
+    bad = [n for n, h in sorted(eff.items()) if not os.path.exists(f"{root}/{n}") or sha_file(f"{root}/{n}") != h]
     if bad:
         raise SealError(f"pinned file(s) differ from the seal (edited after sealing?): {bad}")
     tab = table_pins(text)                                                               # the section-13 table must be the sealed pins, in both directions
@@ -124,21 +180,13 @@ def check_seal(root: str = ROOT, *, prereg_name: str = PREREG_NAME, required=(),
         raise SealError("MM_RULING_PGCLEAN.md is missing or differs from its sealed sha256")
     if not _verbatim_ok(text, ruling):
         raise SealError("Revision 1 is not the MM ruling verbatim (the de-quoted block differs from MM_RULING_PGCLEAN.md)")
-    amend, k = {}, 1
-    while os.path.exists(f"{root}/{prereg_name[:-3]}_AMENDMENT{k}.md"):
-        a = f"{root}/{prereg_name[:-3]}_AMENDMENT{k}.md"
-        ash = a[:-3] + ".sha256"
-        if not os.path.exists(ash) or sha_file(a) != open(ash, encoding="utf-8").read().split()[0]:
-            raise SealError(f"Amendment {k} does not hash to its recorded sha256")
-        amend[f"amend{k}"] = open(ash, encoding="utf-8").read().split()[0]
-        k += 1
     if inputs:
         ins = S.get("inputs") or {}
         bad_in = [key for key, r in ins.items() if not os.path.exists(r["path"] if os.path.isabs(r["path"]) else f"{root}/{r['path']}")
                   or sha_file(r["path"] if os.path.isabs(r["path"]) else f"{root}/{r['path']}") != r["sha256"]]
         if bad_in or not ins:
             raise SealError(f"input file(s) differ from the seal (or none sealed): {bad_in}")
-    return {"pins": {"prereg": rec, **amend}, "sealed_at": S.get("sealed_at"), "revision": S.get("revision"), "n_code_pins": len(pins), "status": st, "inputs_checked": bool(inputs)}
+    return {"pins": {"prereg": rec, **amend}, "sealed_at": S.get("sealed_at"), "revision": S.get("revision"), "n_code_pins": len(pins), "repinned": repinned, "status": st, "inputs_checked": bool(inputs)}
 
 
 def seal(root: str = ROOT, *, sealed_by: str, inputs: dict, required=(), prereg_name: str = PREREG_NAME) -> dict:

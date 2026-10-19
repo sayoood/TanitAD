@@ -3,3 +3,20 @@
 [21:31:40] SEAL HOLDS: {"prereg": "148ebf0f2162b43ba7a1c29243fceac5900fe6b88ace3cae04fc27bdf29c6cf9"}
 [21:31:40] preflight: branch table clean
 [21:31:40] select OK: 76 logs, 10867 sets, 6140 tokens -> C:\Users\Admin\par18\pgclean/run_clean/subset_clean.json
+
+===== 2026-10-20T01:26:53+02:00 preflight (seal-check + branch table + select) =====
+[01:26:54] SEAL HOLDS: {"prereg": "148ebf0f2162b43ba7a1c29243fceac5900fe6b88ace3cae04fc27bdf29c6cf9", "amend_ops1": "3d84a135c4ab0aaff581817f379307db2184ca1694f4f7b7020282f544e7ee0d"}
+[01:26:54] preflight: branch table clean
+[01:26:54] select OK: 76 logs, 10867 sets, 6140 tokens -> C:\Users\Admin\par18\pgclean/run_clean/subset_clean.json
+
+===== 2026-10-20T01:26:54+02:00 join =====
+[01:26:54] join OK: 10867/10867 sets in 76 logs
+
+===== 2026-10-20T01:26:54+02:00 gate =====
+[01:29:16] gate PHASE A (label-free): PASS  join True  id-extract True  suites {'test_pg_geom.py': 0, 'test_pg_lib.py': 0, 'test_pgc_lib.py': 0, 'test_pgc_admit.py': 0, 'test_pgc_seal.py': 0}  branch-table True  grad-real True
+[01:29:16] gate: labels opened for 10867 retained sets
+[01:30:58] C-ADMIT: admissible True controls_ok True red-arm controls_ok False (102 s)
+[01:32:15] gate PASS: agree {'exact_frac': 1.0, 'n_prop': 695488, 'pass': True}  reach {'plantlabel_LG_s0': 1.0, 'plantlabel_G_s0': 1.0, 'plantlabel_LG_s1': 1.0, 'plantlabel_G_s1': 1.0}  admit True  suites {'test_pg_geom.py': 0, 'test_pg_lib.py': 0, 'test_pgc_lib.py': 0, 'test_pgc_admit.py': 0, 'test_pgc_seal.py': 0}
+
+===== 2026-10-20T01:36:57+02:00 analyze =====
+[01:37:11] analyze OK: final INCONCLUSIVE (raw INCONCLUSIVE; companion NULL; void_null False; power False)
