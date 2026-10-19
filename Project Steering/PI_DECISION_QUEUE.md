@@ -2270,3 +2270,28 @@ PI, verbatim: *"Switch to speed, acceleration and yaw rate"*. Closes the OPEN it
   reference reads os − ha0_ext_pose −0.0136 [−0.0286, +0.0018] / −0.0127 [−0.0272, +0.0024]: favourable, not separated.
 * Still open from the same night: whether refcv8 may ship with a frozen arc-length re-timing step if the train-clip fit
   passes (H-R8-RETIME-1), and the dev-box memory blocker.
+
+## ⏳ OPEN (2026-10-19 ~15:30 Berlin) -- D-R8-SHIP-RETIME: may refcv8 ship with a frozen re-timing stage after its planner?
+
+**Why it is asked.** refcv8's only failing bar is E1 (S2 ADE vs its causal prior `ha0_ext_pose`, D-R8-E1-REF). The
+defect is localised: the plan's path shape is fine, but its progress ALONG the path runs ahead of the prior by about
+2x. A post-hoc stage fixes it without retraining: `s'(t) = s_prior(t) + g_t (s_os(t) - s_prior(t))` along the plan's
+own path, gains frozen.
+
+**Evidence (MEASURED, T1 open loop, single training seed, EMA-30k, ceiling-compliant windows):**
+- H-R8-RETIME-TRAINFIT-1 (9e2c0b5): gains fitted on 139 TRAIN clips only, frozen, scored on eval139 =
+  **DEPLOYABLE-PASS**, E1 vs pose −0.0318 [−0.0433, −0.0201] / −0.0313 [−0.0426, −0.0194]; turns hold; no family
+  worse than refcv7-50,400. A flat gain of 0.5 (no fit at all) nearly matches.
+- H-R8-GAINTRAJ-1 (bac8be4): **STRUCTURAL** -- the over-scaling does not fade with training (best eval gain 0.50 at
+  5k → 0.46 at 30k, separated below zero), so the final checkpoint will not pass E1 without the stage. The train gains
+  sit above the eval optimum (0.69 vs 0.46), i.e. they under-correct on eval.
+
+**Options:**
+| | |
+|---|---|
+| **(a) RECOMMENDED: ship refcv8 WITH the frozen train-gain stage, conditional on it passing at 48,852** | No retraining, one cheap step per plan, nothing fitted on eval. The 40k and 48,852 reads run automatically (`code/tf40k_after_r8.sh`, `chain_final_r8.sh`) and print the flat-0.5 arm beside as the fallback. refcv9 then learns the along-track scale in-model. |
+| (b) ship refcv8 without it | refcv8 is reported as failing E1; the defect is carried to refcv9. |
+| (c) ship with the flat-0.5 stage instead | No fitted parameter at all; close to the eval optimum. Not the pre-registered arm, so it would need its own pre-registration before 48,852 is read. |
+
+**Needed by:** before the 48,852 read is interpreted (~2026-10-20 evening). Nothing waits on it until then; every
+read runs either way.
