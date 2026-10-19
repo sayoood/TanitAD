@@ -386,6 +386,7 @@ def static() -> None:
     rls1_static()
     aux_s1_static()
     hnscreen_static()
+    rls1e_static()
     field_static()
     fingerprint_identity_static()
 
@@ -2014,6 +2015,220 @@ def hnscreen_static() -> None:
             ok(any(frag in r for r in rs), (mid, rs))
     else:
         print("ZZTEST_SKIP hn_wiring_evidence.json absent (not counted)")
+
+
+# ====================================================================================================== R0e-pick: the refe_rls1e profile (PREREG_R0E_PICK 2.1, launch blockers B2 + B5)
+# ONE lever against R0d: `--epo-con-temp`.  The profile registers R0e-id (T 0.1, named), R0e-pick (0.01), R1e-pick (0.01, seed 1) and R1o (`--epo-con off`, no lever), requires the lever NAMED, REFUSES it on R1o,
+# and pins every argv to R0d's registered one token for token (`lineage`).  Every refusal has its positive twin, every rule its deliberate-regression arm, and three monkeypatch MUTATIONS prove the rules are
+# what refuse (not a neighbouring rule): with the lineage rule, the must-name rule, or the R1o forbid rule switched off, the argv they exist for is no longer refused BY THEM.
+E_ARMS = ("R0e-id", "R0e-pick", "R1e-pick", "R1o")
+E_TEMP = {"R0e-id": "0.1", "R0e-pick": "0.01", "R1e-pick": "0.01"}
+E_PREREG_SHA256 = "1be7a0301b454a21a0adcfc209ce73f63b7802a72d3155008a90ca616d5cccd0"
+
+
+def rls1e_static() -> None:
+    import contextlib
+    import hashlib
+    import io
+    import scorer_finetune as S
+    import rl_reward
+    P = L.PROFILES["refe_rls1e"]
+    arms_e = json.loads((PKG / "eval" / "rls1e_arms.json").read_text(encoding="utf-8"))
+    d_bytes = (PKG / "eval" / "rls1d_arms.json").read_bytes()
+    arms_d = json.loads(d_bytes.decode("utf-8"))
+    r0d = list(arms_d["arms"]["R0d"]["argv"])
+    ap = S.build_parser()
+
+    def refs(argv, arm, prof=None):
+        return L.profile_refusals({**(prof or P), "declared_arm": arm}, argv)
+
+    def clean(argv, arm, prof=None):
+        rs = refs(argv, arm, prof)
+        ok(rs == [], (arm, rs))
+
+    def red(argv, frag, arm, prof=None):
+        rs = refs(argv, arm, prof)
+        ok(any(frag in r for r in rs), (frag, arm, rs))
+    exp = {a: L.rls1e_expected_argv(a) for a in E_ARMS}
+    # ------------------------------------------------------------------ E1 the profile: refe_rls1d's runner, checks, flags and recipe; ITS arm table, must-name, forbid, lineage and suite
+    D = L.PROFILES["refe_rls1d"]
+    ok(P["name"] == "refe_rls1e" and P["runner"] == "scorer" and P["parser_module"] == "scorer_finetune" and P["trainer_src"] == "scorer_finetune.py" and P["arm_rules"] == "rls1" and P["lineage"] == "rls1e")
+    ok(all(P[k] == D[k] for k in ("checks", "na_ok", "required_flags", "data_flags", "live_terms", "output_flags", "namespace_funcs", "forbidden_flags", "trainer", "clock_na")) and P["mintable"] and P["require_commit"] and not P["rehearsal"])
+    ok(P["epo_con_block"] is True and "epo_registered" not in P and "must_name" not in P and "hn_rules" not in P and "schedule_reach" not in P)
+    ok(P["arm_class"] == {a: "R" for a in E_ARMS} and P["arm_seeds"] == {"R0e-id": 0, "R0e-pick": 0, "R1e-pick": 1, "R1o": 1} and "arms_need_pi" not in P)
+    ok(all(P["arm_must_name"][a] == ("--epo-con", "--epo-con-eps", "--epo-con-lr", "--epo-con-max", "--epo-con-lam0", "--epo-con-temp") for a in E_TEMP) and P["arm_must_name"]["R1o"] == ("--epo-con",))
+    ok(P["arm_forbid_flags"] == {"R1o": ("--epo-con-temp",)})
+    ok({a: P["arm_epo_registered"][a]["epo_con_temp"] for a in E_TEMP} == {"R0e-id": 0.1, "R0e-pick": 0.01, "R1e-pick": 0.01} and "epo_con_temp" not in P["arm_epo_registered"]["R1o"])
+    ok(all(P["arm_epo_registered"][a][k] == v for a in E_TEMP for k, v in L.RLS1D_CON_ON.items()) and P["arm_epo_registered"]["R1o"] == {"epo_con": "off"})
+    ok(P["arm_con_terms"]["R1o"] == () and all(P["arm_con_terms"][a] == L.RLS1D_CON_TERMS for a in E_TEMP))
+    ok(P["suite"] == L.RLS1D_SUITE + [{"script": "test_rl_pickcon.py", "token": "ZZTEST_PASS"}] and P["suite"][:len(L.RLS1D_SUITE)] == D["suite"])
+    for e in P["suite"]:                                                          # a renamed PASS token would make G-SUITE fail on the pod, not here
+        ok((HERE / e["script"]).is_file() and e["token"] in (HERE / e["script"]).read_text(encoding="utf-8"), e)
+    for nm in ("refe_rls1", "refe_rls1b", "refe_rls1c", "refe_rls1d", "refe_hnscreen", "refe_aux_s1", "refe_aux_s1c", "refe_sft4r"):          # no other profile carries the new keys (their dicts are untouched)
+        ok("lineage" not in L.PROFILES[nm] and "arm_forbid_flags" not in L.PROFILES[nm], nm)
+    ok(D["arm_must_name"] == L.RLS1D_ARM_MUST_NAME and D["arm_epo_registered"] == L.RLS1D_ARM_EPO_REGISTERED and D["suite"] == L.RLS1D_SUITE)           # refe_rls1d is what it was
+    ok(all(c in L.CHECKS for c in tuple(P["checks"]) + tuple(P.get("na_ok", ()))), "a profile names a check the gate does not know")
+    # ------------------------------------------------------------------ E2 the registered argvs: the gate's constant, eval/rls1e_arms.json and eval/rls1d_arms.json agree, token for token
+    ok(L.RLS1E_BASE_ARGV == r0d and L.GT.argv_sha256(L.RLS1E_BASE_ARGV) == arms_d["arms"]["R0d"]["argv_sha256"], "launch_gate.RLS1E_BASE_ARGV drifted from eval/rls1d_arms.json arms.R0d.argv")
+    ok(arms_e["schema"] == "rls1e_arms/1" and arms_e["profile"] == "refe_rls1e" and arms_e["order"] == list(E_ARMS) and set(arms_e["arms"]) == set(E_ARMS))
+    ok(arms_e["derived_from"]["file_sha256"] == hashlib.sha256(d_bytes.replace(b"\r\n", b"\n")).hexdigest() and arms_e["derived_from"]["argv_sha256"] == arms_d["arms"]["R0d"]["argv_sha256"], "rls1e_arms.json was derived from another rls1d_arms.json")
+    ok(arms_e["prereg_sha256"] == E_PREREG_SHA256)
+    prereg = PKG / "raw" / "2026-10-18-r0e-pick" / "PREREG_R0E_PICK.md"
+    if prereg.is_file():                                                          # the frozen pre-registration this file registers (absent from a pod's package: not a skip, the pin above stands)
+        ok(hashlib.sha256(prereg.read_bytes().replace(b"\r\n", b"\n")).hexdigest() == E_PREREG_SHA256, "PREREG_R0E_PICK.md changed after it was frozen")
+    for a in E_ARMS:
+        ar = arms_e["arms"][a]
+        ok(ar["argv"] == exp[a] == L.parse_args_string(ar["args"]), (a, "the arms file and the gate disagree on the registered argv"))
+        ok(ar["argv_sha256"] == L.GT.argv_sha256(ar["argv"]) and ar["seed"] == L.RLS1E_ARM_SEEDS[a] == P["arm_seeds"][a] and ar["class"] == "R", a)
+        ok(arms_e["self_check"]["per_arm"][a] and all(v is True for v in arms_e["self_check"]["per_arm"][a].values() if isinstance(v, bool)), a)
+    ok(arms_e["arms"]["R1o"]["argv"] == arms_d["arms"]["R1o"]["argv"] and arms_e["arms"]["R1o"]["argv_sha256"] == arms_d["arms"]["R1o"]["argv_sha256"] and "--epo-con-temp" not in arms_e["arms"]["R1o"]["argv"])
+    for a, t in E_TEMP.items():                                                  # PREREG 2.1, recomputed here and not trusted from the file: minus the lever, own paths swapped back and the seed read as R0d's, the argv IS R0d's
+        argv = arms_e["arms"][a]["argv"]
+        ok(argv[-2:] == ["--epo-con-temp", t] and argv.count("--epo-con-temp") == 1 and arms_e["arms"][a]["registered_con_temp"] == float(t) == P["arm_epo_registered"][a]["epo_con_temp"], a)
+        swapped = [x.replace(f"/workspace/data/rls1/arms/{a}", "/workspace/data/rls1/arms/R0d") for x in argv[:-2]]
+        swapped[swapped.index("--seed") + 1] = "0"
+        ok(swapped == r0d and len(argv) == len(r0d) + 2, a)                       # token for token
+        lever = {x for x in argv if x not in set(r0d)}
+        ok(lever == {"--epo-con-temp", t, f"/workspace/data/rls1/arms/{a}", f"/workspace/data/rls1/arms/{a}/scores"} | ({"1"} if a == "R1e-pick" else set()), (a, sorted(lever)))
+    r0e_pick = arms_e["arms"]["R0e-pick"]["argv"]
+    ok(arms_e["arms"]["R1e-pick"]["argv"] == [("1" if (i and r0e_pick[i - 1] == "--seed") else x.replace("/arms/R0e-pick", "/arms/R1e-pick")) for i, x in enumerate(r0e_pick)], "R1e-pick is R0e-pick with --seed 1 and its own paths")
+    # ------------------------------------------------------------------ E3 the clean argvs (positive twins), and the lever's position
+    for a in E_ARMS:
+        clean(exp[a], a)
+    clean(["--epo-con-temp", "0.01"] + L._strip_lever(exp["R0e-pick"])[0], "R0e-pick")             # the lever pair's position is argparse's business; the rest stays R0d's, token for token
+    clean(L.parse_args_string(" ".join(exp["R0e-pick"])), "R0e-pick")
+    for a in E_ARMS:                                                            # each arm's argv is that arm's alone: another arm's name on it is refused
+        for b in E_ARMS:
+            if a != b:
+                ok(refs(exp[a], b) != [], (a, b))
+    red(exp["R0e-pick"], "registered with --seed 1", "R1e-pick")
+    red(exp["R1e-pick"], "registered with --seed 0", "R0e-pick")
+    red(exp["R0e-id"], "requires --epo-con-temp 0.01", "R0e-pick")
+    red(exp["R0e-pick"], "requires --epo-con-temp 0.1", "R0e-id")
+    # ------------------------------------------------------------------ E4 the DELIBERATE-REGRESSION arms: each makes the gate refuse (profile_refusals), and names why
+    for a in E_TEMP:
+        t = E_TEMP[a]
+        om = L.rls1e_regression_argv(exp[a], "omit_temp")                       # (1) the lever omitted: its None default inherits --epo-temp 0.1 and silently reproduces R0d
+        ok(om == L._strip_lever(exp[a])[0] and "--epo-con-temp" not in om, a)
+        red(om, "requires --epo-con-temp NAMED", a)
+        wt = L.rls1e_regression_argv(exp[a], "wrong_temp")                      # (2) a wrong T
+        red(wt, f"requires --epo-con-temp {t}", a)
+        red(wt, "the argv resolves to 0.02", a)
+        rs = refs(L.rls1e_regression_argv(exp[a], "extra_lever"), a)           # (3) an extra lever token: --lane-weight 0.5 is asserted by NO other rule, only by the lineage pin
+        ok(len(rs) == 1 and "it ADDS --lane-weight 0.5 (a second lever)" in rs[0] and "NOTHING ELSE" in rs[0], (a, rs))
+        rs = refs(L.rls1e_regression_argv(exp[a], "moved_lever"), a)            # a moved token is named as MOVED, alone
+        ok(len(rs) == 1 and "--workers MOVED to 4 (registered 3)" in rs[0], (a, rs))
+        red(L.rls1e_regression_argv(exp[a], "carve_feed"), "it ADDS --epo-con-feed carve (a second lever)", a)       # the carve is the NEXT arm's lever (R0e-carve), not this one's
+        ss = L.rls1e_regression_argv(exp[a], "short_schedule")                  # --max-updates 250 is not an identity argv (the cosine schedule runs over min(total, max_updates))
+        red(ss, "--max-updates MOVED to 250", a)
+        red(ss, "requires --max-updates 1000", a)
+        red(L.rls1e_regression_argv(exp[a], "dup_temp"), "carries --epo-con-temp 2 times", a)
+        red(exp[a] + ["--lr", "2e-4"], "it carries --lr 2 times", a)
+        red(L._strip_lever(exp[a])[0] + ["--epo-con-t", t], "is not an exact option of the trainer", a)       # an abbreviation of the lever is not the lever
+        red(L._strip_lever(exp[a])[0] + ["--epo-temp", t], "it ADDS --epo-temp", a)                              # the REWARD term's T is not the constraint's: --epo-temp named is a second lever
+        red(C._set(exp[a], "--epochs", "5"), "--epochs MOVED to 5", a)
+    ro = L.rls1e_regression_argv(exp["R1o"], "r1o_with_temp")                    # (4) R1o carrying --epo-con-temp: the profile refuses it, and so does the trainer (defense in depth)
+    red(ro, "must NOT carry --epo-con-temp", "R1o")
+    red(ro, "scorer_finetune refuses this argv", "R1o")
+    red(exp["R1o"] + ["--epo-con-temp", "0.01"], "must NOT carry --epo-con-temp", "R1o")
+    red(C._set(exp["R1o"], "--seed", "0"), "registered with --seed 1", "R1o")
+    red(C._drop(exp["R1o"], "--epo-con", 1), "requires --epo-con NAMED", "R1o")
+    red(C._set(exp["R1o"], "--epo-con", "g5"), "requires --epo-con off", "R1o")
+    red(L.rls1e_regression_argv(exp["R1o"], "extra_lever"), "it ADDS --lane-weight 0.5", "R1o")
+    # reorder two flags of the rest: the same flags and values in another order than R0d's is refused (token for token)
+    toks = L._strip_lever(exp["R0e-pick"])[0]
+    i, j = toks.index("--workers"), toks.index("--eval-every")
+    swp = list(toks)
+    swp[i:i + 2], swp[j:j + 2] = toks[j:j + 2], toks[i:i + 2]
+    ok(swp != toks and sorted(swp) == sorted(toks))
+    red(swp + ["--epo-con-temp", "0.01"], "in another order than R0d's", "R0e-pick")
+    # R0d's own argv under the e profile (the dry static check): refused for every e arm, and still CLEAN under refe_rls1d
+    for a in E_ARMS:
+        ok(refs(r0d, a) != [], a)
+    red(r0d, "requires --epo-con-temp NAMED", "R0e-pick")
+    red(r0d, "requires --epo-con-temp NAMED", "R0e-id")                          # R0e-id: the omitted lever is the whole point of the control, and only the must-name rule can see it (T 0.1 is the default)
+    red(r0d, "--out MOVED to /workspace/data/rls1/arms/R0d", "R0e-pick")
+    clean(r0d, "R0d", D)
+    r0e_k = L._strip_lever(exp["R0e-pick"])[0]
+    for nm, a, argv in (("refe_rls1d", "R0d", r0e_k), ("refe_rls1c", "R0c", r0e_k + ["--epo-ref", "armA"]), ("refe_rls1b", "R0b", r0e_k + ["--epo-lam", "0.25"])):       # no older profile takes the lever silently
+        red(argv + ["--epo-con-temp", "0.01"], "requires --epo-con-temp 0.1", a, L.PROFILES[nm])
+    # ------------------------------------------------------------------ E5 the three MUTATIONS: with a rule switched off, the argv it exists for is no longer refused BY IT
+    keep_l, keep_f, keep_m = L.rls1e_lineage_refusals, P["arm_forbid_flags"], P["arm_must_name"]
+    try:
+        L.rls1e_lineage_refusals = lambda *a_, **k_: []                          # M1 the lineage rule off: the extra lever walks through
+        ok(refs(L.rls1e_regression_argv(exp["R0e-pick"], "extra_lever"), "R0e-pick") == [], "M1 must turn the extra-lever arm CLEAN: nothing else asserts --lane-weight")
+        ok(refs(L.rls1e_regression_argv(exp["R0e-pick"], "carve_feed"), "R0e-pick") != [] and any("carve" in r for r in refs(L.rls1e_regression_argv(exp["R0e-pick"], "carve_feed"), "R0e-pick")), "the trainer's own carve rules still speak")
+    finally:
+        L.rls1e_lineage_refusals = keep_l
+    try:
+        P["arm_must_name"] = {**keep_m, "R0e-id": tuple(f for f in keep_m["R0e-id"] if f != "--epo-con-temp")}           # M2 the must-name off: R0e-id's omitted lever (T 0.1 = the default) is CLEAN, i.e. R0d re-run
+        ok(refs(L.rls1e_regression_argv(exp["R0e-id"], "omit_temp"), "R0e-id") == [], "M2 must turn R0e-id's omitted lever CLEAN: the registered value equals the parser default")
+    finally:
+        P["arm_must_name"] = keep_m
+    try:
+        P["arm_forbid_flags"] = {}                                              # M3 the R1o forbid off: the trainer's own refusal still stands, the profile's no longer speaks
+        rs = refs(ro, "R1o")
+        ok(not any("must NOT carry --epo-con-temp" in r for r in rs) and any("scorer_finetune refuses this argv" in r for r in rs), rs)
+    finally:
+        P["arm_forbid_flags"] = keep_f
+    ok(refs(L.rls1e_regression_argv(exp["R0e-pick"], "extra_lever"), "R0e-pick") != [] and refs(L.rls1e_regression_argv(exp["R0e-id"], "omit_temp"), "R0e-id") != [] and refs(ro, "R1o") != [])      # no residue
+    # ------------------------------------------------------------------ E6 the gate itself: every regression arm makes EVERY check FAIL and starts nothing; the CLI; the arm names
+    for a, kind in (("R0e-pick", "omit_temp"), ("R0e-pick", "wrong_temp"), ("R0e-pick", "extra_lever"), ("R0e-id", "omit_temp"), ("R1e-pick", "extra_lever"), ("R1o", "r1o_with_temp")):
+        with tempfile.TemporaryDirectory() as td:
+            st = L.run_checks({**P, "declared_arm": a}, L.rls1e_regression_argv(exp[a], kind), PKG, Path(td) / "o")
+            ok(set(st.values()) == {"FAIL"} and set(st) == set(P["checks"]) | set(P["na_ok"]), (a, kind, st))
+    for a in E_ARMS:
+        ok(L._profile_for(SimpleNamespace(profile="refe_rls1e", arm_name=a), True)["declared_arm"] == a)
+    for bad in ("R0d", "R1d", "R0e", "R0e-PICK", "R2"):
+        try:
+            L._profile_for(SimpleNamespace(profile="refe_rls1e", arm_name=bad), True)
+            ok(False, bad)
+        except SystemExit as e:
+            ok("is not an arm of refe_rls1e" in str(e), str(e))
+    try:
+        L._profile_for(SimpleNamespace(profile="refe_rls1e", arm_name=None), True)
+        ok(False, "an arm-less mint")
+    except SystemExit as e:
+        ok("mints for ONE named arm" in str(e) and "R0e-pick" in str(e), str(e))
+
+    def cli(*argv_):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc_ = L.main(list(argv_))
+        return rc_, buf.getvalue()
+    for a in E_ARMS:                                                            # the dry static check: the registered argv is CLEAN ...
+        rc, out = cli("refusals", "--profile", "refe_rls1e", "--arm-name", a, "--args", " ".join(exp[a]))
+        ok(rc == 0 and "ZZGATE-CLEANZZ" in out, (a, out))
+    rc, out = cli("refusals", "--profile", "refe_rls1e", "--arm-name", "R0e-pick", "--args", " ".join(r0d))          # ... and R0d's argv under the R0e-pick profile is REFUSED
+    ok(rc == 5 and "ZZGATE-REFUSEDZZ" in out and "requires --epo-con-temp NAMED" in out, out)
+    for kind in ("omit_temp", "wrong_temp", "extra_lever", "moved_lever", "carve_feed", "short_schedule", "dup_temp"):
+        rc, out = cli("refusals", "--profile", "refe_rls1e", "--arm-name", "R0e-pick", "--args", " ".join(L.rls1e_regression_argv(exp["R0e-pick"], kind)))
+        ok(rc == 5 and "ZZGATE-REFUSEDZZ" in out, (kind, out))
+    rc, out = cli("refusals", "--profile", "refe_rls1e", "--arm-name", "R1o", "--args", " ".join(ro))
+    ok(rc == 5 and "ZZGATE-REFUSEDZZ" in out and "must NOT carry --epo-con-temp" in out, out)
+    rc, out = cli("refusals", "--profile", "refe_rls1d", "--arm-name", "R0d", "--args", " ".join(r0d))              # refe_rls1d's own dry check is unchanged
+    ok(rc == 0 and "ZZGATE-CLEANZZ" in out, out)
+    # ------------------------------------------------------------------ E7 G-DVB: each arm's T against the T the trainer BUILT (the `epo_con` block); the preflight obliges G13 on the constrained arms only
+    cols = [rl_reward.COMPONENTS.index(c) for c in ("ttc", "nc")]
+
+    def dvb(argv, arm, temp, arm_=None):
+        blk = {"mode": "g5", "comps": ["ttc", "nc"], "cols": cols, "eps": 0.0, "lr": 4.0, "max": 10.0, "lam0": 0.0, "ref": "armA_detached", "temp": temp}
+        pf = C.load_scorer_preflight(rls1_write(Path(tempfile.mkdtemp()) / "preflight.jsonl", rls1_pf_rows(argv, data_mut={"epo_con": blk})))
+        return C.check_dvb_scorer(argv, pf, {**P, "declared_arm": arm}, arm=arm_)
+    for a, t in E_TEMP.items():
+        ev = dvb(exp[a], a, float(t))
+        ok(ev["status"] == "PASS" and ev["details"]["unknown_flags"] == [] and ev["details"]["stale_registry"] == [], (a, ev["reasons"]))
+        ok(any(r["dest"] == "epo_con_temp" and r["declared"] == float(t) == r["built"] and r["ok"] for r in ev["details"]["rows"]), a)
+        ev = dvb(exp[a], a, 0.1 if t == "0.01" else 0.01)                       # the trainer BUILT the other T: an argv that says one thing and a run that did another
+        ok(ev["status"] == "FAIL" and "--epo-con-temp: declared" in " ".join(ev["reasons"]), (a, ev["reasons"]))
+        ev = dvb(exp[a], a, float(t), arm_="con_temp_ignored")                  # the trainer's own regression arm: it ignored --epo-con-temp
+        ok(ev["status"] == "FAIL" and "epo_con_temp" in " ".join(ev["reasons"]).replace("-", "_"), (a, ev["reasons"]))
+    ok(dvb(exp["R0e-pick"], "R0e-pick", 0.01)["status"] == "PASS")              # no residue
+    for a in E_TEMP:
+        ns_, err_ = C.parse_scorer_argv(ap, exp[a])
+        ok(err_ is None and "G13" in C.scorer_required_gates(ns_) and "G11" in C.scorer_required_gates(ns_), (a, err_))
+    ns_, err_ = C.parse_scorer_argv(ap, exp["R1o"])
+    ok(err_ is None and "G13" not in C.scorer_required_gates(ns_) and "G11" in C.scorer_required_gates(ns_))
 
 
 def full() -> None:

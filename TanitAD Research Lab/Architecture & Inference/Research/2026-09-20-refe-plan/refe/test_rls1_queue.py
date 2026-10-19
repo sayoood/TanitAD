@@ -797,7 +797,7 @@ def rls1d_all(text, tmp):
                                                               '      elif false; then\n        log "ZZRLS1_SAFEOBJ_NO_SECOND_CONTROL'), {"order"}),
         ("the precheck of the arm list is removed", sw('for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do arm_registered "$ARM" || refuse "unknown arm \'$ARM\' in RLS1_ARMS (registered: $REGISTERED_ARMS)"; done', ":"), {"unknown_arm_in_list"}),
         ("the precheck of the arm list judges only the first arm", sw('for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do arm_registered "$ARM" ||', 'for ARM in $(set -- ${RLS1_ARMS:-C0 R0 C1 R1 R2}; echo "$1"); do arm_registered "$ARM" ||'), {"unknown_arm_in_list"}),
-        ("a misspelled SAFEOBJ arm reaches the preflight", sw('REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o R2d"'), {"unknown_arm"}),
+        ("a misspelled SAFEOBJ arm reaches the preflight", sw('REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o R0e-id R0e-pick R1e-pick"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o R0e-id R0e-pick R1e-pick R2d"'), {"unknown_arm"}),
     ]
     for name, mut, only in muts:
         tag = "KILL-STOP" if only in ({"r0d_kill"}, {"r1d_kill"}) else None                                 # the two "does not stop the chain" mutations must go RED AT the stop check, not at any other assertion

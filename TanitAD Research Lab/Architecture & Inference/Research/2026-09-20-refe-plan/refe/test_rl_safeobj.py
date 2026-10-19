@@ -971,7 +971,7 @@ def suite_ch(rc_src: str, pod_src: str, tag: str) -> list:
 
     # ---------------------------------------------------------------- static: registration, profile, argv (RUN under bash), the files the pod needs
     reg = re.search(r'^REGISTERED_ARMS="([^"]*)"', pod_src, re.M)
-    check(bad, "CH_registered_arms_are_the_older_eight_plus_R0d_R1d_R1o", lambda: reg is not None and reg.group(1).split() == ["C0", "C1", "R0", "R1", "R2", "R0b", "R1b", "R0c", "R0d", "R1d", "R1o"])
+    check(bad, "CH_registered_arms_are_the_older_eight_plus_R0d_R1d_R1o", lambda: reg is not None and reg.group(1).split() == ["C0", "C1", "R0", "R1", "R2", "R0b", "R1b", "R0c", "R0d", "R1d", "R1o", "R0e-id", "R0e-pick", "R1e-pick"])
     ap_body = _fn_body(pod_src, "arm_profile")
     check(bad, "CH_profile_R0d_R1d_R1o_are_judged_under_refe_rls1d_and_R0c_under_refe_rls1c", lambda: "    R0d|R1d|R1o) echo refe_rls1d ;;\n" in ap_body and "    R0c) echo refe_rls1c ;;\n" in ap_body)
     check(bad, "CH_arms_json_is_derived_from_R0_s_banked_token_and_orders_the_three_arms", lambda: AJ["order"] == ["R0d", "R1d", "R1o"] and AJ["profile"] == "refe_rls1d"
@@ -1007,7 +1007,7 @@ def suite_ch(rc_src: str, pod_src: str, tag: str) -> list:
     check(bad, "CH_the_replay_line_carries_OBS_too_a_retroactive_K3_must_not_kill_R1o", lambda: rep is not None and '${OBS:-}' in rep.group(0))
     check(bad, "CH_OBS_is_observe_only_for_R1o_alone", lambda: pod_src.count('OBS="--observe-only"') == 1 and '  OBS=""\n  if [ "$ARM" = R1o ]; then\n    OBS="--observe-only"' in pod_src)
     gate_i = pod_src.find('safeobj-gate --dirs "$R/arms/R0d" "$R/arms/R1d"')
-    check(bad, "CH_R1o_waits_for_both_S_verdicts_before_any_directory_preflight_or_GPU_work", lambda: gate_i > 0 and pod_src.count("safeobj-gate --dirs") == 1
+    check(bad, "CH_R1o_waits_for_both_S_verdicts_before_any_directory_preflight_or_GPU_work", lambda: gate_i > 0 and pod_src.count("safeobj-gate --dirs") == 2 and pod_src.count('safeobj-gate --dirs "$R/arms/R0d" "$R/arms/R1d"') == 1
           and '|| refuse "R1o runs only if R0d and R1d both read bar S = PASS' in pod_src and gate_i < pod_src.find('mkdir -p "$ARMDIR" "$LG"') and gate_i < pod_src.find("scorer_finetune.py $ARGS --preflight"))
     check(bad, "CH_the_precheck_ships_test_rl_safeobj_the_refe_rls1d_suite_runs_it_on_the_pod", lambda: "refe/test_rl_r0c.py refe/test_rl_safeobj.py \\\n" in pod_src)
     check(bad, "CH_the_precheck_ships_the_S_reader_and_the_two_tests_that_pin_the_S_gate_a_missing_one_is_refused_before_the_queue",
@@ -1125,7 +1125,7 @@ CH_MUTATIONS = [
     ("CH2 OBS is set for every arm", "CH", [(POD_PATH, '  OBS=""\n  if [ "$ARM" = R1o ]; then\n    OBS="--observe-only"', '  OBS="--observe-only"\n  if [ "$ARM" = R1o ]; then\n    :')], None),
     ("CH3 R1o's S gate is not enforced", "CH", [(POD_PATH, '|| refuse "R1o runs only if R0d and R1d both read bar S = PASS: $(tail', '|| echo "R1o runs only if R0d and R1d both read bar S = PASS: $(tail')], None),
     ("CH4 R0d is read against C0's dumps when they are there", "CH", [(POD_PATH, '  case "$ARM" in R0d|R1d|R1o) REFDIR="$ARMDIR/scores";; esac', "  :")], None),
-    ("CH5 R1o is not registered", "CH", [(POD_PATH, 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d"')], None),
+    ("CH5 R1o is not registered", "CH", [(POD_PATH, 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o R0e-id R0e-pick R1e-pick"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R0e-id R0e-pick R1e-pick"')], None),
     ("CH6 R1o's argv names --epo-con g5", "CH", [(POD_PATH, '--epo-terms-heldout $TERMS_VA --epo-con off" ;;', '--epo-terms-heldout $TERMS_VA --epo-con g5" ;;')], None),
     ("CH7 a killed R0d does not stop the chain", "CH", [(POD_PATH, '\n  [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED', '\n  [ "$ARM" != R0d ] && [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED')], None),
     ("CH8 judge ignores observe_only", "CH", [(RC_PATH, "if k3_enabled and not observe_only and prev is not None", "if k3_enabled and prev is not None")], None),

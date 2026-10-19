@@ -17,6 +17,8 @@ CLAUDE.md, PI 2026-09-26 (BINDING).  Route, contract and every regression arm: e
     python launch_gate.py run --profile refe_rls1 --arm-name R0 --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-preflight-json <preflight.jsonl>
     # RL-S1c / R0c (DRAFT; needs a PI decision): R0's argv + `--epo-ref armA`, profile refe_rls1c; the argv must NAME the flag, every other arm refuses it
     python launch_gate.py run --profile refe_rls1c --arm-name R0c --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-preflight-json <preflight.jsonl>
+    # R0e-pick (PREREG_R0E_PICK, FROZEN): R0d's argv + `--epo-con-temp <T>` and nothing else, token for token; profile refe_rls1e, arms R0e-id (T 0.1) R0e-pick (0.01) R1e-pick (0.01, seed 1) R1o (no --epo-con-temp)
+    python launch_gate.py refusals --profile refe_rls1e --arm-name R0e-pick --args "$ARGS"        # instant, no pod: ZZGATE-CLEANZZ for the registered argv, ZZGATE-REFUSEDZZ for R0d's (it lacks the lever)
     # P2-s1, the P2 training-seed replicate (refe/p2rep_pod.sh): P2's gates on P2's argv PLUS exactly two changes (--out, --seed 1), PINNED token for token
     python launch_gate.py run --profile refe_p2rep --pkg <pkg> --args "$ARGS" --out-dir <dir> --gate-sets <d> --gate-pdm <d> --gate-bank <d> --p2-gate-json <gate.json>
 
@@ -109,6 +111,31 @@ RLS1D_ARM_MUST_NAME = {"R0d": RLS1D_CON_FLAGS, "R1d": RLS1D_CON_FLAGS, "R1o": ("
 RLS1D_CON_TERMS = ("con", "con_lam_ttc", "con_lam_nc", "con_g_ttc", "con_g_nc")                # the trainer's metric rows must emit these on a constrained arm (R1o: none, and their presence there is a FAIL)
 RLS1D_ARM_CON_TERMS = {"R0d": RLS1D_CON_TERMS, "R1d": RLS1D_CON_TERMS, "R1o": ()}
 RLS1D_SUITE = RLS1C_SUITE + [{"script": "test_rl_safeobj.py", "token": "ZZTEST_PASS"}]
+# R0e-pick (raw/2026-10-18-r0e-pick/PREREG_R0E_PICK.md, FROZEN 2026-10-18, sha256 1be7a030...; PI decisions 1a-1f; launch blockers B2 + B5, raw/2026-10-19-r0e-b2b5/).  ONE lever moves against R0d: `--epo-con-temp`, the
+# temperature T of the CONSTRAINT's softmax.  Its parser default is None = INHERIT --epo-temp (0.1), which silently REPRODUCES R0d, so every e arm NAMES it (`arm_must_name`) and the profile registers its value per
+# arm (`arm_epo_registered`): R0e-id 0.1 (the identity control, run to u1000: PI 1c), R0e-pick 0.01, R1e-pick 0.01 (seed 1, Stage 2, only on outcome O1).  R1o is SAFEOBJ's registered R1o (`--epo-con off`) and must
+# NOT carry `--epo-con-temp` (`arm_forbid_flags`; the trainer refuses it too, scorer_finetune.epo_con_refusals).  `lineage` pins each argv TOKEN FOR TOKEN to R0d's registered argv (eval/rls1d_arms.json, arms.R0d.argv):
+# with the lever pair removed, the own paths swapped back to /arms/R0d and the seed read as R0d's, the argv IS R0d's -- so a second lever (--epo-con-feed carve, --workers 4, --max-updates 250: the cosine schedule runs
+# over min(total, max_updates), so 250 is NOT an identity argv) cannot ride along.  The expected argv is a CONSTANT here because the token binds THIS file and eval/ is outside the tree digest; test_launch_gate.py
+# diffs it against eval/rls1d_arms.json and eval/rls1e_arms.json (built by raw/2026-10-19-r0e-b2b5/build/make_rls1e_arms_json.py), so a copy that drifts is RED.
+RLS1E_ROOT = "/workspace/data/rls1"
+RLS1E_BASE_ARM = "R0d"
+RLS1E_BASE_ARGV = ("--ckpt /workspace/data/rls1/base/model_sft4_B_u400.pt --backbone vitl16 --targets /workspace/data/refe_navtrain/train_grow --images "
+                   "/workspace/data/navtrain_pixels --calib /workspace/data/refe_navtrain/train_grow/calib_table.json --onpolicy /workspace/data/rls1/sets_train --heldout "
+                   "/workspace/data/rls1/sets_val --heldout-logs /workspace/data/rls1/rl_val_logs.txt --out /workspace/data/rls1/arms/R0d --pdm-labels-train "
+                   "/workspace/data/rls1/pdm_train --pdm-labels-heldout /workspace/data/rls1/pdm_val --require-pdm --b-mode listnet --lam 0 --lr 1e-4 --max-updates 1000 --epochs 4 "
+                   "--workers 3 --seed 0 --eval-every 250 --dump-scores /workspace/data/rls1/arms/R0d/scores --lane-head --teacher-lane-train /workspace/data/rls1/tlane_train "
+                   "--teacher-lane-heldout /workspace/data/rls1/tlane_heldout --epo --epo-terms-train /workspace/data/rls1/terms_train --epo-terms-heldout "
+                   "/workspace/data/rls1/terms_val --epo-con g5 --epo-con-eps 0 --epo-con-lr 4 --epo-con-max 10 --epo-con-lam0 0").split()
+RLS1E_ARM_SEEDS = {"R0e-id": 0, "R0e-pick": 0, "R1e-pick": 1, "R1o": 1}
+RLS1E_ARM_CLASS = {a: "R" for a in RLS1E_ARM_SEEDS}
+RLS1E_CON_TEMP = {"R0e-id": 0.1, "R0e-pick": 0.01, "R1e-pick": 0.01}                    # PREREG_R0E_PICK 2.1: the registered constraint T per arm (R0e-id names the inherited default on purpose)
+RLS1E_LEVER = "--epo-con-temp"
+RLS1E_ARM_EPO_REGISTERED = {**{a: {**RLS1D_CON_ON, "epo_con_temp": t} for a, t in RLS1E_CON_TEMP.items()}, "R1o": RLS1D_CON_OFF}
+RLS1E_ARM_MUST_NAME = {**{a: RLS1D_CON_FLAGS + (RLS1E_LEVER,) for a in RLS1E_CON_TEMP}, "R1o": RLS1D_ARM_MUST_NAME["R1o"]}
+RLS1E_ARM_FORBID = {"R1o": (RLS1E_LEVER,)}                                                # R1o is `--epo-con off`: a constraint T belongs to a term that is OFF
+RLS1E_ARM_CON_TERMS = {**{a: RLS1D_CON_TERMS for a in RLS1E_CON_TEMP}, "R1o": ()}
+RLS1E_SUITE = RLS1D_SUITE + [{"script": "test_rl_pickcon.py", "token": "ZZTEST_PASS"}]    # PREREG 5, K0: RLS1D_SUITE + test_rl_pickcon.py (ZZTEST_PASS 20: G13 temp_reach included)
 # Auxiliary drivable-area head, S1 (WIRING_PLAN.md; eval/PREREG_AUX_DRIVABLE_DRAFT.md "Hosts": S1 = the SFT-4 recipe on the dev box, trunk frozen).  ⛔ PROPOSED values: they are
 # raw/2026-10-13-aux-head/PREREG_BLANKS_PROPOSED.md's, and the Master Mind's approval of that file is what makes them registered -- an amendment is a one-line change HERE.
 # Arms: N = the no-head replicate, H1 = head with the feed off (perception proof; the scorer is bit-identical to N, G12), H2 = head + feed.  One seed per arm name.
@@ -332,6 +359,11 @@ PROFILES["refe_rls1c"] = {**PROFILES["refe_rls1"], "name": "refe_rls1c", "suite"
 # constrained arm must emit (arm_con_terms).  `epo_con_block`: the data event MUST carry the `epo_con` block (G-DVB cannot read a legacy absence as "off" here: R1o's OFF is itself observed).
 PROFILES["refe_rls1d"] = {**PROFILES["refe_rls1"], "name": "refe_rls1d", "suite": RLS1D_SUITE, "arm_class": RLS1D_ARM_CLASS, "arm_seeds": RLS1D_ARM_SEEDS,
                           "arm_epo_registered": RLS1D_ARM_EPO_REGISTERED, "arm_must_name": RLS1D_ARM_MUST_NAME, "arm_con_terms": RLS1D_ARM_CON_TERMS, "epo_con_block": True}
+# R0e-pick = refe_rls1d's checks, data flags, forbidden / required flags and recipe with ITS arm table (R0e-id, R0e-pick, R1e-pick, R1o): the registered --epo-con values AND the constraint T PER ARM
+# (arm_epo_registered), the flags each arm must NAME (arm_must_name: the five --epo-con* and --epo-con-temp), the flags an arm must NOT carry (arm_forbid_flags: R1o), and `lineage` (rls1e_lineage_refusals: the argv
+# is R0d's registered argv plus the lever, token for token).  A G-DVB `epo_con_temp` row compares each arm's T with the T the trainer BUILT, so a trainer that ignored the flag is refused too.
+PROFILES["refe_rls1e"] = {**PROFILES["refe_rls1"], "name": "refe_rls1e", "suite": RLS1E_SUITE, "arm_class": RLS1E_ARM_CLASS, "arm_seeds": RLS1E_ARM_SEEDS, "arm_epo_registered": RLS1E_ARM_EPO_REGISTERED,
+                         "arm_must_name": RLS1E_ARM_MUST_NAME, "arm_forbid_flags": RLS1E_ARM_FORBID, "arm_con_terms": RLS1E_ARM_CON_TERMS, "epo_con_block": True, "lineage": "rls1e"}
 # P6-HN-S = refe_rls1 with ITS arm table (S0 S1 S2), the screen's own forbidden flags (the RL-S1 set minus --hn-bank / --ctx-cache, which it REQUIRES), `hn_rules` (hnscreen_refusals: the argv pin, G14 / G15
 # are required by the argv, the trainer's own hn_refusals) and `schedule_reach` (G-DVB re-derives ceil(train_sets / batch x epochs / accum) against --max-updates 1000: PREREG 4.4's G-CLOCK).
 PROFILES["refe_hnscreen"] = {**PROFILES["refe_rls1"], "name": "refe_hnscreen", "suite": HNSCREEN_SUITE, "arm_class": HNSCREEN_ARM_CLASS, "arm_seeds": HNSCREEN_ARM_SEEDS, "arms_need_pi": HNSCREEN_NEEDS_PI,
@@ -512,6 +544,9 @@ def rls1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
         for f in prof.get("arm_must_name", {}).get(declared, ()):                  # SAFEOBJ: the flags THIS arm must CARRY (R0d / R1d: the five --epo-con*; R1o: --epo-con off, whose default would hide the control)
             if f not in argv:
                 out.append(f"{name} requires {f} NAMED for {who} (a flag whose default reproduces the old arm must be named, or the arm did not test the lever); the argv does not carry it")
+        for f in prof.get("arm_forbid_flags", {}).get(declared, ()):              # R0e-pick: R1o is `--epo-con off` and must NOT carry --epo-con-temp (a constraint T would belong to a term that is OFF)
+            if f in argv:
+                out.append(f"{name}: {who} must NOT carry {f} (its registered argv is R0d's base with `--epo-con off`; a constraint temperature would belong to a term that is OFF -- scorer_finetune refuses it too)")
         if cls == "R?":
             out.append(f"{name}: exactly one of --epo-k / --epo-l: R0/R1 carry neither (the core reward), R2 carries both")
         if cls == "R":
@@ -544,8 +579,102 @@ def rls1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
         out.append(f"{name}: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout (the 7th output would have no label)")
     if (ns.teacher_lane_train or ns.teacher_lane_heldout) and not ns.lane_head:
         out.append(f"{name}: --teacher-lane-* is named without --lane-head: the labels would be loaded and never trained on")
+    if prof.get("lineage") == "rls1e":                                          # R0e-pick: the argv is R0d's registered argv plus the lever, token for token
+        out += rls1e_lineage_refusals(name, argv, declared)
     con_terms = tuple(prof.get("arm_con_terms", {}).get(declared, ())) if cls != "C" else ()          # SAFEOBJ: a constrained arm's rows must also emit the con* columns
     return out, ((RLS1_EPO_TERMS + con_terms) if cls != "C" else ())
+
+
+# ============================================================================================ R0e-pick arm rules (refe_rls1e)
+def rls1e_expected_argv(arm: str) -> list:
+    """The argv PREREG_R0E_PICK 2.1 registers for `arm`, DERIVED from R0d's registered argv (RLS1E_BASE_ARGV) and nothing else: the arm's own --out / --dump-scores, its registered seed, and the lever
+    `--epo-con-temp <T>` appended (R0e-id, R0e-pick, R1e-pick); R1o is the same base with the five `--epo-con*` levers replaced by `--epo-con off` (SAFEOBJ's registered R1o, eval/rls1d_arms.json)."""
+    if arm not in RLS1E_ARM_SEEDS:
+        raise KeyError(f"{arm!r} is not an arm of refe_rls1e (one of {sorted(RLS1E_ARM_SEEDS)})")
+    r0d, own = f"{RLS1E_ROOT}/arms/{RLS1E_BASE_ARM}", f"{RLS1E_ROOT}/arms/{arm}"
+    toks = [(own + t[len(r0d):] if t in (r0d, r0d + "/scores") else t) for t in RLS1E_BASE_ARGV]
+    toks[toks.index("--seed") + 1] = str(RLS1E_ARM_SEEDS[arm])
+    if arm == "R1o":
+        i = toks.index("--epo-con")
+        toks[i:i + 2 * len(RLS1D_CON_FLAGS)] = ["--epo-con", "off"]
+    else:
+        toks += [RLS1E_LEVER, repr(RLS1E_CON_TEMP[arm])]
+    return toks
+
+
+def _strip_lever(toks: list) -> tuple:
+    """(the tokens without every `--epo-con-temp <value>` pair, the number of such pairs): the lever is compared on its own, the rest token for token"""
+    out, n, i = [], 0, 0
+    while i < len(toks):
+        if toks[i] == RLS1E_LEVER:
+            n += 1
+            i += 2 if i + 1 < len(toks) and not toks[i + 1].startswith("--") else 1
+            continue
+        out.append(toks[i])
+        i += 1
+    return out, n
+
+
+def rls1e_lineage_refusals(name: str, argv: list, arm) -> list:
+    """PREREG_R0E_PICK 2.1, ENFORCED at launch: the argv of R0e-id / R0e-pick / R1e-pick is R0d's registered argv + `--epo-con-temp <T>` and NOTHING ELSE, token for token (R1o: SAFEOBJ's registered R1o).
+    With the lever pair removed from both sides, every difference is named: a flag the argv ADDS (a second lever), a flag it DROPS, a value that MOVED, or the same tokens in another order.  The lever's
+    own VALUE is the registered-value rule's (`arm_epo_registered`), and its presence the must-name rule's; here it is only counted (exactly once)."""
+    if arm not in RLS1E_ARM_SEEDS:
+        return []                                                               # an undeclared or unknown arm: the class rules already speak
+    want, _ = _strip_lever(rls1e_expected_argv(arm))
+    got, n = _strip_lever(list(argv))
+    out = []
+    if arm != "R1o" and n > 1:
+        out.append(f"{name}: arm {arm} carries {RLS1E_LEVER} {n} times (the lever is named exactly once, with its registered value)")
+    if got == want:
+        return out
+    why = f"{name}: arm {arm} is R0d's registered argv + the lever and NOTHING ELSE, token for token (PREREG_R0E_PICK 2.1)" if arm != "R1o" else f"{name}: arm R1o is SAFEOBJ's registered R1o argv, token for token"
+    if got and not str(got[0]).startswith("--"):
+        out.append(f"{why}; the argv starts with {got[0]!r}, which belongs to no flag")
+    gg, gw = {}, {}
+    for d, toks in ((gg, got), (gw, want)):
+        for f, v in GT.flag_pairs(toks):
+            d.setdefault(f, []).append(tuple(v))
+    diffs = []
+    for f in sorted(set(gw) | set(gg)):
+        a, b = gg.get(f, []), gw.get(f, [])
+        if a == b:
+            continue
+        if not a:
+            diffs.append(f"it DROPS {f} {' '.join(b[0])}")
+        elif not b:
+            diffs.append(f"it ADDS {f} {' '.join(a[0])} (a second lever)")
+        elif len(a) != len(b):
+            diffs.append(f"it carries {f} {len(a)} times (once)")
+        else:
+            diffs.append(f"{f} MOVED to {' '.join(a[0]) or '(no value)'} (registered {' '.join(b[0]) or '(no value)'})")
+    out.append(f"{why}; " + ("; ".join(diffs) if diffs else "the same flags and values, in another order than R0d's"))
+    return out
+
+
+def rls1e_regression_argv(argv: list, kind: str) -> list:
+    """The deliberate-regression arms of refe_rls1e that act on the ARGV (PREREG_R0E_PICK 2.1); each must be REFUSED by profile_refusals: `omit_temp` (the lever dropped: its None default silently reproduces R0d),
+    `wrong_temp` (0.02, A2R2's T*: the O2 / O3 next lever, a plausible slip), `extra_lever` (--lane-weight 0.5, a real lever that no other rule asserts), `moved_lever` (--workers 4), `carve_feed` (the dual's feed
+    moved: the NEXT arm's lever), `short_schedule` (--max-updates 250: not an identity argv),
+    `r1o_with_temp` (R1o carrying the constraint T), `dup_temp` (the lever named twice)."""
+    argv = list(argv)
+    if kind == "omit_temp":
+        return _strip_lever(argv)[0]
+    if kind == "wrong_temp":
+        return [(("0.01" if t == "0.02" else "0.02") if i and argv[i - 1] == RLS1E_LEVER else t) for i, t in enumerate(argv)]        # 0.02 = A2R2's T*, the O2 / O3 next lever: a plausible slip
+    if kind == "extra_lever":
+        return argv + ["--lane-weight", "0.5"]
+    if kind == "moved_lever":
+        return [("4" if i and argv[i - 1] == "--workers" else t) for i, t in enumerate(argv)]
+    if kind == "carve_feed":
+        return argv + ["--epo-con-feed", "carve"]
+    if kind == "short_schedule":
+        return [("250" if i and argv[i - 1] == "--max-updates" else t) for i, t in enumerate(argv)]
+    if kind == "r1o_with_temp":
+        return argv + [RLS1E_LEVER, "0.1"]
+    if kind == "dup_temp":
+        return argv + [RLS1E_LEVER, "0.01"]
+    raise KeyError(kind)
 
 
 # ============================================================================================ P6-HN-S arm rules (refe_hnscreen)
@@ -1118,7 +1247,7 @@ def _profile_for(a, minting: bool) -> dict:
     arms = {"rls1": prof.get("arm_class", RLS1_ARM_CLASS), "auxs1": prof.get("arm_class", AUXS1_ARM_CLASS)}.get(prof.get("arm_rules"), {})
     if arm_name:
         if not prof.get("arm_rules"):
-            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_rls1b, refe_rls1c, refe_rls1d, refe_aux_s1, refe_aux_s1c, refe_hnscreen), not {a.profile}")
+            raise SystemExit(f"--arm-name is only meaningful for a profile with arm rules (refe_rls1, refe_rls1b, refe_rls1c, refe_rls1d, refe_rls1e, refe_aux_s1, refe_aux_s1c, refe_hnscreen), not {a.profile}")
         if arm_name in prof.get("arms_need_pi", {}):
             raise SystemExit(f"REFUSED: {prof['arms_need_pi'][arm_name]}")
         if arm_name not in arms:
@@ -1229,8 +1358,8 @@ def main(argv=None) -> int:
         p.add_argument("--key-file")
         p.add_argument("--pkg", required=(name != "refusals"))
         if name in ("run", "refusals"):
-            p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1D_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI) | set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS) + sorted(AUXS1C_ARM_CLASS) + sorted(set(HNSCREEN_ARM_CLASS) | set(HNSCREEN_NEEDS_PI)),
-                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_rls1b: C1 R0b R1b (R2b needs a PI decision); refe_rls1c: R0c; refe_rls1d: R0d R1d R1o; refe_aux_s1: N-s0..H2-s2; refe_aux_s1c: H1u10k-s0 | H1u2k-s0; refe_hnscreen: S0 S1 S2 (S3 S4 need rule E); "
+            p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1D_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI) | set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS) + sorted(AUXS1C_ARM_CLASS) + sorted(set(HNSCREEN_ARM_CLASS) | set(HNSCREEN_NEEDS_PI)) + sorted(set(RLS1E_ARM_CLASS) - set(RLS1D_ARM_CLASS)),
+                           help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_rls1b: C1 R0b R1b (R2b needs a PI decision); refe_rls1c: R0c; refe_rls1d: R0d R1d R1o; refe_rls1e: R0e-id R0e-pick R1e-pick R1o; refe_aux_s1: N-s0..H2-s2; refe_aux_s1c: H1u10k-s0 | H1u2k-s0; refe_hnscreen: S0 S1 S2 (S3 S4 need rule E); "
                                 "REQUIRED to mint, optional for `refusals` (undeclared = read off the argv)")
         if name == "run":
             p.add_argument("--out-dir", required=True)

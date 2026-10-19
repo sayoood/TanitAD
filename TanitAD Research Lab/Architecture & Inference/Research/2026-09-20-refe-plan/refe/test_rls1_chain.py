@@ -677,7 +677,7 @@ def mutations(text):
         ("a re-run keeps the stale read / egress markers", drop_line(text, 'rm -f "$S/read_$ARM.ok" "$S/egress_$ARM.ok"'), "STALE_MARKERS_KEPT"),
         ("an insertion point is gone", sw("RLS1B-INSERTION-POINT-2", "NOTHING"), "NO_INSERTION_POINT_2"),
         ("an RL-S1b arm is invented", sw("    # RLS1B-INSERTION-POINT-2", "    R2b) seed=0 ;;\n    # RLS1B-INSERTION-POINT-2"), "INVENTED_RLS1B_ARGV"),
-        ("R0b / R1b are not registered", sw('REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0c R0d R1d R1o"'), "RLS1B_ARMS_NOT_REGISTERED"),
+        ("R0b / R1b are not registered", sw('REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o R0e-id R0e-pick R1e-pick"', 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0c R0d R1d R1o R0e-id R0e-pick R1e-pick"'), "RLS1B_ARMS_NOT_REGISTERED"),
         ("R0b is judged under the original profile", sw("R0b|R1b) echo refe_rls1b", "R0b|R1b) echo refe_rls1"), "NO_RLS1B_PROFILE"),
         ("a missing control is silently replaced by the arm's own A", sw('refuse "RL-S1b arm $ARM is read against $RD', 'refuse "x $ARM $RD'), "RLS1B_CONTROL_NOT_ENFORCED"),
         ("the in-loop arm check is gone", sw('  arm_registered "$ARM" || refuse "unknown arm \'$ARM\'"\n', ""), "ARM_NAMES_NOT_REFUSED_TWICE"),
@@ -965,7 +965,7 @@ def r0c_behaviour(text, tmp, P, groups=None):
 def r0c_mutations(text):
     """(name, mutated text, static violation prefix check_chain must raise or None, (r0c_behaviour group, violation prefix) or None).  Every mutated copy must differ from `text`."""
     sw = lambda a, b: text.replace(a, b)                                                         # noqa: E731
-    regs = 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o"'
+    regs = 'REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o R0e-id R0e-pick R1e-pick"'
     precheck = re.search(r'^for ARM in \$\{RLS1_ARMS:-C0 R0 C1 R1 R2\}; do arm_registered "\$ARM" \|\| refuse "unknown arm.*?; done\n', text, re.M).group(0)
     own = re.search(r'^  \[ "\$ARM" = R0c \] && REFDIR="\$ARMDIR/scores"\n', text, re.M).group(0)
     generic = '  if [ -z "$RD" ] || [ ! -f "$R/arms/$RD/scores/scores_update1000_A.npz" ]; then REFDIR="$ARMDIR/scores"; else REFDIR="$R/arms/$RD/scores"; fi\n'
