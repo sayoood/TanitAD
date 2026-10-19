@@ -43,8 +43,10 @@ NEVER touches the GPU lock.  Never reads the dev-gate or navtest tables (every f
 from __future__ import annotations
 
 import argparse
+import builtins
 import dataclasses
 import hashlib
+import itertools
 import json
 import os
 import re
@@ -91,20 +93,71 @@ class GateError(RuntimeError):
 
 
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
-# the frozen gate, loaded from the bytes that are hashed (read once, hashed, exec'd from those same bytes: no check-then-use gap)
+# module loading.  EVERY load execs the bytes that were hashed into a NEW module of its own (C2-GATE-SIBLING-LEAK, 2026-10-19)
+#
+# The loaders used to register the module in `sys.modules` under a name that carried only the sha256 of the bytes, and to SERVE that module to any later caller holding the same bytes.  That is sound for the
+# bytes and wrong for everything else a module is: its `__file__` (srttc_c2.py:110 and srttc_r1.py:258,858 re-read it at run time) and its state belonged to the FIRST load.  A second code dir with identical
+# bytes was handed the first dir's module; once the first dir was gone `run_c2` raised FileNotFoundError, and while it was there the file that "ran" was the other dir's.  The sibling import had the same shape:
+# `import srttc_r1 as R` (srttc_c2.py:37) was answered by a PROCESS-GLOBAL `sys.modules['srttc_r1']` swapped in for the duration of the exec, and srttc_c2.py's own `sys.path.insert(0, HERE)`
+# (srttc_c2.py:35-36) left the dir on the path for good.
+# Now (1) a unique module name per load: nothing is looked up, nothing is served; (2) a load that raises removes its module; (3) the sibling import of the exec'd module is answered by THAT load's verified
+# module through the exec'd module's OWN `__import__`: `sys.modules['srttc_r1']` and `sys.path` are never consulted for it and never touched; (4) `sys.path` is put back after every exec.
+# Reference pattern: EPR1UB-GATE-CACHE's `load_verified_ub` (epr1ub_gate.py), no cache.  A repeat load costs one exec of a ~60 kB source.
 # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+_LOADS = itertools.count(1)
+
+
+def _unique_name(stem: str) -> str:
+    """A module name no earlier load used (and none squatting in sys.modules): `<stem>_n<k>`.  The stem carries the sha256 for the log; the counter is what makes every load its own module."""
+    name = f"{stem}_n{next(_LOADS)}"
+    while name in sys.modules:
+        name = f"{stem}_n{next(_LOADS)}"
+    return name
+
+
+def _bound_builtins(bound: dict) -> dict:
+    """A copy of `builtins` whose `__import__` answers `import <name>` for each name in `bound` with exactly that module (the one THIS load verified) and sends every other import to the normal machinery.
+    It is the `__builtins__` of ONE exec'd module, so nothing process-global is touched.  A dotted import of a bound name is refused: it would reach past the verified module."""
+    real = builtins.__import__
+
+    def __import__(name, globals=None, locals=None, fromlist=(), level=0):          # noqa: A001, A002
+        top = name.partition(".")[0]
+        if level == 0 and top in bound:
+            if name != top:
+                raise ImportError(f"import {name!r}: only the verified {top!r} module of this load may be imported, not a submodule of it")
+            return bound[top]
+        return real(name, globals, locals, fromlist, level)
+
+    ns = dict(builtins.__dict__)
+    ns["__import__"] = __import__
+    return ns
+
+
+def _exec_fresh(stem: str, p: str, src: bytes, *, bind: dict | None = None):
+    """Exec `src` (the bytes that were hashed, read once) as a NEW module `<stem>_n<k>` with `__file__ = p`.  `bind` = {import name: verified module}: that module is what `import <name>` inside `src` gives."""
+    name = _unique_name(stem)                                                       # MUTATION-TARGET-SIBLING-NAME
+    mod = types.ModuleType(name)
+    mod.__file__ = p
+    if bind:                                                                        # MUTATION-TARGET-SIBLING-BIND
+        mod.__dict__["__builtins__"] = _bound_builtins(bind)
+    saved_path = list(sys.path)
+    sys.modules[name] = mod                                                         # dataclasses (with `from __future__ import annotations`) looks the module up here
+    try:
+        exec(compile(src, p, "exec", dont_inherit=True), mod.__dict__)
+    except BaseException:
+        sys.modules.pop(name, None)                                                 # MUTATION-TARGET-POISON-GUARD: a load that raised leaves no module behind
+        raise
+    finally:
+        sys.path[:] = saved_path                                                    # srttc_c2.py does `sys.path.insert(0, HERE)` when exec'd: that must not outlive the load
+    return mod
+
+
 def _load_frozen_gate(code_dir: str = HERE):
+    """The frozen R1 gate, from the bytes that are hashed (read once, hashed, exec'd from those same bytes: no check-then-use gap), as a module of its own.  -> (module, sha256)."""
     p = os.path.join(code_dir, "srttc_r1_gate.py")
     src = Path(p).read_bytes()
     sha = hashlib.sha256(src).hexdigest()
-    name = "srttc_r1_gate__c2dep_" + sha[:12]
-    if name in sys.modules:
-        return sys.modules[name], sha
-    mod = types.ModuleType(name)
-    mod.__file__ = p
-    sys.modules[name] = mod                      # dataclasses (with `from __future__ import annotations`) looks the module up here
-    exec(compile(src, p, "exec", dont_inherit=True), mod.__dict__)
-    return mod, sha
+    return _exec_fresh("srttc_r1_gate__c2dep_" + sha[:12], p, src), sha
 
 
 G, FROZEN_GATE_SHA = _load_frozen_gate()
@@ -113,46 +166,29 @@ _res = G._res
 
 
 def exec_verified_module(code_dir: str, filename: str, modname: str, expect_sha256: str | None = None):
-    """Exec `filename` from the exact bytes that are hashed and register it as `modname__c2g_<sha>`.  -> (module, sha256).  A module of that name that already exists is the same bytes (the name carries the sha)."""
+    """Exec `filename` from the exact bytes that are hashed, as a NEW module `<modname>__c2g_<sha12>_n<k>` (never a module an earlier load made; its `__file__` is THIS dir's file).  -> (module, sha256)."""
     p = os.path.join(code_dir, filename)
     src = Path(p).read_bytes()
     sha = sha256_bytes(src)
     if expect_sha256 is not None and sha != expect_sha256:
         raise GateError(f"{filename} sha256 {sha} != the verified {expect_sha256}")
-    name = f"{modname}__c2g_{sha[:12]}"
-    if name in sys.modules:
-        return sys.modules[name], sha
-    mod = types.ModuleType(name)
-    mod.__file__ = p
-    sys.modules[name] = mod                      # dataclasses (with `from __future__ import annotations`) looks the module up here
-    exec(compile(src, p, "exec", dont_inherit=True), mod.__dict__)
-    return mod, sha
+    return _exec_fresh(f"{modname}__c2g_{sha[:12]}", p, src), sha
 
 
 def load_verified_pair(code_dir: str, expect: dict) -> tuple:
-    """-> (srttc_r1 module, srttc_c2 module, shas).  srttc_c2.py does `import srttc_r1 as R`: while it is exec'd, `srttc_r1` resolves to THE verified module (restored afterwards), so the C2 fit runs on the bytes
-    that were hashed and not on whatever file the import path would find."""
+    """-> (srttc_r1 module, srttc_c2 module, shas), both NEW modules made from the bytes of THIS code_dir that were hashed.  srttc_c2.py does `import srttc_r1 as R`: that import is answered by the srttc_r1
+    module of THIS pair (the exec'd module's own `__import__`, see `_bound_builtins`), so the C2 fit runs on the bytes that were hashed and not on whatever `sys.modules` / the import path would give."""
     mod, sha_r1 = exec_verified_module(code_dir, "srttc_r1.py", "srttc_r1", expect.get("srttc_r1.py"))
-    p = os.path.join(code_dir, "srttc_c2.py")
-    src = Path(p).read_bytes()
-    sha_c2 = sha256_bytes(src)
-    if expect.get("srttc_c2.py") is not None and sha_c2 != expect["srttc_c2.py"]:
-        raise GateError(f"srttc_c2.py sha256 {sha_c2} != the verified {expect['srttc_c2.py']}")
-    name = f"srttc_c2__c2g_{sha_c2[:12]}_{sha_r1[:12]}"
-    if name in sys.modules:
-        return mod, sys.modules[name], {"srttc_r1.py": sha_r1, "srttc_c2.py": sha_c2}
-    c2mod = types.ModuleType(name)
-    c2mod.__file__ = p
-    sys.modules[name] = c2mod
-    prev = sys.modules.get("srttc_r1")
-    sys.modules["srttc_r1"] = mod
     try:
-        exec(compile(src, p, "exec", dont_inherit=True), c2mod.__dict__)
-    finally:
-        if prev is None:
-            sys.modules.pop("srttc_r1", None)
-        else:
-            sys.modules["srttc_r1"] = prev
+        p = os.path.join(code_dir, "srttc_c2.py")
+        src = Path(p).read_bytes()
+        sha_c2 = sha256_bytes(src)
+        if expect.get("srttc_c2.py") is not None and sha_c2 != expect["srttc_c2.py"]:
+            raise GateError(f"srttc_c2.py sha256 {sha_c2} != the verified {expect['srttc_c2.py']}")
+        c2mod = _exec_fresh(f"srttc_c2__c2g_{sha_c2[:12]}_{sha_r1[:12]}", p, src, bind={"srttc_r1": mod})
+    except BaseException:
+        sys.modules.pop(mod.__name__, None)                                         # a pair that failed leaves neither half behind
+        raise
     return mod, c2mod, {"srttc_r1.py": sha_r1, "srttc_c2.py": sha_c2}
 
 

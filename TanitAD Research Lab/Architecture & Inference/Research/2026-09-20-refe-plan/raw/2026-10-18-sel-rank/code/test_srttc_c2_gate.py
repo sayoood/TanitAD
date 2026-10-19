@@ -16,6 +16,8 @@ Every check has a deliberate-regression arm that MUST make the gate FAIL, each p
   ENTRY    srttc_c2_run.py REFUSES with no token (exit 3, nothing written), with --no-gate-stage-ack (exit 2), with the lc sub-command (exit 2), with a token for another argv, with srttc_c2.py edited after the mint;
            with a valid token it writes the C2 rows + result + attestation, bound to the R1 run; a second run writes nothing; the attestation refuses an edited result
   MUTATION the enforcement code itself: each marked line of srttc_c2_gate.py is mutated and a scenario that is GREEN on the original must go RED
+  LOADERS  C2-GATE-SIBLING-LEAK: every load execs the hashed bytes into a module of its own: a second code dir (a different srttc_r1, identical bytes, or the first dir DELETED) runs ITS files,
+           never a sys.modules / sys.path / earlier-load module; a load that raises leaves nothing behind; restoring each process-global lookup must turn the arms RED
 """
 from __future__ import annotations
 
@@ -827,6 +829,182 @@ class TestMutationOfTheEnforcement(unittest.TestCase):
         self.assertTrue(any("REAL labels" in r for r in orig["reasons"]), orig["reasons"])
         self.assertFalse(any("did not receive the SHUFFLED" in r for r in mut["reasons"]), "the mutated decision no longer fires")
         self.assertTrue(any("REAL labels" in r for r in mut["reasons"]), "the 'received the REAL labels' arm still catches the real-label fit")
+
+
+# ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+@dataclasses.dataclass
+class _FakeFitData:
+    """The two fields `srttc_c2.fit_c2_rows` reads (`y3`, `n_sets`) and `dataclasses.replace`s: enough to run the module's own function against a stand-in `srttc_r1.fit_row` that returns a sentinel."""
+    y3: torch.Tensor
+    n_sets: int
+
+
+class TestEachLoadUsesExactlyTheVerifiedFiles(unittest.TestCase):
+    """C2-GATE-SIBLING-LEAK (BACKLOG, fix before any reuse of the C2 chain).  The loaders registered the module in `sys.modules` under the sha256 of its bytes and served it to every later caller with the
+    same bytes, and srttc_c2.py's `import srttc_r1 as R` was answered by a process-global `sys.modules['srttc_r1']`.  A second code dir therefore ran the FIRST dir's module (its `__file__`, its state): once that
+    dir was gone `run_c2` raised FileNotFoundError.  Every arm asserts on a SENTINEL value the module under test returns, not on a path string, and each arm is paired with the mutant that restores the lookup."""
+
+    GATE_SRC = rb(os.path.join(HERE, "srttc_c2_gate.py")).decode("utf-8")
+    FILES = ("srttc_r1_gate.py", "srttc_r1.py", "srttc_c2.py")
+    PREFIXES = ("srttc_r1__c2g_", "srttc_c2__c2g_", "srttc_r1_gate__c2dep_")
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.mkdtemp(prefix="c2g_sibling_")
+
+    @classmethod
+    def tearDownClass(cls):
+        for k in [k for k in sys.modules if k.startswith("srttc_c2_gate_sibling_mutant_")]:
+            sys.modules.pop(k, None)
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    # -- helpers --------------------------------------------------------------------------------------------------------------------------------------------------
+    def mk(self, name, tag, uid, **boom):
+        """A code dir with the real three files.  srttc_r1.py gets `SENTINEL = tag` and a `fit_row` that returns ('fit_row from', tag) appended (its sha256 therefore depends on `tag` and `uid`: the same tag and
+        uid is the SAME bytes in another dir).  A file named in `boom` gets a `raise RuntimeError(msg)` appended."""
+        d = os.path.join(self.tmp, f"{name}_{uid}")
+        os.makedirs(d)
+        for f in self.FILES:
+            data = rb(os.path.join(HERE, f))
+            if f == "srttc_r1.py":
+                data += (f"\n\nSENTINEL = {tag!r}\n\n\ndef fit_row(*a, **k):\n    return ('fit_row from', SENTINEL)\n\n# uid {uid}\n").encode("utf-8")
+            if f in boom:
+                data += ("\nraise RuntimeError(%r)\n" % boom[f]).encode("utf-8")
+            wb(os.path.join(d, f), data)
+        return d
+
+    def snap(self):
+        return {k for k in sys.modules if k.startswith(self.PREFIXES)}
+
+    def run_fit(self, c2):
+        """`srttc_c2.fit_c2_rows` as the module ITSELF runs it: its default `fit` is `R.fit_row`, so the row it returns is whatever the srttc_r1 it was bound to returns."""
+        rows, _ = c2.fit_c2_rows(_FakeFitData(torch.zeros(3, 8), 3), None, (0,), None, None)
+        return rows["0"]
+
+    def mutant(self, marker, new, name):
+        """srttc_c2_gate.py with the ONE line that carries `marker` replaced by `new` (the lines of `new` are indented like the original)."""
+        lines = self.GATE_SRC.split("\n")
+        idx = [i for i, ln in enumerate(lines) if marker in ln]
+        self.assertEqual(len(idx), 1, (marker, len(idx)))
+        ln = lines[idx[0]]
+        indent = ln[:len(ln) - len(ln.lstrip())]
+        lines[idx[0]] = "\n".join(indent + x for x in new.split("\n"))
+        modname = f"srttc_c2_gate_sibling_mutant_{name}"
+        m = types.ModuleType(modname)
+        m.__file__ = os.path.join(HERE, "srttc_c2_gate.py")
+        sys.modules[modname] = m
+        exec(compile("\n".join(lines), m.__file__, "exec", dont_inherit=True), m.__dict__)
+        return m
+
+    # -- the arms: each takes a gate module and raises AssertionError when that gate hands a load the wrong module ---------------------------------------------------
+    def arm_poison(self, gm):
+        """Code dirs A, B (a DIFFERENT srttc_r1) and A2 (the SAME bytes as A, in another dir) are loaded in a process that already has some other `srttc_r1` registered under that name.  Each load must run ITS
+        dir's srttc_r1: asserted by the sentinel its `fit_row` returns through `srttc_c2.fit_c2_rows`."""
+        uid = os.urandom(6).hex()
+        dirs = [self.mk(f"pa_{n}", tag, uid) for n, tag in (("A", "A"), ("B", "B"), ("A2", "A"))]
+        decoy = types.ModuleType("srttc_r1")
+        decoy.SENTINEL = "GLOBAL"
+        decoy.fit_row = lambda *a, **k: ("fit_row from", "GLOBAL")
+        saved, path0 = sys.modules.get("srttc_r1"), list(sys.path)
+        sys.modules["srttc_r1"] = decoy                                           # a process that already imported another srttc_r1 (every test run does: setUpModule)
+        try:
+            loads = [gm.load_verified_pair(d, {}) for d in dirs]
+            untouched = sys.modules.get("srttc_r1") is decoy
+            path_same = sys.path == path0
+        finally:
+            if saved is None:
+                sys.modules.pop("srttc_r1", None)
+            else:
+                sys.modules["srttc_r1"] = saved
+            sys.path[:] = path0
+        for tag, (r1, c2, _shas) in zip(("A", "B", "A"), loads):
+            self.assertIs(c2.R, r1, f"{tag}: srttc_c2's R is not the srttc_r1 that was loaded with it")
+            self.assertEqual(r1.SENTINEL, tag, f"{tag}: the srttc_r1 module of this load carries another dir's sentinel")
+            self.assertEqual(self.run_fit(c2), ("fit_row from", tag), f"{tag}: the C2 fit ran another module's srttc_r1 code")
+        self.assertIsNot(loads[2][0], loads[0][0], "identical bytes in a second dir were served the first dir's srttc_r1 module")
+        self.assertIsNot(loads[2][1], loads[0][1], "identical bytes in a second dir were served the first dir's srttc_c2 module")
+        self.assertTrue(untouched, "a load replaced or removed sys.modules['srttc_r1'] (process-global state)")
+        self.assertTrue(path_same, "a load left an entry on sys.path")
+
+    def arm_gone(self, gm):
+        """A is loaded and then DELETED; B (identical bytes) is loaded next.  B must not raise, must not carry A's state, and the file its module points at (what `run_c2` re-reads at srttc_c2.py:110) must
+        be readable and be the bytes that were verified."""
+        uid = os.urandom(6).hex()
+        dA = self.mk("pb_A", "same", uid)
+        r1A, _c2A, _ = gm.load_verified_pair(dA, {})
+        r1A.LEFT_BY_A = "state of A"
+        shutil.rmtree(dA)
+        dB = self.mk("pb_B", "same", uid)
+        r1B, c2B, shas = gm.load_verified_pair(dB, {})
+        self.assertFalse(hasattr(r1B, "LEFT_BY_A"), "B was handed A's module object (its state is visible)")
+        self.assertIsNot(r1B, r1A)
+        with open(os.path.abspath(c2B.R.__file__), "rb") as f:
+            self.assertEqual(hashlib.sha256(f.read()).hexdigest(), shas["srttc_r1.py"], "the file the loaded module points at is not the file whose sha256 was verified")
+
+    def arm_failed_load(self, gm):
+        """A load whose exec raises leaves no module in sys.modules, restores sys.path and never touches sys.modules['srttc_r1']; the same bytes raise again on the next call."""
+        uid = os.urandom(6).hex()
+        cases = (("frozen gate", {"srttc_r1_gate.py": "boom frozen"}, lambda d: gm._load_frozen_gate(d)),
+                 ("exec_verified_module", {"srttc_r1.py": "boom evm"}, lambda d: gm.exec_verified_module(d, "srttc_r1.py", "srttc_r1")),
+                 ("pair, srttc_c2.py raises", {"srttc_c2.py": "boom c2"}, lambda d: gm.load_verified_pair(d, {})),
+                 ("pair, srttc_r1.py raises", {"srttc_r1.py": "boom r1"}, lambda d: gm.load_verified_pair(d, {})))
+        for i, (label, broken, call) in enumerate(cases):
+            d = self.mk(f"pf{i}", "boom", uid, **broken)
+            before, r1_before, path0 = self.snap(), sys.modules.get("srttc_r1"), list(sys.path)
+            for attempt in (1, 2):
+                with self.assertRaises(RuntimeError) as cm:
+                    call(d)
+                self.assertIn(next(iter(broken.values())), str(cm.exception), f"{label}, attempt {attempt}")
+            self.assertEqual(self.snap() - before, set(), f"{label}: a FAILED load left modules registered in sys.modules")
+            self.assertIs(sys.modules.get("srttc_r1"), r1_before, f"{label}: sys.modules['srttc_r1'] changed")
+            self.assertEqual(sys.path, path0, f"{label}: sys.path changed")
+
+    # -- the tests ------------------------------------------------------------------------------------------------------------------------------------------------
+    def test_a_second_code_dir_runs_its_own_srttc_r1_poison_arm(self):
+        self.arm_poison(CG)
+
+    def test_a_deleted_first_code_dir_is_never_touched_by_a_later_load(self):
+        self.arm_gone(CG)
+
+    def test_a_failed_load_leaves_nothing_behind_and_fails_again(self):
+        self.arm_failed_load(CG)
+
+    def test_restoring_each_process_global_lookup_turns_the_arms_red(self):
+        reuse = self.mutant("MUTATION-TARGET-SIBLING-NAME", "name = stem\nif name in sys.modules:\n    return sys.modules[name]", "reuse")     # the sha-keyed sys.modules lookup of the old loaders
+        nobind = self.mutant("MUTATION-TARGET-SIBLING-BIND", "if False:", "nobind")                                                        # `import srttc_r1` answered by sys.modules / sys.path again
+        noguard = self.mutant("MUTATION-TARGET-POISON-GUARD", "pass", "noguard")                                                           # a failed load stays registered
+        for arm in (self.arm_poison, self.arm_gone, self.arm_failed_load):
+            arm(CG)                                                                    # the GREEN side, in the same breath
+        for name, gm, arms in (("sha-keyed sys.modules lookup", reuse, (self.arm_poison, self.arm_gone)), ("global srttc_r1 binding", nobind, (self.arm_poison,)),
+                               ("no poison guard", noguard, (self.arm_failed_load,))):
+            for arm in arms:
+                with self.assertRaises(AssertionError, msg=f"{name}: the mutant must turn {arm.__name__} RED"):
+                    arm(gm)
+
+    def test_the_sibling_import_is_answered_by_the_verified_module_only(self):
+        import builtins
+        process_import = builtins.__import__
+        sentinel = types.ModuleType("verified_srttc_r1")
+        ns = CG._bound_builtins({"srttc_r1": sentinel})
+        imp = ns["__import__"]
+        self.assertIs(imp("srttc_r1"), sentinel)
+        self.assertIs(imp("srttc_r1", None, None, ("Cfg",), 0), sentinel)
+        self.assertIs(imp("json"), json)                                                # everything else goes to the normal machinery
+        with self.assertRaises(ImportError):
+            imp("srttc_r1.sub")                                                         # a submodule would reach past the verified module
+        self.assertIs(builtins.__import__, process_import)                              # the process-wide __import__ is untouched
+        self.assertIsNot(ns["__import__"], process_import)
+
+    def test_every_load_is_a_module_of_its_own_with_its_own_file(self):
+        uid = os.urandom(6).hex()
+        d1, d2 = self.mk("pe1", "same", uid), self.mk("pe2", "same", uid)
+        (a1, b1, _), (a2, b2, _) = CG.load_verified_pair(d1, {}), CG.load_verified_pair(d2, {})
+        self.assertEqual((os.path.dirname(a1.__file__), os.path.dirname(a2.__file__)), (d1, d2))
+        self.assertEqual((os.path.dirname(b1.__file__), os.path.dirname(b2.__file__)), (d1, d2))
+        self.assertEqual(len({a1.__name__, a2.__name__, b1.__name__, b2.__name__}), 4)
+        g1, g2 = CG._load_frozen_gate(d1)[0], CG._load_frozen_gate(d2)[0]
+        self.assertIsNot(g1, g2)
+        self.assertIsNot(g1, CG.G)
 
 
 if __name__ == "__main__":
