@@ -1,0 +1,118 @@
+usage: run_tests.py fit [-h] --data DATA --ctx CTX --ctx-manifest CTX_MANIFEST
+                        --seed SEED --stage {A1,A2,B,PRE} [--folds FOLDS]
+                        --out-dir OUT_DIR [--epochs EPOCHS]
+                        [--shard-gib SHARD_GIB] [--max-wait MAX_WAIT]
+                        [--min-avail-gb MIN_AVAIL_GB]
+
+options:
+  -h, --help            show this help message and exit
+  --data DATA           dir with sh5_inputs.npz + sh5_labels.npz
+  --ctx CTX
+  --ctx-manifest CTX_MANIFEST
+                        ctx_manifest.json of sh5_ctx_build.py (tokens in file
+                        order + fidelity)
+  --seed SEED
+  --stage {A1,A2,B,PRE}
+  --folds FOLDS
+  --out-dir OUT_DIR
+  --epochs EPOCHS       0 = the C-ID pre-flight (no optimizer step)
+  --shard-gib SHARD_GIB
+  --max-wait MAX_WAIT
+  --min-avail-gb MIN_AVAIL_GB
+usage: run_tests.py analyze [-h] --data DATA --fits FITS --gates GATES
+                            [--keep-tokens KEEP_TOKENS] --out-dir OUT_DIR
+
+options:
+  -h, --help            show this help message and exit
+  --data DATA
+  --fits FITS
+  --gates GATES         json {c_id, g_live, c_fid, red_table}
+  --keep-tokens KEEP_TOKENS
+                        the ctx manifest json (its done tokens are the
+                        analysis set)
+  --out-dir OUT_DIR
+usage: run_tests.py run [-h] --inputs INPUTS --plan PLAN [--ckpt CKPT]
+                        --out-dir OUT_DIR --max-wait MAX_WAIT
+                        [--min-avail-gb MIN_AVAIL_GB] [--device DEVICE]
+                        [--backbone BACKBONE]
+
+options:
+  -h, --help            show this help message and exit
+  --inputs INPUTS       sh5_inputs.npz (label-free): token_idx, traj3, z6 for
+                        the fidelity gate
+  --plan PLAN
+  --ckpt CKPT
+  --out-dir OUT_DIR
+  --max-wait MAX_WAIT
+  --min-avail-gb MIN_AVAIL_GB
+  --device DEVICE
+  --backbone BACKBONE
+usage: run_tests.py plan [-h] --inputs INPUTS --out-dir OUT_DIR
+                         [--stage-db-dir STAGE_DB_DIR]
+                         [--images-root IMAGES_ROOT]
+
+options:
+  -h, --help            show this help message and exit
+  --inputs INPUTS
+  --out-dir OUT_DIR
+  --stage-db-dir STAGE_DB_DIR
+  --images-root IMAGES_ROOT
+ZZGLIVE ok=False
+ZZSH5FIT_FAIL G-LIVE failed: no optimizer step is taken
+ZZGLIVE ok=True
+  cycle 1 done
+ZZSH5FIT_OK 1 groups
+ZZGLIVE ok=True
+  cycle 1 done
+ZZSH5FIT_OK 1 groups
+ZZGLIVE ok=True
+  cycle 1/1 shard 1/1: 20 tokens loaded in 0 s
+    inner 1/2 done; mean last loss 0.7713
+    inner 2/2 done; mean last loss 0.8286
+  cycle 1 done
+ZZPREFLIGHT {"plant_s0": {"n_sets": 6, "auc_all_strata": 0.7814411964649898, "r2_reg": -5.374878350670888}}
+ZZSH5FIT_OK 1 groups
+
+  synthetic C-REACH: plant-arm DAC AUC(Q1-3) 0.987, reg R2 0.589
+
+  synthetic Delta(Q1-3) L+S +0.0569   L+Sshuf +0.0014   (AUC L 0.939)
+
+  synthetic machinery null: Delta(Q1-3) +0.0003 [-0.0003, +0.0011], stacker b [0.664, 0.581, 0.765, 0.588, 0.53]
+{
+ "test_sh5_lib.py": {
+  "ran": 43,
+  "failures": 0,
+  "errors": 0,
+  "ok": true,
+  "seconds": 3.2
+ },
+ "test_sh5_branch.py": {
+  "ran": 17,
+  "failures": 0,
+  "errors": 0,
+  "ok": true,
+  "seconds": 4.8
+ },
+ "test_sh5_ctx.py": {
+  "ran": 16,
+  "failures": 0,
+  "errors": 0,
+  "ok": true,
+  "seconds": 8.0
+ },
+ "test_sh5_guard.py": {
+  "ran": 4,
+  "failures": 0,
+  "errors": 0,
+  "ok": true,
+  "seconds": 1.8
+ },
+ "test_sh5_pipeline.py": {
+  "ran": 15,
+  "failures": 0,
+  "errors": 0,
+  "ok": true,
+  "seconds": 573.1
+ },
+ "all_passed": true
+}

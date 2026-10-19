@@ -1,0 +1,64 @@
+................
+----------------------------------------------------------------------
+Ran 16 tests in 1.951s
+
+OK
+usage: test_sh5_ctx.py fit [-h] --data DATA --ctx CTX --ctx-manifest
+                           CTX_MANIFEST --seed SEED --stage {A1,A2,B,PRE}
+                           [--folds FOLDS] --out-dir OUT_DIR [--epochs EPOCHS]
+                           [--shard-gib SHARD_GIB] [--max-wait MAX_WAIT]
+                           [--min-avail-gb MIN_AVAIL_GB]
+
+options:
+  -h, --help            show this help message and exit
+  --data DATA           dir with sh5_inputs.npz + sh5_labels.npz
+  --ctx CTX
+  --ctx-manifest CTX_MANIFEST
+                        ctx_manifest.json of sh5_ctx_build.py (tokens in file
+                        order + fidelity)
+  --seed SEED
+  --stage {A1,A2,B,PRE}
+  --folds FOLDS
+  --out-dir OUT_DIR
+  --epochs EPOCHS       0 = the C-ID pre-flight (no optimizer step)
+  --shard-gib SHARD_GIB
+  --max-wait MAX_WAIT
+  --min-avail-gb MIN_AVAIL_GB
+usage: test_sh5_ctx.py analyze [-h] --data DATA --fits FITS --gates GATES
+                               [--keep-tokens KEEP_TOKENS] --out-dir OUT_DIR
+
+options:
+  -h, --help            show this help message and exit
+  --data DATA
+  --fits FITS
+  --gates GATES         json {c_id, g_live, c_fid, red_table}
+  --keep-tokens KEEP_TOKENS
+                        the ctx manifest json (its done tokens are the
+                        analysis set)
+  --out-dir OUT_DIR
+usage: test_sh5_ctx.py run [-h] --inputs INPUTS --plan PLAN [--ckpt CKPT]
+                           --out-dir OUT_DIR --max-wait MAX_WAIT
+                           [--min-avail-gb MIN_AVAIL_GB] [--device DEVICE]
+                           [--backbone BACKBONE]
+
+options:
+  -h, --help            show this help message and exit
+  --inputs INPUTS       sh5_inputs.npz (label-free): token_idx, traj3, z6 for
+                        the fidelity gate
+  --plan PLAN
+  --ckpt CKPT
+  --out-dir OUT_DIR
+  --max-wait MAX_WAIT
+  --min-avail-gb MIN_AVAIL_GB
+  --device DEVICE
+  --backbone BACKBONE
+usage: test_sh5_ctx.py plan [-h] --inputs INPUTS --out-dir OUT_DIR
+                            [--stage-db-dir STAGE_DB_DIR]
+                            [--images-root IMAGES_ROOT]
+
+options:
+  -h, --help            show this help message and exit
+  --inputs INPUTS
+  --out-dir OUT_DIR
+  --stage-db-dir STAGE_DB_DIR
+  --images-root IMAGES_ROOT

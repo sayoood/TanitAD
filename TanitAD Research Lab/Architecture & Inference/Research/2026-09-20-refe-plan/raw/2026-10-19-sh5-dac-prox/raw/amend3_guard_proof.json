@@ -1,0 +1,167 @@
+{
+ "purpose": "the guard accepts the Amendment-3 package (amendments [1, 2, 3]) and refuses the Amendment-2 analysis code and every tampered variant, at the function and at the real stage entry points",
+ "root": "C:/Users/Admin/par18/sh5",
+ "old_lib_sha256": "f7901f2a1b53926f34a9414f39576300208af0aaf7f6a139c314f93c3b7d88fa",
+ "old_test_sha256": "2566dcc5cde60f6db8488d7d6c780c09ccb1ca8f14dbefc3d1b77cea1e38747a",
+ "new_lib_sha256": "cb99698c6f5e1cbcc8e01476d12dddc3a01f3af79e68174f04c01aed74219aa4",
+ "new_test_sha256": "d01d20df254eac162acd8eac30ebb3cada00548ebeaf799744828a153cf389a3",
+ "all_as_expected": true,
+ "cases": [
+  {
+   "case": "amended_package",
+   "change": "none: the Amendment-3 package as built (amendments 1, 2, 3)",
+   "expected": "ACCEPT",
+   "guard": {
+    "accepted": true,
+    "result": {
+     "prereg": "687e08c8468c16b6904d968a2c0316c76066841244718789f62c3f927d0a0839",
+     "pins": 16,
+     "amendments": [
+      1,
+      2,
+      3
+     ]
+    }
+   },
+   "as_expected": true,
+   "stage_analyze": {
+    "cmd": "sh5_train_eval.py analyze --data NO_SUCH_DIR --fits NO_SUCH_DIR --gates NO_SUCH.json --out-dir NO_SUCH_OUT",
+    "returncode": 1,
+    "last_stderr_line": "FileNotFoundError: [Errno 2] No such file or directory: 'NO_SUCH_DIR/sh5_inputs.npz'",
+    "refused_by_guard": false
+   },
+   "stage_fit": {
+    "cmd": "sh5_train_eval.py fit --data NO_SUCH_DIR --ctx NO_SUCH.npy --ctx-manifest NO_SUCH.json --seed 0 --stage A1 --out-dir NO_SUCH_OUT",
+    "returncode": 1,
+    "last_stderr_line": "FileNotFoundError: [Errno 2] No such file or directory: 'NO_SUCH_DIR/sh5_inputs.npz'",
+    "refused_by_guard": false
+   }
+  },
+  {
+   "case": "amend2_analysis_code",
+   "change": "code/sh5_lib.py := the Amendment-2-state file (C-NULL-LABEL still fires at lower CI > +0.02)",
+   "expected": "REFUSE",
+   "guard": {
+    "accepted": false,
+    "refused_with": "NotSealed: pinned code changed after the seal (or after the last Amendment): ['code/sh5_lib.py']; write an Amendment before running"
+   },
+   "as_expected": true,
+   "stage_analyze": {
+    "cmd": "sh5_train_eval.py analyze --data NO_SUCH_DIR --fits NO_SUCH_DIR --gates NO_SUCH.json --out-dir NO_SUCH_OUT",
+    "returncode": 1,
+    "last_stderr_line": "sh5_guard.NotSealed: pinned code changed after the seal (or after the last Amendment): ['code/sh5_lib.py']; write an Amendment before running",
+    "refused_by_guard": true
+   },
+   "stage_fit": {
+    "cmd": "sh5_train_eval.py fit --data NO_SUCH_DIR --ctx NO_SUCH.npy --ctx-manifest NO_SUCH.json --seed 0 --stage A1 --out-dir NO_SUCH_OUT",
+    "returncode": 1,
+    "last_stderr_line": "sh5_guard.NotSealed: pinned code changed after the seal (or after the last Amendment): ['code/sh5_lib.py']; write an Amendment before running",
+    "refused_by_guard": true
+   }
+  },
+  {
+   "case": "amend2_tests",
+   "change": "code/test_sh5_lib.py := the Amendment-2-state file",
+   "expected": "REFUSE",
+   "guard": {
+    "accepted": false,
+    "refused_with": "NotSealed: pinned code changed after the seal (or after the last Amendment): ['code/test_sh5_lib.py']; write an Amendment before running"
+   },
+   "as_expected": true,
+   "stage_analyze": {
+    "cmd": "sh5_train_eval.py analyze --data NO_SUCH_DIR --fits NO_SUCH_DIR --gates NO_SUCH.json --out-dir NO_SUCH_OUT",
+    "returncode": 1,
+    "last_stderr_line": "sh5_guard.NotSealed: pinned code changed after the seal (or after the last Amendment): ['code/test_sh5_lib.py']; write an Amendment before running",
+    "refused_by_guard": true
+   },
+   "stage_fit": {
+    "cmd": "sh5_train_eval.py fit --data NO_SUCH_DIR --ctx NO_SUCH.npy --ctx-manifest NO_SUCH.json --seed 0 --stage A1 --out-dir NO_SUCH_OUT",
+    "returncode": 1,
+    "last_stderr_line": "sh5_guard.NotSealed: pinned code changed after the seal (or after the last Amendment): ['code/test_sh5_lib.py']; write an Amendment before running",
+    "refused_by_guard": true
+   }
+  },
+  {
+   "case": "amend1_analysis_code",
+   "change": "code/sh5_lib.py := the Amendment-1-state file (the sealed CTX-REACHABLE bar)",
+   "expected": "REFUSE",
+   "guard": {
+    "accepted": false,
+    "refused_with": "NotSealed: pinned code changed after the seal (or after the last Amendment): ['code/sh5_lib.py']; write an Amendment before running"
+   },
+   "as_expected": true
+  },
+  {
+   "case": "amended_code_without_its_amendment",
+   "change": "Amendment-3 md, sha256 and pins deleted (new code, no written amendment)",
+   "expected": "REFUSE",
+   "guard": {
+    "accepted": false,
+    "refused_with": "NotSealed: pinned code changed after the seal (or after the last Amendment): ['code/sh5_lib.py', 'code/test_sh5_lib.py']; write an Amendment before running"
+   },
+   "as_expected": true,
+   "stage_analyze": {
+    "cmd": "sh5_train_eval.py analyze --data NO_SUCH_DIR --fits NO_SUCH_DIR --gates NO_SUCH.json --out-dir NO_SUCH_OUT",
+    "returncode": 1,
+    "last_stderr_line": "sh5_guard.NotSealed: pinned code changed after the seal (or after the last Amendment): ['code/sh5_lib.py', 'code/test_sh5_lib.py']; write an Amendment before running",
+    "refused_by_guard": true
+   },
+   "stage_fit": {
+    "cmd": "sh5_train_eval.py fit --data NO_SUCH_DIR --ctx NO_SUCH.npy --ctx-manifest NO_SUCH.json --seed 0 --stage A1 --out-dir NO_SUCH_OUT",
+    "returncode": 1,
+    "last_stderr_line": "sh5_guard.NotSealed: pinned code changed after the seal (or after the last Amendment): ['code/sh5_lib.py', 'code/test_sh5_lib.py']; write an Amendment before running",
+    "refused_by_guard": true
+   }
+  },
+  {
+   "case": "amendment3_text_edited",
+   "change": "one byte appended to PREREG_SH5_DAC_PROX_AMENDMENT3.md",
+   "expected": "REFUSE",
+   "guard": {
+    "accepted": false,
+    "refused_with": "NotSealed: AMENDMENT3 sha256 does not match its record"
+   },
+   "as_expected": true
+  },
+  {
+   "case": "amendment2_text_edited",
+   "change": "one byte appended to PREREG_SH5_DAC_PROX_AMENDMENT2.md (the chain is walked in order)",
+   "expected": "REFUSE",
+   "guard": {
+    "accepted": false,
+    "refused_with": "NotSealed: AMENDMENT2 sha256 does not match its record"
+   },
+   "as_expected": true
+  },
+  {
+   "case": "broken_chain",
+   "change": "CODE_PINS_AMENDMENT3.json `from` for code/sh5_lib.py is not the file's current pin",
+   "expected": "REFUSE",
+   "guard": {
+    "accepted": false,
+    "refused_with": "NotSealed: AMENDMENT3: code/sh5_lib.py is not pinned at the hash the amendment starts from (chain broken)"
+   },
+   "as_expected": true
+  },
+  {
+   "case": "edit_after_amendment",
+   "change": "one byte appended to code/sh5_lib.py after Amendment 3",
+   "expected": "REFUSE",
+   "guard": {
+    "accepted": false,
+    "refused_with": "NotSealed: pinned code changed after the seal (or after the last Amendment): ['code/sh5_lib.py']; write an Amendment before running"
+   },
+   "as_expected": true
+  },
+  {
+   "case": "sealed_prereg_edited",
+   "change": "one byte appended to PREREG_SH5_DAC_PROX.md",
+   "expected": "REFUSE",
+   "guard": {
+    "accepted": false,
+    "refused_with": "NotSealed: PREREG sha256 cd4c9a952ce5068694869857129daa6276a0721863b71808521ecc2aefc39ef9 != recorded 687e08c8468c16b6904d968a2c0316c76066841244718789f62c3f927d0a0839: every stage refuses"
+   },
+   "as_expected": true
+  }
+ ]
+}

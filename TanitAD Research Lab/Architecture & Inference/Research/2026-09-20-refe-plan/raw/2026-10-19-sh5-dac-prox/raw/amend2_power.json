@@ -1,0 +1,1165 @@
+{
+ "purpose": "Amendment 2 power: CTX-REACHABLE sealed rule (lower CI > +0.02) vs NEW rule (lower CI > 0 AND point >= +0.02), on the inputs that gave the sealed MDEs",
+ "evidence_class": "MEASURED inputs (PRIVGEOM banked arrays), ESTIMATED probabilities (normal approximation + nested bootstrap)",
+ "inputs": {
+  "privgeom_arrays": "C:/Users/Admin/par18/privgeom/run/join/arrays.npz",
+  "L": "C:/Users/Admin/par18/privgeom/run/fits/L_dac_s0.npy",
+  "sign_clean_arm": "C:/Users/Admin/par18/privgeom/run/descr/fits/drop0_dac_s0.npy",
+  "plan": "../work/plan/plan.json",
+  "sealed_mde": "../work/mde.json"
+ },
+ "rule_constants": {
+  "sealed": {
+   "lower_ci_gt": 0.02
+  },
+  "new": {
+   "lower_ci_gt": 0.0,
+   "point_ge": 0.02
+  },
+  "true_effect_sized_for": 0.03
+ },
+ "correlation_assumption": "each seed's point estimate has marginal sd = se; the seeds share the logs and the bootstrap draws, so the both-seed probability lies between rho = 1 (identical: = per-seed) and rho = 0 (independent: the sealed table's 'both seeds if independent'); rho 0.8 and 0.5 are intermediate. NOT measured (no banked pair of seeds of the sign-clean arm). Sensitivity: training variance equal to sampling variance on top (marginal sd sqrt(2) se, rho 0.5).",
+ "variants": {
+  "FULL": {
+   "n_sets": 4941,
+   "n_logs": 41,
+   "banked_sign_clean_arm_delta_F": {
+    "point": 0.027626618242166612,
+    "lo": 0.013003737430799144,
+    "hi": 0.043003106832428056,
+    "n_nan": 0,
+    "pairs_a": 332614.0,
+    "pairs_b": 332614.0
+   },
+   "reproduces_sealed_MDE_inputs": {
+    "MDE_sealed_rule_from_this_run": 0.03499968470081446,
+    "MDE_sealed_in_mde_json": 0.03499968470081446,
+    "P_sealed_per_seed_at_0.03_from_this_run": 0.2567795555073402,
+    "P_sealed_per_seed_at_0.03_in_mde_json": 0.2567795555073402,
+    "P_sealed_both_independent_from_this_run": 0.06593574012654721,
+    "P_sealed_both_independent_in_mde_json": 0.06593574012654721
+   },
+   "analytic": {
+    "se": 0.007652900357558396,
+    "thresholds": {
+     "sealed_point_needed": 0.03499968470081446,
+     "new_lower_ci_conjunct_needs_point": 0.014999684700814456,
+     "new_point_conjunct_needs_point": 0.02,
+     "new_point_needed": 0.02,
+     "binding_conjunct_of_new_rule": "point >= +0.02"
+    },
+    "by_effect": {
+     "+0.000": {
+      "sealed": {
+       "per_seed": 2.399498235849567e-06,
+       "both_seeds_by_rho": {
+        "rho=1.0": 2.399498235849567e-06,
+        "rho=0.8": 2.6920063837086923e-07,
+        "rho=0.5": 1.4654269388044583e-08,
+        "rho=0.0": 5.757591783845184e-12
+       }
+      },
+      "new": {
+       "per_seed": 0.004482469590355087,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.004482469590355087,
+        "rho=0.8": 0.0014863507546936038,
+        "rho=0.5": 0.0004268499264473104,
+        "rho=0.0": 2.0092533628458102e-05
+       }
+      }
+     },
+     "+0.010": {
+      "sealed": {
+       "per_seed": 0.0005440558695026806,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.0005440558695026806,
+        "rho=0.8": 0.00013093325682471459,
+        "rho=0.5": 2.3568188968097455e-05,
+        "rho=0.0": 2.959967891403178e-07
+       }
+      },
+      "new": {
+       "per_seed": 0.09565830597543006,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.09565830597543006,
+        "rho=0.8": 0.05335024077466293,
+        "rho=0.5": 0.030426081150162064,
+        "rho=0.0": 0.009150511502088997
+       }
+      }
+     },
+     "+0.020": {
+      "sealed": {
+       "per_seed": 0.024997895148220435,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.024997895148220435,
+        "rho=0.8": 0.010969918596050529,
+        "rho=0.5": 0.004621739703637813,
+        "rho=0.0": 0.0006248947618414228
+       }
+      },
+      "new": {
+       "per_seed": 0.5,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.5,
+        "rho=0.8": 0.39758361762877065,
+        "rho=0.5": 0.33333333332395293,
+        "rho=0.0": 0.25
+       }
+      }
+     },
+     "+0.025": {
+      "sealed": {
+       "per_seed": 0.09566530521059706,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.09566530521059706,
+        "rho=0.8": 0.053354882370391814,
+        "rho=0.5": 0.03042923503408236,
+        "rho=0.0": 0.009151850621036689
+       }
+      },
+      "new": {
+       "per_seed": 0.7432337221272032,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.7432337221272032,
+        "rho=0.8": 0.6611321984630177,
+        "rho=0.5": 0.6114890934640265,
+        "rho=0.0": 0.5523963657070566
+       }
+      }
+     },
+     "+0.030": {
+      "sealed": {
+       "per_seed": 0.2567795555073402,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.2567795555073402,
+        "rho=0.8": 0.17467574285413778,
+        "rho=0.5": 0.12503102359042803,
+        "rho=0.0": 0.06593574012654721
+       }
+      },
+      "new": {
+       "per_seed": 0.9043416940245699,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.9043416940245699,
+        "rho=0.8": 0.8620336288011422,
+        "rho=0.5": 0.8391094691766416,
+        "rho=0.0": 0.8178338995512288
+       }
+      }
+     },
+     "+0.035": {
+      "sealed": {
+       "per_seed": 0.5000164364058302,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.5000164364058302,
+        "rho=0.8": 0.39760005412465177,
+        "rho=0.5": 0.33334976988575676,
+        "rho=0.0": 0.2500164366759856
+       }
+      },
+      "new": {
+       "per_seed": 0.9750045125191111,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.9750045125191111,
+        "rho=0.8": 0.9609777071963662,
+        "rho=0.5": 0.9546301440458276,
+        "rho=0.0": 0.9506337994326295
+       }
+      }
+     },
+     "+0.040": {
+      "sealed": {
+       "per_seed": 0.7432469994043458,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.7432469994043458,
+        "rho=0.8": 0.6611477648311338,
+        "rho=0.5": 0.6115062741460171,
+        "rho=0.0": 0.5524161021235636
+       }
+      },
+      "new": {
+       "per_seed": 0.9955175304096449,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.9955175304096449,
+        "rho=0.8": 0.9925214115704841,
+        "rho=0.5": 0.991461910742238,
+        "rho=0.0": 0.9910551533529182
+       }
+      }
+     },
+     "+0.050": {
+      "sealed": {
+       "per_seed": 0.9750069199920227,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.9750069199920227,
+        "rho=0.8": 0.960981285837128,
+        "rho=0.5": 0.9546343383815176,
+        "rho=0.0": 0.9506384940323306
+       }
+      },
+      "new": {
+       "per_seed": 0.9999557406511383,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.9999557406511383,
+        "rho=0.8": 0.999918904232978,
+        "rho=0.5": 0.9999122492960969,
+        "rho=0.0": 0.9999114832611666
+       }
+      }
+     },
+     "+0.060": {
+      "sealed": {
+       "per_seed": 0.9994561024509778,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.9994561024509778,
+        "rho=0.8": 0.9990430944311645,
+        "rho=0.5": 0.9989357637037553,
+        "rho=0.0": 0.9989125007264995
+       }
+      },
+      "new": {
+       "per_seed": 0.9999999137546183,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.9999999137546183,
+        "rho=0.8": 0.9999998337185396,
+        "rho=0.5": 0.9999998276717673,
+        "rho=0.0": 0.999999827509244
+       }
+      }
+     }
+    },
+    "MDE_80pct_power_per_seed": {
+     "sealed": 0.04144052814015335,
+     "new": 0.026440843439338894
+    },
+    "MDE_50pct_power_per_seed": {
+     "sealed": 0.03499968470081446,
+     "new": 0.02
+    },
+    "sensitivity_training_var_equals_sampling_var": {
+     "marginal_sd": 0.010822835477148993,
+     "rho": 0.5,
+     "by_effect": {
+      "+0.000": {
+       "sealed": {
+        "per_seed": 0.0006106169116934839,
+        "both_seeds_rho_0.5": 2.7602216038416514e-05
+       },
+       "new": {
+        "per_seed": 0.03230518132525188,
+        "both_seeds_rho_0.5": 0.006611073965487384
+       }
+      },
+      "+0.030": {
+       "sealed": {
+        "per_seed": 0.3220560753801014,
+        "both_seeds_rho_0.5": 0.17388125627038795
+       },
+       "new": {
+        "per_seed": 0.8222496264908938,
+        "both_seeds_rho_0.5": 0.7180662224974388
+       }
+      }
+     }
+    }
+   },
+   "false_fire_true_zero": {
+    "sampling_only_se_of_the_banked_arm": {
+     "point_sd": 0.007652900357558396,
+     "ci_se": 0.007652900357558396,
+     "sealed": {
+      "per_seed": 2.399498235849567e-06,
+      "both_seeds_rho=1": 2.399498235849567e-06,
+      "both_seeds_rho=0.5": 1.4654269388044583e-08,
+      "both_seeds_rho=0": 5.757591783845184e-12
+     },
+     "new": {
+      "per_seed": 0.004482469590355087,
+      "both_seeds_rho=1": 0.004482469590355087,
+      "both_seeds_rho=0.5": 0.0004268499264473104,
+      "both_seeds_rho=0": 2.0092533628458102e-05
+     }
+    },
+    "point_sd_0.001_interval_se_0.001": {
+     "point_sd": 0.001,
+     "ci_se": 0.001,
+     "sealed": {
+      "per_seed": 3.474952440752691e-107,
+      "both_seeds_rho=1": 3.474952440752691e-107,
+      "both_seeds_rho=0.5": 2.0228607936186775e-143,
+      "both_seeds_rho=0": 1.2075294465493086e-213
+     },
+     "new": {
+      "per_seed": 2.753624118606332e-89,
+      "both_seeds_rho=1": 2.753624118606332e-89,
+      "both_seeds_rho=0.5": 1.5766816817590784e-119,
+      "both_seeds_rho=0": 7.582445786570499e-178
+     }
+    },
+    "point_sd_0.002_interval_se_0.002": {
+     "point_sd": 0.002,
+     "ci_se": 0.002,
+     "sealed": {
+      "per_seed": 2.8780960513598868e-33,
+      "both_seeds_rho=1": 2.8780960513598868e-33,
+      "both_seeds_rho=0.5": 1.0793199805743668e-44,
+      "both_seeds_rho=0": 8.283436880853372e-66
+     },
+     "new": {
+      "per_seed": 7.619853024160595e-24,
+      "both_seeds_rho=1": 7.619853024160595e-24,
+      "both_seeds_rho=0.5": 4.416978251592608e-32,
+      "both_seeds_rho=0": 5.806216010980936e-47
+     }
+    },
+    "point_sd_0.004_interval_se_0.004": {
+     "point_sd": 0.004,
+     "ci_se": 0.004,
+     "sealed": {
+      "per_seed": 1.7013636921956808e-12,
+      "both_seeds_rho=1": 1.7013636921956808e-12,
+      "both_seeds_rho=0.5": 7.41423495146736e-17,
+      "both_seeds_rho=0": 2.8946384131217195e-24
+     },
+     "new": {
+      "per_seed": 2.8665157187919455e-07,
+      "both_seeds_rho=1": 2.8665157187919455e-07,
+      "both_seeds_rho=0.5": 8.247086442000731e-10,
+      "both_seeds_rho=0": 8.216912366081303e-14
+     }
+    },
+    "training_var_equals_sampling_var": {
+     "point_sd": 0.010822835477148993,
+     "ci_se": 0.007652900357558396,
+     "sealed": {
+      "per_seed": 0.0006106169116934839,
+      "both_seeds_rho=1": 0.0006106169116934839,
+      "both_seeds_rho=0.5": 2.7602216038416514e-05,
+      "both_seeds_rho=0": 3.7285301284608784e-07
+     },
+     "new": {
+      "per_seed": 0.03230518132525188,
+      "both_seeds_rho=1": 0.03230518132525188,
+      "both_seeds_rho=0.5": 0.006611073965487384,
+      "both_seeds_rho=0": 0.001043624740457403
+     }
+    }
+   },
+   "nested_bootstrap": {
+    "R_outer": 3000,
+    "B_inner": 2000,
+    "note": "outer = draws of logs from the analysis set, inner = the registered percentile bootstrap; shift = relocation of (point, lo, hi) to the stated true effect at the banked se (conservative for the true zero)",
+    "result": {
+     "effect_banked": {
+      "shift_applied": 0.0,
+      "mean_point": 0.02732316098828151,
+      "sd_point": 0.007509021983656226,
+      "mean_half_width": 0.013905982163588734,
+      "P_sealed_per_seed": 0.124,
+      "P_new_per_seed": 0.8193333333333334,
+      "P_new_lower_ci_gt_0": 0.9833333333333333,
+      "P_new_point_ge_0.02": 0.822,
+      "both_seeds[sd_u=0 (rho=1)]": {
+       "sealed": 0.124,
+       "new": 0.8193333333333334,
+       "per_seed_sealed": 0.124,
+       "per_seed_new": 0.8193333333333334
+      },
+      "both_seeds[sd_u=0.5se (rho=0.8)]": {
+       "sealed": 0.09318333333333334,
+       "new": 0.734575,
+       "per_seed_sealed": 0.16541666666666666,
+       "per_seed_new": 0.803525
+      },
+      "both_seeds[sd_u=1se (rho=0.5)]": {
+       "sealed": 0.09856666666666666,
+       "new": 0.6271583333333334,
+       "per_seed_sealed": 0.23144166666666666,
+       "per_seed_new": 0.753225
+      }
+     },
+     "effect_+0.030": {
+      "shift_applied": 0.002373381757833387,
+      "mean_point": 0.029696542746114905,
+      "sd_point": 0.007509021983656226,
+      "mean_half_width": 0.013905982163588734,
+      "P_sealed_per_seed": 0.23033333333333333,
+      "P_new_per_seed": 0.9026666666666666,
+      "P_new_lower_ci_gt_0": 0.9943333333333333,
+      "P_new_point_ge_0.02": 0.904,
+      "both_seeds[sd_u=0 (rho=1)]": {
+       "sealed": 0.23033333333333333,
+       "new": 0.9026666666666666,
+       "per_seed_sealed": 0.23033333333333333,
+       "per_seed_new": 0.9026666666666666
+      },
+      "both_seeds[sd_u=0.5se (rho=0.8)]": {
+       "sealed": 0.16771666666666665,
+       "new": 0.82375,
+       "per_seed_sealed": 0.26495833333333335,
+       "per_seed_new": 0.8766166666666667
+      },
+      "both_seeds[sd_u=1se (rho=0.5)]": {
+       "sealed": 0.15731666666666666,
+       "new": 0.7169,
+       "per_seed_sealed": 0.316125,
+       "per_seed_new": 0.820675
+      }
+     },
+     "effect_+0.000": {
+      "shift_applied": -0.027626618242166612,
+      "mean_point": -0.0003034572538850985,
+      "sd_point": 0.007509021983656226,
+      "mean_half_width": 0.013905982163588734,
+      "P_sealed_per_seed": 0.0,
+      "P_new_per_seed": 0.0023333333333333335,
+      "P_new_lower_ci_gt_0": 0.010333333333333333,
+      "P_new_point_ge_0.02": 0.0036666666666666666,
+      "both_seeds[sd_u=0 (rho=1)]": {
+       "sealed": 0.0,
+       "new": 0.0023333333333333335,
+       "per_seed_sealed": 0.0,
+       "per_seed_new": 0.0023333333333333335
+      },
+      "both_seeds[sd_u=0.5se (rho=0.8)]": {
+       "sealed": 0.0,
+       "new": 0.0023083333333333332,
+       "per_seed_sealed": 0.0,
+       "per_seed_new": 0.006533333333333334
+      },
+      "both_seeds[sd_u=1se (rho=0.5)]": {
+       "sealed": 8.333333333333334e-06,
+       "new": 0.00455,
+       "per_seed_sealed": 0.00011666666666666667,
+       "per_seed_new": 0.0232
+      }
+     }
+    }
+   },
+   "void_sensitivity": {
+    "note": "VOID keeps its SEALED numeric rule (lo > +0.02; MM ruling s1). A noise-trained replicate that satisfies the NEW CTX-REACHABLE rule but not the sealed numeric one does not void the run. The alternative (VOID follows the new rule) would void a CLEAN machinery with the 'if VOID followed the new rule' probability: it is the false-alarm cost of that alternative. Replicates share the logs, so the truth lies between the bounds.",
+    "sampling_only_conservative_se": {
+     "per_replicate_fires_sealed_rule": 2.399498235849567e-06,
+     "per_replicate_would_fire_under_new_rule": 0.004482469590355087,
+     "P_any_of_3_sealed_rule(bounds: all replicates identical .. independent)": [
+      2.399498235849567e-06,
+      7.198477434910977e-06
+     ],
+     "P_any_of_3_if_VOID_followed_the_new_rule(bounds)": [
+      0.004482469590355087,
+      0.013387221234350988
+     ]
+    },
+    "training_var_equals_sampling_var": {
+     "per_replicate_fires_sealed_rule": 0.0006106169116934839,
+     "per_replicate_would_fire_under_new_rule": 0.03230518132525188,
+     "P_any_of_3_sealed_rule(bounds: all replicates identical .. independent)": [
+      0.0006106169116934839,
+      0.001830732403712343
+     ],
+     "P_any_of_3_if_VOID_followed_the_new_rule(bounds)": [
+      0.03230518132525188,
+      0.09381838424085931
+     ]
+    }
+   }
+  },
+  "LOCAL": {
+   "n_sets": 1444,
+   "n_logs": 38,
+   "banked_sign_clean_arm_delta_F": {
+    "point": 0.027446503377740905,
+    "lo": 0.0007571909185359467,
+    "hi": 0.061253982207449716,
+    "n_nan": 0,
+    "pairs_a": 105988.0,
+    "pairs_b": 105988.0
+   },
+   "reproduces_sealed_MDE_inputs": {
+    "MDE_sealed_rule_from_this_run": 0.050248395644456885,
+    "MDE_sealed_in_mde_json": 0.050248395644456885,
+    "P_sealed_per_seed_at_0.03_from_this_run": 0.09475471109086592,
+    "P_sealed_per_seed_at_0.03_in_mde_json": 0.09475471109086597,
+    "P_sealed_both_independent_from_this_run": 0.008978455273913468,
+    "P_sealed_both_independent_in_mde_json": 0.008978455273913478
+   },
+   "analytic": {
+    "se": 0.015432854920641267,
+    "thresholds": {
+     "sealed_point_needed": 0.050248395644456885,
+     "new_lower_ci_conjunct_needs_point": 0.030248395644456885,
+     "new_point_conjunct_needs_point": 0.02,
+     "new_point_needed": 0.030248395644456885,
+     "binding_conjunct_of_new_rule": "lower CI > 0"
+    },
+    "by_effect": {
+     "+0.000": {
+      "sealed": {
+       "per_seed": 0.0005650951235762139,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.0005650951235762139,
+        "rho=0.8": 0.00013676103030436395,
+        "rho=0.5": 2.4824525067718923e-05,
+        "rho=0.0": 3.193324986896164e-07
+       }
+      },
+      "new": {
+       "per_seed": 0.024997895148220435,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.024997895148220435,
+        "rho=0.8": 0.010969918596050534,
+        "rho=0.5": 0.004621739703637816,
+        "rho=0.0": 0.0006248947618414228
+       }
+      }
+     },
+     "+0.010": {
+      "sealed": {
+       "per_seed": 0.004554070100980618,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.004554070100980618,
+        "rho=0.8": 0.001513858102214239,
+        "rho=0.5": 0.0004362826551996204,
+        "rho=0.0": 2.073955448464562e-05
+       }
+      },
+      "new": {
+       "per_seed": 0.09475471109086592,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.09475471109086592,
+        "rho=0.8": 0.052751601995552136,
+        "rho=0.5": 0.030019758199037523,
+        "rho=0.0": 0.008978455273913468
+       }
+      }
+     },
+     "+0.020": {
+      "sealed": {
+       "per_seed": 0.024997895148220435,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.024997895148220435,
+        "rho=0.8": 0.010969918596050534,
+        "rho=0.5": 0.004621739703637816,
+        "rho=0.0": 0.0006248947618414228
+       }
+      },
+      "new": {
+       "per_seed": 0.253324835190582,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.253324835190582,
+        "rho=0.8": 0.17182140327883047,
+        "rho=0.5": 0.12259982630741974,
+        "rho=0.0": 0.06417347212433554
+       }
+      }
+     },
+     "+0.025": {
+      "sealed": {
+       "per_seed": 0.05091813250391197,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.05091813250391197,
+        "rho=0.8": 0.025293634067128565,
+        "rho=0.5": 0.012504888735661855,
+        "rho=0.0": 0.002592656217685937
+       }
+      },
+      "new": {
+       "per_seed": 0.3668983770087094,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.3668983770087094,
+        "rho=0.8": 0.2704372824411469,
+        "rho=0.5": 0.21052478094816462,
+        "rho=0.0": 0.13461441905162508
+       }
+      }
+     },
+     "+0.030": {
+      "sealed": {
+       "per_seed": 0.09475471109086592,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.09475471109086592,
+        "rho=0.8": 0.052751601995552136,
+        "rho=0.5": 0.030019758199037523,
+        "rho=0.0": 0.008978455273913468
+       }
+      },
+      "new": {
+       "per_seed": 0.49357920184232984,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.49357920184232984,
+        "rho=0.8": 0.39117656195145445,
+        "rho=0.5": 0.32693633772604797,
+        "rho=0.0": 0.24362042849131138
+       }
+      }
+     },
+     "+0.035": {
+      "sealed": {
+       "per_seed": 0.16156466234645542,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.16156466234645542,
+        "rho=0.8": 0.09979061558287165,
+        "rho=0.5": 0.06416093894045176,
+        "rho=0.0": 0.02610314011912415
+       }
+      },
+      "new": {
+       "per_seed": 0.6209165547275001,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.6209165547275001,
+        "rho=0.8": 0.523407638076191,
+        "rho=0.5": 0.46273511349821,
+        "rho=0.0": 0.3855373679346686
+       }
+      }
+     },
+     "+0.040": {
+      "sealed": {
+       "per_seed": 0.253324835190582,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.253324835190582,
+        "rho=0.8": 0.17182140327883047,
+        "rho=0.5": 0.12259982630741974,
+        "rho=0.0": 0.06417347212433554
+       }
+      },
+      "new": {
+       "per_seed": 0.736265066619587,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.736265066619587,
+        "rho=0.8": 0.652981625972103,
+        "rho=0.5": 0.602503999441028,
+        "rho=0.0": 0.5420862483243449
+       }
+      }
+     },
+     "+0.050": {
+      "sealed": {
+       "per_seed": 0.49357920184232995,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.49357920184232995,
+        "rho=0.8": 0.39117656195145456,
+        "rho=0.5": 0.3269363377260482,
+        "rho=0.0": 0.2436204284913115
+       }
+      },
+      "new": {
+       "per_seed": 0.8996995136899908,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.8996995136899908,
+        "rho=0.8": 0.8558429255977231,
+        "rho=0.5": 0.8319386714977903,
+        "rho=0.0": 0.809459214934006
+       }
+      }
+     },
+     "+0.060": {
+      "sealed": {
+       "per_seed": 0.7362650666195869,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.7362650666195869,
+        "rho=0.8": 0.6529816259721029,
+        "rho=0.5": 0.6025039994410278,
+        "rho=0.0": 0.5420862483243447
+       }
+      },
+      "new": {
+       "per_seed": 0.9730605872900695,
+       "both_seeds_by_rho": {
+        "rho=1.0": 0.9730605872900695,
+        "rho=0.8": 0.9580949425554249,
+        "rho=0.5": 0.9512511589896036,
+        "rho=0.0": 0.946846906537295
+       }
+      }
+     }
+    },
+    "MDE_80pct_power_per_seed": {
+     "sealed": 0.06323701404031881,
+     "new": 0.04323701404031881
+    },
+    "MDE_50pct_power_per_seed": {
+     "sealed": 0.050248395644456885,
+     "new": 0.030248395644456885
+    },
+    "sensitivity_training_var_equals_sampling_var": {
+     "marginal_sd": 0.02182535273490724,
+     "rho": 0.5,
+     "by_effect": {
+      "+0.000": {
+       "sealed": {
+        "per_seed": 0.010659277040784936,
+        "both_seeds_rho_0.5": 0.0014135943779014395
+       },
+       "new": {
+        "per_seed": 0.08288424782989612,
+        "both_seeds_rho_0.5": 0.024840427161158384
+       }
+      },
+      "+0.030": {
+       "sealed": {
+        "per_seed": 0.1767695285253999,
+        "both_seeds_rho_0.5": 0.07298536288251165
+       },
+       "new": {
+        "per_seed": 0.4954597120695476,
+        "both_seeds_rho_0.5": 0.3288049471016608
+       }
+      }
+     }
+    }
+   },
+   "false_fire_true_zero": {
+    "sampling_only_se_of_the_banked_arm": {
+     "point_sd": 0.015432854920641267,
+     "ci_se": 0.015432854920641267,
+     "sealed": {
+      "per_seed": 0.0005650951235762139,
+      "both_seeds_rho=1": 0.0005650951235762139,
+      "both_seeds_rho=0.5": 2.4824525067718923e-05,
+      "both_seeds_rho=0": 3.193324986896164e-07
+     },
+     "new": {
+      "per_seed": 0.024997895148220435,
+      "both_seeds_rho=1": 0.024997895148220435,
+      "both_seeds_rho=0.5": 0.004621739703637816,
+      "both_seeds_rho=0": 0.0006248947618414228
+     }
+    },
+    "point_sd_0.001_interval_se_0.001": {
+     "point_sd": 0.001,
+     "ci_se": 0.001,
+     "sealed": {
+      "per_seed": 3.474952440752691e-107,
+      "both_seeds_rho=1": 3.474952440752691e-107,
+      "both_seeds_rho=0.5": 2.0228607936186775e-143,
+      "both_seeds_rho=0": 1.2075294465493086e-213
+     },
+     "new": {
+      "per_seed": 2.753624118606332e-89,
+      "both_seeds_rho=1": 2.753624118606332e-89,
+      "both_seeds_rho=0.5": 1.5766816817590784e-119,
+      "both_seeds_rho=0": 7.582445786570499e-178
+     }
+    },
+    "point_sd_0.002_interval_se_0.002": {
+     "point_sd": 0.002,
+     "ci_se": 0.002,
+     "sealed": {
+      "per_seed": 2.8780960513598868e-33,
+      "both_seeds_rho=1": 2.8780960513598868e-33,
+      "both_seeds_rho=0.5": 1.0793199805743668e-44,
+      "both_seeds_rho=0": 8.283436880853372e-66
+     },
+     "new": {
+      "per_seed": 7.619853024160595e-24,
+      "both_seeds_rho=1": 7.619853024160595e-24,
+      "both_seeds_rho=0.5": 4.416978251592608e-32,
+      "both_seeds_rho=0": 5.806216010980936e-47
+     }
+    },
+    "point_sd_0.004_interval_se_0.004": {
+     "point_sd": 0.004,
+     "ci_se": 0.004,
+     "sealed": {
+      "per_seed": 1.7013636921956808e-12,
+      "both_seeds_rho=1": 1.7013636921956808e-12,
+      "both_seeds_rho=0.5": 7.41423495146736e-17,
+      "both_seeds_rho=0": 2.8946384131217195e-24
+     },
+     "new": {
+      "per_seed": 2.8665157187919455e-07,
+      "both_seeds_rho=1": 2.8665157187919455e-07,
+      "both_seeds_rho=0.5": 8.247086442000731e-10,
+      "both_seeds_rho=0": 8.216912366081303e-14
+     }
+    },
+    "training_var_equals_sampling_var": {
+     "point_sd": 0.02182535273490724,
+     "ci_se": 0.015432854920641267,
+     "sealed": {
+      "per_seed": 0.010659277040784936,
+      "both_seeds_rho=1": 0.010659277040784936,
+      "both_seeds_rho=0.5": 0.0014135943779014395,
+      "both_seeds_rho=0": 0.00011362018703220487
+     },
+     "new": {
+      "per_seed": 0.08288424782989612,
+      "both_seeds_rho=1": 0.08288424782989612,
+      "both_seeds_rho=0.5": 0.024840427161158384,
+      "both_seeds_rho=0": 0.006869798538327639
+     }
+    }
+   },
+   "nested_bootstrap": {
+    "R_outer": 3000,
+    "B_inner": 2000,
+    "note": "outer = draws of logs from the analysis set, inner = the registered percentile bootstrap; shift = relocation of (point, lo, hi) to the stated true effect at the banked se (conservative for the true zero)",
+    "result": {
+     "effect_banked": {
+      "shift_applied": 0.0,
+      "mean_point": 0.027809360124137286,
+      "sd_point": 0.015296893467315146,
+      "mean_half_width": 0.02767612987479924,
+      "P_sealed_per_seed": 0.093,
+      "P_new_per_seed": 0.531,
+      "P_new_lower_ci_gt_0": 0.5616666666666666,
+      "P_new_point_ge_0.02": 0.673,
+      "both_seeds[sd_u=0 (rho=1)]": {
+       "sealed": 0.093,
+       "new": 0.531,
+       "per_seed_sealed": 0.093,
+       "per_seed_new": 0.531
+      },
+      "both_seeds[sd_u=0.5se (rho=0.8)]": {
+       "sealed": 0.06773333333333334,
+       "new": 0.42885,
+       "per_seed_sealed": 0.12166666666666667,
+       "per_seed_new": 0.5457583333333333
+      },
+      "both_seeds[sd_u=1se (rho=0.5)]": {
+       "sealed": 0.073275,
+       "new": 0.3621083333333333,
+       "per_seed_sealed": 0.18461666666666668,
+       "per_seed_new": 0.5415083333333334
+      }
+     },
+     "effect_+0.030": {
+      "shift_applied": 0.002553496622259094,
+      "mean_point": 0.030362856746396383,
+      "sd_point": 0.015296893467315146,
+      "mean_half_width": 0.02767612987479924,
+      "P_sealed_per_seed": 0.12433333333333334,
+      "P_new_per_seed": 0.6233333333333333,
+      "P_new_lower_ci_gt_0": 0.6543333333333333,
+      "P_new_point_ge_0.02": 0.7336666666666667,
+      "both_seeds[sd_u=0 (rho=1)]": {
+       "sealed": 0.12433333333333334,
+       "new": 0.6233333333333333,
+       "per_seed_sealed": 0.12433333333333334,
+       "per_seed_new": 0.6233333333333333
+      },
+      "both_seeds[sd_u=0.5se (rho=0.8)]": {
+       "sealed": 0.09459166666666667,
+       "new": 0.5018916666666666,
+       "per_seed_sealed": 0.159875,
+       "per_seed_new": 0.6179916666666667
+      },
+      "both_seeds[sd_u=1se (rho=0.5)]": {
+       "sealed": 0.096475,
+       "new": 0.4191916666666667,
+       "per_seed_sealed": 0.22285,
+       "per_seed_new": 0.59585
+      }
+     },
+     "effect_+0.000": {
+      "shift_applied": -0.027446503377740905,
+      "mean_point": 0.0003628567463963798,
+      "sd_point": 0.015296893467315146,
+      "mean_half_width": 0.02767612987479924,
+      "P_sealed_per_seed": 0.0006666666666666666,
+      "P_new_per_seed": 0.029,
+      "P_new_lower_ci_gt_0": 0.029,
+      "P_new_point_ge_0.02": 0.10966666666666666,
+      "both_seeds[sd_u=0 (rho=1)]": {
+       "sealed": 0.0006666666666666666,
+       "new": 0.029,
+       "per_seed_sealed": 0.0006666666666666666,
+       "per_seed_new": 0.029
+      },
+      "both_seeds[sd_u=0.5se (rho=0.8)]": {
+       "sealed": 0.00055,
+       "new": 0.021333333333333333,
+       "per_seed_sealed": 0.0013583333333333334,
+       "per_seed_new": 0.0447
+      },
+      "both_seeds[sd_u=1se (rho=0.5)]": {
+       "sealed": 0.00125,
+       "new": 0.027908333333333334,
+       "per_seed_sealed": 0.010016666666666667,
+       "per_seed_new": 0.091675
+      }
+     }
+    }
+   },
+   "void_sensitivity": {
+    "note": "VOID keeps its SEALED numeric rule (lo > +0.02; MM ruling s1). A noise-trained replicate that satisfies the NEW CTX-REACHABLE rule but not the sealed numeric one does not void the run. The alternative (VOID follows the new rule) would void a CLEAN machinery with the 'if VOID followed the new rule' probability: it is the false-alarm cost of that alternative. Replicates share the logs, so the truth lies between the bounds.",
+    "sampling_only_conservative_se": {
+     "per_replicate_fires_sealed_rule": 0.0005650951235762139,
+     "per_replicate_would_fire_under_new_rule": 0.024997895148220435,
+     "P_any_of_3_sealed_rule(bounds: all replicates identical .. independent)": [
+      0.0005650951235762139,
+      0.0016943275536857039
+     ],
+     "P_any_of_3_if_VOID_followed_the_new_rule(bounds)": [
+      0.024997895148220435,
+      0.07313462221287237
+     ]
+    },
+    "training_var_equals_sampling_var": {
+     "per_replicate_fires_sealed_rule": 0.010659277040784936,
+     "per_replicate_would_fire_under_new_rule": 0.08288424782989612,
+     "P_any_of_3_sealed_rule(bounds: all replicates identical .. independent)": [
+      0.010659277040784936,
+      0.031638181670309296
+     ],
+     "P_any_of_3_if_VOID_followed_the_new_rule(bounds)": [
+      0.08288424782989612,
+      0.2286127459592976
+     ]
+    }
+   }
+  }
+ },
+ "falsefire_sim_banked_rows_reread_under_new_rule": {
+  "noise_trained_replicates": {
+   "n": 16,
+   "new_rule_fires_F": 0,
+   "sealed_rule_fires_F": 0,
+   "new_rule_fires_Q123": 0,
+   "max_point_F": 0.0007955449482895949,
+   "n_lower_ci_gt_0_F": 0
+  },
+  "positive_control_replicates": {
+   "n": 4,
+   "new_rule_fires_F": 4,
+   "sealed_rule_fires_F": 4,
+   "points_F": [
+    0.058074781225139205,
+    0.06364359586316626,
+    0.06424025457438343,
+    0.05926809864757354
+   ]
+  },
+  "note": "CPU synthetic world (sh5_sim_falsefire.py); 16 noise-trained replicates + 4 branch-reads-the-ctx replicates, re-read under the NEW rule. Valid for a bound on the machinery's false-fire rate, not for the real rig's training variance."
+ },
+ "headline": {
+  "FULL": {
+   "se": 0.007652900357558396,
+   "n_logs": 41,
+   "binding_conjunct_of_new_rule": "point >= +0.02",
+   "MDE_50pct_per_seed": {
+    "sealed": 0.03499968470081446,
+    "new": 0.02
+   },
+   "MDE_80pct_per_seed": {
+    "sealed": 0.04144052814015335,
+    "new": 0.026440843439338894
+   },
+   "P_CTX_REACHABLE_at_true_+0.03": {
+    "sealed": {
+     "per_seed": 0.2567795555073402,
+     "both_seeds": {
+      "rho=1 (shared draw)": 0.2567795555073402,
+      "rho=0.8": 0.17467574285413778,
+      "rho=0.5": 0.12503102359042803,
+      "rho=0 (independent)": 0.06593574012654721
+     }
+    },
+    "new": {
+     "per_seed": 0.9043416940245699,
+     "both_seeds": {
+      "rho=1 (shared draw)": 0.9043416940245699,
+      "rho=0.8": 0.8620336288011422,
+      "rho=0.5": 0.8391094691766416,
+      "rho=0 (independent)": 0.8178338995512288
+     }
+    }
+   },
+   "P_false_CTX_REACHABLE_at_true_0_CONSERVATIVE_se": {
+    "sealed": {
+     "per_seed": 2.399498235849567e-06,
+     "both_seeds": {
+      "rho=1": 2.399498235849567e-06,
+      "rho=0.5": 1.4654269388044583e-08,
+      "rho=0": 5.757591783845184e-12
+     }
+    },
+    "new": {
+     "per_seed": 0.004482469590355087,
+     "both_seeds": {
+      "rho=1": 0.004482469590355087,
+      "rho=0.5": 0.0004268499264473104,
+      "rho=0": 2.0092533628458102e-05
+     }
+    }
+   },
+   "nested_bootstrap_per_seed_at_+0.03": {
+    "sealed": 0.23033333333333333,
+    "new": 0.9026666666666666,
+    "both_seeds_rho=0.5_equiv": {
+     "sealed": 0.15731666666666666,
+     "new": 0.7169
+    }
+   },
+   "nested_bootstrap_per_seed_at_true_0": {
+    "sealed": 0.0,
+    "new": 0.0023333333333333335
+   },
+   "sensitivity_training_var_equals_sampling_var": {
+    "P_at_+0.03": {
+     "sealed": {
+      "per_seed": 0.3220560753801014,
+      "both_seeds_rho_0.5": 0.17388125627038795
+     },
+     "new": {
+      "per_seed": 0.8222496264908938,
+      "both_seeds_rho_0.5": 0.7180662224974388
+     }
+    },
+    "P_false_at_0": {
+     "sealed": {
+      "per_seed": 0.0006106169116934839,
+      "both_seeds_rho_0.5": 2.7602216038416514e-05
+     },
+     "new": {
+      "per_seed": 0.03230518132525188,
+      "both_seeds_rho_0.5": 0.006611073965487384
+     }
+    }
+   },
+   "void_sensitivity": {
+    "note": "VOID keeps its SEALED numeric rule (lo > +0.02; MM ruling s1). A noise-trained replicate that satisfies the NEW CTX-REACHABLE rule but not the sealed numeric one does not void the run. The alternative (VOID follows the new rule) would void a CLEAN machinery with the 'if VOID followed the new rule' probability: it is the false-alarm cost of that alternative. Replicates share the logs, so the truth lies between the bounds.",
+    "sampling_only_conservative_se": {
+     "per_replicate_fires_sealed_rule": 2.399498235849567e-06,
+     "per_replicate_would_fire_under_new_rule": 0.004482469590355087,
+     "P_any_of_3_sealed_rule(bounds: all replicates identical .. independent)": [
+      2.399498235849567e-06,
+      7.198477434910977e-06
+     ],
+     "P_any_of_3_if_VOID_followed_the_new_rule(bounds)": [
+      0.004482469590355087,
+      0.013387221234350988
+     ]
+    },
+    "training_var_equals_sampling_var": {
+     "per_replicate_fires_sealed_rule": 0.0006106169116934839,
+     "per_replicate_would_fire_under_new_rule": 0.03230518132525188,
+     "P_any_of_3_sealed_rule(bounds: all replicates identical .. independent)": [
+      0.0006106169116934839,
+      0.001830732403712343
+     ],
+     "P_any_of_3_if_VOID_followed_the_new_rule(bounds)": [
+      0.03230518132525188,
+      0.09381838424085931
+     ]
+    }
+   }
+  },
+  "LOCAL": {
+   "se": 0.015432854920641267,
+   "n_logs": 38,
+   "binding_conjunct_of_new_rule": "lower CI > 0",
+   "MDE_50pct_per_seed": {
+    "sealed": 0.050248395644456885,
+    "new": 0.030248395644456885
+   },
+   "MDE_80pct_per_seed": {
+    "sealed": 0.06323701404031881,
+    "new": 0.04323701404031881
+   },
+   "P_CTX_REACHABLE_at_true_+0.03": {
+    "sealed": {
+     "per_seed": 0.09475471109086592,
+     "both_seeds": {
+      "rho=1 (shared draw)": 0.09475471109086592,
+      "rho=0.8": 0.052751601995552136,
+      "rho=0.5": 0.030019758199037523,
+      "rho=0 (independent)": 0.008978455273913468
+     }
+    },
+    "new": {
+     "per_seed": 0.49357920184232984,
+     "both_seeds": {
+      "rho=1 (shared draw)": 0.49357920184232984,
+      "rho=0.8": 0.39117656195145445,
+      "rho=0.5": 0.32693633772604797,
+      "rho=0 (independent)": 0.24362042849131138
+     }
+    }
+   },
+   "P_false_CTX_REACHABLE_at_true_0_CONSERVATIVE_se": {
+    "sealed": {
+     "per_seed": 0.0005650951235762139,
+     "both_seeds": {
+      "rho=1": 0.0005650951235762139,
+      "rho=0.5": 2.4824525067718923e-05,
+      "rho=0": 3.193324986896164e-07
+     }
+    },
+    "new": {
+     "per_seed": 0.024997895148220435,
+     "both_seeds": {
+      "rho=1": 0.024997895148220435,
+      "rho=0.5": 0.004621739703637816,
+      "rho=0": 0.0006248947618414228
+     }
+    }
+   },
+   "nested_bootstrap_per_seed_at_+0.03": {
+    "sealed": 0.12433333333333334,
+    "new": 0.6233333333333333,
+    "both_seeds_rho=0.5_equiv": {
+     "sealed": 0.096475,
+     "new": 0.4191916666666667
+    }
+   },
+   "nested_bootstrap_per_seed_at_true_0": {
+    "sealed": 0.0006666666666666666,
+    "new": 0.029
+   },
+   "sensitivity_training_var_equals_sampling_var": {
+    "P_at_+0.03": {
+     "sealed": {
+      "per_seed": 0.1767695285253999,
+      "both_seeds_rho_0.5": 0.07298536288251165
+     },
+     "new": {
+      "per_seed": 0.4954597120695476,
+      "both_seeds_rho_0.5": 0.3288049471016608
+     }
+    },
+    "P_false_at_0": {
+     "sealed": {
+      "per_seed": 0.010659277040784936,
+      "both_seeds_rho_0.5": 0.0014135943779014395
+     },
+     "new": {
+      "per_seed": 0.08288424782989612,
+      "both_seeds_rho_0.5": 0.024840427161158384
+     }
+    }
+   },
+   "void_sensitivity": {
+    "note": "VOID keeps its SEALED numeric rule (lo > +0.02; MM ruling s1). A noise-trained replicate that satisfies the NEW CTX-REACHABLE rule but not the sealed numeric one does not void the run. The alternative (VOID follows the new rule) would void a CLEAN machinery with the 'if VOID followed the new rule' probability: it is the false-alarm cost of that alternative. Replicates share the logs, so the truth lies between the bounds.",
+    "sampling_only_conservative_se": {
+     "per_replicate_fires_sealed_rule": 0.0005650951235762139,
+     "per_replicate_would_fire_under_new_rule": 0.024997895148220435,
+     "P_any_of_3_sealed_rule(bounds: all replicates identical .. independent)": [
+      0.0005650951235762139,
+      0.0016943275536857039
+     ],
+     "P_any_of_3_if_VOID_followed_the_new_rule(bounds)": [
+      0.024997895148220435,
+      0.07313462221287237
+     ]
+    },
+    "training_var_equals_sampling_var": {
+     "per_replicate_fires_sealed_rule": 0.010659277040784936,
+     "per_replicate_would_fire_under_new_rule": 0.08288424782989612,
+     "P_any_of_3_sealed_rule(bounds: all replicates identical .. independent)": [
+      0.010659277040784936,
+      0.031638181670309296
+     ],
+     "P_any_of_3_if_VOID_followed_the_new_rule(bounds)": [
+      0.08288424782989612,
+      0.2286127459592976
+     ]
+    }
+   }
+  }
+ },
+ "power_script_sha256": "e0d8847f6a2d37b47d5ac65d8da281afa6c2e84f875e6401c8f073b0e1f40351"
+}

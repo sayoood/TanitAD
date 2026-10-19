@@ -1,0 +1,1121 @@
+{
+ "purpose": "Amendment 3 power: C-NULL-LABEL fire rule, sealed (lower CI > +0.02, the rule Amendment 2 kept) vs NEW (= the Amendment-2 CTX-REACHABLE rule: lower CI > 0 AND point >= +0.02): the false-VOID rate on a clean machinery and the VOID power against a machinery that manufactures a gain",
+ "evidence_class": "MEASURED inputs (PRIVGEOM banked arrays + banked CPU false-fire rows), ESTIMATED probabilities (normal approximation + nested bootstrap)",
+ "rule_constants": {
+  "sealed_fire": {
+   "lower_ci_gt": 0.02
+  },
+  "new_fire": {
+   "lower_ci_gt": 0.0,
+   "point_ge": 0.02
+  },
+  "n_replicates": 3,
+  "replicate_seed_layout": "rep r is read on seed r % 2 (reps 0, 2 on seed 0; rep 1 on seed 1)",
+  "true_effect_sized_for": 0.03
+ },
+ "assumptions": "the SAME as amend2_power.json: each replicate's POINT estimate has marginal sd = se (the banked sign-clean arm's interval half-width / 1.96: CONSERVATIVE for a true zero, where the interval is far narrower, PRIVGEOM RESULT 5.3 ~0.001 wide and the 16 noise-trained CPU replicates scattered with sd 0.0006); the three replicates share the logs, so P(VOID) lies between 'all identical' (= per replicate) and 'independent' (1 - (1 - p)^3); sensitivity: training variance EQUAL to the sampling variance on top (point sd sqrt(2) se, interval still se wide); a nested-bootstrap cross-check that does not assume a normal, symmetric interval. No between-seed correlation is involved (one seed per replicate).",
+ "variants": {
+  "FULL": {
+   "n_sets": 4941,
+   "n_logs": 41,
+   "banked_sign_clean_arm_delta_F": {
+    "point": 0.027626618242166612,
+    "lo": 0.013003737430799144,
+    "hi": 0.043003106832428056,
+    "n_nan": 0,
+    "pairs_a": 332614.0,
+    "pairs_b": 332614.0
+   },
+   "se": 0.007652900357558396,
+   "thresholds_point_needed_to_fire": {
+    "sealed_bisected_on_the_AMEND2_STATE_null_label_fires": 0.03499968470081446,
+    "sealed_closed_form_0.02_plus_1.96se": 0.03499968470081446,
+    "sealed_bisected": 0.03499968470081446,
+    "new_bisected_on_the_REAL_null_label_fires": 0.02,
+    "new_closed_form_max(1.96se,0.02)": 0.02,
+    "binding_conjunct_of_new_rule": "point >= +0.02"
+   },
+   "analytic_sampling_only_se": {
+    "+0.000": {
+     "sealed": {
+      "per_replicate_fires": 2.399498235849567e-06,
+      "P_VOID_bounds_identical_to_independent": [
+       2.399498235849567e-06,
+       7.198477434910977e-06
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.004482469590355087,
+      "P_VOID_bounds_identical_to_independent": [
+       0.004482469590355087,
+       0.013387221234350988
+      ]
+     }
+    },
+    "+0.010": {
+     "sealed": {
+      "per_replicate_fires": 0.0005440558695026806,
+      "P_VOID_bounds_identical_to_independent": [
+       0.0005440558695026806,
+       0.0016312797791794287
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.09565830597543006,
+      "P_VOID_bounds_identical_to_independent": [
+       0.09565830597543006,
+       0.2603987058491216
+      ]
+     }
+    },
+    "+0.020": {
+     "sealed": {
+      "per_replicate_fires": 0.024997895148220435,
+      "P_VOID_bounds_identical_to_independent": [
+       0.024997895148220435,
+       0.07313462221287237
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.5,
+      "P_VOID_bounds_identical_to_independent": [
+       0.5,
+       0.875
+      ]
+     }
+    },
+    "+0.025": {
+     "sealed": {
+      "per_replicate_fires": 0.09566530521059706,
+      "P_VOID_bounds_identical_to_independent": [
+       0.09566530521059706,
+       0.2604158783515843
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.7432337221272032,
+      "P_VOID_bounds_identical_to_independent": [
+       0.7432337221272032,
+       0.983071676234435
+      ]
+     }
+    },
+    "+0.030": {
+     "sealed": {
+      "per_replicate_fires": 0.2567795555073402,
+      "P_VOID_bounds_identical_to_independent": [
+       0.2567795555073402,
+       0.5894623961841212
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.9043416940245699,
+      "P_VOID_bounds_identical_to_independent": [
+       0.9043416940245699,
+       0.9991246775709015
+      ]
+     }
+    },
+    "+0.035": {
+     "sealed": {
+      "per_replicate_fires": 0.5000164364058302,
+      "P_VOID_bounds_identical_to_independent": [
+       0.5000164364058302,
+       0.8750123268991439
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.9750045125191111,
+      "P_VOID_bounds_identical_to_independent": [
+       0.9750045125191111,
+       0.9999843834594462
+      ]
+     }
+    },
+    "+0.040": {
+     "sealed": {
+      "per_replicate_fires": 0.7432469994043458,
+      "P_VOID_bounds_identical_to_independent": [
+       0.7432469994043458,
+       0.9830743021683299
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.9955175304096449,
+      "P_VOID_bounds_identical_to_independent": [
+       0.9955175304096449,
+       0.999999909935829
+      ]
+     }
+    },
+    "+0.050": {
+     "sealed": {
+      "per_replicate_fires": 0.9750069199920227,
+      "P_VOID_bounds_identical_to_independent": [
+       0.9750069199920227,
+       0.9999843879713939
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.9999557406511383,
+      "P_VOID_bounds_identical_to_independent": [
+       0.9999557406511383,
+       0.9999999999999133
+      ]
+     }
+    },
+    "+0.060": {
+     "sealed": {
+      "per_replicate_fires": 0.9994561024509778,
+      "P_VOID_bounds_identical_to_independent": [
+       0.9994561024509778,
+       0.9999999998391017
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.9999999137546183,
+      "P_VOID_bounds_identical_to_independent": [
+       0.9999999137546183,
+       1.0
+      ]
+     }
+    }
+   },
+   "analytic_training_var_equals_sampling_var": {
+    "point_sd": 0.010822835477148993,
+    "by_effect": {
+     "+0.000": {
+      "sealed": {
+       "per_replicate_fires": 0.0006106169116934839,
+       "P_VOID_bounds_identical_to_independent": [
+        0.0006106169116934839,
+        0.001830732403712343
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.03230518132525188,
+       "P_VOID_bounds_identical_to_independent": [
+        0.03230518132525188,
+        0.09381838424085931
+       ]
+      }
+     },
+     "+0.010": {
+      "sealed": {
+       "per_replicate_fires": 0.010446801965296933,
+       "P_VOID_bounds_identical_to_independent": [
+        0.010446801965296933,
+        0.0310141390007298
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.17775037350910602,
+       "P_VOID_bounds_identical_to_independent": [
+        0.17775037350910602,
+        0.44408159244201806
+       ]
+      }
+     },
+     "+0.020": {
+      "sealed": {
+       "per_replicate_fires": 0.0828842478298961,
+       "P_VOID_bounds_identical_to_independent": [
+        0.0828842478298961,
+        0.2286127459592976
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.5,
+       "P_VOID_bounds_identical_to_independent": [
+        0.5,
+        0.875
+       ]
+      }
+     },
+     "+0.025": {
+      "sealed": {
+       "per_replicate_fires": 0.17775795777801381,
+       "P_VOID_bounds_identical_to_independent": [
+        0.17775795777801381,
+        0.44409697534643644
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.6779543705901714,
+       "P_VOID_bounds_identical_to_independent": [
+        0.6779543705901714,
+        0.9665995568694654
+       ]
+      }
+     },
+     "+0.030": {
+      "sealed": {
+       "per_replicate_fires": 0.3220560753801014,
+       "P_VOID_bounds_identical_to_independent": [
+        0.3220560753801014,
+        0.6884115724694482
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.8222496264908938,
+       "P_VOID_bounds_identical_to_independent": [
+        0.8222496264908938,
+        0.99438394223742
+       ]
+      }
+     },
+     "+0.035": {
+      "sealed": {
+       "per_replicate_fires": 0.5000116222940225,
+       "P_VOID_bounds_identical_to_independent": [
+        0.5000116222940225,
+        0.8750087165179019
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.9171202003943211,
+       "P_VOID_bounds_identical_to_independent": [
+        0.9171202003943211,
+        0.9994306935857006
+       ]
+      }
+     },
+     "+0.040": {
+      "sealed": {
+       "per_replicate_fires": 0.6779648164198534,
+       "P_VOID_bounds_identical_to_independent": [
+        0.6779648164198534,
+        0.9666028068811885
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.967694818674748,
+       "P_VOID_bounds_identical_to_independent": [
+        0.967694818674748,
+        0.999966285513524
+       ]
+      }
+     },
+     "+0.050": {
+      "sealed": {
+       "per_replicate_fires": 0.9171246484389366,
+       "P_VOID_bounds_identical_to_independent": [
+        0.9171246484389366,
+        0.9994307852424531
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.9972136365033081,
+       "P_VOID_bounds_identical_to_independent": [
+        0.9972136365033081,
+        0.999999978367171
+       ]
+      }
+     },
+     "+0.060": {
+      "sealed": {
+       "per_replicate_fires": 0.9895548111743947,
+       "P_VOID_bounds_identical_to_independent": [
+        0.9895548111743947,
+        0.9999988604093263
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.9998904407074393,
+       "P_VOID_bounds_identical_to_independent": [
+        0.9998904407074393,
+        0.9999999999986849
+       ]
+      }
+     }
+    }
+   },
+   "nested_bootstrap": {
+    "R_outer": 3000,
+    "B_inner": 2000,
+    "by_effect": {
+     "+0.000": {
+      "per_replicate_fires": {
+       "sealed": 0.0,
+       "new": 0.0023333333333333335
+      },
+      "P_VOID_bounds": {
+       "sealed": [
+        0.0,
+        0.0
+       ],
+       "new": [
+        0.0023333333333333335,
+        0.006983679370370255
+       ]
+      }
+     },
+     "+0.020": {
+      "per_replicate_fires": {
+       "sealed": 0.010333333333333333,
+       "new": 0.4723333333333333
+      },
+      "P_VOID_bounds": {
+       "sealed": [
+        0.010333333333333333,
+        0.030680770037036953
+       ],
+       "new": [
+        0.4723333333333333,
+        0.853080656037037
+       ]
+      }
+     },
+     "+0.025": {
+      "per_replicate_fires": {
+       "sealed": 0.06,
+       "new": 0.7176666666666667
+      },
+      "P_VOID_bounds": {
+       "sealed": [
+        0.06,
+        0.16941600000000012
+       ],
+       "new": [
+        0.7176666666666667,
+        0.977494613962963
+       ]
+      }
+     },
+     "+0.030": {
+      "per_replicate_fires": {
+       "sealed": 0.23033333333333333,
+       "new": 0.9026666666666666
+      },
+      "P_VOID_bounds": {
+       "sealed": [
+        0.23033333333333333,
+        0.5440596433703703
+       ],
+       "new": [
+        0.9026666666666666,
+        0.9990778856296296
+       ]
+      }
+     },
+     "+0.035": {
+      "per_replicate_fires": {
+       "sealed": 0.5403333333333333,
+       "new": 0.979
+      },
+      "P_VOID_bounds": {
+       "sealed": [
+        0.5403333333333333,
+        0.9028754467037037
+       ],
+       "new": [
+        0.979,
+        0.999990739
+       ]
+      }
+     },
+     "+0.040": {
+      "per_replicate_fires": {
+       "sealed": 0.8233333333333334,
+       "new": 0.9973333333333333
+      },
+      "P_VOID_bounds": {
+       "sealed": [
+        0.8233333333333334,
+        0.9944860370370371
+       ],
+       "new": [
+        0.9973333333333333,
+        0.999999981037037
+       ]
+      }
+     }
+    }
+   },
+   "false_VOID_clean_machinery_bracketing_rows_point_sd_below_se": {
+    "sampling_only_se_of_the_banked_arm": {
+     "per_replicate_new": 0.004482469590355087,
+     "per_replicate_sealed": 2.399498235849567e-06
+    },
+    "point_sd_0.001_interval_se_0.001": {
+     "per_replicate_new": 2.753624118606332e-89,
+     "per_replicate_sealed": 3.474952440752691e-107
+    },
+    "point_sd_0.002_interval_se_0.002": {
+     "per_replicate_new": 7.619853024160595e-24,
+     "per_replicate_sealed": 2.8780960513598868e-33
+    },
+    "point_sd_0.004_interval_se_0.004": {
+     "per_replicate_new": 2.8665157187919455e-07,
+     "per_replicate_sealed": 1.7013636921956808e-12
+    },
+    "training_var_equals_sampling_var": {
+     "per_replicate_new": 0.03230518132525188,
+     "per_replicate_sealed": 0.0006106169116934839
+    }
+   },
+   "reproduces_amend2_per_seed_probabilities": true
+  },
+  "LOCAL": {
+   "n_sets": 1444,
+   "n_logs": 38,
+   "banked_sign_clean_arm_delta_F": {
+    "point": 0.027446503377740905,
+    "lo": 0.0007571909185359467,
+    "hi": 0.061253982207449716,
+    "n_nan": 0,
+    "pairs_a": 105988.0,
+    "pairs_b": 105988.0
+   },
+   "se": 0.015432854920641267,
+   "thresholds_point_needed_to_fire": {
+    "sealed_bisected_on_the_AMEND2_STATE_null_label_fires": 0.05024839564445689,
+    "sealed_closed_form_0.02_plus_1.96se": 0.050248395644456885,
+    "sealed_bisected": 0.05024839564445689,
+    "new_bisected_on_the_REAL_null_label_fires": 0.030248395644456888,
+    "new_closed_form_max(1.96se,0.02)": 0.030248395644456885,
+    "binding_conjunct_of_new_rule": "lower CI > 0"
+   },
+   "analytic_sampling_only_se": {
+    "+0.000": {
+     "sealed": {
+      "per_replicate_fires": 0.0005650951235762125,
+      "P_VOID_bounds_identical_to_independent": [
+       0.0005650951235762125,
+       0.0016943275536857039
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.024997895148220435,
+      "P_VOID_bounds_identical_to_independent": [
+       0.024997895148220435,
+       0.07313462221287237
+      ]
+     }
+    },
+    "+0.010": {
+     "sealed": {
+      "per_replicate_fires": 0.004554070100980614,
+      "P_VOID_bounds_identical_to_independent": [
+       0.004554070100980614,
+       0.013600086088872976
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.09475471109086592,
+      "P_VOID_bounds_identical_to_independent": [
+       0.09475471109086592,
+       0.2581795183863794
+      ]
+     }
+    },
+    "+0.020": {
+     "sealed": {
+      "per_replicate_fires": 0.024997895148220418,
+      "P_VOID_bounds_identical_to_independent": [
+       0.024997895148220418,
+       0.07313462221287204
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.2533248351905819,
+      "P_VOID_bounds_identical_to_independent": [
+       0.2533248351905819,
+       0.583710823448244
+      ]
+     }
+    },
+    "+0.025": {
+     "sealed": {
+      "per_replicate_fires": 0.05091813250391193,
+      "P_VOID_bounds_identical_to_independent": [
+       0.05091813250391193,
+       0.1451084420715073
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.3668983770087093,
+      "P_VOID_bounds_identical_to_independent": [
+       0.3668983770087093,
+       0.7462416857432644
+      ]
+     }
+    },
+    "+0.030": {
+     "sealed": {
+      "per_replicate_fires": 0.09475471109086586,
+      "P_VOID_bounds_identical_to_independent": [
+       0.09475471109086586,
+       0.2581795183863791
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.49357920184232973,
+      "P_VOID_bounds_identical_to_independent": [
+       0.49357920184232973,
+       0.8701222967002832
+      ]
+     }
+    },
+    "+0.035": {
+     "sealed": {
+      "per_replicate_fires": 0.16156466234645528,
+      "P_VOID_bounds_identical_to_independent": [
+       0.16156466234645528,
+       0.41060191170152205
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.6209165547275,
+      "P_VOID_bounds_identical_to_independent": [
+       0.6209165547275,
+       0.9455240945951974
+      ]
+     }
+    },
+    "+0.040": {
+     "sealed": {
+      "per_replicate_fires": 0.2533248351905819,
+      "P_VOID_bounds_identical_to_independent": [
+       0.2533248351905819,
+       0.583710823448244
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.7362650666195869,
+      "P_VOID_bounds_identical_to_independent": [
+       0.7362650666195869,
+       0.981655622621812
+      ]
+     }
+    },
+    "+0.050": {
+     "sealed": {
+      "per_replicate_fires": 0.49357920184232973,
+      "P_VOID_bounds_identical_to_independent": [
+       0.49357920184232973,
+       0.8701222967002832
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.8996995136899908,
+      "P_VOID_bounds_identical_to_independent": [
+       0.8996995136899908,
+       0.9989909582959614
+      ]
+     }
+    },
+    "+0.060": {
+     "sealed": {
+      "per_replicate_fires": 0.7362650666195868,
+      "P_VOID_bounds_identical_to_independent": [
+       0.7362650666195868,
+       0.981655622621812
+      ]
+     },
+     "new": {
+      "per_replicate_fires": 0.9730605872900695,
+      "P_VOID_bounds_identical_to_independent": [
+       0.9730605872900695,
+       0.9999804492072893
+      ]
+     }
+    }
+   },
+   "analytic_training_var_equals_sampling_var": {
+    "point_sd": 0.02182535273490724,
+    "by_effect": {
+     "+0.000": {
+      "sealed": {
+       "per_replicate_fires": 0.010659277040784933,
+       "P_VOID_bounds_identical_to_independent": [
+        0.010659277040784933,
+        0.031638181670309296
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.0828842478298961,
+       "P_VOID_bounds_identical_to_independent": [
+        0.0828842478298961,
+        0.2286127459592976
+       ]
+      }
+     },
+     "+0.010": {
+      "sealed": {
+       "per_replicate_fires": 0.03258340718048493,
+       "P_VOID_bounds_identical_to_independent": [
+        0.03258340718048493,
+        0.09459977937135422
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.1767695285253999,
+       "P_VOID_bounds_identical_to_independent": [
+        0.1767695285253999,
+        0.44208978680137834
+       ]
+      }
+     },
+     "+0.020": {
+      "sealed": {
+       "per_replicate_fires": 0.08288424782989604,
+       "P_VOID_bounds_identical_to_independent": [
+        0.08288424782989604,
+        0.22861274595929737
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.3193333451628767,
+       "P_VOID_bounds_identical_to_independent": [
+        0.3193333451628767,
+        0.6846423094791714
+       ]
+      }
+     },
+     "+0.025": {
+      "sealed": {
+       "per_replicate_fires": 0.12366929315834317,
+       "P_VOID_bounds_identical_to_independent": [
+        0.12366929315834317,
+        0.32701700706734615
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.40498201632112546,
+       "P_VOID_bounds_identical_to_independent": [
+        0.40498201632112546,
+        0.7893360244069618
+       ]
+      }
+     },
+     "+0.030": {
+      "sealed": {
+       "per_replicate_fires": 0.17676952852539982,
+       "P_VOID_bounds_identical_to_independent": [
+        0.17676952852539982,
+        0.44208978680137834
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.49545971206954753,
+       "P_VOID_bounds_identical_to_independent": [
+        0.49545971206954753,
+        0.8715637691359543
+       ]
+      }
+     },
+     "+0.035": {
+      "sealed": {
+       "per_replicate_fires": 0.24238377656585186,
+       "P_VOID_bounds_identical_to_independent": [
+        0.24238377656585186,
+        0.5651416657280257
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.5861725857471485,
+       "P_VOID_bounds_identical_to_independent": [
+        0.5861725857471485,
+        0.929130760531282
+       ]
+      }
+     },
+     "+0.040": {
+      "sealed": {
+       "per_replicate_fires": 0.3193333451628767,
+       "P_VOID_bounds_identical_to_independent": [
+        0.3193333451628767,
+        0.6846423094791714
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.6724908723441766,
+       "P_VOID_bounds_identical_to_independent": [
+        0.6724908723441766,
+        0.9648706410487384
+       ]
+      }
+     },
+     "+0.050": {
+      "sealed": {
+       "per_replicate_fires": 0.49545971206954753,
+       "P_VOID_bounds_identical_to_independent": [
+        0.49545971206954753,
+        0.8715637691359543
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.8172631814882532,
+       "P_VOID_bounds_identical_to_independent": [
+        0.8172631814882532,
+        0.9938979160466013
+       ]
+      }
+     },
+     "+0.060": {
+      "sealed": {
+       "per_replicate_fires": 0.6724908723441765,
+       "P_VOID_bounds_identical_to_independent": [
+        0.6724908723441765,
+        0.9648706410487383
+       ]
+      },
+      "new": {
+       "per_replicate_fires": 0.9135850845576673,
+       "P_VOID_bounds_identical_to_independent": [
+        0.9135850845576673,
+        0.9993546933687911
+       ]
+      }
+     }
+    }
+   },
+   "nested_bootstrap": {
+    "R_outer": 3000,
+    "B_inner": 2000,
+    "by_effect": {
+     "+0.000": {
+      "per_replicate_fires": {
+       "sealed": 0.0006666666666666666,
+       "new": 0.029
+      },
+      "P_VOID_bounds": {
+       "sealed": [
+        0.0006666666666666666,
+        0.001998666962963025
+       ],
+       "new": [
+        0.029,
+        0.08450138900000004
+       ]
+      }
+     },
+     "+0.020": {
+      "per_replicate_fires": {
+       "sealed": 0.029,
+       "new": 0.32066666666666666
+      },
+      "P_VOID_bounds": {
+       "sealed": [
+        0.029,
+        0.08450138900000004
+       ],
+       "new": [
+        0.32066666666666666,
+        0.6864918936296296
+       ]
+      }
+     },
+     "+0.025": {
+      "per_replicate_fires": {
+       "sealed": 0.06366666666666666,
+       "new": 0.45666666666666667
+      },
+      "P_VOID_bounds": {
+       "sealed": [
+        0.06366666666666666,
+        0.17909773596296297
+       ],
+       "new": [
+        0.45666666666666667,
+        0.839601962962963
+       ]
+      }
+     },
+     "+0.030": {
+      "per_replicate_fires": {
+       "sealed": 0.12433333333333334,
+       "new": 0.6233333333333333
+      },
+      "P_VOID_bounds": {
+       "sealed": [
+        0.12433333333333334,
+        0.328545708037037
+       ],
+       "new": [
+        0.6233333333333333,
+        0.9465593703703703
+       ]
+      }
+     },
+     "+0.035": {
+      "per_replicate_fires": {
+       "sealed": 0.23433333333333334,
+       "new": 0.7963333333333333
+      },
+      "P_VOID_bounds": {
+       "sealed": [
+        0.23433333333333334,
+        0.5511314047037036
+       ],
+       "new": [
+        0.7963333333333333,
+        0.9915518840370371
+       ]
+      }
+     },
+     "+0.040": {
+      "per_replicate_fires": {
+       "sealed": 0.35433333333333333,
+       "new": 0.9066666666666666
+      },
+      "P_VOID_bounds": {
+       "sealed": [
+        0.35433333333333333,
+        0.7308309647037038
+       ],
+       "new": [
+        0.9066666666666666,
+        0.9991869629629629
+       ]
+      }
+     }
+    }
+   },
+   "false_VOID_clean_machinery_bracketing_rows_point_sd_below_se": {
+    "sampling_only_se_of_the_banked_arm": {
+     "per_replicate_new": 0.024997895148220435,
+     "per_replicate_sealed": 0.0005650951235762139
+    },
+    "point_sd_0.001_interval_se_0.001": {
+     "per_replicate_new": 2.753624118606332e-89,
+     "per_replicate_sealed": 3.474952440752691e-107
+    },
+    "point_sd_0.002_interval_se_0.002": {
+     "per_replicate_new": 7.619853024160595e-24,
+     "per_replicate_sealed": 2.8780960513598868e-33
+    },
+    "point_sd_0.004_interval_se_0.004": {
+     "per_replicate_new": 2.8665157187919455e-07,
+     "per_replicate_sealed": 1.7013636921956808e-12
+    },
+    "training_var_equals_sampling_var": {
+     "per_replicate_new": 0.08288424782989612,
+     "per_replicate_sealed": 0.010659277040784936
+    }
+   },
+   "reproduces_amend2_per_seed_probabilities": true
+  }
+ },
+ "banked_cpu_false_fire_rows_read_by_the_new_function": {
+  "noise_trained_replicates": {
+   "n": 16,
+   "fire_by_the_new_function_null_label_fires": 0,
+   "fire_by_the_sealed_rule": 0,
+   "n_lower_ci_gt_0": 0,
+   "max_point": 0.0007955449482895949,
+   "min_point": -0.0015910898965791898
+  },
+  "positive_control_replicates_branch_reads_the_ctx": {
+   "n": 4,
+   "fire_by_the_new_function_null_label_fires": 4,
+   "fire_by_the_sealed_rule": 4,
+   "points": [
+    0.058074781225139205,
+    0.06364359586316626,
+    0.06424025457438343,
+    0.05926809864757354
+   ]
+  },
+  "note": "CPU synthetic world (sh5_sim_falsefire.py, banked work/falsefire_sim.json); 16 noise-trained replicates + 4 branch-reads-the-ctx replicates.  Valid as a bound on the machinery's false-fire rate in that world, not for the real rig's training variance (unmeasured, H-ESTIM-SEED-1)."
+ },
+ "headline": {
+  "FULL": {
+   "se": 0.007652900357558396,
+   "n_logs": 41,
+   "binding_conjunct": "point >= +0.02",
+   "point_needed_to_fire": {
+    "sealed": 0.03499968470081446,
+    "new": 0.02
+   },
+   "FALSE_VOID_clean_machinery(true_delta_F=0)": {
+    "sampling_only_conservative_se": {
+     "per_replicate": {
+      "sealed": 2.399498235849567e-06,
+      "new": 0.004482469590355087
+     },
+     "P_VOID_bounds": {
+      "sealed": [
+       2.399498235849567e-06,
+       7.198477434910977e-06
+      ],
+      "new": [
+       0.004482469590355087,
+       0.013387221234350988
+      ]
+     }
+    },
+    "training_var_equals_sampling_var": {
+     "per_replicate": {
+      "sealed": 0.0006106169116934839,
+      "new": 0.03230518132525188
+     },
+     "P_VOID_bounds": {
+      "sealed": [
+       0.0006106169116934839,
+       0.001830732403712343
+      ],
+      "new": [
+       0.03230518132525188,
+       0.09381838424085931
+      ]
+     }
+    },
+    "nested_bootstrap": {
+     "sealed": [
+      0.0,
+      0.0
+     ],
+     "new": [
+      0.0023333333333333335,
+      0.006983679370370255
+     ]
+    }
+   },
+   "VOID_POWER_machinery_manufactures_+0.03": {
+    "sampling_only": {
+     "per_replicate": {
+      "sealed": 0.2567795555073402,
+      "new": 0.9043416940245699
+     },
+     "P_VOID_bounds": {
+      "sealed": [
+       0.2567795555073402,
+       0.5894623961841212
+      ],
+      "new": [
+       0.9043416940245699,
+       0.9991246775709015
+      ]
+     }
+    },
+    "training_var_equals_sampling_var": {
+     "per_replicate": {
+      "sealed": 0.3220560753801014,
+      "new": 0.8222496264908938
+     },
+     "P_VOID_bounds": {
+      "sealed": [
+       0.3220560753801014,
+       0.6884115724694482
+      ],
+      "new": [
+       0.8222496264908938,
+       0.99438394223742
+      ]
+     }
+    },
+    "nested_bootstrap": {
+     "sealed": [
+      0.23033333333333333,
+      0.5440596433703703
+     ],
+     "new": [
+      0.9026666666666666,
+      0.9990778856296296
+     ]
+    }
+   }
+  },
+  "LOCAL": {
+   "se": 0.015432854920641267,
+   "n_logs": 38,
+   "binding_conjunct": "lower CI > 0",
+   "point_needed_to_fire": {
+    "sealed": 0.05024839564445689,
+    "new": 0.030248395644456888
+   },
+   "FALSE_VOID_clean_machinery(true_delta_F=0)": {
+    "sampling_only_conservative_se": {
+     "per_replicate": {
+      "sealed": 0.0005650951235762125,
+      "new": 0.024997895148220435
+     },
+     "P_VOID_bounds": {
+      "sealed": [
+       0.0005650951235762125,
+       0.0016943275536857039
+      ],
+      "new": [
+       0.024997895148220435,
+       0.07313462221287237
+      ]
+     }
+    },
+    "training_var_equals_sampling_var": {
+     "per_replicate": {
+      "sealed": 0.010659277040784933,
+      "new": 0.0828842478298961
+     },
+     "P_VOID_bounds": {
+      "sealed": [
+       0.010659277040784933,
+       0.031638181670309296
+      ],
+      "new": [
+       0.0828842478298961,
+       0.2286127459592976
+      ]
+     }
+    },
+    "nested_bootstrap": {
+     "sealed": [
+      0.0006666666666666666,
+      0.001998666962963025
+     ],
+     "new": [
+      0.029,
+      0.08450138900000004
+     ]
+    }
+   },
+   "VOID_POWER_machinery_manufactures_+0.03": {
+    "sampling_only": {
+     "per_replicate": {
+      "sealed": 0.09475471109086586,
+      "new": 0.49357920184232973
+     },
+     "P_VOID_bounds": {
+      "sealed": [
+       0.09475471109086586,
+       0.2581795183863791
+      ],
+      "new": [
+       0.49357920184232973,
+       0.8701222967002832
+      ]
+     }
+    },
+    "training_var_equals_sampling_var": {
+     "per_replicate": {
+      "sealed": 0.17676952852539982,
+      "new": 0.49545971206954753
+     },
+     "P_VOID_bounds": {
+      "sealed": [
+       0.17676952852539982,
+       0.44208978680137834
+      ],
+      "new": [
+       0.49545971206954753,
+       0.8715637691359543
+      ]
+     }
+    },
+    "nested_bootstrap": {
+     "sealed": [
+      0.12433333333333334,
+      0.328545708037037
+     ],
+     "new": [
+      0.6233333333333333,
+      0.9465593703703703
+     ]
+    }
+   }
+  }
+ },
+ "amend2_state_library_sha256": "f7901f2a1b53926f34a9414f39576300208af0aaf7f6a139c314f93c3b7d88fa",
+ "power_script_sha256": "96aec2b01421e18569696cd6bc334d8871f02fd1b2d754cbfc64f7e1b2c60588"
+}
