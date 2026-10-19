@@ -18386,3 +18386,22 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 **Class:** *a THRESHOLD SHARE read as a CALIBRATION claim*. "No bad pick scored below 0.5" says nothing about over-confidence; only observed-vs-predicted mass at the picks does. Same family as reading a ranking metric as a calibration metric.
 
 ⚠️ It is the third Master Mind error in two days, and all three were in my instrument or reading design, never in an agent's execution (R51 a point rule, R52 a training-blind control, R53 a threshold read as calibration). ⇒ Before writing a mechanism into the register, state the quantity that would distinguish it from the nearest alternative, and check whether that quantity was measured.
+
+### R54 (2026-10-19) - "the DAC-nosign companion removes the label's own test, so its jump is boundary-PROXIMITY information" (Master Mind design, `raw/2026-10-19-privgeom-safe/PREREG_PRIVGEOM_SAFE_AMENDMENT1.md` companion variants; read in `RESULT.md` §1)
+
+**Claimed:**
+- Dropping the sign of the clearance columns (abs values only) leaves a companion that cannot re-derive the DAC verdict, so a companion INFO-UPSTREAM measures proximity beyond the verdict.
+
+**Measured (the agent's DESCRIPTIVE read, re-checked by the Master Mind on `raw/descr/dac_signleak.json`):**
+- "Some key step has |c_t| < |c_min|" implies DAC-unsafe with precision 1.0 BY CONSTRUCTION (0 safe among 47,206), recall 0.887.
+- That one contrast alone has F-AUC 0.953 [0.946, 0.959]. The companion's +0.079 rides on it.
+- The sign-clean 9-column read is +0.028 [+0.013, +0.043] (post-hoc, descriptive).
+
+**Fixed:**
+- The registered call stands as written; its PROXIMITY interpretation is withdrawn to the descriptive +0.03 (`MM_RULING_PRIVGEOM.md`, GAC `D-REFE-PRIVGEOM-SAFE-1`).
+- SH5 is powered at about +0.03, and every privileged target in it passes a PLANTED admissibility check before sealing.
+- A held-out confirmation (PRIVGEOM-CLEAN, 76 unseen logs) is registered as conditional.
+
+**Class:** *removing a SIGN is not removing the INFORMATION*. Unsigned columns re-derive a sign through their ORDER relations (|c_t| < |c_min| forces c_min < 0). Admissibility is a property of what a model can COMPUTE from the columns, so it is tested by trying to recompute the label from them on planted and real data, never by inspecting the column definitions. Same family as the PRIVGEOM scalars that contained the label's own test (caught pre-data), now one level deeper.
+
+⚠️ The fourth Master Mind design error in two days (R51 to R54). All four were in my instrument or reading design, never in an agent's execution. ⇒ Every leak-removal step I specify ships with a planted recompute-the-label check in the same prereg.

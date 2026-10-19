@@ -1,3 +1,5 @@
+# SUPERSEDED 2026-10-19 ~12:00: PRIVGEOM-SAFE is FINISHED. Read RESULT.md (DAC INFO-UPSTREAM primary + companion; NC INCONCLUSIVE). The text below is the pre-result handoff, kept as provenance.
+
 # HANDOFF (PRIVGEOM-SAFE), written 2026-10-19 ~11:00 by the Research Lab agent. Read PREREG_PRIVGEOM_SAFE.md + AMENDMENT1 first.
 
 ## State

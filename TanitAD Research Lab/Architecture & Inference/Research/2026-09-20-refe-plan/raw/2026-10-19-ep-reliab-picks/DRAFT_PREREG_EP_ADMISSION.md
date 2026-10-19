@@ -24,3 +24,14 @@ For candidate C against P2, on a selection-tier bank built from C's own forward 
 - A1 and A2 pass → the candidate's shared navtest look (`MM_RULINGS_HEADROWS.md` R1-R9 rules).
 - A1 fails → the candidate's EP gain is not real on the selection tier: no look. Attribute the cause and return the lever to the trunk.
 - A2 fails → the safety rows are mis-calibrated at the candidate's picks: register a calibration arm for THAT candidate, with reliability at the picks pre-registered.
+
+## REVISION 1 (Master Mind, 2026-10-19, pre-seal; no candidate read)
+P6-READ-PREP measured that the drafted A1 bar sits INSIDE the estimator's own noise: EP-R1's D_M half-width is 0.026 against the +0.02 bar. A perfectly calibrated candidate would be ADMITTED only about 32 % of the time (ESTIMATED). An admission gate that refuses most good candidates is mis-specified: the R51 class again, a bar that does not account for its own estimator's false-refusal rate. A2 as drafted refused only significant miscalibration beyond 25 %. Both are revised before any sealing:
+- **A1 (revised): FAIL-A1 iff, on ANY seed, D_M has a lower CI > 0 (significant over-prediction) OR a point estimate > +0.05 (material over-prediction).** Otherwise ADMIT-A1.
+  - False refusal of a calibrated candidate: about 5 % across 2 seeds (ESTIMATED).
+  - EP-R1-sized over-prediction (+0.135, lower bound +0.111) is refused with power about 1.
+  - The sealed version must SIMULATE both rates on the real estimator (calibrated and planted-over-prediction replicates) and report them.
+- **A2 (revised): FAIL-A2 iff, for any of NC / DAC / TTC, the observed / predicted unsafe mass at the candidate's picks has a lower CI > 1.0 on any seed** (the rows significantly UNDER-predict risk at the picks, i.e. the pick exploits over-confident safety rows). Ratios below 1 are conservative and are not refused.
+- **B slot source: `row`** (EP_slot = the EP ROW's own per-slot mean on training folds, so EP_used stays on the row's scale). Measured on EP-R1's smoke: `label` gives dPDMS -0.725 and `row` gives -0.211 x100; `label` mixes scales.
+- **Seeds: 2** (as every arm in this line). **In-sample:** S0's tokens are navtrain fit tokens, so P6, like P2, is IN-SAMPLE there. Its selection-tier read is biased toward OVER (conservative for A1), and every report states it.
+- `ep_admission.py` implements the DRAFT rules. It must gain the revised rules (keeping the draft rules reproducible) with RED mutations BEFORE sealing (BACKLOG `EP-ADMISSION`).
