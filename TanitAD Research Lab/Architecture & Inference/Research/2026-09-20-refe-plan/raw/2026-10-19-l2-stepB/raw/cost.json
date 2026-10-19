@@ -1,0 +1,35 @@
+{
+ "evidence": "MEASURED (ours, CPU 4 threads, shared box) on the first 3 tokens of L1's Step A bundle, mechanics only; projections ESTIMATED",
+ "smoke": {
+  "n_tokens": 3,
+  "n_seeds": 3,
+  "search_seconds_per_token_and_seed": {
+   "mean": 1.3127398490905762,
+   "median": 1.2887811660766602,
+   "max": 1.6385929584503174
+  },
+  "search_seconds_per_token_all_seeds": 4.019761959711711,
+  "label_seconds_per_token_smoke_cold": 4.215956290562947,
+  "label_plans_per_token": 5,
+  "label_breakdown_seconds_3_tokens": {
+   "seconds_scenario_build_total": 1.5018343925476074,
+   "seconds_metric_cache_parts_total": 9.306338548660278,
+   "seconds_label_plans_total": 1.8361730575561523
+  }
+ },
+ "stepA_label_reference": {
+  "seconds_per_token_all_in_at_96_plans": 1.4775,
+  "source": "l1run/steps4to7.log: ZZLABEL_OK 400/400 591 s"
+ },
+ "projection_per_arm_400_tokens_x_3_seeds": {
+  "search_minutes": 26.79841306474474,
+  "label_minutes_low (StepA rate, an upper bound for 5 plans/token)": 9.85,
+  "label_minutes_high (smoke cold rate)": 28.10637527041965
+ },
+ "projection_total_arms": {
+  "arms": 3,
+  "sequential_hours_low": 1.8324206532372367,
+  "sequential_hours_high": 2.7452394167582193,
+  "note": "CPU only, no GPU, no lock; two processes in parallel roughly halve the wall clock; the gate (about 1 min per head) is extra"
+ }
+}
