@@ -1,63 +1,56 @@
-# HANDOFF: SH5 C-REACH diagnosis (Research Lab, Opus), written 2026-10-19 ~23:20
+# HANDOFF: SH5 C-REACH diagnosis, grid 5 (Research Lab), written 2026-10-20
 
 ## State
-- Grids 1-2 DONE, verified from the summaries: **no recipe passes** (best final F 0.6008, ALLQ 0.6732). Table and reading are in the draft `PREREG_SH5_DAC_PROX_AMENDMENT4.draft.md` s6. Key point: zero_clear moves ALLQ by <= 0.0043 everywhere. Where R^2 reads the plant (K6/o8 lr 1e-3 s1: 0.644 -> 0.024 under zero_clear), **shuffle_clear keeps it at 0.630**. So the learned read is a TOKEN-LEVEL average, never position-matched. On s0 R^2 does not read the plant at all.
-- Pre-launch CPU checks are MEASURED (`raw/levers_cpu_check.json`).
-  - At init the plant logit range is ~1 (beta_eff 0.1-0.2). The ideal reader needs ~30 (beta >= 16).
-  - temp at tau 1 is bit-identical to the sealed layer.
-  - Logit reconstruction error is <= 4e-6.
-  - beta estimator controls read 16.0001 / -0.07 / 0.0.
-  - The tau gradient is exactly 0 at step 0 and > 0 after 3 steps.
-  - The q/k scale was chosen by rule: c = 6.
-  - The smoke test passes (`code/smoke_diag3_cpu.py`: SMOKE3_OK).
-- **Pre-registered**: `PREREG_GRID3.md` (sha256 pins in `PREREG_GRID3.md.sha256`; re-hashed once for a typo fix BEFORE any grid-3 number). It defines PASS, the replicate controls, outcomes O1/O2/O3 and their committed next arms.
-- **A RUNNING detached job** (WMI, cmd PID 11872, started ~23:05): `code/diag_pre3.py` grid3, then `&&` grid4. It uses the sealed `sh5_gpulock`, owner `sh5_diag`, job `sh5-creach-diag3`.
-  - At launch the lock was held by `refcv8-g0-step40000` (chain_active), so the job waits. Max wait is 6 h per grid.
-  - Grid 3 (`work/grid3.json` -> `work/diag3/`, log `work/diag3.log`) runs S12_s0 and S12_s1 at 12 ep. Each run has 8 cells: base / temp / cos16 / qk6 at K6/o8 and K8/o8, with ablations. Expect ~25 min once locked.
-  - Grid 4 (`work/grid4.json` -> `work/diag4/`, log `work/diag4.log`) skips itself if a grid-3 cell passes. Otherwise it resolves BEST, the lever cell with the highest min-over-seeds F, and runs W12_s0/s1 {base_k8o8, BEST} x {lr 3e-3, p_sub 64} and W60_s0/s1 {base_k8o8, BEST} at 60 ep. Expect ~40 min.
-  - Checkpoints of every learner are in `work/diag3/ckpt/`, `work/diag4/ckpt/`.
-- Markers:
-  - `ZZDIAGEVAL <run> <tag> cycle c: auc_all .. F .. r2 ..`
-  - `ZZATTN <run> <tag> cycle c L<l>: beta_eff_max .. beta [4 heads] range_plant .. plant_mass .. self_mass .. top1 .. tau ..`
-  - `ZZDIAGABL`, `ZZDIAGRUN_DONE`, `ZZDIAG3_PASSING [...]`, `ZZDIAG3_BEST {...}`, `ZZDIAG3_SKIPPED`
-  - `ZZDIAG_EXIT <rc>` (75 = the GPU never freed in 6 h)
+- **Grids 3-4 are DONE with no pass.** Grid 3 is O3. They are written up in draft s4 and s6 and in `out/RESULT.md`. The per-cell table is `raw/grid34_cells.json`.
+- **The first position-matched read is on seed 0 only:** W60 cos16_k6o8, 60 ep, F 0.846.
+- Probe 5 (`raw/probe5_ckpt_seedsplit.json`) shows that every learner memorises TRAIN through the visual ctx. That is hypothesis H5.
+- **Grid 5 is RUNNING**, detached: WMI cmd PID 39992, python PID 65288, `GPULOCKED` under owner `sh5_diag`.
+  - It is pre-registered in `PREREG_GRID5.md`. Pins are in `PREREG_GRID5.md.sha256`, written before any grid-5 number.
+  - Driver: `code/diag_pre5.py` (diag_pre3 plus the fp32 / AdamW options). The CPU smoke passed: `code/smoke_diag5_cpu.py` gives SMOKE5_OK.
+  - Long runs: `work/grid5L.json` -> `work/diag5/`, log `work/diag5.log`. Runs G5_s1, then G5_s0, then G5_s2. Each is 120 ep (30 cycles), evaluated every 3 cycles. Cells: cos16_k8o8_120ep, cos16_k8o8_wd1_120ep, BEST_120ep, base_k8o8_120ep. G5_s2 runs only the first two.
+  - Then, chained with `&`: `work/grid5F.json` -> `work/diag5f/`, log `work/diag5f.log`. Runs F12_s0 and F12_s1 with BEST_fp32_lr3e-3 and BEST_lr3e-3_rep.
+  - ESTIMATED ~4 h after the lock: the log projects 1.48 h for G5_s1 alone.
+- Checkpoints: `work/diag5/ckpt/`, `work/diag5f/ckpt/`. They live on the dev box only and are not staged.
 
-## RELAUNCH CONDITION (for the watcher)
-Done when:
-- `work/diag3.log` has `ZZDIAG_EXIT` with rc != 0, OR
-- `work/diag4.log` has `ZZDIAG_EXIT`, OR
-- either log has `Traceback`.
+## Done-marker / relaunch condition
+- Done when `work/diag5f.log` has `ZZDIAG_EXIT`.
+- Relaunch case 1: `work/diag5.log` has `ZZDIAG_EXIT` != 0 or a `Traceback`, and diag5f has not started. The `&` chain still runs F12 in this case.
+- Relaunch case 2: `ZZDIAG_EXIT 75`, which means the lock never freed in 6 h.
+- To relaunch, re-run `powershell -NoProfile -ExecutionPolicy Bypass -File work/launch_diag5.ps1`. That restarts BOTH grids, so first move the partial `work/diag5*` to `work/diag5_attemptN/`.
+- ⚠ **C: had ~0.9 GB free at launch.** Grid-3 attempt 1 died of a host MemoryError with C: full. Check `Get-PSDrive C` if the job dies.
 
-If rc is 75:
-- From grid 3: re-run `powershell -NoProfile -ExecutionPolicy Bypass -File work/launch_diag3.ps1`.
-- From grid 4 only: re-run the `$g4` line of that script alone, via the same WMI pattern.
-
-## Exact next steps
-1. `sha256sum -c PREREG_GRID3.md.sha256` (the comment line is expected to warn). Then read `work/diag3/diag_summary.json`, `work/diag4/diag_summary.json`, and the per-eval `attn` blocks in `work/diag3/diag_S12_s*.json`.
-   - `sys.path.insert(0, 'code'); import diag_pre3 as D; D.passing_cells(json.load(...))` applies the PASS rule. The rule needs both seeds and requires zero_clear and shuffle_clear to collapse to <= 0.80.
-2. Replicate controls first. The base_k6o8 cells must reproduce s0 0.6489 / s1 0.6732, and base_k8o8 s0 must reproduce 0.6467. Report each |Δ| as the GPU non-determinism floor.
-   - Report the base cells' TRAINED beta_eff and plant logit range. That number answers "is sharpness the binding term": if base already has beta_eff >= 16, it is NOT.
-3. Name the outcome per the prereg.
-   - **O1: a cell passes.** Do old steps 3-5 with the cheapest passing cell. Lever order is qkinit < temp < cos, and K6 before K8.
-     - Copy `par18/sh5/code/*` to `code/amend4/` (already an exact copy). Implement the lever in the COPY: `sh5_branch.CrossLayer` as in `code/diag_attn.LeverLayer`, or the q/k init scale. If K = 8, change `sh5_lib.FOURIER_K`.
-     - Add tests: the lever is live with a non-zero tau gradient and an exact-0 control; a RED test that refuses the old recipe; a test that query octaves == plant octaves if changed.
-     - Run the suite: `cd code/amend4; CUDA_VISIBLE_DEVICES=-1 SH5_TMP=C:/Users/Admin/par18/sh5diag/tmp PY run_tests.py --out ../../work/tests_summary_amend4.json` (~10 min, so detach it and hand off).
-     - Then get C-REACH evidence on both seeds via the amended `_fit_locked` PRE, fold 0, under the lock: `code/confirm_pre.py --code code/amend4 --seeds 0,1 --out work/confirm`. Launch it like `launch_diag.ps1`.
-   - **O2 or O3, and grid 4 also fails.**
-     - O2 (sharpness learned: beta_eff >= 16 on both seeds, top-1 >= 0.5): the next lever is the readout, a softmin key-time pool on BEST.
-     - O3: the next lever is fp32 attention (autocast off) on BEST at lr 3e-3. Then run a supervised attention target on the plant (a diagnostic only).
-     - Run these as a grid5 the same way: pre-register first, then detach. If they are blocked or fail, report **INSTRUMENT DEFECT** with each lever's best F / ALLQ / R^2 / beta_eff, and name the next lever.
-4. Write up.
-   - Fill draft s4 (root cause, with its evidence class), s6 (grids 3-4 table plus the attention numbers), s7 and s8 (sha256 of every changed file).
-   - Run `PY code/stage_out.py`. It now also stages `PREREG_GRID3.md` and its .sha256, plus `work/diag*/*.json` and logs. The .pt checkpoints are NOT staged: list them in the manifest as dev-box only.
-   - Write `out/RESULT.md` with proposed register rows. Hand back in <= 300 words.
-
-## Corrections to the MM's first glance (verified)
-36 ep lr 1e-3 F reads 0.485-0.548 (not 0.50-0.56). R^2 0.60-0.68 (K6/o8) and 0.13-0.17 (K10/o10) is **seed 1 only**: seed 0 reads 0.437 and 0.412. The zero_clear R^2 collapse is also **seed 1 only**: on s0, 0.437 -> 0.433.
+## Exact next steps (the fresh agent)
+1. `cd par18/sh5diag; sha256sum -c PREREG_GRID5.md.sha256`. The comment line is expected to warn.
+2. Read `work/diag5/diag_summary.json`, `work/diag5f/diag_summary.json`, and the curves in `work/diag5/diag_G5_s*.json`.
+   - PASS_REG: `sys.path.insert(0,'code'); import diag_pre3 as D; D.passing_cells({k:v for k,v in S.items() if k in ('G5_s0','G5_s1')})`.
+   - ROBUST also needs G5_s2.
+   - The in-log `ZZDIAG3_PASSING` already includes s2 for the two candidate cells.
+3. Replicate controls (PREREG_GRID5 s4). Report each |Δ| against the 0.030 floor.
+   - BEST_120ep at c15 vs W60 BEST: s0 F 0.846. If it reads < 0.75, the transition is NOT reproducible.
+   - base at c15 vs W60 base.
+   - cos16_k8o8 at c3 vs grid-3.
+   - F12 rep vs W12 BEST_lr3e-3.
+4. Re-run probe 5 on the grid-5 checkpoints. Add the paths to `CKPTS` in a COPY such as `probe5b`; do not edit the pinned probe5. Use K and lever per cell. This gives the train F under no_plant, the H5 test for the wd cell.
+5. Name the outcome (PREREG_GRID5 s6, in order: G1, G3, G2, G4, otherwise) and execute its committed next arm. RULE ZERO applies.
+   - **G1:** copy `par18/sh5/code/*` -> `code/amend4/` (already an exact copy). Implement the picked recipe in the COPY:
+     - the cos lever in `sh5_branch.CrossLayer`, as in `code/diag_attn.LeverLayer`;
+     - FOURIER_K 8 if it is a K8 cell;
+     - 120 epochs;
+     - AdamW groups if it is the wd cell.
+     - Tests: the lever is live with a non-zero tau gradient and an exact-0 control; a RED test that refuses the old recipe; query octaves == plant octaves.
+     - Suite: `cd code/amend4; CUDA_VISIBLE_DEVICES=-1 SH5_TMP=C:/Users/Admin/par18/sh5diag/tmp PY run_tests.py --out ../../work/tests_summary_amend4.json` (~10 min, so detach it).
+     - Then `code/confirm_pre.py --code code/amend4 --seeds 0,1 --out work/confirm` under the lock. Detach it, hand off, and END.
+   - **G2:** the same cell(s) at 240 ep. Pre-register first (`PREREG_GRID6.md` + sha256), then detach.
+   - **G3:** a softmin key-time pool on that cell. Pre-register, implement it in a new module, smoke it, then detach.
+   - **G4 / otherwise:** INSTRUMENT DEFECT, with every lever's best number. The next lever is visual-ctx dropout for ALL arms. Implement it and pre-register it.
+6. Fill draft s6/s7/s8 (s8 = the sha256 of every changed file). Run `PY code/stage_out.py`; it now stages `PREREG_GRID*` too. Update `out/RESULT.md`. Hand back in <= 300 words.
 
 ## Constraints (unchanged)
-- GPU only through `sh5_gpulock` with owner `sh5_diag`. Never touch another owner's lock, `devbox_gpu.chain_active`, or a pod.
-- No `pkill -f`. Kill your own processes by explicit PID only.
-- Never run S, Snoprox or Sshuf, and never run `analyze`. Do not touch l2fresh, l2stepb, podstage, unseen_s1b or D:/b9. New D: files only in `DD/fits_local/`, and only small ones.
-- Nothing sealed: the MM seals. Stage in `out/`, never commit.
-- `PY` = `C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe -B -W ignore`. CPU jobs use `CUDA_VISIBLE_DEVICES=-1 OMP_NUM_THREADS=8`, with at most 2 concurrent.
+- GPU only through `sh5_gpulock`, owner `sh5_diag`. Never touch another owner's lock, `devbox_gpu.chain_active`, or a pod.
+- No `pkill -f`. Kill by explicit PID only.
+- Never run S, Snoprox or Sshuf, and never run `analyze` or open navtest.
+- Do not touch l2fresh, l2stepb, podstage, unseen_s1b or D:/b9. D: was FULL (0 B free) at launch, so write nothing there.
+- Do not edit pinned files (`PREREG_GRID3.md.sha256`, `PREREG_GRID5.md.sha256`). Make copies instead.
+- Nothing is sealed or committed: stage in `out/`.
+- `PY` = `C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe -B -W ignore`.
+- CPU jobs run with `CUDA_VISIBLE_DEVICES=-1 OMP_NUM_THREADS=8`, at most 2 at a time.

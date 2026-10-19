@@ -32,12 +32,21 @@ Amends `PREREG_SH5_DAC_PROX.md` (sealed 2026-10-19T13:39:48+02:00, sha256 `687e0
 **Why the sealed synthetic said the plant is readable** (`raw/probe4_synth_plant_only.json`, MEASURED): the synthetic C-REACH test (`test_sh5_pipeline.py:145-153`, AUC > 0.9, R^2 > 0.5) ran at lr 2e-3 (6.7x the registered 3e-4; the test's own docstring, line 119), 40 epochs, d 32, `fourier_k` 3, P = 1,280 slots (so the plant filled 45-90 % of the slots, against 7.5-15 % on the real ctx), fp32, and proposals 0.3-1.15 m apart at 0.5-4 s (real: 0.002-0.43 m). I suspected the synthetic arm read the road widths that `make_synth(info=True)` writes into EVERY slot rather than the plant. **REFUTED:** with an information-free ctx (info=False) the same recipe still reads the plant, ALLQ 0.9852 / R^2 0.628, against 0.9869 / 0.584 with the info ctx. So the synthetic proves the MECHANISM can read a plant. What it never tested is the registered RECIPE on the real geometry, where the plant is a small share of the slots and the proposals are sub-metre neighbours.
 
 ## 4. Root cause
-PENDING s6 (to be stated with its evidence class). Leading candidate after s3: **the registered recipe never learns a sharp, position-matched read of the plant** (an optimisation/budget defect of the INSTRUMENT, not a property of the plant or of the plumbing), and the synthetic test that set the bar could not have caught it.
+**Status 2026-10-20: PARTLY MEASURED, the binding term is narrowed but not yet fixed.** MEASURED (grids 1-4 + probe 5, s6):
+- Every learner fits TRAIN through the visual ctx (memorisation): train F stays 0.83-0.95 with the plant removed (`raw/probe5_ckpt_seedsplit.json`).
+- The planted read is the only path that generalises to fold 0.
+- Dot-product attention commits a head to the plant on both seeds but never sharpens it: beta_eff plateaus at 5.6-6.5 over 60 ep, and the read stays token-level.
+- Cosine attention (learnable tau, tau0 16) CAN sharpen. On seed 0 a committed head reached beta_eff 18.4 and gave the first position-matched read (F 0.846, collapsing to 0.61 under zero_clear and shuffle_clear).
+- On seed 1 the K6 cosine learner never committed a head and read nothing from the plant.
+
+HYPOTHESIS H5 (tested by grid 5, `PREREG_GRID5.md`): plant commitment versus memorisation is a per-seed race, followed by a slow, grokking-type sharpening.
+
+Original candidate after s3, kept for the record: **the registered recipe never learns a sharp, position-matched read of the plant** (an optimisation/budget defect of the INSTRUMENT, not a property of the plant or of the plumbing), and the synthetic test that set the bar could not have caught it.
 
 ## 5. Root-cause class (for RETRACTION_LOG)
 *A control validated in a test world where the control's job was easier than in production.* The synthetic world gave the plant 45-90 % of the slots, spread the proposals 2-3x wider, and trained at 6.7x the learning rate for 3.3x the epochs. The real plant needs a sharp positional read among sub-metre neighbours, with 85-92 % of the slots as distractors. This is a sibling of Amendment 1's class: the test world differed from production in a dimension it never exercised. Rule proposed: **validate a planted control on the REAL geometry, with the REAL slot share, at the REGISTERED recipe. Compute its ideal-reader ceiling before the bar is set.**
 
-## 6. The fix (grids 1-2 MEASURED; grid 3 / 4 PENDING, `PREREG_GRID3.md`, sha256 in `PREREG_GRID3.md.sha256`)
+## 6. The fix (grids 1-4 MEASURED, no pass; grid 5 RUNNING, `PREREG_GRID3.md`, sha256 in `PREREG_GRID3.md.sha256`)
 Grids 1-2 (`work/diag1/diag_summary.json`, `work/diag2/diag_summary.json`, fold 0, final cycle, point values, one training run per cell and seed):
 
 | cell | seed | ep | ALLQ | F | R^2 | zero_clear ALLQ / R^2 | shuffle_clear R^2 |
@@ -50,6 +59,31 @@ Grids 1-2 (`work/diag1/diag_summary.json`, `work/diag2/diag_summary.json`, fold 
 
 Reading: zero_clear moves ALLQ by <= 0.0043 everywhere, so the classifier never reads the planted clearance. Where the regression reads it (K6/o8 lr 1e-3 s1: R^2 0.644 -> 0.024 under zero_clear), shuffling the planted values across positions keeps R^2 at 0.630: it reads a TOKEN-LEVEL average of the plant, not the position-matched entry. That is finding (f) seen from the trained side: the learned read is flat.
 Grid 3 tests the attention-sharpness levers first (learnable temperature, cosine attention with tau0 16, q/k init x 6; at K6/o8 and K8/o8, both seeds) and measures the trained logits' beta_eff against the ideal reader's beta >= 16; grid 4 (lr 3e-3 / p_sub 64 / 60 ep) runs only if grid 3 has no pass.
+### Grids 3-4 (MEASURED; `work/diag3|4/diag_summary.json`, per-cell table `raw/grid34_cells.json`; fold 0, final cycle, point values, one training run per cell and seed)
+No cell passes in either grid (`ZZDIAG3_PASSING []` ×2). Per PREREG_GRID3 grid 3 is **O3**: no lever cell reaches beta_eff >= 16 on both seeds with top-1 >= 0.5.
+
+| cell (lever) | ep | F s0 / s1 | ALLQ s0 / s1 | R^2 s0 / s1 | max beta_eff s0 / s1 | zero_clear F s0 / s1 | shuffle F s0 / s1 |
+|---|---|---|---|---|---|---|---|
+| base_k8o8_60ep (none) | 60 | 0.653 / 0.609 | 0.715 / 0.679 | 0.765 / 0.823 | 6.5 / 5.6 | 0.639 / 0.590 | 0.642 / 0.595 |
+| BEST_60ep (cos16_k6o8) | 60 | **0.846** / 0.562 | **0.842** / 0.597 | 0.868 / 0.690 | **18.4** / 1.2 | **0.614** / 0.561 | **0.604** / 0.558 |
+| cos16_k6o8 | 12 | 0.566 / 0.570 | 0.665 / 0.640 | 0.571 / 0.576 | -0.8 / 0.0 | 0.563 / 0.569 | 0.561 / 0.569 |
+| cos16_k8o8 | 12 | 0.611 / 0.523 | 0.698 / 0.614 | 0.571 / 0.667 | 4.0 / 2.4 | 0.612 / 0.522 | 0.611 / 0.523 |
+| temp_k6o8 / temp_k8o8 | 12 | 0.537 / 0.567 ; 0.534 / 0.587 | 0.631 / 0.647 ; 0.648 / 0.677 | 0.398 / 0.469 ; 0.461 / 0.511 | 1.6 / 0.8 ; 3.8 / 1.1 | = unablated ±0.003 | = unablated ±0.003 |
+| qk6_k6o8 / qk6_k8o8 | 12 | 0.515 / 0.534 ; 0.515 / 0.582 | 0.594 / 0.601 ; 0.568 / 0.624 | 0.383 / 0.330 ; 0.529 / 0.624 | 6.2 / 4.0 ; 7.7 / 19.7 (top-1 0.05) | = unablated ±0.016 | = unablated ±0.016 |
+| BEST_lr3e-3 / base_k8o8_lr3e-3 | 12 | 0.495 / 0.538 ; 0.497 / 0.553 | 0.574 / 0.630 ; 0.484 / 0.549 | 0.668 / 0.691 ; -0.325 / 0.611 | 2.2 / 1.0 ; 2.9 / 2.7 | = unablated ±0.011 | = unablated ±0.009 |
+| BEST_psub64 / base_k8o8_psub64 | 12 | 0.537 / 0.489 ; 0.504 / 0.510 | 0.684 / 0.601 ; 0.625 / 0.657 | 0.547 / 0.537 ; 0.466 / 0.519 | 0.3 / 1.2 ; 3.2 / 0.5 | = unablated ±0.002 | = unablated ±0.002 |
+
+**Replicate floor:** grid-3 base cells vs grids 1-2, |Δ ALLQ| 0.0296 / 0.0009 / 0.0006.
+
+**The seed split, read from the checkpoints and the per-head diagnostic** (probe 5 reproduces the logged beta_eff from every checkpoint within 0.5):
+- **Seed 0.** BEST's L1 head 1 held plant mass 0.985-0.9999 from cycle 3 on. Its beta_eff ran -0.88, 0.07, 2.70, 6.62, 18.36 at cycles 3/6/9/12/15, and F ran 0.659, 0.603, 0.599, 0.675, 0.846. The run was still accelerating at the end.
+- **Seed 1.** No head was committed: the max plant mass was 0.64, with beta -2.27. R^2 0.690 survives no_plant (0.680), so it is read from the visual ctx.
+- **Per-learner loss curves do not exist.** The sealed trainer logs only a pooled last-batch mean over learners. Probe 5 substitutes final per-learner TRAIN fits, taken from the checkpoints.
+
+Next: grid 5 (`PREREG_GRID5.md`, sha256 in `PREREG_GRID5.md.sha256`):
+- cos16_k8o8, cos16_k8o8 + AdamW wd 1.0, BEST and base, all at 120 ep on seeds 0 and 1 (plus seed 2 for the two candidates);
+- the committed fp32-attention arm at lr 3e-3.
+
 ## 7. C-REACH evidence, both seeds (PENDING)
 ## 8. Pinned files and new pins (PENDING)
 ## 9. Power (Amendments 2 / 3)

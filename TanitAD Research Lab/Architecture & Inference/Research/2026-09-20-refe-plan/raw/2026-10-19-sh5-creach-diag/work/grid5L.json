@@ -1,0 +1,186 @@
+{
+ "runs": [
+  {
+   "name": "G5_s1",
+   "seed": 1,
+   "cycles": 30,
+   "inner": 4,
+   "eval_cycles": [
+    3,
+    6,
+    9,
+    12,
+    15,
+    18,
+    21,
+    24,
+    27,
+    30
+   ],
+   "ablate": [
+    "zero_clear",
+    "shuffle_clear",
+    "no_plant"
+   ],
+   "learners": [
+    {
+     "tag": "cos16_k8o8_120ep",
+     "lr": 0.0003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     }
+    },
+    {
+     "tag": "cos16_k8o8_wd1_120ep",
+     "lr": 0.0003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     },
+     "adamw_wd": 1.0
+    },
+    {
+     "tag": "BEST_120ep",
+     "lr": 0.0003,
+     "fourier_k": 6,
+     "plant_oct": 8,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     },
+     "best_from": "cos16_k6o8"
+    },
+    {
+     "tag": "base_k8o8_120ep",
+     "lr": 0.0003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": null
+    }
+   ]
+  },
+  {
+   "name": "G5_s0",
+   "seed": 0,
+   "cycles": 30,
+   "inner": 4,
+   "eval_cycles": [
+    3,
+    6,
+    9,
+    12,
+    15,
+    18,
+    21,
+    24,
+    27,
+    30
+   ],
+   "ablate": [
+    "zero_clear",
+    "shuffle_clear",
+    "no_plant"
+   ],
+   "learners": [
+    {
+     "tag": "cos16_k8o8_120ep",
+     "lr": 0.0003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     }
+    },
+    {
+     "tag": "cos16_k8o8_wd1_120ep",
+     "lr": 0.0003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     },
+     "adamw_wd": 1.0
+    },
+    {
+     "tag": "BEST_120ep",
+     "lr": 0.0003,
+     "fourier_k": 6,
+     "plant_oct": 8,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     },
+     "best_from": "cos16_k6o8"
+    },
+    {
+     "tag": "base_k8o8_120ep",
+     "lr": 0.0003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": null
+    }
+   ]
+  },
+  {
+   "name": "G5_s2",
+   "seed": 2,
+   "cycles": 30,
+   "inner": 4,
+   "eval_cycles": [
+    3,
+    6,
+    9,
+    12,
+    15,
+    18,
+    21,
+    24,
+    27,
+    30
+   ],
+   "ablate": [
+    "zero_clear",
+    "shuffle_clear",
+    "no_plant"
+   ],
+   "learners": [
+    {
+     "tag": "cos16_k8o8_120ep",
+     "lr": 0.0003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     }
+    },
+    {
+     "tag": "cos16_k8o8_wd1_120ep",
+     "lr": 0.0003,
+     "fourier_k": 8,
+     "plant_oct": 8,
+     "lever": {
+      "mode": "cos",
+      "tau0": 16.0,
+      "mult": 10.0
+     },
+     "adamw_wd": 1.0
+    }
+   ]
+  }
+ ]
+}

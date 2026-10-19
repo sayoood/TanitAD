@@ -3,7 +3,7 @@ import json, os, shutil, glob
 ROOT = "C:/Users/Admin/par18/sh5diag"
 REPO = "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-sh5-creach-diag"
 OUT = f"{ROOT}/out"
-srcs = [f"{ROOT}/PREREG_SH5_DAC_PROX_AMENDMENT4.draft.md", f"{ROOT}/HANDOFF.md", f"{ROOT}/PREREG_GRID3.md", f"{ROOT}/PREREG_GRID3.md.sha256"]
+srcs = [f"{ROOT}/PREREG_SH5_DAC_PROX_AMENDMENT4.draft.md", f"{ROOT}/HANDOFF.md"] + sorted(glob.glob(f"{ROOT}/PREREG_GRID*.md")) + sorted(glob.glob(f"{ROOT}/PREREG_GRID*.md.sha256"))
 for pat in ("code/*.py", "raw/*.json", "work/*.json", "work/*.log", "work/*.ps1", "work/diag*/*.json", "work/confirm*/*.json", "work/confirm*/*.log", "code/amend4/*.py"):
     srcs += sorted(glob.glob(f"{ROOT}/{pat}"))
 rows = []
