@@ -12,12 +12,14 @@ import shutil
 W = "C:/Users/Admin/par18/l2stepb"
 OUT = f"{W}/out"
 REPO = "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-l2-stepB"
-CODE = ["l2_scorer.py", "stepB.py", "g_reach_stepb.py", "label_stepB.py", "analyse_stepB.py", "cost_stepB.py", "make_test_head.py", "fake_scorer.py", "test_stepB.py", "stepB_chain.py", "test_stepB_chain.py", "make_stage.py"]
+CODE = ["l2_scorer.py", "stepB.py", "g_reach_stepb.py", "label_stepB.py", "analyse_stepB.py", "cost_stepB.py", "make_test_head.py", "fake_scorer.py", "test_stepB.py", "stepB_chain.py", "test_stepB_chain.py", "make_stage.py", "amend1_concordance.py", "test_amend1.py"]
 DOCS = {"PREREG_L2_STEPB.md": f"{W}/PREREG_L2_STEPB.md", "PREREG_L2_STEPB.sha256": f"{W}/PREREG_L2_STEPB.sha256", "SEALED_AT.txt": f"{W}/SEALED_AT.txt", "MM_RULING_STEPB.md": f"{W}/MM_RULING_STEPB.md",
-        "PREREG_L2_STEPB_DRAFT.md": f"{W}/PREREG_L2_STEPB_DRAFT.md", "READY.md": f"{W}/READY.md", "HANDOFF.md": f"{W}/HANDOFF.md", "seal_stepB.py": f"{W}/seal_stepB.py"}
+        "PREREG_L2_STEPB_DRAFT.md": f"{W}/PREREG_L2_STEPB_DRAFT.md", "READY.md": f"{W}/READY.md", "HANDOFF.md": f"{W}/HANDOFF.md", "seal_stepB.py": f"{W}/seal_stepB.py",
+        "PREREG_L2_STEPB_AMENDMENT1.md": f"{W}/PREREG_L2_STEPB_AMENDMENT1.md", "PREREG_L2_STEPB_AMENDMENT1.sha256": f"{W}/PREREG_L2_STEPB_AMENDMENT1.sha256", "SEALED_AT_AMENDMENT1.txt": f"{W}/SEALED_AT_AMENDMENT1.txt"}
 RAW = {"raw/stepB_config.json": f"{W}/raw/stepB_config.json", "raw/stepB_config_O4.json": f"{W}/raw/stepB_config_O4.json", "raw/cost.json": f"{OUT}/cost.json", "raw/smoke_label_timing.json": f"{OUT}/smoke_label_timing.json",
        "raw/testheads/test_head_s0.npz": f"{W}/raw/testheads/test_head_s0.npz", "raw/pytest_test_stepB.log": f"{W}/logs/pytest_test_stepB.log", "raw/pytest_test_stepB_sealed.log": f"{W}/logs/pytest_test_stepB_sealed.log", "raw/gate_real_testhead.log": f"{W}/logs/gate_real_testhead.log",
        "raw/gate_real_testhead_rev1.log": f"{W}/logs/gate_real_testhead_rev1.log",
+       "raw/pytest_test_amend1.log": f"{W}/logs/pytest_test_amend1.log", "raw/mutations_amend1.log": f"{W}/logs/mutations_amend1.log", "raw/test_amend1/run_mutations.py": f"{W}/test_amend1/run_mutations.py",
        **{f"raw/gate_testhead/{os.path.basename(p)}": p for p in glob.glob(f"{OUT}/gate_testhead/G-REACH-STEPB_*.json")},
        **{f"raw/gate_testhead_rev1/{os.path.basename(p)}": p for p in glob.glob(f"{W}/raw/gate_testhead_rev1/G-REACH-STEPB_*.json")}}
 
