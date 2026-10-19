@@ -1,0 +1,31 @@
+STEP3_START 19.10.2026  6:17:47,38 L1_TREE=C:/Users/Admin/par18/l1run/tree_hybrid
+ZZGPUWAIT RAM available 3 GB < 8 GB (lock not taken)
+ZZGPUWAIT RAM available 2 GB < 8 GB (lock not taken)
+ZZGPUWAIT RAM available 1 GB < 8 GB (lock not taken)
+ZZGPUWAIT RAM available 0 GB < 8 GB (lock not taken)
+ZZGPUWAIT RAM available 2 GB < 8 GB (lock not taken)
+ZZGPUWAIT RAM available 3 GB < 8 GB (lock not taken)
+ZZGPUWAIT RAM available 2 GB < 8 GB (lock not taken)
+ZZGPUWAIT RAM available 1 GB < 8 GB (lock not taken)
+ZZGPUWAIT RAM available 4 GB < 8 GB (lock not taken)
+ZZGPUWAIT RAM available 6 GB < 8 GB (lock not taken)
+ZZGPUWAIT RAM available 5 GB < 8 GB (lock not taken)
+ZZGPULOCKED
+Traceback (most recent call last):
+  File "C:\Users\Admin\par18\l1run\code\make_stepA_bundle.py", line 139, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "C:\Users\Admin\par18\l1run\code\make_stepA_bundle.py", line 107, in main
+    traj, score, k = planner.infer(ego, img)                 # ONE forward; `traj` is the RAW [64,20,3] model output
+                     ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\par18\l1run\tree_hybrid\refe\planner.py", line 470, in infer
+    goal = self._goal_for(ego).to(self.device)
+           ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Admin\par18\l1run\tree_hybrid\refe\planner.py", line 636, in _goal_for
+    import augment_routes as A
+ModuleNotFoundError: No module named 'augment_routes'
+ZZGPURELEASED yes
+STEP3_END rc=1 19.10.2026  6:36:25,87
+ZZRELAUNCH 2026-10-19 after rc=1 (ModuleNotFoundError augment_routes): tree_hybrid/code/ added = p2heldout tree code/ byte-identical (59 files)
+STEP3_START 19.10.2026  6:39:54,21 L1_TREE=C:/Users/Admin/par18/l1run/tree_hybrid
+ZZGPUWAIT RAM available 5 GB < 8 GB (lock not taken)
