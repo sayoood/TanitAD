@@ -56,6 +56,7 @@ OLD_PARTITION_ID = "272cfd357b81db535a1214fc344f71469219c17ac3c8203698d5c2b0f1be
 N_PROP = 64
 LANE_CHANGE_FACTOR = 2.0           # K5
 K4_ROUNDS = 2                      # K3 / K4: two consecutive checks
+OBSERVE_ONLY_ARMS = ("R1o", "R0e-id")   # K3 is logged, never a kill, on exactly these arms: R1o (PREREG_SAFEOBJ 9) and R0e-id (PREREG_R0E_PICK 4: "R0e-id and R1o run K3 observe-only; K2 and K6 stay live").  R0e-pick and R1e-pick are NOT here: their K3 is live.
 
 
 def say(marker, *rest):
@@ -331,7 +332,7 @@ def join_gate(side, sets_dir, pdm_dir, terms_dir, tsv, ckpt_step=CKPT_STEP, n_pr
 # ------------------------------------------------------------------------------------------------------------- the kill rules
 def judge(arm, rec, hist, k3_enabled=True, observe_only=False):
     """(code or None, why).  rec/hist items: {'tag','g3_ok','g5_ok','k4_breach','k5_breach'}.  K3 and K4 need TWO CONSECUTIVE breaches, K5 (R2 only) one.
-    observe_only (SAFEOBJ R1o, PREREG_SAFEOBJ.md section 9): K3 is NOT a kill -- the caller logs it (ZZRLS1_K3_OBSERVED); K4 and K5 are judged exactly as before."""
+    observe_only (SAFEOBJ R1o, PREREG_SAFEOBJ.md section 9; R0e-id, PREREG_R0E_PICK.md section 4): K3 is NOT a kill -- the caller logs it (ZZRLS1_K3_OBSERVED); K4 and K5 are judged exactly as before."""
     prev = hist[-1] if hist else None
     k3 = lambda r: not (r["g3_ok"] and r["g5_ok"])                                # noqa: E731
     if k3_enabled and not observe_only and prev is not None and k3(rec) and k3(prev):
@@ -648,6 +649,87 @@ def safeobj_gate(dirs):
     return (not bad), (f"S = PASS on {len(dirs)} constrained arm(s), each a genuine reader record: its inputs unchanged and a fresh read of the arm directory reproducing it" if not bad else "; ".join(bad))
 
 
+def _id_reader():
+    """eval/r0e_id_read.py of THIS checkout, loaded by path (never through sys.path or sys.modules): the one place that says what a genuine R0e-id verdict is (TOOL, record_digest, sha256_file, REQUIRED_INPUTS, read_arm, differing_fields)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("r0e_id_read_of_the_gate", str(EVAL_DIR / "r0e_id_read.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def id_not_genuine(d, rec):
+    """-> "" when `rec` (the parsed <d>/id_verdict.json) is a genuine, unmodified output of eval/r0e_id_read.py for THIS directory as it stands now, else the reasons joined by "; ".  Fail closed.  Same contract as
+    safeobj_not_genuine: (a) the tool, (b) record_sha256 recomputes by the reader's own `record_digest`, (c) the record lists every REQUIRED_INPUT and each listed input still has its sha256 in <d>, (d) a fresh `read_arm(<d>)` reproduces the
+    stored record -- a verdict copied from another run's directory, an input that changed or appeared after the read, or a hand-written PASS cannot satisfy all four."""
+    try:
+        ID = _id_reader()
+    except Exception as e:                                                                                                   # noqa: BLE001
+        return f"the reader eval/r0e_id_read.py cannot be loaded ({type(e).__name__}: {str(e)[:120]})"
+    try:
+        why = []
+        if rec.get("tool") != ID.TOOL:
+            why.append(f"tool is {rec.get('tool')!r}, not the reader's {ID.TOOL!r}")
+        if rec.get("record_sha256") != ID.record_digest(rec):
+            why.append("record_sha256 does not recompute (the record was edited, or not written by the reader)")
+        if rec.get("arm") != ID.ARM:
+            why.append(f"arm is {rec.get('arm')!r}, not {ID.ARM!r}")
+        ins = rec.get("inputs_sha256")
+        if not isinstance(ins, dict):
+            why.append("inputs_sha256 is absent or not an object")
+            ins = {}
+        why.extend(f"lists no input {n!r}" for n in ID.REQUIRED_INPUTS if n not in ins)
+        for name, want in sorted(ins.items()):
+            fp = os.path.join(d, *str(name).split("/"))
+            if not os.path.isfile(fp):
+                why.append(f"input {name!r} is absent from the arm directory")
+            elif ID.sha256_file(fp) != want:
+                why.append(f"input {name!r} changed since the read (sha256 differs)")
+        if not why:
+            diff = ID.differing_fields(rec, ID.read_arm(d))
+            if diff:
+                why.append("record is stale or not the reader's output (a fresh read of the directory differs in: " + ", ".join(diff) + ")")
+        return "; ".join(why)
+    except Exception as e:                                                                                                   # noqa: BLE001
+        return f"cannot verify the verdict ({type(e).__name__}: {str(e)[:120]})"
+
+
+def id_kill_marker(d, stage_dir=None):
+    """-> the path of the chain's kill marker for R0e-id (<stage>/arm_R0e-id_killed, written by rls1_pod.sh when the monitor's KILLED.json or the retroactive replay kills the arm, removed only by the Master Mind), else "".
+    `stage_dir` defaults to the chain's layout: <R>/arms/R0e-id -> <R>/stage.  Existence is the test (os.path.lexists: a dangling or unreadable marker still counts)."""
+    sd = stage_dir or os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(d))), "stage")
+    m = os.path.join(sd, "arm_R0e-id_killed")
+    return m if os.path.lexists(m) else ""
+
+
+def id_gate(d, stage_dir=None):
+    """PREREG_R0E_PICK.md 5.1 / launch blocker B10: R0e-pick starts only if R0e-id's directory carries <d>/id_verdict.json reading "outcome": "ID-PASS" that is a GENUINE output of eval/r0e_id_read.py (id_not_genuine)
+    AND R0e-id carries NO kill marker <stage>/arm_R0e-id_killed.  The marker clause is a MASTER MIND RULING of 2026-10-19 (MM_RULING_B10) on a silence of the prereg (5.1 reads only step0 and u250), NOT a prereg change: a kill after
+    a clean u250 read is evidence the identity run is not healthy at the horizon R0e-pick trains to, so ID-PASS fails closed on it, whatever the kill rule (K3 is observe-only for R0e-id, so a kill there is K1/K2/divergence/NaN class).
+    Only the Master Mind removes the marker.  Missing, unparsable, ID-FAIL, ID-DIVERGED, NOT_READ, another run's, stale, hand-written or killed => (False, reason).  -> (ok, why)."""
+    km = id_kill_marker(d, stage_dir)
+    if km:
+        try:
+            with open(km, encoding="utf-8", errors="replace") as f:
+                said = f.read(200).strip()
+        except OSError as e:
+            said = type(e).__name__
+        return False, f"R0e-id carries a kill marker {km} ({said}): ID-PASS needs a clean u250 verdict AND no arm_R0e-id_killed marker (MM ruling 2026-10-19, fail closed); the Master Mind decides and removes the marker"
+    p = os.path.join(d, "id_verdict.json")
+    try:
+        with open(p, encoding="utf-8") as f:
+            rec = json.load(f)
+        out = rec.get("outcome")
+    except (OSError, ValueError, AttributeError) as e:
+        return False, f"{p}: {type(e).__name__} (no readable R0e-id verdict: run  python eval/r0e_id_read.py --arm-dir {d}  after R0e-id has finished)"
+    if out != "ID-PASS":
+        return False, f"{p}: outcome is {out!r}, not 'ID-PASS' ({'; '.join(list(rec.get('fail_reasons') or []) + list(rec.get('problems') or []))[:300]})"
+    why = id_not_genuine(d, rec)
+    if why:
+        return False, f"{p}: not a genuine reader record: {why}"
+    return True, "R0e-id reads ID-PASS: a genuine reader record, its inputs unchanged and a fresh read of the directory reproducing it"
+
+
 # ------------------------------------------------------------------------------------------------------------- CLI
 def _kill_group(pid):
     import signal
@@ -683,6 +765,7 @@ def main(argv=None):
     p.add_argument("--ckpt-step", type=int, default=CKPT_STEP); p.add_argument("--expect", type=int, default=None); p.add_argument("--json", default=None)
     p = sub.add_parser("updates-check"); p.add_argument("--args", required=True); p.add_argument("--n-sets", type=int, required=True)
     p = sub.add_parser("safeobj-gate"); p.add_argument("--dirs", nargs="+", required=True)
+    p = sub.add_parser("id-gate"); p.add_argument("--dir", required=True); p.add_argument("--stage-dir", default=None)
     p = sub.add_parser("join-gate"); p.add_argument("--side", required=True, choices=["train", "val"])
     for x in ("sets", "pdm", "terms", "tsv"):
         p.add_argument(f"--{x}", required=True)
@@ -693,7 +776,7 @@ def main(argv=None):
         for x in ("arm", "out", "refdir", "pdm", "terms", "sets", "tsv"):
             p.add_argument(f"--{x}", required=True)
         p.add_argument("--rule", default="navsim_v1_lane")
-        p.add_argument("--observe-only", action="store_true")                 # SAFEOBJ: R1o only (refused for any other arm below)
+        p.add_argument("--observe-only", action="store_true")                 # R1o (SAFEOBJ) and R0e-id (PREREG_R0E_PICK 4) only: OBSERVE_ONLY_ARMS (refused for any other arm below)
         if name == "monitor":
             p.add_argument("--pid", type=int, required=True); p.add_argument("--poll", type=float, default=20.0)
             p.add_argument("--max-hours", type=float, default=6.0)
@@ -724,6 +807,10 @@ def main(argv=None):
         ok, why = safeobj_gate(a.dirs)
         say("ZZRLS1_SAFEOBJ_S_PASS" if ok else "ZZRLS1_SAFEOBJ_S_REFUSED", why)
         return 0 if ok else 1
+    if a.cmd == "id-gate":
+        ok, why = id_gate(a.dir, a.stage_dir)
+        say("ZZRLS1_ID_PASS" if ok else "ZZRLS1_ID_REFUSED", why)
+        return 0 if ok else 1
     if a.cmd == "updates-check":
         ok, why = updates_check(a.args, a.n_sets)
         say("ZZRLS1_UPDATES_OK" if ok else "ZZRLS1_UPDATES_REFUSED", why)
@@ -735,8 +822,8 @@ def main(argv=None):
                 json.dump({"ok": ok, "why": why, **rep}, f, indent=1)
         say("ZZRLS1_JOIN_OK" if ok else "ZZRLS1_JOIN_REFUSED", a.side, why)
         return 0 if ok else 1
-    if a.cmd in ("monitor", "replay") and a.observe_only and a.arm != "R1o":
-        say("ZZRLS1_OBSERVE_ONLY_REFUSED", a.arm, "--observe-only is R1o's alone (the matched lever-off control); on any other arm it would disable K3")
+    if a.cmd in ("monitor", "replay") and a.observe_only and a.arm not in OBSERVE_ONLY_ARMS:
+        say("ZZRLS1_OBSERVE_ONLY_REFUSED", a.arm, f"--observe-only is {' and '.join(OBSERVE_ONLY_ARMS)}'s alone (R1o: the matched lever-off control; R0e-id: the identity replicate); on any other arm it would disable K3")
         return 1
     if a.cmd == "monitor":
         say("ZZRLS1_MONITOR_UP", a.arm, f"pid={os.getpid()}")                  # BEFORE anything is loaded: a monitor that dies while loading has still said it started

@@ -54,6 +54,9 @@ MANIFEST=$PART/$PNAME.manifest.json; TRAIN_TSV=$PART/$PNAME/rl_train_scenes.tsv;
 # Run: Stage 1 = RLS1_ARMS="R0e-id" (to u1000: PI 1c), then RLS1_ARMS="R0e-pick"; Stage 2 only on outcome O1: RLS1_ARMS="R1e-pick", the operator runs the reader  python eval/safeobj_read.py --arm-dir $R/arms/R0e-pick --arm-dir $R/arms/R1e-pick
 # (never this chain), then RLS1_R1O_LINEAGE=e RLS1_ARMS="R1o": R1o (SAFEOBJ's registered argv, NO --epo-con-temp, judged under refe_rls1e) refuses unless R0e-pick AND R1e-pick both carry a GENUINE safeobj_S.json reading S = PASS
 # (the rls1_checks.py safeobj-gate run on $R/arms/R0e-pick and $R/arms/R1e-pick).  Without RLS1_R1O_LINEAGE=e R1o is the SAFEOBJ lineage's (gated on R0d and R1d), exactly as before; a value other than d / e is refused at the precheck.
+# R0e-id is K3 OBSERVE-ONLY (PREREG_R0E_PICK 4, B9; R0e-pick and R1e-pick keep K3 live).  R0e-pick refuses (before any GPU work) unless R0e-id's directory carries a GENUINE eval/r0e_id_read.py verdict reading ID-PASS (PREREG 5.1, B10;
+# rls1_checks.py id-gate): the operator runs  python eval/r0e_id_read.py --arm-dir $R/arms/R0e-id  after R0e-id has finished (this chain never writes the verdict; it does write rlval_id_u250.json, the reader's ID-DIVERGED input) and then RLS1_ARMS="R0e-pick".
+# Master Mind ruling 2026-10-19 (fail closed, on a silence of the prereg): the id-gate also refuses when stage/arm_R0e-id_killed exists, whatever the kill rule and however clean the u250 verdict -- only the Master Mind removes that marker.
 REGISTERED_ARMS="C0 C1 R0 R1 R2 R0b R1b R0c R0d R1d R1o R0e-id R0e-pick R1e-pick"
 SETS_TR=$R/sets_train; SETS_VA=$R/sets_val; PDM_TR=$R/pdm_train; PDM_VA=$R/pdm_val; TERMS_TR=$R/terms_train; TERMS_VA=$R/terms_val
 TLANE_TR=$R/tlane_train; TLANE_VA=$R/tlane_heldout; VALLOGS=$R/rl_val_logs.txt
@@ -260,7 +263,7 @@ for f in refe/scorer_finetune.py refe/aux_drivable_head.py refe/rl_fan_dump.py r
          eval/rl_val_eval.py eval/proxy_eval.py eval/rl_terms_join_identity.py eval/safeobj_read.py eval/test_safeobj_read.py eval/test_safeobj_gate.py SHIP_MANIFEST.json \
          code/pod_teacher_env.sh code/pod_dataprep.sh splits/navtrain.yaml splits/sft_heldout_logs.txt \
          splits/rl_fancmp_keys.tsv \
-         refe/test_rl_pickcon.py eval/rls1d_arms.json eval/rls1e_arms.json \
+         refe/test_rl_pickcon.py eval/rls1d_arms.json eval/rls1e_arms.json eval/r0e_id_read.py eval/r0d_id_reference.json \
          raw/rl_pool/partition_runs/A_no_trained_list_seed20261012_n16000.manifest.json \
          raw/rl_pool/partition_runs/A_no_trained_list_seed20261012_n16000/rl_train_scenes.tsv \
          raw/rl_pool/partition_runs/A_no_trained_list_seed20261012_n16000/rl_val_scenes.tsv; do
@@ -520,6 +523,14 @@ for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
     grep -q "^ZZRLS1_SAFEOBJ_S_PASS" "$R/safeobj_gate_R1o.log" || refuse "R1o runs only if R0d and R1d both read bar S = PASS: $(tail -n 1 "$R/safeobj_gate_R1o.log" | cut -c1-300)"
     fi
   fi
+  # R0e-id (PREREG_R0E_PICK 4, B9): "R0e-id and R1o run K3 observe-only; K2 and K6 stay live" -- the identity replicate is read at u250 / u500 / u750 / u1000 and a K3 kill would delete those floors.  R0e-pick and R1e-pick keep K3 LIVE.
+  [ "$ARM" = R0e-id ] && OBS="--observe-only"
+  # R0e-pick (PREREG_R0E_PICK 5.1, B10): runs only after R0e-id reads ID-PASS -- R0e-id's directory must carry a GENUINE verdict of eval/r0e_id_read.py (its inputs unchanged, a fresh read reproducing it); refused before any directory, preflight or GPU work.
+  # MM ruling 2026-10-19 (a prereg silence, not a prereg change; fail closed): ID-PASS ALSO needs "$S/arm_R0e-id_killed" to be ABSENT (a kill after a clean u250 read is not a pass); the gate checks the marker, --stage-dir "$S" tells it where.
+  if [ "$ARM" = R0e-pick ]; then
+    env -u HF_TOKEN "$PY" rls1_checks.py id-gate --dir "$R/arms/R0e-id" --stage-dir "$S" > "$R/id_gate_R0e-pick.log" 2>&1 200>&-
+    grep -q "^ZZRLS1_ID_PASS" "$R/id_gate_R0e-pick.log" || refuse "R0e-pick runs only after R0e-id reads ID-PASS (PREREG_R0E_PICK 5.1): $(tail -n 1 "$R/id_gate_R0e-pick.log" | cut -c1-300)"
+  fi
   mkdir -p "$ARMDIR" "$LG"
   # TL-1: the pre-registered budget is --max-updates 1000.  On 16,000 scenes --epochs 2 would end at 500 (the trainer never complains), and the reads below name update1000.
   env -u HF_TOKEN "$PY" rls1_checks.py updates-check --args "$ARGS" --n-sets "$NTRAIN" > "$ARMDIR/updates.log" 2>&1 200>&-
@@ -615,6 +626,10 @@ for ARM in ${RLS1_ARMS:-C0 R0 C1 R1 R2}; do
     else
       env -u HF_TOKEN $RV --scores A0=$SC/scores_update1000_base.npz CTRL=$SC/scores_update1000_A.npz R=$SC/scores_update1000_B.npz --base A0 \
         --out "$ARMDIR/rlval_vs_A0.json" > "$ARMDIR/rlval.log" 2>&1 200>&-
+      if [ "$ARM" = R0e-id ]; then       # the ID reader's ID-DIVERGED input (PREREG_R0E_PICK 5.1): B - own A at u250, the call form of R0d's run_checks_numeric.sh
+        env -u HF_TOKEN $RV --scores A=$SC/scores_update250_A.npz B=$SC/scores_update250_B.npz --base A --out "$ARMDIR/rlval_id_u250.json" >> "$ARMDIR/rlval.log" 2>&1 200>&-
+        [ -f "$ARMDIR/rlval_id_u250.json" ] || refuse "rl_val_eval.py wrote no rlval_id_u250.json for R0e-id (rlval.log): the ID reader has no u250 contrast"
+      fi
       if [ -f "$R/arms/$RD/scores/scores_update1000_A.npz" ]; then
         env -u HF_TOKEN $RV --scores C=$R/arms/$RD/scores/scores_update1000_A.npz R=$SC/scores_update1000_B.npz --base C --out "$ARMDIR/rlval_vs_$RD.json" \
           >> "$ARMDIR/rlval.log" 2>&1 200>&-

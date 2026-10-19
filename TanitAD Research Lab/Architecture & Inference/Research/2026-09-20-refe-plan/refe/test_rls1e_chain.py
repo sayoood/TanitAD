@@ -74,9 +74,9 @@ def run_gate_block(text, tmp, arm, lineage, verdict):
     d.mkdir(parents=True, exist_ok=True)
     shim = d / "fakepy.sh"
     write_sh(shim, '#!/bin/bash\necho "$@" >> "' + posix(d / "calls.txt") + '"\n'
-             'case "$*" in *safeobj-gate*) if [ "' + verdict + '" = PASS ]; then echo "ZZRLS1_SAFEOBJ_S_PASS ok"; else echo "ZZRLS1_SAFEOBJ_S_REFUSED the shim says no"; fi;; esac\n')
+             'case "$*" in *safeobj-gate*) if [ "' + verdict + '" = PASS ]; then echo "ZZRLS1_SAFEOBJ_S_PASS ok"; else echo "ZZRLS1_SAFEOBJ_S_REFUSED the shim says no"; fi;; *id-gate*) echo "ZZRLS1_ID_PASS shim";; esac\n')
     sc = d / "gb.sh"
-    write_sh(sc, f'set -u\nR="{posix(d)}"; ARM="{arm}"; PY="{posix(shim)}"\nrefuse() {{ echo "REFUSED: $*"; exit 1; }}\n{gate_block(text)}\necho "OBS=[${{OBS:-}}]"\n')
+    write_sh(sc, f'set -u\nR="{posix(d)}"; S="$R/stage"; ARM="{arm}"; PY="{posix(shim)}"\nrefuse() {{ echo "REFUSED: $*"; exit 1; }}\n{gate_block(text)}\necho "OBS=[${{OBS:-}}]"\n')
     rc, out, err = bash(f'bash "{posix(sc)}"', {"RLS1_R1O_LINEAGE": lineage} if lineage is not None else None)
     calls = (d / "calls.txt").read_text().splitlines() if (d / "calls.txt").exists() else []
     return rc, out, calls
@@ -136,7 +136,8 @@ def check(text):
         c(f"R1O_GATE_REFUSED_{lin}", rc == 1 and out.startswith("REFUSED: R1o") and names in out and len([x for x in calls if "safeobj-gate" in x]) == 1)
     for arm in E_ARMS + ("R0d",):
         rc, out, calls = run_gate_block(text, tmp, arm, "e", "REFUSED")
-        c(f"NO_S_GATE_FOR_{arm}", rc == 0 and not [x for x in calls if "safeobj-gate" in x] and "OBS=[]" in out)
+        # B9 (R0e-id: K3 observe-only) and B10 (R0e-pick: the ID gate, answered ID-PASS by the shim; its truth table is test_r0e_b9b10.py's) moved this pin: no arm but R1o has an S gate, OBS is set for R0e-id alone
+        c(f"NO_S_GATE_FOR_{arm}", rc == 0 and not [x for x in calls if "safeobj-gate" in x] and (("OBS=[--observe-only]" if arm == "R0e-id" else "OBS=[]") in out) and len([x for x in calls if "id-gate" in x]) == (1 if arm == "R0e-pick" else 0) and (arm != "R0e-pick" or [x for x in calls if "id-gate" in x][0].endswith("--stage-dir " + posix(Path(tmp) / f"gb_{arm}_e_REFUSED") + "/stage")))
     gi, mk, pf = text.find('safeobj-gate --dirs "$R/arms/R0e-pick" "$R/arms/R1e-pick"'), text.find('mkdir -p "$ARMDIR" "$LG"'), text.find("scorer_finetune.py $ARGS --preflight")
     c("R1O_E_GATE_AFTER_THE_DIRECTORY_WORK", 0 < gi < mk and gi < pf)
     # --- the precheck: a misspelled lineage is refused (it must not default to d); the files the e-lineage gate needs on disk are required, and exist

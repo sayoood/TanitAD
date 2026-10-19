@@ -1005,7 +1005,8 @@ def suite_ch(rc_src: str, pod_src: str, tag: str) -> list:
     rep = re.search(r'rls1_checks\.py replay .*?replay\.log', pod_src, re.S)
     check(bad, "CH_M9_the_monitor_line_carries_OBS_so_R1o_s_K3_is_observe_only", lambda: mon is not None and '${OBS:-}' in mon.group(0))
     check(bad, "CH_the_replay_line_carries_OBS_too_a_retroactive_K3_must_not_kill_R1o", lambda: rep is not None and '${OBS:-}' in rep.group(0))
-    check(bad, "CH_OBS_is_observe_only_for_R1o_alone", lambda: pod_src.count('OBS="--observe-only"') == 1 and '  OBS=""\n  if [ "$ARM" = R1o ]; then\n    OBS="--observe-only"' in pod_src)
+    check(bad, "CH_OBS_is_observe_only_for_R1o_and_R0e_id_alone", lambda: pod_src.count('OBS="--observe-only"') == 2 and '  OBS=""\n  if [ "$ARM" = R1o ]; then\n    OBS="--observe-only"' in pod_src
+          and pod_src.count('  [ "$ARM" = R0e-id ] && OBS="--observe-only"\n') == 1)          # R0e-id: PREREG_R0E_PICK 4 / B9; R0e-pick and R1e-pick are not here (their K3 is live)
     gate_i = pod_src.find('safeobj-gate --dirs "$R/arms/R0d" "$R/arms/R1d"')
     check(bad, "CH_R1o_waits_for_both_S_verdicts_before_any_directory_preflight_or_GPU_work", lambda: gate_i > 0 and pod_src.count("safeobj-gate --dirs") == 2 and pod_src.count('safeobj-gate --dirs "$R/arms/R0d" "$R/arms/R1d"') == 1
           and '|| refuse "R1o runs only if R0d and R1d both read bar S = PASS' in pod_src and gate_i < pod_src.find('mkdir -p "$ARMDIR" "$LG"') and gate_i < pod_src.find("scorer_finetune.py $ARGS --preflight"))
@@ -1067,8 +1068,8 @@ def suite_ch(rc_src: str, pod_src: str, tag: str) -> list:
         return rc, buf.getvalue()
     def cargs(cmd, arm):
         return [cmd, "--arm", arm, "--out", "o", "--refdir", "r", "--pdm", "p", "--terms", "t", "--sets", "s", "--tsv", "v", *(["--pid", "1"] if cmd == "monitor" else []), "--observe-only"]
-    check(bad, "CH_cli_observe_only_is_refused_on_every_arm_but_R1o_monitor_and_replay", lambda: all(
-        (lambda r: r[0] == 1 and r[1].startswith("ZZRLS1_OBSERVE_ONLY_REFUSED"))(cli(*cargs(c, a))) for a in ("R0", "R0d", "R1d", "R0c", "C0") for c in ("monitor", "replay")))
+    check(bad, "CH_cli_observe_only_is_refused_on_every_arm_but_R1o_and_R0e_id_monitor_and_replay", lambda: all(
+        (lambda r: r[0] == 1 and r[1].startswith("ZZRLS1_OBSERVE_ONLY_REFUSED"))(cli(*cargs(c, a))) for a in ("R0", "R0d", "R1d", "R0c", "C0", "R0e-pick", "R1e-pick") for c in ("monitor", "replay")))
     # ---- the S gate.  SAFEOBJ round 3: it opens only on a GENUINE, unmodified reader record, so the PASS / FAIL / NOT_READ fixtures below are arm directories made by the REAL producers with the record
     # written by the REAL reader (eval/test_safeobj_gate.py: genuine / copy_arm); a hand-written `{"S": "PASS"}` -- what the gate used to open on -- is now one of the refused cases.
     # (The full battery of mutations of the genuineness check lives in eval/test_safeobj_gate.py.)
@@ -1129,7 +1130,7 @@ CH_MUTATIONS = [
     ("CH6 R1o's argv names --epo-con g5", "CH", [(POD_PATH, '--epo-terms-heldout $TERMS_VA --epo-con off" ;;', '--epo-terms-heldout $TERMS_VA --epo-con g5" ;;')], None),
     ("CH7 a killed R0d does not stop the chain", "CH", [(POD_PATH, '\n  [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED', '\n  [ "$ARM" != R0d ] && [ -f "$S/arm_${ARM}_killed" ] && refuse "arm $ARM was KILLED')], None),
     ("CH8 judge ignores observe_only", "CH", [(RC_PATH, "if k3_enabled and not observe_only and prev is not None", "if k3_enabled and prev is not None")], None),
-    ("CH9 --observe-only is accepted on any arm", "CH", [(RC_PATH, 'and a.observe_only and a.arm != "R1o":', "and a.observe_only and False:")], None),
+    ("CH9 --observe-only is accepted on any arm", "CH", [(RC_PATH, 'and a.observe_only and a.arm not in OBSERVE_ONLY_ARMS:', "and a.observe_only and False:")], None),
     ("CH10 safeobj_gate accepts anything but FAIL", "CH", [(RC_PATH, '        if s != "PASS":\n', '        if s == "FAIL":\n')], None),
     ("CH11 replay ignores observe_only", "CH", [(RC_PATH, "code, why = judge(arm, rec, hist, k3_enabled, observe_only)\n        hist.append(rec)", "code, why = judge(arm, rec, hist, k3_enabled)\n        hist.append(rec)")], None),
     ("CH12 the monitor does not log the observed K3", "CH", [(RC_PATH, '                    say("ZZRLS1_K3_OBSERVED", arm, r["tag"], would_why)\n', "                    pass\n")], None),
@@ -1143,14 +1144,14 @@ CH_MUTATIONS = [
 CH_EXPECT = {
     "M9 R1o's K3 monitor without --observe-only": ["CH_M9_the_monitor_line_carries_OBS_so_R1o_s_K3_is_observe_only"],
     "CH1 the replay forgets --observe-only": ["CH_the_replay_line_carries_OBS_too_a_retroactive_K3_must_not_kill_R1o"],
-    "CH2 OBS is set for every arm": ["CH_OBS_is_observe_only_for_R1o_alone"],
+    "CH2 OBS is set for every arm": ["CH_OBS_is_observe_only_for_R1o_and_R0e_id_alone"],
     "CH3 R1o's S gate is not enforced": ["CH_R1o_waits_for_both_S_verdicts_before_any_directory_preflight_or_GPU_work"],
     "CH4 R0d is read against C0's dumps when they are there": ["CH_own_arm_A_is_the_monitor_and_replay_reference_after_the_generic_pick"],
     "CH5 R1o is not registered": ["CH_registered_arms_are_the_older_eight_plus_R0d_R1d_R1o"],
     "CH6 R1o's argv names --epo-con g5": ["CH_argv_R1o_equals_eval_rls1d_arms_json_token_for_token_and_its_sha256"],
     "CH7 a killed R0d does not stop the chain": ["CH_a_killed_arm_still_stops_the_chain_no_exemption_for_R0d_R1d_R1o"],
     "CH8 judge ignores observe_only": ["CH_monitor_R1o_observe_only_NEVER_kills_on_K3_logs_it_and_keeps_every_check_row", "CH_judge_observe_only_is_off_by_default_and_never_returns_K3_when_on"],
-    "CH9 --observe-only is accepted on any arm": ["CH_cli_observe_only_is_refused_on_every_arm_but_R1o_monitor_and_replay"],
+    "CH9 --observe-only is accepted on any arm": ["CH_cli_observe_only_is_refused_on_every_arm_but_R1o_and_R0e_id_monitor_and_replay"],
     "CH10 safeobj_gate accepts anything but FAIL": ["CH_safeobj_gate_refuses_a_FAIL_a_NOT_READ_a_missing_file_junk_and_an_almost_PASS"],
     "CH11 replay ignores observe_only": ["CH_replay_R1o_observe_only_does_not_retro_kill_on_K3_and_marks_the_records"],
     "CH12 the monitor does not log the observed K3": ["CH_monitor_R1o_observe_only_NEVER_kills_on_K3_logs_it_and_keeps_every_check_row"],
