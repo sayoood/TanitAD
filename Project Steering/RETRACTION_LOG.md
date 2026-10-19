@@ -18326,3 +18326,24 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 **Class:** *an architecture fact quoted from an analyst's prose instead of from the run's argv* (INHERITED, not re-verified). It is the `flagship4b-phase0-30k` family: a model fact taken from a summary, not from the registry or config.
 
 ⇒ Before proposing an input or architecture lever, grep the run's `config.json['argv']` for the flag that would provide it.
+
+### R51 (2026-10-19) - "dev C2 stays strict, no tolerance" (Master Mind rulings D7 / R2, `raw/2026-10-18-ep-r1/MM_DECISIONS_EPR1B.md`, `MM_RULINGS_HEADROWS.md`)
+
+**Claimed:**
+- The registered dev C2 ("the shuffled-label rows' point gain <= 0 per seed") is a valid negative control.
+- Adding a tolerance would move a bar. I confirmed it strict twice, after the SRTTC-DEV agent flagged it (G2: "can read RED by chance and burn the one read").
+
+**Measured:**
+- SR-TTC's dev read at f = 10 % went VOID on C2: +0.078 [-0.342, +0.452] and +0.137 [-0.277, +0.508]. Both intervals straddle 0 widely.
+- Under a symmetric null the per-seed point is above 0 half the time, so the two-seed rule reads RED about 75 % of the time BY CHANCE (ESTIMATED).
+- The control could not separate a leak from noise, and it consumed the arm's only dev read.
+- The gain missed the bar anyway (+0.100 / +0.078 vs +0.30), so the verdict did not hinge on it. The instrument was still wrong.
+
+**Fixed:**
+- The verdict stands as registered (VOID; changing it now would move a bar after the data).
+- Every successor registration must give C2 POWER: replicate shuffles and a one-sided rule on the interval (e.g. RED iff the shuffled gain's LOWER bound is > 0, or its point is >= the bar), never a per-seed point <= 0.
+- BACKLOG `SRTTC-SUCCESSOR`.
+
+**Class:** *a negative control specified on a POINT estimate of a null quantity is a coin flip per replicate*. It is the dual of "a separated CI from a one-seed arm is necessary, not sufficient": there, noise passes as an effect; here, noise fails as a leak.
+
+⇒ Before registering any control, compute its false-RED rate under the null it is meant to pass. If it exceeds the test's alpha, the control is mis-specified.

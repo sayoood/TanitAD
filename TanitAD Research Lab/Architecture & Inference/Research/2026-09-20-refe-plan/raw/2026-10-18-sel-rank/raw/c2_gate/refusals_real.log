@@ -1,0 +1,11 @@
+Real-machine refusals, 2026-10-19 06:11, BEFORE the gated C2 fit ran. Interpreter C:\Users\Admin\venvs\driverl-eval\Scripts\python.exe -I, code dir C:\Users\Admin\par18\src2\code, out dir C:\Users\Admin\srttc_r1\run\f10 (no C2 file existed in it at any of these three calls; verified by ls afterwards).
+
+--- srttc_c2_run.py run --fraction 10 ... --no-gate-stage-ack
+REFUSED: --no-gate-stage-ack is NOT accepted (Master Mind R5, MM_RULINGS_HEADROWS.md). A shuffled-label C2 fit is a fit and needs a launch-gate PASS token (srttc_c2_gate.py).
+
+--- srttc_c2_run.py run --fraction 10 ... --epochs 11   (a token exists for --epochs 10 only)
+REFUSED by the launch gate (no C2 fit was started): argv differs from the gated argv (sha 2751f39bb30a vs 2a99d565e5a8; ['10 -> 11'])
+
+--- the LANDED srttc_c2.py run directly WITHOUT its own acknowledgement flag
+REFUSED: pass --no-gate-stage-ack. A C2 fit is a training run and srttc_r1_gate.py has no c2 stage; the Master Mind rules on that before this runs.
+(NOTE: the landed srttc_c2.py, run directly WITH --no-gate-stage-ack, still starts a fit without a token. It is frozen and was not edited; the sanctioned entry is srttc_c2_run.py.)
