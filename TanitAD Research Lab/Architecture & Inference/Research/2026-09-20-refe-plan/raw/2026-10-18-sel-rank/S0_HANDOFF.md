@@ -22,7 +22,7 @@ Phase L (local DB+frames): ~25 min. Phase S (stage from pod, dump, bank, delete)
 
 ## For R1
 Bank (single copy, C: only): `C:/Users/Admin/srttc_s0/work/bank/<unit>.sets.npz` (+ `.fan.npz`, `.report.json`); a unit = <= 500 tokens, <= 12 logs, content-addressed.
-`sets.npz`: `log, token, step, rank, ckpt_step`, `feat [S,64,256] fp16` (input of `score_head`), `logits [S,64]`, `top8 [S,8]` (frozen rule: float64 sigmoid, p0*p1*(5p2+5p3+2p4)/12, stable argsort desc), `labels6 [S,64,6]` (order NC, DAC, EP, **TTC = column 3**, C, DDC; clipped [0,1]), `label_order`, controls, `rule`, `ckpt`.
+`sets.npz`: `log, token, step, rank, ckpt_step`, `feat [S,64,256] fp16` (input of `score_head`), `logits [S,64,6]`, `top8 [S,8]` (frozen rule: float64 sigmoid, p0*p1*(5p2+5p3+2p4)/12, stable argsort desc), `labels6 [S,64,6]` (order NC, DAC, EP, **TTC = column 3**, C, DDC; clipped [0,1]), `label_order`, controls, `rule`, `ckpt`.
 Folds: rank mod 5 from `run/plan/ranked_fit_logs.tsv`; key-order prefixes per A2.1. `S0_SUMMARY.json` = counts only; `logs_without_any_token` is the A2.1 item 7 report (NOT auto-replaced; > 5 % => stop).
 Read nothing beyond integrity checks until the gate phase.
 
