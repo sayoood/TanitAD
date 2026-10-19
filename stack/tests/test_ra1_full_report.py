@@ -10,7 +10,9 @@ What is pinned, and the control that must go red for each:
   * mixed provenance is REFUSED: another holdout (in one run, or shared by all runs but not the Amendment-1 list), a steer-unit run,
     a run from the 600-clip cache, two different P10-yaw-540s;
   * final mode copies S* / the outcome from the verdict's JSON and REFUSES a full1.json whose seed means are not the runs' (it would be
-    reporting files the verdict did not read).
+    reporting files the verdict did not read), and REFUSES a gate delta the A1x / A1 runs do not reproduce;
+  * the R0 -> A1x -> A1 decomposition at S*_A1 is the paired mean difference of each pair; --notes lands under its own labelled
+    heading, before the generated tables.
 """
 from __future__ import annotations
 
@@ -83,6 +85,9 @@ def _world(tmp, gain=0.3, seed_gap=0.01, mini_gap=0.01, every=None, **over):
                 kw = dict(every or {}, **(over if (S, arm, s) == (1000, "R0", 1) else {}))
                 _run(tmp / "full" / "runs" / f"st{S}" / RUN[arm].format(s=s) / "eval", arm, S, s,
                      base - gain + s * seed_gap - (0.05 if arm == "A1" else 0), base + 0.4 + s * seed_gap - 0.001 * S / 100, **kw)
+    # A1x seed 0 at 1000 (the gate's control): A1x - A1 = +0.02 on every eval-141 window
+    _run(tmp / "full" / "runs" / "st1000" / "A1x_b0.08g50_s0" / "eval", "A1x", 1000, 0, base - gain - 0.03, base + 0.4 - 0.01,
+         **dict(every or {}))
     for arm in RUN:
         for s in (0, 1):
             _run(tmp / "mini" / f"st500" / RUN[arm].format(s=s) / "eval", arm, 500, s, base + s * mini_gap - (0.05 if arm == "A1" else 0),
@@ -168,19 +173,41 @@ def _full1(full, nudge=0.0):
                                                      K_arm="A1", reading="r", next="full2 1000 1000 0.08 50", budgets=b)))
 
 
-def test_final_mode_copies_S_star_and_the_outcome(tmp_path):
-    full, mini = _world(tmp_path)
-    _full1(full)
+def _final(full, gate_delta=0.02):
     cand = {"seed0": {"ade6": 2.3, "p10_ade6": 2.5, "arm_minus_p10": {"delta": -0.2, "lo": -0.3, "hi": -0.1, "separated": True}}}
     (full / "full_final.json").write_text(json.dumps(dict(
         outcome="K_PASS", reading="READING 4 PASS", K_arm="A1", training_seed_floor_A1=0.01,
-        A1x_control={"verdict": "OK: A1x loses", "delta_A1x_minus_A1_ade6": {"delta": 0.05, "lo": 0.02, "hi": 0.08, "separated": True}},
+        A1x_control={"verdict": "OK: A1x loses", "delta_A1x_minus_A1_ade6": {"delta": gate_delta, "lo": 0.01, "hi": 0.03, "separated": True}},
         K_read={"bar": "b", "K_arm": "A1", "PASS": True, "K_arm_row": cand, "other_arm_DESCRIPTIVE": cand})))
-    rc, md, js = _main(full, mini)
+
+
+def test_final_mode_copies_S_star_and_the_outcome_and_decomposes_R0_A1x_A1(tmp_path):
+    full, mini = _world(tmp_path)
+    _full1(full)
+    _final(full)
+    notes = tmp_path / "notes.md"
+    notes.write_text("HAND-WRITTEN LINE", encoding="utf-8")
+    rc, md, js = _main(full, mini, "--notes", str(notes))
     assert rc == 0
     assert "FINAL" in md and "K_PASS" in md and "→ **PASS**" in md and "OK: A1x loses" in md
     assert md.count("⭐S*") == 2 and "| A1 | 1000 ⭐S*" in md and "| R0 | 1000 ⭐S*" in md
     assert js["K_arm"] == "A1" and js["S_star"] == {"R0": 1000, "A1": 1000}
+    rows = js["decomposition"]["rows"]
+    assert js["decomposition"]["S"] == 1000
+    assert rows["A1x_s0-A1_s0"]["eval141"]["delta"] == pytest.approx(0.02, abs=1e-4)    # the gate's own quantity, re-derived
+    assert rows["A1x_s0-R0_s0"]["eval141"]["delta"] == pytest.approx(-0.03, abs=1e-4)
+    assert rows["A1_s1-R0_s1"]["eval141"]["delta"] == pytest.approx(-0.05, abs=1e-4)
+    i = md.index("## The author's reading")
+    assert "NOT generated" in md[i:i + 200] and "HAND-WRITTEN LINE" in md[i:] and i < md.index("## Reading 1")
+
+
+def test_final_mode_refuses_a_gate_delta_the_runs_do_not_give(tmp_path):
+    full, mini = _world(tmp_path)
+    _full1(full)
+    _final(full, gate_delta=0.05)                                    # the runs give +0.02
+    assert _main(full, mini)[0] == 2
+    _final(full, gate_delta=0.02)                                    # control: the true value renders
+    assert _main(full, mini)[0] == 0
 
 
 def test_final_mode_refuses_a_full1_that_read_other_files(tmp_path):

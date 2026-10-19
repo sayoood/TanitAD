@@ -19,6 +19,8 @@ MUT = {
     "2F ignored": ("big = bool(d141[\"separated\"] and abs(d141[\"delta\"]) > 2 * F)", "big = bool(d141[\"separated\"])"),
     "strategic dropped": ("        w(f\"| STRATEGIC | — | **{sp.get('status')}**", "        (f\"| STRATEGIC | — | **{sp.get('status')}**"),
     "interim selects": ("    star = (f1 or {}).get(\"S_star\") or {}", "    star = {\"A1\": 500, \"R0\": 500}"),
+    "no gate-delta crosscheck": ("        if isinstance(gate, dict) and \"delta\" in gate and abs(", "        if False and abs("),
+    "decomposition pairs the wrong run": ("(\"A1x − R0\", \"A1x\", 0, \"R0\", 0)", "(\"A1x − R0\", \"A1\", 0, \"R0\", 0)"),
 }
 
 

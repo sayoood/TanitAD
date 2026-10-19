@@ -191,3 +191,46 @@ Read in this order. A later reading is not made if an earlier one stops.
   trainer, the evaluator, the model, the loader, the queue and the prior), and records the tip in `TIP_FULL.txt`. The whole
   sequence runs as one script with no model turn waiting on it: phase 1, selection, the edge extension, phase 2, and phase 3 if
   K fails.
+
+## Amendment 1 (2026-10-19 ~21:30, after phase 2 and BEFORE any of its runs): the K-PASS lever, SENS + A2 + the gate's seed replicate
+
+**Why it exists:**
+* Phase 2 read **K_PASS** (`RESULT_RA1_FULL.md`): A1 @ 3000 − P10-yaw-4512 = −0.2865 / −0.2758, separated.
+* Reading 3's PASS branch names the next step: *"A2, and SENS with A0, at S\* on the full corpus, under PREREG_HJ_STAGE0's other bars."*
+* PREREG_HJ_STAGE0's branch rule makes **SENS the decider** once K passes.
+* The result also exposed one weakness, and this amendment adds the cheapest run that discriminates it: the gate rests on **ONE A1x training seed**. On eval-141, A1x − A1 = +0.0376 [+0.0119, +0.0643]; on the holdout it is −0.0029 [−0.0534, +0.0526].
+* No run below exists yet. Nothing already read is re-read, and K's PASS for A1 stands whatever these runs show.
+
+**Arms:** all at **S = 3000** (S*_A1 = S*_R0), cell **b0.08g50**, the same cache, train list, holdout, prior, constants and directory (`runs\ra1_yaw_full\st3000`):
+
+| arm | seeds | what it answers |
+|---|---|---|
+| `A0` (β 0.08, γ 0) | 0, 1 | SENS's "separated above A0" half |
+| `A2` (A1 + level 3, s₃ = 3) | 0, 1 | K's `best(R0, A1, A2)`: the 3-level arm, never run at full scale |
+| `A1x` | **1** | the gate's training-seed replicate (`H-ESTIM-SEED-1`) |
+
+**Readings, committed now, in this order:**
+1. **SENS** (PREREG_HJ_STAGE0 Amendment 3's yaw-rate form, unchanged). A1's level-1 `yaw_rate` sensitivity at k = 10 must be **≥ 0.10 AND A1 − A0 > 0 separated**, at **both** seeds (A0 seed k pairs with A1 seed k). It is read from the queue verdict's `SENS` block over R0/A0/A1/A1x/A2 at 3000.
+   * **PASS (with K's PASS)** ⇒ PREREG_HJ_STAGE0: *"frozen + adapter suffices; build refav2 (RA-2)"*. RA-2's design is a Master Mind / PI step; this amendment does not pre-register it.
+   * **FAIL** ⇒ PREREG_HJ_STAGE0's SENS-FAIL ladder, in order: γ = 200, then IDM at level 2 only, then a time-repulsion floor (|λ_sim| ≤ 0.06). Each is A1 ×2 at 3000, read under this same SENS bar.
+2. **The gate's seed replicate.** A1x_s1 − A1_s1, eval-141 ADE@6s, paired over episodes:
+   * **> 0, separated ⇒ REPLICATES.** The time-order share of A1's gain is reproduced by another training run. The gate is then read at two seeds.
+   * **Otherwise ⇒ DOES NOT REPLICATE.** This does **not** reverse K: K's bar never contained the gate's seed count. But every claim that **true time order** in the IDM/prediction targets adds skill is reported as **one-seed only**. The next lever is Addendum D's **A1a** (actions permuted across windows) at full scale, which asks whether the gain needs the true action pairing. It is pre-registered by Addendum D's own readings.
+   * The holdout difference is reported beside it and decides nothing, as in phase 2.
+3. **A2 (K's best-of).** The K arm is re-picked on the **holdout** among R0, A1 and A2 at 3000: the lowest seed-mean, with ties within 0.01 m going to the simpler arm (R0 < A1 < A2).
+   * If A2 is picked, K is read for A2 under the unchanged bar (2F = 2·|A2_s0 − A2_s1|).
+   * If it is not picked, A2's K numbers are descriptive.
+   * **A2 − A1** (paired, per seed, eval-141 and holdout) is reported descriptively. It is the "does the third level help" number, and it is not a pre-registered bar here.
+
+**Reported, not read:**
+* the four families for every new run;
+* SENS's per-channel table (`a`, `yaw_rate`, `v`);
+* COST L2 − L1 (and A2's level-3 cost, where the eval publishes it);
+* A0 − R0.
+
+**Variance:** episodes (paired bootstrap, B = 2,000) and training seed (two seeds for A0 and A2; A1x now also two). There is no inference seed.
+
+**Cost and safety:**
+* 5 runs at ~47 min each (MEASURED in phase 1: clip loading dominates) ≈ **4 h** on box 2, SAFE MODE, one job at a time.
+* The same crash, unreachability, timeout and USB-HDD temperature stop rules as phases 1–3.
+* ⛔ **Box 2 is queued with v8F-mini (`PREREG_V8F_MINI` Amendment 4), then rung β (`PREREG_V8F_BETA` Amendment 1). This run set takes the slot after β ONLY on the PI's go.** Box 2 is the PI's machine, and no box-2 job runs without a go.

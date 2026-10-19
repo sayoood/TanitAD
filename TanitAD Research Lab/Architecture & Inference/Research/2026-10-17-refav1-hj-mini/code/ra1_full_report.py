@@ -1,7 +1,7 @@
 """RESULT_RA1_FULL.md generator (../PREREG_RA1_FULL.md): renders the readings AND the "Reported, NOT read" list from the banked files.
 
   python ra1_full_report.py --root <logs/ra1_full> --mini-root <raw/ra1_es> --out RESULT_RA1_FULL.md [--json-out report.json]
-                            [--tip <sha>] [--interim] [--family-budget S]
+                            [--tip <sha>] [--interim] [--family-budget S] [--notes author_reading.md]
 
   <root>      runs/st<S>/<run>/eval/{eval.json,perwindow.npz}  (+ runs/st<S>_wd3.0/... for phase 3), full1.json, full_final.json,
               full_final3.json -- exactly what chain_ra1_full_runs.sh pulls.
@@ -241,6 +241,11 @@ def render(a, pairfn) -> tuple[str, dict]:
                 w(f"* **{tag} — reading 3, K:** NOT READ (the gate did not pass).")
             w(f"* **{tag} outcome `{ff.get('outcome')}`:** {ff.get('reading')}\n")
 
+    if getattr(a, "notes", None):
+        w("## The author's reading — written AFTER the data, by hand; NOT generated and NOT a pre-registered reading\n")
+        with open(a.notes, encoding="utf-8") as f:
+            w(f.read().strip() + "\n")
+
     # ---------------------------------------------------------------- reading 1 + the selection grid
     w("\n## Reading 1 (descriptive) and the selection grid — holdout selects, eval-141 never does\n")
     w("| arm | steps | holdout ADE@6s s0 / s1 | seed mean | mean − P10-4512 | F_hold | holdout Δ vs P10 s0 | s1 | eval-141 Δ vs P10 s0 (NON-DECIDING) | s1 | F_141 |")
@@ -256,6 +261,32 @@ def render(a, pairfn) -> tuple[str, dict]:
     for arm, S, seeds in partial:
         w(f"| {arm} | {S} | seed {seeds} only — not a row until both seeds exist | | | | | | | | |")
     w("\nF = |s0 − s1| (training-seed floor, one draw). `sep` = the paired episode CI excludes 0. A negative Δ = the arm beats its prior.\n")
+
+    # ---------------------------------------------------------------- R0 -> A1x -> A1 at S*_A1 (descriptive)
+    Sd = star.get("A1") if star else max((S for S in grid if 0 in grid[S].get("A1x", {})), default=None)
+    g = grid.get(Sd, {}) if Sd is not None else {}
+    w(f"## Where A1's gain over R0 comes from (descriptive) — R0 → A1x → A1 at {Sd} steps\n")
+    if not (0 in g.get("A1x", {}) and all(s in g.get(arm, {}) for arm in ("R0", "A1") for s in SEEDS)):
+        w("NOT COMPUTED: R0 and A1 at both seeds and A1x seed 0 are not all in at one budget.\n")
+    else:
+        w("A1x is A1 with its prediction/IDM targets TIME-SHUFFLED (the gate's control). So A1x − R0 is what the auxiliary training buys "
+          "without true time order, and A1x − A1 is what the true order adds (the gate's own quantity; the gate reads it on eval-141 only). "
+          "A1x has ONE training seed: its rows answer *another draw of episodes*, not *another training run*. Paired over episodes on "
+          "the same windows (asserted).\n")
+        w("| difference | seeds | eval-141 ADE@6s | holdout ADE@6s |\n|---|---|---|---|")
+        dec = {}
+        for nm, a1, s1, b1, s2 in (("A1 − R0", "A1", 0, "R0", 0), ("A1 − R0", "A1", 1, "R0", 1), ("A1x − R0", "A1x", 0, "R0", 0),
+                                   ("A1x − A1 (the gate's quantity)", "A1x", 0, "A1", 0)):
+            d141 = paired_runs(g[a1][s1], g[b1][s2], "eval141", "ade6", "ade6", pairfn)
+            dh = paired_runs(g[a1][s1], g[b1][s2], "holdout", "hold_ade6", "hold_ade6", pairfn)
+            dec[f"{a1}_s{s1}-{b1}_s{s2}"] = dict(eval141=d141, holdout=dh)
+            w(f"| {nm} | {a1} s{s1} − {b1} s{s2} | {fmt_d(d141)} | {fmt_d(dh)} |")
+        out["decomposition"] = dict(S=Sd, rows=dec)
+        gate = ((f_final or {}).get("A1x_control") or {}).get("delta_A1x_minus_A1_ade6")   # phase 2 read these st<S*_A1> runs
+        if isinstance(gate, dict) and "delta" in gate and abs(gate["delta"] - dec["A1x_s0-A1_s0"]["eval141"]["delta"]) > 5e-4:
+            raise ValueError(f"the verdict's gate delta {gate['delta']} != the runs' A1x − A1 {dec['A1x_s0-A1_s0']['eval141']['delta']}: "
+                             "the report is not reading the verdict's files")
+        w("")
 
     # ---------------------------------------------------------------- data scale (descriptive)
     mini = scan(a.mini_root) if a.mini_root else {}
@@ -395,6 +426,7 @@ def main(argv=None) -> int:
     ap.add_argument("--tip", default=None, help="the commit the runs' code was sha-checked against")
     ap.add_argument("--interim", action="store_true", help="render the runs present; read NOTHING (no S*, gate or K)")
     ap.add_argument("--family-budget", default=None, help="render the families at this budget instead of S*")
+    ap.add_argument("--notes", default=None, help="a hand-written markdown reading, appended under its own labelled heading")
     a = ap.parse_args(argv)
     try:
         from taniteval.ci import paired_episode_cluster_bootstrap
