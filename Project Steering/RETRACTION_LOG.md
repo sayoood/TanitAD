@@ -18347,3 +18347,23 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 **Class:** *a negative control specified on a POINT estimate of a null quantity is a coin flip per replicate*. It is the dual of "a separated CI from a one-seed arm is necessary, not sufficient": there, noise passes as an effect; here, noise fails as a leak.
 
 ⇒ Before registering any control, compute its false-RED rate under the null it is meant to pass. If it exceeds the test's alpha, the control is mis-specified.
+
+### R52 (2026-10-19) - "C2 (POWERED): 5 replicate label shuffles, RED iff any replicate's shuffled concordance - 0.5 has a lower CI > 0" (Master Mind design, HEADROW-PROBE brief `par18/probe.md`)
+
+**Claimed:**
+- After R51, this was the powered fix: replicate shuffles and a rule on the interval, not a point.
+
+**Measured (HEADROW-PROBE, `D-REFE-HEADROW-PROBE-1`):**
+- C2 read RED in 8 of 8 cells.
+- A probe TRAINED on noise labels over P2's structured features gives a per-replicate RED of up to 0.375.
+- The paired log-cluster bootstrap resamples LOGS with the trained probe held FIXED, so the control's own training noise is invisible to its CI (the `H-ESTIM-SEED-1` blind spot, now inside a control).
+- "Any of 5 replicates" then multiplies the false-RED rate.
+
+**Fixed:**
+- No call changes: C2 RED voids only a CAPACITY call, and none was made.
+- ⛔ Do not reuse this C2.
+- A shuffled-label control is read against the EMPIRICAL distribution of noise-trained replicates (their spread IS the null), with a multiplicity correction across replicates and cells. It is never read against 0.5 with a log-only CI.
+
+**Class:** *a null control whose interval is blind to the variance the null itself generates will fire on that variance*. It is the same blind spot as `H-ESTIM-SEED-1` (the bootstrap is blind to training variance), applied to the control instead of the arm.
+
+⚠️ This is the second control-design error by the Master Mind in two days (R51: a point rule; R52: a training-blind interval). ⇒ Before registering any trained control, SIMULATE its false-fire rate on noise-trained replicates; R51's "compute the false-RED rate" must include TRAINING noise.

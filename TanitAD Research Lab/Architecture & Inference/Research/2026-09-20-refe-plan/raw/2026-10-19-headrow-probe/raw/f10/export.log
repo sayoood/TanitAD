@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "C:\Users\Admin\par18\probe\code\export_oof.py", line 202, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "C:\Users\Admin\par18\probe\code\export_oof.py", line 197, in main
+    {"export": do_export, "verify": do_verify}[a.cmd](a)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "C:\Users\Admin\par18\probe\code\export_oof.py", line 141, in do_export
+    sha = E._io_write_bytes(guard, os.path.join(a.stage_dir, OUT_NAME), blob, exclusive=True)
+  File "C:\Users\Admin\par18\probe\code\epr1.py", line 194, in _io_write_bytes
+    with open(path, "xb" if exclusive else "wb") as f:
+         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileExistsError: [Errno 17] File exists: 'C:/Users/Admin/par18/probe/out/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-headrow-probe/raw/f10\\oof_proposals_f10.npz'
+verify ok: True
