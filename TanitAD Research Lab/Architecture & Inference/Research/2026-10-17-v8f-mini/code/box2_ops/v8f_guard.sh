@@ -6,6 +6,8 @@
 #                step total must stay <= 10 h. Above that the input pipeline, not the model, is the experiment: STOP and report.
 # Stop = Stop-Process on OUR job's python processes only (v8f_mini_train / v8f_mini_eval) and their workers. A stopped run resumes
 # from ckpt_last.pt on the same argv. Exits when the chain ends. Script polling, not model turns.
+# 2026-10-20: the end test is ANCHORED (^MARKER) and knows PREREG_V8F_TAC's chain (ZZV8FTAC-DONE / -STOP). Unanchored, the same
+# test in ra1runs_guard.sh matched a chain's own "waiting for <marker>" line and switched itself off (2026-10-20 22:43).
 B=/c/Users/Admin/box2_ship; L=$B/logs
 SSH="ssh -o BatchMode=yes -o ConnectTimeout=20 tanitad-box2"
 PY=C:/Users/Admin/venvs/tanitad/Scripts/python.exe
@@ -17,7 +19,7 @@ kill_ours() {
 echo "$(date '+%m-%d %H:%M') v8F guard armed (USB >= 4/20 samples >= 61 C or one >= 63 C; projected run > ${MAXH} h after 1,000 steps)"
 hi=0
 while :; do
-  grep -q -E 'ZZV8FMINI-DONE|ZZV8FMINI-STOP|ZZBETA-DONE|ZZBETA-STOP' "$CHAIN_OUT" 2>/dev/null && { echo "$(date '+%m-%d %H:%M') chain ended; guard off (max USB ${hi} C)"; exit 0; }
+  grep -q -E '^(ZZV8FMINI|ZZBETA|ZZV8FTAC)-(DONE|STOP)' "$CHAIN_OUT" 2>/dev/null && { echo "$(date '+%m-%d %H:%M') chain ended; guard off (max USB ${hi} C)"; exit 0; }
   t=$($SSH "powershell -NoProfile -Command \"Get-Content D:/tanitad/logs/telemetry_full.csv -Tail 20\"" 2>/dev/null | tr -d '\r' | grep -E '^20' | cut -d, -f11 | grep -E '^[0-9]+$')
   if [ -n "$t" ]; then
     n61=$(echo "$t" | awk '$1 >= 61' | wc -l); m=$(echo "$t" | sort -n | tail -1)

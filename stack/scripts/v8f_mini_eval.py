@@ -238,6 +238,8 @@ def cmd_run(a):
             raise SystemExit("REFUSED: --plan beta scores with the checkpoint's OWN world model; this one was trained with wm='off' (arm M1). Use M2a / M2b.")
         if cfg.kin_mode != "yaw":
             raise SystemExit("REFUSED: --plan beta runs only on a --kin-mode yaw checkpoint (PI ruling D-PI-YAWRATE-1: no steering angle at inference).")
+    if a.tac != "pred" and (a.plan == "beta" or a.nav_shuffle):
+        raise SystemExit("REFUSED: --tac shuffle|oracle is ONE intervention on T -> O; run it without --plan beta and without --nav-shuffle")
     grid, J, X = ctx_from_args(a, cfg.kin_mode)       # the scoring context is built in the CHECKPOINT's representation
     tracks = None
     if cfg.kin_mode == "yaw":
@@ -259,6 +261,11 @@ def cmd_run(a):
     if a.nav_shuffle:
         from tanitad.models.hjepa import donor_indices
         perm = donor_indices(N, episode_ids=torch.as_tensor(X["eid"]), seed=0).numpy()
+    tperm = None
+    if a.tac == "shuffle":
+        from tanitad.models.hjepa import donor_indices
+        tperm = donor_indices(N, episode_ids=torch.as_tensor(X["eid"]), seed=1).numpy()
+    tac_rows = {"shift": [], "oracle_fallback": []}
     outs = {"traj30": [], "ckpt": [], "goal_prob": [], "lat_logits": [], "lon_logits": [], "cons_pred": [],
             "traj30_proj": []}
     beta_rows = []                                     # rung beta: the planner's per-window inputs (only with --plan beta)
@@ -266,7 +273,7 @@ def cmd_run(a):
         from tanitad.models import v8f_beta as BETA
     with torch.no_grad():
         for b0 in range(0, N, a.batch):
-            items = []
+            items, ditems = [], []
             for i in range(b0, min(b0 + a.batch, N)):
                 ci, t, _, _ = wins[i]
                 if a.ages == "cycle":
@@ -279,9 +286,25 @@ def cmd_run(a):
                     dci, dt_, _, _ = wins[int(perm[i])]
                     it["nav"] = ds.item(dci, dt_, a_t, a_s)["nav"]
                 items.append(it)
-            b = D.collate(items)
-            b = {k: ({kk: vv.to(dev) for kk, vv in v.items()} if isinstance(v, dict) else v.to(dev)) for k, v in b.items()}
+                if tperm is not None:                  # the donor window, at the SAME ages: its T runs in its own episode
+                    dci, dt_, _, _ = wins[int(tperm[i])]
+                    ditems.append(ds.item(dci, dt_, a_t, a_s))
+            todev = lambda bb: {k: ({kk: vv.to(dev) for kk, vv in v.items()} if isinstance(v, dict) else v.to(dev))   # noqa: E731
+                                for k, v in bb.items()}
+            b = todev(D.collate(items))
             o = model.forward_infer(b)
+            if a.tac != "pred":                      # PREREG_V8F_TAC: O reads another code; S, T and the scene are untouched
+                code0 = o["code"]
+                if a.tac == "shuffle":
+                    code = model.forward_infer(todev(D.collate(ditems)))["code"]
+                    fb = torch.zeros(code.shape[0], dtype=torch.bool, device=dev)
+                else:                                    # oracle: the GT code where the window has a v9 row (a T0 diagnostic)
+                    has = b["lab_t"]["has"].bool()
+                    code = torch.where(has[:, None], model._code_gt(b["lab_t"]).to(code0.dtype), code0)
+                    fb = ~has
+                o = model.forward_diag(b, code)
+                tac_rows["shift"].append((o["code"] - code0).abs().mean(-1).float().cpu().numpy())
+                tac_rows["oracle_fallback"].append(fb.cpu().numpy())
             if a.plan == "beta":
                 beta_rows.append(BETA.collect_beta_inputs(model, b, o))
             outs["traj30"].append(o["traj30"].float().cpu().numpy())
@@ -302,7 +325,15 @@ def cmd_run(a):
     extras = {"ckpt": ck_now, "goal_prob": O["goal_prob"], "lat_logits": O["lat_logits"],
               "lon_logits": O["lon_logits"], "cons": cons_dec}
     tag = a.tag
-    res = {"tag": tag, "ckpt": a.ckpt, "ages": a.ages, "nav_shuffle": bool(a.nav_shuffle), "kin_mode": cfg.kin_mode, "plan": a.plan}
+    res = {"tag": tag, "ckpt": a.ckpt, "ages": a.ages, "nav_shuffle": bool(a.nav_shuffle), "kin_mode": cfg.kin_mode, "plan": a.plan,
+           "tac": a.tac}
+    tac_npz = {}
+    if a.tac != "pred":
+        shift, fb = np.concatenate(tac_rows["shift"]), np.concatenate(tac_rows["oracle_fallback"])
+        res["tac_manipulation"] = {"mode": a.tac, "code_shift_mean": float(shift.mean()), "frac_code_changed": float((shift > 1e-6).mean()),
+                                   "n_oracle_fallback_no_v9_row": int(fb.sum()), "n_windows": int(shift.size),
+                                   "donor_seed": 1 if a.tac == "shuffle" else None}
+        tac_npz = {"tac_code_shift": shift, "tac_oracle_fallback": fb}
     r, pw = evaluate(O["traj30"].astype(np.float64), X, extras, a.n_boot, with_families=a.families)
     res["raw"] = r
     if a.plan == "beta":
@@ -315,7 +346,7 @@ def cmd_run(a):
         os.makedirs(a.out_dir, exist_ok=True)
         np.savez_compressed(os.path.join(a.out_dir, f"eval_{tag}_proj.npz"), pred=O["traj30_proj"], **pw2)
     os.makedirs(a.out_dir, exist_ok=True)
-    np.savez_compressed(os.path.join(a.out_dir, f"eval_{tag}.npz"), pred=O["traj30"], **O, **pw, eid=X["eid"])
+    np.savez_compressed(os.path.join(a.out_dir, f"eval_{tag}.npz"), pred=O["traj30"], **O, **pw, **tac_npz, eid=X["eid"])
     jdump(res, os.path.join(a.out_dir, f"eval_{tag}.json"))
     print(tag, "ADE6", r["traj"]["ade6_m"]["mean"], "ADE2", r["traj"]["ade2_m"]["mean"],
           "CONS(a)", r["consistency_a"]["any"]["rate_all"])
@@ -567,6 +598,10 @@ def main(argv=None):
     p.add_argument("--eval-cache", default="C:/Users/Admin/refav1_hj_cache")
     p.add_argument("--ages", choices=("fresh", "cycle"), default="cycle")
     p.add_argument("--nav-shuffle", action="store_true"); p.add_argument("--project", action="store_true")
+    p.add_argument("--tac", choices=("pred", "shuffle", "oracle"), default="pred",
+                   help="PREREG_V8F_TAC: pred (DEFAULT) = O reads T's own held code. shuffle = O reads a DONOR window's predicted code (another "
+                        "episode, seed 1): does O use T at all? oracle = O reads the GT v9 code where the window has a row (T0 diagnostic: what "
+                        "a perfect tactical layer would buy). One intervention per run.")
     p.add_argument("--batch", type=int, default=64); p.add_argument("--lru", type=int, default=32)
     p.add_argument("--device", default="auto")
     p.add_argument("--plan", choices=("none", "beta"), default="none",

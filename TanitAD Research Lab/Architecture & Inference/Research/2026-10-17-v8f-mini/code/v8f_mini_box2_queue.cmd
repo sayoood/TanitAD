@@ -8,6 +8,8 @@ rem   v8f_mini_box2_queue.cmd train ARM SEED [GRID]   one 4S run (resumes from c
 rem   v8f_mini_box2_queue.cmd eval ARM SEED [GRID]    eval-141 of that run (+ the nav-shuffle control for M1); skipped once its npz exists
 rem   v8f_mini_box2_queue.cmd floors            P10-yaw-4512 and the kinematic floors on the eval grid, into %RUNSM%\eval
 rem   v8f_mini_box2_queue.cmd compare           the PREREG bars (K-1, CONS-1, STRAT-1, TAC-1) over the M1 / M2b / navshuf evals
+rem   v8f_mini_box2_queue.cmd tac               PREREG_V8F_TAC (eval only): the T -> O intervention -- O reads T's own code,
+rem                                             a donor episode's code, or the GT v9 code -- for M1 / M2b at seeds 0 and 1
 rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
@@ -38,7 +40,8 @@ if /i "%~1"=="train" goto :d_train
 if /i "%~1"=="eval" goto :d_eval
 if /i "%~1"=="floors" goto :floors
 if /i "%~1"=="compare" goto :compare
-echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare
+if /i "%~1"=="tac" goto :tac
+echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac
 exit /b 2
 
 rem train / eval are CALLED with the stage name dropped, so inside them %~1 = ARM, %~2 = SEED, %~3 = GRID
@@ -107,6 +110,31 @@ if exist "%EV%\eval_M1-navshuf%SUF%_s%~2.npz" (echo [skip] eval M1-navshuf%SUF%_
 "%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag M1-navshuf%SUF%_s%~2 --nav-shuffle %EC% %ER% >> "%EV%\eval_M1-navshuf%SUF%_s%~2.log" 2>&1
 if errorlevel 1 (echo [FAIL] eval M1-navshuf%SUF%_s%~2 - see %EV%\eval_M1-navshuf%SUF%_s%~2.log & exit /b 1)
 echo [ok] eval M1-navshuf%SUF%_s%~2
+exit /b 0
+
+:tac
+rem PREREG_V8F_TAC (eval only, ZERO training): for M1 and M2b at seeds 0 and 1, O reads T's own code (tacpred), a DONOR window's
+rem predicted code from another episode (tacshuf), or the GT v9 code where the window has a row (tacorc, a T0 oracle). Into %EV%
+rem beside the banked eval_<ARM>_s<SEED>.npz, which code\v8f_tac_read.py reads for its reproducibility check. No --project,
+rem no --families: the reader rebuilds the families from the predictions. Each eval is skipped once its npz exists.
+call :prep || exit /b 2
+for %%A in (M1 M2b) do for %%S in (0 1) do (
+  call :tacone %%A %%S pred tacpred || exit /b 1
+  call :tacone %%A %%S shuffle tacshuf || exit /b 1
+  call :tacone %%A %%S oracle tacorc || exit /b 1
+)
+exit /b 0
+
+:tacone
+set "OUT=%RUNSM%\%~1_s%~2"
+set "TAG=%~1_s%~2-%~4"
+if defined V8F_DRYRUN (echo "%PY%" "%EVAL%" run --ckpt %OUT%\ckpt_last.pt --tag %TAG% --tac %~3 %EC% %ER% & exit /b 0)
+if not exist "%OUT%\summary.json" (echo REFUSED: %~1_s%~2 has not finished training & exit /b 2)
+if not exist "%EV%\eval_%~1_s%~2.npz" (echo REFUSED: the banked eval_%~1_s%~2.npz is missing from %EV% & exit /b 2)
+if exist "%EV%\eval_%TAG%.npz" (echo [skip] eval %TAG% & exit /b 0)
+"%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TAG% --tac %~3 %EC% %ER% >> "%EV%\eval_%TAG%.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TAG% - see %EV%\eval_%TAG%.log & exit /b 1)
+echo [ok] eval %TAG%
 exit /b 0
 
 :floors

@@ -540,7 +540,7 @@ class V8FMini(nn.Module):
         adapt = self.adapter(b["feats"].float()) + self.pos[None, None]            # [B, F, n_tok, d]
         return adapt
 
-    def _forward(self, b, p_gt: float, use_labels: bool, gen=None):
+    def _forward(self, b, p_gt: float, use_labels: bool, gen=None, code_override: Tensor | None = None):
         cfg = self.cfg
         B = b["feats"].shape[0]
         dev = b["feats"].device
@@ -567,8 +567,13 @@ class V8FMini(nn.Module):
         if use_labels and p_gt > 0:
             use_t = (torch.rand(B, generator=gen, device=dev) < p_gt) & b["lab_t"]["has"]
             code = torch.where(use_t[:, None], self._code_gt(b["lab_t"]), code)
+        if code_override is not None:                                   # forward_diag only (PREREG_V8F_TAC)
+            if code_override.shape != code.shape:
+                raise ValueError(f"code_override {tuple(code_override.shape)} != T's code {tuple(code.shape)}")
+            code = code_override.to(device=code.device, dtype=code.dtype)
         if cfg.detach_upper:
             code = code.detach()
+        out["code"] = code                                               # the code O actually read
         ck_for_o = transform_ckpt(ck_src, b["pose_s"], b["pose_now"])
         traj60, p30 = self.run_o(b, adapt, last_now, ck_for_o, ck_ok, code)
         out["traj60"], out["traj30"], out["p10"] = traj60, subsample_02(traj60), p30
@@ -579,6 +584,17 @@ class V8FMini(nn.Module):
         """INFERENCE: reads only :data:`INFERENCE_INPUT_KEYS` -- no label, no GT, no situation classifier."""
         g = _KeyGuard(batch)
         out = self._forward(g, 0.0, False)
+        out["_keys_read"] = set(g.read)
+        return out
+
+    def forward_diag(self, batch: dict, code_override: Tensor) -> dict:
+        """DIAGNOSTIC ONLY (PREREG_V8F_TAC): inference exactly as :meth:`forward_infer`, except that O reads ``code_override``
+        [B, CODE_DIM] in place of T's held output: a DONOR window's predicted code (TAC-USED: does O use T at all?) or the GT code
+        (TAC-HEADROOM: what a perfect tactical layer would buy; a T0 oracle, never a result). The batch is read through the same
+        key guard, so the model still sees only :data:`INFERENCE_INPUT_KEYS`; any label in the override was read by the EVALUATOR.
+        Never called by training or by :meth:`forward_infer`."""
+        g = _KeyGuard(batch)
+        out = self._forward(g, 0.0, False, code_override=code_override)
         out["_keys_read"] = set(g.read)
         return out
 
