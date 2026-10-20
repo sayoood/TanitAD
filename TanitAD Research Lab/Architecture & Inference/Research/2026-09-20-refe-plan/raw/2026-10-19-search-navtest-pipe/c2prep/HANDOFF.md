@@ -1,0 +1,14 @@
+# HANDOFF c2prep (launched 2026-10-20 08:55 local; tip 0d5cef5d, nothing committed/pushed/git-added) -- STATE: RUNNING (detached), est. 3-3.5 h
+
+**What runs** (one bash driver `C:/Users/Admin/par18/c2prep/run_c2prep.sh`, strictly sequential): (a) `navpipe_chain.py --mode fixture --work C:/Users/Admin/c2prep_run/fixture` (carve B, 5 chunks, threads=4 is the Cfg default, no CLI flag; RAM guard 3.0 GiB untouched; a RAM_LOW exit 7 is re-launched <= 3 times after 5 min, chain is resumable) -> (a2) `fixture_verdict.py` -> (b) `mutation_check.py --keep-going` over ALL guards (~123) on scratch copies in `C:/Users/Admin/c2prep_run/npmut`. Code = exported tip tree `c2prep/tree/` (402 files incl. all 70 l2-stepB npz shards and l1_stepA `g0_traingrow_scan2.json`).
+**RAM at launch:** 7.87 GiB free (< 10 GiB; chain's own RAM guard intact, a stop is clean and not a defect verdict). C: 61 GB free.
+**PIDs at launch:** cmd 63884 -> bash 53748/12732/43632 -> chain python 60628 (+ launcher child 44280). Kill only by explicit PID if ever needed.
+
+**Logs / markers** (all in `C:/Users/Admin/par18/c2prep/`): `logs/driver.log` (ZZC2PREP_* lines), `logs/fixture_chain.log` (only the LAST `ZZNAVPIPE_START fixture` block counts), `logs/fixture.done`, `raw/fixture_result_c2prep.json` + `logs/verdict.done`, `logs/mutation_check.log` (ends `ZZMUT_SUMMARY`), `logs/mutation.done`, `raw/mutations_c2prep.json`, and `logs/c2prep.done` = EVERYTHING finished. Check: `cat logs/driver.log; ls logs`.
+Work dir `C:/Users/Admin/c2prep_run/fixture/` holds `FIXTURE_RECORD.json` (copied to `raw/FIXTURE_RECORD_c2prep.json`; the C2 amendment pins its sha256) and `final/RESULT_NAVPIPE.json`.
+
+**Finisher (a fresh Sonnet agent, after `logs/c2prep.done` exists):**
+1. Read `raw/fixture_result_c2prep.json` `.verdict`. IDENTICAL (and `fixture_record_verdict` IDENTICAL) => stage into `out/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-search-navtest-pipe/c2prep/` : `raw/fixture_result_c2prep.json`, `raw/FIXTURE_RECORD_c2prep.json`, `raw/mutations_c2prep.json`, `logs/{driver,fixture_chain,fixture_verdict,mutation_check}.log`, plus a short `RESULT.md`; write `out/paths.json` rows `[repo path, abs src, "raw"]`. Report mutation `caught/judged` and every survivor / INFRA_ERROR by name.
+2. DIFFERS => name the differing array(s) from `payload.arrays_differing` and `payload.analysis_blocks_differing`; do NOT fix code (first suspect: thread count, then a changed shared input). STOPPED => report the stop reason (RAM_LOW after 4 attempts, disk, crash) and re-launch the same driver only if the reason is box load.
+3. Survivors in the mutation run: name them; do not edit code (the Master Mind decides).
+Do not read navtest labels, B-REST or C1/dose outputs. Do not touch `par18/doser1`, `spc_dose`, or the dev-box GPU lock.
