@@ -1,0 +1,83 @@
+.................................................F.............          [100%]
+================================== FAILURES ===================================
+_______________ test_forward_kwargs8_emits_exactly_the_contract _______________
+
+    def test_forward_kwargs8_emits_exactly_the_contract():
+        g = torch.zeros(4, 400, 240, 2)
+        v = torch.ones(4, 400, 240, dtype=torch.bool)
+        nav = B.nav_input8(B.declare8(_const_accel(cmd=(1, 0, 0, 0)), "R8_LEGAL"), "R8_LEGAL")
+>       kw = B.forward_kwargs8(None, nav, 9.5, B.speed_input8(None, "R8_LEGAL"), g, v, 2, "cpu")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_inputs8.py:372: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+frames_dev = None
+nav = {'nav_index': 1, 'name': 'TURN_L', 'navsim_argmax': 0, 'navsim_key': 'left'}
+v0 = 9.5
+vmax = {'v_max_ms': 0.0, 'v_max_valid': 0.0, 'why': 'LEGAL: the trained unknown row'}
+grid = tensor([[[[0., 0.],
+          [0., 0.],
+          [0., 0.],
+          ...,
+          [0., 0.],
+          [0., 0.],
+   ...,
+          [0., 0.],
+          [0., 0.],
+          ...,
+          [0., 0.],
+          [0., 0.],
+          [0., 0.]]]])
+valid = tensor([[[True, True, True,  ..., True, True, True],
+         [True, True, True,  ..., True, True, True],
+         [Tr...rue, True],
+         [True, True, True,  ..., True, True, True],
+         [True, True, True,  ..., True, True, True]]])
+steps = 2, device = 'cpu', r8_nav = tensor([[0., 0., 0., 0., 0., 0.]])
+
+    def forward_kwargs8(frames_dev, nav: dict, v0: float, vmax: dict, grid, valid, steps: int, device: str,
+                        r8_nav=None) -> dict:
+        """EXACTLY the trainer's keyword set for a ``--r8-no-rc`` build (``FORWARD_KWARGS``), NavSim-valued: ``lan`` / ``ego_state`` /
+        ``nav_args`` / ``agent_gt`` None (each asserted by ``load_refcv8``), ``r8_nav`` = the unknown row [1, 6] (``r8_nav_row()``),
+        ``nav_cmd`` None only for the nav-withheld arm.  ``r8_rc`` is NOT passed (the trainer does not pass it under ``--r8-no-rc``)."""
+        import torch
+        if r8_nav is None:
+            r8_nav = r8_nav_row()
+        kw = {"nav_cmd": (None if nav["nav_index"] is None
+                          else torch.tensor([int(nav["nav_index"])], dtype=torch.long, device=device)),
+              "v0": torch.tensor([float(v0)], dtype=torch.float32, device=device),
+              "steps": int(steps), "lan": None, "ego_state": None, "nav_args": None,
+              "v_max_ms": torch.tensor([float(vmax["v_max_ms"])], dtype=torch.float32, device=device),
+              "v_max_valid": torch.tensor([float(vmax["v_max_valid"])], dtype=torch.float32, device=device),
+              "agent_gt": None,
+              "perception_grid": grid[None].to(device), "perception_valid": valid[None].to(device),
+              "r8_nav": r8_nav.to(device=device, dtype=torch.float32)}
+        if MUTATION == "drop_r8_nav":                        # the nav-feed defect of R8-EVAL-NAV-FEED-1: r8_nav never passed
+            del kw["r8_nav"]
+        if tuple(kw) != FORWARD_KWARGS:
+>           raise RefusedInput(f"forward kwargs {tuple(kw)} != {FORWARD_KWARGS}")
+E           e2_navsim_bridge.RefusedInput: forward kwargs ('nav_cmd', 'v0', 'steps', 'lan', 'ego_state', 'nav_args', 'v_max_ms', 'v_max_valid', 'agent_gt', 'perception_grid', 'perception_valid') != ('nav_cmd', 'v0', 'steps', 'lan', 'ego_state', 'nav_args', 'v_max_ms', 'v_max_valid', 'agent_gt', 'perception_grid', 'perception_valid', 'r8_nav')
+
+code\refcv8_bridge.py:331: RefusedInput
+============================== warnings summary ===============================
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:62: DeprecationWarning: numpy.core.numeric is deprecated and has been renamed to numpy._core.numeric. The numpy._core namespace contains private NumPy internals and its use is discouraged, as NumPy internals can change without warning in any release. In practice, most real-world usage of numpy.core is to access functionality in the public NumPy API. If that is the case, use the public NumPy API. If not, you are using NumPy internals. If you would still like to access an internal attribute, use numpy._core.numeric._frombuffer.
+    return super().find_class(mod, name)
+
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:137: RuntimeWarning: overflow encountered in cast
+    return np.stack(grids).astype(np.float32), src, M
+
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:146: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\utils\tensor_numpy.cpp:219.)
+    im = torch.from_numpy(np.asarray(Image.open(p).convert("RGB"))).permute(
+
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:151: RuntimeWarning: invalid value encountered in cast
+    s = s[0].permute(1, 2, 0).clamp(0, 255).numpy().astype(np.uint8)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_inputs8.py::test_forward_kwargs8_emits_exactly_the_contract
+1 failed, 62 passed, 4 warnings in 14.27s

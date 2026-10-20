@@ -1,0 +1,53 @@
+....................................................FF.........          [100%]
+================================== FAILURES ===================================
+________________________ test_bank_params_are_the_runs ________________________
+
+hbank = (<tanitad.models.map_head_hires.HiresLiftGeometryBank object at 0x00000295AC2C2BA0>, RigCamera(R_cam_to_rig=tensor([[ ...type=torch.float64), frame=CanonicalFrame(height=416, width=1024, f_ref=488.92398517830253, projection='cylindrical')))
+
+    def test_bank_params_are_the_runs(hbank):
+        b, _ = hbank
+        p = B.bank_params(b)
+        assert p["stride"] == 8 and p["heights_m"] == (0.0, 0.5, 1.5, 2.5)
+        assert (p["grid"].x_fwd_m, p["grid"].y_half_m, p["grid"].cell_m) == (100.0, 30.0, 0.25)
+>       assert p["equalize_bottom_rows"] == 43 and int((~p["observed"]).sum()) == 43 * 1024
+                                                        ^^^^^^^^^^^^^^
+E       TypeError: bad operand type for unary ~: 'NoneType'
+
+tests\test_inputs8.py:426: TypeError
+____________ test_KL_lift_navsim_camera_through_the_banks_own_call ____________
+
+hbank = (<tanitad.models.map_head_hires.HiresLiftGeometryBank object at 0x00000295AC2C2BA0>, RigCamera(R_cam_to_rig=tensor([[ ...type=torch.float64), frame=CanonicalFrame(height=416, width=1024, f_ref=488.92398517830253, projection='cylindrical')))
+
+    def test_KL_lift_navsim_camera_through_the_banks_own_call(hbank):
+        from tanitad.data.v2_dataset import stable_episode_id
+        b, cam = hbank
+        g0, v0 = b.geometry(int(stable_episode_id("synthetic-clip")))
+        g1, v1 = B.lift_geometry_for_camera(cam, b)
+>       assert torch.equal(g0, g1) and torch.equal(v0, v1)
+E       assert (False)
+E        +  where False = <built-in method equal of type object at 0x00007FFCECE98DE0>(tensor([[[[ 0.0000,  0.0000],\n          [ 0.0000,  0.0000],\n          [ 0.0000,  0.0000],\n          ...,\n          [ 0...,  0.0019],\n          ...,\n          [-0.2708,  0.0019],\n          [-0.2730,  0.0019],\n          [-0.2753,  0.0019]]]]), tensor([[[[ 0.0000,  0.0000],\n          [ 0.0000,  0.0000],\n          [ 0.0000,  0.0000],\n          ...,\n          [ 0...,  0.0019],\n          ...,\n          [-0.2708,  0.0019],\n          [-0.2730,  0.0019],\n          [-0.2753,  0.0019]]]]))
+E        +    where <built-in method equal of type object at 0x00007FFCECE98DE0> = torch.equal
+
+tests\test_inputs8.py:434: AssertionError
+============================== warnings summary ===============================
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:62: DeprecationWarning: numpy.core.numeric is deprecated and has been renamed to numpy._core.numeric. The numpy._core namespace contains private NumPy internals and its use is discouraged, as NumPy internals can change without warning in any release. In practice, most real-world usage of numpy.core is to access functionality in the public NumPy API. If that is the case, use the public NumPy API. If not, you are using NumPy internals. If you would still like to access an internal attribute, use numpy._core.numeric._frombuffer.
+    return super().find_class(mod, name)
+
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:137: RuntimeWarning: overflow encountered in cast
+    return np.stack(grids).astype(np.float32), src, M
+
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:146: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\utils\tensor_numpy.cpp:219.)
+    im = torch.from_numpy(np.asarray(Image.open(p).convert("RGB"))).permute(
+
+tests/test_inputs8.py::test_restitch_reproduces_the_landed_smoke_geometry
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:151: RuntimeWarning: invalid value encountered in cast
+    s = s[0].permute(1, 2, 0).clamp(0, 255).numpy().astype(np.uint8)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_inputs8.py::test_bank_params_are_the_runs - TypeError: bad ...
+FAILED tests/test_inputs8.py::test_KL_lift_navsim_camera_through_the_banks_own_call
+2 failed, 61 passed, 4 warnings in 13.64s
