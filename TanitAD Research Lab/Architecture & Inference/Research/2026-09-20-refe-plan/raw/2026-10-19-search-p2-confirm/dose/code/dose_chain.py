@@ -36,9 +36,13 @@ import spc_launch as SL  # noqa: E402  (sealed C1 code, imported)
 import analyse_stepB as AB  # noqa: E402  (Step B code, put on sys.path by spc_chain)
 import stepA as A  # noqa: E402
 
-AMEND_NAME = "AMENDMENT_DOSE.md"
+AMEND_NAME = "AMENDMENT_DOSE.md"                                                     # the ORIGINAL sealed amendment (sha256 d55ebac6...): never edited; REVISION 1 is checked IN ITS PLACE and the original is read only to prove the terms text is unchanged
 AMEND_SHA = "AMENDMENT_DOSE.sha256"
+AMEND_R1_NAME, AMEND_R1_SHA = "AMENDMENT_DOSE_R1.md", "AMENDMENT_DOSE_R1.sha256"      # REVISION 1 (MM_RULING_C2FINAL.md point 1): the amendment this chain checks
 RULING_NAME = "MM_RULING_DOSE.md"
+RULING_C2FINAL_NAME = "MM_RULING_C2FINAL.md"
+RULING_C2FINAL_SHA256 = "70a08e0912165bc031f499742212bb23daf216eb95a9033d3dbe8207215eb17b"      # the ruling REVISION 1 cites (checked by seal_dose.py at the seal; pinned in R1 as `ruling_c2final_sha256`)
+REV1_BEGIN, REV1_END = "<!-- REVISION1-NOTE-BEGIN -->", "<!-- REVISION1-NOTE-END -->"
 CONFIG_C8 = CH.CONFIG
 CONFIG_O4 = "C:/Users/Admin/par18/l2stepb/raw/stepB_config_O4.json"
 O4_SHA256 = "1ebd719617e8978a03cea0254edd6f531504c1d070792d066736130ceb929013"      # also a pin of the C1 seal (`config_o4_sha256`); the two must agree with the file
@@ -49,7 +53,7 @@ C1_STAGES = ("SEAL_OK", "DATA_OK", "GPU_STAGE_OK", "REACH_PASS", "CID_PASS", "SE
 DOSE_STAGES = ("SEAL_OK", "AMEND_SEAL_OK", "DATA_OK", "C1_DONE", "BUNDLE_OK", "SUBID_PASS", "REACH_PASS", "SEARCH_DONE", "SELFREP_PASS", "LABEL_DONE")
 SELFREP_N, SUBID_N = 8, 16                                                           # MM_RULING_DOSE.md DQ5: the first 8 / the first 16 B-REST tokens
 ROW_KEYS = CID.SEARCH_KEYS + ("token", "bundle_index")                               # per-token arrays compared bit for bit; "seeds" is compared whole; the t_* timings and the meta are not
-LICENCE_SAFETY_BAR, LICENCE_MOVED_BAR = AC.BAR_SAFETY, 0.05                          # MM_RULING_C2_LICENCE.md section 2: each safety point >= -0.25, moved share >= 5 %
+LICENCE_SAFETY_BAR, LICENCE_MOVED_BAR = AC.BAR_SAFETY, 0.05                          # MM_RULING_C2_LICENCE.md section 2: each safety point >= -0.25, moved share >= 5 %; "moved share" = inert.frac_moved (REVISION 1, MM_RULING_C2FINAL.md point 1)
 
 STAMPS = ("MEASURED; SEEN-SCENE (all of B-REST is inside M-SCENE; M-PDM overlap 0); the SAME bundle and the SAME 905 tokens / 24 logs as C1, so this is a SECOND READ OF THE SAME TOKENS (not a fresh draw); "
           "SELECTION tier, label-only (not T1, not navtest); ONE training seed, no head substitution (H-ESTIM-SEED-1 open); the interval is the paired log-cluster bootstrap (B = 10,000, seed 20260927) = "
@@ -83,6 +87,15 @@ def next_arm(outcome: str, c1_outcome: str) -> str:
             return "C1 read INERT; this was its committed raised-M arm, run ONCE, and it MOVED the pick: " + txt
         return "C1 read INERT; this was its committed raised-M arm, run ONCE: " + txt
     return txt
+
+
+def terms_text(text: str) -> str:
+    """the amendment's TERMS TEXT: the text with exactly three things removed, the Status line (its seal stamp and sha pointer differ per file), the REVISION 1 note block, and the PINS block (the code shas are re-pinned).
+    REVISION 1 may change nothing else: `terms_text(R1) == terms_text(AMENDMENT_DOSE.md)` is checked by the chain (`check_amendment`), by the seal tool at the seal, and by `test_dose.py`, byte for byte."""
+    t = text.replace("\r\n", "\n")
+    t = re.sub(r"^Status: .*\n", "", t, count=1, flags=re.M)
+    t = re.sub(re.escape(REV1_BEGIN) + r".*?" + re.escape(REV1_END) + r"\n?", "", t, flags=re.S)
+    return re.sub(r"<!-- PINS-BEGIN -->.*?<!-- PINS-END -->\n?", "", t, flags=re.S)
 
 
 def contrast(bundle: dict, so: dict, lab: dict, so_c1: dict, lab_c1: dict, B: int = A.N_BOOT, seed: int = A.SEED) -> dict:
@@ -121,14 +134,25 @@ def _bool(x):
     return np.asarray(x, bool)
 
 
+def frac_moved_of(read: dict) -> float:
+    """the ONE definition of "moved share" for the C2 licence (REVISION 1, MM_RULING_C2FINAL.md point 1): `read["inert"]["frac_moved"]`, the share of pooled (token, seed) outputs whose ADE vs the pick exceeds 0.5 m
+    (`tts_cem.inert_verdict`, the quantity whose shortfall IS O4_INERT).  NOT `read["moved_share"]` (the mean of the search's `moved` flag = any non-zero move), which stays in the output as a descriptive number.
+    NaN when the term is absent or unreadable: NaN >= 0.05 is False, so a missing value is never a licence."""
+    try:
+        return float(read["inert"]["frac_moved"])                                        # @FRACREAD
+    except (KeyError, TypeError, ValueError):
+        return float("nan")
+
+
 def licensed(read: dict, strict: bool = False) -> bool:
-    """the C2 licence terms of MM_RULING_C2_LICENCE.md section 2 applied to one read: O1 or O2 (only O1 when `strict`), each safety point >= -0.25, moved share >= 5 %.  A missing or NaN term is NOT a licence."""
+    """the C2 licence terms of MM_RULING_C2_LICENCE.md section 2 applied to one read: O1 or O2 (only O1 when `strict`), each safety point >= -0.25, moved share (= `inert.frac_moved`, see `frac_moved_of`) >= 5 %.
+    A missing or NaN term is NOT a licence."""
     ok = ("O1_CONFIRMED",) if strict else ("O1_CONFIRMED", "O2_DIRECTIONAL")
     try:
         safety = all(float(read["safety_points"][k]) >= LICENCE_SAFETY_BAR for k in AC.SAFETY_TERMS)
-        moved = float(read["moved_share"]) >= LICENCE_MOVED_BAR
     except (KeyError, TypeError, ValueError):
         return False
+    moved = frac_moved_of(read) >= LICENCE_MOVED_BAR                                      # @LICMOVED
     return bool(read.get("outcome") in ok and safety and moved)
 
 
@@ -154,7 +178,8 @@ def c2_config(c1_read: dict, dose_read: dict, contrast_lo: float) -> dict:
     why = {1: "C1's licence met, the dose's not: C8", 2: "C1's licence not met, the dose O1_CONFIRMED with the safety and moved-share terms: O4",
            3: f"both licences met: C8 unless the paired O4-minus-C8 contrast has lower CI > 0 (lower CI > 0: {lo_pos}): {'O4' if lo_pos else 'C8'}",
            4: "C1's licence not met and the dose's not met (or O2 only): no C2, the committed next arms stand"}[row]
-    return {"config": cfg, "row": row, "why": why, "c1_licensed": c1, "dose_licensed": dose_any, "dose_o1_strict": dose_strict, "contrast_lower_ci_gt_0": lo_pos}
+    return {"config": cfg, "row": row, "why": why, "c1_licensed": c1, "dose_licensed": dose_any, "dose_o1_strict": dose_strict, "contrast_lower_ci_gt_0": lo_pos,
+            "moved_term": {"quantity": "inert.frac_moved", "bar": LICENCE_MOVED_BAR, "c1": frac_moved_of(c1_read), "dose": frac_moved_of(dose_read)}}
 
 
 def rows_identical(ref: dict, new: dict, n: int) -> dict:
@@ -182,7 +207,8 @@ def rows_identical(ref: dict, new: dict, n: int) -> dict:
 
 def analyse_dose(bundle: dict, so: dict, lab: dict, so_c1: dict, lab_c1: dict, c1_read: dict, B: int = A.N_BOOT, seed: int = A.SEED, with_concordance: bool = True) -> dict:
     """C1's outcome rules VERBATIM (`spc_analyse.analyse_c1`: dPDMS vs P2's pick), the dose amendment's NEXT arm, the descriptive contrast, and the mechanical C2 config (`c2_config`).
-    `c1_read` = C1's RESULT_SPC.json fields {outcome, safety_points, moved_share}."""
+    `c1_read` = C1's RESULT_SPC.json fields {outcome, safety_points, inert}; the licence's "moved share" is `inert.frac_moved` (REVISION 1).  The dose read's own `inert` block is `res["inert"]`, which `AC.analyse_c1` returns
+    from `AB.analyse` -> `tts_cem.inert_verdict` (analyse_stepB.py:119-121, spc_analyse.py:96): the SAME function, on the same pooled arrays, as C1's read; nothing here re-computes it."""
     res = AC.analyse_c1(bundle, so, lab, B=B, seed=seed, with_concordance=with_concordance)
     c1_outcome = c1_read["outcome"]
     res["read"] = "DOSE"
@@ -190,7 +216,7 @@ def analyse_dose(bundle: dict, so: dict, lab: dict, so_c1: dict, lab_c1: dict, c
     res["c1_outcome"] = c1_outcome
     res["next_arm"] = next_arm(res["outcome"], c1_outcome)
     res["contrast_O4_minus_C8"] = contrast(bundle, so, lab, so_c1, lab_c1, B=B, seed=seed)
-    res["c2_config"] = c2_config(c1_read, {"outcome": res["outcome"], "safety_points": res["safety_points"], "moved_share": res["moved_share"]}, res["contrast_O4_minus_C8"]["pooled"]["lo"])
+    res["c2_config"] = c2_config(c1_read, {"outcome": res["outcome"], "safety_points": res["safety_points"], "inert": res["inert"]}, res["contrast_O4_minus_C8"]["pooled"]["lo"])
     res["stamps"] = STAMPS
     return res
 
@@ -227,15 +253,19 @@ class DoseChain(CH.Chain):
         return {**pins, "config_c8_sha256": pins["config_sha256"], "config_sha256": want}   # @SWAP
 
     def check_amendment(self, pins):
-        """G-SEAL-DOSE: AMENDMENT_DOSE.md equals its .sha256, its first Status line is SEALED, and its pins (C1's prereg sha, the O4 sha, every `code:` file here) equal the files"""
+        """G-SEAL-DOSE, REVISION 1: AMENDMENT_DOSE_R1.md equals its .sha256, its first Status line is SEALED, it carries exactly one REVISION 1 note, its pins (C1's prereg sha, the O4 sha, the ruling shas, the ORIGINAL amendment's sha,
+        every `code:` file here) equal the files, and its TERMS TEXT equals the original AMENDMENT_DOSE.md's byte for byte (`terms_text`).  The original must still equal its own .sha256."""
         c = self.cfg
-        p, sp = os.path.join(c.dose_pkg, AMEND_NAME), os.path.join(c.dose_pkg, AMEND_SHA)
-        if not (os.path.isfile(p) and os.path.isfile(sp)):
-            self.stop(5, "AMEND_MISSING", f"{p} / {sp}")
+        p, sp, p0, sp0 = (os.path.join(c.dose_pkg, n) for n in (AMEND_R1_NAME, AMEND_R1_SHA, AMEND_NAME, AMEND_SHA))
+        if not all(os.path.isfile(q) for q in (p, sp, p0, sp0)):
+            self.stop(5, "AMEND_MISSING", f"{p} / {sp} / {p0} / {sp0}")
         text = open(p, "rb").read().replace(b"\r\n", b"\n")
+        orig = open(p0, "rb").read().replace(b"\r\n", b"\n")
         want = open(sp, encoding="utf-8").read().split()[0].strip().lower()
         if hashlib.sha256(text).hexdigest() != want:                                   # @AMENDSHA
             self.stop(5, "AMEND_SHA_MISMATCH", "the text differs from its .sha256")
+        if hashlib.sha256(orig).hexdigest() != open(sp0, encoding="utf-8").read().split()[0].strip().lower():      # @ORIGSHA
+            self.stop(5, "AMEND_SHA_MISMATCH", "the ORIGINAL amendment differs from its .sha256")
         t = text.decode("utf-8")
         m = re.search(r"^Status: .*$", t, re.M)
         if not m or not m.group(0).startswith("Status: **SEALED"):                     # @AMENDSTATUS
@@ -250,6 +280,15 @@ class DoseChain(CH.Chain):
         rp = os.path.join(c.dose_pkg, RULING_NAME)
         if not os.path.isfile(rp) or ap.get("ruling_sha256") != CH.sha_lf(rp):          # @RULINGPIN
             bad.append("ruling_sha256")
+        rp2 = os.path.join(c.dose_pkg, RULING_C2FINAL_NAME)
+        if not os.path.isfile(rp2) or ap.get("ruling_c2final_sha256") != CH.sha_lf(rp2):      # @RULING2PIN
+            bad.append("ruling_c2final_sha256")
+        if ap.get("amendment_original_sha256") != hashlib.sha256(orig).hexdigest():     # @ORIGPIN
+            bad.append("amendment_original_sha256")
+        if t.count(REV1_BEGIN) != 1 or t.count(REV1_END) != 1:                          # @REV1NOTE
+            bad.append("revision1_note")
+        if terms_text(t) != terms_text(orig.decode("utf-8")):                           # @TERMSID
+            bad.append("terms_text_differs_from_the_original")
         codes = {k[5:]: v for k, v in ap.items() if k.startswith("code:")}
         if "dose_chain.py" not in codes:
             bad.append("dose_chain.py not pinned")
@@ -277,8 +316,11 @@ class DoseChain(CH.Chain):
             self.stop(5, "C1_NOT_DONE", f"stages not done: {miss}")
         if res.get("outcome") not in AC.OUTCOMES:
             self.stop(5, "C1_NOT_DONE", f"RESULT_SPC.json outcome {res.get('outcome')!r}")
-        if not isinstance(res.get("safety_points"), dict) or not all(k in res["safety_points"] for k in AC.SAFETY_TERMS) or not isinstance(res.get("moved_share"), (int, float)):      # @C1TERMS
-            self.stop(5, "C1_NOT_DONE", "RESULT_SPC.json carries no safety_points / moved_share: C1's C2 licence cannot be read")
+        if not isinstance(res.get("safety_points"), dict) or not all(k in res["safety_points"] for k in AC.SAFETY_TERMS):      # @C1TERMS
+            self.stop(5, "C1_NOT_DONE", "RESULT_SPC.json carries no safety_points: C1's C2 licence cannot be read")
+        fm = res["inert"].get("frac_moved") if isinstance(res.get("inert"), dict) else None
+        if isinstance(fm, bool) or not isinstance(fm, (int, float)):                                                           # @C1FRAC
+            self.stop(5, "C1_NOT_DONE", "RESULT_SPC.json carries no inert.frac_moved: C1's C2 licence cannot be read (REVISION 1: moved share = inert.frac_moved)")
         merged, labels = os.path.join(c.c1_work, "search_C1_P2HEAD.npz"), os.path.join(c.c1_work, "labels_C1_P2HEAD.npz")
         c8_pins = {**pins, "config_sha256": pins["config_c8_sha256"]}
         ok, why = CH.Chain.merged_valid(self, merged, "C1", 905, c8_pins)               # C1's own file under C1's own (C8) config pin
@@ -292,7 +334,7 @@ class DoseChain(CH.Chain):
             self.stop(5, "C1_NOT_DONE", "the bundle on disk is not the bundle C1 searched")
         self.emit("C1_DONE", res["outcome"], "bundle", self.c1_bundle_sha[:12])
         self.state("C1_DONE")
-        return {"outcome": res["outcome"], "safety_points": res["safety_points"], "moved_share": res["moved_share"], "result_sha256": CH.sha256_file(os.path.join(c.c1_work, "RESULT_SPC.json")), "merged": merged, "labels": labels}
+        return {"outcome": res["outcome"], "safety_points": res["safety_points"], "inert": res["inert"], "moved_share": res.get("moved_share"), "result_sha256": CH.sha256_file(os.path.join(c.c1_work, "RESULT_SPC.json")), "merged": merged, "labels": labels}
 
     def check_bundle(self):
         ok, why = self.bundle_valid("C1", 905)

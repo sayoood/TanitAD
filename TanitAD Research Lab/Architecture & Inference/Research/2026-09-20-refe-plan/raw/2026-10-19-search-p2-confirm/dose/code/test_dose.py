@@ -251,7 +251,10 @@ def test_emit_prefix_is_zzdose(tmp_path):
     assert ch.out.getvalue() == "ZZDOSE_START\n"
 
 
-def _c1_world(tmp, world, pins, done=None, outcome="O3_NULL", bundle_ok=True, c1_cfg_sha=None, terms=True):
+INERT_OK = {"inert": False, "frac_moved": 0.2, "n": 2715, "ade_median_m": 1.0, "thr_m": 0.5, "min_frac": 0.05}      # the shape of `tts_cem.inert_verdict` (+ per_seed_frac_moved in the real file)
+
+
+def _c1_world(tmp, world, pins, done=None, outcome="O3_NULL", bundle_ok=True, c1_cfg_sha=None, terms=True, inert=INERT_OK, drop_inert=False):
     """plant C1's finished state under tmp/c1: stages, RESULT_SPC.json, B-REST bundle, merged search (C8 pin) and labels"""
     c1 = str(tmp / "c1")
     os.makedirs(c1, exist_ok=True)
@@ -262,7 +265,7 @@ def _c1_world(tmp, world, pins, done=None, outcome="O3_NULL", bundle_ok=True, c1
     np.savez(os.path.join(c1, "search_C1_P2HEAD.npz"), meta=np.array(json.dumps(meta)), token=np.array(toks))
     TS.plant_labels(os.path.join(c1, "labels_C1_P2HEAD.npz"), toks)
     json.dump({"stage": "LABEL_DONE", "done": DC.C1_STAGES if done is None else done}, open(os.path.join(c1, "chain_state.json"), "w"))
-    json.dump({"outcome": outcome, **({"safety_points": {k: 0.0 for k in AC.SAFETY_TERMS}, "moved_share": 0.2} if terms else {})}, open(os.path.join(c1, "RESULT_SPC.json"), "w"))
+    json.dump({"outcome": outcome, **({"safety_points": {k: 0.0 for k in AC.SAFETY_TERMS}, "moved_share": 0.8, **({} if drop_inert else {"inert": inert})} if terms else {})}, open(os.path.join(c1, "RESULT_SPC.json"), "w"))
     return bsha
 
 
@@ -271,8 +274,9 @@ def test_c1_done_green_and_red_arms(tmp_path, world, real_pins):
     ch = dose_chain(tmp_path)
     bsha = _c1_world(tmp_path, world, real_pins)
     c1 = ch.check_c1_done(real_pins)
-    assert c1["outcome"] == "O3_NULL" and c1["moved_share"] == 0.2 and set(c1["safety_points"]) == set(AC.SAFETY_TERMS) and ch.c1_bundle_sha == bsha and "C1_DONE" in ch.st["done"]
-    for kw, why in (({"done": list(DC.C1_STAGES[:-1])}, "stages"), ({"bundle_ok": False}, "bundle"), ({"outcome": "SOMETHING"}, "outcome"), ({"c1_cfg_sha": DC.O4_SHA256}, "c1_merged_not_under_c8"), ({"terms": False}, "c1_licence_terms_missing")):
+    assert c1["outcome"] == "O3_NULL" and c1["moved_share"] == 0.8 and c1["inert"]["frac_moved"] == 0.2 and set(c1["safety_points"]) == set(AC.SAFETY_TERMS) and ch.c1_bundle_sha == bsha and "C1_DONE" in ch.st["done"]
+    for kw, why in (({"done": list(DC.C1_STAGES[:-1])}, "stages"), ({"bundle_ok": False}, "bundle"), ({"outcome": "SOMETHING"}, "outcome"), ({"c1_cfg_sha": DC.O4_SHA256}, "c1_merged_not_under_c8"), ({"terms": False}, "c1_licence_terms_missing"), ({"drop_inert": True}, "c1_inert_block_absent"), ({"inert": {"inert": False}}, "c1_frac_moved_absent"), ({"inert": {"frac_moved": None}}, "c1_frac_moved_none"),
+                    ({"inert": {"frac_moved": "0.2"}}, "c1_frac_moved_string"), ({"inert": {"frac_moved": True}}, "c1_frac_moved_bool"), ({"inert": 0.2}, "c1_inert_not_a_dict"), ({"inert": None}, "c1_inert_none")):
         t = tmp_path / why
         ch2 = dose_chain(t)
         _c1_world(t, world, real_pins, **kw)
@@ -314,19 +318,45 @@ def test_dose_merged_valid_binds_the_o4_config_and_c1s_bundle(tmp_path, world, r
 
 
 # ------------------------------------------------------------------------------------------------------------------------------ G-SEAL-DOSE
-def _amend(tmp, c1_sha, c8_sha, code_sha, status="Status: **SEALED**", o4=DC.O4_SHA256, sha=None, include_code=True, ruling_pin="ok", ruling_edit=False):
+C2F = os.path.join(os.path.dirname(HERE), DC.RULING_C2FINAL_NAME)                       # the package's copy of MM_RULING_C2FINAL.md (sha256 70a08e09...)
+ORIG_TEXT = ("# AMENDMENT\n\nStatus: **SEALED** 2026-10-20 (the original)\nTERMS: moved share >= 5 %.\n\n## 1. First\nbody one\n\n## 2. Second\nbody two\n\n"
+             "<!-- PINS-BEGIN -->\n```\nc1_prereg_sha256 x\n```\n<!-- PINS-END -->\n")
+NOTE_TEXT = "## REVISION 1 NOTE (test)\nmoved share = inert.frac_moved; MM_RULING_C2FINAL.md 70a08e09.\n"
+
+
+def _amend(tmp, c1_sha, c8_sha, code_sha, status="Status: **SEALED**", o4=DC.O4_SHA256, sha=None, include_code=True, ruling_pin="ok", c2f_pin="ok", orig_pin="ok", terms_edit=False, note="one", orig_sha=None,
+           orig_edit=False, write_r1=True, write_orig=True):
+    """a minimal ORIGINAL amendment + a REVISION 1 built by the seal tool's own `build_r1_text`, each pin and file individually breakable"""
     pkg = tmp / "pkg"
     pkg.mkdir(parents=True, exist_ok=True)
     rtext = "# MM ruling\nDQ1 (a).\n"
     (pkg / DC.RULING_NAME).write_bytes(rtext.encode())
+    ctext = b"# a stand-in for MM_RULING_C2FINAL.md\n"
+    (pkg / DC.RULING_C2FINAL_NAME).write_bytes(ctext)
+    ohash = hashlib.sha256(ORIG_TEXT.encode()).hexdigest()
+    if write_orig:
+        (pkg / DC.AMEND_NAME).write_bytes((ORIG_TEXT + ("tampered\n" if orig_edit else "")).encode())
+        (pkg / DC.AMEND_SHA).write_text((orig_sha or ohash) + "\n")
     pins = [f"c1_prereg_sha256 {c1_sha}", f"config_o4_sha256 {o4}", f"config_c8_sha256 {c8_sha}"] + ([f"code:dose_chain.py {code_sha}"] if include_code else [])
-    if ruling_pin == "ok":
-        pins.append(f"ruling_sha256 {hashlib.sha256(rtext.encode()).hexdigest()}")
-    elif ruling_pin == "wrong":
-        pins.append("ruling_sha256 " + "6" * 64)
-    text = f"# AMENDMENT\n\n{status} 2026-10-20\n\n<!-- PINS-BEGIN -->\n```\n" + "\n".join(pins) + "\n```\n<!-- PINS-END -->\n"
-    (pkg / DC.AMEND_NAME).write_bytes(text.encode())
-    (pkg / DC.AMEND_SHA).write_text((sha or hashlib.sha256(text.encode()).hexdigest()) + "\n")
+    for key, mode, good in (("ruling_sha256", ruling_pin, hashlib.sha256(rtext.encode()).hexdigest()), ("ruling_c2final_sha256", c2f_pin, hashlib.sha256(ctext).hexdigest()), ("amendment_original_sha256", orig_pin, ohash)):
+        if mode == "ok":
+            pins.append(f"{key} {good}")
+        elif mode == "wrong":
+            pins.append(f"{key} " + "6" * 64)
+    block = "<!-- PINS-BEGIN -->\n```\n" + "\n".join(pins) + "\n```\n<!-- PINS-END -->"
+    text = SD.build_r1_text(ORIG_TEXT, NOTE_TEXT, block, status + " 2026-10-20 (REVISION 1)")
+    one = DC.REV1_BEGIN + "\n" + NOTE_TEXT.strip("\n") + "\n" + DC.REV1_END + "\n"
+    assert one in text
+    if note == "none":
+        text = text.replace(one, "")
+    elif note == "two":
+        text = text.replace(one, one + one)
+    if terms_edit:
+        text = text.replace("body two", "body 2wo")
+        assert "body 2wo" in text
+    if write_r1:
+        (pkg / DC.AMEND_R1_NAME).write_bytes(text.encode())
+        (pkg / DC.AMEND_R1_SHA).write_text((sha or hashlib.sha256(text.encode()).hexdigest()) + "\n")
 
 
 @real
@@ -341,20 +371,58 @@ def test_amendment_seal_green_and_red_arms(tmp_path, real_pins):
     _amend(tmp_path, c1_sha, c8, code)
     ch.check_amendment(real_pins)
     assert "AMEND_SEAL_OK" in ch.st["done"]
-    reds = {"AMEND_SHA_MISMATCH": dict(sha="0" * 64), "AMEND_NOT_SEALED": dict(status="Status: **DRAFT**"), "AMEND_PIN_MISMATCH": dict(o4="3" * 64)}
-    for reason, kw in reds.items():
-        t = tmp_path / reason
-        _amend(t, c1_sha, c8, code, **kw)
-        with pytest.raises(CH.StopChain) as e:
-            dose_chain(t).check_amendment(real_pins)
-        assert e.value.reason == reason
-    for tag, args, kw in (("wrong_c1", ("4" * 64, c8, code), {}), ("wrong_code", (c1_sha, c8, "5" * 64), {}), ("unpinned", (c1_sha, c8, code), {"include_code": False}),
-                          ("ruling_unpinned", (c1_sha, c8, code), {"ruling_pin": "none"}), ("ruling_wrong_sha", (c1_sha, c8, code), {"ruling_pin": "wrong"})):
+    reds = {"AMEND_SHA_MISMATCH": ({"sha": "0" * 64}, {"orig_sha": "0" * 64}, {"orig_edit": True}), "AMEND_NOT_SEALED": ({"status": "Status: **DRAFT**"},), "AMEND_PIN_MISMATCH": ({"o4": "3" * 64},),
+            "AMEND_MISSING": ({"write_r1": False}, {"write_orig": False})}
+    for reason, arms_ in reds.items():
+        for i, kw in enumerate(arms_):
+            t = tmp_path / f"{reason}{i}"
+            _amend(t, c1_sha, c8, code, **kw)
+            with pytest.raises(CH.StopChain) as e:
+                dose_chain(t).check_amendment(real_pins)
+            assert e.value.reason == reason, kw
+    for tag, args, kw, token in (("wrong_c1", ("4" * 64, c8, code), {}, "c1_prereg_sha256"), ("wrong_code", (c1_sha, c8, "5" * 64), {}, "code:dose_chain.py"), ("unpinned", (c1_sha, c8, code), {"include_code": False}, "dose_chain.py not pinned"),
+                                 ("ruling_unpinned", (c1_sha, c8, code), {"ruling_pin": "none"}, "ruling_sha256"), ("ruling_wrong_sha", (c1_sha, c8, code), {"ruling_pin": "wrong"}, "ruling_sha256"),
+                                 ("c2f_unpinned", (c1_sha, c8, code), {"c2f_pin": "none"}, "ruling_c2final_sha256"), ("c2f_wrong", (c1_sha, c8, code), {"c2f_pin": "wrong"}, "ruling_c2final_sha256"),
+                                 ("orig_unpinned", (c1_sha, c8, code), {"orig_pin": "none"}, "amendment_original_sha256"), ("orig_wrong", (c1_sha, c8, code), {"orig_pin": "wrong"}, "amendment_original_sha256"),
+                                 ("note_none", (c1_sha, c8, code), {"note": "none"}, "revision1_note"), ("note_two", (c1_sha, c8, code), {"note": "two"}, "revision1_note"),
+                                 ("terms_edit", (c1_sha, c8, code), {"terms_edit": True}, "terms_text_differs_from_the_original")):
         t = tmp_path / tag
         _amend(t, *args, **kw)
         with pytest.raises(CH.StopChain) as e:
             dose_chain(t).check_amendment(real_pins)
-        assert e.value.reason == "AMEND_PIN_MISMATCH", tag
+        assert e.value.reason == "AMEND_PIN_MISMATCH" and token in e.value.detail, tag
+    (tmp_path / "pkg" / DC.RULING_C2FINAL_NAME).write_bytes(b"edited after the seal\n")        # the cited ruling changed on disk after the seal
+    with pytest.raises(CH.StopChain) as e:
+        dose_chain(tmp_path).check_amendment(real_pins)
+    assert e.value.reason == "AMEND_PIN_MISMATCH" and "ruling_c2final_sha256" in e.value.detail
+
+
+@real
+def test_the_original_amendment_alone_is_no_longer_accepted(tmp_path, real_pins):
+    """REVISION 1 is checked IN PLACE of the original: a package holding only the (sealed, unedited) original has no amendment the chain accepts"""
+    c1_sha = open(os.path.join(DC.SPC_PKG, "PREREG_SEARCH_P2_CONFIRM.sha256")).read().split()[0]
+    _amend(tmp_path, c1_sha, real_pins["config_c8_sha256"], "0" * 64, write_r1=False)
+    assert os.path.isfile(tmp_path / "pkg" / DC.AMEND_NAME) and not os.path.isfile(tmp_path / "pkg" / DC.AMEND_R1_NAME)
+    with pytest.raises(CH.StopChain) as e:
+        dose_chain(tmp_path).check_amendment(real_pins)
+    assert e.value.reason == "AMEND_MISSING"
+
+
+def test_terms_text_removes_exactly_the_status_line_the_note_block_and_the_pins_block():
+    t = ORIG_TEXT
+    assert DC.terms_text(t) == "# AMENDMENT\n\nTERMS: moved share >= 5 %.\n\n## 1. First\nbody one\n\n## 2. Second\nbody two\n\n"
+    r1 = SD.build_r1_text(t, NOTE_TEXT, "<!-- PINS-BEGIN -->\nx\n<!-- PINS-END -->", "Status: **SEALED** other stamp")
+    assert DC.terms_text(r1) == DC.terms_text(t) and r1 != t and DC.REV1_BEGIN in r1 and "other stamp" in r1
+    assert DC.terms_text(r1.replace("\n", "\r\n")) == DC.terms_text(t)                      # CRLF-insensitive, like every other sha in the chain
+    for edit in ("body one", "TERMS", "## 2. Second", "5 %"):
+        assert DC.terms_text(r1.replace(edit, edit + "!")) != DC.terms_text(t), edit        # any change outside the three removed things is visible
+    assert DC.terms_text(r1.replace("Status: **SEALED** other stamp", "Status: **SEALED** another")) == DC.terms_text(t)      # the Status line is not terms text
+    with pytest.raises(SD.SealRefused):
+        SD.build_r1_text(r1, NOTE_TEXT, "<!-- PINS-BEGIN -->\nx\n<!-- PINS-END -->", "Status: **SEALED** s")      # an original that already carries a note block is refused
+    pins = "<!-- PINS-BEGIN -->\nx\n<!-- PINS-END -->"
+    for bad in (t.replace("Status: ", "Stat: "), t + pins, t.replace("<!-- PINS-END -->", "")):
+        with pytest.raises(SD.SealRefused):
+            SD.build_r1_text(bad, NOTE_TEXT, pins, "Status: **SEALED** s")                    # no Status line / two pins blocks / a broken pins block: refused
 
 
 # ------------------------------------------------------------------------------------------------------------------------------ analysis: C1's rules verbatim + the descriptive contrast
@@ -369,7 +437,7 @@ def arms(world):
     return b, run(DC.CONFIG_C8), run(DC.CONFIG_O4)
 
 
-C1READ = {"outcome": "O3_NULL", "safety_points": {k: 0.0 for k in AC.SAFETY_TERMS}, "moved_share": 0.2}
+C1READ = {"outcome": "O3_NULL", "safety_points": {k: 0.0 for k in AC.SAFETY_TERMS}, "inert": {**INERT_OK, "frac_moved": 0.2}, "moved_share": 0.8}
 
 
 def _labels(so, rng, pdms=None, sub=None):
@@ -513,8 +581,23 @@ def test_seal_tool_output_passes_check_amendment_and_never_overwrites(tmp_path, 
     sealed = (tmp_path / "pkg" / DC.AMEND_NAME).read_text(encoding="utf-8")
     assert hashlib.sha256(sealed.encode()).hexdigest() == sha and re.search(r"^Status: \*\*SEALED\*\*", sealed, re.M) and "@@" not in sealed and "THE RULING PREVAILS" in sealed
     ch = dose_chain(tmp_path)
+    with pytest.raises(CH.StopChain) as e:
+        ch.check_amendment(real_pins)                                                       # the original alone is not what the chain accepts any more (REVISION 1 is checked in its place)
+    assert e.value.reason == "AMEND_MISSING"
+    if not os.path.isfile(C2F):
+        pytest.skip("MM_RULING_C2FINAL.md absent")
+    import shutil
+    shutil.copy(C2F, tmp_path / "pkg" / DC.RULING_C2FINAL_NAME)
+    note = tmp_path / "REVISION1_NOTE.md"
+    note.write_text(NOTE_TEXT, encoding="utf-8")
+    r1sha = SD.seal_revision1(str(tmp_path / "pkg"), str(note))
+    r1 = (tmp_path / "pkg" / DC.AMEND_R1_NAME).read_text(encoding="utf-8")
+    assert hashlib.sha256(r1.encode()).hexdigest() == r1sha and re.search(r"^Status: \*\*SEALED\*\*", r1, re.M) and DC.terms_text(r1) == DC.terms_text(sealed)
+    ch = dose_chain(tmp_path)
     ch.check_amendment(real_pins)                                                           # the dose chain's own gate accepts what the tool wrote
     assert "AMEND_SEAL_OK" in ch.st["done"]
+    with pytest.raises(SD.SealRefused):
+        SD.seal_revision1(str(tmp_path / "pkg"), str(note))                                  # REVISION 1 is never overwritten either
     with pytest.raises(SD.SealRefused):
         SD.seal(str(src), str(tmp_path / "pkg"), ruling=str(ruling))                          # never overwritten
     pins = CH.parse_pins(sealed)
@@ -590,10 +673,12 @@ def test_draft_quotes_the_code_next_arms_verbatim():
 
 # ------------------------------------------------------------------------------------------------------------------------------ MM_RULING_DOSE.md DQ4: the mechanical C2 config rule
 def _rd(outcome, nc=0.0, moved=0.2, **safety):
+    """one read as `licensed` / `c2_config` take it.  `moved` is `inert.frac_moved`, the licence quantity (REVISION 1).  The descriptive `moved_share` is a DECOY on the OPPOSITE side of the 5 % bar
+    (0.9 where frac_moved < 5 %, 0.0 where it is >= 5 %), so every row of every table below fails if the code reads the wrong key."""
     sp = {k: 0.0 for k in AC.SAFETY_TERMS}
     sp["nc"] = nc
     sp.update(safety)
-    return {"outcome": outcome, "safety_points": sp, "moved_share": moved}
+    return {"outcome": outcome, "safety_points": sp, "inert": {"inert": bool(moved < 0.05), "frac_moved": moved, "n": 100, "thr_m": 0.5, "min_frac": 0.05}, "moved_share": 0.9 if moved < 0.05 else 0.0}
 
 
 def test_licensed_terms_are_the_c2_licence_terms():
@@ -601,9 +686,112 @@ def test_licensed_terms_are_the_c2_licence_terms():
     for o in ("O3_NULL", "NEGATIVE", "TRADE", "O4_INERT"):
         assert not DC.licensed(_rd(o))
     assert DC.licensed(_rd("O2_DIRECTIONAL", nc=-0.25)) and not DC.licensed(_rd("O2_DIRECTIONAL", nc=-0.2501))        # safety bar -0.25 inclusive
-    assert DC.licensed(_rd("O1_CONFIRMED", moved=0.05)) and not DC.licensed(_rd("O1_CONFIRMED", moved=0.0499))        # moved share >= 5 % inclusive
-    for bad in ({"outcome": "O1_CONFIRMED"}, {**_rd("O1_CONFIRMED"), "moved_share": float("nan")}, {**_rd("O1_CONFIRMED"), "safety_points": {"nc": 0.0}}, {**_rd("O1_CONFIRMED"), "moved_share": None}):
-        assert not DC.licensed(bad)                                                                                    # a missing or NaN term is never a licence
+    assert DC.licensed(_rd("O1_CONFIRMED", moved=0.05)) and not DC.licensed(_rd("O1_CONFIRMED", moved=0.0499))        # moved share (= inert.frac_moved) >= 5 % inclusive
+    for bad in ({"outcome": "O1_CONFIRMED"}, {**_rd("O1_CONFIRMED"), "safety_points": {"nc": 0.0}}):
+        assert not DC.licensed(bad)                                                                                    # a missing term is never a licence
+
+
+# ------------------------------------------------------------------------------------------------------------------------------ REVISION 1 (MM_RULING_C2FINAL.md point 1): "moved share" = inert.frac_moved
+def _fr(outcome, frac, ms, **kw):
+    """a read whose `inert.frac_moved` (the licence quantity) and descriptive `moved_share` are set INDEPENDENTLY"""
+    r = _rd(outcome, moved=frac, **kw)
+    r["moved_share"] = ms
+    return r
+
+
+def test_licence_moved_term_is_inert_frac_moved_not_moved_share():
+    for o in ("O1_CONFIRMED", "O2_DIRECTIONAL"):
+        for ms in (0.05, 0.2, 0.9, 1.0):                                                    # moved_share >= 5 % ...
+            for fr in (0.0, 0.01, 0.0499):                                                  # ... with frac_moved < 5 %: NOT licensed (the sealed code licensed these)
+                assert not DC.licensed(_fr(o, fr, ms)), (o, fr, ms)
+        for ms in (0.0, 0.01, 0.0499):                                                      # the reverse: moved_share < 5 % ...
+            for fr in (0.05, 0.2, 0.7):                                                     # ... with frac_moved >= 5 %: licensed
+                assert DC.licensed(_fr(o, fr, ms)), (o, fr, ms)
+    assert DC.licensed(_fr("O1_CONFIRMED", 0.05, 0.0), strict=True) and not DC.licensed(_fr("O1_CONFIRMED", 0.0499999, 1.0), strict=True)      # the bar is inclusive, on frac_moved
+    assert not DC.licensed(_fr("O1_CONFIRMED", 0.5, 0.5, nc=-0.3)) and not DC.licensed(_fr("O3_NULL", 0.5, 0.5))                               # the other licence terms still bind
+
+
+def test_licence_missing_or_nan_frac_moved_is_not_a_licence_and_moved_share_is_never_a_fallback():
+    base = _fr("O1_CONFIRMED", 0.5, 0.9)                                                    # moved_share 0.9 sits ABOVE the bar in every variant below
+    no_inert = {k: v for k, v in base.items() if k != "inert"}
+    variants = {"no_inert_key": no_inert, "inert_empty": {**base, "inert": {}}, "inert_none": {**base, "inert": None}, "inert_str": {**base, "inert": "x"}, "inert_list": {**base, "inert": [0.5]},
+                "frac_none": {**base, "inert": {"frac_moved": None}}, "frac_str": {**base, "inert": {"frac_moved": "abc"}}, "frac_nan": {**base, "inert": {"frac_moved": float("nan")}},
+                "frac_missing": {**base, "inert": {"inert": False}}}
+    assert DC.licensed(base) and DC.licensed(base, strict=True)                             # control: the same read WITH a readable frac_moved is licensed
+    for name, rd in variants.items():
+        assert not DC.licensed(rd) and not DC.licensed(rd, strict=True), name
+        assert np.isnan(DC.frac_moved_of(rd)), name
+    assert DC.frac_moved_of(base) == 0.5 and DC.frac_moved_of({"inert": {"frac_moved": 3}}) == 3.0
+    lic = _fr("O1_CONFIRMED", 0.5, 0.0)
+    for name, rd in variants.items():                                                       # and through the config rule, for the C1 read and for the dose read
+        assert DC.c2_config(rd, lic, -9.0)["c1_licensed"] is False and DC.c2_config(rd, lic, -9.0)["config"] == "O4", name        # C1 unlicensed + dose licensed: row 2
+        r = DC.c2_config(lic, rd, 9.0)
+        assert r["dose_licensed"] is False and (r["config"], r["row"]) == ("C8", 1), name  # C1 licensed + dose unlicensed: row 1 (a moved_share fallback would reach row 3 and send O4)
+
+
+def test_c2_config_reads_frac_moved_for_the_c1_read_and_for_the_dose_read():
+    lic = lambda o="O1_CONFIRMED": _fr(o, 0.2, 0.0)         # noqa: E731  licensed on frac_moved; the decoy moved_share sits BELOW the bar
+    shy = lambda o="O1_CONFIRMED": _fr(o, 0.03, 0.9)        # noqa: E731  NOT licensed on frac_moved; the decoy moved_share sits ABOVE the bar
+    r = DC.c2_config(lic(), shy(), 9.0)
+    assert (r["config"], r["row"], r["dose_licensed"]) == ("C8", 1, False)                  # the DOSE read: moved_share 0.9 / frac 0.03 does not license (read as moved_share it would send O4 via row 3)
+    r = DC.c2_config(shy(), lic(), -9.0)
+    assert (r["config"], r["row"], r["c1_licensed"]) == ("O4", 2, False)                    # the C1 read: moved_share 0.9 / frac 0.03 does not license (read as moved_share it would give row 3 -> C8)
+    r = DC.c2_config(shy(), shy(), 9.0)
+    assert (r["config"], r["row"]) == (None, 4)                                             # neither licenses
+    r = DC.c2_config(lic(), lic(), 9.0)
+    assert (r["config"], r["row"], r["c1_licensed"], r["dose_licensed"]) == ("O4", 3, True, True)      # the reverse: moved_share 0.0 / frac 0.2 licenses both
+    r = DC.c2_config(lic(), lic("O2_DIRECTIONAL"), 0.0)
+    assert (r["config"], r["row"]) == ("C8", 3)
+
+
+def test_c2_config_records_the_quantity_it_read():
+    r = DC.c2_config(_fr("O1_CONFIRMED", 0.2, 0.0), _fr("O3_NULL", 0.03, 0.9), 0.0)
+    assert r["moved_term"] == {"quantity": "inert.frac_moved", "bar": 0.05, "c1": 0.2, "dose": 0.03}
+    r = DC.c2_config({"outcome": "O1_CONFIRMED"}, _fr("O3_NULL", 0.03, 0.9), 0.0)
+    assert np.isnan(r["moved_term"]["c1"]) and r["moved_term"]["dose"] == 0.03
+
+
+@real
+def test_c1_done_nan_frac_moved_is_read_but_never_a_licence(tmp_path, world, real_pins):
+    ch = dose_chain(tmp_path)
+    _c1_world(tmp_path, world, real_pins, outcome="O1_CONFIRMED", inert={**INERT_OK, "frac_moved": float("nan")})
+    c1 = ch.check_c1_done(real_pins)                                                        # a NaN is a number the file holds: read as is ...
+    assert np.isnan(c1["inert"]["frac_moved"]) and c1["moved_share"] == 0.8
+    assert not DC.licensed(c1)                                                              # ... and it is NOT a licence, whatever moved_share (0.8) says
+    ch2 = dose_chain(tmp_path / "ok")
+    _c1_world(tmp_path / "ok", world, real_pins, outcome="O1_CONFIRMED")
+    assert DC.licensed(ch2.check_c1_done(real_pins))                                        # control: the same world with frac_moved 0.2 is licensed (O1, safety 0, 0.2 >= 5 %)
+
+
+@real
+def test_c1_done_refuses_by_name_when_inert_frac_moved_is_absent(tmp_path, world, real_pins):
+    for i, kw in enumerate(({"drop_inert": True}, {"inert": {"inert": False}})):
+        t = tmp_path / f"arm{i}"
+        ch = dose_chain(t)
+        _c1_world(t, world, real_pins, **kw)
+        with pytest.raises(CH.StopChain) as e:
+            ch.check_c1_done(real_pins)
+        assert e.value.reason == "C1_NOT_DONE" and e.value.code == 5 and "inert.frac_moved" in e.value.detail
+
+
+@real
+def test_dose_result_carries_its_own_inert_block_computed_by_c1s_function(arms):
+    """the dose read's `inert` is C1's `spc_analyse.analyse_c1` output (analyse_stepB.py:119-121 -> tts_cem.inert_verdict), not a re-implementation, and the licence reads exactly it"""
+    b, c8, o4 = arms
+    rng = np.random.default_rng(5)
+    lab_c8, lab_o4 = _labels(c8, rng), _labels(o4, rng)
+    res = DC.analyse_dose(b, o4, lab_o4, c8, lab_c8, C1READ, B=200, with_concordance=False)
+    ref = AC.analyse_c1(b, o4, lab_o4, B=200, with_concordance=False)
+    assert res["inert"] == ref["inert"] and set(res["inert"]) >= {"inert", "frac_moved", "n", "thr_m", "min_frac", "per_seed_frac_moved"}
+    S = np.asarray(o4["exec"]).shape[1]
+    direct = AB.T.inert_verdict(np.asarray(o4["exec"]).reshape(-1, 20, 3), np.repeat(np.asarray(o4["pick_exec"]), S, axis=0))      # C1's function, on the pooled arrays, in this test
+    assert res["inert"]["frac_moved"] == direct["frac_moved"] and res["inert"]["n"] == direct["n"] == np.asarray(o4["exec"]).shape[0] * S and res["inert"]["thr_m"] == 0.5
+    assert res["moved_share"] == pytest.approx(float(np.asarray(o4["moved"], bool).mean())) and "moved_share" in res            # still reported, descriptive
+    k = res["c2_config"]["moved_term"]
+    assert k["quantity"] == "inert.frac_moved" and k["dose"] == res["inert"]["frac_moved"] and k["c1"] == C1READ["inert"]["frac_moved"]
+    flat = dict(res, outcome="O1_CONFIRMED")
+    assert DC.licensed(flat) == (res["inert"]["frac_moved"] >= 0.05 and all(res["safety_points"][t] >= -0.25 for t in AC.SAFETY_TERMS))
+
 
 
 @pytest.mark.parametrize("c1,dose,lo,want,row", [
@@ -842,9 +1030,125 @@ def test_run_analysis_writes_and_prints_the_c2_config(monkeypatch, tmp_path, wor
     res = json.load(open(ch.cfg.d("RESULT_DOSE.json")))
     out = ch.out.getvalue()
     k = res["c2_config"]
-    want = DC.c2_config(C1READ, {"outcome": res["outcome"], "safety_points": res["safety_points"], "moved_share": res["moved_share"]}, res["contrast_O4_minus_C8"]["pooled"]["lo"])
+    want = DC.c2_config(C1READ, {"outcome": res["outcome"], "safety_points": res["safety_points"], "inert": res["inert"]}, res["contrast_O4_minus_C8"]["pooled"]["lo"])
     assert k == json.loads(json.dumps(want))                                               # wired from the chain's own numbers
     ci = res["contrast_O4_minus_C8"]["pooled"]
     assert ci["lo"] < 0.0 < ci["hi"] and k["contrast_lower_ci_gt_0"] is False             # the LOWER bound is what enters row 3, not the upper one
     assert re.search(rf"^ZZDOSE_C2CONFIG {k['config'] or 'NONE'} row {k['row']}: ", out, re.M) and re.search(r"^ZZDOSE_NEXT ", out, re.M) and re.search(r"^ZZDOSE_DONE ", out, re.M)
     assert res["c1_outcome"] == "O3_NULL"
+
+
+# ------------------------------------------------------------------------------------------------------------------------------ REVISION 1 of the amendment: the terms text is the original's, byte for byte
+REAL_ORIG_SHA256 = "d55ebac686cb4d8ec979872c9ae8111f8f6e14ea31641310d387898d89910679"      # the sealed AMENDMENT_DOSE.md (landed at tip 51078a6)
+SECTION_PREFIXES = ["", "# AMENDMENT SEARCH-DOSE", "## Revision 1 (MM ruling, pre-seal)", "## 0. Why", "## 1. The object and the pins", "## 2. Reachability", "## 3. Run order", "## 4. Endpoint",
+                    "## 5. Outcomes of the dose read", "### 5b. The config sent to the navtest look", "## 6. The four families", "## 7. Cost", "## 8. Peak disk", "## 9. Gates", "## 10. RULED", "## 11. Not licensed"]
+R1_FILES = (DC.AMEND_NAME, DC.AMEND_SHA, DC.RULING_NAME, DC.RULING_C2FINAL_NAME, "REVISION1_NOTE.md")
+
+
+def _sections(text):
+    """[(heading, body)] split at the lines that start with '#' OUTSIDE code fences (the folded ruling sits in a four-backtick fence); the preamble before the first heading is ('', body)"""
+    out, fence = [("", [])], None
+    for ln in text.split("\n"):
+        m = re.match(r"^(`{3,})", ln)
+        if m:
+            fence = len(m.group(1)) if fence is None else (None if (len(m.group(1)) >= fence and ln.strip() == m.group(1)) else fence)
+        if fence is None and not m and re.match(r"^#{1,6} ", ln):
+            out.append((ln, []))
+        else:
+            out[-1][1].append(ln)
+    return [(h, "\n".join(b)) for h, b in out]
+
+
+def _real_r1(tmp_path):
+    """copy the package's REAL original + rulings + note into tmp/pkg and seal REVISION 1 there with the real code dir (nothing in the package dir is written)"""
+    import shutil
+    here = os.path.dirname(HERE)
+    if not all(os.path.isfile(os.path.join(here, f)) for f in R1_FILES) or not os.path.isfile(SEALED):
+        pytest.skip("the package's original amendment / rulings / note or C1's sealed prereg is absent")
+    pkg = tmp_path / "pkg"
+    pkg.mkdir(parents=True)
+    for f in R1_FILES:
+        shutil.copy(os.path.join(here, f), pkg / f)
+    return pkg, SD.seal_revision1(str(pkg), str(pkg / "REVISION1_NOTE.md"))
+
+
+@real
+def test_revision1_terms_text_is_the_originals_byte_for_byte(tmp_path, real_pins):
+    pkg, sha = _real_r1(tmp_path)
+    orig_b, r1_b = (pkg / DC.AMEND_NAME).read_bytes(), (pkg / DC.AMEND_R1_NAME).read_bytes()
+    assert hashlib.sha256(orig_b).hexdigest() == REAL_ORIG_SHA256 == (pkg / DC.AMEND_SHA).read_text().split()[0]       # the original IS the sealed d55ebac6 text
+    assert hashlib.sha256(r1_b).hexdigest() == sha == (pkg / DC.AMEND_R1_SHA).read_text().split()[0] and r1_b != orig_b
+    at = (pkg / "AMENDMENT_DOSE_R1.SEALED_AT.txt").read_text().split("\n")
+    assert at[1] == sha and at[0] in r1_b.decode("utf-8")                                                               # SEALED_AT = the stamp that is in the Status line + the sha256
+    o, r = orig_b.decode("utf-8"), r1_b.decode("utf-8")
+    assert DC.terms_text(r).encode("utf-8") == DC.terms_text(o).encode("utf-8")                                  # the whole terms text, byte for byte
+    so, sr = _sections(DC.terms_text(o)), _sections(DC.terms_text(r))
+    assert len(so) == len(sr) == len(SECTION_PREFIXES)                                                              # the sections, listed
+    for (h, bo), (hr, br), pre in zip(so, sr, SECTION_PREFIXES):
+        assert h == hr and h.startswith(pre) and bo.encode("utf-8") == br.encode("utf-8"), (pre, h[:60])           # each section equal, byte for byte
+    assert len(_sections(r)) == len(_sections(o)) + 1                                                                 # the raw R1 has one more heading (the note's own); the terms text has none
+    assert r.count(DC.REV1_BEGIN) == r.count(DC.REV1_END) == 1 and o.count(DC.REV1_BEGIN) == 0 and r.count("<!-- PINS-BEGIN -->") == o.count("<!-- PINS-BEGIN -->") == 1
+    assert re.search(r"^Status: \*\*SEALED\*\*", r, re.M) and "REVISION 1" in re.search(r"^Status: .*$", r, re.M).group(0)
+    lines = r.split("\n")
+    assert lines[2].startswith("Status: **SEALED**") and lines[3] == DC.REV1_BEGIN and lines[4].startswith("## REVISION 1 NOTE") and "70a08e09" in r.split(DC.REV1_END)[0]      # the dated note sits directly under the Status line
+    po, pr = CH.parse_pins(o), CH.parse_pins(r)
+    assert {k for k in pr if pr[k] != po.get(k)} == {"code:dose_chain.py", "code:test_dose.py", "code:mutation_dose.py", "code:seal_dose.py", "ruling_c2final_sha256", "amendment_original_sha256"}
+    assert pr["code:cost_dose.py"] == po["code:cost_dose.py"] and pr["amendment_original_sha256"] == REAL_ORIG_SHA256 and pr["ruling_c2final_sha256"] == DC.RULING_C2FINAL_SHA256
+    assert DC.RULING_C2FINAL_SHA256.startswith("70a08e09") and all(CH.sha_lf(os.path.join(HERE, f)) == pr["code:" + f] for f in SD.PINNED_CODE)      # the re-pinned code shas are the files'
+    assert all(pr[k] == po[k] for k in ("c1_prereg_sha256", "config_o4_sha256", "config_c8_sha256", "ruling_sha256"))                                  # nothing else in the pins moved
+    ch = dose_chain(tmp_path)
+    ch.check_amendment(real_pins)                                                                                    # and the chain's own gate accepts it
+    assert "AMEND_SEAL_OK" in ch.st["done"]
+
+
+@real
+def test_revision1_seal_tool_refusals_and_cli(tmp_path, capsys, monkeypatch):
+    import shutil
+    pkg, sha = _real_r1(tmp_path / "a")
+    note = str(pkg / "REVISION1_NOTE.md")
+    with pytest.raises(SD.SealRefused):
+        SD.seal_revision1(str(pkg), note)                                                   # never overwrites
+    here = os.path.dirname(HERE)
+
+    def fresh(tag, edit=None):
+        d = tmp_path / tag
+        d.mkdir()
+        for f in R1_FILES:
+            shutil.copy(os.path.join(here, f), d / f)
+        if edit:
+            edit(d)
+        return d
+
+    def refused(tag, edit, note_name="REVISION1_NOTE.md", why=None):
+        d = fresh(tag, edit)
+        with pytest.raises(SD.SealRefused, match=why):                                       # `why`: the refusal must come from THIS guard, not from a later one that happens to back it up
+            SD.seal_revision1(str(d), str(d / note_name))
+        assert not (d / DC.AMEND_R1_NAME).exists()                                          # nothing is written on a refusal
+    refused("orig_edit", lambda d: (d / DC.AMEND_NAME).write_bytes((d / DC.AMEND_NAME).read_bytes() + b"x"))        # the original no longer equals its .sha256
+    refused("c2f_edit", lambda d: (d / DC.RULING_C2FINAL_NAME).write_bytes((d / DC.RULING_C2FINAL_NAME).read_bytes() + b"x"))          # not the ruling the constant names
+    refused("dose_ruling_edit", lambda d: (d / DC.RULING_NAME).write_bytes((d / DC.RULING_NAME).read_bytes() + b"x"))                  # not the ruling the original pinned
+    refused("note_no_sha", lambda d: (d / "REVISION1_NOTE.md").write_text("a note that does not name the ruling by its sha\n"))
+    refused("note_empty", lambda d: (d / "REVISION1_NOTE.md").write_text("  \n"))
+    refused("note_delim", lambda d: (d / "REVISION1_NOTE.md").write_text("70a08e09 " + DC.REV1_END + "\n"), why="block delimiter")
+    refused("note_delim_begin", lambda d: (d / "REVISION1_NOTE.md").write_text("70a08e09 " + DC.REV1_BEGIN + "\n"), why="block delimiter")
+    refused("note_delim_pins", lambda d: (d / "REVISION1_NOTE.md").write_text("70a08e09 <!-- PINS-BEGIN -->\n"), why="block delimiter")
+    refused("no_c2f", lambda d: (d / DC.RULING_C2FINAL_NAME).unlink())
+    refused("no_orig_sha", lambda d: (d / DC.AMEND_SHA).unlink())
+
+    def to_draft(d):                                                                        # a self-consistent original (its .sha256 re-written) whose Status is DRAFT: not a sealed text
+        txt = (d / DC.AMEND_NAME).read_bytes().replace(b"Status: **SEALED**", b"Status: **DRAFT**", 1)
+        (d / DC.AMEND_NAME).write_bytes(txt)
+        (d / DC.AMEND_SHA).write_text(hashlib.sha256(txt.replace(b"\r\n", b"\n")).hexdigest() + "\n")
+    refused("orig_draft", to_draft)
+    d2 = fresh("terms_guard")
+    real_build = SD.build_r1_text
+    monkeypatch.setattr(SD, "build_r1_text", lambda *a, **k: real_build(*a, **k).replace("## 11. Not licensed", "## 11. Licensed"))      # a builder that changes a term: the seal's own equality guard refuses
+    with pytest.raises(SD.SealRefused):
+        SD.seal_revision1(str(d2), str(d2 / "REVISION1_NOTE.md"))
+    assert not (d2 / DC.AMEND_R1_NAME).exists()
+    monkeypatch.undo()
+    d = fresh("cli")
+    assert SD.main(["--revision1", "--pkg", str(d)]) == 0 and re.search(r"^ZZSEAL_R1_OK [0-9a-f]{64}$", capsys.readouterr().out, re.M)      # the CLI the Master Mind runs
+    assert SD.main(["--revision1", "--pkg", str(d)]) == 5 and "ZZSEAL_REFUSED" in capsys.readouterr().out                                    # and a second run refuses
+    with pytest.raises(SystemExit):
+        SD.main(["--pkg", str(d)])                                                           # without --revision1 the draft and the ruling are still required

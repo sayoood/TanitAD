@@ -1,0 +1,418 @@
+{
+ "shard": "0/1",
+ "n_mutations_total": 110,
+ "results": [
+  {
+   "id": "CONTROL (unmutated)",
+   "rc": 0,
+   "caught": null,
+   "control_passes": true
+  },
+  {
+   "id": 65,
+   "desc": "R1 licence reads inert.frac_moved, not moved_share",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "sed_terms_are_the_c2_licence_terms - Assertion...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 31 passed in 19.12s\n"
+  },
+  {
+   "id": 66,
+   "desc": "R1 licence: an absent frac_moved reads NaN, never a number",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "not_a_licence_and_moved_share_is_never_a_fallback\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 33 passed in 19.23s\n"
+  },
+  {
+   "id": 67,
+   "desc": "R1 licence: the moved term is applied",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "sed_terms_are_the_c2_licence_terms - Assertion...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 31 passed in 19.00s\n"
+  },
+  {
+   "id": 68,
+   "desc": "R1 licence: the moved bar is inclusive (>= 5 %)",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "sed_terms_are_the_c2_licence_terms - Assertion...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 31 passed in 19.01s\n"
+  },
+  {
+   "id": 69,
+   "desc": "R1 licence: moved_share is never a fallback",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "not_a_licence_and_moved_share_is_never_a_fallback\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 33 passed in 18.98s\n"
+  },
+  {
+   "id": 70,
+   "desc": "R1 dose read: the licence gets the dose read's OWN inert block",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "ries_its_own_inert_block_computed_by_c1s_function\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 38 passed in 19.85s\n"
+  },
+  {
+   "id": 71,
+   "desc": "R1 C1 read: the licence gets C1's inert block",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "st_c1_done_green_and_red_arms - KeyError: 'inert'\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 12 passed in 11.65s\n"
+  },
+  {
+   "id": 72,
+   "desc": "R1 C1 read: moved_share is still reported (descriptive)",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "done_green_and_red_arms - KeyError: 'moved_share'\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 12 passed in 10.68s\n"
+  },
+  {
+   "id": 73,
+   "desc": "R1 C1 read: an absent inert.frac_moved is refused by name",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "st_c1_done_green_and_red_arms - KeyError: 'inert'\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 12 passed in 10.18s\n"
+  },
+  {
+   "id": 74,
+   "desc": "R1 C1 read: a bool is not a frac_moved",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "ne_green_and_red_arms - Failed: DID NOT RAISE ...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 12 passed in 10.43s\n"
+  },
+  {
+   "id": 75,
+   "desc": "R1 C1 read: an absent inert block is an absent frac_moved",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "st_c1_done_green_and_red_arms - KeyError: 'inert'\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 12 passed in 10.42s\n"
+  },
+  {
+   "id": 76,
+   "desc": "R1 c2_config records c1 / dose frac_moved the right way round",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "nfig_records_the_quantity_it_read - AssertionE...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 35 passed in 18.37s\n"
+  },
+  {
+   "id": 77,
+   "desc": "R1 c2_config names the quantity",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "nfig_records_the_quantity_it_read - AssertionE...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 35 passed in 18.62s\n"
+  },
+  {
+   "id": 78,
+   "desc": "R1 c2_config records the bar applied",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "nfig_records_the_quantity_it_read - AssertionE...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 35 passed in 20.42s\n"
+  },
+  {
+   "id": 79,
+   "desc": "R1 amendment: R1 and the original (with their .sha256) are all required",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "ment_seal_green_and_red_arms - FileNotFoundErr...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 15 passed in 11.18s\n"
+  },
+  {
+   "id": 80,
+   "desc": "R1 amendment: the original equals its .sha256",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "ment_seal_green_and_red_arms - Failed: DID NOT...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 15 passed in 11.35s\n"
+  },
+  {
+   "id": 81,
+   "desc": "R1 amendment: ruling_c2final_sha256 is pinned and equals the file",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "ment_seal_green_and_red_arms - Failed: DID NOT...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 15 passed in 11.35s\n"
+  },
+  {
+   "id": 82,
+   "desc": "R1 amendment: amendment_original_sha256 is pinned",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "ment_seal_green_and_red_arms - Failed: DID NOT...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 15 passed in 11.37s\n"
+  },
+  {
+   "id": 83,
+   "desc": "R1 amendment: exactly one REVISION 1 note block",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "ment_seal_green_and_red_arms - Failed: DID NOT...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 15 passed in 11.35s\n"
+  },
+  {
+   "id": 84,
+   "desc": "R1 amendment: the terms text equals the original's",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "ment_seal_green_and_red_arms - Failed: DID NOT...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 15 passed in 11.11s\n"
+  },
+  {
+   "id": 85,
+   "desc": "terms_text normalises CRLF",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "the_status_line_the_note_block_and_the_pins_block\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 17 passed in 11.51s\n"
+  },
+  {
+   "id": 86,
+   "desc": "terms_text removes the Status line",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "ment_seal_green_and_red_arms - spc_chain.StopC...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 15 passed in 11.14s\n"
+  },
+  {
+   "id": 87,
+   "desc": "terms_text removes the note block",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "ment_seal_green_and_red_arms - spc_chain.StopC...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 15 passed in 11.58s\n"
+  },
+  {
+   "id": 88,
+   "desc": "terms_text removes the pins block",
+   "file": "dose_chain.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "ment_seal_green_and_red_arms - spc_chain.StopC...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 15 passed in 11.30s\n"
+  },
+  {
+   "id": 89,
+   "desc": "seal R1: never overwrites",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "utput_passes_check_amendment_and_never_overwrites\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 27 passed in 19.16s\n"
+  },
+  {
+   "id": 90,
+   "desc": "seal R1: the original equals its .sha256",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "on1_seal_tool_refusals_and_cli - Failed: DID ...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 122 passed in 22.53s\n"
+  },
+  {
+   "id": 91,
+   "desc": "seal R1: the original is SEALED",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "on1_seal_tool_refusals_and_cli - Failed: DID ...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 122 passed in 22.38s\n"
+  },
+  {
+   "id": 92,
+   "desc": "seal R1: MM_RULING_C2FINAL.md is the pinned ruling",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "on1_seal_tool_refusals_and_cli - Failed: DID ...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 122 passed in 21.92s\n"
+  },
+  {
+   "id": 93,
+   "desc": "seal R1: MM_RULING_DOSE.md is the ruling the original pinned",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "on1_seal_tool_refusals_and_cli - Failed: DID ...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 122 passed in 22.03s\n"
+  },
+  {
+   "id": 94,
+   "desc": "seal R1: a note may not carry the note-begin delimiter",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "on1_seal_tool_refusals_and_cli - Failed: DID ...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 122 passed in 21.97s\n"
+  },
+  {
+   "id": 95,
+   "desc": "seal R1: a note may not carry the note-end delimiter",
+   "file": "seal_dose.py",
+   "caught": false,
+   "rc": 0,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "................................................... [ 58%]\n...................................................                      [100%]\n123 passed in 21.50s\n"
+  },
+  {
+   "id": 96,
+   "desc": "seal R1: a note may not carry a pins delimiter",
+   "file": "seal_dose.py",
+   "caught": false,
+   "rc": 0,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "................................................... [ 58%]\n...................................................                      [100%]\n123 passed in 20.85s\n"
+  },
+  {
+   "id": 97,
+   "desc": "seal R1: the note names the ruling by its sha256",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "on1_seal_tool_refusals_and_cli - Failed: DID ...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 122 passed in 21.18s\n"
+  },
+  {
+   "id": 98,
+   "desc": "seal R1: the terms-equality guard",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "on1_seal_tool_refusals_and_cli - Failed: DID ...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 122 passed in 21.20s\n"
+  },
+  {
+   "id": 99,
+   "desc": "seal R1: the dose ruling stays pinned",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "utput_passes_check_amendment_and_never_overwrites\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 27 passed in 18.50s\n"
+  },
+  {
+   "id": 100,
+   "desc": "seal R1: the original's sha is pinned",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "utput_passes_check_amendment_and_never_overwrites\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 27 passed in 18.53s\n"
+  },
+  {
+   "id": 101,
+   "desc": "seal R1: the C2FINAL ruling is pinned",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "utput_passes_check_amendment_and_never_overwrites\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 27 passed in 18.61s\n"
+  },
+  {
+   "id": 102,
+   "desc": "seal R1: the status says REVISION 1",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "ision1_terms_text_is_the_originals_byte_for_byte\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 121 passed in 22.13s\n"
+  },
+  {
+   "id": 103,
+   "desc": "build_r1_text: the note sits directly under the Status line",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "ision1_terms_text_is_the_originals_byte_for_byte\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 121 passed in 22.14s\n"
+  },
+  {
+   "id": 104,
+   "desc": "build_r1_text: an original without a Status line is refused",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "the_status_line_the_note_block_and_the_pins_block\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 17 passed in 11.06s\n"
+  },
+  {
+   "id": 105,
+   "desc": "build_r1_text: exactly one pins block",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "the_status_line_the_note_block_and_the_pins_block\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 17 passed in 10.96s\n"
+  },
+  {
+   "id": 106,
+   "desc": "build_r1_text: an original that already has a note block is refused",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "the_status_line_the_note_block_and_the_pins_block\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 17 passed in 10.96s\n"
+  },
+  {
+   "id": 107,
+   "desc": "CLI: without --revision1 the draft and the ruling are required",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "on1_seal_tool_refusals_and_cli - TypeError: e...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 122 passed in 22.41s\n"
+  },
+  {
+   "id": 108,
+   "desc": "CLI: prints ZZSEAL_R1_OK",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "on1_seal_tool_refusals_and_cli - AssertionErr...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 122 passed in 21.90s\n"
+  },
+  {
+   "id": 109,
+   "desc": "CLI: the default note is <pkg>/REVISION1_NOTE.md",
+   "file": "seal_dose.py",
+   "caught": true,
+   "rc": 1,
+   "subset": "licen or c2_config or amend or revision1 or terms_text or c1_done or seal or inert or original or order or draft or dq4 or next_arm or analysis or o4 or bundle or subid or selfrep or replicate or rows or contrast or dose",
+   "tail": "on1_seal_tool_refusals_and_cli - AssertionErr...\n!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!\n1 failed, 122 passed in 21.95s\n"
+  }
+ ],
+ "all_caught": false
+}

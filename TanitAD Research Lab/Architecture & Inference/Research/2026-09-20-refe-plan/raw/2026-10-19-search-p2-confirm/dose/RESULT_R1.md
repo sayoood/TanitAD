@@ -1,0 +1,8 @@
+# SEARCH-DOSE Revision 1 -- "moved share" = `inert.frac_moved` (MM_RULING_C2FINAL.md point 1)
+
+Status: code, tests, mutation check DONE; the real seal is the Master Mind's (command in `HANDOFF.md`, also landed as `HANDOFF_R1.md`). MEASURED (ours): `logs/pytest_dose_r1.log` 123 passed; `logs/pytest_spc_r1.log` 115 passed (C1 files untouched); `logs/mutations_dose_r1.json` 110 of 110 mutations caught, control passes.
+
+- Defect (ruling): sealed `licensed()` read `moved_share` (mean of the search's `moved` flag). Now `licensed()` reads `read["inert"]["frac_moved"]` (`dose_chain.py:137-156`); absent or NaN is not a licence; both the C1 read (`check_c1_done`) and the dose read (`analyse_dose`) pass their own `inert` block, the latter being C1's own `analyse_c1` output (`analyse_stepB.py:119-121` -> `tts_cem.inert_verdict`).
+- Revision path: `AMENDMENT_DOSE_R1.md` (+`.sha256`) is built by `seal_dose.py --revision1` from the unedited sealed original; the chain checks it in place of the original and refuses unless its terms text equals the original's byte for byte.
+- Proposed register row (MM to land, not edited here): H-SEARCH-P2-1 / dose amendment: licence "moved share" term re-defined as `inert.frac_moved` (Revision 1), code-only, pre-read; the old `moved_share` licence defect is a RETRACTION-class instance of "a quantity named in prose, implemented as a different quantity" (found before any read).
+- Observation, not a change: with frac_moved as the term, "moved >= 5 %" is implied by O1/O2 (O4_INERT fires below 5 % with the same threshold, `tts_cem.py:26`), so it binds only on NaN/absent.
