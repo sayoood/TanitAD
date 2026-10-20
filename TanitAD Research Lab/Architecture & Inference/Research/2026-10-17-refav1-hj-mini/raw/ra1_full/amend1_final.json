@@ -1,0 +1,232 @@
+{
+ "schema": "ra1-full-amend1-v1",
+ "prereg": "PREREG_RA1_FULL.md Amendment 1",
+ "S": 3000,
+ "cell": "b0.08g50",
+ "tier": "T1-class open-loop trajectory (SENS is T0)",
+ "estimator": "paired episode-cluster bootstrap, B=2000 (episodes); F = |s0 - s1|",
+ "SENS": {
+  "bar": "A1 level-1 yaw_rate-sensitivity (k=10) >= 0.1 AND separated above A0, at BOTH seeds",
+  "PASS": true,
+  "per_seed": {
+   "seed0": {
+    "A1_yaw_rate_k10": 0.7591226100921631,
+    "A0_yaw_rate_k10": 0.28433939814567566,
+    "A0_cell": "b0.08",
+    "A1_minus_A0": {
+     "delta": 0.4748,
+     "lo": 0.3981,
+     "hi": 0.5562,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "passes_level": true,
+    "separated_above_A0": true,
+    "speed_k10_A1": 0.7435451745986938
+   },
+   "seed1": {
+    "A1_yaw_rate_k10": 0.7722825407981873,
+    "A0_yaw_rate_k10": 0.24531877040863037,
+    "A0_cell": "b0.08",
+    "A1_minus_A0": {
+     "delta": 0.527,
+     "lo": 0.4375,
+     "hi": 0.6253,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "estimator": "paired_episode_cluster_bootstrap"
+    },
+    "passes_level": true,
+    "separated_above_A0": true,
+    "speed_k10_A1": 0.6268072724342346
+   }
+  }
+ },
+ "REPLICATE": {
+  "quantity": "A1x_s1 - A1_s1, eval-141 ADE@6s",
+  "eval141": {
+   "delta": 0.0343,
+   "lo": 0.0043,
+   "hi": 0.0658,
+   "separated": true,
+   "n_windows": 2399,
+   "n_episodes": 141
+  },
+  "holdout_NON_DECIDING": {
+   "delta": 0.0354,
+   "lo": -0.0121,
+   "hi": 0.0875,
+   "separated": false,
+   "n_windows": 4076,
+   "n_episodes": 60
+  },
+  "verdict": "REPLICATES"
+ },
+ "A2": {
+  "holdout_seed_mean_ade6": {
+   "R0": 2.72455,
+   "A1": 2.6497,
+   "A2": 2.6197999999999997
+  },
+  "K_arm": "A2",
+  "floors_eval141": {
+   "A1": 0.010600000000000165,
+   "A2": 0.017300000000000093
+  },
+  "two_F": 0.034600000000000186,
+  "K_for_A2": {
+   "read": true,
+   "PASS": true,
+   "rows": [
+    {
+     "seed": 0,
+     "arm_minus_p10": {
+      "delta": -0.2774,
+      "lo": -0.3784,
+      "hi": -0.1717,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "below": true,
+     "separated": true,
+     "beats_2x_floor": true
+    },
+    {
+     "seed": 1,
+     "arm_minus_p10": {
+      "delta": -0.2947,
+      "lo": -0.3882,
+      "hi": -0.203,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "below": true,
+     "separated": true,
+     "beats_2x_floor": true
+    }
+   ],
+   "note": null
+  },
+  "A2_minus_A1": [
+   {
+    "seed": 0,
+    "eval141": {
+     "delta": 0.0091,
+     "lo": -0.0218,
+     "hi": 0.0404,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "holdout": {
+     "delta": -0.045,
+     "lo": -0.1124,
+     "hi": 0.0239,
+     "separated": false,
+     "n_windows": 4076,
+     "n_episodes": 60
+    }
+   },
+   {
+    "seed": 1,
+    "eval141": {
+     "delta": -0.0189,
+     "lo": -0.0492,
+     "hi": 0.0114,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "holdout": {
+     "delta": -0.0148,
+     "lo": -0.0912,
+     "hi": 0.05,
+     "separated": false,
+     "n_windows": 4076,
+     "n_episodes": 60
+    }
+   }
+  ]
+ },
+ "IDM": {
+  "bar": "A1 - A0, eval-141 ADE@6s: < 0, separated at BOTH seeds, |delta| > 2 x max(F_A1, F_A0)",
+  "PASS": false,
+  "floors_eval141": {
+   "A1": 0.010600000000000165,
+   "A0": 0.05650000000000022
+  },
+  "two_F": 0.11300000000000043,
+  "rows": [
+   {
+    "seed": 0,
+    "A1_minus_A0": {
+     "delta": -0.0612,
+     "lo": -0.1314,
+     "hi": 0.003,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "below": true,
+    "separated": false,
+    "beats_2x_floor": false,
+    "holdout_NON_DECIDING": {
+     "delta": -0.0991,
+     "lo": -0.245,
+     "hi": 0.0271,
+     "separated": false,
+     "n_windows": 4076,
+     "n_episodes": 60
+    },
+    "A1x_minus_A0_DESCRIPTIVE": {
+     "delta": -0.0236,
+     "lo": -0.0929,
+     "hi": 0.047,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141
+    }
+   },
+   {
+    "seed": 1,
+    "A1_minus_A0": {
+     "delta": -0.107,
+     "lo": -0.1772,
+     "hi": -0.0407,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "below": true,
+    "separated": true,
+    "beats_2x_floor": false,
+    "holdout_NON_DECIDING": {
+     "delta": -0.1389,
+     "lo": -0.2692,
+     "hi": -0.0207,
+     "separated": true,
+     "n_windows": 4076,
+     "n_episodes": 60
+    },
+    "A1x_minus_A0_DESCRIPTIVE": {
+     "delta": -0.0728,
+     "lo": -0.1397,
+     "hi": -0.0073,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    }
+   }
+  ],
+  "note": "A1x - A0 (time-shuffled targets vs no IDM) is DESCRIPTIVE: near A1 - A0 => the gain does not need true time order (a regulariser); near 0 => it does"
+ },
+ "next": "SENS PASS + K PASS => PREREG_HJ_STAGE0: frozen + adapter suffices; build refav2 (RA-2) -- its design is a Master Mind / PI step, not pre-registered here. IDM FAIL: IDM's trajectory benefit is NOT established at full scale; next lever, read under this same bar: A1 with gamma 200 x2 at S (the stage-0 ladder's first rung).",
+ "reading": "SENS PASS; IDM FAIL (A1 - A0 -0.0612 / -0.1070, 2F 0.1130); gate replicate REPLICATES (A1x_s1 - A1_s1 +0.0343 [+0.0043, +0.0658]); holdout K arm A2, K for A2 PASS."
+}
