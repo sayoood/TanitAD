@@ -74,7 +74,7 @@ launch telemetry_long || echo "$(date '+%m-%d %H:%M') telemetry did not launch"
 tl() { $SSH "powershell -NoProfile -Command \"Get-Content D:/tanitad/logs/telemetry_full.csv -Tail 1\"" 2>/dev/null | tr -d '\r'; }
 sleep 45; t1=$(tl); sleep 35; t2=$(tl)
 [[ $t2 == 20* && $t2 != "$t1" ]] || stop "no fresh telemetry ($t1 / $t2): the temperature guard would be blind"
-grep -q 'ZZRA1A2-DONE|ZZRA1A2-STOP' $B/ra1runs_guard.sh || stop "ra1runs_guard.sh does not know this chain's markers: it would never exit"
+grep -qF '|ZZRA1A2)-(DONE|STOP)' $B/ra1runs_guard.sh || stop "ra1runs_guard.sh does not know this chain's markers (anchored): it would never exit"
 RA1_CHAIN_OUT=$L/chain_ra1_full5.out bash $B/ra1runs_guard.sh > $L/ra1a2_guard.out 2>&1 &
 # ---- 2. Amendment 2's runs (no queue verdict)
 $PY "$(cygpath -m $B)/mk_ra1_job.py" ra1full_p5 full5 $S $BETA $GAMMA >/dev/null && $SCP $B/ra1full_p5.cmd tanitad-box2:D:/tanitad/jobs/ || stop "ship ra1full_p5"
