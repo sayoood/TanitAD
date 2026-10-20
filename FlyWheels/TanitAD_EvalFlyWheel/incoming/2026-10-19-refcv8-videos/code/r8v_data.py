@@ -6,6 +6,10 @@ clip UUIDs exist only in memory (programme clip-id rule).
 SOURCES (all read-only; every path is a module constant so a later checkpoint is a one-argument change)
   dumps    <ARCH>/<tree>/{panel_s0,s6_s0,dump_s0}/ep###.npz, dump_s0/decisions/ep###.npz, dump_s0/refcv6_extras.npz     (battery roll, inference seed 0)
   prior    DEPLOY8_POS_<tree30k>_s0.npz  S2_prior8 / S2_pos8                        (30k EMA ONLY: the shipped re-timed plan; the prior is model-free)
+           ⭐ a PER-FRAME tree (*_pf, 2026-10-20) never defaults to that clip-fed file: its RT layer is the REGISTERED per-frame table's
+           DEPLOY8_POS_<tree>_s0.npz (pf_lane d8, provenance-checked by resolve_deploy_pf) or it is OFF with an on-screen note.
+  nav      dump_s0/manifest.json nav_feed.mode + decisions sidecar (nav_cmd = the FED token; nav_cmd_clip / r8_nav_fed / r8_nav_known on a pf tree),
+           read by r8v_feed.feed_from_decisions -- NEVER re-derived by a separate lookup (R57).
   frames   <KIT6>/data/refcv6-b1-416x1024-eval139/<clip>.v2ep.pt  (PNG, 416x1024, CYLINDRICAL f_ref 488.924, n_stack 3, 10 Hz)
   extrinsic <KIT8>/data/refcv8_train4572_eval139_extrinsics.json (per-clip cam->rig quaternion + mount x,y,z)
   map GT   <KIT6>/data/sam3_gt_v3_eval/<sha12>.sam3mapgt.npz  cart_frac [T,9,200,120] (rig frame, 0.5 m cells, x 0..100 m, y -30..+30 m)   137/139 clips
@@ -24,13 +28,26 @@ import os
 import re
 from pathlib import Path
 
+import sys
+
 import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import r8v_feed as FEED  # noqa: E402  (numpy only at import)
 
 ARCH = Path("C:/Users/Admin/refcv8_eval_archive/battery")
 KIT6 = Path("E:/refcv6_eval_kit")
 KIT8 = Path("E:/refcv8_eval_kit")
 BATT_PKG = Path("C:/Users/Admin/qland/hold_r8batt/stage/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-15-refcv8-milestone-battery")
 DEPLOY8_30K = BATT_PKG / "raw/retime_deploy/DEPLOY8_POS_step30000ema_unc_s0.npz"
+# ---- the PER-FRAME re-timed (RT) layer (SHIP-R8 AMENDMENT 3 (ii)); every path overridable on the CLI
+PF_HOLD = Path("C:/Users/Admin/qland/hold_r8pf")
+PF_REGISTERED = PF_HOLD / "REGISTERED_PF_TABLE.sha256"            # 64 hex == sha256(FROZEN_GAINS_RETIME_train_pf.json), written when the table is frozen
+PF_PKG = PF_HOLD / "stage/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-20-refcv8-perframe-final/pfpkg"   # pf_lane --pkg (chain_final_pf_r8.sh PFPKG)
+PF_RS_TABLE_NAME = "refcv8_retime_deploy_gains_pf.json"          # == pf_lane.RS_TABLE_NAME
+CLIP_FED_FROZEN_SHA256 = "b208c9c1e4236075de107ef49eaef39c1dddddba257f6e594bf6b84f8a24b1ee"   # LITERAL: the clip-fed frozen train table (FORWARD_DEPLOY8_*_unc.json)
+CLIP_FED_RS_TABLE_SHA256 = "f18359be021dd400f4865cdcb3ca053bb8c0910b54c0611ba09d44da9a97219e"  # LITERAL: its runtime stage table (DEPLOY8_POS_*_unc meta)
+AUTO = "auto"
 EVAL_CACHE = KIT6 / "data/refcv6-b1-416x1024-eval139"
 MAP_GT_DIR = KIT6 / "data/sam3_gt_v3_eval"
 EXTR_JSON = KIT8 / "data/refcv8_train4572_eval139_extrinsics.json"
@@ -59,12 +76,85 @@ def softmax(x):
     return e / e.sum(-1, keepdims=True)
 
 
-class EvalBank:
-    """One checkpoint's banked roll (`tree`) + the model-free / baseline layers."""
+def _sha256_file(p) -> str:
+    return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 
-    def __init__(self, tree="step40000ema_unc", deploy_npz=DEPLOY8_30K, load_agents=True):
+
+def read_registered(path) -> str:
+    """64 lower-case hex or '' (an empty / short string is INCONCLUSIVE, never a match) -- the pf_lane.read_registered contract."""
+    try:
+        s = "".join(c for c in Path(path).read_text(encoding="utf-8-sig").split()[0] if c in "0123456789abcdefABCDEF").lower()
+    except Exception:      # noqa: BLE001
+        return ""
+    return s if len(s) == 64 else ""
+
+
+def resolve_deploy_pf(tree: str, deploy_npz=AUTO, registered_file=PF_REGISTERED, pf_pkg=PF_PKG) -> dict:
+    """The RT layer of a PER-FRAME tree: ON only when every link of the provenance chain is the REGISTERED per-frame table, else OFF with the reason.
+
+    chain (each a positive assertion; any missing / unreadable link reads OFF, never ON):
+      registered   REGISTERED_PF_TABLE.sha256 holds 64 hex (the per-frame re-fitted FROZEN_GAINS_RETIME_train_pf.json, frozen 2026-10-20)
+      npz          DEPLOY8_POS_<tree>_s0.npz (default: <pf_pkg>/raw/retime_deploy/, written by pf_lane.py d8) exists, meta_json.tree == tree
+      stage table  meta_json.table_sha256 == sha256(<npz dir>/refcv8_retime_deploy_gains_pf.json) and that file's source_sha256 == registered
+      forward      FORWARD_DEPLOY8_<tree>.json (same dir) frozen_gains_sha256 == registered
+      not clip-fed none of the above equals the clip-fed literals b208c9c1... / f18359be...
+    """
+    off = {"on": False, "path": None, "label": "OFF", "provenance": {}}
+    reg = read_registered(registered_file)
+    if not reg:
+        return {**off, "note": f"RT layer OFF: no registered per-frame table ({Path(registered_file).name} absent / not 64 hex)"}
+    if reg in (CLIP_FED_FROZEN_SHA256, CLIP_FED_RS_TABLE_SHA256):
+        return {**off, "note": "RT layer OFF: the 'registered' sha256 is the CLIP-FED table (b208c9c1...)"}
+    p = Path(pf_pkg) / "raw/retime_deploy" / f"DEPLOY8_POS_{tree}_s0.npz" if deploy_npz in (None, AUTO) else Path(deploy_npz)
+    if not p.exists():
+        return {**off, "note": f"RT layer OFF: per-frame deploy npz not built yet ({p.name})"}
+    try:
+        z = np.load(p, allow_pickle=True)
+        meta = json.loads(str(z["meta_json"]))
+        rs = p.parent / PF_RS_TABLE_NAME
+        rs_sha = _sha256_file(rs) if rs.exists() else ""
+        rs_src = (json.load(open(rs, encoding="utf-8")).get("source_sha256") or "") if rs.exists() else ""
+        fw = p.parent / f"FORWARD_DEPLOY8_{tree}.json"
+        fw_fz = (json.load(open(fw, encoding="utf-8")).get("frozen_gains_sha256") or "") if fw.exists() else ""
+    except Exception as exc:      # noqa: BLE001
+        return {**off, "note": f"RT layer OFF: provenance unreadable ({type(exc).__name__})"}
+    prov = {"npz": str(p), "meta_tree": meta.get("tree"), "meta_table_sha256": meta.get("table_sha256"), "rs_table_sha256": rs_sha,
+            "rs_source_sha256": rs_src, "forward_frozen_gains_sha256": fw_fz, "registered": reg}
+    bad = []
+    if meta.get("tree") != tree:
+        bad.append(f"npz tree {meta.get('tree')!r} != {tree!r}")
+    if len(rs_sha) != 64 or meta.get("table_sha256") != rs_sha:
+        bad.append("stage table sha mismatch / absent")
+    if rs_src != reg:
+        bad.append("stage table source != registered")
+    if fw_fz != reg:
+        bad.append("FORWARD_DEPLOY8 frozen sha != registered")
+    if {meta.get("table_sha256"), rs_src, fw_fz} & {CLIP_FED_FROZEN_SHA256, CLIP_FED_RS_TABLE_SHA256}:
+        bad.append("clip-fed table b208c9c1/f18359be in the chain")
+    if bad:
+        return {**off, "provenance": prov, "note": "RT layer OFF: " + "; ".join(bad)}
+    return {"on": True, "path": str(p), "label": f"pf table {reg[:8]}", "provenance": prov, "note": ""}
+
+
+class EvalBank:
+    """One checkpoint's banked roll (`tree`) + the model-free / baseline layers.
+
+    deploy_npz: AUTO (default) = per-clip tree -> the 30k EMA file (legacy, labelled); per-frame tree -> resolve_deploy_pf (registered pf table or OFF).
+    An explicit path on a per-frame tree is accepted only if it passes resolve_deploy_pf's provenance chain."""
+
+    def __init__(self, tree="step40000ema_unc", deploy_npz=AUTO, load_agents=True, arch_root=ARCH, pf_registered=PF_REGISTERED, pf_pkg=PF_PKG):
         self.tree = tree
-        self.root = ARCH / tree
+        self.root = Path(arch_root) / tree
+        self.feed = FEED.tree_feed(self.root, tree)          # SystemExit if the tree's name and its manifest's nav_feed disagree
+        self.feed_mode = self.feed["mode"]
+        self.rt = {"on": None, "note": "", "label": ""}
+        if self.feed_mode == FEED.NAV_FEED_PF:
+            self.rt = resolve_deploy_pf(tree, deploy_npz, pf_registered, pf_pkg)
+            deploy_npz = self.rt["path"]
+            print(f"[r8v_data] {tree}: nav feed {self.feed_mode}; {self.rt['note'] or 'RT layer ON (' + self.rt['label'] + ')'}", flush=True)
+        elif deploy_npz in (None, AUTO):
+            deploy_npz = DEPLOY8_30K
+        self.rt_note = self.rt.get("note", "")
         summ = json.load(open(self.root / "battery_summary.json", encoding="utf-8"))
         self.summary = summ
         self.ckpt_step = summ.get("step")
@@ -82,8 +172,12 @@ class EvalBank:
         self.dep = np.load(deploy_npz, allow_pickle=True) if deploy_npz and Path(deploy_npz).exists() else None
         m = re.search(r"step(\d+)(ema)?", Path(deploy_npz).name) if deploy_npz else None
         self.deploy_label = (f"{int(m.group(1)) / 1000:g}k {'EMA' if m.group(2) else 'raw'}" if m else "n/a")
+        if self.feed_mode == FEED.NAV_FEED_PF:
+            self.deploy_label = (f"{self.deploy_label}, {self.rt['label']}" if self.rt["on"] else "RT OFF")
+        if self.dep is None and not self.rt_note:
+            self.rt_note = f"RT layer OFF: deploy npz {deploy_npz} absent"
         mt = re.search(r"step(\d+)(ema)?", tree)
-        self.ema = bool(mt and mt.group(2))
+        self.ema = bool(mt and mt.group(2)) or "ckpt_ema_" in str(summ.get("ckpt", "")).replace("\\", "/")   # a tree name without "stepNNNNNema" (smoke)
         self.step_k = (int(mt.group(1)) / 1000) if mt else (self.ckpt_step or 0) / 1000
         self.name_label = f"refcv8 {'EMA' if self.ema else 'raw'}-{self.step_k:g}k"
         self._dep_rows = {}
@@ -127,7 +221,11 @@ class EvalBank:
         assert np.array_equal(ws, dec["ws"]), "panel ws != decisions ws"
         rows = [self._ex_key[(ci, int(w))] for w in ws]
         ex = self.ex
+        fd = FEED.feed_from_decisions(dec, self.feed_mode)     # the FED nav as the roll WROTE it (sidecar), never a lookup
+        assert np.array_equal(fd["ws"], ws), "feed ws != panel ws"
         e = {
+            "nav_feed": self.feed_mode, "nav_fed": fd["nav_cmd_fed"], "nav_clip": fd["nav_cmd_clip"],
+            "r8_nav_fed": fd["r8_nav"], "r8_nav_known": fd["r8_nav_known"],
             "ci": ci, "ws": ws, "poses": dec["ep_poses"].astype(np.float64),         # [199, 4] x, y, yaw, v  (world / clip-local)
             "v0": pan["v0"].astype(np.float64),
             "g4": pan["g"].astype(np.float64),                                         # GT ego-frame @ 0.5/1/1.5/2 s
@@ -137,7 +235,7 @@ class EvalBank:
             "gt_future_world": dec["gt_future_ext"].astype(np.float64),               # [n, 60, 4] world x, y, yaw, v @ t0+0.1..6.0 s
             "gt_future_valid": dec["gt_future_valid_ext"].astype(bool),
             "pose_last": dec["pose_last"].astype(np.float64),
-            "nav_cmd": dec["nav_cmd"].astype(int), "nav_valid": dec["nav_valid"].astype(bool),
+            "nav_cmd": fd["nav_cmd_fed"].astype(int), "nav_valid": dec["nav_valid"].astype(bool),     # nav_cmd == the FED token (pf: per-frame)
             "sel_idx": dec["sel_idx"].astype(int), "sel_agrees_oracle": dec["sel_agrees_oracle"].astype(float),
             "lat_label": ex["lat_v7"][rows].astype(int), "lon_label": ex["lon_v7"][rows].astype(int),
             "lat_logits": ex["nav_true.tacv6_lat_logits"][rows].astype(np.float64),

@@ -1,0 +1,36 @@
+[dump_heads] 1 episodes, 3 windows, device cpu, feed perframe_full
+[dump_heads] nav feed wired: perframe_full (asked perframe_full, mutated=False, argv tail ['--nav-feed', 'perframe_full'])
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from E:/refcv8_eval_kit/data/refcv8_train4572_eval139_extrinsics.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] E:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_eval.jsonl): 23772/23772 windows fed, per-step windows {'30': 8042, '50': 8382, '100': 6153, '120': 1195}, per-clip rows {'30': 49, '50': 52, '100': 39, '120': 7}
+[model] E:/refcv8_eval_kit/ckpt/ckpt_ema_40000.pt step=40000 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-refcv7_loader.build_model (train() replayed; strict; G-EVAL-passed)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav-feed] perframe_full: nav_true = the v9 PER-FRAME token on 3 windows; it differs from the clip token on 3; r8_nav args known on 3 (FED)
+[nav] ⚠️ --no-navshuf: the record is NOT admissible for any nav-conditioned (STRATEGIC) claim
+[nav] ⚠️ --no-navzero: BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm BESIDE the nav-shuffle one; this record carries only the shuffle
+[roll] 3 windows / 139 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'oracle_sel'] · fed conditionings=['nav_true'] · nav_shuffle changed 0/3
+[cost] first forward (1 fed row(s), 1 rows total) took 19.62 s -> ESTIMATED 0.02 h for 3 windows (forward only; IO/analysis extra)
+  [1/1] clip_sha12=0dfe63214bc2 3 windows 79s
+[dump] 3 windows over 1 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_SMOKE_CORPUS - ckpt=TRAINED corpus=SMOKE step=40000 eps=1 windows=3 anchors=117
+REFCV3_DUMP_DONE
+[dump-only] ..\smoke\heads_cpu_ep000\roll_dump; analyse later with --analyze-only
+[dump_heads] roll done in 82s, captured 3 windows
+{
+ "episodes": [
+  0
+ ],
+ "n_windows": 3,
+ "wall_s": 82.3
+}
+[dump_heads] feed perframe_full parity PASS ZZHEADSFEEDPASSZZ
+EXIT=0

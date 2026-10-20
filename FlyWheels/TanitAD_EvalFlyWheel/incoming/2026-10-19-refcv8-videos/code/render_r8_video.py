@@ -14,6 +14,10 @@ LAYERS (each labelled on screen): GT (logged ego path, green) | refcv8 plan (sel
 | refcv7-50,400 (banked baseline arm of the paired reads, violet dashed) | causal prior (ha0_ext_pose, model-free, grey) | GT agent footprints (B1 3-D join) |
 GT map (SAM3 v3 cart_frac).  refcv8's OWN map-head / box-head outputs are NOT banked -> panels say "pending GPU dump (dump_heads_r8.py)".
 
+NAV FEED (2026-10-20, R57): the tactical panel's NAV FED line is the token the roll WROTE as fed (decisions sidecar via r8v_feed), with the per-clip token
+beside as "clip nav (not fed)" on a per-frame (*_pf) tree.  A heads dump whose feed / fed tokens disagree with the tree is REFUSED.  On a *_pf tree the
+RT (shipped re-timed) layer is the REGISTERED per-frame table or OFF with an on-screen note -- never the clip-fed b208c9c1... table.
+
     python render_r8_video.py --episode 114 --out E:/refcv8_eval_kit/videos/ep114.mp4 [--tree step40000ema_unc] [--still 120 --png x.png] [--max-frames N]
 """
 from __future__ import annotations
@@ -33,6 +37,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import r8v_data as D  # noqa: E402
+import r8v_feed as FEED  # noqa: E402
 import r8v_geom as G  # noqa: E402
 
 # --------------------------------------------------------------------------------------------- layout (1920x1080)
@@ -142,7 +147,24 @@ class Episode:
                 z = np.load(hp)
                 self.heads = {k: z[k] for k in z.files}
                 self.hmap = {int(w): j for j, w in enumerate(self.heads["ws"])}
+                self._check_heads_feed(hp)
         self._precompute()
+
+    def _check_heads_feed(self, hp):
+        """The heads dump must have been rolled on the SAME feed as the tree, window by window -- else its map / box / fan panels show another model input."""
+        H, e = self.heads, self.e
+        if "nav_feed" not in H:
+            if e["nav_feed"] == "clip":
+                return                                            # a pre-2026-10-20 clip-fed heads dump on a clip-fed tree: consistent
+            raise SystemExit(f"{hp.name}: a heads dump without a recorded nav feed (pre-2026-10-20, clip-fed) cannot be shown on the per-frame tree "
+                             f"{self.B.tree}; re-dump with dump_heads_r8.py --feed perframe_full")
+        if str(H["nav_feed"]) != e["nav_feed"]:
+            raise SystemExit(f"{hp.name}: heads nav_feed {str(H['nav_feed'])!r} != tree {self.B.tree} nav_feed {e['nav_feed']!r}")
+        wsi = {int(w): i for i, w in enumerate(e["ws"])}
+        bad = [int(w) for j, w in enumerate(H["ws"]) if int(w) in wsi and (int(H["nav_cmd_fed"][j]) != int(e["nav_fed"][wsi[int(w)]]) or
+               float(np.abs(np.asarray(H["r8_nav"][j], np.float64) - e["r8_nav_fed"][wsi[int(w)]]).max()) > 1e-6)]
+        if bad:
+            raise SystemExit(f"{hp.name}: fed nav / r8_nav differ from the tree's sidecar at ws {bad[:5]} (n={len(bad)})")
 
     # ---- per-window GT slots + ADE rows + false-brake flags
     def _precompute(self):
@@ -337,6 +359,9 @@ class Episode:
         stat = (f"FRONT CAMERA  camera_front_wide_120fov  CYLINDRICAL 416x1024 f_ref {D.FRAME_F_REF:.1f}  (column linear in azimuth)   "
                 f"raw frame {raw}/{self.R - 1}  t={raw * D.DT:4.1f} s")
         txt(dd, (x0 + 10, y0 + h - 13), stat, F_XS, DIM, "lm")
+        if self.B.rt_note:
+            dd.rectangle([x0, y0 + 30, x0 + w, y0 + 52], fill=(70, 20, 20, 200))
+            txt(dd, (x0 + 10, y0 + 41), self.B.rt_note + "  (cyan shipped-plan layer not drawn; causal prior comes from the same file)", F_S, (255, 220, 220), "lm")
         if i is None:
             dd.rectangle([x0 + w // 2 - 280, y0 + h // 2 - 20, x0 + w // 2 + 280, y0 + h // 2 + 20], fill=(0, 0, 0, 190))
             msg = "no plan window at this frame (warm-up)" if raw - D.K < self.ws[0] else "no plan window at this frame (past the last window)"
@@ -545,12 +570,13 @@ class Episode:
         y = bars(y, "LAT", D.LAT_NAMES, e["lat_logits"][i], int(e["lat_label"][i]))
         y = bars(y + 1, "LON", D.LON_NAMES, e["lon_logits"][i], int(e["lon_label"][i]))
         txt(dd, (x0 + 10, y), "bars = softmax of the v6 behaviour decoder (tacv6_lat/lon_logits); green triangle = GT label", F_XS, DIM)
-        y += 16
+        y += 14
         v0 = float(e["v0"][i])
         vm = float(e["v_max_ms"][i])
-        nav = D.NAV_NAMES[int(e["nav_cmd"][i])] if 0 <= int(e["nav_cmd"][i]) < 3 else "?"
+        nav_fed, nav_clip = FEED.label(int(e["nav_fed"][i]), int(e["nav_clip"][i]), bool(e["r8_nav_known"][i]), e["nav_feed"])
         fb, gcls, pcls, vend = self.fb[i]
-        row = [("NAV in / STRATEGIC", f"{nav}{'' if e['nav_valid'][i] else ' (invalid)'}  /  off (n/a, --no-strategic)"),
+        row = [("NAV FED (this frame)", f"{nav_fed}{'' if e['nav_valid'][i] else ' (invalid)'}"),
+               ("clip nav (not fed)" if e["nav_feed"] == FEED.NAV_FEED_PF else "clip nav", f"{nav_clip}   |   STRATEGIC: off (--no-strategic)"),
                ("ALLOCATION (head dump)", self._alloc_text(i)),
                ("speed (actual v0)", f"{v0:5.1f} m/s = {3.6 * v0:4.0f} km/h"),
                ("fed ceiling (road-type)", f"{vm:5.1f} m/s = {3.6 * vm:4.0f} km/h"),
@@ -560,9 +586,9 @@ class Episode:
         else:
             row.append(("GT speed @ +6 s", "n/a (window runs past the clip end)"))
         for k, (a, b) in enumerate(row):
-            txt(dd, (x0 + 14, y + k * 17), a, F_SM, DIM)
-            txt(dd, (x0 + 214, y + k * 17), b, F_SM, FG)
-        y += len(row) * 17 + 4
+            txt(dd, (x0 + 14, y + k * 16), a, F_SM, DIM)              # 16 px (was 17): the 7th row (clip nav, 2026-10-20) must fit the panel
+            txt(dd, (x0 + 214, y + k * 16), b, F_SM, FG)
+        y += len(row) * 16 + 4
         # false-brake banner
         if fb is None:
             txt(dd, (x0 + 10, y + 4), "FALSE-BRAKE: n/a (no GT 6 s for this window)", F_H, DIM)
@@ -675,8 +701,10 @@ class Episode:
         md5 = (self.B.ckpt_md5 or "")[:8]
         txt(dd, (12, 8), f"refcv8-r101-s0   ckpt: {'EMA' if self.B.ema else 'raw'} step {step:,} ({'ckpt_ema_' if self.B.ema else 'ckpt_'}{step}.pt md5 {md5})   arm: refcv8 hierarchical, --no-strategic   "
                          f"episode {self.ci}", F_TITLE)
+        feed = ("nav feed: PER-FRAME v9 token + r8_nav (as trained)" if self.e["nav_feed"] == FEED.NAV_FEED_PF
+                else "nav feed: CLIP-level token, no r8_nav (NOT the trained feed)")
         txt(dd, (12, 31), "TIER: T1 self-action OPEN LOOP on logged eval139 frames (not driving performance)   |   10 Hz native, plan snapshots 2 Hz   |   "
-                          "inference seed 0, single training seed", F_S, DIM)
+                          f"inference seed 0, single training seed   |   {feed}", F_S, DIM)
         txt(dd, (W - 12, 8), f"{raw * D.DT:5.1f} s", F_TITLE, FG, "ra")
 
     def render(self, raw):
@@ -738,7 +766,9 @@ def render_episode(bank, ci, out, tree_label, max_frames=None, fps=10, crf=18, s
     if rc != 0:
         raise SystemExit(f"ffmpeg exited {rc}")
     return {"out": out, "frames": nfr, "seconds": nfr / fps, "wall_s": time.time() - t0, "controls": ep.ctl,
-            "map_gt": ep.map_frac is not None, "windows": ep.n}
+            "map_gt": ep.map_frac is not None, "windows": ep.n, "nav_feed": ep.e["nav_feed"],
+            "n_windows_fed_token_differs_from_clip": int((ep.e["nav_fed"] != ep.e["nav_clip"]).sum()),
+            "rt": bank.rt_note or f"ON ({bank.deploy_label})", "heads_feed": (None if ep.heads is None else str(ep.heads.get("nav_feed", "clip (legacy)")))}
 
 
 def main():
@@ -750,12 +780,16 @@ def main():
     ap.add_argument("--png", default=None)
     ap.add_argument("--max-frames", type=int, default=None)
     ap.add_argument("--crf", type=int, default=18)
-    ap.add_argument("--deploy-npz", default=str(D.DEPLOY8_30K), help="DEPLOY8_POS_*.npz (shipped re-timed plan + causal prior); default = the 30k EMA table, labelled as such")
+    ap.add_argument("--deploy-npz", default=D.AUTO, help="DEPLOY8_POS_*.npz (shipped re-timed plan + causal prior). auto (DEFAULT): per-clip tree -> the 30k EMA "
+                    "table, labelled; per-frame (*_pf) tree -> the REGISTERED per-frame table's npz, or the RT layer is OFF with an on-screen note")
+    ap.add_argument("--arch-root", default=str(D.ARCH))
+    ap.add_argument("--pf-registered", default=str(D.PF_REGISTERED))
+    ap.add_argument("--pf-pkg", default=str(D.PF_PKG))
     ap.add_argument("--heads-dir", default=None, help="dir with heads_ep###.npz from dump_heads_r8.py (fills the MAP-head / BOX-head / allocation layers)")
     ap.add_argument("--box-p-thr", type=float, default=0.20, help="box-head presence threshold for display (the head never exceeds p 0.40 on the three showcase episodes, MEASURED: a standard 0.5 shows nothing; this is a display choice, not a detector threshold)")
     a = ap.parse_args()
     os.environ.setdefault("OMP_NUM_THREADS", "4")
-    B = D.EvalBank(a.tree, deploy_npz=a.deploy_npz)
+    B = D.EvalBank(a.tree, deploy_npz=a.deploy_npz, arch_root=a.arch_root, pf_registered=a.pf_registered, pf_pkg=a.pf_pkg)
     res = render_episode(B, a.episode, a.out, a.tree, a.max_frames, crf=a.crf, still=a.still, png=a.png, heads_dir=a.heads_dir, box_p_thr=a.box_p_thr)
     print(json.dumps(res, indent=1))
 
