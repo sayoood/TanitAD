@@ -2327,3 +2327,14 @@ kept as the deliberate-regression arm.
 - **(b)** Keep the per-clip read binding as registered; print the per-frame read beside.
 - **Cost of (a):** one extra full battery pass on 48,852 (~3–4 GPU-h on the dev box, ESTIMATED) plus the re-fit
   (CPU). It delays the SHIP-R8 verdict by about half a day.
+
+## ✅ DECIDED (PI, 2026-10-20 ~07:05 Berlin) -- D-R8-NAV-FEED: option (a)
+
+**PI, verbatim:** "Follow your a recommendation". Decided BEFORE any step-48,852 number exists (training was at
+step 44,550; the 48,852 checkpoint does not exist yet).
+
+**Binding consequence (SHIP-R8 AMENDMENT 3, GOALS_AND_CLAIMS):** the 48,852 bars and SHIP-R8 read on the PER-FRAME nav
+feed, as refcv8 was trained. The per-clip read is printed beside and is never binding. D-R8-SHIP-RETIME is re-opened
+in one respect only: the re-timing table is re-fitted by the unchanged train-fit procedure on per-frame-fed train
+rolls and frozen before the 48,852 eval rolls. The stage ships only if every SHIP-R8 clause passes on the per-frame
+feed with that table.
