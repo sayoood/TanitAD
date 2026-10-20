@@ -13,6 +13,8 @@ Every subcommand prints ONE opaque marker line (so the chain parses a marker, ne
   sample-tokens   an even stride over the cache's logged-route parts, as "log:token,..." (G-LIVE-LAB / D9 verify inputs).     ZZTOKENS <list>
   mem-argv        the G-LIVE-MEM trainer argv: the launch ARGS with --epochs/--resume dropped and --steps 4 at the LAUNCH --accum (4 x 64 = 256 micro-batches), a scratch --out.
   egr-ok          the chain-level fail-fast read of hf_egress.py gate's g_egr_result.json (the launch gate re-judges it).     ZZEGR_OK / ZZEGR_BAD <why>
+  resume-bank     a RESUME must read the bank the run STARTED on: the `--targets` train.py recorded in <run>/config.json (args.targets, train.py:1500-1511) against the chain's CBANK.
+                  ZZRESUME_BANK_SAME bank=<p> (rc 0) | ZZRESUME_BANK_MISMATCH run=<p> chain=<p> [run_n_tuples= run_targets_sha256=] (rc 3) | ZZRESUME_BANK_UNREADABLE <why> (rc 4)
 """
 from __future__ import annotations
 
@@ -21,6 +23,7 @@ import hashlib
 import json
 import os
 import pickle
+import posixpath
 import re
 import sys
 from pathlib import Path
@@ -231,6 +234,41 @@ def egr_check(path) -> tuple:
     return (not why), ",".join(why)
 
 
+def _norm_bank_path(p) -> str:
+    """A path as a string comparison needs it: forward slashes, no doubled or trailing slash, no `./`.  NOT realpath: the run's bank may be on another machine's volume."""
+    s = re.sub(r"/{2,}", "/", str(p).strip().replace("\\", "/"))
+    return posixpath.normpath(s) if s else s
+
+
+def resume_bank(config_path, chain_bank) -> tuple:
+    """(rc, marker line): does the bank this chain is about to train on name the bank the run STARTED on?
+
+    The run's own record is `<run>/config.json`, written ONCE by train.py on a fresh start (train.py:1500-1511): `args` is `vars(argparse namespace)`, so `args.targets` is the
+    `--targets` the run was launched with (parsed, so `--targets=X`, an abbreviated flag and a re-ordered argv all read the same; `argv` is the raw sys.argv and does not).
+    ⛔ This compares the PATH.  That is a cheap early PROXY for the bank's identity (a stat-and-read-one-file check, run before any stage spends), NOT the authority: train.py's
+    own resume identity (IDENTITY_ARGS + n_tuples / per_rank / targets_sha256, train.py:993-996 and 1036-1055) compares the bank's CONTENT and deliberately not its path, and
+    that stays the content check.  The two fail differently: a bank MOVED to another path with the same bytes is refused here (point P6_CBANK at the run's recorded path and
+    the trainer's content check decides), and a bank REBUILT IN PLACE under the same path passes here and is refused by the trainer's preflight.
+    ⛔ A config.json that cannot be read or parsed, or that carries no `args.targets`, is never treated as 'fresh': it refuses (rc 4)."""
+    cp = Path(config_path)
+    try:
+        cfg = json.loads(cp.read_text(encoding="utf-8"))
+        run_bank = cfg["args"]["targets"]
+        if not isinstance(run_bank, str) or not run_bank.strip():
+            raise ValueError(f"args.targets is {run_bank!r}, not a path")
+        idn = cfg.get("identity") if isinstance(cfg.get("identity"), dict) else {}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as e:      # json.JSONDecodeError and UnicodeDecodeError are ValueErrors
+        return 4, f"ZZRESUME_BANK_UNREADABLE {config_path}: {type(e).__name__}: {str(e)[:160]}".replace(chr(10), " ")
+    if _norm_bank_path(run_bank) == _norm_bank_path(chain_bank):
+        return 0, f"ZZRESUME_BANK_SAME bank={_norm_bank_path(chain_bank)}"
+    extra = ""
+    if idn.get("n_tuples") is not None:
+        extra += f" run_n_tuples={idn['n_tuples']}"
+    if idn.get("targets_sha256"):
+        extra += f" run_targets_sha256={str(idn['targets_sha256'])[:12]}"
+    return 3, f"ZZRESUME_BANK_MISMATCH run={run_bank} chain={chain_bank}{extra}"
+
+
 # ------------------------------------------------------------------------------------------------ CLI
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -260,6 +298,9 @@ def main(argv=None) -> int:
     p.add_argument("--out", required=True)
     p = sub.add_parser("egr-ok")
     p.add_argument("--json", required=True)
+    p = sub.add_parser("resume-bank")
+    p.add_argument("--config", required=True)
+    p.add_argument("--bank", required=True)
     a = ap.parse_args(argv)
     if a.cmd == "command-table":
         table, st = build_command_table(a.logs, a.bank, a.max_missing_frac)
@@ -286,6 +327,10 @@ def main(argv=None) -> int:
     if a.cmd == "mem-argv":
         print("ZZMEM_ARGV " + " ".join(mem_argv(a.args, a.out)), flush=True)
         return 0
+    if a.cmd == "resume-bank":
+        rc, line = resume_bank(a.config, a.bank)
+        print(line, flush=True)
+        return rc
     ok, why = egr_check(a.json)
     print("ZZEGR_OK" if ok else f"ZZEGR_BAD {why}", flush=True)
     return 0 if ok else 1

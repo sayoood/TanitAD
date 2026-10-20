@@ -245,6 +245,30 @@ if ! stage_done recover; then
   grep -q "^ZZRECOVER_OK" "$P6/recover.log" || refuse "recover failed: $(tail -n 1 "$P6/recover.log" | cut -c1-300)"
   stage_mark recover
 fi
+
+# ---- 3b. A RESUME MUST READ THE BANK THE RUN STARTED ON, and the chain checks it BEFORE any stage spends (MEASURED 2026-10-20, the A40): after a reboot the chain was relaunched from an env file that lacked
+#          P6_CBANK, so CBANK fell back to the pre-3C bank (189,888 tuples, ARGS 6a13af85) while the run had been STARTED on the 3-C bank (167,300 tuples, ARGS 570619873b1ebaa0).  The chain re-ran
+#          G-LIVE-MEM, G-EGR and the launch gate on the wrong bank (~25 min of the A40), MINTED a PASS token for the wrong argv, and only the trainer's own preflight refused ("the run's identity changed").
+#          The run's record of its bank is <run>/config.json -> args.targets, written once by train.py on a fresh start (train.py:1500-1511; p6_prep.py resume-bank reads it with the chain's $PY).
+#          ⛔ This compares the PATH, on purpose: it is a cheap proxy that needs one small file and no dataset load, so it can run here, before the hours of CPU and the GPU minutes.  It is NOT the content
+#          check.  train.py compares the bank's CONTENT (n_tuples / per_rank / targets_sha256) and deliberately not its path (train.py:993-996), and that preflight identity check stays the authority;
+#          the two fail differently (a bank moved with the same bytes is refused HERE, a bank rebuilt in place under the same path passes here and is refused by the trainer).
+#          No config.json = a fresh start: unchanged.  A config.json that cannot be read or has no args.targets REFUSES (it is never "fresh").  Called twice: right after `recover` (which can restore
+#          config.json from HF), so before inputs / commands / cache / lanes and so that P6_STOP_AFTER=recover is a cheap bank check; and again right after ARGS is defined (7b), before lab /
+#          mem / egr / the launch gate / preflight / train.
+resume_bank_check() {
+  [ -e "$RUN/config.json" ] || [ -L "$RUN/config.json" ] || return 0
+  local out rc=0 msg
+  out="$("$PY" p6_prep.py resume-bank --config "$RUN/config.json" --bank "$CBANK" 200>&- 2>&1)" || rc=$?
+  case "$rc" in
+    0) log "resume bank ok: $out"; return 0 ;;
+    3) msg="ZZP6_RESUME_BANK_MISMATCH ${out#ZZRESUME_BANK_MISMATCH } -- the run in $RUN was STARTED on another bank than this chain's CBANK; set P6_CBANK to the run's bank (check the start env file); no stage after this one starts" ;;
+    4) msg="ZZP6_RESUME_BANK_UNREADABLE ${out#ZZRESUME_BANK_UNREADABLE } -- $RUN/config.json does not say which bank the run started on, so the resume is not checked; no stage after this one starts" ;;
+    *) msg="ZZP6_RESUME_BANK_UNCHECKED rc $rc: $(printf '%s' "$out" | tail -n 1 | cut -c1-200) -- the bank check itself failed; no stage after this one starts" ;;
+  esac
+  echo "$msg"; refuse "$msg"
+}
+resume_bank_check
 log "recover: $(grep '^ZZRECOVER_OK' "$P6/recover.log" | tail -n 1 | cut -c1-80)"; stop_after recover
 
 # ---- 4. inputs: P2's files are REUSED IN PLACE.  Each fetch exists ONLY inside a fetch_* function and is reached ONLY as `have_X || fetch_X` (test_p6_chain pins both).
@@ -397,6 +421,8 @@ yaw_check
 ARGS="--backbone vitl16 --targets $CBANK --images $PIX --calib $BANK/calib_table.json --metric-cache $MC --scorer-sees-trunk --yaw-wrap $YAW_WRAP --nav-mode command --labeller online --label-workers $LW --label-chunks $LC --epochs 25 --epoch-unit scenes --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --tf32 --compile --workers 2 --log-every 1 --ckpt-every-min 20 --out $RUN --resume"
 ARGS_SHA="$(printf '%s' "$ARGS" | sha256sum | cut -c1-16)"
 log "ARGS sha $ARGS_SHA (--yaw-wrap $YAW_WRAP, --label-workers $LW, --label-chunks $LC)"
+# 3b again: a resume on another bank than the run's own REFUSES here, before lab / mem / egr / the launch gate (so a PASS token is never minted for the wrong argv)
+resume_bank_check
 LG=$P6/lg
 # ⛔ THE LAUNCH-GATE TOKEN (CLAUDE.md, PI 2026-09-26, BINDING): the trainer does not start unless this returns 0.  `launch_gate.py verify` RE-MEASURES the argv, the code tree
 # and the data and checks the HMAC; it is never a grep of a log.   token_ok  -> rc 0 iff ZZGATE-MATCHZZ

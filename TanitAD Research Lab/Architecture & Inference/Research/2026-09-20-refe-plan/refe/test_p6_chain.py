@@ -8,6 +8,8 @@ No pod, no GPU, no network, no NAVSIM stack. Four layers:
   3. The helpers, each in both directions (p6_prep, the P6 smoke-bank carve, the G-EGR first-checkpoint size, the expanded ARGS against the refe_p6 profile).
   4. The REAL p6_pod.sh run under bash in a sandbox with stubbed tools: stage order, every stage skipped when done and resumed after an interruption, an argv change voiding
      what depends on it, the token verified before the trainer, the yaw refusal, D6 / D7 refusals, and NO token in any file. Behavioural mutants (echo the token, re-fetch) are caught too.
+     4l (2026-10-20): a RESUME on another bank than the run's own (config.json args.targets vs CBANK) REFUSES, named (ZZP6_RESUME_BANK_MISMATCH), before any stage spends; a match / a fresh start
+     proceed unchanged; an unparseable config.json refuses; the guard's lines are mutated (refuse deleted, comparison flipped) and each mutant breaks the assertion it protects.
 
 Run: python refe/test_p6_chain.py   -> ZZP6CHAIN_PASS <n>   (needs bash on PATH; Git Bash on the dev box)
 Never prints ZZTEST_SKIP (the launch gate's G-SUITE treats a skip as a failure); an optional real-data check that is absent prints a plain ZZINFO line.
@@ -226,6 +228,29 @@ def check_chain(text, ref_args=ARGS_REF):
         v.append("EGR_WITHOUT_CKPT_SIZE")
     if 'p6_prep.py mem-argv --args "$ARGS"' not in text or text.count("train.py $MEM_ARGS") != 1:
         v.append("MEM_RUN_NOT_FROM_ARGS")
+    # ---- a RESUME must read the bank the run STARTED on (MEASURED 2026-10-20, the A40): the guard compares the run's recorded --targets with CBANK and REFUSES, named, before any stage spends --
+    #      called right after `recover` (before inputs / commands / cache / lanes) and again right after ARGS (before lab / mem / egr / the gate / preflight / train)
+    code = code_of(text)
+    fb = re.search(r"^resume_bank_check\(\) \{\n.*?^\}\n", code, re.S | re.M)
+    if not fb:
+        v.append("RESUME_BANK_GUARD_MISSING")
+    else:
+        body = fb.group(0)
+        if '"$PY" p6_prep.py resume-bank --config "$RUN/config.json" --bank "$CBANK" 200>&-' not in body:
+            v.append("RESUME_BANK_NOT_COMPARING_THE_RUNS_CONFIG")
+        for mk in ("ZZP6_RESUME_BANK_MISMATCH", "ZZP6_RESUME_BANK_UNREADABLE", "ZZP6_RESUME_BANK_UNCHECKED"):
+            if mk not in body:
+                v.append("RESUME_BANK_MARKER_MISSING:" + mk)
+        if 'echo "$msg"; refuse "$msg"' not in body:
+            v.append("RESUME_BANK_NEVER_REFUSES")
+        if re.search(r"^\s*(3|4|\*)\) [^\n]*\breturn\b", body, re.M):
+            v.append("RESUME_BANK_REFUSAL_RETURNS")                  # a mismatch, an unreadable config or a failed check must never fall through to a `return`
+        if not re.search(r'^  \[ -e "\$RUN/config\.json" \] \|\| \[ -L "\$RUN/config\.json" \] \|\| return 0$', body, re.M):
+            v.append("RESUME_BANK_FRESH_START_CHANGED")             # no config.json = a fresh start: nothing to compare, nothing changes
+    rb_calls = [m.start() for m in re.finditer(r"^resume_bank_check$", code, re.M)]
+    i_rec, i_have, i_args, i_lab = code.find("p2r_sync.py recover"), code.find("\nhave_bank() {"), code.find("\nARGS="), code.find("\nlab_stage() {")
+    if len(rb_calls) != 2 or not (0 <= i_rec < rb_calls[0] < i_have and 0 <= i_args < rb_calls[1] < i_lab):
+        v.append("RESUME_BANK_NOT_BEFORE_SPEND")
     # ---- the BINDING launch gate: the token is verified against the exact argv before the preflight and before every launch
     v += check_launch_gate(text)
     return v
@@ -354,8 +379,31 @@ def mutations(text):
         ("a re-measured memory run does not void the gate", text.replace("  invalidate egr launch_gate\n", ""), "INVALIDATION_MISSING"),
         ("a rebuilt cache does not void the instruments", text.replace("invalidate lanes lab mem egr launch_gate", "invalidate lanes"), "INVALIDATION_MISSING"),
         ("the trainer before the gate", text.replace("# ---- 8. G-LIVE-LAB's instrument", 'env -u HF_TOKEN "$PY" train.py $ARGS > /dev/null 2>&1 200>&-\n# ---- 8. G-LIVE-LAB\'s instrument', 1), "TRAINER_BEFORE_GATE"),
+        # ---- the resume-bank guard (2026-10-20): each of its lines is load-bearing
+        ("no resume-bank check after recover", drop_nth_line(text, "resume_bank_check", 0), "RESUME_BANK_NOT_BEFORE_SPEND"),
+        ("no resume-bank check after ARGS", drop_nth_line(text, "resume_bank_check", 1), "RESUME_BANK_NOT_BEFORE_SPEND"),
+        ("the resume-bank check moved behind the memory run", drop_nth_line(text, "resume_bank_check", 1).replace('log "mem ok"; stop_after mem', 'resume_bank_check\nlog "mem ok"; stop_after mem', 1),
+         "RESUME_BANK_NOT_BEFORE_SPEND"),
+        ("the guard is gone", re.sub(r"(?s)^resume_bank_check\(\) \{\n.*?^\}\n", "", text, count=1, flags=re.M), "RESUME_BANK_GUARD_MISSING"),
+        ("a mismatch is never refused", d(text, 'echo "$msg"; refuse "$msg"'), "RESUME_BANK_NEVER_REFUSES"),
+        ("a mismatch only logs", text.replace('echo "$msg"; refuse "$msg"', 'echo "$msg"; log "$msg"; return 0'), "RESUME_BANK_NEVER_REFUSES"),
+        ("an unreadable config.json is a fresh start", text.replace('    4) msg=', '    4) return 0 ;;\n    9) msg=', 1), "RESUME_BANK_REFUSAL_RETURNS"),
+        ("a failed check is waved through", text.replace('    *) msg=', '    *) return 0 ;;\n    9) msg=', 1), "RESUME_BANK_REFUSAL_RETURNS"),
+        ("a missing config.json is no longer a fresh start", text.replace('[ -L "$RUN/config.json" ] || return 0', '[ -L "$RUN/config.json" ] || return 1', 1), "RESUME_BANK_FRESH_START_CHANGED"),
+        ("the guard reads another file than the run's config", text.replace('--config "$RUN/config.json"', '--config "$RUN/summary.json"', 1), "RESUME_BANK_NOT_COMPARING_THE_RUNS_CONFIG"),
+        ("the guard compares another bank than CBANK", text.replace('--bank "$CBANK" 200>&- 2>&1', '--bank "$BANK" 200>&- 2>&1', 1), "RESUME_BANK_NOT_COMPARING_THE_RUNS_CONFIG"),
+        ("the unreadable marker is gone", text.replace("ZZP6_RESUME_BANK_UNREADABLE", "ZZP6_X"), "RESUME_BANK_MARKER_MISSING:ZZP6_RESUME_BANK_UNREADABLE"),
     ]
     return out
+
+
+def drop_nth_line(text, line, k):
+    """Delete the k-th (0-based) line that is exactly `line`: the guard is CALLED twice, and each call must be pinned on its own."""
+    lines = text.split("\n")
+    idx = [i for i, ln in enumerate(lines) if ln == line]
+    assert len(idx) > k, (line, len(idx), k)
+    del lines[idx[k]]
+    return "\n".join(lines)
 
 
 # ------------------------------------------------------------------------------------------------ the sandbox (layer 4)
@@ -663,6 +711,243 @@ def write_bank(d, r0, r1=()):
         (d / "targets_rank1.jsonl").write_text("".join(json.dumps(r) + "\n" for r in r1), encoding="utf-8", newline="\n")
 
 
+# ------------------------------------------------------------------------------------------------ the resume-bank guard (2026-10-20)
+# MEASURED on the A40: P6 was STARTED on the 3-C bank; a relaunch from an env file without P6_CBANK fell back to the pre-3C bank, re-ran G-LIVE-MEM / G-EGR / the launch gate on it, minted a PASS token for
+# the wrong argv, and only the trainer's preflight refused.  p6_pod.sh now compares the run's recorded --targets (config.json args.targets) with CBANK BEFORE any stage spends.
+def rb_config(targets, n_tuples=167300, sha="8775e73ee94812345678"):
+    """A config.json as train.py:1500-1511 writes it, down to the keys the guard reads (`args.targets`; `identity.n_tuples` / `targets_sha256` only for the message)."""
+    return json.dumps({"argv": ["train.py", "--targets", targets, "--resume"], "args": {"targets": targets, "resume": True, "epochs": 25},
+                       "identity": {"n_tuples": n_tuples, "targets_sha256": sha}, "started_at": "2026-10-19T00:00:00"})
+
+
+def resume_bank_helper_tests(tmp):
+    """p6_prep.resume_bank and its CLI, in BOTH directions, plus the flipped-comparison mutant (which every 'same' / 'different' assertion below must catch)."""
+    import importlib.util
+    n = 0
+    d = Path(tmp) / "rb"
+    d.mkdir(parents=True, exist_ok=True)
+
+    def wr(name, content, binary=False):
+        p = d / name
+        p.write_bytes(content) if binary else p.write_text(content, encoding="utf-8", newline="\n")
+        return str(p)
+    ok_cfg = wr("ok.json", rb_config("/w/data/refe_navtrain/train_grow_cmd_3c"))
+    # the same bank: rc 0, and the spelling does not matter (trailing / doubled slash, backslashes, ./)
+    for chain in ("/w/data/refe_navtrain/train_grow_cmd_3c", "/w/data/refe_navtrain/train_grow_cmd_3c/", "/w//data/refe_navtrain/./train_grow_cmd_3c",
+                  "\\w\\data\\refe_navtrain\\train_grow_cmd_3c"):
+        rc, line = PP.resume_bank(ok_cfg, chain)
+        assert rc == 0 and line == "ZZRESUME_BANK_SAME bank=/w/data/refe_navtrain/train_grow_cmd_3c", (chain, rc, line); n += 1
+    # another bank (the incident, in the direction it happened): rc 3, the marker names BOTH paths and carries the run's own identity for the reader
+    pre = "/w/data/refe_navtrain/train_grow_cmd"
+    rc, line = PP.resume_bank(ok_cfg, pre)
+    assert rc == 3 and line == f"ZZRESUME_BANK_MISMATCH run=/w/data/refe_navtrain/train_grow_cmd_3c chain={pre} run_n_tuples=167300 run_targets_sha256=8775e73ee948", (rc, line); n += 2
+    rc, line = PP.resume_bank(wr("noid.json", json.dumps({"args": {"targets": "/w/a"}})), "/w/b")
+    assert rc == 3 and line == "ZZRESUME_BANK_MISMATCH run=/w/a chain=/w/b", (rc, line); n += 1                                      # an identity block is not required for the comparison
+    for chain in ("/w/data/refe_navtrain/train_grow_cmd_3", "/w/data/refe_navtrain/train_grow_cmd_3cc", "/w/data/refe_navtrain/train_grow_cmd_3C", "/x/data/refe_navtrain/train_grow_cmd_3c"):
+        assert PP.resume_bank(ok_cfg, chain)[0] == 3, chain; n += 1                                                                    # a prefix, a suffix, another case, another root: all different
+    # a config.json that cannot say which bank the run started on is NEVER a fresh start: rc 4
+    bad = {"not_json": wr("a.json", "{ not json"), "empty": wr("b.json", ""), "binary": wr("c.json", b"\xff\xfe\x00\x01", binary=True), "list": wr("d.json", "[1, 2]"),
+           "no_args": wr("e.json", json.dumps({"identity": {}})), "no_targets": wr("f.json", json.dumps({"args": {"resume": True}})),
+           "targets_none": wr("g.json", json.dumps({"args": {"targets": None}})), "targets_blank": wr("h.json", json.dumps({"args": {"targets": "  "}})),
+           "targets_list": wr("i.json", json.dumps({"args": {"targets": ["/w/a"]}})), "args_str": wr("j.json", json.dumps({"args": "x"})), "missing": str(d / "nope.json"),
+           "a_directory": str(d)}
+    for k, p in bad.items():
+        rc, line = PP.resume_bank(p, "/w/a")
+        assert rc == 4 and line.startswith("ZZRESUME_BANK_UNREADABLE "), (k, rc, line); n += 1
+    # the CLI: the rc and the ONE marker line the chain reads
+    for argvs, want_rc, want in ((["--config", ok_cfg, "--bank", "/w/data/refe_navtrain/train_grow_cmd_3c"], 0, "ZZRESUME_BANK_SAME "), (["--config", ok_cfg, "--bank", pre], 3, "ZZRESUME_BANK_MISMATCH run="),
+                                 (["--config", bad["not_json"], "--bank", pre], 4, "ZZRESUME_BANK_UNREADABLE ")):
+        r = subprocess.run([sys.executable, str(HERE / "p6_prep.py"), "resume-bank"] + argvs, capture_output=True, text=True)
+        assert r.returncode == want_rc and r.stdout.startswith(want) and len(r.stdout.strip().splitlines()) == 1, (want_rc, r.returncode, r.stdout, r.stderr[-200:]); n += 1
+    # MUTANT: flip the comparison.  Every 'same' assertion above would read rc != 0 and every 'different' one rc 0 -- so the assertions above go RED on it (shown here, not assumed)
+    src = (HERE / "p6_prep.py").read_text(encoding="utf-8")
+    eq = "_norm_bank_path(run_bank) == _norm_bank_path(chain_bank)"
+    assert src.count(eq) == 1
+    mp = d / "p6_prep_flipped.py"
+    mp.write_text(src.replace(eq, eq.replace("==", "!=")), encoding="utf-8", newline="\n")
+    spec = importlib.util.spec_from_file_location("p6_prep_flipped", str(mp))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert mod.resume_bank(ok_cfg, "/w/data/refe_navtrain/train_grow_cmd_3c")[0] != 0 and mod.resume_bank(ok_cfg, pre)[0] == 0; n += 2
+    # MUTANT: an unparseable config treated as fresh (rc 0 instead of 4) -- the 'bad' loop above reads rc 4 for each of them, the mutant reads 0
+    nosrc = src.replace("return 4, f\"ZZRESUME_BANK_UNREADABLE", "return 0, f\"ZZRESUME_BANK_UNREADABLE")
+    assert nosrc != src
+    (d / "p6_prep_fresh.py").write_text(nosrc, encoding="utf-8", newline="\n")
+    spec = importlib.util.spec_from_file_location("p6_prep_fresh", str(d / "p6_prep_fresh.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert mod.resume_bank(bad["not_json"], "/w/a")[0] == 0; n += 1
+    return n
+
+
+SPEND_CALLS = ("diag_p6_labeller_identity.py", "hf_egress.py", "launch_gate.py", "train.py")       # the stub calls a spending stage makes (lab, G-EGR, the gate, mem / preflight / train)
+SPEND_LOG = ("lab ok", "mem ok", "egr ok", "launch gate PASS", "train.py preflight OK", "ZZP6_WAIT_OK", "ZZP6_DONE")
+
+
+def rb_spent(sb, base, lb):
+    """Everything that proves a stage AFTER the guard started: stub calls since `base`, log markers since offset `lb`, stage files, a minted token."""
+    bad = [x[:50] for x in sb.calls_list()[base:] if x.startswith(SPEND_CALLS)]
+    tail = sb.chain_log()[lb:]
+    bad += [m for m in SPEND_LOG if m in tail]
+    bad += ["stage." + s for s in ("lab", "mem", "egr", "launch_gate") if sb.stage(s)]
+    bad += ["token." + p.name for p in (sb.data / "refe_p6" / "lg").glob("PASS_*.json")]
+    return bad
+
+
+def rb_refusal_problems(sb, rc, out, base, lb, marker, expect=""):
+    """[] iff the chain REFUSED with `marker` (and `expect` in its line), on stdout and in chain.log, and nothing after the guard ran."""
+    tail = sb.chain_log()[lb:]
+    p = []
+    if rc == 0:
+        p.append("rc0")
+    if not any(ln.split(" ", 1)[-1].startswith("REFUSED: " + marker + " ") and expect in ln for ln in tail.splitlines()):
+        p.append("no_refusal_in_chain_log")
+    if marker + " " not in out or expect not in out:
+        p.append("not_on_stdout")
+    return p + ["spent:" + s for s in rb_spent(sb, base, lb)]
+
+
+def rb_match_problems(sb, rc, out, lb):
+    """[] iff the chain ran PAST the guard on a matching bank: rc 0, 'resume bank ok', no refusal."""
+    tail = sb.chain_log()[lb:]
+    return (["rc%s" % rc] if rc != 0 else []) + ([] if "resume bank ok: ZZRESUME_BANK_SAME" in tail else ["no_ok_line"]) + (["refused"] if "REFUSED" in tail else [])
+
+
+def resume_bank_sandbox_tests(py_env):
+    """The REAL p6_pod.sh in the sandbox: (a) a mismatch refuses, named, with no later stage; (b) a match proceeds; (c) no config.json proceeds unchanged; (d) an unparseable config.json refuses.
+    Then the two calls pinned one by one, and the guard's lines mutated (each mutant must make the assertion it protects go RED)."""
+    n = 0
+    M = "ZZP6_RESUME_BANK_MISMATCH"
+    U = "ZZP6_RESUME_BANK_UNREADABLE"
+
+    def set_script(sb, script_text):
+        sb.script.write_text(script_text, encoding="utf-8", newline="\n")
+
+    real = CHAIN.read_text(encoding="utf-8")
+    first_call_gone = drop_nth_line(real, "resume_bank_check", 0)             # only the 7b call (after ARGS) is left
+    second_call_gone = drop_nth_line(real, "resume_bank_check", 1)            # only the call after `recover` is left
+    with tempfile.TemporaryDirectory() as tmp:
+        sb = Sandbox(tmp)
+        calls = sb.calls_list
+        cb = posix(sb.data / "refe_navtrain" / "train_grow_cmd")              # the CBANK the sandboxed chain defaults to
+        run_bank = posix(sb.data / "refe_navtrain" / "train_grow_cmd_3c")     # the bank the run was STARTED on (the incident, in the direction it happened)
+        cfg = sb.data / "refe_runs" / "p6_paper_faithful" / "config.json"
+        # (c) no config.json: a fresh start, unchanged -- no extra call, no extra log line, every stage up to `lanes` runs (4c below runs the whole chain the same way)
+        rc, out = sb.run({**py_env, "P6_STOP_AFTER": "lanes"})
+        assert rc == 0 and sb.stage("lanes") and n_calls(calls(), "p6_prep.py resume-bank") == 0 and "resume bank" not in sb.chain_log() and "ZZP6_RESUME_BANK" not in out, (rc, sb.chain_log()[-300:]); n += 4
+        # (a) a config.json recording ANOTHER bank: refused, named, before lab / mem / egr / the gate / preflight / train -- and the very first call is the one that refuses
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        cfg.write_text(rb_config(run_bank), encoding="utf-8", newline="\n")
+        base, lb = len(calls()), len(sb.chain_log())
+        rc, out = sb.run(py_env)
+        pr = rb_refusal_problems(sb, rc, out, base, lb, M, f"run={run_bank} chain={cb} run_n_tuples=167300 run_targets_sha256=8775e73ee948")
+        assert pr == [], (pr, sb.chain_log()[-500:]); n += 1
+        assert n_calls(calls()[base:], "p6_prep.py resume-bank") == 1 and "ARGS sha" not in sb.chain_log()[lb:], calls()[base:]; n += 2       # refused at the FIRST call: ARGS was never defined
+        assert not [x for x in calls()[base:] if x.startswith(("build_metric_cache.py", "annotate_commands.py", "pod_dataprep", "p6_prep.py command-table", "p6_prep.py mem-argv"))]; n += 1
+        # the dry run `P6_STOP_AFTER=recover` is a cheap bank check as well
+        base, lb = len(calls()), len(sb.chain_log())
+        rc, out = sb.run({**py_env, "P6_STOP_AFTER": "recover"})
+        assert rb_refusal_problems(sb, rc, out, base, lb, M, f"run={run_bank} chain={cb}") == []; n += 1
+        # (d) a config.json that cannot be parsed (or that carries no args.targets) REFUSES -- it is not 'fresh'
+        for label, content in (("not json", "{ not json"), ("empty", ""), ("no args.targets", json.dumps({"args": {"resume": True}}))):
+            cfg.write_text(content, encoding="utf-8", newline="\n")
+            base, lb = len(calls()), len(sb.chain_log())
+            rc, out = sb.run(py_env)
+            pr = rb_refusal_problems(sb, rc, out, base, lb, U, posix(cfg))
+            assert pr == [], (label, pr, sb.chain_log()[-300:]); n += 1
+        # the 7b call on its own (the call after `recover` deleted): the refusal comes AFTER `ARGS sha` is logged and BEFORE lab -- the instrument the first reading could not have caught
+        set_script(sb, first_call_gone)
+        cfg.write_text(rb_config(run_bank), encoding="utf-8", newline="\n")
+        base, lb = len(calls()), len(sb.chain_log())
+        rc, out = sb.run(py_env)
+        pr = rb_refusal_problems(sb, rc, out, base, lb, M, f"run={run_bank} chain={cb}")
+        assert pr == [] and n_calls(calls()[base:], "p6_prep.py resume-bank") == 1 and "ARGS sha" in sb.chain_log()[lb:], (pr, sb.chain_log()[-400:]); n += 3
+        set_script(sb, real)
+        # (b) a config.json recording THIS chain's bank: proceeds exactly as before -- the whole chain, both guard calls read 'ok', and the trainer is launched
+        cfg.write_text(rb_config(cb), encoding="utf-8", newline="\n")
+        base, lb = len(calls()), len(sb.chain_log())
+        rc, out = sb.run(py_env)
+        assert rb_match_problems(sb, rc, out, lb) == [] and "ZZP6_DONE" in sb.chain_log()[lb:], (rc, sb.chain_log()[-500:]); n += 3
+        new = calls()[base:]
+        assert n_calls(new, "p6_prep.py resume-bank") == 2 and sb.chain_log()[lb:].count("resume bank ok: ZZRESUME_BANK_SAME") == 2, new; n += 2
+        assert n_calls(new, "launch_gate.py run") == 1 and any(x.startswith("train.py") and "--preflight" in x for x in new) \
+            and any(x.startswith("train.py") and "--steps" not in x and "--preflight" not in x for x in new), new; n += 2
+        assert sb.files_containing(TOKEN.encode()) == []; n += 1
+    # the guard is called BEFORE the CPU-hours: a fresh pod (no stage markers) restoring a config.json from HF refuses before inputs / commands / cache / lanes spend anything ...
+    with tempfile.TemporaryDirectory() as tmp:
+        sb = Sandbox(tmp, second_call_gone)                                     # ... through the call after `recover` alone
+        cb = posix(sb.data / "refe_navtrain" / "train_grow_cmd")
+        run_bank = posix(sb.data / "refe_navtrain" / "train_grow_cmd_3c")
+        cfg = sb.data / "refe_runs" / "p6_paper_faithful" / "config.json"
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        cfg.write_text(rb_config(run_bank), encoding="utf-8", newline="\n")
+        rc, out = sb.run(py_env)
+        assert rb_refusal_problems(sb, rc, out, 0, 0, M, f"run={run_bank} chain={cb}") == [], sb.chain_log()[-400:]; n += 1
+        assert not [x for x in sb.calls_list() if x.startswith(("build_metric_cache.py", "annotate_commands.py", "pod_dataprep", "p6_prep.py command-table", "p6_prep.py lane-ranks"))] \
+            and not sb.stage("commands") and not sb.stage("cache") and not sb.stage("lanes"), sb.calls_list(); n += 2
+    # ... and the contrast arm, so the probe CAN see that spend: with only the 7b call, the same pod builds commands / the D9 cache / D7 first and refuses only after them
+    with tempfile.TemporaryDirectory() as tmp:
+        sb = Sandbox(tmp, first_call_gone)
+        cb = posix(sb.data / "refe_navtrain" / "train_grow_cmd")
+        run_bank = posix(sb.data / "refe_navtrain" / "train_grow_cmd_3c")
+        cfg = sb.data / "refe_runs" / "p6_paper_faithful" / "config.json"
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        cfg.write_text(rb_config(run_bank), encoding="utf-8", newline="\n")
+        rc, out = sb.run(py_env)
+        assert rb_refusal_problems(sb, rc, out, 0, 0, M, f"run={run_bank} chain={cb}") == [] and sb.stage("lanes"), sb.chain_log()[-400:]; n += 2       # still refused before lab ...
+        assert n_calls(sb.calls_list(), "build_metric_cache.py build") >= 1 and n_calls(sb.calls_list(), "annotate_commands.py") == 1; n += 2             # ... but only after the CPU stages
+    # ---- the guard's lines MUTATED (cheap: `P6_STOP_AFTER=recover` reaches the guard and stops).  Each mutant must break the assertion it protects.
+    with tempfile.TemporaryDirectory() as tmp:
+        sb = Sandbox(tmp)
+        calls = sb.calls_list
+        cb = posix(sb.data / "refe_navtrain" / "train_grow_cmd")
+        run_bank = posix(sb.data / "refe_navtrain" / "train_grow_cmd_3c")
+        cfg = sb.data / "refe_runs" / "p6_paper_faithful" / "config.json"
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        stop = {**py_env, "P6_STOP_AFTER": "recover"}
+
+        def arm(script_text, content):
+            set_script(sb, script_text)
+            cfg.write_text(content, encoding="utf-8", newline="\n")
+            base, lb = len(calls()), len(sb.chain_log())
+            rc, out = sb.run(stop)
+            return rc, out, base, lb
+        # the controls first: the real script refuses the mismatch and the garbage and accepts the match under this very arm (the detectors can read all three)
+        rc, out, base, lb = arm(real, rb_config(run_bank))
+        assert rb_refusal_problems(sb, rc, out, base, lb, M, f"run={run_bank} chain={cb}") == []; n += 1
+        rc, out, base, lb = arm(real, "{ not json")
+        assert rb_refusal_problems(sb, rc, out, base, lb, U) == []; n += 1
+        rc, out, base, lb = arm(real, rb_config(cb))
+        assert rb_match_problems(sb, rc, out, lb) == []; n += 1
+        # M1: delete the refuse line -> the mismatch is no longer refused: test (a) goes RED (it asserts rc != 0 and the refusal)
+        m1 = real.replace('  echo "$msg"; refuse "$msg"\n', "")
+        assert m1 != real
+        rc, out, base, lb = arm(m1, rb_config(run_bank))
+        assert rb_refusal_problems(sb, rc, out, base, lb, M, f"run={run_bank} chain={cb}") != []; n += 1
+        rc, out, base, lb = arm(m1, "{ not json")
+        assert rb_refusal_problems(sb, rc, out, base, lb, U) != []; n += 1                                                          # ... and test (d)
+        # M2: flip the comparison (a match is refused, a mismatch is waved through) -> test (b) goes RED, and so does (a)
+        m2 = real.replace('    0) log "resume bank ok: $out"; return 0 ;;', '    9) log "resume bank ok: $out"; return 0 ;;', 1).replace('    3) msg="ZZP6_RESUME_BANK_MISMATCH', '    0) msg="ZZP6_RESUME_BANK_MISMATCH', 1) \
+            .replace('    9) log "resume bank ok', '    3) log "resume bank ok', 1)
+        assert m2 != real
+        rc, out, base, lb = arm(m2, rb_config(cb))
+        assert rb_match_problems(sb, rc, out, lb) != []; n += 1
+        rc, out, base, lb = arm(m2, rb_config(run_bank))
+        assert rb_refusal_problems(sb, rc, out, base, lb, M, f"run={run_bank} chain={cb}") != []; n += 1
+        # M3: an unparseable config.json treated as fresh -> test (d) goes RED
+        m3 = real.replace('    4) msg=', '    4) return 0 ;;\n    9) msg=', 1)
+        assert m3 != real
+        rc, out, base, lb = arm(m3, "{ not json")
+        assert rb_refusal_problems(sb, rc, out, base, lb, U) != []; n += 1
+        # M4: the guard compares the wrong file / the wrong bank -> the match is refused or the mismatch is not (test (a) / (b) RED)
+        m4 = real.replace('--bank "$CBANK" 200>&- 2>&1', '--bank "$BANK" 200>&- 2>&1', 1)
+        assert m4 != real
+        rc, out, base, lb = arm(m4, rb_config(cb))
+        assert rb_match_problems(sb, rc, out, lb) != []; n += 1
+        set_script(sb, real)
+    return n
+
+
 def main() -> int:
     n = 0
     text = CHAIN.read_text(encoding="utf-8")
@@ -788,6 +1073,8 @@ def main() -> int:
             assert r.returncode == 0 and r.stdout.startswith(marker), r.stdout[:100]; n += 1
         r = subprocess.run([sys.executable, str(HERE / "p6_prep.py"), "command-table", "--logs", str(nav), "--bank", str(bank), "--out", str(tmp / "t.json")], capture_output=True, text=True)
         assert r.returncode == 1 and r.stdout.startswith("ZZCMD_TABLE_BAD"), r.stdout; n += 1                                          # a failing table prints the BAD marker, not the OK one
+        # ---- 3b'. resume-bank (2026-10-20): the --targets the run STARTED with (config.json args.targets, written by train.py:1500-1511) against the chain's CBANK, both directions
+        n += resume_bank_helper_tests(tmp)
         # ---- 3c. carve_p6_gate_bank: only rows whose parts exist; the twin keyed by its OWN parts file
         import gate_fixture as F
         cb = tmp / "cbank"
@@ -889,6 +1176,7 @@ def main() -> int:
         c = calls()
         new = c[base:]
         assert n_calls(c, "build_metric_cache.py build") == 2 and n_calls(c, "annotate_commands.py") == 1 and n_calls(c, "pod_dataprep") == 0; n += 3     # nothing rebuilt, nothing fetched
+        assert n_calls(c, "p6_prep.py resume-bank") == 0 and "resume bank" not in sb.chain_log(); n += 1                                                    # no config.json = a fresh start: the guard adds no call and no line
         gate_i = next(i for i, x in enumerate(c) if x.startswith("launch_gate.py run"))
         mem_i = next(i for i, x in enumerate(c) if x.startswith("train.py") and "--steps 4" in x)
         pre_i = next(i for i, x in enumerate(c) if x.startswith("train.py") and "--preflight" in x)
@@ -1296,6 +1584,8 @@ def main() -> int:
         rc, out = sb.run({**py_env, "P6_YAW_WRAP": "off"})
         # the gate stage itself still refuses on a token that does not verify, so the mutant cannot be run past it: the detector is that the REFUSAL came from the gate stage
         assert rc != 0 and n_calls(sb.calls_list(), "train.py", "--preflight") == 0; n += 1
+    # ---- 4l. the resume-bank guard (2026-10-20): the REAL chain refuses a resume on another bank than the run's own, before any stage spends; the match / the fresh start proceed unchanged
+    n += resume_bank_sandbox_tests(py_env)
     print(f"ZZP6CHAIN_PASS {n}")
     return 0
 
