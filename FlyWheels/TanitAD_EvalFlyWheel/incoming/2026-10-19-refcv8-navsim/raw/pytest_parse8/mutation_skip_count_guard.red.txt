@@ -1,0 +1,16 @@
+...........F............                                                 [100%]
+================================== FAILURES ===================================
+__________________ test_count_guard_failure_refuses_the_arm ___________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6251/test_count_guard_failure_refus0')
+
+    def test_count_guard_failure_refuses_the_arm(tmp_path):
+        out = P.build_summary(**build_warmup(tmp_path, counts_fail=("R8_LEGAL_s1",)))
+>       assert out["arms"]["R8_LEGAL_s1"]["status"] == "UNAVAILABLE" and "count guard FAIL" in out["arms"]["R8_LEGAL_s1"]["reason"]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'status'
+
+tests\test_parse8.py:267: KeyError
+=========================== short test summary info ===========================
+FAILED tests/test_parse8.py::test_count_guard_failure_refuses_the_arm - KeyEr...
+1 failed, 23 passed, 16 deselected in 15.20s

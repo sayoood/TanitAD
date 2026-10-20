@@ -1,0 +1,68 @@
+F.F....                                                                  [100%]
+================================== FAILURES ===================================
+__________ test_control_warmup_reproduces_the_banked_refcv7_numbers ___________
+
+    def test_control_warmup_reproduces_the_banked_refcv7_numbers():
+        kw, _ = _control_paths("warmup")
+        out = P.build_summary(**kw)
+        for arm, v in WARMUP_U.items():
+            assert out["arms"][arm]["S2_EPDMS_u"]["value"] == approx(v), arm
+            assert out["arms"][arm]["S2_EPDMS_u"]["n_groups"] == 16
+        assert out["seed_floor_S2_EPDMS_u"] == approx(WARMUP_SEED_FLOOR)
+        p = out["pairs"]
+        assert p["R8_LEGAL__minus__STOP_zero"]["S2_EPDMS_u_delta"] == approx(0.001119694590765219)      # W/T/L 113/32/59
+        assert (p["R8_LEGAL__minus__STOP_zero"]["wins"], p["R8_LEGAL__minus__STOP_zero"]["ties"],
+                p["R8_LEGAL__minus__STOP_zero"]["losses"]) == (113, 32, 59)
+        assert p["R8_LEGAL__minus__R8_BLIND"]["S2_EPDMS_u_delta"] == approx(0.3030406466423695)
+        assert (p["R8_LEGAL__minus__R8_BLIND"]["wins"], p["R8_LEGAL__minus__R8_BLIND"]["losses"]) == (116, 18)
+        assert p["R8_LEGAL__minus__R8_LEGAL_s1"]["S2_EPDMS_u_delta"] == approx(-WARMUP_SEED_FLOOR)
+        assert out["arms"]["R8_LEGAL"]["stop_fraction"]["frac_endpoint_lt_1m"] == approx(0.029411764705882353)
+        assert out["arms"]["R8_BLIND"]["stop_fraction"]["frac_endpoint_lt_1m"] == approx(0.09313725490196079)
+        assert out["arms"]["R8_BLIND"]["official_two_stage_EPDMS"] == 0.0                              # BLIND's stage 1 is its own
+        assert out["arms"]["STOP_zero"]["official_two_stage_EPDMS"] == approx(0.3009023137456225)
+>       assert out["arms"]["R8_LEGAL"]["official_two_stage_EPDMS"]["status"] == "UNAVAILABLE"           # CV stand-in stage 1: stated, not headlined
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: 'float' object is not subscriptable
+
+tests\test_parse8.py:546: TypeError
+_ test_control_whole_summary_equals_the_banked_one_apart_from_labels[warmup] __
+
+sp = 'warmup'
+
+    @pytest.mark.parametrize("sp", ["warmup", "navhard"])
+    def test_control_whole_summary_equals_the_banked_one_apart_from_labels(sp):
+        """Everything the bars layer could read -- arms, pairs, intervals, paired intervals, estimator -- equals parse7's banked
+        output after the R7->R8 rename.  Only free-text labels (``what``, ``_label``, ``model_as_trained``) and parse8's additive
+        provenance are excluded; the R7-recipe-only arms (VMAXOFF, FILTOFF, CEILDECL_d) have no R8 counterpart."""
+        kw, banked_path = _control_paths(sp)
+        new = P.build_summary(**kw)
+        banked = json.load(open(banked_path, encoding="utf-8"))
+        drop = {"R7_VMAXOFF", "R7_FILTOFF", "R7_CEILDECL_d"}
+        b = {}
+        for k, v in banked.items():
+            if k in ("arms", "pairs", "intervals", "paired_intervals"):
+                b[k] = {_r7_to_r8(kk): vv for kk, vv in v.items() if not any(p in drop for p in kk.split("__minus__"))}
+            elif k not in ("_label", "model_as_trained", "arms_refused"):
+                b[k] = v
+        n = {k: v for k, v in new.items() if k in b}
+        for blk in ("pairs", "paired_intervals"):
+            if blk in n:        # parse8 ADDS the seed-1 mirror rows (AMENDMENT 3); parse7's banked output has no such key
+                n[blk] = {k: v for k, v in n[blk].items() if k in b[blk]}
+        assert all(f"R8_LEGAL_s1__minus__{y}" in new["pairs"] for y in ("STOP_zero", "CV_official", "ECHO_ha0_ext"))
+        for blk in ("pairs",):
+            for rec in list(n.get(blk, {}).values()) + list(b.get(blk, {}).values()):
+                rec.pop("what", None)
+        if "estimator" in n and "module" in n["estimator"]:
+            n["estimator"] = {k: v for k, v in n["estimator"].items() if k not in ("module", "module_sha256")}
+            b["estimator"] = {k: v for k, v in b["estimator"].items() if k not in ("module", "module_sha256")}
+>       assert _diff(n, b) == []
+E       AssertionError: assert [('/arms/R8_L...in one'), ...] == []
+E         
+E         Left contains 24 more items, first extra item: ('/arms/R8_LEGAL/official_rows', 'only in one')
+E         Use -v to get more diff
+
+tests\test_parse8.py:617: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_parse8.py::test_control_warmup_reproduces_the_banked_refcv7_numbers
+FAILED tests/test_parse8.py::test_control_whole_summary_equals_the_banked_one_apart_from_labels[warmup]
+2 failed, 5 passed, 33 deselected in 38.83s

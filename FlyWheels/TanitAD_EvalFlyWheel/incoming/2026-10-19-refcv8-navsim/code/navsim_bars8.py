@@ -56,7 +56,8 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 MUTATION = os.environ.get("NAVSIM_BARS8_MUTATION", "")
 MUTATIONS = ("swap_arm_labels", "drop_seed_floor_gate", "speed_edges_closed_right", "positional_join",
-             "rt_bar_without_ship", "priv_carries_bar", "drop_drive_conjunction", "n4_floor_1x")
+             "rt_bar_without_ship", "priv_carries_bar", "drop_drive_conjunction", "n4_floor_1x", "n2_log_only",
+             "n2n3_seed0_only")
 
 # ---- registered constants (SPEC_REFCV8 6.2, A-R8-NS1, AMENDMENT 1) -------------------------------------------------------------
 BAR_ARM, FLOOR_ARM, RT_ARM, PRIV_ARM, BLIND_ARM, PRIOR_ARM = "R8_LEGAL", "R8_LEGAL_s1", "R8_RT", "R8_PRIV", "R8_BLIND", "PRIOR_ha0p"
@@ -395,6 +396,16 @@ def combine_seeds(v0: str, v1: str | None) -> str:
     return f"NOT PROVEN (inference seeds disagree: seed0={_cat(v0)}, seed1={_cat(v1)})"
 
 
+def combine_seeds_strict(v0: str, v1: str | None) -> str:
+    """N2 / N3 (A-R8-NS1 AMENDMENT 3): as ``combine_seeds``, but a seed-0 PASS whose seed-1 mirror is absent or not
+    evaluable reads NOT PROVEN -- 'both inference seeds' (SPEC 6.2) is never satisfied by one draw."""
+    if MUTATION == "n2n3_seed0_only":
+        return v0
+    if _cat(v0) == "PASS" and (v1 is None or _cat(v1) not in _RANK):
+        return f"NOT PROVEN (seed-1 mirror not evaluable: {v1 or 'absent'})"
+    return combine_seeds(v0, v1)
+
+
 def _sep(pr: dict | None):
     """tri-state: True / False / None(unavailable)."""
     iv = (pr or {}).get("interval") or {}
@@ -541,8 +552,14 @@ def navtest_bars(arms: dict, toks, pairs: dict, floor, cfg: dict, meta: dict) ->
 
 
 def navhard_bar(summary: dict | None, meta: dict, cfg: dict) -> dict:
-    """BAR-R8-N2 from a parse7-schema ``summary_navhard.json`` with R8 arm names (official two-stage EPDMS)."""
-    stmt = ("official two-stage EPDMS(R8_LEGAL) > max(STOP, CV, ECHO); paired interval vs STOP excludes 0; margin > 2x the seed floor")
+    """BAR-R8-N2 from a parse7-schema ``summary_navhard.json`` with R8 arm names (official two-stage EPDMS).
+
+    A-R8-NS1 AMENDMENT 3 (Master Mind, 2026-10-20, before any 48,852 NavSim number): the paired interval vs STOP must exclude 0
+    ABOVE at log_name AND nuplan_drive (SPEC_REFCV8 l.651-652 -- the same ``compact_pair`` conjunction N1 uses; the builder's
+    log-level-only ``lo > 0`` is overruled), and the bar is read at BOTH inference seeds (SPEC 6.2 header): R8_LEGAL carries it,
+    R8_LEGAL_s1 is its mirror with its own paired interval ``R8_LEGAL_s1__minus__STOP_zero``; ``combine_seeds_strict``."""
+    stmt = ("official two-stage EPDMS(R8_LEGAL) > max(STOP, CV, ECHO); paired interval vs STOP excludes 0 (log_name AND "
+            "nuplan_drive); margin > 2x the seed floor; at both inference seeds (A-R8-NS1 AMENDMENT 3)")
     if not summary:
         return {"bar": "BAR-R8-N2", "statement": stmt, "verdict": "UNAVAILABLE (summary_navhard.json not supplied: needs official "
                 "two-stage EPDMS for R8_LEGAL, R8_LEGAL_s1, CV_official, STOP_zero, ECHO_ha0_ext and the paired interval vs STOP_zero)"}
@@ -553,14 +570,29 @@ def navhard_bar(summary: dict | None, meta: dict, cfg: dict) -> dict:
         return {"bar": "BAR-R8-N2", "statement": stmt, "verdict": f"UNAVAILABLE (official two-stage EPDMS not defined for all of {need}: {o})"}
     floor_ref = max(o["CV_official"], o["STOP_zero"], o["ECHO_ha0_ext"])
     margin = o[BAR_ARM] - floor_ref
-    pi = (summary.get("paired_intervals") or {}).get(f"{BAR_ARM}__minus__STOP_zero", {})
-    sep = None if pi.get("status") != "OK" else bool(pi.get("lo") is not None and pi["lo"] > 0)
     sf = ((summary.get("pairs") or {}).get(f"{BAR_ARM}__minus__{FLOOR_ARM}") or {}).get("official_two_stage_EPDMS_delta")
-    v = verdict_rule(margin, sep, sf, why_no_sep=str(pi.get("reason") or pi.get("status")))
+    pis = summary.get("paired_intervals") or {}
+    per, used = {}, {}
+    for a in (BAR_ARM, FLOOR_ARM):
+        val = (arms.get(a) or {}).get("official_two_stage_EPDMS")
+        if not isinstance(val, (int, float)):
+            per[a] = f"UNAVAILABLE (official two-stage EPDMS of {a} not defined)"
+            continue
+        pi = pis.get(f"{a}__minus__STOP_zero") or {}
+        if pi.get("status") != "OK":
+            sep, why = None, str(pi.get("reason") or pi.get("status") or f"{a}__minus__STOP_zero absent from the summary")
+        else:
+            cp = compact_pair(pi)
+            sep, why = ((cp["lo"] > 0) if MUTATION == "n2_log_only" else cp["positive"]), ""
+            used[a] = cp
+        per[a] = verdict_rule(val - floor_ref, sep, sf, why_no_sep=why)
+    v = combine_seeds_strict(per[BAR_ARM], per.get(FLOOR_ARM))
     gate = gate_text(meta, cfg)
-    return {"bar": "BAR-R8-N2", "statement": stmt, "values": o, "margin": margin, "paired_vs_STOP": pi, "seed_floor": sf,
+    return {"bar": "BAR-R8-N2", "statement": stmt, "values": o, "margin": margin, "paired_vs_STOP": used.get(BAR_ARM),
+            "paired_vs_STOP_s1": used.get(FLOOR_ARM), "per_arm_verdict": per, "seed_floor": sf,
             "verdict": gate or v, "verdict_if_eligible_ARITHMETIC_ONLY": v if gate else None,
-            "note": "units as the summary (EPDMS fraction); the interval is the summary's own paired log-cluster record"}
+            "note": "units as the summary (EPDMS fraction); the interval is the summary's own paired log-cluster record, read "
+                    "through compact_pair (log_name AND nuplan_drive)"}
 
 
 def warmup_bar(summary: dict | None, meta: dict, cfg: dict) -> dict:
@@ -578,7 +610,11 @@ def warmup_bar(summary: dict | None, meta: dict, cfg: dict) -> dict:
         return {"bar": "BAR-R8-N3", "statement": stmt, "verdict": f"UNAVAILABLE (S2_EPDMS_u missing for {[k for k in (BAR_ARM,) + need if u(k) is None]})"}
     floor_ref = max(u(k) for k in need)
     sf = summary.get("seed_floor_S2_EPDMS_u")
-    v = verdict_rule(u(BAR_ARM) - floor_ref, True, sf)
+    # A-R8-NS1 AMENDMENT 3: both inference seeds (SPEC 6.2 header); warmup never carries an interval (7 logs < 8)
+    v0 = verdict_rule(u(BAR_ARM) - floor_ref, True, sf)
+    v1 = (f"UNAVAILABLE (S2_EPDMS_u of {FLOOR_ARM} missing)" if u(FLOOR_ARM) is None
+          else verdict_rule(u(FLOOR_ARM) - floor_ref, True, sf))
+    v = combine_seeds_strict(v0, v1)
     blind = None if u(BLIND_ARM) is None else verdict_rule(u(BLIND_ARM) - floor_ref, True, sf)
     if blind is None:
         panel = "UNAVAILABLE (control R8_BLIND absent: the panel cannot be certified, so N3 cannot PASS)"
@@ -592,7 +628,8 @@ def warmup_bar(summary: dict | None, meta: dict, cfg: dict) -> dict:
     elif panel.startswith("UNAVAILABLE") and _cat(v) == "PASS":
         final = "UNAVAILABLE (R8_BLIND control absent)"
     gate = gate_text(meta, cfg)
-    return {"bar": "BAR-R8-N3", "statement": stmt, "values": {k: u(k) for k in (BAR_ARM, BLIND_ARM) + need},
+    return {"bar": "BAR-R8-N3", "statement": stmt, "values": {k: u(k) for k in (BAR_ARM, FLOOR_ARM, BLIND_ARM) + need},
+            "per_arm_verdict": {BAR_ARM: v0, FLOOR_ARM: v1},
             "margin": u(BAR_ARM) - floor_ref, "seed_floor": sf, "blind_control_verdict": blind, "panel": panel,
             "interval": "UNAVAILABLE (warmup has 7 logs < 8: it never carries an interval)",
             "verdict": gate or final, "verdict_if_eligible_ARITHMETIC_ONLY": final if gate else None}

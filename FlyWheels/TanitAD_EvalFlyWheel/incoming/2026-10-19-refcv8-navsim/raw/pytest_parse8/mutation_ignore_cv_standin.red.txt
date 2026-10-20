@@ -1,0 +1,16 @@
+.......F................                                                 [100%]
+================================== FAILURES ===================================
+______ test_cv_standin_stage1_is_not_reported_as_a_real_two_stage_epdms _______
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-6252/test_cv_standin_stage1_is_not_0')
+
+    def test_cv_standin_stage1_is_not_reported_as_a_real_two_stage_epdms(tmp_path):
+        out = P.build_summary(**build_warmup(tmp_path))
+        r = out["arms"]["R8_LEGAL"]
+>       assert r["stage1_rows_own"] is False
+E       assert True is False
+
+tests\test_parse8.py:233: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_parse8.py::test_cv_standin_stage1_is_not_reported_as_a_real_two_stage_epdms
+1 failed, 23 passed, 16 deselected in 11.94s

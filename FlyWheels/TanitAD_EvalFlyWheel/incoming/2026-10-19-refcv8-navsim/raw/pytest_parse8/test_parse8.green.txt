@@ -1,0 +1,48 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.5, pytest-9.1.1, pluggy-1.6.0 -- C:\Users\Admin\venvs\tanitad\Scripts\python.exe
+rootdir: C:\Users\Admin\qland\hold_r8parse8\stage\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-10-19-refcv8-navsim
+plugins: anyio-4.14.1
+collecting ... collected 40 items
+
+tests/test_parse8.py::test_warmup_s2_epdms_u_literal PASSED              [  2%]
+tests/test_parse8.py::test_arm_names_are_r8_and_no_r7_name_survives PASSED [  5%]
+tests/test_parse8.py::test_seed_floor_literal_and_the_exceeds_flags PASSED [  7%]
+tests/test_parse8.py::test_seed_arms_are_not_swapped PASSED              [ 10%]
+tests/test_parse8.py::test_blind_arm_is_read PASSED                      [ 12%]
+tests/test_parse8.py::test_wtl_counts_literal PASSED                     [ 15%]
+tests/test_parse8.py::test_stop_fraction_and_zero_rate_literal PASSED    [ 17%]
+tests/test_parse8.py::test_cv_standin_stage1_is_not_reported_as_a_real_two_stage_epdms PASSED [ 20%]
+tests/test_parse8.py::test_missing_expected_arm_reads_unavailable_never_a_value PASSED [ 22%]
+tests/test_parse8.py::test_missing_floor_arm_reads_unavailable_never_a_value PASSED [ 25%]
+tests/test_parse8.py::test_missing_seed_floor_arm_gives_a_null_floor_with_a_reason PASSED [ 27%]
+tests/test_parse8.py::test_count_guard_failure_refuses_the_arm PASSED    [ 30%]
+tests/test_parse8.py::test_a_pdm_score_column_is_refused PASSED          [ 32%]
+tests/test_parse8.py::test_an_unknown_split_is_refused PASSED            [ 35%]
+tests/test_parse8.py::test_warmup_never_carries_an_interval PASSED       [ 37%]
+tests/test_parse8.py::test_summary_is_json_roundtrippable_with_lf_endings PASSED [ 40%]
+tests/test_parse8.py::test_main_refuses_to_write_while_a_mutation_is_set PASSED [ 42%]
+tests/test_parse8.py::test_the_mutation_list_matches_the_module PASSED   [ 45%]
+tests/test_parse8.py::test_warmup_seed1_mirror_pairs_are_point_deltas_only PASSED [ 47%]
+tests/test_parse8.py::test_warmup_seed1_mirror_reads_unavailable_when_the_s1_arm_is_absent PASSED [ 50%]
+tests/test_parse8.py::test_navhard_constant_arms_literal PASSED          [ 52%]
+tests/test_parse8.py::test_navhard_seed_floor_is_the_official_delta_of_the_two_seed_arms PASSED [ 55%]
+tests/test_parse8.py::test_navhard_seed1_mirror_rows_literal PASSED      [ 57%]
+tests/test_parse8.py::test_navhard_seed1_mirror_rows_read_unavailable_when_the_s1_arm_is_absent PASSED [ 60%]
+tests/test_parse8.py::test_navhard_estimator_is_the_pinned_refcv7_one PASSED [ 62%]
+tests/test_parse8.py::test_navhard_a_missing_floor_arm_makes_its_paired_interval_unavailable PASSED [ 65%]
+tests/test_parse8.py::test_navhard_a_missing_wrapper_frame_is_an_error_record_not_a_silent_skip PASSED [ 67%]
+tests/test_parse8.py::test_e2e_navhard_synthetic_n2_passes PASSED        [ 70%]
+tests/test_parse8.py::test_e2e_navhard_unavailable_arm_propagates_as_unavailable PASSED [ 72%]
+tests/test_parse8.py::test_e2e_warmup_synthetic_n3_passes_and_the_blind_panel_is_ok PASSED [ 75%]
+tests/test_parse8.py::test_e2e_warmup_without_the_blind_arm_cannot_pass PASSED [ 77%]
+tests/test_parse8.py::test_e2e_warmup_missing_seed_arm_is_not_proven_not_a_crash PASSED [ 80%]
+tests/test_parse8.py::test_e2e_a_blind_arm_that_passes_voids_the_panel PASSED [ 82%]
+tests/test_parse8.py::test_control_warmup_reproduces_the_banked_refcv7_numbers PASSED [ 85%]
+tests/test_parse8.py::test_control_navhard_reproduces_the_banked_refcv7_numbers PASSED [ 87%]
+tests/test_parse8.py::test_control_whole_summary_equals_the_banked_one_apart_from_labels[warmup] PASSED [ 90%]
+tests/test_parse8.py::test_control_whole_summary_equals_the_banked_one_apart_from_labels[navhard] PASSED [ 92%]
+tests/test_parse8.py::test_control_cli_writes_the_same_summary_through_main PASSED [ 95%]
+tests/test_parse8.py::test_control_identity_seed1_mirror_fed_with_seed0_rows_equals_the_banked_seed0_records PASSED [ 97%]
+tests/test_parse8.py::test_e2e_control_bars_accept_the_summaries_and_give_a_verdict PASSED [100%]
+
+======================== 40 passed in 97.02s (0:01:37) ========================

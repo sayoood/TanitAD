@@ -318,10 +318,25 @@ def test_pair_positive_needs_both_levels():
 
 
 # ---- 7. N2 / N3 from summaries (literals) ---------------------------------------------------------------------------------------------------
-def _nh(legal=0.30, lo=0.0005, sf=0.0004):
-    return {"arms": {"R8_LEGAL": {"official_two_stage_EPDMS": legal}, "CV_official": {"official_two_stage_EPDMS": 0.10},
+def _pi(lo, dlo, hi=0.002):
+    # the parse7 / parse8 paired record shape (log_name level + the nuplan_drive sensitivity)
+    return {"status": "OK", "delta": round((lo + hi) / 2, 6), "lo": lo, "hi": hi, "n_clusters": 76,
+            "sensitivity_nuplan_drive": {"status": "OK", "n_clusters": 34, "lo": dlo, "hi": hi}}
+
+
+def _nh(legal=0.30, lo=0.0005, sf=0.0004, dlo=None, s1=None, s1_lo=None, s1_dlo=None, s1_pair=True):
+    # seed 1 follows seed 0 unless a test moves it (A-R8-NS1 AMENDMENT 3: N2 is read at both inference seeds)
+    dlo = lo if dlo is None else dlo
+    s1 = legal if s1 is None else s1
+    s1_lo = lo if s1_lo is None else s1_lo
+    s1_dlo = dlo if s1_dlo is None else s1_dlo
+    pis = {"R8_LEGAL__minus__STOP_zero": _pi(lo, dlo)}
+    if s1_pair:
+        pis["R8_LEGAL_s1__minus__STOP_zero"] = _pi(s1_lo, s1_dlo)
+    return {"arms": {"R8_LEGAL": {"official_two_stage_EPDMS": legal}, "R8_LEGAL_s1": {"official_two_stage_EPDMS": s1},
+                     "CV_official": {"official_two_stage_EPDMS": 0.10},
                      "STOP_zero": {"official_two_stage_EPDMS": 0.2985}, "ECHO_ha0_ext": {"official_two_stage_EPDMS": 0.20}},
-            "paired_intervals": {"R8_LEGAL__minus__STOP_zero": {"status": "OK", "lo": lo, "hi": 0.002}},
+            "paired_intervals": pis,
             "pairs": {"R8_LEGAL__minus__R8_LEGAL_s1": {"official_two_stage_EPDMS_delta": sf}}}
 
 
@@ -331,13 +346,37 @@ def test_n2_literal(kw, expect):
     assert B.navhard_bar(_nh(**kw), ELIGIBLE, B.DEFAULT_CFG)["verdict"].startswith(expect)
 
 
+def test_n2_needs_the_drive_level():
+    # A-R8-NS1 AMENDMENT 3: log level lo +0.0005 excludes 0, the nuplan_drive level lo -0.0001 does not -> not separated -> FAILED
+    # (the builder's log-only gate read PASS here; the n2_log_only mutation restores it and must go red)
+    r = B.navhard_bar(_nh(dlo=-0.0001), ELIGIBLE, B.DEFAULT_CFG)
+    assert r["per_arm_verdict"] == {"R8_LEGAL": "FAILED", "R8_LEGAL_s1": "FAILED"}
+    assert r["verdict"] == "FAILED"
+    assert r["paired_vs_STOP"]["positive"] is False and r["paired_vs_STOP"]["drive_level"]["lo"] == -0.0001
+
+
+def test_n2_both_seeds_must_agree():
+    # seed 1 at 0.29 sits below max(STOP 0.2985, CV, ECHO) -> its own verdict FAILED; seed 0 PASSES -> NOT PROVEN, never PASS
+    r = B.navhard_bar(_nh(s1=0.29), ELIGIBLE, B.DEFAULT_CFG)
+    assert r["per_arm_verdict"]["R8_LEGAL"] == "PASS" and r["per_arm_verdict"]["R8_LEGAL_s1"] == "FAILED"
+    assert r["verdict"] == "NOT PROVEN (inference seeds disagree: seed0=PASS, seed1=FAILED)"
+
+
+def test_n2_seed1_pair_missing_is_not_a_pass():
+    r = B.navhard_bar(_nh(s1_pair=False), ELIGIBLE, B.DEFAULT_CFG)
+    assert r["per_arm_verdict"]["R8_LEGAL"] == "PASS" and r["per_arm_verdict"]["R8_LEGAL_s1"].startswith("UNAVAILABLE")
+    assert r["verdict"].startswith("NOT PROVEN (seed-1 mirror not evaluable")
+
+
 def test_n2_is_gated_by_the_label_and_unavailable_without_a_summary():
     assert B.navhard_bar(_nh(), {"label": "VALIDATION ONLY", "step": 40000, "weights": "ema"}, B.DEFAULT_CFG)["verdict"] == "NOT_EVALUATED -- VALIDATION ONLY"
     assert B.navhard_bar(None, ELIGIBLE, B.DEFAULT_CFG)["verdict"].startswith("UNAVAILABLE")
 
 
-def _wu(blind=0.30, legal=0.60):
+def _wu(blind=0.30, legal=0.60, s1="same"):
     arms = {"R8_LEGAL": legal, "CV_official": 0.20, "STOP_zero": 0.5212, "ECHO_ha0_ext": 0.50}
+    if s1 is not None:
+        arms["R8_LEGAL_s1"] = legal if s1 == "same" else s1
     if blind is not None:
         arms["R8_BLIND"] = blind
     return {"arms": {k: {"S2_EPDMS_u": {"value": v}} for k, v in arms.items()}, "seed_floor_S2_EPDMS_u": 0.001}
@@ -351,6 +390,14 @@ def test_n3_with_the_blind_control_literal():
     none = B.warmup_bar(_wu(blind=None), ELIGIBLE, B.DEFAULT_CFG)           # control absent -> N3 cannot PASS
     assert none["verdict"].startswith("UNAVAILABLE")
     assert B.warmup_bar(_wu(legal=0.40), ELIGIBLE, B.DEFAULT_CFG)["verdict"] == "FAILED"
+
+
+def test_n3_both_seeds():
+    # A-R8-NS1 AMENDMENT 3: seed 1 at 0.50 < max(CV .20, STOP .5212, ECHO .50) -> FAILED while seed 0 PASSES -> NOT PROVEN
+    r = B.warmup_bar(_wu(s1=0.50), ELIGIBLE, B.DEFAULT_CFG)
+    assert r["per_arm_verdict"] == {"R8_LEGAL": "PASS", "R8_LEGAL_s1": "FAILED"}
+    assert r["verdict"] == "NOT PROVEN (inference seeds disagree: seed0=PASS, seed1=FAILED)"
+    assert B.warmup_bar(_wu(s1=None), ELIGIBLE, B.DEFAULT_CFG)["verdict"].startswith("NOT PROVEN (seed-1 mirror not evaluable")
 
 
 # ---- 8. artifact guards, the pinned estimator ---------------------------------------------------------------------------------------------

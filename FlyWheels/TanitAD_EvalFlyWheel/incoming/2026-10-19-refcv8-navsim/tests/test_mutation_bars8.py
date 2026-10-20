@@ -39,6 +39,8 @@ CASES = {
     "priv_carries_bar": ["test_priv_never_carries_a_bar"],
     "drop_drive_conjunction": ["test_pair_positive_needs_both_levels"],
     "n4_floor_1x": ["test_n4_inside_2x_floor_is_not_proven"],
+    "n2_log_only": ["test_n2_needs_the_drive_level"],
+    "n2n3_seed0_only": ["test_n2_both_seeds_must_agree", "test_n2_seed1_pair_missing_is_not_a_pass", "test_n3_both_seeds"],
 }
 
 
