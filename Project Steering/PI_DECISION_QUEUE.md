@@ -2361,3 +2361,30 @@ Memo: `TanitAD Research Lab/Architecture & Inference/Research/2026-10-20-latency
 - **The deployment budget is ONE number: end to end, at most 100 ms on Thor, with all 4 cameras.** That covers trunk, proposals, scorer and any search. None of the memo's options is adopted as written. Option (2)'s 300 ms search stage exceeds the budget and option (3)'s 200 ms cycle does not meet it, so the memo's pre-committed 5 Hz / 200 ms fallback is NOT adopted.
 - **Order of work: results first, latency second.** No research or training arm is gated, shaped or rejected for latency now. That covers C2, the search line, P6 and its successors. Every capability verdict carries a latency line, MEASURED against 100 ms on Thor or named UNMEASURED, and that line decides nothing until the optimisation phase.
 - **The optimisation phase** begins once the programme has its best result. Its target is a stack that meets the result inside 100 ms on Thor with 4 cameras. `THOR-PICK-TICK` and `SEARCH-HOST-PORT` belong to it.
+
+## ⏳ OPEN (2026-10-20 ~22:30 Berlin) -- D-R8-CKPT: which refcv8 checkpoint is the deliverable, 48,852 (registered) or 40k?
+
+**What happened (MEASURED tonight, landed 75ce238 / c268131 + the paired package).** SHIP-R8 PASSES at 48,852 on every
+clause (the re-timed stage ships as registered). But refcv8's RAW plans got worse after 40k, and the paired test on the
+SAME windows says it is real (another draw of EPISODES; one training run): 48,852 − 40k on compliant capped windows, S6
+ADE **+0.168 m [+0.111, +0.241]**, S2 ADE +0.011 [+0.006, +0.019], S2 speed MAE +0.016, |along| at 2 s +0.032 — all
+separated worse at both inference seeds; 19 of 28 rows worse, 0 better, lateral flat; largest at v0 > 12.9 m/s (+0.30 m
+at 6 s). The raw bars follow it: at 40k every no-regression row passed and X7 distance keeping met its bar; at 48,852 E1
+and NR fail and X7 misses at seed 0. The trainer's own EMA eval agrees in direction (trajectory loss 0.507 at 30k →
+0.525 at 40k → 0.535–0.552 at 46–48.8k), but it runs on the SAME eval139 episodes, so it is not an independent set.
+
+**Why this is your call.** Picking 40k because it scores better on eval139 is selecting on the test set; the 48,852
+read is the registered one. A clean choice needs a set refcv8 never saw and we never scored on.
+
+**Options:**
+- **(a) Keep 48,852 + the re-timing stage as the deliverable** (SHIP-R8 passed as registered). Report the raw-plan bar
+  failures and the 40k → 48,852 regression as written; carry the fix into refcv9's schedule (stop earlier / lower final LR).
+- **(b) Recommended: pre-register a checkpoint choice on independent data, then decide.** Score EMA-40k and EMA-48,852
+  on a NavSim **navtrain** sample (a corpus refcv8 never trained on and the programme has not scored), choose by a rule
+  written down now, then report that checkpoint once on navtest. This rides on the NavSim read that is already waiting
+  for D-NS8-1 (dev box vs Thor) and D-NS8-2 (Ego-Status-MLP download); D-NS8-4 (leaderboard) is unchanged.
+- **(c)** Re-run SHIP-R8 on 40k as a second, post-hoc read and ship whichever passes with the larger margin. Not
+  recommended: it is selection on eval139 (the 40k rehearsal already reads PASS with E3 −1.00 vs −0.87).
+
+**Cost of (b):** two checkpoints × the navtrain sample on the NavSim bridge (≈ 1–3 GPU-h ESTIMATED for a few thousand
+tokens; the full navtest read is 6.5–12.5 GPU-h ESTIMATED per checkpoint, not yet timed on CUDA). Nothing else waits on it.
