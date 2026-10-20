@@ -138,20 +138,26 @@ class C1:
 
 # ====================================================================================================== G-SEAL (a) + the C1 licence
 
-DOSE_STUB_SRC = """\"\"\"TEST DOUBLE of the dose package's dose_chain.py for planted worlds: the c2_config table (MM_RULING_DOSE.md DQ4) as the dose chain writes it.  Production code CALLS the real file by path; only these tests carry a copy,
-and test_navpipe_select.py compares this copy with the real file over a grid whenever the real file is present.\"\"\"
+DOSE_STUB_SRC = """\"\"\"TEST DOUBLE of the dose package's dose_chain.py AT REVISION 1 for planted worlds: the c2_config table (MM_RULING_DOSE.md DQ4) as the dose chain writes it, with "moved share" = `inert.frac_moved` (MM_RULING_C2FINAL.md point 1).
+Production code CALLS the real file by path; only these tests carry a copy, and test_navpipe_select.py compares this copy with the real file over a grid.\"\"\"
 DOSE_STAGES = ("SEAL_OK", "AMEND_SEAL_OK", "DATA_OK", "C1_DONE", "BUNDLE_OK", "SUBID_PASS", "REACH_PASS", "SEARCH_DONE", "SELFREP_PASS", "LABEL_DONE")
 SAFETY = ("nc", "dac", "ttc", "c")
+
+
+def frac_moved_of(read):
+    try:
+        return float(read["inert"]["frac_moved"])
+    except (KeyError, TypeError, ValueError):
+        return float("nan")
 
 
 def licensed(read, strict=False):
     ok = ("O1_CONFIRMED",) if strict else ("O1_CONFIRMED", "O2_DIRECTIONAL")
     try:
         safety = all(float(read["safety_points"][k]) >= -0.25 for k in SAFETY)
-        moved = float(read["moved_share"]) >= 0.05
     except (KeyError, TypeError, ValueError):
         return False
-    return bool(read.get("outcome") in ok and safety and moved)
+    return bool(read.get("outcome") in ok and safety and frac_moved_of(read) >= 0.05)
 
 
 def c2_config(c1_read, dose_read, contrast_lo):
@@ -171,6 +177,22 @@ def c2_config(c1_read, dose_read, contrast_lo):
     return {"config": cfg, "row": row, "why": "stub row %d" % row, "c1_licensed": c1, "dose_licensed": dose_any, "dose_o1_strict": dose_strict, "contrast_lower_ci_gt_0": lo_pos}
 """
 
+# the PRE-REVISION-1 semantics (the sealed-then-defective dose_chain.py: "moved share" = the file's `moved_share`), kept just to plant a dose chain that disagrees with C2's own licence terms (G-LICENCE-ROW-AGREES)
+DOSE_STUB_LEGACY_SRC = DOSE_STUB_SRC.replace('return bool(read.get("outcome") in ok and safety and frac_moved_of(read) >= 0.05)', 'return bool(read.get("outcome") in ok and safety and float(read.get("moved_share") or 0.0) >= 0.05)')
+assert DOSE_STUB_LEGACY_SRC != DOSE_STUB_SRC
+R1_STATUS = "Status: **SEALED** 2026-10-20T05:53:59+02:00 (planted REVISION 1)"
+
+
+def plant_dose_package(root, src, status=R1_STATUS, pin=None):
+    """a planted dose package `<root>/code/dose_chain.py` + `<root>/AMENDMENT_DOSE_R1.md` (+ its .sha256), laid out like the real `.../dose/`: the sealed Revision 1 text pins `code:dose_chain.py` to the file (or to `pin`)"""
+    os.makedirs(os.path.join(root, "code"), exist_ok=True)
+    path = os.path.join(root, "code", "dose_chain.py")
+    open(path, "w", encoding="utf-8", newline="\n").write(src)
+    text = "# AMENDMENT_DOSE_R1 (planted)\n\n" + status + "\n\n<!-- PINS-BEGIN -->\n```\ncode:dose_chain.py " + (pin or NC.sha_lf(path)) + "\n```\n<!-- PINS-END -->\n"
+    open(os.path.join(root, NC.DOSE_R1_AMENDMENT), "w", encoding="utf-8", newline="\n").write(text)
+    open(os.path.join(root, NC.DOSE_R1_SIDECAR), "w").write(hashlib.sha256(text.encode()).hexdigest() + "  " + NC.DOSE_R1_AMENDMENT + "\n")
+    return path
+
 
 EVID = {}                                           # amendment path -> the Evidence make_seal planted beside it (the dose-chain double, the bound dose result, the fixture record)
 
@@ -189,16 +211,15 @@ def dose_doc(c1, stub, **kw):
          "c1": {"outcome": c1_outcome, "result_sha256": c1.sha, "bundle_sha256": "b" * 64, "config_c8_sha256": NC.CONFIG_C8_SHA256, "config_o4_sha256": NC.CONFIG_O4_SHA256}}
     d.update(kw)
     if "c2_config" not in d:
-        keys = ("outcome", "safety_points", "moved_share")
+        keys = ("outcome", "safety_points", "inert", "moved_share")
         r = stub.c2_config({k: (c1.doc or {}).get(k) for k in keys}, {k: d.get(k) for k in keys}, d["contrast_O4_minus_C8"]["pooled"]["lo"])
         d["c2_config"] = {"config": r["config"], "row": r["row"], "why": r["why"]}
     return d
 
 
-def plant_evidence(tmp, c1, dose=None, dose_state=None, fixture=None, name="dose", dose_kw=None, dose_mut=None, fixture_mut=None):
+def plant_evidence(tmp, c1, dose=None, dose_state=None, fixture=None, name="dose", dose_kw=None, dose_mut=None, fixture_mut=None, dose_src=None):
     ev = Evidence()
-    ev.stub_path = os.path.join(tmp, "dose_chain_stub.py")
-    open(ev.stub_path, "w", encoding="utf-8", newline="\n").write(DOSE_STUB_SRC)
+    ev.stub_path = plant_dose_package(os.path.join(tmp, "dosepkg"), dose_src or DOSE_STUB_SRC)          # the double sits in a planted dose package SEALED AT REVISION 1, as the real one does
     ev.stub = NC.load_dose_chain(ev.stub_path, NC.sha_lf(ev.stub_path))
     ev.dir = os.path.join(tmp, name)
     os.makedirs(ev.dir, exist_ok=True)
@@ -228,12 +249,12 @@ def check_c2_seal(am, sha, c1_path, c1_sha, **over):
     return NC.check_c2_seal(am, sha, c1_path, c1_sha, **kw)
 
 
-def make_seal(tmp, status="Status: **SEALED 2026-10-20**", drop=(), extra_pins=None, c1=None, tamper_pin=None, dose=None, dose_state=None, fixture=None, dose_kw=None, dose_mut=None, fixture_mut=None):
+def make_seal(tmp, status="Status: **SEALED 2026-10-20**", drop=(), extra_pins=None, c1=None, tamper_pin=None, dose=None, dose_state=None, fixture=None, dose_kw=None, dose_mut=None, fixture_mut=None, dose_src=None):
     tmp = str(tmp)
     ck = os.path.join(tmp, "ck.pt")
     open(ck, "wb").write(b"ckpt")
     c1 = c1 if c1 is not None else C1(tmp)
-    ev = plant_evidence(tmp, c1, dose=dose, dose_state=dose_state, fixture=fixture, dose_kw=dose_kw, dose_mut=dose_mut, fixture_mut=fixture_mut)
+    ev = plant_evidence(tmp, c1, dose=dose, dose_state=dose_state, fixture=fixture, dose_kw=dose_kw, dose_mut=dose_mut, fixture_mut=fixture_mut, dose_src=dose_src)
     pins = {"token_file_sha256": "a" * 64, "chunk_plan_sha256": "b" * 64, "ckpt_sha256": NC.sha256_file(ck), "config_c8_sha256": NC.CONFIG_C8_SHA256, "config_o4_sha256": NC.CONFIG_O4_SHA256, "head_s0_sha256": "d" * 64,
             "banked_seam_sha256": "e" * 64, "banked_csv_sha256": "f" * 64, "c1_prereg_sha256": PLANT_PREREG, "licence_ruling_sha256": NC.LICENCE_RULING_SHA256, "c2amend_ruling_sha256": NC.C2AMEND_RULING_SHA256,
             "inference_cost_status": "UNMEASURED", "bar_dpdms_points": "0.10", "bar_safety_points": "-0.25", "harness_script_sha256": "1" * 64, "seam_module_sha256": "2" * 64,

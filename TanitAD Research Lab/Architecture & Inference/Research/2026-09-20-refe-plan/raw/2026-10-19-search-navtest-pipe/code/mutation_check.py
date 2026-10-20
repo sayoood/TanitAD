@@ -43,6 +43,10 @@ OVERRIDE = {
     "C-ONERUN-FINISH": ("replace", ("NC.one_run_finish(c.one_run_marker, NC.sha256_file(out))", "pass")),                # the look is never consumed
     "S-PLACEHOLDER-OUTSIDE": ("replace", ('raise SealRefused("the source still has an unfilled @@ placeholder outside the PINS block")', "pass")),
     "S-OWN-CHECK": ("replace", ('NC.check_amendment_seal(p, r["sha"], a.code_dir, (), NC.OPERATIVE, NC.REQUIRED_PINS, True)', "pass")),      # the chain's own seal check is skipped
+    # ---- the C2 binding to the REVISION 1 dose package (MM_RULING_C2FINAL.md points 1 and 3)
+    "G-C2CONFIG-INERT": ("replace", ('keys = ("outcome", "safety_points", "inert", "moved_share")', 'keys = ("outcome", "safety_points", "moved_share")')),      # c2_config is called without the inert block: frac_moved reads NaN and nothing is ever licensed
+    "G-DOSE-R1-CALLED": ("replace", ("r1 = check_dose_package_r1(dpath)", 'r1 = {"amendment_sha256": None}')),                       # the package's Revision 1 seal is never checked
+    "S-DOSE-R1": ("replace", ("NC.check_dose_package_r1(a.dose_chain)", "pass")),                                                       # the seal tool pins a dose file without checking it is Revision 1
 }
 KNOWN_UNTESTABLE = {
     "MB-IDENT-REF": "the builder's per-token identity gate runs only inside make_navtest_bundle.py on a GPU forward; the suite cannot execute it. Its comparison is `ref.equal`, the same call G-IDENT-REF mutates, and its bridge judge (BR-*) is mutated.",

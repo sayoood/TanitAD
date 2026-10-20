@@ -211,8 +211,22 @@ def test_red_arm_a_prefilled_pin_that_differs_from_its_file_refuses(P):
     m = refused(S.seal, P.args())
     assert "dose_chain_sha256" in m and "hashes to" in m
     P.set_draft(P.draft())
-    open(P.dose_chain, "a").write("# edited\n")                                                        # the file moved on after the draft was made: its placeholder still fills, but a prefilled pin would now refuse
+    T.plant_dose_package(os.path.dirname(os.path.dirname(P.dose_chain)), open(P.dose_chain).read() + "# edited\n")      # the file moved on after the draft was made (and was re-sealed at R1): its placeholder still fills, but a prefilled pin would now refuse
     assert S.seal(P.args())["pins"]["dose_chain_sha256"] == NC.sha_lf(P.dose_chain)
+
+
+def test_red_arm_the_seal_tool_refuses_a_dose_package_that_is_not_sealed_at_revision_1(P):
+    """the `dose_chain_sha256` pin may only be filled from a dose_chain.py whose package is sealed at REVISION 1 (b41ccab5... on the real file): no R1 text, or an R1 text that pins another dose_chain.py, refuses at the SEAL, not at the run"""
+    pkg = os.path.dirname(os.path.dirname(P.dose_chain))
+    os.remove(os.path.join(pkg, NC.DOSE_R1_AMENDMENT))
+    m = refused(S.seal, P.args())
+    assert "Revision 1" in m and "DOSE_R1_SEAL_MISSING" in m
+
+
+def test_red_arm_the_seal_tool_refuses_a_dose_chain_whose_r1_pin_is_another_file(P):
+    open(P.dose_chain, "a").write("# edited after the R1 seal\n")
+    m = refused(S.seal, P.args())
+    assert "Revision 1" in m and "DOSE_R1_CODE_PIN_MISMATCH" in m
 
 
 def test_red_arm_a_draft_without_a_line_for_a_pin_the_tool_computes_refuses(P):

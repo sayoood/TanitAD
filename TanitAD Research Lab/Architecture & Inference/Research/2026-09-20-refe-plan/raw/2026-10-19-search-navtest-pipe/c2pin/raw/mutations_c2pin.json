@@ -1,0 +1,109 @@
+{
+ "caught": 12,
+ "judged": 12,
+ "survived_or_inapplicable": [],
+ "untestable_without_gpu": [],
+ "results": [
+  {
+   "guard": "CONTROL (unmutated)",
+   "status": "CONTROL_GREEN",
+   "tail": ".................... [ 56%]\n........................................................................ [ 75%]\n.................................................s..s................... [ 94%]\n..................ss                                                     [100%]\n376 passed, 4 skipped in 30.03s\n"
+  },
+  {
+   "guard": "G-LICENCE-MOVED",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_licence.py::test_moved_share_below_5_percent_refuses_and_exactly_5_percent_passes"
+   ]
+  },
+  {
+   "guard": "G-DOSECHAIN-PIN",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_select.py::test_dose_chain_is_imported_by_path_under_its_pin"
+   ]
+  },
+  {
+   "guard": "G-DOSE-R1-PRESENT",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_select.py::test_a_dose_package_that_is_not_sealed_at_r1_refuses_by_name[no_r1_files_only_the_original_seal]"
+   ]
+  },
+  {
+   "guard": "G-DOSE-R1-SHA",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_select.py::test_a_dose_package_that_is_not_sealed_at_r1_refuses_by_name[r1_text_edited_one_byte_after_the_seal]"
+   ]
+  },
+  {
+   "guard": "G-DOSE-R1-SEALED",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_select.py::test_a_dose_package_that_is_not_sealed_at_r1_refuses_by_name[r1_text_still_a_draft]"
+   ]
+  },
+  {
+   "guard": "G-DOSE-R1-CODE-PIN",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_select.py::test_a_dose_package_that_is_not_sealed_at_r1_refuses_by_name[r1_text_does_not_pin_dose_chain]"
+   ]
+  },
+  {
+   "guard": "G-C2CONFIG-INERT",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_licence.py::test_o2_directional_with_every_term_exactly_at_its_bar_licenses"
+   ]
+  },
+  {
+   "guard": "G-CONFIG-NONE",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_select.py::test_licence_row_disagreement_is_refused_by_name"
+   ]
+  },
+  {
+   "guard": "G-CONFIG-IS-C2CONFIG",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_select.py::test_a_config_c2_config_did_not_return_is_refused_by_name[row1_but_O4_given]"
+   ]
+  },
+  {
+   "guard": "G-DOSE-R1-CALLED",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_select.py::test_the_real_file_drives_the_seal_and_the_r1_amendment_is_banked_with_the_selection"
+   ]
+  },
+  {
+   "guard": "G-LICENCE-ROW-AGREES",
+   "file": "navpipe_core.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_navpipe_select.py::test_licence_row_disagreement_is_refused_by_name"
+   ]
+  },
+  {
+   "guard": "S-DOSE-R1",
+   "file": "seal_c2_amendment.py",
+   "status": "CAUGHT",
+   "first_failing": [
+    "FAILED test_seal_c2.py::test_red_arm_the_seal_tool_refuses_a_dose_package_that_is_not_sealed_at_revision_1"
+   ]
+  }
+ ]
+}

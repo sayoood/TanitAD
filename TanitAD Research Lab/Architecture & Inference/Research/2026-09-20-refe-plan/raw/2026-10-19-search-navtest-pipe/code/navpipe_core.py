@@ -33,7 +33,7 @@ PKG = os.path.dirname(HERE)
 #   Step B code      <raw>/2026-10-19-l2-stepB/code/                          (stepB.py, stepB_chain.py, l2_scorer.py, g_reach_stepb.py, label_stepB.py, analyse_stepB.py, ...)
 #   Step B configs   <raw>/2026-10-19-l2-stepB/raw/stepB_config.json  (C8)  and  stepB_config_O4.json  (O4)
 #   C1 code          <raw>/2026-10-19-search-p2-confirm/code/                 (spc_analyse.py, spc_chain.py, ...)
-#   dose code        <raw>/2026-10-19-search-p2-confirm/dose/code/dose_chain.py   (UNVERIFIED: the dose package was not on the tip when this was written; C2_DOSE_CHAIN overrides)
+#   dose code        <raw>/2026-10-19-search-p2-confirm/dose/code/dose_chain.py   (on the tip since 51078a6, at REVISION 1: sha256 b41ccab5..., sealed by dose/AMENDMENT_DOSE_R1.md; C2_DOSE_CHAIN moves the PATH only, the R1 seal check below still applies)
 #   L1 code          <Research>/2026-10-18-ep-rl-lit/l1_stepA/                (stepA.py, tts_cem.py, real_scorer.py, launch_stepA.py) and its PATCHED copies in run_2026-10-19/ (launch_stepA_ctype.py, make_stepA_bundle.py bf16)
 # The dev-box scratch layout (`par18/l1run/code` = both L1 directories merged, `par18/l2stepb/code`, `par18/spc/code`) is reached by setting SPC_STEPB_CODE / L1_CODE / SPC_CODE.
 RAW_DIR = os.path.dirname(PKG)
@@ -42,7 +42,8 @@ STEPB_CODE = os.environ.get("SPC_STEPB_CODE", os.path.join(RAW_DIR, "2026-10-19-
 L1_CODE = os.environ.get("L1_CODE", os.path.join(RESEARCH_DIR, "2026-10-18-ep-rl-lit", "l1_stepA"))
 L1_PATCHED = os.path.join(L1_CODE, "run_2026-10-19")               # absent on the dev-box layout (merged directory); present on the tip
 SPC_CODE = os.environ.get("SPC_CODE", os.path.join(RAW_DIR, "2026-10-19-search-p2-confirm", "code"))
-DOSE_CHAIN = os.environ.get("C2_DOSE_CHAIN", os.path.join(RAW_DIR, "2026-10-19-search-p2-confirm", "dose", "code", "dose_chain.py"))
+DOSE_CHAIN = os.environ.get("C2_DOSE_CHAIN", os.path.join(RAW_DIR, "2026-10-19-search-p2-confirm", "dose", "code", "dose_chain.py"))      # repo-relative; the REVISION 1 file (MM_RULING_C2FINAL.md point 3): the amendment's dose_chain_sha256 pin must be its sha256 (expected b41ccab5a24fa67c...)
+DOSE_R1_AMENDMENT, DOSE_R1_SIDECAR = "AMENDMENT_DOSE_R1.md", "AMENDMENT_DOSE_R1.sha256"          # next to <dose>/code/: the sealed Revision 1 text and its sha256 (MM_RULING_C2FINAL.md points 1 and 3)
 CONFIG_C8 = os.environ.get("C2_CONFIG_C8", os.path.join(RAW_DIR, "2026-10-19-l2-stepB", "raw", "stepB_config.json"))
 CONFIG_O4 = os.environ.get("C2_CONFIG_O4", os.path.join(RAW_DIR, "2026-10-19-l2-stepB", "raw", "stepB_config_O4.json"))
 
@@ -278,14 +279,55 @@ def licence_terms(res: dict, got: str, pins: dict, outcomes=LICENCE_OUTCOMES, wh
 _DOSE_MODULE = {}
 
 
-def load_dose_chain(path: str | None, pin: str | None):
-    """`dose_chain.py` imported BY PATH, never re-implemented here: `c2_config` is the dose package's mechanical table (MM_RULING_DOSE.md DQ4) and this file only CALLS it.  The file's LF sha256 must equal the amendment's
-    `dose_chain_sha256` pin (filled at the seal).  Its own imports (C1's spc_* modules, Step B's analyse_stepB / stepA) resolve through the same repo-relative code paths."""
+def check_dose_chain_pin(path: str | None, pin: str | None) -> str:
+    """the dose file exists and its LF sha256 equals the amendment's `dose_chain_sha256` pin (the pin the seal tool filled; the Revision 1 file, b41ccab5...).  Returns that sha256."""
     if not path or not os.path.isfile(path):
         raise Refusal("seal", "DOSE_CHAIN_MISSING", str(path))
     got = sha_lf(path)
     if got != str(pin or "").strip().lower():                                               # @GUARD:G-DOSECHAIN-PIN
         raise Refusal("seal", "DOSE_CHAIN_PIN_MISMATCH", f"{path}: {got[:12]} != pin {str(pin)[:12]}")
+    return got
+
+
+def check_dose_package_r1(path: str) -> dict:
+    """The dose package that `path` (= <dose>/code/dose_chain.py) belongs to is SEALED AT REVISION 1 (MM_RULING_C2FINAL.md points 1 and 3), checked BEFORE the file is imported (executed).  Refuses (class `seal`, exit 5) unless ALL of:
+      1. `AMENDMENT_DOSE_R1.md` and `AMENDMENT_DOSE_R1.sha256` both sit in <dose>/ (`DOSE_R1_SEAL_MISSING`: a package sealed only at the original `AMENDMENT_DOSE.md` carries the defective `moved_share` licence);
+      2. the text's LF sha256 equals its sidecar (`DOSE_R1_SHA_MISMATCH`);
+      3. its first `Status:` line starts `Status: **SEALED` (`DOSE_R1_NOT_SEALED`);
+      4. its PINS block pins `code:dose_chain.py` to the LF sha256 of THE FILE ABOUT TO BE IMPORTED (`DOSE_R1_NO_PINS`, `DOSE_R1_CODE_PIN_MISMATCH`): an edited byte is not the sealed Revision 1 code even when the C2 amendment's own pin was filled from the edited file.
+    Returns {amendment_sha256, dose_chain_sha256}."""
+    import re
+    pkg = os.path.dirname(os.path.dirname(os.path.abspath(path)))
+    am, side = os.path.join(pkg, DOSE_R1_AMENDMENT), os.path.join(pkg, DOSE_R1_SIDECAR)
+    if not (os.path.isfile(am) and os.path.isfile(side)):                                   # @GUARD:G-DOSE-R1-PRESENT
+        raise Refusal("seal", "DOSE_R1_SEAL_MISSING", f"{DOSE_R1_AMENDMENT} / {DOSE_R1_SIDECAR} not both in {pkg}")
+    text_b = open(am, "rb").read().replace(b"\r\n", b"\n")
+    got = hashlib.sha256(text_b).hexdigest()
+    try:
+        want = open(side, encoding="utf-8").read().split()[0].strip().lower()
+    except (OSError, IndexError, UnicodeDecodeError):
+        want = ""
+    if got != want:                                                                         # @GUARD:G-DOSE-R1-SHA
+        raise Refusal("seal", "DOSE_R1_SHA_MISMATCH", f"{DOSE_R1_AMENDMENT} {got[:12]} / sidecar {want[:12]!r}")
+    t = text_b.decode("utf-8", errors="replace")
+    m = re.search(r"^Status: .*$", t, re.M)
+    if not m or not m.group(0).startswith("Status: **SEALED"):                             # @GUARD:G-DOSE-R1-SEALED
+        raise Refusal("seal", "DOSE_R1_NOT_SEALED", f"first status line: {(m.group(0)[:40] if m else None)!r}")
+    try:
+        pinned = parse_pins(t).get("code:dose_chain.py")
+    except Refusal:
+        raise Refusal("seal", "DOSE_R1_NO_PINS", f"{DOSE_R1_AMENDMENT} has no PINS block")
+    have = sha_lf(path)
+    if str(pinned or "").strip().lower() != have:                                           # @GUARD:G-DOSE-R1-CODE-PIN
+        raise Refusal("seal", "DOSE_R1_CODE_PIN_MISMATCH", f"{DOSE_R1_AMENDMENT} pins code:dose_chain.py {str(pinned)[:12]}, the file is {have[:12]}")
+    return {"amendment_sha256": got, "dose_chain_sha256": have}
+
+
+def load_dose_chain(path: str | None, pin: str | None):
+    """`dose_chain.py` imported BY PATH, never re-implemented here: `c2_config` is the dose package's mechanical table (MM_RULING_DOSE.md DQ4) and this file only CALLS it.  The file's LF sha256 must equal the amendment's
+    `dose_chain_sha256` pin (filled at the seal; the Revision 1 file).  Its own imports (C1's spc_* modules, Step B's analyse_stepB / stepA) resolve through the same repo-relative code paths.
+    The Revision 1 seal of the package (`check_dose_package_r1`) is checked by `check_c2_seal` BEFORE this import."""
+    got = check_dose_chain_pin(path, pin)
     key = (os.path.abspath(path), got)
     if key in _DOSE_MODULE:
         return _DOSE_MODULE[key]
@@ -344,7 +386,8 @@ def read_dose_result(dose_result: str | None, dose_result_sha256: str | None, c1
 
 def select_config(config_path: str | None, c1_res: dict, dose_res: dict, dc) -> dict:
     """C2 accepts EXACTLY ONE of two pinned configs, and it must be the one `c2_config(c1_read, dose_read, contrast_lo)` returns (MM_RULING_C2AMEND.md ADDITION).  `c2_config` is the dose package's function, called, not copied.
-    Its inputs are read from the two bound result files exactly as the dose chain reads them (`outcome`, `safety_points`, `moved_share`; `contrast_O4_minus_C8.pooled.lo`).  Refuses (class `seal`) unless
+    Its inputs are read from the two bound result files exactly as the dose chain reads them (`outcome`, `safety_points`, `inert`, `moved_share`; `contrast_O4_minus_C8.pooled.lo`): at REVISION 1 `licensed()` reads
+    `inert.frac_moved` from each read's OWN `inert` block (MM_RULING_C2FINAL.md point 1) and `moved_share` is descriptive only, so a call without `inert` would read NaN and never license.  Refuses (class `seal`) unless
       * the file given is C8 or O4 by sha256 (`stepB_config.json` 299c6e63... / `stepB_config_O4.json` 1ebd7196...),
       * `c2_config` returns a config at all (row 4 = no C2: the committed next arms stand), and it is the one given,
       * the dose result's OWN recorded `c2_config` says the same (config and row): two computations of one function on one pair of reads must agree."""
@@ -359,7 +402,7 @@ def select_config(config_path: str | None, c1_res: dict, dose_res: dict, dc) -> 
     lo = pool.get("lo") if isinstance(pool, dict) else None
     if not _is_num(lo):                                                                     # @GUARD:G-CONFIG-CONTRAST-READABLE
         raise Refusal("seal", "CONFIG_CONTRAST_UNREADABLE", f"contrast_O4_minus_C8.pooled.lo = {lo!r}: an unreadable contrast would silently turn row 3's O4 into C8")
-    keys = ("outcome", "safety_points", "moved_share")
+    keys = ("outcome", "safety_points", "inert", "moved_share")                            # @GUARD:G-C2CONFIG-INERT
     exp = dc.c2_config({k: c1_res.get(k) for k in keys}, {k: dose_res.get(k) for k in keys}, lo)
     if not isinstance(exp, dict) or "config" not in exp or "row" not in exp:
         raise Refusal("seal", "CONFIG_C2CONFIG_UNREADABLE", repr(exp)[:200])
@@ -561,7 +604,10 @@ def check_c2_seal(amendment: str | None, amendment_sha256: str | None, c1_result
             licence = None                                                                       # row 2 (C1 not licensed): the DOSE read must license, below
     else:
         licence = licence_terms(c1res, c1sha, pins, LICENCE_OUTCOMES, "C1")                      # C8 (rows 1 and 3): C1's licence, read by code
-    dc = load_dose_chain(dose_chain or DOSE_CHAIN, pins["dose_chain_sha256"])
+    dpath = dose_chain or DOSE_CHAIN
+    check_dose_chain_pin(dpath, pins["dose_chain_sha256"])                                  # the file is the one the amendment pinned (first: nothing is read from an unpinned file)
+    r1 = check_dose_package_r1(dpath)                                                       # @GUARD:G-DOSE-R1-CALLED
+    dc = load_dose_chain(dpath, pins["dose_chain_sha256"])                                  # ... and only then executed
     dres, dsha = read_dose_result(dose_result, dose_result_sha256, c1res, c1sha, pins, dc)
     if licence is None:
         licence = licence_terms(dres, dsha, pins, ("O1_CONFIRMED",), "DOSE", c1_sha=c1sha)       # @GUARD:G-LICENCE-DOSE-PATH
@@ -571,7 +617,7 @@ def check_c2_seal(amendment: str | None, amendment_sha256: str | None, c1_result
     fixture = check_fixture_record(fixture_record, pins, CARVE_B_SHA256, operative)
     pins = {**pins, "config_sha256": sel["config_sha256"], "config_name": sel["config"]}
     return {"amendment_sha256": got, "pins": pins, "licence": licence, "fixture": fixture,
-            "selection": {**sel, "dose_result_sha256": dsha, "dose_chain_sha256": pins["dose_chain_sha256"], "c1_result_sha256": c1sha}}
+            "selection": {**sel, "dose_result_sha256": dsha, "dose_chain_sha256": pins["dose_chain_sha256"], "dose_r1_amendment_sha256": r1["amendment_sha256"], "c1_result_sha256": c1sha}}
 
 
 def check_s0_seal(amendment: str | None, amendment_sha256: str | None, code_dir: str = HERE, extra_dirs: tuple = (), operative: tuple = OPERATIVE) -> dict:

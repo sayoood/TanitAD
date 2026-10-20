@@ -7,7 +7,7 @@
 Modelled on `seal_spc.py` (C1's sealer).  It
   (1) REFUSES a source that is not a FINAL DRAFT (`Status: **DRAFT`), that still carries a `@@` placeholder outside the PINS block, or whose PINS block carries a `@@SEAL@@` placeholder this tool does not know how to fill
       (a pin left as a placeholder must refuse: that is the RED arm of DQ9);
-  (2) FILLS the `@@SEAL@@` pins from the files on disk: the sha256 of the banked seam and the banked CSV (bytes only, no label is parsed), of the dose package's `dose_chain.py` (LF) and of the fixture record, and the LF sha256 of
+  (2) FILLS the `@@SEAL@@` pins from the files on disk: the sha256 of the banked seam and the banked CSV (bytes only, no label is parsed), of the dose package's `dose_chain.py` (LF; REFUSED unless that package is sealed at Revision 1) and of the fixture record, and the LF sha256 of
       every operative code file and of this tool; a pin the draft already carries for a computed key must EQUAL the file (else it refuses), and every pin that names a file is checked against that file;
   (3) checks the ruling file is `MM_RULING_C2AMEND.md` (sha256 fe4d9ce6...), that the draft pins it, and that the FIXTURE RECORD reads IDENTICAL with code shas equal to the pins it is about to write (the chain's own check);
   (4) writes the sealed text (LF, `Status: **SEALED**`; the terms text is BYTE-IDENTICAL to the draft's: only the status line and the PINS block change, and the tool checks that), `AMENDMENT_C2.sha256` and `SEALED_AT.txt`;
@@ -56,7 +56,12 @@ def split_pins(text: str) -> tuple:
 
 
 def computed_pins(a) -> dict:
-    """the pins this tool computes from files on disk: key -> sha256"""
+    """the pins this tool computes from files on disk: key -> sha256.  The dose package is checked first: `dose_chain_sha256` may only be filled from a dose_chain.py that is sealed at REVISION 1 (MM_RULING_C2FINAL.md point 3;
+    expected sha256 b41ccab5...), so an amendment can never be sealed over a file the chain would refuse."""
+    try:
+        NC.check_dose_package_r1(a.dose_chain)                                              # @GUARD:S-DOSE-R1
+    except NC.Refusal as e:
+        raise SealRefused(f"the dose package is not sealed at Revision 1 ({e.reason}): {e.detail}")
     out = {"banked_seam_sha256": NC.sha256_file(a.banked_seam), "banked_csv_sha256": NC.sha256_file(a.banked_csv), "dose_chain_sha256": NC.sha_lf(a.dose_chain),
            "fixture_record_sha256": NC.sha256_file(a.fixture_record)}
     for f in CODE_PINS:

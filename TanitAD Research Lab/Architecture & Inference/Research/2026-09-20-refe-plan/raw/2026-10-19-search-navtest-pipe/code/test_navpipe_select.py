@@ -5,10 +5,12 @@ Every guard has a RED arm that must REFUSE with its NAMED reason (a later check 
 """
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import math
 import os
+import shutil
 import subprocess
 import sys
 
@@ -88,22 +90,28 @@ def test_a_config_c2_config_did_not_return_is_refused_by_name(tmp_path, cid, con
     refused(reason, tmp_path, config, c1d, dose_kw)
 
 
-def test_ruling_vs_code_c2_config_licences_on_moved_share_but_the_c2_licence_reads_inert_frac_moved(tmp_path):
-    """FINDING (ruling vs code): `dose_chain.licensed` reads the file's `moved_share` (the mean `moved` flag, true for ANY move: DQ2 (b)), while the C2 licence reads `inert.frac_moved` (ADE vs the pick > 0.5 m: DQ2 (a), RATIFIED).
-    The two can disagree on the same C1 file.  Both directions are REFUSALS (never a wrong run), each with its own name; the mismatch is for the MM to know about, not for this code to paper over."""
-    a = T.c1_doc(moved_share=0.34, inert={"inert": False, "frac_moved": 0.01})                      # c2_config: C1 licensed; the C2 terms: INERT
+def test_moved_share_vs_frac_moved_disagreement_is_not_licensed_through_c2s_path(tmp_path):
+    """MM_RULING_C2FINAL.md point 1: "moved share" is `inert.frac_moved` EVERYWHERE.  At Revision 1 the dose chain's `c2_config` and C2's own licence terms read the same quantity, so a read with moved_share >= 5 % and
+    frac_moved < 5 % is NOT licensed: refused by name, never a config.  (Before Revision 1 the two disagreed on exactly this file and this test documented it; against the REAL file see the `real_file` tests below.)"""
+    a = T.c1_doc(moved_share=0.34, inert={"inert": False, "frac_moved": 0.01})                      # moved_share 34 %, frac_moved 1 %: not licensed
     call, c1, am, sha = seal_for(tmp_path / "a", "C8", a)
-    assert call is not None and raises("seal", lambda: call()).reason == "LICENCE_INERT"
-    assert call.__closure__ is not None
-    b = T.c1_doc(moved_share=0.01, inert={"inert": False, "frac_moved": 0.165})                     # the C2 terms: licensed; c2_config: C1 NOT licensed, dose null -> row 4 -> no config
+    assert raises("seal", lambda: call()).reason == "LICENCE_INERT"
+    b = T.c1_doc(moved_share=0.01, inert={"inert": False, "frac_moved": 0.165})                     # the other direction: licensed by frac_moved although moved_share is 1 %, so row 1 / C8
     call, c1, am, sha = seal_for(tmp_path / "b", "C8", b)
-    assert raises("seal", lambda: call()).reason == "C2_CONFIG_NONE"
+    r = call()
+    assert (r["selection"]["config"], r["selection"]["row"]) == ("C8", 1)
 
 
 def test_licence_row_disagreement_is_refused_by_name(tmp_path):
-    """O4 by row 3 needs C1's licence.  If C1's file fails the C2 terms (frac_moved 0.01) while c2_config still calls it licensed (moved_share 0.34), the DOSE read would be licensing a row-3 pick: refused"""
+    """G-LICENCE-ROW-AGREES is the net under the two licences.  A dose chain that still reads `moved_share` (the pre-Revision-1 semantics, PLANTED: the real file is Revision 1 and cannot do this) calls C1 licensed (moved_share 0.34)
+    while C2's terms say INERT (frac_moved 0.01): row 3 would then rely on the dose read to license, which is refused by name.  At Revision 1 the same world is a consistent row 2 and is accepted."""
     c1d = T.c1_doc(moved_share=0.34, inert={"inert": False, "frac_moved": 0.01})
-    refused("LICENCE_ROW_DISAGREES", tmp_path, "O4", c1d, {**O1_DOSE, "contrast_O4_minus_C8": POS})
+    refused("LICENCE_ROW_DISAGREES", tmp_path / "legacy", "O4", c1d, {**O1_DOSE, "contrast_O4_minus_C8": POS}, dose_src=T.DOSE_STUB_LEGACY_SRC)
+    # the other direction, same planted pre-Revision-1 chain: C2's terms license C1 (frac_moved 16.5 %) while the chain's c2_config calls it unlicensed (moved_share 1 %): row 4, no config (G-CONFIG-NONE; unreachable with the real Revision 1 file)
+    refused("C2_CONFIG_NONE", tmp_path / "legacy_none", "C8", T.c1_doc(moved_share=0.01, inert={"inert": False, "frac_moved": 0.165}), None, dose_src=T.DOSE_STUB_LEGACY_SRC)
+    call, c1, am, sha = seal_for(tmp_path / "r1", "O4", c1d, {**O1_DOSE, "contrast_O4_minus_C8": POS})
+    r = call()
+    assert r["selection"]["row"] == 2 and r["licence"]["licensing_read"] == "DOSE"
 
 
 def test_a_config_that_is_neither_c8_nor_o4_is_refused_and_so_is_none(tmp_path):
@@ -242,26 +250,48 @@ def test_the_amendment_pin_on_the_dose_chain_is_checked_in_the_seal_call(tmp_pat
 
 def test_a_c2_config_that_returns_garbage_is_refused(tmp_path):
     call, c1, am, sha = seal_for(tmp_path / "a")
-    garbage = tmp_path / "garbage_dose_chain.py"
-    garbage.write_text('DOSE_STAGES = ("SEAL_OK", "AMEND_SEAL_OK", "DATA_OK", "C1_DONE", "BUNDLE_OK", "SUBID_PASS", "REACH_PASS", "SEARCH_DONE", "SELFREP_PASS", "LABEL_DONE")\ndef c2_config(a, b, c):\n    return 5\n')
+    garbage = T.plant_dose_package(str(tmp_path / "garbage_pkg"), 'DOSE_STAGES = ("SEAL_OK", "AMEND_SEAL_OK", "DATA_OK", "C1_DONE", "BUNDLE_OK", "SUBID_PASS", "REACH_PASS", "SEARCH_DONE", "SELFREP_PASS", "LABEL_DONE")\ndef c2_config(a, b, c):\n    return 5\n')    # sealed at R1 (planted), so only the garbage can refuse
     c1b = T.C1(tmp_path / "b")
     am2, sha2, _, _ = T.make_seal(tmp_path / "b", c1=c1b, extra_pins={"dose_chain_sha256": NC.sha_lf(str(garbage))})
     e = raises("seal", lambda: T.check_c2_seal(am2, sha2, c1b.path, c1b.sha, config=C8_FILE, dose_chain=str(garbage)))
     assert e.reason == "CONFIG_C2CONFIG_UNREADABLE"
 
 
-REAL_DOSE = os.environ.get("C2_DOSE_CHAIN") if os.path.isfile(os.environ.get("C2_DOSE_CHAIN", "")) else ("C:/Users/Admin/par18/doseamend/code/dose_chain.py" if os.path.isfile("C:/Users/Admin/par18/doseamend/code/dose_chain.py") else
-                                                                                                     (NC.DOSE_CHAIN if os.path.isfile(NC.DOSE_CHAIN) else None))
+DOSE_CHAIN_R1_SHA256 = "b41ccab5a24fa67c4d07c3aa4dce1b60175c97ad9787f513e91491193dccc217"      # dose/code/dose_chain.py at REVISION 1 (AMENDMENT_DOSE_R1.md pins `code:dose_chain.py` to it): the pin follows Revision 1
+DOSE_R1_AMENDMENT_SHA256 = "4769bb8e1961288feebae913c20aaf429de7ddc02f3d595876df0977558203ca"   # dose/AMENDMENT_DOSE_R1.md, equal to its .sha256
+REAL_DOSE = NC.DOSE_CHAIN                  # the repo-relative file (C2_DOSE_CHAIN moves the PATH only); no dev-box fallback and no skip: a missing or changed real file is a RED test, never a silent pass
+SAFE_LOW = {**SAFE, "ttc": -0.3}
+OUTCOMES = ("O1_CONFIRMED", "O2_DIRECTIONAL", "O3_NULL", "TRADE", "NEGATIVE", "O4_INERT", None)
 
 
-@pytest.mark.skipif(REAL_DOSE is None, reason="the dose package's dose_chain.py is not on this box (it was not on the tip when this was written)")
-def test_the_test_double_agrees_with_the_real_dose_chain_over_a_grid_and_the_real_one_drives_the_seal(tmp_path):
-    real = NC.load_dose_chain(REAL_DOSE, NC.sha_lf(REAL_DOSE))
-    src = T.DOSE_STUB_SRC
+def real_and_double():
+    """the REAL dose_chain.py imported by path under the Revision 1 sha pin (a changed file is a RED test, not a new baseline), and the test double exec'd from T.DOSE_STUB_SRC"""
+    real = NC.load_dose_chain(REAL_DOSE, DOSE_CHAIN_R1_SHA256)
     ns = {}
-    exec(compile(src, "dose_stub", "exec"), ns)
-    reads = [{"outcome": o, "safety_points": sp, "moved_share": ms} for o in ("O1_CONFIRMED", "O2_DIRECTIONAL", "O3_NULL", "TRADE", "NEGATIVE", "O4_INERT", None)
-             for sp in (SAFE, {**SAFE, "ttc": -0.3}, None) for ms in (0.3, 0.049, None)]
+    exec(compile(T.DOSE_STUB_SRC, "dose_stub", "exec"), ns)
+    return real, ns
+
+
+def read_of(o, sp, ms, fm):
+    """a read with its descriptive `moved_share` and its `inert` block (`fm` == "absent" leaves the block out)"""
+    d = {"outcome": o, "safety_points": sp, "moved_share": ms}
+    if fm != "absent":
+        d["inert"] = {"inert": False, "frac_moved": fm}
+    return d
+
+
+def test_the_real_dose_chain_is_the_revision_1_file_and_its_package_is_sealed_at_r1():
+    assert os.path.isfile(REAL_DOSE), REAL_DOSE
+    assert NC.sha_lf(REAL_DOSE) == DOSE_CHAIN_R1_SHA256
+    assert NC.check_dose_package_r1(REAL_DOSE) == {"amendment_sha256": DOSE_R1_AMENDMENT_SHA256, "dose_chain_sha256": DOSE_CHAIN_R1_SHA256}
+    pkg = os.path.dirname(os.path.dirname(REAL_DOSE))
+    assert open(os.path.join(pkg, NC.DOSE_R1_SIDECAR), encoding="utf-8").read().split()[0] == DOSE_R1_AMENDMENT_SHA256
+
+
+def test_the_test_double_agrees_with_the_real_dose_chain_over_the_whole_grid():
+    """the grid the double was validated on: 7 outcomes x 3 safety x 3 moved values, squared, x 5 contrast values.  The moved value is carried in BOTH `moved_share` and `inert.frac_moved` (the two agree), so the grid is the old one read at Revision 1"""
+    real, ns = real_and_double()
+    reads = [read_of(o, sp, x, x) for o in OUTCOMES for sp in (SAFE, SAFE_LOW, None) for x in (0.3, 0.049, None)]
     n = 0
     for c1 in reads:
         for d in reads:
@@ -269,13 +299,146 @@ def test_the_test_double_agrees_with_the_real_dose_chain_over_a_grid_and_the_rea
                 a, b = real.c2_config(c1, d, lo), ns["c2_config"](c1, d, lo)
                 assert (a["config"], a["row"]) == (b["config"], b["row"]), (c1, d, lo, a, b)
                 n += 1
-    assert n == len(reads) ** 2 * 5
+    assert n == len(reads) ** 2 * 5 == 19845
     assert tuple(real.DOSE_STAGES) == tuple(ns["DOSE_STAGES"])
-    # the REAL file drives the seal call (the pin is its sha; nothing else changes)
-    c1 = T.C1(tmp_path / "w")
-    am, sha, _, _ = T.make_seal(tmp_path / "w", c1=c1, extra_pins={"dose_chain_sha256": NC.sha_lf(REAL_DOSE)})
-    r = T.check_c2_seal(am, sha, c1.path, c1.sha, config=C8_FILE, dose_chain=REAL_DOSE)
-    assert r["selection"]["config"] == "C8" and r["selection"]["row"] == 1
+
+
+def test_the_double_and_the_real_chain_agree_where_moved_share_and_frac_moved_DISAGREE_and_neither_licenses_on_moved_share():
+    """the Revision 1 ruling on the REAL file: frac_moved < 5 % (or absent / NaN / None) is never a licence whatever `moved_share` says, and frac_moved >= 5 % is one whatever `moved_share` says"""
+    real, ns = real_and_double()
+    pairs = [(0.3, 0.049), (0.049, 0.3), (0.3, "absent"), (0.3, float("nan")), (None, 0.3), (0.3, 0.05), (0.0, 0.0499), (0.9, None)]
+    reads = [read_of(o, sp, ms, fm) for o in ("O1_CONFIRMED", "O2_DIRECTIONAL", "O3_NULL", None) for sp in (SAFE, SAFE_LOW) for ms, fm in pairs]
+    n = 0
+    for r in reads:
+        for strict in (False, True):
+            assert real.licensed(r, strict) == ns["licensed"](r, strict), (r, strict)
+    for c1 in reads:
+        for d in reads:
+            for lo in (-1.0, 0.3, None):
+                a, b = real.c2_config(c1, d, lo), ns["c2_config"](c1, d, lo)
+                assert (a["config"], a["row"]) == (b["config"], b["row"]), (c1, d, lo, a, b)
+                n += 1
+    assert n == len(reads) ** 2 * 3
+    for ms, fm, want in [(0.34, 0.01, False), (0.34, "absent", False), (0.34, float("nan"), False), (0.34, None, False), (0.01, 0.165, True), (None, 0.05, True), (0.0, 0.3, True)]:
+        assert real.licensed(read_of("O1_CONFIRMED", SAFE, ms, fm)) is want and real.licensed(read_of("O1_CONFIRMED", SAFE, ms, fm), strict=True) is want, (ms, fm)
+    t = real.c2_config(read_of("O1_CONFIRMED", SAFE, 0.34, 0.01), read_of("O3_NULL", SAFE, 0.5, 0.3), 0.1)["moved_term"]
+    assert t["quantity"] == "inert.frac_moved" and t["c1"] == 0.01 and t["dose"] == 0.3
+
+
+def real_call(tmp, config, c1_doc=None, dose_kw=None):
+    """a sealed planted world whose amendment pins the REAL Revision 1 dose_chain.py, and the check call that imports that real file"""
+    c1 = T.C1(tmp, doc=c1_doc if c1_doc is not None else T.c1_doc())
+    am, sha, _, _ = T.make_seal(tmp, c1=c1, dose_kw=dose_kw, extra_pins={"dose_chain_sha256": DOSE_CHAIN_R1_SHA256})
+    return lambda **over: T.check_c2_seal(am, sha, c1.path, c1.sha, **{"config": {"C8": C8_FILE, "O4": O4_FILE}[config], "dose_chain": REAL_DOSE, **over})
+
+
+def test_the_real_file_drives_the_seal_and_the_r1_amendment_is_banked_with_the_selection(tmp_path):
+    r = real_call(tmp_path, "C8")()
+    assert (r["selection"]["config"], r["selection"]["row"]) == ("C8", 1)
+    assert r["selection"]["dose_chain_sha256"] == DOSE_CHAIN_R1_SHA256 and r["selection"]["dose_r1_amendment_sha256"] == DOSE_R1_AMENDMENT_SHA256
+
+
+def test_a_read_licensed_by_frac_moved_alone_is_accepted_through_the_real_file_so_c2_config_was_handed_the_inert_block(tmp_path):
+    """moved_share 1 %, frac_moved 16.5 %: licensed at Revision 1.  If `select_config` did not hand the real `c2_config` the `inert` block it would read NaN, call C1 not licensed and return row 4 (C2_CONFIG_NONE)"""
+    r = real_call(tmp_path, "C8", T.c1_doc(moved_share=0.01, inert={"inert": False, "frac_moved": 0.165}))()
+    assert (r["selection"]["config"], r["selection"]["row"]) == ("C8", 1)
+
+
+REAL_PATH_CASES = [
+    ("c1_moved_share_34pct_frac_moved_1pct", "C8", T.c1_doc(moved_share=0.34, inert={"inert": False, "frac_moved": 0.01}), None, "LICENCE_INERT"),
+    ("dose_only_path_moved_share_50pct_frac_moved_1pct", "O4", UNLIC(), {**O1_DOSE, "moved_share": 0.5, "inert": {"inert": False, "frac_moved": 0.01}}, "LICENCE_INERT"),
+    ("dose_moved_share_50pct_frac_moved_1pct_is_row_1_so_O4_is_refused", "O4", None, {**O1_DOSE, "moved_share": 0.5, "inert": {"inert": False, "frac_moved": 0.01}, "contrast_O4_minus_C8": POS}, "CONFIG_NOT_C2_CONFIG"),
+]
+
+
+@pytest.mark.parametrize("cid,config,c1d,dose_kw,reason", REAL_PATH_CASES, ids=[c[0] for c in REAL_PATH_CASES])
+def test_a_read_with_moved_share_5pct_or_more_and_frac_moved_below_5pct_is_NOT_licensed_through_c2s_path_with_the_real_file(tmp_path, cid, config, c1d, dose_kw, reason):
+    e = raises("seal", real_call(tmp_path, config, c1d, dose_kw))
+    assert e.code == 5 and e.reason == reason, (e.reason, e.detail)
+
+
+# ---- the Revision 1 seal of the dose package (MM_RULING_C2FINAL.md points 1 and 3): the package C2 imports must carry AMENDMENT_DOSE_R1.md + .sha256, matching, sealed, and pinning THIS file
+def copy_real_package(dst, with_r1=True, with_original=True):
+    """a byte-exact copy of the real dose package (`<dst>/code/dose_chain.py`, and the amendment texts that sit beside `code/`); returns the copied dose_chain.py"""
+    src = os.path.dirname(os.path.dirname(REAL_DOSE))
+    os.makedirs(os.path.join(str(dst), "code"), exist_ok=True)
+    shutil.copyfile(REAL_DOSE, os.path.join(str(dst), "code", "dose_chain.py"))
+    for n in (([NC.DOSE_R1_AMENDMENT, NC.DOSE_R1_SIDECAR] if with_r1 else []) + (["AMENDMENT_DOSE.md", "AMENDMENT_DOSE.sha256"] if with_original else [])):
+        shutil.copyfile(os.path.join(src, n), os.path.join(str(dst), n))
+    return os.path.join(str(dst), "code", "dose_chain.py")
+
+
+def rewrite_r1(path, fn):
+    """rewrite the copied AMENDMENT_DOSE_R1.md with `fn(text)` and re-bind its sidecar to the new text (so only the checked property differs)"""
+    pkg = os.path.dirname(os.path.dirname(path))
+    am = os.path.join(pkg, NC.DOSE_R1_AMENDMENT)
+    text = fn(open(am, "rb").read().decode("utf-8"))
+    open(am, "wb").write(text.encode("utf-8"))
+    open(os.path.join(pkg, NC.DOSE_R1_SIDECAR), "w", newline="\n").write(hashlib.sha256(text.replace("\r\n", "\n").encode("utf-8")).hexdigest() + "  " + NC.DOSE_R1_AMENDMENT + "\n")
+
+
+def _append(path, name, data):
+    open(os.path.join(os.path.dirname(os.path.dirname(path)), name) if name else path, "ab").write(data)
+
+
+R1_RED = [
+    ("no_r1_files_only_the_original_seal", lambda p: [os.remove(os.path.join(os.path.dirname(os.path.dirname(p)), n)) for n in (NC.DOSE_R1_AMENDMENT, NC.DOSE_R1_SIDECAR)], "DOSE_R1_SEAL_MISSING"),
+    ("no_amendment_files_at_all", lambda p: [os.remove(os.path.join(os.path.dirname(os.path.dirname(p)), n)) for n in (NC.DOSE_R1_AMENDMENT, NC.DOSE_R1_SIDECAR, "AMENDMENT_DOSE.md", "AMENDMENT_DOSE.sha256")], "DOSE_R1_SEAL_MISSING"),
+    ("r1_text_without_its_sidecar", lambda p: os.remove(os.path.join(os.path.dirname(os.path.dirname(p)), NC.DOSE_R1_SIDECAR)), "DOSE_R1_SEAL_MISSING"),
+    ("r1_sidecar_without_its_text", lambda p: os.remove(os.path.join(os.path.dirname(os.path.dirname(p)), NC.DOSE_R1_AMENDMENT)), "DOSE_R1_SEAL_MISSING"),
+    ("r1_text_edited_one_byte_after_the_seal", lambda p: _append(p, NC.DOSE_R1_AMENDMENT, b" "), "DOSE_R1_SHA_MISMATCH"),
+    ("r1_sidecar_names_another_text", lambda p: open(os.path.join(os.path.dirname(os.path.dirname(p)), NC.DOSE_R1_SIDECAR), "w").write("0" * 64 + "\n"), "DOSE_R1_SHA_MISMATCH"),
+    ("r1_sidecar_empty", lambda p: open(os.path.join(os.path.dirname(os.path.dirname(p)), NC.DOSE_R1_SIDECAR), "w").write(""), "DOSE_R1_SHA_MISMATCH"),
+    ("r1_text_still_a_draft", lambda p: rewrite_r1(p, lambda t: t.replace("Status: **SEALED**", "Status: **DRAFT**", 1)), "DOSE_R1_NOT_SEALED"),
+    ("r1_text_has_no_pins_block", lambda p: rewrite_r1(p, lambda t: t.replace("<!-- PINS-BEGIN -->", "").replace("<!-- PINS-END -->", "")), "DOSE_R1_NO_PINS"),
+    ("r1_text_does_not_pin_dose_chain", lambda p: rewrite_r1(p, lambda t: t.replace("code:dose_chain.py ", "code:not_dose_chain.py ", 1)), "DOSE_R1_CODE_PIN_MISMATCH"),
+    ("r1_text_pins_another_dose_chain", lambda p: rewrite_r1(p, lambda t: t.replace("code:dose_chain.py " + DOSE_CHAIN_R1_SHA256, "code:dose_chain.py " + "1" * 64, 1)), "DOSE_R1_CODE_PIN_MISMATCH"),
+    ("dose_chain_edited_one_byte", lambda p: _append(p, None, b"\n# edited\n"), "DOSE_R1_CODE_PIN_MISMATCH"),
+]
+
+
+def test_the_r1_package_check_passes_a_byte_exact_copy_of_the_real_package_and_a_crlf_checkout(tmp_path):
+    """the control that makes the RED arms below mean something: the unedited copy passes, and so does a CRLF checkout of the same bytes (the checks fold CRLF to LF, as every other sha in this package)"""
+    p = copy_real_package(tmp_path / "ok")
+    assert NC.check_dose_package_r1(p) == {"amendment_sha256": DOSE_R1_AMENDMENT_SHA256, "dose_chain_sha256": DOSE_CHAIN_R1_SHA256}
+    crlf = copy_real_package(tmp_path / "crlf")
+    am = os.path.join(os.path.dirname(os.path.dirname(crlf)), NC.DOSE_R1_AMENDMENT)
+    for f in (crlf, am):
+        data = open(f, "rb").read()                                # read first: open(f, "wb") truncates
+        open(f, "wb").write(data.replace(b"\n", b"\r\n"))
+    assert NC.check_dose_package_r1(crlf)["dose_chain_sha256"] == DOSE_CHAIN_R1_SHA256
+
+
+@pytest.mark.parametrize("cid,mut,reason", R1_RED, ids=[c[0] for c in R1_RED])
+def test_a_dose_package_that_is_not_sealed_at_r1_refuses_by_name(tmp_path, cid, mut, reason):
+    p = copy_real_package(tmp_path / "pkg")
+    mut(p)
+    e = raises("seal", NC.check_dose_package_r1, p)
+    assert e.code == 5 and e.reason == reason, (e.reason, e.detail)
+
+
+def test_c2_refuses_a_dose_package_without_the_r1_files_and_an_edited_dose_chain_byte_on_its_own_call_path(tmp_path):
+    """through `check_c2_seal`: in each arm the amendment's `dose_chain_sha256` pin is filled from the file C2 is handed, so the pin layer passes and ONLY the Revision 1 seal can refuse; then the pin layer's own arm"""
+    def attempt(name, pkg_mut, pin_of):
+        d = tmp_path / name
+        p = copy_real_package(d / "pkg")
+        pkg_mut(p)
+        c1 = T.C1(d / "w")
+        am, sha, _, _ = T.make_seal(d / "w", c1=c1, extra_pins={"dose_chain_sha256": pin_of(p)})
+        return raises("seal", lambda: T.check_c2_seal(am, sha, c1.path, c1.sha, config=C8_FILE, dose_chain=p))
+    own = lambda p: NC.sha_lf(p)                                   # noqa: E731
+    e = attempt("no_r1", lambda p: [os.remove(os.path.join(os.path.dirname(os.path.dirname(p)), n)) for n in (NC.DOSE_R1_AMENDMENT, NC.DOSE_R1_SIDECAR)], own)
+    assert e.code == 5 and e.reason == "DOSE_R1_SEAL_MISSING", (e.reason, e.detail)
+    e = attempt("edited_byte", lambda p: _append(p, None, b"\n# edited\n"), own)
+    assert e.code == 5 and e.reason == "DOSE_R1_CODE_PIN_MISMATCH", (e.reason, e.detail)
+    e = attempt("edited_byte_amendment_pins_the_real_r1_sha", lambda p: _append(p, None, b"\n# edited\n"), lambda p: DOSE_CHAIN_R1_SHA256)
+    assert e.code == 5 and e.reason == "DOSE_CHAIN_PIN_MISMATCH", (e.reason, e.detail)
+    d = tmp_path / "control"                                       # control: the unedited package, imported from the copy by path, passes the same call
+    p = copy_real_package(d / "pkg")
+    c1 = T.C1(d / "w")
+    am, sha, _, _ = T.make_seal(d / "w", c1=c1, extra_pins={"dose_chain_sha256": DOSE_CHAIN_R1_SHA256})
+    r = T.check_c2_seal(am, sha, c1.path, c1.sha, config=C8_FILE, dose_chain=p)
+    assert (r["selection"]["config"], r["selection"]["row"]) == ("C8", 1) and r["selection"]["dose_r1_amendment_sha256"] == DOSE_R1_AMENDMENT_SHA256
 
 
 # ====================================================================================================== the fixture record (DQ7 (b))
