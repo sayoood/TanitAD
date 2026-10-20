@@ -10,6 +10,13 @@ MUT = {
     "unevaluable SENS read as FAIL": ("        if not isinstance(per.get(s), dict):\n            raise", "        if False:\n            raise"),
     "missing run tolerated": ("    if miss:\n        raise", "    if False:\n        raise"),
     "K for A2 read when not picked": ("read=k_arm == \"A2\", PASS=a2_pass if k_arm == \"A2\" else None", "read=True, PASS=a2_pass"),
+    "IDM ignores separation": ("idm_pass = all(r[\"below\"] and r[\"separated\"] and r[\"beats_2x_floor\"] for r in idm_rows)",
+                               "idm_pass = all(r[\"below\"] and r[\"beats_2x_floor\"] for r in idm_rows)"),
+    "IDM floor uses A1 only": ("two_F_idm = 2 * max(F_idm.values())", "two_F_idm = 2 * F_idm[\"A1\"]"),
+    "IDM reads one seed": ("idm_pass = all(r[\"below\"] and r[\"separated\"] and r[\"beats_2x_floor\"] for r in idm_rows)",
+                           "idm_pass = all(r[\"below\"] and r[\"separated\"] and r[\"beats_2x_floor\"] for r in idm_rows[:1])"),
+    "IDM pairs A1 with R0": ("d = rep.paired_runs(runs[(\"A1\", s)], runs[(\"A0\", s)], \"eval141\"",
+                             "d = rep.paired_runs(runs[(\"A1\", s)], runs[(\"R0\", s)], \"eval141\""),
 }
 def run():
     r = subprocess.run([sys.executable] + TEST, cwd=T, capture_output=True, text=True, encoding="utf-8", errors="replace")

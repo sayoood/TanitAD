@@ -10,6 +10,9 @@
   3. A2     -- the K arm re-picked on the HOLDOUT among R0, A1, A2 at S (lowest seed mean; within 0.01 m -> the simpler, R0 < A1 < A2).
                If A2 is picked, K is read for A2: A2 - P10-yaw-4512 < 0, separated at both seeds, |delta| > 2 x max(F_A1, F_A2) (the
                stage-0 bar names A1's floor; the larger of the two is never easier).  A2 - A1 per seed is descriptive.
+  4. IDM    -- A1 - A0 (the only pair that isolates the IDM term), eval-141 ADE@6s, paired per seed: < 0, separated at BOTH seeds,
+               |delta| > 2 x max(F_A1, F_A0).  The holdout difference is reported, decides nothing; A1x - A0 is descriptive (does the
+               gain need true time order?).  Added by the PI's go of 2026-10-20, before any Amendment-1 run existed.
 Estimator: taniteval.ci.paired_episode_cluster_bootstrap, B = 2,000 (episodes); F = |s0 - s1| on eval-141 (training seed).
 Exit code: 0 when the inputs parse (the readings are in the JSON); 2 on a missing / malformed / inconsistent input."""
 from __future__ import annotations
@@ -86,6 +89,23 @@ def read(a, pairfn) -> dict:
                      A2_minus_A1=[dict(seed=s, eval141=rep.paired_runs(runs[("A2", s)], runs[("A1", s)], "eval141", "ade6", "ade6", pairfn),
                                        holdout=rep.paired_runs(runs[("A2", s)], runs[("A1", s)], "holdout", "hold_ade6", "hold_ade6", pairfn))
                                   for s in (0, 1)])
+    # ---- 4. IDM (Amendment 1, "the IDM reading"): A1 - A0, eval-141 ADE@6s, paired per seed (A0 seed k with A1 seed k)
+    eA0 = [runs[("A0", s)]["ev"]["K"]["ade6_arm"]["mean"] for s in (0, 1)]
+    F_idm = {"A1": F["A1"], "A0": abs(eA0[0] - eA0[1])}
+    two_F_idm = 2 * max(F_idm.values())
+    idm_rows = []
+    for s in (0, 1):
+        d = rep.paired_runs(runs[("A1", s)], runs[("A0", s)], "eval141", "ade6", "ade6", pairfn)
+        idm_rows.append(dict(
+            seed=s, A1_minus_A0=d, below=d["delta"] < 0, separated=bool(d["separated"]), beats_2x_floor=abs(d["delta"]) > two_F_idm,
+            holdout_NON_DECIDING=rep.paired_runs(runs[("A1", s)], runs[("A0", s)], "holdout", "hold_ade6", "hold_ade6", pairfn),
+            A1x_minus_A0_DESCRIPTIVE=rep.paired_runs(runs[("A1x", s)], runs[("A0", s)], "eval141", "ade6", "ade6", pairfn)
+            if ("A1x", s) in runs else None))
+    idm_pass = all(r["below"] and r["separated"] and r["beats_2x_floor"] for r in idm_rows)
+    out["IDM"] = dict(bar="A1 - A0, eval-141 ADE@6s: < 0, separated at BOTH seeds, |delta| > 2 x max(F_A1, F_A0)", PASS=idm_pass,
+                      floors_eval141=F_idm, two_F=two_F_idm, rows=idm_rows,
+                      note="A1x - A0 (time-shuffled targets vs no IDM) is DESCRIPTIVE: near A1 - A0 => the gain does not need true "
+                           "time order (a regulariser); near 0 => it does")
     # ---- the branch
     if out["SENS"]["PASS"]:
         nxt = ("SENS PASS + K PASS => PREREG_HJ_STAGE0: frozen + adapter suffices; build refav2 (RA-2) -- its design is a Master Mind / "
@@ -96,8 +116,16 @@ def read(a, pairfn) -> dict:
     if not rep_ok:
         nxt += (" The gate does NOT replicate at seed 1: every claim that TRUE time order adds skill is one-seed only; next is Addendum D's "
                 "A1a at full scale.")
+    if idm_pass:
+        nxt += (" IDM PASS: adding IDM lowers the open-loop 6 s error beyond training-seed noise at full scale (T1-class open loop; not a "
+                "closed-loop driving claim).")
+    else:
+        nxt += (" IDM FAIL: IDM's trajectory benefit is NOT established at full scale; next lever, read under this same bar: A1 with "
+                "gamma 200 x2 at S (the stage-0 ladder's first rung).")
     out["next"] = nxt
-    out["reading"] = (f"SENS {'PASS' if out['SENS']['PASS'] else 'FAIL'}; gate replicate {out['REPLICATE']['verdict']} "
+    out["reading"] = (f"SENS {'PASS' if out['SENS']['PASS'] else 'FAIL'}; IDM {'PASS' if idm_pass else 'FAIL'} (A1 - A0 "
+                      + " / ".join(f"{r['A1_minus_A0']['delta']:+.4f}" for r in idm_rows) + f", 2F {two_F_idm:.4f}); "
+                      f"gate replicate {out['REPLICATE']['verdict']} "
                       f"(A1x_s1 - A1_s1 {d141['delta']:+.4f} [{d141['lo']:+.4f}, {d141['hi']:+.4f}]); holdout K arm {k_arm}"
                       + (f", K for A2 {'PASS' if a2_pass else 'FAIL'}" if k_arm == "A2" else "") + ".")
     return out

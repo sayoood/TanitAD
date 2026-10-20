@@ -273,3 +273,39 @@ Read in this order. A later reading is not made if an earlier one stops.
 * **It is purely additive** (178 lines added, 0 changed). ADE, holdout, K, SENS and COST are computed by unchanged code. So Amendment 1's runs, which the chain scores at the tip, stay comparable with phase 1/2's runs on every reading.
 * Phase 1/2's runs have no paired family block, because they were scored before it existed. The paired deltas are **reported, not read**, like the families themselves.
 * TACTICAL decision agreement is still unpaired (a stated work item in the block).
+
+### Amendment 1, the IDM reading (2026-10-20, still before ANY of its runs)
+
+**Why it exists:**
+* The PI asked: *"Does this mean that we found a working world model configuration and that IDM has significant benefit?"*
+* At full scale the honest answer is that IDM's benefit is not isolated. A1 − R0 bundles SIGReg + prediction + IDM, and **A1 − A0 is the only pair that isolates the IDM term**.
+* Amendment 1 as written read A0 only for SENS (action sensitivity), so it had no driving bar for IDM.
+* Offered: *"add a pre-registered A1 − A0 ADE@6s reading (paired per seed on eval-141; separated at both seeds and beyond 2× the seed spread; holdout reported beside it; wired into the reader)"*. **The PI's answer (verbatim):** *"Yes"*.
+* **No Amendment-1 run exists** (MEASURED 2026-10-20: `runs\ra1_yaw_full\st3000` holds R0 ×2, A1 ×2 and A1x seed 0 only; the chain is waiting for rung β).
+
+**Reading 4: IDM, committed now.**
+* The quantity is A1_sk − A0_sk on eval-141 ADE@6s, paired over episodes (A0 seed k with A1 seed k, k = 0, 1).
+* **PASS iff at BOTH seeds:** Δ < 0, separated, and |Δ| > **2 · max(F_A1, F_A0)**, with F = |s0 − s1| on eval-141. The larger floor is never easier; this is the same rule as the A2 clarification.
+* **PASS ⇒** adding IDM lowers the 6 s open-loop error beyond training-seed noise at full scale.
+  * That is a T1-class open-loop trajectory claim, **not** a closed-loop driving claim.
+  * How to read it is set by A1x − A0 (descriptive, per seed):
+    * near A1 − A0 ⇒ the gain does **not** need true time order and acts as a regulariser. That is what 540 clips showed.
+    * near 0 ⇒ it does.
+* **FAIL ⇒** IDM's trajectory benefit is **not established** at full scale, and it is reported that way. The next lever, read under this same bar, is A1 with **γ = 200** ×2 at 3000: the stage-0 ladder's first rung, which is also SENS-FAIL's.
+* The holdout A1 − A0 is reported beside it and decides nothing.
+* None of readings 1–3 changes.
+
+**Prior evidence: 540 clips, MEASURED** (`raw/ra1_es/es3_attribution.json`, ES-3 at 250 steps):
+
+| difference | seed 0 | seed 1 |
+|---|---|---|
+| A1 − A0 | −0.0268 [−0.0508, −0.0044] | −0.0233 [−0.0480, −0.0004] |
+| A1x − A0 | −0.0279 [−0.0504, −0.0063] | — |
+
+* A1 − A0 is separated at both seeds; A1x − A0 is separated at seed 0.
+* ⇒ IDM carried the auxiliary's gain there, but the time-shuffled control kept all of it. That gain was about 1 % of a 2.5 m error.
+
+**The instrument:** `code/ra1_full_amend1.py` reading 4 (`IDM`).
+* It is pinned by `stack/tests/test_ra1_full_amend1.py::test_idm_is_a1_minus_a0_per_seed_and_passes_only_at_both_seeds_beyond_the_larger_floor`: a wide A0 floor FAILS it, and one unseparated seed FAILS it.
+* Its four guard deletions each turn the test RED: separation dropped, A1's floor only, one seed only, R0 paired in place of A0 (`raw/ra1_full/mutate_amend1.json`, 10/10 RED).
+* The chain reads Amendment 1 with the reader **at the tip it runs from**, so this reading applies without re-arming.

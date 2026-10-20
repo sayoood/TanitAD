@@ -8,6 +8,8 @@ What is pinned, and the control that must go red for each:
     names A1a, and K is untouched;
   * the K arm is re-picked on the HOLDOUT among R0 < A1 < A2 with a 0.01 m tie to the simpler; K for A2 is read only when A2 is
     picked, against 2 x max(F_A1, F_A2) -- a wide A2 floor FAILS an A2 that a narrow A1 floor would pass;
+  * IDM = A1 - A0 per seed (A1 is 0.05 m below A0 on every window here): PASS only when BOTH seeds are < 0, separated and beyond
+    2 x max(F_A1, F_A0) -- a wide A0 floor FAILS it, and one unseparated seed FAILS it;
   * a missing run is REFUSED.
 """
 from __future__ import annotations
@@ -36,7 +38,8 @@ def _load(name, path):
 _run = _load("test_ra1_full_report_helpers", Path(__file__).resolve().parent / "test_ra1_full_report.py")._run
 
 
-def _world(tmp, x_rep=0.03, x_spread=0.0, a2_hold=0.05, a2_gap=0.0, sens_pass=True, sens_seed1=True, drop=None):
+def _world(tmp, x_rep=0.03, x_spread=0.0, a2_hold=0.05, a2_gap=0.0, a0_gap=0.0, a0_spread=0.0, sens_pass=True, sens_seed1=True,
+           drop=None):
     rng = np.random.default_rng(1)
     base = 2.6 + rng.normal(0, 0.3, 200) + np.repeat(rng.normal(0, 0.2, 20), 10)
     st = tmp / "full" / "runs" / "st3000"
@@ -46,6 +49,8 @@ def _world(tmp, x_rep=0.03, x_spread=0.0, a2_hold=0.05, a2_gap=0.0, sens_pass=Tr
             if drop == f"{arm}_s{s}":
                 continue
             g = 0.01 * s + (a2_gap * s if arm == "A2" else 0.0)
+            if arm == "A0" and s == 1:                       # A0 seed 1: a wider seed gap and / or a zero-mean episode spread
+                g = g + a0_gap + np.repeat(np.tile([a0_spread, -a0_spread], 10), 10)
             _run(st / DIRS[arm].format(s=s) / "eval", arm, 3000, s, base + e + g, base + h + 0.01 * s)
     spread = np.repeat(np.tile([x_spread, -x_spread], 10), 10)   # zero-mean episode spread: widens the CI, leaves the mean at x_rep
     for s, dx in ((0, 0.03), (1, x_rep + spread)):           # A1x = A1 + dx on every window
@@ -94,7 +99,23 @@ def test_holdout_repick_tie_goes_to_the_simpler_arm_and_a2_is_read_against_the_l
     assert r["A2"]["two_F"] == pytest.approx(2 * 0.51, abs=1e-6)
 
 
-def test_an_unevaluable_sens_seed_and_a_missing_run_are_refused(tmp_path):
+def test_an_unevaluable_sens_seed_and_a_missing_run_are_refused(tmp_path, capsys):
     assert _main(*_world(tmp_path / "s", sens_seed1=False))[0] == 2
-    assert _main(*_world(tmp_path / "m", drop="A0_s1"))[0] == 2
-    assert _main(*_world(tmp_path / "x", drop="A1x_s1"))[0] == 2
+    assert "is not evaluable in the verdict" in capsys.readouterr().err
+    # a missing run is refused BY NAME (not by a later KeyError the reading happens to hit)
+    for drop in ("A0_s1", "A1x_s1"):
+        assert _main(*_world(tmp_path / drop, drop=drop))[0] == 2
+        assert f"missing ['{drop}']" in capsys.readouterr().err, drop
+
+
+def test_idm_is_a1_minus_a0_per_seed_and_passes_only_at_both_seeds_beyond_the_larger_floor(tmp_path):
+    rc, r = _main(*_world(tmp_path / "ok"))
+    assert rc == 0 and r["IDM"]["PASS"] is True and "IDM PASS" in r["next"] and "IDM PASS" in r["reading"]
+    assert [round(x["A1_minus_A0"]["delta"], 4) for x in r["IDM"]["rows"]] == [-0.05, -0.05]
+    assert r["IDM"]["rows"][0]["A1x_minus_A0_DESCRIPTIVE"]["delta"] == pytest.approx(-0.02, abs=1e-4)   # A1x = A1 + 0.03 at seed 0
+    rc, r = _main(*_world(tmp_path / "floor", a0_gap=0.2))       # F_A0 = 0.21 -> 2F = 0.42 > |A1 - A0| at both seeds: FAIL
+    assert rc == 0 and r["IDM"]["PASS"] is False and r["IDM"]["two_F"] == pytest.approx(0.42, abs=1e-6)
+    assert all(x["separated"] for x in r["IDM"]["rows"]) and "gamma 200" in r["next"]
+    rc, r = _main(*_world(tmp_path / "one", a0_spread=0.3))      # seed 1 not separated, seed 0 clean: FAIL (BOTH seeds are required)
+    assert rc == 0 and r["IDM"]["rows"][0]["separated"] is True and r["IDM"]["rows"][1]["separated"] is False
+    assert r["IDM"]["PASS"] is False and "IDM FAIL" in r["next"]
