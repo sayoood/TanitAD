@@ -2388,3 +2388,17 @@ read is the registered one. A clean choice needs a set refcv8 never saw and we n
 
 **Cost of (b):** two checkpoints × the navtrain sample on the NavSim bridge (≈ 1–3 GPU-h ESTIMATED for a few thousand
 tokens; the full navtest read is 6.5–12.5 GPU-h ESTIMATED per checkpoint, not yet timed on CUDA). Nothing else waits on it.
+
+## ✅ DECIDED (PI, 2026-10-20 ~22:00 Berlin) -- D-R8-CKPT: option (b); and D-NS8-1: Thor
+
+**PI, verbatim:** "Follow b variant." Then, asked where the NavSim rolls run (D-NS8-1), the PI chose **Thor** (training is
+finished, so Thor's GPU is free). Both decided before any NavSim number exists for either checkpoint. In the same exchange
+the PI approved stopping the per-clip chain (`chain_final_r8.sh`, never binding) so the 48,852 per-frame videos render
+first; it was stopped ~22:05 and is re-armed to restart once the video chain releases the GPU.
+
+**Binding consequence:** the refcv8 deliverable checkpoint (EMA-40k or EMA-48,852, each with the registered per-frame
+re-timing stage `2aacc9ff…`) is chosen on a NavSim **navtrain** sample by the rule registered in GOALS_AND_CLAIMS as
+**D-R8-CKPT-RULE** (landed with this entry, before any navtrain number); the chosen checkpoint is then reported ONCE on
+navtest under A-R8-NS1 + Amendments 1-3. Default when the rule cannot separate them: the registered 48,852. The 48,852
+SHIP-R8 PASS stands as read; the raw-plan bar failures stand as written. Still open: D-NS8-2 (Ego-Status-MLP download,
+needed for the navtest bars, not for the selection) and D-NS8-4 (leaderboard) — no submission.
