@@ -73,12 +73,12 @@ def _world(tmp, wm_off=0.0, k1_off=0.0, floors_off=0.0, bad_eid=None, bad_ade=No
     if floors:
         np.savez(ev / "floors_perwindow.npz", P10_refit__ade6=ade(p10) + floors_off)
         (ev / "floors_report.json").write_text(json.dumps({"floors": {"P10_refit": raw}}), encoding="utf-8")
-    k1 = lambda arm: [{"mean": float(means.get(f"{arm}_s{s}", 0) - pm + k1_off), "lo": -1, "hi": -0.5, "separated": True}  # noqa: E731
-                      for s in (0, 1)]
+    k1 = lambda arm: [{"mean": round(float(means.get(f"{arm}_s{s}", 0) - pm + k1_off), 4), "lo": -1, "hi": -0.5,  # noqa: E731
+                       "separated": True} for s in (0, 1)]                 # rounded to 4 dp, as taniteval.ci rounds a paired delta
     v = {"tier": "T1-class open loop", "estimator": "e", "provenance": {"n_clips": 4512}, "summary": "K-1 PASS (M1 False, M2b True); WM-1 FAIL",
          "K1": {"per_arm": {a: {"K1_ade6_minus_P10": k1(a), "seed_floor_F_m": 0.01, "K1_pass": a == "M2b"} for a in ("M1", "M2b")},
                 "pass": True, "multiplicity": "2 arms read"},
-         "WM1": {"per_seed": [{"seed": s, "mean": float(means.get(f"M2b_s{s}", 0) - means.get(f"M1_s{s}", 0) + wm_off), "lo": -0.2,
+         "WM1": {"per_seed": [{"seed": s, "mean": round(float(means.get(f"M2b_s{s}", 0) - means.get(f"M1_s{s}", 0) + wm_off), 4), "lo": -0.2,
                                "hi": -0.05, "separated": True} for s in (0, 1)],
                  "seed_floor_F_m": {"M1": 0.01, "M2b": 0.02, "max": 0.02}, "pass": False, "n_windows": n, "n_episodes": N_EP},
          "next": ["K-1 PASS => next"]}

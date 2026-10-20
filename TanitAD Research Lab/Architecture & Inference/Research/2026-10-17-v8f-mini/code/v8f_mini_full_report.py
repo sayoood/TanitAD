@@ -12,7 +12,7 @@ Every guard REFUSES (rc 2), because a report over the wrong windows reads exactl
   * each run's eid equals the rebuilt grid's, and its saved ade6 equals ||pred - gt|| per window to 1e-5 (else the GT is not its grid);
   * the P10 predictions reproduce floors_perwindow.npz's P10_refit__ade6 per window to 1e-5 when the file is present;
   * the verdict's numbers are re-derived from the npz files: WM-1 per seed = mean(M2b) - mean(M1), K-1 per run = mean(arm) - mean(P10),
-    each to 1e-6 (a verdict computed over other files is refused);
+    each to 5e-5, half the 4-dp rounding taniteval.ci applies (a verdict computed over other files is refused);
   * the paired M1 - M1 control must read exactly +0 [0, 0] on every component.
 Estimator, every paired interval: it answers ANOTHER DRAW OF EPISODES only. Training-seed variance enters only through F (2 seeds).
 """
@@ -35,7 +35,8 @@ RAW = PKG / "raw"
 P10_PRED = REPO / "TanitAD Research Lab" / "Architecture & Inference" / "Research" / "2026-10-17-refav1-hj-mini" / "raw" / "p10_yaw4512" / \
     "p10_eval_pred6.npy"
 ARMS, SEEDS, CONTROLS = ("M1", "M2b"), (0, 1), ("M1-navshuf",)
-TOL_ADE, TOL_VERDICT = 1e-5, 1e-6
+TOL_ADE = 1e-5
+TOL_VERDICT = 5e-5     # half the last digit: taniteval.ci ROUNDS a paired delta to 4 dp, so 1e-6 refused a correct verdict (2026-10-20)
 B = 2000
 
 

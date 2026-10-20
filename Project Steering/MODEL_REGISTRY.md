@@ -5766,3 +5766,39 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | gate history | `bc2816862b8c`: 8/10 PASS, 2 FAIL. G-LIVE saw 101 loss calls against 100: the fp32 gradient-share replay is one extra call, and the RC projection is dead by construction. G-EVAL compared the gate's own smoke record with the RAW launch argv. Both were gaps in the gate's rules, not model defects. They were fixed in `fb47a58` with mutation-tested pins. The re-judgement on the real record caught one more trap: the newest smoke `config.json` is G-CKPT's RESUME run (`--steps 102`). Both tokens are banked: `TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/launch_gate_2026-10-14/raw/`. |
 | status | ▶ **TRAINING**: first rows MEASURED 2026-10-15 05:16 Berlin: steps 50 / 100 logged, loss 42.709 → 37.855, no non-finite value, train.stderr 0 B; **8.84 s/step** over steps 50→100 (`elapsed_s` 482 → 924); peak `cuda_max_mem` 27.24 GB at step 100; warm start loaded refcv7's `ckpt.pt` (md5 `d5f104ee`, source step 50,400): 1,131 keys + 34 new refcv8 keys, optimiser fresh. Supervisor marker `ZZrefcv8-r101-s0-51-48852-0-1ZZ`. |
 | predecessor | refcv7-r101-s0 (FINISHED at 50,400) |
+
+## 17. v8F-mini, full corpus: M1 / M2b × 2 seeds [T0 open loop · eval-141 · box 2 · 2026-10-20]
+
+**Source:** `PREREG_V8F_MINI` Amendment 4.
+* Verdict: `TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/full/eval/verdict.json`.
+* Report: `…/2026-10-17-v8f-mini/RESULT_FULL.md`.
+* Checkpoints: `…/raw/full/MANIFEST.md` (box 2 `D:\tanitad\runs\v8f_mini_full\<run>`, plus a dev-box copy).
+
+| | |
+|---|---|
+| architecture | v8F-mini: three readers (strategic / tactical / operational) over frozen DINOv3-L pooled tokens (`--grid pool4x10`); the operational head emits a residual over the frozen P10-yaw-4512 prior as a 12-term cosine basis over 60 steps (`stack/tanitad/models/v8f_mini.py`). M2b adds the H-JEPA WM auxiliary (`wm b`, IDM γ 100, `w_wm` 0.1). |
+| params (trainable, MEASURED `summary.json`) | M1 **5,206,621** (adapter 275,712; cond 25,088; S 1,321,737; T 1,463,868; O 2,120,216); M2b **7,214,495** (+ WM 2,007,874) |
+| corpus | TRAIN = RA-1 full's **4,512** clips (`--exclude 540:600`, holdout sha `f6a1dee0…` withheld), **306,566** windows, train sha256 `37f4f9ee468e0872…`. ⚠️ Box 2's `cache_full`: **NOT the parity corpus** `physicalai-train-e438721ae894`, so not comparable with parity arms |
+| schedule | **19,164** steps (`--steps-mult 4`, S 4,791), batch 64, scheduled sampling p_gt 1.0 → 0.2, lr end 3e-5; about 3.9 h (M1) / 4.4 h (M2b) per run on box 2. Selfcheck: declared_vs_built PASS, no dead params |
+| eval | eval-141: **2,399** windows, **141** episodes, kin_mode yaw (`D-PI-YAWRATE-1`). Tier **T0** (open loop, the model's own outputs; the eval stamps `T0-open-loop-own-held-outputs`; the verdict's header calls it "T1-class open loop") |
+
+**6 s ADE** (`full_set` mean, m; MEASURED):
+
+| run | 6 s ADE | − P10-yaw-4512 (paired, B = 2,000) |
+|---|---|---|
+| P10-yaw-4512 | 2.4870 | — |
+| M1 s0 | 2.2466 | −0.2404 [−0.4200, −0.0575] |
+| M1 s1 | 2.0244 | −0.4626 [−0.5940, −0.3367] |
+| M2b s0 | 2.1753 | −0.3117 [−0.4635, −0.1656] |
+| M2b s1 | 2.0546 | −0.4324 [−0.5654, −0.2961] |
+
+**Verdicts:**
+* **H-MINI-K-1 PASS on M2b** (2F 0.2415). M1 FAILS on its own floor (2F 0.4444).
+* **H-MINI-WM-1 FAIL:** M2b − M1 is −0.0713 at s0 and +0.0302 at s1, neither separated.
+
+**Seed floors:** F_M1 **0.2222**, F_M2b **0.1207** m. These are training variance, common to both arms (`H-V8F-SEED-1`).
+
+**The four families:**
+* They are in `RESULT_FULL.md`, per run and paired.
+* Acceleration MAE is worse than P10 in all four runs (+0.29 to +0.61 m/s²). Heading and cross-track are better in all four.
+* Distance keeping is UNAVAILABLE (no lead track in this eval).
