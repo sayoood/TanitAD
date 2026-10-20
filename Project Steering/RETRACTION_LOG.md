@@ -18454,3 +18454,17 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 - The mechanism claims built on the mis-fed plans (R55's "noisy along-track", the brake locus, the L2 headroom) are re-scoped to "of the mis-fed model" until re-read.
 
 **Class:** *an eval harness that rebuilds a model input by its own route instead of reading it from the item the trainer used.* The dataset item carried the right per-frame token; the roll looked it up again from a per-clip table under the same name (`nav_true`), and dropped a second input (`r8_nav`) entirely. Every control in the battery compared arms that ALL received the wrong input, so all of them were blind to it — a check that shares the defect it checks for (CLAUDE.md, four instances 2026-09-07). The G0 gate used the trainer's path and passed, so the two instruments disagreed silently. ⇒ **For any new model input, assert at the roll boundary that the eval tensor EQUALS the training-path tensor for the same window** (a feed-parity control with a literal expectation and a mutation arm), exactly as SHIP-R8 clause (7) does for the prior. Same family as the binding goal-input and vision-only rules: ask what the model is actually given at inference, read from the call site, not from the flag that should have produced it.
+
+### R58 (2026-10-20) - "N1 (A2 restricted to the changed picks) is the next arm that could let EP-ADMISSION certify the search at S0 geometry" (Master Mind, `MM_RULING_S0BANK.md` DQ3)
+
+**Claimed:**
+- An A2 statistic restricted to the picks the search CHANGED could meet every bar at 41 or at 117 logs, so the frozen gate could certify the search candidate there.
+
+**Measured (`TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-20-epadm-n1/RESULT.md`, SIMULATED, design hashed before the first run):**
+- No cell meets every bar at either geometry. N1 DAC power at x1.25: 9.3 % / 27.5 % at 41 logs (Base C / Base X), 13.5 % / 39.6 % at 117 logs; the bar is >= 70 %.
+- On Base C the A1-r1 false refusal is 8.6 % at both geometries (bar: Wilson upper <= 5.0 %). N1 changes only A2, and that A1 miss was already in the S0BANK tables the ruling read. So "every bar on both bases" was unreachable for N1 before it ran, and the ruling did not say so.
+
+**Fixed:**
+- No verdict changes: the DAC-power miss alone fails every cell on both bases. `D-REFE-EPADM-N1-1`. `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-search-p2-confirm/MM_RULING_C2_LICENCE.md` (sealed before any C1 output existed) replaces the gate for this one arm only.
+
+**Class:** *an arm whose pass condition includes a bar its lever cannot move.* Before naming a next arm, list every bar it must clear and mark which ones the lever touches. If an untouched bar is already missed, the arm cannot pass as specified: say so in the ruling, or change the pass condition in a pre-registration before the run.
