@@ -1359,3 +1359,25 @@ def test_queue_full4_stage_runs_a0_a2_and_the_a1x_seed1_replicate_beside_phase_1
     assert len(vd) == 1 and vd[0].count("--run ") == 9 and "full4_verdict.json" in vd[0], vd
     assert "A0:b0.08@1=" in vd[0] and "A2:b0.08g50@1=" in vd[0] and "A1x:b0.08g50@1" not in vd[0], vd
     assert _dry_queue(env, "full4 3000 0.08")[0] == 2
+
+
+# ================================================================================ PREREG_RA1_FULL Amendment 2: IDM at gamma 200 (full5)
+@pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
+def test_queue_full5_stage_runs_a1_x2_at_the_new_gamma_beside_amendment_1_and_no_verdict(tmp_path):
+    """A1 x2 at S with the LEVEL-1 IDM weight GAMMA (Amendment 2 commits 200), BETA as before, into st<S> beside Amendment 1's A0 / A1 /
+    A1x / A2 runs, on the full cache with P10-yaw-4512 and the 60-clip holdout. No queue verdict: code/ra1_full_amend2.py reads IDM-200.
+    A missing GAMMA is refused, never defaulted (a default would rerun gamma 50 into a gamma-200 cell)."""
+    import re
+    cf = str(tmp_path / "cache_full")
+    env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(tmp_path / "runs"), CACHEFULL=cf)
+    rc, out = _dry_queue(env, "full5 3000 0.08 200")
+    assert rc == 0, out
+    tr = [ln for ln in out if "ra1_hjepa_train.py" in ln]
+    assert [re.search(r"--arm (\S+) --seed (\S+)", ln).groups() for ln in tr] == [("A1", "0"), ("A1", "1")], tr
+    assert all("--steps 3000" in ln and f'--cache "{cf}"' in ln and "p10_yaw4512" in ln and "--beta 0.08 --gamma 200" in ln
+               and "--holdout-n 60" in ln and "--kin-mode yaw" in ln and "--gamma-up" not in ln for ln in tr), tr
+    assert [f"runs_full{os.sep}st3000{os.sep}A1_b0.08g200_s{s}" in ln for s, ln in enumerate(tr)] == [True, True], tr
+    ev = [ln for ln in out if "ra1_hjepa_eval.py" in ln]
+    assert len(ev) == 2 and all(f'--eval-cache "{cf}" --train-cache "{cf}"' in ln for ln in ev), ev
+    assert not [ln for ln in out if " verdict --out " in ln], "Amendment 2 runs no queue verdict"
+    assert _dry_queue(env, "full5 3000 0.08")[0] == 2

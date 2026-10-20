@@ -15,6 +15,7 @@ rem   ra1_box2_queue.cmd full "S1 S2 ..." BETA GAMMA   PREREG_RA1_FULL phase 1: 
 rem   ra1_box2_queue.cmd full2 SA SR BETA GAMMA        PREREG_RA1_FULL phase 2: A1x seed 0 at SA (= S*_A1), + the verdict over R0@SR, A1/A1x@SA
 rem   ra1_box2_queue.cmd full3 SA SR BETA GAMMA WD     PREREG_RA1_FULL reading 3 K-FAIL lever: A1 x2 + A1x at SA with --wd WD, in st<SA>_wd<WD>
 rem   ra1_box2_queue.cmd full4 S BETA GAMMA            PREREG_RA1_FULL Amendment 1 (K PASS): A0 x2, A2 x2, A1x seed 1 at S, + the verdict at S
+rem   ra1_box2_queue.cmd full5 S BETA GAMMA            PREREG_RA1_FULL Amendment 2 (IDM FAIL lever): A1 x2 at S with level-1 IDM weight GAMMA (200), no verdict
 rem   ra1_box2_queue.cmd a1a S BETA GAMMA [WD]  PREREG_RA1_ES Addendum D: A1a seed 0 (actions permuted ACROSS windows) at budget S [--wd WD], in the root of the A1 it pairs with
 rem
 rem HOLDOUT (PREREG_HJ_STAGE0 Amendment 1): every trainer call carries --holdout-n 60 (the trainer REFUSES to run without it): the last 60 of the
@@ -70,6 +71,7 @@ if /i "%~1"=="full" goto :full
 if /i "%~1"=="full2" goto :full2
 if /i "%~1"=="full3" goto :full3
 if /i "%~1"=="full4" goto :full4
+if /i "%~1"=="full5" goto :full5
 if /i "%~1"=="a1a" goto :a1a
 echo usage: ra1_box2_queue.cmd gate^|stage1^|stage1verdict^|stage2 BETA GAMMA^|final BETA GAMMA
 echo        ra1_box2_queue.cmd es "S1 S2 ..."^|es2 S BETA GAMMA   (PREREG_RA1_ES)
@@ -78,6 +80,7 @@ echo        ra1_box2_queue.cmd es5 S BETA GAMMA WD   (PREREG_RA1_ES Addendum C)
 echo        ra1_box2_queue.cmd full "S1 S2 ..." BETA GAMMA^|full2 SA SR BETA GAMMA   (PREREG_RA1_FULL)
 echo        ra1_box2_queue.cmd full3 SA SR BETA GAMMA WD   (PREREG_RA1_FULL, the K-FAIL lever)
 echo        ra1_box2_queue.cmd full4 S BETA GAMMA   (PREREG_RA1_FULL Amendment 1, the K-PASS lever)
+echo        ra1_box2_queue.cmd full5 S BETA GAMMA   (PREREG_RA1_FULL Amendment 2, IDM at gamma 200)
 echo        ra1_box2_queue.cmd a1a S BETA GAMMA [WD]   (PREREG_RA1_ES Addendum D)
 exit /b 2
 
@@ -264,6 +267,19 @@ set "VN=full4_verdict.json"
 set "C=b%~3g%~4"
 call :verdict --run "R0@0=%RUNS%\R0_s0\eval" --run "R0@1=%RUNS%\R0_s1\eval" --run "A0:b%~3@0=%RUNS%\A0_b%~3_s0\eval" --run "A0:b%~3@1=%RUNS%\A0_b%~3_s1\eval" --run "A1:%C%@0=%RUNS%\A1_%C%_s0\eval" --run "A1:%C%@1=%RUNS%\A1_%C%_s1\eval" --run "A1x:%C%@0=%RUNS%\A1x_%C%_s0\eval" --run "A2:%C%@0=%RUNS%\A2_%C%_s0\eval" --run "A2:%C%@1=%RUNS%\A2_%C%_s1\eval"
 exit /b %errorlevel%
+
+:full5
+rem PREREG_RA1_FULL Amendment 2 (the IDM-FAIL lever): A1 x2 at S with the LEVEL-1 IDM weight GAMMA (the committed 200), BETA as before,
+rem gamma_up left at the trainer default (50); written into st<S> beside Amendment 1's A0, A1 (gamma 50), A1x and A2. No queue verdict:
+rem nothing here is a K or SENS bar. code\ra1_full_amend2.py reads IDM-200 (A1g200 - A0 per seed) and REFUSES a run built at another gamma.
+if "%~4"=="" (echo full5 needs S BETA GAMMA & exit /b 2)
+call :fullenv || exit /b 2
+set "FROOT=%RUNS%_full"
+set "STEPS=%~2"
+set "RUNS=%FROOT%\st%~2"
+if not exist "%RUNS%" mkdir "%RUNS%"
+for %%S in (0 1) do call :run A1_b%~3g%~4_s%%S A1 %%S %~3 %~4 "" || exit /b 1
+exit /b 0
 
 :fullenv
 rem The full stages' cache, tracks and prior. Set here, never at the top, so no 540-clip stage can read them.

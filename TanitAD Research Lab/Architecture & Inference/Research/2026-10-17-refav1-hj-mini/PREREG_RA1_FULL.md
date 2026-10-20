@@ -309,3 +309,47 @@ Read in this order. A later reading is not made if an earlier one stops.
 * It is pinned by `stack/tests/test_ra1_full_amend1.py::test_idm_is_a1_minus_a0_per_seed_and_passes_only_at_both_seeds_beyond_the_larger_floor`: a wide A0 floor FAILS it, and one unseparated seed FAILS it.
 * Its four guard deletions each turn the test RED: separation dropped, A1's floor only, one seed only, R0 paired in place of A0 (`raw/ra1_full/mutate_amend1.json`, 10/10 RED).
 * The chain reads Amendment 1 with the reader **at the tip it runs from**, so this reading applies without re-arming.
+
+## Amendment 2 (2026-10-20 ~19:45, after Amendment 1 and BEFORE any of its runs): IDM at γ = 200, the committed next lever
+
+**Why it exists:**
+* Amendment 1's IDM reading FAILED (`RESULT_RA1_AMEND1.md`, `raw/ra1_full/amend1_final.json`).
+  * A1 − A0 at 6 s on eval-141: −0.0612 [−0.1314, +0.0030] (seed 0, not separated) and −0.1070 [−0.1772, −0.0407] (seed 1, separated).
+  * The floor 2·max(F_A1 0.0106, F_A0 0.0565) = 0.1130 was cleared at neither seed.
+* Its committed FAIL branch, verbatim: *"The next lever, read under this same bar, is A1 with **γ = 200** ×2 at 3000"*.
+* **The PI's go (verbatim, 2026-10-20):** *"Continue with the ra-1's committed IDM."*
+* **No γ = 200 run exists** when this is written.
+
+**The arm (nothing else changes):**
+* A1 ×2 (seeds 0, 1) at **γ = 200** (`--gamma 200`, the LEVEL-1 IDM weight), β 0.08, S = 3000. Cell `b0.08g200`.
+* The upper level's IDM weight stays at the trainer default, `gamma_up` 50. The reader REFUSES a run whose built `cfg.gamma` is not 200.0, or whose `cfg.gamma_up` is not 50.0.
+* Everything else is the same as Amendment 1's runs:
+  * the 4,512-clip full cache, the 60-clip holdout (`f6a1dee0…`), P10-yaw-4512, yaw rate, the same eval;
+  * written into `st3000` beside A0, A1 (γ 50), A1x and A2.
+* Queue stage `full5 S BETA GAMMA`. It runs no queue verdict, since nothing here is a K or SENS bar.
+
+**Reading IDM-200 (decides):**
+* The quantity is **A1γ200_sk − A0_sk**, eval-141 ADE@6s, paired over episodes per seed.
+* **PASS iff at BOTH seeds:** Δ < 0, separated, and |Δ| > **2 · max(F_A1γ200, F_A0)**, with F = |s0 − s1| on eval-141.
+* This is Amendment 1's bar with A1γ200 in A1's place. F_A0 = 0.0565 is already MEASURED, so the floor is ≥ 0.1130 m.
+
+**Reported beside it (decide nothing):**
+* the holdout A1γ200 − A0;
+* **A1γ200 − A1γ50** per seed (does γ move the error at all?);
+* A1γ200's K row vs P10-yaw-4512;
+* its level-1 yaw-rate sensitivity (k = 10) against A0's;
+* the paired LONGITUDINAL / LATERAL family deltas: A1γ200 − A0 by component, since both carry the per-window family arrays.
+
+**Outcomes, committed now:**
+* **PASS** ⇒ IDM at γ 200 lowers open-loop 6 s error beyond training-seed noise at full scale.
+  * γ 200 becomes the IDM weight carried into the RA-2 candidate, confirmed under RA-2's own pre-registration.
+  * It is a T1-class open-loop claim, not a closed-loop driving claim.
+* **FAIL** ⇒ IDM's trajectory benefit is **not established at γ 50 or γ 200**, and it is reported that way.
+  * IDM is then kept only for what it measurably does: SENS PASS, the action-sensitive latent a planner needs. It is dropped as a trajectory-error lever, with **no further γ arms**.
+  * Any later read of IDM's trajectory effect is **SEEDS** (A0 / A1 seeds 2 and 3) under its own amendment, because two seeds with F_A0 = 0.0565 cannot resolve below about 0.11 m (`H-ESTIM-SEED-1`).
+
+**Instruments:**
+* `code/ra1_full_amend2.py`, pinned by `stack/tests/test_ra1_full_amend2.py` (a narrow floor PASSES, a wide A0 floor FAILS, one unseparated seed FAILS, a separated WORSE γ 200 FAILS, a run built at the wrong γ is REFUSED, a missing run is REFUSED) plus its mutation proof: **8 / 8 RED** (`raw/ra1_full/amend2_prep/mutate_amend2.out`).
+* The queue's `full5` dry-run test in `stack/tests/test_ra1_hjepa.py`: **7 / 7 mutations RED**, including the tip's queue without the stage (`raw/ra1_full/amend2_prep/mutate_queue_full5.out`).
+* `code/box2_ops/chain_ra1_full5.sh`, with markers ZZRA1A2-DONE / ZZRA1A2-STOP. `ra1runs_guard.sh` learns those markers.
+* SAFE MODE on box 2, the same stop rules, and the temperature guard. About 2 h.
