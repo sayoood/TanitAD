@@ -11,6 +11,8 @@ STAGE ORDER (SCREEN_NOTES.md "Order, with stop points"; each stage has a DONE ma
     S2  trunk-context cache (units, the LANDED lock taken by the driver per unit), I6, G15 (GPU, behind the lease)   ->  STOP: SCREEN-INVALID
     ANCHOR  (gate.ctx_mode anchor-bound, the DEFAULT; HNSCREEN-FP-COST) the START of the chain: `launch_gate.py anchor` = ONE full content fingerprint of the cache vs the registered pin + a signed stat listing
     T<s>  mint the `refe_hnscreen` token of pass s: trainer --preflight (GPU), `launch_gate.py run`, `launch_gate.py verify`   (anchor-bound: a stat compare with the anchor, no byte read)
+          BEFORE that verify (and again at the start of the pass) every check name the chain will read (each VALUE of gate.token_check_names) must be in the token's `checks` with status PASS, else
+          STOP rc 2 `SCREEN-INVALID: token check '<name>' absent` -- a wrong run-box override fails here, before any pass, not at S4 (HNSCREEN-TOKEN-NAMES follow-up)
     P<s>  the paired pass of seed s: `launch_gate.py verify` IMMEDIATELY before the trainer starts, then the trainer behind the lease, then the post-pass gates (I4 / I5 / D1)
     ENDV  (anchor-bound) the END of the chain, before any output is read: `launch_gate.py end-verify` = a second full content fingerprint vs the anchor + a final stat compare -> END_VERIFY_OK, or the chain is VOID
     S4  the gates file, the offsets scoring (M3), `hn_screen_families.py --per-set-out`, `hn_screen_read.py --families-per-set`
@@ -559,11 +561,39 @@ class Chain:
         toks = sorted(glob.glob(f"{self.pass_dir(seed)}/lg/PASS_*.json"))
         return toks[-1] if toks else None
 
+    def token_name_problems(self, seed, tok):
+        """HNSCREEN-TOKEN-NAMES follow-up, the MINT-STAGE GUARD.  [] iff EVERY check name the chain will read from this token -- every VALUE of the effective `gate.token_check_names` (the defaults under the config, so
+        a stray key counts too) -- is a key of the token's `checks` with status PASS.  Each problem starts `SCREEN-INVALID: token check '<name>' ...`.  Pure: it reads the token file and the config, nothing else."""
+        override = self.cfg.get("gate.token_check_names")
+        wanted = list({**TOKEN_CHECK_NAMES, **(override if isinstance(override, dict) else {})}.values())
+        try:
+            checks = jload(tok)["checks"]
+        except (OSError, ValueError, KeyError, TypeError):
+            checks = None
+        have = checks if isinstance(checks, dict) else {}
+        out, seen = [], []
+        for name in wanted:
+            if name in seen:
+                continue
+            seen.append(name)
+            if not isinstance(name, str) or name not in have:
+                out.append(f"SCREEN-INVALID: token check '{name}' absent from the token of pass s{seed} (its checks: {sorted(have) if checks is not None else 'token unreadable'})")
+                continue
+            status = have[name].get("status") if isinstance(have[name], dict) else None
+            if status != "PASS":
+                out.append(f"SCREEN-INVALID: token check '{name}' status is {status!r}, not PASS (token of pass s{seed})")
+        return out
+
     def verify_pass_token(self, seed, where):
-        """`launch_gate.py verify` on the argv list of THIS pass.  Refuses (rc 5) without a token, without rc 0, or without the MATCH marker."""
+        """`launch_gate.py verify` on the argv list of THIS pass.  Refuses (rc 5) without a token, without rc 0, or without the MATCH marker.
+        BEFORE that (and before any trainer start, at the mint and again at the start of the pass): STOPS (rc 2, SCREEN-INVALID) if a check name the chain will read is absent from the token or not PASS."""
         tok = self.token_file(seed)
         if tok is None:
             raise ChainStop(RC_REFUSED, f"no PASS token for pass s{seed} ({where}): the trainer is NOT started", "REFUSED")
+        bad = self.token_name_problems(seed, tok)
+        if bad:                                                                             # HNSCREEN-TOKEN-NAMES follow-up: a wrong run-box override fails HERE, at the first token, not at S4 after every pass
+            raise ChainStop(RC_INVALID, "; ".join(bad) + f" [{where}; gate.token_check_names = {self.cfg.get('gate.token_check_names')}]: S4 would end SCREEN-INVALID after the whole GPU spend, "
+                            "so the chain stops now and the trainer is NOT started; fix the override (a changed config is a NEW state dir)", "INVALID")
         gate = self.cfg.get("gate")
         argv_file = f"{self.pass_dir(seed)}/argv.json"
         jdump(self.pass_argv(seed), argv_file)

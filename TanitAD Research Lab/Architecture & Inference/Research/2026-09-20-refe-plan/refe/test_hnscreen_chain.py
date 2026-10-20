@@ -21,6 +21,9 @@ WHAT IS PROVEN:
   I  stop points: SCREEN-SPARSE (rc 3, no cache), SCREEN-INVALID (rc 2) taking precedence over SPARSE, I6/G15 failures train nothing, a failed post-pass gate stops before the read.
   J  the argv levers (--seed/--out/--dump-scores/--hn-bank/--ctx-cache exactly once, with this pass's values; no --epo/--aux-drv) and every missing named parameter refuse BEFORE anything runs.
   K  a changed config on an existing state dir is refused; a second live chain on the same root is refused; a low disk stops cleanly.
+  L  (HNSCREEN-TOKEN-NAMES follow-up) the MINT-STAGE GUARD: a `gate.token_check_names` override naming a check the token does not carry (the old G14 / G15 pair, one wrong value, a stray key, a null, one seed's token
+     missing the check) or carrying with a status that is not PASS stops the chain AT THE MINT -- rc 2, `SCREEN-INVALID: token check '<name>' absent` -- before any `launch_gate verify`, any pass or any later stage; the DEFAULT passes, and
+     so does an override naming another check the token does carry.
   N  the shared dev-box lock files were not touched by the suite.
 Every mutation below edits hnscreen_devbox.py SOURCE (each snippet must occur EXACTLY once) and must turn >= 1 expected check RED.
 """
@@ -155,9 +158,12 @@ def main(tool, argv):
         record(label, argv)
         sha = hashlib.sha256(open(af, "rb").read()).hexdigest()
         if sub == "run":
-            if (sp.get("gate_run") or {}).get("no_token"):
+            gr = sp.get("gate_run") or {}
+            if gr.get("no_token"):
                 return 1
-            write(os.path.join(val(argv, "--out-dir"), "PASS_tok.json"), json.dumps({"verdict": "PASS", "binding": {"argv_sha256": sha}, "checks": {c: {"status": "PASS"} for c in json.loads(os.environ["STUB_TOKEN_CHECKS"])}}))
+            drop, fail = (gr.get("drop_checks") or {}).get(str(seed_of(argv)), []), gr.get("fail_checks") or []        # HNSCREEN-TOKEN-NAMES follow-up: a token with a check missing (for one seed) / not PASS
+            write(os.path.join(val(argv, "--out-dir"), "PASS_tok.json"), json.dumps({"verdict": "PASS", "binding": {"argv_sha256": sha},
+                  "checks": {c: {"status": "FAIL" if c in fail else "PASS"} for c in json.loads(os.environ["STUB_TOKEN_CHECKS"]) if c not in drop}}))
             return 0
         sv = sp.get("verify") or {}
         tok = json.load(open(val(argv, "--token"), encoding="utf-8"))
@@ -659,11 +665,41 @@ def K_config_frozen_single_instance_and_disk(M, w):
     return all(res.values())
 
 
+def L_a_wrong_token_name_stops_at_the_mint_before_any_pass(M, w):
+    res = {}
+    sc, rc, ch, _ = full(M, w, "L_default")
+    res["default_passes"] = rc == 0 and ch.stage_order_run == STAGES
+    sc, rc, ch, _ = full(M, w, "L_other_real_check", cfg_over={"gate.token_check_names": {"G14": "G-DVB"}})            # control: a name the token DOES carry (PASS) is not refused
+    res["control_other_real_check_passes"] = rc == 0 and ch.stage_order_run == STAGES
+
+    def stopped(nm, *, names=None, spec=None, upto=("S0", "S1", "S2", "T0"), needle="", verifies=0, pre=1):
+        sc, rc, ch, _ = full(M, w, "L_" + nm, spec, cfg_over={"gate.token_check_names": names} if names is not None else None)
+        lab = sc.labels()
+        st = json.load(open(f"{sc.root}/STATUS.json", encoding="utf-8"))
+        out = json.load(open(f"{sc.root}/outcome.json", encoding="utf-8"))
+        done = [s for s in STAGES if os.path.exists(f"{sc.root}/stage/{s}.done.json")]
+        late = ("trainer:train", "i4", "i5", "d1", "s4_", "families", "read", "next_")
+        log = open(f"{sc.root}/chain.log", encoding="utf-8").read()
+        return (rc == 2 and ch.stage_order_run == list(upto) and done == list(upto[:-1]) and not any(x.startswith(late) for x in lab)          # no later stage ran
+                and sum(x.startswith("gate:verify") for x in lab) == verifies and sum(x.startswith("trainer:pre") for x in lab) == pre             # the mint's own verify never ran; no later seed was minted
+                and not os.path.exists(sc.lock) and st["state"] == "INVALID" and st["rc"] == 2 and st["reason"].startswith("SCREEN-INVALID: token check '") and needle in st["reason"]
+                and out["row"] == 0 and out["name"] == "SCREEN-INVALID" and "ZZHNCHAIN_INVALID rc 2: SCREEN-INVALID: token check '" in log and "ZZHNCHAIN_STAGE_DONE " + upto[-1] not in log)
+
+    res["old_pair"] = stopped("old_pair", names={"G14": "G14", "G15": "G15"}, needle="token check 'G14' absent")
+    res["one_wrong_value"] = stopped("one_wrong", names={"G15": "G-NOPE"}, needle="token check 'G-NOPE' absent")
+    res["stray_key"] = stopped("stray", names={"G99": "G-NOPE"}, needle="token check 'G-NOPE' absent")                    # a value the chain never reads still names a check the token lacks
+    res["null_value"] = stopped("null", names={"G14": None}, needle="token check 'None' absent")
+    res["status_not_pass"] = stopped("fail", spec={"gate_run": {"fail_checks": ["G-PREFLIGHT"]}}, needle="token check 'G-PREFLIGHT' status is 'FAIL', not PASS")
+    res["second_seed_token"] = stopped("seed1", spec={"gate_run": {"drop_checks": {"1": ["G-PREFLIGHT"]}}}, upto=("S0", "S1", "S2", "T0", "T1"), needle="token check 'G-PREFLIGHT' absent", verifies=1, pre=2)
+    return all(res.values())
+
+
 CHECKS = [("A_stage_order_and_markers", A_stage_order), ("B_handoff_per_stage_and_no_key_leak", B_handoffs_and_no_key_leak), ("C_resume_after_interruption", C_resume_after_interruption),
           ("D_resume_by_content_not_presence", D_resume_by_content), ("E_no_trainer_without_a_token", E_no_trainer_without_a_token), ("F_lock_discipline", F_lock_discipline),
           ("G_foreign_lock_waited_for_never_removed", G_foreign_lock_is_waited_for_never_removed), ("G_control_landed_helper_alone_removes_a_stale_lock", G_control_landed_helper_alone_removes_such_a_lock),
           ("H_families_read_integration_and_rule_e", H_families_read_integration_and_rule_e), ("I_stop_points", I_stop_points), ("J_named_parameters_and_levers", J_named_parameters_and_levers),
-          ("K_config_frozen_single_instance_and_disk", K_config_frozen_single_instance_and_disk)]
+          ("K_config_frozen_single_instance_and_disk", K_config_frozen_single_instance_and_disk),
+          ("L_a_wrong_token_name_stops_at_the_mint_before_any_pass", L_a_wrong_token_name_stops_at_the_mint_before_any_pass)]
 
 
 def suite(M, tag, only=None):
@@ -701,6 +737,12 @@ MUTATIONS = [
     ("a failed I6 / G15 does not stop the chain", [("            bad = [g for g in (\"I6\", \"G15\") if not ev_ok(self.gate_path(g))]\n", "            bad = []\n")], ["I_stop_points"]),
     ("DEFAULTS: gate.token_check_names is the pre-fix G14 / G15 pair (a real token has no such checks: G14 = G15 = False)",
      [("TOKEN_CHECK_NAMES = {\"G14\": \"G-PREFLIGHT\", \"G15\": \"G-PREFLIGHT\"}\n", "TOKEN_CHECK_NAMES = {\"G14\": \"G14\", \"G15\": \"G15\"}\n")], ["A_stage_order_and_markers"]),
+    ("the mint-stage name guard is deleted (a wrong token_check_names override runs on to S4)", [("        bad = self.token_name_problems(seed, tok)\n", "        bad = []\n")], ["L_a_wrong_token_name_stops_at_the_mint_before_any_pass"]),
+    ("the mint-stage guard ignores the status (a check that is not PASS passes)", [("            if status != \"PASS\":\n", "            if False:\n")], ["L_a_wrong_token_name_stops_at_the_mint_before_any_pass"]),
+    ("the mint-stage guard checks only the G14 / G15 names, not every value (a stray key slips through)",
+     [("        wanted = list({**TOKEN_CHECK_NAMES, **(override if isinstance(override, dict) else {})}.values())\n", "        wanted = [(override or {}).get(g, TOKEN_CHECK_NAMES[g]) for g in (\"G14\", \"G15\")]\n")], ["L_a_wrong_token_name_stops_at_the_mint_before_any_pass"]),
+    ("the mint-stage guard always reads the first seed's token (the second seed's missing check is not seen)",
+     [("        bad = self.token_name_problems(seed, tok)\n", "        bad = self.token_name_problems(0, self.token_file(0))\n")], ["L_a_wrong_token_name_stops_at_the_mint_before_any_pass"]),
     ("the argv lever check is skipped", [("        if lever_issues:\n", "        if False:\n")], ["J_named_parameters_and_levers"]),
     ("rule E may fire twice", [("            if os.path.exists(self.rule_e_path):\n                raise ChainStop(RC_INVALID, \"rule E already fired", "            if False:\n                raise ChainStop(RC_INVALID, \"rule E already fired")], ["H_families_read_integration_and_rule_e"]),
     ("a failed gate before the read does not stop it", [("        bad = sorted(k for k, v in gates.items() if not v)\n", "        bad = []\n")], ["I_stop_points"]),

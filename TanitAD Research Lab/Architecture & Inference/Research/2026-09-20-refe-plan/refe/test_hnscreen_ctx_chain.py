@@ -12,7 +12,7 @@ Every gate process appends {sub, reads, files} to a log: a READ is one `gate_tok
 THE ARMS  C_* : the anchored chain end to end (the default mode; stage order, the calls each stage makes, ZERO reads at the intermediate calls, 1 + 1 at the ends, the END_VERIFY_OK record, the reader gate admits);
  the content-mode chain is today's chain (stage order, gate calls, 6 full reads per seed); R1 mid-chain same-size same-mtime edit -> ENDV fails -> VOID -> no outputs read -> a resume cannot launder it; R2 a size change between two
  passes -> the next intermediate call refuses and the trainer is not started; R5 the END record deleted -> the reader refuses the chain's own read command; a refused anchor trains nothing; resume keeps the chain; a bad ctx_mode is a
- config error.  Every mutation edits hnscreen_devbox.py SOURCE (each snippet occurs exactly once) and must turn the named arms RED.
+ config error; a wrong `gate.token_check_names` override (a check the REAL token does not carry) stops the chain AT THE MINT of pass 0 (HNSCREEN-TOKEN-NAMES follow-up).  Every mutation edits hnscreen_devbox.py SOURCE (each snippet occurs exactly once) and must turn the named arms RED.
 """
 from __future__ import annotations
 
@@ -183,8 +183,9 @@ class Real:
         self.w.close()
 
 
-def scenario(R, M, name, *, seeds=(0,), mode="default", tamper=None, spec=None, stop_after=None, pre=None, cfg_extra=None):
-    """one chain run: a fresh state dir, a fresh COPY of the sealed cache, the shim gate.  tamper = (mode, seed|'any') runs after the trainer of that pass.  -> (sc, rc, chain, shim log rows)"""
+def scenario(R, M, name, *, seeds=(0,), mode="default", tamper=None, spec=None, stop_after=None, pre=None, cfg_extra=None, names=None):
+    """one chain run: a fresh state dir, a fresh COPY of the sealed cache, the shim gate.  tamper = (mode, seed|'any') runs after the trainer of that pass.  names = a `gate.token_check_names` override (default: none).
+    -> (sc, rc, chain, shim log rows)"""
     sc = TC.Sc(R.w, name)
     cache = f"{sc.d}/cache"
     shutil.copytree(R.pristine, cache)
@@ -194,6 +195,8 @@ def scenario(R, M, name, *, seeds=(0,), mode="default", tamper=None, spec=None, 
     os.environ.update({"SHIM_REFE": HERE, "SHIM_FX": json.dumps(R.fx), "SHIM_LOG": log, "SHIM_REAL_PKG": REAL_PKG})
     over = {"python": sys.executable, "gate.cmd": [sys.executable, R.shim], "gate.key_file": R.keyf, "trainer.seeds": list(seeds), "trainer.argv_template": R.template, "commands.s2_cache": [PY, sc.w.stub, "step", "s2_cache"]}      # NO gate.token_check_names override (HNSCREEN-TOKEN-NAMES): the REAL mint writes the profile's checks, and the chain's DEFAULT names must find G14 / G15 in them
     over["gate.ctx_mode"] = None if mode == "default" else mode
+    if names is not None:
+        over["gate.token_check_names"] = names
     doc = TC.make_cfg(sc, **over)
     if tamper:
         doc["commands"]["post_pass"].append({"name": "tamper", "argv": [PY, R.tamper, tamper[0], cache, str(tamper[1]), "{seed}"]})
@@ -317,6 +320,22 @@ def arms(R, M, only=None):
         sc, rc, ch, rows, cache = scenario(R, M, "C9", seeds=(0, 1))
         return (rc == 0 and subs(rows) == ["anchor", "run", "verify", "run", "verify", "verify", "verify", "end-verify"] and passes(R, rows) == 2.0)
     chk("C_two_seeds_still_cost_exactly_two_full_reads_the_anchor_and_the_end_verify", c_two_seeds_reads)
+
+    def c_wrong_token_names():
+        """HNSCREEN-TOKEN-NAMES follow-up, with the REAL mint (the real `finalize` writes the token): an override naming a check the real profile does not mint stops the chain AT THE MINT of pass 0 (rc 2,
+        `SCREEN-INVALID: token check '<name>' absent`): the gate ran `anchor` and `run` only (no `verify`, no `end-verify`), pass 1 was never minted, no trainer started, no later stage ran.  The DEFAULT passing is c_end_to_end."""
+        res = {}
+        for nm, names, needle in (("old_pair", {"G14": "G14", "G15": "G15"}, "token check 'G14' absent"), ("one_wrong", {"G15": "G-NOPE"}, "token check 'G-NOPE' absent")):
+            sc, rc, ch, rows, cache = scenario(R, M, "C10_" + nm, seeds=(0, 1), names=names)
+            lab = sc.labels()
+            st = json.load(open(f"{sc.root}/STATUS.json", encoding="utf-8"))
+            out = json.load(open(f"{sc.root}/outcome.json", encoding="utf-8"))
+            res[nm] = (rc == 2 and ch.stage_order_run == ["S0", "S1", "S2", "ANCHOR", "T0"] and subs(rows) == ["anchor", "run"] and not os.path.exists(f"{sc.root}/ctx_chain/end_verify.json")
+                       and lab.count("trainer:pre:0") == 1 and "trainer:pre:1" not in lab and not any(x.startswith(("trainer:train", "s4_", "read", "i4", "d1")) for x in lab)
+                       and not os.path.exists(f"{sc.root}/stage/T0.done.json") and st["state"] == "INVALID" and st["rc"] == 2 and st["reason"].startswith("SCREEN-INVALID: token check '") and needle in st["reason"]
+                       and out["row"] == 0 and out["name"] == "SCREEN-INVALID")
+        return all(res.values())
+    chk("C_a_wrong_token_name_override_stops_at_the_mint_with_the_real_token_no_verify_no_second_pass_no_trainer_and_no_later_stage", c_wrong_token_names)
     return bad, n[0]
 
 
@@ -353,6 +372,9 @@ MUTATIONS = [
     ("DEFAULTS: gate.token_check_names is the pre-fix G14 / G15 pair (no real token has those checks, so G14 = G15 = False)",
      [("TOKEN_CHECK_NAMES = {\"G14\": \"G-PREFLIGHT\", \"G15\": \"G-PREFLIGHT\"}\n", "TOKEN_CHECK_NAMES = {\"G14\": \"G14\", \"G15\": \"G15\"}\n")],
      ["C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_reader_admits_it"]),
+    ("verify_pass_token: the mint-stage name guard is deleted (a wrong token_check_names override runs on to the passes, and SCREEN-INVALID only at S4)",
+     [("        bad = self.token_name_problems(seed, tok)\n", "        bad = []\n")],
+     ["C_a_wrong_token_name_override_stops_at_the_mint_with_the_real_token_no_verify_no_second_pass_no_trainer_and_no_later_stage"]),
     ("stage_ANCHOR: a refused anchor does not stop the chain",
      [("        if rc != 0 or ANCHOR_OK not in text or not os.path.isfile(out):\n", "        if False:\n")],
      ["C_a_tampered_cache_is_refused_at_the_anchor_and_nothing_is_trained"]),
