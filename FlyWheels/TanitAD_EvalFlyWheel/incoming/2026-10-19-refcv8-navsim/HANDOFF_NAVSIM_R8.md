@@ -107,3 +107,38 @@ Rule-Zero levers if a bar misses (all 0-training, from plan §5.3): R8_NT (stati
 | PRIOR_ha0p (model-free) | 80.0 | 20.0 | 6.8809 | 80.0 | 100.0 | 40.0 | 14.5337 |
 
 A same-config rerun reproduced every row exactly (determinism, MEASURED n = 5). Tokens fed: TURN_L, TURN_R, TURN_R, FOLLOW, FOLLOW for the five commands; `r8_nav` all-zero and `v_max_valid` 0 on every R8_LEGAL row (read back from the rows).
+
+## 9. After the rolls: parse + bars (added 2026-10-20 by the Master Mind; A-R8-NS1 AMENDMENTS 2 and 3, GOALS_AND_CLAIMS)
+
+The rolls of section 4 produce scores, not verdicts. The verdicts come from two CPU steps, in this order:
+
+```bash
+PY=C:/Users/Admin/venvs/tanitad/Scripts/python.exe; P=<repo>/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-19-refcv8-navsim; O=<…>/step48852_ema
+F=D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/raw/floors
+# (a) navhard / warmup summaries with R8 arm names (parse8 = parse7's statistics, plus the seed-1 paired rows; PARSE8_README.md)
+$PY -X utf8 $P/code/parse8.py --split warmup_two_stage --scores $O/scores_warmup --bridge $O/bridge_warmup --floors $F/warmup_two_stage \
+  --inputs D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-refcv4b-bridge/raw/navsim_agent_inputs.json --label RESULT --out $O/summary_warmup.json
+$PY -X utf8 $P/code/parse8.py --split navhard_two_stage --scores $O/scores_navhard --bridge $O/bridge_navhard --floors $F/navhard_two_stage \
+  --inputs C:/Users/Admin/navsim-crun/exp/tanitad_bench/exports/navhard_two_stage/navsim_agent_inputs.json --csv-suffix __navhard_two_stage --label RESULT --out $O/summary_navhard.json
+# (b) the four bars. --city-census is EXPLICIT (Amendment 2): the landed raw/navtest_city_census.json (sha256 ccb9fc42…; dev-box copy
+#     C:/Users/Admin/navsim8/navtest_city_census.json). --ship-r8-passed 1 ONLY if SHIP-R8 passed on the PER-FRAME feed (SHIP-R8 Amendment 3).
+PYTHONPATH="$P/code;<repo>/taniteval" $PY -X utf8 $P/code/navsim_bars8.py --run-dir $O --tag step48852_ema --out-dir <dir> \
+  --navhard-summary $O/summary_navhard.json --warmup-summary $O/summary_warmup.json \
+  --city-census C:/Users/Admin/navsim8/navtest_city_census.json --ship-r8-passed <0|1>
+```
+
+**Check before reading any verdict:** `controls.city_census.status == "OK"` (1,914 Singapore / 12,146 tokens); `ep_clause_source_consistent`
+and `v0_inputs_vs_scorer_rows` read OK; the label reads `RESULT (EMA 48,852, the bar read)`.
+
+**The rules the verdicts apply (registered before any 48,852 NavSim number):**
+
+| bar | rule |
+|---|---|
+| N1 | PDMS(R8_LEGAL) > STOP; paired interval excludes 0 above at log_name AND nuplan_drive; margin > 2× the full-split inference floor; both seeds |
+| N2 | official two-stage EPDMS > max(STOP, CV, ECHO); paired vs STOP above 0 at log_name AND nuplan_drive (Amendment 3; the record's own `separated` is direction-agnostic and is never read as a pass); margin > 2× the seed floor; R8_LEGAL and R8_LEGAL_s1 each, combined strictly |
+| N3 | warmup S2-EPDMS-u > max(CV, STOP, ECHO); margin > 2× the seed floor; both seeds (Amendment 3); R8_BLIND must FAIL or the panel is VOID |
+| N4 | navtest PDMS(R8_LEGAL) − PDMS(refcv7-50,400 LEGAL) > 0, separated; margin > 2× the inference floor (Amendment 2: the SPEC's general NOT PROVEN rule; 1× printed beside); both seeds; MIXED-BACKEND stated |
+
+A seed-1 category that differs from seed 0, or a seed-1 mirror that cannot be evaluated, reads **NOT PROVEN**, never PASS.
+End-to-end control (refcv7-30k through the same code): N2 FAILED at both seeds, N3 NOT PROVEN, the SPEC 6.2 reference row
+(`raw/e2e_parse8_bars8_am3/E2E_CONTROL_refcv7_step30000.json`).
