@@ -1,0 +1,212 @@
+{
+ "question": "PROBE 5b = probe5_ckpt_seedsplit.py (pinned, unedited) re-pointed at the GRID-5 checkpoints (Research Lab, 2026-10-20, CPU only).  Original text follows.\nPROBE 5 (Research Lab, 2026-10-20, CPU only): why does the cos16_k6o8 lever read the plant on seed 0 (W60 F 0.846) and not on seed 1 (F 0.562)?  Read from the SAVED CHECKPOINTS.",
+ "n_train_tokens": 48,
+ "n_attn_tokens": 24,
+ "arith": "CPU fp32 (autocast off)",
+ "ckpts": [
+  {
+   "ckpt": "diag5/ckpt/G5_s1__base_k8o8_120ep.pt",
+   "run": "G5_s1",
+   "tag": "base_k8o8_120ep",
+   "K": 8,
+   "lever": null,
+   "seed": 1,
+   "taus": [
+    null,
+    null
+   ],
+   "full": {
+    "fold0": {
+     "n_sets": 39,
+     "bce": 1.0469478368759155,
+     "huber": 0.15697993338108063,
+     "auc_point": 0.714710489478843,
+     "auc_all_strata": 0.6924197002141328,
+     "auc_F": 0.4638100752750434,
+     "r2_reg": 0.9087271933070801
+    },
+    "train": {
+     "n_sets": 79,
+     "bce": 0.09057996422052383,
+     "huber": 0.06281126290559769,
+     "auc_point": 0.9924465978651934,
+     "auc_all_strata": 0.9862921028270313,
+     "auc_F": 0.9772406215664731,
+     "r2_reg": 0.9148042439232643
+    }
+   },
+   "ablate_zero_clear": {
+    "fold0": {
+     "n_sets": 39,
+     "bce": 1.0453675985336304,
+     "huber": 1.0885088443756104,
+     "auc_point": 0.6428216592151018,
+     "auc_all_strata": 0.6522483940042827,
+     "auc_F": 0.4169079328314997,
+     "r2_reg": -0.48073962134831794
+    },
+    "train": {
+     "n_sets": 79,
+     "bce": 0.09766515344381332,
+     "huber": 0.7547999024391174,
+     "auc_point": 0.9902267485975412,
+     "auc_all_strata": 0.9857580289112013,
+     "auc_F": 0.976769737874745,
+     "r2_reg": -0.5881062420905392
+    }
+   },
+   "ablate_shuffle_clear": {
+    "fold0": {
+     "n_sets": 39,
+     "bce": 1.1525927782058716,
+     "huber": 0.4133879840373993,
+     "auc_point": 0.67857477123336,
+     "auc_all_strata": 0.6454817987152034,
+     "auc_F": 0.4371742906774754,
+     "r2_reg": 0.6061695078422972
+    },
+    "train": {
+     "n_sets": 79,
+     "bce": 0.10480109602212906,
+     "huber": 0.12418146431446075,
+     "auc_point": 0.9895492309922076,
+     "auc_all_strata": 0.9835861283201595,
+     "auc_F": 0.9758279704912887,
+     "r2_reg": 0.7888831196033157
+    }
+   },
+   "ablate_no_plant": {
+    "fold0": {
+     "n_sets": 39,
+     "bce": 1.117464303970337,
+     "huber": 1.0442852973937988,
+     "auc_point": 0.5508038330561495,
+     "auc_all_strata": 0.6620128479657388,
+     "auc_F": 0.6346265199768385,
+     "r2_reg": -0.3165976692985566
+    },
+    "train": {
+     "n_sets": 79,
+     "bce": 0.32165947556495667,
+     "huber": 0.7800052762031555,
+     "auc_point": 0.9539599745085,
+     "auc_all_strata": 0.9544969023712881,
+     "auc_F": 0.9591900800502275,
+     "r2_reg": -0.6656661540363995
+    }
+   },
+   "attn_ckpt": [
+    {
+     "layer": 0,
+     "n_tokens": 24,
+     "beta_eff": [
+      9.572,
+      -1.091,
+      0.708,
+      -0.447
+     ],
+     "beta_eff_max": 9.572,
+     "logit_kernel_corr": [
+      0.4644,
+      -0.0671,
+      0.0338,
+      -0.0248
+     ],
+     "plant_mass": [
+      0.9463,
+      0.0486,
+      0.0344,
+      0.0077
+     ],
+     "self_mass": [
+      0.00301,
+      1e-05,
+      0.00011,
+      2e-05
+     ],
+     "range_plant_mean": [
+      19.365,
+      19.17,
+      23.712,
+      22.35
+     ],
+     "range_all_mean": [
+      30.777,
+      38.868,
+      38.694,
+      44.683
+     ],
+     "top1_within_0p5m": [
+      0.1391,
+      0.0252,
+      0.0196,
+      0.0209
+     ]
+    },
+    {
+     "layer": 1,
+     "n_tokens": 24,
+     "beta_eff": [
+      0.193,
+      0.115,
+      -0.394,
+      -1.556
+     ],
+     "beta_eff_max": 0.193,
+     "logit_kernel_corr": [
+      0.0693,
+      0.0084,
+      -0.0679,
+      -0.141
+     ],
+     "plant_mass": [
+      0.0915,
+      0.0244,
+      0.0072,
+      0.0556
+     ],
+     "self_mass": [
+      9e-05,
+      1e-05,
+      1e-05,
+      4e-05
+     ],
+     "range_plant_mean": [
+      2.905,
+      14.389,
+      7.132,
+      11.544
+     ],
+     "range_all_mean": [
+      9.54,
+      30.158,
+      14.374,
+      24.032
+     ],
+     "top1_within_0p5m": [
+      0.0374,
+      0.0329,
+      0.0074,
+      0.0109
+     ]
+    }
+   ],
+   "attn_logged_beta": [
+    [
+     9.576,
+     -1.09,
+     0.708,
+     -0.448
+    ],
+    [
+     0.193,
+     0.114,
+     -0.394,
+     -1.554
+    ]
+   ],
+   "attn_reproduces": true
+  }
+ ],
+ "elapsed_s": 31.63370680809021
+}
