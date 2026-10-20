@@ -40,6 +40,11 @@ import types
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REAL_PKG = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+import launch_gate as REAL_LG  # noqa: E402  -- HNSCREEN-TOKEN-NAMES: the REAL profile table (not a copy), so the stub token below carries the checks a REAL token carries
+
+_PROF = REAL_LG.PROFILES["refe_hnscreen"]
+REAL_TOKEN_CHECKS = list(_PROF["checks"]) + list(_PROF.get("na_ok", ()))     # launch_gate.finalize writes exactly these keys (prof["checks"] + na_ok), each PASS; G14 / G15 are inside G-PREFLIGHT
 SRC_PATH = os.path.join(HERE, "hnscreen_devbox.py")
 PY = getattr(sys, "_base_executable", None) or sys.executable
 SHARED_LOCK = "C:/Users/Admin/qland/work/refcv7/devbox_gpu.lock"
@@ -152,7 +157,7 @@ def main(tool, argv):
         if sub == "run":
             if (sp.get("gate_run") or {}).get("no_token"):
                 return 1
-            write(os.path.join(val(argv, "--out-dir"), "PASS_tok.json"), json.dumps({"verdict": "PASS", "binding": {"argv_sha256": sha}, "checks": {"G14": {"status": "PASS"}, "G15": {"status": "PASS"}}}))
+            write(os.path.join(val(argv, "--out-dir"), "PASS_tok.json"), json.dumps({"verdict": "PASS", "binding": {"argv_sha256": sha}, "checks": {c: {"status": "PASS"} for c in json.loads(os.environ["STUB_TOKEN_CHECKS"])}}))
             return 0
         sv = sp.get("verify") or {}
         tok = json.load(open(val(argv, "--token"), encoding="utf-8"))
@@ -266,6 +271,7 @@ class World:
             os.makedirs(os.path.dirname(p), exist_ok=True)
             open(p, "w", encoding="utf-8").write(FAKE.format(tool=tool))
         os.environ["STUB_DIR"] = self.stub_dir
+        os.environ["STUB_TOKEN_CHECKS"] = json.dumps(REAL_TOKEN_CHECKS)
         self.n = 0
 
     def close(self):
@@ -693,6 +699,8 @@ MUTATIONS = [
     ("the chain holds the lock around the cache driver", [("            text = self.must(self.cmd(\"s2_cache\"), \"S2_cache\", lock=None)", "            text = self.must(self.cmd(\"s2_cache\"), \"S2_cache\", lock=\"S2\")")], ["F_lock_discipline"]),
     ("SY < 0.10 does not stop the chain", [("            if sparse is True:\n", "            if False:\n")], ["I_stop_points"]),
     ("a failed I6 / G15 does not stop the chain", [("            bad = [g for g in (\"I6\", \"G15\") if not ev_ok(self.gate_path(g))]\n", "            bad = []\n")], ["I_stop_points"]),
+    ("DEFAULTS: gate.token_check_names is the pre-fix G14 / G15 pair (a real token has no such checks: G14 = G15 = False)",
+     [("TOKEN_CHECK_NAMES = {\"G14\": \"G-PREFLIGHT\", \"G15\": \"G-PREFLIGHT\"}\n", "TOKEN_CHECK_NAMES = {\"G14\": \"G14\", \"G15\": \"G15\"}\n")], ["A_stage_order_and_markers"]),
     ("the argv lever check is skipped", [("        if lever_issues:\n", "        if False:\n")], ["J_named_parameters_and_levers"]),
     ("rule E may fire twice", [("            if os.path.exists(self.rule_e_path):\n                raise ChainStop(RC_INVALID, \"rule E already fired", "            if False:\n                raise ChainStop(RC_INVALID, \"rule E already fired")], ["H_families_read_integration_and_rule_e"]),
     ("a failed gate before the read does not stop it", [("        bad = sorted(k for k, v in gates.items() if not v)\n", "        bad = []\n")], ["I_stop_points"]),

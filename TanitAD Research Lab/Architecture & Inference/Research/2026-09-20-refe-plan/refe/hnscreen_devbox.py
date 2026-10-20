@@ -71,12 +71,19 @@ ROW1 = ("SCREEN-SPARSE", "NO-GO (no supply)", "the draft's SPARSE lever: pair-co
 GATE_IDS = ("I1", "I2", "I3", "I4", "I5", "I6", "D1", "G14", "G15", "launch_gate")
 PER_PASS_GATES = ("I4", "I5", "D1")
 
+# HNSCREEN-TOKEN-NAMES: the names, in a REAL launch-gate token's `checks`, that carry the screen's G14 (--hn-bank) and G15 (--ctx-cache) verdicts.  A real token has only the PROFILE's checks
+# (launch_gate.PROFILES["refe_hnscreen"]["checks"] = G-HYG, G-DVB, G-PREFLIGHT, G-SUITE, + G-CLOCK as na_ok); G14 and G15 are the trainer preflight's gates, re-judged INSIDE G-PREFLIGHT
+# (launch_gate.py check_preflight, required by the argv: gate_checks.scorer_required_gates), so a token's G-PREFLIGHT PASS is the only place the token says them.  Every VALUE here must be a
+# check of the profile (raw/2026-10-20-hnscreen-token-names/test_hnscreen_token_names.py pins that against the REAL launch_gate).  The old pair {"G14": "G14", "G15": "G15"} named checks no
+# real token has, so a real token read G14 = G15 = False and the screen would have ended SCREEN-INVALID after its whole GPU spend.
+TOKEN_CHECK_NAMES = {"G14": "G-PREFLIGHT", "G15": "G-PREFLIGHT"}
+
 DEFAULTS = {
     "python": None, "pkg": None,
     "gpu": {"lock": None, "chain_marker": CHAIN_MARKER, "wait_idle": "default", "idle_timeout_s": 240.0, "poll_s": 30.0, "max_wait_s": 6 * 3600.0, "settle_s": 4.0},
     "trainer": {"cmd": None, "argv_template": None, "seeds": list(SEEDS), "extension_seeds": list(EXT_SEEDS),
                 "score_files": ["scores_update1000_A.npz", "scores_update1000_B.npz"], "attempt_artifacts": ["scores", "sft.jsonl", "sft.log"]},
-    "gate": {"cmd": None, "profile": "refe_hnscreen", "key_file": None, "arm_name_fmt": None, "token_check_names": {"G14": "G14", "G15": "G15"},
+    "gate": {"cmd": None, "profile": "refe_hnscreen", "key_file": None, "arm_name_fmt": None, "token_check_names": dict(TOKEN_CHECK_NAMES),
              "ctx_mode": "anchor-bound"},      # HNSCREEN-FP-COST (b'): the intermediate gate calls bind the cache by the chain's START anchor (stat compare), the END verify closes the residual; `content` = every call re-reads the cache in full
     "paths": {"bank_train": None, "bank_val": None, "cache_dir": None},
     "sy": {"partition_id": None, "fan_fingerprint": None, "label_version": 5},
@@ -740,8 +747,8 @@ class Chain:
             g[gid] = ev_ok(self.gate_path(gid))
         for gid in PER_PASS_GATES:
             g[gid] = all(ev_ok(self.gate_path(gid, s)) for s in seeds)
-        g["G14"] = all(self.token_checks(s, names.get("G14", "G14")) for s in seeds)
-        g["G15"] = ev_ok(self.gate_path("G15")) and all(self.token_checks(s, names.get("G15", "G15")) for s in seeds)
+        g["G14"] = all(self.token_checks(s, names.get("G14", TOKEN_CHECK_NAMES["G14"])) for s in seeds)
+        g["G15"] = ev_ok(self.gate_path("G15")) and all(self.token_checks(s, names.get("G15", TOKEN_CHECK_NAMES["G15"])) for s in seeds)
         g["launch_gate"] = all((self.marks.read(f"P{s}") or {}).get("extra", {}).get("token_verified") is True for s in seeds)
         return {k: bool(g[k]) for k in GATE_IDS}
 

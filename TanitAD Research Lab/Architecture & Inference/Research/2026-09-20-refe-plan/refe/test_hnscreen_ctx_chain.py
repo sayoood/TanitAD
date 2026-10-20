@@ -192,8 +192,7 @@ def scenario(R, M, name, *, seeds=(0,), mode="default", tamper=None, spec=None, 
         pre(cache)
     log = f"{sc.d}/shim.jsonl"
     os.environ.update({"SHIM_REFE": HERE, "SHIM_FX": json.dumps(R.fx), "SHIM_LOG": log, "SHIM_REAL_PKG": REAL_PKG})
-    over = {"python": sys.executable, "gate.cmd": [sys.executable, R.shim], "gate.key_file": R.keyf, "trainer.seeds": list(seeds), "trainer.argv_template": R.template, "commands.s2_cache": [PY, sc.w.stub, "step", "s2_cache"],
-            "gate.token_check_names": {"G14": "G-PREFLIGHT", "G15": "G-PREFLIGHT"}}      # the real token has no check named G14 / G15 (they are the trainer preflight's gates, judged by G-PREFLIGHT)
+    over = {"python": sys.executable, "gate.cmd": [sys.executable, R.shim], "gate.key_file": R.keyf, "trainer.seeds": list(seeds), "trainer.argv_template": R.template, "commands.s2_cache": [PY, sc.w.stub, "step", "s2_cache"]}      # NO gate.token_check_names override (HNSCREEN-TOKEN-NAMES): the REAL mint writes the profile's checks, and the chain's DEFAULT names must find G14 / G15 in them
     over["gate.ctx_mode"] = None if mode == "default" else mode
     doc = TC.make_cfg(sc, **over)
     if tamper:
@@ -350,6 +349,9 @@ MUTATIONS = [
      ["C_an_unknown_ctx_mode_is_a_config_error_before_anything_runs"]),
     ("DEFAULTS: the chain's default gate.ctx_mode is content",
      [("\"ctx_mode\": \"anchor-bound\"},", "\"ctx_mode\": \"content\"},")],
+     ["C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_reader_admits_it"]),
+    ("DEFAULTS: gate.token_check_names is the pre-fix G14 / G15 pair (no real token has those checks, so G14 = G15 = False)",
+     [("TOKEN_CHECK_NAMES = {\"G14\": \"G-PREFLIGHT\", \"G15\": \"G-PREFLIGHT\"}\n", "TOKEN_CHECK_NAMES = {\"G14\": \"G14\", \"G15\": \"G15\"}\n")],
      ["C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_reader_admits_it"]),
     ("stage_ANCHOR: a refused anchor does not stop the chain",
      [("        if rc != 0 or ANCHOR_OK not in text or not os.path.isfile(out):\n", "        if False:\n")],
