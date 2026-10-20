@@ -1,0 +1,2323 @@
+--- a/refe/gate_token.py
++++ b/refe/gate_token.py
+@@ -238,4 +238,8 @@
+             return f"dir-content-INVALID:{fp.get('n_problems')}:{sha256_bytes(chr(10).join(str(x) for x in (fp.get('problems') or [])).encode('utf-8'))[:16]}"
+         return f"dirc:{fp.get('n_files')}:{fp.get('bytes')}:{fp.get('content_sha256')}"
++    if fp.get("kind") == "dir-anchor":                                      # anchor_fingerprint(): a valid one carries the ANCHOR's content key (= the registered `dirc:` pin); any problem is `dir-anchor-INVALID:` and equals no registered key
++        if fp.get("n_problems") or not fp.get("content_sha256"):
++            return f"dir-anchor-INVALID:{fp.get('n_problems')}:{sha256_bytes(chr(10).join(str(x) for x in (fp.get('problems') or [])).encode('utf-8'))[:16]}"
++        return f"dirc:{fp.get('n_files')}:{fp.get('bytes')}:{fp.get('content_sha256')}"
+     return f"{fp.get('kind')}:{fp.get('sha256', fp.get('why', ''))}"
+ 
+@@ -433,4 +437,225 @@
+ 
+ 
++# ------------------------------------------------------------------------------------------ the CTX ANCHOR (HNSCREEN-FP-COST, MM ruling (b'), 2026-10-19)
++# A 3-seed screen re-read the ~70 GiB cache SIX times per seed (`launch_gate.py run` = run_checks 2 + finalize 2, then `verify` at the mint and again at the pass start) = 20 full reads (CALLMAP.md).  The content check
++# is KEPT IN FULL where it is the evidence (the seal, the fill, the START of the chain, the END of the chain); only its REPETITION in between is bounded.  An anchor is the chain's start-of-chain record: ONE full
++# content fingerprint (compared with the registered pin) + the (relpath, size, mtime_ns) of EVERY file, HMAC-signed with the gate key.  An INTERMEDIATE gate call in `anchor-bound` mode compares the live stat
++# listing with it and reads no byte: any missing, extra, resized or re-timestamped file is a REFUSAL.  The residual -- a same-size edit that also restores the mtime_ns -- is DETECTED at the END (a second full
++# fingerprint vs the anchor + a final stat compare): a mismatch writes a VOID record, and the reader (`ctx_chain_refusals`) refuses any chain without an END_VERIFY_OK record bound to the same anchor.
++# Nothing here changes `content` mode (the default everywhere): `data_manifest(ctx_anchor=None)` is the call it always was.
++CTX_MODE_CONTENT, CTX_MODE_ANCHOR = "content", "anchor-bound"
++CTX_MODES = (CTX_MODE_CONTENT, CTX_MODE_ANCHOR)
++ANCHOR_SCHEMA, ANCHOR_KIND = "tanitad.hn_ctx_anchor/1", "hn-ctx-anchor"
++END_SCHEMA, END_KIND = "tanitad.hn_ctx_end_verify/1", "hn-ctx-end-verify"
++END_OK, END_VOID = "END_VERIFY_OK", "VOID"
++ANCHOR_REL, END_REL, CHAIN_REL = "ctx_chain/anchor.json", "ctx_chain/end_verify.json", "ctx_chain/chain.json"      # under the chain root: where the chain writes them and the reader reads them
++
++
++def norm_dir(p) -> str:
++    """The identity of a directory for the anchor's 'same cache directory' test: absolute, symlinks resolved, case- and separator-normalised."""
++    return os.path.normcase(os.path.realpath(os.path.abspath(os.fspath(p))))
++
++
++def _stat_listing(root) -> tuple:
++    """({relpath: [size, mtime_ns]} of EVERY file under `root`, the content manifest INCLUDED and nothing pruned, [problems]).  Reads no byte.  A directory that cannot be listed, a file that cannot be stat'ed and
++    a symlinked directory (not followed, so its files would be bound by nothing) are PROBLEMS, never a silent skip."""
++    rootp = os.fspath(root)
++    files: dict = {}
++    problems: list = []
++
++    def onerr(e):
++        problems.append(f"cannot list {getattr(e, 'filename', '?')}: {type(e).__name__}: {e}")
++    for dirpath, dirnames, filenames in os.walk(rootp, onerror=onerr):
++        dirnames[:] = sorted(dirnames)
++        problems += [f"a symlinked directory is not followed, so its files cannot be bound: {os.path.relpath(os.path.join(dirpath, d), rootp).replace(os.sep, '/')}"
++                     for d in dirnames if os.path.islink(os.path.join(dirpath, d))]
++        for fn in sorted(filenames):
++            full = os.path.join(dirpath, fn)
++            rel = os.path.relpath(full, rootp).replace(os.sep, "/")
++            try:
++                st = os.stat(full)
++                files[rel] = [int(st.st_size), int(st.st_mtime_ns)]
++            except OSError as e:
++                problems.append(f"cannot stat {rel}: {type(e).__name__}: {e}")
++    return files, problems
++
++
++def mint_anchor(cache_dir, *, chain_id: str, key: bytes, pin, out_path) -> dict:
++    """THE START OF THE CHAIN: ONE full content fingerprint of `cache_dir` (every file re-hashed against its seal), compared with the REGISTERED pin, bracketed by two stat listings that must be equal (a file edited
++    while it is being anchored is not anchored).  Writes the HMAC-signed anchor to `out_path` and returns it.  Raises GateError on ANY problem: nothing is written then."""
++    if not re.fullmatch(r"[0-9a-f]{16,64}", str(chain_id)):
++        raise GateError("the anchor needs a chain id (16-64 hex)")
++    if not (isinstance(pin, str) and pin.startswith("dirc:")):
++        raise GateError(f"no registered content pin to anchor against ({str(pin)[:24]!r} is not a dirc: key): fill fingerprints_expected with hn_fingerprints.py first")
++    if not Path(cache_dir).is_dir():
++        raise GateError(f"cannot anchor {cache_dir}: not a directory")
++    before, p1 = _stat_listing(cache_dir)
++    fp = content_fingerprint(cache_dir)                                                      # the ONE full read of the anchor
++    after, p2 = _stat_listing(cache_dir)
++    if p1 or p2:
++        raise GateError("cannot anchor: " + "; ".join((p1 + p2)[:3]))
++    if fp.get("n_problems"):
++        raise GateError(f"cannot anchor: the cache FAILS its content check ({fp['n_problems']} problem(s)): " + "; ".join(str(x) for x in (fp.get("problems") or [])[:3]))
++    if before != after:
++        raise GateError("cannot anchor: the cache changed while it was being anchored (its stat listing moved across the content read)")
++    k = fp_key(fp)
++    if k != pin:
++        raise GateError(f"cannot anchor: the cache's content fingerprint {k[:40]} is not the registered pin {pin[:40]}")
++    doc = {"schema": ANCHOR_SCHEMA, "kind": ANCHOR_KIND, "chain_id": chain_id, "cache_dir": norm_dir(cache_dir), "minted_ns": time.time_ns(), "minted_utc": utc_now(), "key_id": key_id(key),
++           "content": {"key": k, "n_files": fp["n_files"], "bytes": fp["bytes"], "content_sha256": fp["content_sha256"], "manifest_file_sha256": fp.get("manifest_file_sha256")},
++           "pin": pin, "stat": {"n_files": len(before), "files": before}}
++    doc["hmac_sha256"] = sign(doc, key)
++    write_json(out_path, doc)
++    return doc
++
++
++def load_anchor(path, key: bytes) -> tuple:
++    """(doc | None, reasons, sha256 of the file's bytes).  Refuses an unreadable, wrong-kind, wrong-schema, unsigned / edited or malformed anchor."""
++    try:
++        raw = Path(path).read_bytes()
++        doc = json.loads(raw.decode("utf-8"))
++    except (OSError, ValueError) as e:
++        return None, [f"the anchor {path} is unreadable: {type(e).__name__}: {str(e)[:120]}"], None
++    sha = sha256_bytes(raw)
++    if not isinstance(doc, dict) or doc.get("kind") != ANCHOR_KIND or doc.get("schema") != ANCHOR_SCHEMA:
++        return None, [f"{path} is not a {ANCHOR_KIND} ({ANCHOR_SCHEMA})"], sha
++    if not signature_ok(doc, key):
++        return None, [f"the anchor's HMAC does not verify -- edited, or signed with another key (anchor key_id {str(doc.get('key_id'))[:20]}, this host's {key_id(key)})"], sha
++    st, ct = doc.get("stat"), doc.get("content")
++    if not (isinstance(st, dict) and isinstance(st.get("files"), dict) and st["files"] and isinstance(ct, dict) and ct.get("content_sha256") and type(doc.get("minted_ns")) is int
++            and all(isinstance(v, list) and len(v) == 2 and all(type(x) is int for x in v) for v in st["files"].values())):
++        return None, ["the anchor is malformed (no stat listing / content block / minted_ns)"], sha
++    return doc, [], sha
++
++
++def anchor_binding_refusals(doc: dict, *, cache_dir, chain_id, chain_start_ns) -> list:
++    """Why this anchor may not serve THIS call: another cache directory, another chain, or minted BEFORE the chain started."""
++    out = []
++    if norm_dir(cache_dir) != doc.get("cache_dir"):
++        out.append(f"the anchor was minted from another cache directory ({str(doc.get('cache_dir'))[-60:]!r}), this call names {norm_dir(cache_dir)[-60:]!r}")
++    if chain_id != doc.get("chain_id"):
++        out.append(f"the anchor belongs to another chain (anchor {str(doc.get('chain_id'))[:12]}, this call {str(chain_id)[:12]})")
++    if not isinstance(chain_start_ns, int) or doc["minted_ns"] < chain_start_ns:
++        out.append(f"the anchor is OLDER than the chain (minted_ns {doc['minted_ns']} < chain start {chain_start_ns}): it cannot vouch for a chain that began after it")
++    return out
++
++
++def anchor_listing_problems(want: dict, got: dict) -> list:
++    """Every difference between the anchor's (size, mtime_ns) listing `want` and the live one `got`: a missing file, an extra file, a changed size, a changed mtime_ns."""
++    out = [f"file in the anchor is MISSING: {r}" for r in sorted(set(want) - set(got))]
++    out += [f"file NOT in the anchor (extra, or a renamed file): {r}" for r in sorted(set(got) - set(want))]
++    out += [f"SIZE changed since the anchor: {r} (anchor {want[r][0]} bytes, now {got[r][0]})" for r in sorted(set(want) & set(got)) if want[r][0] != got[r][0]]
++    out += [f"MTIME changed since the anchor: {r} (anchor {want[r][1]} ns, now {got[r][1]} ns): the bytes are not re-read at an intermediate call, so a re-timestamped file is refused as a possible edit"
++            for r in sorted(set(want) & set(got)) if want[r][1] != got[r][1]]
++    return out
++
++
++def anchor_fingerprint(path, anchor: dict) -> dict:
++    """The ANCHOR-BOUND fingerprint of `path` (`anchor` = {"doc": <load_anchor doc>, "sha256": <anchor file sha256>}): the live (relpath, size, mtime_ns) listing is compared with the anchor's and NO BYTE IS READ.
++    Valid iff there is no difference at all; then its `fp_key` is the anchor's content key (`dirc:...`), i.e. the registered one.  Any problem -> `n_problems > 0` and the key is `dir-anchor-INVALID:...`."""
++    p = Path(path)
++    if not p.is_dir():
++        return {"kind": "missing"}
++    doc = anchor["doc"]
++    got, problems = _stat_listing(p)
++    problems += anchor_listing_problems(doc["stat"]["files"], got)
++    fp = {"kind": "dir-anchor", "mode": CTX_MODE_ANCHOR, "n_problems": len(problems), "problems": problems[:CONTENT_MAX_PROBLEMS], "anchor_sha256": anchor["sha256"], "chain_id": doc["chain_id"],
++          "method": "dir-anchor-v1 (relpath + size + mtime_ns of EVERY file compared with the chain's start anchor; NO byte is read; the anchor is one full content fingerprint compared with the registered pin; "
++                    "a same-size, same-mtime_ns edit is detected only by the chain's END verify)"}
++    if not problems:
++        c = doc["content"]
++        fp.update(n_files=c["n_files"], bytes=c["bytes"], content_sha256=c["content_sha256"])
++    return fp
++
++
++def end_verify(cache_dir, anchor: dict, key: bytes, out_path, *, seeds=()) -> dict:
++    """THE END OF THE CHAIN: a second FULL content fingerprint of `cache_dir`, compared with the START anchor, bracketed by stat listings that must still equal the anchor's.  Writes the signed record -- status
++    `END_VERIFY_OK` only if the content key AND every (size, mtime_ns) equal the anchor's, otherwise `VOID` -- and returns it.  A VOID chain's outputs are never read (`ctx_chain_refusals`)."""
++    doc = anchor["doc"]
++    before, p1 = _stat_listing(cache_dir)
++    fp = content_fingerprint(cache_dir)                                                      # the ONE full read of the end
++    after, p2 = _stat_listing(cache_dir)
++    problems = list(p1 + p2)
++    if fp.get("kind") != "dir-content":
++        problems.append(f"the cache is {fp.get('kind')} at the end of the chain")
++    if fp.get("n_problems"):
++        problems.append(f"the cache FAILS its content check at the end of the chain ({fp['n_problems']} problem(s)): " + "; ".join(str(x) for x in (fp.get("problems") or [])[:3]))
++    k_end = fp_key(fp)
++    content_equal = k_end == doc["content"]["key"]
++    if not content_equal:
++        problems.append(f"CONTENT differs from the start anchor (start {doc['content']['key'][:40]}, end {k_end[:40]})")
++    stat_problems = anchor_listing_problems(doc["stat"]["files"], before) + anchor_listing_problems(doc["stat"]["files"], after)
++    stat_equal = not stat_problems and not p1 and not p2
++    problems += stat_problems[:5]
++    rec = {"schema": END_SCHEMA, "kind": END_KIND, "status": END_OK if not problems else END_VOID, "chain_id": doc["chain_id"], "anchor_sha256": anchor["sha256"], "cache_dir": norm_dir(cache_dir),
++           "ended_ns": time.time_ns(), "ended_utc": utc_now(), "seeds": sorted(int(s) for s in seeds), "content_key_start": doc["content"]["key"], "content_key_end": k_end,
++           "content_equal": content_equal, "stat_equal": stat_equal, "n_problems": len(problems), "problems": problems[:CONTENT_MAX_PROBLEMS], "key_id": key_id(key)}
++    rec["hmac_sha256"] = sign(rec, key)
++    write_json(out_path, rec)
++    return rec
++
++
++def ctx_chain_refusals(chain_root, seeds, key: bytes) -> list:
++    """THE READER'S GATE.  [] iff every pass in `seeds` carries a signed PASS token whose `--ctx-cache` is bound (a) by CONTENT (`dir-content`: every call re-read the cache), or (b) by an ANCHOR (`dir-anchor`) and
++    then the chain's END record is signed, `END_VERIFY_OK`, bound to THE SAME anchor (sha256 of the anchor file), covers every seed asked for, and both its content and its stat comparisons were equal.  Fail closed:
++    a missing token, a missing / deleted / VOID / foreign / edited END record, two different anchors, or a listing-only token is a refusal.  Layout under `chain_root`: passes/s<seed>/lg/PASS_*.json,
++    ctx_chain/anchor.json, ctx_chain/end_verify.json."""
++    import glob
++    root = Path(chain_root)
++    seeds = sorted({int(s) for s in seeds})
++    if not seeds:
++        return ["no seed to read: there is no pass token to check the cache binding of"]
++    out, anchors = [], {}
++    for s in seeds:
++        toks = sorted(glob.glob(str(root / "passes" / f"s{s}" / "lg" / "PASS_*.json")))
++        if not toks:
++            out.append(f"seed {s}: no PASS token under {root / 'passes' / f's{s}' / 'lg'}: the cache binding of this pass cannot be established")
++            continue
++        try:
++            tok = read_json(toks[-1])
++        except (OSError, ValueError) as e:
++            out.append(f"seed {s}: the token is unreadable ({type(e).__name__})")
++            continue
++        if not signature_ok(tok, key) or tok.get("verdict") != "PASS" or tok.get("kind") != "launch-gate-token":
++            out.append(f"seed {s}: the token is not a signed PASS launch-gate token")
++            continue
++        d = (((tok.get("binding") or {}).get("data")) or {}).get("--ctx-cache")
++        kind = d.get("kind") if isinstance(d, dict) else None
++        if kind == "dir-content" and not d.get("n_problems") and d.get("content_sha256"):
++            continue
++        if kind == "dir-anchor" and d.get("mode") == CTX_MODE_ANCHOR and not d.get("n_problems") and d.get("content_sha256") and re.fullmatch(r"[0-9a-f]{64}", str(d.get("anchor_sha256"))):
++            anchors[s] = d["anchor_sha256"]
++            continue
++        out.append(f"seed {s}: the token binds --ctx-cache as {kind!r}, which is neither a valid content fingerprint (dir-content) nor an anchor-bound one (dir-anchor)")
++    if out or not anchors:
++        return out
++    shas = sorted(set(anchors.values()))
++    if len(shas) != 1:
++        return [f"the pass tokens are bound to {len(shas)} different anchors ({[x[:12] for x in shas]}): one chain has one anchor"]
++    adoc, areasons, asha = load_anchor(root / ANCHOR_REL, key)
++    if areasons:
++        return areasons
++    if asha != shas[0]:
++        return [f"the anchor on disk ({asha[:12]}) is not the anchor the tokens are bound to ({shas[0][:12]})"]
++    try:
++        rec = read_json(root / END_REL)
++    except (OSError, ValueError):
++        return [f"no END_VERIFY_OK record ({END_REL}): the chain's end verify did not run, or its record was deleted -- the screen's outputs are not read"]
++    if not (isinstance(rec, dict) and rec.get("kind") == END_KIND and rec.get("schema") == END_SCHEMA) or not signature_ok(rec, key):
++        return [f"{END_REL} is not a signed {END_KIND} record (edited, foreign or malformed)"]
++    if rec.get("status") != END_OK:
++        return [f"the chain is {rec.get('status')!r}, not {END_OK}: the cache changed under the chain ({'; '.join(str(x) for x in (rec.get('problems') or [])[:2])[:300]})"]
++    out = []
++    if rec.get("anchor_sha256") != asha or rec.get("chain_id") != adoc["chain_id"]:
++        out.append(f"the {END_OK} record is bound to another anchor/chain (record anchor {str(rec.get('anchor_sha256'))[:12]}, the tokens' {asha[:12]})")
++    if rec.get("content_equal") is not True or rec.get("stat_equal") is not True or rec.get("content_key_end") != adoc["content"]["key"]:
++        out.append(f"the {END_OK} record does not carry equal content AND stat comparisons")
++    if not set(seeds) <= {int(x) for x in (rec.get("seeds") or [])}:
++        out.append(f"the {END_OK} record covers seeds {rec.get('seeds')}, the read asks for {seeds}")
++    if not (type(rec.get("ended_ns")) is int and rec["ended_ns"] >= adoc["minted_ns"]):
++        out.append(f"the {END_OK} record is not later than its anchor")
++    return out
++
++
+ def flag_pairs(argv: list) -> list:
+     """[(flag, [values...])] -- a token starting with `--` opens a flag, the tokens after it are its values."""
+@@ -452,15 +677,19 @@
+ 
+ 
+-def _timed_fingerprint(path, pool=None, content=False) -> tuple:
++def _timed_fingerprint(path, pool=None, content=False, anchor=None) -> tuple:
+     t0 = time.perf_counter()
+-    fp = content_fingerprint(path) if content else fingerprint(path, _pool=pool)       # content: a directory's BYTES are hashed (on its own hash pool); `pool` is the listing's stat pool
++    if content and anchor is not None:                                                  # ANCHOR-BOUND (HNSCREEN-FP-COST): stat compare against the chain's start anchor, no byte read
++        fp = anchor_fingerprint(path, anchor)
++    else:
++        fp = content_fingerprint(path) if content else fingerprint(path, _pool=pool)       # content: a directory's BYTES are hashed (on its own hash pool); `pool` is the listing's stat pool
+     return fp, time.perf_counter() - t0
+ 
+ 
+-def data_manifest(argv: list, data_flags: Iterable[str], gate_inputs: dict | None = None, path_map=None, timings: dict | None = None, content_flags: Iterable[str] = ()) -> dict:
++def data_manifest(argv: list, data_flags: Iterable[str], gate_inputs: dict | None = None, path_map=None, timings: dict | None = None, content_flags: Iterable[str] = (), ctx_anchor: dict | None = None) -> dict:
+     """Every input the launch READS, fingerprinted on THIS host: the value of each data flag in the argv, plus the gate's own inputs
+     (`gate:*`).  A data flag that is passed and missing on the host is a finding (`data_problems`).  `timings`, when given, is filled {input: seconds}: evidence of where the
+     time went, never part of the manifest.  `content_flags`: the flags whose DIRECTORY value is fingerprinted by CONTENT (`content_fingerprint`: every byte re-hashed against the build-time manifest)
+-    instead of by listing; default (): every flag is fingerprinted exactly as it always was."""
++    instead of by listing; default (): every flag is fingerprinted exactly as it always was.  `ctx_anchor` (HNSCREEN-FP-COST; default None = every content flag is re-read in full, today's behaviour):
++    {"doc", "sha256"} of a chain's start anchor; a content flag is then fingerprinted ANCHOR-BOUND (`anchor_fingerprint`: a stat compare, no byte read)."""
+     want = set(data_flags)
+     cflags = set(content_flags)
+@@ -481,5 +710,5 @@
+     if nthr <= 1 or not jobs:
+         for key, extra, path, byc in jobs:
+-            fp, dt = _timed_fingerprint(path, None, byc)
++            fp, dt = _timed_fingerprint(path, None, byc, ctx_anchor)
+             man[key] = {**extra, **fp}
+             if timings is not None:
+@@ -488,5 +717,5 @@
+     with concurrent.futures.ThreadPoolExecutor(max_workers=nthr, thread_name_prefix="fp-stat") as stat_pool, \
+             concurrent.futures.ThreadPoolExecutor(max_workers=min(len(jobs), 8), thread_name_prefix="fp-job") as job_pool:
+-        futs = [job_pool.submit(_timed_fingerprint, path, stat_pool, byc) for _, _, path, byc in jobs]
++        futs = [job_pool.submit(_timed_fingerprint, path, stat_pool, byc, ctx_anchor) for _, _, path, byc in jobs]
+         try:
+             for (key, extra, _, _), f in zip(jobs, futs):
+@@ -505,5 +734,7 @@
+             if v.get("kind") in ("missing", "unresolved")] + \
+            [f"data input {k} ({v.get('path', '')}) FAILS its content check ({v.get('n_problems')} problem(s)): {'; '.join(str(x) for x in (v.get('problems') or [])[:3])}" for k, v in sorted(data.items())
+-            if v.get("kind") == "dir-content" and v.get("n_problems")]
++            if v.get("kind") == "dir-content" and v.get("n_problems")] + \
++           [f"data input {k} ({v.get('path', '')}) FAILS its anchor check ({v.get('n_problems')} problem(s)): {'; '.join(str(x) for x in (v.get('problems') or [])[:3])}" for k, v in sorted(data.items())
++            if v.get("kind") == "dir-anchor" and v.get("n_problems")]
+ 
+ 
+@@ -590,5 +821,5 @@
+ 
+ def verify_token(token_path, argv: list, pkg, *, key: bytes, profile: str | None = None, data_flags: Iterable[str] = (),
+-                 commit: str | None = None, path_map=None, content_flags: Iterable[str] = ()):
++                 commit: str | None = None, path_map=None, content_flags: Iterable[str] = (), ctx_anchor: dict | None = None):
+     """THE SUPERVISOR'S SIDE.  Every field the token binds is RE-MEASURED here; any difference refuses.  Returns (ok, reasons, info)."""
+     reasons: list = []
+@@ -628,5 +859,7 @@
+     flags = list(data_flags) or sorted({k for k in (b.get("data") or {}) if k.startswith("--")})
+     t_data, dtim = time.perf_counter(), {}
+-    data = data_manifest(argv, flags, b.get("gate_inputs") or {}, path_map, timings=dtim, content_flags=content_flags)
++    data = data_manifest(argv, flags, b.get("gate_inputs") or {}, path_map, timings=dtim, content_flags=content_flags, ctx_anchor=ctx_anchor)
++    if ctx_anchor is not None:                                                  # the call RECORDS which mode it used (content-mode records are exactly what they always were)
++        info["ctx_cache"] = {"mode": CTX_MODE_ANCHOR, "anchor_sha256": ctx_anchor["sha256"], "chain_id": ctx_anchor["doc"]["chain_id"]}
+     info.setdefault("timing_s", {})["data_manifest"] = round(time.perf_counter() - t_data, 2)
+     info["timing_s"]["data_inputs"] = dict(sorted(dtim.items(), key=lambda kv: -kv[1])[:6])
+@@ -636,5 +869,5 @@
+     if d_bad:
+         reasons.append(f"data differs from the gated data on {d_bad[:8]}")
+-        reasons += [p_ for p_ in data_problems(data) if "content check" in p_]                  # WHICH file, when the input that differs is a content-fingerprinted directory
++        reasons += [p_ for p_ in data_problems(data) if "content check" in p_ or "anchor check" in p_]       # WHICH file, when the input that differs is a content- or anchor-fingerprinted directory
+     return not reasons, reasons, info
+ 
+--- a/refe/launch_gate.py
++++ b/refe/launch_gate.py
+@@ -189,5 +189,5 @@
+ HNSCREEN_TERMS = ("hn_rows", "hn_rows_expected", "hn_loss")                              # the trainer's train rows must emit these (D1: the rows that entered the term vs the rows the bank holds)
+ HNSCREEN_SUITE = RLS1_SUITE + [{"script": "test_hn_bank.py", "token": "ZZTEST_PASS"}, {"script": "test_ctx_cache.py", "token": "ZZTEST_PASS"},
+-                               {"script": "test_hn_screen_wiring.py", "token": "ZZTEST_PASS"}, {"script": "test_hn_content_fp.py", "token": "ZZTEST_PASS"}]
++                               {"script": "test_hn_screen_wiring.py", "token": "ZZTEST_PASS"}, {"script": "test_hn_content_fp.py", "token": "ZZTEST_PASS"}, {"script": "test_hn_ctx_anchor.py", "token": "ZZTEST_PASS", "args": ["--no-mutants"]}]      # --no-mutants: G-SUITE runs the 38 arms; the 34-mutant matrix (a tree copy per mutant) is run at landing and in the sibling suite, DECLARED not skipped
+ 
+ 
+@@ -747,6 +747,7 @@
+             out.append(f"{name}: the content fingerprint of {f} cannot be checked: the registered value {str(want)[:24]!r} is not a content fingerprint (dirc:...); refill it with hn_fingerprints.py from the SEALED cache (a size listing cannot see a same-size byte flip)")
+             continue
++        anc = prof.get("ctx_anchor") if by_content else None                                # HNSCREEN-FP-COST: an ANCHOR-BOUND call stat-compares with the chain's start anchor (no byte read); None = the content check in full
+         try:
+-            fp = GT.content_fingerprint(vals[0][0]) if by_content else GT.fingerprint(vals[0][0])
++            fp = (GT.anchor_fingerprint(vals[0][0], anc) if anc is not None else GT.content_fingerprint(vals[0][0])) if by_content else GT.fingerprint(vals[0][0])
+             fk = GT.fp_key(fp)
+         except (OSError, ValueError, KeyError) as e:
+@@ -754,5 +755,5 @@
+             continue
+         if by_content and fp.get("n_problems"):
+-            out.append(f"{name}: the content fingerprint of {f} cannot be taken: {fp['n_problems']} problem(s): " + "; ".join(str(x) for x in fp.get("problems", [])[:3]))
++            out.append(f"{name}: the {'anchor-bound' if anc is not None else 'content'} fingerprint of {f} cannot be taken: {fp['n_problems']} problem(s): " + "; ".join(str(x) for x in fp.get("problems", [])[:3]))
+             continue
+         if fk != want:
+@@ -957,5 +958,5 @@
+     gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json)
+     dtim: dict = {}
+-    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof))
++    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof), ctx_anchor=prof.get("ctx_anchor"))
+     _log_manifest_timing("run", t_tree, time.perf_counter() - t0 - t_tree, dtim)
+     rehearsal = bool(prof.get("rehearsal"))
+@@ -1197,5 +1198,5 @@
+     gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json)
+     dtim: dict = {}
+-    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof))
++    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof), ctx_anchor=prof.get("ctx_anchor"))
+     _log_manifest_timing("finalize", t_tree, time.perf_counter() - t0 - t_tree, dtim)
+     binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
+@@ -1276,4 +1277,75 @@
+ 
+ 
++# ============================================================================================ the CTX ANCHOR commands (HNSCREEN-FP-COST, MM ruling (b'))
++def _with_ctx_anchor(a, prof: dict, argv: list, key=None) -> dict:
++    """The profile with THIS call's anchor folded in (the way `declared_arm` is) when `--ctx-mode anchor-bound`; the profile itself, untouched, in `content` mode (the default: every intermediate call re-reads the
++    cache in full, exactly as before).  An anchor named under `content`, an anchor-bound call without its anchor / chain id / chain start, a profile with no content-bound --ctx-cache, an anchor that is unsigned,
++    for ANOTHER cache directory, for another chain, or OLDER than the chain: GateError (the caller refuses)."""
++    mode = getattr(a, "ctx_mode", None) or GT.CTX_MODE_CONTENT
++    named = [n for n in ("anchor", "chain_id", "chain_start_ns") if getattr(a, n, None) not in (None, "")]
++    if mode == GT.CTX_MODE_CONTENT:
++        if named:
++            raise GT.GateError("--" + " --".join(n.replace("_", "-") for n in named) + " given with --ctx-mode content: an anchor is only used in anchor-bound mode (refused, never silently ignored)")
++        return prof
++    if mode != GT.CTX_MODE_ANCHOR:
++        raise GT.GateError(f"unknown --ctx-mode {mode!r}")
++    if not prof.get("hn_rules"):
++        raise GT.GateError(f"--ctx-mode anchor-bound is defined only for a profile with a content-bound --ctx-cache (the HN screen's); {prof.get('name')} refuses it")
++    if len(named) != 3:
++        raise GT.GateError("--ctx-mode anchor-bound needs --anchor, --chain-id and --chain-start-ns")
++    vals = GT.flag_values(argv, "--ctx-cache")
++    if not vals or len(vals) != 1:
++        raise GT.GateError("--ctx-mode anchor-bound: the argv does not carry --ctx-cache with exactly one value")
++    if key is None:
++        key = GT.load_key(getattr(a, "key_file", None), create=False, forbid_under=[a.pkg] if getattr(a, "pkg", None) else [])
++    doc, reasons, sha = GT.load_anchor(a.anchor, key)
++    if doc is not None:
++        reasons = reasons + GT.anchor_binding_refusals(doc, cache_dir=vals[0], chain_id=a.chain_id, chain_start_ns=int(a.chain_start_ns))
++    if reasons:
++        raise GT.GateError("anchor refused: " + "; ".join(reasons))
++    return {**prof, "ctx_anchor": {"doc": doc, "sha256": sha}}
++
++
++def cmd_anchor(a) -> int:
++    """THE START OF THE CHAIN: one full content fingerprint of --ctx-cache, compared with the profile's REGISTERED pin (never a CLI value), then the HMAC-signed anchor.  rc 0 + ZZGATE-ANCHOR-OKZZ, or rc 5."""
++    prof = PROFILES[a.profile]
++    try:
++        if not prof.get("hn_rules"):
++            raise GT.GateError(f"{a.profile} has no content-bound --ctx-cache: there is nothing to anchor")
++        key = GT.load_key(a.key_file, create=True, forbid_under=[a.pkg])
++        doc = GT.mint_anchor(a.ctx_cache, chain_id=a.chain_id, key=key, pin=(prof.get("fingerprints_expected") or {}).get("--ctx-cache"), out_path=a.out)
++    except GT.GateError as e:
++        print("REFUSED:", str(e)[:600], file=sys.stderr, flush=True)
++        print("ZZGATE-ANCHOR-REFUSEDZZ", flush=True)
++        return 5
++    print(f"anchor {a.out}: {doc['stat']['n_files']} files, content {doc['content']['key'][:48]}, chain {doc['chain_id'][:12]}", flush=True)
++    print("ZZGATE-ANCHOR-OKZZ", flush=True)
++    return 0
++
++
++def cmd_end_verify(a) -> int:
++    """THE END OF THE CHAIN: a second full content fingerprint vs the START anchor + a final stat compare.  Writes the signed END_VERIFY_OK / VOID record.  rc 0 + ZZGATE-END_VERIFY_OKZZ, or rc 5 (VOID or refused)."""
++    prof = PROFILES[a.profile]
++    try:
++        if not prof.get("hn_rules"):
++            raise GT.GateError(f"{a.profile} has no content-bound --ctx-cache: there is no chain to end-verify")
++        key = GT.load_key(a.key_file, create=False, forbid_under=[a.pkg])
++        doc, reasons, sha = GT.load_anchor(a.anchor, key)
++        if doc is not None:
++            reasons = reasons + GT.anchor_binding_refusals(doc, cache_dir=a.ctx_cache, chain_id=a.chain_id, chain_start_ns=int(a.chain_start_ns))
++        if reasons:
++            raise GT.GateError("anchor refused: " + "; ".join(reasons))
++        rec = GT.end_verify(a.ctx_cache, {"doc": doc, "sha256": sha}, key, a.out, seeds=[int(s) for s in a.seeds.split(",") if s.strip() != ""])
++    except (GT.GateError, ValueError) as e:
++        print("REFUSED:", str(e)[:600], file=sys.stderr, flush=True)
++        print("ZZGATE-END_VERIFY-REFUSEDZZ", flush=True)
++        return 5
++    for p in rec["problems"][:8]:
++        print("PROBLEM:", p[:300], file=sys.stderr, flush=True)
++    print(f"end verify {rec['status']}: content_equal {rec['content_equal']}, stat_equal {rec['stat_equal']}, chain {rec['chain_id'][:12]} -> {a.out}", flush=True)
++    print(f"ZZGATE-{rec['status']}ZZ", flush=True)
++    return 0 if rec["status"] == GT.END_OK else 5
++
++
+ def cmd_run(a) -> int:
+     prof = _profile_for(a, minting=True)
+@@ -1281,4 +1353,10 @@
+     pkg, out = Path(a.pkg), Path(a.out_dir)
+     key = GT.load_key(a.key_file, create=True, forbid_under=[pkg])
++    try:
++        prof = _with_ctx_anchor(a, prof, argv, key)                           # HNSCREEN-FP-COST: content mode (the default) returns the profile untouched
++    except GT.GateError as e:
++        print("REFUSED:", str(e)[:600], file=sys.stderr, flush=True)
++        print("ZZGATE-REFUSEDZZ", flush=True)
++        return 5
+     man = GT.read_json(pkg / GT.SHIP_MANIFEST) if (pkg / GT.SHIP_MANIFEST).is_file() else None
+     commit = man.get("commit") if man else a.commit
+@@ -1338,6 +1416,8 @@
+     try:
+         key = GT.load_key(a.key_file, create=False, forbid_under=[a.pkg])
+-        ok, reasons, info = GT.verify_token(a.token, _argv_of(a), a.pkg, key=key, profile=a.profile, data_flags=prof["data_flags"] if prof else (),
+-                                            commit=a.commit, content_flags=content_flags_of(prof) if prof else ())
++        argv_v = _argv_of(a)
++        pa = _with_ctx_anchor(a, prof if prof else {"name": a.profile}, argv_v, key)         # HNSCREEN-FP-COST: content mode (the default) returns the profile untouched
++        ok, reasons, info = GT.verify_token(a.token, argv_v, a.pkg, key=key, profile=a.profile, data_flags=prof["data_flags"] if prof else (),
++                                            commit=a.commit, content_flags=content_flags_of(prof) if prof else (), ctx_anchor=pa.get("ctx_anchor"))
+     except Exception as e:                                                   # noqa: BLE001 -- refuse, never pass
+         ok, reasons, info = False, [f"{type(e).__name__}: {e}"], {}
+@@ -1358,5 +1438,13 @@
+ 
+ def cmd_refusals(a) -> int:
+-    rs = profile_refusals(_profile_for(a, minting=False), _argv_of(a))
++    prof = _profile_for(a, minting=False)
++    argv = _argv_of(a)
++    try:
++        prof = _with_ctx_anchor(a, prof, argv)
++    except GT.GateError as e:
++        print("REFUSED:", str(e)[:600])
++        print("ZZGATE-REFUSEDZZ")
++        return 5
++    rs = profile_refusals(prof, argv)
+     for r in rs:
+         print("REFUSED:", r)
+@@ -1375,4 +1463,10 @@
+         p.add_argument("--key-file")
+         p.add_argument("--pkg", required=(name != "refusals"))
++        p.add_argument("--ctx-mode", choices=GT.CTX_MODES, default=GT.CTX_MODE_CONTENT,
++                       help="HNSCREEN-FP-COST: how this call binds the HN screen's --ctx-cache.  `content` (DEFAULT, today's behaviour): every byte re-read.  `anchor-bound`: a stat compare with the chain's START anchor (no byte read); "
++                            "needs --anchor, --chain-id, --chain-start-ns; only the HN screen chain's intermediate calls use it, and its END verify (`end-verify`) closes the residual")
++        p.add_argument("--anchor", help="the chain's start anchor (`anchor` writes it); anchor-bound mode only")
++        p.add_argument("--chain-id", help="the chain id the anchor must belong to; anchor-bound mode only")
++        p.add_argument("--chain-start-ns", type=int, help="time.time_ns() the chain began at: an anchor minted before it is refused; anchor-bound mode only")
+         if name in ("run", "refusals"):
+             p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1D_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI) | set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS) + sorted(AUXS1C_ARM_CLASS) + sorted(set(HNSCREEN_ARM_CLASS) | set(HNSCREEN_NEEDS_PI)) + sorted(set(RLS1E_ARM_CLASS) - set(RLS1D_ARM_CLASS)),
+@@ -1404,4 +1498,21 @@
+     p.add_argument("--key-file")
+     p.add_argument("--commit")
++    p = sub.add_parser("anchor", help="HNSCREEN-FP-COST: the START of an HN screen chain -- one full content fingerprint of --ctx-cache vs the registered pin, then a signed anchor")
++    p.add_argument("--profile", required=True, choices=sorted(PROFILES))
++    p.add_argument("--ctx-cache", required=True)
++    p.add_argument("--chain-id", required=True)
++    p.add_argument("--out", required=True)
++    p.add_argument("--pkg", required=True)
++    p.add_argument("--key-file")
++    p = sub.add_parser("end-verify", help="HNSCREEN-FP-COST: the END of an HN screen chain -- a second full content fingerprint vs the anchor + a final stat compare; writes END_VERIFY_OK or VOID")
++    p.add_argument("--profile", required=True, choices=sorted(PROFILES))
++    p.add_argument("--ctx-cache", required=True)
++    p.add_argument("--anchor", required=True)
++    p.add_argument("--chain-id", required=True)
++    p.add_argument("--chain-start-ns", type=int, required=True)
++    p.add_argument("--seeds", default="")
++    p.add_argument("--out", required=True)
++    p.add_argument("--pkg", required=True)
++    p.add_argument("--key-file")
+     p = sub.add_parser("ship-manifest")
+     p.add_argument("--pkg", required=True)
+@@ -1411,5 +1522,5 @@
+     p.add_argument("--out", required=True)
+     a = ap.parse_args(argv)
+-    return {"run": cmd_run, "verify": cmd_verify, "refusals": cmd_refusals, "ship-manifest": cmd_ship, "suite-prerun": cmd_suite_prerun}[a.cmd](a)
++    return {"run": cmd_run, "verify": cmd_verify, "refusals": cmd_refusals, "ship-manifest": cmd_ship, "suite-prerun": cmd_suite_prerun, "anchor": cmd_anchor, "end-verify": cmd_end_verify}[a.cmd](a)
+ 
+ 
+--- a/refe/hnscreen_devbox.py
++++ b/refe/hnscreen_devbox.py
+@@ -10,6 +10,8 @@
+     S1  bank build, SY (hn_bank.py yield), I1, I2          ->  STOP: SCREEN-INVALID (a gate failed; checked FIRST, section 11 row 0) / SCREEN-SPARSE (SY < 0.10, row 1)
+     S2  trunk-context cache (units, the LANDED lock taken by the driver per unit), I6, G15 (GPU, behind the lease)   ->  STOP: SCREEN-INVALID
+-    T<s>  mint the `refe_hnscreen` token of pass s: trainer --preflight (GPU), `launch_gate.py run`, `launch_gate.py verify`
++    ANCHOR  (gate.ctx_mode anchor-bound, the DEFAULT; HNSCREEN-FP-COST) the START of the chain: `launch_gate.py anchor` = ONE full content fingerprint of the cache vs the registered pin + a signed stat listing
++    T<s>  mint the `refe_hnscreen` token of pass s: trainer --preflight (GPU), `launch_gate.py run`, `launch_gate.py verify`   (anchor-bound: a stat compare with the anchor, no byte read)
+     P<s>  the paired pass of seed s: `launch_gate.py verify` IMMEDIATELY before the trainer starts, then the trainer behind the lease, then the post-pass gates (I4 / I5 / D1)
++    ENDV  (anchor-bound) the END of the chain, before any output is read: `launch_gate.py end-verify` = a second full content fingerprint vs the anchor + a final stat compare -> END_VERIFY_OK, or the chain is VOID
+     S4  the gates file, the offsets scoring (M3), `hn_screen_families.py --per-set-out`, `hn_screen_read.py --families-per-set`
+     VERDICT  the first matching section-11 row; row None = rule E fired: seeds 3 and 4 are added (ONCE) and the chain re-plans
+@@ -42,4 +44,5 @@
+ import os
+ import re
++import secrets
+ import subprocess
+ import sys
+@@ -52,4 +55,6 @@
+ CHAIN_MARKER = "C:/Users/Admin/qland/work/refcv7/devbox_gpu.chain_active"
+ MATCH = "ZZGATE-MATCHZZ"
++ANCHOR_OK, END_OK_MARK = "ZZGATE-ANCHOR-OKZZ", "ZZGATE-END_VERIFY_OKZZ"             # HNSCREEN-FP-COST: what the gate's `anchor` / `end-verify` print on success
++CTX_MODES = ("content", "anchor-bound")
+ PREFLIGHT_PASS = "ZZSFT_PREFLIGHT_PASS"
+ CACHE_DONE, CACHE_PARTIAL = "ZZCTX_DONE", "ZZCTX_PARTIAL"
+@@ -72,5 +77,6 @@
+     "trainer": {"cmd": None, "argv_template": None, "seeds": list(SEEDS), "extension_seeds": list(EXT_SEEDS),
+                 "score_files": ["scores_update1000_A.npz", "scores_update1000_B.npz"], "attempt_artifacts": ["scores", "sft.jsonl", "sft.log"]},
+-    "gate": {"cmd": None, "profile": "refe_hnscreen", "key_file": None, "arm_name_fmt": None, "token_check_names": {"G14": "G14", "G15": "G15"}},
++    "gate": {"cmd": None, "profile": "refe_hnscreen", "key_file": None, "arm_name_fmt": None, "token_check_names": {"G14": "G14", "G15": "G15"},
++             "ctx_mode": "anchor-bound"},      # HNSCREEN-FP-COST (b'): the intermediate gate calls bind the cache by the chain's START anchor (stat compare), the END verify closes the residual; `content` = every call re-reads the cache in full
+     "paths": {"bank_train": None, "bank_val": None, "cache_dir": None},
+     "sy": {"partition_id": None, "fan_fingerprint": None, "label_version": 5},
+@@ -558,4 +564,5 @@
+         if gate.get("key_file"):
+             cmd += ["--key-file", gate["key_file"]]
++        cmd += self.ctx_args()                                                              # HNSCREEN-FP-COST: [] in content mode
+         r = self.runner.run(cmd, f"{self.dirs['logs']}/token_verify_s{seed}.log")
+         ok = r[0] == 0 and MATCH in r[1]
+@@ -564,4 +571,67 @@
+         self.log(f"ZZHNCHAIN_TOKEN_OK s{seed} {where} sha256 {sha256_file(tok)[:12]}")
+         return tok, jload(argv_file)
++
++
++    # ------------------------------------------------------------------ the ctx anchor (HNSCREEN-FP-COST, MM ruling (b')): the START anchor, the intermediate calls' flags, the END verify
++    @property
++    def anchored(self):
++        """True iff the intermediate gate calls bind the cache by the chain's START anchor (`gate.ctx_mode` = anchor-bound, the default).  `content` = every call re-reads the cache in full, the chain exactly as it was."""
++        return self.cfg.get("gate.ctx_mode") == "anchor-bound"
++
++    @property
++    def ctx_dir(self):
++        return f"{self.root}/ctx_chain"
++
++    def chain_info(self):
++        """{chain_id, created_ns}: written ONCE (the first time the chain needs it) and never rewritten, so a resume keeps the same chain; an anchor minted before `created_ns` cannot serve it"""
++        p = f"{self.ctx_dir}/chain.json"
++        if not os.path.isfile(p):
++            jdump({"schema": "hnscreen_ctx_chain/1", "chain_id": secrets.token_hex(16), "created_ns": time.time_ns(), "created_utc": now_utc(), "cache_dir": norm(self.cfg.get("paths.cache_dir"))}, p)
++        return jload(p)
++
++    def ctx_args(self):
++        """the flags of an INTERMEDIATE gate call (`run`, `verify`): [] in content mode -- the command line is exactly what it always was"""
++        if not self.anchored:
++            return []
++        ci = self.chain_info()
++        return ["--ctx-mode", "anchor-bound", "--anchor", f"{self.ctx_dir}/anchor.json", "--chain-id", ci["chain_id"], "--chain-start-ns", str(ci["created_ns"])]
++
++    def gate_key_args(self):
++        gate = self.cfg.get("gate")
++        return ["--key-file", gate["key_file"]] if gate.get("key_file") else []
++
++    def stage_ANCHOR(self):
++        """the START of the chain: ONE full content fingerprint of the cache (the gate's `anchor`: vs the registered pin) + the stat listing of every file, signed.  Refused -> rc 5, nothing is trained."""
++        ci = self.chain_info()
++        gate, out = self.cfg.get("gate"), f"{self.ctx_dir}/anchor.json"
++        if os.path.exists(out):
++            os.replace(out, f"{out}.prev{int(self.clock())}")                           # evidence is archived, never deleted
++        cmd = gate["cmd"] + ["anchor", "--profile", gate["profile"], "--ctx-cache", self.cfg.get("paths.cache_dir"), "--chain-id", ci["chain_id"], "--out", out, "--pkg", self.pkg] + self.gate_key_args()
++        rc, text = self.exec(cmd, "ANCHOR")
++        if rc != 0 or ANCHOR_OK not in text or not os.path.isfile(out):
++            raise ChainStop(RC_REFUSED, f"the launch gate did not anchor the ctx cache (rc {rc}; logs/ANCHOR.log): nothing is trained", "REFUSED")
++        return [out, f"{self.ctx_dir}/chain.json"], {"chain_id": ci["chain_id"]}
++
++    def stage_ENDV(self, seeds):
++        """the END of the chain, before any output is read: a second full content fingerprint vs the anchor + a final stat compare.  Anything but END_VERIFY_OK marks the chain VOID -- permanently: a later run does
++        not re-verify (a cache restored by hand must not launder a voided chain), the outputs are never read, and the reader refuses the chain."""
++        void = f"{self.ctx_dir}/VOID.json"
++        if os.path.exists(void):
++            raise ChainStop(RC_INVALID, f"this chain is VOID (see {void}): the ctx cache changed under it; a new screen needs a new state dir", "INVALID")
++        ci = self.chain_info()
++        gate, out = self.cfg.get("gate"), f"{self.ctx_dir}/end_verify.json"
++        if os.path.exists(out):
++            os.replace(out, f"{out}.prev{int(self.clock())}")
++        cmd = gate["cmd"] + ["end-verify", "--profile", gate["profile"], "--ctx-cache", self.cfg.get("paths.cache_dir"), "--anchor", f"{self.ctx_dir}/anchor.json", "--chain-id", ci["chain_id"],
++                             "--chain-start-ns", str(ci["created_ns"]), "--seeds", ",".join(str(s) for s in seeds), "--out", out, "--pkg", self.pkg] + self.gate_key_args()
++        rc, text = self.exec(cmd, "ENDV")
++        try:
++            status = jload(out).get("status")
++        except (OSError, ValueError):
++            status = None
++        if rc != 0 or END_OK_MARK not in text or status != "END_VERIFY_OK":
++            jdump({"void_utc": now_utc(), "rc": rc, "record_status": status, "record": out}, void)
++            raise ChainStop(RC_INVALID, f"the end verify of the ctx cache did not pass (rc {rc}, record {status!r}; logs/ENDV.log): the chain is VOID and its outputs are never read", "INVALID")
++        return [out], {"seeds": list(seeds)}
+ 
+     # ------------------------------------------------------------------ stage bodies: each returns (outputs, extra)
+@@ -625,4 +695,5 @@
+         if gate.get("key_file"):
+             cmd += ["--key-file", gate["key_file"]]
++        cmd += self.ctx_args()                                                              # HNSCREEN-FP-COST: [] in content mode
+         rc, _ = self.exec(cmd, f"T{seed}_gate_run")
+         tok = self.token_file(seed)
+@@ -694,5 +765,5 @@
+              "--sy", self.sy_path, "--bank9", f"{self.dirs['s4']}/bank9.npz", "--scores9", *scores9, "--families", f"{self.dirs['s4']}/families.json",
+              "--families-per-set", self.per_set, "--rule", RULE, "--out", f"{self.dirs['s4']}/read_result.json"]
+-        return a + (["--sets", s4["sets_dir"]] if s4.get("sets_dir") else [])
++        return a + (["--sets", s4["sets_dir"]] if s4.get("sets_dir") else []) + ["--chain-root", self.root] + self.gate_key_args()          # HNSCREEN-FP-COST: the reader checks the passes' cache binding (+ the END record) itself
+ 
+     def stage_S4(self, seeds):
+@@ -737,5 +808,5 @@
+     # ------------------------------------------------------------------ stage table, fingerprints, markers, handoffs
+     def stage_list(self, seeds):
+-        return ["S0", "S1", "S2"] + [f"T{s}" for s in seeds] + [f"P{s}" for s in seeds] + ["S4", "VERDICT", "NEXT"]
++        return ["S0", "S1", "S2"] + (["ANCHOR"] if self.anchored else []) + [f"T{s}" for s in seeds] + [f"P{s}" for s in seeds] + (["ENDV"] if self.anchored else []) + ["S4", "VERDICT", "NEXT"]
+ 
+     def deps(self, sid, seeds):
+@@ -744,20 +815,25 @@
+         if sid in ("S1", "S2"):
+             return ["S0" if sid == "S1" else "S1"]
++        if sid == "ANCHOR":
++            return ["S2"]
++        if sid == "ENDV":
++            return [f"P{s}" for s in seeds]
+         if sid[0] == "T":
+-            return ["S2"]
++            return ["ANCHOR"] if self.anchored else ["S2"]
+         if sid[0] == "P":
+             return ["T" + sid[1:]]
+         if sid == "S4":
+-            return ["S1"] + [f"P{s}" for s in seeds]
++            return ["S1"] + [f"P{s}" for s in seeds] + (["ENDV"] if self.anchored else [])
+         return {"VERDICT": ["S4"], "NEXT": ["VERDICT"]}[sid]
+ 
+     def fingerprint(self, sid, seeds):
+         d = {"tool": TOOL, "cfg": self.cfg.sha, "stage": sid, "deps": {x: self.marks.digest(x) for x in self.deps(sid, seeds)}}
+-        if sid in ("S4", "VERDICT"):
++        if sid in ("S4", "VERDICT", "ENDV"):
+             d["seeds"] = list(seeds)
+         return sha256_text(json.dumps(d, sort_keys=True))
+ 
+     def body_of(self, sid, seeds):
+-        fixed = {"S0": self.stage_S0, "S1": self.stage_S1, "S2": self.stage_S2, "S4": lambda: self.stage_S4(seeds), "VERDICT": lambda: self.stage_VERDICT(seeds), "NEXT": self.stage_NEXT}
++        fixed = {"S0": self.stage_S0, "S1": self.stage_S1, "S2": self.stage_S2, "S4": lambda: self.stage_S4(seeds), "VERDICT": lambda: self.stage_VERDICT(seeds), "NEXT": self.stage_NEXT,
++                 "ANCHOR": self.stage_ANCHOR, "ENDV": lambda: self.stage_ENDV(seeds)}
+         if sid in fixed:
+             return fixed[sid]
+@@ -835,4 +911,6 @@
+         if miss:
+             raise ChainStop(RC_CONFIG, f"named parameters not set: {miss}", "CONFIG")
++        if self.cfg.get("gate.ctx_mode") not in CTX_MODES:
++            raise ChainStop(RC_CONFIG, f"gate.ctx_mode must be one of {CTX_MODES}, not {self.cfg.get('gate.ctx_mode')!r}", "CONFIG")
+         os.makedirs(self.root, exist_ok=True)
+         sha_p = f"{self.root}/config.sha256"
+@@ -845,4 +923,6 @@
+         for d in self.dirs.values():
+             os.makedirs(d, exist_ok=True)
++        if self.anchored:
++            self.chain_info()                                                               # the chain's START is recorded now (once): an anchor minted before it can never serve this chain
+         for s in self.seeds() + [int(x) for x in self.cfg.get("trainer.extension_seeds")]:      # every argv must be registered BEFORE anything runs, including rule E's
+             self.pass_argv(s)
+--- a/eval/hn_screen_read.py
++++ b/eval/hn_screen_read.py
+@@ -3,5 +3,9 @@
+ 
+     python eval/hn_screen_read.py --scores base=base.npz A0=... A1=... A2=... B0=... B1=... B2=... [A3= A4= B3= B4=] [C0=c0.npz] --pdm <pdm dir> --rl-val-scenes rl_val_scenes.tsv \\
+-        --sets <rl_fan sets dir> --gates gates.json [--scores9 base=... A0=... ...] [--bank9 <rl_val.hnbank>] [--families families.json --families-per-set families_per_set.npz] --rule navsim_v1_lane --out result.json
++        --sets <rl_fan sets dir> --gates gates.json --chain-root <the chain's state dir> [--key-file <gate key>] [--scores9 base=... A0=... ...] [--bank9 <rl_val.hnbank>] [--families families.json --families-per-set families_per_set.npz] --rule navsim_v1_lane --out result.json
++
++CACHE-BINDING GATE (HNSCREEN-FP-COST, MM ruling (b')).  BEFORE any score file is opened, `--chain-root` is checked (`gate_token.ctx_chain_refusals`): every pass named in --scores (A<s> / B<s>) must carry a signed PASS token whose --ctx-cache
++is bound by CONTENT (every gate call re-read the cache), or by the chain's START ANCHOR -- and then the chain's `ctx_chain/end_verify.json` must be a signed END_VERIFY_OK bound to THE SAME anchor, with equal content and stat comparisons and every
++seed covered.  No token, no record, a deleted / VOID / foreign / edited record, two anchors, or a listing-only token: the read REFUSES (rc 6, `ZZHNSCREEN_REFUSED`, nothing is read and no result is written).
+ 
+ It REUSES rl_val_eval's lookup (`load_scores`, `load_pdm`, `read_scenes`, `select`, the reward module's PDMS) for base / A_s / B_s, and `zt4_baseline.twin_pairs` unchanged for M2.
+@@ -688,4 +692,6 @@
+     ap.add_argument("--sets", default=None, help="the frozen-fan dump dir (executed plans for M2)")
+     ap.add_argument("--gates", required=True, help="json {I1,I2,I3,I4,I5,I6,D1,G14,G15,launch_gate: bool} written by the gate runs; a missing key is a failed gate")
++    ap.add_argument("--chain-root", required=True, help="the chain's state dir (passes/s<seed>/lg/PASS_*.json, ctx_chain/anchor.json, ctx_chain/end_verify.json): the read REFUSES unless the passes' cache binding is proven (see the module doc)")
++    ap.add_argument("--key-file", default=None, help="the launch-gate key that signed the tokens and the chain's anchor / END record (default: the host's gate key)")
+     ap.add_argument("--sy", default=None, help="the SY yield report json (hn_bank.py yield)")
+     ap.add_argument("--bank9", default=None, help="npz {dac9 [N9,9], status [N9], log [N9]} of the RL-val bank")
+@@ -697,4 +703,15 @@
+     ap.add_argument("--out", required=True)
+     a = ap.parse_args(argv)
++    passes = sorted({int(n[1:]) for n in (spec.partition("=")[0] for spec in a.scores) if len(n) > 1 and n[0] in "AB" and n[1:].isdigit()})
++    try:
++        import gate_token as GT                                                    # refe/ is on sys.path (above)
++        why = GT.ctx_chain_refusals(a.chain_root, passes, GT.load_key(a.key_file, create=False))
++    except Exception as e:                                                         # noqa: BLE001 -- a check that cannot run is a refusal, never a pass
++        why = [f"the chain's cache binding cannot be checked: {type(e).__name__}: {str(e)[:200]}"]
++    if why:
++        for r in why[:6]:
++            print("REFUSED:", r[:400], flush=True)
++        print("ZZHNSCREEN_REFUSED the chain's ctx-cache binding is not proven (no END_VERIFY_OK / content-bound token): nothing was read", flush=True)
++        return 6
+     arms = {}
+     for spec in a.scores:
+--- a/refe/test_hn_ctx_anchor.py
++++ b/refe/test_hn_ctx_anchor.py
+@@ -0,0 +1,960 @@
++#!/usr/bin/env python3
++"""HNSCREEN-FP-COST (MM ruling (b'), 2026-10-19): the HN screen's --ctx-cache is read in full 4 times per screen, not 20.  (raw/2026-10-19-hnscreen-fp-cost/RESULT.md)
++
++Run:  PYTHONIOENCODING=utf-8 python refe/test_hn_ctx_anchor.py               ->  ZZTEST_PASS <n>   (arms + the mutation matrix, about 6 min)
++      python refe/test_hn_ctx_anchor.py --no-mutants                        ->  ZZTEST_PASS <n>   (arms only: what G-SUITE runs; the matrix is run at landing and in the sibling suite)
++      python refe/test_hn_ctx_anchor.py --arms [--only a,b]                 ->  `ZZHNANC_RED <check>` per failing check (what the matrix reads)
++CPU only; every fixture is a tiny real cache built by the REAL `ctx_cache.finalize`; every arm runs the gate's OWN entry points (`launch_gate.main`: anchor / verify / refusals / end-verify, `cmd_run`, `finalize`,
++`run_checks`; `verify` also as the subprocess the chain runs), not only the helper functions.
++
++THE RULE (MM_RULING_FPCOST.md): the content check is kept IN FULL at the seal, the fill, the START of the chain (`launch_gate.py anchor`: one full fingerprint vs the registered pin, plus the signed
++(relpath, size, mtime_ns) of EVERY file) and the END of the chain (`end-verify`: a second full fingerprint vs the anchor + a final stat compare).  An intermediate call in `--ctx-mode anchor-bound` reads NO byte: any
++mismatch, missing or extra file is a refusal.  The residual (a same-size edit that restores the mtime_ns) is detected at the END: VOID, and the reader refuses a chain without an END_VERIFY_OK bound to the same anchor.
++`content` (the default) is today's behaviour.
++
++THE NAMED ARMS (the ruling's R1-R7):
++  R1  a same-size, same-mtime_ns byte edit mid-chain: every intermediate call still MATCHES (the residual is real), the END verify FAILS -> VOID -> the reader gate refuses.
++  R2  a size change: every intermediate entry point (verify in process and as the chain's subprocess, refusals, run_checks, finalize) refuses.
++  R3  an mtime_ns change with identical bytes: refuses (conservative by design); restoring the mtime matches again; the END verify also voids it.
++  R4  an extra file / a missing file / a renamed file: refuses.
++  R5  the end verify skipped, deleted, VOID, bound to another anchor, edited, covering fewer seeds, tokens bound to two anchors, a listing-only token: the reader gate refuses.
++  R6  an anchor from another cache directory, another chain, minted before the chain started, edited, signed with another key: refuses.  The mint refuses a cache that is not the registered pin / is unfilled / is tampered / changes while it is anchored.
++  R7  `content` mode is today's behaviour (the identity arm): same data manifest, same refusals text, same verdicts; an anchor named under content is refused; the default is content; the full-read counts are the
++      pinned 1 / 1 / 2 / 2 / 4; anchor-bound reads ZERO bytes at every intermediate entry point.
++  W   wiring: `cmd_run`, `cmd_verify`, `cmd_refusals` hand THIS call's anchor to run_checks / finalize / verify_token / profile_refusals (built-and-tested-but-unreachable is the class CLAUDE.md names).
++Every mutation below edits SOURCE (each snippet occurs EXACTLY once), deletes the single line that enforces a refusal, and must turn the named arms RED in a fresh copy of the tree.
++"""
++from __future__ import annotations
++
++import contextlib
++import hashlib
++import io
++import json
++import os
++import shutil
++import subprocess
++import sys
++import tempfile
++import time
++from pathlib import Path
++
++HERE = Path(__file__).resolve().parent
++PKG = HERE.parent
++sys.path.insert(0, str(HERE))
++ARMS_MODE = "--arms" in sys.argv
++NO_MUTANTS = "--no-mutants" in sys.argv
++ONLY = set(sys.argv[sys.argv.index("--only") + 1].split(",")) if "--only" in sys.argv else None
++
++
++def check(bad, name, fn):
++    try:
++        ok = bool(fn())
++    except Exception as e:                                            # noqa: BLE001 -- an exception IS a failed check
++        ok = False
++        if os.environ.get("HNANC_DEBUG"):
++            import traceback
++            traceback.print_exc()
++            print("  [check raised]", name, type(e).__name__, str(e)[:300])
++    if not ok:
++        bad.append(name)
++    return ok
++
++
++def arms() -> tuple:
++    import gate_token as GT
++    import launch_gate as L
++    import gate_checks as C
++    import ctx_cache as CC
++    import hn_fingerprints as HF
++    import test_ctx_cache as TCC
++    import torch  # noqa: F401  -- the tiny real cache is built with torch
++
++    bad: list = []
++    n_checks = [0]
++
++    def chk(name, fn):
++        if ONLY is not None and name not in ONLY:
++            return None
++        n_checks[0] += 1
++        return check(bad, name, fn)
++
++    root = Path(tempfile.mkdtemp(prefix="hnanc_"))
++    CONTENT = GT.CONTENT_MANIFEST
++
++    # ============================================================================ fixtures: a REAL sealed cache, a bank, the C1-based argv, the FILLED profile, a pkg, a key
++    units = TCC.mk_units()
++    model = TCC.Fake().eval()
++    trunk_fp = CC.trunk_fingerprint(model.state_dict())
++    cache = root / "cache"
++    CC.build_units(model, units, TCC.load_batch, TCC.make_forward(model), str(cache), trunk_fp=trunk_fp, log=lambda *_: None)
++    CC.finalize(str(cache), units, trunk_fp=trunk_fp, calib_sha256="calib-1")
++    bank = root / "bank.hnb"
++    bank.write_bytes(b"HNBANK1\n" + bytes(range(200)))
++    pristine = root / "pristine"
++    shutil.copytree(cache, pristine)
++    dummy = root / "dummy_input.bin"
++    dummy.write_bytes(b"an input the pod would hold; only its existence matters here")
++    c1 = list(json.loads((PKG / "eval" / "rls1b_arms.json").read_text(encoding="utf-8"))["arms"]["C1"]["argv"])
++    P0 = L.PROFILES["refe_hnscreen"]
++    c1r = list(c1)
++    for f_ in P0["data_flags"]:
++        if f_ in c1r and f_ not in L.HNSCREEN_FLAGS:
++            c1r = C._set(c1r, f_, str(dummy))
++    FX = HF.fingerprints_expected(str(bank), str(pristine))
++    PFc = {**P0, "fingerprints_expected": dict(FX)}
++    profv = {**PFc, "declared_arm": "S1"}
++    pkg = root / "pkg"
++    (pkg / "refe").mkdir(parents=True)
++    (pkg / "refe" / "dummy.py").write_text("X = 1\n", encoding="utf-8")
++    keyf = root / "gate.key"
++    key = GT.load_key(keyf, create=True, forbid_under=[pkg])
++    commit = "a" * 40
++    tree = GT.tree_manifest(pkg)
++    checks_all = profv["checks"] + tuple(profv.get("na_ok", ()))
++
++    def argv_for(cdir, seed=1):
++        return C._set(c1r, "--seed", str(seed)) + ["--hn-bank", str(bank), "--ctx-cache", str(cdir)]
++
++    def sha_file(p):
++        return hashlib.sha256(Path(p).read_bytes()).hexdigest()
++
++    def oracle_key(d):
++        files = {}
++        for r_, _ds, fs in os.walk(d):
++            for fn in fs:
++                full = os.path.join(r_, fn)
++                rel = os.path.relpath(full, d).replace(os.sep, "/")
++                if rel != CONTENT:
++                    b = open(full, "rb").read()
++                    files[rel] = (len(b), hashlib.sha256(b).hexdigest())
++        return f"dirc:{len(files)}:{sum(v[0] for v in files.values())}:{hashlib.sha256(GT.manifest_bytes(files)).hexdigest()}"
++
++    def cli(cmd, prof, extra):
++        buf = io.StringIO()
++        old = L.PROFILES["refe_hnscreen"]
++        L.PROFILES["refe_hnscreen"] = prof
++        try:
++            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
++                rc = L.main([cmd, "--profile", "refe_hnscreen", *extra])
++        finally:
++            L.PROFILES["refe_hnscreen"] = old
++        return rc, buf.getvalue()
++
++    seq = [0]
++
++    class W:
++        pass
++
++    def work(prof_pin=PFc):
++        """a working copy of the sealed cache, ANCHORED through the gate's own `anchor` command, with a PASS token minted by the real `finalize` in anchor-bound mode"""
++        seq[0] += 1
++        w = W()
++        w.n = seq[0]
++        w.dir = root / f"w{w.n}"
++        shutil.copytree(pristine, w.dir)
++        w.argv = argv_for(w.dir)
++        w.argf = root / f"argv_w{w.n}.json"
++        GT.write_json(w.argf, w.argv)
++        w.chain = hashlib.sha256(f"chain{w.n}".encode()).hexdigest()[:32]
++        w.start = time.time_ns()
++        w.anchor_p = root / f"anchor_w{w.n}.json"
++        rc, out = cli("anchor", prof_pin, ["--ctx-cache", str(w.dir), "--chain-id", w.chain, "--out", str(w.anchor_p), "--pkg", str(pkg), "--key-file", str(keyf)])
++        assert rc == 0 and "ZZGATE-ANCHOR-OKZZ" in out, out
++        w.doc, _r, w.sha = GT.load_anchor(w.anchor_p, key)
++        w.anc = {"doc": w.doc, "sha256": w.sha}
++        w.ctx = ["--ctx-mode", "anchor-bound", "--anchor", str(w.anchor_p), "--chain-id", w.chain, "--chain-start-ns", str(w.start)]
++        w.lg = root / f"lg_w{w.n}"
++        w.lg.mkdir()
++        profa = {**profv, "ctx_anchor": w.anc}
++        binding = GT.binding_of(profa["name"], commit, GT.tree_digest(tree), w.argv)
++        for c_ in checks_all:
++            L.write_evidence(w.lg, C.evidence(c_, "PASS", [], {}), binding, {})
++        w.verdict, w.tokp, w.tok = L.finalize(profa, w.argv, pkg, w.lg, key, commit=commit)
++        return w
++
++    def verify_cli(w, ctx=None, token=None, argf=None):
++        rec = root / f"vrec_{w.n}_{time.time_ns()}.json"
++        rc, out = cli("verify", PFc, ["--token", str(token or w.tokp), "--args-file", str(argf or w.argf), "--pkg", str(pkg), "--key-file", str(keyf), "--json", str(rec)] + (w.ctx if ctx is None else ctx))
++        return rc, out, (json.loads(rec.read_text(encoding="utf-8")) if rec.is_file() else None)
++
++    def verify_sub(w, ctx=None):
++        return subprocess.run([sys.executable, str(HERE / "launch_gate.py"), "verify", "--profile", "refe_hnscreen", "--token", str(w.tokp), "--args-file", str(w.argf), "--pkg", str(pkg), "--key-file", str(keyf)]
++                              + (w.ctx if ctx is None else ctx), capture_output=True, text=True, timeout=600, encoding="utf-8", errors="replace",
++                              env=dict(os.environ, PYTHONIOENCODING="utf-8", CUDA_VISIBLE_DEVICES="-1"))
++
++    def refusals_cli(w, ctx=None):
++        return cli("refusals", PFc, ["--arm-name", "S1", "--args-file", str(w.argf), "--key-file", str(keyf)] + (w.ctx if ctx is None else ctx))
++
++    def end_cli(w, seeds="1", out=None, ctx_dir=None):
++        o = out or (root / f"end_w{w.n}_{time.time_ns()}.json")
++        rc, txt = cli("end-verify", PFc, ["--ctx-cache", str(ctx_dir or w.dir), "--anchor", str(w.anchor_p), "--chain-id", w.chain, "--chain-start-ns", str(w.start), "--seeds", seeds, "--out", str(o),
++                                         "--pkg", str(pkg), "--key-file", str(keyf)])
++        return rc, txt, o
++
++    def runchecks(w, prof_ctx=True):
++        o = root / f"rc_w{w.n}_{time.time_ns()}"
++        pr = {**profv, "ctx_anchor": w.anc} if prof_ctx else profv
++        st = L.run_checks(pr, w.argv, pkg, o, commit=commit, only=("G-HYG",))
++        return st, o
++
++    def finalize_again(w):
++        o = root / f"fin_w{w.n}_{time.time_ns()}"
++        o.mkdir()
++        profa = {**profv, "ctx_anchor": w.anc}
++        binding = GT.binding_of(profa["name"], commit, GT.tree_digest(tree), w.argv)
++        for c_ in checks_all:
++            L.write_evidence(o, C.evidence(c_, "PASS", [], {}), binding, {})
++        return L.finalize(profa, w.argv, pkg, o, key, commit=commit)
++
++    # ---- the edits of a cache (each isolates ONE cause)
++    def payload(d):
++        return sorted((Path(d) / "units").glob("*.ctx.u16"))[0]
++
++    def edit_keep_mtime(p, fn):
++        st = os.stat(p)
++        b = bytearray(Path(p).read_bytes())
++        out = fn(b)
++        Path(p).write_bytes(bytes(out if out is not None else b))
++        os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))
++        assert os.stat(p).st_mtime_ns == st.st_mtime_ns, "premise: this filesystem restores mtime_ns exactly"
++        return st
++
++    def flip_same_size_same_mtime(d):
++        def f(b):
++            b[len(b) // 2] ^= 0x01
++        return edit_keep_mtime(payload(d), f)
++
++    def grow_same_mtime(d):
++        def f(b):
++            return bytes(b) + b"\x00"
++        return edit_keep_mtime(payload(d), f)
++
++    def touch_only(d, delta_ns=2_000_000_000):
++        p = payload(d)
++        st = os.stat(p)
++        os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns + delta_ns))
++        return st
++
++    def add_extra(d):
++        (Path(d) / "units" / "zz_extra.bin").write_bytes(b"x")
++
++    def delete_one(d):
++        sorted((Path(d) / "units").glob("*.fan.f32"))[0].unlink()
++
++    def rename_one(d):
++        p = sorted((Path(d) / "units").glob("*.fan.f32"))[0]
++        p.rename(p.with_name("renamed.fan.f32"))
++
++    def refused_everywhere(w, frag):
++        """every INTERMEDIATE entry point refuses: verify (in process + the chain's subprocess), refusals, run_checks, finalize"""
++        rc, out, rec = verify_cli(w)
++        sp = verify_sub(w)
++        rcr, outr = refusals_cli(w)
++        st, o = runchecks(w)
++        ev = json.loads((o / "evidence_G-HYG.json").read_text(encoding="utf-8"))
++        v2, _p, t2 = finalize_again(w)
++        txt = " | ".join(t2["reasons"])
++        return (rc == 5 and "ZZGATE-REFUSEDZZ" in out and "data differs" in out and frag in out and rec["verdict"] == "REFUSED" and sp.returncode == 5 and "ZZGATE-REFUSEDZZ" in sp.stdout
++                and rcr == 5 and "ZZGATE-REFUSEDZZ" in outr and frag in outr and set(st.values()) == {"FAIL"} and ev["inputs_read"]["--ctx-cache"]["kind"] == "dir-anchor"
++                and ev["inputs_read"]["--ctx-cache"]["n_problems"] >= 1 and v2 == "FAIL" and "anchor" in txt and frag in txt)
++
++    # ---- a chain root layout for the reader gate
++    lay = [0]
++
++    def layout(ws, *, seeds=None, end=True, end_seeds=None, tokens=True):
++        """root/passes/s<seed>/lg/PASS_*.json, root/ctx_chain/anchor.json, root/ctx_chain/end_verify.json (written by the REAL end-verify command).  ws = one work (all seeds) or {seed: work}"""
++        lay[0] += 1
++        r = root / f"chain_{lay[0]}"
++        ws = ws if isinstance(ws, dict) else {s: ws for s in (seeds or [1])}
++        w0 = next(iter(ws.values()))
++        if tokens:
++            for s, wv in ws.items():
++                (r / "passes" / f"s{s}" / "lg").mkdir(parents=True)
++                shutil.copy(wv.tokp, r / "passes" / f"s{s}" / "lg" / "PASS_t.json")
++        (r / "ctx_chain").mkdir(parents=True, exist_ok=True)
++        shutil.copy(w0.anchor_p, r / "ctx_chain" / "anchor.json")
++        if end:
++            rc, _t, o = end_cli(w0, seeds=",".join(str(s) for s in (end_seeds if end_seeds is not None else ws)))
++            shutil.copy(o, r / "ctx_chain" / "end_verify.json")
++        return r
++
++    def refusals_of(r, seeds):
++        return GT.ctx_chain_refusals(r, seeds, key)
++
++    # ============================================================================ R0 the clean control: anchor-bound calls MATCH, the key IS the registered one, the modes are recorded
++    def r0_control():
++        w = work()
++        d = w.tok["binding"]["data"]["--ctx-cache"]
++        rc, out, rec = verify_cli(w)
++        sp = verify_sub(w)
++        rcr, outr = refusals_cli(w)
++        rce, txte, oe = end_cli(w)
++        end = json.loads(Path(oe).read_text(encoding="utf-8"))
++        st, o = runchecks(w)
++        return (w.verdict == "PASS" and d["kind"] == "dir-anchor" and d["mode"] == "anchor-bound" and d["anchor_sha256"] == w.sha and GT.fp_key(d) == oracle_key(w.dir) == FX["--ctx-cache"]
++                and w.tok["binding"]["data"]["--hn-bank"]["kind"] == "file" and rc == 0 and "ZZGATE-MATCHZZ" in out and rec["verdict"] == "MATCH" and rec["info"]["ctx_cache"]["mode"] == "anchor-bound"
++                and rec["info"]["ctx_cache"]["anchor_sha256"] == w.sha and sp.returncode == 0 and "ZZGATE-MATCHZZ" in sp.stdout and rcr == 0 and "ZZGATE-CLEANZZ" in outr
++                and rce == 0 and "ZZGATE-END_VERIFY_OKZZ" in txte and end["status"] == "END_VERIFY_OK" and end["content_equal"] is True and end["stat_equal"] is True
++                and set(st.values()) == {"PASS"})
++    chk("R0_clean_control_anchor_bound_calls_MATCH_the_key_is_the_registered_pin_and_the_mode_is_recorded", r0_control)
++
++    def r0_anchor_content():
++        w = work()
++        a = w.doc
++        return (a["content"]["key"] == FX["--ctx-cache"] and a["pin"] == FX["--ctx-cache"] and a["stat"]["n_files"] == 1 + 3 * 3 + 1 and CONTENT in a["stat"]["files"] and "manifest.json" in a["stat"]["files"]
++                and GT.signature_ok(a, key) and a["cache_dir"] == GT.norm_dir(w.dir) and a["minted_ns"] >= w.start and a["chain_id"] == w.chain and GT.sha256_bytes(Path(w.anchor_p).read_bytes()) == w.sha)
++    chk("R0_the_anchor_binds_the_registered_pin_every_file_incl_the_content_manifest_a_signature_and_the_chain", r0_anchor_content)
++
++    # ============================================================================ R1 the residual: same size, same mtime_ns
++    def r1():
++        w = work()
++        st = flip_same_size_same_mtime(w.dir)                                        # premise asserted inside: the mtime_ns is exactly the original
++        rc, out, _ = verify_cli(w)
++        sp = verify_sub(w)
++        rcr, _o = refusals_cli(w)
++        stt, _ = runchecks(w)
++        residual = rc == 0 and sp.returncode == 0 and rcr == 0 and set(stt.values()) == {"PASS"}       # the intermediate calls cannot see it (this is WHY the end verify exists)
++        rce, txte, oe = end_cli(w)
++        rec = json.loads(Path(oe).read_text(encoding="utf-8"))
++        r = layout(w, end=False)
++        shutil.copy(oe, r / "ctx_chain" / "end_verify.json")
++        why = refusals_of(r, [1])
++        voided = (rce == 5 and "ZZGATE-VOIDZZ" in txte and rec["status"] == "VOID" and rec["content_equal"] is False and rec["stat_equal"] is True and any("BYTES CHANGED" in p for p in rec["problems"]))
++        return residual and voided and bool(why) and "VOID" in why[0]
++    chk("R1_same_size_same_mtime_edit_mid_chain_passes_every_intermediate_call_the_END_verify_voids_and_the_reader_gate_refuses", r1)
++
++    def r1_clean_control():
++        w = work()
++        r = layout(w)
++        return refusals_of(r, [1]) == []
++    chk("R1_control_an_untouched_chain_ends_END_VERIFY_OK_and_the_reader_gate_admits_it", r1_clean_control)
++
++    def r1_restore():
++        w = work()
++        p = payload(w.dir)
++        before = p.read_bytes()
++        flip_same_size_same_mtime(w.dir)
++        st = os.stat(p)
++        p.write_bytes(before)
++        os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))
++        rce, txte, oe = end_cli(w)
++        return rce == 0 and json.loads(Path(oe).read_text(encoding="utf-8"))["status"] == "END_VERIFY_OK"
++    chk("R1_control_the_end_verify_compares_bytes_a_restored_file_ends_OK", r1_restore)
++
++    # ============================================================================ R2 a size change
++    def r2():
++        w = work()
++        grow_same_mtime(w.dir)                                                        # ONLY the size moved (mtime_ns restored)
++        ok_refused = refused_everywhere(w, "SIZE changed since the anchor")
++        rce, _t, oe = end_cli(w)
++        return ok_refused and rce == 5 and json.loads(Path(oe).read_text(encoding="utf-8"))["status"] == "VOID"
++    chk("R2_a_size_change_refuses_every_intermediate_entry_point_and_voids_at_the_end", r2)
++
++    # ============================================================================ R3 an mtime change, identical bytes
++    def r3():
++        w = work()
++        st = touch_only(w.dir)
++        refused = refused_everywhere(w, "MTIME changed since the anchor")
++        p = payload(w.dir)
++        os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))                              # restore the mtime: the same bytes MATCH again
++        rc, out, _ = verify_cli(w)
++        return refused and rc == 0 and "ZZGATE-MATCHZZ" in out
++    chk("R3_an_mtime_ns_change_with_identical_bytes_refuses_and_restoring_it_matches_again", r3)
++
++    def r3e():
++        w = work()
++        touch_only(w.dir)                                                             # after the last intermediate call: nothing but the END can see it
++        rce, txte, oe = end_cli(w)
++        rec = json.loads(Path(oe).read_text(encoding="utf-8"))
++        return rce == 5 and rec["status"] == "VOID" and rec["content_equal"] is True and rec["stat_equal"] is False and any("MTIME changed" in p for p in rec["problems"])
++    chk("R3e_an_mtime_change_after_the_last_intermediate_call_voids_at_the_end_though_the_bytes_are_equal", r3e)
++
++    # ============================================================================ R4 an extra file, a missing file, a renamed file
++    def r4_extra():
++        w = work()
++        add_extra(w.dir)
++        return refused_everywhere(w, "file NOT in the anchor")
++    chk("R4_an_extra_file_refuses_every_intermediate_entry_point", r4_extra)
++
++    def r4_missing():
++        w = work()
++        delete_one(w.dir)
++        return refused_everywhere(w, "file in the anchor is MISSING")
++    chk("R4_a_missing_file_refuses_every_intermediate_entry_point", r4_missing)
++
++    def r4_renamed():
++        w = work()
++        rename_one(w.dir)
++        return refused_everywhere(w, "file NOT in the anchor") and "MISSING" in verify_cli(w)[1]
++    chk("R4_a_renamed_file_is_both_a_missing_and_an_extra_file_and_refuses", r4_renamed)
++
++    def r4_symlink():                                                                 # a symlinked directory is not walked, so its files are bound by nothing: a problem, never a silent skip
++        w = work()
++        real = os.path.islink
++        try:
++            os.path.islink = lambda p: os.path.basename(str(p)) == "units"
++            fp = GT.anchor_fingerprint(str(w.dir), w.anc)
++        finally:
++            os.path.islink = real
++        return fp["n_problems"] >= 1 and any("symlinked directory" in x for x in fp["problems"]) and GT.fp_key(fp).startswith("dir-anchor-INVALID:") and GT.fp_key(GT.anchor_fingerprint(str(w.dir), w.anc)) == FX["--ctx-cache"]
++    chk("R4_a_symlinked_directory_is_a_problem_not_a_silent_skip", r4_symlink)
++
++    # ============================================================================ R5 the end verify skipped / deleted / VOID / foreign / edited -> the reader gate refuses
++    def r5_skipped():
++        w = work()
++        r = layout(w, end=False)                                                     # the chain never ran its end verify
++        why = refusals_of(r, [1])
++        return len(why) == 1 and "no END_VERIFY_OK record" in why[0]
++    chk("R5_the_end_verify_skipped_the_reader_gate_refuses", r5_skipped)
++
++    def r5_deleted():
++        w = work()
++        r = layout(w)
++        ok0 = refusals_of(r, [1]) == []
++        (r / "ctx_chain" / "end_verify.json").unlink()
++        why = refusals_of(r, [1])
++        return ok0 and len(why) == 1 and "no END_VERIFY_OK record" in why[0]
++    chk("R5_the_end_record_deleted_after_it_was_written_the_reader_gate_refuses", r5_deleted)
++
++    def r5_void_flag_edited():
++        w = work()
++        flip_same_size_same_mtime(w.dir)
++        r = layout(w)                                                                 # a REAL VOID record
++        p = r / "ctx_chain" / "end_verify.json"
++        rec = json.loads(p.read_text(encoding="utf-8"))
++        void_ok = rec["status"] == "VOID" and "VOID" in refusals_of(r, [1])[0]
++        rec["status"] = "END_VERIFY_OK"                                               # hand-edited to pass: the HMAC no longer verifies
++        p.write_text(json.dumps(rec, indent=1, sort_keys=True), encoding="utf-8")
++        why = refusals_of(r, [1])
++        return void_ok and len(why) == 1 and "not a signed" in why[0]
++    chk("R5_a_VOID_record_refuses_and_a_hand_edited_one_is_refused_by_its_signature", r5_void_flag_edited)
++
++    def r5_other_anchor():
++        w = work()
++        r = layout(w)
++        p = r / "ctx_chain" / "end_verify.json"
++        rec = json.loads(p.read_text(encoding="utf-8"))
++        rec.pop("hmac_sha256")
++        rec["anchor_sha256"] = "0" * 64                                               # a perfectly valid, correctly SIGNED record -- of another anchor
++        rec["hmac_sha256"] = GT.sign(rec, key)
++        p.write_text(json.dumps(rec, indent=1, sort_keys=True), encoding="utf-8")
++        why = refusals_of(r, [1])
++        return len(why) >= 1 and "another anchor" in why[0]
++    chk("R5_an_END_VERIFY_OK_signed_for_another_anchor_is_refused", r5_other_anchor)
++
++    def r5_fewer_seeds():
++        w = work()
++        r = layout(w, seeds=[1, 2], end_seeds=[1])
++        why = refusals_of(r, [1, 2])
++        return len(why) == 1 and "covers seeds" in why[0] and refusals_of(r, [1]) == []
++    chk("R5_an_END_record_that_does_not_cover_every_seed_read_is_refused", r5_fewer_seeds)
++
++    def r5_two_anchors():
++        w1, w2 = work(), work()
++        r = layout({1: w1, 2: w2})
++        why = refusals_of(r, [1, 2])
++        return len(why) == 1 and "different anchors" in why[0]
++    chk("R5_tokens_bound_to_two_different_anchors_are_refused", r5_two_anchors)
++
++    def r5_no_token():
++        w = work()
++        r = layout(w, seeds=[1])
++        why = refusals_of(r, [1, 2])
++        return len(why) == 1 and "seed 2: no PASS token" in why[0]
++    chk("R5_a_pass_without_a_token_is_refused", r5_no_token)
++
++    def r5_listing_token():
++        w = work()
++        r = layout(w)
++        tp = r / "passes" / "s1" / "lg" / "PASS_t.json"
++        tok = json.loads(tp.read_text(encoding="utf-8"))
++        tok.pop("hmac_sha256")
++        tok["binding"]["data"]["--ctx-cache"] = {"kind": "dir", "n_files": 10, "bytes": 1, "listing_sha256": "0" * 64, "path": "x"}      # a size-listing token: the defect hnfp2 closed
++        tok["hmac_sha256"] = GT.sign(tok, key)
++        tp.write_text(json.dumps(tok, indent=1, sort_keys=True), encoding="utf-8")
++        why = refusals_of(r, [1])
++        return len(why) == 1 and "'dir'" in why[0]
++    chk("R5_a_token_that_binds_only_a_size_listing_is_refused", r5_listing_token)
++
++    def r5_content_tokens_need_no_end_record():                                      # R7's reader side: a content-mode chain (every call re-read the cache) is admitted without an anchor
++        cd = root / "content_chain"
++        w = work()
++        profc = profv                                                                  # no anchor: content mode
++        o = root / "lg_content"
++        o.mkdir()
++        binding = GT.binding_of(profc["name"], commit, GT.tree_digest(tree), w.argv)
++        for c_ in checks_all:
++            L.write_evidence(o, C.evidence(c_, "PASS", [], {}), binding, {})
++        v, tokp, tok = L.finalize(profc, w.argv, pkg, o, key, commit=commit)
++        (cd / "passes" / "s1" / "lg").mkdir(parents=True)
++        shutil.copy(tokp, cd / "passes" / "s1" / "lg" / "PASS_t.json")
++        return v == "PASS" and tok["binding"]["data"]["--ctx-cache"]["kind"] == "dir-content" and refusals_of(cd, [1]) == [] and refusals_of(cd, []) != []
++    chk("R5_a_content_bound_chain_needs_no_end_record_and_an_empty_seed_list_is_refused", r5_content_tokens_need_no_end_record)
++
++    def r5_unsigned_token():
++        w = work()
++        r = layout(w)
++        tp = r / "passes" / "s1" / "lg" / "PASS_t.json"
++        tok = json.loads(tp.read_text(encoding="utf-8"))
++        tok["verdict"] = "PASS"
++        tok["binding"]["data"]["--ctx-cache"]["n_problems"] = 0
++        tok["created_utc"] = "1999-01-01T00:00:00Z"                                    # any edit without the key
++        tp.write_text(json.dumps(tok, indent=1, sort_keys=True), encoding="utf-8")
++        why = refusals_of(r, [1])
++        return len(why) == 1 and "not a signed PASS" in why[0]
++    chk("R5_an_edited_token_is_refused_by_its_signature", r5_unsigned_token)
++
++    # ============================================================================ R6 the anchor's own binding
++    def r6_other_dir():
++        w1, w2 = work(), work()
++        ctx = list(w1.ctx)                                                             # w1's anchor offered for w2's cache
++        rc, out, _ = verify_cli(w2, ctx=ctx)
++        sp = verify_sub(w2, ctx=ctx)
++        rcr, outr = refusals_cli(w2, ctx=ctx)
++        rce, txte, oe = end_cli(w1, ctx_dir=w2.dir)
++        rcm, outm, _ = verify_cli(w2)
++        return (rc == 5 and "another cache directory" in out and sp.returncode == 5 and rcr == 5 and "another cache directory" in outr and rce == 5 and not Path(oe).exists()
++                and "ZZGATE-END_VERIFY-REFUSEDZZ" in txte and rcm == 0)
++    chk("R6_an_anchor_minted_from_another_cache_directory_is_refused_by_every_entry_point", r6_other_dir)
++
++    def r6_older_than_the_chain():
++        w = work()
++        late = ["--ctx-mode", "anchor-bound", "--anchor", str(w.anchor_p), "--chain-id", w.chain, "--chain-start-ns", str(w.doc["minted_ns"] + 1)]
++        rc, out, _ = verify_cli(w, ctx=late)
++        sp = verify_sub(w, ctx=late)
++        rcr, outr = refusals_cli(w, ctx=late)
++        rce, txte, oe = cli("end-verify", PFc, ["--ctx-cache", str(w.dir), "--anchor", str(w.anchor_p), "--chain-id", w.chain, "--chain-start-ns", str(w.doc["minted_ns"] + 1), "--seeds", "1",
++                                                "--out", str(root / "late_end.json"), "--pkg", str(pkg), "--key-file", str(keyf)]) + (None,)
++        on_time = ["--ctx-mode", "anchor-bound", "--anchor", str(w.anchor_p), "--chain-id", w.chain, "--chain-start-ns", str(w.doc["minted_ns"])]
++        rcok, _o, _ = verify_cli(w, ctx=on_time)
++        return (rc == 5 and "OLDER than the chain" in out and sp.returncode == 5 and rcr == 5 and "OLDER than the chain" in outr and rce == 5 and "OLDER than the chain" in txte
++                and not (root / "late_end.json").exists() and rcok == 0)
++    chk("R6_an_anchor_minted_before_the_chain_started_is_refused_by_every_entry_point", r6_older_than_the_chain)
++
++    def r6_other_chain():
++        w = work()
++        other = ["--ctx-mode", "anchor-bound", "--anchor", str(w.anchor_p), "--chain-id", "cd" * 16, "--chain-start-ns", str(w.start)]
++        rc, out, _ = verify_cli(w, ctx=other)
++        rcr, outr = refusals_cli(w, ctx=other)
++        return rc == 5 and "another chain" in out and rcr == 5 and "another chain" in outr
++    chk("R6_an_anchor_of_another_chain_is_refused", r6_other_chain)
++
++    def r6_edited_and_foreign_key():
++        w = work()
++        doc = json.loads(Path(w.anchor_p).read_text(encoding="utf-8"))
++        edited = root / f"anchor_edited_{w.n}.json"
++        doc["stat"]["files"]["units/log0.ctx.u16"][1] += 1                             # the anchor's mtime edited so a re-timestamped file would MATCH: the signature refuses
++        edited.write_text(json.dumps(doc, indent=1, sort_keys=True), encoding="utf-8")
++        ctx = ["--ctx-mode", "anchor-bound", "--anchor", str(edited), "--chain-id", w.chain, "--chain-start-ns", str(w.start)]
++        rc, out, _ = verify_cli(w, ctx=ctx)
++        key2 = GT.load_key(root / "other.key", create=True, forbid_under=[pkg])
++        doc2 = json.loads(Path(w.anchor_p).read_text(encoding="utf-8"))
++        doc2.pop("hmac_sha256")
++        doc2["hmac_sha256"] = GT.sign(doc2, key2)
++        foreign = root / f"anchor_foreign_{w.n}.json"
++        foreign.write_text(json.dumps(doc2, indent=1, sort_keys=True), encoding="utf-8")
++        ctx2 = ["--ctx-mode", "anchor-bound", "--anchor", str(foreign), "--chain-id", w.chain, "--chain-start-ns", str(w.start)]
++        rc2, out2, _ = verify_cli(w, ctx=ctx2)
++        rcr, outr = refusals_cli(w, ctx=ctx)
++        return rc == 5 and "HMAC does not verify" in out and rc2 == 5 and "HMAC does not verify" in out2 and rcr == 5
++    chk("R6_an_edited_anchor_and_an_anchor_signed_with_another_key_are_refused", r6_edited_and_foreign_key)
++
++    def r6_mint_refusals():
++        base_args = lambda d, o: ["--ctx-cache", str(d), "--chain-id", "ef" * 16, "--out", str(o), "--pkg", str(pkg), "--key-file", str(keyf)]    # noqa: E731
++        d1 = root / "m_ok"
++        shutil.copytree(pristine, d1)
++        o1 = root / "m_ok.json"
++        rc_ok, out_ok = cli("anchor", PFc, base_args(d1, o1))
++        d2 = root / "m_flip"
++        shutil.copytree(pristine, d2)
++        flip_same_size_same_mtime(d2)
++        o2 = root / "m_flip.json"
++        rc_flip, out_flip = cli("anchor", PFc, base_args(d2, o2))
++        o3 = root / "m_wrongpin.json"
++        rc_pin, out_pin = cli("anchor", {**P0, "fingerprints_expected": {**FX, "--ctx-cache": "dirc:10:6012:" + "0" * 64}}, base_args(d1, o3))
++        o4 = root / "m_unfilled.json"
++        rc_un, out_un = cli("anchor", P0, base_args(d1, o4))
++        o5 = root / "m_listingpin.json"
++        rc_ls, out_ls = cli("anchor", {**P0, "fingerprints_expected": {**FX, "--ctx-cache": GT.fp_key(GT.fingerprint(str(pristine)))}}, base_args(d1, o5))
++        o6 = root / "m_other.json"
++        rc_o, out_o = cli("anchor", PFc, ["--ctx-cache", str(root / "does_not_exist"), "--chain-id", "ef" * 16, "--out", str(o6), "--pkg", str(pkg), "--key-file", str(keyf)])
++        o7 = root / "m_badid.json"
++        rc_id, out_id = cli("anchor", PFc, ["--ctx-cache", str(d1), "--chain-id", "not hex", "--out", str(o7), "--pkg", str(pkg), "--key-file", str(keyf)])
++        return (rc_ok == 0 and o1.is_file() and rc_flip == 5 and "BYTES CHANGED" in out_flip and not o2.exists() and rc_pin == 5 and "not the registered pin" in out_pin and not o3.exists()
++                and rc_un == 5 and "no registered content pin" in out_un and not o4.exists() and rc_ls == 5 and "no registered content pin" in out_ls and not o5.exists()
++                and rc_o == 5 and not o6.exists() and rc_id == 5 and not o7.exists() and all("ZZGATE-ANCHOR-REFUSEDZZ" in x for x in (out_flip, out_pin, out_un, out_ls, out_o, out_id)))
++    chk("R6_the_anchor_is_minted_only_for_the_registered_sealed_untampered_cache", r6_mint_refusals)
++
++    def r6_pin_compare_only():                                                        # isolates the pin comparison: a perfectly valid, sealed cache that is simply NOT the registered one
++        d = root / "m_resealed"
++        shutil.copytree(pristine, d)
++        flip_same_size_same_mtime(d)
++        GT.seal_content_manifest(d)                                                    # self-consistent: only the registered pin can refuse it
++        o = root / "m_resealed.json"
++        rc, out = cli("anchor", PFc, ["--ctx-cache", str(d), "--chain-id", "ef" * 16, "--out", str(o), "--pkg", str(pkg), "--key-file", str(keyf)])
++        return rc == 5 and "not the registered pin" in out and not o.exists()
++    chk("R6_a_resealed_self_consistent_cache_is_refused_by_the_pin_alone", r6_pin_compare_only)
++
++    def r6_edited_while_anchoring():
++        d = root / "m_race"
++        shutil.copytree(pristine, d)
++        real = GT.content_fingerprint
++
++        def racy(path, **k):
++            fp = real(path, **k)
++            p = payload(d)
++            st = os.stat(p)
++            os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns + 5_000_000_000))        # a file touched while the cache is being anchored
++            return fp
++        o = root / "m_race.json"
++        GT.content_fingerprint = racy
++        try:
++            try:
++                GT.mint_anchor(d, chain_id="ef" * 16, key=key, pin=FX["--ctx-cache"], out_path=o)
++                return False
++            except GT.GateError as e:
++                return "changed while it was being anchored" in str(e) and not o.exists()
++        finally:
++            GT.content_fingerprint = real
++    chk("R6_a_cache_edited_while_it_is_being_anchored_is_not_anchored", r6_edited_while_anchoring)
++
++    # ============================================================================ R7 content mode is today's behaviour; the cost is pinned
++    def r7_identity():
++        w = work()
++        av = ["--ctx-cache", str(w.dir), "--hn-bank", str(bank)]
++        flags = ("--ctx-cache", "--hn-bank")
++        old = GT.data_manifest(av, flags, content_flags=("--ctx-cache",))
++        new = GT.data_manifest(av, flags, content_flags=("--ctx-cache",), ctx_anchor=None)
++        by_hand = {"--ctx-cache": {"path": str(w.dir), **GT.content_fingerprint(str(w.dir))}, "--hn-bank": {"path": str(bank), **GT.fingerprint(str(bank))}}
++        listing = GT.data_manifest(av, flags)
++        return (json.dumps(old, sort_keys=True) == json.dumps(new, sort_keys=True) == json.dumps(by_hand, sort_keys=True) and old["--ctx-cache"]["kind"] == "dir-content"
++                and listing["--ctx-cache"]["kind"] == "dir" and GT.fp_key(old["--ctx-cache"]) == oracle_key(w.dir))
++    chk("R7_identity_content_mode_data_manifest_is_exactly_the_call_it_always_was", r7_identity)
++
++    def r7_cli_default_is_content():
++        w = work()
++        # a content-mode token over the same bytes (no anchor in the profile)
++        o = root / f"lg_c{w.n}"
++        o.mkdir()
++        binding = GT.binding_of(profv["name"], commit, GT.tree_digest(tree), w.argv)
++        for c_ in checks_all:
++            L.write_evidence(o, C.evidence(c_, "PASS", [], {}), binding, {})
++        v, tokp, tok = L.finalize(profv, w.argv, pkg, o, key, commit=commit)
++        kinds = (v, tok["binding"]["data"]["--ctx-cache"]["kind"], "ctx_cache" in str(tok["binding"]["data"]["--ctx-cache"].get("mode", "")))
++        a1 = verify_cli(w, ctx=[], token=tokp)                                         # no ctx flag at all
++        a2 = verify_cli(w, ctx=["--ctx-mode", "content"], token=tokp)
++        same = a1[0] == a2[0] == 0 and a1[1] == a2[1] and "ctx_cache" not in a1[2]["info"] and "ctx_cache" not in a2[2]["info"]
++        flip_same_size_same_mtime(w.dir)                                               # the DEFAULT (no flag) re-reads every byte: a same-size, same-mtime flip is REFUSED
++        b1 = verify_cli(w, ctx=[], token=tokp)
++        b2 = verify_sub(w, ctx=[])
++        return kinds == ("PASS", "dir-content", False) and same and b1[0] == 5 and "BYTES CHANGED at the same size" in b1[1] and b2.returncode == 5
++    chk("R7_default_mode_is_content_it_matches_the_clean_cache_and_refuses_the_same_size_same_mtime_flip", r7_cli_default_is_content)
++
++    def r7_anchor_under_content_refused():
++        w = work()
++        a = verify_cli(w, ctx=["--anchor", str(w.anchor_p)])
++        b = verify_cli(w, ctx=["--ctx-mode", "content", "--chain-id", w.chain])
++        c = refusals_cli(w, ctx=["--anchor", str(w.anchor_p)])
++        return a[0] == 5 and "only used in anchor-bound mode" in a[1] and b[0] == 5 and c[0] == 5 and "ZZGATE-REFUSEDZZ" in c[1]
++    chk("R7_an_anchor_named_under_content_mode_is_refused_never_silently_ignored", r7_anchor_under_content_refused)
++
++    def r7_anchor_incomplete_or_other_profile():
++        w = work()
++        a = verify_cli(w, ctx=["--ctx-mode", "anchor-bound", "--anchor", str(w.anchor_p)])
++        buf = io.StringIO()
++        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
++            rc = L.main(["verify", "--profile", "refe_rls1", "--token", str(w.tokp), "--args-file", str(w.argf), "--pkg", str(pkg), "--key-file", str(keyf)] + w.ctx)
++        return a[0] == 5 and "needs --anchor, --chain-id and --chain-start-ns" in a[1] and rc == 5 and "defined only for a profile" in buf.getvalue()
++    chk("R7_anchor_bound_needs_all_three_flags_and_exists_only_for_the_hn_screen_profile", r7_anchor_incomplete_or_other_profile)
++
++    def r7_refusal_text_unchanged():
++        d = root / "t_flip"
++        shutil.copytree(pristine, d)
++        flip_same_size_same_mtime(d)
++        w = W()
++        w.n, w.dir, w.argv = 0, d, argv_for(d)
++        w.argf = root / "argv_t.json"
++        GT.write_json(w.argf, w.argv)
++        rc, out = cli("refusals", PFc, ["--arm-name", "S1", "--args-file", str(w.argf)])
++        return rc == 5 and "the content fingerprint of --ctx-cache cannot be taken: 1 problem(s): BYTES CHANGED at the same size" in out and "anchor" not in out
++    chk("R7_the_content_mode_refusal_text_is_exactly_the_one_it_always_was", r7_refusal_text_unchanged)
++
++    def r7_cost():
++        counts = []
++        real = GT._sha256_and_size
++        n_files = len(json.loads((pristine / CONTENT).read_text(encoding="utf-8"))["files"])
++
++        def counting(path, *a, **k):
++            counts.append(os.path.abspath(str(path)))
++            return real(path, *a, **k)
++
++        w = work()
++        wc = work()
++        prefix = os.path.abspath(str(w.dir)) + os.sep
++
++        def passes(fn):
++            counts.clear()
++            fn()
++            return len([c for c in counts if c.startswith(prefix)]) / n_files
++        GT._sha256_and_size = counting
++        try:
++            anc = {"refusals_cli": passes(lambda: refusals_cli(w)), "verify_cli": passes(lambda: verify_cli(w)), "run_checks": passes(lambda: runchecks(w)),
++                   "finalize": passes(lambda: finalize_again(w)), "verify_sub_not_counted_here": 0.0}
++            runc = root / "cmd_run_a"
++            ra = passes(lambda: cli("run", PFc, ["--arm-name", "S1", "--args-file", str(w.argf), "--pkg", str(pkg), "--out-dir", str(runc), "--only", "G-HYG", "--commit", commit, "--key-file", str(keyf)] + w.ctx))
++            cprefix = os.path.abspath(str(wc.dir)) + os.sep
++            counts.clear()
++            cli("run", PFc, ["--arm-name", "S1", "--args-file", str(wc.argf), "--pkg", str(pkg), "--out-dir", str(root / "cmd_run_c"), "--only", "G-HYG", "--commit", commit, "--key-file", str(keyf)])
++            rc_content = len([c for c in counts if c.startswith(cprefix)]) / n_files
++            counts.clear()
++            end_cli(w)
++            end_reads = len([c for c in counts if c.startswith(prefix)]) / n_files
++            counts.clear()
++            cli("anchor", PFc, ["--ctx-cache", str(w.dir), "--chain-id", "ab" * 16, "--out", str(root / "again.json"), "--pkg", str(pkg), "--key-file", str(keyf)])
++            anchor_reads = len([c for c in counts if c.startswith(prefix)]) / n_files
++        finally:
++            GT._sha256_and_size = real
++        return (anc["refusals_cli"] == anc["verify_cli"] == anc["run_checks"] == anc["finalize"] == 0.0 and ra == 0.0 and rc_content == 4.0 and end_reads == 1.0 and anchor_reads == 1.0)
++    chk("R7_cost_anchor_bound_intermediate_calls_read_ZERO_bytes_content_run_is_4_reads_anchor_1_end_verify_1", r7_cost)
++
++    # ============================================================================ W wiring: the CLI commands hand THIS call's anchor to the functions that use it
++    def w_cmd_run():
++        w = work()
++        seen = {}
++        real_rc, real_fin = L.run_checks, L.finalize
++
++        def spy_rc(prof, *a, **k):
++            seen["run_checks"] = (prof.get("ctx_anchor") or {}).get("sha256")
++            return {}
++
++        def spy_fin(prof, *a, **k):
++            seen["finalize"] = (prof.get("ctx_anchor") or {}).get("sha256")
++            return "PASS", Path("x"), {"reasons": [], "binding": {"commit": "c" * 12, "tree_sha256": "t" * 12}}
++        L.run_checks, L.finalize = spy_rc, spy_fin
++        try:
++            cli("run", PFc, ["--arm-name", "S1", "--args-file", str(w.argf), "--pkg", str(pkg), "--out-dir", str(root / "wr_a"), "--commit", commit, "--key-file", str(keyf)] + w.ctx)
++            a = dict(seen)
++            seen.clear()
++            cli("run", PFc, ["--arm-name", "S1", "--args-file", str(w.argf), "--pkg", str(pkg), "--out-dir", str(root / "wr_c"), "--commit", commit, "--key-file", str(keyf)])
++            c = dict(seen)
++            seen.clear()
++            rc, out = cli("run", PFc, ["--arm-name", "S1", "--args-file", str(w.argf), "--pkg", str(pkg), "--out-dir", str(root / "wr_x"), "--commit", commit, "--key-file", str(keyf),
++                                       "--ctx-mode", "anchor-bound", "--anchor", str(w.anchor_p), "--chain-id", "00" * 16, "--chain-start-ns", str(w.start)])
++            refused = (rc, "ZZGATE-REFUSEDZZ" in out, dict(seen))
++        finally:
++            L.run_checks, L.finalize = real_rc, real_fin
++        return a == {"run_checks": w.sha, "finalize": w.sha} and c == {"run_checks": None, "finalize": None} and refused == (5, True, {})
++    chk("W_cmd_run_hands_the_anchor_to_run_checks_and_finalize_and_content_mode_hands_none_and_a_bad_anchor_runs_nothing", w_cmd_run)
++
++    def w_cmd_verify_and_refusals():
++        w = work()
++        seen = {}
++        real_vt, real_pr = GT.verify_token, L.profile_refusals
++
++        def spy_vt(*a, **k):
++            seen["verify_token"] = (k.get("ctx_anchor") or {}).get("sha256")
++            return True, [], {}
++
++        def spy_pr(prof, argv):
++            seen["profile_refusals"] = (prof.get("ctx_anchor") or {}).get("sha256")
++            return []
++        GT.verify_token, L.profile_refusals = spy_vt, spy_pr
++        try:
++            verify_cli(w)
++            refusals_cli(w)
++            a = dict(seen)
++            seen.clear()
++            verify_cli(w, ctx=[])
++            refusals_cli(w, ctx=[])
++            c = dict(seen)
++        finally:
++            GT.verify_token, L.profile_refusals = real_vt, real_pr
++        return a == {"verify_token": w.sha, "profile_refusals": w.sha} and c == {"verify_token": None, "profile_refusals": None}
++    chk("W_cmd_verify_and_cmd_refusals_hand_the_anchor_to_verify_token_and_profile_refusals_and_content_mode_hands_none", w_cmd_verify_and_refusals)
++
++    def w_hnscreen_refusals_uses_the_anchor():
++        w = work()
++        calls = []
++        real = GT.content_fingerprint
++
++        def spy(p, **k):
++            calls.append(p)
++            return real(p, **k)
++        GT.content_fingerprint = spy
++        try:
++            rs = L.profile_refusals({**profv, "ctx_anchor": w.anc}, w.argv)
++            n_anchor = len([c for c in calls if str(w.dir) in str(c)])
++            calls.clear()
++            rs2 = L.profile_refusals(profv, w.argv)
++            n_content = len([c for c in calls if str(w.dir) in str(c)])
++        finally:
++            GT.content_fingerprint = real
++        return rs == [] and rs2 == [] and n_anchor == 0 and n_content == 1
++    chk("W_hnscreen_refusals_stat_compares_under_an_anchor_and_re_reads_in_full_without_one", w_hnscreen_refusals_uses_the_anchor)
++
++    shutil.rmtree(root, ignore_errors=True)
++    return bad, n_checks[0]
++
++
++# ================================================================================================== M: source mutations (each snippet must occur EXACTLY once; each deletes the line that enforces a refusal)
++SIZE_LINE = "    out += [f\"SIZE changed since the anchor: {r} (anchor {want[r][0]} bytes, now {got[r][0]})\" for r in sorted(set(want) & set(got)) if want[r][0] != got[r][0]]\n"
++MTIME_LINE = ("    out += [f\"MTIME changed since the anchor: {r} (anchor {want[r][1]} ns, now {got[r][1]} ns): the bytes are not re-read at an intermediate call, so a re-timestamped file is refused as a possible edit\"\n"
++              "            for r in sorted(set(want) & set(got)) if want[r][1] != got[r][1]]\n")
++EXTRA_LINE = "    out += [f\"file NOT in the anchor (extra, or a renamed file): {r}\" for r in sorted(set(got) - set(want))]\n"
++MISSING_LINE = "    out = [f\"file in the anchor is MISSING: {r}\" for r in sorted(set(want) - set(got))]\n"
++R4 = ["R4_an_extra_file_refuses_every_intermediate_entry_point", "R4_a_renamed_file_is_both_a_missing_and_an_extra_file_and_refuses"]
++MUTATIONS = [
++    ("anchor_listing_problems: the SIZE comparison is deleted", "gate_token.py", [(SIZE_LINE, "")], ["R2_a_size_change_refuses_every_intermediate_entry_point_and_voids_at_the_end"]),
++    ("anchor_listing_problems: the MTIME comparison is deleted", "gate_token.py", [(MTIME_LINE, "")],
++     ["R3_an_mtime_ns_change_with_identical_bytes_refuses_and_restoring_it_matches_again", "R3e_an_mtime_change_after_the_last_intermediate_call_voids_at_the_end_though_the_bytes_are_equal"]),
++    ("anchor_listing_problems: an EXTRA file is not reported", "gate_token.py", [(EXTRA_LINE, "")], R4),
++    ("anchor_listing_problems: a MISSING file is not reported", "gate_token.py", [(MISSING_LINE, "    out = []\n")], ["R4_a_missing_file_refuses_every_intermediate_entry_point", "R4_a_renamed_file_is_both_a_missing_and_an_extra_file_and_refuses"]),
++    ("_stat_listing: a symlinked directory is silently skipped", "gate_token.py",
++     [("        problems += [f\"a symlinked directory is not followed, so its files cannot be bound: {os.path.relpath(os.path.join(dirpath, d), rootp).replace(os.sep, '/')}\"\n"
++       "                     for d in dirnames if os.path.islink(os.path.join(dirpath, d))]\n        for fn in sorted(filenames):\n            full = os.path.join(dirpath, fn)\n            rel = os.path.relpath(full, rootp).replace(os.sep, \"/\")\n            try:\n                st = os.stat(full)",
++       "        for fn in sorted(filenames):\n            full = os.path.join(dirpath, fn)\n            rel = os.path.relpath(full, rootp).replace(os.sep, \"/\")\n            try:\n                st = os.stat(full)")],
++     ["R4_a_symlinked_directory_is_a_problem_not_a_silent_skip"]),
++    ("end_verify: the CONTENT comparison with the anchor is deleted (the end verify can never void on bytes)", "gate_token.py",
++     [("    content_equal = k_end == doc[\"content\"][\"key\"]\n", "    content_equal = True\n")],
++     ["R1_same_size_same_mtime_edit_mid_chain_passes_every_intermediate_call_the_END_verify_voids_and_the_reader_gate_refuses"]),
++    ("end_verify: the final STAT comparison is deleted", "gate_token.py", [("    stat_equal = not stat_problems and not p1 and not p2\n", "    stat_equal = True\n")],
++     ["R3e_an_mtime_change_after_the_last_intermediate_call_voids_at_the_end_though_the_bytes_are_equal"]),
++    ("end_verify: the record is always END_VERIFY_OK", "gate_token.py", [("\"status\": END_OK if not problems else END_VOID", "\"status\": END_OK")],
++     ["R1_same_size_same_mtime_edit_mid_chain_passes_every_intermediate_call_the_END_verify_voids_and_the_reader_gate_refuses", "R2_a_size_change_refuses_every_intermediate_entry_point_and_voids_at_the_end"]),
++    ("anchor_binding_refusals: the cache-directory comparison is deleted", "gate_token.py",
++     [("    if norm_dir(cache_dir) != doc.get(\"cache_dir\"):\n", "    if False:\n")], ["R6_an_anchor_minted_from_another_cache_directory_is_refused_by_every_entry_point"]),
++    ("anchor_binding_refusals: the chain-id comparison is deleted", "gate_token.py", [("    if chain_id != doc.get(\"chain_id\"):\n", "    if False:\n")], ["R6_an_anchor_of_another_chain_is_refused"]),
++    ("anchor_binding_refusals: the 'older than the chain' comparison is deleted", "gate_token.py",
++     [("    if not isinstance(chain_start_ns, int) or doc[\"minted_ns\"] < chain_start_ns:\n", "    if not isinstance(chain_start_ns, int):\n")],
++     ["R6_an_anchor_minted_before_the_chain_started_is_refused_by_every_entry_point"]),
++    ("load_anchor: the signature check is deleted", "gate_token.py", [("    if not signature_ok(doc, key):\n        return None, [f\"the anchor's HMAC", "    if False:\n        return None, [f\"the anchor's HMAC")],
++     ["R6_an_edited_anchor_and_an_anchor_signed_with_another_key_are_refused"]),
++    ("mint_anchor: the comparison with the registered pin is deleted", "gate_token.py", [("    if k != pin:\n", "    if False:\n")],
++     ["R6_a_resealed_self_consistent_cache_is_refused_by_the_pin_alone", "R6_the_anchor_is_minted_only_for_the_registered_sealed_untampered_cache"]),
++    ("mint_anchor: the 'changed while being anchored' comparison is deleted", "gate_token.py", [("    if before != after:\n        raise GateError(\"cannot anchor: the cache changed", "    if False:\n        raise GateError(\"cannot anchor: the cache changed")],
++     ["R6_a_cache_edited_while_it_is_being_anchored_is_not_anchored"]),
++    ("mint_anchor: the content check of the cache at the start is ignored", "gate_token.py", [("    if fp.get(\"n_problems\"):\n        raise GateError(f\"cannot anchor: the cache FAILS", "    if False:\n        raise GateError(f\"cannot anchor: the cache FAILS")],
++     ["R6_the_anchor_is_minted_only_for_the_registered_sealed_untampered_cache"]),
++    ("ctx_chain_refusals: a missing END record is admitted", "gate_token.py",
++     [("        return [f\"no END_VERIFY_OK record ({END_REL}): the chain's end verify did not run, or its record was deleted -- the screen's outputs are not read\"]\n", "        return []\n")],
++     ["R5_the_end_verify_skipped_the_reader_gate_refuses", "R5_the_end_record_deleted_after_it_was_written_the_reader_gate_refuses"]),
++    ("ctx_chain_refusals: a VOID record is admitted", "gate_token.py", [("    if rec.get(\"status\") != END_OK:\n", "    if False:\n")],
++     ["R1_same_size_same_mtime_edit_mid_chain_passes_every_intermediate_call_the_END_verify_voids_and_the_reader_gate_refuses", "R5_a_VOID_record_refuses_and_a_hand_edited_one_is_refused_by_its_signature"]),
++    ("ctx_chain_refusals: the END record's signature is not checked", "gate_token.py", [("or not signature_ok(rec, key):\n        return [f\"{END_REL} is not a signed", "or False:\n        return [f\"{END_REL} is not a signed")],
++     ["R5_a_VOID_record_refuses_and_a_hand_edited_one_is_refused_by_its_signature"]),
++    ("ctx_chain_refusals: the binding of the END record to THE SAME anchor is deleted", "gate_token.py",
++     [("    if rec.get(\"anchor_sha256\") != asha or rec.get(\"chain_id\") != adoc[\"chain_id\"]:\n", "    if False:\n")], ["R5_an_END_VERIFY_OK_signed_for_another_anchor_is_refused"]),
++    ("ctx_chain_refusals: the seed-coverage comparison is deleted", "gate_token.py", [("    if not set(seeds) <= {int(x) for x in (rec.get(\"seeds\") or [])}:\n", "    if False:\n")],
++     ["R5_an_END_record_that_does_not_cover_every_seed_read_is_refused"]),
++    ("ctx_chain_refusals: a pass without a token is skipped silently", "gate_token.py",
++     [("            out.append(f\"seed {s}: no PASS token under {root / 'passes' / f's{s}' / 'lg'}: the cache binding of this pass cannot be established\")\n            continue\n", "            continue\n")],
++     ["R5_a_pass_without_a_token_is_refused"]),
++    ("ctx_chain_refusals: the single-anchor requirement is deleted", "gate_token.py", [("    if len(shas) != 1:\n", "    if False:\n")], ["R5_tokens_bound_to_two_different_anchors_are_refused"]),
++    ("ctx_chain_refusals: a listing-only token is admitted as a content-bound one", "gate_token.py",
++     [("        if kind == \"dir-content\" and not d.get(\"n_problems\") and d.get(\"content_sha256\"):\n", "        if kind in (\"dir-content\", \"dir\"):\n")], ["R5_a_token_that_binds_only_a_size_listing_is_refused"]),
++    ("ctx_chain_refusals: the token signature is not checked", "gate_token.py", [("        if not signature_ok(tok, key) or tok.get(\"verdict\") != \"PASS\" or tok.get(\"kind\") != \"launch-gate-token\":\n", "        if tok.get(\"verdict\") != \"PASS\" or tok.get(\"kind\") != \"launch-gate-token\":\n")],
++     ["R5_an_edited_token_is_refused_by_its_signature"]),
++    ("launch_gate.cmd_run: the anchor of the call is not applied", "launch_gate.py", [("        prof = _with_ctx_anchor(a, prof, argv, key)                           # HNSCREEN-FP-COST: content mode (the default) returns the profile untouched\n", "        pass\n")],
++     ["W_cmd_run_hands_the_anchor_to_run_checks_and_finalize_and_content_mode_hands_none_and_a_bad_anchor_runs_nothing",
++      "R7_cost_anchor_bound_intermediate_calls_read_ZERO_bytes_content_run_is_4_reads_anchor_1_end_verify_1"]),
++    ("launch_gate.cmd_verify: the anchor is not handed to verify_token", "launch_gate.py", [("content_flags=content_flags_of(prof) if prof else (), ctx_anchor=pa.get(\"ctx_anchor\"))", "content_flags=content_flags_of(prof) if prof else ())")],
++     ["W_cmd_verify_and_cmd_refusals_hand_the_anchor_to_verify_token_and_profile_refusals_and_content_mode_hands_none", "R0_clean_control_anchor_bound_calls_MATCH_the_key_is_the_registered_pin_and_the_mode_is_recorded"]),
++    ("launch_gate.finalize: the anchor is not handed to the data manifest", "launch_gate.py",
++     [("content_flags=content_flags_of(prof), ctx_anchor=prof.get(\"ctx_anchor\"))\n    _log_manifest_timing(\"finalize\"", "content_flags=content_flags_of(prof))\n    _log_manifest_timing(\"finalize\"")],
++     ["R7_cost_anchor_bound_intermediate_calls_read_ZERO_bytes_content_run_is_4_reads_anchor_1_end_verify_1", "R0_clean_control_anchor_bound_calls_MATCH_the_key_is_the_registered_pin_and_the_mode_is_recorded"]),
++    ("launch_gate.run_checks: the anchor is not handed to the data manifest", "launch_gate.py",
++     [("content_flags=content_flags_of(prof), ctx_anchor=prof.get(\"ctx_anchor\"))\n    _log_manifest_timing(\"run\"", "content_flags=content_flags_of(prof))\n    _log_manifest_timing(\"run\"")],
++     ["R7_cost_anchor_bound_intermediate_calls_read_ZERO_bytes_content_run_is_4_reads_anchor_1_end_verify_1"]),
++    ("launch_gate.hnscreen_refusals: the anchor is ignored (the cache is re-read in full)", "launch_gate.py",
++     [("(GT.anchor_fingerprint(vals[0][0], anc) if anc is not None else GT.content_fingerprint(vals[0][0]))", "(GT.content_fingerprint(vals[0][0]))")],
++     ["W_hnscreen_refusals_stat_compares_under_an_anchor_and_re_reads_in_full_without_one", "R7_cost_anchor_bound_intermediate_calls_read_ZERO_bytes_content_run_is_4_reads_anchor_1_end_verify_1"]),
++    ("launch_gate: the --ctx-mode DEFAULT is anchor-bound", "launch_gate.py", [("choices=GT.CTX_MODES, default=GT.CTX_MODE_CONTENT,", "choices=GT.CTX_MODES, default=GT.CTX_MODE_ANCHOR,")],
++     ["R7_default_mode_is_content_it_matches_the_clean_cache_and_refuses_the_same_size_same_mtime_flip"]),
++    ("launch_gate._with_ctx_anchor: an anchor named under content mode is silently ignored", "launch_gate.py", [("        if named:\n            raise GT.GateError(\"--\" +", "        if False:\n            raise GT.GateError(\"--\" +")],
++     ["R7_an_anchor_named_under_content_mode_is_refused_never_silently_ignored"]),
++    ("launch_gate._with_ctx_anchor: anchor-bound is allowed for any profile", "launch_gate.py", [("    if not prof.get(\"hn_rules\"):\n        raise GT.GateError(f\"--ctx-mode anchor-bound", "    if False:\n        raise GT.GateError(f\"--ctx-mode anchor-bound")],
++     ["R7_anchor_bound_needs_all_three_flags_and_exists_only_for_the_hn_screen_profile"]),
++    ("launch_gate._with_ctx_anchor: the three flags are not required together", "launch_gate.py", [("    if len(named) != 3:\n", "    if False:\n")],
++     ["R7_anchor_bound_needs_all_three_flags_and_exists_only_for_the_hn_screen_profile"]),
++    ("gate_token.fp_key AND anchor_fingerprint: BOTH layers of the invalid-key guard deleted (an INVALID anchor-bound fingerprint carries the anchor's content key)", "gate_token.py",
++     [("        if fp.get(\"n_problems\") or not fp.get(\"content_sha256\"):\n            return f\"dir-anchor-INVALID:", "        if False:\n            return f\"dir-anchor-INVALID:"),
++      ("    if not problems:\n        c = doc[\"content\"]\n        fp.update(", "    if True:\n        c = doc[\"content\"]\n        fp.update(")],
++     ["R2_a_size_change_refuses_every_intermediate_entry_point_and_voids_at_the_end"]),
++]
++
++
++def apply_edits(src, edits, name):
++    for old, new in edits:
++        n = src.count(old)
++        if n != 1:
++            raise AssertionError(f"mutation {name!r}: snippet occurs {n} times (need exactly 1): {old[:90]!r}")
++        src = src.replace(old, new)
++    return src
++
++
++def mutant_tree(dst: Path, fname: str, edits, name):
++    """a fresh copy of the code the arms import (refe/*.py, code/, splits/, the C1 argv file) with ONE source edit applied"""
++    ign = shutil.ignore_patterns("__pycache__", "*.pyc")
++    shutil.copytree(HERE, dst / "refe", ignore=ign)
++    for sub in ("code", "splits"):
++        if (PKG / sub).is_dir():
++            shutil.copytree(PKG / sub, dst / sub, ignore=ign)
++    (dst / "eval").mkdir()
++    shutil.copy(PKG / "eval" / "rls1b_arms.json", dst / "eval" / "rls1b_arms.json")
++    p = dst / "refe" / fname
++    p.write_text(apply_edits(p.read_text(encoding="utf-8"), edits, name), encoding="utf-8", newline="\n")
++
++
++def run_arms(tree_refe: Path, only=None) -> list:
++    env = dict(os.environ, PYTHONIOENCODING="utf-8", CUDA_VISIBLE_DEVICES="-1", PYTHONDONTWRITEBYTECODE="1")
++    r = subprocess.run([sys.executable, str(tree_refe / "test_hn_ctx_anchor.py"), "--arms"] + (["--only", ",".join(only)] if only else []), capture_output=True, text=True, timeout=1800, env=env,
++                       cwd=str(tree_refe), encoding="utf-8", errors="replace")
++    red = [ln.split(" ", 1)[1].strip() for ln in r.stdout.splitlines() if ln.startswith("ZZHNANC_RED ")]
++    if "ZZHNANC_ARMS_DONE" not in r.stdout:
++        red.append(f"arms process died rc {r.returncode}: {(r.stdout + r.stderr)[-300:]!r}")
++    return red
++
++
++def main() -> int:
++    if ARMS_MODE:
++        bad, n = arms()
++        for b in bad:
++            print("ZZHNANC_RED", b)
++        print(f"ZZHNANC_ARMS_DONE checks {n} red {len(bad)}")
++        return 0
++    bad, n = arms()
++    if bad:
++        print("\n".join("PROBLEM the unmutated tree FAILS: " + b for b in bad))
++        print(f"ZZTEST_FAIL {len(bad)} of {n} arm(s) failed on the real tree")
++        return 1
++    if NO_MUTANTS:
++        print(f"ZZTEST_PASS {n}  ({n} arms on the real tree; --no-mutants: the mutation matrix was not run here)")
++        return 0
++    print(f"{n} arms green on the real tree.  Mutation matrix (each mutant is a fresh copy of the tree with ONE source edit; it runs the checks it must turn RED):")
++    problems = []
++    for name, fname, edits, expect in MUTATIONS:
++        tmp = Path(tempfile.mkdtemp(prefix="hnanc_mut_"))
++        try:
++            mutant_tree(tmp, fname, edits, name)
++            red = run_arms(tmp / "refe", only=expect)
++        except AssertionError as e:
++            problems.append(str(e))
++            red = []
++        finally:
++            shutil.rmtree(tmp, ignore_errors=True)
++        miss = [c for c in expect if c not in red]
++        if not red:
++            problems.append(f"mutation {name!r} stayed GREEN: no arm can see it")
++        elif miss:
++            problems.append(f"mutation {name!r}: expected RED and stayed green: {miss} (RED: {red[:8]})")
++        print(f"{name[:100]:100s} RED {len(red):3d}  e.g. {', '.join(red[:2])[:110]}", flush=True)
++    if problems:
++        print("\n".join("PROBLEM " + p for p in problems))
++        print(f"ZZTEST_FAIL {len(problems)} problem(s)")
++        return 1
++    print(f"ZZTEST_PASS {n + len(MUTATIONS)}  ({n} arms on the real tree + {len(MUTATIONS)} RED mutations)")
++    return 0
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+--- a/refe/test_hnscreen_ctx_chain.py
++++ b/refe/test_hnscreen_ctx_chain.py
+@@ -0,0 +1,417 @@
++#!/usr/bin/env python3
++"""HNSCREEN-FP-COST at CHAIN level: the P6-HN screen chain with the REAL launch gate (anchor / run / verify / end-verify, real HMAC-signed tokens, real anchor and END records), a REAL sealed cache, stub trainer and stage tools.
++(MM_RULING_FPCOST.md; the gate-level arms are refe/test_hn_ctx_anchor.py.)  Sibling-suite test (it needs eval/ for the landed GPU lock, like test_hnscreen_chain.py, which it reuses: World, Sc, make_cfg, run_chain).
++
++Run:  PYTHONIOENCODING=utf-8 python refe/test_hnscreen_ctx_chain.py   ->   ZZTEST_PASS <n>   (arms, then the mutation matrix on hnscreen_devbox.py)      --arms-only   arms only
++
++WHAT IS REAL AND WHAT IS STUBBED.  REAL: the chain (`hnscreen_devbox.Chain`, from source), `launch_gate.py` run via a shim process (`anchor`, `verify`, `end-verify` unchanged; `run` is the real `cmd_run` -> the real `finalize` and the real
++`profile_refusals`, with `run_checks`' GPU/pod checks replaced by synthetic PASS evidence -- the cache-touching lines of `run_checks` (the data manifest and the refusals) are kept, so the reads are the real reads), the cache
++(built by `ctx_cache.finalize`), the reader's argument parsing and cache-binding gate (the shim imports the landed eval/hn_screen_read.py and stops it at the first score file).  STUBBED: the trainer, S0/S1 builders, I1-I6/G15, S4 scorers.
++Every gate process appends {sub, reads, files} to a log: a READ is one `gate_token._sha256_and_size` call (one file fully hashed), so reads / n_files = FULL PASSES over the cache.
++
++THE ARMS  C_* : the anchored chain end to end (the default mode; stage order, the calls each stage makes, ZERO reads at the intermediate calls, 1 + 1 at the ends, the END_VERIFY_OK record, the reader gate admits);
++ the content-mode chain is today's chain (stage order, gate calls, 6 full reads per seed); R1 mid-chain same-size same-mtime edit -> ENDV fails -> VOID -> no outputs read -> a resume cannot launder it; R2 a size change between two
++ passes -> the next intermediate call refuses and the trainer is not started; R5 the END record deleted -> the reader refuses the chain's own read command; a refused anchor trains nothing; resume keeps the chain; a bad ctx_mode is a
++ config error.  Every mutation edits hnscreen_devbox.py SOURCE (each snippet occurs exactly once) and must turn the named arms RED.
++"""
++from __future__ import annotations
++
++import hashlib
++import json
++import os
++import shutil
++import subprocess
++import sys
++import tempfile
++import time
++
++HERE = os.path.dirname(os.path.abspath(__file__))
++REAL_PKG = os.path.dirname(HERE)
++sys.path.insert(0, HERE)
++import test_hnscreen_chain as TC  # noqa: E402  -- the chain harness this file builds on
++
++PY = TC.PY
++SRC_PATH = TC.SRC_PATH
++ARMS_ONLY = "--arms-only" in sys.argv
++ONLY = set(sys.argv[sys.argv.index("--only") + 1].split(",")) if "--only" in sys.argv else None
++
++GATE_SHIM = r'''
++import json, os, sys, time
++REFE = os.environ["SHIM_REFE"]
++sys.path.insert(0, REFE)
++import gate_token as GT
++import launch_gate as L
++import gate_checks as C
++L.PROFILES["refe_hnscreen"] = {**L.PROFILES["refe_hnscreen"], "fingerprints_expected": json.loads(os.environ["SHIM_FX"])}
++reads = []
++_real = GT._sha256_and_size
++
++
++def counting(path, *a, **k):
++    reads.append(os.path.abspath(str(path)))
++    return _real(path, *a, **k)
++
++
++GT._sha256_and_size = counting
++
++
++def fake_run_checks(prof, argv, pkg, out_dir, *, only=None, arm=None, commit=None, preflight_json=None, **kw):
++    """launch_gate.run_checks with the pod/GPU checks replaced by synthetic PASS evidence; the lines that TOUCH THE CACHE (the data manifest, the profile refusals) are run exactly as run_checks runs them"""
++    out_dir.mkdir(parents=True, exist_ok=True)
++    tree = GT.tree_manifest(pkg)
++    binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
++    data = GT.data_manifest(argv, prof["data_flags"], L.gate_inputs_of(None, None, None, None, preflight_json), content_flags=L.content_flags_of(prof), ctx_anchor=prof.get("ctx_anchor"))
++    refusals = L.profile_refusals(prof, argv)
++    status = {}
++    for c in prof["checks"] + tuple(prof.get("na_ok", ())):
++        ev = C.evidence(c, "FAIL" if refusals else "PASS", ["profile refusal: " + r for r in refusals], {}, arm=arm)
++        L.write_evidence(out_dir, ev, binding, data)
++        status[c] = ev["status"]
++    return status
++
++
++L.run_checks = fake_run_checks
++sub = sys.argv[1]
++args = sys.argv[1:] + (["--commit", "a" * 40] if sub == "run" else [])
++rc = L.main(args)
++with open(os.environ["SHIM_LOG"], "a", encoding="utf-8") as f:
++    f.write(json.dumps({"sub": sub, "reads": len(reads), "files": len(set(reads)), "rc": rc, "args": [a for a in sys.argv[2:] if a.startswith("--ctx-mode")], "t": time.time()}) + "\n")
++sys.exit(rc)
++'''
++
++READER_SHIM = r'''
++import os, sys
++sys.path.insert(0, os.environ["STUB_DIR"])
++sys.path.insert(0, os.path.join(os.environ["SHIM_REAL_PKG"], "eval"))
++sys.path.insert(0, os.environ["SHIM_REFE"])
++import stublib
++import hn_screen_read as HR
++
++
++class Past(Exception):
++    pass
++
++
++def stop(*a, **k):
++    raise Past()
++
++
++HR.RV.load_scores = stop                                     # the landed reader's gate has run by the time it asks for the first score file
++try:
++    rc = HR.main(sys.argv[1:])
++except Past:
++    rc = stublib.main("read", sys.argv[1:])
++sys.exit(rc)
++'''
++
++TAMPER = r'''
++import os, sys
++mode, cache, only_seed, seed = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
++if only_seed != "any" and only_seed != seed:
++    sys.exit(0)
++p = sorted(os.scandir(os.path.join(cache, "units")), key=lambda e: e.name)[0].path
++for e in sorted(os.scandir(os.path.join(cache, "units")), key=lambda e: e.name):
++    if e.name.endswith(".ctx.u16"):
++        p = e.path
++        break
++st = os.stat(p)
++b = bytearray(open(p, "rb").read())
++if mode == "flip":                                           # same size, same mtime_ns
++    b[len(b) // 2] ^= 1
++elif mode == "grow":                                         # a size change, mtime_ns restored
++    b += b"\0"
++open(p, "wb").write(bytes(b))
++os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))
++print("TAMPERED", mode, p)
++'''
++
++
++def check(bad, name, fn):
++    try:
++        ok = bool(fn())
++    except Exception as e:                                            # noqa: BLE001 -- an exception IS a failed check
++        ok = False
++        if os.environ.get("HNCC_DEBUG"):
++            import traceback
++            traceback.print_exc()
++            print("  [check raised]", name, type(e).__name__, str(e)[:300])
++    if not ok:
++        bad.append(name)
++    return ok
++
++
++class Real:
++    """the real fixtures of the whole run: a sealed cache (pristine), the shims, the key, the registered pins, the real argv template"""
++
++    def __init__(self):
++        import gate_token as GT
++        import gate_checks as C
++        import ctx_cache as CC
++        import test_ctx_cache as TCC
++        import torch  # noqa: F401
++        self.GT, self.C = GT, C
++        self.w = TC.World()
++        base = self.w.base
++        units = TCC.mk_units()
++        model = TCC.Fake().eval()
++        fp = CC.trunk_fingerprint(model.state_dict())
++        self.pristine = os.path.join(base, "pristine_cache")
++        CC.build_units(model, units, TCC.load_batch, TCC.make_forward(model), self.pristine, trunk_fp=fp, log=lambda *_: None)
++        CC.finalize(self.pristine, units, trunk_fp=fp, calib_sha256="calib-1")
++        self.n_files = GT.content_fingerprint(self.pristine)["n_files"]
++        self.cache_bytes = GT.content_fingerprint(self.pristine)["bytes"]
++        self.pin = GT.fp_key(GT.content_fingerprint(self.pristine))
++        self.fx = {"--hn-bank": "file:" + hashlib.sha256(b"BANK").hexdigest(), "--ctx-cache": self.pin}      # the stub S1 writes the bank "BANK"
++        self.keyf = os.path.join(base, "gate.key").replace("\\", "/")
++        self.shim = os.path.join(base, "gate_shim.py")
++        open(self.shim, "w", encoding="utf-8").write(GATE_SHIM)
++        self.tamper = os.path.join(base, "tamper.py")
++        open(self.tamper, "w", encoding="utf-8").write(TAMPER)
++        rd = os.path.join(self.w.fake, "eval", "hn_screen_read.py")           # the chain's reader: the landed one behind a one-file stop (see the module doc)
++        open(rd, "w", encoding="utf-8").write(READER_SHIM)
++        self.dummy = os.path.join(base, "dummy_input.bin").replace("\\", "/")
++        open(self.dummy, "wb").write(b"an input the pod would hold; only its existence matters here")
++        import launch_gate as L
++        c1 = list(json.load(open(os.path.join(REAL_PKG, "eval", "rls1b_arms.json"), encoding="utf-8"))["arms"]["C1"]["argv"])
++        for f_ in L.PROFILES["refe_hnscreen"]["data_flags"]:
++            if f_ in c1 and f_ not in L.HNSCREEN_FLAGS:
++                c1 = C._set(c1, f_, self.dummy)
++        c1 = C._set(C._set(C._set(c1, "--seed", "{seed}"), "--out", "{out}"), "--dump-scores", "{scores}")
++        self.template = c1 + ["--hn-bank", "{bank_train}", "--ctx-cache", "{cache_dir}"]
++
++    def close(self):
++        self.w.close()
++
++
++def scenario(R, M, name, *, seeds=(0,), mode="default", tamper=None, spec=None, stop_after=None, pre=None, cfg_extra=None):
++    """one chain run: a fresh state dir, a fresh COPY of the sealed cache, the shim gate.  tamper = (mode, seed|'any') runs after the trainer of that pass.  -> (sc, rc, chain, shim log rows)"""
++    sc = TC.Sc(R.w, name)
++    cache = f"{sc.d}/cache"
++    shutil.copytree(R.pristine, cache)
++    if pre:
++        pre(cache)
++    log = f"{sc.d}/shim.jsonl"
++    os.environ.update({"SHIM_REFE": HERE, "SHIM_FX": json.dumps(R.fx), "SHIM_LOG": log, "SHIM_REAL_PKG": REAL_PKG})
++    over = {"python": sys.executable, "gate.cmd": [sys.executable, R.shim], "gate.key_file": R.keyf, "trainer.seeds": list(seeds), "trainer.argv_template": R.template, "commands.s2_cache": [PY, sc.w.stub, "step", "s2_cache"],
++            "gate.token_check_names": {"G14": "G-PREFLIGHT", "G15": "G-PREFLIGHT"}}      # the real token has no check named G14 / G15 (they are the trainer preflight's gates, judged by G-PREFLIGHT)
++    over["gate.ctx_mode"] = None if mode == "default" else mode
++    doc = TC.make_cfg(sc, **over)
++    if tamper:
++        doc["commands"]["post_pass"].append({"name": "tamper", "argv": [PY, R.tamper, tamper[0], cache, str(tamper[1]), "{seed}"]})
++    for k, v in (cfg_extra or {}).items():
++        doc[k] = v
++    rc, ch, clk = TC.run_chain(M, sc, spec={**TC.PARTIAL2, **(spec or {})}, cfg_doc=doc, stop_after=stop_after)
++    rows = [json.loads(x) for x in open(log, encoding="utf-8")] if os.path.exists(log) else []
++    return sc, rc, ch, rows, cache
++
++
++def passes(R, rows, sub=None):
++    return sum(r["reads"] for r in rows if sub is None or r["sub"] == sub) / R.n_files
++
++
++def arms(R, M, only=None):
++    bad = []
++    n = [0]
++
++    def chk(name, fn):
++        if only is not None and name not in only:
++            return
++        n[0] += 1
++        check(bad, name, fn)
++    GT = R.GT
++
++    def key():
++        return GT.load_key(R.keyf, create=False)
++
++    def subs(rows):
++        return [r["sub"] for r in rows]
++
++    def c_end_to_end():
++        sc, rc, ch, rows, cache = scenario(R, M, "C1", seeds=(0,))                # NO gate.ctx_mode in the config: the DEFAULT must be anchor-bound
++        tok = sorted(__import__("glob").glob(f"{sc.root}/passes/s0/lg/PASS_*.json"))
++        d = json.load(open(tok[-1], encoding="utf-8"))["binding"]["data"]["--ctx-cache"] if tok else {}
++        end = json.load(open(f"{sc.root}/ctx_chain/end_verify.json", encoding="utf-8"))
++        rd = [r for r in sc.J() if r["label"] == "read"]
++        return (rc == 0 and ch.stage_order_run == ["S0", "S1", "S2", "ANCHOR", "T0", "P0", "ENDV", "S4", "VERDICT", "NEXT"] and subs(rows) == ["anchor", "run", "verify", "verify", "end-verify"]
++                and [r["reads"] for r in rows] == [R.n_files, 0, 0, 0, R.n_files] and passes(R, rows) == 2.0 and d.get("kind") == "dir-anchor" and d.get("mode") == "anchor-bound"
++                and end["status"] == "END_VERIFY_OK" and end["seeds"] == [0] and os.path.isfile(f"{sc.root}/ctx_chain/anchor.json") and os.path.isfile(f"{sc.root}/ctx_chain/chain.json")
++                and len(rd) == 1 and "--chain-root" in rd[0]["argv"] and R.keyf in rd[0]["argv"] and GT.ctx_chain_refusals(sc.root, [0], key()) == []
++                and all(r["args"] == ["--ctx-mode"] for r in rows if r["sub"] in ("run", "verify")))
++    chk("C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_reader_admits_it", c_end_to_end)
++
++    def c_content():
++        sc, rc, ch, rows, cache = scenario(R, M, "C2", seeds=(0,), mode="content")
++        tok = sorted(__import__("glob").glob(f"{sc.root}/passes/s0/lg/PASS_*.json"))
++        d = json.load(open(tok[-1], encoding="utf-8"))["binding"]["data"]["--ctx-cache"]
++        today = [x for x in TC.expected_labels(seeds=(0,)) if not x.startswith("gate:")]
++        return (rc == 0 and ch.stage_order_run == ["S0", "S1", "S2", "T0", "P0", "S4", "VERDICT", "NEXT"] and subs(rows) == ["run", "verify", "verify"] and [r["reads"] for r in rows] == [4 * R.n_files, R.n_files, R.n_files]
++                and all(r["args"] == [] for r in rows) and d["kind"] == "dir-content" and not os.path.exists(f"{sc.root}/ctx_chain") and sc.labels() == today
++                and GT.ctx_chain_refusals(sc.root, [0], key()) == [])
++    chk("C_R7_forcing_content_mode_is_todays_chain_same_stages_same_gate_calls_no_anchor_6_full_reads_per_seed_and_the_reader_admits_it", c_content)
++
++    def c_r1():
++        sc, rc, ch, rows, cache = scenario(R, M, "C3", seeds=(0,), tamper=("flip", 0))
++        end = json.load(open(f"{sc.root}/ctx_chain/end_verify.json", encoding="utf-8"))
++        outcome = json.load(open(f"{sc.root}/outcome.json", encoding="utf-8"))
++        ok1 = (rc == 2 and subs(rows) == ["anchor", "run", "verify", "verify", "end-verify"] and end["status"] == "VOID" and os.path.isfile(f"{sc.root}/ctx_chain/VOID.json") and outcome["row"] == 0
++               and "read" not in sc.labels() and "S4" not in ch.stage_order_run and "VOID" in GT.ctx_chain_refusals(sc.root, [0], key())[0])
++        # the residual is real: nothing before the end verify saw it; and a hand-restore cannot launder the voided chain on a relaunch
++        p = sorted(__import__("glob").glob(f"{cache}/units/*.ctx.u16"))[0]
++        st = os.stat(p)
++        b = bytearray(open(p, "rb").read())
++        b[len(b) // 2] ^= 1
++        open(p, "wb").write(bytes(b))
++        os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))                              # the cache is byte-identical to the anchor again
++        rc2, ch2, _ = TC.run_chain(M, sc, spec={**TC.PARTIAL2}, cfg_doc=json.load(open(f"{sc.d}/config.json", encoding="utf-8")))
++        rows2 = [json.loads(x) for x in open(f"{sc.d}/shim.jsonl", encoding="utf-8")]
++        return ok1 and rc2 == 2 and subs(rows2) == subs(rows) and "read" not in sc.labels() and os.path.isfile(f"{sc.root}/ctx_chain/VOID.json")
++    chk("C_R1_a_same_size_same_mtime_edit_mid_chain_voids_the_chain_no_output_is_read_and_a_relaunch_cannot_launder_it", c_r1)
++
++    def c_r2():
++        sc, rc, ch, rows, cache = scenario(R, M, "C4", seeds=(0, 1), tamper=("grow", 0))
++        lab = sc.labels()
++        return (rc == 5 and "trainer:train:0" in lab and "trainer:train:1" not in lab and "read" not in lab and subs(rows)[-1] == "verify" and rows[-1]["rc"] == 5 and "end-verify" not in subs(rows))
++    chk("C_R2_a_size_change_after_pass_0_refuses_the_start_verify_of_pass_1_and_the_trainer_is_not_started", c_r2)
++
++    def c_r5():
++        sc, rc, ch, rows, cache = scenario(R, M, "C5", seeds=(0,))
++        argv = ch.read_argv([0])
++        env = dict(os.environ, PYTHONIOENCODING="utf-8")
++        env.pop("HF_TOKEN", None)
++        ok_run = subprocess.run(argv, capture_output=True, text=True, env=env, timeout=600, encoding="utf-8", errors="replace")
++        os.remove(f"{sc.root}/ctx_chain/end_verify.json")                                # the end verify deleted
++        gone = subprocess.run(argv, capture_output=True, text=True, env=env, timeout=600, encoding="utf-8", errors="replace")
++        return (rc == 0 and ok_run.returncode == 0 and gone.returncode == 6 and "ZZHNSCREEN_REFUSED" in gone.stdout and "no END_VERIFY_OK record" in gone.stdout)
++    chk("C_R5_the_chains_own_read_command_is_refused_by_the_landed_reader_once_the_end_record_is_deleted", c_r5)
++
++    def c_refused_anchor():
++        def flip(cache):
++            p = sorted(__import__("glob").glob(f"{cache}/units/*.ctx.u16"))[0]
++            st = os.stat(p)
++            b = bytearray(open(p, "rb").read())
++            b[0] ^= 1
++            open(p, "wb").write(bytes(b))
++            os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))
++        sc, rc, ch, rows, cache = scenario(R, M, "C6", seeds=(0,), pre=flip)
++        lab = sc.labels()
++        return rc == 5 and subs(rows) == ["anchor"] and rows[0]["rc"] == 5 and "trainer:pre:0" not in lab and "trainer:train:0" not in lab and not os.path.exists(f"{sc.root}/ctx_chain/anchor.json")
++    chk("C_a_tampered_cache_is_refused_at_the_anchor_and_nothing_is_trained", c_refused_anchor)
++
++    def c_resume():
++        sc, rc, ch, rows, cache = scenario(R, M, "C7", seeds=(0,), stop_after="T0")
++        info1 = json.load(open(f"{sc.root}/ctx_chain/chain.json", encoding="utf-8"))
++        a1 = open(f"{sc.root}/ctx_chain/anchor.json", "rb").read()
++        sha_cfg = json.load(open(f"{sc.d}/config.json", encoding="utf-8"))
++        rc2, ch2, _ = TC.run_chain(M, sc, spec={**TC.PARTIAL2}, cfg_doc=sha_cfg)
++        rows2 = [json.loads(x) for x in open(f"{sc.d}/shim.jsonl", encoding="utf-8")]
++        info2 = json.load(open(f"{sc.root}/ctx_chain/chain.json", encoding="utf-8"))
++        return (rc == 0 and rc2 == 0 and subs(rows)[:2] == ["anchor", "run"] and subs(rows2).count("anchor") == 1 and info1 == info2 and open(f"{sc.root}/ctx_chain/anchor.json", "rb").read() == a1
++                and subs(rows2) == ["anchor", "run", "verify", "verify", "end-verify"] and ch2.stage_order_run == ["P0", "ENDV", "S4", "VERDICT", "NEXT"])
++    chk("C_a_resumed_chain_keeps_its_chain_and_its_anchor_and_ends_with_one_end_verify", c_resume)
++
++    def c_bad_mode():
++        sc, rc, ch, rows, cache = scenario(R, M, "C8", seeds=(0,), mode="bogus")
++        return rc == 4 and rows == [] and sc.labels() == []
++    chk("C_an_unknown_ctx_mode_is_a_config_error_before_anything_runs", c_bad_mode)
++
++    def c_two_seeds_reads():
++        sc, rc, ch, rows, cache = scenario(R, M, "C9", seeds=(0, 1))
++        return (rc == 0 and subs(rows) == ["anchor", "run", "verify", "run", "verify", "verify", "verify", "end-verify"] and passes(R, rows) == 2.0)
++    chk("C_two_seeds_still_cost_exactly_two_full_reads_the_anchor_and_the_end_verify", c_two_seeds_reads)
++    return bad, n[0]
++
++
++def read_src():
++    return open(SRC_PATH, encoding="utf-8").read()
++
++
++MUTATIONS = [
++    ("stage_list: ENDV is not a stage (the end verify is skipped)",
++     [("+ [f\"P{s}\" for s in seeds] + ([\"ENDV\"] if self.anchored else []) + [\"S4\"", "+ [f\"P{s}\" for s in seeds] + [\"S4\"")],
++     ["C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_reader_admits_it",
++      "C_R1_a_same_size_same_mtime_edit_mid_chain_voids_the_chain_no_output_is_read_and_a_relaunch_cannot_launder_it"]),
++    ("stage_ENDV: a failed end verify does not void the chain",
++     [("        if rc != 0 or END_OK_MARK not in text or status != \"END_VERIFY_OK\":\n", "        if False:\n")],
++     ["C_R1_a_same_size_same_mtime_edit_mid_chain_voids_the_chain_no_output_is_read_and_a_relaunch_cannot_launder_it"]),
++    ("stage_ENDV: a VOID chain is re-verified on a relaunch (a hand-restored cache launders it)",
++     [("        if os.path.exists(void):\n", "        if False:\n")],
++     ["C_R1_a_same_size_same_mtime_edit_mid_chain_voids_the_chain_no_output_is_read_and_a_relaunch_cannot_launder_it"]),
++    ("ctx_args: the intermediate gate calls get no anchor flags (every call re-reads in full)",
++     [("        if not self.anchored:\n            return []\n        ci = self.chain_info()\n        return [\"--ctx-mode\"", "        return []\n        ci = self.chain_info()\n        return [\"--ctx-mode\"")],
++     ["C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_reader_admits_it", "C_two_seeds_still_cost_exactly_two_full_reads_the_anchor_and_the_end_verify"]),
++    ("read_argv: the reader is not given --chain-root",
++     [(" + [\"--chain-root\", self.root] + self.gate_key_args()", "")],
++     ["C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_reader_admits_it"]),
++    ("stage_list: ANCHOR is not a stage (the chain has no start anchor)",
++     [("(\"ANCHOR\"] if self.anchored else [])".replace("(\"", "([\""), "[]")],
++     ["C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_reader_admits_it"]),
++    ("preflight: any gate.ctx_mode is accepted",
++     [("        if self.cfg.get(\"gate.ctx_mode\") not in CTX_MODES:\n", "        if False:\n")],
++     ["C_an_unknown_ctx_mode_is_a_config_error_before_anything_runs"]),
++    ("DEFAULTS: the chain's default gate.ctx_mode is content",
++     [("\"ctx_mode\": \"anchor-bound\"},", "\"ctx_mode\": \"content\"},")],
++     ["C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_reader_admits_it"]),
++    ("stage_ANCHOR: a refused anchor does not stop the chain",
++     [("        if rc != 0 or ANCHOR_OK not in text or not os.path.isfile(out):\n", "        if False:\n")],
++     ["C_a_tampered_cache_is_refused_at_the_anchor_and_nothing_is_trained"]),
++    ("verify_pass_token: the start verify of a pass is not run with the anchor flags (a stale-token-only check)",
++     [("        cmd += self.ctx_args()                                                              # HNSCREEN-FP-COST: [] in content mode\n        r = self.runner.run(cmd, f\"{self.dirs['logs']}/token_verify_s{seed}.log\")",
++       "        r = self.runner.run(cmd, f\"{self.dirs['logs']}/token_verify_s{seed}.log\")")],
++     # ONLY the cost arm can see this mutant, by design: without the anchor flags the start verify runs in CONTENT mode, and a content verify refuses a size change too, so R2's outcome (rc 5, the trainer
++     # not started) is the same in both modes.  The mutant is a COST regression (the intermediate call re-reads the cache in full); the arm that counts the full reads is the one that must go RED.
++     # (An earlier version of this table also demanded R2 and failed the matrix with "expected RED and stayed green" -- an over-specified expectation, not an undetected mutant.)
++     ["C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_reader_admits_it"]),
++]
++
++
++def apply_edits(src, edits, name):
++    for old, new in edits:
++        n = src.count(old)
++        if n != 1:
++            raise AssertionError(f"mutation {name!r}: snippet occurs {n} times (need exactly 1): {old[:90]!r}")
++        src = src.replace(old, new)
++    return src
++
++
++def main() -> int:
++    R = Real()
++    try:
++        M = TC.load_module(read_src(), "real")
++        bad, n = arms(R, M, ONLY)
++        if bad:
++            print("\n".join("PROBLEM the unmutated chain FAILS: " + b for b in bad))
++            print(f"ZZTEST_FAIL {len(bad)} of {n} arm(s) failed on the real chain")
++            return 1
++        if ARMS_ONLY or ONLY is not None:
++            print(f"ZZTEST_PASS {n}  ({n} chain arms; the mutation matrix was not run)")
++            return 0
++        print(f"{n} chain arms green on the real chain.  Mutation matrix (each mutant is hnscreen_devbox.py with ONE source edit; it runs the arms it must turn RED):")
++        problems = []
++        for k, (name, edits, expect) in enumerate(MUTATIONS, 1):
++            try:
++                Mm = TC.load_module(apply_edits(read_src(), edits, name), f"m{k}")
++                red, _ = arms(R, Mm, set(expect))
++                red = list(red)
++            except AssertionError as e:
++                problems.append(str(e))
++                continue
++            except Exception as e:                                                # noqa: BLE001 -- a mutant that cannot even run its arms is RED, and said so
++                red = [f"arms raised {type(e).__name__}: {str(e)[:80]}"]
++            miss = [c for c in expect if c not in red]
++            if not red:
++                problems.append(f"mutation {name!r} stayed GREEN: no arm can see it")
++            elif miss and not any(r.startswith("arms raised") for r in red):
++                problems.append(f"mutation {name!r}: expected RED and stayed green: {miss} (RED: {red[:6]})")
++            print(f"{name[:100]:100s} RED {len(red):2d}  e.g. {', '.join(red[:1])[:110]}", flush=True)
++        if problems:
++            print("\n".join("PROBLEM " + p for p in problems))
++            print(f"ZZTEST_FAIL {len(problems)} problem(s)")
++            return 1
++        print(f"ZZTEST_PASS {n + len(MUTATIONS)}  ({n} chain arms + {len(MUTATIONS)} RED mutations of hnscreen_devbox.py)")
++        return 0
++    finally:
++        R.close()
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+--- a/refe/test_hnscreen_chain.py
++++ b/refe/test_hnscreen_chain.py
+@@ -325,5 +325,6 @@
+         "gpu": {"lock": sc.lock, "chain_marker": sc.marker, "wait_idle": None, "idle_timeout_s": 1, "poll_s": 10, "max_wait_s": 100, "settle_s": 0},
+         "trainer": {"cmd": [PY, stub, "trainer"], "argv_template": template()},
+-        "gate": {"cmd": [PY, stub, "gate"], "profile": "refe_hnscreen", "key_file": KEYPATH, "arm_name_fmt": "S{seed}"},
++        "gate": {"cmd": [PY, stub, "gate"], "profile": "refe_hnscreen", "key_file": KEYPATH, "arm_name_fmt": "S{seed}",
++                 "ctx_mode": "content"},      # HNSCREEN-FP-COST: the stub gate has no anchor / end-verify, so this suite runs the chain in CONTENT mode = exactly the chain it always was (the anchored chain: test_hnscreen_ctx_chain.py)
+         "paths": {"bank_train": f"{sc.d}/bank/train.hnbank", "bank_val": f"{sc.d}/bank/val.hnbank", "cache_dir": f"{sc.d}/cache"},
+         "commands": {
+--- a/eval/test_hn_screen_read.py
++++ b/eval/test_hn_screen_read.py
+@@ -714,7 +714,9 @@
+     json.dump(GATES_OK, open(os.path.join(tmp, "gates.json"), "w"))
+     json.dump(SY_OK, open(os.path.join(tmp, "sy.json"), "w"))
++    chain_root, chain_key = make_chain_root(tmp, "chain", (0, 1, 2), "content")                  # HNSCREEN-FP-COST: the reader's cache-binding gate needs the passes' tokens
+     out = os.path.join(tmp, "result.json")
+     rc = H.main(["--scores"] + [f"{n}={os.path.join(tmp, n + '.npz')}" for n in picks] + ["--pdm", os.path.join(tmp, "pdm"), "--rl-val-scenes", os.path.join(tmp, "scenes.tsv"),
+-                 "--gates", os.path.join(tmp, "gates.json"), "--sy", os.path.join(tmp, "sy.json"), "--rule", "navsim_v1_lane", "--n-boot", str(NB), "--out", out])
++                 "--gates", os.path.join(tmp, "gates.json"), "--sy", os.path.join(tmp, "sy.json"), "--rule", "navsim_v1_lane", "--n-boot", str(NB), "--out", out,
++                 "--chain-root", chain_root, "--key-file", chain_key])
+     res = json.load(open(out, encoding="utf-8"))
+     ok = (rc == 0 and res["outcome"]["row"] == 3 and res["strategic"]["status"] == "PAUSED" and "log-cluster bootstrap" in res["estimator"] and res["M2"]["status"] == "NOT COMPUTABLE"
+@@ -730,5 +732,5 @@
+     rc2 = H.main(["--scores"] + [f"{n}={os.path.join(tmp, n + '.npz')}" for n in picks] + ["--pdm", os.path.join(tmp, "pdm"), "--rl-val-scenes", os.path.join(tmp, "scenes.tsv"),
+                   "--gates", os.path.join(tmp, "gates.json"), "--sy", os.path.join(tmp, "sy.json"), "--families", os.path.join(tmp, "fam.json"), "--families-per-set", os.path.join(tmp, "fam_per_set.npz"),
+-                  "--rule", "navsim_v1_lane", "--n-boot", str(NB), "--out", out2])
++                  "--rule", "navsim_v1_lane", "--n-boot", str(NB), "--out", out2, "--chain-root", chain_root, "--key-file", chain_key])
+     r2 = json.load(open(out2, encoding="utf-8"))
+     if not (rc2 == 0 and r2["outcome"]["row"] == 3 and r2["families"]["published"] is True and r2["families"]["paired"] is True and r2["families_paired"]["status"] == "OK"
+@@ -736,4 +738,132 @@
+                                                  "LONGITUDINAL.ego_progress.progress_ratio_median", "LONGITUDINAL.target_speed_acc.within_1.0_mps"] and r2["strategic"]["status"] == "PAUSED"):
+         bad.append("C_cli_families_per_set_published_paired_and_outcome_unchanged")
++    return bad
++
++
++
++
++# ================================================================================================ G: the CACHE-BINDING GATE of the reader (HNSCREEN-FP-COST)
++def make_chain_root(tmp, name, seeds, mode="content", end="ok"):
++    """A chain state dir the reader's gate can read: signed PASS tokens under passes/s<seed>/lg/ whose --ctx-cache is bound by CONTENT or by an ANCHOR, and (anchor mode) ctx_chain/anchor.json + end_verify.json written by the
++    gate's own functions on a tiny sealed directory.  end = ok (END_VERIFY_OK) | void (a same-size, same-mtime edit before the end verify) | none (no end record).  -> (root, key file)"""
++    import shutil
++    import gate_token as GT
++    keyf = os.path.join(tmp, "gate.key")
++    key = GT.load_key(keyf, create=True)
++    root = os.path.join(tmp, name)
++    cache = os.path.join(tmp, name + "_cache")
++    shutil.rmtree(root, ignore_errors=True)
++    shutil.rmtree(cache, ignore_errors=True)
++    os.makedirs(os.path.join(cache, "units"))
++    for i in range(3):
++        with open(os.path.join(cache, "units", f"u{i}.bin"), "wb") as f:
++            f.write(bytes([i]) * (64 + i))
++    with open(os.path.join(cache, "manifest.json"), "w") as f:
++        f.write("{}")
++    GT.seal_content_manifest(cache)
++    pin = GT.fp_key(GT.content_fingerprint(cache))
++    if mode == "content":
++        fp = {"path": cache, **GT.content_fingerprint(cache)}
++    else:
++        os.makedirs(os.path.join(root, "ctx_chain"), exist_ok=True)
++        ap = os.path.join(root, GT.ANCHOR_REL)
++        GT.mint_anchor(cache, chain_id="ab" * 16, key=key, pin=pin, out_path=ap)
++        doc, _why, sha = GT.load_anchor(ap, key)
++        anc = {"doc": doc, "sha256": sha}
++        fp = {"path": cache, **GT.anchor_fingerprint(cache, anc)}
++        if end == "void":
++            p = os.path.join(cache, "units", "u0.bin")
++            st = os.stat(p)
++            with open(p, "r+b") as f:
++                f.write(b"\xff")
++            os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))
++        if end in ("ok", "void"):
++            GT.end_verify(cache, anc, key, os.path.join(root, GT.END_REL), seeds=seeds)
++    for s in seeds:
++        out = os.path.join(root, "passes", f"s{s}", "lg")
++        os.makedirs(out, exist_ok=True)
++        GT.mint(profile="refe_hnscreen", commit="a" * 40, tree_man={}, argv=[], trainer="scorer_finetune.py", data={"--ctx-cache": fp}, checks={}, reasons=[], key=key, out_dir=out)
++    return root, keyf
++
++
++def suite_chain_gate(H, tag, only=None):
++    """The reader refuses (rc 6, ZZHNSCREEN_REFUSED, nothing read, no result written) unless every pass's cache binding is proven; admits a content-bound chain and an anchored chain with an END_VERIFY_OK.  Runs the REAL
++    `main` of the module under test up to the first score file (a sentinel stops it there: the gate has run by then)."""
++    import contextlib
++    import io
++    bad = []
++    sel = (lambda name: only is None or name in only)
++    tmp = tempfile.mkdtemp(prefix=f"hsr_gate_{tag}_")
++
++    class Past(Exception):
++        pass
++
++    def stop(*a, **k):
++        raise Past()
++
++    def run(root, keyf, seeds=(0, 1, 2), extra=()):
++        out = os.path.join(tmp, "result_gate.json")
++        if os.path.exists(out):
++            os.remove(out)
++        buf = io.StringIO()
++        real = H.RV.load_scores
++        H.RV.load_scores = stop
++        try:
++            with contextlib.redirect_stdout(buf):
++                try:
++                    rc = H.main(["--scores", "base=x.npz"] + [f"{a}{s}=x.npz" for s in seeds for a in "AB"] + ["--pdm", "p", "--rl-val-scenes", "s", "--gates", "g.json", "--rule", "navsim_v1_lane", "--out", out,
++                                 "--chain-root", root, "--key-file", keyf, *extra])
++                except Past:
++                    rc = "PAST_GATE"
++        finally:
++            H.RV.load_scores = real
++        return rc, buf.getvalue(), os.path.exists(out)
++
++    def refused(rc, txt, wrote, frag):
++        return rc == 6 and "ZZHNSCREEN_REFUSED" in txt and frag in txt and not wrote
++
++    if sel("G_a_content_bound_chain_is_admitted_without_an_end_record"):
++        root, keyf = make_chain_root(tmp, "c_ok", (0, 1, 2), "content")
++        rc, txt, wrote = run(root, keyf)
++        if not (rc == "PAST_GATE" and "REFUSED" not in txt):
++            bad.append("G_a_content_bound_chain_is_admitted_without_an_end_record")
++    if sel("G_an_anchored_chain_with_END_VERIFY_OK_is_admitted"):
++        root, keyf = make_chain_root(tmp, "a_ok", (0, 1, 2), "anchor", "ok")
++        rc, txt, wrote = run(root, keyf)
++        if not (rc == "PAST_GATE" and "REFUSED" not in txt):
++            bad.append("G_an_anchored_chain_with_END_VERIFY_OK_is_admitted")
++    if sel("G_R5_an_anchored_chain_without_an_end_record_is_refused_before_any_score_is_read"):
++        root, keyf = make_chain_root(tmp, "a_none", (0, 1, 2), "anchor", "none")
++        if not refused(*run(root, keyf), "no END_VERIFY_OK record"):
++            bad.append("G_R5_an_anchored_chain_without_an_end_record_is_refused_before_any_score_is_read")
++    if sel("G_R1_a_VOID_chain_is_refused_before_any_score_is_read"):
++        root, keyf = make_chain_root(tmp, "a_void", (0, 1, 2), "anchor", "void")
++        if not refused(*run(root, keyf), "VOID"):
++            bad.append("G_R1_a_VOID_chain_is_refused_before_any_score_is_read")
++    if sel("G_an_END_record_that_does_not_cover_every_seed_read_is_refused"):
++        root, keyf = make_chain_root(tmp, "a_few", (0, 1), "anchor", "ok")
++        import shutil
++        shutil.copytree(os.path.join(root, "passes", "s1"), os.path.join(root, "passes", "s2"))      # a third pass the END record never covered
++        if not refused(*run(root, keyf), "covers seeds"):
++            bad.append("G_an_END_record_that_does_not_cover_every_seed_read_is_refused")
++    if sel("G_a_chain_root_with_no_tokens_is_refused"):
++        os.makedirs(os.path.join(tmp, "empty_root"), exist_ok=True)
++        root, keyf = make_chain_root(tmp, "c_for_key", (0,), "content")
++        if not refused(*run(os.path.join(tmp, "empty_root"), keyf), "no PASS token"):
++            bad.append("G_a_chain_root_with_no_tokens_is_refused")
++    if sel("G_a_missing_gate_key_is_a_refusal_never_a_pass"):
++        root, keyf = make_chain_root(tmp, "c_nokey", (0, 1, 2), "content")
++        rc, txt, wrote = run(root, os.path.join(tmp, "no_such.key"))
++        if not (rc == 6 and "cannot be checked" in txt and not wrote):
++            bad.append("G_a_missing_gate_key_is_a_refusal_never_a_pass")
++    if sel("G_the_chain_root_is_a_required_argument"):
++        buf = io.StringIO()
++        try:
++            with contextlib.redirect_stderr(buf):
++                H.main(["--scores", "base=x.npz", "--pdm", "p", "--rl-val-scenes", "s", "--gates", "g.json", "--rule", "navsim_v1_lane", "--out", os.path.join(tmp, "r.json")])
++            bad.append("G_the_chain_root_is_a_required_argument")
++        except SystemExit as e:
++            if e.code != 2:
++                bad.append("G_the_chain_root_is_a_required_argument")
+     return bad
+ 
+@@ -779,4 +909,14 @@
+     ("families are published without the family IC", [('paired.get("status") == "OK" and paired.get("IC", {}).get("ok"))', 'paired.get("status") == "OK")')], ["P_families_published_only_when_paired_and_IC_holds"]),
+     ("the human-only components are compared", [('            if any(e[fam][nm].get("human_only") for e in Bs + As):\n', "            if False:\n")], ["P_human_only_components_excluded"]),
++    ("the reader's cache-binding gate is not called", [('        why = GT.ctx_chain_refusals(a.chain_root, passes, GT.load_key(a.key_file, create=False))\n', '        why = []\n')],
++     ["G_R5_an_anchored_chain_without_an_end_record_is_refused_before_any_score_is_read", "G_R1_a_VOID_chain_is_refused_before_any_score_is_read", "G_a_chain_root_with_no_tokens_is_refused"]),
++    ("the reader ignores a refusal of the gate", [('    if why:\n        for r in why[:6]:', '    if False:\n        for r in why[:6]:')],
++     ["G_R5_an_anchored_chain_without_an_end_record_is_refused_before_any_score_is_read", "G_R1_a_VOID_chain_is_refused_before_any_score_is_read"]),
++    ("a gate that cannot run is a pass", [('        why = [f"the chain\'s cache binding cannot be checked: {type(e).__name__}: {str(e)[:200]}"]\n', '        why = []\n')],
++     ["G_a_missing_gate_key_is_a_refusal_never_a_pass"]),
++    ("the reader checks no seed (an empty pass list)", [('    passes = sorted({int(n[1:])', '    passes = [] and sorted({int(n[1:])')],
++     ["G_R5_an_anchored_chain_without_an_end_record_is_refused_before_any_score_is_read", "G_a_chain_root_with_no_tokens_is_refused"]),
++    ("--chain-root is optional", [('    ap.add_argument("--chain-root", required=True,', '    ap.add_argument("--chain-root", required=False, default=".",')],
++     ["G_the_chain_root_is_a_required_argument"]),
+     ("M2 reads A minus B", [('m2 = ratio_diff(JB, [tw[f"B{s}"][1] for s in seeds], [tw[f"A{s}"][1] for s in seeds], den)', 'm2 = ratio_diff(JB, [tw[f"A{s}"][1] for s in seeds], [tw[f"B{s}"][1] for s in seeds], den)')], ["O_row7_HEAD_MOVES_NO_ZEROS"]),
+ ]
+@@ -795,5 +935,5 @@
+     src = open(SRC_READ, encoding="utf-8").read()
+     Hreal = load_read(src, "real")
+-    real = suite(Hreal, "real") + suite_items56() + suite_cli(Hreal) + suite_paired(Hreal, "real")
++    real = suite(Hreal, "real") + suite_items56() + suite_cli(Hreal) + suite_paired(Hreal, "real") + suite_chain_gate(Hreal, "real")
+     assert not real, f"the unmutated sources FAIL their own checks: {real}"
+     n, problems = 1, []
+@@ -804,5 +944,5 @@
+             ast.parse(m_src)
+             Hm = load_read(m_src, f"m{n}")
+-            failing = suite(Hm, f"m{n}", only=set(expect)) + suite_paired(Hm, f"m{n}", only=set(expect))
++            failing = suite(Hm, f"m{n}", only=set(expect)) + suite_paired(Hm, f"m{n}", only=set(expect)) + suite_chain_gate(Hm, f"m{n}", only=set(expect))
+         except (Exception, SystemExit) as e:                           # noqa: BLE001 -- a mutated source that breaks the suite's own setup is RED, and said so
+             failing = [f"suite setup raised {type(e).__name__}: {str(e)[:80]}"]
+--- a/refe/test_hn_content_fp.py
++++ b/refe/test_hn_content_fp.py
+@@ -515,18 +515,18 @@
+       "G_verify_REFUSES_delete_after_the_token_was_minted_in_process_and_as_subprocess", "G_verify_REFUSES_nomanifest_after_the_token_was_minted_in_process_and_as_subprocess"]),
+     ("launch_gate.cmd_verify: the content flags are not passed to verify_token (the profile -> caller wiring dropped)",
+-     "launch_gate.py", [("commit=a.commit, content_flags=content_flags_of(prof) if prof else ())", "commit=a.commit)")],
++     "launch_gate.py", [("commit=a.commit, content_flags=content_flags_of(prof) if prof else (), ctx_anchor=pa.get(\"ctx_anchor\"))", "commit=a.commit, ctx_anchor=pa.get(\"ctx_anchor\"))")],
+      ["G_verify_clean_control_MATCHES_in_process_and_as_the_chains_subprocess"]),                       # fail CLOSED: a token minted by content no longer matches a listing, so the clean control breaks; the flip is never silently passed
+     ("launch_gate.finalize AND cmd_verify both drop the content flags (the token binds a size listing and the supervisor compares one: the same-size flip must now PASS the supervisor)",
+-     "launch_gate.py", [("commit=a.commit, content_flags=content_flags_of(prof) if prof else ())", "commit=a.commit)"),
+-                        ("    data = GT.data_manifest(argv, prof[\"data_flags\"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof))\n    _log_manifest_timing(\"finalize\"",
+-                         "    data = GT.data_manifest(argv, prof[\"data_flags\"], gate_inputs, timings=dtim)\n    _log_manifest_timing(\"finalize\"")],
++     "launch_gate.py", [("commit=a.commit, content_flags=content_flags_of(prof) if prof else (), ctx_anchor=pa.get(\"ctx_anchor\"))", "commit=a.commit, ctx_anchor=pa.get(\"ctx_anchor\"))"),
++                        ("    data = GT.data_manifest(argv, prof[\"data_flags\"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof), ctx_anchor=prof.get(\"ctx_anchor\"))\n    _log_manifest_timing(\"finalize\"",
++                         "    data = GT.data_manifest(argv, prof[\"data_flags\"], gate_inputs, timings=dtim, ctx_anchor=prof.get(\"ctx_anchor\"))\n    _log_manifest_timing(\"finalize\"")],
+      ["G_verify_REFUSES_flip_after_the_token_was_minted_in_process_and_as_subprocess", "G_mint_finalize_PASSES_on_the_sealed_cache_and_binds_its_CONTENT_fingerprint"]),
+     ("launch_gate.finalize: the content flags are not passed to data_manifest (the token binds a size listing)",
+-     "launch_gate.py", [("    data = GT.data_manifest(argv, prof[\"data_flags\"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof))\n    _log_manifest_timing(\"finalize\"",
+-                         "    data = GT.data_manifest(argv, prof[\"data_flags\"], gate_inputs, timings=dtim)\n    _log_manifest_timing(\"finalize\"")],
++     "launch_gate.py", [("    data = GT.data_manifest(argv, prof[\"data_flags\"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof), ctx_anchor=prof.get(\"ctx_anchor\"))\n    _log_manifest_timing(\"finalize\"",
++                         "    data = GT.data_manifest(argv, prof[\"data_flags\"], gate_inputs, timings=dtim, ctx_anchor=prof.get(\"ctx_anchor\"))\n    _log_manifest_timing(\"finalize\"")],
+      ["G_mint_finalize_PASSES_on_the_sealed_cache_and_binds_its_CONTENT_fingerprint", "G_mint_finalize_FAILS_on_a_same_size_flip"]),
+     ("launch_gate.run_checks: the content flags are not passed to data_manifest",
+-     "launch_gate.py", [("    data = GT.data_manifest(argv, prof[\"data_flags\"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof))\n    _log_manifest_timing(\"run\"",
+-                         "    data = GT.data_manifest(argv, prof[\"data_flags\"], gate_inputs, timings=dtim)\n    _log_manifest_timing(\"run\"")],
++     "launch_gate.py", [("    data = GT.data_manifest(argv, prof[\"data_flags\"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof), ctx_anchor=prof.get(\"ctx_anchor\"))\n    _log_manifest_timing(\"run\"",
++                         "    data = GT.data_manifest(argv, prof[\"data_flags\"], gate_inputs, timings=dtim, ctx_anchor=prof.get(\"ctx_anchor\"))\n    _log_manifest_timing(\"run\"")],
+      ["G_run_checks_fails_every_check_on_a_same_size_flip_and_records_the_content_fingerprint"]),
+     ("launch_gate.content_flags_of: the profile no longer fingerprints by content",
+@@ -553,9 +553,9 @@
+      ["U_invalid_noncanonical", "G_refused_noncanonical_pin_registered"]),
+     ("gate_token._content_listing: a symlinked directory is silently skipped",
+-     "gate_token.py", [("        problems += [f\"a symlinked directory is not followed, so its files cannot be bound: {os.path.relpath(os.path.join(dirpath, d), rootp).replace(os.sep, '/')}\"\n                     for d in dirnames if os.path.islink(os.path.join(dirpath, d))]\n",
+-                        "        pass  # MUTANT\n")],
++     "gate_token.py", [("        problems += [f\"a symlinked directory is not followed, so its files cannot be bound: {os.path.relpath(os.path.join(dirpath, d), rootp).replace(os.sep, '/')}\"\n                     for d in dirnames if os.path.islink(os.path.join(dirpath, d))]\n        for fn in sorted(filenames):\n            full = os.path.join(dirpath, fn)\n            rel = os.path.relpath(full, rootp).replace(os.sep, \"/\")\n            if rel == CONTENT_MANIFEST:\n",
++                        "        pass  # MUTANT\n        for fn in sorted(filenames):\n            full = os.path.join(dirpath, fn)\n            rel = os.path.relpath(full, rootp).replace(os.sep, \"/\")\n            if rel == CONTENT_MANIFEST:\n")],
+      ["U_a_symlinked_directory_is_a_problem_not_a_silent_skip"]),
+     ("gate_token.fp_key: an INVALID content fingerprint is keyed like a valid one (problems ignored)",
+-     "gate_token.py", [("        if fp.get(\"n_problems\") or not fp.get(\"content_sha256\"):\n", "        if False:\n")],
++     "gate_token.py", [("        if fp.get(\"n_problems\") or not fp.get(\"content_sha256\"):\n            return f\"dir-content-INVALID:", "        if False:\n            return f\"dir-content-INVALID:")],
+      ["U_defect_reproduced_listing_fingerprint_blind_to_a_same_size_flip"]),
+     ("ctx_cache.finalize: the cache is not sealed at build",

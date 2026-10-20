@@ -324,7 +324,8 @@ def make_cfg(sc, **over):
         "python": PY, "pkg": sc.w.fake,
         "gpu": {"lock": sc.lock, "chain_marker": sc.marker, "wait_idle": None, "idle_timeout_s": 1, "poll_s": 10, "max_wait_s": 100, "settle_s": 0},
         "trainer": {"cmd": [PY, stub, "trainer"], "argv_template": template()},
-        "gate": {"cmd": [PY, stub, "gate"], "profile": "refe_hnscreen", "key_file": KEYPATH, "arm_name_fmt": "S{seed}"},
+        "gate": {"cmd": [PY, stub, "gate"], "profile": "refe_hnscreen", "key_file": KEYPATH, "arm_name_fmt": "S{seed}",
+                 "ctx_mode": "content"},      # HNSCREEN-FP-COST: the stub gate has no anchor / end-verify, so this suite runs the chain in CONTENT mode = exactly the chain it always was (the anchored chain: test_hnscreen_ctx_chain.py)
         "paths": {"bank_train": f"{sc.d}/bank/train.hnbank", "bank_val": f"{sc.d}/bank/val.hnbank", "cache_dir": f"{sc.d}/cache"},
         "commands": {
             "s0_stage": st("s0_stage", *w("{s0}/staged_manifest.json", {"staged": 1})),

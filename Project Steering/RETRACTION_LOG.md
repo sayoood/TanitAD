@@ -18468,3 +18468,17 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 - No verdict changes: the DAC-power miss alone fails every cell on both bases. `D-REFE-EPADM-N1-1`. `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-search-p2-confirm/MM_RULING_C2_LICENCE.md` (sealed before any C1 output existed) replaces the gate for this one arm only.
 
 **Class:** *an arm whose pass condition includes a bar its lever cannot move.* Before naming a next arm, list every bar it must clear and mark which ones the lever touches. If an untouched bar is already missed, the arm cannot pass as specified: say so in the ruling, or change the pass condition in a pre-registration before the run.
+
+### R59 (2026-10-20) - "The content fingerprint costs 17 full reads of the ctx cache per 3-seed HN screen" (hnfp2's `COST.md`, carried verbatim into `MM_RULING_FPCOST.md` by the Master Mind)
+
+**Claimed:**
+- 17 full reads per 3-seed screen, which sized option (b')'s saving at 17 -> 4.
+
+**Measured (`TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-hnscreen-fp-cost/logs/reads_per_screen.json`, `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-19-hnscreen-fp-cost/RESULT.md` HEADLINE):**
+- 20 reads, not 17. `run` is 4 reads (`run_checks` 2 + `finalize` 2), not 2, and the chain verifies twice per seed (at the mint and at the start of the pass), not once.
+- The saving is 20 -> 4 (5x).
+
+**Fixed:**
+- `D-REFE-HNSCREEN-FPCOST-1`. Option (b') stands: the decision did not depend on 17 vs 20.
+
+**Class:** *an inherited count not re-derived from source.* A cost that decides an option is counted by instrumenting the call path (or tracing it to `file:line`), never copied from another package's tally.

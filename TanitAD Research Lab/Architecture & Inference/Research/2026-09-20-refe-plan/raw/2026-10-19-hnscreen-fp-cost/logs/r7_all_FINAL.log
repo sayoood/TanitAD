@@ -1,0 +1,46 @@
+RAMGATE_OK free 5.68 GB after 0 s
+pristine cache built
+base rc 0 s, --calib 0.0s, --onpolicy 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.2s (--images 0.1s, --onpolicy 0.1s, --pdm-labels-heldout 0.1s, --ctx-cache 0.1s)
+WORKER_DONE base 9 scenarios 
+mine rc 0  --targets 0.0s, --images 0.0s, --calib 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.1s (--ctx-cache 0.0s, --heldout 0.0s, --targets 0.0s, --images 0.0s)
+WORKER_DONE mine 9 scenarios 
+{
+ "n_observables": 83,
+ "n_identical": 83,
+ "n_different": 0,
+ "scenarios": [
+  "clean",
+  "extra_file",
+  "flip_same_size_same_mtime",
+  "grow_size_change",
+  "manifest_json_flip",
+  "missing_file",
+  "no_manifest",
+  "resealed_self_consistent",
+  "touch_mtime_only"
+ ],
+ "mine_only_keys": [
+  "refusals_explicit_content",
+  "verify_explicit_content"
+ ],
+ "reads_clean": {
+  "content_fingerprint": 10,
+  "data_manifest": 10,
+  "fp_key": 10,
+  "mint_again": 20,
+  "profile_refusals": 10,
+  "refusals": 10,
+  "verify": 10
+ },
+ "evidence": "MEASURED (this script, tip vs mine, same sealed cache)"
+}
+ZZR7_IDENTICAL
+EXIT_CODE_DIFFERENTIAL 0 
+0_unmutated_copy {'rc': 0, 'n_DIFF_rows': 0, 'went_RED': True, 'first_diffs': []}
+A_refusal_text {'rc': 3, 'n_DIFF_rows': 0, 'went_RED': False, 'first_diffs': []}
+B_extra_full_read {'rc': 1, 'n_DIFF_rows': 50, 'went_RED': True, 'first_diffs': ['DIFF mint: verdict + token binding + reads ', 'DIFF clean/content_fingerprint ', 'DIFF clean/data_manifest ', 'DIFF clean/fp_key ']}
+(went_RED for the unmutated copy means: stayed IDENTICAL, as it must)
+ZZR7_CONTROL_FAIL
+EXIT_CODE_CONTROL 0 

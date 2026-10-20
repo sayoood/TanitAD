@@ -9,8 +9,10 @@ STAGE ORDER (SCREEN_NOTES.md "Order, with stop points"; each stage has a DONE ma
     S0  stage the inputs (a named command; the chain never touches the pod)
     S1  bank build, SY (hn_bank.py yield), I1, I2          ->  STOP: SCREEN-INVALID (a gate failed; checked FIRST, section 11 row 0) / SCREEN-SPARSE (SY < 0.10, row 1)
     S2  trunk-context cache (units, the LANDED lock taken by the driver per unit), I6, G15 (GPU, behind the lease)   ->  STOP: SCREEN-INVALID
-    T<s>  mint the `refe_hnscreen` token of pass s: trainer --preflight (GPU), `launch_gate.py run`, `launch_gate.py verify`
+    ANCHOR  (gate.ctx_mode anchor-bound, the DEFAULT; HNSCREEN-FP-COST) the START of the chain: `launch_gate.py anchor` = ONE full content fingerprint of the cache vs the registered pin + a signed stat listing
+    T<s>  mint the `refe_hnscreen` token of pass s: trainer --preflight (GPU), `launch_gate.py run`, `launch_gate.py verify`   (anchor-bound: a stat compare with the anchor, no byte read)
     P<s>  the paired pass of seed s: `launch_gate.py verify` IMMEDIATELY before the trainer starts, then the trainer behind the lease, then the post-pass gates (I4 / I5 / D1)
+    ENDV  (anchor-bound) the END of the chain, before any output is read: `launch_gate.py end-verify` = a second full content fingerprint vs the anchor + a final stat compare -> END_VERIFY_OK, or the chain is VOID
     S4  the gates file, the offsets scoring (M3), `hn_screen_families.py --per-set-out`, `hn_screen_read.py --families-per-set`
     VERDICT  the first matching section-11 row; row None = rule E fired: seeds 3 and 4 are added (ONCE) and the chain re-plans
     NEXT  the verdict row's next lever: the configured commands for that row, and NEXT_LEVER.md (Rule Zero: a verdict is never the end of a turn)
@@ -41,6 +43,7 @@ import hashlib
 import json
 import os
 import re
+import secrets
 import subprocess
 import sys
 import time
@@ -51,6 +54,8 @@ PKG_DEFAULT = os.path.dirname(HERE)
 OWNER = "hnscreen_devbox"
 CHAIN_MARKER = "C:/Users/Admin/qland/work/refcv7/devbox_gpu.chain_active"
 MATCH = "ZZGATE-MATCHZZ"
+ANCHOR_OK, END_OK_MARK = "ZZGATE-ANCHOR-OKZZ", "ZZGATE-END_VERIFY_OKZZ"             # HNSCREEN-FP-COST: what the gate's `anchor` / `end-verify` print on success
+CTX_MODES = ("content", "anchor-bound")
 PREFLIGHT_PASS = "ZZSFT_PREFLIGHT_PASS"
 CACHE_DONE, CACHE_PARTIAL = "ZZCTX_DONE", "ZZCTX_PARTIAL"
 RULE = "navsim_v1_lane"
@@ -71,7 +76,8 @@ DEFAULTS = {
     "gpu": {"lock": None, "chain_marker": CHAIN_MARKER, "wait_idle": "default", "idle_timeout_s": 240.0, "poll_s": 30.0, "max_wait_s": 6 * 3600.0, "settle_s": 4.0},
     "trainer": {"cmd": None, "argv_template": None, "seeds": list(SEEDS), "extension_seeds": list(EXT_SEEDS),
                 "score_files": ["scores_update1000_A.npz", "scores_update1000_B.npz"], "attempt_artifacts": ["scores", "sft.jsonl", "sft.log"]},
-    "gate": {"cmd": None, "profile": "refe_hnscreen", "key_file": None, "arm_name_fmt": None, "token_check_names": {"G14": "G14", "G15": "G15"}},
+    "gate": {"cmd": None, "profile": "refe_hnscreen", "key_file": None, "arm_name_fmt": None, "token_check_names": {"G14": "G14", "G15": "G15"},
+             "ctx_mode": "anchor-bound"},      # HNSCREEN-FP-COST (b'): the intermediate gate calls bind the cache by the chain's START anchor (stat compare), the END verify closes the residual; `content` = every call re-reads the cache in full
     "paths": {"bank_train": None, "bank_val": None, "cache_dir": None},
     "sy": {"partition_id": None, "fan_fingerprint": None, "label_version": 5},
     "commands": {"s0_stage": None, "s1_build": None, "s1_i1": None, "s1_i2": None, "s1_i3": None, "s2_cache": None, "s2_i6": None, "s2_g15": None,
@@ -557,12 +563,76 @@ class Chain:
         cmd = gate["cmd"] + ["verify", "--profile", gate["profile"], "--token", tok, "--args-file", argv_file, "--pkg", self.pkg, "--json", f"{self.pass_dir(seed)}/token_verify.json"]
         if gate.get("key_file"):
             cmd += ["--key-file", gate["key_file"]]
+        cmd += self.ctx_args()                                                              # HNSCREEN-FP-COST: [] in content mode
         r = self.runner.run(cmd, f"{self.dirs['logs']}/token_verify_s{seed}.log")
         ok = r[0] == 0 and MATCH in r[1]
         if not ok:
             raise ChainStop(RC_REFUSED, f"the launch-gate token of pass s{seed} does not verify at {where} (rc {r[0]}, marker {'seen' if MATCH in r[1] else 'NOT seen'}): the trainer is NOT started", "REFUSED")
         self.log(f"ZZHNCHAIN_TOKEN_OK s{seed} {where} sha256 {sha256_file(tok)[:12]}")
         return tok, jload(argv_file)
+
+
+    # ------------------------------------------------------------------ the ctx anchor (HNSCREEN-FP-COST, MM ruling (b')): the START anchor, the intermediate calls' flags, the END verify
+    @property
+    def anchored(self):
+        """True iff the intermediate gate calls bind the cache by the chain's START anchor (`gate.ctx_mode` = anchor-bound, the default).  `content` = every call re-reads the cache in full, the chain exactly as it was."""
+        return self.cfg.get("gate.ctx_mode") == "anchor-bound"
+
+    @property
+    def ctx_dir(self):
+        return f"{self.root}/ctx_chain"
+
+    def chain_info(self):
+        """{chain_id, created_ns}: written ONCE (the first time the chain needs it) and never rewritten, so a resume keeps the same chain; an anchor minted before `created_ns` cannot serve it"""
+        p = f"{self.ctx_dir}/chain.json"
+        if not os.path.isfile(p):
+            jdump({"schema": "hnscreen_ctx_chain/1", "chain_id": secrets.token_hex(16), "created_ns": time.time_ns(), "created_utc": now_utc(), "cache_dir": norm(self.cfg.get("paths.cache_dir"))}, p)
+        return jload(p)
+
+    def ctx_args(self):
+        """the flags of an INTERMEDIATE gate call (`run`, `verify`): [] in content mode -- the command line is exactly what it always was"""
+        if not self.anchored:
+            return []
+        ci = self.chain_info()
+        return ["--ctx-mode", "anchor-bound", "--anchor", f"{self.ctx_dir}/anchor.json", "--chain-id", ci["chain_id"], "--chain-start-ns", str(ci["created_ns"])]
+
+    def gate_key_args(self):
+        gate = self.cfg.get("gate")
+        return ["--key-file", gate["key_file"]] if gate.get("key_file") else []
+
+    def stage_ANCHOR(self):
+        """the START of the chain: ONE full content fingerprint of the cache (the gate's `anchor`: vs the registered pin) + the stat listing of every file, signed.  Refused -> rc 5, nothing is trained."""
+        ci = self.chain_info()
+        gate, out = self.cfg.get("gate"), f"{self.ctx_dir}/anchor.json"
+        if os.path.exists(out):
+            os.replace(out, f"{out}.prev{int(self.clock())}")                           # evidence is archived, never deleted
+        cmd = gate["cmd"] + ["anchor", "--profile", gate["profile"], "--ctx-cache", self.cfg.get("paths.cache_dir"), "--chain-id", ci["chain_id"], "--out", out, "--pkg", self.pkg] + self.gate_key_args()
+        rc, text = self.exec(cmd, "ANCHOR")
+        if rc != 0 or ANCHOR_OK not in text or not os.path.isfile(out):
+            raise ChainStop(RC_REFUSED, f"the launch gate did not anchor the ctx cache (rc {rc}; logs/ANCHOR.log): nothing is trained", "REFUSED")
+        return [out, f"{self.ctx_dir}/chain.json"], {"chain_id": ci["chain_id"]}
+
+    def stage_ENDV(self, seeds):
+        """the END of the chain, before any output is read: a second full content fingerprint vs the anchor + a final stat compare.  Anything but END_VERIFY_OK marks the chain VOID -- permanently: a later run does
+        not re-verify (a cache restored by hand must not launder a voided chain), the outputs are never read, and the reader refuses the chain."""
+        void = f"{self.ctx_dir}/VOID.json"
+        if os.path.exists(void):
+            raise ChainStop(RC_INVALID, f"this chain is VOID (see {void}): the ctx cache changed under it; a new screen needs a new state dir", "INVALID")
+        ci = self.chain_info()
+        gate, out = self.cfg.get("gate"), f"{self.ctx_dir}/end_verify.json"
+        if os.path.exists(out):
+            os.replace(out, f"{out}.prev{int(self.clock())}")
+        cmd = gate["cmd"] + ["end-verify", "--profile", gate["profile"], "--ctx-cache", self.cfg.get("paths.cache_dir"), "--anchor", f"{self.ctx_dir}/anchor.json", "--chain-id", ci["chain_id"],
+                             "--chain-start-ns", str(ci["created_ns"]), "--seeds", ",".join(str(s) for s in seeds), "--out", out, "--pkg", self.pkg] + self.gate_key_args()
+        rc, text = self.exec(cmd, "ENDV")
+        try:
+            status = jload(out).get("status")
+        except (OSError, ValueError):
+            status = None
+        if rc != 0 or END_OK_MARK not in text or status != "END_VERIFY_OK":
+            jdump({"void_utc": now_utc(), "rc": rc, "record_status": status, "record": out}, void)
+            raise ChainStop(RC_INVALID, f"the end verify of the ctx cache did not pass (rc {rc}, record {status!r}; logs/ENDV.log): the chain is VOID and its outputs are never read", "INVALID")
+        return [out], {"seeds": list(seeds)}
 
     # ------------------------------------------------------------------ stage bodies: each returns (outputs, extra)
     def stage_S0(self):
@@ -624,6 +694,7 @@ class Chain:
             cmd += ["--arm-name", gate["arm_name_fmt"].replace("{seed}", str(seed))]
         if gate.get("key_file"):
             cmd += ["--key-file", gate["key_file"]]
+        cmd += self.ctx_args()                                                              # HNSCREEN-FP-COST: [] in content mode
         rc, _ = self.exec(cmd, f"T{seed}_gate_run")
         tok = self.token_file(seed)
         if rc != 0 or tok is None:
@@ -693,7 +764,7 @@ class Chain:
         a = [self.py, f"{self.pkg}/eval/hn_screen_read.py", "--scores", *scores, "--pdm", s4["pdm_dir"], "--rl-val-scenes", s4["rl_val_scenes"], "--gates", f"{self.dirs['s4']}/gates.json",
              "--sy", self.sy_path, "--bank9", f"{self.dirs['s4']}/bank9.npz", "--scores9", *scores9, "--families", f"{self.dirs['s4']}/families.json",
              "--families-per-set", self.per_set, "--rule", RULE, "--out", f"{self.dirs['s4']}/read_result.json"]
-        return a + (["--sets", s4["sets_dir"]] if s4.get("sets_dir") else [])
+        return a + (["--sets", s4["sets_dir"]] if s4.get("sets_dir") else []) + ["--chain-root", self.root] + self.gate_key_args()          # HNSCREEN-FP-COST: the reader checks the passes' cache binding (+ the END record) itself
 
     def stage_S4(self, seeds):
         os.makedirs(self.dirs["s4"], exist_ok=True)
@@ -736,29 +807,34 @@ class Chain:
 
     # ------------------------------------------------------------------ stage table, fingerprints, markers, handoffs
     def stage_list(self, seeds):
-        return ["S0", "S1", "S2"] + [f"T{s}" for s in seeds] + [f"P{s}" for s in seeds] + ["S4", "VERDICT", "NEXT"]
+        return ["S0", "S1", "S2"] + (["ANCHOR"] if self.anchored else []) + [f"T{s}" for s in seeds] + [f"P{s}" for s in seeds] + (["ENDV"] if self.anchored else []) + ["S4", "VERDICT", "NEXT"]
 
     def deps(self, sid, seeds):
         if sid == "S0":
             return []
         if sid in ("S1", "S2"):
             return ["S0" if sid == "S1" else "S1"]
-        if sid[0] == "T":
+        if sid == "ANCHOR":
             return ["S2"]
+        if sid == "ENDV":
+            return [f"P{s}" for s in seeds]
+        if sid[0] == "T":
+            return ["ANCHOR"] if self.anchored else ["S2"]
         if sid[0] == "P":
             return ["T" + sid[1:]]
         if sid == "S4":
-            return ["S1"] + [f"P{s}" for s in seeds]
+            return ["S1"] + [f"P{s}" for s in seeds] + (["ENDV"] if self.anchored else [])
         return {"VERDICT": ["S4"], "NEXT": ["VERDICT"]}[sid]
 
     def fingerprint(self, sid, seeds):
         d = {"tool": TOOL, "cfg": self.cfg.sha, "stage": sid, "deps": {x: self.marks.digest(x) for x in self.deps(sid, seeds)}}
-        if sid in ("S4", "VERDICT"):
+        if sid in ("S4", "VERDICT", "ENDV"):
             d["seeds"] = list(seeds)
         return sha256_text(json.dumps(d, sort_keys=True))
 
     def body_of(self, sid, seeds):
-        fixed = {"S0": self.stage_S0, "S1": self.stage_S1, "S2": self.stage_S2, "S4": lambda: self.stage_S4(seeds), "VERDICT": lambda: self.stage_VERDICT(seeds), "NEXT": self.stage_NEXT}
+        fixed = {"S0": self.stage_S0, "S1": self.stage_S1, "S2": self.stage_S2, "S4": lambda: self.stage_S4(seeds), "VERDICT": lambda: self.stage_VERDICT(seeds), "NEXT": self.stage_NEXT,
+                 "ANCHOR": self.stage_ANCHOR, "ENDV": lambda: self.stage_ENDV(seeds)}
         if sid in fixed:
             return fixed[sid]
         return (lambda: self.stage_T(int(sid[1:]))) if sid[0] == "T" else (lambda: self.stage_P(int(sid[1:])))
@@ -834,6 +910,8 @@ class Chain:
         miss = self.cfg.missing()
         if miss:
             raise ChainStop(RC_CONFIG, f"named parameters not set: {miss}", "CONFIG")
+        if self.cfg.get("gate.ctx_mode") not in CTX_MODES:
+            raise ChainStop(RC_CONFIG, f"gate.ctx_mode must be one of {CTX_MODES}, not {self.cfg.get('gate.ctx_mode')!r}", "CONFIG")
         os.makedirs(self.root, exist_ok=True)
         sha_p = f"{self.root}/config.sha256"
         if os.path.exists(sha_p):
@@ -844,6 +922,8 @@ class Chain:
             jdump(self.cfg.redacted(), f"{self.root}/config.frozen.json")
         for d in self.dirs.values():
             os.makedirs(d, exist_ok=True)
+        if self.anchored:
+            self.chain_info()                                                               # the chain's START is recorded now (once): an anchor minted before it can never serve this chain
         for s in self.seeds() + [int(x) for x in self.cfg.get("trainer.extension_seeds")]:      # every argv must be registered BEFORE anything runs, including rule E's
             self.pass_argv(s)
 

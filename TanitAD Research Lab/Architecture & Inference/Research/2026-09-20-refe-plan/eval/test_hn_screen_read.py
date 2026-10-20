@@ -713,9 +713,11 @@ def suite_cli(H):
         f.write("token\tlog\n" + "".join(f"{k[1]}\t{k[0]}\n" for k in keys))
     json.dump(GATES_OK, open(os.path.join(tmp, "gates.json"), "w"))
     json.dump(SY_OK, open(os.path.join(tmp, "sy.json"), "w"))
+    chain_root, chain_key = make_chain_root(tmp, "chain", (0, 1, 2), "content")                  # HNSCREEN-FP-COST: the reader's cache-binding gate needs the passes' tokens
     out = os.path.join(tmp, "result.json")
     rc = H.main(["--scores"] + [f"{n}={os.path.join(tmp, n + '.npz')}" for n in picks] + ["--pdm", os.path.join(tmp, "pdm"), "--rl-val-scenes", os.path.join(tmp, "scenes.tsv"),
-                 "--gates", os.path.join(tmp, "gates.json"), "--sy", os.path.join(tmp, "sy.json"), "--rule", "navsim_v1_lane", "--n-boot", str(NB), "--out", out])
+                 "--gates", os.path.join(tmp, "gates.json"), "--sy", os.path.join(tmp, "sy.json"), "--rule", "navsim_v1_lane", "--n-boot", str(NB), "--out", out,
+                 "--chain-root", chain_root, "--key-file", chain_key])
     res = json.load(open(out, encoding="utf-8"))
     ok = (rc == 0 and res["outcome"]["row"] == 3 and res["strategic"]["status"] == "PAUSED" and "log-cluster bootstrap" in res["estimator"] and res["M2"]["status"] == "NOT COMPUTABLE"
           and res["families"]["published"] is False and res["IC"]["ok"] and res["n_sets"] == N)
@@ -729,12 +731,140 @@ def suite_cli(H):
     out2 = os.path.join(tmp, "result2.json")
     rc2 = H.main(["--scores"] + [f"{n}={os.path.join(tmp, n + '.npz')}" for n in picks] + ["--pdm", os.path.join(tmp, "pdm"), "--rl-val-scenes", os.path.join(tmp, "scenes.tsv"),
                   "--gates", os.path.join(tmp, "gates.json"), "--sy", os.path.join(tmp, "sy.json"), "--families", os.path.join(tmp, "fam.json"), "--families-per-set", os.path.join(tmp, "fam_per_set.npz"),
-                  "--rule", "navsim_v1_lane", "--n-boot", str(NB), "--out", out2])
+                  "--rule", "navsim_v1_lane", "--n-boot", str(NB), "--out", out2, "--chain-root", chain_root, "--key-file", chain_key])
     r2 = json.load(open(out2, encoding="utf-8"))
     if not (rc2 == 0 and r2["outcome"]["row"] == 3 and r2["families"]["published"] is True and r2["families"]["paired"] is True and r2["families_paired"]["status"] == "OK"
             and r2["watch_items_trajectory"] == ["LATERAL.cross_mae_m", "LATERAL.curvature_bias_1pm", "LATERAL.heading_mae_deg", "LONGITUDINAL.along_bias_m", "LONGITUDINAL.ego_progress.progress_ratio_mean",
                                                  "LONGITUDINAL.ego_progress.progress_ratio_median", "LONGITUDINAL.target_speed_acc.within_1.0_mps"] and r2["strategic"]["status"] == "PAUSED"):
         bad.append("C_cli_families_per_set_published_paired_and_outcome_unchanged")
+    return bad
+
+
+
+
+# ================================================================================================ G: the CACHE-BINDING GATE of the reader (HNSCREEN-FP-COST)
+def make_chain_root(tmp, name, seeds, mode="content", end="ok"):
+    """A chain state dir the reader's gate can read: signed PASS tokens under passes/s<seed>/lg/ whose --ctx-cache is bound by CONTENT or by an ANCHOR, and (anchor mode) ctx_chain/anchor.json + end_verify.json written by the
+    gate's own functions on a tiny sealed directory.  end = ok (END_VERIFY_OK) | void (a same-size, same-mtime edit before the end verify) | none (no end record).  -> (root, key file)"""
+    import shutil
+    import gate_token as GT
+    keyf = os.path.join(tmp, "gate.key")
+    key = GT.load_key(keyf, create=True)
+    root = os.path.join(tmp, name)
+    cache = os.path.join(tmp, name + "_cache")
+    shutil.rmtree(root, ignore_errors=True)
+    shutil.rmtree(cache, ignore_errors=True)
+    os.makedirs(os.path.join(cache, "units"))
+    for i in range(3):
+        with open(os.path.join(cache, "units", f"u{i}.bin"), "wb") as f:
+            f.write(bytes([i]) * (64 + i))
+    with open(os.path.join(cache, "manifest.json"), "w") as f:
+        f.write("{}")
+    GT.seal_content_manifest(cache)
+    pin = GT.fp_key(GT.content_fingerprint(cache))
+    if mode == "content":
+        fp = {"path": cache, **GT.content_fingerprint(cache)}
+    else:
+        os.makedirs(os.path.join(root, "ctx_chain"), exist_ok=True)
+        ap = os.path.join(root, GT.ANCHOR_REL)
+        GT.mint_anchor(cache, chain_id="ab" * 16, key=key, pin=pin, out_path=ap)
+        doc, _why, sha = GT.load_anchor(ap, key)
+        anc = {"doc": doc, "sha256": sha}
+        fp = {"path": cache, **GT.anchor_fingerprint(cache, anc)}
+        if end == "void":
+            p = os.path.join(cache, "units", "u0.bin")
+            st = os.stat(p)
+            with open(p, "r+b") as f:
+                f.write(b"\xff")
+            os.utime(p, ns=(st.st_atime_ns, st.st_mtime_ns))
+        if end in ("ok", "void"):
+            GT.end_verify(cache, anc, key, os.path.join(root, GT.END_REL), seeds=seeds)
+    for s in seeds:
+        out = os.path.join(root, "passes", f"s{s}", "lg")
+        os.makedirs(out, exist_ok=True)
+        GT.mint(profile="refe_hnscreen", commit="a" * 40, tree_man={}, argv=[], trainer="scorer_finetune.py", data={"--ctx-cache": fp}, checks={}, reasons=[], key=key, out_dir=out)
+    return root, keyf
+
+
+def suite_chain_gate(H, tag, only=None):
+    """The reader refuses (rc 6, ZZHNSCREEN_REFUSED, nothing read, no result written) unless every pass's cache binding is proven; admits a content-bound chain and an anchored chain with an END_VERIFY_OK.  Runs the REAL
+    `main` of the module under test up to the first score file (a sentinel stops it there: the gate has run by then)."""
+    import contextlib
+    import io
+    bad = []
+    sel = (lambda name: only is None or name in only)
+    tmp = tempfile.mkdtemp(prefix=f"hsr_gate_{tag}_")
+
+    class Past(Exception):
+        pass
+
+    def stop(*a, **k):
+        raise Past()
+
+    def run(root, keyf, seeds=(0, 1, 2), extra=()):
+        out = os.path.join(tmp, "result_gate.json")
+        if os.path.exists(out):
+            os.remove(out)
+        buf = io.StringIO()
+        real = H.RV.load_scores
+        H.RV.load_scores = stop
+        try:
+            with contextlib.redirect_stdout(buf):
+                try:
+                    rc = H.main(["--scores", "base=x.npz"] + [f"{a}{s}=x.npz" for s in seeds for a in "AB"] + ["--pdm", "p", "--rl-val-scenes", "s", "--gates", "g.json", "--rule", "navsim_v1_lane", "--out", out,
+                                 "--chain-root", root, "--key-file", keyf, *extra])
+                except Past:
+                    rc = "PAST_GATE"
+        finally:
+            H.RV.load_scores = real
+        return rc, buf.getvalue(), os.path.exists(out)
+
+    def refused(rc, txt, wrote, frag):
+        return rc == 6 and "ZZHNSCREEN_REFUSED" in txt and frag in txt and not wrote
+
+    if sel("G_a_content_bound_chain_is_admitted_without_an_end_record"):
+        root, keyf = make_chain_root(tmp, "c_ok", (0, 1, 2), "content")
+        rc, txt, wrote = run(root, keyf)
+        if not (rc == "PAST_GATE" and "REFUSED" not in txt):
+            bad.append("G_a_content_bound_chain_is_admitted_without_an_end_record")
+    if sel("G_an_anchored_chain_with_END_VERIFY_OK_is_admitted"):
+        root, keyf = make_chain_root(tmp, "a_ok", (0, 1, 2), "anchor", "ok")
+        rc, txt, wrote = run(root, keyf)
+        if not (rc == "PAST_GATE" and "REFUSED" not in txt):
+            bad.append("G_an_anchored_chain_with_END_VERIFY_OK_is_admitted")
+    if sel("G_R5_an_anchored_chain_without_an_end_record_is_refused_before_any_score_is_read"):
+        root, keyf = make_chain_root(tmp, "a_none", (0, 1, 2), "anchor", "none")
+        if not refused(*run(root, keyf), "no END_VERIFY_OK record"):
+            bad.append("G_R5_an_anchored_chain_without_an_end_record_is_refused_before_any_score_is_read")
+    if sel("G_R1_a_VOID_chain_is_refused_before_any_score_is_read"):
+        root, keyf = make_chain_root(tmp, "a_void", (0, 1, 2), "anchor", "void")
+        if not refused(*run(root, keyf), "VOID"):
+            bad.append("G_R1_a_VOID_chain_is_refused_before_any_score_is_read")
+    if sel("G_an_END_record_that_does_not_cover_every_seed_read_is_refused"):
+        root, keyf = make_chain_root(tmp, "a_few", (0, 1), "anchor", "ok")
+        import shutil
+        shutil.copytree(os.path.join(root, "passes", "s1"), os.path.join(root, "passes", "s2"))      # a third pass the END record never covered
+        if not refused(*run(root, keyf), "covers seeds"):
+            bad.append("G_an_END_record_that_does_not_cover_every_seed_read_is_refused")
+    if sel("G_a_chain_root_with_no_tokens_is_refused"):
+        os.makedirs(os.path.join(tmp, "empty_root"), exist_ok=True)
+        root, keyf = make_chain_root(tmp, "c_for_key", (0,), "content")
+        if not refused(*run(os.path.join(tmp, "empty_root"), keyf), "no PASS token"):
+            bad.append("G_a_chain_root_with_no_tokens_is_refused")
+    if sel("G_a_missing_gate_key_is_a_refusal_never_a_pass"):
+        root, keyf = make_chain_root(tmp, "c_nokey", (0, 1, 2), "content")
+        rc, txt, wrote = run(root, os.path.join(tmp, "no_such.key"))
+        if not (rc == 6 and "cannot be checked" in txt and not wrote):
+            bad.append("G_a_missing_gate_key_is_a_refusal_never_a_pass")
+    if sel("G_the_chain_root_is_a_required_argument"):
+        buf = io.StringIO()
+        try:
+            with contextlib.redirect_stderr(buf):
+                H.main(["--scores", "base=x.npz", "--pdm", "p", "--rl-val-scenes", "s", "--gates", "g.json", "--rule", "navsim_v1_lane", "--out", os.path.join(tmp, "r.json")])
+            bad.append("G_the_chain_root_is_a_required_argument")
+        except SystemExit as e:
+            if e.code != 2:
+                bad.append("G_the_chain_root_is_a_required_argument")
     return bad
 
 
@@ -778,6 +908,16 @@ MUTATIONS = [
     ("the watch-items gate the outcome", [('"cogate_fails": res["cogate"]["fails"],', '"cogate_fails": res["cogate"]["fails"] or bool(fp and fp.get("watch_items")),')], ["P_watch_items_reported_not_gating_the_outcome_row_is_unchanged"]),
     ("families are published without the family IC", [('paired.get("status") == "OK" and paired.get("IC", {}).get("ok"))', 'paired.get("status") == "OK")')], ["P_families_published_only_when_paired_and_IC_holds"]),
     ("the human-only components are compared", [('            if any(e[fam][nm].get("human_only") for e in Bs + As):\n', "            if False:\n")], ["P_human_only_components_excluded"]),
+    ("the reader's cache-binding gate is not called", [('        why = GT.ctx_chain_refusals(a.chain_root, passes, GT.load_key(a.key_file, create=False))\n', '        why = []\n')],
+     ["G_R5_an_anchored_chain_without_an_end_record_is_refused_before_any_score_is_read", "G_R1_a_VOID_chain_is_refused_before_any_score_is_read", "G_a_chain_root_with_no_tokens_is_refused"]),
+    ("the reader ignores a refusal of the gate", [('    if why:\n        for r in why[:6]:', '    if False:\n        for r in why[:6]:')],
+     ["G_R5_an_anchored_chain_without_an_end_record_is_refused_before_any_score_is_read", "G_R1_a_VOID_chain_is_refused_before_any_score_is_read"]),
+    ("a gate that cannot run is a pass", [('        why = [f"the chain\'s cache binding cannot be checked: {type(e).__name__}: {str(e)[:200]}"]\n', '        why = []\n')],
+     ["G_a_missing_gate_key_is_a_refusal_never_a_pass"]),
+    ("the reader checks no seed (an empty pass list)", [('    passes = sorted({int(n[1:])', '    passes = [] and sorted({int(n[1:])')],
+     ["G_R5_an_anchored_chain_without_an_end_record_is_refused_before_any_score_is_read", "G_a_chain_root_with_no_tokens_is_refused"]),
+    ("--chain-root is optional", [('    ap.add_argument("--chain-root", required=True,', '    ap.add_argument("--chain-root", required=False, default=".",')],
+     ["G_the_chain_root_is_a_required_argument"]),
     ("M2 reads A minus B", [('m2 = ratio_diff(JB, [tw[f"B{s}"][1] for s in seeds], [tw[f"A{s}"][1] for s in seeds], den)', 'm2 = ratio_diff(JB, [tw[f"A{s}"][1] for s in seeds], [tw[f"B{s}"][1] for s in seeds], den)')], ["O_row7_HEAD_MOVES_NO_ZEROS"]),
 ]
 
@@ -794,7 +934,7 @@ def apply_edits(src, edits, name):
 def main() -> int:
     src = open(SRC_READ, encoding="utf-8").read()
     Hreal = load_read(src, "real")
-    real = suite(Hreal, "real") + suite_items56() + suite_cli(Hreal) + suite_paired(Hreal, "real")
+    real = suite(Hreal, "real") + suite_items56() + suite_cli(Hreal) + suite_paired(Hreal, "real") + suite_chain_gate(Hreal, "real")
     assert not real, f"the unmutated sources FAIL their own checks: {real}"
     n, problems = 1, []
     print(f"{'mutation':50s} caught-by (failing checks)")
@@ -803,7 +943,7 @@ def main() -> int:
         try:
             ast.parse(m_src)
             Hm = load_read(m_src, f"m{n}")
-            failing = suite(Hm, f"m{n}", only=set(expect)) + suite_paired(Hm, f"m{n}", only=set(expect))
+            failing = suite(Hm, f"m{n}", only=set(expect)) + suite_paired(Hm, f"m{n}", only=set(expect)) + suite_chain_gate(Hm, f"m{n}", only=set(expect))
         except (Exception, SystemExit) as e:                           # noqa: BLE001 -- a mutated source that breaks the suite's own setup is RED, and said so
             failing = [f"suite setup raised {type(e).__name__}: {str(e)[:80]}"]
         if not failing:

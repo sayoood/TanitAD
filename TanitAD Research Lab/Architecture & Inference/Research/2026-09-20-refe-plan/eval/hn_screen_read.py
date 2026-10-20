@@ -2,7 +2,11 @@
 """P6-HN-S: the SCREEN READ.  (raw/2026-10-18-p6hn-prereg/PREREG_P6HN_SCREEN.md sections 5-11; SCREEN_NOTES.md checklist item 7.)  CPU only, a table lookup: no model runs here.
 
     python eval/hn_screen_read.py --scores base=base.npz A0=... A1=... A2=... B0=... B1=... B2=... [A3= A4= B3= B4=] [C0=c0.npz] --pdm <pdm dir> --rl-val-scenes rl_val_scenes.tsv \\
-        --sets <rl_fan sets dir> --gates gates.json [--scores9 base=... A0=... ...] [--bank9 <rl_val.hnbank>] [--families families.json --families-per-set families_per_set.npz] --rule navsim_v1_lane --out result.json
+        --sets <rl_fan sets dir> --gates gates.json --chain-root <the chain's state dir> [--key-file <gate key>] [--scores9 base=... A0=... ...] [--bank9 <rl_val.hnbank>] [--families families.json --families-per-set families_per_set.npz] --rule navsim_v1_lane --out result.json
+
+CACHE-BINDING GATE (HNSCREEN-FP-COST, MM ruling (b')).  BEFORE any score file is opened, `--chain-root` is checked (`gate_token.ctx_chain_refusals`): every pass named in --scores (A<s> / B<s>) must carry a signed PASS token whose --ctx-cache
+is bound by CONTENT (every gate call re-read the cache), or by the chain's START ANCHOR -- and then the chain's `ctx_chain/end_verify.json` must be a signed END_VERIFY_OK bound to THE SAME anchor, with equal content and stat comparisons and every
+seed covered.  No token, no record, a deleted / VOID / foreign / edited record, two anchors, or a listing-only token: the read REFUSES (rc 6, `ZZHNSCREEN_REFUSED`, nothing is read and no result is written).
 
 It REUSES rl_val_eval's lookup (`load_scores`, `load_pdm`, `read_scenes`, `select`, the reward module's PDMS) for base / A_s / B_s, and `zt4_baseline.twin_pairs` unchanged for M2.
 ESTIMATOR (section 6): paired log-cluster bootstrap over the RL-val logs, 10,000 resamples, seed 20260927, percentile 2.5 / 97.5, ratio-of-sums.  ONE log draw per resample is applied JOINTLY to every
@@ -687,6 +691,8 @@ def main(argv=None) -> int:
     ap.add_argument("--rl-val-scenes", required=True)
     ap.add_argument("--sets", default=None, help="the frozen-fan dump dir (executed plans for M2)")
     ap.add_argument("--gates", required=True, help="json {I1,I2,I3,I4,I5,I6,D1,G14,G15,launch_gate: bool} written by the gate runs; a missing key is a failed gate")
+    ap.add_argument("--chain-root", required=True, help="the chain's state dir (passes/s<seed>/lg/PASS_*.json, ctx_chain/anchor.json, ctx_chain/end_verify.json): the read REFUSES unless the passes' cache binding is proven (see the module doc)")
+    ap.add_argument("--key-file", default=None, help="the launch-gate key that signed the tokens and the chain's anchor / END record (default: the host's gate key)")
     ap.add_argument("--sy", default=None, help="the SY yield report json (hn_bank.py yield)")
     ap.add_argument("--bank9", default=None, help="npz {dac9 [N9,9], status [N9], log [N9]} of the RL-val bank")
     ap.add_argument("--scores9", nargs="*", default=[], help="name=npz {scores9 [N9,9,C]} from hn_screen_offsets_score.py")
@@ -696,6 +702,17 @@ def main(argv=None) -> int:
     ap.add_argument("--n-boot", type=int, default=N_BOOT)
     ap.add_argument("--out", required=True)
     a = ap.parse_args(argv)
+    passes = sorted({int(n[1:]) for n in (spec.partition("=")[0] for spec in a.scores) if len(n) > 1 and n[0] in "AB" and n[1:].isdigit()})
+    try:
+        import gate_token as GT                                                    # refe/ is on sys.path (above)
+        why = GT.ctx_chain_refusals(a.chain_root, passes, GT.load_key(a.key_file, create=False))
+    except Exception as e:                                                         # noqa: BLE001 -- a check that cannot run is a refusal, never a pass
+        why = [f"the chain's cache binding cannot be checked: {type(e).__name__}: {str(e)[:200]}"]
+    if why:
+        for r in why[:6]:
+            print("REFUSED:", r[:400], flush=True)
+        print("ZZHNSCREEN_REFUSED the chain's ctx-cache binding is not proven (no END_VERIFY_OK / content-bound token): nothing was read", flush=True)
+        return 6
     arms = {}
     for spec in a.scores:
         n, _, p = spec.partition("=")

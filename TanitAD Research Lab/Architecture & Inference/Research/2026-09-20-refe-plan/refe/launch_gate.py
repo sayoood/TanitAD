@@ -188,7 +188,7 @@ HNSCREEN_PATHS = ("--ckpt", "--targets", "--images", "--calib", "--onpolicy", "-
                   "--teacher-lane-train", "--teacher-lane-heldout") + HNSCREEN_FLAGS      # tokens whose VALUE may move (a re-rooted path) but which must be carried exactly once
 HNSCREEN_TERMS = ("hn_rows", "hn_rows_expected", "hn_loss")                              # the trainer's train rows must emit these (D1: the rows that entered the term vs the rows the bank holds)
 HNSCREEN_SUITE = RLS1_SUITE + [{"script": "test_hn_bank.py", "token": "ZZTEST_PASS"}, {"script": "test_ctx_cache.py", "token": "ZZTEST_PASS"},
-                               {"script": "test_hn_screen_wiring.py", "token": "ZZTEST_PASS"}, {"script": "test_hn_content_fp.py", "token": "ZZTEST_PASS"}]
+                               {"script": "test_hn_screen_wiring.py", "token": "ZZTEST_PASS"}, {"script": "test_hn_content_fp.py", "token": "ZZTEST_PASS"}, {"script": "test_hn_ctx_anchor.py", "token": "ZZTEST_PASS", "args": ["--no-mutants"]}]      # --no-mutants: G-SUITE runs the 38 arms; the 34-mutant matrix (a tree copy per mutant) is run at landing and in the sibling suite, DECLARED not skipped
 
 
 P2_RUN_DIR = "/workspace/data/refe_runs/p2_joint_pdm"
@@ -746,14 +746,15 @@ def hnscreen_refusals(prof: dict, argv: list, mod, parser) -> tuple:
         if by_content and not (isinstance(want, str) and want.startswith("dirc:")):       # a stale fill: the old size-listing key (`dir:`) can never be equal to a content key -- say so, and do not hash 70 GB to say it
             out.append(f"{name}: the content fingerprint of {f} cannot be checked: the registered value {str(want)[:24]!r} is not a content fingerprint (dirc:...); refill it with hn_fingerprints.py from the SEALED cache (a size listing cannot see a same-size byte flip)")
             continue
+        anc = prof.get("ctx_anchor") if by_content else None                                # HNSCREEN-FP-COST: an ANCHOR-BOUND call stat-compares with the chain's start anchor (no byte read); None = the content check in full
         try:
-            fp = GT.content_fingerprint(vals[0][0]) if by_content else GT.fingerprint(vals[0][0])
+            fp = (GT.anchor_fingerprint(vals[0][0], anc) if anc is not None else GT.content_fingerprint(vals[0][0])) if by_content else GT.fingerprint(vals[0][0])
             fk = GT.fp_key(fp)
         except (OSError, ValueError, KeyError) as e:
             out.append(f"{name}: cannot fingerprint {f} {vals[0][0]} ({e})")
             continue
         if by_content and fp.get("n_problems"):
-            out.append(f"{name}: the content fingerprint of {f} cannot be taken: {fp['n_problems']} problem(s): " + "; ".join(str(x) for x in fp.get("problems", [])[:3]))
+            out.append(f"{name}: the {'anchor-bound' if anc is not None else 'content'} fingerprint of {f} cannot be taken: {fp['n_problems']} problem(s): " + "; ".join(str(x) for x in fp.get("problems", [])[:3]))
             continue
         if fk != want:
             out.append(f"{name}: the content fingerprint of {f} is not the registered one (RL-S1 C1 / C0's token fingerprint)")
@@ -956,7 +957,7 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
     binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
     gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json)
     dtim: dict = {}
-    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof))
+    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof), ctx_anchor=prof.get("ctx_anchor"))
     _log_manifest_timing("run", t_tree, time.perf_counter() - t0 - t_tree, dtim)
     rehearsal = bool(prof.get("rehearsal"))
     want = [c for c in (prof["checks"] + tuple(prof.get("na_ok", ()))) if (only is None or c in only)]
@@ -1196,7 +1197,7 @@ def finalize(prof: dict, argv: list, pkg: Path, out_dir: Path, key: bytes, *, p2
     t_tree = time.perf_counter() - t0
     gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json)
     dtim: dict = {}
-    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof))
+    data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof), ctx_anchor=prof.get("ctx_anchor"))
     _log_manifest_timing("finalize", t_tree, time.perf_counter() - t0 - t_tree, dtim)
     binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
     reasons = profile_refusals(prof, argv) + GT.data_problems(data)
@@ -1275,11 +1276,88 @@ def _profile_for(a, minting: bool) -> dict:
     return prof
 
 
+# ============================================================================================ the CTX ANCHOR commands (HNSCREEN-FP-COST, MM ruling (b'))
+def _with_ctx_anchor(a, prof: dict, argv: list, key=None) -> dict:
+    """The profile with THIS call's anchor folded in (the way `declared_arm` is) when `--ctx-mode anchor-bound`; the profile itself, untouched, in `content` mode (the default: every intermediate call re-reads the
+    cache in full, exactly as before).  An anchor named under `content`, an anchor-bound call without its anchor / chain id / chain start, a profile with no content-bound --ctx-cache, an anchor that is unsigned,
+    for ANOTHER cache directory, for another chain, or OLDER than the chain: GateError (the caller refuses)."""
+    mode = getattr(a, "ctx_mode", None) or GT.CTX_MODE_CONTENT
+    named = [n for n in ("anchor", "chain_id", "chain_start_ns") if getattr(a, n, None) not in (None, "")]
+    if mode == GT.CTX_MODE_CONTENT:
+        if named:
+            raise GT.GateError("--" + " --".join(n.replace("_", "-") for n in named) + " given with --ctx-mode content: an anchor is only used in anchor-bound mode (refused, never silently ignored)")
+        return prof
+    if mode != GT.CTX_MODE_ANCHOR:
+        raise GT.GateError(f"unknown --ctx-mode {mode!r}")
+    if not prof.get("hn_rules"):
+        raise GT.GateError(f"--ctx-mode anchor-bound is defined only for a profile with a content-bound --ctx-cache (the HN screen's); {prof.get('name')} refuses it")
+    if len(named) != 3:
+        raise GT.GateError("--ctx-mode anchor-bound needs --anchor, --chain-id and --chain-start-ns")
+    vals = GT.flag_values(argv, "--ctx-cache")
+    if not vals or len(vals) != 1:
+        raise GT.GateError("--ctx-mode anchor-bound: the argv does not carry --ctx-cache with exactly one value")
+    if key is None:
+        key = GT.load_key(getattr(a, "key_file", None), create=False, forbid_under=[a.pkg] if getattr(a, "pkg", None) else [])
+    doc, reasons, sha = GT.load_anchor(a.anchor, key)
+    if doc is not None:
+        reasons = reasons + GT.anchor_binding_refusals(doc, cache_dir=vals[0], chain_id=a.chain_id, chain_start_ns=int(a.chain_start_ns))
+    if reasons:
+        raise GT.GateError("anchor refused: " + "; ".join(reasons))
+    return {**prof, "ctx_anchor": {"doc": doc, "sha256": sha}}
+
+
+def cmd_anchor(a) -> int:
+    """THE START OF THE CHAIN: one full content fingerprint of --ctx-cache, compared with the profile's REGISTERED pin (never a CLI value), then the HMAC-signed anchor.  rc 0 + ZZGATE-ANCHOR-OKZZ, or rc 5."""
+    prof = PROFILES[a.profile]
+    try:
+        if not prof.get("hn_rules"):
+            raise GT.GateError(f"{a.profile} has no content-bound --ctx-cache: there is nothing to anchor")
+        key = GT.load_key(a.key_file, create=True, forbid_under=[a.pkg])
+        doc = GT.mint_anchor(a.ctx_cache, chain_id=a.chain_id, key=key, pin=(prof.get("fingerprints_expected") or {}).get("--ctx-cache"), out_path=a.out)
+    except GT.GateError as e:
+        print("REFUSED:", str(e)[:600], file=sys.stderr, flush=True)
+        print("ZZGATE-ANCHOR-REFUSEDZZ", flush=True)
+        return 5
+    print(f"anchor {a.out}: {doc['stat']['n_files']} files, content {doc['content']['key'][:48]}, chain {doc['chain_id'][:12]}", flush=True)
+    print("ZZGATE-ANCHOR-OKZZ", flush=True)
+    return 0
+
+
+def cmd_end_verify(a) -> int:
+    """THE END OF THE CHAIN: a second full content fingerprint vs the START anchor + a final stat compare.  Writes the signed END_VERIFY_OK / VOID record.  rc 0 + ZZGATE-END_VERIFY_OKZZ, or rc 5 (VOID or refused)."""
+    prof = PROFILES[a.profile]
+    try:
+        if not prof.get("hn_rules"):
+            raise GT.GateError(f"{a.profile} has no content-bound --ctx-cache: there is no chain to end-verify")
+        key = GT.load_key(a.key_file, create=False, forbid_under=[a.pkg])
+        doc, reasons, sha = GT.load_anchor(a.anchor, key)
+        if doc is not None:
+            reasons = reasons + GT.anchor_binding_refusals(doc, cache_dir=a.ctx_cache, chain_id=a.chain_id, chain_start_ns=int(a.chain_start_ns))
+        if reasons:
+            raise GT.GateError("anchor refused: " + "; ".join(reasons))
+        rec = GT.end_verify(a.ctx_cache, {"doc": doc, "sha256": sha}, key, a.out, seeds=[int(s) for s in a.seeds.split(",") if s.strip() != ""])
+    except (GT.GateError, ValueError) as e:
+        print("REFUSED:", str(e)[:600], file=sys.stderr, flush=True)
+        print("ZZGATE-END_VERIFY-REFUSEDZZ", flush=True)
+        return 5
+    for p in rec["problems"][:8]:
+        print("PROBLEM:", p[:300], file=sys.stderr, flush=True)
+    print(f"end verify {rec['status']}: content_equal {rec['content_equal']}, stat_equal {rec['stat_equal']}, chain {rec['chain_id'][:12]} -> {a.out}", flush=True)
+    print(f"ZZGATE-{rec['status']}ZZ", flush=True)
+    return 0 if rec["status"] == GT.END_OK else 5
+
+
 def cmd_run(a) -> int:
     prof = _profile_for(a, minting=True)
     argv = _argv_of(a)
     pkg, out = Path(a.pkg), Path(a.out_dir)
     key = GT.load_key(a.key_file, create=True, forbid_under=[pkg])
+    try:
+        prof = _with_ctx_anchor(a, prof, argv, key)                           # HNSCREEN-FP-COST: content mode (the default) returns the profile untouched
+    except GT.GateError as e:
+        print("REFUSED:", str(e)[:600], file=sys.stderr, flush=True)
+        print("ZZGATE-REFUSEDZZ", flush=True)
+        return 5
     man = GT.read_json(pkg / GT.SHIP_MANIFEST) if (pkg / GT.SHIP_MANIFEST).is_file() else None
     commit = man.get("commit") if man else a.commit
     arm = os.environ.get("TANITAD_GATE_ARM")
@@ -1337,8 +1415,10 @@ def cmd_verify(a) -> int:
     prof = PROFILES.get(a.profile) if a.profile else None
     try:
         key = GT.load_key(a.key_file, create=False, forbid_under=[a.pkg])
-        ok, reasons, info = GT.verify_token(a.token, _argv_of(a), a.pkg, key=key, profile=a.profile, data_flags=prof["data_flags"] if prof else (),
-                                            commit=a.commit, content_flags=content_flags_of(prof) if prof else ())
+        argv_v = _argv_of(a)
+        pa = _with_ctx_anchor(a, prof if prof else {"name": a.profile}, argv_v, key)         # HNSCREEN-FP-COST: content mode (the default) returns the profile untouched
+        ok, reasons, info = GT.verify_token(a.token, argv_v, a.pkg, key=key, profile=a.profile, data_flags=prof["data_flags"] if prof else (),
+                                            commit=a.commit, content_flags=content_flags_of(prof) if prof else (), ctx_anchor=pa.get("ctx_anchor"))
     except Exception as e:                                                   # noqa: BLE001 -- refuse, never pass
         ok, reasons, info = False, [f"{type(e).__name__}: {e}"], {}
     for r in reasons:
@@ -1357,7 +1437,15 @@ def cmd_ship(a) -> int:
 
 
 def cmd_refusals(a) -> int:
-    rs = profile_refusals(_profile_for(a, minting=False), _argv_of(a))
+    prof = _profile_for(a, minting=False)
+    argv = _argv_of(a)
+    try:
+        prof = _with_ctx_anchor(a, prof, argv)
+    except GT.GateError as e:
+        print("REFUSED:", str(e)[:600])
+        print("ZZGATE-REFUSEDZZ")
+        return 5
+    rs = profile_refusals(prof, argv)
     for r in rs:
         print("REFUSED:", r)
     print(f"ZZGATE-{'REFUSED' if rs else 'CLEAN'}ZZ")
@@ -1374,6 +1462,12 @@ def main(argv=None) -> int:
         p.add_argument("--args-file")
         p.add_argument("--key-file")
         p.add_argument("--pkg", required=(name != "refusals"))
+        p.add_argument("--ctx-mode", choices=GT.CTX_MODES, default=GT.CTX_MODE_CONTENT,
+                       help="HNSCREEN-FP-COST: how this call binds the HN screen's --ctx-cache.  `content` (DEFAULT, today's behaviour): every byte re-read.  `anchor-bound`: a stat compare with the chain's START anchor (no byte read); "
+                            "needs --anchor, --chain-id, --chain-start-ns; only the HN screen chain's intermediate calls use it, and its END verify (`end-verify`) closes the residual")
+        p.add_argument("--anchor", help="the chain's start anchor (`anchor` writes it); anchor-bound mode only")
+        p.add_argument("--chain-id", help="the chain id the anchor must belong to; anchor-bound mode only")
+        p.add_argument("--chain-start-ns", type=int, help="time.time_ns() the chain began at: an anchor minted before it is refused; anchor-bound mode only")
         if name in ("run", "refusals"):
             p.add_argument("--arm-name", choices=sorted(set(RLS1_ARM_CLASS) | set(RLS1D_ARM_CLASS) | set(RLS1B_ARM_CLASS) | set(RLS1B_NEEDS_PI) | set(RLS1C_ARM_CLASS)) + sorted(AUXS1_ARM_CLASS) + sorted(AUXS1C_ARM_CLASS) + sorted(set(HNSCREEN_ARM_CLASS) | set(HNSCREEN_NEEDS_PI)) + sorted(set(RLS1E_ARM_CLASS) - set(RLS1D_ARM_CLASS)),
                            help="refe_rls1: the arm this argv is for (C0 C1 R0 R1 R2); refe_rls1b: C1 R0b R1b (R2b needs a PI decision); refe_rls1c: R0c; refe_rls1d: R0d R1d R1o; refe_rls1e: R0e-id R0e-pick R1e-pick R1o; refe_aux_s1: N-s0..H2-s2; refe_aux_s1c: H1u10k-s0 | H1u2k-s0; refe_hnscreen: S0 S1 S2 (S3 S4 need rule E); "
@@ -1403,6 +1497,23 @@ def main(argv=None) -> int:
     p.add_argument("--out", required=True)
     p.add_argument("--key-file")
     p.add_argument("--commit")
+    p = sub.add_parser("anchor", help="HNSCREEN-FP-COST: the START of an HN screen chain -- one full content fingerprint of --ctx-cache vs the registered pin, then a signed anchor")
+    p.add_argument("--profile", required=True, choices=sorted(PROFILES))
+    p.add_argument("--ctx-cache", required=True)
+    p.add_argument("--chain-id", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--pkg", required=True)
+    p.add_argument("--key-file")
+    p = sub.add_parser("end-verify", help="HNSCREEN-FP-COST: the END of an HN screen chain -- a second full content fingerprint vs the anchor + a final stat compare; writes END_VERIFY_OK or VOID")
+    p.add_argument("--profile", required=True, choices=sorted(PROFILES))
+    p.add_argument("--ctx-cache", required=True)
+    p.add_argument("--anchor", required=True)
+    p.add_argument("--chain-id", required=True)
+    p.add_argument("--chain-start-ns", type=int, required=True)
+    p.add_argument("--seeds", default="")
+    p.add_argument("--out", required=True)
+    p.add_argument("--pkg", required=True)
+    p.add_argument("--key-file")
     p = sub.add_parser("ship-manifest")
     p.add_argument("--pkg", required=True)
     p.add_argument("--commit")
@@ -1410,7 +1521,7 @@ def main(argv=None) -> int:
     p.add_argument("--repo-prefix", default="")
     p.add_argument("--out", required=True)
     a = ap.parse_args(argv)
-    return {"run": cmd_run, "verify": cmd_verify, "refusals": cmd_refusals, "ship-manifest": cmd_ship, "suite-prerun": cmd_suite_prerun}[a.cmd](a)
+    return {"run": cmd_run, "verify": cmd_verify, "refusals": cmd_refusals, "ship-manifest": cmd_ship, "suite-prerun": cmd_suite_prerun, "anchor": cmd_anchor, "end-verify": cmd_end_verify}[a.cmd](a)
 
 
 if __name__ == "__main__":
