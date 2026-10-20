@@ -16,3 +16,7 @@ DONE and staged in `out/` (manifest `out/paths.json`, summary `out/RESULT.md`). 
 - Fixture carve B has NOT read IDENTICAL (stopped RAM_LOW, 3 of 5 chunks): re-run on the landed code. The GPU stage has never run. D: ~0 free (C2 needs >= 9.64 GiB); dev-box GPU lock held by another battery.
 - No Thor latency exists (UNMEASURED; needs a Thor slot, an agent to write `thor_search_latency.py`, a latency budget: DQ3, DQ4).
 - Any pinned-code change after the seal makes the chain refuse (`SEAL_PIN_MISMATCH`): re-pin by a "Revision 1" with the terms byte-identical (DQ8).
+
+## UPDATE 2026-10-20 (C2 FINAL; package `C:/Users/Admin/par18/c2final/`): this handoff's "next step" is superseded
+- `MM_RULING_C2AMEND.md` (sha256 `fe4d9ce6…`) ruled DQ1..DQ11 and added the C8/O4 config choice and the one-run marker. Folded into `AMENDMENT_C2_DRAFT.md` (now **FINAL DRAFT**, section 14 RULED, 27 pins (12 filled at the seal) incl. `dose_chain_sha256`, `fixture_record_sha256`, `code:seal_c2_amendment.py`) and into the code (see `LICENCE_GUARD.md`, section "C2 FINAL"). `seal_c2_amendment.py` is the DQ9 seal tool; the Master Mind seals, nobody else.
+- Remaining before the seal: land the dose package (`dose/code/dose_chain.py`), run the fixture on the landed code (it writes `FIXTURE_RECORD.json`; it must read IDENTICAL), then `seal_c2_amendment.py --check-only` and the real seal.

@@ -21,12 +21,11 @@ import pytest
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
 HERE = os.path.dirname(os.path.abspath(__file__))
 PKG = os.path.dirname(HERE)
-STEPB_CODE = "C:/Users/Admin/par18/l2stepb/code"
-L1_CODE = "C:/Users/Admin/par18/l1run/code"
-for p in (HERE, STEPB_CODE, L1_CODE):
-    if p not in sys.path:
-        sys.path.insert(0, p)
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
 import navpipe_core as NC  # noqa: E402
+NC.add_code_paths(spc=True)                         # the repo-relative sibling packages (SPC_STEPB_CODE / L1_CODE / SPC_CODE override); no dev-box path is named here
+STEPB_CODE, L1_CODE = NC.STEPB_CODE, NC.L1_CODE
 import navpipe_chain as CH  # noqa: E402
 import navpipe_launch as NL  # noqa: E402
 import navpipe_analyse as NA  # noqa: E402
@@ -107,7 +106,7 @@ def c1_doc(**kw):
     """a planted RESULT_SPC.json with the keys `spc_analyse.analyse_c1` writes and the licence reads (the shape is pinned against the real code/banked data in test_navpipe_licence.py)"""
     d = {"read": "C1", "arm": "P2HEAD (no head substitution)", "outcome": "O1_CONFIRMED", "n_tokens": 905, "n_logs": 24,
          "endpoint_dPDMS_points": {"point": 0.3273, "lo": 0.0565, "hi": 0.7216}, "safety_points": {"nc": 0.0, "dac": 0.17, "ttc": 0.25, "c": 0.0},
-         "inert": {"inert": False, "frac_moved": 0.165, "n": 2715, "thr_m": 0.5, "min_frac": 0.05}}
+         "inert": {"inert": False, "frac_moved": 0.165, "n": 2715, "thr_m": 0.5, "min_frac": 0.05}, "moved_share": 0.34}
     d.update(kw)
     return d
 
@@ -117,6 +116,15 @@ class C1:
 
     def __init__(self, tmp, doc=None, state=None, name="c1", raw=None):
         self.dir = os.path.join(str(tmp), name)
+        self.doc = doc
+        if doc is None and raw is None:
+            self.doc = c1_doc()
+        elif doc is None:
+            try:
+                self.doc = json.loads(raw)
+            except ValueError:
+                self.doc = None
+            self.doc = self.doc if isinstance(self.doc, dict) else None
         os.makedirs(self.dir, exist_ok=True)
         self.path = os.path.join(self.dir, "RESULT_SPC.json")
         if raw is not None:
@@ -129,14 +137,107 @@ class C1:
 
 
 # ====================================================================================================== G-SEAL (a) + the C1 licence
-def make_seal(tmp, status="Status: **SEALED 2026-10-20**", drop=(), extra_pins=None, c1=None, tamper_pin=None):
+
+DOSE_STUB_SRC = """\"\"\"TEST DOUBLE of the dose package's dose_chain.py for planted worlds: the c2_config table (MM_RULING_DOSE.md DQ4) as the dose chain writes it.  Production code CALLS the real file by path; only these tests carry a copy,
+and test_navpipe_select.py compares this copy with the real file over a grid whenever the real file is present.\"\"\"
+DOSE_STAGES = ("SEAL_OK", "AMEND_SEAL_OK", "DATA_OK", "C1_DONE", "BUNDLE_OK", "SUBID_PASS", "REACH_PASS", "SEARCH_DONE", "SELFREP_PASS", "LABEL_DONE")
+SAFETY = ("nc", "dac", "ttc", "c")
+
+
+def licensed(read, strict=False):
+    ok = ("O1_CONFIRMED",) if strict else ("O1_CONFIRMED", "O2_DIRECTIONAL")
+    try:
+        safety = all(float(read["safety_points"][k]) >= -0.25 for k in SAFETY)
+        moved = float(read["moved_share"]) >= 0.05
+    except (KeyError, TypeError, ValueError):
+        return False
+    return bool(read.get("outcome") in ok and safety and moved)
+
+
+def c2_config(c1_read, dose_read, contrast_lo):
+    c1, dose_any, dose_strict = licensed(c1_read), licensed(dose_read), licensed(dose_read, strict=True)
+    try:
+        lo_pos = bool(float(contrast_lo) > 0.0)
+    except (TypeError, ValueError):
+        lo_pos = False
+    if c1 and not dose_any:
+        cfg, row = "C8", 1
+    elif c1 and dose_any:
+        cfg, row = ("O4" if lo_pos else "C8"), 3
+    elif dose_strict:
+        cfg, row = "O4", 2
+    else:
+        cfg, row = None, 4
+    return {"config": cfg, "row": row, "why": "stub row %d" % row, "c1_licensed": c1, "dose_licensed": dose_any, "dose_o1_strict": dose_strict, "contrast_lower_ci_gt_0": lo_pos}
+"""
+
+
+EVID = {}                                           # amendment path -> the Evidence make_seal planted beside it (the dose-chain double, the bound dose result, the fixture record)
+
+
+class Evidence:
+    def __init__(self):
+        self.kw = {}
+
+
+def dose_doc(c1, stub, **kw):
+    """a planted RESULT_DOSE.json (the keys `dose_chain.analyse_dose` writes and C2 reads), bound to `c1`; by default NOT licensed, so c2_config reads row 1 (C8) for a licensed C1"""
+    c1_outcome = (c1.doc or {}).get("outcome")
+    d = {"read": "DOSE", "arm": "P2HEAD search, O4 config (M 256, elites 32, widen 2.0), no head substitution", "outcome": "O3_NULL", "n_tokens": 905, "n_logs": 24, "c1_outcome": c1_outcome,
+         "safety_points": {"nc": 0.0, "dac": 0.0, "ttc": 0.0, "c": 0.0}, "moved_share": 0.5, "inert": {"inert": False, "frac_moved": 0.3, "n": 2715, "thr_m": 0.5, "min_frac": 0.05},
+         "contrast_O4_minus_C8": {"pooled": {"point": 0.1, "lo": -0.2, "hi": 0.4}},
+         "c1": {"outcome": c1_outcome, "result_sha256": c1.sha, "bundle_sha256": "b" * 64, "config_c8_sha256": NC.CONFIG_C8_SHA256, "config_o4_sha256": NC.CONFIG_O4_SHA256}}
+    d.update(kw)
+    if "c2_config" not in d:
+        keys = ("outcome", "safety_points", "moved_share")
+        r = stub.c2_config({k: (c1.doc or {}).get(k) for k in keys}, {k: d.get(k) for k in keys}, d["contrast_O4_minus_C8"]["pooled"]["lo"])
+        d["c2_config"] = {"config": r["config"], "row": r["row"], "why": r["why"]}
+    return d
+
+
+def plant_evidence(tmp, c1, dose=None, dose_state=None, fixture=None, name="dose", dose_kw=None, dose_mut=None, fixture_mut=None):
+    ev = Evidence()
+    ev.stub_path = os.path.join(tmp, "dose_chain_stub.py")
+    open(ev.stub_path, "w", encoding="utf-8", newline="\n").write(DOSE_STUB_SRC)
+    ev.stub = NC.load_dose_chain(ev.stub_path, NC.sha_lf(ev.stub_path))
+    ev.dir = os.path.join(tmp, name)
+    os.makedirs(ev.dir, exist_ok=True)
+    ev.dose_path = os.path.join(ev.dir, "RESULT_DOSE.json")
+    doc = dose if dose is not None else dose_doc(c1, ev.stub, **(dose_kw or {}))
+    if dose_mut:
+        dose_mut(doc)
+    json.dump(doc, open(ev.dose_path, "w", encoding="utf-8", newline="\n"), indent=1, allow_nan=True)
+    if dose_state is not False:
+        json.dump(dose_state if dose_state is not None else {"stage": "LABEL_DONE", "done": list(ev.stub.DOSE_STAGES), "prereg_sha256": PLANT_PREREG}, open(os.path.join(ev.dir, "chain_state.json"), "w"))
+    ev.dose_sha = NC.sha256_file(ev.dose_path)
+    rec = NC.make_fixture_record("IDENTICAL", HERE, NC.CARVE_B_SHA256, "p" * 64, None, None, "c" * 64)
+    rec.update(fixture or {})
+    if fixture_mut:
+        fixture_mut(rec)
+    ev.fixture_path = os.path.join(tmp, "FIXTURE_RECORD.json")
+    json.dump(rec, open(ev.fixture_path, "w", encoding="utf-8", newline="\n"), indent=1, sort_keys=True)
+    ev.kw = {"config": NC.CONFIG_C8, "dose_result": ev.dose_path, "dose_result_sha256": ev.dose_sha, "fixture_record": ev.fixture_path, "dose_chain": ev.stub_path}
+    return ev
+
+
+def check_c2_seal(am, sha, c1_path, c1_sha, **over):
+    """NC.check_c2_seal with the evidence make_seal planted beside `am` (config C8, the bound dose result, the dose-chain double, the fixture record); `over` replaces any of them (None removes it)"""
+    ev = EVID.get(os.path.abspath(am)) if am else None
+    kw = dict(ev.kw) if ev else {}
+    kw.update(over)
+    return NC.check_c2_seal(am, sha, c1_path, c1_sha, **kw)
+
+
+def make_seal(tmp, status="Status: **SEALED 2026-10-20**", drop=(), extra_pins=None, c1=None, tamper_pin=None, dose=None, dose_state=None, fixture=None, dose_kw=None, dose_mut=None, fixture_mut=None):
     tmp = str(tmp)
     ck = os.path.join(tmp, "ck.pt")
     open(ck, "wb").write(b"ckpt")
     c1 = c1 if c1 is not None else C1(tmp)
-    pins = {"token_file_sha256": "a" * 64, "chunk_plan_sha256": "b" * 64, "ckpt_sha256": NC.sha256_file(ck), "config_sha256": "c" * 64, "head_s0_sha256": "d" * 64, "banked_seam_sha256": "e" * 64,
-            "banked_csv_sha256": "f" * 64, "c1_prereg_sha256": PLANT_PREREG, "licence_ruling_sha256": NC.LICENCE_RULING_SHA256, "inference_cost_status": "UNMEASURED", "bar_dpdms_points": "0.10", "bar_safety_points": "-0.25",
-            "harness_script_sha256": "1" * 64, "seam_module_sha256": "2" * 64}
+    ev = plant_evidence(tmp, c1, dose=dose, dose_state=dose_state, fixture=fixture, dose_kw=dose_kw, dose_mut=dose_mut, fixture_mut=fixture_mut)
+    pins = {"token_file_sha256": "a" * 64, "chunk_plan_sha256": "b" * 64, "ckpt_sha256": NC.sha256_file(ck), "config_c8_sha256": NC.CONFIG_C8_SHA256, "config_o4_sha256": NC.CONFIG_O4_SHA256, "head_s0_sha256": "d" * 64,
+            "banked_seam_sha256": "e" * 64, "banked_csv_sha256": "f" * 64, "c1_prereg_sha256": PLANT_PREREG, "licence_ruling_sha256": NC.LICENCE_RULING_SHA256, "c2amend_ruling_sha256": NC.C2AMEND_RULING_SHA256,
+            "inference_cost_status": "UNMEASURED", "bar_dpdms_points": "0.10", "bar_safety_points": "-0.25", "harness_script_sha256": "1" * 64, "seam_module_sha256": "2" * 64,
+            "dose_chain_sha256": NC.sha_lf(ev.stub_path), "fixture_record_sha256": NC.sha256_file(ev.fixture_path)}
     for f in NC.OPERATIVE:
         pins[f"code:{f}"] = NC.sha_lf(os.path.join(HERE, f))
     pins.update(extra_pins or {})
@@ -149,20 +250,26 @@ def make_seal(tmp, status="Status: **SEALED 2026-10-20**", drop=(), extra_pins=N
     open(am, "w", encoding="utf-8", newline="\n").write(body)
     sha = hashlib.sha256(body.encode()).hexdigest()
     open(os.path.join(tmp, "AMEND.sha256"), "w").write(sha + "  AMEND.md\n")
+    c1.ev = ev
+    EVID[os.path.abspath(am)] = ev
     return am, sha, c1, pins
 
 
 def test_seal_passes_on_a_complete_sealed_amendment(tmp_path):
     am, sha, c1, pins = make_seal(tmp_path)
-    r = NC.check_c2_seal(am, sha, c1.path, c1.sha)
+    r = check_c2_seal(am, sha, c1.path, c1.sha)
     assert r["amendment_sha256"] == sha and r["pins"]["bar_dpdms_points"] == "0.10"
     assert r["licence"]["outcome"] == "O1_CONFIRMED" and r["licence"]["c1_result_sha256"] == c1.sha and r["licence"]["moved_share_inert_frac_moved"] == 0.165
+    assert r["pins"]["config_name"] == "C8" and r["pins"]["config_sha256"] == NC.CONFIG_C8_SHA256 and r["selection"]["row"] == 1 and r["fixture"]["verdict"] == "IDENTICAL"
+    assert r["pins"]["config_name"] == "C8" and r["pins"]["config_sha256"] == NC.CONFIG_C8_SHA256 and r["selection"]["row"] == 1 and r["fixture"]["verdict"] == "IDENTICAL"
     assert "admission_record_sha256" not in NC.REQUIRED_PINS and "admission" not in r                    # EP-ADMISSION no longer licenses this arm (MM_RULING_C2_LICENCE.md)
 
 
 SEAL_REASON = {"no_args": "SEAL_MISSING_ARGS", "no_c1_args": "LICENCE_MISSING_ARGS", "no_amend": "SEAL_AMENDMENT_MISSING", "no_sidecar": "SEAL_SIDECAR_MISSING", "typed_sha_wrong": "SEAL_SHA_MISMATCH",
                "edited_after_seal": "SEAL_SHA_MISMATCH", "draft": "SEAL_NOT_SEALED", "pin_missing": "SEAL_PIN_MISSING", "c1_prereg_pin_missing": "SEAL_PIN_MISSING", "licence_ruling_pin_missing": "SEAL_PIN_MISSING",
-               "operative_unpinned": "SEAL_PIN_MISMATCH", "code_pin_wrong": "SEAL_PIN_MISMATCH", "cost_unstated": "SEAL_INFERENCE_COST_UNSTATED", "licence_ruling_pin_wrong": "SEAL_LICENCE_RULING_PIN"}
+               "operative_unpinned": "SEAL_PIN_MISMATCH", "code_pin_wrong": "SEAL_PIN_MISMATCH", "cost_unstated": "SEAL_INFERENCE_COST_UNSTATED", "licence_ruling_pin_wrong": "SEAL_LICENCE_RULING_PIN",
+               "amend_ruling_pin_missing": "SEAL_PIN_MISSING", "amend_ruling_pin_wrong": "SEAL_AMEND_RULING_PIN", "config_c8_pin_wrong": "SEAL_CONFIG_PIN", "config_o4_pin_wrong": "SEAL_CONFIG_PIN",
+               "dose_chain_pin_missing": "SEAL_PIN_MISSING", "fixture_record_pin_missing": "SEAL_PIN_MISSING"}
 
 
 @pytest.mark.parametrize("case", list(SEAL_REASON))
@@ -184,23 +291,35 @@ def test_seal_refuses(tmp_path, case):
         kw["extra_pins"] = {"inference_cost_status": "FINE"}
     if case == "licence_ruling_pin_wrong":
         kw["tamper_pin"] = "licence_ruling_sha256"
+    if case == "amend_ruling_pin_missing":
+        kw["drop"] = ("c2amend_ruling_sha256",)
+    if case == "amend_ruling_pin_wrong":
+        kw["tamper_pin"] = "c2amend_ruling_sha256"
+    if case == "config_c8_pin_wrong":
+        kw["tamper_pin"] = "config_c8_sha256"
+    if case == "config_o4_pin_wrong":
+        kw["tamper_pin"] = "config_o4_sha256"
+    if case == "dose_chain_pin_missing":
+        kw["drop"] = ("dose_chain_sha256",)
+    if case == "fixture_record_pin_missing":
+        kw["drop"] = ("fixture_record_sha256",)
     am, sha, c1, pins = make_seal(tmp_path, **kw)
     if case == "no_args":
-        e = raises("seal", NC.check_c2_seal, None, None, None, None)
+        e = raises("seal", check_c2_seal, None, None, None, None)
     elif case == "no_c1_args":                                                                   # a sealed amendment alone is no licence
-        e = raises("seal", NC.check_c2_seal, am, sha, None, None)
+        e = raises("seal", check_c2_seal, am, sha, None, None)
     elif case == "no_amend":
-        e = raises("seal", NC.check_c2_seal, str(tmp_path / "nope.md"), sha, c1.path, c1.sha)
+        e = raises("seal", check_c2_seal, str(tmp_path / "nope.md"), sha, c1.path, c1.sha)
     elif case == "no_sidecar":
         os.remove(str(tmp_path / "AMEND.sha256"))
-        e = raises("seal", NC.check_c2_seal, am, sha, c1.path, c1.sha)
+        e = raises("seal", check_c2_seal, am, sha, c1.path, c1.sha)
     elif case == "typed_sha_wrong":
-        e = raises("seal", NC.check_c2_seal, am, "0" * 64, c1.path, c1.sha)
+        e = raises("seal", check_c2_seal, am, "0" * 64, c1.path, c1.sha)
     elif case == "edited_after_seal":
         open(am, "a").write("\nedited\n")
-        e = raises("seal", NC.check_c2_seal, am, sha, c1.path, c1.sha)
+        e = raises("seal", check_c2_seal, am, sha, c1.path, c1.sha)
     else:
-        e = raises("seal", NC.check_c2_seal, am, sha, c1.path, c1.sha)
+        e = raises("seal", check_c2_seal, am, sha, c1.path, c1.sha)
     assert e.code == 5
     assert e.reason == SEAL_REASON[case], (case, e.reason)                                      # the REASON, not just the class: a later check must not be able to stand in for a removed one
 
@@ -359,13 +478,14 @@ def test_t1_planted_identity_and_its_red_arms():
     raw, pick = planted_bundle(toks)
     pp = NC.exec_to_poses(NC.repair_last_heading(raw[np.arange(6), pick]))
     bsub, bp = f_scores(pp)
-    ok = NC.t1_planted_identity(toks, pp, (bsub, bp), f_scores)
+    ok = NC.t1_planted_identity(toks, pp, f_scores(pp), (bsub, bp), f_scores)
     assert ok["ok"] and ok["max_abs_diff"] == 0.0 and ok["control_tokens_changed"] > 0
-    off = NC.t1_planted_identity(toks, pp, (bsub, bp), lambda q: (lambda s, p: (s, p + 1e-4))(*f_scores(q)))        # a label-path offset
+    off_rows = (lambda s, p: (s, p + 1e-4))(*f_scores(pp))                                                          # the re-scored pick rows carry a label-path offset
+    off = NC.t1_planted_identity(toks, pp, off_rows, (bsub, bp), f_scores)
     assert not off["ok"] and not off["identity_ok"] and off["control_ok"]
-    blind = NC.t1_planted_identity(toks, pp, (bsub, bp), lambda q: (bsub, bp))                                      # a route that cannot see a shift
+    blind = NC.t1_planted_identity(toks, pp, (bsub, bp), (bsub, bp), lambda q: (bsub, bp))                          # a route that cannot see a shift
     assert not blind["ok"] and not blind["control_ok"] and blind["identity_ok"]
-    assert not NC.t1_planted_identity([], pp[:0], (bsub[:0], bp[:0]), f_scores)["ok"]
+    assert not NC.t1_planted_identity([], pp[:0], (bsub[:0], bp[:0]), (bsub[:0], bp[:0]), f_scores)["ok"]
 
 
 def test_seam_writer_and_token_file(tmp_path):
@@ -645,13 +765,14 @@ def test_gpu_stage_stops_at_the_first_failing_step():
 
 # ====================================================================================================== the planted CHAIN (c2): wiring of every gate through the caller
 class World:
-    def __init__(self, tmp, harness_bias=0.0, break_pick=None, bad_clause=False, free=50.0):
+    def __init__(self, tmp, harness_bias=0.0, break_pick=None, bad_clause=False, free=50.0, blind_control=False, bias_tokens=None):
         self.tmp = str(tmp)
         os.makedirs(self.tmp, exist_ok=True)
         self.doc = planted_doc()
         self.tokens = sorted(self.doc["tokens"])
         self.banked = banked_for(self.tokens)
         self.break_pick, self.bad_clause, self.harness_bias, self.free = break_pick, bad_clause, harness_bias, free
+        self.blind_control, self.bias_tokens = blind_control, bias_tokens
         self.calls = []
         self.token_file = os.path.join(self.tmp, "tokens.json")
         json.dump(self.doc, open(self.token_file, "w"))
@@ -662,21 +783,23 @@ class World:
         self.bcsv = write_csv(os.path.join(self.tmp, "banked.csv"), self.tokens, sub, p)
         self.ckpt = os.path.join(self.tmp, "ck.pt")
         open(self.ckpt, "wb").write(b"ckpt")
-        self.config = os.path.join(self.tmp, "cfg.json")
-        open(self.config, "w").write("{}")
+        self.config = os.path.join(self.tmp, "cfg.json")                 # a COPY of the real C8 file (same bytes, so its sha256 is the pinned constant); tests that write to `w.config` must never touch the tracked file
+        shutil.copyfile(NC.CONFIG_C8, self.config)
         self.head = os.path.join(self.tmp, "head.npz")
         open(self.head, "wb").write(b"head")
         self.plan = NC.plan_doc(self.doc, NC.sha256_file(self.token_file), 11)
         self.harness = os.path.join(PKG, "ref", "score_navtest_refe.py")
-        pins = {"token_file_sha256": NC.sha256_file(self.token_file), "chunk_plan_sha256": self.plan["plan_sha256"], "ckpt_sha256": NC.sha256_file(self.ckpt), "config_sha256": NC.sha_lf(self.config),
+        pins = {"token_file_sha256": NC.sha256_file(self.token_file), "chunk_plan_sha256": self.plan["plan_sha256"], "ckpt_sha256": NC.sha256_file(self.ckpt),
                 "head_s0_sha256": NC.sha256_file(self.head), "banked_seam_sha256": NC.sha256_file(self.bseam), "banked_csv_sha256": NC.sha256_file(self.bcsv), "harness_script_sha256": NC.sha_lf(self.harness),
                 "seam_module_sha256": NC.sha_lf(os.path.join(PKG, "ref", "refe_navtest_seam.py")), "inference_cost_status": "UNMEASURED", "bar_dpdms_points": "0.10", "bar_safety_points": "-0.25"}
         am, sha, c1, _ = make_seal(self.tmp, extra_pins=pins)
         self.am, self.sha, self.c1 = am, sha, c1
+        self.ev = EVID[os.path.abspath(am)]
+        self.marker = os.path.join(self.tmp, "ONE_RUN.json")
 
     def cfg(self, **kw):
         return CH.Cfg(os.path.join(self.tmp, "work"), mode="c2", amendment=self.am, amendment_sha256=self.sha, c1_result=self.c1.path, c1_result_sha256=self.c1.sha, cap=11, expect_tokens=(20, 4), token_file=self.token_file,
-                      banked_seam=self.bseam, banked_csv=self.bcsv, ckpt=self.ckpt, config=self.config, head_s0=self.head, harness=self.harness, **kw)
+                      banked_seam=self.bseam, banked_csv=self.bcsv, ckpt=self.ckpt, head_s0=self.head, harness=self.harness, one_run_marker=self.marker, **{**self.ev.kw, "config": self.config, **kw})
 
     # ---- the fake children
     def runner(self, argv, env, log_path, cwd=None):
@@ -757,12 +880,18 @@ class World:
 
     def harness_fn(self, label, seam_path, tokens_file):
         z = np.load(seam_path)
+        toks = [str(t) for t in z["token"]]
         sub, p = f_scores(z["poses"])
-        p = p + (self.harness_bias if "_id" in label else 0.0)
         sub = sub.copy()
-        sub[:, 2] += (self.harness_bias if "_id" in label else 0.0)
+        if "_pick" in label and self.harness_bias:                         # a route whose re-scored picks do not reproduce the banked CSV (bias on all tokens, or only on `bias_tokens`)
+            hit = np.array([self.bias_tokens is None or t in self.bias_tokens for t in toks])
+            p = p + self.harness_bias * hit
+            sub[:, 2] += self.harness_bias * hit
+        if "_ctl" in label and self.blind_control:                         # a route that cannot see a 0.5 m shift
+            sub, p = f_scores(z["poses"] - np.array([0.5, 0.0, 0.0], np.float32))
         path = os.path.join(self.tmp, "h_" + label + ".csv")
-        write_csv(path, [str(t) for t in z["token"]], sub, nc_formula(sub))
+        write_csv(path, toks, sub, nc_formula(sub))
+        self.labels = getattr(self, "labels", []) + [label]
         return path
 
     def chain(self, **kw):
@@ -853,10 +982,13 @@ def test_chain_red_disk_guard_counts_the_chunks_own_ctx(tmp_path):
     assert ch.run() == 3 and "DISK_LOW" in ch.out.getvalue() and "navpipe_gpu_stage.py" not in w.calls
 
 
-def test_chain_red_t1_identity_stops_and_keeps_the_ctx(tmp_path):
-    w = World(tmp_path, harness_bias=1e-3)
+def test_chain_red_pick_rescore_that_differs_from_the_banked_csv_stops_and_keeps_the_ctx(tmp_path):
+    w = World(tmp_path, harness_bias=1e-3)                                    # the route's re-scored picks are 1e-3 off P2's banked rows
     ch = w.chain()
-    assert ch.run() == 7 and "ZZNAVPIPE_STOP G_T1ID_NOT_PASSED" in ch.out.getvalue()
+    out = ""
+    assert ch.run() == 7
+    out = ch.out.getvalue()
+    assert "ZZNAVPIPE_PICK_RESCORE_MISMATCH 0" in out and "ZZNAVPIPE_STOP G_PICK_RESCORE_DIFFERS_FROM_BANKED" in out and "SCORE_DONE" not in out
     st = NC.State(os.path.join(w.tmp, "work", "navpipe_state.json"), w.plan["plan_sha256"])
     assert st.status(0) == "SEARCHED" and os.path.exists(os.path.join(w.tmp, "work", "chunks", "c00", "bundle", "ctx.npy"))
 

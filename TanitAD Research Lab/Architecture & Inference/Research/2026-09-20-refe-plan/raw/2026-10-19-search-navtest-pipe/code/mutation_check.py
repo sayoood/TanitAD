@@ -22,8 +22,8 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PKG = os.path.dirname(HERE)
-FILES = ("navpipe_core.py", "navpipe_chain.py", "navpipe_launch.py", "navpipe_analyse.py", "make_navtest_bundle.py", "navpipe_bridge.py", "navpipe_gpu_stage.py")
-TESTS = ("test_navpipe_licence.py", "test_navpipe.py", "test_navpipe_s0.py", "test_navpipe_guards.py")
+FILES = ("navpipe_core.py", "navpipe_chain.py", "navpipe_launch.py", "navpipe_analyse.py", "make_navtest_bundle.py", "navpipe_bridge.py", "navpipe_gpu_stage.py", "seal_c2_amendment.py")
+TESTS = ("test_navpipe_licence.py", "test_navpipe.py", "test_navpipe_s0.py", "test_navpipe_guards.py", "test_navpipe_select.py", "test_seal_c2.py")
 MARK = re.compile(r"@GUARD:([A-Za-z0-9\-]+)\s*$")
 # guard -> (kind, payload): "replace": (old-substring-of-the-line, new); "prepend": a statement inserted before the line (same indent); "line": the whole replacement line body
 OVERRIDE = {
@@ -34,6 +34,15 @@ OVERRIDE = {
     "G-T1ID-IDENTITY": ("replace", ("ident_ok = bool(len(tokens) > 0 and np.isfinite(d) and d <= tol)", "ident_ok = True")),
     "G-T1ID-CONTROL": ("replace", ("ctl_ok = bool(changed > 0)", "ctl_ok = True")),
     "C-DELETE-CALLED": ("replace", ('NC.delete_ctx(st, cid, c.cdir(cid, "bundle", "ctx.npy"))', "pass")),
+    # ---- the C2 FINAL pieces (MM_RULING_C2AMEND.md)
+    "G-DOSE-BOUND-TO-C1": ("replace", ("if not (isinstance(b, dict)", "if False and (isinstance(b, dict)")),            # the whole binding clause (first line of the multi-line condition) never fires
+    "G-ONERUN-EXCL": ("replace", ("os.O_CREAT | os.O_EXCL | os.O_WRONLY", "os.O_CREAT | os.O_WRONLY")),                  # the marker is no longer created exclusively: a second start finds no file to lose to
+    "G-LICENCE-DOSE-PATH": ("replace", ('("O1_CONFIRMED",), "DOSE"', '("O1_CONFIRMED", "O2_DIRECTIONAL"), "DOSE"')),     # the dose-only licence loosened to O2
+    "G-PICKX-DIFF": ("replace", ("ok = bool(n > 0 and len(bad) == 0)", "ok = True")),                                    # the pick plan's byte comparison never fails
+    "C-MERGE-RESCORED": ("replace", ('sub, pdms = ml["pick_sub"], ml["pick_pdms"]', 'sub, pdms = NC.read_harness_csv(c.banked_csv, [str(t) for t in mb["token"]])')),     # the baseline is the banked CSV again
+    "C-ONERUN-FINISH": ("replace", ("NC.one_run_finish(c.one_run_marker, NC.sha256_file(out))", "pass")),                # the look is never consumed
+    "S-PLACEHOLDER-OUTSIDE": ("replace", ('raise SealRefused("the source still has an unfilled @@ placeholder outside the PINS block")', "pass")),
+    "S-OWN-CHECK": ("replace", ('NC.check_amendment_seal(p, r["sha"], a.code_dir, (), NC.OPERATIVE, NC.REQUIRED_PINS, True)', "pass")),      # the chain's own seal check is skipped
 }
 KNOWN_UNTESTABLE = {
     "MB-IDENT-REF": "the builder's per-token identity gate runs only inside make_navtest_bundle.py on a GPU forward; the suite cannot execute it. Its comparison is `ref.equal`, the same call G-IDENT-REF mutates, and its bridge judge (BR-*) is mutated.",
@@ -89,7 +98,10 @@ def main(argv=None):
         return 3
     only = set(a.only.split(",")) if a.only else None
     res, caught = [], 0
-    env = dict(os.environ, CUDA_VISIBLE_DEVICES="-1", PYTHONDONTWRITEBYTECODE="1")
+    sys.path.insert(0, HERE)
+    import navpipe_core as NC0                                                                                         # the REAL package's resolved sibling locations (repo-relative; env overrides honoured)
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES="-1", PYTHONDONTWRITEBYTECODE="1", NPMUT_SCRATCH="1", SPC_STEPB_CODE=NC0.STEPB_CODE, L1_CODE=NC0.L1_CODE, SPC_CODE=NC0.SPC_CODE, C2_DOSE_CHAIN=NC0.DOSE_CHAIN,
+               C2_CONFIG_C8=NC0.CONFIG_C8, C2_CONFIG_O4=NC0.CONFIG_O4, C2_RULING=os.path.join(NC0.RAW_DIR, "2026-10-19-search-p2-confirm", "c2", "MM_RULING_C2AMEND.md"))
     runs = [None] + [g for g in guards if (only is None or g[2] in only)]
     for g in runs:
         tmp = tempfile.mkdtemp(prefix="npmut_", dir=os.environ.get("NPMUT_DIR"))
@@ -114,7 +126,10 @@ def main(argv=None):
                 open(p, "w", encoding="utf-8", newline="\n").write(new)
             print("ZZMUT_START", label, flush=True)                                                           # so a runaway mutant is identifiable while it runs
             cmd = [sys.executable, "-m", "pytest", *TESTS, "-q", "-x", "-p", "no:cacheprovider", f"--basetemp={os.path.join(tmp, 'pt')}"]
-            r = subprocess.run(cmd, cwd=os.path.join(tmp, "code"), capture_output=True, text=True, env=env)
+            try:
+                r = subprocess.run(cmd, cwd=os.path.join(tmp, "code"), capture_output=True, text=True, env=env, timeout=int(os.environ.get("NPMUT_TIMEOUT", "900")))
+            except subprocess.TimeoutExpired as e:                                                                   # a hung mutant is a suite that never answered: reported, never counted as CAUGHT
+                r = subprocess.CompletedProcess(cmd, 124, stdout="TIMEOUT after %s s" % e.timeout, stderr="")
             ok = r.returncode == 0
             if g is None:
                 res.append({"guard": label, "status": "CONTROL_GREEN" if ok else "CONTROL_RED", "tail": r.stdout[-300:]})
@@ -125,7 +140,7 @@ def main(argv=None):
                 print("ZZMUT_CONTROL_GREEN", flush=True)
             else:
                 failed = [l for l in r.stdout.splitlines() if l.startswith("FAILED")][:2]
-                infra = (not ok) and any(m in r.stdout for m in ("No space left", "Errno 28", "ENOSPC", "MemoryError", "Access is denied"))      # a suite that died of the BOX is not a suite that caught the mutation
+                infra = (not ok) and any(m in r.stdout for m in ("No space left", "Errno 28", "ENOSPC", "MemoryError", "Access is denied", "TIMEOUT after"))      # a suite that died of the BOX is not a suite that caught the mutation
                 status = "SURVIVED" if ok else ("INFRA_ERROR" if infra else "CAUGHT")
                 res.append({"guard": label, "file": g[0], "status": status, "first_failing": failed})
                 caught += (status == "CAUGHT")

@@ -17,12 +17,11 @@ import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-STEPB_CODE = os.environ.get("SPC_STEPB_CODE", "C:/Users/Admin/par18/l2stepb/code")
-L1_CODE = os.environ.get("L1_CODE", "C:/Users/Admin/par18/l1run/code")
-for p in (HERE, STEPB_CODE, L1_CODE):
-    if p not in sys.path:
-        sys.path.insert(0, p)
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
 import navpipe_core as NC  # noqa: E402
+NC.add_code_paths()                                    # Step B's and L1's code: repo-relative siblings, SPC_STEPB_CODE / L1_CODE override
+STEPB_CODE, L1_CODE = NC.STEPB_CODE, NC.L1_CODE
 
 
 def chunk_clause(plan_file: str, plan_sha256: str, cid: int) -> str:

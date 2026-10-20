@@ -26,10 +26,13 @@ import time
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-L1_CODE = os.environ.get("L1_CODE", "C:/Users/Admin/par18/l1run/code")
+# L1's code: the repo-relative sibling package (`<Research>/2026-10-18-ep-rl-lit/l1_stepA`, tip 6a0cfae) unless L1_CODE is set; its PATCHED copies (run_2026-10-19/make_stepA_bundle.py, bf16) come first.  Same
+# resolution as navpipe_core.L1_CODE / L1_PATCHED, repeated here because this file runs in the GPU venv and must not need the rest of the package to be importable before its own sys.path is set.
+L1_CODE = os.environ.get("L1_CODE", os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(HERE)))), "2026-10-18-ep-rl-lit", "l1_stepA"))
+L1_PATCHED = os.path.join(L1_CODE, "run_2026-10-19")
 TREE = os.environ.get("L1_TREE", "C:/Users/Admin/p2heldout/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan")
-for p in (HERE, L1_CODE, os.path.join(TREE, "refe"), os.path.join(TREE, "eval")):
-    if p not in sys.path:
+for p in (HERE, L1_CODE, L1_PATCHED, os.path.join(TREE, "refe"), os.path.join(TREE, "eval")):
+    if os.path.isdir(p) and p not in sys.path:
         sys.path.insert(0, p)
 P_TOK, D_CTX = 7680, 256
 TEST_DB_DIR = "D:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/test"

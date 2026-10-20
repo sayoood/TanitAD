@@ -28,6 +28,41 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 PKG = os.path.dirname(HERE)
 
+# ------------------------------------------------------------------------------------------------------------------------------ where the sibling packages live (REPO-RELATIVE; an env var still overrides)
+# PKG is `<Research>/2026-09-20-refe-plan/raw/2026-10-19-search-navtest-pipe`.  On the mirror tip (6a0cfae) the packages this pipeline imports are its siblings:
+#   Step B code      <raw>/2026-10-19-l2-stepB/code/                          (stepB.py, stepB_chain.py, l2_scorer.py, g_reach_stepb.py, label_stepB.py, analyse_stepB.py, ...)
+#   Step B configs   <raw>/2026-10-19-l2-stepB/raw/stepB_config.json  (C8)  and  stepB_config_O4.json  (O4)
+#   C1 code          <raw>/2026-10-19-search-p2-confirm/code/                 (spc_analyse.py, spc_chain.py, ...)
+#   dose code        <raw>/2026-10-19-search-p2-confirm/dose/code/dose_chain.py   (UNVERIFIED: the dose package was not on the tip when this was written; C2_DOSE_CHAIN overrides)
+#   L1 code          <Research>/2026-10-18-ep-rl-lit/l1_stepA/                (stepA.py, tts_cem.py, real_scorer.py, launch_stepA.py) and its PATCHED copies in run_2026-10-19/ (launch_stepA_ctype.py, make_stepA_bundle.py bf16)
+# The dev-box scratch layout (`par18/l1run/code` = both L1 directories merged, `par18/l2stepb/code`, `par18/spc/code`) is reached by setting SPC_STEPB_CODE / L1_CODE / SPC_CODE.
+RAW_DIR = os.path.dirname(PKG)
+RESEARCH_DIR = os.path.dirname(os.path.dirname(RAW_DIR))
+STEPB_CODE = os.environ.get("SPC_STEPB_CODE", os.path.join(RAW_DIR, "2026-10-19-l2-stepB", "code"))
+L1_CODE = os.environ.get("L1_CODE", os.path.join(RESEARCH_DIR, "2026-10-18-ep-rl-lit", "l1_stepA"))
+L1_PATCHED = os.path.join(L1_CODE, "run_2026-10-19")               # absent on the dev-box layout (merged directory); present on the tip
+SPC_CODE = os.environ.get("SPC_CODE", os.path.join(RAW_DIR, "2026-10-19-search-p2-confirm", "code"))
+DOSE_CHAIN = os.environ.get("C2_DOSE_CHAIN", os.path.join(RAW_DIR, "2026-10-19-search-p2-confirm", "dose", "code", "dose_chain.py"))
+CONFIG_C8 = os.environ.get("C2_CONFIG_C8", os.path.join(RAW_DIR, "2026-10-19-l2-stepB", "raw", "stepB_config.json"))
+CONFIG_O4 = os.environ.get("C2_CONFIG_O4", os.path.join(RAW_DIR, "2026-10-19-l2-stepB", "raw", "stepB_config_O4.json"))
+
+
+def add_code_paths(spc: bool = False) -> None:
+    """put this pipeline's code and its sibling packages on sys.path (idempotent).  Final order: L1's PATCHED copies first (they shadow the unpatched make_stepA_bundle.py), then L1, Step B, [C1 when `spc`], this directory.
+    C1's directory is opt-in: it holds a `mutation_check.py` and a `make_stage.py` that would shadow this package's / Step B's."""
+    for p in (HERE, *((SPC_CODE,) if spc else ()), STEPB_CODE, L1_CODE, L1_PATCHED):
+        if os.path.isdir(p) and p not in sys.path:
+            sys.path.insert(0, p)
+
+
+def find_launcher() -> str:
+    """launch_stepA_ctype.py (the lock-respecting GPU launcher): `<L1_CODE>/` on the dev-box layout, `<L1_CODE>/run_2026-10-19/` on the tip"""
+    for d in (L1_CODE, L1_PATCHED):
+        p = os.path.join(d, "launch_stepA_ctype.py")
+        if os.path.isfile(p):
+            return p
+    return os.path.join(L1_CODE, "launch_stepA_ctype.py")
+
 # ------------------------------------------------------------------------------------------------------------------------------ constants (pinned by the seal where they matter)
 MIN_FREE_GIB = 6.0                                  # the brief's disk guard: stop if D: free < 6 GB
 CTX_BYTES_PER_TOKEN = 7680 * 256 * 2                # uint16 bf16 bits, [7680, 256]: 3,932,160 B = 3.75 MiB (measured in spc/raw/cost.json)
@@ -37,8 +72,8 @@ HARNESS_ARG_BUDGET = 30000                          # Windows' CreateProcess lim
 STATUS_ORDER = ("NEW", "BUNDLED", "GATED", "SEARCHED", "SCORED", "BANKED", "DELETED")
 EXIT = {"gate": 3, "timeout": 4, "seal": 5, "search": 6, "score": 7, "analysis": 8, "crash": 9}
 # the sealed amendment must pin all of these (the seal check REFUSES on any missing one)
-REQUIRED_PINS = ("token_file_sha256", "chunk_plan_sha256", "ckpt_sha256", "config_sha256", "head_s0_sha256", "banked_seam_sha256", "banked_csv_sha256", "c1_prereg_sha256", "licence_ruling_sha256",
-                 "inference_cost_status", "bar_dpdms_points", "bar_safety_points", "harness_script_sha256", "seam_module_sha256")
+REQUIRED_PINS = ("token_file_sha256", "chunk_plan_sha256", "ckpt_sha256", "config_c8_sha256", "config_o4_sha256", "head_s0_sha256", "banked_seam_sha256", "banked_csv_sha256", "c1_prereg_sha256", "licence_ruling_sha256",
+                 "c2amend_ruling_sha256", "inference_cost_status", "bar_dpdms_points", "bar_safety_points", "harness_script_sha256", "seam_module_sha256", "dose_chain_sha256", "fixture_record_sha256")
 OPERATIVE = ("navpipe_core.py", "navpipe_chain.py", "navpipe_launch.py", "navpipe_analyse.py", "make_navtest_bundle.py", "navpipe_bridge.py", "navpipe_gpu_stage.py")
 
 
@@ -149,16 +184,6 @@ def parse_pins(text: str) -> dict:
 REQUIRED_PINS_S0 = ("mode", "token_file_sha256", "plan_json_sha256", "chunk_plan_sha256", "n_tokens", "n_logs", "ckpt_sha256", "config_sha256", "head_s0_sha256", "reference_sha256", "reference_kind", "fan_labels_sha256")
 
 
-def check_c2_seal(amendment: str | None, amendment_sha256: str | None, c1_result: str | None, c1_result_sha256: str | None, code_dir: str = HERE, extra_dirs: tuple = (), operative: tuple = OPERATIVE) -> dict:
-    return _check_seal(amendment, amendment_sha256, c1_result, c1_result_sha256, code_dir, extra_dirs, operative, REQUIRED_PINS, True)
-
-
-def check_s0_seal(amendment: str | None, amendment_sha256: str | None, code_dir: str = HERE, extra_dirs: tuple = (), operative: tuple = OPERATIVE) -> dict:
-    """G-SEAL for the S0-bank mode (MM scope addition 2026-10-19): the SAME three-way sha binding, SEALED status, pins and code pins as the C2 seal, with NO C1 licence (the S0 bank is not a navtest look)
-    and the S0 pin set (token list, plan json, chunk plan, ckpt, config, head, the banked P2 reference and its kind).  It refuses without a sealed S0-bank amendment sha."""
-    return _check_seal(amendment, amendment_sha256, None, None, code_dir, extra_dirs, operative, REQUIRED_PINS_S0, False)
-
-
 # ------------------------------------------------------------------------------------------------------------------------------ the C1 licence (MM_RULING_C2_LICENCE.md, sealed 2026-10-20 02:56)
 # It REPLACES the EP-ADMISSION record for `H-SEARCH-P2-1`'s arm only: the frozen gate cannot certify a search candidate at any geometry the programme has (that ruling, section 1).  The numbers are the ruling's and may not be loosened:
 LICENCE_RULING_SHA256 = "fa7a26046a2fb5f8d8e69b2644c97a6cfce8907201d40d5d3c5be5358560ba6a"       # sha256 of MM_RULING_C2_LICENCE.md; the sealed amendment must pin this exact value
@@ -170,19 +195,28 @@ C1_N_TOKENS, C1_N_LOGS = 905, 24                                                
 C1_STAGES = ("SEAL_OK", "DATA_OK", "GPU_STAGE_OK", "REACH_PASS", "CID_PASS", "LABEL_DONE")           # spc_chain.run_analysis's own G-ORDER `need` list, read back from the C1 chain's chain_state.json
 
 
+CONFIG_C8_SHA256 = "299c6e63dd3016100149f88b6ca498529d79f8a5fbcfc6845753c8121d62c441"         # stepB_config.json (C8): sigma0 0.08126 / 0.15, M 64, elites 8
+CONFIG_O4_SHA256 = "1ebd719617e8978a03cea0254edd6f531504c1d070792d066736130ceb929013"         # stepB_config_O4.json (O4, MM_RULING_DOSE.md): M 256, elites 32, widen 2.0
+CONFIG_NAMES = {CONFIG_C8_SHA256: "C8", CONFIG_O4_SHA256: "O4"}
+C2AMEND_RULING_SHA256 = "fe4d9ce6e843ba4b708fc19478a261592feac03030e8a1708fa23d73d485cba0"      # sha256 of MM_RULING_C2AMEND.md (2026-10-20 ~04:00); the sealed amendment must pin this exact value
+HYPOTHESIS = "H-SEARCH-P2-1"
+DOSE_N_TOKENS, DOSE_N_LOGS = C1_N_TOKENS, C1_N_LOGS                                                # the dose arm runs on C1's B-REST bundle: the SAME 905 tokens / 24 logs
+CARVE_B_SHA256 = "0629811ff5d05879eb62abc5726005ccc4924f03539423003503a099ba29577c"               # the fixture's token list (carve B, already read, not navtest)
+FIXTURE_SCHEMA = "tanitad.navpipe_fixture_record/1"
+FIXTURE_STEPB_FILES = ("stepB.py", "stepB_chain.py", "l2_scorer.py", "g_reach_stepb.py", "label_stepB.py", "analyse_stepB.py")        # Step B code the fixture chain imports or runs (read from STEPB_CODE)
+FIXTURE_L1_FILES = ("stepA.py", "tts_cem.py", "real_scorer.py", "make_stepA_bundle.py", "launch_stepA_ctype.py")                          # L1 code it imports or runs (read from L1_CODE / its patched run_2026-10-19)
+
+
 def _is_num(v) -> bool:
     return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
 
 
-def check_c1_licence(c1_result: str | None, c1_result_sha256: str | None, pins: dict) -> dict:
-    """The C1 licence (MM_RULING_C2_LICENCE.md section 2), READ BY CODE before any navtest token is touched.  Refuses (class `seal`, exit 5) unless ALL of:
-      1. C1's `RESULT_SPC.json` exists and its sha256 equals the one the operator typed (and, when the amendment was sealed AFTER C1 read and pins `c1_result_sha256`, that pin too),
+def read_c1_result(c1_result: str | None, c1_result_sha256: str | None, pins: dict) -> tuple:
+    """C1's RESULT_SPC.json, BOUND (MM_RULING_C2_LICENCE.md section 2; MM_RULING_C2AMEND.md DQ1): refuses (class `seal`, exit 5) unless
+      1. the file exists and its sha256 equals the one the operator typed (and, when the amendment was sealed AFTER C1 read and pins `c1_result_sha256`, that pin too),
       2. it IS the C1 read: read == "C1", 905 tokens / 24 logs, arm P2HEAD, and the `chain_state.json` beside it was written under the prereg the amendment pins (`c1_prereg_sha256`) with every analysis precondition done
-         (a carve-B read or the SEARCH-DOSE arm, both of which can read O1 on other tokens or another config, are not C1),
-      3. its outcome is O1_CONFIRMED or O2_DIRECTIONAL (TRADE, O3_NULL, NEGATIVE and O4_INERT do not license),
-      4. each of dNC, dDAC, dTTC, dC POINT estimates is finite and >= -0.25 PDMS points,
-      5. the moved share (`inert.frac_moved`) is finite and >= 5 %, and the file does not say INERT.
-    Returns the licence record the chain banks beside its state."""
+         (a carve-B read or the SEARCH-DOSE arm, both of which can read O1 on other tokens or another config, are not C1).
+    Returns (the parsed result, its sha256).  The licence TERMS are `licence_terms`."""
     if not c1_result or not c1_result_sha256:                                               # @GUARD:G-LICENCE-ARGS
         raise Refusal("seal", "LICENCE_MISSING_ARGS", "--c1-result and --c1-result-sha256 are both required")
     if not os.path.isfile(c1_result):                                                       # @GUARD:G-LICENCE-EXISTS
@@ -209,9 +243,18 @@ def check_c1_licence(c1_result: str | None, c1_result_sha256: str | None, pins: 
     missing = [s for s in C1_STAGES if s not in (cs.get("done") or [])]
     if missing:                                                                             # @GUARD:G-LICENCE-STAGES
         raise Refusal("seal", "LICENCE_C1_INCOMPLETE", ",".join(missing))
+    return res, got
+
+
+def licence_terms(res: dict, got: str, pins: dict, outcomes=LICENCE_OUTCOMES, who: str = "C1", c1_sha: str | None = None) -> dict:
+    """The licence TERMS (MM_RULING_C2_LICENCE.md section 2) applied to ONE bound read, READ BY CODE before any navtest token is touched.  Refuses (class `seal`, exit 5) unless ALL of:
+      3. its outcome is one of `outcomes` (C1's read: O1_CONFIRMED or O2_DIRECTIONAL; the dose read when it is the licensing read (O4 on the dose-only path): O1_CONFIRMED only; TRADE, O3_NULL, NEGATIVE and O4_INERT never license),
+      4. each of dNC, dDAC, dTTC, dC POINT estimates is finite and >= -0.25 PDMS points,
+      5. the moved share (`inert.frac_moved`, DQ2) is finite and >= 5 %, and the file does not say INERT.
+    Returns the licence record the chain banks beside its state."""
     outcome = res.get("outcome")
-    if outcome not in LICENCE_OUTCOMES:                                                     # @GUARD:G-LICENCE-OUTCOME
-        raise Refusal("seal", "LICENCE_OUTCOME", f"{outcome!r}: only {' / '.join(LICENCE_OUTCOMES)} license C2")
+    if outcome not in outcomes:                                                             # @GUARD:G-LICENCE-OUTCOME
+        raise Refusal("seal", "LICENCE_OUTCOME", f"{who} read {outcome!r}: only {' / '.join(outcomes)} license C2 on this path")
     sp = res.get("safety_points")
     safety = {k: (sp.get(k) if isinstance(sp, dict) else None) for k in LICENCE_SAFETY_TERMS}
     unreadable = [k for k, v in safety.items() if not _is_num(v)]
@@ -226,20 +269,234 @@ def check_c1_licence(c1_result: str | None, c1_result_sha256: str | None, pins: 
         raise Refusal("seal", "LICENCE_MOVED_UNREADABLE", repr(frac))
     if frac < LICENCE_MOVED_MIN or inert.get("inert") is not False:                         # @GUARD:G-LICENCE-MOVED
         raise Refusal("seal", "LICENCE_INERT", f"moved share {frac} (needs >= {LICENCE_MOVED_MIN}); inert flag {inert.get('inert')!r}")
-    return {"c1_result_sha256": got, "outcome": outcome, "safety_points": {k: float(v) for k, v in safety.items()}, "moved_share_inert_frac_moved": float(frac), "c1_prereg_sha256": str(pins["c1_prereg_sha256"]),
-            "licence_ruling_sha256": LICENCE_RULING_SHA256, "bars": {"safety_min": LICENCE_SAFETY_MIN, "moved_min": LICENCE_MOVED_MIN, "outcomes": list(LICENCE_OUTCOMES)}}
+    return {"c1_result_sha256": c1_sha or got, "licensing_read": who, "licensing_result_sha256": got, "outcome": outcome, "safety_points": {k: float(v) for k, v in safety.items()},
+            "moved_share_inert_frac_moved": float(frac), "c1_prereg_sha256": str(pins["c1_prereg_sha256"]), "licence_ruling_sha256": LICENCE_RULING_SHA256,
+            "bars": {"safety_min": LICENCE_SAFETY_MIN, "moved_min": LICENCE_MOVED_MIN, "outcomes": list(outcomes)}}
 
 
-def _check_seal(amendment, amendment_sha256, c1_result, c1_result_sha256, code_dir, extra_dirs, operative, required, need_licence) -> dict:
-    """G-SEAL.  Refuses (class `seal`, exit 5) unless ALL of:
+# ------------------------------------------------------------------------------------------------------------------------------ the config the look is sent with (MM_RULING_C2AMEND.md ADDITION; MM_RULING_DOSE.md DQ4)
+_DOSE_MODULE = {}
+
+
+def load_dose_chain(path: str | None, pin: str | None):
+    """`dose_chain.py` imported BY PATH, never re-implemented here: `c2_config` is the dose package's mechanical table (MM_RULING_DOSE.md DQ4) and this file only CALLS it.  The file's LF sha256 must equal the amendment's
+    `dose_chain_sha256` pin (filled at the seal).  Its own imports (C1's spc_* modules, Step B's analyse_stepB / stepA) resolve through the same repo-relative code paths."""
+    if not path or not os.path.isfile(path):
+        raise Refusal("seal", "DOSE_CHAIN_MISSING", str(path))
+    got = sha_lf(path)
+    if got != str(pin or "").strip().lower():                                               # @GUARD:G-DOSECHAIN-PIN
+        raise Refusal("seal", "DOSE_CHAIN_PIN_MISMATCH", f"{path}: {got[:12]} != pin {str(pin)[:12]}")
+    key = (os.path.abspath(path), got)
+    if key in _DOSE_MODULE:
+        return _DOSE_MODULE[key]
+    os.environ.setdefault("SPC_STEPB_CODE", STEPB_CODE)
+    os.environ.setdefault("L1_CODE", L1_CODE)
+    os.environ.setdefault("DOSE_SPC_CODE", SPC_CODE)
+    add_code_paths(spc=True)
+    try:
+        spec = importlib.util.spec_from_file_location("dose_chain_pinned", path)
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+    except Exception as e:                                                                  # an import that fails is a refusal, not a pass
+        raise Refusal("seal", "DOSE_CHAIN_IMPORT_FAILED", f"{type(e).__name__}: {e}"[:300])
+    if not callable(getattr(m, "c2_config", None)) or not isinstance(getattr(m, "DOSE_STAGES", None), tuple):
+        raise Refusal("seal", "DOSE_CHAIN_NO_C2_CONFIG", f"{path} has no callable c2_config / DOSE_STAGES tuple")
+    _DOSE_MODULE[key] = m
+    return m
+
+
+def read_dose_result(dose_result: str | None, dose_result_sha256: str | None, c1_res: dict, c1_sha: str, pins: dict, dc) -> tuple:
+    """The dose arm's RESULT_DOSE.json, BOUND LIKE C1's (MM_RULING_C2AMEND.md ADDITION): the typed sha256 (and an optional amendment pin), and the check that it IS the dose read on B-REST: read == "DOSE", the SAME 905 tokens /
+    24 logs as C1, arm P2HEAD on the O4 config, computed AGAINST THIS C1 result (its `c1.result_sha256` equals C1's file sha, the outcomes agree, both config shas are the pinned C8 / O4), and the `chain_state.json` beside it was
+    written under C1's prereg with every dose stage done.  Needed in EVERY case: `c2_config` takes both reads, and its C8 rows (1 and 3) depend on the dose read as much as its O4 rows do.  Returns (result, sha256)."""
+    if not dose_result or not dose_result_sha256:                                           # @GUARD:G-DOSE-ARGS
+        raise Refusal("seal", "DOSE_MISSING_ARGS", "--dose-result and --dose-result-sha256 are both required: c2_config takes both reads")
+    if not os.path.isfile(dose_result):                                                     # @GUARD:G-DOSE-EXISTS
+        raise Refusal("seal", "DOSE_RESULT_MISSING", dose_result)
+    got = sha256_file(dose_result)
+    if got != str(dose_result_sha256).strip().lower():                                      # @GUARD:G-DOSE-SHA
+        raise Refusal("seal", "DOSE_RESULT_SHA_MISMATCH", f"file {got[:12]} / typed {str(dose_result_sha256)[:12]}")
+    if "dose_result_sha256" in pins and str(pins["dose_result_sha256"]).strip().lower() != got:  # @GUARD:G-DOSE-PIN
+        raise Refusal("seal", "DOSE_RESULT_PIN_MISMATCH", f"file {got[:12]} / amendment pin {str(pins['dose_result_sha256'])[:12]}")
+    try:
+        res = json.load(open(dose_result, encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        raise Refusal("seal", "DOSE_RESULT_UNREADABLE", type(e).__name__)
+    if not isinstance(res, dict):
+        raise Refusal("seal", "DOSE_RESULT_UNREADABLE", "not a JSON object")
+    if (res.get("read"), res.get("n_tokens"), res.get("n_logs")) != ("DOSE", DOSE_N_TOKENS, DOSE_N_LOGS) or "O4" not in str(res.get("arm", "")) or not str(res.get("arm", "")).startswith("P2HEAD"):   # @GUARD:G-DOSE-IS-DOSE
+        raise Refusal("seal", "DOSE_NOT_THE_DOSE_READ", f"read={res.get('read')!r} n_tokens={res.get('n_tokens')!r} n_logs={res.get('n_logs')!r} arm={res.get('arm')!r}")
+    b = res.get("c1")
+    if not (isinstance(b, dict) and b.get("result_sha256") == c1_sha and b.get("outcome") == c1_res.get("outcome") and res.get("c1_outcome") == c1_res.get("outcome")    # @GUARD:G-DOSE-BOUND-TO-C1
+            and b.get("config_c8_sha256") == CONFIG_C8_SHA256 and b.get("config_o4_sha256") == CONFIG_O4_SHA256 and isinstance(b.get("bundle_sha256"), str) and b.get("bundle_sha256")):
+        raise Refusal("seal", "DOSE_NOT_BOUND_TO_C1", f"the dose read does not say it was computed against THIS C1 result ({c1_sha[:12]}) on the pinned C8 / O4 configs: {json.dumps(b)[:200] if isinstance(b, dict) else repr(b)}")
+    try:
+        cs = json.load(open(os.path.join(os.path.dirname(os.path.abspath(dose_result)), "chain_state.json"), encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        raise Refusal("seal", "DOSE_CHAIN_STATE_MISSING", f"chain_state.json beside the dose result: {type(e).__name__}")
+    if not isinstance(cs, dict) or str(cs.get("prereg_sha256", "")).lower() != str(pins["c1_prereg_sha256"]).strip().lower():     # @GUARD:G-DOSE-PREREG
+        raise Refusal("seal", "DOSE_PREREG_MISMATCH", f"the dose chain ran under {str(cs.get('prereg_sha256') if isinstance(cs, dict) else None)[:12]}, the amendment pins {str(pins['c1_prereg_sha256'])[:12]}")
+    missing = [s for s in dc.DOSE_STAGES if s not in (cs.get("done") or [])]
+    if missing:                                                                             # @GUARD:G-DOSE-STAGES
+        raise Refusal("seal", "DOSE_INCOMPLETE", ",".join(missing))
+    return res, got
+
+
+def select_config(config_path: str | None, c1_res: dict, dose_res: dict, dc) -> dict:
+    """C2 accepts EXACTLY ONE of two pinned configs, and it must be the one `c2_config(c1_read, dose_read, contrast_lo)` returns (MM_RULING_C2AMEND.md ADDITION).  `c2_config` is the dose package's function, called, not copied.
+    Its inputs are read from the two bound result files exactly as the dose chain reads them (`outcome`, `safety_points`, `moved_share`; `contrast_O4_minus_C8.pooled.lo`).  Refuses (class `seal`) unless
+      * the file given is C8 or O4 by sha256 (`stepB_config.json` 299c6e63... / `stepB_config_O4.json` 1ebd7196...),
+      * `c2_config` returns a config at all (row 4 = no C2: the committed next arms stand), and it is the one given,
+      * the dose result's OWN recorded `c2_config` says the same (config and row): two computations of one function on one pair of reads must agree."""
+    if not config_path or not os.path.isfile(config_path):                                  # @GUARD:G-CONFIG-GIVEN
+        raise Refusal("seal", "CONFIG_MISSING", f"--config is required for the navtest look (C8 or O4): {config_path!r}")
+    got = sha_lf(config_path)
+    name = CONFIG_NAMES.get(got)
+    if name is None:                                                                        # @GUARD:G-CONFIG-PINNED
+        raise Refusal("seal", "CONFIG_NOT_PINNED", f"{config_path}: {got[:12]} is neither C8 ({CONFIG_C8_SHA256[:12]}) nor O4 ({CONFIG_O4_SHA256[:12]})")
+    pool = dose_res.get("contrast_O4_minus_C8")
+    pool = pool.get("pooled") if isinstance(pool, dict) else None
+    lo = pool.get("lo") if isinstance(pool, dict) else None
+    if not _is_num(lo):                                                                     # @GUARD:G-CONFIG-CONTRAST-READABLE
+        raise Refusal("seal", "CONFIG_CONTRAST_UNREADABLE", f"contrast_O4_minus_C8.pooled.lo = {lo!r}: an unreadable contrast would silently turn row 3's O4 into C8")
+    keys = ("outcome", "safety_points", "moved_share")
+    exp = dc.c2_config({k: c1_res.get(k) for k in keys}, {k: dose_res.get(k) for k in keys}, lo)
+    if not isinstance(exp, dict) or "config" not in exp or "row" not in exp:
+        raise Refusal("seal", "CONFIG_C2CONFIG_UNREADABLE", repr(exp)[:200])
+    if exp["config"] is None:                                                               # @GUARD:G-CONFIG-NONE
+        raise Refusal("seal", "C2_CONFIG_NONE", f"c2_config row {exp['row']}: {exp.get('why')}")
+    if exp["config"] != name:                                                               # @GUARD:G-CONFIG-IS-C2CONFIG
+        raise Refusal("seal", "CONFIG_NOT_C2_CONFIG", f"given {name}, c2_config returns {exp['config']} (row {exp['row']}): {exp.get('why')}")
+    rec = dose_res.get("c2_config")
+    if not (isinstance(rec, dict) and rec.get("config") == exp["config"] and rec.get("row") == exp["row"]):    # @GUARD:G-CONFIG-DOSE-RECORD
+        raise Refusal("seal", "CONFIG_DOSE_RECORD_DIFFERS", f"the dose result records {json.dumps(rec)[:160] if isinstance(rec, dict) else repr(rec)}, c2_config returns config {exp['config']} row {exp['row']}")
+    return {"config": name, "config_sha256": got, "row": exp["row"], "why": exp.get("why"), "contrast_lower_ci": float(lo), "c2_config": exp}
+
+
+# ------------------------------------------------------------------------------------------------------------------------------ the fixture record (MM_RULING_C2AMEND.md DQ7 (b))
+def code_shas(code_dir: str = HERE, files=OPERATIVE) -> dict:
+    return {f: sha_lf(os.path.join(code_dir, f)) for f in files}
+
+
+def extra_code_paths() -> dict:
+    """the sibling code the fixture chain imports or runs, keyed `stepb/<file>` / `l1/<file>`, resolved through the same repo-relative directories as the chain (absent files are simply not listed)"""
+    out = {}
+    for f in FIXTURE_STEPB_FILES:
+        p = os.path.join(STEPB_CODE, f)
+        if os.path.isfile(p):
+            out["stepb/" + f] = p
+    for f in FIXTURE_L1_FILES:
+        p = next((q for q in (os.path.join(L1_PATCHED, f), os.path.join(L1_CODE, f)) if os.path.isfile(q)), None)      # the patched copy shadows the unpatched one, as on sys.path
+        if p:
+            out["l1/" + f] = p
+    return out
+
+
+def make_fixture_record(verdict: str, code_dir: str, tokens_sha256_: str, plan_sha256: str, result_sha256: str | None, ckpt_sha256: str | None, config_sha256: str, detail=None) -> dict:
+    """what the FIXTURE chain writes when it ends (navpipe_chain.Chain.fixture_identity): the verdict, the sha256 of every code file it ran, and its token list's sha.  `verdict` is exactly IDENTICAL or DIFFERS."""
+    return {"schema": FIXTURE_SCHEMA, "mode": "fixture", "verdict": verdict, "code_sha256": code_shas(code_dir), "extra_code_sha256": {k: sha_lf(p) for k, p in sorted(extra_code_paths().items())},
+            "tokens_sha256": tokens_sha256_, "plan_sha256": plan_sha256, "result_navpipe_sha256": result_sha256, "ckpt_sha256": ckpt_sha256, "config_sha256": config_sha256, "detail": detail,
+            "written": time.strftime("%Y-%m-%dT%H:%M:%S")}
+
+
+def check_fixture_record(record: str | None, pins: dict, fixture_tokens_sha256: str = CARVE_B_SHA256, operative=OPERATIVE) -> dict:
+    """C2 refuses unless the fixture chain's record (a) is the file the amendment pins (`fixture_record_sha256`), (b) reads IDENTICAL, (c) is of carve B's token list, (d) lists, for every OPERATIVE file, the sha256 the amendment
+    PINS (`code:<file>`), and (e) lists the Step B / L1 code it ran with the sha256 those files have NOW.  An operator-checked precondition is the class the launch-gate rule exists to remove."""
+    if not record:                                                                          # @GUARD:G-FIXREC-ARGS
+        raise Refusal("seal", "FIXTURE_RECORD_MISSING_ARGS", "--fixture-record is required: the fixture chain's record that reads IDENTICAL")
+    if not os.path.isfile(record):                                                          # @GUARD:G-FIXREC-EXISTS
+        raise Refusal("seal", "FIXTURE_RECORD_MISSING", record)
+    got = sha256_file(record)
+    if got != str(pins.get("fixture_record_sha256", "")).strip().lower():                   # @GUARD:G-FIXREC-PIN
+        raise Refusal("seal", "FIXTURE_RECORD_PIN_MISMATCH", f"file {got[:12]} / amendment pin {str(pins.get('fixture_record_sha256'))[:12]}")
+    try:
+        rec = json.load(open(record, encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        raise Refusal("seal", "FIXTURE_RECORD_UNREADABLE", type(e).__name__)
+    if not isinstance(rec, dict) or rec.get("schema") != FIXTURE_SCHEMA or rec.get("mode") != "fixture":
+        raise Refusal("seal", "FIXTURE_RECORD_UNREADABLE", "not a fixture record of this schema")
+    if rec.get("verdict") != "IDENTICAL":                                                   # @GUARD:G-FIXREC-IDENTICAL
+        raise Refusal("seal", "FIXTURE_NOT_IDENTICAL", f"the fixture record reads {rec.get('verdict')!r}")
+    if rec.get("tokens_sha256") != fixture_tokens_sha256:                                   # @GUARD:G-FIXREC-TOKENS
+        raise Refusal("seal", "FIXTURE_RECORD_TOKENS", f"the record is of token list {str(rec.get('tokens_sha256'))[:12]}, carve B is {fixture_tokens_sha256[:12]}")
+    cs = rec.get("code_sha256")
+    cs = cs if isinstance(cs, dict) else {}
+    bad = [f for f in operative if cs.get(f) != pins.get(f"code:{f}")]
+    if bad:                                                                                 # @GUARD:G-FIXREC-CODE-PINS
+        raise Refusal("seal", "FIXTURE_CODE_NOT_THE_SEALED_CODE", "the fixture ran code that is not the sealed pins: " + ",".join(bad))
+    ex = rec.get("extra_code_sha256")
+    ex = ex if isinstance(ex, dict) else {}
+    now = extra_code_paths()
+    stale = sorted(k for k in set(ex) | {f"stepb/{f}" for f in FIXTURE_STEPB_FILES} if (k not in ex) or (k not in now) or sha_lf(now[k]) != ex[k])
+    if stale:                                                                               # @GUARD:G-FIXREC-EXTRA-CODE
+        raise Refusal("seal", "FIXTURE_EXTRA_CODE_CHANGED", "Step B / L1 code differs from what the fixture ran (or was not recorded): " + ",".join(stale))
+    return {"fixture_record_sha256": got, "verdict": rec["verdict"], "tokens_sha256": rec["tokens_sha256"], "result_navpipe_sha256": rec.get("result_navpipe_sha256")}
+
+
+# ------------------------------------------------------------------------------------------------------------------------------ the ONE-RUN marker (MM_RULING_C2AMEND.md ADDITION: exactly one C2 run per H-SEARCH-P2-1)
+ONE_RUN_MARKER = "D:/Projects/TanitAD-artifacts/navpipe_c2_ONE_RUN_H-SEARCH-P2-1.json"          # outside any work dir: a second run with another work dir or another config meets the same file
+ONE_RUN_IDENTITY = ("amendment_sha256", "config_sha256", "c1_result_sha256", "dose_result_sha256", "work")
+
+
+def norm_work(p: str) -> str:
+    return os.path.normcase(os.path.abspath(p)).replace("\\", "/")
+
+
+def one_run_check(marker: str, ident: dict) -> str:
+    """-> "NEW" (no marker), or "RESUME" (the marker is STARTED and names exactly this run: the same amendment, config, C1 and dose results and work dir).  Refuses (class `seal`) otherwise:
+    `C2_ALREADY_RUN` when the marker says the analysis was computed (the look is consumed, whatever config), `C2_SECOND_RUN_REFUSED` when it names another run.  Reads only; `--dry-run` calls this too."""
+    if not os.path.exists(marker):
+        return "NEW"
+    try:
+        m = json.load(open(marker, encoding="utf-8"))
+    except (OSError, ValueError):
+        raise Refusal("seal", "C2_MARKER_UNREADABLE", marker)                              # an unreadable marker is not an absent one
+    if not isinstance(m, dict) or m.get("hypothesis") != HYPOTHESIS:
+        raise Refusal("seal", "C2_MARKER_UNREADABLE", f"{marker}: not this hypothesis' marker")
+    if m.get("status") != "STARTED":                                                        # @GUARD:G-ONERUN-DONE
+        raise Refusal("seal", "C2_ALREADY_RUN", f"{HYPOTHESIS} has had its one navtest look (config {m.get('config')}, status {m.get('status')}, marker {marker}); a second run of any config is refused")
+    other = [k for k in ONE_RUN_IDENTITY if str(m.get(k)) != str(ident.get(k))]
+    if other:                                                                               # @GUARD:G-ONERUN-OTHER
+        raise Refusal("seal", "C2_SECOND_RUN_REFUSED", f"{marker} names another run (config {m.get('config')}, started {m.get('started')}); differing: {','.join(other)}")
+    return "RESUME"
+
+
+def one_run_start(marker: str, ident: dict, config_name: str) -> None:
+    """write the marker, ATOMICALLY and exclusively (O_EXCL), before the first navtest token is touched.  A second process racing to the same file loses and refuses."""
+    os.makedirs(os.path.dirname(os.path.abspath(marker)), exist_ok=True)
+    body = {"schema": "tanitad.navpipe_one_run/1", "hypothesis": HYPOTHESIS, "status": "STARTED", "config": config_name, "started": time.strftime("%Y-%m-%dT%H:%M:%S"), **{k: ident[k] for k in ONE_RUN_IDENTITY}}
+    try:
+        fd = os.open(marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)                  # @GUARD:G-ONERUN-EXCL
+    except FileExistsError:
+        raise Refusal("seal", "C2_SECOND_RUN_REFUSED", f"{marker} appeared while this run was starting")
+    with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(body, f, indent=1, sort_keys=True)
+        f.flush()
+        os.fsync(f.fileno())
+
+
+def one_run_finish(marker: str, result_sha256: str) -> None:
+    """the analysis was computed: the look is CONSUMED.  After this no run of any config starts (`one_run_check` -> C2_ALREADY_RUN).  Atomic replace."""
+    m = json.load(open(marker, encoding="utf-8"))
+    m.update({"status": "ANALYSED", "finished": time.strftime("%Y-%m-%dT%H:%M:%S"), "result_navpipe_sha256": result_sha256})
+    tmp = marker + f".tmp{os.getpid()}"
+    with open(tmp, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(m, f, indent=1, sort_keys=True)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, marker)
+
+
+# ------------------------------------------------------------------------------------------------------------------------------ G-SEAL
+def check_amendment_seal(amendment, amendment_sha256, code_dir, extra_dirs, operative, required, c2: bool) -> tuple:
+    """G-SEAL, the part that needs only the amendment (the Master Mind's seal tool, `seal_c2_amendment.py`, runs exactly this on the text it wrote).  Refuses (class `seal`, exit 5) unless ALL of:
       1. an amendment file exists, and its LF sha256 equals BOTH the `--amendment-sha256` the operator typed AND the sha in its sidecar `<name>.sha256` (three-way binding: a file edited after the seal is caught);
       2. its FIRST `Status:` line starts with `Status: **SEALED`;
-      3. its PINS block carries every REQUIRED_PINS key, and every `code:<file>` pin equals the LF sha256 of that file (code_dir / extra_dirs), and every OPERATIVE file is pinned;
-      4. (navtest mode only) the inference-cost status is stated, the amendment pins the sealed licence ruling, and `check_c1_licence` passes: C1's RESULT_SPC.json licenses the look (this REPLACES the EP-ADMISSION
-         record, MM_RULING_C2_LICENCE.md); the S0-bank mode has no licence because it is not a navtest look.
-    Returns the pins dict (the chain's proof of seal) and, in navtest mode, the licence record."""
+      3. its PINS block carries every `required` key, and every `code:<file>` pin equals the LF sha256 of that file (code_dir / extra_dirs), and every OPERATIVE file is pinned;
+      4. (navtest mode only) the inference-cost status is stated, the amendment pins the sealed licence ruling and the ruling of 2026-10-20 (MM_RULING_C2AMEND.md), and pins C8 and O4 by their sha256.
+    Returns (the LF sha256 of the amendment, its pins)."""
     if not amendment or not amendment_sha256:                                               # @GUARD:G-SEAL-ARGS
-        raise Refusal("seal", "SEAL_MISSING_ARGS", "--amendment and --amendment-sha256 are both required" + ("" if need_licence else " (the S0-bank mode has no C1 licence)"))
+        raise Refusal("seal", "SEAL_MISSING_ARGS", "--amendment and --amendment-sha256 are both required" + ("" if c2 else " (the S0-bank mode has no C1 licence)"))
     if not os.path.isfile(amendment):                                                       # @GUARD:G-SEAL-AMEND-EXISTS
         raise Refusal("seal", "SEAL_AMENDMENT_MISSING", amendment)
     sidecar = os.path.splitext(amendment)[0] + ".sha256"
@@ -259,7 +516,7 @@ def _check_seal(amendment, amendment_sha256, c1_result, c1_result_sha256, code_d
     miss = [k for k in required if k not in pins]
     if miss:                                                                                # @GUARD:G-SEAL-PINS-PRESENT
         raise Refusal("seal", "SEAL_PIN_MISSING", ",".join(miss))
-    if (pins.get("mode") == "s0bank") != (not need_licence):                                # @GUARD:G-SEAL-MODE
+    if (pins.get("mode") == "s0bank") != (not c2):                                          # @GUARD:G-SEAL-MODE
         raise Refusal("seal", "SEAL_WRONG_MODE", f"pin mode={pins.get('mode')!r}: an S0-bank amendment cannot unlock navtest, a C2 amendment cannot unlock the S0 bank")
     bad = []
     for f in operative:
@@ -272,14 +529,76 @@ def _check_seal(amendment, amendment_sha256, c1_result, c1_result_sha256, code_d
                 bad.append(k)
     if bad:
         raise Refusal("seal", "SEAL_PIN_MISMATCH", ";".join(bad))
-    if not need_licence:
-        return {"amendment_sha256": got, "pins": pins, "licence": None}
+    if not c2:
+        return got, pins
     if pins["inference_cost_status"] not in ("MEASURED", "UNMEASURED"):                     # @GUARD:G-SEAL-COST-STATED
         raise Refusal("seal", "SEAL_INFERENCE_COST_UNSTATED", pins["inference_cost_status"])  # DQ3: the search's inference cost per token, MEASURED or named UNMEASURED, before the look
     if str(pins["licence_ruling_sha256"]).strip().lower() != LICENCE_RULING_SHA256:         # @GUARD:G-SEAL-LICENCE-RULING
         raise Refusal("seal", "SEAL_LICENCE_RULING_PIN", f"the amendment pins {str(pins['licence_ruling_sha256'])[:12]}, the licence this code enforces is {LICENCE_RULING_SHA256[:12]}")
-    licence = check_c1_licence(c1_result, c1_result_sha256, pins)
-    return {"amendment_sha256": got, "pins": pins, "licence": licence}
+    if str(pins["c2amend_ruling_sha256"]).strip().lower() != C2AMEND_RULING_SHA256:         # @GUARD:G-SEAL-AMEND-RULING
+        raise Refusal("seal", "SEAL_AMEND_RULING_PIN", f"the amendment pins {str(pins['c2amend_ruling_sha256'])[:12]}, the ruling its terms follow is {C2AMEND_RULING_SHA256[:12]}")
+    if str(pins["config_c8_sha256"]).strip().lower() != CONFIG_C8_SHA256:                   # @GUARD:G-SEAL-CONFIG-C8
+        raise Refusal("seal", "SEAL_CONFIG_PIN", f"config_c8_sha256 {str(pins['config_c8_sha256'])[:12]} != C8 {CONFIG_C8_SHA256[:12]}")
+    if str(pins["config_o4_sha256"]).strip().lower() != CONFIG_O4_SHA256:                   # @GUARD:G-SEAL-CONFIG-O4
+        raise Refusal("seal", "SEAL_CONFIG_PIN", f"config_o4_sha256 {str(pins['config_o4_sha256'])[:12]} != O4 {CONFIG_O4_SHA256[:12]}")
+    return got, pins
+
+
+def check_c2_seal(amendment: str | None, amendment_sha256: str | None, c1_result: str | None, c1_result_sha256: str | None, code_dir: str = HERE, extra_dirs: tuple = (), operative: tuple = OPERATIVE, *,
+                  config: str | None = None, dose_result: str | None = None, dose_result_sha256: str | None = None, fixture_record: str | None = None, dose_chain: str | None = None) -> dict:
+    """G-SEAL for the navtest (C2) mode: the sealed amendment (`check_amendment_seal`), THEN the evidence the look is licensed with, in this order: C1's result bound (DQ1), the licence terms, the dose result bound, the config the
+    look is sent with (the ADDITION), and the fixture record (DQ7).  The licence terms are C1's (O1 or O2, safety, moved share) for C8 and for O4-by-row-3; on the dose-only path (O4 by row 2, C1 not licensed) the licensing
+    read is the DOSE read, which must be O1_CONFIRMED with the same safety and moved-share terms.
+    Returns {amendment_sha256, pins (with `config_sha256` = the SELECTED config's, and `config_name`), licence, selection, fixture}."""
+    got, pins = check_amendment_seal(amendment, amendment_sha256, code_dir, extra_dirs, operative, REQUIRED_PINS, True)
+    c1res, c1sha = read_c1_result(c1_result, c1_result_sha256, pins)
+    name = CONFIG_NAMES.get(sha_lf(config)) if config and os.path.isfile(config) else None
+    licence = None
+    if name == "O4":
+        try:
+            licence = licence_terms(c1res, c1sha, pins, LICENCE_OUTCOMES, "C1")                  # row 3: both licensed, the contrast chose O4
+        except Refusal:
+            licence = None                                                                       # row 2 (C1 not licensed): the DOSE read must license, below
+    else:
+        licence = licence_terms(c1res, c1sha, pins, LICENCE_OUTCOMES, "C1")                      # C8 (rows 1 and 3): C1's licence, read by code
+    dc = load_dose_chain(dose_chain or DOSE_CHAIN, pins["dose_chain_sha256"])
+    dres, dsha = read_dose_result(dose_result, dose_result_sha256, c1res, c1sha, pins, dc)
+    if licence is None:
+        licence = licence_terms(dres, dsha, pins, ("O1_CONFIRMED",), "DOSE", c1_sha=c1sha)       # @GUARD:G-LICENCE-DOSE-PATH
+    sel = select_config(config, c1res, dres, dc)
+    if (licence["licensing_read"] == "DOSE") != (sel["row"] == 2):                              # @GUARD:G-LICENCE-ROW-AGREES
+        raise Refusal("seal", "LICENCE_ROW_DISAGREES", f"c2_config row {sel['row']} but the licensing read is {licence['licensing_read']}")
+    fixture = check_fixture_record(fixture_record, pins, CARVE_B_SHA256, operative)
+    pins = {**pins, "config_sha256": sel["config_sha256"], "config_name": sel["config"]}
+    return {"amendment_sha256": got, "pins": pins, "licence": licence, "fixture": fixture,
+            "selection": {**sel, "dose_result_sha256": dsha, "dose_chain_sha256": pins["dose_chain_sha256"], "c1_result_sha256": c1sha}}
+
+
+def check_s0_seal(amendment: str | None, amendment_sha256: str | None, code_dir: str = HERE, extra_dirs: tuple = (), operative: tuple = OPERATIVE) -> dict:
+    """G-SEAL for the S0-bank mode (MM scope addition 2026-10-19): the SAME three-way sha binding, SEALED status, pins and code pins as the C2 seal, with NO C1 licence (the S0 bank is not a navtest look)
+    and the S0 pin set (token list, plan json, chunk plan, ckpt, config, head, the banked P2 reference and its kind).  It refuses without a sealed S0-bank amendment sha."""
+    got, pins = check_amendment_seal(amendment, amendment_sha256, code_dir, extra_dirs, operative, REQUIRED_PINS_S0, False)
+    return {"amendment_sha256": got, "pins": pins, "licence": None}
+
+
+# ------------------------------------------------------------------------------------------------------------------------------ the pins that name a FILE (the chain and the seal tool check the same list)
+FILE_PIN_HASH = {"token_file_sha256": "raw", "ckpt_sha256": "raw", "head_s0_sha256": "raw", "banked_seam_sha256": "raw", "banked_csv_sha256": "raw",
+                 "config_sha256": "lf", "config_c8_sha256": "lf", "config_o4_sha256": "lf", "harness_script_sha256": "lf", "seam_module_sha256": "lf", "dose_chain_sha256": "lf"}
+
+
+def file_pin_mismatches(pins: dict, paths: dict) -> list:
+    """the names of the pins whose FILE does not hash to the pinned value.  `paths` maps a pin key to its file (None = skip that pin).  `raw` pins hash the bytes, `lf` pins fold CRLF to LF (a text file checked out on Windows
+    must not look like different code).  A missing file is a mismatch, never a skip."""
+    bad = []
+    for k, p in paths.items():
+        if p is None:
+            continue
+        have = None
+        if os.path.isfile(p):
+            have = sha256_file(p) if FILE_PIN_HASH[k] == "raw" else sha_lf(p)
+        if have is None or have != str(pins.get(k)).strip().lower():                         # @GUARD:G-FILEPINS
+            bad.append(k)
+    return bad
 
 
 # ------------------------------------------------------------------------------------------------------------------------------ G-DISK
@@ -658,13 +977,40 @@ def read_harness_csv(path: str, tokens) -> tuple:
     return sub, pdms
 
 
-def t1_planted_identity(tokens, pick_poses, banked_csv_rows: tuple, run_scores, tol: float = 1e-9, shift_m: float = 0.5) -> dict:
+def check_pick_plan_is_banked(pick_poses, tokens, banked: dict) -> dict:
+    """DQ6 (b), the object check: the plan the chain re-scores as "P2's pick" (the search stage's own `pick_exec`, converted by the seam's own `to_navsim`) IS P2's banked navtest seam row, byte for byte, for every token of the
+    chunk.  Without it the re-score could be of some other plan and the cross-check against the banked CSV would be comparing different objects.  Reads no label."""
+    absent, bad = [], []
+    for i, t in enumerate(tokens):
+        if t not in banked["poses"]:
+            absent.append(t)
+        elif np.asarray(pick_poses[i], np.float32).tobytes() != np.asarray(banked["poses"][t], np.float32).tobytes():     # @GUARD:G-PICKPLAN-BYTES
+            bad.append(t)
+    return {"ok": bool(len(tokens) > 0 and not bad and not absent), "n": len(tokens), "n_bad": len(bad), "n_absent_from_banked": len(absent), "bad_examples": bad[:5], "absent_examples": absent[:5]}
+
+
+def crosscheck_rescored_picks(tokens, rescored: tuple, banked: tuple, tol: float = 1e-9) -> dict:
+    """DQ6 (b), the CROSS-CHECK (MM_RULING_C2AMEND.md): P2's picks RE-SCORED through the identical T1 route as the search outputs must reproduce the BANKED CSV rows (six sub-scores and PDMS) to <= tol, for EVERY token of the
+    chunk (a superset of the planted-identity tokens).  The re-score, not the banked CSV, is the paired delta's baseline; this check says the route is the one P2's 88.82 was measured on.  A NaN is a mismatch (it compares False).
+    `rescored` / `banked` = (sub [n,6], pdms [n]) in the same token order."""
+    n = len(tokens)
+    rs, rp, bs, bp = (np.asarray(x, np.float64) for x in (rescored[0], rescored[1], banked[0], banked[1]))
+    if n == 0 or rs.shape != (n, 6) or bs.shape != (n, 6) or rp.shape != (n,) or bp.shape != (n,):
+        return {"ok": False, "n": n, "n_bad": n, "max_abs_diff": float("nan"), "tol": tol, "bad_examples": [], "reason": f"shapes {rs.shape} {bs.shape} {rp.shape} {bp.shape} for {n} tokens"}
+    d = np.maximum(np.abs(rs - bs).max(1), np.abs(rp - bp))
+    bad = np.nonzero(~(d <= tol))[0]
+    ok = bool(n > 0 and len(bad) == 0)                                                      # @GUARD:G-PICKX-DIFF
+    return {"ok": ok, "n": n, "n_bad": int(len(bad)), "max_abs_diff": float(np.max(d)) if np.isfinite(d).all() else float("nan"), "tol": tol, "bad_examples": [tokens[int(i)] for i in bad[:5]]}
+
+
+def t1_planted_identity(tokens, pick_poses, pick_rows: tuple, banked_csv_rows: tuple, run_scores, tol: float = 1e-9, shift_m: float = 0.5) -> dict:
     """The label-path check of the T1 route, per chunk (the analogue of label_stepB's planted identity), on the K tokens given:
-      * IDENTITY  the pick's own seam, put through the SAME harness route as every search output, must reproduce P2's BANKED per-token row (six sub-scores and PDMS) to <= tol;
-      * CONTROL   the same plan shifted `shift_m` ahead must change at least one token's PDMS (so the identity is not a probe that cannot read a difference).
+      * IDENTITY  the pick's own plan, scored through the SAME harness route as every search output (`pick_rows` = those K rows out of the chunk-wide pick RE-SCORE, DQ6 (b); no separate call is spent on them), must
+                  reproduce P2's BANKED per-token row (six sub-scores and PDMS) to <= tol;
+      * CONTROL   the same plan shifted `shift_m` ahead, sent through the route by `run_scores`, must change at least one token's PDMS (so the identity is not a probe that cannot read a difference).
     `run_scores(poses [K,8,3]) -> (sub [K,6], pdms [K])` is the injected route (the real one writes a seam and runs the harness); `banked_csv_rows` = (sub, pdms) of the SAME K tokens from the banked CSV."""
     bsub, bpdms = banked_csv_rows
-    s0, p0 = run_scores(np.asarray(pick_poses, np.float32))
+    s0, p0 = pick_rows
     d = max(float(np.max(np.abs(np.asarray(s0) - np.asarray(bsub)))), float(np.max(np.abs(np.asarray(p0) - np.asarray(bpdms))))) if len(tokens) else float("nan")
     sh = np.array(pick_poses, np.float32, copy=True)
     sh[:, :, 0] += np.float32(shift_m)

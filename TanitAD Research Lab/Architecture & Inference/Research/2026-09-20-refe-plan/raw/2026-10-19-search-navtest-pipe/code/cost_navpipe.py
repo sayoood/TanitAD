@@ -27,6 +27,8 @@ CTX_B = 3_932_160
 GiB = 2 ** 30
 BRIDGE_S = 180.0                       # ESTIMATED: the certified bridge (l2fresh bridge_g2b) is ~3 min, 3 tokens x 2 arms; NOT measured for this builder
 MIN_FREE = 6.0
+O4_SEARCH_SCALE = 2.9                  # ESTIMATED, INHERITED: MM_RULING_DOSE.md / AMENDMENT_DOSE_DRAFT.md ("about 2.9x per token" for the O4 config: M 256 / elites 32 / widen 2.0 vs C8's 64 / 8 / 1.0); not re-measured here
+T1_K = 24                              # tokens in the planted identity's control call
 
 
 def lsq(x, y):
@@ -115,9 +117,19 @@ def main(argv=None):
     other = round(sum(fx["other_s"]) / len(fx["other_s"]), 1) if fx else 90.0
     other_src = f"fixture mean over {fx['chunks_done']} chunks (includes the fixture's bundle slicer, so slightly high)" if fx else "ESTIMATED 90 s"
 
+    def t1_calls_s(n):
+        """MM_RULING_C2AMEND.md DQ6 (b): 3 seed calls over the chunk, ONE call re-scoring P2's picks over the chunk (it also serves as the planted identity's pick rows), ONE control call of K = 24 tokens.
+        Before DQ6 (b): 3 seed calls + 2 identity calls of K tokens.  The number of calls is the same (5); only the pick call grew from K to n tokens."""
+        return 3 * (hfixed + hslope * n) + (hfixed + hslope * n) + (hfixed + hslope * min(T1_K, n))
+
+    def t1_calls_before_dq6_s(n):
+        return 3 * (hfixed + hslope * n) + 2 * (hfixed + hslope * min(T1_K, n))
+
     def cpu_navtest(n, div):
-        t1_calls = 3 * (hfixed + hslope * n) + 2 * (hfixed + hslope * min(24, n))
-        return search_rate * n / div + t1_calls + other
+        return search_rate * n / div + t1_calls_s(n) + other
+
+    def cpu_navtest_o4(n, div):
+        return search_rate * O4_SEARCH_SCALE * n / div + t1_calls_s(n) + other
 
     def cpu_s0(n, div):
         return search_rate * n / div + label_rate * n + other
@@ -127,13 +139,15 @@ def main(argv=None):
                      "label_s_per_token_used": label_rate, "label_s_per_token_spc_5_plans": label_spc, "label_96_plans_upper_bound": label96, "harness_fixed_s": round(hfixed, 2), "harness_s_per_token": round(hslope, 5),
                      "sha256_MiB_per_s": round(thr), "cpu_count": ncpu}, "fixture": fx}
     rows = {}
-    for name, chunks, cpu in (("navtest (C2, T1 route)", nav_chunks, cpu_navtest), ("S0 bank (label route)", s0_chunks, cpu_s0)):
+    for name, chunks, cpu in (("navtest (C2, T1 route)", nav_chunks, cpu_navtest), ("navtest (C2, T1 route), O4 config", nav_chunks, cpu_navtest_o4), ("S0 bank (label route)", s0_chunks, cpu_s0)):
         N = sum(chunks)
         gpu_h = (gpu_fixed * len(chunks) + gpu_slope * N + BRIDGE_S) / 3600
         r = {"chunks": len(chunks), "tokens": N, "max_chunk": max(chunks), "ctx_total_GiB": round(N * CTX_B / GiB, 1), "ctx_peak_chunk_GiB": round(max(chunks) * CTX_B / GiB, 2), "gpu_h": round(gpu_h, 2),
-             "search_cpu_h_1proc": round(search_rate * N / 3600, 2)}
+             "search_cpu_h_1proc": round(search_rate * (O4_SEARCH_SCALE if "O4" in name else 1.0) * N / 3600, 2)}
         if "navtest" in name:
-            r["score_h"] = round(sum(3 * (hfixed + hslope * n) + 2 * (hfixed + hslope * min(24, n)) for n in chunks) / 3600, 2)
+            r["score_h"] = round(sum(t1_calls_s(n) for n in chunks) / 3600, 2)
+            r["score_h_before_dq6"] = round(sum(t1_calls_before_dq6_s(n) for n in chunks) / 3600, 2)
+            r["dq6_extra_harness_min"] = round(sum(t1_calls_s(n) - t1_calls_before_dq6_s(n) for n in chunks) / 60, 1)
         else:
             r["score_h"] = round(label_rate * N / 3600, 2)
         for tag, div, pre in (("seq_1proc", 1, False), ("seq_2proc", 2, False), ("prefetch_1proc", 1, True), ("prefetch_2proc", 2, True)):
@@ -163,15 +177,17 @@ def main(argv=None):
     L.append(f"| sha256 of ctx.npy | {thr:.0f} MiB/s ({CTX_B / 2 ** 20 * 1000 / thr:.0f} s per 1000-token chunk, twice per chunk) | MEASURED here (in memory) | this script |")
     L.append(f"| CPU threads on this box | {ncpu} | MEASURED | os.cpu_count() |\n")
     L.append("## 2. Whole-run projection (ESTIMATED: the rates above times the real chunk plans; the GPU lock wait is NOT counted, the B chain waited 2 h 20 min for it on 2026-10-19)\n")
-    L.append("| | navtest C2 (T1 route) | S0 bank (label route) |\n|---|---|---|")
-    a_, b_ = rows["navtest (C2, T1 route)"], rows["S0 bank (label route)"]
+    L.append("| | navtest C2 (T1 route), C8 | navtest C2, O4 (search x%.1f, ESTIMATED) | S0 bank (label route) |\n|---|---|---|---|" % O4_SEARCH_SCALE)
+    a_, o_, b_ = rows["navtest (C2, T1 route)"], rows["navtest (C2, T1 route), O4 config"], rows["S0 bank (label route)"]
     for lab, k in (("chunks (cap 1000, whole logs)", "chunks"), ("tokens", "tokens"), ("largest chunk", "max_chunk"), ("ctx bytes, all chunks (never on disk at once) GiB", "ctx_total_GiB"), ("ctx peak, one chunk, GiB", "ctx_peak_chunk_GiB"),
-                   ("GPU hours (bundle forward + bridge)", "gpu_h"), ("search CPU hours, 1 process", "search_cpu_h_1proc"), ("scoring hours (T1 harness: 3 seed calls + 2 identity calls of K=24 per chunk / label_stepB)", "score_h"),
+                   ("GPU hours (bundle forward + bridge)", "gpu_h"), ("search CPU hours, 1 process", "search_cpu_h_1proc"), ("scoring hours (T1 harness, DQ6 (b): 3 seed calls + 1 pick re-score call over the chunk + 1 control call of K=24 per chunk / label_stepB)", "score_h"),
                    ("WALL h, sequential, 1 search process", "wall_h_seq_1proc"), ("WALL h, sequential, 2 search processes", "wall_h_seq_2proc"), ("WALL h, prefetch, 1 search process", "wall_h_prefetch_1proc"),
                    ("WALL h, prefetch, 2 search processes", "wall_h_prefetch_2proc"), ("PEAK DISK on the work volume, sequential, GiB (largest ctx + the 6 GiB guard floor)", "peak_disk_GiB_sequential"),
                    ("PEAK DISK with prefetch, GiB", "peak_disk_GiB_prefetch"), ("banked outputs kept, all chunks, GiB", "banked_GiB_total")):
-        L.append(f"| {lab} | {a_[k]} | {b_[k]} |")
+        L.append(f"| {lab} | {a_[k]} | {o_[k]} | {b_[k]} |")
     L.append("\n- 2 search processes is ESTIMATED as a clean halving of the search term; it was NEVER measured, and `torch` thread contention is a known trap (TRAPS.md). The chain allows at most 2 and the fixture ran with 1.")
+    L.append(f"- **DQ6 (b) (MM_RULING_C2AMEND.md): P2's picks are RE-SCORED through the same T1 route.** Extra harness time: **{a_['dq6_extra_harness_min']} min** over the 14 chunks (ESTIMATED: {hslope:.4f} s/token x (chunk tokens - {T1_K}) summed; the call count per chunk stays 5, the pick call just grows from {T1_K} tokens to the whole chunk), scoring {a_['score_h_before_dq6']} h -> {a_['score_h']} h. The draft's \"+18 min\" is the per-token term alone; no extra call overhead is added because the re-score REPLACES the planted identity's pick call.")
+    L.append(f"- **O4 (MM_RULING_C2AMEND.md ADDITION): the GPU stage is unchanged (the forward is the same); the CPU search scales by about {O4_SEARCH_SCALE}x per token (ESTIMATED, INHERITED from MM_RULING_DOSE.md, not re-measured here)**: search CPU {a_['search_cpu_h_1proc']} h -> {o_['search_cpu_h_1proc']} h on 1 process, wall {a_['wall_h_seq_1proc']} h -> {o_['wall_h_seq_1proc']} h sequential. The Thor per-token latency scales the same way (UNMEASURED).")
     L.append("- The S0 row's GPU hours agree with the master plan's own figure (`srttc_s0/run/plan/NOTES.md`: 8,922 tokens at 1.44 s/token = 3.6 GPU-h).")
     L.append(f"- Per-chunk overhead outside bundle / search / score (gate = checkpoint + ctx load, identity, banking, hashing): {other} s, source: {other_src}.\n")
     f = out["fan_label_job_if_needed"]

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """SEARCH-NAVTEST-PIPE chain: the chunked navtest pipeline for SEARCH-P2-CONFIRM READ C2.  NOT LAUNCHED by the build.
 
-    c2 mode      G-SEAL + the C1 LICENCE (first, always; MM_RULING_C2_LICENCE.md) -> pins vs files -> disk -> per chunk [ bundle(GPU, lock) -> G-IDENT -> G-REACH -> search P2HEAD x3 seeds -> T1 score(seam -> W3 harness) + T1 planted identity -> bank -> delete ctx ]
-                 -> merge (sorted-token order) -> analysis (DQ3 terms).   Reads no label until the seal passes.
+    c2 mode      G-SEAL + the C1 LICENCE + the dose result + the CONFIG (C8 or O4: exactly the one `c2_config` returns) + the FIXTURE RECORD (reads IDENTICAL, code shas == the sealed pins) (first, always; MM_RULING_C2_LICENCE.md,
+                 MM_RULING_C2AMEND.md) -> pins vs files -> the ONE-RUN marker (one C2 run per H-SEARCH-P2-1) -> disk -> per chunk [ bundle(GPU, lock) -> G-IDENT -> G-REACH -> search P2HEAD x3 seeds -> T1 re-score of P2's PICK
+                 (DQ6 (b); cross-checked against the banked CSV, a mismatch STOPS) + T1 score of the 3 seeds + T1 planted identity -> bank -> delete ctx ] -> merge (sorted-token order) -> analysis (DQ3 terms; a safety miss in
+                 the headline line, DQ5).   Reads no label until the seal passes.
     s0bank mode  (MM scope addition 2026-10-19; TOKEN-LIST GENERIC) the same pipeline on ANY pinned token list, scored by the label-only PDM route (`label_stepB`, NOT the T1 harness): G-SEAL(S0) -> pins -> G-NOT-NAVTEST ->
                  per chunk [ bundle(GPU, lock) -> fan-label join -> G-IDENT vs P2's own S0 fan files -> G-REACH -> search -> label_stepB + its planted identity -> bank -> delete ctx ] -> merge.  Output = the Step B / C1
                  npz triple that `epadm_searchbank.py build` reads.  The seal is a SEALED S0-bank amendment sha (no admission record: EP-ADMISSION is READ on this bank).
@@ -11,6 +13,7 @@
 
 Resumable: a stage whose output validates is skipped; an output that does not validate after its child ran is a STOP, never a pass.  The per-chunk state file is `<work>/navpipe_state.json`.
 Markers ZZNAVPIPE_* start their line.  Exit: 0 done, 3 gate, 4 timeout, 5 seal / data refusal, 6 search, 7 score, 8 analysis, 9 crash.   python navpipe_chain.py --mode {navtest|c2,s0bank,fixture} [--tokens FILE] ... [--dry-run]
+  navtest: --amendment F --amendment-sha256 H --c1-result F --c1-result-sha256 H --dose-result F --dose-result-sha256 H --config F --fixture-record F [--table-ref F]   (no default config)
 """
 from __future__ import annotations
 
@@ -28,22 +31,21 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PKG = os.path.dirname(HERE)
-STEPB_CODE = os.environ.get("SPC_STEPB_CODE", "C:/Users/Admin/par18/l2stepb/code")
-L1_CODE = os.environ.get("L1_CODE", "C:/Users/Admin/par18/l1run/code")
-for _p in (HERE, STEPB_CODE, L1_CODE):
-    if _p not in sys.path:
-        sys.path.insert(0, _p)
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
 import navpipe_core as NC  # noqa: E402
 from navpipe_core import Refusal  # noqa: E402
+NC.add_code_paths()                                    # Step B's and L1's code: the repo-relative sibling packages (navpipe_core.STEPB_CODE / L1_CODE); SPC_STEPB_CODE / L1_CODE override
+STEPB_CODE, L1_CODE = NC.STEPB_CODE, NC.L1_CODE
 
 PY_CPU = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
 PY_GPU = "C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe"
 PY_LABEL = "C:/Users/Admin/navsim-crun/venv/Scripts/python.exe"
 CKPT = "D:/Projects/TanitAD/data/refe_runs_eval/p2/model_final.pt"
 REFE_DIR = "C:/Users/Admin/par18/l1run/tree_hybrid/refe"
-CONFIG = "C:/Users/Admin/par18/l2stepb/raw/stepB_config.json"
+CONFIG = NC.CONFIG_C8                                                                              # the C8 file: the s0bank / fixture default.  The navtest (C2) mode takes --config (C8 or O4) and refuses a choice `c2_config` did not make.
 HEAD_S0 = "D:/Projects/TanitAD-artifacts/l2_fresh_stepA/heads/final_head_s0.npz"
-LAUNCHER = os.path.join(L1_CODE, "launch_stepA_ctype.py")
+LAUNCHER = NC.find_launcher()
 NAVTEST_TOKENS = "D:/Projects/TanitAD/data/refe_navtest/navtest_full_tokens.json"
 BANKED_SEAM = "D:/Projects/TanitAD/data/refe_navtest/seams/stage2_p2_full.npz"
 BANKED_CSV = "D:/Projects/TanitAD/data/refe_navtest/score/refe_stage2_p2_full/refe_stage2_p2_full.csv"
@@ -86,7 +88,8 @@ def fixture_slice(src_dir: str, tokens: list, out_dir: str) -> dict:
 class Cfg:
     def __init__(self, work, mode="c2", amendment=None, amendment_sha256=None, c1_result=None, c1_result_sha256=None, cap=1000, procs=1, prefetch=0, min_free_gib=NC.MIN_FREE_GIB, min_ram_gb=3.0, max_chunks=None,
                  token_file=NAVTEST_TOKENS, banked_seam=BANKED_SEAM, banked_csv=BANKED_CSV, ckpt=CKPT, config=CONFIG, head_s0=HEAD_S0, refe_dir=REFE_DIR, launcher=LAUNCHER, py_cpu=PY_CPU, py_gpu=PY_GPU,
-                 py_label=PY_LABEL, harness=HARNESS, plan_label=PLAN_LABEL, src_bundle=SRC_BUNDLE, code_dir=HERE, threads=4, hash_ckpt=True, t1id_k=T1ID_K, label_script=None, harness_py=None, expect_tokens=(12146, 136), reference_kind=None, reference_path=None, table_ref=None, fan_labels=None, navtest_tokens=NAVTEST_TOKENS):
+                 py_label=PY_LABEL, harness=HARNESS, plan_label=PLAN_LABEL, src_bundle=SRC_BUNDLE, code_dir=HERE, threads=4, hash_ckpt=True, t1id_k=T1ID_K, label_script=None, harness_py=None, expect_tokens=(12146, 136), reference_kind=None, reference_path=None, table_ref=None, fan_labels=None, navtest_tokens=NAVTEST_TOKENS,
+                 dose_result=None, dose_result_sha256=None, dose_chain=None, fixture_record=None, one_run_marker=NC.ONE_RUN_MARKER):
         self.__dict__.update({k: v for k, v in locals().items() if k != "self"})
         self.work = os.path.abspath(work)
         self.reference_kind = reference_kind or ("s0fan" if mode == "s0bank" else "seam")
@@ -149,30 +152,23 @@ class Chain:
     # ------------------------------------------------------------------------------------------------ gates before any chunk
     def check_c2(self):
         c = self.cfg
-        self.seal = NC.check_c2_seal(c.amendment, c.amendment_sha256, c.c1_result, c.c1_result_sha256, c.code_dir)   # G-SEAL + the C1 LICENCE: FIRST, before any data is opened   @GUARD:C-SEAL-FIRST
+        self.seal = NC.check_c2_seal(c.amendment, c.amendment_sha256, c.c1_result, c.c1_result_sha256, c.code_dir, config=c.config, dose_result=c.dose_result, dose_result_sha256=c.dose_result_sha256, fixture_record=c.fixture_record, dose_chain=c.dose_chain)   # G-SEAL + the C1 LICENCE + the CONFIG (C8 or O4, == c2_config) + the FIXTURE RECORD: FIRST, before any data is opened   @GUARD:C-SEAL-FIRST
         pins = self.seal["pins"]
-        lic = self.seal["licence"]
+        lic, sel = self.seal["licence"], self.seal["selection"]
         self.emit("SEAL_OK", self.seal["amendment_sha256"][:12])
-        self.emit("LICENCE_OK", lic["outcome"], "safety", json.dumps(lic["safety_points"]), "moved", f"{lic['moved_share_inert_frac_moved']:.4f}", "c1_result", lic["c1_result_sha256"][:12])
-        bad = []
-        if NC.sha256_file(c.token_file) != pins["token_file_sha256"]:
-            bad.append("token_file_sha256")
-        if c.hash_ckpt and NC.sha256_file(c.ckpt) != pins["ckpt_sha256"]:
-            bad.append("ckpt_sha256")
-        if NC.sha_lf(c.config) != pins["config_sha256"]:
-            bad.append("config_sha256")
-        if NC.sha256_file(c.head_s0) != pins["head_s0_sha256"]:
-            bad.append("head_s0_sha256")
-        if NC.sha256_file(c.banked_seam) != pins["banked_seam_sha256"]:
-            bad.append("banked_seam_sha256")
-        if NC.sha256_file(c.banked_csv) != pins["banked_csv_sha256"]:
-            bad.append("banked_csv_sha256")
-        if NC.sha_lf(c.harness) != pins["harness_script_sha256"] or NC.sha_lf(c.harness) != HARNESS_SHA256_LF:
-            bad.append("harness_script_sha256")
-        if NC.sha_lf(os.path.join(PKG, "ref", "refe_navtest_seam.py")) != pins["seam_module_sha256"]:
-            bad.append("seam_module_sha256")
+        self.emit("LICENCE_OK", lic["outcome"], "safety", json.dumps(lic["safety_points"]), "moved", f"{lic['moved_share_inert_frac_moved']:.4f}", "c1_result", lic["c1_result_sha256"][:12], "licensing_read", lic["licensing_read"])
+        self.emit("CONFIG_OK", sel["config"], f"row {sel['row']}", "config", sel["config_sha256"][:12], "dose_result", sel["dose_result_sha256"][:12], "dose_chain", sel["dose_chain_sha256"][:12])
+        self.emit("FIXTURE_RECORD_OK", self.seal["fixture"]["verdict"], self.seal["fixture"]["fixture_record_sha256"][:12])
+        bad = NC.file_pin_mismatches(pins, {"token_file_sha256": c.token_file, "ckpt_sha256": c.ckpt if c.hash_ckpt else None, "config_sha256": c.config, "head_s0_sha256": c.head_s0, "banked_seam_sha256": c.banked_seam,
+                                            "banked_csv_sha256": c.banked_csv, "harness_script_sha256": c.harness, "seam_module_sha256": os.path.join(PKG, "ref", "refe_navtest_seam.py"),
+                                            "dose_chain_sha256": c.dose_chain or NC.DOSE_CHAIN})
+        if NC.sha_lf(c.harness) != HARNESS_SHA256_LF:
+            bad.append("harness_script_sha256 (this code's constant)")
         if bad:
             raise Refusal("seal", "SEAL_PIN_MISMATCH", ";".join(bad))
+        ident = {"amendment_sha256": self.seal["amendment_sha256"], "config_sha256": sel["config_sha256"], "c1_result_sha256": sel["c1_result_sha256"], "dose_result_sha256": sel["dose_result_sha256"], "work": NC.norm_work(c.work)}
+        self.one_run_ident, self.one_run = ident, NC.one_run_check(c.one_run_marker, ident)        # ONE look per H-SEARCH-P2-1: a consumed or foreign marker refuses here, before any data is opened
+        self.emit("ONE_RUN_" + self.one_run, NC.HYPOTHESIS, sel["config"])
         self.token_doc = json.load(open(c.token_file, encoding="utf-8"))
         plan = NC.plan_doc(self.token_doc, pins["token_file_sha256"], c.cap)
         if plan["plan_sha256"] != pins["chunk_plan_sha256"] or (plan["n_tokens"], plan["n_logs"]) != tuple(c.expect_tokens):
@@ -180,7 +176,7 @@ class Chain:
         self.plan = plan
         os.makedirs(c.work, exist_ok=True)
         json.dump(plan, open(c.d("chunk_plan.json"), "w"), indent=1)
-        json.dump({"amendment_sha256": self.seal["amendment_sha256"], "licence": lic}, open(c.d("licence_c1.json"), "w"), indent=1)       # the licence as READ BY CODE, banked beside the plan
+        json.dump({"amendment_sha256": self.seal["amendment_sha256"], "licence": lic, "selection": sel, "fixture": self.seal["fixture"]}, open(c.d("licence_c1.json"), "w"), indent=1)       # the licence and the config choice as READ BY CODE, banked beside the plan
         self.emit("DATA_OK", plan["n_tokens"], "tokens", plan["n_logs"], "logs", len(plan["chunks"]), "chunks", plan["plan_sha256"][:12])
 
     def check_s0bank(self):
@@ -415,8 +411,12 @@ class Chain:
             ident = str(lab["identity"])
             toks_ok = [str(t) for t in lab["token"]] == [str(t) for t in so["token"]]
             fin = bool(np.isfinite(lab["pdms"]).all() and np.isfinite(lab["sub"]).all())
+            n_ = len(lab["token"])
+            pick_ok = bool("pick_sub" in lab.files and "pick_pdms" in lab.files and lab["pick_sub"].shape == (n_, 6) and lab["pick_pdms"].shape == (n_,) and np.isfinite(lab["pick_sub"]).all() and np.isfinite(lab["pick_pdms"]).all())
         except (OSError, KeyError, ValueError):
             return False, "unreadable"
+        if self.cfg.mode == "c2" and not pick_ok:                                                   # @GUARD:C-SCORES-PICK
+            return False, "DQ6(b): the scores carry no (finite) RE-SCORED picks; a file written before the re-score existed is not accepted"
         m = re.search(r"\{.*\}", ident)
         try:
             j = json.loads(m.group(0)) if m else {}
@@ -454,9 +454,13 @@ class Chain:
         raise Refusal("score", "HARNESS_NOT_PASS", f"{label}: rc/status/failures {last}")
 
     def stage_score_c2(self, cid, toks, merged, scores):
+        """T1 scoring of one chunk.  DQ6 (b) (MM_RULING_C2AMEND.md): P2's PICKS are RE-SCORED through the identical route as the search outputs (the pick's `pick_exec` -> `exec_to_poses` -> seam npz -> W3 harness -> CSV), so the paired
+        delta's two arms are scored by the same code on the same harness by construction.  The BANKED CSV stays only as a CROSS-CHECK: the re-scored rows must equal it for every token of the chunk, else the chain STOPS with
+        ZZNAVPIPE_PICK_RESCORE_MISMATCH.  The pick is scored FIRST, so a route that is not the one P2's 88.82 was measured on stops the chain before the three seed calls are spent."""
         c = self.cfg
         so = {k: v for k, v in np.load(merged, allow_pickle=False).items()}
-        b = np.load(c.cdir(cid, "bundle", "bundle.npz"), allow_pickle=False)
+        if "pick_exec" not in so:
+            raise Refusal("score", "PICK_EXEC_MISSING", f"chunk {cid}: the search output carries no `pick_exec` (P2's pick plan, which DQ6 (b) re-scores)")
         banked = getattr(self, "_banked", None) or NC.load_banked_seam(c.banked_seam)
         self._banked = banked
         tl = self.token_doc["token_log"]
@@ -468,32 +472,44 @@ class Chain:
         os.makedirs(seam_dir, exist_ok=True)
         tf = NC.write_tokens_file(os.path.join(seam_dir, "tokens.json"), toks, tl)
         extra = {}
+        # ---- DQ6 (b): P2's pick, re-scored through the same route
+        pick_poses = NC.exec_to_poses(so["pick_exec"])
+        pp = NC.check_pick_plan_is_banked(pick_poses, toks, banked)
+        if not pp["ok"]:                                                                            # @GUARD:C-PICKPLAN-STOPS
+            self.emit("PICK_PLAN_NOT_BANKED", cid, json.dumps(pp)[:300])
+            raise Refusal("score", "G_PICK_PLAN_NOT_BANKED", json.dumps(pp)[:300])
+        sp0 = NC.write_seam(os.path.join(seam_dir, "seam_pick.npz"), toks, pick_poses, fps, f"NAVPIPE_c{cid:02d}_pick")
+        csv0 = self.run_harness(f"refe_navpipe_c{cid:02d}_pick", sp0, tf)
+        psub, ppdms = NC.read_harness_csv(csv0, toks)
+        extra["seam_pick"], extra["csv_pick"] = sp0, csv0
+        xc = NC.crosscheck_rescored_picks(toks, (psub, ppdms), NC.read_harness_csv(c.banked_csv, toks))
+        if not xc["ok"]:                                                                            # @GUARD:C-PICKX-STOPS
+            self.emit("PICK_RESCORE_MISMATCH", cid, f"{xc['n_bad']} of {xc['n']} tokens differ from the banked CSV; max |diff| {xc['max_abs_diff']}; e.g. {xc['bad_examples'][:2]}")
+            raise Refusal("score", "G_PICK_RESCORE_DIFFERS_FROM_BANKED", json.dumps(xc)[:300])
+        self.emit("PICK_RESCORE_OK", cid, f"{xc['n']} tokens equal the banked CSV; max |diff| {xc['max_abs_diff']:.3e}")
+        # ---- the search outputs, 3 seeds, the same route
         for s in range(S):
             poses = NC.exec_to_poses(so["exec"][:, s])
             sp = NC.write_seam(os.path.join(seam_dir, f"seam_s{s}.npz"), toks, poses, fps, f"NAVPIPE_c{cid:02d}_s{s}")
             csvp = self.run_harness(f"refe_navpipe_c{cid:02d}_s{s}", sp, tf)
             sub[:, s], pdms[:, s] = NC.read_harness_csv(csvp, toks)
             extra[f"seam_s{s}"], extra[f"csv_s{s}"] = sp, csvp
-        # the planted identity: K tokens, the PICK's own plan through the same route vs P2's banked row, plus the +0.5 m control
+        # ---- the planted identity: K tokens' re-scored picks (out of the call above) vs P2's banked row, plus the +0.5 m control through the same route
         K = min(c.t1id_k, n)
         order = sorted(range(n), key=lambda i: __import__("hashlib").sha1(toks[i].encode()).hexdigest())[:K]
         idt = [toks[i] for i in sorted(order)]
         ix = {t: i for i, t in enumerate(toks)}
-        pick_ex = NC.repair_last_heading(np.asarray(b["traj_raw"], np.float32)[np.arange(n), np.asarray(b["pick"], np.int64)])
-        pick_poses = NC.exec_to_poses(pick_ex[[ix[t] for t in idt]])
+        rows = [ix[t] for t in idt]
         tfk = NC.write_tokens_file(os.path.join(seam_dir, "tokens_id.json"), idt, tl)
-        calls = {"n": 0}
 
         def run_scores(poses):
-            calls["n"] += 1
-            lab = f"refe_navpipe_c{cid:02d}_id{calls['n']}"
-            sp = NC.write_seam(os.path.join(seam_dir, f"seam_id{calls['n']}.npz"), idt, poses, fps, f"NAVPIPE_c{cid:02d}_id")
-            return NC.read_harness_csv(self.run_harness(lab, sp, tfk), idt)
+            sp = NC.write_seam(os.path.join(seam_dir, "seam_ctl.npz"), idt, poses, fps, f"NAVPIPE_c{cid:02d}_ctl")
+            return NC.read_harness_csv(self.run_harness(f"refe_navpipe_c{cid:02d}_ctl", sp, tfk), idt)
 
         banked_rows = NC.read_harness_csv(c.banked_csv, idt)
-        rec = NC.t1_planted_identity(idt, pick_poses, banked_rows, run_scores)
-        rec = {**rec, "passed": rec["identity_ok"], "control_ok": rec["control_ok"]}
-        np.savez(scores, sub=sub, pdms=pdms, token=np.array(toks), identity=np.array(json.dumps(rec)), sub_names=np.array(NC.SUBS))
+        rec = NC.t1_planted_identity(idt, pick_poses[rows], (psub[rows], ppdms[rows]), banked_rows, run_scores)
+        rec = {**rec, "passed": rec["identity_ok"], "control_ok": rec["control_ok"], "pick_crosscheck": xc, "pick_plan": pp}
+        np.savez(scores, sub=sub, pdms=pdms, pick_sub=psub, pick_pdms=ppdms, token=np.array(toks), identity=np.array(json.dumps(rec)), sub_names=np.array(NC.SUBS))
         return rec, extra
 
     def stage_score_fixture(self, cid, toks, merged, scores):
@@ -579,8 +595,8 @@ class Chain:
         ml["bundle_index"] = ms["bundle_index"]
         fin = c.d("final")
         os.makedirs(fin, exist_ok=True)
-        if c.mode == "c2":                                  # T1 has a banked label for the PICK only: the shim bundle has ONE column (the pick's), pick := 0 (memory-light, same arithmetic)
-            sub, pdms = NC.read_harness_csv(c.banked_csv, [str(t) for t in mb["token"]])
+        if c.mode == "c2":                                  # T1 labels the PICK only (its RE-SCORED row, DQ6 (b)): the shim bundle has ONE column (the pick's), pick := 0 (memory-light, same arithmetic)
+            sub, pdms = ml["pick_sub"], ml["pick_pdms"]                                    # DQ6 (b): the baseline is P2's pick RE-SCORED through the same route as the search outputs, not the banked CSV   @GUARD:C-MERGE-RESCORED
             mb = {"token": mb["token"], "log": mb["log"], "pick_real": np.asarray(mb["pick"], np.int64), "pick": np.zeros(N, np.int64), "sub": sub[:, None, :], "pdms": pdms[:, None]}
             ms["arm_argmax_real"] = np.asarray(ms["arm_argmax"], np.int64)
             ms["arm_argmax"] = np.zeros(N, np.int64)
@@ -602,9 +618,16 @@ class Chain:
         if rc != 0 or not os.path.isfile(out):
             raise Refusal("analysis", "ANALYSIS_FAILED", f"rc={rc}")
         res = json.load(open(out))
+        if c.mode == "c2":
+            NC.one_run_finish(c.one_run_marker, NC.sha256_file(out))                                # the endpoint now exists: the ONE look is consumed (a second run of any config is refused)   @GUARD:C-ONERUN-FINISH
         self.emit("ANALYSIS_DONE")
         e = res["endpoint_dPDMS_points"]
-        self.emit("DONE", res.get("outcome", "RULE_MET" if res.get("rule_met") else "RULE_NOT_MET"))
+        head = res.get("outcome", "RULE_MET" if res.get("rule_met") else "RULE_NOT_MET")
+        if res.get("negative"):
+            head += " NEGATIVE"
+        if res.get("safety_miss"):                                                                  # DQ5 (MM_RULING_C2AMEND.md): a safety-family miss is printed IN THE HEADLINE LINE, whatever the outcome   @GUARD:C-HEADLINE-SAFETY
+            head += " SAFETY_MISS " + json.dumps(res["safety_miss"], sort_keys=True)
+        self.emit("DONE", head)
         self.emit("ENDPOINT", f"dPDMS {e['point']:+.4f} [{e['lo']:+.4f}, {e['hi']:+.4f}] points; seed range {res['per_seed_points']['range']:.4f}; points {[round(x, 4) for x in res['per_seed_points']['points']]}")
         for fam in ("LONGITUDINAL", "LATERAL", "TACTICAL"):
             self.emit("FAMILY", fam, json.dumps(res["families"][fam])[:400])
@@ -619,16 +642,39 @@ class Chain:
         rows = fixture_row_compare(os.path.join(fin, "search_merged.npz"), os.path.join(fin, "scores_merged.npz"), BANKED_SEARCH, BANKED_LABELS)
         ok = bool(not diffs and rows["ok"])
         self.emit("FIXTURE_IDENTICAL" if ok else "FIXTURE_DIFFERS", json.dumps({"analysis_blocks_differing": diffs, "rows": rows}))
+        self.write_fixture_record(ok, {"analysis_blocks_differing": diffs, "rows": rows})
         return ok
+
+    def write_fixture_record(self, ok, detail):
+        """DQ7 (b): the fixture chain's own RECORD (verdict, the sha256 of every code file it ran, its token list's sha), `<work>/FIXTURE_RECORD.json`.  C2 refuses unless this reads IDENTICAL and its code shas equal the sealed pins.
+        A file edited while the fixture ran makes the verdict DIFFERS (the code that ran is not the code on disk now)."""
+        c = self.cfg
+        detail = dict(detail or {})
+        verdict = "DIFFERS"
+        if ok:                                                                                      # @GUARD:C-FIXREC-VERDICT
+            verdict = "IDENTICAL"
+        if verdict == "IDENTICAL" and NC.code_shas(c.code_dir) != self.code_at_start:               # @GUARD:C-FIXREC-CODE-STABLE
+            verdict = "DIFFERS"
+            detail["code_changed_during_the_run"] = True
+        res_p = c.d("final", "RESULT_NAVPIPE.json")
+        rec = NC.make_fixture_record(verdict, c.code_dir, NC.tokens_sha256(sorted(self.token_doc["tokens"])), self.plan["plan_sha256"], NC.sha256_file(res_p) if os.path.isfile(res_p) else None, self.pins.get("ckpt_sha256"),
+                                     self.pins["config_sha256"], detail)
+        path = c.d("FIXTURE_RECORD.json")
+        json.dump(rec, open(path, "w", encoding="utf-8", newline="\n"), indent=1, sort_keys=True)
+        self.emit("FIXTURE_RECORD", verdict, NC.sha256_file(path))
+        return path
 
     # ------------------------------------------------------------------------------------------------ the run
     def run(self):
         c = self.cfg
         try:
             self.emit("START", c.mode)
+            self.code_at_start = NC.code_shas(c.code_dir)
             if c.mode == "c2":
                 self.check_c2()
                 self.pins = self.seal["pins"]
+                if self.one_run == "NEW":                                                           # the marker is written before the first navtest token is touched; a RESUME of this very run keeps its own
+                    NC.one_run_start(c.one_run_marker, self.one_run_ident, self.seal["selection"]["config"])
                 from make_navtest_bundle import make_plan
                 json.dump(make_plan(self.token_doc), open(c.d("navtest_plan.json"), "w"))
                 self.make_bridge_sample()
@@ -757,6 +803,10 @@ def main(argv=None):
     ap.add_argument("--amendment-sha256", default=None)
     ap.add_argument("--c1-result", default=None, help="navtest: C1's RESULT_SPC.json, with its chain_state.json beside it (the C1 licence, MM_RULING_C2_LICENCE.md)")
     ap.add_argument("--c1-result-sha256", default=None, help="navtest: the sha256 of that RESULT_SPC.json, typed by the operator from the register (the pin)")
+    ap.add_argument("--config", default=None, help="navtest: the search config file, stepB_config.json (C8) or stepB_config_O4.json (O4); it must be the one `c2_config(c1_read, dose_read)` returns")
+    ap.add_argument("--dose-result", default=None, help="navtest: the dose arm's RESULT_DOSE.json (with its chain_state.json beside it); needed for either config, because c2_config takes both reads")
+    ap.add_argument("--dose-result-sha256", default=None, help="navtest: the sha256 of that RESULT_DOSE.json, typed by the operator from the register")
+    ap.add_argument("--fixture-record", default=None, help="navtest: the fixture chain's FIXTURE_RECORD.json (verdict IDENTICAL, code shas == the sealed pins); the amendment pins its sha256")
     ap.add_argument("--procs", type=int, default=1, choices=(1, 2))
     ap.add_argument("--prefetch", type=int, default=0, choices=(0, 1))
     ap.add_argument("--max-chunks", type=int, default=None)
@@ -779,6 +829,8 @@ def main(argv=None):
         kw["table_ref"] = a.table_ref
     if a.expect_tokens:
         kw["expect_tokens"] = tuple(int(x) for x in a.expect_tokens.split(","))
+    if mode == "c2":
+        kw.update(config=a.config, dose_result=a.dose_result, dose_result_sha256=a.dose_result_sha256, fixture_record=a.fixture_record)       # no default config: C8 or O4 is named, and checked against c2_config
     cfg = Cfg(work, mode=mode, amendment=a.amendment, amendment_sha256=a.amendment_sha256, c1_result=a.c1_result, c1_result_sha256=a.c1_result_sha256, cap=a.cap or (110 if mode == "fixture" else 1000), procs=a.procs,
               prefetch=a.prefetch, max_chunks=a.max_chunks, min_ram_gb=a.min_ram_gb, min_free_gib=a.min_free_gib, **kw)
     ch = Chain(cfg)

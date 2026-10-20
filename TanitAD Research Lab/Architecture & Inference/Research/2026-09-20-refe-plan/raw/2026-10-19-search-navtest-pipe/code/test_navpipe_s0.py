@@ -319,13 +319,14 @@ def test_a_c2_amendment_cannot_unlock_the_s0_bank_nor_the_reverse(tmp_path):
     (tmp_path / "c2").mkdir()
     am, sha, c1, pins = T.make_seal(tmp_path / "c2")
     raises("seal", NC.check_s0_seal, am, sha)                                                   # a navtest amendment (licence pins, no S0 pins) is no S0 amendment
-    e = raises("seal", NC.check_c2_seal, w.am0, w.sha0, c1.path, c1.sha)                        # an S0 amendment is no navtest amendment, even with a valid C1 licence in hand
+    e = raises("seal", T.check_c2_seal, w.am0, w.sha0, c1.path, c1.sha)                        # an S0 amendment is no navtest amendment, even with a valid C1 licence in hand
     assert e.code == 5
     p2 = dict(w.pins0)
     p2.update({"c1_prereg_sha256": T.PLANT_PREREG, "licence_ruling_sha256": NC.LICENCE_RULING_SHA256, "inference_cost_status": "UNMEASURED", "bar_dpdms_points": "0.1", "bar_safety_points": "-0.25",
-               "banked_seam_sha256": "a" * 64, "banked_csv_sha256": "a" * 64, "harness_script_sha256": "a" * 64, "seam_module_sha256": "a" * 64})
+               "banked_seam_sha256": "a" * 64, "banked_csv_sha256": "a" * 64, "harness_script_sha256": "a" * 64, "seam_module_sha256": "a" * 64,
+                   "config_c8_sha256": NC.CONFIG_C8_SHA256, "config_o4_sha256": NC.CONFIG_O4_SHA256, "c2amend_ruling_sha256": NC.C2AMEND_RULING_SHA256, "dose_chain_sha256": "a" * 64, "fixture_record_sha256": "a" * 64})
     am2, sha2 = make_s0_seal(tmp_path, p2, name="BOTH")                                          # even with every navtest pin present, mode=s0bank is not a navtest seal
-    e = raises("seal", NC.check_c2_seal, am2, sha2, c1.path, c1.sha)
+    e = raises("seal", T.check_c2_seal, am2, sha2, c1.path, c1.sha)
     assert e.reason == "SEAL_WRONG_MODE"
 
 

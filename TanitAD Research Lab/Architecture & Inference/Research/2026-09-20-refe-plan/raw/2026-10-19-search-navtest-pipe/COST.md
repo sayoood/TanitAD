@@ -9,34 +9,36 @@ Stamps: wall-clock seconds of runs that already exist (MEASURED, artifact paths 
 | GPU bundle forward | 1.4736 s/token + 46.6 s per run (one lock hold per chunk) | MEASURED (carve B, 400 tokens, dev-box GPU) | spc/raw/cost.json `bundle_s_per_token_total_run`; step3.log ZZBUNDLE_OK 400 636 s |
 | bridge (first chunk only) | 180 s | ESTIMATED (certified bridge_g2b ~3 min; this builder's bridge has never run) | l2fresh/code/bridge_g2b.py |
 | search P2HEAD, 3 seeds, `--threads 4`, 1 process | 3.95 s/token | MEASURED (spc/cost.json, 20 shards, shared box) | l2stepb/run/logs/search_P2HEAD.log |
-| search P2HEAD in THIS pipeline (carve-B fixture) | 4.53 s/token mean (2/5 chunks); fit n/a (fewer than 4 chunks) | MEASURED (fixture; box shared with the test suite and the mutation run) | C:\Users\Admin\par18\navpipe\run\fixture\navpipe_state.json |
-| label_stepB (5 plans/token), whole score stage | 1.69 s/token mean; fit n/a (fewer than 4 chunks) | MEASURED (fixture) | C:\Users\Admin\par18\navpipe\run\fixture\navpipe_state.json |
+| search P2HEAD in THIS pipeline (carve-B fixture) | 4.53 s/token mean (2/5 chunks); fit n/a (fewer than 4 chunks) | MEASURED (fixture; box shared with the test suite and the mutation run) | C:/Users/Admin/par18/navpipe/run/fixture/navpipe_state.json |
+| label_stepB (5 plans/token), whole score stage | 1.69 s/token mean; fit n/a (fewer than 4 chunks) | MEASURED (fixture) | C:/Users/Admin/par18/navpipe/run/fixture/navpipe_state.json |
 | label_stepB (5 plans/token), 400 tokens | 1.110 s/token; the metric cache is 1.03 s/token of it, the 2000 plan labels 26.5 s in all | MEASURED | l2stepb/run/logs/label_P2HEAD.log ZZTIMING |
 | T1 harness call | 15.9 s fixed + 0.0898 s/token | MEASURED (two banked calls: R1 and full) | D:/.../refe_stage2_p2_{R1,full}.counts.json |
-| sha256 of ctx.npy | 2070 MiB/s (2 s per 1000-token chunk, twice per chunk) | MEASURED here (in memory) | this script |
+| sha256 of ctx.npy | 2175 MiB/s (2 s per 1000-token chunk, twice per chunk) | MEASURED here (in memory) | this script |
 | CPU threads on this box | 24 | MEASURED | os.cpu_count() |
 
 ## 2. Whole-run projection (ESTIMATED: the rates above times the real chunk plans; the GPU lock wait is NOT counted, the B chain waited 2 h 20 min for it on 2026-10-19)
 
-| | navtest C2 (T1 route) | S0 bank (label route) |
-|---|---|---|
-| chunks (cap 1000, whole logs) | 14 | 10 |
-| tokens | 12146 | 8922 |
-| largest chunk | 993 | 991 |
-| ctx bytes, all chunks (never on disk at once) GiB | 44.5 | 32.7 |
-| ctx peak, one chunk, GiB | 3.64 | 3.63 |
-| GPU hours (bundle forward + bridge) | 5.2 | 3.83 |
-| search CPU hours, 1 process | 15.28 | 11.23 |
-| scoring hours (T1 harness: 3 seed calls + 2 identity calls of K=24 per chunk / label_stepB) | 1.24 | 4.2 |
-| WALL h, sequential, 1 search process | 22.35 | 19.7 |
-| WALL h, sequential, 2 search processes | 14.71 | 14.09 |
-| WALL h, prefetch, 1 search process | 17.62 | 16.34 |
-| WALL h, prefetch, 2 search processes | 9.97 | 10.73 |
-| PEAK DISK on the work volume, sequential, GiB (largest ctx + the 6 GiB guard floor) | 9.64 | 9.63 |
-| PEAK DISK with prefetch, GiB | 13.27 | 13.26 |
-| banked outputs kept, all chunks, GiB | 0.23 | 0.2 |
+| | navtest C2 (T1 route), C8 | navtest C2, O4 (search x2.9, ESTIMATED) | S0 bank (label route) |
+|---|---|---|---|
+| chunks (cap 1000, whole logs) | 14 | 14 | 10 |
+| tokens | 12146 | 12146 | 8922 |
+| largest chunk | 993 | 993 | 991 |
+| ctx bytes, all chunks (never on disk at once) GiB | 44.5 | 44.5 | 32.7 |
+| ctx peak, one chunk, GiB | 3.64 | 3.64 | 3.63 |
+| GPU hours (bundle forward + bridge) | 5.2 | 5.2 | 3.83 |
+| search CPU hours, 1 process | 15.28 | 44.32 | 11.23 |
+| scoring hours (T1 harness, DQ6 (b): 3 seed calls + 1 pick re-score call over the chunk + 1 control call of K=24 per chunk / label_stepB) | 1.53 | 1.53 | 4.2 |
+| WALL h, sequential, 1 search process | 22.65 | 51.68 | 19.7 |
+| WALL h, sequential, 2 search processes | 15.0 | 29.52 | 14.09 |
+| WALL h, prefetch, 1 search process | 17.91 | 46.95 | 16.34 |
+| WALL h, prefetch, 2 search processes | 10.27 | 24.79 | 10.73 |
+| PEAK DISK on the work volume, sequential, GiB (largest ctx + the 6 GiB guard floor) | 9.64 | 9.64 | 9.63 |
+| PEAK DISK with prefetch, GiB | 13.27 | 13.27 | 13.26 |
+| banked outputs kept, all chunks, GiB | 0.23 | 0.23 | 0.2 |
 
 - 2 search processes is ESTIMATED as a clean halving of the search term; it was NEVER measured, and `torch` thread contention is a known trap (TRAPS.md). The chain allows at most 2 and the fixture ran with 1.
+- **DQ6 (b) (MM_RULING_C2AMEND.md): P2's picks are RE-SCORED through the same T1 route.** Extra harness time: **17.7 min** over the 14 chunks (ESTIMATED: 0.0898 s/token x (chunk tokens - 24) summed; the call count per chunk stays 5, the pick call just grows from 24 tokens to the whole chunk), scoring 1.24 h -> 1.53 h. The draft's "+18 min" is the per-token term alone; no extra call overhead is added because the re-score REPLACES the planted identity's pick call.
+- **O4 (MM_RULING_C2AMEND.md ADDITION): the GPU stage is unchanged (the forward is the same); the CPU search scales by about 2.9x per token (ESTIMATED, INHERITED from MM_RULING_DOSE.md, not re-measured here)**: search CPU 15.28 h -> 44.32 h on 1 process, wall 22.65 h -> 51.68 h sequential. The Thor per-token latency scales the same way (UNMEASURED).
 - The S0 row's GPU hours agree with the master plan's own figure (`srttc_s0/run/plan/NOTES.md`: 8,922 tokens at 1.44 s/token = 3.6 GPU-h).
 - Per-chunk overhead outside bundle / search / score (gate = checkpoint + ctx load, identity, banking, hashing): 161.8 s, source: fixture mean over 2 chunks (includes the fixture's bundle slicer, so slightly high).
 

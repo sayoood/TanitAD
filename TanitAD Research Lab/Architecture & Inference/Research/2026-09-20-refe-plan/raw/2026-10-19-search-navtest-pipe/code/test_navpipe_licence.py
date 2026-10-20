@@ -35,12 +35,12 @@ def seal_with(tmp_path, doc=None, state=None, raw=None, extra_pins=None):
 
 def check(tmp_path, **kw):
     am, sha, c1 = seal_with(tmp_path, **kw)
-    return NC.check_c2_seal(am, sha, c1.path, c1.sha)
+    return T.check_c2_seal(am, sha, c1.path, c1.sha)
 
 
 def refused(tmp_path, reason, **kw):
     am, sha, c1 = seal_with(tmp_path, **kw)
-    e = raises("seal", NC.check_c2_seal, am, sha, c1.path, c1.sha)
+    e = raises("seal", T.check_c2_seal, am, sha, c1.path, c1.sha)
     assert e.code == 5 and e.reason == reason, (e.reason, e.detail)
     return e
 
@@ -115,7 +115,7 @@ def test_the_chain_state_beside_the_result_must_exist(tmp_path):
     c1 = T.C1(tmp_path / "bad", state=None)
     open(os.path.join(c1.dir, "chain_state.json"), "w").write("{not json")
     am, sha, _, _ = T.make_seal(tmp_path / "bad", c1=c1)
-    assert raises("seal", NC.check_c2_seal, am, sha, c1.path, c1.sha).reason == "LICENCE_CHAIN_STATE_MISSING"
+    assert raises("seal", T.check_c2_seal, am, sha, c1.path, c1.sha).reason == "LICENCE_CHAIN_STATE_MISSING"
 
 
 def test_a_result_from_another_prereg_refuses(tmp_path):
@@ -134,14 +134,14 @@ def test_a_c1_chain_that_did_not_finish_each_stage_refuses(tmp_path, stage):
 # ====================================================================================================== the sha pin, the missing file, the edited file
 def test_a_missing_result_file_refuses(tmp_path):
     am, sha, c1 = seal_with(tmp_path)
-    e = raises("seal", NC.check_c2_seal, am, sha, str(tmp_path / "nope" / "RESULT_SPC.json"), c1.sha)
+    e = raises("seal", T.check_c2_seal, am, sha, str(tmp_path / "nope" / "RESULT_SPC.json"), c1.sha)
     assert e.reason == "LICENCE_RESULT_MISSING" and e.code == 5
 
 
 def test_a_wrong_typed_sha_refuses_and_an_uppercase_correct_one_passes(tmp_path):
     am, sha, c1 = seal_with(tmp_path)
-    assert raises("seal", NC.check_c2_seal, am, sha, c1.path, "0" * 64).reason == "LICENCE_RESULT_SHA_MISMATCH"
-    assert NC.check_c2_seal(am, sha, c1.path, c1.sha.upper())["licence"]["c1_result_sha256"] == c1.sha
+    assert raises("seal", T.check_c2_seal, am, sha, c1.path, "0" * 64).reason == "LICENCE_RESULT_SHA_MISMATCH"
+    assert T.check_c2_seal(am, sha, c1.path, c1.sha.upper())["licence"]["c1_result_sha256"] == c1.sha
 
 
 def test_a_result_edited_after_its_sha_was_taken_refuses(tmp_path):
@@ -149,23 +149,23 @@ def test_a_result_edited_after_its_sha_was_taken_refuses(tmp_path):
     d = json.load(open(c1.path))
     d["outcome"] = "O2_DIRECTIONAL"                                                            # a one-word edit of an otherwise valid licence
     json.dump(d, open(c1.path, "w"), indent=1)
-    assert raises("seal", NC.check_c2_seal, am, sha, c1.path, c1.sha).reason == "LICENCE_RESULT_SHA_MISMATCH"
+    assert raises("seal", T.check_c2_seal, am, sha, c1.path, c1.sha).reason == "LICENCE_RESULT_SHA_MISMATCH"
 
 
 def test_a_missing_c1_argument_refuses_after_a_valid_amendment(tmp_path):
     am, sha, c1 = seal_with(tmp_path)
-    assert raises("seal", NC.check_c2_seal, am, sha, None, None).reason == "LICENCE_MISSING_ARGS"
-    assert raises("seal", NC.check_c2_seal, am, sha, c1.path, None).reason == "LICENCE_MISSING_ARGS"
-    assert raises("seal", NC.check_c2_seal, am, sha, None, c1.sha).reason == "LICENCE_MISSING_ARGS"
+    assert raises("seal", T.check_c2_seal, am, sha, None, None).reason == "LICENCE_MISSING_ARGS"
+    assert raises("seal", T.check_c2_seal, am, sha, c1.path, None).reason == "LICENCE_MISSING_ARGS"
+    assert raises("seal", T.check_c2_seal, am, sha, None, c1.sha).reason == "LICENCE_MISSING_ARGS"
 
 
 def test_an_amendment_sealed_after_c1_may_pin_the_result_and_the_pin_binds(tmp_path):
     c1 = T.C1(tmp_path)
     am, sha, _, _ = T.make_seal(tmp_path, c1=c1, extra_pins={"c1_result_sha256": c1.sha})
-    assert NC.check_c2_seal(am, sha, c1.path, c1.sha)["licence"]["c1_result_sha256"] == c1.sha
+    assert T.check_c2_seal(am, sha, c1.path, c1.sha)["licence"]["c1_result_sha256"] == c1.sha
     other = T.C1(tmp_path / "other", doc=T.c1_doc(endpoint_dPDMS_points={"point": 0.9, "lo": 0.5, "hi": 1.3}))   # a different, equally valid C1-shaped file
     am2, sha2, _, _ = T.make_seal(tmp_path / "other", c1=other, extra_pins={"c1_result_sha256": c1.sha})
-    assert raises("seal", NC.check_c2_seal, am2, sha2, other.path, other.sha).reason == "LICENCE_RESULT_PIN_MISMATCH"
+    assert raises("seal", T.check_c2_seal, am2, sha2, other.path, other.sha).reason == "LICENCE_RESULT_PIN_MISMATCH"
 
 
 @pytest.mark.parametrize("raw,why", [("{not json", "JSONDecodeError"), ("[1, 2]", "not a JSON object"), ("", "JSONDecodeError")])
@@ -177,15 +177,15 @@ def test_an_unreadable_or_non_object_result_refuses(tmp_path, raw, why):
 # ====================================================================================================== the amendment's own licence pins
 def test_the_amendment_must_pin_the_licence_ruling_this_code_enforces(tmp_path):
     am, sha, c1, pins = T.make_seal(tmp_path, tamper_pin="licence_ruling_sha256")
-    assert raises("seal", NC.check_c2_seal, am, sha, c1.path, c1.sha).reason == "SEAL_LICENCE_RULING_PIN"
+    assert raises("seal", T.check_c2_seal, am, sha, c1.path, c1.sha).reason == "SEAL_LICENCE_RULING_PIN"
 
 
 def test_an_old_admission_pin_is_neither_required_nor_a_substitute_for_the_licence(tmp_path):
     am, sha, c1, pins = T.make_seal(tmp_path, extra_pins={"admission_record_sha256": "a" * 64})
-    assert NC.check_c2_seal(am, sha, c1.path, c1.sha)["licence"]["outcome"] == "O1_CONFIRMED"              # an extra pin is harmless
+    assert T.check_c2_seal(am, sha, c1.path, c1.sha)["licence"]["outcome"] == "O1_CONFIRMED"              # an extra pin is harmless
     bad = T.C1(tmp_path / "bad", doc=T.c1_doc(outcome="TRADE"))
     am2, sha2, _, _ = T.make_seal(tmp_path / "bad", c1=bad, extra_pins={"admission_record_sha256": "a" * 64})
-    assert raises("seal", NC.check_c2_seal, am2, sha2, bad.path, bad.sha).reason == "LICENCE_OUTCOME"      # an ADMIT record would not have helped; the licence is the only key
+    assert raises("seal", T.check_c2_seal, am2, sha2, bad.path, bad.sha).reason == "LICENCE_OUTCOME"      # an ADMIT record would not have helped; the licence is the only key
 
 
 # ====================================================================================================== the constants ARE the ruling's, and the schema IS the writer's

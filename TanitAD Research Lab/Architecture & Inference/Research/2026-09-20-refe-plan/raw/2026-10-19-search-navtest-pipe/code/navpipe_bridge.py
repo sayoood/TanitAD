@@ -23,12 +23,12 @@ import time
 import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-L1_CODE = os.environ.get("L1_CODE", "C:/Users/Admin/par18/l1run/code")
-TREE = os.environ.get("L1_TREE", "C:/Users/Admin/p2heldout/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan")
-for p in (HERE, L1_CODE):
-    if p not in sys.path:
-        sys.path.insert(0, p)
+TREE = os.environ.get("L1_TREE", "C:/Users/Admin/p2heldout/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan")      # dev-box checkout of the refe model tree (NOT repo-relative: the chain sets L1_TREE to the hybrid tree)
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
 import navpipe_core as NC  # noqa: E402
+NC.add_code_paths()                                    # L1's code: the repo-relative sibling `l1_stepA` (+ its patched run_2026-10-19), L1_CODE overrides
+L1_CODE = NC.L1_CODE
 BUILDER = os.path.join(HERE, "make_navtest_bundle.py")
 
 
