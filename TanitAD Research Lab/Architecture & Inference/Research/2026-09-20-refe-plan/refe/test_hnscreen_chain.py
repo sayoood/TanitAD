@@ -242,6 +242,7 @@ def check(bad, name, fn):
 def load_module(src, tag):
     mod = types.ModuleType(f"hnscreen_devbox_{tag}")
     mod.__file__ = SRC_PATH
+    mod.__src__ = src                                                  # check M re-execs this source in a fresh isolated interpreter
     sys.modules[mod.__name__] = mod
     exec(compile(src, f"hnscreen_devbox_{tag}.py", "exec"), mod.__dict__)    # noqa: S102 -- the module under test, possibly mutated
     return mod
@@ -367,7 +368,7 @@ def make_cfg(sc, **over):
     return cfg
 
 
-def run_chain(M, sc, *, spec=None, stop_after=None, hook=None, used=0, cfg_over=None, cfg_doc=None, guard_gb=None, max_wait=None):
+def run_chain(M, sc, *, spec=None, stop_after=None, hook=None, used=0, cfg_over=None, cfg_doc=None, guard_gb=None, max_wait=None, no_cfg_check=False):
     sc.activate()
     if spec is not None:
         sc.set_spec(spec)
@@ -378,6 +379,8 @@ def run_chain(M, sc, *, spec=None, stop_after=None, hook=None, used=0, cfg_over=
     clk = Clk(hook)
     kw = {"printer": lambda *_a, **_k: None, "guard_gb": guard_gb or (lambda p: 1e9), "guard_ram": lambda: 10 ** 9, "sleep": lambda s: None}
     ch = M.Chain(cfg, sc.root, **kw)
+    if no_cfg_check:                                                  # HNSCREEN-TOKEN-NAMES-STATIC: switch the FIRST line (the config-load check) off, to exercise the SECOND (the mint guard) on a name the profile does not mint
+        ch.token_names_config_problems = lambda: []
     ch._door = M.GpuDoor(lock=sc.lock, marker=sc.marker, landed=lambda **k: M.landed_gpu_lock(REAL_PKG, **k),
                          landed_kw={"lock": sc.lock, "wait_idle": None, "wait_timeout_s": 1.0, "settle_s": 0.0, "used_fn": (lambda: used)},
                          poll_s=10.0, max_wait_s=max_wait if max_wait is not None else float(doc["gpu"]["max_wait_s"]), clock=clk.time, sleep=clk.sleep, log=ch.log)
@@ -672,8 +675,9 @@ def L_a_wrong_token_name_stops_at_the_mint_before_any_pass(M, w):
     sc, rc, ch, _ = full(M, w, "L_other_real_check", cfg_over={"gate.token_check_names": {"G14": "G-DVB"}})            # control: a name the token DOES carry (PASS) is not refused
     res["control_other_real_check_passes"] = rc == 0 and ch.stage_order_run == STAGES
 
-    def stopped(nm, *, names=None, spec=None, upto=("S0", "S1", "S2", "T0"), needle="", verifies=0, pre=1):
-        sc, rc, ch, _ = full(M, w, "L_" + nm, spec, cfg_over={"gate.token_check_names": names} if names is not None else None)
+    def stopped(nm, *, names=None, spec=None, upto=("S0", "S1", "S2", "T0"), needle="", verifies=0, pre=1, bypass=False):
+        # bypass=True: the config-load check (HNSCREEN-TOKEN-NAMES-STATIC, check M) would refuse these names before S0; it is switched off here so the MINT guard is still exercised on its own (defence in depth)
+        sc, rc, ch, _ = full(M, w, "L_" + nm, spec, cfg_over={"gate.token_check_names": names} if names is not None else None, no_cfg_check=bypass)
         lab = sc.labels()
         st = json.load(open(f"{sc.root}/STATUS.json", encoding="utf-8"))
         out = json.load(open(f"{sc.root}/outcome.json", encoding="utf-8"))
@@ -685,12 +689,105 @@ def L_a_wrong_token_name_stops_at_the_mint_before_any_pass(M, w):
                 and not os.path.exists(sc.lock) and st["state"] == "INVALID" and st["rc"] == 2 and st["reason"].startswith("SCREEN-INVALID: token check '") and needle in st["reason"]
                 and out["row"] == 0 and out["name"] == "SCREEN-INVALID" and "ZZHNCHAIN_INVALID rc 2: SCREEN-INVALID: token check '" in log and "ZZHNCHAIN_STAGE_DONE " + upto[-1] not in log)
 
-    res["old_pair"] = stopped("old_pair", names={"G14": "G14", "G15": "G15"}, needle="token check 'G14' absent")
-    res["one_wrong_value"] = stopped("one_wrong", names={"G15": "G-NOPE"}, needle="token check 'G-NOPE' absent")
-    res["stray_key"] = stopped("stray", names={"G99": "G-NOPE"}, needle="token check 'G-NOPE' absent")                    # a value the chain never reads still names a check the token lacks
-    res["null_value"] = stopped("null", names={"G14": None}, needle="token check 'None' absent")
+    res["old_pair"] = stopped("old_pair", names={"G14": "G14", "G15": "G15"}, needle="token check 'G14' absent", bypass=True)
+    res["one_wrong_value"] = stopped("one_wrong", names={"G15": "G-NOPE"}, needle="token check 'G-NOPE' absent", bypass=True)
+    res["stray_key"] = stopped("stray", names={"G99": "G-NOPE"}, needle="token check 'G-NOPE' absent", bypass=True)                    # a value the chain never reads still names a check the token lacks
+    res["null_value"] = stopped("null", names={"G14": None}, needle="token check 'None' absent", bypass=True)
     res["status_not_pass"] = stopped("fail", spec={"gate_run": {"fail_checks": ["G-PREFLIGHT"]}}, needle="token check 'G-PREFLIGHT' status is 'FAIL', not PASS")
     res["second_seed_token"] = stopped("seed1", spec={"gate_run": {"drop_checks": {"1": ["G-PREFLIGHT"]}}}, upto=("S0", "S1", "S2", "T0", "T1"), needle="token check 'G-PREFLIGHT' absent", verifies=1, pre=2)
+    return all(res.values())
+
+
+def M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0(M, w):
+    """HNSCREEN-TOKEN-NAMES-STATIC.  The CONFIG-LOAD check (`preflight` -> `token_names_config_problems`): BEFORE S0, and before the config is frozen, rc 4 `TOKEN-NAMES-CONFIG: ...` if any VALUE of the
+    effective gate.token_check_names is not in the REAL `launch_gate.PROFILES[gate.profile]["checks"]`, or the profile is unknown.  A refusal means NO stage started: not one stub command ran (the journal is
+    empty, not even s0_stage), no stage marker, no frozen config, no outcome row, no lock.  An override naming `G-HYG` PASSES by design: G-HYG is a real check of the profile, so membership holds; that is acceptable
+    HERE because (a) the mint guard (check L) still stops the chain at the first token unless that check is PASS in it, and (b) which check really judges G14 / G15 is pinned from the AST and a real token by
+    raw/2026-10-20-hnscreen-token-names/test_hnscreen_token_names.py (check C).  This check judges MEMBERSHIP, nothing more."""
+    res = {}
+
+    def reason_of(sc):
+        return json.load(open(f"{sc.root}/STATUS.json", encoding="utf-8"))["reason"]
+
+    def refused(nm, needle, *, names=None, profile=None, raw=None):
+        """one run with a bad config; raw = {dotted key: value} written into the JSON doc as is (make_cfg's overrides pop a None).  True iff the refusal is the clean one."""
+        sc = Sc(w, "M_" + nm)
+        doc = make_cfg(sc, **({"gate.token_check_names": names} if names is not None else {}), **({"gate.profile": profile} if profile is not None else {}))
+        for k, v in (raw or {}).items():
+            a, b = k.split(".")
+            doc[a][b] = v
+        rc, ch, _ = run_chain(M, sc, cfg_doc=doc, stop_after="S0")                                                                                           # a working check refuses BEFORE S0; a broken one lets S0 run and stops there
+        st = json.load(open(f"{sc.root}/STATUS.json", encoding="utf-8"))
+        log = open(f"{sc.root}/chain.log", encoding="utf-8").read()
+        stage_dir = f"{sc.root}/stage"
+        return (rc == 4 and ch.stage_order_run == [] and sc.J() == [] and not (os.path.isdir(stage_dir) and os.listdir(stage_dir))                                  # no stage started, no stub command ran
+                and not any(os.path.exists(f"{sc.root}/{x}") for x in ("config.sha256", "config.frozen.json", "outcome.json")) and not os.path.exists(sc.lock)      # nothing frozen, no verdict row, no lock
+                and st["state"] == "CONFIG" and st["rc"] == 4 and st["reason"].startswith("TOKEN-NAMES-CONFIG: ") and needle in st["reason"]
+                and "ZZHNCHAIN_CONFIG rc 4: TOKEN-NAMES-CONFIG: " in log and "ZZHNCHAIN_STAGE_DONE" not in log), sc
+
+    def passes(nm, *, names=None, profile=None):
+        over = {}
+        if names is not None:
+            over["gate.token_check_names"] = names
+        if profile is not None:
+            over["gate.profile"] = profile
+        sc, rc, ch, _ = full(M, w, "M_" + nm, stop_after="S0", cfg_over=over)
+        return rc == 0 and ch.stage_order_run == ["S0"] and sc.labels() == ["s0_stage"] and os.path.exists(f"{sc.root}/config.sha256") and ch.token_names_config_problems() == []
+
+    res["default_passes"] = passes("default")
+    res["default_values_are_in_the_real_profile"] = all(v in REAL_LG.PROFILES["refe_hnscreen"]["checks"] for v in M.TOKEN_CHECK_NAMES.values())
+    res["g_hyg_override_passes_membership_by_design"] = passes("ghyg", names={"G14": "G-HYG"}) and passes("ghyg2", names={"G14": "G-HYG", "G15": "G-DVB"})
+    ok, sc14 = refused("g14", "gate.token_check_names['G14'] = 'G14' is not a check of launch_gate.PROFILES['refe_hnscreen']['checks']", names={"G14": "G14"})
+    res["override_naming_G14_refuses_before_s0"] = ok
+    ok, _sc = refused("old_pair", "gate.token_check_names['G15'] = 'G15'", names={"G14": "G14", "G15": "G15"})
+    res["the_old_pair_refuses"] = ok
+    ok, sc15 = refused("one_wrong", "gate.token_check_names['G15'] = 'G-NOPE'", names={"G15": "G-NOPE"})
+    res["one_wrong_value_refuses_and_the_good_default_is_not_blamed"] = ok and "['G14']" not in reason_of(sc15)
+    ok, _sc = refused("stray", "gate.token_check_names['G99'] = 'G-NOPE'", names={"G99": "G-NOPE"})
+    res["a_stray_key_with_a_wrong_value_refuses"] = ok
+    ok, _sc = refused("null", "gate.token_check_names['G14'] = None", raw={"gate.token_check_names": {"G14": None}})
+    res["a_json_null_value_refuses"] = ok
+    ok, _sc = refused("int", "gate.token_check_names['G14'] = 7", raw={"gate.token_check_names": {"G14": 7}})
+    res["a_non_string_value_refuses"] = ok
+    ok, _sc = refused("list", "must be a JSON object", raw={"gate.token_check_names": ["G-HYG"]})
+    res["a_non_object_refuses"] = ok
+    ok, _sc = refused("noprofile", "gate.profile 'no_such_profile' is not a launch_gate profile", profile="no_such_profile")
+    res["an_unknown_profile_refuses"] = ok
+    ok, _sc = refused("intprofile", "gate.profile 5 is not a launch_gate profile", raw={"gate.profile": 5})
+    res["a_non_string_profile_refuses"] = ok
+    # membership is read from the CONFIGURED profile's checks, both ways: refe_p2 lacks G-PREFLIGHT (the default names refuse under it) and has G-LIVE (which refe_hnscreen lacks)
+    ok, _sc = refused("p2_lacks_preflight", "is not a check of launch_gate.PROFILES['refe_p2']['checks']", profile="refe_p2")
+    res["the_default_names_are_refused_under_a_profile_that_does_not_mint_them"] = ok and "G-PREFLIGHT" in REAL_LG.PROFILES["refe_hnscreen"]["checks"] and "G-PREFLIGHT" not in REAL_LG.PROFILES["refe_p2"]["checks"]
+    res["a_name_of_the_configured_profile_passes"] = passes("p2_glive", names={"G14": "G-LIVE", "G15": "G-LIVE"}, profile="refe_p2")
+    ok, _sc = refused("hn_glive", "gate.token_check_names['G14'] = 'G-LIVE'", names={"G14": "G-LIVE"})
+    res["the_same_name_is_refused_under_refe_hnscreen"] = ok and "G-LIVE" not in REAL_LG.PROFILES["refe_hnscreen"]["checks"]
+    # a refusal freezes nothing: the SAME state dir, relaunched with the default config, starts normally (not "started with a different config")
+    rc, ch, _ = run_chain(M, sc14, stop_after="S0")
+    res["a_refusal_leaves_the_state_dir_reusable"] = rc == 0 and ch.stage_order_run == ["S0"] and sc14.labels() == ["s0_stage"]
+    # fail closed: launch_gate cannot be imported -> a named refusal, nothing runs
+    held = sys.modules.get("launch_gate", None)
+    sys.modules["launch_gate"] = None
+    try:
+        scu = Sc(w, "M_noimport")
+        rc, ch, _ = run_chain(M, scu)
+    finally:
+        if held is None:
+            sys.modules.pop("launch_gate", None)
+        else:
+            sys.modules["launch_gate"] = held
+    res["an_unimportable_launch_gate_fails_closed"] = rc == 4 and ch.stage_order_run == [] and scu.J() == [] and reason_of(scu).startswith("TOKEN-NAMES-CONFIG: the real launch_gate could not be imported")
+    # the import path: a FRESH interpreter in isolated mode (no PYTHONPATH, no cwd, no script dir on sys.path) can judge the default config, so the module puts its own directory on sys.path itself
+    probe_src = os.path.join(w.base, "probe_src.py")
+    open(probe_src, "w", encoding="utf-8").write(M.__src__)
+    code = ("import sys, types\n"
+            "src, fp = open(sys.argv[1], encoding='utf-8').read(), sys.argv[2]\n"
+            "m = types.ModuleType('hnd'); m.__file__ = fp; sys.modules['hnd'] = m; exec(compile(src, 'hnd.py', 'exec'), m.__dict__)\n"
+            "p = m.Chain.token_names_config_problems(types.SimpleNamespace(cfg=m.Cfg({}, 'x')))\n"
+            "print('ZZPROBLEMS', len(p), p[:1])\n")
+    r = subprocess.run([sys.executable, "-I", "-c", code, probe_src, SRC_PATH], capture_output=True, text=True, cwd=w.base, timeout=240)
+    res["a_fresh_isolated_interpreter_finds_the_real_launch_gate_by_itself"] = r.returncode == 0 and "ZZPROBLEMS 0 []" in r.stdout
+    if not all(res.values()):
+        print("  [M] failing parts:", sorted(k for k, v in res.items() if not v), flush=True)
     return all(res.values())
 
 
@@ -699,7 +796,8 @@ CHECKS = [("A_stage_order_and_markers", A_stage_order), ("B_handoff_per_stage_an
           ("G_foreign_lock_waited_for_never_removed", G_foreign_lock_is_waited_for_never_removed), ("G_control_landed_helper_alone_removes_a_stale_lock", G_control_landed_helper_alone_removes_such_a_lock),
           ("H_families_read_integration_and_rule_e", H_families_read_integration_and_rule_e), ("I_stop_points", I_stop_points), ("J_named_parameters_and_levers", J_named_parameters_and_levers),
           ("K_config_frozen_single_instance_and_disk", K_config_frozen_single_instance_and_disk),
-          ("L_a_wrong_token_name_stops_at_the_mint_before_any_pass", L_a_wrong_token_name_stops_at_the_mint_before_any_pass)]
+          ("L_a_wrong_token_name_stops_at_the_mint_before_any_pass", L_a_wrong_token_name_stops_at_the_mint_before_any_pass),
+          ("M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0", M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0)]
 
 
 def suite(M, tag, only=None):
@@ -743,6 +841,19 @@ MUTATIONS = [
      [("        wanted = list({**TOKEN_CHECK_NAMES, **(override if isinstance(override, dict) else {})}.values())\n", "        wanted = [(override or {}).get(g, TOKEN_CHECK_NAMES[g]) for g in (\"G14\", \"G15\")]\n")], ["L_a_wrong_token_name_stops_at_the_mint_before_any_pass"]),
     ("the mint-stage guard always reads the first seed's token (the second seed's missing check is not seen)",
      [("        bad = self.token_name_problems(seed, tok)\n", "        bad = self.token_name_problems(0, self.token_file(0))\n")], ["L_a_wrong_token_name_stops_at_the_mint_before_any_pass"]),
+    ("the config-load check is not called (a wrong override runs on to the mint)", [("        bad = self.token_names_config_problems()\n", "        bad = []\n")], ["M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0"]),
+    ("the config-load check judges no membership (any value passes)", [("            if not isinstance(name, str) or name not in checks:\n", "            if False:\n")], ["M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0"]),
+    ("the config-load check accepts an unknown profile", [("        if not isinstance(profile, str) or profile not in profiles:\n", "        if False:\n")], ["M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0"]),
+    ("the config-load check accepts a non-object token_check_names", [("        if not isinstance(override, dict):\n            return [f\"TOKEN-NAMES-CONFIG: gate.token_check_names must be", "        if False:\n            return [f\"TOKEN-NAMES-CONFIG: gate.token_check_names must be")], ["M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0"]),
+    ("the config-load check judges only the G14 / G15 keys (a stray key slips through)",
+     [("        for gate_id, name in sorted({**TOKEN_CHECK_NAMES, **override}.items()):\n", "        for gate_id, name in sorted((g, override.get(g, TOKEN_CHECK_NAMES[g])) for g in (\"G14\", \"G15\")):\n")], ["M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0"]),
+    ("the config-load check reads the refe_hnscreen checks whatever gate.profile says", [("        checks = tuple(profiles[profile].get(\"checks\", ()))\n", "        checks = tuple(profiles[\"refe_hnscreen\"].get(\"checks\", ()))\n")], ["M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0"]),
+    ("the config-load check fails OPEN when launch_gate cannot be imported", [("            return [f\"TOKEN-NAMES-CONFIG: the real launch_gate could not be imported", "            return []; _x = [f\"TOKEN-NAMES-CONFIG: the real launch_gate could not be imported")], ["M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0"]),
+    ("the config-load check does not put the module's own directory on sys.path (a fresh interpreter cannot import launch_gate)", [("            if HERE not in sys.path:\n                sys.path.insert(0, HERE)\n            import launch_gate as LG\n", "            import launch_gate as LG\n")], ["M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0"]),
+    ("the config-load check runs AFTER the config is frozen (a refusal leaves a frozen state dir)",
+     [("        bad = self.token_names_config_problems()\n", "        bad = []\n"),
+      ("            jdump(self.cfg.redacted(), f\"{self.root}/config.frozen.json\")\n", "            jdump(self.cfg.redacted(), f\"{self.root}/config.frozen.json\")\n            bad = self.token_names_config_problems()\n            if bad:\n                raise ChainStop(RC_CONFIG, \"; \".join(bad) + \": late\", \"CONFIG\")\n")], ["M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0"]),
+    ("the config-load refusal exits rc 0", [("            raise ChainStop(RC_CONFIG, \"; \".join(bad) + \": no stage was started", "            raise ChainStop(RC_OK, \"; \".join(bad) + \": no stage was started")], ["M_config_load_refuses_a_token_check_name_the_profile_does_not_mint_before_s0"]),
     ("the argv lever check is skipped", [("        if lever_issues:\n", "        if False:\n")], ["J_named_parameters_and_levers"]),
     ("rule E may fire twice", [("            if os.path.exists(self.rule_e_path):\n                raise ChainStop(RC_INVALID, \"rule E already fired", "            if False:\n                raise ChainStop(RC_INVALID, \"rule E already fired")], ["H_families_read_integration_and_rule_e"]),
     ("a failed gate before the read does not stop it", [("        bad = sorted(k for k, v in gates.items() if not v)\n", "        bad = []\n")], ["I_stop_points"]),

@@ -5,6 +5,9 @@
     python refe/hnscreen_devbox.py plan --config chain_config.json --root <state dir>        # stage order, DONE state, missing named parameters; writes nothing
     python refe/hnscreen_devbox.py skeleton --out chain_config.json                           # every named parameter, the unknown ones null
 
+CONFIG-LOAD CHECK (HNSCREEN-TOKEN-NAMES-STATIC): BEFORE S0 -- before the config is frozen and before any stage -- `preflight` refuses (rc 4, `TOKEN-NAMES-CONFIG: ...`) if any VALUE of the effective
+    gate.token_check_names is not in `launch_gate.PROFILES[gate.profile]["checks"]` (the REAL launch_gate, imported from this file's directory, never a copy) or the profile is unknown, so even S2's
+    GPU spend is protected from a wrong run-box override; the mint-stage guard below stays as the second line (it judges the token's status).
 STAGE ORDER (SCREEN_NOTES.md "Order, with stop points"; each stage has a DONE marker, a HANDOFF, and is skipped on resume only if its outputs RE-HASH to the marker):
     S0  stage the inputs (a named command; the chain never touches the pod)
     S1  bank build, SY (hn_bank.py yield), I1, I2          ->  STOP: SCREEN-INVALID (a gate failed; checked FIRST, section 11 row 0) / SCREEN-SPARSE (SY < 0.10, row 1)
@@ -943,12 +946,41 @@ class Chain:
         atomic_write(f"{self.root}/HANDOFF.md", txt[:6000])
 
     # ------------------------------------------------------------------ run
+    def token_names_config_problems(self):
+        """HNSCREEN-TOKEN-NAMES-STATIC, the CONFIG-LOAD CHECK.  [] iff the profile is a profile of the REAL launch_gate AND every VALUE of the effective `gate.token_check_names` (the module defaults under the
+        config, so a stray key counts, exactly as in `token_name_problems`) is in `launch_gate.PROFILES[gate.profile]["checks"]`.  Each problem starts `TOKEN-NAMES-CONFIG:`.  Pure: it reads the config and the
+        launch_gate import, nothing else.  The profile table is READ from the real module (imported from this file's directory, the checkout the chain runs from), never copied.  An unimportable launch_gate is
+        a problem too (fail closed).  It judges MEMBERSHIP only: whether the token says PASS is the mint guard's job (`token_name_problems`), and whether the named check really judges G14 / G15 is pinned by
+        raw/2026-10-20-hnscreen-token-names/test_hnscreen_token_names.py (check C)."""
+        try:
+            if HERE not in sys.path:
+                sys.path.insert(0, HERE)
+            import launch_gate as LG
+            profiles = LG.PROFILES
+        except Exception as e:                                                              # noqa: BLE001 -- fail closed: a config that cannot be judged is not accepted
+            return [f"TOKEN-NAMES-CONFIG: the real launch_gate could not be imported from {HERE} to judge gate.token_check_names ({type(e).__name__}: {str(e)[:160]})"]
+        profile = self.cfg.get("gate.profile")
+        if not isinstance(profile, str) or profile not in profiles:
+            return [f"TOKEN-NAMES-CONFIG: gate.profile {profile!r} is not a launch_gate profile (known: {sorted(profiles)})"]
+        override = self.cfg.get("gate.token_check_names")
+        if not isinstance(override, dict):
+            return [f"TOKEN-NAMES-CONFIG: gate.token_check_names must be a JSON object {{gate: token check name}}, not {override!r}"]
+        checks = tuple(profiles[profile].get("checks", ()))
+        out = []
+        for gate_id, name in sorted({**TOKEN_CHECK_NAMES, **override}.items()):
+            if not isinstance(name, str) or name not in checks:
+                out.append(f"TOKEN-NAMES-CONFIG: gate.token_check_names[{gate_id!r}] = {name!r} is not a check of launch_gate.PROFILES[{profile!r}]['checks'] (its checks: {list(checks)})")
+        return out
+
     def preflight(self):
         miss = self.cfg.missing()
         if miss:
             raise ChainStop(RC_CONFIG, f"named parameters not set: {miss}", "CONFIG")
         if self.cfg.get("gate.ctx_mode") not in CTX_MODES:
             raise ChainStop(RC_CONFIG, f"gate.ctx_mode must be one of {CTX_MODES}, not {self.cfg.get('gate.ctx_mode')!r}", "CONFIG")
+        bad = self.token_names_config_problems()
+        if bad:                                                                             # HNSCREEN-TOKEN-NAMES-STATIC: BEFORE the config is frozen and before S0, so not even S2's GPU spend is risked
+            raise ChainStop(RC_CONFIG, "; ".join(bad) + ": no stage was started and the config was not frozen; fix gate.token_check_names (or gate.profile) in the config and relaunch", "CONFIG")
         os.makedirs(self.root, exist_ok=True)
         sha_p = f"{self.root}/config.sha256"
         if os.path.exists(sha_p):

@@ -183,8 +183,8 @@ class Real:
         self.w.close()
 
 
-def scenario(R, M, name, *, seeds=(0,), mode="default", tamper=None, spec=None, stop_after=None, pre=None, cfg_extra=None, names=None):
-    """one chain run: a fresh state dir, a fresh COPY of the sealed cache, the shim gate.  tamper = (mode, seed|'any') runs after the trainer of that pass.  names = a `gate.token_check_names` override (default: none).
+def scenario(R, M, name, *, seeds=(0,), mode="default", tamper=None, spec=None, stop_after=None, pre=None, cfg_extra=None, names=None, no_cfg_check=False):
+    """one chain run: a fresh state dir, a fresh COPY of the sealed cache, the shim gate.  tamper = (mode, seed|'any') runs after the trainer of that pass.  names = a `gate.token_check_names` override (default: none).  no_cfg_check = switch the config-load check off (HNSCREEN-TOKEN-NAMES-STATIC), to reach the mint guard.
     -> (sc, rc, chain, shim log rows)"""
     sc = TC.Sc(R.w, name)
     cache = f"{sc.d}/cache"
@@ -202,7 +202,7 @@ def scenario(R, M, name, *, seeds=(0,), mode="default", tamper=None, spec=None, 
         doc["commands"]["post_pass"].append({"name": "tamper", "argv": [PY, R.tamper, tamper[0], cache, str(tamper[1]), "{seed}"]})
     for k, v in (cfg_extra or {}).items():
         doc[k] = v
-    rc, ch, clk = TC.run_chain(M, sc, spec={**TC.PARTIAL2, **(spec or {})}, cfg_doc=doc, stop_after=stop_after)
+    rc, ch, clk = TC.run_chain(M, sc, spec={**TC.PARTIAL2, **(spec or {})}, cfg_doc=doc, stop_after=stop_after, no_cfg_check=no_cfg_check)
     rows = [json.loads(x) for x in open(log, encoding="utf-8")] if os.path.exists(log) else []
     return sc, rc, ch, rows, cache
 
@@ -323,10 +323,10 @@ def arms(R, M, only=None):
 
     def c_wrong_token_names():
         """HNSCREEN-TOKEN-NAMES follow-up, with the REAL mint (the real `finalize` writes the token): an override naming a check the real profile does not mint stops the chain AT THE MINT of pass 0 (rc 2,
-        `SCREEN-INVALID: token check '<name>' absent`): the gate ran `anchor` and `run` only (no `verify`, no `end-verify`), pass 1 was never minted, no trainer started, no later stage ran.  The DEFAULT passing is c_end_to_end."""
+        `SCREEN-INVALID: token check '<name>' absent`) -- reached with the CONFIG-LOAD check switched off (`no_cfg_check`; that check refuses these names before S0, see test_hnscreen_chain.py check M): the gate ran `anchor` and `run` only (no `verify`, no `end-verify`), pass 1 was never minted, no trainer started, no later stage ran.  The DEFAULT passing is c_end_to_end."""
         res = {}
         for nm, names, needle in (("old_pair", {"G14": "G14", "G15": "G15"}, "token check 'G14' absent"), ("one_wrong", {"G15": "G-NOPE"}, "token check 'G-NOPE' absent")):
-            sc, rc, ch, rows, cache = scenario(R, M, "C10_" + nm, seeds=(0, 1), names=names)
+            sc, rc, ch, rows, cache = scenario(R, M, "C10_" + nm, seeds=(0, 1), names=names, no_cfg_check=True)
             lab = sc.labels()
             st = json.load(open(f"{sc.root}/STATUS.json", encoding="utf-8"))
             out = json.load(open(f"{sc.root}/outcome.json", encoding="utf-8"))
