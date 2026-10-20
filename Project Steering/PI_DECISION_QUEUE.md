@@ -2338,3 +2338,17 @@ feed, as refcv8 was trained. The per-clip read is printed beside and is never bi
 in one respect only: the re-timing table is re-fitted by the unchanged train-fit procedure on per-frame-fed train
 rolls and frozen before the 48,852 eval rolls. The stage ships only if every SHIP-R8 clause passes on the per-frame
 feed with that table.
+
+## ⏳ OPEN (2026-10-20 ~11:15 Berlin) -- D-LATENCY-BUDGET: what planning-latency budget do REFe / P2 / P6 and the search answer to on Thor?
+
+**Why now.** C1 read **O1_CONFIRMED**: the CEM search on P2's own scorer adds **+0.56 PDMS points [+0.11, +0.93]** over P2's pick (MEASURED, selection tier, label-only, `raw/2026-10-19-search-p2-confirm/c1/RESULT_SPC.json`). It costs 14 scorer calls per token (C8), or 38 (O4). Without a budget, no search or planner can be called deployable, and C2's pass will read "deployability UNMEASURED". A 100 ms / 10 Hz working number appears in four documents but was never ruled and never applied to REFe.
+
+**Known:** nothing is MEASURED for REFe / P2 on Thor. The 4-camera ViT-L trunk alone is ESTIMATED at 48-121 ms, so the 10 Hz pick path is the open question, not the search. On the dev-box CPU (not Thor) the pick-only path is 61 ms, C8 870 ms and O4 2,703 ms (MEASURED, n = 5). Published reference points: Alpamayo-R1 99 ms end to end; the Apollo EM planner under 100 ms; a real L4 Autoware stack with planning at p99 267 ms (primaries banked).
+
+**Options (p99 deadlines on Thor):**
+- **(1)** Strict: one cycle at 10 Hz / 100 ms. The search must fit inside the pick path's leftover.
+- **(2) Recommended:** two-rate. The pick path runs at 10 Hz / 100 ms; the search runs at 2 Hz / 300 ms on cached features, and its plan is applied late. C8 fits in all 4 cost regimes the memo models, O4 in 3 of 4 (ESTIMATED). **Pre-committed fallback:** if Thor's pick-path measurement (THOR-PICK-TICK) cannot make 100 ms, the pick path runs at 5 Hz / 200 ms, REFe's native rate, and nothing else reopens.
+- **(3)** Relaxed: one cycle at 5 Hz / 200 ms.
+
+**What a decision unlocks:** THOR-PICK-TICK's pre-registered outcomes, SEARCH-STALE-T1 (does the gain survive a late plan?), and a latency line in C2's and P6's verdicts. **P6 is not gated** by this.
+Memo: `TanitAD Research Lab/Architecture & Inference/Research/2026-10-20-latency-budget/LATENCY_BUDGET_PROPOSAL.md`.
