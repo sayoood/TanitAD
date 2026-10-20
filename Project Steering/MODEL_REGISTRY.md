@@ -5802,3 +5802,15 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 * They are in `RESULT_FULL.md`, per run and paired.
 * Acceleration MAE is worse than P10 in all four runs (+0.29 to +0.61 m/s²). Heading and cross-track are better in all four.
 * Distance keeping is UNAVAILABLE (no lead track in this eval).
+
+### 16.1 refcv8-r101-s0 — ✅ FINISHED at 48,852 (2026-10-20 ~18:20 Berlin) · SHIP-R8 PASS · raw-plan bars E1 FAILED, E3 PASS, NR FAILED  *(addendum to §16; supersedes §16's "TRAINING" status row)*
+
+| | |
+|---|---|
+| status | **FINISHED** at step 48,852 (one full pass). `ckpt_full_48852.pt` md5 `904e237658bc26e6473a6b891bd43169`; EMA `ckpt_ema_48852.pt` md5 `b4364029b68f29a33eeb4aebbbbd002b` (strict load clean, weights differ from raw; trainer `model_ema.pt` == derived EMA on every tensor). |
+| binding read | Tier **T1** self-action open loop on logged eval139 frames (not driving performance); EMA weights; **per-frame nav feed** (`perframe_full`, SHIP-R8 Amendment 3); inference seeds 0 and 1; paired episode-cluster bootstrap B 2000; ceiling-compliant capped windows. Artifacts: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-20-refcv8-perframe-final/raw/ship_r8/SHIP_R8_step48852ema_pf.json`, `pfpkg/raw/compliant_reread/trees/step48852ema_pf.json`. |
+| SHIP-R8 (re-timed stage, `RETIME_DEPLOY8`, table `2aacc9ff…`) | **PASS, every clause.** E1 S2 − `ha0_ext_pose` −0.0342 [−0.0474, −0.0216] s0 / −0.0329 [−0.0452, −0.0206] s1; E3 S6 −0.8682 [−1.1959, −0.5380] / −0.8676 [−1.1891, −0.5429]; FZR-NR ADE/LON/LAT PASS; TAC no cell worse (S2 lon separated better); feed parity 4,754/4,754; prior parity 0.0 m. |
+| raw-plan bars (no re-timing) | **E1 FAILED** −0.0069 [−0.0246, +0.0112] / −0.0048 [−0.0210, +0.0124]; **E3 PASS** −0.7285 [−1.0809, −0.3758] / −0.7287 [−1.0635, −0.3826]; **NR FAILED** — ADE S6 +0.1725 [+0.0337, +0.3384] / +0.1801 [+0.0523, +0.3258] separated worse vs refcv7-50,400; LON S2 speed MAE and abs along-track at 2 s separated worse at s1; LATERAL PASS. |
+| four families | ADE: above. LONGITUDINAL: speed / along-track / accel worse than refcv7 on raw plans, not worse on the re-timed plans; **distance keeping NOT in this read** (X7 LEAD-VIOL owed). LATERAL: heading / curvature / yaw-rate / cross-track not worse; yaw-rate better. TACTICAL: lateral head 0.9415 vs constant 0.9039; longitudinal head 0.6103 vs constant 0.3352 (both separated); trajectory-derived decisions not worse on re-timed plans. STRATEGIC: NOT APPLICABLE, n = 0 (`--no-strategic`). |
+| ⚠️ 40k → 48,852 | The same compliant capped raw read at EMA-40k passed every NR row (ADE S6 +0.0049 [−0.1044, +0.1196]) with E3 −0.8961: **the final 8,852 steps made the raw plans worse.** Two separate reads, not a paired test (owed). |
+| caveats | ONE training seed; NON-PARITY corpus; per-frame nav token is ego-future derived (optimistic by construction); the re-timing stage was found post-hoc and registered before the 48,852 rolls; bootstrap = "another draw of EPISODES" only. |
