@@ -171,3 +171,27 @@ Recorded, not enforced by the wrapper (the shell scripts cannot hash themselves 
 | code/tests/test_wrapper_flow.py | 4f4c20eebb2f4ac94af19148a391a52011f2ab77cae61a199f8b5b1108783ec2 |
 
 Launch tree `C:/lgs/Lfb47a58376` is read-only to this experiment; battery package `qland/hold_r8batt` is imported read-only (`r8_battery_patch.apply_child`).
+
+## AMENDMENT 1 (2026-10-20 ~07:00 Berlin, Master Mind) — the smoke checker's loader; PRE-DATA
+
+**Seal before this amendment:** `fbc89426c5425764a8493db2ef9b1ba6ffe9cd6e5ebf4768a94c85b0a72cfb5f` (copy kept beside the run).
+
+**What happened.** The first real start (06:33–06:35) passed the seal, took the GPU lock, verified the checkpoint
+md5, and ran both 6-window smoke rolls to completion (`done=True`, `problems=[]`). Then `smoke_check.py` itself crashed
+on `IndexError: index 4 is out of bounds for axis 0 with size 4`: its `load()` indexed EVERY key of
+`decisions/*.npz` by window position, and `sel_bank_nav_true` has shape (4, 8, 2), not per window. The wrapper
+halted correctly and spent no further GPU.
+
+**Change.** `load()` keeps only keys whose first dimension equals the window count (`ep_poses` stays excluded).
+Nothing else in the experiment changes: arms, windows (`raw/windows_navfeed.json` unchanged), seeds, estimator,
+families, decision rule, and every other sealed file are byte-identical. The patched checker, run on the existing
+smoke dumps, passed all 9 checks. That run looked only at feed wiring (tokens, sidecars, finiteness, whether the
+plans differ), never at any metric. No primary-arm roll has run and no family has been computed.
+
+| file | sha256 before | sha256 after |
+|---|---|---|
+| code/smoke_check.py | eebd1dfca747e18cae7526ebe48909ea9033df0d851c54f5ef7d48d2ad508faf | 64694c40b9782505aaf61a3fbe972115fd0bd4984ea103f46ee8ddff6714fd4c |
+| code/tests/test_smoke_check_load.py | (new) | d849c39b0c46ce7934f293ead559eff4198ecc0d02cbb3c20c8c536638f87249 |
+
+The regression test reproduces the 06:35 failure with a (4, 8, 2) key (mutation arm: the old expression must raise).
+Suite: 61 passed.

@@ -25,8 +25,10 @@ def load(dump):
     for e in man["episodes"]:
         fi = int(e["file_index"])
         dec = np.load(d / "decisions" / f"ep{fi:03d}.npz", allow_pickle=False)
+        n = len(dec["ws"])
+        per_window = [k for k in dec.files if k != "ep_poses" and dec[k].ndim >= 1 and dec[k].shape[0] == n]
         for i, w in enumerate(dec["ws"].astype(np.int64)):
-            out[(int(e["episode_index"]), int(w))] = {k: dec[k][i] for k in dec.files if k not in ("ep_poses",)}
+            out[(int(e["episode_index"]), int(w))] = {k: dec[k][i] for k in per_window}
     return man, out
 
 
