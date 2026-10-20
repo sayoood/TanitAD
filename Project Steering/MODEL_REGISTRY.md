@@ -5814,3 +5814,12 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | four families | ADE: above. LONGITUDINAL: speed / along-track / accel worse than refcv7 on raw plans, not worse on the re-timed plans; **distance keeping NOT in this read** (X7 LEAD-VIOL owed). LATERAL: heading / curvature / yaw-rate / cross-track not worse; yaw-rate better. TACTICAL: lateral head 0.9415 vs constant 0.9039; longitudinal head 0.6103 vs constant 0.3352 (both separated); trajectory-derived decisions not worse on re-timed plans. STRATEGIC: NOT APPLICABLE, n = 0 (`--no-strategic`). |
 | ⚠️ 40k → 48,852 | The same compliant capped raw read at EMA-40k passed every NR row (ADE S6 +0.0049 [−0.1044, +0.1196]) with E3 −0.8961: **the final 8,852 steps made the raw plans worse.** Two separate reads, not a paired test (owed). |
 | caveats | ONE training seed; NON-PARITY corpus; per-frame nav token is ego-future derived (optimistic by construction); the re-timing stage was found post-hoc and registered before the 48,852 rolls; bootstrap = "another draw of EPISODES" only. |
+
+### 16.2 refcv8-r101-s0 — X7 distance keeping (LEAD-VIOL, SPEC_REFCV8 §8.7) at 48,852 and 40k  *(addendum to §16.1; fills its "X7 owed" row)*
+
+| | |
+|---|---|
+| read | S6, 830 at-risk / 1,151 lead windows (grid identical to the refcv7 baseline), per-frame feed, EMA, inference seeds 0 and 1, paired episode-cluster bootstrap B 2000 (63 episodes). Instrument `taniteval/taniteval/lead_metrics.py`; package `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-20-refcv8-perframe-final/raw/x7_lead_viol_48852/`. Tier T1 open loop. |
+| 48,852 | `share_of_at_risk` 0.0446 (37) s0 / 0.0398 (33) s1 vs refcv7 0.0590 / 0.0602; paired −0.0145 [−0.0341, +0.0024] s0 (not separated), −0.0205 [−0.0363, −0.0083] s1 → **bar NOT MET**; progress 0.943 ≥ 0.90; mean min headway +0.30 / +0.37 m vs refcv7 (separated). |
+| 40k | paired −0.0169 [−0.0348, −0.0024] s0, −0.0169 [−0.0334, −0.0044] s1 → **bar MET**. 48,852 − 40k not distinguishable. |
+| caveats | Small event counts; inference-draw movement of the 48,852 delta (0.0060) exceeds the 48,852 − 40k gap; one training seed. |
