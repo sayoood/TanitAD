@@ -2352,3 +2352,12 @@ feed with that table.
 
 **What a decision unlocks:** THOR-PICK-TICK's pre-registered outcomes, SEARCH-STALE-T1 (does the gain survive a late plan?), and a latency line in C2's and P6's verdicts. **P6 is not gated** by this.
 Memo: `TanitAD Research Lab/Architecture & Inference/Research/2026-10-20-latency-budget/LATENCY_BUDGET_PROPOSAL.md`.
+
+## ✅ DECIDED (PI, 2026-10-20 ~11:32 Berlin) -- D-LATENCY-BUDGET: max 100 ms on Thor, 4 cameras; optimise after the best results
+
+**PI, verbatim:** "The budget is max 100 ms on Thor using the 4 cameras. We will optimize later after we achieved the best possible results"
+
+**Binding consequences:**
+- **The deployment budget is ONE number: end to end, at most 100 ms on Thor, with all 4 cameras.** That covers trunk, proposals, scorer and any search. None of the memo's options is adopted as written. Option (2)'s 300 ms search stage exceeds the budget and option (3)'s 200 ms cycle does not meet it, so the memo's pre-committed 5 Hz / 200 ms fallback is NOT adopted.
+- **Order of work: results first, latency second.** No research or training arm is gated, shaped or rejected for latency now. That covers C2, the search line, P6 and its successors. Every capability verdict carries a latency line, MEASURED against 100 ms on Thor or named UNMEASURED, and that line decides nothing until the optimisation phase.
+- **The optimisation phase** begins once the programme has its best result. Its target is a stack that meets the result inside 100 ms on Thor with 4 cameras. `THOR-PICK-TICK` and `SEARCH-HOST-PORT` belong to it.
