@@ -1,0 +1,2847 @@
+{
+ "tier": "NavSim open-loop benchmark (T1-family), zero-shot PhysicalAI-AV -> nuPlan cameras, non-parity; NEVER closed loop. NOT leaderboard-submitted (PI 2026-10-04).",
+ "n_tokens": 12146,
+ "n_logs": 136,
+ "estimator": {
+  "name": "navsim_log_cluster_bootstrap",
+  "paired": "paired_navsim_log_cluster_bootstrap",
+  "cluster_unit": "log_name",
+  "sensitivity_unit": "nuplan_drive",
+  "aggregation": "single_stage_token_mean",
+  "n_boot": 2000,
+  "seed": 0,
+  "alpha": 0.05,
+  "module": "C:\\lgs\\Lfb47a58376\\taniteval\\adapters\\navsim_ci.py",
+  "module_sha256": "00e0e39ef6cfc9de5b16212c0c91386099a085b8d780b24eebd9f10cea849285",
+  "question_answered": "would another draw of LOGS (the OpenScene log_name clusters) give this score? \u2014 evaluation-set variance only. \u26d4 BLIND to training variance (H-ESTIM-SEED-1) and to inference variance of a sampling planner: a separated paired interval between two trained arms is NECESSARY, NOT SUFFICIENT \u2014 read it against a replicate arm's floor.",
+  "separated_means": "interval excludes 0 at the log_name level AND at the nuplan_drive level (SPEC 5)"
+ },
+ "arms": {
+  "R8_LEGAL": {
+   "NC": 89.8073,
+   "DAC": 87.3703,
+   "TTC": 79.1289,
+   "EP": 68.2735,
+   "C": 99.9424,
+   "DDC": 94.7143,
+   "PDMS": 70.2048,
+   "n": 12146,
+   "zeroed_by_NC_or_DAC": 2624,
+   "pdms_recompute_max_abs": 3.3306690738754696e-16,
+   "intervals_x100": {
+    "NC": {
+     "status": "OK",
+     "point": 89.8073,
+     "lo": 88.1749,
+     "hi": 91.4691,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 87.6635,
+      "hi": 91.7946
+     }
+    },
+    "DAC": {
+     "status": "OK",
+     "point": 87.3703,
+     "lo": 85.6783,
+     "hi": 88.9892,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 85.3643,
+      "hi": 89.5038
+     }
+    },
+    "TTC": {
+     "status": "OK",
+     "point": 79.1289,
+     "lo": 76.7225,
+     "hi": 81.6245,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 75.4127,
+      "hi": 82.8585
+     }
+    },
+    "EP": {
+     "status": "OK",
+     "point": 68.2735,
+     "lo": 66.3945,
+     "hi": 70.2539,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 65.9624,
+      "hi": 71.0943
+     }
+    },
+    "C": {
+     "status": "OK",
+     "point": 99.9424,
+     "lo": 99.8771,
+     "hi": 99.992,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 99.8659,
+      "hi": 99.9922
+     }
+    },
+    "PDMS": {
+     "status": "OK",
+     "point": 70.2048,
+     "lo": 68.5495,
+     "hi": 71.8204,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 68.3599,
+      "hi": 71.9013
+     }
+    }
+   },
+   "role": "BAR ARM"
+  },
+  "R8_LEGAL_s1": {
+   "NC": 89.3175,
+   "DAC": 87.2304,
+   "TTC": 78.8325,
+   "EP": 68.0896,
+   "C": 99.9177,
+   "DDC": 94.6567,
+   "PDMS": 69.8506,
+   "n": 12146,
+   "zeroed_by_NC_or_DAC": 2691,
+   "pdms_recompute_max_abs": 3.3306690738754696e-16,
+   "intervals_x100": {
+    "NC": {
+     "status": "OK",
+     "point": 89.3175,
+     "lo": 87.6382,
+     "hi": 91.026,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 87.012,
+      "hi": 91.4116
+     }
+    },
+    "DAC": {
+     "status": "OK",
+     "point": 87.2304,
+     "lo": 85.5152,
+     "hi": 88.9041,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 85.1573,
+      "hi": 89.4699
+     }
+    },
+    "TTC": {
+     "status": "OK",
+     "point": 78.8325,
+     "lo": 76.269,
+     "hi": 81.4298,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 74.8936,
+      "hi": 82.7195
+     }
+    },
+    "EP": {
+     "status": "OK",
+     "point": 68.0896,
+     "lo": 66.2196,
+     "hi": 70.0512,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 65.7481,
+      "hi": 70.9605
+     }
+    },
+    "C": {
+     "status": "OK",
+     "point": 99.9177,
+     "lo": 99.8463,
+     "hi": 99.974,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 99.8368,
+      "hi": 99.9756
+     }
+    },
+    "PDMS": {
+     "status": "OK",
+     "point": 69.8506,
+     "lo": 68.182,
+     "hi": 71.4987,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 67.9535,
+      "hi": 71.511
+     }
+    }
+   },
+   "role": "inference-seed floor arm"
+  },
+  "R8_PRIV": {
+   "NC": 89.5892,
+   "DAC": 87.2139,
+   "TTC": 78.7337,
+   "EP": 68.3466,
+   "C": 99.9259,
+   "DDC": 94.6731,
+   "PDMS": 69.9904,
+   "n": 12146,
+   "zeroed_by_NC_or_DAC": 2664,
+   "pdms_recompute_max_abs": 3.3306690738754696e-16,
+   "intervals_x100": {
+    "NC": {
+     "status": "OK",
+     "point": 89.5892,
+     "lo": 87.927,
+     "hi": 91.2386,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 87.3854,
+      "hi": 91.6616
+     }
+    },
+    "DAC": {
+     "status": "OK",
+     "point": 87.2139,
+     "lo": 85.5052,
+     "hi": 88.8838,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 85.2147,
+      "hi": 89.3521
+     }
+    },
+    "TTC": {
+     "status": "OK",
+     "point": 78.7337,
+     "lo": 76.3315,
+     "hi": 81.3079,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 74.9213,
+      "hi": 82.5311
+     }
+    },
+    "EP": {
+     "status": "OK",
+     "point": 68.3466,
+     "lo": 66.4721,
+     "hi": 70.3247,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 66.0713,
+      "hi": 71.099
+     }
+    },
+    "C": {
+     "status": "OK",
+     "point": 99.9259,
+     "lo": 99.8472,
+     "hi": 99.9839,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 99.8365,
+      "hi": 99.9849
+     }
+    },
+    "PDMS": {
+     "status": "OK",
+     "point": 69.9904,
+     "lo": 68.2865,
+     "hi": 71.6379,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 68.1361,
+      "hi": 71.7034
+     }
+    }
+   },
+   "role": "DIAGNOSTIC ONLY (never a bar)"
+  },
+  "REFCV7_50400_LEGAL": {
+   "NC": 89.8073,
+   "DAC": 87.3703,
+   "TTC": 79.1289,
+   "EP": 68.2735,
+   "C": 99.9424,
+   "DDC": 94.7143,
+   "PDMS": 70.2048,
+   "n": 12146,
+   "zeroed_by_NC_or_DAC": 2624,
+   "pdms_recompute_max_abs": 3.3306690738754696e-16,
+   "intervals_x100": {
+    "NC": {
+     "status": "OK",
+     "point": 89.8073,
+     "lo": 88.1749,
+     "hi": 91.4691,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 87.6635,
+      "hi": 91.7946
+     }
+    },
+    "DAC": {
+     "status": "OK",
+     "point": 87.3703,
+     "lo": 85.6783,
+     "hi": 88.9892,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 85.3643,
+      "hi": 89.5038
+     }
+    },
+    "TTC": {
+     "status": "OK",
+     "point": 79.1289,
+     "lo": 76.7225,
+     "hi": 81.6245,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 75.4127,
+      "hi": 82.8585
+     }
+    },
+    "EP": {
+     "status": "OK",
+     "point": 68.2735,
+     "lo": 66.3945,
+     "hi": 70.2539,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 65.9624,
+      "hi": 71.0943
+     }
+    },
+    "C": {
+     "status": "OK",
+     "point": 99.9424,
+     "lo": 99.8771,
+     "hi": 99.992,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 99.8659,
+      "hi": 99.9922
+     }
+    },
+    "PDMS": {
+     "status": "OK",
+     "point": 70.2048,
+     "lo": 68.5495,
+     "hi": 71.8204,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 68.3599,
+      "hi": 71.9013
+     }
+    }
+   },
+   "role": "reference (banked floor, INHERITED)"
+  },
+  "STOP": {
+   "NC": 97.3983,
+   "DAC": 96.5256,
+   "TTC": 96.4021,
+   "EP": 30.9994,
+   "C": 69.4385,
+   "DDC": 99.5925,
+   "PDMS": 61.8202,
+   "n": 12146,
+   "zeroed_by_NC_or_DAC": 732,
+   "pdms_recompute_max_abs": 2.220446049250313e-16,
+   "intervals_x100": {
+    "NC": {
+     "status": "OK",
+     "point": 97.3983,
+     "lo": 96.8034,
+     "hi": 97.9861,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 96.6755,
+      "hi": 98.0097
+     }
+    },
+    "DAC": {
+     "status": "OK",
+     "point": 96.5256,
+     "lo": 95.8419,
+     "hi": 97.2195,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 95.76,
+      "hi": 97.2764
+     }
+    },
+    "TTC": {
+     "status": "OK",
+     "point": 96.4021,
+     "lo": 95.7707,
+     "hi": 97.0899,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 95.7535,
+      "hi": 97.0412
+     }
+    },
+    "EP": {
+     "status": "OK",
+     "point": 30.9994,
+     "lo": 29.0387,
+     "hi": 33.0414,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 28.0283,
+      "hi": 34.1434
+     }
+    },
+    "C": {
+     "status": "OK",
+     "point": 69.4385,
+     "lo": 66.0403,
+     "hi": 72.671,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 65.886,
+      "hi": 72.7155
+     }
+    },
+    "PDMS": {
+     "status": "OK",
+     "point": 61.8202,
+     "lo": 60.7003,
+     "hi": 63.0816,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 60.475,
+      "hi": 63.3578
+     }
+    }
+   },
+   "role": "reference (banked floor, INHERITED)"
+  },
+  "CV": {
+   "NC": 68.0183,
+   "DAC": 57.838,
+   "TTC": 50.0329,
+   "EP": 19.437,
+   "C": 100.0,
+   "DDC": 79.907,
+   "PDMS": 20.6517,
+   "n": 12146,
+   "zeroed_by_NC_or_DAC": 8130,
+   "pdms_recompute_max_abs": 2.220446049250313e-16,
+   "intervals_x100": {
+    "NC": {
+     "status": "OK",
+     "point": 68.0183,
+     "lo": 64.2728,
+     "hi": 71.9557,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 62.0503,
+      "hi": 74.0318
+     }
+    },
+    "DAC": {
+     "status": "OK",
+     "point": 57.838,
+     "lo": 53.0452,
+     "hi": 62.4644,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 51.1528,
+      "hi": 64.7877
+     }
+    },
+    "TTC": {
+     "status": "OK",
+     "point": 50.0329,
+     "lo": 44.5968,
+     "hi": 55.4309,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 41.1071,
+      "hi": 58.9289
+     }
+    },
+    "EP": {
+     "status": "OK",
+     "point": 19.437,
+     "lo": 17.8246,
+     "hi": 21.0925,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 17.1377,
+      "hi": 21.9266
+     }
+    },
+    "C": {
+     "status": "OK",
+     "point": 100.0,
+     "lo": 100.0,
+     "hi": 100.0,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 100.0,
+      "hi": 100.0
+     }
+    },
+    "PDMS": {
+     "status": "OK",
+     "point": 20.6517,
+     "lo": 19.2048,
+     "hi": 22.2163,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 19.468,
+      "hi": 22.065
+     }
+    }
+   },
+   "role": "reference (banked floor, INHERITED)"
+  },
+  "HUMAN": {
+   "NC": 100.0,
+   "DAC": 100.0,
+   "TTC": 100.0,
+   "EP": 86.9629,
+   "C": 99.9012,
+   "DDC": 98.8268,
+   "PDMS": 94.5514,
+   "n": 12146,
+   "zeroed_by_NC_or_DAC": 0,
+   "pdms_recompute_max_abs": 3.3306690738754696e-16,
+   "intervals_x100": {
+    "NC": {
+     "status": "OK",
+     "point": 100.0,
+     "lo": 100.0,
+     "hi": 100.0,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 100.0,
+      "hi": 100.0
+     }
+    },
+    "DAC": {
+     "status": "OK",
+     "point": 100.0,
+     "lo": 100.0,
+     "hi": 100.0,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 100.0,
+      "hi": 100.0
+     }
+    },
+    "TTC": {
+     "status": "OK",
+     "point": 100.0,
+     "lo": 100.0,
+     "hi": 100.0,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 100.0,
+      "hi": 100.0
+     }
+    },
+    "EP": {
+     "status": "OK",
+     "point": 86.9629,
+     "lo": 85.132,
+     "hi": 88.6212,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 83.8679,
+      "hi": 89.84
+     }
+    },
+    "C": {
+     "status": "OK",
+     "point": 99.9012,
+     "lo": 99.7925,
+     "hi": 99.9759,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 99.7854,
+      "hi": 99.9863
+     }
+    },
+    "PDMS": {
+     "status": "OK",
+     "point": 94.5514,
+     "lo": 93.7941,
+     "hi": 95.2344,
+     "n_clusters": 136,
+     "drive_sensitivity": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": 93.2697,
+      "hi": 95.7453
+     }
+    }
+   },
+   "role": "reference (banked floor, INHERITED)"
+  }
+ },
+ "refused_pairing": {},
+ "pairs": {
+  "R8_LEGAL__minus__STOP": {
+   "delta_x100": 8.3846,
+   "wins": 8207,
+   "ties": 778,
+   "losses": 3161,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 8.3846,
+    "lo": 6.3586,
+    "hi": 10.2413,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 6.0022,
+     "hi": 10.3217
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "R8_LEGAL__minus__CV": {
+   "delta_x100": 49.5532,
+   "wins": 9013,
+   "ties": 2560,
+   "losses": 573,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 49.5532,
+    "lo": 47.2851,
+    "hi": 51.7629,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 47.1115,
+     "hi": 51.5329
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "R8_LEGAL__minus__HUMAN": {
+   "delta_x100": -24.3466,
+   "wins": 3792,
+   "ties": 2093,
+   "losses": 6261,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": -24.3466,
+    "lo": -26.1674,
+    "hi": -22.6204,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": -26.7139,
+     "hi": -22.2143
+    },
+    "positive": false,
+    "negative": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+   "delta_x100": 0.0,
+   "wins": 0,
+   "ties": 12146,
+   "losses": 0,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_clusters": 136,
+    "separated_log_name": false,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "positive": false,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "R8_LEGAL_s1__minus__STOP": {
+   "delta_x100": 8.0304,
+   "wins": 8185,
+   "ties": 743,
+   "losses": 3218,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 8.0304,
+    "lo": 5.9695,
+    "hi": 9.9435,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 5.6982,
+     "hi": 9.9604
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "R8_LEGAL_s1__minus__CV": {
+   "delta_x100": 49.199,
+   "wins": 8997,
+   "ties": 2602,
+   "losses": 547,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 49.199,
+    "lo": 46.9106,
+    "hi": 51.3907,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 46.746,
+     "hi": 51.2177
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "R8_LEGAL_s1__minus__HUMAN": {
+   "delta_x100": -24.7008,
+   "wins": 3807,
+   "ties": 2091,
+   "losses": 6248,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": -24.7008,
+    "lo": -26.5933,
+    "hi": -22.9266,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": -27.0734,
+     "hi": -22.5631
+    },
+    "positive": false,
+    "negative": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "R8_LEGAL_s1__minus__REFCV7_50400_LEGAL": {
+   "delta_x100": -0.3542,
+   "wins": 3399,
+   "ties": 5376,
+   "losses": 3371,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": -0.3542,
+    "lo": -0.6861,
+    "hi": 0.001,
+    "n_clusters": 136,
+    "separated_log_name": false,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": -0.6731,
+     "hi": -0.0584
+    },
+    "positive": false,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "R8_PRIV__minus__STOP": {
+   "delta_x100": 8.1702,
+   "wins": 8185,
+   "ties": 757,
+   "losses": 3204,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 8.1702,
+    "lo": 6.1228,
+    "hi": 10.0668,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 5.7887,
+     "hi": 10.1793
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "R8_PRIV__minus__CV": {
+   "delta_x100": 49.3387,
+   "wins": 9006,
+   "ties": 2595,
+   "losses": 545,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 49.3387,
+    "lo": 47.0593,
+    "hi": 51.5524,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 46.8732,
+     "hi": 51.3432
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "R8_PRIV__minus__HUMAN": {
+   "delta_x100": -24.561,
+   "wins": 3844,
+   "ties": 2104,
+   "losses": 6198,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": -24.561,
+    "lo": -26.448,
+    "hi": -22.8069,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": -26.9667,
+     "hi": -22.3541
+    },
+    "positive": false,
+    "negative": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "R8_PRIV__minus__REFCV7_50400_LEGAL": {
+   "delta_x100": -0.2144,
+   "wins": 301,
+   "ties": 11704,
+   "losses": 141,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": -0.2144,
+    "lo": -0.3999,
+    "hi": -0.0404,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": -0.3941,
+     "hi": -0.0478
+    },
+    "positive": false,
+    "negative": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "R8_LEGAL__minus__R8_LEGAL_s1": {
+   "delta_x100": 0.3542,
+   "wins": 3371,
+   "ties": 5376,
+   "losses": 3399,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 0.3542,
+    "lo": -0.001,
+    "hi": 0.6861,
+    "n_clusters": 136,
+    "separated_log_name": false,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 0.0584,
+     "hi": 0.6731
+    },
+    "positive": false,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "R8_PRIV__minus__R8_LEGAL": {
+   "delta_x100": -0.2144,
+   "wins": 301,
+   "ties": 11704,
+   "losses": 141,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": -0.2144,
+    "lo": -0.3999,
+    "hi": -0.0404,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": -0.3941,
+     "hi": -0.0478
+    },
+    "positive": false,
+    "negative": true,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  }
+ },
+ "inference_seed_floor": {
+  "x100": 0.3542,
+  "pair": "R8_LEGAL__minus__R8_LEGAL_s1",
+  "interval": {
+   "status": "OK",
+   "delta": 0.3542,
+   "lo": -0.001,
+   "hi": 0.6861,
+   "n_clusters": 136,
+   "separated_log_name": false,
+   "drive_level": {
+    "status": "OK",
+    "n_clusters": 44,
+    "lo": 0.0584,
+    "hi": 0.6731
+   },
+   "positive": false,
+   "negative": false,
+   "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+  },
+  "rule": "a difference below this floor is not an effect (one pair of inference draws: a lower bound on the noise, not an estimate of it)"
+ },
+ "strata": {
+  "partition_sums_ok": true,
+  "partitions": {
+   "city": {
+    "Singapore": {
+     "n": 1914,
+     "n_logs": 13,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 97.7534,
+       "DAC": 81.7137,
+       "TTC": 94.0961,
+       "EP": 62.2619,
+       "C": 100.0,
+       "DDC": 93.652,
+       "PDMS": 71.6844
+      },
+      "R8_LEGAL_s1": {
+       "NC": 97.7534,
+       "DAC": 81.5047,
+       "TTC": 94.4619,
+       "EP": 61.8241,
+       "C": 100.0,
+       "DDC": 93.6782,
+       "PDMS": 71.4998
+      },
+      "R8_PRIV": {
+       "NC": 97.7534,
+       "DAC": 81.7137,
+       "TTC": 94.0961,
+       "EP": 62.2619,
+       "C": 100.0,
+       "DDC": 93.652,
+       "PDMS": 71.6844
+      },
+      "STOP": {
+       "NC": 98.9812,
+       "DAC": 95.559,
+       "TTC": 96.813,
+       "EP": 19.4707,
+       "C": 74.9216,
+       "DDC": 99.7649,
+       "PDMS": 58.4222
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 97.7534,
+       "DAC": 81.7137,
+       "TTC": 94.0961,
+       "EP": 62.2619,
+       "C": 100.0,
+       "DDC": 93.652,
+       "PDMS": 71.6844
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": 13.2622,
+       "wins": 1479,
+       "ties": 55,
+       "losses": 380,
+       "n": 1914,
+       "interval": {
+        "status": "OK",
+        "delta": 13.2622,
+        "lo": 10.8754,
+        "hi": 15.9354,
+        "n_clusters": 13,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "CANNOT-RULE",
+         "reason": "2 drives < floor 8"
+        },
+        "positive": true,
+        "negative": false,
+        "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": true,
+       "is_effect": true
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 1914,
+       "losses": 0,
+       "n": 1914,
+       "interval": {
+        "status": "OK",
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_clusters": 13,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "CANNOT-RULE",
+         "reason": "2 drives < floor 8"
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 1914,
+       "losses": 0,
+       "n": 1914,
+       "interval": {
+        "status": "OK",
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_clusters": 13,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "CANNOT-RULE",
+         "reason": "2 drives < floor 8"
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 0.1846,
+       "wins": 752,
+       "ties": 449,
+       "losses": 713,
+       "n": 1914,
+       "interval": {
+        "status": "OK",
+        "delta": 0.1846,
+        "lo": -0.4239,
+        "hi": 0.8319,
+        "n_clusters": 13,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "CANNOT-RULE",
+         "reason": "2 drives < floor 8"
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.1846
+    },
+    "US": {
+     "n": 10232,
+     "n_logs": 123,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 88.321,
+       "DAC": 88.4285,
+       "TTC": 76.3292,
+       "EP": 69.398,
+       "C": 99.9316,
+       "DDC": 94.913,
+       "PDMS": 69.9281
+      },
+      "R8_LEGAL_s1": {
+       "NC": 87.7394,
+       "DAC": 88.3014,
+       "TTC": 75.9089,
+       "EP": 69.2616,
+       "C": 99.9023,
+       "DDC": 94.8397,
+       "PDMS": 69.5421
+      },
+      "R8_PRIV": {
+       "NC": 88.062,
+       "DAC": 88.2428,
+       "TTC": 75.86,
+       "EP": 69.4848,
+       "C": 99.912,
+       "DDC": 94.8642,
+       "PDMS": 69.6735
+      },
+      "STOP": {
+       "NC": 97.1022,
+       "DAC": 96.7064,
+       "TTC": 96.3253,
+       "EP": 33.1559,
+       "C": 68.4128,
+       "DDC": 99.5602,
+       "PDMS": 62.4559
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 88.321,
+       "DAC": 88.4285,
+       "TTC": 76.3292,
+       "EP": 69.398,
+       "C": 99.9316,
+       "DDC": 94.913,
+       "PDMS": 69.9281
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": 7.4722,
+       "wins": 6728,
+       "ties": 723,
+       "losses": 2781,
+       "n": 10232,
+       "interval": {
+        "status": "OK",
+        "delta": 7.4722,
+        "lo": 5.2294,
+        "hi": 9.6259,
+        "n_clusters": 123,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 42,
+         "lo": 5.1791,
+         "hi": 9.7342
+        },
+        "positive": true,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3859,
+       "exceeds_seed_floor": true,
+       "is_effect": true
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 10232,
+       "losses": 0,
+       "n": 10232,
+       "interval": {
+        "status": "OK",
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_clusters": 123,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 42,
+         "lo": 0.0,
+         "hi": 0.0
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3859,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": -0.2546,
+       "wins": 301,
+       "ties": 9790,
+       "losses": 141,
+       "n": 10232,
+       "interval": {
+        "status": "OK",
+        "delta": -0.2546,
+        "lo": -0.466,
+        "hi": -0.037,
+        "n_clusters": 123,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 42,
+         "lo": -0.4571,
+         "hi": -0.0712
+        },
+        "positive": false,
+        "negative": true,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3859,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 0.3859,
+       "wins": 2619,
+       "ties": 4927,
+       "losses": 2686,
+       "n": 10232,
+       "interval": {
+        "status": "OK",
+        "delta": 0.3859,
+        "lo": -0.0094,
+        "hi": 0.7736,
+        "n_clusters": 123,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 42,
+         "lo": 0.0473,
+         "hi": 0.742
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.3859
+    }
+   },
+   "command": {
+    "straight": {
+     "n": 8070,
+     "n_logs": 134,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 88.29,
+       "DAC": 91.834,
+       "TTC": 76.6543,
+       "EP": 71.5314,
+       "C": 99.9133,
+       "DDC": 98.3395,
+       "PDMS": 72.2264
+      },
+      "R8_LEGAL_s1": {
+       "NC": 87.6084,
+       "DAC": 92.0322,
+       "TTC": 76.1834,
+       "EP": 71.6381,
+       "C": 99.8885,
+       "DDC": 98.3395,
+       "PDMS": 72.1708
+      },
+      "R8_PRIV": {
+       "NC": 87.9988,
+       "DAC": 91.7348,
+       "TTC": 76.0471,
+       "EP": 71.682,
+       "C": 99.8885,
+       "DDC": 98.3024,
+       "PDMS": 71.9786
+      },
+      "STOP": {
+       "NC": 97.6022,
+       "DAC": 98.1537,
+       "TTC": 97.1375,
+       "EP": 34.7596,
+       "C": 59.8637,
+       "DDC": 99.8203,
+       "PDMS": 62.9692
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 88.29,
+       "DAC": 91.834,
+       "TTC": 76.6543,
+       "EP": 71.5314,
+       "C": 99.9133,
+       "DDC": 98.3395,
+       "PDMS": 72.2264
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": 9.2572,
+       "wins": 5463,
+       "ties": 536,
+       "losses": 2071,
+       "n": 8070,
+       "interval": {
+        "status": "OK",
+        "delta": 9.2572,
+        "lo": 6.6977,
+        "hi": 11.6116,
+        "n_clusters": 134,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": 6.4001,
+         "hi": 12.2338
+        },
+        "positive": true,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": true,
+       "is_effect": true
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 8070,
+       "losses": 0,
+       "n": 8070,
+       "interval": {
+        "status": "OK",
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_clusters": 134,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": 0.0,
+         "hi": 0.0
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": -0.2478,
+       "wins": 230,
+       "ties": 7757,
+       "losses": 83,
+       "n": 8070,
+       "interval": {
+        "status": "OK",
+        "delta": -0.2478,
+        "lo": -0.4505,
+        "hi": -0.058,
+        "n_clusters": 134,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": -0.4652,
+         "hi": -0.0424
+        },
+        "positive": false,
+        "negative": true,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 0.0556,
+       "wins": 2238,
+       "ties": 3499,
+       "losses": 2333,
+       "n": 8070,
+       "interval": {
+        "status": "OK",
+        "delta": 0.0556,
+        "lo": -0.3321,
+        "hi": 0.4885,
+        "n_clusters": 134,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": -0.258,
+         "hi": 0.4245
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.0556
+    },
+    "turn": {
+     "n": 4076,
+     "n_logs": 113,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 92.8116,
+       "DAC": 78.5329,
+       "TTC": 84.0285,
+       "EP": 61.8232,
+       "C": 100.0,
+       "DDC": 87.5368,
+       "PDMS": 66.2024
+      },
+      "R8_LEGAL_s1": {
+       "NC": 92.7012,
+       "DAC": 77.7233,
+       "TTC": 84.0775,
+       "EP": 61.0639,
+       "C": 99.9755,
+       "DDC": 87.3651,
+       "PDMS": 65.2569
+      },
+      "R8_PRIV": {
+       "NC": 92.738,
+       "DAC": 78.263,
+       "TTC": 84.053,
+       "EP": 61.7429,
+       "C": 100.0,
+       "DDC": 87.4877,
+       "PDMS": 66.0539
+      },
+      "STOP": {
+       "NC": 96.9946,
+       "DAC": 93.3023,
+       "TTC": 94.946,
+       "EP": 23.5545,
+       "C": 88.3955,
+       "DDC": 99.1413,
+       "PDMS": 59.5454
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 92.8116,
+       "DAC": 78.5329,
+       "TTC": 84.0285,
+       "EP": 61.8232,
+       "C": 100.0,
+       "DDC": 87.5368,
+       "PDMS": 66.2024
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": 6.657,
+       "wins": 2744,
+       "ties": 242,
+       "losses": 1090,
+       "n": 4076,
+       "interval": {
+        "status": "OK",
+        "delta": 6.657,
+        "lo": 3.7595,
+        "hi": 9.2766,
+        "n_clusters": 113,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 41,
+         "lo": 3.6768,
+         "hi": 9.7366
+        },
+        "positive": true,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.9455,
+       "exceeds_seed_floor": true,
+       "is_effect": true
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 4076,
+       "losses": 0,
+       "n": 4076,
+       "interval": {
+        "status": "OK",
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_clusters": 113,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 41,
+         "lo": 0.0,
+         "hi": 0.0
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.9455,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": -0.1484,
+       "wins": 71,
+       "ties": 3947,
+       "losses": 58,
+       "n": 4076,
+       "interval": {
+        "status": "OK",
+        "delta": -0.1484,
+        "lo": -0.4754,
+        "hi": 0.1399,
+        "n_clusters": 113,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 41,
+         "lo": -0.4925,
+         "hi": 0.1562
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.9455,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 0.9455,
+       "wins": 1133,
+       "ties": 1877,
+       "losses": 1066,
+       "n": 4076,
+       "interval": {
+        "status": "OK",
+        "delta": 0.9455,
+        "lo": 0.2014,
+        "hi": 1.6695,
+        "n_clusters": 113,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 41,
+         "lo": 0.3041,
+         "hi": 1.6555
+        },
+        "positive": true,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.9455
+    },
+    "unknown": {
+     "n": 0
+    },
+    "malformed": {
+     "n": 0
+    }
+   },
+   "t0_speed_band": {
+    "[0,2)": {
+     "n": 2539,
+     "n_logs": 130,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 88.204,
+       "DAC": 95.9433,
+       "TTC": 83.4974,
+       "EP": 69.5156,
+       "C": 99.7243,
+       "DDC": 97.2233,
+       "PDMS": 76.2899
+      },
+      "R8_LEGAL_s1": {
+       "NC": 88.1056,
+       "DAC": 95.8645,
+       "TTC": 83.2217,
+       "EP": 70.4322,
+       "C": 99.6061,
+       "DDC": 97.0461,
+       "PDMS": 76.4716
+      },
+      "R8_PRIV": {
+       "NC": 88.1056,
+       "DAC": 95.9433,
+       "TTC": 83.3005,
+       "EP": 70.6707,
+       "C": 99.6455,
+       "DDC": 97.0855,
+       "PDMS": 76.6793
+      },
+      "STOP": {
+       "NC": 92.438,
+       "DAC": 99.9212,
+       "TTC": 99.1729,
+       "EP": 27.659,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 65.1546
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 88.204,
+       "DAC": 95.9433,
+       "TTC": 83.4974,
+       "EP": 69.5156,
+       "C": 99.7243,
+       "DDC": 97.2233,
+       "PDMS": 76.2899
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": 11.1353,
+       "wins": 1783,
+       "ties": 264,
+       "losses": 492,
+       "n": 2539,
+       "interval": {
+        "status": "OK",
+        "delta": 11.1353,
+        "lo": 7.2117,
+        "hi": 14.8857,
+        "n_clusters": 130,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": 6.5745,
+         "hi": 15.193
+        },
+        "positive": true,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": true,
+       "is_effect": true
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 2539,
+       "losses": 0,
+       "n": 2539,
+       "interval": {
+        "status": "OK",
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_clusters": 130,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": 0.0,
+         "hi": 0.0
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": 0.3894,
+       "wins": 91,
+       "ties": 2426,
+       "losses": 22,
+       "n": 2539,
+       "interval": {
+        "status": "OK",
+        "delta": 0.3894,
+        "lo": 0.0471,
+        "hi": 0.7592,
+        "n_clusters": 130,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": 0.0724,
+         "hi": 0.7706
+        },
+        "positive": true,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": true,
+       "is_effect": true
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": -0.1817,
+       "wins": 597,
+       "ties": 1309,
+       "losses": 633,
+       "n": 2539,
+       "interval": {
+        "status": "OK",
+        "delta": -0.1817,
+        "lo": -0.799,
+        "hi": 0.3654,
+        "n_clusters": 130,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": -0.8212,
+         "hi": 0.4328
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.1817
+    },
+    "[2,8.33)": {
+     "n": 7354,
+     "n_logs": 131,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 87.9861,
+       "DAC": 85.5045,
+       "TTC": 74.9116,
+       "EP": 65.7356,
+       "C": 100.0,
+       "DDC": 93.065,
+       "PDMS": 66.4823
+      },
+      "R8_LEGAL_s1": {
+       "NC": 87.3742,
+       "DAC": 85.3413,
+       "TTC": 74.694,
+       "EP": 65.1675,
+       "C": 100.0,
+       "DDC": 93.0446,
+       "PDMS": 65.9453
+      },
+      "R8_PRIV": {
+       "NC": 87.687,
+       "DAC": 85.2869,
+       "TTC": 74.5037,
+       "EP": 65.4327,
+       "C": 100.0,
+       "DDC": 93.031,
+       "PDMS": 66.0638
+      },
+      "STOP": {
+       "NC": 98.7286,
+       "DAC": 95.6758,
+       "TTC": 96.4101,
+       "EP": 33.427,
+       "C": 80.1469,
+       "DDC": 99.4697,
+       "PDMS": 64.8403
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 87.9861,
+       "DAC": 85.5045,
+       "TTC": 74.9116,
+       "EP": 65.7356,
+       "C": 100.0,
+       "DDC": 93.065,
+       "PDMS": 66.4823
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": 1.642,
+       "wins": 4622,
+       "ties": 449,
+       "losses": 2283,
+       "n": 7354,
+       "interval": {
+        "status": "OK",
+        "delta": 1.642,
+        "lo": -0.8633,
+        "hi": 3.9939,
+        "n_clusters": 131,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": -1.406,
+         "hi": 4.1868
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.537,
+       "exceeds_seed_floor": true,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 7354,
+       "losses": 0,
+       "n": 7354,
+       "interval": {
+        "status": "OK",
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_clusters": 131,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": 0.0,
+         "hi": 0.0
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.537,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": -0.4185,
+       "wins": 140,
+       "ties": 7116,
+       "losses": 98,
+       "n": 7354,
+       "interval": {
+        "status": "OK",
+        "delta": -0.4185,
+        "lo": -0.6509,
+        "hi": -0.2073,
+        "n_clusters": 131,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": -0.7246,
+         "hi": -0.1723
+        },
+        "positive": false,
+        "negative": true,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.537,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 0.537,
+       "wins": 2088,
+       "ties": 3212,
+       "losses": 2054,
+       "n": 7354,
+       "interval": {
+        "status": "OK",
+        "delta": 0.537,
+        "lo": 0.0429,
+        "hi": 0.993,
+        "n_clusters": 131,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": 0.1361,
+         "hi": 1.0323
+        },
+        "positive": true,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.537
+    },
+    "[8.33,13.89)": {
+     "n": 2190,
+     "n_logs": 113,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 97.5342,
+       "DAC": 83.379,
+       "TTC": 88.1279,
+       "EP": 74.5496,
+       "C": 100.0,
+       "DDC": 97.1918,
+       "PDMS": 75.0811
+      },
+      "R8_LEGAL_s1": {
+       "NC": 96.9863,
+       "DAC": 83.1963,
+       "TTC": 87.6256,
+       "EP": 74.328,
+       "C": 100.0,
+       "DDC": 97.1461,
+       "PDMS": 74.701
+      },
+      "R8_PRIV": {
+       "NC": 97.3973,
+       "DAC": 83.242,
+       "TTC": 87.5799,
+       "EP": 74.5876,
+       "C": 100.0,
+       "DDC": 97.2374,
+       "PDMS": 74.8382
+      },
+      "STOP": {
+       "NC": 98.653,
+       "DAC": 95.3425,
+       "TTC": 93.9726,
+       "EP": 26.6229,
+       "C": 0.0457,
+       "DDC": 99.5205,
+       "PDMS": 48.3611
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 97.5342,
+       "DAC": 83.379,
+       "TTC": 88.1279,
+       "EP": 74.5496,
+       "C": 100.0,
+       "DDC": 97.1918,
+       "PDMS": 75.0811
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": 26.72,
+       "wins": 1742,
+       "ties": 65,
+       "losses": 383,
+       "n": 2190,
+       "interval": {
+        "status": "OK",
+        "delta": 26.72,
+        "lo": 23.2237,
+        "hi": 29.9716,
+        "n_clusters": 113,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 43,
+         "lo": 22.7093,
+         "hi": 30.4532
+        },
+        "positive": true,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3801,
+       "exceeds_seed_floor": true,
+       "is_effect": true
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 2190,
+       "losses": 0,
+       "n": 2190,
+       "interval": {
+        "status": "OK",
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_clusters": 113,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 43,
+         "lo": 0.0,
+         "hi": 0.0
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3801,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": -0.2429,
+       "wins": 69,
+       "ties": 2101,
+       "losses": 20,
+       "n": 2190,
+       "interval": {
+        "status": "OK",
+        "delta": -0.2429,
+        "lo": -0.637,
+        "hi": 0.131,
+        "n_clusters": 113,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 43,
+         "lo": -0.4793,
+         "hi": 0.017
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3801,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 0.3801,
+       "wins": 675,
+       "ties": 813,
+       "losses": 702,
+       "n": 2190,
+       "interval": {
+        "status": "OK",
+        "delta": 0.3801,
+        "lo": -0.5108,
+        "hi": 1.3239,
+        "n_clusters": 113,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 43,
+         "lo": -0.5181,
+         "hi": 1.3322
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.3801
+    },
+    ">=13.89": {
+     "n": 63,
+     "n_logs": 9,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 98.4127,
+       "DAC": 98.4127,
+       "TTC": 82.5397,
+       "EP": 96.2825,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 89.9854
+      },
+      "R8_LEGAL_s1": {
+       "NC": 98.4127,
+       "DAC": 100.0,
+       "TTC": 79.3651,
+       "EP": 97.9119,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 90.2675
+      },
+      "R8_PRIV": {
+       "NC": 100.0,
+       "DAC": 98.4127,
+       "TTC": 80.9524,
+       "EP": 97.8698,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 90.25
+      },
+      "STOP": {
+       "NC": 98.4127,
+       "DAC": 100.0,
+       "TTC": 68.254,
+       "EP": 34.3843,
+       "C": 0.0,
+       "DDC": 100.0,
+       "PDMS": 42.766
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 98.4127,
+       "DAC": 98.4127,
+       "TTC": 82.5397,
+       "EP": 96.2825,
+       "C": 100.0,
+       "DDC": 100.0,
+       "PDMS": 89.9854
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": 47.2195,
+       "wins": 60,
+       "ties": 0,
+       "losses": 3,
+       "n": 63,
+       "interval": {
+        "status": "OK",
+        "delta": 47.2195,
+        "lo": 33.0376,
+        "hi": 65.1003,
+        "n_clusters": 9,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 8,
+         "lo": 35.1567,
+         "hi": 61.1822
+        },
+        "positive": true,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": true,
+       "is_effect": true
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 63,
+       "losses": 0,
+       "n": 63,
+       "interval": {
+        "status": "OK",
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_clusters": 9,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 8,
+         "lo": 0.0,
+         "hi": 0.0
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": 0.2646,
+       "wins": 1,
+       "ties": 61,
+       "losses": 1,
+       "n": 63,
+       "interval": {
+        "status": "OK",
+        "delta": 0.2646,
+        "lo": -1.4126,
+        "hi": 3.8889,
+        "n_clusters": 9,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 8,
+         "lo": -1.0965,
+         "hi": 4.8611
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": -0.2821,
+       "wins": 11,
+       "ties": 42,
+       "losses": 10,
+       "n": 63,
+       "interval": {
+        "status": "OK",
+        "delta": -0.2821,
+        "lo": -7.8883,
+        "hi": 4.3099,
+        "n_clusters": 9,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 8,
+         "lo": -9.7936,
+         "hi": 3.397
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.2821
+    },
+    "invalid": {
+     "n": 0
+    }
+   },
+   "ep_clause": {
+    "fired": {
+     "n": 1006,
+     "n_logs": 111,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 59.8907,
+       "DAC": 94.831,
+       "TTC": 48.4095,
+       "EP": 56.7594,
+       "C": 100.0,
+       "DDC": 98.0119,
+       "PDMS": 51.8431
+      },
+      "R8_LEGAL_s1": {
+       "NC": 58.5487,
+       "DAC": 94.6322,
+       "TTC": 46.3221,
+       "EP": 55.3678,
+       "C": 100.0,
+       "DDC": 97.8628,
+       "PDMS": 50.2029
+      },
+      "R8_PRIV": {
+       "NC": 58.8966,
+       "DAC": 94.7316,
+       "TTC": 47.2167,
+       "EP": 55.7654,
+       "C": 100.0,
+       "DDC": 98.1113,
+       "PDMS": 50.7662
+      },
+      "STOP": {
+       "NC": 94.5328,
+       "DAC": 99.4036,
+       "TTC": 99.1054,
+       "EP": 93.9364,
+       "C": 99.8012,
+       "DDC": 99.6024,
+       "PDMS": 93.7293
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 59.8907,
+       "DAC": 94.831,
+       "TTC": 48.4095,
+       "EP": 56.7594,
+       "C": 100.0,
+       "DDC": 98.0119,
+       "PDMS": 51.8431
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": -41.8862,
+       "wins": 45,
+       "ties": 430,
+       "losses": 531,
+       "n": 1006,
+       "interval": {
+        "status": "OK",
+        "delta": -41.8862,
+        "lo": -47.0335,
+        "hi": -36.3283,
+        "n_clusters": 111,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 41,
+         "lo": -47.2291,
+         "hi": -36.4594
+        },
+        "positive": false,
+        "negative": true,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 1.6402,
+       "exceeds_seed_floor": true,
+       "is_effect": true
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 1006,
+       "losses": 0,
+       "n": 1006,
+       "interval": {
+        "status": "OK",
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_clusters": 111,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 41,
+         "lo": 0.0,
+         "hi": 0.0
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 1.6402,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": -1.0769,
+       "wins": 0,
+       "ties": 992,
+       "losses": 14,
+       "n": 1006,
+       "interval": {
+        "status": "OK",
+        "delta": -1.0769,
+        "lo": -1.7306,
+        "hi": -0.4591,
+        "n_clusters": 111,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 41,
+         "lo": -1.7675,
+         "hi": -0.4682
+        },
+        "positive": false,
+        "negative": true,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 1.6402,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 1.6402,
+       "wins": 65,
+       "ties": 899,
+       "losses": 42,
+       "n": 1006,
+       "interval": {
+        "status": "OK",
+        "delta": 1.6402,
+        "lo": 0.1597,
+        "hi": 3.0512,
+        "n_clusters": 111,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 41,
+         "lo": 0.3249,
+         "hi": 3.0589
+        },
+        "positive": true,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 1.6402
+    },
+    "not_fired": {
+     "n": 11140,
+     "n_logs": 136,
+     "arms_x100": {
+      "R8_LEGAL": {
+       "NC": 92.509,
+       "DAC": 86.6966,
+       "TTC": 81.9031,
+       "EP": 69.3132,
+       "C": 99.9372,
+       "DDC": 94.4165,
+       "PDMS": 71.863
+      },
+      "R8_LEGAL_s1": {
+       "NC": 92.0961,
+       "DAC": 86.5619,
+       "TTC": 81.7684,
+       "EP": 69.2384,
+       "C": 99.9102,
+       "DDC": 94.3671,
+       "PDMS": 71.6249
+      },
+      "R8_PRIV": {
+       "NC": 92.3609,
+       "DAC": 86.535,
+       "TTC": 81.5799,
+       "EP": 69.4827,
+       "C": 99.9192,
+       "DDC": 94.3627,
+       "PDMS": 71.7264
+      },
+      "STOP": {
+       "NC": 97.6571,
+       "DAC": 96.2657,
+       "TTC": 96.158,
+       "EP": 25.3158,
+       "C": 66.6966,
+       "DDC": 99.5916,
+       "PDMS": 58.9387
+      },
+      "REFCV7_50400_LEGAL": {
+       "NC": 92.509,
+       "DAC": 86.6966,
+       "TTC": 81.9031,
+       "EP": 69.3132,
+       "C": 99.9372,
+       "DDC": 94.4165,
+       "PDMS": 71.863
+      }
+     },
+     "pairs": {
+      "R8_LEGAL__minus__STOP": {
+       "delta_x100": 12.9243,
+       "wins": 8162,
+       "ties": 348,
+       "losses": 2630,
+       "n": 11140,
+       "interval": {
+        "status": "OK",
+        "delta": 12.9243,
+        "lo": 11.2653,
+        "hi": 14.4488,
+        "n_clusters": 136,
+        "separated_log_name": true,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": 11.0421,
+         "hi": 14.6632
+        },
+        "positive": true,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": true,
+       "is_effect": true
+      },
+      "R8_LEGAL__minus__REFCV7_50400_LEGAL": {
+       "delta_x100": 0.0,
+       "wins": 0,
+       "ties": 11140,
+       "losses": 0,
+       "n": 11140,
+       "interval": {
+        "status": "OK",
+        "delta": 0.0,
+        "lo": 0.0,
+        "hi": 0.0,
+        "n_clusters": 136,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": 0.0,
+         "hi": 0.0
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_PRIV__minus__R8_LEGAL": {
+       "delta_x100": -0.1366,
+       "wins": 301,
+       "ties": 10712,
+       "losses": 127,
+       "n": 11140,
+       "interval": {
+        "status": "OK",
+        "delta": -0.1366,
+        "lo": -0.3237,
+        "hi": 0.0447,
+        "n_clusters": 136,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": -0.2957,
+         "hi": 0.0152
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       },
+       "floor_used_x100": 0.3542,
+       "exceeds_seed_floor": false,
+       "is_effect": false
+      },
+      "R8_LEGAL__minus__R8_LEGAL_s1": {
+       "delta_x100": 0.2381,
+       "wins": 3306,
+       "ties": 4477,
+       "losses": 3357,
+       "n": 11140,
+       "interval": {
+        "status": "OK",
+        "delta": 0.2381,
+        "lo": -0.1473,
+        "hi": 0.6205,
+        "n_clusters": 136,
+        "separated_log_name": false,
+        "drive_level": {
+         "status": "OK",
+         "n_clusters": 44,
+         "lo": -0.0898,
+         "hi": 0.5967
+        },
+        "positive": false,
+        "negative": false,
+        "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+       }
+      }
+     },
+     "seed_floor_x100_in_stratum": 0.2381
+    }
+   }
+  }
+ },
+ "ep_clause_fired": {
+  "n": 1006,
+  "fraction": 0.0828,
+  "rule": "max compliant progress <= 5.0 m => EP is set to 1 (the oracle's progress, model-independent)"
+ },
+ "bars": {
+  "BAR-R8-N1": {
+   "bar": "BAR-R8-N1",
+   "statement": "navtest PDMS(R8_LEGAL) > STOP, paired interval excluding 0 (log_name AND nuplan_drive), margin > 2x the full-split inference floor |PDMS(R8_LEGAL) - PDMS(R8_LEGAL_s1)|",
+   "baseline": "STOP",
+   "carrying_arm": "R8_LEGAL",
+   "mirror_arm": "R8_LEGAL_s1",
+   "verdict": "NOT_EVALUATED -- VALIDATION ONLY",
+   "verdict_if_eligible_ARITHMETIC_ONLY": "PASS",
+   "per_arm_verdict": {
+    "R8_LEGAL": "PASS",
+    "R8_LEGAL_s1": "PASS"
+   },
+   "arithmetic": {
+    "R8_LEGAL": {
+     "PDMS_x100": 70.2048,
+     "margin_x100": 8.3846,
+     "paired_interval": {
+      "status": "OK",
+      "delta": 8.3846,
+      "lo": 6.3586,
+      "hi": 10.2413,
+      "n_clusters": 136,
+      "separated_log_name": true,
+      "drive_level": {
+       "status": "OK",
+       "n_clusters": 44,
+       "lo": 6.0022,
+       "hi": 10.3217
+      },
+      "positive": true,
+      "negative": false,
+      "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+     },
+     "wins_ties_losses": [
+      8207,
+      778,
+      3161
+     ]
+    },
+    "R8_LEGAL_s1": {
+     "PDMS_x100": 69.8506,
+     "margin_x100": 8.0304,
+     "paired_interval": {
+      "status": "OK",
+      "delta": 8.0304,
+      "lo": 5.9695,
+      "hi": 9.9435,
+      "n_clusters": 136,
+      "separated_log_name": true,
+      "drive_level": {
+       "status": "OK",
+       "n_clusters": 44,
+       "lo": 5.6982,
+       "hi": 9.9604
+      },
+      "positive": true,
+      "negative": false,
+      "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+     },
+     "wins_ties_losses": [
+      8185,
+      743,
+      3218
+     ]
+    }
+   },
+   "seed_floor_x100": 0.3542,
+   "seed_floor_rule": "margin must exceed 2x the floor",
+   "n_tokens": 12146,
+   "full_split": true,
+   "caveats": [
+    "ONE training seed: separated is necessary, not sufficient (H-ESTIM-SEED-1)."
+   ]
+  },
+  "BAR-R8-N4": {
+   "bar": "BAR-R8-N4",
+   "statement": "navtest PDMS(R8_LEGAL) - PDMS(refcv7-50,400 LEGAL) > 0, separated; margin > 2x the full-split inference floor (the SPEC's general NOT PROVEN rule, A-R8-NS1 AMENDMENT 2)",
+   "baseline": "REFCV7_50400_LEGAL",
+   "carrying_arm": "R8_LEGAL",
+   "mirror_arm": "R8_LEGAL_s1",
+   "verdict": "NOT_EVALUATED -- VALIDATION ONLY",
+   "verdict_if_eligible_ARITHMETIC_ONLY": "FAILED",
+   "per_arm_verdict": {
+    "R8_LEGAL": "FAILED",
+    "R8_LEGAL_s1": "FAILED"
+   },
+   "arithmetic": {
+    "R8_LEGAL": {
+     "PDMS_x100": 70.2048,
+     "margin_x100": 0.0,
+     "paired_interval": {
+      "status": "OK",
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "n_clusters": 136,
+      "separated_log_name": false,
+      "drive_level": {
+       "status": "OK",
+       "n_clusters": 44,
+       "lo": 0.0,
+       "hi": 0.0
+      },
+      "positive": false,
+      "negative": false,
+      "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+     },
+     "wins_ties_losses": [
+      0,
+      12146,
+      0
+     ]
+    },
+    "R8_LEGAL_s1": {
+     "PDMS_x100": 69.8506,
+     "margin_x100": -0.3542,
+     "paired_interval": {
+      "status": "OK",
+      "delta": -0.3542,
+      "lo": -0.6861,
+      "hi": 0.001,
+      "n_clusters": 136,
+      "separated_log_name": false,
+      "drive_level": {
+       "status": "OK",
+       "n_clusters": 44,
+       "lo": -0.6731,
+       "hi": -0.0584
+      },
+      "positive": false,
+      "negative": false,
+      "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+     },
+     "wins_ties_losses": [
+      3399,
+      5376,
+      3371
+     ]
+    }
+   },
+   "seed_floor_x100": 0.3542,
+   "seed_floor_rule": "margin must exceed 2x the floor (A-R8-NS1 AMENDMENT 2)",
+   "n_tokens": 12146,
+   "full_split": true,
+   "margin_exceeds_1x_floor_BESIDE": false,
+   "caveats": [
+    "MIXED-BACKEND: refcv7-50,400 LEGAL was scored on the Thor backend (INHERITED, MODEL_REGISTRY 15.4.1); the refcv8 backend is stated in the arm table -- comparable only under RULING_BACKEND_POLICY.",
+    "ONE training seed per model: a separated paired interval is NECESSARY, NOT SUFFICIENT (H-ESTIM-SEED-1); the interval answers 'another draw of LOGS?' only."
+   ]
+  },
+  "R8_RT": {
+   "verdict": "NO_BAR (R8_RT not in this run)"
+  },
+  "R8_PRIV": {
+   "verdict": "NO_BAR (diagnostic only, never a bar, never submitted)",
+   "PRIV_minus_LEGAL": {
+    "delta_x100": -0.2144,
+    "wins": 301,
+    "ties": 11704,
+    "losses": 141,
+    "n": 12146,
+    "interval": {
+     "status": "OK",
+     "delta": -0.2144,
+     "lo": -0.3999,
+     "hi": -0.0404,
+     "n_clusters": 136,
+     "separated_log_name": true,
+     "drive_level": {
+      "status": "OK",
+      "n_clusters": 44,
+      "lo": -0.3941,
+      "hi": -0.0478
+     },
+     "positive": false,
+     "negative": true,
+     "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+    }
+   }
+  },
+  "BAR-R8-N2": {
+   "bar": "BAR-R8-N2",
+   "statement": "official two-stage EPDMS(R8_LEGAL) > max(STOP, CV, ECHO); paired interval vs STOP excludes 0; margin > 2x the seed floor",
+   "verdict": "UNAVAILABLE (summary_navhard.json not supplied: needs official two-stage EPDMS for R8_LEGAL, R8_LEGAL_s1, CV_official, STOP_zero, ECHO_ha0_ext and the paired interval vs STOP_zero)"
+  },
+  "BAR-R8-N3": {
+   "bar": "BAR-R8-N3",
+   "statement": "warmup S2-EPDMS-u(R8_LEGAL) > max(CV, STOP, ECHO), margin > 2x the seed floor; R8_BLIND must FAIL it (else the panel is VOID)",
+   "verdict": "UNAVAILABLE (summary_warmup.json not supplied)"
+  }
+ },
+ "meta": {
+  "label": "VALIDATION ONLY -- PIPELINE CONTROL: refcv7-50,400 arms wearing refcv8 names, NOT a refcv8 result",
+  "step": 50400,
+  "weights": "ema"
+ },
+ "controls": {
+  "note": "stand-in control; arm names are borrowed (R8_LEGAL=R7_VMAXOFF, R8_LEGAL_s1=R7_A1_s1, R8_PRIV=R7_A1)"
+ },
+ "validation_only": true,
+ "ineligible_because": [
+  "control run"
+ ],
+ "label": "VALIDATION ONLY -- PIPELINE CONTROL: refcv7-50,400 arms wearing refcv8 names, NOT a refcv8 result"
+}
