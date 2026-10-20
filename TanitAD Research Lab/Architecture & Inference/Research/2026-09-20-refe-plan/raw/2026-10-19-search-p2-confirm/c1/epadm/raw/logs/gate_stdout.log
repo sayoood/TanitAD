@@ -1,0 +1,32 @@
+controls: C-ID (P2 as the candidate)
+candidate s0: analysis
+candidate s0: C-NULL / E-NULL
+candidate s1: analysis
+candidate s1: C-NULL / E-NULL
+candidate s2: analysis
+candidate s2: C-NULL / E-NULL
+candidate s0: B (pessimistic EP)
+candidate s1: B (pessimistic EP)
+candidate s2: B (pessimistic EP)
+ADMISSION ADMIT (A1 and A2 pass: the shared navtest look is permitted) | A1 {'s0': 'ADMIT-A1', 's1': 'ADMIT-A1', 's2': 'ADMIT-A1'} | A2 {'s0': 'ADMIT-A2', 's1': 'ADMIT-A2', 's2': 'ADMIT-A2'} | controls_ok True | authority NONE (unsealed run: control / smoke only) | -> C:/Users/Admin/par18/epadmc1/work/gate/admission_c1.json
+{
+ "A1": {
+  "s0": "ADMIT-A1",
+  "s1": "ADMIT-A1",
+  "s2": "ADMIT-A1"
+ },
+ "A2_at_margin": {
+  "s0": "ADMIT-A2",
+  "s1": "ADMIT-A2",
+  "s2": "ADMIT-A2"
+ },
+ "A2_at_module_default_1.00": {
+  "s0": "ADMIT-A2",
+  "s1": "ADMIT-A2",
+  "s2": "ADMIT-A2"
+ },
+ "label": "ADMIT (A1 and A2 pass: the shared navtest look is permitted)",
+ "margin": 1.05,
+ "module_label_at_1.00": "ADMIT (A1 and A2 pass: the shared navtest look is permitted)",
+ "note": "A1 / controls / C-NULL unchanged from the module's output; only the A2 bar is re-applied with the module's own a2_head_ok_r1."
+}
