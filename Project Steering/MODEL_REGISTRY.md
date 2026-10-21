@@ -5876,3 +5876,16 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | ⛔ instrument note | the UNMASKED per-step yaw-rate component is inadmissible on NavSim: it averages crawl-step heading noise (mean 0.48 vs 0.083 rad/s masked), reads separated at the seed floor, and inverts the 15k reading. Read the pair-masked column only. |
 | gate stacked on theta_0.5 (R8-WISEFT-GATE, registered f0ae643; stage A bce05d3) | GW_ARC = PRIOR where the 4 s arc-length log-ratio of theta_0.5's plan to the prior exceeds 0.1368 (R8-GATE-NAVTEST's fixed constant), else theta_0.5 R8_LEGAL. navtrain PDMS **80.77 / 80.11** (theta_0.5 76.33 / 76.44, PRIOR 73.84, EMA-48,852 63.39); GW_ARC − theta_0.5 **+4.43 [+1.86, +7.13]** / **+3.67 [+1.34, +6.34]**, floor 0.76 ⇒ admissible, X* = G_ARC; prior fallback on ~40 % of tokens. GW_CMD not admissible (+2.35 [−0.16, +5.08]). Stage B = one navtest read on R8-WISEFT stage 2's rows, armed. |
 | caveats | Diagnostic composites, never bars. NavSim v1 open loop; one training seed; navtrain = Las Vegas only; distance-keeping and STRATEGIC UNAVAILABLE on the NavSim bridge (no lead track; NavSim scores no strategic decision). |
+### 16.8 refcv8-r101-s0 -- the WiSE blend theta_0.5 on held-out navtest: R8-WISEFT stage 2 WORKS, 72.78 / 72.90, above refcv7  *(addendum to §16.6 / §16.7)*
+
+| | |
+|---|---|
+| read | NavSim v1.1 open-loop PDMS, navtest 12,146 tokens / 136 logs, R8_LEGAL seeds 0 / 1, Thor CUDA roll + Thor CPU scorer (12 shard jobs, 0 failed), paired log-cluster bootstrap B 2000 (log_name AND nuplan_drive). The ONE navtest read of lambda* = 0.5 (registered e8911b1). Package `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-21-refcv8-wiseft/result/stage2_navtest/`. |
+| arm | theta_0.5 = 0.5·refcv7-r101-s0 (50,400, md5 `d5f104ee…`) + 0.5·refcv8 EMA-48,852 on the 1,027 shared float keys; refcv8's 34 new tensors kept (`ckpt_wiseft_l0p50.pt`, md5 `d72f7f57…`). No training. |
+| PDMS ×100 | **72.78 / 72.90** (NC 92.30 · DAC 88.28 · TTC 84.00 · EP 67.85 · C 99.99, s0). EMA-48,852 57.84 / 57.92; refcv7-50,400 LEGAL 70.20; STOP 61.82; PRIOR 58.66. |
+| paired | − EMA-48,852 **+14.93 [+13.60, +16.47]** / **+14.98 [+13.62, +16.55]** (verdict **WORKS**); − refcv7 **+2.57 [+1.58, +3.55]**; − STOP **+10.96 [+9.10, +12.77]**; − PRIOR **+14.11 [+11.97, +16.18]** -- all separated at log_name AND nuplan_drive. |
+| families (beside) | vs EMA-48,852: ADE −1.03 m*, heading −3.2°*, TAC lat +17 pp*, TAC lon +11 pp* (both seeds); vs PRIOR: ADE −0.18*, heading −2.13°*, cross −0.20*, longitudinal tied. |
+| PhysicalAI (beside) | open-loop S6 geometry vs EMA-48,852: ADE +0.06 / +0.04 (ns), heading +0.18°* (s0 only), accel MAE −0.02* (R8-WISEFT-GATE-PAI's beside rows). The registered SHIP-R8 read on theta_0.5 (R8-WISEFT-PAI) is running. |
+| status | **CANDIDATE.** Replaces EMA-48,852 only if SHIP-R8 PASSES on it (R8-WISEFT-PAI) and the PI accepts; its own N2 (navhard) / N3 (warmup) reads are not rolled. |
+| levers tried on top (all registered, all banked) | arc gate: navtrain 80.77 (+4.43 over theta_0.5) but WORSE on PhysicalAI (lateral + tactical, 5307456) ⇒ NavSim-only; path-preserving gate: WORSE on PhysicalAI tactical agreement (55dbb22) ⇒ no navtest read. |
+| caveats | One training seed; NavSim open loop; zero-shot (no NavSim training); mixed backend for the refcv7 row. |
