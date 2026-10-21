@@ -2402,3 +2402,32 @@ re-timing stage `2aacc9ff…`) is chosen on a NavSim **navtrain** sample by the 
 navtest under A-R8-NS1 + Amendments 1-3. Default when the rule cannot separate them: the registered 48,852. The 48,852
 SHIP-R8 PASS stands as read; the raw-plan bar failures stand as written. Still open: D-NS8-2 (Ego-Status-MLP download,
 needed for the navtest bars, not for the selection) and D-NS8-4 (leaderboard) — no submission.
+## ⏳ OPEN (2026-10-21 ~17:03 Berlin) -- D-R8-WISE-NAVTEST: may the refcv8 blend that passes PhysicalAI get ONE navtest read?
+
+**What happened (MEASURED today; landed 13c2239, fd020a6, bda74c7, 53fbd63).** A weight blend of refcv8 with its own
+refcv7 initialisation, theta_0.5 (no training), scores **72.78 / 72.90** on held-out navtest: **+14.9** over refcv8 as
+trained (EMA-48,852, 57.84) and **+2.57** over refcv7 (70.20), all separated. But on PhysicalAI it **fails SHIP-R8 on one
+clause**: E1, the 2 s ADE against the causal prior, becomes a tie (+0.0014; EMA-48,852 −0.034, separated). By the
+committed rule theta_0.5 is a NavSim-only arm. Splitting the blend by module (R8-WISEFT-MOD) located the NavSim loss in
+refcv8's **planning stack**: blending only the planning weights (theta_PLAN) keeps 81 % of the gain on navtrain (73.93 /
+73.86); blending only perception keeps 9–12 %.
+
+**Running now (no decision needed for it).** The PhysicalAI SHIP-R8 battery on theta_PLAN (dev box, locked 16:59,
+~2.5 h), then on theta_0.75 (R8-WISEFT-L075-PAI). A family rule was registered before either result: among the arms that
+PASS SHIP-R8, take the one with the highest navtrain PDMS.
+
+**The question.** navtest has already been read twice in this family (EMA-48,852 under option (b), then theta_0.5). If an
+arm passes SHIP-R8, its own navtest number needs a third read. That is selection pressure on the held-out set, so it is
+your call.
+
+**Options:**
+- **(a) Recommended: authorise ONE navtest read for the family-selected arm, only if it passes SHIP-R8.** It becomes the
+  single refcv8 deliverable if it beats EMA-48,852 on navtest (paired, separated, both seeds). All three navtest reads
+  are reported together, with their order and the multiplicity stated. Cost: one Thor roll and CPU scoring, ~1 h 45 min
+  (MEASURED for theta_0.5 today: roll 15:03–16:21, scoring to 16:46).
+- **(b) Two deliverables, no further navtest read:** theta_0.5 for NavSim (72.78), EMA-48,852 with its re-timing stage
+  for PhysicalAI (SHIP-R8 PASS). A passing family arm is reported on navtrain only.
+- **(c) Keep EMA-48,852 as the only deliverable.** The blend results become refcv9 evidence ("protect the planning
+  stack": freeze it, or regularise it toward the refcv7 init).
+
+If no arm passes SHIP-R8, (a) falls away and the choice is between (b) and (c).
