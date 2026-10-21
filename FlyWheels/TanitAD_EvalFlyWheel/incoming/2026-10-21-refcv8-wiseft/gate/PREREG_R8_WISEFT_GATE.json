@@ -1,0 +1,29 @@
+{
+ "id": "R8-WISEFT-GATE",
+ "filed": "2026-10-21 15:31 Europe/Berlin (clock read 15:30:31), BEFORE any gate arm on theta_0.5 is computed on navtrain AND before any theta_0.5 navtest score exists (the stage-2 roll is still on its first seed; the dev box holds no wiseft/stage2/)",
+ "status": "PRE-REGISTERED diagnostic lever test; never a bar; changes no registered verdict",
+ "question": "Do the two prior-fallback gates that WORK on held-out navtest for refcv8 EMA-48,852 (R8-GATE-NAVTEST, 0c5b5db: G_ARC 65.52, G_CMD 62.33) compose with the WiSE blend theta_0.5 (R8-WISEFT, e8911b1) -- i.e. does a gate on theta_0.5's plan beat BOTH theta_0.5 and the prior?",
+ "arms": {
+  "GW_CMD": "PRIOR_ha0p where NavSim driving_command is straight (one-hot index 1, 'forward'), else theta_0.5 R8_LEGAL (seed 1: R8_LEGAL_s1)",
+  "GW_ARC": "PRIOR_ha0p where |ln(arc4(theta_0.5 R8_LEGAL) / max(arc4(PRIOR_ha0p), 0.05))| > 0.1368, else theta_0.5 R8_LEGAL (seed 1: R8_LEGAL_s1, same threshold)",
+  "threshold": "0.1368 -- the REGISTERED constant of R8-GATE-NAVTEST (fit on navtrain EMA-48,852 R8_RT); NOT re-fit on theta_0.5",
+  "plan_arm": "theta_0.5 R8_LEGAL, not R8_RT: R8-WISEFT rolled LEGAL only (stage 1 and stage 2), and R8_RT costs PDMS on navtest (56.67 vs 57.84 for EMA-48,852)",
+  "scoring": "EXACT per-token selection of already-scored rows (the PDM scorer scores tokens independently) -- no new roll, no new scoring",
+  "tool": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-21-refcv8-navtest-read/result/code/r8_gate_eval.py (unchanged; its --rt-csv/--seam-rt take the plan arm) plus a thin wrapper for the extra pairs below; estimator and CSV reader from navsim_bars8 (paired log-cluster bootstrap, B 2000)"
+ },
+ "stage_A_navtrain_selection": {
+  "data": "the registered navtrain sample (2,089 tokens / 30 logs): theta_0.5 R8_LEGAL / R8_LEGAL_s1 scores of R8-WISEFT stage 1 + r8sel_ref_PRIOR_ha0p + their seams",
+  "rule": "gate X is ADMISSIBLE iff GW_X - theta_0.5 > 0 with the paired log-cluster interval excluding 0 at BOTH seeds and margin min(d_s0, d_s1) > 2 x |d_s0 - d_s1| (log_name only: 7 drives < floor 8, as stage 1). X* = the admissible gate with the higher mean PDMS over the two seeds.",
+  "none_admissible": "the gates do not compose with WiSE on navtrain; NO navtest gate read for theta_0.5 (stated, nothing computed on navtest)"
+ },
+ "stage_B_navtest_once": {
+  "data": "the ONE theta_0.5 navtest read of R8-WISEFT stage 2 (12,146 tokens / 136 logs; R8_LEGAL seeds 0/1) + the banked EMA-48,852 navtest PRIOR_ha0p rows (R8-WISEFT stage 2 control K3 asserts theta-run PRIOR == EMA-run PRIOR per token)",
+  "rule": "GW_X* WORKS iff BOTH GW_X* - theta_0.5 > 0 AND GW_X* - PRIOR_ha0p > 0, each with the paired interval excluding 0 at log_name AND nuplan_drive (bars8 compact_pair 'positive'), at BOTH inference seeds, margin > 2 x floor; FAILED if either point <= 0 at either seed; else NOT PROVEN.",
+  "beside_never_bars": ["GW_X* - G_ARC(EMA-48,852) per token (the banked best composite, 65.52)", "GW_X* - STOP (61.82)", "GW_X* - REFCV7_50400_LEGAL (70.20)", "city and command strata", "NC/DAC/TTC/EP/C", "the four families: paired, on the composite's per-token poses, vs theta_0.5 and vs PRIOR (paired_families_navsim.py)"]
+ },
+ "committed": {
+  "WORKS": "GW_X* is a candidate NavSim arm built from admissible inference inputs (theta_0.5's plan; the causal prior from v0/a0 at t0; the NavSim driving command, a route signal, information-disjoint from any situation classifier). It is the programme's best NavSim arm iff it also beats G_ARC(EMA-48,852) separated at both seeds (beside row). Whether a gated planner is an admissible DELIVERABLE is the PI's decision (PI queue item, with this evidence). Its PhysicalAI cost is not read here.",
+  "FAILED_or_NOT_PROVEN": "the gates do not compose with WiSE on navtest; theta_0.5 alone remains the WiSE candidate; the next lever is training-side (R8-WISEFT-MOD names what to protect)."
+ },
+ "caveats": ["NavSim v1 open loop, PDMS (families beside)", "one training seed", "the threshold was fit on EMA-48,852's R8_RT arc ratios, not theta_0.5's -- applied as a fixed constant, which is the honest held-out form", "Las Vegas only on navtrain"]
+}
