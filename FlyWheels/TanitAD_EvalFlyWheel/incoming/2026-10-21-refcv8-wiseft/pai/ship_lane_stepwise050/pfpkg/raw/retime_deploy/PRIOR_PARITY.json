@@ -1,0 +1,488 @@
+{
+ "tool": "prior_parity_r8.py",
+ "clause": "SHIP-R8 AMENDMENT 2 clause (7): eval-rebuilt prior == the model's residual_prior_path to <= 1e-3 m at all 8 slots on >= 200 windows",
+ "tolerance_m": 0.001,
+ "min_windows": 200,
+ "horizons_ticks": [
+  5,
+  10,
+  15,
+  20,
+  30,
+  40,
+  50,
+  60
+ ],
+ "slot_instants_s": [
+  0.5,
+  1.0,
+  1.5,
+  2.0,
+  3.0,
+  4.0,
+  5.0,
+  6.0
+ ],
+ "launch_stack": "C:\\lgs\\Lfb47a58376\\stack",
+ "tanitad_file": "C:\\lgs\\Lfb47a58376\\stack\\tanitad\\__init__.py",
+ "run_config": {
+  "run_config": "E:\\refcv8_eval_kit\\ckpt\\config.json",
+  "present": true,
+  "sha256": "796fc41520e4f5d9e7a45e4599dd514dbfb143841ca3dd3aa007d03804d350b7",
+  "residual_prior": "ha0_ext_pose",
+  "horizons": [
+   5,
+   10,
+   15,
+   20,
+   30,
+   40,
+   50,
+   60
+  ],
+  "withheld_bank": {
+   "mode": "fixed",
+   "warmup_steps": 0,
+   "speed_max_ms": 35.0,
+   "random_pool": null
+  },
+  "ego_history_flag_present": true,
+  "pose_sync_sidecar_argv": "/home/nvidia/data/refcv8_pose_sync_sidecar.jsonl"
+ },
+ "generated": "2026-10-21T16:44:35",
+ "source_trace": [
+  {
+   "file": "stack/tanitad/refs/refc.py",
+   "line": 5136,
+   "quote": "_rp_in = self._residual_prior_inputs(ego_poses, n_past,",
+   "meaning": "RefCModel.forward hands the prior ONLY forward ARGUMENTS: ego_poses, n_past (= ego_n_past), ego_actions, v0",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/tanitad/refs/refc.py",
+   "line": 4530,
+   "quote": "a0, k0 = _kp.prior_controls(mode, ego_poses, n_past, acts,",
+   "meaning": "(a0, kappa0) are a pure function of the pose window; dt = self.ego_hist.cfg.dt, a CONFIG scalar (EgoHistoryConfig.dt = 0.1)",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/tanitad/models/kinematic_prior.py",
+   "line": 311,
+   "quote": "ch = ego_channels_from_poses(poses, n, dt=float(dt))",
+   "meaning": "backward differences of the pose window -- no module, no parameter",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/tanitad/models/kinematic_prior.py",
+   "line": 341,
+   "quote": "kappa0 = (omega0 / v0.clamp_min(POSE_KAPPA_V_FLOOR)).clamp(",
+   "meaning": "kappa0 = omega0 / max(v0, 2), clamped to +-0.3: arithmetic on the window",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/tanitad/refs/refc.py",
+   "line": 3437,
+   "quote": "_rp = self._residual_prior(residual_prior, v_ms, ego_keep, b,",
+   "meaning": "the decoder composes (a0, kappa0, v) once per forward",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/tanitad/refs/refc.py",
+   "line": 2345,
+   "quote": "v = self._prior_speed(v_ms, ego_keep, withheld_speed)",
+   "meaning": "v = the v0 ARGUMENT (kept rows); a withheld row (ego_keep False) would be rolled at the bank's withheld speed -- at eval ego_keep is None",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/tanitad/refs/refc.py",
+   "line": 2346,
+   "quote": "a0, k0 = _kp.withhold(a0, k0, ego_keep)",
+   "meaning": "identity when ego_keep is None",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/tanitad/refs/refc.py",
+   "line": 2350,
+   "quote": "if (self.r8_cfg is not None and self.training",
+   "meaning": "the lateral prior dropout is TRAINING-only (`self.training`)",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/tanitad/refs/refc.py",
+   "line": 3952,
+   "quote": "out[\"residual_prior_path\"] = _kp.prior_path(",
+   "meaning": "the emitted tensor is prior_path(a0, kappa0, v, anchor_horizons, tick=anchor_dt)",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/tanitad/refs/refc.py",
+   "line": 3954,
+   "quote": "tick=self.anchor_dt).to(x.dtype).detach()",
+   "meaning": "cast to the fan's dtype (float32 at eval: the banked plans are full float32, see plan_dtype_evidence), detached",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/tanitad/models/kinematic_prior.py",
+   "line": 387,
+   "quote": "path = rollout_unicycle(state0, ctrl, dt=float(tick))[..., :2]",
+   "meaning": "a constant-control unicycle roll from a zero state with v in slot 3",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/tanitad/refs/refc.py",
+   "line": 1748,
+   "quote": "self.anchor_dt = 0.1",
+   "meaning": "a constructor constant, not a parameter or buffer",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/tanitad/refs/refc.py",
+   "line": 1769,
+   "quote": "self.anchor_horizons: tuple[int, ...] = tuple(int(k) for k in _h)",
+   "meaning": "a plain attribute (refc.py:1764-1768 says so): the configured horizons, here [5, 10, 15, 20, 30, 40, 50, 60]",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/tanitad/models/kinematic.py",
+   "line": 260,
+   "quote": "x = x + v * torch.cos(yaw) * dt",
+   "meaning": "rollout_unicycle: elementwise torch arithmetic only (kinematic.py:220-266)",
+   "verified_at_line": true
+  },
+  {
+   "file": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/battery/code/r7_roll.py",
+   "line": 154,
+   "quote": "ph = it[\"pose_hist\"].to(dev)",
+   "meaning": "the battery roll feeds the model ego_poses = the dataset item's pose_hist ...",
+   "verified_at_line": true
+  },
+  {
+   "file": "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/battery/code/r7_roll.py",
+   "line": 162,
+   "quote": "\"ego_n_past\": int(ph.shape[0]),",
+   "meaning": "... and n_past = its full length",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/scripts/refc_v3_train.py",
+   "line": 4533,
+   "quote": "item[\"pose_hist\"] = ep.poses[t:t + w]",
+   "meaning": "pose_hist = ep.poses[t : t+w] when pose-sync is OFF -- the banked decisions' `ep_poses` IS ep.poses (taniteval/tools/refcv3_arm.py:2582)",
+   "verified_at_line": true
+  },
+  {
+   "file": "stack/scripts/refc_v3_train.py",
+   "line": 4506,
+   "quote": "item[\"pose_hist\"] = pv[t:t + w]",
+   "meaning": "with pose-sync ON (corrected clock) pose_hist is the RE-SAMPLED pv, which `ep_poses` does not carry (see caveats)",
+   "verified_at_line": true
+  },
+  {
+   "file": "taniteval/tools/refcv3_arm.py",
+   "line": 2582,
+   "quote": "ep_poses=ep.poses.float().cpu().numpy()",
+   "meaning": "the banked window source is the raw provider poses",
+   "verified_at_line": true
+  }
+ ],
+ "source_trace_all_verified": true,
+ "depends_on_weights": false,
+ "dependency_conclusion": "INPUT-ONLY: residual_prior_path = prior_path(a0, kappa0, v, anchor_horizons, anchor_dt) with (a0, kappa0) from prior_controls(ego_poses, ego_n_past) and v = the v0 argument; every other quantity is a configuration scalar or list (EgoHistoryConfig.dt, anchor_dt, anchor_horizons, anchor_withheld_bank). No nn.Module, parameter or buffer is read; the lateral dropout is training-only. => it can be computed with the model's own methods WITHOUT the network.",
+ "known_value_controls": {
+  "tolerance_m": 0.001,
+  "literals": {
+   "straight_10": [
+    5.0,
+    10.0,
+    15.0,
+    20.0,
+    30.0,
+    40.0,
+    50.0,
+    60.0
+   ],
+   "standing": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "accel_+1": [
+    5.1,
+    10.45,
+    16.05,
+    21.9,
+    34.35,
+    47.8,
+    62.25,
+    77.7
+   ]
+  },
+  "paths": {
+   "model_path": {
+    "straight_10": 0.0,
+    "standing": 0.0,
+    "accel_+1": 6.561279296590783e-05,
+    "max_abs_m": 6.561279296590783e-05,
+    "PASS": true
+   },
+   "rebuilt": {
+    "straight_10": 0.0,
+    "standing": 0.0,
+    "accel_+1": 6.561279296590783e-05,
+    "max_abs_m": 6.561279296590783e-05,
+    "PASS": true
+   },
+   "independent_f64": {
+    "straight_10": 0.0,
+    "standing": 0.0,
+    "accel_+1": 6.752014161293118e-05,
+    "max_abs_m": 6.752014161293118e-05,
+    "PASS": true
+   }
+  },
+  "mutations_must_FAIL": {
+   "model_path_wrong_tick_0p2": {
+    "straight_10": 60.0,
+    "standing": 0.0,
+    "accel_+1": 113.10026245117187,
+    "max_abs_m": 113.10026245117187,
+    "PASS": false
+   },
+   "rebuilt_wrong_horizons": {
+    "straight_10": 5.0,
+    "standing": 0.0,
+    "accel_+1": 7.84994812011719,
+    "max_abs_m": 7.84994812011719,
+    "PASS": false
+   },
+   "independent_wrong_tick_0p2": {
+    "straight_10": 60.0,
+    "standing": 0.0,
+    "accel_+1": 113.1002700805664,
+    "max_abs_m": 113.1002700805664,
+    "PASS": false
+   }
+  },
+  "all_paths_pass": true,
+  "all_mutations_detected": true
+ },
+ "parity": [
+  {
+   "tree": "stepwise050_pf",
+   "inference_seed": 0,
+   "n_windows": 4754,
+   "window_last_speed_vs_v0_max_abs_mps": 0.0,
+   "model_path_vs_rebuilt": {
+    "n_windows": 4754,
+    "max_m": 0.0,
+    "mean_m": 0.0,
+    "p99_m": 0.0,
+    "per_slot_max_m": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "per_slot_mean_m": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "n_over_tol": 0,
+    "n_bit_equal_windows": null
+   },
+   "model_path_vs_independent_f64": {
+    "n_windows": 4754,
+    "max_m": 0.00213366538660564,
+    "mean_m": 3.9238003687276544e-05,
+    "p99_m": 0.00034981143283926096,
+    "per_slot_max_m": [
+     4.02198488063937e-06,
+     1.794594913496955e-05,
+     4.203507719577268e-05,
+     7.610230409394632e-05,
+     0.0001741531424587191,
+     0.0004442452585638784,
+     0.0010509083757834956,
+     0.00213366538660564
+    ],
+    "per_slot_mean_m": [
+     7.334487930131732e-07,
+     3.072104577660492e-06,
+     7.086206760831648e-06,
+     1.2780747067101567e-05,
+     2.9340262877176512e-05,
+     5.3061747686014893e-05,
+     8.430982559698579e-05,
+     0.00012351968613942825
+    ],
+    "n_over_tol": 2,
+    "n_bit_equal_windows": null
+   },
+   "bit_equal_windows_model_vs_rebuilt": 4754,
+   "prior_path_max_abs_m": 219.41799926757812,
+   "prior_x_at_6s_mean_m": 65.32867431640625,
+   "vs_deploy8_npz_prior8": {
+    "npz": "raw/retime_deploy/DEPLOY8_POS_stepwise050_pf_s0.npz",
+    "rows_aligned_ws": true,
+    "n_windows": 4754,
+    "max_m": 0.0,
+    "mean_m": 0.0,
+    "p99_m": 0.0,
+    "per_slot_max_m": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "per_slot_mean_m": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "n_over_tol": 0,
+    "n_bit_equal_windows": null
+   },
+   "plan_dtype_evidence": {
+    "frac_float32_values_with_low16_bits_zero": 0.028410286074884307,
+    "reading": "a bfloat16 tensor widened to float32 would read 1.0; the banked plan reads ~0, so the fan's x.dtype is float32 and `.to(x.dtype)` rounds nothing"
+   }
+  },
+  {
+   "tree": "stepwise050_pf",
+   "inference_seed": 1,
+   "n_windows": 4754,
+   "window_last_speed_vs_v0_max_abs_mps": 0.0,
+   "model_path_vs_rebuilt": {
+    "n_windows": 4754,
+    "max_m": 0.0,
+    "mean_m": 0.0,
+    "p99_m": 0.0,
+    "per_slot_max_m": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "per_slot_mean_m": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "n_over_tol": 0,
+    "n_bit_equal_windows": null
+   },
+   "model_path_vs_independent_f64": {
+    "n_windows": 4754,
+    "max_m": 0.00213366538660564,
+    "mean_m": 3.9238003687276544e-05,
+    "p99_m": 0.00034981143283926096,
+    "per_slot_max_m": [
+     4.02198488063937e-06,
+     1.794594913496955e-05,
+     4.203507719577268e-05,
+     7.610230409394632e-05,
+     0.0001741531424587191,
+     0.0004442452585638784,
+     0.0010509083757834956,
+     0.00213366538660564
+    ],
+    "per_slot_mean_m": [
+     7.334487930131732e-07,
+     3.072104577660492e-06,
+     7.086206760831648e-06,
+     1.2780747067101567e-05,
+     2.9340262877176512e-05,
+     5.3061747686014893e-05,
+     8.430982559698579e-05,
+     0.00012351968613942825
+    ],
+    "n_over_tol": 2,
+    "n_bit_equal_windows": null
+   },
+   "bit_equal_windows_model_vs_rebuilt": 4754,
+   "prior_path_max_abs_m": 219.41799926757812,
+   "prior_x_at_6s_mean_m": 65.32867431640625,
+   "vs_deploy8_npz_prior8": {
+    "npz": "raw/retime_deploy/DEPLOY8_POS_stepwise050_pf_s1.npz",
+    "rows_aligned_ws": true,
+    "n_windows": 4754,
+    "max_m": 0.0,
+    "mean_m": 0.0,
+    "p99_m": 0.0,
+    "per_slot_max_m": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "per_slot_mean_m": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "n_over_tol": 0,
+    "n_bit_equal_windows": null
+   },
+   "plan_dtype_evidence": {
+    "frac_float32_values_with_low16_bits_zero": 0.028633782078249896,
+    "reading": "a bfloat16 tensor widened to float32 would read 1.0; the banked plan reads ~0, so the fan's x.dtype is float32 and `.to(x.dtype)` rounds nothing"
+   }
+  }
+ ],
+ "clause7": {
+  "max_abs_m_all_slots_all_windows": 0.0,
+  "min_windows_per_panel": 4754,
+  "n_panels": 2,
+  "within_tolerance": true,
+  "deploy8_npz_prior8_within_tolerance": true,
+  "known_values_ok": true,
+  "READING": "PASS (model-path parity)"
+ },
+ "caveats": [
+  "SCOPE: the model's own methods were run on CPU float32 against the banked windows; the tensor `out['residual_prior_path']` of an actual forward was NOT observed (the banked dumps carry no residual_prior_* key). What that leaves open: (i) GPU-vs-CPU float32 cos/sin: both devices run the SAME float32 op sequence (x = x + v*cos(yaw)*dt ...), only the libm cos/sin may differ by an ulp; one float32 ulp of x at 60 m is 3.8e-6 m, so even a 1-ulp flip on EVERY one of 60 steps is <= 2.3e-4 m < 1e-3 m (an ANALYTIC bound, not a measurement), (ii) that the roll fed the model exactly ep.poses[t:t+w] (source-traced above, and the window / v0 / pose_last consistency checks pass).",
+  "CLOCK: parity holds on a tree rolled with pose-sync OFF (the `_unc` trees: R8_NO_POSE_SYNC=1; battery_summary.json r8.pose_sync_policy). With pose-sync ON (corrected clock, `_corr` trees) the model's window is the re-sampled pv (refc_v3_train.py:4506) while the banked decisions carry the raw ep.poses, so the eval-rebuilt prior would NOT equal the model's -- clause (7) must not be read across clocks.",
+  "TO CLOSE (i)+(ii) AT 48,852: have the roll dump out['residual_prior_path'][:, slots] beside `os` (a one-line extra in the dump sidecar) and compare to the rebuilt array; or run one CPU forward on >= 200 windows (needs the checkpoint + the eval frames, ~6 GB commit)."
+ ]
+}

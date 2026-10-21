@@ -5889,3 +5889,13 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | status | **CANDIDATE.** Replaces EMA-48,852 only if SHIP-R8 PASSES on it (R8-WISEFT-PAI) and the PI accepts; its own N2 (navhard) / N3 (warmup) reads are not rolled. |
 | levers tried on top (all registered, all banked) | arc gate: navtrain 80.77 (+4.43 over theta_0.5) but WORSE on PhysicalAI (lateral + tactical, 5307456) ⇒ NavSim-only; path-preserving gate: WORSE on PhysicalAI tactical agreement (55dbb22) ⇒ no navtest read. |
 | caveats | One training seed; NavSim open loop; zero-shot (no NavSim training); mixed backend for the refcv7 row. |
+### 16.9 refcv8-r101-s0 -- theta_0.5 on PhysicalAI: SHIP-R8 FAIL on E1 only (2 s ADE ties the prior); the arc gate fails on navtest  *(addendum to §16.8)*
+
+| | |
+|---|---|
+| SHIP-R8 (R8-WISEFT-PAI, 44eec8f) | **FAIL**, clause (2) only. E1 S2 ADE RETIME_DEPLOY8 − ha0_ext_pose **+0.0014 [−0.0095, +0.0120]** / +0.0012 (EMA-48,852: −0.0342* / −0.0329*). Clauses 1, 1b, 3 (E3 −0.846* / −0.848*), 4, 5, 7 PASS; 6 N/A. Package `…/2026-10-21-refcv8-wiseft/pai/ship_lane_stepwise050/`. |
+| paired theta_0.5 − EMA-48,852 (PhysicalAI, compliant capped) | S2 ADE +0.043* / +0.042*, S2 speed MAE +0.036* / +0.037*, S2 final along-track +0.083* / +0.085*; S6 ADE −0.009 (ns); curvature / yaw rate ns. The cost is short-horizon longitudinal. `…/pai/paired_48852_wise050/`. |
+| status | theta_0.5 is a **NavSim-only arm** (navtest 72.78 / 72.90, above refcv7) by R8-WISEFT-PAI's committed rule; the shipped refcv8 deliverable remains EMA-48,852 (SHIP-R8 PASS, §16.1). Deliverable choice is the PI's. |
+| gate stacked on theta_0.5 | navtest Stage B **FAILED**: GW_ARC 70.58 / 70.68, − theta_0.5 −2.19 / −2.22. PhysicalAI: arc gate WORSE (lateral + tactical), path-preserving gate WORSE (tactical). Closed. |
+| next | R8-WISEFT-MOD (7ec285d): which module group carries the NavSim loss; a single-group blend is the registered next PhysicalAI candidate. |
+| caveats | One training seed; open loop on both benchmarks. Battery per-clip files (analysis_*, windows_*) stay on the dev box (they carry PhysicalAI clip-id prefixes). |
