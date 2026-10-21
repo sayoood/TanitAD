@@ -5833,3 +5833,14 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | beside (never deciding) | STOP 67.57 [65.56, 69.28]; CV 15.80; PRIOR_ha0p (refcv8's own causal prior) **73.84** [70.06, 77.77]. |
 | ⚠️ POST-HOC | R8_RT − PRIOR_ha0p **−10.44 [−16.63, −4.80]** (NC −10.5, TTC −11.0, EP −8.9); RETIME neutral (R8_RT − R8_LEGAL +0.005). The loss sits on straight-command tokens (n 1,444: −19.64 [−25.4, −14.9]); right turns gain (n 162: +32.5 [+22.9, +40.7]). Diagnosis `…/prior_gap_diag/PRIOR_GAP_DIAG.md` (0c5b5db). Two fallback gates found here are PRE-REGISTERED for a held-out navtest test (R8-GATE-NAVTEST, 0c5b5db, before any refcv8 navtest score). |
 | caveats | One city; one training seed; PDMS only (the four families are not in this read); the post-hoc cells are outcome-selected. |
+
+### 16.4 refcv8-r101-s0 -- NavSim navtest (A-R8-NS1, the one registered read of EMA-48,852): N1 FAILED, N4 FAILED  *(addendum to §16.3)*
+
+| | |
+|---|---|
+| read | NavSim v1.1 open-loop PDMS (T1-family), navtest 12,146 tokens / 136 logs, zero-shot (trained on PhysicalAI only), Thor CUDA rolls + Thor CPU scorer, paired log-cluster bootstrap B 2000 (log_name AND nuplan_drive). Package `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-21-refcv8-navtest-read/result/`. NOT leaderboard-submitted. |
+| bar arm R8_LEGAL | **57.84** [55.79, 59.86] (s1 57.92): NC 85.31 · DAC 76.84 · TTC 77.15 · EP 52.07 · C 99.52. |
+| bars | **N1 FAILED** -3.98 [-6.37, -1.65] vs STOP 61.82. **N4 FAILED** -12.36 [-13.90, -10.87] vs refcv7-50,400 LEGAL 70.20. N2 / N3 pending. |
+| beside | PRIOR_ha0p 58.66 (= refcv7's prior, token for token); R8_LEGAL - PRIOR -0.82 [-3.46, +1.82] (refcv7: +11.54). R8_RT 56.67; R8_PRIV 59.23. Straight cell 56.90 vs refcv7 72.23; turn cell 59.70 vs 66.20. |
+| gates (diagnostic, pre-registered) | G_CMD 62.33 (+3.67 over PRIOR, WORKS); G_ARC 65.52 (+6.86, WORKS); G_CMDCAP pending. |
+| caveats | One training seed; the EP-clause stratum control is defective (model-dependent hook), no bar uses it. |

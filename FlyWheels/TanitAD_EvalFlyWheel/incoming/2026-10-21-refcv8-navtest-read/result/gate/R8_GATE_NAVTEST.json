@@ -1,0 +1,681 @@
+{
+ "id": "R8-GATE-NAVTEST",
+ "label": "NAVTEST_RESULT",
+ "threshold": 0.1368,
+ "n_tokens": 12146,
+ "n_logs": 136,
+ "estimator": {
+  "paired": "paired_navsim_log_cluster_bootstrap",
+  "cluster_unit": "log_name",
+  "sensitivity_unit": "nuplan_drive",
+  "n_boot": 2000,
+  "seed": 0,
+  "navsim_ci_sha256": "00e0e39ef6cfc9de5b16212c0c91386099a085b8d780b24eebd9f10cea849285"
+ },
+ "tier": "NavSim v1 open-loop PDM scorer (T1-family); one training seed; diagnostic lever test, never a bar",
+ "n_straight": 8070,
+ "arms": {
+  "R8_RT_s0": {
+   "NC": 84.8263,
+   "DAC": 74.469,
+   "TTC": 76.3873,
+   "EP": 51.8989,
+   "C": 99.4648,
+   "PDMS": 56.67
+  },
+  "R8_RT_s1": {
+   "NC": 84.9086,
+   "DAC": 74.4113,
+   "TTC": 76.8154,
+   "EP": 52.013,
+   "C": 99.4813,
+   "PDMS": 56.8582
+  },
+  "PRIOR_ha0p": {
+   "NC": 88.5024,
+   "DAC": 74.0491,
+   "TTC": 78.6596,
+   "EP": 54.164,
+   "C": 99.6213,
+   "PDMS": 58.6613
+  },
+  "G_CMD_s0": {
+   "NC": 89.7291,
+   "DAC": 78.1327,
+   "TTC": 80.8332,
+   "EP": 57.2508,
+   "C": 99.8106,
+   "PDMS": 62.3261,
+   "fallback_frac": 0.6644,
+   "n_fallback": 8070
+  },
+  "G_ARC_s0": {
+   "NC": 90.7212,
+   "DAC": 80.7426,
+   "TTC": 81.9035,
+   "EP": 60.6603,
+   "C": 99.7777,
+   "PDMS": 65.5246,
+   "fallback_frac": 0.6125,
+   "n_fallback": 7439
+  },
+  "G_CMD_s1": {
+   "NC": 89.7003,
+   "DAC": 78.0751,
+   "TTC": 80.9814,
+   "EP": 57.2455,
+   "C": 99.8024,
+   "PDMS": 62.3221,
+   "fallback_frac": 0.6644,
+   "n_fallback": 8070
+  },
+  "G_ARC_s1": {
+   "NC": 90.7171,
+   "DAC": 80.6356,
+   "TTC": 81.8376,
+   "EP": 60.6661,
+   "C": 99.753,
+   "PDMS": 65.5078,
+   "fallback_frac": 0.6116,
+   "n_fallback": 7429
+  }
+ },
+ "pairs": {
+  "G_CMD_s0__minus__PRIOR": {
+   "delta_x100": 3.6649,
+   "wins": 1701,
+   "ties": 9245,
+   "losses": 1200,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 3.6649,
+    "lo": 2.4619,
+    "hi": 4.8246,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 2.4716,
+     "hi": 4.8473
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_CMD_s0__minus__R8_RT": {
+   "delta_x100": 5.6562,
+   "wins": 3502,
+   "ties": 6183,
+   "losses": 2461,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 5.6562,
+    "lo": 3.7619,
+    "hi": 7.5976,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 3.4639,
+     "hi": 7.9644
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_CMD_s0__minus__PRIOR__singapore": {
+   "delta_x100": 7.3819,
+   "wins": 481,
+   "ties": 1135,
+   "losses": 298,
+   "n": 1914,
+   "interval": {
+    "status": "OK",
+    "delta": 7.3819,
+    "lo": 3.0537,
+    "hi": 10.3616,
+    "n_clusters": 13,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "2 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_CMD_s0__minus__PRIOR__us": {
+   "delta_x100": 2.9695,
+   "wins": 1220,
+   "ties": 8110,
+   "losses": 902,
+   "n": 10232,
+   "interval": {
+    "status": "OK",
+    "delta": 2.9695,
+    "lo": 2.0292,
+    "hi": 4.0224,
+    "n_clusters": 123,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 42,
+     "lo": 1.9667,
+     "hi": 3.9969
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_CMD_s0__minus__PRIOR__straight": {
+   "delta_x100": 0.0,
+   "wins": 0,
+   "ties": 8070,
+   "losses": 0,
+   "n": 8070,
+   "interval": {
+    "status": "OK",
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_clusters": 134,
+    "separated_log_name": false,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "positive": false,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_CMD_s0__minus__PRIOR__turn": {
+   "delta_x100": 10.9208,
+   "wins": 1701,
+   "ties": 1175,
+   "losses": 1200,
+   "n": 4076,
+   "interval": {
+    "status": "OK",
+    "delta": 10.9208,
+    "lo": 7.6794,
+    "hi": 14.1014,
+    "n_clusters": 113,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 41,
+     "lo": 7.5738,
+     "hi": 13.7121
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_ARC_s0__minus__PRIOR": {
+   "delta_x100": 6.8633,
+   "wins": 2169,
+   "ties": 8813,
+   "losses": 1164,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 6.8633,
+    "lo": 5.6507,
+    "hi": 8.0655,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 5.5078,
+     "hi": 8.2391
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_ARC_s0__minus__R8_RT": {
+   "delta_x100": 8.8546,
+   "wins": 3538,
+   "ties": 6615,
+   "losses": 1993,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 8.8546,
+    "lo": 7.1222,
+    "hi": 10.7111,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 6.8042,
+     "hi": 10.9585
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_ARC_s0__minus__PRIOR__singapore": {
+   "delta_x100": 9.1334,
+   "wins": 461,
+   "ties": 1296,
+   "losses": 157,
+   "n": 1914,
+   "interval": {
+    "status": "OK",
+    "delta": 9.1334,
+    "lo": 5.2356,
+    "hi": 12.2575,
+    "n_clusters": 13,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "2 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_ARC_s0__minus__PRIOR__us": {
+   "delta_x100": 6.4386,
+   "wins": 1708,
+   "ties": 7517,
+   "losses": 1007,
+   "n": 10232,
+   "interval": {
+    "status": "OK",
+    "delta": 6.4386,
+    "lo": 5.2903,
+    "hi": 7.6409,
+    "n_clusters": 123,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 42,
+     "lo": 4.9369,
+     "hi": 8.084
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_ARC_s0__minus__PRIOR__straight": {
+   "delta_x100": 5.5452,
+   "wins": 1358,
+   "ties": 5839,
+   "losses": 873,
+   "n": 8070,
+   "interval": {
+    "status": "OK",
+    "delta": 5.5452,
+    "lo": 4.3935,
+    "hi": 6.7621,
+    "n_clusters": 134,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 4.0863,
+     "hi": 7.0595
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_ARC_s0__minus__PRIOR__turn": {
+   "delta_x100": 9.4729,
+   "wins": 811,
+   "ties": 2974,
+   "losses": 291,
+   "n": 4076,
+   "interval": {
+    "status": "OK",
+    "delta": 9.4729,
+    "lo": 7.4941,
+    "hi": 11.4457,
+    "n_clusters": 113,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 41,
+     "lo": 7.64,
+     "hi": 11.3431
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_CMD_s1__minus__PRIOR": {
+   "delta_x100": 3.6608,
+   "wins": 1692,
+   "ties": 9258,
+   "losses": 1196,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 3.6608,
+    "lo": 2.4231,
+    "hi": 4.8193,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 2.4931,
+     "hi": 4.7829
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_CMD_s1__minus__R8_RT": {
+   "delta_x100": 5.4639,
+   "wins": 3503,
+   "ties": 6158,
+   "losses": 2485,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 5.4639,
+    "lo": 3.5042,
+    "hi": 7.4448,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 3.1176,
+     "hi": 7.8017
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_CMD_s1__minus__PRIOR__singapore": {
+   "delta_x100": 7.2178,
+   "wins": 480,
+   "ties": 1135,
+   "losses": 299,
+   "n": 1914,
+   "interval": {
+    "status": "OK",
+    "delta": 7.2178,
+    "lo": 2.7556,
+    "hi": 10.2782,
+    "n_clusters": 13,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "2 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_CMD_s1__minus__PRIOR__us": {
+   "delta_x100": 2.9954,
+   "wins": 1212,
+   "ties": 8123,
+   "losses": 897,
+   "n": 10232,
+   "interval": {
+    "status": "OK",
+    "delta": 2.9954,
+    "lo": 2.0296,
+    "hi": 4.0068,
+    "n_clusters": 123,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 42,
+     "lo": 1.9631,
+     "hi": 4.0281
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_CMD_s1__minus__PRIOR__straight": {
+   "delta_x100": 0.0,
+   "wins": 0,
+   "ties": 8070,
+   "losses": 0,
+   "n": 8070,
+   "interval": {
+    "status": "OK",
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_clusters": 134,
+    "separated_log_name": false,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 0.0,
+     "hi": 0.0
+    },
+    "positive": false,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_CMD_s1__minus__PRIOR__turn": {
+   "delta_x100": 10.9087,
+   "wins": 1692,
+   "ties": 1188,
+   "losses": 1196,
+   "n": 4076,
+   "interval": {
+    "status": "OK",
+    "delta": 10.9087,
+    "lo": 7.7149,
+    "hi": 14.1128,
+    "n_clusters": 113,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 41,
+     "lo": 7.7027,
+     "hi": 13.6677
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_ARC_s1__minus__PRIOR": {
+   "delta_x100": 6.8466,
+   "wins": 2155,
+   "ties": 8803,
+   "losses": 1188,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 6.8466,
+    "lo": 5.5597,
+    "hi": 8.1505,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 5.4318,
+     "hi": 8.2901
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_ARC_s1__minus__R8_RT": {
+   "delta_x100": 8.6496,
+   "wins": 3511,
+   "ties": 6613,
+   "losses": 2022,
+   "n": 12146,
+   "interval": {
+    "status": "OK",
+    "delta": 8.6496,
+    "lo": 6.9478,
+    "hi": 10.5169,
+    "n_clusters": 136,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 6.4781,
+     "hi": 10.8414
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_ARC_s1__minus__PRIOR__singapore": {
+   "delta_x100": 9.5028,
+   "wins": 458,
+   "ties": 1300,
+   "losses": 156,
+   "n": 1914,
+   "interval": {
+    "status": "OK",
+    "delta": 9.5028,
+    "lo": 5.6305,
+    "hi": 12.8467,
+    "n_clusters": 13,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "2 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_ARC_s1__minus__PRIOR__us": {
+   "delta_x100": 6.3497,
+   "wins": 1697,
+   "ties": 7503,
+   "losses": 1032,
+   "n": 10232,
+   "interval": {
+    "status": "OK",
+    "delta": 6.3497,
+    "lo": 5.1938,
+    "hi": 7.6367,
+    "n_clusters": 123,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 42,
+     "lo": 4.8513,
+     "hi": 7.9518
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_ARC_s1__minus__PRIOR__straight": {
+   "delta_x100": 5.5507,
+   "wins": 1362,
+   "ties": 5818,
+   "losses": 890,
+   "n": 8070,
+   "interval": {
+    "status": "OK",
+    "delta": 5.5507,
+    "lo": 4.3565,
+    "hi": 6.8667,
+    "n_clusters": 134,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 44,
+     "lo": 4.0559,
+     "hi": 7.1382
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  },
+  "G_ARC_s1__minus__PRIOR__turn": {
+   "delta_x100": 9.4122,
+   "wins": 793,
+   "ties": 2985,
+   "losses": 298,
+   "n": 4076,
+   "interval": {
+    "status": "OK",
+    "delta": 9.4122,
+    "lo": 7.3747,
+    "hi": 11.4709,
+    "n_clusters": 113,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "OK",
+     "n_clusters": 41,
+     "lo": 7.5737,
+     "hi": 11.344
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name AND nuplan_drive (SPEC \u00a75 conjunction)"
+   }
+  }
+ },
+ "controls": {
+  "never_fires_equals_RT_s0": true,
+  "always_fires_equals_PRIOR_s0": true,
+  "never_fires_equals_RT_s1": true,
+  "always_fires_equals_PRIOR_s1": true,
+  "G_minus_G_zero": true,
+  "all_pass": true
+ },
+ "verdicts": {
+  "G_CMD": {
+   "verdict": "WORKS",
+   "delta_s0": 3.6649,
+   "delta_s1": 3.6608,
+   "inference_floor": 0.0041,
+   "both_positive_separated": true,
+   "margin": 3.6608,
+   "needed": 0.0082
+  },
+  "G_ARC": {
+   "verdict": "WORKS",
+   "delta_s0": 6.8633,
+   "delta_s1": 6.8466,
+   "inference_floor": 0.0167,
+   "both_positive_separated": true,
+   "margin": 6.8466,
+   "needed": 0.0334
+  }
+ }
+}
