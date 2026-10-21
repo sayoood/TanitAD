@@ -1,0 +1,25 @@
+{
+ "id": "R8-WISEFT-DECLAM",
+ "filed": "2026-10-21 18:07 Europe/Berlin (clock read 18:07:07), BEFORE any DECLAM arm is built, rolled or scored; no theta_DEC or theta_PLAN PhysicalAI number exists",
+ "status": "PRE-REGISTERED candidate generation (navtrain); never a bar; changes no registered verdict; no navtest read",
+ "why": "R8-WISEFT-MOD2 (742fca0) read SUB-LOCUS = DEC: lambda 0.5 on core.decoder only reads 76.36 / 75.68 on navtrain, level with theta_0.5. theta_0.5's only SHIP-R8 failure is E1 (2 s progress precision). If theta_DEC fails E1 as well, the cheapest next arm moves the DECODER's lambda toward refcv8 as trained; its navtrain curve is measured now on the idle Thor so a PhysicalAI battery can start without delay.",
+ "arms": {
+  "DEC625": "lambda 0.625 on the 168 core.decoder keys; everything else EMA-48,852",
+  "DEC75": "lambda 0.75 on the 168 core.decoder keys; everything else EMA-48,852",
+  "DEC875": "lambda 0.875 on the 168 core.decoder keys; everything else EMA-48,852",
+  "builder": "build_wiseft_declam.py; controls: the lambda 0.5 decoder blend rebuilt equals the banked theta_DEC (md5 dad4cb5b...) key by key; arms exact on decoder keys; theta8 elsewhere; each arm changed; readback bit-exact"
+ },
+ "read": "navtrain registered sample (2,089 tokens / 30 logs), R8_LEGAL seeds 0/1, Thor CUDA roll (r8ns_wisedeclam_LAUNCH.sh = R8-WISEFT-MOD's roll() unchanged) + Thor CPU scorer (navtrain_cache_score.py), scoring gated on PREREG_ACK_DECLAM.txt = this registration's landing commit; paired log-cluster bootstrap B 2000 (bars8 pair_record); reader wisedeclam_read.py",
+ "rule": {
+  "admissible": "X - EMA-48,852 positive (interval excluding 0 at log_name; 7 drives < 8) at BOTH seeds with margin min(d_s0, d_s1) > 2 x |d_s0 - d_s1| (the stage-1 rule)",
+  "share": "share_X = (PDMS(X) - PDMS(EMA)) / (PDMS(theta_DEC) - PDMS(EMA)) per seed, printed (no locus rule)",
+  "controls": "K1 self-pair exactly 0; K2 the banked theta_DEC (76.3621 / 75.6804) and EMA-48,852 (63.3907 / 63.0232) reproduce; K3 identical token sets"
+ },
+ "committed": {
+  "candidates": "every ADMISSIBLE DECLAM arm becomes a PhysicalAI candidate read under R8-WISEFT-PAI's rule unchanged",
+  "family_selection_extended": "the family selection (bda74c7, extended fc67bf6) -- among arms that PASS SHIP-R8, the highest mean navtrain PDMS -- is EXTENDED NOW to include the admissible DECLAM arms",
+  "order": "a DECLAM arm runs only after theta_PLAN and theta_DEC have read, and only if no arm with a higher mean navtrain PDMS has passed; among the remaining candidates, descending mean navtrain PDMS"
+ },
+ "navtest": "NO navtest read under this registration (D-R8-WISE-NAVTEST, 8fd262e, is the PI's)",
+ "tier": "NavSim v1 open-loop PDMS (T1-family), navtrain sample; Las Vegas only; one training seed"
+}
