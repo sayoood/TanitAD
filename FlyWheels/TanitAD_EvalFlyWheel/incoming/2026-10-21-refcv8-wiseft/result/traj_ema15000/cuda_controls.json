@@ -1,0 +1,51 @@
+{
+ "ckpt": "/home/nvidia/refcv8_run/runs/refcv8-r101-s0/ckpt_ema_15000.pt",
+ "config": "/home/nvidia/r8ns/ckpt/config.json",
+ "device": "cuda",
+ "tests": {
+  "test_premises_all_hold": "PASS",
+  "test_K0_same_seed_is_bit_identical": "PASS",
+  "test_KD_exact_dedup_matches_the_native_path": "PASS"
+ },
+ "label": "VALIDATION ONLY (Thor CUDA controls)",
+ "skipif": {
+  "skipif": false,
+  "reason": "no refcv8 checkpoint on this box"
+ },
+ "world_s": 5.8,
+ "seam_checks": {
+  "strict_0_0": true,
+  "gdvb_0": true,
+  "horizons": true,
+  "window": true,
+  "image_hw": true,
+  "n_anchors": true,
+  "anchor_units_alat": true,
+  "residual_prior": true,
+  "speed_ceiling_filter_on": true,
+  "ego_hist": true,
+  "max_speed_onehot_v6": true,
+  "hires_bank": true,
+  "no_stride16_bank": true,
+  "trunk_equalize_43": true,
+  "hires_mask_43": true,
+  "no_ego_state_inject": true,
+  "no_lan": true,
+  "no_nav_args_flag": true,
+  "agents_not_oracle": true,
+  "r8_enabled": true,
+  "r8_no_rc": true,
+  "r8_nav_from_v9": true,
+  "nav_args_dropout_0p5": true,
+  "speed_input_label": true,
+  "speed_unknown_p_0p45": true,
+  "strategic_off": true
+ },
+ "precision": "as_trained",
+ "cuda_max_memory_allocated_gb": 1.178,
+ "torch": "2.13.0+cu130",
+ "K0_pass": true,
+ "KD_pass": true,
+ "premises_pass": true,
+ "wall_s": 7.5
+}

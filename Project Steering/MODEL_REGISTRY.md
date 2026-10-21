@@ -5854,3 +5854,13 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | N3 | **FAILED.** R8_LEGAL 48.73 / 47.00 vs STOP 52.12, CV 39.71, ECHO 42.87; margin −3.40, seed floor 1.73; R8_BLIND 1.55 (fails as it must). No interval (7 logs < 8). |
 | bars | **N1, N2, N3, N4 all FAILED** for EMA-48,852. bars8 controls all OK (EP-clause stratum now the PDM reference proposal, 44eec8f: 1,296 navtest tokens). |
 | caveats | One training seed; mixed backend; ×100 units. |
+
+### 16.6 refcv8-r101-s0 -- weight-space blend with its refcv7 initialisation (R8-WISEFT) recovers NavSim on navtrain; navtest read running  *(addendum to §16.5)*
+
+| | |
+|---|---|
+| arm | theta_lam = (1−lam)·refcv7-r101-s0 ckpt.pt (step 50,400, md5 `d5f104ee…`, refcv8's exact `init_from`) + lam·refcv8 EMA-48,852 on the 1,027 shared float keys (100.6 M params); refcv8's 34 new tensors (129,195 params) kept. No training. Builder `…/2026-10-21-refcv8-wiseft/code/build_wiseft.py` (lam=1 → EMA-48,852 and lam=0 → refcv7 shared keys bit-exact). theta_0.5 md5 `d72f7f57…`. |
+| navtrain (stage 1, registered e8911b1) | PDMS ×100, 2,089 tokens / 30 logs, s0 / s1: lam 0 71.02 / 71.36 · 0.25 74.12 / 73.19 · **0.5 76.33 / 76.44** · 0.75 71.12 / 71.03 · 1 63.39 / 63.02 (PRIOR 73.84). theta_0.5 − EMA-48,852 +12.94 [+10.54, +15.66] / +13.42; floor 0.47 → **lambda* = 0.5**. |
+| snapshots (diagnostic) | EMA-5k 74.61 · 15k 71.12 · 30k 63.73 · 40k 64.49 · 48,852 63.39 (s0): NavSim transfer is lost between 15k and 30k, on straight commands. |
+| status | navtest stage 2 (ONE read, registered) running on Thor from 15:03; PhysicalAI per-frame battery of theta_0.5 running on the dev box (R8-WISEFT-PAI, 44eec8f). theta_0.5 is a CANDIDATE arm, not a deliverable. |
+| caveats | navtrain = Las Vegas only; one training seed; PDMS only on NavSim; lam 0 is not refcv7. |
