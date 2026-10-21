@@ -1,0 +1,517 @@
+{
+ "schema": "r8-ckpt-select/1",
+ "rule": "D-R8-CKPT-RULE 2026-10-20 + AMENDMENT 1 (GOALS_AND_CLAIMS.md)",
+ "tier": "NavSim open-loop PDM scorer (T1-family; NOT closed loop). Choice between two EMA snapshots of ONE training run; says nothing about another training seed. Backend: rolls on Thor CUDA, scoring on the Thor CPU backend (D-R8-CKPT-RULE AMENDMENT 1c).",
+ "evidence_class": "MEASURED (input artifacts in `inputs`)",
+ "constants": {
+  "N_BOOT": 2000,
+  "ALPHA": 0.05,
+  "BOOT_SEED": 0,
+  "SHUFFLE_SEED": 1,
+  "MIN_TOKENS": 1000,
+  "MIN_CLUSTERS": 2,
+  "FLOOR_MULT": 2.0,
+  "CHALLENGER": "ema40000",
+  "DEFAULT": "ema48852",
+  "SEEDS": [
+   0,
+   1
+  ],
+  "CKPT_MD5": {
+   "ema40000": "57807456bd7169800be159ff95871d22",
+   "ema48852": "b4364029b68f29a33eeb4aebbbbd002b"
+  }
+ },
+ "estimator": "paired_episode_cluster_bootstrap (cluster = log_name) via taniteval/ci.py",
+ "ci_py": {
+  "path": "/home/nvidia/r8ns/code/tree/taniteval/taniteval/ci.py",
+  "sha256": "38db571e368f02dc4c0d9df7b47333ebbb082e43695617ba0dfba881668cd73e"
+ },
+ "inputs": {
+  "spec": "/home/nvidia/r8ns/navtrain_sel/DECISION.spec.json",
+  "sample": "/home/nvidia/r8ns/navtrain/NAVTRAIN_SAMPLE_TOKENS.json",
+  "sample_sha256_sorted_tokens": "9dd68698659ec73c131b677120c45fa6f385ea058d4a055f7378f4c13f46d707",
+  "arms": {
+   "ema40000_s0": {
+    "csv": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ema40000_s0/r8sel_ema40000_s0.csv",
+    "seam": "/home/nvidia/r8ns/navtrain_sel/ema40000/bridge/seam_R8_RT.npz",
+    "binding": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ema40000_s0/r8sel_ema40000_s0.binding.json",
+    "counts": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ema40000_s0/r8sel_ema40000_s0.counts.json",
+    "csv_sha256": "d725176ca9ad93e2f4429897634c09caf851dad378acc85015411b75a73cd1e7",
+    "counts_status": "PASS",
+    "seam_sha256": "d0e471fd4d3905f2ede9324ddd7ca0d9b83084ff6972686de4802be3027d1fb8",
+    "identity": {
+     "ckpt_md5": "57807456bd7169800be159ff95871d22",
+     "step": 40000,
+     "device": [
+      "cuda"
+     ],
+     "precision": [
+      "as_trained"
+     ],
+     "seed": 0,
+     "split": "navtrain",
+     "KPR": "PASS",
+     "rt_derived_from": "rows_R8_LEGAL.jsonl",
+     "rt_table_sha256": "3319b003fecc83577430f07dad762bce0a9a0b8594e9748e9a61bc4d264136b7",
+     "rt_partial": false,
+     "rt_n_cv_standin_rows": 0,
+     "fwd_n_cv_standin_rows": 0
+    }
+   },
+   "ema40000_s1": {
+    "csv": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ema40000_s1/r8sel_ema40000_s1.csv",
+    "seam": "/home/nvidia/r8ns/navtrain_sel/ema40000/bridge/seam_R8_RT_s1.npz",
+    "binding": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ema40000_s1/r8sel_ema40000_s1.binding.json",
+    "counts": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ema40000_s1/r8sel_ema40000_s1.counts.json",
+    "csv_sha256": "51ad4f26502b86d8a3598c70ccb725d7c5bec67b0367e2bda57726cc99acb8ae",
+    "counts_status": "PASS",
+    "seam_sha256": "b0ff083fdf56a3298182d8c92c8d082cb2bb0b5997010bd67a5ddc674a8208b7",
+    "identity": {
+     "ckpt_md5": "57807456bd7169800be159ff95871d22",
+     "step": 40000,
+     "device": [
+      "cuda"
+     ],
+     "precision": [
+      "as_trained"
+     ],
+     "seed": 1,
+     "split": "navtrain",
+     "KPR": "PASS",
+     "rt_derived_from": "rows_R8_LEGAL_s1.jsonl",
+     "rt_table_sha256": "3319b003fecc83577430f07dad762bce0a9a0b8594e9748e9a61bc4d264136b7",
+     "rt_partial": false,
+     "rt_n_cv_standin_rows": 0,
+     "fwd_n_cv_standin_rows": 0
+    }
+   },
+   "ema48852_s0": {
+    "csv": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ema48852_s0/r8sel_ema48852_s0.csv",
+    "seam": "/home/nvidia/r8ns/navtrain_sel/ema48852/bridge/seam_R8_RT.npz",
+    "binding": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ema48852_s0/r8sel_ema48852_s0.binding.json",
+    "counts": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ema48852_s0/r8sel_ema48852_s0.counts.json",
+    "csv_sha256": "85163e780e622a08e9899758ad14a30b1cd7edbc1488b853171311de1e5bca8e",
+    "counts_status": "PASS",
+    "seam_sha256": "d1d491f61ff262b34836252b17ea539aa1ea3f7fb50bcd53a3b886418a63c38d",
+    "identity": {
+     "ckpt_md5": "b4364029b68f29a33eeb4aebbbbd002b",
+     "step": 48852,
+     "device": [
+      "cuda"
+     ],
+     "precision": [
+      "as_trained"
+     ],
+     "seed": 0,
+     "split": "navtrain",
+     "KPR": "PASS",
+     "rt_derived_from": "rows_R8_LEGAL.jsonl",
+     "rt_table_sha256": "3319b003fecc83577430f07dad762bce0a9a0b8594e9748e9a61bc4d264136b7",
+     "rt_partial": false,
+     "rt_n_cv_standin_rows": 0,
+     "fwd_n_cv_standin_rows": 0
+    }
+   },
+   "ema48852_s1": {
+    "csv": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ema48852_s1/r8sel_ema48852_s1.csv",
+    "seam": "/home/nvidia/r8ns/navtrain_sel/ema48852/bridge/seam_R8_RT_s1.npz",
+    "binding": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ema48852_s1/r8sel_ema48852_s1.binding.json",
+    "counts": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ema48852_s1/r8sel_ema48852_s1.counts.json",
+    "csv_sha256": "0660ecdcc0d40b79fd2b566d23b218106443d7ac3964ef695f4afc7adf0b3ed9",
+    "counts_status": "PASS",
+    "seam_sha256": "fc5b3dcd41935852b0aaee01817024f6bd3b813d1405b86c074644215c1108a3",
+    "identity": {
+     "ckpt_md5": "b4364029b68f29a33eeb4aebbbbd002b",
+     "step": 48852,
+     "device": [
+      "cuda"
+     ],
+     "precision": [
+      "as_trained"
+     ],
+     "seed": 1,
+     "split": "navtrain",
+     "KPR": "PASS",
+     "rt_derived_from": "rows_R8_LEGAL_s1.jsonl",
+     "rt_table_sha256": "3319b003fecc83577430f07dad762bce0a9a0b8594e9748e9a61bc4d264136b7",
+     "rt_partial": false,
+     "rt_n_cv_standin_rows": 0,
+     "fwd_n_cv_standin_rows": 0
+    }
+   }
+  },
+  "references": {
+   "STOP": {
+    "csv": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ref_STOP/r8sel_ref_STOP.csv",
+    "seam": null,
+    "binding": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ref_STOP/r8sel_ref_STOP.binding.json",
+    "counts": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ref_STOP/r8sel_ref_STOP.counts.json",
+    "csv_sha256": "1731ca40d82df05417fa7614c1236be5049c893b8c214bb4f1e376ffeb3bb9e8",
+    "counts_status": "PASS"
+   },
+   "CV": {
+    "csv": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ref_CV/r8sel_ref_CV.csv",
+    "seam": null,
+    "binding": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ref_CV/r8sel_ref_CV.binding.json",
+    "counts": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ref_CV/r8sel_ref_CV.counts.json",
+    "csv_sha256": "ea9262b961b0951b38294a470e98ee5175b7faf4a438609cb6ec0b52caef165a",
+    "counts_status": "PASS"
+   },
+   "PRIOR_ha0p": {
+    "csv": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ref_PRIOR_ha0p/r8sel_ref_PRIOR_ha0p.csv",
+    "seam": "/home/nvidia/r8ns/navtrain_sel/ema48852/bridge/seam_PRIOR_ha0p.npz",
+    "binding": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ref_PRIOR_ha0p/r8sel_ref_PRIOR_ha0p.binding.json",
+    "counts": "/home/nvidia/r8ns/navtrain_sel/scores/r8sel_ref_PRIOR_ha0p/r8sel_ref_PRIOR_ha0p.counts.json",
+    "csv_sha256": "87b8fcd84b9c22016d78e320962933775937ceebbe28f884483ba8a561912f84",
+    "counts_status": "PASS",
+    "seam_sha256": "7fcff411e4f8e10744a2c2b4ed9d7393eff12fea01c55c2b06d4cf901cc925d1"
+   }
+  }
+ },
+ "sample_status": "FIXED",
+ "n_tokens": 2089,
+ "n_clusters": 30,
+ "n_tokens_used": 2089,
+ "controls": {
+  "zero_48852_minus_48852": {
+   "0": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "separated": false,
+    "reads_exactly_zero": true
+   },
+   "1": {
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "separated": false,
+    "reads_exactly_zero": true
+   }
+  },
+  "token_shuffled_pairing": {
+   "0": {
+    "delta_shuffled": 0.0069,
+    "lo": -0.0449,
+    "hi": 0.0498,
+    "width_true": 0.0191,
+    "width_shuffled": 0.0947,
+    "point_unchanged": true,
+    "widens": true
+   },
+   "1": {
+    "delta_shuffled": 0.0107,
+    "lo": -0.0426,
+    "hi": 0.0504,
+    "width_true": 0.0244,
+    "width_shuffled": 0.093,
+    "point_unchanged": true,
+    "widens": true
+   }
+  },
+  "all_read_known_values": true
+ },
+ "per_seed": {
+  "0": {
+   "delta": 0.006915347363551039,
+   "delta_x100": 0.6915,
+   "lo": -0.0022,
+   "hi": 0.0169,
+   "ci95": 0.0095,
+   "separated": false,
+   "p_delta_gt0": 0.9255,
+   "n_windows": 2089,
+   "n_episodes_logs": 30,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "pdms_x100": {
+    "ema40000": 64.0869,
+    "ema48852": 63.3954
+   },
+   "positive_and_excludes_zero": false
+  },
+  "1": {
+   "delta": 0.01067058700257506,
+   "delta_x100": 1.0671,
+   "lo": -0.0017,
+   "hi": 0.0227,
+   "ci95": 0.0122,
+   "separated": false,
+   "p_delta_gt0": 0.954,
+   "n_windows": 2089,
+   "n_episodes_logs": 30,
+   "n_boot": 2000,
+   "estimator": "paired_episode_cluster_bootstrap",
+   "pdms_x100": {
+    "ema40000": 63.8018,
+    "ema48852": 62.7347
+   },
+   "positive_and_excludes_zero": false
+  }
+ },
+ "inference_floor_abs_delta_s0_minus_s1": 0.0037552396390240217,
+ "inference_floor_x100": 0.3755,
+ "margin": {
+  "definition": "min(delta_s0, delta_s1)",
+  "value": 0.006915347363551039,
+  "value_x100": 0.6915,
+  "needed_gt": 0.007510479278048043,
+  "needed_gt_x100": 0.751,
+  "exceeds": false
+ },
+ "margin_mean_beside": {
+  "value_x100": 0.8793,
+  "exceeds_2x_floor": true
+ },
+ "decision_terms": {
+  "both_seeds_positive_and_interval_excludes_zero": false,
+  "margin_exceeds_2x_floor": false,
+  "controls_read_known_values": true
+ },
+ "verdict": "DEFAULT_EMA_48852",
+ "choice": "ema48852",
+ "reasons": [
+  "A_SEED_IS_NOT_POSITIVE_WITH_AN_INTERVAL_EXCLUDING_ZERO",
+  "MARGIN_NOT_ABOVE_2X_INFERENCE_FLOOR"
+ ],
+ "beside": {
+  "subscore_paired_delta_40k_minus_48852": {
+   "0": {
+    "NC": {
+     "delta_x100": 1.3164,
+     "lo_x100": 0.71,
+     "hi_x100": 2.11,
+     "deciding": false
+    },
+    "DAC": {
+     "delta_x100": -0.4787,
+     "lo_x100": -1.42,
+     "hi_x100": 0.42,
+     "deciding": false
+    },
+    "EP": {
+     "delta_x100": 0.1709,
+     "lo_x100": -0.98,
+     "hi_x100": 1.19,
+     "deciding": false
+    },
+    "TTC": {
+     "delta_x100": 1.7712,
+     "lo_x100": 0.73,
+     "hi_x100": 3.11,
+     "deciding": false
+    },
+    "C": {
+     "delta_x100": 0.0479,
+     "lo_x100": 0.0,
+     "hi_x100": 0.19,
+     "deciding": false
+    },
+    "DDC": {
+     "delta_x100": 0.5026,
+     "lo_x100": 0.21,
+     "hi_x100": 0.86,
+     "deciding": false
+    }
+   },
+   "1": {
+    "NC": {
+     "delta_x100": 1.4361,
+     "lo_x100": 0.62,
+     "hi_x100": 2.4,
+     "deciding": false
+    },
+    "DAC": {
+     "delta_x100": -0.1436,
+     "lo_x100": -1.12,
+     "hi_x100": 0.84,
+     "deciding": false
+    },
+    "EP": {
+     "delta_x100": 0.5619,
+     "lo_x100": -0.63,
+     "hi_x100": 1.73,
+     "deciding": false
+    },
+    "TTC": {
+     "delta_x100": 2.2499,
+     "lo_x100": 1.04,
+     "hi_x100": 3.53,
+     "deciding": false
+    },
+    "C": {
+     "delta_x100": 0.0479,
+     "lo_x100": 0.0,
+     "hi_x100": 0.16,
+     "deciding": false
+    },
+    "DDC": {
+     "delta_x100": 0.3351,
+     "lo_x100": 0.08,
+     "hi_x100": 0.57,
+     "deciding": false
+    }
+   }
+  },
+  "arm_means_x100": {
+   "ema40000_s0": {
+    "PDMS": 64.0869,
+    "NC": 82.9105,
+    "DAC": 86.1656,
+    "EP": 63.0502,
+    "TTC": 70.7516,
+    "C": 99.3298,
+    "DDC": 97.3911
+   },
+   "ema48852_s0": {
+    "PDMS": 63.3954,
+    "NC": 81.5941,
+    "DAC": 86.6443,
+    "EP": 62.8793,
+    "TTC": 68.9804,
+    "C": 99.282,
+    "DDC": 96.8885
+   },
+   "ema40000_s1": {
+    "PDMS": 63.8018,
+    "NC": 82.5754,
+    "DAC": 86.1178,
+    "EP": 62.788,
+    "TTC": 70.7516,
+    "C": 99.4256,
+    "DDC": 97.3432
+   },
+   "ema48852_s1": {
+    "PDMS": 62.7347,
+    "NC": 81.1393,
+    "DAC": 86.2614,
+    "EP": 62.2261,
+    "TTC": 68.5017,
+    "C": 99.3777,
+    "DDC": 97.0081
+   }
+  },
+  "inference_floor_per_checkpoint_x100": {
+   "ema40000": 0.2851,
+   "ema48852": 0.6606
+  },
+  "references": {
+   "STOP": {
+    "usable": true,
+    "PDMS": {
+     "mean_x100": 67.57,
+     "lo_x100": 65.56,
+     "hi_x100": 69.28
+    },
+    "NC": {
+     "mean_x100": 97.73,
+     "lo_x100": 97.05,
+     "hi_x100": 98.33
+    },
+    "DAC": {
+     "mean_x100": 98.66,
+     "lo_x100": 97.29,
+     "hi_x100": 99.61
+    },
+    "EP": {
+     "mean_x100": 40.46,
+     "lo_x100": 37.67,
+     "hi_x100": 43.48
+    },
+    "TTC": {
+     "mean_x100": 97.08,
+     "lo_x100": 95.31,
+     "hi_x100": 98.35
+    },
+    "C": {
+     "mean_x100": 72.52,
+     "lo_x100": 68.08,
+     "hi_x100": 77.85
+    },
+    "DDC": {
+     "mean_x100": 99.78,
+     "lo_x100": 99.51,
+     "hi_x100": 99.97
+    }
+   },
+   "CV": {
+    "usable": true,
+    "PDMS": {
+     "mean_x100": 15.8,
+     "lo_x100": 11.34,
+     "hi_x100": 20.03
+    },
+    "NC": {
+     "mean_x100": 49.71,
+     "lo_x100": 42.76,
+     "hi_x100": 56.15
+    },
+    "DAC": {
+     "mean_x100": 67.88,
+     "lo_x100": 56.34,
+     "hi_x100": 78.43
+    },
+    "EP": {
+     "mean_x100": 17.84,
+     "lo_x100": 13.39,
+     "hi_x100": 22.33
+    },
+    "TTC": {
+     "mean_x100": 28.48,
+     "lo_x100": 22.73,
+     "hi_x100": 33.87
+    },
+    "C": {
+     "mean_x100": 100.0,
+     "lo_x100": 100.0,
+     "hi_x100": 100.0
+    },
+    "DDC": {
+     "mean_x100": 88.92,
+     "lo_x100": 83.93,
+     "hi_x100": 92.96
+    }
+   },
+   "PRIOR_ha0p": {
+    "usable": true,
+    "PDMS": {
+     "mean_x100": 73.84,
+     "lo_x100": 70.06,
+     "hi_x100": 77.77
+    },
+    "NC": {
+     "mean_x100": 92.08,
+     "lo_x100": 90.39,
+     "hi_x100": 93.83
+    },
+    "DAC": {
+     "mean_x100": 87.55,
+     "lo_x100": 83.02,
+     "hi_x100": 91.97
+    },
+    "EP": {
+     "mean_x100": 71.78,
+     "lo_x100": 67.85,
+     "hi_x100": 75.65
+    },
+    "TTC": {
+     "mean_x100": 79.94,
+     "lo_x100": 76.98,
+     "hi_x100": 82.86
+    },
+    "C": {
+     "mean_x100": 99.9,
+     "lo_x100": 99.69,
+     "hi_x100": 100.0
+    },
+    "DDC": {
+     "mean_x100": 96.24,
+     "lo_x100": 94.93,
+     "hi_x100": 97.45
+    }
+   }
+  }
+ },
+ "beside_note": "sub-scores, seed floors and reference rows are printed beside and NEVER decide (rule item 3 / 6)"
+}

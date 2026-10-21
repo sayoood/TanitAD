@@ -1,0 +1,21 @@
+{
+ "what": "D-R8-CKPT-RULE + AMENDMENT 1 navtrain checkpoint selection, executed 2026-10-21 (Europe/Berlin) on Thor (rolls CUDA, scoring CPU)",
+ "verdict": "DEFAULT_EMA_48852 (choice ema48852); reasons A_SEED_IS_NOT_POSITIVE_WITH_AN_INTERVAL_EXCLUDING_ZERO + MARGIN_NOT_ABOVE_2X_INFERENCE_FLOOR",
+ "evidence_class": "MEASURED; tier NavSim v1 open-loop PDM scorer (T1-family, NOT closed loop); split navtrain; backend Thor CUDA rolls / Thor CPU scorer",
+ "sample": {"status": "FIXED", "count": 2089, "logs_with_tokens": 30, "logs_scanned": 38, "city": "us-nv-las-vegas-strip (all 2089)",
+            "sha256_sorted_tokens": "9dd68698659ec73c131b677120c45fa6f385ea058d4a055f7378f4c13f46d707"},
+ "wall_s": {"S1_download_curl": 1593, "S1_download_wall": 1609, "maps_lan_ship": 41, "S2_extract": 89, "S3_fix_sample": 62, "S4_export": 5,
+            "S5_bank": 394, "S7_metric_cache_thor_native": 2941, "S8_rolls_incl_controls": 1636, "S8_bridge_ema40000": 806.1, "S8_bridge_ema48852": 800.7,
+            "S9_score_7_arms_pool": 794, "S10_decide": 4, "posthoc_diag_score_4_arms": 420},
+ "deviations_from_runbook_none_touch_sample_arms_metric_rule_controls": [
+  "cache/score profile roots re-pointed from /dev/shm/navsim to /home/nvidia/r8ns/navtrain/{nsexp,nsdata} via the driver's own --exp/--data/--maps flags (brief: Thor writes only under /home/nvidia/r8ns); jobs.jsonl = make_score_jobs output + those 3 flags (original kept as jobs.orig.jsonl)",
+  "S4 export attempt 1 died at import (navsim-cpu venv has no rasterio); rerun with the Thor backend's import-only rasterio stub on PYTHONPATH (maps stubbed by the exporter); 2089/2089, missing 0",
+  "download lives in /home/nvidia/r8ns/navtrain_dl (runbook said $N/dl); path only",
+  "S7 started while S5 was finishing (runbook allows overlap at MemAvailable >= 35 GB with no GPU job; 74 GB, S5 CPU-only)",
+  "AMENDMENT 1(b) control compared seam_R8_RT.npz (bridge writes no rows_R8_RT.jsonl): all 7 arrays bit-identical at both checkpoints",
+  "maps shipped over the LAN alias tanitad-thor (runbook named tanitad-thor-wifi)"
+ ],
+ "side_writes_outside_r8ns": ["/home/nvidia/navsim-thor/code/w3/__pycache__/run_v1.cpython-312.pyc", "/home/nvidia/navsim-thor/src/navsim-v11/navsim/agents/__pycache__/constant_velocity_agent.cpython-39.pyc",
+                              "/tmp/perf-1261674.map", "/tmp/perf-1261699.map", "/tmp/perf-1262239.map", "/tmp/perf-1262268.map (46 B each)"],
+ "posthoc_diagnostic": "DIAG_RT_vs_LEGAL_POSTHOC.json -- NOT pre-registered, never deciding"
+}
