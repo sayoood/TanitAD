@@ -57,7 +57,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 MUTATION = os.environ.get("NAVSIM_BARS8_MUTATION", "")
 MUTATIONS = ("swap_arm_labels", "drop_seed_floor_gate", "speed_edges_closed_right", "positional_join",
              "rt_bar_without_ship", "priv_carries_bar", "drop_drive_conjunction", "n4_floor_1x", "n2_log_only",
-             "n2n3_seed0_only")
+             "n2n3_seed0_only", "ep_clause_agent_inclusive")
 
 # ---- registered constants (SPEC_REFCV8 6.2, A-R8-NS1, AMENDMENT 1) -------------------------------------------------------------
 BAR_ARM, FLOOR_ARM, RT_ARM, PRIV_ARM, BLIND_ARM, PRIOR_ARM = "R8_LEGAL", "R8_LEGAL_s1", "R8_RT", "R8_PRIV", "R8_BLIND", "PRIOR_ha0p"
@@ -151,6 +151,54 @@ def command_stratum(onehot) -> str:
 def ep_clause_fired(max_compliant_progress_m: float) -> bool:
     """The devkit sets EP = 1 when the best compliant progress is <= 5 m (inclusive)."""
     return float(max_compliant_progress_m) <= EP_CLAUSE_M
+
+
+def oracle_compliant_progress_m(row: dict) -> float:
+    """The MODEL-INDEPENDENT best compliant progress: the PDM reference proposal ALONE (index 0 of the scorer hook's
+    ``progress_raw_m`` x ``multiplier_prod``; NavSim v1 scores [PDM-Closed reference, agent]).  The hook's ``max_compliant_progress_m``
+    is the devkit's max over ALL proposals INCLUDING THE AGENT'S OWN, so it differs between arms and cannot define a partition the
+    arms share.  MEASURED 2026-10-21 on the 48,852 navtest read: hook == max(p * m) exactly (0.0) on 7 x 12,146 rows; the reference
+    product agrees across the 7 arms to 9.8e-10 m; the agent raised the max on 2,446-2,599 tokens per model arm (606 for STOP), and the
+    hook-based control therefore read MISMATCH at 466.96 m.  Fired counts on the STOP rows: hook 1,006, reference 1,296."""
+    p, m = row.get("progress_raw_m"), row.get("multiplier_prod")
+    if p is None or m is None or len(p) != len(m) or len(p) < 2:
+        raise BarsError(f"token {row.get('token')}: the scorer row has no [reference, agent] progress_raw_m / multiplier_prod pair")
+    return float(p[0]) * float(m[0])
+
+
+def ep_clause_mcp(rows_by_arm: dict, stop_rows: dict, toks, bar_arm: str):
+    """token -> the EP-clause stratum's progress (the reference proposal, from the bar arm's rows, else the banked STOP rows), plus the
+    two controls: ``ep_clause_source_consistent`` (the reference value is identical in EVERY arm's rows and the STOP rows, < 1e-6 m) and
+    ``mcp_hook_identity`` (every row's hook equals the devkit's max over its proposals, < 1e-9 m).  The agent-inclusive hook is
+    reported beside as ``agent_raised_max`` per arm -- information, never the stratum."""
+    agent_inclusive = MUTATION == "ep_clause_agent_inclusive"
+    val = (lambda r: float(r["max_compliant_progress_m"])) if agent_inclusive else oracle_compliant_progress_m
+    mcp = {}
+    for t in toks:
+        r = rows_by_arm[bar_arm].get(t) or stop_rows.get(t)
+        if r is None:
+            raise BarsError(f"token {t}: no scorer row in {bar_arm} or the STOP rows -- EP-clause stratum undefined")
+        mcp[t] = val(r)
+    srcs = list(rows_by_arm.items()) + [("STOP", {t: stop_rows[t] for t in toks if t in stop_rows})]
+    dif = [abs(val(r) - mcp[t]) for _n, rows in srcs for t, r in rows.items() if t in mcp]
+    ident, raised = [], {}
+    for n, rows in srcs:
+        k = 0
+        for t, r in rows.items():
+            if t not in mcp or r.get("progress_raw_m") is None:
+                continue
+            pm = max(float(a) * float(b) for a, b in zip(r["progress_raw_m"], r["multiplier_prod"]))
+            ident.append(abs(float(r["max_compliant_progress_m"]) - pm))
+            k += float(r["max_compliant_progress_m"]) > oracle_compliant_progress_m(r) + 1e-6
+        raised[n] = k
+    controls = {"ep_clause_source_consistent": {"max_abs_diff_m": (max(dif) if dif else None), "n_compared": len(dif),
+                                                "definition": "agent-inclusive hook (MUTATION)" if agent_inclusive else
+                                                "PDM reference proposal alone (oracle_compliant_progress_m)",
+                                                "status": "OK" if (not dif or max(dif) < 1e-6) else "MISMATCH"},
+                "mcp_hook_identity": {"max_abs_diff_m": (max(ident) if ident else None), "n": len(ident),
+                                      "agent_raised_max": raised,
+                                      "status": "OK" if (not ident or max(ident) < 1e-9) else "MISMATCH"}}
+    return mcp, controls
 
 
 def city_stratum(map_name: str) -> str:
@@ -695,7 +743,10 @@ def evaluate_navtest(arms: dict, tok_info: pd.DataFrame, meta: dict, cfg: dict |
     out["strata"] = strata_report(usable, toks, tok_info, clusters, cfg, floor)
     fired = out["strata"]["partitions"]["ep_clause"]["fired"].get("n", 0)
     out["ep_clause_fired"] = {"n": fired, "fraction": round(fired / len(toks), 4),
-                              "rule": f"max compliant progress <= {EP_CLAUSE_M} m => EP is set to 1 (the oracle's progress, model-independent)"}
+                              "rule": f"max compliant progress <= {EP_CLAUSE_M} m => EP is set to 1 (the oracle's progress, model-independent)",
+                              "definition": "the PDM REFERENCE proposal's compliant progress (oracle_compliant_progress_m); the devkit's "
+                                            "own clause takes the max over the reference AND the agent, so per arm it fires on a SUBSET "
+                                            "of these tokens"}
     out["bars"] = navtest_bars(usable, toks, out["pairs"], floor, cfg, meta)
     out["bars"]["BAR-R8-N2"] = navhard_bar(navhard_summary, meta, cfg)
     out["bars"]["BAR-R8-N3"] = warmup_bar(warmup_summary, meta, cfg)
@@ -744,20 +795,12 @@ def load_run(run_dir: str, *, inputs: str, floors_dir: str, r7_csv: str, census:
             raise BarsError(f"city stratum refused: {controls['city_census']}")
     else:
         controls["city_census"] = {"status": "UNCHECKED", "reason": "raw/navtest_city_census.json not found (pass --city-census)"}
-    # the EP clause: the oracle's best compliant progress is MODEL-INDEPENDENT -> read it from the bar arm's scorer rows, check
-    # it against every other arm's rows and the banked STOP rows
-    mcp, src = {}, {}
+    # the EP clause: the stratum is the PDM REFERENCE proposal's compliant progress, which is MODEL-INDEPENDENT (the hook's
+    # max_compliant_progress_m includes the agent's own proposal and is NOT -- ep_clause_mcp's docstring has the measurement)
     rows_by_arm = {n: read_rows_jsonl(p["rows"]) for n, p in found.items()}
     stop_rows = read_rows_jsonl(os.path.join(floors_dir, "STOP_navtest", "STOP_navtest_rows.jsonl"))
-    for t in toks:
-        r = rows_by_arm[BAR_ARM].get(t) or stop_rows.get(t)
-        if r is None:
-            raise BarsError(f"token {t}: no max_compliant_progress_m in {BAR_ARM} rows or the STOP rows -- EP-clause stratum undefined")
-        mcp[t] = float(r["max_compliant_progress_m"])
-    dif = [abs(float(r["max_compliant_progress_m"]) - mcp[t]) for n, rows in rows_by_arm.items() for t, r in rows.items() if t in mcp]
-    dif += [abs(float(stop_rows[t]["max_compliant_progress_m"]) - mcp[t]) for t in toks if t in stop_rows]
-    controls["ep_clause_source_consistent"] = {"max_abs_diff_m": (max(dif) if dif else None), "n_compared": len(dif),
-                                               "status": "OK" if (not dif or max(dif) < 1e-6) else "MISMATCH"}
+    mcp, ep_controls = ep_clause_mcp(rows_by_arm, stop_rows, toks, BAR_ARM)
+    controls.update(ep_controls)
     v0d = [abs(float(r["v0_mps"]) - float(ti.loc[t, "v0"])) for t, r in rows_by_arm[BAR_ARM].items() if t in ti.index and "v0_mps" in r]
     controls["v0_inputs_vs_scorer_rows"] = {"max_abs_diff_mps": (max(v0d) if v0d else None), "n": len(v0d),
                                             "status": "OK" if (not v0d or max(v0d) < 1e-4) else "MISMATCH"}

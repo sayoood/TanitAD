@@ -618,7 +618,13 @@ class Episode:
         for k, (lab, key, col, _) in enumerate(rows):
             yy = y0 + 72 + k * 24
             dd.rectangle([tx, yy + 3, tx + 14, yy + 15], fill=col)
-            txt(dd, (tx + 22, yy), lab, F_N, FG)
+            avail = 232 - 22 - 8                                             # the label must end before the first number column
+            fnt = F_N if dd.textlength(lab, font=F_N) <= avail else F_S       # the 'shipped re-timed (...)' label overflowed onto the numbers
+            if dd.textlength(lab, font=fnt) > avail:                          # still too wide: cut and mark the cut, never overlap
+                while len(lab) > 4 and dd.textlength(lab + "...", font=fnt) > avail:
+                    lab = lab[:-1]
+                lab = lab.rstrip() + "..."
+            txt(dd, (tx + 22, yy), lab, fnt, FG)
             if key not in self.ade:
                 continue
             for j, (m, kind) in enumerate((("a2", 0), ("a2", 1), ("a6", 0), ("a6", 1))):

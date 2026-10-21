@@ -147,6 +147,38 @@ def test_ep_clause_is_inclusive_at_5_m(m, fired):
     assert B.ep_clause_fired(m) is fired
 
 
+def _row(tok, prog, mult, hook=None):
+    """A scorer-hook row as score_navtest8 writes it: [PDM reference, agent] progress and multiplier products."""
+    return {"token": tok, "progress_raw_m": list(prog), "multiplier_prod": list(mult),
+            "max_compliant_progress_m": max(a * b for a, b in zip(prog, mult)) if hook is None else hook}
+
+
+def test_ep_clause_oracle_is_the_reference_proposal_literal():
+    """The stratum must be the REFERENCE proposal's compliant progress, never the agent-inclusive hook (MEASURED 2026-10-21: the hook
+    moved 466.96 m between arms on navtest).  t1: reference 4 m compliant; arm A's agent drives 9 m compliant (hook 9 -> the devkit's
+    clause would NOT fire for A), arm B's agent 2 m (hook 4).  t2: reference NON-compliant (product 0), both agents 12 m compliant."""
+    rows = {"R8_LEGAL": {"t1": _row("t1", (4.0, 9.0), (1.0, 1.0)), "t2": _row("t2", (30.0, 12.0), (0.0, 1.0))},
+            "PRIOR_ha0p": {"t1": _row("t1", (4.0, 2.0), (1.0, 1.0)), "t2": _row("t2", (30.0, 12.0), (0.0, 1.0))}}
+    stop = {"t1": _row("t1", (4.0, 0.0), (1.0, 1.0)), "t2": _row("t2", (30.0, 0.0), (0.0, 1.0))}
+    mcp, c = B.ep_clause_mcp(rows, stop, ["t1", "t2"], "R8_LEGAL")
+    assert mcp == {"t1": 4.0, "t2": 0.0}
+    assert c["ep_clause_source_consistent"]["status"] == "OK" and c["ep_clause_source_consistent"]["max_abs_diff_m"] == 0.0
+    assert c["mcp_hook_identity"]["status"] == "OK" and c["mcp_hook_identity"]["n"] == 6
+    assert c["mcp_hook_identity"]["agent_raised_max"] == {"R8_LEGAL": 2, "PRIOR_ha0p": 1, "STOP": 0}
+    assert [B.ep_clause_fired(mcp[t]) for t in ("t1", "t2")] == [True, True]
+
+
+def test_ep_clause_hook_identity_catches_a_wrong_hook_literal():
+    rows = {"R8_LEGAL": {"t1": _row("t1", (4.0, 9.0), (1.0, 1.0), hook=7.5)}}
+    _mcp, c = B.ep_clause_mcp(rows, {}, ["t1"], "R8_LEGAL")
+    assert c["mcp_hook_identity"]["status"] == "MISMATCH" and c["mcp_hook_identity"]["max_abs_diff_m"] == 1.5
+
+
+def test_ep_clause_refuses_a_row_without_the_proposal_pair():
+    with pytest.raises(B.BarsError):
+        B.oracle_compliant_progress_m({"token": "t1", "max_compliant_progress_m": 4.0})
+
+
 def test_city_stratum_literal():
     assert (B.city_stratum("sg-one-north"), B.city_stratum("us-ma-boston"), B.city_stratum("us-pa-pittsburgh-hazelwood")) == \
            ("Singapore", "US", "US")
@@ -480,7 +512,9 @@ def test_fullsplit_control_reproduces_the_banked_refcv7_numbers():
     the banked R7_A1 vs R7_A1_s1 inference floor is 0.1398 (summary_navtest_vmaxoff_legal.THOR.json)."""
     ti = B.load_inputs(B.DEFAULT_INPUTS)
     stop_rows = B.read_rows_jsonl(os.path.join(B.DEFAULT_W3, "STOP_navtest", "STOP_navtest_rows.jsonl"))
-    ti["mcp"] = pd.Series({t: float(r["max_compliant_progress_m"]) for t, r in stop_rows.items()})
+    hook_fired = sum(B.ep_clause_fired(float(r["max_compliant_progress_m"])) for r in stop_rows.values())
+    assert hook_fired == 1006                     # the OLD (agent-inclusive hook) count on the STOP rows: 8.28 % of 12,146, MEASURED
+    ti["mcp"] = pd.Series({t: B.oracle_compliant_progress_m(r) for t, r in stop_rows.items()})
     assert len(ti) == 12146 and int(ti["mcp"].notna().sum()) == 12146
     rd = lambda p: B.read_scores_csv(p)                                                       # noqa: E731
     stop = rd(os.path.join(B.DEFAULT_W3, "STOP_navtest", "STOP_navtest.csv"))
@@ -496,6 +530,6 @@ def test_fullsplit_control_reproduces_the_banked_refcv7_numbers():
     assert r["n_tokens"] == 12146 and r["n_logs"] == 136 and r["strata"]["partition_sums_ok"] is True
     assert r["strata"]["partitions"]["city"]["Singapore"]["n"] == 1914                         # MEASURED navtest_city_census.json
     clause = r["strata"]["partitions"]["ep_clause"]["fired"]["n"]
-    assert clause == 1006                                                                       # 8.28 % of 12,146, MEASURED on the STOP rows
+    assert clause == 1296                         # the PDM REFERENCE proposal <= 5 m: 10.67 % of 12,146, MEASURED 2026-10-21 on the STOP rows
     r2 = B.evaluate_navtest({"R8_LEGAL": a1, "R8_LEGAL_s1": a1s1, "STOP": stop}, ti, meta, {"sub_intervals": False, "strata_pairs": False})
     assert r2["inference_seed_floor"]["x100"] == 0.1398

@@ -10,6 +10,7 @@ reintroduces one real defect class into ``code/navsim_bars8.py``:
   rt_bar_without_ship       R8_RT carries a bar although SHIP-R8 has not passed
   priv_carries_bar          R8_PRIV is given a bar
   drop_drive_conjunction    'separated' reads the log level only (the nuplan_drive level is ignored)
+  ep_clause_agent_inclusive the EP-clause stratum reads the scorer hook's max over ALL proposals (agent included), the 2026-10-21 defect
 
 The unmutated suite must PASS; the mutated suite must FAIL and the NAMED literal tests must be among the failures.  A literal test that
 stays green under the defect it exists to catch would be the 'check that shares the defect' of CLAUDE.md -- this file is the proof it does
@@ -41,6 +42,7 @@ CASES = {
     "n4_floor_1x": ["test_n4_inside_2x_floor_is_not_proven"],
     "n2_log_only": ["test_n2_needs_the_drive_level"],
     "n2n3_seed0_only": ["test_n2_both_seeds_must_agree", "test_n2_seed1_pair_missing_is_not_a_pass", "test_n3_both_seeds"],
+    "ep_clause_agent_inclusive": ["test_ep_clause_oracle_is_the_reference_proposal_literal"],
 }
 
 
