@@ -18499,3 +18499,18 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 - MODEL_REGISTRY §16.11 carries a stage note for §16.8's "EMA-48,852 57.84 / 57.92".
 
 **Class:** *a number quoted with its checkpoint but not its STAGE.* refcv8 has several navtest rows per checkpoint (R8_LEGAL raw plan, R8_RT re-timed, R8_PRIV). "EMA-48,852 57.84" names the checkpoint and drops the stage, and the reader fills the gap with the deliverable. A refcv8 NavSim number carries checkpoint + stage + seed.
+
+### R61 (2026-10-21) - "STRATEGIC: PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE item 25)" (v8F-mini session bfe78918: RESULT_V8F_TAC_A1.md, landed in aa8366d)
+
+**Measured:**
+* v8F-mini's strategic family is **un-paused**. The PI ruled this on 2026-10-17, and `v8f_mini_full_verdict.py` quotes it in its docstring ("STRATEGIC is un-paused for v8F-mini (PI ruling of 2026-10-17), so it is read, not paused").
+* The 2026-09-19 pause is the programme-wide rule in CLAUDE.md, and it was quoted for a sub-programme that has its own later ruling.
+* No number was affected. In every PREREG_V8F_TAC arm, S is upstream of the intervention, so the strategic family is unchanged by construction.
+
+**Fixed:**
+* `RESULT_V8F_TAC_A1.md` carries an erratum on that line.
+* `RESULT_V8F_TAC_A2.md` and `PREREG_V8F_CZ.md` state the un-pause and read the strategic family.
+
+**Class:** *a programme-wide default quoted where a narrower, later ruling governs.*
+* A pause written for "the programme" reads as universal. The ruling that lifts it for one model family lives in that family's verdict code, which the writer did not re-open.
+* ⇒ **Before stamping a family PAUSED, grep the arm's own verdict / PREREG for the family's name.** The narrower ruling wins.

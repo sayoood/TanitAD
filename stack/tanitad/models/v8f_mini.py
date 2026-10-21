@@ -139,12 +139,16 @@ class V8FMiniConfig:
     max_age_s: int = 6
     detach_upper: bool = False         # stop O/T gradients into the upper layer's output
     kin_mode: str = "steer"            # steer | yaw: what the kinematic inputs (P10 features, base, WM action channel 1) are made of
+    cons_absent: str = "mask"          # mask: an ABSENT constraint is out of T's loss (M1 / M2b as built); zero: T's target there is the 0
+                                       # that _code_gt writes and O is teacher-forced on (PREREG_V8F_CZ)
 
     def __post_init__(self):
         if self.kin_mode not in CH1_SCALE:
             raise ValueError(f"kin_mode must be one of {tuple(CH1_SCALE)}, got {self.kin_mode!r}")
         if self.wm not in ("off", "a", "b"):
             raise ValueError(f"wm must be off|a|b, got {self.wm!r}")
+        if self.cons_absent not in ("mask", "zero"):
+            raise ValueError(f"cons_absent must be mask|zero, got {self.cons_absent!r}")
         if self.hmax < self.hist + self.max_age_s:
             raise ValueError("hmax must cover hist + max_age_s")
         if self.wm != "off" and self.hmax < 2 * self.wm_strides[0] * self.wm_strides[1] + 4:
@@ -660,7 +664,11 @@ class V8FMini(nn.Module):
         T["lat"] = self._partial_ce(out["lat_logits"], lt["lat_al"], lt["has"])
         T["lon"] = self._partial_ce(out["lon_logits"], lt["lon_al"], lt["has"])
         tgt = (lt["cons"] - self.cons_mu) / self.cons_sd
-        m = torch.isfinite(tgt) & lt["has"][:, None]
+        if cfg.cons_absent == "zero":                # PREREG_V8F_CZ: an absent constraint's target is the 0 O reads under teacher forcing
+            m = lt["has"][:, None].expand_as(tgt)
+            tgt = torch.where(torch.isfinite(tgt), tgt, torch.zeros_like(tgt))
+        else:
+            m = torch.isfinite(tgt) & lt["has"][:, None]
         hub = F.huber_loss(out["cons_std"], torch.nan_to_num(tgt), reduction="none", delta=1.0)
         T["cons"] = (hub * m).sum() / m.sum().clamp_min(1.0)
         # O: ADE / FDE on the 0.2 s knots
@@ -717,6 +725,7 @@ class V8FMini(nn.Module):
                                   if p.requires_grad))
         return {"navonly": (not self.read_s.uses_scene) and (not self.read_t.uses_scene) and self.read_o.uses_scene,
                 "consistency": bool(cfg.consistency), "wm": "off" if self.wm is None else ("b" if self.wm.gamma > 0 else "a"),
+                "cons_absent": cfg.cons_absent,
                 "wm_idm_gamma": 0.0 if self.wm is None else float(self.wm.gamma),
                 "kin_mode": self.cfg.kin_mode, "wm_ch1_scale": None if self.wm is None else float(self.wm.ch1_scale),
                 "prior_frozen": not any(p.requires_grad for p in self.prior.parameters()),

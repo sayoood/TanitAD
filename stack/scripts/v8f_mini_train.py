@@ -48,6 +48,8 @@ ARM_SPECS = {
     "M1-nocons": dict(navonly=False, consistency=False, wm="off"),
     "M2a": dict(navonly=False, consistency=True, wm="a"),
     "M2b": dict(navonly=False, consistency=True, wm="b"),
+    # PREREG_V8F_CZ: M2b with ONE lever moved -- T's target for an ABSENT constraint is the 0 O is teacher-forced on
+    "M2b-cz": dict(navonly=False, consistency=True, wm="b", cons_absent="zero"),
 }
 
 #: dest -> how it is verified. "cfg:<field>" = equals the BUILT config; "lever:<k>" = equals built_levers()[k];
@@ -65,7 +67,7 @@ FLAG_CHECKS = {
     "w_cons": "cfg:w_cons", "w_traj": "cfg:w_traj", "w_pen": "cfg:w_pen", "w_pen_self": "cfg:w_pen_self",
     "w_wm": "cfg:w_wm", "detach_upper": "cfg:detach_upper", "synthetic": "run", "selfcheck_only": "run",
     "fit_join": "run", "workers": "run", "clip_grad": "opt:clip_grad", "threads": "run",
-    "kin_mode": "cfg:kin_mode", "tracks": "path",
+    "kin_mode": "cfg:kin_mode", "tracks": "path", "cons_absent": "lever:cons_absent",
 }
 
 
@@ -75,6 +77,9 @@ def build_parser():
     ap.add_argument("--navonly", action="store_true", default=None, help="override: S and T lose the scene")
     ap.add_argument("--no-consistency", action="store_true", default=None, help="override: penalties at 0")
     ap.add_argument("--wm", choices=("off", "a", "b"), default=None, help="override: H-JEPA auxiliary (a: no IDM, b: IDM)")
+    ap.add_argument("--cons-absent", choices=("mask", "zero"), default=None,
+                    help="override (PREREG_V8F_CZ): mask = an absent constraint is out of T's loss (every arm but M2b-cz); zero = T's "
+                         "target there is the 0 that O reads under teacher forcing")
     ap.add_argument("--cache-dir", default="C:/Users/Admin/refav1_hj_cache")
     ap.add_argument("--out", required=True)
     ap.add_argument("--v9-train", default="C:/Users/Admin/qland/work/refcv8_hf_v9/release/v9_labels_train.npz")
@@ -142,6 +147,9 @@ def declared_levers(a) -> dict:
         spec["consistency"] = not a.no_consistency
     if a.wm is not None:
         spec["wm"] = a.wm
+    spec.setdefault("cons_absent", "mask")
+    if a.cons_absent is not None:
+        spec["cons_absent"] = a.cons_absent
     return spec
 
 
@@ -152,7 +160,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
-                           detach_upper=a.detach_upper, kin_mode=a.kin_mode)
+                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"])
 
 
 def declared_vs_built(a, cfg, model, opt, data_info) -> list:
@@ -164,7 +172,7 @@ def declared_vs_built(a, cfg, model, opt, data_info) -> list:
         bad.append(f"flags without a declared-vs-built entry (the gate refuses them): {missing}")
     lv = declared_levers(a)
     built = model.built_levers()
-    for k, want in (("navonly", lv["navonly"]), ("consistency", lv["consistency"]), ("wm", lv["wm"])):
+    for k, want in (("navonly", lv["navonly"]), ("consistency", lv["consistency"]), ("wm", lv["wm"]), ("cons_absent", lv["cons_absent"])):
         if built[k] != want:
             bad.append(f"lever {k}: declared {want} but built {built[k]}")
     if not built["prior_frozen"]:
@@ -190,6 +198,8 @@ def declared_vs_built(a, cfg, model, opt, data_info) -> list:
         bad.append("M1-nocons declared but penalty weights are non-zero in the built loss")
     if lv["consistency"] and not built["w"]["w_pen"] > 0.0:
         bad.append("consistency penalties declared ON but w_pen is 0 -- a lever that is declared and does nothing")
+    if lv["cons_absent"] == "zero" and not (cfg.w_cons > 0.0 and cfg.w_tac > 0.0):
+        bad.append("cons_absent zero declared but the constraint loss weight is 0 -- a lever that is declared and does nothing")
     if lv["wm"] != "off" and not built["w"]["w_wm"] > 0.0:
         bad.append("WM auxiliary declared but w_wm is 0 -- a lever that is declared and does nothing")
     if lv["wm"] == "off" and model.wm is not None:

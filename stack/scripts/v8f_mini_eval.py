@@ -275,7 +275,7 @@ def cmd_run(a):
     if a.tac == "shuffle":
         from tanitad.models.hjepa import donor_indices
         tperm = donor_indices(N, episode_ids=torch.as_tensor(X["eid"]), seed=1).numpy()
-    tac_rows = {"shift": [], "oracle_fallback": [], "code": []}
+    tac_rows = {"shift": [], "oracle_fallback": [], "code": [], "absent_frac": []}
     outs = {"traj30": [], "ckpt": [], "goal_prob": [], "lat_logits": [], "lon_logits": [], "cons_pred": [],
             "traj30_proj": []}
     beta_rows = []                                     # rung beta: the planner's per-window inputs (only with --plan beta)
@@ -308,6 +308,14 @@ def cmd_run(a):
                 if a.tac == "shuffle":
                     code = model.forward_infer(todev(D.collate(ditems)))["code"]
                     fb = torch.zeros(code.shape[0], dtype=torch.bool, device=dev)
+                elif a.tac == "absmask":                 # PREREG_V8F_CZ stage 1: T's OWN code, with every constraint slot the GT marks
+                    has = b["lab_t"]["has"].bool()       # ABSENT set to the 0 O is teacher-forced on (T0: only presence comes from GT)
+                    absent = (~torch.isfinite(b["lab_t"]["cons"])) & has[:, None]
+                    code = code0.clone()
+                    c0 = M.N_GOAL + M.N_LAT + M.N_LON
+                    code[:, c0:] = torch.where(absent, torch.zeros_like(code0[:, c0:]), code0[:, c0:])
+                    fb = ~has
+                    tac_rows["absent_frac"].append(absent.float().mean(-1).cpu().numpy())
                 else:                                    # oracle: the GT code where the window has a v9 row (a T0 diagnostic)
                     has = b["lab_t"]["has"].bool()
                     code = torch.where(has[:, None], model._code_gt(b["lab_t"]).to(code0.dtype), code0)
@@ -351,7 +359,8 @@ def cmd_run(a):
                                    "n_oracle_fallback_no_v9_row": int(fb.sum()), "n_windows": int(shift.size),
                                    "donor_seed": 1 if a.tac == "shuffle" else None,
                                    "groups": a.tac_groups, "n_code_dims_replaced": len(grp_idx) if a.tac == "oracle" else None,
-                                   "alpha": a.tac_alpha if a.tac == "oracle" else None}
+                                   "alpha": a.tac_alpha if a.tac == "oracle" else None,
+                                   "absent_slot_frac": float(np.concatenate(tac_rows["absent_frac"]).mean()) if a.tac == "absmask" else None}
         tac_npz = {"tac_code_shift": shift, "tac_oracle_fallback": fb, "tac_code": np.concatenate(tac_rows["code"])}
     r, pw = evaluate(O["traj30"].astype(np.float64), X, extras, a.n_boot, with_families=a.families)
     res["raw"] = r
@@ -617,10 +626,11 @@ def main(argv=None):
     p.add_argument("--eval-cache", default="C:/Users/Admin/refav1_hj_cache")
     p.add_argument("--ages", choices=("fresh", "cycle"), default="cycle")
     p.add_argument("--nav-shuffle", action="store_true"); p.add_argument("--project", action="store_true")
-    p.add_argument("--tac", choices=("pred", "shuffle", "oracle"), default="pred",
+    p.add_argument("--tac", choices=("pred", "shuffle", "oracle", "absmask"), default="pred",
                    help="PREREG_V8F_TAC: pred (DEFAULT) = O reads T's own held code. shuffle = O reads a DONOR window's predicted code (another "
                         "episode, seed 1): does O use T at all? oracle = O reads the GT v9 code where the window has a row (T0 diagnostic: what "
-                        "a perfect tactical layer would buy). One intervention per run.")
+                        "a perfect tactical layer would buy). absmask (PREREG_V8F_CZ) = T's own code with the constraint slots the GT marks ABSENT "
+                        "set to 0, the value O is teacher-forced on. One intervention per run.")
     p.add_argument("--tac-groups", default="all",
                    help="PREREG_V8F_TAC Amendment 1, with --tac oracle only: which part of the code gets GT -- groups goal | latdec | londec | "
                         "latcons | lonspeed | stoplead, composites decisions | constraints, joined by '+' (a comma would split a cmd argument). "

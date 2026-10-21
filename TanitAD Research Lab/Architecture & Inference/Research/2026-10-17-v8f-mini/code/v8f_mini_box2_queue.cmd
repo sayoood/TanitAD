@@ -14,6 +14,10 @@ rem   v8f_mini_box2_queue.cmd tacgrp            PREREG_V8F_TAC Amendment 1 (eval
 rem                                             part of T's code (6 groups + 2 composites) -- for M1 / M2b at seeds 0 and 1
 rem   v8f_mini_box2_queue.cmd tacgrp2           PREREG_V8F_TAC Amendment 2 (eval only): lonspeed+londec, the six leave-one-out
 rem                                             oracles (all-<g>) and the constraints dose-response (alpha 0.25 / 0.5 / 0.75)
+rem   v8f_mini_box2_queue.cmd tacabs            PREREG_V8F_CZ stage 1 (eval only): T's own code with the GT-ABSENT constraint
+rem                                             slots set to 0 (the value O is teacher-forced on), M1 / M2b at seeds 0 and 1
+rem   v8f_mini_box2_queue.cmd gatearm ARM       the in-process launch gate (G-DVB + G-LIVE + admissibility) for ONE arm
+rem   v8f_mini_box2_queue.cmd tacabsarm ARM SEED  the absent-slot oracle on ONE trained arm (PREREG_V8F_CZ's mechanism check)
 rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
@@ -47,7 +51,10 @@ if /i "%~1"=="compare" goto :compare
 if /i "%~1"=="tac" goto :tac
 if /i "%~1"=="tacgrp" goto :tacgrp
 if /i "%~1"=="tacgrp2" goto :tacgrp2
-echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2
+if /i "%~1"=="tacabs" goto :tacabs
+if /i "%~1"=="gatearm" goto :gatearm
+if /i "%~1"=="tacabsarm" goto :tacabsarm
+echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|tacabs^|gatearm ARM^|tacabsarm ARM SEED
 exit /b 2
 
 rem train / eval are CALLED with the stage name dropped, so inside them %~1 = ARM, %~2 = SEED, %~3 = GRID
@@ -184,6 +191,28 @@ if exist "%EV%\eval_%TAG%.npz" (echo [skip] eval %TAG% & exit /b 0)
 "%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TAG% --tac oracle --tac-groups %~3 --tac-alpha %~5 %EC% %ER% >> "%EV%\eval_%TAG%.log" 2>&1
 if errorlevel 1 (echo [FAIL] eval %TAG% - see %EV%\eval_%TAG%.log & exit /b 1)
 echo [ok] eval %TAG%
+exit /b 0
+
+:tacabs
+rem PREREG_V8F_CZ stage 1 (eval only, ZERO training): O reads T's own code with every constraint slot the GT marks ABSENT set to 0.
+rem Read by code\v8f_cz_gate_read.py beside PREREG_V8F_TAC's tacpred / tacorc runs. Skipped once its npz exists.
+call :prep || exit /b 2
+for %%A in (M1 M2b) do for %%S in (0 1) do call :tacone %%A %%S absmask tacabs || exit /b 1
+exit /b 0
+
+:tacabsarm
+call :prep || exit /b 2
+if "%~3"=="" (echo REFUSED: tacabsarm needs ARM SEED & exit /b 2)
+call :tacone %~2 %~3 absmask tacabs
+exit /b %errorlevel%
+
+:gatearm
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: gatearm needs an ARM & exit /b 2)
+if defined V8F_DRYRUN (echo "%PY%" "%TRAIN%" --arm %~2 --out %RUNSM%\gate_%~2 %A% --selfcheck-only & exit /b 0)
+"%PY%" "%TRAIN%" --arm %~2 --out "%RUNSM%\gate_%~2" %A% --selfcheck-only > "%RUNSM%\gate_%~2.log" 2>&1
+if errorlevel 1 (echo [FAIL] gate %~2 - see %RUNSM%\gate_%~2.log & exit /b 1)
+echo [ok] gate %~2
 exit /b 0
 
 :floors

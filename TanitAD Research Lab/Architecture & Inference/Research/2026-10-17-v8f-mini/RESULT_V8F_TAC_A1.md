@@ -56,7 +56,7 @@ Every row is separated unless marked `ns`.
   * It is the open work item of the distance-keeping session card.
   * Stated per family, not dropped.
 * **TACTICAL** is unchanged by construction. Only O's input changes, and T's outputs are bit-identical across the arms. T's tactical quality is reported in `RESULT_V8F_MINI.md`.
-* **STRATEGIC:** PAUSED (PI ruling 2026-09-19, `PI_DECISION_QUEUE.md` item 25).
+* **STRATEGIC:** ~~PAUSED (PI ruling 2026-09-19, `PI_DECISION_QUEUE.md` item 25).~~ ⛔ **ERRATUM 2026-10-21 (R61):** that is the programme-wide pause; v8F-mini's strategic family is **UN-PAUSED** (PI ruling 2026-10-17, quoted in `v8f_mini_full_verdict.py`). In these arms it is unchanged by construction: S is upstream of every intervention.
 
 **The run itself:**
 * Box 2, SAFE MODE, the temperature guard: max USB 36 °C, boot unchanged.
