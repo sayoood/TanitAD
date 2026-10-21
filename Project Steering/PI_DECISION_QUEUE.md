@@ -2457,3 +2457,6 @@ peak ≈ 80 GB) and 3–4 agent-days of engineering; about 5–6 calendar days t
 
 **Recommendation.** Authorise on Thor once the current eval queue drains, with the 84.5 line. It is method-matched to
 REFe-without-scorer, so a DATA verdict means the same thing on both sides.
+**D-NT-DECIDE -- DECIDED 2026-10-21 ~20:40 Berlin (PI, in chat).** Authorised **on Thor**, including the 295 GB navtrain
+download. **DATA line = 84.5.** Engineering starts now; the run launches once tonight's eval queue drains and the launch gate
+passes. The two navtest reads (theta_DEC and A1) are part of the authorisation. Register: GOALS_AND_CLAIMS "D-NT-DECIDE DECIDED".
