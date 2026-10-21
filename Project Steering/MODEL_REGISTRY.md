@@ -5823,3 +5823,13 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | 48,852 | `share_of_at_risk` 0.0446 (37) s0 / 0.0398 (33) s1 vs refcv7 0.0590 / 0.0602; paired −0.0145 [−0.0341, +0.0024] s0 (not separated), −0.0205 [−0.0363, −0.0083] s1 → **bar NOT MET**; progress 0.943 ≥ 0.90; mean min headway +0.30 / +0.37 m vs refcv7 (separated). |
 | 40k | paired −0.0169 [−0.0348, −0.0024] s0, −0.0169 [−0.0334, −0.0044] s1 → **bar MET**. 48,852 − 40k not distinguishable. |
 | caveats | Small event counts; inference-draw movement of the 48,852 delta (0.0060) exceeds the 48,852 − 40k gap; one training seed. |
+
+### 16.3 refcv8-r101-s0 — NavSim navtrain checkpoint choice (D-R8-CKPT-RULE) · EMA-48,852 stays · shipped stage BELOW its own prior on NavSim  *(addendum to §16.1)*
+
+| | |
+|---|---|
+| read | NavSim v1 open-loop PDMS (T1-family, NOT closed loop), split **navtrain**, fixed sample 2,089 tokens / 30 logs (sorted-token sha256 `9dd68698…`; every log Las Vegas; a corpus refcv8 never trained on), Thor CUDA rolls + Thor CPU scorer. Rule D-R8-CKPT-RULE + Amendment 1 (GOALS_AND_CLAIMS). Package `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-20-refcv8-navsim-ckpt-select/run_navtrain_2026-10-21/` (1b9f9cd). |
+| choice | **DEFAULT_EMA_48852.** R8_RT PDMS ×100: EMA-40k 64.09 / 63.80, EMA-48,852 63.40 / 62.73 (seeds 0 / 1). Paired 40k − 48,852 (log-cluster bootstrap, B 2000): +0.6915 [−0.22, +1.69] / +1.0671 [−0.17, +2.27]; floor 0.3755 → neither clause holds. Controls read known values. |
+| beside (never deciding) | STOP 67.57 [65.56, 69.28]; CV 15.80; PRIOR_ha0p (refcv8's own causal prior) **73.84** [70.06, 77.77]. |
+| ⚠️ POST-HOC | R8_RT − PRIOR_ha0p **−10.44 [−16.63, −4.80]** (NC −10.5, TTC −11.0, EP −8.9); RETIME neutral (R8_RT − R8_LEGAL +0.005). The loss sits on straight-command tokens (n 1,444: −19.64 [−25.4, −14.9]); right turns gain (n 162: +32.5 [+22.9, +40.7]). Diagnosis `…/prior_gap_diag/PRIOR_GAP_DIAG.md` (0c5b5db). Two fallback gates found here are PRE-REGISTERED for a held-out navtest test (R8-GATE-NAVTEST, 0c5b5db, before any refcv8 navtest score). |
+| caveats | One city; one training seed; PDMS only (the four families are not in this read); the post-hoc cells are outcome-selected. |
