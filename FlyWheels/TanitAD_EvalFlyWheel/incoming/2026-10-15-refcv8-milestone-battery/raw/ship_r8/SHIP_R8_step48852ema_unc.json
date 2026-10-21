@@ -1,0 +1,971 @@
+{
+ "tool": "ship_r8_verdict.py",
+ "generated": "2026-10-21T08:43:38",
+ "tree": "step48852ema_unc",
+ "condition_tree": "step48852ema_unc",
+ "orientation_only": false,
+ "label": "SHIP-R8 VERDICT on the condition's tree step48852ema_unc: FAIL",
+ "overall": "FAIL",
+ "clauses": [
+  {
+   "id": 1,
+   "text": "(1) FORWARD_TRAINFIT controls ALL_PASS",
+   "status": "PASS",
+   "reason": "FORWARD_TRAINFIT and FORWARD_DEPLOY8 controls ALL_PASS; the frozen gains hash is the pinned one; seeds 0 and 1; B 2000",
+   "evidence": {
+    "forward_trainfit_present": true,
+    "forward_deploy8_present": true,
+    "trainfit_controls_ALL_PASS": true,
+    "deploy8_controls_ALL_PASS": true,
+    "trainfit_frozen_gains_sha256": "b208c9c1e4236075de107ef49eaef39c1dddddba257f6e594bf6b84f8a24b1ee",
+    "deploy8_recorded_gain_hashes": [
+     "b208c9c1e4236075de107ef49eaef39c1dddddba257f6e594bf6b84f8a24b1ee"
+    ],
+    "deploy8_n_boot_ok": true,
+    "trainfit_n_boot_ok": true,
+    "trainfit_seeds": [
+     "0",
+     "1"
+    ],
+    "deploy8_seeds": [
+     "0",
+     "1"
+    ]
+   }
+  },
+  {
+   "id": 2,
+   "text": "(2) E1 S2 ADE \u2212 `ha0_ext_pose` separated below 0 at both seeds",
+   "status": "PASS",
+   "reason": "E1: RETIME_DEPLOY8 - ha0_ext_pose ADE on S2 is separated below 0 at both inference seeds",
+   "evidence": {
+    "surface": "S2",
+    "reference": "ha0_ext_pose",
+    "arm": "RETIME_DEPLOY8",
+    "cells": {
+     "s0": {
+      "delta": -0.0256,
+      "lo": -0.0393,
+      "hi": -0.0123,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.26018165810362004,
+      "mean_ref": 0.28581937894529424
+     },
+     "s1": {
+      "delta": -0.0262,
+      "lo": -0.0391,
+      "hi": -0.0139,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.2596322286765947,
+      "mean_ref": 0.28581937894529424
+     }
+    },
+    "separated_below_0": {
+     "s0": true,
+     "s1": true
+    }
+   }
+  },
+  {
+   "id": 3,
+   "text": "(3) E3 S6 ADE \u2212 `ha0_ext_pose` separated below 0 at both seeds",
+   "status": "PASS",
+   "reason": "E3: RETIME_DEPLOY8 - ha0_ext_pose ADE on S6 is separated below 0 at both inference seeds",
+   "evidence": {
+    "surface": "S6",
+    "reference": "ha0_ext_pose",
+    "arm": "RETIME_DEPLOY8",
+    "cells": {
+     "s0": {
+      "delta": -0.839,
+      "lo": -1.1617,
+      "hi": -0.5377,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 2.570731997958384,
+      "mean_ref": 3.4097815215823526
+     },
+     "s1": {
+      "delta": -0.8431,
+      "lo": -1.1569,
+      "hi": -0.5533,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 2.5667253283822324,
+      "mean_ref": 3.4097815215823526
+     }
+    },
+    "separated_below_0": {
+     "s0": true,
+     "s1": true
+    }
+   }
+  },
+  {
+   "id": 4,
+   "text": "(4) LONGITUDINAL / LATERAL / ADE no row separated worse than refcv7-50,400 at both seeds (FZR-NR), and S6 lateral HOLDS (FZR-LAT)",
+   "status": "PASS",
+   "reason": "FZR-NR ADE / LONGITUDINAL / LATERAL all PASS (no headline row separated worse than refcv7-50,400 at either seed) and FZR-LAT HOLDS",
+   "evidence": {
+    "FZR-NR_per_family": {
+     "ADE": "PASS",
+     "LONGITUDINAL": "PASS",
+     "LATERAL": "PASS"
+    },
+    "FZR-LAT_HOLDS": true,
+    "FZR-LAT_separated_worse_at_any_seed": []
+   }
+  },
+  {
+   "id": 5,
+   "text": "(5) TACTICAL `TAC_traj_lat_correct` and `TAC_traj_lon_correct` of the RE-TIMED plan not separated worse than refcv7-50,400 at both seeds (instrument being built 2026-10-19; if it cannot be computed, SHIP-R8 reads INCOMPLETE, not PASS)",
+   "status": "FAIL",
+   "reason": "separated worse than refcv7-50,400: S6|TAC_traj_lon_correct|s0, S6|TAC_traj_lon_correct|s1",
+   "evidence": {
+    "n_cells": 8,
+    "separated_worse_cells": [
+     "S6|TAC_traj_lon_correct|s0",
+     "S6|TAC_traj_lon_correct|s1"
+    ],
+    "missing": [],
+    "tac_file_status": "FAIL",
+    "deploy8_load_status": {
+     "S2|s0": "ok",
+     "S6|s0": "ok",
+     "S2|s1": "ok",
+     "S6|s1": "ok"
+    },
+    "cells": {
+     "S2|TAC_traj_lat_correct|s0": {
+      "delta": -0.0019,
+      "lo": -0.0063,
+      "hi": 0.0026,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9581630199567204,
+      "mean_ref": 0.9600865592690551
+     },
+     "S2|TAC_traj_lat_correct|s1": {
+      "delta": -0.0046,
+      "lo": -0.0099,
+      "hi": 0.0005,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9555181534022602,
+      "mean_ref": 0.9600865592690551
+     },
+     "S2|TAC_traj_lon_correct|s0": {
+      "delta": 0.0228,
+      "lo": 0.008,
+      "hi": 0.0385,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8576580908872325,
+      "mean_ref": 0.834816061553258
+     },
+     "S2|TAC_traj_lon_correct|s1": {
+      "delta": 0.0171,
+      "lo": 0.0031,
+      "hi": 0.0317,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.858379418129358,
+      "mean_ref": 0.8413080067323876
+     },
+     "S6|TAC_traj_lat_correct|s0": {
+      "delta": -0.0055,
+      "lo": -0.0213,
+      "hi": 0.0097,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8748077514610889,
+      "mean_ref": 0.8803445093817287
+     },
+     "S6|TAC_traj_lat_correct|s1": {
+      "delta": -0.0065,
+      "lo": -0.0221,
+      "hi": 0.0078,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8751153491233467,
+      "mean_ref": 0.8815749000307598
+     },
+     "S6|TAC_traj_lon_correct|s0": {
+      "delta": -0.0332,
+      "lo": -0.0663,
+      "hi": -0.0034,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5665948938788066,
+      "mean_ref": 0.5998154414026453
+     },
+     "S6|TAC_traj_lon_correct|s1": {
+      "delta": -0.0338,
+      "lo": -0.0655,
+      "hi": -0.0051,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5644417102430022,
+      "mean_ref": 0.5982774530913565
+     }
+    }
+   }
+  },
+  {
+   "id": 6,
+   "text": "(6) STRATEGIC not applicable, n = 0, `--no-strategic`",
+   "status": "N/A",
+   "reason": "the battery's strategic block reads NOT APPLICABLE, n = 0 (--no-strategic): satisfied as the condition states",
+   "evidence": {
+    "strategic": {
+     "status": "NOT APPLICABLE",
+     "n": 0
+    }
+   }
+  },
+  {
+   "id": 7,
+   "text": "(7) PRIOR PARITY: the prior the eval rebuilds from banked poses must equal the model's emitted `residual_prior_path` (built in `RefCModel.forward` via `kinematic_prior.prior_controls('ha0_ext_pose')`) to \u2264 1e-3 m at all 8 slots on \u2265 200 eval windows; if it cannot be shown, SHIP-R8 reads INCOMPLETE",
+   "status": "PASS",
+   "reason": "max |delta| <= 0.001 m at all 8 slots on >= 200 windows (smallest panel 4754; 4 panel(s))",
+   "evidence": {
+    "panels": [
+     {
+      "panel": "step30000ema_unc|s0",
+      "n_windows": 4754,
+      "per_slot_max_m": [
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "panel": "step30000ema_unc|s1",
+      "n_windows": 4754,
+      "per_slot_max_m": [
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "panel": "step30000_unc|s0",
+      "n_windows": 4754,
+      "per_slot_max_m": [
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ]
+     },
+     {
+      "panel": "step30000_unc|s1",
+      "n_windows": 4754,
+      "per_slot_max_m": [
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ]
+     }
+    ],
+    "file_reading": "PASS (model-path parity)",
+    "known_values_ok": true,
+    "source_trace_all_verified": true,
+    "min_windows_per_panel": 4754,
+    "slot_max_abs_m": {
+     "values": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   }
+  }
+ ],
+ "arm": "RETIME_DEPLOY8",
+ "condition_text": "SHIP-R8 holds iff, on tree `step48852ema_unc` (EMA weights), ceiling-compliant windows, arm `RETIME_TRAINFIT` with the frozen gains UNCHANGED (sha256 b208c9c1e4236075\u2026), both inference seeds 0 and 1, paired episode-cluster bootstrap B 2000: ... Any failed clause = the stage does NOT ship and refcv8 is reported failing that bar.",
+ "amendment_text": "AMENDMENT 1: SHIP-R8 clauses (1)\u2013(6) are evaluated on `RETIME_DEPLOY`; `RETIME_TRAINFIT` (per-surface) is printed beside. If `RETIME_DEPLOY` cannot be computed for 48,852, SHIP-R8 reads INCOMPLETE.  AMENDMENT 2: `RETIME_DEPLOY` = ONE call per window on all 8 model slots with Amendment 1's table, prior = `ha0_ext_pose` at the same 8 slots; each surface is scored on that call's outputs at its own instants; the per-surface form is printed beside.  New clause (7) PRIOR PARITY.",
+ "per_clause": {
+  "1": "PASS",
+  "2": "PASS",
+  "3": "PASS",
+  "4": "PASS",
+  "5": "FAIL",
+  "6": "N/A",
+  "7": "PASS"
+ },
+ "caveats": [
+  "single training seed",
+  "T1 open loop (not driving performance)",
+  "the stage was found post-hoc",
+  "the E1/E3 reference was switched after the 30k reads (D-R8-E1-REF)",
+  "the train gains under-correct on eval (H-R8-GAINTRAJ-1)",
+  "the bootstrap answers 'another draw of EPISODES' only (not another training or inference run)"
+ ],
+ "beside": {
+  "pre_ruling_ha0_ext": {
+   "E1_S2": {
+    "s0": {
+     "delta": -0.0205,
+     "lo": -0.0336,
+     "hi": -0.0074,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.26018165810362004,
+     "mean_ref": 0.2806968202410624
+    },
+    "s1": {
+     "delta": -0.0211,
+     "lo": -0.0333,
+     "hi": -0.0093,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.2596322286765947,
+     "mean_ref": 0.2806968202410624
+    }
+   },
+   "E3_S6": {
+    "s0": {
+     "delta": -0.8103,
+     "lo": -1.1291,
+     "hi": -0.5176,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.570731997958384,
+     "mean_ref": 3.3810287398475665
+    },
+    "s1": {
+     "delta": -0.8143,
+     "lo": -1.125,
+     "hi": -0.5284,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.5667253283822324,
+     "mean_ref": 3.3810287398475665
+    }
+   }
+  },
+  "flat_0p5_CONST_G05": {
+   "E1_S2_vs_pose": {
+    "s0": {
+     "delta": -0.026,
+     "lo": -0.0391,
+     "hi": -0.013,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.25982171531816156,
+     "mean_ref": 0.28581937894529424
+    },
+    "s1": {
+     "delta": -0.0266,
+     "lo": -0.0389,
+     "hi": -0.0146,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.25923394039920206,
+     "mean_ref": 0.28581937894529424
+    }
+   },
+   "E3_S6_vs_pose": {
+    "s0": {
+     "delta": -0.9522,
+     "lo": -1.2418,
+     "hi": -0.6872,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.45759367850394,
+     "mean_ref": 3.4097815215823526
+    },
+    "s1": {
+     "delta": -0.9512,
+     "lo": -1.236,
+     "hi": -0.696,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.45857685075065,
+     "mean_ref": 3.4097815215823526
+    }
+   }
+  },
+  "per_surface_RETIME_DEPLOY_amendment1": {
+   "E1_S2_vs_pose": {
+    "s0": {
+     "delta": -0.0257,
+     "lo": -0.0393,
+     "hi": -0.0123,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.2601365473582076,
+     "mean_ref": 0.28581937894529424
+    },
+    "s1": {
+     "delta": -0.0262,
+     "lo": -0.0392,
+     "hi": -0.014,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.2595838064264513,
+     "mean_ref": 0.28581937894529424
+    }
+   },
+   "E3_S6_vs_pose": {
+    "s0": {
+     "delta": -0.8389,
+     "lo": -1.1615,
+     "hi": -0.5376,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.5708685536158846,
+     "mean_ref": 3.4097815215823526
+    },
+    "s1": {
+     "delta": -0.8429,
+     "lo": -1.1567,
+     "hi": -0.5532,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.566891639288936,
+     "mean_ref": 3.4097815215823526
+    }
+   },
+   "clause2_on_this_arm": "PASS",
+   "clause3_on_this_arm": "PASS"
+  },
+  "RETIME_TRAINFIT_per_surface": {
+   "E1_S2_vs_pose": {
+    "s0": {
+     "delta": -0.0257,
+     "lo": -0.0393,
+     "hi": -0.0123,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.2601365473582076,
+     "mean_ref": 0.28581937894529424
+    },
+    "s1": {
+     "delta": -0.0262,
+     "lo": -0.0392,
+     "hi": -0.014,
+     "separated": true,
+     "n_windows": 4159,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 0.2595838064264513,
+     "mean_ref": 0.28581937894529424
+    }
+   },
+   "E3_S6_vs_pose": {
+    "s0": {
+     "delta": -0.838,
+     "lo": -1.161,
+     "hi": -0.5364,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.5718206306884364,
+     "mean_ref": 3.4097815215823526
+    },
+    "s1": {
+     "delta": -0.8419,
+     "lo": -1.1563,
+     "hi": -0.5521,
+     "separated": true,
+     "n_windows": 3251,
+     "n_episodes": 138,
+     "n_dropped_nonfinite": 0,
+     "mean_new": 2.5678332101433217,
+     "mean_ref": 3.4097815215823526
+    }
+   },
+   "clause2_on_this_arm": "PASS",
+   "clause3_on_this_arm": "PASS"
+  },
+  "raw_weights_tree": null,
+  "tactical_per_surface_form": {
+   "status": "FAIL",
+   "separated_worse_cells": [
+    "S6|TAC_traj_lon_correct|s0",
+    "S6|TAC_traj_lon_correct|s1"
+   ],
+   "arm": "RETIME_DEPLOY"
+  },
+  "tactical_beside": {
+   "S2|s0": {
+    "TAC_traj_lat_correct": {
+     "os_minus_refcv7": {
+      "delta": -0.0029,
+      "lo": -0.0077,
+      "hi": 0.0019,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.957201250300553,
+      "mean_ref": 0.9600865592690551
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": -0.0014,
+      "lo": -0.0058,
+      "hi": 0.0031,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.958643904784804,
+      "mean_ref": 0.9600865592690551
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": -0.0014,
+      "lo": -0.0058,
+      "hi": 0.0031,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.958643904784804,
+      "mean_ref": 0.9600865592690551
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.001,
+      "lo": -0.0007,
+      "hi": 0.0028,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9581630199567204,
+      "mean_ref": 0.957201250300553
+     }
+    },
+    "TAC_traj_lon_correct": {
+     "os_minus_refcv7": {
+      "delta": -0.0135,
+      "lo": -0.0299,
+      "hi": 0.0027,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8213512863669151,
+      "mean_ref": 0.834816061553258
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0228,
+      "lo": 0.008,
+      "hi": 0.0385,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8576580908872325,
+      "mean_ref": 0.834816061553258
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0228,
+      "lo": 0.008,
+      "hi": 0.0385,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8576580908872325,
+      "mean_ref": 0.834816061553258
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0363,
+      "lo": 0.023,
+      "hi": 0.0494,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8576580908872325,
+      "mean_ref": 0.8213512863669151
+     }
+    }
+   },
+   "S2|s1": {
+    "TAC_traj_lat_correct": {
+     "os_minus_refcv7": {
+      "delta": -0.0053,
+      "lo": -0.0108,
+      "hi": 0.0,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9547968261601346,
+      "mean_ref": 0.9600865592690551
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": -0.0041,
+      "lo": -0.0093,
+      "hi": 0.001,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9559990382303438,
+      "mean_ref": 0.9600865592690551
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": -0.0041,
+      "lo": -0.0093,
+      "hi": 0.001,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9559990382303438,
+      "mean_ref": 0.9600865592690551
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0007,
+      "lo": -0.001,
+      "hi": 0.0024,
+      "separated": false,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.9555181534022602,
+      "mean_ref": 0.9547968261601346
+     }
+    },
+    "TAC_traj_lon_correct": {
+     "os_minus_refcv7": {
+      "delta": -0.02,
+      "lo": -0.0362,
+      "hi": -0.0039,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8213512863669151,
+      "mean_ref": 0.8413080067323876
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": 0.0171,
+      "lo": 0.0031,
+      "hi": 0.0317,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.858379418129358,
+      "mean_ref": 0.8413080067323876
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": 0.0171,
+      "lo": 0.0031,
+      "hi": 0.0317,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.858379418129358,
+      "mean_ref": 0.8413080067323876
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.037,
+      "lo": 0.0233,
+      "hi": 0.0508,
+      "separated": true,
+      "n_windows": 4159,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.858379418129358,
+      "mean_ref": 0.8213512863669151
+     }
+    }
+   },
+   "S6|s0": {
+    "TAC_traj_lat_correct": {
+     "os_minus_refcv7": {
+      "delta": -0.0077,
+      "lo": -0.0237,
+      "hi": 0.0076,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8726545678252845,
+      "mean_ref": 0.8803445093817287
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": -0.0052,
+      "lo": -0.021,
+      "hi": 0.0098,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8751153491233467,
+      "mean_ref": 0.8803445093817287
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": -0.0052,
+      "lo": -0.021,
+      "hi": 0.0098,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8751153491233467,
+      "mean_ref": 0.8803445093817287
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0022,
+      "lo": 0.0003,
+      "hi": 0.0044,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8748077514610889,
+      "mean_ref": 0.8726545678252845
+     }
+    },
+    "TAC_traj_lon_correct": {
+     "os_minus_refcv7": {
+      "delta": -0.0501,
+      "lo": -0.0844,
+      "hi": -0.0196,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5496770224546293,
+      "mean_ref": 0.5998154414026453
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": -0.0332,
+      "lo": -0.0664,
+      "hi": -0.0031,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5665948938788066,
+      "mean_ref": 0.5998154414026453
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": -0.0332,
+      "lo": -0.0663,
+      "hi": -0.0034,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5665948938788066,
+      "mean_ref": 0.5998154414026453
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0169,
+      "lo": 0.0024,
+      "hi": 0.0317,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5665948938788066,
+      "mean_ref": 0.5496770224546293
+     }
+    }
+   },
+   "S6|s1": {
+    "TAC_traj_lat_correct": {
+     "os_minus_refcv7": {
+      "delta": -0.0089,
+      "lo": -0.0253,
+      "hi": 0.0059,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8726545678252845,
+      "mean_ref": 0.8815749000307598
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": -0.0062,
+      "lo": -0.0217,
+      "hi": 0.0082,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8754229467856044,
+      "mean_ref": 0.8815749000307598
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": -0.0062,
+      "lo": -0.0217,
+      "hi": 0.0082,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8754229467856044,
+      "mean_ref": 0.8815749000307598
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0025,
+      "lo": 0.0,
+      "hi": 0.0053,
+      "separated": false,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.8751153491233467,
+      "mean_ref": 0.8726545678252845
+     }
+    },
+    "TAC_traj_lon_correct": {
+     "os_minus_refcv7": {
+      "delta": -0.0511,
+      "lo": -0.0868,
+      "hi": -0.0196,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5472162411565672,
+      "mean_ref": 0.5982774530913565
+     },
+     "TRAINFIT_minus_refcv7": {
+      "delta": -0.0345,
+      "lo": -0.0665,
+      "hi": -0.0057,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5638265149184866,
+      "mean_ref": 0.5982774530913565
+     },
+     "per_surface_DEPLOY_minus_refcv7": {
+      "delta": -0.0338,
+      "lo": -0.0655,
+      "hi": -0.0051,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5644417102430022,
+      "mean_ref": 0.5982774530913565
+     },
+     "DEPLOY8_minus_os": {
+      "delta": 0.0172,
+      "lo": 0.0031,
+      "hi": 0.0309,
+      "separated": true,
+      "n_windows": 3251,
+      "n_episodes": 138,
+      "n_dropped_nonfinite": 0,
+      "mean_new": 0.5644417102430022,
+      "mean_ref": 0.5472162411565672
+     }
+    }
+   }
+  }
+ },
+ "inputs": {
+  "tf": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\retime_trainfit\\FORWARD_TRAINFIT_step48852ema_unc.json",
+  "fd8": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\retime_deploy\\FORWARD_DEPLOY8_step48852ema_unc.json",
+  "tac": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\retime_deploy\\TAC_step48852ema_unc.json",
+  "pp": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\retime_deploy\\PRIOR_PARITY.json",
+  "fd_ps": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\retime_deploy\\FORWARD_DEPLOY_step48852ema_unc.json",
+  "pr": "C:\\Users\\Admin\\refcv8_eval_archive\\battery\\step48852ema_unc\\PAIRED_READ_step48852ema_unc.json",
+  "raw_fd8": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\retime_deploy\\FORWARD_DEPLOY8_step48852_unc.json",
+  "raw_fd_ps": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\retime_deploy\\FORWARD_DEPLOY_step48852_unc.json",
+  "deploy_sha": "C:\\Users\\Admin\\qland\\hold_r8batt\\stage\\FlyWheels\\TanitAD_EvalFlyWheel\\incoming\\2026-10-15-refcv8-milestone-battery\\raw\\retime_deploy\\FROZEN_GAINS_RETIME_deploy.sha256"
+ },
+ "inputs_sha256": {
+  "tf": "4ab3c36260f04703e16dffddf1c8389a986b6a970a185f9f356fd99a15639f77",
+  "fd8": "65a89173640d0c3e1a56d6110fc0f14f6ee6de720e76259f1a583870f8b46253",
+  "tac": "f065016f30644a3fd9464720744dc06169f161f56c85708456d6758708ebf337",
+  "pp": "45fca8e9b71390759e4269fec922d3f1445f5fb571ba88cfb8f266f54c70b57f",
+  "fd_ps": "fa070eaf172491973a63cb0e8900a218cab52d290e2938ef79a5eb759b13bd79",
+  "pr": "d62fa71108c37fd7c93b8ee9b688b3c29bc8ffa695dba34795c2e68df0415cd8",
+  "raw_fd8": null,
+  "raw_fd_ps": null,
+  "deploy_sha": "9477391701c5fc53001c0557ad23f324fb829e000d73895f4415c480a554d76c"
+ },
+ "script_sha256": "7543c585d9cc099942862c7f644c5fcae797272cd9b4dfec93708450224660f2"
+}

@@ -1,0 +1,256 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from E:/refcv8_eval_kit/data/refcv8_train4572_eval139_extrinsics.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[g0] model built in 4.1 s; strict missing=0 unexpected=0 step=48852; param_breakdown equal=True
+[v2] E:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_eval.jsonl): 23772/23772 windows fed, per-step windows {'30': 8042, '50': 8382, '100': 6153, '120': 1195}, per-clip rows {'30': 49, '50': 52, '100': 39, '120': 7}
+[v3] agent join: 139/139 episodes (stable-63bit), 22663/23772 windows labelled (95.3 %), 776801 prefilter target boxes, pad 397
+[v3] SAM3 map GT at 10 cm (100 m x +-30 m): frac_ok 0.9856 of 23772 windows over 139 clips (verdict PASS)
+[r8_repoint] pose-sync attached to the eval dataset: 139/139 clips shifted (0 unshifted); sidecar E:/refcv8_eval_kit/data/refcv8_pose_sync_sidecar.jsonl
+[g0] eval dataset: 139 episodes -> 23772 windows (118s); subset 128; batches 8
+[g0] collated 8 batches in 163.6 s (disk cache C:\Users\Admin\refcv8_eval_archive\g0cache\step48852)
+[g0] requires_grad control: 43 of 471 terms differ between trained and loader flags (dev box)
+[g0] seed 0: eval_loss 46.03912 eval_traj 0.55416 (72s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 1: eval_loss 46.06424 eval_traj 0.56018 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 2: eval_loss 45.96197 eval_traj 0.54687 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 3: eval_loss 45.93257 eval_traj 0.55392 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 4: eval_loss 46.11133 eval_traj 0.55597 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 5: eval_loss 46.06316 eval_traj 0.55657 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 6: eval_loss 45.98224 eval_traj 0.5509 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 7: eval_loss 46.23817 eval_traj 0.56672 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 8: eval_loss 45.99237 eval_traj 0.55078 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 9: eval_loss 46.10528 eval_traj 0.55285 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 10: eval_loss 45.95878 eval_traj 0.55405 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 11: eval_loss 46.1621 eval_traj 0.56778 (69s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 12: eval_loss 46.08122 eval_traj 0.55851 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 13: eval_loss 45.85793 eval_traj 0.55273 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 14: eval_loss 46.11322 eval_traj 0.56218 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 15: eval_loss 45.95216 eval_traj 0.55158 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 16: eval_loss 45.75432 eval_traj 0.53888 (69s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 17: eval_loss 46.136 eval_traj 0.56312 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 18: eval_loss 45.95634 eval_traj 0.54837 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 19: eval_loss 46.08765 eval_traj 0.56094 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 20: eval_loss 45.99766 eval_traj 0.55152 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 21: eval_loss 46.07889 eval_traj 0.55567 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 22: eval_loss 46.03689 eval_traj 0.56228 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] seed 23: eval_loss 45.95196 eval_traj 0.54421 (68s, peak 5.86 GiB, buffers unchanged True)
+[g0] mutation m1: ran (67.9 s)
+[g0] mutation m2: ran (57.3 s)
+[g0] mutation m4: ran (67.3 s)
+[g0] mutation m5: ran (68.7 s)
+[g0] diagnostic eps0: eval_traj 0.55416 (in-run 0.5623)
+[g0] A6 arm fp32_s0: ran (115 s)
+[wrapper] P1_as_run: max wrapper rel 1.506e-01, max floor rel 6.372e-02, over bar 162
+[wrapper] P2_cudnn_det: max wrapper rel 1.506e-01, max floor rel 6.372e-02, over bar 106, W1 detected True, W2 detected True
+[wrapper] P3_fp32_det: max wrapper rel 1.448e-01, max floor rel 6.372e-02, over bar 5, W1 detected True, W2 detected True
+[g0] wrapper clause: FAIL (P3_fp32_det)
+[g0] A7.3 detection packs: ALL BANKED
+[g0] A7.4 seed-group (seeds 0-7 vs 8-23, eval_traj): COMPUTED A
+[g0] A7.4 seed-draw correlation: COMPUTED
+{
+ "G0_as_registered": "FAIL",
+ "reasons_as_registered": [
+  "eval_agent_det_ap2_bus_40_60 [DETECTION] in-run 0.2 vs seeds mean 0.01961 (sd 0)",
+  "eval_agent_det_ap2_trailer_40_60 [DETECTION] in-run 0.02806 vs seeds mean 0.00476 (sd 0)",
+  "eval_agent_det_ap4_bus_40_60 [DETECTION] in-run 0.2 vs seeds mean 0.25 (sd 0)",
+  "eval_agent_det_map2_40_60 [DETECTION] in-run 0.04764 vs seeds mean 0.01801 (sd 0)",
+  "eval_box3d_det_ap0p5_bus_20_40 [DETECTION] in-run 0.5 vs seeds mean 0 (sd 0)",
+  "eval_box3d_det_ap0p5_bus_all [DETECTION] in-run 0.16667 vs seeds mean 0 (sd 0)",
+  "eval_box3d_det_ap0p5_person_0_20 [DETECTION] in-run 0.03377 vs seeds mean 0.00231 (sd 0)",
+  "eval_box3d_det_ap0p5_protruding_object_0_20 [DETECTION] in-run 0.1 vs seeds mean 0.125 (sd 0)",
+  "eval_box3d_det_ap0p5_protruding_object_all [DETECTION] in-run 0.1 vs seeds mean 0.125 (sd 0)",
+  "eval_box3d_det_ap1_bus_20_40 [DETECTION] in-run 0.5 vs seeds mean 1 (sd 0)"
+ ],
+ "G0": "FAIL",
+ "amendment": "A7",
+ "reasons": [
+  "wrapper clause FAIL: ['merge defect: cascade wrapper 1.064e-01 > bar 2.913e-02', 'merge defect: law wrapper 3.559e-03 > bar 2.039e-03', 'merge defect: loss wrapper 8.019e-03 > bar 8.252e-04', 'merge defect: r8_sat wrapper 4.558e-02 > bar 3.662e-02', 'merge defect: traj wrapper 1.448e-01 > bar 2.777e-02']"
+ ],
+ "n_terms": 1136,
+ "by_class_counts": {
+  "SMOOTH": 192,
+  "DETECTION": 100,
+  "EXCLUDED": 11,
+  "MATCHED": 29,
+  "UNDEFINED": 94,
+  "DERIVED": 2,
+  "DETECTION_LOWSUPPORT": 238,
+  "COUNT": 219,
+  "STOCHASTIC": 10,
+  "MAP10_COUNTS": 160,
+  "MAP10_IOU": 80,
+  "THRESHOLD_TARGET": 1
+ },
+ "medians": {
+  "SMOOTH": 0.0009896409021161949,
+  "MATCHED": 0.0015775643519736699,
+  "MAP10_COUNTS": 3.473385760507736e-05,
+  "DETECTION_abs01": 0.0016299999999999926,
+  "SMOOTH_phi_rel": 0.001960571867937279,
+  "SMOOTH_bar": 0.0058817156038118365
+ },
+ "mutation_detection": {
+  "m1": {
+   "detected": true,
+   "n_terms_out": 10,
+   "first10": [
+    {
+     "term": "eval_agent_centre_err_p50",
+     "class": "DETECTION",
+     "inrun": 0.4931,
+     "mutated": 0.52491
+    },
+    {
+     "term": "eval_agent_det_ap0p5_all_0_20",
+     "class": "DETECTION",
+     "inrun": 0.156,
+     "mutated": 0.12182
+    },
+    {
+     "term": "eval_agent_det_ap0p5_automobile_0_20",
+     "class": "DETECTION",
+     "inrun": 0.1774,
+     "mutated": 0.13333
+    },
+    {
+     "term": "eval_agent_det_ap1_automobile_0_20",
+     "class": "DETECTION",
+     "inrun": 0.30893,
+     "mutated": 0.28777
+    },
+    {
+     "term": "eval_box3d_conf_ratio",
+     "class": "DETECTION",
+     "inrun": 0.00885,
+     "mutated": 0.0118
+    },
+    {
+     "term": "eval_goal_score_absmean",
+     "class": "STOCHASTIC",
+     "inrun": 6.03968,
+     "mutated": 5.99147
+    },
+    {
+     "term": "eval_lat",
+     "class": "SMOOTH",
+     "inrun": 0.2153,
+     "mutated": 0.20744
+    },
+    {
+     "term": "eval_lon_tac",
+     "class": "SMOOTH",
+     "inrun": 1.00459,
+     "mutated": 1.04055
+    },
+    {
+     "term": "eval_r8_subscore",
+     "class": "STOCHASTIC",
+     "inrun": 0.30428,
+     "mutated": 0.29837
+    },
+    {
+     "term": "eval_r8_v9_mae_speed",
+     "class": "SMOOTH",
+     "inrun": 0.10898,
+     "mutated": 0.11153
+    }
+   ]
+  },
+  "m2": {
+   "detected": true,
+   "n_terms_out": 67,
+   "first10": [
+    {
+     "term": "eval_map_hires_inter_arrow_0_20",
+     "class": "MAP10_COUNTS",
+     "inrun": 109.375,
+     "mutated": 210.5
+    },
+    {
+     "term": "eval_map_hires_inter_arrow_20_40",
+     "class": "MAP10_COUNTS",
+     "inrun": 0.0,
+     "mutated": 36.625
+    },
+    {
+     "term": "eval_map_hires_inter_crosswalk_0_20",
+     "class": "MAP10_COUNTS",
+     "inrun": 617.375,
+     "mutated": 1443.0
+    },
+    {
+     "term": "eval_map_hires_inter_drivable_0_20",
+     "class": "MAP10_COUNTS",
+     "inrun": 253737.5,
+     "mutated": 246692.875
+    },
+    {
+     "term": "eval_map_hires_inter_drivable_60_80",
+     "class": "MAP10_COUNTS",
+     "inrun": 190362.25,
+     "mutated": 194923.625
+    },
+    {
+     "term": "eval_map_hires_inter_drivable_80_100",
+     "class": "MAP10_COUNTS",
+     "inrun": 152398.75,
+     "mutated": 159944.0
+    },
+    {
+     "term": "eval_map_hires_inter_edge_0_20",
+     "class": "MAP10_COUNTS",
+     "inrun": 0.75,
+     "mutated": 886.125
+    },
+    {
+     "term": "eval_map_hires_inter_edge_20_40",
+     "class": "MAP10_COUNTS",
+     "inrun": 0.0,
+     "mutated": 368.625
+    },
+    {
+     "term": "eval_map_hires_inter_edge_40_60",
+     "class": "MAP10_COUNTS",
+     "inrun": 0.0,
+     "mutated": 107.875
+    },
+    {
+     "term": "eval_map_hires_inter_edge_60_80",
+     "class": "MAP10_COUNTS",
+     "inrun": 0.0,
+     "mutated": 28.125
+    }
+   ]
+  },
+  "m4": {
+   "detected": true,
+   "n_terms_out": 2,
+   "first10": [
+    {
+     "term": "eval_anchor_acc",
+     "class": "SMOOTH",
+     "inrun": 0.5625,
+     "mutated": 0.53125
+    },
+    {
+     "term": "eval_r8_subscore",
+     "class": "STOCHASTIC",
+     "inrun": 0.30428,
+     "mutated": 0.29413
+    }
+   ]
+  },
+  "m5": {
+   "detected": true,
+   "n_terms_out": 54,
+   "how": "DETECTED"
+  }
+ }
+}
+[g0] wrote E:/refcv8_eval_kit/battery/step48852/g0.json (2421.4 s)
