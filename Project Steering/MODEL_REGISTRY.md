@@ -5923,3 +5923,11 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | R8-WISEFT-DECLAM (bf9865d), navtrain sample, R8_LEGAL s0 / s1 | decoder-only λ 0.625 **75.24 / 74.52** (share of theta_DEC's gain 0.91), λ 0.75 **71.61 / 71.25** (0.64), λ 0.875 **66.64 / 66.93** (0.28); all admissible vs EMA-48,852 (+11.9* / +8.2* / +3.3*, s0). `…/2026-10-21-refcv8-wiseft/declam/result/`. |
 | PhysicalAI candidate order (family selection = highest navtrain among SHIP-R8 passes) | DEC 76.02 > DEC625 74.88 > PLAN 73.90 > DEC75 71.43 > theta_0.75 71.08 > PLAN75 69.09 > DEC875 66.79. theta_PLAN battery running, theta_DEC next (queue2); the rest by `queue_wise_cands3.sh`, each only if no higher arm passed. |
 | caveats | Lambdas post-hoc; one training seed; open loop; PDMS only. |
+### 16.13 Corrections owed to §15.2 and §16 (found 2026-10-21 by the R8-WHYPOOR evidence pass; append-only, nothing above edited)
+
+| | |
+|---|---|
+| §15.2 perception rows | The box 0.248 / 0.131 (NMS 0.349) and lane 0.164 / edge 0.042 figures labelled "trainer-val" are **EVAL-DIAG** (1,061 / 1,112 eval windows, oracle-fit thresholds; WP-D `raw/box_probe0.json`). refcv7's true trainer-val values are box AP 0.2287 and lane 0.062 / edge 0.0. The eval-grade read is `…/2026-09-28-refcv7-standard-tests/battery/raw/step50400_a6text/perc_score.json`: pooled AP@2m **0.2491**, recall at the 0.5 gate 0.008. |
+| §16 B1 guard | The B1 guard reference 0.21211 is the minimum of refcv7's **RAW** in-run AP over 40-50.4k (SPEC_REFCV8_DRAFT §10.1). refcv7 had no EMA, so "EMA" in §16 is wrong. At step 1,000 the guard compared refcv8's EMA (about 82 % warm-start weights, 0.9998^1000) at 0.23024 against that reference and said "keep", while the raw head read 0.160. **The guard was blind to that regression.** |
+| refcv8 perception status | **No eval-grade read exists for refcv8.** `perc_pass_r8.py` has run only as a 4-window CPU smoke. The eval-grade pass on EMA-48,852 was started 2026-10-21 ~19:20 Berlin (Thor, after the fan-ceiling job). |
+| wiring | The planner never reads the box3d slots (`refc_v3_train.py:6418-6420`, `refc.py:5211` at fb47a58). It reads the agent head and the pooled BEV. GOALS_AND_CLAIMS R8-PERC-WIRING-1. |

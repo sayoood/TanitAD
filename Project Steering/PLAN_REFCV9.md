@@ -70,3 +70,28 @@ recovers what the frozen stage already gives is worth nothing. Hence:
 * Strategic layer: refcv8 runs `--no-strategic` (v7F R6). Turning it on is the hierarchy thesis but has no measured
   lever behind it yet.
 * Training seeds: B9-2 needs a replicate; two seeds double the GPU time.
+## 6. v1 update -- the PI question of 2026-10-21 (Master Mind, 19:30 Berlin)
+
+Full synthesis: `TanitAD Research Lab/Architecture & Inference/Research/2026-10-21-refcv8-why-poor/RESULT.md` (GOALS_AND_CLAIMS R8-WHYPOOR). New defects measured on refcv8 EMA-48,852 (per-frame feed), added to §1:
+
+| # | defect | MEASURED size | register row |
+|---|---|---|---|
+| D8 | **Late decoder drift carries the NavSim loss** | decoder-only blend +12.97 [+10.55, +15.68] navtrain; the decoder moved only 3.7 % | R8-WISEFT-MOD2 |
+| D9 | **Lateral head echoes the nav token** | adds +0.0226 over a token lookup; vision-only 0.8873 < constant 0.9039 | H-R8-LAT-ECHO-1 |
+| D10 | **Route direction below bar** | 0.870 [0.794, 0.925] vs bar 0.95 (proxy) | R8-ROUTE-PROXY-1 |
+| D11 | **Planner starved of trunk gradient** | trajectory 0.016 % of the trunk update (refcv7 P-GRAD) | WPD-PGRAD |
+| D12 | **No safety terms in selection; box3d not wired** | REFe scorer-only +3.79; box3d read only by its loss | R8-DD-CONFORM-1, R8-PERC-WIRING-1 |
+
+New levers, ranked (all HYPOTHESIS for refc unless marked):
+
+- **L0 decoder protection** -- anchor or freeze the decoder late in training (MEASURED post-hoc +12.97).
+- **L7 DDv2-style safety selector** -- NC / DAC / TTC / EP / C sub-scores (MEASURED +3.79 on REFe).
+- **L8 nav-blind lateral loss.**
+- **L9 a planner share of the trunk update well above 0.016 %.**
+- **L10 perception set-prediction fixes**, gated on a causal test.
+
+⭐ **The decision experiment that fixes refcv9's architecture** (needs PI compute):
+- Fine-tune θ_DEC, front camera only, on NAVSIM navtrain.
+- **≥ ~85** ⇒ data was the gap; refcv9 keeps the refc trunk.
+- **≤ ~75 while REFe is at 89** ⇒ sensors / backbone; refcv9 adopts REFe's DINOv3 ViT-L and multi-camera input.
+- Both outcomes are to be registered before any run.
