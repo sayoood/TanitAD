@@ -62,3 +62,18 @@ Seams: navtest at Thor `/home/nvidia/r8ns/navtest_read/full/bridge_navtest/seam_
 `/home/nvidia/r8ns/navtrain_sel/{ema48852,ema40000,wiseft/*}/bridge/seam_*.npz` (md5 verified on pull; each JSON names its seam).
 `code/fam_wise050_waiter.sh` runs the same reads on theta_0.5's navtest seams when the stage-2 roll ends (beside the registered
 PDMS rule).
+## theta_0.5 on navtest (R8-WISEFT stage 2's roll; added 2026-10-21 16:29 Berlin) -- `navtest_w050/`
+
+Read by `code/fam_wise050_waiter.sh` the moment the roll ended, BESIDE the registered PDMS rule (which these geometry rows cannot
+decide). theta_0.5's prior seam is byte-identical to EMA-48,852's (md5 `d9839199…`). All controls pass on all four reads.
+
+| B − A | ADE m | speed MAE | cross m | heading ° | yaw-rate (masked) | curvature 1/m | TAC lat | TAC lon |
+|---|---|---|---|---|---|---|---|---|
+| theta_0.5 s1 − s0 (inference-seed floor) | +0.0006 | −0.0015 | −0.0011 | +0.0070 | +0.0001 | +0.0001 | +0.0008 | −0.0012 |
+| theta_0.5 − EMA-48,852, s0 | **−1.0267*** | **−0.5776*** | **−0.4178*** | **−3.2165*** | **−0.0346*** | **−0.0119*** | **+0.1712*** | **+0.1109*** |
+| theta_0.5 − EMA-48,852, s1 | **−1.0214*** | **−0.5747*** | **−0.4209*** | **−3.2266*** | **−0.0344*** | **−0.0120*** | **+0.1727*** | **+0.1058*** |
+| theta_0.5 − PRIOR_ha0p, s0 | **−0.1796*** | +0.0149 | **−0.1999*** | **−2.1281*** | **−0.0226*** | **−0.0020*** | **+0.0755*** | −0.0041 |
+
+On held-out navtest the blend is better than refcv8-as-trained on every family at both seeds, and better than its own prior on
+every LATERAL component and on ADE, while TYING it longitudinally (speed MAE +0.015 and TAC lon −0.4 pp, neither separated) --
+on navtrain it was worse than the prior longitudinally. NavSim v1 open loop; one training seed.
