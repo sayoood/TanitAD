@@ -1,0 +1,36 @@
+#!/bin/bash
+# run_pk_thor.sh <seed> [--os-only] -- PREREG R8-PICKER capture roll R<seed> on Thor (called by pk_waiter.sh under flock -o on the Thor GPU lock).
+# Reuses the fanceil agent's md5-verified tree / code / inputs READ-ONLY; writes only under /home/nvidia/r8ns/picker/out/R<seed>.
+# Exit: 2 = an input md5 differs (refuse), 3 = GPU / python busy at precheck (caller retries), else the roll's rc.
+# Opaque markers in out/R<seed>/pkroll.log: ZZPKR<NAME>ZZ (never grep the command text).
+set -u
+SEED=${1:?seed}; OSO=${2:-}
+F=/home/nvidia/r8ns/fanceil; P=/home/nvidia/r8ns/picker; O=$P/out/R$SEED; mkdir -p $O
+PY=/home/nvidia/venvs/tanitad-train/bin/python
+CK=/home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt; CFG=/home/nvidia/r8ns/ckpt/config.json; WIN=$F/inputs/windows_s1.json
+RMP=$F/code/fanceil/refcv8_eval_remap_thor_fanceil.json
+unset REFCV6_KIT REFCV6_REMAP_OVERRIDES REFCV6_REPO REFCV7_KIT REFCV7_REMAP_OVERRIDES REFCV7_REPO R8_MUTATION R7_MUTATION
+export R8_LAUNCH_TREE=$F/tree R8_EVAL_KIT=/home/nvidia PF_R8_CODE=$F/code/batt/code PF_NF_HOLD=$F/code/navfix
+export R8_NO_POSE_SYNC=1 OMP_NUM_THREADS=6 PYTHONIOENCODING=utf-8 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1
+export PYTHONPATH=$F/tree/stack:$F/tree/taniteval
+LOG=$O/pkroll.log
+echo "ZZPKRSTARTZZ $(date -Is) seed $SEED form ${OSO:-FULL_ARM} pid $$" >> $LOG
+bad=0
+for pair in "$CK:b4364029b68f29a33eeb4aebbbbd002b" "$CFG:4ce2c77230dc4e802e78b39ce05af916" "$WIN:a3a78dba889e70aa69a05271559794ad" \
+            "$RMP:4dc5fb013cb1ed4533379816f0bc3a22" "$P/code/fan_roll_r8_pk.py:$(cat $P/code/fan_roll_r8_pk.py.md5)"; do
+  f=${pair%%:*}; want=${pair##*:}; got=$(md5sum "$f" 2>/dev/null | cut -c1-32)
+  if [ ${#got} -ne 32 ] || [ ${#want} -ne 32 ] || [ "$got" != "$want" ]; then echo "ZZPKRMD5BADZZ $f got=$got want=$want" >> $LOG; bad=1; fi
+done
+[ $bad = 0 ] || exit 2
+echo "ZZPKRMD5OKZZ ckpt config windows remap wrapper" >> $LOG
+apps=$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | wc -l)
+pys=$(ps -u nvidia -o pid=,args= | awk '$2 ~ /python/' | grep -vE 'r8ns/nt/|code/nt_[a-z0-9_]+[.]py' | wc -l)  # NT-DECIDE CPU pipeline excluded (MM 2026-10-21)
+echo "precheck compute_apps=$apps other_python=$pys" >> $LOG
+if [ "$apps" != "0" ] || [ "$pys" != "0" ]; then echo "ZZPKRBUSYZZ $(date -Is)" >> $LOG; exit 3; fi
+cd $O
+$PY -X utf8 $P/code/fan_roll_r8_pk.py --pf-code $F/code/pf/code --remap-json $RMP --ckpt $CK --config $CFG --seed $SEED \
+  --dump-dir $O/dump --windows-json $WIN --out-json $O/roll_s$SEED.json --fan-meta-json $O/fan_roll_s$SEED.json --device cuda $OSO >> $LOG 2>&1 200>&-
+rc=$?
+echo "ZZPKRENDZZ rc=$rc $(date -Is)" >> $LOG
+[ $rc = 0 ] && (cd $O && md5sum dump/fan_extras.npz dump/refcv6_extras.npz fan_roll_s$SEED.json roll_s$SEED.json > MD5_R$SEED.txt) 200>&-
+exit $rc
