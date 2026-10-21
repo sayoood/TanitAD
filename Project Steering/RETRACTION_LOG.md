@@ -18514,3 +18514,19 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 **Class:** *a programme-wide default quoted where a narrower, later ruling governs.*
 * A pause written for "the programme" reads as universal. The ruling that lifts it for one model family lives in that family's verdict code, which the writer did not re-open.
 * ⇒ **Before stamping a family PAUSED, grep the arm's own verdict / PREREG for the family's name.** The narrower ruling wins.
+
+### R62 (2026-10-21) - navtrain E1 future poses off by up to 6.7 cm (DataFlyWheel build of H-NT-DECIDE-1; caught by its own control before any use)
+
+**Measured:**
+* The first 20-token smoke passed. The 200-token run then failed the future-pose check against the devkit's own trajectory at **0.021 m**.
+* Cause: yaw was computed with the textbook quaternion formula. The devkit uses `pyquaternion.yaw_pitch_roll`, whose xy term has the opposite sign.
+* After the fix (`nt-e1/1.2`) the future poses match the devkit to **1.9e-6 m**.
+* The 9,034 files already written had their poses recomputed. Images were unchanged and history rows identical. Futures moved by up to 6.7 cm (median 0.5 mm, p99 2.4 cm).
+* No training or eval had read them.
+
+**Fixed:** `nt_repair_poses.py`; manifest backup `MANIFEST_A1.pre_v1.2_yaw.jsonl` on Thor.
+
+**Class:** *correct formula, wrong convention.*
+* The textbook yaw is right in isolation. The consumer (the devkit, and the agent's inference feed) uses another sign convention, and a 20-token smoke was too small to expose it.
+* ⇒ **Derive any pose quantity with the CONSUMER'S library call, or check it against the consumer's own output on a sample large enough to contain turning tokens.**
+* Same family as the cylindrical-FOV and unit-less-anchor traps: a true quantity read outside its scope.
