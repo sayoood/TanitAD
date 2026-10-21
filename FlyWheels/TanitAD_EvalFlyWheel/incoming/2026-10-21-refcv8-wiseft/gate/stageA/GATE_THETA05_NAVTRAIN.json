@@ -1,0 +1,553 @@
+{
+ "id": "R8-GATE-NAVTEST",
+ "label": "NAVTRAIN_SELECTION_R8_WISEFT_GATE_STAGE_A",
+ "threshold": 0.1368,
+ "n_tokens": 2089,
+ "n_logs": 30,
+ "estimator": {
+  "paired": "paired_navsim_log_cluster_bootstrap",
+  "cluster_unit": "log_name",
+  "sensitivity_unit": "nuplan_drive",
+  "n_boot": 2000,
+  "seed": 0,
+  "navsim_ci_sha256": "00e0e39ef6cfc9de5b16212c0c91386099a085b8d780b24eebd9f10cea849285"
+ },
+ "tier": "NavSim v1 open-loop PDM scorer (T1-family); one training seed; diagnostic lever test, never a bar",
+ "n_straight": 1444,
+ "arms": {
+  "R8_RT_s0": {
+   "NC": 89.0378,
+   "DAC": 94.3514,
+   "TTC": 77.6448,
+   "EP": 76.016,
+   "C": 99.9043,
+   "PDMS": 76.3342
+  },
+  "R8_RT_s1": {
+   "NC": 90.1149,
+   "DAC": 93.7291,
+   "TTC": 77.4055,
+   "EP": 76.4941,
+   "C": 99.8085,
+   "PDMS": 76.4399
+  },
+  "PRIOR_ha0p": {
+   "NC": 92.0775,
+   "DAC": 87.5539,
+   "TTC": 79.9426,
+   "EP": 71.7823,
+   "C": 99.9043,
+   "PDMS": 73.8378
+  },
+  "G_CMD_s0": {
+   "NC": 92.6041,
+   "DAC": 93.5376,
+   "TTC": 80.517,
+   "EP": 77.8098,
+   "C": 99.9043,
+   "PDMS": 78.6812,
+   "fallback_frac": 0.6912,
+   "n_fallback": 1444
+  },
+  "G_ARC_s0": {
+   "NC": 94.7104,
+   "DAC": 93.2982,
+   "TTC": 85.6391,
+   "EP": 77.6748,
+   "C": 99.9043,
+   "PDMS": 80.7657,
+   "fallback_frac": 0.3978,
+   "n_fallback": 831
+  },
+  "G_CMD_s1": {
+   "NC": 92.6759,
+   "DAC": 93.0589,
+   "TTC": 80.2298,
+   "EP": 77.4768,
+   "C": 99.9043,
+   "PDMS": 78.2774,
+   "fallback_frac": 0.6912,
+   "n_fallback": 1444
+  },
+  "G_ARC_s1": {
+   "NC": 94.471,
+   "DAC": 92.8195,
+   "TTC": 84.8731,
+   "EP": 77.1923,
+   "C": 99.9043,
+   "PDMS": 80.1065,
+   "fallback_frac": 0.4035,
+   "n_fallback": 843
+  }
+ },
+ "pairs": {
+  "G_CMD_s0__minus__PRIOR": {
+   "delta_x100": 4.8434,
+   "wins": 266,
+   "ties": 1666,
+   "losses": 157,
+   "n": 2089,
+   "interval": {
+    "status": "OK",
+    "delta": 4.8434,
+    "lo": 2.5255,
+    "hi": 7.4068,
+    "n_clusters": 30,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_CMD_s0__minus__R8_RT": {
+   "delta_x100": 2.3471,
+   "wins": 632,
+   "ties": 1030,
+   "losses": 427,
+   "n": 2089,
+   "interval": {
+    "status": "OK",
+    "delta": 2.3471,
+    "lo": -0.1646,
+    "hi": 5.0848,
+    "n_clusters": 30,
+    "separated_log_name": false,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": false,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_CMD_s0__minus__PRIOR__us": {
+   "delta_x100": 4.8434,
+   "wins": 266,
+   "ties": 1666,
+   "losses": 157,
+   "n": 2089,
+   "interval": {
+    "status": "OK",
+    "delta": 4.8434,
+    "lo": 2.5255,
+    "hi": 7.4068,
+    "n_clusters": 30,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_CMD_s0__minus__PRIOR__straight": {
+   "delta_x100": 0.0,
+   "wins": 0,
+   "ties": 1444,
+   "losses": 0,
+   "n": 1444,
+   "interval": {
+    "status": "OK",
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_clusters": 30,
+    "separated_log_name": false,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": false,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_CMD_s0__minus__PRIOR__turn": {
+   "delta_x100": 15.6868,
+   "wins": 266,
+   "ties": 222,
+   "losses": 157,
+   "n": 645,
+   "interval": {
+    "status": "OK",
+    "delta": 15.6868,
+    "lo": 9.2261,
+    "hi": 21.6352,
+    "n_clusters": 17,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "6 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_ARC_s0__minus__PRIOR": {
+   "delta_x100": 6.9279,
+   "wins": 427,
+   "ties": 1206,
+   "losses": 456,
+   "n": 2089,
+   "interval": {
+    "status": "OK",
+    "delta": 6.9279,
+    "lo": 4.6792,
+    "hi": 9.5499,
+    "n_clusters": 30,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_ARC_s0__minus__R8_RT": {
+   "delta_x100": 4.4316,
+   "wins": 333,
+   "ties": 1490,
+   "losses": 266,
+   "n": 2089,
+   "interval": {
+    "status": "OK",
+    "delta": 4.4316,
+    "lo": 1.8649,
+    "hi": 7.1328,
+    "n_clusters": 30,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_ARC_s0__minus__PRIOR__us": {
+   "delta_x100": 6.9279,
+   "wins": 427,
+   "ties": 1206,
+   "losses": 456,
+   "n": 2089,
+   "interval": {
+    "status": "OK",
+    "delta": 6.9279,
+    "lo": 4.6792,
+    "hi": 9.5499,
+    "n_clusters": 30,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_ARC_s0__minus__PRIOR__straight": {
+   "delta_x100": 4.0282,
+   "wins": 269,
+   "ties": 807,
+   "losses": 368,
+   "n": 1444,
+   "interval": {
+    "status": "OK",
+    "delta": 4.0282,
+    "lo": 2.5157,
+    "hi": 5.644,
+    "n_clusters": 30,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_ARC_s0__minus__PRIOR__turn": {
+   "delta_x100": 13.4198,
+   "wins": 158,
+   "ties": 399,
+   "losses": 88,
+   "n": 645,
+   "interval": {
+    "status": "OK",
+    "delta": 13.4198,
+    "lo": 9.0738,
+    "hi": 18.375,
+    "n_clusters": 17,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "6 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_CMD_s1__minus__PRIOR": {
+   "delta_x100": 4.4396,
+   "wins": 259,
+   "ties": 1661,
+   "losses": 169,
+   "n": 2089,
+   "interval": {
+    "status": "OK",
+    "delta": 4.4396,
+    "lo": 2.5069,
+    "hi": 6.2823,
+    "n_clusters": 30,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_CMD_s1__minus__R8_RT": {
+   "delta_x100": 1.8376,
+   "wins": 625,
+   "ties": 1050,
+   "losses": 414,
+   "n": 2089,
+   "interval": {
+    "status": "OK",
+    "delta": 1.8376,
+    "lo": -0.4494,
+    "hi": 4.4929,
+    "n_clusters": 30,
+    "separated_log_name": false,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": false,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_CMD_s1__minus__PRIOR__us": {
+   "delta_x100": 4.4396,
+   "wins": 259,
+   "ties": 1661,
+   "losses": 169,
+   "n": 2089,
+   "interval": {
+    "status": "OK",
+    "delta": 4.4396,
+    "lo": 2.5069,
+    "hi": 6.2823,
+    "n_clusters": 30,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_CMD_s1__minus__PRIOR__straight": {
+   "delta_x100": 0.0,
+   "wins": 0,
+   "ties": 1444,
+   "losses": 0,
+   "n": 1444,
+   "interval": {
+    "status": "OK",
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_clusters": 30,
+    "separated_log_name": false,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": false,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_CMD_s1__minus__PRIOR__turn": {
+   "delta_x100": 14.3789,
+   "wins": 259,
+   "ties": 217,
+   "losses": 169,
+   "n": 645,
+   "interval": {
+    "status": "OK",
+    "delta": 14.3789,
+    "lo": 9.0194,
+    "hi": 19.1669,
+    "n_clusters": 17,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "6 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_ARC_s1__minus__PRIOR": {
+   "delta_x100": 6.2687,
+   "wins": 403,
+   "ties": 1235,
+   "losses": 451,
+   "n": 2089,
+   "interval": {
+    "status": "OK",
+    "delta": 6.2687,
+    "lo": 4.3284,
+    "hi": 8.6076,
+    "n_clusters": 30,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_ARC_s1__minus__R8_RT": {
+   "delta_x100": 3.6667,
+   "wins": 343,
+   "ties": 1476,
+   "losses": 270,
+   "n": 2089,
+   "interval": {
+    "status": "OK",
+    "delta": 3.6667,
+    "lo": 1.3352,
+    "hi": 6.3441,
+    "n_clusters": 30,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_ARC_s1__minus__PRIOR__us": {
+   "delta_x100": 6.2687,
+   "wins": 403,
+   "ties": 1235,
+   "losses": 451,
+   "n": 2089,
+   "interval": {
+    "status": "OK",
+    "delta": 6.2687,
+    "lo": 4.3284,
+    "hi": 8.6076,
+    "n_clusters": 30,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_ARC_s1__minus__PRIOR__straight": {
+   "delta_x100": 3.6718,
+   "wins": 254,
+   "ties": 832,
+   "losses": 358,
+   "n": 1444,
+   "interval": {
+    "status": "OK",
+    "delta": 3.6718,
+    "lo": 2.2577,
+    "hi": 5.2048,
+    "n_clusters": 30,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "7 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  },
+  "G_ARC_s1__minus__PRIOR__turn": {
+   "delta_x100": 12.0826,
+   "wins": 149,
+   "ties": 403,
+   "losses": 93,
+   "n": 645,
+   "interval": {
+    "status": "OK",
+    "delta": 12.0826,
+    "lo": 8.1333,
+    "hi": 16.3998,
+    "n_clusters": 17,
+    "separated_log_name": true,
+    "drive_level": {
+     "status": "CANNOT-RULE",
+     "reason": "6 drives < floor 8"
+    },
+    "positive": true,
+    "negative": false,
+    "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+   }
+  }
+ },
+ "controls": {
+  "never_fires_equals_RT_s0": true,
+  "always_fires_equals_PRIOR_s0": true,
+  "never_fires_equals_RT_s1": true,
+  "always_fires_equals_PRIOR_s1": true,
+  "G_minus_G_zero": true,
+  "all_pass": true
+ },
+ "verdicts": {
+  "G_CMD": {
+   "verdict": "WORKS",
+   "delta_s0": 4.8434,
+   "delta_s1": 4.4396,
+   "inference_floor": 0.4038,
+   "both_positive_separated": true,
+   "margin": 4.4396,
+   "needed": 0.8076
+  },
+  "G_ARC": {
+   "verdict": "WORKS",
+   "delta_s0": 6.9279,
+   "delta_s1": 6.2687,
+   "inference_floor": 0.6592,
+   "both_positive_separated": true,
+   "margin": 6.2687,
+   "needed": 1.3184
+  }
+ }
+}
