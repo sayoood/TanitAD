@@ -2431,3 +2431,29 @@ your call.
   stack": freeze it, or regularise it toward the refcv7 init).
 
 If no arm passes SHIP-R8, (a) falls away and the choice is between (b) and (c).
+## D-NT-DECIDE -- authorise the navtrain decision experiment for refcv9? (filed 2026-10-21 20:25 Berlin, OPEN)
+
+**Why.** REFe (DINOv3 ViT-L, 4 cameras, trained on NAVSIM navtrain) scores 88.82 / 89.15 on navtest. refc's best blend scores
+72.78, zero-shot from one PhysicalAI front camera. REFe changes data, cameras and backbone at once, so the 16-point gap is not
+attributable, and refcv9's architecture depends on which one it is (`…/Research/2026-10-21-refcv8-why-poor/RESULT.md` §7).
+
+**The experiment** (H-NT-DECIDE-1, registered; brief `…/Research/2026-10-21-nt-decide/DECISION_BRIEF.md`). Fine-tune
+theta_DEC on navtrain with the refc architecture unchanged and the agent's front 120° stitch:
+- ≥ 85.0 means DATA: keep the refc trunk, then add the PDM-scorer selector.
+- ≤ 75 with a plateau means SENSORS/BACKBONE: adopt REFe's backbone and multiple cameras.
+- In between, the split is named by a registered share.
+- PUBLISHED and MEASURED priors (LTF 83.8; REFe without its scorer 84.46) put the most likely outcome near 84.
+
+**Cost.** About 38–42 exclusive Thor GPU-h (≈ 1.7 Thor-days), a 295 GB navtrain download (streamed; Thor has 169 GB free,
+peak ≈ 80 GB) and 3–4 agent-days of engineering; about 5–6 calendar days to the verdict. On an A40 it is 20–55 A40-h
+(UNMEASURED) plus a new pod: the old one refuses ssh and had no persistent volume.
+
+**Decisions:**
+1. **Compute:** Thor (exclusive ≈ 1.7 days) **or** a new A40 pod.
+2. **The DATA line:** 85.0 (default) or 84.5 (method-matched). It is recorded before the run.
+3. **The download:** 31 `navtrain_current` shards, 295 GB.
+4. **Two navtest reads:** theta_DEC and A1. These overlap D-R8-WISE-NAVTEST.
+5. **Optional:** the confounded wider-stitch camera arm A2, and/or a zero-training REFe camera-masking probe.
+
+**Recommendation.** Authorise on Thor once the current eval queue drains, with the 84.5 line. It is method-matched to
+REFe-without-scorer, so a DATA verdict means the same thing on both sides.
