@@ -5931,3 +5931,12 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | §16 B1 guard | The B1 guard reference 0.21211 is the minimum of refcv7's **RAW** in-run AP over 40-50.4k (SPEC_REFCV8_DRAFT §10.1). refcv7 had no EMA, so "EMA" in §16 is wrong. At step 1,000 the guard compared refcv8's EMA (about 82 % warm-start weights, 0.9998^1000) at 0.23024 against that reference and said "keep", while the raw head read 0.160. **The guard was blind to that regression.** |
 | refcv8 perception status | **No eval-grade read exists for refcv8.** `perc_pass_r8.py` has run only as a 4-window CPU smoke. The eval-grade pass on EMA-48,852 was started 2026-10-21 ~19:20 Berlin (Thor, after the fan-ceiling job). |
 | wiring | The planner never reads the box3d slots (`refc_v3_train.py:6418-6420`, `refc.py:5211` at fb47a58). It reads the agent head and the pooled BEV. GOALS_AND_CLAIMS R8-PERC-WIRING-1. |
+### 16.14 refcv8-r101-s0 -- the planning-stack-only blend theta_PLAN FAILS SHIP-R8 *(addendum to §16.10-16.12)*
+
+| | |
+|---|---|
+| SHIP-R8 (AMENDMENT 3, table 2aacc9ff), per-frame feed, seeds 0 / 1 | **FAIL**: clauses (2) E1, (4) NR, (5) TAC fail; 1, 1b, 3 and 7 pass. E1 S2 RETIME vs `ha0_ext_pose` **+0.0563 [+0.0416, +0.0703] / +0.0574 [+0.0425, +0.0717]** (worse). E3 S6 -0.611 / -0.600 (pass). `…/2026-10-21-refcv8-wiseft/pai/ship_lane_stepwplan050/ship_r8/SHIP_R8_stepwplan050_pf.json`. |
+| paired vs EMA-48,852 (compliant, capped) | S2 ADE **0.4251 vs 0.2790, +0.1461 [+0.1217, +0.1699]** / +0.1461; S2 speed MAE +0.137; S2 along-track at 2 s +0.272; S6 ADE +0.301 [+0.128, +0.463]. Lateral (heading, curvature, yaw rate) not separated. Controls C1-C5 PASS. `…/pai/paired_48852_wplan050/`. |
+| SHIP-R8 across the family so far | EMA-48,852 + RETIME **PASS** (E1 -0.0343); theta_0.5 FAIL on E1 only (+0.0013, tie); theta_PLAN FAIL on E1, NR and TAC (+0.0563). |
+| reading | Mixing refcv7's planning stack with refcv8's perception breaks the speed profile on PhysicalAI while NavSim navtrain prefers it (73.9 vs 63.4). Partial blends are not coherent models, so each needs its own PhysicalAI read; NavSim navtrain does not predict SHIP-R8. |
+| caveats | One training seed; open loop; post-hoc arms ordered by the registered family rule (bda74c7 / fc67bf6 / bf9865d). |
