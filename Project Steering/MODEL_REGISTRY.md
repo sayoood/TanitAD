@@ -5907,3 +5907,12 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | reading | refcv8's training moved its **planning stack** (core.decoder, tac_decoder_v6, tactical trunk and heads) away from NavSim transfer; its perception stack is not where the loss is. The module refcv9 must protect is named. |
 | next (running) | theta_PLAN (md5 47c7fdac…) per-frame PhysicalAI battery under R8-WISEFT-PAI's rule unchanged, locked 16:59; then theta_0.75 (R8-WISEFT-L075-PAI, bda74c7). Family selection (bda74c7): highest navtrain PDMS among arms that PASS SHIP-R8. No navtest read without the PI. |
 | caveats | Post-hoc grouping; one training seed; open loop; PDMS only on NavSim for these arms. |
+### 16.11 refcv8-r101-s0 -- the NavSim loss is a DECODER drift (R8-WISEFT-MOD2: SUB-LOCUS = DEC); stage note for §16.8  *(addendum to §16.10)*
+
+| | |
+|---|---|
+| R8-WISEFT-MOD2 (fc67bf6), navtrain sample, R8_LEGAL s0 / s1 | **SUB-LOCUS = DEC.** theta_DEC (λ 0.5 on core.decoder only, 168 keys, 15.26 M) **76.36 / 75.68**, − EMA-48,852 +12.97* / +12.66* (log level), − theta_PLAN +2.43*, − theta_0.5 +0.03 (tie). theta_TAC (other 122 PLAN keys) 59.81 / 58.46, − EMA **−3.58* / −4.57*** (worse). theta_PLAN75 (λ 0.75 on PLAN) 69.12 / 69.07, − EMA +5.73* / +6.04*. Controls PASS. `…/2026-10-21-refcv8-wiseft/mod2/result/`. |
+| reading | refcv8's training moved its decoder only 3.7 % (relative L2) and that drift carries the whole NavSim loss; its tactical-stack changes (26–83 % drift) are not the cause — reverting them alone costs NavSim. refcv9: protect the decoder. |
+| PhysicalAI (running) | candidates by navtrain PDMS: DEC 76.02 > PLAN 73.90 > theta_0.75 71.08 > PLAN75 69.09; family selection = highest among arms that PASS SHIP-R8. theta_PLAN battery running (locked 16:59), DEC next; theta_0.75 / PLAN75 only if no higher arm passes. |
+| stage note for §16.8 (R60) | "EMA-48,852 57.84 / 57.92" in §16.8 is the RAW plan (R8_LEGAL), the like-for-like comparator for theta_0.5 (also R8_LEGAL). The shipped re-timed stage (R8_RT) reads **56.67 / 56.86** on navtest. Every §16.8 delta is vs R8_LEGAL and stands. |
+| caveats | Post-hoc split; one training seed; open loop; PDMS only for the MOD2 arms. |

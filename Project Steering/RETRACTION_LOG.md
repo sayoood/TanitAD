@@ -18482,3 +18482,20 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 - `D-REFE-HNSCREEN-FPCOST-1`. Option (b') stands: the decision did not depend on 17 vs 20.
 
 **Class:** *an inherited count not re-derived from source.* A cost that decides an option is counted by instrumenting the call path (or tracing it to `file:line`), never copied from another package's tally.
+
+### R60 (2026-10-21) - "refcv8 as trained (EMA-48,852 with its re-timing stage) scores 57.84 on navtest" (Master Mind: status message to the PI at 17:16 Berlin, and the title-card text in the NavSim video brief)
+
+**Claimed:**
+- 57.84 / 57.92 is the navtest PDMS of refcv8's SHIPPED stage (EMA-48,852 with the registered re-timing stage).
+
+**Measured (the navtest score CSVs `r8nt_s48852e_{R8_LEGAL,R8_RT}{,_s1}.csv` of the registered N1 read; MODEL_REGISTRY §16.4 "bar arm R8_LEGAL 57.84"):**
+- 57.84 / 57.92 is EMA-48,852's RAW plan (R8_LEGAL). The shipped re-timed stage (R8_RT) reads **56.67 / 56.86**.
+- The registered R8-WISEFT stage-2 read paired theta_0.5 (an R8_LEGAL-stage arm) against R8_LEGAL, which is like-for-like. Every banked delta stands (+14.93 over refcv8 as trained, +2.57 over refcv7). Only the stage label in the two outputs above was wrong.
+- Caught by the video subagent, which recomputed the mean of the file it was told to use (56.67) and refused to put a mismatched label on the title card.
+
+**Fixed:**
+- Status corrected to the PI in the same turn.
+- Video title cards and per-frame legends re-rendered with the stage named (primary set R8_LEGAL, alternate set R8_RT; f2f4b4f).
+- MODEL_REGISTRY §16.11 carries a stage note for §16.8's "EMA-48,852 57.84 / 57.92".
+
+**Class:** *a number quoted with its checkpoint but not its STAGE.* refcv8 has several navtest rows per checkpoint (R8_LEGAL raw plan, R8_RT re-timed, R8_PRIV). "EMA-48,852 57.84" names the checkpoint and drops the stage, and the reader fills the gap with the deliverable. A refcv8 NavSim number carries checkpoint + stage + seed.
