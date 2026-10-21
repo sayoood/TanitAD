@@ -1,0 +1,23 @@
+{
+ "ckpt": "E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt",
+ "step": 48852,
+ "kind": "ema_model_only",
+ "beta_lat": -0.042951490730047226,
+ "beta_lon": -0.02099968120455742,
+ "gamma_prog": 0.12189671397209167,
+ "gamma_head": 0.4562014043331146,
+ "r8_rc_gate": 0.0,
+ "max_swing_of_each_term_on_the_score": {
+  "gamma_prog_x_sat_prog (sat range up to log1p(120))": 0.5845911084066675,
+  "gamma_head_x_sat_head (sat range 1)": 0.4562014043331146,
+  "beta_lat_x_log_p (log p floored at log 1e-4 = -9.21)": 0.395596115070954,
+  "beta_lon_x_log_p (same floor)": 0.1934133637983352
+ },
+ "r8_mod_proj_nonzero": {
+  "core.decoder.r8_mod.proj.0.weight": 0.017558909952640533,
+  "core.decoder.r8_mod.proj.1.weight": 0.009687642566859722,
+  "core.decoder.r8_mod.proj.2.weight": 0.008349334821105003,
+  "core.decoder.r8_mod.proj.3.weight": 0.03331781178712845
+ },
+ "note": "log p is floored at -9.21 so the beta terms' maximum swing is an UPPER bound that only a near-zero-probability hypothesis reaches; typical |log p| of the top hypothesis is ~0.1-1. The weights say what training moved, not how many metres the term is worth."
+}

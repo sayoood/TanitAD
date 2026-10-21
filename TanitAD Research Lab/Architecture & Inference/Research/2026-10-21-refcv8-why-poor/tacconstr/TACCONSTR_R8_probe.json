@@ -1,0 +1,361 @@
+{
+ "schema": "tacconstr-r8-probe-v1",
+ "what": "refcv8 probe-level constraint heads (the 4 dims the planner reads) vs controls, 128 windows",
+ "tier": "T0 teacher-forced on the PATH-TAGGED GT hypothesis's query; NOT driving performance",
+ "head_EMA48852_logged_huber": 0.02416,
+ "head_RAW48852_logged_huber": 0.02426,
+ "estimator": "episode_cluster_bootstrap B=2000 seed=0, 80 episodes, controls only; head has NO interval",
+ "controls_table": {
+  "GT_as_prediction": {
+   "real_constraint_head_loss_trainer_reduction": 0.0,
+   "mae": {
+    "lat(psi_term,t_onset)": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_entries": 112,
+     "n_boot": 2000,
+     "n_episodes": 80
+    },
+    "lon(prog6,v_end)": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_entries": 204,
+     "n_boot": 2000,
+     "n_episodes": 80
+    },
+    "ALL4": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n_entries": 316,
+     "n_boot": 2000,
+     "n_episodes": 80
+    }
+   },
+   "huber_pooled_ALL4": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n_entries": 316,
+    "n_boot": 2000,
+    "n_episodes": 80
+   }
+  },
+  "const_TRAIN_mean": {
+   "real_constraint_head_loss_trainer_reduction": 0.10076065361499786,
+   "mae": {
+    "lat(psi_term,t_onset)": {
+     "point": 0.06239461047308786,
+     "lo": 0.04075497659769925,
+     "hi": 0.08404530099600799,
+     "n_entries": 112,
+     "n_boot": 2000,
+     "n_episodes": 80
+    },
+    "lon(prog6,v_end)": {
+     "point": 0.15287174898035386,
+     "lo": 0.12638932872902264,
+     "hi": 0.18030143317312156,
+     "n_entries": 204,
+     "n_boot": 2000,
+     "n_episodes": 80
+    },
+    "ALL4": {
+     "point": 0.12080389336694645,
+     "lo": 0.10287554466945124,
+     "hi": 0.13879383707392043,
+     "n_entries": 316,
+     "n_boot": 2000,
+     "n_episodes": 80
+    }
+   },
+   "huber_pooled_ALL4": {
+    "point": 0.10085048554818841,
+    "lo": 0.0833108745433152,
+    "hi": 0.11854609690759144,
+    "n_entries": 316,
+    "n_boot": 2000,
+    "n_episodes": 80
+   },
+   "per_field_mae_norm": {
+    "psi_term/pi": 0.0532398447394371,
+    "t_onset/6": 0.1386842578649521,
+    "log1p(prog6)/log1p(120)": 0.11715953797101974,
+    "v_end/30": 0.18721039593219757
+   },
+   "head_over_control_ratio_huber": 0.2397761341675524,
+   "head_gap_closed_vs_control": 0.7602238658324476
+  },
+  "const_TRAIN_median": {
+   "real_constraint_head_loss_trainer_reduction": 0.09866244019940495,
+   "mae": {
+    "lat(psi_term,t_onset)": {
+     "point": 0.061978391238621304,
+     "lo": 0.04084326100113368,
+     "hi": 0.08349788171108637,
+     "n_entries": 112,
+     "n_boot": 2000,
+     "n_episodes": 80
+    },
+    "lon(prog6,v_end)": {
+     "point": 0.1495823579676011,
+     "lo": 0.12230308072896995,
+     "hi": 0.17720480553499846,
+     "n_entries": 204,
+     "n_boot": 2000,
+     "n_episodes": 80
+    },
+    "ALL4": {
+     "point": 0.11853285680843305,
+     "lo": 0.09993727044401704,
+     "hi": 0.13704004798344036,
+     "n_entries": 316,
+     "n_boot": 2000,
+     "n_episodes": 80
+    }
+   },
+   "huber_pooled_ALL4": {
+    "point": 0.0987703709662715,
+    "lo": 0.08083226482007283,
+    "hi": 0.11668020989318792,
+    "n_entries": 316,
+    "n_boot": 2000,
+    "n_episodes": 80
+   },
+   "per_field_mae_norm": {
+    "psi_term/pi": 0.05324913561344147,
+    "t_onset/6": 0.13472221791744232,
+    "log1p(prog6)/log1p(120)": 0.11232457309961319,
+    "v_end/30": 0.18540717661380768
+   },
+   "head_over_control_ratio_huber": 0.24487535430069074,
+   "head_gap_closed_vs_control": 0.7551246456993093
+  },
+  "const_classcond_TRAIN_mean": {
+   "real_constraint_head_loss_trainer_reduction": 0.08355241175740957,
+   "mae": {
+    "lat(psi_term,t_onset)": {
+     "point": 0.046644781317029683,
+     "lo": 0.032546075237529455,
+     "hi": 0.06125874212105953,
+     "n_entries": 112,
+     "n_boot": 2000,
+     "n_episodes": 80
+    },
+    "lon(prog6,v_end)": {
+     "point": 0.1347991625467936,
+     "lo": 0.11129830943079233,
+     "hi": 0.15876335229295668,
+     "n_entries": 204,
+     "n_boot": 2000,
+     "n_episodes": 80
+    },
+    "ALL4": {
+     "point": 0.10355456871322438,
+     "lo": 0.08713510229005182,
+     "hi": 0.11976851531496255,
+     "n_entries": 316,
+     "n_boot": 2000,
+     "n_episodes": 80
+    }
+   },
+   "huber_pooled_ALL4": {
+    "point": 0.08422464056860042,
+    "lo": 0.06834289139509252,
+    "hi": 0.0998759007701626,
+    "n_entries": 316,
+    "n_boot": 2000,
+    "n_episodes": 80
+   },
+   "per_field_mae_norm": {
+    "psi_term/pi": 0.03440234810113907,
+    "t_onset/6": 0.14866502583026886,
+    "log1p(prog6)/log1p(120)": 0.10469622910022736,
+    "v_end/30": 0.16374428570270538
+   },
+   "head_over_control_ratio_huber": 0.28915981587877326,
+   "head_gap_closed_vs_control": 0.7108401841212267
+  },
+  "ridge_v0_a_yawrate_TRAINfit": {
+   "real_constraint_head_loss_trainer_reduction": 0.03973137494176626,
+   "mae": {
+    "lat(psi_term,t_onset)": {
+     "point": 0.054225270237241475,
+     "lo": 0.03703993414880849,
+     "hi": 0.07207114117064342,
+     "n_entries": 112,
+     "n_boot": 2000,
+     "n_episodes": 80
+    },
+    "lon(prog6,v_end)": {
+     "point": 0.06063819399067,
+     "lo": 0.050256903588950616,
+     "hi": 0.071144577001178,
+     "n_entries": 204,
+     "n_boot": 2000,
+     "n_episodes": 80
+    },
+    "ALL4": {
+     "point": 0.05836525446251978,
+     "lo": 0.0478607113247826,
+     "hi": 0.06897377675814977,
+     "n_entries": 316,
+     "n_boot": 2000,
+     "n_episodes": 80
+    }
+   },
+   "huber_pooled_ALL4": {
+    "point": 0.03997570351709293,
+    "lo": 0.030140468720865093,
+    "hi": 0.05001504147365639,
+    "n_entries": 316,
+    "n_boot": 2000,
+    "n_episodes": 80
+   },
+   "per_field_mae_norm": {
+    "psi_term/pi": 0.04417014122009277,
+    "t_onset/6": 0.13801802694797516,
+    "log1p(prog6)/log1p(120)": 0.049032021313905716,
+    "v_end/30": 0.07179797440767288
+   },
+   "head_over_control_ratio_huber": 0.6080836627328147,
+   "head_gap_closed_vs_control": 0.39191633726718533
+  },
+  "ridge_poly2_TRAINfit": {
+   "real_constraint_head_loss_trainer_reduction": 0.034812550875358284,
+   "mae": {
+    "lat(psi_term,t_onset)": {
+     "point": 0.05277017184666225,
+     "lo": 0.036557305577229963,
+     "hi": 0.06956122190168819,
+     "n_entries": 112,
+     "n_boot": 2000,
+     "n_episodes": 80
+    },
+    "lon(prog6,v_end)": {
+     "point": 0.05108214359657437,
+     "lo": 0.040148834705596985,
+     "hi": 0.06233874871176831,
+     "n_entries": 204,
+     "n_boot": 2000,
+     "n_episodes": 80
+    },
+    "ALL4": {
+     "point": 0.0516804320902764,
+     "lo": 0.0410222977922042,
+     "hi": 0.06218236031986418,
+     "n_entries": 316,
+     "n_boot": 2000,
+     "n_episodes": 80
+    }
+   },
+   "huber_pooled_ALL4": {
+    "point": 0.03475179551522943,
+    "lo": 0.025133805143509026,
+    "hi": 0.04439038038253784,
+    "n_entries": 316,
+    "n_boot": 2000,
+    "n_episodes": 80
+   },
+   "per_field_mae_norm": {
+    "psi_term/pi": 0.04500360041856766,
+    "t_onset/6": 0.11749160289764404,
+    "log1p(prog6)/log1p(120)": 0.03779304772615433,
+    "v_end/30": 0.06386012583971024
+   },
+   "head_over_control_ratio_huber": 0.694002576441516,
+   "head_gap_closed_vs_control": 0.305997423558484
+  }
+ },
+ "controls": {
+  "counts_vs_trainer_log": {
+   "lat_mine_mean_per_batch": 14.0,
+   "lat_logged": 14.0,
+   "lon_mine_mean_per_batch": 25.5,
+   "lon_logged": 25.5,
+   "match": true
+  },
+  "GT_as_prediction_loss_exact_zero": true,
+  "const_equals_TRAIN_mean": true,
+  "n_train_windows": 4855,
+  "n_eval_windows": 128,
+  "ego_t0_populations": {
+   "train_dump_ego_t0_mean": [
+    11.058606147766113,
+    -0.07023756951093674,
+    0.0012694442411884665
+   ],
+   "eval_cache_ego_t0_mean": [
+    11.064682960510254,
+    -0.05118174105882645,
+    -0.012625554576516151
+   ],
+   "train_dump_ego_t0_std": [
+    7.68665075302124,
+    0.8037727475166321,
+    0.09915708750486374
+   ],
+   "eval_cache_ego_t0_std": [
+    7.219305038452148,
+    0.5822362899780273,
+    0.0743558406829834
+   ]
+  },
+  "mutant_const_plus_0p5_worse_than_const": true,
+  "imported_module_file": "C:\\Users/Admin/refcv8_pf/navsim_ckpt/thor_bundle/stage/tree/stack\\tanitad\\refs\\refcv8_conditioning.py"
+ },
+ "ridge_meta": {
+  "linear": {
+   "psi_term/pi": {
+    "lambda": 100.0,
+    "n_train_entries": 3702,
+    "d": 3
+   },
+   "t_onset/6": {
+    "lambda": 10000.0,
+    "n_train_entries": 509,
+    "d": 3
+   },
+   "log1p(prog6)/log1p(120)": {
+    "lambda": 100.0,
+    "n_train_entries": 3702,
+    "d": 3
+   },
+   "v_end/30": {
+    "lambda": 0.01,
+    "n_train_entries": 3749,
+    "d": 3
+   }
+  },
+  "poly2": {
+   "psi_term/pi": {
+    "lambda": 100.0,
+    "n_train_entries": 3702,
+    "d": 8
+   },
+   "t_onset/6": {
+    "lambda": 100.0,
+    "n_train_entries": 509,
+    "d": 8
+   },
+   "log1p(prog6)/log1p(120)": {
+    "lambda": 1.0,
+    "n_train_entries": 3702,
+    "d": 8
+   },
+   "v_end/30": {
+    "lambda": 0.01,
+    "n_train_entries": 3749,
+    "d": 8
+   }
+  }
+ },
+ "field_names": [
+  "psi_term/pi",
+  "t_onset/6",
+  "log1p(prog6)/log1p(120)",
+  "v_end/30"
+ ]
+}
