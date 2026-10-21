@@ -1,6 +1,18 @@
 # HANDOFF — refcv8 EMA-48,852 warmup (N3) + navhard (N2) scoring on the Thor CPU backend (nhwu)
 
-EvalFlyWheel, 2026-10-21 (Europe/Berlin). Nothing written to G:, nothing committed. **No refcv8 warmup/navhard number exists yet.**
+EvalFlyWheel, 2026-10-21 (Europe/Berlin). Nothing written to G:, nothing committed.
+
+## 0. OUTCOME (waiter END 14:26:08; every stage OK — `nhwu_waiter.log`)
+22/22 jobs PASS, counts guards PASS, 3/3 navhard arms finalized (5,912 rows each), assemble PASS, `summaries/NHWU_ASSERT.json`
+**PASS** (0 refused, 0 UNAVAILABLE arms, seed floors non-null, navhard interval OK), bars8 controls all OK (city census, EP clause,
+v0 inputs, banked floors). MEASURED from `summaries/summary_{navhard,warmup}.json` + `bars/NAVSIM_BARS_step48852_ema.md`:
+* **N2 navhard, official two-stage EPDMS ×100:** R8_LEGAL **17.62**, R8_LEGAL_s1 18.43, PRIOR_ha0p 13.00 vs STOP 29.85, CV 11.48, ECHO 14.29.
+  Paired R8_LEGAL−STOP **−12.23 [−15.49, −8.91]** (log), drive lo −16.02 ⇒ **N2 FAILED**. Seed floor 0.11 (×100).
+* **N3 warmup, S2-EPDMS-u ×100:** R8_LEGAL **48.73**, R8_LEGAL_s1 47.00 vs STOP 52.12, CV 39.71, ECHO 42.87; R8_BLIND 1.55 (fails as it
+  must → panel valid). LEGAL−STOP −3.40, seed floor 1.73 ⇒ **N3 FAILED**. (Official two-stage UNAVAILABLE on LEGAL arms: stage 1 = declared CV stand-ins.)
+* bars8 with both summaries: **N1, N2, N3, N4 all FAILED** (N1 PDMS 57.84 vs STOP 61.82, −3.98 [−6.37, −1.65]; N4 −12.36 vs refcv7-50,400 LEGAL).
+Tier: NavSim open-loop (T1-family), zero-shot, ONE training seed; Thor-scored model arms vs dev-box floors (MIXED-backend, stated).
+`/dev/shm/navsim` freed after END (no fd/cmdline referenced it). Sections 1–4 below are the pre-run hand-off, unchanged.
 Tier of everything the waiter will produce: NavSim v2 open-loop two-stage EPDMS (T1-family), zero-shot, ONE training seed; model arms
 Thor CPU backend, floors = refcv7 dev-box banks → every R8-vs-floor pair is **MIXED-backend** (RULING_BACKEND_POLICY.md).
 

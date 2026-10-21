@@ -5844,3 +5844,13 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | beside | PRIOR_ha0p 58.66 (= refcv7's prior, token for token); R8_LEGAL - PRIOR -0.82 [-3.46, +1.82] (refcv7: +11.54). R8_RT 56.67; R8_PRIV 59.23. Straight cell 56.90 vs refcv7 72.23; turn cell 59.70 vs 66.20. |
 | gates (diagnostic, pre-registered) | G_CMD 62.33 (+3.67 over PRIOR, WORKS); G_ARC 65.52 (+6.86, WORKS); G_CMDCAP pending. |
 | caveats | One training seed; the EP-clause stratum control is defective (model-dependent hook), no bar uses it. |
+
+### 16.5 refcv8-r101-s0 -- NavSim navhard (N2) and warmup (N3): both FAILED; all four NavSim bars FAILED  *(addendum to §16.4; fills its "N2 / N3 pending" row)*
+
+| | |
+|---|---|
+| read | NavSim v2 open-loop two-stage EPDMS (navhard, 5,912 rows per arm, 6 shards) and S2-EPDMS-u (warmup), zero-shot, EMA-48,852, Thor CPU scorer; floors are dev-box banks (mixed backend, stated). Package `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-21-refcv8-navtest-read/nhwu/` (`summaries/`, `bars/NAVSIM_BARS_step48852_ema.json`). |
+| N2 | **FAILED.** R8_LEGAL 17.62 / 18.43 (s0 / s1) vs STOP 29.85, CV 11.48, ECHO 14.29, PRIOR_ha0p 13.00; paired vs STOP −12.23 [−15.49, −8.91] s0, −11.43 [−14.64, −8.28] s1 (log_name AND nuplan_drive separated). |
+| N3 | **FAILED.** R8_LEGAL 48.73 / 47.00 vs STOP 52.12, CV 39.71, ECHO 42.87; margin −3.40, seed floor 1.73; R8_BLIND 1.55 (fails as it must). No interval (7 logs < 8). |
+| bars | **N1, N2, N3, N4 all FAILED** for EMA-48,852. bars8 controls all OK (EP-clause stratum now the PDM reference proposal, 44eec8f: 1,296 navtest tokens). |
+| caveats | One training seed; mixed backend; ×100 units. |
