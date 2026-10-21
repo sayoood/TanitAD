@@ -5899,3 +5899,11 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | gate stacked on theta_0.5 | navtest Stage B **FAILED**: GW_ARC 70.58 / 70.68, − theta_0.5 −2.19 / −2.22. PhysicalAI: arc gate WORSE (lateral + tactical), path-preserving gate WORSE (tactical). Closed. |
 | next | R8-WISEFT-MOD (7ec285d): which module group carries the NavSim loss; a single-group blend is the registered next PhysicalAI candidate. |
 | caveats | One training seed; open loop on both benchmarks. Battery per-clip files (analysis_*, windows_*) stay on the dev box (they carry PhysicalAI clip-id prefixes). |
+### 16.10 refcv8-r101-s0 -- the NavSim loss lives in the PLANNING stack (R8-WISEFT-MOD: LOCUS = PLAN); the single-group blend goes to PhysicalAI  *(addendum to §16.9)*
+
+| | |
+|---|---|
+| R8-WISEFT-MOD (7ec285d), navtrain sample, R8_LEGAL s0 / s1 | **LOCUS = PLAN.** theta_PLAN (λ 0.5 on 290 planning keys, 24.6 M) **73.93 / 73.86**, − EMA-48,852 +10.54* / +10.84* (log level), share of theta_0.5's gain 0.814 / 0.808. theta_PERC (λ 0.5 on 737 perception keys, 76.0 M) 64.54 / 64.66, − EMA +1.15 / +1.64 (ns), share 0.089 / 0.122. Additivity −1.26 (s0). Controls PASS. `…/2026-10-21-refcv8-wiseft/mod/result/`. |
+| reading | refcv8's training moved its **planning stack** (core.decoder, tac_decoder_v6, tactical trunk and heads) away from NavSim transfer; its perception stack is not where the loss is. The module refcv9 must protect is named. |
+| next (running) | theta_PLAN (md5 47c7fdac…) per-frame PhysicalAI battery under R8-WISEFT-PAI's rule unchanged, locked 16:59; then theta_0.75 (R8-WISEFT-L075-PAI, bda74c7). Family selection (bda74c7): highest navtrain PDMS among arms that PASS SHIP-R8. No navtest read without the PI. |
+| caveats | Post-hoc grouping; one training seed; open loop; PDMS only on NavSim for these arms. |
