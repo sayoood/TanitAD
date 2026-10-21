@@ -5916,3 +5916,10 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | PhysicalAI (running) | candidates by navtrain PDMS: DEC 76.02 > PLAN 73.90 > theta_0.75 71.08 > PLAN75 69.09; family selection = highest among arms that PASS SHIP-R8. theta_PLAN battery running (locked 16:59), DEC next; theta_0.75 / PLAN75 only if no higher arm passes. |
 | stage note for §16.8 (R60) | "EMA-48,852 57.84 / 57.92" in §16.8 is the RAW plan (R8_LEGAL), the like-for-like comparator for theta_0.5 (also R8_LEGAL). The shipped re-timed stage (R8_RT) reads **56.67 / 56.86** on navtest. Every §16.8 delta is vs R8_LEGAL and stands. |
 | caveats | Post-hoc split; one training seed; open loop; PDMS only for the MOD2 arms. |
+### 16.12 refcv8-r101-s0 -- decoder-only blend λ sweep (R8-WISEFT-DECLAM) and the PhysicalAI candidate order  *(addendum to §16.11)*
+
+| | |
+|---|---|
+| R8-WISEFT-DECLAM (bf9865d), navtrain sample, R8_LEGAL s0 / s1 | decoder-only λ 0.625 **75.24 / 74.52** (share of theta_DEC's gain 0.91), λ 0.75 **71.61 / 71.25** (0.64), λ 0.875 **66.64 / 66.93** (0.28); all admissible vs EMA-48,852 (+11.9* / +8.2* / +3.3*, s0). `…/2026-10-21-refcv8-wiseft/declam/result/`. |
+| PhysicalAI candidate order (family selection = highest navtrain among SHIP-R8 passes) | DEC 76.02 > DEC625 74.88 > PLAN 73.90 > DEC75 71.43 > theta_0.75 71.08 > PLAN75 69.09 > DEC875 66.79. theta_PLAN battery running, theta_DEC next (queue2); the rest by `queue_wise_cands3.sh`, each only if no higher arm passed. |
+| caveats | Lambdas post-hoc; one training seed; open loop; PDMS only. |
