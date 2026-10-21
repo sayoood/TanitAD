@@ -11,7 +11,7 @@
 # Temperature: telemetry restarted (no fresh sample => STOP), and v8f_guard.sh (it stops only v8f_mini_train / v8f_mini_eval) watches
 # this log; its end test is ANCHORED (^ZZV8FTAC-DONE|STOP), so the waiting line below cannot switch it off.
 B=/c/Users/Admin/box2_ship; L=$B/logs; E=$L/v8f_tacgrp; mkdir -p $E/eval
-GROUPS="goal latdec londec latcons lonspeed stoplead decisions constraints"
+TAC_GROUPS="goal latdec londec latcons lonspeed stoplead decisions constraints"
 MIRROR=/c/Users/Admin/tanitad-push; BR=agent/arch-inf-20260803
 PK="TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini"
 HJ="TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-refav1-hj-mini/raw/p10_yaw4512"
@@ -80,7 +80,7 @@ launch v8ftacgrp_run || stop "launch v8ftacgrp_run"
 waitrc v8ftacgrp_run 300
 for c in M1_s0 M1_s1 M2b_s0 M2b_s1; do
   for s in tacpred tacorc; do $SCP "tanitad-box2:$EVR/eval_$c-$s.npz" $E/eval/ || stop "pull eval_$c-$s.npz"; done
-  for g in $GROUPS; do s=tacorc-$g
+  for g in $TAC_GROUPS; do s=tacorc-$g
     for x in npz json; do $SCP "tanitad-box2:$EVR/eval_$c-$s.$x" $E/eval/ || stop "pull eval_$c-$s.$x"; done
   done
 done

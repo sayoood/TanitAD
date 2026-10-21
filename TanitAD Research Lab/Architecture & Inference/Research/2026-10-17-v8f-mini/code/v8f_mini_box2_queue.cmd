@@ -12,6 +12,8 @@ rem   v8f_mini_box2_queue.cmd tac               PREREG_V8F_TAC (eval only): the 
 rem                                             a donor episode's code, or the GT v9 code -- for M1 / M2b at seeds 0 and 1
 rem   v8f_mini_box2_queue.cmd tacgrp            PREREG_V8F_TAC Amendment 1 (eval only): the per-group oracle -- GT in ONE
 rem                                             part of T's code (6 groups + 2 composites) -- for M1 / M2b at seeds 0 and 1
+rem   v8f_mini_box2_queue.cmd tacgrp2           PREREG_V8F_TAC Amendment 2 (eval only): lonspeed+londec, the six leave-one-out
+rem                                             oracles (all-<g>) and the constraints dose-response (alpha 0.25 / 0.5 / 0.75)
 rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
@@ -44,7 +46,8 @@ if /i "%~1"=="floors" goto :floors
 if /i "%~1"=="compare" goto :compare
 if /i "%~1"=="tac" goto :tac
 if /i "%~1"=="tacgrp" goto :tacgrp
-echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp
+if /i "%~1"=="tacgrp2" goto :tacgrp2
+echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2
 exit /b 2
 
 rem train / eval are CALLED with the stage name dropped, so inside them %~1 = ARM, %~2 = SEED, %~3 = GRID
@@ -156,6 +159,29 @@ if not exist "%OUT%\summary.json" (echo REFUSED: %~1_s%~2 has not finished train
 if not exist "%EV%\eval_%~1_s%~2-tacpred.npz" (echo REFUSED: PREREG_V8F_TAC's eval_%~1_s%~2-tacpred.npz is missing from %EV% & exit /b 2)
 if exist "%EV%\eval_%TAG%.npz" (echo [skip] eval %TAG% & exit /b 0)
 "%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TAG% --tac oracle --tac-groups %~3 %EC% %ER% >> "%EV%\eval_%TAG%.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TAG% - see %EV%\eval_%TAG%.log & exit /b 1)
+echo [ok] eval %TAG%
+exit /b 0
+
+:tacgrp2
+rem PREREG_V8F_TAC Amendment 2 (eval only, ZERO training), beside Amendment 1's runs in %EV%: (A) the joint oracle lonspeed+londec that
+rem Amendment 1's MIXED reading committed to; (B) leave-one-out, GT everywhere EXCEPT one group (all-<g>); (C) the constraints moved only a
+rem fraction alpha of the way from T's code to the GT. Read by code\v8f_tac_groups2_read.py. Skipped once its npz exists.
+call :prep || exit /b 2
+for %%A in (M1 M2b) do for %%S in (0 1) do for %%G in (lonspeed+londec all-goal all-latdec all-londec all-latcons all-lonspeed all-stoplead) do call :tacgtwo %%A %%S %%G %%G 1 || exit /b 1
+for %%A in (M1 M2b) do for %%S in (0 1) do for %%L in (25 50 75) do call :tacgtwo %%A %%S constraints constraints-a%%L 0.%%L || exit /b 1
+exit /b 0
+
+:tacgtwo
+rem args: ARM SEED GROUPSPEC TAGSUFFIX ALPHA
+set "OUT=%RUNSM%\%~1_s%~2"
+set "TAG=%~1_s%~2-tacorc-%~4"
+if defined V8F_DRYRUN (echo "%PY%" "%EVAL%" run --ckpt %OUT%\ckpt_last.pt --tag %TAG% --tac oracle --tac-groups %~3 --tac-alpha %~5 %EC% %ER% & exit /b 0)
+if not exist "%OUT%\summary.json" (echo REFUSED: %~1_s%~2 has not finished training & exit /b 2)
+if not exist "%EV%\eval_%~1_s%~2-tacpred.npz" (echo REFUSED: PREREG_V8F_TAC's eval_%~1_s%~2-tacpred.npz is missing from %EV% & exit /b 2)
+if not exist "%EV%\eval_%~1_s%~2-tacorc-constraints.npz" (echo REFUSED: Amendment 1's eval_%~1_s%~2-tacorc-constraints.npz is missing from %EV% & exit /b 2)
+if exist "%EV%\eval_%TAG%.npz" (echo [skip] eval %TAG% & exit /b 0)
+"%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TAG% --tac oracle --tac-groups %~3 --tac-alpha %~5 %EC% %ER% >> "%EV%\eval_%TAG%.log" 2>&1
 if errorlevel 1 (echo [FAIL] eval %TAG% - see %EV%\eval_%TAG%.log & exit /b 1)
 echo [ok] eval %TAG%
 exit /b 0

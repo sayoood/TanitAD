@@ -614,6 +614,19 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
     before the full read and had to be disclosed. Keep RAM-heavy sibling jobs off the box while navtest scores.
   - ⭐ **FIXED UPSTREAM 2026-10-19 (NT-FIX1)** in `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-navsim-v1-navtest/code/run_v1_fix1.py`, a pinned wrapper (`run_v1.py`'s sha256 is recorded in the Thor admission record, the Colab code manifest and 24 `*.thor.json` stamps, so it is NOT edited). It fixes (1) the cross-drive relpath (absolute path, `csv_path_kind`), (3) stale `*.csv` moved to `quarantine_*` at run start and recorded, and (4) a count- or set-mismatched CSV emitting NO summary/average, printed or stored. Fix (2), the memory gate, stays in the launcher (`nt_run2.py`). 20 tests, one RED arm per fix. ⚠️ **It is inert unless the caller loads `run_v1_fix1.load()`.** Adopted (each with a reachability test + RED arm) in REFe's `eval/score_navtest_refe.py`, `score_navtest6.py`, `score_navtest7.py`, `colab/navtest/linux_run_v1.py` (and shipped by `pack_code.py`); `score_navtest_thor.py` stays on the admitted copy. NOT adopted: the taniteval `navsim_v1` plugin, `after_a8_chain.py`, `after_bridge_chain.py` (BACKLOG `NT-FIX1`). `incoming/2026-10-19-navtest-harness-fix/`
 
+- ⛔ **A BASH VARIABLE NAMED `GROUPS` (or `SECONDS`, `RANDOM`, `FUNCNAME`, `LINENO` …) IS A SHELL BUILTIN. ASSIGNING IT IS SILENTLY
+  IGNORED, AND THE SCRIPT RUNS ON WITH THE WRONG VALUE.** MEASURED 2026-10-21 (PREREG_V8F_TAC Amendment 1).
+  - `chain_v8f_tacgrp.sh` held its eight group names in `GROUPS="goal latdec …"`.
+  - Bash ignores the assignment (no error, rc 0), and `$GROUPS` expands to the user's gid: **197121** on the dev box.
+  - So after 32 evals had finished on box 2, the pull asked for `eval_M1_s0-tacorc-197121.npz` and the chain stopped.
+    The evals were intact; a finisher did the pull and the read without re-running one.
+  - `bash -n` passes, a dry run passes, and `set -u` does not fire: the variable exists.
+  - ⇒ **Never use a bash special name for your own data. Prefix it** (`TAC_GROUPS`).
+  - `stack/tests/test_bash_specials.py` scans every box-2 / pod / stack shell script for an assignment, a `for` or a `read` over 18
+    such names, and checks the mechanism itself. At the fix, it was 1 offender in 1,009 tracked `.sh` files.
+  - ⚠️ **From Python on Windows, `bash` can resolve to `System32\bash.exe`, the WSL launcher, which fails when no distro is
+    installed.** The test uses the first bash that actually runs `echo ok`.
+
 ## Git hygiene — the mistake that has now happened twice
 
 **`git commit` and `git commit --amend` both commit the ENTIRE INDEX, not the files you

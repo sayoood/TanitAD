@@ -67,9 +67,16 @@ CODE_COMPOSITES = {"decisions": ("goal", "latdec", "londec"), "constraints": ("l
 
 
 def code_group_index(spec: str) -> list:
-    """``"goal+londec"`` | ``"decisions"`` | ``"all"`` -> sorted code indices. Unknown names are refused."""
+    """``"goal+londec"`` | ``"decisions"`` | ``"all"`` | ``"all-<spec>"`` -> sorted code indices. Unknown names are refused.
+    ``all-<spec>`` is the COMPLEMENT (PREREG_V8F_TAC Amendment 2's leave-one-out: GT everywhere except ``<spec>``)."""
     if spec == "all":
         return list(range(CODE_DIM))
+    if spec.startswith("all-"):
+        drop = set(code_group_index(spec[len("all-"):]))
+        keep = [i for i in range(CODE_DIM) if i not in drop]
+        if not keep:
+            raise ValueError(f"code group {spec!r} selects nothing")
+        return keep
     names = []
     for part in spec.split("+"):
         if part in CODE_COMPOSITES:

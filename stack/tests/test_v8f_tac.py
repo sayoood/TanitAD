@@ -314,3 +314,135 @@ def test_queue_tacgrp_stage_runs_eight_group_oracles_on_four_checkpoints(tmp_pat
     gs = GROUPS + ("decisions", "constraints")
     assert got == [(f"{a}_s{s}-tacorc-{g}", ("oracle", g)) for a in ("M1", "M2b") for s in (0, 1) for g in gs], got
     assert all("--kin-mode yaw" in x and "--tracks" in x for x in ln)
+
+
+# ---- PREREG_V8F_TAC Amendment 2: the joint lon pair, leave-one-out, and the constraints dose-response --------------------------------
+READER_G2 = PKG / "code" / "v8f_tac_groups2_read.py"
+SPECS7 = ("lonspeed+londec",) + tuple(f"all-{g}" for g in GROUPS)
+
+
+def test_code_group_complement_is_the_leave_one_out():
+    assert M.code_group_index("all-goal") == list(range(22, 60))
+    assert M.code_group_index("all-decisions") == M.code_group_index("constraints")
+    assert len(M.code_group_index("all-latcons")) == 48 and len(M.code_group_index("lonspeed+londec")) == 15
+    with pytest.raises(ValueError, match="selects nothing"):
+        M.code_group_index("all-all")
+    with pytest.raises(ValueError, match="unknown code group"):
+        M.code_group_index("all-speedy")
+
+
+def test_eval_alpha_is_a_dose_and_leave_one_out_keeps_t_only_in_its_group(world, tmp_path):
+    EV = _load("v8f_mini_eval_for_tacgrp2", REPO / "stack" / "scripts" / "v8f_mini_eval.py")
+    ck = _ckpt(world, tmp_path)
+    out = tmp_path / "ev"
+    runs = {"orc": ("--tac", "oracle"), "cons": ("--tac", "oracle", "--tac-groups", "constraints"),
+            "cons1": ("--tac", "oracle", "--tac-groups", "constraints", "--tac-alpha", "1"),
+            "cons05": ("--tac", "oracle", "--tac-groups", "constraints", "--tac-alpha", "0.5"),
+            "nocons": ("--tac", "oracle", "--tac-groups", "all-constraints"),
+            "nolat": ("--tac", "oracle", "--tac-groups", "all-latcons"),
+            "dec": ("--tac", "oracle", "--tac-groups", "decisions")}
+    for t, args in runs.items():
+        assert _run(EV, world, ck, out, f"c-{t}", *args) == 0, t
+    z = {t: np.load(out / f"eval_c-{t}.npz") for t in runs}
+    assert np.array_equal(z["cons1"]["pred"], z["cons"]["pred"]), "alpha 1 is the oracle, bit-exact"
+    C0 = slice(34, 60)
+    t_cons, g_cons = z["nocons"]["tac_code"][:, C0], z["cons"]["tac_code"][:, C0]      # T's constraints / the GT constraints
+    assert np.abs(t_cons - g_cons).max() > 1e-3, "the world must give T a constraint error"
+    np.testing.assert_allclose(z["cons05"]["tac_code"][:, C0], 0.5 * (t_cons + g_cons), atol=1e-6)
+    assert np.array_equal(z["cons05"]["tac_code"][:, :34], z["cons"]["tac_code"][:, :34]), "alpha moves only the selected groups"
+    lat = list(M.CODE_GROUPS["latcons"])
+    rest = [i for i in range(60) if i not in lat]
+    assert np.array_equal(z["nolat"]["tac_code"][:, lat], z["dec"]["tac_code"][:, lat]), "leave-one-out: T's own code in the left-out group"
+    assert np.array_equal(z["nolat"]["tac_code"][:, rest], z["orc"]["tac_code"][:, rest]), "... and the full oracle everywhere else"
+    m = json.load(open(out / "eval_c-cons05.json", encoding="utf-8"))["tac_manipulation"]
+    assert m["alpha"] == 0.5 and m["groups"] == "constraints" and m["n_code_dims_replaced"] == 26
+    assert json.load(open(out / "eval_c-nolat.json", encoding="utf-8"))["tac_manipulation"]["n_code_dims_replaced"] == 48
+    for bad in (("--tac", "pred", "--tac-alpha", "0.5"), ("--tac", "oracle", "--tac-alpha", "0"), ("--tac", "oracle", "--tac-alpha", "1.5")):
+        with pytest.raises(SystemExit, match="REFUSED"):
+            _run(EV, world, ck, out, "bad", *bad)
+
+
+def _group2_files(d, A=-0.3, loo=None, dose=(0.3, 0.6, 0.85), cons=-0.9, full=-1.0, m2b_gap=0.0, bad_alpha=None, drop=None, ref_shift=0.0):
+    """synthetic Amendment 2 inputs + Amendment 1's tac_groups_read.json. loo: {group: all-g minus all}; dose: r at alpha 0.25/0.5/0.75."""
+    loo = {**{g: 0.05 for g in GROUPS}, **(loo or {})}
+    rng = np.random.default_rng(7)
+    eid = np.repeat(np.arange(30), 8)
+    base = 2.2 + rng.normal(0, 0.3, eid.size) + np.repeat(rng.normal(0, 0.2, 30), 8)
+    d.mkdir(parents=True, exist_ok=True)
+    prev = {}
+    for arm in ("M1", "M2b"):
+        for s in (0, 1):
+            c = f"{arm}_s{s}"
+            pred = base + (m2b_gap * s if arm == "M2b" else 0.0)
+
+            def nz():
+                return rng.normal(0, 0.01, eid.size)
+            files = {"tacpred": (pred, None), "tacorc": (pred + full, None),
+                     "tacorc-constraints": (pred + cons + nz(), ("constraints", 26, None)),
+                     "tacorc-lonspeed+londec": (pred + A + nz(), ("lonspeed+londec", 15, 1.0))}
+            files.update({f"tacorc-all-{g}": (pred + full + loo[g] + nz(), (f"all-{g}", 60 - len(M.CODE_GROUPS[g]), 1.0)) for g in GROUPS})
+            files.update({f"tacorc-constraints-a{a}": (pred + cons * r + nz(), ("constraints", 26, a / 100))
+                          for a, r in zip((25, 50, 75), dose)})
+            for suf, (ade, man) in files.items():
+                if drop == f"{c}-{suf}":
+                    continue
+                np.savez(d / f"eval_{c}-{suf}.npz", eid=eid, ade6=ade, pred=np.zeros((eid.size, 30, 2)))
+                if man is not None:
+                    al = 0.4 if bad_alpha == f"{c}-{suf}" else man[2]
+                    json.dump({"tac_manipulation": {"mode": "oracle", "groups": man[0], "n_code_dims_replaced": man[1], "alpha": al}},
+                              open(d / f"eval_{c}-{suf}.json", "w", encoding="utf-8"))
+            prev[c] = {"ade6_pred": float(pred.mean()) + ref_shift,
+                       "groups": {"constraints": {"ade6": float(files["tacorc-constraints"][0].mean())}}}
+    json.dump({"rows": prev}, open(d / "g1.json", "w", encoding="utf-8"))
+    return d
+
+
+def _read_g2(d):
+    R = _load("v8f_tac_groups2_read", READER_G2)
+    out = d / "g2.json"
+    rc = R.main(["--eval-dir", str(d), "--groups-read", str(d / "g1.json"), "--out", str(out), "--n-boot", "300", "--no-families"])
+    return rc, (json.loads(out.read_text(encoding="utf-8")) if rc == 0 else None)
+
+
+@pytest.mark.skipif(not READER_G2.exists(), reason="the v8F-mini package is not in this checkout")
+def test_group2_reader_decision_table(tmp_path, capsys):
+    rc, r = _read_g2(_group2_files(tmp_path / "acc", loo={"lonspeed": 0.5}))
+    assert rc == 0 and r["DECISION"]["M2b"]["verdict"] == "CONSTRAINT-ACCURACY" and r["DECISION"]["M2b"]["dose"] == "PAYS", r["reading"]
+    assert r["DECISION"]["M2b"]["necessary"]["lonspeed"] and not r["DECISION"]["M2b"]["necessary"]["latcons"]
+    assert "targeting lonspeed (NECESSARY" in r["next"]
+    assert abs(r["rows"]["M2b_s0"]["dose"]["0.50"]["r"] - 0.6) < 0.03, "r is read against the constraints oracle, not the full one"
+    assert r["rows"]["M2b_s0"]["t_code_error"]["status"] == "UNAVAILABLE"
+    rc, r = _read_g2(_group2_files(tmp_path / "lon", A=-0.7))
+    assert rc == 0 and r["DECISION"]["M2b"]["verdict"] == "LON-TACTIC" and r["DECISION"]["M2b"]["A_carries"], r["reading"]
+    rc, r = _read_g2(_group2_files(tmp_path / "thr", A=-0.7, dose=(0.05, 0.1, 0.3)))
+    assert rc == 0 and r["DECISION"]["M2b"]["verdict"] == "STRUCTURAL" and r["DECISION"]["M2b"]["dose"] == "THRESHOLD", "THRESHOLD wins"
+    rc, r = _read_g2(_group2_files(tmp_path / "mid", dose=(0.15, 0.3, 0.6)))
+    assert rc == 0 and r["DECISION"]["M2b"]["dose"] == "INTERMEDIATE" and r["DECISION"]["M2b"]["verdict"] == "CONSTRAINT-ACCURACY"
+    rc, r = _read_g2(_group2_files(tmp_path / "floor", A=-0.7, loo={"lonspeed": 0.5}, m2b_gap=0.5))     # 2F 1.0
+    assert rc == 0 and not r["DECISION"]["M2b"]["A_carries"] and not any(r["DECISION"]["M2b"]["necessary"].values())
+    assert "all three" in r["next"]
+    assert _read_g2(_group2_files(tmp_path / "alpha", bad_alpha="M2b_s1-tacorc-constraints-a50"))[0] == 2
+    assert "expected oracle / constraints / 26 / 0.5" in capsys.readouterr().err
+    assert _read_g2(_group2_files(tmp_path / "miss", drop="M1_s0-tacorc-all-goal"))[0] == 2
+    assert "eval_M1_s0-tacorc-all-goal.npz is missing" in capsys.readouterr().err
+    assert _read_g2(_group2_files(tmp_path / "ref", ref_shift=0.01))[0] == 2
+    assert "Amendment 1 read" in capsys.readouterr().err
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
+def test_queue_tacgrp2_stage_runs_ten_oracles_on_four_checkpoints(tmp_path):
+    import os
+    import re
+    import subprocess
+    q = PKG / "code" / "v8f_mini_box2_queue.cmd"
+    env = dict(os.environ, V8F_DRYRUN="1", REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"),
+               V9=str(tmp_path / "v9"))
+    r = subprocess.run(f'cmd /c ""{q}" tacgrp2"', env=env, capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stdout + r.stderr
+    ln = [x for x in r.stdout.splitlines() if "v8f_mini_eval.py" in x]
+    got = [(re.search(r"--tag (\S+)", x).group(1),) + re.search(r"--tac oracle --tac-groups (\S+) --tac-alpha (\S+)", x).groups() for x in ln]
+    ck = [(a, s) for a in ("M1", "M2b") for s in (0, 1)]
+    want = ([(f"{a}_s{s}-tacorc-{g}", g, "1") for a, s in ck for g in SPECS7]
+            + [(f"{a}_s{s}-tacorc-constraints-a{x}", "constraints", f"0.{x}") for a, s in ck for x in (25, 50, 75)])
+    assert got == want, got
+    assert all("--kin-mode yaw" in x and "--tracks" in x for x in ln)

@@ -242,6 +242,10 @@ def cmd_run(a):
         raise SystemExit("REFUSED: --tac shuffle|oracle is ONE intervention on T -> O; run it without --plan beta and without --nav-shuffle")
     if a.tac_groups != "all" and a.tac != "oracle":
         raise SystemExit("REFUSED: --tac-groups selects which part of the GT code the ORACLE writes; it needs --tac oracle")
+    if a.tac_alpha != 1.0 and a.tac != "oracle":
+        raise SystemExit("REFUSED: --tac-alpha moves the code a fraction of the way to the GT ORACLE; it needs --tac oracle")
+    if not 0.0 < a.tac_alpha <= 1.0:
+        raise SystemExit(f"REFUSED: --tac-alpha {a.tac_alpha} is outside (0, 1]: 1 is the oracle, and 0 would be T's own code (run --tac pred)")
     try:
         grp_idx = M.code_group_index(a.tac_groups)        # PREREG_V8F_TAC Amendment 1: the per-group oracle
     except ValueError as e:
@@ -271,7 +275,7 @@ def cmd_run(a):
     if a.tac == "shuffle":
         from tanitad.models.hjepa import donor_indices
         tperm = donor_indices(N, episode_ids=torch.as_tensor(X["eid"]), seed=1).numpy()
-    tac_rows = {"shift": [], "oracle_fallback": []}
+    tac_rows = {"shift": [], "oracle_fallback": [], "code": []}
     outs = {"traj30": [], "ckpt": [], "goal_prob": [], "lat_logits": [], "lon_logits": [], "cons_pred": [],
             "traj30_proj": []}
     beta_rows = []                                     # rung beta: the planner's per-window inputs (only with --plan beta)
@@ -311,10 +315,13 @@ def cmd_run(a):
                         sel = torch.zeros(code.shape[1], dtype=torch.bool, device=dev)
                         sel[grp_idx] = True
                         code = torch.where(sel[None, :], code, code0)
+                    if a.tac_alpha != 1.0:               # Amendment 2: only a fraction alpha of the way from T's code to the GT (dose-response)
+                        code = code0 + a.tac_alpha * (code - code0)
                     fb = ~has
                 o = model.forward_diag(b, code)
                 tac_rows["shift"].append((o["code"] - code0).abs().mean(-1).float().cpu().numpy())
                 tac_rows["oracle_fallback"].append(fb.cpu().numpy())
+                tac_rows["code"].append(o["code"].float().cpu().numpy())
             if a.plan == "beta":
                 beta_rows.append(BETA.collect_beta_inputs(model, b, o))
             outs["traj30"].append(o["traj30"].float().cpu().numpy())
@@ -343,8 +350,9 @@ def cmd_run(a):
         res["tac_manipulation"] = {"mode": a.tac, "code_shift_mean": float(shift.mean()), "frac_code_changed": float((shift > 1e-6).mean()),
                                    "n_oracle_fallback_no_v9_row": int(fb.sum()), "n_windows": int(shift.size),
                                    "donor_seed": 1 if a.tac == "shuffle" else None,
-                                   "groups": a.tac_groups, "n_code_dims_replaced": len(grp_idx) if a.tac == "oracle" else None}
-        tac_npz = {"tac_code_shift": shift, "tac_oracle_fallback": fb}
+                                   "groups": a.tac_groups, "n_code_dims_replaced": len(grp_idx) if a.tac == "oracle" else None,
+                                   "alpha": a.tac_alpha if a.tac == "oracle" else None}
+        tac_npz = {"tac_code_shift": shift, "tac_oracle_fallback": fb, "tac_code": np.concatenate(tac_rows["code"])}
     r, pw = evaluate(O["traj30"].astype(np.float64), X, extras, a.n_boot, with_families=a.families)
     res["raw"] = r
     if a.plan == "beta":
@@ -616,7 +624,10 @@ def main(argv=None):
     p.add_argument("--tac-groups", default="all",
                    help="PREREG_V8F_TAC Amendment 1, with --tac oracle only: which part of the code gets GT -- groups goal | latdec | londec | "
                         "latcons | lonspeed | stoplead, composites decisions | constraints, joined by '+' (a comma would split a cmd argument). "
-                        "Default all = the whole code (the original oracle).")
+                        "Default all = the whole code (the original oracle). all-<g> = every group EXCEPT g (Amendment 2's leave-one-out).")
+    p.add_argument("--tac-alpha", type=float, default=1.0,
+                   help="PREREG_V8F_TAC Amendment 2, with --tac oracle only: O reads T's code moved a fraction alpha of the way to the GT in "
+                        "the selected groups (default 1 = the oracle, bit-exact; 0 < alpha <= 1)")
     p.add_argument("--batch", type=int, default=64); p.add_argument("--lru", type=int, default=32)
     p.add_argument("--device", default="auto")
     p.add_argument("--plan", choices=("none", "beta"), default="none",

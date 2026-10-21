@@ -164,3 +164,60 @@ Each arm runs on every checkpoint `c` ∈ {M1_s0, M1_s1, M2b_s0, M2b_s1}: the ba
 * Mutation proof: **24 / 24 RED** across six files (`raw/2026-10-20-tac/mutate_tac_a1.out`).
 * v8F suites: 147 passed, 2 skipped.
 * Chain: `code/box2_ops/chain_v8f_tacgrp.sh`, with ZZV8FTAC markers in its own log, after PREREG_V8F_TAC's chain.
+
+## Amendment 2 (2026-10-21, after Amendment 1's result and BEFORE any of these runs): what must T predict better, and can partial accuracy pay?
+
+**Why it exists:** Amendment 1 read **MIXED** (`…/2026-10-17-v8f-mini/RESULT_V8F_TAC_A1.md`).
+* The constraints **together** carry 0.88–0.90 of the oracle's headroom; the decisions together carry 0.07–0.12.
+* Single constraint groups **hurt** alone (+0.18 to +0.49 m). O was trained on whole codes only (`v8f_mini.py:601-602`), so one GT group beside T's own code is a mix it never saw.
+* Its committed next read is the joint oracle of the two largest groups. Two more reads decide how the training arm is built, and both cost zero training:
+  * which constraint group is **necessary** inside the consistent set;
+  * whether **partial** accuracy pays at all.
+
+**The arms**, each on the same four checkpoints with the same eval and windows. All are `v8f_mini_eval.py run --tac oracle`; queue stage `tacgrp2`, 4 × 10 = 40 evals.
+* **(A)** `--tac-groups lonspeed+londec`: the read Amendment 1 committed to.
+* **(B)** `--tac-groups all-<g>` for each of the six groups: GT **everywhere except** group g, where O reads T's own code.
+  * These are the mixes closest to the whole code O was trained on.
+* **(C)** `--tac-groups constraints --tac-alpha {0.25, 0.5, 0.75}`.
+  * O reads T's constraints moved a fraction α of the way to the GT: `code = code0 + α (code_GT − code0)` in the constraint dimensions only.
+  * α = 1 is Amendment 1's `constraints` arm, bit-for-bit (pinned).
+  * ⚠️ This is a **proxy** for "T's constraint error shrunk by (1 − α)". It moves every constraint by the same fraction, which a trained T would not do.
+
+**The reading** (`code/v8f_tac_groups2_read.py`), all T0, paired over episodes:
+* **A CARRIES** iff d_A < 0, separated, |d_A| > 2F, and share_A = d_A / d_all ≥ 0.5, at both seeds.
+* **B:** loss_g = (all−g) − all, and necessity_g = loss_g / |d_all|.
+  * g is **NECESSARY** iff loss_g > 0, separated, loss_g > 2F, and necessity_g ≥ 0.25, at both seeds.
+* **C:** r(α) = d_cons(α) / d_cons(1), where d_cons(1) is Amendment 1's `constraints` arm. The class is read at α = 0.5, at both seeds:
+  * **PAYS** iff r ≥ 0.4 and d_cons(0.5) < 0, separated;
+  * **THRESHOLD** iff r < 0.2;
+  * **INTERMEDIATE** otherwise.
+* **Decided on M2b:**
+
+| verdict | condition | the next arm (own PREREG and launch gate; PI go) |
+|---|---|---|
+| **STRUCTURAL** | C is THRESHOLD | No loss-level arm on T: halving T's constraint error would buy under a fifth of the gain. The next arm changes what T sees, or how it predicts the constraint set jointly. That is an architecture change: named, built only on the PI's go. |
+| **LON-TACTIC** | not STRUCTURAL, and A CARRIES | A training arm on T's longitudinal tactic: the lon decision + lonspeed loss terms. |
+| **CONSTRAINT-ACCURACY** | otherwise | A training arm on T's constraint prediction, targeting the NECESSARY constraint groups (all three if none is necessary alone). |
+
+* Reported beside it, deciding nothing:
+  * every row at every checkpoint;
+  * M1's decision;
+  * the LON / LAT family deltas, for A and C vs T's own code, and for B vs the full oracle;
+  * **T's own code error per group**, from the `tac_code` the eval now saves. T's values in g come from `all-g`, and the GT from another `all-h`.
+* **Refusals:**
+  * a missing file;
+  * files on different grids;
+  * a manipulation record that is not `oracle / <spec> / <n dims> / <alpha>`;
+  * a `tacpred` or `constraints` run that is not the one Amendment 1 read (ADE differs by more than 1e-3 m).
+
+**Proofs, before any run:**
+* `stack/tests/test_v8f_tac.py`, now 14 tests, adds:
+  * the complement spec;
+  * α = 1 is the oracle bit-for-bit, and α = 0.5 is the exact midpoint, in the selected groups only;
+  * leave-one-out holds T's code exactly in the left-out group and the full oracle elsewhere;
+  * the α refusals;
+  * the reader's decision table and refusals;
+  * the queue's 40-call dry run.
+* `stack/tests/test_bash_specials.py`, the `GROUPS` trap that stopped Amendment 1's pull.
+* Mutation proof: `raw/2026-10-21-tacgrp/mutate_tac_a2.out`.
+* Chain: `code/box2_ops/chain_v8f_tacgrp2.sh`, derived by `mk_chain_grp2.py` from the fixed Amendment 1 chain, with ZZV8FTAC markers in its own log.
