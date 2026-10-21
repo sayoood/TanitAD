@@ -1,0 +1,33 @@
+{
+ "id": "R8-WISEFT + R8-CKPT-TRAJ",
+ "filed": "2026-10-21 13:37 Berlin (clock read 13:36:50); at 13:36:51 Thor held NO wiseft/scores directory, and the scoring loop refuses to score before PREREG_ACK.txt (the landing commit) exists on Thor",
+ "why": "refcv8-r101-s0 is a fine-tune of refcv7-r101-s0 (config.json init_from: refcv7 ckpt.pt md5 d5f104ee54ba6b2861e38030b4f6fcf1, step 50,400, 1,131 keys loaded, 34 new). On navtest refcv7's learned stage adds +11.54 PDMS over the shared causal prior and refcv8's adds -0.82 (R8_LEGAL 57.84 vs PRIOR 58.66; refcv7 70.20). R8-NAVFEED-DIAG read FEED IS NOT THE CAUSE (+0.75 [-1.60, +3.04]). The committed next lever was training-side (PI + compute); WiSE-FT (Wortsman et al. 2022, weight-space ensembling of a fine-tune with its initialisation) is a no-training lever that targets exactly a fine-tune that lost out-of-distribution transfer, so it is run first. The encoder barely moved (relative drift 6e-4); the drift sits in the tactical heads, trunk and decoder (lat_head_tac 1.15, lon_head_tac 0.90, core.tactical_trunk 0.53, phi_tac 0.34-0.46).",
+ "arms": {
+  "WiSE": "theta_lam = (1-lam)*theta7 + lam*theta8 on the 1,027 shared float keys of equal shape (100,576,465 params, fp32 arithmetic cast back); the 34 refcv8-only tensors (129,195 params) and 104 non-float entries from theta8. lam in {0, 0.25, 0.5, 0.75}; lam = 1 is EMA-48,852 itself (banked). Builder controls: lam=1 reproduces theta8 bit-exactly and lam=0 reproduces theta7 on shared keys bit-exactly; each output read back bit-exactly. NOTE lam = 0 is NOT refcv7: refcv8's new modules stay active.",
+  "TRAJ": "refcv8 EMA snapshots 5,000 / 15,000 / 30,000 (run dir refcv8-r101-s0), seed 0 only; 40,000 and 48,852 are banked (diag LEGAL)."
+ },
+ "split": "registered navtrain sample, 2,089 tokens / 30 logs (NAVTRAIN_SAMPLE_TOKENS.json, status FIXED)",
+ "rollout": "Thor CUDA, refcv8 NavSim bridge, arms R8_LEGAL + R8_LEGAL_s1 (WiSE) / R8_LEGAL (TRAJ), the selection run's flags; scored by navtrain_cache_score.py on the Thor CPU backend with the selection run's experiment dir",
+ "estimator": "paired log-cluster bootstrap B 2000 via navsim_bars8.pair_record (log_name; nuplan_drive beside), same tokens",
+ "stage1_rule_navtrain": {
+  "delta": "D(lam, s) = PDMS(theta_lam, R8_LEGAL seed s) - PDMS(EMA-48,852, R8_LEGAL seed s) on the 2,089 tokens (reference rows = banked r8sel_diag_ema48852_LEGAL_s0/_s1)",
+  "admissible": "D > 0 with the interval excluding 0 at BOTH seeds AND min(D_s0, D_s1) > 2 x |D_s0 - D_s1|",
+  "select": "lam* = the admissible lam with the highest mean-of-seeds PDMS; a tie (equal to 0.01) goes to the LARGER lam (less departure from refcv8 as trained)",
+  "none_admissible": "R8-WISEFT FAILED on navtrain; no navtest read; the next lever is training-side (fine-tune on NavSim; PI decision + compute)"
+ },
+ "stage2_rule_navtest_once": {
+  "what": "theta_lam* rolled ONCE on the 12,146 navtest tokens (R8_LEGAL + R8_LEGAL_s1) with the registered navtest-read machinery (r8nt_*, Thor) and scored by the same pool",
+  "WORKS": "theta_lam* - EMA-48,852 R8_LEGAL (57.84) > 0 with the interval excluding 0 at log_name AND nuplan_drive at BOTH seeds, and margin > 2 x floor",
+  "FAILED": "point <= 0 at either seed",
+  "NOT_PROVEN": "otherwise",
+  "beside": "vs PRIOR 58.66, STOP 61.82, refcv7-50,400 70.20, G_ARC 65.52; the straight / turn and Singapore / US cells; NC / DAC / TTC / EP / C"
+ },
+ "committed_outcomes": {
+  "WORKS": "theta_lam* is a CANDIDATE NavSim arm. It is a NEW checkpoint: before any ship or registry 'best' claim it must pass the refcv8 PhysicalAI per-frame battery (the section-5 bars) on its own, and the PI decides whether it becomes refcv8's NavSim arm. No leaderboard submission (D-NS8-4).",
+  "FAILED_or_NOT_PROVEN": "no weight-space lever is claimed; the next lever is training-side (PI decision item filed with this evidence)"
+ },
+ "traj_rule": "DIAGNOSTIC ONLY, never a bar and never a checkpoint choice (D-R8-CKPT already chose). Report PDMS(R8_LEGAL s0) at 5k / 15k / 30k / 40k / 48,852, each paired vs PRIOR (73.84) and vs EMA-48,852; name the earliest snapshot whose LEGAL is below PRIOR with a separated interval. If an earlier snapshot beats EMA-48,852 separated, it is reported as a finding and a seed-1 replicate is owed before any use.",
+ "multiplicity": "4 lambdas selected on navtrain, one held-out navtest read; 3 trajectory points diagnostic",
+ "scope": "NavSim v1 open-loop PDMS (T1-family open loop, not closed loop); PDMS-only lever test, so the four metric families are not read here; one TRAINING seed (H-ESTIM-SEED-1); two inference seeds",
+ "builder_md5": {"0p00": "82b135a5d2209b5ec880fd8b538d000c", "0p25": "4d8b2a9323be64de23b6bc0059859cf4", "0p50": "d72f7f575388cb32a938d2bfbbee39b5", "0p75": "dc5a3a5a428e3a6af685fa109a9dae38"}
+}

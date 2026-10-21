@@ -1,0 +1,113 @@
+{
+ "id": "R8-NAVFEED-DIAG",
+ "registered": "64d0150 (before scoring)",
+ "tier": "NavSim v1 open-loop PDMS, navtrain sample, POST-HOC diagnostic",
+ "PDMS_x100": {
+  "R8_NAVOFF": 64.1416,
+  "R8_LEGAL": 63.3907,
+  "PRIOR": 73.8378
+ },
+ "subs_NAVOFF": {
+  "NC": 85.0407,
+  "DAC": 86.4528,
+  "TTC": 76.3523,
+  "EP": 56.5752,
+  "C": 99.7607
+ },
+ "subs_LEGAL": {
+  "NC": 80.7563,
+  "DAC": 88.1762,
+  "TTC": 68.8368,
+  "EP": 62.0151,
+  "C": 99.4256
+ },
+ "NAVOFF_minus_LEGAL": {
+  "delta_x100": 0.7509,
+  "wins": 441,
+  "ties": 829,
+  "losses": 819,
+  "n": 2089,
+  "interval": {
+   "status": "OK",
+   "delta": 0.7509,
+   "lo": -1.6031,
+   "hi": 3.0389,
+   "n_clusters": 30,
+   "separated_log_name": false,
+   "drive_level": {
+    "status": "CANNOT-RULE",
+    "reason": "7 drives < floor 8"
+   },
+   "positive": false,
+   "negative": false,
+   "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+  }
+ },
+ "NAVOFF_minus_PRIOR": {
+  "delta_x100": -9.6962,
+  "wins": 489,
+  "ties": 535,
+  "losses": 1065,
+  "n": 2089,
+  "interval": {
+   "status": "OK",
+   "delta": -9.6962,
+   "lo": -14.0872,
+   "hi": -5.527,
+   "n_clusters": 30,
+   "separated_log_name": true,
+   "drive_level": {
+    "status": "CANNOT-RULE",
+    "reason": "7 drives < floor 8"
+   },
+   "positive": false,
+   "negative": true,
+   "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+  }
+ },
+ "NAVOFF_minus_LEGAL__straight": {
+  "delta_x100": 4.2351,
+  "wins": 297,
+  "ties": 592,
+  "losses": 555,
+  "n": 1444,
+  "interval": {
+   "status": "OK",
+   "delta": 4.2351,
+   "lo": 2.7542,
+   "hi": 6.3152,
+   "n_clusters": 30,
+   "separated_log_name": true,
+   "drive_level": {
+    "status": "CANNOT-RULE",
+    "reason": "7 drives < floor 8"
+   },
+   "positive": true,
+   "negative": false,
+   "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+  }
+ },
+ "NAVOFF_minus_LEGAL__turn": {
+  "delta_x100": -7.0496,
+  "wins": 144,
+  "ties": 237,
+  "losses": 264,
+  "n": 645,
+  "interval": {
+   "status": "OK",
+   "delta": -7.0496,
+   "lo": -10.6239,
+   "hi": -2.9749,
+   "n_clusters": 17,
+   "separated_log_name": true,
+   "drive_level": {
+    "status": "CANNOT-RULE",
+    "reason": "6 drives < floor 8"
+   },
+   "positive": false,
+   "negative": true,
+   "separated_scope": "log_name ONLY \u2014 the drive level CANNOT-RULE; state any claim as 'separated at the log level only' (SPEC \u00a75)"
+  }
+ },
+ "verdict": "FEED IS NOT THE CAUSE (within (-3, +3) or interval includes 0)"
+}
