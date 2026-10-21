@@ -1,0 +1,412 @@
+CMD: nice -n 19 ionice -c3 /home/nvidia/venvs/navsim-cpu/bin/python /home/nvidia/navsim-thor/code/thor/navsim_thor.py --script pdm_score --label R7_A1 --out-dir /home/nvidia/r8ns/nhwu/control/scores_warmup/score_R7_A1_wrapper --patch-loader --ram-floor-mb 3000.0 --dump-final-scores /home/nvidia/r8ns/nhwu/control/scores_warmup/score_R7_A1_wrapper/R7_A1_final_scores_frame.csv -- train_test_split=warmup_two_stage experiment_name=nhcw50400_warmup_two_stage_R7_A1 metric_cache_path=/dev/shm/navsim/exp/metric_cache_warmup_two_stage synthetic_sensor_path=/dev/shm/navsim/data/openscene/warmup_two_stage/sensor_blobs synthetic_scenes_path=/dev/shm/navsim/data/openscene/warmup_two_stage/synthetic_scene_pickles worker=sequential agent=constant_velocity_agent agent._target_=tanitad_seam_agent.TanitADSeamAgent +agent.seam_file=/dev/shm/navsim/seams/ctl50400/seam_R7_A1__warmup.npz +agent.call_log=/home/nvidia/r8ns/nhwu/control/scores_warmup/score_R7_A1.calls.jsonl output_dir=/dev/shm/navsim/exp/nhcw50400/warmup_two_stage_R7_A1
+2026-10-21 10:18:38,856 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/builders/worker_pool_builder.py:19}  Building WorkerPool...
+2026-10-21 10:18:38,859 INFO {/home/nvidia/navsim-thor/src/nuplan-devkit/nuplan/planning/utils/multithreading/worker_pool.py:101}  Worker: Sequential
+2026-10-21 10:18:38,859 INFO {/home/nvidia/navsim-thor/src/nuplan-devkit/nuplan/planning/utils/multithreading/worker_pool.py:102}  Number of nodes: 1
+Number of CPUs per node: 1
+Number of GPUs per node: 0
+Number of threads across all nodes: 1
+2026-10-21 10:18:38,859 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/builders/worker_pool_builder.py:27}  Building WorkerPool...DONE!
+Loading logs:   0%|          | 0/7 [00:00<?, ?it/s]Loading logs:  43%|████▎     | 3/7 [00:00<00:00, 10.19it/s]Loading logs: 100%|██████████| 7/7 [00:00<00:00, 19.10it/s]Loading logs: 100%|██████████| 7/7 [00:00<00:00, 17.15it/s]
+Loading synthetic scenes:   0%|          | 0/204 [00:00<?, ?it/s]Loading synthetic scenes:   0%|          | 1/204 [00:00<01:12,  2.79it/s]Loading synthetic scenes:  10%|█         | 21/204 [00:00<00:04, 44.49it/s]Loading synthetic scenes:  24%|██▍       | 49/204 [00:00<00:02, 74.39it/s]Loading synthetic scenes:  39%|███▊      | 79/204 [00:01<00:01, 93.37it/s]Loading synthetic scenes:  56%|█████▌    | 114/204 [00:01<00:00, 113.39it/s]Loading synthetic scenes:  73%|███████▎  | 149/204 [00:01<00:00, 127.12it/s]Loading synthetic scenes:  87%|████████▋ | 178/204 [00:01<00:00, 129.27it/s]Loading synthetic scenes: 100%|█████████▉| 203/204 [00:01<00:00, 127.00it/s]Loading synthetic scenes: 100%|██████████| 204/204 [00:01<00:00, 105.12it/s]
+2026-10-21 10:18:41,225 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:354}  Starting pdm scoring of 220 scenarios...
+2026-10-21 10:18:41,226 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:46}  Starting worker in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+Loading logs:   0%|          | 0/7 [00:00<?, ?it/s]Loading logs:  43%|████▎     | 3/7 [00:00<00:00, 28.44it/s]Loading logs: 100%|██████████| 7/7 [00:00<00:00, 35.70it/s]
+Loading synthetic scenes:   0%|          | 0/204 [00:00<?, ?it/s]Loading synthetic scenes:  12%|█▏        | 25/204 [00:00<00:01, 131.17it/s]Loading synthetic scenes:  25%|██▍       | 50/204 [00:00<00:01, 116.44it/s]Loading synthetic scenes:  42%|████▏     | 85/204 [00:00<00:00, 130.00it/s]Loading synthetic scenes:  57%|█████▋    | 116/204 [00:00<00:00, 132.01it/s]Loading synthetic scenes:  74%|███████▎  | 150/204 [00:01<00:00, 135.55it/s]Loading synthetic scenes:  90%|████████▉ | 183/204 [00:01<00:00, 138.82it/s]Loading synthetic scenes: 100%|██████████| 204/204 [00:01<00:00, 140.54it/s]
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token 7caf8d7d76cd0a120: the AgentInput handed by the scorer does not match the exported one (1286e9ea8ffb2958f0acd88659d54a2a77d0c669 != 2488080c8dae69d6a001f208520a2deca66d3e05)
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token a946e96acbe5186d9: the AgentInput handed by the scorer does not match the exported one (9499db48f690c7bafc1e0cb8c244653ae55084a1 != 25a4f491f342efcca1cae6d7725d5e6c96bcfab5)
+2026-10-21 10:18:42,906 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 1 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:18:45,210 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 2 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:18:45,584 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 3 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:18:47,866 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 4 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:18:50,174 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 5 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:18:50,503 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 6 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:18:50,834 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 7 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:18:52,267 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 8 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:18:54,945 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 9 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:18:57,290 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 10 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:18:57,442 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 11 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:18:57,549 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 12 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:00,047 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 13 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:02,403 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 14 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:02,524 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 15 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:05,070 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:85}  Processing stage one reactive scenario 16 / 16 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:07,470 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 1 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:07,718 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 2 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:08,330 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 3 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:08,416 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 4 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:09,212 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 5 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:09,881 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 6 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:09,971 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token 7caf8d7d76cd0a120:
+2026-10-21 10:19:09,972 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 7 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:11,339 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 8 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:12,045 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 9 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:13,096 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 10 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:13,201 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 11 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:14,248 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 12 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:15,404 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 13 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:16,743 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 14 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:17,844 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 15 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:18,033 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 16 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:18,309 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token a946e96acbe5186d9:
+2026-10-21 10:19:18,310 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 17 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:19,095 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 18 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:20,026 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 19 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token 8aea1806b6e406159: the AgentInput handed by the scorer does not match the exported one (7d06ab8c24b7c99c5096f07841fbb3910983d3f5 != 234e9b2cc4aabcaa571552b68e9a9e5abc4d840b)
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token 6c5bcf6f99698fac4: the AgentInput handed by the scorer does not match the exported one (d0be192819c8b1daa2af5ec520ca07792287c3d5 != e1bc275d7cbb9648c1b5138519ccbda6448540b6)
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token 2bb929aa7298012be: the AgentInput handed by the scorer does not match the exported one (7fcce0e4ac39b66e9b1eb24ddf0d3b9a3f91181a != a481c4624388520857d87a702454947680c860fc)
+2026-10-21 10:19:20,652 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 20 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:21,812 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 21 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:22,813 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 22 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:23,797 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 23 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:25,203 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 24 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:26,380 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 25 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:27,557 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 26 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:28,911 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 27 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:29,015 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 28 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:29,202 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 29 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:29,254 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token 8aea1806b6e406159:
+2026-10-21 10:19:29,256 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 30 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:29,346 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 31 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:29,437 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 32 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:30,587 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 33 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:30,689 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 34 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:31,783 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 35 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:33,109 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 36 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:34,248 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 37 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:34,432 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 38 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:35,241 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 39 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:35,337 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 40 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:36,081 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 41 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:36,908 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 42 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:37,590 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 43 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:37,777 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 44 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:37,877 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 45 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:38,249 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 46 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:38,913 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 47 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:38,956 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token 6c5bcf6f99698fac4:
+2026-10-21 10:19:38,957 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 48 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:40,049 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 49 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:40,325 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 50 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:41,479 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 51 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:41,570 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 52 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:41,830 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token 2bb929aa7298012be:
+2026-10-21 10:19:41,832 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 53 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token 8d71beefa48cb91fb: the AgentInput handed by the scorer does not match the exported one (f89e8314a07cb7a174991dac66dbd7d8da72196a != f671e57a3970ea8a9085f9c737ca0b37731335c6)
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token 07d57ac58a266170f: the AgentInput handed by the scorer does not match the exported one (a375cb2111027652480d733b6aa66b06cb87912b != 2148a38b093925962e3d735988f7a0094d7f1a46)
+2026-10-21 10:19:43,003 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 54 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:43,810 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 55 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:45,164 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 56 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:46,275 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 57 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:47,229 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 58 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:47,323 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 59 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:47,496 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 60 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:47,539 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token 8d71beefa48cb91fb:
+2026-10-21 10:19:47,541 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 61 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:48,203 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 62 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:49,037 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 63 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:49,132 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 64 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:50,162 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 65 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:51,468 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 66 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:51,641 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 67 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:52,608 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 68 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:52,690 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 69 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:52,855 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 70 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:53,221 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 71 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:53,971 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 72 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:54,946 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 73 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:55,757 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 74 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:56,400 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 75 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:56,482 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token 07d57ac58a266170f:
+2026-10-21 10:19:56,484 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 76 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:57,527 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 77 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:57,633 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 78 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:58,731 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 79 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:59,880 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 80 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:19:59,979 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 81 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:01,042 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 82 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:02,192 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 83 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:03,330 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 84 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:04,322 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 85 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:05,277 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 86 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:05,992 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 87 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:07,287 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 88 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token c481b1ded8232fa61: the AgentInput handed by the scorer does not match the exported one (b619f013759ccfd69e409d5ee94989535f9604b8 != 7feb2ba498dd0a599caeee3e61b1ac47f0bccff8)
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token 4d115c250e5dc02b1: the AgentInput handed by the scorer does not match the exported one (1e8ff27bf28e3d607f7504927fd5d4079959bbdd != 585f1e4e5c9967492acdf9c90a2329475bfdbe87)
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token ba9155b84dc322eac: the AgentInput handed by the scorer does not match the exported one (781760a799a5dd77b412805e068f077c6c69e133 != fcb40559614dcd7bce2b5b2d114c08b7d73904f5)
+2026-10-21 10:20:08,502 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 89 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:09,355 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 90 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:10,695 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 91 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:11,892 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 92 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:13,210 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 93 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:13,988 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 94 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:15,005 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 95 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:16,388 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 96 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:17,164 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 97 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:18,419 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 98 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:19,587 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 99 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:19,637 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token c481b1ded8232fa61:
+2026-10-21 10:20:19,638 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 100 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:21,044 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 101 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:21,822 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 102 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:22,006 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 103 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:23,275 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 104 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:24,452 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 105 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:25,219 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 106 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:25,506 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token 4d115c250e5dc02b1:
+2026-10-21 10:20:25,508 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 107 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:25,617 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 108 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:25,792 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 109 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:25,869 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token ba9155b84dc322eac:
+2026-10-21 10:20:25,871 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 110 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:27,140 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 111 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:27,774 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 112 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:27,880 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 113 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:28,156 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 114 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:29,302 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 115 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:29,399 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 116 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:30,763 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 117 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:30,871 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 118 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:31,544 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 119 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:31,638 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 120 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:32,502 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 121 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:33,703 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 122 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token e1f0dcd38a9ec2523: the AgentInput handed by the scorer does not match the exported one (33cae7c2ee30492dbc0ec594e2729eaeae53ef18 != 85a8c9ef094a102fa8528225e68ef4d123053c03)
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token 7b5998d0c96e5433a: the AgentInput handed by the scorer does not match the exported one (1e8ff27bf28e3d607f7504927fd5d4079959bbdd != 585f1e4e5c9967492acdf9c90a2329475bfdbe87)
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token d5cbf126369d32fdf: the AgentInput handed by the scorer does not match the exported one (cb13989600ced0df672c7721ce89c96494c90131 != 16793b4e1184c3dc459614f5afd8c3ee79d98202)
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token fd0fe3e97024a208f: the AgentInput handed by the scorer does not match the exported one (b71742ab5e3267b1804f4aaf0158d41ee60fd0c9 != cd7b59d1b92dd75a3928093515099598ecf6b1a2)
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token 71afcb9b1ac436e14: the AgentInput handed by the scorer does not match the exported one (6c5cad4f18fd369eb8f69f566af5480012eceab6 != 361329df0053fa65f30d161b8df2641f51dcbecc)
+2026-10-21 10:20:34,367 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 123 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:34,665 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 124 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:34,751 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 125 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:34,832 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token e1f0dcd38a9ec2523:
+2026-10-21 10:20:34,834 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 126 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:34,919 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token 7b5998d0c96e5433a:
+2026-10-21 10:20:34,921 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 127 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:36,256 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 128 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:36,302 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token d5cbf126369d32fdf:
+2026-10-21 10:20:36,304 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 129 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:37,450 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 130 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:38,781 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 131 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:40,005 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 132 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:40,312 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token fd0fe3e97024a208f:
+2026-10-21 10:20:40,315 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 133 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:41,370 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 134 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:42,344 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 135 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:42,719 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 136 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:42,808 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 137 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:43,766 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 138 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:44,712 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 139 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:45,739 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 140 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:46,467 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 141 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:47,633 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 142 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:48,199 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 143 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:48,368 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 144 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:49,190 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 145 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:50,151 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 146 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:50,869 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 147 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:51,137 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token 71afcb9b1ac436e14:
+2026-10-21 10:20:51,138 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 148 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:51,307 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 149 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:52,284 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 150 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:52,658 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 151 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:53,233 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 152 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:53,330 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 153 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:53,936 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 154 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token 2251eed913b2fbe46: the AgentInput handed by the scorer does not match the exported one (c7a3e0488f44039512629d84320f81dc41950bf8 != 8bba345480e929d978695c15d6815ff456e2d482)
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token 4a421aa61a3bbad1d: the AgentInput handed by the scorer does not match the exported one (45022d736aade840f8610986f44bec5f8bc8df58 != b67705a631c363c8b1c21ed88b4de94263081e82)
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token 80fbecd9f16630510: the AgentInput handed by the scorer does not match the exported one (395d1abdfbece7fc73b43e11aaadb7e276777722 != 4afd84f5424aaec8b28c24c645ef375e744718bc)
+2026-10-21 10:20:54,759 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 155 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:54,849 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 156 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:54,927 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 157 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:55,941 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 158 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:56,194 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token 2251eed913b2fbe46:
+2026-10-21 10:20:56,196 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 159 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:56,879 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 160 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:57,616 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 161 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:57,657 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token 4a421aa61a3bbad1d:
+2026-10-21 10:20:57,659 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 162 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:57,766 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 163 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:58,705 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 164 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:20:59,715 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 165 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:00,322 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 166 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:01,321 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 167 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:02,400 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 168 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:03,779 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 169 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:03,958 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 170 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:04,004 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token 80fbecd9f16630510:
+2026-10-21 10:21:04,005 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 171 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:04,674 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 172 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:04,859 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 173 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:06,223 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 174 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:06,317 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 175 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:06,399 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 176 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:07,166 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 177 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:08,618 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 178 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:09,275 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 179 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:10,543 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 180 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:10,715 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 181 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:11,699 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 182 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:11,786 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 183 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:11,865 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 184 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:13,056 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 185 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:13,157 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 186 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:13,241 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 187 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:14,072 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 188 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 147, in run_pdm_score
+    trajectory = agent.compute_trajectory(agent_input, scene)
+  File "/home/nvidia/navsim-thor/code/e2/tanitad_seam_agent.py", line 123, in compute_trajectory
+    raise ValueError(f"token {tok}: the AgentInput handed by the scorer does not "
+ValueError: token 241e6bedc6fcf2de4: the AgentInput handed by the scorer does not match the exported one (02ea79b556ea2ca2dcaf799f2d212c7da98d1348 != 286d9bcb2be35ee32f8631d57301b682e5cafca8)
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 375, in main
+    pdm_score_df = create_scene_aggregators(
+  File "/home/nvidia/navsim-thor/code/thor/navsim_thor.py", line 314, in csa_hook
+    return _orig_csa(all_mappings, full_score_df, proposal_sampling)
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 313, in create_scene_aggregators
+    updated_rows = aggregator.aggregate_scores()
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/simulation/planner/pdm_planner/scoring/scene_aggregator.py", line 113, in aggregate_scores
+    two_frame_comfort = self._compute_two_frame_comfort(now_token, prev_token)
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/simulation/planner/pdm_planner/scoring/scene_aggregator.py", line 62, in _compute_two_frame_comfort
+    assert 0 < observation_interval < 0.55, f"Invalid interval {observation_interval}"
+AssertionError: Invalid interval nan
+Error executing job with overrides: ['train_test_split=warmup_two_stage', 'experiment_name=nhcw50400_warmup_two_stage_R7_A1', 'metric_cache_path=/dev/shm/navsim/exp/metric_cache_warmup_two_stage', 'synthetic_sensor_path=/dev/shm/navsim/data/openscene/warmup_two_stage/sensor_blobs', 'synthetic_scenes_path=/dev/shm/navsim/data/openscene/warmup_two_stage/synthetic_scene_pickles', 'worker=sequential', 'agent=constant_velocity_agent', 'agent._target_=tanitad_seam_agent.TanitADSeamAgent', '+agent.seam_file=/dev/shm/navsim/seams/ctl50400/seam_R7_A1__warmup.npz', '+agent.call_log=/home/nvidia/r8ns/nhwu/control/scores_warmup/score_R7_A1.calls.jsonl', 'output_dir=/dev/shm/navsim/exp/nhcw50400/warmup_two_stage_R7_A1']
+Traceback (most recent call last):
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 403, in main
+    pcl_group_score, pcl_stage1_score, pcl_stage2_score = calculate_individual_mapping_scores(
+  File "/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py", line 287, in calculate_individual_mapping_scores
+    pd.DataFrame(all_group_scores).mean(),
+  File "/home/nvidia/venvs/navsim-cpu/lib/python3.9/site-packages/pandas/core/frame.py", line 11720, in mean
+    result = super().mean(axis, skipna, numeric_only, **kwargs)
+  File "/home/nvidia/venvs/navsim-cpu/lib/python3.9/site-packages/pandas/core/generic.py", line 12485, in mean
+    return self._stat_function(
+  File "/home/nvidia/venvs/navsim-cpu/lib/python3.9/site-packages/pandas/core/generic.py", line 12442, in _stat_function
+    return self._reduce(
+  File "/home/nvidia/venvs/navsim-cpu/lib/python3.9/site-packages/pandas/core/frame.py", line 11589, in _reduce
+    res = df._mgr.reduce(blk_func)
+  File "/home/nvidia/venvs/navsim-cpu/lib/python3.9/site-packages/pandas/core/internals/managers.py", line 1519, in reduce
+    nbs = blk.reduce(func)
+  File "/home/nvidia/venvs/navsim-cpu/lib/python3.9/site-packages/pandas/core/internals/blocks.py", line 406, in reduce
+    result = func(self.values)
+  File "/home/nvidia/venvs/navsim-cpu/lib/python3.9/site-packages/pandas/core/frame.py", line 11508, in blk_func
+    return op(values, axis=axis, skipna=skipna, **kwds)
+  File "/home/nvidia/venvs/navsim-cpu/lib/python3.9/site-packages/pandas/core/nanops.py", line 147, in f
+    result = alt(values, axis=axis, skipna=skipna, **kwds)
+  File "/home/nvidia/venvs/navsim-cpu/lib/python3.9/site-packages/pandas/core/nanops.py", line 404, in new_func
+    result = func(values, axis=axis, skipna=skipna, mask=mask, **kwargs)
+  File "/home/nvidia/venvs/navsim-cpu/lib/python3.9/site-packages/pandas/core/nanops.py", line 720, in nanmean
+    the_sum = _ensure_numeric(the_sum)
+  File "/home/nvidia/venvs/navsim-cpu/lib/python3.9/site-packages/pandas/core/nanops.py", line 1686, in _ensure_numeric
+    raise TypeError(f"Could not convert {x} to numeric")
+TypeError: Could not convert [array([nan, nan, nan, nan, nan]) array([nan, nan, nan, nan, nan])] to numeric
+
+Set the environment variable HYDRA_FULL_ERROR=1 for a complete stack trace.
+2026-10-21 10:21:14,955 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 189 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:16,054 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 190 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:17,125 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 191 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:18,403 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 192 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:19,415 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 193 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:20,331 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 194 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:21,455 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 195 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:22,696 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 196 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:24,123 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 197 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:25,201 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 198 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:26,054 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 199 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:26,101 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:176}  ----------- Agent failed for token 241e6bedc6fcf2de4:
+2026-10-21 10:21:26,103 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 200 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:26,213 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 201 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:26,299 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 202 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:27,358 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 203 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:28,706 INFO {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:139}  Processing stage two reactive scenario 204 / 204 in thread_id=d83f4e7d-2938-4a37-be54-64b1f201bb69, node_id=0
+2026-10-21 10:21:29,863 WARNING {/home/nvidia/navsim-thor/src/navsim-v2/navsim/planning/script/run_pdm_score.py:382}  ----------- Failed to calculate pseudo closed-loop weights or comfort:
+E1_WRAPPER_DONE label=R7_A1 status=SYSTEM_EXIT_1 wall_s=174.12 peak_rss_mb=541.4 min_avail_mb=79481.1 pdm_calls=201 cache_scenes=0
