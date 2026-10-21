@@ -1,0 +1,179 @@
+{
+ "task": "D-R8-CKPT-RULE groundwork (EvalFlyWheel, 2026-10-20)",
+ "rule_source": "git FETCH_HEAD beba0241 GOALS_AND_CLAIMS.md",
+ "no_scores_produced": true,
+ "sample": {
+  "status": "NOT_FIXED__NO_READABLE_NAVTRAIN_TOKEN__ACQUISITION_NEEDS_PI_APPROVAL",
+  "count": 0,
+  "sha256_sorted_tokens": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "options": {
+   "S1_recommended": {
+    "total_bytes": 20353459264,
+    "eta": {
+     "thor_min_at_31.2MBps_INHERITED": 10.9,
+     "devbox_h_at_1.6_to_3.8MBps_INHERITED": [
+      1.49,
+      3.53
+     ]
+    }
+   },
+   "S25_cheaper_underpowered_size": {
+    "total_bytes": 9990506732,
+    "eta": {
+     "thor_min_at_31.2MBps_INHERITED": 5.3,
+     "devbox_h_at_1.6_to_3.8MBps_INHERITED": [
+      0.73,
+      1.73
+     ]
+    }
+   }
+  }
+ },
+ "thor_smoke_VALIDATION_ONLY": {
+  "host": "thor6",
+  "venv": "/home/nvidia/venvs/tanitad-train (+ read-only overlay /home/nvidia/r8ns/overlay_scipy -> tanitad-edge scipy 1.18.0)",
+  "torch": "2.13.0+cu130",
+  "precision": "as_trained (bf16)",
+  "tokens": "pkg raw/smoke5_tokens.json (5 navtest)",
+  "per_ckpt": {
+   "40000": {
+    "K0": true,
+    "KD": true,
+    "premises": true,
+    "warm_forward_s_median": 0.179,
+    "warm_forward_s_all": [
+     0.178,
+     0.178,
+     0.178,
+     0.179,
+     0.179,
+     0.179,
+     0.179,
+     0.179,
+     0.18
+    ],
+    "first_forward_s": 1.015,
+    "cuda_max_memory_allocated_gb": 1.156,
+    "bridge_wall_s": 9.82,
+    "ckpt_md5": "57807456bd7169800be159ff95871d22",
+    "arms": {
+     "PRIOR_ha0p": {
+      "n_rows": 5,
+      "partial": false,
+      "n_cv_standin_rows": 0
+     },
+     "R8_LEGAL": {
+      "n_rows": 5,
+      "partial": false,
+      "n_cv_standin_rows": 0
+     },
+     "R8_LEGAL_s1": {
+      "n_rows": 5,
+      "partial": false,
+      "n_cv_standin_rows": 0
+     },
+     "R8_RT": {
+      "n_rows": 5,
+      "partial": false,
+      "n_cv_standin_rows": 0
+     },
+     "R8_RT_s1": {
+      "n_rows": 5,
+      "partial": false,
+      "n_cv_standin_rows": 0
+     }
+    }
+   },
+   "48852": {
+    "K0": true,
+    "KD": true,
+    "premises": true,
+    "warm_forward_s_median": 0.177,
+    "warm_forward_s_all": [
+     0.177,
+     0.177,
+     0.177,
+     0.177,
+     0.177,
+     0.178,
+     0.178,
+     0.178,
+     0.179
+    ],
+    "first_forward_s": 1.007,
+    "cuda_max_memory_allocated_gb": 1.156,
+    "bridge_wall_s": 9.76,
+    "ckpt_md5": "b4364029b68f29a33eeb4aebbbbd002b",
+    "arms": {
+     "PRIOR_ha0p": {
+      "n_rows": 5,
+      "partial": false,
+      "n_cv_standin_rows": 0
+     },
+     "R8_LEGAL": {
+      "n_rows": 5,
+      "partial": false,
+      "n_cv_standin_rows": 0
+     },
+     "R8_LEGAL_s1": {
+      "n_rows": 5,
+      "partial": false,
+      "n_cv_standin_rows": 0
+     },
+     "R8_RT": {
+      "n_rows": 5,
+      "partial": false,
+      "n_cv_standin_rows": 0
+     },
+     "R8_RT_s1": {
+      "n_rows": 5,
+      "partial": false,
+      "n_cv_standin_rows": 0
+     }
+    }
+   }
+  },
+  "rt_assert": {
+   "verdict": "PASS",
+   "1_frozen_is_registered_2aacc9ff": true,
+   "2_deploy_sidecar_and_literal": true,
+   "3_deploy_equals_rederivation_exactly": true,
+   "4_every_RT_manifest_on_registered_table": true,
+   "5_stage_acted_on_every_RT_seam": true,
+   "frozen_sha256": "2aacc9ff32d3d2a5a18dda2d72ab5ce6c42d1c1268e9186912c5151bbe4d6d80",
+   "deploy_sha256": "3319b003fecc83577430f07dad762bce0a9a0b8594e9748e9a61bc4d264136b7"
+  },
+  "cpu_vs_cuda_finding": "plans differ like a fresh inference draw (sel differs 4/10, max 19.3 m; Thor s0-vs-s1 up to 19.6 m), n=5 descriptive"
+ },
+ "estimates": {
+  "s_per_forward_used": 0.2,
+  "navtrain_selection": {
+   "forwards": "4 x N, N~2,000-2,300 -> 8,000-9,200",
+   "gpu_min": [
+    27,
+    31
+   ],
+   "total_wall_h": [
+    1.5,
+    2.5
+   ],
+   "class": "ESTIMATED from MEASURED rate"
+  },
+  "navtest_single_read": {
+   "forwards_ema": 48922,
+   "gpu_h": 2.7,
+   "raw_beside_gpu_h": 1.0,
+   "scoring_cpu_h_INHERITED_rates": 2.2
+  }
+ },
+ "blockers": {
+  "B1": "no readable navtrain token -> PI approves S1 (20.35 GB) / S25 / A40 console check",
+  "B2": "rule says CAM_F0 history; bridge needs L0/F0/R0 x 4 frames -> MM amendment before any score",
+  "B3": "tanitad-edge lacks timm -> accept tanitad-train + scipy overlay, or approve timm --no-deps install",
+  "B4": "R8_RT seed 1 not produced by run_bridge8 -> MM accepts derive_rt_seed.py",
+  "B5": "navtrain inputs export / bank builder / metric cache / scorer port / decision script not built",
+  "B6": "backend consistency: all compared rows on Thor CUDA + Thor scorer backend; re-ship caches, maps, banks",
+  "B7": "split!=navtest -> missing frames become stand-ins; launch gate G4 requires zero"
+ },
+ "launch_script_NOT_EXECUTED": "C:/Users/Admin/refcv8_pf/navsim_ckpt/code/r8ns_navtrain_select_LAUNCH.sh"
+}

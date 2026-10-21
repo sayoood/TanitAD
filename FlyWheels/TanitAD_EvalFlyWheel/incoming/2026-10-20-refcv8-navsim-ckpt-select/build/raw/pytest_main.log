@@ -1,0 +1,228 @@
+........................................................................ [ 37%]
+........................................................................ [ 74%]
+..................................................                       [100%]
+============================== warnings summary ===============================
+tests/test_build_navtrain_frames.py::test_real_stitch_pipeline_on_real_rigs_with_synthetic_pixels_and_the_real_bank_reader
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:146: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\utils\tensor_numpy.cpp:219.)
+    im = torch.from_numpy(np.asarray(Image.open(p).convert("RGB"))).permute(
+
+tests/test_build_navtrain_frames.py::test_real_stitch_pipeline_on_real_rigs_with_synthetic_pixels_and_the_real_bank_reader
+  C:\lgs\Lfb47a58376\FlyWheels\TanitAD_EvalFlyWheel\incoming\2026-09-19-navsim-refcv4b-bridge\code\build_frames.py:151: RuntimeWarning: invalid value encountered in cast
+    s = s[0].permute(1, 2, 0).clamp(0, 255).numpy().astype(np.uint8)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=================================== PASSES ====================================
+_________________ test_a_not_fixed_placeholder_is_overwritten _________________
+---------------------------- Captured stdout call -----------------------------
+ZZSAMPLE status=FIXED count=21 logs=3 sha256=6881c432393f476500e85c8890e6b7552d264bac2f5d874bef769d1e5fefa847
+_____________ test_cli_accepts_shards_whose_sha256_is_the_hf_oid ______________
+---------------------------- Captured stdout call -----------------------------
+ZZSAMPLE status=FIXED count=21 logs=3 sha256=6881c432393f476500e85c8890e6b7552d264bac2f5d874bef769d1e5fefa847
+___________ test_the_fixer_writes_the_sample_every_consumer_accepts ___________
+---------------------------- Captured stdout setup ----------------------------
+ZZSAMPLE status=FIXED count=1034 logs=22 sha256=6e5697a8cc97605a06e33accc8d56a91772be1333f818d878ee22c80a6916e62
+___________ test_the_cache_overrides_name_exactly_the_fixed_sample ____________
+---------------------------- Captured stdout setup ----------------------------
+ZZSAMPLE status=FIXED count=1034 logs=22 sha256=6e5697a8cc97605a06e33accc8d56a91772be1333f818d878ee22c80a6916e62
+_ test_a_sample_the_fixer_calls_readable_is_buildable_from_the_real_record_builder _
+---------------------------- Captured stdout setup ----------------------------
+ZZSAMPLE status=FIXED count=1034 logs=22 sha256=6e5697a8cc97605a06e33accc8d56a91772be1333f818d878ee22c80a6916e62
+_ test_what_the_fixer_excludes_for_a_missing_jpg_is_exactly_what_the_bank_builder_refuses _
+---------------------------- Captured stdout call -----------------------------
+ZZSAMPLE status=FIXED count=1030 logs=22 sha256=cb1c8ad21aead6cffcbc79c99076f10c57a9bda794a3832466f0ada693fce3f7
+=========================== short test summary info ===========================
+PASSED tests/test_build_navtrain_frames.py::test_unique_frames_are_stored_once_and_rows_are_the_history_windows
+PASSED tests/test_build_navtrain_frames.py::test_every_bank_row_is_the_frame_it_claims_to_be
+PASSED tests/test_build_navtrain_frames.py::test_a_token_reads_its_own_four_frames_in_history_order
+PASSED tests/test_build_navtrain_frames.py::test_the_index_schema_is_the_one_BankNavtest416_reads
+PASSED tests/test_build_navtrain_frames.py::test_done_marker_report_and_scratch
+PASSED tests/test_build_navtrain_frames.py::test_the_stitcher_is_called_once_per_unique_frame
+PASSED tests/test_build_navtrain_frames.py::test_a_directory_source_gives_the_same_bank_as_the_archives
+PASSED tests/test_build_navtrain_frames.py::test_one_missing_history_jpg_refuses_and_names_every_affected_token
+PASSED tests/test_build_navtrain_frames.py::test_a_missing_t0_jpg_of_one_camera_refuses
+PASSED tests/test_build_navtrain_frames.py::test_a_missing_FRONT_only_history_is_not_enough_the_L0_R0_cameras_are_required
+PASSED tests/test_build_navtrain_frames.py::test_an_archive_that_is_absent_refuses
+PASSED tests/test_build_navtrain_frames.py::test_an_all_black_frame_refuses
+PASSED tests/test_build_navtrain_frames.py::test_a_frame_that_fails_to_stitch_refuses
+PASSED tests/test_build_navtrain_frames.py::test_two_shard_members_with_the_same_path_but_different_bytes_refuse
+PASSED tests/test_build_navtrain_frames.py::test_identical_duplicate_members_are_fine
+PASSED tests/test_build_navtrain_frames.py::test_an_inputs_export_that_does_not_cover_the_sample_refuses
+PASSED tests/test_build_navtrain_frames.py::test_a_navtest_export_is_refused
+PASSED tests/test_build_navtrain_frames.py::test_a_sample_that_is_not_fixed_refuses
+PASSED tests/test_build_navtrain_frames.py::test_a_sample_whose_sha256_does_not_rederive_refuses
+PASSED tests/test_build_navtrain_frames.py::test_a_finished_bank_is_never_rebuilt_in_place
+PASSED tests/test_build_navtrain_frames.py::test_verify_bank_catches_a_flipped_byte
+PASSED tests/test_build_navtrain_frames.py::test_the_mutation_list_is_the_registered_one
+PASSED tests/test_build_navtrain_frames.py::test_the_real_BankNavtest416_loads_the_bank
+PASSED tests/test_build_navtrain_frames.py::test_real_stitch_pipeline_on_real_rigs_with_synthetic_pixels_and_the_real_bank_reader
+PASSED tests/test_derive_rt_seed_acceptance.py::test_the_file_under_acceptance_is_the_one_pinned
+PASSED tests/test_derive_rt_seed_acceptance.py::test_seed0_rows_reproduce_the_bridges_own_R8_RT_exactly[40000]
+PASSED tests/test_derive_rt_seed_acceptance.py::test_seed0_rows_reproduce_the_bridges_own_R8_RT_exactly[48852]
+PASSED tests/test_derive_rt_seed_acceptance.py::test_seed1_rows_reproduce_the_banked_R8_RT_s1[40000]
+PASSED tests/test_derive_rt_seed_acceptance.py::test_seed1_rows_reproduce_the_banked_R8_RT_s1[48852]
+PASSED tests/test_derive_rt_seed_acceptance.py::test_the_stage_acts_on_every_token
+PASSED tests/test_derive_rt_seed_acceptance.py::test_mutation_knot_perturbed_in_expected_is_detected
+PASSED tests/test_derive_rt_seed_acceptance.py::test_mutation_knot_perturbed_in_source_rows_is_detected
+PASSED tests/test_derive_rt_seed_acceptance.py::test_mutation_stage_is_noop_in_the_script_is_detected
+PASSED tests/test_derive_rt_seed_acceptance.py::test_mutation_wrong_source_rows_is_detected
+PASSED tests/test_derive_rt_seed_acceptance.py::test_mutation_other_checkpoint_is_detected
+PASSED tests/test_export_navtrain_inputs.py::test_constants_are_the_registered_literals
+PASSED tests/test_export_navtrain_inputs.py::test_es_dict_widens_float32_exactly_and_keeps_float64
+PASSED tests/test_export_navtrain_inputs.py::test_es_dict_keeps_velocity_and_acceleration_apart
+PASSED tests/test_export_navtrain_inputs.py::test_es_dict_records_the_source_dtypes
+PASSED tests/test_export_navtrain_inputs.py::test_record_schema_is_w3s
+PASSED tests/test_export_navtrain_inputs.py::test_record_frame_tokens_are_the_four_history_frames
+PASSED tests/test_export_navtrain_inputs.py::test_record_cams_are_the_history_frames_of_three_cameras
+PASSED tests/test_export_navtrain_inputs.py::test_record_identity_comes_from_the_token_frame
+PASSED tests/test_export_navtrain_inputs.py::test_record_future_arrays_are_float64_lists_with_the_sampling
+PASSED tests/test_export_navtrain_inputs.py::test_a_fixed_sample_loads
+PASSED tests/test_export_navtrain_inputs.py::test_sample_must_be_fixed_for_navtrain
+PASSED tests/test_export_navtrain_inputs.py::test_sample_hash_must_rederive
+PASSED tests/test_export_navtrain_inputs.py::test_sample_needs_a_complete_token_log
+PASSED tests/test_export_navtrain_inputs.py::test_the_navtest_control_does_not_demand_a_fixed_sample
+PASSED tests/test_export_navtrain_inputs.py::test_a_refused_export_leaves_no_file
+PASSED tests/test_export_navtrain_inputs.py::test_a_complete_export_round_trips_and_hashes_its_own_bytes
+PASSED tests/test_export_navtrain_inputs.py::test_an_existing_export_is_never_overwritten
+PASSED tests/test_export_navtrain_inputs.py::test_the_navsim_tree_check_is_exact_not_a_prefix
+PASSED tests/test_export_navtrain_inputs.py::test_main_refuses_while_a_mutation_env_is_set
+PASSED tests/test_export_navtrain_inputs.py::test_four_real_navtest_logs_export_exactly_w3s_banked_records
+PASSED tests/test_export_navtrain_inputs.py::test_a_sample_token_the_devkit_does_not_produce_refuses_and_writes_nothing
+PASSED tests/test_export_navtrain_inputs.py::test_a_parent_directory_of_a_different_devkit_refuses
+PASSED tests/test_export_navtrain_inputs.py::test_a_navsim_not_from_the_named_tree_refuses
+PASSED tests/test_fix_navtrain_sample.py::test_sorted_logs_all_readable_tokens_stop_at_the_first_log_reaching_the_target
+PASSED tests/test_fix_navtrain_sample.py::test_a_log_that_lands_exactly_on_the_target_stops_the_sample
+PASSED tests/test_fix_navtrain_sample.py::test_the_sha256_is_over_the_sorted_token_list
+PASSED tests/test_fix_navtrain_sample.py::test_token_log_and_per_log_accounting
+PASSED tests/test_fix_navtrain_sample.py::test_a_log_without_metadata_is_skipped_and_recorded
+PASSED tests/test_fix_navtrain_sample.py::test_one_missing_history_jpg_of_one_camera_removes_exactly_the_tokens_that_need_it
+PASSED tests/test_fix_navtrain_sample.py::test_front_camera_only_is_not_readable
+PASSED tests/test_fix_navtrain_sample.py::test_history_frames_are_required_not_just_the_current_frame
+PASSED tests/test_fix_navtrain_sample.py::test_a_window_the_devkit_drops_is_not_readable
+PASSED tests/test_fix_navtrain_sample.py::test_fewer_than_min_tokens_is_underpowered
+PASSED tests/test_fix_navtrain_sample.py::test_target_not_reached_but_above_min_is_fixed_with_the_flag
+PASSED tests/test_fix_navtrain_sample.py::test_the_registered_defaults_are_literals
+PASSED tests/test_fix_navtrain_sample.py::test_an_extracted_directory_gives_the_same_sample_as_the_archive
+PASSED tests/test_fix_navtrain_sample.py::test_non_front_cameras_and_directories_in_the_archive_are_ignored
+PASSED tests/test_fix_navtrain_sample.py::test_cli_writes_the_sample_the_launch_gate_reads
+PASSED tests/test_fix_navtrain_sample.py::test_an_existing_fixed_sample_is_never_replaced_with_different_content
+PASSED tests/test_fix_navtrain_sample.py::test_cli_second_run_is_idempotent_and_a_changed_availability_is_refused
+PASSED tests/test_fix_navtrain_sample.py::test_a_not_fixed_placeholder_is_overwritten
+PASSED tests/test_fix_navtrain_sample.py::test_cli_refuses_a_filter_that_is_not_the_registered_file
+PASSED tests/test_fix_navtrain_sample.py::test_cli_refuses_a_shard_whose_sha256_is_not_the_hf_oid
+PASSED tests/test_fix_navtrain_sample.py::test_cli_accepts_shards_whose_sha256_is_the_hf_oid
+PASSED tests/test_fix_navtrain_sample.py::test_cli_refuses_while_a_mutation_is_set
+PASSED tests/test_fix_navtrain_sample.py::test_an_untrusted_pickle_executes_nothing
+PASSED tests/test_fix_navtrain_sample.py::test_numpy_arrays_and_paths_survive_the_tolerant_unpickler
+PASSED tests/test_fix_navtrain_sample.py::test_member_rel_literals
+PASSED tests/test_fix_navtrain_sample.py::test_the_window_derivation_reproduces_w3s_export_on_334_real_navtest_tokens
+PASSED tests/test_fix_navtrain_sample.py::test_the_parsed_navtest_filter_matches_the_known_counts
+PASSED tests/test_make_score_jobs.py::test_seven_jobs_with_the_literal_labels_and_seams
+PASSED tests/test_make_score_jobs.py::test_the_job_argv_is_the_score_command_of_the_driver
+PASSED tests/test_make_score_jobs.py::test_every_job_lands_where_the_decision_script_looks
+PASSED tests/test_make_score_jobs.py::test_missing_seams_refuse_and_write_nothing
+PASSED tests/test_make_score_jobs.py::test_with_every_seam_present_the_file_has_seven_json_lines
+PASSED tests/test_navtrain_cache_score.py::test_constants_are_the_registered_literals
+PASSED tests/test_navtrain_cache_score.py::test_a_fixed_sample_loads_with_its_own_sha
+PASSED tests/test_navtrain_cache_score.py::test_an_unfixed_sample_refuses
+PASSED tests/test_navtrain_cache_score.py::test_fewer_than_1000_tokens_refuses
+PASSED tests/test_navtrain_cache_score.py::test_a_sample_whose_hash_does_not_rederive_refuses
+PASSED tests/test_navtrain_cache_score.py::test_the_navtest_control_is_not_held_to_fixed
+PASSED tests/test_navtrain_cache_score.py::test_overrides_name_the_navtrain_split_and_exactly_the_samples_logs_and_tokens
+PASSED tests/test_navtrain_cache_score.py::test_the_navtest_control_names_navtest
+PASSED tests/test_navtrain_cache_score.py::test_a_run_without_a_sample_file_refuses
+PASSED tests/test_navtrain_cache_score.py::test_windows_refuses_a_2000_token_line_and_accepts_1000
+PASSED tests/test_navtrain_cache_score.py::test_linux_refuses_one_argument_over_131072_bytes
+PASSED tests/test_navtrain_cache_score.py::test_chunks_are_whole_logs_disjoint_and_exhaustive
+PASSED tests/test_navtrain_cache_score.py::test_a_log_larger_than_the_chunk_gets_a_chunk_to_itself
+PASSED tests/test_navtrain_cache_score.py::test_a_log_is_never_split_across_chunks
+PASSED tests/test_navtrain_cache_score.py::test_four_cities_present_is_clean
+PASSED tests/test_navtrain_cache_score.py::test_a_maps_root_with_only_las_vegas_is_not_enough
+PASSED tests/test_navtrain_cache_score.py::test_a_maps_json_that_lacks_a_city_is_a_problem
+PASSED tests/test_navtrain_cache_score.py::test_an_absent_maps_root_is_a_problem
+PASSED tests/test_navtrain_cache_score.py::test_a_missing_or_empty_log_pickle_is_a_problem
+PASSED tests/test_navtrain_cache_score.py::test_preflight_is_ok_only_when_nothing_is_missing
+PASSED tests/test_navtrain_cache_score.py::test_a_complete_cache_verifies_whatever_os_built_it[True]
+PASSED tests/test_navtrain_cache_score.py::test_a_complete_cache_verifies_whatever_os_built_it[False]
+PASSED tests/test_navtrain_cache_score.py::test_a_row_missing_from_the_csv_is_reported
+PASSED tests/test_navtrain_cache_score.py::test_a_swapped_token_with_the_same_count_is_reported
+PASSED tests/test_navtrain_cache_score.py::test_a_pickle_on_disk_that_the_sample_does_not_name_is_reported
+PASSED tests/test_navtrain_cache_score.py::test_a_row_whose_file_is_absent_is_reported
+PASSED tests/test_navtrain_cache_score.py::test_two_metadata_csvs_are_reported
+PASSED tests/test_navtrain_cache_score.py::test_a_duplicated_row_is_reported
+PASSED tests/test_navtrain_cache_score.py::test_finalize_refuses_unless_the_pickles_are_exactly_the_sample
+PASSED tests/test_navtrain_cache_score.py::test_a_binding_carries_the_four_things_the_decision_script_requires
+PASSED tests/test_navtrain_cache_score.py::test_a_binding_from_here_is_accepted_by_the_decision_scripts_loader
+PASSED tests/test_navtrain_cache_score.py::test_a_navtest_control_binding_is_rejected_by_the_decision_script
+PASSED tests/test_navtrain_cache_score.py::test_counts_that_are_not_pass_refuse_a_binding
+PASSED tests/test_navtrain_cache_score.py::test_a_csv_missing_a_sample_token_refuses_a_binding
+PASSED tests/test_navtrain_cache_score.py::test_a_csv_with_an_extra_token_refuses_a_binding
+PASSED tests/test_navtrain_cache_score.py::test_a_label_bound_to_different_input_is_never_rescored
+PASSED tests/test_navtrain_cache_score.py::test_the_operator_can_force_a_rescore
+PASSED tests/test_navtrain_cache_score.py::test_a_label_without_the_prefix_refuses
+PASSED tests/test_navtrain_cache_score.py::test_score_needs_exactly_one_of_seam_and_official
+PASSED tests/test_navtrain_cache_score.py::test_preflight_on_an_unfixed_sample_refuses_before_touching_a_path
+PASSED tests/test_navtrain_cache_score.py::test_main_refuses_while_a_mutation_env_is_set
+PASSED tests/test_navtrain_cache_score.py::test_the_devkits_own_configs_compose_to_the_navtrain_split
+PASSED tests/test_navtrain_cache_score.py::test_end_to_end_cache_stop_score_and_binding_equal_w3s_banked_stop_smoke20
+PASSED tests/test_navtrain_cache_score.py::test_a_score_with_no_cache_refuses_before_the_devkit_runs
+PASSED tests/test_navtrain_cache_score.py::test_the_windows_chunked_build_with_the_devkits_own_metadata_writer_reproduces_the_cache
+PASSED tests/test_pipeline_interfaces.py::test_the_fixer_writes_the_sample_every_consumer_accepts
+PASSED tests/test_pipeline_interfaces.py::test_the_cache_overrides_name_exactly_the_fixed_sample
+PASSED tests/test_pipeline_interfaces.py::test_a_sample_the_fixer_calls_readable_is_buildable_from_the_real_record_builder
+PASSED tests/test_pipeline_interfaces.py::test_what_the_fixer_excludes_for_a_missing_jpg_is_exactly_what_the_bank_builder_refuses
+PASSED tests/test_select_ckpt_r8.py::test_constants_are_the_registered_literals
+PASSED tests/test_select_ckpt_r8.py::test_mutation_list_matches_the_module
+PASSED tests/test_select_ckpt_r8.py::test_ci_is_loaded_by_path_and_is_the_paired_cluster_bootstrap
+PASSED tests/test_select_ckpt_r8.py::test_constant_better_chooses_40k
+PASSED tests/test_select_ckpt_r8.py::test_constant_worse_keeps_the_default
+PASSED tests/test_select_ckpt_r8.py::test_one_seed_whose_interval_straddles_zero_keeps_the_default
+PASSED tests/test_select_ckpt_r8.py::test_margin_inside_2x_the_floor_keeps_the_default
+PASSED tests/test_select_ckpt_r8.py::test_the_margin_is_the_smaller_seed_not_the_mean
+PASSED tests/test_select_ckpt_r8.py::test_margin_above_2x_the_floor_chooses_40k
+PASSED tests/test_select_ckpt_r8.py::test_pairing_is_by_token_not_by_row_position
+PASSED tests/test_select_ckpt_r8.py::test_the_cluster_is_the_log_not_the_token
+PASSED tests/test_select_ckpt_r8.py::test_the_interval_is_95_percent
+PASSED tests/test_select_ckpt_r8.py::test_the_bootstrap_is_b_2000_per_seed
+PASSED tests/test_select_ckpt_r8.py::test_the_decision_never_reads_a_sub_score
+PASSED tests/test_select_ckpt_r8.py::test_48852_minus_48852_reads_exactly_zero
+PASSED tests/test_select_ckpt_r8.py::test_a_token_shuffled_pairing_widens_the_interval
+PASSED tests/test_select_ckpt_r8.py::test_a_control_that_cannot_read_its_known_value_voids_the_choice
+PASSED tests/test_select_ckpt_r8.py::test_a_cv_standin_row_refuses
+PASSED tests/test_select_ckpt_r8.py::test_an_unverifiable_standin_status_refuses
+PASSED tests/test_select_ckpt_r8.py::test_fewer_than_1000_tokens_is_underpowered
+PASSED tests/test_select_ckpt_r8.py::test_exactly_1000_tokens_is_enough
+PASSED tests/test_select_ckpt_r8.py::test_a_token_missing_in_any_arm_refuses
+PASSED tests/test_select_ckpt_r8.py::test_token_sets_that_differ_refuse
+PASSED tests/test_select_ckpt_r8.py::test_a_missing_arm_refuses
+PASSED tests/test_select_ckpt_r8.py::test_a_single_log_is_not_a_cluster_bootstrap
+PASSED tests/test_select_ckpt_r8.py::test_a_token_without_a_log_name_refuses
+PASSED tests/test_select_ckpt_r8.py::test_an_invalid_or_nonfinite_row_refuses
+PASSED tests/test_select_ckpt_r8.py::test_a_pdms_outside_0_1_or_breaking_the_identity_refuses
+PASSED tests/test_select_ckpt_r8.py::test_every_incomplete_run_keeps_the_default
+PASSED tests/test_select_ckpt_r8.py::test_identical_arms_keep_the_default
+PASSED tests/test_select_ckpt_r8.py::test_reference_rows_are_printed_beside_and_never_decide
+PASSED tests/test_select_ckpt_r8.py::test_files_roundtrip_chooses_40k
+PASSED tests/test_select_ckpt_r8.py::test_a_swapped_checkpoint_directory_refuses
+PASSED tests/test_select_ckpt_r8.py::test_a_cpu_arm_refuses
+PASSED tests/test_select_ckpt_r8.py::test_file_level_refusals[rt_from_wrong_rows-<lambda>-ema40000_s1:RT_DERIVED_FROM_rows_R8_LEGAL.jsonl]
+PASSED tests/test_select_ckpt_r8.py::test_file_level_refusals[rt_table-<lambda>-ema40000_s0:RT_TABLE_NOT_THE_REGISTERED_DEPLOY_TABLE]
+PASSED tests/test_select_ckpt_r8.py::test_file_level_refusals[navtest_split-<lambda>-ema48852_s0:ARM_SPLIT_NOT_NAVTRAIN]
+PASSED tests/test_select_ckpt_r8.py::test_file_level_refusals[kpr_fail-<lambda>-ema48852_s0:ARM_KPR_FAIL]
+PASSED tests/test_select_ckpt_r8.py::test_file_level_refusals[wrong_seed-<lambda>-ema40000_s1:ARM_SEED_MISMATCH:0]
+PASSED tests/test_select_ckpt_r8.py::test_file_level_refusals[partial_manifest-<lambda>-ema40000_s0:MANIFEST_PARTIAL_OR_STANDIN]
+PASSED tests/test_select_ckpt_r8.py::test_file_level_refusals[counts_fail-<lambda>-ema40000_s0:SCORER_COUNTS_STATUS_FAIL]
+PASSED tests/test_select_ckpt_r8.py::test_file_level_refusals[counts_n_expected-<lambda>-ema40000_s0:SCORER_N_EXPECTED_1039_NE_1040]
+PASSED tests/test_select_ckpt_r8.py::test_file_level_refusals[binding_seam_sha-<lambda>-ema48852_s0:BINDING_SEAM_SHA_MISMATCH]
+PASSED tests/test_select_ckpt_r8.py::test_file_level_refusals[binding_sample_sha-<lambda>-ema48852_s1:BINDING_SAMPLE_SHA_MISMATCH]
+PASSED tests/test_select_ckpt_r8.py::test_file_level_refusals[binding_split-<lambda>-ema48852_s1:BINDING_SPLIT_navtest]
+PASSED tests/test_select_ckpt_r8.py::test_a_csv_edited_after_scoring_refuses
+PASSED tests/test_select_ckpt_r8.py::test_a_cv_standin_in_the_seam_file_refuses
+PASSED tests/test_select_ckpt_r8.py::test_seam_and_csv_token_sets_must_agree
+PASSED tests/test_select_ckpt_r8.py::test_csv_with_a_duplicate_or_missing_token_or_bad_row_refuses
+PASSED tests/test_select_ckpt_r8.py::test_a_sample_that_is_not_fixed_refuses[UNDERPOWERED-SAMPLE_STATUS_UNDERPOWERED]
+PASSED tests/test_select_ckpt_r8.py::test_a_sample_that_is_not_fixed_refuses[NOT_FIXED__NO_READABLE_NAVTRAIN_TOKEN__ACQUISITION_NEEDS_PI_APPROVAL-SAMPLE_STATUS_NOT_FIXED__NO_READABLE_NAVTRAIN_TOKEN__ACQUISITION_NEEDS_PI_APPROVAL]
+PASSED tests/test_select_ckpt_r8.py::test_a_sample_whose_sha256_does_not_rederive_refuses
+PASSED tests/test_select_ckpt_r8.py::test_cli_layout_root_writes_the_decision_and_the_marker
+PASSED tests/test_select_ckpt_r8.py::test_the_cli_refuses_while_a_mutation_is_set
+PASSED tests/test_select_ckpt_r8.py::test_spec_from_layout_names_the_files_the_runbook_produces
+194 passed, 2 warnings in 184.21s (0:03:04)
