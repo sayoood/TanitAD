@@ -48,6 +48,39 @@ CONS_NAMES = ("lat_theta_deg", "turn_t_start_s", "turn_t_end_s", "turn_d_start_m
               "lon_v_target_ms", "lon_t_reach_s", "lon_d_reach_m", "lon_t_start_s", "stop_x_m", "stop_y_m",
               "lead_gap_m", "lead_tg_s", "lead_gap_min_m", "lead_tg_min_s", "v_a_ms", "v_end_ms", "v_lo_ms", "v_hi_ms")
 CI = {n: i for i, n in enumerate(CONS_NAMES)}
+#: PREREG_V8F_TAC Amendment 1: a PARTITION of T's code [goal 22 | lat 5 | lon 7 | cons 26] into six groups, so a per-group oracle can
+#: replace one part at a time. Every code index belongs to exactly one group (pinned by test_v8f_tac.py).
+_C0 = N_GOAL + N_LAT + N_LON
+CODE_GROUPS = {
+    "goal": tuple(range(0, N_GOAL)),
+    "latdec": tuple(range(N_GOAL, N_GOAL + N_LAT)),
+    "londec": tuple(range(N_GOAL + N_LAT, _C0)),
+    "latcons": tuple(_C0 + CI[n] for n in ("lat_theta_deg", "turn_t_start_s", "turn_t_end_s", "turn_d_start_m", "turn_len_m",
+                                            "turn_dyaw_deg", "turn_r_arc_m", "turn_exit_x_m", "turn_exit_y_m", "turn_exit_psi_deg",
+                                            "lc_t_cross_s", "lc_d_cross_m")),
+    "lonspeed": tuple(_C0 + CI[n] for n in ("lon_v_target_ms", "lon_t_reach_s", "lon_d_reach_m", "lon_t_start_s", "v_a_ms", "v_end_ms",
+                                             "v_lo_ms", "v_hi_ms")),
+    "stoplead": tuple(_C0 + CI[n] for n in ("stop_x_m", "stop_y_m", "lead_gap_m", "lead_tg_s", "lead_gap_min_m", "lead_tg_min_s")),
+}
+#: the two composites the Amendment 1 decision reads: the categorical DECISIONS vs the continuous CONSTRAINTS
+CODE_COMPOSITES = {"decisions": ("goal", "latdec", "londec"), "constraints": ("latcons", "lonspeed", "stoplead")}
+
+
+def code_group_index(spec: str) -> list:
+    """``"goal+londec"`` | ``"decisions"`` | ``"all"`` -> sorted code indices. Unknown names are refused."""
+    if spec == "all":
+        return list(range(CODE_DIM))
+    names = []
+    for part in spec.split("+"):
+        if part in CODE_COMPOSITES:
+            names.extend(CODE_COMPOSITES[part])
+        elif part in CODE_GROUPS:
+            names.append(part)
+        else:
+            raise ValueError(f"unknown code group {part!r}: use {sorted(CODE_GROUPS) + sorted(CODE_COMPOSITES)} or 'all', joined by '+'")
+    return sorted({i for n in names for i in CODE_GROUPS[n]})
+
+
 LIMITS_MS = (30 / 3.6, 50 / 3.6, 100 / 3.6, 120 / 3.6)
 #: the scale the WM auxiliary divides action channel 1 by, per kin mode (PI ruling D-PI-YAWRATE-1): the recorded steer angle
 #: (rad) in the legacy mode, the MEASURED yaw rate (rad/s) in the compliant one. 0.4 keeps the scaled channel's std at 0.255 vs the

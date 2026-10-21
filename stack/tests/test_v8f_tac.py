@@ -211,3 +211,106 @@ def test_the_v8f_guard_ends_only_on_a_line_start_marker_of_its_chains():
         assert not rx.search(m), m
     chain = (PKG / "code" / "box2_ops" / "chain_v8f_tac.sh").read_text(encoding="utf-8")
     assert set(re.findall(r'echo "(ZZ[A-Z0-9]+)-STOP', chain)) == {"ZZV8FTAC"}
+
+
+# ================================================================================ PREREG_V8F_TAC Amendment 1: the per-group oracle
+GROUPS = ("goal", "latdec", "londec", "latcons", "lonspeed", "stoplead")
+READER_G = PKG / "code" / "v8f_tac_groups_read.py"
+
+
+def test_the_code_groups_partition_the_tactical_code():
+    idx = [i for g in GROUPS for i in M.CODE_GROUPS[g]]
+    assert sorted(idx) == list(range(M.CODE_DIM)) and len(idx) == len(set(idx)) == 60, "six groups, every index exactly once"
+    assert [len(M.CODE_GROUPS[g]) for g in GROUPS] == [22, 5, 7, 12, 8, 6]
+    assert M.code_group_index("decisions") == list(range(34)) and M.code_group_index("constraints") == list(range(34, 60))
+    assert M.code_group_index("all") == list(range(60)) and M.code_group_index("goal+londec") == sorted(list(range(22)) + list(range(27, 34)))
+    assert M.CODE_GROUPS["lonspeed"][0] == 34 + M.CI["lon_v_target_ms"]
+    with pytest.raises(ValueError, match="unknown code group"):
+        M.code_group_index("goal,londec")
+
+
+def test_eval_group_oracle_writes_gt_only_in_its_group_and_six_groups_rebuild_the_full_oracle(world, tmp_path):
+    EV = _load("v8f_mini_eval_for_tacgrp", REPO / "stack" / "scripts" / "v8f_mini_eval.py")
+    ck = _ckpt(world, tmp_path)
+    out = tmp_path / "ev"
+    assert _run(EV, world, ck, out, "c-tacpred", "--tac", "pred") == 0
+    assert _run(EV, world, ck, out, "c-tacorc", "--tac", "oracle") == 0
+    for g in ("londec", "decisions", "+".join(GROUPS)):
+        assert _run(EV, world, ck, out, f"c-tacorc-{g}", "--tac", "oracle", "--tac-groups", g) == 0, g
+    z = {t: np.load(out / f"eval_{t}.npz") for t in ("c-tacpred", "c-tacorc", "c-tacorc-londec", "c-tacorc-decisions")}
+    full6 = np.load(out / f"eval_c-tacorc-{'+'.join(GROUPS)}.npz")
+    assert np.array_equal(full6["pred"], z["c-tacorc"]["pred"]), "the six groups together ARE the full oracle (bit-exact)"
+    m = json.load(open(out / "eval_c-tacorc-londec.json", encoding="utf-8"))["tac_manipulation"]
+    assert m["groups"] == "londec" and m["n_code_dims_replaced"] == 7
+    assert 0 < z["c-tacorc-londec"]["tac_code_shift"].mean() < z["c-tacorc"]["tac_code_shift"].mean(), "one group moves less of the code"
+    assert np.abs(z["c-tacorc-decisions"]["pred"] - z["c-tacpred"]["pred"]).max() > 1e-4, "the group's GT moves O"
+    with pytest.raises(SystemExit, match="REFUSED"):
+        _run(EV, world, ck, out, "bad", "--tac", "shuffle", "--tac-groups", "londec")
+    with pytest.raises(SystemExit, match="unknown code group"):
+        _run(EV, world, ck, out, "bad", "--tac", "oracle", "--tac-groups", "speedy")
+
+
+def _group_files(d, eff, full=-1.0, m2b_gap=0.0, bad_dims=None, drop=None):
+    """eff: {group: delta of orc_g - pred} (same at every checkpoint); the full oracle reads `full`."""
+    rng = np.random.default_rng(5)
+    eid = np.repeat(np.arange(30), 8)
+    base = 2.2 + rng.normal(0, 0.3, eid.size) + np.repeat(rng.normal(0, 0.2, 30), 8)
+    d.mkdir(parents=True, exist_ok=True)
+    sizes = {g: len(M.code_group_index(g)) for g in GROUPS + ("decisions", "constraints")}
+    for arm in ("M1", "M2b"):
+        for s in (0, 1):
+            c = f"{arm}_s{s}"
+            pred = base + (m2b_gap * s if arm == "M2b" else 0.0)
+            files = {"tacpred": pred, "tacorc": pred + full}
+            files.update({f"tacorc-{g}": pred + eff.get(g, 0.0) + rng.normal(0, 0.01, eid.size) for g in sizes})
+            for suf, ade in files.items():
+                if drop == f"{c}-{suf}":
+                    continue
+                np.savez(d / f"eval_{c}-{suf}.npz", eid=eid, ade6=ade, pred=np.zeros((eid.size, 30, 2)))
+                if suf.startswith("tacorc-"):
+                    g = suf[len("tacorc-"):]
+                    n = sizes[g] if bad_dims != f"{c}-{g}" else sizes[g] + 1
+                    json.dump({"tac_manipulation": {"mode": "oracle", "groups": g, "n_code_dims_replaced": n}},
+                              open(d / f"eval_{c}-{suf}.json", "w", encoding="utf-8"))
+    return d
+
+
+def _read_g(d):
+    R = _load("v8f_tac_groups_read", READER_G)
+    out = d / "g.json"
+    rc = R.main(["--eval-dir", str(d), "--out", str(out), "--n-boot", "300", "--no-families"])
+    return rc, (json.loads(out.read_text(encoding="utf-8")) if rc == 0 else None)
+
+
+@pytest.mark.skipif(not READER_G.exists(), reason="the v8F-mini package is not in this checkout")
+def test_group_reader_decision_table(tmp_path, capsys):
+    rc, r = _read_g(_group_files(tmp_path / "cls", {"londec": -0.6, "decisions": -0.7, "lonspeed": -0.2, "constraints": -0.3}))
+    assert rc == 0 and r["DECISION"]["M2b"]["verdict"] == "CLASSIFIER" and r["DECISION"]["M2b"]["top_two"][0] == "londec", r["reading"]
+    assert "v8F-HJ" in r["next"] and "londec" in r["next"]
+    rc, r = _read_g(_group_files(tmp_path / "spd", {"londec": -0.1, "decisions": -0.2, "lonspeed": -0.7, "constraints": -0.8}))
+    assert rc == 0 and r["DECISION"]["M2b"]["verdict"] == "SPEED" and "speed-target head" in r["next"], r["reading"]
+    rc, r = _read_g(_group_files(tmp_path / "mix", {"goal": -0.3, "londec": -0.3, "decisions": -0.4, "lonspeed": -0.3, "constraints": -0.4}))
+    assert rc == 0 and r["DECISION"]["M2b"]["verdict"] == "MIXED", "no composite reaches half of the full oracle"
+    rc, r = _read_g(_group_files(tmp_path / "floor", {"decisions": -0.7, "londec": -0.6}, m2b_gap=0.5))   # 2F 1.0 > 0.7
+    assert rc == 0 and r["DECISION"]["M2b"]["verdict"] == "MIXED" and r["DECISION"]["M2b"]["carries"]["decisions"] is False
+    assert _read_g(_group_files(tmp_path / "dims", {"decisions": -0.7}, bad_dims="M2b_s1-londec"))[0] == 2
+    assert "expected oracle / londec / 7" in capsys.readouterr().err
+    assert _read_g(_group_files(tmp_path / "miss", {"decisions": -0.7}, drop="M1_s0-tacorc-stoplead"))[0] == 2
+    assert "eval_M1_s0-tacorc-stoplead.npz is missing" in capsys.readouterr().err
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
+def test_queue_tacgrp_stage_runs_eight_group_oracles_on_four_checkpoints(tmp_path):
+    import os
+    import re
+    import subprocess
+    q = PKG / "code" / "v8f_mini_box2_queue.cmd"
+    env = dict(os.environ, V8F_DRYRUN="1", REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"),
+               V9=str(tmp_path / "v9"))
+    r = subprocess.run(f'cmd /c ""{q}" tacgrp"', env=env, capture_output=True, text=True, timeout=60)
+    assert r.returncode == 0, r.stdout + r.stderr
+    ln = [x for x in r.stdout.splitlines() if "v8f_mini_eval.py" in x]
+    got = [(re.search(r"--tag (\S+)", x).group(1), re.search(r"--tac (\S+) --tac-groups (\S+)", x).groups()) for x in ln]
+    gs = GROUPS + ("decisions", "constraints")
+    assert got == [(f"{a}_s{s}-tacorc-{g}", ("oracle", g)) for a in ("M1", "M2b") for s in (0, 1) for g in gs], got
+    assert all("--kin-mode yaw" in x and "--tracks" in x for x in ln)

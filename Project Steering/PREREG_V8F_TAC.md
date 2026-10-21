@@ -107,3 +107,60 @@ Each arm runs on every checkpoint `c` ∈ {M1_s0, M1_s1, M2b_s0, M2b_s1}: the ba
   * the guard's anchoring.
   * The rest of the v8F suite stays green: 141 passed.
 * Mutation proof: **15 / 15 RED** (`…/raw/2026-10-20-tac/mutate_tac.out`).
+
+## Amendment 1 (2026-10-21, after the result and BEFORE any per-group run): WHICH part of the code carries the headroom?
+
+**Why it exists:** the result (`…/2026-10-17-v8f-mini/RESULT_V8F_TAC.md`) is **USED + LARGE**.
+* The oracle lowers 6 s error by −1.05 to −1.30 m (T0), mostly longitudinally.
+* But T's GT code holds categorical **decisions** (goals, lateral, longitudinal) AND continuous **constraints**, some computed from the FUTURE (`lon_v_target_ms`, `v_end_ms`, `stop_x_m`, the lead gap).
+* "A perfect tactical layer" therefore includes perfect speed prediction. Two levers are open, and they are built differently:
+  * a better tactical **classifier**: v8F-HJ, with the tactical labels supervising the H-JEPA level-2 latent;
+  * a **speed-target** head inside T.
+* The per-group oracle separates them at zero training cost.
+
+**The arms:** each on the same four checkpoints, with the same eval and windows.
+* `v8f_mini_eval.py run --tac oracle --tac-groups <g>`: O reads the GT code in group `g` only, and T's own code everywhere else.
+* The six groups PARTITION the 60-dimensional code (`v8f_mini.CODE_GROUPS`, pinned):
+
+| group | dims | holds |
+|---|---|---|
+| `goal` | 22 | the v9 tactical goals (incl. traffic-light colours) |
+| `latdec` | 5 | the lateral decision |
+| `londec` | 7 | the longitudinal decision |
+| `latcons` | 12 | turn geometry, lane-change crossing |
+| `lonspeed` | 8 | target speed, reach time and distance, start time, speed band, end speed |
+| `stoplead` | 6 | stop point, lead gap and time gap |
+
+* Plus two composites: `decisions` = goal + latdec + londec, and `constraints` = latcons + lonspeed + stoplead.
+* 4 × 8 = 32 evals of about 25 s each. Eval only, box 2, SAFE MODE, the temperature guard.
+
+**The reading** (`…/2026-10-17-v8f-mini/code/v8f_tac_groups_read.py`), all T0:
+* Per checkpoint and group: d_g = orc_g − pred, paired over episodes, and **share_g = d_g / d_all**, where d_all is the full oracle PREREG_V8F_TAC read.
+* A group **CARRIES** for an arm iff d_g < 0, separated, and |d_g| > 2·F_arm at **both** seeds.
+* **Decided on M2b:**
+
+| verdict | condition | the next arm (own PREREG and launch gate; PI go) |
+|---|---|---|
+| **CLASSIFIER** | `decisions` CARRIES and share ≥ 0.5 at both seeds | **v8F-HJ**: the v9 tactical labels supervise the H-JEPA level-2 latent and T reads it (PLAN_V8F §4.4 R3). The decision group with the largest share comes first. |
+| **SPEED** | not CLASSIFIER, and `lonspeed` CARRIES and share ≥ 0.5 at both seeds | **A speed-target head inside T** (vision + nav + ego dynamics only), trained on the v9 lon speed constraints with its own weight, with O conditioned on it. |
+| **MIXED** | otherwise | No arm. The two largest single groups are named, and their joint oracle is the next read. |
+
+* Reported beside it, deciding nothing: every group at every checkpoint, M1's decision, and each group's LON / LAT family deltas.
+* **Refusals:**
+  * a missing file;
+  * files on different grids;
+  * a group run whose manipulation record is not `oracle / <g> / |g| dims`;
+  * a tacpred run that differs from the one PREREG_V8F_TAC read by more than 1e-3 m.
+* **Interactions are not assumed away.** Shares need not sum to 1, which is why the composites are read directly and not as sums.
+
+**Proofs, before any run:**
+* `stack/tests/test_v8f_tac.py`, now 10 tests, adds:
+  * the partition;
+  * a group oracle that writes GT only in its group;
+  * **the six groups together rebuild the full oracle bit-for-bit**;
+  * the refusals;
+  * the reader's decision table;
+  * the queue's `tacgrp` dry run.
+* Mutation proof: **24 / 24 RED** across six files (`raw/2026-10-20-tac/mutate_tac_a1.out`).
+* v8F suites: 147 passed, 2 skipped.
+* Chain: `code/box2_ops/chain_v8f_tacgrp.sh`, with ZZV8FTAC markers in its own log, after PREREG_V8F_TAC's chain.
