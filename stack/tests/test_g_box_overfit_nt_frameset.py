@@ -127,7 +127,7 @@ def test_the_frozen_selector_reproduces_the_nt_frame_set_from_the_banked_input(t
     assert _md5(SELECTOR.read_bytes()) == SELECTOR_MD5
     out = tmp_path / "fs.json"
     r = subprocess.run([sys.executable, SELECTOR.as_posix(), (NT_RAW / "visibility" / "vis_train_boxes_nt.json")
-                        .as_posix(), str(out)], capture_output=True, text=True, cwd=str(SELECTOR.parent),
+                        .as_posix(), str(out)], capture_output=True, text=True, encoding="utf-8", cwd=str(SELECTOR.parent),
                        env={**__import__("os").environ, "PYTHONPATH": str(SELECTOR.parent),
                             "PYTHONIOENCODING": "utf-8"})
     assert r.returncode == 0, r.stderr[-800:]

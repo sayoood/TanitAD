@@ -1065,7 +1065,7 @@ def test_chain_pgt_syntax_and_dry_run_prints_the_queue_lines(tmp_path):
     bash = _git_bash()
     if bash is None or sys.platform != "win32":
         pytest.skip("Git Bash on Windows is needed to run the chain's --dry-run")
-    r = subprocess.run([bash, "-n", str(CHAIN)], capture_output=True, text=True, timeout=60)
+    r = subprocess.run([bash, "-n", str(CHAIN)], capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert r.returncode == 0, r.stderr
     env = dict(os.environ, V8F_QUEUE=str(QUEUE), TMPDIR=tmp_path.as_posix())
     env.pop("V8F_DRYRUN", None)
@@ -1110,7 +1110,7 @@ def test_chain_pgt_gate_assertions_pass_the_pgt_gate_and_refuse_every_way_it_can
             mod(sc)
         f = tmp_path / "sc.json"
         f.write_text(json.dumps(sc), encoding="utf-8")
-        r = subprocess.run([sys.executable, "-", str(f), hold, "19164", str(m2b), *p], input=body, capture_output=True, text=True, timeout=60)
+        r = subprocess.run([sys.executable, "-", str(f), hold, "19164", str(m2b), *p], input=body, capture_output=True, text=True, encoding="utf-8", timeout=60)
         return r.returncode, r.stdout + r.stderr
     rc, out = run()
     assert rc == 0 and "PASS" in out and "built p_gt 0.5 -> 0.0" in out, out

@@ -478,7 +478,7 @@ def test_cli_run_end_to_end_writes_tier_stamped_scores(world, tmp_path):
                   "--out-dir", str(tmp_path / "out"), "--replan-steps", "5", "--batch", "6", "--max-windows", "12", "--n-boot", "20"])
     assert rc == 0
     import json
-    res = json.load(open(tmp_path / "out" / "t1v8f_syn.json"))
+    res = json.load(open(tmp_path / "out" / "t1v8f_syn.json", encoding="utf-8"))
     assert res["arms"]["cl"]["tier"] == "T1" and res["arms"]["fl"]["tier"] == "T1" and res["arms"]["ol"]["tier"] == "T0"
     assert "closed" not in res["_tier_doctrine"].lower().replace("only closed loop", "").replace("the only closed", "") or "OPEN" in res["_tier_doctrine"]
     h = res["t1v8f"]
