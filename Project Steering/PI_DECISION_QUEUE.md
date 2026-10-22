@@ -2460,3 +2460,20 @@ REFe-without-scorer, so a DATA verdict means the same thing on both sides.
 **D-NT-DECIDE -- DECIDED 2026-10-21 ~20:40 Berlin (PI, in chat).** Authorised **on Thor**, including the 295 GB navtrain
 download. **DATA line = 84.5.** Engineering starts now; the run launches once tonight's eval queue drains and the launch gate
 passes. The two navtest reads (theta_DEC and A1) are part of the authorisation. Register: GOALS_AND_CLAIMS "D-NT-DECIDE DECIDED".
+
+## ⏳ OPEN (2026-10-22 ~13:00 Berlin) -- D-SESSION-RESERVE: hold out ~16 navtrain drive sessions from the NEXT trunk's training?
+
+**Question.** When the next trunk is trained from scratch (after P6; P6 itself is unaffected, because it resumes on its identical bank), reserve about 16 of navtrain's 162 drive sessions (~10 %) as a **session-unseen fit set**?
+
+**Why (MEASURED, `D-REFE-SESSION-EXPOSURE-1`):**
+- navtest's 44 sessions share none with navtrain. Every non-navtest read we have is on sessions the model trained on.
+- On those seen sessions the search gained +0.558 PDMS points (C1). On navtest's unseen sessions it lost −0.155 (C2).
+- No public unseen-session pool exists outside navtest (`D-DATA-U-FRAMES-1`).
+- Without a reserve, anything that must be tuned for unseen scenes (search pessimism, selection thresholds, calibration) can only be tuned on navtest, which the one-look rule forbids.
+
+**Options.**
+- **(a) Reserve ~16 sessions** in the next trunk. It costs ~10 % of the training scenes, and it makes generalisation measurable without spending navtest. **MM recommends (a).**
+- **(b) No reserve.** Unseen-scene tuning stays impossible outside navtest.
+- **(c) Split navtest by session** (22 to fit, 22 to judge). Not recommended: it breaks the one-look discipline, and the navtest headline would no longer be clean.
+
+**What does NOT wait on this:** the P6 rebuild and resume; SEARCH-PESSIMISTIC Stage 0, which needs 0 GPU on the 24-log table.

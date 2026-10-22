@@ -43,13 +43,13 @@ The search is **not inert**: 19.8 % of outputs moved by more than 0.5 m (per see
 
 | read | tokens | stratum | dPDMS | given slow-down | given speed-up | moved |
 |---|---|---|---|---|---|---|
-| C1 (`../../c1/RESULT_SPC.json`) | 905 B-REST | **SEEN-SCENE** (navtrain logs) | **+0.558 [+0.106, +0.925]** | **+2.46** | +1.96 | 17.3 % |
-| C2 (this) | 12,146 navtest | **UNSEEN** scenes | **−0.155 [−0.350, +0.037]** | **−1.18** | +0.25 | 19.8 % |
+| C1 (`../../c1/RESULT_SPC.json`) | 905 B-REST | **SEEN-SESSION** (21 sessions, all trained on) | **+0.558 [+0.106, +0.925]** | **+2.46** | +1.96 | 17.3 % |
+| C2 (this) | 12,146 navtest | **UNSEEN** sessions (44, 0 shared) | **−0.155 [−0.350, +0.037]** | **−1.18** | +0.25 | 19.8 % |
 
 **What changed:** the same search on the same scorer moves a similar share of plans. Its slow-downs flip from the largest gain to the largest loss.
 
 **HYPOTHESIS, post hoc, not registered:** the search **exploits the scorer's errors**.
-- On scenes from the logs P2 was trained on, the scorer's ranking holds, so selecting on it pays.
+- On tokens from drive **sessions** P2 was trained on (C1's 24 logs span 21 sessions, all of them in P2's own PDM fine-tune; `D-REFE-SESSION-EXPOSURE-1`), the scorer's ranking holds, so selecting on it pays. navtest's 44 sessions are all unseen.
 - On unseen scenes, the plans the search moves to are the ones whose scores are most over-estimated, and slow-downs most of all.
 - This fits the dose read's descriptive O4 − C8 = −0.119 [−0.227, −0.021]: the wider search lost more.
 - ⛔ It is not a refutation of search at a larger dose or on a better scorer (§11, verbatim).
