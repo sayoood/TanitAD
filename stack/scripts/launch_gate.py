@@ -1131,6 +1131,15 @@ PROFILES["refcv8-nt"] = dict(
     #: G-CLOCK: refcv8's three references (eval139 + the PhysicalAI clips) + the NT token clocks MEASURED from the
     #: logs' 2 Hz microsecond timestamps (nt_clock_reference.py; NT-CORPUS places the file)
     clock_reference=tuple(_R8["clock_reference"]) + ("stack/tanitad/configs/refcv8_nt/nt_clock_reference_a1.json",),
+    #: ⭐ OPTION B (2026-10-22): G-BOX-OVERFIT on NT's OWN frozen frame set. refcv8's 16 PhysicalAI frames are not in
+    #: the NT --v2-cache (bind 701922c: "16 frame-set clips are not in the TRAIN cache"), so the SAME selector
+    #: (`gbo_select.py` md5 f9f93f92...) was run labels-only on the NT TRAIN token-episodes; the prereg (594c7119...),
+    #: the sec. 5 bars, the arms, the optimiser and the schedule are refcv8's, unchanged. The addendum that registers
+    #: the frame set (`stack/ops/refcv8nt_box_audit/raw/PREREG_G_BOX_OVERFIT_ADDENDUM_NT.md`) is bound by md5, and
+    #: judge_box_overfit re-judges frameset_profile / frameset_md5 / addendum_md5 / n_pos / n_ign / the C3 totals.
+    box_overfit=dict(_R8["box_overfit"], frameset_profile="refcv8-nt",
+                     frameset_md5="bb60278ce8d763cc5151cbcc1cb32735",
+                     addendum_md5="a9515574d356a359e08fc39dbac46d71", n_frames=16, n_pos=122, n_ignore=108),
 )
 
 
@@ -5159,6 +5168,18 @@ def judge_box_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
     for k in ("prereg_md5", "frameset_md5"):
         if rec.get(k) != bo.get(k):
             reasons.append(f"{tag}: {k} {rec.get(k)!r} != the registered {bo.get(k)!r}")
+    # OPTION B: a profile that registers its OWN frame set (`frameset_profile`) binds the record to that set's name,
+    # its addendum's bytes, and a C3 recount whose totals ARE the registered literals (re-judged, not the C3 flag)
+    if "frameset_profile" in bo:
+        for k in ("frameset_profile", "addendum_md5"):
+            if rec.get(k) != bo.get(k):
+                reasons.append(f"{tag}: {k} {rec.get(k)!r} != the registered {bo.get(k)!r}")
+        c3 = rec.get("C3") if isinstance(rec.get("C3"), dict) else {}
+        want_c3 = [int(bo["n_pos"]), int(bo["n_ignore"])]
+        if c3.get("totals") != want_c3 or c3.get("frameset_md5") != bo.get("frameset_md5"):
+            reasons.append(f"{tag}: C3 recount totals {c3.get('totals')!r} on frame set "
+                           f"{str(c3.get('frameset_md5'))[:8]}... != the registered {want_c3} on "
+                           f"{str(bo.get('frameset_md5'))[:8]}...")
     lit = rec.get("literals") if isinstance(rec.get("literals"), dict) else {}
     for rk, pk in (("batch", "batch"), ("seed", "seed"), ("n_pos", "n_pos"), ("n_ign", "n_ignore")):
         if not (_finite_num(lit.get(rk)) and float(lit[rk]) == float(bo[pk])):

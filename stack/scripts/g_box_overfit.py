@@ -33,6 +33,14 @@ MUST FAIL: ``memory_zeros`` fails (1); ``presence_w0`` fails (2) and (3) -- if e
 CONTROLS: C1 GT-as-slots reads AP 1.0, P = R = 1.0, Σ confident = 113 exactly; C2 constant presence reads AUROC 0.5
 exactly; C3 113 / 77 with per-frame POS and IGN + DROP of the frame set and its md5; C4 step 0 is reported.
 
+⭐ OPTION B (H-NT-DECIDE-1, 2026-10-22): ONE FROZEN FRAME SET PER LAUNCH PROFILE. ``--frameset-profile`` (default
+``refcv8``, whose path is unchanged) picks the frame-set file, its md5 and the C3 literals from ``FRAMESETS``; the
+§5 bars, the arms, the optimiser and the schedule are SHARED. ``refcv8-nt``'s frames come from the SAME frozen
+selector (``SELECTOR_MD5``) run labels-only on the NT launch's TRAIN token-episodes
+(``stack/ops/refcv8nt_box_audit/raw/PREREG_G_BOX_OVERFIT_ADDENDUM_NT.md``, whose md5 the record carries), and the
+launch gate re-judges ``frameset_profile`` / ``frameset_md5`` / ``addendum_md5`` / ``literals.n_pos`` /
+``literals.n_ign`` / the C3 totals against its own ``PROFILES["refcv8-nt"]["box_overfit"]``.
+
 ``--binding`` is OFF by default: an early run stamps ``"binding": false`` and a ``commit`` field that can never
 equal a launch sha, so the launch gate cannot consume it (Master Mind, 2026-09-27). A11 (SPEC_REFCV7 §16): a
 BINDING record binds through the code closure that ``stack/scripts/closure_run.py`` records around this UNMODIFIED
@@ -70,6 +78,17 @@ PREREG_MD5 = "594c71196cc5bbd527fee40b2cb0e3f1"
 FRAMESET_MD5 = "b291404c36f83c3e397e3b90367e8e7b"
 SELECTOR_MD5 = "f9f93f92b60a979b581b8f78be2ec6db"
 N_FRAMES, N_POS, N_IGN = 16, 113, 77
+#: ⭐ OPTION B: the FROZEN frame set of each launch profile -- the file under ``<audit>/raw/visibility/``, its md5, the
+#: C3 literals (POS, IGN + DROP after A10) and the prereg addendum (under ``<audit>/raw/``) that registers it. Every
+#: entry comes from the SAME selector (``SELECTOR_MD5``) and is scored against the SAME ``BARS``. ``launch_gate.PROFILES
+#: [<profile>]["box_overfit"]`` holds its own copy of these values and re-judges the record against it.
+FRAMESETS = {
+    "refcv8": {"file": "gbo_frameset.json", "md5": FRAMESET_MD5, "n_frames": N_FRAMES, "n_pos": N_POS,
+               "n_ign": N_IGN, "addendum": None, "addendum_md5": None},
+    "refcv8-nt": {"file": "gbo_frameset_nt.json", "md5": "bb60278ce8d763cc5151cbcc1cb32735", "n_frames": 16,
+                  "n_pos": 122, "n_ign": 108, "addendum": "PREREG_G_BOX_OVERFIT_ADDENDUM_NT.md",
+                  "addendum_md5": "a9515574d356a359e08fc39dbac46d71"},
+}
 STEPS, BATCH, LR, LOG_EVERY, SEED = 2000, 4, 2e-4, 100, 0
 BARS = {"ap2m": 0.90, "prec": 0.90, "rec": 0.90, "count_rel": 0.10, "centre_p50_m": 0.30,
         "size_p50_m": 0.30, "z_p50_m": 0.15, "cls_acc": 0.90, "presence_ratio": 0.25}
@@ -274,19 +293,20 @@ def score_packs(packs: list) -> dict:
             "pr_equal_rec_informative": pr["recall"]}
 
 
-def criteria(s: dict, *, presence_step0: float, presence_end: float, finite: bool) -> dict:
-    """PREREG §5, literally. Each entry: value(s), bar, pass. NaN never passes."""
+def criteria(s: dict, *, presence_step0: float, presence_end: float, finite: bool, n_pos: int = N_POS) -> dict:
+    """PREREG §5, literally. Each entry: value(s), bar, pass. NaN never passes. ``n_pos`` = the frame set's POSITIVES
+    (criterion 3's count; ``FRAMESETS[<profile>]["n_pos"]``)."""
     def ge(v, b):
         return bool(v == v and v >= b)
 
     def le(v, b):
         return bool(v == v and v <= b)
-    cnt = abs(float(s["n_conf"]) - N_POS) / N_POS
+    cnt = abs(float(s["n_conf"]) - n_pos) / n_pos
     ratio = (presence_end / presence_step0) if presence_step0 and presence_step0 == presence_step0 else float("nan")
     c = {"1": {"what": "AP@2 m BEV >= 0.90", "value": s["ap2m"], "pass": ge(s["ap2m"], BARS["ap2m"])},
          "2": {"what": "precision >= 0.90 AND recall >= 0.90 at the declared gate",
                "value": [s["prec"], s["rec"]], "pass": ge(s["prec"], BARS["prec"]) and ge(s["rec"], BARS["rec"])},
-         "3": {"what": "|sum confident - 113| / 113 <= 0.10", "value": [s["n_conf"], cnt],
+         "3": {"what": f"|sum confident - {n_pos}| / {n_pos} <= 0.10", "value": [s["n_conf"], cnt],
                "pass": le(cnt, BARS["count_rel"])},
          "4": {"what": "median centre <= 0.30 m, |dl|+|dw| <= 0.30 m, |dz| <= 0.15 m (Hungarian pairs)",
                "value": [s["centre_p50_m"], s["size_p50_m"], s["z_p50_m"]],
@@ -345,34 +365,37 @@ def constant_presence_packs(packs: list) -> list:
     return out
 
 
-def control_c1_c2(packs: list) -> dict:
+def control_c1_c2(packs: list, n_pos: int = N_POS) -> dict:
     from tanitad.eval import detection_metrics as DM
     s1 = score_packs(gt_as_slot_packs(packs))
     c1 = {"ap2m": s1["ap2m"], "prec": s1["prec"], "rec": s1["rec"], "n_conf": s1["n_conf"],
-          "pass": s1["ap2m"] == 1.0 and s1["prec"] == 1.0 and s1["rec"] == 1.0 and s1["n_conf"] == float(N_POS)}
+          "pass": s1["ap2m"] == 1.0 and s1["prec"] == 1.0 and s1["rec"] == 1.0 and s1["n_conf"] == float(n_pos)}
     m2 = DM.summarise(constant_presence_packs(packs), "box3d")
     c2 = {"auroc_matched": m2["eval_box3d_auroc_matched"], "pass": m2["eval_box3d_auroc_matched"] == 0.5}
     return {"C1": c1, "C2": c2}
 
 
-def control_c3(per_frame: list, frameset: dict, frameset_md5: str) -> dict:
+def control_c3(per_frame: list, frameset: dict, frameset_md5: str, literals: dict | None = None) -> dict:
     """``per_frame`` = [(sha12, t, n_pos, n_ign)] in the frame set's order, from ``vis1.vis1_split`` on the
-    harness's OWN target blocks. A10: POS and IGN + DROP of the frame set; totals 113 / 77."""
+    harness's OWN target blocks. A10: POS and IGN + DROP of the frame set; totals 113 / 77 (``literals`` = the
+    profile's ``FRAMESETS`` entry; default refcv8's)."""
+    w = FRAMESETS["refcv8"] if literals is None else literals
+    lit = (int(w["n_pos"]), int(w["n_ign"]))
     want = [(f["sha12"], int(f["t"]), int(f["positive"]), int(f["ignore"]) + int(f["dropped"]))
             for f in frameset["frames"]]
     got = [(str(a), int(b), int(c), int(d)) for (a, b, c, d) in per_frame]
     tot = (sum(x[2] for x in got), sum(x[3] for x in got))
-    return {"per_frame_equal": got == want, "totals": list(tot), "want_totals": [N_POS, N_IGN],
-            "frameset_md5": frameset_md5, "frameset_md5_ok": frameset_md5 == FRAMESET_MD5,
-            "mismatch": [(g, w) for g, w in zip(got, want) if g != w][:8],
-            "pass": got == want and tot == (N_POS, N_IGN) and frameset_md5 == FRAMESET_MD5}
+    return {"per_frame_equal": got == want, "totals": list(tot), "want_totals": list(lit),
+            "frameset_md5": frameset_md5, "frameset_md5_ok": frameset_md5 == w["md5"],
+            "mismatch": [(g, x) for g, x in zip(got, want) if g != x][:8],
+            "pass": got == want and tot == lit and frameset_md5 == w["md5"]}
 
 
 # --------------------------------------------------------------------------------------------------------- #
 # the loop (adapter-agnostic)                                                                              #
 # --------------------------------------------------------------------------------------------------------- #
 def run_arm(adapter, arm: str, *, steps: int = STEPS, log_every: int = LOG_EVERY, lr: float | None = None,
-            seed: int = SEED, n_frames: int = N_FRAMES, batch: int = BATCH) -> dict:
+            seed: int = SEED, n_frames: int = N_FRAMES, batch: int = BATCH, n_pos: int = N_POS) -> dict:
     """One arm. ``adapter`` provides: ``setup(arm, seed)``, ``params(arm)``, ``optimizer(arm, params, lr) ->
     (optimizer, spec)``, ``clip()`` (applied before every step when the spec carries a clip), ``loss(idx) ->
     tensor``, ``evaluate() -> (packs, presence)``, ``teardown()``. ``lr`` is for TOY adapters only: the real adapter
@@ -419,7 +442,7 @@ def run_arm(adapter, arm: str, *, steps: int = STEPS, log_every: int = LOG_EVERY
                 f"conf {row['n_conf']:.0f} centre {row['centre_p50_m']:.3f} pres {pres:.4f}")
     final = rows[-1]
     crit = criteria(final, presence_step0=pres0, presence_end=final["presence"], finite=finite and
-                    final["step"] == steps)
+                    final["step"] == steps, n_pos=n_pos)
     res = {"arm": arm, "rows": rows, "criteria": crit, "verdict": arm_verdict(arm, crit),
            "n_trainable_tensors": len(params), "n_trainable_params": int(sum(p.numel() for p in params)),
            "wall_s": round(time.time() - t0, 1), "s_per_step": final.get("s_per_step"),
@@ -685,8 +708,49 @@ class TrainerAdapter:
             a_loader = copy.copy(a)
             if hires:
                 a_loader.map_gt_root = None
+            # ⛔ OPTION B (MEASURED 2026-10-22 on Thor, NT launch argv): the vendored loader attaches the set-speed
+            # channel through ``enable_max_speed_v6``, which REFUSES an all-UNKNOWN sidecar ("NOT ONE of the
+            # sidecar's 99400 rows carries a valid ceiling") -- and ``--r8-speed-unknown-always`` DECLARES exactly
+            # that sidecar. ``train()`` attaches it through ``enable_r8_speed_label(..., all_unknown=True)``
+            # (refc_v3_train.py, "H-NT-DECIDE-1"), so under that flag the loader's attach is skipped and the
+            # trainer's is replayed below. Every other argv (refcv8) takes the loader's path, unchanged.
+            spd_all_unknown = bool(getattr(a, "r8_speed_unknown_always", False))
+            if spd_all_unknown:
+                a_loader.max_speed_input_v6 = False
+            # ⛔ OPTION B (MEASURED 2026-10-22, same run): ``--window-starts first`` keeps ONE window per
+            # token-episode (t = 0) and ``train()`` applies it RIGHT AFTER the dataset is constructed, BEFORE any
+            # ``enable_*`` join walks ``ds.index`` (``restrict_window_starts``). The loader does not, so its dataset
+            # held 40 windows per NT token-episode and the v9 join refused the first t >= 1 window ("frame k=10
+            # outside clip"). The trainer's own filter runs at the same point here, through the loader's
+            # ``dataset_cls`` hook; an argv without the flag (refcv8) passes no class and is unchanged. The class
+            # derives from the LOADER's trainer module (``refc_v3_train_for_arm``, a second module object of the same
+            # file): the loader refuses a ``dataset_cls`` that does not subclass ITS ``V3Dataset``.
+            ws = getattr(a, "window_starts", "all")
+            ds_kw = {}
+            if ws not in (None, "all"):
+                _ltr = L.trainer()
+                _base = (_ltr.lan_dataset_class(_ltr.V3Dataset) if bool(getattr(a, "graft_lan", False)
+                                                                          or getattr(a, "goal_str", None))
+                         else _ltr.V3Dataset)
+
+                class _LaunchWindows(_base):
+                    def __init__(self, *aa, **kk):
+                        super().__init__(*aa, **kk)
+                        self.window_starts_stats = _ltr.restrict_window_starts(self, ws)
+                ds_kw["dataset_cls"] = _LaunchWindows
             e_ds, e_eps, self.dataset_record = L.build_eval_dataset(None, cfg, a_loader, self.config,
-                                                                    with_perception_targets=True)
+                                                                    with_perception_targets=True, **ds_kw)
+            if ds_kw:
+                self.dataset_record["window_starts"] = e_ds.window_starts_stats
+            if spd_all_unknown and getattr(a, "max_speed_input_v6", False):
+                if getattr(a, "r8_speed_input", None) != tr.r8train.R8_SPEED_LABEL:
+                    raise SystemExit("[gbo] --r8-speed-unknown-always without --r8-speed-input label: train() "
+                                     "would not attach the all-unknown sidecar either")
+                from tanitad.data import v7_labels as _v7l
+                _lab, _man = _v7l.load_v7_labels(a.eval_labels, allow_oracle_nav=True)
+                del _lab
+                self.dataset_record["r8_speed_label"] = e_ds.enable_r8_speed_label(
+                    str(a.speed_max_sidecar_v6), _man, all_unknown=True)
             if hires:
                 _e_clip, _e_ns = tr._clip_table_for_caches([a.eval_cache])
                 self.dataset_record["map_hires"] = e_ds.enable_map_hires(
@@ -980,6 +1044,8 @@ def main(argv=None) -> int:
                     "from (A11: the launch gate binds the record through closure_run.py's code closure)")
     ap.add_argument("--check-build", action="store_true",
                     help="build the data (C3) and the model ONCE (G-DVB self-check, parameter counts), train nothing")
+    ap.add_argument("--frameset-profile", choices=tuple(FRAMESETS), default="refcv8",
+                    help="OPTION B: which frozen frame set (file, md5, C3 literals) -- the launch gate's profile")
     ap.add_argument("--one-frame", action="store_true",
                     help="A14's ONE-FRAME test (arms main + anchors_removed unless --arms says otherwise)")
     a = ap.parse_args(argv)
@@ -990,14 +1056,17 @@ def main(argv=None) -> int:
     t_all = time.time()
     audit = Path(a.audit_dir)
     prereg = (audit / "raw" / "PREREG_G_BOX_OVERFIT.md").read_bytes()
-    fs_bytes = (audit / "raw" / "visibility" / "gbo_frameset.json").read_bytes()
+    fsl = FRAMESETS[a.frameset_profile]
+    fs_bytes = (audit / "raw" / "visibility" / fsl["file"]).read_bytes()
+    add_md5 = md5_bytes((audit / "raw" / fsl["addendum"]).read_bytes()) if fsl["addendum"] else None
     rec = {"tool": "g_box_overfit.py", "binding": bool(a.binding),
            "commit": (a.commit if a.binding else f"NON-BINDING candidate: {a.candidate}"),
            "candidate": a.candidate, "started_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
            "prereg_md5": md5_bytes(prereg), "prereg_md5_ok": md5_bytes(prereg) == PREREG_MD5,
-           "frameset_md5": md5_bytes(fs_bytes), "steps": a.steps, "device": a.device,
+           "frameset_md5": md5_bytes(fs_bytes), "frameset_profile": a.frameset_profile, "frameset_file": fsl["file"],
+           "addendum_md5": add_md5, "steps": a.steps, "device": a.device,
            "literals": {"optimizer": OPTIMIZER_RULE, "clip": CLIP_NORM, "lr_schedule": dict(LR_SCHEDULE),
-                        "batch": BATCH, "seed": SEED, "bars": BARS, "n_pos": N_POS, "n_ign": N_IGN}}
+                        "batch": BATCH, "seed": SEED, "bars": BARS, "n_pos": fsl["n_pos"], "n_ign": fsl["n_ign"]}}
     if not rec["prereg_md5_ok"]:
         log(f"⚠ prereg md5 {rec['prereg_md5']} != {PREREG_MD5} (line endings? recorded, not refused)")
     frameset = json.loads(fs_bytes.decode("utf-8"))
@@ -1012,7 +1081,7 @@ def main(argv=None) -> int:
     L, rec["loader"] = load_vendored_loader()
     ad = TrainerAdapter(tr, L, build_argv, frameset, a.device)
     rec["sidecar"] = ad.sidecar_stamp
-    rec["C3"] = control_c3(ad.per_frame, frameset, rec["frameset_md5"])
+    rec["C3"] = control_c3(ad.per_frame, frameset, rec["frameset_md5"], fsl)
     log(f"C3 {'PASS' if rec['C3']['pass'] else 'FAIL'}: totals {rec['C3']['totals']} vs {rec['C3']['want_totals']}")
     if not rec["C3"]["pass"]:
         Path(a.out).write_text(json.dumps(rec, indent=1, default=str), encoding="utf-8")
@@ -1064,10 +1133,10 @@ def main(argv=None) -> int:
     for arm in [x for x in a.arms.split(",") if x]:
         if arm not in ARMS:
             raise SystemExit(f"[gbo] unknown arm {arm!r}")
-        res = run_arm(ad, arm, steps=a.steps)
+        res = run_arm(ad, arm, steps=a.steps, n_frames=fsl["n_frames"], n_pos=fsl["n_pos"])
         packs0 = res.pop("controls_step0_packs")
         if arm == "main":
-            rec["C1_C2"] = control_c1_c2(packs0)
+            rec["C1_C2"] = control_c1_c2(packs0, fsl["n_pos"])
             rec["C4_step0"] = res["rows"][0]
         rec["arms"][arm] = res
         rec["dvb_mismatches"] = getattr(ad, "dvb_mismatches", [])

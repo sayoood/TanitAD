@@ -4,7 +4,8 @@
 #
 #   THOR : nt_prelaunch.sh bind --code /home/nvidia/r8ns/nt/launch_tree --commit SHA40 [--arm nt-a1-s0]
 #              G-MAP-OVERFIT then G-BOX-OVERFIT binding records (closure_run.py --binding, MAIN arm only per A19) for
-#              THIS arm's argv sha -- refcv8's templates (refcv8_bind_{map,box}.args.tpl), GPU, ~34 + ~82 min INHERITED
+#              THIS arm's argv sha -- refcv8's map template (refcv8_bind_map.args.tpl) + the NT box template
+#              (refcv8nt_bind_box.args.tpl: OPTION B, the NT frame set), GPU, ~34 + ~82 min INHERITED
 #          nt_prelaunch.sh gate --code ... --commit SHA40 [--arm A] [--devbox-evidence DIR] [--suite-verdict F]
 #              preflights, then launch_gate.py run --profile refcv8-nt --stage thor ... -> PASS_<c12>.json (hours)
 #          nt_prelaunch.sh fire --code ... --commit SHA40 [--arm A]       (the MASTER MIND's step: verify == MATCH,
@@ -62,20 +63,26 @@ case "$MODE" in
 # ------------------------------------------------------------------------------------------------------ bind
 bind)
   mkdir -p "$BD" 2>/dev/null
-  BAUD="$BD/run_box/audit/raw"; BSRC="$CODE/stack/ops/refcv8_box_audit/raw"
+  # ⭐ OPTION B (2026-10-22): the NT frame set. refcv8's 16 PhysicalAI frames are not in the NT --v2-cache (bind 701922c:
+  # "16 frame-set clips are not in the TRAIN cache"); the SAME frozen selector, run labels-only on the NT TRAIN
+  # token-episodes, chose 16 NT frames. The prereg is refcv8's (its bars unchanged); the NT addendum registers the set.
+  BAUD="$BD/run_box/audit/raw"; BSRC="$CODE/stack/ops/refcv8_box_audit/raw"; NSRC="$CODE/stack/ops/refcv8nt_box_audit/raw"
   if [ "$DRY" != 1 ]; then
     mkdir -p "$BAUD/visibility" 2>/dev/null
-    cp -p "$BSRC/PREREG_G_BOX_OVERFIT.md" "$BAUD/" && cp -p "$BSRC/visibility/gbo_frameset.json" "$BAUD/visibility/" \
-      || die "could not prepare the box audit inputs from $BSRC"
+    cp -p "$BSRC/PREREG_G_BOX_OVERFIT.md" "$BAUD/" && cp -p "$NSRC/PREREG_G_BOX_OVERFIT_ADDENDUM_NT.md" "$BAUD/" \
+      && cp -p "$NSRC/visibility/gbo_frameset_nt.json" "$BAUD/visibility/" \
+      || die "could not prepare the box audit inputs from $BSRC + $NSRC"
     echo "594c71196cc5bbd527fee40b2cb0e3f1  $BAUD/PREREG_G_BOX_OVERFIT.md" | md5sum -c - > /dev/null 2>&1 || die "box audit prereg md5"
-    echo "b291404c36f83c3e397e3b90367e8e7b  $BAUD/visibility/gbo_frameset.json" | md5sum -c - > /dev/null 2>&1 || die "box audit frame-set md5"
+    echo "a9515574d356a359e08fc39dbac46d71  $BAUD/PREREG_G_BOX_OVERFIT_ADDENDUM_NT.md" | md5sum -c - > /dev/null 2>&1 || die "NT box addendum md5"
+    echo "bb60278ce8d763cc5151cbcc1cb32735  $BAUD/visibility/gbo_frameset_nt.json" | md5sum -c - > /dev/null 2>&1 || die "NT box frame-set md5"
   fi
   # the harness records bind to sha256(json.dumps(argv, separators=(",",":"))) -- THIS arm's argv
   ASHA="$(pyval 'import json,hashlib,sys; d=json.load(open(sys.argv[1])); a=d["argv"] if isinstance(d,dict) else d; print(hashlib.sha256(json.dumps(a,separators=(",",":")).encode()).hexdigest())' "$ARGV")"
   [ "${#ASHA}" = 64 ] || die "could not hash the launch argv"
   [ "$(argv_get --r8-v9-md5)" != PENDING-NT-CORPUS ] || die "the argv still carries PENDING-NT-CORPUS: close NT-CORPUS (nt_close.py) and commit BEFORE binding (the records bind the argv sha)"
   for K2 in map box; do
-    TPL="$HERE/refcv8_bind_$K2.args.tpl"; [ -f "$TPL" ] || die "no harness template $TPL"
+    TPL="$HERE/refcv8_bind_$K2.args.tpl"; [ "$K2" = box ] && TPL="$HERE/refcv8nt_bind_box.args.tpl"   # OPTION B
+    [ -f "$TPL" ] || die "no harness template $TPL"
     "$PY" "$HERE/refcv8_assemble_argv.py" --render-template "$TPL" --sub "CODE=$CODE" --sub "COMMIT=$COMMIT" --sub "ARGV=$ARGV" \
         --sub "ARGV_SHA=$ASHA" --sub "OUT=$BD/run_$K2" --sub "INPUTS=${BIND_INPUTS:-/home/nvidia/refcv7_bind/run_$K2/inputs}" \
         --args-out "$BD/$K2.args" --data-roots-out "$BD/$K2.roots" > "$BD/$K2.render.txt" 2>&1 9>&- 200>&-
