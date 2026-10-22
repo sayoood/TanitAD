@@ -23,6 +23,7 @@ happening again.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
@@ -807,3 +808,271 @@ def test_a_committed_token_is_still_caught_by_history(repo, capsys):
     assert rc == 1
     assert "huggingface" in out and "REACHABLE" in out
     assert _hf() not in out
+
+
+# ================ launch-gate token RECORDS are not key stores (PI 2026-10-22, "Exempt + mask")
+#
+# ⛔ PINNED BOTH WAYS, like everything above. MEASURED on 10078b5: 10 of the full checkout's 12
+# blocking findings were `*token.json` hits on banked `*gate_token.json` records. A launch-gate token
+# is an HMAC-SHA256 SIGNATURE plus `key_id` (16 hex of a sha256 OVER the key) -- never the key -- so
+# the PI exempted it, by CONTENT and nothing broader. The genuine arm is built by the PRODUCER:
+# `stack/scripts/launch_gate.py`'s own GATE_SCHEMA / key_id() / sign(), under a throwaway key derived
+# at runtime, so "genuine" means what the gate writes, not this file's idea of it. Every MUTATION arm
+# is a way a file with that name could carry, or be, something else; each must stay BLOCKING.
+# Expectations are LITERALS: a check derived from the code under test is green forever.
+
+_REFE_RAW = "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/"
+_GATE_NAME = "raw/f10/epr1_gate_token.json"
+
+
+def _launch_gate():
+    """The producer, loaded by path (stdlib-only at import; MEASURED ~0.5 s, no torch)."""
+    import importlib.util
+    if "launch_gate" in sys.modules:
+        return sys.modules["launch_gate"]
+    spec = importlib.util.spec_from_file_location(
+        "launch_gate", _REPO / "stack" / "scripts" / "launch_gate.py")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules["launch_gate"] = mod
+    try:
+        spec.loader.exec_module(mod)
+    except BaseException:
+        sys.modules.pop("launch_gate", None)
+        raise
+    return mod
+
+
+def _test_gate_key() -> bytes:
+    """32 throwaway bytes -- the gate key's size -- derived at runtime, never a literal."""
+    return hashlib.sha256(b"secret_scan test fixture -- not a gate key").digest()
+
+
+def _gate_token_bytes(pre=None, post=None) -> bytes:
+    """A launch-gate PASS token as the gate writes it: ``pre`` edits the body BEFORE it is signed
+    (what a defective writer would sign), ``post`` edits it after (a hand-edited record)."""
+    LG = _launch_gate()
+    key = _test_gate_key()
+    tok = {"schema": LG.GATE_SCHEMA, "kind": "launch-gate-token", "verdict": "PASS",
+           "binding": {"profile": "refe-ep-r1", "commit": "0" * 40,
+                       "argv_sha256": hashlib.sha256(b"argv").hexdigest()},
+           "checks": {"G-LIVE": {"status": "PASS", "reasons": [],
+                                 "details": {"first_key_rank": 0, "unit": "S5a.sets.npz"}}},
+           "reasons": [], "gate_sha256": hashlib.sha256(b"gate").hexdigest(),
+           "created_utc": "2026-10-22T03:50:00Z", "key_id": LG.key_id(key)}
+    if pre:
+        pre(tok, key)
+    tok["hmac_sha256"] = LG.sign(tok, key)
+    if post:
+        post(tok, key)
+    return (json.dumps(tok, indent=2) + "\n").encode("utf-8")
+
+
+def _blocking_path(rel, content):
+    return [(f.pattern, f.line) for f in ss.scan_path_shape(rel, content) if f.blocking]
+
+
+def _details(t):
+    return t["checks"]["G-LIVE"]["details"]
+
+
+def test_the_exemption_is_keyed_to_the_PRODUCERS_token_definition():
+    """The scanner's literals ARE `launch_gate.py`'s token schema and kind (its writer and its
+    verifier), and the producer's key_id/signature are the shapes the exemption requires."""
+    LG = _launch_gate()
+    assert ss.LAUNCH_GATE_TOKEN_SCHEMA == "tanitad.launch_gate/1"
+    assert LG.GATE_SCHEMA == "tanitad.launch_gate/1"
+    assert ss.LAUNCH_GATE_TOKEN_KIND == "launch-gate-token"
+    src = (_REPO / "stack" / "scripts" / "launch_gate.py").read_text(encoding="utf-8")
+    assert '"kind": "launch-gate-token"' in src, "the writer's literal moved"
+    assert 'tok.get("kind") != "launch-gate-token"' in src, "the verifier's literal moved"
+    key = _test_gate_key()
+    assert len(LG.key_id(key)) == 16
+    assert len(LG.sign({"a": 1}, key)) == 64
+
+
+def test_a_genuine_launch_gate_token_record_does_not_block():
+    data = _gate_token_bytes()
+    assert ss._gate_token_refusal(data) is None
+    assert _blocking_path(_GATE_NAME, data) == []
+    assert _blocking_path(_GATE_NAME, lambda: data) == [], "the lazy (tree/tracked) call shape"
+
+
+@pytest.mark.parametrize("why, make", [
+    ("the KEY itself written into the record",
+     lambda: _gate_token_bytes(pre=lambda t, k: t.update(key=k.hex()))),
+    ("an hmac_key field",
+     lambda: _gate_token_bytes(pre=lambda t, k: t.update(hmac_key=k.hex()))),
+    ("key material NESTED under checks",
+     lambda: _gate_token_bytes(pre=lambda t, k: _details(t).update(signing_key=k.hex()))),
+    ("a nested *key* field holding the 32 key bytes as one integer",
+     lambda: _gate_token_bytes(
+         pre=lambda t, k: _details(t).update(key_int=int.from_bytes(k, "big")))),
+    ("the key in the key_id slot",
+     lambda: _gate_token_bytes(pre=lambda t, k: t.update(key_id=k.hex()))),
+    ("missing key_id",
+     lambda: _gate_token_bytes(pre=lambda t, k: t.pop("key_id"))),
+    ("another schema",
+     lambda: _gate_token_bytes(pre=lambda t, k: t.update(schema="tanitad.launch_gate/2"))),
+    ("another launch_gate record kind",
+     lambda: _gate_token_bytes(pre=lambda t, k: t.update(kind="launch-gate-verify"))),
+    ("missing hmac_sha256",
+     lambda: _gate_token_bytes(post=lambda t, k: t.pop("hmac_sha256"))),
+    ("hmac_sha256 of 63 hex",
+     lambda: _gate_token_bytes(post=lambda t, k: t.update(hmac_sha256=t["hmac_sha256"][:63]))),
+    ("hmac_sha256 with a trailing newline (an end-of-line anchor would admit it)",
+     lambda: _gate_token_bytes(post=lambda t, k: t.update(hmac_sha256=t["hmac_sha256"] + "\n"))),
+    ("a provider token in a reason string",
+     lambda: _gate_token_bytes(pre=lambda t, k: t["reasons"].append("see " + _hf()))),
+    ("a credential-shaped value under a credential name",
+     lambda: _gate_token_bytes(pre=lambda t, k: t["binding"].update({"token": _high_entropy_value()}))),
+    ("a duplicate key hiding the key (json.loads keeps the LAST one)",
+     lambda: b'{"key_id": "' + _test_gate_key().hex().encode() + b'",' + _gate_token_bytes()[1:]),
+    ("not JSON",
+     lambda: b"PASS -- signed by launch_gate\n"),
+    ("a JSON array",
+     lambda: b"[" + _gate_token_bytes() + b"]"),
+    ("content not available to the path tier",
+     lambda: None),
+])
+def test_MUTATION_a_gate_token_name_that_is_not_a_token_record_still_blocks(why, make):
+    assert _blocking_path(_GATE_NAME, make()) == [("credential-filename", 0)], why
+
+
+def test_the_refusal_names_the_condition_never_a_value():
+    data = _gate_token_bytes(pre=lambda t, k: t.update(hmac_key=k.hex()))
+    (f,) = [f for f in ss.scan_path_shape(_GATE_NAME, data) if f.blocking]
+    assert f.detail == ("filename matches a credential glob (*token.json); "
+                        "not a launch-gate token record: a field named like key material")
+    assert _test_gate_key().hex() not in f.detail
+
+
+@pytest.mark.parametrize("rel, glob", [
+    ("raw/hf_token.json", "*token.json"),        # not a *gate_token.json name
+    ("raw/token.json", "*token.json"),
+    ("raw/gate-token.json", "*token.json"),
+    ("raw/secret_gate_token.json", "*secret*"),  # exempt from *token.json, NOT from *secret*
+])
+def test_MUTATION_a_genuine_record_under_another_name_still_blocks(rel, glob):
+    """Same genuine bytes, a different basename: only `*gate_token.json` releases, and only the
+    `*token.json` glob -- every other glob still judges the name."""
+    (f,) = [f for f in ss.scan_path_shape(rel, _gate_token_bytes()) if f.blocking]
+    assert (f.pattern, f.detail) == ("credential-filename",
+                                     f"filename matches a credential glob ({glob})")
+
+
+def test_MUTATION_an_hf_token_json_carrying_a_token_blocks_by_name_AND_content(tmp_path):
+    p = tmp_path / "raw" / "hf_token.json"
+    p.parent.mkdir(parents=True)
+    p.write_text(json.dumps({"token": _hf()}) + "\n", encoding="utf-8")
+    assert sorted(f.pattern for f in ss.scan_tree(tmp_path).blocking) == [
+        "credential-filename", "huggingface"]
+
+
+def test_an_exempt_name_is_still_CONTENT_scanned(tmp_path):
+    """The exemption releases a PATH glob; it never skips a content tier."""
+    p = tmp_path / "raw" / "f10" / "epr1_gate_token.json"
+    p.parent.mkdir(parents=True)
+    p.write_bytes(_gate_token_bytes(pre=lambda t, k: t["reasons"].append("see " + _hf())))
+    assert sorted(f.pattern for f in ss.scan_tree(tmp_path).blocking) == [
+        "credential-filename", "huggingface"]
+
+
+def test_tree_mode_judges_the_FILE(tmp_path):
+    p = tmp_path / "raw" / "f10" / "epr1_gate_token.json"
+    p.parent.mkdir(parents=True)
+    p.write_bytes(_gate_token_bytes())
+    assert ss.scan_tree(tmp_path).blocking == []
+    p.write_bytes(_gate_token_bytes(pre=lambda t, k: t.update(hmac_key=k.hex())))
+    assert [(f.pattern, f.path) for f in ss.scan_tree(tmp_path).blocking] == [
+        ("credential-filename", "raw/f10/epr1_gate_token.json")]
+
+
+def test_staged_mode_judges_the_STAGED_BLOB_not_the_worktree(repo):
+    """The two can differ, and the commit publishes the blob -- so the blob is what is judged.
+    Both directions: a bad blob under an innocent worktree file blocks; the reverse does not."""
+    rel = "raw/f10/epr1_gate_token.json"
+    p = repo / rel
+    p.parent.mkdir(parents=True)
+    genuine = _gate_token_bytes()
+    bad = _gate_token_bytes(pre=lambda t, k: t.update(hmac_key=k.hex()))
+    p.write_bytes(bad)
+    _git(repo, "add", "--", rel)
+    p.write_bytes(genuine)
+    assert [(f.pattern, f.path) for f in ss.scan_staged(repo).blocking] == [
+        ("credential-filename", rel)]
+    assert ss.scan_tree(repo).blocking == []
+    _git(repo, "add", "--", rel)
+    p.write_bytes(bad)
+    assert ss.scan_staged(repo).blocking == []
+    assert [(f.pattern, f.path) for f in ss.scan_tree(repo).blocking] == [
+        ("credential-filename", rel)]
+
+
+def test_tracked_mode_judges_the_worktree_file_it_content_scans(repo):
+    rel = "raw/f10/epr1_gate_token.json"
+    p = repo / rel
+    p.parent.mkdir(parents=True)
+    p.write_bytes(_gate_token_bytes())
+    _git(repo, "add", "--", rel)
+    _git(repo, "commit", "-m", "banked gate token")
+    assert ss.scan_tracked(repo).blocking == []
+    p.write_bytes(_gate_token_bytes(pre=lambda t, k: t.update(hmac_key=k.hex())))
+    assert [(f.pattern, f.path) for f in ss.scan_tracked(repo).blocking] == [
+        ("credential-filename", rel)]
+
+
+def test_RED_the_exemption_is_load_bearing(monkeypatch, tmp_path):
+    """With the content check switched off, the genuine record blocks again -- so the green arm
+    above is the exemption at work, not a glob that never fired."""
+    data = _gate_token_bytes()
+    p = tmp_path / "raw" / "f10" / "epr1_gate_token.json"
+    p.parent.mkdir(parents=True)
+    p.write_bytes(data)
+    assert _blocking_path(_GATE_NAME, data) == []
+    assert ss.scan_tree(tmp_path).blocking == []
+    monkeypatch.setattr(ss, "_gate_token_refusal", lambda d: "exemption disabled")
+    assert _blocking_path(_GATE_NAME, data) == [("credential-filename", 0)]
+    assert [f.pattern for f in ss.scan_tree(tmp_path).blocking] == ["credential-filename"]
+
+
+def test_the_exemption_travels_with_the_filter_rule():
+    (ex,) = ss.filter_rule(ss.DEFAULT_MAX_BYTES, False)["tier_b_content_checked_exemptions"]
+    assert (ex["basename_glob"], ex["releases_only_glob"]) == ("*gate_token.json", "*token.json")
+
+
+# The REAL banked records (MEASURED on 10078b5). Read from this checkout; a sparse one skips.
+_REAL_LAUNCH_GATE_TOKENS = (
+    "2026-10-18-ep-r1/raw/f10/epr1_gate_token.json",
+    "2026-10-18-sel-rank/raw/r1/f10/c2_gate_token.json",
+    "2026-10-18-sel-rank/raw/r1/f10/lc_gate_token.json",
+    "2026-10-18-sel-rank/raw/r1/f10/r1_gate_token.json",
+    "2026-10-19-ep-r1ub/raw/f10/epr1ub_gate_token.json",
+)
+_REAL_NON_TOKEN_GATE_RECORDS = (
+    "2026-10-19-fastneg-census/raw/gate_token.json",
+    "2026-10-19-headrow-probe/raw/f10/gate_token.json",
+    "2026-10-19-privgeom-clean/raw/read/gate_token.json",
+    "2026-10-19-privgeom-clean/raw/rehearsal/gate_token.json",
+    "2026-10-19-privgeom-safe/raw/gate_token.json",
+)
+
+
+def _banked(rel: str) -> bytes:
+    p = _REPO / _REFE_RAW / rel
+    if not p.is_file():
+        pytest.skip(f"banked record not in this checkout: {rel}")
+    return p.read_bytes()
+
+
+@pytest.mark.parametrize("rel", _REAL_LAUNCH_GATE_TOKENS)
+def test_the_banked_launch_gate_tokens_do_not_block(rel):
+    assert _blocking_path(_REFE_RAW + rel, _banked(rel)) == []
+
+
+@pytest.mark.parametrize("rel", _REAL_NON_TOKEN_GATE_RECORDS)
+def test_the_banked_NON_token_gate_records_still_block(rel):
+    """⚠️ NARROW ON PURPOSE: pre-registration pin records of other schemas, unsigned. The PI's
+    decision covers launch-gate tokens only; these keep blocking until another one is taken."""
+    (f,) = [f for f in ss.scan_path_shape(_REFE_RAW + rel, _banked(rel)) if f.blocking]
+    assert f.detail == ("filename matches a credential glob (*token.json); not a launch-gate "
+                        "token record: schema/kind is not the launch-gate token's")

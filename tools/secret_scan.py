@@ -89,6 +89,7 @@ import sys
 from dataclasses import dataclass, asdict, field
 from fnmatch import fnmatch
 from pathlib import Path
+from typing import Callable
 
 HOOK_MARKER = "TANITAD-SECRET-GATE v1"
 
@@ -269,6 +270,20 @@ def filter_rule(max_bytes: int, include_git: bool) -> dict:
         },
         "tier_b_path_globs": list(SECRET_PATH_GLOBS),
         "tier_b_advisory_path_globs": list(ADVISORY_PATH_GLOBS),
+        # PI 2026-10-22 "Exempt + mask": the ONE content-checked path exemption, stated as data.
+        "tier_b_content_checked_exemptions": [{
+            "basename_glob": LAUNCH_GATE_TOKEN_BASENAME_GLOB,
+            "releases_only_glob": LAUNCH_GATE_TOKEN_RELEASES_GLOB,
+            "requires": [
+                "the bytes THIS mode scans (staged blob / tree file / tracked worktree file)",
+                f"a JSON object, no duplicate keys, schema == {LAUNCH_GATE_TOKEN_SCHEMA!r} "
+                f"and kind == {LAUNCH_GATE_TOKEN_KIND!r}",
+                "hmac_sha256 = 64 lowercase hex; key_id = 16 lowercase hex",
+                "no other field named *key* (nested: only an integer in [0, 2**31))",
+                "no Tier-A shape and no Tier-A2 credential-shaped value in any name or string",
+            ],
+            "content_tiers": "unchanged -- the record is content-scanned like any other file",
+        }],
         "tier_c_advisory": [n for n, _ in LOOSE_PATTERNS],
         "_warning": (
             "THIS IS A FILTERED VIEW, NOT A CENSUS. A file outside this rule is "
@@ -480,13 +495,132 @@ def _is_own_test_artifact(base: str) -> bool:
     return any(stem in b for stem in _OWN_TEST_ARTIFACT_STEMS)
 
 
-def scan_path_shape(path: str) -> list[Finding]:
-    """Tier B. Path only -- the file is NEVER opened for this finding."""
+# ⛔ THE SELF-MATCH, FOURTH COSTUME -- A SIGNATURE RECORD NAMED LIKE A KEY STORE (PI decision
+# 2026-10-22 ~05:50 Berlin, "Exempt + mask"; MEASURED on 10078b5: `--tree` over the full checkout gave
+# 12 BLOCKING findings, all false positives, 10 of them `*token.json` hits on banked
+# `…/2026-09-20-refe-plan/raw/**/*gate_token.json` records). A launch-gate token is what
+# `stack/scripts/launch_gate.py` writes (GATE_SCHEMA :121, the token dict :7367, its verifier :7534) --
+# and what the package-local gates that reuse its schema write (`epr1_gate.py`, `srttc_r1_gate.py`):
+# an HMAC-SHA256 SIGNATURE plus `key_id`, the first 16 hex of a sha256 OVER the key (:1551). Never
+# the key: that is 64 hex in `~/.config/tanitad/launch_gate.key`, which the gate refuses to keep
+# inside the code tree. ⇒ The exemption is by CONTENT, never by name alone: a `*gate_token.json`
+# basename releases ONLY the `*token.json` glob, and ONLY when the bytes THIS MODE scans (the staged
+# blob for --staged, the file for --tree/--tracked) are that token -- schema AND kind, a 64-hex
+# `hmac_sha256`, a 16-hex `key_id`, and nothing key-shaped (`_gate_token_refusal`). Unreadable, not
+# JSON, another schema, an extra `*key*` field, a provider shape in any string: still BLOCKING, and
+# the finding names which condition failed (never a value). The record's CONTENT still goes through
+# every content tier as before, and the substring/advisory globs still apply to the same basename.
+# ⚠️ Narrow ON PURPOSE: in that same tree five more `gate_token.json` files are pre-registration
+# PIN records of other schemas (`fastneg-census-v1`, `headrow-probe-v1`, three with no schema) and
+# carry no signature. They are outside the PI's decision and keep blocking until one is taken.
+LAUNCH_GATE_TOKEN_BASENAME_GLOB = "*gate_token.json"
+#: the ONE glob this exemption may release; every other path glob still judges the same basename
+LAUNCH_GATE_TOKEN_RELEASES_GLOB = "*token.json"
+#: LITERALS, pinned against `stack/scripts/launch_gate.py` by `stack/tests/test_secret_scan.py`: a
+#: schema bump there turns that pin red instead of silently re-blocking (or releasing) records.
+LAUNCH_GATE_TOKEN_SCHEMA = "tanitad.launch_gate/1"
+LAUNCH_GATE_TOKEN_KIND = "launch-gate-token"
+_HEX64_RE = re.compile(r"[0-9a-f]{64}")          # used with fullmatch: `$` would admit a "\n"
+_KEY_ID_RE = re.compile(r"[0-9a-f]{16}")         # launch_gate.key_id(): sha256(...)[:16]
+#: a NESTED field whose name says "key" is admissible only as a small non-negative integer (MEASURED:
+#: the banked records carry `checks/G-LIVE/details/first_key_rank: 0`); one below 2**31 cannot hold
+#: the gate's 32 key bytes. At the TOP level only `key_id` is admissible.
+_NESTED_KEYNAME_INT_MAX = 2 ** 31
+
+
+class _DuplicateJSONKey(ValueError):
+    pass
+
+
+def _no_duplicate_keys(pairs: list) -> dict:
+    """`json.loads` keeps the LAST of two equal keys, so a duplicate could hide a value that no
+    check below would ever see. A record with one is not a launch-gate token."""
+    out: dict = {}
+    for k, v in pairs:
+        if k in out:
+            raise _DuplicateJSONKey(k)
+        out[k] = v
+    return out
+
+
+def _json_fields(obj, depth: int = 0):
+    """``(depth, field name or None, value)`` for every node; depth 0 = the top-level fields."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            yield depth, k, v
+            yield from _json_fields(v, depth + 1)
+    elif isinstance(obj, list):
+        for v in obj:
+            yield depth, None, v
+            yield from _json_fields(v, depth + 1)
+
+
+def _carries_credential_shape(s: str) -> bool:
+    """The content tiers' own patterns over one DECODED string (a `\\u`-escape cannot hide here)."""
+    if any(p.search(s) for _, p in TOKEN_PATTERNS):
+        return True
+    # A JSON string is a LITERAL, so the unquoted-constant-reference release never applies.
+    return any(_assign_is_credential_shaped(m.group("val"), quoted=True)
+               for m in ASSIGN_RE.finditer(s))
+
+
+def _gate_token_refusal(data: bytes | None) -> str | None:
+    """``None`` iff ``data`` is a launch-gate token RECORD; otherwise the condition it fails.
+
+    The reason names a CONDITION, never a value from the file (the redaction rule above)."""
+    if data is None:
+        return "content not available to the path tier"
+    try:
+        obj = json.loads(data.decode("utf-8"), object_pairs_hook=_no_duplicate_keys)
+    except _DuplicateJSONKey:
+        return "a duplicate JSON key"
+    except (UnicodeDecodeError, ValueError, RecursionError):
+        return "not a JSON document"
+    if not isinstance(obj, dict):
+        return "not a JSON object"
+    if obj.get("schema") != LAUNCH_GATE_TOKEN_SCHEMA or obj.get("kind") != LAUNCH_GATE_TOKEN_KIND:
+        return "schema/kind is not the launch-gate token's"
+    sig, kid = obj.get("hmac_sha256"), obj.get("key_id")
+    if not (isinstance(sig, str) and _HEX64_RE.fullmatch(sig)):
+        return "no 64-hex hmac_sha256"
+    if not (isinstance(kid, str) and _KEY_ID_RE.fullmatch(kid)):
+        return "no 16-hex key_id"
+    try:
+        for depth, name, val in _json_fields(obj):
+            if name is not None and "key" in name.lower() and not (
+                    (depth == 0 and name == "key_id")
+                    or (depth > 0 and type(val) is int and 0 <= val < _NESTED_KEYNAME_INT_MAX)):
+                return "a field named like key material"
+            texts = [s for s in (name, val) if isinstance(s, str)]
+            if name is not None and isinstance(val, str):
+                texts.append(f"{name}: {val}")      # what Tier A2 would see unquoted
+            if any(_carries_credential_shape(s) for s in texts):
+                return "a credential shape in a name or string value"
+    except RecursionError:
+        return "nested too deeply to check"
+    return None
+
+
+def scan_path_shape(path: str,
+                    content: "bytes | Callable[[], bytes | None] | None" = None
+                    ) -> list[Finding]:
+    """Tier B. Path only -- the file is NEVER opened for this finding, with ONE content-checked
+    exception: a `*gate_token.json` basename (the PI 2026-10-22 block above).
+
+    ``content`` is the bytes the calling MODE scans for this path, or a zero-argument callable that
+    returns them -- read lazily, so only that basename ever pays for it. ``None`` (the default, and
+    every pre-existing caller) means "not available": such a record stays BLOCKING."""
     base = path.replace("\\", "/").rsplit("/", 1)[-1]
     for g in SECRET_PATH_GLOBS:
         if fnmatch(base, g):
-            return [Finding("secret-path", "credential-filename", path, 0,
-                            f"filename matches a credential glob ({g})")]
+            detail = f"filename matches a credential glob ({g})"
+            if (g == LAUNCH_GATE_TOKEN_RELEASES_GLOB
+                    and fnmatch(base, LAUNCH_GATE_TOKEN_BASENAME_GLOB)):
+                why = _gate_token_refusal(content() if callable(content) else content)
+                if why is None:
+                    continue        # a launch-gate token record; the remaining globs still apply
+                detail += f"; not a launch-gate token record: {why}"
+            return [Finding("secret-path", "credential-filename", path, 0, detail)]
     if (Path(base).suffix.lower() not in SOURCE_DOC_SUFFIXES
             and not _is_own_test_artifact(base)):
         for g in SECRET_NAME_SUBSTRING_GLOBS:
@@ -604,6 +738,20 @@ def _skip(rep: "Report", k: str, path: str) -> None:
         lst.append(path)
 
 
+def _file_content(p: Path, max_bytes: int) -> Callable[[], bytes | None]:
+    """The path tier's LAZY view of a worktree file -- the same bytes, under the same size cap, that
+    --tree/--tracked then content-scan. Any failure is ``None`` (the record stays BLOCKING); the
+    content scan below still reports its own stat/read errors exactly as before."""
+    def load() -> bytes | None:
+        try:
+            if p.stat().st_size > max_bytes:
+                return None
+            return p.read_bytes()
+        except OSError:
+            return None
+    return load
+
+
 def scan_tree(root: Path, max_bytes: int = DEFAULT_MAX_BYTES,
               include_git: bool = False, scope: str = "tree") -> Report:
     """C111's literal rule: scan an imported tree BEFORE anything is staged."""
@@ -620,7 +768,7 @@ def scan_tree(root: Path, max_bytes: int = DEFAULT_MAX_BYTES,
             except ValueError:                       # pragma: no cover
                 rel = str(p)
             rep.candidates += 1
-            rep.findings.extend(scan_path_shape(rel))
+            rep.findings.extend(scan_path_shape(rel, _file_content(p, max_bytes)))
             if p.suffix.lower() in SKIP_SUFFIXES:
                 _skip(rep, "compressed-suffix", rel)
                 continue
@@ -765,8 +913,19 @@ def scan_staged(repo: Path, max_bytes: int = DEFAULT_MAX_BYTES) -> Report:
     rep = Report(scope="staged", filter_rule=filter_rule(max_bytes, False))
     paths = staged_paths(repo)
     rep.candidates = len(paths)
+
+    revs = [f":{p}" for p in paths]
+    # Staged keeps the errors->UNUSABLE path (any errs already invalidate the
+    # verdict, non-zero exit). Strict per-object accounting is history-only:
+    # here 'missing-or-not-blob' is a LEGITIMATE skip -- a staged submodule
+    # gitlink has no blob behind it -- so counting it as a read failure would
+    # turn a normal index into a false alarm.
+    # ⭐ 2026-10-22: read BEFORE the path tier, so the launch-gate-token exemption
+    # judges the STAGED BLOB -- the bytes this commit would publish -- and never
+    # the worktree file, which can differ from it. Finding order is unchanged.
+    blobs, skipped, errs, _batch_failed = _cat_file_batch(repo, revs, max_bytes)
     for p in paths:
-        rep.findings.extend(scan_path_shape(p))
+        rep.findings.extend(scan_path_shape(p, blobs.get(f":{p}")))
 
     # git's OWN ignore verdict -- the tool that owns the fact (operating standard
     # 2). --no-index makes check-ignore answer for ALREADY-staged paths, which is
@@ -790,13 +949,6 @@ def scan_staged(repo: Path, max_bytes: int = DEFAULT_MAX_BYTES) -> Report:
                     "secret-path", "git-ignored-but-staged", raw, 0,
                     "staged despite being git-IGNORED (only 'git add -f' does this)"))
 
-    revs = [f":{p}" for p in paths]
-    # Staged keeps the errors->UNUSABLE path (any errs already invalidate the
-    # verdict, non-zero exit). Strict per-object accounting is history-only:
-    # here 'missing-or-not-blob' is a LEGITIMATE skip -- a staged submodule
-    # gitlink has no blob behind it -- so counting it as a read failure would
-    # turn a normal index into a false alarm.
-    blobs, skipped, errs, _batch_failed = _cat_file_batch(repo, revs, max_bytes)
     rep.skipped.update(skipped)
     rep.errors.extend(errs)
     for p in paths:
@@ -816,8 +968,8 @@ def scan_tracked(repo: Path, max_bytes: int = DEFAULT_MAX_BYTES) -> Report:
     out = git(repo, "ls-files", "-z")
     paths = [p for p in out.split("\0") if p]
     for rel in paths:
-        rep.findings.extend(scan_path_shape(rel))
         p = repo / rel
+        rep.findings.extend(scan_path_shape(rel, _file_content(p, max_bytes)))
         if p.suffix.lower() in SKIP_SUFFIXES:
             _skip(rep, "compressed-suffix", rel)
             continue
