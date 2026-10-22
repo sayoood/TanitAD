@@ -288,7 +288,12 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # + v8F rung alpha, arm alpha-1: --p10-prior ("built": core.decoder.p10, the frozen P10) and --p10-prior-sha256
     #   ("elsewhere": checked with it, `_c_p10_prior`) (276 -> 278)
     # + v7F R1 equivalent (audit 2026-10-18): --plan-vmax-clamp ("built": model.cfg.plan_vmax_clamp) (278 -> 279)
-    assert len(dvb.REGISTRY) == 279
+    # + H-NT-DECIDE-1 (navtrain fine-tune, input-path only): --window-starts / --nt-heldout / --nt-heldout-sha256 /
+    #   --nt-token-table / --r8-speed-unknown-always ("data") and --snapshot-steps ("runtime") (279 -> 285)
+    assert len(dvb.REGISTRY) == 285
+    for _d, _k in (("window_starts", "data"), ("nt_heldout", "data"), ("nt_heldout_sha256", "data"),
+                   ("nt_token_table", "data"), ("r8_speed_unknown_always", "data"), ("snapshot_steps", "runtime")):
+        assert dvb.REGISTRY[_d].kind == _k
     assert dvb.REGISTRY["r8_speed_enc8"].kind == "built"
     assert dvb.REGISTRY["r8_alloc_emit_start"].kind == "built"
     assert dvb.REGISTRY["w_r8_v9_cons"].kind == "loss"

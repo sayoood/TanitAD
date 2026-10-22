@@ -106,10 +106,44 @@ def _jpeg_offsets(jpeg_len: torch.Tensor) -> torch.Tensor:
                       torch.cumsum(jpeg_len.to(torch.int64), 0)])
 
 
+def _decode_indexed(jpeg_buf: torch.Tensor, offs: torch.Tensor, n_stack: int,
+                    a: int, b: int, codec: str,
+                    sl: "tuple[slice, slice] | None",
+                    newest_only: bool, frame_index: torch.Tensor) -> torch.Tensor:
+    """``_decode_stacked`` for a payload carrying ``frame_index`` (NT-DECIDE E1, 2026-10-21).
+
+    Raw row ``i`` is stored image ``frame_index[i]``: a token-episode stores each UNIQUE frame once
+    (an ST window repeats one frame in all 10 slots). Each unique image is decoded ONCE per call. A raw
+    row outside ``frame_index`` raises ``IndexError`` -- fail loud: that row has no frame by contract
+    (``nt_build/INTERFACE.md`` R2). Stacking / slicing / ``newest_only`` are ``_decode_stacked``'s."""
+    k = n_stack - 1
+    dec = tvio.decode_png if codec == "png" else tvio.decode_jpeg
+    n_fi = int(frame_index.shape[0])
+    memo: dict = {}
+
+    def raw(i: int) -> torch.Tensor:
+        if not 0 <= i < n_fi:
+            raise IndexError(f"raw row {i} is outside frame_index (len {n_fi}): this token-episode stores no "
+                             f"frame for it -- only window t=0 is admissible (NT-DECIDE INTERFACE R2)")
+        j = int(frame_index[i])
+        f = memo.get(j)
+        if f is None:
+            f = dec(jpeg_buf[int(offs[j]):int(offs[j + 1])], mode=tvio.ImageReadMode.RGB)
+            if sl is not None:
+                f = f[:, sl[0], sl[1]]
+            memo[j] = f
+        return f
+
+    if newest_only:
+        return torch.stack([raw(i) for i in range(a + k, b + k)])  # [b-a, 3, h, w] u8
+    return stack_frames(torch.stack([raw(i) for i in range(a, b + k)]), n_stack)
+
+
 def _decode_stacked(jpeg_buf: torch.Tensor, offs: torch.Tensor, n_stack: int,
                     a: int, b: int, codec: str = "jpeg",
                     sl: "tuple[slice, slice] | None" = None,
-                    newest_only: bool = False) -> torch.Tensor:
+                    newest_only: bool = False,
+                    frame_index: "torch.Tensor | None" = None) -> torch.Tensor:
     """Decode + D-015 channel-stack ONLY stacked-frame rows ``[a:b]``.
 
     ``stack_frames`` output row ``j`` = channel-concat of raw frames
@@ -122,7 +156,12 @@ def _decode_stacked(jpeg_buf: torch.Tensor, offs: torch.Tensor, n_stack: int,
     :class:`V2CompressedCache`). It is applied to each RAW frame before
     stacking, which is the order ``scripts/v2_compressed.load_compressed``
     uses; slicing spatial dims and concatenating channels commute, so the two
-    orders are bit-identical and the cheaper one is used here."""
+    orders are bit-identical and the cheaper one is used here.
+
+    ``frame_index`` (NT-DECIDE E1, 2026-10-21): ``None`` (every existing cache) runs the lines below
+    UNCHANGED; a payload that carries one is decoded by :func:`_decode_indexed`."""
+    if frame_index is not None:
+        return _decode_indexed(jpeg_buf, offs, n_stack, a, b, codec, sl, newest_only, frame_index)
     k = n_stack - 1
     dec = tvio.decode_png if codec == "png" else tvio.decode_jpeg
     if newest_only:
@@ -348,16 +387,17 @@ class V2CompressedCache:
         d = torch.load(path, map_location="cpu", weights_only=False)
         payload = (d["jpeg_buf"], _jpeg_offsets(d["jpeg_len"]),
                    int(d["n_stack"]), str(d.get("codec", "jpeg")),
-                   self._slice_for(d, path))
+                   self._slice_for(d, path), d.get("frame_index"))
         self._lru[clip_idx] = payload
         while len(self._lru) > self.lru_size:
             self._lru.popitem(last=False)
         return payload
 
     def decode_stacked_range(self, clip_idx: int, a: int, b: int) -> torch.Tensor:
-        jpeg_buf, offs, n_stack, codec, sl = self._payload(clip_idx)
+        jpeg_buf, offs, n_stack, codec, sl, frame_index = self._payload(clip_idx)
         return _decode_stacked(jpeg_buf, offs, n_stack, a, b, codec, sl,
-                               newest_only=self.newest_frame_only)
+                               newest_only=self.newest_frame_only,
+                               frame_index=frame_index)
 
 
 # --------------------------------------------------------------------------- #
@@ -588,8 +628,10 @@ def decode_full_episode(path: str):
     n_stack = int(d["n_stack"])
     k = n_stack - 1
     offs = _jpeg_offsets(d["jpeg_len"])
+    fi = d.get("frame_index")
+    n_raw = len(d["jpeg_len"]) if fi is None else int(fi.shape[0])   # NT-DECIDE: frames cover frame_index only
     frames = _decode_stacked(d["jpeg_buf"], offs, n_stack, 0,
-                             len(d["jpeg_len"]) - k, str(d.get("codec", "jpeg")))
+                             n_raw - k, str(d.get("codec", "jpeg")), frame_index=fi)
     return ToyEpisode(frames=frames, actions=d["actions"][k:].float(),
                       poses=d["poses"][k:].float(), episode_id=int(d["episode_id"]),
                       maneuvers=None)

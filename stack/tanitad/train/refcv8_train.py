@@ -147,7 +147,8 @@ def _label_row_refusal(r: dict) -> str | None:
     return None
 
 
-def read_road_type_sidecar(path: str, *, label_md5: str | None = None) -> tuple[dict, dict]:
+def read_road_type_sidecar(path: str, *, label_md5: str | None = None,
+                           allow_all_unknown: bool = False) -> tuple[dict, dict]:
     """``--r8-speed-input label``: ``sidecar.jsonl -> ({sid: (road_type_ms, valid)}, report)``.
 
     PI 2026-10-11: the value this returns is the ROAD-TYPE STEP (``{30, 50, 100, 120}`` km/h ``/ 3.6``, python
@@ -163,7 +164,10 @@ def read_road_type_sidecar(path: str, *, label_md5: str | None = None) -> tuple[
     into config.json (``histogram_kmh`` = rows per road-type step; ``n_unknown`` = the explicit unknown rows)."""
     import json as _json
     from tanitad.refs import refcv6_max_speed as v6ms
-    _raw, rep = v6ms.read_speed_max_sidecar_v6(str(path), label_md5=label_md5)
+    # H-NT-DECIDE-1 (--r8-speed-unknown-always): an ALL-UNKNOWN train sidecar is the declared NavSim feed; the
+    # v6 reader then admits zero known rows and REFUSES any known one.
+    _raw, rep = v6ms.read_speed_max_sidecar_v6(str(path), label_md5=label_md5,
+                                               allow_all_unknown=bool(allow_all_unknown))
     out: dict[int, tuple[float, float]] = {}
     hist = {str(k): 0 for k in R8_ROAD_TYPE_KMH}
     n_unknown = 0

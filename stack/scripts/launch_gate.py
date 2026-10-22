@@ -898,6 +898,63 @@ _V8F_STEER_OPEN_ITEMS = (
      "closes_when": "a PI ruling that steer[t0] is admissible at inference; then FORWARD_EXCLUSIONS' declaration is "
                     "deleted for p10 and the RL/NavSim adapters plumb actions"},
 )
+
+
+# --------------------------------------------------------------------------------------------- #
+# refcv8-nt: H-NT-DECIDE-1 arms A1 / A1r (PREREG_NT_DECIDE; DESIGN_AND_COSTING sec. 3)             #
+# --------------------------------------------------------------------------------------------- #
+#: The NavSim navtrain fine-tune of theta_DEC. = refcv8's profile (every refcv8 rule still binds: the architecture, the
+#: recipe, the selection mechanisms, the warm-start strictness) with ONLY the NavSim data inputs replaced, the
+#: PhysicalAI pose-sync artifact removed, and the NT guards required. Every departure is a LITERAL below with its source.
+#: Built 2026-10-21 by the Architecture & Inference agent (E4); the argv is `nt_argv.py a1` (derived from
+#: stack/ops/runs.d/refcv8-r101-s0.argv.json by a closed edit list).
+_NT_ROOT = "/home/nvidia/r8ns/nt"
+_NT_LAB = "/home/nvidia/r8ns/nt/labels/a1"
+#: a value no argv can carry: a required value equal to it REFUSES every argv until the corpus build replaces it
+_NT_PENDING = "PENDING-NT-CORPUS"
+#: NT-B1-GUARD (see the open item): None = OPEN (refcv8's literals stay required, the item blocks a PASS);
+#: "keep" = refcv8's guard literals required (the item closes); "drop" = both guard flags REFUSED (the item closes)
+_NT_B1_GUARD: str | None = "drop"
+#: NT-CORPUS (see the open item): the v9 release md5 of the FINAL A1 label build (labels/a1/v9_labels_nt_train.npz,
+#: logs/V9_MD5_FINAL). _NT_PENDING = OPEN (every argv is refused on it); a 32-hex literal closes the item. CLOSING =
+#: these TWO constants (+ the argv md5 and the clock reference file) -- written by trainer/code/nt_close.py, reviewed.
+_NT_V9_MD5: str = "65bf1f62461913d05732944d51ba13c2"
+#: the 10 cm map's MAP-ONLY parts (map_head_hires.grad_reach_report_hires: `refine`, `near`, `near_refine` feed the map
+#: logits only; `lift` / `encoder` / the trunk's s8 stage are SHARED with the planner's pooled BEV). Under the NT data
+#: there is no SAM3 GT, so with `--map-min-coverage 0.0` every train window's map target is all-IGNORE and the loss
+#: builds `logits.sum() * 0`: these parts take EXACTLY zero gradient by construction (K4). Leaf groups read off the
+#: built model's state_dict (ckpt_0.pt of the 2026-10-21 smoke): 12 groups, 105,032 values.
+_NT_MAP_ONLY_GROUPS = (
+    "_map_hires.refine.cls", "_map_hires.refine.conv1", "_map_hires.refine.conv2", "_map_hires.refine.inp.0",
+    "_map_hires.refine.inp.1", "_map_hires.refine.norm1", "_map_hires.refine.norm2",
+    "_map_hires.near.lift", "_map_hires.near.lift.proj",
+    "_map_hires.near_refine.0.c1", "_map_hires.near_refine.0.c2", "_map_hires.near_refine.0.n1")
+#: PREREG_NT_DECIDE sec. 4.1: the PI's DATA-line ACK (L_D = 84.5; ABSENT the file the line is 85.0). The gate binds the
+#: file's git BLOB id -- the bytes as committed with the Research Lab package (cd8c465), shipped to Thor beside the NT
+#: inputs -- and REFUSES a missing or different file (amendment_ack_reasons, via profile_argv_rules, so no path to a
+#: token skips it). The ACK names the prereg blob it applies to; a byte-identical copy rides in the tree beside the
+#: held-out guard (configs/refcv8_nt/AMENDMENT_ACK_NT.txt, LF-pinned by that dir's .gitattributes) for the tests.
+_NT_AMENDMENT_ACK = {
+    "path": "/home/nvidia/r8ns/nt/inputs/AMENDMENT_ACK_NT.txt",
+    "git_blob": "38175992b524e29353a8e666c37a2813e0912080",
+    "data_line": 84.5, "fallback_line": 85.0,
+    "prereg_blob": "88abf03f5d40396fc074aca7a8c9e5aedc972425",
+    "repo_path": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-21-nt-decide/AMENDMENT_ACK_NT.txt"}
+_NT_OPEN_ITEMS = (
+    {"id": "NT-CORPUS",
+     "what": "the full A1 corpus: E1's DONE_A1.json, then E2 (nt_labels.py) + E3 (nt_joins.py build/merge) + the clock "
+             "reference (nt_clock_reference.py) over it on Thor. Closing it = writing the v9 release md5 into "
+             "`--r8-v9-md5` below (now the unmatched literal PENDING-NT-CORPUS) and placing the clock reference at "
+             "stack/tanitad/configs/refcv8_nt/nt_clock_reference_a1.json",
+     "owner": "DataFlyWheel (E1) -> Architecture & Inference (E2/E3 builds) -> the Master Mind (literal review)"},
+    {"id": "NT-B1-GUARD",
+     "what": "the refcv8 B1 guard (--b1-guard-ref-ap2m 0.21211 --b1-guard-step 1000) cuts the head LR when the "
+             "PhysicalAI eval139 EMA box3d AP@2m reads below refcv7's minimum. PREREG sec. 2 keeps every refcv8 flag; "
+             "PREREG sec. 8 says A1's PhysicalAI forgetting is 'reported, not gated'; FEASIBILITY_AUDIT says 'drop "
+             "the guard or re-reference it'. Set _NT_B1_GUARD to 'keep' or 'drop' (nt_argv.py a1 --b1 keep|drop "
+             "writes the matching argv)",
+     "owner": "the Master Mind (a PREREG reading; the recommendation is 'drop')"},
+)
 _R8 = PROFILES["refcv8"]
 
 
@@ -967,6 +1024,113 @@ def _v8f_profile(variant: str) -> dict:
 
 PROFILES["v8f"] = _v8f_profile("pose")
 PROFILES["v8f_steer"] = _v8f_profile("steer")
+
+
+def _nt_b1(prof_flags: tuple, prof_values: dict) -> tuple[tuple, dict, tuple]:
+    """refcv8's B1 guard literals under the NT-B1-GUARD decision -> (required_flags, required_values, forbidden)."""
+    b1 = ("--b1-guard-ref-ap2m", "--b1-guard-step")
+    if _NT_B1_GUARD == "drop":
+        return (tuple(f for f in prof_flags if f not in b1),
+                {k: v for k, v in prof_values.items() if k not in b1},
+                ((b1, "NT-B1-GUARD closed 'drop': A1's PhysicalAI forgetting is reported, not gated (PREREG sec. 8)"),))
+    return prof_flags, prof_values, ()
+
+
+_nt_flags = tuple(f for f in _R8["required_flags"] if f != "--pose-sync-sidecar") + (
+    "--nt-heldout", "--nt-heldout-sha256", "--nt-token-table", "--window-starts", "--snapshot-steps",
+    "--r8-speed-unknown-always", "--map-min-coverage", "--grad-share-at", "--v7-labels", "--clip-clock-sidecar",
+    "--agent-join", "--join3d")
+_nt_values = {k: v for k, v in _R8["required_values"].items() if k != "--pose-sync-sidecar"}
+_nt_values.update({
+    # the data (E1 / E2 / E3), literals of the Thor layout (INTERFACE.md v1.1 + this agent's build scripts)
+    "--v2-cache": f"{_NT_ROOT}/v2ep_a1",
+    "--v7-labels": f"{_NT_LAB}/s2_labels_nt_train.jsonl.gz",
+    "--clip-clock-sidecar": f"{_NT_LAB}/clip_clock_nt.jsonl",
+    "--speed-max-sidecar-v6": f"{_NT_LAB}/speed_label_nt_train.jsonl",
+    "--agent-join": f"{_NT_LAB}/nt_train_plus_eval139_agents.jsonl.xz",
+    "--join3d": f"{_NT_LAB}/nt_train_plus_eval139_agents_3d.jsonl.xz",
+    "--vis1-sidecar": f"{_NT_LAB}/nt_train_plus_eval139_vis1_sidecar.npz",
+    "--agent-rig-extrinsics": f"{_NT_LAB}/nt_train_plus_eval139_extrinsics.json",
+    "--r8-v9-labels": f"{_NT_LAB}/v9_labels_nt_train.npz",
+    "--r8-v9-md5": _NT_V9_MD5,
+    # K3: the held-out guard + the token table (trainer-side refusal, tanitad/train/nt_guard.py)
+    "--nt-heldout": "/home/nvidia/r8ns/nt/launch_tree/stack/tanitad/configs/refcv8_nt/nt_heldout.json",
+    "--nt-heldout-sha256": "4b5b1aee2be780026c3df58ffc7924f8220459e4d9aa603ef801d76d8af95652",
+    "--nt-token-table": f"{_NT_LAB}/token_table_nt.json",
+    # the warm start: theta_DEC (md5 dad4cb5b5fb316922b4e9a7e85cee8f8; K0 checks the step-0 saves bit-equal to it)
+    "--init-from": "/home/nvidia/r8ns/navtrain_sel/wiseft/ckpt_mod2/ckpt_wiseft_mod2_DEC.pt",
+    # the schedule (PREREG sec. 2 / sec. 5): 2 epochs of 99,824 tokens at batch 16; one window per token-episode
+    "--steps": "12478",
+    "--window-starts": "first",
+    "--snapshot-steps": "0,1560,3120,6239,9359,12478",
+    # K7 P-GRAD: the readings at the logged steps nearest 1,000 / 6,239 / 12,478 (multiples of --grad-share-every)
+    "--grad-share-every": "50",
+    "--grad-share-at": "1000,6250,12450",
+    # map OFF without an architecture change (K4): no NavSim map GT, so no coverage floor
+    "--map-min-coverage": "0.0",
+})
+_nt_flags, _nt_values, _nt_b1_forbid = _nt_b1(_nt_flags, _nt_values)
+
+PROFILES["refcv8-nt"] = dict(
+    _R8, name="refcv8-nt",
+    open_items=tuple(it for it in _NT_OPEN_ITEMS
+                     if not (it["id"] == "NT-B1-GUARD" and _NT_B1_GUARD in ("keep", "drop"))
+                     and not (it["id"] == "NT-CORPUS" and re.fullmatch(r"[0-9a-f]{32}", _NT_V9_MD5))),
+    required_flags=_nt_flags,
+    required_flags_why=dict({k: v for k, v in (_R8.get("required_flags_why") or {}).items()
+                             if k != "--pose-sync-sidecar"}, **{
+        "--nt-heldout": "PREREG sec. 2 / K3: the 38 selection-scan logs + every navtest log are never trained on",
+        "--nt-heldout-sha256": "K3: the guard file's pinned digest (the trainer refuses any other content)",
+        "--nt-token-table": "K3: clip -> (token, log) for every train clip; the guard reads it",
+        "--window-starts": "DESIGN sec. 3: ONE window per token-episode (t = 0) -- the R8_LEGAL inference window",
+        "--snapshot-steps": "PREREG sec. 5: EMA + RAW at 1,560 / 3,120 / 6,239 / 9,359 / 12,478, and step 0 for K0",
+        "--r8-speed-unknown-always": "DESIGN sec. 3: the UNKNOWN speed row always (= the LEGAL inference feed)",
+        "--map-min-coverage": "DESIGN sec. 3 map head: no NavSim map GT; 0.0 admits zero labelled windows (K4)",
+        "--grad-share-at": "PREREG K7: the P-GRAD readings",
+        "--v7-labels": "E2: the NavSim token labels (v7 minimal records)",
+        "--clip-clock-sidecar": "E2: the NavSim clocks merged with eval139's (G3 refuses v7 labels without one)",
+        "--agent-join": "E3: OpenScene anns, class map vehicle/pedestrian/bicycle -> automobile/person/rider",
+        "--join3d": "E3: the same records + cz (road plane) / h"}),
+    required_values=_nt_values,
+    required_values_why=dict({k: v for k, v in (_R8.get("required_values_why") or {}).items()
+                              if k != "--pose-sync-sidecar"}, **{
+        "--v2-cache": "E1 (INTERFACE.md v1.1): the token-episode cache, 99,824 tokens / 1,154 logs",
+        "--r8-v9-md5": "NT-CORPUS: the v9 release built over the full A1 token table (PENDING until built)",
+        "--steps": "PREREG sec. 2: 2 epochs = 12,478 steps at batch 16 (99,824 / 16 = 6,239 per epoch)",
+        "--init-from": "PREREG sec. 2: theta_DEC = ckpt_wiseft_mod2_DEC.pt, md5 dad4cb5b5fb316922b4e9a7e85cee8f8",
+        "--grad-share-every": "K7 P-GRAD cadence (a multiple of --log-every 50; the readings must be multiples of it)",
+        "--grad-share-at": "K7: the logged steps nearest 1,000 / 6,239 / 12,478 (declared +11 / -28 steps)",
+        "--speed-max-sidecar-v6": "DESIGN sec. 3: the all-UNKNOWN road-type rows (meta binds the v7 blob)",
+        "--map-min-coverage": "DESIGN sec. 3 / K4: map OFF by data, the head kept built and its weight kept 1.0"}),
+    #: the PENDING literal is REQUIRED (until NT-CORPUS writes the md5) AND FORBIDDEN, so no argv passes meanwhile
+    forbidden_values=dict(_R8.get("forbidden_values") or {}, **{"--r8-v9-md5": (_NT_PENDING,)}),
+    forbidden_values_why=dict(_R8.get("forbidden_values_why") or {}, **{
+        "--r8-v9-md5": "NT-CORPUS: the v9 release over the full A1 corpus is not built yet"}),
+    forbidden_levers=tuple(_R8["forbidden_levers"]) + (
+        (("--pose-sync-sidecar",), "DESIGN sec. 3 'dropped': a PhysicalAI pose-to-image timing artifact; the NavSim "
+                                   "token-episodes are on the nominal 0.1 s grid by construction"),) + _nt_b1_forbid,
+    #: NT: K4's identity, admitted by name -- the 12 map-only leaf groups take EXACTLY zero gradient on NavSim data
+    live_dead_admitted=tuple(_R8["live_dead_admitted"]) + tuple(
+        (g, "--map-min-coverage", "K4: a 10 cm map-ONLY part; no NavSim map GT, so every train window is all-IGNORE "
+                                  "and the loss is logits.sum() * 0 (exactly zero gradient by construction)")
+        for g in _NT_MAP_ONLY_GROUPS),
+    #: ga-reach: the SHARED parts must still be > 0 (the planner trains them); the map-only parts must read EXACTLY 0.0
+    map_hires=dict(_R8["map_hires"], ga_keys=("ga_mh_lift", "ga_mh_encoder", "ga_mh_trunk_s8_stage"),
+                   ga_keys_zero=("ga_mh_refine", "ga_mh_near", "ga_mh_near_refine")),
+    #: FIX-4 under the PREREG's "every refcv8 flag unchanged": the selection tolerance is refcv8's, INHERITED by
+    #: digest -- the record is bound by its sha256, its status and its tau, and NOT re-derived on navtrain (a navtrain
+    #: tau would move the selection mechanism and confound A1 - A0). nav_tau_reasons reads this field.
+    #: PREREG sec. 4.1: the PI's DATA-line ACK, bound by git blob (amendment_ack_reasons reads this field)
+    amendment_ack=_NT_AMENDMENT_ACK,
+    nav_tau_inherited={"record": "stack/tanitad/configs/refcv8_nav_compliance_tau_train4572.json",
+                       "sha256": "9fa7ca38b529bacfe79209c4bb9ccad039c7af284e5080f1c4f856ea46ebb5a3",
+                       "tau": 0.1806411302089691,
+                       "why": "PREREG_NT_DECIDE sec. 2: A1 keeps every refcv8 flag; theta_DEC was selected with this "
+                              "tau, and the R8_LEGAL bridge reads it from the checkpoint config"},
+    #: G-CLOCK: refcv8's three references (eval139 + the PhysicalAI clips) + the NT token clocks MEASURED from the
+    #: logs' 2 Hz microsecond timestamps (nt_clock_reference.py; NT-CORPUS places the file)
+    clock_reference=tuple(_R8["clock_reference"]) + ("stack/tanitad/configs/refcv8_nt/nt_clock_reference_a1.json",),
+)
 
 
 class GateError(RuntimeError):
@@ -2083,6 +2247,35 @@ def pi_pending_reasons(prof: dict, argv: list[str]) -> list[str]:
     return out
 
 
+def git_blob_id(data: bytes) -> str:
+    """git's blob id of ``data`` (``git hash-object --no-filters``): sha1 over ``blob <len>\\0<data>``."""
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + bytes([0]) + data).hexdigest()
+
+
+def amendment_ack_reasons(prof: dict, pmap: list[tuple[str, str]] | None = None) -> tuple[list[str], dict]:
+    """A profile's ``amendment_ack`` (refcv8-nt: PREREG_NT_DECIDE sec. 4.1, the PI's DATA-line ACK): the file at
+    ``path`` must EXIST and its git blob id must equal the pinned ``git_blob``. Missing -> REFUSED (absent the ACK the
+    pre-registered line is ``fallback_line``, which the profile's argv was not built for); different bytes -> REFUSED.
+    The evidence is the blob of the bytes THIS host reads, never a name or a size."""
+    ack = prof.get("amendment_ack")
+    if not ack:
+        return [], {"on": False}
+    local = map_path(ack["path"], pmap or [])
+    det: dict[str, Any] = {"on": True, "path": ack["path"], "local": local, "git_blob_pinned": ack["git_blob"]}
+    if not Path(local).is_file():
+        return [f"the PI's amendment ACK {ack['path']} is MISSING (PREREG sec. 4.1: absent the ACK the DATA line is "
+                f"{ack['fallback_line']}, not {ack['data_line']}) -- ship it beside the NT inputs and md5-verify it"], det
+    data = Path(local).read_bytes()
+    det["git_blob"] = git_blob_id(data)
+    m = re.search(r"DATA_LINE L_D = ([0-9]+(?:\.[0-9]+)?)", data.decode("utf-8", "replace"))
+    det["data_line_read"] = float(m.group(1)) if m else None
+    det["names_prereg_blob"] = ack["prereg_blob"] in data.decode("utf-8", "replace")
+    if det["git_blob"] != ack["git_blob"]:
+        return [f"the amendment ACK {local} has git blob {det['git_blob']}, the profile pins {ack['git_blob']} "
+                f"(PREREG sec. 4.1: a changed ACK is a new PI decision, not an edit)"], det
+    return [], det
+
+
 def profile_argv_rules(prof: dict, argv: list[str], options: dict | None = None,
                        pmap: list[tuple[str, str]] | None = None) -> tuple[list[str], list[str]]:
     """The profile's rules that read the ARGV alone -> (refusals, pi_pending). ONE definition,
@@ -2094,6 +2287,7 @@ def profile_argv_rules(prof: dict, argv: list[str], options: dict | None = None,
     refusals += forbidden_lever_reasons(prof, argv)[0]
     refusals += nav_tau_reasons(prof, argv, options.get("nav_tau_record"), pmap)[0]
     refusals += required_on_reasons(prof, argv)[0]
+    refusals += amendment_ack_reasons(prof, pmap)[0]
     return refusals, pi_pending_reasons(prof, argv)
 
 
@@ -2810,6 +3004,18 @@ def nav_tau_reasons(prof: dict, argv: list[str], record: str | None,
     labels_flag = nc.get("labels_flag", "--v7-labels")
     want_cache, want_labels = flag_values(argv, cache_flag), flag_values(argv, labels_flag)
     inputs = rec.get("inputs") if isinstance(rec.get("inputs"), dict) else None
+    inh = prof.get("nav_tau_inherited")
+    if inh:
+        # refcv8-nt (PREREG_NT_DECIDE sec. 2): the tau is INHERITED from the profile's named record, never re-derived
+        # on this arm's split. The record must be THAT file by content (sha256), status OK, its tau the pinned
+        # literal and the argv's; the split binding below is waived -- and the waiver is in the evidence.
+        det["inherited"] = dict(inh)
+        if det["sha256"] != inh.get("sha256"):
+            reasons.append(f"the tau record {record} (sha256 {det['sha256'][:16]}) is not the inherited record "
+                           f"{inh.get('record')} (sha256 {str(inh.get('sha256'))[:16]}) this profile names")
+        if t_rec is None or abs(float(t_rec) - float(inh.get("tau"))) > 1e-12:
+            reasons.append(f"the tau record's tau {t_rec} is not the inherited literal {inh.get('tau')}")
+        return reasons, det
     if inputs is not None:
         det["schema"] = "banked (inputs.manifest / inputs.labels)"
         man = (inputs.get("manifest") or {}).get("path")
@@ -4397,12 +4603,29 @@ def judge_ga_reach(prof: dict, rows: list[dict], *, log_every: int, final_step: 
     keys = [f"ga_{g}" for g in want]
     if hires:
         keys += list(prof["map_hires"]["ga_keys"])
+    zero_keys = list((prof.get("map_hires") or {}).get("ga_keys_zero", ())) if hires else []
+    det["required_zero_keys"] = zero_keys
     logged = [r for r in rows if isinstance(r.get("step"), int)
               and (r["step"] % max(1, log_every) == 0 or r["step"] == final_step)]
     det["logged_rows"] = [r["step"] for r in logged][:20]
     if not logged:
         reasons.append("G-LIVE ga-reach: the smoke wrote no logged training row")
         return reasons, det
+    if zero_keys:
+        # ⛔ an identity, not a tolerance: a map-only part of a run with NO map labels must read EXACTLY 0.0. A non-zero
+        # value means map supervision leaked in (a GT file found for a NavSim window, or a PhysicalAI window trained)
+        zmiss = [(r["step"], [k for k in zero_keys if k not in r]) for r in logged
+                 if any(k not in r for k in zero_keys)]
+        zbad = [(r["step"], k, r[k]) for r in logged for k in zero_keys
+                if k in r and not (_finite_num(r[k]) and float(r[k]) == 0.0)]
+        det.update(zero_rows_missing=zmiss[:10], zero_bad_values=zbad[:10])
+        if zmiss:
+            reasons.append(f"G-LIVE ga-reach: {len(zmiss)} logged rows lack the must-be-zero keys "
+                           f"(first: step {zmiss[0][0]} lacks {zmiss[0][1][:4]})")
+        if zbad:
+            reasons.append(f"G-LIVE ga-reach: {len(zbad)} must-be-ZERO reach value(s) are not exactly 0.0 (first: "
+                           f"step {zbad[0][0]} {zbad[0][1]} = {zbad[0][2]}) -- map supervision reached a run that has "
+                           f"no map labels")
     missing_rows, bad_vals = [], []
     for r in logged:
         miss = [k for k in keys if k not in r]

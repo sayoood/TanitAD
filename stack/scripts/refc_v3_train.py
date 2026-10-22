@@ -138,6 +138,7 @@ from tanitad.eval import detection_metrics as _det_metrics  # noqa: E402  (refcv
 from tanitad.eval import detection_nms as _det_nms  # noqa: E402  (refcv8 WP-C I1/F4b; scripts/ ONLY, never planner-side)
 from tanitad.eval import detection_zh as _det_zh  # noqa: E402  (refcv8 WP-C I2/fix 5)
 from tanitad.data import join_label_hygiene as _jlh  # noqa: E402  (refcv8 WP-C I3/fixes 3+4)
+from tanitad.train import nt_guard as _nt_guard  # noqa: E402  (H-NT-DECIDE-1 K3, the NavSim held-out guard)
 # --- refcv6 §2/§6: the perception branch (map + 3-D boxes) ------------------ #
 # ⛔ IMPORTED UNCONDITIONALLY, USED ONLY BEHIND A POSITIVE WEIGHT. An
 # analysis-time import that fails AFTER the rollout destroys a run whose
@@ -994,6 +995,9 @@ def _pin_refcv8(cfg, args) -> None:
                     or bool(getattr(args, "r8_roll_speed_input", False))):
         raise SystemExit("[refcv8] --r8-speed-unknown-p / --r8-roll-speed-input without --r8-speed-input: "
                          "there is no past-only speed input to drop or roll (a dead flag)")
+    if bool(getattr(args, "r8_speed_unknown_always", False)) and _si != "label":
+        raise SystemExit("[refcv8] --r8-speed-unknown-always (H-NT-DECIDE-1) declares the LABEL source's train "
+                         "sidecar all-unknown: it needs --r8-speed-input label (a dead flag otherwise)")
     if getattr(args, "agent_join", None) and not getattr(args, "join_defect_masks", None):
         # MM binding 2026-10-04 item 6: the 693-box ego-footprint mask is APPLIED on refcv8 (the 8-clip drop list
         # is NOT -- PI decision 8 is open, the default is keep). WP-C's list reproduces D3's 693 boxes / 18 clips.
@@ -4378,21 +4382,33 @@ class V3Dataset(RouteV21Dataset):
               f"{rep.get('over_ceiling_frac_of_known')}", flush=True)
         return self.max_speed_report
 
-    def enable_r8_speed_label(self, sidecar_path: str, manifest=None) -> dict:
+    def enable_r8_speed_label(self, sidecar_path: str, manifest=None, *, all_unknown: bool = False) -> dict:
         """refcv8 ``--r8-speed-input label`` (PI 2026-10-11): the 4-way set-speed channel's SOURCE is refcv7's ROAD-TYPE
         sidecar ({30, 50, 100, 120} km/h), fed as the ROAD-TYPE STEP and never as the sidecar's exact ``v_hi_ms``
         (``r8train.read_road_type_sidecar`` refuses a sidecar that carries anything else). Rides the same
         ``_max_speed_by_sid`` -> ``item["v_max_ms"]`` path as :meth:`enable_max_speed_v6`, so ``r8_before_forward``'s
         trained unknown row / V-VSHUF roll apply unchanged. REFUSES a split where NOT ONE window joins a known row (a
-        join failure, not a channel). Returns the census config.json stamps, with the per-step histogram."""
+        join failure, not a channel). Returns the census config.json stamps, with the per-step histogram.
+
+        ``all_unknown`` (H-NT-DECIDE-1 ``--r8-speed-unknown-always``, the TRAIN split only): the sidecar is ALL
+        UNKNOWN by design (the NavSim inference feed). Then EVERY window must join a sidecar row (a sidecar for
+        another split still refuses: it would join nothing) and NOT ONE may carry a road type."""
         if self.max_speed_enabled:
             raise SystemExit("[refcv8] ⛔ the label source: a max-speed channel is already feeding `v_max_ms` on this "
                              "dataset; one channel, one source")
         by_sid, report = r8train.read_road_type_sidecar(
-            str(sidecar_path), label_md5=(getattr(manifest, "md5", None) if manifest else None))
-        win = r8train.road_type_histogram(by_sid, [int(self.episodes[e_i].episode_id) for (e_i, _t) in self.index])
+            str(sidecar_path), label_md5=(getattr(manifest, "md5", None) if manifest else None),
+            allow_all_unknown=bool(all_unknown))
+        _wsids = [int(self.episodes[e_i].episode_id) for (e_i, _t) in self.index]
+        win = r8train.road_type_histogram(by_sid, _wsids)
         n_fed = win["n_windows"] - win["n_unknown"]
-        if win["n_windows"] and n_fed == 0:
+        if all_unknown:
+            n_absent = sum(1 for s_ in _wsids if s_ not in by_sid)
+            if n_absent or n_fed:
+                raise SystemExit(f"[refcv8] ⛔ --r8-speed-unknown-always: {n_absent} of {win['n_windows']} windows join "
+                                 f"NO sidecar row and {n_fed} join a KNOWN road type -- the declared feed is an explicit "
+                                 f"unknown row on every window, nothing else")
+        elif win["n_windows"] and n_fed == 0:
             raise SystemExit(f"[refcv8] ⛔ --r8-speed-input label: NOT ONE of this split's {win['n_windows']} windows "
                              f"joins a sidecar row with a road type -- a sidecar for another split; the channel would "
                              f"be a constant unknown row")
@@ -7297,6 +7313,49 @@ def refuse_eval_clips_in_train(cache_dirs, args) -> list[str]:
     return hits
 
 
+def parse_snapshot_steps(spec, steps: int) -> frozenset:
+    """``--snapshot-steps "0,1560,3120"`` -> the frozenset of steps that get a model-only RAW + EMA snapshot
+    (H-NT-DECIDE-1). ``None`` -> empty. REFUSES a non-integer, a negative step, a step beyond ``--steps`` and a
+    duplicate: a snapshot that can never be written is a selection read that silently does not exist."""
+    if spec in (None, ""):
+        return frozenset()
+    try:
+        vals = [int(x) for x in str(spec).split(",") if x.strip() != ""]
+    except ValueError:
+        raise SystemExit(f"[v3] ⛔ --snapshot-steps {spec!r}: not a comma list of integers") from None
+    if len(set(vals)) != len(vals):
+        raise SystemExit(f"[v3] ⛔ --snapshot-steps {spec!r}: duplicate step")
+    bad = [v for v in vals if v < 0 or v > int(steps)]
+    if bad:
+        raise SystemExit(f"[v3] ⛔ --snapshot-steps {bad}: outside [0, --steps {steps}] -- never written")
+    return frozenset(vals)
+
+
+def restrict_window_starts(ds, mode: str) -> dict:
+    """H-NT-DECIDE-1 R2 (``--window-starts``): ``'all'`` returns ``{}`` and touches nothing; ``'first'`` keeps
+    exactly ONE window per episode, ``t = 0``, and ASSERTS one per episode.
+
+    ⛔ A NAMED FUNCTION SO A TEST CALLS THE REAL FILTER (the ``refuse_eval_clips_in_train`` pattern). Called
+    right after the TRAIN dataset is constructed and BEFORE any ``enable_*`` join walks ``ds.index``: every
+    census downstream (agent coverage, speed histogram, v9 join rows) then counts the windows that train.
+    A NavSim token-episode stores frames for raw rows 0..29 only (``frame_index`` [30], INTERFACE.md sec. 4),
+    so a window ``t >= 1`` would raise on its first decode -- the backstop, not the guard."""
+    if mode in (None, "all"):
+        return {}
+    if mode != "first":
+        raise SystemExit(f"[v3] ⛔ --window-starts {mode!r} (choices: all, first)")
+    before = len(ds.index)
+    n_eps = len(ds.episodes)
+    keep = [(e_i, t) for (e_i, t) in ds.index if int(t) == 0]
+    have = sorted({int(e_i) for (e_i, _t) in keep})
+    if len(keep) != n_eps or have != list(range(n_eps)):
+        miss = sorted(set(range(n_eps)) - set(have))
+        raise SystemExit(f"[v3] ⛔ --window-starts first: {len(keep)} t=0 windows for {n_eps} episodes "
+                         f"(missing episodes {miss[:5]}): every token-episode must contribute exactly ONE window")
+    ds.index = keep
+    return {"mode": "first", "n_windows_before": int(before), "n_windows": int(len(keep)), "n_episodes": int(n_eps)}
+
+
 def _eval_clips_in_v2_cache(cache_dirs) -> list[str]:
     """-> the v7.2 EVAL clip ids present in the given ``*.v2ep.pt`` cache dir(s).
 
@@ -9359,6 +9418,10 @@ def train(args) -> dict:
                          "--synth-episodes (the synthetic corpus is CI-only "
                          "and must never masquerade as a training cache)")
     v2_parity = None
+    nt_guard_stats = {}                       # H-NT-DECIDE-1 K3 (filled on the --v2-cache path)
+    if (getattr(args, "nt_heldout", None) or getattr(args, "nt_token_table", None)) and not args.v2_cache:
+        raise SystemExit("[v3] ⛔ --nt-heldout / --nt-token-table guard a --v2-cache directory listing; without "
+                         "--v2-cache they would be stamped and check nothing")
     synth_clip_ids_from_labels = None
     if args.synth_episodes:
         # ⭐ When a label blob is supplied, stamp the synthetic episodes with
@@ -9406,6 +9469,13 @@ def train(args) -> dict:
         # ⭐ Checked on the DIRECTORY LISTING, before a single provider is built: the
         # providers do not expose `clip_id`, but the filenames ARE `<clip_id>.v2ep.pt`.
         refuse_eval_clips_in_train(args.v2_cache, args)
+        # ⛔ H-NT-DECIDE-1 K3: the NavSim held-out logs (38 selection-scan + every navtest log), checked on the
+        # SAME directory listing, before a provider is built. {} when --nt-heldout is not passed.
+        nt_guard_stats = _nt_guard.refuse_heldout_in_train(args.v2_cache, args)
+        if nt_guard_stats:
+            print(f"[v3] NT held-out guard: {nt_guard_stats['n_train_clips']} train clips on "
+                  f"{nt_guard_stats['n_distinct_logs']} logs, 0 of {nt_guard_stats['n_heldout_logs']} held-out logs "
+                  f"(guard sha256 {nt_guard_stats['guard_sha256'][:16]})", flush=True)
         eps = build_v2_providers(args.v2_cache, lru_size=args.v2_lru)
         if v2_parity.get("parity") and len(eps) != v2_parity["episodes_loaded"]:
             raise parity.ParityViolation(
@@ -9441,6 +9511,8 @@ def train(args) -> dict:
             arclengths_m=tuple(args.lan_arclengths),
             min_lead_m=args.lan_min_lead_m)
     ds = dcls(eps, **kw)
+    # ⭐ H-NT-DECIDE-1 R2: ONE window per token-episode (t = 0), BEFORE any enable_* join walks `ds.index`.
+    nt_window_stats = restrict_window_starts(ds, getattr(args, "window_starts", "all"))
     # --u8-batches: the dataset emits frames AS STORED (uint8); the device-side
     # /255 is frames_to_device in compute_losses_v3. Instance attribute — the
     # V3Dataset idiom; see FailLoudWindowDataset.u8_frames (refb_train.py).
@@ -9631,7 +9703,9 @@ def train(args) -> dict:
         if (getattr(args, "max_speed_input_v6", False)
                 and getattr(args, "r8_speed_input", None) not in r8train.R8_SPEED_PAST_ONLY):
             if getattr(args, "r8_speed_input", None) == r8train.R8_SPEED_LABEL:       # PI 2026-10-11
-                max_speed_v6_stats = ds.enable_r8_speed_label(str(args.speed_max_sidecar_v6), manifest)
+                max_speed_v6_stats = ds.enable_r8_speed_label(
+                    str(args.speed_max_sidecar_v6), manifest,
+                    all_unknown=bool(getattr(args, "r8_speed_unknown_always", False)))   # H-NT-DECIDE-1
             else:
                 max_speed_v6_stats = ds.enable_max_speed_v6(
                     str(args.speed_max_sidecar_v6), manifest)
@@ -10400,6 +10474,9 @@ def train(args) -> dict:
         # recorded so such a run can never be mistaken for a trained arm.
         "synth_clip_ids_from_labels": synth_clip_ids_from_labels,
         "v7_labels": v7_manifest,
+        # ⭐ H-NT-DECIDE-1: the NavSim held-out guard census and the window filter ({} = not requested).
+        "nt_decide": {"heldout_guard": nt_guard_stats, "window_starts": nt_window_stats,
+                      "r8_speed_unknown_always": bool(getattr(args, "r8_speed_unknown_always", False))},
         # ⭐ refcv5 WP-6: WHICH labels the detector saw, and HOW MANY windows
         # actually carried one. A run that stamps `w_agent > 0` without this
         # cannot say whether its detector was supervised on 100 % or 3 % of
@@ -10639,6 +10716,16 @@ def train(args) -> dict:
             torch.save(_ckpt_payload(model, opt, step, _dpos, len(ds), args, _ema, _b1), ck)
             print("[v3:eval] B1 GUARD (catch-up on resume) at step %d: EMA box3d AP@2 m %.5f vs refcv7-50,400 %.5f -> %s" % (
                 step, _b1_row["b1_ema_box3d_ap2m"], _b1_row["b1_ref_box3d_ap2m"], _b1_row["b1_guard"].upper()), flush=True)
+    # ⭐ H-NT-DECIDE-1 (`--snapshot-steps`): the held-out selection reads' snapshots (EMA + RAW, model-only, the
+    # milestone layout). Step 0 is written HERE, before the first update, and only on a FRESH start: it is the
+    # warm-start identity control K0's input (the --init-from weights exactly as this trainer loaded them).
+    _nt_snaps = parse_snapshot_steps(getattr(args, "snapshot_steps", None), int(args.steps))
+    if 0 in _nt_snaps and step == 0:
+        torch.save({"model": model.state_dict(), "step": 0}, out_dir / "ckpt_0.pt")
+        if _ema is not None:
+            _save_ema_model(_ema, model, 0, out_dir / "ckpt_ema_0.pt")
+        print(f"[v3:{args.arm}] step-0 snapshot -> ckpt_0.pt" + (" + ckpt_ema_0.pt" if _ema is not None else ""),
+              flush=True)
     while step < args.steps:
         if _seed_batch is not None:
             batch, _seed_batch = _seed_batch, None       # an EXTRA batch: `_dpos` and the iterator are untouched
@@ -10940,11 +11027,11 @@ def train(args) -> dict:
             # the one line that makes the order VERIFIABLE from train.log
             print(f"[v3:{args.arm}] ckpt step {step} -> {ck.name}",
                   flush=True)
-        if step in MILESTONES:
+        if step in MILESTONES or step in _nt_snaps:      # H-NT-DECIDE-1: + the --snapshot-steps (RAW, model-only)
             torch.save({"model": model.state_dict(), "step": step},
                        out_dir / f"ckpt_{step}.pt")
         if _ema is not None:                 # refcv8 R8-WARMUP: the EMA weights, model-only, beside the live ones
-            if step in MILESTONES:
+            if step in MILESTONES or step in _nt_snaps:
                 _save_ema_model(_ema, model, step, out_dir / f"ckpt_ema_{step}.pt")
             if step == args.steps:
                 _save_ema_model(_ema, model, step, out_dir / "model_ema.pt")
@@ -11376,6 +11463,26 @@ def build_parser() -> argparse.ArgumentParser:
                     help="⛔ DELIBERATE, NAMED OVERRIDE. Permit v7.2 EVAL clips in "
                          "--v2-cache. Refused by default because training on them voids "
                          "every eval-139 number the arm reports. Stamped into config.json.")
+    # ---- H-NT-DECIDE-1 (PREREG_NT_DECIDE, PI 2026-10-21): the NavSim token-episode corpus. INPUT PATH ONLY --
+    # none of these flags touches the model; each defaults to the pre-NT behaviour, byte for byte.
+    ap.add_argument("--window-starts", choices=("all", "first"), default="all",
+                    help="H-NT-DECIDE-1 R2: 'first' keeps exactly ONE window per TRAIN episode, t = 0 (a NavSim "
+                         "token-episode's NOW is its t0 frame; windows t >= 1 have no frame by contract and would "
+                         "raise on decode). Applied to the TRAIN dataset only, BEFORE any join walks the index; the "
+                         "eval139 monitor keeps every window. 'all' (default) = the pre-NT index, unchanged.")
+    ap.add_argument("--snapshot-steps", type=str, default=None,
+                    help="H-NT-DECIDE-1: comma list of steps that each write a model-only RAW ckpt_<step>.pt AND (with "
+                         "--ema-decay) ckpt_ema_<step>.pt, beside the fixed MILESTONES. 0 = the step-0 save (fresh "
+                         "start only), the warm-start identity control K0's input. Default: none (pre-NT behaviour).")
+    ap.add_argument("--nt-heldout", type=str, default=None,
+                    help="H-NT-DECIDE-1 K3: the held-out log file (tanitad.nt_heldout/1: the 38 selection-scan logs "
+                         "+ every navtest log). REFUSES a --v2-cache clip on any of them. Needs --nt-heldout-sha256 "
+                         "and --nt-token-table.")
+    ap.add_argument("--nt-heldout-sha256", type=str, default=None,
+                    help="H-NT-DECIDE-1: the pinned sha256 of --nt-heldout (the launch gate binds the exact list)")
+    ap.add_argument("--nt-token-table", type=str, default=None,
+                    help="H-NT-DECIDE-1: clip_id -> (token, log_name) for every --v2-cache clip (nt_labels.py's "
+                         "token_table_nt.json); a clip it does not name is REFUSED (unknown provenance)")
     ap.add_argument("--require-parity", action="store_true",
                     help="REFUSE unless --v2-cache references a REGISTERED "
                          "corpus key (B1 is unregistered as of 2026-09-01: "
@@ -12434,6 +12541,11 @@ def build_parser() -> argparse.ArgumentParser:
     g8.add_argument("--r8-speed-unknown-p", type=float, default=None,
                     help="X3: the trained 'unknown' row's rate on TRAINING windows (None = 0.45, D4 / NavSim's no-limit "
                          "share); refused outside (0, 1)")
+    g8.add_argument("--r8-speed-unknown-always", action="store_true",
+                    help="H-NT-DECIDE-1: the TRAIN road-type sidecar is ALL UNKNOWN by design (NavSim publishes no "
+                         "speed limit; the bridge feeds the trained unknown row at inference). Admits a train "
+                         "sidecar with zero known rows -- and REFUSES one that carries any known row. Needs "
+                         "--r8-speed-input label. The eval sidecar is read unchanged (it must carry known rows).")
     g8.add_argument("--r8-roll-speed-input", action="store_true",
                     help="DELIBERATE REGRESSION (training only, SPEC_WPB_LADDER L4 V-VSHUF): every row takes another "
                          "window's speed input (roll by one; distribution kept, information removed)")

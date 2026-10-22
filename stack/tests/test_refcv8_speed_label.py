@@ -418,7 +418,11 @@ def _train_src():
 
 def test_train_dispatches_label_to_the_road_type_reader_on_both_splits_and_n2_n3_to_the_v9_column():
     src = _train_src()
-    assert "ds.enable_r8_speed_label(str(args.speed_max_sidecar_v6), manifest)" in src
+    # H-NT-DECIDE-1: the train-split call also passes `all_unknown` (--r8-speed-unknown-always); the eval call is unchanged
+    i_call = src.index("max_speed_v6_stats = ds.enable_r8_speed_label(")
+    call = src[i_call:src.index("else:", i_call)]
+    assert "str(args.speed_max_sidecar_v6), manifest," in call
+    assert 'all_unknown=bool(getattr(args, "r8_speed_unknown_always", False))' in call
     assert "e_ds.enable_r8_speed_label(_esc, e_man)" in src
     assert src.count('getattr(args, "r8_speed_input", None) in r8train.R8_SPEED_PAST_ONLY:') == 2   # train + eval v9 columns
     assert 'ds.enable_r8_speed(args.r8_speed_input)' in src and 'e_ds.enable_r8_speed(args.r8_speed_input)' in src

@@ -301,7 +301,8 @@ def test_step_loop_saves_before_it_evals_in_the_source():
     i_save = loop.index('"opt": opt.state_dict(), "step": step,')
     i_eval = loop.index("if eval_dl is not None and (step % args.eval_every")
     assert i_save < i_eval, "ckpt.pt must be written BEFORE the eval block"
-    assert loop.index("if step in MILESTONES:") < i_eval
+    # H-NT-DECIDE-1: the milestone save also writes the --snapshot-steps (RAW, model-only); the ORDER pin is the same
+    assert loop.index("if step in MILESTONES or step in _nt_snaps:") < i_eval
     assert "except Exception as exc:" in loop and '"eval_error"' in loop
     # ⚠️ THREE held-out passes live in the loop: since W-BOOTSTRAP (2026-09-19) the
     # aggregate eval and the per-window dump, and since refcv7 A10 15.3 the INFORMATIVE

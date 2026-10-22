@@ -1139,6 +1139,13 @@ for _d, _why in (
         ("v7_labels", "the train label blob"), ("cot_negative_sidecar", "a label sidecar"),
         ("tac_goal_negatives", "the label NEGATIVE policy"), ("v2_lru", "a cache size"),
         ("allow_eval_clips_in_train", "a corpus-split override (stamped)"),
+        # H-NT-DECIDE-1 (PREREG_NT_DECIDE): input-path only, each stamped in config.json[nt_decide]
+        ("window_starts", "the TRAIN window index filter (t = 0 per NavSim token-episode; stamped)"),
+        ("nt_heldout", "the NavSim held-out log guard (a corpus-split refusal; stamped)"),
+        ("nt_heldout_sha256", "the pinned digest of the held-out guard file"),
+        ("nt_token_table", "the clip -> (token, log) table the held-out guard reads"),
+        ("r8_speed_unknown_always", "the declared all-UNKNOWN train speed sidecar (a sidecar-reader switch; "
+                                    "the trained unknown row is the model's existing input)"),
         ("require_parity", "a corpus-parity refusal"), ("synth_episodes", "the CI corpus"),
         ("episodes", "a corpus subset size"), ("map_gt_root", "the SAM3 map GT path"),
         ("map_min_coverage", "a map-GT coverage filter"), ("map_lru", "a cache size"),
@@ -1158,6 +1165,7 @@ for _d, _why in (
         ("eval_window_dump", "an eval output path"), ("out", "the run directory"),
         ("workers", "data-loader workers"), ("log_every", "logging cadence"),
         ("save_every", "checkpoint cadence"), ("device", "the device"),
+        ("snapshot_steps", "H-NT-DECIDE-1 model-only RAW + EMA snapshot steps (checkpoint cadence)"),
         ("preflight", "the preflight mode switch")):
     register(_d, "runtime", reason=_why)
 

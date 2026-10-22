@@ -319,7 +319,8 @@ def assert_speed_max_stamp_v6(cfg_dict: dict, on: bool) -> None:
 
 # --- the sidecar -----------------------------------------------------------
 
-def read_speed_max_sidecar_v6(path: str, *, label_md5: str | None = None
+def read_speed_max_sidecar_v6(path: str, *, label_md5: str | None = None,
+                              allow_all_unknown: bool = False
                               ) -> tuple[dict[int, tuple[float, float]], dict]:
     """``sidecar.jsonl -> ({sid: (v_hi_ms, valid)}, meta)``.
 
@@ -450,7 +451,14 @@ def read_speed_max_sidecar_v6(path: str, *, label_md5: str | None = None
             f"they contain. Rebuild it with "
             f"`scripts/build_refcv6_speed_max_window.py`, which now emits "
             f"`sid` on every row.")
-    if n_valid == 0:
+    # ⭐ H-NT-DECIDE-1 (`allow_all_unknown`, from the trainer's --r8-speed-unknown-always): the NavSim train
+    # sidecar is ALL UNKNOWN BY DESIGN (the bridge feeds the trained unknown row at inference). Then a KNOWN row
+    # is the error, and zero known rows is the contract -- the refusal below is inverted, not dropped.
+    if allow_all_unknown and n_valid:
+        raise SpeedMaxStampError(
+            f"[refcv6-vmax] ⛔ allow_all_unknown: {n_valid} of the sidecar's {n_rows} rows carry a ceiling, but the "
+            f"declared feed is UNKNOWN on every row (H-NT-DECIDE-1). A mixed sidecar is another experiment.")
+    if n_valid == 0 and not allow_all_unknown:
         raise SpeedMaxStampError(
             f"[refcv6-vmax] ⛔ NOT ONE of the sidecar's {n_rows} rows carries "
             f"a valid ceiling (every row is keyed and readable, and every one "
@@ -466,6 +474,7 @@ def read_speed_max_sidecar_v6(path: str, *, label_md5: str | None = None
         "source_md5": meta.get("source_md5"),
         "source_labels": meta.get("source_labels"),
         "join_key": "sid = stable_episode_id(clip_id)",
+        "all_unknown_declared": bool(allow_all_unknown),
         "ladder_kmh": list(SPEED_MAX_STEPS_KMH_V6),
         "quantized_by": ("tanitad.refs.refcv6_max_speed.MaxSpeedOneHotEncoder "
                          "(model side, ONCE); this reader ships the RAW "
