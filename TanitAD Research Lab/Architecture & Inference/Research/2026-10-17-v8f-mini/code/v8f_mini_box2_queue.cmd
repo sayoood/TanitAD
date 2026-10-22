@@ -28,6 +28,11 @@ rem                                             schedule --p-gt-start %PGTS% --p
 rem   v8f_mini_box2_queue.cmd trainpgt SEED     PREREG_V8F_PGT: one M2b-pgt run into %RUNSM%\M2b-pgt_s<SEED> (resumes; skipped once done)
 rem   v8f_mini_box2_queue.cmd evalpgt SEED      PREREG_V8F_PGT: that run's eval-141 (--project --families), its absent-slot oracle (absmask), its GT-code
 rem                                             oracle (tacorc) and its all-latcons oracle (GT everywhere but T's latcons); each skipped once its npz exists
+rem   v8f_mini_box2_queue.cmd gategrid BASE        PREREG_V8F_GRID: the in-process launch gate for G = BASE + --grid pool8x20, no training. BASE is M2b or M2b-pgt (the
+rem                                             base is decided by PREREG_V8F_PGT's reads, not here): M2b-pgt carries the PGT dose (PGTS / PGTE, defined ONCE below)
+rem   v8f_mini_box2_queue.cmd traingrid SEED BASE  PREREG_V8F_GRID: one G run into %RUNSM%\<BASE>_s<SEED>_8x20 (resumes; skipped once done)
+rem   v8f_mini_box2_queue.cmd evalgrid SEED BASE   PREREG_V8F_GRID: that run's eval-141 (--project --families), its absmask eval, its GT-code oracle and its all-latcons oracle,
+rem                                             tagged <BASE>-8x20_s<SEED>; each skipped once its npz exists
 rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
@@ -75,7 +80,10 @@ if /i "%~1"=="evalwc" goto :evalwc
 if /i "%~1"=="gatepgt" goto :gatepgt
 if /i "%~1"=="trainpgt" goto :trainpgt
 if /i "%~1"=="evalpgt" goto :evalpgt
-echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED
+if /i "%~1"=="gategrid" goto :gategrid
+if /i "%~1"=="traingrid" goto :traingrid
+if /i "%~1"=="evalgrid" goto :evalgrid
+echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED^|gategrid BASE^|traingrid SEED BASE^|evalgrid SEED BASE
 exit /b 2
 
 rem train / eval are CALLED with the stage name dropped, so inside them %~1 = ARM, %~2 = SEED, %~3 = GRID
@@ -332,6 +340,84 @@ if exist "%EV%\eval_%TG%-tacorc-all-latcons.npz" (echo [skip] eval %TG%-tacorc-a
 if errorlevel 1 (echo [FAIL] eval %TG%-tacorc-all-latcons - see %EV%\eval_%TG%-tacorc-all-latcons.log & exit /b 1)
 echo [ok] eval %TG%-tacorc-all-latcons
 :evalpgt_4
+exit /b 0
+
+:gridbase
+rem PREREG_V8F_GRID: the base B of the arm, passed as BASE. M2b-pgt carries the PGT dose (PGTS / PGTE, defined once above); M2b carries no schedule flag. Sets GBASE and GLEV (the base's
+rem lever flags WITH A LEADING SPACE, or empty), so ONE command string serves both bases. Any other BASE (or none) is refused with rc 2.
+set "GBASE=%~1"
+set "GLEV="
+if /i "%GBASE%"=="M2b-pgt" set "GLEV= --p-gt-start %PGTS% --p-gt-end %PGTE%"
+if /i not "%GBASE%"=="M2b" if /i not "%GBASE%"=="M2b-pgt" (echo REFUSED: BASE must be M2b or M2b-pgt, got "%GBASE%" & exit /b 2)
+exit /b 0
+
+:gategrid
+rem PREREG_V8F_GRID: G = BASE's levers with --grid pool8x20 and nothing else. The trainer's G-DVB checks the built n_tok against this argv; selfcheck.json records the built parameter
+rem groups (the position table is the only per-token parameter) and the LRU the 160-token frames imply; the chain asserts them before any training.
+call :prep || exit /b 2
+call :gridbase %~2 || exit /b 2
+rem ONE command string: the dry run prints exactly what the real run executes
+set "GG="%PY%" "%TRAIN%" --arm M2b%GLEV% --grid pool8x20 --out "%RUNSM%\gate_%GBASE%-8x20" %A% --selfcheck-only"
+if defined V8F_DRYRUN (echo %GG% & exit /b 0)
+%GG% > "%RUNSM%\gate_%GBASE%-8x20.log" 2>&1
+if errorlevel 1 (echo [FAIL] gate %GBASE%-8x20 - see %RUNSM%\gate_%GBASE%-8x20.log & exit /b 1)
+echo [ok] gate %GBASE%-8x20
+exit /b 0
+
+:traingrid
+rem PREREG_V8F_GRID: one G run. Its summary.json says arm M2b (the trainer's arm table is unchanged); its argv.json carries --grid pool8x20 (and, for BASE M2b-pgt, the PGT dose), its
+rem checkpoint the grid and the built n_tok: code\v8f_grid_read.py refuses a run where any is not. The run lives in <BASE>_s<SEED>_8x20, so it can never resume or be mistaken for a 4x10 run.
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: traingrid needs a SEED and a BASE & exit /b 2)
+call :gridbase %~3 || exit /b 2
+set "OUT=%RUNSM%\%GBASE%_s%~2_8x20"
+if exist "%OUT%\summary.json" (echo [skip] %GBASE%_s%~2_8x20 & exit /b 0)
+rem ONE command string: the dry run prints exactly what the real run executes
+set "TGR="%PY%" "%TRAIN%" --arm M2b%GLEV% --seed %~2 --grid pool8x20 --out "%OUT%" %A%"
+if defined V8F_DRYRUN (echo %TGR% & exit /b 0)
+if not exist "%OUT%" mkdir "%OUT%"
+echo [%date% %time%] train %GBASE%_s%~2_8x20
+%TGR% >> "%OUT%\train.log" 2>&1
+if errorlevel 1 (echo [FAIL] train %GBASE%_s%~2_8x20 - see %OUT%\train.log & exit /b 1)
+if not exist "%OUT%\summary.json" (echo [FAIL] train %GBASE%_s%~2_8x20 exited 0 without summary.json & exit /b 1)
+exit /b 0
+
+:evalgrid
+rem PREREG_V8F_GRID: the four evals its reader needs, EACH ONE command string that the dry run prints and the real run executes (the PGT recipe):
+rem   E0 the standard eval (--project --families)   E1 absmask (T's own present slots)   E2 the GT-code oracle (tacorc)   E3 the all-latcons oracle (GT everywhere but T's latcons)
+rem   All four read THIS run's last checkpoint, which names its own grid (pool8x20): v8f_mini_eval.py takes the grid from the checkpoint. Each is skipped once its npz exists.
+rem   FLAT on purpose (no parenthesised else-block): an `exit /b 1` inside a multi-line block returns rc 0 from `cmd /c queue.cmd` (MEASURED by the PGT build).
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: evalgrid needs a SEED and a BASE & exit /b 2)
+call :gridbase %~3 || exit /b 2
+set "OUT=%RUNSM%\%GBASE%_s%~2_8x20"
+set "TG=%GBASE%-8x20_s%~2"
+set "E0="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG% %EC% %ER% --project --families"
+set "E1="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacabs --tac absmask %EC% %ER%"
+set "E2="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacorc --tac oracle %EC% %ER%"
+set "E3="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacorc-all-latcons --tac oracle --tac-groups all-latcons --tac-alpha 1 %EC% %ER%"
+if defined V8F_DRYRUN (echo %E0% & echo %E1% & echo %E2% & echo %E3% & exit /b 0)
+if not exist "%OUT%\summary.json" (echo REFUSED: %TG% has not finished training & exit /b 2)
+if exist "%EV%\eval_%TG%.npz" (echo [skip] eval %TG% & goto :evalgrid_1)
+%E0% >> "%EV%\eval_%TG%.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG% - see %EV%\eval_%TG%.log & exit /b 1)
+echo [ok] eval %TG%
+:evalgrid_1
+if exist "%EV%\eval_%TG%-tacabs.npz" (echo [skip] eval %TG%-tacabs & goto :evalgrid_2)
+%E1% >> "%EV%\eval_%TG%-tacabs.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacabs - see %EV%\eval_%TG%-tacabs.log & exit /b 1)
+echo [ok] eval %TG%-tacabs
+:evalgrid_2
+if exist "%EV%\eval_%TG%-tacorc.npz" (echo [skip] eval %TG%-tacorc & goto :evalgrid_3)
+%E2% >> "%EV%\eval_%TG%-tacorc.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacorc - see %EV%\eval_%TG%-tacorc.log & exit /b 1)
+echo [ok] eval %TG%-tacorc
+:evalgrid_3
+if exist "%EV%\eval_%TG%-tacorc-all-latcons.npz" (echo [skip] eval %TG%-tacorc-all-latcons & goto :evalgrid_4)
+%E3% >> "%EV%\eval_%TG%-tacorc-all-latcons.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacorc-all-latcons - see %EV%\eval_%TG%-tacorc-all-latcons.log & exit /b 1)
+echo [ok] eval %TG%-tacorc-all-latcons
+:evalgrid_4
 exit /b 0
 
 :gatearm

@@ -65,3 +65,21 @@
   * Prove that a checkpoint whose `n_tok` disagrees with the features it is given is REFUSED, not silently scored. If the eval cannot refuse today, the refusal is added, with a mutation.
 * **Chain:** every manifest row of box 2's train and eval caches lists `8x20`; the dry run prints the exact line each stage runs, and a static test pins the printed line to the run line.
 * **Reader:** B against itself reads exactly +0 [0, 0]; a synthetic regression fails; a synthetic success passes.
+
+## Amendment 1 (2026-10-22, written before any GRID data: what building the instruments found)
+
+* **F1: a derived constant moves with the lever.** The trainer sizes its clip cache from a fixed RAM budget and the token count, then the sampler chunk from that:
+  * `v8f_mini_train.py:328`: `lru = max(8, 1.5e9 // (n_max · n_tok · 1024 · 2))`;
+  * `:405`: `chunk = max(4, min(48, lru − 2))`.
+  * At 8×20 the chunk falls from 48 to about 41 clips, so each batch is drawn from slightly fewer clips at a time.
+  * It is NOT pinned: pinning it would need a second flag and more RAM on the PI's machine. It is declared part of the lever, "the stack's scene resolution, with the sampler chunk the trainer derives from it". Both chunk sizes are reported.
+* **F2: which RMSE.** M-LAT uses the slot-pooled present-slot RMSE. That is the definition behind the 0.686 SD this file cites, and the one `v8f_wc_read.py` uses.
+  * The window-weighted RMSE (0.468 SD at M2b_s0) is reported beside it and decides nothing.
+  * The reader flags it when the two disagree on the 12.5 % bar.
+* **The parameter count rises by exactly +30,720:** 120 more token-position rows, MEASURED in the build. It is part of the lever, as this file anticipated.
+* **The eval refuses a mismatch without an edit.**
+  * A checkpoint scored on features of the wrong token count raises a torch `RuntimeError` (`raw/2026-10-22-grid/probe_eval_mismatch.out`); the chain turns that into a STOP.
+  * The trainer's own `n_tok` gate (`:180`) compares two values derived from one flag. So reachability rests on the test that the batch's features ARE the clip's `pool8x20` array, exactly.
+* **The 10 h run cap of `PREREG_V8F_MINI` Amendment 4 applies unchanged.**
+  * If the guard projects a G run above it, that run is a STOP with its reason. Moving the cap is the PI's call.
+  * The chain's training wait is 11 h, so the guard ends a slow run, never the wait.
