@@ -319,7 +319,7 @@ def static() -> None:
     import train as T
     dests = {x.dest for x in T.build_parser()._actions if x.dest != "help"}
     ok(set(C.DVB_KINDS) == dests, (sorted(dests - set(C.DVB_KINDS)), sorted(set(C.DVB_KINDS) - dests)))
-    ok(len(dests) == 61)                                                                                      # 55 + the five L_field levers (--w-field, --field-margin, --field-interp, --field-labels, --field-shuffle-seed) + --label-chunks (2026-10-18)
+    ok(len(dests) == 68)                                                                                      # 55 + the five L_field levers (--w-field, --field-margin, --field-interp, --field-labels, --field-shuffle-seed) + --label-chunks (2026-10-18) + the seven P7.1 head levers (--aux-drv, --w-aux-drv, --aux-drv-tap, --aux-drv-depth, --aux-drv-feed, --aux-drv-labels, --aux-drv-shuffle-seed)
     ok(C.namespace_reads(C._train_run_source()) <= dests)
     ok(C.check_hyg()["status"] == "PASS")
     for arm, frag in (("no_cfg_guard", "ACCEPTED an undeclared attribute"), ("undeclared_namespace_read", "undeclared_lever_g_hyg")):

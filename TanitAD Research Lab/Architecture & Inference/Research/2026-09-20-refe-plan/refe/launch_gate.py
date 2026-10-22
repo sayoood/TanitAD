@@ -50,7 +50,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import gate_token as GT  # noqa: E402
 
-CHECKS = ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE", "G-P2GATE", "G-LIVE-LAB", "G-LIVE-MEM", "G-EGR", "G-PREFLIGHT")
+CHECKS = ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE", "G-P2GATE", "G-LIVE-LAB", "G-LIVE-MEM", "G-EGR", "G-PREFLIGHT", "G-RESERVE")
 SUITE = [{"script": "test_p2r_chain.py", "token": "ZZTEST_PASS"}, {"script": "test_launch_gate.py", "args": ["--static", "--no-banked"], "token": "ZZLG_STATIC_PASS"}]
 FORBIDDEN = ("--synthetic", "--overfit", "--overfit-n", "--overfit-thresh", "--spread", "--break-optimizer", "--halt-after-steps",
              "--declare-change", "--preflight", "--cpu", "--n-cameras", "--no-undistort", "--no-cosine", "--weights")
@@ -333,6 +333,58 @@ PROFILES = {
 }
 
 
+# ============================================================================================ P7 (SPEC_P7.md sections 1 and 2): refe_p6 + the training-only drivable-area head + the session reserve
+# `refe_p7` is CLONED from `refe_p6` (the P6 dict above is not edited: its ARGS sha and every test_p6_* anchor stay what they were) and adds, each with a check that can fail:
+#   * the head's levers are REQUIRED in the argv with their registered values (`--w-aux-drv` DEFAULTS to 0.0, so an arm that omits it would train head-less and read as clean: SPEC_P7 1);
+#     `--w-field 0.0` is NAMED (the field loss is its own arm, D-AUX-4); `--aux-drv-shuffle-seed` (the label-shuffled control) is FORBIDDEN in a launch;
+#   * `--aux-drv-labels` is a DATA flag: the PASS token fingerprints the label store, and G-DVB compares the store's manifest sha256 + key count with the profile's registered pins;
+#   * G-RESERVE (SPEC_P7 2): the reserve file's sha256 is the registered draw's AND `session_reserve.audit_inputs` finds it disjoint from all five training inputs;
+#   * the schedule: 25 epochs x ceil(92,896 / 256) = 9,075 steps (P6: 10,075), a step-0 bank registered PER BANK.
+# ⛔ THREE PINS ARE NOT KNOWN YET AND ARE LEFT UNREGISTERED ON PURPOSE -- each makes the gate REFUSE (`p7_refusals`, then G-DVB / G-CLOCK / G-RESERVE), never default to something else:
+#   P7_AUX_STORE_PINS  the P7 TRAINING store's manifest sha256 + key count: they exist only after `filter_reserve.py` re-finalises the store without the reserve's logs (SPEC_P7 2, "registered before step 0")
+#   P7_BANK_TUPLES     the `train_grow_cmd_3c_p7` bank's tuple count: 92,896 rank-0 rows + the filter's rank-1 count (SPEC_P7 2: ~150.8k ESTIMATED -- a number never to be registered from an estimate)
+#   P7_RESERVE_SHA256  filled below (R-A, MEASURED: the sha256 of raw/2026-10-22-p7-session-reserve/raw/reserve_sessions.json, re-measured 2026-10-22; SESSION_RESERVE.md header table)
+# The P7-WIRE-RESERVE deliverable fills the first two from the filter's report and adds `--reserve-manifest` to `data_flags` and `test_reserve*` to the suite (the draw's own suite, ZZRESERVE_PASS 17).
+P7_SCENES = 92896                                                       # SPEC_P7 section 2: the reserve-free bank's rank-0 scenes (103,037 - 10,141 reserved)
+P7_EPOCHS = 25
+P7_STEPS = P7_EPOCHS * -(-P7_SCENES // 256)                             # the trainer's own definition: epochs x ceil(epoch_len / (batch x accum)) = 25 x 363
+P7_BANK_TUPLES: dict = {}                                               # UNREGISTERED: a --targets bank with no entry FAILS G-CLOCK (clock_bank_tuples), and `p7_refusals` refuses before any check runs
+P7_AUX_STORE_PINS = {"sha256": None, "keys": None}                      # UNREGISTERED: `aux_dvb_rows` FAILS the store row, and `p7_refusals` refuses
+P7_RESERVE_SHA256 = "53f3bcd4684513f0ee765fbcfbaf583b587f58c97e9c8915f4e4df3ae3e32f29"
+P7_AUX_REQUIRED = {"--aux-drv": None, "--w-aux-drv": "0.1", "--aux-drv-tap": "visual", "--aux-drv-depth": "2", "--aux-drv-feed": "off", "--aux-drv-labels": None, "--w-field": "0.0"}
+P7_SUITE_EXTRA = [{"script": "test_p7_head_wiring.py", "args": ["--static"], "token": "ZZP7HEAD_PASS"}]       # the pod runs the STATIC block (no dev-box data); --full / --mutations are the dev box's
+PROFILES["refe_p7"] = {**PROFILES["refe_p6"], "name": "refe_p7", "p7_rules": True,
+                       "data_flags": PROFILES["refe_p6"]["data_flags"] + ("--aux-drv-labels",),
+                       "suite": PROFILES["refe_p6"]["suite"] + P7_SUITE_EXTRA,
+                       "checks": PROFILES["refe_p6"]["checks"] + ("G-RESERVE",),
+                       "live_terms": P6_TERMS + ("aux_bce", "aux_huber"),
+                       "forbidden_flags": PROFILES["refe_p6"]["forbidden_flags"] + ("--aux-drv-shuffle-seed",),
+                       "required_flags": {**PROFILES["refe_p6"]["required_flags"], **P7_AUX_REQUIRED},
+                       "expect_schedule": {"epochs": P7_EPOCHS, "steps": P7_STEPS, "epoch_len": P7_SCENES, "n_tuples_by_bank": P7_BANK_TUPLES},
+                       "aux_store_pins": P7_AUX_STORE_PINS, "reserve_sha256": P7_RESERVE_SHA256}
+
+
+def p7_refusals(prof: dict, argv: list) -> list:
+    """The P7 pins that must be REGISTERED before the gate spends a minute: an unregistered pin is a refusal here (cheap, before BUILD) and independently a FAIL in the check that consumes it
+    (G-DVB's store row, G-CLOCK's bank row, G-RESERVE's sha row), so neither can be the only line of defence."""
+    out = []
+    pins = prof.get("aux_store_pins") or {}
+    if pins.get("sha256") is None or pins.get("keys") is None:
+        out.append(f"{prof['name']}: the P7 label store's pins (manifest sha256 + key count) are not registered (P7_AUX_STORE_PINS): the training store exists only after filter_reserve re-finalises it; "
+                   f"an unregistered store is never vouched for by another store's number")
+    exp = prof.get("expect_schedule") or {}
+    reg = exp.get("n_tuples_by_bank") or {}
+    tg = (GT.flag_values(argv, "--targets") or [None])[0]
+    name = Path(str(tg).rstrip("/\\")).name if tg else None
+    if name not in reg:
+        out.append(f"{prof['name']}: --targets {tg!r} names bank {name!r}, which has no registered tuple count (P7_BANK_TUPLES holds {sorted(reg)}): register it in the pre-registration before any training data exists")
+    if not prof.get("reserve_sha256"):
+        out.append(f"{prof['name']}: no reserve sha256 is registered (P7_RESERVE_SHA256)")
+    if not (exp.get("steps") == P7_STEPS == 9075 and exp.get("epoch_len") == P7_SCENES and exp.get("epochs") == P7_EPOCHS):
+        out.append(f"{prof['name']}: the registered schedule {exp.get('epochs')} x {exp.get('epoch_len')} -> {exp.get('steps')} steps is not SPEC_P7's 25 x 92,896 -> 9,075")
+    return out
+
+
 # the replicate = refe_p2 (same checks, same G-P2GATE sub-check, same data flags, same forbidden flags, same P2 levers asserted) + `--seed 1` required + the WHOLE argv pinned + its own chain test in G-SUITE
 PROFILES["refe_p2rep"] = {**PROFILES["refe_p2"], "name": "refe_p2rep", "suite": SUITE + [{"script": "test_p2rep_chain.py", "token": "ZZTEST_PASS"}],
                           "required_flags": {**PROFILES["refe_p2"]["required_flags"], "--seed": str(P2REP_SEED)}, "pinned_argv": tuple(P2REP_ARGV)}
@@ -447,6 +499,8 @@ def profile_refusals(prof: dict, argv: list) -> list:
             out.append(f"DECLARED, NOT BUILT: {prof['name']} declares {f} but the trainer's parser has no such flag "
                        f"(a config that declares a lever the model does not build is a launch blocker)")
     out += pinned_argv_refusals(prof, argv)
+    if prof.get("p7_rules"):
+        out += p7_refusals(prof, argv)
     if prof.get("field_arm"):
         got = GT.flag_values(argv, "--w-field")
         try:
@@ -939,13 +993,13 @@ def _log_manifest_timing(where: str, t_tree: float, t_data: float, per_input: di
     print(f"  [timing] {where}: tree_manifest {t_tree:.1f}s, data_manifest {t_data:.1f}s ({top})", flush=True)
 
 
-def gate_inputs_of(p2_gate_json=None, lab_json=None, mem_metrics=None, egr_json=None, preflight_json=None) -> dict:
+def gate_inputs_of(p2_gate_json=None, lab_json=None, mem_metrics=None, egr_json=None, preflight_json=None, reserve_json=None) -> dict:
     return {k: v for k, v in (("gate:p2_gate_json", p2_gate_json), ("gate:lab_json", lab_json), ("gate:mem_metrics", mem_metrics),
-                              ("gate:egr_json", egr_json), ("gate:preflight_json", preflight_json)) if v}
+                              ("gate:egr_json", egr_json), ("gate:preflight_json", preflight_json), ("gate:reserve_json", reserve_json)) if v}
 
 
 def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, arm=None, gate_sets=None, gate_pdm=None, gate_bank=None,
-               p2_gate_json=None, commit=None, lab_json=None, mem_metrics=None, egr_json=None, preflight_json=None, suite_evidence=None, key=None) -> dict:
+               p2_gate_json=None, commit=None, lab_json=None, mem_metrics=None, egr_json=None, preflight_json=None, suite_evidence=None, key=None, reserve_json=None) -> dict:
     """Run every check of the profile (or `only`), writing evidence files.  Returns {check: status}.  `suite_evidence` (+ the gate `key` that verifies it) is the OPTIONAL pre-run of G-SUITE
     (`suite-prerun`): see `suite_check`.  Without it every check is exactly as it has always been."""
     import gate_checks as C
@@ -955,7 +1009,7 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
     tree = GT.tree_manifest(pkg)
     t_tree = time.perf_counter() - t0
     binding = GT.binding_of(prof["name"], commit, GT.tree_digest(tree), argv)
-    gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json)
+    gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json, reserve_json)
     dtim: dict = {}
     data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof), ctx_anchor=prof.get("ctx_anchor"))
     _log_manifest_timing("run", t_tree, time.perf_counter() - t0 - t_tree, dtim)
@@ -1026,6 +1080,8 @@ def run_checks(prof: dict, argv: list, pkg: Path, out_dir: Path, *, only=None, a
         emit(C.check_live_mem(mem_metrics, arm=arm, rehearsal=rehearsal))
     if "G-EGR" in want:
         emit(C.check_egr(egr_json, arm=arm, rehearsal=rehearsal))
+    if "G-RESERVE" in want:
+        emit(C.check_reserve(argv, prof2, reserve_json, arm=arm, rehearsal=rehearsal))      # P7: the registered draw is disjoint from all five training inputs (a SLOT: session_reserve.audit_inputs)
     return status
 
 
@@ -1190,12 +1246,12 @@ def collect(out_dir: Path, check: str):
 
 
 def finalize(prof: dict, argv: list, pkg: Path, out_dir: Path, key: bytes, *, p2_gate_json=None, commit=None, lab_json=None, mem_metrics=None,
-             egr_json=None, preflight_json=None):
+             egr_json=None, preflight_json=None, reserve_json=None):
     """Mint the token from the evidence ON DISK.  Every required check must have usable PASS evidence bound to this launch."""
     t0 = time.perf_counter()
     tree = GT.tree_manifest(pkg)
     t_tree = time.perf_counter() - t0
-    gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json)
+    gate_inputs = gate_inputs_of(p2_gate_json, lab_json, mem_metrics, egr_json, preflight_json, reserve_json)
     dtim: dict = {}
     data = GT.data_manifest(argv, prof["data_flags"], gate_inputs, timings=dtim, content_flags=content_flags_of(prof), ctx_anchor=prof.get("ctx_anchor"))
     _log_manifest_timing("finalize", t_tree, time.perf_counter() - t0 - t_tree, dtim)
@@ -1372,9 +1428,9 @@ def cmd_run(a) -> int:
     run_checks(prof, argv, pkg, out, only=set(a.only.split(",")) if a.only else None, arm=arm, gate_sets=a.gate_sets, gate_pdm=a.gate_pdm,
                gate_bank=a.gate_bank, p2_gate_json=a.p2_gate_json, commit=commit, lab_json=a.gate_lab_json, mem_metrics=a.gate_mem_metrics,
                egr_json=a.gate_egr_json, preflight_json=a.gate_preflight_json,
-               suite_evidence=a.suite_evidence, key=key)
+               suite_evidence=a.suite_evidence, key=key, reserve_json=a.gate_reserve_json)
     verdict, path, tok = finalize(prof, argv, pkg, out, key, p2_gate_json=a.p2_gate_json, commit=commit, lab_json=a.gate_lab_json,
-                                  mem_metrics=a.gate_mem_metrics, egr_json=a.gate_egr_json, preflight_json=a.gate_preflight_json)
+                                  mem_metrics=a.gate_mem_metrics, egr_json=a.gate_egr_json, preflight_json=a.gate_preflight_json, reserve_json=a.gate_reserve_json)
     for r in tok["reasons"][:8]:
         print("  REASON:", r[:300])
     print(f"verdict {verdict} -> {path}", flush=True)
@@ -1485,6 +1541,7 @@ def main(argv=None) -> int:
             p.add_argument("--gate-mem-metrics", help="refe_p6: metrics.jsonl of a >= 200-micro-batch run on the real card (G-LIVE-MEM)")
             p.add_argument("--gate-egr-json", help="refe_p6, refe_sft4r: hf_egress.py gate's g_egr_result.json (G-EGR)")
             p.add_argument("--gate-preflight-json", help="refe_rls1: scorer_finetune.py --preflight's preflight.jsonl (G-PREFLIGHT; also G-DVB's built side)")
+            p.add_argument("--gate-reserve-json", help="refe_p7: the registered session reserve (reserve_sessions.json); its sha256 must equal the profile's pin and session_reserve.audit_inputs must pass (G-RESERVE)")
             p.add_argument("--suite-evidence", help="OPTIONAL: a `suite-prerun` JSON.  G-SUITE ACCEPTS it in place of the live run only if its signature verifies and the commit, profile, tree digest, suite entries, "
                                                     "gate code and environment all re-measure equal now, it is <= 12 h old and it is PASS with 0 skips; otherwise the suite runs LIVE and the token says why. Absent = today's gate")
         if name == "verify":

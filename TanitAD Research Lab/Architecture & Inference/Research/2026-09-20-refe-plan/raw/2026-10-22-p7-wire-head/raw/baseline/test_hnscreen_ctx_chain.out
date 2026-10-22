@@ -1,0 +1,14 @@
+10 chain arms green on the real chain.  Mutation matrix (each mutant is hnscreen_devbox.py with ONE source edit; it runs the arms it must turn RED):
+stage_list: ENDV is not a stage (the end verify is skipped)                                          RED  2  e.g. C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_
+stage_ENDV: a failed end verify does not void the chain                                              RED  1  e.g. C_R1_a_same_size_same_mtime_edit_mid_chain_voids_the_chain_no_output_is_read_and_a_relaunch_cannot_launder_it
+stage_ENDV: a VOID chain is re-verified on a relaunch (a hand-restored cache launders it)            RED  1  e.g. C_R1_a_same_size_same_mtime_edit_mid_chain_voids_the_chain_no_output_is_read_and_a_relaunch_cannot_launder_it
+ctx_args: the intermediate gate calls get no anchor flags (every call re-reads in full)              RED  2  e.g. C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_
+read_argv: the reader is not given --chain-root                                                      RED  1  e.g. C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_
+stage_list: ANCHOR is not a stage (the chain has no start anchor)                                    RED  1  e.g. C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_
+preflight: any gate.ctx_mode is accepted                                                             RED  1  e.g. C_an_unknown_ctx_mode_is_a_config_error_before_anything_runs
+DEFAULTS: the chain's default gate.ctx_mode is content                                               RED  1  e.g. C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_
+DEFAULTS: gate.token_check_names is the pre-fix G14 / G15 pair (no real token has those checks, so G RED  1  e.g. C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_
+verify_pass_token: the mint-stage name guard is deleted (a wrong token_check_names override runs on  RED  1  e.g. C_a_wrong_token_name_override_stops_at_the_mint_with_the_real_token_no_verify_no_second_pass_no_trainer_and_no
+stage_ANCHOR: a refused anchor does not stop the chain                                               RED  1  e.g. C_a_tampered_cache_is_refused_at_the_anchor_and_nothing_is_trained
+verify_pass_token: the start verify of a pass is not run with the anchor flags (a stale-token-only c RED  1  e.g. C_the_anchored_chain_end_to_end_the_default_mode_zero_reads_at_the_intermediate_calls_one_at_each_end_and_the_
+ZZTEST_PASS 22  (10 chain arms + 12 RED mutations of hnscreen_devbox.py)

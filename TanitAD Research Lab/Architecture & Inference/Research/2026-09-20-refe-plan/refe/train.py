@@ -38,6 +38,7 @@ from model import BACKBONES, REFe, REFeConfig, param_report, wta_loss  # noqa: E
 from field_loss import field_loss  # noqa: E402  (L_field, eval/PREREG_AUX_FIELD_LOSS_DRAFT.md: only called when --w-field > 0; the label reader is imported lazily by TargetBank)
 import ckpt_io  # noqa: E402
 import nav_command as NC  # noqa: E402
+import aux_drivable_head as AUX  # noqa: E402  (P7.1, SPEC_AUX_DRIVABLE_HEAD.md: the TRAINING-ONLY drivable-area head. Built ONLY under --aux-drv; the module imports no map API and no label-store code at import time)
 
 
 CAMERAS = ("CAM_F0", "CAM_L0", "CAM_R0", "CAM_B0")
@@ -627,12 +628,25 @@ def onpolicy_cov_norm(ds, op_bank, n_prop: int) -> float:
     return max(n * n_prop / float(len(ds)), 1e-3)
 
 
+def _open_aux_store(path: str, shuffle_seed):
+    """P7.1: the head's label source. The store's OWN manifest pin is the integrity anchor (AuxLabelSource then checks: schema, raster spec, files-map hash == store_sha256, every shard's bytes
+    against the manifest on read, the manifest's navtest-leak fields). Which store a LAUNCH may use is the gate's job: G-DVB compares the `aux` event's store_sha256 / key count with the
+    profile's registered pins (refe_p7: the P7 TRAINING store, without the reserve), so a self-consistent store that is NOT the registered one is a launch blocker, never a silent success."""
+    try:
+        man = json.loads((Path(path) / "manifest.json").read_text(encoding="utf-8"))
+        return AUX.AuxLabelSource(path, pinned_sha256=man.get("store_sha256"), pinned_keys=(man.get("counts") or {}).get("stored_keys"),
+                                  shuffle_seed=shuffle_seed, max_logs=None)
+    except (OSError, ValueError, AUX.StoreRefused) as e:
+        raise SystemExit(f"TargetBank: --aux-drv-labels {path} is refused: {e}")
+
+
 class TargetBank(Dataset):
     def __init__(self, target_dir: str, images_root: str | None, cfg: REFeConfig,
                  synthetic: bool = False, limit: int | None = None, spread: bool = False, scorer=None,
                  max_missing_frac: float = 0.001, calib: str | None = None,
                  sizes: dict | None = None, onpolicy=None, online: bool = False,
-                 field_labels: str | None = None, field_shuffle_seed: int | None = None):
+                 field_labels: str | None = None, field_shuffle_seed: int | None = None,
+                 aux_labels: str | None = None, aux_shuffle_seed: int | None = None):
         self.scorer = scorer
         # P6 / D1: the ONLINE labeller labels the model's own proposals, so each item also returns its row index (the trainer needs the row's
         # (log_name, token, rank, aug) to find the metric-cache parts). Off => the tuple is the unchanged nine elements.
@@ -643,7 +657,6 @@ class TargetBank(Dataset):
         self.field = None
         self.field_cov = None
         if field_labels:
-            import aux_drivable_head as AUX
             try:
                 self.field = AUX.AuxLabelSource(field_labels, pinned_sha256=AUX.PINNED_STORE_SHA256, pinned_keys=AUX.PINNED_STORE_KEYS,
                                                 shuffle_seed=field_shuffle_seed, max_logs=None)
@@ -651,6 +664,16 @@ class TargetBank(Dataset):
                     self.field.key_map()                     # the derangement is built once, HERE, and travels to the workers with the dataset
             except AUX.StoreRefused as e:
                 raise SystemExit(f"TargetBank: --field-labels {field_labels} is refused: {e}")
+        # P7.1 (SPEC_P7 section 1): the SAME (sdf int8 [160, 128], valid bool) tail for the TRAINING-ONLY drivable-area head, read by the ONE store reader. `aux_labels=None` (the default)
+        # => self.aux is None and the item tuple is EXACTLY what it was without the head; otherwise two more elements, ALWAYS THE LAST TWO (after L_field's pair when both are on).
+        # The key is (log_name, token) ONLY: goal twins share a frame. The source is built from the store's OWN manifest pin (integrity: files map == store_sha256, every shard re-hashed
+        # on read, the manifest's navtest-leak fields); WHICH store this run may train on is the launch gate's pin (G-DVB `aux_drv_labels`: the profile's registered sha256 / key count).
+        self.aux = None
+        self.aux_cov = None
+        if aux_labels:
+            self.aux = _open_aux_store(aux_labels, aux_shuffle_seed)
+            if aux_shuffle_seed is not None:
+                self.aux.key_map()
         # ⭐ on-policy mode (PI decision B): the paper's supervision REPLACES the fixed candidates
         self.onpolicy = onpolicy
         self.rows = []
@@ -803,6 +826,14 @@ class TargetBank(Dataset):
             print(f"  L_field labels: {n_lab:,}/{len(self.rows):,} rows ({100.0 * n_lab / max(len(self.rows), 1):.3f} %) have a stored SDF  <- {field_labels}  "
                   f"(store_sha256 {self.field.manifest['store_sha256'][:12]}, {len(have):,} keys"
                   + (f"; LABEL-SHUFFLED CONTROL, derangement seed {field_shuffle_seed}" if field_shuffle_seed is not None else "") + ")")
+        if self.aux is not None:
+            # coverage of the FINAL rows (after every drop above) by the head's label store, keyed by (log_name, token): a row the store lacks reads zeros + valid False = exactly 0 loss
+            have = set(self.aux.all_keys())
+            n_lab = sum(1 for r in self.rows if (r.get("log_name", ""), r.get("token", "")) in have)
+            self.aux_cov = {"rows": len(self.rows), "labelled": n_lab, "store_keys": len(have)}
+            print(f"  P7.1 aux-head labels: {n_lab:,}/{len(self.rows):,} rows ({100.0 * n_lab / max(len(self.rows), 1):.3f} %) have a stored SDF  <- {aux_labels}  "
+                  f"(store_sha256 {self.aux.manifest['store_sha256'][:12]}, {len(have):,} keys"
+                  + (f"; LABEL-SHUFFLED CONTROL, derangement seed {aux_shuffle_seed}" if aux_shuffle_seed is not None else "") + ")")
 
     def __len__(self):
         return len(self.rows)
@@ -910,6 +941,14 @@ class TargetBank(Dataset):
             else:
                 lab, vld = self.field.labels([key])
             item = item + (lab[0], vld[0])
+        if self.aux is not None:
+            # P7.1: (sdf int8 [160, 128], valid bool) as the LAST TWO elements. A key with no stored label reads zeros and valid False (= exactly 0 loss and 0 gradient for that frame).
+            akey = (r.get("log_name", ""), r.get("token", ""))
+            if self.aux.shuffle_seed is not None and akey not in self.aux.key_map():
+                alab, avld = torch.zeros(1, 160, 128, dtype=torch.int8), torch.zeros(1, dtype=torch.bool)
+            else:
+                alab, avld = self.aux.labels([akey])
+            item = item + (alab[0], avld[0])
         return item
 
 
@@ -998,12 +1037,14 @@ IDENTITY_ARGS = ("backbone", "synthetic", "n_cameras", "undistort", "detach_scor
                  "seed", "spread", "overfit", "overfit_n", "epoch_unit", "amp", "tf32",
                  "fused_adam", "compile", "grow", "grow_scenes", "scorer_mode", "init_from", "pdm_labels",
                  "pdm_only", "yaw_wrap", "nav_mode", "labeller", "label_backend",
-                 "w_field", "field_margin", "field_interp", "field_labels", "field_shuffle_seed")
+                 "w_field", "field_margin", "field_interp", "field_labels", "field_shuffle_seed") + AUX.AUX_IDENTITY_ARGS      # P7.1: a resume with a different head is refused
 # ⭐ an identity key ADDED after runs began: an OLD checkpoint lacks it and must read as the value
 # those runs actually used, or every pre-existing run would refuse its own resume
 IDENTITY_DEFAULTS = {"scorer_mode": "fixed", "init_from": None, "pdm_labels": None, "pdm_only": False,
                      "yaw_wrap": "on", "nav_mode": "goal", "labeller": "bank", "label_backend": "pdm",
-                     "w_field": 0.0, "field_margin": 0.25, "field_interp": "5hz", "field_labels": None, "field_shuffle_seed": None}
+                     "w_field": 0.0, "field_margin": 0.25, "field_interp": "5hz", "field_labels": None, "field_shuffle_seed": None,
+                     # P7.1: every pre-P7 checkpoint was trained WITHOUT the head, so it reads as head-off and still resumes under this trainer
+                     "aux_drv": False, "w_aux_drv": 0.0, "aux_drv_tap": "visual", "aux_drv_depth": 2, "aux_drv_feed": "off", "aux_drv_labels": "", "aux_drv_shuffle_seed": None}
 
 
 def warm_start(model, path: str) -> dict:
@@ -1052,6 +1093,9 @@ def run_identity(a, ds, scorer_bank, frozen_sha256) -> dict:
     if a.field_labels:
         # L_field: the label store's CONTENT (its manifest sha256), beside the path in `args` -- a key present ONLY on a field run, so every other run's identity is unchanged
         ident["field_store_sha256"] = ds.field.manifest["store_sha256"] if getattr(ds, "field", None) is not None else None
+    if a.aux_drv_labels:
+        # P7.1: the head's label store CONTENT, beside the path in `args` -- a key present ONLY on a head run, so every other run's identity is unchanged
+        ident["aux_store_sha256"] = ds.aux.manifest["store_sha256"] if getattr(ds, "aux", None) is not None else None
     return ident
 
 
@@ -1071,7 +1115,7 @@ def _identity_diff(old: dict, new: dict, declared=(), accepted: list | None = No
             out.append(msg)
     grow = bool(new["args"].get("grow")) and bool(old["args"].get("grow"))
     for k in ("n_tuples", "n_scenes", "per_rank", "targets_sha256", "scorer_sha256",
-              "calib_sha256", "frozen_sha256", "field_store_sha256"):
+              "calib_sha256", "frozen_sha256", "field_store_sha256", "aux_store_sha256"):
         if grow and k in GROW_EXEMPT:
             continue
         if old.get(k) != new.get(k):
@@ -1156,6 +1200,17 @@ def run(a) -> int:
         print("  REFUSING: --w-field > 0 needs --field-labels (the SDF label store): the term would have no label."); return 4
     if a.field_shuffle_seed is not None and not a.field_labels:
         print("  REFUSING: --field-shuffle-seed needs --field-labels."); return 4
+    # P7.1 (SPEC_AUX_DRIVABLE_HEAD.md section 4, SPEC_P7 section 1). EVERY default builds nothing (--w-aux-drv 0.0, no --aux-drv): a head-less arm cannot silently carry one, and an arm that
+    # means the head NAMES --aux-drv AND --w-aux-drv > 0. A lever named without the head, a head without labels, a head with no weight, a feed this trainer does not build: refused.
+    bad_aux = list(AUX.aux_refusals(a))
+    if a.aux_drv and not (0.0 < a.w_aux_drv < float("inf")):
+        bad_aux.append(f"--aux-drv needs --w-aux-drv > 0 (got {a.w_aux_drv}): a head with no weight is built, trained by nothing and carried in every checkpoint -- the head-off twin simply omits --aux-drv")
+    if a.aux_drv and a.aux_drv_feed != "off":
+        bad_aux.append("--aux-drv-feed on (H2) is not built in the trunk trainer: the scorer-side feed needs the planner / model.py path (WIRING_PLAN 3.10) -- this trainer builds H1 only")
+    if bad_aux:
+        for m_ in bad_aux:
+            print(f"  REFUSING: {m_}")
+        return 4
     if a.nav_mode != "goal":
         cfg.nav_mode = a.nav_mode
         print(f"  NAV MODE: {a.nav_mode} -- the student is conditioned on the discrete navigation command (the paper's input), not on goal points")
@@ -1221,6 +1276,18 @@ def run(a) -> int:
         # would return a wrapper whose keys all gain an `_orig_mod.` prefix.) MEASURED on the A40:
         # bf16 + compiled backbone 0.220 s/sample vs 0.366 eager (1.66x); ~2 min compile, once per shape.
         model.backbone.compile()
+    # ---- P7.1: the training-only drivable-area head, a SIBLING of the model (never a submodule: it must not reach ckpt_io.full_state / the planner's strict load). Built only under --aux-drv.
+    # `aux_cap` is the tap: a forward hook on `scene_proj` collects its TWO outputs of one forward (call 1 = scene_ctx [B, 64, 256], call 2 = visual_ctx [B, P, 256], model.py forward), live only
+    # around the training forward. `aux_params` is [] without the head, so the optimiser / clip lists below are then the very lists they always were.
+    aux = None
+    aux_params: list = []
+    aux_cap = {"on": False, "taps": []}
+    if a.aux_drv:
+        aux = AUX.AuxDrivable(AUX.AuxDrivableConfig.from_args(a)).to(dev)
+        aux_params = list(aux.parameters())
+        model.scene_proj.register_forward_hook(lambda _m, _i, o: aux_cap["taps"].append(o) if aux_cap["on"] else None)
+        print(f"  P7.1 AUX DRIVABLE-AREA HEAD (training-only, H1): tap {a.aux_drv_tap}  depth {a.aux_drv_depth}  w_aux {a.w_aux_drv:g}  {sum(p.numel() for p in aux_params):,} parameters  "
+              f"(not in model_final.pt's `model`: the planner is unchanged)")
     rep = param_report(model)
     print(f"  REFe {a.backbone} {rep['total']/1e6:.2f} M total / {rep['trainable']/1e6:.2f} M "
           f"trainable ({rep['pct']:.2f} %)  device={dev}")
@@ -1304,7 +1371,8 @@ def run(a) -> int:
                     scorer=scorer_bank if scorer_bank.n_rows else None,
                     max_missing_frac=a.max_missing_images, calib=a.calib, sizes=grow_snap,
                     onpolicy=op_bank, online=online,
-                    field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed)
+                    field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed,
+                    aux_labels=a.aux_drv_labels or None, aux_shuffle_seed=a.aux_drv_shuffle_seed)
     if not a.calib:
         print("  *** NO --calib: every tuple is lifted with the ONE baked rig (pre-R22 behaviour). "
               "An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***")
@@ -1351,6 +1419,8 @@ def run(a) -> int:
               f"is wrong){'  [--grow: sized for --grow-scenes, not the bank now]' if a.grow else ''}")
 
     params = [p for p in model.parameters() if p.requires_grad]
+    if aux is not None:
+        params += aux_params            # P7.1: the head trains with the trunk -- the same AdamW group, lr and cosine schedule (its gradient reaches the LoRA, so it shares the clip below)
     if a.break_optimizer:
         print("  *** DELIBERATE REGRESSION: optimizer given an EMPTY parameter set.")
         print("  *** If the overfit control still PASSES below, the control is inert.")
@@ -1461,6 +1531,11 @@ def run(a) -> int:
                 return 4
             ckpt_io.load_partial(model, st["model_partial"], st["meta"].get("frozen_sha256"))
             opt.load_state_dict(st["opt"])
+            if aux is not None:
+                if "aux_drv" not in st:
+                    print(f"  REFUSING TO RESUME: --aux-drv is on but {ck_path} carries no `aux_drv` head state (the identity check passed, so this checkpoint is damaged).")
+                    return 4
+                aux.load_state_dict(st["aux_drv"])
             if sched is not None and st.get("sched") is not None:
                 sched.load_state_dict(st["sched"])
             S = st["state"]
@@ -1507,6 +1582,8 @@ def run(a) -> int:
                        "source_sha256": {f: _src(f) for f in
                                          ("train.py", "model.py", "load_dinov3.py", "ckpt_io.py")},
                        "started_at": _now()}
+            if aux is not None:
+                cfg_out["aux_drv"] = {**aux.built_facts(), "tap": a.aux_drv_tap, "feed": a.aux_drv_feed, "labels": a.aux_drv_labels, "source_sha256": _src("aux_drivable_head.py")}
             with open(run_dir / "config.json", "w", encoding="utf-8") as f:
                 json.dump(cfg_out, f, indent=1)
             _append_jsonl(run_dir / "metrics.jsonl", {"event": "start", "at": _now()})
@@ -1546,7 +1623,8 @@ def run(a) -> int:
                        limit=a.overfit_n if a.overfit else None, spread=a.spread,
                        scorer=sb if sb.n_rows else None,
                        max_missing_frac=a.max_missing_images, calib=a.calib, sizes=snap,
-                       onpolicy=ob, field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed)
+                       onpolicy=ob, field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed,
+                       aux_labels=a.aux_drv_labels or None, aux_shuffle_seed=a.aux_drv_shuffle_seed)
         smp = (SceneEpochSampler(d.scene_groups, a.seed, shuffle=not a.overfit)
                if a.epoch_unit == "scenes" else EpochSampler(len(d), a.seed, shuffle=not a.overfit))
         ld = DataLoader(d, batch_size=a.batch, sampler=smp, num_workers=a.workers,
@@ -1559,12 +1637,18 @@ def run(a) -> int:
             cn = onpolicy_cov_norm(d, ob, cfg.n_proposals)
         return sb, d, smp, ld, cn, ob
 
+    def _aux_ckpt() -> dict:
+        """P7.1: the head rides BESIDE `model` in every checkpoint dict (never inside it: the planner's strict load of `model` is unchanged). {} without the head: the dicts are then byte for byte what they were."""
+        if aux is None:
+            return {}
+        return {"aux_drv": aux.state_dict(), "aux_drv_meta": {**aux.built_facts(), "tap": a.aux_drv_tap, "feed": a.aux_drv_feed, "store_sha256": ds.aux.manifest["store_sha256"]}}
+
     def _save_ckpt():
         nbytes = ckpt_io.atomic_save(
             {"format": ckpt_io.FORMAT_PARTIAL, "model_partial": ckpt_io.partial_state(model),
              "meta": meta, "opt": opt.state_dict(),
              "sched": sched.state_dict() if sched is not None else None,
-             "state": _state(), "rng": _rng_state(), "identity": ident, "saved_at": _now()},
+             "state": _state(), "rng": _rng_state(), "identity": ident, "saved_at": _now(), **_aux_ckpt()},
             run_dir / "ckpt_last.pt")
         _append_jsonl(run_dir / "metrics.jsonl",
                       {"event": "ckpt", "step": step, "epoch": epoch, "pos": pos,
@@ -1581,6 +1665,11 @@ def run(a) -> int:
                                                   "shuffle_seed": a.field_shuffle_seed, "store_sha256": ds.field.manifest["store_sha256"],
                                                   "store_keys": ds.field_cov["store_keys"], "rows": ds.field_cov["rows"], "rows_labelled": ds.field_cov["labelled"],
                                                   "at": _now()})
+    if aux is not None and run_dir is not None:
+        # P7.1: what the head was BUILT with, written by the trainer itself (G-DVB reads it): the built facts, the tap, and the store's manifest sha256 / key count / label coverage of the bank's rows
+        _append_jsonl(run_dir / "metrics.jsonl", {"event": "aux", "step": step, **aux.built_facts(), "tap": a.aux_drv_tap, "feed": a.aux_drv_feed, "shuffle_seed": a.aux_drv_shuffle_seed,
+                                                  "store_sha256": ds.aux.manifest["store_sha256"], "store_keys": ds.aux_cov["store_keys"], "rows": ds.aux_cov["rows"],
+                                                  "rows_labelled": ds.aux_cov["labelled"], "at": _now()})
     pend = None                              # online labeller: the micro-batch whose labels have not been consumed yet (its graph is alive)
     bce_comp = [float("nan")] * 6
     t_log0 = time.time()
@@ -1591,15 +1680,21 @@ def run(a) -> int:
             img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id, cal = batch[:9]
             # L_field: the loader appends (sdf int8 [B,160,128], valid bool [B]) as the LAST TWO elements, after the online row index -- so the index is found by its
             # position among the elements that precede them, and the field elements by negative index. Without --field-labels this is the unchanged `batch[9]`.
-            ridx = batch[9] if len(batch) > 9 + (2 if field_on else 0) else None
+            ridx = batch[9] if len(batch) > 9 + (2 if field_on else 0) + (2 if aux is not None else 0) else None
             sdf_t = valid_t = None
+            tail_end = len(batch) - (2 if aux is not None else 0)          # P7.1: the head's (sdf, valid) is the very LAST pair, after L_field's when both ride
             if field_on:
-                sdf_t, valid_t = batch[-2].to(dev, non_blocking=True), batch[-1].to(dev, non_blocking=True)
+                sdf_t, valid_t = batch[tail_end - 2].to(dev, non_blocking=True), batch[tail_end - 1].to(dev, non_blocking=True)
+            aux_lab = aux_valid = None
+            if aux is not None:
+                aux_lab, aux_valid = batch[-2].to(dev, non_blocking=True), batch[-1].to(dev, non_blocking=True)
             img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id = (
                 x.to(dev, non_blocking=True)
                 for x in (img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id))
             # the rig stays on the CPU in float64: the model uses it as a cache key, not a tensor op
             op_live = OP is not None and float(cand_m.sum()) > 0
+            aux_cap["taps"].clear()
+            aux_cap["on"] = aux is not None            # P7.1: the tap is live for THIS forward only
             with torch.autocast("cuda", dtype=torch.bfloat16,
                                 enabled=(a.amp == "bf16" and dev == "cuda")):
                 if op_live:
@@ -1608,6 +1703,12 @@ def run(a) -> int:
                                             score_extra=cand_xy)
                 else:
                     traj, score = model(img, ego, goal, calib=cal if cal.numel() else None)
+                if aux is not None:
+                    # P7.1: the head reads ONE tensor, image-derived: visual_ctx (scene_proj's 2nd output) or scene_ctx (its 1st). No ego, goal, navigation command or map (SPEC_AUX 6).
+                    aux_cap["on"] = False
+                    if len(aux_cap["taps"]) != 2:
+                        raise RuntimeError(f"P7.1 tap: scene_proj ran {len(aux_cap['taps'])} times in one forward, expected 2 (scene_ctx, visual_ctx): model.py's forward changed under the head")
+                    aux_logit, aux_sdf = aux.predict(aux_cap["taps"][1 if a.aux_drv_tap == "visual" else 0])
             traj, score = traj.float(), score.float()      # every loss and assignment in FP32
             # P6 / D5: --yaw-wrap on (default) is today's wrapped yaw L1, bit for bit; off is the paper's literal L1. parts=True returns the two terms the
             # P6 profile logs (pos_L1, yaw_L1); the sum l_traj is the same expression as before.
@@ -1617,6 +1718,11 @@ def run(a) -> int:
             l_field = fparts = None
             if a.w_field > 0.0:
                 l_field, fparts = field_loss(traj, sdf_t, margin=a.field_margin, valid=valid_t, interp=a.field_interp, return_parts=True)
+            # P7.1: L_aux = BCE(mask) + Huber(SDF) over the frames WITH a label (a frame without one contributes exactly 0). Computed ONLY under --aux-drv.
+            l_aux = aux_bce = aux_hub = None
+            if aux is not None:
+                l_aux, aux_bce, aux_hub = aux.loss(aux_logit, aux_sdf, aux_lab, aux_valid)
+                aux_cap["taps"].clear()
             n_cand = float(cand_m.sum())
             if online:
                 # ⭐ P6 / D1 + D2 + D4. The scorer scored ITS OWN proposals (`score`, candidates detached inside the model); their detached copies go to the
@@ -1624,7 +1730,8 @@ def run(a) -> int:
                 props_np = traj.detach().double().cpu().numpy()
                 metas = [{k: ds.rows[int(j)].get(k) for k in ("log_name", "token", "rank", "aug", "step")} for j in ridx]
                 cur = {"stamp": micro, "step": step, "B": int(img.shape[0]), "score": score, "l_traj": l_traj, "l_pos": l_pos, "l_yaw": l_yaw,
-                       "idx": idx, "props": props_np, "h": lab.submit(micro, step, metas, props_np), "l_field": l_field, "fparts": fparts}
+                       "idx": idx, "props": props_np, "h": lab.submit(micro, step, metas, props_np), "l_field": l_field, "fparts": fparts,
+                       "l_aux": l_aux, "aux_bce": aux_bce, "aux_hub": aux_hub}
                 l_score = None
             elif OP is not None:
                 if op_live:
@@ -1751,9 +1858,13 @@ def run(a) -> int:
                     tot_ = P["l_traj"] + l_score
                     if a.w_field > 0.0:
                         tot_ = tot_ + a.w_field * P["l_field"]          # L_field rides the same deferred backward as the other two terms
+                    if aux is not None:
+                        tot_ = aux.combine(tot_, P["l_aux"])           # P7.1 SITE 1 of 2: L_aux rides the SAME deferred backward (always multiplied by w_aux)
                     (tot_ / a.accum).backward()
                     l_traj, l_pos, l_yaw, idx = P["l_traj"], P["l_pos"], P["l_yaw"], P["idx"]
                     l_field, fparts = P["l_field"], P["fparts"]
+                    if aux is not None:
+                        l_aux, aux_bce, aux_hub = P["l_aux"], P["aux_bce"], P["aux_hub"]
                     assign_d = 0.0                                # the labelled trajectories ARE the current proposals (identity asserted by sha256)
                     del P
             # ⭐ GRADIENT ACCUMULATION. `step` counts OPTIMISER steps, never micro-batches, so
@@ -1765,12 +1876,14 @@ def run(a) -> int:
                 loss = l_traj + l_score
                 if l_field is not None:
                     loss = loss + a.w_field * l_field
+                if aux is not None:
+                    loss = aux.combine(loss, l_aux)                 # P7.1 SITE 2 of 2 (editing one site leaves the other arm head-less: the 'V2' failure)
                 loss = loss / a.accum
                 loss.backward()
             micro += 1
             if micro % a.accum:
                 continue                     # still filling the window: no step, no step count
-            torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], 1.0)
+            torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad] + aux_params, 1.0)
             opt.step()
             opt.zero_grad(set_to_none=True)
             if sched is not None:
@@ -1797,6 +1910,9 @@ def run(a) -> int:
                         # L_field: the unweighted loss, the multiplier applied to it, the share of in-extent footprint corners with SDF < 0, and the share of corners in extent
                         row.update({"field_L": float(l_field), "field_w": float(a.w_field), "field_viol": float(fparts["violating_frac"]),
                                     "field_inext": float(fparts["in_extent_frac"])})
+                    if l_aux is not None:
+                        # P7.1: the two terms (unweighted), their sum, and the multiplier the trainer applied
+                        row.update({"aux_bce": float(aux_bce), "aux_huber": float(aux_hub), "aux_L": float(l_aux), "aux_w": float(aux.w_aux)})
                     if online:
                         # P6: the six BCE components (NC, DAC, EP, TTC, C, DDC), unweighted, of the step's last micro-batch: score == score_w * mean(bce_*)
                         row.update({"bce_nc": bce_comp[0], "bce_dac": bce_comp[1], "bce_ep": bce_comp[2],
@@ -1848,7 +1964,7 @@ def run(a) -> int:
             if run_dir is not None:
                 ckpt_io.atomic_save({"format": ckpt_io.FORMAT_PARTIAL,
                                      "model_partial": ckpt_io.partial_state(model),
-                                     "meta": dict(meta, epoch=epoch, step=step), "saved_at": _now()},
+                                     "meta": dict(meta, epoch=epoch, step=step), "saved_at": _now(), **_aux_ckpt()},
                                     run_dir / f"snap_epoch{epoch:03d}.pt")
                 _append_jsonl(run_dir / "metrics.jsonl",
                               {"event": "epoch", "epoch": epoch, "step": step, "at": _now()})
@@ -1900,7 +2016,7 @@ def run(a) -> int:
         _save_ckpt()
         fin = run_dir / "model_final.pt"
         ckpt_io.atomic_save({"format": ckpt_io.FORMAT_FULL, "model": ckpt_io.full_state(model),
-                             "meta": dict(meta, step=step, epoch=epoch, finished_at=_now())},
+                             "meta": dict(meta, step=step, epoch=epoch, finished_at=_now()), **_aux_ckpt()},
                             fin)
         fin_sha = ckpt_io.sha256_file(fin)
         summary = {"done": True, "steps": step, "epochs_completed": epoch,
@@ -2071,6 +2187,8 @@ def build_parser() -> argparse.ArgumentParser:
                          "is unchanged.")
     ap.add_argument("--field-shuffle-seed", type=int, default=None,
                     help="the label-shuffled CONTROL arm: a derangement of the label keys with this seed (registered 20261011). Needs --field-labels.")
+    # ---- P7.1 (SPEC_AUX_DRIVABLE_HEAD.md section 4): the training-only drivable-area head. EVERY default builds nothing; an arm that means the head NAMES --aux-drv AND --w-aux-drv > 0.
+    AUX.add_aux_args(ap)
     ap.add_argument("--preflight", action="store_true",
                     help="build banks + model, load and check the checkpoint, then exit WITHOUT "
                          "writing anything (safe against a live run directory); prints PREFLIGHT_OK")

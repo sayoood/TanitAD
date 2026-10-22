@@ -103,7 +103,9 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
                           samplers=[], grads=[], first_batch=None, fwd_dtype=None, warm=None, trunk_dir=None, trunk_loaded=None,
                           rc=None, error=None, args=None, parser_unknown=[], seed=None, tf32=None, compiled=None, device=None,
                           metrics=[], summary=None, log=str(work / f"{mode}.log"), run_dir=None, wta_yaw_wrap=None, bank_len={}, nav_modules={},
-                          field_calls=[], field_grads=[], field_first=None)
+                          field_calls=[], field_grads=[], field_first=None,
+                          aux=None, aux_facts=None, aux_loss_calls=[], aux_loss_grads=[], aux_first=None, aux_tap_obs=[], aux_grads=[], aux_adam=None, opt_param_ids=None,
+                          sp_ptrs=[], sctx_ptr=None, scorer_in_width=None)
     ap = T.build_parser()
     a, unknown = ap.parse_known_args(list(argv))
     cap.parser_unknown, cap.args = unknown, a
@@ -127,6 +129,7 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
             if cap.model is None:
                 cap.model, cap.cfg = self, self.cfg
                 cap.nav_modules = {"cmd_embed": hasattr(self, "cmd_embed"), "goal_freqs": hasattr(self, "goal_freqs")}     # read before the BUILD model is freed
+                cap.scorer_in_width = int(self.score_q_mlp[0].in_features)                                                  # P7.1: the REAL scorer's input width (G-DVB aux_drv_feed)
                 if arm_is("frozen_group", arm):       # a group that should train is frozen after the fact
                     for p in self.traj_head.parameters():
                         p.requires_grad_(False)
@@ -139,6 +142,14 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
                     return None
                 self.register_forward_pre_hook(pre, with_kwargs=True)
                 amp_probe_module(self.backbone).register_forward_hook(lambda _m, _i, o: setattr(cap, "fwd_dtype", str(o.dtype)))
+                if a.aux_drv:
+                    # P7.1 tap observers, independent of the trainer's own hook: `scene_proj` runs twice per forward (call 1 = scene_ctx, call 2 = visual_ctx) and the scoring decoder's first
+                    # block receives the context the scorer reads; the head's input is compared with THESE storages (aux_dvb_rows, row `aux_drv_tap`).
+                    def _sp(_m, _i, o):
+                        cap.sp_ptrs.append((o.data_ptr(), tuple(o.shape)))
+                        del cap.sp_ptrs[:-4]
+                    self.scene_proj.register_forward_hook(_sp)
+                    self.score_dec[0].register_forward_pre_hook(lambda _m, args: setattr(cap, "sctx_ptr", (args[1].data_ptr(), tuple(args[1].shape))))
 
     Opt0 = torch.optim.AdamW
 
@@ -147,6 +158,7 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
             super().__init__(params, *a_, **k_)
             cap.opt = {"lr": self.defaults["lr"], "weight_decay": self.defaults["weight_decay"], "fused": self.defaults.get("fused"),
                        "n_tensors": sum(len(g["params"]) for g in self.param_groups)}
+            cap.opt_param_ids = {id(p_) for g_ in self.param_groups for p_ in g_["params"]}          # P7.1: which parameters the optimiser actually holds
 
         def zero_grad(self, *a_, **k_):
             r = super().zero_grad(*a_, **k_)
@@ -225,6 +237,38 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
             out = out.detach()
         return (out,) + tuple(r[1:]) if isinstance(r, tuple) else out
 
+    def rec_aux_cls(base):
+        """P7.1: a recording subclass of AuxDrivable.  `predict` records WHICH tensor the head read (its storage against scene_proj's two outputs and the scorer's context); `loss` records the labels
+        it RECEIVED and measures the multiplier at the graph (a hook on the term's own output sees d(total loss)/d(L_aux) = w_aux / accum when the trainer adds `combine(l, L_aux)` once per
+        micro-batch, and never fires when the term is computed but not added or added detached).  The regression arms insert the fault BETWEEN the term and the loss, downstream of that hook."""
+        class RecAux(base):
+            def __init__(self, cfg):
+                super().__init__(cfg)
+                cap.aux = self
+                cap.aux_facts = self.built_facts()
+
+            def predict(self, ctx):
+                sp = cap.sp_ptrs[-2:]
+                cap.aux_tap_obs.append({"ctx": (ctx.data_ptr(), tuple(ctx.shape)), "scene": sp[0] if len(sp) == 2 else None, "visual": sp[1] if len(sp) == 2 else None,
+                                        "sctx": cap.sctx_ptr})
+                return super().predict(ctx)
+
+            def loss(self, logit, sdf_pred, label_i8, valid=None):
+                cap.aux_loss_calls.append({"valid": valid is not None, "labelled": int(valid.sum()) if valid is not None else int(label_i8.shape[0])})
+                if cap.aux_first is None:
+                    cap.aux_first = (label_i8.detach().cpu().clone(), None if valid is None else valid.detach().cpu().clone())
+                r = super().loss(logit, sdf_pred, label_i8, valid)
+                out = r[0]
+                if out.requires_grad:
+                    out.register_hook(lambda g: cap.aux_loss_grads.append(float(g)))
+                if arm_is("aux_weight_off", arm):                    # the multiplier wired off by a factor
+                    out = out * 0.5
+                elif arm_is("aux_term_detached", arm):               # the term computed, never entering the loss's graph
+                    out = out.detach()
+                return (out,) + tuple(r[1:])
+        RecAux.__name__ = "AuxDrivable"
+        return RecAux
+
     def rec_warm(model, path):
         cap.warm = path
         return ws0(model, path)
@@ -258,8 +302,27 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
                 r["n_zero"] += int(s == 0.0)
                 r["finite"] = r["finite"] and bool(torch.isfinite(p.grad).all())
         cap.grads.append(rec)
+        if cap.aux is not None:
+            hr = {"abs_sum": 0.0, "finite": True, "n": 0, "n_grad": 0, "n_zero": 0, "numel": 0, "n_req": 0}
+            for p in cap.aux.parameters():
+                hr["n"] += 1
+                hr["numel"] += p.numel()
+                hr["n_req"] += int(p.requires_grad)
+                if p.grad is not None:
+                    s_ = float(p.grad.detach().double().abs().sum())
+                    hr["n_grad"] += 1
+                    hr["abs_sum"] += s_
+                    hr["n_zero"] += int(s_ == 0.0)
+                    hr["finite"] = hr["finite"] and bool(torch.isfinite(p.grad).all())
+            cap.aux_grads.append(hr)
 
-    handle = None
+    def step_post(optimizer, _a, _k):
+        if cap.aux is None or not isinstance(optimizer, Opt0):
+            return
+        ps = list(cap.aux.parameters())
+        cap.aux_adam = {"n": len(ps), "with_state": sum(1 for p in ps if p in optimizer.state and len(optimizer.state[p]) > 0)}
+
+    handle = handle_post = None
     saved_tf32 = torch.backends.cuda.matmul.allow_tf32
     try:
         torch.backends.cuda.matmul.allow_tf32 = False
@@ -274,6 +337,9 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
         patch(T, "wta_loss", rec_wta)
         if fl0 is not None:
             patch(T, "field_loss", rec_field)
+        if a.aux_drv:
+            import aux_drivable_head as AUXm
+            patch(AUXm, "AuxDrivable", rec_aux_cls(AUXm.AuxDrivable))
         import online_labeller as OLm
         OL0 = OLm.OnlineLabeller
 
@@ -291,6 +357,7 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
             patch(torch.nn.functional, "binary_cross_entropy_with_logits",
                   lambda x, *a_, **k_: (x * 0.0).sum() if k_.get("reduction") != "none" else x * 0.0)
         handle = optim_mod.register_optimizer_step_pre_hook(step_pre)
+        handle_post = optim_mod.register_optimizer_step_post_hook(step_post)
         with open(cap.log, "w", encoding="utf-8") as lg, contextlib.redirect_stdout(lg), contextlib.redirect_stderr(lg):
             try:
                 cap.rc = T.run(a)
@@ -301,6 +368,8 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
     finally:
         if handle is not None:
             handle.remove()
+        if handle_post is not None:
+            handle_post.remove()
         for obj, name, orig in reversed(patches):
             setattr(obj, name, orig)
         torch.backends.cuda.matmul.allow_tf32 = saved_tf32
@@ -406,6 +475,9 @@ DVB_KINDS = {
     "label_python": "built", "metric_cache": "built",
     # L_field (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md): each has its observed row in `field_dvb_rows` (what the loader / the term actually RECEIVED)
     "w_field": "built", "field_margin": "built", "field_interp": "built", "field_labels": "built", "field_shuffle_seed": "built",
+    # P7.1 (SPEC_P7 section 1, SPEC_AUX_DRIVABLE_HEAD section 7): the training-only drivable-area head.  Each has its observed row in `aux_dvb_rows` (what the loader / the head / the loss actually
+    # RECEIVED or BUILT); `aux_drv_labels` is also a profile `data_flags` entry (the PASS token fingerprints the store).  ALL default OFF: an arm that means the head NAMES --aux-drv and --w-aux-drv.
+    "aux_drv": "built", "w_aux_drv": "built", "aux_drv_tap": "built", "aux_drv_depth": "built", "aux_drv_feed": "built", "aux_drv_labels": "built", "aux_drv_shuffle_seed": "built",
 }
 DVB_REASON = {"score_w": "weights the score BCE inside run(); observed through the live `score` term (G-LIVE), statically traced here",
               "log_every": "logging cadence", "out": "output directory", "resume": "supervised relaunch",
@@ -483,7 +555,94 @@ def field_dvb_rows(a, b, s, min_coverage: float = FIELD_MIN_COVERAGE) -> list:
     return rows
 
 
-def dvb_rows(a, b, s, field_min_coverage: float = FIELD_MIN_COVERAGE) -> list:
+AUX_MIN_COVERAGE = 0.999          # SPEC_P7 section 1: the head's label coverage of the bank's rows >= 99.9 % (a missing label contributes exactly 0 silently, so coverage is REPORTED and BOUNDED); a profile may set `aux_min_coverage`
+
+
+def aux_dvb_rows(a, b, s, profile=None) -> list:
+    """G-DVB's rows for the seven P7.1 levers (SPEC_P7 section 1's table).  The BUILT side is what was actually built / received, never the namespace:
+      aux_drv                  an AuxDrivable was CONSTRUCTED iff --aux-drv (the BUILD capture: a recording subclass)
+      aux_drv_labels / _shuffle_seed   TargetBank's own constructor arguments (BUILD capture)
+      aux_drv_depth            the number of CrossBlocks the built head holds (`built_facts`)
+      aux_drv_feed             off <=> the scorer's input width is 60 and no feed module exists (`built_facts`); the trunk trainer builds H1 only
+      aux_drv_tap              the storage the head's input IS: equal to scene_proj's 2nd output (visual_ctx) for `visual`, to its 1st (scene_ctx) for `scene`; and visual_ctx IS the context the scoring decoder reads
+      w_aux_drv                the multiplier MEASURED AT THE GRAPH (a hook on L_aux's own output reads d(total loss)/d(L_aux) = w_aux / accum, once per micro-batch), and the trainer's logged `aux_w`
+      the store                the trainer's `aux` event: the manifest sha256 and key count against the PROFILE's registered pins (`aux_store_pins`; none registered => the full pinned store), the label coverage of
+                               the bank's rows, the shuffle seed, and the head's built facts the trainer itself wrote
+    Defaults (no --aux-drv) add only the three BUILD rows; the SMOKE-side rows exist only for a head arm."""
+    rows = []
+
+    def add(dest, declared, built, how, ok=None):
+        rows.append({"dest": dest, "flag": "--" + dest.replace("_", "-"), "declared": declared, "built": built, "how": how,
+                     "ok": _close(declared, built) if ok is None else bool(ok)})
+    tk = ((b.banks.get("TargetBank") or [{"args": [], "kwargs": {}}])[0])["kwargs"]
+    on = bool(getattr(a, "aux_drv", False))
+    facts = getattr(b, "aux_facts", None)
+    add("aux_drv", on, facts is not None, "an AuxDrivable is constructed iff --aux-drv")
+    add("aux_drv_labels", getattr(a, "aux_drv_labels", "") or None, tk.get("aux_labels"), "TargetBank(aux_labels=)")
+    add("aux_drv_shuffle_seed", getattr(a, "aux_drv_shuffle_seed", None), tk.get("aux_shuffle_seed"), "TargetBank(aux_shuffle_seed=)")
+    if not on or facts is None:
+        return rows
+    f = facts
+    add("aux_drv_depth", a.aux_drv_depth, f.get("depth"), "AuxDrivable.built_facts(): the CrossBlocks the head holds")
+    add("aux_drv_feed", a.aux_drv_feed, "on" if (f.get("feed_built") or f.get("scorer_in_width") != 60) else "off",
+        "the scorer's input width (60 off / 63 on) and whether a feed module exists (built_facts)")
+    # ... and the REAL scorer of the BUILT model (read off `score_q_mlp[0]`, not off the head's own claim): feed off <=> its first layer reads the 60 trajectory features
+    sw = getattr(b, "scorer_in_width", None)
+    add("aux_drv_feed", 60 + (3 if a.aux_drv_feed == "on" else 0), sw, "the built model's score_q_mlp[0].in_features (60 off / 63 on): the feed is wired iff the flag says so")
+    prof = profile or {}
+    if profile is not None:
+        add("aux_drv_labels", "in the profile's data_flags", "--aux-drv-labels" if "--aux-drv-labels" in prof.get("data_flags", ()) else None,
+            "the label store is a DATA input: the PASS token must fingerprint it (a profile that does not list it cannot launch a head arm: refe_p6 carries no head)", ok="--aux-drv-labels" in prof.get("data_flags", ()))
+    if s is None:
+        return rows
+    sa = s.args
+    n_micro = int(sa.steps) * int(sa.accum)
+    calls, grads, obs = s.aux_loss_calls, s.aux_loss_grads, s.aux_tap_obs
+    add("w_aux_drv", n_micro, len(calls), "L_aux is computed once per micro-batch (steps x accum of the SMOKE run)")
+    add("w_aux_drv", True, bool(calls) and all(c["valid"] for c in calls), "L_aux received the valid mask on every call (a frame without a label contributes exactly 0)")
+    mult = [g * int(sa.accum) for g in grads]
+    wa = float(a.w_aux_drv)
+    add("w_aux_drv", wa, (min(mult), max(mult)) if mult else None,
+        f"the multiplier measured at the graph: d(loss)/d(L_aux) x accum on {len(mult)} of {n_micro} micro-batches (a hook on the term's output; a term never added, or added detached, never fires it)",
+        ok=len(mult) == n_micro and all(math.isclose(m_, wa, rel_tol=1e-5) for m_ in mult))
+    aw = {r["aux_w"] for r in s.metrics if "aux_w" in r}
+    add("w_aux_drv", wa, (sorted(aw)[0] if len(aw) == 1 else sorted(aw)) if aw else None, "the trainer's logged aux_w on every logged row")
+
+    def which(o):
+        v, sc, ctx = o.get("visual"), o.get("scene"), o.get("ctx")
+        if ctx is not None and ctx == v and ctx != sc:
+            return "visual"
+        if ctx is not None and ctx == sc and ctx != v:
+            return "scene"
+        return "NEITHER-OR-AMBIGUOUS"
+    seen = sorted({which(o) for o in obs})
+    add("aux_drv_tap", a.aux_drv_tap, seen[0] if len(seen) == 1 else (seen or None),
+        f"the storage the head's input IS, on {len(obs)} forwards: scene_proj's 2nd output (visual_ctx) for `visual`, its 1st (scene_ctx) for `scene` (data_ptr + shape, AUX.tap_is)")
+    add("aux_drv_tap", True, bool(obs) and all(o.get("visual") is not None and o.get("visual") == o.get("sctx") for o in obs),
+        "scene_proj's 2nd output IS the context the scoring decoder reads (the tensor the cross-fit evidence says lacks the visual information)")
+    ev = next((e for e in s.metrics if e.get("event") == "aux"), None)
+    if ev is None:
+        add("aux_drv_labels", "an `aux` event", None, "the trainer writes one `aux` event (built facts, store sha256, keys, coverage) at start", ok=False)
+        return rows
+    pins = prof.get("aux_store_pins")                       # ONLY the profile's registered pins: there is no fallback to the full store's (it holds the reserve's keys)
+    ok_pins = bool(pins) and pins.get("sha256") is not None and pins.get("keys") is not None
+    if not ok_pins:
+        add("aux_drv_labels", "registered pins (sha256 + key count)", None,
+            "the profile registers NO pins for this run's label store (refe_p7: P7_AUX_STORE_PINS, from the filter's report, BEFORE step 0): an unregistered store is never vouched for by another store's number", ok=False)
+    else:
+        add("aux_drv_labels", pins["sha256"], ev.get("store_sha256"), "the `aux` event: the loader's manifest sha256 is the registered store's")
+        add("aux_drv_labels", pins["keys"], ev.get("store_keys"), "the `aux` event: the registered store's key count")
+    cov = ev["rows_labelled"] / max(ev["rows"], 1)
+    mc = prof.get("aux_min_coverage", AUX_MIN_COVERAGE)
+    add("aux_drv_labels", f">= {mc}", round(cov, 6), f"label coverage: {ev['rows_labelled']}/{ev['rows']} of the bank's rows have a stored SDF", ok=cov >= mc)
+    add("aux_drv_shuffle_seed", a.aux_drv_shuffle_seed, ev.get("shuffle_seed"), "the `aux` event: the derangement seed")
+    add("aux_drv_tap", a.aux_drv_tap, ev.get("tap"), "the `aux` event: the tap the trainer built")
+    add("aux_drv_depth", a.aux_drv_depth, ev.get("depth"), "the `aux` event: the head's CrossBlocks")
+    add("w_aux_drv", wa, ev.get("w_aux"), "the `aux` event: the head's multiplier")
+    return rows
+
+
+def dvb_rows(a, b, s, field_min_coverage: float = FIELD_MIN_COVERAGE, profile=None) -> list:
     """{flag, declared, built, how, ok} for every observable lever.  `b` = BUILD capture (real levers), `s` = SMOKE capture or None."""
     from model import BACKBONES, REFeConfig
     from load_dinov3 import BACKBONE_ROOT
@@ -565,6 +724,7 @@ def dvb_rows(a, b, s, field_min_coverage: float = FIELD_MIN_COVERAGE) -> list:
         add("amp", "torch.bfloat16" if (a.amp == "bf16" and not a.cpu and _cuda()) else "torch.float32", s.fwd_dtype,
             "dtype of the backbone's first matmul (amp_probe_module) under autocast")
     rows += field_dvb_rows(a, b, s, field_min_coverage)
+    rows += aux_dvb_rows(a, b, s, profile)
     return rows
 
 
@@ -614,7 +774,7 @@ def check_dvb(argv: list, b, s, profile: dict, arm=None, rehearsal=False) -> dic
         reasons.append(f"the BUILD run did not reach the optimiser: rc={b.rc} {str(b.error or '')[-300:]}")
         det["build_log"] = b.log
         return verdict("G-DVB", reasons, det, arm=arm, rehearsal=rehearsal)
-    rows = dvb_rows(b.args, b, s, profile.get("field_min_coverage", FIELD_MIN_COVERAGE))
+    rows = dvb_rows(b.args, b, s, profile.get("field_min_coverage", FIELD_MIN_COVERAGE), profile=profile)
     det["rows"] = rows
     for r in rows:
         if not r["ok"]:
@@ -1431,6 +1591,156 @@ def judge_field_reach(fr: dict, w_field: float) -> list:
     return out
 
 
+# ---- P7.1: the training-only drivable-area head (SPEC_P7 section 1; SPEC_AUX_DRIVABLE_HEAD sections 2.1 and 7).  The probe reads what L_aux ALONE does to the trained model on the first REAL labelled
+# sample of the smoke run, at the DECLARED weight and at weight 0.0 (the probe's own control: every group must then read exactly 0.0, so a zero elsewhere is a property of the model).
+AUX_REACH = {"visual": ("aux_head", "backbone.lora", "scene_proj", "pos3d_mlp"),
+             "scene": ("aux_head", "backbone.lora", "scene_proj", "pos3d_mlp", "reg_compress", "registers")}                 # the ancestors of the declared tap
+AUX_NO_REACH = {"visual": ("traj_head", "reg_compress", "registers", "queries", "dec", "ego_enc", "cmd_embed") + SCORER_GROUPS,
+                "scene": ("traj_head", "queries", "dec", "ego_enc", "cmd_embed") + SCORER_GROUPS}                                 # the head reads image tokens only: nothing downstream of the proposals
+AUX_BCE_INIT_TOL = 0.15          # SPEC_AUX 7: the initial aux BCE reads ln 2 +- 0.15 (a mis-scaled head or the wrong tap reads elsewhere)
+
+
+def aux_reach(cap, arm=None) -> dict:
+    """L_aux-ONLY backward through the trained model (and the head) on the first REAL labelled sample of the smoke run: per parameter group the |grad| sum and the number of parameters with NO
+    autograd path, at the DECLARED weight and at weight 0.0; plus: no autograd path from the score to the head (feed off)."""
+    import torch
+    import aux_drivable_head as AUXm
+    m, aux = cap.model, cap.aux
+    if m is None or aux is None or cap.first_batch is None or cap.aux_first is None:
+        return {"ran": False}
+    lab, valid = cap.aux_first
+    img, ego, goal, calib = cap.first_batch
+    idx = [k for k in range(lab.shape[0]) if valid is None or bool(valid[k])]
+    if not idx:
+        return {"ran": True, "labelled": 0}
+    sl = slice(idx[0], idx[0] + 1)
+    dev = next(m.parameters()).device
+    cal = calib[sl].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
+    m.train()
+    taps: list = []
+    hk = m.scene_proj.register_forward_hook(lambda _m, _i, o: taps.append(o))
+    tap_i = 1 if cap.args.aux_drv_tap == "visual" else 0
+    w0 = float(aux.w_aux)
+    w_decl = 0.0 if arm_is("aux_weight_zero", arm) else w0                 # arm: a trainer that ignored --w-aux-drv would read all-zero
+    out = {"ran": True, "labelled": len(idx), "tap": cap.args.aux_drv_tap}
+    try:
+        for tag, w in (("declared", w_decl), ("zero", 0.0)):
+            m.zero_grad(set_to_none=True)
+            aux.zero_grad(set_to_none=True)
+            taps.clear()
+            _traj, score = m(img[sl].to(dev), ego[sl].to(dev), goal[sl].to(dev), calib=cal)[:2]
+            logit, sdf = aux.head(taps[tap_i])
+            l_aux = AUXm.aux_loss(logit, sdf, lab[sl].to(dev), None if valid is None else valid[sl].to(dev), cell=aux.cfg.cell, sdf_scale=aux.cfg.sdf_scale, w_sdf=aux.cfg.w_sdf)[0]
+            aux.w_aux = w
+            try:
+                total = aux.combine(torch.zeros((), device=dev), l_aux)
+            finally:
+                aux.w_aux = w0
+            if tag == "declared":
+                gs = torch.autograd.grad(score.float().sum(), list(aux.head.parameters()), allow_unused=True, retain_graph=True)
+                out["score_to_head_grads_all_none"] = all(g_ is None for g_ in gs)
+            total.backward()
+            groups: dict = {}
+            for n, p in list(m.named_parameters()) + [("aux_head." + n_, p_) for n_, p_ in aux.head.named_parameters()]:
+                r = groups.setdefault("aux_head" if n.startswith("aux_head.") else group_of(n), {"abs_sum": 0.0, "n": 0, "n_none": 0})
+                r["n"] += 1
+                if p.grad is None:
+                    r["n_none"] += 1
+                else:
+                    r["abs_sum"] += float(p.grad.double().abs().sum())
+            out[tag] = {"loss": float(total), "groups": groups}
+    finally:
+        hk.remove()
+        aux.w_aux = w0
+        m.zero_grad(set_to_none=True)
+        aux.zero_grad(set_to_none=True)
+    return out
+
+
+def judge_aux_reach(fr: dict, w_aux: float, tap: str = "visual") -> list:
+    """The reach probe re-judged from its RAW FIELDS.  [] = proved: L_aux-only gradient is non-zero on the head and on every ancestor of the declared tap (LoRA, scene_proj, pos3d_mlp; for `scene` also the
+    register compression), EXACTLY 0.0 on everything the head does not read (traj_head, reg_compress, the proposal decoder, the scorer), no autograd path from the score to the head, and the weight-0
+    control reads exactly 0.0 on every group (so a zero elsewhere is a property of the model, not of a broken probe)."""
+    if not fr.get("ran"):
+        return ["L_aux reach probe could not run (no model / head / first batch / recorded label): the reach is unproved"]
+    if not fr.get("labelled"):
+        return ["L_aux reach probe: no labelled sample in the first micro-batch -- the term was not exercised"]
+    out = []
+    g, g0 = fr["declared"]["groups"], fr["zero"]["groups"]
+    for grp in AUX_REACH[tap]:
+        x = g.get(grp)
+        if x is None or not (_finite(x["abs_sum"]) and x["abs_sum"] > 0.0):
+            out.append(f"L_aux-only backward reads EXACTLY zero (or is absent) on {grp!r}: the term does not reach it (declared weight {w_aux}, tap {tap})")
+    for grp in AUX_NO_REACH[tap]:
+        x = g.get(grp)
+        if x is not None and x["abs_sum"] != 0.0:
+            out.append(f"L_aux-only backward reaches {grp!r} ({x['abs_sum']:.3g}): the head reads image tokens only, so nothing downstream of the proposals may feel it (a goal / ego path would be a back door)")
+    bad0 = {k: v["abs_sum"] for k, v in g0.items() if v["abs_sum"] != 0.0}
+    if bad0:
+        out.append(f"the weight-0 control does not read exactly 0.0 (the probe cannot be trusted): {bad0}")
+    if fr.get("score_to_head_grads_all_none") is not True:
+        out.append("an autograd path from the score to the head exists (feed off: the scorer could teach the head to game the score)")
+    return out
+
+
+def aux_live_facts(cap) -> dict:
+    """The raw fields of the SMOKE run's head, for `judge_aux_live`: per-step gradients, optimiser membership, Adam state, the logged terms."""
+    steps = [r for r in cap.metrics if "traj_L1" in r]
+    ps = list(cap.aux.parameters()) if cap.aux is not None else []
+    ids = cap.opt_param_ids or set()
+    return {"built": cap.aux is not None, "n_head_params": len(ps), "grads": list(cap.aux_grads),
+            "in_optimizer": sum(1 for p in ps if id(p) in ids), "adam": cap.aux_adam,
+            "rows": [{"step": r.get("step"), "aux_bce": r.get("aux_bce"), "aux_huber": r.get("aux_huber"), "aux_w": r.get("aux_w")} for r in steps]}
+
+
+def judge_aux_live(f: dict, w_aux: float) -> list:
+    """[] = proved from the raw fields: the head EXISTS, every head parameter requires grad, holds a finite gradient on every observed optimiser step and a NON-ZERO one on at least one, is held by the
+    optimiser and has Adam state after the step (the probe_zerograd3 pattern: a registered parameter without state never trained); `aux_bce` / `aux_huber` are present and finite on EVERY logged row
+    and the first reads ln 2 +- 0.15; `aux_w` is the declared weight on every row."""
+    import math as _m
+    r = []
+    if not f.get("built"):
+        return ["--aux-drv is declared but the SMOKE run built no head (a lever declared, never built)"]
+    n = f["n_head_params"]
+    gr = f.get("grads") or []
+    if not gr:
+        r.append("no optimiser step was observed on the head")
+    else:
+        for rec in gr:
+            if rec["n_req"] != rec["n"]:
+                r.append(f"the head is FROZEN ({rec['n_req']}/{rec['n']} tensors require grad)")
+                break
+            if not rec["finite"]:
+                r.append("non-finite gradient on the head")
+                break
+            if rec["n_grad"] != rec["n"]:
+                r.append(f"only {rec['n_grad']} of {rec['n']} head tensors received a gradient (the rest have no autograd path)")
+                break
+        if not any(rec["abs_sum"] > 0.0 for rec in gr):
+            r.append(f"the head's gradient is EXACTLY zero on every observed optimiser step ({gr[0]['numel']:,} parameters never trained)")
+    if f.get("in_optimizer") != n:
+        r.append(f"{n - (f.get('in_optimizer') or 0)} of {n} head tensors are NOT held by the optimiser (the head's param group was dropped: it computes a gradient and never moves)")
+    ad = f.get("adam")
+    if not ad or ad.get("n") != n or ad.get("with_state") != n:
+        r.append(f"{(ad or {}).get('with_state')} of {n} head tensors hold Adam state after the step (a registered parameter without state never received an update)")
+    rows = f.get("rows") or []
+    if not rows:
+        r.append("no logged step rows to read the head's terms from")
+    for t in ("aux_bce", "aux_huber"):
+        miss = [x["step"] for x in rows if x.get(t) is None]
+        bad = [x["step"] for x in rows if x.get(t) is not None and not _finite(x[t])]
+        if miss:
+            r.append(f"declared loss term {t!r} ABSENT from the trainer's metrics on steps {miss[:4]}")
+        if bad:
+            r.append(f"declared loss term {t!r} not finite on steps {bad[:4]}")
+    if rows and _finite(rows[0].get("aux_bce")) and abs(rows[0]["aux_bce"] - _m.log(2.0)) > AUX_BCE_INIT_TOL:
+        r.append(f"the initial aux BCE {rows[0]['aux_bce']:.4f} is not within {AUX_BCE_INIT_TOL} of ln 2 (SPEC_AUX 7: a mis-scaled head or the wrong tap)")
+    ws = {x.get("aux_w") for x in rows}
+    if rows and ws != {float(w_aux)}:
+        r.append(f"the logged aux_w {sorted(map(str, ws))} != the declared --w-aux-drv {w_aux}")
+    return r
+
+
 def check_live(argv: list, cap, profile: dict, arm=None, rehearsal=False, control: bool = True) -> dict:
     reasons, det = [], {}
     if cap.rc != 0:
@@ -1504,6 +1814,20 @@ def check_live(argv: list, cap, profile: dict, arm=None, rehearsal=False, contro
         det["field_viol_logged"] = [r["field_viol"] for r in steps if "field_viol" in r]
         if not reasons:
             reasons += judge_field_reach(fr, cap.args.w_field)
+    if getattr(cap.args, "aux_drv", False) and not reasons:
+        # P7.1: the head must be BUILT, held by the optimiser, finite and non-zero, REACH its ancestors and nothing downstream, with the weight-0 control reading exactly 0.0
+        facts = aux_live_facts(cap)
+        det["aux_live"] = {k: v for k, v in facts.items() if k != "grads"} | {"grad_steps": len(facts["grads"]), "grad_abs_sum_max": max((g_["abs_sum"] for g_ in facts["grads"]), default=None)}
+        reasons += judge_aux_live(facts, cap.args.w_aux_drv)
+        if not reasons:
+            try:
+                ar = aux_reach(cap, arm)
+            except Exception as e:                                                    # noqa: BLE001
+                ar = {"ran": False}
+                reasons.append(f"L_aux reach probe could not run: {type(e).__name__}: {e}")
+            det["aux_reach"] = {k: (v if k in ("ran", "labelled", "tap", "score_to_head_grads_all_none") else {"loss": v["loss"], "groups": v["groups"]}) for k, v in ar.items()}
+            if not reasons:
+                reasons += judge_aux_reach(ar, cap.args.w_aux_drv, cap.args.aux_drv_tap)
     return verdict("G-LIVE", reasons, det, arm=arm, rehearsal=rehearsal)
 
 
@@ -1545,6 +1869,16 @@ def check_eval(argv: list, cap, profile: dict, arm=None, rehearsal=False) -> dic
     if arm_is("loader_drops_tensor", arm):             # a loader that quietly skips one tensor
         with torch.no_grad():
             next(p for n, p in pm.named_parameters() if group_of(n) == "dec").add_(1.0)
+    if getattr(cap.args, "aux_drv", False):
+        # P7.1: the head rides BESIDE `model` in model_final.pt (its final weights are needed for the head-IoU reads) and NEVER inside it: the planner's strict load of `model` must be unchanged
+        fsd = torch.load(fin, map_location="cpu", weights_only=False)
+        inside = sorted(k for k in fsd["model"] if k.startswith(("aux", "head.")))
+        det["aux_in_model_final"] = {"aux_drv_beside_model": "aux_drv" in fsd, "head_keys_inside_model": inside[:3]}
+        if "aux_drv" not in fsd:
+            reasons.append("model_final.pt carries no `aux_drv` head state beside `model`: the head's final weights would be lost")
+        if inside:
+            reasons.append(f"the head's tensors are INSIDE model_final.pt's `model` ({inside[:3]}): the planner's strict load would refuse the file")
+        del fsd
     ts = {k: v.detach().cpu() for k, v in cap.model.state_dict().items()}
     ps = {k: v.detach().cpu() for k, v in pm.state_dict().items()}
     det["state_keys"] = {"trainer": len(ts), "planner": len(ps)}
@@ -1692,6 +2026,14 @@ def check_ckpt(argv: list, work, profile: dict, arm=None, rehearsal=False) -> di
     det["optimizer_state_equal"] = _opt_digest(cu["opt"]) == _opt_digest(chh["opt"])
     if not det["optimizer_state_equal"]:
         reasons.append("optimiser state after the resumed run != the uninterrupted run's")
+    if "aux_drv" in cu or "aux_drv" in chh:
+        # P7.1: the head's weights (the Adam state is inside `opt`, compared above: it holds the head's moments) must round-trip bit for bit, and be present on BOTH sides
+        au, ah = cu.get("aux_drv"), chh.get("aux_drv")
+        if arm_is("resume_drops_aux", arm) and ah is not None:                     # the resumed run's head is not the uninterrupted run's
+            ah = {k: v + 1.0 if v.is_floating_point() else v for k, v in ah.items()}
+        det["aux_state_equal"] = au is not None and ah is not None and _digest_sd(au) == _digest_sd(ah)
+        if not det["aux_state_equal"]:
+            reasons.append("the head's weights after the resumed run != the uninterrupted run's (or the head state is absent from a checkpoint)")
     pos_u = {k: cu["state"][k] for k in ("step", "epoch", "pos", "micro")}
     pos_h = {k: chh["state"][k] for k in ("step", "epoch", "pos", "micro")}
     det["data_position"] = {"U": pos_u, "H": pos_h}
@@ -1956,6 +2298,60 @@ def check_live_mem(mem_metrics, arm=None, rehearsal=False) -> dict:
 
 
 EGR_CKPT_MIN_BYTES = 50_000_000      # MEASURED ckpt_last.pt of this model class: 228,234,301 B (SPEC_P6 section 4); a probe far below it proves nothing about the real push
+
+
+# ============================================================================================ P7: G-RESERVE (SPEC_P7 section 2) -- a SLOT; the audit is `refe/session_reserve.py` (P7-WIRE-RESERVE)
+# The gate consumes the registered reserve file (`--gate-reserve-json`, bound into the token by its sha256 and pinned in the profile) and calls
+#     session_reserve.audit_inputs(reserve, *, bank_files, metric_cache_dir, label_store, image_index, calib_rows)  ->  a dict with `ok: bool`
+# with every input the LAUNCH argv names (the five inputs of SPEC_P7 section 2).  It imports the audit LAZILY (the module is a separate deliverable; absent => this check FAILS, never passes).
+# ⚠️ UNVERIFIED at the time of writing: the audit's argument TYPES.  `reserve_audit_inputs` is the ONE place that maps the argv to them (paths, as the argv names them); adjust it there.
+def reserve_audit_inputs(argv: list) -> dict:
+    """The keyword arguments of `audit_inputs` (other than `reserve`), read from the LAUNCH argv: the bank's rank files, the D9 metric-cache directory, the head's label store, the image root, the calibration table."""
+    import gate_token as GT_
+
+    def val(flag):
+        v = GT_.flag_values(argv, flag)
+        return v[0] if v else None
+    tg = val("--targets")
+    return {"bank_files": sorted(str(p) for p in Path(tg).glob("targets_rank*.jsonl")) if tg else [], "metric_cache_dir": val("--metric-cache"),
+            "label_store": val("--aux-drv-labels"), "image_index": val("--images"), "calib_rows": val("--calib")}
+
+
+def check_reserve(argv: list, profile: dict, reserve_json, arm=None, rehearsal=False, audit=None) -> dict:
+    """G-RESERVE.  PASS iff the reserve file is the registered one (sha256 == the profile's `reserve_sha256`) AND `audit_inputs(...)` returns a dict with `ok` True.  `audit` (tests) replaces the lazy
+    import.  Every other outcome FAILS: no file, a different file, an unreadable file, the audit module absent, the audit raising, a result that is not a dict, `ok` anything but True."""
+    reasons, det = [], {}
+    pin = profile.get("reserve_sha256")
+    if not reserve_json or not Path(str(reserve_json)).is_file():
+        return verdict("G-RESERVE", [f"no reserve file (--gate-reserve-json {reserve_json!r}): the reserve cannot be audited"], det, arm=arm, rehearsal=rehearsal)
+    import gate_token as GT_
+    sha = GT_.sha256_file(reserve_json)
+    det["reserve_sha256"] = sha
+    if pin is None:
+        reasons.append("the profile registers no reserve sha256 (P7_RESERVE_SHA256): an unregistered reserve is never audited")
+    elif sha != pin:
+        reasons.append(f"the reserve file {sha[:16]}... is not the registered draw {pin[:16]}...")
+    try:
+        reserve = json.loads(Path(str(reserve_json)).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as e:
+        return verdict("G-RESERVE", reasons + [f"the reserve file is unreadable: {type(e).__name__}: {e}"], det, arm=arm, rehearsal=rehearsal)
+    if audit is None:
+        try:
+            import session_reserve as SR
+            audit = SR.audit_inputs
+        except Exception as e:                                                        # noqa: BLE001 -- absent module / missing function: the check FAILS
+            return verdict("G-RESERVE", reasons + [f"session_reserve.audit_inputs is not importable ({type(e).__name__}: {e}): the five inputs cannot be audited"], det, arm=arm, rehearsal=rehearsal)
+    kw = reserve_audit_inputs(argv)
+    det["inputs"] = {k: (v if not isinstance(v, list) else f"{len(v)} files") for k, v in kw.items()}
+    try:
+        res = audit(reserve, **kw)
+    except Exception as e:                                                            # noqa: BLE001
+        return verdict("G-RESERVE", reasons + [f"audit_inputs raised {type(e).__name__}: {str(e)[:300]}"], det, arm=arm, rehearsal=rehearsal)
+    if not isinstance(res, dict) or res.get("ok") is not True:
+        why = res.get("reasons") or res.get("violations") or res.get("problems") if isinstance(res, dict) else None
+        reasons.append(f"the reserve audit did not pass (ok={res.get('ok') if isinstance(res, dict) else type(res).__name__}): {str(why)[:300] if why else 'no reason given'}")
+    det["audit"] = {k: v for k, v in (res.items() if isinstance(res, dict) else []) if isinstance(v, (bool, int, float, str)) or v is None}
+    return verdict("G-RESERVE", reasons, det, arm=arm, rehearsal=rehearsal)
 
 
 def check_egr(egr_json, ckpt_sizes=None, arm=None, rehearsal=False, require_ckpt=True) -> dict:
