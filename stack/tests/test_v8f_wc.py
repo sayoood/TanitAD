@@ -92,6 +92,8 @@ def test_m2b_wc_argv_builds_w_cons_4_and_a_lie_is_refused(world):
 C0, NC = M.N_GOAL + M.N_LAT + M.N_LON, len(M.CONS_NAMES)
 
 
+@pytest.mark.skipif(not PKG.is_dir(), reason="stack-only tree: the v8F-mini package is not in this checkout "
+                    "(a full checkout runs this, and a missing file there still fails)")
 def test_reader_layout_matches_the_model():
     R = _load("v8f_wc_read_layout", WC_R)
     assert (R.C0, R.N_CONS) == (C0, NC) and C0 + NC == M.CODE_DIM
@@ -205,6 +207,8 @@ def test_wc_reader_reads_the_banked_m2b_oracle_through_all_goal(tmp_path, capsys
     assert R.main(["--check-inputs", "--eval-dir", str(d / "eval"), "--runs-dir", str(d / "runs"), "--out", str(d / "x.json")]) == 2
 
 
+@pytest.mark.skipif(not PKG.is_dir(), reason="stack-only tree: the v8F-mini package is not in this checkout "
+                    "(a full checkout runs this, and a missing file there still fails)")
 def test_wc_reader_refusals(tmp_path, capsys):
     for name, kw, msg in (("wbuilt", dict(w_wc=0.5), "built with w_cons 0.5, expected 4.0"),
                           ("wargv", dict(argv_wc="2.0"), "argv --w-cons 2.0, expected 4.0"),
@@ -219,6 +223,8 @@ def test_wc_reader_refusals(tmp_path, capsys):
     assert "M2b's seed floor needs both seeds" in capsys.readouterr().err
 
 
+@pytest.mark.skipif(not PKG.is_dir(), reason="stack-only tree: the v8F-mini package is not in this checkout "
+                    "(a full checkout runs this, and a missing file there still fails)")
 def test_queue_wc_runs_the_command_it_prints():
     """A dry run can only print: the real line is checked statically -- the trainer appears ONCE per stage, inside the one command
     string, and the real run executes that string (the mutation proof found a real line that dropped the lever under a green dry run)."""
@@ -234,6 +240,8 @@ def test_queue_wc_runs_the_command_it_prints():
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
+@pytest.mark.skipif(not PKG.is_dir(), reason="stack-only tree: the v8F-mini package is not in this checkout "
+                    "(a full checkout runs this, and a missing file there still fails)")
 def test_queue_wc_stages(tmp_path):
     import os
     import subprocess
