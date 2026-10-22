@@ -1,0 +1,43 @@
+[calib_a1] real FEATURES loaded and label-blinded (assert_blind ok): N 1705 S 21 D 256 Ns 400; constants_sha256 529fc02ddc5806d05cfbb88a5348e9b06e0b167cdf7d8ffdc99406d68f4af59c; workers 8; S list (1, 3); null worlds 2
+[calib_a1] 1/12 done ('planted', 3, 0.5)  67.3s elapsed 68s
+[calib_a1] 2/12 done ('planted', 3, 4.0)  70.3s elapsed 71s
+[calib_a1] 3/12 done ('planted', 3, 2.0)  71.3s elapsed 72s
+[calib_a1] 4/12 done ('planted', 3, 1.0)  77.2s elapsed 78s
+[calib_a1] 5/12 done ('planted', 1, 0.5)  30.7s elapsed 99s
+[calib_a1] 6/12 done ('planted', 1, 1.0)  28.8s elapsed 100s
+[calib_a1] 7/12 done ('planted', 1, 2.0)  30.1s elapsed 102s
+[calib_a1] 8/12 done ('planted', 1, 4.0)  25.2s elapsed 103s
+[calib_a1] 9/12 done ('null', 1, 0)  150.2s elapsed 151s
+[calib_a1] 10/12 done ('null', 1, 1)  151.0s elapsed 152s
+[calib_a1] 11/12 done ('null', 3, 0)  251.7s elapsed 253s
+[calib_a1] 12/12 done ('null', 3, 1)  252.3s elapsed 253s
+--- S = 1: C-II-b planted table (M1 gap | lo | nu | lo-nu | SEEN-OOF | collapse | pass)
+    kappa  0.5: gap 0.0141 lo 0.0018 nu 0.0054 lo-nu -0.0036 SEEN-OOF 0.0156 collapse True read False PASS False
+    kappa    1: gap 0.0191 lo 0.0069 nu 0.0102 lo-nu -0.0033 SEEN-OOF 0.0244 collapse True read False PASS False
+    kappa    2: gap 0.0251 lo 0.0065 nu 0.0093 lo-nu -0.0028 SEEN-OOF 0.0330 collapse True read False PASS False
+    kappa    4: gap 0.0348 lo 0.0043 nu 0.0082 lo-nu -0.0039 SEEN-OOF 0.0261 collapse True read False PASS False
+    C-II-b kappas passing []  read []  pass at kappa<=2: False
+    null worlds 2/24 ok: FP 0/2  INVALID(excl C-II-b) 0/2  gap-conjunct-fires-ignoring-controls 0  INVALID(incl C-II-b) 2  failed controls {}
+    null M1: mean gap 0.0002 sd 0.0003 mean lo -0.0008 mean nu 0.0006; separated 0/2
+    runtime: null world mean 150.6 s, planted total 114.8 s; ESTIMATED real read (serial) 266 s
+--- S = 3: C-II-b planted table (M1 gap | lo | nu | lo-nu | SEEN-OOF | collapse | pass)
+    kappa  0.5: gap 0.0142 lo 0.0023 nu 0.0064 lo-nu -0.0041 SEEN-OOF 0.0157 collapse True read False PASS False
+    kappa    1: gap 0.0211 lo 0.0084 nu 0.0086 lo-nu -0.0002 SEEN-OOF 0.0254 collapse True read False PASS False
+    kappa    2: gap 0.0283 lo 0.0088 nu 0.0062 lo-nu 0.0026 SEEN-OOF 0.0339 collapse True read True PASS True
+    kappa    4: gap 0.0339 lo 0.0074 nu 0.0161 lo-nu -0.0086 SEEN-OOF 0.0235 collapse True read False PASS False
+    C-II-b kappas passing [2.0]  read [2.0]  pass at kappa<=2: True
+    null worlds 2/24 ok: FP 0/2  INVALID(excl C-II-b) 0/2  gap-conjunct-fires-ignoring-controls 0  INVALID(incl C-II-b) 0  failed controls {}
+    null M1: mean gap 0.0006 sd 0.0000 mean lo -0.0007 mean nu 0.0006; separated 0/2
+    runtime: null world mean 252.0 s, planted total 286.1 s; ESTIMATED real read (serial) 558 s
+[calib_a1] IDENTITY S=1 vs the sealed run's planted numbers: max |diff| = 0.000e+00 (bit identical: True); flags equal: True; PASS True
+    kappa  0.5: sealed M1 gap 0.014131533594 now 0.014131533594  lo 0.001841075251 / 0.001841075251  nu 0.005439744201 / 0.005439744201
+    kappa    1: sealed M1 gap 0.019094656123 now 0.019094656123  lo 0.006854533029 / 0.006854533029  nu 0.010170911690 / 0.010170911690
+    kappa    2: sealed M1 gap 0.025114230111 now 0.025114230111  lo 0.006539184665 / 0.006539184665  nu 0.009333212465 / 0.009333212465
+    kappa    4: sealed M1 gap 0.034847956291 now 0.034847956291  lo 0.004309773808 / 0.004309773808  nu 0.008232322984 / 0.008232322984
+[calib_a1] SELECTION RULE: smallest S in [3, 5, 8] with C-II-b passing at some kappa <= 2, null-world false positives <= 2/24, null-world INVALID (excluding C-II-b) <= 4/24
+    S=3: {'complete': False, 'a_c2b_passes_at_kappa_le_2': True, 'b_false_positives_le_2_of_24': True, 'c_invalid_le_4_of_24': True, 'fp_n': 0, 'invalid_n': 0, 'qualifies': False}
+    S=5: {'eligible': False, 'reason': 'not calibrated'}
+    S=8: {'eligible': False, 'reason': 'not calibrated'}
+[calib_a1] VERDICT: INSTRUMENT-LIMITED
+[calib_a1] wrote C:\Users\Admin\par18\spess0a1\raw\preflight_timing.json; errors 0; wall 253s
+ZZCALIB_DONE
