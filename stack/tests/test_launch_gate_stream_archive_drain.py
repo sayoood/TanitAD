@@ -273,7 +273,17 @@ _PREFIX_DEATH = [("stdout-tail-only", GateError),
                  ("stderr-flood-FIRST", tarfile.ReadError)]
 
 
-@pytest.mark.parametrize("name,dies_with", _PREFIX_DEATH, ids=[n for n, _ in _PREFIX_DEATH])
+# The one-record arm reproduces ONLY where the pipe buffer is smaller than one 10,240-B record (Windows' anonymous pipe).
+# Linux's 64 KiB pipe absorbs it: MEASURED on Thor 2026-10-22 (suite_22f9863a8b33), the pre-fix body FINISHED in 0.0 s.
+# The 512 KiB tail and the stderr flood still deadlock the pre-fix body on every platform.
+_WINDOWS_PIPE_ONLY = {"one-record-tail-10240"}
+
+
+@pytest.mark.parametrize("name,dies_with", [
+    pytest.param(n, e, id=n, marks=pytest.mark.skipif(
+        n in _WINDOWS_PIPE_ONLY and sys.platform != "win32",
+        reason="a 64 KiB POSIX pipe absorbs one 10,240-B record; the production deadlock is a Windows-pipe signature"))
+    for n, e in _PREFIX_DEATH])
 def test_DELIBERATE_REGRESSION_prefix_body_deadlocks(name, dies_with, tmp_path, children):
     """The PRE-FIX body, same child: it must hang. If it ever finishes, the fix arms above prove nothing."""
     sc = SCENARIOS[name]

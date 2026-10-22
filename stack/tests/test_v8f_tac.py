@@ -79,7 +79,7 @@ def _ckpt(world, tmp_path):
     g = torch.Generator().manual_seed(1)
     for k, v in ck["model"].items():                     # the same perturbation as _code_sensitive, on the saved state
         if k.startswith("head_o.") or k.startswith("e_code."):
-            ck["model"][k] = v + torch.randn(v.shape, generator=g) * 0.3
+            ck["model"][k] = v + torch.randn(v.shape, generator=g).to(v.device) * 0.3   # CPU draw, then v's device (cuda on a GPU box)
     p = tmp_path / "ck_sens.pt"
     torch.save(ck, p)
     return p
