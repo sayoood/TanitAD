@@ -7,6 +7,13 @@
 > Pre-registration: `eval/PREREG_P6.md` (DRAFT). Confidence: `P6_CONFIDENCE.md`.
 > Evidence classes: MEASURED (ours, artifact named), PUBLISHED (paper), INHERITED (our docs, not re-verified),
 > ESTIMATED, UNVERIFIED.
+>
+> **CORRECTION 2026-10-22 (P7-WIRE-INTEGRATE; MM_RULINGS conflict (i)) -- the bank figure.** This spec said **189,888** tuples in four places (the "bank" row of the work table, the "data" row of
+> the recipe table, D8, and G-CLOCK; lines 63, 112, 149 and 256 BEFORE this note was inserted). **189,888 is the pre-3C bank's figure** (`train_grow_cmd`: 103,037 rank-0 + 86,851 rank-1; MEASURED, the P2
+> final run's `bank` events, epochs 4-27). The bank P6 trains on is the 3-C commit-filtered `train_grow_cmd_3c`: **167,300** = 103,037 rank-0 + 64,263 rank-1, pinned in
+> `launch_gate.P6_BANK_TUPLES["train_grow_cmd_3c"]` (its comment cites the trainer's own `bank` event on the pod, 2026-10-18; INHERITED here, ruled authoritative by the Master Mind). The four cells were
+> edited in place and each now carries BOTH figures with their classes; nothing else changed (the scene count 103,037 and the 10,075-step schedule are shared by both banks). The spec's other figures
+> were written for the 189,888 bank and have not been re-derived. Patch: `raw/2026-10-22-p7-wire-reserve/raw/SPEC_P6_bank_figure.patch` (proposed by P7-WIRE-RESERVE, applied unchanged by P7-WIRE-INTEGRATE).
 
 ## 0 · The answer on time, first: does 25 epochs fit 7 days on one A40?
 
@@ -60,7 +67,7 @@ edited it (another document's owner).
 
 | quantity | value | class |
 |---|---|---|
-| bank | 189,888 tuples over **103,037 scenes** | MEASURED, final run `bank` events, epochs 4–27 |
+| bank | **167,300** tuples (103,037 rank-0 + 64,263 rank-1; the 3-C commit-filtered bank `train_grow_cmd_3c`, `launch_gate.P6_BANK_TUPLES`) over **103,037 scenes** (the pre-3C bank `train_grow_cmd` was 189,888 (103,037 + 86,851); that figure is a PRE-BUILD figure and is not what P6 trained on) | 167,300: pinned in `launch_gate.P6_BANK_TUPLES["train_grow_cmd_3c"]` (its comment cites the trainer's own `bank` event on the pod, 2026-10-18: INHERITED here, ruled authoritative by MM_RULINGS conflict (i)); 189,888: MEASURED, the P2 final run's `bank` events, epochs 4–27 |
 | work | 25 × 103,037 = **2,575,925 sample-passes = 10,075 optimiser steps** at 256 (25 × ⌈103,037 / 256⌉ = 25 × 403: the trainer rounds the partial last batch UP per epoch; corrected 2026-10-11 from 10,063 = the pooled ceiling, which the trainer never runs. The final run's 10,075 is MEASURED) | arithmetic |
 | pure training step, no labeller GPU work | **57.0 s** | MEASURED, median of epochs 0–11; epochs 12–27 with the on-policy dump read 60.99 s |
 | pure training time | 10,075 × 57.0 s = **159.5 h = 6.65 days** | MEASURED basis |
@@ -109,7 +116,7 @@ Sources:
 |---|---|---|---|---|
 | encoder | DINOv3 ViT-L (Table A13) | DINOv3 ViT-L/16 frozen, rank-32 Q/V LoRA | same as P2 | PI: "we keep our encoder" |
 | init | not stated beyond the backbone | warm start from `model_final.pt` | **DINOv3 + fresh LoRA + fresh heads**, as the final run | = paper (a full run) |
-| data | navtrain, no SimScale | the `train_grow` bank | the **same** bank: 189,888 tuples / 103,037 scenes, restored from HF `Sayood/tanitad-refe-navtrain-banks` | no re-selection. ⚠️ The parity rule's PhysicalAI corpus is not involved. |
+| data | navtrain, no SimScale | the `train_grow` bank | the 3-C commit-filtered derivative of that bank: **167,300 tuples** / 103,037 scenes (`train_grow_cmd_3c`; the pre-3C `train_grow_cmd` is 189,888), restored from HF `Sayood/tanitad-refe-navtrain-banks` (`refe_train_grow_cmd_3c.tar.zst`) | no re-selection. ⚠️ The parity rule's PhysicalAI corpus is not involved. |
 | schedule | 25 epochs over the full set | 3 epochs | **25 epochs over scenes** (`--epoch-unit scenes`, `train.py:1784`), **full bank from step 0**, no `--grow` (`:1742`) | = paper. The final run's growing bank (epoch 0 = 7,536 scenes) was a departure. |
 | augmentation | "alternative route intents" | lane rank / goal horizon twins, alternating across epochs | same twins | = paper in kind (method unstated) |
 | batch | 256 | 4 × 64 | **4 × 64 = 256** (`--batch` `:1758`, `--accum` `:1766`) | = paper's effective batch; micro-batch invariance probed by `refe/check_microbatch_invariance.py` (result UNVERIFIED here) |
@@ -146,7 +153,7 @@ Each test also has a deliberate-regression (mutation) arm.
 | D5 | unwrapped yaw L1 | `dy = (dy + math.pi) % (2*math.pi) - math.pi` `model.py:788`; `yaw_w` 0.1 `:792` | analytic: error 2π−ε gives a yaw loss of **(2π−ε)·0.1** unwrapped (ε·0.1 is the wrapped mutation arm, which must FAIL); with `yaw_w` 0 the yaw-channel gradient is **exactly 0.0**. New flag `--yaw-wrap {on,off}`, **named in argv** (its default must not silently decide) |
 | D6 | command input | goal encoder: `n_goal_points=2` `model.py:170`, `goal_dim` `:511`, `forward(img, ego, goal, ...)` `:684`; the planner builds a `driving_command` one-hot at `planner.py:184/335/346/662` | new `cmd_embed`: **non-zero** gradient; the goal encoder is not built in command mode (assert absent, so its gradient is **exactly 0.0** by construction). `goal_to_command()` (the OpenScene rule; **exact rule UNVERIFIED**, the implementer reads [56]) agrees with NAVSIM `driving_command` on ≥ 95 % of non-twin navtrain tokens, a bar set now. Twins take the command of their own augmented goal. |
 | D7 | twin-route PDM labels | `metric_cache_parts(scenario)` `navsim_pdm_targets.py:87` always uses the scenario route; twin rows carry their parameter in `aug` (`augment_search.py`, docstring l. 34) | for lane-rank twins, build the cache under `route_lane_rank_patch.set_rank(aug)`; goal-horizon twins share the logged-route cache. Test: PDM-Closed's first centerline lane equals the twin's lane; **mutation:** no patch → logged lane → FAIL. ⚠️ Whether PDM-Closed honours the rank patch is UNVERIFIED. **Fallback** (declared): twin samples get trajectory loss only. |
-| D8 | full bank from step 0 | `--grow` `:1742`, `--grow-scenes` `:1747` | G-CLOCK: the bank event at step 0 reads 189,888 / 103,037; realised epochs = 25; steps = 10,075; **mutation:** `--grow` → FAIL |
+| D8 | full bank from step 0 | `--grow` `:1742`, `--grow-scenes` `:1747` | G-CLOCK: the bank event at step 0 reads 167,300 / 103,037 (`P6_BANK_TUPLES["train_grow_cmd_3c"]`; 189,888 only for the pre-3C `train_grow_cmd`); realised epochs = 25; steps = 10,075; **mutation:** `--grow` → FAIL |
 | D9 | metric-cache precompute (`refe/build_metric_cache.py`, new) | `metric_cache_parts` `navsim_pdm_targets.py:87` is deterministic per (token, route) | `score_plans(cached)` == `score_plans(fresh)` **exactly** on 300 tokens; **mutation:** perturb one cached field → FAIL |
 | D10 | `refe/p6_gate.py` + `refe/p6_pod.sh` + a `refe_p6` profile in the launch gate | none; `refe/p2_gate.py` G1–G4 is the pattern | §5 |
 
@@ -253,7 +260,7 @@ What that copy already provides:
 | **G-LIVE** | real-data smoke of 2 optimiser steps (128 micro-batches, ~2 min): the position, yaw and 6 BCE terms are present and finite; every trainable group (LoRA, traj head, scorer, `cmd_embed`) has a non-zero gradient; D2/D3 controls read exactly 0.0 | drop the BCE term; detach the context |
 | **G-LIVE-LAB** | D1(a) identity on ≥ 64 sets; throughput ≥ 1.5 × 4.49 sets/s; L1 stall ≤ 5 %; lag = 0; coverage reported | stale proposals (D1c); a pool of 2 workers must FAIL the throughput bar |
 | **G-LIVE-MEM** | L1 peak ≤ 44 GB at the chosen micro-batch, over 200 micro-batches | – (a measurement; on failure, switch to micro-batch 2) |
-| **G-CLOCK** | step 0 bank = 189,888 / 103,037; the trainer prints realised epochs = 25 and steps = 10,075; each label set is stamped with the micro-batch id whose forward produced its proposals | `--grow`; stamp mismatch |
+| **G-CLOCK** | step 0 bank = 167,300 / 103,037 (the bank's own entry in `launch_gate.P6_BANK_TUPLES`; 189,888 is the pre-3C bank's); the trainer prints realised epochs = 25 and steps = 10,075; each label set is stamped with the micro-batch id whose forward produced its proposals | `--grow`; stamp mismatch |
 | **G-EVAL** | `planner.py` builds the identical model from `ckpt_last.pt`; trajectories and scores are bit-identical on real rows (p2_gate G1); labeller and planner use the identical plan transform (`executed_plans8`, repair on) | repair off in the planner only |
 | **G-CKPT** | save → load → resume: model, optimiser, scheduler, sampler position and labeller stamps; 2 resumed steps are bit-identical to uninterrupted ones (`refe/diag_train_resume.py` pattern) | drop the optimiser state |
 | **G-SUITE** | clean-tree `refe` tests and `stack` `pytest -q`, 0 regressions | – |

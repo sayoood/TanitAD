@@ -2152,7 +2152,54 @@ def check_clock(argv: list, b, profile: dict, arm=None, rehearsal=False) -> dict
                 reasons.append(f"step-0 bank has {bl.get('n_tuples')} tuples != registered {want} ({how})")
             if bl.get("n_scenes") != exp["epoch_len"]:
                 reasons.append(f"step-0 bank has {bl.get('n_scenes')} scenes != registered {exp['epoch_len']}")
+        # P7-WIRE-INTEGRATE-2: the bank's CONTENT.  A tuple count cannot tell two same-size banks apart; the trainer's own `targets_sha256` of the SAME files the build just loaded can.  Only a profile that
+        # registers `targets_sha256_by_bank` (refe_p7) is asked; refe_p6 has no such key and takes none of these lines (its G-CLOCK evidence is byte-for-byte what it was).
+        want_sha, how_sha = clock_bank_sha256(argv, exp, required=bool(profile.get("p7_rules")))
+        if how_sha is not None:
+            import gate_token as GT_
+            tg = (GT_.flag_values(argv, "--targets") or [None])[0]
+            got_sha = bank_targets_sha256(tg) if tg else None
+            det["bank_content"] = {"targets_sha256": got_sha, "registered": want_sha, "registration": how_sha}
+            if want_sha is None:
+                reasons.append(f"step-0 bank content: {how_sha}")
+            elif got_sha is None:
+                reasons.append(f"--targets {tg!r} holds no targets_rank*.jsonl: the bank's content cannot be pinned")
+            elif got_sha != want_sha:
+                reasons.append(f"the bank's CONTENT is not the registered one: targets_sha256 {got_sha[:16]}... != registered {want_sha[:16]}... ({how_sha}); the same tuple count is not the same bank")
     return verdict("G-CLOCK", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+def _digest_files(paths) -> str:
+    h = hashlib.sha256()
+    for q in paths:
+        h.update(os.path.basename(str(q)).encode("utf-8"))
+        with open(q, "rb") as f:
+            for b in iter(lambda: f.read(1 << 22), b""):
+                h.update(b)
+    return h.hexdigest()
+
+
+def bank_targets_sha256(target_dir):
+    """The trainer's `targets_sha256` of a bank directory: `train._digest_files(sorted(Path(a.targets).glob("targets_rank*.jsonl")))` -- sha256 over (basename, bytes) of each rank file, sorted.  It is the value
+    `train.run_identity` records in config.json / ckpt_last.pt and that `train._identity_diff` compares on every `--resume` (train.py:1077-1125, 1525); `_digest_files` above is that function's text
+    (test_p7_integration.py compares their ASTs).  None when the directory holds no rank file."""
+    files = sorted(Path(str(target_dir)).glob("targets_rank*.jsonl"))
+    return _digest_files(files) if files else None
+
+
+def clock_bank_sha256(argv: list, exp: dict, required: bool = False):
+    """-> (registered content digest of the argv's `--targets` bank or None, how it was resolved) for G-CLOCK; (None, None) when the profile registers none and `required` is False (refe_p6, refe_p2).
+    `targets_sha256_by_bank` is keyed by the DIRECTORY NAME of `--targets`, exactly like `n_tuples_by_bank`.  `required` (refe_p7): a profile WITHOUT the key, or a bank WITHOUT an entry, is a FAIL --
+    never a skip, because a check that is silently absent reads as clean."""
+    if "targets_sha256_by_bank" not in exp:
+        return (None, "the profile registers no targets_sha256_by_bank: a bank's content is not pinned") if required else (None, None)
+    import gate_token as GT_
+    tg = (GT_.flag_values(argv, "--targets") or [None])[0]
+    name = Path(str(tg).rstrip("/\\")).name if tg else None
+    reg = exp["targets_sha256_by_bank"]
+    if name not in reg:
+        return None, f"--targets {tg!r} names bank {name!r}, which has no registered targets_sha256 (registered: {sorted(reg)})"
+    return reg[name], f"bank {name!r} per targets_sha256_by_bank"
 
 
 def clock_bank_tuples(argv: list, exp: dict):
@@ -2300,13 +2347,22 @@ def check_live_mem(mem_metrics, arm=None, rehearsal=False) -> dict:
 EGR_CKPT_MIN_BYTES = 50_000_000      # MEASURED ckpt_last.pt of this model class: 228,234,301 B (SPEC_P6 section 4); a probe far below it proves nothing about the real push
 
 
-# ============================================================================================ P7: G-RESERVE (SPEC_P7 section 2) -- a SLOT; the audit is `refe/session_reserve.py` (P7-WIRE-RESERVE)
-# The gate consumes the registered reserve file (`--gate-reserve-json`, bound into the token by its sha256 and pinned in the profile) and calls
-#     session_reserve.audit_inputs(reserve, *, bank_files, metric_cache_dir, label_store, image_index, calib_rows)  ->  a dict with `ok: bool`
-# with every input the LAUNCH argv names (the five inputs of SPEC_P7 section 2).  It imports the audit LAZILY (the module is a separate deliverable; absent => this check FAILS, never passes).
-# ⚠️ UNVERIFIED at the time of writing: the audit's argument TYPES.  `reserve_audit_inputs` is the ONE place that maps the argv to them (paths, as the argv names them); adjust it there.
+# ============================================================================================ P7: G-RESERVE (SPEC_P7 section 2) -- the REAL audit, `refe/session_reserve.py` (P7-WIRE-RESERVE)
+# The gate consumes the registered reserve file (`--gate-reserve-json`, bound into the token by its sha256 and pinned in the profile) and runs
+#     reserve = session_reserve.load_reserve(<file>)                                   a frozenset of the 16 SESSION names (sha256- and content-pinned: refuses on one changed byte)
+#     session_reserve.audit_inputs(reserve, *, bank_files, metric_cache_dir, label_store, image_index, calib_rows)  ->  {ok, leaks, unresolved, counts}
+# with every input the LAUNCH argv names (the five inputs of SPEC_P7 section 2).
+# ⛔ P7-WIRE-INTEGRATE (2026-10-22, MEASURED `raw/probes/probe_before.out`): the slot's first version handed `audit_inputs` the PARSED JSON DOCUMENT (a dict of schema / reserve / sessions ...).  The real
+# module takes the SESSION SET, so G-RESERVE FAILED ON A CLEAN TREE with "'closure' is not a session name" -- a check that could never PASS, tested only with fakes that accepted whatever they were given.
+# `loader` is now the ONE seam for turning the file into the audit's first argument (default `session_reserve.load_reserve`); a fake audit in a test gets the same TYPE the real one would.
+# The audit's inputs are KEYWORDS THAT DEFAULT TO "not audited": an argv that omits one would read as clean for it, so an omitted input is itself a FAIL (`RESERVE_INPUT_FLAGS`).
+RESERVE_INPUT_FLAGS = {"bank_files": "--targets", "metric_cache_dir": "--metric-cache", "label_store": "--aux-drv-labels", "image_index": "--images", "calib_rows": "--calib"}
+RESERVE_AUDITED = ("bank", "metric_cache", "label_store", "images", "calibration")           # `counts.inputs_audited` of session_reserve.audit_inputs: all five, or the audit proved less than SPEC_P7 2 asks
+
+
 def reserve_audit_inputs(argv: list) -> dict:
-    """The keyword arguments of `audit_inputs` (other than `reserve`), read from the LAUNCH argv: the bank's rank files, the D9 metric-cache directory, the head's label store, the image root, the calibration table."""
+    """The keyword arguments of `audit_inputs` (other than `reserve`), read from the LAUNCH argv: the bank's rank files (`--targets`, the SAME `targets_rank*.jsonl` glob as the trainer's
+    TargetBank), the D9 metric-cache directory, the head's label store, the image root, the calibration table.  Types as `audit_inputs` documents them: a list of file paths, and four path strings."""
     import gate_token as GT_
 
     def val(flag):
@@ -2317,9 +2373,27 @@ def reserve_audit_inputs(argv: list) -> dict:
             "label_store": val("--aux-drv-labels"), "image_index": val("--images"), "calib_rows": val("--calib")}
 
 
-def check_reserve(argv: list, profile: dict, reserve_json, arm=None, rehearsal=False, audit=None) -> dict:
-    """G-RESERVE.  PASS iff the reserve file is the registered one (sha256 == the profile's `reserve_sha256`) AND `audit_inputs(...)` returns a dict with `ok` True.  `audit` (tests) replaces the lazy
-    import.  Every other outcome FAILS: no file, a different file, an unreadable file, the audit module absent, the audit raising, a result that is not a dict, `ok` anything but True."""
+def _leak_summary(res: dict) -> str:
+    """The audit's own findings in one line: the true leak totals with a few keys, the unresolved counts, the inputs that examined nothing."""
+    parts = []
+    counts = res.get("counts") if isinstance(res.get("counts"), dict) else {}
+    tot = {k: n for k, n in (counts.get("leak_totals") or {}).items() if n}
+    if tot:
+        ex = {k: (res.get("leaks") or {}).get(k, [])[:2] for k in tot}
+        parts.append(f"reserve keys in {tot}, e.g. {ex}")
+    un = {k: n for k, n in (res.get("unresolved") or {}).items() if n}
+    if un:
+        parts.append(f"keys with no resolvable log {un}, e.g. {dict(list((counts.get('unresolved_examples') or {}).items())[:2])}")
+    if counts.get("empty_inputs"):
+        parts.append(f"inputs that examined ZERO keys {counts['empty_inputs']}")
+    return "; ".join(parts)
+
+
+def check_reserve(argv: list, profile: dict, reserve_json, arm=None, rehearsal=False, audit=None, loader=None) -> dict:
+    """G-RESERVE.  PASS iff the reserve file is the registered one (sha256 == the profile's `reserve_sha256`), it LOADS (`loader`, default `session_reserve.load_reserve`: its own sha256 + content pins),
+    the launch argv names ALL FIVE audited inputs, and `audit_inputs(reserve, ...)` returns `ok` True having examined all five.  `audit` / `loader` (tests only) replace the lazy imports.
+    Every other outcome FAILS: no file, a different file, an unreadable or unloadable file, the audit module absent, an input the argv does not name, the audit raising, a result that is not a dict,
+    `ok` anything but True, an audit that examined fewer than the five inputs."""
     reasons, det = [], {}
     pin = profile.get("reserve_sha256")
     if not reserve_json or not Path(str(reserve_json)).is_file():
@@ -2331,26 +2405,45 @@ def check_reserve(argv: list, profile: dict, reserve_json, arm=None, rehearsal=F
         reasons.append("the profile registers no reserve sha256 (P7_RESERVE_SHA256): an unregistered reserve is never audited")
     elif sha != pin:
         reasons.append(f"the reserve file {sha[:16]}... is not the registered draw {pin[:16]}...")
-    try:
-        reserve = json.loads(Path(str(reserve_json)).read_text(encoding="utf-8"))
-    except (OSError, ValueError) as e:
-        return verdict("G-RESERVE", reasons + [f"the reserve file is unreadable: {type(e).__name__}: {e}"], det, arm=arm, rehearsal=rehearsal)
-    if audit is None:
+    real_audit = audit is None
+    if audit is None or loader is None:
         try:
             import session_reserve as SR
-            audit = SR.audit_inputs
+            audit = audit or SR.audit_inputs
+            loader = loader or SR.load_reserve
         except Exception as e:                                                        # noqa: BLE001 -- absent module / missing function: the check FAILS
-            return verdict("G-RESERVE", reasons + [f"session_reserve.audit_inputs is not importable ({type(e).__name__}: {e}): the five inputs cannot be audited"], det, arm=arm, rehearsal=rehearsal)
+            return verdict("G-RESERVE", reasons + [f"session_reserve is not importable ({type(e).__name__}: {e}): the five inputs cannot be audited"], det, arm=arm, rehearsal=rehearsal)
+    try:
+        reserve = loader(reserve_json)
+    except Exception as e:                                                            # noqa: BLE001 -- a file the module refuses is not "the registered draw", whatever its sha256 says
+        return verdict("G-RESERVE", reasons + [f"the reserve file does not load ({type(e).__name__}: {str(e)[:300]})"], det, arm=arm, rehearsal=rehearsal)
+    try:
+        det["reserve_sessions"] = len(reserve)
+    except TypeError:
+        pass
     kw = reserve_audit_inputs(argv)
     det["inputs"] = {k: (v if not isinstance(v, list) else f"{len(v)} files") for k, v in kw.items()}
+    missing = [flag for kwarg, flag in RESERVE_INPUT_FLAGS.items() if not kw.get(kwarg)]
+    for flag in missing:
+        reasons.append(f"the launch argv gives the audit no {flag} input" + (" (no targets_rank*.jsonl under it)" if flag == "--targets" and "--targets" in argv else "")
+                       + ": audit_inputs treats an input it is not given as NOT AUDITED, which reads as clean, and SPEC_P7 2 audits all five")
+    if missing:
+        return verdict("G-RESERVE", reasons, det, arm=arm, rehearsal=rehearsal)
     try:
         res = audit(reserve, **kw)
     except Exception as e:                                                            # noqa: BLE001
         return verdict("G-RESERVE", reasons + [f"audit_inputs raised {type(e).__name__}: {str(e)[:300]}"], det, arm=arm, rehearsal=rehearsal)
     if not isinstance(res, dict) or res.get("ok") is not True:
-        why = res.get("reasons") or res.get("violations") or res.get("problems") if isinstance(res, dict) else None
-        reasons.append(f"the reserve audit did not pass (ok={res.get('ok') if isinstance(res, dict) else type(res).__name__}): {str(why)[:300] if why else 'no reason given'}")
+        why = (res.get("reasons") or res.get("violations") or res.get("problems") or _leak_summary(res)) if isinstance(res, dict) else None
+        reasons.append(f"the reserve audit did not pass (ok={res.get('ok') if isinstance(res, dict) else type(res).__name__}): {str(why)[:400] if why else 'no reason given'}")
+    if real_audit and isinstance(res, dict):                                          # the real module reports what it examined: all five, or it proved less than the spec asks
+        done = set((res.get("counts") or {}).get("inputs_audited") or ())
+        if not set(RESERVE_AUDITED) <= done:
+            reasons.append(f"the audit examined {sorted(done)}, not all of {list(RESERVE_AUDITED)}")
     det["audit"] = {k: v for k, v in (res.items() if isinstance(res, dict) else []) if isinstance(v, (bool, int, float, str)) or v is None}
+    if isinstance(res, dict) and isinstance(res.get("counts"), dict):
+        c = res["counts"]
+        det["audit_counts"] = {k: c.get(k) for k in ("reserve_sessions", "inputs_audited", "examined", "leak_totals", "empty_inputs") if k in c}
     return verdict("G-RESERVE", reasons, det, arm=arm, rehearsal=rehearsal)
 
 

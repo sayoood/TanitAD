@@ -42,6 +42,7 @@ import importlib
 import json
 import math
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -340,19 +341,32 @@ PROFILES = {
 #   * `--aux-drv-labels` is a DATA flag: the PASS token fingerprints the label store, and G-DVB compares the store's manifest sha256 + key count with the profile's registered pins;
 #   * G-RESERVE (SPEC_P7 2): the reserve file's sha256 is the registered draw's AND `session_reserve.audit_inputs` finds it disjoint from all five training inputs;
 #   * the schedule: 25 epochs x ceil(92,896 / 256) = 9,075 steps (P6: 10,075), a step-0 bank registered PER BANK.
-# ⛔ THREE PINS ARE NOT KNOWN YET AND ARE LEFT UNREGISTERED ON PURPOSE -- each makes the gate REFUSE (`p7_refusals`, then G-DVB / G-CLOCK / G-RESERVE), never default to something else:
-#   P7_AUX_STORE_PINS  the P7 TRAINING store's manifest sha256 + key count: they exist only after `filter_reserve.py` re-finalises the store without the reserve's logs (SPEC_P7 2, "registered before step 0")
+# ⛔ THREE PINS ARE NOT KNOWN YET AND ARE LEFT UNREGISTERED ON PURPOSE -- each makes the gate REFUSE (`p7_refusals`, then G-DVB / G-CLOCK), never default to something else:
+#   P7_AUX_STORE_PINS  the P7 TRAINING store's manifest `store_sha256` + `counts.stored_keys`: they exist only after the chain's block 5a (`p6_pod.sh`, `P7_RESERVE` + `P7_LABEL_STORE`) has moved the reserve's shards
+#                      out and RE-FINALISED the store (`aux_label_store.py finalize`) -- SPEC_P7 2, "registered before step 0"
 #   P7_BANK_TUPLES     the `train_grow_cmd_3c_p7` bank's tuple count: 92,896 rank-0 rows + the filter's rank-1 count (SPEC_P7 2: ~150.8k ESTIMATED -- a number never to be registered from an estimate)
-#   P7_RESERVE_SHA256  filled below (R-A, MEASURED: the sha256 of raw/2026-10-22-p7-session-reserve/raw/reserve_sessions.json, re-measured 2026-10-22; SESSION_RESERVE.md header table)
-# The P7-WIRE-RESERVE deliverable fills the first two from the filter's report and adds `--reserve-manifest` to `data_flags` and `test_reserve*` to the suite (the draw's own suite, ZZRESERVE_PASS 17).
+#   P7_TARGETS_SHA256  the bank's CONTENT: the trainer's own `targets_sha256` (sha256 over basename + bytes of each `targets_rank*.jsonl`, sorted) of that same bank directory.  A tuple count cannot tell two same-size banks
+#                      apart; this can.  Keyed by the bank's directory name like the count; G-CLOCK recomputes it from the `--targets` files at launch and FAILS on any other bank (P7-WIRE-INTEGRATE-2)
+#   P7_RESERVE_SHA256  filled below (R-A, MEASURED: the sha256 of raw/2026-10-22-p7-session-reserve/raw/reserve_sessions.json, re-measured 2026-10-22; SESSION_RESERVE.md header table) == session_reserve.RESERVE_FILE_SHA256
+# ⭐ HOW THE TWO PINS ARE PRODUCED, exactly: `raw/2026-10-22-p7-wire-integrate/PROCEDURE_P7_PINS.md` -- `measure_rank1_3c.sh` (the filter on the rebuilt 3-C bank) then `p7_pins.py` (reads both numbers off the
+# OUTPUTS, refuses unless the bank and the store audit clean, and prints the two registrations).  Nothing here is typed from an estimate.
+# ⭐ DESIGN (P7-WIRE-INTEGRATE, 2026-10-22): the reserve is removed INSIDE THE DATA CHAIN (`p6_pod.sh` block 5a + `p6_prep.py reserve-*`, run under `P7_RESERVE`), and G-RESERVE audits the chain's OUTPUTS -- the five inputs the
+# LAUNCH argv names -- with the real `session_reserve.audit_inputs`.  There is NO trainer-side `--reserve-manifest` flag and NO `filter_reserve.py`: the head side assumed both, the reserve side built neither, and the
+# smaller correct design is to build neither (a flag whose default is "off" is the 'built, tested, unreachable from its caller' class; the bank the gate audits IS the bank the trainer loads -- the same
+# `targets_rank*.jsonl` glob, pinned by test_p7_integration.py -- and every other input is read only by a bank row's key).  The residual and the exact design of the optional (b) are in RESULT.md of the integrate package.
 P7_SCENES = 92896                                                       # SPEC_P7 section 2: the reserve-free bank's rank-0 scenes (103,037 - 10,141 reserved)
 P7_EPOCHS = 25
 P7_STEPS = P7_EPOCHS * -(-P7_SCENES // 256)                             # the trainer's own definition: epochs x ceil(epoch_len / (batch x accum)) = 25 x 363
 P7_BANK_TUPLES: dict = {}                                               # UNREGISTERED: a --targets bank with no entry FAILS G-CLOCK (clock_bank_tuples), and `p7_refusals` refuses before any check runs
 P7_AUX_STORE_PINS = {"sha256": None, "keys": None}                      # UNREGISTERED: `aux_dvb_rows` FAILS the store row, and `p7_refusals` refuses
+P7_TARGETS_SHA256: dict = {}                                            # UNREGISTERED: a --targets bank with no entry FAILS G-CLOCK (clock_bank_sha256), and `p7_refusals` refuses; paste what p7_pins.py printed
 P7_RESERVE_SHA256 = "53f3bcd4684513f0ee765fbcfbaf583b587f58c97e9c8915f4e4df3ae3e32f29"
 P7_AUX_REQUIRED = {"--aux-drv": None, "--w-aux-drv": "0.1", "--aux-drv-tap": "visual", "--aux-drv-depth": "2", "--aux-drv-feed": "off", "--aux-drv-labels": None, "--w-field": "0.0"}
-P7_SUITE_EXTRA = [{"script": "test_p7_head_wiring.py", "args": ["--static"], "token": "ZZP7HEAD_PASS"}]       # the pod runs the STATIC block (no dev-box data); --full / --mutations are the dev box's
+# the pod runs the STATIC block of the head test (no dev-box data); --full / --mutations are the dev box's.  `test_session_reserve.py` is the reserve's own suite (ZZSESSRES_PASS 43: its optional real-data checks list
+# themselves ABSENT on a pod, never skip); `test_p7_integration.py` runs the gate's G-RESERVE against the REAL module on a synthetic P7 tree (clean PASS, planted leaks FAIL) and the pin procedure.
+P7_SUITE_EXTRA = [{"script": "test_p7_head_wiring.py", "args": ["--static"], "token": "ZZP7HEAD_PASS"},
+                  {"script": "test_session_reserve.py", "token": "ZZSESSRES_PASS"},
+                  {"script": "test_p7_integration.py", "token": "ZZP7INT_PASS"}]
 PROFILES["refe_p7"] = {**PROFILES["refe_p6"], "name": "refe_p7", "p7_rules": True,
                        "data_flags": PROFILES["refe_p6"]["data_flags"] + ("--aux-drv-labels",),
                        "suite": PROFILES["refe_p6"]["suite"] + P7_SUITE_EXTRA,
@@ -360,7 +374,8 @@ PROFILES["refe_p7"] = {**PROFILES["refe_p6"], "name": "refe_p7", "p7_rules": Tru
                        "live_terms": P6_TERMS + ("aux_bce", "aux_huber"),
                        "forbidden_flags": PROFILES["refe_p6"]["forbidden_flags"] + ("--aux-drv-shuffle-seed",),
                        "required_flags": {**PROFILES["refe_p6"]["required_flags"], **P7_AUX_REQUIRED},
-                       "expect_schedule": {"epochs": P7_EPOCHS, "steps": P7_STEPS, "epoch_len": P7_SCENES, "n_tuples_by_bank": P7_BANK_TUPLES},
+                       "expect_schedule": {"epochs": P7_EPOCHS, "steps": P7_STEPS, "epoch_len": P7_SCENES, "n_tuples_by_bank": P7_BANK_TUPLES,
+                                           "targets_sha256_by_bank": P7_TARGETS_SHA256},
                        "aux_store_pins": P7_AUX_STORE_PINS, "reserve_sha256": P7_RESERVE_SHA256}
 
 
@@ -370,14 +385,33 @@ def p7_refusals(prof: dict, argv: list) -> list:
     out = []
     pins = prof.get("aux_store_pins") or {}
     if pins.get("sha256") is None or pins.get("keys") is None:
-        out.append(f"{prof['name']}: the P7 label store's pins (manifest sha256 + key count) are not registered (P7_AUX_STORE_PINS): the training store exists only after filter_reserve re-finalises it; "
-                   f"an unregistered store is never vouched for by another store's number")
+        out.append(f"{prof['name']}: the P7 label store's pins (manifest sha256 + key count) are not registered (P7_AUX_STORE_PINS): the training store exists only after the chain's reserve stage "
+                   f"re-finalises it (PROCEDURE_P7_PINS.md); an unregistered store is never vouched for by another store's number")
+    elif not (isinstance(pins["sha256"], str) and re.fullmatch(r"[0-9a-f]{64}", pins["sha256"]) and type(pins["keys"]) is int and pins["keys"] > 0):
+        out.append(f"{prof['name']}: P7_AUX_STORE_PINS is not a registration (sha256 must be 64 lowercase hex digits and keys a positive int; got {pins!r}): paste what p7_pins.py printed, never a typed value")
     exp = prof.get("expect_schedule") or {}
     reg = exp.get("n_tuples_by_bank") or {}
     tg = (GT.flag_values(argv, "--targets") or [None])[0]
     name = Path(str(tg).rstrip("/\\")).name if tg else None
     if name not in reg:
         out.append(f"{prof['name']}: --targets {tg!r} names bank {name!r}, which has no registered tuple count (P7_BANK_TUPLES holds {sorted(reg)}): register it in the pre-registration before any training data exists")
+    for bank_name, n_t in sorted(reg.items()):
+        if type(n_t) is not int or n_t <= 0:
+            out.append(f"{prof['name']}: the registered tuple count of bank {bank_name!r} is {n_t!r}, not a positive int (P7_BANK_TUPLES): paste what p7_pins.py printed")
+    # P7-WIRE-INTEGRATE-2: the bank's CONTENT.  A count cannot tell two same-size banks apart, so the digest is registered beside it, per bank, and a profile WITHOUT the key is itself a refusal
+    # (G-CLOCK only checks the digest when the key exists: a key that can be absent is a default that disables the check).
+    dig = exp.get("targets_sha256_by_bank")
+    if not isinstance(dig, dict):
+        out.append(f"{prof['name']}: the profile carries no targets_sha256_by_bank (P7_TARGETS_SHA256 in expect_schedule): a bank's tuple count cannot tell two same-size banks apart, so its CONTENT digest must be registered")
+    else:
+        if name not in dig:
+            out.append(f"{prof['name']}: --targets {tg!r} names bank {name!r}, which has no registered targets_sha256 (P7_TARGETS_SHA256 holds {sorted(dig)}): paste what p7_pins.py printed, "
+                       f"never a typed value -- the digest exists only once the reserve filter has produced the bank")
+        for bank_name, h in sorted(dig.items()):
+            if not (isinstance(h, str) and re.fullmatch(r"[0-9a-f]{64}", h)):
+                out.append(f"{prof['name']}: the registered targets_sha256 of bank {bank_name!r} is {h!r}, not a sha256 (64 lowercase hex digits; P7_TARGETS_SHA256): paste what p7_pins.py printed")
+        if reg and dig and set(reg) != set(dig):
+            out.append(f"{prof['name']}: P7_BANK_TUPLES {sorted(reg)} and P7_TARGETS_SHA256 {sorted(dig)} register DIFFERENT banks: a bank is pinned by its count AND its content, or not at all")
     if not prof.get("reserve_sha256"):
         out.append(f"{prof['name']}: no reserve sha256 is registered (P7_RESERVE_SHA256)")
     if not (exp.get("steps") == P7_STEPS == 9075 and exp.get("epoch_len") == P7_SCENES and exp.get("epochs") == P7_EPOCHS):

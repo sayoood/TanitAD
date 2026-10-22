@@ -48,6 +48,22 @@
 | **cost** | **−1,000 steps = −15.8 h ≈ −0.66 d** vs P6 (saving). CPU/disk only otherwise. |
 | **effect** | −9.84 % scenes: **−0.06 to −0.25 PDMS (ESTIMATED**, by scaling SPEC_P6's −0.3 to −1.2 for 48 % fewer steps; weak basis, never measured for this recipe). Its value is S4/S5 unseen-session data, not PDMS. |
 
+> **INTEGRATION NOTE 2026-10-22 (P7-WIRE-INTEGRATE) -- what was BUILT in place of three rows of the table above; the table is left as written.**
+> | the table asks for | what exists | status |
+> |---|---|---|
+> | `refe/filter_reserve.py` | `refe/session_reserve.py` (stdlib; `filter_bank_dir`, `filter_calib`, `move_reserved`, `split_label_store`, `audit_inputs`) + `p6_prep.py reserve-*` + the dormant `p6_pod.sh` block 5a keyed on `P7_RESERVE` (P7-WIRE-RESERVE) | BUILT, 43 tests |
+> | trainer flag `--reserve-manifest` and G-DVB `reserve_manifest` | **NOT built -- a decision, not an omission.** `G-RESERVE` audits the five inputs the LAUNCH argv names (bank rank-0 + twins, D9 cache, label store, image root, calibration table) with the real `session_reserve.audit_inputs`; the bank it audits is the SAME `targets_rank*.jsonl` glob the trainer loads, and every other input is read only by a bank row's key | DECIDED (a); (b) is optional, design in the integrate package's RESULT.md |
+> | "the refusal string must exist in `train.py`, not only in its test" | the refusal strings live in `gate_checks.py` / `session_reserve.py` (implementation), and `test_p7_integration.py` asserts them from the CALLER on a synthetic P7 tree with a deliberate-regression arm per guard | MET at the gate, NOT in the trainer |
+> | the draw's own suite `ZZRESERVE_PASS 17` in G-SUITE | `test_session_reserve.py` (`ZZSESSRES_PASS 43`) + `test_p7_integration.py` (`ZZP7INT_PASS`) are in `refe_p7`'s G-SUITE | BUILT |
+> | a `P6_BANK_TUPLES` successor entry and the P7 store's sha256 + key count "registered before step 0" | `launch_gate.P7_BANK_TUPLES` and `P7_AUX_STORE_PINS`: UNREGISTERED on purpose (the profile REFUSES); produced by `raw/2026-10-22-p7-wire-integrate/PROCEDURE_P7_PINS.md` (`p7_pins.py` reads them off the filter's and the re-finalise's outputs) | PENDING the rebuilt 3-C bank |
+> | (added 2026-10-22, P7-WIRE-INTEGRATE-2) the bank's CONTENT is pinned beside its count | `launch_gate.P7_TARGETS_SHA256` (the trainer's own `targets_sha256` of the filtered bank, keyed by directory name): UNREGISTERED on purpose; `p7_refusals` and G-CLOCK refuse a bank whose bytes differ at the same row count; `p7_pins.py --check-run <run dir>` compares the trainer's RECORDED identity with it after the first start | PENDING the rebuilt 3-C bank; mechanism BUILT + tested |
+> | `refe/p7_pod.sh` | **NOT built.** It must be a COPY of `p6_pod.sh` with its own `$P6` / `$RUN` / `$REPO`, `P7_RESERVE` + `P7_LABEL_STORE` set, and the gate called as `launch_gate.py run|verify --profile refe_p7 --gate-reserve-json "$P7_RESERVE"` (the dormant block 5a stops at the reserve stage; `p6_pod.sh` itself names `refe_p6`) | OPEN |
+>
+> Residual of (a), stated: the token fingerprints a directory by its LISTING (relpath + size, contents not hashed), so a same-size in-place edit of the bank between the gate's content audit and the trainer's start would not be seen by the token. A trainer-side
+> `assert_rows_clear` over the loaded rows (the table's flag) would close it for the bank, the one input that decides what is trained on. It was not built because it adds a default-off flag (the class this repo has paid for four times) to a trainer
+> that P6 resumes from, for a window that needs a deliberate same-size edit; if the PI wants it, the design is: `--reserve-manifest <reserve_sessions.json>` (default None = no-op, P6 bit-identical), `TargetBank` calls
+> `session_reserve.assert_rows_clear(self.rows, session_reserve.load_reserve(path))` after the rows load, a G-DVB `built` entry, REQUIRED and fingerprinted by `refe_p7`, and a `--reserve-manifest`-omitted arm that must FAIL.
+
 ## 3 · Change 3: the bank on HF before training
 
 | code | `refe/p7_bank_hf.sh` (pattern: `PK/raw/2026-10-22-p6-newpod-rebuild/code/bank3c_hf.sh`): pack `train_grow_cmd_3c_p7` + manifest, `reserve_sessions.json`, both label stores (≈ 0.35 GB), `filter_report.json` to the private dataset `Sayood/tanitad-refe-navtrain-banks`; token read in place, `HF_HUB_DISABLE_XET=1`. `p7_pod.sh` **refuses to start the trainer without the receipt**. |

@@ -1,0 +1,10 @@
+refe_p6 profile sha256         80fa4d7ec757ad4658df04b1ecfd453ae98653e729e2ee24458769d851cdf9c3
+refe_p6 expect_schedule sha256 c82ab620f7d52d1f1732f21dba6d3e4f40ffc175b7ffd3415be8c2206032a21a | keys ['epoch_len', 'epochs', 'n_tuples_by_bank', 'steps']
+check_clock(refe_p6, clean 3-C bank    ) PASS sha256 ed11f753887d383b2cf7e6e31354d7e5 keys ['bank', 'bank_registration', 'epochs_flag', 'sampler_n', 'steps']
+check_clock(refe_p6, wrong count       ) FAIL sha256 e808148d6cff25a24bfe6d435340c1ec keys ['bank', 'bank_registration', 'epochs_flag', 'sampler_n', 'steps']
+check_clock(refe_p6, unregistered bank ) FAIL sha256 08602da93dfdb992f588270c3ab94f70 keys ['bank', 'bank_registration', 'epochs_flag', 'sampler_n', 'steps']
+train.py             sha256 ad865dab0ec33884c62b63c55cfef4600962b929f95b0238a23fa8d855438106
+model.py             sha256 e6011cd83c846dfbd9756301ae731f4b84541b7b8e07a139a2c2c2b663a8a46d
+session_reserve.py   sha256 80564894ce19f241e53a70a9d51767609cb89699aef897800162e92138b3c68c
+p6_pod.sh            sha256 9aa375dfc2a71be7b0eb9732b2f9a05f43819b72dc581a0e1ae8c33d0a237435
+p6_prep.py           sha256 85bad26fbd342a383089a86d02a3844d748d1ab10b05fad630ebac2290f6b504

@@ -66,6 +66,7 @@ PRE_P7_TRAIN_SHA256 = "6b425ac7e72ce2b33c35e7c71431beb526faa9b6b0c5a9b159860784a
 RESERVE_SHA256 = "53f3bcd4684513f0ee765fbcfbaf583b587f58c97e9c8915f4e4df3ae3e32f29"            # raw/2026-10-22-p7-session-reserve/raw/reserve_sessions.json (R-A), SESSION_RESERVE.md
 AUX_DESTS = ("aux_drv", "w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_labels", "aux_drv_shuffle_seed")
 SHA_T = "ab" * 32                                                                                 # a TEST registration of a label store's sha256 (never a real pin)
+SHA_B = "cd" * 32                                                                                 # a TEST registration of a bank's content digest (P7-WIRE-INTEGRATE-2; never a real pin)
 
 P6_ARGS = ("--backbone vitl16 --targets /w/train_grow --images /w/pix --calib /w/calib.json --metric-cache /w/mc --scorer-sees-trunk --yaw-wrap off --nav-mode command "
            "--labeller online --label-chunks 2 --epochs 25 --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --tf32 --compile --workers 2 "
@@ -84,7 +85,7 @@ def without(argv: list, flag: str, nvalues: int = 1) -> list:
 
 def registered(prof: dict) -> dict:
     """TEST-ONLY copy of a P7 profile with its three unknown pins REGISTERED (the real ones come from filter_reserve's report, SPEC_P7 2).  Never written back to PROFILES."""
-    exp = {**prof["expect_schedule"], "n_tuples_by_bank": {"train_grow_cmd_3c_p7": 150800}}
+    exp = {**prof["expect_schedule"], "n_tuples_by_bank": {"train_grow_cmd_3c_p7": 150800}, "targets_sha256_by_bank": {"train_grow_cmd_3c_p7": SHA_B}}
     return {**prof, "aux_store_pins": {"sha256": SHA_T, "keys": 5}, "expect_schedule": exp}
 
 
@@ -116,15 +117,23 @@ def s_profiles() -> None:
        and {"script": "test_p7_head_wiring.py", "args": ["--static"], "token": "ZZP7HEAD_PASS"} in P7["suite"], str(P7["suite"][-1]))
     ck("S2 the reserve sha256 is the registered R-A draw", P7["reserve_sha256"] == RESERVE_SHA256)
     ck("S2 the keys P7 adds to P6's", sorted(set(P7) - set(P6)) == ["aux_store_pins", "p7_rules", "reserve_sha256"], str(sorted(set(P7) - set(P6))))
-    ck("S2 the unknown pins are UNREGISTERED in the profile (never defaulted)", P7["aux_store_pins"] == {"sha256": None, "keys": None} and P7["expect_schedule"]["n_tuples_by_bank"] == {})
+    # P7-WIRE-INTEGRATE: these two assertions used to read the LIVE profile and pin it UNREGISTERED -- which would have turned the G-SUITE (this static block runs in it) RED the day the real pins are registered
+    # from the filter's outputs (PROCEDURE_P7_PINS.md).  The live profile must be unregistered OR registered with WELL-FORMED values (never partial); the refusal arms run on an explicitly unregistered copy.
+    _pins, _tup, _dig = P7["aux_store_pins"], P7["expect_schedule"]["n_tuples_by_bank"], P7["expect_schedule"]["targets_sha256_by_bank"]
+    ck("S2 the unknown pins are UNREGISTERED in the profile (never defaulted) or registered with well-formed measured values (never partial)",
+       (_pins == {"sha256": None, "keys": None} and _tup == {} and _dig == {})
+       or bool(re.fullmatch(r"[0-9a-f]{64}", str(_pins["sha256"])) and type(_pins["keys"]) is int and _pins["keys"] > 0 and _tup and all(type(v) is int and v > 0 for v in _tup.values())
+               and set(_dig) == set(_tup) and all(re.fullmatch(r"[0-9a-f]{64}", str(v)) for v in _dig.values())), str((_pins, _tup, _dig)))
+    UN = {**P7, "aux_store_pins": {"sha256": None, "keys": None}, "expect_schedule": {**P7["expect_schedule"], "n_tuples_by_bank": {}, "targets_sha256_by_bank": {}}}            # TEST-ONLY: what the shipped profile is until the pin procedure has run
     ck("S2 P7 is not a rehearsal and can mint", P7.get("mintable", True) and not P7.get("rehearsal"))
     # the pins' refusal reasons on the real (unregistered) profile
-    rs = L.profile_refusals(P7, argv_of(P7_ARGS))
+    rs = L.profile_refusals(UN, argv_of(P7_ARGS))
     red("S2 unregistered store pins REFUSE", rs, "label store's pins")
     red("S2 unregistered bank REFUSES", rs, "has no registered tuple count")
-    ck("S2 ... and nothing else is refused on the clean P7 argv", len(rs) == 2, str(rs))
+    red("S2 unregistered bank CONTENT REFUSES (P7-WIRE-INTEGRATE-2: a count cannot tell two same-size banks apart)", rs, "has no registered targets_sha256")
+    ck("S2 ... and nothing else is refused on the clean P7 argv", len(rs) == 3, str(rs))
     # G-CLOCK independently FAILS an unregistered bank (the refusal above is not the only defence)
-    want, how = C.clock_bank_tuples(argv_of(P7_ARGS), P7["expect_schedule"])
+    want, how = C.clock_bank_tuples(argv_of(P7_ARGS), UN["expect_schedule"])
     ck("S2 G-CLOCK has no number for the unregistered bank", want is None and "no registered tuple count" in how, str(how))
     ck("S2 the profile with pins REGISTERED (test copy) is clean", L.profile_refusals(registered(P7), argv_of(P7_ARGS)) == [], str(L.profile_refusals(registered(P7), argv_of(P7_ARGS))))
     # the sibling pin checks of p7_refusals
@@ -221,36 +230,43 @@ def s_reserve() -> None:
             (bank / f"targets_rank{k}.jsonl").write_text("{}\n", encoding="utf-8")
         argv = ["--targets", str(bank), "--metric-cache", "/m", "--aux-drv-labels", "/store", "--images", "/img", "--calib", "/c.json", "--aux-drv"]
         seen = {}
+        # P7-WIRE-INTEGRATE: the real G-RESERVE loads the file with `session_reserve.load_reserve` (a frozenset of SESSION names) and hands THAT to the audit, so a fake audit must be given the same type; this
+        # fake file is not the registered draw, hence the injected loader.  (Before, the gate passed the PARSED JSON and the real module refused it: raw/probes/probe_before.out.)
+        FL = lambda p_: frozenset(json.loads(Path(p_).read_text(encoding="utf-8"))["sessions"])  # noqa: E731
+
+        def cr(argv_, prof_, rf_, **kw_):
+            kw_.setdefault("loader", FL)
+            return C.check_reserve(argv_, prof_, rf_, **kw_)
 
         def audit_ok(reserve, **kw):
             seen["reserve"], seen["kw"] = reserve, kw
             return {"ok": True, "overlap": 0, "note": "fake"}
-        ev = C.check_reserve(argv, prof, rfile, audit=audit_ok)
+        ev = cr(argv, prof, rfile, audit=audit_ok)
         ck("S4 PASS: registered file + ok True", ev["status"] == "PASS", str(ev["reasons"]))
-        ck("S4 the audit received the PARSED reserve", seen["reserve"] == {"seed": 20261022, "sessions": ["s1", "s2"], "logs": ["l1", "l2", "l3"]})
+        ck("S4 the audit received the LOADER's output: a frozenset of session names (the real module's type), never the parsed document", seen["reserve"] == frozenset({"s1", "s2"}) and isinstance(seen["reserve"], frozenset))
         ck("S4 ... with exactly the five inputs of SPEC_P7 2, as keywords", set(seen["kw"]) == {"bank_files", "metric_cache_dir", "label_store", "image_index", "calib_rows"}, str(sorted(seen["kw"])))
         ck("S4 ... mapped from the LAUNCH argv", seen["kw"]["metric_cache_dir"] == "/m" and seen["kw"]["label_store"] == "/store" and seen["kw"]["image_index"] == "/img"
            and seen["kw"]["calib_rows"] == "/c.json" and [Path(p).name for p in seen["kw"]["bank_files"]] == ["targets_rank0.jsonl", "targets_rank1.jsonl"], str(seen["kw"]))
         ck("S4 the evidence records the reserve sha256 and the audit's scalars", ev["details"]["reserve_sha256"] == sha and ev["details"]["audit"]["overlap"] == 0)
         # ---- the negative twins: each must FAIL, for ITS reason
-        red("S4 FAIL: ok False", C.check_reserve(argv, prof, rfile, audit=lambda r, **k: {"ok": False, "reasons": ["1 reserve row in rank-0"]})["reasons"], "did not pass")
-        red("S4 FAIL: ok False names the audit's reason", C.check_reserve(argv, prof, rfile, audit=lambda r, **k: {"ok": False, "reasons": ["1 reserve row in rank-0"]})["reasons"], "1 reserve row in rank-0")
-        red("S4 FAIL: ok missing", C.check_reserve(argv, prof, rfile, audit=lambda r, **k: {"overlap": 0})["reasons"], "did not pass")
-        red("S4 FAIL: ok truthy but not True", C.check_reserve(argv, prof, rfile, audit=lambda r, **k: {"ok": "yes"})["reasons"], "did not pass")
-        red("S4 FAIL: audit returns a non-dict", C.check_reserve(argv, prof, rfile, audit=lambda r, **k: True)["reasons"], "did not pass")
-        red("S4 FAIL: audit returns None", C.check_reserve(argv, prof, rfile, audit=lambda r, **k: None)["reasons"], "did not pass")
+        red("S4 FAIL: ok False", cr(argv, prof, rfile, audit=lambda r, **k: {"ok": False, "reasons": ["1 reserve row in rank-0"]})["reasons"], "did not pass")
+        red("S4 FAIL: ok False names the audit's reason", cr(argv, prof, rfile, audit=lambda r, **k: {"ok": False, "reasons": ["1 reserve row in rank-0"]})["reasons"], "1 reserve row in rank-0")
+        red("S4 FAIL: ok missing", cr(argv, prof, rfile, audit=lambda r, **k: {"overlap": 0})["reasons"], "did not pass")
+        red("S4 FAIL: ok truthy but not True", cr(argv, prof, rfile, audit=lambda r, **k: {"ok": "yes"})["reasons"], "did not pass")
+        red("S4 FAIL: audit returns a non-dict", cr(argv, prof, rfile, audit=lambda r, **k: True)["reasons"], "did not pass")
+        red("S4 FAIL: audit returns None", cr(argv, prof, rfile, audit=lambda r, **k: None)["reasons"], "did not pass")
 
         def boom(r, **k):
             raise ValueError("bank file unreadable")
-        red("S4 FAIL: audit raises", C.check_reserve(argv, prof, rfile, audit=boom)["reasons"], "audit_inputs raised ValueError")
-        red("S4 FAIL: a different reserve file (wrong manifest sha)", C.check_reserve(argv, {**prof, "reserve_sha256": "0" * 64}, rfile, audit=audit_ok)["reasons"], "not the registered draw")
-        red("S4 FAIL: no sha registered in the profile", C.check_reserve(argv, {"name": "t7"}, rfile, audit=audit_ok)["reasons"], "registers no reserve sha256")
-        red("S4 FAIL: no file", C.check_reserve(argv, prof, None, audit=audit_ok)["reasons"], "no reserve file")
-        red("S4 FAIL: a missing file", C.check_reserve(argv, prof, td / "nope.json", audit=audit_ok)["reasons"], "no reserve file")
+        red("S4 FAIL: audit raises", cr(argv, prof, rfile, audit=boom)["reasons"], "audit_inputs raised ValueError")
+        red("S4 FAIL: a different reserve file (wrong manifest sha)", cr(argv, {**prof, "reserve_sha256": "0" * 64}, rfile, audit=audit_ok)["reasons"], "not the registered draw")
+        red("S4 FAIL: no sha registered in the profile", cr(argv, {"name": "t7"}, rfile, audit=audit_ok)["reasons"], "registers no reserve sha256")
+        red("S4 FAIL: no file", cr(argv, prof, None, audit=audit_ok)["reasons"], "no reserve file")
+        red("S4 FAIL: a missing file", cr(argv, prof, td / "nope.json", audit=audit_ok)["reasons"], "no reserve file")
         bad = td / "bad.json"
         bad.write_text("{not json", encoding="utf-8")
-        red("S4 FAIL: an unreadable file", C.check_reserve(argv, {**prof, "reserve_sha256": GT.sha256_file(bad)}, bad, audit=audit_ok)["reasons"], "unreadable")
-        ck("S4 a regression arm cannot PASS (rehearsal flag is carried)", C.check_reserve(argv, prof, rfile, arm="x", audit=audit_ok).get("arm") == "x")
+        red("S4 FAIL: a file the loader refuses", cr(argv, {**prof, "reserve_sha256": GT.sha256_file(bad)}, bad, audit=audit_ok)["reasons"], "does not load")
+        ck("S4 a regression arm cannot PASS (rehearsal flag is carried)", cr(argv, prof, rfile, arm="x", audit=audit_ok).get("arm") == "x")
         # ---- the LAZY import: absent module FAILS, a module with the registered signature is called, a module without the function FAILS
         saved = sys.modules.get("session_reserve", "ABSENT")
         try:
@@ -259,8 +275,14 @@ def s_reserve() -> None:
             fake = type(sys)("session_reserve")
             sys.modules["session_reserve"] = fake
             red("S4 FAIL: session_reserve without audit_inputs", C.check_reserve(argv, prof, rfile)["reasons"], "not importable")
-            fake.audit_inputs = lambda reserve, *, bank_files, metric_cache_dir, label_store, image_index, calib_rows: {"ok": True}
+            fake.load_reserve = FL                                                                                  # the lazily imported module supplies BOTH names
+            ALL5 = {"inputs_audited": ["bank", "calibration", "images", "label_store", "metric_cache"]}                          # what the REAL audit reports it examined
+            fake.audit_inputs = lambda reserve, *, bank_files, metric_cache_dir, label_store, image_index, calib_rows: {"ok": True, "counts": ALL5}
             ck("S4 PASS through the lazily imported module (keyword-only signature of the brief)", C.check_reserve(argv, prof, rfile)["status"] == "PASS")
+            fake.audit_inputs = lambda reserve, *, bank_files, metric_cache_dir, label_store, image_index, calib_rows: {"ok": True}      # a module that does not say what it examined: FAIL, never a pass
+            red("S4 FAIL: a lazily imported audit that reports ok but not WHAT it examined", C.check_reserve(argv, prof, rfile)["reasons"], "not all of")
+            fake.audit_inputs = lambda reserve, *, bank_files, metric_cache_dir, label_store, image_index, calib_rows: {"ok": True, "counts": {"inputs_audited": ["bank"]}}
+            red("S4 FAIL: a lazily imported audit that examined only the bank", C.check_reserve(argv, prof, rfile)["reasons"], "not all of")
             fake.audit_inputs = lambda reserve, *, bank_files, metric_cache_dir, label_store, image_index: {"ok": True}           # a signature drift: TypeError -> FAIL, never a pass
             red("S4 FAIL: a signature drift is a FAIL", C.check_reserve(argv, prof, rfile)["reasons"], "audit_inputs raised TypeError")
         finally:

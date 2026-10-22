@@ -5,3 +5,6 @@
 *.py text eol=lf
 # patches are applied with git apply on Linux pods and here; CRLF would break them (2026-09-27, measures_hooks.patch)
 *.patch text eol=lf
+# P7-WIRE-INTEGRATE 2026-10-22: the session reserve is sha256-pinned (launch_gate.P7_RESERVE_SHA256 == session_reserve.RESERVE_FILE_SHA256 over the LF bytes); a CRLF checkout fails the GATE's pin (closed)
+# though session_reserve.load_reserve accepts it.  Keep it LF on every checkout.
+refe/fixtures/p7_reserve_sessions.json text eol=lf
