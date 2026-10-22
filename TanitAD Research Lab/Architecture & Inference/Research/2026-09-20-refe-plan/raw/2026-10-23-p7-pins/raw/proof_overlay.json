@@ -1,0 +1,211 @@
+{
+ "checks": [
+  {
+   "name": "pins equal the pins output",
+   "ok": true
+  },
+  {
+   "name": "p7_refusals EMPTY on the real-bank argv",
+   "ok": true
+  },
+  {
+   "name": "profile_refusals EMPTY on the real-bank argv",
+   "ok": true
+  },
+  {
+   "name": "G-CLOCK PASS on the real bank, evidence carries the recomputed digest",
+   "ok": true
+  },
+  {
+   "name": "G-CLOCK FAILS a count off by one",
+   "ok": true
+  },
+  {
+   "name": "G-CLOCK FAILS the unfiltered 3-C bank",
+   "ok": true
+  },
+  {
+   "name": "p7_refusals refuses the unfiltered 3-C bank's name",
+   "ok": true
+  },
+  {
+   "name": "G-CLOCK FAILS a one-byte change of the registered name (count-only gating would pass it)",
+   "ok": true
+  },
+  {
+   "name": "G-DVB aux rows ALL ok on the real training store",
+   "ok": true
+  },
+  {
+   "name": "G-DVB FAILS the FULL store (reserve keys present)",
+   "ok": true
+  },
+  {
+   "name": "every negative control refuses",
+   "ok": true
+  }
+ ],
+ "g_clock_one_byte_changed_bank": {
+  "bank_content": {
+   "registered": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f",
+   "registration": "bank 'train_grow_cmd_3c_p7' per targets_sha256_by_bank",
+   "targets_sha256": "ccbd716f6de14dcf88d4805f3ce6c55bb6cbe655d73c7b766d58431482d7b0bb"
+  },
+  "reasons": [
+   "the bank's CONTENT is not the registered one: targets_sha256 ccbd716f6de14dcf... != registered 92af8d663ecdd04a... (bank 'train_grow_cmd_3c_p7' per targets_sha256_by_bank); the same tuple count is not the same bank"
+  ],
+  "status": "FAIL"
+ },
+ "g_clock_real_bank": {
+  "bank_content": {
+   "registered": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f",
+   "registration": "bank 'train_grow_cmd_3c_p7' per targets_sha256_by_bank",
+   "targets_sha256": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f"
+  },
+  "reasons": [],
+  "status": "PASS"
+ },
+ "g_clock_real_bank_count_off_by_one": {
+  "bank_content": {
+   "registered": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f",
+   "registration": "bank 'train_grow_cmd_3c_p7' per targets_sha256_by_bank",
+   "targets_sha256": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f"
+  },
+  "reasons": [
+   "step-0 bank has 150604 tuples != registered 150603 (bank 'train_grow_cmd_3c_p7' per n_tuples_by_bank)"
+  ],
+  "status": "FAIL"
+ },
+ "g_clock_unfiltered_3c_bank": {
+  "bank_content": {
+   "registered": null,
+   "registration": "--targets 'rank1_measure\\\\train_grow_cmd_3c' names bank 'train_grow_cmd_3c', which has no registered targets_sha256 (registered: ['train_grow_cmd_3c_p7'])",
+   "targets_sha256": "8775e73ee948588c6db6b18e3f5a65f6686b313405d6b28e439f85114d5f87a4"
+  },
+  "reasons": [
+   "step-0 bank: --targets 'rank1_measure\\\\train_grow_cmd_3c' names bank 'train_grow_cmd_3c', which has no registered tuple count (registered: ['train_grow_cmd_3c_p7'])",
+   "step-0 bank content: --targets 'rank1_measure\\\\train_grow_cmd_3c' names bank 'train_grow_cmd_3c', which has no registered targets_sha256 (registered: ['train_grow_cmd_3c_p7'])"
+  ],
+  "status": "FAIL"
+ },
+ "g_dvb_FULL_store_with_reserve_keys": {
+  "event": {
+   "rows": 150603,
+   "rows_labelled": 150603,
+   "store_keys": 103139,
+   "store_sha256": "4a17db673b1548ba35724ab848a7dc551e4b0bc1e49c57ae93e6357454bf287a"
+  },
+  "not_ok_rows": [
+   {
+    "flag": "--aux-drv-labels",
+    "how": "the `aux` event: the loader's manifest sha256 is the registered store's"
+   },
+   {
+    "flag": "--aux-drv-labels",
+    "how": "the `aux` event: the registered store's key count"
+   }
+  ]
+ },
+ "g_dvb_training_store": {
+  "event": {
+   "rows": 150603,
+   "rows_labelled": 150603,
+   "store_keys": 92993,
+   "store_sha256": "df2ddd1ba2aa16a27ecea4251178038ffadaa65693be4adbe1796d74cf78e997"
+  },
+  "not_ok_rows": []
+ },
+ "label": "overlay",
+ "live_pins": {
+  "P7_AUX_STORE_PINS": {
+   "keys": 92993,
+   "sha256": "df2ddd1ba2aa16a27ecea4251178038ffadaa65693be4adbe1796d74cf78e997"
+  },
+  "P7_BANK_TUPLES": {
+   "train_grow_cmd_3c_p7": 150603
+  },
+  "P7_TARGETS_SHA256": {
+   "train_grow_cmd_3c_p7": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f"
+  }
+ },
+ "mutated_bank_same_size_same_rows": {
+  "bytes_equal_len": true
+ },
+ "negative_controls": {
+  "another bank name (digest)": {
+   "fragment": "no registered targets_sha256",
+   "n_reasons": 2,
+   "refused": true
+  },
+  "another bank name in --targets": {
+   "fragment": "no registered tuple count",
+   "n_reasons": 2,
+   "refused": true
+  },
+  "count and digest name different banks": {
+   "fragment": "DIFFERENT banks",
+   "n_reasons": 2,
+   "refused": true
+  },
+  "digest malformed": {
+   "fragment": "not a sha256",
+   "n_reasons": 1,
+   "refused": true
+  },
+  "forbidden --grow": {
+   "fragment": "FORBIDS",
+   "n_reasons": 1,
+   "refused": true
+  },
+  "no digest key": {
+   "fragment": "carries no targets_sha256_by_bank",
+   "n_reasons": 1,
+   "refused": true
+  },
+  "required --aux-drv dropped": {
+   "fragment": "aux-drv",
+   "n_reasons": 1,
+   "refused": true
+  },
+  "reserve sha removed": {
+   "fragment": "no reserve sha256",
+   "n_reasons": 1,
+   "refused": true
+  },
+  "schedule steps changed": {
+   "fragment": "is not SPEC_P7's",
+   "n_reasons": 1,
+   "refused": true
+  },
+  "store keys None": {
+   "fragment": "label store's pins",
+   "n_reasons": 1,
+   "refused": true
+  },
+  "store pins removed": {
+   "fragment": "label store's pins",
+   "n_reasons": 1,
+   "refused": true
+  },
+  "store sha short": {
+   "fragment": "not a registration",
+   "n_reasons": 1,
+   "refused": true
+  },
+  "tuple count 0": {
+   "fragment": "not a positive int",
+   "n_reasons": 1,
+   "refused": true
+  }
+ },
+ "p7_refusals_real_bank_argv": [],
+ "p7_refusals_unfiltered_3c_bank": [
+  "refe_p7: --targets 'rank1_measure\\\\train_grow_cmd_3c' names bank 'train_grow_cmd_3c', which has no registered tuple count (P7_BANK_TUPLES holds ['train_grow_cmd_3c_p7']): register it in the pre-registration before any training data exists",
+  "refe_p7: --targets 'rank1_measure\\\\train_grow_cmd_3c' names bank 'train_grow_cmd_3c', which has no registered targets_sha256 (P7_TARGETS_SHA256 holds ['train_grow_cmd_3c_p7']): paste what p7_pins.py printed, never a typed value -- the digest exists only once the reserve filter has produced the bank"
+ ],
+ "profile_refusals_real_bank_argv": [],
+ "refe": "C:\\Users\\Admin\\par18\\p7pins\\work\\overlay\\refe",
+ "refe_p6_profile_sha256": "80fa4d7ec757ad4658df04b1ecfd453ae98653e729e2ee24458769d851cdf9c3",
+ "refe_p6_refusals_on_its_own_argv": [],
+ "verdict": "ALL_OK"
+}

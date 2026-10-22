@@ -1,0 +1,43 @@
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py
+@@ -341,10 +341,10 @@
+ #   * `--aux-drv-labels` is a DATA flag: the PASS token fingerprints the label store, and G-DVB compares the store's manifest sha256 + key count with the profile's registered pins;
+ #   * G-RESERVE (SPEC_P7 2): the reserve file's sha256 is the registered draw's AND `session_reserve.audit_inputs` finds it disjoint from all five training inputs;
+ #   * the schedule: 25 epochs x ceil(92,896 / 256) = 9,075 steps (P6: 10,075), a step-0 bank registered PER BANK.
+-# ⛔ THREE PINS ARE NOT KNOWN YET AND ARE LEFT UNREGISTERED ON PURPOSE -- each makes the gate REFUSE (`p7_refusals`, then G-DVB / G-CLOCK), never default to something else:
++# ⭐ THE THREE PINS BELOW WERE REGISTERED BY P7-PINS (2026-10-22) FROM `p7_pins.py`'s OUTPUT on the real rebuilt 3-C bank (`ZZP7PINS_OK tuples=150603 scenes=92896 store_keys=92993 store_sha256=df2ddd1ba2aa16a2 targets_sha256=92af8d663ecdd04a`); an unregistered or malformed pin still makes the gate REFUSE (`p7_refusals`, then G-DVB / G-CLOCK), never default to something else:
+ #   P7_AUX_STORE_PINS  the P7 TRAINING store's manifest `store_sha256` + `counts.stored_keys`: they exist only after the chain's block 5a (`p6_pod.sh`, `P7_RESERVE` + `P7_LABEL_STORE`) has moved the reserve's shards
+ #                      out and RE-FINALISED the store (`aux_label_store.py finalize`) -- SPEC_P7 2, "registered before step 0"
+-#   P7_BANK_TUPLES     the `train_grow_cmd_3c_p7` bank's tuple count: 92,896 rank-0 rows + the filter's rank-1 count (SPEC_P7 2: ~150.8k ESTIMATED -- a number never to be registered from an estimate)
++#   P7_BANK_TUPLES     the `train_grow_cmd_3c_p7` bank's tuple count: 92,896 rank-0 rows + the filter's rank-1 count (MEASURED 2026-10-22: 57,707 = 64,263 - 6,556 excluded; the earlier ~150.8k was an ESTIMATE and was never registered)
+ #   P7_TARGETS_SHA256  the bank's CONTENT: the trainer's own `targets_sha256` (sha256 over basename + bytes of each `targets_rank*.jsonl`, sorted) of that same bank directory.  A tuple count cannot tell two same-size banks
+ #                      apart; this can.  Keyed by the bank's directory name like the count; G-CLOCK recomputes it from the `--targets` files at launch and FAILS on any other bank (P7-WIRE-INTEGRATE-2)
+ #   P7_RESERVE_SHA256  filled below (R-A, MEASURED: the sha256 of raw/2026-10-22-p7-session-reserve/raw/reserve_sessions.json, re-measured 2026-10-22; SESSION_RESERVE.md header table) == session_reserve.RESERVE_FILE_SHA256
+@@ -357,9 +357,9 @@
+ P7_SCENES = 92896                                                       # SPEC_P7 section 2: the reserve-free bank's rank-0 scenes (103,037 - 10,141 reserved)
+ P7_EPOCHS = 25
+ P7_STEPS = P7_EPOCHS * -(-P7_SCENES // 256)                             # the trainer's own definition: epochs x ceil(epoch_len / (batch x accum)) = 25 x 363
+-P7_BANK_TUPLES: dict = {}                                               # UNREGISTERED: a --targets bank with no entry FAILS G-CLOCK (clock_bank_tuples), and `p7_refusals` refuses before any check runs
+-P7_AUX_STORE_PINS = {"sha256": None, "keys": None}                      # UNREGISTERED: `aux_dvb_rows` FAILS the store row, and `p7_refusals` refuses
+-P7_TARGETS_SHA256: dict = {}                                            # UNREGISTERED: a --targets bank with no entry FAILS G-CLOCK (clock_bank_sha256), and `p7_refusals` refuses; paste what p7_pins.py printed
++P7_BANK_TUPLES: dict = {"train_grow_cmd_3c_p7": 150603}          # REGISTERED (P7-PINS, MEASURED): 92,896 rank-0 + 57,707 rank-1 rows == p7_pins.py n_tuples; a --targets bank with another name FAILS G-CLOCK (clock_bank_tuples)
++P7_AUX_STORE_PINS = {"sha256": "df2ddd1ba2aa16a27ecea4251178038ffadaa65693be4adbe1796d74cf78e997", "keys": 92993}  # REGISTERED (P7-PINS, MEASURED): the re-finalised TRAINING store (1,076 logs); aux_dvb_rows compares the trainer's `aux` event with these
++P7_TARGETS_SHA256: dict = {"train_grow_cmd_3c_p7": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f"}  # REGISTERED (P7-PINS, MEASURED): the trainer's own targets_sha256 of train_grow_cmd_3c_p7; G-CLOCK recomputes it from the --targets files at launch
+ P7_RESERVE_SHA256 = "53f3bcd4684513f0ee765fbcfbaf583b587f58c97e9c8915f4e4df3ae3e32f29"
+ P7_AUX_REQUIRED = {"--aux-drv": None, "--w-aux-drv": "0.1", "--aux-drv-tap": "visual", "--aux-drv-depth": "2", "--aux-drv-feed": "off", "--aux-drv-labels": None, "--w-field": "0.0"}
+ # the pod runs the STATIC block of the head test (no dev-box data); --full / --mutations are the dev box's.  `test_session_reserve.py` is the reserve's own suite (ZZSESSRES_PASS 43: its optional real-data checks list
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_p7_integration.py
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_p7_integration.py
+@@ -614,7 +614,11 @@
+     red("V check_run REFUSES a null digest (a --grow run)", PINS.check_run(mk_run("run_null", {**good, "targets_sha256": None}), P)["reasons"], "recorded no targets_sha256")
+     red("V check_run REFUSES a bank the profile never vouched for", PINS.check_run(mk_run("run_unreg", good, targets=td / "elsewhere" / "some_other_bank"), P)["reasons"], "is not registered")
+     red("V check_run REFUSES a run that has no config.json yet", PINS.check_run(mk_run("run_none", good, cfg=False), P)["reasons"], "is missing")
+-    red("V check_run on the LIVE profile (pins unregistered) refuses everything", PINS.check_run(mk_run("run_live", good))["reasons"], "is not registered")
++    red("V check_run on a profile with the pins UNREGISTERED refuses everything", PINS.check_run(mk_run("run_live", good), unregistered(P7))["reasons"], "is not registered")
++    # P7-PINS: the LIVE profile twin must hold whether the shipped pins are still unregistered or already registered (the synthetic bank is never the pinned one)
++    live_rs = PINS.check_run(mk_run("run_live2", good))["reasons"]
++    ck("V check_run on the LIVE profile refuses a run that is not on the pinned bank (pins unregistered: 'is not registered'; registered: 'is not the registered')",
++       bool(live_rs) and any(("is not registered" in r or "is not the registered" in r) for r in live_rs), str(live_rs)[:400])
+     buf_o, buf_e = io.StringIO(), io.StringIO()
+     with mock.patch.object(L, "PROFILES", {**L.PROFILES, "refe_p7": P}), contextlib.redirect_stdout(buf_o), contextlib.redirect_stderr(buf_e):
+         rc_ok = PINS.main(["--check-run", str(td / "run_ok")])

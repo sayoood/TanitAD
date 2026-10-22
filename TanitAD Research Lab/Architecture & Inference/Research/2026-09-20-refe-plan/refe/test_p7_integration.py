@@ -614,7 +614,11 @@ def s_content(td: Path, rj: Path, C_: dict, R: dict, P: dict, argv: list) -> Non
     red("V check_run REFUSES a null digest (a --grow run)", PINS.check_run(mk_run("run_null", {**good, "targets_sha256": None}), P)["reasons"], "recorded no targets_sha256")
     red("V check_run REFUSES a bank the profile never vouched for", PINS.check_run(mk_run("run_unreg", good, targets=td / "elsewhere" / "some_other_bank"), P)["reasons"], "is not registered")
     red("V check_run REFUSES a run that has no config.json yet", PINS.check_run(mk_run("run_none", good, cfg=False), P)["reasons"], "is missing")
-    red("V check_run on the LIVE profile (pins unregistered) refuses everything", PINS.check_run(mk_run("run_live", good))["reasons"], "is not registered")
+    red("V check_run on a profile with the pins UNREGISTERED refuses everything", PINS.check_run(mk_run("run_live", good), unregistered(P7))["reasons"], "is not registered")
+    # P7-PINS: the LIVE profile twin must hold whether the shipped pins are still unregistered or already registered (the synthetic bank is never the pinned one)
+    live_rs = PINS.check_run(mk_run("run_live2", good))["reasons"]
+    ck("V check_run on the LIVE profile refuses a run that is not on the pinned bank (pins unregistered: 'is not registered'; registered: 'is not the registered')",
+       bool(live_rs) and any(("is not registered" in r or "is not the registered" in r) for r in live_rs), str(live_rs)[:400])
     buf_o, buf_e = io.StringIO(), io.StringIO()
     with mock.patch.object(L, "PROFILES", {**L.PROFILES, "refe_p7": P}), contextlib.redirect_stdout(buf_o), contextlib.redirect_stderr(buf_e):
         rc_ok = PINS.main(["--check-run", str(td / "run_ok")])

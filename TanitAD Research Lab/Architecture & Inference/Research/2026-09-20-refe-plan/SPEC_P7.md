@@ -107,3 +107,5 @@
 ## Deliverable manifest
 
 `SPEC_P7.md`, `SESSION_RESERVE.md`, `code/`, `raw/` in `C:/Users/Admin/par18/p7spec/` only (nothing staged, committed or pushed; the MM lands with the scoped lander). Suggested: `PK/SPEC_P7.md`, `PK/raw/2026-10-22-p7-session-reserve/`.
+
+> **MEASURED 2026-10-23 (P7-PINS, `raw/2026-10-23-p7-pins/RESULT.md`)**: the reserve-free bank `train_grow_cmd_3c_p7` holds **150,603 tuples**. Rank-0 is 92,896 (10,141 excluded). Rank-1 is 57,707 (6,556 of 64,263 excluded, 10.20 %). This replaces the ESTIMATED ~150.8k above. The bank's `targets_sha256` is `92af8d66…`. It is banked on HF as `refe_train_grow_cmd_3c_p7.tar.zst` (192,135,900 B, sha256 `e95f3987…`, remote verified). The pins are registered in `refe/launch_gate.py`.
