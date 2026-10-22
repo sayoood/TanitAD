@@ -6,7 +6,7 @@
   "verdict_sha256": "70c66cba4d4f8f902cc6b7ee491eb7f3473c42b69b4a09da8cfa5162ec13f573",
   "tip": "06380de73d82673433db79bcdfd266e417a32063"
  },
- "n_ids": 165,
+ "n_ids": 168,
  "ids": [
   "tests.test_amp_and_threads::test_the_reordering_ACTUALLY_changes_the_thread_pool",
   "tests.test_anchor_prefilter::test_prefilter_is_BIT_EXACT_on_every_candidate_it_decodes",
@@ -63,6 +63,8 @@
   "tests.test_openloop_suite::test_arm_json_roundtrip_is_the_contract_with_another_stream",
   "tests.test_openloop_suite::test_criteria_checker_reports_zero_violations",
   "tests.test_openloop_suite::test_forbidden_estimator_is_never_a_decision_grade_interval",
+  "tests.test_p10_pose_prior::test_a_fit_clips_are_TRAIN_clips_only_and_disjoint_from_eval139_and_eval141",
+  "tests.test_p10_pose_prior::test_a_the_package_copy_and_the_shipped_copy_are_the_same_bytes_and_the_fit_record_says_what_it_fit",
   "tests.test_pdm_proxy::test_poly_deriv_is_scipy_savgol_with_a_full_window[2-1]",
   "tests.test_pdm_proxy::test_poly_deriv_is_scipy_savgol_with_a_full_window[2-2]",
   "tests.test_pdm_proxy::test_poly_deriv_is_scipy_savgol_with_a_full_window[3-2]",
@@ -172,7 +174,8 @@
   "tests.test_tactical_goal_underpowered_matches_census::test_pinning_on_the_status_field_would_be_circular",
   "tests.test_tactical_goal_underpowered_matches_census::test_the_two_thresholds_are_distinct_and_both_declared",
   "tests.test_tactical_goal_underpowered_matches_census::test_underpowered_equals_the_census_set_below_the_metric_floor",
-  "tests.test_v6_st_launch_fixes::test_E4_the_resolution_is_banked_with_its_reasons"
+  "tests.test_v6_st_launch_fixes::test_E4_the_resolution_is_banked_with_its_reasons",
+  "tests.test_v8f_tac::test_the_v8f_guard_ends_only_on_a_line_start_marker_of_its_chains"
  ],
  "n_flaky": 1,
  "flaky": [
@@ -187,7 +190,7 @@
    "proposed_fix": "insert `torch.manual_seed(0)` as the first statement of the test (the pattern test_flagship_v4.py already uses at its line 432)"
   }
  ],
- "n_files": 33,
+ "n_files": 35,
  "files": [
   {
    "sub": "stack",
@@ -240,6 +243,10 @@
   {
    "sub": "stack",
    "file": "tests/test_openloop_suite.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_p10_pose_prior.py"
   },
   {
    "sub": "stack",
@@ -316,6 +323,10 @@
   {
    "sub": "stack",
    "file": "tests/test_v6_st_launch_fixes.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_v8f_tac.py"
   },
   {
    "sub": "taniteval",
@@ -542,6 +553,14 @@
   "tests.test_openloop_suite::test_forbidden_estimator_is_never_a_decision_grade_interval": {
    "sub": "stack",
    "file": "tests/test_openloop_suite.py"
+  },
+  "tests.test_p10_pose_prior::test_a_fit_clips_are_TRAIN_clips_only_and_disjoint_from_eval139_and_eval141": {
+   "sub": "stack",
+   "file": "tests/test_p10_pose_prior.py"
+  },
+  "tests.test_p10_pose_prior::test_a_the_package_copy_and_the_shipped_copy_are_the_same_bytes_and_the_fit_record_says_what_it_fit": {
+   "sub": "stack",
+   "file": "tests/test_p10_pose_prior.py"
   },
   "tests.test_pdm_proxy::test_poly_deriv_is_scipy_savgol_with_a_full_window[2-1]": {
    "sub": "stack",
@@ -982,6 +1001,30 @@
   "tests.test_v6_st_launch_fixes::test_E4_the_resolution_is_banked_with_its_reasons": {
    "sub": "stack",
    "file": "tests/test_v6_st_launch_fixes.py"
+  },
+  "tests.test_v8f_tac::test_the_v8f_guard_ends_only_on_a_line_start_marker_of_its_chains": {
+   "sub": "stack",
+   "file": "tests/test_v8f_tac.py"
   }
- }
+ },
+ "amendments": [
+  {
+   "date": "2026-10-22",
+   "by": "Master Mind",
+   "added_ids": [
+    "tests.test_p10_pose_prior::test_a_fit_clips_are_TRAIN_clips_only_and_disjoint_from_eval139_and_eval141",
+    "tests.test_p10_pose_prior::test_a_the_package_copy_and_the_shipped_copy_are_the_same_bytes_and_the_fit_record_says_what_it_fit",
+    "tests.test_v8f_tac::test_the_v8f_guard_ends_only_on_a_line_start_marker_of_its_chains"
+   ],
+   "added_files": [
+    "tests/test_p10_pose_prior.py",
+    "tests/test_v8f_tac.py"
+   ],
+   "class": "ENV (tree scope): each reads a TanitAD Research Lab package file that a stack/taniteval-only Thor gate tree does not carry",
+   "measured": "Thor suite for 947b05f2f4b3 (/home/nvidia/r8ns/nt/suite_947b05f2f4b3, 2026-10-22 05:23): FileNotFoundError / is_file() False on '.../2026-10-20-v8f-rung-alpha/raw/p10_pose/{fit_clip_ids.txt,p10_pose_prior.pt}' and '.../2026-10-17-v8f-mini/code/box2_ops/v8f_guard.sh'; failing on BOTH TIP (e0da2ea) and CAND",
+   "not_admitted": "the same run's other 3 out-of-list failures are CODE defects and were FIXED in this commit instead: test_text_encoding_is_explicit x2 (55 bare text-mode call sites in 9 test files) and test_hjepa::test_sigreg_gloo_two_process (file:/// + POSIX path -> file:////; Path.as_uri())",
+   "dev_box_half": "G-SUITE (b) now also runs tests/test_p10_pose_prior.py and tests/test_v8f_tac.py on the full-commit archive, where they must PASS",
+   "authorized": "PI (Sayed), 2026-10-22 ~05:50 Berlin, in chat: 'Admit the 3' -- after the auto-mode classifier flagged the Master Mind's own edit as a possible CI bypass and it was put to the PI"
+  }
+ ]
 }

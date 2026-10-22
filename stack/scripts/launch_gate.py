@@ -425,11 +425,11 @@ _DRIVORT_OFF = (
     (("--w-r7-wta", "--w-drivort-wta"), "DrivoR-T's WTA proposal-decoder weight"),
     (("--w-r7-scorer", "--w-drivort-scorer"), "DrivoR-T's disentangled-scorer weight"),
 )
-#: the pinned Thor failure list -- 165 ENV ids (fixes-batch-2 gate) + 1 FLAKY id with its cited
-#: record (fixes-batch-3 gate), in 33 files -- and its sha256: a changed list is a reviewed edit of
-#: BOTH lines
+#: the pinned Thor failure list -- 165 ENV ids (fixes-batch-2 gate) + 3 ENV tree-scope ids (NT suite
+#: 947b05f2f4b3, amendment 2026-10-22, recorded in the file) + 1 FLAKY id with its cited record
+#: (fixes-batch-3 gate), in 35 files -- and its sha256: a changed list is a reviewed edit of BOTH lines
 _THOR_ENV_FAILURES = ("stack/ops/launch_gate_thor_env_failures.json",
-                      "fc1214e5978383c694af7dbfc6c26f44758fcf8a93c4386700efb792072b4ed4")
+                      "22d8fe2c900c8654c0fce4af754ee01db52da97a93272b61acb38a1932acaf21")
 PROFILES: dict[str, dict] = {
     "refc": dict(_REFC, name="refc"),
     #: the arm the PI stopped on 2026-09-26: kept so the gate can be run on its argv as evidence

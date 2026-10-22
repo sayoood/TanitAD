@@ -1696,14 +1696,14 @@ def test_G_SUITE_the_pinned_env_list_is_content_bound_by_the_profile(tmp_path):
     tree = _mini_tree(tmp_path / "t")
     rel, want = LG.PROFILES["refcv7"]["suite_env_failures"]
     assert rel == "stack/ops/launch_gate_thor_env_failures.json"
-    assert want == "fc1214e5978383c694af7dbfc6c26f44758fcf8a93c4386700efb792072b4ed4"
+    assert want == "22d8fe2c900c8654c0fce4af754ee01db52da97a93272b61acb38a1932acaf21"
     assert "absent from the tree" in LG.env_failure_pin(LG.PROFILES["refcv7"], tree)[1]
     f = tree / rel
     f.parent.mkdir(parents=True, exist_ok=True)
     f.write_text('{"ids": [], "files": []}', encoding="utf-8")
     assert "the profile pins" in LG.env_failure_pin(LG.PROFILES["refcv7"], tree)[1]
     rec, prob = LG.env_failure_pin(LG.PROFILES["refcv7"], ROOT.parent)     # the real file
-    assert prob is None and rec["n_ids"] == 165 and rec["n_files"] == 33 and rec["n_flaky"] == 1
+    assert prob is None and rec["n_ids"] == 168 and rec["n_files"] == 35 and rec["n_flaky"] == 1
     assert rec["flaky"][0]["id"] == ("tests.test_flagship_v4::"
                                      "test_graft_tau_to_zero_makes_the_class_posterior_one_hot")
     assert rec["flaky"][0]["record_sha256"] == (
