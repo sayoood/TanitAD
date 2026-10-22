@@ -140,14 +140,14 @@ def test_config_hygiene_refuses_unnamed_or_unreachable_flags(arm, kw, frag):
 def test_every_arm_trains_three_steps_on_cpu_and_passes_its_gate(world, tmp_path, arm):
     out = tmp_path / arm
     assert run_train(world, arm, out) == 0
-    log = [json.loads(l) for l in open(out / "train_log.jsonl")]
+    log = [json.loads(l) for l in open(out / "train_log.jsonl", encoding="utf-8")]
     assert len(log) == 3 and all(np.isfinite(r["total"]) and np.isfinite(r["traj"]) for r in log)
-    gate = json.load(open(out / "launch_check.json"))
+    gate = json.load(open(out / "launch_check.json", encoding="utf-8"))
     assert gate["ok"] and gate["G_LIVE"]["ok"] and all(r["ok"] for r in gate["G_DVB"])
     assert gate["vram_estimate"]["estimate_gb"] > 0
     assert (out / "final.pt").exists() and (out / "DONE").exists()
     if arm == "A1h":
-        assert 0.0 < json.load(open(out / "DONE"))["hist_drop_fraction"] < 1.0
+        assert 0.0 < json.load(open(out / "DONE", encoding="utf-8"))["hist_drop_fraction"] < 1.0
 
 
 # ------------------------------------------------------------------------------------------------ the IDM term
@@ -388,7 +388,7 @@ def test_eval_and_verdict_end_to_end(world, tmp_path):
                       world["prior_path"], "--grid-json", world["grid_json"], "--train-cache", world["root"], "--out", str(ev),
                       "--n-boot", "40", "--fam-boot", "20"])
         assert rc == 0, f"{arm}@{s}: an instrument control failed"
-        r = json.load(open(ev / "eval.json"))
+        r = json.load(open(ev / "eval.json", encoding="utf-8"))
         assert r["instrument_ok"] and r["controls"]["p10_minus_p10_ok"] and r["controls"]["gt_ade_max"] == 0.0
         assert r["param_audit"]["untrained"] == [], f"{arm}: parameters that never received a gradient"
         assert r["K"]["ade6_arm_minus_p10"]["estimator"].startswith("paired_")
@@ -406,7 +406,7 @@ def test_eval_and_verdict_end_to_end(world, tmp_path):
         runs += ["--run", f"{arm}{':' + cell[arm] if cell[arm] else ''}@{s}={ev}"]
     vout = tmp_path / "verdict.json"
     assert EV.main(["verdict", "--out", str(vout), "--n-boot", "40"] + runs) == 0
-    v = json.load(open(vout))
+    v = json.load(open(vout, encoding="utf-8"))
     assert v["A1_best_cell"] == "b0.08g100" and v["branch"] and "A1x_control" in v and "A1h_EXPLORATORY" in v
     assert set(v["SENS"]["per_seed"]) == {"seed0", "seed1"} and v["K"]["best_arm"] in ("R0", "A1", "A2")
     assert v["training_seed_floor_A1"] is not None and v["COST"]["per_run"]
@@ -422,7 +422,7 @@ def test_verdict_degrades_gracefully_on_partial_inputs(world, tmp_path):
                     "--grid-json", world["grid_json"], "--train-cache", world["root"], "--out", str(ev), "--n-boot", "30",
                     "--fam-boot", "10"]) == 0
     assert EV.main(["verdict", "--out", str(tmp_path / "v.json"), "--n-boot", "30", "--run", f"A1:b0.08g100@0={ev}"]) == 0
-    v = json.load(open(tmp_path / "v.json"))
+    v = json.load(open(tmp_path / "v.json", encoding="utf-8"))
     assert v["SENS"]["PASS"] is False and v["K"]["PASS"] is False and "NOT RUN" in v["A1x_control"]["verdict"]
     assert v["branch"].startswith("A1x GATE"), "with the instrument gate open no other branch may be selected"
 
@@ -513,13 +513,13 @@ def test_every_arm_withholds_the_same_holdout_and_never_trains_on_it(world, tmp_
         assert not (seen["loaded"] & set(want)), f"{arm}: the bank loaded a holdout clip"
         assert not (seen["sampled"] & set(want)), f"{arm}: the sampler could draw a holdout clip"
         assert seen["loaded"] == set(want_train), f"{arm}: every non-holdout clip trains"
-        meta = json.load(open(out / "meta.json"))
+        meta = json.load(open(out / "meta.json", encoding="utf-8"))
         assert meta["holdout"]["clips"] == want and meta["holdout"]["sha256"] == RD.clips_sha256(want)
         assert meta["holdout"]["disjoint_from_train"] is True and meta["holdout"]["n"] == 2 and meta["holdout"]["pool"] == 6
         assert meta["train"]["sha256"] == RD.clips_sha256(want_train) and meta["train"]["n"] == len(want_train)
         ck = torch.load(out / "final.pt", weights_only=False)
         assert ck["holdout"]["clips"] == want and ck["holdout"]["sha256"] == meta["holdout"]["sha256"]
-        assert json.load(open(out / "DONE"))["holdout_sha256"] == meta["holdout"]["sha256"]
+        assert json.load(open(out / "DONE", encoding="utf-8"))["holdout_sha256"] == meta["holdout"]["sha256"]
         shas.add(meta["holdout"]["sha256"])
     assert len(shas) == 1, "the holdout is IDENTICAL across arms"
 
@@ -531,7 +531,7 @@ def test_mutation_a_split_that_does_not_exclude_the_holdout_turns_the_spy_red(wo
                         lambda clips, n, hn, pn: (RD.pick_train_clips(clips, n), RD.holdout_clips(clips, hn, pn)))   # the bug: nothing withheld
     assert run_train(world, "A0", tmp_path / "mut") == 0
     assert seen["loaded"] & set(want) and seen["sampled"] & set(want), "the control must see the holdout being trained on"
-    assert json.load(open(tmp_path / "mut" / "meta.json"))["holdout"]["disjoint_from_train"] is False, "and the run's own meta must say so"
+    assert json.load(open(tmp_path / "mut" / "meta.json", encoding="utf-8"))["holdout"]["disjoint_from_train"] is False, "and the run's own meta must say so"
 
 
 def test_resume_refuses_a_changed_holdout(world, tmp_path):
@@ -550,14 +550,14 @@ def test_eval_rederives_the_holdout_and_refuses_a_drifted_checkpoint(world, tmp_
         return EV.main(argv + (["--train-cache", world["root"]] if train_cache else []))
 
     assert ev(tmp_path / "a" / "final.pt", "ok") == 0
-    ok = json.load(open(tmp_path / "e_ok" / "eval.json"))["holdout"]
+    ok = json.load(open(tmp_path / "e_ok" / "eval.json", encoding="utf-8"))["holdout"]
     assert ok["status"] == "OK" and ok["clips_sha256"] == ck["holdout"]["sha256"] and ok["n_windows"] > 0
     z = np.load(tmp_path / "e_ok" / "perwindow.npz", allow_pickle=True)
     assert set(("hold_eid", "hold_t", "hold_ade6", "hold_p10_ade6")) <= set(z.files) and len(z["hold_ade6"]) == ok["n_windows"]
     assert not np.array_equal(z["ade6"], z["hold_ade6"]), "the holdout ADE is its own array, never the eval-141 one"
     # no --train-cache => the holdout is NOT computed, and says so (verdict will refuse)
     assert ev(tmp_path / "a" / "final.pt", "nocache", train_cache=False) == 0
-    assert json.load(open(tmp_path / "e_nocache" / "eval.json"))["holdout"]["status"].startswith("NOT COMPUTED")
+    assert json.load(open(tmp_path / "e_nocache" / "eval.json", encoding="utf-8"))["holdout"]["status"].startswith("NOT COMPUTED")
     # a checkpoint with a record that no longer matches the manifest: refused loudly
     drift = dict(ck, holdout=dict(ck["holdout"], clips=list(reversed(ck["holdout"]["clips"]))))
     torch.save(drift, tmp_path / "drift.pt")
@@ -570,7 +570,7 @@ def test_eval_rederives_the_holdout_and_refuses_a_drifted_checkpoint(world, tmp_
     old = {k: v for k, v in ck.items() if k != "holdout"}                      # trained before Amendment 1
     torch.save(old, tmp_path / "old.pt")
     assert ev(tmp_path / "old.pt", "old") == 0
-    assert json.load(open(tmp_path / "e_old" / "eval.json"))["holdout"]["status"].startswith("NOT COMPUTED")
+    assert json.load(open(tmp_path / "e_old" / "eval.json", encoding="utf-8"))["holdout"]["status"].startswith("NOT COMPUTED")
 
 
 # ---- verdict: SYNTHETIC per-window numbers where the holdout winner differs from the eval-141 winner
@@ -587,7 +587,7 @@ def _fake_run(d, eval_ade, hold_ade, *, hold=True, hold_t=(3, 4, 3, 4), sha="a" 
         arr.update(hold_eid=np.repeat(np.arange(2), 2), hold_t=np.asarray(hold_t), hold_ade6=np.full(4, hold_ade), hold_p10_ade6=np.full(4, 3.0))
         ev["holdout"] = {"status": "OK", "clips_sha256": sha, "n_clips": 2, "n": 2, "pool": 6}
     np.savez_compressed(d / "perwindow.npz", **arr)
-    json.dump(ev, open(d / "eval.json", "w"))
+    json.dump(ev, open(d / "eval.json", "w", encoding="utf-8"))
     return d
 
 
@@ -604,7 +604,7 @@ def test_verdict_selects_the_A1_cell_on_the_holdout_not_on_eval141(tmp_path):
     assert eval_winner != hold_winner, "the synthetic case must discriminate the two rules"
     runs, vout = _verdict_args(tmp_path, "real")
     assert EV.main(["verdict", "--out", str(vout), "--n-boot", "20"] + runs) == 0
-    v = json.load(open(vout))
+    v = json.load(open(vout, encoding="utf-8"))
     assert v["A1_best_cell"] == hold_winner != eval_winner
     assert v["A1_cells_seed0_holdout_ade6"] == pytest.approx(HOLDOUT)
     nd = v["A1_cells_seed0_eval141_ade6_NON_DECIDING"]
@@ -634,17 +634,17 @@ def test_mutation_selecting_on_eval141_again_turns_the_selection_check_red(tmp_p
 
     def selects_on_holdout(module):
         assert module.main(["verdict", "--out", str(vout), "--n-boot", "20"] + runs) == 0
-        return json.load(open(vout))["A1_best_cell"] == hold_winner
+        return json.load(open(vout, encoding="utf-8"))["A1_best_cell"] == hold_winner
 
     assert selects_on_holdout(EV), "control: the real evaluator passes the check"
     assert not selects_on_holdout(_mutant_eval_module()), "the one-line mutation (eval-141 selection) must make the check RED"
-    assert json.load(open(vout))["A1_best_cell"] == eval_winner
+    assert json.load(open(vout, encoding="utf-8"))["A1_best_cell"] == eval_winner
 
 
 def test_verdict_refuses_an_A1_cell_without_holdout_numbers_and_has_no_eval141_fallback(tmp_path):
     runs, vout = _verdict_args(tmp_path, "nohold", hold=False)
     assert EV.main(["verdict", "--out", str(vout), "--n-boot", "20"] + runs) == 4
-    v = json.load(open(vout))
+    v = json.load(open(vout, encoding="utf-8"))
     assert v["A1_best_cell"] is None and v["status"].startswith("A1 SELECTION REFUSED") and "branch" not in v
     assert "A1_best_rule" not in v and set(v["A1_cells_seed0_eval141_ade6_NON_DECIDING"]) == set(CELLS)
     # a single cell with no holdout is refused too (it is not "trivially the best")
@@ -654,7 +654,7 @@ def test_verdict_refuses_an_A1_cell_without_holdout_numbers_and_has_no_eval141_f
     runs2, vout2 = _verdict_args(tmp_path, "mix")
     _fake_run(tmp_path / "mix" / CELLS[1], EVAL141[CELLS[1]], 0.0, hold=False)
     assert EV.main(["verdict", "--out", str(vout2), "--n-boot", "20"] + runs2) == 4
-    assert CELLS[1] in json.load(open(vout2))["status"]
+    assert CELLS[1] in json.load(open(vout2, encoding="utf-8"))["status"]
 
 
 def test_verdict_asserts_every_run_scored_the_same_holdout(tmp_path):
@@ -692,7 +692,7 @@ def test_queue_dry_run_prints_holdout_n_60_in_every_trainer_argv(tmp_path):
 
     def dry(args):
         # cmd /c with an outer pair of quotes: the package path contains an ampersand
-        r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, timeout=120)
+        r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, timeout=120, encoding="utf-8")
         assert r.returncode == 0, r.stdout + r.stderr
         return r.stdout.splitlines()
 
@@ -1079,7 +1079,7 @@ def test_full_box2_driver_dry_run_builds_then_encodes_then_verifies_each_chunk_i
     (st / "camera_sha256.json").write_text(json.dumps({c: {"sha256": "0" * 64} for c in rest}), encoding="utf-8")
     (st / "ctl_expected.json").write_text(json.dumps({"c" * 8 + "-ctl": "1" * 64}), encoding="utf-8")
     env = dict(os.environ, RA1FULL_ROOT=str(tmp_path), LABELFLAGS="--listing L --train-labels T", RA1FULL_MIN_FREE_GB="0")
-    r = subprocess.run([sys.executable, str(FULL_DRIVER), "--dry-run", "--chunk", "2"], env=env, capture_output=True, text=True, timeout=120)
+    r = subprocess.run([sys.executable, str(FULL_DRIVER), "--dry-run", "--chunk", "2"], env=env, capture_output=True, text=True, timeout=120, encoding="utf-8")
     assert r.returncode == 0, r.stdout + r.stderr
     runs = [ln.split(" RUN ", 1)[1] for ln in r.stdout.splitlines() if " RUN " in ln]
     kind = ["build" if "pod_build_b1_epcache.py" in x else "encode" if "pull_encode_pooled.py" in x else "verify" if "verify_cache.py" in x
@@ -1097,7 +1097,7 @@ def test_full_box2_driver_dry_run_builds_then_encodes_then_verifies_each_chunk_i
     assert not any(str(tmp_path / "cache") + " " in x + " " for x in runs), "nothing may write into the 600-clip cache root"
     # the disk guard: a box without the space stops before the first chunk builds, with its own exit code
     env["RA1FULL_MIN_FREE_GB"] = "1e12"
-    r = subprocess.run([sys.executable, str(FULL_DRIVER), "--dry-run", "--chunk", "2"], env=env, capture_output=True, text=True, timeout=120)
+    r = subprocess.run([sys.executable, str(FULL_DRIVER), "--dry-run", "--chunk", "2"], env=env, capture_output=True, text=True, timeout=120, encoding="utf-8")
     assert r.returncode == 11 and "ZZDISK-GUARD" in r.stdout and "pull_encode_pooled.py" not in r.stdout, r.stdout
 
 

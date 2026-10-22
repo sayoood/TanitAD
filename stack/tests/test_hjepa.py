@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import math
 import os
+import pathlib
 import tempfile
 
 import pytest
@@ -212,7 +213,7 @@ def test_sigreg_gradient_is_finite_nonzero_and_bf16_safe():
 
 def _gloo_worker(rank, world, init_file, out_dir):
     import torch.distributed as dist
-    dist.init_process_group("gloo", init_method="file:///" + init_file.replace("\\", "/"),
+    dist.init_process_group("gloo", init_method=pathlib.Path(init_file).as_uri(),
                             rank=rank, world_size=world)
     torch.manual_seed(0)
     x = torch.randn(256, 32, dtype=torch.float64)

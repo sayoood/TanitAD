@@ -54,7 +54,7 @@ def _working_bash():
         if not c or not Path(c).exists():
             continue
         try:
-            r = subprocess.run([c, "-c", "echo ok"], capture_output=True, text=True, timeout=30)
+            r = subprocess.run([c, "-c", "echo ok"], capture_output=True, text=True, timeout=30, encoding="utf-8")
         except (OSError, subprocess.TimeoutExpired):
             continue
         if r.returncode == 0 and r.stdout.strip() == "ok":
@@ -67,7 +67,7 @@ BASH = _working_bash()
 
 @pytest.mark.skipif(BASH is None, reason="no working bash")
 def test_bash_really_ignores_groups_assignment():
-    r = subprocess.run([BASH, "-c", 'GROUPS="goal latdec"; echo "[$GROUPS]"'], capture_output=True, text=True, timeout=30)
+    r = subprocess.run([BASH, "-c", 'GROUPS="goal latdec"; echo "[$GROUPS]"'], capture_output=True, text=True, timeout=30, encoding="utf-8")
     assert r.returncode == 0
     assert r.stdout.strip() != "[goal latdec]", "bash honoured the assignment: the trap this test guards no longer exists"
 

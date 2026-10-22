@@ -185,7 +185,7 @@ def test_queue_tac_stage_runs_three_interventions_on_four_checkpoints(tmp_path):
     q = PKG / "code" / "v8f_mini_box2_queue.cmd"
     env = dict(os.environ, V8F_DRYRUN="1", REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"),
                V9=str(tmp_path / "v9"))
-    r = subprocess.run(f'cmd /c ""{q}" tac"', env=env, capture_output=True, text=True, timeout=60)
+    r = subprocess.run(f'cmd /c ""{q}" tac"', env=env, capture_output=True, text=True, timeout=60, encoding="utf-8")
     assert r.returncode == 0, r.stdout + r.stderr
     ln = [x for x in r.stdout.splitlines() if "v8f_mini_eval.py" in x]
     got = [(re.search(r"--tag (\S+)", x).group(1), re.search(r"--tac (\S+)", x).group(1)) for x in ln]
@@ -307,7 +307,7 @@ def test_queue_tacgrp_stage_runs_eight_group_oracles_on_four_checkpoints(tmp_pat
     q = PKG / "code" / "v8f_mini_box2_queue.cmd"
     env = dict(os.environ, V8F_DRYRUN="1", REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"),
                V9=str(tmp_path / "v9"))
-    r = subprocess.run(f'cmd /c ""{q}" tacgrp"', env=env, capture_output=True, text=True, timeout=60)
+    r = subprocess.run(f'cmd /c ""{q}" tacgrp"', env=env, capture_output=True, text=True, timeout=60, encoding="utf-8")
     assert r.returncode == 0, r.stdout + r.stderr
     ln = [x for x in r.stdout.splitlines() if "v8f_mini_eval.py" in x]
     got = [(re.search(r"--tag (\S+)", x).group(1), re.search(r"--tac (\S+) --tac-groups (\S+)", x).groups()) for x in ln]
@@ -437,7 +437,7 @@ def test_queue_tacgrp2_stage_runs_ten_oracles_on_four_checkpoints(tmp_path):
     q = PKG / "code" / "v8f_mini_box2_queue.cmd"
     env = dict(os.environ, V8F_DRYRUN="1", REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"),
                V9=str(tmp_path / "v9"))
-    r = subprocess.run(f'cmd /c ""{q}" tacgrp2"', env=env, capture_output=True, text=True, timeout=60)
+    r = subprocess.run(f'cmd /c ""{q}" tacgrp2"', env=env, capture_output=True, text=True, timeout=60, encoding="utf-8")
     assert r.returncode == 0, r.stdout + r.stderr
     ln = [x for x in r.stdout.splitlines() if "v8f_mini_eval.py" in x]
     got = [(re.search(r"--tag (\S+)", x).group(1),) + re.search(r"--tac oracle --tac-groups (\S+) --tac-alpha (\S+)", x).groups() for x in ln]

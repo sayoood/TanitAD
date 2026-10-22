@@ -434,7 +434,7 @@ def test_five_hand_checked_real_windows():
             ("91929cea", 59, 11.994035, (29.9743, -1.118, -3.4838), (49.9086, -2.6974, -5.4043), 7.6617),
             ("b99058dc", 23, 4.808529, (29.9978, -0.3473, -0.9017), (49.995, -0.5664, 0.1245), 8.17),
             ("f1a94fee", 39, 7.977197, (29.8471, 2.7474, 7.1904), (49.7253, 4.8528, 4.6743), 3.4963)]
-    grid = json.load(open(PKG / "raw" / "eval_grid_windows.json"))
+    grid = json.load(open(PKG / "raw" / "eval_grid_windows.json", encoding="utf-8"))
     by_prefix = {c[:8]: c for c in grid["order"]}
     for pre, t, now, a30, a50, vnow in pins:
         sid = D.stable_episode_id(by_prefix[pre])
@@ -563,7 +563,7 @@ def test_exclude_drops_the_sha12_slice_counts_S_without_it_and_the_gate_refuses_
     common = ["--synthetic", "--batch", "8", "--d", "32", "--n-q", "2", "--threads", "1", "--selfcheck-only"]
     assert TR.main(["--out", str(tmp_path / "base"), *common]) == 0
     assert TR.main(["--out", str(tmp_path / "ex"), *common, "--exclude", "1:3"]) == 0
-    b, e = (json.load(open(tmp_path / k / "selfcheck.json"))["info"] for k in ("base", "ex"))
+    b, e = (json.load(open(tmp_path / k / "selfcheck.json", encoding="utf-8"))["info"] for k in ("base", "ex"))
     names = D.make_synthetic_world(str(tmp_path / "ref"), n_train=6, n_eval=2, T=60, seed=0)["names"]["train"]
     drop = sorted(names, key=D.sha12)[1:3]
     assert (b["n_clips"], e["n_clips"], e["n_excluded"], e["excluded_in_train"]) == (6, 4, 2, 0)
@@ -588,9 +588,9 @@ def test_end_to_end_train_resume_eval(world, tmp_path, monkeypatch, kin_mode):
               "--ckpt-every", "4", "--threads", "1", "--kin-mode", kin_mode, "--seed", "5"]
     full = tmp_path / "full"
     assert TR.main(["--out", str(full), *common]) == 0
-    s = json.load(open(full / "summary.json"))
+    s = json.load(open(full / "summary.json", encoding="utf-8"))
     assert s["done"] is True and s["steps"] == 8
-    sc = json.load(open(full / "selfcheck.json"))
+    sc = json.load(open(full / "selfcheck.json", encoding="utf-8"))
     assert sc["declared_vs_built"] == "PASS" and sc["live"]["pass"] and sc["live"]["control_prior_grad_sum"] == 0.0
     # crash at step 6, resume from the step-4 checkpoint: the SAME run
     res = tmp_path / "res"
@@ -600,7 +600,7 @@ def test_end_to_end_train_resume_eval(world, tmp_path, monkeypatch, kin_mode):
     assert not (res / "summary.json").exists()                                # no done-marker on an unfinished run
     monkeypatch.delenv("V8F_TRAIN_CRASH_AT")
     assert TR.main(["--out", str(res), *common]) == 0
-    assert json.load(open(res / "summary.json"))["done"] is True
+    assert json.load(open(res / "summary.json", encoding="utf-8"))["done"] is True
     A = torch.load(full / "ckpt_last.pt", weights_only=False)["model"]
     B = torch.load(res / "ckpt_last.pt", weights_only=False)["model"]
     for k in A:
@@ -616,15 +616,15 @@ def test_end_to_end_train_resume_eval(world, tmp_path, monkeypatch, kin_mode):
                   "--eval-join", str(root / "join_eval.npz"), "--out-dir", str(out), "--n-boot", "50", "--batch", "16",
                   "--lru", "4", "--project", "--tracks", str(root / "native_tracks.pt")])
     assert rc == 0
-    assert json.load(open(out / "eval_t.json"))["kin_mode"] == kin_mode
-    r = json.load(open(out / "eval_t.json"))["raw"]
+    assert json.load(open(out / "eval_t.json", encoding="utf-8"))["kin_mode"] == kin_mode
+    r = json.load(open(out / "eval_t.json", encoding="utf-8"))["raw"]
     z = np.load(out / "eval_t.npz")
     assert np.isfinite(z["pred"]).all() and z["pred"].shape[1:] == (30, 2)
     assert r["traj"]["ade6_m"]["mean"] > 0 and 0.0 <= r["consistency_a"]["any"]["rate_all"] <= 1.0
     assert "self_consistency_b" in r and "strategic" in r and "tactical" in r
     assert (out / "eval_t_proj.npz").exists()
     # compare: two "seeds" of one arm + a fake floors file built from the same windows (smoke of the PREREG bar plumbing)
-    grid = json.load(open(root / "eval_grid_windows.json"))
+    grid = json.load(open(root / "eval_grid_windows.json", encoding="utf-8"))
     fake = {"P10_refit__ade6": z["ade6"] * 1.3, "P10_refit__viol_any": z["viol_any"], "eid": z["eid"],
             "nav_baseline_ckpt": np.zeros((len(z["eid"]), 3, 3))}
     np.savez(out / "floors.npz", **fake)
@@ -633,5 +633,5 @@ def test_end_to_end_train_resume_eval(world, tmp_path, monkeypatch, kin_mode):
                     "--floors-npz", str(out / "floors.npz"), "--out", str(cmp_out), "--n-boot", "50",
                     "--eval-grid", str(root / "eval_grid_windows.json"), "--eval-kin", str(root / "eval_kin.npz"),
                     "--eval-join", str(root / "join_eval.npz")]) == 0
-    cj = json.load(open(cmp_out))
+    cj = json.load(open(cmp_out, encoding="utf-8"))
     assert cj["arms"]["M1"]["seed_floor_F_m"] == 0.0 and "tactical_lat" in cj and "strat" in cj["arms"]["M1"]

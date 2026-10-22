@@ -236,7 +236,7 @@ def ckpt(world, tmp_path_factory):
 def _eval(module, world, ckpt, out):
     rc = module.main(["eval", "--ckpt", ckpt, "--eval-cache", world["root"], "--p10-prior", world["prior_path"], "--grid-json", world["grid_json"],
                       "--train-cache", world["root"], "--out", str(out), "--n-boot", "20", "--fam-boot", "40"])
-    return rc, json.load(open(out / "eval.json")), np.load(out / "perwindow.npz", allow_pickle=True)
+    return rc, json.load(open(out / "eval.json", encoding="utf-8")), np.load(out / "perwindow.npz", allow_pickle=True)
 
 
 def _missing_arrays(z):

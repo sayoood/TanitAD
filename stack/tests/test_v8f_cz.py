@@ -227,7 +227,7 @@ def test_queue_cz_stages(tmp_path):
                V9=str(tmp_path / "v9"))
 
     def dry(args):
-        r = subprocess.run(f'cmd /c ""{q}" {args}"', env=env, capture_output=True, text=True, timeout=60)
+        r = subprocess.run(f'cmd /c ""{q}" {args}"', env=env, capture_output=True, text=True, timeout=60, encoding="utf-8")
         return r.returncode, [x for x in r.stdout.splitlines() if ".py" in x]
     rc, ln = dry("tacabs")
     assert rc == 0 and [(re.search(r"--tag (\S+)", x).group(1), re.search(r"--tac (\S+)", x).group(1)) for x in ln] == \

@@ -112,6 +112,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import threading
 import time
 import traceback
 from pathlib import Path
@@ -6810,6 +6811,15 @@ def stream_archive(git_dir: str, commit: str, dest: Path) -> dict:
     env = dict(os.environ, GIT_DIR=str(git_dir))
     p = subprocess.Popen(["git", "-c", "core.autocrlf=false", "archive", "--format=tar", commit],
                          env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    # MEASURED 2026-10-22 (Windows pipe): git pads its tar to a 10,240-B record; tarfile stops at the
+    # end-of-archive block, git blocks writing the unread padding while we block in stderr.read()
+    # (0 CPU >30 min after a 100 % extraction). So: drain stderr from the start, stdout to EOF below.
+    err_parts: list[bytes] = []
+
+    def _drain_stderr() -> None:
+        err_parts.append(p.stderr.read())
+    err_thread = threading.Thread(target=_drain_stderr, daemon=True)
+    err_thread.start()
     n = nbytes = 0
     skipped = []
     with tarfile.open(fileobj=p.stdout, mode="r|") as tf:
@@ -6829,12 +6839,23 @@ def stream_archive(git_dir: str, commit: str, dest: Path) -> dict:
                 shutil.copyfileobj(src, fh, 1 << 20)
             n += 1
             nbytes += int(m.size)
-    err = p.stderr.read().decode(errors="replace")
+    pad = 0
+    while True:                     # whatever follows the end-of-archive block must be tar padding
+        chunk = p.stdout.read(1 << 20)
+        if not chunk:
+            break
+        if chunk.count(0) != len(chunk):
+            p.kill()
+            raise GateError(f"git archive {commit[:12]}: non-zero bytes after the end-of-archive "
+                            f"block ({pad} B of padding first) -- the tar stream stopped early")
+        pad += len(chunk)
     rc = p.wait()
+    err_thread.join()
+    err = b"".join(err_parts).decode(errors="replace")
     if rc != 0:
         raise GateError(f"git archive {commit[:12]} failed rc={rc}: {err[-400:]}")
     rec = {"commit": commit, "files": n, "bytes": nbytes, "skipped_non_files": skipped[:20],
-           "written_utc": utc_now()}
+           "trailing_pad_bytes": pad, "written_utc": utc_now()}
     write_json(dest / _ARCHIVE_DONE, rec)
     return rec
 

@@ -50,7 +50,7 @@ def test_queue_dry_run_passes_arm_seed_grid_in_order_and_8x20_gets_its_own_run(t
                V9=str(tmp_path / "v9"))
 
     def q(args):
-        r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, timeout=60)
+        r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, timeout=60, encoding="utf-8")
         assert r.returncode == 0, r.stdout + r.stderr
         return [ln for ln in r.stdout.splitlines() if ln.strip()]
 
@@ -93,15 +93,15 @@ def _world(tmp, gain=0.30, seed_gap=0.01, s1_gain=None, s1_split=0.0, train_sha=
                 ade = ade + s1_split * np.where(eid % 2 == 0, 1.0, -1.0)
             np.savez(ev / f"eval_{arm}_s{s}.npz", ade6=ade, eid=eid)
             json.dump({"raw": {"traj": {"ade6_m": {"mean": float(ade.mean())}}, "families": {"lateral": {}}}},
-                      open(ev / f"eval_{arm}_s{s}.json", "w"))
+                      open(ev / f"eval_{arm}_s{s}.json", "w", encoding="utf-8"))
             if drop == (arm, s):
                 continue
             (rd / f"{arm}_s{s}").mkdir(parents=True, exist_ok=True)
             json.dump({"done": True, "steps": 100, "S": 25, "arm": arm, "seed": s, "n_clips": 4512, "train_sha256": train_sha,
-                       "excluded_sha256": holdout}, open(rd / f"{arm}_s{s}" / "summary.json", "w"))
+                       "excluded_sha256": holdout}, open(rd / f"{arm}_s{s}" / "summary.json", "w", encoding="utf-8"))
     arms = {a: {"K1_ade6_minus_P10": [{"mean": -0.1, "separated": True}] * 2, "seed_floor_F_m": 0.01, "K1_pass": a == "M2b"}
             for a in ("M1", "M2b")}
-    json.dump({"arms": arms, "P10_consistency_a_rate": 0.32}, open(ev / "compare.json", "w"))
+    json.dump({"arms": arms, "P10_consistency_a_rate": 0.32}, open(ev / "compare.json", "w", encoding="utf-8"))
     return ev, rd
 
 
@@ -109,7 +109,7 @@ def _run(tmp, **kw):
     ev, rd = _world(tmp, **kw)
     out = tmp / "verdict.json"
     assert _verdict().main(["--eval-dir", str(ev), "--runs-dir", str(rd), "--out", str(out)]) == 0
-    return json.load(open(out))
+    return json.load(open(out, encoding="utf-8"))
 
 
 @pytest.mark.skipif(not VERDICT.exists(), reason="verdict not in this checkout")
@@ -138,8 +138,8 @@ def test_verdict_refuses_mixed_provenance(tmp_path):
         with pytest.raises(SystemExit, match="REFUSED"):
             V.main(["--eval-dir", str(ev), "--runs-dir", str(rd), "--out", str(tmp_path / "x.json")])
     ev, rd = _world(tmp_path / "r2")
-    s = json.load(open(rd / "M1_s1" / "summary.json"))
+    s = json.load(open(rd / "M1_s1" / "summary.json", encoding="utf-8"))
     s["train_sha256"] = "u" * 64
-    json.dump(s, open(rd / "M1_s1" / "summary.json", "w"))
+    json.dump(s, open(rd / "M1_s1" / "summary.json", "w", encoding="utf-8"))
     with pytest.raises(SystemExit, match="one clip list"):
         V.main(["--eval-dir", str(ev), "--runs-dir", str(rd), "--out", str(tmp_path / "y.json")])

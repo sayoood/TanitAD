@@ -300,11 +300,11 @@ def argv(world, arm, out, mode="yaw", prior=None, tracks=True, extra=()):
 @pytest.mark.parametrize("arm", ["R0", "A0", "A1"])
 def test_ra1_trainer_runs_the_compliant_mode_and_the_gate_reads_it_back(world, tmp_path, arm):
     assert TR.main(argv(world, arm, tmp_path / arm)) == 0
-    gate = json.load(open(tmp_path / arm / "launch_check.json"))
+    gate = json.load(open(tmp_path / arm / "launch_check.json", encoding="utf-8"))
     rows = {r["lever"]: r for r in gate["G_DVB"]}
     assert gate["ok"] and rows["kin_mode_bank"]["built"] == "yaw" and rows["p10_units"]["built"] == "pose_kappa"
     assert rows["act_ch1_name"]["built"] == "yaw_rate" and rows["act_channels"]["ok"], rows
-    assert json.load(open(tmp_path / arm / "meta.json"))["kin_mode"] == "yaw"
+    assert json.load(open(tmp_path / arm / "meta.json", encoding="utf-8"))["kin_mode"] == "yaw"
     assert torch.load(tmp_path / arm / "final.pt", weights_only=False)["cfg"]["kin_mode"] == "yaw"
     if arm != "R0":
         assert gate["G_LIVE"]["idm_ok"] and gate["G_LIVE"]["ok"]
@@ -315,7 +315,7 @@ def test_ra1_trainer_default_is_the_compliant_mode(world, tmp_path):
     assert ap.get_default("kin_mode") == "yaw"
     a = [x for x in argv(world, "R0", tmp_path / "d") if x not in ("--kin-mode", "yaw")]
     assert TR.main(a) == 0
-    assert json.load(open(tmp_path / "d" / "meta.json"))["kin_mode"] == "yaw"
+    assert json.load(open(tmp_path / "d" / "meta.json", encoding="utf-8"))["kin_mode"] == "yaw"
 
 
 def test_ra1_trainer_refuses_a_wrong_units_prior_missing_tracks_and_a_foreign_track(world, tmp_path, capsys):
@@ -369,7 +369,7 @@ def run_eval(world, tmp_path, arm, seed, mode="yaw"):
 
 def test_eval_and_verdict_end_to_end_in_the_compliant_mode_and_mixing_is_refused(world, tmp_path):
     evs = {(a, s): run_eval(world, tmp_path, a, s) for a, s in (("A0", 0), ("A0", 1), ("A1", 0), ("A1", 1))}
-    r = json.load(open(evs[("A1", 0)] / "eval.json"))
+    r = json.load(open(evs[("A1", 0)] / "eval.json", encoding="utf-8"))
     assert r["kin_mode"] == "yaw" and r["ctl_channel"] == "yaw_rate" and r["p10_units"] == "pose_kappa" and r["instrument_ok"]
     assert r["SENS"]["ctl_channel"] == "yaw_rate" and r["SENS"]["self_swap_control_ok"] and r["SENS"]["self_swap_control_max"] == 0.0
     assert r["SENS"]["channels"]["yaw_rate/k10"]["mean_of_ratios"] > 0.0 and "steer/k10" not in r["SENS"]["channels"]
@@ -378,19 +378,19 @@ def test_eval_and_verdict_end_to_end_in_the_compliant_mode_and_mixing_is_refused
     runs = [x for (a, s), ev in evs.items() for x in ("--run", f"{a}{':b0.08' if a == 'A0' else ':b0.08g100'}@{s}={ev}")]
     vout = tmp_path / "verdict.json"
     assert EV.main(["verdict", "--out", str(vout), "--n-boot", "30"] + runs) == 0
-    v = json.load(open(vout))
+    v = json.load(open(vout, encoding="utf-8"))
     assert v["kin_mode"] == "yaw" and v["ctl_channel"] == "yaw_rate" and v["deciding"] is True
     assert "A1_yaw_rate_k10" in v["SENS"]["per_seed"]["seed0"] and "yaw-rate" not in v["SENS"]["bar"] and "yaw_rate-sensitivity" in v["SENS"]["bar"]
     # a steer-representation run is NON-DECIDING and may never sit in the same verdict as yaw runs
     ev_s = run_eval(world, tmp_path / "steer", "A1", 0, "steer") if (tmp_path / "steer").mkdir() is None else None
-    rs = json.load(open(ev_s / "eval.json"))
+    rs = json.load(open(ev_s / "eval.json", encoding="utf-8"))
     assert rs["kin_mode"] == "steer" and rs["ctl_channel"] == "steer" and "steer/k10" in rs["SENS"]["channels"]
     with pytest.raises(SystemExit, match="different kin_mode"):
         EV.main(["verdict", "--out", str(tmp_path / "mixed.json"), "--n-boot", "30", "--run", f"A1:b0.08g100@0={evs[('A1', 0)]}",
                  "--run", f"A1:b0.08g100@1={ev_s}"])
     # a steer-only verdict still works and says it does not decide
     assert EV.main(["verdict", "--out", str(tmp_path / "steer_only.json"), "--n-boot", "30", "--run", f"A1:b0.08g100@0={ev_s}"]) == 0
-    vs = json.load(open(tmp_path / "steer_only.json"))
+    vs = json.load(open(tmp_path / "steer_only.json", encoding="utf-8"))
     assert vs["deciding"] is False and "NON-DECIDING" in vs["representation_note"]
 
 
@@ -420,7 +420,7 @@ BANKED = {"540": (RA / "2026-10-17-refav1-hj-mini" / "raw" / "p10_yaw540", 540),
 def eval_pseudo_cache(tmp_path):
     """The 141 eval clips as S4-format clips (pose_grid = the track's even frames; decoys in every steer-carrying field) so the
     ACTUAL loader (`ra1_pooled.load_clip`, yaw mode) produces the P10 trajectories the fit script banked."""
-    g = json.load(open(MINI_RAW / "eval_grid_windows.json"))
+    g = json.load(open(MINI_RAW / "eval_grid_windows.json", encoding="utf-8"))
     root = tmp_path / "pseudo"
     (root / "eval" / "clips").mkdir(parents=True)
     tracks = {}
@@ -461,7 +461,7 @@ def test_banked_p10_yaw_artifact_equals_what_the_ra1_loader_computes(which, tmp_
     assert got.shape == ref.shape
     assert float(np.abs(got - ref).max()) <= 1e-3, "the loader's P10 trajectory differs from the fit script's banked prediction"
     # and the banked fit is the documented one: the compliant floor is within 0.02 m of the steer P10 on eval-141
-    fit = json.load(open(d / "p10_fit.json"))
+    fit = json.load(open(d / "p10_fit.json", encoding="utf-8"))
     assert abs(fit["yaw"]["ade6_m"] - fit["steer_control"]["ade6_m"]) < 0.02 and fit["steer_control"]["ade6_m"] == pytest.approx(
         {540: 2.5560, 600: 2.5744}[n], abs=2e-4), "the pipeline control must reproduce the banked steer P10"
 
@@ -490,7 +490,7 @@ def test_queue_runs_the_compliant_representation_in_its_own_directory():
 def test_queue_dry_run_prints_the_compliant_flags_in_every_argv(tmp_path):
     import subprocess
     env = dict(os.environ, RA1_DRYRUN="1", REPO=str(REPO), RUNS=str(tmp_path / "runs"))
-    r = subprocess.run(f'cmd /c ""{QUEUE}" gate"', env=env, capture_output=True, text=True, timeout=120)
+    r = subprocess.run(f'cmd /c ""{QUEUE}" gate"', env=env, capture_output=True, text=True, timeout=120, encoding="utf-8")
     assert r.returncode == 0, r.stdout + r.stderr
     tr = [ln for ln in r.stdout.splitlines() if "ra1_hjepa_train.py" in ln]
     assert len(tr) == 6 and all("--kin-mode yaw" in ln and "native_tracks.pt" in ln and "p10_yaw540" in ln for ln in tr), tr

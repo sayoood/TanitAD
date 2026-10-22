@@ -43,7 +43,7 @@ def test_beta_queue_reads_the_amendment4_m2b_checkpoints_into_its_own_eval_dir()
 def _dry(tmp_path, args):
     env = dict(os.environ, V8F_DRYRUN="1", REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"),
                V9=str(tmp_path / "v9"))
-    r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, timeout=60)
+    r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, timeout=60, encoding="utf-8")
     assert r.returncode == 0, r.stdout + r.stderr
     lines = [ln for ln in r.stdout.splitlines() if ln.strip()]
     assert len(lines) == 1
