@@ -1,0 +1,192 @@
+{
+ "what": "PERC2PLAN-R8 CPU smoke controls (dev box, CUDA_VISIBLE_DEVICES=-1, --smoke-cpu-fp32-trunk, --os-only), seed 1, 2 episodes x 3 windows (windows_smoke.json); refcv8 EMA-48,852; NOT a result (n=6 windows)",
+ "clock": "2026-10-21T19:52:28+0200",
+ "C1_as_registered_bitexact": {
+  "os_bitexact": false,
+  "plan_full_bitexact": false,
+  "max_abs_os_m": 4.842877388000488e-08,
+  "max_abs_plan_full_m": 3.814697265625e-06,
+  "sel_idx_identical": true,
+  "verdict": "FAIL as registered (bit-exact); PASS at the brief's tolerance (max |d| <= 1e-5)"
+ },
+ "C1_attribution": {
+  "unmodified_child_vs_itself_bitexact (REF vs REF2)": true,
+  "wrapper_BASE_hooks_vs_wrapper_NO_hooks_bitexact": true,
+  "wrapper_BASE_vs_wrapper_BASE_rerun_bitexact": true,
+  "wrapper_NO_hooks_vs_unmodified_child_max_abs_m": 3.814697265625e-06,
+  "reading": "the HOOKS are a bit-exact identity at BASE (hooked == un-hooked wrapper, bitwise); the residual 3.8e-6 m is the WRAPPER PROCESS vs the directly-run child (same code, same seed, same device, both deterministic run-to-run) -- a CPU float-reduction difference from a different process history, not the intervention. Every arm and BASE go through the SAME wrapper, so arm - BASE isolates the hook mode."
+ },
+ "C4_per_arm": {
+  "AGT_ZERO": {
+   "C4": {
+    "census_ok": true,
+    "decoder_sees_hooked_agent": true,
+    "decoder_sees_hooked_bev": true,
+    "agent_zero_exact": true,
+    "agent_changed_all_nonzero": true,
+    "bev_identity": true,
+    "all_pass": true
+   },
+   "agent_changed/fwd": "6/6",
+   "agent_max_abs_hooked": 0.0,
+   "bev_changed/fwd": "0/6",
+   "bev_max_abs_hooked": 0.0,
+   "decoder_kwargs_are_hooked_tensors(agent/bev)/calls": "6/6/6",
+   "donor bank/prev/same_clip": "0/0/0"
+  },
+  "BEV_ZERO": {
+   "C4": {
+    "census_ok": true,
+    "decoder_sees_hooked_agent": true,
+    "decoder_sees_hooked_bev": true,
+    "agent_identity": true,
+    "bev_zero_exact": true,
+    "bev_changed_all_nonzero": true,
+    "all_pass": true
+   },
+   "agent_changed/fwd": "0/6",
+   "agent_max_abs_hooked": 1.3903942108154297,
+   "bev_changed/fwd": "6/6",
+   "bev_max_abs_hooked": 0.0,
+   "decoder_kwargs_are_hooked_tensors(agent/bev)/calls": "6/6/6",
+   "donor bank/prev/same_clip": "0/0/0"
+  },
+  "BOTH_ZERO": {
+   "C4": {
+    "census_ok": true,
+    "decoder_sees_hooked_agent": true,
+    "decoder_sees_hooked_bev": true,
+    "agent_zero_exact": true,
+    "agent_changed_all_nonzero": true,
+    "bev_zero_exact": true,
+    "bev_changed_all_nonzero": true,
+    "all_pass": true
+   },
+   "agent_changed/fwd": "6/6",
+   "agent_max_abs_hooked": 0.0,
+   "bev_changed/fwd": "6/6",
+   "bev_max_abs_hooked": 0.0,
+   "decoder_kwargs_are_hooked_tensors(agent/bev)/calls": "6/6/6",
+   "donor bank/prev/same_clip": "0/0/0"
+  },
+  "AGT_SHUF": {
+   "C4": {
+    "census_ok": true,
+    "decoder_sees_hooked_agent": true,
+    "decoder_sees_hooked_bev": true,
+    "agent_changed_ge99pct": true,
+    "bev_identity": true,
+    "all_pass": true
+   },
+   "agent_changed/fwd": "6/6",
+   "agent_max_abs_hooked": 1.3903942108154297,
+   "bev_changed/fwd": "0/6",
+   "bev_max_abs_hooked": 0.0,
+   "decoder_kwargs_are_hooked_tensors(agent/bev)/calls": "6/6/6",
+   "donor bank/prev/same_clip": "3/3/0"
+  },
+  "BEV_SHUF": {
+   "C4": {
+    "census_ok": true,
+    "decoder_sees_hooked_agent": true,
+    "decoder_sees_hooked_bev": true,
+    "agent_identity": true,
+    "bev_changed_ge99pct": true,
+    "all_pass": true
+   },
+   "agent_changed/fwd": "0/6",
+   "agent_max_abs_hooked": 1.3903942108154297,
+   "bev_changed/fwd": "6/6",
+   "bev_max_abs_hooked": 9.657734870910645,
+   "decoder_kwargs_are_hooked_tensors(agent/bev)/calls": "6/6/6",
+   "donor bank/prev/same_clip": "3/3/0"
+  },
+  "BASE": {
+   "C4": {
+    "census_ok": true,
+    "decoder_sees_hooked_agent": true,
+    "decoder_sees_hooked_bev": true,
+    "agent_identity": true,
+    "bev_identity": true,
+    "all_pass": true
+   },
+   "agent_changed/fwd": "0/6",
+   "agent_max_abs_hooked": 1.3903942108154297,
+   "bev_changed/fwd": "0/6",
+   "bev_max_abs_hooked": 0.0,
+   "decoder_kwargs_are_hooked_tensors(agent/bev)/calls": "6/6/6",
+   "donor bank/prev/same_clip": "0/0/0"
+  }
+ },
+ "plan_full_displacement_vs_BASE_m": {
+  "AGT_ZERO": {
+   "per_window": [
+    0.0081,
+    0.0138,
+    0.1015,
+    0.0176,
+    0.0448,
+    0.0156
+   ],
+   "sel_idx_changed": 0
+  },
+  "BEV_ZERO": {
+   "per_window": [
+    1.3087,
+    2.355,
+    4.6828,
+    4.4741,
+    1.0647,
+    0.7001
+   ],
+   "sel_idx_changed": 5
+  },
+  "BOTH_ZERO": {
+   "per_window": [
+    1.2055,
+    1.3057,
+    4.5553,
+    4.5406,
+    1.2102,
+    0.7506
+   ],
+   "sel_idx_changed": 5
+  },
+  "AGT_SHUF": {
+   "per_window": [
+    0.0399,
+    0.0339,
+    0.0687,
+    0.0578,
+    0.0379,
+    0.0362
+   ],
+   "sel_idx_changed": 0
+  },
+  "BEV_SHUF": {
+   "per_window": [
+    1.8998,
+    0.715,
+    1.8526,
+    1.7611,
+    0.1306,
+    3.5168
+   ],
+   "sel_idx_changed": 5
+  }
+ },
+ "zero_is_exactly_zero_at_hook": {
+  "AGT_ZERO": [
+   true,
+   null
+  ],
+  "BEV_ZERO": [
+   null,
+   true
+  ],
+  "BOTH_ZERO": [
+   true,
+   true
+  ]
+ }
+}

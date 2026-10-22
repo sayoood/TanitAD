@@ -1,0 +1,23 @@
+#!/bin/bash
+# p2p_waiter.sh -- Master Mind, 2026-10-21: start PERC2PLAN-R8's chain once Thor's GPU is free.
+# Needs TWO consecutive idle polls 5 min apart (sibling-free and python-free), so the perception-pass agent's own waiter
+# (which polls every 5 min for the fan job to end) gets Thor first.  Then runs the chain; exit 3 = busy -> keep waiting.
+# Gives up after 10 h.  Markers ZZW<NAME> in out/waiter.log (opaque tokens; never grep for the command text).
+P=/home/nvidia/r8ns/perc2plan; W=$P/out/waiter.log; mkdir -p $P/out
+echo "ZZWSTART $(date -Is) pid $$" >> $W
+idle=0; t0=$(date +%s)
+while [ $(( $(date +%s) - t0 )) -lt 36000 ]; do
+  sib=$(ps -eo args | grep -cE "[r]8ns/(fanceil|perc8)/|[w]ait_and_run|[c]hain_fanceil|[c]hain_perc8")
+  pys=$(ps -u nvidia -o pid=,comm= | awk '$2 ~ /^python/' | wc -l)
+  if [ "$sib" = "0" ] && [ "$pys" = "0" ]; then idle=$((idle+1)); else idle=0; fi
+  echo "ZZWPOLL idle=$idle sib=$sib py=$pys $(date -Is)" >> $W
+  if [ $idle -ge 2 ]; then
+    bash $P/code/chain_p2p_thor.sh 200>&-
+    rc=$?
+    echo "ZZWCHAIN rc=$rc $(date -Is)" >> $W
+    if [ $rc != 3 ]; then echo "ZZWDONE $(date -Is)" >> $W; exit $rc; fi
+    idle=0
+  fi
+  sleep 300 200>&-
+done
+echo "ZZWTIMEOUT $(date -Is)" >> $W; exit 9
