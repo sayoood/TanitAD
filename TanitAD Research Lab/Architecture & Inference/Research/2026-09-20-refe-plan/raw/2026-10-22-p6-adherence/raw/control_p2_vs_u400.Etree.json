@@ -1,0 +1,962 @@
+{
+ "instrument": "eval/command_adherence.py (P6-ADHERENCE)",
+ "definition": {
+  "source": [
+   "eval/PREREG_P6.md 'Amendment 2026-10-22 (b)' (Command adherence is DEFINED here)",
+   "raw/2026-10-22-p6-read-gaps/MM_RULING_P6_READ_GAPS.md section E3 / G2c, Q1-Q5"
+  ],
+  "classing": "tanitad.refs.refc_tactical.factor_from_kinematics via taniteval.four_families.maneuver_kinematics (the tactical_from_trajectory path); LATERAL factor; no new thresholds",
+  "plan": "the executed (A7) plan = seam poses [N,8,3]; the raw proposal is descriptive only",
+  "statistics": "accuracy AND Cohen's kappa on all tokens AND on the turn-active subset (LEFT u RIGHT commands); turn-active accuracy is the headline cell; 3x3 confusion always",
+  "floor": "mean adherence of the 64 proposals per token (--dump-proposals dump)",
+  "interval": "paired log-cluster bootstrap, B = 10,000, against C1 and C2 separately",
+  "authority": "NONE. TACTICAL is a reported family; it carries no decision authority over PREREG_P6's rule (PDMS vs C1/C2 and the goal bar). Quote it only with the estimator and n above."
+ },
+ "tier": "T1 = NAVSIM v1.1 PDMS-side plan, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop); the command is an INPUT of the agent",
+ "estimator": "paired log-cluster bootstrap over the navtest logs (cluster unit log_name), 10,000 resamples, 95 %, seed 20260927: the resample stream of proxy_eval.boot (proxy_eval.py:313; called by stage3_full.py:216), applied to per-log confusion matrices so Cohen's kappa shares it. It answers 'another draw of LOGS' and nothing else; training variance (one seed per arm, H-ESTIM-SEED-1) is unmeasured; inference is deterministic.",
+ "authority": "NONE. TACTICAL is a reported family; it carries no decision authority over PREREG_P6's rule (PDMS vs C1/C2 and the goal bar). Quote it only with the estimator and n above.",
+ "evidence_class": "MEASURED (ours) on the named seams; a control read on banked arms is a known-value control, not a P6 look",
+ "arm": "p2",
+ "comparators": [
+  {
+   "role": "C1",
+   "name": "u400"
+  }
+ ],
+ "tokens": {
+  "n": 12146,
+  "n_logs": 136,
+  "command_counts": {
+   "LEFT": 2501,
+   "STRAIGHT": 8070,
+   "RIGHT": 1575,
+   "UNKNOWN": 0
+  },
+  "turn_active_n": 4076
+ },
+ "arms": {
+  "p2": {
+   "executed_plan_A7": {
+    "all_tokens": {
+     "n": 12146,
+     "n_logs": 136,
+     "accuracy": {
+      "point": 0.863823480981393,
+      "ci95": [
+       0.8423407927308069,
+       0.8846902210120503
+      ]
+     },
+     "kappa": {
+      "point": 0.7422357330036603,
+      "ci95": [
+       0.7079308162774246,
+       0.7747295220601215
+      ],
+      "n_undefined_resamples": 0
+     },
+     "confusion_command_rows_plan_cols": [
+      [
+       2278.0,
+       210.0,
+       13.0
+      ],
+      [
+       638.0,
+       6894.0,
+       538.0
+      ],
+      [
+       7.0,
+       248.0,
+       1320.0
+      ]
+     ],
+     "rows": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "cols": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "per_command_recall": {
+      "LEFT": 0.9108356657337066,
+      "STRAIGHT": 0.8542750929368029,
+      "RIGHT": 0.8380952380952381
+     },
+     "per_command_n": {
+      "LEFT": 2501.0,
+      "STRAIGHT": 8070.0,
+      "RIGHT": 1575.0
+     },
+     "_what": "p2: all tokens"
+    },
+    "turn_active": {
+     "n": 4076,
+     "n_logs": 113,
+     "accuracy": {
+      "point": 0.8827281648675172,
+      "ci95": [
+       0.8585671952466332,
+       0.9052727854923961
+      ]
+     },
+     "kappa": {
+      "point": 0.7785869131893164,
+      "ci95": [
+       0.7337645610316532,
+       0.8187904652969864
+      ],
+      "n_undefined_resamples": 0
+     },
+     "confusion_command_rows_plan_cols": [
+      [
+       2278.0,
+       210.0,
+       13.0
+      ],
+      [
+       0.0,
+       0.0,
+       0.0
+      ],
+      [
+       7.0,
+       248.0,
+       1320.0
+      ]
+     ],
+     "rows": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "cols": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "per_command_recall": {
+      "LEFT": 0.9108356657337066,
+      "STRAIGHT": null,
+      "RIGHT": 0.8380952380952381
+     },
+     "per_command_n": {
+      "LEFT": 2501.0,
+      "STRAIGHT": 0.0,
+      "RIGHT": 1575.0
+     },
+     "_what": "p2: turn-active (LEFT u RIGHT commands) = HEADLINE"
+    }
+   },
+   "labeller_provenance": {
+    "n": 12146,
+    "n_heading_held_from_last_moving_step": 995,
+    "n_never_moved": 39,
+    "dt_s": 0.5,
+    "n_poses": 8
+   },
+   "n_cv_standin_rows_dropped": 0,
+   "seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_p2_full.npz",
+   "raw_proposal_descriptive": {
+    "status": "IDENTICAL_BY_CONSTRUCTION",
+    "n_class_differences_with_heading_column_zeroed": 0,
+    "why": "A7 (planner.repair_last_heading) rewrites only the last pose's heading; the canonical labeller reads only xy. The pre-A7 plan is not banked in the seam or the dump (both hold executed forms), and cannot differ in class.",
+    "descriptive_only": true
+   }
+  },
+  "u400": {
+   "executed_plan_A7": {
+    "all_tokens": {
+     "n": 12146,
+     "n_logs": 136,
+     "accuracy": {
+      "point": 0.868187057467479,
+      "ci95": [
+       0.846009610954877,
+       0.889515045822752
+      ]
+     },
+     "kappa": {
+      "point": 0.7497562549560227,
+      "ci95": [
+       0.7139845491721571,
+       0.7837025840272903
+      ],
+      "n_undefined_resamples": 0
+     },
+     "confusion_command_rows_plan_cols": [
+      [
+       2271.0,
+       211.0,
+       19.0
+      ],
+      [
+       592.0,
+       6945.0,
+       533.0
+      ],
+      [
+       7.0,
+       239.0,
+       1329.0
+      ]
+     ],
+     "rows": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "cols": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "per_command_recall": {
+      "LEFT": 0.9080367852858856,
+      "STRAIGHT": 0.8605947955390335,
+      "RIGHT": 0.8438095238095238
+     },
+     "per_command_n": {
+      "LEFT": 2501.0,
+      "STRAIGHT": 8070.0,
+      "RIGHT": 1575.0
+     },
+     "_what": "u400: all tokens"
+    },
+    "turn_active": {
+     "n": 4076,
+     "n_logs": 113,
+     "accuracy": {
+      "point": 0.8832188420019627,
+      "ci95": [
+       0.8591134172339978,
+       0.9051549891398097
+      ]
+     },
+     "kappa": {
+      "point": 0.7793599243432401,
+      "ci95": [
+       0.7358604277545224,
+       0.8190920156606525
+      ],
+      "n_undefined_resamples": 0
+     },
+     "confusion_command_rows_plan_cols": [
+      [
+       2271.0,
+       211.0,
+       19.0
+      ],
+      [
+       0.0,
+       0.0,
+       0.0
+      ],
+      [
+       7.0,
+       239.0,
+       1329.0
+      ]
+     ],
+     "rows": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "cols": [
+      "LEFT",
+      "STRAIGHT",
+      "RIGHT"
+     ],
+     "per_command_recall": {
+      "LEFT": 0.9080367852858856,
+      "STRAIGHT": null,
+      "RIGHT": 0.8438095238095238
+     },
+     "per_command_n": {
+      "LEFT": 2501.0,
+      "STRAIGHT": 0.0,
+      "RIGHT": 1575.0
+     },
+     "_what": "u400: turn-active (LEFT u RIGHT commands) = HEADLINE"
+    }
+   },
+   "labeller_provenance": {
+    "n": 12146,
+    "n_heading_held_from_last_moving_step": 1051,
+    "n_never_moved": 59,
+    "dt_s": 0.5,
+    "n_poses": 8
+   },
+   "n_cv_standin_rows_dropped": 0,
+   "seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_sft4_B_u400_navtest_full.npz"
+  }
+ },
+ "paired_vs_comparators": {
+  "p2_minus_C1_u400": {
+   "all_tokens": {
+    "n": 12146.0,
+    "n_logs": 136,
+    "accuracy_delta": {
+     "point": -0.0043635764860859546,
+     "ci95": [
+      -0.008261622732205794,
+      -0.00024959558839944833
+     ],
+     "separated": true
+    },
+    "kappa_delta": {
+     "point": -0.007520521952362413,
+     "ci95": [
+      -0.014491107461783698,
+      -0.00017990615462583375
+     ],
+     "separated": true,
+     "n_undefined_resamples": 0
+    }
+   },
+   "turn_active": {
+    "n": 4076.0,
+    "n_logs": 113,
+    "accuracy_delta": {
+     "point": -0.0004906771344455348,
+     "ci95": [
+      -0.004962892683955302,
+      0.004386061180167274
+     ],
+     "separated": false
+    },
+    "kappa_delta": {
+     "point": -0.0007730111539236972,
+     "ci95": [
+      -0.008350434983712999,
+      0.007509475626436696
+     ],
+     "separated": false,
+     "n_undefined_resamples": 0
+    }
+   }
+  }
+ },
+ "random_proposal_floor": {
+  "definition": "mean over the 64 proposals' per-token adherence (the exact expectation of a skill-free selector); kappa is the kappa of the EXPECTED confusion matrix",
+  "n_proposals": 64,
+  "dump": "D:/Projects/TanitAD-artifacts/p2_full_table/table_p2_full.npz",
+  "all_tokens": {
+   "floor": {
+    "n": 12146,
+    "n_logs": 136,
+    "accuracy": {
+     "point": 0.8610936728140952,
+     "ci95": [
+      0.8411412676153868,
+      0.8804575202759354
+     ]
+    },
+    "kappa": {
+     "point": 0.7395153217793113,
+     "ci95": [
+      0.7074170508398115,
+      0.7700666795338406
+     ],
+     "n_undefined_resamples": 0
+    },
+    "confusion_command_rows_plan_cols": [
+     [
+      2276.265625,
+      207.75,
+      16.984375
+     ],
+     [
+      643.515625,
+      6823.203125,
+      603.28125
+     ],
+     [
+      7.96875,
+      207.65625,
+      1359.375
+     ]
+    ],
+    "rows": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "cols": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "per_command_recall": {
+     "LEFT": 0.9101421931227509,
+     "STRAIGHT": 0.8455022459727385,
+     "RIGHT": 0.8630952380952381
+    },
+    "per_command_n": {
+     "LEFT": 2501.0,
+     "STRAIGHT": 8070.0,
+     "RIGHT": 1575.0
+    },
+    "_what": "random-proposal floor: all_tokens"
+   },
+   "actual_minus_floor": {
+    "n": 12146.0,
+    "n_logs": 136,
+    "accuracy_delta": {
+     "point": 0.002729808167297876,
+     "ci95": [
+      -0.004128131651527905,
+      0.009771200339471682
+     ],
+     "separated": false
+    },
+    "kappa_delta": {
+     "point": 0.002720411224348962,
+     "ci95": [
+      -0.00930293861667244,
+      0.015323318207554865
+     ],
+     "separated": false,
+     "n_undefined_resamples": 0
+    }
+   },
+   "floor_ge_actual_point": false
+  },
+  "turn_active": {
+   "floor": {
+    "n": 4076,
+    "n_logs": 113,
+    "accuracy": {
+     "point": 0.8919628618743867,
+     "ci95": [
+      0.8723710631639442,
+      0.9091795974969503
+     ]
+    },
+    "kappa": {
+     "point": 0.7944719939178233,
+     "ci95": [
+      0.759097227145654,
+      0.8250984935552252
+     ],
+     "n_undefined_resamples": 0
+    },
+    "confusion_command_rows_plan_cols": [
+     [
+      2276.265625,
+      207.75,
+      16.984375
+     ],
+     [
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      7.96875,
+      207.65625,
+      1359.375
+     ]
+    ],
+    "rows": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "cols": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "per_command_recall": {
+     "LEFT": 0.9101421931227509,
+     "STRAIGHT": null,
+     "RIGHT": 0.8630952380952381
+    },
+    "per_command_n": {
+     "LEFT": 2501.0,
+     "STRAIGHT": 0.0,
+     "RIGHT": 1575.0
+    },
+    "_what": "random-proposal floor: turn_active"
+   },
+   "actual_minus_floor": {
+    "n": 4076.0,
+    "n_logs": 113,
+    "accuracy_delta": {
+     "point": -0.00923469700686948,
+     "ci95": [
+      -0.01889696956714845,
+      -0.00033127024254263966
+     ],
+     "separated": true
+    },
+    "kappa_delta": {
+     "point": -0.015885080728506917,
+     "ci95": [
+      -0.032206066360230816,
+      -0.0008166847958201461
+     ],
+     "separated": true,
+     "n_undefined_resamples": 0
+    }
+   },
+   "floor_ge_actual_point": true
+  },
+  "note": "a floor at or above the actual selection is a FINDING (selection adds no adherence), not an instrument failure; it is flagged, never gated"
+ },
+ "controls": {
+  "swap_LR_commands": {
+   "turn_active_accuracy": {
+    "point": 0.004906771344455349,
+    "ci95": [
+     0.002322829830312477,
+     0.007981005331613071
+    ]
+   },
+   "turn_active_kappa": {
+    "point": -0.7076892756047163,
+    "ci95": [
+     -0.7799383399608899,
+     -0.6181761458138609
+    ],
+    "n_undefined_resamples": 0
+   },
+   "all_tokens_accuracy": {
+    "point": 0.5692409023546847,
+    "ci95": [
+     0.5241710106200046,
+     0.615969094811258
+    ]
+   },
+   "real_turn_active_accuracy": 0.8827281648675172,
+   "drops": true,
+   "expected": "turn-active accuracy falls sharply (a plan that follows its command is wrong on every swapped turn)"
+  },
+  "constant_straight_plan": {
+   "kappa_all_tokens": 0.0,
+   "kappa_turn_active": 0.0,
+   "accuracy_all_tokens": 0.6644162687304462,
+   "accuracy_turn_active": 0.0,
+   "kappa_is_zero": true
+  }
+ },
+ "reference_human_future": {
+  "status": "DESCRIPTIVE REFERENCE, not part of the definition: the same labeller on the logged human future vs the same command",
+  "cells": {
+   "all_tokens": {
+    "n": 12146,
+    "n_logs": 136,
+    "accuracy": {
+     "point": 0.8757615675942697,
+     "ci95": [
+      0.8604357109574923,
+      0.8912279340068864
+     ]
+    },
+    "kappa": {
+     "point": 0.761930057423388,
+     "ci95": [
+      0.7345158692438886,
+      0.7874334849467781
+     ],
+     "n_undefined_resamples": 0
+    },
+    "confusion_command_rows_plan_cols": [
+     [
+      2262.0,
+      226.0,
+      13.0
+     ],
+     [
+      547.0,
+      7046.0,
+      477.0
+     ],
+     [
+      4.0,
+      242.0,
+      1329.0
+     ]
+    ],
+    "rows": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "cols": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "per_command_recall": {
+     "LEFT": 0.9044382247101159,
+     "STRAIGHT": 0.8731102850061958,
+     "RIGHT": 0.8438095238095238
+    },
+    "per_command_n": {
+     "LEFT": 2501.0,
+     "STRAIGHT": 8070.0,
+     "RIGHT": 1575.0
+    },
+    "_what": "human future (descriptive reference): all tokens"
+   },
+   "turn_active": {
+    "n": 4076,
+    "n_logs": 113,
+    "accuracy": {
+     "point": 0.8810107948969578,
+     "ci95": [
+      0.8557300023715096,
+      0.9025504528528149
+     ]
+    },
+    "kappa": {
+     "point": 0.7761925356000208,
+     "ci95": [
+      0.7317530096598721,
+      0.8139505749718489
+     ],
+     "n_undefined_resamples": 0
+    },
+    "confusion_command_rows_plan_cols": [
+     [
+      2262.0,
+      226.0,
+      13.0
+     ],
+     [
+      0.0,
+      0.0,
+      0.0
+     ],
+     [
+      4.0,
+      242.0,
+      1329.0
+     ]
+    ],
+    "rows": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "cols": [
+     "LEFT",
+     "STRAIGHT",
+     "RIGHT"
+    ],
+    "per_command_recall": {
+     "LEFT": 0.9044382247101159,
+     "STRAIGHT": null,
+     "RIGHT": 0.8438095238095238
+    },
+    "per_command_n": {
+     "LEFT": 2501.0,
+     "STRAIGHT": 0.0,
+     "RIGHT": 1575.0
+    },
+    "_what": "human future (descriptive reference): turn-active (LEFT u RIGHT commands) = HEADLINE"
+   }
+  },
+  "labeller_provenance": {
+   "n": 12146,
+   "n_heading_held_from_last_moving_step": 1276,
+   "n_never_moved": 41,
+   "dt_s": 0.5,
+   "n_poses": 8
+  }
+ },
+ "strategic_family": "PAUSED (PI 2026-09-19, PI_DECISION_QUEUE item 25): not computed here, never a pass",
+ "gates": {
+  "G_FORMAT": {
+   "ok": true,
+   "n_poses": 8,
+   "dt_s": 0.5,
+   "detail": "every plan is [N, 8, 3], finite xy (check_plan_format)"
+  },
+  "G_COUNTS": {
+   "ok": true,
+   "observed": {
+    "LEFT": 2501,
+    "STRAIGHT": 8070,
+    "RIGHT": 1575,
+    "UNKNOWN": 0
+   },
+   "n_turn_active": 4076,
+   "n_tokens": 12146,
+   "n_logs": 136,
+   "expected": {
+    "LEFT": 2501,
+    "STRAIGHT": 8070,
+    "RIGHT": 1575,
+    "UNKNOWN": 0,
+    "n": 12146,
+    "turn_active": 4076,
+    "logs": 136
+   },
+   "enforced": true,
+   "note": "the full-navtest class counts of the ruling; a subset run must pass --subset-ok and is then NOT the registered read"
+  },
+  "G_LABELLER": {
+   "ok": true,
+   "factor_from_kinematics": "tanitad.refs.refc_tactical.factor_from_kinematics",
+   "maneuver_kinematics": "taniteval.four_families.maneuver_kinematics",
+   "thresholds": {
+    "YAW_TURN_RAD": 0.15,
+    "DV_ACCEL_MS": 1.0,
+    "DV_BRAKE_MS": -1.0,
+    "STOP_V_MS": 0.3,
+    "MOVING_V_MS": 1.0,
+    "LABEL_HORIZON": 20
+   },
+   "lateral_gate": "v1: |dyaw| > YAW_TURN_RAD (kappa=None), dyaw = path tangent at the horizon in the ego frame",
+   "lat_classes": [
+    "lane_keep",
+    "turn_left",
+    "turn_right"
+   ],
+   "lat_to_command": {
+    "lane_keep": "STRAIGHT",
+    "turn_left": "LEFT",
+    "turn_right": "RIGHT"
+   },
+   "files": {
+    "refc_tactical.py": {
+     "path": "E:\\Projects\\TanitAD\\stack\\tanitad\\refs\\refc_tactical.py",
+     "sha256_lf": "b7e44c3e03b7b6147ed6af2fc0ff2574da834bfd915ecc817cbc28f01876e59f"
+    },
+    "four_families.py": {
+     "path": "E:\\Projects\\TanitAD\\taniteval\\taniteval\\four_families.py",
+     "sha256_lf": "f454e24ef0a45165411bfa2bd2ec128a3c1f48bd92a6324082fea225d39de529"
+    }
+   }
+  },
+  "G_KAPPA_PROGRAMME": {
+   "ok": true,
+   "kappa_ours": 0.7422357330036603,
+   "kappa_programme": 0.7422357330036603,
+   "confusion_equal": true
+  },
+  "G_DUMP_PICK": {
+   "ok": true,
+   "detail": "dump proposals[pick] == the arm's seam poses, bit for bit (the dump IS the run that was scored)"
+  },
+  "G_KAPPA_ZERO_ID": {
+   "ok": true,
+   "detail": "a constant-STRAIGHT plan has kappa 0 (an identity, independent of the arm)"
+  },
+  "G_PE_BOOT_EQUAL": {
+   "ok": true,
+   "n_checked": 6,
+   "mismatches": [],
+   "status": "bit-equal to proxy_eval.boot"
+  }
+ },
+ "n_boot": 10000,
+ "seed": 20260927,
+ "seconds": 11.3,
+ "families_lateral_control": {
+  "p2": {
+   "arm": "p2",
+   "ok": true,
+   "ours_confusion_command_space": [
+    [
+     2626,
+     185,
+     2
+    ],
+    [
+     296,
+     6971,
+     247
+    ],
+    [
+     1,
+     196,
+     1622
+    ]
+   ],
+   "banked_confusion_command_space": [
+    [
+     2626,
+     185,
+     2
+    ],
+    [
+     296,
+     6971,
+     247
+    ],
+    [
+     1,
+     196,
+     1622
+    ]
+   ],
+   "banked_confusion_labeller_order": [
+    [
+     6971,
+     296,
+     247
+    ],
+    [
+     185,
+     2626,
+     2
+    ],
+    [
+     196,
+     1,
+     1622
+    ]
+   ],
+   "families_json": "E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\2026-10-05-sft-stage2\\p2_full\\p2_full_families.json",
+   "pred_provenance_ours": {
+    "n": 12146,
+    "n_heading_held_from_last_moving_step": 995,
+    "n_never_moved": 39,
+    "dt_s": 0.5,
+    "n_poses": 8
+   },
+   "pred_provenance_banked": {
+    "n_windows": 12146,
+    "n_heading_held_from_last_moving_step": 995,
+    "n_never_moved": 39,
+    "min_ds_m": 0.25,
+    "dt_s": 0.5,
+    "caveats": [
+     "dyaw is the PATH TANGENT at the horizon, not the vehicle yaw",
+     "v0/v1 are one-step CHORD speeds, not the recorded poses[:,3]",
+     "heading is HELD at the last moving step when the window ends stationary \u2014 dropping those windows would delete brake_stop from the denominator"
+    ]
+   },
+   "gt_provenance_ours": {
+    "n": 12146,
+    "n_heading_held_from_last_moving_step": 1276,
+    "n_never_moved": 41,
+    "dt_s": 0.5,
+    "n_poses": 8
+   },
+   "gt_provenance_banked": {
+    "n_windows": 12146,
+    "n_heading_held_from_last_moving_step": 1276,
+    "n_never_moved": 41,
+    "min_ds_m": 0.25,
+    "dt_s": 0.5,
+    "caveats": [
+     "dyaw is the PATH TANGENT at the horizon, not the vehicle yaw",
+     "v0/v1 are one-step CHORD speeds, not the recorded poses[:,3]",
+     "heading is HELD at the last moving step when the window ends stationary \u2014 dropping those windows would delete brake_stop from the denominator"
+    ]
+   }
+  },
+  "u400": {
+   "arm": "u400",
+   "ok": true,
+   "ours_confusion_command_space": [
+    [
+     2615,
+     193,
+     5
+    ],
+    [
+     253,
+     7003,
+     258
+    ],
+    [
+     2,
+     199,
+     1618
+    ]
+   ],
+   "banked_confusion_command_space": [
+    [
+     2615,
+     193,
+     5
+    ],
+    [
+     253,
+     7003,
+     258
+    ],
+    [
+     2,
+     199,
+     1618
+    ]
+   ],
+   "banked_confusion_labeller_order": [
+    [
+     7003,
+     253,
+     258
+    ],
+    [
+     193,
+     2615,
+     5
+    ],
+    [
+     199,
+     2,
+     1618
+    ]
+   ],
+   "families_json": "E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\raw\\2026-10-05-sft-stage2\\sft4_B_u400_navtest_full\\sft4_B_u400_navtest_full_families.json",
+   "pred_provenance_ours": {
+    "n": 12146,
+    "n_heading_held_from_last_moving_step": 1051,
+    "n_never_moved": 59,
+    "dt_s": 0.5,
+    "n_poses": 8
+   },
+   "pred_provenance_banked": {
+    "n_windows": 12146,
+    "n_heading_held_from_last_moving_step": 1051,
+    "n_never_moved": 59,
+    "min_ds_m": 0.25,
+    "dt_s": 0.5,
+    "caveats": [
+     "dyaw is the PATH TANGENT at the horizon, not the vehicle yaw",
+     "v0/v1 are one-step CHORD speeds, not the recorded poses[:,3]",
+     "heading is HELD at the last moving step when the window ends stationary \u2014 dropping those windows would delete brake_stop from the denominator"
+    ]
+   },
+   "gt_provenance_ours": {
+    "n": 12146,
+    "n_heading_held_from_last_moving_step": 1276,
+    "n_never_moved": 41,
+    "dt_s": 0.5,
+    "n_poses": 8
+   },
+   "gt_provenance_banked": {
+    "n_windows": 12146,
+    "n_heading_held_from_last_moving_step": 1276,
+    "n_never_moved": 41,
+    "min_ds_m": 0.25,
+    "dt_s": 0.5,
+    "caveats": [
+     "dyaw is the PATH TANGENT at the horizon, not the vehicle yaw",
+     "v0/v1 are one-step CHORD speeds, not the recorded poses[:,3]",
+     "heading is HELD at the last moving step when the window ends stationary \u2014 dropping those windows would delete brake_stop from the denominator"
+    ]
+   }
+  }
+ },
+ "control_inputs": {
+  "p2_seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_p2_full.npz",
+  "p2_seam_md5": "49a1f6ecf28c5ebdaac4c68c2997c5f0",
+  "u400_seam": "E:\\Projects\\TanitAD\\data\\refe_navtest\\seams\\stage2_sft4_B_u400_navtest_full.npz",
+  "u400_seam_md5": "b009e941620b6cbbbe63e1dd8a94a506",
+  "p2_table": "D:/Projects/TanitAD-artifacts/p2_full_table/table_p2_full.npz",
+  "export": "E:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
+ }
+}
