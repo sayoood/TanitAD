@@ -18,6 +18,11 @@ rem   v8f_mini_box2_queue.cmd tacabs            PREREG_V8F_CZ stage 1 (eval only
 rem                                             slots set to 0 (the value O is teacher-forced on), M1 / M2b at seeds 0 and 1
 rem   v8f_mini_box2_queue.cmd gatearm ARM       the in-process launch gate (G-DVB + G-LIVE + admissibility) for ONE arm
 rem   v8f_mini_box2_queue.cmd tacabsarm ARM SEED  the absent-slot oracle on ONE trained arm (PREREG_V8F_CZ's mechanism check)
+rem   v8f_mini_box2_queue.cmd gatewc            PREREG_V8F_WC: the in-process launch gate for M2b-wc = M2b with ONE lever moved,
+rem                                             T's constraint-loss weight --w-cons %WC% (M2b: the default 0.5), no training
+rem   v8f_mini_box2_queue.cmd trainwc SEED      PREREG_V8F_WC: one M2b-wc run into %RUNSM%\M2b-wc_s<SEED> (resumes; skipped once done)
+rem   v8f_mini_box2_queue.cmd evalwc SEED       PREREG_V8F_WC: that run's eval-141 (--project --families), its absent-slot oracle
+rem                                             (T's own present-slot values) and its GT oracle (the GT code); each skipped once its npz exists
 rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
@@ -42,6 +47,8 @@ set "EV=%RUNSM%\eval"
 set "A=--cache-dir %CACHEFULL% --v9-train %V9%\v9_labels_train.npz --v9-train-md5 83e30bd3791f0767707eade5f4671759 --lead-train %V9%\lead_train4572.npz --speed-train %V9%\refcv6_speed_max_v8_train.jsonl --join-train %RUNSM%\join_train.npz --p10 %P10% --kin-mode yaw --tracks %TRACKS% --exclude 540:600 --batch 64 --steps-mult 4 --device cuda"
 set "EC=--v9-eval %V9%\v9_labels_eval139.npz --lead-eval %V9%\lead_eval139.npz --speed-eval %V9%\refcv6_speed_max_v8_eval.jsonl --kin-mode yaw --p10 %P10% --out-dir %EV%"
 set "ER=--eval-cache %CACHEFULL% --tracks %TRACKS%"
+rem PREREG_V8F_WC: the ONE lever M2b-wc moves, written once so the gate, the runs and the dry-run test read one value
+set "WC=4.0"
 
 if /i "%~1"=="gate" goto :gate
 if /i "%~1"=="train" goto :d_train
@@ -54,7 +61,10 @@ if /i "%~1"=="tacgrp2" goto :tacgrp2
 if /i "%~1"=="tacabs" goto :tacabs
 if /i "%~1"=="gatearm" goto :gatearm
 if /i "%~1"=="tacabsarm" goto :tacabsarm
-echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|tacabs^|gatearm ARM^|tacabsarm ARM SEED
+if /i "%~1"=="gatewc" goto :gatewc
+if /i "%~1"=="trainwc" goto :trainwc
+if /i "%~1"=="evalwc" goto :evalwc
+echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED
 exit /b 2
 
 rem train / eval are CALLED with the stage name dropped, so inside them %~1 = ARM, %~2 = SEED, %~3 = GRID
@@ -204,6 +214,45 @@ exit /b 0
 call :prep || exit /b 2
 if "%~3"=="" (echo REFUSED: tacabsarm needs ARM SEED & exit /b 2)
 call :tacone %~2 %~3 absmask tacabs
+exit /b %errorlevel%
+
+:gatewc
+rem PREREG_V8F_WC: M2b's levers with --w-cons %WC%. The trainer's G-DVB checks the built w_cons against this argv and selfcheck.json
+rem records it (levers.w.w_cons); the chain asserts both before any training.
+call :prep || exit /b 2
+rem ONE command string: the dry run prints exactly what the real run executes
+set "GW="%PY%" "%TRAIN%" --arm M2b --w-cons %WC% --out "%RUNSM%\gate_M2b-wc" %A% --selfcheck-only"
+if defined V8F_DRYRUN (echo %GW% & exit /b 0)
+%GW% > "%RUNSM%\gate_M2b-wc.log" 2>&1
+if errorlevel 1 (echo [FAIL] gate M2b-wc - see %RUNSM%\gate_M2b-wc.log & exit /b 1)
+echo [ok] gate M2b-wc
+exit /b 0
+
+:trainwc
+rem PREREG_V8F_WC: one M2b-wc run. Its summary.json says arm M2b (the trainer's arm table is unchanged); its argv.json carries
+rem --w-cons %WC% and its levers.w.w_cons the built value: code\v8f_wc_read.py refuses a run where either is not %WC%.
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: trainwc needs a SEED & exit /b 2)
+set "OUT=%RUNSM%\M2b-wc_s%~2"
+if exist "%OUT%\summary.json" (echo [skip] M2b-wc_s%~2 & exit /b 0)
+rem ONE command string: the dry run prints exactly what the real run executes
+set "TW="%PY%" "%TRAIN%" --arm M2b --w-cons %WC% --seed %~2 --grid pool4x10 --out "%OUT%" %A%"
+if defined V8F_DRYRUN (echo %TW% & exit /b 0)
+if not exist "%OUT%" mkdir "%OUT%"
+echo [%date% %time%] train M2b-wc_s%~2
+%TW% >> "%OUT%\train.log" 2>&1
+if errorlevel 1 (echo [FAIL] train M2b-wc_s%~2 - see %OUT%\train.log & exit /b 1)
+if not exist "%OUT%\summary.json" (echo [FAIL] train M2b-wc_s%~2 exited 0 without summary.json & exit /b 1)
+exit /b 0
+
+:evalwc
+rem PREREG_V8F_WC: the standard eval of M2b-wc_s<SEED>, then absmask (its present slots are T's own values) and the GT oracle (its code
+rem is the GT): code\v8f_wc_read.py reads T's present-slot error from the pair, exactly as for the banked M2b runs.
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: evalwc needs a SEED & exit /b 2)
+call :eval M2b-wc %~2 || exit /b 1
+call :tacone M2b-wc %~2 absmask tacabs || exit /b 1
+call :tacone M2b-wc %~2 oracle tacorc
 exit /b %errorlevel%
 
 :gatearm

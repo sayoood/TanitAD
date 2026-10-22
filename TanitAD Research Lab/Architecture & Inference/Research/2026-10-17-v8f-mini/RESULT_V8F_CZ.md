@@ -47,3 +47,4 @@
 * **The world-model aux does not compete with it.** M1 (no WM) and M2b (WM-b) end within 0.01 of each other at matched steps. That holds even though at M2b's last step the WM term is 87 % of the total loss (0.1 × 162.36 of 18.60) and T's constraint term is 0.4 % (1.0 × 0.5 × 0.140).
 * **The eval-set error on PRESENT slots** is 0.45–0.84 SD by group (Amendment 2's `absent_slot_error.out`). T fits neither its training set (ESTIMATED from a Huber of 0.12: an RMSE near 0.5 SD) nor, by more, the eval set.
 * ⇒ The next arm must move T's present-slot accuracy **in training** and be read **in training**, under its own PREREG.
+* **Pre-registered (2026-10-22): `PREREG_V8F_WC`** (H-V8F-WC-1): M2b-wc = M2b + `--w-cons 4.0`, read in training. Seed 0 decides whether seed 1 trains. It awaits the PI's box-2 go.

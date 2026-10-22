@@ -733,7 +733,8 @@ class V8FMini(nn.Module):
                 "params": {k: gp(v) for k, v in self.trainable_groups().items()},
                 "n_params_trainable": int(sum(p.numel() for p in self.parameters() if p.requires_grad)),
                 "w": {"w_pen": cfg.w_pen if cfg.consistency else 0.0, "w_pen_self": cfg.w_pen_self if cfg.consistency else 0.0,
-                      "w_wm": cfg.w_wm if self.wm is not None else 0.0}}
+                      "w_wm": cfg.w_wm if self.wm is not None else 0.0,
+                      "w_tac": cfg.w_tac, "w_cons": cfg.w_cons}}                       # PREREG_V8F_WC: T's constraint term is w_tac x w_cons
 
 
 class _KeyGuard(dict):
