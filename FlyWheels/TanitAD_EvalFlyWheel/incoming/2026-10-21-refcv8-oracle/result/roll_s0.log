@@ -1,0 +1,177 @@
+[r8oracle] prereg sha256 cd7ba96d8b1f16f1... arms=('GT_CONS', 'GT_HYP', 'GT_BOTH', 'GT_SPEED_ONLY', 'OWN_ARGMAX', 'GT_HYP_SWAP', 'GT_BOTH_SWAP', 'SELF_NAN') child=--ckpt E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt --config E:/refcv8_eval_kit/ckpt/config.json --seed 0 --dump-dir C:/Users/Admin/refcv8_pf/r8oracle/run_48852ema_pf/dump_s0 --windows-json C:/Users/Admin/refcv8_eval_archive/battery/step48852ema_pf/windows_s0.json --device cuda --out-json C:/Users/Admin/refcv8_pf/r8oracle/run_48852ema_pf/roll_s0.json --os-only
+[roll_pf] nav_feed=perframe_full overlay=98293dd741127016 patched_refcv3_arm=64e6ffbb1d0434d1 pose_sync=OFF (R8_NO_POSE_SYNC)
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] rig camera = PER-CLIP EXTRINSICS from E:/refcv8_eval_kit/data/refcv8_train4572_eval139_extrinsics.json (4711 clips, z 1.203-1.687 m, pitch -0.0755..+0.0683 rad)
+[v3] ⚠️ a rig camera is built but --agent-w-project and --agent-w-ground are both 0: neither monocular term contributes. That is a legal ablation baseline and the stamp records it, but it is not a projection arm.
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] refcv6 coupling (1) ON: d_bev=96 learned_offsets=False offset_max_m=2 -> 4 decoder layers
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v2] E:\refcv6_eval_kit\data\refcv6-b1-416x1024-eval139: 139 providers (channels 9, 416x1024 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 139 distinct for 139 clips]
+[v2] 139 providers, 139 distinct episode ids
+[v3] nav_from_v7: follow 88 / left 13 / right 38, missing 0 (of 139 clips; md5=eefc38d1453bd1c73802d44d45affced)
+[v3] refcv8 label speed input (road-type sidecar refcv6_speed_max_v8_eval.jsonl): 23772/23772 windows fed, per-step windows {'30': 8042, '50': 8382, '100': 6153, '120': 1195}, per-clip rows {'30': 49, '50': 52, '100': 39, '120': 7}
+[model] E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt step=48852 arm=hier anchors=117 horizons=[5, 10, 15, 20, 30, 40, 50, 60] window=8 decoder=diffusion/2 config<-refcv7_loader.build_model (train() replayed; strict; G-EVAL-passed)
+[grid] 2s: dt=0.5 s K=4 instants=[0.5, 1.0, 1.5, 2.0] s <- model slots [5, 10, 15, 20] (indices [0, 1, 2, 3]); dropped [30, 40, 50, 60]
+[units] action_units=steer — the RECORDED channel 1 is a road-wheel STEER angle (physicalai.py:621). kappa = tan(steer)/2.9 is applied before integration; `ha` is NOT comparable to a kappa-unit refav1 run (`ha0` is, it is zero).
+[nav-feed] perframe_full: nav_true = the v9 PER-FRAME token on 4754 windows; it differs from the clip token on 1157; r8_nav args known on 2802 (FED)
+[nav] ⚠️ --no-navshuf: the record is NOT admissible for any nav-conditioned (STRATEGIC) claim
+[nav] ⚠️ --no-navzero: BACKLOG R39 binds every nav-conditioned claim to carry the nav-ZERO arm BESIDE the nav-shuffle one; this record carries only the shuffle
+[roll] 4754 windows / 139 episodes · arms=['os', 'ha', 'ha0', 'ha0_ext', 'oracle_sel'] · fed conditionings=['nav_true'] · nav_shuffle changed 1426/4754
+[r8oracle] spy installed on RefCV3Model; min_alloc=2 horizons=(5, 10, 15, 20, 30, 40, 50, 60)
+[cost] first forward (1 fed row(s), 1 rows total) took 2.84 s -> ESTIMATED 3.75 h for 4754 windows (forward only; IO/analysis extra)
+  [1/139] <sha12-redacted> 35 windows 74s
+  [2/139] <sha12-redacted> 34 windows 124s
+  [3/139] <sha12-redacted> 34 windows 172s
+  [4/139] <sha12-redacted> 34 windows 221s
+  [5/139] <sha12-redacted> 34 windows 270s
+  [6/139] <sha12-redacted> 35 windows 320s
+  [7/139] <sha12-redacted> 34 windows 368s
+  [8/139] <sha12-redacted> 34 windows 417s
+  [9/139] <sha12-redacted> 34 windows 465s
+  [10/139] <sha12-redacted> 34 windows 515s
+  [11/139] <sha12-redacted> 35 windows 571s
+  [12/139] <sha12-redacted> 34 windows 620s
+  [13/139] <sha12-redacted> 34 windows 669s
+  [14/139] <sha12-redacted> 34 windows 721s
+ZZR8OPROGZZ 500 windows elapsed=759s last_window_own=0.34s forced=1.30s
+  [15/139] <sha12-redacted> 34 windows 771s
+  [16/139] <sha12-redacted> 35 windows 821s
+  [17/139] <sha12-redacted> 34 windows 871s
+  [18/139] <sha12-redacted> 34 windows 920s
+  [19/139] <sha12-redacted> 34 windows 968s
+  [20/139] <sha12-redacted> 36 windows 1021s
+  [21/139] <sha12-redacted> 34 windows 1076s
+  [22/139] <sha12-redacted> 34 windows 1125s
+  [23/139] <sha12-redacted> 34 windows 1175s
+  [24/139] <sha12-redacted> 34 windows 1226s
+  [25/139] <sha12-redacted> 35 windows 1277s
+  [26/139] <sha12-redacted> 34 windows 1327s
+  [27/139] <sha12-redacted> 34 windows 1375s
+  [28/139] <sha12-redacted> 34 windows 1425s
+  [29/139] <sha12-redacted> 34 windows 1476s
+ZZR8OPROGZZ 1000 windows elapsed=1489s last_window_own=0.37s forced=1.29s
+  [30/139] <sha12-redacted> 34 windows 1525s
+  [31/139] <sha12-redacted> 34 windows 1581s
+  [32/139] <sha12-redacted> 34 windows 1630s
+  [33/139] <sha12-redacted> 34 windows 1679s
+  [34/139] <sha12-redacted> 34 windows 1729s
+  [35/139] <sha12-redacted> 35 windows 1780s
+  [36/139] <sha12-redacted> 34 windows 1829s
+  [37/139] <sha12-redacted> 34 windows 1877s
+  [38/139] <sha12-redacted> 34 windows 1927s
+  [39/139] <sha12-redacted> 34 windows 1978s
+  [40/139] <sha12-redacted> 35 windows 2028s
+  [41/139] <sha12-redacted> 34 windows 2084s
+  [42/139] <sha12-redacted> 34 windows 2132s
+  [43/139] <sha12-redacted> 34 windows 2181s
+ZZR8OPROGZZ 1500 windows elapsed=2230s last_window_own=0.33s forced=0.18s
+  [44/139] <sha12-redacted> 34 windows 2232s
+  [45/139] <sha12-redacted> 35 windows 2283s
+  [46/139] <sha12-redacted> 34 windows 2333s
+  [47/139] <sha12-redacted> 34 windows 2382s
+  [48/139] <sha12-redacted> 34 windows 2429s
+  [49/139] <sha12-redacted> 34 windows 2482s
+  [50/139] <sha12-redacted> 35 windows 2535s
+  [51/139] <sha12-redacted> 34 windows 2591s
+  [52/139] <sha12-redacted> 34 windows 2641s
+  [53/139] <sha12-redacted> 34 windows 2694s
+  [54/139] <sha12-redacted> 34 windows 2744s
+  [55/139] <sha12-redacted> 35 windows 2795s
+  [56/139] <sha12-redacted> 34 windows 2843s
+  [57/139] <sha12-redacted> 34 windows 2893s
+  [58/139] <sha12-redacted> 34 windows 2942s
+ZZR8OPROGZZ 2000 windows elapsed=2972s last_window_own=0.34s forced=1.31s
+  [59/139] <sha12-redacted> 34 windows 2992s
+  [60/139] <sha12-redacted> 34 windows 3043s
+  [61/139] <sha12-redacted> 35 windows 3100s
+  [62/139] <sha12-redacted> 34 windows 3148s
+  [63/139] <sha12-redacted> 34 windows 3197s
+  [64/139] <sha12-redacted> 34 windows 3246s
+  [65/139] <sha12-redacted> 34 windows 3295s
+  [66/139] <sha12-redacted> 35 windows 3346s
+  [67/139] <sha12-redacted> 34 windows 3396s
+  [68/139] <sha12-redacted> 34 windows 3445s
+  [69/139] <sha12-redacted> 34 windows 3494s
+  [70/139] <sha12-redacted> 34 windows 3544s
+  [71/139] <sha12-redacted> 35 windows 3602s
+  [72/139] <sha12-redacted> 34 windows 3650s
+  [73/139] <sha12-redacted> 34 windows 3699s
+ZZR8OPROGZZ 2500 windows elapsed=3706s last_window_own=0.37s forced=1.38s
+  [74/139] <sha12-redacted> 34 windows 3749s
+  [75/139] <sha12-redacted> 34 windows 3797s
+  [76/139] <sha12-redacted> 34 windows 3846s
+  [77/139] <sha12-redacted> 34 windows 3895s
+  [78/139] <sha12-redacted> 35 windows 3946s
+  [79/139] <sha12-redacted> 34 windows 3995s
+  [80/139] <sha12-redacted> 34 windows 4045s
+  [81/139] <sha12-redacted> 34 windows 4100s
+  [82/139] <sha12-redacted> 34 windows 4149s
+  [83/139] <sha12-redacted> 34 windows 4199s
+  [84/139] <sha12-redacted> 35 windows 4250s
+  [85/139] <sha12-redacted> 34 windows 4299s
+  [86/139] <sha12-redacted> 34 windows 4348s
+  [87/139] <sha12-redacted> 34 windows 4397s
+ZZR8OPROGZZ 3000 windows elapsed=4442s last_window_own=0.32s forced=1.34s
+  [88/139] <sha12-redacted> 34 windows 4448s
+  [89/139] <sha12-redacted> 35 windows 4499s
+  [90/139] <sha12-redacted> 34 windows 4547s
+  [91/139] <sha12-redacted> 34 windows 4603s
+  [92/139] <sha12-redacted> 34 windows 4651s
+  [93/139] <sha12-redacted> 34 windows 4702s
+  [94/139] <sha12-redacted> 34 windows 4751s
+  [95/139] <sha12-redacted> 34 windows 4801s
+  [96/139] <sha12-redacted> 35 windows 4852s
+  [97/139] <sha12-redacted> 34 windows 4901s
+  [98/139] <sha12-redacted> 34 windows 4950s
+  [99/139] <sha12-redacted> 34 windows 5000s
+  [100/139] <sha12-redacted> 35 windows 5050s
+  [101/139] <sha12-redacted> 34 windows 5107s
+  [102/139] <sha12-redacted> 34 windows 5156s
+ZZR8OPROGZZ 3500 windows elapsed=5179s last_window_own=0.35s forced=1.30s
+  [103/139] <sha12-redacted> 34 windows 5205s
+  [104/139] <sha12-redacted> 34 windows 5256s
+  [105/139] <sha12-redacted> 36 windows 5309s
+  [106/139] <sha12-redacted> 34 windows 5358s
+  [107/139] <sha12-redacted> 34 windows 5407s
+  [108/139] <sha12-redacted> 34 windows 5455s
+  [109/139] <sha12-redacted> 34 windows 5507s
+  [110/139] <sha12-redacted> 35 windows 5557s
+  [111/139] <sha12-redacted> 34 windows 5613s
+  [112/139] <sha12-redacted> 34 windows 5661s
+  [113/139] <sha12-redacted> 34 windows 5710s
+  [114/139] <sha12-redacted> 34 windows 5759s
+  [115/139] <sha12-redacted> 34 windows 5808s
+  [116/139] <sha12-redacted> 34 windows 5859s
+ZZR8OPROGZZ 4000 windows elapsed=5910s last_window_own=0.33s forced=0.18s
+  [117/139] <sha12-redacted> 35 windows 5910s
+  [118/139] <sha12-redacted> 34 windows 5960s
+  [119/139] <sha12-redacted> 34 windows 6008s
+  [120/139] <sha12-redacted> 34 windows 6057s
+  [121/139] <sha12-redacted> 34 windows 6114s
+  [122/139] <sha12-redacted> 35 windows 6164s
+  [123/139] <sha12-redacted> 34 windows 6213s
+  [124/139] <sha12-redacted> 34 windows 6263s
+  [125/139] <sha12-redacted> 34 windows 6312s
+  [126/139] <sha12-redacted> 34 windows 6362s
+  [127/139] <sha12-redacted> 35 windows 6412s
+  [128/139] <sha12-redacted> 34 windows 6461s
+  [129/139] <sha12-redacted> 34 windows 6509s
+  [130/139] <sha12-redacted> 34 windows 6560s
+  [131/139] <sha12-redacted> 35 windows 6618s
+ZZR8OPROGZZ 4500 windows elapsed=6652s last_window_own=0.33s forced=1.36s
+  [132/139] <sha12-redacted> 34 windows 6667s
+  [133/139] <sha12-redacted> 34 windows 6715s
+  [134/139] <sha12-redacted> 34 windows 6764s
+  [135/139] <sha12-redacted> 34 windows 6814s
+  [136/139] <sha12-redacted> 35 windows 6865s
+  [137/139] <sha12-redacted> 34 windows 6915s
+  [138/139] <sha12-redacted> 34 windows 6964s
+  [139/139] <sha12-redacted> 34 windows 7013s
+[dump] 4754 windows over 139 episodes (0 skipped: none)
+[provenance] REAL_CHECKPOINT_ON_REAL_CORPUS - ckpt=TRAINED corpus=FULL step=48852 eps=139 windows=4754 anchors=117
+REFCV3_DUMP_DONE
+[dump-only] C:/Users/Admin/refcv8_pf/r8oracle/run_48852ema_pf/dump_s0; analyse later with --analyze-only
+[roll_seed] seed 0 -> C:/Users/Admin/refcv8_pf/r8oracle/run_48852ema_pf/roll_s0.json
+[roll_pf] pf.ok=True windows=4754 args_known=2802 token_differs_from_clip=1157 ZZROLLPFOKZZ
+[r8oracle] windows=4754 rc=0 wall_by_arm_s={"OWN": 1614.0, "GT_CONS": 687.3, "GT_HYP": 685.9, "GT_BOTH": 687.5, "GT_SPEED_ONLY": 688.4, "OWN_ARGMAX": 889.5, "GT_HYP_SWAP": 684.6, "GT_BOTH_SWAP": 687.7, "SELF_NAN": 90.1} ZZR8OOKZZ
