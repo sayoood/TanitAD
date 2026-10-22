@@ -197,3 +197,20 @@ component carries a paired CI.
    - the DBs sit on local container disk;
    - `build_twin_parts_3c_pp.sh` adds `$PKG/refe` to PYTHONPATH, one line, for the acceptance check.
 4. **Context for the read, registered now:** `D-REFE-SESSION-EXPOSURE-1` (navtest shares 0 of its 44 sessions with navtrain). P6's navtest read is therefore an unseen-session read, like every navtest read. It changes nothing in the rule.
+
+## Amendment 2026-10-22 (b): read instrumentation, written BEFORE any P6 checkpoint touched navtest
+
+**The endpoint, comparators, estimator, rule, goal bar and next-arm table are UNCHANGED.** This amendment fixes how the registered read is instrumented. Full text and evidence: `raw/2026-10-22-p6-read-gaps/MM_RULING_P6_READ_GAPS.md`.
+
+1. **Scoring caller.** The tip's post-NT-FIX1 caller runs with the banked harness under `eval/harness/`. It is hash-pinned, and `stage2_sft.py` refuses a mismatch before taking the GPU lock.
+   - Its declared one-line drift is `RUN_V1_FIX1_ALLOW_DRIFT=1`.
+   - **Read-day preflight:** the 24-token u400 control must reproduce csv sha256 `a71dd17c…`, or the read stops before any P6 output exists.
+2. **C2 comparator.** It is in `stage3_full.py`. The control reproduces the published C2 − C1 = +0.571 [+0.018, +1.176] bit-exactly from banked per-token tables.
+3. **TACTICAL rows.**
+   - Selection quality (random / actual / best-of-64) comes from the `--dump-proposals` dump. Its instrument reproduces P2's 73.0031 / 88.8184 / 98.2311 to 1e-9.
+   - **Command adherence is DEFINED here, because line 125 named it without a definition:**
+     - **Classing:** the canonical labeller on the executed (A7) plan.
+     - **Statistics:** accuracy and Cohen's κ, on all tokens and on the turn-active subset (LEFT ∪ RIGHT commands, 4,076 tokens). Turn-active accuracy is the headline cell.
+     - **Always reported:** the 3×3 confusion matrix, and a random-proposal floor from the dump.
+     - **Interval:** a paired log-cluster bootstrap against C1 and against C2 separately.
+     - **Authority:** none over the rule.

@@ -14,6 +14,13 @@ confirmation tokens (43 logs), against the DEPLOYED system's own scores on the s
 
     python eval/stage2_sft.py --ckpt <local model_sft_X.pt> --name sft3_A [--rule navsim_v1|navsim_v1_lane]
 Writes raw/2026-10-05-sft-stage2/<name>/result.json and prints ZZSTAGE2 <name> <verdict> <mean> [lo, hi].
+
+P6-READ-GAPS (2026-10-22), two changes and nothing else (every other line is the 2026-10-12 instrument, whose estimator, seam arguments and
+scoring calls are unchanged; `python eval/test_p6_read_gaps.py` proves the seam command is the old one when --dump-proposals is absent):
+  * G3  the harness (score_e.py, w3e/, ev6e/families6.py) is the BANKED copy under eval/harness/, sha256-pinned and refused on any mismatch
+        (eval/harness_pins.py), no longer a previous session's %TEMP% scratchpad.
+  * G2  --dump-proposals: the seam also writes all 64 proposals + the scorer logits (REPORT ONLY, same forward pass, ~95 MB on the full navtest),
+        the input of the TACTICAL selection-quality rows (eval/selection_quality.py).
 """
 from __future__ import annotations
 
@@ -32,9 +39,12 @@ import numpy as np
 PKG = Path("E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan")
 sys.path.insert(0, str(PKG / "eval"))
 import eval_checkpoint as EC  # noqa: E402
+import harness_pins as HP  # noqa: E402
 import proxy_eval as PE  # noqa: E402
 
-SP = "C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/a085b71c-4fb3-409b-ae6b-65f605ed575e/scratchpad"
+# G3: the banked, sha256-pinned harness (was: a previous session's %TEMP% scratchpad, a085b71c-.../scratchpad)
+HARNESS = PKG / "eval" / "harness"
+SP = str(HARNESS)
 EV6E = f"{SP}/ev6e"
 D = Path("E:/Projects/TanitAD/data/refe_navtest")
 EXPORT = "E:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
@@ -98,19 +108,28 @@ def main() -> int:
     ap.add_argument("--tokens", default=str(TOKENS), help="W3-format token set; default = Amendment 5's 923 (the registered set)")
     ap.add_argument("--exploratory", action="store_true",
                     help="a look on a NON-registered token set: the verdict is labelled EXPLORATORY and decides nothing")
+    ap.add_argument("--dump-proposals", action="store_true",
+                    help="G2: the seam also writes every proposal + the scorer's raw logits to seams/stage2_<name>.proposals.npz (REPORT ONLY; "
+                         "the seam's poses are unchanged); the input of eval/selection_quality.py")
     a = ap.parse_args()
+    # G3: refuse to start (no lock, no 4.8 h seam) unless the banked harness is the pinned one
+    hp = HP.require(HARNESS, caller=PKG / "eval" / "score_navtest_refe.py")        # the caller score_e.py loads (same PKG)
     out_dir = PKG / "raw" / "2026-10-05-sft-stage2" / a.name
     out_dir.mkdir(parents=True, exist_ok=True)
     TOK = Path(a.tokens)
     toks = sorted(json.load(open(TOK, encoding="utf-8"))["tokens"])
     seam = D / "seams" / f"stage2_{a.name}.npz"
+    dump = D / "seams" / f"stage2_{a.name}.proposals.npz"
     # ⛔ the harness refuses any label not starting with "refe" (its scratch must never collide with W3's / refcv6's);
     # MEASURED 2026-10-05: "stage2_sft3_A" failed all score attempts in seconds. The selftests never scored, so missed it.
     label = f"refe_stage2_{a.name}"
     res = {"name": a.name, "ckpt": a.ckpt, "rule": a.rule, "tokens": str(TOK), "n_tokens": len(toks), "exploratory": a.exploratory,
            "deployed_seam": str(BASE_SEAM), "deployed_csv": str(BASE_CSV),
            "estimator": "paired log-cluster bootstrap over the confirmation logs, 10,000 resamples, 95 %, seed 20260927",
-           "tier": "NAVSIM v1.1 PDMS = ego pseudo-simulation of an open-loop plan against logged agents"}
+           "tier": "NAVSIM v1.1 PDMS = ego pseudo-simulation of an open-loop plan against logged agents",
+           "harness_pins": {"n_files": hp["n_files"], "pins_file_sha256": hp["pins_file_sha256"], "caller": hp["caller"]}}
+    if a.dump_proposals:
+        res["proposal_dump"] = {"requested": True, "path": str(dump)}
     if not seam.exists():
         me = json.dumps({"job": f"refe-stage2-{a.name}", "pid": os.getpid(), "host": socket.gethostname(),
                          "acquired": time.strftime("%Y-%m-%dT%H:%M:%S%z")})
@@ -120,6 +139,8 @@ def main() -> int:
             cmd = [PY_D, "refe_navtest_seam.py", "--ckpt", a.ckpt, "--frames", str(D / "frames"),
                    "--db-dir", "E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/test", "--export", EXPORT,
                    "--tokens", str(TOK), "--out", str(seam), "--arm", f"REFe_{a.name}", "--rule", a.rule]
+            if a.dump_proposals:
+                cmd += ["--dump-proposals", str(dump)]
             t0 = time.time()
             rc = subprocess.call(cmd, cwd=str(PKG / "eval"), env=env, stdout=open(out_dir / "seam.log", "w"),
                                  stderr=subprocess.STDOUT)
@@ -150,8 +171,12 @@ def main() -> int:
         while free_mb() < 4000:
             time.sleep(60)
         lp = out_dir / f"score_{att}.log"
+        # RUN_V1_FIX1_ALLOW_DRIFT: when the caller (eval/score_navtest_refe.py) is the post-NT-FIX1 variant it byte-pins W3's run_v1.py to the
+        # ORIGINAL's sha256; the banked copy is that file with exactly six `D:/` -> `E:/` (HARNESS_PINS.json, raw/harness_provenance.jsonl), so the
+        # pin must be told. It is recorded in the harness's counts.json (run_v1_matches_pinned: false). With the pre-NT-FIX1 caller it is inert.
         subprocess.call([PY_D, "score_e.py", "--label", label, "--seam", str(seam), *tok_arg,
-                         "--out", str(D / "score")], cwd=SP, env=dict(os.environ, PYTHONIOENCODING="utf-8"),
+                         "--out", str(D / "score")], cwd=SP,
+                        env=dict(os.environ, PYTHONIOENCODING="utf-8", RUN_V1_FIX1_ALLOW_DRIFT="1"),
                         stdout=open(lp, "w"), stderr=subprocess.STDOUT)
         lines = open(lp, encoding="utf-8", errors="replace").read().splitlines()
         status = next((json.loads(l) for l in reversed(lines) if l.startswith("{") and '"status"' in l), {})
@@ -200,8 +225,13 @@ def main() -> int:
         res["verdict"] = "NOT PROVEN"
     if a.exploratory:
         res["verdict"] = "EXPLORATORY (not registered; decides nothing): would read " + res["verdict"]
+    tail = ""
+    if a.dump_proposals:                       # G2: the dump is REQUESTED, so its absence is stated, never silent (a seam re-run costs 4.8 h)
+        present = dump.exists()
+        res["proposal_dump"].update({"present": present, "bytes": dump.stat().st_size if present else None})
+        tail = " proposal_dump=" + ("ok" if present else "MISSING")
     json.dump(res, open(out_dir / "result.json", "w"), indent=1)
-    print("ZZSTAGE2", a.name, res["verdict"], f"{mu:+.2f} [{lo:+.2f}, {hi:+.2f}]", flush=True)
+    print("ZZSTAGE2", a.name, res["verdict"], f"{mu:+.2f} [{lo:+.2f}, {hi:+.2f}]" + tail, flush=True)
     return 0
 
 

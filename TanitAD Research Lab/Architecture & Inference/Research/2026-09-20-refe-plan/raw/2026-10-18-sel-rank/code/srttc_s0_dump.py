@@ -16,6 +16,12 @@ What is NEW (and only this):
   * `--lean`: do not store the token-level fan arrays (proposals / proposals20 / fan features): S0 does not need them.  Without `--sets-dir` the script is the held-out dump (DG-DUMP).
 Prints ZZS0DUMP_OK <tokens> <sets> only when every requested token has a finite row and every fit set of those tokens a finite one.
 
+P6-READ-GAPS G4 (2026-10-22): COMMAND-MODE checkpoints (P6, P6-N) are accepted when a COMMAND SOURCE is given: `--commands <commands.json>` (or env SRTTC_COMMANDS_JSON, because the landed
+driver builds this script's argv and cannot forward a flag; `--commands-sha256` / SRTTC_COMMANDS_SHA256 pins the file). The source is P6's own training command table (HF logs/commands.json,
+103,037 scenes): {"<log>/<token>": one-hot [LEFT, STRAIGHT, RIGHT, UNKNOWN] = NAVSIM's driving_command}. Each token's command is handed to the planner by the seam's OWN
+`set_driving_command` (the function the navtest seam and the P6 dry run use). A token with no command, or a non-one-hot vector, RAISES (never a default). A command-mode (or sanitising)
+checkpoint with NO source is still REFUSED, exactly as before; a goal-mode checkpoint (P2) ignores a supplied source and the run is the landed one.
+
     C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe srttc_s0_dump.py --ckpt <model_final.pt> --plan <plan.json> --out <dump.npz> --sets-dir <dir> --sets-out <sets.npz> --device cuda --lean
 """
 from __future__ import annotations
@@ -42,6 +48,29 @@ def wrap(a):
     return (a + math.pi) % (2.0 * math.pi) - math.pi
 
 
+def load_command_table(path, sha256=None) -> dict:
+    """P6's command table: {"<log>/<token>": [4 ints]}; refuses a file whose sha256 differs from the pin, an empty table, and any non-one-hot row"""
+    raw = open(path, "rb").read()
+    got = hashlib.sha256(raw).hexdigest()
+    if sha256 and got != sha256.lower():
+        raise SystemExit(f"REFUSED: command table {path} sha256 {got} != the pinned {sha256}")
+    tab = json.loads(raw.decode("utf-8"))
+    if not isinstance(tab, dict) or not tab:
+        raise SystemExit(f"REFUSED: command table {path} is empty or not a dict")
+    for k, v in tab.items():
+        if "/" not in k or len(v) != 4 or sorted(int(x) for x in v) != [0, 0, 0, 1]:
+            raise SystemExit(f"REFUSED: command table {path}: row {k!r} = {v!r} is not '<log>/<token>' -> one-hot [LEFT, STRAIGHT, RIGHT, UNKNOWN]")
+    return {"path": os.path.abspath(path), "sha256": got, "rows": tab}
+
+
+def command_vec(table: dict, log: str, tok: str) -> list:
+    """the token's one-hot command; RAISES when the table has none (a command-mode model fed a missing command would answer an unknown question)"""
+    key = f"{log}/{tok}"
+    if key not in table["rows"]:
+        raise RuntimeError(f"token {tok} (log {log}): no command in {table['path']}: a command-mode checkpoint is never run on a default command")
+    return [int(x) for x in table["rows"][key]]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ckpt", required=True)
@@ -56,6 +85,8 @@ def main() -> int:
     ap.add_argument("--sets-dir", default=None, help="dir of per-log fit-set stores <log>.npz (srttc_s0_podsets.py); omitted -> the held-out fan dump (DG-DUMP)")
     ap.add_argument("--sets-out", default=None, help="npz for the per-set features / logits / top-8 / labels / identity controls")
     ap.add_argument("--lean", action="store_true", help="do not store the token-level fan arrays (proposals, proposals20, fan features)")
+    ap.add_argument("--commands", default=os.environ.get("SRTTC_COMMANDS_JSON") or None, help="G4: P6's command table (see the docstring); required for a command-mode checkpoint")
+    ap.add_argument("--commands-sha256", default=os.environ.get("SRTTC_COMMANDS_SHA256") or None)
     a = ap.parse_args()
     plan = json.load(open(a.plan, encoding="utf-8"))
     toks = sorted(plan["tokens"])
@@ -73,9 +104,15 @@ def main() -> int:
     first_db = next(iter(plan["db"].values()))
     planner = REFePlanner(checkpoint=a.ckpt, images_root="", db_dir=os.path.dirname(first_db), backbone=a.backbone, device=a.device, select=a.select, rule=a.rule)
     nav_mode = getattr(planner.model.cfg, "nav_mode", "goal")
+    cmd_table = None
     if nav_mode == "command" or planner.sanitize_goal:
-        print("  REFUSED: a command-mode / sanitising planner needs NAVSIM's driving_command, which navtrain tokens do not carry here", flush=True)
-        return 2
+        if not a.commands:
+            print("  REFUSED: a command-mode / sanitising planner needs NAVSIM's driving_command, which navtrain tokens do not carry here "
+                  "(give --commands <P6 commands.json> or set SRTTC_COMMANDS_JSON)", flush=True)
+            return 2
+        cmd_table = load_command_table(a.commands, a.commands_sha256)
+        print(f"  command source: {cmd_table['path']} sha256 {cmd_table['sha256'][:16]} rows {len(cmd_table['rows']):,}", flush=True)
+    n_cmd_set = 0
     print(f"  planner: trained={planner.trained} per_sample_calib={planner.per_sample_calib} device={planner.device} select={planner.select} rule={planner.rule} "
           f"goal_fix={planner.goal_fix} repair_last_heading={planner.repair_last_heading} nav_mode={nav_mode}", flush=True)
     # one FrameResolver per image root; switched per token (db_dir is per log).  The resolver class is the planner's own, unmodified.
@@ -120,6 +157,9 @@ def main() -> int:
                 continue
             feat_box.clear()
             sctx_box.clear()
+            if cmd_table is not None:                                       # G4: NAVSIM's driving_command for this token, through the seam's own hop
+                from refe_navtest_seam import set_driving_command
+                n_cmd_set += int(set_driving_command(planner, tok, {"ego_statuses": [{"driving_command": command_vec(cmd_table, log, tok)}]}))
             traj, _score, k = planner.infer(ego, img)
             if len(feat_box) != 1:
                 raise RuntimeError(f"token {tok}: the score_head hook fired {len(feat_box)} times in one infer (want exactly 1: a second forward would have run)")
@@ -216,6 +256,7 @@ def main() -> int:
     sets_expected = sum(len(store[lg]["by_tok"].get(t, [])) for lg, lt in by_log.items() for t in lt if t in got_set) if a.sets_dir else 0
     rep = {"tokens_asked": len(toks), "sets_asked": sets_expected, "sets_rows": n_sets, "rows": len(rows_tok), "ctrl_fanpath_max": (max(fanpath_tok) if fanpath_tok else None), "ctrl_fanpath_n_tokens": len(fanpath_tok), "misses": len(misses), "miss_examples": misses[:10], "miss_tokens": [t for t, _m in misses], "margin_only": bool(margin_only), "ckpt": a.ckpt, "rule": planner.rule,
            "repair_last_heading": planner.repair_last_heading, "goal_fix": planner.goal_fix, "nav_mode": nav_mode, "sanitize_goal": planner.sanitize_goal,
+           "commands": ({"path": cmd_table["path"], "sha256": cmd_table["sha256"], "rows": len(cmd_table["rows"]), "set": n_cmd_set} if cmd_table is not None else None),
            "prehead_feature_shape": list(np.stack(dump_feat).shape) if dump_feat else None, "lean": bool(a.lean), "seconds": round(time.time() - t0, 1)}
     json.dump(rep, open(os.path.splitext(a.out)[0] + ".report.json", "w"), indent=1)
     print(json.dumps(rep, indent=1))

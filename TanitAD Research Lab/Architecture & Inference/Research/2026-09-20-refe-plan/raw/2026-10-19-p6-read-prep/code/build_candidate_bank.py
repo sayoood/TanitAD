@@ -48,9 +48,13 @@ TREE = os.environ.get("P2HO_TREE", "C:/Users/Admin/p2heldout/tree/TanitAD Resear
 BANK_ON = "D:/Projects/TanitAD-artifacts"       # R belongs on D: (C: is nearly full; the S0 driver stops below 5 GiB free on the work drive)
 N_TOKENS, N_SETS, N_LOGS = 8922, 15808, 117     # S0's registered sample
 # sha256 of the LANDED S0 code this wrapper runs (identical on the dev box and at the tip 807a29c, compared 2026-10-19)
+# P6-READ-GAPS G4 (2026-10-22): srttc_s0_dump.py has TWO accepted forms. The landed one refuses every command-mode checkpoint; the G4 one (raw/2026-10-18-sel-rank/code) adds `--commands`
+# (the P6 training command table) and is otherwise the landed script (a goal-mode run is unchanged). Both are CRLF files; the pins are raw sha256.
+S0_DUMP_LANDED_SHA256 = "1b41a9fbc21426f949dd4be2362dda467a7d04c630790df9a703cb2b184d2ac3"
+S0_DUMP_G4_SHA256 = "28e5e56bf2f2b15825a74b81549ea2f078bd7e86bd95c24047d0f1bbfea4441f"
 S0_PINS = {
     "srttc_s0_driver.py": "117dc228f13b6260b3d95f9525c99be3137100845df755f00b3a12d6f8a70f06",
-    "srttc_s0_dump.py": "1b41a9fbc21426f949dd4be2362dda467a7d04c630790df9a703cb2b184d2ac3",
+    "srttc_s0_dump.py": (S0_DUMP_LANDED_SHA256, S0_DUMP_G4_SHA256),        # goal-mode (P2): either; a command-mode candidate needs the G4 one (apply_command_source)
     "srttc_s0_stage.py": "cb2a42120768c40903a061d06307368cb15c949400a162431911c8c0ffeb287a",
     "srttc_s0_podsets.py": "87498ec421f8128364314996ad18c416b197ca6d77b78c39fc475a9c1272df6b",
     "srttc_s0_dgdump.py": "b0fd031294e4ca249fdf4230bafe29b831c127ce67b678a604ed33a2619dba29",
@@ -103,16 +107,64 @@ def ram_gb():
 
 def check_s0_pins(s0_code=S0_CODE):
     """Refuse unless every landed S0 script this wrapper runs hashes to its pin (a changed driver would change what a bank means)."""
-    bad = []
+    bad, got = [], {}
     for rel, want in S0_PINS.items():
+        ok = (want,) if isinstance(want, str) else tuple(want)
         p = os.path.join(s0_code, rel)
         if not os.path.exists(p):
             bad.append(f"{rel}: missing under {s0_code}")
-        elif sha256_file(p) != want:
-            bad.append(f"{rel}: sha256 {sha256_file(p)[:16]}... != pinned {want[:16]}...")
+        elif sha256_file(p) not in ok:
+            bad.append(f"{rel}: sha256 {sha256_file(p)[:16]}... != pinned {', '.join(w[:16] + '...' for w in ok)}")
+        else:
+            got[rel] = sha256_file(p)
     if bad:
         raise BuildError("the landed S0 code differs from the pinned copy: " + "; ".join(bad))
-    return {rel: want for rel, want in S0_PINS.items()}
+    return got
+
+
+def ckpt_nav_mode(path) -> str:
+    """the checkpoint nav mode as the planner loader reads it (meta.nav_mode, default 'goal'; refe/ckpt_io.py config_for_checkpoint)"""
+    import torch
+    ck = torch.load(path, map_location="cpu", weights_only=False, mmap=True)          # the loader's own call (ckpt_io.py:122): our checkpoint, sha256-checked by `prepare`
+    m = ck.get("meta") if isinstance(ck, dict) and isinstance(ck.get("meta"), dict) else {}
+    return str(m.get("nav_mode", "goal"))
+
+
+def check_command_source(path, sha256, plan_tokens) -> dict:
+    """G4: the P6 command table (HF logs/commands.json: {"<log>/<token>": one-hot [LEFT, STRAIGHT, RIGHT, UNKNOWN]}) must cover EVERY token of the S0 plan; refuses otherwise"""
+    if not os.path.exists(path):
+        raise BuildError(f"command source {path} does not exist")
+    sha = sha256_file(path)
+    if sha256 and sha != sha256.lower():
+        raise BuildError(f"command source sha256 {sha} != the given {sha256}")
+    tab = json.load(open(path, encoding="utf-8"))
+    missing = [f"{lg}/{tk}" for tk, lg in plan_tokens.items() if f"{lg}/{tk}" not in tab]
+    if missing:
+        raise BuildError(f"the command source lacks {len(missing)} of the {len(plan_tokens)} plan tokens (e.g. {missing[:3]}): a command-mode checkpoint is never run on a default command")
+    bad = [k for k in (f"{lg}/{tk}" for tk, lg in plan_tokens.items()) if sorted(int(x) for x in tab[k]) != [0, 0, 0, 1]]
+    if bad:
+        raise BuildError(f"the command source has non-one-hot rows for plan tokens (e.g. {bad[:3]})")
+    return {"path": os.path.abspath(path).replace(chr(92), "/"), "sha256": sha, "rows": len(tab), "plan_tokens": len(plan_tokens), "plan_tokens_covered": len(plan_tokens)}
+
+
+def apply_command_source(cand: dict, nav_mode: str, environ=None) -> dict:
+    """G4: decide, BEFORE any GPU lock, how the dump gets its commands. command-mode + source: export SRTTC_COMMANDS_JSON / _SHA256 (the landed driver builds the dump argv and
+    cannot forward a flag; its subprocess env is a copy of os.environ) and require the G4 dump; command-mode with NO source: REFUSE (as the landed dump did);
+    goal-mode: the source is ignored and nothing is exported (a P2 bank is the landed run)."""
+    environ = os.environ if environ is None else environ
+    src = cand.get("commands")
+    if nav_mode == "command":
+        if not src:
+            raise BuildError("a command-mode checkpoint needs a command source: `prepare --commands <P6 commands.json>` (the dump REFUSES a command-mode planner without one)")
+        if sha256_file(src["path"]) != src["sha256"]:
+            raise BuildError("the command source changed since `prepare` (sha256)")
+        if cand["s0_code_pins"].get("srttc_s0_dump.py") != S0_DUMP_G4_SHA256:
+            raise BuildError("a command-mode checkpoint needs the G4 srttc_s0_dump.py (--commands); the landed one refuses it: point `prepare --s0-code` at a copy of the S0 code dir with the G4 dump")
+        environ["SRTTC_COMMANDS_JSON"], environ["SRTTC_COMMANDS_SHA256"] = src["path"], src["sha256"]
+        return {"nav_mode": nav_mode, "commands_exported": True, "sha256": src["sha256"]}
+    for k in ("SRTTC_COMMANDS_JSON", "SRTTC_COMMANDS_SHA256"):
+        environ.pop(k, None)
+    return {"nav_mode": nav_mode, "commands_exported": False, "note": "goal-mode checkpoint: a supplied command source is ignored" if src else None}
 
 
 def read_candidate(root):
@@ -156,6 +208,8 @@ def cmd_preflight(a) -> int:
     rep["meta_candidate"] = {k: m_c.get(k) for k in ("backbone", "cameras", "n_cameras", "per_sample_calib", "frozen_sha256", "weights_dir", "step", "epoch", "finished_at") if k in m_c}
     ok_head = bool(sw is not None and tuple(sw.shape) == (6, 256) and sb is not None and tuple(sb.shape) == (6,))
     same = bool(not miss and not extra and not shape_diff)
+    rep["nav_mode"] = m_c.get("nav_mode", "goal")
+    rep["needs_command_source"] = bool(rep["nav_mode"] == "command")
     rep["checks"] = {"score_head_is_256_to_6": ok_head, "same_tensor_names_and_shapes_as_P2": same, "format_equals_P2": bool(rep["format"] == ref_ck.get("format"))}
     rep["PASS"] = bool(ok_head)
     rep["verdict"] = ("PASS: same architecture as P2 (the S0 dump runs unchanged)" + ("; BUT meta differs from P2's in " + ", ".join(rep["meta_differs_from_P2"]) + " (read it: a different frozen backbone / camera set changes what the planner loads)" if rep["meta_differs_from_P2"] else "") if (ok_head and same) else
@@ -200,7 +254,10 @@ def cmd_prepare(a) -> int:
     mp = json.load(open(f"{root}/run/plan/master_plan.json", encoding="utf-8"))
     if not (mp["n_logs"] == N_LOGS and mp["n_tokens"] == N_TOKENS and mp["n_sets"] == N_SETS):
         raise BuildError(f"master_plan.json is not the registered S0 sample ({mp['n_logs']}/{mp['n_tokens']}/{mp['n_sets']})")
-    cand = {"created": now(), "candidate_id": a.candidate_id, "ckpt": a.ckpt.replace("\\", "/"), "ckpt_sha256": sha, "ckpt_bytes": os.path.getsize(a.ckpt), "root": root, "s0_root": a.s0_root, "s0_code": a.s0_code,
+    cmd_rec = None
+    if getattr(a, "commands", None):
+        cmd_rec = check_command_source(a.commands, getattr(a, "commands_sha256", None), mp["tokens"])
+    cand = {"created": now(), "candidate_id": a.candidate_id, "commands": cmd_rec, "ckpt": a.ckpt.replace("\\", "/"), "ckpt_sha256": sha, "ckpt_bytes": os.path.getsize(a.ckpt), "root": root, "s0_root": a.s0_root, "s0_code": a.s0_code,
             "plan_files": copied, "s0_code_pins": pins, "p2_ckpt": P2_CKPT, "p2_ckpt_sha256": P2_CKPT_SHA256, "n_logs": N_LOGS, "n_tokens": N_TOKENS, "n_sets": N_SETS,
             "wrapper_sha256": {n: sha256_file(os.path.join(HERE, n)) for n in SELF_FILES if os.path.exists(os.path.join(HERE, n))}}
     jdump(cand, f"{root}/candidate.json")
@@ -282,6 +339,8 @@ def cmd_dump(a) -> int:
     vs = f"{cand['root']}/run/verify_sets.json"
     if not (os.path.exists(vs) and json.load(open(vs)).get("PASS")):
         raise BuildError("run `verify-sets` first (the rebuilt set stores must equal S0's labels before GPU hours are spent)")
+    cmdinfo = apply_command_source(cand, ckpt_nav_mode(cand["ckpt"]))
+    print(f"[{now()}] command source: {cmdinfo}", flush=True)
     D = load_s0_driver(cand)
     argv = ["--tag", "main", "--device", a.device, "--min-free-ram-mb", str(a.min_free_ram_mb)]
     if a.no_stage:
@@ -482,6 +541,8 @@ def main(argv=None) -> int:
     p.add_argument("--ckpt", required=True)
     p.add_argument("--ckpt-sha256", default=None)
     p.add_argument("--candidate-id", default="p6")
+    p.add_argument("--commands", default=None, help="G4: the P6 command table (HF logs/commands.json), required for a command-mode checkpoint; must cover every S0 plan token")
+    p.add_argument("--commands-sha256", default=None)
     p.add_argument("--s0-root", default=S0_ROOT)
     p.add_argument("--s0-code", default=S0_CODE)
     p.set_defaults(fn=cmd_prepare)

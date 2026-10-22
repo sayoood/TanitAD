@@ -1,0 +1,48 @@
+  tokens: 1 over 1 logs; ckpt x.pt
+  REFUSED: a command-mode / sanitising planner needs NAVSIM's driving_command, which navtrain tokens do not carry here (give --commands <P6 commands.json> or set SRTTC_COMMANDS_JSON)
+  tokens: 1 over 1 logs; ckpt x.pt
+  command source: C:\Users\Admin\AppData\Local\Temp\tmp9m9srnal\commands.json sha256 5707086d1fc2fccf rows 3
+  planner: trained=True per_sample_calib=True device=cpu select=best rule=navsim_v1 goal_fix=pdm_route repair_last_heading=True nav_mode=command
+  tokens: 1 over 1 logs; ckpt x.pt
+  planner: trained=True per_sample_calib=True device=cpu select=best rule=navsim_v1 goal_fix=pdm_route repair_last_heading=True nav_mode=goal
+  tokens: 1 over 1 logs; ckpt x.pt
+  command source: - sha256 0000000000000000 rows 0
+  planner: trained=True per_sample_calib=True device=cpu select=best rule=navsim_v1 goal_fix=pdm_route repair_last_heading=True nav_mode=command
+ZZSTAGE2 gap INCOMPLETE (the harness did not PASS)
+ZZSTAGE2 gap INCOMPLETE (the harness did not PASS)
+ZZSTAGE2 gap INCOMPLETE (the harness did not PASS)
+ZZSTAGE2 gap INCOMPLETE (the harness did not PASS)
+ZZSTAGE2 gap INCOMPLETE (the harness did not PASS)
+ZZSTAGE2 gap INCOMPLETE (the harness did not PASS)
+PASS G1 C2 comparator: pins hold on the real P2 files, and C2 - C1 = +0.5715 [+0.0179, +1.1755] to the bit (published +0.57 [+0.02, +1.18])
+PASS G1 RED: the control reads the right table (arm and base swapped must NOT reproduce the published value)
+PASS G1 a pin may be a tuple (LF and CRLF forms); a md5 outside the tuple is refused
+PASS G1 RED: a WRONG pin on the p2 entry (u400's csv md5) makes the pin gate fail and the control fail
+PASS G2 level CI (the PREREG goal-bar test): selection_quality.level_from_csv on P2's own harness csv reproduces its banked level 88.8184 [87.8611, 89.7701] to 1e-9, from the csv alone
+PASS G2 RED: the level control fails on another arm's csv (u400), on a csv with a token that has no log, and on an empty csv
+PASS G2 the 64-column chain (seams -> harness columns -> table -> read) on a synthetic dump with a fake runner: gates PASS, resumable, and every RED arm fails
+PASS G2 selection quality: random >= actual is flagged INVALID (an instrument failure, C3's rule), never reported as a result
+PASS G2 selection quality: P2's banked 64-proposal navtest table reproduces anatomy.json (pick 88.8184 / best-of-64 98.2311 / random 73.0031, CIs, counts) to 1e-9
+PASS G2 RED: a shuffled pick / a duplicated proposal column / a token-shuffled table each FAIL the known-value control
+PASS G2 selection quality on a synthetic world with analytic answers: actual = the pick's PDMS, random = the mean over 64, best = the max over 64; differences consistent
+PASS G3 byte identity to the scratchpad files the SFT-4 / C2 results used (skipped, stated, if the scratchpad is gone)
+PASS G3 RED: one changed byte in run_v1.py is refused and the message names the file
+PASS G3 control: a CRLF checkout (core.autocrlf) of the same files still verifies; the guard is not so brittle that it refuses a checkout
+PASS G3 RED: a missing file, an UNPINNED extra .py and a missing pins file are each refused
+PASS G3 the banked harness equals its pins (every file, none missing, none unpinned, the caller a known variant)
+PASS G3 stage3_full resolves families6 to the banked, pinned copy FIRST (the D: W3 original and a scratchpad are fallbacks only)
+PASS G3 RED: an unknown scoring caller (score_navtest_refe.py) is refused
+PASS G4 build_candidate_bank.apply_command_source: command-mode + source exports it; NO source is REFUSED; the landed dump is refused for command-mode; goal-mode exports nothing
+PASS G4 RED: a mutant that exports a default / drops the no-source refusal fails the apply cases
+PASS G4 build_candidate_bank.check_command_source: P6's real commands.json covers ALL 8,922 S0 plan tokens; a table missing one / a non-one-hot row / a wrong sha256 is refused
+PASS G4 build_candidate_bank.ckpt_nav_mode reads meta.nav_mode: the epoch-6 P6 file reads 'command'; a goal-mode file reads 'goal' (skipped, stated, if the files are absent)
+PASS G4 build_candidate_bank: S0_PINS accepts the landed AND the G4 srttc_s0_dump.py, refuses any third form
+PASS G4 srttc_s0_dump: command-table helpers load, look up, and REFUSE a missing token / malformed row / wrong sha256 pin
+PASS G4 RED: a mutant dump that answers a missing token with a default command fails the helper check
+PASS G4 srttc_s0_dump: the per-token hop sits BEFORE planner.infer in the loop and calls the seam's own set_driving_command with the table's one-hot (static; the hop itself is MEASURED in the dry run and in the e2e CPU run)
+PASS G4 srttc_s0_dump.main: a command-mode checkpoint with NO source is still REFUSED (rc 2); with a source it passes the decision; a goal-mode checkpoint is untouched
+PASS G4 RED: a mutant dump that drops the refusal (accepts command-mode with no source) fails the decision check
+PASS G2/G3 RED: mutants of stage2_sft.py (dump flag dropped / scratchpad path restored / pin guard removed / drift env dropped) each fail the wiring check
+PASS G3 stage2_sft.py REFUSES a tampered harness before taking the GPU lock or starting the seam (guard first)
+PASS G2/G3 stage2_sft.py: seam command = the OLD command exactly without --dump-proposals; + exactly '--dump-proposals <seams/stage2_<name>.proposals.npz>' with it; scoring runs in the banked harness
+ZZP6GAPS PASS 31/31

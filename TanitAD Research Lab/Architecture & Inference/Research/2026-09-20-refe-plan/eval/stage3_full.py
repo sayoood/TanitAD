@@ -23,6 +23,11 @@ Reads (all under E:/Projects/TanitAD/data/refe_navtest unless a flag says otherw
 Baselines are PINNED by md5 (u400, deployed): a wrong table is refused, not paired. A copy of each lives in
 raw/p2_r2_instrument/baseline/ so R2 does not depend on one disk.
 
+P6-READ-GAPS (2026-10-22), G1: BASELINES now also holds `p2` = C2 of eval/PREREG_P6.md (P2, 88.82, its own seam: goal fix pdm_route, A7 ON, navsim_v1),
+so the P6 read is `--base u400 --also p2` (P6 vs C1 in `R2`, P6 vs C2 in `R2b`; PREREG_P6 applies its rule to each comparator separately). p2's pins are MEASURED
+on the files behind eval/RESULT_P2.md (the pairing of the p2 and u400 tables reproduces that result's +0.5715 [+0.0179, +1.1755] to the bit:
+`python eval/test_p6_read_gaps.py`). A pin may now be a TUPLE of md5s (the LF and CRLF forms of one text file: a core.autocrlf checkout changes a CSV's md5).
+
 Outcome (the amendment's section-4 table, applied verbatim):
     delta = PDMS(arm) - PDMS(u400), x100, lo / hi = the 95 % interval
     lo > 0 and no PDMS sub-score adverse      -> GO
@@ -62,11 +67,11 @@ BANK = PKG / "raw" / "p2_r2_instrument" / "baseline"          # the in-repo copy
 OUT_ROOT = PKG / "raw" / "p2_readout"
 PY_T = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
 STAGE2_SFT = HERE / "stage2_sft.py"
-STAGE2_SFT_MD5 = "831a8d76bb5b8be2016288b02cd29ee5"             # R1's instrument; this file must never change it
+STAGE2_SFT_MD5 = "3a30ab4c5a122664c534f378144cb4a5"             # stage2_sft.py as of P6-READ-GAPS (2026-10-22: the banked harness + --dump-proposals; was 831a8d76bb5b8be2016288b02cd29ee5, R1's instrument, whose estimator and scoring calls are unchanged)
 FAMILIES6_CANDIDATES = (
     os.environ.get("REFE_FAMILIES6", ""),
-    "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/families6.py",
-    "C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/a085b71c-4fb3-409b-ae6b-65f605ed575e/scratchpad/ev6e/families6.py",
+    str(HERE / "harness" / "ev6e" / "families6.py"),       # G3: the banked, sha256-pinned copy (eval/harness_pins.py) the SFT-4 / C2 results used, FIRST: stage 2 runs this one, so does stage 3
+    "D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-23-refcv6-standard-tests/navsim/code/families6.py",   # the W3 original (D: paths; produced NO output in the 2026-10-22 selfcheck on this box)
 )
 
 N_BOOT, SEED = 10000, 20260927
@@ -83,6 +88,8 @@ FULL_PINS = {"md5": "3a8b3653fd70891e50a230a37eb76ae8", "n": 12146, "logs": 136}
 C1_PINS = {"md5": "bc813be8300b69f9795e190238806329", "n": 12110, "logs": 136}   # navtest minus the 36 C1 tokens / 4 logs
 # content pins, MEASURED 2026-10-12 on the files that produced RESULT_SFT4.md's full-navtest numbers (the pairing of these two
 # tables reproduces its result.json to the bit -- that, not the file name, is what ties the pins to the banked result)
+P2_ARM = PKG / "raw" / "p2_readout" / "p2_full" / "arm"          # the in-repo copy of P2's arm files (eval/P2_READOUT_RUNBOOK.md section 4)
+S2_PKG = PKG / "raw" / "2026-10-05-sft-stage2"
 BASELINES = {
     "u400": {
         "label": "SFT-4 arm B u400 (rule navsim_v1_lane)", "pdms_x100": 88.2469,
@@ -93,6 +100,19 @@ BASELINES = {
         "report": [DATA / "seams/stage2_sft4_B_u400_navtest_full.report.json", BANK / "u400_navtest_full_seam.report.json"],
         "families": [S2_RAW / "sft4_B_u400_navtest_full/sft4_B_u400_navtest_full_families.json", BANK / "u400_navtest_full_families.json"],
         "families_md5": "ed816ea98dd0e3fd2df2178fb3366714",
+    },
+    # C2 of PREREG_P6 (P2, rule navsim_v1, goal fix pdm_route, A7 ON). MEASURED 2026-10-22 (P6-READ-GAPS G1) on the files behind eval/RESULT_P2.md: CSV md5 =
+    # raw/p2_readout/p2_full/arm/MD5SUMS.txt and r2_result.json's arm.csv_md5; the CSV is CRLF on disk and LF in git, so both forms are accepted.
+    # ⚠️ the dry run (raw/2026-10-22-p6-read-dryrun) pinned the families file as a6a381b4...; that is `p2_full/deployed_families.json`, NOT P2's.
+    "p2": {
+        "label": "C2 = P2 (rule navsim_v1, goal fix pdm_route, A7 ON)", "pdms_x100": 88.8184,
+        "csv": [DATA / "score/refe_stage2_p2_full/refe_stage2_p2_full.csv", P2_ARM / "refe_stage2_p2_full.csv"],
+        "csv_md5": ("bed5687fb75e884d45cf991c2ff391c9", "1dc7d7a7e0ed0ec8950311471a914758"),
+        "seam": [DATA / "seams/stage2_p2_full.npz", P2_ARM / "stage2_p2_full.npz"],
+        "seam_md5": "49a1f6ecf28c5ebdaac4c68c2997c5f0",
+        "report": [DATA / "seams/stage2_p2_full.report.json", P2_ARM / "stage2_p2_full.report.json"],
+        "families": [S2_RAW / "p2_full/p2_full_families.json", S2_PKG / "p2_full/p2_full_families.json"],
+        "families_md5": ("d80a2599f637710566408c49f786619d", "2bedac304a3be6801afc03b8d81b4c10"),
     },
     "deployed": {
         "label": "deployed route-fix system (rule navsim_v1)", "pdms_x100": 84.4561,
@@ -128,15 +148,23 @@ def md5_bytes(b: bytes) -> str:
     return hashlib.md5(b).hexdigest()
 
 
-def first_matching(cands, md5: str | None):
+def _md5_set(md5) -> set | None:
+    """a pin is one md5 or a tuple of them (the LF and CRLF forms of one text file); None = no pin"""
+    if md5 is None:
+        return None
+    return {md5} if isinstance(md5, str) else set(md5)
+
+
+def first_matching(cands, md5):
     """the first existing candidate whose CONTENT hash equals md5 (the name proves nothing); (path, why-not list)"""
     why = []
+    ok = _md5_set(md5)
     for c in cands:
         c = Path(c)
         if not c.exists():
             why.append(f"{c}: absent")
             continue
-        if md5 is None or md5_file(c) == md5:
+        if ok is None or md5_file(c) in ok:
             return c, why
         why.append(f"{c}: md5 differs from the pin")
     return None, why
@@ -305,7 +333,7 @@ def pick_baseline(name: str) -> dict:
     out["csv_md5"] = md5_file(out["csv"]) if out["csv"] else None
     out["seam_md5"] = md5_file(out["seam"]) if out["seam"] else None
     out["pinned_csv_md5"], out["pinned_seam_md5"] = b["csv_md5"], b["seam_md5"]
-    out["pin_ok"] = bool(out["csv"] and out["seam"] and out["csv_md5"] == b["csv_md5"] and out["seam_md5"] == b["seam_md5"])
+    out["pin_ok"] = bool(out["csv"] and out["seam"] and out["csv_md5"] in _md5_set(b["csv_md5"]) and out["seam_md5"] in _md5_set(b["seam_md5"]))
     return out
 
 
@@ -473,7 +501,9 @@ def run_r2(a) -> dict:
         fam_also = json.load(open(also_s["families"], encoding="utf-8")) if also_s.get("families") else None
         r2b["families_vs_also"] = families_vs(fam_also, fam_arm)
         r2b["consistency_vs_also"] = consistency(arm_s["seam"], also_s["seam"], arm, also, sel)
-        res["R2b"] = {"vs": also_s["label"], "status": "REPORTED, decides nothing (amendment section 3)", **r2b}
+        res["R2b"] = {"vs": also_s["label"], "status": ("C2 of PREREG_P6: the P6 rule (ADOPT / REFUTED / NOT PROVEN) is applied to this comparator SEPARATELY from C1; "
+                                                        "the GO / NO-GO words of this file are P2's, read the numbers (eval/RUNBOOK_P6_READ.md)" if a.also == "p2"
+                                                        else "REPORTED, decides nothing (amendment section 3)"), **r2b}
     # the tactical rows are reported beside the intervals (no interval exists for them)
     res["tactical_vs_base"] = res["R2"]["families_vs_base"].get("tactical_no_interval")
     res["seconds"] = round(time.time() - t_start, 1)
