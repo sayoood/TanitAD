@@ -1070,9 +1070,178 @@ def test_the_banked_launch_gate_tokens_do_not_block(rel):
 
 
 @pytest.mark.parametrize("rel", _REAL_NON_TOKEN_GATE_RECORDS)
-def test_the_banked_NON_token_gate_records_still_block(rel):
-    """⚠️ NARROW ON PURPOSE: pre-registration pin records of other schemas, unsigned. The PI's
-    decision covers launch-gate tokens only; these keep blocking until another one is taken."""
-    (f,) = [f for f in ss.scan_path_shape(_REFE_RAW + rel, _banked(rel)) if f.blocking]
-    assert f.detail == ("filename matches a credential glob (*token.json); not a launch-gate "
-                        "token record: schema/kind is not the launch-gate token's")
+def test_the_banked_NON_token_gate_records_are_still_refused_by_the_TOKEN_rule(rel):
+    """⚠️ The launch-gate-token rule stays NARROW: these pre-registration pin records of other
+    schemas are not tokens and it still says so. What releases them is the separate PIN below."""
+    assert ss._gate_token_refusal(_banked(rel)) == "schema/kind is not the launch-gate token's"
+
+
+# ============ PINNED BYTES for the five pin records (PI 2026-10-22 ~12:05 Berlin, "Pin exact bytes")
+#
+# Not a rule: EXACT (repo-relative path, sha256-of-bytes) pairs, read from the 39e21e5 tip blobs. The
+# table below is a LITERAL copy of the decision, so a sixth entry or a changed hash in the scanner
+# turns `test_the_pin_table_is_exactly_the_PI_decision` red. Real-record arms read this checkout (a
+# sparse one skips); the mechanism arms pin a synthetic record and always run.
+
+_PINS = {
+    "2026-10-19-fastneg-census/raw/gate_token.json":
+        "68af4ac34fb162eb9501a62902de2ad6a5a4127a27a24dd60778edfe0cb43573",
+    "2026-10-19-headrow-probe/raw/f10/gate_token.json":
+        "7d6e6b6797d738453c5600874f900ae6e08f14d56a5534bb3f29319cd365bbf4",
+    "2026-10-19-privgeom-clean/raw/read/gate_token.json":
+        "e2d0a68235ff83dc0015740cbede297c6749bff01bd43068095072766ca99156",
+    "2026-10-19-privgeom-clean/raw/rehearsal/gate_token.json":
+        "8d7d831ad47929296f2e999a2a7e12aa187806aad78ea21de976ce8216772ee3",
+    "2026-10-19-privgeom-safe/raw/gate_token.json":
+        "19dff56ff6b61da08fce38d1e562b940e815f8819e93aaeb9053bdca31138899",
+}
+_PIN_REFUSED = ("filename matches a credential glob (*token.json); not a launch-gate token record: "
+                "schema/kind is not the launch-gate token's")
+_PIN_MISMATCH_TAIL = "; not the pinned bytes of this path"
+
+
+def test_the_pin_table_is_exactly_the_PI_decision():
+    assert ss.PINNED_TOKEN_JSON_RECORDS == {
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/"
+        "2026-10-19-fastneg-census/raw/gate_token.json":
+            "68af4ac34fb162eb9501a62902de2ad6a5a4127a27a24dd60778edfe0cb43573",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/"
+        "2026-10-19-headrow-probe/raw/f10/gate_token.json":
+            "7d6e6b6797d738453c5600874f900ae6e08f14d56a5534bb3f29319cd365bbf4",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/"
+        "2026-10-19-privgeom-clean/raw/read/gate_token.json":
+            "e2d0a68235ff83dc0015740cbede297c6749bff01bd43068095072766ca99156",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/"
+        "2026-10-19-privgeom-clean/raw/rehearsal/gate_token.json":
+            "8d7d831ad47929296f2e999a2a7e12aa187806aad78ea21de976ce8216772ee3",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/"
+        "2026-10-19-privgeom-safe/raw/gate_token.json":
+            "19dff56ff6b61da08fce38d1e562b940e815f8819e93aaeb9053bdca31138899",
+    }
+    fr = ss.filter_rule(ss.DEFAULT_MAX_BYTES, False)["tier_b_pinned_records"]
+    assert fr["releases_only_glob"] == "*token.json"
+    assert fr["pins"] == ss.PINNED_TOKEN_JSON_RECORDS
+
+
+@pytest.mark.parametrize("rel", sorted(_PINS))
+def test_each_banked_pin_record_passes_at_its_pinned_bytes(rel):
+    data = _banked(rel)
+    assert hashlib.sha256(data).hexdigest() == _PINS[rel]
+    assert _blocking_path(_REFE_RAW + rel, data) == []
+
+
+def _one_byte_changed(data: bytes) -> bytes:
+    i = len(data) // 2
+    return data[:i] + bytes([data[i] ^ 0x01]) + data[i + 1:]
+
+
+@pytest.mark.parametrize("why, mutate", [
+    ("one byte changed", _one_byte_changed),
+    ("CRLF line endings -- what an autocrlf checkout writes", lambda d: d.replace(b"\n", b"\r\n")),
+    ("the pinned bytes plus a key field",
+     lambda d: b'{"key": "' + _test_gate_key().hex().encode() + b'", ' + d.lstrip()[1:]),
+])
+@pytest.mark.parametrize("rel", sorted(_PINS))
+def test_MUTATION_other_bytes_at_a_pinned_path_block(rel, why, mutate):
+    data = _banked(rel)
+    bad = mutate(data)
+    assert bad != data, why
+    (f,) = [f for f in ss.scan_path_shape(_REFE_RAW + rel, bad) if f.blocking]
+    assert f.detail.startswith("filename matches a credential glob (*token.json); "), why
+    assert f.detail.endswith(_PIN_MISMATCH_TAIL), why
+
+
+@pytest.mark.parametrize("rel", sorted(_PINS))
+def test_MUTATION_the_pinned_bytes_at_another_path_block(rel):
+    """The pin is a (path, bytes) PAIR: a copy elsewhere, the path a sub-tree scan would see, and a
+    case variant of the name are all unpinned."""
+    data = _banked(rel)
+    for other in (_REFE_RAW + "2026-10-22-copy/raw/gate_token.json",
+                  rel,
+                  _REFE_RAW + rel.replace("gate_token", "Gate_token")):
+        assert _blocking_path(other, data) == [("credential-filename", 0)], other
+
+
+def test_MUTATION_a_sixth_gate_token_record_blocks():
+    """A new pin-shaped record at a new path: no rule releases it -- it needs its own PI decision."""
+    rec = (json.dumps({"schema": "newprobe-v1", "pass": True,
+                       "bindings": {"cfg_sha256": hashlib.sha256(b"cfg").hexdigest()}},
+                      indent=2) + "\n").encode()
+    (f,) = [f for f in ss.scan_path_shape(
+        _REFE_RAW + "2026-10-22-new-probe/raw/gate_token.json", rec) if f.blocking]
+    assert f.detail == _PIN_REFUSED
+
+
+def test_RED_with_the_pin_table_emptied_the_five_block_again(monkeypatch):
+    datas = [(rel, _banked(rel)) for rel in sorted(_PINS)]
+    assert [_blocking_path(_REFE_RAW + r, d) for r, d in datas] == [[], [], [], [], []]
+    monkeypatch.setattr(ss, "PINNED_TOKEN_JSON_RECORDS", {})
+    assert [_blocking_path(_REFE_RAW + r, d) for r, d in datas] == [[("credential-filename", 0)]] * 5
+
+
+# --- the mechanism, on a SYNTHETIC pin (always runs, banked files or not)
+_SYN_REL = "pins/raw/gate_token.json"
+_SYN = (json.dumps({"schema": "probe-v1", "pass": True}, indent=2) + "\n").encode()
+
+
+@pytest.fixture()
+def syn_pin(monkeypatch):
+    monkeypatch.setitem(ss.PINNED_TOKEN_JSON_RECORDS, _SYN_REL, hashlib.sha256(_SYN).hexdigest())
+
+
+def test_pin_tree_mode_judges_the_FILE(tmp_path, syn_pin, monkeypatch):
+    p = tmp_path / _SYN_REL
+    p.parent.mkdir(parents=True)
+    p.write_bytes(_SYN)
+    assert ss.scan_tree(tmp_path).blocking == []
+    p.write_bytes(_one_byte_changed(_SYN))
+    assert [(f.pattern, f.path) for f in ss.scan_tree(tmp_path).blocking] == [
+        ("credential-filename", "pins/raw/gate_token.json")]
+    p.write_bytes(_SYN)
+    monkeypatch.delitem(ss.PINNED_TOKEN_JSON_RECORDS, _SYN_REL)        # RED: unpinned
+    assert [f.pattern for f in ss.scan_tree(tmp_path).blocking] == ["credential-filename"]
+
+
+def test_pin_staged_mode_judges_the_STAGED_BLOB(repo, syn_pin):
+    p = repo / _SYN_REL
+    p.parent.mkdir(parents=True)
+    p.write_bytes(_one_byte_changed(_SYN))
+    _git(repo, "add", "--", _SYN_REL)
+    p.write_bytes(_SYN)
+    assert [(f.pattern, f.path) for f in ss.scan_staged(repo).blocking] == [
+        ("credential-filename", "pins/raw/gate_token.json")]
+    assert ss.scan_tree(repo).blocking == []
+    _git(repo, "add", "--", _SYN_REL)
+    p.write_bytes(_one_byte_changed(_SYN))
+    assert ss.scan_staged(repo).blocking == []
+    assert [(f.pattern, f.path) for f in ss.scan_tree(repo).blocking] == [
+        ("credential-filename", "pins/raw/gate_token.json")]
+
+
+def test_pin_tracked_mode_judges_the_worktree_file(repo, syn_pin):
+    p = repo / _SYN_REL
+    p.parent.mkdir(parents=True)
+    p.write_bytes(_SYN)
+    _git(repo, "add", "--", _SYN_REL)
+    _git(repo, "commit", "-m", "pinned record")
+    assert ss.scan_tracked(repo).blocking == []
+    p.write_bytes(_one_byte_changed(_SYN))
+    assert [(f.pattern, f.path) for f in ss.scan_tracked(repo).blocking] == [
+        ("credential-filename", "pins/raw/gate_token.json")]
+
+
+def test_a_pinned_file_is_still_CONTENT_scanned(tmp_path, monkeypatch):
+    """The pin releases a PATH glob; it never skips a content tier."""
+    data = (json.dumps({"schema": "probe-v1", "note": "see " + _hf()}) + "\n").encode()
+    monkeypatch.setitem(ss.PINNED_TOKEN_JSON_RECORDS, _SYN_REL, hashlib.sha256(data).hexdigest())
+    p = tmp_path / _SYN_REL
+    p.parent.mkdir(parents=True)
+    p.write_bytes(data)
+    assert [f.pattern for f in ss.scan_tree(tmp_path).blocking] == ["huggingface"]
+
+
+def test_a_pin_releases_only_the_token_json_glob(monkeypatch):
+    rel = "pins/raw/secret_gate_token.json"
+    monkeypatch.setitem(ss.PINNED_TOKEN_JSON_RECORDS, rel, hashlib.sha256(_SYN).hexdigest())
+    (f,) = [f for f in ss.scan_path_shape(rel, _SYN) if f.blocking]
+    assert f.detail == "filename matches a credential glob (*secret*)"

@@ -80,6 +80,7 @@ Stdlib-only, ASCII-clean stdout (the cp1252 console lesson), OS-agnostic.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import os
@@ -284,6 +285,15 @@ def filter_rule(max_bytes: int, include_git: bool) -> dict:
             ],
             "content_tiers": "unchanged -- the record is content-scanned like any other file",
         }],
+        # PI 2026-10-22 ~12:05 "Pin exact bytes": exact (path, sha256) pairs, not a rule.
+        "tier_b_pinned_records": {
+            "releases_only_glob": LAUNCH_GATE_TOKEN_RELEASES_GLOB,
+            "requires": ("the repo-relative path is pinned AND sha256 of the bytes THIS mode scans "
+                         "(staged blob / tree file / tracked worktree file) equals its pin; any "
+                         "byte change, CRLF conversion included, re-blocks"),
+            "pins": dict(PINNED_TOKEN_JSON_RECORDS),
+            "content_tiers": "unchanged -- a pinned file is content-scanned like any other file",
+        },
         "tier_c_advisory": [n for n, _ in LOOSE_PATTERNS],
         "_warning": (
             "THIS IS A FILTERED VIEW, NOT A CENSUS. A file outside this rule is "
@@ -512,7 +522,8 @@ def _is_own_test_artifact(base: str) -> bool:
 # every content tier as before, and the substring/advisory globs still apply to the same basename.
 # ⚠️ Narrow ON PURPOSE: in that same tree five more `gate_token.json` files are pre-registration
 # PIN records of other schemas (`fastneg-census-v1`, `headrow-probe-v1`, three with no schema) and
-# carry no signature. They are outside the PI's decision and keep blocking until one is taken.
+# carry no signature. They are outside this decision; the PI took a separate one for them the same
+# day -- `PINNED_TOKEN_JSON_RECORDS` below (exact bytes at exact paths, not a rule).
 LAUNCH_GATE_TOKEN_BASENAME_GLOB = "*gate_token.json"
 #: the ONE glob this exemption may release; every other path glob still judges the same basename
 LAUNCH_GATE_TOKEN_RELEASES_GLOB = "*token.json"
@@ -601,25 +612,74 @@ def _gate_token_refusal(data: bytes | None) -> str | None:
     return None
 
 
+# ⛔ PINNED BYTES, NOT A RULE (PI decision 2026-10-22 ~12:05 Berlin, "Pin exact bytes"). The five
+# `gate_token.json` files the launch-gate-token exemption above correctly REFUSES are pre-registration
+# PIN records -- sha256 bindings plus check verdicts, unsigned, no field named key/secret/hmac/sig, no
+# string carrying a credential shape (MEASURED on 39e21e5 with this file's own helpers; blobs unchanged
+# since 10078b5). The PI declined to widen any glob or schema rule for them: each is released by its
+# EXACT (repo-relative path, sha256 of the bytes) pair, read from the tip blob. ANY byte change
+# re-blocks -- including git's own autocrlf LF->CRLF on a Windows checkout -- and so do the same bytes
+# at any other path. It releases ONLY the `*token.json` glob; the content tiers still run; the bytes
+# judged are the ones the MODE scans (staged blob / tree file / tracked worktree file), exactly as for
+# the exemption above. A sixth record gets no rule: it gets a PI decision and a line here.
+_REFE_RAW = "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/"
+PINNED_TOKEN_JSON_RECORDS: dict[str, str] = {
+    # schema fastneg-census-v1, kind "gate_token": 12 sha256 bindings + G-* check verdicts + pass flag
+    _REFE_RAW + "2026-10-19-fastneg-census/raw/gate_token.json":
+        "68af4ac34fb162eb9501a62902de2ad6a5a4127a27a24dd60778edfe0cb43573",
+    # schema headrow-probe-v1: sha256 bindings, g_bank/g_commit/g_dvb/g_live/g_suite verdicts, ok flag
+    _REFE_RAW + "2026-10-19-headrow-probe/raw/f10/gate_token.json":
+        "7d6e6b6797d738453c5600874f900ae6e08f14d56a5534bb3f29319cd365bbf4",
+    # no schema field: privgeom READ pins (arrays/labels sha256, code_pins, gate verdicts); the only
+    # *token* names are `gate/C-GRAD-REAL/{token_w,token_b,zero_block_token_w}_moved` -- floats
+    _REFE_RAW + "2026-10-19-privgeom-clean/raw/read/gate_token.json":
+        "e2d0a68235ff83dc0015740cbede297c6749bff01bd43068095072766ca99156",
+    # no schema field: the same privgeom pin record for the REHEARSAL run (same field set, floats)
+    _REFE_RAW + "2026-10-19-privgeom-clean/raw/rehearsal/gate_token.json":
+        "8d7d831ad47929296f2e999a2a7e12aa187806aad78ea21de976ce8216772ee3",
+    # no schema field: privgeom-safe pins (arrays/labels/subset sha256, code_pins, gate verdicts)
+    _REFE_RAW + "2026-10-19-privgeom-safe/raw/gate_token.json":
+        "19dff56ff6b61da08fce38d1e562b940e815f8819e93aaeb9053bdca31138899",
+}
+
+
+def _is_pinned_record(path: str, data: bytes | None) -> bool:
+    """True iff ``path`` (repo-relative, POSIX) is pinned AND ``data`` hashes to its pin."""
+    want = PINNED_TOKEN_JSON_RECORDS.get(path)
+    return (want is not None and isinstance(data, bytes)
+            and hashlib.sha256(data).hexdigest() == want)
+
+
 def scan_path_shape(path: str,
                     content: "bytes | Callable[[], bytes | None] | None" = None
                     ) -> list[Finding]:
-    """Tier B. Path only -- the file is NEVER opened for this finding, with ONE content-checked
-    exception: a `*gate_token.json` basename (the PI 2026-10-22 block above).
+    """Tier B. Path only -- the file is NEVER opened for this finding, with TWO content-checked
+    exceptions, both PI 2026-10-22 and both releasing only `*token.json`: a launch-gate token
+    RECORD under a `*gate_token.json` basename, and the exact bytes of a PINNED path (blocks above).
 
     ``content`` is the bytes the calling MODE scans for this path, or a zero-argument callable that
-    returns them -- read lazily, so only that basename ever pays for it. ``None`` (the default, and
+    returns them -- read lazily, so only those paths ever pay for it. ``None`` (the default, and
     every pre-existing caller) means "not available": such a record stays BLOCKING."""
-    base = path.replace("\\", "/").rsplit("/", 1)[-1]
+    norm = path.replace("\\", "/")
+    base = norm.rsplit("/", 1)[-1]
     for g in SECRET_PATH_GLOBS:
         if fnmatch(base, g):
             detail = f"filename matches a credential glob ({g})"
-            if (g == LAUNCH_GATE_TOKEN_RELEASES_GLOB
-                    and fnmatch(base, LAUNCH_GATE_TOKEN_BASENAME_GLOB)):
-                why = _gate_token_refusal(content() if callable(content) else content)
-                if why is None:
-                    continue        # a launch-gate token record; the remaining globs still apply
-                detail += f"; not a launch-gate token record: {why}"
+            if g == LAUNCH_GATE_TOKEN_RELEASES_GLOB:
+                gate_name = fnmatch(base, LAUNCH_GATE_TOKEN_BASENAME_GLOB)
+                pinned = norm in PINNED_TOKEN_JSON_RECORDS
+                data = None
+                if gate_name or pinned:     # read once, and only for these paths
+                    data = content() if callable(content) else content
+                if gate_name:
+                    why = _gate_token_refusal(data)
+                    if why is None:
+                        continue    # a launch-gate token record; the remaining globs still apply
+                    detail += f"; not a launch-gate token record: {why}"
+                if pinned:
+                    if _is_pinned_record(norm, data):
+                        continue    # the PINNED bytes at the pinned path; remaining globs apply
+                    detail += "; not the pinned bytes of this path"
             return [Finding("secret-path", "credential-filename", path, 0, detail)]
     if (Path(base).suffix.lower() not in SOURCE_DOC_SUFFIXES
             and not _is_own_test_artifact(base)):
