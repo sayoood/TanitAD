@@ -563,7 +563,9 @@ def posix(p):
 # (added a5a4ee8); the leaked value named the REAL 3-C bank, and the sandboxed chain REFUSED in its commands stage -- the stage whose rebuild ends `rm -rf "$CBANK"` and
 # which only a5a4ee8's guard stopped.  So the chain's whole namespace is dropped by PREFIX (a new knob cannot be missing from it), plus the variables the chain EXPORTS
 # to its children (paths to real data and to the gate key).  Everything else is kept: PATH, the temp dirs, and the gate's own nesting guard (REFE_GATE_NESTED).
-SANDBOX_DROP_PREFIXES = ("P6_", "STUB_", "NUPLAN_", "DRIVERL_", "TANITAD_GATE_")
+# "P7_" (P7-WIRE-RESERVE, 2026-10-22): p6_pod.sh section 5a is keyed on P7_RESERVE (and P7_LABEL_STORE / P7_TOKEN_TABLE).  A P7 chain's own G-SUITE runs THIS sandbox with the chain's environment, so
+# an undropped P7_RESERVE would switch the sandboxed DEFAULT-path chain onto the reserve stage and refuse it (the P6_CBANK leak above, in a new namespace).
+SANDBOX_DROP_PREFIXES = ("P6_", "P7_", "STUB_", "NUPLAN_", "DRIVERL_", "TANITAD_GATE_")
 SANDBOX_DROP_NAMES = ("REFE_BACKBONE_ROOT", "REFE_NUPLAN_DB_ROOT", "REFE_NAVTRAIN_YAML", "REFE_PAUSE_FILE", "REFE_PAUSE_POLL_S", "CUDA_VISIBLE_DEVICES",
                       "HF_TOKEN", "HUGGING_FACE_HUB_TOKEN", "HUGGINGFACE_HUB_TOKEN", "HF_HUB_TOKEN")
 

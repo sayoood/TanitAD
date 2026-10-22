@@ -15,6 +15,17 @@ Every subcommand prints ONE opaque marker line (so the chain parses a marker, ne
   egr-ok          the chain-level fail-fast read of hf_egress.py gate's g_egr_result.json (the launch gate re-judges it).     ZZEGR_OK / ZZEGR_BAD <why>
   resume-bank     a RESUME must read the bank the run STARTED on: the `--targets` train.py recorded in <run>/config.json (args.targets, train.py:1500-1511) against the chain's CBANK.
                   ZZRESUME_BANK_SAME bank=<p> (rc 0) | ZZRESUME_BANK_MISMATCH run=<p> chain=<p> [run_n_tuples= run_targets_sha256=] (rc 3) | ZZRESUME_BANK_UNREADABLE <why> (rc 4)
+
+P7 ONLY (P7-WIRE-RESERVE, MM_RULINGS Q7; refe/session_reserve.py).  Reached ONLY from p6_pod.sh section 5a, which runs ONLY when P7_RESERVE is set: with it unset nothing below is imported, called or read,
+and every subcommand above behaves exactly as before.  One marker line each, `ZZRESERVE_<WHAT>_OK ...` (rc 0) or `ZZRESERVE_<WHAT>_BAD <why>` (rc 1).
+  reserve-verify      the reserve file's sha256 against the module's pin, and its content against the pinned digests.            ZZRESERVE_OK sessions=16 logs=116 sha256=<12>
+  reserve-filter      a bank directory -> its reserve-free copy (same targets_rank*.jsonl names, byte-for-byte rows, rank-0 AND twins) + reserve_filter_report.json; REFUSES a row with no resolvable log.
+                      ZZRESERVE_FILTER_OK rows_in= rows_out= excluded= unresolved=0 targets_sha256=<16>
+  reserve-calib       calib_table.json without the reserve's logs.                                                                ZZRESERVE_CALIB_OK logs_in= logs_out= excluded=
+  reserve-move        MOVE the reserve's <log>/ dirs out of the D9 metric cache (--kind cache) or its <log>_<CAM>.zip / <log>/ out of an image root (--kind images); reversible (--restore).
+                      ZZRESERVE_MOVE_OK kind= moved= already= | ZZRESERVE_RESTORE_OK restored=
+  reserve-labelstore  the reserve's shards out of an aux label store into a reserve-only store (the caller re-runs `aux_label_store.py finalize` on both).   ZZRESERVE_LABELSTORE_OK moved=
+  reserve-audit       zero reserve keys, and every key's log resolved, in the bank, cache, label store, image root and calibration table.   ZZRESERVE_AUDIT_OK inputs=... | ZZRESERVE_AUDIT_LEAK ...
 """
 from __future__ import annotations
 
@@ -269,6 +280,58 @@ def resume_bank(config_path, chain_bank) -> tuple:
     return 3, f"ZZRESUME_BANK_MISMATCH run={run_bank} chain={chain_bank}{extra}"
 
 
+# ------------------------------------------------------------------------------------------------ P7: the session reserve (P7-WIRE-RESERVE)
+def _one_line(s, n=300) -> str:
+    return " ".join(str(s).split())[:n]
+
+
+def reserve_cmd(a) -> int:
+    """The P7-only subcommands.  `session_reserve` is imported HERE, never at module level: the P6 chain does not load it."""
+    import session_reserve as SR
+    tag = {"reserve-verify": "", "reserve-filter": "FILTER_", "reserve-calib": "CALIB_", "reserve-move": "MOVE_", "reserve-labelstore": "LABELSTORE_", "reserve-audit": "AUDIT_"}[a.cmd]
+    try:
+        if a.cmd == "reserve-move" and a.restore:
+            print(f"ZZRESERVE_RESTORE_OK restored={SR.restore_moved(a.to)['restored']}", flush=True)
+            return 0
+        reserve = SR.load_reserve(a.reserve)                        # refuses unless the file IS the registered draw (sha256 pinned)
+        if a.cmd == "reserve-verify":
+            info = SR._reserve_sha_info(a.reserve)
+            print(f"ZZRESERVE_OK sessions={info['sessions']} logs={info['logs']} sha256={info['file_sha256'][:12]}", flush=True)
+            return 0
+        if a.cmd == "reserve-filter":
+            tl = SR.token_log_map(a.token_table) if a.token_table else None
+            r = SR.filter_bank_dir(a.bank, a.out, reserve, token_log=tl, reserve_info=SR._reserve_sha_info(a.reserve))
+            print(f"ZZRESERVE_FILTER_OK rows_in={r['n_in']} rows_out={r['n_out']} excluded={r['n_excluded']} unresolved={r['n_unresolved']} targets_sha256={r['targets_sha256'][:16]}", flush=True)
+            return 0
+        if a.cmd == "reserve-calib":
+            r = SR.filter_calib(a.calib, a.out, reserve)
+            print(f"ZZRESERVE_CALIB_OK logs_in={r['logs_in']} logs_out={r['logs_out']} excluded={r['excluded']}", flush=True)
+            return 0
+        if a.cmd == "reserve-move":
+            r = SR.move_reserved(a.kind, a.root, a.to, reserve, dry_run=a.dry_run)
+            print(f"ZZRESERVE_MOVE_OK kind={a.kind} moved={r['n_moved']} already={r['n_already']} planned={r['n_planned']}{' dry_run=1' if a.dry_run else ''}", flush=True)
+            return 0
+        if a.cmd == "reserve-labelstore":
+            r = SR.split_label_store(a.store, a.reserve_store, reserve)
+            print(f"ZZRESERVE_LABELSTORE_OK moved={r['n_moved']}", flush=True)
+            return 0
+        bank = sorted(Path(a.bank).glob("targets_rank*.jsonl")) if Path(a.bank).is_dir() else [Path(a.bank)]
+        r = SR.audit_inputs(reserve, bank_files=bank, metric_cache_dir=a.cache, label_store=a.label_store, image_index=a.images, calib_rows=a.calib)
+        if a.out:
+            Path(a.out).parent.mkdir(parents=True, exist_ok=True)
+            Path(a.out).write_text(json.dumps(r, indent=1, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+        c = r["counts"]
+        if r["ok"]:
+            print("ZZRESERVE_AUDIT_OK inputs=" + ",".join(c["inputs_audited"]) + " " + " ".join(f"{k}={v}" for k, v in sorted(c["examined"].items())), flush=True)
+            return 0
+        print("ZZRESERVE_AUDIT_LEAK leaks=" + ",".join(f"{k}:{v}" for k, v in sorted(c["leak_totals"].items()) if v) + " unresolved=" + ",".join(f"{k}:{v}" for k, v in sorted(r["unresolved"].items()) if v)
+              + " empty=" + ",".join(c["empty_inputs"]), flush=True)
+        return 1
+    except (SR.ReserveError, OSError, ValueError, KeyError) as e:
+        print(f"ZZRESERVE_{tag}BAD {type(e).__name__}: {_one_line(e)}", flush=True)
+        return 1
+
+
 # ------------------------------------------------------------------------------------------------ CLI
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -301,7 +364,42 @@ def main(argv=None) -> int:
     p = sub.add_parser("resume-bank")
     p.add_argument("--config", required=True)
     p.add_argument("--bank", required=True)
+    # P7 only (session_reserve.py): see the module docstring
+    p = sub.add_parser("reserve-verify")
+    p.add_argument("--reserve", required=True)
+    p = sub.add_parser("reserve-filter")
+    p.add_argument("--reserve", required=True)
+    p.add_argument("--bank", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--token-table", default=None)
+    p = sub.add_parser("reserve-calib")
+    p.add_argument("--reserve", required=True)
+    p.add_argument("--calib", required=True)
+    p.add_argument("--out", required=True)
+    p = sub.add_parser("reserve-move")
+    p.add_argument("--reserve", default=None)
+    p.add_argument("--kind", choices=("cache", "images"), default=None)
+    p.add_argument("--root", default=None)
+    p.add_argument("--to", required=True)
+    p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--restore", action="store_true")
+    p = sub.add_parser("reserve-labelstore")
+    p.add_argument("--reserve", required=True)
+    p.add_argument("--store", required=True)
+    p.add_argument("--reserve-store", required=True)
+    p = sub.add_parser("reserve-audit")
+    p.add_argument("--reserve", required=True)
+    p.add_argument("--bank", required=True)
+    p.add_argument("--cache", default=None)
+    p.add_argument("--images", default=None)
+    p.add_argument("--calib", default=None)
+    p.add_argument("--label-store", default=None)
+    p.add_argument("--out", default=None)
     a = ap.parse_args(argv)
+    if a.cmd.startswith("reserve-"):
+        if a.cmd == "reserve-move" and not a.restore and not (a.reserve and a.kind and a.root):
+            ap.error("reserve-move needs --reserve, --kind and --root (or --restore --to)")
+        return reserve_cmd(a)
     if a.cmd == "command-table":
         table, st = build_command_table(a.logs, a.bank, a.max_missing_frac)
         Path(a.out).parent.mkdir(parents=True, exist_ok=True)

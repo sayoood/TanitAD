@@ -333,6 +333,69 @@ if ! { stage_done commands && ls "$CBANK"/targets_rank*.jsonl > /dev/null 2>&1; 
 fi
 log "commands ok: $(tail -n 1 "$P6/commands_table.out" | cut -c1-120)"; stop_after commands
 
+# ---- 5a. (P7 ONLY, DORMANT) THE SESSION RESERVE OUT OF EVERY LOG-KEYED TRAINING INPUT (P7-WIRE-RESERVE; MM_RULINGS Q7; refe/session_reserve.py; SPEC_P7 section 2).
+#          Runs ONLY when P7_RESERVE names the reserve file (raw/2026-10-22-p7-session-reserve/raw/reserve_sessions.json; its sha256 is PINNED in session_reserve.py and refused on any other byte).
+#          UNSET (every P6 caller): this block, p7_audit and the audit call before ARGS are skipped, CBANK / BANK / MC / PIX / ARGS are untouched, nothing is read or written (test_session_reserve.py
+#          runs the REAL chain both ways and compares the call log).  P6_STOP_AFTER=reserve is meaningful only with P7_RESERVE set.
+#          What it does: (1) verifies the reserve file; (2) rebinds CBANK to `<bank>_p7` and BANK to a calibration root of its own, so ARGS (which names $CBANK and $BANK/calib_table.json) points at the
+#          reserve-free copies with ARGS' text unchanged; (3) THE GUARD: the resume-bank check runs on the REBOUND CBANK before any file moves, so a run directory that was started on another bank (a P6 run)
+#          REFUSES here, untouched; (4) filters the bank (rank-0 AND twins, byte-for-byte rows), the calibration table, MOVES the reserve's <log>/ dirs out of the D9 cache root and its zips / frame dirs out of the
+#          image root (reversible: `p6_prep.py reserve-move --restore`), splits the aux label store when P7_LABEL_STORE names it; (5) AUDITS all five inputs and refuses on any reserve key or unresolved log.
+#          A P7 chain is a COPY of this script with its OWN $P6 / $RUN / $REPO and a refe_p7 launch-gate profile (p7_pod.sh); it must never share P6's run directory.  If P6_CBANK already ends in `_p7` the
+#          bank is taken as filtered (a RESUME of a P7 run: the run recorded that path) and is verified by the audit and the calibration root, not re-filtered.
+if [ -n "${P7_RESERVE:-}" ]; then
+  [ -f "$PKG/refe/session_reserve.py" ] || refuse "P7_RESERVE is set but $PKG/refe/session_reserve.py is not shipped"
+  [ -f "$P7_RESERVE" ] || refuse "P7_RESERVE=$P7_RESERVE is not a file"
+  P7OUT="$("$PY" p6_prep.py reserve-verify --reserve "$P7_RESERVE" 200>&- 2>&1)" || refuse "P7 reserve file refused: $(printf '%s' "$P7OUT" | tail -n 1 | cut -c1-300)"
+  P7SHA="${P7OUT#*sha256=}"; P7SHA="${P7SHA%% *}"
+  P7D="$P6/p7_reserve"; mkdir -p "$P7D"
+  P7_SRC=""; P7_CALIB_SRC="$BANK/calib_table.json"
+  case "${CBANK##*/}" in
+    *_p7) log "P7: $CBANK already names a filtered bank (_p7): verified by the audit, not re-filtered" ;;
+    *) P7_SRC="$CBANK"; CBANK="${P7_SRC}_p7" ;;
+  esac
+  BANK="$P7D/calib"
+  # THE GUARD, before anything moves: the run in $RUN must have been started on THIS (rebound) bank, or be fresh
+  resume_bank_check
+  p7_audit() {
+    local co=""
+    if [ -n "$(ls -A "$MC" 2> /dev/null | head -n 1)" ]; then co="--cache $MC"; fi
+    "$PY" p6_prep.py reserve-audit --reserve "$P7_RESERVE" --bank "$CBANK" $co --images "$PIX" --calib "$BANK/calib_table.json" ${P7_LABEL_STORE:+--label-store "$P7_LABEL_STORE"} \
+      --out "$P7D/audit.json" > "$P7D/audit.out" 2>&1 200>&-
+    grep -q "^ZZRESERVE_AUDIT_OK " "$P7D/audit.out" || refuse "P7 reserve audit FAILED (a reserve key in an input, an unresolved log, or an empty input): $(tail -n 1 "$P7D/audit.out" | cut -c1-300)"
+  }
+  P7_ID="$P7SHA:${P7_SRC:-filtered}:${P7_LABEL_STORE:-}"
+  if [ -n "$P7_SRC" ] && ! { key_done reserve "$P7_ID" && ls "$CBANK"/targets_rank*.jsonl > /dev/null 2>&1 && [ -s "$BANK/calib_table.json" ]; }; then
+    # the D9 cache and the image root are SHARED with the P6 chain: never move them from under a trainer that reads them
+    if [ "$P6" != "$DATA/refe_p6" ] && lock_held "$DATA/refe_p6"; then refuse "P7: the P6 chain at $DATA/refe_p6 holds its chain.lock: its trainer reads the metric cache and pixels this stage moves"; fi
+    ls "$P7_SRC"/targets_rank*.jsonl > /dev/null 2>&1 || refuse "P7 reserve: the source bank $P7_SRC holds no targets_rank*.jsonl"
+    rm -rf "$CBANK.tmp"
+    nice -n "$(nice_level)" "$PY" p6_prep.py reserve-filter --reserve "$P7_RESERVE" --bank "$P7_SRC" --out "$CBANK.tmp" ${P7_TOKEN_TABLE:+--token-table "$P7_TOKEN_TABLE"} \
+      > "$P7D/filter.out" 2>&1 200>&-
+    grep -q "^ZZRESERVE_FILTER_OK " "$P7D/filter.out" || refuse "P7 reserve: the bank filter refused: $(tail -n 1 "$P7D/filter.out" | cut -c1-300)"
+    rm -rf "$CBANK"; mv "$CBANK.tmp" "$CBANK"
+    mkdir -p "$BANK"
+    "$PY" p6_prep.py reserve-calib --reserve "$P7_RESERVE" --calib "$P7_CALIB_SRC" --out "$BANK/calib_table.json" > "$P7D/calib.out" 2>&1 200>&-
+    grep -q "^ZZRESERVE_CALIB_OK " "$P7D/calib.out" || refuse "P7 reserve: the calibration filter refused: $(tail -n 1 "$P7D/calib.out" | cut -c1-300)"
+    if [ -d "$MC" ]; then
+      "$PY" p6_prep.py reserve-move --reserve "$P7_RESERVE" --kind cache --root "$MC" --to "${MC}_reserve" > "$P7D/move_cache.out" 2>&1 200>&-
+      grep -q "^ZZRESERVE_MOVE_OK " "$P7D/move_cache.out" || refuse "P7 reserve: moving the reserve out of the metric cache failed: $(tail -n 1 "$P7D/move_cache.out" | cut -c1-300)"
+    fi
+    "$PY" p6_prep.py reserve-move --reserve "$P7_RESERVE" --kind images --root "$PIX" --to "${PIX}_reserve" > "$P7D/move_images.out" 2>&1 200>&-
+    grep -q "^ZZRESERVE_MOVE_OK " "$P7D/move_images.out" || refuse "P7 reserve: moving the reserve out of the image root failed: $(tail -n 1 "$P7D/move_images.out" | cut -c1-300)"
+    if [ -n "${P7_LABEL_STORE:-}" ]; then
+      "$PY" p6_prep.py reserve-labelstore --reserve "$P7_RESERVE" --store "$P7_LABEL_STORE" --reserve-store "${P7_LABEL_STORE}_reserve" > "$P7D/labelstore.out" 2>&1 200>&-
+      grep -q "^ZZRESERVE_LABELSTORE_OK " "$P7D/labelstore.out" || refuse "P7 reserve: splitting the aux label store failed: $(tail -n 1 "$P7D/labelstore.out" | cut -c1-300)"
+      "$PY" aux_label_store.py finalize --out "$P7_LABEL_STORE" > "$P7D/finalize_train.out" 2>&1 200>&- || refuse "P7 reserve: re-finalising the training label store failed"
+      "$PY" aux_label_store.py finalize --out "${P7_LABEL_STORE}_reserve" > "$P7D/finalize_reserve.out" 2>&1 200>&- || refuse "P7 reserve: finalising the reserve label store failed"
+    fi
+    invalidate cache lanes lab mem egr launch_gate
+    key_mark reserve "$P7_ID"
+  fi
+  p7_audit
+  log "P7 reserve ok: bank $CBANK ($(tail -n 1 "$P7D/filter.out" 2> /dev/null | cut -c1-160)); $(tail -n 1 "$P7D/audit.out" | cut -c1-160)"; stop_after reserve
+fi
+
 # ---- 5b. (OVERLAP only) THE EARLY READING of G-LIVE-LAB: D9 parts for the first P6_EARLY_LOGS (3) logs (~250 parts, minutes; the full build below skips them), then the labeller instrument on them
 #          BESIDE the replicate's trainer.  It answers the 11-vCPU question in the first half hour instead of after D9 + D7 (hours).  INFORMATION: it writes lab_early.json, NEVER lab.json (the
 #          gate judges lab.json); only an IDENTITY failure refuses, because the online labeller differing from the offline one is a defect whatever the speed.  P6_EARLY_LAB=0 skips it.
@@ -414,6 +477,9 @@ if ! stage_done lanes; then
   stage_mark lanes
 fi
 log "lanes ok"; stop_after lanes
+
+# ---- 7a. (P7 ONLY) the audit again on the FINAL state of every input, right before ARGS: the cache and lane stages have written since 5a, and the proof must be of what the trainer will read
+if [ -n "${P7_RESERVE:-}" ]; then p7_audit; log "P7 reserve audit (final): $(tail -n 1 "$P7D/audit.out" | cut -c1-160)"; fi
 
 # ---- 7b. THE TRAINING ARGUMENTS, defined ONCE and BEFORE every instrument and the launch gate: the token is minted over EXACTLY this string and verified against it
 #          before the preflight and before every train.py launch.  --yaw-wrap is filled from YAW_WRAP (top of this file) and nothing else.
