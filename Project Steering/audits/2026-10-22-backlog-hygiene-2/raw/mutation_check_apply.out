@@ -1,0 +1,47 @@
+CONTROL (unmutated)  rc=0  17 passed in 1.90s
+
+A1_anchor_check_removed      rc=1  RED (killed)
+  mutation : a row whose closure evidence vanished is struck anyway
+  result   : 1 failed, 16 passed in 1.95s
+    RED  test_a_row_whose_closure_evidence_is_gone_is_NOT_struck
+
+A2_duplicate_ids_allowed     rc=1  RED (killed)
+  mutation : a duplicated id is no longer a refusal
+  result   : 1 failed, 16 passed in 1.98s
+    RED  test_a_DUPLICATE_id_is_always_a_refusal
+
+A3_no_deletion_guard_off     rc=1  RED (killed)
+  mutation : the never-delete-text contract is not enforced
+  result   : 1 failed, 16 passed in 0.93s
+    RED  test_the_no_deletion_contract_is_ENFORCED_by_apply_not_just_by_a_helper
+
+A4_not_idempotent            rc=1  RED (killed)
+  mutation : an already-struck row is struck AGAIN
+  result   : 3 failed, 14 passed in 2.57s
+    RED  test_an_already_struck_row_is_skipped_not_refused
+    RED  test_applying_twice_is_applying_once
+    RED  test_on_the_TIP_the_sweep_leaves_exactly_the_rows_listed_for_the_MM
+
+A5_relabel_marker_ignored    rc=1  RED (killed)
+  mutation : a relabel is re-inserted on every run
+  result   : 2 failed, 15 passed in 2.17s
+    RED  test_applying_twice_is_applying_once
+    RED  test_on_the_TIP_the_sweep_leaves_exactly_the_rows_listed_for_the_MM
+
+A6_eol_normalised            rc=1  RED (killed)
+  mutation : CRLF input comes out LF
+  result   : 1 failed, 16 passed in 1.45s
+    RED  test_line_endings_are_preserved[\r\n]
+
+A7_c2_strike_kept            rc=1  RED (killed)
+  mutation : C2's display-strike is left in place
+  result   : 14 failed, 3 passed in 0.50s
+    RED  test_C2_loses_its_STALE_BLOCKER_verdict_without_losing_a_word
+    RED  test_NO_TEXT_IS_EVER_DELETED_and_the_guard_can_fail
+    RED  test_an_ABSENT_id_refuses_by_default_and_skips_under_allow_absent
+    RED  test_an_already_struck_row_is_skipped_not_refused
+    RED  test_applying_twice_is_applying_once
+    RED  test_every_row_the_MM_listed_is_CLOSED_after_the_sweep
+
+apply_hygiene.py md5 dce6ff08d3b851cebdd095fde4838701 -> dce6ff08d3b851cebdd095fde4838701 (UNCHANGED)
+survivors: 0 of 7

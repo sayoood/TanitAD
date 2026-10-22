@@ -1,0 +1,72 @@
+[backlog-drift] Project Steering/BACKLOG.md
+[backlog-drift] rows read     : 199 distinct ids over 215 occurrence(s), 41 section(s)
+[backlog-drift] last written  : ?  ?  (? commit(s) to the repo since)
+[backlog-drift] verdicts      : CLOSED=5  CLOSED-ELSEWHERE=14  CLOSED-LATER=25  DONE-BUT-OPEN=28  OPEN=126  STALE-BLOCKER=1
+[backlog-drift] heading items : 2 (1 without a closure marker) - NOT id'd rows, a human adjudicates these
+                 L261  ?? BLOCKING INTEGRATION ITEM -- refcv5's model seams are NOT IN `HEAD` (raised 2026-09-06, Tanit
+
+STALE ROWS - each contradicts BACKLOG.md:8, 'Strike items through
+when done, with the commit'. A puller scanning for open work reads
+these as work, and spends the turn re-deriving that they are not:
+  DONE-BUT-OPEN  A11   L26    | A11 | ~~? **Rescue the 45 stranded files on Thor**~~ ? **DONE 2026-08-18, 0 GPU** (`.../incoming/2026-08-18-
+  DONE-BUT-OPEN  A13   L32    | A13 | ~~**Adjudicate the 24 DRIFT rows in Thor's live `/home/nvidia/TanitAD` checkout**~~ ? **DONE 2026-09-0
+  DONE-BUT-OPEN  B4    L45    | B4 | ~~**Matched-capacity camera head** for sitclf~~ **DONE 2026-08-03, 0 pod GPU-h** (`.../incoming/2026-08
+  STALE-BLOCKER  C2    L56    | C2 | **C64 option A** -- score both arms on the 19 leak-free episodes, **v1 re-scored there** | ~~v2corpus r
+  DONE-BUT-OPEN  C3    L57    | C3 | **v5 gate verdict** | ~~v5 reaching step 2000; ?? first probe is the INCUMBENT and cannot stop the run~
+  DONE-BUT-OPEN  R1    L124   | **R1** | ? **DONE 2026-09-02 (D-REFAV1-LEAD-BLOCK)** -- **Lead block for the 141-clip eval grid** -- nearest
+  DONE-BUT-OPEN  R2    L125   | **R2** | ? **DONE 2026-09-02 (`3a6a48c`)** -- **Review the UNSTAGED `taniteval/tools/t1_eval.py` worktree di
+  DONE-BUT-OPEN  R4    L127   | **R4** | ? **DONE 2026-09-02 19:26Z (switch step 16,500; D-REFCV3-NAV-SWITCHED)** -- **`--nav-from-v7` for r
+  DONE-BUT-OPEN  S4R-1 L530   | S4R-1 | **DONE 2026-10-17** (`raw/2026-10-17-s4r-integration/`, TEST_TABLE.md: 22 full-form runs, 0 regressi
+  DONE-BUT-OPEN  P2F-1 L532   | P2F-1 | **DONE 2026-10-18** (`raw/2026-10-16-p2-full-table/RESULT.md`, `D-REFE-P2-FULLTABLE`; the SELRULE-DA
+  DONE-BUT-OPEN  EP-1  L534   | EP-1 | **DONE 2026-10-18, 0 GPU** (`raw/2026-10-18-ep-selection/RESULT.md`, `D-REFE-EP-1`/`-2`): P2's EP los
+  CLOSED-LATER   EP-R1UB L536   | EP-R1UB | **NEXT, CPU, ~10-20 min fit** (MM R7, `D-REFE-HEADFIT-F10`): E1 + D-LEAK fired at f = 10 %. Write 
+  CLOSED-LATER   NAVTEST-HEADBANK L537   | NAVTEST-HEADBANK | **SCHEDULED (MM D4, 2026-10-19), dev-box GPU, 5.43 GPU-h**: the navtest P2 `score_head` i
+  DONE-BUT-OPEN  SRTTC-DEV-APPLIER L538   | SRTTC-DEV-APPLIER | **DONE 2026-10-19** (`srttc_dev.py`, `navtest_c2.py`, `confirm_families.py`, `confirm_re
+  CLOSED-LATER   HEADROW-PROBE L539   | HEADROW-PROBE | **NEXT, CPU, minutes** (the D-FLAT next arm of SR-TTC and, if EP-R1ub has no feasible config
+  CLOSED-LATER   FASTNEG-CENSUS L540   | FASTNEG-CENSUS | **REGISTERED 2026-10-19 (`TanitAD Research Lab/Architecture & Inference/Research/2026-09-20
+  CLOSED-LATER   PICKRULE-AUDIT-NC L543   | PICKRULE-AUDIT-NC | **NEXT, 0 GPU, CPU minutes; own PREREG before any number.** NC resolves the fast band, y
+  CLOSED-LATER   NC-FASTCAL L544   | NC-FASTCAL | **NEXT, CPU minutes; own PREREG** (the committed ROW-MISS arm): SPEED-CONDITIONAL NC calibratio
+  CLOSED-LATER   EP-RELIAB-PICKS L545   | EP-RELIAB-PICKS | **NEXT, 0 GPU, CPU minutes; own PREREG with a pre-registered reliability-at-picks diagnost
+  DONE-BUT-OPEN  P6-READ-PREP L547   | P6-READ-PREP | **DONE 2026-10-19** (`raw/2026-10-19-p6-read-prep/`): `build_candidate_bank.py` (S0 candidate
+  CLOSED-LATER   EP-ADMISSION-R1 L548   | EP-ADMISSION-R1 | **NEXT, CPU** (before P6's read, about 25 Oct): implement the draft's Revision 1 in `ep_ad
+  CLOSED-LATER   EP-ADMISSION-R2-CONFIRM L549   | EP-ADMISSION-R2-CONFIRM | **NEXT, CPU (about 15 min)**: re-run the EP-ADMISSION-R1 simulator with a NEW repl
+  CLOSED-LATER   PRIVGEOM-SAFE L550   | PRIVGEOM-SAFE | **NEXT, CPU (budget about 16 CPU-h, sized by measured cost); own PREREG; supersedes PRIVGEOM
+  CLOSED-LATER   PRIVGEOM-CLEAN L553   | PRIVGEOM-CLEAN | **CONDITIONAL, BLOCKED (PI: nuPlan DB fetch for the 76 f10 logs without a local DB)**. A pr
+  CLOSED-LATER   D-SPACE L554   | D-SPACE | **BLOCKER (needs the PI: top-level D: deletions are refused to the agent's tools)**. D: (external 
+  CLOSED-LATER   PRIVGEOM-DAC L555   | PRIVGEOM-DAC | **NEXT, CPU; own PREREG before any number** (D2 of the Lab report, restricted to DAC): privil
+  CLOSED-LATER   PRIVGEOM-PROBE L557   | PRIVGEOM-PROBE | **CONDITIONAL on FASTNEG-CENSUS reading FEATURE** (D2 of the Lab report; CPU EST 13.5 h): p
+  CLOSED-LATER   EPR1UB-GATE-CACHE L560   | EPR1UB-GATE-CACHE | **FIX BEFORE ANY REUSE** (`D-REFE-EPR1UB-1`): `epr1ub_gate.load_verified_ub` caches the 
+  CLOSED-LATER   C2-GATE-SIBLING-LEAK L561   | C2-GATE-SIBLING-LEAK | **FIX BEFORE ANY REUSE of the (VOID) C2 chain:** `srttc_c2.run_c2` resolves `srttc_r1
+  DONE-BUT-OPEN  LIT-EP-RL L565   | LIT-EP-RL | **DONE 2026-10-18, 0 GPU** (`TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-e
+  CLOSED-LATER   L1-STEPA-RUN L566   | L1-STEPA-RUN | **LAUNCH-READY 2026-10-18** (`2026-10-18-ep-rl-lit/l1_stepA/`, Amendment 1 ADOPTED): the off-
+  CLOSED-LATER   L2-OFFPROP L567   | L2-OFFPROP | **BUILDING 2026-10-19** (agent; `C:/Users/Admin/par18/l2/`; draft prereg `TanitAD Research Lab/
+  CLOSED-LATER   L2-FRESH-STEPA L568   | L2-FRESH-STEPA | **NEXT** (L2-ADMIT's committed arm): L1 Step A re-run on a FRESH carve of navtrain held-out
+  DONE-BUT-OPEN  UNSEEN-STRATUM-DATA L569   | UNSEEN-STRATUM-DATA | **O3 next arm of L2-FRESH (Amendment 2); its PRIORITY is set by the Step B diagnostic*
+  CLOSED-LATER   L2-STEPB-GATE L570   | L2-STEPB-GATE | **BLOCKER for Step B** (MM ruling E7): integrating an L2 EP head into REFe's scorer for the 
+  CLOSED-LATER   EPADM-SEARCHBANK L572   | EPADM-SEARCHBANK | **BUILDING 2026-10-19** (agent, CPU; `C:/Users/Admin/par18/epadm_search/`; SEARCH-P2-CONF
+  CLOSED-LATER   EPADM-SEARCHBANK-S0 L573   | EPADM-SEARCHBANK-S0 | **NEXT (fallback (b) of `MM_RULING_SPC.md` DQ6)**: the search-output bank at S0's geom
+  DONE-BUT-OPEN  SEARCH-STALE-T1 L579   | SEARCH-STALE-T1 | **PROPOSED, after the PI's LATENCY-BUDGET ruling** (M3 of the memo, selection tier): apply
+  CLOSED-LATER   SEARCH-DOSE L580   | SEARCH-DOSE | **NEXT after `ZZSPC_DONE`** (CPU only, about 4 h ESTIMATED): the pinned O4 config (M = 256, `s
+  DONE-BUT-OPEN  P7-SPEC L583   | P7-SPEC | **DONE 2026-10-22 (spec + reserve landed: `TanitAD Research Lab/Architecture & Inference/Research/
+  DONE-BUT-OPEN  SO-A16 L593   | SO-A16 | **DONE 2026-10-17**: `test_launch_gate.py` resolves a real POSIX bash by absolute path (skips the W
+  DONE-BUT-OPEN  TEST-RED-1 L594   | TEST-RED-1 | **DONE 2026-10-18 -- none is a code defect** (`raw/2026-10-17-s4r-integration/TEST_RED_1_RESULT
+  DONE-BUT-OPEN  SO-CARVE L596   | SO-CARVE | **DONE 2026-10-18** (`raw/2026-10-18-so-carve/`, `D-REFE-SAFEOBJ-CARVE`: CARVE-TRACKS-TRAIN [F1 i
+  DONE-BUT-OPEN  R0E-B2B5 L599   | R0E-B2B5 | **DONE 2026-10-19** (`D-REFE-R0E-B2B5`): launch-gate profile `refe_rls1e` + pod chain for R0e-id 
+  CLOSED-LATER   R0E-B9B10 L600   | R0E-B9B10 | **BUILDING 2026-10-19** (agent; `C:/Users/Admin/par18/r0eb9/`): **B9** R0e-id runs K3 OBSERVE-ON
+  DONE-BUT-OPEN  RL-1  L602   | RL-1 | **DONE 2026-10-19, 0 GPU** (`raw/2026-10-18-rl-headwise/`, `D-REFE-RL1-HEADWISE`, `D-REFE-RL1-MECH`):
+  DONE-BUT-OPEN  RL-2  L603   | RL-2 | **DONE 2026-10-18, 0 GPU** (`raw/2026-10-19-rl-lanemix/`, `D-REFE-RL2-LANEDOSE`): the lane-dose compo
+  DONE-BUT-OPEN  LOCK-STEAL-2 L604   | LOCK-STEAL-2 | ~~**Four more dev-box lock helpers can remove a live job's lock** (sweep 2026-10-18, `TRAPS.m
+  DONE-BUT-OPEN  P6-RESUME-BANK L607   | P6-RESUME-BANK | **DONE 2026-10-20, for the NEXT ship** (`raw/2026-10-20-p6-resume-bank/`; the pod still run
+  DONE-BUT-OPEN  HNSCREEN-CACHE-CONTENT-FP L609   | HNSCREEN-CACHE-CONTENT-FP | 0 GPU: the `--ctx-cache` fingerprint used by the HN screen's gate is a SIZE LIST
+  DONE-BUT-OPEN  HNSCREEN-FP-COST L610   | HNSCREEN-FP-COST | **DECIDE BEFORE THE HN SCREEN LAUNCHES** (0 GPU): the content fingerprint costs 17 full r
+  CLOSED-LATER   HNSCREEN-TOKEN-NAMES L611   | HNSCREEN-TOKEN-NAMES | **LAUNCH BLOCKER for the P6-HN screen, 0 GPU. MEASURED from source at tip `823c529` (
+  DONE-BUT-OPEN  ZG-WIRE L612   | ZG-WIRE | **Wire the post-training zero-gradient gate into the chains** (landed 2026-10-18: `stack/scripts/z
+  DONE-BUT-OPEN  HJ-UNITS L615   | HJ-UNITS | **CLOSED 2026-10-18 (INSTFIX / HJ-UNITS-3, `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-18-in
+
+=> DONE-BUT-OPEN : strike the id (~~A11~~) and keep the evidence.
+=> CLOSED-LATER  : the row LEADS open (NEXT/BUILDING/...) but a dated span
+   later in it closes it. Strike the id and keep the evidence -- a puller
+   reads the lead, not the tail.
+=> STALE-BLOCKER : the blocker cleared and the row was not revisited;
+   re-state what is still open, or strike it. Do not leave it reading
+   as a live gap.
