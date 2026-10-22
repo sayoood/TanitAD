@@ -92,3 +92,7 @@ MEASURED: all numbers above (paths in the manifest). ESTIMATED: GPU memory/time 
 ## 9. Deliverable manifest
 
 See the end of the hand-back message and `MANIFEST.txt`.
+
+## Erratum (2026-10-22): distance keeping
+
+* The families note above says the lead-track distance-keeping input "is not built -- a work item". It is now read post hoc from the v8F-mini evals by `code/v8f_dk_read.py` (`taniteval.lead_metrics` on the B1 lead block): see `RESULT_V8F_DK.md`.

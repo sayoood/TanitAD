@@ -76,7 +76,9 @@ def traj_metrics(pred, X, n_boot=B_BOOT, seed=0):
 def families(pred, X, n_boot=B_BOOT, seed=0):
     """The binding LONGITUDINAL / LATERAL / TACTICAL families via `taniteval.four_families` (no re-implementation).
     A family that raises is recorded with its error -- never dropped. Lead-track (distance keeping) is reported by the
-    CONSISTENCY LEAD rule here; the family's own lead-track input is not built (UNAVAILABLE, a work item)."""
+    CONSISTENCY LEAD rule here; the family's own lead-track input is not built (UNAVAILABLE, a work item) IN THIS EVAL.
+    Distance keeping proper (headway / time-gap / min-TTC / LEAD-VIOL: `taniteval.lead_metrics` on the B1 lead block) is read from this
+    eval's saved npz by `TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_dk_read.py` (2026-10-22)."""
     import torch
     from taniteval import four_families as ff
     P, G = torch.as_tensor(pred, dtype=torch.float32), torch.as_tensor(X["gt"], dtype=torch.float32)

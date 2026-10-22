@@ -54,3 +54,10 @@
 * The fixed reader takes M2b's GT constraints from Amendment 2's `-tacorc-all-goal` oracle (`gt_source` in the read). The criteria are unchanged.
 * `--check-inputs` now runs before any training, in the chain.
 * See `PREREG_V8F_WC.md` Amendment 1.
+
+## Update (2026-10-22): distance keeping, and what it says about the next lever
+
+* "Distance keeping is not instrumented here" is out of date. `code/v8f_dk_read.py` now reads it for M1, M2b and P10 (`RESULT_V8F_DK.md`). M2b-wc_s0 was not read.
+* That read bears on the choice of next lever. An exploratory T0 oracle read finds T's LATERAL constraint error leaking into O's longitudinal profile: O's plan is further along at 2 s, and the early closing on the lead comes with it.
+  * That is a measured, O-side defect for the committed lever (O trained against T's own code) to remove. The section above found no such defect.
+  * It is also an accuracy target for the `pool8x20` input arm.

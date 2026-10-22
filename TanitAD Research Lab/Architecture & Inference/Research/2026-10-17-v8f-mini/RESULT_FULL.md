@@ -134,3 +134,12 @@ TACTICAL and STRATEGIC are not paired here: the eval files save no per-window ma
 1. Rung β runs now on box 2 (the WM as a planner: WM-1's committed branch).
 2. K-1 PASS names the controls M2a / M1-navonly / M1-nocons as next. Each is the PI's go and a box-2 slot.
 3. The largest measured lever is the **longitudinal speed decision**: an oracle per-window speed scale is worth 0.20–0.39 m across the four runs (M1 s0 0.197, M2b s0 0.287, M1 s1 0.355, M2b s1 0.386). It is training-side, so the PI's go.
+
+## Erratum (2026-10-22): distance keeping is no longer UNAVAILABLE
+
+* The LONGITUDINAL distance-keeping row above, and the two notes that repeat it, read UNAVAILABLE. That was true of this eval, not of the programme. The instrument (`taniteval/lead_metrics.py` on the B1 lead block, BACKLOG R1, 2026-09-02) existed; v8F-mini never called it.
+* It is now read post hoc from these same eval files by `code/v8f_dk_read.py`: `RESULT_V8F_DK.md`, `raw/2026-10-22-dk/`. The table and notes above are left as written.
+* Headline (MEASURED, T1-class open loop, descriptive, no bar):
+  * at 6 s, M2b keeps more headway than P10: +0.53 / +0.42 m, separated at both seeds;
+  * at 2 s, the learned arms close on the lead faster: min-TTC −1.76 / −1.19 s against P10, separated;
+  * an exploratory T0 oracle read traces the 2 s closing to T's lateral constraint group (`latcons`).

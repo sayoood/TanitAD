@@ -255,7 +255,8 @@ def render(v, runs, p10_raw, p10, gtprov, blocks, ctl, checks, notes):
     for fam, lab, path, dp in FAM_ROWS:
         L.append(f"| {fam} | {lab} | " + " | ".join(fmt(g(src[c], path), dp) if src[c] else "--" for c in cols) + " |")
     dk = g(runs["M1_s0"]["raw"], "families.longitudinal.distance_keeping") or {}
-    L += ["", f"* Distance keeping is `{dk.get('status')}`: {dk.get('reason', '--')} (n = {dk.get('n')}). A work item, not a pass.",
+    L += ["", f"* Distance keeping is `{dk.get('status')}`: {dk.get('reason', '--')} (n = {dk.get('n')}). A work item, not a pass. "
+          "Since 2026-10-22 it is read post hoc from these evals by `code/v8f_dk_read.py` (RESULT_V8F_DK.md).",
           f"* Tactical-head majority-class macro-F1: lat {fmt(g(runs['M1_s0']['raw'], 'tactical.lat_majority.macro_f1'))}, "
           f"lon {fmt(g(runs['M1_s0']['raw'], 'tactical.lon_majority.macro_f1'))}.",
           f"* P10 consistency (a) rate: {fmt(v.get('P10_consistency_a_rate'))}.",
