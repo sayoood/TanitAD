@@ -86,7 +86,7 @@ export CONTROLS_JSON=$CJ
 # ---- twin parts (44,409) on the frozen D7 tree
 if [ ! -f $F/PARTS_DONE ]; then
   log "twin parts: start (WORKERS=$NP)"
-  WORKERS=$NP bash $W/ops/bank3c/code/build_twin_parts_3c.sh > $O/parts.out 2>&1
+  WORKERS=$NP bash $O/build_twin_parts_3c_pp.sh > $O/parts.out 2>&1
   [ -f $F/PARTS_DONE ] || fail "twin parts: $(tail -n 1 $O/parts.out | cut -c1-250)"
   mark parts "44,409 twin parts, D7 distinct OK K=1..3"
 fi

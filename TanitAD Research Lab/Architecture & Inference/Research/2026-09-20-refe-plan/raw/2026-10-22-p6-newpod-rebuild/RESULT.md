@@ -87,3 +87,26 @@ The run's identity checks are unchanged: ARGS sha, launch-gate token and trainer
 | the 74-twin control's full outputs | pod `/workspace/ops/bank3c/controls74/` |
 | P6 checkpoint (6 epochs) | HF `Sayood/tanitad-refe-p6-paper-faithful` |
 | the 3-C bank, once merged and sha-verified | pod volume, then HF dataset `Sayood/tanitad-refe-navtrain-banks` as `refe_train_grow_cmd_3c.tar.zst`. The pod sidecar `code/bank3c_hf.sh` waits for `merge.done`, uploads, and checks the remote size and LFS sha256 (`ZZB3_OK`). The bank was never banked off the old pod, which is why this rebuild was needed. |
+
+## Addendum 1 (2026-10-22 13:16Z): the twin-parts acceptance check could not import its module; fixed by a one-line PYTHONPATH copy
+
+**What happened.**
+- The rank-1 twin parts built cleanly: `ZZMETRIC_CACHE_DONE built=32929 failed=0`, 4,984 s.
+- The D7 acceptance check right after them, `check_twin_parts_distinct.py`, crashed with `ModuleNotFoundError: No module named 'online_labeller'`.
+- The driver stopped (`ZZRB_FAIL`), as designed.
+
+**Why.**
+- The checker's own header requires *"pod, teacher venv, PYTHONPATH incl. $PKG/refe"*. `build_twin_parts_3c.sh` exports only `$PKG/code`.
+- `teacher_env.sh` resets PYTHONPATH, so it cannot be passed in from outside.
+- `online_labeller.py` exists only in `$PKG/refe` (sha256 `917ca293…`).
+
+**Fix.** `code/build_twin_parts_3c_pp.sh` is a copy of the pinned `build_twin_parts_3c.sh` with **exactly one line changed** (diff: 1 line): `export PYTHONPATH=$PKG/code:$PKG/refe:${PYTHONPATH:-}`.
+- The pinned script was not edited.
+- The parts are unchanged by it: `build_metric_cache.py` runs from `$PKG/refe`, so its import path already starts there.
+- The driver now calls the copy (`code/rebuild_driver.sh`; executed sha in `raw/executed_script_sha256.txt`).
+
+**Result.**
+- On relaunch, rank 1 skipped all 32,929 existing parts (14 s).
+- The check passed: `ZZD7_DISTINCT_OK k=1 sampled=40 differ=37 frac=0.925 min_frac=0.9`.
+- Ranks 2 and 3 followed.
+- This is a fifth disclosed deviation for the resumed run (§5).
