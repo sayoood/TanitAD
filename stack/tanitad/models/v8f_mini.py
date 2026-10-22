@@ -728,6 +728,7 @@ class V8FMini(nn.Module):
                 "cons_absent": cfg.cons_absent,
                 "wm_idm_gamma": 0.0 if self.wm is None else float(self.wm.gamma),
                 "kin_mode": self.cfg.kin_mode, "wm_ch1_scale": None if self.wm is None else float(self.wm.ch1_scale),
+                "p_gt_start": cfg.p_gt_start, "p_gt_end": cfg.p_gt_end,      # PREREG_V8F_PGT: the scheduled-sampling schedule the train loop reads
                 "prior_frozen": not any(p.requires_grad for p in self.prior.parameters()),
                 "residual_zero_init": bool(float(self.head_o[2].weight.detach().abs().sum()) == 0.0),
                 "params": {k: gp(v) for k, v in self.trainable_groups().items()},

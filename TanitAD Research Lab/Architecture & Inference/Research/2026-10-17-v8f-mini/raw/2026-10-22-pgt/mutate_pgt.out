@@ -1,0 +1,255 @@
+# mutate_pgt.out -- the mutation proof of the PREREG_V8F_PGT instruments, run in EIGHT parallel parts (each in its own slim copy of the tree).
+# Every mutant must turn stack/tests/test_v8f_pgt.py RED; every part's unmutated tree is GREEN before and after. A reader/queue/chain mutant is tried on its own
+# tests first (-k) and, if it survives them, on the WHOLE file before it may be called GREEN.
+# sha256 of the bytes mutated (the delivered bytes):
+#   2b31fa0af5369be6b44aa2a4a94d4a1cb7997f733e0821ddfa02546eafd07288  stack/tests/test_v8f_pgt.py
+#   f470191ffae1b5246b7c3308b1b93a676a1df8b7f19a5ca0644103ead5a0edf2  stack/tanitad/models/v8f_mini.py
+#   daf4dd9da9df1c0df595349c30509d293803a66dbd591dde878ab3274d06d969  stack/scripts/v8f_mini_train.py
+#   dfafcb4f94d1b2d9edefee6b8aaf38b96dac80449dd94e43231821d9a6e80903  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_pgt_read.py
+#   ece0a85fa11973437c012d32fb3ef8732352bf4d9bdcfede27f4aa0bbe37307f  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd
+#   2e7923c02a594e654ad29c63baac26fd52a45b7166e5192926e305737bc9536c  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/box2_ops/chain_v8f_pgt.sh
+#   0b89cad02fa6d959fd176edf00843ee25b41900d7c1977130115dd9356040712  TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-22-pgt/mutate_pgt.py
+
+## part reach
+anchors OK: 21 mutants, every anchor occurs exactly once
+BASELINE rc=0 29 passed, 1 warning in 82.79s (0:01:22)
+RED   v8f_mini.py: S->T/O: a floor hard-coded at M2b's 0.2 survives p_gt = 0 -> 1 failed, 3 passed in 10.39s  [test_mid_p_is_the_exact_bernoulli_draw_s_first_then_t[0.1]]
+RED   v8f_mini.py: S->T/O: the draw ignores rc_ok (a GT checkpoint where it is invalid) -> 1 failed, 2 passed in 3.94s  [test_checkpoint_interfaces_s_to_t_and_s_to_o_at_p0_and_p1]
+RED   v8f_mini.py: S->T/O: never reads the GT checkpoint -> 1 failed, 2 passed in 4.05s  [test_checkpoint_interfaces_s_to_t_and_s_to_o_at_p0_and_p1]
+RED   v8f_mini.py: T->O: a floor hard-coded at M2b's 0.2 survives p_gt = 0 -> 1 failed, 1 passed in 12.51s  [test_o_reads_t_code_exactly_at_p0_and_the_gt_code_where_labelled_at_p1]
+RED   v8f_mini.py: T->O: the draw ignores the label's `has` (GT code on an unlabelled window) -> 1 failed, 1 passed in 12.76s  [test_o_reads_t_code_exactly_at_p0_and_the_gt_code_where_labelled_at_p1]
+RED   v8f_mini.py: T->O: never reads the GT code -> 1 failed, 1 passed in 13.38s  [test_o_reads_t_code_exactly_at_p0_and_the_gt_code_where_labelled_at_p1]
+RED   v8f_mini.py: T->O: the draw ignores the generator -> 1 failed, 3 passed in 14.53s  [test_mid_p_is_the_exact_bernoulli_draw_s_first_then_t[0.1]]
+RED   v8f_mini.py: T->O: half the rate -> 1 failed, 1 passed in 13.75s  [test_o_reads_t_code_exactly_at_p0_and_the_gt_code_where_labelled_at_p1]
+RED   v8f_mini.py: forward ignores the p_gt it is given -> 1 failed, 1 passed in 14.31s  [test_o_reads_t_code_exactly_at_p0_and_the_gt_code_where_labelled_at_p1]
+RED   v8f_mini.py: loss drops the p_gt it is given -> 1 failed, 6 passed, 1 warning in 26.77s  [test_the_train_loop_hands_the_schedule_to_the_masks]
+RED   v8f_mini.py: built_levers misreports p_gt_start -> 1 failed, 5 passed in 19.47s  [test_argv_reaches_cfg_and_the_built_record_and_a_lie_is_refused]
+RED   v8f_mini.py: built_levers misreports p_gt_end -> 1 failed, 5 passed in 18.54s  [test_argv_reaches_cfg_and_the_built_record_and_a_lie_is_refused]
+RED   v8f_mini.py: the schedule does not decay -> 1 failed in 8.24s  [test_p_gt_schedule_values_and_the_dose_arithmetic]
+RED   v8f_mini.py: the schedule runs backwards -> 1 failed in 9.65s  [test_p_gt_schedule_values_and_the_dose_arithmetic]
+RED   v8f_mini.py: the schedule is not clamped at the end value -> 1 failed in 9.31s  [test_p_gt_schedule_values_and_the_dose_arithmetic]
+RED   v8f_mini_train.py: make_config drops --p-gt-start -> 1 failed, 5 passed in 15.15s  [test_argv_reaches_cfg_and_the_built_record_and_a_lie_is_refused]
+RED   v8f_mini_train.py: make_config drops --p-gt-end -> 1 failed, 5 passed in 15.62s  [test_argv_reaches_cfg_and_the_built_record_and_a_lie_is_refused]
+RED   v8f_mini_train.py: the loop swaps the schedule's endpoints -> 1 failed, 6 passed, 1 warning in 26.70s  [test_the_train_loop_hands_the_schedule_to_the_masks]
+RED   v8f_mini_train.py: the loop does not hand p_gt to the loss -> 1 failed, 6 passed, 1 warning in 29.50s  [test_the_train_loop_hands_the_schedule_to_the_masks]
+RED   v8f_mini_train.py: the gate does not compare p_gt_start / p_gt_end -> 1 failed, 5 passed in 23.91s  [test_argv_reaches_cfg_and_the_built_record_and_a_lie_is_refused]
+RED   v8f_mini_train.py: M2b's default floor silently moves to 0.0 -> 1 failed, 5 passed in 17.52s  [test_argv_reaches_cfg_and_the_built_record_and_a_lie_is_refused]
+AFTER rc=0 29 passed, 1 warning in 214.46s (0:03:34)
+21 / 21 mutations RED
+
+## part reader1
+anchors OK: 30 mutants, every anchor occurs exactly once
+BASELINE rc=0 29 passed, 1 warning in 84.83s (0:01:24)
+RED   v8f_pgt_read.py: s0: CONTINUE and STOP swapped -> [-k 'reader'] 1 failed, 5 passed, 16 deselected in 28.35s  [test_reader_stage_s0_continues_or_stops_on_seed_0_alone]
+RED   v8f_pgt_read.py: final: the two FAIL labels swapped -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 14.10s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: PRIMARY bar is F, not 2F -> [-k 'reader'] 1 failed, 9 passed, 16 deselected in 80.99s (0:01:20)  [test_reader_primary_bar_is_two_F_needs_a_separated_interval_and_every_bar_reads_its_own_seed]
+RED   v8f_pgt_read.py: PRIMARY does not need a separated interval -> [-k 'reader'] 1 failed, 9 passed, 16 deselected in 91.13s (0:01:31)  [test_reader_primary_bar_is_two_F_needs_a_separated_interval_and_every_bar_reads_its_own_seed]
+RED   v8f_pgt_read.py: size bar of M-LEAK / M-DK is the full reference, not half -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 12.00s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: size bar of M-LEAK / M-DK is gone -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 19.40s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: the judge reads seed 0's reference at every seed -> [-k 'reader'] 1 failed, 9 passed, 16 deselected in 101.10s (0:01:41)  [test_reader_primary_bar_is_two_F_needs_a_separated_interval_and_every_bar_reads_its_own_seed]
+RED   v8f_pgt_read.py: PRIMARY contrast sign flipped -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 13.05s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: M-LEAK reference reads ALL windows -> [-k 'reader'] 1 failed, 10 passed, 16 deselected in 108.43s (0:01:48)  [test_reader_mdk_pairs_the_windows_where_both_arms_close_and_reports_the_rest_beside_it]
+RED   v8f_pgt_read.py: LAMBDA sign flipped (oracle minus all-latcons) -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 18.31s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: S5 threshold is 2 s, not 5 s -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 14.54s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: S5 reference sign flipped (P10 minus M2b) -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 16.62s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: the companion S5 sign flipped -> [-k 'reader'] 1 failed, 10 passed, 16 deselected in 101.40s (0:01:41)  [test_reader_mdk_pairs_the_windows_where_both_arms_close_and_reports_the_rest_beside_it]
+RED   v8f_pgt_read.py: refusal off: runs not on one clip list -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 64.39s (0:01:04)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: a run is not done -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 64.78s (0:01:04)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: the launch gate is not PASS -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 67.60s (0:01:07)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: built p_gt differs from the dose -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 70.18s (0:01:10)  [test_reader_refusals]
+RED   v8f_pgt_read.py: built p_gt checked in selfcheck.json only (summary.json ignored) -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 72.45s (0:01:12)  [test_reader_refusals]
+RED   v8f_pgt_read.py: train_log tolerance is 1.0 -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 71.31s (0:01:11)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: an M2b run built with another schedule -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 70.93s (0:01:10)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: absmask eval is not an absmask run -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 72.59s (0:01:12)  [test_reader_refusals]
+RED   v8f_pgt_read.py: the old-format GT oracle does not fall back to all-goal -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 10.62s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: check_gt_codes: the all-latcons oracle's GT outside latcons is unchecked -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 76.86s (0:01:16)  [test_reader_refusals]
+RED   v8f_pgt_read.py: known-value control off: LAMBDA / S5 excess -> [-k 'reader'] 1 failed, 11 passed, 16 deselected in 106.63s (0:01:46)  [test_reader_known_values_are_checked_term_by_term_with_their_tolerance_and_the_identity_control_checks_the_bounds]
+RED   v8f_pgt_read.py: identity control off -> [-k 'reader'] 1 failed, 11 passed, 16 deselected in 122.31s (0:02:02)  [test_reader_known_values_are_checked_term_by_term_with_their_tolerance_and_the_identity_control_checks_the_bounds]
+RED   v8f_pgt_read.py: the committed dose in the reader is 1.0 -> 0.0 -> [-k 'reader'] 1 failed, 16 deselected in 7.31s  [test_reader_layout_and_constants_match_the_model_and_the_trainer]
+RED   v8f_pgt_read.py: the reader's schedule is not clamped -> [-k 'reader'] 1 failed, 16 deselected in 8.18s  [test_reader_layout_and_constants_match_the_model_and_the_trainer]
+RED   v8f_pgt_read.py: the reader's banked F is another -> [-k 'reader'] 1 failed, 16 deselected in 8.00s  [test_reader_layout_and_constants_match_the_model_and_the_trainer]
+RED   v8f_pgt_read.py: identity control ignores delta -> [-k 'reader'] 1 failed, 11 passed, 16 deselected in 125.03s (0:02:05)  [test_reader_known_values_are_checked_term_by_term_with_their_tolerance_and_the_identity_control_checks_the_bounds]
+RED   v8f_pgt_read.py: check-inputs does not compare the banked GT codes -> [-k 'reader'] 1 failed, 12 passed, 16 deselected in 124.32s (0:02:04)  [test_reader_check_inputs_refuses_banked_gt_codes_that_differ_between_the_two_m2b_seeds]
+AFTER rc=0 29 passed, 1 warning in 153.01s (0:02:33)
+30 / 30 mutations RED
+
+## part reader2
+anchors OK: 29 mutants, every anchor occurs exactly once
+BASELINE rc=0 29 passed, 1 warning in 84.62s (0:01:24)
+RED   v8f_pgt_read.py: final: SUCCESS needs only ONE passing seed -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 10.73s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: s0: the two FAIL labels swapped -> [-k 'reader'] 1 failed, 5 passed, 16 deselected in 38.04s  [test_reader_stage_s0_continues_or_stops_on_seed_0_alone]
+RED   v8f_pgt_read.py: PRIMARY bar has no size floor -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 14.27s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: PRIMARY passes a WORSE arm (sign) -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 11.39s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: size bar of M-LEAK / M-DK is 0.6 of the reference -> [-k 'reader'] 1 failed, 2 passed, 16 deselected in 35.54s  [test_reader_mechanism_needs_both_symptoms_and_the_size_bar_is_half]
+RED   v8f_pgt_read.py: mechanism is EITHER symptom -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 19.01s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: F is not the banked M2b seed floor -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 12.08s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: M-LEAK contrast sign flipped -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 11.77s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: LAMBDA is read at 4 s, not 2 s -> [-k 'reader'] 1 failed, 16 deselected in 8.22s  [test_reader_layout_and_constants_match_the_model_and_the_trainer]
+RED   v8f_pgt_read.py: LAMBDA reference CI built from the wrong arrays -> [-k 'reader'] 1 failed, 10 passed, 16 deselected in 98.78s (0:01:38)  [test_reader_mdk_pairs_the_windows_where_both_arms_close_and_reports_the_rest_beside_it]
+RED   v8f_pgt_read.py: S5 contrast sign flipped -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 10.70s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: S5 keeps the windows whose min-TTC is undefined (scored not at risk) -> [-k 'reader'] 1 failed, 10 passed, 16 deselected in 106.14s (0:01:46)  [test_reader_mdk_pairs_the_windows_where_both_arms_close_and_reports_the_rest_beside_it]
+RED   v8f_pgt_read.py: the dropped-window count is not reported -> [-k 'reader'] 1 failed, 10 passed, 16 deselected in 111.05s (0:01:51)  [test_reader_mdk_pairs_the_windows_where_both_arms_close_and_reports_the_rest_beside_it]
+RED   v8f_pgt_read.py: refusal off: the RA-1 holdout not withheld -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 71.28s (0:01:11)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: different step counts -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 67.80s (0:01:07)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: argv --arm is not M2b -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 66.70s (0:01:06)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: built p_gt unrecorded -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 67.12s (0:01:07)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: a second lever differs between the arms -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 72.09s (0:01:12)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: an empty train_log -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 75.77s (0:01:15)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: an eval on another grid (load_arm) -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 67.08s (0:01:07)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: an oracle eval is not an oracle run -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 78.08s (0:01:18)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: no pred / ade6 in an eval -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 70.92s (0:01:10)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: the rebuilt eval grid is not the evals' grid -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 64.33s (0:01:04)  [test_reader_refusals]
+RED   v8f_pgt_read.py: known-value control off: F -> [-k 'reader'] 1 failed, 11 passed, 16 deselected in 122.35s (0:02:02)  [test_reader_known_values_are_checked_term_by_term_with_their_tolerance_and_the_identity_control_checks_the_bounds]
+RED   v8f_pgt_read.py: identity control skips the bounds -> [-k 'reader'] 1 failed, 11 passed, 16 deselected in 122.00s (0:02:01)  [test_reader_known_values_are_checked_term_by_term_with_their_tolerance_and_the_identity_control_checks_the_bounds]
+RED   v8f_pgt_read.py: the reader's M2b dose is 1.0 -> 0.0 -> [-k 'reader'] 1 failed, 16 deselected in 7.09s  [test_reader_layout_and_constants_match_the_model_and_the_trainer]
+RED   v8f_pgt_read.py: the reader's holdout sha is another -> [-k 'reader'] 1 failed, 16 deselected in 7.30s  [test_reader_layout_and_constants_match_the_model_and_the_trainer]
+RED   v8f_pgt_read.py: the reader's banked M2b leak is another -> [-k 'reader'] 1 failed, 16 deselected in 7.46s  [test_reader_layout_and_constants_match_the_model_and_the_trainer]
+RED   v8f_pgt_read.py: identity control ignores the lower bound -> [-k 'reader'] 1 failed, 11 passed, 16 deselected in 119.61s (0:01:59)  [test_reader_known_values_are_checked_term_by_term_with_their_tolerance_and_the_identity_control_checks_the_bounds]
+AFTER rc=0 29 passed, 1 warning in 183.42s (0:03:03)
+29 / 29 mutations RED
+
+## part reader3
+anchors OK: 29 mutants, every anchor occurs exactly once
+BASELINE rc=0 29 passed, 1 warning in 84.82s (0:01:24)
+RED   v8f_pgt_read.py: mechanism read as ANY seed instead of every seed -> [-k 'reader'] 1 failed, 9 passed, 16 deselected in 75.64s (0:01:15)  [test_reader_primary_bar_is_two_F_needs_a_separated_interval_and_every_bar_reads_its_own_seed]
+RED   v8f_pgt_read.py: final: SUCCESS declared whatever the seeds read -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 13.06s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: PRIMARY bar is 3F -> [-k 'reader'] 1 failed, 9 passed, 16 deselected in 87.65s (0:01:27)  [test_reader_primary_bar_is_two_F_needs_a_separated_interval_and_every_bar_reads_its_own_seed]
+RED   v8f_pgt_read.py: separated OR improving (not AND) -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 22.34s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: size bar of M-LEAK / M-DK is 0.4 of the reference -> [-k 'reader'] 1 failed, 2 passed, 16 deselected in 33.14s  [test_reader_mechanism_needs_both_symptoms_and_the_size_bar_is_half]
+RED   v8f_pgt_read.py: a non-positive reference symptom is silently scored on its size -> [-k 'reader'] 1 failed, 2 passed, 16 deselected in 40.78s  [test_reader_mechanism_needs_both_symptoms_and_the_size_bar_is_half]
+RED   v8f_pgt_read.py: stage s0 reads both seeds -> [-k 'reader'] 1 failed, 5 passed, 16 deselected in 47.70s  [test_reader_stage_s0_continues_or_stops_on_seed_0_alone]
+RED   v8f_pgt_read.py: M-LEAK reads ALL windows, not the LEAD windows -> [-k 'reader'] 1 failed, 3 passed, 16 deselected in 44.54s  [test_reader_lambda_reads_only_lead_windows_and_is_the_2s_along_track_difference]
+RED   v8f_pgt_read.py: LAMBDA is the cross-track, not the along-track -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 12.28s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: S5 threshold is 10 s, not 5 s -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 12.56s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: S5 reference is M2b against itself, not against P10 -> [-k 'reader'] 1 failed, 1 passed, 16 deselected in 12.42s  [test_reader_decision_table_final_stage]
+RED   v8f_pgt_read.py: the companion S5 reads ALL windows, not the LEAD windows -> [-k 'reader'] 1 failed, 10 passed, 16 deselected in 113.85s (0:01:53)  [test_reader_mdk_pairs_the_windows_where_both_arms_close_and_reports_the_rest_beside_it]
+RED   v8f_pgt_read.py: the identity control does not cover the companion S5 -> [-k 'reader'] 1 failed, 7 passed, 16 deselected in 65.03s (0:01:05)  [test_reader_identity_control_known_values_and_check_inputs]
+RED   v8f_pgt_read.py: refusal off: n_clips -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 66.94s (0:01:06)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: summary says another arm / seed -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 70.83s (0:01:10)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: M2b-pgt argv does not carry the dose -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 66.99s (0:01:06)  [test_reader_refusals]
+RED   v8f_pgt_read.py: built p_gt checked in summary.json only (selfcheck.json ignored) -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 74.29s (0:01:14)  [test_reader_refusals]
+RED   v8f_pgt_read.py: the M2b-pgt train_log is optional -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 69.66s (0:01:09)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: an M2b run carries a lever flag -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 67.26s (0:01:07)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: an arm on another grid (load_all) -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 73.26s (0:01:13)  [test_reader_refusals]
+RED   v8f_pgt_read.py: refusal off: no tac_code on the absmask eval -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 73.58s (0:01:13)  [test_reader_refusals]
+RED   v8f_pgt_read.py: check_gt_codes: the GT constraint blocks are not compared across arms -> [-k 'reader'] 1 failed, 12 passed, 16 deselected in 126.41s (0:02:06)  [test_reader_check_inputs_refuses_banked_gt_codes_that_differ_between_the_two_m2b_seeds]
+RED   v8f_pgt_read.py: refusal off: the lead block has K < 10 -> [-k 'reader'] 1 failed, 8 passed, 16 deselected in 71.86s (0:01:11)  [test_reader_refusals]
+RED   v8f_pgt_read.py: known-value tolerance is 1.0 -> [-k 'reader'] 1 failed, 7 passed, 16 deselected in 63.26s (0:01:03)  [test_reader_identity_control_known_values_and_check_inputs]
+RED   v8f_pgt_read.py: the committed dose in the reader is 0.5 -> 0.2 -> [-k 'reader'] 1 failed, 16 deselected in 7.40s  [test_reader_layout_and_constants_match_the_model_and_the_trainer]
+RED   v8f_pgt_read.py: the reader's schedule never decays -> [-k 'reader'] 1 failed, 16 deselected in 7.06s  [test_reader_layout_and_constants_match_the_model_and_the_trainer]
+RED   v8f_pgt_read.py: the reader's clip count is another -> [-k 'reader'] 1 failed, 16 deselected in 7.56s  [test_reader_layout_and_constants_match_the_model_and_the_trainer]
+RED   v8f_pgt_read.py: the reader's banked S5 excess is another -> [-k 'reader'] 1 failed, 16 deselected in 8.00s  [test_reader_layout_and_constants_match_the_model_and_the_trainer]
+RED   v8f_pgt_read.py: identity control ignores the point estimate -> [-k 'reader'] 1 failed, 11 passed, 16 deselected in 127.05s (0:02:07)  [test_reader_known_values_are_checked_term_by_term_with_their_tolerance_and_the_identity_control_checks_the_bounds]
+AFTER rc=0 29 passed, 1 warning in 186.11s (0:03:06)
+29 / 29 mutations RED
+
+## part qstages1
+anchors OK: 25 mutants, every anchor occurs exactly once
+BASELINE rc=0 29 passed, 1 warning in 83.93s (0:01:23)
+RED   v8f_mini_box2_queue.cmd: gatepgt drops the whole lever -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 2.56s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: gatepgt hard-codes the end at M2b's 0.2 -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 2.64s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: gatepgt is not a selfcheck-only run -> [-k 'queue or chain'] 1 failed, 2 passed, 20 deselected in 2.33s  [test_queue_pgt_stages_dry]
+RED   v8f_mini_box2_queue.cmd: trainpgt drops --p-gt-start -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 2.20s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: trainpgt hard-codes the end at M2b's 0.2 -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 2.46s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: trainpgt swaps the endpoints -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 2.40s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: trainpgt runs a different string than it prints -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 8.09s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: trainpgt accepts no seed -> [-k 'queue or chain'] 1 failed, 2 passed, 20 deselected in 9.41s  [test_queue_pgt_stages_dry]
+RED   v8f_mini_box2_queue.cmd: trainpgt does not notice a failing trainer -> [-k 'queue or chain'] 1 failed, 4 passed, 20 deselected in 19.12s  [test_queue_pgt_real_stages_notice_failures_and_skip_exactly_what_is_finished]
+RED   v8f_mini_box2_queue.cmd: the dose end moved -> [-k 'queue or chain'] 1 failed, 20 deselected in 8.96s  [test_queue_pgt_dose_is_defined_once_and_the_stages_read_it]
+RED   v8f_mini_box2_queue.cmd: the dose start is defined a second time -> [-k 'queue or chain'] 1 failed, 20 deselected in 8.49s  [test_queue_pgt_dose_is_defined_once_and_the_stages_read_it]
+RED   v8f_mini_box2_queue.cmd: the dispatch sends trainpgt to the base train stage -> [-k 'queue or chain'] 1 failed, 20 deselected in 8.50s  [test_queue_pgt_dose_is_defined_once_and_the_stages_read_it]
+RED   v8f_mini_box2_queue.cmd: the dispatch sends evalpgt to the WC eval -> [-k 'queue or chain'] 1 failed, 20 deselected in 8.97s  [test_queue_pgt_dose_is_defined_once_and_the_stages_read_it]
+RED   v8f_mini_box2_queue.cmd: E0 drops --families -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 8.52s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: E2 is not an oracle run -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 8.60s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: E3 asks for all-goal, not all-latcons -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 8.75s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: E0 evaluates the banked M2b checkpoint -> [-k 'queue or chain'] 1 failed, 2 passed, 20 deselected in 12.37s  [test_queue_pgt_stages_dry]
+RED   v8f_mini_box2_queue.cmd: E2's tag is E3's (the oracle eval overwrites nothing and names the wrong file) -> [-k 'queue or chain'] 1 failed, 2 passed, 20 deselected in 13.15s  [test_queue_pgt_stages_dry]
+RED   v8f_mini_box2_queue.cmd: the dry run omits E1 -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 8.37s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: the real run executes E2 where it prints E3 -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 8.72s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: evalpgt evaluates an unfinished run -> [-k 'queue or chain'] 1 failed, 4 passed, 20 deselected in 19.00s  [test_queue_pgt_real_stages_notice_failures_and_skip_exactly_what_is_finished]
+RED   v8f_mini_box2_queue.cmd: evalpgt does not notice a failing E1 -> [-k 'queue or chain'] 1 failed, 4 passed, 20 deselected in 20.18s  [test_queue_pgt_real_stages_notice_failures_and_skip_exactly_what_is_finished]
+RED   v8f_mini_box2_queue.cmd: a finished E0 skips E1 as well -> [-k 'queue or chain'] 1 failed, 4 passed, 20 deselected in 23.70s  [test_queue_pgt_real_stages_notice_failures_and_skip_exactly_what_is_finished]
+RED   v8f_mini_box2_queue.cmd: a finished E2 skips E3 as well -> [-k 'queue or chain'] 1 failed, 4 passed, 20 deselected in 31.32s  [test_queue_pgt_real_stages_notice_failures_and_skip_exactly_what_is_finished]
+RED   v8f_mini_box2_queue.cmd: evalpgt tags the eval as M2b -> [-k 'queue or chain'] 1 failed, 2 passed, 20 deselected in 12.66s  [test_queue_pgt_stages_dry]
+AFTER rc=0 29 passed, 1 warning in 215.52s (0:03:35)
+25 / 25 mutations RED
+
+## part qstages2
+anchors OK: 24 mutants, every anchor occurs exactly once
+BASELINE rc=0 29 passed, 1 warning in 84.30s (0:01:24)
+RED   v8f_mini_box2_queue.cmd: gatepgt drops --p-gt-end -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 2.44s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: gatepgt writes into M2b's own run directory -> [-k 'queue or chain'] 1 failed, 2 passed, 20 deselected in 3.99s  [test_queue_pgt_stages_dry]
+RED   v8f_mini_box2_queue.cmd: gatepgt runs a different string than it prints -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 2.18s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: trainpgt drops --p-gt-end -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 2.45s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: trainpgt hard-codes the start at 0.5 -> [-k 'queue or chain'] 1 failed, 20 deselected in 2.45s  [test_queue_pgt_dose_is_defined_once_and_the_stages_read_it]
+RED   v8f_mini_box2_queue.cmd: trainpgt drops the grid -> [-k 'queue or chain'] 1 failed, 2 passed, 20 deselected in 8.41s  [test_queue_pgt_stages_dry]
+RED   v8f_mini_box2_queue.cmd: trainpgt trains into M2b's own run directory -> [-k 'queue or chain'] 1 failed, 2 passed, 20 deselected in 9.34s  [test_queue_pgt_stages_dry]
+RED   v8f_mini_box2_queue.cmd: trainpgt does not notice a trainer that exits 0 without summary.json -> [-k 'queue or chain'] 1 failed, 4 passed, 20 deselected in 19.76s  [test_queue_pgt_real_stages_notice_failures_and_skip_exactly_what_is_finished]
+RED   v8f_mini_box2_queue.cmd: the dose start moved -> [-k 'queue or chain'] 1 failed, 20 deselected in 9.29s  [test_queue_pgt_dose_is_defined_once_and_the_stages_read_it]
+RED   v8f_mini_box2_queue.cmd: the dose end is M2b's own -> [-k 'queue or chain'] 1 failed, 20 deselected in 8.79s  [test_queue_pgt_dose_is_defined_once_and_the_stages_read_it]
+RED   v8f_mini_box2_queue.cmd: the dose end is defined a second time -> [-k 'queue or chain'] 1 failed, 20 deselected in 8.73s  [test_queue_pgt_dose_is_defined_once_and_the_stages_read_it]
+RED   v8f_mini_box2_queue.cmd: the dispatch sends gatepgt to the base gate -> [-k 'queue or chain'] 1 failed, 20 deselected in 8.95s  [test_queue_pgt_dose_is_defined_once_and_the_stages_read_it]
+RED   v8f_mini_box2_queue.cmd: E0 drops --project -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 8.08s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: E1 is not an absmask run -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 8.79s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: E3 drops the all-latcons group (a whole-GT oracle under the latcons name) -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 8.99s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: E3 drops --tac-alpha 1 -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 8.99s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: E3 evaluates the banked M2b checkpoint -> [-k 'queue or chain'] 1 failed, 2 passed, 20 deselected in 16.84s  [test_queue_pgt_stages_dry]
+RED   v8f_mini_box2_queue.cmd: the dry run omits E3 -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 8.40s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: the real run executes E1 where it prints E2 -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 8.97s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: the real run executes E0 where it prints E1 -> [-k 'queue or chain'] 1 failed, 1 passed, 20 deselected in 9.56s  [test_queue_pgt_runs_the_command_it_prints]
+RED   v8f_mini_box2_queue.cmd: evalpgt does not notice a failing E3 -> [-k 'queue or chain'] 1 failed, 4 passed, 20 deselected in 21.15s  [test_queue_pgt_real_stages_notice_failures_and_skip_exactly_what_is_finished]
+RED   v8f_mini_box2_queue.cmd: evalpgt skips E3 whenever E2's npz exists -> [-k 'queue or chain'] 1 failed, 3 passed, 20 deselected in 15.97s  [test_queue_pgt_real_lines_execute_exactly_the_printed_commands]
+RED   v8f_mini_box2_queue.cmd: a finished E1 skips E2 as well -> [-k 'queue or chain'] 1 failed, 4 passed, 20 deselected in 31.04s  [test_queue_pgt_real_stages_notice_failures_and_skip_exactly_what_is_finished]
+RED   v8f_mini_box2_queue.cmd: evalpgt writes into M2b's run directory -> [-k 'queue or chain'] 1 failed, 2 passed, 20 deselected in 11.44s  [test_queue_pgt_stages_dry]
+AFTER rc=0 29 passed, 1 warning in 214.54s (0:03:34)
+24 / 24 mutations RED
+
+## part chain1
+anchors OK: 18 mutants, every anchor occurs exactly once
+BASELINE rc=0 29 passed, 1 warning in 85.00s (0:01:24)
+RED   chain_v8f_pgt.sh: the chain copies the dose as a literal start -> [-k 'queue or chain'] 1 failed, 5 passed, 20 deselected in 7.91s  [test_chain_pgt_static_ordering_and_the_lever]
+RED   chain_v8f_pgt.sh: the chain tolerates a dose defined twice (PGTE) -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 11.08s  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the chain does not require the dose in the queue -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 53.34s  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the gate no longer refuses M2b's own schedule -> [-k 'queue or chain'] 1 failed, 5 passed, 20 deselected in 29.90s  [test_chain_pgt_static_ordering_and_the_lever]
+RED   chain_v8f_pgt.sh: the gate no longer checks the holdout -> [-k 'queue or chain'] 1 failed, 7 passed, 20 deselected in 38.81s  [test_chain_pgt_gate_assertions_pass_the_pgt_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_pgt.sh: the gate no longer checks M2b's step count -> [-k 'queue or chain'] 1 failed, 7 passed, 20 deselected in 51.73s  [test_chain_pgt_gate_assertions_pass_the_pgt_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_pgt.sh: the gate assertions' failure no longer stops the chain -> [-k 'queue or chain'] 1 failed, 7 passed, 20 deselected in 33.72s  [test_chain_pgt_gate_assertions_pass_the_pgt_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_pgt.sh: the chain trains with the base train stage -> [-k 'queue or chain'] 1 failed, 5 passed, 20 deselected in 32.10s  [test_chain_pgt_static_ordering_and_the_lever]
+RED   chain_v8f_pgt.sh: check-inputs failure no longer stops the chain -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 59.51s  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the seed-0 CONTINUE gate is not enforced -> [-k 'queue or chain'] 1 failed, 5 passed, 20 deselected in 33.09s  [test_chain_pgt_static_ordering_and_the_lever]
+RED   chain_v8f_pgt.sh: the seed-0 read is the final read -> [-k 'queue or chain'] 1 failed, 5 passed, 20 deselected in 35.60s  [test_chain_pgt_static_ordering_and_the_lever]
+RED   chain_v8f_pgt.sh: train_log.jsonl is not pulled -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 59.21s  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the absmask eval is not pulled -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 64.56s (0:01:04)  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the tip's built_levers record is not required (p_gt_start) -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 53.37s  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the dry run omits evalpgt 1 -> [-k 'queue or chain'] 1 failed, 6 passed, 20 deselected in 33.85s  [test_chain_pgt_syntax_and_dry_run_prints_the_queue_lines]
+RED   chain_v8f_pgt.sh: the STOP marker is renamed -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 41.05s  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the busy marker is not honoured -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 46.12s  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the banked all-latcons oracle is not staged -> [-k 'queue or chain'] 1 failed, 5 passed, 20 deselected in 25.67s  [test_chain_pgt_static_ordering_and_the_lever]
+AFTER rc=0 29 passed, 1 warning in 182.71s (0:03:02)
+18 / 18 mutations RED
+
+## part chain2
+anchors OK: 18 mutants, every anchor occurs exactly once
+BASELINE rc=0 29 passed, 1 warning in 86.03s (0:01:26)
+RED   chain_v8f_pgt.sh: the chain copies the dose as a literal end -> [-k 'queue or chain'] 1 failed, 5 passed, 20 deselected in 7.84s  [test_chain_pgt_static_ordering_and_the_lever]
+RED   chain_v8f_pgt.sh: the chain tolerates a dose defined twice (PGTS) -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 13.90s  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the gate assertion on the built schedule is gone -> [-k 'queue or chain'] 1 failed, 5 passed, 20 deselected in 36.31s  [test_chain_pgt_static_ordering_and_the_lever]
+RED   chain_v8f_pgt.sh: the gate no longer checks a second lever (w_tac / w_cons) -> [-k 'queue or chain'] 1 failed, 5 passed, 20 deselected in 29.06s  [test_chain_pgt_static_ordering_and_the_lever]
+RED   chain_v8f_pgt.sh: the gate no longer checks M2b's clip list -> [-k 'queue or chain'] 1 failed, 7 passed, 20 deselected in 41.81s  [test_chain_pgt_gate_assertions_pass_the_pgt_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_pgt.sh: the gate no longer checks declared_vs_built -> [-k 'queue or chain'] 1 failed, 7 passed, 20 deselected in 45.05s  [test_chain_pgt_gate_assertions_pass_the_pgt_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_pgt.sh: the chain runs M2b's own gate, not gatepgt -> [-k 'queue or chain'] 1 failed, 5 passed, 20 deselected in 32.40s  [test_chain_pgt_static_ordering_and_the_lever]
+RED   chain_v8f_pgt.sh: the chain evaluates with the WC eval stage -> [-k 'queue or chain'] 1 failed, 5 passed, 20 deselected in 32.84s  [test_chain_pgt_static_ordering_and_the_lever]
+RED   chain_v8f_pgt.sh: check-inputs is not run -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 62.34s (0:01:02)  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the final read is the seed-0 read -> [-k 'queue or chain'] 1 failed, 5 passed, 20 deselected in 32.85s  [test_chain_pgt_static_ordering_and_the_lever]
+RED   chain_v8f_pgt.sh: a failing reader no longer stops the chain -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 49.68s  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the all-latcons eval is not pulled -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 58.99s  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the archive carries no B1 lead block -> [-k 'queue or chain'] 1 failed, 5 passed, 20 deselected in 42.34s  [test_chain_pgt_static_ordering_and_the_lever]
+RED   chain_v8f_pgt.sh: the tip's built_levers record is not required (p_gt_end) -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 53.25s  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the dry run omits trainpgt 0 -> [-k 'queue or chain'] 1 failed, 6 passed, 20 deselected in 38.29s  [test_chain_pgt_syntax_and_dry_run_prints_the_queue_lines]
+RED   chain_v8f_pgt.sh: the DONE marker is renamed -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 42.61s  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the banked M2b train_log is not staged -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 42.41s  [test_chain_pgt_load_bearing_lines_are_present]
+RED   chain_v8f_pgt.sh: the wait for the predecessor is skipped -> [-k 'queue or chain'] 1 failed, 8 passed, 20 deselected in 49.17s  [test_chain_pgt_load_bearing_lines_are_present]
+AFTER rc=0 29 passed, 1 warning in 174.50s (0:02:54)
+18 / 18 mutations RED
+
+TOTAL: 194 / 194 mutations RED across 8 parts
