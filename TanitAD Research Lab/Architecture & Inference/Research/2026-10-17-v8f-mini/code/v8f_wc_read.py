@@ -12,13 +12,17 @@ the RA-1 holdout withheld, M2b's 19,164 steps. Eval: `v8f_mini_eval.py run` on e
   MECHANISM per seed s (deciding the reading of a FAIL, never the verdict): T's present-slot constraint error, the per-window mean of
             (T - GT)^2 in SD units over the slots where the GT constraint is PRESENT (GT code != 0, windows with a v9 row), is LOWER on
             M2b-wc than on M2b: delta < 0 and separated. T's values come from the absmask eval (its present slots are T's own, untouched);
-            the GT from the GT-oracle eval. The two arms' GT codes must be identical.
+            the GT from the GT-oracle eval -- or, where an arm's `-tacorc` eval predates `tac_code` (M2b's, banked 2026-10-20), from
+            Amendment 2's `-tacorc-all-goal` oracle, whose constraint block IS the GT (Amendment 1). The GT constraint blocks of every arm
+            and seed must be identical.
   STAGES    s0: seed 0 only. CONTINUE iff seed 0 PASSES (only then is seed 1 trained); otherwise STOP -- one failing seed already fails a
             criterion that needs both. final: both seeds.
   VERDICTS  SUCCESS (both seeds pass) | FAIL-MECHANISM-OK (T's present slots improved at every seed read, driving did not) |
             FAIL-NO-MECHANISM (the weight did not make T more accurate).
 Reported beside it, deciding nothing: LON / LAT family deltas (paired, same windows), each run's eval-json families incl. TACTICAL and
 STRATEGIC (un-paused for v8F-mini, PI ruling 2026-10-17), per-group present-slot RMSE (latcons / lonspeed / stoplead).
+`--check-inputs` (Amendment 1): validate the banked M2b side alone (runs, evals, GT sources), print OK and exit 0 -- the chain runs it
+BEFORE any training, so an input the reader cannot use stops the chain while box 2 is still idle.
 Refusals (rc 2): a missing file; runs not on one clip list / not withholding the RA-1 holdout / not done / different step counts; an
 M2b-wc run whose argv is not `--arm M2b ... --w-cons 4.0` or whose built w_cons is not 4.0 or whose selfcheck is not PASS; an M2b run
 with any --w-cons in its argv; evals not on one grid; GT codes that differ between the arms.
@@ -116,7 +120,17 @@ def load_evals(eval_dir, seeds):
                 if not os.path.exists(q):
                     refuse(f"{os.path.basename(q)} is missing from {eval_dir}")
             z, za, zo = np.load(p["z"]), np.load(p["abs"]), np.load(p["orc"])
-            for name, zz in (("", z), ("-tacabs", za), ("-tacorc", zo)):
+            gsrc, zg = "-tacorc", zo
+            if "tac_code" not in zo.files:                 # Amendment 1: a GT oracle banked before the eval saved tac_code
+                pg = os.path.join(eval_dir, f"eval_{t}-tacorc-all-goal.npz")
+                if not os.path.exists(pg):
+                    refuse(f"eval_{t}-tacorc.npz has no tac_code (it predates it) and eval_{t}-tacorc-all-goal.npz is missing from {eval_dir}")
+                gsrc, zg = "-tacorc-all-goal", np.load(pg)
+                if "tac_code" not in zg.files:
+                    refuse(f"eval_{t}-tacorc-all-goal.npz has no tac_code either")
+            if "tac_code" not in za.files:
+                refuse(f"eval_{t}-tacabs.npz has no tac_code")
+            for name, zz in (("", z), ("-tacabs", za), ("-tacorc", zo), (gsrc, zg)):
                 if eid is None:
                     eid = np.asarray(zz["eid"])
                 elif not np.array_equal(np.asarray(zz["eid"]), eid):
@@ -125,7 +139,8 @@ def load_evals(eval_dir, seeds):
                 refuse(f"eval_{t}-tacabs.json is not an absmask run")
             Z[(arm, s)] = {"ade6": np.asarray(z["ade6"], np.float64), "pred": np.asarray(z["pred"], np.float64),
                            "t_cons": np.asarray(za["tac_code"], np.float64)[:, C0:C0 + N_CONS],
-                           "g_code": np.asarray(zo["tac_code"], np.float64), "has": ~np.asarray(zo["tac_oracle_fallback"], bool)}
+                           "g_cons": np.asarray(zg["tac_code"], np.float64)[:, C0:C0 + N_CONS],
+                           "has": ~np.asarray(zg["tac_oracle_fallback"], bool), "gt_source": gsrc}
             J[(arm, s)] = json.load(open(p["j"], encoding="utf-8")).get("raw", {})
     return Z, J, eid
 
@@ -147,11 +162,11 @@ def seed_floor(eval_dir, eid):
 def present_error(Z, seeds):
     """Per window: the mean squared error of T's PRESENT constraint slots (SD units); NaN where a window has no present slot."""
     ref = Z[("M2b", seeds[0])]
-    has, G = ref["has"], ref["g_code"]
+    has, G = ref["has"], ref["g_cons"]
     for k, v in Z.items():
-        if not np.array_equal(v["has"], has) or not np.array_equal(v["g_code"][has], G[has]):
-            refuse(f"{k[0]}_s{k[1]}: the GT code differs from M2b_s{seeds[0]}'s -- not the same labels on the same windows")
-    g = G[:, C0:C0 + N_CONS]
+        if not np.array_equal(v["has"], has) or not np.array_equal(v["g_cons"][has], G[has]):
+            refuse(f"{k[0]}_s{k[1]}: the GT constraint block differs from M2b_s{seeds[0]}'s -- not the same labels on the same windows")
+    g = G
     pres = has[:, None] & (g != 0.0)
     out = {}
     for k, v in Z.items():
@@ -161,6 +176,27 @@ def present_error(Z, seeds):
                   "rmse_group": {gname: float(np.sqrt(e2[:, list(r)][pres[:, list(r)]].mean())) if pres[:, list(r)].any() else None
                                  for gname, r in GROUPS.items()}}
     return out, pres
+
+
+def check_inputs(a):
+    """Amendment 1: the banked M2b side alone, before any training -- the runs, both seeds' evals and their GT sources."""
+    bad = []
+    for s in (0, 1):
+        d = os.path.join(a.runs_dir, f"M2b_s{s}")
+        for f in ("summary.json", "argv.json", "selfcheck.json"):
+            if not os.path.exists(os.path.join(d, f)):
+                bad.append(f"M2b_s{s}/{f}")
+    if bad:
+        refuse("the banked M2b runs are incomplete: " + ", ".join(bad))
+    global ARMS
+    keep, ARMS = ARMS, ("M2b",)
+    try:
+        Z, _, eid = load_evals(a.eval_dir, (0, 1))
+        seed_floor(a.eval_dir, eid)
+        present_error(Z, (0, 1))
+    finally:
+        ARMS = keep
+    return {k: v["gt_source"] for k, v in Z.items()}
 
 
 def read(a, pairfn, fam):
@@ -202,7 +238,7 @@ def read(a, pairfn, fam):
     out = dict(schema="v8f-wc-read-v1", prereg=f"PREREG_V8F_WC.md stage {a.stage}", tier="T1-class open loop (eval-141, 2,399 windows)",
                estimator=f"paired episode-cluster bootstrap, B={a.n_boot} (episodes); F = |M2b_s0 - M2b_s1| = {F:.4f} m (both banked evals)",
                n_windows=int(eid.size), n_episodes=int(np.unique(eid).size), n_windows_present=int(ok.sum()),
-               present_slot_frac=float(pres[ok].mean()), F=F, two_F=2 * F, w_cons={"M2b": M2B_W_CONS, "M2b-wc": WC},
+               present_slot_frac=float(pres[ok].mean()), gt_source={f"{k[0]}_s{k[1]}": v["gt_source"] for k, v in Z.items()}, F=F, two_F=2 * F, w_cons={"M2b": M2B_W_CONS, "M2b-wc": WC},
                rows=rows, stage=a.stage, DECISION=decision, VERDICT=verdict, mechanism=mech_all, next=nxt)
     out["reading"] = (f"PREREG_V8F_WC stage {a.stage}: {decision or verdict}; M2b-wc - M2b ADE6 " +
                       " / ".join(f"{rows[f's{s}']['delta']['delta']:+.3f}{'' if rows[f's{s}']['delta']['separated'] else ' ns'}" for s in seeds) +
@@ -215,7 +251,8 @@ def read(a, pairfn, fam):
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--stage", choices=("s0", "final"), required=True)
+    ap.add_argument("--stage", choices=("s0", "final"))
+    ap.add_argument("--check-inputs", action="store_true", help="Amendment 1: validate the banked M2b side alone and exit")
     ap.add_argument("--eval-dir", required=True)
     ap.add_argument("--runs-dir", required=True)
     ap.add_argument("--out", required=True)
@@ -226,6 +263,18 @@ def main(argv=None) -> int:
     ap.add_argument("--eval-join", default=str(HERE.parents[1] / "raw" / "join_eval141.npz"))
     ap.add_argument("--gt-npz", help="TEST INPUT: npz with gt, eid, dt in place of the rebuild")
     a = ap.parse_args(argv)
+    if a.check_inputs:
+        try:
+            src = check_inputs(a)
+        except (OSError, KeyError, ValueError) as e:
+            print(f"WC READ INPUT ERROR: {type(e).__name__}: {e}", file=sys.stderr)
+            return 2
+        except SystemExit as e:
+            return int(e.code or 2)
+        print(f"WC INPUTS OK: the banked M2b side loads; GT sources {src}")
+        return 0
+    if a.stage is None:
+        ap.error("--stage is required unless --check-inputs")
     spec = importlib.util.spec_from_file_location("v8f_tac_groups_read_for_wc", HERE.parent / "v8f_tac_groups_read.py")
     R1 = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(R1)

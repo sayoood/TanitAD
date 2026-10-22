@@ -109,7 +109,11 @@ for s in 0 1; do
   for f in summary.json argv.json selfcheck.json; do cp "$L/v8f_mini/runs/M2b_s$s/$f" $E/runs/M2b_s$s/ || stop "stage the banked M2b_s$s/$f"; done
   cp $L/v8f_mini/eval/eval_M2b_s$s.npz $L/v8f_mini/eval/eval_M2b_s$s.json $E/eval/ || stop "stage eval_M2b_s$s"
   for f in eval_M2b_s$s-tacabs.npz eval_M2b_s$s-tacabs.json eval_M2b_s$s-tacorc.npz; do cp "$L/v8f_cz/eval/$f" $E/eval/ || stop "stage $f"; done
+  # PREREG_V8F_WC Amendment 1: M2b's tacorc predates tac_code; its GT constraints come from Amendment 2's all-goal oracle
+  cp "$L/v8f_tacgrp2/eval/eval_M2b_s$s-tacorc-all-goal.npz" $E/eval/ || stop "stage eval_M2b_s$s-tacorc-all-goal.npz"
 done
+# Amendment 1: the reader must load the REAL banked M2b side BEFORE any training (it was tested only on synthetic inputs and crashed)
+PYTHONIOENCODING=utf-8 $PY "$RD/v8f_wc_read.py" --check-inputs --eval-dir "$(cygpath -m $E/eval)" --runs-dir "$(cygpath -m $E/runs)"   --out "$(cygpath -m $E/check_inputs.json)" || stop "the reader cannot use the banked M2b side (check-inputs)"
 $SSH "powershell -NoProfile -Command \"if (Test-Path D:/tanitad/logs/telemetry.stop) { Remove-Item D:/tanitad/logs/telemetry.stop }\"" 2>/dev/null
 launch telemetry_long || echo "$(date '+%m-%d %H:%M') telemetry did not launch"
 tl() { $SSH "powershell -NoProfile -Command \"Get-Content D:/tanitad/logs/telemetry_full.csv -Tail 1\"" 2>/dev/null | tr -d '\r'; }

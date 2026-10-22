@@ -84,3 +84,15 @@
   * It refreshes from the tip: 8 files sha-checked, both v9 releases md5-checked.
   * It stages the banked M2b side before any training, and runs telemetry and the v8F guard.
   * It stops on a crash, a reboot or a guard stop.
+
+## Amendment 1 (2026-10-22 12:10, an instrument fix written BEFORE any number was read)
+
+* **What happened:** seed 0 trained (08:04–12:04) and its three evals ran. Then `code/v8f_wc_read.py --stage s0` crashed at load (`KeyError: 'tac_code is not a file in the archive'`), and the chain stopped (`ZZV8FMINI-STOP wc read s0`). **No number was computed.**
+* **Cause:** M2b's GT-oracle evals (`eval_M2b_s*-tacorc.npz`, banked 2026-10-20 under `PREREG_V8F_TAC`) predate the eval saving `tac_code`. The reader had been tested only on synthetic inputs.
+* **The fix:**
+  * Where an arm's `-tacorc` eval has no `tac_code`, the GT constraint block comes from Amendment 2's banked `-tacorc-all-goal` oracle. That oracle puts GT in every group but the goal, so its constraint block IS the GT.
+  * The equality check now runs on the constraint block of every arm and seed.
+  * Each arm's GT source is reported (`gt_source`).
+  * **The criteria, the bar, the stages and the verdict table are unchanged.**
+* **The guard against a repeat:** `--check-inputs` validates the banked M2b side alone. The chain runs it BEFORE any training, and it passes on the real inputs.
+* **Seed 1** trains only if the seed-0 reading says CONTINUE, as committed. The stopped chain is resumed with the fixed reader from the tip (`trainwc` / `evalwc` skip finished work).

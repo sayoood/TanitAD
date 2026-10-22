@@ -100,7 +100,7 @@ def test_reader_layout_matches_the_model():
 
 
 def _wc_files(d, delta=-0.4, m2b_gap=0.1, err_wc=0.3, err_m2b=0.6, w_wc=4.0, argv_wc="4.0", steps_wc=19164, drop=None, delta_s1=None,
-              gt_shift=0.0, m2b_argv_wc=False, sc="PASS", seeds=(0, 1)):
+              gt_shift=0.0, m2b_argv_wc=False, sc="PASS", seeds=(0, 1), old_m2b_orc=False, no_allgoal=False):
     rng = np.random.default_rng(4)
     n_ep, per = 30, 8
     eid = np.repeat(np.arange(n_ep), per)
@@ -132,7 +132,14 @@ def _wc_files(d, delta=-0.4, m2b_gap=0.1, err_wc=0.3, err_m2b=0.6, w_wc=4.0, arg
             if arm == "M2b-wc":
                 gg[:, C0:] += gt_shift * present
             np.savez(ev / f"eval_{t}-tacabs.npz", eid=eid, ade6=ade, tac_code=tc, tac_oracle_fallback=fb)
-            np.savez(ev / f"eval_{t}-tacorc.npz", eid=eid, ade6=ade - 1.0, tac_code=gg, tac_oracle_fallback=fb)
+            if arm == "M2b" and old_m2b_orc:                # the banked 2026-10-20 format: no tac_code (Amendment 1)
+                np.savez(ev / f"eval_{t}-tacorc.npz", eid=eid, ade6=ade - 1.0, tac_oracle_fallback=fb)
+                if not no_allgoal:                           # Amendment 2's all-goal oracle: GT everywhere but the goal block
+                    ag = gg.copy()
+                    ag[:, :22] = np.random.default_rng(99).normal(0, 1, (N, 22))     # own generator: the shared draws stay put
+                    np.savez(ev / f"eval_{t}-tacorc-all-goal.npz", eid=eid, ade6=ade - 0.9, tac_code=ag, tac_oracle_fallback=fb)
+            else:
+                np.savez(ev / f"eval_{t}-tacorc.npz", eid=eid, ade6=ade - 1.0, tac_code=gg, tac_oracle_fallback=fb)
             json.dump({"tac_manipulation": {"mode": "absmask", "absent_slot_frac": 0.55}}, open(ev / f"eval_{t}-tacabs.json", "w", encoding="utf-8"))
             (ru / t).mkdir(parents=True, exist_ok=True)
             w = {"w_pen": 0.5, "w_wm": 0.1} if arm == "M2b" else {"w_pen": 0.5, "w_wm": 0.1, "w_tac": 1.0, "w_cons": w_wc}
@@ -177,13 +184,34 @@ def test_wc_reader_decision_table(tmp_path):
 
 
 @pytest.mark.skipif(not WC_R.exists(), reason="the v8F-mini package is not in this checkout")
+def test_wc_reader_reads_the_banked_m2b_oracle_through_all_goal(tmp_path, capsys):
+    """Amendment 1: M2b's banked tacorc predates tac_code; its GT constraints come from Amendment 2's all-goal oracle -- same verdict."""
+    rc, r = _read(_wc_files(tmp_path / "old", old_m2b_orc=True))
+    assert rc == 0 and r["VERDICT"] == "SUCCESS", r["reading"]
+    assert r["gt_source"]["M2b_s0"] == "-tacorc-all-goal" and r["gt_source"]["M2b-wc_s0"] == "-tacorc"
+    rc0, r0 = _read(_wc_files(tmp_path / "new"))
+    assert rc0 == 0 and r0["rows"]["s0"]["present_mse"]["delta"] == r["rows"]["s0"]["present_mse"]["delta"], "the GT source changes nothing"
+    assert _read(_wc_files(tmp_path / "none", old_m2b_orc=True, no_allgoal=True))[0] == 2
+    assert "predates it" in capsys.readouterr().err
+    R = _load("v8f_wc_read_check", WC_R)
+    d = _wc_files(tmp_path / "chk", old_m2b_orc=True, seeds=(0,))
+    assert R.main(["--check-inputs", "--eval-dir", str(d / "eval"), "--runs-dir", str(d / "runs"), "--out", str(d / "x.json")]) == 2, \
+        "check-inputs needs BOTH banked M2b seeds' runs"
+    assert "banked M2b runs are incomplete" in capsys.readouterr().err
+    d = _wc_files(tmp_path / "chk2", old_m2b_orc=True)
+    assert R.main(["--check-inputs", "--eval-dir", str(d / "eval"), "--runs-dir", str(d / "runs"), "--out", str(d / "x.json")]) == 0
+    assert "WC INPUTS OK" in capsys.readouterr().out
+    (d / "eval" / "eval_M2b_s1-tacorc-all-goal.npz").unlink()
+    assert R.main(["--check-inputs", "--eval-dir", str(d / "eval"), "--runs-dir", str(d / "runs"), "--out", str(d / "x.json")]) == 2
+
+
 def test_wc_reader_refusals(tmp_path, capsys):
     for name, kw, msg in (("wbuilt", dict(w_wc=0.5), "built with w_cons 0.5, expected 4.0"),
                           ("wargv", dict(argv_wc="2.0"), "argv --w-cons 2.0, expected 4.0"),
                           ("m2bargv", dict(m2b_argv_wc=True), "M2b_s0: argv carries --w-cons"),
                           ("steps", dict(steps_wc=9000), "different step counts"),
                           ("gate", dict(sc="FAIL"), "declared_vs_built is not PASS"),
-                          ("gt", dict(gt_shift=0.5), "the GT code differs"),
+                          ("gt", dict(gt_shift=0.5), "the GT constraint block differs"),
                           ("miss", dict(drop="M2b-wc_s1"), "eval_M2b-wc_s1.npz is missing")):
         assert _read(_wc_files(tmp_path / name, **kw))[0] == 2, name
         assert msg in capsys.readouterr().err, name
