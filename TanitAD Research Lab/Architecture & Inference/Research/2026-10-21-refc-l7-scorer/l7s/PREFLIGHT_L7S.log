@@ -1,0 +1,45 @@
+# PREFLIGHT_L7S.log -- L7-S zero-step preflight, 2026-10-22, l7s_prep agent (dev box, CPU only, CUDA_VISIBLE_DEVICES='', OMP_NUM_THREADS=4). MEASURED. NO optimizer step, NO checkpoint.
+
+## 1. --epochs 0 dry runs on the real train139 s0+s1 banks (train_l7.py, final code)
+ZZL7DRYRUN {"mode": "E", "seed": 0, "n_train": 8730, "n_val": 980, "n_train_episodes": 125, "n_val_episodes": 14, "params": 154504, "keep_mean_candidates": 133.856, "provenance": ["train", "train"]}
+ZZL7DRYRUN {"mode": "E", "seed": 1, "n_train": 8730, "n_val": 980, "n_train_episodes": 125, "n_val_episodes": 14, "params": 154504, "keep_mean_candidates": 133.856, "provenance": ["train", "train"]}
+ZZL7DRYRUN {"mode": "F", "seed": 0, "n_train": 8730, "n_val": 980, "n_train_episodes": 125, "n_val_episodes": 14, "params": 155400, "keep_mean_candidates": 133.856, "provenance": ["train", "train"]}
+ZZL7DRYRUN {"mode": "F", "seed": 1, "n_train": 8730, "n_val": 980, "n_train_episodes": 125, "n_val_episodes": 14, "params": 155400, "keep_mean_candidates": 133.856, "provenance": ["train", "train"]}
+ZZL7DRYRUN {"mode": "S", "seed": 0, "n_train": 8730, "n_val": 980, "n_train_episodes": 125, "n_val_episodes": 14, "params": 480904, "keep_mean_candidates": 133.856, "provenance": ["train", "train"], "scene_dims": {"bev": 96, "agent": 384}, "scene_identical_order": [true, true]}
+ZZL7DRYRUN {"mode": "S", "seed": 1, "n_train": 8730, "n_val": 980, "n_train_episodes": 125, "n_val_episodes": 14, "params": 480904, "keep_mean_candidates": 133.856, "provenance": ["train", "train"], "scene_dims": {"bev": 96, "agent": 384}, "scene_identical_order": [true, true]}
+
+## 2. regression vs the LANDED trainer (c3471b9 train_l7.py, blob 823ee431)
+E/F --epochs 0 lines (seed 0): byte-identical to the landed trainer's (diff empty)
+untrained E / F evaluate() on the first 256 validation windows (seed 0): byte-identical old vs new (cmp)
+
+## 3. zero-step preflight, 4 repeats (preflight_l7s.py; gates of repeat a, timing line of each)
+ZZGATE G1_split_is_the_EF_split PASS {"n_train": 8730, "n_val": 980, "ep_train": 125, "ep_val": 14}
+ZZGATE G2_scene_join_and_independent_reads PASS {"identical_order": [true, true], "dims": {"bev": 96, "agent": 384}, "bank0_bev_tokens_vs_memmap_24_random_rows": true, "bank0_agent_tokens_vs_memmap_24_random_rows": true, "bank0_bev_tokens_vs_zip_stream_first64": true, "bank0_agent_tokens_vs_zip_stream_first64": true, "bank1_bev_tokens_vs_memmap_2
+ZZGATE G3_loss_and_outputs_finite PASS {"losses": [6.4104, 6.5604, 6.564, 6.3847, 6.3269, 6.2976, 6.4047, 6.4429]}
+ZZGATE G4_every_parameter_gets_a_finite_gradient PASS {"n_param_tensors": 54, "no_grad_at_all": [], "scene_branch_tensors": 16, "scene_zero_grad": [], "param_tensors_with_all_zero_grad": []}
+ZZGATE G5_zero_updates PASS {"state_dict_sha256_before_eq_after": true}
+ZZGATE G6_scene_shuffle_map_is_cross_episode_and_changes_the_read PASS {"val_rows_mapped_to_the_same_episode": 0, "untrained_model_pick_true_vs_shuffled_first128_val": [8.43013, 8.12292]}
+repeat a:
+ZZL7SPREFLIGHT PASS {"threads": "4", "cuda_visible": "", "gather_s_per_batch32_median": 0.0115, "fwd_loss_s_per_batch32_median": 0.1198, "bwd_s_per_batch32_median": 0.2425, "per_batch_total_s": 0.3738, "eval_s_per_window": 0.0042, "n_batches_per_epoch": 273, "est_s_per_epoch_train_x1.15": 117.4, "est_s_per_epoch_eval": 10.4, "est_s_per_epoch": 127.7, "est_min_30_epochs": 63.9, "est_min_2_runs_S_ts0_ts1": 127.7}
+ZZPEAKWS 1.09 GB (peak working set), ZZPEAKCOMMIT 1.67 GB
+repeat b:
+ZZL7SPREFLIGHT PASS {"threads": "4", "cuda_visible": "", "gather_s_per_batch32_median": 0.0117, "fwd_loss_s_per_batch32_median": 0.119, "bwd_s_per_batch32_median": 0.2384, "per_batch_total_s": 0.369, "eval_s_per_window": 0.0041, "n_batches_per_epoch": 273, "est_s_per_epoch_train_x1.15": 115.9, "est_s_per_epoch_eval": 10.1, "est_s_per_epoch": 126.0, "est_min_30_epochs": 63.0, "est_min_2_runs_S_ts0_ts1": 126.0}
+ZZPEAKWS 1.09 GB (peak working set), ZZPEAKCOMMIT 1.68 GB
+repeat c:
+ZZL7SPREFLIGHT PASS {"threads": "4", "cuda_visible": "", "gather_s_per_batch32_median": 0.0151, "fwd_loss_s_per_batch32_median": 0.1266, "bwd_s_per_batch32_median": 0.2462, "per_batch_total_s": 0.388, "eval_s_per_window": 0.00433, "n_batches_per_epoch": 273, "est_s_per_epoch_train_x1.15": 121.8, "est_s_per_epoch_eval": 10.7, "est_s_per_epoch": 132.5, "est_min_30_epochs": 66.2, "est_min_2_runs_S_ts0_ts1": 132.5}
+ZZPEAKWS 1.09 GB (peak working set), ZZPEAKCOMMIT 1.67 GB
+repeat d:
+ZZL7SPREFLIGHT PASS {"threads": "4", "cuda_visible": "", "gather_s_per_batch32_median": 0.0125, "fwd_loss_s_per_batch32_median": 0.1214, "bwd_s_per_batch32_median": 0.2456, "per_batch_total_s": 0.3795, "eval_s_per_window": 0.00437, "n_batches_per_epoch": 273, "est_s_per_epoch_train_x1.15": 119.1, "est_s_per_epoch_eval": 10.8, "est_s_per_epoch": 130.0, "est_min_30_epochs": 65.0, "est_min_2_runs_S_ts0_ts1": 130.0}
+ZZPEAKWS 1.09 GB (peak working set), ZZPEAKCOMMIT 1.67 GB
+
+## 4. package tests (final code)
+SKIPPED [1] code\tests\test_refc_scorer.py:204: eval139 s1 targets not built on this box
+48 passed, 1 skipped, 1 warning in 5.05s
+
+## 5. production mutants against tests/test_l7s_scene.py (run_mut.py)
+M1_positional_join -> RED
+M2_no_crc_verify_on_cache_hit -> RED
+M3_shuffle_control_ignored -> RED
+M4_no_duplicate_key_check -> RED
+M5_pad_dropped_from_batch -> RED
+M6_wrong_source_dim_default -> RED

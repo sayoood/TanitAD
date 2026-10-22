@@ -401,7 +401,7 @@ if __name__ == "__main__":       # --params: print the parameter count of each a
     ap = argparse.ArgumentParser()
     ap.add_argument("--params", action="store_true")
     ap.add_argument("--bev-dim", type=int, default=96)
-    ap.add_argument("--agent-dim", type=int, default=256)
+    ap.add_argument("--agent-dim", type=int, default=384, help="384 = r7_agent_tokens' width in the l7cap capture (it read 256 before 2026-10-22)")
     a = ap.parse_args()
     rep = {}
     for mode in ("E", "F", "S"):

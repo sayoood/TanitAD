@@ -1,8 +1,14 @@
-"""train_l7.py -- train an L7 scorer (modes E / F; S once a scene-token bank exists) on a BANKED fan + its targets.
+"""train_l7.py -- train an L7 scorer (modes E / F / S) on a BANKED fan + its targets.
 
     python train_l7.py --fan-npz <bank_s0>/fan_extras.npz [<bank_s1>/fan_extras.npz ...] \
         --targets-npz <targets_s0.npz> [<targets_s1.npz> ...] --mode F --seed 0 --out-dir <run> [--epochs 30] [--val-frac 0.1]
     python train_l7.py --synthetic 256 --mode F --seed 0 --out-dir <run>       # machinery smoke, no real data
+    python train_l7.py --fan-npz <bank_s0>/fan_extras.npz [...] --targets-npz <t_s0.npz> [...] --mode S --scene-cache <dir> --seed 0 --out-dir <run>
+
+Mode S (DRAFT for PILOT-S, see PREREG_L7_SCORER.AMENDMENT-1_DRAFT.md) reads each bank's ``l7cap_scene.npz`` from the SAME dump directory as its
+``fan_extras.npz``.  The deflated members are unpacked once into ``--scene-cache`` (raw .npy, content-addressed, CRC32-verified) and gathered
+per batch, so the process never holds the 1.57 GB token bank (``scene_bank.py`` states the numbers); the join to the fan rows is by
+(clip_index, ws) and fails closed.  Every other setting is the E / F setting.
 
 Several banks (e.g. the PILOT's two inference seeds of the SAME windows) are concatenated; the episode-disjoint validation split is drawn
 on the episode id, so both seeds of a validation episode land on the validation side.
@@ -31,6 +37,7 @@ from __future__ import annotations
 
 import argparse
 import glob
+import hashlib
 import json
 import os
 import sys
@@ -41,6 +48,7 @@ import torch
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import refc_scorer as RS  # noqa: E402
+import scene_bank as SB  # noqa: E402
 
 TARGET_KEYS = ("cost", "along", "cross", "comf", "ep", "nc", "ttc", "dac")
 BANK_KEYS = ("anchor_traj", "sel_score", "refined_logits", "reach_keep", "sel_idx", "clip_index", "ws")
@@ -174,7 +182,7 @@ def load_bank(fan_npz, targets_npz) -> tuple[dict, dict]:
     return fanz, tg
 
 
-def to_batch(fanz: dict, tg: dict, ii: np.ndarray, mode: str) -> tuple[dict, dict, torch.Tensor]:
+def to_batch(fanz: dict, tg: dict, ii: np.ndarray, mode: str, scene_rows: np.ndarray | None = None) -> tuple[dict, dict, torch.Tensor]:
     """-> (scorer inputs, targets, LOSS mask).  The inputs are assembled with ``reach_keep`` (what integration.diff passes at
     inference: ``_rec["reach_keep"] = out["reach_keep"]``); the loss mask is the e9 effective keep."""
     rec = {"anchor_traj": torch.from_numpy(np.asarray(fanz["anchor_traj"][ii], np.float32)),
@@ -183,6 +191,8 @@ def to_batch(fanz: dict, tg: dict, ii: np.ndarray, mode: str) -> tuple[dict, dic
            "refined_logits": torch.from_numpy(np.asarray(fanz["refined_logits"][ii], np.float32)),
            "reach_keep": torch.from_numpy(np.asarray(fanz["reach_keep"][ii]) > 0.5)}
     keep = torch.from_numpy(np.asarray(fanz["keep"][ii])) if "keep" in fanz else rec["reach_keep"]
+    if mode == "S":                      # detached scene tokens, gathered for exactly these rows (bev_tokens / agent_tokens / agent_pad);
+        rec.update(fanz["scene"].batch(ii if scene_rows is None else scene_rows))   # ``scene_rows`` = the scene-shuffle control only (evaluation)
     inp = RS.assemble_inputs(rec, mode)
     t = {}
     for k in TARGET_KEYS:
@@ -224,14 +234,30 @@ def auc_binary(score: np.ndarray, y: np.ndarray) -> float:
     return float((rk[y].sum() - n1 * (n1 + 1) / 2.0) / (n1 * n0))
 
 
-def evaluate(model, fanz, tg, ii, mode, bs=64, temperature=0.5) -> dict:
+def cross_episode_map(eid: np.ndarray, idx: np.ndarray, n_total: int) -> np.ndarray:
+    """The SCENE-SHUFFLE control's row map: ``m[r]`` for each r in ``idx`` is a row of a DIFFERENT episode (identity elsewhere).  The rows of the
+    k-th episode (sorted episode ids) are mapped in order, modulo its length, onto the rows of the (k+1)-th.  No RNG: the control is the same
+    number on every run, and it never feeds the training stream."""
+    eid = np.asarray(eid).astype(str)
+    eps = sorted(set(eid[idx].tolist()))
+    if len(eps) < 2:
+        raise SystemExit("[train_l7] the scene-shuffle control needs >= 2 validation episodes")
+    rows = {e: np.asarray(idx)[eid[idx] == e] for e in eps}
+    m = np.arange(n_total)
+    for k, e in enumerate(eps):
+        src, tgt = rows[e], rows[eps[(k + 1) % len(eps)]]
+        m[src] = tgt[np.arange(len(src)) % len(tgt)]
+    return m
+
+
+def evaluate(model, fanz, tg, ii, mode, bs=64, temperature=0.5, scene_map=None) -> dict:
     model.eval()
     picks, costs, owns, orac, losses, wts = [], [], [], [], [], []
     hs = {h: ([], []) for h in AUC_HEADS if h in model.cfg.heads}
     with torch.no_grad():
         for s in range(0, len(ii), bs):
             jj = ii[s:s + bs]
-            inp, t, keep = to_batch(fanz, tg, jj, mode)
+            inp, t, keep = to_batch(fanz, tg, jj, mode, scene_rows=None if scene_map is None else scene_map[jj])
             out = model(**inp)
             reach, ceil, emit = select_masks(fanz, jj)
             p = RS.select(RS.rule_imit(out), reach, ceil, emit)
@@ -264,7 +290,8 @@ def main():
     ap.add_argument("--fan-npz", nargs="+")
     ap.add_argument("--targets-npz", nargs="+")
     ap.add_argument("--synthetic", type=int, default=0)
-    ap.add_argument("--mode", default="F", choices=("E", "F"))
+    ap.add_argument("--mode", default="F", choices=("E", "F", "S"))
+    ap.add_argument("--scene-cache", default=None, help="mode S: directory for the unpacked scene members (raw .npy; ~1.6 GB for the PILOT banks)")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--epochs", type=int, default=30, help="0 = DRY RUN (load, split, build model + optimizer, write dry_run_log.json, take NO step)")
     ap.add_argument("--batch", type=int, default=32)
@@ -280,11 +307,16 @@ def main():
     ap.add_argument("--i-know-this-is-eval", action="store_true")
     ap.add_argument("--allow-unknown-provenance", action="store_true")
     a = ap.parse_args()
+    if a.mode == "S" and not a.synthetic and not a.scene_cache:
+        raise SystemExit("[train_l7] --mode S needs --scene-cache <dir> (the unpacked scene members; see scene_bank.py)")
     os.makedirs(a.out_dir, exist_ok=True)
     torch.manual_seed(a.seed)
     if a.synthetic:
         fanz, tg = synthetic_bank(a.synthetic, a.seed)
         src = {"synthetic": a.synthetic}
+        if a.mode == "S":
+            fanz["scene"] = SB.synthetic_scene(fanz, seed=a.seed)
+            src["scene"] = fanz["scene"].describe()
     else:
         if not a.fan_npz or not a.targets_npz:
             raise SystemExit("[train_l7] --fan-npz and --targets-npz are required without --synthetic")
@@ -298,14 +330,18 @@ def main():
         fanz, tg = load_bank(a.fan_npz, a.targets_npz)
         src = {"fan_npz": [f.replace("\\", "/") for f in a.fan_npz], "targets_npz": [t.replace("\\", "/") for t in a.targets_npz],
                "provenance": prov, "inference_seeds": fanz["inference_seeds"]}
+        if a.mode == "S":
+            fanz["scene"] = SB.attach(fanz, list(a.fan_npz), a.scene_cache)
+            src["scene"] = fanz["scene"].describe()
     eid = np.asarray(tg["eid"]).astype(str)
     tr, va = episode_split(eid, a.val_frac, 20261021)
     assert not (set(eid[tr].tolist()) & set(eid[va].tolist())), "episode-disjointness of the validation slice violated"
-    cfg = RS.L7Config(mode=a.mode)
+    cfg = RS.L7Config(mode=a.mode, source_dims=(dict(fanz["scene"].dims) if a.mode == "S" else {}))
     model = RS.L7Scorer(cfg)
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=a.wd)
     log = {"args": vars(a), "source": src, "params": RS.n_params(model), "n_train": int(len(tr)), "n_val": int(len(va)),
            "n_train_episodes": int(len(set(eid[tr].tolist()))), "n_val_episodes": int(len(set(eid[va].tolist()))),
+           "val_rows_sha12": hashlib.sha256(np.asarray(va, np.int64).tobytes()).hexdigest()[:12],
            "keep_mean_candidates": round(float(np.asarray(fanz["keep"]).sum(1).mean()), 3), "epochs": []}
     if a.epochs == 0:                      # DRY RUN: everything above ran (provenance, load, split, model, optimizer object); no step, no checkpoint
         log["dry_run"] = True
@@ -314,8 +350,11 @@ def main():
         print("ZZL7DRYRUN " + json.dumps({"mode": a.mode, "seed": a.seed, "n_train": log["n_train"], "n_val": log["n_val"],
                                           "n_train_episodes": log["n_train_episodes"], "n_val_episodes": log["n_val_episodes"],
                                           "params": log["params"], "keep_mean_candidates": log["keep_mean_candidates"],
-                                          "provenance": [p["kind"] for p in src.get("provenance", [])]}))
+                                          "provenance": [p["kind"] for p in src.get("provenance", [])],
+                                          **({"scene_dims": cfg.source_dims, "scene_identical_order": src["scene"]["identical_order"]}
+                                             if a.mode == "S" else {})}))
         return 0
+    smap = cross_episode_map(eid, va, len(eid)) if a.mode == "S" else None     # PILOT-S control C-S1 (evaluation only)
     best, bad, step = float("inf"), 0, 0
     rng = np.random.default_rng(a.seed)
     t_train = 0.0
@@ -342,6 +381,8 @@ def main():
         mean = {k: round(float(np.nanmean([d[k] for d in losses if k in d])), 5) for k in losses[0]}
         log["epochs"].append({"epoch": ep, "steps": step, "train_loss": mean, "val": vr, "train_subset": trr,
                               "epoch_s": round(dt, 2), "s_per_window": round(dt / max(len(perm), 1), 6)})
+        if a.mode == "S":                # the same validation windows scored with ANOTHER episode's scene tokens (no training effect)
+            log["epochs"][-1]["val_scene_shuffled"] = evaluate(model, fanz, tg, va, a.mode, temperature=a.temperature, scene_map=smap)
         print("ZZEP " + json.dumps(log["epochs"][-1]), flush=True)
         score = vr["loss"] if a.early_stop_on == "loss" else vr["pick_cost_m"]
         if score < best - 1e-6:
