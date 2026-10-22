@@ -110,3 +110,42 @@ The run's identity checks are unchanged: ARGS sha, launch-gate token and trainer
 - The check passed: `ZZD7_DISTINCT_OK k=1 sampled=40 differ=37 frac=0.925 min_frac=0.9`.
 - Ranks 2 and 3 followed.
 - This is a fifth disclosed deviation for the resumed run (§5).
+
+## Addendum 2 (2026-10-23, MM): P6 RESUMED on the byte-identical 3-C bank
+
+**1. Acceptance met (MEASURED by the MM on the pod).**
+- The re-roll finished at 20:57:51Z with all 720 shards.
+- Merge: `ZZ3C_MERGE_OK lines_in=86851 lines_out=64263 kept=21821 dropped=22588 yield_guard=HOLDS`.
+- sha256 of the merged bank:
+  - `targets_rank1.jsonl` `2a63acc2f6340481…`, 64,263 rows;
+  - `targets_rank0.jsonl` `daa23b962e951367…`, 103,037 rows.
+- ⇒ **byte-identical to the bank P6 trained on.** §2's cross-pod control predicted it, and the sha confirms it.
+
+**2. Off-pod backups.** All are in HF dataset `Sayood/tanitad-refe-navtrain-banks`, each with its remote size and LFS sha256 verified.
+
+| file | bytes | sha256 | note |
+|---|---|---|---|
+| `refe_train_grow_cmd_3c.tar.zst` | 217,062,290 | `8b965193…` | ⚠️ its sidecar had exited at 13:06Z (`ZZB3_SKIP driver FAILED`, after the 13:04Z driver failure) and was NOT restarted with the driver. The MM relaunched it after the merge. |
+| `refe_d9_metric_cache_newpod_2026-10-22.tar` | 36,282,746,880 | `2bc68e31…` | 103,037 members (`code/d9cache_hf.sh`). The first attempt was aborted by the MM: the lanes stage was still writing rank-1 twin entries into `metric_cache`. The rerun waits for a stable cache. |
+| `refe_train_grow_cmd_3c_p7.tar.zst` | 192,135,900 | `e95f3987…` | P7's reserve-free bank (`raw/2026-10-23-p7-pins/`) |
+| `refe_aux_drivable_label_store_2026-10-23.tar` | 353,802,240 | `583d8811…` | 1,196 members. The only copy had been the dev box's D: drive. |
+
+**3. The launch gate FAILED once, correctly, then PASSED.**
+- **The failure (22:15–22:34Z):**
+  - **G-SUITE FAIL:** `test_launch_gate.py --static --no-banked` rc 1, with `FileNotFoundError: …/eval/rls1b_arms.json`.
+  - **Root cause (MEASURED):** the new pod's package `/workspace/refe-plan-p6` held only `code/`, `refe/` and `splits/`. At `f2f604f` the gate test reads four package files outside `refe/`: `eval/rls1{b,d,e}_arms.json` and `raw/2026-10-18-r0e-pick/PREREG_R0E_PICK.md`.
+- **The fix:**
+  - Shipped exactly `f2f604f`'s blobs; all 4 sha256 values verified on the pod.
+  - `eval/` is outside the token's tree digest (`launch_gate.py:120`), so the run's identity is unchanged.
+  - Re-run on the pod: `ZZLG_STATIC_PASS 1170`, rc 0.
+  - The driver was relaunched at 22:54Z (sha `33711631…` verified).
+- **The pass:** gate verdict `PASS_f2f604f5d806`; the supervisor's token check reads `ZZGATE-MATCH`.
+- **Class:** *a package shipped as a directory subset misses files its own gate tests read.* The gate refused before any training; the cost was about 40 min of A40 idle (BACKLOG `PKG-SHIP-COMPLETE`).
+
+**4. Resume.**
+- The trainer logged step 2,603 at about 23:27Z, continuing from HF's `ckpt_last.pt` (epoch 6 of 25).
+- The run's recorded identity is `targets_sha256 8775e73e…`, and the bank is 167,300 tuples in 103,037 scenes.
+- The trainer refuses a resume whose identity differs, so a proceeding run means the check passed.
+- **Rate:** 58.9 s/step over steps 2,603–2,609. MEASURED, but on only 6 intervals; re-measure over a day.
+- **ETA:** 7,466 steps remain, so ≈ 5.1 d, finishing ≈ **2026-10-28** (ESTIMATED).
+- **Watch:** `code/p6_death_watch_px.sh`, through the proxy: pod unreachable, `train.log` stale for more than 20 min, or the chain's end markers.
