@@ -18557,3 +18557,22 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 * The pre-registered gate did its job, and no lever was trained on the claim.
 * Errata appended to `RESULT_V8F_TAC_A2.md` and `PREREG_V8F_CZ.md`.
 * Register row H-V8F-CZ-1 → GATE FAIL.
+
+### R64 (2026-10-22) - "A cautious search can be fitted on unseen scenes after a ~0.7 GB nuPlan val download (S2 / S4); the PI's yes is the blocker" (Master Mind, C2 result note item 5 and BACKLOG SEARCH-PESSIMISTIC, landed `ea5fca6`; put to the PI, who approved)
+
+**Claimed:**
+* The unseen-scene pool for the next search arm is the 1,167 nuPlan val logs (`UNSEEN-STRATUM-DATA`), reachable by the S2 / S4 fetch once the PI says yes.
+
+**Measured (already, 2026-10-19):**
+* `D-DATA-U-FRAMES-1` / R56: the public val camera set is TAR and holds frames for 11 of those logs (0 of the 122 fetch-list logs). That BACKLOG row itself reads **"CLOSED 2026-10-19 ~23:40: THE ROUTE DOES NOT EXIST"**, later in the same cell.
+
+**How it happened:**
+* The MM read the row with `cut -c1-1800`. Its plan sits at the start of the cell and its CLOSED note near the end, so the truncated read showed a live plan.
+* The MM then quoted the plan to the PI as a pending decision.
+
+**Fixed:**
+* The C2 result note (item 5 plus an erratum) and the SEARCH-PESSIMISTIC row now name the route that exists: log-held-out scorer heads on cached trunk features. That tests head-level exploitation only.
+* The PI was told the same day. Nothing was fetched.
+
+**Class:** *a register cell read TRUNCATED and acted on as if whole.* A cell is appended to over time, so its newest state is at its END, exactly where a width cut drops it. Same family as the NOISE_FLOOR crash (a truncated artifact read as complete) and the `ls | cut` false alarm.
+* ⇒ **Before quoting a register row's plan, read the whole cell, or grep it for `CLOSED|DONE|REFUTED|SUPERSEDED|WITHDRAWN`.** Never pass a row you will act on through `cut -c`.

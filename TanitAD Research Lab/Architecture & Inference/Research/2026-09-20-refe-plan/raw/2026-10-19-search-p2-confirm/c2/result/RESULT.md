@@ -65,7 +65,7 @@ The search is **not inert**: 19.8 % of outputs moved by more than 0.5 m (per see
 4. **The SEARCH-DOSE (M = 256) read:** already banked (`../../dose/read/`). It chose C8.
 5. **New, from this read (named here, not yet registered):** a selection rule that is **pessimistic about the scorer's error**. Examples: a penalty on the distance from P2's pick, or a lower-confidence-bound score.
    - It must be fitted and judged on an **unseen-scene fit set**, never on navtest.
-   - The only such pool is the 1,167 nuPlan val logs (BACKLOG `UNSEEN-STRATUM-DATA`); the S2/S4 fetch is the PI's call.
+   - There is **no public unseen-scene pool outside navtest**: `D-DATA-U-FRAMES-1` / R56 (2026-10-19) showed that the public nuPlan val camera set holds frames for 11 of the 1,167 unseen logs, so the public sensor set is essentially navtrain ∪ navtest. The honest route is to make scenes unseen for the **scorer**: log-held-out (out-of-fold) scorer heads on cached trunk features, then the search on each held-out fold. The trunk has still seen those logs, so this tests HEAD-level error exploitation only, and it must say so. (Corrected 2026-10-22, R64.)
    - ⛔ navtest was used up by this look for H-SEARCH-P2-1 (one-run marker `navpipe_c2_ONE_RUN_H-SEARCH-P2-1.json`). A successor gets its own registration and its own look.
 
 ## Deliverable manifest
@@ -76,3 +76,9 @@ The search is **not inert**: 19.8 % of outputs moved by more than 0.5 m (per see
 | merged npz files (`bundle_merged`, `scores_merged`, `search_merged`) | sha256 in `final_npz.sha256`; inside the tar below |
 | the whole work directory (1,513 files: chunks, T1 CSVs, harness logs, final), plus the dev-box run logs | `D:/Projects/TanitAD-artifacts/c2_navtest_2026-10-22.tar`, 453,918,720 B, sha256 `619bcf26c91bb988eb316e157ef71a2223c76fa72a2b965baed1d8d6bd32557e` |
 | the sealed amendment, fixture and launch record | `../AMENDMENT_C2.md`, `../run/` (landed `bd49eaa`) |
+
+## Erratum (2026-10-22, R64)
+
+Item 5 first said that *"the only such pool is the 1,167 nuPlan val logs (BACKLOG `UNSEEN-STRATUM-DATA`); the S2/S4 fetch is the PI's call"*. That route was CLOSED on 2026-10-19 (`D-DATA-U-FRAMES-1`, R56).
+- The MM read that BACKLOG row truncated, missed its own CLOSED note, and asked the PI for the fetch. The PI approved it; nothing was fetched.
+- Item 5 now names the route that exists: log-held-out scorer heads.
