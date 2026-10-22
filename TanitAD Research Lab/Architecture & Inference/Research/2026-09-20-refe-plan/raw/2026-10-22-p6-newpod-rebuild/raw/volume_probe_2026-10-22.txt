@@ -1,0 +1,9 @@
+# MEASURED 2026-10-22 ~05:30Z on the new pod (du -s --block-size=1M; then 1 GiB dd pieces with conv=fsync until the first failure)
+data/navtrain_dbs 167758 MiB
+data/navtrain_pixels 75918 MiB   (18 of 32 shards, 4 cameras)
+data/nuplan-maps 2309 MiB
+venv-teacher 11458 MiB
+repo 329 MiB ; ops 203 MiB ; refe-plan-p6 19 MiB ; refe-plan-p6-prebuild 17 MiB ; dz 555 MiB ; navsim-3e8291b 108 MiB
+free on the network volume: 16 GiB written, the 17th GiB failed   => quota ~ 270 GiB (df is blind: it reports the MooseFS cluster)
+chain stage 0 (bcc04b5, P6_DD_GB=16), 05:21:21Z: "REFUSED: dd write test of 16 GB failed" (2 pixel downloads were writing at the time)
+container disk (/): df says 700G size, 1G used; a 20 GiB fsync'd write passed (move_dbs.sh), the 164 GiB DB copy is the full test
