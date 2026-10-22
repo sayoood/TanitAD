@@ -18530,3 +18530,30 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 * The textbook yaw is right in isolation. The consumer (the devkit, and the agent's inference feed) uses another sign convention, and a 20-token smoke was too small to expose it.
 * ⇒ **Derive any pose quantity with the CONSUMER'S library call, or check it against the consumer's own output on a sample large enough to contain turning tokens.**
 * Same family as the cylindrical-FOV and unit-less-anchor traps: a true quantity read outside its scope.
+
+### R63 (2026-10-22) - "most of T's 'constraint error' is a train/inference MISMATCH ... not a perception limit" (v8F-mini session bfe78918: `RESULT_V8F_TAC_A2.md` and `PREREG_V8F_CZ.md`, landed in c483a28)
+
+**Measured:**
+* `PREREG_V8F_CZ`'s own zero-training gate tested the claim: O reads T's code, with every ABSENT constraint slot set to the 0 that O is teacher-forced on.
+* If the absent-slot values were error, this would have helped. It made driving **worse**:
+  * ADE6 **+1.042 / +1.020 m** at M2b (2F 0.2415), +1.107 / +0.878 at M1, all separated;
+  * T0, paired episode-cluster bootstrap, 141 episodes;
+  * `…/2026-10-17-v8f-mini/raw/2026-10-22-cz/cz_gate.json`.
+* No training ran: the gate saved about 9 h of box 2.
+
+**What stands, and what falls:**
+* The arithmetic stands: 92–95 % of T's squared `latcons` / `stoplead` deviation **from the 0 convention** sits in absent slots.
+* The reading falls: calling that deviation "error".
+* O reads T's own code for most of its training (`p_gt` 1.0 → 0.2, `v8f_mini.py:601-602`). So T's absent-slot values are **O's input**, and O has co-adapted to them.
+* O has seen 0 in an absent slot only beside GT present values. "T's present values + 0" is a mix O never trained on.
+
+**Class:** *an error metric judged against a convention its consumer does not use.*
+* The 0 is the LABEL's convention for "absent". O, the consumer, was trained mostly on T's values there.
+* ⇒ **Before calling a value "error", ask what its consumer was TRAINED on.** If the consumer co-adapted to the value, the value is an input, whatever the label convention says.
+* ⇒ **A frozen-consumer partial intervention cannot size a TRAINING change.** Only whole-code oracles are clean, because O was trained at both endpoints.
+* Same family as R62 (*correct formula, wrong convention*). This time the convention belonged to the label, the quantity was "error", and the consumer was a co-adapted network.
+
+**Fixed:**
+* The pre-registered gate did its job, and no lever was trained on the claim.
+* Errata appended to `RESULT_V8F_TAC_A2.md` and `PREREG_V8F_CZ.md`.
+* Register row H-V8F-CZ-1 → GATE FAIL.

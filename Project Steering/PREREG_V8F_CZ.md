@@ -78,3 +78,9 @@ This is a train/inference mismatch, not a perception limit. It is the cheapest l
 * Chain: `code/box2_ops/chain_v8f_cz.sh`, derived from `chain_v8f_mini.sh`, with ZZV8FMINI markers in its own log.
   * It refreshes from the tip, with 8 files sha-checked and both v9 releases md5-checked.
   * It runs telemetry and the v8F guard, and stops on a crash, a reboot or a guard stop.
+
+## Outcome (2026-10-22, appended after the data)
+
+* **Stage 1: GATE FAIL, as committed. No training ran.** absmask − pred ADE6 **+1.042 / +1.020 m** at M2b (2F 0.2415), +1.107 / +0.878 at M1, all separated (`…/2026-10-17-v8f-mini/raw/2026-10-22-cz/cz_gate.json`, `RESULT_V8F_CZ.md`).
+* ⛔ **The framing above, "a train/inference mismatch, not a perception limit", is refuted (R63).** O co-adapted to T's absent-slot values, so they are its input.
+* The committed FAIL branch's next lever is T's PRESENT-slot accuracy, under its own PREREG.

@@ -56,6 +56,7 @@
 * ⇒ The CONSTRAINT-ACCURACY arm starts with the defect, not with a reweight. **`PREREG_V8F_CZ`** (written before its data):
   * **stage 1:** a zero-training absent-slot oracle gates the run;
   * **stage 2:** arm `M2b-cz` trains T to write 0 in absent slots, one lever moved vs M2b, 2 seeds, under the launch gate.
+* ⛔ **ERRATUM 2026-10-22 (R63):** the reading "MISMATCH" is refuted by `PREREG_V8F_CZ`'s own gate. Zeroing the absent slots made driving WORSE: ADE6 +1.042 / +1.020 m at M2b, separated (`RESULT_V8F_CZ.md`). O reads T's own code for most of its training, so T's absent-slot values are O's input, not error. The arithmetic in the table stands; the word "error" does not.
 
 **The run itself:**
 * Box 2, SAFE MODE, the temperature guard, boot unchanged.
