@@ -1,0 +1,394 @@
+{
+ "what": "S2 index of the nuPlan val camera archives: which archive holds which log, and whether the 1,944 listed jpgs exist there",
+ "evidence": "MEASURED (public_set_val_sensor.txt read from the bucket; corroborated by 3 range reads x 12 archives, 36 log sightings, 0 contradictions)",
+ "FORMAT_FINDING": {
+  "claim": "The 12 nuplan-v1.1_val_camera_{0..11}.zip objects are TAR archives (POSIX ustar), not zips: no EOCD, no central directory, no per-file CRC32, no compression.",
+  "evidence": [
+   "fetch_front_camera.py central_directory() raised 'no EOCD' on the last 128 KiB (code/s2_cd_attempt_FAILED.py, logs/requests_s2_cd_attempt.jsonl)",
+   "tail of archive 0 (128 KiB): 0 occurrences of the zip signatures PK05 06 / PK06 06 / PK01 02 / PK03 04; archive 0 head: 'nuplan-v1.1_val_camera_0/' + NULs, 'ustar' magic at byte 257 of every 512-byte header (typeflag '5' = dir, '0' = file; first jpg 172,075 B at offset 1536)",
+   "every one of the 12 archive sizes is a multiple of 512 (see archives below)"
+  ],
+  "consequence": "S2's per-jpg (offset, compressed size, method, CRC32) cannot be read from an index: a tar has none, and tar members are stored uncompressed with no CRC. Locating a member needs a sequential header walk (header -> size -> next header). Not done: outside the approved scope."
+ },
+ "fetch_list": {
+  "n_jpgs": 1944,
+  "n_unique": 1944,
+  "list_sha256_recomputed": "fd538eaaf422442cde5b1cebcc330a81dcbbcacf57bae4b5f8a82223d0665b77",
+  "list_sha256_in_file": "fd538eaaf422442cde5b1cebcc330a81dcbbcacf57bae4b5f8a82223d0665b77",
+  "n_logs_field": 123,
+  "n_logs_with_jpgs": 122,
+  "n_tokens": 486,
+  "per_cam": {
+   "CAM_B0": 486,
+   "CAM_F0": 486,
+   "CAM_L0": 486,
+   "CAM_R0": 486
+  },
+  "unfilled": [
+   {
+    "log": "2021.06.08.16.31.33_veh-38_00273_00386",
+    "n_accepted": 2,
+    "n_scored": 120,
+    "n_candidates": 212
+   },
+   {
+    "log": "2021.06.08.18.19.18_veh-47_00544_00624",
+    "n_accepted": 0,
+    "n_scored": 120,
+    "n_candidates": 146
+   }
+  ]
+ },
+ "public_set_val_sensor_txt": {
+  "bytes": 8945,
+  "sha256": "721d703aad317d68a36759c8c842c6c4e26b071fa0f83ad553e580222c04fc78",
+  "n_groups": 12,
+  "n_logs": 225,
+  "per_group": {
+   "0": 11,
+   "1": 16,
+   "2": 12,
+   "3": 18,
+   "4": 17,
+   "5": 23,
+   "6": 24,
+   "7": 30,
+   "8": 18,
+   "9": 21,
+   "10": 19,
+   "11": 16
+  },
+  "logs_in_two_groups": []
+ },
+ "archives": {
+  "0": {
+   "url": "https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/val_set/nuplan-v1.1_val_camera_0.zip",
+   "total_bytes": 70564730880,
+   "mod_512": 0,
+   "mod_10240": 0,
+   "n_txt_logs": 11,
+   "n_U_logs": 0,
+   "U_logs": []
+  },
+  "1": {
+   "url": "https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/val_set/nuplan-v1.1_val_camera_1.zip",
+   "total_bytes": 77868994560,
+   "mod_512": 0,
+   "mod_10240": 0,
+   "n_txt_logs": 16,
+   "n_U_logs": 3,
+   "U_logs": [
+    "2021.06.07.19.29.59_veh-38_02615_02779",
+    "2021.06.08.12.10.22_veh-38_01912_02498",
+    "2021.06.08.12.10.22_veh-38_05512_05652"
+   ]
+  },
+  "2": {
+   "url": "https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/val_set/nuplan-v1.1_val_camera_2.zip",
+   "total_bytes": 79715092480,
+   "mod_512": 0,
+   "mod_10240": 0,
+   "n_txt_logs": 12,
+   "n_U_logs": 0,
+   "U_logs": []
+  },
+  "3": {
+   "url": "https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/val_set/nuplan-v1.1_val_camera_3.zip",
+   "total_bytes": 74908436480,
+   "mod_512": 0,
+   "mod_10240": 0,
+   "n_txt_logs": 18,
+   "n_U_logs": 2,
+   "U_logs": [
+    "2021.06.08.16.31.33_veh-38_04275_04425",
+    "2021.06.08.19.16.23_veh-26_01782_01967"
+   ]
+  },
+  "4": {
+   "url": "https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/val_set/nuplan-v1.1_val_camera_4.zip",
+   "total_bytes": 67884226560,
+   "mod_512": 0,
+   "mod_10240": 0,
+   "n_txt_logs": 17,
+   "n_U_logs": 3,
+   "U_logs": [
+    "2021.08.24.13.12.55_veh-45_00386_00472",
+    "2021.08.24.13.12.55_veh-45_00507_00867",
+    "2021.08.24.14.35.46_veh-45_00440_00501"
+   ]
+  },
+  "5": {
+   "url": "https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/val_set/nuplan-v1.1_val_camera_5.zip",
+   "total_bytes": 73047377920,
+   "mod_512": 0,
+   "mod_10240": 0,
+   "n_txt_logs": 23,
+   "n_U_logs": 0,
+   "U_logs": []
+  },
+  "6": {
+   "url": "https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/val_set/nuplan-v1.1_val_camera_6.zip",
+   "total_bytes": 66026311680,
+   "mod_512": 0,
+   "mod_10240": 0,
+   "n_txt_logs": 24,
+   "n_U_logs": 2,
+   "U_logs": [
+    "2021.08.31.12.54.56_veh-40_01249_01397",
+    "2021.08.31.12.54.56_veh-40_01536_01758"
+   ]
+  },
+  "7": {
+   "url": "https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/val_set/nuplan-v1.1_val_camera_7.zip",
+   "total_bytes": 70172651520,
+   "mod_512": 0,
+   "mod_10240": 0,
+   "n_txt_logs": 30,
+   "n_U_logs": 0,
+   "U_logs": []
+  },
+  "8": {
+   "url": "https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/val_set/nuplan-v1.1_val_camera_8.zip",
+   "total_bytes": 69350809600,
+   "mod_512": 0,
+   "mod_10240": 0,
+   "n_txt_logs": 18,
+   "n_U_logs": 0,
+   "U_logs": []
+  },
+  "9": {
+   "url": "https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/val_set/nuplan-v1.1_val_camera_9.zip",
+   "total_bytes": 76312043520,
+   "mod_512": 0,
+   "mod_10240": 0,
+   "n_txt_logs": 21,
+   "n_U_logs": 1,
+   "U_logs": [
+    "2021.10.05.04.38.41_veh-50_01202_01296"
+   ]
+  },
+  "10": {
+   "url": "https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/val_set/nuplan-v1.1_val_camera_10.zip",
+   "total_bytes": 84905615360,
+   "mod_512": 0,
+   "mod_10240": 0,
+   "n_txt_logs": 19,
+   "n_U_logs": 0,
+   "U_logs": []
+  },
+  "11": {
+   "url": "https://motional-nuplan.s3.ap-northeast-1.amazonaws.com/public/nuplan-v1.1/sensor_blobs/val_set/nuplan-v1.1_val_camera_11.zip",
+   "total_bytes": 56327014400,
+   "mod_512": 0,
+   "mod_10240": 0,
+   "n_txt_logs": 16,
+   "n_U_logs": 0,
+   "U_logs": []
+  }
+ },
+ "corroboration": {
+  "windows_read": 36,
+  "log_sightings": 36,
+  "sightings_not_in_own_txt_group": [],
+  "bytes_MEASURED": 12632064,
+  "NOT_exhaustive": "a header sample cannot prove absence; that the txt is the complete archive listing is UNVERIFIED beyond (a) 0 contradictions in the sightings, (b) all 225 txt logs inside the 1,381 trainval DBs, (c) 214 of them outside U = exactly the trainval logs outside U, (d) density: 867 GB / 225 logs is about 3.9 GB per log for 8 cameras"
+ },
+ "U_coverage": {
+  "n_U": 1167,
+  "n_U_in_any_archive": 11,
+  "n_U_in_no_archive": 1156,
+  "n_txt_logs_in_trainval_DBs": 225,
+  "n_txt_logs_not_in_U": 214,
+  "n_trainval_not_U": 214,
+  "txt_covers_all_trainval_not_U": true,
+  "U_logs_with_frames": {
+   "2021.06.07.19.29.59_veh-38_02615_02779": 1,
+   "2021.06.08.12.10.22_veh-38_01912_02498": 1,
+   "2021.06.08.12.10.22_veh-38_05512_05652": 1,
+   "2021.06.08.16.31.33_veh-38_04275_04425": 3,
+   "2021.06.08.19.16.23_veh-26_01782_01967": 3,
+   "2021.08.24.13.12.55_veh-45_00386_00472": 4,
+   "2021.08.24.13.12.55_veh-45_00507_00867": 4,
+   "2021.08.24.14.35.46_veh-45_00440_00501": 4,
+   "2021.08.31.12.54.56_veh-40_01249_01397": 6,
+   "2021.08.31.12.54.56_veh-40_01536_01758": 6,
+   "2021.10.05.04.38.41_veh-50_01202_01296": 9
+  }
+ },
+ "listed_logs": {
+  "n": 122,
+  "n_in_any_archive": 0,
+  "n_not_in_any_archive": 122,
+  "log_to_archive": {
+   "2021.06.07.12.01.13_veh-47_00730_00915": null,
+   "2021.06.07.12.01.13_veh-47_02509_02927": null,
+   "2021.06.07.12.01.13_veh-47_05509_05665": null,
+   "2021.06.07.12.42.11_veh-38_00103_00274": null,
+   "2021.06.07.12.42.11_veh-38_02089_02283": null,
+   "2021.06.07.12.42.11_veh-38_02952_03124": null,
+   "2021.06.07.12.42.11_veh-38_04779_06284": null,
+   "2021.06.07.13.42.27_veh-47_00077_00282": null,
+   "2021.06.07.13.42.27_veh-47_01096_01251": null,
+   "2021.06.07.13.42.27_veh-47_01679_01792": null,
+   "2021.06.07.13.53.57_veh-35_01195_01572": null,
+   "2021.06.07.17.46.49_veh-35_05396_05482": null,
+   "2021.06.07.17.48.02_veh-38_01285_01447": null,
+   "2021.06.07.17.48.02_veh-38_01706_01815": null,
+   "2021.06.07.17.48.02_veh-38_03590_03715": null,
+   "2021.06.07.17.48.02_veh-38_04528_04694": null,
+   "2021.06.07.17.49.04_veh-47_03886_03999": null,
+   "2021.06.07.18.29.03_veh-16_00049_00824": null,
+   "2021.06.07.19.29.59_veh-38_01500_01575": null,
+   "2021.06.07.19.29.59_veh-38_02790_02994": null,
+   "2021.06.07.19.29.59_veh-38_03005_03160": null,
+   "2021.06.07.19.43.00_veh-35_00829_00910": null,
+   "2021.06.07.19.43.00_veh-35_00922_01351": null,
+   "2021.06.07.19.43.00_veh-35_01997_02072": null,
+   "2021.06.07.19.51.52_veh-47_01700_01785": null,
+   "2021.06.08.12.00.19_veh-35_04110_04230": null,
+   "2021.06.08.12.00.19_veh-35_04241_04354": null,
+   "2021.06.08.12.10.22_veh-38_00613_00804": null,
+   "2021.06.08.13.14.49_veh-47_01670_01844": null,
+   "2021.06.08.13.23.30_veh-16_00030_00386": null,
+   "2021.06.08.14.14.51_veh-35_05049_05320": null,
+   "2021.06.08.14.57.07_veh-47_04412_04567": null,
+   "2021.06.08.14.57.07_veh-47_05110_05325": null,
+   "2021.06.08.16.31.33_veh-38_00273_00386": null,
+   "2021.06.08.16.31.33_veh-38_01080_01257": null,
+   "2021.06.08.16.31.33_veh-38_02424_02513": null,
+   "2021.06.08.17.25.03_veh-35_01953_02306": null,
+   "2021.06.08.17.25.03_veh-35_03342_03422": null,
+   "2021.06.08.17.25.03_veh-35_03727_03939": null,
+   "2021.06.08.17.25.03_veh-35_05031_05225": null,
+   "2021.06.08.17.29.54_veh-16_04333_04409": null,
+   "2021.06.08.17.36.50_veh-26_00424_00487": null,
+   "2021.06.08.17.36.50_veh-26_00533_00628": null,
+   "2021.06.08.18.18.30_veh-38_02657_02782": null,
+   "2021.06.08.18.18.30_veh-38_05462_05566": null,
+   "2021.06.08.18.19.18_veh-47_00417_00521": null,
+   "2021.06.08.18.19.18_veh-47_03172_03366": null,
+   "2021.06.08.18.19.18_veh-47_06298_06467": null,
+   "2021.06.08.18.59.48_veh-12_01470_01550": null,
+   "2021.06.08.18.59.48_veh-12_03766_03974": null,
+   "2021.06.08.18.59.48_veh-12_04090_04528": null,
+   "2021.06.08.19.16.23_veh-26_00118_00182": null,
+   "2021.07.24.00.12.51_veh-37_02616_03464": null,
+   "2021.07.24.00.36.59_veh-47_06810_07310": null,
+   "2021.07.24.00.58.02_veh-12_01831_03390": null,
+   "2021.07.24.15.54.20_veh-47_00418_01528": null,
+   "2021.07.24.15.54.20_veh-47_03573_05252": null,
+   "2021.07.24.16.41.10_veh-12_00134_00220": null,
+   "2021.07.24.16.48.51_veh-17_02573_03272": null,
+   "2021.07.24.16.51.13_veh-26_01004_01138": null,
+   "2021.07.24.20.02.23_veh-47_02071_02432": null,
+   "2021.07.24.20.37.45_veh-17_00386_01357": null,
+   "2021.07.24.20.58.00_veh-35_00016_00776": null,
+   "2021.07.24.22.52.16_veh-35_04252_04896": null,
+   "2021.07.24.22.53.21_veh-47_01177_01407": null,
+   "2021.07.24.22.53.21_veh-47_01429_03205": null,
+   "2021.07.24.23.50.16_veh-17_02844_03442": null,
+   "2021.07.24.23.50.16_veh-17_04580_05245": null,
+   "2021.07.24.23.50.16_veh-17_06539_06969": null,
+   "2021.07.24.23.59.52_veh-12_00016_00481": null,
+   "2021.08.24.12.39.05_veh-42_02417_02512": null,
+   "2021.08.24.12.40.19_veh-45_00351_00429": null,
+   "2021.08.24.12.40.19_veh-45_01246_01454": null,
+   "2021.08.24.17.01.06_veh-45_00053_00154": null,
+   "2021.08.24.17.34.27_veh-45_01118_01346": null,
+   "2021.08.24.17.37.11_veh-08_00510_00673": null,
+   "2021.08.24.17.37.11_veh-08_01117_01293": null,
+   "2021.08.24.17.45.37_veh-42_02178_02285": null,
+   "2021.08.24.17.45.37_veh-42_02371_02441": null,
+   "2021.08.24.18.56.54_veh-45_00399_00499": null,
+   "2021.08.24.18.56.54_veh-45_00522_00779": null,
+   "2021.08.24.19.26.32_veh-08_00809_00880": null,
+   "2021.08.24.19.26.32_veh-08_01043_01341": null,
+   "2021.09.13.13.21.28_veh-39_00945_01414": null,
+   "2021.09.13.13.38.29_veh-28_01358_01647": null,
+   "2021.09.13.14.00.42_veh-39_01559_01620": null,
+   "2021.09.13.14.16.34_veh-28_00143_00352": null,
+   "2021.09.13.14.42.29_veh-39_00070_00192": null,
+   "2021.09.13.14.55.48_veh-28_00468_00627": null,
+   "2021.09.13.17.32.06_veh-39_00533_00750": null,
+   "2021.09.13.18.06.11_veh-39_00309_00384": null,
+   "2021.09.13.18.06.11_veh-39_00588_00748": null,
+   "2021.09.13.18.23.05_veh-28_00313_00449": null,
+   "2021.09.13.18.39.41_veh-39_01348_01467": null,
+   "2021.09.13.18.55.39_veh-28_00334_00475": null,
+   "2021.09.13.19.12.44_veh-39_00294_00509": null,
+   "2021.09.13.19.54.33_veh-39_00005_00106": null,
+   "2021.09.14.14.17.04_veh-45_00872_01944": null,
+   "2021.09.14.17.35.14_veh-45_02006_02248": null,
+   "2021.09.14.17.35.14_veh-45_03216_03308": null,
+   "2021.09.14.19.46.05_veh-45_02912_03071": null,
+   "2021.09.23.01.37.15_veh-53_00633_00752": null,
+   "2021.09.23.01.44.00_veh-49_01207_01408": null,
+   "2021.09.23.02.37.41_veh-51_00039_00529": null,
+   "2021.09.23.02.58.49_veh-53_00275_00362": null,
+   "2021.09.23.02.58.49_veh-53_00780_00895": null,
+   "2021.09.23.03.29.13_veh-51_00279_00368": null,
+   "2021.09.23.03.33.49_veh-53_01590_01877": null,
+   "2021.09.23.03.40.18_veh-49_01258_01414": null,
+   "2021.09.23.03.40.18_veh-49_01618_01830": null,
+   "2021.09.23.05.33.01_veh-51_00455_00528": null,
+   "2021.09.23.06.04.24_veh-53_00792_00932": null,
+   "2021.09.23.06.06.47_veh-51_01483_01949": null,
+   "2021.09.23.06.45.26_veh-50_01532_01789": null,
+   "2021.09.23.07.27.52_veh-50_00016_00106": null,
+   "2021.09.23.07.55.03_veh-51_00016_00231": null,
+   "2021.09.23.07.55.03_veh-51_01340_01436": null,
+   "2021.09.23.08.19.28_veh-53_01414_01683": null,
+   "2021.10.05.06.24.06_veh-50_00563_00688": null,
+   "2021.10.05.07.31.14_veh-53_00655_00761": null,
+   "2021.10.05.07.49.39_veh-52_00034_00111": null,
+   "2021.10.05.08.11.15_veh-50_01478_01545": null
+  }
+ },
+ "coverage_per_camera": {
+  "CAM_F0": {
+   "listed": 486,
+   "found": 0,
+   "missing": 486
+  },
+  "CAM_L0": {
+   "listed": 486,
+   "found": 0,
+   "missing": 486
+  },
+  "CAM_R0": {
+   "listed": 486,
+   "found": 0,
+   "missing": 486
+  },
+  "CAM_B0": {
+   "listed": 486,
+   "found": 0,
+   "missing": 486
+  }
+ },
+ "coverage_total": {
+  "listed": 1944,
+  "found": 0,
+  "missing": 1944
+ },
+ "entries": [],
+ "entries_note": "empty by construction: none of the 123 listed logs is in any archive, so no jpg of the list exists to be indexed",
+ "bytes_read_S2_MEASURED": {
+  "range_body_bytes_total": 13689585,
+  "per_log_file": {
+   "requests_s2_cd_attempt.jsonl": {
+    "requests": 18,
+    "HEAD": 9,
+    "range_body_bytes_ok": 1057521,
+    "failed_attempts": 0
+   },
+   "requests_s2_probe.jsonl": {
+    "requests": 48,
+    "HEAD": 12,
+    "range_body_bytes_ok": 12632064,
+    "failed_attempts": 0
+   }
+  },
+  "note": "HEAD requests carry no body; contents: the 8,945 B txt, the 128 KiB archive tails read by the failed CD attempt, 12 x 4 KiB heads, 24 x 512 KiB windows"
+ }
+}

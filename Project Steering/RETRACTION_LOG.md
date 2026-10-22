@@ -18576,3 +18576,19 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 
 **Class:** *a register cell read TRUNCATED and acted on as if whole.* A cell is appended to over time, so its newest state is at its END, exactly where a width cut drops it. Same family as the NOISE_FLOOR crash (a truncated artifact read as complete) and the `ls | cut` false alarm.
 * ⇒ **Before quoting a register row's plan, read the whole cell, or grep it for `CLOSED|DONE|REFUTED|SUPERSEDED|WITHDRAWN`.** Never pass a row you will act on through `cut -c`.
+
+### R65 -- "the public sensor set is essentially navtrain ∪ navtest" and "no session-unseen pool exists outside navtest" were wider than their probes (2026-10-22, MM)
+
+**Claimed:**
+* `D-DATA-U-FRAMES-1` (2026-10-19) concluded that the public sensor set is essentially navtrain ∪ navtest, from the nuPlan **val** sensor index alone (225 logs).
+* `…/2026-10-22-search-pessimistic-feasibility/FEASIBILITY.md` §7 stated that no session-unseen pool exists outside navtest.
+
+**Measured (UNSEEN-POOL-2, `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-22-unseen-pool-2/RESULT.md`, metadata listings only):**
+* Every public sensor-bearing release, together: 1,457 logs, 217 sessions, 66 vehicle-days.
+* Outside navtrain ∪ navtest: 129 logs, 11 sessions, **0 vehicle-days**.
+* Nine trainval sessions (58 logs) ARE session-unseen, so §7 is false as worded. But 56 of those 58 logs have no route, and only 2 logs (about 137 tokens, ESTIMATED) are scorable.
+
+**Consequence:** none. Both conclusions hold in effect: there is no usable unseen fit set outside navtest. No decision changes. The navtrain session reserve stays the only fit set.
+
+**Class:** *a universal claim about a dataset derived from ONE release's index.* It is operating rule 2 ("absence at one location is not absence") at the dataset level.
+* ⇒ A claim about "the public set" enumerates every release (train / val / test / mini / warmup / private) and says which ones were probed.

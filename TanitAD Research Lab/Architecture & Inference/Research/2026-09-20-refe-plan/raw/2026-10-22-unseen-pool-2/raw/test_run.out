@@ -1,0 +1,25 @@
+PASS T1 session_of == draw_reserve.session_of on 1457 names 
+PASS T1 vehicle-day == draw_reserve.unit_of(vehicle-day) 
+PASS T2 navtrain 1192/162/46 {'logs': 1192, 'sessions': 162, 'vehicle_days': 46, 'vehicles': 16}
+PASS T2 navtest 136/44/20 {'logs': 136, 'sessions': 44, 'vehicle_days': 20, 'vehicles': 16}
+PASS T2 navtrain and navtest share 0 sessions and 0 vehicle-days 
+PASS T3 trainval tar listing has 1310 distinct pkl members 
+PASS T3 navtrain subset of trainval, navtest subset of test 
+PASS T3 trainval and test disjoint; trainval and navtest disjoint 
+PASS T3 mini = 64 logs, all inside trainval or test 
+PASS T4 control: val txt predicted bytes == actual (8945) 
+PASS T4 train txt: (trainval minus val) predicts 42950 B 
+PASS T4 test txt: 147 test logs predicts 5903 B 
+PASS T4 mini txt: 64 mini logs predicts 2622 B 
+PASS T5 mirror train|val == OpenScene trainval, mirror test == OpenScene test {'train': 1085, 'val': 225, 'test': 147}
+PASS T6 universe 1457 logs; outside navtrain U navtest = 129 logs, 11 sessions, 0 vehicle-days {'logs': 1457, 'sessions': 217, 'vehicle_days': 66, 'vehicles': 20, 'outside_navtrain_union_navtest_logs': 129, 'outside_sessions': 11, 'outside_vehicle_days': 0}
+PASS T6 trainval: 118 outside navtrain, 58 logs in 9 sessions absent from navtrain 
+PASS T6 all 9 unseen sessions have >=1 navtrain sibling session on the same vehicle-day (0 vehicle-day-unseen) 
+PASS T6 scorable (has_route) among the 58: exactly 2 logs, 1 session 
+PASS T6 test: 11 outside navtest, 9 route-less 
+PASS T7 control: 40 navtrain logs profiled from the tgz reproduce the independent compact_metadata parse (frames, route frames, anchors) 
+PASS T7 control: navtrain has 0 route-less logs (1192 checked) 
+PASS T7 probe is able to read zero: outside logs include route-less ones 
+PASS T8 mutation (rsplit('_',1)) changes navtrain session count away from 162 -> T2 would FAIL mutated count 1192
+
+SUMMARY pass=23 fail=0
