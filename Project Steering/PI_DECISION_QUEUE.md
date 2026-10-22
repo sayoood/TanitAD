@@ -2461,7 +2461,12 @@ REFe-without-scorer, so a DATA verdict means the same thing on both sides.
 download. **DATA line = 84.5.** Engineering starts now; the run launches once tonight's eval queue drains and the launch gate
 passes. The two navtest reads (theta_DEC and A1) are part of the authorisation. Register: GOALS_AND_CLAIMS "D-NT-DECIDE DECIDED".
 
-## ⏳ OPEN (2026-10-22 ~13:00 Berlin) -- D-SESSION-RESERVE: hold out ~16 navtrain drive sessions from the NEXT trunk's training?
+## ✅ DECIDED (PI, 2026-10-22 evening Berlin) -- D-SESSION-RESERVE: option (a), reserve ~16 navtrain sessions in the NEXT trunk (P7)
+
+**PI, verbatim:** *"follow your recommendation"*. Implemented through `P7-SPEC` (BACKLOG): the sessions are drawn by a seeded rule recorded before any P7 data exists. P6 is unaffected.
+
+### (the question as filed)
+## D-SESSION-RESERVE (filed 2026-10-22 ~13:00 Berlin): hold out ~16 navtrain drive sessions from the NEXT trunk's training?
 
 **Question.** When the next trunk is trained from scratch (after P6; P6 itself is unaffected, because it resumes on its identical bank), reserve about 16 of navtrain's 162 drive sessions (~10 %) as a **session-unseen fit set**?
 

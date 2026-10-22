@@ -176,3 +176,24 @@ component carries a paired CI.
 **REFUTED:**
 - Bisect P6 against SFT-4 by the deltas that differ: nav mode, yaw form, from-scratch vs warm start.
 - Use 0-GPU dev-box reads first: the selection rule on P6's proposals, and goal vs command on the same tokens.
+
+## Amendment 2026-10-22 (pod move), written BEFORE P6 resumes and before any read
+
+**The endpoint, comparators, estimator, rule, goal bar, four families and next-arm table above are UNCHANGED.** This amendment only discloses how the run continues.
+
+1. **Interruption.** The A40 pod stopped on 2026-10-20 at about 13:00Z when the RunPod credit ran out. Its volume could not be recovered.
+   - The run resumes from HF `Sayood/tanitad-refe-p6-paper-faithful` `run/ckpt_last.pt` (pushed 12:52:56Z), at epoch 6 of 25.
+   - The steps after that push are lost and are re-trained.
+   - Whether the resumed data order equals an uninterrupted run's is **UNVERIFIED**.
+2. **The bank is rebuilt, not copied** (`raw/2026-10-22-p6-newpod-rebuild/RESULT.md`).
+   - The 74-twin cross-pod control was bit-equal.
+   - Resume is allowed only if `train_grow_cmd_3c` reproduces rank1 `2a63acc2…` and rank0 `daa23b96…`.
+   - The trainer's own preflight then requires `targets_sha256 8775e73e…`, and the ARGS sha `570619873b1ebaa0` is pinned.
+   - A mismatch means **no resume**. A restart from step 0 would be a new arm with its own amendment.
+3. **Disclosed deviations of the rebuild** (that package, §5 and Addendum 1):
+   - a different CPU (Xeon Gold 6342);
+   - the 3-C preflight reads the banked I1–I4 `controls.json`, backed by the bit-equal cross-pod control;
+   - the prebuild chain ran at `bcc04b5`, identical to the tip up to `cache` except the resume-bank guard;
+   - the DBs sit on local container disk;
+   - `build_twin_parts_3c_pp.sh` adds `$PKG/refe` to PYTHONPATH, one line, for the acceptance check.
+4. **Context for the read, registered now:** `D-REFE-SESSION-EXPOSURE-1` (navtest shares 0 of its 44 sessions with navtrain). P6's navtest read is therefore an unseen-session read, like every navtest read. It changes nothing in the rule.
