@@ -33,6 +33,10 @@ rem                                             base is decided by PREREG_V8F_PG
 rem   v8f_mini_box2_queue.cmd traingrid SEED BASE  PREREG_V8F_GRID: one G run into %RUNSM%\<BASE>_s<SEED>_8x20 (resumes; skipped once done)
 rem   v8f_mini_box2_queue.cmd evalgrid SEED BASE   PREREG_V8F_GRID: that run's eval-141 (--project --families), its absmask eval, its GT-code oracle and its all-latcons oracle,
 rem                                             tagged <BASE>-8x20_s<SEED>; each skipped once its npz exists
+rem   v8f_mini_box2_queue.cmd gatehist              PREREG_V8F_HIST: the in-process launch gate for H = M2b + --hist 10 --window-start 3 (Amendment 1), no training. B is M2b (fixed in the PREREG): there is no BASE argument
+rem   v8f_mini_box2_queue.cmd trainhist SEED       PREREG_V8F_HIST: one H run into %RUNSM%\M2b_s<SEED>_h10 (resumes; skipped once done)
+rem   v8f_mini_box2_queue.cmd evalhist SEED        PREREG_V8F_HIST: that run's eval-141 (--project --families), its absmask eval, its GT-code oracle and its all-latcons oracle,
+rem                                             tagged M2b-h10_s<SEED>; each skipped once its npz exists
 rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
@@ -83,7 +87,10 @@ if /i "%~1"=="evalpgt" goto :evalpgt
 if /i "%~1"=="gategrid" goto :gategrid
 if /i "%~1"=="traingrid" goto :traingrid
 if /i "%~1"=="evalgrid" goto :evalgrid
-echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED^|gategrid BASE^|traingrid SEED BASE^|evalgrid SEED BASE
+if /i "%~1"=="gatehist" goto :gatehist
+if /i "%~1"=="trainhist" goto :trainhist
+if /i "%~1"=="evalhist" goto :evalhist
+echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED^|gategrid BASE^|traingrid SEED BASE^|evalgrid SEED BASE^|gatehist^|trainhist SEED^|evalhist SEED
 exit /b 2
 
 rem train / eval are CALLED with the stage name dropped, so inside them %~1 = ARM, %~2 = SEED, %~3 = GRID
@@ -418,6 +425,75 @@ if exist "%EV%\eval_%TG%-tacorc-all-latcons.npz" (echo [skip] eval %TG%-tacorc-a
 if errorlevel 1 (echo [FAIL] eval %TG%-tacorc-all-latcons - see %EV%\eval_%TG%-tacorc-all-latcons.log & exit /b 1)
 echo [ok] eval %TG%-tacorc-all-latcons
 :evalgrid_4
+exit /b 0
+
+:gatehist
+rem PREREG_V8F_HIST: H = M2b's levers with --hist 10 --window-start 3 and nothing else (hmax stays at the arm's auto 16, so the batch is B's). Amendment 1: --hist 10 ALONE would start every clip's
+rem training windows at t = 9 (306,566 windows down to 279,494, 19,164 steps down to 17,472); --window-start 3 fixes the first window AND the held-age clamp at B's, so the window list and the budget are B's.
+rem The trainer's G-DVB checks the built cfg.hist, the built window_start and the window list the data built against this argv; selfcheck.json records the built parameter groups (the per-frame
+rem time table is the only per-history parameter), hist / hmax / window_start and the steps and windows; the chain asserts them before any training.
+call :prep || exit /b 2
+rem ONE command string: the dry run prints exactly what the real run executes
+set "GH="%PY%" "%TRAIN%" --arm M2b --hist 10 --window-start 3 --out "%RUNSM%\gate_M2b-h10" %A% --selfcheck-only"
+if defined V8F_DRYRUN (echo %GH% & exit /b 0)
+%GH% > "%RUNSM%\gate_M2b-h10.log" 2>&1
+if errorlevel 1 (echo [FAIL] gate M2b-h10 - see %RUNSM%\gate_M2b-h10.log & exit /b 1)
+echo [ok] gate M2b-h10
+exit /b 0
+
+:trainhist
+rem PREREG_V8F_HIST: one H run. Its summary.json says arm M2b (the trainer's arm table is unchanged); its argv.json carries --hist 10 --window-start 3, its checkpoint the built history, window_start 3
+rem and a 10-row time table: code\v8f_hist_read.py refuses a run where any is not. The run lives in M2b_s<SEED>_h10, so it can never resume or be mistaken for a 4-frame run.
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: trainhist needs a SEED & exit /b 2)
+set "OUT=%RUNSM%\M2b_s%~2_h10"
+if exist "%OUT%\summary.json" (echo [skip] M2b_s%~2_h10 & exit /b 0)
+rem ONE command string: the dry run prints exactly what the real run executes
+set "TH="%PY%" "%TRAIN%" --arm M2b --seed %~2 --grid pool4x10 --hist 10 --window-start 3 --out "%OUT%" %A%"
+if defined V8F_DRYRUN (echo %TH% & exit /b 0)
+if not exist "%OUT%" mkdir "%OUT%"
+echo [%date% %time%] train M2b_s%~2_h10
+%TH% >> "%OUT%\train.log" 2>&1
+if errorlevel 1 (echo [FAIL] train M2b_s%~2_h10 - see %OUT%\train.log & exit /b 1)
+if not exist "%OUT%\summary.json" (echo [FAIL] train M2b_s%~2_h10 exited 0 without summary.json & exit /b 1)
+exit /b 0
+
+:evalhist
+rem PREREG_V8F_HIST: the four evals its reader needs, EACH ONE command string that the dry run prints and the real run executes (the PGT / GRID recipe):
+rem   E0 the standard eval (--project --families)   E1 absmask (T's own present slots)   E2 the GT-code oracle (tacorc)   E3 the all-latcons oracle (GT everywhere but T's latcons)
+rem   All four read THIS run's last checkpoint, which names its own history (cfg.hist 10): v8f_mini_eval.py builds the model from the checkpoint's cfg and its strict load_state_dict
+rem   refuses a time table of another size. Each is skipped once its npz exists.
+rem   FLAT on purpose (no parenthesised else-block): an `exit /b 1` inside a multi-line block returns rc 0 from `cmd /c queue.cmd` (MEASURED by the PGT build).
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: evalhist needs a SEED & exit /b 2)
+set "OUT=%RUNSM%\M2b_s%~2_h10"
+set "TG=M2b-h10_s%~2"
+set "E0="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG% %EC% %ER% --project --families"
+set "E1="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacabs --tac absmask %EC% %ER%"
+set "E2="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacorc --tac oracle %EC% %ER%"
+set "E3="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacorc-all-latcons --tac oracle --tac-groups all-latcons --tac-alpha 1 %EC% %ER%"
+if defined V8F_DRYRUN (echo %E0% & echo %E1% & echo %E2% & echo %E3% & exit /b 0)
+if not exist "%OUT%\summary.json" (echo REFUSED: %TG% has not finished training & exit /b 2)
+if exist "%EV%\eval_%TG%.npz" (echo [skip] eval %TG% & goto :evalhist_1)
+%E0% >> "%EV%\eval_%TG%.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG% - see %EV%\eval_%TG%.log & exit /b 1)
+echo [ok] eval %TG%
+:evalhist_1
+if exist "%EV%\eval_%TG%-tacabs.npz" (echo [skip] eval %TG%-tacabs & goto :evalhist_2)
+%E1% >> "%EV%\eval_%TG%-tacabs.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacabs - see %EV%\eval_%TG%-tacabs.log & exit /b 1)
+echo [ok] eval %TG%-tacabs
+:evalhist_2
+if exist "%EV%\eval_%TG%-tacorc.npz" (echo [skip] eval %TG%-tacorc & goto :evalhist_3)
+%E2% >> "%EV%\eval_%TG%-tacorc.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacorc - see %EV%\eval_%TG%-tacorc.log & exit /b 1)
+echo [ok] eval %TG%-tacorc
+:evalhist_3
+if exist "%EV%\eval_%TG%-tacorc-all-latcons.npz" (echo [skip] eval %TG%-tacorc-all-latcons & goto :evalhist_4)
+%E3% >> "%EV%\eval_%TG%-tacorc-all-latcons.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacorc-all-latcons - see %EV%\eval_%TG%-tacorc-all-latcons.log & exit /b 1)
+echo [ok] eval %TG%-tacorc-all-latcons
+:evalhist_4
 exit /b 0
 
 :gatearm

@@ -376,7 +376,8 @@ def cmd_run(a):
     if a.max_windows and a.max_windows < len(wins):
         wins = [wins[i] for i in np.linspace(0, len(wins) - 1, a.max_windows).round().astype(int)]
     proxy = _OneClipStore()
-    ds = D.V8FMiniWindows(proxy, J, [], hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
+    ds = D.V8FMiniWindows(proxy, J, [], hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                          window_start=cfg.window_start)     # PREREG_V8F_HIST Amendment 1: the held-age clamp origin is the CHECKPOINT's (-1 = absent = hist - 1)
     kw = dict(m=a.replan_steps, schedule=a.schedule, scene=a.scene, limit=a.limit, device=dev)
     cl, ol, fl, ha0, g, v0, keys = [], [], [], [], [], [], set()
     n_clip = {"cl": 0, "fl": 0}

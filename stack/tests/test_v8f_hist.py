@@ -1,0 +1,1762 @@
+"""PREREG_V8F_HIST: the stack's scene input over 10 history frames instead of 4 (`--hist 10`, ONE lever).
+
+THE CLASS THIS FILE EXISTS FOR (CLAUDE.md, "built, tested, and unreachable from its caller"): `hist` has existed in the config, the trainer's `--hist` and the model's
+`_scene` since v8F-mini's first commit, and nothing pinned that a run launched with `--hist 10` REACHES the frames the readers attend to, nor that the eval of the resulting
+checkpoint gathers the same ten. Pinned here, hop by hop, as identities on a synthetic world:
+
+  TRAIN  argv --hist 10 -> make_config (cfg.hist 10; hmax stays at the arm's auto 16) -> declared_vs_built (the gate) -> V8FMiniWindows.item (hmax = 16 frames t-15..t)
+         -> V8FMini._scene (the gather) -> the scene tensor each of the THREE readers (S, T, O) receives: EXACTLY frames t-9..t of the batch's features (t-3..t at hist 4),
+         shifted by the held ages for S and T, each frame carrying its own `time` row;
+         -> the BUILT parameter table: time [10, d] (+6 d parameters, nothing else moves);
+         -> a non-zero gradient on EVERY ONE of the 10 `time` rows, with a control that reads EXACTLY 0.0 (a 4-frame gather at hist 10 leaves rows 0..5 at exactly 0.0).
+  EVAL   the checkpoint the trainer saves carries cfg.hist 10 and a 10-row `time` table; v8f_mini_eval.py builds `V8FMiniConfig(**ck["cfg"])` and gathers ten frames. An
+         eval that would build hist 4 is impossible today: `load_state_dict` is strict, so a checkpoint whose cfg disagrees with its `time` table raises and writes no file.
+  FINDING  (not a reachability gap, a property of the lever that the PREREG did not state): `build_data` calls `train_windows(..., hist=cfg.hist)`, whose DEFAULT first window is
+         t = hist - 1. At hist 10 ALONE the training window set LOSES t = 3..8 of every clip, so `n_windows`, `S` and therefore `total = S x steps_mult` all FALL. Pinned below
+         as `test_FINDING_*` (the trap stays pinned: the default is unchanged).
+  AMENDMENT 1  `--window-start 3` is the opt-in decoupling: with it H's window list, held ages and budget are B's (`test_v8f_window_start.py` pins the mechanism, hop by hop; the FINDING
+         test below also asserts the restored counts). The instruments below (reader, queue, chain gate) require `--hist 10 --window-start 3` and B's budget again.
+
+Each identity has a source mutation that turns it red: `raw/2026-10-23-hist/mutate_hist.py` (outputs beside it).
+Everything that needs the v8F-mini research package (the reader, the queue stages, the chain) is below the reachability block and is SKIPPED, not failing, in a checkout
+that has only `stack/` (the lander's probe).
+"""
+from __future__ import annotations
+
+import importlib.util
+import json
+import math
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+import numpy as np
+import pytest
+import torch
+from torch import nn
+
+REPO = Path(__file__).resolve().parents[2]
+for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts"):
+    if str(p) not in sys.path:
+        sys.path.insert(0, str(p))
+from tanitad.data import v8f_mini_data as D  # noqa: E402
+from tanitad.models import v8f_mini as M  # noqa: E402
+import v8f_mini_eval as EV  # noqa: E402
+
+PKG = REPO / "TanitAD Research Lab" / "Architecture & Inference" / "Research" / "2026-10-17-v8f-mini"
+HOLD = "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9"
+
+
+def _load(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+_T = _load("test_v8f_mini_for_hist", Path(__file__).resolve().parent / "test_v8f_mini.py")
+TR = _T.TR
+torch.set_num_threads(1)
+# the banked M2b (hist 4) parameter counts, MEASURED: raw/full/runs/M2b_s0/summary.json (levers.params, n_params_trainable)
+BANKED_M2B_PARAMS = {"adapter": 275712, "cond": 25088, "S": 1321737, "T": 1463868, "O": 2120216, "WM": 2007874}
+BANKED_M2B_TOTAL = 7214495
+D_TIME = (10 - 4) * 256                               # the lever's parameter delta at the real size: six rows of the 256-wide time table = 1,536
+HMAX_M2B = 16                                         # the trainer's auto hmax for an arm with a world-model auxiliary
+
+
+class _Slice(nn.Module):
+    """A marker adapter: the first d feature columns, bit for bit, so a token can be traced back to the exact clip frame it came from."""
+
+    def __init__(self, d):
+        super().__init__()
+        self.d = d
+
+    def forward(self, x):
+        return x[..., :self.d]
+
+
+def _clip_array(root, split, clip):
+    o = torch.load(Path(root) / split / "clips" / f"{clip}.pt", map_location="cpu", weights_only=True)
+    return o["pool4x10"].to(torch.float16).numpy()
+
+
+@pytest.fixture(scope="module")
+def world(tmp_path_factory):
+    root = tmp_path_factory.mktemp("syn_hist")
+    w = D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=0)
+    return {"root": root, **w}
+
+
+def _batch(world, hist, ages=(0, 0), n=10, seed=3, hmax=HMAX_M2B):
+    root = Path(world["root"])
+    J = D.load_join(root / "join_train.npz")
+    store = D.ClipStore(root, "train", lru=8, kin_mode="yaw", tracks=D.load_native_tracks(root / "native_tracks.pt"))
+    wins = D.train_windows(store, J, world["names"]["train"], hist=hist)
+    ds = D.V8FMiniWindows(store, J, wins, hist=hist, hmax=hmax)
+    rng = np.random.default_rng(seed)
+    idx = rng.choice([i for i, w in enumerate(wins) if w[1] >= 20], n, replace=False)          # t >= 20: room for every age at either hist
+    return D.collate([ds.item(wins[i][0], wins[i][1], *ages) for i in idx]), J
+
+
+def _model(J, hist, d=32, hmax=HMAX_M2B):
+    a = _T._args(["--arm", "M2b", "--hist", str(hist)])
+    cfg, model, opt, info = _T._built(a, J, hist=hist, hmax=hmax)
+    return a, cfg, model, opt, info
+
+
+def _expected_scene(world, b, J, last, hist, d, time_vals):
+    """Independent of the model: for each item, frames (t - hmax + 1 + last - (hist - 1) + k), k = 0..hist-1, of the CLIP's own array, first d columns as float32, plus
+    time row k's constant. [B, hist * n_tok, d]."""
+    out = []
+    for i, (ci, t) in enumerate(zip(b["ci"].tolist(), b["t"].tolist())):
+        arr = _clip_array(world["root"], "train", str(J["clip"][ci]))
+        fr = []
+        for k in range(hist):
+            idx = (t - HMAX_M2B + 1) + (int(last[i]) - (hist - 1) + k)
+            assert 0 <= idx < len(arr), "the test picked a window whose history is not real"
+            fr.append(arr[idx][:, :d].astype(np.float32) + np.float32(time_vals[k]))
+        out.append(np.concatenate(fr, 0))
+    return np.stack(out)
+
+
+def _marker_model(J, hist):
+    """M2b-shaped model whose scene path is a pure gather: adapter = first-d-columns slice, pos = 0, time row k = k + 1 (so a token's frame AND its time row are readable)."""
+    a, cfg, model, opt, info = _model(J, hist)
+    model.adapter = _Slice(cfg.d)
+    with torch.no_grad():
+        model.pos.zero_()
+        model.time.copy_(torch.arange(1, hist + 1, dtype=torch.float32)[:, None].expand(hist, cfg.d))
+    return cfg, model
+
+
+def _run_readers(model, b, ages):
+    """Call the three layers' runners exactly as `_forward` does (S at t - a_s, T at t - a_t, O at NOW) and capture the scene tensor each READER receives."""
+    cap = {}
+    orig = M.Reader.forward
+    names = {id(model.read_s): "S", id(model.read_t): "T", id(model.read_o): "O"}
+
+    def spy(self, cond, scene, pad):
+        cap[names[id(self)]] = (scene.detach().clone(), None if pad is None else pad.detach().clone())
+        return orig(self, cond, scene, pad)
+    M.Reader.forward = spy
+    try:
+        with torch.no_grad():
+            adapt = model._encode(b)
+            B, Fn = b["feats"].shape[0], b["feats"].shape[1]
+            last_now = torch.full((B,), Fn - 1, dtype=torch.long)
+            last_t, last_s = last_now - b["a_t"], last_now - b["a_s"]
+            ck = model.run_s(b, adapt, last_s)
+            ok = torch.ones(B, 3)
+            model.run_t(b, adapt, last_t, ck, ok)
+            model.run_o(b, adapt, last_now, ck, ok, torch.zeros(B, M.CODE_DIM))
+    finally:
+        M.Reader.forward = orig
+    return cap, {"S": last_s, "T": last_t, "O": last_now}
+
+
+# ---- 1. argv -> config -> the gate -> the built model ----------------------------------------------------------------------------------------
+def test_hist_flag_reaches_the_config_the_gate_and_the_built_time_table(world):
+    J = D.load_join(Path(world["root"]) / "join_train.npz")
+    a10, a4 = _T._args(["--arm", "M2b", "--hist", "10"]), _T._args(["--arm", "M2b"])
+    c10, c4 = TR.make_config(a10), TR.make_config(a4)
+    assert (c4.hist, c10.hist) == (4, 10), "--hist reaches the config (v8f_mini_train.py make_config)"
+    assert (c4.hmax, c10.hmax) == (HMAX_M2B, HMAX_M2B), "hmax stays at its auto value for M2b: the batch content is B's"
+    assert {k: v for k, v in c10.__dict__.items() if k != "hist"} == {k: v for k, v in c4.__dict__.items() if k != "hist"}, "ONE lever: nothing else in the config moves"
+    assert a4.hist == 4 and a10.hist == 10 and TR.FLAG_CHECKS["hist"] == "cfg:hist"
+    cfg, model, opt, info = _T._built(a10, J, hist=10, hmax=HMAX_M2B)
+    assert model.time.shape == (10, 32) and TR.declared_vs_built(a10, cfg, model, opt, info) == []
+    cfg4, model4, opt4, info4 = _T._built(a4, J, hist=4, hmax=HMAX_M2B)
+    assert model4.time.shape == (4, 32) and TR.declared_vs_built(a4, cfg4, model4, opt4, info4) == []
+    # ... and the gate REFUSES each half of a lie (declared 10, built 4, and the reverse)
+    cfg, model, opt, info = _T._built(a10, J, hist=4, hmax=HMAX_M2B)
+    assert any("cfg.hist: declared 10 but built 4" in m for m in TR.declared_vs_built(a10, cfg, model, opt, info))
+    cfg, model, opt, info = _T._built(a4, J, hist=10, hmax=HMAX_M2B)
+    assert any("cfg.hist: declared 4 but built 10" in m for m in TR.declared_vs_built(a4, cfg, model, opt, info))
+
+
+def test_config_refuses_a_history_the_batch_cannot_hold():
+    """hmax >= hist + max_age_s (6): 10 is the largest hist the auto hmax 16 allows -- 11 is refused by the config, not silently clamped."""
+    M.V8FMiniConfig(hist=10, hmax=16)
+    with pytest.raises(ValueError, match="hmax must cover"):
+        M.V8FMiniConfig(hist=11, hmax=16)
+    with pytest.raises(ValueError, match="hmax must cover"):
+        M.V8FMiniConfig(hist=10, hmax=10)
+
+
+def test_hist_changes_exactly_the_time_table_at_the_real_size():
+    """REAL SIZE (d 256, M2b): the parameter count moves by exactly (10 - 4) x d = 1,536 and only in the adapter group (`time` lives there). The hist-4 counts equal the
+    banked M2b's, MEASURED in raw/full/runs/M2b_s0/summary.json -- so the reader's +1,536 is a known number, and any other delta is a second lever."""
+    built = {}
+    for h in (4, 10):
+        a = TR.build_parser().parse_args(["--out", "x", "--arm", "M2b", "--hist", str(h), "--kin-mode", "yaw"])
+        cfg = TR.make_config(a)
+        assert cfg.hist == h and cfg.d == 256 and cfg.hmax == HMAX_M2B
+        built[h] = M.V8FMini(cfg, M.P10Prior.synthetic(0), None, None).built_levers()
+    assert built[4]["params"] == BANKED_M2B_PARAMS and built[4]["n_params_trainable"] == BANKED_M2B_TOTAL
+    assert built[10]["n_params_trainable"] == BANKED_M2B_TOTAL + D_TIME == 7216031
+    assert built[10]["params"] == {**BANKED_M2B_PARAMS, "adapter": BANKED_M2B_PARAMS["adapter"] + D_TIME}
+    assert built[10]["params"]["adapter"] == 277248
+
+
+# ---- 2. the gather: what each of the THREE readers receives ----------------------------------------------------------------------------------
+@pytest.mark.parametrize("ages", [(0, 0), (1, 3)])
+@pytest.mark.parametrize("hist", [10, 4])
+def test_the_readers_scene_tokens_are_exactly_the_last_hist_frames_of_the_batch(world, hist, ages):
+    """S, T and O each receive, bit for bit, the `hist` clip frames ending at their own tick (S at t - a_s, T at t - a_t, O at NOW), each carrying its own time row: at hist 10
+    the ten frames t-9..t (O), at hist 4 the four frames t-3..t. The marker adapter makes the token <-> clip-frame map exact."""
+    b, J = _batch(world, hist, ages=ages)
+    cfg, model = _marker_model(J, hist)
+    cap, last = _run_readers(model, b, ages)
+    assert set(cap) == {"S", "T", "O"}, "all three layers read the scene"
+    tv = list(range(1, hist + 1))
+    for who in ("S", "T", "O"):
+        scene, pad = cap[who]
+        want = _expected_scene(world, b, J, last[who], hist, cfg.d, tv)
+        assert tuple(scene.shape) == (b["feats"].shape[0], hist * cfg.n_tok, cfg.d), f"{who}: {tuple(scene.shape)}"
+        assert np.array_equal(scene.numpy(), want), f"{who} at hist {hist}: the reader's scene tokens are not exactly the clip's last {hist} frames (+ their time rows)"
+        assert not pad.any(), "a window with a fully real history pads nothing"
+    # the O reader at NOW reads frames t-hist+1 .. t of the batch's features: the batch index range [hmax - hist, hmax - 1]
+    assert (last["O"] == HMAX_M2B - 1).all()
+
+
+def test_the_ten_frame_gather_reads_older_frames_than_the_four_frame_one(world):
+    """The discriminating control: with identical weights, O's hist-10 scene holds six frames the hist-4 scene does not (batch positions 6..11), and its last four frames
+    ARE the hist-4 frames. A model that silently gathered four frames at hist 10 would fail the shape test above; this pins the content relation."""
+    b, J = _batch(world, 10)
+    cfg10, m10 = _marker_model(J, 10)
+    _, m4 = _marker_model(J, 4)
+    s10, _ = _run_readers(m10, b, (0, 0))[0]["O"]
+    s4, _ = _run_readers(m4, b, (0, 0))[0]["O"]
+    n = cfg10.n_tok
+    assert s10.shape[1] == 10 * n and s4.shape[1] == 4 * n
+    # strip the time rows (k + 1 at hist 10 for frame k; the same four frames carry rows 7..10 there and 1..4 at hist 4)
+    f10 = s10[:, 6 * n:, :] - torch.arange(7, 11, dtype=torch.float32).repeat_interleave(n)[None, :, None]
+    f4 = s4 - torch.arange(1, 5, dtype=torch.float32).repeat_interleave(n)[None, :, None]
+    assert torch.equal(f10, f4), "the last four frames of the ten ARE the four"
+    older = s10[:, :6 * n, :] - torch.arange(1, 7, dtype=torch.float32).repeat_interleave(n)[None, :, None]
+    assert not torch.equal(older[:, -n:], f4[:, :n]), "the extra frames are OLDER frames, not copies of the newest"
+
+
+def _loss_grads(model, b):
+    model.train()
+    out = model.loss(b, p_gt=0.5, gen=torch.Generator().manual_seed(0))
+    out["terms"]["total"].backward()
+    return model.time.grad.abs().sum(1), float(sum(p.grad.abs().sum() for p in model.prior.parameters() if p.grad is not None))
+
+
+def test_every_one_of_the_ten_time_rows_gets_a_gradient_and_the_controls_read_exactly_zero(world):
+    """Reachability of the NEW parameters: time rows 4..9 exist only at hist 10 (and rows 0..3 are the older half of the new window). A gradient on the whole table could
+    hide dead rows, so read it row by row. Two controls that must read EXACTLY 0.0: the frozen P10 prior (the gate's control), and a 4-frame gather at hist 10, which
+    leaves rows 0..5 with exactly no gradient -- without them a zero reading would be indistinguishable from a broken probe."""
+    b, J = _batch(world, 10, ages=(1, 3), n=16)
+    a, cfg, model, opt, info = _model(J, 10)
+    row, prior = _loss_grads(model, b)
+    assert row.shape == (10,) and bool((row > 0).all()), f"time rows without a gradient: {(row == 0).nonzero().flatten().tolist()}"
+    assert prior == 0.0, "the frozen prior's gradient control reads exactly 0.0"
+    live = TR.live_check(model.cpu(), b, cfg)                       # the trainer's own G-LIVE on the hist-10 batch: every group alive, prior control 0.0
+    assert live["pass"] and live["control_prior_grad_sum"] == 0.0 and live["groups_grad"]["adapter"] > 0.0
+    # CONTROL: gather only the newest four frames at hist 10 (the mutation `mutate_hist.py` applies to the source) -> rows 0..5 read EXACTLY 0.0
+    _, _, m2, _, _ = _model(J, 10)
+    orig = M.V8FMini._scene
+
+    def scene4(self, adapt, ok, last):
+        pos = last[:, None] - (3 - torch.arange(4, device=adapt.device))[None]
+        g = torch.gather(adapt, 1, pos[:, :, None, None].expand(-1, -1, adapt.shape[2], adapt.shape[3])) + self.time[None, 6:, None, :]
+        pad = ~torch.gather(ok, 1, pos)
+        return g.flatten(1, 2), pad[:, :, None].expand(-1, -1, adapt.shape[2]).flatten(1)
+    M.V8FMini._scene = scene4
+    try:
+        row4, _ = _loss_grads(m2, b)
+    finally:
+        M.V8FMini._scene = orig
+    assert bool((row4[:6] == 0.0).all()) and bool((row4[6:] > 0).all()), f"the control probe cannot read a dead row: {row4.tolist()}"
+
+
+# ---- 3. the trainer end to end: argv -> the scene the readers receive; the checkpoint; the FINDING -------------------------------------------
+def _train(out, extra, monkeypatch=None, steps=4):
+    """A real `TR.main` run on the synthetic world with a spy on `Reader.forward` recording the scene tensor each reader RECEIVES in the trainer's own loop."""
+    cap = {"scene": [], "hist": [], "ds": []}
+    orig = M.Reader.forward
+    ds_init = D.V8FMiniWindows.__init__
+
+    def spy(self, cond, scene, pad):
+        cap["scene"].append(None if scene is None else tuple(scene.shape))
+        return orig(self, cond, scene, pad)
+
+    def ds_spy(self, *a, **k):                                           # the (hist, hmax) the TRAINER builds its dataset with: the held-age clamp follows the first
+        ds_init(self, *a, **k)
+        cap["ds"].append((self.hist, self.hmax))
+    M.Reader.forward = spy
+    D.V8FMiniWindows.__init__ = ds_spy
+    common = ["--synthetic", "--batch", "8", "--d", "32", "--n-q", "2", "--steps", str(steps), "--log-every", "2", "--warmup", "2",
+              "--ckpt-every", "100", "--threads", "1", "--kin-mode", "yaw", "--seed", "5", "--arm", "M2b"]
+    try:
+        assert TR.main(["--out", str(out), *common, *extra]) == 0
+    finally:
+        M.Reader.forward = orig
+        D.V8FMiniWindows.__init__ = ds_init
+    ck = torch.load(Path(out) / "ckpt_last.pt", map_location="cpu", weights_only=False)
+    return {"cap": cap, "root": Path(out) / "_synthetic", "ck": ck, "sc": json.load(open(Path(out) / "selfcheck.json", encoding="utf-8")),
+            "sm": json.load(open(Path(out) / "summary.json", encoding="utf-8")), "out": Path(out)}
+
+
+@pytest.fixture(scope="module")
+def runs(tmp_path_factory):
+    base = tmp_path_factory.mktemp("hist_runs")
+    return {h: _train(base / f"h{h}", ["--hist", str(h)]) for h in (10, 4)}
+
+
+@pytest.mark.parametrize("hist", [10, 4])
+def test_trainer_argv_hist_is_the_number_of_frames_every_reader_receives(runs, hist):
+    r = runs[hist]
+    n_tok = 40
+    scenes = [s for s in r["cap"]["scene"] if s is not None]
+    assert len(scenes) >= 3 * 4, "the live check (3 batches) and the training loop both reached the readers"
+    assert {s[1] for s in scenes} == {hist * n_tok}, f"the readers received scenes of {sorted({s[1] for s in scenes})} tokens; --hist {hist} declares {hist * n_tok}"
+    assert r["sc"]["declared_vs_built"] == "PASS" and r["sm"]["done"] is True
+    assert set(r["cap"]["ds"]) == {(hist, HMAX_M2B)}, f"the trainer built its dataset (the held-age clamp) at {sorted(set(r['cap']['ds']))}, not at the declared (hist, hmax) = {(hist, HMAX_M2B)}"
+
+
+def test_trainer_hist_10_run_records_the_built_time_table_and_the_parameter_delta(runs):
+    r10, r4 = runs[10], runs[4]
+    ck = r10["ck"]
+    assert ck["cfg"]["hist"] == 10 and ck["cfg"]["hmax"] == HMAX_M2B and tuple(ck["model"]["time"].shape) == (10, 32), "the checkpoint carries the built history"
+    assert r4["ck"]["cfg"]["hist"] == 4 and tuple(r4["ck"]["model"]["time"].shape) == (4, 32) and r4["ck"]["cfg"]["hmax"] == HMAX_M2B
+    lv10, lv4 = r10["sm"]["levers"], r4["sm"]["levers"]
+    drop = lambda d: {k: v for k, v in d.items() if k != "residual_zero_init"}      # written BEFORE training (True) and AFTER it (False): the only expected difference
+    assert drop(r10["sc"]["levers"]) == drop(lv10), "summary.json and selfcheck.json record the same built levers"
+    assert lv10["n_params_trainable"] - lv4["n_params_trainable"] == 6 * 32 == lv10["params"]["adapter"] - lv4["params"]["adapter"], "only the time table moved"
+    for k in ("cond", "S", "T", "O", "WM"):
+        assert lv10["params"].get(k) == lv4["params"].get(k), k
+    # nothing else the model builds moved either (the keys the reader compares)
+    skip = {"params", "n_params_trainable", "residual_zero_init", "hist", "window_start"}
+    assert {k: v for k, v in lv10.items() if k not in skip} == {k: v for k, v in lv4.items() if k not in skip}
+    # F-3: the built levers now carry the history, the batch depth and the EFFECTIVE window start. Without --window-start the hist-10 build starts at 9 (the trap), hist 4 at 3.
+    assert (lv10["hist"], lv10["hmax"], lv10["window_start"]) == (10, HMAX_M2B, 9) and (lv4["hist"], lv4["hmax"], lv4["window_start"]) == (4, HMAX_M2B, 3)
+
+
+def test_FINDING_hist_10_drops_the_first_six_training_windows_of_every_clip_and_shortens_the_run(runs, tmp_path):
+    """NOT STATED IN THE PREREG, MEASURED HERE: `build_data` calls `train_windows(store, J, clips, hist=cfg.hist)` (v8f_mini_train.py:338-339) and that function starts at
+    t = hist - 1 (v8f_mini_data.py:512). So `--hist 10` is NOT 'B's window set with a longer history': windows t = 3..8 of every clip are gone, and the step budget
+    `total = S x steps_mult`, S = ceil(n_windows_all_clips / batch) (v8f_mini_train.py:405-406), falls with them. On the banked M2b: 306,566 windows, S 4,791, 19,164 steps; the
+    manifest arithmetic is in raw/2026-10-23-hist/measure_hist.json. If the trainer ever decouples the window start from `hist`, THIS TEST FAILS ON PURPOSE."""
+    n_clips = 6
+    w10, w4 = runs[10]["sc"]["info"]["n_windows"], runs[4]["sc"]["info"]["n_windows"]
+    assert (w4, w10) == (n_clips * 27, n_clips * 21), "T = 60, HORIZON 30: t in [3, 30) at hist 4, [9, 30) at hist 10"
+    assert w4 - w10 == 6 * n_clips, "exactly t = 3..8 of every clip"
+    # the step budget follows the window count: selfcheck-only at the default steps-mult 4 (no --steps override)
+    sc = {}
+    for h in (10, 4):
+        out = tmp_path / f"sc{h}"
+        assert TR.main(["--synthetic", "--batch", "8", "--d", "32", "--n-q", "2", "--kin-mode", "yaw", "--arm", "M2b", "--hist", str(h), "--steps-mult", "4",
+                        "--out", str(out), "--selfcheck-only"]) == 0
+        sc[h] = json.load(open(out / "selfcheck.json", encoding="utf-8"))
+    assert sc[4]["S_steps_per_epoch_100pct"] == math.ceil(w4 / 8) and sc[10]["S_steps_per_epoch_100pct"] == math.ceil(w10 / 8)
+    assert sc[10]["steps_total"] == 4 * math.ceil(w10 / 8) < sc[4]["steps_total"] == 4 * math.ceil(w4 / 8), "the hist-10 run is SHORTER at the same --steps-mult"
+    # the same arithmetic at the banked numbers (the manifest-exact version is measure_hist.json; this is the formula)
+    n_b, n_clips_b, batch = 306566, 4512, 64
+    s_b = math.ceil(n_b / batch)
+    assert (s_b, 4 * s_b) == (4791, 19164), "the banked M2b run"
+    n_h = n_b - 6 * n_clips_b
+    assert (n_h, math.ceil(n_h / batch), 4 * math.ceil(n_h / batch)) == (279494, 4368, 17472), "ESTIMATED H budget if every clip has >= 40 frames (measure_hist.json: exact)"
+    # AMENDMENT 1: `--window-start 3` restores B's window set and B's budget (the same selfcheck, the same synthetic world)
+    out = tmp_path / "scws3"
+    assert TR.main(["--synthetic", "--batch", "8", "--d", "32", "--n-q", "2", "--kin-mode", "yaw", "--arm", "M2b", "--hist", "10", "--window-start", "3", "--steps-mult", "4",
+                    "--out", str(out), "--selfcheck-only"]) == 0
+    s3 = json.load(open(out / "selfcheck.json", encoding="utf-8"))
+    assert s3["info"]["n_windows_all_clips"] == s3["info"]["n_windows"] == w4, "--window-start 3 keeps hist 4's window set"
+    assert s3["steps_total"] == sc[4]["steps_total"] > sc[10]["steps_total"], "... and hist 4's step budget"
+    assert (s3["levers"]["hist"], s3["levers"]["hmax"], s3["levers"]["window_start"]) == (10, HMAX_M2B, 3)
+
+
+# ---- 4. the eval hop: the checkpoint names the history; the eval builds it; a disagreement is refused -----------------------------------------
+def _eval_args(root, ck, tag, out):
+    root = Path(root)
+    return ["run", "--ckpt", str(ck), "--tag", tag, "--eval-cache", str(root), "--eval-grid", str(root / "eval_grid_windows.json"),
+            "--eval-kin", str(root / "eval_kin.npz"), "--eval-join", str(root / "join_eval.npz"), "--out-dir", str(out), "--n-boot", "20",
+            "--batch", "16", "--lru", "4", "--tracks", str(root / "native_tracks.pt")]
+
+
+def _spy_eval():
+    cap = {"hist": [], "scene": [], "pad": [], "t": []}
+    init0, scene0, fi0 = M.V8FMini.__init__, M.V8FMini._scene, M.V8FMini.forward_infer
+
+    def init(self, cfg, *a, **k):
+        cap["hist"].append(cfg.hist)
+        return init0(self, cfg, *a, **k)
+
+    def scene(self, adapt, ok, last):
+        g, pad = scene0(self, adapt, ok, last)
+        cap["scene"].append(tuple(g.shape))
+        cap["pad"].append(pad.clone())
+        return g, pad
+
+    def fi(self, b, *a, **k):
+        cap["t"].append(b["t"].clone())
+        return fi0(self, b, *a, **k)
+    M.V8FMini.__init__, M.V8FMini._scene, M.V8FMini.forward_infer = init, scene, fi
+    return cap, (init0, scene0, fi0)
+
+
+def test_eval_of_a_hist_10_checkpoint_builds_hist_10_and_gathers_ten_frames(runs, tmp_path):
+    r = runs[10]
+    cap, orig = _spy_eval()
+    try:
+        rc = EV.main(_eval_args(r["root"], r["out"] / "ckpt_last.pt", "h10", tmp_path))
+    finally:
+        M.V8FMini.__init__, M.V8FMini._scene, M.V8FMini.forward_infer = orig
+    assert rc == 0 and (tmp_path / "eval_h10.json").exists() and (tmp_path / "eval_h10.npz").exists()
+    assert cap["hist"] == [10], f"the eval built its model at hist {cap['hist']}; the checkpoint says 10 (v8f_mini_eval.py:237)"
+    assert cap["scene"] and {s[1] for s in cap["scene"]} == {10 * 40}, f"the eval's readers received scenes of {sorted({s[1] for s in cap['scene']})} tokens, expected 400"
+    # D4, seen from the eval: a window at cache step t has min(t + 1, 10) real frames; the rest are padded (masked), at hist 10. _forward calls _scene three times
+    # per batch (S, T, O) and the eval's held ages are (0, 0), so the three pads are equal: read the first of each triple.
+    assert len(cap["pad"]) == 3 * len(cap["t"])
+    seen_pad = False
+    for t_b, pad in zip(cap["t"], cap["pad"][0::3]):
+        n_real = (~pad.reshape(pad.shape[0], 10, 40)[:, :, 0]).sum(1).numpy()
+        assert np.array_equal(n_real, np.minimum(t_b.numpy() + 1, 10)), "real frames per window = min(t + 1, 10)"
+        seen_pad |= bool((n_real < 10).any())
+    assert seen_pad, "the synthetic eval grid exercises the padded-history case (t < 9)"
+    z = np.load(tmp_path / "eval_h10.npz")
+    assert np.isfinite(z["pred"]).all() and z["pred"].shape[1:] == (30, 2)
+
+
+def test_eval_of_a_hist_4_checkpoint_still_builds_hist_4(runs, tmp_path):
+    r = runs[4]
+    cap, orig = _spy_eval()
+    try:
+        assert EV.main(_eval_args(r["root"], r["out"] / "ckpt_last.pt", "h4", tmp_path)) == 0
+    finally:
+        M.V8FMini.__init__, M.V8FMini._scene, M.V8FMini.forward_infer = orig
+    assert cap["hist"] == [4] and {s[1] for s in cap["scene"]} == {4 * 40}
+
+
+@pytest.mark.parametrize("variant", ["no_hist_key", "hist_key_4", "time_table_4_rows", "hist_key_10_on_a_4_row_table"])
+def test_eval_refuses_a_checkpoint_whose_history_disagrees_with_its_time_table(runs, tmp_path, variant):
+    """MEASURED today: `load_state_dict` is strict, so a checkpoint whose cfg.hist and `time` table disagree raises RuntimeError and the eval writes no file: an eval can
+    NOT silently score a hist-10 checkpoint at hist 4. The four ways a disagreement can arise: a cfg without `hist` (the dataclass default 4 meets a 10-row table), a cfg that says
+    4, a 4-row table under cfg.hist 10, and the reverse. No edit to v8f_mini_eval.py is needed."""
+    r10, r4 = runs[10], runs[4]
+    ck = torch.load(r10["out"] / "ckpt_last.pt", map_location="cpu", weights_only=False)
+    root = r10["root"]
+    if variant == "no_hist_key":
+        ck["cfg"] = {k: v for k, v in ck["cfg"].items() if k != "hist"}
+    elif variant == "hist_key_4":
+        ck["cfg"] = {**ck["cfg"], "hist": 4}
+    elif variant == "time_table_4_rows":
+        ck["model"] = {**ck["model"], "time": ck["model"]["time"][:4].clone()}
+    else:
+        ck = torch.load(r4["out"] / "ckpt_last.pt", map_location="cpu", weights_only=False)
+        ck["cfg"] = {**ck["cfg"], "hist": 10}
+        root = r4["root"]
+    path = tmp_path / "bad.pt"
+    torch.save(ck, path)
+    out = tmp_path / "out"
+    with pytest.raises((RuntimeError, SystemExit, KeyError, ValueError)):
+        EV.main(_eval_args(root, path, "bad", out))
+    assert not list(out.glob("eval_bad*")) if out.exists() else True, "a refused checkpoint must leave no eval file behind"
+
+
+# =================================================================================================================================================
+# THE READER (code/v8f_hist_read.py), THE QUEUE STAGES AND THE CHAIN need the v8F-mini research package: skipped, not failing, in a checkout that has only `stack/`
+# (the lander's probe). The reader is tested on a synthetic straight-road world whose answers are analytic (test_v8f_dk.World) whose B side is the REAL banked M2b
+# records (raw/full/runs/M2b_s{0,1}: their lever record has NO w_tac / w_cons -- the shape PREREG_V8F_GRID Amendment 2 learned the hard way), real files on disk and the
+# real `main`; the real-data proofs (raw/2026-10-23-hist/real_proofs.py) run it unpatched on the banked M2b evals.
+# =================================================================================================================================================
+CODE = PKG / "code"
+READ_P = CODE / "v8f_hist_read.py"
+GRID_P = CODE / "v8f_grid_read.py"
+QUEUE = CODE / "v8f_mini_box2_queue.cmd"
+CHAIN = CODE / "box2_ops" / "chain_v8f_hist.sh"
+GUARD = CODE / "box2_ops" / "v8f_guard.sh"
+BANKED = PKG / "raw" / "full" / "runs"
+PREREG = REPO / "Project Steering" / "PREREG_V8F_HIST.md"
+needs_pkg = pytest.mark.skipif(not (READ_P.exists() and BANKED.exists()), reason="the v8F-mini package is not in this checkout")
+R = _load("v8f_hist_read_under_test", READ_P) if READ_P.exists() else None            # importable without the package (the lander's stack-only probe)
+GRM = _load("v8f_grid_read_under_test_for_hist", GRID_P) if GRID_P.exists() else None
+_DK = _load("test_v8f_dk_for_hist", Path(__file__).resolve().parent / "test_v8f_dk.py") if READ_P.exists() else None
+C0, NC = M.N_GOAL + M.N_LAT + M.N_LON, len(M.CONS_NAMES)
+LATCONS = [C0 + i for i in range(12)]                                                  # CODE_GROUPS["latcons"] (pinned against the model below)
+TIMING_COLS = [C0 + M.CI[n] for n in ("turn_t_start_s", "turn_t_end_s", "turn_d_start_m", "lc_t_cross_s")]
+
+
+def _sched(step, total, p0, p1):                                                       # independent of the reader's and the model's
+    return p0 + (p1 - p0) * min(max(step / total, 0.0), 1.0)
+
+
+def _ej(path, fn):
+    p = Path(path)
+    j = json.loads(p.read_text(encoding="utf-8"))
+    r = fn(j)
+    p.write_text(json.dumps(j if r is None else r), encoding="utf-8")
+
+
+def _b_real(s):
+    d = BANKED / f"M2b_s{s}"
+    return ({n: json.loads((d / n).read_text(encoding="utf-8")) for n in ("summary.json", "argv.json", "selfcheck.json")}, (d / "train_log.jsonl").read_text(encoding="utf-8"))
+
+
+def _hworld(d, seeds=(0, 1), *, d_ade=-0.7, err_b=0.6, err_h=0.5, err_h_timing=None, err_h1=None, sp_b=11.0, sp_h=10.4, gap_b=0.65, off_b=1.0, lam_b=0.27, lam_h=0.10,
+            pad_extra=0.0, states=None, same_as_b=False):
+    """Synthetic evals + runs for B (M2b, both seeds, ALWAYS the real banked run records) and H = B + --hist 10 (`seeds`). Knobs: `d_ade` = ADE6(H) - ADE6(B) (the lateral offset
+    beyond 2 s is SOLVED for it, so the K = 10 lead metrics do not move with it), `err_*` T's present-slot error (sd of the noise on every present constraint slot, latcons
+    included, the SAME draws for both arms: a paired design; `err_h_timing` replaces it on the four timing / along-path slots), `sp_*` plan speed (-> the low-TTC tail), `gap_b`
+    B's seed-1 offset (-> F), `pad_extra` = how much worse H plans on the windows whose history is padded (t < 11), `same_as_b` = H's evals ARE B's arrays (H against itself)."""
+    d = Path(d)
+    d.mkdir(parents=True, exist_ok=True)
+    w = _DK.World(d, states=states)
+    N, eid, gt = w.n, w.eid, w.gt
+    mult = 1.0 + pad_extra * (w.t < 11)
+    lead = np.array([s == "LEAD" for s in w.states])
+    rng = np.random.default_rng(5)
+    g = np.zeros((N, M.CODE_DIM))
+    g[:, :C0] = rng.normal(0, 1, (N, C0))
+    present = rng.random((N, NC)) < 0.45
+    z_all = np.random.default_rng(31).normal(0, 1, (N, NC))
+    g[:, C0:] = np.where(present, rng.normal(0, 1, (N, NC)), 0.0)
+    fb = np.zeros(N, bool)
+    fb[:5] = True
+    ev, ru = d / "eval", d / "runs"
+    ev.mkdir(exist_ok=True)
+    ru.mkdir(exist_ok=True)
+
+    def ade(p):
+        return np.linalg.norm(p.astype(np.float32).astype(np.float64) - gt, axis=-1).mean(1)
+
+    def std_plan(sp, off, nz, m=1.0):
+        p = _DK.path_at(np.full(N, sp), N)
+        p[:, 10:, 1] += (off * m * (1.0 + 0.05 * nz))[:, None]
+        return p
+
+    def solve_off(sp, nz, target, m):
+        lo, hi = 0.0, 40.0
+        if ade(std_plan(sp, lo, nz, m)).mean() >= target:
+            return lo
+        for _ in range(60):
+            mid = 0.5 * (lo + hi)
+            lo, hi = (mid, hi) if ade(std_plan(sp, mid, nz, m)).mean() < target else (lo, mid)
+        return 0.5 * (lo + hi)
+    ade_b, keep = {}, {}
+    for s in (0, 1):
+        nz = np.random.default_rng(100 + s).normal(0, 1, N)
+        for who in ("B", "H"):
+            if who == "H" and s not in seeds:
+                continue
+            is_h = who == "H"
+            tag = f"M2b-h10_s{s}" if is_h else f"M2b_s{s}"
+            if is_h and same_as_b:
+                pred, lam_w, tc = keep[s]
+            else:
+                pred = std_plan(sp_b, off_b + gap_b * s, nz) if not is_h else std_plan(sp_h, solve_off(sp_h, nz, ade_b[s] + d_ade, mult), nz, mult)
+                lam_w = (lam_h if is_h else lam_b) * (1.0 + 0.3 * np.random.default_rng(7 + s).normal(0, 1, N))
+                err = (err_h1 if (s == 1 and err_h1 is not None) else err_h) if is_h else err_b
+                e = np.full(NC, err)
+                if is_h and err_h_timing is not None:
+                    e[[c - C0 for c in TIMING_COLS]] = err_h_timing
+                tc = g.copy()
+                tc[:, C0:] = np.where(present, g[:, C0:] + e[None, :] * z_all, 0.0)
+            if not is_h:
+                ade_b[s] = ade(pred).mean()
+                keep[s] = (pred, lam_w, tc)
+            orc = _DK.path_at(np.full(N, 10.0), N)
+            lat = orc.copy()
+            lat[:, :, 0] += np.where(lead, lam_w, 0.0)[:, None] * np.minimum(1.0, (np.arange(30) + 1) / 10.0)[None]
+            ckpt = f"D:\\runs\\M2b_s{s}_h10\\ckpt_last.pt" if is_h else None
+            np.savez(ev / f"eval_{tag}.npz", pred=pred.astype(np.float32), ade6=ade(pred), eid=eid)
+            ej = {"raw": {"traj": {"ade6": float(ade(pred).mean())}, "tactical": {"acc": 0.5}, "strategic": {"acc": 0.5}, "families": {}}}
+            if ckpt:
+                ej["ckpt"] = ckpt
+            (ev / f"eval_{tag}.json").write_text(json.dumps(ej), encoding="utf-8")
+            np.savez(ev / f"eval_{tag}-tacabs.npz", pred=pred.astype(np.float32), ade6=ade(pred), eid=eid, tac_code=tc, tac_oracle_fallback=fb)
+            (ev / f"eval_{tag}-tacabs.json").write_text(json.dumps({"tac_manipulation": {"mode": "absmask"}, **({"ckpt": ckpt} if ckpt else {})}), encoding="utf-8")
+            if not is_h:                                                              # the banked 2026-10-20 format: no tac_code (WC Amendment 1)
+                np.savez(ev / f"eval_{tag}-tacorc.npz", pred=orc.astype(np.float32), ade6=ade(orc), eid=eid, tac_oracle_fallback=fb)
+                ag = g.copy()
+                ag[:, :22] = np.random.default_rng(99).normal(0, 1, (N, 22))
+                np.savez(ev / f"eval_{tag}-tacorc-all-goal.npz", pred=orc.astype(np.float32), ade6=ade(orc), eid=eid, tac_code=ag, tac_oracle_fallback=fb)
+            else:
+                np.savez(ev / f"eval_{tag}-tacorc.npz", pred=orc.astype(np.float32), ade6=ade(orc), eid=eid, tac_code=g, tac_oracle_fallback=fb)
+            (ev / f"eval_{tag}-tacorc.json").write_text(json.dumps({"tac_manipulation": {"mode": "oracle"}, **({"ckpt": ckpt} if ckpt else {})}), encoding="utf-8")
+            lc = g.copy()
+            lc[:, LATCONS] = tc[:, LATCONS] + 0.01
+            np.savez(ev / f"eval_{tag}-tacorc-all-latcons.npz", pred=lat.astype(np.float32), ade6=ade(lat), eid=eid, tac_code=lc, tac_oracle_fallback=fb)
+            (ev / f"eval_{tag}-tacorc-all-latcons.json").write_text(json.dumps({"tac_manipulation": {"mode": "oracle"}, **({"ckpt": ckpt} if ckpt else {})}), encoding="utf-8")
+            # ---- the run: B's records are the REAL banked ones; H's are B's with the lever and the build facts changed
+            rd = ru / (f"M2b_s{s}_h10" if is_h else f"M2b_s{s}")
+            rd.mkdir(parents=True, exist_ok=True)
+            real, log = _b_real(s)
+            if not is_h:
+                for n, j in real.items():
+                    (rd / n).write_text(json.dumps(j), encoding="utf-8")
+                (rd / "train_log.jsonl").write_text(log, encoding="utf-8")
+                continue
+            bl = real["summary.json"]["levers"]
+            argv = list(real["argv.json"]["argv"])
+            at = argv.index("--out")
+            argv[at:at] = ["--hist", "10", "--window-start", "3"]                     # B's argv + --hist 10 --window-start 3 (Amendment 1), and the run dir
+            argv[argv.index("--out") + 1] = f"D:\\runs\\M2b_s{s}_h10"
+            lev = {**bl, "cons_absent": "mask", "p_gt_start": 1.0, "p_gt_end": 0.2, "residual_zero_init": False, "hist": 10, "hmax": 16, "window_start": 3,
+                   "w": {**bl["w"], "w_tac": 1.0, "w_cons": 0.5}, "params": {**bl["params"], "adapter": bl["params"]["adapter"] + D_TIME},
+                   "n_params_trainable": bl["n_params_trainable"] + D_TIME}
+            sha = f"h{s}M2b"
+            sm = {**real["summary.json"], "argv_sha": sha, "seconds": real["summary.json"]["seconds"] * 1.1, "levers": lev}
+            (rd / "summary.json").write_text(json.dumps(sm), encoding="utf-8")
+            (rd / "argv.json").write_text(json.dumps({"argv": argv, "sha": sha}), encoding="utf-8")
+            sc = {**real["selfcheck.json"], "declared_vs_built": "PASS", "argv_sha": sha, "levers": dict(lev, residual_zero_init=True),
+                  "info": {**(real["selfcheck.json"].get("info") or {}), "window_start": 3, "window_t_min": 3, "ds_window_start": 3}}
+            (rd / "selfcheck.json").write_text(json.dumps(sc), encoding="utf-8")
+            (rd / "train_log.jsonl").write_text(log, encoding="utf-8")
+            torch.save({"model": {"time": torch.zeros(10, 256), "pos": torch.zeros(40, 4)}, "cfg": {"hist": 10, "hmax": 16, "window_start": 3, "d": 256, "n_tok": 40}, "grid": "pool4x10",
+                        "argv_sha": sha, "step": sm["steps"], "arm": "M2b", "seed": s}, rd / "ckpt_last.pt")
+    np.save(d / "p10.npy", _DK.path_at(np.full(N, 10.0), N))
+    w.write_gt()
+    w.write_block()
+    return {"d": d, "w": w, "eval": ev, "runs": ru, "lead": lead, "n_present": (present & ~fb[:, None]).sum(0),
+            "args": ["--eval-dir", str(ev), "--runs-dir", str(ru), "--out", str(d / "hist.json"), "--n-boot", "300", "--dk-n-boot", "60",
+                     "--no-families", "--no-k30", "--lead-block", str(d / "lead.npz"), "--p10-pred", str(d / "p10.npy"), "--gt-npz", str(d / "gt.npz")]}
+
+
+def _go(f, stage="final", extra=()):
+    rc = R.main(["--stage", stage, *f["args"], *extra])
+    out = f["d"] / "hist.json"
+    return rc, (json.loads(out.read_text(encoding="utf-8")) if rc == 0 else None)
+
+
+@pytest.fixture
+def no_known(monkeypatch):
+    """The banked premises (F 0.1207, LAMBDA +0.2678 / +0.1667, S5 excess +4.42 / +2.50 pp) are the REAL banked M2b values; a synthetic world cannot hold them.
+    The tests of everything else replace the check; `test_known_values_are_checked_and_refuse_a_world_that_does_not_hold_them` and the real-data proofs run the real one."""
+    monkeypatch.setattr(R.PGT, "known_values", lambda *a, **k: {"checked": False, "why": "synthetic test input"})
+
+
+# ---- the committed decision table ---------------------------------------------------------------------------------------------------------------
+@needs_pkg
+def test_reader_decision_table_final_stage(tmp_path, no_known):
+    rc, r = _go(_hworld(tmp_path / "ok"))
+    assert rc == 0 and r["VERDICT"] == "SUCCESS" and r["mechanism"] is True and r["DECISION"] is None and r["base"] == "M2b", r["reading"]
+    assert R.NEXT_TEXT["SUCCESS"] in r["next"], "the committed next step is named verbatim"
+    f = r["F"]
+    ev = tmp_path / "ok" / "eval"
+    d = np.load(ev / "eval_M2b_s0.npz")["ade6"].mean() - np.load(ev / "eval_M2b_s1.npz")["ade6"].mean()
+    assert f == pytest.approx(abs(d), abs=1e-12) and r["two_F"] == pytest.approx(2 * f), "F is B's own two seeds' gap, from BOTH evals"
+    for s in ("s0", "s1"):
+        row = r["rows"][s]
+        assert row["primary"]["point"] < -2 * f and row["primary"]["separated"] and row["judge"]["passed"]
+        assert row["mlat"]["fall"] == pytest.approx(1 - 0.5 / 0.6, abs=1e-9) and row["mlat"]["mse_delta"]["separated"] and row["judge"]["mlat"]["met"]
+    # PRIMARY under 2F, mechanism met -> FAIL-MECHANISM-OK, the committed next step named verbatim
+    rc, r = _go(_hworld(tmp_path / "small", d_ade=-0.10))
+    assert rc == 0 and r["VERDICT"] == "FAIL-MECHANISM-OK" and R.NEXT_TEXT["FAIL-MECHANISM-OK"] in r["next"] and "LoRA on DINOv3" in r["next"] and r["mechanism"] is True
+    assert r["rows"]["s0"]["primary"]["separated"] and 0 < abs(r["rows"]["s0"]["primary"]["point"]) < r["two_F"], "beyond 0, under 2F"
+    # latcons accuracy did not fall 12.5 % -> FAIL-NO-MECHANISM, whatever the ADE did
+    rc, r = _go(_hworld(tmp_path / "nomech", d_ade=-0.10, err_h=0.55))
+    assert rc == 0 and r["VERDICT"] == "FAIL-NO-MECHANISM" and R.NEXT_TEXT["FAIL-NO-MECHANISM"] in r["next"] and "D1 rebalancing" in r["next"] and r["mechanism"] is False
+    # driving better beyond 2F at both seeds is SUCCESS even where the mechanism read is not met (the table: SUCCESS = both seeds pass)
+    rc, r = _go(_hworld(tmp_path / "succ_nomech", err_h=0.6))
+    assert rc == 0 and r["VERDICT"] == "SUCCESS" and r["mechanism"] is False
+    # worse driving is never a pass
+    rc, r = _go(_hworld(tmp_path / "worse", d_ade=0.8))
+    assert rc == 0 and r["VERDICT"] != "SUCCESS" and not r["rows"]["s0"]["judge"]["passed"]
+    # one seed is not enough
+    g1 = _hworld(tmp_path / "oneseed", d_ade=-0.7)
+    _seed1_worse(g1)
+    rc, r = _go(g1)
+    assert rc == 0 and r["VERDICT"] != "SUCCESS" and r["rows"]["s0"]["judge"]["passed"] and not r["rows"]["s1"]["judge"]["passed"]
+
+
+def _seed1_worse(f):
+    """Make H's seed-1 ADE6 worse than B's by shifting its plan laterally beyond 2 s (the ade6 key is rewritten to match, as the eval would)."""
+    w = f["w"]
+    for suf in ("", "-tacabs"):
+        p = f["eval"] / f"eval_M2b-h10_s1{suf}.npz"
+        z = dict(np.load(p))
+        z["pred"] = z["pred"].copy()
+        z["pred"][:, 10:, 1] += 3.0
+        z["ade6"] = np.linalg.norm(z["pred"].astype(np.float64) - w.gt, axis=-1).mean(1)
+        np.savez(p, **z)
+
+
+@needs_pkg
+@pytest.mark.skipif(not PREREG.exists(), reason="PREREG_V8F_HIST.md is not in this checkout")
+def test_the_committed_next_steps_are_verbatim_the_preregs():
+    """The three next-step texts the reader prints are the PREREG's table cells, character for character (the decision table is a commitment, not a paraphrase)."""
+    text = PREREG.read_text(encoding="utf-8")
+    for k, v in R.NEXT_TEXT.items():
+        assert v in text, f"{k}: {v!r} is not in PREREG_V8F_HIST.md"
+        assert v in R.NEXT[k]
+    assert "| **SUCCESS** | both seeds pass |" in text and "| **FAIL-MECHANISM-OK** |" in text and "| **FAIL-NO-MECHANISM** |" in text
+    assert "falls by at least 12.5 %" in text and R.MLAT_BAR == 0.125 and "B = 2,000" in text and R.B == 2000
+    assert "|δ_s| > 2F" in text and "0.1207" in text
+
+
+@needs_pkg
+def test_reader_h_against_itself_reads_exactly_zero_on_every_contrast(tmp_path, no_known):
+    """The identity control at the level of the whole read: H's evals ARE B's arrays, so every paired cell reads exactly +0 [0, 0] and nothing passes."""
+    rc, r = _go(_hworld(tmp_path / "same", same_as_b=True, d_ade=0.0))
+    assert rc == 0 and r["VERDICT"] == "FAIL-NO-MECHANISM" and r["mechanism"] is False
+    zero = {"delta": 0.0, "lo": 0.0, "hi": 0.0, "point": 0.0}
+    for s in ("s0", "s1"):
+        row = r["rows"][s]
+        assert {k: row["primary"][k] for k in zero} == zero and row["primary"]["separated"] is False and not row["judge"]["passed"]
+        assert {k: row["mlat"]["mse_delta"][k] for k in zero} == zero and row["mlat"]["fall"] == 0.0 and row["mlat"]["fall_window"] == 0.0
+        assert {k: row["mleak"]["delta"][k] for k in zero} == zero and {k: row["mdk"]["delta"][k] for k in zero} == zero
+        be = row["beside"]
+        assert {k: be["primary_t_ge_11"][k] for k in zero} == zero and {k: be["primary_t_lt_11"][k] for k in zero} == zero
+        assert {k: be["oracle_ade6_delta"][k] for k in zero} == zero and {k: be["present_slot"]["mse_delta"][k] for k in zero} == zero
+        for key in ("timing4", "geometry8"):
+            assert {k: be["latcons_slots"]["sets"][key]["mse_delta"][k] for k in zero} == zero and be["latcons_slots"]["sets"][key]["fall"] == 0.0
+        assert all(v["fall"] == 0.0 for v in be["latcons_slots"]["slots"].values() if v["fall"] is not None)
+
+
+@needs_pkg
+def test_reader_mlat_is_the_latcons_rmse_fall_with_a_12p5_percent_bar_and_needs_separation(tmp_path, no_known):
+    # fall = 1 - err_h / err_b on the slot-pooled RMSE, exactly (the same noise draws, scaled): 10 % misses the bar, 15 % clears it, a RISE is never a pass
+    for name, err_h, met in (("fall10", 0.54, False), ("fall15", 0.51, True), ("rise", 0.66, False), ("fall0", 0.60, False)):
+        rc, r = _go(_hworld(tmp_path / name, d_ade=-0.10, err_h=err_h))
+        j = r["rows"]["s0"]["judge"]["mlat"]
+        assert rc == 0 and j["met"] is met and j["bar"] == 0.125, name
+        assert r["rows"]["s0"]["mlat"]["fall"] == pytest.approx(1 - err_h / 0.6, abs=1e-9), name
+    rc, r = _go(_hworld(tmp_path / "rise2", d_ade=-0.10, err_h=0.66))
+    d = r["rows"]["s0"]["mlat"]["mse_delta"]
+    assert d["point"] > 0 and d["separated"] and not r["rows"]["s0"]["judge"]["mlat"]["met"], "the sign matters, not only the size"
+    row = r["rows"]["s0"]["mlat"]
+    assert row["rmse_slot"]["B"] == pytest.approx(0.6 * 1.0, rel=0.25) and row["rmse_window"]["B"] > 0 and row["definitions_agree"] is True
+
+
+@needs_pkg
+def test_reader_stage_s0_continues_or_stops_on_seed_0_alone(tmp_path, no_known):
+    rc, r = _go(_hworld(tmp_path / "go", seeds=(0,)), "s0")
+    assert rc == 0 and r["DECISION"] == "CONTINUE" and r["VERDICT"] is None and "train seed 1" in r["next"] and list(r["rows"]) == ["s0"], r["reading"]
+    assert r["two_F"] > 0, "F still comes from BOTH of B's seeds at stage s0"
+    rc, r = _go(_hworld(tmp_path / "stop_mech", d_ade=-0.10, seeds=(0,)), "s0")
+    assert rc == 0 and r["DECISION"] == "STOP" and r["VERDICT"] == "FAIL-MECHANISM-OK" and "LoRA" in r["next"]
+    rc, r = _go(_hworld(tmp_path / "stop_nomech", d_ade=-0.10, err_h=0.58, seeds=(0,)), "s0")
+    assert rc == 0 and r["DECISION"] == "STOP" and r["VERDICT"] == "FAIL-NO-MECHANISM" and "D1 rebalancing" in r["next"]
+    rc, r = _go(_hworld(tmp_path / "stop_worse", d_ade=0.8, seeds=(0,)), "s0")
+    assert rc == 0 and r["DECISION"] == "STOP"
+    assert "s1" not in _go(_hworld(tmp_path / "both", seeds=(0, 1)), "s0")[1]["rows"], "seed 1 is not read at s0 even when its files are present"
+
+
+@needs_pkg
+def test_reader_f_is_the_bases_own_seed_floor_and_the_primary_bar_is_two_f(tmp_path, no_known):
+    rc, r = _go(_hworld(tmp_path / "big", gap_b=2.0, d_ade=-0.7))
+    assert r["F"] == pytest.approx(0.6, rel=0.15) and r["two_F"] > 0.7 and not r["rows"]["s0"]["judge"]["passed"] and r["VERDICT"] != "SUCCESS"
+    rc, r = _go(_hworld(tmp_path / "small", gap_b=0.02, d_ade=-0.7))
+    assert r["F"] < 0.1 and r["rows"]["s0"]["judge"]["passed"] and r["VERDICT"] == "SUCCESS"
+    ev = tmp_path / "small" / "eval"
+    want = abs(np.load(ev / "eval_M2b_s0.npz")["ade6"].mean() - np.load(ev / "eval_M2b_s1.npz")["ade6"].mean())
+    assert r["F"] == pytest.approx(want, abs=1e-12)
+
+
+@needs_pkg
+def test_reader_deliberate_regression_reads_worse_and_fails(tmp_path, no_known):
+    """A synthetic H whose plans are B's PLUS a deliberate lateral error beyond 2 s (d_ade > 0) and whose T is no more accurate than B's: PRIMARY fails, M-LAT not met."""
+    rc, r = _go(_hworld(tmp_path / "reg", d_ade=1.0, err_h=0.6, lam_h=0.27 + 0.5, sp_h=11.6))
+    assert rc == 0 and r["VERDICT"] == "FAIL-NO-MECHANISM"
+    for s in ("s0", "s1"):
+        row = r["rows"][s]
+        assert row["primary"]["point"] > 0 and row["primary"]["separated"] and not row["judge"]["passed"] and not row["judge"]["mlat"]["met"]
+        assert row["mleak"]["delta"]["point"] > 0 and row["mdk"]["delta"]["point"] > 0, "the beside reads move the same way"
+    # and the success control: the SAME reader reads SUCCESS on the opposite knobs (it is not structurally unable to pass)
+    assert _go(_hworld(tmp_path / "pos"))[1]["VERDICT"] == "SUCCESS"
+
+
+@needs_pkg
+def test_mlat_and_the_judge_are_the_grid_readers_own_machinery_with_the_same_bars():
+    """M-LAT is IMPORTED from PREREG_V8F_GRID's reader (the PREREG says: the same instrument and bars): same bar, same inclusive >=, same separated-negative requirement."""
+    mk = lambda fall, point=-0.1, sep=True, prim=-1.0, psep=True: {"primary": {"point": prim, "separated": psep},        # noqa: E731
+                                                                  "mlat": {"fall": fall, "mse_delta": {"point": point, "separated": sep}}}
+    assert R.GR.MLAT_BAR == R.MLAT_BAR == 0.125
+    assert R.GR.judge(mk(0.125), 0.1)["mlat"]["met"] is True and R.GR.judge(mk(0.1249), 0.1)["mlat"]["met"] is False
+    assert R.GR.judge(mk(0.30, sep=False), 0.1)["mlat"]["met"] is False and R.GR.judge(mk(0.30, point=0.05), 0.1)["mlat"]["met"] is False
+    assert R.GR.judge(mk(0.2, prim=-0.21), 0.1)["passed"] is True and R.GR.judge(mk(0.2, prim=-0.20), 0.1)["passed"] is False, "|delta| == 2F does not pass"
+    assert R.GR.judge(mk(0.2, prim=-5.0, psep=False), 0.1)["passed"] is False and R.GR.judge(mk(0.2, prim=+5.0), 0.1)["passed"] is False
+    assert R.verdict("final", {"s0": {"judge": {"passed": True, "mlat": {"met": False}}}, "s1": {"judge": {"passed": True, "mlat": {"met": False}}}}, (0, 1))[1] == "SUCCESS"
+    assert R.verdict("s0", {"s0": {"judge": {"passed": False, "mlat": {"met": True}}}}, (0,))[:2] == ("STOP", "FAIL-MECHANISM-OK")
+    assert R.verdict("s0", {"s0": {"judge": {"passed": False, "mlat": {"met": False}}}}, (0,))[:2] == ("STOP", "FAIL-NO-MECHANISM")
+
+
+# ---- D4: the t >= 11 subset, the padded complement, the committed window counts -----------------------------------------------------------------
+@needs_pkg
+def test_reader_reports_the_primary_on_the_t_ge_11_subset_and_its_padded_complement(tmp_path, no_known):
+    """pad_extra: H plans worse on the windows whose history is padded (t < 11). The deciding PRIMARY is on ALL windows; the subset and the complement ride beside it."""
+    rc, r = _go(_hworld(tmp_path / "pad", d_ade=-0.7, pad_extra=1.5))
+    assert rc == 0
+    wc = r["window_counts"]
+    assert wc == {"total": 72, "t_ge_11": 48, "t_lt_11": 24, "t3": 12, "t7": 12, "asserted_against_prereg": False}, "12 episodes x t = 3, 7, 11, 15, 19, 23"
+    row = r["rows"]["s0"]
+    sub, comp, allw = row["beside"]["primary_t_ge_11"], row["beside"]["primary_t_lt_11"], row["primary"]
+    assert sub["n_windows"] == 48 and comp["n_windows"] == 24 and sub["n_episodes"] == 12
+    assert sub["point"] < allw["point"] < comp["point"], (sub["point"], allw["point"], comp["point"])
+    assert allw["point"] == pytest.approx((48 * sub["point"] + 24 * comp["point"]) / 72, abs=1e-9), "the all-window PRIMARY is the window-weighted mix of the two"
+    assert row["judge"]["passed"] is bool(allw["separated"] and allw["point"] < -2 * r["F"]), "the deciding bar reads the ALL-window PRIMARY, never the subset"
+    assert "passes_bar_if_it_were_deciding" in sub
+    assert f"on the t >= 11 subset {sub['point']:+.3f}" in r["reading"]
+
+
+@needs_pkg
+def test_window_counts_are_asserted_on_the_committed_grid_and_the_real_grid_has_them():
+    t = np.concatenate([np.full(141, v) for v in range(3, 71, 4)] + [np.full(2, 71)])
+    assert t.size == 141 * 17 + 2 == 2399
+    c = R.window_counts(t)
+    assert c == {"total": 2399, "t_ge_11": 2117, "t_lt_11": 282, "t3": 141, "t7": 141, "asserted_against_prereg": True}
+    off_by_one = t.copy()
+    off_by_one[off_by_one == 7] = 8                                      # 141 windows move out of t = 7
+    swapped = t.copy()
+    swapped[0] = 11                                                      # one t = 3 window becomes t = 11
+    for bad in (off_by_one, swapped):
+        with pytest.raises(SystemExit) as e:
+            R.window_counts(bad)
+        assert e.value.code == 2
+    with pytest.raises(SystemExit):
+        R.window_counts(np.full(10, 3))                                  # no window with t >= 11: the subset is empty
+    gp = PKG / "raw" / "eval_grid_windows.json"
+    if gp.exists():
+        g = json.loads(gp.read_text(encoding="utf-8"))
+        real = np.array([tt for c_ in g["order"] for tt in g["windows"][c_]])
+        assert real.size == 2399 and R.window_counts(real)["t_ge_11"] == 2117
+
+
+# ---- the refusals: every precondition of an H-vs-B read is a refusal, never a quiet pass ----------------------------------------------------------
+def _hr(f, s=0):
+    return f["runs"] / f"M2b_s{s}_h10"
+
+
+def _br(f, s=0):
+    return f["runs"] / f"M2b_s{s}"
+
+
+def _heval(f, s, suf=""):
+    return f["eval"] / f"eval_M2b-h10_s{s}{suf}"
+
+
+def _argv_edit(path, fn):
+    def go(j):
+        j["argv"] = fn(list(j["argv"]))
+    _ej(path, go)
+
+
+def _set_flag(argv, flag, val):
+    argv[argv.index(flag) + 1] = val
+    return argv
+
+
+def _ck_edit(f, fn, s=0):
+    p = _hr(f, s) / "ckpt_last.pt"
+    o = torch.load(p, weights_only=False)
+    fn(o)
+    torch.save(o, p)
+
+
+def _lev(path, fn):
+    def go(j):
+        fn(j["levers"])
+    _ej(path, go)
+
+
+def _npz_edit(path, fn):
+    z = dict(np.load(path))
+    fn(z)
+    np.savez(path, **z)
+
+
+def _drop(f, s=0, name="summary.json"):
+    (_hr(f, s) / name).unlink()
+
+
+def _log_edit(f, fn):
+    p = _hr(f) / "train_log.jsonl"
+    rows = [json.loads(x) for x in p.read_text(encoding="utf-8").splitlines()]
+    fn(rows)
+    p.write_text("".join(json.dumps(x) + "\n" for x in rows), encoding="utf-8")
+
+
+def _shift_eid(z):
+    z["eid"] = np.asarray(z["eid"]).copy()
+    z["eid"][0] += 1
+
+
+def _gt_codes_off(z):                                  # the constraint block (cols >= C0) is the GT every arm must carry identically
+    z["tac_code"] = np.asarray(z["tac_code"]).copy()
+    z["tac_code"][10:40, C0:] += 1.0
+
+
+def _not_the_latcons_oracle(z):                        # outside the latcons columns the all-latcons oracle must still be GT
+    z["tac_code"] = np.asarray(z["tac_code"]).copy()
+    z["tac_code"][10:40, C0 + 12:] += 1.0
+
+
+def _fewer_steps(f, n):
+    """A run that stopped at `n` steps, with its own consistent log (so the step-count check, not the log check, is what must refuse)."""
+    _ej(_hr(f) / "summary.json", lambda j: j.update(steps=n))
+    _log_edit(f, lambda r: r.__setitem__(slice(None), [dict(x, p_gt=_sched(x["step"] - 1, n, 1.0, 0.2)) for x in r if x["step"] <= n]))
+
+
+def _del_w(key):
+    def go(l):
+        l["w"].pop(key)
+    return go
+
+
+def _shrink(rows):
+    def go(l):
+        l["params"].update(adapter=l["params"]["adapter"] - rows * 256)
+        l.update(n_params_trainable=l["n_params_trainable"] - rows * 256)
+    return go
+
+
+MUT = {                                # name -> (mutator(f), a message fragment)
+    "h summary missing": (lambda f: _drop(f, 0, "summary.json"), "is missing"),
+    "h checkpoint missing": (lambda f: _drop(f, 0, "ckpt_last.pt"), "is missing"),
+    "h not done": (lambda f: _ej(_hr(f) / "summary.json", lambda j: j.update(done=False)), "is not done"),
+    "h n_clips": (lambda f: _ej(_hr(f) / "summary.json", lambda j: j.update(n_clips=4000)), "n_clips 4000"),
+    "h withheld nothing": (lambda f: _ej(_hr(f) / "summary.json", lambda j: j.update(excluded_sha256="0" * 64)), "did not withhold"),
+    "h trained on another clip list": (lambda f: _ej(_hr(f) / "summary.json", lambda j: j.update(train_sha256="u" * 64)), "did not train on"),
+    "h trained fewer steps": (lambda f: _fewer_steps(f, 9000), "trained for 9000 steps"),
+    "h trained the shortened budget the trainer sizes from the hist-10 window set": (lambda f: _fewer_steps(f, 17472), "trained for 17472 steps, M2b_s0 for 19164"),
+    "h launch gate not PASS": (lambda f: _ej(_hr(f) / "selfcheck.json", lambda j: j.update(declared_vs_built="FAIL")), "declared_vs_built is not PASS"),
+    "h G-LIVE not pass": (lambda f: _ej(_hr(f) / "selfcheck.json", lambda j: j["live"].update(**{"pass": False})), "G-LIVE is not a pass"),
+    "h frozen-prior control not exactly zero": (lambda f: _ej(_hr(f) / "selfcheck.json", lambda j: j["live"].update(control_prior_grad_sum=1e-9)), "G-LIVE is not a pass"),
+    "h selfcheck from another run": (lambda f: _ej(_hr(f) / "selfcheck.json", lambda j: j.update(argv_sha="zzz")), "is not this run's"),
+    "h argv still says hist 4": (lambda f: _argv_edit(_hr(f) / "argv.json", lambda a: _set_flag(a, "--hist", "4")), "expected 10"),
+    "h argv has no --hist": (lambda f: _argv_edit(_hr(f) / "argv.json", lambda a: [x for x in a if x not in ("--hist", "10")]), "argv --hist None, expected 10"),
+    "h argv says hist 8": (lambda f: _argv_edit(_hr(f) / "argv.json", lambda a: _set_flag(a, "--hist", "8")), "expected 10"),
+    "h argv has no --window-start": (lambda f: _argv_edit(_hr(f) / "argv.json", lambda a: [x for x in a if x not in ("--window-start", "3")]), "argv --window-start None, expected 3"),
+    "h argv says window-start 9 (the hist - 1 default spelled out)": (lambda f: _argv_edit(_hr(f) / "argv.json", lambda a: _set_flag(a, "--window-start", "9")), "argv --window-start 9, expected 3"),
+    "h argv says window-start 0": (lambda f: _argv_edit(_hr(f) / "argv.json", lambda a: _set_flag(a, "--window-start", "0")), "expected 3"),
+    "b argv names --window-start": (lambda f: _argv_edit(_br(f) / "argv.json", lambda a: a + ["--window-start", "3"]), "predates the flag"),
+    "h trained on the shortened window set": (lambda f: _ej(_hr(f) / "summary.json", lambda j: j.update(n_windows=279494)), "trained on 279494 windows"),
+    "h built window_start 9 (summary levers)": (lambda f: _lev(_hr(f) / "summary.json", lambda l: l.update(window_start=9)), "summary.json built window_start 9, expected 3"),
+    "h built window_start 9 (selfcheck levers)": (lambda f: _lev(_hr(f) / "selfcheck.json", lambda l: l.update(window_start=9)), "selfcheck.json built window_start 9, expected 3"),
+    "h records no built window_start": (lambda f: _lev(_hr(f) / "summary.json", lambda l: l.pop("window_start")), "record no built window_start"),
+    "h built hist 4 (summary levers)": (lambda f: _lev(_hr(f) / "summary.json", lambda l: l.update(hist=4)), "built hist 4, expected 10"),
+    "h records no built hist (selfcheck levers)": (lambda f: _lev(_hr(f) / "selfcheck.json", lambda l: l.pop("hist")), "record no built hist"),
+    "h built hmax 10 (summary levers)": (lambda f: _lev(_hr(f) / "summary.json", lambda l: l.update(hmax=10)), "built hmax 10, expected 16"),
+    "h records no built hmax": (lambda f: _lev(_hr(f) / "selfcheck.json", lambda l: l.pop("hmax")), "record no built hmax"),
+    "h checkpoint built window_start 9": (lambda f: _ck_edit(f, lambda o: o["cfg"].update(window_start=9)), "BUILT with window_start 9, not 3"),
+    "h checkpoint has no window_start": (lambda f: _ck_edit(f, lambda o: o["cfg"].pop("window_start")), "BUILT with window_start None, not 3"),
+    "h selfcheck: the built window list started at t = 9": (lambda f: _ej(_hr(f) / "selfcheck.json", lambda j: j["info"].update(window_t_min=9)), "info.window_t_min"),
+    "h selfcheck: the dataset clamp origin is 9": (lambda f: _ej(_hr(f) / "selfcheck.json", lambda j: j["info"].update(ds_window_start=9)), "info.ds_window_start"),
+    "h selfcheck: train_windows was asked for 9": (lambda f: _ej(_hr(f) / "selfcheck.json", lambda j: j["info"].update(window_start=9)), "info.window_start"),
+    "b record (new style) built hist 10": (lambda f: _lev(_br(f) / "summary.json", lambda l: l.update(hist=10)), "summary.json built hist 10, expected 4"),
+    "b record (new style) built window_start 9": (lambda f: _lev(_br(f) / "summary.json", lambda l: l.update(window_start=9)), "summary.json built window_start 9, expected 3"),
+    "h argv has a second lever": (lambda f: _argv_edit(_hr(f) / "argv.json", lambda a: a + ["--w-wm", "0.2"]), "not one lever"),
+    "h argv moved hmax": (lambda f: _argv_edit(_hr(f) / "argv.json", lambda a: a + ["--hmax", "20"]), "not one lever"),
+    "h argv moved the grid": (lambda f: _argv_edit(_hr(f) / "argv.json", lambda a: _set_flag(a, "--grid", "pool8x20")), "not one lever"),
+    "h argv lost a flag": (lambda f: _argv_edit(_hr(f) / "argv.json", lambda a: [x for x in a if x not in ("--kin-mode", "yaw")]), "not one lever"),
+    "h argv is another arm": (lambda f: _argv_edit(_hr(f) / "argv.json", lambda a: _set_flag(a, "--arm", "M2")), "argv --arm"),
+    "b argv is a hist-10 run": (lambda f: _argv_edit(_br(f) / "argv.json", lambda a: a + ["--hist", "10"]), "B is not a 4-frame run"),
+    "h built another p_gt": (lambda f: _lev(_hr(f) / "summary.json", lambda l: l.update(p_gt_start=0.7)), "was built with p_gt"),
+    "h records no built p_gt": (lambda f: _lev(_hr(f) / "selfcheck.json", lambda l: l.pop("p_gt_end")), "record no built p_gt"),
+    "h built another weight": (lambda f: _lev(_hr(f) / "summary.json", lambda l: l["w"].update(w_pen=0.9)), "w.w_pen"),
+    "h built another weight B's record lacks": (lambda f: _lev(_hr(f) / "summary.json", lambda l: l["w"].update(w_tac=2.0)), "w.w_tac"),
+    "h built another w_cons": (lambda f: _lev(_hr(f) / "selfcheck.json", lambda l: l["w"].update(w_cons=1.0)), "w.w_cons"),
+    "h lost a weight key B recorded": (lambda f: _lev(_hr(f) / "summary.json", _del_w("w_pen_self")), "w.w_pen_self"),
+    "h built another mask": (lambda f: _lev(_hr(f) / "selfcheck.json", lambda l: l.update(wm="a")), "built levers"),
+    "h has one parameter too many": (lambda f: _lev(_hr(f) / "summary.json", lambda l: l.update(n_params_trainable=l["n_params_trainable"] + 1)), "parameter delta"),
+    "h adapter delta is not the table": (lambda f: _lev(_hr(f) / "selfcheck.json", lambda l: l["params"].update(adapter=l["params"]["adapter"] - 256)), "parameter delta"),
+    "h grew a second group": (lambda f: _lev(_hr(f) / "summary.json", lambda l: l["params"].update(T=l["params"]["T"] + 5)), "group T"),
+    "h has B's parameter count (a hist-4 build)": (lambda f: _lev(_hr(f) / "summary.json", _shrink(6)), "parameter delta"),
+    "h has an 8-frame parameter count": (lambda f: _lev(_hr(f) / "summary.json", _shrink(2)), "parameter delta"),
+    "h checkpoint was built at hist 4": (lambda f: _ck_edit(f, lambda o: o["cfg"].update(hist=4)), "BUILT at hist 4"),
+    "h checkpoint has no hist": (lambda f: _ck_edit(f, lambda o: o["cfg"].pop("hist")), "BUILT at hist None"),
+    "h checkpoint time table has 4 rows": (lambda f: _ck_edit(f, lambda o: o["model"].update(time=torch.zeros(4, 256))), "time table has 4 rows"),
+    "h checkpoint has no time table": (lambda f: _ck_edit(f, lambda o: o["model"].pop("time")), "time table has None rows"),
+    "h checkpoint time table is the wrong width": (lambda f: _ck_edit(f, lambda o: o["model"].update(time=torch.zeros(10, 128))), "is 128 wide"),
+    "h checkpoint built another hmax": (lambda f: _ck_edit(f, lambda o: o["cfg"].update(hmax=10)), "BUILT with hmax 10, B's is 16"),
+    "h checkpoint built a larger hmax": (lambda f: _ck_edit(f, lambda o: o["cfg"].update(hmax=20)), "BUILT with hmax 20, B's is 16"),
+    "h checkpoint is an 8x20 checkpoint": (lambda f: _ck_edit(f, lambda o: o.update(grid="pool8x20")), "are not B's"),
+    "h checkpoint built 160 tokens": (lambda f: _ck_edit(f, lambda o: o["cfg"].update(n_tok=160)), "are not B's"),
+    "h checkpoint from another argv": (lambda f: _ck_edit(f, lambda o: o.update(argv_sha="other")), "another argv"),
+    "h checkpoint at another step": (lambda f: _ck_edit(f, lambda o: o.update(step=100)), "checkpoint is at step 100"),
+    "h checkpoint of another seed": (lambda f: _ck_edit(f, lambda o: o.update(seed=1)), "checkpoint says arm"),
+    "h train log carries the wrong p_gt": (lambda f: _log_edit(f, lambda r: r[3].update(p_gt=0.99)), "p_gt"),
+    "h eval scored B's checkpoint": (lambda f: _ej(_heval(f, 0, ".json"), lambda j: j.update(ckpt=str(_br(f) / "ckpt_last.pt"))), "scored"),
+    "h oracle eval scored no checkpoint": (lambda f: _ej(_heval(f, 0, "-tacorc.json"), lambda j: j.pop("ckpt") and None), "scored None"),
+    "h eval is on another eval grid": (lambda f: _npz_edit(_heval(f, 0, ".npz"), _shift_eid), "eid"),
+    "h evals (both seeds) are on another eval grid than B's": (lambda f: [_npz_edit(_heval(f, s, suf), _shift_eid) for s in (0, 1) for suf in (".npz", "-tacabs.npz", "-tacorc.npz", "-tacorc-all-latcons.npz")],
+                                                           "not on the same eval grid as M2b's"),   # every H file shifted alike: PGT's own per-arm eid check passes, THIS reader's cross-arm check must fire
+    "h oracle eval has other GT codes": (lambda f: _npz_edit(_heval(f, 0, "-tacorc.npz"), _gt_codes_off), "the GT constraint block differs"),
+    "h all-latcons oracle is not GT outside latcons": (lambda f: _npz_edit(_heval(f, 0, "-tacorc-all-latcons.npz"), _not_the_latcons_oracle), "not the all-latcons oracle"),
+    "h eval missing": (lambda f: _heval(f, 0, "-tacorc-all-latcons.npz").unlink(), "is missing"),
+}
+
+
+@needs_pkg
+@pytest.mark.parametrize("name", list(MUT))
+def test_reader_refuses_rc2_with_the_reason(tmp_path, no_known, capsys, name):
+    mut, frag = MUT[name]
+    f = _hworld(tmp_path / "w")
+    mut(f)
+    capsys.readouterr()
+    rc = R.main(["--stage", "final", *f["args"]])
+    err = capsys.readouterr().err
+    assert rc == 2 and frag in err, f"{name}: rc {rc}; stderr: {err[-400:]}"
+    assert not (f["d"] / "hist.json").exists(), "a refused read must leave no result file for the next step to find"
+
+
+@needs_pkg
+def test_reader_refuses_a_final_read_without_seed_1_of_h(tmp_path, no_known, capsys):
+    f = _hworld(tmp_path / "w", seeds=(0,))
+    assert R.main(["--stage", "final", *f["args"]]) == 2
+    assert "is missing" in capsys.readouterr().err
+    assert R.main(["--stage", "s0", *f["args"]]) == 0, "the same files are a complete stage-1 input"
+
+
+@needs_pkg
+def test_reader_missing_inputs_are_rc2_not_a_traceback(tmp_path, no_known, capsys):
+    assert R.main(["--stage", "final", "--eval-dir", str(tmp_path), "--runs-dir", str(tmp_path), "--out", str(tmp_path / "o.json")]) == 2
+    assert "is missing" in capsys.readouterr().err
+    assert R.main(["--stage", "final"]) == 2, "argparse: required arguments missing"
+    assert R.main([]) == 2
+
+
+@needs_pkg
+def test_reader_refuses_a_b_that_is_not_the_banked_m2b(tmp_path, no_known, capsys):
+    """B's own run check is PGT's for the M2b arm: a B carrying a p_gt flag is not M2b."""
+    f = _hworld(tmp_path / "w")
+    _argv_edit(_br(f) / "argv.json", lambda a: a + ["--p-gt-start", "0.5", "--p-gt-end", "0.0"])
+    capsys.readouterr()
+    assert R.main(["--stage", "final", *f["args"]]) == 2
+    assert "REFUSED" in capsys.readouterr().err
+
+
+# ---- B's REAL record shape (PREREG_V8F_GRID Amendment 2's lesson) -----------------------------------------------------------------------------
+@needs_pkg
+@pytest.mark.parametrize("seed", (0, 1))
+def test_the_real_banked_m2b_record_lacks_w_tac_and_w_cons_and_a_default_h_reads_equal_to_it(seed):
+    real, _ = _b_real(seed)
+    w_b = real["summary.json"]["levers"]["w"]
+    assert set(w_b) == {"w_pen", "w_pen_self", "w_wm"}, "B's banked record predates w_tac / w_cons (built_levers began recording them at 39e21e5)"
+    assert set(real["selfcheck.json"]["levers"]["w"]) == set(w_b)
+    assert not any(x in real["argv.json"]["argv"] for x in ("--w-tac", "--w-cons", "--hist", "--hmax", "--window-start")), "B trained at the trainer's defaults for all five"
+    assert not any(k in real["summary.json"]["levers"] for k in ("hist", "hmax", "window_start")), "B's banked record predates the three keys (BUILD.md F-3): key by key, never 'absent = different'"
+    w_h = {**w_b, "w_tac": 1.0, "w_cons": 0.5}
+    flags = R.PGT._flags(real["argv.json"]["argv"])
+    assert R.w_diff(w_h, w_b, flags) == [], "a default H record against B's REAL record: no difference"
+    assert R.w_diff({**w_h, "w_tac": 2.0}, w_b, flags) == ["w_tac"] and R.w_diff({**w_h, "w_cons": 1.0}, w_b, flags) == ["w_cons"]
+    assert R.w_diff({k: v for k, v in w_h.items() if k != "w_pen"}, w_b, flags) == ["w_pen"], "a key H LOST is a difference"
+    assert R.w_diff(w_h, w_b, dict(flags, **{"--w-tac": "1.0"})) == ["w_tac"], "B's argv names the flag: its value is then not the unrecorded default"
+
+
+@needs_pkg
+def test_w_diff_is_the_grid_readers_own_function_and_stays_so():
+    """PREREG_V8F_GRID Amendment 2's `w_diff` / `B_UNRECORDED_W`, REUSED: the HIST reader's are the GRID reader's functions (imported), and a battery of cases reads the same
+    through an independent instance of the GRID reader -- so an edit to either file that makes them diverge turns this red."""
+    import inspect
+    assert inspect.getsource(R.w_diff) == inspect.getsource(GRM.w_diff) and R.B_UNRECORDED_W == GRM.B_UNRECORDED_W == {"w_tac": (1.0, "--w-tac"), "w_cons": (0.5, "--w-cons")}
+    assert tuple(R._SKIP_LEVERS) == tuple(GRM._SKIP_LEVERS)
+    base = {"w_pen": 0.5, "w_pen_self": 0.25, "w_wm": 0.1}
+    for wg, wb, fl in ((base, base, {}), ({**base, "w_tac": 1.0, "w_cons": 0.5}, base, {}), ({**base, "w_tac": 2.0}, base, {}), ({**base, "w_tac": 1.0}, base, {"--w-tac": "1.0"}),
+                       ({**base, "w_cons": 0.4}, base, {}), ({"w_pen": 0.5}, base, {}), ({**base, "w_pen": 0.6}, base, {}), ({**base, "w_x": 1.0}, base, {})):
+        assert R.w_diff(wg, wb, fl) == GRM.w_diff(wg, wb, fl), (wg, wb, fl)
+
+
+@needs_pkg
+@pytest.mark.parametrize("seed", (0, 1))
+def test_b_hmax_and_hist_are_the_trainers_own_values_for_the_real_banked_argv(seed):
+    """The hmax the reader derives for B (the trainer's auto rule: 16 with a world-model auxiliary) IS what the trainer's make_config builds from B's argv, and B's hist is 4."""
+    real, _ = _b_real(seed)
+    argv = real["argv.json"]["argv"]
+    a = TR.build_parser().parse_args(argv)
+    cfg = TR.make_config(a)
+    assert R.b_hmax(R.PGT._flags(argv), real["summary.json"]) == cfg.hmax == HMAX_M2B and cfg.hist == 4 == int(R.B_HIST_VAL)
+    ah = TR.build_parser().parse_args(argv + ["--hist", "10"])
+    ch = TR.make_config(ah)
+    assert ch.hist == 10 and ch.hmax == cfg.hmax, "the lever alone leaves hmax where it is"
+    assert R.b_hmax({"--hmax": "20"}, real["summary.json"]) == 20 and R.b_hmax({}, {"levers": {"wm": "off"}}) == 10
+    with pytest.raises(SystemExit):
+        R.b_hmax({}, {"levers": {}})
+    # and the real parameter record: the reader's expected delta from the real banked counts
+    lv = real["summary.json"]["levers"]
+    assert lv["params"] == BANKED_M2B_PARAMS and lv["n_params_trainable"] == BANKED_M2B_TOTAL
+    pc = R.check_params(lv, {**lv, "params": {**lv["params"], "adapter": lv["params"]["adapter"] + D_TIME}, "n_params_trainable": lv["n_params_trainable"] + D_TIME}, 256, "real")
+    assert pc["expected_delta"] == pc["delta"] == 1536 and pc["adapter"] == {"B": 275712, "H": 277248}
+
+
+@needs_pkg
+def test_reader_constants_match_the_model_the_trainer_and_the_eval():
+    """The reader's constants are independent copies of the PREREG's numbers; here they are tied to the objects that actually build and score the arms."""
+    assert (R.HIST_FLAG, R.HIST_VAL, R.B_HIST_VAL, R.H_ROWS, R.B_ROWS) == ("--hist", "10", "4", 10, 4) and R.SUF == "_h10" and R.ARM_H == "M2b-h10" and R.ARM_B == "M2b"
+    assert (R.WS_FLAG, R.WS_VAL, R.B_WS_EFFECTIVE) == ("--window-start", "3", 3) and R.B_WS_EFFECTIVE == int(R.B_HIST_VAL) - 1 == int(R.WS_VAL), "H's window start IS B's (hist 4 - 1)"
+    assert R._SKIP_LEVERS_H == tuple(R._SKIP_LEVERS) + ("hist",), "only the lever itself is excused from the key-by-key lever comparison"
+    assert R.h_dir(1) == "M2b_s1_h10" and R.ARM_H + "_s1" == "M2b-h10_s1" and tuple(R.EVAL_SUFFIXES) == ("", "-tacabs", "-tacorc", "-tacorc-all-latcons")
+    assert R.MLAT_BAR == 0.125 and R.T_SUB_MIN == 11 and R.B_GRID == "pool4x10" and R.N_TOK_B == 40
+    _dk, WC = R._modules()
+    assert [WC.C0 + i for i in WC.GROUPS["latcons"]] == LATCONS == list(M.CODE_GROUPS["latcons"])
+    assert WC.C0 == C0 and WC.N_CONS == NC
+    assert tuple(D.LAT_CONSTRAINTS) == tuple(M.CONS_NAMES[:12]) and all(n in D.LAT_CONSTRAINTS for n in R.TIMING_SLOTS)
+    assert R.TIMING_SLOTS == ("turn_t_start_s", "turn_t_end_s", "turn_d_start_m", "lc_t_cross_s")
+    assert [c - C0 for c in TIMING_COLS] == [1, 2, 3, 10], "the four timing / along-path slots of the latcons group"
+    # the lever's ceiling: the largest hist the config allows at the auto hmax is the PREREG's 10
+    assert max(h for h in range(1, 40) if h + M.V8FMiniConfig.max_age_s <= HMAX_M2B) == 10 == int(R.HIST_VAL)
+    src = (REPO / "stack" / "scripts" / "v8f_mini_eval.py").read_text(encoding="utf-8")
+    assert "cfg = M.V8FMiniConfig(**ck[\"cfg\"])" in src and "hist=cfg.hist, hmax=tot_hmax" in src, "the eval builds the history FROM the checkpoint's cfg (v8f_mini_eval.py:237, :270)"
+
+
+# ---- the pre-launch check of B's side ----------------------------------------------------------------------------------------------------------------
+@needs_pkg
+def test_check_inputs_reads_b_alone_and_the_identity_control_is_exactly_zero(tmp_path, no_known, capsys):
+    f = _hworld(tmp_path / "c", seeds=())                                               # no H run exists yet: this is the check that runs BEFORE training
+    assert R.main(["--check-inputs", *f["args"]]) == 0
+    out = capsys.readouterr().out
+    assert "HIST INPUTS OK" in out and "identity control exactly +0 [0, 0]" in out and "b_hist 4" in out and "b_hmax 16" in out
+    j = json.loads((f["d"] / "hist.json").read_text(encoding="utf-8"))
+    assert j["base"] == "M2b" and j["F"] > 0 and j["b_hmax"] == 16 and j["b_hist"] == 4 and j["b_steps"] == {"0": 19164, "1": 19164} and j["b_n_windows"] == {"0": 306566, "1": 306566}
+    zero = {"delta": 0.0, "lo": 0.0, "hi": 0.0, "point": 0.0}
+    for s in ("s0", "s1"):
+        cells = j["identity_control"][s]
+        assert cells["mlat_mse"] == zero and cells["primary_t_ge_11"] == zero and cells["primary_t_lt_11"] == zero, "B against itself: exactly +0 [0, 0] on M-LAT and the D4 subsets"
+        assert cells["slots_timing4_mse"] == zero and cells["slots_geometry8_mse"] == zero
+        assert cells["latcons_rmse_slot"] > 0 and cells["latcons_rmse_window"] > 0
+    assert j["window_counts"]["asserted_against_prereg"] is False                          # the synthetic grid is 72 windows
+    assert j["latcons_rmse_slot_b"]["0"] == pytest.approx(j["identity_control"]["s0"]["latcons_rmse_slot"])
+
+
+@needs_pkg
+def test_check_inputs_breaks_loudly_when_the_paired_instrument_is_broken(tmp_path, no_known, capsys, monkeypatch):
+    """The identity control has teeth: a paired estimator that does not return exactly 0 on B-against-B stops the check (and the read)."""
+    f = _hworld(tmp_path / "c", seeds=())
+    import taniteval.ci as ci
+    orig = ci.paired_episode_cluster_bootstrap
+
+    def biased(a, b, *r, **k):
+        o = orig(a, b, *r, **k)
+        if np.array_equal(np.asarray(a), np.asarray(b)):
+            o = dict(o, delta=o["delta"] + 1e-9)
+        return o
+    monkeypatch.setattr(ci, "paired_episode_cluster_bootstrap", biased)
+    capsys.readouterr()
+    assert R.main(["--check-inputs", *f["args"]]) == 2
+    assert "IDENTITY CONTROL FAILED" in capsys.readouterr().err
+
+
+@needs_pkg
+def test_check_inputs_refuses_a_b_that_names_window_start(tmp_path, no_known, capsys):
+    f = _hworld(tmp_path / "c", seeds=())
+    _argv_edit(_br(f, 0) / "argv.json", lambda a: a + ["--window-start", "3"])
+    capsys.readouterr()
+    assert R.main(["--check-inputs", *f["args"]]) == 2
+    assert "predates the flag" in capsys.readouterr().err
+
+
+@needs_pkg
+def test_a_new_style_b_record_with_the_built_keys_reads_the_same_as_the_banked_one_without_them(tmp_path, no_known):
+    """Key by key (BUILD.md F-3): B's banked record lacks hist / hmax / window_start, a re-run B would carry 4 / 16 / 3. Both are the same B: absent is never 'different', present must be B's."""
+    f = _hworld(tmp_path / "w")
+    rc0, r0 = _go(f)
+    for s in (0, 1):
+        for n in ("summary.json", "selfcheck.json"):
+            _lev(_br(f, s) / n, lambda l: l.update(hist=4, hmax=16, window_start=3))
+    rc1, r1 = _go(f)
+    assert rc0 == rc1 == 0
+    assert r0["rows"]["s0"]["primary"] == r1["rows"]["s0"]["primary"] and r0["VERDICT"] == r1["VERDICT"]
+
+
+@needs_pkg
+def test_check_inputs_refuses_a_b_that_is_a_hist_10_run(tmp_path, no_known, capsys):
+    f = _hworld(tmp_path / "c", seeds=())
+    _argv_edit(_br(f, 1) / "argv.json", lambda a: a + ["--hist", "10"])
+    capsys.readouterr()
+    assert R.main(["--check-inputs", *f["args"]]) == 2
+    assert "M2b is not a 4-frame run" in capsys.readouterr().err
+
+
+def test_window_t_is_the_cache_step_and_refuses_an_odd_frame(capsys):
+    """The eval windows' cache step t is derived from the GT's raw frame (= 2t); an odd frame cannot be a cache step and must stop the read, not be floored."""
+    assert R.window_t({"G": {"frame": np.array([6, 14, 22, 142])}}).tolist() == [3, 7, 11, 71]
+    with pytest.raises(SystemExit) as e:
+        R.window_t({"G": {"frame": np.array([6, 15, 22])}})
+    assert e.value.code == 2 and "frame is not 2t" in capsys.readouterr().err
+
+
+@needs_pkg
+def test_reader_turns_an_inherited_refusal_into_rc2_not_a_traceback(tmp_path, no_known, capsys):
+    """v8f_dk_read's own `Refusal` (raised by the lead-block join when a window has no row) is not a SystemExit: the reader must still exit rc 2 with the reason."""
+    f = _hworld(tmp_path / "w")
+
+    def odd(z):
+        z["frame"] = np.asarray(z["frame"]).copy()
+        z["frame"][0] += 1
+    _npz_edit(f["d"] / "gt.npz", odd)
+    capsys.readouterr()
+    assert R.main(["--stage", "final", *f["args"]]) == 2
+    err = capsys.readouterr().err
+    assert "HIST READ REFUSED" in err and "no row in the lead block" in err
+
+
+@needs_pkg
+def test_check_inputs_refuses_b_seeds_that_disagree_about_hmax(tmp_path, no_known, capsys):
+    f = _hworld(tmp_path / "c", seeds=())
+    _argv_edit(_br(f, 1) / "argv.json", lambda a: a + ["--hmax", "18"])
+    capsys.readouterr()
+    assert R.main(["--check-inputs", *f["args"]]) == 2
+    assert "disagree about hmax" in capsys.readouterr().err
+
+
+@needs_pkg
+def test_known_values_are_checked_and_refuse_a_world_that_does_not_hold_them(tmp_path, capsys):
+    """The PREREG's premises (F 0.1207, LAMBDA, S5 excess) are the banked M2b evals' values: a synthetic world cannot reproduce them, so the real check REFUSES it."""
+    f = _hworld(tmp_path / "m", seeds=())
+    capsys.readouterr()
+    assert R.main(["--check-inputs", *f["args"]]) == 2
+    assert "REFUSED" in capsys.readouterr().err
+
+
+@needs_pkg
+def test_reader_reports_parameters_pipeline_windows_groups_slots_and_the_oracle_beside_the_verdict(tmp_path, no_known):
+    f = _hworld(tmp_path / "w", err_h=0.5, err_h_timing=0.3)
+    rc, r = _go(f)
+    assert rc == 0
+    ic = r["identity_control"]                                                  # the real read runs B-against-itself too, and every cell reads exactly +0 [0, 0]
+    assert set(ic) == {"s0", "s1"} and {"primary_t_ge_11", "primary_t_lt_11", "slots_timing4_mse", "slots_geometry8_mse"} <= set(ic["s0"])
+    assert all(v["delta"] == 0.0 and v["lo"] == 0.0 and v["hi"] == 0.0 for blk in ic.values() for v in blk.values() if isinstance(v, dict) and "delta" in v)
+    row = r["rows"]["s0"]
+    be = row["beside"]
+    assert be["parameters"]["expected_delta"] == 1536 and be["parameters"]["delta"] == 1536 and be["parameters"]["adapter"] == {"B": 275712, "H": 275712 + 1536}
+    assert be["parameters"]["n_params_trainable"] == {"B": BANKED_M2B_TOTAL, "H": BANKED_M2B_TOTAL + 1536}
+    pipe = be["pipeline"]
+    assert pipe["H"]["steps"] == pipe["B"]["steps"] == 19164 and pipe["H"]["steps_per_s"] < pipe["B"]["steps_per_s"] and pipe["H"]["n_windows"] == pipe["B"]["n_windows"] == 306566
+    assert be["built"] == {"hist": 10, "hmax": 16, "window_start": 3, "b_hmax": 16, "time_rows": 10}
+    assert set(be["present_slot"]["rmse_group"]["B"]) == {"latcons", "lonspeed", "stoplead"} and be["present_slot"]["rmse"]["H"] < be["present_slot"]["rmse"]["B"]
+    # per latcons slot, and the four timing / along-path slots pooled beside the eight geometry slots
+    sl = be["latcons_slots"]
+    assert list(sl["slots"]) == list(D.LAT_CONSTRAINTS) and len(sl["slots"]) == 12
+    timing = [n for n, v in sl["slots"].items() if v["kind"] == "timing"]
+    assert timing == list(R.TIMING_SLOTS) and sl["sets"]["timing4"]["slots"] == list(R.TIMING_SLOTS) and len(sl["sets"]["geometry8"]["slots"]) == 8
+    for i, (n, v) in enumerate(sl["slots"].items()):
+        want = 1 - (0.3 if n in R.TIMING_SLOTS else 0.5) / 0.6
+        assert v["n_present"] > 0 and v["fall"] == pytest.approx(want, abs=1e-9), n
+        # PRESENT = the window has a GT row AND the GT slot is non-zero: the count is the world's own, independent of the reader (a quiet "has a row" would also count the zero slots)
+        assert v["n_present"] == int(f["n_present"][LATCONS[i] - C0]), n
+    assert 0 < sum(v["n_present"] for v in sl["slots"].values()) < 12 * f["w"].n, "the world has absent slots, so the count is a real test"
+    t4, g8 = sl["sets"]["timing4"], sl["sets"]["geometry8"]
+    assert t4["fall"] == pytest.approx(1 - 0.3 / 0.6, abs=1e-9) and g8["fall"] == pytest.approx(1 - 0.5 / 0.6, abs=1e-9)
+    assert t4["mse_delta"]["separated"] and t4["mse_delta"]["point"] < g8["mse_delta"]["point"] < 0
+    # the pooled latcons fall is the slot-count-weighted mix of the two sets
+    n4, n8 = t4["n_slots_present"], g8["n_slots_present"]
+    mix = lambda who: np.sqrt((n4 * t4["rmse"][who] ** 2 + n8 * g8["rmse"][who] ** 2) / (n4 + n8))          # noqa: E731
+    assert row["mlat"]["fall"] == pytest.approx(1 - mix("H") / mix("B"), abs=1e-9)
+    # the GT-code oracle ADE6 and the leak LAMBDA ride beside
+    assert be["oracle_ade6"]["B"] == pytest.approx(be["oracle_ade6"]["H"]) and be["oracle_ade6_delta"]["point"] == 0.0 and row["mleak"]["lambda_b_m"] > row["mleak"]["lambda_a_m"]
+    assert r["strategic_family"].startswith("NOT PAUSED") and r["tier"].startswith("T1-class open loop")
+    assert "answers 'another draw of EPISODES' only" in r["estimator"] and r["estimator"].count("B=300") == 1
+
+
+# ---- module-level guard (the lander imports test files from a stack-only tree) ------------------------------------------------------------------------
+def test_module_level_loads_of_the_package_are_guarded():
+    """Every module-level load of a research-package file sits behind an existence guard, so importing THIS file in a tree that has only `stack/` cannot raise."""
+    src = Path(__file__).read_text(encoding="utf-8")
+    for name in ("R = _load(\"v8f_hist_read_under_test\", READ_P) if READ_P.exists() else None",
+                 "GRM = _load(\"v8f_grid_read_under_test_for_hist\", GRID_P) if GRID_P.exists() else None",
+                 "_DK = _load(\"test_v8f_dk_for_hist\", Path(__file__).resolve().parent / \"test_v8f_dk.py\") if READ_P.exists() else None"):
+        assert name in src, name
+    top = [ln for ln in src.splitlines() if ln.startswith(("R = ", "GRM = ", "_DK = ", "CC = "))]
+    assert top and all(" if " in ln and ln.split("  #")[0].rstrip().endswith("else None") for ln in top), top
+
+
+# =================================================================================================================================================
+# THE QUEUE STAGES (code/v8f_mini_box2_queue.cmd: gatehist / trainhist / evalhist): what is PRINTED is what RUNS, one lever
+# =================================================================================================================================================
+needs_queue = pytest.mark.skipif(not QUEUE.exists(), reason="the v8F-mini package is not in this checkout")
+win = pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
+HSTAGES = ("gatehist", "trainhist", "evalhist")
+
+
+def _queue_text():
+    return QUEUE.read_text(encoding="utf-8").replace("\r\n", "\n")
+
+
+def _block(label):
+    return _queue_text().split(f"\n:{label}\n", 1)[1].split("\nexit /b 0\n", 1)[0].split("\n")
+
+
+def _code(lines):
+    return [x for x in lines if x.strip() and not x.lower().startswith("rem ")]
+
+
+def _argv_of(line):
+    return [t.strip('"') for t in re.findall(r'"[^"]*"|\S+', line.strip())]
+
+
+def _dry(args, env_extra=None, clean_paths=False):
+    env = dict(os.environ, V8F_DRYRUN="1")
+    if clean_paths:
+        for k in ("REPO", "RUNSM", "CACHEFULL", "V9", "PY"):
+            env.pop(k, None)
+    env.update(env_extra or {})
+    r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, timeout=60, encoding="utf-8")
+    return r.returncode, [x for x in r.stdout.splitlines() if ".py" in x]
+
+
+def _without(line, drop):
+    t, out, i = _argv_of(line), [], 0
+    while i < len(t):
+        if t[i] in drop:
+            i += 2
+            continue
+        out.append(t[i])
+        i += 1
+    return out
+
+
+@needs_queue
+def test_queue_hist_the_queue_is_crlf_and_the_stages_are_dispatched():
+    raw = QUEUE.read_bytes()
+    assert raw.count(b"\r\n") == raw.count(b"\n") > 400, "a .cmd with bare LF endings misparses labels and `exit /b`"
+    q = _queue_text()
+    for st in HSTAGES:
+        assert f'if /i "%~1"=="{st}" goto :{st}' in q, "a stage nobody dispatches never runs"
+        assert q.count(f"\n:{st}\n") == 1
+    assert "^|gatehist^|trainhist SEED^|evalhist SEED" in q, "the usage line names the new stages"
+    for label in HSTAGES:
+        body = "\n".join(_code(_block(label)))
+        assert "p-gt" not in body and "8x20" not in body and "--w-" not in body and "--hmax" not in body, f"{label}: the lever is --hist 10 --window-start 3 and nothing else"
+
+
+@needs_queue
+def test_queue_hist_runs_the_command_it_prints_static():
+    """A dry run can only print: the real line is checked statically -- the trainer / eval appear ONCE per command, inside the one string, and the real run executes that string."""
+    for label, var, pre in (("gatehist", "GH", '--arm M2b --hist 10 --window-start 3 --out "%RUNSM%\\gate_M2b-h10" '),
+                            ("trainhist", "TH", '--arm M2b --seed %~2 --grid pool4x10 --hist 10 --window-start 3 --out "%OUT%" ')):
+        code = _code(_block(label))
+        assert [x for x in code if "%TRAIN%" in x] == [x for x in code if x.startswith(f'set "{var}=')], label
+        assert any(x.startswith(f'set "{var}="%PY%" "%TRAIN%" ' + pre) for x in code), label
+        assert f"if defined V8F_DRYRUN (echo %{var}% & exit /b 0)" in code, label
+        assert sum(x.startswith(f"%{var}% ") for x in code) == 1, label
+        assert sum(x.count("--hist") for x in code if x.startswith(f'set "{var}=')) == 1, f"{label}: --hist appears once, in the one string"
+        assert sum(x.count("--window-start") for x in code if x.startswith(f'set "{var}=')) == 1, f"{label}: --window-start appears once, in the one string"
+        assert not any("pool8x20" in x for x in code), f"{label}: an 8x20 literal in a hist stage"
+    code = _code(_block("evalhist"))
+    assert [x for x in code if "%EVAL%" in x] == [x for x in code if re.match(r'set "E[0-3]=', x)], "the eval script appears only inside the four strings"
+    assert len([x for x in code if re.match(r'set "E[0-3]=', x)]) == 4
+    assert "if defined V8F_DRYRUN (echo %E0% & echo %E1% & echo %E2% & echo %E3% & exit /b 0)" in code
+    for k in range(4):
+        assert sum(x.strip().startswith(f"%E{k}% >> ") for x in code) == 1, f"E{k} is executed exactly once"
+    e = {k: next(x for x in code if x.startswith(f'set "E{k}=')) for k in range(4)}
+    assert "--project --families" in e[0] and "--tac" not in e[0]
+    assert "--tac absmask" in e[1] and "--tac oracle" in e[2] and "--tac-groups" not in e[2]
+    assert "--tac oracle --tac-groups all-latcons --tac-alpha 1" in e[3]
+    for k in range(4):
+        assert '--ckpt "%OUT%\\ckpt_last.pt"' in e[k] and "%EC% %ER%" in e[k] and "--grid" not in e[k] and "--hist" not in e[k], \
+            "the eval reads the history FROM the checkpoint's cfg; no flag can disagree with it"
+    # every failure is noticed on its own line (flat `if errorlevel 1 (... & exit /b 1)`, no parenthesised multi-line block: MEASURED to return rc 0 from `cmd /c`)
+    for label in HSTAGES:
+        body = _block(label)
+        assert not any(x.rstrip().endswith("(") for x in body), f"{label}: a multi-line parenthesised block"
+        assert sum(1 for x in body if x.startswith("if errorlevel 1 (echo [FAIL]") and x.rstrip().endswith("exit /b 1)")) >= (1 if label != "evalhist" else 4)
+
+
+@needs_queue
+@win
+def test_queue_hist_stages_dry_one_lever(tmp_path):
+    env = dict(REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
+    rc, ln = _dry("gatehist", env)
+    assert rc == 0 and len(ln) == 1 and "--selfcheck-only" in ln[0] and "gate_M2b-h10" in ln[0], ln
+    t = _argv_of(ln[0])
+    assert t[t.index("--arm"):t.index("--arm") + 6] == ["--arm", "M2b", "--hist", "10", "--window-start", "3"] and t.count("--hist") == 1 and t.count("--window-start") == 1, ln
+    rc, ln = _dry("trainhist 1", env)
+    assert rc == 0 and len(ln) == 1, ln
+    t = _argv_of(ln[0])
+    assert t[t.index("--arm") + 1] == "M2b" and t[t.index("--seed") + 1] == "1" and t[t.index("--hist") + 1] == "10" and t.count("--hist") == 1, ln
+    assert t[t.index("--window-start") + 1] == "3" and t.count("--window-start") == 1, ln
+    assert t[t.index("--grid") + 1] == "pool4x10" and t.count("--grid") == 1 and t[t.index("--out") + 1].endswith("M2b_s1_h10"), ln
+    assert "--exclude 540:600" in ln[0] and "--kin-mode yaw" in ln[0] and "--steps-mult 4" in ln[0] and "--batch 64" in ln[0], ln
+    for no in ("--w-cons", "--w-tac", "--w-wm", "--hmax", "--steps ", "--p-gt"):
+        assert no not in ln[0], f"ONE lever: {no} is not on the line"
+    rc, ev = _dry("evalhist 0", env)
+    assert rc == 0 and len(ev) == 4, ev
+    for k, (suffix, frag) in enumerate((("", "--project --families"), ("-tacabs", "--tac absmask"), ("-tacorc", "--tac oracle"),
+                                        ("-tacorc-all-latcons", "--tac oracle --tac-groups all-latcons --tac-alpha 1"))):
+        assert f"--tag M2b-h10_s0{suffix} " in ev[k] + " " and frag in ev[k], (k, ev[k])
+        assert f"M2b_s0_h10{os.sep}ckpt_last.pt" in ev[k], "every eval reads THIS run's last checkpoint (which names its own history)"
+        assert f"{os.sep}M2b_s0{os.sep}" not in ev[k], "never B's checkpoint"
+    # ONE lever (set by two flags, Amendment 1), from the queue's own lines: H's gate / train line is B's line with --hist 10 --window-start 3 (and the output dir) changed and NOTHING else
+    drop = {"--hist", "--window-start", "--out"}
+    b_train = _dry("train M2b 1", env)[1][0]
+    assert "--hist" not in b_train and "--window-start" not in b_train
+    assert _without(b_train, {"--out"}) == _without(_dry("trainhist 1", env)[1][0], drop), "H's train line = B's + --hist 10 --window-start 3"
+    b_gate = _dry("gatearm M2b", env)[1][0]
+    assert _without(b_gate, {"--out"}) == _without(_dry("gatehist", env)[1][0], drop), "H's gate line = B's gate line + --hist 10 --window-start 3"
+
+
+@needs_queue
+@win
+def test_queue_hist_refuses_missing_arguments(tmp_path):
+    env = dict(REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
+    for args in ("trainhist", "evalhist"):
+        rc, ln = _dry(args, env)
+        assert rc == 2 and ln == [], (args, rc, ln)
+
+
+@needs_queue
+@win
+def test_queue_hist_leaves_every_other_stage_untouched(tmp_path):
+    """The edit only ADDS stages: the neighbouring arms' lines read as they did, and none of them mentions the history lever."""
+    env = dict(REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
+    for args in ("train M2b 0", "trainpgt 0", "trainwc 0", "gatearm M2b", "gatepgt", "gategrid M2b", "traingrid 0 M2b", "evalgrid 0 M2b"):
+        rc, ln = _dry(args, env)
+        assert rc == 0 and len(ln) >= 1 and all("--hist" not in x and "--window-start" not in x and "h10" not in x for x in ln), (args, ln)
+
+
+def _fake_tree(tmp):
+    """A repo whose trainer / eval are FAKES that record the argv they are handed (and make the files the next stage waits for)."""
+    repo = tmp / "repo"
+    sc = repo / "stack" / "scripts"
+    sc.mkdir(parents=True)
+    rec = tmp / "argv.jsonl"
+    (sc / "v8f_mini_train.py").write_text(
+        "import json, os, sys\n"
+        f"open({str(rec)!r}, 'a').write(json.dumps({{'who': 'train', 'argv': sys.argv[1:]}}) + '\\n')\n"
+        "a = sys.argv; out = a[a.index('--out') + 1]\n"
+        "os.makedirs(out, exist_ok=True)\n"
+        "if os.environ.get('FAKE_TRAIN') == 'fail':\n"
+        "    sys.exit(3)\n"
+        "if '--selfcheck-only' not in a and os.environ.get('FAKE_TRAIN') != 'nosummary':\n"
+        "    open(os.path.join(out, 'summary.json'), 'w').write('{}')\n", encoding="utf-8")
+    (sc / "v8f_mini_eval.py").write_text(
+        "import json, os, sys\n"
+        f"open({str(rec)!r}, 'a').write(json.dumps({{'who': 'eval', 'argv': sys.argv[1:]}}) + '\\n')\n"
+        "a = sys.argv; d = a[a.index('--out-dir') + 1]; t = a[a.index('--tag') + 1]\n"
+        "if os.environ.get('FAKE_FAIL_TAG') == t:\n"
+        "    sys.exit(1)\n"
+        "os.makedirs(d, exist_ok=True)\n"
+        "open(os.path.join(d, 'eval_' + t + '.npz'), 'wb').write(b'x')\n", encoding="utf-8")
+    hj = repo / "TanitAD Research Lab" / "Architecture & Inference" / "Research" / "2026-10-17-refav1-hj-mini" / "raw" / "p10_yaw4512"
+    hj.mkdir(parents=True)
+    (hj / "p10_prior.pt").write_bytes(b"p")
+    (hj / "p10_eval_pred6.npy").write_bytes(b"p")
+    cf = tmp / "cf"
+    for sub in ("train", "eval"):
+        (cf / sub).mkdir(parents=True)
+        (cf / sub / "manifest.jsonl").write_text("{}\n", encoding="utf-8")
+    (cf / "native_tracks.pt").write_bytes(b"t")
+    (tmp / "runsm").mkdir()
+    return repo, rec
+
+
+@needs_queue
+@win
+def test_queue_hist_real_lines_execute_exactly_the_printed_commands(tmp_path):
+    repo, rec = _fake_tree(tmp_path)
+    env = dict(os.environ, REPO=str(repo), PY=sys.executable, RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
+    env.pop("V8F_DRYRUN", None)
+
+    def real(args):
+        r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, timeout=120, encoding="utf-8")
+        assert r.returncode == 0, (args, r.stdout, r.stderr)
+        return [json.loads(x) for x in rec.read_text(encoding="utf-8").splitlines()] if rec.exists() else []
+
+    def printed(args):
+        r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=dict(env, V8F_DRYRUN="1"), capture_output=True, text=True, timeout=60, encoding="utf-8")
+        return [_argv_of(x)[2:] for x in r.stdout.splitlines() if ".py" in x]       # drop python.exe and the script: sys.argv[1:]
+    want_gate, want_train, want_eval = printed("gatehist"), printed("trainhist 1"), printed("evalhist 1")        # BEFORE the runs: a finished stage prints [skip]
+    assert len(want_gate) == 1 and len(want_train) == 1 and len(want_eval) == 4
+    got = real("gatehist")
+    assert [g["argv"] for g in got] == want_gate and got[-1]["who"] == "train" and "--selfcheck-only" in got[-1]["argv"]
+    n = len(got)
+    got = real("trainhist 1")[n:]
+    assert [g["argv"] for g in got] == want_train and len(got) == 1, "the REAL trainhist line hands the trainer the printed command"
+    a = got[0]["argv"]
+    assert a[a.index("--hist") + 1] == "10" and a[a.index("--arm") + 1] == "M2b" and a[a.index("--seed") + 1] == "1" and a[a.index("--grid") + 1] == "pool4x10"
+    assert a[a.index("--window-start") + 1] == "3" and a.count("--window-start") == 1, "Amendment 1: the REAL line hands the trainer --window-start 3"
+    assert (tmp_path / "runsm" / "M2b_s1_h10" / "summary.json").exists() and not (tmp_path / "runsm" / "M2b_s1").exists(), "H has its own run dir; B's is never touched"
+    n += 1
+    got = real("evalhist 1")[n:]
+    assert [g["argv"] for g in got] == want_eval and len(got) == 4 and all(g["who"] == "eval" for g in got), "the REAL evalhist lines hand the eval the printed commands"
+    tags = [g["argv"][g["argv"].index("--tag") + 1] for g in got]
+    assert tags == ["M2b-h10_s1", "M2b-h10_s1-tacabs", "M2b-h10_s1-tacorc", "M2b-h10_s1-tacorc-all-latcons"]
+    n += 4                                              # a finished stage is skipped, not re-run
+    assert len(real("evalhist 1")) == n and len(real("trainhist 1")) == n
+
+
+@needs_queue
+@win
+def test_queue_hist_real_stages_notice_failures_and_skip_exactly_what_is_finished(tmp_path):
+    repo, rec = _fake_tree(tmp_path)
+    runsm = tmp_path / "runsm"
+    ev = runsm / "eval"
+    base = dict(os.environ, REPO=str(repo), PY=sys.executable, RUNSM=str(runsm), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
+    base.pop("V8F_DRYRUN", None)
+
+    def stage(args, **extra):
+        r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=dict(base, **extra), capture_output=True, text=True, timeout=120, encoding="utf-8")
+        return r.returncode, r.stdout
+
+    def evals():
+        return [json.loads(x) for x in rec.read_text(encoding="utf-8").splitlines() if '"eval"' in x] if rec.exists() else []
+    rc, out = stage("gatehist", FAKE_TRAIN="fail")
+    assert rc == 1 and "[FAIL] gate M2b-h10" in out
+    rc, out = stage("trainhist 1", FAKE_TRAIN="fail")
+    assert rc == 1 and "[FAIL] train M2b_s1_h10 - see" in out
+    rc, out = stage("trainhist 1", FAKE_TRAIN="nosummary")                     # a trainer that exits 0 WITHOUT a summary (a crash that swallowed its code)
+    assert rc == 1 and "exited 0 without summary.json" in out
+    rc, out = stage("evalhist 1")                                              # evaluation refuses a run that has not finished training
+    assert rc == 2 and "has not finished training" in out and not evals()
+    assert stage("trainhist 1")[0] == 0
+    rc, out = stage("trainhist 1")
+    assert rc == 0 and "[skip] M2b_s1_h10" in out, "a finished run is not re-trained"
+    tags = ["M2b-h10_s1", "M2b-h10_s1-tacabs", "M2b-h10_s1-tacorc", "M2b-h10_s1-tacorc-all-latcons"]
+    for tag in tags:
+        rc, out = stage("evalhist 1", FAKE_FAIL_TAG=tag)
+        assert rc == 1 and f"[FAIL] eval {tag} - see" in out, (tag, rc, out)
+        for f in list(ev.glob("eval_M2b-h10_s1*.npz")):
+            f.unlink()
+    ev.mkdir(exist_ok=True)
+    for n, done in enumerate(([0, 2], [1], [0], [2], [3], [0, 1, 2], [1, 3])):
+        for f in list(ev.glob("eval_M2b-h10_s1*")):
+            f.rename(f.with_name(f"old{n}_" + f.name))
+        rec.write_text("", encoding="utf-8")
+        for k in done:
+            (ev / f"eval_{tags[k]}.npz").write_bytes(b"x")
+        assert stage("evalhist 1")[0] == 0, done
+        ran = [g["argv"][g["argv"].index("--tag") + 1] for g in evals()]
+        assert ran == [tg for k, tg in enumerate(tags) if k not in done], (done, ran)
+
+
+# =================================================================================================================================================
+# THE CHAIN (code/box2_ops/chain_v8f_hist.sh): needs box 2 and ssh, so it cannot RUN here -- its order, its gate assertions (RUN against synthetic selfchecks),
+# its --dry-run (== the queue's own dry-run lines) and every load-bearing line are pinned
+# =================================================================================================================================================
+def _git_bash():
+    for p in (os.environ.get("GIT_BASH"), "C:/Program Files/Git/bin/bash.exe", "C:/Program Files (x86)/Git/bin/bash.exe"):
+        if p and Path(p).exists():
+            return p
+    return None
+
+
+needs_chain = pytest.mark.skipif(not CHAIN.exists(), reason="the v8F-mini package is not in this checkout")
+
+
+@needs_chain
+def test_chain_hist_static_ordering_the_wait_and_no_base_decision():
+    c = CHAIN.read_text(encoding="utf-8")
+    assert b"\r\n" not in CHAIN.read_bytes(), "a bash script with CRLF endings does not run"
+    code = "\n".join(x for x in c.splitlines() if not x.lstrip().startswith("#"))
+    assert "decide-base" not in code and "PGTD" not in code and "PGTS" not in code and "--pgt-dir" not in code and "--base" not in code and "BASE" not in code, \
+        "B = M2b is fixed in the PREREG: nothing is decided at run time"
+    # the order: predecessor -> refresh -> check-inputs on the REAL B side -> guard -> gate -> seed 0 -> read s0 -> (CONTINUE) seed 1 -> final read
+    order = ["waiting for the predecessor chain", "fetch -q origin", 'v8f_hist_read.py" --check-inputs', "v8f_guard.sh > ", "queue gatehist 120 gatehist", "runone 0\n",
+             "histread s0 hist_read_s0.json", "runone 1\n", "histread final hist_read.json"]
+    idx = [c.index(x) for x in order]
+    assert idx == sorted(idx) and len(set(idx)) == len(idx), dict(zip(order, idx))
+    assert 'queue "t_$g" $TRAIN_POLLS trainhist $s' in c and 'queue "e_$g" $EVAL_POLLS evalhist $s' in c
+    assert '[ "$(jget hist_read_s0.json DECISION)" = CONTINUE ] || finish' in c, "a STOP at seed 0 is a committed outcome (DONE), not a crash"
+    assert c.index('v8f_hist_read.py" --check-inputs') < c.index("launch telemetry_long") < c.index("queue gatehist 120"), "B's side is refused while box 2 is still idle and untouched"
+    # the predecessor is PREREG_V8F_GRID's chain, by default; its markers are the shared ones, in THIS chain's own log
+    assert "AFTER_OUT=${AFTER_OUT:-$L/chain_v8f_grid.out}" in c and "ZZV8FMINI-STOP" in c and "ZZV8FMINI-DONE" in c and "chain_v8f_hist.out" in c
+    assert 'grep -qF "\'^(ZZV8FMINI|" $B/v8f_guard.sh' in c
+    # the training wait covers the longest run the guard lets live: TRAIN_POLLS x 30 s > V8F_MAX_RUN_H (default) hours
+    polls = int(re.search(r"^TRAIN_POLLS=(\d+)", c, re.M).group(1))
+    maxh = float(re.search(r"V8F_MAX_RUN_H:-(\d+)", GUARD.read_text(encoding="utf-8")).group(1))
+    assert polls == 1320 and polls * 30 / 3600 > maxh, f"a run the guard lets live ({maxh} h) outlasts the wait ({polls * 30 / 3600} h)"
+    # the B side: the banked M2b files; the P10 guard file and the check-inputs come BEFORE any training
+    for x in ("$L/v8f_mini/runs/M2b_s$s/$f", "$L/v8f_cz/eval/$f", "$L/v8f_tacgrp2/eval/$f", "floors_perwindow.npz"):
+        assert x in c, x
+    assert c.index("floors_perwindow.npz") < c.index('v8f_hist_read.py" --check-inputs') < c.index("queue gatehist 120")
+    # what an H run pulls: its selfcheck/summary/argv/log/ckpt (the reader reads the checkpoint's history) and the four evals
+    assert "for f in selfcheck.json summary.json argv.json train_log.jsonl train.log ckpt_last.pt; do pull" in c
+    assert 'for f in "" -tacabs -tacorc -tacorc-all-latcons; do for x in json npz log; do pull "eval/eval_$tg$f.$x"' in c
+    arch = next(x for x in c.splitlines() if "archive --format=tar" in x)
+    assert all(x in arch for x in ("stack", "taniteval", '"$HJ"', '"$PK"', '"$B1"')), "the reader and the lead block ride in the archive"
+    for f in ("v8f_hist_read.py", "v8f_grid_read.py", "v8f_pgt_read.py", "v8f_dk_read.py", "v8f_wc_read.py", "v8f_tac_groups_read.py", "v8f_mini_full_report.py"):
+        assert f in c, f"the chain insists the tip has {f}"
+    # the markers the guard's anchored end test knows
+    g = GUARD.read_text(encoding="utf-8")
+    assert "ZZV8FMINI" in g and "(DONE|STOP)" in g
+
+
+@needs_chain
+def test_chain_hist_syntax_and_dry_run_prints_the_queue_lines(tmp_path):
+    bash = _git_bash()
+    if bash is None or sys.platform != "win32":
+        pytest.skip("Git Bash on Windows is needed to run the chain's --dry-run")
+    r = subprocess.run([bash, "-n", str(CHAIN)], capture_output=True, text=True, encoding="utf-8", timeout=60)
+    assert r.returncode == 0, r.stderr
+    env = dict(os.environ, V8F_QUEUE=str(QUEUE), TMPDIR=tmp_path.as_posix())
+    env.pop("V8F_DRYRUN", None)
+    r = subprocess.run([bash, str(CHAIN), "--dry-run"], env=env, capture_output=True, text=True, timeout=180, encoding="utf-8", stdin=subprocess.DEVNULL)
+    assert r.returncode == 0, r.stderr
+    out = r.stdout.splitlines()
+    stages = ["gatehist", "trainhist 0", "trainhist 1", "evalhist 0", "evalhist 1"]
+    assert [x for x in out if x.startswith("== ")] == [f"== {s}" for s in stages]
+    want = []                                               # the chain's printed lines ARE the queue's own dry-run lines at box 2's default paths
+    for st in stages:
+        want += _dry(st, clean_paths=True)[1]
+    assert [x for x in out if ".py" in x] == want and len(want) == 1 + 2 + 8
+    t0 = next(x for x in out if "--seed 0" in x and "v8f_mini_train.py" in x)
+    assert "--arm M2b --seed 0 --grid pool4x10 --hist 10 --window-start 3 --out" in t0 and "D:\\tanitad\\repo" in t0 and "M2b_s0_h10" in t0
+    g0 = next(x for x in out if "--selfcheck-only" in x)
+    assert "--arm M2b --hist 10 --window-start 3 --out" in g0 and "gate_M2b-h10" in g0
+
+
+def _gate_assertions():
+    """The python block the chain runs on the PULLED gate selfcheck.json (its heredoc), as a program."""
+    c = CHAIN.read_text(encoding="utf-8")
+    m = re.search(r"<<'EOF' \|\| stop \"gate H assertions\"\n(.*?)\nEOF\n", c, re.S)
+    assert m, "the chain's gate assertions are a python heredoc whose failure stops the chain"
+    return m.group(1)
+
+
+GLINE_OK = '"D:\\tanitad\\venv\\Scripts\\python.exe" "D:\\tanitad\\repo\\stack\\scripts\\v8f_mini_train.py" --arm M2b --hist 10 --window-start 3 --out "D:\\tanitad\\runs\\v8f_mini_full\\gate_M2b-h10" --kin-mode yaw --selfcheck-only'
+
+
+def _gate_run(tmp_path, mod=None, line=GLINE_OK, steps_arg="19164", good_mod=None, windows_arg="306566"):
+    import copy
+    body = _gate_assertions()
+    real, _ = _b_real(0)
+    bl = real["summary.json"]["levers"]
+    hold = HOLD
+    good = {"declared_vs_built": "PASS", "live": {"pass": True, "control_prior_grad_sum": 0.0}, "steps_total": 19164,
+            "info": {"n_clips": 4512, "n_excluded": 60, "n_excluded_declared": 60, "excluded_in_train": 0, "excluded_sha256": hold,
+                     "train_sha256": real["summary.json"]["train_sha256"], "kin_mode": "yaw", "lru": 174, "n_windows_all_clips": 306566,
+                     "window_start": 3, "window_t_min": 3, "ds_window_start": 3},
+            "levers": {"wm": "b", "navonly": False, "consistency": True, "cons_absent": "mask", "p_gt_start": 1.0, "p_gt_end": 0.2, "hist": 10, "hmax": 16, "window_start": 3,
+                       "w": {"w_pen": 0.5, "w_pen_self": 0.25, "w_wm": 0.1, "w_tac": 1.0, "w_cons": 0.5},
+                       "params": dict(bl["params"], adapter=bl["params"]["adapter"] + D_TIME), "n_params_trainable": bl["n_params_trainable"] + D_TIME}}
+    if good_mod:
+        good_mod(good)
+    sc = copy.deepcopy(good)
+    if mod:
+        mod(sc)
+    (tmp_path / "bsum.json").write_text(json.dumps(real["summary.json"]), encoding="utf-8")
+    f = tmp_path / "sc.json"
+    f.write_text(json.dumps(sc), encoding="utf-8")
+    r = subprocess.run([sys.executable, "-", str(f), hold, steps_arg, str(tmp_path / "bsum.json"), line, windows_arg], input=body, capture_output=True, text=True, encoding="utf-8", timeout=60)
+    return r.returncode, r.stdout + r.stderr
+
+
+@needs_chain
+@needs_pkg
+def test_chain_hist_gate_assertions_pass_the_h_gate_and_refuse_every_way_it_can_be_wrong(tmp_path):
+    """The chain's gate block is RUN against a synthetic selfcheck.json built from B's REAL banked record: a good H gate passes; each single-field corruption exits 1 and names
+    the broken field (the schedule, the clip list, the holdout, the weights, the window set, the step count, the history and the PARAMETER DELTA cannot drift under a green gate)."""
+    rc, out = _gate_run(tmp_path)
+    assert rc == 0 and "PASS" in out and "built p_gt 1.0 -> 0.2" in out and f"params {BANKED_M2B_TOTAL + D_TIME}" in out and "windows 306566" in out, out
+    assert "built hist/hmax/window_start 10 16 3" in out, out
+    L = lambda k, v: (lambda s: s["levers"].__setitem__(k, v))                   # noqa: E731
+    W = lambda k, v: (lambda s: s["levers"]["w"].__setitem__(k, v))              # noqa: E731
+    I = lambda k, v: (lambda s: s["info"].__setitem__(k, v))                     # noqa: E731
+    P = lambda k, v: (lambda s: s["levers"]["params"].__setitem__(k, v))         # noqa: E731
+    pb = _b_real(0)[0]["summary.json"]["levers"]["params"]
+    cases = (("declared_vs_built", lambda s: s.__setitem__("declared_vs_built", "FAIL"), "declared_vs_built"),
+             ("live", lambda s: s["live"].__setitem__("pass", False), "live"),
+             ("control grad", lambda s: s["live"].__setitem__("control_prior_grad_sum", 1.0), "live"),
+             ("n_clips", I("n_clips", 4000), "clips / holdout counts"), ("n_excluded", I("n_excluded", 59), "clips / holdout counts"),
+             ("n_excluded_declared", I("n_excluded_declared", 59), "clips / holdout counts"), ("excluded_in_train", I("excluded_in_train", 1), "clips / holdout counts"),
+             ("holdout", I("excluded_sha256", "0" * 64), "not the RA-1 holdout"), ("train list", I("train_sha256", "d" * 64), "TRAIN list"),
+             ("kin_mode", I("kin_mode", "steer"), "kin_mode"), ("lru unrecorded", lambda s: s["info"].pop("lru"), "info.lru"),
+             ("wm", L("wm", "a"), "levers"), ("navonly", L("navonly", True), "levers"), ("consistency", L("consistency", False), "levers"), ("cons_absent", L("cons_absent", "zero"), "levers"),
+             ("p_gt start", L("p_gt_start", 0.5), "built p_gt"), ("p_gt end", L("p_gt_end", 0.0), "built p_gt"),
+             ("p_gt missing", lambda s: (s["levers"].pop("p_gt_start"), s["levers"].pop("p_gt_end")) and None, "built p_gt None -> None"),
+             ("w_pen", W("w_pen", 0.6), "w_pen"), ("w_pen_self", W("w_pen_self", 0.3), "w_pen_self"), ("w_wm", W("w_wm", 2.0), "w_wm"),
+             ("w_tac", W("w_tac", 2.0), "w_tac / w_cons"), ("w_cons", W("w_cons", 1.0), "w_tac / w_cons"),
+             ("steps", lambda s: s.__setitem__("steps_total", 9000), "steps 9000"),
+             ("window set is not B's", I("n_windows_all_clips", 279494), "the window set is not B's"),
+             ("window set is not the PREREG's number (B's record staged wrongly too)", lambda s: s["info"].__setitem__("n_windows_all_clips", 306565), "the PREREG's 306566"),
+             ("built hist 4", L("hist", 4), "built hist 4 != 10"), ("built hist unrecorded", lambda s: s["levers"].pop("hist"), "built hist None != 10"),
+             ("built hmax 10", L("hmax", 10), "built hmax 10 != 16"), ("built hmax unrecorded", lambda s: s["levers"].pop("hmax"), "built hmax None != 16"),
+             ("built window_start 9 (the flag did not reach the levers)", L("window_start", 9), "built window_start 9 != 3"),
+             ("built window_start unrecorded", lambda s: s["levers"].pop("window_start"), "built window_start None != 3"),
+             ("the window list started at t = 9", I("window_t_min", 9), "window start (asked / first t"), ("the dataset clamps from 9", I("ds_window_start", 9), "window start (asked / first t"),
+             ("train_windows was asked for 9", I("window_start", 9), "window start (asked / first t"),
+             ("the window-start read-backs are unrecorded", lambda s: [s["info"].pop(k) for k in ("window_start", "window_t_min", "ds_window_start")] and None, "window start (asked / first t"),
+             ("one parameter too many", L("n_params_trainable", BANKED_M2B_TOTAL + D_TIME + 1), "n_params_trainable"),
+             ("no time rows (a hist-4 build)", lambda s: (s["levers"].__setitem__("n_params_trainable", BANKED_M2B_TOTAL), P("adapter", pb["adapter"])(s)) and None, "n_params_trainable"),
+             ("an 8-frame table", lambda s: (s["levers"].__setitem__("n_params_trainable", BANKED_M2B_TOTAL + 4 * 256), P("adapter", pb["adapter"] + 4 * 256)(s)) and None,
+              "n_params_trainable"),
+             ("a second group grew", P("T", pb["T"] + 5), "parameter group T"),
+             ("the table landed in the wrong group", lambda s: (P("adapter", pb["adapter"])(s), P("O", pb["O"] + D_TIME)(s)) and None, "parameter group"),
+             ("params unrecorded", lambda s: s["levers"].pop("params"), ""))
+    for name, mod, msg in cases:
+        rc, out = _gate_run(tmp_path, mod)
+        assert rc != 0 and msg in out, (name, rc, out)
+    # the history, from the queue's own printed line
+    for name, line, msg in (("no --hist on the line", GLINE_OK.replace(" --hist 10", ""), "--hist 10 exactly once"),
+                            ("--hist 4", GLINE_OK.replace("--hist 10", "--hist 4"), "--hist 10 exactly once"),
+                            ("--hist twice", GLINE_OK.replace("--hist 10", "--hist 10 --hist 10"), "--hist 10 exactly once"),
+                            ("no --window-start on the line", GLINE_OK.replace(" --window-start 3", ""), "--window-start 3 exactly once"),
+                            ("--window-start 9", GLINE_OK.replace("--window-start 3", "--window-start 9"), "--window-start 3 exactly once"),
+                            ("--window-start twice", GLINE_OK.replace("--window-start 3", "--window-start 3 --window-start 3"), "--window-start 3 exactly once"),
+                            ("--hmax set", GLINE_OK + " --hmax 16", "sets --hmax")):
+        rc, out = _gate_run(tmp_path, line=line)
+        assert rc == 1 and msg in out, (name, rc, out)
+    # the dose comes from B: a different wm would change the auto hmax
+    rc, out = _gate_run(tmp_path, L("wm", "a"))
+    assert rc == 1 and "wm a != B's b" in out, out
+
+
+@needs_chain
+@needs_pkg
+def test_chain_hist_gate_stops_on_the_budget_the_trainer_will_actually_size(tmp_path):
+    """FINDING F-1 (BUILD.md): at --hist 10 ALONE the trainer's window set starts at t = 9, so n_windows falls by 6 per clip and the step budget with it (279,494 windows and
+    17,472 steps on the banked clip set). The gate asserts the PREREG as written -- B's window set and B's 19,164 steps, true again under Amendment 1 -- so a trainer in which
+    `--window-start` does not reach `train_windows` STOPS the chain at the gate, naming the cause, before a GPU hour is spent."""
+    def shortened(s):
+        s["steps_total"] = 17472
+        s["info"]["n_windows_all_clips"] = 279494
+    rc, out = _gate_run(tmp_path, shortened)
+    assert rc == 1 and "steps 17472 != B's 19164" in out and "the window set is not B's" in out and "BUILD.md F-1" in out and "t >= hist - 1" in out, out
+    assert "the PREREG's 306566" in out and "unless --window-start reaches it" in out, out
+    # the trap as the BUILT records show it: a trainer that ignored the flag builds window_start 9 and a window list starting at t = 9
+    def trap(s):
+        shortened(s)
+        s["levers"]["window_start"] = 9
+        s["info"].update(window_t_min=9, ds_window_start=9)
+    rc, out = _gate_run(tmp_path, trap)
+    assert rc == 1 and "built window_start 9 != 3" in out and "window start (asked / first t" in out and "steps 17472 != B's 19164" in out, out
+    # and a trainer that honours the flag passes the gate as the PREREG states it
+    assert _gate_run(tmp_path)[0] == 0
+
+
+@needs_chain
+def test_chain_hist_finish_releases_the_box_before_it_announces_done():
+    """The next chain waits for DONE and then refuses on a leftover BOX2_BUSY.txt: finish() must remove the marker and stop the telemetry BEFORE it prints ZZV8FMINI-DONE."""
+    c = CHAIN.read_text(encoding="utf-8")
+    m = re.search(r"\nfinish\(\) \{.*?\n\}\n", c, re.S)
+    assert m, "no finish() function in the chain"
+    body = m.group(0)
+    for need in ("telemetry.stop", "rm -f $B/BOX2_BUSY.txt", 'echo "" > $CUR', "ZZV8FMINI-DONE", "exit 0"):
+        assert need in body, f"finish() lost {need!r}"
+    assert body.index("rm -f $B/BOX2_BUSY.txt") < body.index("ZZV8FMINI-DONE") < body.index("exit 0")
+
+
+@needs_chain
+def test_chain_hist_load_bearing_lines_are_present():
+    """Every line whose loss would let a wrong run through is pinned. Substrings, not whole lines: line ends are not load-bearing."""
+    c = CHAIN.read_text(encoding="utf-8")
+    lines = (
+        r"""for st in gatehist trainhist evalhist; do grep -q "^:$st\$" $QT || stop "the tip's queue has no $st stage"; done""",
+        r"""grep -q '"p_gt_start": cfg.p_gt_start' || stop "the tip's built_levers does not record p_gt_start""",
+        r"""grep -q '"p_gt_end": cfg.p_gt_end' || stop "the tip's built_levers does not record p_gt_end""",
+        r"""grep -q '"window_start": cfg.window_start_effective' || stop "the tip's built_levers does not record window_start (Amendment 1)""",
+        r"""grep -q -- '"--window-start"' || stop "the tip's trainer has no --window-start flag (Amendment 1)""",
+        r"""git -C $MIRROR cat-file -e "$T:$B1" || stop "the tip has no B1 lead block""",
+        r"""|| stop "the reader cannot use the M2b side (check-inputs)""",
+        r"""|| stop "hist read $1""",
+        r"""$PY "$RD/v8f_hist_read.py" --stage $1 --eval-dir""",
+        r"""GLINE=$(dry_stage "$QC" gatehist | grep -a 'v8f_mini_train.py'); [ -n "$GLINE" ] || stop "the tip's queue prints no gatehist line""",
+        r"""$HOLDOUT_SHA $M2B_STEPS "$(cygpath -m $E/runs/M2b_s0/summary.json)" "$GLINE" $M2B_WINDOWS <<'EOF' || stop "gate H assertions""",
+        r"""pull "gate_M2b-h10/selfcheck.json" "$E/gate_M2b-h10""",
+        r"""stop() { echo "ZZV8FMINI-STOP $*"; echo "" > $CUR; exit 1; }""",
+        r"""echo "ZZV8FMINI-DONE $(date '+%m-%d %H:%M') tip $T: $1 (boot unchanged $BOOT0)""",
+        r"""[ -f $B/BOX2_BUSY.txt ] && { echo "ZZV8FMINI-STOP busy marker present""",
+        r"""until grep -q "^$AFTER_DONE" "$AFTER_OUT" 2>/dev/null; do""",
+        r"""grep -q "^$AFTER_STOP" "$AFTER_OUT" 2>/dev/null && { echo "ZZV8FMINI-STOP the predecessor stopped""",
+        r"""cp "$L/v8f_mini/runs/M2b_s$s/train_log.jsonl" $E/runs/M2b_s$s/ 2>/dev/null || echo""",
+        r"""for f in eval_M2b_s$s-tacorc-all-goal.npz eval_M2b_s$s-tacorc-all-latcons.npz; do cp "$L/v8f_tacgrp2/eval/$f" $E/eval/ || stop "stage $f"; done""",
+        r"""cp "$L/v8f_mini/eval/floors_perwindow.npz" $E/eval/ || stop "stage floors_perwindow.npz""",
+        r"""[ "$(jget hist_read_s0.json DECISION)" = CONTINUE ] || finish "$H1 -- seed 1 not trained (committed)""",
+        r"""finish "$H1 | $(jget hist_read.json reading)""",
+        r"""g="M2b_s${1}_h10" tg="M2b-h10_s${1}""",
+        r"""grep ZZGUARD-STOP $L/v8fhist_guard.out 2>/dev/null && stop "guard stop""",
+        r"""V8F_CHAIN_OUT=$L/chain_v8f_hist.out V8F_CURRENT=$CUR bash $B/v8f_guard.sh""",
+        r"""[[ $t2 == 20* && $t2 != "$t1" ]] || stop "no fresh telemetry""",
+        r"""M2B_STEPS=19164""",
+        r"""M2B_WINDOWS=306566""",
+        r"""TRAIN_POLLS=1320; EVAL_POLLS=600""",
+        r"""CUR=$L/v8fhist_current.txt""")
+    for ln in lines:
+        assert ln in c, f"missing from the chain: {ln!r}"

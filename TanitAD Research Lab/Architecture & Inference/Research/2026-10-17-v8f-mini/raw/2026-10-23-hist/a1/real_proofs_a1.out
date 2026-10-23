@@ -1,0 +1,16 @@
+HIST INPUTS OK: base M2b (b_hist 4, b_hmax 16); F 0.1207; LAMBDA(B) +0.2678 / +0.1667; latcons RMSE(B) 0.6861 / 0.6846 SD; windows 2399 (t>=11 2117, t=3 141, t=7 141); B windows 306566, steps 19164; identity control exactly +0 [0, 0]
+[identity] rc=0
+HIST READ REFUSED: M2b is not a 4-frame run: argv --hist {0: '8', 1: '4'}
+[identity] window_counts {'total': 2399, 't_ge_11': 2117, 't_lt_11': 282, 't3': 141, 't7': 141, 'asserted_against_prereg': True}
+[identity] F 0.1207 m | b_hmax 16 b_hist 4 | b_steps {'0': 19164, '1': 19164} b_n_windows {'0': 306566, '1': 306566}
+[identity] lambda_b {'0': 0.2678449043294623, '1': 0.16669466914070086} | excess_p10 {'0': 0.0442225392296719, '1': 0.025034770514603608}
+[identity] latcons RMSE(B) slot-pooled {'0': 0.6861413005973933, '1': 0.6845808549656447} window-weighted {'0': 0.4678448881355327, '1': 0.4740638806290459}
+[identity] 36 identity contrasts across 2 seeds, every one exactly +0 [0, 0]
+[refuse hist 8] rc=2
+HIST READ REFUSED: B's two seeds disagree about hmax: {0: 16, 1: 18}
+[refuse hmax disagree] rc=2
+HIST READ REFUSED: eval_M2b_s1-tacabs.npz is missing from C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hist_real_a1_051720\refuse_missing\eval
+[refuse missing eval] rc=2
+HIST READ REFUSED: M2b names --window-start in its argv {0: True, 1: False}: B is the banked M2b, which predates the flag
+[refuse B naming --window-start] rc=2
+ALL REAL PROOFS OK

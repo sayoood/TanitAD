@@ -1,0 +1,41 @@
+{
+ "schema": "v8f-hist-a2fix-measure-v1",
+ "grid": {
+  "path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hist\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\eval_grid_windows.json",
+  "sha256": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+  "n_windows": 2399,
+  "n_episodes": 141,
+  "t_min": 3,
+  "t_max": 71,
+  "t_values_below_15": [
+   3,
+   7,
+   11
+  ]
+ },
+ "rule": "v8f_mini_eval.py:291-295 --ages cycle (default): a_t = i % 3, a_s = a_t + (i // 3) % 5, i = position in eval_grid_windows' list",
+ "origins": {
+  "fixed_H": 3,
+  "unfixed_H": 9
+ },
+ "n_windows_with_different_effective_held_ages": 216,
+ "fraction": 0.09003751563151313,
+ "by_t": {
+  "3": {
+   "n_windows_at_t": 141,
+   "n_different": 0
+  },
+  "7": {
+   "n_windows_at_t": 141,
+   "n_different": 132
+  },
+  "11": {
+   "n_windows_at_t": 141,
+   "n_different": 84
+  }
+ },
+ "n_windows_at_t_below_15": 423,
+ "n_of_those_whose_tick_poses_also_differ_on_the_synthetic_clip": 216,
+ "arithmetic_rederivation_disagreements": 0,
+ "t1_note": "v8f_t1_eval.py rolls each window forward and draws ages_for(step) = (step % 3, step % 6) at j = t0 + step; the same clamp applies at every step, so the count above is the --ages cycle read only (the T1 read was affected at every early window and step; not counted here)."
+}

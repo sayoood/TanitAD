@@ -267,7 +267,8 @@ def cmd_run(a):
     ej = D.load_join(a.eval_join)
     store = D.ClipStore(a.eval_cache, "eval", lru=a.lru, grid=ck.get("grid", "pool4x10"), kin_mode=cfg.kin_mode, tracks=tracks)
     wins = D.eval_grid_windows(a.eval_grid, ej)
-    ds = D.V8FMiniWindows(store, ej, wins, hist=cfg.hist, hmax=tot_hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
+    ds = D.V8FMiniWindows(store, ej, wins, hist=cfg.hist, hmax=tot_hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                          window_start=cfg.window_start)     # PREREG_V8F_HIST Amendment 1: the held-age clamp origin is the CHECKPOINT's (-1 = absent = hist - 1)
     N = len(wins)
     perm = None
     if a.nav_shuffle:

@@ -123,3 +123,19 @@
 * **F-4: B's record is silent on `--hist`, `--hmax`, `--w-tac`, `--w-cons`.** The reader reuses `PREREG_V8F_GRID` Amendment 2's `w_diff` unchanged.
 * **F-6, found by a mutant, outside this PREREG:** `v8f_pgt_read.py`, `v8f_grid_read.py` (and by the same pattern `v8f_wc_read.py`) let an inherited `v8f_dk_read.Refusal` escape as a traceback (rc 1, not rc 2). `v8f_hist_read.py` converts it. The three older readers' runs are finished; their fix is a backlog item.
 * **Everything else in this file stands as written:** the bars, the estimator, the stage rule, the decision table and the refusals. The argv check now allows exactly `--hist 10 --window-start 3` (and `--out`).
+
+## Amendment 2 (2026-10-23, written before any HIST data: the EVAL side of Amendment 1)
+
+* **This file's D3 said "Eval windows use ages (0, 0), so the eval is untouched." That was WRONG.**
+  * `eval_grid_windows` does hand out ages (0, 0), but `v8f_mini_eval.py run` defaults to `--ages cycle` (`:629`). Under it the eval assigns held T and S ages per window (`:291`), and `V8FMiniWindows.item` clamps them by `room`.
+  * Both evaluators built `V8FMiniWindows` without `window_start` (`v8f_mini_eval.py:270`, `v8f_t1_eval.py:379`). So an H checkpoint would have been scored with its clamp origin at hist − 1 = 9 instead of B's 3.
+  * **MEASURED** (`raw/2026-10-23-hist/a1/measure_a2fix.{py,json,out}`, on `raw/eval_grid_windows.json`): **216 of the 2,399 eval windows (9.00 %)** would have had held ages different from B's. That is 132 of the 141 windows at t = 7 and 84 of the 141 at t = 11; t = 3 and t ≥ 15 are unaffected. An arithmetic re-derivation disagrees on 0 windows.
+  * The T1-kin count was not made. `--ages fresh` was never affected.
+* **The fix:** both evaluators pass `window_start=cfg.window_start`, the CHECKPOINT's own value.
+  * A checkpoint whose saved config has no `window_start` (every earlier arm: M2b, PGT, GRID) loads with −1 = hist − 1.
+  * Tests load such a checkpoint and prove its eval output bit for bit equal to the pre-fix evaluator's.
+  * With the fix, an H checkpoint's eval items and held ages equal an hist-4 checkpoint's at every eval window under `--ages cycle`.
+  * A static test requires every `V8FMiniWindows(` construction under `stack/scripts/` to pass `window_start=`.
+  * The mutants that drop the keyword from either evaluator turn the tests RED (`raw/2026-10-23-hist/a1/mutate_a1_a2fix.out`).
+* **D4 is unchanged:** at eval, 282 windows show padded history, and the PRIMARY on the 2,117 windows with t ≥ 11 is reported beside it, deciding nothing.
+* **Nothing else changes:** the bars, the estimator, the stage rule, the decision table, the refusals.

@@ -63,6 +63,7 @@ FLAG_CHECKS = {
     "lr": "opt:lr", "wd": "opt:wd", "warmup": "opt:warmup", "device": "run", "amp": "run", "lru": "data:lru",
     "ckpt_every": "run", "log_every": "run", "resume": "run", "no_resume": "run", "max_clips": "data:n_clips", "exclude": "data:n_excluded",
     "hist": "cfg:hist", "hmax": "cfg:hmax", "d": "cfg:d", "n_q": "cfg:n_q", "nb": "cfg:nb",
+    "window_start": "lever:window_start",     # PREREG_V8F_HIST Amendment 1: cfg + built_levers + the WINDOW LIST the data built + the dataset's clamp (declared_vs_built)
     "p_gt_start": "cfg:p_gt_start", "p_gt_end": "cfg:p_gt_end", "w_ckpt": "cfg:w_ckpt", "w_tac": "cfg:w_tac",
     "w_cons": "cfg:w_cons", "w_traj": "cfg:w_traj", "w_pen": "cfg:w_pen", "w_pen_self": "cfg:w_pen_self",
     "w_wm": "cfg:w_wm", "detach_upper": "cfg:detach_upper", "synthetic": "run", "selfcheck_only": "run",
@@ -119,6 +120,10 @@ def build_parser():
     ap.add_argument("--resume", action="store_true", default=True)
     ap.add_argument("--no-resume", action="store_true")
     ap.add_argument("--hist", type=int, default=4)
+    ap.add_argument("--window-start", dest="window_start", type=int, default=-1,
+                    help="PREREG_V8F_HIST Amendment 1: the first TRAINING window's cache step t of every clip AND the origin of the held-age clamp "
+                         "(room = max(t - window_start, 0)). -1 = absent = hist - 1 (every earlier arm, bit for bit); else 0 <= window_start <= hist - 1. "
+                         "`--hist 10 --window-start 3` trains B's window list and B's held ages over 10 frames, the ones before the clip padded")
     ap.add_argument("--hmax", type=int, default=0, help="0 = auto: 10 (M1) or 16 (M2)")
     ap.add_argument("--d", type=int, default=256)
     ap.add_argument("--n-q", dest="n_q", type=int, default=4)
@@ -156,7 +161,7 @@ def declared_levers(a) -> dict:
 def make_config(a) -> M.V8FMiniConfig:
     lv = declared_levers(a)
     hmax = a.hmax or (16 if lv["wm"] != "off" else 10)
-    return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
+    return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, window_start=a.window_start, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
@@ -193,6 +198,17 @@ def declared_vs_built(a, cfg, model, opt, data_info) -> list:
         got = getattr(model.cfg, f)
         if want is not None and not (got == want or (isinstance(want, float) and abs(got - want) < 1e-12)):
             bad.append(f"cfg.{f}: declared {want} but built {got}")
+    # PREREG_V8F_HIST Amendment 1 (F-3): the BUILT history and batch depth, and the EFFECTIVE first-window step, must be the declared ones -- in the built model's levers, in the
+    # window list the data was built from (the measured first t) and in the dataset's held-age clamp. A --window-start the data did not build is REFUSED, and a declared one with no
+    # read-back at all is refused too (it would be a flag nobody can see reach anything).
+    ws_decl = a.hist - 1 if a.window_start == -1 else a.window_start
+    for k, want in (("hist", a.hist), ("hmax", cfg.hmax), ("window_start", ws_decl)):
+        if built.get(k) != want:
+            bad.append(f"lever {k}: declared {want} but built {built.get(k)}")
+    for k, what in (("window_t_min", "the first t of the training window list"), ("ds_window_start", "the dataset's held-age clamp origin")):
+        if k in data_info or a.window_start != -1:
+            if data_info.get(k) != ws_decl:
+                bad.append(f"window_start {a.window_start}: declared {ws_decl} but {what} was built as {data_info.get(k)}")
     # weights that the loss will actually use must be the declared ones (nocons -> 0)
     if not lv["consistency"] and (built["w"]["w_pen"] != 0.0 or built["w"]["w_pen_self"] != 0.0):
         bad.append("M1-nocons declared but penalty weights are non-zero in the built loss")
@@ -335,9 +351,11 @@ def build_data(a, cfg):
         tracks = D.load_native_tracks(tpath)
     info["kin_mode"] = a.kin_mode
     store = D.ClipStore(cache, "train", lru=lru, grid=a.grid, kin_mode=a.kin_mode, tracks=tracks)
-    allw = D.train_windows(store, J, clips_all, hist=cfg.hist)
-    wins = D.train_windows(store, J, clips, hist=cfg.hist)
-    info.update({"n_windows_all_clips": len(allw), "n_windows": len(wins)})
+    allw = D.train_windows(store, J, clips_all, hist=cfg.hist, start=cfg.window_start)
+    wins = D.train_windows(store, J, clips, hist=cfg.hist, start=cfg.window_start)
+    info.update({"n_windows_all_clips": len(allw), "n_windows": len(wins),
+                 "window_start": D.effective_window_start(cfg.hist, cfg.window_start),         # what train_windows was asked for ...
+                 "window_t_min": min((w[1] for w in allw), default=None)})                      # ... and what the built list actually starts at (read back)
     return store, J, wins, clips, info
 
 
@@ -393,7 +411,9 @@ def main(argv=None):
             M.check_p10_units(a.p10, a.kin_mode)                 # REFUSES a prior whose declared units are not this mode's
         except ValueError as e:
             raise SystemExit(f"ZZDVB-REFUSEDZZ {e}")
-    ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
+    ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                          window_start=cfg.window_start)
+    info["ds_window_start"] = ds.window_start                       # the held-age clamp's origin, read back from the BUILT dataset (G-DVB compares it)
     prior = M.load_p10(a.p10) if not a.synthetic else M.P10Prior.synthetic(a.seed)
     mu, sd = M.cons_stats(J)
     model = M.V8FMini(cfg, prior, mu, sd).to(dev)

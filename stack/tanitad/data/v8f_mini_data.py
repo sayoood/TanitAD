@@ -447,17 +447,40 @@ def _lab_pack(J, i):
             "cons": J["cons"][i], "rc": J["rc"][i], "rc_ok": J["rc_ok"][i], "lead_valid": int(J["lead_valid"][i])}
 
 
+WINDOW_START_ABSENT = -1       # the trainer flag's / the config field's default: "not set" = hist - 1, today's behaviour
+
+
+def effective_window_start(hist: int, window_start=None) -> int:
+    """The cache step ``t`` of a clip's FIRST training window, and the ``t`` below which a held tick has no real frame behind it (PREREG_V8F_HIST Amendment 1).
+
+    ABSENT (``None`` or ``WINDOW_START_ABSENT``) = ``hist - 1``, i.e. the first window whose ``hist`` frames are all real: exactly what ``train_windows`` and
+    ``V8FMiniWindows.item`` did before the flag existed, so every arm that does not set it is bit-identical. SET, it must lie in ``[0, hist - 1]``: a start
+    above ``hist - 1`` would be a different lever (dropping windows), a negative one has no meaning. ``--hist 10 --window-start 3`` therefore keeps the window list and
+    the held-age clamp of ``--hist 4``, and the readers see 10 frames of which the ones before the clip are padded (``frame_ok`` False)."""
+    hist = int(hist)
+    if window_start is None or int(window_start) == WINDOW_START_ABSENT:
+        return hist - 1
+    ws = int(window_start)
+    if not 0 <= ws <= hist - 1:
+        raise ValueError(f"window_start must be {WINDOW_START_ABSENT} (absent = hist - 1) or in [0, hist - 1] = [0, {hist - 1}], got {ws}")
+    return ws
+
+
 class V8FMiniWindows:
     """Window dataset. A window = ``(clip_index, t, a_T, a_S)``; NOW = cache step ``t``.
 
     ``hmax`` frames ``t-hmax+1 .. t`` of scene tokens are returned (clamped at 0; ``frame_ok`` marks real ones);
     T's inputs are read at ``t - a_T`` and S's at ``t - a_S`` (SAMPLE-AND-HOLD, ages in 0.2 s cache steps; the true
-    ticks are 0.5 s / 1.0 s -- see RESULT.md I-ages). A tick frame's labels come from the v9 row at that frame."""
+    ticks are 0.5 s / 1.0 s -- see RESULT.md I-ages). A tick frame's labels come from the v9 row at that frame.
+
+    ``window_start`` (PREREG_V8F_HIST Amendment 1; absent = ``hist - 1``) is the ``t`` from which a held age may reach back: ``room = max(t - window_start, 0)``.
+    It is the SAME number ``train_windows(start=...)`` starts each clip at, so the window list and the held-age clamp move together."""
 
     def __init__(self, store: ClipStore, J: dict, windows, *, hist: int = 4, hmax: int = 10, max_age_t: int = 2,
-                 max_age_s: int = 6):
+                 max_age_s: int = 6, window_start=None):
         self.store, self.J, self.windows = store, J, list(windows)
         self.hist, self.hmax = int(hist), int(hmax)
+        self.window_start = effective_window_start(self.hist, window_start)
         self.max_age_t, self.max_age_s = int(max_age_t), int(max_age_s)
         self.clip_index = {c: i for i, c in enumerate(J["clip"].tolist())}
         assert self.hmax >= self.hist + self.max_age_s, "hmax must cover hist + the largest S age"
@@ -472,7 +495,7 @@ class V8FMiniWindows:
         clip = str(self.J["clip"][ci])
         d = self.store.get(clip)
         T = len(d["pose"])
-        room = max(t - (self.hist - 1), 0)                       # a tick frame needs `hist` real frames behind it
+        room = max(t - self.window_start, 0)                     # window_start = hist - 1 unless set: a tick frame needs `hist` real frames behind it
         a_t = int(min(a_t, room, self.max_age_t))
         a_s = int(max(a_t, min(a_s, room, self.max_age_s)))     # nested: S ticked no later than T did
         idx = np.arange(t - self.hmax + 1, t + 1)
@@ -502,14 +525,17 @@ class V8FMiniWindows:
         return self.item(ci, t, a_t, a_s)
 
 
-def train_windows(store: ClipStore, J: dict, clips, *, hist: int = 4, stride: int = 1) -> list:
-    """All 6 s-complete windows ``t in [hist-1, T-31]`` of ``clips`` (age fields filled by the sampler)."""
+def train_windows(store: ClipStore, J: dict, clips, *, hist: int = 4, stride: int = 1, start=None) -> list:
+    """All 6 s-complete windows ``t in [start, T-31]`` of ``clips`` (age fields filled by the sampler); ``start`` absent = ``hist - 1``.
+
+    PREREG_V8F_HIST Amendment 1: ``start`` is ``--window-start``. At ``hist`` 10 the default start (9) drops t = 3..8 of every clip; ``start=3`` keeps ``hist`` 4's list."""
     ci_of = {c: i for i, c in enumerate(J["clip"].tolist())}
+    first = effective_window_start(hist, start)
     out = []
     for c in clips:
         ci = ci_of[c]
         T = int(J["n"][ci])
-        for t in range(hist - 1, T - HORIZON, stride):
+        for t in range(first, T - HORIZON, stride):
             out.append((ci, t, 0, 0))
     return out
 

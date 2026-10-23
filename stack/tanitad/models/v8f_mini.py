@@ -141,6 +141,13 @@ class V8FMiniConfig:
     kin_mode: str = "steer"            # steer | yaw: what the kinematic inputs (P10 features, base, WM action channel 1) are made of
     cons_absent: str = "mask"          # mask: an ABSENT constraint is out of T's loss (M1 / M2b as built); zero: T's target there is the 0
                                        # that _code_gt writes and O is teacher-forced on (PREREG_V8F_CZ)
+    window_start: int = -1             # PREREG_V8F_HIST Amendment 1 (`--window-start`): the first TRAINING window's cache step t AND the held-age clamp's origin
+                                       # (a DATA lever: the model never reads it, the checkpoint records it). -1 = absent = hist - 1 = every earlier arm, bit for bit
+
+    @property
+    def window_start_effective(self) -> int:
+        """The number the data side must have built: ``hist - 1`` when the flag is absent (-1), else the flag."""
+        return self.hist - 1 if self.window_start == -1 else self.window_start
 
     def __post_init__(self):
         if self.kin_mode not in CH1_SCALE:
@@ -151,6 +158,8 @@ class V8FMiniConfig:
             raise ValueError(f"cons_absent must be mask|zero, got {self.cons_absent!r}")
         if self.hmax < self.hist + self.max_age_s:
             raise ValueError("hmax must cover hist + max_age_s")
+        if self.window_start != -1 and not 0 <= self.window_start <= self.hist - 1:
+            raise ValueError(f"window_start must be -1 (absent = hist - 1) or in [0, hist - 1] = [0, {self.hist - 1}], got {self.window_start}")
         if self.wm != "off" and self.hmax < 2 * self.wm_strides[0] * self.wm_strides[1] + 4:
             raise ValueError("hmax too short for the WM levels")
 
@@ -729,6 +738,8 @@ class V8FMini(nn.Module):
                 "wm_idm_gamma": 0.0 if self.wm is None else float(self.wm.gamma),
                 "kin_mode": self.cfg.kin_mode, "wm_ch1_scale": None if self.wm is None else float(self.wm.ch1_scale),
                 "p_gt_start": cfg.p_gt_start, "p_gt_end": cfg.p_gt_end,      # PREREG_V8F_PGT: the scheduled-sampling schedule the train loop reads
+                "hist": int(self.time.shape[0]), "hmax": cfg.hmax,           # PREREG_V8F_HIST (F-3): the BUILT history (the per-frame time table's rows) and batch depth
+                "window_start": cfg.window_start_effective,                  # Amendment 1: the EFFECTIVE first-window step (hist - 1 when the flag is absent)
                 "prior_frozen": not any(p.requires_grad for p in self.prior.parameters()),
                 "residual_zero_init": bool(float(self.head_o[2].weight.detach().abs().sum()) == 0.0),
                 "params": {k: gp(v) for k, v in self.trainable_groups().items()},
