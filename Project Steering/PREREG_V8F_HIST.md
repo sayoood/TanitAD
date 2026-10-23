@@ -97,3 +97,29 @@
   * H against itself reads exactly +0 [0, 0];
   * a synthetic regression fails; a synthetic success passes;
   * B's REAL banked record shape (no `w_tac` / `w_cons`) is read (the lesson of `PREREG_V8F_GRID` Amendment 2).
+
+## Amendment 1 (2026-10-23, written before any HIST data: what building the instruments found)
+
+* **F-1: this file's budget sentence was FALSE.** "19,164 steps" and "the window set is B's" do not hold for `--hist 10` as the trainer is written:
+  * `train_windows` starts each clip at t = hist − 1 (`v8f_mini_data.py:512`), and the step budget is sized from the window count (`v8f_mini_train.py:338-339`, `:405-406`).
+  * MEASURED on box 2's train manifest (`raw/2026-10-23-hist/measure_hist.json`; the same arithmetic at hist 4 reproduces B's 306,566 windows / 19,164 steps exactly): `--hist 10` alone trains 279,494 windows and 17,472 steps (−8.8 %). The t = 3..8 windows of every clip are dropped.
+  * The instruments refused on it by design (the chain gate and the reader).
+* **The fix, chosen now: H = B + `--hist 10 --window-start 3`, ONE lever set by two flags** (as in `PREREG_V8F_PGT`).
+  * `--window-start` is a new trainer flag. Absent, it is hist − 1, today's behaviour, so every existing arm is bit-identical; a test pins that.
+  * Set, it fixes BOTH the first training window of each clip AND the held-age clamp: `room = t − window_start`, in place of `t − (hist − 1)` (`V8FMiniWindows.item`).
+  * At `--window-start 3`, H's window list, held ages and step budget (306,566 / 19,164) are B's EXACTLY. The readers see 10 frames, padded where a frame precedes the clip, the pad mechanism B already has.
+  * **Why, not the alternatives:**
+    * "accept 17,472 steps" confounds the lever with 8.8 % less training;
+    * "pin `--steps 19164`" keeps the dropped windows dropped.
+    * Only this keeps everything but the visual history B's.
+  * It also removes the train/eval mismatch F-2 found: H now trains on the padded-history windows the eval scores (t = 3 and t = 7).
+* **This changes the "declared with the lever" list:**
+  * **D3 is gone:** held ages are B's, window by window.
+  * **D4 stands for the eval** (282 windows with padded history), but H now trains on that case too.
+  * The PRIMARY on the 2,117 windows with t ≥ 11 is still reported beside it and decides nothing.
+  * D1 (+1,536 parameters in `adapter`) and D2 (the init RNG stream) are unchanged.
+* **F-3: the gate reads the built values.** `built_levers` records `hist`, `hmax` and the effective `window_start`, so the chain's gate asserts them from `selfcheck.json` instead of inferring hist from the parameter delta.
+  * The new flag gets its G-DVB entry: a flag without one is refused by the launch gate itself.
+* **F-4: B's record is silent on `--hist`, `--hmax`, `--w-tac`, `--w-cons`.** The reader reuses `PREREG_V8F_GRID` Amendment 2's `w_diff` unchanged.
+* **F-6, found by a mutant, outside this PREREG:** `v8f_pgt_read.py`, `v8f_grid_read.py` (and by the same pattern `v8f_wc_read.py`) let an inherited `v8f_dk_read.Refusal` escape as a traceback (rc 1, not rc 2). `v8f_hist_read.py` converts it. The three older readers' runs are finished; their fix is a backlog item.
+* **Everything else in this file stands as written:** the bars, the estimator, the stage rule, the decision table and the refusals. The argv check now allows exactly `--hist 10 --window-start 3` (and `--out`).
