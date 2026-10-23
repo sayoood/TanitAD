@@ -405,7 +405,10 @@ def test_nt_eval_remap_override_names_exactly_each_arms_own_files():
     refcv8's own preflight demands 4 of 4. The NT override must be the identity on EACH committed arm's values."""
     o = json.loads((STACK / "ops/refcv8nt_eval_remap_thor.json").read_text(encoding="utf-8"))
     r8 = json.loads((STACK / "ops/refcv8_eval_remap_a2_thor.json").read_text(encoding="utf-8"))
-    assert sorted(o) == sorted(r8)                       # the same four flags the loader refuses by basename
+    # MM 2026-10-22: + --agent-join / --join3d, the two flags the loader REFUSED at the f5262ea gate (see the test below)
+    assert sorted(o) == sorted(["--agent-rig-extrinsics", "--clip-clock-sidecar", "--vis1-sidecar",
+                                "--nav-compliance-tau-file", "--agent-join", "--join3d"])
+    assert set(r8) < set(o)
     for path in (A1_ARGV, A1R_ARGV):
         a = _argv(path)
         assert {f: a[a.index(f) + 1] for f in o} == o, path.name
@@ -430,3 +433,77 @@ def test_nt_prelaunch_kit_literals():
     assert "NT=/home/nvidia/r8ns/nt" in src and "NT_PENDING=$NT/NT_LAUNCH_PENDING" in src
     assert body.index('touch "$NT_PENDING"') < body.index('exec 9>"$LOCKF"') < body.index("flock -w 7200 9")
     assert "NT_LAUNCH_PENDING" in src and not any(w in src for w in ('rm -f "$NT_PENDING"', 'rm "$NT_PENDING"'))
+
+
+# ---------------------------------- the f5262ea gate refusal (MM 2026-10-22 23:31 Berlin): three launch-kit defects
+def test_G_LIVE_the_smoke_rewrites_the_snapshot_steps_inside_the_smoke(T, LG):
+    """MEASURED: G-LIVE and G-CKPT FAILED because the 100-step smoke inherited `--snapshot-steps 0,...,12478` and the
+    trainer's own pin refused it before step 1. The smoke keeps 0, adds its last step, and the REAL trainer function
+    accepts the result. RED arm: the pre-fix rewrite (`--steps` only) is refused by that same function. The gate's own
+    resume-run record still matches the smoke rule (G-EVAL's identity check), and a launch that already fits is untouched."""
+    for path in (A1_ARGV, A1R_ARGV):
+        launch = _argv(path)
+        new, dep = LG.smoke_argv(launch, 100, 50)
+        assert LG.flag_values(new, "--snapshot-steps") == ["0,100"], path.name
+        assert "--snapshot-steps" in dep
+        assert T.parse_snapshot_steps(LG.flag_values(new, "--snapshot-steps")[0],
+                                      int(LG.flag_values(new, "--steps")[0])) == frozenset({0, 100})
+        old = LG.set_flag(list(launch), "--steps", ["100"])
+        with pytest.raises(SystemExit, match="never written"):
+            T.parse_snapshot_steps(LG.flag_values(old, "--snapshot-steps")[0], 100)
+        rec = LG.set_flag(LG.set_flag(new, "--out", ["/tmp/smoke"]), "--steps", ["102"])
+        assert LG.stamps_written_for(rec, launch, 100, 50)[0]
+    fit = LG.set_flag(_argv(A1_ARGV), "--snapshot-steps", ["0,50"])
+    new, dep = LG.smoke_argv(fit, 100, 50)
+    assert LG.flag_values(new, "--snapshot-steps") == ["0,50"] and "--snapshot-steps" not in dep
+
+
+def _private_loader(tmp_path, monkeypatch, overrides: dict):
+    """A PRIVATE instance of refcv7_loader with `overrides` as its recorded override (the module reads the env at import)."""
+    import importlib.util
+    f = tmp_path / "remap.json"
+    f.write_text(json.dumps(overrides), encoding="utf-8")
+    for k in ("REMAP_OVERRIDES", "KIT"):
+        monkeypatch.delenv("REFCV7_" + k, raising=False)
+        monkeypatch.delenv("REFCV6_" + k, raising=False)
+    monkeypatch.setenv("REFCV6_REMAP_OVERRIDES", str(f))
+    monkeypatch.setenv("REFCV6_KIT", str(tmp_path))
+    spec = importlib.util.spec_from_file_location("refcv7_loader_nt_remap_test",
+                                                  STACK / "tanitad/eval/refcv7_loader.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def test_G_EVAL_the_nt_override_clears_the_loaders_basename_refusal(tmp_path, monkeypatch):
+    """MEASURED: G-EVAL FAILED -- the loader refused --agent-join and --join3d by basename (the NT argv names the NT-merged
+    joins; the kit's files are the b1 ones) and the override carried only 4 flags. The REAL remap_argv on each committed
+    arm under the shipped override: no refusal, both flags taken from the recorded override. RED arm: the 4-flag override
+    the f5262ea gate ran with refuses, naming exactly those two flags."""
+    o = json.loads((STACK / "ops/refcv8nt_eval_remap_thor.json").read_text(encoding="utf-8"))
+    for path in (A1_ARGV, A1R_ARGV):
+        L = _private_loader(tmp_path, monkeypatch, o)
+        _, rec = L.remap_argv(_argv(path))
+        for f in ("--agent-join", "--join3d"):
+            assert rec["remapped"][f]["source"] == "recorded override", (path.name, f)
+    four = {k: v for k, v in o.items() if k not in ("--agent-join", "--join3d")}
+    L = _private_loader(tmp_path, monkeypatch, four)
+    with pytest.raises(SystemExit) as e:
+        L.remap_argv(_argv(A1_ARGV))
+    assert "--agent-join" in str(e.value) and "--join3d" in str(e.value)
+
+
+def test_G_SUITE_PINNED_import_reads_the_dir_that_holds_the_file(tmp_path, LG):
+    """MEASURED: G-SUITE-PINNED read MISSING with ZERO rejected candidates -- `_collect_evidence` globs G-*.json directly
+    in each --import-evidence dir, and nt_prelaunch.sh passed the dev-box out-dir ROOT (the file is under evidence/).
+    RED arm: the root imports nothing. The kit now passes evidence/ and refuses when the file is absent."""
+    root = tmp_path / "devbox_evidence_x"
+    (root / "evidence").mkdir(parents=True)
+    (root / "evidence" / "G-SUITE-PINNED.json").write_text(
+        json.dumps({"kind": "evidence", "check": "G-SUITE-PINNED", "status": "PASS"}), encoding="utf-8")
+    assert "G-SUITE-PINNED" not in LG._collect_evidence(tmp_path / "gate", [str(root)])
+    assert "G-SUITE-PINNED" in LG._collect_evidence(tmp_path / "gate", [str(root / "evidence")])
+    src = (STACK / "scripts/nt_prelaunch.sh").read_text(encoding="utf-8")
+    assert '[ -d "$DEVEV/evidence" ] && DEVEV="$DEVEV/evidence"' in src
+    assert '[ -s "$DEVEV/G-SUITE-PINNED.json" ] || die' in src
+    assert '[ "$NEV" = "6 6" ]' in src and '[ "$NEV" = "4 4" ]' not in src

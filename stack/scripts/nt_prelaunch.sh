@@ -121,10 +121,11 @@ gate)
   [ "$n_pi" -eq 5 ] && pf PF-OK profile-inputs-5 || pf PF-FAIL "profile-inputs-$n_pi-of-5"
   # the argv's code paths are THIS tree (the argv embeds the launch_tree path)
   for f in --join-defect-masks --nt-heldout; do P="$(argv_get $f)"; case "$P" in "$CODE"/*) [ -s "$P" ] && pf PF-OK "argv-code-path$f" || pf PF-FAIL "argv-code-path$f:missing";; *) pf PF-FAIL "argv-code-path$f:$P-not-under-$CODE";; esac; done
-  # G-EVAL: the eval loader's recorded override names exactly THIS argv's four files (refcv8's names 1 of 4)
+  # G-EVAL: the eval loader's recorded override names exactly THIS argv's six files (refcv8's names 1 of 4; MM 2026-10-22:
+  # + --agent-join / --join3d, which the loader refused by basename at the f5262ea gate)
   [ -f "$EVO" ] && pf PF-OK eval-remap-override || pf PF-FAIL eval-remap-override
   NEV="$(pyval 'import json,sys; o=json.load(open(sys.argv[1])); d=json.load(open(sys.argv[2])); a=d["argv"] if isinstance(d,dict) else d; print(sum(1 for f,p in o.items() if f in a and a[a.index(f)+1]==p), len(o))' "$EVO" "$ARGV" 2>/dev/null)"
-  [ "$NEV" = "4 4" ] && pf PF-OK eval-remap-is-argv || pf PF-FAIL "eval-remap-is-argv:${NEV:-unreadable}"
+  [ "$NEV" = "6 6" ] && pf PF-OK eval-remap-is-argv || pf PF-FAIL "eval-remap-is-argv:${NEV:-unreadable}"
   if [ "$DRY" != 1 ]; then
     M="$(md5sum "$ACK" 2>/dev/null | cut -c1-32)"; [ "${#M}" = 32 ] && [ "$M" = "$ACK_MD5" ] && pf PF-OK amendment-ack || pf PF-FAIL "amendment-ack:${M:-missing}"
     M="$(md5sum "$THETA_DEC" 2>/dev/null | cut -c1-32)"; [ "${#M}" = 32 ] && [ "$M" = "$THETA_DEC_MD5" ] && [ "$(argv_get --init-from)" = "$THETA_DEC" ] && pf PF-OK init-from-theta-dec || pf PF-FAIL "init-from:${M:-missing}"
@@ -147,7 +148,13 @@ gate)
   A=(run --profile refcv8-nt --stage thor --tree "$CODE" --commit "$COMMIT" --argv-file "$ARGV" --out-dir "$GATE_OUT" --eval-kit /home/nvidia
      --eval-remap-overrides "$EVO" --map-overfit-record "$MAPREC" --map-overfit-closure "$MAPCLO"
      --box-overfit-record "$BOXREC" --box-overfit-closure "$BOXCLO")
-  [ -n "$DEVEV" ] && A+=(--import-evidence "$DEVEV"); [ -n "$SUITE" ] && A+=(--suite-verdict "$SUITE")
+  # MM 2026-10-22 (MEASURED, f5262ea gate 23:31): launch_gate's _collect_evidence globs G-*.json DIRECTLY in each
+  # --import-evidence dir, and the dev-box out-dir keeps them under evidence/ -- passing the root imported NOTHING
+  # (G-SUITE-PINNED read MISSING with zero rejected candidates). Pass the dir that holds the file; refuse when absent.
+  if [ -n "$DEVEV" ]; then [ -d "$DEVEV/evidence" ] && DEVEV="$DEVEV/evidence"
+    [ -s "$DEVEV/G-SUITE-PINNED.json" ] || die "no G-SUITE-PINNED.json in $DEVEV (the gate's dev-box half)"
+    A+=(--import-evidence "$DEVEV"); fi
+  [ -n "$SUITE" ] && A+=(--suite-verdict "$SUITE")
   [ -n "$PICOST" ] && A+=(--pi-cost-approval "$PICOST")
   say "gate command: $PY $GATE ${A[*]}"
   [ "$DRY" = 1 ] && { echo "ZZNTGATE-DRYOKZZ"; exit 0; }

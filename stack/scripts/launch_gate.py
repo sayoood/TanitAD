@@ -4252,6 +4252,21 @@ def smoke_argv(base: list[str], steps: int, log_every: int) -> tuple[list[str], 
         out = set_flag(out, "--r8-alloc-emit-start", [str(mid)])
         dep["--r8-alloc-emit-start"] = (f"{es[0]} -> {mid} (emission switches ON mid-smoke, so the launch's "
                                         f"emission switch runs inside G-LIVE)")
+    # MM 2026-10-22 (MEASURED, NT A1 gate on f5262ea, 23:31 Berlin; PI authorized 2026-10-23): the NT launch carries
+    # `--snapshot-steps 0,1560,3120,6239,9359,12478` (H-NT-DECIDE-1). The trainer refuses any snapshot step outside
+    # [0, --steps] (`parse_snapshot_steps`: "never written"), so the 100-step smoke exited before step 1 -- G-LIVE and
+    # G-CKPT could never PASS on a conformant NT argv. REWRITE, not drop (B-GS-SMOKE): keep the launch's steps that fall
+    # inside the smoke and add the smoke's last step, so the snapshot write (EMA + RAW, model-only) runs inside G-LIVE.
+    ss = flag_values(base, "--snapshot-steps")
+    try:
+        snaps = sorted({int(x) for x in str(ss[0]).split(",") if x.strip()}) if ss else []
+    except ValueError:
+        snaps = []                     # malformed: left as launched, the trainer's own refusal names it
+    if snaps and max(snaps) > steps:
+        inside = sorted({s for s in snaps if 0 <= s <= steps} | {steps})
+        out = set_flag(out, "--snapshot-steps", [",".join(str(s) for s in inside)])
+        dep["--snapshot-steps"] = (f"{ss[0]} -> {','.join(str(s) for s in inside)} (steps past the smoke dropped, the "
+                                   f"smoke's last step added: the snapshot write runs inside G-LIVE)")
     return out, dep
 
 
