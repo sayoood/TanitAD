@@ -160,7 +160,26 @@ def check_params(lv_b, lv_g, d, tag):
             "adapter": {"B": pb.get("adapter"), "G": pg.get("adapter")}}
 
 
-_SKIP_LEVERS = ("params", "n_params_trainable", "residual_zero_init")      # params: the lever; residual_zero_init: written before (selfcheck) / after (summary) training
+_SKIP_LEVERS = ("params", "n_params_trainable", "residual_zero_init", "w")  # params: the lever; residual_zero_init: written before (selfcheck) / after (summary) training;
+                                                                                # w: compared key by key in w_diff (Amendment 2)
+# PREREG_V8F_GRID Amendment 2 (written after G s0 trained, BEFORE any GRID number was read): M2b's banked lever record PREDATES these two keys.
+# built_levers began recording them at 39e21e5 (PREREG_V8F_WC), after M2b trained. Both arms train at the trainer's defaults: their argv carries
+# neither flag, and v8f_mini_train.py declares --w-tac 1.0 / --w-cons 0.5 at every commit (4658d5c .. c483a28) and passes both into the loss.
+# A key B's record LACKS is read at exactly that proven value, only while B's argv does not set its flag; every other weight compares as recorded.
+B_UNRECORDED_W = {"w_tac": (1.0, "--w-tac"), "w_cons": (0.5, "--w-cons")}
+
+
+def w_diff(wg, wb, b_flags):
+    """The loss weights where G's built record differs from B's: a key in B must equal G's; a key only in G must be one of B_UNRECORDED_W, at its
+    proven value, with B's argv silent on its flag. Anything else (a key only in B included) is a difference."""
+    out = []
+    for k in sorted(set(wg) | set(wb)):
+        if k in wb:
+            if k not in wg or wg[k] != wb[k]:
+                out.append(k)
+        elif k not in B_UNRECORDED_W or wg[k] != B_UNRECORDED_W[k][0] or B_UNRECORDED_W[k][1] in b_flags:
+            out.append(k)
+    return out
 
 
 def load_b_runs(runs_dir, base):
@@ -219,6 +238,7 @@ def load_g_runs(runs_dir, base, seeds, SB, logsB):
         for w, rec in (("summary", sm), ("selfcheck", sc)):
             lg, lb = rec.get("levers") or {}, rsm.get("levers") or {}
             diff = sorted(k for k in set(lg) & set(lb) if k not in _SKIP_LEVERS and lg[k] != lb[k])
+            diff += [f"w.{k}" for k in w_diff(lg.get("w") or {}, lb.get("w") or {}, rfl)]
             if diff:
                 bad.append(f"{tag}: {w}.json built levers {diff} differ from {base}_s{s}'s")
         pc = {w: check_params(rsm.get("levers") or {}, rec.get("levers") or {}, int(fl.get("--d", 256)), f"{tag} ({w}.json)") for w, rec in (("summary", sm), ("selfcheck", sc))}

@@ -1677,3 +1677,78 @@ def test_mlat_bar_is_undefined_when_b_s_latcons_error_is_exactly_zero(tmp_path, 
     capsys.readouterr()
     assert R.main(["--stage", "final", *f["args"]]) == 2
     assert "non-positive B RMSE" in capsys.readouterr().err
+
+
+# ---- PREREG_V8F_GRID Amendment 2 (written after G s0 trained, BEFORE any GRID number was read) --------------------------------------------------------------
+# The first real G read REFUSED: "built levers ['w'] differ from M2b_s0's". M2b's banked lever record predates w_tac / w_cons (built_levers records them from
+# 39e21e5), while G's carries them at 1.0 / 0.5. The synthetic world above gives B the full dict (line ~449), so no test had ever shown the reader B's real shape.
+
+def _b_predates_tac_cons(f):
+    for s in (0, 1):
+        for n in ("summary.json", "selfcheck.json"):
+            _lev(_br(f, s) / n, lambda l: [l["w"].pop(k) for k in ("w_tac", "w_cons")])
+
+
+@needs_pkg
+def test_a2_reader_reads_a_b_record_that_predates_w_tac_and_w_cons_exactly_as_the_full_record(tmp_path, no_known):
+    rc0, r0 = _go(_gworld(tmp_path / "full", "M2b"))
+    old = _gworld(tmp_path / "old", "M2b")
+    _b_predates_tac_cons(old)
+    rc1, r1 = _go(old)
+    assert (rc0, rc1) == (0, 0), "B's real (older) record shape must be readable"
+    assert (r1["VERDICT"], r1["reading"]) == (r0["VERDICT"], r0["reading"]), "the fill changes what is read, not only whether it is read"
+
+
+A2_MUT = {   # name -> (mutator of G's summary.json levers, the message fragment): B's record predates w_tac / w_cons in every case
+    "g w_tac moved": (lambda l: l["w"].update(w_tac=2.0), "w.w_tac"),
+    "g w_cons moved": (lambda l: l["w"].update(w_cons=0.4), "w.w_cons"),
+    "g records an unproven weight B lacks": (lambda l: l["w"].update(w_new=1.0), "w.w_new"),
+    "g lost a weight B records": (lambda l: l["w"].pop("w_pen"), "w.w_pen"),
+    "g moved a weight B records": (lambda l: l["w"].update(w_wm=0.2), "w.w_wm"),
+}
+
+
+@needs_pkg
+@pytest.mark.parametrize("name", list(A2_MUT))
+def test_a2_reader_still_refuses_every_other_weight_difference(tmp_path, no_known, capsys, name):
+    mut, frag = A2_MUT[name]
+    f = _gworld(tmp_path / "w", "M2b")
+    _b_predates_tac_cons(f)
+    _lev(_gr(f) / "summary.json", mut)
+    capsys.readouterr()
+    rc = R.main(["--stage", "final", *f["args"]])
+    err = capsys.readouterr().err
+    assert rc == 2 and "built levers" in err and frag in err, f"{name}: rc {rc}; stderr: {err[-400:]}"
+
+
+@needs_pkg
+def test_a2_w_diff_fills_only_the_two_proven_keys_and_only_while_bs_argv_is_silent_on_their_flags():
+    wb = {"w_pen": 0.5, "w_pen_self": 0.25, "w_wm": 0.1}
+    g = dict(wb, w_tac=1.0, w_cons=0.5)
+    assert R.w_diff(g, wb, {}) == []
+    assert R.w_diff(g, dict(wb, w_tac=1.0, w_cons=0.5), {}) == [], "a B record that has the keys compares as recorded"
+    assert R.w_diff(g, dict(wb, w_tac=2.0), {}) == ["w_tac"], "a key B records is never filled"
+    assert R.w_diff(g, wb, {"--w-tac": "1.0"}) == ["w_tac"], "B's argv set the flag: its default is not what B trained with"
+    assert R.w_diff(g, wb, {"--w-cons": "0.5"}) == ["w_cons"]
+    assert R.w_diff(wb, g, {}) == ["w_cons", "w_tac"], "a key only in B is a difference (G lost it)"
+
+
+def test_a2_the_proven_values_are_the_trainers_own_defaults():
+    a = TR.build_parser().parse_args(["--out", "x", "--arm", "M2b", "--kin-mode", "yaw"])
+    assert {k: v for k, (v, _) in R.B_UNRECORDED_W.items()} == {"w_tac": a.w_tac, "w_cons": a.w_cons} == {"w_tac": 1.0, "w_cons": 0.5}
+    assert {k: fl for k, (_, fl) in R.B_UNRECORDED_W.items()} == {"w_tac": "--w-tac", "w_cons": "--w-cons"}
+
+
+@needs_pkg
+@pytest.mark.parametrize("seed", (0, 1))
+def test_a2_the_real_banked_m2b_record_lacks_both_keys_and_a_default_g_reads_equal_to_it(seed):
+    rd = PKG / "raw" / "full" / "runs" / f"M2b_s{seed}"
+    flags = R.PGT._flags(json.loads((rd / "argv.json").read_text(encoding="utf-8"))["argv"])
+    assert "--w-tac" not in flags and "--w-cons" not in flags, "M2b trained at the trainer's defaults"
+    for n in ("summary.json", "selfcheck.json"):
+        wb = json.loads((rd / n).read_text(encoding="utf-8"))["levers"]["w"]
+        assert "w_tac" not in wb and "w_cons" not in wb, f"the premise of Amendment 2 ({n}): M2b's record predates the two keys"
+        g = dict(wb, w_tac=1.0, w_cons=0.5)
+        assert R.w_diff(g, wb, flags) == []
+        assert R.w_diff(dict(g, w_tac=2.0), wb, flags) == ["w_tac"]
+        assert R.w_diff(dict(g, w_cons=0.25), wb, flags) == ["w_cons"]

@@ -83,3 +83,35 @@
 * **The 10 h run cap of `PREREG_V8F_MINI` Amendment 4 applies unchanged.**
   * If the guard projects a G run above it, that run is a STOP with its reason. Moving the cap is the PI's call.
   * The chain's training wait is 11 h, so the guard ends a slow run, never the wait.
+
+## Amendment 2 (2026-10-23 03:30, written after G s0 trained and was evaluated, BEFORE any GRID number was read)
+
+* **What happened.** The chain trained G s0 (22:22–03:07, rc 0) and ran its four evals (to 03:11, rc 0). Then the reader REFUSED at its input check, so no delta and no verdict was computed:
+  * *"M2b-8x20_s0: summary.json built levers ['w'] differ from M2b_s0's"*, and the same for selfcheck.json.
+  * The chain stopped (`ZZV8FMINI-STOP grid read s0`). Box 2 is idle; the guard saw max 44 °C.
+* **The cause is a record-schema difference, not a second lever.**
+  * G's `levers.w` = {w_pen, w_pen_self, w_wm, **w_tac 1.0, w_cons 0.5**}; M2b's banked record has the first three only, at the same values.
+  * `built_levers` began recording `w_tac` / `w_cons` at `39e21e5` (2026-10-22 07:45, for `PREREG_V8F_WC`). M2b was trained before that.
+  * The reader compared `w` as ONE value, so the two keys missing from B's older record read as a moved lever.
+* **Proof that B trained at exactly G's values (MEASURED from source):**
+  * Neither M2b's argv (`raw/full/runs/M2b_s{0,1}/argv.json`) nor G's carries `--w-tac` or `--w-cons`, so both train at the trainer's defaults.
+  * `v8f_mini_train.py` declares `--w-tac 1.0` and `--w-cons 0.5` at every commit that touched it (`4658d5c`, `09412e4`, `9678721`, `c483a28`).
+  * At M2b's era it passes both into the config (`9678721:stack/scripts/v8f_mini_train.py:153-154`), and the loss uses both (`9678721:stack/tanitad/models/v8f_mini.py:618`).
+  * The chain's own G gate had already asserted (w_tac, w_cons) = B's 1.0 / 0.5, and it PASSED.
+* **The amendment:** the reader compares `w` key by key (`w_diff`).
+  * A key in B's record must equal G's.
+  * A key only in G is accepted ONLY if it is `w_tac` at 1.0 or `w_cons` at 0.5, and B's argv does not set its flag.
+  * Every other difference still refuses, including a key G lost.
+  * Nothing else in the reader, the bars, the bootstrap or the decision table changes.
+* **Why this is not a goalpost move.**
+  * No GRID number had been computed or seen when this was written.
+  * The rule admits exactly the values the trainer source proves B trained with.
+  * It refuses every other weight difference, as before.
+* **The test gap, logged (same class as `D-*` "built, tested, and unreachable"):**
+  * The synthetic test world gave B the full `w` dict, so no test had ever shown the reader B's REAL record shape.
+  * New tests pin that shape on the real banked M2b records, at both seeds.
+  * Six mutants of the amendment all turn the tests RED (`raw/2026-10-22-grid/a2/mutate_a2.out`).
+* **Resumption:** the chain is relaunched unchanged from the new tip.
+  * The queue skips G s0's finished training (`summary.json` exists) and its four evals (`npz` exist).
+  * So the first new computation is the committed seed-0 read itself. Seed 1 trains only if that read says CONTINUE.
+  * The first run's chain and guard logs are kept as `chain_v8f_grid_run1.out` / `v8fgrid_guard_run1.out`.
