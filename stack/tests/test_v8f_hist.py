@@ -1164,6 +1164,7 @@ def test_check_inputs_refuses_a_b_that_is_a_hist_10_run(tmp_path, no_known, caps
     assert "M2b is not a 4-frame run" in capsys.readouterr().err
 
 
+@needs_pkg       # MM 2026-10-23: reads R (the package's reader) -- None in a stack-only tree (the NT launch tree's Thor G-SUITE)
 def test_window_t_is_the_cache_step_and_refuses_an_odd_frame(capsys):
     """The eval windows' cache step t is derived from the GT's raw frame (= 2t); an odd frame cannot be a cache step and must stop the read, not be floored."""
     assert R.window_t({"G": {"frame": np.array([6, 14, 22, 142])}}).tolist() == [3, 7, 11, 71]

@@ -1733,6 +1733,7 @@ def test_a2_w_diff_fills_only_the_two_proven_keys_and_only_while_bs_argv_is_sile
     assert R.w_diff(wb, g, {}) == ["w_cons", "w_tac"], "a key only in B is a difference (G lost it)"
 
 
+@needs_pkg       # MM 2026-10-23: reads R (the package's reader) -- None in a stack-only tree (the NT launch tree's Thor G-SUITE)
 def test_a2_the_proven_values_are_the_trainers_own_defaults():
     a = TR.build_parser().parse_args(["--out", "x", "--arm", "M2b", "--kin-mode", "yaw"])
     assert {k: v for k, (v, _) in R.B_UNRECORDED_W.items()} == {"w_tac": a.w_tac, "w_cons": a.w_cons} == {"w_tac": 1.0, "w_cons": 0.5}
