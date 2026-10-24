@@ -415,9 +415,9 @@ def test_eval_of_a_hist_10_checkpoint_builds_hist_10_and_gathers_ten_frames(runs
     # per batch (S, T, O) and the eval's held ages are (0, 0), so the three pads are equal: read the first of each triple.
     assert len(cap["pad"]) == 3 * len(cap["t"])
     seen_pad = False
-    for t_b, pad in zip(cap["t"], cap["pad"][0::3]):
-        n_real = (~pad.reshape(pad.shape[0], 10, 40)[:, :, 0]).sum(1).numpy()
-        assert np.array_equal(n_real, np.minimum(t_b.numpy() + 1, 10)), "real frames per window = min(t + 1, 10)"
+    for t_b, pad in zip(cap["t"], cap["pad"][0::3]):           # both captured on the eval's device (--device auto: cuda whenever one is visible)
+        n_real = (~pad.reshape(pad.shape[0], 10, 40)[:, :, 0]).sum(1).cpu().numpy()
+        assert np.array_equal(n_real, np.minimum(t_b.cpu().numpy() + 1, 10)), "real frames per window = min(t + 1, 10)"
         seen_pad |= bool((n_real < 10).any())
     assert seen_pad, "the synthetic eval grid exercises the padded-history case (t < 9)"
     z = np.load(tmp_path / "eval_h10.npz")

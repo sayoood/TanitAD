@@ -204,7 +204,8 @@ def test_trainer_argv_grid_is_the_array_the_model_trains_on(runs, grid):
     for c in r["cap"]:
         assert c["feats"].shape[2] == N_TOK[grid], f"the model received {c['feats'].shape[2]} tokens per frame, --grid {grid} declares {N_TOK[grid]}"
         want = _expected_feats(r["root"], "train", r["J"], c, grid, hmax=10)
-        assert np.array_equal(c["feats"].numpy(), want), f"--grid {grid}: a batch the model received is not the clip's {grid} array (exact)"
+        # the spy holds the batch on the trainer's device (--device auto: cuda whenever one is visible), so copy it to host before comparing
+        assert np.array_equal(c["feats"].cpu().numpy(), want), f"--grid {grid}: a batch the model received is not the clip's {grid} array (exact)"
     assert r["sc"]["declared_vs_built"] == "PASS" and r["sm"]["done"] is True
 
 
@@ -281,7 +282,7 @@ def test_eval_of_an_8x20_checkpoint_reads_pool8x20_from_the_checkpoint(runs, tmp
     for c in cap["feats"]:
         assert c["feats"].shape[2] == 160
         want = _expected_feats(root, "eval", EJ, c, "pool8x20", hmax=r["ck"]["cfg"]["hmax"])
-        assert np.array_equal(c["feats"].numpy(), want), "a batch the eval scored is not the eval clip's pool8x20 array (exact)"
+        assert np.array_equal(c["feats"].cpu().numpy(), want), "a batch the eval scored is not the eval clip's pool8x20 array (exact)"
     z = np.load(tmp_path / "eval_g8.npz")
     assert np.isfinite(z["pred"]).all() and z["pred"].shape[1:] == (30, 2)
 
