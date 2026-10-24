@@ -1,0 +1,109 @@
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py
+index 201006b..f6dc3c4 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py	
+@@ -404,6 +404,8 @@ DVB_KINDS = {
+     # P6 (SPEC_P6 section 2): each new lever has its observed row in `dvb_rows`
+     "yaw_wrap": "built", "nav_mode": "built", "labeller": "built", "label_backend": "built", "label_workers": "built", "label_chunks": "built", "label_timeout_s": "built",
+     "label_python": "built", "metric_cache": "built",
++    # speed study 2026-10-25: frames cross the loader as uint8 (bit-identical; observed as TargetBank(img_u8=))
++    "img_u8": "built",
+     # L_field (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md): each has its observed row in `field_dvb_rows` (what the loader / the term actually RECEIVED)
+     "w_field": "built", "field_margin": "built", "field_interp": "built", "field_labels": "built", "field_shuffle_seed": "built",
+ }
+@@ -510,6 +512,7 @@ def dvb_rows(a, b, s, field_min_coverage: float = FIELD_MIN_COVERAGE) -> list:
+     add("calib", a.calib, tk.get("calib"), "TargetBank(calib=)")
+     add("max_missing_images", a.max_missing_images, tk.get("max_missing_frac"), "TargetBank(max_missing_frac=)")
+     add("synthetic", bool(a.synthetic), bool(tk.get("synthetic")), "TargetBank(synthetic=)")
++    add("img_u8", bool(getattr(a, "img_u8", False)), bool(tk.get("img_u8", False)), "TargetBank(img_u8=)")
+     add("scorer_targets", a.scorer_targets if (a.scorer_mode != "onpolicy" and a.labeller != "online") else None, sb["args"][0], "ScorerBank(path)")
+     # ---- P6 levers: the BUILT value is read off the built objects, never off the namespace
+     lb = (b.banks.get("OnlineLabeller") or [None])[0]
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_launch_gate.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_launch_gate.py
+index 6b1179f..cc09119 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_launch_gate.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_launch_gate.py	
+@@ -319,7 +319,7 @@ def static() -> None:
+     import train as T
+     dests = {x.dest for x in T.build_parser()._actions if x.dest != "help"}
+     ok(set(C.DVB_KINDS) == dests, (sorted(dests - set(C.DVB_KINDS)), sorted(set(C.DVB_KINDS) - dests)))
+-    ok(len(dests) == 61)                                                                                      # 55 + the five L_field levers (--w-field, --field-margin, --field-interp, --field-labels, --field-shuffle-seed) + --label-chunks (2026-10-18)
++    ok(len(dests) == 62)                                                                                      # 55 + the five L_field levers (--w-field, --field-margin, --field-interp, --field-labels, --field-shuffle-seed) + --label-chunks (2026-10-18)
+     ok(C.namespace_reads(C._train_run_source()) <= dests)
+     ok(C.check_hyg()["status"] == "PASS")
+     for arm, frag in (("no_cfg_guard", "ACCEPTED an undeclared attribute"), ("undeclared_namespace_read", "undeclared_lever_g_hyg")):
+diff --git a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/train.py b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/train.py
+index f19b63d..0d03d78 100644
+--- a/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/train.py	
++++ b/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/train.py	
+@@ -632,8 +632,12 @@ class TargetBank(Dataset):
+                  synthetic: bool = False, limit: int | None = None, spread: bool = False, scorer=None,
+                  max_missing_frac: float = 0.001, calib: str | None = None,
+                  sizes: dict | None = None, onpolicy=None, online: bool = False,
+-                 field_labels: str | None = None, field_shuffle_seed: int | None = None):
++                 field_labels: str | None = None, field_shuffle_seed: int | None = None, img_u8: bool = False):
+         self.scorer = scorer
++        # --img-u8 (speed study 2026-10-25, CPU only): frames leave the worker as the decoded+resized uint8 RGB array and are divided by 255 ON THE GPU in run().
++        # Bit-identical to the float path below (proved over all 256 values, speed/check_u8_exact.py); it removes the worker's float conversion and 3/4 of the
++        # collate + pin-memory bytes. Off => the unchanged float32 tensors.
++        self.img_u8 = bool(img_u8)
+         # P6 / D1: the ONLINE labeller labels the model's own proposals, so each item also returns its row index (the trainer needs the row's
+         # (log_name, token, rank, aug) to find the metric-cache parts). Off => the tuple is the unchanged nine elements.
+         self.online = bool(online)
+@@ -829,7 +833,9 @@ class TargetBank(Dataset):
+                 im = cv2.imdecode(np.frombuffer(blob, np.uint8), cv2.IMREAD_COLOR)
+                 if im is None:
+                     raise ValueError(f"undecodable frame: {pth}")
+-                im = cv2.resize(im, (c.img_w, c.img_h))[:, :, ::-1].astype(np.float32) / 255.0
++                im = cv2.resize(im, (c.img_w, c.img_h))[:, :, ::-1]
++                if not self.img_u8:
++                    im = im.astype(np.float32) / 255.0
+                 frames.append(torch.from_numpy(np.ascontiguousarray(im.transpose(2, 0, 1))))
+             img = torch.stack(frames) if len(frames) > 1 else frames[0]
+         if self.onpolicy is not None:
+@@ -1304,7 +1310,7 @@ def run(a) -> int:
+                     scorer=scorer_bank if scorer_bank.n_rows else None,
+                     max_missing_frac=a.max_missing_images, calib=a.calib, sizes=grow_snap,
+                     onpolicy=op_bank, online=online,
+-                    field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed)
++                    field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed, img_u8=a.img_u8)
+     if not a.calib:
+         print("  *** NO --calib: every tuple is lifted with the ONE baked rig (pre-R22 behaviour). "
+               "An ABLATION -- PETR, the paper's cited embedding, uses each sample's own. ***")
+@@ -1546,7 +1552,7 @@ def run(a) -> int:
+                        limit=a.overfit_n if a.overfit else None, spread=a.spread,
+                        scorer=sb if sb.n_rows else None,
+                        max_missing_frac=a.max_missing_images, calib=a.calib, sizes=snap,
+-                       onpolicy=ob, field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed)
++                       onpolicy=ob, field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed, img_u8=a.img_u8)
+         smp = (SceneEpochSampler(d.scene_groups, a.seed, shuffle=not a.overfit)
+                if a.epoch_unit == "scenes" else EpochSampler(len(d), a.seed, shuffle=not a.overfit))
+         ld = DataLoader(d, batch_size=a.batch, sampler=smp, num_workers=a.workers,
+@@ -1582,6 +1588,9 @@ def run(a) -> int:
+                                                   "store_keys": ds.field_cov["store_keys"], "rows": ds.field_cov["rows"], "rows_labelled": ds.field_cov["labelled"],
+                                                   "at": _now()})
+     pend = None                              # online labeller: the micro-batch whose labels have not been consumed yet (its graph is alive)
++    # --img-u8: the divisor MUST be a tensor ON THE DEVICE. A CPU-scalar `x / 255.0` is computed on the GPU as x * (1/255) and differs from the worker's
++    # numpy `/ 255.0` on 126 of the 256 values (MEASURED 2026-10-25, speed/check_u8_exact.py); a 0-dim CUDA divisor is true division and matches all 256.
++    u8_div = torch.full((), 255.0, device=dev)
+     bce_comp = [float("nan")] * 6
+     t_log0 = time.time()
+     field_on = bool(a.field_labels)
+@@ -1598,6 +1607,8 @@ def run(a) -> int:
+             img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id = (
+                 x.to(dev, non_blocking=True)
+                 for x in (img, ego, goal, tgt, cand_xy, cand_tg, cand_m, cand_id))
++            if img.dtype == torch.uint8:
++                img = img.float() / u8_div              # --img-u8: the worker's `astype(float32) / 255.0`, bit for bit, on the device
+             # the rig stays on the CPU in float64: the model uses it as a cache key, not a tensor op
+             op_live = OP is not None and float(cand_m.sum()) > 0
+             with torch.autocast("cuda", dtype=torch.bfloat16,
+@@ -2007,6 +2018,8 @@ def build_parser() -> argparse.ArgumentParser:
+     ap.add_argument("--compile", action="store_true",
+                     help="torch.compile the frozen-trunk backbone in place (keys unchanged). A40: "
+                          "bf16 0.366 -> 0.220 s/sample")
++    ap.add_argument("--img-u8", action="store_true",
++                    help="frames cross the loader as uint8 and are divided by 255 on the device (bit-identical to the float path; a CPU-only speed lever)")
+     ap.add_argument("--workers", type=int, default=0,
+                     help="DataLoader workers decoding JPEGs off the critical path (order unchanged)")
+     ap.add_argument("--out", default=None,

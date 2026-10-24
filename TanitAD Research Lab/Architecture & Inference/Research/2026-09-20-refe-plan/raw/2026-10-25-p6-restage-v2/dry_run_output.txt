@@ -1,0 +1,105 @@
+# dry_run_output.txt -- 2026-10-25, Git Bash on the dev box. bash -n restage_v2.sh: OK. RESTAGE_DRY=1 bash restage_v2.sh (default knobs; rc=0; /workspace not created):
+[DRY] 2026-10-24T22:37:47Z DRY RUN: nothing below touches the network or the disk (resume main/latest, expected step 4321, push repo Sayood/tanitad-refe-p6-paper-faithful, twin bank pre3c)
+[DRY] STEP preflight | est 1 min | tools, token file, cgroup cores, local-disk write test, GPU idle
+[DRY]     check: token file present, non-empty, mode 600 (never printed)
+[DRY]     check: curl tar zstd python3 git flock sha256sum nvidia-smi present (zstd installed via apt if absent)
+[DRY]     check: cgroup CPU quota measured (never nproc): 8 twin workers
+[DRY]     check: local disk /root/tad: df >= 360 GB AND a real 20 GiB write (DBs 164 + pixels 133 + D9 tar 36 + temp)
+[DRY]     check: no GPU compute process (never add load to a training pod)
+[DRY]     check: rollback knobs consistent (P6_RESUME_REV needs an expected step)
+[DRY] STEP code | est 3-6 min | git clone (treeless) + build the four code trees on the pod, every file checked against its commit blob
+[DRY]     check: clone has f2f604f5d8067352287e113d90bc925f76c9641e (tip), bcc04b52233e28ef8eaafc346472c080e027e4a9 (prebuild chain), c1dc5d33233259a8f5f876ecd89f2f4f2c3c9573 (frozen D7 base)
+[DRY]     check: tip package: SHIP_MANIFEST has 272 files and tree sha256 starting b0fad37d9704 (the identity P6 trained under)
+[DRY]     check: G-SUITE extra files (eval/rls1{b,d,e}_arms.json, PREREG_R0E_PICK.md) == their commit blobs
+[DRY]     check: d7fix tree: FIXED_FILES.sha256 6/6 OK
+[DRY]     check: bank3c code/* == commit blobs; pod_helpers.py sha256 == 2d26ea957d9a15daf133d8e4bd0192e86dc26f337291b286b669f4999b7a6efa
+[DRY] TRACK env (background)
+[DRY] STEP teacher_env | est 15-25 min (ESTIMATED; the old log has no timestamps) | build venv-teacher (python 3.11, pinned deps, torch cu128) + nuPlan maps via the tip's pod_teacher_env.sh
+[DRY]     check: log prints 'ZZOK teacher env ready'
+[DRY]     check: /workspace/teacher_env.sh exists
+[DRY]     check: real conv2d on CUDA and imports from the shipped checkout (the script's own checks)
+[DRY] TRACK dbs (background)
+[DRY] STEP dbs | est 30-60 min (ESTIMATED; bandwidth-bound, the longest fetch) | 1,192 nuPlan DBs range-fetched from the public nuPlan S3 zips onto the LOCAL disk; /workspace/data/navtrain_dbs is a symlink
+[DRY]     check: dbs.log: fetch tool exits 0 (it CRC-verifies every DB)
+[DRY]     check: ls navtrain_dbs/*.db >= 1192 through the symlink
+[DRY] TRACK pix (background)
+[DRY] STEP pix | est 30-60 min (ESTIMATED; overlaps everything, needed only at the end) | 32 pixel shards (4 cameras) from the public OpenScene HF repo, authenticated, curl -f, onto the LOCAL disk; /workspace/data/navtrain_pixels is a symlink
+[DRY]     check: every shard: curl -f + tar extract of CAM_F0/B0/L0/R0 succeeded, then .done_N
+[DRY]     check: 32 .done_N markers through the symlink
+[DRY] TRACK quota (background)
+[DRY] STEP quota | est 3-5 min | real write probe of /workspace (never df): the volume quota is invisible to df
+[DRY]     check: a 110 GiB write in 1 GiB pieces succeeds (then deleted)
+[DRY] TRACK d9 (background)
+[DRY] STEP d9 | est 10-18 min (ESTIMATED: 36 GB at >=100 MB/s + sha256 + extract of 107,860 files) | FETCH the D9 metric-cache tar (instead of a 5.2 CPU-h rebuild), verify, extract into refe_navtrain/metric_cache
+[DRY]     check: curl -f; size == 36282746880 and sha256 == 2bc68e31b179e134a99e53d8a16d09f67dd48a28139edecd7eecebea2d13f624 (HF LFS oid)
+[DRY]     check: first tar member is 'metric_cache/' (layout: metric_cache/<log>/<token>.pkl.xz, measured by HTTP Range)
+[DRY]     check: extracted file count == 107860
+[DRY]     check: ZERO lane-rank files in the extracted cache (no wrong-route twins)
+[DRY] TRACK bank3c (background)
+[DRY] STEP bank3c | est 1-2 min | FETCH the 3-C twin bank (instead of the 23 h re-roll), verify, extract into refe_navtrain/train_grow_cmd_3c
+[DRY]     check: curl -f; size == 217062290 and sha256 == 8b965193c23a5afe78b97a125a07e162838f5479ba4dccab227f4450ace7074d
+[DRY]     check: layout: train_grow_cmd_3c/{merge_report.json,targets_rank0.jsonl,...} (first members read by HTTP Range)
+[DRY]     check: targets_rank0.jsonl sha256 == daa23b96... and targets_rank1.jsonl == 2a63acc2... (the bank P6 trained on)
+[DRY] TRACK restore (background)
+[DRY] STEP restore | est ~4 min MEASURED (2026-10-22: 4.4 GB download + 17.6 GB extract) | the chain's own bank restore (p2r_sync.py restore): train_grow (pre-3C bank, calib_table.json), on-policy sets, model_final; md5-pinned
+[DRY]     check: ZZRESTORE_OK (md5 of each archive == the pins in p2r_sync.py)
+[DRY]     check: train_grow/calib_table.json non-empty and targets_rank*.jsonl present (the chain's have_bank)
+[DRY] TRACK rollback (background)
+[DRY] STEP rollback | skipped: P6_RESUME_REV unset (resume from HF main = latest, ckpt step 4321, via the chain's recover stage)
+[DRY] WAIT for: teacher_env restore dbs d9 bank3c
+[DRY] STEP prebuild | est 25-35 min (commands 19 MEASURED + D9 no-op build/verify ~5-10 ESTIMATED) | bcc04b5 chain, P6_STOP_AFTER=cache, no P6_CBANK: mints commands.ok + cache.ok and rebuilds the pre-3C train_grow_cmd (not banked on HF) from the restored train_grow + NAVSIM metadata
+[DRY]     check: chain.log ends 'stopping after cache (P6_STOP_AFTER)'
+[DRY]     check: train_grow_cmd rank0 sha256 == daa23b96 and rank1 == 2f3e4613 (bit-identical to the old pod)
+[DRY]     check: stage markers commands.ok and cache.ok exist
+[DRY]     check: the D9 cache stage built NOTHING new (ZZMETRIC_CACHE_DONE built=0): the fetched cache is complete
+[DRY]     check: resume point on disk (ckpt_last.pt + metrics.jsonl) verified after the chain's recover stage
+[DRY] STEP twin_parts | est 31 min at 8 workers (the PI's figure; ~16 min with RS_TWIN_BANK=3c, UNVERIFIED) | build the lane-rank twin parts into metric_cache_twins_3c on the frozen D7 tree (build_twin_parts_3c_pp.sh)
+[DRY]     check: the script's own gate: every K=1,2,3 build ZZMETRIC_CACHE_DONE failed=0 and check_twin_parts_distinct ZZD7_DISTINCT_OK
+[DRY]     check: PARTS_DONE written
+[DRY]     check: no GPU process (script refuses otherwise)
+[DRY] STEP twin_link | est 3-6 min | POST_MERGE step (d): link the KEPT twins' parts into metric_cache, then the chain's OWN D7 check for K=1,2,3 -- BEFORE the chain starts
+[DRY]     check: pod_helpers parts --mode plan: state=plan_ok, missing_src=0, missing_logged=0, conflict=0, distinct=21821
+[DRY]     check: metric_cache holds ZERO lane-rank files before the link
+[DRY]     check: pod_helpers parts --mode apply --how link: state=ok, errors=0, copied=0, dst_missing_after=0 (keys matched independently)
+[DRY]     check: p6_prep.py lane-ranks == '1 2 3'
+[DRY]     check: p6_prep.py lane-distinct --bank CBANK --cache MC --k K --n 40 --min-frac 0.9 prints ZZD7_DISTINCT_OK for K=1,2,3
+[DRY] STEP final_chain | est ~45 min to training (MEASURED 2026-10-22: lab 2.7 + mem 8.0 + egr 0.5 + launch gate 23.8 + preflight 1.6 min) | the tip chain with P6_CBANK, P6_D7_FALLBACK=0
+[DRY]     check: start env pins P6_CBANK=/workspace/data/refe_navtrain/train_grow_cmd_3c and P6_D7_FALLBACK=0 (grep -x)
+[DRY]     check: all 32 pixel shards present (.done_N)
+[DRY]     check: auth header file removed before the chain
+[DRY]     check: resume point re-verified from disk (ckpt_last.pt + last ckpt event step == 4321)
+[DRY]     check: no GPU process
+[DRY]     check: coverage guard (background): first labeller events after launch have no_parts == 0, else ALERT_COVERAGE.txt (training is NOT killed)
+[DRY]     check: ARGS sha 570619873b1ebaa0 appears in chain.log (else ALERT_ARGS.txt)
+
+# diff of the RESTAGE_DRY=1 run with P6_RESUME_REV=fc2adb00b59e RS_TWIN_BANK=3c against the default run:
+1c1
+< DRY RUN: nothing below touches the network or the disk (resume main/latest, expected step 4321, push repo Sayood/tanitad-refe-p6-paper-faithful, twin bank pre3c)
+---
+> DRY RUN: nothing below touches the network or the disk (resume fc2adb00b59e, expected step 2603, push repo Sayood/tanitad-refe-p6-paper-faithful-rb2603, twin bank 3c)
+47,48c47,57
+< [DRY] STEP rollback | skipped: P6_RESUME_REV unset (resume from HF main = latest, ckpt step 4321, via the chain's recover stage)
+< [DRY] WAIT for: teacher_env restore dbs d9 bank3c
+---
+> [DRY] STEP rollback | est 2-4 min (700 MB) | ROLLBACK: place run/{ckpt_last.pt,config.json,metrics.jsonl,snap_epoch001..006.pt} of HF revision fc2adb00b59e into the run dir BEFORE any chain runs
+> [DRY]     check: every file exists at the revision; sizes; sha256 of the .pt files == HF LFS oid
+> [DRY]     check: the DOWNLOADED metrics.jsonl's last 'event: ckpt' has step == 2603 (read from the file)
+> [DRY]     check: config.json byte-equal to main's
+> [DRY]     check: an existing different ckpt_last.pt is refused
+> [DRY]     check: recover cannot overwrite: p2r_sync.recover restores ONLY when run/ckpt_last.pt is absent
+> [DRY]     check: nothing in the HF repo is modified (optional tag on main's head); pushes go to Sayood/tanitad-refe-p6-paper-faithful-rb2603
+> [DRY] TRACK twin (background)
+> [DRY] STEP twin_parts | est (see s_twins) | twin parts on the kept bank, overlapped with the prebuild
+> [DRY]     check: as s_twins
+> [DRY] WAIT for: teacher_env restore dbs d9 bank3c rollback
+55,58c64
+< [DRY] STEP twin_parts | est 31 min at 8 workers (the PI's figure; ~16 min with RS_TWIN_BANK=3c, UNVERIFIED) | build the lane-rank twin parts into metric_cache_twins_3c on the frozen D7 tree (build_twin_parts_3c_pp.sh)
+< [DRY]     check: the script's own gate: every K=1,2,3 build ZZMETRIC_CACHE_DONE failed=0 and check_twin_parts_distinct ZZD7_DISTINCT_OK
+< [DRY]     check: PARTS_DONE written
+< [DRY]     check: no GPU process (script refuses otherwise)
+---
+> [DRY] WAIT for: twin_parts
+69c75
+< [DRY]     check: resume point re-verified from disk (ckpt_last.pt + last ckpt event step == 4321)
+---
+> [DRY]     check: resume point re-verified from disk (ckpt_last.pt + last ckpt event step == 2603, rollback rev fc2adb00b59e)

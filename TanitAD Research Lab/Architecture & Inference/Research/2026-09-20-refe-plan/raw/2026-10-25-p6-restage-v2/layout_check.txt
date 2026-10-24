@@ -1,0 +1,37 @@
+layout_check.txt -- HF archive layouts, MEASURED 2026-10-25 from the dev box by HTTP Range requests on resolve/main/<file> (no full download).
+Token read in place from Keys.txt (regex hf_[A-Za-z0-9]+), never printed.  Scripts: evidence/layout.py, evidence/oids.py, evidence/hf_list.py.
+Repo: HF dataset Sayood/tanitad-refe-navtrain-banks (listing by the tree API, size and LFS oid as served).
+
+1. refe_d9_metric_cache_newpod_2026-10-22.tar  (plain tar)
+   Range 0-65535 -> HTTP 206, Content-Range bytes 0-65535/36282746880  (== 36,282,746,880 B)
+   LFS sha256 = 2bc68e31b179e134a99e53d8a16d09f67dd48a28139edecd7eecebea2d13f624  (prefix 2bc68e31b179e134 == the PI's note)
+   first tar headers: ('5','metric_cache/')  ('5','metric_cache/2021.10.11.08.31.07_veh-50_02360_02684/')
+                      ('0', 244940 B, 'metric_cache/2021.10.11.08.31.07_veh-50_02360_02684/fdb126f73f4e55e5.pkl.xz')
+   => members are  metric_cache/<log>/<token>.pkl.xz ; extract with  tar -xf FILE -C /workspace/data/refe_navtrain
+
+2. refe_train_grow_cmd_3c.tar.zst  (217,062,290 B; LFS sha256 8b965193c23a5afe78b97a125a07e162838f5479ba4dccab227f4450ace7074d)
+   first 4,194,304 B (Range 0-4194303, 206) stream-decompressed with zstandard 0.25.0 -> 11,141,120 B -> tar headers:
+   ('5','train_grow_cmd_3c/')  ('0', 2182 B,'train_grow_cmd_3c/merge_report.json')  ('0', 351,889,839 B,'train_grow_cmd_3c/targets_rank0.jsonl')
+   => members are train_grow_cmd_3c/... ; extract with  zstd -dc FILE | tar -x -C /workspace/data/refe_navtrain
+   (targets_rank1.jsonl lies beyond the 4 MB window: its presence is proven by the sha256 check the driver makes after extraction)
+
+3. refe_train_grow.tar.zst  (1,043,549,966 B)  -> first members: train_grow/ , train_grow/targets_rank0.jsonl (350,447,321 B).
+   This is P2's PRE-commands bank, the chain's BANK (train_grow/ + calib_table.json).  The chain's own `restore` (p2r_sync.py) extracts it into refe_navtrain/
+   with md5 pin e07c7d6a5c0156f31a5de3af0843c325 ("extracted 7 files 6,330,899,550 B", 2026-10-22 restore.log).  The 7 members were NOT enumerated here
+   (that needs the whole 1 GB); that calib_table.json is among them is inferred from the same run: the chain's have_bank passed after restore.  UNVERIFIED by listing.
+
+4. refe_navtrain_banks_rest.tar.zst (1,919,848,576 B) -> first members aug/, aug/targets_aug.jsonl; navtrain_rest_list.txt (same repo) lists 113 dirs: aug*, r0*, sc_*, log_*.txt, calib_table.json at refe_navtrain/ root.
+   It does NOT contain train_grow_cmd.   refe_train_grow_cmd_3c_p7.tar.zst (192,135,900 B): train_grow_cmd_3c_p7/{reserve_filter_report.json,targets_rank0.jsonl,...} -- the P7 bank, not used.
+
+CONCLUSION on the pre-3C `train_grow_cmd`: it is NOT banked anywhere on HF (full repo listing: only refe_train_grow, _banks_rest, _3c, _3c_p7).  Nothing banked covers it.
+   It is needed for (a) the stage marker commands.ok that the tip chain demands once P6_CBANK is set (the commands stage REFUSES under P6_CBANK), and (b) the old
+   build_twin_parts_3c.sh, which enumerates the 44,409 twins from it.  It is cheap to regenerate: restore train_grow, then the bcc04b5 chain's commands stage
+   (19 min MEASURED, chain.log 2026-10-22 06:06:58 -> 06:26:12) rebuilds it and the driver asserts rank0 daa23b96 / rank1 2f3e4613.
+
+5. ROLLBACK REVISION (repo Sayood/tanitad-refe-p6-paper-faithful, model), evidence/rev_check.py + evidence/main_check.py:
+   fc2adb00b59e -> full sha fc2adb00b59ef5363fe1f7175e2923ce6e265417, "egress p2r_tick_16", 2026-10-20T12:52:56
+   run/ at that revision: ckpt_last.pt 228,324,493 B (LFS eda651447f31846a...), config.json 4,577 B, metrics.jsonl 2,686,823 B, snap_epoch001..006.pt (76,082,312 B each, same LFS oids as main)
+   downloaded metrics.jsonl: 7,958 lines, 124 ckpt events, the LAST LINE is {"event": "ckpt", "step": 2603, "epoch": 6}
+   main (79b7ca3624ff, p2r_tick_58): last ckpt event step 4321 (epoch 10), last line step 4332 (event onpolicy); config.json byte-equal to the revision's (sha256 e0bcd9992ac9dc46...), args.targets = /workspace/data/refe_navtrain/train_grow_cmd_3c
+   rollback placement TESTED end to end on the dev box into a scratch dir (real 700 MB): ZZREV_PLACED, verify OK, idempotent re-place OK, a tampered ckpt makes place REFUSE and verify FAIL.
+   recover() offline mock (evidence/t_recover.py): ckpt absent -> restores 4 files from "main"; ckpt pre-placed -> 0 fetch calls, bytes untouched, still ZZRECOVER_OK (ckpt=no).
