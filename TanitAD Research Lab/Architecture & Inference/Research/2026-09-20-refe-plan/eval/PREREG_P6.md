@@ -214,3 +214,45 @@ component carries a paired CI.
      - **Always reported:** the 3×3 confusion matrix, and a random-proposal floor from the dump.
      - **Interval:** a paired log-cluster bootstrap against C1 and against C2 separately.
      - **Authority:** none over the rule.
+
+## Amendment 2026-10-25 (c): rollback to step 2,603 after the twin-coverage defect, written BEFORE the re-run trains a step
+
+**The endpoint, comparators, estimator, rule, goal bar, four families and next-arm table above are UNCHANGED.** This amendment discloses a defect in the run after the 2026-10-22 resume and the PI's decision about it.
+
+1. **The defect (MEASURED).**
+   - Source: the banked `run/metrics.jsonl` on HF `Sayood/tanitad-refe-p6-paper-faithful`, main head `79b7ca3624ff`.
+   - Scorer-target coverage per window:
+
+     | steps | coverage |
+     |---|---|
+     | 0–2,602 | **1.0000** |
+     | 2,603–3,220 | **0.8946** |
+     | 3,220–4,025 | **0.8941** |
+     | 4,025–4,332 | **0.8936** |
+
+   - The labeller logged `no_parts` 29 of 256 sets at step 4,332, when the pod stopped (credit ran out, 2026-10-24 ~03:45Z).
+   - In those 1,730 steps the 3-C lane-rank twins trained with the trajectory loss only.
+2. **Cause.**
+   - The new-pod rebuild driver built and D7-verified the twin parts into `metric_cache_twins_3c`.
+   - It omitted POST_MERGE step (d) (`raw/2026-10-17-twin-bank-3c/post_merge/POST_MERGE.md`): link the KEPT twins' parts into `metric_cache`.
+   - The chain's `lanes` stage then rebuilt the twins with the DriveRL route patch, which PDM-Closed never consults.
+   - D7 read `DISTINCT_BAD`, differ 0/40 at K = 1, 2, 3.
+   - `P6_D7_FALLBACK=1` quarantined 18,489 / 2,781 / 551 parts without a refusal.
+   - Retraction `R67`.
+3. **PI decision 2026-10-25 (option B): the 1,730 steps are DISCARDED, not continued.**
+   - The run resumes from HF commit `fc2adb00b59e` `run/ckpt_last.pt`: step 2,603, sha256 `eda651447f31846a…`, `config.json` byte-equal to main's. This is the checkpoint the 2026-10-22 resume used.
+   - The discarded state stays on HF (main head `79b7ca3624ff`, tagged before the re-run's first push). It is never read as P6.
+4. **Before the chain starts:**
+   - the kept twins' parts are linked: `pod_helpers.py parts` reads plan_ok, then apply ok with `dst_missing_after=0`;
+   - the chain's own `p6_prep.py lane-distinct` reads OK at K = 1, 2, 3;
+   - `P6_D7_FALLBACK=0`, so a D7 failure REFUSES;
+   - a guard on the first labeller events requires `no_parts == 0`.
+5. **Pod.**
+   - An A40, by RunPod migration of the 2026-10-21 volume. The cgroup CPU quota is 7.65.
+   - The 1,192 nuPlan DBs are re-fetched from the public nuPlan bucket to local disk, with the same fetcher and the same 1,192/1,192 plan.
+   - As in Amendment 2026-10-22 §1, whether the resumed data order equals an uninterrupted run's is **UNVERIFIED**.
+6. **Speed work, committed now.**
+   - The PI ordered a 50 % cut in step time. Compute-only changes may be applied, at a checkpoint boundary only, if both of these hold:
+     - they are shown math-equivalent: fixed-batch loss, gradient and one-step parameter delta within the baseline's own run-to-run floor, and online labels bit-identical;
+     - they are disclosed in a further amendment before they run.
+   - A lever that changes the recipe (resolution, proposals, frozen layers, precision below bf16, schedule, sampling) is not P6. It is a new arm and a PI decision.

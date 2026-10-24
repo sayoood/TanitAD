@@ -18610,3 +18610,32 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 * (a) Two arms agreeing at seed 0 against the same B_0 is not a replicate: they share B_0's seed draw.
 * (b) In the first draft of this correction I used the raw seed gap |B_0 − B_1|. For a SEED-PAIRED delta that ignores the common mode (`H-V8F-SEED-1`), and it would have dismissed the accel gain too: its raw gap is 0.275 against a paired swing of 0.020.
 * ⇒ Name the floor with the comparison. For a seed-paired delta, use the swing of a seed-paired contrast between seeds. For an unpaired comparison, use the seed gap. Same family as `H-ESTIM-SEED-1` and "never quote an interval without its estimator".
+
+### R67 -- "P6 resumed on the byte-identical bank" was true and incomplete: for 1,730 steps 10.6 % of samples had no scorer target, and nothing went red (2026-10-25, MM)
+
+**Claimed (2026-10-22/23):**
+- P6 resumed on the new pod "on the byte-identical 3-C bank", with the launch gate PASSED.
+- The rebuild RESULT listed the twin parts as "44,409 twin parts, D7 distinct OK K=1..3".
+
+**Measured (HF `Sayood/tanitad-refe-p6-paper-faithful`, `run/metrics.jsonl` at main head `79b7ca3624ff`):**
+- Scorer-target coverage was 1.0000 for steps 0–2,602.
+- From the resume to the pod's death it was 0.8946 / 0.8941 / 0.8936 per window (2,603 → 4,332).
+- `no_parts` 29 of 256 sets per step.
+- On the pod:
+  - `metric_cache` held **0** `__lane_rank_*` files;
+  - `metric_cache_twins_rejected` held 18,489 / 2,781 / 551;
+  - `chain.log` read "D7 FALLBACK (P6_D7_FALLBACK=1) … quarantined";
+  - `metric_cache_twins_3c` held all 44,409 correct parts, and a read-only plan showed 21,821/21,821 kept twins with 0 missing and 0 conflicts.
+
+**Cause:**
+- The rebuild driver replayed the 3-C HANDOFF's steps. It omitted POST_MERGE step (d), "hard-link the kept twins' parts into `metric_cache`; 100 % coverage or STOP", because that step lives in `POST_MERGE.md`, not in the HANDOFF.
+- The chain's `lanes` stage filled the gap with twins built on the logged route.
+- A fallback flag set on 2026-10-16, before the 3-C bank existed, turned D7's correct refusal into a quarantine.
+
+**Consequence:**
+- PI decision B: the 1,730 steps are discarded and P6 re-runs from step 2,603 (`PREREG_P6` Amendment (c)).
+- `P6_D7_FALLBACK=0`, the link plus D7 check runs before the chain, and a no_parts guard watches the first steps.
+
+**Class, two-sided:**
+- (a) *A procedure replayed from one document drops the step that lives in another.* The "100 % or STOP" rule was in the post-merge tool, not in the chain. ⇒ A pipeline's invariants must be enforced where the pipeline runs, not in the document that once ran it.
+- (b) *A declared fallback is a silent deviation once the reason for it is gone.* The trainer printed `scorer_cov` 0.895 on every step for 28 h and no check read it. ⇒ A metric that is printed but not gated is not a check. Same family as "built, tested, and unreachable from its caller".
