@@ -90,3 +90,11 @@
 | box 2's eval-cache manifest | `raw/2026-10-22-grid/run/manifest_eval.jsonl`. The train manifest (3.05 MB) is not banked: sha256 `661f5d4578a462a0d7d071b96365d3b93f57911dfb85a0a99203efa0eadbfe12`, summarised by `cache_check.json` |
 | Amendment 2 (the refusal and its fix) | `raw/2026-10-22-grid/a2/` |
 | checkpoint (84 MB, not in git) | dev box `D:/Projects/TanitAD-artifacts/v8f_grid/M2b_s0_8x20/ckpt_last.pt`, sha256 `9562ceb795f3d79b0eb63e9a932f97629026ec5999ada45afc183569f8877d8b`; box 2 `D:/tanitad/runs/v8f_mini_full/M2b_s0_8x20/` |
+
+## Correction (2026-10-25)
+
+* §3 item 2's longitudinal reads are narrowed by `RESULT_V8F_HIST.md` §6, measured on the banked evals.
+  * ADE6 −0.076 m is inside the one available seed-paired swing (0.102 m).
+  * accel MAE −0.123 m/s² is 6.1× that swing (0.020) and stays a candidate.
+  * speed MAE −0.052 m/s is 1.2× it, borderline.
+* R66.

@@ -69,3 +69,22 @@ Beside, deciding nothing:
 | H's run | `raw/2026-10-23-hist/run/runs/M2b_s0_h10/` |
 | box-2 logs, guard, telemetry | `raw/2026-10-23-hist/run/box2_logs/`, `run/telemetry_v8fhist.csv` |
 | checkpoint (83 MB, not in git) | the external artifacts drive, `<drive>:/Projects/TanitAD-artifacts/v8f_hist/M2b_s0_h10/ckpt_last.pt` (mounted as E: on 2026-10-25; D: in earlier records), sha256 in `run/README.md` |
+
+## 6. Correction (2026-10-25, MEASURED the same day, zero GPU)
+
+**§3 item 2 and §4's recommendation are narrowed: only the accel MAE part of the "consistent pattern" clears a seed floor, and the G+H stack is no longer the next arm.**
+
+* **The floor a seed-paired delta must clear.** Seed luck is largely common to arms that share a seed (`H-V8F-SEED-1`), so G_0 − B_0 cancels part of it. The floor is how much a seed-paired contrast swings between seeds. The one contrast banked at two seeds, M2b − M1, swings:
+  * 0.102 m on ADE6;
+  * 0.042 m/s on speed MAE, 0.070 m on along-track, 0.020 m/s² on accel.
+  * n = 1 swing, so it is a rough floor (`raw/2026-10-25-ensemble/paired_swing.{py,json,out}`).
+* **Against it:**
+  * **ADE6:** G −0.076 and H −0.077 m are inside the swing. The "same ADE6 gain" is not evidence of a lever effect.
+  * **accel MAE:** G −0.123 and H −0.092 m/s² are 6.1× and 4.6× the swing. This is the one longitudinal gain beyond this floor in both arms.
+  * speed MAE (1.2× / 1.5×) and along-track (0.8× / 1.2×) are borderline.
+  * ⚠️ Against the raw seed gap |B_0 − B_1| (no common mode: 0.156, 0.202, 0.275), none clears, and M2b_s1 alone beats both arms on all three metrics and on ADE6 (2.055 against 2.099 / 2.098 m). The raw gap is the floor for UNPAIRED comparisons only (`raw/2026-10-25-ensemble/lon_floor.*`).
+* **The error is shared by every model, not training variance.** The average of all six banked M2b-family models' 6 s plans scores ADE6 2.001 m, −0.054 [−0.139, +0.034] ns against M2b_s1. The GT-code oracle is at 0.971 m (`raw/2026-10-25-ensemble/ens_facts.*`). About 1 m is T's code error, common to every seed and lever.
+* **So G+H is not the next arm.** Its additive ADE6 estimate (−0.153 m, ESTIMATED) misses 2F.
+  * The next arm is `PREREG_V8F_DSCALE` (half the training clips at fixed steps). It tells D3 (more data) from LoRA (the encoder).
+  * A G+H arm whose committed claim is the accel replication at both seeds stays a candidate after it.
+* Retraction: R66.

@@ -18592,3 +18592,21 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 
 **Class:** *a universal claim about a dataset derived from ONE release's index.* It is operating rule 2 ("absence at one location is not absence") at the dataset level.
 * ⇒ A claim about "the public set" enumerates every release (train / val / test / mini / warmup / private) and says which ones were probed.
+
+### R66 -- "GRID and HIST move the same family the same way" was read as a pattern while their ADE6 gains sat inside the seed-paired floor, and my first correction used the wrong floor (2026-10-25, MM)
+
+**Claimed:**
+* `RESULT_V8F_GRID.md` §3 item 2: "G drives a little better longitudinally anyway".
+* `RESULT_V8F_HIST.md` §3 item 2: the two input levers "agree on what they DO move", with the same ADE6 gain (−0.076 / −0.077 m). §4 recommended stacking them (G+H) as the next arm.
+
+**Measured (`TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-ensemble/`, zero GPU, the banked evals):**
+* The one seed-paired contrast banked at two seeds (M2b − M1) swings 0.102 m on ADE6 and 0.020 m/s² on accel MAE between seeds.
+* So the ADE6 gains are inside the floor, while the accel MAE gains (−0.123 / −0.092) are 4.6–6.1× it.
+* All six banked models' plans averaged: ADE6 2.001 m, ns against M2b_s1 (2.055). The error is common to every model.
+
+**Consequence:** G+H was not pre-registered as the next arm (≈ 9–10 h of box 2 for an ADE6 read predicted to miss 2F). The next arm is `PREREG_V8F_DSCALE`. Both RESULT files carry a correction section.
+
+**Class, two-sided:** *a one-seed gain read against the wrong floor.*
+* (a) Two arms agreeing at seed 0 against the same B_0 is not a replicate: they share B_0's seed draw.
+* (b) In the first draft of this correction I used the raw seed gap |B_0 − B_1|. For a SEED-PAIRED delta that ignores the common mode (`H-V8F-SEED-1`), and it would have dismissed the accel gain too: its raw gap is 0.275 against a paired swing of 0.020.
+* ⇒ Name the floor with the comparison. For a seed-paired delta, use the swing of a seed-paired contrast between seeds. For an unpaired comparison, use the seed gap. Same family as `H-ESTIM-SEED-1` and "never quote an interval without its estimator".
