@@ -95,3 +95,32 @@ New levers, ranked (all HYPOTHESIS for refc unless marked):
 - **≥ ~85** ⇒ data was the gap; refcv9 keeps the refc trunk.
 - **≤ ~75 while REFe is at 89** ⇒ sensors / backbone; refcv9 adopts REFe's DINOv3 ViT-L and multi-camera input.
 - Both outcomes are to be registered before any run.
+
+## 7. Perception track P0–P4 (Master Mind, 2026-10-25 ~01:10 Berlin; PI in chat: *"follow your plan as porposed"*)
+
+L10 (§6) was gated on a causal test. That test has run, and so has an eval-grade perception read. MEASURED, T0,
+refcv8 EMA-48,852 vs refcv7@50,400, one training seed per arm, paired episode-cluster bootstrap over the 139 eval
+episodes (the CI answers *another draw of episodes* only — `H-ESTIM-SEED-1`):
+
+* **The planner reads its BEV tokens.** Zeroing them worsens S2 ADE +0.206 / +0.202 m (inference seeds s0 / s1) and
+  S6 +1.15 / +1.13 m, separated worse in every reported family (ADE, longitudinal, lateral, tactical); inference-seed floor 0.0018 m (S2) / 0.0237 m (S6). Agent slots:
+  S2 +0.015 / +0.016, S6 +0.114 / +0.094. The box3d head's output is not read by the planner (D12).
+  Source: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-21-refcv8-perc2plan/RESULT.md`.
+* **Box head:** AP@2 m 0.328 [0.301, 0.354] vs 0.249 [0.227, 0.270] (paired +0.079 [0.071, 0.087]); AP@0.5 m 0.065;
+  AP@2 m at 40–60 m 0.092; **2.14 boxes per detected object** (67.8 % of objects carry ≥ 2); the declared 0.5 gate
+  finds 1.3 % of objects (recall 0.013).
+* **Map head:** drivable IoU 0.49–0.61, sidewalk 0.46–0.53, but **lane 0.199 (0–20 m) / 0.060 / 0.026 / ≈ 0**,
+  crosswalk 0.149 (0–20 m) / ≈ 0 beyond, arrow / non-drivable edge / hatched ≈ 0 in every band. Deltas vs refcv7
+  ≤ +0.013 per map class — refcv8's levers did not touch perception.
+  Source (both bullets): `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-21-refcv8-perc8/RESULT.md` (e0fba03; the
+  58 MB `perc_det.pkl` and the window lists stay on the dev box, see that file's manifest).
+
+| # | lever | what | measured basis / bar | status |
+|---|---|---|---|---|
+| **P0** | ship refcv8's box post-processing | NMS 2.5 m + presence gate 0.2165, fitted on TRAIN-DIAG (1,112 windows / 139 train episodes), frozen, re-scored on EVAL | MEASURED: AP@2 m 0.328 → **0.447** (within-arm +0.119 [0.096, 0.139]), F1 0.457, 1.088 boxes / object | pack assembled for landing (0 GPU) |
+| **P1** | box set prediction in the model (= L10) | one-to-one (Hungarian) matching loss + a calibrated objectness loss; box3d read from the 0.25 m grid instead of the pooled 0.5 m BEV | bar: AP@2 m > 0.447 **without** NMS, AP@0.5 m > 0.065, ≤ 1.1 boxes / object; a replicate arm per claim (B9-2) | HYPOTHESIS; ranked by P4 |
+| **P2** | map tolerance re-read | P / R / F / IoU_k at k = 0, 1, 2, 5, 10 cells (0–1.0 m) per class × 20 m band, paired vs refcv7, GT line-width census; per thin class a pre-registered MISPLACED / ABSENT / MIXED verdict | separates *slightly off* from *not there*, which exact 10 cm IoU on a 10–15 cm line cannot (a 10 cm offset halves it) | building; dev-box GPU after the NT A1 gate arms |
+| **P3** | thin classes + far range | P2 = MISPLACED ⇒ a thin-structure loss (Dice / Lovász-style) with uncapped thin-class weights and the 10 cm head read from finer features; P2 = ABSENT ⇒ temporal BEV fusion of past frames for > 20 m | MEASURED imbalance at 0–20 m: lane pixels 1/22 of drivable, arrow 1/507; the median-frequency class weights are clipped at 25 (refcv7 map design, INHERITED — re-verify in the P3 spec) | HYPOTHESIS; chosen by P2 |
+| **P4** | true-map planner oracle | the planner fed the TRUE map vs its OWN map through the identical path (an adapter's capacity cancels), a shuffled-GT arm that must not help, an identity control that must equal BASE bit-for-bit; both inference seeds, all four families | decides the rank of P1–P3 against L1 / L2 (Rule Zero §5): NO-HEADROOM ⇒ perception levers wait behind the planner; HEADROOM ⇒ its size becomes P1–P3's target | building; dev-box GPU after P2 |
+
+A true-map input is privileged: P4 is an oracle bound, never a deployable arm (vision-only inference rule).
