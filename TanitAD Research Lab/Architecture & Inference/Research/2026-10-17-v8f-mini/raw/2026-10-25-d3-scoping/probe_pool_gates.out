@@ -1,0 +1,14 @@
+digest oracles: val40 40, parity-train 2400, v7.2-eval 147
+clip_index 306152; B1 mp4s on disk 4719; B1 in clip_index 4719
+B1 (4,719)                         n=   4719  in val40   6  in parity-train   201  in v7.2-eval 147
+pool (306,152 - B1)                n= 301433  in val40  34  in parity-train  2199  in v7.2-eval   0
+pool, NVIDIA split=train           n= 150839  in val40  34  in parity-train  2199  in v7.2-eval   0
+pool, NVIDIA split=val             n=  89688  in val40   0  in parity-train     0  in v7.2-eval   0
+pool, NVIDIA split=test            n=  60906  in val40   0  in parity-train     0  in v7.2-eval   0
+NVIDIA split of the 4,719 B1 clips: {'train': 2786, 'val': 1240, 'test': 693} -> B1 itself ignores NVIDIA's split; the programme's eval-141 is a B1 subset
+expected deployed-val40 hits in a uniform draw of 4512: 0.51  (the gate must run; it REFUSES, mode='refuse', or drops, mode='exclude')
+expected deployed-val40 hits in a uniform draw of 40000: 4.51  (the gate must run; it REFUSES, mode='refuse', or drops, mode='exclude')
+pool: 3146 chunks, clips/chunk mean 95.8 (min 10, max 100)
+uniform draw of 4512: touches 2408 distinct chunks (each = 1 central-directory range read, 256 KiB)
+uniform draw of 40000: touches 3146 distinct chunks (each = 1 central-directory range read, 256 KiB)
+alternative (whole chunks): 4,512 clips = about 47 chunks; 40,000 clips = about 417 chunks
