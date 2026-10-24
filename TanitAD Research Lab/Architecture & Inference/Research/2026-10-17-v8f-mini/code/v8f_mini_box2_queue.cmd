@@ -37,6 +37,10 @@ rem   v8f_mini_box2_queue.cmd gatehist              PREREG_V8F_HIST: the in-proc
 rem   v8f_mini_box2_queue.cmd trainhist SEED       PREREG_V8F_HIST: one H run into %RUNSM%\M2b_s<SEED>_h10 (resumes; skipped once done)
 rem   v8f_mini_box2_queue.cmd evalhist SEED        PREREG_V8F_HIST: that run's eval-141 (--project --families), its absmask eval, its GT-code oracle and its all-latcons oracle,
 rem                                             tagged M2b-h10_s<SEED>; each skipped once its npz exists
+rem   v8f_mini_box2_queue.cmd gatedscale           PREREG_V8F_DSCALE: the in-process launch gate for Q = M2b + --data-frac 0.5 (the first half of B's clips in sha12 order), no training. B is M2b: no BASE argument
+rem   v8f_mini_box2_queue.cmd traindscale SEED    PREREG_V8F_DSCALE: one Q run into %RUNSM%\M2b_s<SEED>_df50 (resumes; skipped once done). Seed 0 only is pre-registered
+rem   v8f_mini_box2_queue.cmd evaldscale SEED     PREREG_V8F_DSCALE: that run's eval-141 (--project --families), its absmask eval, its GT-code oracle and its all-latcons oracle,
+rem                                             tagged M2b-df50_s<SEED>; each skipped once its npz exists
 rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
@@ -90,7 +94,10 @@ if /i "%~1"=="evalgrid" goto :evalgrid
 if /i "%~1"=="gatehist" goto :gatehist
 if /i "%~1"=="trainhist" goto :trainhist
 if /i "%~1"=="evalhist" goto :evalhist
-echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED^|gategrid BASE^|traingrid SEED BASE^|evalgrid SEED BASE^|gatehist^|trainhist SEED^|evalhist SEED
+if /i "%~1"=="gatedscale" goto :gatedscale
+if /i "%~1"=="traindscale" goto :traindscale
+if /i "%~1"=="evaldscale" goto :evaldscale
+echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED^|gategrid BASE^|traingrid SEED BASE^|evalgrid SEED BASE^|gatehist^|trainhist SEED^|evalhist SEED^|gatedscale^|traindscale SEED^|evaldscale SEED
 exit /b 2
 
 rem train / eval are CALLED with the stage name dropped, so inside them %~1 = ARM, %~2 = SEED, %~3 = GRID
@@ -494,6 +501,73 @@ if exist "%EV%\eval_%TG%-tacorc-all-latcons.npz" (echo [skip] eval %TG%-tacorc-a
 if errorlevel 1 (echo [FAIL] eval %TG%-tacorc-all-latcons - see %EV%\eval_%TG%-tacorc-all-latcons.log & exit /b 1)
 echo [ok] eval %TG%-tacorc-all-latcons
 :evalhist_4
+exit /b 0
+
+:gatedscale
+rem PREREG_V8F_DSCALE: Q = M2b's levers with --data-frac 0.5 and nothing else. select_train_clips takes the first round(0.5 x N) of B's clips in sha12 order (a nested half); the step budget stays B's 19,164
+rem because the trainer sizes S from the windows of ALL clips (n_windows_all_clips), not from the half. The trainer's G-DVB reads back the built clip count (data_frac -> data:n_clips);
+rem selfcheck.json records n_clips / n_clips_all / train_sha256 / steps_total / the window counts, and the chain asserts them before any training.
+call :prep || exit /b 2
+rem ONE command string: the dry run prints exactly what the real run executes
+set "GD="%PY%" "%TRAIN%" --arm M2b --data-frac 0.5 --out "%RUNSM%\gate_M2b-df50" %A% --selfcheck-only"
+if defined V8F_DRYRUN (echo %GD% & exit /b 0)
+%GD% > "%RUNSM%\gate_M2b-df50.log" 2>&1
+if errorlevel 1 (echo [FAIL] gate M2b-df50 - see %RUNSM%\gate_M2b-df50.log & exit /b 1)
+echo [ok] gate M2b-df50
+exit /b 0
+
+:traindscale
+rem PREREG_V8F_DSCALE: one Q run. Its summary.json says arm M2b and data_frac 0.5 with the half's clip count; its argv.json carries --data-frac 0.5. code\v8f_dscale_read.py refuses a run where any is not.
+rem The run lives in M2b_s<SEED>_df50, so it can never resume or be mistaken for a full-data run.
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: traindscale needs a SEED & exit /b 2)
+set "OUT=%RUNSM%\M2b_s%~2_df50"
+if exist "%OUT%\summary.json" (echo [skip] M2b_s%~2_df50 & exit /b 0)
+rem ONE command string: the dry run prints exactly what the real run executes
+set "TD="%PY%" "%TRAIN%" --arm M2b --seed %~2 --grid pool4x10 --data-frac 0.5 --out "%OUT%" %A%"
+if defined V8F_DRYRUN (echo %TD% & exit /b 0)
+if not exist "%OUT%" mkdir "%OUT%"
+echo [%date% %time%] train M2b_s%~2_df50
+%TD% >> "%OUT%\train.log" 2>&1
+if errorlevel 1 (echo [FAIL] train M2b_s%~2_df50 - see %OUT%\train.log & exit /b 1)
+if not exist "%OUT%\summary.json" (echo [FAIL] train M2b_s%~2_df50 exited 0 without summary.json & exit /b 1)
+exit /b 0
+
+:evaldscale
+rem PREREG_V8F_DSCALE: the four evals its reader needs, EACH ONE command string that the dry run prints and the real run executes (the HIST recipe):
+rem   E0 the standard eval (--project --families)   E1 absmask (T's own present slots)   E2 the GT-code oracle (tacorc)   E3 the all-latcons oracle (GT everywhere but T's latcons)
+rem   All four read THIS run's last checkpoint; the eval path never reads data_frac (a static test pins it). Each is skipped once its npz exists.
+rem   FLAT on purpose (no parenthesised else-block): an `exit /b 1` inside a multi-line block returns rc 0 from `cmd /c queue.cmd` (MEASURED by the PGT build).
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: evaldscale needs a SEED & exit /b 2)
+set "OUT=%RUNSM%\M2b_s%~2_df50"
+set "TG=M2b-df50_s%~2"
+set "E0="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG% %EC% %ER% --project --families"
+set "E1="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacabs --tac absmask %EC% %ER%"
+set "E2="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacorc --tac oracle %EC% %ER%"
+set "E3="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacorc-all-latcons --tac oracle --tac-groups all-latcons --tac-alpha 1 %EC% %ER%"
+if defined V8F_DRYRUN (echo %E0% & echo %E1% & echo %E2% & echo %E3% & exit /b 0)
+if not exist "%OUT%\summary.json" (echo REFUSED: %TG% has not finished training & exit /b 2)
+if exist "%EV%\eval_%TG%.npz" (echo [skip] eval %TG% & goto :evaldscale_1)
+%E0% >> "%EV%\eval_%TG%.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG% - see %EV%\eval_%TG%.log & exit /b 1)
+echo [ok] eval %TG%
+:evaldscale_1
+if exist "%EV%\eval_%TG%-tacabs.npz" (echo [skip] eval %TG%-tacabs & goto :evaldscale_2)
+%E1% >> "%EV%\eval_%TG%-tacabs.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacabs - see %EV%\eval_%TG%-tacabs.log & exit /b 1)
+echo [ok] eval %TG%-tacabs
+:evaldscale_2
+if exist "%EV%\eval_%TG%-tacorc.npz" (echo [skip] eval %TG%-tacorc & goto :evaldscale_3)
+%E2% >> "%EV%\eval_%TG%-tacorc.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacorc - see %EV%\eval_%TG%-tacorc.log & exit /b 1)
+echo [ok] eval %TG%-tacorc
+:evaldscale_3
+if exist "%EV%\eval_%TG%-tacorc-all-latcons.npz" (echo [skip] eval %TG%-tacorc-all-latcons & goto :evaldscale_4)
+%E3% >> "%EV%\eval_%TG%-tacorc-all-latcons.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacorc-all-latcons - see %EV%\eval_%TG%-tacorc-all-latcons.log & exit /b 1)
+echo [ok] eval %TG%-tacorc-all-latcons
+:evaldscale_4
 exit /b 0
 
 :gatearm

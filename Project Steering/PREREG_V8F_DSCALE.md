@@ -62,3 +62,17 @@
 * **G-DVB:** `data_frac` already maps to `data:n_clips` (`v8f_mini_train.py:62`); the gate records the built count.
 * **The eval is untouched:** a static check that no eval path reads `data_frac`.
 * **Chain and reader:** the HIST pattern, with an identity control (+0 [0, 0]). A synthetic +6 % rise reads DATA-LIMITED, a +1 % rise NOT DATA-LIMITED, and a −6 % fall EPOCH-LIMITED.
+
+## Amendment 1 (2026-10-25, written before any Q data, with the instruments)
+
+* **"MSE Δ separated" means separated in r's direction.**
+  * r is read on the slot-pooled RMSE and the CI on the window-weighted per-window MSE, so the two can disagree in sign.
+  * A separated MSE Δ whose sign contradicts r counts as NOT separated: the outcome is NOT DATA-LIMITED, and the disagreement is reported.
+  * This can only downgrade DATA-LIMITED or EPOCH-LIMITED, never upgrade.
+  * Instrument: `PK/code/v8f_dscale_read.py` (docstring, line 17).
+* **The clip list was MEASURED before the run** (`raw/2026-10-25-dscale/measure_dscale.{py,json,out}`, the trainer's own `build_data`).
+  * Source: `C:/Users/Admin/tanitad-data/add203/in/train4572_v2manifest.pt`. Its sorted list and its 60 excluded ids reproduce B's banked sha256s.
+  * B: 4,512 clips, 306,566 windows, S 4,791, 19,164 steps.
+  * Q: 2,256 clips (`001e7d520dd0` … `83f6618b1584`, the first half in sha12 order, nested in B), 153,271 windows, 19,164 steps. Each Q window is seen 8.0 times against B's 4.0.
+  * The run's own gate re-measures these on box 2 from the cache manifest, and the chain asserts them before training.
+* **Nothing else changes:** the bar, the estimator, the decision table and the refusals.

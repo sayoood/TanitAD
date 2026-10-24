@@ -1,0 +1,21 @@
+anchors OK: 17 mutants, every anchor occurs exactly once
+BASELINE rc=0 111 passed, 1 warning in 113.14s (0:01:53)
+RED   v8f_mini_train.py: NAMED 1: a.data_frac is dropped from the select_train_clips call [-k reach] -> 1 failed, 1 passed, 104 deselected in 2.16s  [test_reach_the_trainer_hands_the_flag_to_select_train_clips_and_sizes_the_budget_from_all_clips_static]
+RED   v8f_dscale_read.py: NAMED 3: the reader's bar is 10 %, not 5 % [-k reader and not refuses] -> 1 failed, 94 deselected in 2.26s  [test_reader_decide_is_the_preregs_table_on_every_boundary]
+RED   v8f_mini_train.py: the batches are drawn from ALL windows (n_clips says half, the loop trains on everything) [-k reach] -> 1 failed, 2 passed, 104 deselected, 1 warning in 13.55s  [test_reach_the_half_run_trains_on_the_half_and_every_batch_item_belongs_to_it]
+RED   v8f_mini_data.py: select_train_clips takes the LAST n clips [-k reach] -> 1 failed, 104 deselected in 2.12s  [test_reach_the_flag_selects_the_first_half_of_the_clips_in_sha12_order_and_the_subsets_nest]
+RED   v8f_mini_data.py: select_train_clips returns everything from 0.5 up [-k reach] -> 1 failed, 104 deselected in 2.39s  [test_reach_the_flag_selects_the_first_half_of_the_clips_in_sha12_order_and_the_subsets_nest]
+RED   v8f_mini_box2_queue.cmd: evaldscale is never dispatched [-k queue] -> 1 failed, 102 deselected in 2.15s  [test_queue_dscale_the_queue_is_crlf_and_the_stages_are_dispatched]
+RED   v8f_mini_box2_queue.cmd: an OLD stage is edited (gatehist loses --window-start 3) [-k queue] -> 1 failed, 1 passed, 102 deselected in 2.50s  [test_queue_dscale_every_existing_stage_is_byte_identical]
+RED   chain_v8f_dscale.sh: gate: the half's identity is compared with B's whole list [-k chain] -> 1 failed, 3 passed, 104 deselected in 3.68s  [test_chain_dscale_gate_assertions_pass_the_q_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_dscale.sh: gate: the queue line may carry --steps [-k chain] -> 1 failed, 3 passed, 104 deselected in 8.64s  [test_chain_dscale_gate_assertions_pass_the_q_gate_and_refuse_every_way_it_can_be_wrong]
+RED   chain_v8f_dscale.sh: the dry run loses the eval stage [-k chain] -> 1 failed, 2 passed, 104 deselected in 2.47s  [test_chain_dscale_syntax_and_dry_run_prints_the_queue_lines]
+RED   v8f_dscale_read.py: decide: the separation requirement is dropped from DATA-LIMITED [-k reader and not refuses] -> 1 failed, 94 deselected in 2.17s  [test_reader_decide_is_the_preregs_table_on_every_boundary]
+RED   v8f_dscale_read.py: D-T: r is computed on the window-weighted RMSE [-k reader and not refuses] -> 1 failed, 1 passed, 94 deselected in 2.29s  [test_reader_dt_block_decides_on_the_slot_pooled_rmse_and_reports_the_window_weighted_one_beside_it]
+RED   v8f_dscale_read.py: half_n floors instead of rounding [-k reader and not refuses] -> 1 failed, 15 passed, 94 deselected in 15.85s  [test_reader_constants_match_the_trainer_the_data_module_and_the_hist_reader]
+RED   v8f_dscale_read.py: Q's step count is not checked [-k reader and refuses] -> 1 failed, 28 passed, 39 deselected in 9.51s  [test_reader_refuses_rc2_with_the_reason[q trained fewer steps]]
+RED   v8f_dscale_read.py: Q's argv is not compared with B's [-k reader and refuses] -> 1 failed, 9 passed, 39 deselected in 4.93s  [test_reader_refuses_rc2_with_the_reason[q argv has a second lever]]
+RED   v8f_dscale_read.py: Q's budget may be sized from another window set [-k reader and refuses] -> 1 failed, 32 passed, 39 deselected in 11.84s  [test_reader_refuses_rc2_with_the_reason[q budget sized from the half's windows]]
+RED   v8f_dscale_read.py: B may be a data-fraction run [-k reader and refuses] -> 1 failed, 15 passed, 39 deselected in 8.27s  [test_reader_refuses_rc2_with_the_reason[b argv names --data-frac 0.5]]
+AFTER rc=0 111 passed, 1 warning in 77.82s (0:01:17)
+17 / 17 mutations RED

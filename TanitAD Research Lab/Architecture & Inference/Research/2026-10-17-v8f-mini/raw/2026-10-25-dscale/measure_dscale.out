@@ -1,0 +1,16 @@
+source: train4572_v2manifest.pt (clip_id exact, n_frames DERIVED = ceil(T_out / 2) + 1) (sha256 1fb81c1be9f9a8ed)
+B (data_frac 1.0): clips 4512 of 4512, windows 306566, S 4791, steps 19164, train_sha256 37f4f9ee468e0872, excluded_sha256 f6a1dee02af0b96f
+Q (data_frac 0.5): clips 2256 of 4512 (expected 2256), windows 153271 (all clips 306566), S 4791, steps 19164, first/last sha12 001e7d520dd0 / 83f6618b1584, train_sha256 8a4044ad7ea542ec
+passes per window: B 4.001, Q 8.002 (x2.000)
+  queue_argv_q_is_b_plus_data_frac_0.5_only: True
+  B_reproduces_banked_record: {'n_clips': (True, 4512, 4512), 'n_windows': (True, 306566, 306566), 'S': (True, 4791, 4791), 'steps': (True, 19164, 19164), 'train_sha256': (True, '37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1', '37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1'), 'excluded_sha256': (True, 'f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9', 'f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9')}
+  B_n_windows_all_clips_equals_banked: True
+  Q_n_clips_is_round_half_of_N_B: True
+  Q_clips_are_the_first_half_of_B_in_sha12_order: True
+  Q_nested_in_B: True
+  Q_steps_are_B: True
+  Q_window_budget_is_sized_from_all_clips: True
+  Q_excluded_set_is_B: True
+  Q_sees_each_window_about_twice_as_often: {'B': 4.00075677015716, 'Q': 8.002140000391464, 'ratio': 2.0001565853944974}
+  PASS: True
+MEASURE PASS
