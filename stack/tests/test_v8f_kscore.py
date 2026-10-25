@@ -725,14 +725,342 @@ def test_chain_syntax_and_dry_run_prints_the_exact_stage_commands(tmp_path):
 
 def test_chain_text_has_the_load_bearing_lines():
     c = CHAIN.read_text(encoding="utf-8")
-    for s in ("( set -C; echo", "BOX2_BUSY.txt", 'grep -q "^$AFTER_DONE"', "ZZV8FMINI-STOP", "ZZV8FMINI-DONE", "chain_v8f_kscore.out", "v8f_guard.sh", "assert-gate", "TIP_V8FKSCORE.txt",
+    for s in ("( set -C; echo", "BOX2_BUSY.txt", 'grep -a -q "^$AFTER_DONE"', "ZZV8FMINI-STOP", "ZZV8FMINI-DONE", "chain_v8f_kscore.out", "v8f_guard.sh", "assert-gate", "TIP_V8FKSCORE.txt",
               "does not know v8f_kscore", "ckptsha_b", "git -C $MIRROR show \"$T:stack/scripts/v8f_kscore.py\" | grep -q '^FLAG_CHECKS = {'", "waitjob.sh", "launch.ps1", "stop \"gate s$s$p assertions\""):
         assert s in c, s
     assert "rm -rf" not in c and "--allow-nonprereg" not in c and "--allow-any-ckpt" not in c
     assert c.index("kjob \"gate_s$s$p\"") < c.index("kjob \"fit_s$s$p\""), "no fit before its gate"
     assert c.index("for st in hyps_eval_0") < c.index("kjob \"gate_s$s$p\"")
     # the guard the chain depends on must know our python (WIRING.patch): the chain refuses to run against a guard that cannot stop it
-    assert "v8f_kscore" in c.split("guard stop")[0]
+    assert "v8f_kscore" in c.split('stop "guard stop"')[0]
+
+
+# =============================================================================================================================================
+# THE PREDECESSOR WAIT (PREREG "Compute and order"): the predecessor is FLAT's chain. A predecessor that ended on its OWN verdict (a run-level rc != 0, the reader refusing, the launch gate
+# refusing) must not leave box 2 idle for hours -- an unconditional "any ZZV8FMINI-STOP stops me" idled a GPU for 8.3 h -- and a predecessor that left the BOX unhealthy (a thermal / time guard
+# stop, a reboot, an unreachable box, a timeout, a busy marker, ANY text this predicate has never seen) must not be handed a 10-hour job. ONE function (after_decision) decides, for the wait
+# loop and for `--classify-predecessor`, which runs HERE on synthetic logs.   MUTATIONS that must make a check RED: an unknown text PROCEEDs; the box-level evidence is ignored; the REFRESH
+# job's rc is let through; the run-level regex is widened to any job name.
+# =============================================================================================================================================
+FLAT_CHAIN = Path(os.environ["KSCORE_FLAT_CHAIN"]) if os.environ.get("KSCORE_FLAT_CHAIN") else PK / "code" / "box2_ops" / "chain_v8f_flat.sh"
+PROCEED, HOLDING, WAIT = 0, 1, 2
+P, H = PROCEED, HOLDING
+JOB = "v8fflat10261904_"                  # a FLAT job name: v8fflat<MMDDHHMM>_<stage>, as queue() in chain_v8f_flat.sh builds it
+WAIT_MSG = "(2 = CRASH/reboot, 3 = unreachable, 4 = timeout)"
+DONE_LINE = "ZZV8FMINI-DONE 10-26 04:10 tip 18c62306: PREREG_V8F_FLAT HIERARCHY BEATS FLAT"
+
+# EVERY text FLAT's chain can print after ZZV8FMINI-STOP, as the source spells it (the 42 distinct `stop "<msg>"` texts), rendered with plausible values, each with the decision this chain
+# commits for it. PROCEED = a gate / train / eval job's rc, FLAT's reader refusing, FLAT's launch gate refusing, and the 21 PRE-FLIGHT texts (FLAT stopped on the dev box before box 2
+# ran anything; MM 2026-10-25). Everything else is box-level and HOLDS.
+FLAT_STOPS = {
+    "$1 rc=$rc": [(f"{JOB}gateflat rc=1", P), (f"{JOB}t_M2b_s0_flat rc=1", P), (f"{JOB}t_M2b_s1_flat rc=2", P), (f"{JOB}e_M2b_s0_flat rc=1", P), (f"{JOB}e_M2b_s1_flat rc=137", P),
+                  (f"{JOB}refresh rc=1", H), (f"{JOB}refresh rc=3", H),                                  # the refresh job runs no model code: a tar into box 2's repo failed (the box's problem)
+                  (f"{JOB}t_M2b_s0_flat rc=", H), (f"{JOB}t_M2b_s0_flat rc=0", H), (f"{JOB}t_M2b_s0_flat rc=-1073741819", H)],   # nothing parsed / not a failure / a native crash (signed)
+    "flat read": [("flat read", P)],
+    "gate FLAT assertions": [("gate FLAT assertions", P)],
+    "$1 wait=$w (2 = CRASH/reboot, 3 = unreachable, 4 = timeout)": [(f"{JOB}t_M2b_s0_flat wait=2 {WAIT_MSG}", H), (f"{JOB}e_M2b_s1_flat wait=3 {WAIT_MSG}", H), (f"{JOB}gateflat wait=4 {WAIT_MSG}", H),
+                                                                    (f"{JOB}refresh wait=4 {WAIT_MSG}", H)],
+    "box 2 unreachable": [("box 2 unreachable", H)],
+    "guard stop": [("guard stop", H)],
+    "no fresh telemetry ($t1 / $t2): the temperature guard would be blind": [("no fresh telemetry (a / b): the temperature guard would be blind", H)],
+    "ship $j": [(f"ship {JOB}gateflat", H)],
+    "launch $j": [(f"launch {JOB}t_M2b_s0_flat", H)],
+    "pull $R/$1": [("pull D:/tanitad/runs/v8f_mini_full/M2b_s0_flat/ckpt_last.pt", H)],
+    "ship the code archive": [("ship the code archive", H)],
+    "ship refresh job": [("ship refresh job", H)],
+    "launch refresh": [("launch refresh", H)],
+    "archive": [("archive", P)],
+    "extract the reader": [("extract the reader", P)],
+    "write the gate token": [("write the gate token", H)],
+    "remote tip $T is not in the mirror": [("remote tip 18c62306 is not in the mirror", P)],
+    "box 2 $f != tip $T": [("box 2 stack/scripts/v8f_mini_train.py != tip 18c62306", H)],
+    "box 2 v9 ${kv%%=*} md5 != ${kv#*=}": [("box 2 v9 v9_labels_train.npz md5 != 83e30bd3791f0767707eade5f4671759", H)],
+    "$1: cannot hash box 2's M2b_s$s checkpoint": [("before the gate: cannot hash box 2's M2b_s0 checkpoint", H)],
+    "$1: box 2's M2b_s$s checkpoint sha256 $g != the banked run's ${CKPT_SHA[$s]}": [("before the gate: box 2's M2b_s0 checkpoint sha256 aa != the banked run's bb", H)],
+    "cannot hash box 2's M2b_s${1}_flat checkpoint ($2)": [("cannot hash box 2's M2b_s0_flat checkpoint (trained)", H)],
+    "M2b_s${1}_flat's checkpoint changed during the evals: $g != $g0": [("M2b_s0_flat's checkpoint changed during the evals: a != b", H)],
+    "the reader cannot use the M2b side (check-inputs)": [("the reader cannot use the M2b side (check-inputs)", P)],
+    "stage the banked M2b_s$s/$f": [("stage the banked M2b_s0/summary.json", P)],
+    "stage eval_M2b_s$s": [("stage eval_M2b_s0", P)],
+    "stage $f": [("stage eval_M2b_s0-tacabs.npz", P)],
+    "stage floors_perwindow.npz (the P10 reproduction guard)": [("stage floors_perwindow.npz (the P10 reproduction guard)", P)],
+    "v8f_guard.sh does not know this chain's markers (anchored): it would never exit": [("v8f_guard.sh does not know this chain's markers (anchored): it would never exit", H)],
+    "the tip's queue has no $st stage": [("the tip's queue has no gateflat stage", P)],
+    "the tip's queue prints no gateflat line": [("the tip's queue prints no gateflat line", P)],
+    "the tip has no $f": [("the tip has no v8f_flat_read.py", P)],
+    "the tip has no per-window strata file": [("the tip has no per-window strata file", P)],
+    "the tip has no B1 lead block": [("the tip has no B1 lead block", P)],
+    "the tip's built_levers does not record o_interface": [("the tip's built_levers does not record o_interface", P)],
+    "the tip's built_levers does not record p_gt_start": [("the tip's built_levers does not record p_gt_start", P)],
+    "the tip's built_levers does not record p_gt_end": [("the tip's built_levers does not record p_gt_end", P)],
+    "the tip's v8f_mini.py has no O_INTERFACE_MODES": [("the tip's v8f_mini.py has no O_INTERFACE_MODES", P)],
+    "the tip's v8f_mini.py has no cut line": [("the tip's v8f_mini.py has no cut line", P)],
+    "the tip's trainer has no --o-interface flag": [("the tip's trainer has no --o-interface flag", P)],
+    "the tip's trainer has no G-DVB entry (FLAG_CHECKS) for --o-interface": [("the tip's trainer has no G-DVB entry (FLAG_CHECKS) for --o-interface", P)],
+    "the tip's trainer does not run the o_interface probe in its in-process gate": [("the tip's trainer does not run the o_interface probe in its in-process gate", P)],
+}
+# the direct `echo ZZV8FMINI-STOP <msg>` lines of FLAT's chain (not through stop()); the last is printed by `--dry-run` only
+FLAT_DIRECT = {
+    "the predecessor's end does not clear the box: $d": [("the predecessor's end does not clear the box: HOLD box-level evidence in the predecessor's logs: ZZGUARD-STOP TEMP (its stop: guard stop)", H)],
+    "busy marker present: $(cat $B/BOX2_BUSY.txt)": [("busy marker present: v8F-mini PREREG_V8F_MIXO (X = MIXO) since 10-25 12:00", H)],
+    "busy marker taken while arming: $(cat $B/BOX2_BUSY.txt 2>/dev/null)": [("busy marker taken while arming: v8F-mini PREREG_V8F_KIND", H), ("busy marker taken while arming: ", H)],
+    "no queue at the tip": [("no queue at the tip", H)],
+}
+# texts that are NOT FLAT's (another chain's, a stranger's, a malformed one): the regexes are FLAT's, so every one of them HOLDS (fail closed)
+NOT_FLATS = [
+    ("v8fmixo10261904_t_M2b_s0_mixo rc=1", H), ("gatemixo rc=1", H), ("mixo read final", H), ("mixo read", H), ("gate X assertions", H), ("gate s0 assertions", H), ("gate s1_perm assertions", H),
+    ("t_M2b_s0_flat rc=1", H), ("t_x rc=1", H), ("rc=1", H), (f"{JOB}t_M2b_s2_flat rc=1", H), ("v8fflat1026190_t_M2b_s0_flat rc=1", H), (f"{JOB}telemetry_long rc=1", H),
+    (f"{JOB}t_M2b_s0_flat rc=1 (the read's rc 2 = a failed stop-control)", H), ("flat read final", H), ("flat read s0", H), ("gate FLAT assertions (extra)", H),
+    ("the predecessor stopped: ZZV8FMINI-STOP t_x rc=1", H), ("a stop text this predicate has never seen", H), ("", H),
+]
+UNKNOWN = [m for m, w in NOT_FLATS if m in ("a stop text this predicate has never seen", "", "gate X assertions", "flat read final")]
+PREFLIGHT_KEYS = ['archive', 'extract the reader', 'remote tip $T is not in the mirror', 'the reader cannot use the M2b side (check-inputs)', 'stage the banked M2b_s$s/$f', 'stage eval_M2b_s$s', 'stage $f', 'stage floors_perwindow.npz (the P10 reproduction guard)', "the tip's queue has no $st stage", "the tip's queue prints no gateflat line", 'the tip has no $f', 'the tip has no per-window strata file', 'the tip has no B1 lead block', "the tip's built_levers does not record o_interface", "the tip's built_levers does not record p_gt_start", "the tip's built_levers does not record p_gt_end", "the tip's v8f_mini.py has no O_INTERFACE_MODES", "the tip's v8f_mini.py has no cut line", "the tip's trainer has no --o-interface flag", "the tip's trainer has no G-DVB entry (FLAG_CHECKS) for --o-interface", "the tip's trainer does not run the o_interface probe in its in-process gate"]
+STOP_TABLE = [x for d in (FLAT_STOPS, FLAT_DIRECT) for rows in d.values() for x in rows] + NOT_FLATS
+EVIDENCE = ["ZZGUARD-STOP TEMP 10-25 13:00 USB HDD: 12 of the last 20 samples >= 61 C, max 63 C",
+            "ZZGUARD-STOP TIME 10-25 13:00 M2b_s0_flat projects 11.2 h (> 10 h) at 2.1 s/step",
+            "ZZCRASH box 2 rebooted: 2026-10-24 07:00:00 -> 2026-10-25 13:01:00", "ZZUNREACHABLE 12 min", "ZZTIMEOUT 1320 polls"]    # the exact shapes v8f_guard.sh / waitjob.sh print, at column 0
+PROCEEDING_STOPS = [f"{JOB}t_M2b_s0_flat rc=1", "flat read", "gate FLAT assertions", "archive", "the tip has no B1 lead block"]
+
+
+def _classify(tmp_path, out_lines, guard_lines=None, name="c", chain=None, raw=None):
+    bash = _bash()
+    if bash is None:
+        pytest.skip("bash is needed to run the chain's predicate")
+    o = tmp_path / f"{name}.out"
+    o.write_bytes(raw if raw is not None else (("\n".join(out_lines) + "\n").encode("utf-8") if out_lines is not None else b""))
+    args = [bash, str(chain or CHAIN), "--classify-predecessor", o.as_posix()]
+    if guard_lines is not None:
+        g = tmp_path / f"{name}.guard"
+        g.write_bytes(("\n".join(guard_lines) + "\n").encode("utf-8"))
+        args.append(g.as_posix())
+    r = subprocess.run(args, capture_output=True, text=True, timeout=60, encoding="utf-8", stdin=subprocess.DEVNULL)
+    return r.returncode, r.stdout.strip(), r.stderr
+
+
+def _stop(msg):
+    return ["10-25 12:00 boot0=2026-10-24 07:00:00", f"ZZV8FMINI-STOP {msg}".rstrip()]
+
+
+def _row_violations(tmp_path, chain, rows, tag):
+    """The rows whose decision the chain at `chain` does NOT make: [] on a correct chain, non-empty on a mutant."""
+    bad = []
+    for i, (msg, want) in enumerate(rows):
+        rc, out, err = _classify(tmp_path, _stop(msg), name=f"{tag}{i}", chain=chain)
+        if rc != want or out.split()[:1] != [("PROCEED" if want == P else "HOLD")]:
+            bad.append((msg, want, rc, out, err[:200]))
+    return bad
+
+
+def _evidence_violations(tmp_path, chain, tag, evs=EVIDENCE):
+    """Every proceeding stop, with box-level evidence in the chain log or in the guard log, must HOLD."""
+    bad = []
+    for e, ev in enumerate(evs):
+        for s, stop in enumerate(PROCEEDING_STOPS):
+            for where in ("chain", "guard"):
+                rows = _stop(stop)
+                lines, guard = (rows[:1] + [ev] + rows[1:], None) if where == "chain" else (rows, [ev])
+                rc, out, _ = _classify(tmp_path, lines, guard, name=f"{tag}{e}{s}{where}", chain=chain)
+                if rc != H or not out.startswith("HOLD box-level evidence"):
+                    bad.append((ev, stop, where, rc, out))
+    return bad
+
+
+def _mutant(tmp_path, old, new, name):
+    src = CHAIN.read_text(encoding="utf-8")
+    assert src.count(old) == 1, f"the mutation target is not unique / not there: {old!r}"
+    p = tmp_path / name
+    p.write_bytes(src.replace(old, new).encode("utf-8"))
+    return p
+
+
+def test_predecessor_done_proceeds_and_no_end_marker_waits(tmp_path):
+    rc, out, err = _classify(tmp_path, ["10-25 12:00 boot0=2026-10-24 07:00:00", f"10-25 12:30 {JOB}e_M2b_s1_flat rc=0", DONE_LINE])
+    assert rc == PROCEED and out.startswith("PROCEED the predecessor ended: ZZV8FMINI-DONE"), (rc, out, err)
+    rc, out, _ = _classify(tmp_path, ["10-25 12:00 boot0=2026-10-24 07:00:00", f"10-25 12:30 {JOB}t_M2b_s0_flat rc=0"], name="wait")
+    assert rc == WAIT and out.startswith("WAIT no ZZV8FMINI-DONE"), (rc, out)
+    rc, out, _ = _classify(tmp_path, None, name="empty")
+    assert rc == WAIT, "an empty log: the predecessor has not started"
+    rc, out, _ = _classify(tmp_path, None, name="crlf", raw=(DONE_LINE + "\r\n").encode())
+    assert rc == PROCEED, "a CRLF log (the chain's output file) is read the same"
+    rc, out, _ = _classify(tmp_path, None, name="crlfstop", raw=(f"ZZV8FMINI-STOP {JOB}t_M2b_s0_flat rc=1\r\n").encode())
+    assert rc == PROCEED and out.endswith("rc=1"), "a CRLF stop line is read the same (the CR is not part of the message)"
+    rc, out, _ = _classify(tmp_path, [f"ZZV8FMINI-STOP {JOB}t_M2b_s0_flat rc=1", DONE_LINE], name="both")
+    assert rc == PROCEED, "a DONE anywhere in the log wins (a stop followed by a done is a finished chain)"
+    rc, out, _ = _classify(tmp_path, ["ZZV8FMINI-STOP guard stop", f"ZZV8FMINI-STOP {JOB}t_M2b_s0_flat rc=1"], name="last")
+    assert rc == PROCEED and "rc=1" in out, "the LAST stop line decides"
+    rc, out, _ = _classify(tmp_path, [f"ZZV8FMINI-STOP {JOB}t_M2b_s0_flat rc=1", "ZZV8FMINI-STOP guard stop"], name="last2")
+    assert rc == HOLDING, "the LAST stop line decides (a later box-level stop holds)"
+
+
+@pytest.mark.parametrize("msg, want", STOP_TABLE, ids=[f"{i:02d}" for i in range(len(STOP_TABLE))])
+def test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds(tmp_path, msg, want):
+    rc, out, err = _classify(tmp_path, _stop(msg))
+    assert rc == want, (msg, rc, out, err)
+    assert out.split()[0] == ("PROCEED" if want == PROCEED else "HOLD")
+
+
+def test_the_stop_table_covers_every_text_of_flats_chain_and_exactly_three_proceed():
+    """The table is a LIST of FLAT's texts (literal, so it is checked even where FLAT's chain is not in the tree) and, where FLAT's chain IS in the tree, it is checked against its source."""
+    assert len(FLAT_STOPS) == 42 and len(FLAT_DIRECT) == 4
+    proceeding = sorted(k for d in (FLAT_STOPS, FLAT_DIRECT) for k, rows in d.items() if any(w == P for _, w in rows))
+    assert proceeding == sorted(["$1 rc=$rc", "flat read", "gate FLAT assertions"] + PREFLIGHT_KEYS), "the proceeding classes are exactly run / verdict / gate + the 21 pre-flight texts"
+    assert all(w == P for k in PREFLIGHT_KEYS for _, w in FLAT_STOPS[k])
+    assert all(w == H for _, w in NOT_FLATS), "no text outside FLAT's chain may proceed"
+    refresh = [(m, w) for m, w in FLAT_STOPS["$1 rc=$rc"] if "refresh" in m]
+    assert refresh and all(w == H for _, w in refresh), "the code-refresh job's rc HOLDS: it ran no model code (documented deviation from the MIXO-era predicate)"
+
+
+@pytest.mark.skipif(not FLAT_CHAIN.exists(), reason="chain_v8f_flat.sh is not in this tree (FLAT has not landed): the table is checked against its literal list only. Set KSCORE_FLAT_CHAIN to check it against a copy")
+def test_every_stop_text_of_flats_chain_source_is_in_the_table_so_a_new_one_cannot_slip_through_unclassified():
+    """A stop text added to chain_v8f_flat.sh later is not in the table: this test names it. (The predicate holds on anything it does not recognise, so the default is the safe one, but
+    a NEW text deserves a decision made on purpose: it may be one that should proceed, and holding it re-creates the idle box.)"""
+    src = FLAT_CHAIN.read_text(encoding="utf-8")
+    code = "\n".join(x for x in src.splitlines() if not x.lstrip().startswith("#"))
+    stops = set(re.findall(r'stop "([^"]*)"', code))
+    direct = set(re.findall(r'echo "ZZV8FMINI-STOP ([^"]*)"', code)) - {"$*"}
+    assert sorted(stops - set(FLAT_STOPS)) == [] and sorted(set(FLAT_STOPS) - stops) == [], "FLAT's `stop \"<msg>\"` texts and the table differ"
+    assert sorted(direct - set(FLAT_DIRECT)) == [] and sorted(set(FLAT_DIRECT) - direct) == [], "FLAT's direct ZZV8FMINI-STOP lines and the table differ"
+    # what RUN_LEVEL_RE is built from: FLAT's own job names, tag format and the stages that run its code
+    assert "TAG=$(date '+%m%d%H%M')" in src and 'local j="v8fflat${TAG}_$1"' in src, "FLAT's job name is v8fflat<MMDDHHMM>_<stage>"
+    assert "queue gateflat 120 gateflat" in src and 'queue "t_$g" $TRAIN_POLLS trainflat $s' in src and 'queue "e_$g" $EVAL_POLLS evalflat $s' in src
+    assert 'g="M2b_s${1}_flat"' in src and "for s in 0 1; do" in src and "runone 0\n" in src and "runone 1\n" in src and "runone 2" not in src, "FLAT trains seeds 0 and 1 only"
+    assert "launch v8fflat${TAG}_refresh" in src and "waitrc v8fflat${TAG}_refresh" in src, "FLAT's refresh job is v8fflat<tag>_refresh and goes through waitrc (its rc stop is `<job> rc=<n>`)"
+    assert 'stop "$1 rc=$rc"' in src and "|| stop \"flat read\"" in src and '"gate FLAT assertions"' in src
+    # the logs this chain waits on are FLAT's own
+    assert "V8F_CHAIN_OUT=$L/chain_v8f_flat.out" in src and "> $L/v8fflat_guard.out" in src
+    mine = CHAIN.read_text(encoding="utf-8")
+    assert "AFTER_OUT=${AFTER_OUT:-$L/chain_v8f_flat.out}" in mine and "AFTER_GUARD=${AFTER_GUARD:-$L/v8fflat_guard.out}" in mine
+    # the job-name part of RUN_LEVEL_RE renders exactly the jobs FLAT queues
+    m = re.search(r"^RUN_LEVEL_RE='\^v8fflat\[0-9\]\{8\}_\((.*)\) rc=\[1-9\]\[0-9\]\*\$'$", mine, re.M)
+    assert m and m.group(1) == "gateflat|t_M2b_s[01]_flat|e_M2b_s[01]_flat", "RUN_LEVEL_RE must name exactly FLAT's gate / train / eval jobs"
+
+
+@pytest.mark.parametrize("ev", EVIDENCE)
+def test_predecessor_stop_with_box_level_evidence_in_its_logs_holds(tmp_path, ev):
+    """The evidence overrides the message: a run-level `rc=1` that came with a thermal / time stop, a reboot, an unreachable box or a timeout is the box's failure, not the run's."""
+    bad = _evidence_violations(tmp_path, None, "ev", [ev])
+    assert bad == [], bad
+    rc, out, _ = _classify(tmp_path, _stop(f"{JOB}t_M2b_s0_flat rc=1"), ["10-25 13:00 chain ended; guard off (max USB 52 C)"], name="clean")
+    assert rc == PROCEED, "a guard log that merely ended is no evidence"
+    rc, out, _ = _classify(tmp_path, ["10-25 12:00 boot0=x", ev, DONE_LINE], name="done_wins")
+    assert rc == PROCEED, "ZZV8FMINI-DONE proceeds whatever the log says before it: the predecessor FINISHED"
+
+
+def test_hold_texts_name_their_reason(tmp_path):
+    rc, out, _ = _classify(tmp_path, _stop(f"{JOB}refresh rc=1"))
+    assert rc == HOLDING and out.startswith("HOLD box-level: FLAT's code-refresh job"), out
+    rc, out, _ = _classify(tmp_path, _stop("something new"))
+    assert rc == HOLDING and out.startswith("HOLD a stop that is not recognised") and out.endswith("something new"), out
+    rc, out, _ = _classify(tmp_path, _stop(f"{JOB}gateflat rc=1"), ["ZZGUARD-STOP TEMP 10-25 13:00 x"])
+    assert rc == HOLDING and "its stop: " + f"{JOB}gateflat rc=1" in out, out
+
+
+def test_mutation_an_unknown_stop_text_that_proceeds_turns_the_unknown_rows_red(tmp_path):
+    rows = [(m, H) for m in UNKNOWN]
+    assert _row_violations(tmp_path, None, rows, "u0") == [], "the real predicate holds on every unknown text"
+    mutant = _mutant(tmp_path, '(fail closed): $msg"; return 1', '(fail closed): $msg"; return 0', "mut_unknown_proceeds.sh")
+    bad = _row_violations(tmp_path, mutant, rows, "u1")
+    assert len(bad) == len(rows) and all(b[2] == PROCEED for b in bad), f"the mutation (an unrecognised stop PROCEEDs) was not detected: {bad}"
+
+
+def test_mutation_ignoring_the_box_level_evidence_turns_the_evidence_check_red(tmp_path):
+    evs = [EVIDENCE[0], EVIDENCE[2]]
+    assert _evidence_violations(tmp_path, None, "e0", evs) == []
+    mutant = _mutant(tmp_path, '[ -z "$ev" ] || { echo "HOLD box-level evidence in the predecessor\'s logs: $ev (its stop: $msg)"; return 1; }', ":", "mut_no_evidence.sh")
+    bad = _evidence_violations(tmp_path, mutant, "e1", evs)
+    assert len(bad) == len(evs) * len(PROCEEDING_STOPS) * 2, f"the mutation (box-level evidence ignored) was not detected on every case: {len(bad)}"
+
+
+def test_mutation_letting_the_refresh_job_rc_through_turns_its_rows_red(tmp_path):
+    rows = [(m, w) for m, w in FLAT_STOPS["$1 rc=$rc"] if "refresh" in m]
+    assert len(rows) == 2 and _row_violations(tmp_path, None, rows, "r0") == []
+    mutant = _mutant(tmp_path, "(gateflat|t_M2b_s[01]_flat|e_M2b_s[01]_flat)", "(gateflat|refresh|t_M2b_s[01]_flat|e_M2b_s[01]_flat)", "mut_refresh.sh")
+    assert len(_row_violations(tmp_path, mutant, rows, "r1")) == len(rows), "the mutation (the refresh job's rc proceeds) was not detected"
+
+
+def test_mutation_widening_the_run_level_regex_to_any_job_name_turns_the_wrong_chain_rows_red(tmp_path):
+    rows = [(m, w) for m, w in NOT_FLATS if re.fullmatch(r"[A-Za-z0-9_.-]+ rc=[1-9][0-9]*", m)]       # what the MIXO-era, job-name-agnostic regex would let through
+    assert len(rows) >= 4 and _row_violations(tmp_path, None, rows, "w0") == []
+    mutant = _mutant(tmp_path, "RUN_LEVEL_RE='^v8fflat[0-9]{8}_(gateflat|t_M2b_s[01]_flat|e_M2b_s[01]_flat) rc=[1-9][0-9]*$'", "RUN_LEVEL_RE='^[A-Za-z0-9_.-]+ rc=[1-9][0-9]*$'", "mut_anyjob.sh")
+    bad = _row_violations(tmp_path, mutant, rows, "w1")
+    assert len(bad) == len(rows), f"the mutation (RUN_LEVEL_RE matches any job name) was not detected on every wrong-chain row: {bad}"
+
+
+def test_the_wait_loop_calls_the_same_predicate_and_the_chain_stops_on_a_hold():
+    raw = CHAIN.read_bytes()
+    assert b"\r\n" not in raw, "a bash script with CRLF endings does not run"
+    c = raw.decode("utf-8")
+    assert 'd=$(after_decision "$AFTER_OUT" "$AFTER_GUARD"); r=$?' in c and 'if [ $r = 1 ]; then echo "ZZV8FMINI-STOP the predecessor\'s end does not clear the box: $d"; exit 1; fi' in c
+    assert 'if [ $r = 0 ]; then echo "$(date \'+%m-%d %H:%M\') predecessor: $d"; break; fi' in c
+    assert 'if [ "${1:-}" = "--classify-predecessor" ]; then after_decision' in c
+    # the predicate and the classify mode come before EVERY statement that touches box state (the mkdir of $E, the ssh / scp definitions) and before the dry-run: classify has no side effect
+    assert c.index("after_decision() {") < c.index('if [ "${1:-}" = "--classify-predecessor" ]') < c.index('if [ "${1:-}" = "--dry-run" ]') < c.index("mkdir -p $E/fit $E/eval") < c.index("waiting for the predecessor chain")
+    assert c.index("AFTER_DONE=${AFTER_DONE:-ZZV8FMINI-DONE}; AFTER_STOP=${AFTER_STOP:-ZZV8FMINI-STOP}") < c.index("after_decision() {")
+    assert "sleep 300" in c and "until grep -q" not in c and "the predecessor stopped:" not in c, "the old 'any STOP stops me' loop is gone"
+    assert "RUN_LEVEL_RE='^v8fflat[0-9]{8}_(gateflat|t_M2b_s[01]_flat|e_M2b_s[01]_flat) rc=[1-9][0-9]*$'" in c and "VERDICT_LEVEL_RE='^flat read$'" in c and "GATE_LEVEL_RE='^gate FLAT assertions$'" in c
+    assert "AFTER_OUT=${AFTER_OUT:-$L/chain_v8f_flat.out}" in c and "AFTER_GUARD=${AFTER_GUARD:-$L/v8fflat_guard.out}" in c
+
+
+def test_the_wait_loop_runs_end_to_end_proceeds_on_flats_own_stops_and_holds_on_a_box_level_stop(tmp_path):
+    """Run the chain itself against a synthetic predecessor log with a stubbed box: DONE / a run-level / a verdict-level / a gate-level stop pass the wait (and the chain then dies at its
+    first box-2 step: the stubbed `ssh` fails, the busy marker is taken and released); a thermal stop, a timeout and an unknown text never get past it, and take no marker; a log with
+    no end marker WAITs, and the loop proceeds the moment the marker appears."""
+    bash = _bash()
+    if bash is None:
+        pytest.skip("bash is needed to run the chain")
+    box = tmp_path / "box2_ship"
+    (box / "logs").mkdir(parents=True)
+    src = CHAIN.read_text(encoding="utf-8")
+    # THE COPY CANNOT REACH ANYTHING REAL: the box-2 directory is this tmp dir, ssh / scp are `false` (so `boot` finds no box and the chain stops there, before it touches git or ships a file),
+    # and the mirror is a path that does not exist. Each substitution is asserted: a chain whose text moved must not fall through to the real box or the real mirror.
+    for old, new in (("B=/c/Users/Admin/box2_ship", f"B={box.as_posix()}"), ('SSH="ssh -o BatchMode=yes -o ConnectTimeout=20 tanitad-box2"', 'SSH="false"'),
+                     ('SCP="scp -q -o BatchMode=yes -o ConnectTimeout=20"', 'SCP="false"'), ("MIRROR=/c/Users/Admin/tanitad-push;", f"MIRROR={(tmp_path / 'no_mirror').as_posix()};")):
+        assert src.count(old) == 1, old
+        src = src.replace(old, new)
+    code = "\n".join(x for x in src.splitlines() if not x.lstrip().startswith("#"))
+    assert not re.search(r"(?<![\w$])(ssh|scp)\s", code), "no literal ssh / scp command is left: every call goes through $SSH / $SCP, which are `false` here"
+    script = tmp_path / "chain_under_test.sh"
+    script.write_bytes(src.encode("utf-8"))
+    env = {k: v for k, v in os.environ.items() if not k.startswith("AFTER_")}              # a leaked AFTER_* override would point the wait elsewhere
+    env["TMPDIR"] = tmp_path.as_posix()
+
+    def run(lines, guard=None, script_path=script):
+        pred = box / "logs" / "chain_v8f_flat.out"
+        pred.write_bytes(("\n".join(lines) + "\n").encode("utf-8"))
+        gp = box / "logs" / "v8fflat_guard.out"
+        gp.write_bytes(("\n".join(guard) + "\n").encode("utf-8") if guard else b"")
+        (box / "BOX2_BUSY.txt").unlink(missing_ok=True)
+        r = subprocess.run([bash, str(script_path)], env=env, capture_output=True, text=True, timeout=120, encoding="utf-8", stdin=subprocess.DEVNULL)
+        return r.returncode, r.stdout
+
+    def proceeds(out, how):
+        return f"predecessor: PROCEED {how}" in out and "ZZV8FMINI-STOP box 2 unreachable" in out
+
+    rc, out = run([DONE_LINE])
+    assert rc == 1 and proceeds(out, "the predecessor ended"), out
+    assert not (box / "BOX2_BUSY.txt").exists(), "a chain that stops releases the marker it took"
+    rc, out = run([f"ZZV8FMINI-STOP {JOB}t_M2b_s0_flat rc=1"])
+    assert rc == 1 and proceeds(out, f"run-level stop: {JOB}t_M2b_s0_flat rc=1"), out
+    rc, out = run(["ZZV8FMINI-STOP flat read"])
+    assert rc == 1 and proceeds(out, "verdict-level stop: flat read"), out
+    rc, out = run(["ZZV8FMINI-STOP gate FLAT assertions"])
+    assert rc == 1 and proceeds(out, "gate-level stop"), out
+    rc, out = run(["ZZV8FMINI-STOP guard stop"], ["ZZGUARD-STOP TEMP 10-25 13:00 USB HDD: x"])
+    assert rc == 1 and "ZZV8FMINI-STOP the predecessor's end does not clear the box: HOLD" in out and "box 2 unreachable" not in out, out
+    assert not (box / "BOX2_BUSY.txt").exists(), "a held chain never took the marker"
+    rc, out = run([f"ZZV8FMINI-STOP {JOB}t_M2b_s0_flat wait=4 {WAIT_MSG}", "ZZTIMEOUT 1320 polls"])
+    assert rc == 1 and "does not clear the box: HOLD" in out and "box 2 unreachable" not in out, out
+    rc, out = run([f"ZZV8FMINI-STOP {JOB}t_M2b_s0_flat rc=1"], ["ZZGUARD-STOP TIME 10-25 13:00 M2b_s0_flat projects 11.2 h (> 10 h) at 2.1 s/step"])
+    assert rc == 1 and "does not clear the box: HOLD box-level evidence" in out and "box 2 unreachable" not in out, "a run-level rc=1 that the guard caused HOLDS"
+    rc, out = run(["ZZV8FMINI-STOP a stop text nobody has seen"])
+    assert rc == 1 and "does not clear the box: HOLD a stop that is not recognised" in out and "box 2 unreachable" not in out, out
+    # WAIT -> PROCEED: no end marker yet, so the loop sleeps; the stubbed sleep appends FLAT's DONE to the log, and the next pass proceeds
+    waits = src.replace("sleep 300", 'echo "ZZV8FMINI-DONE 10-26 05:00 tip x: appended while the loop slept" >> "$AFTER_OUT"')
+    assert waits != src
+    sleeper = tmp_path / "chain_waits.sh"
+    sleeper.write_bytes(waits.encode("utf-8"))
+    rc, out = run(["10-25 12:00 boot0=x"], script_path=sleeper)
+    assert rc == 1 and "waiting for the predecessor chain" in out and proceeds(out, "the predecessor ended: ZZV8FMINI-DONE 10-26 05:00"), out
 
 
 def test_mkjob_text_is_a_crlf_safe_mode_box2_job():
@@ -775,3 +1103,14 @@ def test_hyps_stage_peak_memory_at_real_size_is_under_2_gb(tmp_path):
     j = json.loads(r.stdout.strip().splitlines()[-1])
     print("HYPS_PEAK", j)
     assert j["peak_commit_gb"] < 2.0, j
+
+
+def test_preflight_stops_proceed_and_a_mutant_that_holds_them_is_detected(tmp_path):
+    """MM 2026-10-25: FLAT's 21 pre-flight stops happen on the dev box before box 2 runs anything, and KSCORE re-checks its own tip, so they PROCEED (holding idles box 2 for a night)."""
+    rows = [x for k in PREFLIGHT_KEYS for x in FLAT_STOPS[k]]
+    assert len(rows) == 21 and _row_violations(tmp_path, None, rows, "pf0") == []
+    mutant = _mutant(tmp_path, '(on the dev box, before box 2 ran anything; this chain re-checks its own tip): $msg"; return 0', '(on the dev box, before box 2 ran anything; this chain re-checks its own tip): $msg"; return 1', "mut_pf_holds.sh")
+    bad = _row_violations(tmp_path, mutant, rows, "pf1")
+    assert len(bad) == 21, f"the mutation (pre-flight HOLDS) was not detected on every pre-flight row: {len(bad)} of 21"
+    near = [("the tip has no v8f_other_read.py", H), ("stage eval_M2b_s2", H), ("stage something else", H), ("archive the logs", H), ("remote tip xyz is not in the mirror", H)]
+    assert _row_violations(tmp_path, None, near, "pf2") == [], "the pre-flight regex is anchored to FLAT's own texts"

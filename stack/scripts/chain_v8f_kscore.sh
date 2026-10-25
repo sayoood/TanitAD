@@ -5,8 +5,16 @@
 # banked-checkpoint sha256 assertions, script polling (waitjob.sh), the v8f_guard.sh temperature guard, and the ZZV8FMINI-DONE / -STOP markers in ITS OWN log (chain_v8f_kscore.out).
 #   chain_v8f_kscore.sh --dry-run   PRINTS the exact command every stage runs on box 2 (v8f_kscore.py's own `cmdline`: the line printed IS the line the job .cmd embeds), the checkpoint sha256
 #                                   values it asserts and the order, and exits; nothing is shipped, launched or waited for.
-#   0. wait for the predecessor (default: FLAT's chain, chain_v8f_flat.out, ZZV8FMINI-DONE (box-2 order MIXO -> FLAT -> KSCORE -> OACC); stop on its ZZV8FMINI-STOP): AFTER_OUT / AFTER_DONE / AFTER_STOP override it; then the busy marker
-#      is taken ATOMICALLY (noclobber)
+#   chain_v8f_kscore.sh --classify-predecessor <out file> [<guard out file>]
+#                                   prints what the wait loop would do with a predecessor log (PROCEED / HOLD / WAIT, with the reason) and exits 0 / 1 / 2. The wait loop calls the SAME function.
+#   0. wait for the predecessor (default: FLAT's chain, chain_v8f_flat.out; box-2 order MIXO -> FLAT -> KSCORE -> OACC):
+#        ZZV8FMINI-DONE                                 -> PROCEED
+#        a ZZV8FMINI-STOP that is a RUN-level stop (a FLAT gate / train / eval job returned rc != 0: "<job> rc=<n>"), a VERDICT-level stop (FLAT's reader refused: "flat read") or a GATE-level
+#        stop (FLAT's launch gate refused: "gate FLAT assertions") -> PROCEED, PROVIDED the log carries no box-level evidence (ZZGUARD-STOP, ZZCRASH, ZZUNREACHABLE, ZZTIMEOUT)
+#        every other stop (guard, thermal, reboot, unreachable, timeout, busy marker, a failed ship / launch / pull / hash, a pre-flight check, the predecessor's own held predecessor) and ANY
+#        stop this predicate does not recognise (FAIL CLOSED) -> HOLD: this chain stops with ZZV8FMINI-STOP, because the box is not known to be healthy. A predecessor that ended on its own
+#        verdict must not leave box 2 idle for hours (an unconditional "any STOP stops me" idled a GPU for 8.3 h); a predecessor that left the box unhealthy must not hand it a 10-hour job
+#      AFTER_OUT / AFTER_DONE / AFTER_STOP / AFTER_GUARD override the log and the markers; then the busy marker is taken ATOMICALLY (noclobber)
 #   1. refresh box 2's code from the REMOTE tip; sha-check the key files; write TIP_V8FKSCORE.txt (the commit the gate token is bound to). v8f_guard.sh must know v8f_kscore (WIRING.patch)
 #   2. B = M2b is fixed in the PREREG: box 2's two M2b checkpoints ARE the banked runs' (sha256); a different file stops the chain while box 2 is idle
 #   3. HYPOTHESES (streamed clip by clip, resumable shards, no merged file): eval s0, train s0, eval s1, train s1. The train split is the TRAINER's own window list (4,512 clips, 306,566 windows)
@@ -46,6 +54,57 @@ read 240 read
 EOF
 }
 stage_args() { local jn=$1 c=${2:-}; stage_table | awk -v j="$jn" '$1==j {for (i=3;i<=NF;i++) printf "%s ", $i; print ""}' | sed "s/@COMMIT/${c:+--commit $c}/" | sed 's/[[:space:]]*$//'; }
+# ---- the predecessor predicate (PREREG_V8F_KSCORE "Compute and order"). ONE function: the wait loop below calls it, and so does `--classify-predecessor`, which a test runs on synthetic logs.
+# It sits BEFORE every statement that touches box state (the mkdir of $E, the ssh / scp definitions), so the classify mode has no side effect.
+AFTER_DONE=${AFTER_DONE:-ZZV8FMINI-DONE}; AFTER_STOP=${AFTER_STOP:-ZZV8FMINI-STOP}
+# What the predecessor's STOP may say for this chain to proceed. The predecessor is FLAT's chain (chain_v8f_flat.sh); EVERY text it can print after ZZV8FMINI-STOP is its own `stop "<msg>"`
+# (43 calls, 42 distinct texts), one of three direct `echo ZZV8FMINI-STOP ...` lines, or (--dry-run only) a fourth. Classified here by what they say about the BOX (not about the arm); a test
+# (test_v8f_kscore.py) lists all 42 + 3 and fails if FLAT's chain grows a text this table has not classified:
+#   RUN     PROCEED  "<job> rc=<n>"        a job that ran FLAT's code on box 2 came back nonzero: the gate, a training or an eval job. The job name is FLAT's own, v8fflat<MMDDHHMM>_ followed by
+#                                          gateflat | t_M2b_s0_flat | t_M2b_s1_flat | e_M2b_s0_flat | e_M2b_s1_flat (queue() in the chain). rc must be a positive integer: "rc=" (nothing parsed),
+#                                          "rc=0" and a negative / signed value (a native crash) are not a run's own failure and HOLD. THE REFRESH JOB'S rc DOES NOT PROCEED: it runs no model code
+#                                          (a tar into box 2's repo), so its failure is the box's (disk, tar, a half-extracted tree)
+#   VERDICT PROCEED  "flat read"           FLAT's reader refused its inputs (rc 2): the read, not the box, failed
+#   GATE    PROCEED  "gate FLAT assertions"  FLAT's launch gate did not pass: nothing was trained
+#   PREFLIGHT PROCEED  the 21 pre-flight texts below: FLAT's chain stopped on the DEV BOX (the mirror, `git archive`, a local `cp` / `tar`, the tip's source) before box 2 was asked to run anything,
+#                    so they say nothing about box 2's health; and KSCORE runs its own pre-flight on its own tip, so a cause it shares with FLAT (a stale mirror, a full dev-box disk) stops it
+#                    there. Holding on them would leave box 2 idle for a night on a dev-box staging problem (MM 2026-10-25: memory 'chain refusal must not stall the pod').
+#   BOX     HOLD     everything else, in the groups below; ANY text not listed is treated the same (FAIL CLOSED: the box is not known to be healthy):
+#     transport / box   "<job> wait=<n> (2 = CRASH/reboot, 3 = unreachable, 4 = timeout)", "box 2 unreachable", "ship <job>", "launch <job>", "pull <path>", "ship the code archive", "ship refresh job",
+#                       "launch refresh", "<refresh job> rc=<n>", "cannot hash box 2's M2b_s<n>[_flat] checkpoint ...", "no fresh telemetry (<t1> / <t2>): the temperature guard would be blind"
+#     box state         "guard stop" (thermal / time), "box 2 <file> != tip <sha>", "box 2 v9 <file> md5 != <md5>", "<phase>: box 2's M2b_s<n> checkpoint sha256 <a> != the banked run's <b>",
+#                       "M2b_s<n>_flat's checkpoint changed during the evals: <a> != <b>"
+#     marker / chain    "busy marker present: ...", "busy marker taken while arming: ...", "the predecessor's end does not clear the box: HOLD ..." (FLAT's own predecessor held), "write the gate token",
+#                       "v8f_guard.sh does not know this chain's markers (anchored): it would never exit"
+#   (pre-flight, PROCEED as above)  the tip or the local staging is not what FLAT expects (the box was never asked to run FLAT's code): "remote tip <sha> is not in the mirror", "archive", "extract the reader",
+#                       "the tip's queue has no <stage> stage", "the tip's queue prints no gateflat line", "the tip has no <file>", "the tip has no per-window strata file", "the tip has no B1 lead block",
+#                       "the tip's built_levers does not record o_interface | p_gt_start | p_gt_end", "the tip's v8f_mini.py has no O_INTERFACE_MODES | cut line", "the tip's trainer has no --o-interface
+#                       flag | G-DVB entry (FLAG_CHECKS) for --o-interface", "the tip's trainer does not run the o_interface probe in its in-process gate", "stage the banked M2b_s<n>/<file>",
+#                       "stage eval_M2b_s<n>", "stage <file>", "stage floors_perwindow.npz (the P10 reproduction guard)", "the reader cannot use the M2b side (check-inputs)"
+#     dry-run only      "no queue at the tip" (printed by `chain_v8f_flat.sh --dry-run`, never by a real run)
+# Independent of the message, a log that carries ZZGUARD-STOP (the temperature / time guard), ZZCRASH (a reboot), ZZUNREACHABLE or ZZTIMEOUT (waitjob.sh) holds: a run-level `rc=1` that came with a
+# thermal stop or a reboot is the box's failure. All four are printed at column 0 (v8f_guard.sh lines 28 / 56, waitjob.sh lines 9 / 10 / 14). A DONE anywhere in the log wins over everything.
+# Re-pointing AFTER_OUT at a different predecessor needs THAT chain's texts classified: these regexes are FLAT's, and a text they do not know HOLDS.
+RUN_LEVEL_RE='^v8fflat[0-9]{8}_(gateflat|t_M2b_s[01]_flat|e_M2b_s[01]_flat) rc=[1-9][0-9]*$'
+VERDICT_LEVEL_RE='^flat read$'
+GATE_LEVEL_RE='^gate FLAT assertions$'
+PREFLIGHT_LEVEL_RE="^(archive|extract the reader|remote tip [0-9a-f]{7,40} is not in the mirror|the reader cannot use the M2b side \(check-inputs\)|stage the banked M2b_s[01]/(summary|argv|selfcheck)\.json|stage eval_M2b_s[01]|stage eval_M2b_s[01]-(tacabs\.npz|tacabs\.json|tacorc\.npz|tacorc-all-goal\.npz|tacorc-all-latcons\.npz)|stage floors_perwindow\.npz \(the P10 reproduction guard\)|the tip's queue has no (gateflat|trainflat|evalflat) stage|the tip's queue prints no gateflat line|the tip has no (v8f_flat_read|v8f_kind_read|v8f_grid_read|v8f_pgt_read|v8f_dk_read|v8f_wc_read|v8f_tac_groups_read|v8f_mini_full_report)\.py|the tip has no per-window strata file|the tip has no B1 lead block|the tip's built_levers does not record (o_interface|p_gt_start|p_gt_end)|the tip's v8f_mini\.py has no (O_INTERFACE_MODES|cut line)|the tip's trainer has no --o-interface flag|the tip's trainer has no G-DVB entry \(FLAG_CHECKS\) for --o-interface|the tip's trainer does not run the o_interface probe in its in-process gate)\$"
+after_decision() {   # after_decision <predecessor chain log> [<its guard log>]: prints the decision; rc 0 = PROCEED, 1 = HOLD, 2 = WAIT (no end marker yet)
+  local out=$1 guard=${2:-} stop msg ev
+  if grep -a -q "^$AFTER_DONE" "$out" 2>/dev/null; then echo "PROCEED the predecessor ended: $(grep -a "^$AFTER_DONE" "$out" | tail -1 | tr -d '\r' | cut -c1-160)"; return 0; fi
+  stop=$(grep -a "^$AFTER_STOP" "$out" 2>/dev/null | tail -1 | tr -d '\r')
+  [ -n "$stop" ] || { echo "WAIT no $AFTER_DONE / $AFTER_STOP in $out yet"; return 2; }
+  msg=${stop#"$AFTER_STOP"}; msg=${msg# }
+  ev=$(grep -a -h -E '^(ZZGUARD-STOP|ZZCRASH|ZZUNREACHABLE|ZZTIMEOUT)' "$out" ${guard:+"$guard"} 2>/dev/null | head -1 | tr -d '\r')
+  [ -z "$ev" ] || { echo "HOLD box-level evidence in the predecessor's logs: $ev (its stop: $msg)"; return 1; }
+  if [[ $msg =~ $RUN_LEVEL_RE ]]; then echo "PROCEED run-level stop: $msg"; return 0; fi
+  if [[ $msg =~ $VERDICT_LEVEL_RE ]]; then echo "PROCEED verdict-level stop: $msg"; return 0; fi
+  if [[ $msg =~ $GATE_LEVEL_RE ]]; then echo "PROCEED gate-level stop (the launch gate refused, nothing was trained): $msg"; return 0; fi
+  if [[ $msg =~ $PREFLIGHT_LEVEL_RE ]]; then echo "PROCEED pre-flight stop (on the dev box, before box 2 ran anything; this chain re-checks its own tip): $msg"; return 0; fi
+  if [[ $msg =~ ^v8fflat[0-9]{8}_refresh\ rc= ]]; then echo "HOLD box-level: FLAT's code-refresh job (a tar into box 2's repo, no model code) failed: $msg"; return 1; fi
+  echo "HOLD a stop that is not recognised as verdict-, gate- or run-level (fail closed): $msg"; return 1
+}
+if [ "${1:-}" = "--classify-predecessor" ]; then after_decision "${2:?usage: --classify-predecessor <out file> [<guard out file>]}" "${3:-}"; exit $?; fi
 if [ "${1:-}" = "--dry-run" ]; then
   echo "== predecessor"; echo "wait for ${AFTER_OUT:-<logs>/chain_v8f_flat.out}: ^${AFTER_DONE:-ZZV8FMINI-DONE} (stop on ^${AFTER_STOP:-ZZV8FMINI-STOP})"
   echo "== checkpoint sha256 (asserted on box 2 before anything runs)"
@@ -68,7 +127,7 @@ SSH="ssh -o BatchMode=yes -o ConnectTimeout=20 tanitad-box2"
 SCP="scp -q -o BatchMode=yes -o ConnectTimeout=20"
 TAG=$(date '+%m%d%H%M')
 CUR=$L/v8fkscore_current.txt
-AFTER_OUT=${AFTER_OUT:-$L/chain_v8f_flat.out}; AFTER_DONE=${AFTER_DONE:-ZZV8FMINI-DONE}; AFTER_STOP=${AFTER_STOP:-ZZV8FMINI-STOP}
+AFTER_OUT=${AFTER_OUT:-$L/chain_v8f_flat.out}; AFTER_GUARD=${AFTER_GUARD:-$L/v8fflat_guard.out}   # AFTER_DONE / AFTER_STOP are set above, with the predicate
 boot() { $SSH "powershell -NoProfile -Command \"(Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToString('yyyy-MM-dd HH:mm:ss')\"" 2>/dev/null | tr -d '\r' | grep -E '^[0-9]{4}-' | head -1; }
 launch() { for t in 1 2 3; do o=$($SSH "powershell -NoProfile -ExecutionPolicy Bypass -File D:\tanitad\launch.ps1 -Job D:\tanitad\jobs\\$1.cmd -Log D:\tanitad\logs\\$1.log" 2>/dev/null | tr -d '\r') && { echo "$(date '+%m-%d %H:%M') $o"; return 0; }; sleep 20; done; return 1; }
 clean() { tr '\r' '\n' < "$L/$1.log"; }
@@ -112,8 +171,10 @@ finish() {   # finish <summary>: the committed end of the chain
   exit 0
 }
 echo "$(date '+%m-%d %H:%M') waiting for the predecessor chain ($AFTER_OUT)"
-until grep -q "^$AFTER_DONE" "$AFTER_OUT" 2>/dev/null; do
-  grep -q "^$AFTER_STOP" "$AFTER_OUT" 2>/dev/null && { echo "ZZV8FMINI-STOP the predecessor stopped: $(grep "^$AFTER_STOP" "$AFTER_OUT" | tail -1)"; exit 1; }
+while :; do
+  d=$(after_decision "$AFTER_OUT" "$AFTER_GUARD"); r=$?
+  if [ $r = 0 ]; then echo "$(date '+%m-%d %H:%M') predecessor: $d"; break; fi
+  if [ $r = 1 ]; then echo "ZZV8FMINI-STOP the predecessor's end does not clear the box: $d"; exit 1; fi
   sleep 300
 done
 [ -f $B/BOX2_BUSY.txt ] && { echo "ZZV8FMINI-STOP busy marker present: $(cat $B/BOX2_BUSY.txt)"; exit 1; }
