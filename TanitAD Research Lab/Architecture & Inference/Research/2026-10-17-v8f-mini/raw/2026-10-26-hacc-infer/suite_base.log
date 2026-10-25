@@ -1,0 +1,1781 @@
+...................................ss...............s................... [  3%]
+........................................................................ [  7%]
+........................................................................ [ 11%]
+........................................................................ [ 15%]
+.......................................................s................ [ 19%]
+.....................................................ss................. [ 23%]
+........................................................................ [ 27%]
+......................................................................s. [ 31%]
+........................................................................ [ 35%]
+.........................................s.............................. [ 39%]
+.........................s....F......................................... [ 43%]
+...............................................s........................ [ 47%]
+............................................F...........F............... [ 51%]
+........................................................................ [ 55%]
+.........................FFsss..FF.F..Fs.FFF........FFFFF..sssF......... [ 59%]
+...................EFFEEEEEEEEEEEE........E............................. [ 63%]
+...........................F...................................s........ [ 67%]
+........................................................................ [ 71%]
+........................................................................ [ 75%]
+....F........FFFF....................................................... [ 79%]
+........................................................................ [ 83%]
+...........................................F............................ [ 87%]
+........................................................................ [ 91%]
+........................................................................ [ 95%]
+......................................................................s. [ 99%]
+ss..                                                                     [100%]
+=================================== ERRORS ====================================
+_ ERROR at setup of test_driver_run_identity_passes_on_a_cache_the_builders_own_functions_made _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _trace=<pluggy._tracing.TagTracerSub objec...0x00000201BE990640>, _basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_run_refuses_a_stored_file_that_is_not_the_one_the_row_describes _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _trace=<pluggy._tracing.TagTracerSub objec...0x00000201BE990640>, _basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_run_refuses_frames_that_are_not_the_ones_the_cache_was_encoded_from _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _trace=<pluggy._tracing.TagTracerSub objec...0x00000201BE990640>, _basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_run_on_cpu_is_refused_unless_labelled_and_then_never_qualifies _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _trace=<pluggy._tracing.TagTracerSub objec...0x00000201BE990640>, _basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+______ ERROR at setup of test_driver_run_a_frame_subset_never_qualifies _______
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _trace=<pluggy._tracing.TagTracerSub objec...0x00000201BE990640>, _basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_run_with_fewer_than_two_and_two_clips_never_qualifies _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _trace=<pluggy._tracing.TagTracerSub objec...0x00000201BE990640>, _basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[IMAGE_MEAN0_0.485_to_0.486] _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _trace=<pluggy._tracing.TagTracerSub objec...0x00000201BE990640>, _basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[IMAGE_STD2_0.225_to_0.226] _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _trace=<pluggy._tracing.TagTracerSub objec...0x00000201BE990640>, _basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[PIXEL_SCALE_255_to_256] _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _trace=<pluggy._tracing.TagTracerSub objec...0x00000201BE990640>, _basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+___ ERROR at setup of test_driver_mutant_that_changes_nothing_is_not_caught ___
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _trace=<pluggy._tracing.TagTracerSub objec...0x00000201BE990640>, _basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_mutant_caught_on_a_non_qualifying_device_proves_nothing _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _trace=<pluggy._tracing.TagTracerSub objec...0x00000201BE990640>, _basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_driver_manifest_only_asserts_the_rows_and_never_builds_a_model _
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _trace=<pluggy._tracing.TagTracerSub objec...0x00000201BE990640>, _basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+____ ERROR at setup of test_driver_main_writes_its_json_even_on_a_refusal _____
+
+tmp_path_factory = TempPathFactory(_given_basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _trace=<pluggy._tracing.TagTracerSub objec...0x00000201BE990640>, _basetemp=WindowsPath('C:/Users/Admin/pt_hinf/base'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="module")
+    def world(tmp_path_factory):
+>       return _write_world(tmp_path_factory.mktemp("ar2w"))
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ ERROR at setup of test_smoke_amp_is_off_by_default_the_census_uses_the_whole_clip_list_and_the_report_carries_tau_device _
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000201BEAE5080>
+
+    @pytest.fixture
+    def smoke_env(monkeypatch):
+        H = lora_helpers()
+        if not SMOKE_P.is_file():
+            pytest.skip("the smoke script is not in this checkout")
+>       pep, _ = E.load_builder()
+                 ^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:629: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+================================== FAILURES ===================================
+__________ test_s0_mode_reproduces_the_banked_deciding_block_exactly __________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000201DC2983D0>
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_s0_mode_reproduces_the_ba0')
+
+    def test_s0_mode_reproduces_the_banked_deciding_block_exactly(monkeypatch, tmp_path):
+        """The reader was PARAMETRISED, not rewritten: on the banked s0 evals and controls it writes the banked READ.json's deciding block bit for bit (B = 2,000)."""
+        if not (RAWX / "eval" / "eval_M2b-mixo_s0-kindx-own.npz").exists() or not (RAWX / "controls.json").exists():
+            pytest.skip("the banked s0 evals are not in this checkout")
+        (tmp_path / "controls.json").write_bytes((RAWX / "controls.json").read_bytes())
+        _env(monkeypatch, tmp_path, 0, ev=RAWX / "eval")
+        R = _load(f"kindx_read_s0_{next(CNT)}", READER)
+        assert R.SEED == 0 and R.T == "M2b-mixo_s0" and R.B_BOOT == 2000
+>       rc = R.main(["--no-beside", "--out", str(tmp_path / "READ.json")])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_kindx_s1.py:388: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\2026-10-25-kindx\kindx_read.py:328: in main
+    R, eid = load_x()
+             ^^^^^^^^
+..\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\2026-10-25-kindx\kindx_read.py:105: in load_x
+    E = K.load_eval(ev, f"{t}-kindx-{nm}", need_json=True)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_kind_read.py:194: in load_eval
+    refuse(f"eval_{name}.npz is missing from {eval_dir}")
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+msg = 'eval_M2b-mixo_s0-kindx-only-speed.npz is missing from C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bf...d/hacc_infer/base/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-kindx/eval'
+
+    def refuse(msg):
+        print(f"KIND READ REFUSED: {msg}", file=sys.stderr)
+>       raise SystemExit(2)
+E       SystemExit: 2
+
+..\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_kind_read.py:108: SystemExit
+---------------------------- Captured stderr call -----------------------------
+KIND READ REFUSED: eval_M2b-mixo_s0-kindx-only-speed.npz is missing from C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/base/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-kindx/eval
+_____________________ test_constants_are_the_prereg_text ______________________
+
+    def test_constants_are_the_prereg_text():
+        t = PREREG.read_text(encoding="utf-8") if PREREG.exists() else ""
+>       assert t, "PREREG_V8F_KSCORE.md must be in the tree"
+E       AssertionError: PREREG_V8F_KSCORE.md must be in the tree
+E       assert ''
+
+tests\test_v8f_kscore.py:144: AssertionError
+_______________ test_every_outcome_quotes_the_prereg_next_step ________________
+
+    def test_every_outcome_quotes_the_prereg_next_step():
+>       t = PREREG.read_text(encoding="utf-8")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_kscore.py:450: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/base/Project Steering/PREREG_V8F_KSCORE.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\base\\Project Steering\\PREREG_V8F_KSCORE.md'
+
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+________ test_b_zero_forward_is_the_frozen_forward_bit_for_bit[dtype0] ________
+
+dtype = torch.float32
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+    def test_b_zero_forward_is_the_frozen_forward_bit_for_bit(dtype):
+        enc = make_encoder(64, 2, dtype=dtype)
+        plain = E._PlainEncoder(copy.deepcopy(enc.backbone), enc.mean.clone(), enc.std.clone())
+        plain.backbone = copy.deepcopy(enc.merge())                                              # B = 0: merging adds exactly 0
+        fr = smooth_frames(3, TINY_HW, seed=1)
+        assert torch.equal(enc.field(fr), plain.field(fr))
+>       assert torch.equal(enc.pooled(fr), plain.pooled(fr))
+                           ^^^^^^^^^^^^^^
+
+tests\test_v8f_lora.py:228: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+________ test_b_zero_forward_is_the_frozen_forward_bit_for_bit[dtype1] ________
+
+dtype = torch.bfloat16
+
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.bfloat16])
+    def test_b_zero_forward_is_the_frozen_forward_bit_for_bit(dtype):
+        enc = make_encoder(64, 2, dtype=dtype)
+        plain = E._PlainEncoder(copy.deepcopy(enc.backbone), enc.mean.clone(), enc.std.clone())
+        plain.backbone = copy.deepcopy(enc.merge())                                              # B = 0: merging adds exactly 0
+        fr = smooth_frames(3, TINY_HW, seed=1)
+        assert torch.equal(enc.field(fr), plain.field(fr))
+>       assert torch.equal(enc.pooled(fr), plain.pooled(fr))
+                           ^^^^^^^^^^^^^^
+
+tests\test_v8f_lora.py:228: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ test_step_one_has_nonzero_B_grads_and_exactly_zero_A_grads_then_A_wakes_up_and_the_frozen_control_reads_zero _
+
+    def test_step_one_has_nonzero_B_grads_and_exactly_zero_A_grads_then_A_wakes_up_and_the_frozen_control_reads_zero():
+        enc = make_encoder(64, 2, r=4)
+        fr = smooth_frames(4, TINY_HW, seed=3)
+        opt = torch.optim.AdamW(enc.lora_parameters(), lr=1e-2)
+>       _loss_through(enc, fr).backward()
+        ^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora.py:302: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora.py:286: in _loss_through
+    f = enc.pooled(frames)
+        ^^^^^^^^^^^^^^^^^^
+tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_________ test_a_detached_encoder_output_turns_the_gradient_check_red _________
+
+    def test_a_detached_encoder_output_turns_the_gradient_check_red():
+        """The instrument self-test: the same check, on an encoder whose output is detached, must FAIL (this is the in-process twin of the mutation harness)."""
+        class Detached(E.DinoV3LoRAEncoder):
+            def pooled(self, frames_u8, grid=None, quantize=None):
+                return super().pooled(frames_u8, grid, quantize).detach()
+        good = make_encoder(64, 2)
+        bad = Detached(tiny_backbone(64, 2, 2, 64), good.mean.clone(), good.std.clone(), r=4, alpha=4.0)
+        fr = smooth_frames(2, TINY_HW)
+>       _loss_through(good, fr).backward()
+        ^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora.py:328: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora.py:286: in _loss_through
+    f = enc.pooled(frames)
+        ^^^^^^^^^^^^^^^^^^
+tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+________________ test_checkpointing_changes_nothing_but_memory ________________
+
+    def test_checkpointing_changes_nothing_but_memory():
+        fr = smooth_frames(3, TINY_HW, seed=4)
+        a = make_encoder(64, 2, r=4)
+        b = make_encoder(64, 2, r=4)
+        for p in a.lora_parameters():
+            nn.init.normal_(p, std=0.05)                                                          # B != 0 so the LoRA branch is live
+        b.load_state_dict(a.state_dict())
+        b.set_checkpointing(True)
+        assert b.built_levers()["checkpointing"] is True and a.built_levers()["checkpointing"] is False
+>       _loss_through(a, fr).backward()
+        ^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora.py:377: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora.py:286: in _loss_through
+    f = enc.pooled(frames)
+        ^^^^^^^^^^^^^^^^^^
+tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ test_the_gradient_cache_equals_the_full_batch_gradient_and_plain_accumulation_does_not _
+
+    def test_the_gradient_cache_equals_the_full_batch_gradient_and_plain_accumulation_does_not():
+        B, F = 6, 3
+        fr_all = smooth_frames(B * F, TINY_HW, seed=7)
+        fmap = torch.arange(B * F).view(B, F)
+        w = torch.linspace(0.5, 1.5, 1024)
+    
+        def fresh():
+            e = make_encoder(64, 2, r=4)
+            g = torch.Generator().manual_seed(11)
+            for p in e.lora_parameters():
+                p.data.copy_(torch.randn(p.shape, generator=g) * 0.05)                          # the same A and B in every copy
+            return e
+        ref = fresh()
+>       feats = ref.pooled(fr_all)[fmap]                                         # the full batch, plain autograd, no chunking
+                ^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora.py:445: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ test_collate_frames_hands_every_window_its_own_frames_and_leaves_collate_alone _
+
+lworld = {'root': WindowsPath('C:/Users/Admin/pt_hinf/base/lw0/w'), 'names': ['syn-train-000', 'syn-train-001', 'syn-train-002'...True,  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}}
+
+    def test_collate_frames_hands_every_window_its_own_frames_and_leaves_collate_alone(lworld):
+        store, J, wins, ds_c, ds_f = _stores(lworld)
+        fs = D.FrameStore(lworld["frames"], lru=4)
+        sel = [w for w in wins if w[0] == 0][20:23] + [w for w in wins if w[0] == 3][:2]       # three ADJACENT windows of one clip share frames
+        items = [ds_f.item(ci, t, 1, 3) for ci, t, _, _ in sel]
+>       b = D.collate_frames(items, fs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora.py:534: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tanitad\data\v8f_mini_data.py:664: in collate_frames
+    if fstore.n_cache_frames(c) != T_of[c]:
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:612: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000201DBCFE120>
+clip = 'syn-train-000'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: C:\Users\Admin\pt_hinf\base\lw0\frames\syn-train-000.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+tanitad\data\v8f_mini_data.py:605: ValueError
+_______________ test_unique_frames_and_the_frame_store_refusals _______________
+
+lworld = {'root': WindowsPath('C:/Users/Admin/pt_hinf/base/lw0/w'), 'names': ['syn-train-000', 'syn-train-001', 'syn-train-002'...True,  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}}
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_unique_frames_and_the_fra0')
+
+    def test_unique_frames_and_the_frame_store_refusals(lworld, tmp_path):
+        keys, fm = D.unique_frames(["a", "a", "b"], np.array([[0, 0, 1], [0, 1, 2], [0, 0, 5]]))
+        assert keys == [("a", 0), ("a", 1), ("a", 2), ("b", 0), ("b", 5)] and fm.tolist() == [[0, 0, 1], [0, 1, 2], [3, 3, 4]]
+        fs = D.FrameStore(lworld["frames"])
+>       assert fs.missing(["syn-train-000", "nope"]) == ["nope"] and fs.n_cache_frames("syn-train-000") == 60
+                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora.py:556: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tanitad\data\v8f_mini_data.py:612: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000201DA695590>
+clip = 'syn-train-000'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: C:\Users\Admin\pt_hinf\base\lw0\frames\syn-train-000.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+tanitad\data\v8f_mini_data.py:605: ValueError
+_ test_end_to_end_identity_the_on_the_fly_feats_are_the_caches_feats_exactly_and_a_one_step_shift_is_caught _
+
+lworld = {'root': WindowsPath('C:/Users/Admin/pt_hinf/base/lw0/w'), 'names': ['syn-train-000', 'syn-train-001', 'syn-train-002'...True,  True,
+        True,  True,  True,  True,  True,  True,  True,  True,  True,
+        True,  True,  True]), ...}}}
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_end_to_end_identity_the_o0')
+
+    def test_end_to_end_identity_the_on_the_fly_feats_are_the_caches_feats_exactly_and_a_one_step_shift_is_caught(lworld, tmp_path):
+        """The cache is made BY THE ENCODER (tiny, fixed weights) from the same frames; the windows -> frames -> encoder -> gather path must then return the cache's
+        `feats` bit for bit, in order, with the same frame_ok. Shift the frames by one cache step and the identity probe must go non-zero."""
+        enc = make_encoder(1024, 2, r=4, seed=0, bb_seed=3)
+        names = lworld["names"]
+        root = tmp_path / "w"
+        D.make_synthetic_world(root, n_train=6, n_eval=2, T=60, seed=0)
+        for i, c in enumerate(names):                                   # overwrite the random cache tokens with the encoder's OWN pooled fp8 tokens
+            p = root / "train" / "clips" / f"{c}.pt"
+            o = torch.load(p, map_location="cpu", weights_only=True)
+            with torch.no_grad():
+>               o["pool4x10"] = enc.pooled(smooth_frames(60, TINY_HW, seed=i), quantize=True).to(torch.float8_e4m3fn)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora.py:580: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tanitad\models\v8f_lora_encoder.py:463: in pooled
+    p = builder_pool_field()(self.field(frames_u8), gh, gw)
+        ^^^^^^^^^^^^^^^^^^^^
+tanitad\models\v8f_lora_encoder.py:101: in builder_pool_field
+    return load_builder()[0].pool_field
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_________ test_launch_gate_refuses_every_lie_about_the_built_encoder __________
+
+tiny_trainer = <module 'v8f_mini_train' from 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\base\\stack\\scripts\\v8f_mini_train.py'>
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_launch_gate_refuses_every0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000201CFE242F0>
+
+    def test_launch_gate_refuses_every_lie_about_the_built_encoder(tiny_trainer, tmp_path, monkeypatch):
+        import copy as _c
+    
+        def run(extra=(), raw=None):
+            out = tmp_path / f"o{len(list(tmp_path.glob('o*')))}"
+            if raw is not None:
+                monkeypatch.setattr(TR, "build_encoder_raw", raw)
+            return TR.main(lora_argv(tmp_path, out, ["--selfcheck-only", *extra]))
+    
+        def lie(mutate):
+            def raw(a, dev):
+                enc = _tiny_raw(a, dev)
+                mutate(enc)
+                return enc
+            return raw
+    
+        def with_args(**kw):
+            def raw(a, dev):
+                b = _c.copy(a)
+                for k, v in kw.items():
+                    setattr(b, k, v)
+                return _tiny_raw(b, dev)
+            return raw
+>       assert run() == 0                                                                           # the honest build passes
+               ^^^^^
+
+tests\test_v8f_lora.py:662: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora.py:646: in run
+    return TR.main(lora_argv(tmp_path, out, ["--selfcheck-only", *extra]))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scripts\v8f_mini_train.py:922: in main
+    probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:664: in collate_frames
+    if fstore.n_cache_frames(c) != T_of[c]:
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:612: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000201BEACBD90>
+clip = 'syn-train-005'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: C:\Users\Admin\pt_hinf\base\test_launch_gate_refuses_every0\frames\syn-train-005.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+tanitad\data\v8f_mini_data.py:605: ValueError
+_________ test_the_encoder_build_never_moves_the_heads_initialisation _________
+
+tiny_trainer = <module 'v8f_mini_train' from 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\base\\stack\\scripts\\v8f_mini_train.py'>
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_the_encoder_build_never_m0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000201DB77AB30>
+
+    def test_the_encoder_build_never_moves_the_heads_initialisation(tiny_trainer, tmp_path, monkeypatch):
+        """B's heads and L's heads must start from the same bits and the same RNG stream: the trainer seeds, builds the heads, THEN the encoder; the encoder build (which here draws
+        from the global RNG, as HF's loader may) is wrapped in a save / restore. The control: without the restore the stream that follows is NOT B's."""
+        seen = {}
+        orig = TR.declared_vs_built
+    
+        def spy(a, cfg, model, opt, info, enc=None):
+            seen[a.encoder] = ({k: v.clone() for k, v in model.state_dict().items()}, torch.get_rng_state().clone())
+            return orig(a, cfg, model, opt, info, enc)
+        monkeypatch.setattr(TR, "declared_vs_built", spy)
+        cache_argv = ["--synthetic", "--batch", "4", "--d", "32", "--n-q", "2", "--steps", "2", "--threads", "1", "--kin-mode", "yaw", "--seed", "5", "--arm", "M1",
+                      "--selfcheck-only", "--out"]
+        assert TR.main([*cache_argv, str(tmp_path / "c")]) == 0
+>       assert TR.main(lora_argv(tmp_path, tmp_path / "l", ["--selfcheck-only"])) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora.py:696: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\v8f_mini_train.py:922: in main
+    probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:664: in collate_frames
+    if fstore.n_cache_frames(c) != T_of[c]:
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:612: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000201C01C9810>
+clip = 'syn-train-005'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: C:\Users\Admin\pt_hinf\base\test_the_encoder_build_never_m0\frames\syn-train-005.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+tanitad\data\v8f_mini_data.py:605: ValueError
+---------------------------- Captured stdout call -----------------------------
+SELFCHECK PASS {"steps_total": 2, "info": {"batch": 4, "md5_overridden": false, "n_clips": 6, "n_clips_expected": 6, "n_clips_all": 6, "n_excluded": 0, "n_excluded_declared": 0, "excluded_in_train": 0, "excluded_sha256": null, "train_sha256": "85246e69cd8370088cd96d5a538d2ea43ad508b13a833f5e6060e454109e1d62", "lru": 305, "kin_mode": "yaw", "n_windows_all_clips": 162, "n_windows": 162, "window_start": 3, "window_t_min": 3, "p10_units": null, "ds_window_start": 3}}
+____________ test_reachability_flag_to_loss_to_backward_end_to_end ____________
+
+tiny_trainer = <module 'v8f_mini_train' from 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\base\\stack\\scripts\\v8f_mini_train.py'>
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_reachability_flag_to_loss0')
+
+    def test_reachability_flag_to_loss_to_backward_end_to_end(tiny_trainer, tmp_path):
+        out = tmp_path / "run"
+>       assert TR.main(lora_argv(tmp_path, out, ["--accum", "2", "--enc-ckpt"], steps="4")) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora.py:708: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\v8f_mini_train.py:922: in main
+    probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:664: in collate_frames
+    if fstore.n_cache_frames(c) != T_of[c]:
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:612: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000201C01CB490>
+clip = 'syn-train-005'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: C:\Users\Admin\pt_hinf\base\test_reachability_flag_to_loss0\frames\syn-train-005.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+tanitad\data\v8f_mini_data.py:605: ValueError
+_ test_gradient_accumulation_is_exact_end_to_end_including_the_wm_sigreg_term _
+
+tiny_trainer = <module 'v8f_mini_train' from 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\base\\stack\\scripts\\v8f_mini_train.py'>
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_gradient_accumulation_is_0')
+
+    def test_gradient_accumulation_is_exact_end_to_end_including_the_wm_sigreg_term(tiny_trainer, tmp_path):
+        """M2b carries the WM auxiliary (SIGReg = a statistic of the whole batch) and masked-mean losses: accum 1 and accum 4 must give the same heads AND the same LoRA."""
+        res = {}
+        for k, extra in (("a1", []), ("a4", ["--accum", "4", "--enc-ckpt"])):
+            out = tmp_path / k
+>           assert TR.main(lora_argv(tmp_path, out, extra, arm="M2b", steps="2", batch="8")) == 0
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora.py:739: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\v8f_mini_train.py:922: in main
+    probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:664: in collate_frames
+    if fstore.n_cache_frames(c) != T_of[c]:
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:612: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000201BEC10B90>
+clip = 'syn-train-005'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: C:\Users\Admin\pt_hinf\base\test_gradient_accumulation_is_0\frames\syn-train-005.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+tanitad\data\v8f_mini_data.py:605: ValueError
+____________________ test_lora_run_resumes_as_the_same_run ____________________
+
+tiny_trainer = <module 'v8f_mini_train' from 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\base\\stack\\scripts\\v8f_mini_train.py'>
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_lora_run_resumes_as_the_s0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000201DBA18F30>
+
+    def test_lora_run_resumes_as_the_same_run(tiny_trainer, tmp_path, monkeypatch):
+        common = ["--ckpt-every", "2"]
+        full, res = tmp_path / "full", tmp_path / "res"
+>       assert TR.main(lora_argv(tmp_path, full, common, steps="5")) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora.py:751: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+scripts\v8f_mini_train.py:922: in main
+    probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:664: in collate_frames
+    if fstore.n_cache_frames(c) != T_of[c]:
+       ^^^^^^^^^^^^^^^^^^^^^^^^
+tanitad\data\v8f_mini_data.py:612: in n_cache_frames
+    return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+                ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = <tanitad.data.v8f_mini_data.FrameStore object at 0x00000201DBAB16A0>
+clip = 'syn-train-005'
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+>           raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+E           ValueError: C:\Users\Admin\pt_hinf\base\test_lora_run_resumes_as_the_s0\frames\syn-train-005.v2ep.pt: codec png / frame (64, 160) is not the cache builder's png (256, 640)
+
+tanitad\data\v8f_mini_data.py:605: ValueError
+_ test_smoke_script_runs_the_trainer_and_reports_the_ar2_checks_and_a_projection _
+
+tiny_trainer = <module 'v8f_mini_train' from 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\base\\stack\\scripts\\v8f_mini_train.py'>
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_smoke_script_runs_the_tra0')
+
+    def test_smoke_script_runs_the_trainer_and_reports_the_ar2_checks_and_a_projection(tiny_trainer, tmp_path):
+        path = PKG / "code" / "v8f_lora_smoke.py"
+        if not path.is_file():
+            pytest.skip("the smoke script is not in this checkout")
+        spec = importlib.util.spec_from_file_location("v8f_lora_smoke_t", path)
+        S = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(S)
+>       assert Path(S.REPO).resolve() == REPO.resolve(), (S.REPO, REPO)               # same pin as the eval route's
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: (WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratc.../Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/base'))
+E       assert WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/export') == WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/base')
+E        +  where WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/export') = resolve()
+E        +    where resolve = WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/export').resolve
+E        +      where WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/export') = Path(WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/export'))
+E        +        where WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/export') = <module 'v8f_lora_smoke_t' from 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-43...c_infer\\base\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\code\\v8f_lora_smoke.py'>.REPO
+E        +  and   WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/base') = resolve()
+E        +    where resolve = WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/base').resolve
+
+tests\test_v8f_lora.py:909: AssertionError
+____ test_driver_run_a_perturbed_stored_cache_with_a_consistent_row_fails _____
+
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_driver_run_a_perturbed_st0')
+cpu_is_qualifying = None
+
+    @needs_pkg
+    def test_driver_run_a_perturbed_stored_cache_with_a_consistent_row_fails(tmp_path, cpu_is_qualifying):
+        """The stored tokens differ by ~5 % (the size of a device / route gap) and the row describes them faithfully (md5 and all): the control must FAIL on that clip, name it, and exit 1."""
+>       w = _write_world(tmp_path / "w", perturb_clip="syn-ev-b", perturb=lambda p: (p.float() * 1.05).to(torch.float8_e4m3fn))
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:296: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+_ test_driver_run_refuses_a_row_that_is_not_a_production_row_before_the_model_is_built _
+
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_driver_run_refuses_a_row_0')
+cpu_is_qualifying = None
+
+    @needs_pkg
+    def test_driver_run_refuses_a_row_that_is_not_a_production_row_before_the_model_is_built(tmp_path, cpu_is_qualifying):
+>       w = _write_world(tmp_path / "w", row_kv={"syn-tr-b": {"source": "thor416-resize", "enc_dtype": "fp32"}})
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_lora_ar2.py:306: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_lora_ar2.py:244: in _write_world
+    rows[split].append(_write_cache_clip(root / "cache", split, c, o, enc, perturb if c == perturb_clip else None, (row_kv or {}).get(c)))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests\test_v8f_lora_ar2.py:215: in _write_cache_clip
+    pep, ship = E.load_builder()
+                ^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+    def load_builder():
+        """-> ``(pull_encode_pooled, dinov3_fp8_encode_ship)``, both loaded by FILE PATH exactly as the builder loads its encoder
+        (``pull_encode_pooled.load_encoder_module``, which also shims the ``truststore`` import). FAILS LOUD when a path is missing: there is no
+        fallback copy of ``pool_field``, because a silent fallback is a pooling that is not the cache's."""
+        if _BUILDER:
+            return _BUILDER["pep"], _BUILDER["ship"]
+        pep_p, ship_p = builder_paths()
+        for p in (pep_p, ship_p):
+            if not p.is_file():
+>               raise FileNotFoundError(f"v8f_lora_encoder: the cache builder file {p} does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full "
+                                        f"checkout). Looked for: {pep_p} and {ship_p}")
+E               FileNotFoundError: v8f_lora_encoder: the cache builder file C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py does not exist (set V8F_LORA_BUILDER / V8F_LORA_SHIP, or run from a full checkout). Looked for: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\code\pull_encode_pooled.py and C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\dinov3_fp8_encode_ship.py
+
+tanitad\models\v8f_lora_encoder.py:89: FileNotFoundError
+______________ test_the_default_ground_truth_is_the_eval141_grid ______________
+
+    def test_the_default_ground_truth_is_the_eval141_grid():
+        raw = PKG / "raw"
+        if not (raw / "eval141_kin.npz").exists():
+            pytest.skip("eval inputs not in this checkout")
+        m = _load()
+    
+        class A:
+            gt_npz = None
+            eval_grid, eval_kin, eval_join = str(raw / "eval_grid_windows.json"), str(raw / "eval141_kin.npz"), str(raw / "join_eval141.npz")
+        gt, eid, dt, prov = m.ground_truth(A)
+        assert gt.shape == (2399, 30, 2) and len(np.unique(eid)) == 141 and dt == pytest.approx(0.2)
+        assert set(prov["files"]) == {"eval_grid_windows.json", "eval141_kin.npz", "join_eval141.npz"}
+>       p10 = np.load(m.P10_PRED)                                          # P10-yaw-4512: its eval-141 ADE@6s is the registered 2.4870
+              ^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_mini_full_report.py:145: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+file = WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratch...t/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-refav1-hj-mini/raw/p10_yaw4512/p10_eval_pred6.npy')
+mmap_mode = None, allow_pickle = False, fix_imports = True, encoding = 'ASCII'
+max_header_size = 10000
+
+    @set_module('numpy')
+    def load(file, mmap_mode=None, allow_pickle=False, fix_imports=True,
+             encoding='ASCII', *, max_header_size=_MAX_HEADER_SIZE):
+        """
+        Load arrays or pickled objects from ``.npy``, ``.npz`` or pickled files.
+    
+        .. warning:: Loading files that contain object arrays uses the ``pickle``
+                     module, which is not secure against erroneous or maliciously
+                     constructed data. Consider passing ``allow_pickle=False`` to
+                     load data that is known not to contain object arrays for the
+                     safer handling of untrusted sources.
+    
+        Parameters
+        ----------
+        file : file-like object, string, or pathlib.Path
+            The file to read. File-like objects must support the
+            ``seek()`` and ``read()`` methods and must always
+            be opened in binary mode.  Pickled files require that the
+            file-like object support the ``readline()`` method as well.
+        mmap_mode : {None, 'r+', 'r', 'w+', 'c'}, optional
+            If not None, then memory-map the file, using the given mode (see
+            `numpy.memmap` for a detailed description of the modes).  A
+            memory-mapped array is kept on disk. However, it can be accessed
+            and sliced like any ndarray.  Memory mapping is especially useful
+            for accessing small fragments of large files without reading the
+            entire file into memory.
+        allow_pickle : bool, optional
+            Allow loading pickled object arrays stored in npy files. Reasons for
+            disallowing pickles include security, as loading pickled data can
+            execute arbitrary code. If pickles are disallowed, loading object
+            arrays will fail. Default: False
+        fix_imports : bool, optional
+            Only useful when loading Python 2 generated pickled files,
+            which includes npy/npz files containing object arrays. If `fix_imports`
+            is True, pickle will try to map the old Python 2 names to the new names
+            used in Python 3.
+        encoding : str, optional
+            What encoding to use when reading Python 2 strings. Only useful when
+            loading Python 2 generated pickled files, which includes
+            npy/npz files containing object arrays. Values other than 'latin1',
+            'ASCII', and 'bytes' are not allowed, as they can corrupt numerical
+            data. Default: 'ASCII'
+        max_header_size : int, optional
+            Maximum allowed size of the header.  Large headers may not be safe
+            to load securely and thus require explicitly passing a larger value.
+            See :py:func:`ast.literal_eval()` for details.
+            This option is ignored when `allow_pickle` is passed.  In that case
+            the file is by definition trusted and the limit is unnecessary.
+    
+        Returns
+        -------
+        result : array, tuple, dict, etc.
+            Data stored in the file. For ``.npz`` files, the returned instance
+            of NpzFile class must be closed to avoid leaking file descriptors.
+    
+        Raises
+        ------
+        OSError
+            If the input file does not exist or cannot be read.
+        UnpicklingError
+            If ``allow_pickle=True``, but the file cannot be loaded as a pickle.
+        ValueError
+            The file contains an object array, but ``allow_pickle=False`` given.
+        EOFError
+            When calling ``np.load`` multiple times on the same file handle,
+            if all data has already been read
+    
+        See Also
+        --------
+        save, savez, savez_compressed, loadtxt
+        memmap : Create a memory-map to an array stored in a file on disk.
+        lib.format.open_memmap : Create or load a memory-mapped ``.npy`` file.
+    
+        Notes
+        -----
+        - If the file contains pickle data, then whatever object is stored
+          in the pickle is returned.
+        - If the file is a ``.npy`` file, then a single array is returned.
+        - If the file is a ``.npz`` file, then a dictionary-like object is
+          returned, containing ``{filename: array}`` key-value pairs, one for
+          each file in the archive.
+        - If the file is a ``.npz`` file, the returned value supports the
+          context manager protocol in a similar fashion to the open function::
+    
+            with load('foo.npz') as data:
+                a = data['a']
+    
+          The underlying file descriptor is closed when exiting the 'with'
+          block.
+    
+        Examples
+        --------
+        >>> import numpy as np
+    
+        Store data to disk, and load it again:
+    
+        >>> np.save('/tmp/123', np.array([[1, 2, 3], [4, 5, 6]]))
+        >>> np.load('/tmp/123.npy')
+        array([[1, 2, 3],
+               [4, 5, 6]])
+    
+        Store compressed data to disk, and load it again:
+    
+        >>> a=np.array([[1, 2, 3], [4, 5, 6]])
+        >>> b=np.array([1, 2])
+        >>> np.savez('/tmp/123.npz', a=a, b=b)
+        >>> data = np.load('/tmp/123.npz')
+        >>> data['a']
+        array([[1, 2, 3],
+               [4, 5, 6]])
+        >>> data['b']
+        array([1, 2])
+        >>> data.close()
+    
+        Mem-map the stored array, and then access the second row
+        directly from disk:
+    
+        >>> X = np.load('/tmp/123.npy', mmap_mode='r')
+        >>> X[1, :]
+        memmap([4, 5, 6])
+    
+        """
+        if encoding not in ('ASCII', 'latin1', 'bytes'):
+            # The 'encoding' value for pickle also affects what encoding
+            # the serialized binary data of NumPy arrays is loaded
+            # in. Pickle does not pass on the encoding information to
+            # NumPy. The unpickling code in numpy._core.multiarray is
+            # written to assume that unicode data appearing where binary
+            # should be is in 'latin1'. 'bytes' is also safe, as is 'ASCII'.
+            #
+            # Other encoding values can corrupt binary data, and we
+            # purposefully disallow them. For the same reason, the errors=
+            # argument is not exposed, as values other than 'strict'
+            # result can similarly silently corrupt numerical data.
+            raise ValueError("encoding must be 'ASCII', 'latin1', or 'bytes'")
+    
+        pickle_kwargs = {'encoding': encoding, 'fix_imports': fix_imports}
+    
+        with contextlib.ExitStack() as stack:
+            if hasattr(file, 'read'):
+                fid = file
+                own_fid = False
+            else:
+>               fid = stack.enter_context(open(os.fspath(file), "rb"))
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\export\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-refav1-hj-mini\\raw\\p10_yaw4512\\p10_eval_pred6.npy'
+
+C:\Users\Admin\venvs\tanitad\Lib\site-packages\numpy\lib\_npyio_impl.py:454: FileNotFoundError
+___ test_the_next_texts_and_the_four_outcome_names_are_the_preregs_verbatim ___
+
+    @needs_reader
+    def test_the_next_texts_and_the_four_outcome_names_are_the_preregs_verbatim():
+        rows = {}
+>       for ln in PREREG.read_text(encoding="utf-8").splitlines():
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_oacc.py:934: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/base/Project Steering/PREREG_V8F_OACC.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\base\\Project Steering\\PREREG_V8F_OACC.md'
+
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_oacc_reader_world_x_equal_to_b_reads_no_effect_and_every_value_is_the_oracles _
+
+fab = {'I': <v8f_oacc_read_t.Instruments object at 0x00000201DBB69940>, 'world': ({'order': ['01be5919-6e61-45ba-a193-5f447e...101e+01,  3.10143807e-01]]], shape=(2399, 30, 2)), ...}), 'base': WindowsPath('C:/Users/Admin/pt_hinf/base/oacc_fab0')}
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_oacc_reader_world_x_equal0')
+capsys = <_pytest.capture.CaptureFixture object at 0x00000201DBBCCBD0>
+
+    @needs_reader
+    @needs_real
+    def test_oacc_reader_world_x_equal_to_b_reads_no_effect_and_every_value_is_the_oracles(fab, tmp_path, capsys):
+        base = _world(fab, "same", lambda s, tau, p: tau)
+        rc, err, r, out = _read(base, "0", tmp_path, capsys)
+        assert rc == 0, err
+        assert "s1_required" in r, "the record says whether seed 1 is required"
+        assert r["OUTCOME"] == "NO EFFECT" and r["s1_required"] is False and r["seeds_read"] == [0]
+        s0 = r["per_seed"]["s0"]
+        assert s0["PRIMARY_ACC"]["mean"] == 0.0 and s0["PRIMARY_ACC"]["separated"] is False and s0["PRIMARY_ACC"]["pass"] is False, "X == B: the paired accel difference is exactly 0 and not separated"
+        assert s0["PRIMARY_KEEP"]["mean"] == 0.0 and s0["PRIMARY_KEEP"]["pass"] is True and s0["state"] == {"ACC": False, "KEEP": True, "DOM": s0["DOMINANCE"]["pass"]}
+        exp = _assert_world(fab, base, r, 0, 40, decoys=False)
+        assert exp["acc"]["mean"] == 0.0
+        assert abs(r["F"] - 0.1207) < 5e-4 and r["keep_bar"] == r["F"] / 2 and r["n_windows"] == 2399 and r["n_episodes"] == 141 and r["w_acc"] == 42.9311 and r["estimator"].startswith("paired episode-cluster bootstrap, B=40")
+        assert s0["identity_controls"]["all_pass"] is True and s0["identity_controls"]["w1_vs_X_pred_maxabs_m"] <= 1e-4 and s0["identity_controls"]["P_vs_P10_file_maxabs_m"] <= 1e-4
+        fams = s0["beside"]["families"]
+        bjB = json.loads((RAWF / "eval_M2b_s0.json").read_text(encoding="utf-8"))["raw"]
+        assert fams["strategic"]["status"].startswith("READ (switched on") and "PAUSED" not in json.dumps(r)
+        assert fams["strategic"]["B"] == _nan_none(bjB["strategic"]) and fams["strategic"]["X"] == _nan_none(bjB["strategic"]) and fams["strategic"]["B"] is not None, "the strategic family is READ from both evals"
+        assert fams["tactical"]["B"] == _nan_none(bjB["tactical"]) and fams["tactical"]["X"] is not None
+        assert fams["strategic"]["identical_to_B"] is True and fams["strategic"]["identical_by_construction"] is False and fams["tactical"]["HX_equals_X_by_construction"] is True
+        assert set(fams["distance_keeping_k30"]["pairs"]) >= {"HX_s0__minus__P10", "X_s0__minus__B_s0"}
+        assert r["checkpoint_sha256"].get("M2b_s0") == RD.BANKED_CKPT_SHA["M2b_s0"] and r["checkpoint_sha256"].get("M2b-oacc_s0") == s0["ckpt_sha256"], "the record names the measured checkpoints"
+>       want_next = f"NO EFFECT: {_prereg_next('NO EFFECT')}."
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_oacc.py:1511: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_oacc.py:1436: in _prereg_next
+    for ln in PREREG.read_text(encoding="utf-8").splitlines():
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/base/Project Steering/PREREG_V8F_OACC.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\base\\Project Steering\\PREREG_V8F_OACC.md'
+
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_oacc_reader_world_costly_x_passes_acc_fails_keep_and_reads_costs_position _
+
+fab = {'I': <v8f_oacc_read_t.Instruments object at 0x00000201DBB69940>, 'world': ({'order': ['01be5919-6e61-45ba-a193-5f447e...101e+01,  3.10143807e-01]]], shape=(2399, 30, 2)), ...}), 'base': WindowsPath('C:/Users/Admin/pt_hinf/base/oacc_fab0')}
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_oacc_reader_world_costly_0')
+capsys = <_pytest.capture.CaptureFixture object at 0x00000201DB7FFED0>
+
+    @needs_reader
+    @needs_real
+    def test_oacc_reader_world_costly_x_passes_acc_fails_keep_and_reads_costs_position(fab, tmp_path, capsys):
+        base = _world(fab, "costly", _tau_costly)
+        rc, err, r, _ = _read(base, "0", tmp_path, capsys)
+        assert rc == 0, err
+        exp = _assert_world(fab, base, r, 0, 40)
+        s0 = r["per_seed"]["s0"]
+        assert exp["state"]["ACC"] is True and exp["state"]["KEEP"] is False and s0["PRIMARY_KEEP"]["hi"] > exp["bar"] + 0.1, "a lateral drift growing to 1.5 m: ADE6 worse by far more than F/2"
+>       assert r["OUTCOME"] == "COSTS POSITION" and r["s1_required"] is False and r["next"] == f"COSTS POSITION: {_prereg_next('COSTS POSITION')}." and r["reading"].startswith("PREREG_V8F_OACC: COSTS POSITION; w_acc 42.9311;")
+                                                                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_oacc.py:1527: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_oacc.py:1436: in _prereg_next
+    for ln in PREREG.read_text(encoding="utf-8").splitlines():
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/base/Project Steering/PREREG_V8F_OACC.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\base\\Project Steering\\PREREG_V8F_OACC.md'
+
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_oacc_reader_world_smoothed_x_every_read_is_the_hand_computed_one_pending_seed_1_then_smoother_not_dominant _
+
+fab = {'I': <v8f_oacc_read_t.Instruments object at 0x00000201DBB69940>, 'world': ({'order': ['01be5919-6e61-45ba-a193-5f447e...101e+01,  3.10143807e-01]]], shape=(2399, 30, 2)), ...}), 'base': WindowsPath('C:/Users/Admin/pt_hinf/base/oacc_fab0')}
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_oacc_reader_world_smoothe0')
+capsys = <_pytest.capture.CaptureFixture object at 0x00000201DD026150>
+
+    @needs_reader
+    @needs_real
+    def test_oacc_reader_world_smoothed_x_every_read_is_the_hand_computed_one_pending_seed_1_then_smoother_not_dominant(fab, tmp_path, capsys):
+        base = _world(fab, "smooth", lambda s, tau, p: _smooth(tau, 4))
+        rc, err, r0, _ = _read(base, "0", tmp_path, capsys, name="r0.json")
+        assert rc == 0, err
+        exp0 = _assert_world(fab, base, r0, 0, 40)
+        assert exp0["state"] == {"ACC": True, "KEEP": True, "DOM": False} and exp0["acc"]["mean"] < 0 and exp0["acc"]["separated"] and exp0["keep"]["hi"] <= exp0["bar"], "the world: ACC and KEEP pass, DOMINANCE fails"
+        assert exp0["dom_rows"]["ADE2"]["better"] is False and exp0["dom_rows"]["curvature MAE"]["worse"] is True and exp0["dom_rows"]["ADE6"]["better"] is True and exp0["dom_rows"]["accel MAE"]["better"] is True, "ADE2 is not separated-better and curvature is separated-WORSE"
+        assert r0["OUTCOME"] == "PENDING SEED 1" and r0["s1_required"] is True and r0["next"] is None and r0["seeds_read"] == [0] and list(r0["per_seed"]) == ["s0"]
+        assert r0["reading"].startswith("PREREG_V8F_OACC: PENDING SEED 1; w_acc 42.9311;") and "DOMINANCE HX - P10 FAIL" in r0["reading"]
+        rc, err, r, out = _read(base, "0,1", tmp_path, capsys, name="r01.json")
+        assert rc == 0, err
+        exp1 = _assert_world(fab, base, r, 1, 40)
+        _assert_world(fab, base, r, 0, 40, decoys=False)
+        assert exp1["state"]["ACC"] is True and exp1["state"]["KEEP"] is True and exp1["state"]["DOM"] is False
+        assert r["seeds_read"] == [0, 1] and r["seed_states"] == {"s0": exp0["state"], "s1": exp1["state"]} and r["s1_required"] is False
+>       assert r["OUTCOME"] == "SMOOTHER, NOT DOMINANT" and r["next"] == f"SMOOTHER, NOT DOMINANT: {_prereg_next('SMOOTHER, NOT DOMINANT')}."
+                                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_oacc.py:1548: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_oacc.py:1436: in _prereg_next
+    for ln in PREREG.read_text(encoding="utf-8").splitlines():
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/base/Project Steering/PREREG_V8F_OACC.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\base\\Project Steering\\PREREG_V8F_OACC.md'
+
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_____ test_oacc_reader_world_near_gt_x_dominates_its_prior_at_both_seeds ______
+
+fab = {'I': <v8f_oacc_read_t.Instruments object at 0x00000201DBB69940>, 'world': ({'order': ['01be5919-6e61-45ba-a193-5f447e...101e+01,  3.10143807e-01]]], shape=(2399, 30, 2)), ...}), 'base': WindowsPath('C:/Users/Admin/pt_hinf/base/oacc_fab0')}
+tmp_path = WindowsPath('C:/Users/Admin/pt_hinf/base/test_oacc_reader_world_near_gt0')
+capsys = <_pytest.capture.CaptureFixture object at 0x00000201DD0251D0>
+
+    @needs_reader
+    @needs_real
+    def test_oacc_reader_world_near_gt_x_dominates_its_prior_at_both_seeds(fab, tmp_path, capsys):
+        base = _world(fab, "near", _tau_near(fab))
+        rc, err, r, _ = _read(base, "0,1", tmp_path, capsys)
+        assert rc == 0, err
+        exp0 = _assert_world(fab, base, r, 0, 40)
+        exp1 = _assert_world(fab, base, r, 1, 40)
+        assert exp0["state"] == {"ACC": True, "KEEP": True, "DOM": True} and exp1["state"] == {"ACC": True, "KEEP": True, "DOM": True}
+        assert all(exp0["dom_rows"][nm]["better"] for nm, _, need in _DOM_SPEC if need == "better") and not any(r_["worse"] for r_ in exp0["dom_rows"].values()), "every DOMINANCE row is separated-better in this world"
+        assert r["OUTCOME"] == "DOMINATES ITS PRIOR" and r["s1_required"] is False and r["seed_states"] == {"s0": exp0["state"], "s1": exp1["state"]}
+>       assert r["next"] == f"DOMINATES ITS PRIOR: {_prereg_next('DOMINATES ITS PRIOR')}." and r["reading"].startswith("PREREG_V8F_OACC: DOMINATES ITS PRIOR; w_acc 42.9311;") and "DOMINANCE HX - P10 PASS / PASS" in r["reading"]
+                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_oacc.py:1565: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_v8f_oacc.py:1436: in _prereg_next
+    for ln in PREREG.read_text(encoding="utf-8").splitlines():
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/base/Project Steering/PREREG_V8F_OACC.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\base\\Project Steering\\PREREG_V8F_OACC.md'
+
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+__________________ test_the_tables_text_is_the_preregs_text ___________________
+
+    def test_the_tables_text_is_the_preregs_text():
+>       txt = PREREG.read_text(encoding="utf-8")
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_speedavg.py:587: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/bfe78918-15e8-439b-8566-593ca3297bd8/scratchpad/hacc_infer/base/Project Steering/PREREG_V8F_SPEEDAVG.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\hacc_infer\\base\\Project Steering\\PREREG_V8F_SPEEDAVG.md'
+
+..\..\..\..\..\..\..\..\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+============================== warnings summary ===============================
+tests/test_v8f_cz.py::test_eval_absmask_zeroes_only_the_gt_absent_constraint_slots
+  C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\stack\scripts\v8f_mini_train.py:1025: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+tests/test_v8f_oacc.py::test_oacc_reader_world_x_equal_to_b_reads_no_effect_and_every_value_is_the_oracles
+tests/test_v8f_oacc.py::test_oacc_reader_world_costly_x_passes_acc_fails_keep_and_reads_costs_position
+tests/test_v8f_oacc.py::test_oacc_reader_world_smoothed_x_every_read_is_the_hand_computed_one_pending_seed_1_then_smoother_not_dominant
+tests/test_v8f_oacc.py::test_oacc_reader_world_near_gt_x_dominates_its_prior_at_both_seeds
+tests/test_v8f_oacc.py::test_oacc_reader_refuses_a_hx_evaluation_without_a_family
+  C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_oacc_read.py:432: RuntimeWarning: Mean of empty slice
+    strat_pair = {"mean_over_checkpoints": BE.paired_row(np.nanmean(cx, 1), np.nanmean(cb, 1), eid, nb), "per_checkpoint": [BE.paired_row(cx[:, j], cb[:, j], eid, nb) for j in range(cx.shape[1])]}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_kindx_s1.py::test_s0_mode_reproduces_the_banked_deciding_block_exactly
+FAILED tests/test_v8f_kscore.py::test_constants_are_the_prereg_text - Asserti...
+FAILED tests/test_v8f_kscore.py::test_every_outcome_quotes_the_prereg_next_step
+FAILED tests/test_v8f_lora.py::test_b_zero_forward_is_the_frozen_forward_bit_for_bit[dtype0]
+FAILED tests/test_v8f_lora.py::test_b_zero_forward_is_the_frozen_forward_bit_for_bit[dtype1]
+FAILED tests/test_v8f_lora.py::test_step_one_has_nonzero_B_grads_and_exactly_zero_A_grads_then_A_wakes_up_and_the_frozen_control_reads_zero
+FAILED tests/test_v8f_lora.py::test_a_detached_encoder_output_turns_the_gradient_check_red
+FAILED tests/test_v8f_lora.py::test_checkpointing_changes_nothing_but_memory
+FAILED tests/test_v8f_lora.py::test_the_gradient_cache_equals_the_full_batch_gradient_and_plain_accumulation_does_not
+FAILED tests/test_v8f_lora.py::test_collate_frames_hands_every_window_its_own_frames_and_leaves_collate_alone
+FAILED tests/test_v8f_lora.py::test_unique_frames_and_the_frame_store_refusals
+FAILED tests/test_v8f_lora.py::test_end_to_end_identity_the_on_the_fly_feats_are_the_caches_feats_exactly_and_a_one_step_shift_is_caught
+FAILED tests/test_v8f_lora.py::test_launch_gate_refuses_every_lie_about_the_built_encoder
+FAILED tests/test_v8f_lora.py::test_the_encoder_build_never_moves_the_heads_initialisation
+FAILED tests/test_v8f_lora.py::test_reachability_flag_to_loss_to_backward_end_to_end
+FAILED tests/test_v8f_lora.py::test_gradient_accumulation_is_exact_end_to_end_including_the_wm_sigreg_term
+FAILED tests/test_v8f_lora.py::test_lora_run_resumes_as_the_same_run - ValueE...
+FAILED tests/test_v8f_lora.py::test_smoke_script_runs_the_trainer_and_reports_the_ar2_checks_and_a_projection
+FAILED tests/test_v8f_lora_ar2.py::test_driver_run_a_perturbed_stored_cache_with_a_consistent_row_fails
+FAILED tests/test_v8f_lora_ar2.py::test_driver_run_refuses_a_row_that_is_not_a_production_row_before_the_model_is_built
+FAILED tests/test_v8f_mini_full_report.py::test_the_default_ground_truth_is_the_eval141_grid
+FAILED tests/test_v8f_oacc.py::test_the_next_texts_and_the_four_outcome_names_are_the_preregs_verbatim
+FAILED tests/test_v8f_oacc.py::test_oacc_reader_world_x_equal_to_b_reads_no_effect_and_every_value_is_the_oracles
+FAILED tests/test_v8f_oacc.py::test_oacc_reader_world_costly_x_passes_acc_fails_keep_and_reads_costs_position
+FAILED tests/test_v8f_oacc.py::test_oacc_reader_world_smoothed_x_every_read_is_the_hand_computed_one_pending_seed_1_then_smoother_not_dominant
+FAILED tests/test_v8f_oacc.py::test_oacc_reader_world_near_gt_x_dominates_its_prior_at_both_seeds
+FAILED tests/test_v8f_speedavg.py::test_the_tables_text_is_the_preregs_text
+ERROR tests/test_v8f_lora_ar2.py::test_driver_run_identity_passes_on_a_cache_the_builders_own_functions_made
+ERROR tests/test_v8f_lora_ar2.py::test_driver_run_refuses_a_stored_file_that_is_not_the_one_the_row_describes
+ERROR tests/test_v8f_lora_ar2.py::test_driver_run_refuses_frames_that_are_not_the_ones_the_cache_was_encoded_from
+ERROR tests/test_v8f_lora_ar2.py::test_driver_run_on_cpu_is_refused_unless_labelled_and_then_never_qualifies
+ERROR tests/test_v8f_lora_ar2.py::test_driver_run_a_frame_subset_never_qualifies
+ERROR tests/test_v8f_lora_ar2.py::test_driver_run_with_fewer_than_two_and_two_clips_never_qualifies
+ERROR tests/test_v8f_lora_ar2.py::test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[IMAGE_MEAN0_0.485_to_0.486]
+ERROR tests/test_v8f_lora_ar2.py::test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[IMAGE_STD2_0.225_to_0.226]
+ERROR tests/test_v8f_lora_ar2.py::test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[PIXEL_SCALE_255_to_256]
+ERROR tests/test_v8f_lora_ar2.py::test_driver_mutant_that_changes_nothing_is_not_caught
+ERROR tests/test_v8f_lora_ar2.py::test_driver_mutant_caught_on_a_non_qualifying_device_proves_nothing
+ERROR tests/test_v8f_lora_ar2.py::test_driver_manifest_only_asserts_the_rows_and_never_builds_a_model
+ERROR tests/test_v8f_lora_ar2.py::test_driver_main_writes_its_json_even_on_a_refusal
+ERROR tests/test_v8f_lora_ar2.py::test_smoke_amp_is_off_by_default_the_census_uses_the_whole_clip_list_and_the_report_carries_tau_device
+SKIPPED [1] tests\test_v8f_beta_box2.py:30: queue not in this checkout
+SKIPPED [1] tests\test_v8f_beta_box2.py:53: the queue is a Windows batch file
+SKIPPED [1] tests\test_v8f_dscale.py:450: PREREG_V8F_DSCALE.md is not in this checkout
+SKIPPED [1] tests\test_v8f_flat.py:1627: PREREG_V8F_FLAT.md is not in this checkout
+SKIPPED [2] tests\test_v8f_flat.py:2483: the cache builder (the tiny geometry's grid constants) is not in this checkout
+SKIPPED [1] tests\test_v8f_hist.py:681: PREREG_V8F_HIST.md is not in this checkout
+SKIPPED [1] tests\test_v8f_kind.py:90: PREREG_V8F_KIND.md is not in this checkout
+SKIPPED [1] tests\test_v8f_kindx_s1.py:330: PREREG_V8F_KINDX.md is not in this checkout
+SKIPPED [1] tests\test_v8f_kindx_s1.py:664: the export the running chain was launched from is gone
+SKIPPED [2] tests\test_v8f_lora.py:232: the cache builder (pull_encode_pooled.py + dinov3_fp8_encode_ship.py) is not in this checkout
+SKIPPED [1] tests\test_v8f_lora.py:250: the cache builder (pull_encode_pooled.py + dinov3_fp8_encode_ship.py) is not in this checkout
+SKIPPED [1] tests\test_v8f_lora.py:465: DINOv3-L weights are not in the local HF cache
+SKIPPED [1] tests\test_v8f_lora.py:814: DINOv3-L weights are not in the local HF cache
+SKIPPED [2] tests\test_v8f_lora.py:842: the cache builder (pull_encode_pooled.py + dinov3_fp8_encode_ship.py) is not in this checkout
+SKIPPED [1] tests\test_v8f_mixo.py:848: PREREG_V8F_MIXO.md is not in this checkout
+SKIPPED [1] tests\test_yaw_rate_ruling.py:443: C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\hacc_infer\base\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-refav1-hj-mini\raw\p10_yaw540 not banked in this checkout
+SKIPPED [1] tests\test_yaw_rate_ruling.py:473: queue not in this checkout
+SKIPPED [1] tests\test_yaw_rate_ruling.py:489: the queue is a Windows batch file
+27 failed, 1742 passed, 21 skipped, 6 warnings, 14 errors in 1497.53s (0:24:57)
+EXIT_CODE=1

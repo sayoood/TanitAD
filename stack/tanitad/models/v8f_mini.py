@@ -28,7 +28,9 @@ from __future__ import annotations
 
 import ast
 import inspect
+import json
 import math
+import os
 from dataclasses import dataclass, field, fields
 
 import numpy as np
@@ -311,6 +313,55 @@ def subsample_02(traj60: Tensor) -> Tensor:
     return traj60[:, 1::2]
 
 
+# ------------------------------------------------------------------------------------------------ HACC post-map (PREREG_V8F_HACC)
+#: the two keys of a HACC weights JSON (``weights_HACC_<model>.json``): the 30 per-step weights of each axis, 0.2 s knots, axis 0 = along, 1 = cross (the ego frame at NOW)
+HACC_KEYS = ("w_along_by_step", "w_cross_by_step")
+
+
+def hacc_check_weights(w) -> np.ndarray:
+    """The ONE validator of a HACC weight table: returns it as float64 ``[30, 2]`` (step x axis), or REFUSES with ``ValueError`` -- a wrong shape, a non-finite entry or an entry
+    outside [0, 1] (the map is then not a convex blend of the prior and O's plan, and would extrapolate beyond both)."""
+    try:
+        a = np.asarray(w.detach().cpu().numpy() if isinstance(w, Tensor) else w, dtype=np.float64)
+    except (TypeError, ValueError) as e:
+        raise ValueError(f"HACC weights are not a numeric array: {e}") from e
+    if a.shape != (K30, 2):
+        raise ValueError(f"HACC weights must have shape ({K30}, 2) (0.2 s step x [along, cross]), got {tuple(a.shape)}")
+    if not np.isfinite(a).all():
+        raise ValueError("HACC weights contain a non-finite entry")
+    if a.min() < 0.0 or a.max() > 1.0:
+        raise ValueError(f"HACC weights must lie in [0, 1], got range [{a.min():.6g}, {a.max():.6g}]")
+    return a
+
+
+def read_hacc_weights(src) -> np.ndarray:
+    """A HACC weights JSON (a path, or its parsed dict) -> the validated ``[30, 2]`` float64 table (:func:`hacc_check_weights`): column 0 = ``w_along_by_step``, column 1 = ``w_cross_by_step``."""
+    if isinstance(src, (str, os.PathLike)):
+        with open(src, "r", encoding="utf-8") as fh:
+            src = json.load(fh)
+    if not isinstance(src, dict) or any(k not in src for k in HACC_KEYS):
+        raise ValueError(f"a HACC weights file needs the keys {HACC_KEYS}")
+    try:
+        cols = np.stack([np.asarray(src[k], dtype=np.float64) for k in HACC_KEYS], 1)
+    except (TypeError, ValueError) as e:
+        raise ValueError(f"HACC weights {HACC_KEYS} are not two equal-length numeric lists: {e}") from e
+    return hacc_check_weights(cols)
+
+
+def hacc_w_midpoints(w30: Tensor) -> Tensor:
+    """The 60 weights of ``traj60`` (the 0.1 s grid) from the 30 fitted ones (the 0.2 s knots): the odd rows (tau = 0.2 j) ARE the knot weights; each even row (tau = 0.1 + 0.2 j) is the mean of the
+    two knot weights around it, and the first (tau = 0.1, between NOW and the first knot) is the first knot's. HBLEND's ``w_midpoints`` verbatim -- the midpoints are not identifiable from the
+    data (GT exists only on the knots), so this is DERIVED, and ``upsample_prior`` already puts the prior's own midpoints at the mean of its neighbours."""
+    mid = torch.cat([w30[:1], 0.5 * (w30[:-1] + w30[1:])], 0)
+    return torch.stack([mid, w30], 1).reshape(N60, 2)
+
+
+def hacc_apply(plan: Tensor, prior: Tensor, w: Tensor) -> Tensor:
+    """HACC: ``prior + w * (plan - prior)``, ``w`` broadcast over the batch (``[n, 2]`` against ``[B, n, 2]``): a per-step, per-axis convex blend of the P10 prior and O's plan. ``torch.lerp`` is
+    that number, EXACT at both ends (w = 0 gives the prior and w = 1 the plan, bit for bit; the plain difference form is off by an ulp of the larger one at w = 1)."""
+    return torch.lerp(prior, plan, w.expand_as(prior))
+
+
 def traj_terms(traj30: Tensor, gt: Tensor, gok: Tensor) -> tuple:
     """O's two position terms on the 0.2 s knots, ``(ade, fde)``: the mean / last-knot L2 distance to the GT, averaged over the GT-valid windows (``gok`` [B]). The loss reads this; so does the
     w_acc rule of PREREG_V8F_OACC (``v8f_mini_eval_oacc.py wacc``), so the trajectory loss it balances against IS the trainer's, never a re-implementation."""
@@ -557,6 +608,7 @@ class V8FMini(nn.Module):
         self.register_buffer("cons_sd", torch.ones(N_CONS) if cons_sd is None else torch.as_tensor(cons_sd, dtype=torch.float32))
         self.register_buffer("ck_nom", torch.tensor([[a, 0.0, 0.0] for a in CKPT_ARCS]))
         self.register_buffer("ck_scale", torch.tensor([10.0, 10.0, 0.5]))
+        self.register_buffer("hacc_w", None)       # PREREG_V8F_HACC post-map weights [30, 2]: ABSENT by default (a None buffer is not in the state dict: every earlier checkpoint loads and runs bit for bit)
         # scene adapter (shared) -- the only place frozen features meet trainable weights
         self.adapter = nn.Sequential(nn.LayerNorm(cfg.d_feat), nn.Linear(cfg.d_feat, d))
         self.pos = nn.Parameter(torch.randn(cfg.n_tok, d) * 0.02)
@@ -719,11 +771,59 @@ class V8FMini(nn.Module):
         return out
 
     def forward_infer(self, batch: dict) -> dict:
-        """INFERENCE: reads only :data:`INFERENCE_INPUT_KEYS` -- no label, no GT, no situation classifier."""
+        """INFERENCE: reads only :data:`INFERENCE_INPUT_KEYS` -- no label, no GT, no situation classifier.
+
+        With the HACC post-map set (:meth:`set_hacc_weights`; ``hacc_w`` ABSENT by default) the plan is ``P + w * (O - P)`` per 0.2 s step and per axis (:meth:`_hacc_post_map`); with
+        it absent the outputs are bit-identical to a model that has no such buffer. Inference stays vision + ego-dynamics only: see :meth:`_hacc_post_map`."""
         g = _KeyGuard(batch)
         out = self._forward(g, 0.0, False)
         out["_keys_read"] = set(g.read)
+        return self._hacc_post_map(out)
+
+    def _hacc_post_map(self, out: dict) -> dict:
+        """PREREG_V8F_HACC, the deployed post-map: with ``hacc_w`` set, ``traj60`` becomes ``P + w * (O - P)`` on the 0.1 s grid (:func:`hacc_apply` with :func:`hacc_w_midpoints`' weights),
+        ``traj30`` its odd rows (so ``traj30 == traj60[:, 1::2]`` still holds), and O's own plan is kept as ``traj60_o`` / ``traj30_o``. P is the prior the model already computed
+        (``out["p10"]``: the DEPLOYED P10 from the measured ego history, as in HBLEND) and ``w`` is a constant -- a fixed function of the step index, fitted offline on TRAINING windows -- so
+        inference stays VISION + ego-dynamics only: the map reads no new batch key, no label and no situation-classifier output, and every other output is untouched. With ``hacc_w`` absent
+        ``out`` is returned as is. It is applied by :meth:`forward_infer` AND :meth:`forward_diag` (whose identity with ``forward_infer`` under T's own code must hold, and a TAC read
+        compares the two) and NEVER in ``_forward``: training and the loss read O's raw plan."""
+        if self.hacc_w is None:
+            return out
+        w30 = self.hacc_w.to(device=out["traj60"].device, dtype=out["traj60"].dtype)
+        out["traj60_o"], out["traj30_o"] = out["traj60"], out["traj30"]
+        out["traj60"] = hacc_apply(out["traj60"], upsample_prior(out["p10"]), hacc_w_midpoints(w30))
+        out["traj30"] = subsample_02(out["traj60"])
         return out
+
+    # ---- HACC post-map (inference only) ------------------------------------------------------------------------
+    @property
+    def hacc_active(self) -> bool:
+        """True iff the HACC post-map weights are set (``forward_infer`` then returns the HACC plan)."""
+        return self.hacc_w is not None
+
+    def set_hacc_weights(self, w) -> None:
+        """Set the post-map: ``w`` is a ``[30, 2]`` table (0.2 s step x [along, cross]), validated by :func:`hacc_check_weights` (shape, finite, in [0, 1]); REFUSED with ``ValueError`` otherwise, and
+        the model is left unchanged. Stored as a float32 buffer, so it follows ``.to(device)`` and is saved / loaded with the state dict."""
+        t = torch.as_tensor(hacc_check_weights(w), dtype=torch.float32, device=self.basis.device)
+        self.register_buffer("hacc_w", t)
+
+    def load_hacc_weights(self, src) -> None:
+        """:meth:`set_hacc_weights` from a ``weights_HACC_<model>.json`` (a path or its parsed dict; :func:`read_hacc_weights`)."""
+        self.set_hacc_weights(read_hacc_weights(src))
+
+    def clear_hacc_weights(self) -> None:
+        """Back to the plain O plan: the buffer is removed (so it leaves the state dict)."""
+        self.hacc_w = None
+
+    def _load_from_state_dict(self, state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs):
+        """A state dict that CARRIES ``hacc_w`` is validated (:func:`hacc_check_weights`: a wrong shape or an entry outside [0, 1] is REFUSED) and loads into a model that has none yet (the buffer is
+        created first); one that does not carry it loads as before."""
+        key = prefix + "hacc_w"
+        if key in state_dict:
+            hacc_check_weights(state_dict[key])
+            if self.hacc_w is None:
+                self.register_buffer("hacc_w", torch.zeros(K30, 2, device=self.basis.device))
+        super()._load_from_state_dict(state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs)
 
     def forward_diag(self, batch: dict, code_override: Tensor) -> dict:
         """DIAGNOSTIC ONLY (PREREG_V8F_TAC): inference exactly as :meth:`forward_infer`, except that O reads ``code_override``
@@ -734,7 +834,7 @@ class V8FMini(nn.Module):
         g = _KeyGuard(batch)
         out = self._forward(g, 0.0, False, code_override=code_override)
         out["_keys_read"] = set(g.read)
-        return out
+        return self._hacc_post_map(out)                      # the same post-map as forward_infer (absent => out as is), so the identity under T's own code survives
 
     def forward(self, batch: dict, p_gt: float | None = None, gen=None) -> dict:
         return self._forward(batch, self.p_gt if p_gt is None else p_gt, True, gen)

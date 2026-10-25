@@ -1,0 +1,350 @@
+{
+ "BASE_unmutated": {
+  "returncode": 0,
+  "n_tests": 17,
+  "n_skipped": 0,
+  "n_failed": 0,
+  "failures": [],
+  "tail": ".................                                                        [100%]\n17 passed in 5.38s\n",
+  "expected": "GREEN, nothing skipped",
+  "ok": true
+ },
+ "M01_apply_when_absent": {
+  "what": "the post-map is applied with a default w = 0.5 when the buffer is ABSENT",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 7,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_absent_buffer_forward_infer_is_bit_identical_to_the_plain_forward",
+   "test_ends_of_the_blend_are_exact_on_both_grids",
+   "test_general_blend_equals_an_independent_float64_formula_on_both_grids",
+   "test_axis_convention_column0_is_along_column1_is_cross",
+   "test_traj30_is_the_odd_rows_of_traj60_and_every_other_output_is_untouched",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s0]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s1]"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: an absent hacc_w must leave forward_infer's outputs and keys exactly as they were",
+   "AssertionError: w = 1 must give O's plan exactly",
+   "AssertionError:"
+  ],
+  "non_assertion_failures": []
+ },
+ "M01b_buffer_has_a_default": {
+  "what": "the buffer is registered with a default table instead of ABSENT",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 6,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_absent_buffer_forward_infer_is_bit_identical_to_the_plain_forward",
+   "test_set_then_clear_returns_to_the_plain_plan_bit_for_bit",
+   "test_state_dict_round_trip_keeps_the_weights_and_the_plan",
+   "test_state_dict_with_a_bad_table_is_refused",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s0]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s1]"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: assert (tensor([[1., 1.],\\n        [1., 1.],\\n        [1., 1.],\\n        [1., 1.],\\n        [1., 1.],\\n        [1., 1.],\\n        [1... [1., 1.],\\n        [1., 1.],\\n        [1., 1.],\\",
+   "AssertionError: assert False",
+   "AssertionError: assert tensor([[1., 1.],\\n        [1., 1.],\\n        [1., 1.],\\n        [1., 1.],\\n        [1., 1.],\\n        [1., 1.],\\n        [1... [1., 1.],\\n        [1., 1.],\\n        [1., 1.],\\n"
+  ],
+  "non_assertion_failures": []
+ },
+ "M02a_swap_axes_in_the_map": {
+  "what": "the blend uses the weight columns swapped (along <-> cross)",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 6,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_general_blend_equals_an_independent_float64_formula_on_both_grids",
+   "test_axis_convention_column0_is_along_column1_is_cross",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s0]",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s1]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s0]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s1]"
+  ],
+  "first_assertion_lines": [
+   "AssertionError:",
+   "AssertionError: axis 0 (along / x) must follow O when column 0 is 1",
+   "AssertionError: M2b_s0: the model's HACC plan differs from the banked per-window plan by 6.66 m (> 1e-5)"
+  ],
+  "non_assertion_failures": []
+ },
+ "M02b_swap_axes_in_the_loader": {
+  "what": "the JSON loader stacks [cross, along] instead of [along, cross]",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 6,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_loader_reads_the_json_and_refuses_bad_tables",
+   "test_real_weights_are_the_scored_table",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s0]",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s1]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s0]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s1]"
+  ],
+  "first_assertion_lines": [
+   "AssertionError:",
+   "AssertionError: M2b_s0: the deployed table is not the one HACC scored",
+   "AssertionError: M2b_s0: the model's HACC plan differs from the banked per-window plan by 6.66 m (> 1e-5)"
+  ],
+  "non_assertion_failures": []
+ },
+ "M03_even_rows_for_traj30": {
+  "what": "traj30 is taken from the EVEN rows of the mapped traj60 (the midpoints), not the 0.2 s knots",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 8,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_ends_of_the_blend_are_exact_on_both_grids",
+   "test_general_blend_equals_an_independent_float64_formula_on_both_grids",
+   "test_axis_convention_column0_is_along_column1_is_cross",
+   "test_traj30_is_the_odd_rows_of_traj60_and_every_other_output_is_untouched",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s0]",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s1]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s0]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s1]"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: w = 1 must give O's plan exactly",
+   "AssertionError:",
+   "AssertionError: axis 0 (along / x) must follow O when column 0 is 1"
+  ],
+  "non_assertion_failures": []
+ },
+ "M04a_skip_midpoint_rule_nearest": {
+  "what": "the 60 weights are the knot weights repeated (no neighbour mean)",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 1,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_general_blend_equals_an_independent_float64_formula_on_both_grids"
+  ],
+  "first_assertion_lines": [
+   "AssertionError:"
+  ],
+  "non_assertion_failures": []
+ },
+ "M04b_skip_midpoint_rule_odd_only": {
+  "what": "the map is applied to the odd rows only; the midpoint rows keep O's own plan",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 3,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_ends_of_the_blend_are_exact_on_both_grids",
+   "test_general_blend_equals_an_independent_float64_formula_on_both_grids",
+   "test_axis_convention_column0_is_along_column1_is_cross"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: w = 0 must give the P10 prior exactly (all 60 rows)",
+   "AssertionError:",
+   "assert False"
+  ],
+  "non_assertion_failures": []
+ },
+ "M04c_first_midpoint_is_half": {
+  "what": "the first midpoint weight is the mean with an origin weight of 0 (0.5 w[0]) instead of w[0]",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 4,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_ends_of_the_blend_are_exact_on_both_grids",
+   "test_general_blend_equals_an_independent_float64_formula_on_both_grids",
+   "test_axis_convention_column0_is_along_column1_is_cross",
+   "test_midpoint_rule_known_values"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: w = 1 must give O's plan exactly",
+   "AssertionError:",
+   "assert False"
+  ],
+  "non_assertion_failures": []
+ },
+ "M04d_midpoints_on_the_wrong_parity": {
+  "what": "the knot weights sit on the EVEN rows and the midpoints on the odd ones",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 6,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_general_blend_equals_an_independent_float64_formula_on_both_grids",
+   "test_midpoint_rule_known_values",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s0]",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s1]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s0]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s1]"
+  ],
+  "first_assertion_lines": [
+   "AssertionError:",
+   "AssertionError:",
+   "AssertionError: M2b_s0: the model's HACC plan differs from the banked per-window plan by 0.23 m (> 1e-5)"
+  ],
+  "non_assertion_failures": []
+ },
+ "M05_map_in_the_training_forward": {
+  "what": "the post-map moves into _forward (training reads the HACC plan) and out of forward_infer",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 4,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_training_path_loss_plan_and_gradient_are_unchanged_by_the_buffer",
+   "test_inference_stays_admissible_and_forward_diag_carries_the_same_map",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s0]",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s1]"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: training loss term 'ade' changed with the post-map set",
+   "AssertionError: forward_diag under T's own code must stay IDENTICAL to forward_infer (the post-map is in both)",
+   "AssertionError: M2b_s0: the model's HACC plan differs from the banked per-window plan by 20.2 m (> 1e-5)"
+  ],
+  "non_assertion_failures": []
+ },
+ "M06_no_range_check": {
+  "what": "the validator accepts entries outside [0, 1]",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 2,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_loader_reads_the_json_and_refuses_bad_tables",
+   "test_state_dict_with_a_bad_table_is_refused"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: the loader must REFUSE: below 0",
+   "AssertionError: load must refuse a state dict whose hacc_w is out of range"
+  ],
+  "non_assertion_failures": []
+ },
+ "M07_no_shape_check": {
+  "what": "the validator accepts any shape",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 2,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_loader_reads_the_json_and_refuses_bad_tables",
+   "test_state_dict_with_a_bad_table_is_refused"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: the loader must REFUSE: too short"
+  ],
+  "non_assertion_failures": [
+   {
+    "test": "test_state_dict_with_a_bad_table_is_refused",
+    "kind": "failure",
+    "assertion": false,
+    "first_e_line": "RuntimeError: Error(s) in loading state_dict for V8FMini:"
+   }
+  ]
+ },
+ "M08_no_state_dict_override": {
+  "what": "the _load_from_state_dict override is gone (a model without the buffer cannot load one that has it)",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 2,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_state_dict_round_trip_keeps_the_weights_and_the_plan",
+   "test_state_dict_with_a_bad_table_is_refused"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: _IncompatibleKeys(missing_keys=[], unexpected_keys=['hacc_w'])",
+   "AssertionError: load must refuse a state dict whose hacc_w is out of range"
+  ],
+  "non_assertion_failures": []
+ },
+ "M08b_state_dict_not_validated": {
+  "what": "a state dict's hacc_w is not validated on load",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 1,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_state_dict_with_a_bad_table_is_refused"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: load must refuse a state dict whose hacc_w is out of range"
+  ],
+  "non_assertion_failures": []
+ },
+ "M09_inverted_blend": {
+  "what": "the blend weight is 1 - w (the prior where O should be)",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 8,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_ends_of_the_blend_are_exact_on_both_grids",
+   "test_general_blend_equals_an_independent_float64_formula_on_both_grids",
+   "test_axis_convention_column0_is_along_column1_is_cross",
+   "test_inference_stays_admissible_and_forward_diag_carries_the_same_map",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s0]",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s1]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s0]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s1]"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: w = 1 must give O's plan exactly",
+   "AssertionError:",
+   "AssertionError: axis 0 (along / x) must follow O when column 0 is 1"
+  ],
+  "non_assertion_failures": []
+ },
+ "M10_forward_diag_unmapped": {
+  "what": "forward_diag returns O's raw plan while forward_infer returns the HACC plan",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 1,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_inference_stays_admissible_and_forward_diag_carries_the_same_map"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: forward_diag under T's own code must stay IDENTICAL to forward_infer (the post-map is in both)"
+  ],
+  "non_assertion_failures": []
+ },
+ "M11_traj30_not_remapped": {
+  "what": "traj60 is mapped but traj30 keeps O's plan (the two grids disagree)",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 9,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_set_then_clear_returns_to_the_plain_plan_bit_for_bit",
+   "test_ends_of_the_blend_are_exact_on_both_grids",
+   "test_general_blend_equals_an_independent_float64_formula_on_both_grids",
+   "test_axis_convention_column0_is_along_column1_is_cross",
+   "test_traj30_is_the_odd_rows_of_traj60_and_every_other_output_is_untouched",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s0]",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s1]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s0]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s1]"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: the map must move the plan, or every test below is vacuous",
+   "assert False",
+   "AssertionError:"
+  ],
+  "non_assertion_failures": []
+ },
+ "M12_prior_is_not_p10": {
+  "what": "the blend's P is the ZERO plan instead of the deployed prior",
+  "verdict": "RED_BY_ASSERTION",
+  "n_failed": 7,
+  "n_tests": 17,
+  "failing_tests": [
+   "test_ends_of_the_blend_are_exact_on_both_grids",
+   "test_general_blend_equals_an_independent_float64_formula_on_both_grids",
+   "test_axis_convention_column0_is_along_column1_is_cross",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s0]",
+   "test_real_weights_through_forward_infer_reproduce_the_banked_hacc_plan[M2b_s1]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s0]",
+   "test_real_checkpoint_loads_unchanged_and_its_hacc_plan_matches_the_banked_one[M2b_s1]"
+  ],
+  "first_assertion_lines": [
+   "AssertionError: w = 0 must give the P10 prior exactly (all 60 rows)",
+   "AssertionError:",
+   "AssertionError: axis 1 (cross / y) must follow the prior when column 1 is 0"
+  ],
+  "non_assertion_failures": []
+ },
+ "summary": {
+  "mutants": 18,
+  "red_by_assertion": 18,
+  "all_red": true,
+  "baseline_green": true
+ }
+}
