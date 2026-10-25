@@ -103,7 +103,7 @@ sub, sup { font-size: max(19px, 0.8em); line-height: 0; }
 .rd div { flex: 1; text-align: center; border-radius: 8px; background: var(--trn); color: #fff; font-weight: 700; font-size: 20px; padding: 4px 0; line-height: 1.15; }
 .rd div small { display: block; font-weight: 500; font-size: 19px; }
 .pbar { display: flex; height: 44px; border-radius: 8px; overflow: hidden; margin-top: 6px; border: 2px solid #8E4208; }
-.pbar div { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 19px; font-weight: 700; white-space: nowrap; overflow: hidden; }
+.pbar div { min-width: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 19px; font-weight: 700; white-space: nowrap; overflow: hidden; }
 ol.prune { margin: 4px 0 0; padding: 0; list-style: none; }
 ol.prune li { border-left: 6px solid var(--rul); background: #fff; padding: 4px 9px; margin: 6px 0 0; border-radius: 0 8px 8px 0; font-size: 19px; line-height: 1.24; }
 ol.prune li.soft { border-left-color: #D98C95; }
@@ -197,22 +197,22 @@ ol.prune li.guard { border-left-color: var(--ink); background: #EEF0F3; }
   </div>
   <div>
     <div class="t1">HiCAP — Hierarchical Contrastive Action Priors<br>on a <span class="accb">frozen VLM backbone</span></div>
-    <div class="sub">A frozen Cosmos3-Edge reasoner read once per refresh, a 56 M contrastive hierarchy selecting among 262,144 factored trajectories under prior-encoded pruning, trustworthy imagination and elastic sensing —
+    <div class="sub">A frozen Cosmos3-Edge reasoner read once per refresh, a 64 M trainable contrastive hierarchy selecting among 262,144 factored trajectories under prior-encoded pruning, trustworthy imagination and elastic sensing —
       plus the <b>v10 extensions</b>: agent supervision, an audio bridge, traffic-rule knowledge with a learned country label, optional reasoning text.</div>
   </div>
   <div class="evkey">evidence class on every number:
     <i class="ev M">M</i> measured <i class="ev P">P</i> published <i class="ev E">E</i> estimated <i class="ev H">H</i> hypothesis <i class="ev I">I</i> inherited</div>
   <div class="strip">
-    <div class="status"><span class="dot"></span>STATUS: architecture implemented and unit-tested on CPU; not yet trained</div>
+    <div class="status"><span class="dot"></span>STATUS: architecture incl. v10 implemented and unit-tested on CPU; not yet trained</div>
     <div class="who"><b>TanitAD programme</b> · PI: Sayed · design &amp; pre-registration poster · <b>2026-10-25</b></div>
-    <div class="who" style="margin-left:auto">v10 extensions specified 2026-10-25 (spec rev a); implementation streams S, A, T, R in progress</div>
+    <div class="who" style="margin-left:auto">v10 extensions implemented and integrated in <span class="mono">HiCAPFull</span> (spec rev b)</div>
   </div>
   <div class="kchips">
       <div class="kchip"><b>2.43 B</b> frozen <i class="ev P">P</i></div>
-      <div class="kchip"><b>56.4 M + 1.88 M</b> trained <i class="ev M">M</i></div>
-      <div class="kchip"><b>1,024 × 256</b> = 262,144 trajectories</div>
+      <div class="kchip"><b>64.37 M</b> trained <i class="ev M">M</i></div>
+      <div class="kchip"><b>262,144</b> trajectories</div>
       <div class="kchip"><b>10 Hz</b> command · <b>2 Hz</b> refresh</div>
-      <div class="kchip"><b>53</b> CPU tests <i class="ev M">M</i></div>
+      <div class="kchip"><b>145</b> CPU test functions <i class="ev M">M</i></div>
   </div>
 </header>
 
@@ -302,7 +302,7 @@ ol.prune li.guard { border-left-color: var(--ink); background: #EEF0F3; }
   </div>
   <div class="node frz opt" style="left:580px;top:450px;width:560px;height:100px;padding-top:6px;padding-bottom:4px">
     <h4><span class="cn">5</span><svg class="lock" style="color:#2F5597"><use href="#i-lock"/></svg>FROZEN audio encoder · optional</h4>
-    <p class="sm">Whisper-class · BEATs-base ≈ 90 M · CLAP</p>
+    <p class="sm">Qwen3-Omni AuT 647.9 M · BEATs ≈ 90 M contender</p>
   </div>
 
   <!-- ---------- tap cache + shared space ---------- -->
@@ -362,7 +362,7 @@ ol.prune li.guard { border-left-color: var(--ink); background: #EEF0F3; }
       <div class="box2 g">
         <b class="h"><span class="cn">7</span>Gated memory read (zero-init)</b>
         <p style="margin:6px 0 4px;font-size:21px">q′<sub>ℓ</sub> = q<sub>ℓ</sub> + tanh(g<sub>ℓ</sub>) · CrossAttn(q<sub>ℓ</sub>, M), &nbsp;g<sub>ℓ</sub> = 0 at init</p>
-        <p style="margin:0;font-size:19.5px">M = <b>audio</b> 8 tokens (optional) ∪ <b>rule tokens</b> top-8 (v10) · per-level gates · one mechanism for every knowledge source · source absent ⇒ output <b>bit-exactly</b> the original <i class="ev M">M</i> (unit test)</p>
+        <p style="margin:0;font-size:19.5px">M = <b>audio</b> 8 tokens (optional) ∪ <b>rule tokens</b> top-8 (v10) · per-level gates · gated rule memory 2.10 M <i class="ev M">M</i> · source absent ⇒ output <b>bit-exactly</b> the original (unit test)</p>
         <p style="margin:4px 0 0;font-size:19.5px">rule memory feeds s1 / s2 queries — never the goal token</p>
       </div>
     </div>
@@ -374,7 +374,7 @@ ol.prune li.guard { border-left-color: var(--ink); background: #EEF0F3; }
       </div>
     </div>
     <div class="box2" style="margin-top:10px">
-      <b class="h">Trainable parameters</b>, counted from the implementation (<span class="mono">HiCAP.n_params</span>, <span class="mono">HiCAPFull</span>): <b>56.4 M</b> core + <b>1.88 M</b> imagination &amp; elastic = 58.3 M <i class="ev M">M</i>
+      <b class="h">Trainable parameters</b> (<span class="mono">HiCAPFull</span>, counted from code) <i class="ev M">M</i>: <b>56.39</b> core + <b>1.88</b> imagination &amp; elastic + <b>6.10</b> v10 knowledge = <b>64.37 M</b> at d<sub>audio</sub> 768
       <div class="pbar">
         <div style="flex:18.9;background:#C25E0E">fusion 18.9</div>
         <div style="flex:13.7;background:#A14E0B">re-ranker 13.7</div>
@@ -386,8 +386,9 @@ ol.prune li.guard { border-left-color: var(--ink); background: #EEF0F3; }
         <div style="flex:0.9;background:#B5651F"></div>
         <div style="flex:0.6;background:#8E4208"></div>
         <div style="flex:1.88;background:#6446A3"></div>
+        <div style="flex:6.10;background:#1F7F5B">v10 6.10</div>
       </div>
-      <p style="margin:4px 0 0;font-size:19px">towers = three text-node towers 8.1 + numeric path / profile towers 1.1 · then: goal / cost / refine / pair heads 1.9 · gated audio read 1.4 · ego/nav/route 0.9 · motion 0.6 · <span style="color:#6446A3;font-weight:700">imagination + elastic 1.88</span> (M) · v10 bridge, rule memory, country readout: <b>to be measured</b> · stages 1–2 train 42.7 M (re-ranker only in stage 3)</p>
+      <p style="margin:4px 0 0;font-size:19px">then: heads 1.9 · gated audio 1.4 · ego/nav/route 0.9 · motion 0.6 · <span style="color:#6446A3;font-weight:700">imagination + elastic 1.88</span> · <span style="color:#1F7F5B;font-weight:700">knowledge 6.10 = country readout 3.67 + rule memory 2.10 + retrieval 0.33</span>. With audio: GatedAudio widened to d<sub>audio</sub> = d<sub>v</sub> = 2,048 (65.02 M) + AudioBridge 9.60 M ⇒ <b>74.62 M</b> <i class="ev M">M</i></p>
     </div>
     <div class="box2" style="margin-top:10px;border-color:#C25E0E;border-style:dashed">
       <b class="h">← Every tick</b>, 16 motion tokens and the ego, nav and route tokens join the sequence; the cached VLM tokens are re-read with their age, so the fusion never waits for a refresh.
@@ -406,7 +407,7 @@ ol.prune li.guard { border-left-color: var(--ink); background: #EEF0F3; }
   </div>
   <div class="node trn" style="left:680px;top:1040px;width:320px;height:170px">
     <h4><span class="cn">9</span>COUNTRY readout <span class="hz o">v10</span></h4>
-    <p class="sm">on s1 · contrastive vs 25 country nodes · λ<sub>c</sub> = 0.1 → posterior p(c)</p>
+    <p class="sm">on s1 · contrastive vs 25 country nodes · λ<sub>c</sub> = 0.1 → p(c) · 3.67 M <i class="ev M">M</i></p>
   </div>
   <div class="node trn" style="left:0;top:1235px;width:620px;height:240px;padding:9px 10px 8px">
     <h4>s2 TACTICAL · lat 3 × lon 7<span class="hz">every 0.5 s</span></h4>
@@ -431,6 +432,7 @@ ol.prune li.guard { border-left-color: var(--ink); background: #EEF0F3; }
     <p class="sm">w<sub>i</sub> = Σ<sub>c</sub> p(c) · 1[i ∈ R<sub>c</sub>]</p>
     <p class="sm">s<sub>i</sub> = ⟨W<sub>q</sub> q<sub>s2</sub>, W<sub>r</sub> r<sub>i</sub>⟩</p>
     <p class="sm">top-8 by w<sub>i</sub> · softmax(s<sub>i</sub>) → memory <span class="cn" style="width:30px;height:30px;font-size:19px;margin:0">7</span>, prune, verify</p>
+    <p class="sm">projections 0.33 M <i class="ev M">M</i> · RuleBook v1: 106 records</p>
   </div>
   <div class="node trn" style="left:680px;top:1462px;width:320px;height:132px">
     <h4>goal query</h4>
@@ -622,19 +624,19 @@ ol.prune li.guard { border-left-color: var(--ink); background: #EEF0F3; }
       <rect x="400" y="108" width="550" height="40" rx="8" fill="#E8EEF9" stroke="#2F5597" stroke-width="2.5"/><text x="414" y="135"><tspan font-weight="800">③ VERIFY / EXPLAIN</tspan> rule texts in prompts (13, K)</text></g>
     </svg>
     <ul>
-      <li><b>NodeLibrary</b> (versioned): new token from its definition, ids never move</li>
-      <li><b>RuleBook</b> <span class="mono">rulebook_v1.json</span>: {rule_id, countries, text, args, road_type, effect ∈ {prune, prior, memory}, source}; UNVERIFIED without a 2nd source</li>
-      <li><b>Country</b>: 25-way readout on s1 (λ<sub>c</sub> 0.1); rules-null is bit-exact</li>
+      <li><b>NodeLibrary</b>, versioned: ids never move</li>
+      <li><b>RuleBook v1</b>: <b>106 records, 25 countries</b> — 73 PUBLISHED (official-domain search summaries), 33 UNVERIFIED <i class="ev M">M</i>; {rule_id, countries, text, args, road_type, effect ∈ {prune, prior, memory}, source}</li>
+      <li><b>Country</b>: 25-way readout on s1 (λ<sub>c</sub> 0.1); labels for 4,508 / 4,508 clips on private HF <span class="mono">…/tanitad-refcv8-v10-labels</span> <i class="ev I">I</i></li>
       <li><b>Country-swap counterfactual (H-HC20)</b>: swapping p(c) may change the decision <i>only</i> on rule-relevant cells</li>
     </ul>
-    <p class="note"><b>RuleBook v1 content</b>: driving side · default speed limits · right-turn-on-red · priority to the right · roundabout yield · emergency vehicles · pedestrian crossings · tram priority · school bus (US) · daytime lights.</p>
-    <p class="note">Corpus limits <i class="ev H">H</i>: all 25 countries drive on the right (driving side untestable); right-on-red differs only for 265 US clips and no traffic-light labels exist; speed limits are testable via the longitudinal family.</p>
+    <p class="note"><b>Content</b>: driving side · default speed limits · right-turn-on-red · priority to the right · roundabout yield · emergency vehicles · pedestrian crossings · tram priority · school bus (US) · daytime lights.</p>
+    <p class="note">Corpus limits <i class="ev H">H</i>: all 25 countries drive on the right; right-on-red differs only for 265 US clips (no traffic-light labels); speed limits are testable.</p>
   </div>
 
   <!-- (c) -->
   <div class="panel" style="grid-column: span 4">
     <h3><span class="pl">c</span>Imagination that can be trusted<span class="refs"><span class="rn">12</span></span></h3>
-    <p>Only the <b>exogenous</b> future is learned (the ego path is a known function of the candidate, so logs identify it under a non-reactive scene). Toy: <b>most of the gain is the target shape</b>.</p>
+    <p>Only the <b>exogenous</b> future is learned; the ego path is a known function of the candidate. Toy: <b>most of the gain is the target shape</b>.</p>
     <table>
       <tr><th>tier</th><th>toy result (3 seeds) <i class="ev M">M</i></th></tr>
       <tr><td>T0 soft targets</td><td>regret 7.00 → 3.43 (paired Δ 3.57, 95 % [2.99, 4.19])</td></tr>
@@ -645,9 +647,9 @@ ol.prune li.guard { border-left-color: var(--ink); background: #EEF0F3; }
       <li><b>G1</b> feasibility mask last: infeasible over-braking 89.8 % → 0 % of toy ticks</li>
       <li><b>G5</b> confidence from the base score only: an imagined cost flipped corr(conf, regret) −0.11 → +0.19</li>
       <li><b>No gradient</b> from imagination into the selector or backbone</li>
-      <li><b>v10 supervision</b> from agent cuboids: lead in the logged corridor (0–80 m), 24 targets, J = ttc · clearance · progress — <i>open-loop, non-reactive</i></li>
+      <li><b>v10 supervision</b>, eval139 <i class="ev M">M</i>: lead agrees with v9 on 90.1 %; gap within 2 m on 92.1 % after a constant +3.55 m offset; logged trajectory collides on 0.26 %; modes = MODE_ACC (brake / hold / accelerate / brake hard), cut-outs IGNORE; agent files for 4,508 / 4,508 clips; J open-loop, non-reactive</li>
     </ul>
-    <p class="note">Also G2 coverage audit · G3 shuffled-cue control (R² on the exogenous residual) · G4 veto ≠ trigger · G6 β on <i>train</i> episodes · G7 marginalise every hidden factor · G8 per family + risk floor · G9 state-only E-head.</p>
+    <p class="note">Also G2 coverage audit · G3 shuffled cue · G4 veto ≠ trigger · G6 β on <i>train</i> · G7 marginalise all · G8, G9.</p>
   </div>
 
   <!-- (d) -->
@@ -657,20 +659,20 @@ ol.prune li.guard { border-left-color: var(--ink); background: #EEF0F3; }
       <g font-size="19" text-anchor="middle">
         <rect x="0" y="30" width="120" height="64" rx="10" fill="#fff" stroke="#5E6875" stroke-width="3" stroke-dasharray="3 5"/><text x="60" y="58" font-weight="700">mic</text><text x="60" y="82">2 s / 0.5 s</text>
         <rect x="160" y="30" width="190" height="64" rx="10" fill="#E8EEF9" stroke="#2F5597" stroke-width="3.5"/><text x="255" y="58" font-weight="700" fill="#1D3E78">FROZEN encoder</text><text x="255" y="82" fill="#1D3E78">log-mel → features</text>
-        <rect x="390" y="30" width="230" height="64" rx="10" fill="#FDEEDF" stroke="#C25E0E" stroke-width="3.5"/><text x="505" y="58" font-weight="700" fill="#8E4208">TRAINED bridge</text><text x="505" y="82" fill="#8E4208">2-layer perceiver → MLP</text>
+        <rect x="390" y="30" width="230" height="64" rx="10" fill="#FDEEDF" stroke="#C25E0E" stroke-width="3.5"/><text x="505" y="58" font-weight="700" fill="#8E4208">TRAINED bridge</text><text x="505" y="82" fill="#8E4208">perceiver + MLP, 9.60 M</text>
         <rect x="660" y="30" width="290" height="64" rx="10" fill="#E2F3EB" stroke="#1F7F5B" stroke-width="3.5" stroke-dasharray="9 5"/><text x="805" y="58" font-weight="700" fill="#135E42">8 tokens, width d<tspan dy="4">v</tspan></text><text x="805" y="82" fill="#135E42">→ gated read, g = 0</text>
       </g>
       <g fill="none" stroke-width="4"><path d="M120 62H156" stroke="#5E6875" marker-end="url(#a-k)"/><path d="M350 62H386" stroke="#2F5597" marker-end="url(#a-b)"/><path d="M620 62H656" stroke="#C25E0E" marker-end="url(#a-o)"/></g>
       <text x="0" y="20" font-size="19" fill="#36404D">default (a): HiCAP fusion read · ablation (b): 8 soft tokens appended to the VLM prefill (omni pattern)</text>
-      <text x="0" y="120" font-size="19" fill="#36404D">encoders: Whisper-class (default) · BEATs-base ≈ 90 M · CLAP-HTSAT</text>
+      <text x="0" y="120" font-size="19" fill="#36404D">tower: Qwen3-Omni AuT 647.9 M, Apache-2.0 (recommended) · BEATs ≈ 90 M · E-N0 decides</text>
     </svg>
     <ul>
-      <li><b>A1</b> align: symmetric InfoNCE + cosine to the frozen text path’s caption embedding (AudioCaps, Clotho, AudioSet, UrbanSound8K, ESC-50, siren sets)</li>
-      <li><b>A2</b> event heads: class, bearing (array), distance, approaching — from event metadata only</li>
-      <li><b>A3</b> gate on synthetic events rendered from <b>real agent tracks</b> (delay, 1/r, Doppler, ITD/ILD); supervised through knowledge (“yield to emergency vehicles”), never a trajectory</li>
+      <li><b>A1</b> align: symmetric InfoNCE + cosine to the frozen text path’s caption embedding (AudioCaps, Clotho, AudioSet, …)</li>
+      <li><b>A2</b> event heads (class, bearing, distance, approaching) from event metadata only</li>
+      <li><b>A3</b> gate on synthetic events rendered from <b>real agent tracks</b>, supervised through knowledge (“yield to emergency vehicles”), never a trajectory</li>
       <li><b>7 controls</b>: null, shuffle, bearing flip, dose-response, onset shift, siren-without-vehicle, audio-only label probe at chance</li>
     </ul>
-    <p class="note"><b>Omni analogy</b> <i class="ev P">P</i>: Qwen2.5/3-Omni and Gemma 3n project an audio encoder into the LM’s embedding space; HiCAP does this on a frozen driving backbone. No audio in any programme corpus <i class="ev M">M</i>.</p>
+    <p class="note"><b>Omni analogy</b>: Qwen2.5/3-Omni and Gemma 3n bridge their audio tower with a small <b>2.4–4.6 M projector</b> (no Perceiver) <i class="ev M">M</i> into the LM’s embedding space; ours: bridge + event heads 10.13 M at d<sub>v</sub> 2,048, mono <i class="ev M">M</i>. No audio in any corpus <i class="ev M">M</i>; no reachable siren / horn set is cleared for commercial use.</p>
   </div>
 
   <!-- (e) -->
@@ -731,36 +733,37 @@ ol.prune li.guard { border-left-color: var(--ink); background: #EEF0F3; }
 
   <!-- (f) -->
   <div class="panel" style="grid-column: span 4">
-    <h3><span class="pl">f</span>Training schedule<span class="refs">spec §6</span></h3>
+    <h3><span class="pl">f</span>Training schedule<span class="refs">losses.STAGES</span></h3>
     <table class="mx">
       <tr><th>component / loss</th><th>S0</th><th>A1</th><th>1</th><th>2</th><th>3</th><th>opt</th></tr>
-      <tr><td>tap caches, text embeddings (nodes, rules, countries), vocabulary, imagination targets, country labels</td><td><span class="bl"></span></td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>tap caches, text embeddings, vocabulary, imagination targets, country labels</td><td><span class="bl"></span></td><td></td><td></td><td></td><td></td><td></td></tr>
       <tr><td>audio bridge alignment (backbone + HiCAP frozen)</td><td></td><td><span class="on"></span></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td>level critics + country readout, soft targets, Tier-0 shape</td><td></td><td></td><td><span class="on"></span></td><td><span class="on"></span></td><td><span class="on"></span></td><td></td></tr>
-      <tr><td>hard negatives, consistency KL, goal loss, Tier-1 E-head, rule-memory gate, camera dropout</td><td></td><td></td><td></td><td><span class="on"></span></td><td><span class="on"></span></td><td></td></tr>
-      <tr><td>re-ranker, Tier-2 heads + benefit gate, camera gate, audio gate (A3), 40 % replay</td><td></td><td></td><td></td><td></td><td><span class="on"></span></td><td></td></tr>
+      <tr><td>critics on all levels, goal loss, country readout (λ 0.1); Tier-0 + camera gate when supervised</td><td></td><td></td><td><span class="on"></span></td><td><span class="on"></span></td><td><span class="on"></span></td><td></td></tr>
+      <tr><td>hard negatives, consistency KL, 40 % replay</td><td></td><td></td><td></td><td><span class="on"></span></td><td><span class="on"></span></td><td></td></tr>
+      <tr><td>cost, refinement, L<sup>cfg</sup>, audio, E-head, Tier 2; re-ranker only here</td><td></td><td></td><td></td><td></td><td><span class="on"></span></td><td></td></tr>
+      <tr><td>rule-memory + audio gates (start at 0)</td><td></td><td></td><td colspan="3" style="color:#1F7F5B;font-weight:700;white-space:nowrap">once attached</td><td></td></tr>
       <tr><td>student distillation; text-channel LoRA for explanations</td><td></td><td></td><td></td><td></td><td></td><td><span class="op"></span></td></tr>
       <tr><td>Cosmos3-Edge reasoner, audio encoder</td><td><span class="fz"></span></td><td><span class="fz"></span></td><td><span class="fz"></span></td><td><span class="fz"></span></td><td><span class="fz"></span></td><td><span class="fz"></span></td></tr>
     </table>
-    <p class="note" style="margin-top:8px">Stage 0 tap caches: 148 GB int8 at 2 Hz, 188,640 refreshes <i class="ev E">E</i>, once per backbone and camera set. Hard negatives: ADE 0.25–1.0 m + speed-scaled copies.</p>
-    <p class="note"><span class="mx"><span class="bl"></span></span> built once · <span class="mx"><span class="on"></span></span> trained · <span class="mx"><span class="fz"></span></span> frozen. AdamW, no weight decay, lr = 2·10⁻³ √(1024/width) √(batch/1024), one-cycle, batch 2,048, 3 seeds + 1 replicate. Code today (<span class="mono">losses.py</span>): goal from stage 1; cost, refine, img, aud, cfg from stage 3 — spec §6 is the v10 target.</p>
+    <p class="note" style="margin-top:8px">Stage 0 tap caches: 148 GB int8 at 2 Hz, 188,640 refreshes <i class="ev E">E</i>, once per backbone and camera set.</p>
+    <p class="note"><span class="mx"><span class="bl"></span></span> built once · <span class="mx"><span class="on"></span></span> trained · <span class="mx"><span class="fz"></span></span> frozen. AdamW, no weight decay, lr = 2·10⁻³ √(1024/width) √(batch/1024), one-cycle, batch 2,048, 3 seeds + 1 replicate. Schedule = code (<span class="mono">losses.STAGES</span>, spec rev b §6).</p>
   </div>
 
   <!-- (g) -->
   <div class="panel" style="grid-column: span 4">
     <h3><span class="pl">g</span>Data: v9 labels, v10 by reference<span class="refs">spec §0, §1, §4</span></h3>
-    <p style="margin-bottom:4px"><b>v9</b> <i class="ev I">I</i>: 4,369 train / 139 eval clips, 869,278 train rows at 10 Hz (≈ 24.1 h), every frame labelled. Census <i class="ev M">M</i>: lane keep 632,971 · turn L 48,830 · turn R 47,726 rows.</p>
+    <p style="margin-bottom:4px"><b>v9</b> <i class="ev I">I</i>: 4,369 train / 139 eval clips, 869,278 rows at 10 Hz (≈ 24.1 h). Census <i class="ev M">M</i>: lane keep 632,971 · turn L 48,830 · turn R 47,726.</p>
     <p style="margin-bottom:6px"><b>v10</b> <i class="ev M">M</i>: <b>country</b> 25 countries, 4,369 / 4,369 + 139 / 139 joined (100 %) · <b>agent cuboids</b> 4,585 / 4,719 clips, 29.4 M rows · <b>Alpamayo CoC</b> 4,729 clips × 1 anchor · <b>audio: none</b>.</p>
     <table>
       <tr><th>trained part</th><th>missing</th><th>filled by</th></tr>
       <tr><td>core HiCAP</td><td class="miss">VLM tap caches</td><td>pod job E27 — blocks all training</td></tr>
-      <tr><td>imagination T0–T2</td><td class="miss">the producer</td><td><span class="mono">supervision.py</span> (stream S)</td></tr>
+      <tr><td>imagination T0–T2</td><td class="miss">full train build</td><td>producer written; eval139 + 100-clip sample built</td></tr>
       <tr><td>elastic gate</td><td class="miss">6 other cameras</td><td>upstream chunks via camera_ref</td></tr>
-      <tr><td>node towers, rules</td><td class="miss">embedding job</td><td>GPU minutes; RuleBook (stream R)</td></tr>
+      <tr><td>node towers, rules</td><td class="miss">embedding job</td><td>GPU minutes; RuleBook v1 written</td></tr>
       <tr><td>audio bridge</td><td class="miss">all of it</td><td>external sets + synthetic events</td></tr>
-      <tr><td>country · reasoning</td><td class="ok">nothing</td><td>zero-shot first; optional LoRA</td></tr>
+      <tr><td>country · reasoning</td><td class="ok">nothing</td><td>labels published; zero-shot explanations</td></tr>
     </table>
-    <p class="note" style="margin-top:6px">Country balance <i class="ev M">M</i>: 68 (Slovenia) – 278 (Denmark) train clips per country, US 265; eval139: 23 countries, 5 with n = 1. Contamination <i class="ev M">M</i>: 4 / 139 eval clips excluded from H-HC2.</p>
+    <p class="note" style="margin-top:6px"><b>Explanation teacher</b> (Alpamayo2-Super meta-action) vs v9 <i class="ev M">M</i>: longitudinal 0.427 (κ 0.255, n 4,363), lateral 0.855 (κ 0.314, n 3,803). Per-frame regeneration pipeline built, <b>not launched</b>: ≈ 374 H100-h at 10 Hz; auto_labeling eligible on ≈ 61.6 % of rows, meta_action ≈ 93.3 % <i class="ev E">E</i>.</p>
   </div>
 
   <!-- (i) -->
@@ -802,13 +805,14 @@ ol.prune li.guard { border-left-color: var(--ink); background: #EEF0F3; }
       <div class="nw"><b>H-HC18</b> country acc. (vision-only) vs 1/25</div>
       <div class="nw"><b>H-HC19</b> rules on / off, paired per family</div>
       <div class="nw"><b>H-HC20</b> country-swap counterfactual</div>
-      <div style="grid-column: span 4; color:#A8283A"><b style="color:#A8283A">NOT MEASURED</b> no HiCAP model trained · no accuracy or driving metric · no Thor timing · tap caches never built · E-I0 not run · v10 parameter counts pending · closed-loop scenes provisioned: 1</div>
+      <div class="nw"><b>H-HC21</b> explanation channel</div>
+      <div style="grid-column: span 3; color:#A8283A"><b style="color:#A8283A">NOT MEASURED</b> no HiCAP model trained · no accuracy or driving metric · no Thor timing · tap caches never built · E-I0 not run · dense reasoning not launched</div>
     </div>
   </div>
 </section>
 
 <div class="footer">
-  <span>Sources: Paper/HiCAP/hicap.tex (sec_method, sec_imag, sec_elastic, sec_eff, sec_problem, sec_protocol, sec_limits) · Paper/HiCAP/design/HICAP_V10_SPEC.md rev a · stack/tanitad/hicap/</span>
+  <span>Sources: Paper/HiCAP/hicap.tex (sec_method, sec_imag, sec_elastic, sec_eff, sec_problem, sec_protocol, sec_limits) · HICAP_V10_SPEC.md rev b · stack/tanitad/hicap/ · DataEng/v10/ · RG note</span>
   <span>TanitAD · HiCAP poster · 2026-10-25 · nothing trained; every result shown is a toy, a mask check, a census or arithmetic</span>
 </div>
 </div>
