@@ -11,6 +11,8 @@
 
 > **Amendment A2 — 2026-09-29, from the Cosmos survey (`RE_cosmos_backbones.md`).** `github.com/NVIDIA/Cosmos` = the Cosmos 3 repo (`NVIDIA/cosmos`). **Primary backbone = Cosmos3-Edge reasoner (2.43 B)**; measured-latency twin = Cosmos-Reason2-2B (≡ Qwen3-VL-2B, identity INHERITED); 8 B tier = Cosmos-Reason2-8B / Cosmos 3 Nano reasoner / Alpamayo-1.5 LM; 32 B tier = teachers only. **No optimised latency row exists for the primary** (eager BF16 only) — H-HC11 on Thor, in the order G12 → G1/G4 → G3 (contention) → G2 (NVFP4), gates any upgrade of a latency claim from ESTIMATED. Qwen3.5-4B / Qwen-Drive stay as external references. H-HC2 re-based on the Alpamayo-1.5 / Cosmos-Reason2-8B pair; H-HC16 re-based on the Cosmos ladder. Taps: Edge is block-granular (57 entries; 28/42/56), Qwen3-VL is per-layer. Contamination wording corrected: NVIDIA's **train-split calibration sample**, not a training list.
 
+> **Amendment A3 — 2026-10-25 (PI).** (i) Latency assumptions accepted. (ii) Ego input = (v, a_lon, yaw rate); **curvature excluded** (null row and ego-zeroed row unchanged). (iii) Primary backbone = **Cosmos3-Edge, the 4 B checkpoint** (reasoner tower 2.43 B tapped, generator tower idle); no official driving-post-trained Edge or Nano checkpoint was found (search of the model hub was blocked; NVIDIA pages show only AV *capability*, AV datasets and a 9-D AV action format in the Cosmos 3 report) — **Cosmos 3 Nano (reasoner 8.76 B) is the fallback/alternative**; Alpamayo-1.5 stays the driving-tuned pair. (iv) **No Thor measurement before the plan and the open points are closed.** (v) **Training data:** the programme corpus with the **newest tactical-label release (PI: v9, on HF)**, the same one used by refcv8 and v8f — exact HF dataset id, schema, clip counts, skip-hash and eval split are **UNVERIFIED** (not in the repo; PI Drive not located) and must be read from the release manifest before H-HC0; HiCAP arms are comparable only to refcv8/v8f arms trained on that release. The numbers in §3 that cite v7 (4,823 windows/141 episodes, reference refcv5-v2) are INHERITED and are re-based on the v9 release when its manifest is read.
+
 ---
 
 ## 0. The claim under test
@@ -85,8 +87,7 @@ A frozen vision–language backbone plus a small trainable motion adapter and fu
 
 ## 6. Decisions the PI owns before the freeze
 ~~1. VLM as backbone~~ **RESOLVED 2026-09-29** (PI: preferred solution; Cosmos family). ~~3. sub-300 M~~ **RESOLVED** (lifted; latency criterion). ~~Audio at inference~~ **RESOLVED** (optional).
-1. Does the 2026-09-02 ruling ("velocity at cycle time is a legal initial state") extend to a_lon, yaw rate and curvature? Are ego cues (G-E) admissible for the camera gate (a gate is a situation classifier in disguise; the vision-only gate was much weaker in the toy)?
-2. Are the latency assumptions acceptable — refresh duty ≤ 0.5, a 64 GB share of Thor's 128 GB for the VLM, L_cmd p95 ≤ 100 ms as the meaning of "very low"? And run the on-Thor H-HC11 benchmark (first HiCAP-relevant latency measurement).
+1. ~~Ego scope~~ RESOLVED 2026-10-25: a_lon and yaw rate admitted, **curvature excluded**. ~~Latency assumptions~~ ACCEPTED. Are ego cues (G-E) admissible for the camera gate (a gate is a situation classifier in disguise; the vision-only gate was much weaker in the toy)?
 3. Run the 147-clip v7-eval contamination screen (0 GPU, feasible now) and recover the 40 canonical val UUIDs.
 4. Which branch to build on (main is stale; newest code is unpushed).
 5. Fund the ~0.1 GPU-h probe E-I0 (does the frozen state carry metric gap / closing speed?) before any imagination work.
