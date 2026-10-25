@@ -5941,3 +5941,17 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | SHIP-R8 across the family so far | EMA-48,852 + RETIME **PASS** (E1 -0.0343); theta_0.5 FAIL on E1 only (+0.0013, tie); theta_PLAN FAIL on E1, NR and TAC (+0.0563). |
 | reading | Mixing refcv7's planning stack with refcv8's perception breaks the speed profile on PhysicalAI while NavSim navtrain prefers it (73.9 vs 63.4). Partial blends are not coherent models, so each needs its own PhysicalAI read; NavSim navtrain does not predict SHIP-R8. |
 | caveats | One training seed; open loop; post-hoc arms ordered by the registered family rule (bda74c7 / fc67bf6 / bf9865d). |
+## 18. nt-a1-s0 — NT A1, the navtrain decision arm (PREREG_NT_DECIDE) [NAVSIM navtrain · ONE SEED · TRAINING]
+
+### nt-a1-s0 — ▶ TRAINING since 2026-10-25 11:02 Berlin (CET, 10:02Z), on Thor, launched by the launch gate's PASS token
+
+| | |
+|---|---|
+| **Status** | ▶ TRAINING. Supervisor `sup_refcv7.sh nt-a1-s0` + trainer `refc_v3_train.py` verified live by process listing 5 min after the fire; step-0 snapshots `ckpt_0.pt` / `ckpt_ema_0.pt` written 11:06. |
+| **Design** | `TanitAD Research Lab/Architecture & Inference/Research/2026-10-21-nt-decide/PREREG_NT_DECIDE.md` + `PREREG_NT_DECIDE_AMENDMENT1.md`. A0 = θ_DEC, no training. A1 = θ_DEC fine-tuned on NAVSIM navtrain. |
+| **Init** | `--init-from …/navtrain_sel/wiseft/ckpt_mod2/ckpt_wiseft_mod2_DEC.pt` = θ_DEC (A0, md5 `dad4cb5b5fb316922b4e9a7e85cee8f8`; preflight `PF-OK init-from-theta-dec`). |
+| **Recipe (config.json argv, MEASURED)** | `--steps 12478 --batch 16 --lr 1e-4 --seed 0 --snapshot-steps 0,1560,3120,6239,9359,12478 --v2-cache /home/nvidia/r8ns/nt/v2ep_a1 --nav-from-v7 --r8-nav-from-v9 --r8-nav-args-dropout 0.5 --graft-nav-compliance --nav-compliance-tau-rad 0.1806411302089691 --map-hires-grad-ckpt on --trunk-chunk-ckpt 8` (217 argv tokens; `argv_sha256 e153b9c1…`). |
+| **Location** | Thor `/home/nvidia/r8ns/nt/runs/nt-a1-s0/`; manifest `/home/nvidia/r8ns/nt/runs.d/nt-a1-s0.env`. |
+| **Gate** | `PASS_009d1cbad678.json` (md5 `a450855e8da48bcae8b251d35f3d3049`) on commit `009d1cbad6782b2fc68388f9a6e44cd26d64f02c`, profile `refcv8-nt`, `tree_sha256 1826a162…`; `gate_verify_1.json` verdict **MATCH**. 30/30 preflights PF-OK. Map/box bind reused from `f5262ea` (closure blobs and data sha256s unchanged). G-MAP judged by the K4 rule (NavSim rows carry no map GT; d826fb1). |
+| **Cost (PI decision)** | G-LIVE measured **8.8937 s/step** in the smoke = 1.39× refcv6's 6.4 (> 1.25×, SPEC 6.2 item 5) → PI-DECISION. PI in chat 2026-10-25 ~10:20 CET: *"Approve up to 9.8 s/step"*. Record: `…/2026-10-21-nt-decide/PI_COST_APPROVAL_NT-A1_2026-10-25.json` (sha256 `7d3641ee75ac19f573f648926dbb9dc3c33c3b40f9d0802a6c167ae97e79560f`), passed to the gate as `--pi-cost-approval`. ESTIMATED wall-clock at the smoke rate: 12,478 × 8.89 s ≈ 30.8 h → ~2026-10-26 18:00 Berlin. |
+| **Not yet** | No result. The live s/step is re-read from the first logged rows. Snapshot choice and the single navtest read follow PREREG_NT_DECIDE §4–§6 only after every control passes and the PI's go is recorded. Thor is not to be shared while it trains (the L7 capture chain yields to `NT_LAUNCH_PENDING`, left in place). |
