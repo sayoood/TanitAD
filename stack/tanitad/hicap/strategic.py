@@ -24,7 +24,8 @@ def token_table(records: dict, extra: tuple = ()) -> list[str]:
 
 
 def strategic_rows(v9, records: dict, tokens: list[str], window_s: float = 2.0) -> np.ndarray:
-    """strat_y per v9 row (-100 = IGNORE). Rows with |now_s - (grid_start_s + t0)| <= window_s receive the clip's anchor label."""
+    """strat_y per v9 row (-100 = IGNORE). Rows with |now_s - t0_s| <= window_s receive the clip's anchor label (now_s and t0_s are both
+    clip-local seconds; grid_start_s is not added)."""
     y = np.full(len(v9["lat_cls_a"]), -100, np.int64); tid = {t: i for i, t in enumerate(tokens)}
     for sha, rec in records.items():
         if sha not in v9.index: continue

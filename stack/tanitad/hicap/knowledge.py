@@ -7,6 +7,7 @@ Knowledge enters in three places, none of which touches the frozen backbone's we
  (3) LANGUAGE VERIFICATION: in uncertain ticks the top candidates are rendered as text and the CLM match score is added.
 """
 from __future__ import annotations
+import hashlib
 import re
 from dataclasses import dataclass, field
 import numpy as np
@@ -69,7 +70,7 @@ def hashed_text_embedding(s: str, dim: int = 64) -> np.ndarray:
     """Deterministic bag-of-words embedding used ONLY in tests/smoke runs (similar strings -> similar vectors). Real runs use the frozen tower."""
     v = np.zeros(dim, np.float32)
     for w in re.findall(r"[a-z]+", s.lower()):
-        rng = np.random.default_rng(abs(hash(w)) % (2 ** 32)); v += rng.normal(size=dim).astype(np.float32)
+        rng = np.random.default_rng(int.from_bytes(hashlib.sha256(w.encode()).digest()[:4], "little")); v += rng.normal(size=dim).astype(np.float32)
     n = np.linalg.norm(v); return v / n if n else v
 
 
