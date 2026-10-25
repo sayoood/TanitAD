@@ -305,3 +305,14 @@ What the measured numbers say in those terms, and no further:
 | telemetry | `…/v8f_mixo/telemetry_v8fmixo.csv` |
 | PREREG | `Project Steering/PREREG_V8F_MIXO.md` at `9daaa255` (repo mirror `C:/Users/Admin/tanitad-push`) |
 | code, tests, pre-run proofs | gate commit `18c62306`: `stack/tests/test_v8f_mixo.py`, `…/2026-10-17-v8f-mini/code/v8f_mixo_read.py`, `…/raw/2026-10-25-mixo/{trace_reachability.out, mutation_proof_rerun.out, suites.out, check_inputs_real.out}` |
+
+## ADDENDUM (2026-10-25, MM): paired tactical / strategic intervals (the work item in §5.3 / §5.4, closed)
+
+`stack/scripts/v8f_paired_families.py` now computes paired X − B intervals for every tactical and strategic cell from the two eval dumps (paired episode-cluster bootstrap, B = 2,000, kappa and every F1 re-computed per resample). Run on X = `M2b-mixo_s0` vs B = `M2b_s0` (`raw/2026-10-25-pairfam2/PAIRFAM_MIXO.md`, `pairfam_mixo_s0.json`):
+* **No tactical or strategic cell is separated.** 37 paired intervals (31 tactical, 6 strategic); none excludes 0.
+* 8 sparse goal tokens carry a point difference only; 5 cells are UNAVAILABLE with their reasons (3 tokens with no positive label, anchor selection, selected-vs-executed).
+* The 16 point differences printed in §5.3 / §5.4 equal the paired read's.
+* Strategic n below 2,399 is now explained from the mask: 77 / 80 windows at 30 / 50 m have no valid checkpoint label (34 without a v9 label row, the rest without a valid checkpoint at that arc).
+* Controls: X vs X reads exactly 0.0 on all 45 cells; per-arm values reproduce each eval JSON (119 checks per arm, 0 failed); 31 of 31 mutants RED. MM re-derived the 50 m strategic cell by an independent bootstrap (`raw/2026-10-25-pairfam2/MM_CHECK.md`).
+
+One training seed, so this answers "another draw of episodes" only. Descriptive: no bar was registered on these cells, and the MIXO outcome (FAIL, O LEARNED) is unchanged.
