@@ -1,0 +1,1361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920">
+<title>HiCAP Explainer</title>
+<!--
+  HiCAP architecture explainer — deterministic motion graphics.
+  window.renderFrame(t) draws the frame at time t (seconds) as a pure function of t
+  (no wall clock, no requestAnimationFrame in the render path). render_video.js steps t at 30 fps.
+  Every number shown is quoted from Paper/HiCAP/*.tex, Paper/HiCAP/design/HICAP_V10_SPEC.md or
+  stack/tanitad/hicap/ (see storyboard.md for the per-chapter source list). Nothing has been trained:
+  where results would go the video says "not yet trained". Bars, posteriors and selections drawn
+  without numbers are ILLUSTRATIVE and are labelled as such on screen.
+  Open this file directly in a browser for a scrubbable preview (space = play/pause).
+-->
+<style>
+  html, body { margin: 0; background: #070a10; overflow: hidden; }
+  canvas { display: block; width: 1920px; height: 1080px; }
+  #ui { position: fixed; left: 0; right: 0; bottom: 0; display: none; gap: 12px; align-items: center;
+        padding: 8px 16px; background: rgba(0,0,0,.6); font: 14px Inter, sans-serif; color: #ddd; }
+  #ui input { flex: 1; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div id="ui"><button id="pp">play</button><input id="sc" type="range" min="0" max="1000" value="0"><span id="tt">0.0 s</span></div>
+<script>
+'use strict';
+const W = 1920, H = 1080;
+const cv = document.getElementById('c');
+const X = cv.getContext('2d');
+
+// ------------------------------------------------------------------ palette (6 hues + greys)
+const C = {
+  bg: '#0a0e16', text: '#eef2f8', mute: '#9aa5b9', dim: '#5b667a', line: '#2b3649',
+  frz: '#4da3ff',   // frozen  (cool)
+  trn: '#ff9f43',   // trained (warm)
+  cch: '#3ddc97',   // cached embedding tables / text space
+  rule: '#ff5d73',  // pruning, rules, safety
+  img: '#b48cff',   // imagination, audio
+  hl: '#ffd166'     // highlight / selection / output
+};
+const KIND = { frz: C.frz, trn: C.trn, cch: C.cch, rule: C.rule, img: C.img, hl: C.hl, inp: '#aeb8ca', grey: C.dim };
+const FONT = 'Inter, "DejaVu Sans", sans-serif';
+const MONO = '"DejaVu Sans Mono", monospace';
+
+// ------------------------------------------------------------------ math / easing
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const lerp = (a, b, u) => a + (b - a) * u;
+const E = u => { u = clamp(u); return u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; };
+const EO = u => { u = clamp(u); return 1 - Math.pow(1 - u, 3); };
+const P = (t, a, b) => clamp((t - a) / (b - a));
+const EP = (t, a, b) => E(P(t, a, b));
+// alpha: fade in at a (over f), and out ending at b (if given)
+function fade(t, a, b, f = 0.45) {
+  const i = EO(P(t, a, a + f));
+  if (b === undefined) return i;
+  return Math.min(i, 1 - E(P(t, b - f, b)));
+}
+const pop = (t, a) => 0.86 + 0.14 * EO(P(t, a, a + 0.5));
+function hexA(h, a) { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; }
+function hash(i) { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+const font = (sz, wt = 500, mono = false) => `${wt} ${sz}px ${mono ? MONO : FONT}`;
+
+// ------------------------------------------------------------------ text
+function wrap(s, maxW) {
+  const words = s.split(' '); const out = []; let cur = '';
+  for (const w of words) { const t2 = cur ? cur + ' ' + w : w; if (X.measureText(t2).width > maxW && cur) { out.push(cur); cur = w; } else cur = t2; }
+  if (cur) out.push(cur); return out;
+}
+function T(s, x, y, o = {}) {
+  const a = o.a ?? 1; if (a <= 0.003) return 0;
+  X.save(); X.globalAlpha *= a; X.font = font(o.size || 20, o.weight || 500, o.mono);
+  X.fillStyle = o.color || C.text; X.textAlign = o.align || 'left'; X.textBaseline = o.base || 'middle';
+  if (o.ls) X.letterSpacing = o.ls + 'px';
+  let n = 1;
+  if (o.maxW) {
+    const L = wrap(s, o.maxW); const lh = (o.size || 20) * (o.lh || 1.3);
+    const y0 = o.vc ? y - (L.length - 1) * lh / 2 : y;
+    L.forEach((l, i) => X.fillText(l, x, y0 + i * lh)); n = L.length;
+  } else X.fillText(s, x, y);
+  X.restore(); return n;
+}
+function TW(s, sz, wt = 500, mono = false) { X.font = font(sz, wt, mono); return X.measureText(s).width; }
+
+// ------------------------------------------------------------------ shapes
+function rr(x, y, w, h, r) { X.beginPath(); X.roundRect(x, y, w, h, r); }
+function lockIcon(cx, cy, s, col) {
+  X.save(); X.translate(cx, cy); X.scale(s, s); X.strokeStyle = col; X.fillStyle = col; X.lineWidth = 2.6;
+  X.beginPath(); X.arc(0, -3, 6, Math.PI, 0); X.lineTo(6, 1); X.moveTo(-6, -3); X.lineTo(-6, 1); X.stroke();
+  rr(-9, 0, 18, 13, 3); X.fill(); X.fillStyle = '#0a0e16'; X.beginPath(); X.arc(0, 6, 2.2, 0, 7); X.fill(); X.restore();
+}
+function spark(cx, cy, col, s = 1) {
+  X.save(); X.translate(cx, cy); X.scale(s, s); X.fillStyle = col; X.beginPath();
+  for (let i = 0; i < 8; i++) { const r = i % 2 ? 3 : 9; const a = i * Math.PI / 4 - Math.PI / 2; X.lineTo(Math.cos(a) * r, Math.sin(a) * r); }
+  X.closePath(); X.fill(); X.restore();
+}
+function box(x, y, w, h, o = {}) {
+  const a = o.a ?? 1; if (a <= 0.003) return;
+  const col = o.col || KIND[o.kind || 'inp'];
+  X.save(); X.globalAlpha *= a;
+  const s = o.s ?? 1; if (s !== 1) { X.translate(x + w / 2, y + h / 2); X.scale(s, s); X.translate(-(x + w / 2), -(y + h / 2)); }
+  rr(x, y, w, h, o.r ?? 12); if (o.solid !== false) { X.fillStyle = '#0d131d'; X.fill(); } X.fillStyle = o.fill || hexA(col, o.fa ?? 0.12); X.fill();
+  if (o.glow) { X.save(); X.shadowColor = col; X.shadowBlur = o.glow; X.lineWidth = 2; X.strokeStyle = col; X.stroke(); X.restore(); }
+  X.lineWidth = o.lw || 2.2; X.strokeStyle = hexA(col, o.sa ?? 0.9);
+  if (o.dash === 'cached') X.setLineDash([11, 7]); else if (o.dash === 'optional') X.setLineDash([2, 6]);
+  X.lineCap = 'round'; X.stroke(); X.setLineDash([]);
+  const pad = o.pad ?? 16, ts = o.ts || 24, ss = o.ss || 18, al = o.align || 'center';
+  const icon = (o.lock || o.spark) ? 30 : 0;
+  const tx = al === 'center' ? x + w / 2 : x + pad;
+  const iw = w - 2 * pad - icon * (al === 'center' ? 2 : 1);
+  X.font = font(ts, o.tw || 650); const tl = o.title ? wrap(o.title, iw) : [];
+  X.font = font(ss, o.sw || 450, o.smono); const sl = o.sub ? wrap(o.sub, iw) : [];
+  const gap = (tl.length && sl.length) ? 7 : 0; const th = tl.length * ts * 1.18 + gap + sl.length * ss * 1.3;
+  let cy = o.valign === 'top' ? y + pad : y + h / 2 - th / 2 + 1;
+  X.textAlign = al === 'center' ? 'center' : 'left'; X.textBaseline = 'top';
+  X.font = font(ts, o.tw || 650); X.fillStyle = o.tc || C.text; tl.forEach((l, i) => X.fillText(l, tx, cy + i * ts * 1.18));
+  cy += tl.length * ts * 1.18 + gap;
+  X.font = font(ss, o.sw || 450, o.smono); X.fillStyle = o.sc || C.mute; sl.forEach((l, i) => X.fillText(l, tx, cy + i * ss * 1.3));
+  if (o.lock) lockIcon(x + w - 22, y + 21, 0.9, col);
+  if (o.spark) spark(x + w - 22, y + 21, col, 0.9);
+  if (o.tag) { X.font = font(13, 700); X.letterSpacing = '1px'; X.fillStyle = hexA(col, 0.95); X.textAlign = 'right'; X.textBaseline = 'bottom'; X.fillText(o.tag.toUpperCase(), x + w - 12, y + h - 7); }
+  X.restore();
+}
+function panel(x, y, w, h, title, o = {}) {
+  const a = o.a ?? 1; if (a <= 0.003) return;
+  X.save(); X.globalAlpha *= a; rr(x, y, w, h, 16); X.fillStyle = 'rgba(19,26,39,0.78)'; X.fill();
+  X.lineWidth = 1.5; X.strokeStyle = o.col ? hexA(o.col, 0.6) : 'rgba(84,100,128,0.6)'; if (o.dash) X.setLineDash(o.dash); X.stroke(); X.setLineDash([]);
+  if (title) { X.fillStyle = o.col || C.mute; X.beginPath(); X.arc(x + 24, y + 28, 5, 0, 7); X.fill(); T(title, x + 38, y + 29, { size: o.ts || 17, weight: 700, color: o.col || C.mute, ls: 1.2 }); }
+  X.restore();
+}
+function chip(x, y, s, o = {}) {
+  const a = o.a ?? 1; const sz = o.size || 17; const w = TW(s, sz, o.weight || 600, o.mono) + (o.padx ?? 13) * 2; const h = sz + 14;
+  const col = o.col || C.mute; const x0 = o.align === 'center' ? x - w / 2 : o.align === 'right' ? x - w : x;
+  if (a <= 0.003) return w;
+  X.save(); X.globalAlpha *= a; rr(x0, y - h / 2, w, h, h / 2); X.fillStyle = hexA(col, o.fa ?? 0.15); X.fill();
+  X.strokeStyle = hexA(col, 0.85); X.lineWidth = 1.5; if (o.dash) X.setLineDash(o.dash); X.stroke(); X.setLineDash([]);
+  T(s, x0 + w / 2, y + 1, { size: sz, color: o.tc || col, align: 'center', weight: o.weight || 600, mono: o.mono });
+  X.restore(); return w;
+}
+// evidence-class tag
+function ev(x, y, cls, o = {}) { return chip(x, y, cls, { size: 12, col: '#8b95a8', fa: 0.08, padx: 8, weight: 700, a: o.a ?? 1, align: o.align }); }
+
+// ------------------------------------------------------------------ arrows and flowing particles
+function segs(pts) { const s = []; let L = 0; for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); s.push(l); L += l; } return [s, L]; }
+function at(pts, d) {
+  const [s, L] = segs(pts); d = clamp(d, 0, L);
+  for (let i = 0; i < s.length; i++) {
+    if (d <= s[i] || i === s.length - 1) { const u = s[i] ? d / s[i] : 0; const a = pts[i], b = pts[i + 1]; return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, Math.atan2(b[1] - a[1], b[0] - a[0])]; }
+    d -= s[i];
+  }
+  return [pts[0][0], pts[0][1], 0];
+}
+function arrow(pts, o = {}) {
+  const p = o.p ?? 1; if (p <= 0.002) return; const a = o.a ?? 1; if (a <= 0.003) return;
+  const [s, L] = segs(pts); const D = L * p; const col = o.col || C.mute;
+  X.save(); X.globalAlpha *= a; X.strokeStyle = col; X.fillStyle = col; X.lineWidth = o.w || 2.5; X.lineCap = 'round'; X.lineJoin = 'round';
+  if (o.dash) X.setLineDash(o.dash);
+  X.beginPath(); X.moveTo(pts[0][0], pts[0][1]); let rem = D;
+  for (let i = 0; i < s.length; i++) { const A = pts[i], B = pts[i + 1]; if (rem >= s[i]) { X.lineTo(B[0], B[1]); rem -= s[i]; } else { const u = rem / s[i]; X.lineTo(A[0] + (B[0] - A[0]) * u, A[1] + (B[1] - A[1]) * u); break; } }
+  X.stroke(); X.setLineDash([]);
+  if (o.head !== false) {
+    const [hx, hy, an] = at(pts, D); const hs = o.hs || 12;
+    X.beginPath(); X.moveTo(hx + Math.cos(an) * 2, hy + Math.sin(an) * 2); X.lineTo(hx - hs * Math.cos(an - 0.42), hy - hs * Math.sin(an - 0.42)); X.lineTo(hx - hs * Math.cos(an + 0.42), hy - hs * Math.sin(an + 0.42)); X.closePath(); X.fill();
+  }
+  X.restore();
+}
+function flow(pts, t, o = {}) {
+  const a = o.a ?? 1; if (a <= 0.003) return;
+  const [, L] = segs(pts); const n = o.n || 4; const sp = o.speed || 170; const col = o.col || C.hl; const r = o.r || 4.5;
+  X.save(); X.fillStyle = col; X.shadowColor = col; X.shadowBlur = 12;
+  for (let i = 0; i < n; i++) {
+    const d = ((t * sp) + i * L / n) % L; const [px, py] = at(pts, d);
+    X.globalAlpha = a * clamp(Math.min(d, L - d) / 26);
+    if (o.sq) X.fillRect(px - r, py - r, 2 * r, 2 * r); else { X.beginPath(); X.arc(px, py, r, 0, 7); X.fill(); }
+  }
+  X.restore();
+}
+function poly(pts, o = {}) {
+  const a = o.a ?? 1; if (a <= 0.003 || pts.length < 2) return;
+  X.save(); X.globalAlpha *= a; X.strokeStyle = o.col || C.mute; X.lineWidth = o.w || 2; X.lineCap = 'round'; X.lineJoin = 'round';
+  if (o.dash) X.setLineDash(o.dash); X.beginPath(); X.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) X.lineTo(pts[i][0], pts[i][1]); X.stroke(); X.restore();
+}
+
+// ------------------------------------------------------------------ icons
+function icon(kind, cx, cy, s, col, a = 1) {
+  if (a <= 0.003) return;
+  X.save(); X.globalAlpha *= a; X.translate(cx, cy); X.scale(s, s); X.strokeStyle = col; X.fillStyle = col; X.lineWidth = 2.4; X.lineCap = 'round'; X.lineJoin = 'round';
+  if (kind === 'cam') { rr(-17, -10, 34, 23, 4); X.stroke(); X.beginPath(); X.arc(0, 1.5, 6.5, 0, 7); X.stroke(); rr(-7, -15, 12, 5, 2); X.stroke(); }
+  else if (kind === 'frames') { for (let i = 2; i >= 0; i--) { rr(-15 + i * 5, -12 + i * 5, 22, 15, 3); X.fillStyle = '#121a27'; X.fill(); X.stroke(); } }
+  else if (kind === 'gauge') { X.beginPath(); X.arc(0, 5, 15, Math.PI, 2 * Math.PI); X.stroke(); X.beginPath(); X.moveTo(0, 5); X.lineTo(9, -6); X.stroke(); X.beginPath(); X.arc(0, 5, 2.5, 0, 7); X.fill(); }
+  else if (kind === 'nav') { X.beginPath(); X.moveTo(-8, 14); X.lineTo(-8, 0); X.quadraticCurveTo(-8, -8, 0, -8); X.lineTo(9, -8); X.stroke(); X.beginPath(); X.moveTo(14, -8); X.lineTo(7, -14); X.lineTo(7, -2); X.closePath(); X.fill(); }
+  else if (kind === 'mic') { rr(-6, -16, 12, 21, 6); X.stroke(); X.beginPath(); X.arc(0, -3, 11, 0.15, Math.PI - 0.15); X.stroke(); X.beginPath(); X.moveTo(0, 8); X.lineTo(0, 15); X.moveTo(-7, 15); X.lineTo(7, 15); X.stroke(); }
+  else if (kind === 'globe') { X.beginPath(); X.arc(0, 0, 14, 0, 7); X.stroke(); X.beginPath(); X.ellipse(0, 0, 6, 14, 0, 0, 7); X.stroke(); X.beginPath(); X.moveTo(-14, 0); X.lineTo(14, 0); X.stroke(); }
+  else if (kind === 'text') { X.beginPath(); X.moveTo(-12, -10); X.lineTo(12, -10); X.moveTo(0, -10); X.lineTo(0, 12); X.stroke(); }
+  else if (kind === 'wave') { X.beginPath(); for (let i = -14; i <= 14; i += 1) { X.lineTo(i, Math.sin(i * 0.9) * (8 - Math.abs(i) * 0.4)); } X.stroke(); }
+  X.restore();
+}
+function carTop(cx, cy, w, h, col, a = 1) {
+  if (a <= 0.003) return;
+  X.save(); X.globalAlpha *= a; X.translate(cx, cy); rr(-w / 2, -h / 2, w, h, w * 0.28); X.fillStyle = col; X.fill();
+  X.fillStyle = 'rgba(8,12,20,0.55)'; rr(-w * 0.34, -h * 0.26, w * 0.68, h * 0.18, 3); X.fill(); rr(-w * 0.32, h * 0.18, w * 0.64, h * 0.12, 3); X.fill(); X.restore();
+}
+function roadThumb(x, y, w, h, a = 1) {
+  if (a <= 0.003) return;
+  X.save(); X.globalAlpha *= a; rr(x, y, w, h, 8); X.save(); X.clip();
+  const g = X.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, '#22324a'); g.addColorStop(0.45, '#2c3c55'); g.addColorStop(0.46, '#1b2230'); g.addColorStop(1, '#121822');
+  X.fillStyle = g; X.fillRect(x, y, w, h);
+  X.fillStyle = '#2a3140'; X.beginPath(); X.moveTo(x + w * 0.46, y + h * 0.46); X.lineTo(x + w * 0.54, y + h * 0.46); X.lineTo(x + w * 1.0, y + h); X.lineTo(x, y + h); X.closePath(); X.fill();
+  X.strokeStyle = 'rgba(230,236,245,0.75)'; X.lineWidth = 2; X.setLineDash([8, 8]);
+  X.beginPath(); X.moveTo(x + w * 0.5, y + h * 0.47); X.lineTo(x + w * 0.5, y + h); X.stroke(); X.setLineDash([]);
+  X.beginPath(); X.moveTo(x + w * 0.465, y + h * 0.46); X.lineTo(x + w * 0.06, y + h); X.moveTo(x + w * 0.535, y + h * 0.46); X.lineTo(x + w * 0.94, y + h); X.stroke();
+  X.fillStyle = '#c96a5a'; rr(x + w * 0.515, y + h * 0.58, w * 0.05, h * 0.11, 2); X.fill();
+  X.fillStyle = '#7fa0c8'; rr(x + w * 0.36, y + h * 0.66, w * 0.07, h * 0.14, 2); X.fill();
+  X.restore(); rr(x, y, w, h, 8); X.strokeStyle = 'rgba(170,184,206,0.6)'; X.lineWidth = 1.5; X.stroke(); X.restore();
+}
+function vec(x, y, n, cw, ch, col, o = {}) { // a vector drawn as n cells
+  const a = o.a ?? 1; if (a <= 0.003) return;
+  X.save(); X.globalAlpha *= a;
+  for (let i = 0; i < n; i++) {
+    const v = 0.25 + 0.75 * hash(i * 7.3 + (o.seed || 0));
+    X.fillStyle = hexA(col, 0.25 + 0.7 * v);
+    if (o.vertical) X.fillRect(x, y + i * (ch + 2), cw, ch); else X.fillRect(x + i * (cw + 2), y, cw, ch);
+  }
+  X.restore();
+}
+
+// ------------------------------------------------------------------ background (static, deterministic)
+const BGC = document.createElement('canvas'); BGC.width = W; BGC.height = H;
+(function () {
+  const b = BGC.getContext('2d'); const g = b.createRadialGradient(900, 480, 80, 960, 540, 1250);
+  g.addColorStop(0, '#111827'); g.addColorStop(1, '#06090e'); b.fillStyle = g; b.fillRect(0, 0, W, H);
+  b.fillStyle = 'rgba(140,160,200,0.055)'; for (let x = 20; x < W; x += 40) for (let y = 20; y < H; y += 40) b.fillRect(x, y, 2, 2);
+})();
+
+// ================================================================== SCENES
+// Each scene: function (t, d) with t = seconds since chapter start.
+
+// ---------- 1. The problem and the idea
+function scene1(t) {
+  const aA = fade(t, 1.3, 9.0, 0.5);
+  if (aA > 0) {
+    panel(100, 290, 790, 540, 'GENERATE · TYPICAL DRIVING VLA', { a: aA, col: '#8b95a8' });
+    const n = clamp(Math.floor((t - 2.0) / 0.32), 0, 16);
+    X.save(); X.globalAlpha *= aA;
+    // weight-streaming bar
+    box(150, 350, 690, 66, { kind: 'grey', title: 'all weights streamed from memory', sub: 'once for every generated token', ts: 19, ss: 16, a: 1 });
+    flow([[160, 430], [830, 430]], t, { n: 9, speed: 520, col: '#8b95a8', r: 3 });
+    for (let i = 0; i < 16; i++) {
+      const x = 160 + (i % 8) * 85, y = 480 + Math.floor(i / 8) * 92;
+      if (i < n) box(x, y, 68, 68, { kind: 'grey', title: 'tok', sub: String(i + 1), ts: 15, ss: 14, r: 10, s: pop(t, 2.0 + i * 0.32) });
+      else if (i === n) { X.save(); X.globalAlpha *= 0.5 + 0.5 * Math.sin(t * 10); rr(x, y, 68, 68, 10); X.strokeStyle = C.mute; X.setLineDash([4, 5]); X.lineWidth = 2; X.stroke(); X.restore(); }
+    }
+    T('one token at a time → bound by memory bandwidth', 495, 712, { size: 22, weight: 650, align: 'center' });
+    T('on an in-vehicle computer (paper, abstract)', 495, 746, { size: 17, color: C.mute, align: 'center' });
+    X.restore();
+  }
+  const aB = fade(t, 4.6, 9.0, 0.5);
+  if (aB > 0) {
+    panel(1010, 290, 830, 540, 'CHOOSE · HiCAP', { a: aB, col: C.trn });
+    X.save(); X.globalAlpha *= aB;
+    vec(1060, 370, 14, 26, 22, C.trn, { vertical: true, seed: 3 });
+    T('state s', 1073, 720, { size: 17, color: C.trn, align: 'center', weight: 650 });
+    const names = ['LANE_KEEP', 'TURN_L', 'TURN_R', 'HOLD', 'CREEP', 'STOP', 'FOLLOW', 'DECELERATE', 'ACCELERATE', 'KEEP'];
+    const sc = [0.55, 0.2, 0.15, 0.25, 0.3, 0.35, 0.92, 0.6, 0.3, 0.5];
+    const win = EP(t, 6.6, 7.4);
+    names.forEach((nm, i) => {
+      const col = i % 2, row = Math.floor(i / 2); const x = 1240 + col * 290, y = 360 + row * 74;
+      const ap = fade(t, 5.0 + i * 0.12);
+      arrow([[1100, 380 + i * 34], [x - 6, y + 26]], { col: hexA(C.cch, 0.25 + 0.5 * sc[i]), w: 1.4, head: false, a: ap * EP(t, 5.6, 6.4) });
+      box(x, y, 262, 54, { kind: 'cch', a: ap, title: nm, ts: 17, align: 'left', pad: 14, glow: (i === 6 ? 22 * win : 0), col: (i === 6 && win > 0.5) ? C.hl : C.cch });
+      X.fillStyle = hexA(i === 6 && win > 0.5 ? C.hl : C.cch, 0.85 * ap); X.fillRect(x + 150, y + 22, 96 * sc[i] * EP(t, 5.8, 6.6), 10);
+    });
+    T('one prefill + a dot-product search over cached, text-defined action embeddings', 1425, 754, { size: 18, align: 'center', weight: 600, maxW: 740 });
+    ev(1425, 806, 'ILLUSTRATIVE SCORES', { align: 'center' });
+    X.restore();
+  }
+  const aC = fade(t, 8.7);
+  if (aC > 0) {
+    box(130, 420, 470, 220, { kind: 'frz', title: 'Frozen vision–language model', sub: 'prefill only · no generation · weights never updated', lock: true, a: aC, s: pop(t, 8.7), ts: 28, ss: 19 });
+    const aL = fade(t, 11.6);
+    const lv = [['STRATEGIC · s1', 'route-level action'], ['TACTICAL · s2', 'lateral × longitudinal cell'], ['TRAJECTORY · s3', 'path × speed profile']];
+    lv.forEach((l, i) => {
+      const y = 320 + i * 180; const ai = fade(t, 11.8 + i * 0.5);
+      arrow([[600, 530], [680, 530], [680, y + 65], [760, y + 65]], { col: C.trn, p: EP(t, 9.6 + i * 0.3, 10.6 + i * 0.3), a: aC });
+      flow([[600, 530], [680, 530], [680, y + 65], [760, y + 65]], t, { n: 3, col: C.trn, a: aC * EP(t, 10.4, 10.8) });
+      box(765, y, 400, 130, { kind: 'trn', title: l[0], sub: l[1], a: ai, s: pop(t, 11.8 + i * 0.5), ts: 26, ss: 19, spark: true });
+      if (i < 2) arrow([[965, y + 132], [965, y + 176]], { col: C.mute, a: ai * aL, p: EP(t, 12.6 + i * 0.5, 13.2 + i * 0.5) });
+    });
+    T('contrastive critics', 680, 300, { size: 18, color: C.trn, a: aC * fade(t, 9.8), weight: 650, align: 'center' });
+    // mini visuals of each level
+    const a1 = fade(t, 12.4), a2 = fade(t, 12.9), a3 = fade(t, 13.4);
+    for (let i = 0; i < 5; i++) { X.save(); X.globalAlpha *= a1; X.fillStyle = i === 0 ? C.hl : hexA(C.cch, 0.75); X.beginPath(); X.arc(1270 + i * 105, 385, i === 0 ? 17 : 14, 0, 7); X.fill(); X.restore(); }
+    T('5 usable strategic actions', 1480, 425, { size: 16, color: C.mute, a: a1, align: 'center' });
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 7; c++) { X.save(); X.globalAlpha *= a2; X.fillStyle = (r === 0 && c === 3) ? C.hl : hexA(C.cch, 0.4 + 0.3 * hash(r * 7 + c)); X.fillRect(1250 + c * 66, 512 + r * 30, 58, 24); X.restore(); }
+    T('3 × 7 tactical cells', 1480, 622, { size: 16, color: C.mute, a: a2, align: 'center' });
+    for (let i = 0; i < 26; i++) { const k = (i / 25 * 2 - 1) * 0.0042; const pts = pathPts(k, 150, 18).map(p => [1480 + p[0] * 1.7, 815 + p[1] * 0.75]); poly(pts, { col: i === 13 ? C.hl : hexA(C.cch, 0.5), w: i === 13 ? 3.5 : 1.5, a: a3 }); }
+    T('262,144 composed trajectories', 1480, 836, { size: 16, color: C.mute, a: a3, align: 'center' });
+  }
+}
+function pathPts(k, len, n = 24) {
+  const pts = [[0, 0]]; let x = 0, y = 0, th = -Math.PI / 2; const ds = len / n;
+  for (let i = 0; i < n; i++) { th += k * ds; x += Math.cos(th) * ds; y += Math.sin(th) * ds; pts.push([x, y]); }
+  return pts;
+}
+
+// ---------- 2. Inputs and the two clocks
+function scene2(t) {
+  const cards = [
+    [1.4, 'cam', 'Cameras', 'front-wide by default · 10 elastic camera options', 'inp', null],
+    [5.0, 'frames', 'Motion frames', '3 frames, 100 ms apart, at 64×160 → motion adapter (trained)', 'trn', null],
+    [8.6, 'gauge', 'Ego state', 'v · a_lon · yaw rate', 'inp', 'curvature'],
+    [12.2, 'nav', 'Navigation', 'nav command + args · route checkpoint (x, y, ψ)', 'inp', null],
+    [13.5, 'mic', 'Microphone', 'optional audio window', 'inp', 'opt'],
+    [14.6, 'globe', 'Country (supplied)', 'optional GNSS-geofence arm; predicted country is primary', 'inp', 'opt'],
+  ];
+  cards.forEach((c, i) => {
+    const y = 150 + i * 106; const a = fade(t, c[0]); const s = pop(t, c[0]);
+    box(80, y, 590, 92, { kind: c[4], a, s, title: c[2], sub: c[3], align: 'left', pad: 84, ts: 22, ss: 16, dash: c[5] === 'opt' ? 'optional' : null, tag: c[5] === 'opt' ? 'optional' : null, spark: c[4] === 'trn' });
+    icon(c[1], 124, y + 46, 1.2, KIND[c[4]], a);
+    if (c[5] === 'curvature') {
+      const a2 = fade(t, c[0] + 1.2);
+      const xw = 330; T('curvature', xw, y + 60, { size: 17, color: C.rule, a: a2, weight: 650 });
+      X.save(); X.globalAlpha *= a2; X.strokeStyle = C.rule; X.lineWidth = 2.5; X.beginPath(); X.moveTo(xw - 4, y + 60); X.lineTo(xw - 4 + TW('curvature', 17, 650) * EP(t, c[0] + 1.3, c[0] + 1.8) + 8, y + 60); X.stroke(); X.restore();
+      T('not fed (PI ruling 2026-10-25)', xw + 100, y + 60, { size: 15, color: C.rule, a: a2 });
+    }
+  });
+  if (t > 1.0) {
+    // camera option dots
+    const a = fade(t, 2.4);
+    for (let j = 0; j < 10; j++) { X.save(); X.globalAlpha *= a * fade(t, 2.4 + j * 0.1); X.fillStyle = j === 0 ? C.frz : hexA('#aeb8ca', 0.5); X.beginPath(); X.arc(390 + j * 26, 176, 7, 0, 7); X.fill(); X.restore(); }
+  }
+  // ---- two clocks
+  const aK = fade(t, 15.6);
+  if (aK <= 0) return;
+  panel(720, 290, 1140, 620, 'TWO CLOCKS', { a: aK, col: C.hl });
+  X.save(); X.globalAlpha *= aK;
+  const tau = Math.max(0, (t - 15.6)) * 0.5 + 0.12;  // slowed simulated time
+  const X0 = 1150, SC = 440, xL = 980, xR = 1830;
+  const xs = tm => X0 + (tm - tau) * SC;
+  T('COMMAND CLOCK', 745, 372, { size: 16, weight: 700, color: C.trn, ls: 1 }); T('10 Hz · fast path', 745, 396, { size: 15, color: C.mute });
+  T('BACKBONE REFRESH', 745, 470, { size: 16, weight: 700, color: C.frz, ls: 1 }); T('2 Hz · asynchronous', 745, 494, { size: 15, color: C.mute });
+  T('TOKEN AGE  A', 745, 600, { size: 16, weight: 700, color: C.hl, ls: 1 }); T('age of cached tokens', 745, 624, { size: 15, color: C.mute });
+  X.save(); X.beginPath(); X.rect(xL, 330, xR - xL, 400); X.clip();
+  X.strokeStyle = 'rgba(120,135,160,0.35)'; X.lineWidth = 1; [384, 482].forEach(y => { X.beginPath(); X.moveTo(xL, y); X.lineTo(xR, y); X.stroke(); });
+  for (let k = Math.ceil((tau - 0.5) / 0.1); k <= Math.floor((tau + 1.7) / 0.1); k++) {
+    const tm = k * 0.1, x = xs(tm); const past = tm <= tau;
+    X.fillStyle = past ? C.trn : hexA(C.trn, 0.3); rr(x - 4, 364, 8, 40, 3); X.fill();
+  }
+  const TR = 0.2;   // illustrative refresh compute time (T_r + o)
+  for (let m = Math.floor((tau - 0.9) / 0.5); m <= Math.ceil((tau + 1.8) / 0.5); m++) {
+    const s0 = m * 0.5; if (s0 < 0) continue; const x = xs(s0); const w = TR * SC; const done = tau >= s0 + TR;
+    X.fillStyle = hexA(C.frz, tau >= s0 ? 0.55 : 0.18); rr(x, 460, w, 44, 6); X.fill(); X.strokeStyle = C.frz; X.lineWidth = 1.5; X.stroke();
+    T('prefill', x + w / 2, 482, { size: 14, align: 'center', color: C.text, weight: 600, a: tau >= s0 ? 1 : 0.4 });
+    if (done || s0 + TR > tau) arrow([[x + w, 506], [x + w, 532]], { col: C.frz, a: done ? 0.9 : 0.25, hs: 8, w: 2 });
+  }
+  // age sawtooth
+  const yb = 700, sy = 200; const pts = [];
+  const ageAt = tm => { let m = Math.floor((tm - TR) / 0.5); if (m < 0) return null; return tm - m * 0.5; };
+  for (let tm = tau - 0.5; tm <= tau + 1.75; tm += 0.004) { const ag = ageAt(tm); if (ag === null) continue; pts.push([xs(tm), yb - ag * sy]); }
+  for (let i = 1; i < pts.length; i++) { const p0 = pts[i - 1], p1 = pts[i]; if (Math.abs(p1[1] - p0[1]) > 20) continue; X.strokeStyle = p1[0] <= X0 ? C.hl : hexA(C.hl, 0.3); X.lineWidth = 3; X.beginPath(); X.moveTo(p0[0], p0[1]); X.lineTo(p1[0], p1[1]); X.stroke(); }
+  X.strokeStyle = 'rgba(120,135,160,0.45)'; X.lineWidth = 1; X.beginPath(); X.moveTo(xL, yb); X.lineTo(xR, yb); X.stroke();
+  X.restore();
+  // playhead
+  X.strokeStyle = C.hl; X.lineWidth = 2; X.setLineDash([6, 5]); X.beginPath(); X.moveTo(X0, 340); X.lineTo(X0, 712); X.stroke(); X.setLineDash([]);
+  T('now', X0, 330, { size: 14, align: 'center', color: C.hl, weight: 700 });
+  // annotations
+  const aF = fade(t, 19.6);
+  T('worst-case age   A = T_r + o + 1/f_r', 745, 770, { size: 24, weight: 650, a: aF, mono: false });
+  T('refresh duty   D = f_r (T_r + o) ≤ 0.5   (registered criterion)', 745, 812, { size: 19, color: C.mute, a: aF });
+  T('cached tokens carry a Fourier embedding of their age into the fusion transformer', 745, 850, { size: 17, color: C.mute, a: aF });
+  ev(1840, 880, 'BLOCK WIDTHS ILLUSTRATIVE', { align: 'right', a: aK });
+  X.restore();
+}
+
+// ---------- 3. The frozen backbone
+function scene3(t) {
+  const aV = fade(t, 1.2);
+  const bx = 470, by = 250, bw = 380, bh = 640;
+  box(bx, by, bw, bh, { kind: 'frz', a: aV, s: pop(t, 1.2), fa: 0.08 });
+  T('Cosmos3-Edge reasoner', bx + 20, by + 32, { size: 22, weight: 700, a: aV });
+  T('2.43 B · FROZEN · prefill only', bx + 20, by + 60, { size: 16, color: C.frz, a: aV, weight: 600 });
+  if (aV > 0) { X.save(); X.globalAlpha *= aV; lockIcon(bx + bw - 26, by + 30, 1.1, C.frz); X.restore(); }
+  ev(bx + 20, by + 90, 'PUBLISHED CARD', { a: aV });
+  const yk = k => 850 - (k - 1) * (500 / 55);
+  const sweep = EP(t, 5.0, 8.4) * 56;
+  for (let k = 1; k <= 56; k++) {
+    const lit = k <= sweep; const tap = (k === 28 || k === 42 || k === 56);
+    X.save(); X.globalAlpha *= aV; X.fillStyle = lit ? hexA(C.frz, tap ? 1 : 0.75) : hexA(C.frz, 0.16); rr(bx + 40, yk(k) - 2.5, bw - 80, 5, 2); X.fill(); X.restore();
+  }
+  T('56 blocks', bx + bw - 40, 878, { size: 14, color: C.mute, align: 'right', a: aV });
+  // frame in
+  const aF = fade(t, 2.0);
+  roadThumb(80, 520, 320, 128, aF);
+  if (aF > 0) {
+    X.save(); X.globalAlpha *= aF * 0.55; X.strokeStyle = C.frz; X.lineWidth = 1;
+    for (let i = 1; i < 20; i++) { X.beginPath(); X.moveTo(80 + i * 16, 520); X.lineTo(80 + i * 16, 648); X.stroke(); }
+    for (let j = 1; j < 8; j++) { X.beginPath(); X.moveTo(80, 520 + j * 16); X.lineTo(400, 520 + j * 16); X.stroke(); }
+    X.restore();
+  }
+  T('front-wide frame · 256×640', 240, 500, { size: 18, align: 'center', weight: 650, a: aF });
+  T('20 × 8 grid = 160 visual tokens', 240, 672, { size: 16, align: 'center', color: C.mute, a: aF });
+  T('(16-px patches, 2×2 merge)', 240, 696, { size: 15, align: 'center', color: C.dim, a: aF });
+  chip(240, 760, 'fixed short prompt', { align: 'center', a: fade(t, 4.0), col: '#aeb8ca', size: 15 });
+  const aIn = fade(t, 4.6);
+  arrow([[400, 600], [440, 600], [440, 830], [500, 830]], { col: C.frz, p: EP(t, 4.6, 5.2), a: aIn });
+  flow([[400, 600], [440, 600], [440, 830], [500, 830]], t, { n: 4, col: C.frz, a: aIn * (1 - P(t, 9, 10)) * EP(t, 5, 5.4), sq: true, r: 4 });
+  // prefill sweep particles
+  if (t > 5 && t < 8.6) { flow([[bx + 60, 850], [bx + 60, 300]], t, { n: 5, col: C.frz, speed: 260 }); flow([[bx + bw - 60, 850], [bx + bw - 60, 300]], t + 0.4, { n: 5, col: C.frz, speed: 260 }); }
+  T('one prefill pass', bx + bw / 2, 900, { size: 16, color: C.frz, align: 'center', a: fade(t, 5.0) * aV, weight: 600 });
+  // taps
+  const taps = [[28, 'block 28 · middle'], [42, 'block 42 · ¾'], [56, 'block 56 · final']];
+  taps.forEach((tp, i) => {
+    const y = yk(tp[0]); const a = fade(t, 8.4 + i * 0.5);
+    arrow([[bx + bw - 30, y], [1000, y]], { col: C.frz, p: EP(t, 8.4 + i * 0.5, 9.0 + i * 0.5), a, w: 3 });
+    T(tp[1], 880, y - 18, { size: 15, color: C.frz, a, weight: 650 });
+    // 128 pooled tokens (4 x 32)
+    const np = Math.floor(EP(t, 9.0 + i * 0.5, 10.2 + i * 0.5) * 128);
+    X.save(); X.globalAlpha *= a;
+    for (let q = 0; q < np; q++) { const c = q % 32, r = Math.floor(q / 32); X.fillStyle = hexA(C.frz, 0.45 + 0.5 * hash(q + i * 200)); X.fillRect(1010 + c * 9, y - 20 + r * 10, 7, 8); }
+    X.restore();
+    T('128', 1310, y, { size: 15, color: C.mute, a, weight: 700 });
+    arrow([[1340, y], [1392, y]], { col: C.frz, a: a * fade(t, 10.6), hs: 9, w: 2 });
+  });
+  T('adaptive pool → 128 tokens per depth', 1150, yk(56) - 52, { size: 16, color: C.mute, align: 'center', a: fade(t, 9.4) });
+  box(1400, 280, 450, 320, { kind: 'frz', dash: 'cached', a: fade(t, 10.6), title: 'Tap cache', sub: '3 depths × 128 tokens × d_v = 2,048 + the last-token state · int8 · read by the 10 Hz fast path', ts: 24, ss: 17, tag: 'cache' });
+  box(880, 626, 970, 72, { kind: 'frz', dash: 'optional', a: fade(t, 12.2), title: 'KV cache of the latest refresh prefill', sub: 'kept so an optional explanation can be decoded later — no second vision pass', ts: 19, ss: 15, align: 'left', tag: 'optional' });
+  // why fast
+  const aW = fade(t, 15.8);
+  if (aW > 0) {
+    panel(880, 712, 970, 196, 'WHY A BIG BACKBONE STAYS FAST', { a: aW, col: C.hl, ts: 15 });
+    X.save(); X.globalAlpha *= aW;
+    const g = EP(t, 19.9, 21.6);
+    T('REFRESH 2 Hz', 900, 778, { size: 15, weight: 700, color: C.frz });
+    const len = lerp(150, 330, g);
+    box(1040, 760, len, 36, { kind: 'frz', title: g > 0.5 ? 'larger backbone → longer T_r' : 'VLM prefill (T_r)', ts: 14, r: 8 });
+    arrow([[1040 + len, 778], [1040 + len + 40, 778]], { col: C.frz, hs: 8, w: 2 });
+    box(1040 + len + 46, 762, 96, 32, { kind: 'frz', dash: 'cached', title: 'cache', ts: 14, r: 8 });
+    T('COMMAND 10 Hz', 900, 856, { size: 15, weight: 700, color: C.trn });
+    ['motion', 'fusion', 'retrieval', 'heads'].forEach((s, i) => { box(1040 + i * 120, 840, 104, 34, { kind: 'trn', title: s, ts: 14, r: 8 }); if (i < 3) arrow([[1144 + i * 120, 857], [1158 + i * 120, 857]], { col: C.trn, hs: 7, w: 2 }); });
+    T('L_cmd unchanged', 1530, 857, { size: 16, weight: 700, color: C.trn });
+    arrow([[1040 + len + 94, 796], [1040 + len + 94, 836]], { col: C.mute, dash: [4, 4], hs: 8, w: 1.5 });
+    // age meter
+    T('token age', 1700, 760, { size: 14, color: C.hl, weight: 700 });
+    rr(1700, 776, 130, 14, 7); X.fillStyle = 'rgba(255,209,102,0.15)'; X.fill(); rr(1700, 776, lerp(40, 118, g), 14, 7); X.fillStyle = C.hl; X.fill();
+    X.restore();
+  }
+}
+
+// ---------- 4. One shared embedding space
+function scene4(t) {
+  const cx = 975, cy = 520, R = 232;
+  const aS = fade(t, 1.2);
+  if (aS > 0) {
+    X.save(); X.globalAlpha *= aS;
+    const g = X.createRadialGradient(cx, cy, 10, cx, cy, R); g.addColorStop(0, 'rgba(61,220,151,0.16)'); g.addColorStop(1, 'rgba(61,220,151,0.03)');
+    X.fillStyle = g; X.beginPath(); X.arc(cx, cy, R * pop(t, 1.2), 0, 7); X.fill();
+    X.strokeStyle = hexA(C.cch, 0.7); X.lineWidth = 2; X.setLineDash([11, 7]); X.stroke(); X.setLineDash([]);
+    for (let r = 60; r < R; r += 60) { X.strokeStyle = 'rgba(61,220,151,0.10)'; X.beginPath(); X.arc(cx, cy, r, 0, 7); X.stroke(); }
+    for (let i = 0; i < 70; i++) { const a = hash(i) * 6.283, rr2 = Math.sqrt(hash(i + 50)) * (R - 14); X.fillStyle = 'rgba(160,190,210,0.18)'; X.beginPath(); X.arc(cx + Math.cos(a) * rr2, cy + Math.sin(a) * rr2, 2.2, 0, 7); X.fill(); }
+    X.restore();
+    T('the frozen backbone\'s', 790, cy + R - 4, { size: 19, align: 'right', weight: 650, color: C.cch, a: aS }); T('text-embedding space', 790, cy + R + 20, { size: 19, align: 'right', weight: 650, color: C.cch, a: aS });
+    T('d_v = 2,048 (Edge reasoner) · 4,096 (8 B tier)', 790, cy + R + 46, { size: 15, align: 'right', color: C.mute, a: aS });
+  }
+  T('camera frames enter through the frozen VLM itself', cx, 262, { size: 15, align: 'center', color: C.frz, a: fade(t, 1.8) });
+  const dot = (x, y, col, a, r = 7) => { if (a <= 0) return; X.save(); X.globalAlpha *= a; X.fillStyle = col; X.shadowColor = col; X.shadowBlur = 14; X.beginPath(); X.arc(x, y, r, 0, 7); X.fill(); X.restore(); };
+  // node definitions
+  const aN = fade(t, 4.8);
+  box(70, 250, 450, 112, { kind: 'cch', a: aN, s: pop(t, 4.8), title: 'Node definitions', sub: 'FOLLOW: “follow the lead vehicle keeping a safe time gap”', align: 'left', ts: 21, ss: 16, dash: 'cached', tag: 'cached once' });
+  box(560, 282, 150, 48, { kind: 'frz', a: aN, title: 'text path', ts: 16, lock: true, r: 10 });
+  arrow([[520, 306], [556, 306]], { col: C.cch, a: aN, hs: 9 });
+  arrow([[712, 306], [790, 330], [880, 420]], { col: C.cch, a: aN, p: EP(t, 5.2, 6.0) });
+  flow([[712, 306], [790, 330], [880, 420]], t, { n: 2, col: C.cch, a: aN * EP(t, 6, 6.3) });
+  const nodes = [['FOLLOW', 885, 425], ['KEEP', 930, 400], ['STOP', 845, 470], ['TURN_L', 905, 470], ['LANE_KEEP', 960, 445]];
+  nodes.forEach((n, i) => { const a = fade(t, 5.9 + i * 0.2); dot(n[1], n[2], C.cch, a); T(n[0], n[1] + 10, n[2] - 13, { size: 12, color: C.cch, a, weight: 650 }); });
+  // country
+  const aC = fade(t, 8.4);
+  box(70, 600, 450, 120, { kind: 'cch', a: aC, s: pop(t, 8.4), title: 'Country nodes (v10)', sub: '“driving in Denmark” · “driving in Slovenia” · “driving in United States” · … 25 countries', align: 'left', ts: 21, ss: 16, dash: 'cached', tag: 'cached once' });
+  arrow([[520, 660], [760, 640], [850, 610]], { col: C.cch, a: aC, p: EP(t, 8.8, 9.6) });
+  for (let i = 0; i < 9; i++) dot(855 + (i % 3) * 30 + hash(i) * 10, 590 + Math.floor(i / 3) * 26 + hash(i + 9) * 8, C.cch, fade(t, 9.4 + i * 0.06), 5);
+  T('countries', 890, 676, { size: 12, color: C.cch, a: fade(t, 9.6), align: 'center', weight: 650 });
+  // rules
+  const aR = fade(t, 9.6);
+  box(1440, 300, 420, 132, { kind: 'cch', a: aR, s: pop(t, 9.6), title: 'Traffic rules (v10, per country)', sub: '“roundabout entry yields to circulating traffic” · “yield to emergency vehicles”', align: 'left', ts: 20, ss: 16, dash: 'cached', tag: 'cached once' });
+  arrow([[1440, 366], [1200, 400], [1100, 440]], { col: C.cch, a: aR, p: EP(t, 10.0, 10.8) });
+  for (let i = 0; i < 8; i++) dot(1060 + (i % 4) * 26 + hash(i + 3) * 8, 445 + Math.floor(i / 4) * 26 + hash(i + 30) * 6, '#7ff0bf', fade(t, 10.6 + i * 0.06), 5);
+  T('rules', 1100, 512, { size: 12, color: C.cch, a: fade(t, 10.8), align: 'center', weight: 650 });
+  // audio
+  const aA = fade(t, 12.0);
+  box(1440, 560, 420, 150, { kind: 'img', a: aA, s: pop(t, 12.0), title: 'Audio (optional)', sub: 'mic → frozen audio encoder → trainable bridge → 8 tokens in d_v', align: 'left', ts: 20, ss: 16, dash: 'optional' });
+  icon('wave', 1820, 590, 1, C.img, aA);
+  arrow([[1440, 640], [1230, 640], [1130, 610]], { col: C.img, a: aA, p: EP(t, 12.4, 13.2) });
+  for (let i = 0; i < 8; i++) dot(1060 + (i % 4) * 22, 585 + Math.floor(i / 4) * 24, C.img, fade(t, 13.0 + i * 0.07), 5);
+  chip(1650, 742, 'omni pattern: Qwen2.5/3-Omni · Gemma 3n', { align: 'center', a: fade(t, 13.4), col: C.img, size: 15 });
+  ev(1650, 776, 'PUBLISHED', { align: 'center', a: fade(t, 13.4) });
+  // reader
+  const aQ = fade(t, 15.8);
+  box(780, 820, 390, 70, { kind: 'trn', a: aQ, s: pop(t, 15.8), title: 'level queries', sub: 'zero-init gated cross-attention', ts: 19, ss: 15, spark: true });
+  [[885, 470], [1090, 470], [1080, 610], [870, 620]].forEach((p, i) => { arrow([[p[0], p[1] + 20], [lerp(p[0], 975, 0.6), 812]], { col: C.trn, a: aQ * 0.8, p: EP(t, 16 + i * 0.15, 16.8 + i * 0.15), w: 2, hs: 9 }); flow([[p[0], p[1] + 20], [lerp(p[0], 975, 0.6), 812]], t + i * 0.3, { n: 2, col: C.trn, a: aQ * EP(t, 16.8, 17.2), r: 3.5 }); });
+  T('g = 0 at initialisation and when a source is absent ⇒ that source is removed bit-exactly', 1190, 855, { size: 16, color: C.mute, a: fade(t, 16.6), maxW: 380, vc: true });
+}
+
+// ---------- 5. Fusion and level queries
+function scene5(t) {
+  const segsT = [
+    ['last', 1, 30, '#4da3ff', 'last-token state'], ['vlm', 128, 600, C.frz, '128 VLM tokens + age'], ['mot', 16, 200, C.trn, '16 motion tokens'],
+    ['ego', 1, 34, '#aeb8ca', 'ego'], ['nav', 1, 34, '#aeb8ca', 'nav'], ['route', 1, 34, '#aeb8ca', 'route'], ['q', 6, 204, C.hl, '6 level queries'],
+  ];
+  let x = 110; const y = 190;
+  segsT.forEach((s, i) => {
+    const t0 = s[0] === 'q' ? 8.6 : 4.8 + i * 0.4; const a = fade(t, t0);
+    const n = Math.min(s[1], 32); const cw = s[2] / n;
+    X.save(); X.globalAlpha *= a;
+    for (let k = 0; k < n; k++) { X.fillStyle = hexA(s[3], 0.45 + 0.5 * hash(k + i * 50)); rr(x + k * cw + 1, y, cw - 2, 44, 3); X.fill(); }
+    X.restore();
+    T(s[4], x + s[2] / 2, y + 66, { size: 14, color: s[3], align: 'center', a, weight: 650, maxW: Math.max(s[2] + 30, 70), vc: false });
+    if (s[0] === 'vlm' || s[0] === 'q') flow([[x + s[2] / 2, y + 90], [x + s[2] / 2, 330]], t + i, { n: 2, col: s[3], a: a * (s[0] === 'q' ? 0 : 1), r: 4 });
+    s.x = x; x += s[2] + 16;
+  });
+  // fusion
+  const aF = fade(t, 1.4);
+  box(110, 330, 1270, 228, { kind: 'trn', a: aF, s: pop(t, 1.4), fa: 0.06 });
+  for (let l = 0; l < 6; l++) {
+    const a = aF * fade(t, 1.6 + l * 0.15); X.save(); X.globalAlpha *= a; rr(140, 350 + l * 33, 1210, 25, 6); X.fillStyle = hexA(C.trn, 0.13 + 0.05 * (l % 2)); X.fill();
+    // attention arcs
+    X.strokeStyle = hexA(C.trn, 0.35); X.lineWidth = 1;
+    for (let k = 0; k < 6; k++) { const xa = 170 + hash(l * 9 + k) * 1150, xb = 170 + hash(l * 9 + k + 3) * 1150; X.beginPath(); X.moveTo(xa, 362 + l * 33); X.quadraticCurveTo((xa + xb) / 2, 350 + l * 33 - 10, xb, 362 + l * 33); X.stroke(); }
+    X.restore(); T('layer ' + (l + 1), 160, 363 + l * 33, { size: 12, color: C.trn, a, weight: 700 });
+  }
+  if (aF > 0) { X.save(); X.globalAlpha *= aF; rr(470, 420, 560, 52, 26); X.fillStyle = 'rgba(12,16,24,0.88)'; X.fill(); X.restore(); }
+  T('FUSION TRANSFORMER · d = 512 · 6 layers · 8 heads · 10 Hz', 750, 447, { size: 19, align: 'center', weight: 700, a: aF });
+  chip(1380, 300, 'fusion 18.9 M', { align: 'right', a: fade(t, 2.6), col: C.trn, size: 15 }); ev(1235, 300, 'MEASURED', { align: 'right', a: fade(t, 2.6) });
+  // queries descending through fusion
+  const qx0 = segsT[6].x; const aQ = fade(t, 8.6);
+  const qd = EP(t, 9.2, 11.4);
+  const LV = ['s1', 's2-lat', 's2-lon', 's3-P', 's3-V', 'goal'];
+  for (let i = 0; i < 6; i++) {
+    const sx = qx0 + i * 34 + 17, sy = 212; const ex = 205 + i * 212, ey = 610;
+    const px = lerp(sx, ex, qd), py = lerp(sy, ey, qd);
+    X.save(); X.globalAlpha *= aQ; X.fillStyle = C.hl; X.shadowColor = C.hl; X.shadowBlur = 14 * (qd > 0 && qd < 1 ? 1 : 0.4); rr(px - 13, py - 13, 26, 26, 5); X.fill(); X.restore();
+    T(LV[i], px, py + 28, { size: 14, align: 'center', color: C.hl, a: aQ * EP(t, 11.0, 11.4), weight: 700 });
+    // readout heads
+    const aH = fade(t, 12.2 + i * 0.12);
+    arrow([[ex, 650], [ex, 676]], { col: C.trn, a: aH, hs: 9 });
+    if (i < 5) box(ex - 92, 680, 184, 92, { kind: 'trn', a: aH, s: pop(t, 12.2 + i * 0.12), title: 'H: 512→1024→512', sub: 'L2-normalised', ts: 16, ss: 14 });
+    else box(ex - 92, 680, 184, 92, { kind: 'trn', a: aH, s: pop(t, 12.2 + i * 0.12), title: 'goal head', sub: '22 goals + goal point', ts: 16, ss: 14 });
+    arrow([[ex, 774], [ex, 800]], { col: C.trn, a: aH, hs: 9 });
+    chip(ex, 822, i < 5 ? 'unit state ' + LV[i] : 'goal logits', { align: 'center', a: aH, col: i < 5 ? C.trn : '#aeb8ca', size: 15 });
+  }
+  // Matryoshka
+  const aM = fade(t, 16.0);
+  if (aM > 0) {
+    panel(1430, 300, 430, 560, 'MATRYOSHKA READOUTS', { a: aM, col: C.trn, ts: 15 });
+    X.save(); X.globalAlpha *= aM;
+    const bx = 1460, bw = 370; const g = [128, 256, 512];
+    g.forEach((d, i) => {
+      const w = bw * d / 512 * EP(t, 16.2 + i * 0.4, 16.9 + i * 0.4); const yy = 380 + i * 96;
+      rr(bx, yy, w, 40, 8); X.fillStyle = hexA(C.trn, 0.22 + 0.18 * i); X.fill(); X.strokeStyle = C.trn; X.lineWidth = 1.5; X.stroke();
+      T(d + ' dims', bx + 12, yy + 21, { size: 16, weight: 700 });
+      T(i === 0 ? 'first 128' : i === 1 ? 'first 256' : 'full 512', bx + bw - 6, yy + 60, { size: 14, color: C.mute, align: 'right' });
+    });
+    T('every prefix is a usable unit embedding — a free option', 1645, 690, { size: 16, align: 'center', color: C.text, maxW: 380 });
+    chip(1645, 770, 'trainable core 56.4 M', { align: 'center', col: C.trn, size: 16 });
+    ev(1645, 808, 'MEASURED · HiCAP.n_params', { align: 'center' });
+    X.restore();
+  }
+}
+
+// ---------- 6. Multi-hierarchy decision
+function scene6(t) {
+  // Level 1
+  const a1 = fade(t, 1.2);
+  T('LEVEL 1 · STRATEGIC · s1', 90, 170, { size: 18, weight: 700, color: C.trn, a: a1, ls: 1 }); T('every 2 s', 90, 194, { size: 15, color: C.mute, a: a1 });
+  const strat = [['HOLD_MAIN_ROAD', 1], ['PREPARE_TURN_L_FOLLOW_ROUTE', 1], ['PREPARE_TURN_R_FOLLOW_ROUTE', 1], ['PREPARE_STOP_FOLLOW_ROUTE', 1], ['RESUME_CRUISE_FOLLOW_ROUTE', 1], ['PREPARE_EXIT_FOLLOW_ROUTE', 0], ['PREPARE_LANE_CHANGE_FOLLOW_ROUTE', 0]];
+  const sel1 = EP(t, 3.0, 3.6);
+  strat.forEach((s, i) => {
+    const y = 220 + i * 52; const a = fade(t, 1.4 + i * 0.12) * (s[1] ? 1 : 0.45);
+    box(90, y, 470, 44, { kind: s[1] ? 'cch' : 'grey', a, title: s[0], ts: 14, align: 'left', pad: 14, r: 8, col: (i === 0 && sel1 > 0.5) ? C.hl : undefined, glow: i === 0 ? 16 * sel1 : 0 });
+    if (!s[1]) T('n = 0 · masked', 548, y + 22, { size: 13, color: C.mute, align: 'right', a });
+  });
+  box(90, 590, 470, 70, { kind: 'trn', a: fade(t, 2.4), title: '+ country readout (v10)', sub: 'contrastive, against 25 country node embeddings', ts: 17, ss: 14, align: 'left', pad: 14 });
+  ev(90, 680, '7 DECLARED / 5 USABLE · v7 CENSUS', { a: a1 });
+  // Level 2
+  const a2 = fade(t, 4.8);
+  T('LEVEL 2 · TACTICAL · s2', 640, 170, { size: 18, weight: 700, color: C.trn, a: a2, ls: 1 }); T('every 0.5 s', 640, 194, { size: 15, color: C.mute, a: a2 });
+  const LAT = ['LANE_KEEP', 'TURN_L', 'TURN_R'], LON = ['HOLD', 'CREEP', 'STOP', 'FOLLOW', 'DECEL.', 'ACCEL.', 'KEEP'];
+  const gx = 770, gy = 300, cw = 58, ch = 54;
+  const split = EP(t, 8.4, 9.2), selC = EP(t, 10.2, 10.8);
+  LON.forEach((l, c) => T(l, gx + c * cw + cw / 2, gy - 18, { size: 12, align: 'center', color: C.mute, a: a2, weight: 650 }));
+  LAT.forEach((l, r) => T(l, gx - 10, gy + r * ch + ch / 2, { size: 13, align: 'right', color: C.mute, a: a2, weight: 650 }));
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 7; c++) {
+    const a = a2 * fade(t, 5.0 + (r * 7 + c) * 0.03); const isSel = r === 0 && c === 3;
+    const rowHL = split * (0.5 + 0.5 * Math.sin(t * 4)) * (r === 0 ? 1 : 0) * (1 - selC);
+    const colHL = split * (0.5 + 0.5 * Math.sin(t * 4 + 1.6)) * (c === 3 ? 1 : 0) * (1 - selC);
+    X.save(); X.globalAlpha *= a; rr(gx + c * cw + 2, gy + r * ch + 2, cw - 4, ch - 4, 6);
+    X.fillStyle = isSel && selC > 0.5 ? hexA(C.hl, 0.75) : hexA(C.cch, 0.18 + 0.25 * Math.max(rowHL, colHL)); X.fill();
+    X.strokeStyle = isSel && selC > 0.5 ? C.hl : hexA(C.cch, 0.6); X.lineWidth = 1.5; X.stroke(); X.restore();
+  }
+  T('21 cells · 19 populated (v9 census)', gx + 3.5 * cw, gy + 3 * ch + 24, { size: 15, align: 'center', color: C.mute, a: a2 });
+  // split queries
+  const aSp = fade(t, 8.4);
+  chip(gx - 70, gy + ch / 2 - 46, 's2-lat', { a: aSp, col: C.trn, size: 14, align: 'center' });
+  arrow([[gx - 70, gy + ch / 2 - 30], [gx - 70, gy + ch / 2 - 8], [gx - 4, gy + ch / 2 - 8]], { col: C.trn, a: aSp * 0, hs: 8 });
+  chip(gx + 3.5 * cw, gy - 50, 's2-lon', { a: aSp, col: C.trn, size: 14, align: 'center' });
+  T('two queries: lateral and longitudinal stay separately evaluable', gx + 3.5 * cw, gy + 3 * ch + 54, { size: 15, align: 'center', color: C.trn, a: aSp, maxW: 470 });
+  T('f₂ = τ⟨s_lat, a_lat⟩ + τ⟨s_lon, a_lon⟩ + b(lat, lon)', gx + 3.5 * cw, gy + 3 * ch + 104, { size: 16, align: 'center', a: aSp, color: C.text });
+  // Level 3
+  const a3 = fade(t, 11.8);
+  T('LEVEL 3 · TRAJECTORY · s3', 1270, 300, { size: 18, weight: 700, color: C.trn, a: a3, ls: 1 }); T('every 0.1 s', 1270, 324, { size: 15, color: C.mute, a: a3 });
+  panel(1265, 345, 290, 270, 'PATHS · K_P = 1,024', { a: a3, col: C.cch, ts: 13 });
+  const selK = 0.0016;
+  for (let i = 0; i < 44; i++) {
+    const k = (i / 43 * 2 - 1) * 0.0105; const pts = pathPts(k, 200, 20).map(p => [1410 + p[0], 600 + p[1]]);
+    const isS = i === 25; poly(pts, { col: isS && t > 15.6 ? C.hl : hexA(C.cch, 0.45), w: isS && t > 15.6 ? 3.5 : 1.3, a: a3 * fade(t, 12.0 + i * 0.02) });
+  }
+  const aP = fade(t, 13.0);
+  panel(1575, 345, 285, 270, 'PROFILES · K_V = 256', { a: aP, col: C.cch, ts: 13 });
+  if (aP > 0) {
+    X.save(); X.globalAlpha *= aP; X.strokeStyle = 'rgba(160,175,200,0.4)'; X.lineWidth = 1; X.beginPath(); X.moveTo(1595, 480); X.lineTo(1845, 480); X.stroke();
+    T('Δv(t) over 6 s', 1720, 598, { size: 13, color: C.mute, align: 'center' });
+    for (let i = 0; i < 30; i++) {
+      const aa = (hash(i + 11) * 2 - 1) * 1.0, bb = (hash(i + 77) * 2 - 1) * 0.12; const pts = [];
+      for (let s = 0; s <= 30; s++) { const tt = s / 30 * 6; pts.push([1600 + s * 8, 480 - (aa * tt + bb * tt * tt) * 13]); }
+      poly(pts, { col: i === 4 && t > 15.6 ? C.hl : hexA(C.cch, 0.45), w: i === 4 && t > 15.6 ? 3.5 : 1.3 });
+    }
+    X.restore();
+  }
+  T('×', 1565, 480, { size: 30, align: 'center', weight: 700, a: aP, color: C.text });
+  // composition
+  const aCo = fade(t, 15.6);
+  if (aCo > 0) {
+    panel(1265, 632, 595, 268, 'ARC-LENGTH COMPOSITION', { a: aCo, col: C.hl, ts: 13 });
+    X.save(); X.globalAlpha *= aCo;
+    const pth = pathPts(0.0003, 520, 52).map(p => [1300 - p[1], 848 - p[0]]);
+    poly(pth, { col: hexA(C.hl, 0.35), w: 8 });
+    // speed profile 4 (decelerating/accelerating) -> positions
+    const aa = (hash(4 + 11) * 2 - 1) * 1.0, bb = (hash(4 + 77) * 2 - 1) * 0.12; let s = 0; const v0 = 7.0;
+    const nShow = Math.floor(EP(t, 16.0, 18.4) * 60);
+    for (let k = 1; k <= 60; k++) {
+      const tt = k * 0.1; const v = Math.max(0, v0 + aa * tt + bb * tt * tt) ; s += v * 0.1;
+      if (k > nShow) continue; const [px, py] = at(pth, s * 6.4);
+      X.fillStyle = C.hl; X.beginPath(); X.arc(px, py, k % 10 === 0 ? 5 : 3, 0, 7); X.fill();
+    }
+    T('1,024 × 256 = 262,144 composed entries', 1290, 700, { size: 17, weight: 700 });
+    T('60 waypoints from path geometry + speed profile', 1290, 726, { size: 14, color: C.mute });
+    chip(1290, 764, 'v₀ < 0.5 m/s → standstill sub-vocabulary: hold · creep · stop', { col: C.cch, size: 13, a: fade(t, 17.6) });
+    X.restore();
+  }
+  // dot product
+  const aD = fade(t, 19.6);
+  if (aD > 0) {
+    panel(90, 720, 1100, 180, 'SCORING = A DOT PRODUCT', { a: aD, col: C.hl, ts: 15 });
+    X.save(); X.globalAlpha *= aD;
+    vec(120, 790, 14, 18, 30, C.trn, { seed: 2 }); T('state readout s_ℓ', 120 + 7 * 20, 840, { size: 14, color: C.trn, align: 'center', weight: 650 });
+    T('·', 412, 804, { size: 40, align: 'center', weight: 700 });
+    vec(430, 790, 14, 18, 30, C.cch, { seed: 9 }); T('cached node embedding a_v', 430 + 7 * 20, 840, { size: 14, color: C.cch, align: 'center', weight: 650 });
+    T('→ score   τ⟨s_ℓ, a_v⟩ + β log q̄(v)', 735, 805, { size: 21, weight: 650 });
+    T('≈ 1 ms even if flat over 262,144 entries — a table lookup, not a generation', 735, 845, { size: 15, color: C.mute, maxW: 440 });
+    ev(1175, 880, 'ESTIMATED · PAPER §EFF', { align: 'right' });
+    X.restore();
+  }
+  // beam
+  const aB = fade(t, 23.6);
+  arrow([[560, 242], [745, 242], [745, 300]], { col: C.hl, a: aB, p: EP(t, 23.6, 24.4), w: 3 });
+  arrow([[gx + 4 * cw - 2, gy - 3], [1210, gy - 3], [1210, 470], [1262, 470]], { col: C.hl, a: aB, p: EP(t, 24.4, 25.2), w: 3 });
+  T('parent restricts children — a hard beam', 900, 636, { size: 17, color: C.hl, weight: 700, a: aB, align: 'center' });
+  T('lateral class partitions paths · longitudinal class partitions profiles', 900, 662, { size: 14, color: C.mute, a: aB, align: 'center' });
+  ev(560, 700, 'SELECTION ILLUSTRATIVE', { a: fade(t, 3.2), align: 'right' });
+}
+
+// ---------- 7. Knowledge injection
+function scene7(t) {
+  // Panel A: NodeLibrary
+  const aA = fade(t, 1.2, 16.9);
+  if (aA > 0) {
+    panel(80, 150, 820, 450, 'TEXT-DEFINED NODES · NodeLibrary', { a: aA, col: C.cch });
+    X.save(); X.globalAlpha *= aA;
+    const ver = t > 3.4 ? 'v2' : 'v1';
+    chip(880, 178, 'lateral · ' + ver, { align: 'right', col: C.cch, size: 14 });
+    const rows = [['0', 'LANE_KEEP', 'keep the current lane and follow the road without turning'], ['1', 'TURN_L', 'turn left at a junction'], ['2', 'TURN_R', 'turn right at a junction']];
+    rows.forEach((r, i) => { const y = 220 + i * 56; T(r[0], 110, y + 20, { size: 18, weight: 700, color: C.mute, mono: true }); box(140, y, 170, 40, { kind: 'cch', title: r[1], ts: 15, r: 8 }); T('“' + r[2] + '”', 326, y + 20, { size: 14, color: C.mute }); });
+    const an = fade(t, 2.6); const y = 220 + 3 * 56;
+    T('3', 110, y + 20, { size: 18, weight: 700, color: C.hl, mono: true, a: an }); box(140, y, 170, 40, { kind: 'hl', title: 'NUDGE_L', ts: 15, r: 8, a: an, s: pop(t, 2.6) });
+    T('definition: “nudge left”  (example new token)', 326, y + 20, { size: 14, color: C.hl, a: an });
+    box(330, 470, 170, 48, { kind: 'frz', title: 'text path', ts: 15, lock: true, r: 10, a: fade(t, 3.0) });
+    arrow([[225, 430], [225, 494], [326, 494]], { col: C.hl, a: fade(t, 3.0), p: EP(t, 3.0, 3.5), hs: 9 });
+    arrow([[502, 494], [600, 494]], { col: C.cch, a: fade(t, 3.4), hs: 9 });
+    vec(612, 482, 12, 14, 24, C.cch, { a: fade(t, 3.6), seed: 41 });
+    T('new embedding from its definition alone', 612, 534, { size: 14, color: C.cch, a: fade(t, 3.6) });
+    T('existing ids never move · extension = a new version', 110, 570, { size: 16, weight: 650, a: fade(t, 4.0) });
+    X.restore();
+  }
+  // Panel B: rule retrieval
+  const aB = fade(t, 5.0, 21.1);
+  if (aB > 0) {
+    panel(960, 290, 900, 330, 'TRAFFIC-RULE RETRIEVAL · keyed by the predicted country', { a: aB, col: C.cch, ts: 14 });
+    X.save(); X.globalAlpha *= aB;
+    const cn = ['Denmark', 'United States', 'Sweden', 'Netherlands', 'Slovenia'];
+    T('s1 country posterior p(c)', 985, 345, { size: 14, color: C.trn, weight: 700 });
+    cn.forEach((c, i) => { const w = [0.85, 0.35, 0.25, 0.18, 0.1][i] * 120 * EP(t, 5.4, 6.4); T(c, 985, 380 + i * 30, { size: 13, color: C.mute }); rr(1090, 372 + i * 30, w, 16, 4); X.fillStyle = hexA(C.trn, 0.8); X.fill(); });
+    T('… 25 countries', 985, 530, { size: 13, color: C.dim });
+    ev(985, 566, 'ILLUSTRATIVE', {});
+    T('w_i = Σ_c p(c) · 1[i ∈ R_c]', 1240, 345, { size: 16, weight: 650, a: fade(t, 6.2) });
+    T('s_i = ⟨W_q q_s2, W_r r_i⟩ → top-k = 8 by w_i · softmax(s_i)', 1240, 372, { size: 14, color: C.mute, a: fade(t, 8.8) });
+    const rules = ['yield to emergency vehicles', 'roundabout entry yields to circulating traffic', 'priority to the right at unsigned junctions', 'right-turn-on-red: US permitted unless signed', 'default speed limits by road type', 'pedestrian-crossing yielding'];
+    const topk = EP(t, 9.4, 10.2);
+    rules.forEach((r, i) => { const a = fade(t, 6.6 + i * 0.15); const hl = i !== 3 && topk > 0.5; box(1240, 395 + i * 36, 600, 31, { kind: hl ? 'hl' : 'cch', a, title: r, ts: 14, align: 'left', pad: 12, r: 7, dash: hl ? null : 'cached' }); });
+    T('RuleBook v1 · each rule text embedded once by the frozen text path', 1540, 638 - 8, { size: 12, color: C.dim, align: 'center', a: fade(t, 7) });
+    X.restore();
+  }
+  // Panel C: three routes
+  const aC = fade(t, 12.6);
+  if (aC > 0) {
+    const R = [['trn', 'MEMORY', 'retrieved rule tokens → zero-init gated cross-attention into s1 / s2 · rules-null is bit-exact'],
+               ['rule', 'PRUNE', 'numeric rules → masks / priors (speed-profile cap, right-on-red) · never removes the guard set'],
+               ['frz', 'VERIFY + EXPLAIN', 'rule texts join the System-2 verifier prompt and the explanation prompt']];
+    R.forEach((r, i) => { const x = 80 + i * 600; const a = fade(t, 12.6 + i * 0.5); box(x, 668, 570, 110, { kind: r[0], a, s: pop(t, 12.6 + i * 0.5), title: r[1], sub: r[2], ts: 20, ss: 15, align: 'left', lock: r[0] === 'frz' }); });
+    T('three routes for every knowledge source', 960, 806, { size: 15, color: C.mute, align: 'center', a: aC });
+  }
+  // Panel D: country swap
+  const aD = fade(t, 16.8);
+  if (aD > 0) {
+    panel(80, 150, 820, 450, 'COUNTRY-SWAP TEST · H-HC20 (pre-registered)', { a: aD, col: C.hl, ts: 15 });
+    X.save(); X.globalAlpha *= aD;
+    const sw = Math.floor(Math.max(0, t - 17.6) / 1.3) % 2;
+    chip(130, 230, 'p(c) = Denmark', { col: sw ? C.dim : C.trn, size: 16 });
+    T('⇄', 330, 230, { size: 26, align: 'center', weight: 700 });
+    chip(370, 230, 'p(c) = United States', { col: sw ? C.trn : C.dim, size: 16 });
+    const gx = 230, gy = 300;
+    ['LANE_KEEP', 'TURN_L', 'TURN_R'].forEach((l, r) => {
+      T(l, gx - 10, gy + r * 50 + 22, { size: 13, align: 'right', color: C.mute, weight: 650 });
+      for (let c = 0; c < 7; c++) { const rel = r === 2; const on = rel ? (sw ? (c === 1 || c === 2) : false) : (r === 0 && c === 3); rr(gx + c * 54 + 2, gy + r * 50 + 2, 50, 44, 6); X.fillStyle = on ? hexA(rel ? C.rule : C.hl, 0.7) : hexA(C.cch, 0.15); X.fill(); X.strokeStyle = rel ? hexA(C.rule, 0.8) : hexA(C.cch, 0.5); X.lineWidth = 1.5; X.stroke(); }
+    });
+    T('rule-relevant cells (e.g. right-turn-on-red)', gx + 378 + 14, gy + 122, { size: 14, color: C.rule, maxW: 230 });
+    T('pass ⇔ swapping the country changes decisions only on rule-relevant cells', 110, 500, { size: 16, weight: 650, maxW: 760 });
+    T('both outcomes committed in advance · cells shown are illustrative', 110, 540, { size: 14, color: C.mute });
+    X.restore();
+  }
+  // Panel E: System-2 verifier
+  const aE = fade(t, 21.0);
+  if (aE > 0) {
+    panel(960, 290, 900, 330, 'SYSTEM-2 VERIFIER · only when uncertain', { a: aE, col: C.frz, ts: 15 });
+    X.save(); X.globalAlpha *= aE;
+    box(990, 340, 380, 74, { kind: 'grey', title: 'fires only if', sub: 'top-2 margin < m_min, or the imagination heads disagree', ts: 16, ss: 14, align: 'left' });
+    arrow([[1372, 377], [1410, 377]], { col: C.mute, hs: 8 });
+    box(1414, 340, 420, 74, { kind: 'grey', title: 'top K₂ ≤ 8 survivors as text', sub: '“lat=LANE_KEEP, lon=FOLLOW”', ts: 16, ss: 14, align: 'left', smono: true });
+    arrow([[1624, 416], [1624, 440]], { col: C.mute, hs: 8 });
+    box(1180, 444, 654, 70, { kind: 'frz', title: 'one extra weight pass of the frozen VLM', sub: 'over the cached scene prefix + each candidate → CLM match score added', ts: 16, ss: 14, lock: true, align: 'left' });
+    const st = EP(t, 22.0, 22.4);
+    X.save(); X.translate(1190 + 120, 570); X.rotate(-0.06); X.scale(lerp(1.4, 1, st), lerp(1.4, 1, st)); X.globalAlpha *= st;
+    rr(-200, -22, 400, 44, 8); X.strokeStyle = C.frz; X.lineWidth = 3; X.stroke(); T('SCORES · NEVER GENERATES', 0, 1, { size: 20, weight: 800, align: 'center', color: C.frz, ls: 2 }); X.restore();
+    T('≈ 58.6 ms for an 8 B body in bf16', 1560, 570, { size: 14, color: C.mute }); ev(1560, 596, 'ESTIMATED', {});
+    X.restore();
+  }
+}
+
+// ---------- 8. Pruning and safety
+const GATES = [['R1', 'physics', 'hard'], ['R2', 'state admissibility', 'hard'], ['R3', 'route (nav-fed arm)', 'hard'], ['RULES', 'traffic rules (v10)', 'hard'], ['R4 · R5', 'goal · hysteresis', 'soft'], ['R6', 'conformal keep-sets', 'hard']];
+const GX = [600, 780, 960, 1140, 1320, 1500];
+function scene8(t) {
+  GATES.forEach((g, i) => {
+    const a = fade(t, 1.4 + i * 0.25); const x = GX[i];
+    X.save(); X.globalAlpha *= a; rr(x - 7, 330, 14, 380, 7); X.fillStyle = hexA(C.rule, g[2] === 'soft' ? 0.15 : 0.45); X.fill();
+    X.strokeStyle = C.rule; X.lineWidth = 1.5; if (g[2] === 'soft') X.setLineDash([3, 5]); X.stroke(); X.setLineDash([]); X.restore();
+    T(g[0], x, 288, { size: 17, weight: 800, align: 'center', color: C.rule, a });
+    T(g[1], x, 310, { size: 13, align: 'center', color: C.mute, a, maxW: 170 });
+  });
+  T('262,144 candidates', 280, 300, { size: 17, weight: 700, align: 'center', a: fade(t, 1.2) });
+  ev(280, 740, 'FLOW ILLUSTRATIVE', { align: 'center', a: fade(t, 1.2) });
+  // dots
+  const N = 1400; const xe = 1640;
+  for (let i = 0; i < N; i++) {
+    const c = i % 40, r = Math.floor(i / 40); const x0 = 110 + c * 9.2, y0 = 360 + r * 9.6;
+    const h = hash(i * 3.7);
+    let k; if (h < 0.42) k = 0; else if (h < 0.55) k = 1; else if (h < 0.63) k = 2; else if (h < 0.68) k = 3; else if (h < 0.955) k = 5; else k = 6;
+    const t0 = 2.4 + hash(i * 1.3) * 4.5; const u = (t - t0) / 6.0;
+    let x, y, col = C.cch, a = fade(t, 1.0);
+    if (u <= 0) { x = x0; y = y0; }
+    else {
+      const uu = Math.min(u, 1); x = lerp(x0, xe, uu); y = lerp(y0, 520 + (y0 - 520) * 0.3, uu);
+      if (k < 6 && x >= GX[k]) { const tau = (x - GX[k]) / ((xe - x0) / 6.0); x = GX[k] + 4; y += tau * 120; a *= clamp(1 - tau / 0.45); col = C.rule; }
+      else if (k === 6 && u >= 1) { const s = Math.floor(hash(i + 5) * 60); x = 1660 + (s % 10) * 15; y = 470 + Math.floor(s / 10) * 15; col = C.cch; }
+    }
+    if (a <= 0.01) continue;
+    X.globalAlpha = a; X.fillStyle = col; X.fillRect(x - 2, y - 2, 4.4, 4.4);
+  }
+  X.globalAlpha = 1;
+  // survivors box
+  const aS = fade(t, 9.5);
+  box(1630, 440, 220, 150, { kind: 'cch', a: aS, fa: 0.05, title: '', r: 12, solid: false });
+  T('survivors', 1740, 425, { size: 15, weight: 700, align: 'center', a: aS, color: C.cch });
+  T('→ MaxSim shortlist ≤ 32 → re-rank K = 16 (32 if uncertain)', 1740, 640, { size: 14, align: 'center', color: C.mute, a: fade(t, 12.0), maxW: 230 });
+  // guard set
+  const aG = fade(t, 16.2);
+  const gnames = ['hold-current (CTRA)', 'gentle brake', 'firm brake', 'max brake in lane', 'previous plan, shifted'];
+  gnames.forEach((g, i) => {
+    const u = EP(t, 16.4 + i * 0.25, 17.2 + i * 0.25); const x = lerp(1745, 1660 + i * 40, u), y = lerp(900, 570, u);
+    X.save(); X.globalAlpha *= aG; X.fillStyle = C.hl; X.shadowColor = C.hl; X.shadowBlur = 12; X.beginPath(); X.arc(x, y, 7, 0, 7); X.fill(); X.restore();
+  });
+  if (aG > 0) { panel(1170, 760, 690, 145, 'GUARD SET · INJECTED AFTER EVERY MASK', { a: aG, col: C.hl, ts: 14 }); T(gnames.join(' · '), 1195, 822, { size: 16, a: aG, maxW: 650 }); T('the candidate set is never empty; the recall floor is a safe fallback', 1195, 878, { size: 14, color: C.mute, a: aG }); }
+  // R1 bitset detail
+  const aR = fade(t, 4.8, 12.3);
+  if (aR > 0) {
+    panel(80, 770, 1060, 135, 'R1 · KINEMATIC FEASIBILITY (hard)', { a: aR, col: C.rule, ts: 14 });
+    X.save(); X.globalAlpha *= aR;
+    T('1,024-bit path mask', 105, 830, { size: 14, color: C.mute });
+    for (let i = 0; i < 48; i++) { X.fillStyle = hash(i + 1) < 0.6 ? hexA(C.cch, 0.8) : hexA(C.rule, 0.35); X.fillRect(270 + i * 7, 822, 5, 16); }
+    T('AND', 645, 849, { size: 16, weight: 800, color: C.rule, align: 'center' });
+    T('256-bit profile mask', 105, 868, { size: 14, color: C.mute });
+    for (let i = 0; i < 48; i++) { X.fillStyle = hash(i + 99) < 0.45 ? hexA(C.cch, 0.8) : hexA(C.rule, 0.35); X.fillRect(270 + i * 7, 860, 5, 16); }
+    T('limits from v₀, a₀, yaw rate', 700, 820, { size: 15, weight: 650 });
+    T('accelerate 6 · brake 10 · lateral 9 m/s²', 700, 846, { size: 15, color: C.mute });
+    T('comfort limits enter only as a soft cost', 700, 872, { size: 14, color: C.dim });
+    X.restore();
+  }
+  const aM = fade(t, 8.6, 16.3);
+  if (aM > 0) { box(1170, 770, 690, 135, { kind: 'rule', a: aM, title: 'R1 on real windows: removes 78 % of a speed-agnostic set (15 % of a speed-normalised one) while keeping all 881 / 881 logged futures', ts: 18, align: 'left', tw: 600 }); ev(1846, 888, 'MEASURED · PAPER §PRELIM', { align: 'right', a: aM }); }
+  const aR6 = fade(t, 12.4);
+  if (aR6 > 0) { panel(80, 770, 1060, 135, 'R6 · CONFORMAL KEEP-SETS (guarantee)', { a: aR6, col: C.rule, ts: 14 }); T('class-conditional (Mondrian), calibrated on episode blocks', 105, 835, { size: 17, a: aR6 }); T('joint recall ≥ 1 − Σ_ℓ α_ℓ · beam width follows the calibrated margin', 105, 870, { size: 16, color: C.mute, a: aR6 }); }
+}
+
+// ---------- 9. Imagination
+function scene9(t) {
+  const a0 = fade(t, 1.2);
+  panel(80, 290, 550, 455, 'TIER 0 · training only', { a: a0, col: C.img, ts: 15 });
+  panel(660, 290, 620, 455, 'TIER 1 · every tick', { a: fade(t, 1.5), col: C.img, ts: 15 });
+  panel(1310, 290, 550, 455, 'TIER 2 · gated, top-8', { a: fade(t, 1.8), col: C.img, ts: 15 });
+  [[355, 'listwise targets from per-candidate outcomes'], [970, 'forecast the exogenous part · integrate the ego part analytically'], [1585, 'counterfactual cost heads on the survivors, only when a learned gate fires']].forEach((q, i) => T(q[1], q[0], 515, { size: 22, weight: 600, align: 'center', color: C.img, maxW: 440, vc: true, a: fade(t, 1.6 + i * 0.5, [4.9, 8.7, 16.5][i], 0.4) }));
+  // Tier 0
+  const aT0 = fade(t, 4.8);
+  if (aT0 > 0) {
+    X.save(); X.globalAlpha *= aT0;
+    T('expert one-hot label', 105, 345, { size: 14, color: C.mute });
+    for (let i = 0; i < 14; i++) { const hgt = i === 6 ? 70 : 2; X.fillStyle = hexA('#aeb8ca', 0.7); X.fillRect(110 + i * 34, 440 - hgt, 24, hgt); }
+    arrow([[355, 452], [355, 488]], { col: C.img, hs: 9 });
+    T('outcome-aware soft target', 105, 495, { size: 14, color: C.img });
+    const J = i => Math.abs(i - 6.4) * 0.9 + (hash(i + 4) * 1.2);
+    let Z = 0; for (let i = 0; i < 14; i++) Z += Math.exp(-J(i)); const m = EP(t, 5.4, 6.4);
+    for (let i = 0; i < 14; i++) { const y = 0.7 * Math.exp(-J(i)) / Z + 0.3 * (i === 6 ? 1 : 0); const hgt = lerp(i === 6 ? 70 : 2, y * 95, m); X.fillStyle = hexA(C.img, 0.85); X.fillRect(110 + i * 34, 600 - hgt, 24, hgt); }
+    T('y(a) = 0.7 · softmax(−J_teacher / T) + 0.3 · 1[a = a*]', 105, 632, { size: 15, weight: 650 });
+    chip(105, 672, 'zero cost at inference', { col: C.img, size: 14 });
+    T('toy: regret 7.00 → 3.43 (synthetic world, paper §prelim)', 105, 712, { size: 13, color: C.mute });
+    X.restore();
+  }
+  // Tier 1
+  const aT1 = fade(t, 8.6);
+  if (aT1 > 0) {
+    X.save(); X.globalAlpha *= aT1;
+    box(685, 330, 300, 64, { kind: 'img', title: 'E-head 512 → 1024 → 24', sub: 'reads the state only', ts: 16, ss: 13, spark: true });
+    const plots = ['lead gap', 'closing speed', 'lead accel.'];
+    plots.forEach((p, i) => {
+      const x = 690 + i * 195, y = 420; rr(x, y, 180, 120, 8); X.fillStyle = 'rgba(180,140,255,0.06)'; X.fill(); X.strokeStyle = hexA(C.img, 0.35); X.lineWidth = 1; X.stroke();
+      T(p, x + 10, y + 16, { size: 13, color: C.img, weight: 650 });
+      const tt = [0.5, 1, 2, 3]; const pts = [];
+      tt.forEach((s, j) => { const px = x + 22 + s / 3 * 140, py = y + 80 - (i === 0 ? -j * 8 + 10 : i === 1 ? j * 6 : -j * 4) - 0; pts.push([px, py]); const e = 5 + j * 4; X.strokeStyle = hexA(C.img, 0.7); X.beginPath(); X.moveTo(px, py - e); X.lineTo(px, py + e); X.stroke(); X.fillStyle = C.img; X.beginPath(); X.arc(px, py, 3.5, 0, 7); X.fill(); });
+      poly(pts, { col: hexA(C.img, 0.6), w: 1.5 });
+      T('0.5  1   2   3 s', x + 90, y + 108, { size: 11, color: C.dim, align: 'center' });
+    });
+    X.restore();
+  }
+  const aT1b = fade(t, 12.6);
+  if (aT1b > 0) {
+    X.save(); X.globalAlpha *= aT1b;
+    T('mode', 690, 568, { size: 13, color: C.img, weight: 650 });
+    ['cruise', 'brake', 'accelerate', 'cut-out'].forEach((m, i) => { const w = [0.5, 0.3, 0.12, 0.08][i] * 150; T(m, 690, 592 + i * 22, { size: 12, color: C.mute }); X.fillStyle = hexA(C.img, 0.75); X.fillRect(775, 585 + i * 22, w, 13); });
+    T('onset quantiles', 960, 568, { size: 13, color: C.img, weight: 650 });
+    X.strokeStyle = 'rgba(160,175,200,0.5)'; X.lineWidth = 1.5; X.beginPath(); X.moveTo(965, 620); X.lineTo(1250, 620); X.stroke();
+    [['q10', 1010], ['q50', 1080], ['q90', 1190]].forEach(q => { X.fillStyle = C.img; X.fillRect(q[1] - 1.5, 604, 3, 32); T(q[0], q[1], 648, { size: 12, align: 'center', color: C.mute }); });
+    T('J₁ = E_{m, τ} [ c(e_a, x_{m,τ}) ]', 690, 690, { size: 18, weight: 700 });
+    T('ego path e_a integrated analytically · ≈ 3 MFLOP / tick', 690, 720, { size: 13, color: C.mute });
+    ev(1260, 720, 'ESTIMATED', { align: 'right' });
+    X.restore();
+  }
+  // Tier 2
+  const aT2 = fade(t, 16.4);
+  if (aT2 > 0) {
+    X.save(); X.globalAlpha *= aT2;
+    box(1335, 330, 245, 56, { kind: 'img', title: 'cost head A', ts: 16, spark: true }); box(1595, 330, 245, 56, { kind: 'img', title: 'cost head B', ts: 16, spark: true });
+    T('counterfactual cost of 8 survivors', 1590, 412, { size: 13, color: C.mute, align: 'center' });
+    for (let i = 0; i < 8; i++) {
+      const x = 1350 + i * 60; const ca = 30 + hash(i + 2) * 40, cb = i === 5 ? 95 : ca + (hash(i + 8) - 0.5) * 12;
+      X.fillStyle = hexA(C.trn, 0.8); X.fillRect(x, 540 - ca, 20, ca); X.fillStyle = hexA(C.img, 0.85); X.fillRect(x + 22, 540 - cb * EP(t, 17, 17.8), 20, cb * EP(t, 17, 17.8));
+      T('a' + (i + 1), x + 21, 556, { size: 12, color: C.mute, align: 'center' });
+    }
+    const v = EP(t, 18.6, 19.0);
+    if (v > 0) { X.save(); X.translate(1671, 470); X.rotate(-0.15); X.scale(lerp(1.6, 1, v), lerp(1.6, 1, v)); X.globalAlpha *= v; rr(-44, -16, 88, 32, 6); X.strokeStyle = C.rule; X.lineWidth = 3; X.stroke(); T('VETO', 0, 1, { size: 18, weight: 800, align: 'center', color: C.rule, ls: 2 }); X.restore(); }
+    T('heads disagree → veto (never a trigger)', 1335, 590, { size: 14, color: C.rule, weight: 650 });
+    T('learned benefit gate · target ≤ 30 % of ticks', 1335, 625, { size: 14 });
+    T('G1: feasibility mask applied after every learned term', 1335, 660, { size: 14, color: C.mute });
+    T('no gradient into the frozen backbone', 1335, 695, { size: 14, color: C.mute });
+    X.restore();
+  }
+  // supervision band
+  const aS = fade(t, 20.6);
+  if (aS > 0) {
+    panel(80, 762, 1780, 143, 'SUPERVISION · agent cuboid tracks (obstacle.offline)', { a: aS, col: C.img, ts: 14 });
+    X.save(); X.globalAlpha *= aS;
+    // mini BEV
+    X.save(); rr(100, 800, 520, 92, 8); X.clip(); X.fillStyle = '#121925'; X.fillRect(100, 800, 520, 92);
+    X.strokeStyle = 'rgba(200,210,230,0.3)'; X.setLineDash([10, 10]); X.beginPath(); X.moveTo(100, 846); X.lineTo(620, 846); X.stroke(); X.setLineDash([]);
+    carTop(170, 862, 16, 30, C.hl); X.restore(); X.save(); X.translate(170, 862); X.restore();
+    const ag = [[0, 862, 9], [1, 830, 13], [2, 828, -7]];
+    ag.forEach((g, i) => {
+      const x0 = 260 + i * 120; const x = 100 + ((x0 - 100 + (t - 20.6) * g[2] * 6) % 520 + 520) % 520;
+      X.strokeStyle = hexA(C.img, 0.6); X.setLineDash([3, 5]); X.beginPath(); X.moveTo(x, g[1]); X.lineTo(Math.min(615, x + 120 * Math.sign(g[2] || 1)), g[1]); X.stroke(); X.setLineDash([]);
+      X.strokeStyle = C.img; X.lineWidth = 2; X.strokeRect(x - 14, g[1] - 8, 28, 16);
+    });
+    T('4,585 / 4,719 clips · 29,415,112 cuboid rows', 660, 818, { size: 18, weight: 700 }); ev(1100, 818, 'MEASURED · V10 SPEC §0', {});
+    T('Tier-1 targets, Tier-0 / Tier-2 teacher costs (TTC, clearance, progress deficit)', 660, 850, { size: 15, color: C.mute });
+    T('caveat: logged agents do not react to a counterfactual ego — an open-loop target shape, not a simulator', 660, 880, { size: 15, color: C.rule, a: fade(t, 24.4) });
+    X.restore();
+  }
+}
+
+// ---------- 10. Audio bridge and elastic sensing
+function scene10(t) {
+  const aAud = fade(t, 1.0, 16.9);
+  if (aAud > 0) {
+    X.save(); X.globalAlpha *= aAud;
+    const yc = 360;
+    flow([[202, yc], [1170, yc]], t, { n: 6, col: C.img, speed: 220, a: 0.9 });
+    box(80, yc - 50, 120, 100, { kind: 'inp', title: 'mic', ts: 16, dash: 'optional', valign: 'top', pad: 64 }); icon('mic', 140, yc - 14, 1.2, '#aeb8ca');
+    arrow([[202, yc], [244, yc]], { col: C.img, hs: 9 });
+    // log-mel
+    rr(250, yc - 50, 220, 100, 10); X.fillStyle = 'rgba(180,140,255,0.08)'; X.fill(); X.strokeStyle = hexA(C.img, 0.6); X.lineWidth = 1.5; X.stroke();
+    for (let c = 0; c < 20; c++) for (let r = 0; r < 8; r++) { const v = hash(Math.floor(c + t * 4) * 13 + r * 7); X.fillStyle = hexA(C.img, 0.1 + 0.7 * v * (r < 3 ? 1 : 0.6)); X.fillRect(258 + c * 10.2, yc - 42 + r * 10.5, 9, 9); }
+    T('log-mel · 2 s window · 0.5 s hop', 360, yc + 68, { size: 13, color: C.mute, align: 'center' });
+    arrow([[472, yc], [512, yc]], { col: C.img, hs: 9 });
+    box(518, yc - 50, 260, 100, { kind: 'frz', title: 'frozen audio encoder', sub: 'Whisper-class default · BEATs / CLAP alternatives', ts: 17, ss: 13, lock: true });
+    arrow([[780, yc], [820, yc]], { col: C.img, hs: 9 });
+    box(826, yc - 50, 300, 100, { kind: 'trn', title: 'trainable bridge', sub: '2-layer perceiver · 8 latent queries → MLP', ts: 17, ss: 13, spark: true });
+    arrow([[1128, yc], [1168, yc]], { col: C.img, hs: 9 });
+    for (let i = 0; i < 8; i++) { X.fillStyle = hexA(C.img, 0.5 + 0.45 * hash(i + 3)); rr(1176 + i * 34, yc - 15, 28, 30, 5); X.fill(); }
+    T('8 tokens in d_v', 1310, yc + 36, { size: 14, color: C.img, align: 'center', weight: 650 });
+    X.restore();
+    // alignment
+    const aL = fade(t, 4.8, 16.9);
+    box(518, 470, 608, 70, { kind: 'cch', a: aL, title: '“siren approaching from behind, about 40 m”', sub: 'caption from event metadata — never a driving label', ts: 17, ss: 13 });
+    box(1176, 470, 270, 70, { kind: 'frz', a: aL, title: 'frozen text path', ts: 16, lock: true });
+    arrow([[1128, 505], [1172, 505]], { col: C.cch, a: aL, hs: 9 });
+    arrow([[1310, 414], [1310, 466]], { col: C.hl, a: aL, hs: 9, w: 2.5 }); arrow([[1310, 466], [1310, 414]], { col: C.hl, a: aL, hs: 9, w: 2.5 });
+    T('A1 alignment: symmetric InfoNCE + cosine (CLAP-style)', 1470, 430, { size: 15, color: C.hl, a: aL, weight: 650, maxW: 380 });
+    T('public sets: AudioCaps, Clotho, AudioSet, UrbanSound8K, ESC-50, …', 1470, 492, { size: 13, color: C.mute, a: aL, maxW: 380 });
+    // gate
+    const aG = fade(t, 8.6, 16.9);
+    if (aG > 0) {
+      panel(80, 590, 1360, 120, null, { a: aG, col: C.trn });
+      T('q′ = q + tanh(g) · CrossAttn(q, audio tokens)', 110, 632, { size: 24, weight: 700, a: aG });
+      T('g ≡ 0 at initialisation  ⇒  audio absent: output bit-identical to the audio-off model', 110, 674, { size: 17, color: C.mute, a: aG });
+      // dial
+      X.save(); X.globalAlpha *= aG; const dx = 1330, dy = 662; X.strokeStyle = 'rgba(160,175,200,0.5)'; X.lineWidth = 6; X.beginPath(); X.arc(dx, dy, 40, Math.PI, 2 * Math.PI); X.stroke();
+      X.strokeStyle = C.trn; X.lineWidth = 3; X.beginPath(); X.moveTo(dx, dy); X.lineTo(dx, dy - 40); X.stroke(); T('g = 0', dx, dy + 18, { size: 15, align: 'center', weight: 700, color: C.trn }); X.restore();
+      chip(1650, 650, 'audio-off is every family\'s primary number', { align: 'center', col: C.trn, size: 14, a: aG });
+    }
+    const aM = fade(t, 12.4, 16.9);
+    if (aM > 0) {
+      box(80, 740, 860, 160, { kind: 'rule', a: aM, title: 'No audio in any programme corpus', sub: 'PhysicalAI-AV: 36 features, none audio · ffprobe of corpus video: one HEVC stream, no audio stream', ts: 21, ss: 16, align: 'left' });
+      ev(926, 882, 'MEASURED · V10 SPEC §0', { align: 'right', a: aM });
+      box(970, 740, 890, 160, { kind: 'img', a: aM, title: 'So alignment uses…', sub: 'public audio–caption sets + synthetic events rendered from real agent tracks (delay, 1/r gain, Doppler, absorption, ITD / ILD, ego-noise floor)', ts: 21, ss: 16, align: 'left' });
+    }
+  }
+  // ---- elastic sensing
+  const aCam = fade(t, 16.8);
+  if (aCam <= 0) return;
+  X.save(); X.globalAlpha *= aCam;
+  const cx = 520, cy = 600;
+  const tick = Math.max(0, Math.floor((t - 21.0) / 0.4));
+  // option per tick: escalate at tick 2 to [front, cross_left] with shadow 2..3, used 4..; de-escalate at tick 10
+  const opt = (tick >= 2 && tick < 10) ? 2 : 0; const shadow = tick >= 2 && tick < 4;
+  const cams = [['front_wide', -90, 62, 300], ['front_tele', -90, 18, 380], ['cross_left', -150, 70, 250], ['cross_right', -30, 70, 250], ['rear_left', 150, 55, 230], ['rear_right', 30, 55, 230], ['rear_tele', 90, 18, 300]];
+  cams.forEach((c, i) => {
+    const on = i === 0 || (opt === 2 && i === 2);
+    const a0 = c[1] * Math.PI / 180, hw = c[2] / 2 * Math.PI / 180;
+    X.beginPath(); X.moveTo(cx, cy); X.arc(cx, cy, c[3], a0 - hw, a0 + hw); X.closePath();
+    X.fillStyle = on ? hexA(C.frz, shadow && i === 2 ? 0.08 : 0.22) : 'rgba(140,155,180,0.05)'; X.fill();
+    X.strokeStyle = on ? C.frz : 'rgba(140,155,180,0.3)'; X.lineWidth = on ? 2 : 1; if (shadow && i === 2) X.setLineDash([6, 6]); X.stroke(); X.setLineDash([]);
+    const lx = cx + Math.cos(a0) * (c[3] + 22), ly = cy + Math.sin(a0) * (c[3] + 22);
+    T(c[0] + (shadow && i === 2 ? ' (shadow)' : ''), lx, ly, { size: 14, align: 'center', color: on ? C.frz : C.mute, weight: on ? 700 : 500 });
+  });
+  carTop(cx, cy, 34, 64, C.hl);
+  T('front-wide always on · 160 tokens; each extra camera 64 tokens', 90, 152, { size: 16, color: C.mute });
+  // gate + options
+  box(1000, 300, 400, 110, { kind: 'trn', title: 'G-V camera gate (vision-only)', sub: 'reads the pooled front-wide embedding + its own previous option', ts: 18, ss: 14, spark: true });
+  const OPTS = ['T0 · front', 'T1 · + tele', 'T1 · + cross-L', 'T1 · + cross-R', 'T1 · + rear-L', 'T1 · + rear-R', 'T2 · + tele + cross-L', 'T2 · + tele + cross-R', 'T2 · + cross-L + cross-R', 'T3 · all 7 (probe)'];
+  T('10 OPTIONS', 1440, 318, { size: 14, weight: 700, color: C.mute, ls: 1 });
+  OPTS.forEach((o, j) => { const y = 340 + j * 38; const on = j === opt; box(1440, y, 420, 32, { kind: on ? 'hl' : 'grey', title: o, ts: 14, align: 'left', pad: 12, r: 7, fa: on ? 0.25 : 0.06 }); });
+  arrow([[1402, 355], [1436, 355]], { col: C.trn, hs: 8 });
+  // tick strip
+  T('ticks', 1000, 470, { size: 14, color: C.mute, weight: 700 });
+  for (let k = 0; k < 12; k++) {
+    const st = k < 2 ? 0 : (k < 4 ? 1 : (k < 10 ? 2 : 0)); const x = 1000 + k * 34; const past = k <= tick;
+    X.fillStyle = st === 0 ? hexA('#aeb8ca', past ? 0.6 : 0.15) : st === 1 ? hexA(C.frz, past ? 0.35 : 0.1) : hexA(C.hl, past ? 0.85 : 0.15);
+    rr(x, 490, 28, 28, 5); X.fill();
+  }
+  T('escalate in 1 tick  ·  shadow mode 2 ticks  ·  de-escalate only after 3 ticks with margin 0.10', 1000, 548, { size: 14, color: C.mute, maxW: 420 });
+  T('G-E (ego cues) is an ablation; G-T (previous tactical token) is not provided', 1000, 610, { size: 13, color: C.dim, maxW: 420 });
+  X.restore();
+}
+
+// ---------- 11. Outputs
+function scene11(t) {
+  // BEV road
+  const aR = fade(t, 1.0);
+  X.save(); X.globalAlpha *= aR; rr(260, 160, 470, 760, 14); X.fillStyle = '#111824'; X.fill();
+  X.strokeStyle = 'rgba(210,220,235,0.6)'; X.lineWidth = 3; X.beginPath(); X.moveTo(340, 160); X.lineTo(340, 920); X.moveTo(650, 160); X.lineTo(650, 920); X.stroke();
+  X.setLineDash([22, 18]); X.lineWidth = 2; X.beginPath(); X.moveTo(495, 160); X.lineTo(495, 920); X.stroke(); X.setLineDash([]);
+  X.restore();
+  carTop(418, 850, 40, 74, C.hl, aR);
+  carTop(418, 330 - Math.min(t, 6) * 4, 40, 74, '#c96a5a', aR);
+  // trajectory 60 waypoints
+  const n = Math.floor(EP(t, 1.4, 4.8) * 60); let s = 0;
+  for (let k = 1; k <= 60; k++) {
+    const tt = k * 0.1; const v = Math.max(0, 9 - 0.55 * tt); s += v * 0.1;
+    if (k > n) continue; const y = 810 - s * 9.6;
+    X.fillStyle = C.hl; X.globalAlpha = aR; X.beginPath(); X.arc(418, y, k % 10 === 0 ? 6 : 3.2, 0, 7); X.fill();
+    if (k % 10 === 0) T((k / 10) + ' s', 400, y, { size: 13, align: 'right', color: C.hl, a: aR });
+  }
+  X.globalAlpha = 1;
+  T('6 s @ 10 Hz = 60 waypoints', 495, 140, { size: 19, weight: 700, align: 'center', a: aR });
+  ev(495, 945 - 10, 'ILLUSTRATIVE', { align: 'center', a: aR });
+  // selected nodes
+  const aN = fade(t, 4.8);
+  panel(860, 290, 1000, 200, 'SELECTED NODES', { a: aN, col: C.trn, ts: 15 });
+  [['L1 strategic', 'HOLD_MAIN_ROAD'], ['L2 tactical', 'LANE_KEEP × FOLLOW'], ['L3 trajectory', 'path p ∈ 1,024 · profile q ∈ 256 · + residual refinement']].forEach((r, i) => {
+    const a = aN * fade(t, 5.0 + i * 0.3); T(r[0], 890, 352 + i * 44, { size: 15, color: C.mute, a, weight: 650 }); T(r[1], 1050, 352 + i * 44, { size: 18, a, weight: 650, mono: i < 2 });
+  });
+  // confidence
+  const aC = fade(t, 6.6);
+  if (aC > 0) {
+    T('CONFIDENCE', 860, 525, { size: 15, weight: 700, color: C.mute, ls: 1, a: aC });
+    X.save(); X.globalAlpha *= aC; rr(1010, 512, 420, 26, 13); X.strokeStyle = C.mute; X.lineWidth = 1.5; X.setLineDash([4, 5]); X.stroke(); X.setLineDash([]); X.restore();
+    T('not yet trained', 1220, 525, { size: 15, align: 'center', color: C.mute, a: aC, weight: 650 });
+    T('from the base score only (G5)', 1450, 525, { size: 14, color: C.dim, a: aC });
+  }
+  // explanation
+  const aE = fade(t, 8.8);
+  if (aE > 0) {
+    box(860, 565, 1000, 210, { kind: 'frz', dash: 'optional', a: aE, fa: 0.06 });
+    T('OPTIONAL EXPLANATION · frozen reasoner, reuses the refresh KV cache', 885, 592, { size: 14, weight: 700, color: C.frz, a: aE, ls: 1 });
+    T('Scene (cached). Decision: LANE_KEEP, FOLLOW, target ⟨v⟩ m/s. Applicable rules: ⟨r1; r2⟩. In one sentence, explain why.', 885, 630, { size: 15, mono: true, color: C.mute, a: aE, maxW: 950 });
+    T('→ ⟨one-sentence explanation⟩ — not yet trained', 885, 700, { size: 18, weight: 650, a: fade(t, 10), color: C.text });
+    let x = 885; ['≤ 48 tokens', '≤ 0.5 Hz', 'off the control path'].forEach(s => { x += chip(x, 748, s, { col: C.frz, size: 13, a: fade(t, 10.6) }) + 10; });
+  }
+  // monitor
+  const aM = fade(t, 13.2);
+  if (aM > 0) {
+    panel(860, 795, 1000, 110, 'CONSISTENCY MONITOR', { a: aM, col: C.hl, ts: 14 });
+    T('explanation → frozen text path → nearest tactical node  ⇄  executed node → disagreement logged', 885, 860, { size: 16, a: aM, maxW: 950 });
+  }
+}
+
+// ---------- 12. Training
+function scene12(t) {
+  const st = [
+    [1.2, 80, 450, 'cch', 'STAGE 0 · offline, once', ['VLM tap caches', 'text embeddings: nodes · rules · countries', 'vocabulary build (1,024 × 256)', 'imagination supervision (agent tracks)', 'country labels'], 'cached'],
+    [8.8, 560, 340, 'trn', 'STAGE 1', ['critics on every level', '+ country readout', 'soft targets (Tier-0 shape)'], null],
+    [12.6, 940, 440, 'trn', 'STAGE 2', ['+ hard negatives', '+ consistency KL', '+ goal loss', '+ Tier-1 E-head', '+ rule-memory gate', '+ camera-dropout curriculum'], null],
+    [16.8, 1420, 440, 'trn', 'STAGE 3', ['+ candidate re-ranker', '+ Tier-2 heads + benefit gate', '+ camera gate', '+ audio gate (A3)', '40 % replay'], null],
+  ];
+  st.forEach((s, i) => {
+    const a = fade(t, s[0]); if (a <= 0) return;
+    box(s[1], 300, s[2], 360, { kind: s[3], a, s: pop(t, s[0]), dash: s[6], fa: 0.07, spark: s[3] === 'trn' });
+    T(s[4], s[1] + 20, 330, { size: 19, weight: 750, color: KIND[s[3]], a, ls: 1 });
+    s[5].forEach((it, j) => T(it, s[1] + 22, 376 + j * 42, { size: 16, a: a * fade(t, s[0] + 0.3 + j * 0.15), maxW: s[2] - 40 }));
+    if (i < 3) { const xe = st[i + 1][1]; arrow([[s[1] + s[2] + 4, 480], [xe - 6, 480]], { col: C.mute, a: fade(t, st[i + 1][0] - 0.4), hs: 10 }); flow([[s[1] + s[2] + 4, 480], [xe - 6, 480]], t, { n: 2, col: C.cch, a: fade(t, st[i + 1][0]) }); }
+  });
+  box(80, 690, 470, 76, { kind: 'trn', a: fade(t, 5.0), s: pop(t, 5.0), title: 'A1 · audio bridge alignment', sub: 'independent · backbone and HiCAP frozen', ts: 17, ss: 14, align: 'left', spark: true });
+  box(1420, 690, 440, 76, { kind: 'grey', a: fade(t, 21.6), dash: 'optional', title: 'optional', sub: 'student distillation · text-channel LoRA for explanations', ts: 17, ss: 14, align: 'left' });
+  const aP = fade(t, 22.2);
+  const w1 = chip(600, 712, 'trainable 56.4 M + 1.88 M', { col: C.trn, size: 15, a: aP }); ev(612 + w1, 712, 'MEASURED', { a: aP });
+  const w2 = chip(600, 750, 'stages 1–2 train 42.7 M; re-ranker joins in stage 3', { col: C.trn, size: 14, a: aP }); ev(612 + w2, 750, 'MEASURED', { a: aP });
+  const aF = fade(t, 21.0);
+  box(80, 790, 1780, 110, { kind: 'frz', a: aF, s: pop(t, 21.0), title: 'FROZEN THROUGHOUT', sub: 'Cosmos3-Edge reasoner (2.43 B) · audio encoder · cached text embeddings of nodes, rules and countries · no gradient into the backbone', ts: 22, ss: 16, lock: true, align: 'left', pad: 24 });
+}
+
+// ---------- 13. Data and status
+function scene13(t) {
+  const aL = fade(t, 1.2, 15.2);
+  if (aL > 0) {
+    panel(80, 150, 820, 690, 'DATA · v10 = v9 + additions by reference', { a: aL, col: C.cch, ts: 15 });
+    const rows = [['v9 labels', 'base release (tactical labels, ego, windows)', 'cch'], ['+ v8.1 strategic', 'unchanged, by reference', 'cch'], ['+ country', '25 countries · 4,369 / 4,369 train clips mapped (built)', 'hl'], ['+ imagination supervision', 'from agent tracks + egomotion', 'img'], ['+ rules · reasoning text · camera refs', 'RuleBook, chain-of-causation text, upstream chunk index', 'cch']];
+    rows.forEach((r, i) => { const a = aL * fade(t, 1.5 + i * 0.35); box(110, 210 + i * 110, 760, 92, { kind: r[2], a, s: pop(t, 1.5 + i * 0.35), title: r[0], sub: r[1], align: 'left', ts: 20, ss: 15, dash: i === 0 ? null : 'cached' }); });
+    ev(856, 452, 'MEASURED', { align: 'right', a: aL * fade(t, 2.4) });
+    T('keyed by clip (sha12) — augment by reference, never by copy', 110, 790, { size: 16, color: C.mute, a: aL });
+  }
+  const aS = fade(t, 5.6, 15.2);
+  if (aS > 0) {
+    panel(940, 290, 920, 550, 'STATUS', { a: aS, col: C.hl, ts: 15 });
+    X.save(); X.globalAlpha *= aS;
+    const ok = (y, s, sub) => { X.strokeStyle = C.cch; X.lineWidth = 4; X.beginPath(); X.moveTo(972, y); X.lineTo(982, y + 10); X.lineTo(1000, y - 10); X.stroke(); T(s, 1020, y, { size: 19, weight: 650 }); T(sub, 1020, y + 28, { size: 14, color: C.mute }); };
+    ok(350, 'Architecture implemented and unit-tested on CPU', 'synthetic data · 53 tests · stack/tanitad/hicap');
+    ok(420, 'Country labels built (v10)', '25 countries, joined 100 % on train and eval139');
+    const n = fade(t, 6.6);
+    X.globalAlpha = aS * n; rr(965, 475, 870, 120, 14); X.fillStyle = 'rgba(255,93,115,0.12)'; X.fill(); X.strokeStyle = C.rule; X.lineWidth = 2.5; X.stroke();
+    T('NOT YET TRAINED', 1400, 518, { size: 40, weight: 800, align: 'center', color: C.rule, ls: 3 });
+    T('no accuracy or driving metric exists · VLM tap caches never built', 1400, 562, { size: 16, align: 'center', color: C.text });
+    X.globalAlpha = aS * fade(t, 10.8);
+    T('NEXT', 972, 640, { size: 15, weight: 800, color: C.hl, ls: 2 });
+    box(972, 660, 360, 84, { kind: 'frz', title: 'pod: build VLM tap caches', sub: 'build_hicap_cache.py (never run)', ts: 17, ss: 13 });
+    arrow([[1336, 702], [1380, 702]], { col: C.hl, hs: 10 });
+    box(1386, 660, 450, 84, { kind: 'hl', title: 'H-HC0 gate', sub: 'k-NN on frozen + motion + v₀ vs a v₀-only k-NN', ts: 17, ss: 13 });
+    T('if not separated → change backbone or adapter before any head is trained', 972, 780, { size: 14, color: C.mute });
+    X.restore();
+  }
+}
+function endCard(t) {
+  const aE = fade(t, 15.0);
+  if (aE > 0) {
+    X.save(); X.globalAlpha = aE; X.fillStyle = "#06090e"; X.fillRect(0, 0, W, 1060); X.restore();
+    T('HiCAP', 960, 430, { size: 110, weight: 800, align: 'center', a: aE, ls: 4 });
+    T('Hierarchical Contrastive Action Priors on a Frozen Vision–Language Backbone', 960, 520, { size: 28, align: 'center', a: aE, color: C.mute });
+    T('TanitAD programme · design and pre-registration paper (working draft) · v10 design spec rev a', 960, 580, { size: 18, align: 'center', a: aE, color: C.dim });
+    const cols = [C.frz, C.trn, C.cch, C.rule, C.img, C.hl];
+    cols.forEach((c, i) => { X.save(); X.globalAlpha = aE; X.fillStyle = c; X.fillRect(760 + i * 70, 640, 56, 6); X.restore(); });
+    T('implemented and unit-tested on CPU · not yet trained', 960, 700, { size: 20, align: 'center', a: aE, color: C.rule, weight: 650 });
+  }
+}
+
+// ================================================================== CHAPTERS
+// caps: [t_start, t_end, text] in chapter-local seconds. Every caption is one line and stays >= 2.5 s.
+const CH = [
+  { title: 'The problem and the idea', dur: 15, map: ['all'], draw: scene1,
+    vis: 'Left: a VLA decoding one token at a time while all weights stream from memory. Right: HiCAP scoring a state vector against text-defined action cards (v9 classes), winner highlighted (scores illustrative). Then a frozen VLM block (lock) feeding three trainable levels: strategic, tactical, trajectory, each with a mini visual.',
+    src: 'hicap.tex abstract; knowledge.py DEFINITIONS (v9 classes)',
+    caps: [[1.0, 4.6, 'Driving VLAs decode actions token by token — bandwidth-bound on the car\'s computer.'],
+           [4.6, 8.4, 'HiCAP chooses instead: it scores a structured, text-defined action vocabulary.'],
+           [8.4, 11.8, 'Contrastive critics sit on a frozen vision–language model: prefill only, no decoding.'],
+           [11.8, 15.0, 'Decisions are multi-hierarchy: strategic → tactical → trajectory.']] },
+  { title: 'Inputs and the two clocks', dur: 24, map: ['cam', 'mot', 'ego', 'mic'], draw: scene2,
+    vis: 'Six input cards build up: cameras (10 option dots), motion frames (trained adapter), ego state with "curvature" struck through, navigation + route checkpoint, optional microphone and optional supplied country (dotted). Right: two scrolling clocks — 10 Hz command ticks and 2 Hz asynchronous refresh blocks — with a token-age sawtooth and the age and duty formulas.',
+    src: 'model.py (ego = v, a_lon, yaw rate; nav args; route x, y, psi); elastic.py OPTIONS (10); sec_method.tex motion adapter; sec_eff.tex two clocks (A, D <= 0.5); V10 spec §3.4 (supplied GNSS arm)',
+    caps: [[1.0, 4.6, 'Cameras: front-wide by default, with 10 elastic camera options chosen per tick.'],
+           [4.6, 8.2, 'Three motion frames, 100 ms apart, at 64×160 feed a small trainable motion adapter.'],
+           [8.2, 11.8, 'Ego state: speed v, longitudinal acceleration a_lon and yaw rate. Curvature is not fed.'],
+           [11.8, 15.4, 'Navigation command and route checkpoint. Optional: microphone, and a supplied country.'],
+           [15.4, 19.4, 'Two clocks: commands tick at 10 Hz; the frozen backbone refreshes asynchronously at 2 Hz.'],
+           [19.4, 24.0, 'Between refreshes, cached tokens are reused and tagged with their age A.']] },
+  { title: 'The frozen backbone', dur: 24, map: ['vlm'], draw: scene3,
+    vis: 'A front-wide 256×640 frame with a 20×8 token grid enters a tall frozen block (56 block bars, lock). A prefill sweep lights the blocks bottom-up; taps at blocks 28, 42, 56 pull out, each pooled into 128 tokens, into a dashed tap cache. A dotted KV-cache box appears. Then a "why fast" strip: the refresh bar grows with backbone size while the 10 Hz command chain stays the same length and the token-age meter rises.',
+    src: 'sec_eff.tex (2.43 B reasoner, blocks 28/42/56, 160 tokens per 256×640 frame, L_cmd independent of backbone to first order); model.py n_vlm_tokens=128, d_v=2048; V10 spec §3.3 (KV cache reuse)',
+    caps: [[1.0, 4.6, 'Backbone: the Cosmos3-Edge reasoner, 2.43 B parameters (published) — frozen.'],
+           [4.6, 8.2, 'One front-wide 256×640 frame becomes 160 visual tokens; one prefill pass, no decoding.'],
+           [8.2, 12.0, 'Hidden states are tapped at blocks 28, 42 and 56 and pooled to 128 tokens each.'],
+           [12.0, 15.6, 'The prefill\'s KV cache is kept, so an explanation needs no second vision pass.'],
+           [15.6, 19.8, 'Why a big backbone stays fast: the command path never waits for the refresh.'],
+           [19.8, 24.0, 'To first order L_cmd does not depend on backbone size — a bigger model only ages tokens.']] },
+  { title: 'One shared embedding space', dur: 20, map: ['txt', 'aud'], draw: scene4,
+    vis: 'A dashed green circle — the backbone\'s text-embedding space — fills with points from four sources: node definitions (via the frozen text path), country nodes, per-country traffic rules, and audio tokens through a trainable bridge (omni-pattern chip). Finally a trainable "level queries" box reads all of them through zero-init gated cross-attention.',
+    src: 'V10 spec §2 (shared space, d_v 2,048 / 4,096, omni pattern), §3.4 ("driving in <country>", rules); knowledge.py FOLLOW definition',
+    caps: [[1.0, 4.6, 'Every non-visual source enters one space: the backbone\'s text-embedding space.'],
+           [4.6, 8.2, 'Node definitions are embedded once by the frozen text path, then cached.'],
+           [8.2, 11.8, 'Country nodes and per-country traffic rules land in the same space.'],
+           [11.8, 15.6, 'Audio enters through a trainable bridge — the omni pattern of Qwen-Omni and Gemma.'],
+           [15.6, 20.0, 'One reader for all: zero-init gated cross-attention — every source removable bit-exactly.']] },
+  { title: 'Fusion and the level queries', dur: 20, map: ['fus'], draw: scene5,
+    vis: 'A wide trainable fusion transformer (6 layer slabs with attention arcs). Above it the token row builds: last-token state, 128 VLM tokens + age, 16 motion tokens, ego, nav, route, then 6 yellow level queries that descend through the layers and exit as s1, s2-lat, s2-lon, s3-P, s3-V, goal into readout heads (512→1024→512, L2-norm; goal head). Right: nested Matryoshka bars 128 ⊂ 256 ⊂ 512 and the 56.4 M chip.',
+    src: 'model.py HiCAPConfig (d 512, 6 layers, 8 heads, 128 VLM, 16 motion, LEVELS, matryoshka) and ReadoutHead; sec_method.tex (18.9 M fusion, 56.4 M)',
+    caps: [[1.0, 4.6, 'The fusion transformer — d = 512, 6 layers, 8 heads — is trained and runs at 10 Hz.'],
+           [4.6, 8.4, 'It reads 128 cached VLM tokens (with age), 16 motion tokens, ego, nav and route tokens.'],
+           [8.4, 12.0, 'Six learned level queries: s1, s2-lat, s2-lon, s3-path, s3-profile and goal.'],
+           [12.0, 15.8, 'Each query is read out 512 → 1024 → 512 and L2-normalised into a unit state vector.'],
+           [15.8, 20.0, 'Readouts are Matryoshka-nested: the first 128, 256 or 512 dimensions each work alone.']] },
+  { title: 'Multi-hierarchy decision', dur: 28, map: ['s1', 's2', 's3'], draw: scene6,
+    vis: 'Level 1: 7 strategic node cards (2 greyed, n = 0) plus the v10 country readout. Level 2: the 3×7 lateral×longitudinal grid with separate s2-lat / s2-lon queries pulsing a row and a column, then the selected cell. Level 3: a fan of paths (K_P = 1,024) × a set of speed profiles (K_V = 256), then arc-length composition placing 60 waypoints on the chosen path, with the standstill chip. A dot-product panel, then yellow beam arrows from parent to children.',
+    src: 'app_vocab.tex (strategic tokens, 7 declared / 5 populated); vocab.py (LAT_V9, LON_V9, 21 cells / 19 populated, standstill v0 < 0.5 m/s); sec_method.tex (K_P, K_V, 262,144, f2, score, hard beam); sec_eff.tex (≈1 ms flat lookup, estimated)',
+    caps: [[1.0, 4.6, 'Level 1, strategic: 7 declared, 5 usable actions — plus a country readout (25 countries).'],
+           [4.6, 8.2, 'Level 2, tactical: a lateral × longitudinal cell — 3 × 7 = 21 cells, 19 populated.'],
+           [8.2, 11.8, 'Lat and lon get separate queries — one softmax mixing them broke the longitudinal call.'],
+           [11.8, 15.4, 'Level 3, trajectory: a path from K_P = 1,024 and a speed profile from K_V = 256.'],
+           [15.4, 19.4, 'Arc-length composition gives 262,144 trajectories; near standstill: hold, creep, stop.'],
+           [19.4, 23.4, 'Scoring is a dot product with cached node embeddings — a table lookup, not generation.'],
+           [23.4, 28.0, 'A parent\'s choice restricts its children: a hard beam, coarse first, then compose.']] },
+  { title: 'Knowledge injection', dur: 26, map: ['txt', 's1', 'prn'], draw: scene7,
+    vis: 'NodeLibrary panel: lateral tokens with their definition strings; an example new token NUDGE_L ("nudge left", the define() verbalisation) passes through the frozen text path into a new embedding, version v1 → v2. Rule-retrieval panel: an illustrative country posterior from s1, the weight and relevance formulas, six RuleBook cards with the top-k highlighted. Three route boxes (memory / prune / verify + explain). Then the country-swap test grid (rule-relevant TURN_R row flips) and the System-2 verifier flow with the stamp "SCORES · NEVER GENERATES".',
+    src: 'knowledge.py (NodeLibrary.add_token, DEFINITIONS, define(), Verifier); V10 spec §3.4 (country posterior, w_i, s_i, top-k 8, three routes, H-HC20, rule examples); sec_method.tex (verifier trigger, K2 <= 8, 58.6 ms estimate)',
+    caps: [[1.0, 4.8, 'Nodes are text-defined: a new token\'s embedding comes from its definition alone.'],
+           [4.8, 8.6, 's1\'s country posterior keys traffic-rule retrieval over 25 countries.'],
+           [8.6, 12.4, 'Relevance to the tactical query ranks the rules; the top 8 are retrieved each tick.'],
+           [12.4, 16.6, 'Three routes: memory (gated cross-attention), prune (rules as masks), verify + explain.'],
+           [16.6, 20.8, 'Pre-registered country swap: decisions should change only on rule-relevant cells.'],
+           [20.8, 26.0, 'The System-2 verifier fires only when uncertain — it scores candidates, never generates.']] },
+  { title: 'Pruning and safety', dur: 20, map: ['prn'], draw: scene8,
+    vis: 'A block of candidate dots streams right through six red gates (R1 physics, R2 state admissibility, R3 route, traffic rules, R4·R5 soft, R6 conformal); rejected dots turn red and fall away (flow illustrative). Panels: R1 bitset AND with the 6/10/9 m/s² limits; the measured 78 % / 881-of-881 result; R6 conformal recall bound. Yellow guard-set dots fly into the survivor box.',
+    src: 'prune.py (B_PHYS 6/10/9, guard_set, route_mask, ClassConditionalConformal); sec_method.tex (R1–R6, bitsets, shortlist <= 32, K = 16/32); hicap.tex abstract (78 %, 15 %, 881/881)',
+    caps: [[1.0, 4.6, 'Before expensive scoring, an ordered chain of prior-encoded rules shrinks the set.'],
+           [4.6, 8.4, 'R1 physics: 6 / 10 / 9 m/s² limits as a bitset AND over 1,024 paths and 256 profiles.'],
+           [8.4, 12.2, 'Measured on real windows: R1 removes 78 % of a speed-agnostic set, keeps 881/881 futures.'],
+           [12.2, 16.0, 'Then route, traffic rules, and conformal keep-sets with joint recall ≥ 1 − Σα.'],
+           [16.0, 20.0, 'A guard set — hold, gentle / firm / maximum brake, previous plan — always survives.']] },
+  { title: 'Imagination', dur: 28, map: ['img'], draw: scene9,
+    vis: 'Three violet tier panels. Tier 0: a one-hot bar chart morphs into the soft outcome-aware target, with its formula and "zero cost at inference". Tier 1: the E-head and three small forecast plots (gap, closing speed, lead accel at 0.5/1/2/3 s), mode bars, onset quantiles, and the J1 expectation. Tier 2: two cost heads over 8 survivors; where they disagree a red VETO stamp lands; benefit gate and guards listed. Bottom band: a mini BEV with agent cuboids moving on logged tracks, the measured coverage, and the non-reactive caveat.',
+    src: 'sec_imag.tex (tiers, y(a) formula, E-head 512→1024→24, J1, ≈3 MFLOP, top-8, veto, gate <= 30 %, G1, toy regret 7.00 → 3.43); imagination.py; V10 spec §0 and §3.1 (4,585 / 4,719 clips, 29,415,112 rows, modes, non-reactive caveat)',
+    caps: [[1.0, 4.8, 'Imagination is confined to what logs can identify — three tiers, cheapest first.'],
+           [4.8, 8.6, 'Tier 0, training only: outcome-aware soft targets — free at inference.'],
+           [8.6, 12.6, 'Tier 1, every tick: an E-head predicts lead gap, closing speed and lead acceleration.'],
+           [12.6, 16.4, '…plus mode and onset; the cost is an expectation over both, the ego path analytic.'],
+           [16.4, 20.6, 'Tier 2, gated, top-8: two counterfactual cost heads — disagreement is a VETO.'],
+           [20.6, 24.4, 'Supervision: the corpus\'s agent cuboid tracks, 4,585 clips.'],
+           [24.4, 28.0, 'Caveat: logged agents do not react — the target is open-loop, not a simulator.']] },
+  { title: 'Audio bridge and elastic sensing', dur: 26, map: ['mic', 'aud', 'cam'], draw: scene10,
+    vis: 'Audio chain: dotted mic → scrolling log-mel → frozen audio encoder (lock) → trainable perceiver bridge → 8 violet tokens; below, an event caption through the frozen text path with a two-way alignment arrow; the gated-residual formula with a g = 0 dial; a red MEASURED box (no audio in any corpus) and the alignment-data box. Then elastic sensing: a top-view ego car with 7 camera wedges, the vision-only G-V gate and its 10 options; cross-left escalates in shadow mode (dashed) then goes live, and de-escalates later on a tick strip.',
+    src: 'V10 spec §0 (no audio: 36 features, ffprobe), §3.2 (encoder, perceiver 8 queries, A1 InfoNCE + cosine, public sets, synthetic events); model.py GatedAudio; sec_elastic.tex (gate formula, 160/64 tokens, keep-alive 1 / 3 ticks, margin 0.10, shadow 2 ticks, G-V / G-E / G-T); elastic.py CAMERAS, OPTIONS',
+    caps: [[1.0, 4.8, 'Optional audio: mic → frozen audio encoder → trainable perceiver bridge → 8 tokens.'],
+           [4.8, 8.6, 'The bridge is aligned to the text path\'s embedding of an event caption.'],
+           [8.6, 12.4, 'Gate g starts at zero: with no audio, the model is bit-exactly the audio-off model.'],
+           [12.4, 16.8, 'Measured: no programme corpus has audio — alignment uses public sets and synthetic events.'],
+           [16.8, 21.2, 'Elastic sensing: front-wide always on; a vision-only gate picks 1 of 10 camera options.'],
+           [21.2, 26.0, 'Escalate in one tick, de-escalate after three; new cameras warm up in shadow mode.']] },
+  { title: 'Outputs', dur: 18, map: ['out'], draw: scene11,
+    vis: 'Left: a bird\'s-eye road with the ego car and a lead car; 60 yellow waypoints appear (markers every second, illustrative). Right: selected nodes per level, a dashed confidence bar reading "not yet trained", a dotted explanation box with the prompt template and "⟨one-sentence explanation⟩ — not yet trained", and the consistency-monitor strip.',
+    src: 'vocab.py (T_STEPS = 60, DT = 0.1); sec_imag.tex G5; V10 spec §3.3 (prompt template, <= 48 tokens, <= 0.5 Hz, KV reuse, consistency monitor, off the control path)',
+    caps: [[1.0, 4.8, 'Output every tick: a 6 s trajectory at 10 Hz — 60 waypoints.'],
+           [4.8, 8.6, 'Plus the selected nodes at every level, and a confidence from the base score only.'],
+           [8.6, 13.0, 'Optional: the frozen reasoner explains the decision — off the control path, ≤ 0.5 Hz.'],
+           [13.0, 18.0, 'A consistency monitor maps the explanation to a tactical node and logs disagreement.']] },
+  { title: 'Training', dur: 26, map: ['trained'], draw: scene12,
+    vis: 'Four stage boxes build left to right with arrows and flowing particles: Stage 0 (dashed, offline caches), Stage 1, Stage 2, Stage 3, each listing its added terms; an independent A1 audio-bridge box; a dotted optional box (student, LoRA); measured parameter chips; and a full-width frozen bar with a lock.',
+    src: 'V10 spec §5–6 (schedule, frozen vs trained, 56.4 M + 1.88 M); sec_method.tex (42.7 M in stages 1–2, re-ranker stage 3); train.py (40 % replay)',
+    caps: [[1.0, 4.8, 'Stage 0, offline and once: tap caches, text embeddings, vocabulary, supervision, countries.'],
+           [4.8, 8.6, 'Stage A1, independent: the audio bridge is aligned with everything else frozen.'],
+           [8.6, 12.4, 'Stage 1: critics on every level, including country, with soft targets.'],
+           [12.4, 16.6, 'Stage 2: + hard negatives, consistency, goal, Tier-1 E-head, rule gate, camera dropout.'],
+           [16.6, 20.8, 'Stage 3: + re-ranker, Tier 2 and benefit gate, camera and audio gates, 40 % replay.'],
+           [20.8, 26.0, 'Frozen throughout: the reasoner, audio encoder and cached embeddings. Student optional.']] },
+  { title: 'Data and status', dur: 17, map: ['all'], draw: scene13,
+    vis: 'Left: v10 composition blocks (v9 base; v8.1 strategic, country, imagination supervision, rules / reasoning / camera refs, dashed = by reference). Right: status — two check marks (implemented and CPU-tested; country labels built), a red "NOT YET TRAINED" banner, and the next steps: pod tap-cache build → H-HC0 gate. End card with the title.',
+    src: 'V10 spec §0, §4 (country 4,369 / 4,369; v10 components; build_hicap_cache.py never run); stack/tanitad/hicap/README.md (53 tests, CPU, synthetic, nothing trained); sec_protocol.tex H-HC0',
+    caps: [[1.0, 5.4, 'Data: v9 labels, with v10 additions referenced by clip — never copied.'],
+           [5.4, 10.6, 'Status: implemented and unit-tested on CPU. NOT YET TRAINED — no results exist.'],
+           [10.6, 15.4, 'Next: build the VLM tap caches on a pod, then run the H-HC0 gate.']] },
+];
+let acc = 0; CH.forEach(c => { c.start = acc; acc += c.dur; });
+const TOTAL = acc;
+
+// ================================================================== persistent UI
+const MM = { x: 1530, y: 20, w: 370, h: 232 };
+const MMN = {
+  cam: [10, 30, 64, 22, 'inp', 'CAMERAS'], mot: [80, 30, 64, 22, 'trn', 'MOTION'], ego: [150, 30, 64, 22, 'inp', 'EGO · NAV'],
+  mic: [220, 30, 50, 22, 'inp', 'MIC', 'optional'], vlm: [10, 58, 134, 22, 'frz', 'FROZEN VLM'], aud: [220, 58, 50, 22, 'trn', 'BRIDGE'],
+  txt: [278, 30, 82, 50, 'cch', 'TEXT SPACE', 'cached'], fus: [10, 88, 350, 22, 'trn', 'FUSION · LEVEL QUERIES'],
+  s1: [10, 118, 112, 22, 'trn', 'S1 STRATEGIC'], s2: [129, 118, 112, 22, 'trn', 'S2 TACTICAL'], s3: [248, 118, 112, 22, 'trn', 'S3 TRAJECTORY'],
+  prn: [10, 148, 112, 22, 'rule', 'PRUNE · RULES'], img: [129, 148, 112, 22, 'img', 'IMAGINATION'], out: [248, 148, 112, 22, 'hl', 'OUTPUT'],
+};
+const MML = [['cam', 'vlm'], ['vlm', 'fus'], ['mot', 'fus'], ['ego', 'fus'], ['mic', 'aud'], ['aud', 'fus'], ['txt', 'fus'], ['fus', 's1'], ['fus', 's2'], ['fus', 's3'], ['s1', 'prn'], ['s2', 'img'], ['s3', 'out'], ['prn', 'img'], ['img', 'out']];
+const TRAINED = ['mot', 'aud', 'fus', 's1', 's2', 's3', 'img'];
+function minimap(keys, t) {
+  const { x, y, w, h } = MM; const all = keys.includes('all'); const act = keys.includes('trained') ? TRAINED : keys;
+  X.save(); rr(x, y, w, h, 12); X.fillStyle = 'rgba(12,17,26,0.9)'; X.fill(); X.strokeStyle = 'rgba(90,106,134,0.6)'; X.lineWidth = 1.2; X.stroke();
+  T('ARCHITECTURE', x + 12, y + 14, { size: 11, weight: 800, color: C.mute, ls: 1.5 });
+  const ctr = k => { const n = MMN[k]; return [x + n[0] + n[2] / 2, y + n[1] + n[3] / 2, n]; };
+  MML.forEach(([a, b]) => {
+    const [ax, ay, na] = ctr(a), [bx, by, nb] = ctr(b);
+    const on = all || (act.includes(a) && act.includes(b));
+    X.strokeStyle = on ? 'rgba(220,230,245,0.55)' : 'rgba(120,135,160,0.22)'; X.lineWidth = 1;
+    X.beginPath();
+    if (Math.abs(ay - by) < 4) { X.moveTo(x + na[0] + na[2], ay); X.lineTo(x + nb[0], by); }
+    else { const sx = clamp(ax, x + nb[0] + 8, x + nb[0] + nb[2] - 8); X.moveTo(sx, y + na[1] + na[3]); X.lineTo(sx, y + nb[1]); }
+    X.stroke();
+  });
+  const pulse = 0.5 + 0.5 * Math.sin(t * 5);
+  for (const k in MMN) {
+    const n = MMN[k]; const on = all || act.includes(k); const col = KIND[n[4]];
+    rr(x + n[0], y + n[1], n[2], n[3], 5); X.fillStyle = '#0c111a'; X.fill();
+    X.save(); X.globalAlpha = on ? 1 : 0.3; rr(x + n[0], y + n[1], n[2], n[3], 5);
+    X.fillStyle = hexA(col, on && !all ? 0.32 + 0.12 * pulse : 0.14); X.fill();
+    if (on && !all) { X.shadowColor = col; X.shadowBlur = 10 + 6 * pulse; }
+    X.strokeStyle = col; X.lineWidth = on && !all ? 2 : 1.2;
+    if (n[6] === 'optional') X.setLineDash([2, 3]); else if (n[6] === 'cached') X.setLineDash([5, 3]);
+    X.stroke(); X.setLineDash([]); X.shadowBlur = 0;
+    T(n[5], x + n[0] + n[2] / 2, y + n[1] + n[3] / 2 + 0.5, { size: n[2] < 60 ? 8.5 : 9.5, weight: 700, align: 'center', color: on ? C.text : C.mute, maxW: n[2] - 4, vc: true, lh: 1.1 });
+    if (k === 'vlm') lockIcon(x + n[0] + n[2] - 10, y + n[1] + 11, 0.5, col);
+    X.restore();
+  }
+  // legend
+  const L = [['frz', 'frozen', 'lock'], ['trn', 'trained', ''], ['cch', 'cached once', 'cached'], ['inp', 'optional', 'optional'], ['rule', 'rules · safety', ''], ['img', 'imagination · audio', '']];
+  L.forEach((l, i) => {
+    const lx = x + 12 + (i % 3) * 118, ly = y + 188 + Math.floor(i / 3) * 22; const col = KIND[l[0]];
+    rr(lx, ly - 6, 16, 12, 3); X.fillStyle = hexA(col, 0.25); X.fill(); X.strokeStyle = col; X.lineWidth = 1.3;
+    if (l[2] === 'cached') X.setLineDash([4, 2]); else if (l[2] === 'optional') X.setLineDash([1.5, 2.5]); X.stroke(); X.setLineDash([]);
+    if (l[2] === 'lock') lockIcon(lx + 8, ly - 1, 0.42, col);
+    T(l[1], lx + 22, ly, { size: 10.5, color: C.mute, weight: 600 });
+  });
+  X.restore();
+}
+function titleCard(lt, ci) {
+  const ch = CH[ci]; const u = EP(lt, 1.5, 2.3); const num = String(ci + 1).padStart(2, '0');
+  const dim = 0.9 * (1 - EP(lt, 1.35, 2.25));
+  if (dim > 0) { X.save(); X.globalAlpha = dim; X.fillStyle = '#06090e'; X.fillRect(0, 0, W, H); X.restore(); }
+  const a = ci === 0 ? EO(P(lt, 0, 0.6)) : EO(P(lt, 0.05, 0.45));
+  const sz = lerp(84, 40, u); const tw = TW(ch.title, sz, 750);
+  const xl = lerp(960 - tw / 2, 70, u), yt = lerp(510, 92, u);
+  T(`${num} / ${String(CH.length).padStart(2, '0')}`, xl, lerp(420, 46, u), { size: lerp(28, 17, u), weight: 800, color: C.hl, a, ls: 2 });
+  T(ch.title, xl, yt, { size: sz, weight: 750, a });
+  if (u < 1) { X.save(); X.globalAlpha = a * (1 - u); X.fillStyle = C.hl; X.fillRect(960 - 60, 580, 120 * EO(P(lt, 0.2, 0.9)), 4); X.restore(); }
+  if (ci === 0 && u < 1) T('HiCAP · Hierarchical Contrastive Action Priors on a frozen vision–language backbone', 960, 640, { size: 24, color: C.mute, align: 'center', a: a * (1 - u) });
+}
+const CAP_SIZE = 33, CAP_MAXW = 1720;
+function captions(lt, ci) {
+  const caps = CH[ci].caps;
+  for (const c of caps) {
+    if (lt < c[0] || lt >= c[1]) continue;
+    const a = Math.min(EO(P(lt, c[0], c[0] + 0.25)), 1 - E(P(lt, c[1] - 0.25, c[1])));
+    X.save(); X.font = font(CAP_SIZE, 550); const L = wrap(c[2], CAP_MAXW); const w = Math.max(...L.map(l => X.measureText(l).width)) + 70; const hh = L.length * 44 + 30;
+    X.globalAlpha = a; rr(960 - w / 2, 1046 - hh, w, hh, 14); X.fillStyle = 'rgba(4,6,10,0.82)'; X.fill(); X.strokeStyle = 'rgba(120,135,160,0.35)'; X.lineWidth = 1; X.stroke();
+    X.fillStyle = C.text; X.textAlign = 'center'; X.textBaseline = 'middle'; L.forEach((l, i) => X.fillText(l, 960, 1046 - hh + 15 + 22 + i * 44));
+    X.restore();
+  }
+}
+function progress(t) {
+  const x0 = 60, x1 = 1860, y = 1066; const sc = (x1 - x0) / TOTAL;
+  CH.forEach((c, i) => {
+    const a = x0 + c.start * sc + 2, b = x0 + (c.start + c.dur) * sc - 2;
+    X.fillStyle = 'rgba(120,135,160,0.25)'; X.fillRect(a, y, b - a, 4);
+    const f = clamp((t - c.start) / c.dur); if (f > 0) { X.fillStyle = C.hl; X.fillRect(a, y, (b - a) * f, 4); }
+  });
+}
+function chapterAt(t) { for (let i = CH.length - 1; i >= 0; i--) if (t >= CH[i].start) return i; return 0; }
+
+// ================================================================== renderFrame
+function renderFrame(t) {
+  t = clamp(t, 0, TOTAL - 1e-6);
+  X.setTransform(1, 0, 0, 1, 0, 0); X.globalAlpha = 1; X.shadowBlur = 0; X.setLineDash([]); X.letterSpacing = '0px';
+  X.drawImage(BGC, 0, 0);
+  const ci = chapterAt(t), ch = CH[ci], lt = t - ch.start;
+  X.save(); X.globalAlpha = 1 - E(P(lt, ch.dur - 0.35, ch.dur)); ch.draw(lt, ch.dur); X.restore();
+  X.globalAlpha = 1; X.shadowBlur = 0; X.setLineDash([]); X.letterSpacing = '0px';
+  minimap(ch.map, t);
+  titleCard(lt, ci);
+  captions(lt, ci);
+  progress(t);
+  if (ci === CH.length - 1) endCard(lt);
+}
+function checkCaptions() {
+  const out = [];
+  CH.forEach((c, i) => c.caps.forEach(k => { X.font = font(CAP_SIZE, 550); const L = wrap(k[2], CAP_MAXW); out.push({ ch: i + 1, t0: k[0], t1: k[1], dur: +(k[1] - k[0]).toFixed(2), lines: L.length, width: Math.round(X.measureText(k[2]).width), text: k[2] }); }));
+  return out;
+}
+window.renderFrame = renderFrame;
+window.checkCaptions = checkCaptions;
+window.TOTAL = TOTAL;
+window.STORYBOARD = CH.map((c, i) => ({ n: i + 1, title: c.title, start: c.start, dur: c.dur, vis: c.vis, src: c.src, map: c.map, caps: c.caps }));
+window.READY = false;
+document.fonts.load('700 20px Inter').then(() => document.fonts.load('500 20px Inter')).then(() => document.fonts.load('500 20px "DejaVu Sans Mono"')).catch(() => {}).then(() => { renderFrame(0); window.READY = true; });
+
+// ------------------------------------------------------------------ preview player (not used by the renderer)
+if (!/render/.test(location.search)) {
+  const ui = document.getElementById('ui'); ui.style.display = 'flex';
+  const sc = document.getElementById('sc'), tt = document.getElementById('tt'), pp = document.getElementById('pp');
+  let playing = false, cur = 0, last = 0;
+  const show = () => { renderFrame(cur); sc.value = Math.round(cur / TOTAL * 1000); tt.textContent = cur.toFixed(1) + ' s / ' + TOTAL + ' s'; };
+  sc.oninput = () => { cur = sc.value / 1000 * TOTAL; show(); };
+  const loop = now => { if (!playing) return; cur += (now - last) / 1000; last = now; if (cur >= TOTAL) { cur = 0; } show(); requestAnimationFrame(loop); };
+  const toggle = () => { playing = !playing; pp.textContent = playing ? 'pause' : 'play'; if (playing) { last = performance.now(); requestAnimationFrame(loop); } };
+  pp.onclick = toggle; document.addEventListener('keydown', e => { if (e.code === 'Space') { e.preventDefault(); toggle(); } });
+  const fit = () => { const s = Math.min(innerWidth / W, innerHeight / H); cv.style.transformOrigin = '0 0'; cv.style.transform = `scale(${s})`; };
+  addEventListener('resize', fit); fit();
+}
+</script>
+</body>
+</html>
