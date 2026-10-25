@@ -176,12 +176,29 @@ class SpeedAvgHook:
 
 
 # ------------------------------------------------------------------------------------------------ the pair of checkpoints
+def built_cfg(cfg: dict) -> dict:
+    """The config `v8f_mini_eval.py` builds from a checkpoint (`M.V8FMiniConfig(**ck["cfg"])`): the stored keys over the dataclass
+    defaults. A key added after a checkpoint was written (e.g. PREREG_V8F_FLAT's `o_interface`, default "full" = every earlier arm bit
+    for bit) is that default, so two runs of one model compare equal however old their checkpoints are."""
+    import dataclasses
+    from tanitad.models import v8f_mini as M
+    out = {}
+    for f in dataclasses.fields(M.V8FMiniConfig):
+        if f.default is not dataclasses.MISSING:
+            out[f.name] = f.default
+        elif f.default_factory is not dataclasses.MISSING:
+            out[f.name] = f.default_factory()
+    out.update(cfg or {})
+    return out
+
+
 def pair_violations(ck0: dict, ck1: dict) -> list:
     """X_0 and X_1 must be two training runs of ONE model: same config, same grid, same state-dict layout, the SAME standardisation (cons_mu / cons_sd bitwise), different weights. [] = they are."""
     import torch
     bad = []
-    if ck0.get("cfg") != ck1.get("cfg"):
-        diff = sorted(k for k in set(ck0.get("cfg", {})) | set(ck1.get("cfg", {})) if ck0.get("cfg", {}).get(k) != ck1.get("cfg", {}).get(k))
+    b0, b1 = built_cfg(ck0.get("cfg", {})), built_cfg(ck1.get("cfg", {}))   # the configs the loader BUILDS: a key a checkpoint predates is its default
+    if b0 != b1:
+        diff = sorted(k for k in set(b0) | set(b1) if b0.get(k) != b1.get(k))
         bad.append(f"the two checkpoints' configs differ in {diff}")
     if ck0.get("grid") != ck1.get("grid"):
         bad.append(f"grid {ck0.get('grid')!r} != {ck1.get('grid')!r}")

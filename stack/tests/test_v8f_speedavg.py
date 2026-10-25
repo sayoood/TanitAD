@@ -147,6 +147,15 @@ def test_pair_violations_on_checkpoints(world, tmp_path):
     c3 = ck(m1)
     c3["model"].pop("pos")
     assert any("keys or shapes" in x for x in SA.pair_violations(ck(m0), c3))
+    # a checkpoint that PREDATES a config key builds that key's default: X_s0 (MIXO s0) has no `o_interface`, X_s1 stores "full"
+    c4 = ck(m0)
+    c4["cfg"].pop("o_interface")
+    c5 = ck(m1)
+    c5["cfg"]["o_interface"] = "full"
+    assert SA.pair_violations(c4, c5) == [], "a missing key is its default: the same built model"
+    c6 = ck(m1)
+    c6["cfg"]["o_interface"] = "cut"
+    assert any("configs differ in ['o_interface']" in x for x in SA.pair_violations(c4, c6)), "a missing key whose default differs is refused"
 
 
 def test_install_limit_cuts_the_windows_and_every_per_window_array_and_undoes():
