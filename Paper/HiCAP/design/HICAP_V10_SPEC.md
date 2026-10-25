@@ -1,4 +1,4 @@
-# HiCAP v10 extensions — design specification (rev a, 2026-10-25)
+# HiCAP v10 extensions — design specification (rev b, 2026-10-25)
 
 Single source for the four extensions the PI requested on 2026-10-25 and for the poster / motion-graphics
 explainer. The paper (`Paper/HiCAP/hicap.tex`) is the authority for everything that existed before; this
@@ -216,17 +216,18 @@ Publishing to HF is the PI's decision; everything above is staged in the repo fi
 | Audio encoder | **FROZEN** | candidate-dependent |
 | Motion adapter, projectors, fusion (6 L, d 512), level queries, readouts, node/numeric towers, re-ranker | trained | 56.4 M (MEASURED, `HiCAP.n_params`) |
 | Imagination E-head, Tier-2 heads, camera gate, config embedding | trained | +1.88 M (MEASURED, `HiCAPFull`) |
-| Audio bridge, rule memory (gated cross-attention + retrieval projections), country readout | trained | to be MEASURED after implementation |
+| Rule memory (retrieval 0.33 M + gated cross-attention 2.10 M), country readout 3.67 M | trained | **6.10 M** (MEASURED, `HiCAPFull.knowledge_params`, d 512, d_text 2,048) — complete model **64.37 M** without the audio bridge |
+| Audio bridge + event heads | trained | MEASURED in stream A (see `audio.py`) |
 | Node / rule / country text embeddings | cached once from the frozen text path | 0 trainable |
 
-## 6. Training schedule (poster / video)
+## 6. Training schedule (poster / video) — as implemented (`losses.STAGES`, `full.FullLoss`; rev b aligns the spec to the code)
 
-Stage 0 (offline, once): VLM tap caches; text embeddings of nodes, rules, countries; vocabulary build;
-imagination supervision; country labels. Stage A1 (independent): audio bridge alignment.
-Stage 1: critics on all levels incl. country (soft targets, Tier-0 shape). Stage 2: + hard negatives,
-consistency KL, goal loss, Tier-1 E-head, rule memory gate, camera dropout curriculum. Stage 3:
-+ re-ranker, Tier-2 heads + benefit gate, camera gate, audio gate (A3), 40 % replay. Optional: student
-distillation; text-channel LoRA for explanations.
+Stage 0 (offline, once): VLM tap caches; text embeddings of nodes, rules, countries; vocabulary build; imagination supervision;
+country labels. Stage A1 (independent): audio bridge alignment.
+Stage 1: level critics on every level (soft targets), goal loss, **country readout** (λ 0.1); Tier-0 target shaping and the camera gate
+whenever their supervision is in the batch. Stage 2: + hard negatives, consistency KL, 40 % replay. Stage 3: + cost heads, refinement,
+L^cfg, audio, imagination (E-head, Tier-2 heads); the re-ranker is trained only here. The rule-memory and audio gates start at 0 and are
+trained by the main losses from the moment their source is attached. Optional: student distillation; text-channel LoRA for explanations.
 
 ## 7. Inference data flow (one tick, 10 Hz command clock; 2 Hz refresh clock)
 
