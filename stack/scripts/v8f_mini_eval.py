@@ -354,7 +354,7 @@ def cmd_run(a):
               "lon_logits": O["lon_logits"], "cons": cons_dec}
     tag = a.tag
     res = {"tag": tag, "ckpt": a.ckpt, "ages": a.ages, "nav_shuffle": bool(a.nav_shuffle), "kin_mode": cfg.kin_mode, "plan": a.plan,
-           "tac": a.tac}
+           "tac": a.tac, "o_interface": cfg.o_interface}        # PREREG_V8F_FLAT: the interface the eval BUILT, from the checkpoint's own cfg (G-EVAL): a cut checkpoint cannot be scored as a full one
     tac_npz = {}
     if a.tac != "pred":
         shift, fb = np.concatenate(tac_rows["shift"]), np.concatenate(tac_rows["oracle_fallback"])

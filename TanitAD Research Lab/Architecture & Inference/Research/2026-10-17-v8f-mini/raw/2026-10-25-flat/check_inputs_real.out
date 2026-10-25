@@ -1,0 +1,35 @@
+# PREREG_V8F_FLAT: v8f_flat_read.py --check-inputs on the REAL banked B side (M2b s0/s1), staged from the mirror tip 18c62306 exactly as chain_v8f_flat.sh stages it on box 2 (read-only git show, raw bytes).
+# MEASURED 2026-10-25 10:26 on the dev box, CPU only. Evidence class: MEASURED (the banked files below); the FLAT side (box 2) is NOT covered. The strata file is the repo's own (raw/2026-10-25-kind/window_strata_eval141.npz), validated against B's own oracle evals.
+# cmd: python stage_real_b.py <dest>;  python v8f_flat_read.py --check-inputs --eval-dir <dest>/eval --runs-dir <dest>/runs --out <dest>/check_inputs.json --lead-block <dest>/b1/b1_eval_lead_block.npz --strata <dest>/strata/window_strata_eval141.npz   (no --ckpt-sha: that json is the chain's, measured on box 2)
+# ---- staged files (sha256[:16], bytes, dest <- repo path at the tip)
+# 40957e4efaca2032         868  runs/M2b_s0/summary.json  <-  raw/full/runs/M2b_s0/summary.json
+# 8a90dcac36e149d4         727  runs/M2b_s0/argv.json  <-  raw/full/runs/M2b_s0/argv.json
+# 62268cdfac1227c4        2451  runs/M2b_s0/selfcheck.json  <-  raw/full/runs/M2b_s0/selfcheck.json
+# 08c8cd831eee3671      247484  runs/M2b_s0/train_log.jsonl  <-  raw/full/runs/M2b_s0/train_log.jsonl
+# 8ddcd42c119f7ca9     2332474  eval/eval_M2b_s0.npz  <-  raw/full/eval/eval_M2b_s0.npz
+# 38d57843df9d57d3     2220411  eval/eval_M2b_s0-tacabs.npz  <-  raw/2026-10-22-cz/eval/eval_M2b_s0-tacabs.npz
+# 14d7ebeec7df29d3     1796520  eval/eval_M2b_s0-tacorc.npz  <-  raw/2026-10-20-tac/eval/eval_M2b_s0-tacorc.npz
+# 8755df07aed08cc0     1989669  eval/eval_M2b_s0-tacorc-all-latcons.npz  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s0-tacorc-all-latcons.npz
+# e69946c61e567ed3       42267  eval/eval_M2b_s0.json  <-  raw/full/eval/eval_M2b_s0.json
+# 47d67dadd498579e       10342  eval/eval_M2b_s0-tacabs.json  <-  raw/2026-10-22-cz/eval/eval_M2b_s0-tacabs.json
+# b2106311458e17c5       10225  eval/eval_M2b_s0-tacorc.json  <-  raw/2026-10-20-tac/eval/eval_M2b_s0-tacorc.json
+# b80e4a3e49131ff5       10293  eval/eval_M2b_s0-tacorc-all-latcons.json  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s0-tacorc-all-latcons.json
+# 8992c35668de044a     2103333  eval/eval_M2b_s0-tacorc-all-goal.npz  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s0-tacorc-all-goal.npz
+# fc8bed2abca1c30b         868  runs/M2b_s1/summary.json  <-  raw/full/runs/M2b_s1/summary.json
+# e8fb2430fc2f43ce         727  runs/M2b_s1/argv.json  <-  raw/full/runs/M2b_s1/argv.json
+# a6c5b7f29161ccc0        2456  runs/M2b_s1/selfcheck.json  <-  raw/full/runs/M2b_s1/selfcheck.json
+# fa73b6618ccd4def      247844  runs/M2b_s1/train_log.jsonl  <-  raw/full/runs/M2b_s1/train_log.jsonl
+# 0b9e40ff71fd3636     2334284  eval/eval_M2b_s1.npz  <-  raw/full/eval/eval_M2b_s1.npz
+# 89a593df9739c9d4     2222040  eval/eval_M2b_s1-tacabs.npz  <-  raw/2026-10-22-cz/eval/eval_M2b_s1-tacabs.npz
+# b6e55dde7d77b399     1798128  eval/eval_M2b_s1-tacorc.npz  <-  raw/2026-10-20-tac/eval/eval_M2b_s1-tacorc.npz
+# c3e1c7ce37759e0b     1990935  eval/eval_M2b_s1-tacorc-all-latcons.npz  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s1-tacorc-all-latcons.npz
+# bd9e294f91fa9df1       42247  eval/eval_M2b_s1.json  <-  raw/full/eval/eval_M2b_s1.json
+# e14326e1715ea03c       10319  eval/eval_M2b_s1-tacabs.json  <-  raw/2026-10-22-cz/eval/eval_M2b_s1-tacabs.json
+# a1812dd8a584bf5a       10192  eval/eval_M2b_s1-tacorc.json  <-  raw/2026-10-20-tac/eval/eval_M2b_s1-tacorc.json
+# eedfb9ce9f51b5bf       10289  eval/eval_M2b_s1-tacorc-all-latcons.json  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s1-tacorc-all-latcons.json
+# 96d64537803890ff     2105742  eval/eval_M2b_s1-tacorc-all-goal.npz  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s1-tacorc-all-goal.npz
+# 4168b4293f972dae      387151  eval/floors_perwindow.npz  <-  raw/full/eval/floors_perwindow.npz
+# c0525943605cfd4a     2489644  b1/b1_eval_lead_block.npz  <-  TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-02-b1-eval-lead-block/raw/b1_eval_lead_block.npz
+# 55d12d16ac04f843        7269  strata/window_strata_eval141.npz  <-  raw/2026-10-25-kind/window_strata_eval141.npz
+# ---- the read
+FLAT INPUTS OK: base M2b; F 0.1207 (2F bar 0.2415); LAMBDA(B) +0.2678 / +0.1667; 2399 windows over 141 episodes; strata {'JUNCTION': {'n_windows': 298, 'n_episodes': 34}, 'CURVE': {'n_windows': 140, 'n_episodes': 17}, 'NO-TURN': {'n_windows': 1961, 'n_episodes': 140}}; expects 4 evals per seed; identity control exactly +0 [0, 0]

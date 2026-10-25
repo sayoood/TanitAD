@@ -76,6 +76,7 @@ FLAG_CHECKS = {
     "fit_join": "run", "workers": "run", "clip_grad": "opt:clip_grad", "threads": "run",
     "kin_mode": "cfg:kin_mode", "tracks": "path", "cons_absent": "lever:cons_absent",
     "code_mix": "lever:code_mix",             # PREREG_V8F_MIXO: argv -> make_config -> the BUILT model's levers (declared_vs_built) -> the probe of the code O actually read (code_mix_probe)
+    "o_interface": "lever:o_interface",       # PREREG_V8F_FLAT: argv -> make_config -> the BUILT model's levers (declared_vs_built) -> G-LIVE's dead-weight set (live_check) -> the probe of what O is handed (o_interface_probe)
     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
     "encoder": "enc:encoder", "lora_r": "enc:lora_r", "lora_alpha": "enc:lora_alpha", "lora_targets": "enc:lora_targets",
@@ -98,6 +99,10 @@ def build_parser():
     ap.add_argument("--code-mix", dest="code_mix", choices=M.CODE_MIX_MODES, default="whole",
                     help="PREREG_V8F_MIXO: the granularity of O's teacher forcing of T's code. whole (default) = ONE GT-or-own switch per sample over the whole code (every earlier arm, bit for bit, "
                          "the RNG stream included); kind = an independent switch per sample AND per unit (the decisions + the six constraint kinds), at the same p_gt")
+    ap.add_argument("--o-interface", dest="o_interface", choices=M.O_INTERFACE_MODES, default="full",
+                    help="PREREG_V8F_FLAT: what O reads of the layers above it. full (default) = S's checkpoints and T's code (every earlier arm, bit for bit, the RNG stream included); "
+                         "cut = a CONSTANT in place of both (T's code = zeros after every override, S's checkpoints = the nominal ck_nom with ok = 0): the capacity-matched FLAT control. "
+                         "S and T are still built, trained and run")
     ap.add_argument("--cache-dir", default="C:/Users/Admin/refav1_hj_cache")
     ap.add_argument("--out", required=True)
     ap.add_argument("--v9-train", default="C:/Users/Admin/qland/work/refcv8_hf_v9/release/v9_labels_train.npz")
@@ -192,7 +197,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
-                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix)
+                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface)
 
 
 def bad_encoder(a, enc, data_info) -> list:
@@ -270,6 +275,9 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None) -> list:
     if a.code_mix == "kind" and built["p_gt_start"] == built["p_gt_end"] and built["p_gt_start"] in (0.0, 1.0):
         bad.append(f"code_mix kind declared but the built p_gt is constant {built['p_gt_start']} -> {built['p_gt_end']}: "
                    f"{'O is never teacher-forced' if built['p_gt_start'] == 0.0 else 'every unit is GT, which is whole'} -- a lever that is declared and does nothing")
+    # PREREG_V8F_FLAT: the interface declared on the argv is the one the BUILT model's levers say (argv -> make_config -> cfg -> built_levers); o_interface_probe then reads what O is actually handed
+    if built.get("o_interface") != a.o_interface:
+        bad.append(f"lever o_interface: declared {a.o_interface} but built {built.get('o_interface')}")
     if not built["prior_frozen"]:
         bad.append("the P10 prior is not frozen")
     if model.cfg.n_tok != (40 if a.grid == "pool4x10" else 160):
@@ -374,6 +382,8 @@ def live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
     missing = sorted(expect - set(terms_seen))
     extra_pen = sorted(k for k in terms_seen if k.startswith("pen") and not cfg.consistency)
     declared_dead = [n for n in acc if cfg.wm == "a" and ".idm_heads." in n]
+    if cfg.o_interface == "cut":                  # PREREG_V8F_FLAT: O reads a constant code, so e_code.weight receives EXACTLY 0.0 (its bias still trains): declared dead, and G-LIVE REQUIRES the zero
+        declared_dead += [n for n in acc if n == "e_code.weight"]
     dead = sorted(n for n, g in acc.items() if g == 0.0)
     unexpected_dead = sorted(set(dead) - set(declared_dead))
     declared_dead_alive = sorted(n for n in declared_dead if acc[n] != 0.0)
@@ -454,6 +464,80 @@ def code_mix_probe(model, batch, cfg, p_gt: float = 0.5, tries: int = 4) -> dict
             raise AssertionError(f"code_mix probe: a unit's GT share {res['unit_gt_rate']} is far from p_gt {p_gt}")
     elif n_partial:
         raise AssertionError(f"code_mix probe: code_mix whole is declared but {n_partial} labelled samples read a PARTLY-GT code ({res}): whole is one switch per sample")
+    res["pass"] = True
+    return res
+
+
+def o_interface_probe(model, batch, cfg, shift: float = 2.5) -> dict:
+    """G-LIVE for PREREG_V8F_FLAT: what the BUILT model's O is actually HANDED, read from the tensors ``run_o`` receives in a forward of a COPY on the real probe batch (no gradient, its own
+    generators, the residual head re-initialised non-zero on the copy: it is zero-init, so at build O's output is P10 whatever it reads and no wire could be seen).
+
+    Perturb everything above O: T's code (a donor window's code, the GT code, a random code: ``code_override``, the evaluator's own route) and S's checkpoints (every one shifted by ``shift``).
+
+      cut   O is handed the constants (code = zeros, checkpoints = ck_nom, ok = 0) under EVERY perturbation, and traj60 is bit-for-bit the unperturbed one (max |d| = 0.0)
+      full  O is handed the perturbed values, and traj60 MOVES under every perturbation: the control that proves this probe can see a change
+
+    Two more controls hold under both: the override reached the interface (out["code"] is the override) and T still reads S (T's goal logits move with S's checkpoints). A violation is an
+    AssertionError, which the caller turns into a refusal. The probe reads the tensor the trainer's model hands the O layer, so it proves reachability FROM THE ACTUAL CALLER."""
+    m = copy.deepcopy(model).cpu()
+    m.eval()
+    B = int(batch["feats"].shape[0])
+    if B < 2:
+        if cfg.o_interface == "full":      # the DEFAULT interface is every earlier arm (a smoke run's probe batch can hold one window): nothing to prove there, and the run must not be refused
+            return {"o_interface": cfg.o_interface, "shift": shift, "n_windows": B, "perturbations": {}, "pass": True,
+                    "skipped": "the probe batch holds a single window (a donor code cannot differ from its own); the full interface is the default and the pre-change model"}
+        raise AssertionError("o_interface probe: the probe batch has a single window: a donor code cannot be told from its own")
+    g = torch.Generator().manual_seed(2718)
+    with torch.no_grad():
+        w = m.head_o[2].weight
+        w.copy_(torch.randn(w.shape, generator=g) * 0.05)
+    cap = {}
+    run_o0 = m.run_o
+
+    def run_o(b, adapt, last_o, ck_o, ck_ok, code):
+        cap["ck_o"], cap["ck_ok"], cap["code"] = ck_o.detach().clone(), ck_ok.detach().clone(), code.detach().clone()
+        return run_o0(b, adapt, last_o, ck_o, ck_ok, code)
+    m.run_o = run_o
+
+    def fwd(override=None, shifted=False):
+        if shifted:
+            run_s0 = type(m).run_s.__get__(m)
+            m.run_s = lambda *a, **k: run_s0(*a, **k) + shift
+        try:
+            with torch.no_grad():
+                out = m._forward(batch, 0.0, False, None, override)
+        finally:
+            m.__dict__.pop("run_s", None)
+        return out, dict(cap)
+    base, base_cap = fwd()
+    own = base["code"].detach().clone()
+    perts = {"donor_code": (own.roll(1, 0), False), "gt_code": (m._code_gt(batch["lab_t"]).to(own.dtype), False),
+             "random_code": (torch.rand(own.shape, generator=g).to(own.dtype), False), "shifted_checkpoints": (None, True)}
+    ck_nom = m.ck_nom[None].expand(B, -1, -1)
+    res = {"o_interface": cfg.o_interface, "shift": shift, "n_windows": B, "perturbations": {}}
+    for name, (ov, sh) in perts.items():
+        out, c = fwd(ov, sh)
+        d_traj = float((out["traj60"] - base["traj60"]).abs().max())
+        row = {"max_abs_dtraj60": d_traj, "o_read_code_abs_max": float(c["code"].abs().max()), "o_read_ck_minus_nominal_abs_max": float((c["ck_o"] - ck_nom).abs().max()),
+               "o_read_ck_ok_abs_max": float(c["ck_ok"].abs().max())}
+        if ov is not None and not torch.equal(out["code"], ov.to(out["code"].dtype)):
+            raise AssertionError(f"o_interface probe: the {name} override did not reach the interface (out['code'] is not the override): the perturbation is not applied, the probe is blind")
+        if sh:
+            row["max_abs_d_ckpt"] = float((out["ckpt"] - base["ckpt"]).abs().max())
+            row["t_reads_s_max_abs_dgoal_logits"] = float((out["goal_logits"] - base["goal_logits"]).abs().max())
+            if row["max_abs_d_ckpt"] == 0.0:
+                raise AssertionError("o_interface probe: shifting S's output did not move S's checkpoints: the perturbation is not applied, the probe is blind")
+            if not row["t_reads_s_max_abs_dgoal_logits"] > 0.0:
+                raise AssertionError("o_interface probe: T's output did not move with S's checkpoints: T does not read S (the interface cut must leave S -> T intact)")
+        if cfg.o_interface == "cut":
+            if d_traj != 0.0:
+                raise AssertionError(f"o_interface probe: cut is declared but traj60 moved by {d_traj} under {name}: O still reads S or T")
+            if row["o_read_code_abs_max"] != 0.0 or row["o_read_ck_minus_nominal_abs_max"] != 0.0 or row["o_read_ck_ok_abs_max"] != 0.0:
+                raise AssertionError(f"o_interface probe: cut is declared but O was handed a non-constant under {name}: {row}")
+        else:
+            if not d_traj > 0.0:
+                raise AssertionError(f"o_interface probe: full is declared but traj60 did not move under {name}: O does not read what it is declared to read, or the probe cannot see a change")
+        res["perturbations"][name] = row
     res["pass"] = True
     return res
 
@@ -575,6 +659,8 @@ def live_check_lora(model, enc, batch, cfg, a, dev, chunk, steps: int = 3, lr: f
         expect.add("wm")
     missing = sorted(expect - set(terms_seen))
     declared_dead = [n for n in acc if cfg.wm == "a" and ".idm_heads." in n]
+    if cfg.o_interface == "cut":                  # PREREG_V8F_FLAT: O reads a constant code, so e_code.weight receives EXACTLY 0.0 (its bias still trains): declared dead, and G-LIVE REQUIRES the zero
+        declared_dead += [n for n in acc if n == "e_code.weight"]
     dead = sorted(n for n, g in acc.items() if g == 0.0)
     unexpected_dead = sorted(set(dead) - set(declared_dead))
     ctrl = [float(p.grad.abs().sum()) if p.grad is not None else 0.0 for p in m.prior.parameters()]
@@ -762,13 +848,17 @@ def main(argv=None):
         mix = code_mix_probe(model, probe, cfg)           # PREREG_V8F_MIXO: the joint structure of the code the BUILT model hands O is the declared one (whole: all-or-nothing; kind: partial)
     except AssertionError as e:
         raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
+    try:
+        ocut = o_interface_probe(model, probe, cfg)       # PREREG_V8F_FLAT: what the BUILT model's O is handed under a perturbation of everything above it (cut: constants, traj60 invariant; full: it moves)
+    except AssertionError as e:
+        raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
     adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
     model.to(dev).train()
     levers = model.built_levers()
     if enc is not None:
         levers["encoder"] = enc.built_levers()
         levers["accum"] = {"accum": a.accum, "micro_windows": a.batch // a.accum, "chunk_frames": chunk}
-    sc = {"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix, "admissibility": adm, "levers": levers,
+    sc = {"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix, "o_interface_probe": ocut, "admissibility": adm, "levers": levers,
           "steps_total": total, "S_steps_per_epoch_100pct": S, "info": info, "argv_sha": argv_sha(argv)}
     if ident is not None:
         sc["identity_probe"] = ident

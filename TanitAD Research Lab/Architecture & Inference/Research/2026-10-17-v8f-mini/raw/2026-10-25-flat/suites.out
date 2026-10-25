@@ -1,0 +1,12 @@
+# PREREG_V8F_FLAT suites (CPU only, started 2026-10-25 11:24). Run in THREE shards with the pytest basetemp wiped between them: C: had < 5 GB free, and test_v8f_mixo.py alone leaves ~2 GB of synthetic worlds.
+# cmd per shard: pytest -q -p no:cacheprovider -rfEs --basetemp C:/Users/Admin/pt_flat_final <files>   (shard mixo = test_v8f_mixo.py; shard flat = test_v8f_flat.py; shard rest = every other stack/tests/test_v8f*.py + test_launch_gate_v8f.py)
+# BAR: baseline (tip 18c62306 + nothing) 998 passed, 2 skipped, 0 failed  =>  998 + the new test_v8f_flat.py tests, 0 failed.
+# ---- shard mixo: pytest -q -p no:cacheprovider -rfEs --basetemp C:/Users/Admin/pt_flat_final stack/tests/test_v8f_mixo.py
+149 passed, 1 warning in 131.67s (0:02:11)
+# ---- shard flat: pytest -q -p no:cacheprovider -rfEs --basetemp C:/Users/Admin/pt_flat_final stack/tests/test_v8f_flat.py
+254 passed, 1 warning in 148.39s (0:02:28)
+# ---- shard rest: pytest -q -p no:cacheprovider -rfEs --basetemp C:/Users/Admin/pt_flat_final stack/tests/test_v8f_beta.py stack/tests/test_v8f_beta_box2.py stack/tests/test_v8f_cz.py stack/tests/test_v8f_dk.py stack/tests/test_v8f_dscale.py stack/tests/test_v8f_grid.py stack/tests/test_v8f_hist.py stack/tests/test_v8f_kind.py stack/tests/test_v8f_lora.py stack/tests/test_v8f_lora_ar2.py stack/tests/test_v8f_lora_device.py stack/tests/test_v8f_lora_shape.py stack/tests/test_v8f_mini.py stack/tests/test_v8f_mini_full.py stack/tests/test_v8f_mini_full_report.py stack/tests/test_v8f_pgt.py stack/tests/test_v8f_smooth_read.py stack/tests/test_v8f_t1.py stack/tests/test_v8f_tac.py stack/tests/test_v8f_wc.py stack/tests/test_v8f_window_start.py  stack/tests/test_launch_gate_v8f.py
+SKIPPED [1] stack\tests\test_v8f_beta_box2.py:30: queue not in this checkout
+SKIPPED [1] stack\tests\test_v8f_beta_box2.py:53: the queue is a Windows batch file
+849 passed, 2 skipped, 1 warning in 1324.18s (0:22:04)
+# TOTAL over the three shards: 1252 passed, 2 skipped, 0 failed, 0 errors

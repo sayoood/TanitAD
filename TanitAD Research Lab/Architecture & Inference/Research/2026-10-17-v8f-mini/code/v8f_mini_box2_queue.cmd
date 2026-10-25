@@ -57,6 +57,11 @@ rem   v8f_mini_box2_queue.cmd trainmixo SEED        PREREG_V8F_MIXO: one X run i
 rem   v8f_mini_box2_queue.cmd evalmixo SEED         PREREG_V8F_MIXO: that run's seven evals, tagged M2b-mixo_s<SEED>: the standard eval (--project --families), absmask, the GT-code oracle, the all-latcons oracle, and TAC_A2's dose chain on the
 rem                                             constraints (T's own code --tac pred, the constraints oracle at alpha 1, at alpha 0.50); each skipped once its npz exists
 rem
+rem   v8f_mini_box2_queue.cmd gateflat              PREREG_V8F_FLAT: the in-process launch gate for FLAT = M2b + --o-interface cut (O reads a CONSTANT in place of T's code and S's checkpoints), no training. B is M2b (fixed in the PREREG): there is no BASE argument
+rem   v8f_mini_box2_queue.cmd trainflat SEED       PREREG_V8F_FLAT: one FLAT run into %RUNSM%\M2b_s<SEED>_flat (resumes; skipped once done). BOTH seeds are always trained
+rem   v8f_mini_box2_queue.cmd evalflat SEED        PREREG_V8F_FLAT: that run's four evals, tagged M2b-flat_s<SEED>: the standard eval (--project --families), absmask, the GT-code oracle (the identity read: FLAT's oracle ADE6 minus
+rem                                             its own must be exactly 0) and the all-latcons oracle; each skipped once its npz exists
+rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
 rem
@@ -118,6 +123,9 @@ if /i "%~1"=="kind" goto :kind
 if /i "%~1"=="gatemixo" goto :gatemixo
 if /i "%~1"=="trainmixo" goto :trainmixo
 if /i "%~1"=="evalmixo" goto :evalmixo
+if /i "%~1"=="gateflat" goto :gateflat
+if /i "%~1"=="trainflat" goto :trainflat
+if /i "%~1"=="evalflat" goto :evalflat
 echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|kind^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED^|gategrid BASE^|traingrid SEED BASE^|evalgrid SEED BASE^|gatehist^|trainhist SEED^|evalhist SEED^|gatedscale^|traindscale SEED^|evaldscale SEED^|identitylora^|smokelora
 exit /b 2
 
@@ -804,4 +812,71 @@ if exist "%EV%\eval_%TG%-tacorc-constraints-a50.npz" (echo [skip] eval %TG%-taco
 if errorlevel 1 (echo [FAIL] eval %TG%-tacorc-constraints-a50 - see %EV%\eval_%TG%-tacorc-constraints-a50.log & exit /b 1)
 echo [ok] eval %TG%-tacorc-constraints-a50
 :evalmixo_7
+exit /b 0
+:gateflat
+rem PREREG_V8F_FLAT: FLAT = M2b's levers with --o-interface cut and nothing else (O reads a CONSTANT in place of T's code -- zeros, after every override -- and of S's checkpoints -- the nominal arcs, ok = 0; S and T are still
+rem built, trained on their own losses and run, and T still reads S; the data, the 19,164 steps, the p_gt schedule 1.0 -> 0.2 and the eval are B's). The trainer's G-DVB checks the built o_interface against this argv, its G-LIVE
+rem requires e_code.weight to read exactly 0.0, its o_interface probe reads what O is HANDED under a perturbation of everything above it, and selfcheck.json records them (levers.o_interface, o_interface_probe); the chain asserts
+rem them before any training.
+call :prep || exit /b 2
+rem ONE command string: the dry run prints exactly what the real run executes
+set "GX="%PY%" "%TRAIN%" --arm M2b --o-interface cut --out "%RUNSM%\gate_M2b-flat" %A% --selfcheck-only"
+if defined V8F_DRYRUN (echo %GX% & exit /b 0)
+%GX% > "%RUNSM%\gate_M2b-flat.log" 2>&1
+if errorlevel 1 (echo [FAIL] gate M2b-flat - see %RUNSM%\gate_M2b-flat.log & exit /b 1)
+echo [ok] gate M2b-flat
+exit /b 0
+
+:trainflat
+rem PREREG_V8F_FLAT: one FLAT run. Its summary.json says arm M2b (the trainer's arm table is unchanged); its argv.json carries --o-interface cut, its levers and its checkpoint the BUILT o_interface: code\v8f_flat_read.py refuses a run
+rem where any is not. The run lives in M2b_s<SEED>_flat, so it can never resume or be mistaken for B.
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: trainflat needs a SEED & exit /b 2)
+set "OUT=%RUNSM%\M2b_s%~2_flat"
+if exist "%OUT%\summary.json" (echo [skip] M2b_s%~2_flat & exit /b 0)
+rem ONE command string: the dry run prints exactly what the real run executes
+set "TX="%PY%" "%TRAIN%" --arm M2b --seed %~2 --grid pool4x10 --o-interface cut --out "%OUT%" %A%"
+if defined V8F_DRYRUN (echo %TX% & exit /b 0)
+if not exist "%OUT%" mkdir "%OUT%"
+echo [%date% %time%] train M2b_s%~2_flat
+%TX% >> "%OUT%\train.log" 2>&1
+if errorlevel 1 (echo [FAIL] train M2b_s%~2_flat - see %OUT%\train.log & exit /b 1)
+if not exist "%OUT%\summary.json" (echo [FAIL] train M2b_s%~2_flat exited 0 without summary.json & exit /b 1)
+exit /b 0
+
+:evalflat
+rem PREREG_V8F_FLAT: the four evals its reader needs, EACH ONE command string that the dry run prints and the real run executes (the HIST recipe):
+rem   E0 the standard eval (--project --families)   E1 absmask (T's own present slots)   E2 the GT-code oracle (tacorc: the PREREG's identity read, ADE6 minus own = exactly 0 under the cut)   E3 the all-latcons oracle
+rem   All four read THIS run's last checkpoint, which names its own interface (cfg.o_interface cut): v8f_mini_eval.py builds the model from the checkpoint's cfg, so there is no flag to give it. Each is skipped once its npz exists.
+rem   FLAT on purpose (no parenthesised else-block): an `exit /b 1` inside a multi-line block returns rc 0 from `cmd /c queue.cmd` (MEASURED by the PGT build).
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: evalflat needs a SEED & exit /b 2)
+set "OUT=%RUNSM%\M2b_s%~2_flat"
+set "TG=M2b-flat_s%~2"
+set "E0="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG% %EC% %ER% --project --families"
+set "E1="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacabs --tac absmask %EC% %ER%"
+set "E2="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacorc --tac oracle %EC% %ER%"
+set "E3="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacorc-all-latcons --tac oracle --tac-groups all-latcons --tac-alpha 1 %EC% %ER%"
+if defined V8F_DRYRUN (echo %E0% & echo %E1% & echo %E2% & echo %E3% & exit /b 0)
+if not exist "%OUT%\summary.json" (echo REFUSED: %TG% has not finished training & exit /b 2)
+if exist "%EV%\eval_%TG%.npz" (echo [skip] eval %TG% & goto :evalflat_1)
+%E0% >> "%EV%\eval_%TG%.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG% - see %EV%\eval_%TG%.log & exit /b 1)
+echo [ok] eval %TG%
+:evalflat_1
+if exist "%EV%\eval_%TG%-tacabs.npz" (echo [skip] eval %TG%-tacabs & goto :evalflat_2)
+%E1% >> "%EV%\eval_%TG%-tacabs.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacabs - see %EV%\eval_%TG%-tacabs.log & exit /b 1)
+echo [ok] eval %TG%-tacabs
+:evalflat_2
+if exist "%EV%\eval_%TG%-tacorc.npz" (echo [skip] eval %TG%-tacorc & goto :evalflat_3)
+%E2% >> "%EV%\eval_%TG%-tacorc.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacorc - see %EV%\eval_%TG%-tacorc.log & exit /b 1)
+echo [ok] eval %TG%-tacorc
+:evalflat_3
+if exist "%EV%\eval_%TG%-tacorc-all-latcons.npz" (echo [skip] eval %TG%-tacorc-all-latcons & goto :evalflat_4)
+%E3% >> "%EV%\eval_%TG%-tacorc-all-latcons.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacorc-all-latcons - see %EV%\eval_%TG%-tacorc-all-latcons.log & exit /b 1)
+echo [ok] eval %TG%-tacorc-all-latcons
+:evalflat_4
 exit /b 0

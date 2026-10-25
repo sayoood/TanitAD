@@ -117,6 +117,12 @@ if sorted(i for idx in CODE_MIX_UNITS.values() for i in idx) != list(range(CODE_
 CODE_UNIT_OF = tuple(next(u for u, idx in enumerate(CODE_MIX_UNITS.values()) if i in idx) for i in range(CODE_DIM))
 
 
+#: PREREG_V8F_FLAT (`--o-interface`): what O reads of the two layers above it. ``full`` (the default, every earlier arm bit for bit, the RNG stream included) = S's checkpoints and T's
+#: code. ``cut`` = a CONSTANT in place of BOTH (T's code = zeros, S's checkpoints for O = the nominal ``ck_nom`` with ok = 0), applied after every override so no eval can reach O through them.
+#: S and T are still built, trained on their own losses and run; T still reads S. Only the wires into O are cut.
+O_INTERFACE_MODES = ("full", "cut")
+
+
 LIMITS_MS = (30 / 3.6, 50 / 3.6, 100 / 3.6, 120 / 3.6)
 #: the scale the WM auxiliary divides action channel 1 by, per kin mode (PI ruling D-PI-YAWRATE-1): the recorded steer angle
 #: (rad) in the legacy mode, the MEASURED yaw rate (rad/s) in the compliant one. 0.4 keeps the scaled channel's std at 0.255 vs the
@@ -174,6 +180,8 @@ class V8FMiniConfig:
                                        # (a DATA lever: the model never reads it, the checkpoint records it). -1 = absent = hist - 1 = every earlier arm, bit for bit
     code_mix: str = "whole"            # PREREG_V8F_MIXO (`--code-mix`): how O's teacher forcing draws GT-or-own over T's code. whole = one switch per sample (every earlier arm,
                                        # bit for bit, RNG stream included); kind = an independent switch per sample AND per unit (CODE_MIX_UNITS). Training only: the eval never teacher-forces
+    o_interface: str = "full"          # PREREG_V8F_FLAT (`--o-interface`): full = O reads S's checkpoints and T's code (every earlier arm, bit for bit); cut = O reads a CONSTANT for both (the FLAT control:
+                                       # T's code = zeros AFTER every override, S's checkpoints = the nominal ck_nom with ok = 0). S and T are still built, trained and run
 
     @property
     def window_start_effective(self) -> int:
@@ -189,6 +197,8 @@ class V8FMiniConfig:
             raise ValueError(f"cons_absent must be mask|zero, got {self.cons_absent!r}")
         if self.code_mix not in CODE_MIX_MODES:
             raise ValueError(f"code_mix must be one of {CODE_MIX_MODES}, got {self.code_mix!r}")
+        if self.o_interface not in O_INTERFACE_MODES:
+            raise ValueError(f"o_interface must be one of {O_INTERFACE_MODES}, got {self.o_interface!r}")
         if self.hmax < self.hist + self.max_age_s:
             raise ValueError("hmax must cover hist + max_age_s")
         if self.window_start != -1 and not 0 <= self.window_start <= self.hist - 1:
@@ -670,8 +680,12 @@ class V8FMini(nn.Module):
             code = code_override.to(device=code.device, dtype=code.dtype)
         if cfg.detach_upper:
             code = code.detach()
-        out["code"] = code                                               # the code O actually read
+        out["code"] = code                                               # the code O actually read (o_interface full); under cut, the code OFFERED to the interface (T's, after every override): O reads zeros there
         ck_for_o = transform_ckpt(ck_src, b["pose_s"], b["pose_now"])
+        if cfg.o_interface == "cut":                                     # PREREG_V8F_FLAT: O reads a CONSTANT for both of its hierarchical inputs; T has already read S (run_t above), so only the wires INTO O are cut
+            ck_for_o = self.ck_nom[None].expand(B, -1, -1)               # S's checkpoints for O = the nominal arcs ...
+            ck_ok = torch.zeros_like(ck_ok)                              # ... flagged absent (ok = 0)
+            code = torch.zeros_like(code)                                # T's code = zeros, AFTER every override (the teacher forcing and forward_diag's code_override)
         traj60, p30 = self.run_o(b, adapt, last_now, ck_for_o, ck_ok, code)
         out["traj60"], out["traj30"], out["p10"] = traj60, subsample_02(traj60), p30
         out["adapt"] = adapt
@@ -779,6 +793,7 @@ class V8FMini(nn.Module):
         return {"navonly": (not self.read_s.uses_scene) and (not self.read_t.uses_scene) and self.read_o.uses_scene,
                 "consistency": bool(cfg.consistency), "wm": "off" if self.wm is None else ("b" if self.wm.gamma > 0 else "a"),
                 "cons_absent": cfg.cons_absent, "code_mix": cfg.code_mix,        # PREREG_V8F_MIXO: the teacher-forcing granularity the BUILT model's _forward reads
+                "o_interface": cfg.o_interface,                                # PREREG_V8F_FLAT: what the BUILT model's _forward hands O (full: S's checkpoints + T's code; cut: constants)
                 "wm_idm_gamma": 0.0 if self.wm is None else float(self.wm.gamma),
                 "kin_mode": self.cfg.kin_mode, "wm_ch1_scale": None if self.wm is None else float(self.wm.ch1_scale),
                 "p_gt_start": cfg.p_gt_start, "p_gt_end": cfg.p_gt_end,      # PREREG_V8F_PGT: the scheduled-sampling schedule the train loop reads
