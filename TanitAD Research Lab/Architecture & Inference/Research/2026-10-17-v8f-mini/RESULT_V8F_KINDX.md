@@ -118,3 +118,53 @@ Reading (descriptive, one seed): on X only speed and angle are missed by O when 
 ## CORRECTION (2026-10-25, MM; R72)
 
 The STRATEGIC family is NOT paused for v8F. `PI-V8F-2026-10-17` (register): "R6 (strategic OFF) is superseded **for v8F**; the STRATEGIC family is un-paused for v8F". The label above quoted the superseded 2026-09-19 ruling. No number changes: the strategic block is bit-identical across every oracle arm by construction (the oracle replaces only the code O reads; S is the arm's own), so the family is reported as identical across arms, not as paused.
+
+
+## SEED-1 CONFIRMATION (2026-10-25, MM): CARRIER (speed). Amendment 1 applied: `PREREG_V8F_SPEEDAVG` runs
+
+**Outcome (Amendment 1's row, applied verbatim by `kindx_read.py --seed 1`): CARRIER.** SPEED clears 2F at seed 1 as well:
+* **gain_speed(X_s1) = +0.668 [+0.575, +0.761] m**, separated.
+* At seed 0 it was +0.716 [+0.623, +0.818].
+* The bar is ≥ 2F = 0.2415 m and separated.
+
+No other kind clears it at seed 1.
+
+**Committed next step (Amendment 1, quoted):** *"`PREREG_V8F_SPEEDAVG` runs (its condition is met)"*. It was launched at 21:40 on the dev-box CPU, zero training.
+
+* **Tier:** T0, a GT-conditioned oracle. It diagnoses how O consumes T's code; ⛔ it is never a driving claim. The headroom it shows is an upper bound on what a better speed decision could give.
+* **Estimator:** paired episode-cluster bootstrap, B = 2,000, 141 episodes / 2,399 windows. It answers "another draw of episodes". The second training seed is the replicate KIND's both-seed rule requires, and it is now in.
+* **Evidence class:** MEASURED (ours). Artefacts are in `raw/2026-10-25-kindx-s1/`.
+* **X_s1** = `M2b-mixo_s1`: MIXO's argv with `--seed 1`, behind its launch gate. Checkpoint sha256 68a0f335…, the same before and after the evals. Its run records PASS: in-process gate, summary, and an argv whose only difference from X_s0's is the seed.
+
+| kind | gain_k(X_s1), m | clears 2F at s1 | gain_k(X_s0), m (s0 read) | gain_k(B_s1), m |
+|---|---|---|---|---|
+| **speed** | **+0.668 [+0.575, +0.761] *** | **yes** | +0.716 [+0.623, +0.818] * | +0.185 [+0.145, +0.226] * |
+| angle | +0.093 [+0.063, +0.130] * | no | +0.095 [+0.056, +0.148] * | +0.043 [+0.011, +0.081] * |
+| tte | +0.113 [+0.080, +0.148] * | no | +0.110 [+0.075, +0.146] * | **−0.315 [−0.434, −0.210] *** |
+| timegap | +0.005 [−0.005, +0.014] | no | −0.004 [−0.014, +0.006] | −0.000 [−0.004, +0.003] |
+| geom | +0.117 [+0.090, +0.146] * | no | +0.108 [+0.080, +0.139] * | **−0.421 [−0.577, −0.286] *** |
+| leadgap | +0.012 [+0.002, +0.022] * | no | +0.001 [−0.008, +0.009] | +0.002 [−0.003, +0.006] |
+| union (constraints) | +0.791 [+0.689, +0.895] * | — | +0.801 * | — |
+
+⭐ **B's tte and geom gains are NEGATIVE at s1, X's are positive at both seeds.** Given only the true tte or geom cells, B gets worse: this is KIND's "O cannot use a partly right code". X improves on the same cells. The second seed reproduces MIXO's mechanism ("O LEARNED"): training O on per-kind mixed codes lets it use a partly right code, kind by kind. (T0, a mechanism reading, not a driving claim.)
+
+* A_X (the interaction ratio) = 1.27 [1.21, 1.33], against 1.28 at s0.
+* Necessity is NOT COMPUTED at s1, because the PREREG's 10 seed-1 evals contain no leave-one-out arm.
+* X_s1's own-code ADE6 is 2.1201 m. B_s1 banked is 2.0546 m: a point difference of +0.066 m, unpaired and descriptive, under no bar. MIXO's PRIMARY was a seed-0 read, and it failed.
+
+**What it means.** O trained on per-kind mixed codes (MIXO) consumes T's speed cells about 3.6× more than B does: +0.668 against +0.185 at s1, and +0.716 against +0.270 at s0. Both seeds agree that speed is where O's remaining headroom sits. It is the only kind that clears 2F at either seed. Whether T's speed error is variance or bias is SPEEDAVG's question.
+
+**Controls (all PASS, `raw/2026-10-25-kindx-s1/controls_s1.json`):**
+* The checkpoint is X_s1's and differs from X_s0's.
+* The own-code eval reproduces the banked one (max |dev| 0.0 m).
+* The union and all oracles reproduce the banked `tacorc` evals (0.0 m).
+* The identity oracle has zero gain on every window.
+* The 34 fallback windows carry zero gain.
+
+**Strategic.** It is not paused for v8F (`PI-V8F-2026-10-17`). Every oracle arm here replaces only the code O reads, and S is X_s1's own, so the strategic family is identical across the arms by construction.
+
+**How the chain ran (no number comes from any of this):**
+1. The first driver died at about 19:45 with its trainer still running on box 2. The guard log shows cygwin fork failures under commit pressure; a console Ctrl-C event is not ruled out.
+2. The guard was restarted at 19:48. `relaunch_kindx_s1.sh` waited for the trainer's end and relaunched the chain at 21:20, which skipped the finished run.
+3. The relaunched chain completed every box-2 stage, then stopped at a dev-box pull of `eval_M2b-mixo_s1-kindx-own.log`. The 10 KINDX evals run in ONE process and write no per-eval `.log`, so `chain_v8f_kindx_s1.sh:322` asked for files that never exist. This is an instrument defect: the pull list was written from the eval naming pattern, not from what the process writes.
+4. `kindx_s1_finish.sh` ran the chain's step 7 verbatim, with that one process's job log in place of the per-eval logs: pull, controls 1 and 2, the read.

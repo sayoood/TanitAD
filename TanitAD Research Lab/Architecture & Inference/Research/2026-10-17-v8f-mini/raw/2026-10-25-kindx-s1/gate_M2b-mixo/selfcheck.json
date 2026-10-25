@@ -1,0 +1,185 @@
+{
+ "declared_vs_built": "PASS",
+ "live": {
+  "terms": {
+   "ckpt": 2.9688117504119873,
+   "goal": 0.5693469643592834,
+   "lat": 0.642099916934967,
+   "lon": 1.3714863061904907,
+   "cons": 0.429002046585083,
+   "ade": 2.9639406204223633,
+   "fde": 9.202808380126953,
+   "pen_SPEED": 1.0223870277404785,
+   "pens_SPEED": 2.7370107173919678,
+   "pen_STOP": 0.38299989700317383,
+   "pens_STOP": 0.0,
+   "pen_TURN": 0.3698478639125824,
+   "pens_TURN": 0.0,
+   "pen_LEAD": 0.44232669472694397,
+   "pens_LEAD": 0.0,
+   "wm": 217.61456298828125,
+   "total": 30.068824768066406
+  },
+  "missing_terms": [],
+  "unexpected_terms": [],
+  "dead_params": [],
+  "declared_dead": [],
+  "unexpected_dead": [],
+  "declared_dead_but_alive": [],
+  "control_prior_grad_sum": 0.0,
+  "head_o_grad_step0": 589.1423187255859,
+  "n_trainable": 252,
+  "groups_grad": {
+   "adapter": 3868.720355153084,
+   "S": 3535.736323840916,
+   "T": 706.2964211404324,
+   "O": 4350.368926529773,
+   "head_s": 6532.156193494797,
+   "head_o": 8954.215491771698,
+   "wm": 5228.950964769698
+  },
+  "pass": true
+ },
+ "code_mix_probe": {
+  "code_mix": "kind",
+  "p_gt": 0.5,
+  "n_labelled": 64,
+  "n_draws_samples": 128,
+  "n_partial": 124,
+  "n_all_gt": 3,
+  "n_all_own": 1,
+  "unit_gt_rate": {
+   "decisions": 0.5,
+   "speed": 0.5703125,
+   "angle": 0.484375,
+   "tte": 0.5390625,
+   "timegap": 0.5546875,
+   "geom": 0.46875,
+   "leadgap": 0.4765625
+  },
+  "pass": true
+ },
+ "o_interface_probe": {
+  "o_interface": "full",
+  "shift": 2.5,
+  "n_windows": 64,
+  "perturbations": {
+   "donor_code": {
+    "max_abs_dtraj60": 0.15862321853637695,
+    "o_read_code_abs_max": 0.5387358665466309,
+    "o_read_ck_minus_nominal_abs_max": 36.348228454589844,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "gt_code": {
+    "max_abs_dtraj60": 1.6942291259765625,
+    "o_read_code_abs_max": 5.147832870483398,
+    "o_read_ck_minus_nominal_abs_max": 36.348228454589844,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "random_code": {
+    "max_abs_dtraj60": 1.5912094116210938,
+    "o_read_code_abs_max": 0.9999334216117859,
+    "o_read_ck_minus_nominal_abs_max": 36.348228454589844,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "shifted_checkpoints": {
+    "max_abs_dtraj60": 3.090184211730957,
+    "o_read_code_abs_max": 0.5486589670181274,
+    "o_read_ck_minus_nominal_abs_max": 35.060447692871094,
+    "o_read_ck_ok_abs_max": 1.0,
+    "max_abs_d_ckpt": 2.500001907348633,
+    "t_reads_s_max_abs_dgoal_logits": 0.11914823204278946
+   }
+  },
+  "pass": true
+ },
+ "admissibility": {
+  "allowed": [
+   "a_s",
+   "a_t",
+   "act",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ]
+ },
+ "levers": {
+  "navonly": false,
+  "consistency": true,
+  "wm": "b",
+  "cons_absent": "mask",
+  "code_mix": "kind",
+  "o_interface": "full",
+  "wm_idm_gamma": 100.0,
+  "kin_mode": "yaw",
+  "wm_ch1_scale": 0.4,
+  "p_gt_start": 1.0,
+  "p_gt_end": 0.2,
+  "hist": 4,
+  "hmax": 16,
+  "window_start": 3,
+  "prior_frozen": true,
+  "residual_zero_init": true,
+  "params": {
+   "adapter": 275712,
+   "cond": 25088,
+   "S": 1321737,
+   "T": 1463868,
+   "O": 2120216,
+   "WM": 2007874
+  },
+  "n_params_trainable": 7214495,
+  "w": {
+   "w_pen": 0.5,
+   "w_pen_self": 0.25,
+   "w_wm": 0.1,
+   "w_tac": 1.0,
+   "w_cons": 0.5
+  }
+ },
+ "steps_total": 19164,
+ "S_steps_per_epoch_100pct": 4791,
+ "info": {
+  "batch": 64,
+  "md5_overridden": false,
+  "n_clips": 4512,
+  "n_clips_expected": 4512,
+  "n_clips_all": 4512,
+  "n_excluded": 60,
+  "n_excluded_declared": 60,
+  "excluded_in_train": 0,
+  "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9",
+  "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+  "lru": 174,
+  "kin_mode": "yaw",
+  "n_windows_all_clips": 306566,
+  "n_windows": 306566,
+  "window_start": 3,
+  "window_t_min": 3,
+  "p10_units": "pose_kappa",
+  "ds_window_start": 3
+ },
+ "argv_sha": "9b10652f4eafc33a"
+}
