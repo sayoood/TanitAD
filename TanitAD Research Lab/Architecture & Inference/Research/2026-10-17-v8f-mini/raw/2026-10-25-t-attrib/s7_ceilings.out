@@ -1,0 +1,102 @@
+
+==============================================================================================================
+M2b_s0: T->GT gap_full 1.2045 m, gap_cons 1.0756 m (mean ADE6 over 2399 windows); bar 2F = 0.2415 m = 20.1% of gap_full
+==============================================================================================================
+(E) EXACT window-stratum ceilings (GT constraints in S, T's own elsewhere):
+   stratum S                                                   n_win   win% SSEshare ceiling m           [CI95] share of gap_cons  >2F?
+   top-10% windows by T's constraint SSE                         236  10.0%    0.550     0.164 [ 0.097, 0.237]             0.152    no
+   top-25% windows by T's constraint SSE                         591  25.0%    0.780     0.378 [ 0.290, 0.467]             0.352   yes
+   bottom-50% windows by T's constraint SSE                     1183  50.0%    0.064     0.379 [ 0.309, 0.455]             0.353   yes
+   turn-label windows (any nav)                                  476  20.1%    0.520     0.306 [ 0.212, 0.407]             0.284   yes
+   turn-label windows whose nav token = FOLLOW (route silent)    210   8.9%    0.303     0.161 [ 0.086, 0.246]             0.150    no
+   turn-label windows whose nav token = TURN (route speaks)      266  11.2%    0.217     0.144 [ 0.086, 0.212]             0.134    no
+   lead present                                                 1060  44.8%    0.583     0.501 [ 0.387, 0.631]             0.466   yes
+   lead present AND heavy-tail lead_tg label (|GT|>=3 SD)         32   1.4%    0.164     0.004 [-0.004, 0.013]             0.004    no
+   lon class FOLLOW                                              436  18.4%    0.114     0.257 [ 0.163, 0.368]             0.239   yes
+   lon class DECELERATE/ACCELERATE                               868  36.7%    0.453     0.484 [ 0.387, 0.587]             0.450   yes
+   lon class STOP/HOLD/CREEP                                     200   8.5%    0.248     0.066 [ 0.033, 0.104]             0.062    no
+   lon class KEEP                                                736  31.1%    0.127     0.228 [ 0.177, 0.281]             0.212    no
+   ego speed 5-10 m/s                                            653  27.6%    0.320     0.406 [ 0.312, 0.505]             0.378   yes
+   ego speed >= 10 m/s                                          1227  51.9%    0.431     0.445 [ 0.360, 0.541]             0.414   yes
+   ALL windows with a v9 row                                    2365 100.0%    1.000     1.076 [ 0.955, 1.198]             1.000   yes
+   gap_cons by DECILE of window T-SSE (decile 10 = worst):
+       0.43  0.53  0.79  0.99  1.11  1.30  1.20  1.51  1.40  1.66   (mean gap_cons m per window; overall 1.09)
+      SSE share by decile: 0.002 0.006 0.011 0.018 0.028 0.043 0.067 0.103 0.172 0.550
+
+(D) DOSE-MODEL for cell strata  [ESTIMATED]: banked r(alpha) = share of gap_full recovered by moving all constraints alpha toward the GT:
+   alpha  0.00  0.25  0.50  0.75  1.00
+   r     0.000 0.145 0.326 0.650 0.893   -> gain m: 0.000 0.174 0.392 0.783 1.076
+   cell stratum (all of its error removed)                    phi=SSEshare alpha_eq      r  gain m  >2F?
+   ANGLE (deg)                                                       0.145    0.075  0.044   0.053    no
+   GEOMETRY distance/position (m)                                    0.179    0.094  0.054   0.065    no
+   LEAD GAP distance                                                 0.126    0.065  0.038   0.045    no
+   SPEED (m/s)                                                       0.118    0.061  0.035   0.042    no
+   TIME-GAP to lead (gap/closing speed)                              0.166    0.087  0.050   0.061    no
+   TIME-TO-EVENT (turn/lc/reach/start)                               0.266    0.143  0.083   0.100    no
+   TIME-TO-EVENT + TIME-GAP (the T-error-dominant cells)             0.432    0.246  0.143   0.172    no
+   lead_tg_s + lead_tg_min_s heavy-tail cells only (|GT|>=3)         0.134    0.069  0.040   0.048    no
+   ALL cells of the 3 groups                                         1.000    1.000  0.893   1.076   yes
+   uniform lever-sized cuts of T's constraint RMSE (alpha = RMSE cut):
+      alpha 0.020 (seed-to-seed |s1-s0| level                ): r power-law  0.008 ->  0.009 m;  linear (generous)  0.012 ->  0.014 m
+      alpha 0.054 (ensemble of 7 (measured RMSE cut, s5)     ): r power-law  0.024 ->  0.029 m;  linear (generous)  0.031 ->  0.038 m
+      alpha 0.060 (DSCALE 2x data (PI-quoted -6%)            ): r power-law  0.027 ->  0.033 m;  linear (generous)  0.035 ->  0.042 m
+      alpha 0.100 (an optimistic single lever                ): r power-law  0.050 ->  0.060 m;  linear (generous)  0.058 ->  0.070 m
+      alpha 0.250 (dose point                                ): r interp  0.145 ->  0.174 m
+      alpha 0.400 (                                          ): r interp  0.253 ->  0.305 m
+   ==> to clear 2F (0.201 of gap_full) the constraint RMSE must fall by alpha = 0.33 across the block (55% of the squared error)
+
+   WITHIN-GROUP ADE relevance (NNLS of the per-window leave-one-out necessity nec_g(w) on that group's cell-kind SSE; ESTIMATED, R2 reported):
+      latcons   mean nec +0.675 m; R2 0.157; ANGLE coef 0.192 (share of explained 1.00, SSE-share-in-group 0.42); GEOMETRY coef 0.000 (share of explained 0.00, SSE-share-in-group 0.38); TIME-TO-EVENT coef 0.000 (share of explained 0.00, SSE-share-in-group 0.20)
+      lonspeed  mean nec +2.017 m; R2 0.176; GEOMETRY coef 1.283 (share of explained 0.10, SSE-share-in-group 0.04); SPEED coef 1.341 (share of explained 0.90, SSE-share-in-group 0.36); TIME-TO-EVENT coef 0.000 (share of explained 0.00, SSE-share-in-group 0.60)
+      stoplead  mean nec +0.426 m; R2 0.000; GEOMETRY coef 0.000 (share of explained 0.00, SSE-share-in-group 0.10); LEAD coef 0.000 (share of explained 0.00, SSE-share-in-group 0.39); TIME-GAP coef 0.000 (share of explained 0.00, SSE-share-in-group 0.51)
+
+==============================================================================================================
+M2b_s1: T->GT gap_full 1.0508 m, gap_cons 0.9231 m (mean ADE6 over 2399 windows); bar 2F = 0.2415 m = 23.0% of gap_full
+==============================================================================================================
+(E) EXACT window-stratum ceilings (GT constraints in S, T's own elsewhere):
+   stratum S                                                   n_win   win% SSEshare ceiling m           [CI95] share of gap_cons  >2F?
+   top-10% windows by T's constraint SSE                         236  10.0%    0.551     0.186 [ 0.119, 0.263]             0.201    no
+   top-25% windows by T's constraint SSE                         591  25.0%    0.782     0.371 [ 0.280, 0.466]             0.402   yes
+   bottom-50% windows by T's constraint SSE                     1183  50.0%    0.062     0.304 [ 0.245, 0.367]             0.330   yes
+   turn-label windows (any nav)                                  476  20.1%    0.500     0.249 [ 0.168, 0.341]             0.270   yes
+   turn-label windows whose nav token = FOLLOW (route silent)    210   8.9%    0.293     0.142 [ 0.073, 0.222]             0.154    no
+   turn-label windows whose nav token = TURN (route speaks)      266  11.2%    0.206     0.107 [ 0.061, 0.159]             0.115    no
+   lead present                                                 1060  44.8%    0.564     0.433 [ 0.332, 0.540]             0.469   yes
+   lead present AND heavy-tail lead_tg label (|GT|>=3 SD)         32   1.4%    0.165     0.010 [-0.002, 0.025]             0.011    no
+   lon class FOLLOW                                              436  18.4%    0.120     0.211 [ 0.138, 0.296]             0.228    no
+   lon class DECELERATE/ACCELERATE                               868  36.7%    0.442     0.392 [ 0.305, 0.481]             0.425   yes
+   lon class STOP/HOLD/CREEP                                     200   8.5%    0.255     0.107 [ 0.061, 0.158]             0.116    no
+   lon class KEEP                                                736  31.1%    0.114     0.157 [ 0.112, 0.204]             0.170    no
+   ego speed 5-10 m/s                                            653  27.6%    0.307     0.297 [ 0.226, 0.366]             0.322   yes
+   ego speed >= 10 m/s                                          1227  51.9%    0.436     0.403 [ 0.314, 0.499]             0.437   yes
+   ALL windows with a v9 row                                    2365 100.0%    1.000     0.923 [ 0.806, 1.037]             1.000   yes
+   gap_cons by DECILE of window T-SSE (decile 10 = worst):
+       0.39  0.44  0.56  0.78  0.92  0.85  1.06  1.22  1.27  1.89   (mean gap_cons m per window; overall 0.94)
+      SSE share by decile: 0.002 0.005 0.010 0.017 0.028 0.043 0.067 0.104 0.173 0.551
+
+(D) DOSE-MODEL for cell strata  [ESTIMATED]: banked r(alpha) = share of gap_full recovered by moving all constraints alpha toward the GT:
+   alpha  0.00  0.25  0.50  0.75  1.00
+   r     0.000 0.066 0.183 0.418 0.878   -> gain m: 0.000 0.070 0.192 0.439 0.923
+   cell stratum (all of its error removed)                    phi=SSEshare alpha_eq      r  gain m  >2F?
+   ANGLE (deg)                                                       0.142    0.074  0.020   0.020    no
+   GEOMETRY distance/position (m)                                    0.176    0.092  0.024   0.026    no
+   LEAD GAP distance                                                 0.121    0.063  0.017   0.017    no
+   SPEED (m/s)                                                       0.124    0.064  0.017   0.018    no
+   TIME-GAP to lead (gap/closing speed)                              0.167    0.087  0.023   0.024    no
+   TIME-TO-EVENT (turn/lc/reach/start)                               0.270    0.146  0.039   0.041    no
+   TIME-TO-EVENT + TIME-GAP (the T-error-dominant cells)             0.437    0.250  0.066   0.069    no
+   lead_tg_s + lead_tg_min_s heavy-tail cells only (|GT|>=3)         0.135    0.070  0.019   0.019    no
+   ALL cells of the 3 groups                                         1.000    1.000  0.878   0.923   yes
+   uniform lever-sized cuts of T's constraint RMSE (alpha = RMSE cut):
+      alpha 0.020 (seed-to-seed |s1-s0| level                ): r power-law  0.002 ->  0.002 m;  linear (generous)  0.005 ->  0.006 m
+      alpha 0.054 (ensemble of 7 (measured RMSE cut, s5)     ): r power-law  0.007 ->  0.007 m;  linear (generous)  0.014 ->  0.015 m
+      alpha 0.060 (DSCALE 2x data (PI-quoted -6%)            ): r power-law  0.008 ->  0.009 m;  linear (generous)  0.016 ->  0.017 m
+      alpha 0.100 (an optimistic single lever                ): r power-law  0.017 ->  0.018 m;  linear (generous)  0.026 ->  0.028 m
+      alpha 0.250 (dose point                                ): r interp  0.066 ->  0.070 m
+      alpha 0.400 (                                          ): r interp  0.136 ->  0.143 m
+   ==> to clear 2F (0.230 of gap_full) the constraint RMSE must fall by alpha = 0.55 across the block (80% of the squared error)
+
+   WITHIN-GROUP ADE relevance (NNLS of the per-window leave-one-out necessity nec_g(w) on that group's cell-kind SSE; ESTIMATED, R2 reported):
+      latcons   mean nec +0.687 m; R2 0.151; ANGLE coef 0.180 (share of explained 1.00, SSE-share-in-group 0.42); GEOMETRY coef 0.000 (share of explained 0.00, SSE-share-in-group 0.37); TIME-TO-EVENT coef 0.000 (share of explained 0.00, SSE-share-in-group 0.21)
+      lonspeed  mean nec +1.768 m; R2 0.170; GEOMETRY coef 1.339 (share of explained 0.17, SSE-share-in-group 0.05); SPEED coef 0.839 (share of explained 0.83, SSE-share-in-group 0.37); TIME-TO-EVENT coef 0.000 (share of explained 0.00, SSE-share-in-group 0.59)
+      stoplead  mean nec +0.395 m; R2 0.000; GEOMETRY coef 0.000 (share of explained 0.00, SSE-share-in-group 0.11); LEAD coef 0.000 (share of explained 0.00, SSE-share-in-group 0.38); TIME-GAP coef 0.000 (share of explained 0.00, SSE-share-in-group 0.52)

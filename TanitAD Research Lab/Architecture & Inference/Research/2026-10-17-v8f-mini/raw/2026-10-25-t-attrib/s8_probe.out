@@ -1,0 +1,33 @@
+cell                     n | RMSE const(0)  probeA probeB(+lead)   T s0   T s1   (SD units, same windows/cells)
+lat_theta_deg         2351 |         0.914   0.772         0.764  0.635  0.630
+turn_t_start_s         476 |         1.146   0.857         0.860  0.808  0.795
+turn_t_end_s           476 |         0.890   0.886         0.864  0.737  0.747
+turn_d_start_m         476 |         1.026   0.777         0.800  0.710  0.642
+turn_len_m             476 |         1.318   0.922         0.924  0.629  0.604
+turn_dyaw_deg          476 |         0.967   0.850         0.822  0.646  0.638
+turn_r_arc_m           476 |         1.117   0.707         0.722  0.638  0.690
+turn_exit_x_m          476 |         1.051   0.714         0.728  0.626  0.621
+turn_exit_y_m          476 |         1.221   1.246         1.236  0.885  0.832
+turn_exit_psi_deg      476 |         0.923   0.863         0.859  0.626  0.631
+lon_v_target_ms       2334 |         1.014   0.363         0.363  0.358  0.374
+lon_t_reach_s         1045 |         1.032   0.985         0.966  0.915  0.941
+lon_d_reach_m         1045 |         0.971   0.383         0.379  0.347  0.370
+lon_t_start_s         1045 |         1.007   1.004         1.005  0.948  0.941
+lead_gap_m            1060 |         0.956   1.043         0.579  0.715  0.708
+lead_tg_s             1060 |         1.046   1.034         0.845  0.836  0.840
+lead_gap_min_m        1060 |         0.936   1.023         0.734  0.762  0.750
+lead_tg_min_s         1060 |         1.005   1.023         0.931  0.861  0.870
+v_a_ms                2351 |         0.983   0.126         0.127  0.202  0.218
+v_end_ms              2317 |         1.019   0.374         0.372  0.345  0.365
+v_lo_ms               2351 |         1.007   0.273         0.275  0.296  0.297
+v_hi_ms               2351 |         0.987   0.260         0.263  0.296  0.292
+
+By cell kind (pooled over cells; SSE-weighted):
+   kind                                      const  probeA  probeB   T s0   T s1   verdict
+   ANGLE (deg)                               0.923   0.797   0.787  0.635  0.631   both probes lose to T (inconclusive: probe sees 141 episodes)
+   GEOMETRY distance/position (m)            1.100   0.776   0.781  0.618  0.605   both probes lose to T (inconclusive: probe sees 141 episodes)
+   LEAD GAP distance                         0.946   1.033   0.661  0.739  0.729   privileged lead info beats T by >10% (lead information is missing from T)
+   SPEED (m/s)                               1.002   0.293   0.293  0.304  0.314   non-vision probe A matches T (vision adds ~nothing here)
+   TIME-GAP to lead (gap/closing speed)      1.026   1.028   0.889  0.849  0.855   both probes lose to T (inconclusive: probe sees 141 episodes)
+   TIME-TO-EVENT (turn/lc/reach/start)       1.021   0.958   0.949  0.885  0.891   both probes lose to T (inconclusive: probe sees 141 episodes)
+   ALL cells with n>=200: const 1.006, probeA 0.696, probeB 0.638, T s0 0.585, T s1 0.586

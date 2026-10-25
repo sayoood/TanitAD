@@ -28,7 +28,8 @@ Beside, deciding nothing:
   * latcons 0.686 → 0.729 (+6.3 %);
   * lonspeed 0.452 → 0.469 (+3.9 %);
   * stoplead 0.815 → 0.856 (+5.0 %).
-* **The generalisation signature:** T's TRAINING constraint loss over the last 10 % of steps was LOWER with half the data (0.1209 against 0.1264, −4.3 %), while its eval error rose. T fits its smaller set better and generalises worse. That is the same reading WC gave.
+* ~~**The generalisation signature:** T's TRAINING constraint loss over the last 10 % of steps was LOWER with half the data (0.1209 against 0.1264, −4.3 %), while its eval error rose. T fits its smaller set better and generalises worse. That is the same reading WC gave.~~
+  **CORRECTED 2026-10-25 (R70, `raw/2026-10-25-t-attrib/s6_trainval.out`):** the −4.3 % is about one standard error (z ≈ 0.96 over 40 single logged batches), so it is no signature. In the trainer's own units M2b_s0's eval Huber, 0.1355 [0.1178, 0.1548], contains its train Huber, 0.1264: at full data T is FIT-limited, not generalisation-limited.
 
 ## 3. The four families (Q − B, paired)
 
@@ -54,7 +55,7 @@ Beside, deciding nothing:
    * Against M2b_s0, every seed-0 arm lowers accel MAE: GRID −0.123, HIST −0.092, PGT −0.019, WC −0.169, and **half the data −0.183** (`raw/2026-10-25-dscale/run/accel_all_arms.out`).
    * A lever that removes half the data cannot plausibly be what improves acceleration. M2b_s0's own accel MAE is the outlier: 1.206 against seed 1's 0.931.
    * R69.
-3. **T is generalisation-limited, and the levers that act on its inputs, loss and data volume move it by single-digit percent.** Its error is shared by every trained model (`raw/2026-10-25-ensemble/`). The remaining committed lever is the encoder's representation (LoRA), whose prior for a PASS is LOW (`PREREG_V8F_LORA.md`).
+3. ~~**T is generalisation-limited, and**~~ **CORRECTED (R70): T is fit-limited at full data (eval ≈ train error), and the levers that act on its inputs, loss and data volume move it by single-digit percent.** Its error is shared by every trained model (`raw/2026-10-25-ensemble/`). The remaining committed lever is the encoder's representation (LoRA), whose prior for a PASS is LOW (`PREREG_V8F_LORA.md`).
 
 ## 5. Provenance
 

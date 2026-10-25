@@ -1,0 +1,30 @@
+probe table parsed (const, probeA, probeB, T s0, T s1): {'ANGLE (deg)': (0.923, 0.797, 0.787, 0.635, 0.631), 'GEOMETRY distance/position (m)': (1.1, 0.776, 0.781, 0.618, 0.605), 'LEAD GAP distance': (0.946, 1.033, 0.661, 0.739, 0.729), 'SPEED (m/s)': (1.002, 0.293, 0.293, 0.304, 0.314), 'TIME-GAP to lead (gap/closing speed)': (1.026, 1.028, 0.889, 0.849, 0.855), 'TIME-TO-EVENT (turn/lc/reach/start)': (1.021, 0.958, 0.949, 0.885, 0.891)}
+privileged-lead headroom (relative SSE cut if T matched probe B): LEAD GAP 0.200, TIME-GAP 0.000
+
+M2b_s0: gap_full 1.2045 m, r(alpha) at 0/.25/.5/.75/1: 0.000 0.145 0.326 0.650 0.893;  2F = 0.2415 m
+   case                                                                          phi alpha_eq   (D) m | (E) outer bound m  window set
+   T-error-dominant cells: TIME-TO-EVENT + TIME-GAP, ALL their error removed   0.432    0.246   0.171 |             0.164  top-10% SSE windows (all constraints)
+   heavy-tail lead_tg cells (|GT|>=3 SD), removed                              0.134    0.069   0.039 |             0.004  32 heavy-tail lead windows
+   turn cells of ROUTE-SILENT turn windows, removed                            0.189    0.099   0.059 |             0.161  210 route-silent turn windows (all constraints)
+     same, but only up to what the model does when the route speaks            0.154    0.080   0.046 |             0.161  same windows
+   LoRA stratum (lead cells: LEAD GAP + TIME-GAP), ALL removed                 0.292    0.159   0.102 |             0.501  lead-present windows (all constraints)
+     same, but only the privileged-lead probe headroom                         0.025    0.013   0.005 |             0.501  same windows
+   SPEED-kind cells, ALL removed (size-agnostic dose)                          0.118    0.061   0.033 |               nan  n/a
+   all cells, RMSE cut alpha=0.06 (DSCALE 2x, PI-quoted -6%)                   0.116    0.060   0.033 |               nan  n/a
+   all cells, RMSE cut alpha=0.054 (7-model ensemble of T)                     0.105    0.054   0.029 |               nan  n/a
+   all cells, GRID 8x20 / HIST 10 / PGT / WC / DF50 as measured (s5)             nan    0.000   0.000 |               nan  n/a (no separated improvement)
+   need alpha = 0.33 uniform RMSE cut to clear 2F; route-silent turn-cell SSE cut if matched to route-speaking: 0.82
+
+M2b_s1: gap_full 1.0508 m, r(alpha) at 0/.25/.5/.75/1: 0.000 0.066 0.183 0.418 0.878;  2F = 0.2415 m
+   case                                                                          phi alpha_eq   (D) m | (E) outer bound m  window set
+   T-error-dominant cells: TIME-TO-EVENT + TIME-GAP, ALL their error removed   0.437    0.250   0.069 |             0.186  top-10% SSE windows (all constraints)
+   heavy-tail lead_tg cells (|GT|>=3 SD), removed                              0.135    0.070   0.011 |             0.010  32 heavy-tail lead windows
+   turn cells of ROUTE-SILENT turn windows, removed                            0.181    0.095   0.017 |             0.142  210 route-silent turn windows (all constraints)
+     same, but only up to what the model does when the route speaks            0.149    0.078   0.013 |             0.142  same windows
+   LoRA stratum (lead cells: LEAD GAP + TIME-GAP), ALL removed                 0.288    0.156   0.035 |             0.433  lead-present windows (all constraints)
+     same, but only the privileged-lead probe headroom                         0.024    0.012   0.001 |             0.433  same windows
+   SPEED-kind cells, ALL removed (size-agnostic dose)                          0.124    0.064   0.009 |               nan  n/a
+   all cells, RMSE cut alpha=0.06 (DSCALE 2x, PI-quoted -6%)                   0.116    0.060   0.009 |               nan  n/a
+   all cells, RMSE cut alpha=0.054 (7-model ensemble of T)                     0.105    0.054   0.007 |               nan  n/a
+   all cells, GRID 8x20 / HIST 10 / PGT / WC / DF50 as measured (s5)             nan    0.000   0.000 |               nan  n/a (no separated improvement)
+   need alpha = 0.55 uniform RMSE cut to clear 2F; route-silent turn-cell SSE cut if matched to route-speaking: 0.82

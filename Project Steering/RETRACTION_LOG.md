@@ -18665,3 +18665,17 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 
 **Class:** *a gain measured against ONE baseline draw, with a floor taken from a different contrast.* The paired swing came from M2b − M1, but every arm is compared against M2b_s0, and M2b_s0 is the arm with the outlying value. A negative control (here, an arm that should not improve a metric) shows it at once.
 * ⇒ Before calling a one-seed delta a lever effect, put it next to the same delta for the OTHER arms on the same base. If unrelated levers, or a deliberately worse arm, "improve" the metric too, the base is the effect.
+
+### R70 -- "T's lower train loss with half the data is the generalisation signature; T is generalisation-limited" (`RESULT_V8F_DSCALE.md` §2, §4.3) (2026-10-25, MM)
+
+**Claimed:** T's training constraint loss over the last 10 % of steps was 4.3 % lower with half the data (0.1209 against 0.1264) while its eval error rose. I read that as *"T fits its smaller set better and generalises worse"* and concluded T is generalisation-limited.
+
+**Measured (`TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-t-attrib/s6_trainval.out`):**
+* The logged loss is one 64-window batch per log step (40 records in the window, SE about 0.004), so −4.3 % is z ≈ 0.96, about one standard error.
+* In units identical to the trainer's (Huber, delta 1 SD, pooled over present cells, `v8f_mini.py:681-682`), M2b_s0's eval error is 0.1355 [0.1178, 0.1548] against a train value of 0.1264. The ratio is 1.07, and the interval contains the train value.
+* 88 % of T's squared error is common to seven trained arms (`s5_shared.out`).
+
+**Consequence:** at full data T is FIT-limited: it does not fit its own training windows better than it does held-out ones. That agrees with DSCALE's verdict and with every input lever moving it by single-digit percent. The verdict (NOT DATA-LIMITED) is unchanged.
+
+**Class:** *a difference between training-log samples quoted without its sampling error and read as a mechanism.*
+* ⇒ Before reading a train-loss difference as fit or generalisation, compute its SE over the logged records. Compare train and eval only in the trainer's own units and reduction.

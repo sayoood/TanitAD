@@ -1,0 +1,50 @@
+N windows 2399, episodes 141, a_t counts [893 753 753]
+row mapping check 1: tac_oracle_fallback == ~has[rowT] on all 2399 windows: OK (34 windows have no v9 row)
+row mapping check 2 (the 2365 windows WITH a v9 row; the 34 fallback windows carry T's own code in the oracle and are excluded from every T-error number): max |GT oracle tac_code - (join cons - mu)/sd| = 3.42e-07 (per-column recovery residual max 3.42e-07); absent-cell zero fill matches: True
+recovered standardiser (mu, sd) per cell:
+   0 lat_theta_deg      mu     0.0463 sd   26.2226  present n=2351 (98.0%)
+   1 turn_t_start_s     mu     2.0875 sd    3.4094  present n=476 (19.8%)
+   2 turn_t_end_s       mu     7.4480 sd    3.5012  present n=476 (19.8%)
+   3 turn_d_start_m     mu    19.7186 sd   24.6906  present n=476 (19.8%)
+   4 turn_len_m         mu    40.2184 sd   42.4691  present n=476 (19.8%)
+   5 turn_dyaw_deg      mu     2.6320 sd   89.1503  present n=476 (19.8%)
+   6 turn_r_arc_m       mu    31.9009 sd   26.0384  present n=476 (19.8%)
+   7 turn_exit_x_m      mu    40.4914 sd   33.1371  present n=476 (19.8%)
+   8 turn_exit_y_m      mu     0.0836 sd   28.2540  present n=476 (19.8%)
+   9 turn_exit_psi_deg  mu     1.4864 sd   81.6045  present n=476 (19.8%)
+  10 lc_t_cross_s       mu     4.7746 sd    1.7093  present n=40 (1.7%)
+  11 lc_d_cross_m       mu   103.6587 sd   57.7000  present n=40 (1.7%)
+  12 lon_v_target_ms    mu    11.0331 sd    7.8149  present n=2334 (97.3%)
+  13 lon_t_reach_s      mu     7.0617 sd    1.3628  present n=1045 (43.6%)
+  14 lon_d_reach_m      mu    64.4366 sd   45.8801  present n=1045 (43.6%)
+  15 lon_t_start_s      mu     1.1196 sd    1.4921  present n=1045 (43.6%)
+  16 stop_x_m           mu    20.4497 sd   14.0044  present n=131 (5.5%)
+  17 stop_y_m           mu     0.0704 sd    2.8485  present n=131 (5.5%)
+  18 lead_gap_m         mu    35.4489 sd   26.8410  present n=1060 (44.2%)
+  19 lead_tg_s          mu     6.3083 sd    9.8982  present n=1060 (44.2%)
+  20 lead_gap_min_m     mu    28.6530 sd   24.2484  present n=1060 (44.2%)
+  21 lead_tg_min_s      mu     4.5401 sd    7.1293  present n=1060 (44.2%)
+  22 v_a_ms             mu    10.8181 sd    7.7219  present n=2351 (98.0%)
+  23 v_end_ms           mu    11.2585 sd    7.7265  present n=2317 (96.6%)
+  24 v_lo_ms            mu     9.5276 sd    7.9767  present n=2351 (98.0%)
+  25 v_hi_ms            mu    12.1352 sd    7.4464  present n=2351 (98.0%)
+M2b_s0       base-eval cons_pred (raw, standardised with recovered mu/sd) vs tacabs tac_code on present cells: max|diff| 3.86e-07   ade6 mean 2.1753
+M2b_s1       base-eval cons_pred (raw, standardised with recovered mu/sd) vs tacabs tac_code on present cells: max|diff| 4.14e-07   ade6 mean 2.0546
+grid8x20_s0  base-eval cons_pred (raw, standardised with recovered mu/sd) vs tacabs tac_code on present cells: max|diff| 4.03e-07   ade6 mean 2.0994
+hist10_s0    base-eval cons_pred (raw, standardised with recovered mu/sd) vs tacabs tac_code on present cells: max|diff| 3.64e-07   ade6 mean 2.0979
+pgt_s0       base-eval cons_pred (raw, standardised with recovered mu/sd) vs tacabs tac_code on present cells: max|diff| 3.66e-07   ade6 mean 2.2047
+wc_s0        base-eval cons_pred (raw, standardised with recovered mu/sd) vs tacabs tac_code on present cells: max|diff| 5.75e-07   ade6 mean 2.1718
+df50_s0      base-eval cons_pred (raw, standardised with recovered mu/sd) vs tacabs tac_code on present cells: max|diff| 3.89e-07   ade6 mean 2.2142
+M1_s0        base-eval cons_pred (raw, standardised with recovered mu/sd) vs tacabs tac_code on present cells: max|diff| 3.62e-07   ade6 mean 2.2466
+M1_s1        base-eval cons_pred (raw, standardised with recovered mu/sd) vs tacabs tac_code on present cells: max|diff| 3.77e-07   ade6 mean 2.0244
+M2b_s0       GT-code (tacorc) ade6 mean 0.9709  own-code ade6 mean 2.1753
+M2b_s1       GT-code (tacorc) ade6 mean 1.0037  own-code ade6 mean 2.0546
+grid8x20_s0  GT-code (tacorc) ade6 mean 0.9685  own-code ade6 mean 2.0994
+hist10_s0    GT-code (tacorc) ade6 mean 0.9381  own-code ade6 mean 2.0979
+pgt_s0       GT-code (tacorc) ade6 mean 1.2927  own-code ade6 mean 2.2047
+wc_s0        GT-code (tacorc) ade6 mean 1.0061  own-code ade6 mean 2.1718
+df50_s0      GT-code (tacorc) ade6 mean 0.9606  own-code ade6 mean 2.2142
+M1_s0        GT-code (tacorc) ade6 mean 0.9506  own-code ade6 mean 2.2466
+M1_s1        GT-code (tacorc) ade6 mean 0.9614  own-code ade6 mean 2.0244
+strata vars: v_T [0.00,36.27] median 10.29; dpsi6 deg abs median 2.69; lead_valid frac 0.442; lat_cls values [-100    0    1    2]; lon_cls [-100    0    1    2    3    4    5    6]
+wrote table.npz keys: 56
