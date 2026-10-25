@@ -34,3 +34,12 @@ found nothing; F: was offline after USB I/O errors and could not be searched) an
 verifiable copy. 2.1 GB. Delete it only after a second copy exists.
 
 Kept by the PI's instruction: `tanit-astra-research/`, `sam3map/`.
+
+## 4. CORRECTION (09:3x CET): `data/_b1stage416` was NOT deletable — 4 of its files were pinned by the NT bind
+The gate re-run on 009d1cb refused at 09:30 CET: `G-MAP-OVERFIT: 4 data file(s) the run read are absent` — four
+`r0/camera_front_wide/*.timestamps.parquet` under `data/_b1stage416/`. The bind records (`bind_f5262ea3c01d_nt-a1-s0/{map,box}_closure.json`)
+carry a `data` list of `[path, sha256]` (17 map + 34 box) that the gate re-hashes; I had checked only the code `modules` before
+calling the directory "staging leftovers". All 4 were restored from the dev box (`C:/Users/Admin/tanitad-data/refav1-train600-256_stage/r0/camera_front_wide/`,
+sha256 matched before copy and again on Thor, 4/4), then all 51 recorded data files were verified (map 17/17, box 34/34) before
+the gate was re-run (09:36). Rule recorded: before deleting on a host that holds a bind, union every bind record's `data` paths and
+never touch them. The rest of the PI-approved list is unaffected (none of it is in either `data` list).
