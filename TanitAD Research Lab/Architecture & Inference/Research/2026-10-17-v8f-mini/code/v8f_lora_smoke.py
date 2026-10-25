@@ -2,7 +2,7 @@
 
     python v8f_lora_smoke.py [--steps 200] --out <dir> [--census-batches 20] [--heads-b64-steps 5] -- <the arm's trainer argv: B's argv + --frames-root <dir>>
 
-It drives the TRAINER ITSELF (``v8f_mini_train.main``) with ``--encoder lora --batch 1 --steps N --enc-ckpt --amp --log-every 1`` appended (the later flag wins), so the
+It drives the TRAINER ITSELF (``v8f_mini_train.main``) with ``--encoder lora --batch 1 --steps N --enc-ckpt --log-every 1`` appended (the later flag wins), so the
 launch gate (G-DVB, G-LIVE through the real encoder), the data path and the optimiser are the arm's, not a re-implementation. It wraps the trainer's ``lora_step`` to record,
 at EVERY step: every declared loss term, the RAW (pre-clip) gradient of each parameter group -- LoRA A, LoRA B, adapter / cond / S / T / O / WM heads -- the frozen-DINOv3
 control (exactly 0.0) and the frozen-prior control (exactly 0.0), the step's three phase times, the iteration period, and the peak memory.
@@ -13,6 +13,17 @@ Then it PROJECTS the hours of one 19,164-step seed at effective batch 64 on the 
       t_phase*       the median per-frame time of the no-grad encode and of the with-grad encode + backward, from the batch-1 steps (first 5 steps = warm-up, dropped)
       t_heads(64)    the heads' forward + backward on a real batch of 64 CACHED windows (``--heads-b64-steps``), model copy, no encoder
     The optimiser step (10 M parameters) and the data-loading wait (overlapped by the prefetch thread) are not in the model; the batch-1 ``iter_s`` is reported beside it.
+
+AR-2 CHAIN (``box2_ops/chain_v8f_lora_ar2.sh``, queue stage ``smokelora``) ADDITIONS (PREREG_V8F_LORA Amendment 2):
+  * ``--amp`` is OPT-IN and the chain never passes it: autocast is UNMEASURED against the cache and Amendment 2 pins it OFF (the frozen encoder runs in the builder's pure bf16, the
+    LoRA matrices in fp32). It used to be appended unconditionally; the report now records ``amp`` from the trainer argv actually run.
+  * the smoke's windows come from a declared small set of train clips (``--max-clips N`` in the trainer argv, frames shipped for exactly those). The PROJECTION must not: with 4 clips a
+    batch of 64 windows shares most of its frames, so U (unique frames per window) would be badly under-estimated against the real 4,512-clip run (48-clip chunks, ~1.3 windows per clip).
+    The census and the heads-at-64 measurement therefore run on the trainer argv WITHOUT ``--max-clips`` (index-only census; the heads read the cache's pooled tokens), and the report
+    says so (``projection_ESTIMATED.census_scope``).
+  * ``identity_probe_tau_device``: the trainer's launch-gate identity probe (B = 0 on-the-fly features of the probe windows vs the cached tokens, the TRAINING path's 16-frame
+    micro-batches) read against tau_device = 1e-3 (Amendment 1 item 2). Reported beside the verdict, not part of it.
+  * ``peak_reserved_gib`` beside ``peak_alloc_gib`` (an 8 GB card runs out of RESERVED memory).
 
 It does not run itself on a GPU: the GPU run is its own go. ``--cpu-fp32`` + ``--proof-frames`` make the CPU mechanics proof (real DINOv3-L weights in fp32, real PNG frames, the
 trainer's synthetic world for labels): 2-3 steps, the numbers are CPU numbers and are labelled so.
@@ -43,6 +54,7 @@ from tanitad.models import v8f_mini as M  # noqa: E402
 
 FULL_STEPS = 19_164          # PREREG_V8F_LORA: B's step budget (S = 4,791 steps/epoch at batch 64, x 4)
 VENUE_HOURS = 36.0           # PREREG_V8F_LORA proof 5: box 2 iff one seed projects <= 36 h
+TAU_DEVICE = 1e-3            # PREREG_V8F_LORA Amendment 1 item 2 (unchanged by Amendment 2)
 
 
 def group_grads(model, enc) -> dict:
@@ -80,6 +92,20 @@ def make_proof_frames(root: Path, eps_dir: Path, names, n_steps: int = 60, clips
         o2.update(clip_id=nm, jpeg_buf=o["jpeg_buf"][offs[a]:offs[b]].clone(), jpeg_len=lens[a:b].clone())
         torch.save(o2, root / f"{nm}.v2ep.pt")
     return root
+
+
+def strip_flag(argv, flag: str, nvals: int = 1) -> list:
+    """``argv`` without ``flag`` and its ``nvals`` values (also the ``flag=value`` spelling)."""
+    out, i = [], 0
+    while i < len(argv):
+        if argv[i] == flag:
+            i += 1 + nvals
+        elif argv[i].startswith(flag + "="):
+            i += 1
+        else:
+            out.append(argv[i])
+            i += 1
+    return out
 
 
 def census(argv, n_batches: int) -> dict:
@@ -157,12 +183,14 @@ def main(argv=None) -> int:
     ap.add_argument("--proof-frames", default=None, help="eval v2ep dir: make real PNG frames for the trainer's --synthetic world (mechanics proof)")
     ap.add_argument("--live-windows", type=int, default=0, help="override the launch gate's G-LIVE probe size (windows); 0 = the trainer's")
     ap.add_argument("--no-projection", action="store_true")
+    ap.add_argument("--amp", action="store_true", help="bf16 autocast over the heads AND the loss (OFF by default: Amendment 2 pins the builder's pure-bf16 numerics; "
+                    "turning it on needs the same-device identity control to pass with it first)")
     a = ap.parse_args(smoke_args)
     out = Path(a.out)
     out.mkdir(parents=True, exist_ok=True)
     if "--out" in trainer_argv:
         raise SystemExit("do not pass --out in the trainer argv: the smoke owns it")
-    targv = [*trainer_argv, "--encoder", "lora", "--batch", "1", "--accum", "1", "--steps", str(a.steps), "--enc-ckpt", "--amp", "--log-every", "1",
+    targv = [*trainer_argv, "--encoder", "lora", "--batch", "1", "--accum", "1", "--steps", str(a.steps), "--enc-ckpt", *(["--amp"] if a.amp else []), "--log-every", "1",
              "--ckpt-every", "100000000", "--out", str(out / "run")]
     if "--synthetic" in targv and a.proof_frames:
         names = [f"syn-train-{i:03d}" for i in range(6)]
@@ -194,7 +222,8 @@ def main(argv=None) -> int:
         out_, gn, gn_l = res
         rec = {"step": step, "terms": {k: float(v) for k, v in out_["terms"].items()}, "timing": out_.get("timing", {}), "step_wall_s": now - t0,
                "iter_s": None if t_last[0] is None else now - t_last[0], "grad_norm_heads_preclip": float(gn), "grad_norm_lora_preclip": float(gn_l),
-               "groups": grads, "peak_alloc_gib": (torch.cuda.max_memory_allocated() / 2 ** 30) if cuda else None, "n_windows": int(b["t"].shape[0])}
+               "groups": grads, "peak_alloc_gib": (torch.cuda.max_memory_allocated() / 2 ** 30) if cuda else None,
+               "peak_reserved_gib": (torch.cuda.max_memory_reserved() / 2 ** 30) if cuda else None, "n_windows": int(b["t"].shape[0])}
         if not cuda:
             try:
                 import psutil
@@ -231,9 +260,15 @@ def main(argv=None) -> int:
     verdict["AR2_gradient_and_finite_checks_pass"] = all(v for k, v in verdict.items() if isinstance(v, bool))
     keep = recs[a.warmup:] or recs
     med = lambda f: float(np.median([f(r) for r in keep]))
-    rep = {"what": "PREREG_V8F_LORA AR-2 smoke", "device": str(dev), "cuda": torch.cuda.get_device_name(0) if dev.type == "cuda" else None, "torch": torch.__version__,
+    ip = sc.get("identity_probe")
+    rep = {"what": "PREREG_V8F_LORA AR-2 smoke", "amp": "--amp" in targv, "device": str(dev), "cuda": torch.cuda.get_device_name(0) if dev.type == "cuda" else None, "torch": torch.__version__,
            "cpu_fp32_mechanics_proof": bool(a.cpu_fp32), "trainer_argv": targv, "rc": rc, "wall_s": run_s, "selfcheck": {k: sc[k] for k in ("declared_vs_built", "levers", "identity_probe") if k in sc},
-           "live_check": sc["live"], "verdict": verdict, "measured_batch1": {
+           "live_check": sc["live"], "verdict": verdict,
+           "identity_probe_tau_device": None if not ip else {"tau_device": TAU_DEVICE, "rel_l2": ip["rel_l2"], "max_abs": ip["max_abs"], "frac_bitwise_equal": ip["frac_bitwise_equal"],
+                                                            "pass": bool(ip["rel_l2"] <= TAU_DEVICE), "device": str(dev), "n_frames_unique": ip["n_frames_unique"],
+                                                            "scope": "B = 0 features of the launch gate's probe windows through the TRAINING path (16-frame micro-batches) vs the cached tokens; "
+                                                                     "Amendment 1 item 2 tau_device; recorded beside the verdict, not part of it"},
+           "measured_batch1": {
                "n_steps": len(recs), "n_steps_in_medians": len(keep), "step_wall_s_median": med(lambda r: r["step_wall_s"]),
                "iter_s_median": float(np.median([r["iter_s"] for r in keep if r["iter_s"] is not None])) if any(r["iter_s"] for r in keep) else None,
                "unique_frames_per_step_median": med(lambda r: r["timing"].get("n_unique_frames", float("nan"))),
@@ -241,11 +276,13 @@ def main(argv=None) -> int:
                "heads_fwd_bwd_s_median": med(lambda r: r["timing"].get("heads_fwd_bwd_s", float("nan"))),
                "phase2_encode_grad_s_median": med(lambda r: r["timing"].get("phase2_encode_grad_s", float("nan"))),
                "peak_alloc_gib_max": max([r["peak_alloc_gib"] for r in recs if r["peak_alloc_gib"] is not None], default=None),
+               "peak_reserved_gib_max": max([r["peak_reserved_gib"] for r in recs if r.get("peak_reserved_gib") is not None], default=None),
                "rss_gib_max": max([r.get("rss_gib") or 0 for r in recs], default=None),
                "loss_first_to_last": [recs[0]["terms"]["total"], recs[-1]["terms"]["total"]] if recs else None,
                "terms_last_step": recs[-1]["terms"] if recs else None}}
     if not a.no_projection and recs:
-        c = census(targv, a.census_batches)
+        cargv = strip_flag(targv, "--max-clips")
+        c = census(cargv, a.census_batches)
         h64 = heads_at_64(c, a.heads_b64_steps, dev)
         mb = rep["measured_batch1"]
         U1 = mb["unique_frames_per_step_median"]
@@ -257,6 +294,9 @@ def main(argv=None) -> int:
         rep["projection_ESTIMATED"] = {
             "formula": "step_s(64) = 64 * U * (t_phase1_per_frame + t_phase2_per_frame) + t_heads(64); hours = steps / 3600 * step_s(64)",
             "U_unique_frames_per_window_b64": U64, "census": {k: v for k, v in c.items() if not k.startswith("_")},
+            "census_scope": {"smoke_trainer_argv_has_max_clips": cargv != targv, "census_and_heads_clips": c["_info"]["n_clips"], "census_clips_all": c["_info"]["n_clips_all"],
+                             "why": "a batch of 64 windows from a handful of clips shares most of its frames; U must come from the real clip list"},
+            "assumes_micro_batch_frames": int(rep["selfcheck"]["levers"]["accum"]["chunk_frames"]) if "accum" in rep["selfcheck"].get("levers", {}) else None,
             "t_phase1_per_frame_s": f1, "t_phase2_per_frame_s": f2, "t_heads_b64": h64, "step_s_b64_ESTIMATED": step64, "steps": FULL_STEPS,
             "hours_one_seed_ESTIMATED": hours, "device_of_measurement": str(dev),
             "venue_rule_proof5": {"box2_if_hours_le": VENUE_HOURS, "box2_eligible_by_this_estimate": bool(hours <= VENUE_HOURS) if dev.type == "cuda" else "n/a (not measured on a GPU)"},

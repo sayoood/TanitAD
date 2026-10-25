@@ -1,0 +1,12 @@
+Deliberate-regression check of stack/tests/test_v8f_lora_ar2.py (mutation_check.py): one change at a time to the instruments, the named tests must go RED, the bytes are restored (sha256 verified before/after).
+RED  (good) | driver: tau 1e-3 -> 1e-2
+RED  (good) | driver: allow any manifest source
+RED  (good) | queue: edit an old stage (gatedscale)
+RED  (good) | queue: dispatch to a missing label
+RED  (good) | queue: LF line endings
+RED  (good) | queue: --amp in the smokelora line
+RED  (good) | chain: identity does not stop the chain
+RED  (good) | chain: no sha check of the shipped frames
+RED  (good) | smoke: --amp unconditional again
+blind mutants: 0
+(An earlier pass of this check found ONE blind mutant: the dispatch line `if /i "%~1"=="gatedscale" goto :gatedscale` could point at a missing label unnoticed. A dispatch-target assertion was added; the mutant above is the regression arm for it.)

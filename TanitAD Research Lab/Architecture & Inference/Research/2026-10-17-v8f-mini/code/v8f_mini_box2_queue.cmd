@@ -41,6 +41,13 @@ rem   v8f_mini_box2_queue.cmd gatedscale           PREREG_V8F_DSCALE: the in-pro
 rem   v8f_mini_box2_queue.cmd traindscale SEED    PREREG_V8F_DSCALE: one Q run into %RUNSM%\M2b_s<SEED>_df50 (resumes; skipped once done). Seed 0 only is pre-registered
 rem   v8f_mini_box2_queue.cmd evaldscale SEED     PREREG_V8F_DSCALE: that run's eval-141 (--project --families), its absmask eval, its GT-code oracle and its all-latcons oracle,
 rem                                             tagged M2b-df50_s<SEED>; each skipped once its npz exists
+rem   v8f_mini_box2_queue.cmd identitylora    PREREG_V8F_LORA Amendment 2: the SAME-DEVICE identity control. v8f_lora_identity_dev.py encodes the declared train and eval clips' frames (production route, shipped to
+rem                                             %LORAFRAMES%) with the arm's encoder at B = 0 in the builder's pure bf16 on THIS box's cuda device and compares the pooled fp8 tokens with cache_full's STORED ones: PASS iff
+rem                                             rel-L2 <= 1e-3 on every clip. Then the same with --mutant (one preprocessing constant changed), which must FAIL. Both write a json under %RUNSM%\lora_ar2\identity;
+rem                                             the stage exits 0 once both readings exist (the CHAIN judges them) and 1 if either driver crashed or refused to write one. Skipped once both jsons exist
+rem   v8f_mini_box2_queue.cmd smokelora       PREREG_V8F_LORA proof 4 (AR-2): v8f_lora_smoke.py, 200 real-data steps at batch 1 through the trainer itself (--encoder lora --enc-ckpt, bf16 weights, --amp OFF) on windows drawn ONLY
+rem                                             from the declared train clips (--max-clips; frames shipped for exactly those), into %RUNSM%\lora_ar2\smoke. Exits 0 once smoke_report.json exists: the report carries its own
+rem                                             verdict, step time, peak memory and the projected hours of one 19,164-step seed (ESTIMATED), and the CHAIN reads it
 rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
@@ -97,7 +104,9 @@ if /i "%~1"=="evalhist" goto :evalhist
 if /i "%~1"=="gatedscale" goto :gatedscale
 if /i "%~1"=="traindscale" goto :traindscale
 if /i "%~1"=="evaldscale" goto :evaldscale
-echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED^|gategrid BASE^|traingrid SEED BASE^|evalgrid SEED BASE^|gatehist^|trainhist SEED^|evalhist SEED^|gatedscale^|traindscale SEED^|evaldscale SEED
+if /i "%~1"=="identitylora" goto :identitylora
+if /i "%~1"=="smokelora" goto :smokelora
+echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED^|gategrid BASE^|traingrid SEED BASE^|evalgrid SEED BASE^|gatehist^|trainhist SEED^|evalhist SEED^|gatedscale^|traindscale SEED^|evaldscale SEED^|identitylora^|smokelora
 exit /b 2
 
 rem train / eval are CALLED with the stage name dropped, so inside them %~1 = ARM, %~2 = SEED, %~3 = GRID
@@ -568,6 +577,66 @@ if exist "%EV%\eval_%TG%-tacorc-all-latcons.npz" (echo [skip] eval %TG%-tacorc-a
 if errorlevel 1 (echo [FAIL] eval %TG%-tacorc-all-latcons - see %EV%\eval_%TG%-tacorc-all-latcons.log & exit /b 1)
 echo [ok] eval %TG%-tacorc-all-latcons
 :evaldscale_4
+exit /b 0
+
+:loraenv
+rem PREREG_V8F_LORA Amendment 2 (the AR-2 chain, chain_v8f_lora_ar2.sh): the DECLARED clips and paths of identitylora / smokelora, written ONCE so the two stages, the chain and the tests read one list.
+rem   LORA_TRAIN = the first LORA_NTRAIN train clips of B's list (the cache manifest in sha12 order, --exclude 540:600 applied): all are inside the first 600, whose production frames exist; --max-clips LORA_NTRAIN in smokelora selects exactly these
+rem   LORA_EVAL  = the first 2 eval clips of the 141 in sha12 order
+rem   LORAFRAMES = where the chain ships their v2ep files (built by the PRODUCTION route, pod_build_b1_epcache.py): train and eval subdirectories
+rem   the two scripts are named RELATIVE to the code directory: mk_v8f_job.py runs this queue from there (cd /d), and the repo path carries an ampersand, which must never enter a command string
+rem   (inside set "X="%PY%" "..."" it splits the line at the ampersand: MEASURED by the first dry run of these stages)
+set "LORA_TRAIN=8f387977-4086-466d-bba4-b04f8cdc0743 bf5ec76e-e8b5-4f0d-a9cc-4fe1687d3d3a 0e1526b3-d2b6-46b2-95fa-2903bb34e2ec 83e32d0f-ed19-4116-8c1c-9e4c843de993"
+set "LORA_NTRAIN=4"
+set "LORA_EVAL=dca157a0-20a9-464b-a74c-084b678e7be1 e6cb7cd4-8349-4b9d-9674-e3ebf789e611"
+if not defined LORAFRAMES set "LORAFRAMES=D:\tanitad\data\lora_ar2_frames"
+set "LORAID=v8f_lora_identity_dev.py"
+set "LORASMOKE=v8f_lora_smoke.py"
+set "LORAOUT=%RUNSM%\lora_ar2"
+if defined V8F_DRYRUN exit /b 0
+if not exist "%LORAID%" (echo REFUSED: %LORAID% is not in the current directory - run the queue from the v8f-mini code directory, as mk_v8f_job.py does & exit /b 2)
+if not exist "%LORASMOKE%" (echo REFUSED: %LORASMOKE% is not in the current directory - run the queue from the v8f-mini code directory, as mk_v8f_job.py does & exit /b 2)
+exit /b 0
+
+:identitylora
+rem PREREG_V8F_LORA Amendment 2: the same-device identity control (see the header). ID0 is the control, ID1 the same with ONE preprocessing constant changed (--mutant): the control is only evidence if ID1 FAILS.
+rem Exit codes of the driver: 0 PASS / mutant caught, 1 FAIL / mutant missed, 2 REFUSED. A FAIL is a READING (the chain pulls it and stops with the numbers); a crash writes no json and is [FAIL] here.
+rem ONE command string each: the dry run prints exactly what the real run executes. FLAT (no parenthesised else-block): an exit /b 1 inside a multi-line block returns rc 0 from cmd /c queue.cmd (MEASURED by the PGT build).
+call :prep || exit /b 2
+call :loraenv || exit /b 2
+set "OUT=%LORAOUT%\identity"
+set "ID0="%PY%" %LORAID% --cache-root "%CACHEFULL%" --device cuda --train-frames "%LORAFRAMES%\train" --train-clips %LORA_TRAIN% --eval-frames "%LORAFRAMES%\eval" --eval-clips %LORA_EVAL% --out "%OUT%\identity_lora.json""
+set "ID1="%PY%" %LORAID% --cache-root "%CACHEFULL%" --device cuda --train-frames "%LORAFRAMES%\train" --train-clips %LORA_TRAIN% --eval-frames "%LORAFRAMES%\eval" --eval-clips %LORA_EVAL% --mutant --out "%OUT%\identity_lora_mutant.json""
+if defined V8F_DRYRUN (echo %ID0% & echo %ID1% & exit /b 0)
+if exist "%OUT%\identity_lora.json" if exist "%OUT%\identity_lora_mutant.json" (echo [skip] identitylora & exit /b 0)
+if not exist "%OUT%" mkdir "%OUT%"
+if exist "%OUT%\identity_lora.json" del "%OUT%\identity_lora.json"
+if exist "%OUT%\identity_lora_mutant.json" del "%OUT%\identity_lora_mutant.json"
+echo [%date% %time%] identitylora
+%ID0% > "%OUT%\identity_lora.log" 2>&1
+if not exist "%OUT%\identity_lora.json" (echo [FAIL] identitylora wrote no json - see %OUT%\identity_lora.log & exit /b 1)
+echo [ok] identitylora reading written
+%ID1% > "%OUT%\identity_lora_mutant.log" 2>&1
+if not exist "%OUT%\identity_lora_mutant.json" (echo [FAIL] identitylora mutant wrote no json - see %OUT%\identity_lora_mutant.log & exit /b 1)
+echo [ok] identitylora mutant reading written
+exit /b 0
+
+:smokelora
+rem PREREG_V8F_LORA proof 4 (AR-2): the 200-step smoke at batch 1 (see the header). The trainer argv is B's (A) plus --max-clips LORA_NTRAIN --frames-root; the smoke appends --encoder lora --batch 1 --accum 1 --steps 200
+rem --enc-ckpt (and NO --amp: Amendment 2 pins autocast OFF; the encoder runs in the builder's pure bf16). Its census and heads-at-64 measurement drop --max-clips themselves, so the projected hours come from the real clip list.
+rem ONE command string: the dry run prints exactly what the real run executes. A partial OUT (no smoke_report.json) is REFUSED, not resumed: it would double-count smoke_steps.jsonl.
+call :prep || exit /b 2
+call :loraenv || exit /b 2
+set "OUT=%LORAOUT%\smoke"
+set "SM="%PY%" %LORASMOKE% --steps 200 --out "%OUT%" -- --arm M2b --seed 0 --grid pool4x10 --max-clips %LORA_NTRAIN% --frames-root "%LORAFRAMES%\train" %A%"
+if defined V8F_DRYRUN (echo %SM% & exit /b 0)
+if exist "%OUT%\smoke_report.json" (echo [skip] smokelora & exit /b 0)
+if exist "%OUT%" (echo REFUSED: %OUT% exists without a smoke_report.json - a partial run would resume and double-count smoke_steps.jsonl: move it aside & exit /b 2)
+mkdir "%OUT%"
+echo [%date% %time%] smokelora
+%SM% > "%OUT%\smoke.log" 2>&1
+if not exist "%OUT%\smoke_report.json" (echo [FAIL] smokelora wrote no smoke_report.json - see %OUT%\smoke.log & exit /b 1)
+echo [ok] smokelora report written
 exit /b 0
 
 :gatearm
