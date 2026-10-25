@@ -18718,3 +18718,18 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 
 **Class:** *a correction applied to a generator's outputs, and not to the generator, re-emits on the generator's next run.*
 * ⇒ When retracting a label, grep the code that writes it, not only the documents that carry it.
+
+### R74 -- "C-1(i): at m = 30, `cl` = `ol` exactly" (`PREREG_V8F_T1KIN_HACC.md` §4, the MM's own pre-registration) (2026-10-26, MM)
+
+**Wrong as written:**
+* The control was copied from the T1 instrument's C2 (`DESIGN_T1_V8F.md` §7: *"to 1e-9"*), and "exactly" replaced the tolerance in the copying.
+* The executed knots pass through the world frame and back, so the real-data difference is 1.1e-13 / 1.4e-13 m.
+* The reader therefore REFUSED a read whose control purpose (m = 30 is open loop) was met.
+
+**Consequence:**
+* No outcome row was read. The refused read's JSON is banked unopened, with its sha256.
+* Amendment 3 restores the instrument's 1e-9 m. The re-read must equal the refused read bit for bit on every row except C-1's verdict, or it is void.
+
+**Class:** *a tolerance written as "exactly" on a float pipeline, in a control copied from its source.*
+* ⇒ Quote a control's tolerance from its source and cite the source.
+* ⇒ Never write "exactly" for a value that passes through a floating-point transform.

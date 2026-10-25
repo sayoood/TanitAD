@@ -126,3 +126,26 @@ Per seed s ∈ {0, 1}:
 2. **The original second clause is reported beside, not gated:** |`ol` − banked HACC plan| per window (max and median), with the measured mechanism above.
 3. ⚠ **A consequence stated now: T1-kin − open loop (beside) mixes two effects,** self-action and the ages schedule (periodic from 0 against cycle). It is never quoted as the self-action effect alone. The PRIMARY (HACC − P10, both inside the T1 tool) is not affected: the floor reads no age.
 4. C-2, C-3, C-4, R-1..R-3, PRIMARY, DOMINANCE and the outcome table are unchanged.
+
+## Amendment 3 (2026-10-26 ~01:00 Berlin): C-1(i)'s tolerance restored to the instrument's own. ⚠ Written AFTER the control was read and refused; no outcome row was read; PRIMARY unchanged
+
+**What happened, in order:**
+1. The reader (`t1k_read.py`, sha256 `47771441c8dbea01…`) ran on the 6 deciding runs. It returned **REFUSED** on `s0:C-1` and `s1:C-1`.
+2. Only the control block was opened:
+   - C-1(i): `max |cl − ol|` at m = 30 is **1.1e-13 m (s0) / 1.4e-13 m (s1)**, where §4 says "exactly".
+   - C-1(ii): the floor against the banked P10 plans is 1.5e-5 m (≤ 1e-4, pass).
+   - C-2: 2.486992 m (pass). C-3: 80.4 / 89.3 m (pass). C-4 and R-1..R-3: pass.
+3. The reader had also written the outcome rows into the same JSON. **That file was not opened.** It is banked unopened as `raw/2026-10-26-t1kin-hacc/read1_REFUSED/T1K_READ.json`, sha256 `77b11bfa52a5352064b0e6dee2658eda415c45afdc1b188aac771257c23cc206`.
+
+**Why "exactly" was a transcription error:**
+- §4 calls C-1(i) *"the instrument's C2, re-checked on real data."*
+- The instrument's C2 is *"m=30 executed path == tick-0 plan to 1e-9"* (`DESIGN_T1_V8F.md` §7).
+- The executed knots pass through the world frame and back (p_n + R(yaw_n) · plan), which leaves float64 round-off of order 1e-13 m.
+- An m = 30 run that was not open loop would differ by metres, not 1e-13. The control's purpose is met; its tolerance was mis-copied.
+
+**The amendment:**
+1. C-1(i) reads **max |`cl` − `ol`| ≤ 1e-9 m at m = 30**, the instrument's own C2 tolerance. Nothing else in §4, §5 or Amendments 1–2 changes.
+2. **Integrity check, committed now:** the re-read (`read2`) uses the reader with this one tolerance changed. Every outcome row, the PRIMARY and DOMINANCE values, and every beside value must equal `read1`'s bit for bit (the bootstrap seed is fixed at 0). Only C-1's `PASS`, `refused_controls` and `OUTCOME` may differ. If anything else differs, the read is void.
+3. **The age mechanism of Amendment 2 is now complete** (`ages_probe2.log`). On all 17 cached-clip windows, including those whose cycle ages are non-zero, the T1 tool's tick-0 plan (the m = 30 dump) equals a direct `forward_infer` at ages 0 to 8.6e-6 m.
+
+**The root-cause class, for `RETRACTION_LOG.md` (not a retracted claim, a control specification defect):** a tolerance written as "exactly" on a float pipeline. The PREREG copied a control from the instrument's design and changed its tolerance in the copying. ⇒ Quote a control's tolerance from its source, with the source cited, and never write "exactly" for a value that passes through a floating-point transform.

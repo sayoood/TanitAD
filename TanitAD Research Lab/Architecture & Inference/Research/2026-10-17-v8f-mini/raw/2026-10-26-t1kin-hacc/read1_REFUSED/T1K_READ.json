@@ -1,0 +1,700 @@
+{
+ "prereg": "Project Steering/PREREG_V8F_T1KIN_HACC.md (323624f2) + Amendment 1 (15abe8d9)",
+ "tier": "T1 (T1-kin: self-action OPEN loop; ego state = own executed motion; cameras logged; never 'closed loop')",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0, on episodes; answers 'another draw of EPISODES'; the two seeds are the training replicate",
+ "settings_primary": {
+  "m": 10,
+  "nav": "deadreckon",
+  "scene": "logged",
+  "limit": "logged",
+  "schedule": "periodic"
+ },
+ "F_m": 0.1207,
+ "two_F_m": 0.2415,
+ "controls": {
+  "R-3": {
+   "R-3": "PASS",
+   "identical_track_all_rows_zero": true,
+   "lateral_offset_1m": "cross 1.0, along 0.0",
+   "along_offset_1m": "along 1.0, cross 0.0"
+  },
+  "C-4": {
+   "line": "10-26 00:26:30 C-4 23 passed in 58.98s",
+   "PASS": true
+  }
+ },
+ "seeds": {
+  "s0": {
+   "C-1_beside_age_effect": {
+    "what": "Amendment 2 item 2, beside: |ol - banked HACC plan| per window (the eval's --ages cycle vs the T1 tick-0 age 0)",
+    "max_m": 31.680174914848553,
+    "median_m": 0.23420172891454083,
+    "frac_windows_below_1e-4": 0.12130054189245519
+   },
+   "controls": {
+    "C-1": {
+     "max_abs_cl_minus_ol_m": 1.1368683772161603e-13,
+     "max_abs_floor_vs_banked_P10_m": 1.525878909092171e-05,
+     "n_windows": 2399,
+     "grid_indices_unique": true,
+     "PASS": false
+    },
+    "C-2": {
+     "floor_m30_ade6_m": 2.486992117746755,
+     "banked_m": 2.48699212,
+     "PASS": true
+    },
+    "C-3": {
+     "max_abs_HACC_minus_B_executed_m10_m": 80.42057898986658,
+     "PASS": true
+    },
+    "R-1": {
+     "PASS": true,
+     "rows": {
+      "cl": {
+       "speed_mae_mps": [
+        1.5012113660885305,
+        1.5012
+       ],
+       "along_mae_m": [
+        1.9222662712842589,
+        1.9223
+       ],
+       "accel_mae_mps2": [
+        2.134917909262582,
+        2.1349
+       ],
+       "cross_mae_m": [
+        1.3474171403515884,
+        1.3474
+       ],
+       "heading_mae_deg": [
+        7.537004958980116,
+        7.537
+       ],
+       "yaw_rate_mae_degps": [
+        18.485622133585384,
+        18.4856
+       ],
+       "curvature_mae_1pm": [
+        0.08681620738780056,
+        0.086816
+       ]
+      },
+      "fl": {
+       "speed_mae_mps": [
+        1.8880307728496237,
+        1.888
+       ],
+       "along_mae_m": [
+        2.4581475137665323,
+        2.4581
+       ],
+       "accel_mae_mps2": [
+        2.0898610243415527,
+        2.0899
+       ],
+       "cross_mae_m": [
+        1.9195239231042973,
+        1.9195
+       ],
+       "heading_mae_deg": [
+        8.275652282397242,
+        8.2757
+       ],
+       "yaw_rate_mae_degps": [
+        14.460551488343196,
+        14.4606
+       ],
+       "curvature_mae_1pm": [
+        0.049105727699890765,
+        0.049106
+       ]
+      }
+     },
+     "tolerance": "6e-5 (four_families rounds to 4 dp)"
+    },
+    "R-2": {
+     "reader_delta": -0.8291,
+     "analyze_delta": -0.8291,
+     "PASS": true
+    }
+   },
+   "m10_HACC_minus_P10": {
+    "ade2_m": {
+     "delta": -0.0112,
+     "lo": -0.0158,
+     "hi": -0.0061,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "ADE",
+     "separated_worse": false
+    },
+    "ade6_m": {
+     "delta": -0.8291,
+     "lo": -0.9711,
+     "hi": -0.6894,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "ADE",
+     "separated_worse": false
+    },
+    "speed_mae_mps": {
+     "delta": -0.3868,
+     "lo": -0.4817,
+     "hi": -0.2955,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "LONGITUDINAL",
+     "separated_worse": false
+    },
+    "along_mae_m": {
+     "delta": -0.5359,
+     "lo": -0.6785,
+     "hi": -0.4059,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "LONGITUDINAL",
+     "separated_worse": false
+    },
+    "accel_mae_mps2": {
+     "delta": 0.0451,
+     "lo": -0.1205,
+     "hi": 0.2108,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "LONGITUDINAL",
+     "separated_worse": false
+    },
+    "heading_mae_deg": {
+     "delta": -0.4317,
+     "lo": -1.1139,
+     "hi": 0.2473,
+     "separated": false,
+     "n_windows": 2373,
+     "n_episodes": 141,
+     "family": "LATERAL",
+     "separated_worse": false
+    },
+    "yaw_rate_mae_degps": {
+     "delta": 4.2048,
+     "lo": 2.488,
+     "hi": 5.9866,
+     "separated": true,
+     "n_windows": 2366,
+     "n_episodes": 141,
+     "family": "LATERAL",
+     "separated_worse": true
+    },
+    "curvature_mae_1pm": {
+     "delta": 0.04,
+     "lo": 0.0262,
+     "hi": 0.055,
+     "separated": true,
+     "n_windows": 2366,
+     "n_episodes": 141,
+     "family": "LATERAL",
+     "separated_worse": true
+    },
+    "cross_mae_m": {
+     "delta": -0.5721,
+     "lo": -0.6914,
+     "hi": -0.4608,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "LATERAL",
+     "separated_worse": false
+    }
+   },
+   "PRIMARY": {
+    "met": true,
+    "ade6": {
+     "delta": -0.8291,
+     "lo": -0.9711,
+     "hi": -0.6894,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "ADE",
+     "separated_worse": false
+    },
+    "bar": "point <= -2F = -0.2415 m AND the interval excludes 0"
+   },
+   "DOMINANCE": {
+    "met": false,
+    "separated_worse_rows": [
+     "yaw_rate_mae_degps",
+     "curvature_mae_1pm"
+    ]
+   },
+   "not_computed": {
+    "TACTICAL": "NOT COMPUTED: the T1 dumps record no per-tick T code (Amendment 1 item 2); work item: dump the per-tick code",
+    "STRATEGIC": "NOT COMPUTED: the T1 dumps record no per-tick S checkpoints (Amendment 1 item 2); work item: dump the per-tick checkpoints",
+    "DISTANCE_KEEPING": "NOT COMPUTED: v8f_t1_eval passes no lead track to analyze(); four_families.longitudinal.distance_keeping in its output: UNAVAILABLE"
+   },
+   "beside": {
+    "HACC_s0_m30": {
+     "model_minus_floor_ade6": {
+      "delta": -0.5292,
+      "lo": -0.6394,
+      "hi": -0.4242,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "model_minus_floor_accel": {
+      "delta": -0.0247,
+      "lo": -0.0375,
+      "hi": -0.0124,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "envelope_clipped_windows": {
+      "cl": 0,
+      "fl": 0
+     },
+     "t1_minus_open_ade": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "settings": {
+      "replan_steps": 30,
+      "scene": "logged",
+      "nav": "deadreckon",
+      "limit": "logged",
+      "schedule": "periodic"
+     }
+    },
+    "HACC_s0_m5": {
+     "status": "absent: no dumps for HACC_s0_m5"
+    },
+    "HACC_s0_m10_frozen": {
+     "status": "absent: no dumps for HACC_s0_m10_frozen"
+    },
+    "HACC_s0_m10_limoff": {
+     "status": "absent: no dumps for HACC_s0_m10_limoff"
+    },
+    "B_s0_m10": {
+     "model_minus_floor_ade6": {
+      "delta": -0.4101,
+      "lo": -0.6654,
+      "hi": -0.1419,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "model_minus_floor_accel": {
+      "delta": 1.2232,
+      "lo": 0.8151,
+      "hi": 1.5813,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "envelope_clipped_windows": {
+      "cl": 123,
+      "fl": 178
+     },
+     "t1_minus_open_ade": {
+      "delta": 0.9101,
+      "lo": 0.6945,
+      "hi": 1.1996,
+      "ci95": 0.2526,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "settings": {
+      "replan_steps": 10,
+      "scene": "logged",
+      "nav": "deadreckon",
+      "limit": "logged",
+      "schedule": "periodic"
+     },
+     "this_minus_default_HACC_m10_ade6": {
+      "delta": 0.419,
+      "lo": 0.2041,
+      "hi": 0.68,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     }
+    },
+    "HACC_minus_B_m10_ade6": {
+     "delta": -0.419,
+     "lo": -0.68,
+     "hi": -0.2041,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "envelope_clipped_windows_m10": {
+     "cl": 172,
+     "fl": 178
+    },
+    "mean_ade6_m10": {
+     "HACC": 2.61415081223835,
+     "P10": 3.443279013457244
+    }
+   }
+  },
+  "s1": {
+   "C-1_beside_age_effect": {
+    "what": "Amendment 2 item 2, beside: |ol - banked HACC plan| per window (the eval's --ages cycle vs the T1 tick-0 age 0)",
+    "max_m": 38.142811279091106,
+    "median_m": 0.3399471583149598,
+    "frac_windows_below_1e-4": 0.12130054189245519
+   },
+   "controls": {
+    "C-1": {
+     "max_abs_cl_minus_ol_m": 1.4210854715202004e-13,
+     "max_abs_floor_vs_banked_P10_m": 1.525878909092171e-05,
+     "n_windows": 2399,
+     "grid_indices_unique": true,
+     "PASS": false
+    },
+    "C-2": {
+     "floor_m30_ade6_m": 2.486992117746755,
+     "banked_m": 2.48699212,
+     "PASS": true
+    },
+    "C-3": {
+     "max_abs_HACC_minus_B_executed_m10_m": 89.29520515864017,
+     "PASS": true
+    },
+    "R-1": {
+     "PASS": true,
+     "rows": {
+      "cl": {
+       "speed_mae_mps": [
+        1.4574433194501024,
+        1.4574
+       ],
+       "along_mae_m": [
+        1.8770140165292823,
+        1.877
+       ],
+       "accel_mae_mps2": [
+        1.8610728700962382,
+        1.8611
+       ],
+       "cross_mae_m": [
+        1.4870565832737612,
+        1.4871
+       ],
+       "heading_mae_deg": [
+        7.3242536125029325,
+        7.3243
+       ],
+       "yaw_rate_mae_degps": [
+        15.984776943254955,
+        15.9848
+       ],
+       "curvature_mae_1pm": [
+        0.06438478015567461,
+        0.064385
+       ]
+      },
+      "fl": {
+       "speed_mae_mps": [
+        1.8880307728496237,
+        1.888
+       ],
+       "along_mae_m": [
+        2.4581475137665323,
+        2.4581
+       ],
+       "accel_mae_mps2": [
+        2.0898610243415527,
+        2.0899
+       ],
+       "cross_mae_m": [
+        1.9195239231042973,
+        1.9195
+       ],
+       "heading_mae_deg": [
+        8.275652282397242,
+        8.2757
+       ],
+       "yaw_rate_mae_degps": [
+        14.460551488343196,
+        14.4606
+       ],
+       "curvature_mae_1pm": [
+        0.049105727699890765,
+        0.049106
+       ]
+      }
+     },
+     "tolerance": "6e-5 (four_families rounds to 4 dp)"
+    },
+    "R-2": {
+     "reader_delta": -0.7945,
+     "analyze_delta": -0.7945,
+     "PASS": true
+    }
+   },
+   "m10_HACC_minus_P10": {
+    "ade2_m": {
+     "delta": -0.0094,
+     "lo": -0.0146,
+     "hi": -0.0033,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "ADE",
+     "separated_worse": false
+    },
+    "ade6_m": {
+     "delta": -0.7945,
+     "lo": -0.9379,
+     "hi": -0.6575,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "ADE",
+     "separated_worse": false
+    },
+    "speed_mae_mps": {
+     "delta": -0.4306,
+     "lo": -0.5166,
+     "hi": -0.3459,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "LONGITUDINAL",
+     "separated_worse": false
+    },
+    "along_mae_m": {
+     "delta": -0.5811,
+     "lo": -0.7039,
+     "hi": -0.4668,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "LONGITUDINAL",
+     "separated_worse": false
+    },
+    "accel_mae_mps2": {
+     "delta": -0.2288,
+     "lo": -0.4024,
+     "hi": -0.0699,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "LONGITUDINAL",
+     "separated_worse": false
+    },
+    "heading_mae_deg": {
+     "delta": -0.7696,
+     "lo": -1.3714,
+     "hi": -0.1844,
+     "separated": true,
+     "n_windows": 2373,
+     "n_episodes": 141,
+     "family": "LATERAL",
+     "separated_worse": false
+    },
+    "yaw_rate_mae_degps": {
+     "delta": 1.5304,
+     "lo": -0.0706,
+     "hi": 3.1005,
+     "separated": false,
+     "n_windows": 2366,
+     "n_episodes": 141,
+     "family": "LATERAL",
+     "separated_worse": false
+    },
+    "curvature_mae_1pm": {
+     "delta": 0.0155,
+     "lo": 0.0077,
+     "hi": 0.0242,
+     "separated": true,
+     "n_windows": 2366,
+     "n_episodes": 141,
+     "family": "LATERAL",
+     "separated_worse": true
+    },
+    "cross_mae_m": {
+     "delta": -0.4325,
+     "lo": -0.5659,
+     "hi": -0.3092,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "LATERAL",
+     "separated_worse": false
+    }
+   },
+   "PRIMARY": {
+    "met": true,
+    "ade6": {
+     "delta": -0.7945,
+     "lo": -0.9379,
+     "hi": -0.6575,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "family": "ADE",
+     "separated_worse": false
+    },
+    "bar": "point <= -2F = -0.2415 m AND the interval excludes 0"
+   },
+   "DOMINANCE": {
+    "met": false,
+    "separated_worse_rows": [
+     "curvature_mae_1pm"
+    ]
+   },
+   "not_computed": {
+    "TACTICAL": "NOT COMPUTED: the T1 dumps record no per-tick T code (Amendment 1 item 2); work item: dump the per-tick code",
+    "STRATEGIC": "NOT COMPUTED: the T1 dumps record no per-tick S checkpoints (Amendment 1 item 2); work item: dump the per-tick checkpoints",
+    "DISTANCE_KEEPING": "NOT COMPUTED: v8f_t1_eval passes no lead track to analyze(); four_families.longitudinal.distance_keeping in its output: UNAVAILABLE"
+   },
+   "beside": {
+    "HACC_s1_m30": {
+     "model_minus_floor_ade6": {
+      "delta": -0.5288,
+      "lo": -0.636,
+      "hi": -0.4238,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "model_minus_floor_accel": {
+      "delta": -0.0398,
+      "lo": -0.0501,
+      "hi": -0.0293,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "envelope_clipped_windows": {
+      "cl": 0,
+      "fl": 0
+     },
+     "t1_minus_open_ade": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "ci95": 0.0,
+      "p_delta_gt0": 0.0,
+      "separated": false,
+      "reducer": "mean",
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "settings": {
+      "replan_steps": 30,
+      "scene": "logged",
+      "nav": "deadreckon",
+      "limit": "logged",
+      "schedule": "periodic"
+     }
+    },
+    "HACC_s1_m5": {
+     "status": "absent: no dumps for HACC_s1_m5"
+    },
+    "HACC_s1_m10_frozen": {
+     "status": "absent: no dumps for HACC_s1_m10_frozen"
+    },
+    "HACC_s1_m10_limoff": {
+     "status": "absent: no dumps for HACC_s1_m10_limoff"
+    },
+    "B_s1_m10": {
+     "model_minus_floor_ade6": {
+      "delta": -0.6524,
+      "lo": -0.8544,
+      "hi": -0.4455,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "model_minus_floor_accel": {
+      "delta": 1.0772,
+      "lo": 0.6769,
+      "hi": 1.4614,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "envelope_clipped_windows": {
+      "cl": 151,
+      "fl": 178
+     },
+     "t1_minus_open_ade": {
+      "delta": 0.8017,
+      "lo": 0.6086,
+      "hi": 1.04,
+      "ci95": 0.2157,
+      "p_delta_gt0": 1.0,
+      "separated": true,
+      "reducer": "mean",
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "n_boot": 2000,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "settings": {
+      "replan_steps": 10,
+      "scene": "logged",
+      "nav": "deadreckon",
+      "limit": "logged",
+      "schedule": "periodic"
+     },
+     "this_minus_default_HACC_m10_ade6": {
+      "delta": 0.1421,
+      "lo": -0.0012,
+      "hi": 0.3121,
+      "separated": false,
+      "n_windows": 2399,
+      "n_episodes": 141
+     }
+    },
+    "HACC_minus_B_m10_ade6": {
+     "delta": -0.1421,
+     "lo": -0.3121,
+     "hi": 0.0012,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "envelope_clipped_windows_m10": {
+     "cl": 163,
+     "fl": 178
+    },
+    "mean_ade6_m10": {
+     "HACC": 2.648762000228867,
+     "P10": 3.443279013457244
+    }
+   }
+  }
+ },
+ "OUTCOME": "REFUSED",
+ "refused_controls": [
+  "s0:C-1",
+  "s1:C-1"
+ ]
+}
