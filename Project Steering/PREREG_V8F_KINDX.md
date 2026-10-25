@@ -35,3 +35,14 @@ One seed decides only whether a second seed is worth training. ⛔ No claim abou
 ## Compute
 
 Dev-box CPU (`CUDA_VISIBLE_DEVICES=-1`), 10 evals of X (own code; six kinds; union; full GT code; the identity oracle) over the eval-141 windows; ESTIMATED 30–60 min. Box 2 is untouched (KSCORE runs there).
+
+## Amendment 1 (2026-10-25, MM): the seed-1 rows, committed BEFORE any seed-1 data
+
+The CANDIDATE row sends SPEED (gain_speed(X_s0) +0.716 [+0.623, +0.818] m, `RESULT_V8F_KINDX.md`) to a seed-1 read and names the CARRIER branch only. The other s1 outcomes are fixed here, before X_s1 exists. The read is gain_speed(X_s1) on the same 2,399 windows, T0, the same estimator.
+
+| s1 outcome | condition | next (committed) |
+|---|---|---|
+| **CARRIER** | gain_speed(X_s1) ≥ 2F = 0.2415 m and separated | `PREREG_V8F_SPEEDAVG` runs (its condition is met) |
+| **NOT A CARRIER** | anything else | SPEED is not a carrier (a one-seed effect, `H-ESTIM-SEED-1`); `PREREG_V8F_SPEEDAVG` does not run; single-kind T-side arms stay unranked; the longitudinal line (KSCORE, then OACC) stays the top lever. Both seeds' gains are reported side by side |
+
+The instrument (`code/box2_ops/chain_v8f_kindx_s1.sh`, `stack/scripts/v8f_mini_eval_kindx.py`, `kindx_read.py --seed 1`) applies these two rows verbatim. X_s1 = MIXO's argv with `--seed 1` (and its own `--out`); the chain asserts that the argv differs from X_s0's in exactly those two flags.
