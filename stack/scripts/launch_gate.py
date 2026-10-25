@@ -1116,8 +1116,12 @@ PROFILES["refcv8-nt"] = dict(
                                   "and the loss is logits.sum() * 0 (exactly zero gradient by construction)")
         for g in _NT_MAP_ONLY_GROUPS),
     #: ga-reach: the SHARED parts must still be > 0 (the planner trains them); the map-only parts must read EXACTLY 0.0
+    #: K4 on the TRAINING ROWS (PI 2026-10-25, "Profile-scoped K4 check"): every train window is all-IGNORE, so the
+    #: trainer writes the 10 cm loss as a counted zero WITHOUT the per-class contributions; map_train_row_reasons
+    #: then asserts K4 itself (0 labelled windows, loss exactly 0) instead of the contribution sum
     map_hires=dict(_R8["map_hires"], ga_keys=("ga_mh_lift", "ga_mh_encoder", "ga_mh_trunk_s8_stage"),
-                   ga_keys_zero=("ga_mh_refine", "ga_mh_near", "ga_mh_near_refine")),
+                   ga_keys_zero=("ga_mh_refine", "ga_mh_near", "ga_mh_near_refine"),
+                   train_labels="absent_k4", n_labelled_key="map_hires_n_labelled"),
     #: FIX-4 under the PREREG's "every refcv8 flag unchanged": the selection tolerance is refcv8's, INHERITED by
     #: digest -- the record is bound by its sha256, its status and its tau, and NOT re-derived on navtrain (a navtrain
     #: tau would move the selection mechanism and confound A1 - A0). nav_tau_reasons reads this field.
@@ -4486,12 +4490,40 @@ def map_eval_key_reasons(prof: dict, eval_rows: list[dict], *,
     return reasons, det
 
 
+def _map_train_rows_k4(h: dict, lk: str, train_rows: list[dict]) -> tuple[list[str], dict]:
+    """G-MAP under a profile whose map supervision is OFF BY DATA (``map_hires.train_labels = "absent_k4"``;
+    refcv8-nt, PREREG_NT_DECIDE K4: NavSim has no map GT). An all-IGNORE batch makes the trainer write the 10 cm
+    loss as ``logits.sum() * 0`` and NO per-class contributions, so the contribution-sum check cannot apply.
+    It is replaced by K4 on every row that carries the loss, which is STRICTER for this profile: ZERO labelled
+    windows and the loss exactly 0.0. A labelled window means map GT reached NavSim training -- FAIL."""
+    nk = h.get("n_labelled_key", "map_hires_n_labelled")
+    rows = [r for r in train_rows if lk in r]
+    if not rows:
+        return [f"G-MAP (K4): no training row carries `{lk}` -- the 10 cm branch never reached the log"], {}
+    lab = [(r.get("step"), r.get(nk)) for r in rows
+           if not (_finite_num(r.get(nk)) and float(r[nk]) == 0.0)]
+    nz = [(r.get("step"), r.get(lk)) for r in rows
+          if not (_finite_num(r.get(lk)) and float(r[lk]) == 0.0)]
+    det = {"mode": "absent_k4", "n_rows": len(rows), "rows_labelled": lab[:10], "rows_nonzero_loss": nz[:10]}
+    reasons = []
+    if lab:
+        reasons.append(f"G-MAP (K4): {len(lab)} of {len(rows)} training rows do not read ZERO labelled 10 cm "
+                       f"windows (first: step {lab[0][0]}, `{nk}` = {lab[0][1]}) -- this profile admits map "
+                       f"supervision OFF only")
+    if nz:
+        reasons.append(f"G-MAP (K4): on {len(nz)} of {len(rows)} training rows `{lk}` is not exactly 0.0 "
+                       f"(first: step {nz[0][0]}: {nz[0][1]}) -- K4 requires the counted zero")
+    return reasons, det
+
+
 def map_train_row_reasons(prof: dict, train_rows: list[dict]) -> tuple[list[str], dict]:
     """G-MAP (LOGGING_SPEC_MAP10 sec. 6 item 2): on EVERY training row that carries the 10 cm
     loss, the 24 per-class x band loss CONTRIBUTIONS are present and sum to it within
     1e-5 x |loss| -- plus the rows' own 5-dp rounding (0.5e-5 per rounded term), stated."""
     h = prof["map_hires"]
     lk = h["loss_key"]
+    if h.get("train_labels") == "absent_k4":
+        return _map_train_rows_k4(h, lk, train_rows)
     lcs = _fmt_keys(h["lc_fmt"], h)
     rows = [r for r in train_rows if lk in r]
     if not rows:

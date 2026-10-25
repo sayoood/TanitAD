@@ -507,3 +507,27 @@ def test_G_SUITE_PINNED_import_reads_the_dir_that_holds_the_file(tmp_path, LG):
     assert '[ -d "$DEVEV/evidence" ] && DEVEV="$DEVEV/evidence"' in src
     assert '[ -s "$DEVEV/G-SUITE-PINNED.json" ] || die' in src
     assert '[ "$NEV" = "6 6" ]' in src and '[ "$NEV" = "4 4" ]' not in src
+
+
+def test_G_MAP_K4_the_nt_train_rows_are_judged_by_K4_not_the_contribution_sum(LG):
+    """MEASURED 2026-10-25 01:18-02:06 (gate on 54c6028, Thor): G-LIVE FAIL "2 of 2 training rows lack the per-class loss
+    contributions `map_hires_lc_{cls}_{band}`" -- NavSim has no map GT, so every NT train batch is all-IGNORE
+    (smoke: map_hires_n_labelled 0 of 48 windows) and the trainer writes the counted zero with no contributions.
+    PI 2026-10-25 ("Profile-scoped K4 check"): on refcv8-nt the rows are judged by K4 itself. RED arms: a labelled
+    window, a non-zero loss, no loss row at all -- and the SAME unlabelled row under plain refcv8 still FAILS."""
+    nt, r8 = LG.PROFILES["refcv8-nt"], LG.PROFILES["refcv8"]
+    assert nt["map_hires"]["train_labels"] == "absent_k4"
+    assert "train_labels" not in r8["map_hires"]
+    row = {"step": 50, "map_hires": -0.0, "map_hires_n_labelled": 0.0, "map_hires_n_windows": 16.0}
+    reasons, det = LG.map_train_row_reasons(nt, [row, dict(row, step=100)])
+    assert reasons == [] and det["mode"] == "absent_k4" and det["n_rows"] == 2
+    lab = dict(row, step=100, map_hires=0.37, map_hires_n_labelled=3.0)
+    reasons, det = LG.map_train_row_reasons(nt, [row, lab])
+    assert len(reasons) == 2 and "step 100" in reasons[0] and "K4" in reasons[1]
+    assert det["rows_labelled"] == [(100, 3.0)] and det["rows_nonzero_loss"] == [(100, 0.37)]
+    reasons, _ = LG.map_train_row_reasons(nt, [dict(row, map_hires=1e-6)])
+    assert len(reasons) == 1 and "not exactly 0.0" in reasons[0]
+    reasons, _ = LG.map_train_row_reasons(nt, [{"step": 50}])
+    assert len(reasons) == 1 and "no training row carries `map_hires`" in reasons[0]
+    reasons, _ = LG.map_train_row_reasons(r8, [row])
+    assert len(reasons) == 1 and "lack the per-class loss contributions" in reasons[0]
