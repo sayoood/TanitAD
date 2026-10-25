@@ -1,0 +1,88 @@
+# PREREG_V8F_MIXO: v8f_mixo_read.py --check-inputs on the REAL banked B side (M2b s0/s1), staged from the mirror tip c0769eaa exactly as chain_v8f_mixo.sh stages it on box 2.
+# MEASURED 2026-10-25 08:35 on the dev box, CPU only. Evidence class: MEASURED (the banked files below); the X side (box 2) is NOT covered.
+# cmd: python stage_real_b.py <dest>;  python v8f_mixo_read.py --check-inputs --eval-dir <dest>/eval --runs-dir <dest>/runs --out <dest>/check_inputs.json   (no --ckpt-sha: that json is the chain's, measured on box 2)
+# ---- staged files (sha256[:16], bytes, dest <- repo path at the tip)
+# 40957e4efaca2032         868  runs/M2b_s0/summary.json  <-  raw/full/runs/M2b_s0/summary.json
+# 8a90dcac36e149d4         727  runs/M2b_s0/argv.json  <-  raw/full/runs/M2b_s0/argv.json
+# 62268cdfac1227c4        2451  runs/M2b_s0/selfcheck.json  <-  raw/full/runs/M2b_s0/selfcheck.json
+# 08c8cd831eee3671      247484  runs/M2b_s0/train_log.jsonl  <-  raw/full/runs/M2b_s0/train_log.jsonl
+# 8ddcd42c119f7ca9     2332474  eval/eval_M2b_s0.npz  <-  raw/full/eval/eval_M2b_s0.npz
+# 38d57843df9d57d3     2220411  eval/eval_M2b_s0-tacabs.npz  <-  raw/2026-10-22-cz/eval/eval_M2b_s0-tacabs.npz
+# 14d7ebeec7df29d3     1796520  eval/eval_M2b_s0-tacorc.npz  <-  raw/2026-10-20-tac/eval/eval_M2b_s0-tacorc.npz
+# 8755df07aed08cc0     1989669  eval/eval_M2b_s0-tacorc-all-latcons.npz  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s0-tacorc-all-latcons.npz
+# 94386dfe6cbfe1a1     1787774  eval/eval_M2b_s0-tacpred.npz  <-  raw/2026-10-20-tac/eval/eval_M2b_s0-tacpred.npz
+# 50dd5df6435d15c0     1796478  eval/eval_M2b_s0-tacorc-constraints.npz  <-  raw/2026-10-21-tacgrp/eval/eval_M2b_s0-tacorc-constraints.npz
+# 0d2ba38fc1642bec     2345489  eval/eval_M2b_s0-tacorc-constraints-a50.npz  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s0-tacorc-constraints-a50.npz
+# e69946c61e567ed3       42267  eval/eval_M2b_s0.json  <-  raw/full/eval/eval_M2b_s0.json
+# 47d67dadd498579e       10342  eval/eval_M2b_s0-tacabs.json  <-  raw/2026-10-22-cz/eval/eval_M2b_s0-tacabs.json
+# b2106311458e17c5       10225  eval/eval_M2b_s0-tacorc.json  <-  raw/2026-10-20-tac/eval/eval_M2b_s0-tacorc.json
+# b80e4a3e49131ff5       10293  eval/eval_M2b_s0-tacorc-all-latcons.json  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s0-tacorc-all-latcons.json
+# cc47e8d57589a552       10008  eval/eval_M2b_s0-tacpred.json  <-  raw/2026-10-20-tac/eval/eval_M2b_s0-tacpred.json
+# 38670e9393d68150       10294  eval/eval_M2b_s0-tacorc-constraints.json  <-  raw/2026-10-21-tacgrp/eval/eval_M2b_s0-tacorc-constraints.json
+# b2725c3e86267569       10320  eval/eval_M2b_s0-tacorc-constraints-a50.json  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s0-tacorc-constraints-a50.json
+# 8992c35668de044a     2103333  eval/eval_M2b_s0-tacorc-all-goal.npz  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s0-tacorc-all-goal.npz
+# fc8bed2abca1c30b         868  runs/M2b_s1/summary.json  <-  raw/full/runs/M2b_s1/summary.json
+# e8fb2430fc2f43ce         727  runs/M2b_s1/argv.json  <-  raw/full/runs/M2b_s1/argv.json
+# a6c5b7f29161ccc0        2456  runs/M2b_s1/selfcheck.json  <-  raw/full/runs/M2b_s1/selfcheck.json
+# fa73b6618ccd4def      247844  runs/M2b_s1/train_log.jsonl  <-  raw/full/runs/M2b_s1/train_log.jsonl
+# 0b9e40ff71fd3636     2334284  eval/eval_M2b_s1.npz  <-  raw/full/eval/eval_M2b_s1.npz
+# 89a593df9739c9d4     2222040  eval/eval_M2b_s1-tacabs.npz  <-  raw/2026-10-22-cz/eval/eval_M2b_s1-tacabs.npz
+# b6e55dde7d77b399     1798128  eval/eval_M2b_s1-tacorc.npz  <-  raw/2026-10-20-tac/eval/eval_M2b_s1-tacorc.npz
+# c3e1c7ce37759e0b     1990935  eval/eval_M2b_s1-tacorc-all-latcons.npz  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s1-tacorc-all-latcons.npz
+# e529b8ea3a68de28     1789748  eval/eval_M2b_s1-tacpred.npz  <-  raw/2026-10-20-tac/eval/eval_M2b_s1-tacpred.npz
+# b989f9e0bb6925c3     1797985  eval/eval_M2b_s1-tacorc-constraints.npz  <-  raw/2026-10-21-tacgrp/eval/eval_M2b_s1-tacorc-constraints.npz
+# 17c52edb5a7404cf     2346964  eval/eval_M2b_s1-tacorc-constraints-a50.npz  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s1-tacorc-constraints-a50.npz
+# bd9e294f91fa9df1       42247  eval/eval_M2b_s1.json  <-  raw/full/eval/eval_M2b_s1.json
+# e14326e1715ea03c       10319  eval/eval_M2b_s1-tacabs.json  <-  raw/2026-10-22-cz/eval/eval_M2b_s1-tacabs.json
+# a1812dd8a584bf5a       10192  eval/eval_M2b_s1-tacorc.json  <-  raw/2026-10-20-tac/eval/eval_M2b_s1-tacorc.json
+# eedfb9ce9f51b5bf       10289  eval/eval_M2b_s1-tacorc-all-latcons.json  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s1-tacorc-all-latcons.json
+# 21a0232868be9031        9995  eval/eval_M2b_s1-tacpred.json  <-  raw/2026-10-20-tac/eval/eval_M2b_s1-tacpred.json
+# 614f5ace6b19fb91       10258  eval/eval_M2b_s1-tacorc-constraints.json  <-  raw/2026-10-21-tacgrp/eval/eval_M2b_s1-tacorc-constraints.json
+# 1c73392fca07c4e6       10293  eval/eval_M2b_s1-tacorc-constraints-a50.json  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s1-tacorc-constraints-a50.json
+# 96d64537803890ff     2105742  eval/eval_M2b_s1-tacorc-all-goal.npz  <-  raw/2026-10-21-tacgrp2/eval/eval_M2b_s1-tacorc-all-goal.npz
+# 4168b4293f972dae      387151  eval/floors_perwindow.npz  <-  raw/full/eval/floors_perwindow.npz
+# c0525943605cfd4a     2489644  b1/b1_eval_lead_block.npz  <-  TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-02-b1-eval-lead-block/raw/b1_eval_lead_block.npz
+# ---- the reader's output
+# MIXO INPUTS OK: base M2b; F 0.1207 (2F bar 0.2415); LAMBDA(B) +0.2678 / +0.1667; r_B(0.5) 0.3647 / 0.2085 (committed 0.36 / 0.21); 2399 windows over 141 episodes; expects 7 evals per seed; identity control exactly +0 [0, 0]
+# 
+# real	0m22.880s
+# user	0m0.030s
+# sys	0m0.000s
+# ---- check_inputs.json (selected)
+{
+ "base": "M2b",
+ "n_windows": 2399,
+ "n_episodes": 141,
+ "F": 0.12074012131477874,
+ "two_F_bar": 0.2415,
+ "dose_b": {
+  "s0": {
+   "r_half": 0.36468449009235276,
+   "r_tac_a2": 0.36463369282261066,
+   "committed": 0.36,
+   "d_cons_full": -1.0755647439340001,
+   "d_cons_half": -0.3922417802028828
+  },
+  "s1": {
+   "r_half": 0.20846560770308042,
+   "r_tac_a2": 0.20842812263026755,
+   "committed": 0.21,
+   "d_cons_full": -0.9231115917871964,
+   "d_cons_half": -0.1924370189596758
+  }
+ },
+ "tacpred_repro_max_dev_m": {
+  "M2b_s0": 0.0,
+  "M2b_s1": 0.0
+ },
+ "expected_x_suffixes": [
+  "",
+  "-tacabs",
+  "-tacorc",
+  "-tacorc-all-latcons",
+  "-tacpred",
+  "-tacorc-constraints",
+  "-tacorc-constraints-a50"
+ ],
+ "expected_evals_per_seed": 7
+}

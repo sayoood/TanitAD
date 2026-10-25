@@ -75,6 +75,7 @@ FLAG_CHECKS = {
     "w_wm": "cfg:w_wm", "detach_upper": "cfg:detach_upper", "synthetic": "run", "selfcheck_only": "run",
     "fit_join": "run", "workers": "run", "clip_grad": "opt:clip_grad", "threads": "run",
     "kin_mode": "cfg:kin_mode", "tracks": "path", "cons_absent": "lever:cons_absent",
+    "code_mix": "lever:code_mix",             # PREREG_V8F_MIXO: argv -> make_config -> the BUILT model's levers (declared_vs_built) -> the probe of the code O actually read (code_mix_probe)
     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
     "encoder": "enc:encoder", "lora_r": "enc:lora_r", "lora_alpha": "enc:lora_alpha", "lora_targets": "enc:lora_targets",
@@ -94,6 +95,9 @@ def build_parser():
     ap.add_argument("--cons-absent", choices=("mask", "zero"), default=None,
                     help="override (PREREG_V8F_CZ): mask = an absent constraint is out of T's loss (every arm but M2b-cz); zero = T's "
                          "target there is the 0 that O reads under teacher forcing")
+    ap.add_argument("--code-mix", dest="code_mix", choices=M.CODE_MIX_MODES, default="whole",
+                    help="PREREG_V8F_MIXO: the granularity of O's teacher forcing of T's code. whole (default) = ONE GT-or-own switch per sample over the whole code (every earlier arm, bit for bit, "
+                         "the RNG stream included); kind = an independent switch per sample AND per unit (the decisions + the six constraint kinds), at the same p_gt")
     ap.add_argument("--cache-dir", default="C:/Users/Admin/refav1_hj_cache")
     ap.add_argument("--out", required=True)
     ap.add_argument("--v9-train", default="C:/Users/Admin/qland/work/refcv8_hf_v9/release/v9_labels_train.npz")
@@ -188,7 +192,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
-                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"])
+                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix)
 
 
 def bad_encoder(a, enc, data_info) -> list:
@@ -259,6 +263,13 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None) -> list:
     for k, want in (("navonly", lv["navonly"]), ("consistency", lv["consistency"]), ("wm", lv["wm"]), ("cons_absent", lv["cons_absent"])):
         if built[k] != want:
             bad.append(f"lever {k}: declared {want} but built {built[k]}")
+    # PREREG_V8F_MIXO: the teacher-forcing granularity declared on the argv is the one the BUILT model's levers say (argv -> make_config -> cfg -> built_levers); a `kind` declared
+    # on a schedule that never draws (p_gt constant 0) or never mixes (p_gt constant 1: every unit is GT, i.e. `whole`) is a lever that is declared and does nothing
+    if built.get("code_mix") != a.code_mix:
+        bad.append(f"lever code_mix: declared {a.code_mix} but built {built.get('code_mix')}")
+    if a.code_mix == "kind" and built["p_gt_start"] == built["p_gt_end"] and built["p_gt_start"] in (0.0, 1.0):
+        bad.append(f"code_mix kind declared but the built p_gt is constant {built['p_gt_start']} -> {built['p_gt_end']}: "
+                   f"{'O is never teacher-forced' if built['p_gt_start'] == 0.0 else 'every unit is GT, which is whole'} -- a lever that is declared and does nothing")
     if not built["prior_frozen"]:
         bad.append("the P10 prior is not frozen")
     if model.cfg.n_tok != (40 if a.grid == "pool4x10" else 160):
@@ -380,6 +391,70 @@ def live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
     res["pass"] = bool(ok)
     if not ok:
         raise AssertionError("G-LIVE failed: " + json.dumps({k: v for k, v in res.items() if k != "groups_grad"}, default=str)[:1500])
+    return res
+
+
+def code_mix_probe(model, batch, cfg, p_gt: float = 0.5, tries: int = 4) -> dict:
+    """G-LIVE for PREREG_V8F_MIXO: the code O actually READ in a teacher-forced forward of the BUILT model (on a COPY, no gradient, its own generators) is, per sample and per unit
+    of ``CODE_MIX_UNITS``, either the GT code's value or T's own (the code T predicted in that same call), and has the joint structure the declared ``code_mix`` promises:
+
+      whole  every labelled sample is ALL-GT or ALL-OWN (never partial): one switch per sample
+      kind   some labelled sample is PARTIAL (>= 1 unit GT and >= 1 unit own) within ``tries`` draws; and each unit is GT on a share of the labelled samples near p_gt
+
+    A unit that matches neither (the code O read is not a mix of the two sources), too few labelled windows to tell, or a joint structure other than the declared one is an
+    AssertionError, which the caller turns into a refusal. This is the reachability proof FROM THE ACTUAL CALLER: it reads the tensor the trainer's model hands the O layer."""
+    m = copy.deepcopy(model).cpu()
+    m.train()
+    has = batch["lab_t"]["has"].bool()
+    n_lab = int(has.sum())
+    if n_lab < 1:
+        raise AssertionError("code_mix probe: no labelled window in the probe batch: the joint structure of the code O reads cannot be told")
+    units = [torch.as_tensor(idx, dtype=torch.long) for idx in M.CODE_MIX_UNITS.values()]
+    cap = {}
+    t0 = m.run_t
+
+    def run_t(*a, **k):
+        o = t0(*a, **k)
+        cap["own"] = m._code_pred(o).detach().clone()                    # T's own code IN THIS CALL (it depends on the checkpoint T was handed)
+        return o
+    m.run_t = run_t
+    n_partial = n_all_gt = n_all_own = 0
+    gt_hits = torch.zeros(len(units))
+    n_seen = 0
+    for k in range(tries):
+        with torch.no_grad():
+            out = m._forward(batch, p_gt, True, torch.Generator().manual_seed(7919 + k))
+            gt = m._code_gt(batch["lab_t"])
+        code, own = out["code"], cap["own"]
+        is_gt = torch.stack([(code[:, u] == gt[:, u]).all(1) & ~(own[:, u] == gt[:, u]).all(1) for u in units], 1)       # [B, U] unit read from the GT
+        is_own = torch.stack([(code[:, u] == own[:, u]).all(1) & ~(own[:, u] == gt[:, u]).all(1) for u in units], 1)     # [B, U] unit read from T's own code
+        same = torch.stack([(own[:, u] == gt[:, u]).all(1) for u in units], 1)                                               # [B, U] units where the sources agree (untellable)
+        if (same & has[:, None]).any():
+            raise AssertionError("code_mix probe: a unit of T's own code equals the GT code on a labelled window of the probe batch: that unit's source cannot be told")
+        other = has[:, None] & ~(is_gt | is_own)
+        if other.any():
+            raise AssertionError(f"code_mix probe: {int(other.sum())} (sample, unit) cells of the code O read are neither the GT value nor T's own: not a mix of the two sources")
+        if (is_gt & ~has[:, None]).any():
+            raise AssertionError("code_mix probe: an UNLABELLED window read the GT code")
+        g, w = is_gt[has], is_own[has]
+        n_partial += int((g.any(1) & w.any(1)).sum())
+        n_all_gt += int(g.all(1).sum())
+        n_all_own += int(w.all(1).sum())
+        gt_hits += g.float().sum(0)
+        n_seen += int(g.shape[0])
+        if cfg.code_mix == "kind" and n_partial > 0 and k >= 1:
+            break
+    rate = (gt_hits / max(n_seen, 1)).tolist()
+    res = {"code_mix": cfg.code_mix, "p_gt": p_gt, "n_labelled": n_lab, "n_draws_samples": n_seen, "n_partial": n_partial, "n_all_gt": n_all_gt, "n_all_own": n_all_own,
+           "unit_gt_rate": dict(zip(M.CODE_MIX_UNITS, rate))}
+    if cfg.code_mix == "kind":
+        if n_partial == 0:
+            raise AssertionError(f"code_mix probe: code_mix kind is declared but NO labelled sample read a partly-GT code in {n_seen} draws ({res}): the per-unit mix did not reach the code O reads")
+        if any(abs(r - p_gt) > 0.25 for r in rate) and n_seen >= 64:
+            raise AssertionError(f"code_mix probe: a unit's GT share {res['unit_gt_rate']} is far from p_gt {p_gt}")
+    elif n_partial:
+        raise AssertionError(f"code_mix probe: code_mix whole is declared but {n_partial} labelled samples read a PARTLY-GT code ({res}): whole is one switch per sample")
+    res["pass"] = True
     return res
 
 
@@ -683,13 +758,17 @@ def main(argv=None):
         live = live_check_lora(model, enc, probe_f, cfg, a, dev, chunk)
         ident = identity_probe(enc, probe_f, dev, chunk)
     model.to(dev)
+    try:
+        mix = code_mix_probe(model, probe, cfg)           # PREREG_V8F_MIXO: the joint structure of the code the BUILT model hands O is the declared one (whole: all-or-nothing; kind: partial)
+    except AssertionError as e:
+        raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
     adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
     model.to(dev).train()
     levers = model.built_levers()
     if enc is not None:
         levers["encoder"] = enc.built_levers()
         levers["accum"] = {"accum": a.accum, "micro_windows": a.batch // a.accum, "chunk_frames": chunk}
-    sc = {"declared_vs_built": "PASS", "live": live, "admissibility": adm, "levers": levers,
+    sc = {"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix, "admissibility": adm, "levers": levers,
           "steps_total": total, "S_steps_per_epoch_100pct": S, "info": info, "argv_sha": argv_sha(argv)}
     if ident is not None:
         sc["identity_probe"] = ident

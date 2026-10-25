@@ -219,6 +219,7 @@ PRE_EXISTING = {
     "evaldscale_4": "22636d9d007850fa", "loraenv": "adacc37155199a86", "identitylora": "ee8f28bc42b410c9", "smokelora": "af9acad644a32d72", "gatearm": "b79d2a733b86fe61",
     "floors": "2b7f345ee3e86bcc", "compare": "b41e1a1c859c59c3"}
 KIND_LABELS = ("kind", "kindseed", "kindown", "kindorc")
+MIXO_LABELS = {"gatemixo", "trainmixo", "evalmixo"} | {f"evalmixo_{i}" for i in range(1, 8)}      # PREREG_V8F_MIXO appended these (test_v8f_mixo.py pins them); widened here, nothing else
 OLD_DISPATCH = ("gate", "train", "eval", "floors", "compare", "tac", "tacgrp", "tacgrp2", "tacabs", "gatearm", "tacabsarm", "gatewc", "trainwc", "evalwc", "gatepgt", "trainpgt",
                 "evalpgt", "gategrid", "traingrid", "evalgrid", "gatehist", "trainhist", "evalhist", "gatedscale", "traindscale", "evaldscale", "identitylora", "smokelora")
 needs_queue = pytest.mark.skipif(not QUEUE.exists(), reason="the v8F-mini package is not in this checkout")
@@ -259,7 +260,7 @@ def test_queue_is_crlf_dispatches_kind_and_every_existing_stage_is_byte_identica
         assert label in blocks, f"the stage {label} was removed"
         assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
         assert "kind" not in blocks[label].lower().replace("kinds", ""), f"{label} mentions the new stage"
-    assert set(blocks) == set(PRE_EXISTING) | set(KIND_LABELS), "the only new labels are the four of this edit"
+    assert set(blocks) - MIXO_LABELS == set(PRE_EXISTING) | set(KIND_LABELS), "the only new labels are the four of this edit (and PREREG_V8F_MIXO's, pinned in test_v8f_mixo.py)"
     assert q.count('if /i "%~1"=="kind" goto :kind\n') == 1
     target = {"train": "d_train", "eval": "d_eval"}                                    # `train` and `eval` have always dispatched to :d_train / :d_eval
     for st in OLD_DISPATCH:

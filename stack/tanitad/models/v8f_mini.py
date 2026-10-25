@@ -104,6 +104,19 @@ def code_group_index(spec: str) -> list:
     return sorted(idx)
 
 
+#: PREREG_V8F_MIXO (`--code-mix`): the granularity of O's teacher forcing. ``whole`` (the default, every earlier arm bit for bit) = ONE GT-or-own switch per sample over the whole
+#: code; ``kind`` = an independent switch per sample AND per UNIT, at the same p_gt, so O also trains on a code that is partly right and partly T's own.
+CODE_MIX_MODES = ("whole", "kind")
+#: the units ``kind`` draws over: the decisions (goal + latdec + londec, one unit) and the six constraint kinds of PREREG_V8F_KIND. Every code index is in EXACTLY one unit (the
+#: decisions' 34 indices and the 26 constraint cells; pinned by test_v8f_mixo.py).
+CODE_MIX_UNITS = {"decisions": tuple(i for n in CODE_COMPOSITES["decisions"] for i in CODE_GROUPS[n]), **CODE_KINDS}
+N_CODE_UNITS = len(CODE_MIX_UNITS)
+if sorted(i for idx in CODE_MIX_UNITS.values() for i in idx) != list(range(CODE_DIM)):
+    raise ImportError("CODE_MIX_UNITS is not a partition of the code: every index must be in exactly one unit")
+#: code index -> its unit's column in the [B, N_CODE_UNITS] draw (built from the partition checked above)
+CODE_UNIT_OF = tuple(next(u for u, idx in enumerate(CODE_MIX_UNITS.values()) if i in idx) for i in range(CODE_DIM))
+
+
 LIMITS_MS = (30 / 3.6, 50 / 3.6, 100 / 3.6, 120 / 3.6)
 #: the scale the WM auxiliary divides action channel 1 by, per kin mode (PI ruling D-PI-YAWRATE-1): the recorded steer angle
 #: (rad) in the legacy mode, the MEASURED yaw rate (rad/s) in the compliant one. 0.4 keeps the scaled channel's std at 0.255 vs the
@@ -159,6 +172,8 @@ class V8FMiniConfig:
                                        # that _code_gt writes and O is teacher-forced on (PREREG_V8F_CZ)
     window_start: int = -1             # PREREG_V8F_HIST Amendment 1 (`--window-start`): the first TRAINING window's cache step t AND the held-age clamp's origin
                                        # (a DATA lever: the model never reads it, the checkpoint records it). -1 = absent = hist - 1 = every earlier arm, bit for bit
+    code_mix: str = "whole"            # PREREG_V8F_MIXO (`--code-mix`): how O's teacher forcing draws GT-or-own over T's code. whole = one switch per sample (every earlier arm,
+                                       # bit for bit, RNG stream included); kind = an independent switch per sample AND per unit (CODE_MIX_UNITS). Training only: the eval never teacher-forces
 
     @property
     def window_start_effective(self) -> int:
@@ -172,6 +187,8 @@ class V8FMiniConfig:
             raise ValueError(f"wm must be off|a|b, got {self.wm!r}")
         if self.cons_absent not in ("mask", "zero"):
             raise ValueError(f"cons_absent must be mask|zero, got {self.cons_absent!r}")
+        if self.code_mix not in CODE_MIX_MODES:
+            raise ValueError(f"code_mix must be one of {CODE_MIX_MODES}, got {self.code_mix!r}")
         if self.hmax < self.hist + self.max_age_s:
             raise ValueError("hmax must cover hist + max_age_s")
         if self.window_start != -1 and not 0 <= self.window_start <= self.hist - 1:
@@ -609,6 +626,14 @@ class V8FMini(nn.Module):
         adapt = self.adapter(b["feats"].float()) + self.pos[None, None]            # [B, F, n_tok, d]
         return adapt
 
+    def _code_mix_mask(self, has: Tensor, p_gt: float, gen=None) -> Tensor:
+        """PREREG_V8F_MIXO, ``code_mix = kind``: [B, CODE_DIM] bool, True where O reads the GT code's value instead of T's own. ONE Bernoulli(p_gt) draw per sample AND per
+        unit of :data:`CODE_MIX_UNITS` (a [B, N_CODE_UNITS] draw, independent), broadcast to the unit's indices through :data:`CODE_UNIT_OF`; a window with no T label
+        (``has`` False) reads T's own code in every unit. Every cell's marginal GT probability is p_gt (``whole``'s); only the joint changes."""
+        draw = torch.rand(has.shape[0], N_CODE_UNITS, generator=gen, device=has.device) < p_gt
+        unit = torch.as_tensor(CODE_UNIT_OF, dtype=torch.long, device=has.device)
+        return (draw & has[:, None])[:, unit]
+
     def _forward(self, b, p_gt: float, use_labels: bool, gen=None, code_override: Tensor | None = None):
         cfg = self.cfg
         B = b["feats"].shape[0]
@@ -634,8 +659,11 @@ class V8FMini(nn.Module):
         out.update(tout)
         code = self._code_pred(tout)
         if use_labels and p_gt > 0:
-            use_t = (torch.rand(B, generator=gen, device=dev) < p_gt) & b["lab_t"]["has"]
-            code = torch.where(use_t[:, None], self._code_gt(b["lab_t"]), code)
+            if cfg.code_mix == "kind":                                  # PREREG_V8F_MIXO: an independent GT-or-own switch per sample AND per unit
+                code = torch.where(self._code_mix_mask(b["lab_t"]["has"], p_gt, gen), self._code_gt(b["lab_t"]), code)
+            else:                                                       # whole: the pre-MIXO lines, verbatim (the RNG stream is B's)
+                use_t = (torch.rand(B, generator=gen, device=dev) < p_gt) & b["lab_t"]["has"]
+                code = torch.where(use_t[:, None], self._code_gt(b["lab_t"]), code)
         if code_override is not None:                                   # forward_diag only (PREREG_V8F_TAC)
             if code_override.shape != code.shape:
                 raise ValueError(f"code_override {tuple(code_override.shape)} != T's code {tuple(code.shape)}")
@@ -750,7 +778,7 @@ class V8FMini(nn.Module):
                                   if p.requires_grad))
         return {"navonly": (not self.read_s.uses_scene) and (not self.read_t.uses_scene) and self.read_o.uses_scene,
                 "consistency": bool(cfg.consistency), "wm": "off" if self.wm is None else ("b" if self.wm.gamma > 0 else "a"),
-                "cons_absent": cfg.cons_absent,
+                "cons_absent": cfg.cons_absent, "code_mix": cfg.code_mix,        # PREREG_V8F_MIXO: the teacher-forcing granularity the BUILT model's _forward reads
                 "wm_idm_gamma": 0.0 if self.wm is None else float(self.wm.gamma),
                 "kin_mode": self.cfg.kin_mode, "wm_ch1_scale": None if self.wm is None else float(self.wm.ch1_scale),
                 "p_gt_start": cfg.p_gt_start, "p_gt_end": cfg.p_gt_end,      # PREREG_V8F_PGT: the scheduled-sampling schedule the train loop reads

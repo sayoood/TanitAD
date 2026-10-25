@@ -52,6 +52,11 @@ rem   v8f_mini_box2_queue.cmd kind    PREREG_V8F_KIND (eval only, ZERO training)
 rem                                             M2b_s<SEED>-kind-<name>: own (T's own code, the standard eval: identity control 1), all (the full oracle: identity control 2), only-<k> and loo-<k> (GT in kind k's cells only /
 rem                                             everywhere EXCEPT kind k) for the six kinds speed angle tte timegap geom leadgap, and union (GT in all 26 constraint cells). Read by code8f_kind_read.py. Skipped once its npz exists
 rem
+rem   v8f_mini_box2_queue.cmd gatemixo              PREREG_V8F_MIXO: the in-process launch gate for X = M2b + --code-mix kind (O's teacher forcing drawn per sample AND per unit), no training. B is M2b (fixed in the PREREG): there is no BASE argument
+rem   v8f_mini_box2_queue.cmd trainmixo SEED        PREREG_V8F_MIXO: one X run into %RUNSM%\M2b_s<SEED>_mixo (resumes; skipped once done)
+rem   v8f_mini_box2_queue.cmd evalmixo SEED         PREREG_V8F_MIXO: that run's seven evals, tagged M2b-mixo_s<SEED>: the standard eval (--project --families), absmask, the GT-code oracle, the all-latcons oracle, and TAC_A2's dose chain on the
+rem                                             constraints (T's own code --tac pred, the constraints oracle at alpha 1, at alpha 0.50); each skipped once its npz exists
+rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
 rem
@@ -110,6 +115,9 @@ if /i "%~1"=="evaldscale" goto :evaldscale
 if /i "%~1"=="identitylora" goto :identitylora
 if /i "%~1"=="smokelora" goto :smokelora
 if /i "%~1"=="kind" goto :kind
+if /i "%~1"=="gatemixo" goto :gatemixo
+if /i "%~1"=="trainmixo" goto :trainmixo
+if /i "%~1"=="evalmixo" goto :evalmixo
 echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|kind^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED^|gategrid BASE^|traingrid SEED BASE^|evalgrid SEED BASE^|gatehist^|trainhist SEED^|evalhist SEED^|gatedscale^|traindscale SEED^|evaldscale SEED^|identitylora^|smokelora
 exit /b 2
 
@@ -711,4 +719,89 @@ if exist "%EV%\eval_%TG%.npz" (echo [skip] eval %TG% & exit /b 0)
 %EK% >> "%EV%\eval_%TG%.log" 2>&1
 if errorlevel 1 (echo [FAIL] eval %TG% - see %EV%\eval_%TG%.log & exit /b 1)
 echo [ok] eval %TG%
+exit /b 0
+:gatemixo
+rem PREREG_V8F_MIXO: X = M2b's levers with --code-mix kind and nothing else (O's teacher forcing is drawn per sample AND per unit -- the decisions and the six constraint kinds -- at B's p_gt schedule 1.0 -> 0.2; the S-level switch,
+rem T's losses, the windows and the 19,164 steps are B's). The trainer's G-DVB checks the built code_mix against this argv, its G-LIVE probe reads the code O actually receives (a partly-GT code must occur), and selfcheck.json
+rem records both (levers.code_mix, code_mix_probe); the chain asserts them before any training.
+call :prep || exit /b 2
+rem ONE command string: the dry run prints exactly what the real run executes
+set "GX="%PY%" "%TRAIN%" --arm M2b --code-mix kind --out "%RUNSM%\gate_M2b-mixo" %A% --selfcheck-only"
+if defined V8F_DRYRUN (echo %GX% & exit /b 0)
+%GX% > "%RUNSM%\gate_M2b-mixo.log" 2>&1
+if errorlevel 1 (echo [FAIL] gate M2b-mixo - see %RUNSM%\gate_M2b-mixo.log & exit /b 1)
+echo [ok] gate M2b-mixo
+exit /b 0
+
+:trainmixo
+rem PREREG_V8F_MIXO: one X run. Its summary.json says arm M2b (the trainer's arm table is unchanged); its argv.json carries --code-mix kind, its levers and its checkpoint the BUILT code_mix: code\v8f_mixo_read.py refuses a run where any is not.
+rem The run lives in M2b_s<SEED>_mixo, so it can never resume or be mistaken for B.
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: trainmixo needs a SEED & exit /b 2)
+set "OUT=%RUNSM%\M2b_s%~2_mixo"
+if exist "%OUT%\summary.json" (echo [skip] M2b_s%~2_mixo & exit /b 0)
+rem ONE command string: the dry run prints exactly what the real run executes
+set "TX="%PY%" "%TRAIN%" --arm M2b --seed %~2 --grid pool4x10 --code-mix kind --out "%OUT%" %A%"
+if defined V8F_DRYRUN (echo %TX% & exit /b 0)
+if not exist "%OUT%" mkdir "%OUT%"
+echo [%date% %time%] train M2b_s%~2_mixo
+%TX% >> "%OUT%\train.log" 2>&1
+if errorlevel 1 (echo [FAIL] train M2b_s%~2_mixo - see %OUT%\train.log & exit /b 1)
+if not exist "%OUT%\summary.json" (echo [FAIL] train M2b_s%~2_mixo exited 0 without summary.json & exit /b 1)
+exit /b 0
+
+:evalmixo
+rem PREREG_V8F_MIXO: the seven evals its reader needs, EACH ONE command string that the dry run prints and the real run executes (the HIST recipe, plus TAC_A2's dose chain):
+rem   E0 the standard eval (--project --families)   E1 absmask (T's own present slots)   E2 the GT-code oracle (tacorc: HARM)   E3 the all-latcons oracle (GT everywhere but T's latcons: LAMBDA)
+rem   E4 T's own code (--tac pred: the dose chain's base, as PREREG_V8F_TAC's tacpred)   E5 the constraints oracle at alpha 1 (d_cons(1))   E6 the constraints oracle at alpha 0.50 (d_cons(0.5); r(0.5) = d_cons(0.5) / d_cons(1))
+rem   E5 and E6 are the flags of PREREG_V8F_TAC Amendments 1 and 2 (`--tac oracle --tac-groups constraints --tac-alpha 1` / `0.50`), so r(0.5) on X is TAC_A2's own definition. All seven read THIS run's last checkpoint. Each is skipped once its npz exists.
+rem   FLAT on purpose (no parenthesised else-block): an `exit /b 1` inside a multi-line block returns rc 0 from `cmd /c queue.cmd` (MEASURED by the PGT build).
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: evalmixo needs a SEED & exit /b 2)
+set "OUT=%RUNSM%\M2b_s%~2_mixo"
+set "TG=M2b-mixo_s%~2"
+set "E0="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG% %EC% %ER% --project --families"
+set "E1="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacabs --tac absmask %EC% %ER%"
+set "E2="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacorc --tac oracle %EC% %ER%"
+set "E3="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacorc-all-latcons --tac oracle --tac-groups all-latcons --tac-alpha 1 %EC% %ER%"
+set "E4="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacpred --tac pred %EC% %ER%"
+set "E5="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacorc-constraints --tac oracle --tac-groups constraints --tac-alpha 1 %EC% %ER%"
+set "E6="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG%-tacorc-constraints-a50 --tac oracle --tac-groups constraints --tac-alpha 0.50 %EC% %ER%"
+if defined V8F_DRYRUN (echo %E0% & echo %E1% & echo %E2% & echo %E3% & echo %E4% & echo %E5% & echo %E6% & exit /b 0)
+if not exist "%OUT%\summary.json" (echo REFUSED: %TG% has not finished training & exit /b 2)
+if exist "%EV%\eval_%TG%.npz" (echo [skip] eval %TG% & goto :evalmixo_1)
+%E0% >> "%EV%\eval_%TG%.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG% - see %EV%\eval_%TG%.log & exit /b 1)
+echo [ok] eval %TG%
+:evalmixo_1
+if exist "%EV%\eval_%TG%-tacabs.npz" (echo [skip] eval %TG%-tacabs & goto :evalmixo_2)
+%E1% >> "%EV%\eval_%TG%-tacabs.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacabs - see %EV%\eval_%TG%-tacabs.log & exit /b 1)
+echo [ok] eval %TG%-tacabs
+:evalmixo_2
+if exist "%EV%\eval_%TG%-tacorc.npz" (echo [skip] eval %TG%-tacorc & goto :evalmixo_3)
+%E2% >> "%EV%\eval_%TG%-tacorc.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacorc - see %EV%\eval_%TG%-tacorc.log & exit /b 1)
+echo [ok] eval %TG%-tacorc
+:evalmixo_3
+if exist "%EV%\eval_%TG%-tacorc-all-latcons.npz" (echo [skip] eval %TG%-tacorc-all-latcons & goto :evalmixo_4)
+%E3% >> "%EV%\eval_%TG%-tacorc-all-latcons.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacorc-all-latcons - see %EV%\eval_%TG%-tacorc-all-latcons.log & exit /b 1)
+echo [ok] eval %TG%-tacorc-all-latcons
+:evalmixo_4
+if exist "%EV%\eval_%TG%-tacpred.npz" (echo [skip] eval %TG%-tacpred & goto :evalmixo_5)
+%E4% >> "%EV%\eval_%TG%-tacpred.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacpred - see %EV%\eval_%TG%-tacpred.log & exit /b 1)
+echo [ok] eval %TG%-tacpred
+:evalmixo_5
+if exist "%EV%\eval_%TG%-tacorc-constraints.npz" (echo [skip] eval %TG%-tacorc-constraints & goto :evalmixo_6)
+%E5% >> "%EV%\eval_%TG%-tacorc-constraints.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacorc-constraints - see %EV%\eval_%TG%-tacorc-constraints.log & exit /b 1)
+echo [ok] eval %TG%-tacorc-constraints
+:evalmixo_6
+if exist "%EV%\eval_%TG%-tacorc-constraints-a50.npz" (echo [skip] eval %TG%-tacorc-constraints-a50 & goto :evalmixo_7)
+%E6% >> "%EV%\eval_%TG%-tacorc-constraints-a50.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG%-tacorc-constraints-a50 - see %EV%\eval_%TG%-tacorc-constraints-a50.log & exit /b 1)
+echo [ok] eval %TG%-tacorc-constraints-a50
+:evalmixo_7
 exit /b 0
