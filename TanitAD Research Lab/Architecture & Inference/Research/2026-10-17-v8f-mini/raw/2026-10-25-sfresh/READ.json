@@ -1,0 +1,40 @@
+{
+ "prereg": "PREREG_V8F_SFRESH",
+ "executed": "2026-10-25",
+ "tip": "583cfc02",
+ "outcome": "STALENESS ARTEFACT",
+ "outcome_rule_applied_verbatim": "Q-LAYER <= 0 (point) at both seeds AND Q-STALE < 0 separated at both seeds",
+ "clause1_reread_on_fresh_ages": "PASSES (Q-LAYER < 0 separated at both seeds)",
+ "clause1_under_registered_default_cycle_ages": "FAILED as registered (learned S - baseline +3.2826 [2.0633, 4.4673] s0, +3.2088 [1.9640, 4.3805] s1; reproduces compare.json)",
+ "committed_next_step_quoted": "STRAT-1's failure was the metric. Clause 1 is re-read on fresh ages: it PASSES iff Q-LAYER < 0 separated at both seeds. Then the deployed-schedule cost (Q-STALE) becomes the strategic lever: a faster S tick or a re-anchored checkpoint",
+ "evidence_class": "MEASURED (ours), artifact paths in SFRESH_RESULT.md",
+ "tier": "T1-class open loop, DIAGNOSTIC: fresh ages are not the deployed schedule",
+ "estimator": "paired episode-cluster bootstrap, B=2000, seed 0, 141 episodes, taniteval/taniteval/ci.py; blind to training-run variance (two seeds shown side by side)",
+ "reads_S_checkpoint_pos_err_50m_m": {
+  "n_windows": 2319,
+  "Q_STALE_fresh_minus_cycle": {"s0": {"delta": -5.7157, "lo": -6.4437, "hi": -5.0621, "separated": true}, "s1": {"delta": -5.7348, "lo": -6.4604, "hi": -5.0657, "separated": true}},
+  "Q_LAYER_fresh_S_minus_navonly": {"s0": {"delta": -2.4331, "lo": -3.2220, "hi": -1.7394, "separated": true}, "s1": {"delta": -2.5260, "lo": -3.3325, "hi": -1.7945, "separated": true}},
+  "banked_cycle_S_minus_navonly": {"s0": {"delta": 3.2826, "lo": 2.0633, "hi": 4.4673, "separated": true}, "s1": {"delta": 3.2088, "lo": 1.9640, "hi": 4.3805, "separated": true}},
+  "levels": {"cycle_banked": {"s0": 8.0122, "s1": 7.9384}, "fresh": {"s0": 2.2965, "s1": 2.2037}, "navonly_baseline": 4.7297},
+  "seed_difference_F": {"Q_STALE": 0.0191, "Q_LAYER": 0.0929}
+ },
+ "beside_80m_m": {
+  "Q_STALE": {"s0": {"delta": -5.3186, "lo": -6.0479, "hi": -4.5984}, "s1": {"delta": -5.3177, "lo": -6.0413, "hi": -4.5946}},
+  "Q_LAYER": {"s0": {"delta": -5.1079, "lo": -6.5567, "hi": -3.7592}, "s1": {"delta": -5.0988, "lo": -6.5914, "hi": -3.7021}},
+  "note": "80 m was not separated on the banked cycle numbers (+0.2107 / +0.2190); it decides nothing here, per the PREREG"
+ },
+ "beside_heading_deg_50m": {
+  "Q_STALE": {"s0": {"delta": -0.6235, "lo": -0.8730, "hi": -0.3941}, "s1": {"delta": -0.7144, "lo": -0.9660, "hi": -0.4661}},
+  "Q_LAYER": {"s0": {"delta": -4.7170, "lo": -6.1755, "hi": -3.3462}, "s1": {"delta": -4.7756, "lo": -6.1626, "hi": -3.3827}}
+ },
+ "controls": {
+  "checkpoint_sha256_equal_banked": true,
+  "eval_cache_md5_all_141_equal_manifest": true,
+  "cycle_rerun_cpu_s0": {"max_abs_diff_ck_pos_err_m": 7.2e-05, "max_abs_diff_plan_m": 5.3e-05, "ck_pos_err_50m_rerun": 8.012241, "ck_pos_err_50m_banked": 8.012241, "ade6_rerun": 2.1753, "ade6_banked": 2.1753, "pass": true},
+  "cycle_rerun_cpu_s1": {"max_abs_diff_ck_pos_err_m": 9.5e-05, "max_abs_diff_plan_m": 9.9e-05, "ck_pos_err_50m_rerun": 7.938449, "ck_pos_err_50m_banked": 7.938448, "ade6_rerun": 2.0546, "ade6_banked": 2.0546, "pass": true},
+  "banked_compare_json_strat_reproduced": "4/4 (s0,s1 x 50,80 m)",
+  "age0_window_identity_fresh_vs_cycle_rerun": {"n_windows": 291, "max_abs_diff": 0.0, "pass": true}
+ },
+ "incidents": ["C: free fell below 4.5 GB mid-fetch from other consumers; the retry loop (pkill bug) fetched the last 25 clips below the threshold; nothing failed; see SFRESH_RESULT.md section 9"],
+ "not_done": ["M1 not run (PREREG names M2b s0/s1)", "no register or PREREG edited, nothing staged or committed"]
+}
