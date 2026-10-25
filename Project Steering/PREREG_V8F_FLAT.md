@@ -63,3 +63,16 @@ Both seeds are trained. The verdict needs both, because a hierarchy claim on one
   * It also proceeds after a ZZV8FMINI-STOP that is a verdict-level or run-level stop.
   * It does NOT proceed after a guard, thermal, reboot or unreachable stop: those are box-level, and the box is not healthy.
 * Box 2 runs one job at a time, in SAFE MODE, under the temperature guard.
+
+## Amendment 1 (2026-10-25, written BEFORE any FLAT data: no FLAT arm has trained)
+
+The instrument build (`v8f_flat_read.py`) found that the outcome table above does not cover every seed pairing. Classify each seed's Δ_s as
+**H** (≤ −2F, separated), **F** (≥ +2F, separated) or **M** (anything else). The table covers (H, H), (F, F), (H, F) / (F, H), and, through
+NOT ESTABLISHED's own wording ("either seed misses −2F … and neither seed reads ≥ +2F"), (H, M) / (M, H) / (M, M). **(F, M) and (M, F) had no row.**
+They now read:
+
+| outcome | condition | what it means | next (committed) |
+|---|---|---|---|
+| **FLAT LEANING** | one seed F, the other M | the hierarchy is not validated, and one seed says the interface hurts. ⛔ It is never reported as FLAT BETTER, which needs both seeds | reported to the PI as **v8F not validated against flat**; next is FLAT BETTER's committed arm (an O-robustness arm under its own PREREG) |
+
+The partition is now complete: every (Δ_0, Δ_1) maps to exactly one row. Nothing else changes; no bar, estimator or arm is touched.
