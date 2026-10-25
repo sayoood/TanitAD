@@ -124,16 +124,18 @@ class Block(nn.Module):
 
 
 class GatedAudio(nn.Module):
-    """q' = q + tanh(g) * CrossAttn(q, audio tokens), g = 0 at init, so audio-null is BIT-EXACTLY the original (paper sec:audio).
-    audio=None skips the branch entirely."""
+    """q' = q + present * tanh(g) * CrossAttn(q, audio tokens), g = 0 at init, so audio-null is BIT-EXACTLY the original (paper sec:audio).
+    audio=None skips the branch entirely; `present` [B] (mixed batches) zeroes the residual of samples without audio, because
+    cross-attention over zero tokens is not a null."""
     def __init__(self, c: HiCAPConfig):
         super().__init__()
         self.proj = nn.Linear(c.d_audio, c.d); self.att = nn.MultiheadAttention(c.d, c.heads, batch_first=True)
         self.g = nn.Parameter(torch.zeros(len(LEVELS)))
-    def forward(self, q, audio):                                   # q [B,6,d], audio [B,k,d_audio]
+    def forward(self, q, audio, present=None):                     # q [B,6,d], audio [B,k,d_audio], present [B] or None
         if audio is None: return q
         a = self.proj(audio)
         r = self.att(q, a, a, need_weights=False)[0]
+        if present is not None: r = r * present.to(r.dtype).view(-1, 1, 1)
         return q + torch.tanh(self.g).view(1, -1, 1) * r
 
 
@@ -160,7 +162,7 @@ class Fusion(nn.Module):
         self.audio = GatedAudio(c)
 
     def forward(self, vlm, last, age_s, frames, ego, nav, nav_args, route,
-                ego_present=None, nav_present=None, route_present=None, audio=None):
+                ego_present=None, nav_present=None, route_present=None, audio=None, audio_present=None):
         B = vlm.shape[0]
         toks = [self.vlm(vlm, last, age_s), self.motion(frames),
                 self.ego(ego, ego_present).unsqueeze(1),
@@ -169,7 +171,7 @@ class Fusion(nn.Module):
         x = torch.cat(toks + [self.queries.expand(B, -1, -1)], 1)
         for b in self.blocks: x = b(x)
         q = self.norm(x[:, -len(LEVELS):])
-        return self.audio(q, audio), x[:, :-len(LEVELS)]               # level outputs [B,6,d], scene tokens
+        return self.audio(q, audio, audio_present), x[:, :-len(LEVELS)]   # level outputs [B,6,d], scene tokens
 
 
 class NodeTower(nn.Module):
@@ -235,7 +237,7 @@ class HiCAP(nn.Module):
     def encode(self, batch, width=None):
         q, scene = self.fusion(batch["vlm"], batch["last"], batch["age_s"], batch["frames"], batch["ego"], batch["nav"],
                                batch["nav_args"], batch["route"], batch.get("ego_present"), batch.get("nav_present"),
-                               batch.get("route_present"), batch.get("audio"))
+                               batch.get("route_present"), batch.get("audio"), batch.get("audio_present"))
         s = {k: self.heads[k](q[:, i], width) for i, k in enumerate(LEVELS) if k != "goal"}
         g = self.goal_head(q[:, LEVELS.index("goal")])
         return s, g[:, : self.c.n_goals], g[:, self.c.n_goals:].view(-1, 3, 3), scene

@@ -109,7 +109,9 @@ def main(argv=None):
                 assert not R["clip__built"][i], f"clip {i} built in two shards"
                 r0, n = int(Z["clip__row0"][i]), int(Z["clip__n_rows"][i])
                 for k, v in P.items():
-                    if not k.startswith("clip__") and k != "meta": R[k][r0:r0 + n] = v[r0:r0 + n]
+                    if k.startswith("clip__") or k == "meta": continue
+                    if v.dtype.kind == "U" and v.dtype.itemsize > R[k].dtype.itemsize: R[k] = R[k].astype(v.dtype)   # never truncate ids
+                    R[k][r0:r0 + n] = v[r0:r0 + n]
                 for k in ("clip__built", "clip__n_tracks", "clip__sec"): R[k][i] = P[k][i]
         np.savez_compressed(a.out, **R); a.stats_only = True
     if a.stats_only:

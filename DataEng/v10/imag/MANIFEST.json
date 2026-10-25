@@ -4,9 +4,9 @@
  "status": "SAMPLE: eval139 all 139 clips + train first 100 clips in v9 order (--limit 100); full train build NOT run",
  "producer": {
   "stack/tanitad/hicap/supervision.py": "b27b20f89086a9f85a0c5ad46ce310b8",
-  "stack/scripts/build_hicap_imag_supervision.py": "a162ec458bbc1531a7941a109aad9764"
+  "stack/scripts/build_hicap_imag_supervision.py": "0c757f3c07e1dac533ba8e85000c7837"
  },
- "base_commit": "2b592c36fe54bea81c8f1d4ffde1cbe83016d217",
+ "base_commit": "20135ac571d4b20a7d702bb0a83d51f8138bfe35",
  "built": "2026-10-25",
  "sources": {
   "corpus": "Sayood/tanitad-v7-training-corpus: agents/obstacle_offline/*.parquet (+index.parquet), egomotion/egomotion_alpamayo.tar",
@@ -36,5 +36,10 @@
  "args": [
   "eval139: --v9 v9_labels_eval139.npz",
   "train: --v9 v9_labels_train.npz --limit 100"
- ]
+ ],
+ "producer_md5_at_build": {
+  "stack/tanitad/hicap/supervision.py": "b27b20f89086a9f85a0c5ad46ce310b8",
+  "stack/scripts/build_hicap_imag_supervision.py": "a162ec458bbc1531a7941a109aad9764"
+ },
+ "producer_note": "the CLI later gained --shard/--merge (verified: a 2-shard merge of 4 eval139 clips is array-identical to the single-process build); the build path that produced these files is unchanged"
 }

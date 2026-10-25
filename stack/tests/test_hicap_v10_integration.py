@@ -79,3 +79,25 @@ def test_v10_country_labels_load():
     m = load_country("DataEng/v10/country/v10_country.parquet")
     d = pd.read_parquet("DataEng/v10/country/v10_country.parquet")
     assert len(m) == 4508 and all(RU.COUNTRIES[d.country_id[i]] == d.country[i] for i in range(len(d)))
+
+
+def test_audio_bridge_wired_present_mask_and_null():
+    from tanitad.hicap.audio import BridgeConfig
+    c = HiCAPConfig(**{**SMALL, "d_audio": SMALL.get("d_v", 2048)})
+    with pytest.raises(ValueError): HiCAPFull(HiCAPConfig(**{**SMALL, "d_audio": c.d_v + 1}), bridge=BridgeConfig(d_v=c.d_v))
+    torch.manual_seed(0)
+    m = HiCAPFull(c, bridge=BridgeConfig(d_enc=64, d_v=c.d_v, width=64, heads=4)).eval()
+    p, lat, dv, lon, v0 = synth_world(); vocab = V.build_factored_vocab(p, lat, dv, lon, v0, K_P=48, K_V=24, floor_P=4, floor_V=2)
+    b = label_batch(c, vocab, 3)
+    with torch.no_grad():
+        s0, *_ = m.encode(b)
+        b2 = dict(b, audio_feat=torch.randn(3, 25, 64))
+        s1, *_ = m.encode(b2)                                       # gate 0: bridge tokens change nothing
+        for k in s0: assert torch.equal(s0[k], s1[k]), k
+        m.fusion.audio.g.fill_(1.0)
+        b3 = dict(b2, audio_present=torch.tensor([1.0, 0.0, 1.0]))
+        s2, *_ = m.encode(b3)
+        m.fusion.audio.g.zero_()
+    assert torch.equal(s0["s1"][1], s2["s1"][1])                    # sample without audio: untouched in a mixed batch
+    assert not torch.equal(s0["s1"][0], s2["s1"][0])                # sample with audio: moved once the gate opens
+    assert len(m.audio_params()) > 0

@@ -13,12 +13,13 @@ from .losses import HiCAPLoss, STAGES, node_embeddings, VocabTensors
 from .imagination import EHead, Tier2, exo_loss, tier2_loss, tier0_target
 from .elastic import CameraGate, ConfigEmbedding, gate_loss, cfg_loss, N_OPT
 from .rules import RuleBook, RuleMemory, GatedMemory, CountryReadout
+from .audio import AudioBridge, BridgeConfig
 
 LAM_COUNTRY = 0.1                                                     # paper sec:rules, lambda_c; active from stage 1 (a strategic critic)
 
 
 class HiCAPFull(HiCAP):
-    def __init__(self, c: HiCAPConfig | None = None, book: RuleBook | None = None):
+    def __init__(self, c: HiCAPConfig | None = None, book: RuleBook | None = None, bridge: BridgeConfig | None = None):
         super().__init__(c)
         d = self.c.d
         self.ehead = EHead(d); self.tier2 = Tier2(d, 4); self.camera_gate = CameraGate(d); self.cfg_emb = ConfigEmbedding(d)
@@ -30,6 +31,12 @@ class HiCAPFull(HiCAP):
         self.gated_memory = GatedMemory(d, self.c.d_text, self.c.heads, LEVELS)
         self.register_buffer("rule_emb", torch.zeros(0, self.c.d_text), persistent=False)
         self.register_buffer("country_emb", torch.zeros(0, self.c.d_text), persistent=False)
+        # v10 audio (optional): frozen-tower features -> trainable bridge -> 8 tokens in the backbone's text space -> GatedAudio
+        self.audio_bridge = None
+        if bridge is not None:
+            if not (bridge.d_v == self.c.d_v == self.c.d_audio):
+                raise ValueError(f"audio bridge needs d_v == HiCAPConfig.d_v == d_audio (got {bridge.d_v}, {self.c.d_v}, {self.c.d_audio})")
+            self.audio_bridge = AudioBridge(bridge)
 
     def set_knowledge(self, rule_emb, country_emb):
         """Cached frozen-text-path embeddings of RuleBook.texts() [R,d_text] and RuleBook.country_nodes() [C,d_text] (pod job E33;
@@ -41,15 +48,21 @@ class HiCAPFull(HiCAP):
     @property
     def has_knowledge(self) -> bool: return self.rule_emb.shape[0] > 0
 
+    def audio_params(self): return [] if self.audio_bridge is None else list(self.audio_bridge.parameters())
+
     def knowledge_params(self): return [p for n, p in self.named_parameters() if n.startswith(("country_readout", "rule_memory", "gated_memory"))]
 
     def encode_k(self, batch, width=None):
         """encode() plus the knowledge read: country posterior from the s1 query BEFORE memory (predicted arm, or one-hot of
         batch['country_supplied'] in the registered GNSS arm), top-k rule retrieval keyed on s2lat, gated memory into s1/s2 only
         (never the goal query). Returns (s, goal_logits, goal_pt, scene, k) with k = dict(country_logits, p_country, rules) or {}."""
+        audio, ap = batch.get("audio"), batch.get("audio_present")
+        if self.audio_bridge is not None and batch.get("audio_feat") is not None:
+            if ap is None or bool(ap.any()):                       # no sample with audio -> branch skipped (bit-exact null)
+                audio = self.audio_bridge(batch["audio_feat"], batch.get("audio_spatial"), batch.get("audio_pad"))
         q, scene = self.fusion(batch["vlm"], batch["last"], batch["age_s"], batch["frames"], batch["ego"], batch["nav"],
                                batch["nav_args"], batch["route"], batch.get("ego_present"), batch.get("nav_present"),
-                               batch.get("route_present"), batch.get("audio"))
+                               batch.get("route_present"), audio, ap)
         k = {}
         if self.has_knowledge:
             i1, i2 = LEVELS.index("s1"), LEVELS.index("s2lat")
