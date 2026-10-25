@@ -1,0 +1,40 @@
+{
+ "schema": "tanitad.v10_imag_manifest/1",
+ "component": "imag",
+ "status": "SAMPLE: eval139 all 139 clips + train first 100 clips in v9 order (--limit 100); full train build NOT run",
+ "producer": {
+  "stack/tanitad/hicap/supervision.py": "b27b20f89086a9f85a0c5ad46ce310b8",
+  "stack/scripts/build_hicap_imag_supervision.py": "a162ec458bbc1531a7941a109aad9764"
+ },
+ "base_commit": "2b592c36fe54bea81c8f1d4ffde1cbe83016d217",
+ "built": "2026-10-25",
+ "sources": {
+  "corpus": "Sayood/tanitad-v7-training-corpus: agents/obstacle_offline/*.parquet (+index.parquet), egomotion/egomotion_alpamayo.tar",
+  "v9": "v9_labels_eval139.npz / v9_labels_train.npz (HF Sayood/tanitad-refcv8-v9-labels)",
+  "uuid_map": "index/clip_index_v7.2_{train,eval}.json"
+ },
+ "alignment": "row r of v10_imag_<split>.npz == row r of v9_labels_<split>.npz (clip table copied); clips not built have exo_w = J_w = 0",
+ "candidate_set": "probe set only (8 vocabulary-free candidates, verification); J_teacher/cand_p/cand_q need a TRAIN-split FactoredVocab (--vocab) and were NOT produced",
+ "files": {
+  "v10_imag_eval139.npz": {
+   "bytes": 2709092,
+   "md5": "75bfab356e13228902562764759941a0"
+  },
+  "v10_imag_eval139.stats.json": {
+   "bytes": 4176,
+   "md5": "4fcd403707e7cbef0192a928719c8aa9"
+  },
+  "v10_imag_train_sample100.npz": {
+   "bytes": 2087579,
+   "md5": "057c3b1b1d12a4a750212b5a8177bdd5"
+  },
+  "v10_imag_train_sample100.stats.json": {
+   "bytes": 4142,
+   "md5": "cbed8a37c6cbd06d85a945dbe02a0e77"
+  }
+ },
+ "args": [
+  "eval139: --v9 v9_labels_eval139.npz",
+  "train: --v9 v9_labels_train.npz --limit 100"
+ ]
+}
