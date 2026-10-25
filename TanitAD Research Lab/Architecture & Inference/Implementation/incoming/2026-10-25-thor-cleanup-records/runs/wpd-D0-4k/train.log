@@ -1,0 +1,113 @@
+[v3] anchors: artifact anchors (117, 8, 2), controls (117, 2), units=alat (file+cli), schedule=constant, horizon_s=6.0, dt=0.1, ref_speed_ms=10.0, kappa_cap=0.12, alat_v_floor=4.0, schema=tanitad.anchor_artifact/1
+[v3] tensor sharing = file_system (workers=6; /dev/shm 24 GB vs ~34 MB/clip payloads)
+[v3] --sel-score-emitted on a ddim arm: sel_score_emitted_t -1 -> 0 (the emitted fan IS the denoised state; -1 would index the refinement loop's embedding table instead)
+[v3] anchors: loaded (117, 8, 2) from /home/nvidia/data/anchors/refc_anchors_6s_v0cond_alat_117.pt (sha256 51f930dc6f3564ff)
+[v3] anchors: v0-CONDITIONED, controls (117, 2) (accel, lateral accel), units=alat (source: file+cli), rolled per window; withheld rows at 10.0 m/s. straight-ahead control present: True
+[parity] ⚠ NON-PARITY v2 corpus for v3 v2-cache: ['/home/nvidia/data/physicalai-b1-w120-256x640cyl'] reference no registered parity key. Results off it are NOT cross-arm comparable with the parity arms.
+[v2] /home/nvidia/data/physicalai-b1-w120-256x640cyl: 4713 providers (channels 9, 256x640 px), episode ids from 'episode_uid' [collision-free; the as-built 16-bit ids would give only 4573 distinct for 4713 clips]
+[v2] 4713 providers, 4713 distinct episode ids
+[v3] 4713 lazy v2 providers from ['/home/nvidia/data/physicalai-b1-w120-256x640cyl'] (lru 24)
+[v3] v7.2 labels: 4572 records, joined 4572/4713 episodes = 97.0 % (release ?)
+[v3] nav_from_v7: follow 2897 / left 811 / right 864, missing 141 (of 4713 clips; md5=0ff902130ce76886b8a925eceed9e3a5)
+[v3] agent join verified: md5(compressed of b1train_agents.jsonl.xz) = 1c985e6d6ad34e605c4ebd30cb353558
+[v3] agent join loaded: 849263 records / 4427 clips (filtered out 0) in 109.3 s
+[v3] agent join: 4427/4713 episodes (stable-63bit), 729243/805749 windows labelled (90.5 %), 24166608 prefilter target boxes, pad 397
+[v3] 4713 episodes -> 805749 windows (window 8, max_horizon 20, image_hw (256, 640), tac_vocab v7.0)
+[v3] loader: workers=6 prefetch=1 -> <=6 batches in flight
+[v3] u8_batches=True: frames+future_frames = 0.826 GB per collated batch (uint8), <= 6 in flight -> ~4.95 GB
+[v3] withheld bank: mode=fixed warmup=0 speed_max=35.0 m/s pool=None
+[v3] EFFECTIVE WEIGHTS (this arm) -- default -> layer -> effective -> builds a graph?
+[v3] term                                     flag               default  asked  effective  src   graph  status          layer/mask/missing                                                                                                           
+[v3] ---------------------------------------  -----------------  -------  -----  ---------  ----  -----  --------------  -----------------------------------------------------------------------------------------------------------------------------
+[v3] u0 control-space x0 loss (WP-4)          --w-u0             0        0.5    0.5        op    yes    TRAINS                                                                                                                                       
+[v3] GT-supervised detection set loss (WP-6)  --w-agent          0        0      0          dflt  no     OFF_BY_DEFAULT  missing=--w-agent needs `--agents head` AND `--agent-join` (no seam => no `agent_slots` in `out`; no join => no labels)      
+[v3] WP-D BEV auxiliary loss                  --w-bev-aux        0        0      0          dflt  no     OFF_BY_DEFAULT  missing=--w-bev-aux needs `--bev-aux col|xcol` AND `--agent-join` (no head => no `bev_logits` in `out`; no join => no target)
+[v3] agent projection consistency             --agent-w-project  0        0      0          dflt  no     OFF_BY_DEFAULT  missing=--agents off: no AgentSeamConfig is built, so `refc_agents.agent_losses` is never called                             
+[v3] agent ground-plane prior                 --agent-w-ground   0        0      0          dflt  no     OFF_BY_DEFAULT  missing=--agents off: no AgentSeamConfig is built, so `refc_agents.agent_losses` is never called                             
+[v3] E15 geometric goal point (GP-2)          --goal-point-w     0        0      0          dflt  no     OFF_BY_DEFAULT  missing=no --goal-point-inject: the head that predicts the point is never built                                              
+[v3] 1/6 terms build a graph. A term with graph=no contributes EXACTLY zero gradient; 'p.grad is None' is the sound check, never the weight value.
+[v3:hier] step 50 loss 51.6389 traj 2.3022
+[v3:hier] step 100 loss 49.0058 traj 3.1013
+[v3:hier] step 150 loss 46.2573 traj 2.3071
+[v3:hier] step 200 loss 30.2106 traj 1.8910
+[v3:hier] step 250 loss 24.4326 traj 1.3122
+[v3:hier] step 300 loss 24.7661 traj 1.5005
+[v3:hier] step 350 loss 30.1559 traj 2.3072
+[v3:hier] step 400 loss 22.3652 traj 2.5881
+[v3:hier] step 450 loss 28.0064 traj 1.9711
+[v3:hier] step 500 loss 17.0280 traj 1.3614
+[v3:hier] step 550 loss 20.0914 traj 3.3702
+[v3:hier] step 600 loss 22.1068 traj 3.3700
+[v3:hier] step 650 loss 26.3158 traj 2.6612
+[v3:hier] step 700 loss 20.4519 traj 2.3516
+[v3:hier] step 750 loss 22.1794 traj 1.8017
+[v3:hier] step 800 loss 18.6167 traj 2.4316
+[v3:hier] step 850 loss 17.3041 traj 1.8345
+[v3:hier] step 900 loss 16.9203 traj 1.7440
+[v3:hier] step 950 loss 19.0285 traj 1.9515
+[v3:hier] step 1000 loss 20.4765 traj 2.7282
+[v3:hier] ckpt step 1000 -> ckpt.pt
+[v3:hier] step 1050 loss 19.3514 traj 1.6920
+[v3:hier] step 1100 loss 25.7032 traj 3.0797
+[v3:hier] step 1150 loss 18.0161 traj 2.1210
+[v3:hier] step 1200 loss 16.6760 traj 1.6163
+[v3:hier] step 1250 loss 20.4898 traj 1.5121
+[v3:hier] step 1300 loss 25.4700 traj 2.4294
+[v3:hier] step 1350 loss 20.1802 traj 1.7617
+[v3:hier] step 1400 loss 19.4753 traj 2.7341
+[v3:hier] step 1450 loss 19.5984 traj 1.1832
+[v3:hier] step 1500 loss 21.3452 traj 2.5571
+[v3:hier] step 1550 loss 16.1009 traj 1.6104
+[v3:hier] step 1600 loss 22.2176 traj 2.6525
+[v3:hier] step 1650 loss 16.1187 traj 1.6648
+[v3:hier] step 1700 loss 14.4894 traj 1.8868
+[v3:hier] step 1750 loss 17.2638 traj 1.6872
+[v3:hier] step 1800 loss 21.4435 traj 2.8739
+[v3:hier] step 1850 loss 21.1758 traj 2.3565
+[v3:hier] step 1900 loss 15.7107 traj 2.4396
+[v3:hier] step 1950 loss 16.4589 traj 1.6324
+[v3:hier] step 2000 loss 16.5842 traj 1.5397
+[v3:hier] ckpt step 2000 -> ckpt.pt
+[v3:hier] step 2050 loss 18.0768 traj 2.1575
+[v3:hier] step 2100 loss 18.8534 traj 2.5580
+[v3:hier] step 2150 loss 18.4343 traj 1.4156
+[v3:hier] step 2200 loss 14.8887 traj 1.4277
+[v3:hier] step 2250 loss 14.2920 traj 1.7217
+[v3:hier] step 2300 loss 15.8285 traj 1.9754
+[v3:hier] step 2350 loss 14.7216 traj 1.6894
+[v3:hier] step 2400 loss 11.8891 traj 0.8976
+[v3:hier] step 2450 loss 16.9047 traj 2.4235
+[v3:hier] step 2500 loss 17.9854 traj 1.7236
+[v3:hier] step 2550 loss 13.7757 traj 1.1858
+[v3:hier] step 2600 loss 17.3389 traj 1.9849
+[v3:hier] step 2650 loss 15.2628 traj 1.3347
+[v3:hier] step 2700 loss 16.0058 traj 1.1667
+[v3:hier] step 2750 loss 16.1061 traj 1.5324
+[v3:hier] step 2800 loss 12.7387 traj 1.0961
+[v3:hier] step 2850 loss 18.0498 traj 1.6552
+[v3:hier] step 2900 loss 10.5334 traj 1.0468
+[v3:hier] step 2950 loss 15.9253 traj 0.8301
+[v3:hier] step 3000 loss 15.9665 traj 1.9516
+[v3:hier] ckpt step 3000 -> ckpt.pt
+[v3:hier] step 3050 loss 10.6729 traj 0.9421
+[v3:hier] step 3100 loss 10.2735 traj 0.9851
+[v3:hier] step 3150 loss 14.7416 traj 1.3811
+[v3:hier] step 3200 loss 11.9165 traj 1.2451
+[v3:hier] step 3250 loss 11.4700 traj 1.0380
+[v3:hier] step 3300 loss 16.9635 traj 1.0015
+[v3:hier] step 3350 loss 11.5834 traj 1.0969
+[v3:hier] step 3400 loss 13.3253 traj 0.9417
+[v3:hier] step 3450 loss 13.7101 traj 1.3084
+[v3:hier] step 3500 loss 14.6167 traj 1.4299
+[v3:hier] step 3550 loss 9.7871 traj 0.7564
+[v3:hier] step 3600 loss 12.2372 traj 0.8301
+[v3:hier] step 3650 loss 15.2038 traj 1.0170
+[v3:hier] step 3700 loss 10.5996 traj 1.1830
+[v3:hier] step 3750 loss 16.0764 traj 1.2274
+[v3:hier] step 3800 loss 11.9543 traj 0.9917
+[v3:hier] step 3850 loss 12.8680 traj 0.9764
+[v3:hier] step 3900 loss 11.7602 traj 0.9205
+[v3:hier] step 3950 loss 11.8048 traj 1.0205
+[v3:hier] step 4000 loss 11.4041 traj 1.0225
+[v3:hier] ckpt step 4000 -> ckpt.pt
+[v3:hier] DONE at 4000 — summary.json written
