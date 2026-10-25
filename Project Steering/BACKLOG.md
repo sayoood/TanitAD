@@ -92,3 +92,10 @@ Strike items through when done, with the commit.
 | E27 | ⭐ **Cosmos3-Edge first trial**: HF eager loader, one front frame per refresh at 256×640 (160 tok), taps at block indices 28/42/56, pooled to 128 tokens, int8 cache for the 4,369 train + 139 eval v9 clips; then H-HC0 k-NN gate vs hold-speed and a v0-only k-NN (exclude the 4 contaminated eval clips from H-HC2 only) | A40-class pod, cache ≈ 0.5 GPU-day | GPU pod + PI go; no Thor run before the plan closes |
 | E28 | **Watch for Alpamayo 2 Edge weights** (announced Oct 2026, ~2 B, Cosmos 3 Edge base): poll `huggingface.co/api/models?search=alpamayo` and NVlabs/alpamayo2 releases; on release read card (licence, architecture identity with Cosmos3-Edge, separable reasoner, taps), add it as the driving-tuned member of the Edge / Nano / Alpamayo-2-Edge comparison | 0 | release |
 | E29 | **Three-backbone run order**: (1) Cosmos3-Edge cache + H-HC0, (2) Cosmos3-Nano reasoner (hidden 4096, 297 GB cache — use 1 front camera first), (3) Alpamayo 2 Edge when public; identical heads, seeds, v9 windows, four families, paired bootstrap | pod | E27, E28 |
+| E30 | **v10 country labels** (`stack/scripts/build_v10_country.py` → `DataEng/v10/country/`); publish to HF is the PI's call | 0 | — |
+| E31 | **Imagination supervision full build** (`build_hicap_imag_supervision.py` over 4,585 clips with agent files; cross-check vs v9 lead gap) | CPU/pod | stream S |
+| E32 | **RuleBook source audit** — every rule record has an official source or stays UNVERIFIED; second-source check for speed limits | 0 | stream R |
+| E33 | **Text-path embedding job** for node definitions, country nodes and rules on Cosmos3-Edge (and Nano) — minutes on a GPU | pod | E27 loader |
+| E34 | **Audio bridge A1 alignment** on public audio–caption sets (licences per set first; see RG_audio_bridge.md) | pod | stream A |
+| E35 | **Explanation channel zero-shot run** on eval139 windows with the Edge reasoner (KV-cache reuse), H-HC21 metrics | pod | E27 |
+| E36 | **Six extra cameras by reference** — `camera_ref` table to upstream chunks; pull on the pod for elastic-sensing per-option runs | pod | — |
