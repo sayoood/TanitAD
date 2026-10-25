@@ -90,6 +90,8 @@ class Stage:
     lam: dict
 
 
+HARD_W = 2.0                                  # weight of near-miss negatives (ADE in [0.25, 1.0] m) in the stage-2 normaliser (HYPOTHESIS)
+
 STAGES = {
     1: Stage("stage1", False, 0.0, dict(voc=1.0, cons=0.0, goal=0.2, cost=0.0, ref=0.0, cfg=0.0, aud=0.0, img=0.0)),
     2: Stage("stage2", True, 0.4, dict(voc=1.0, cons=0.1, goal=0.2, cost=0.0, ref=0.0, cfg=0.0, aud=0.0, img=0.0)),
@@ -160,7 +162,10 @@ class HiCAPLoss(nn.Module):
         # Level 3 -- factored path / profile critics with LEVEL-WIDE negatives and soft targets
         zP = level_logits(s["s3P"], A["s3P"], m.tau("s3P"), V.logq_s3P, self.beta.get("s3P", 0.0))
         zQ = level_logits(s["s3V"], A["s3V"], m.tau("s3V"), V.logq_s3V, self.beta.get("s3V", 0.0))
-        parts["L3P"] = level_loss(zP, batch["yP"]); parts["L3V"] = level_loss(zQ, batch["yQ"])
+        zPt, zQt = zP, zQ
+        if st.hard_negatives and "hardP" in batch:                              # stage 2+: near-miss negatives get extra weight in the normaliser
+            zPt = zP + math.log(HARD_W) * batch["hardP"]; zQt = zQ + math.log(HARD_W) * batch["hardQ"]
+        parts["L3P"] = level_loss(zPt, batch["yP"]); parts["L3V"] = level_loss(zQt, batch["yQ"])
         voc = sum(parts.values())
         total = lam["voc"] * voc
         # consistency: cascade marginal p(class) * p(path | class) of the path factor vs the level-wide critic (stop-grad on the cascade)
@@ -179,7 +184,7 @@ class HiCAPLoss(nn.Module):
             if "goal_pt" in batch:
                 parts["goal_pt"] = (F.smooth_l1_loss(g_pt, batch["goal_pt"], reduction="none").mean(-1) * batch["goal_pt_w"]).sum() / batch["goal_pt_w"].sum().clamp(min=1)
             total = total + lam["goal"] * (parts["goal"] + parts.get("goal_pt", 0.0))
-        if lam["cost"] > 0 and "cand_p" in batch:
+        if lam["cost"] > 0 and "cand_p" in batch and "cost_t" in batch:     # needs the agent-track join (not in this dataset yet)
             ap = A["s3P"][batch["cand_p"]]; aq = A["s3V"][batch["cand_q"]]
             sp = (s["s3P"].unsqueeze(1) * s["s3V"].unsqueeze(1))
             feat = sp * ap * aq
