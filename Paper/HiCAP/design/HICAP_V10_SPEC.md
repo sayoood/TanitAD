@@ -109,8 +109,8 @@ cuboids (track id, class among 10 dynamic classes, centre, size, yaw, timestamp)
 
 ```
 mic (mono, or array) ─► log-mel, 2 s window, 0.5 s hop
-   └► FROZEN audio encoder  (default: Whisper-class encoder, as used by Qwen-Omni's audio tower;
-                            alternatives: BEATs-base ~90 M, CLAP-HTSAT; licence + Thor cost per candidate)
+   └► FROZEN audio encoder  (default: Qwen3-Omni AuT, 647.9 M, Apache-2.0, ~6.8 ms/window on Thor ESTIMATED;
+                            contender: BEATs-base ~90 M; decided by E-N0 — note R-G)
          └► TRAINABLE BRIDGE: 2-layer perceiver, 8 latent queries → MLP → 8 tokens ∈ R^{d_v}
                ├─(a, default) HiCAP fusion: zero-init gated cross-attention (existing GatedAudio, d_audio = d_v)
                └─(b, ablation) native: 8 soft tokens appended to the frozen VLM prefill (omni pattern)
@@ -219,7 +219,7 @@ Publishing to HF is the PI's decision; everything above is staged in the repo fi
 | Motion adapter, projectors, fusion (6 L, d 512), level queries, readouts, node/numeric towers, re-ranker | trained | 56.4 M (MEASURED, `HiCAP.n_params`) |
 | Imagination E-head, Tier-2 heads, camera gate, config embedding | trained | +1.88 M (MEASURED, `HiCAPFull`) |
 | Rule memory (retrieval 0.33 M + gated cross-attention 2.10 M), country readout 3.67 M | trained | **6.10 M** (MEASURED, `HiCAPFull.knowledge_params`, d 512, d_text 2,048) — complete model **64.37 M** without the audio bridge |
-| Audio bridge + event heads | trained | MEASURED in stream A (see `audio.py`) |
+| Audio bridge + event heads | trained | **10.13 M** at d_v 2,048 mono (MEASURED, `rg_audio_bridge_params_result.json`); HiCAPFull with bridge and d_audio = d_v: **74.62 M** |
 | Node / rule / country text embeddings | cached once from the frozen text path | 0 trainable |
 
 ## 6. Training schedule (poster / video) — as implemented (`losses.STAGES`, `full.FullLoss`; rev b aligns the spec to the code)

@@ -66,7 +66,7 @@ So the \emph{first} experiment is not the gate but the value of an oracle camera
 Sirens and horns are decisive cues that may be invisible until late, and the leading model families are becoming omni-modal. We add audio as tokens in the backbone's own space, under a stricter regime than vision because audio cannot yet be validated as driving skill.
 
 \paragraph{Pattern: a gated residual, not audio inside the language model.}
-A frozen audio tower (a BEATs-base-class encoder of $\approx90$\,M parameters, or an ASR-class encoder if the chosen VLM family ships none) reads a two-second window; a two-layer Perceiver pools it to $k=8$ tokens; and the level-query outputs are updated by one gated cross-attention read,
+A frozen audio tower (the Qwen3-Omni audio encoder, $\approx648$\,M parameters under Apache-2.0, as default, with a BEATs-base-class encoder of $\approx90$\,M as the contender, decided by the pre-registered tower probe E-N0; note R-G) reads a two-second window; a two-layer Perceiver pools it to $k=8$ tokens; and the level-query outputs are updated by one gated cross-attention read,
 \begin{equation}
 \mathbf q_\ell'=\mathbf q_\ell+\tanh(g_\ell)\,\mathrm{CrossAttn}\big(\mathbf q_\ell,\ \text{audio tokens}\big),\qquad g_\ell\equiv0\ \text{at initialisation},
 \end{equation}
