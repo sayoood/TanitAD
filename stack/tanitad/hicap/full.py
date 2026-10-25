@@ -102,6 +102,7 @@ class FullLoss(HiCAPLoss):
             out = m.ehead(s["s2lon"].detach())                       # trained separately from the selector: no gradient into it
             tgt = dict(gap=batch["exo_gap"], closing=batch["exo_close"], lacc=batch["exo_acc"], mode=batch["exo_mode"], onset=batch["exo_onset"],
                        has_lead=batch["exo_has_lead"], w=batch["exo_w"])
+            if "exo_hmask" in batch: tgt["hmask"] = batch["exo_hmask"]
             parts["exo"] = exo_loss(out, tgt); total = total + lam["img"] * parts["exo"]
         # --- Tier 2 counterfactual heads (family-masked: G2)
         if lam["img"] > 0 and "cf_cost" in batch and "cand_p" in batch:
@@ -113,7 +114,8 @@ class FullLoss(HiCAPLoss):
             ap, aq = A["s3P"][batch["cand_p"]], A["s3V"][batch["cand_q"]]
             z = m.tau("s3P") * (s["s3P"].unsqueeze(1) * ap).sum(-1) + m.tau("s3V") * (s["s3V"].unsqueeze(1) * aq).sum(-1)
             y = tier0_target(batch["J_teacher"], batch["star"])
-            parts["tier0"] = -(y * F.log_softmax(z, -1)).sum(-1).mean(); total = total + parts["tier0"]
+            l = -(y * F.log_softmax(z, -1)).sum(-1); jw = batch.get("J_w", torch.ones_like(l))
+            parts["tier0"] = (l * jw).sum() / jw.sum().clamp(min=1.0); total = total + parts["tier0"]
         # --- elastic: cost-sensitive gate on cached per-option errors, and L^cfg on reduced configurations
         if "E_opt" in batch:
             front = s["s2lon"]

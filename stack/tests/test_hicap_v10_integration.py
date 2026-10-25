@@ -101,3 +101,25 @@ def test_audio_bridge_wired_present_mask_and_null():
     assert torch.equal(s0["s1"][1], s2["s1"][1])                    # sample without audio: untouched in a mixed batch
     assert not torch.equal(s0["s1"][0], s2["s1"][0])                # sample with audio: moved once the gate opens
     assert len(m.audio_params()) > 0
+
+
+@pytest.mark.skipif(not os.path.exists("DataEng/v10/imag/v10_imag_eval139.npz"), reason="imag sample absent")
+def test_imag_rows_feed_fullloss_and_masks():
+    from tanitad.hicap.data import ImagRows, collate
+    from tanitad.hicap.imagination import EHead, exo_loss
+    R = ImagRows("DataEng/v10/imag/v10_imag_eval139.npz")
+    sha = next(iter(R.row0)); items = [R.item(sha, j) for j in range(0, 40, 5)] + [R.item("000000000000", 0)]
+    b = collate(items)
+    assert b["exo_w"][-1] == 0 and b["exo_mode"][-1] == -100          # clip absent -> unsupervised, never 'no lead'
+    out = EHead(64)(torch.randn(len(items), 64))
+    tgt = dict(gap=b["exo_gap"], closing=b["exo_close"], lacc=b["exo_acc"], mode=b["exo_mode"], onset=b["exo_onset"],
+               has_lead=b["exo_has_lead"], w=b["exo_w"], hmask=b["exo_hmask"])
+    L = exo_loss(out, tgt); assert torch.isfinite(L); L.backward()
+
+
+def test_ehead_gap_is_linear():
+    from tanitad.hicap.imagination import EHead
+    h = EHead(8)
+    with torch.no_grad():
+        h.m.net[-1].bias.fill_(-1.0); h.m.net[-1].weight.zero_()
+    assert (h(torch.randn(2, 8))["gap"] < 0).all()                     # negative gap targets are representable (stream S: up to 3.7 %)

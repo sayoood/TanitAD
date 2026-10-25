@@ -67,10 +67,11 @@ class V9Rows:
 class HiCAPWindows(Dataset):
     def __init__(self, cache_dir: str, rows: V9Rows, vocab: V.FactoredVocab, sha12s: list[str] | None = None,
                  train: bool = True, stride: int = 1, require_label: bool = False, rc_variant: str = "A50", seed: int = 0, cfg=None,
-                 strat: np.ndarray | None = None, country: dict | None = None):
+                 strat: np.ndarray | None = None, country: dict | None = None, imag: str | None = None):
         self.dir, self.rows, self.vocab, self.train, self.rc = cache_dir, rows, vocab, train, rc_variant
         self.rng = np.random.default_rng(seed); self.cfg = cfg; self.strat = strat       # strat_y per v9 row (strategic.py), None -> IGNORE
         self.country = country or {}                            # sha12 -> country_id (v10 country component; load_country), missing -> IGNORE
+        self.imag = ImagRows(imag) if imag else None             # v10 imagination supervision (supervision.py), keyed by (sha12, j)
         self.clips: dict[str, dict] = {}
         self.index: list[tuple[str, int]] = []                 # (sha12, j)
         for s in (sha12s or rows.sha12):
@@ -134,7 +135,26 @@ class HiCAPWindows(Dataset):
             dP=torch.from_numpy(dP), dQ=torch.from_numpy(dQ), goal_y=torch.from_numpy(goal_y), goal_w=torch.from_numpy(goal_w),
             goal_pt=torch.from_numpy(gp / np.array([50.0, 50.0, 10.0], np.float32)), goal_pt_w=torch.ones(3),
             fut=torch.from_numpy(fut), v0=torch.tensor(v0, dtype=torch.float32), dv_log=torch.from_numpy(dv_log),
-            path_log=torch.from_numpy(path_log), eid=torch.tensor(cm["sid"]), k=torch.tensor(k))
+            path_log=torch.from_numpy(path_log), eid=torch.tensor(cm["sid"]), k=torch.tensor(k)) | (self.imag.item(s, j) if self.imag else {})
+
+
+class ImagRows:
+    """v10 imagination supervision (`build_hicap_imag_supervision.py` npz): row (sha12, j) -> exo_* targets + J_w. Clips not in the file
+    get exo_w = J_w = 0 (no supervision), never 'no lead'. Mode ids index imagination.MODE_ACC; cut-outs are IGNORE."""
+    KEYS = ("exo_gap", "exo_close", "exo_acc", "exo_hmask", "exo_mode", "exo_onset", "exo_has_lead", "exo_w", "J_w")
+
+    def __init__(self, path: str):
+        z = np.load(path); self.a = {k: z[k] for k in self.KEYS}
+        self.row0 = {str(sh): int(r) for sh, r, b in zip(z["clip__sha12"], z["clip__row0"], z["clip__built"]) if b}
+        self.n = {str(sh): int(n) for sh, n in zip(z["clip__sha12"], z["clip__n_rows"])}
+
+    def item(self, sha: str, j: int) -> dict:
+        r0 = self.row0.get(sha)
+        if r0 is None or j >= self.n[sha]:
+            d = {k: np.zeros_like(self.a[k][0]) for k in self.KEYS}; d["exo_mode"] = np.int64(-100)
+        else:
+            d = {k: self.a[k][r0 + j] for k in self.KEYS}
+        return {k: torch.as_tensor(np.asarray(v)) for k, v in d.items()}
 
 
 def load_country(parquet: str) -> dict:
@@ -153,7 +173,7 @@ def targets_from_distances(b: dict, sigma: float = 0.5, hard_lo=0.25, hard_hi=1.
     from .losses import soft_target
     b["yP"] = soft_target(b["dP"], sigma); b["yQ"] = soft_target(b["dQ"], sigma)
     b["hardP"] = ((b["dP"] > hard_lo) & (b["dP"] < hard_hi)).float(); b["hardQ"] = ((b["dQ"] > hard_lo) & (b["dQ"] < hard_hi)).float()
-    if vocab is not None:
+    if vocab is not None and "cand_p" not in b:                 # never overwrite candidates the supervision file's J refers to
         cp = b["dP"].topk(n_cand, largest=False).indices; cq = b["dQ"].topk(n_cand, largest=False).indices
         b["cand_p"], b["cand_q"] = cp, cq
         ref = []

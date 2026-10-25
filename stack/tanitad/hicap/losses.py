@@ -189,7 +189,9 @@ class HiCAPLoss(nn.Module):
             sp = (s["s3P"].unsqueeze(1) * s["s3V"].unsqueeze(1))
             feat = sp * ap * aq
             pred = torch.stack([h(feat).squeeze(-1) for h in m.cost], -1)
-            parts["cost"] = F.smooth_l1_loss(pred, batch["cost_t"])
+            l = F.smooth_l1_loss(pred, batch["cost_t"], reduction="none").flatten(1).mean(-1)
+            jw = batch.get("J_w", torch.ones_like(l))                 # rows whose agent labels cover < 3 s carry J_w = 0
+            parts["cost"] = (l * jw).sum() / jw.sum().clamp(min=1.0)
             total = total + lam["cost"] * parts["cost"]
         if lam["ref"] > 0 and "cand_p" in batch and "refine_t" in batch:
             ap = A["s3P"][batch["cand_p"]]; aq = A["s3V"][batch["cand_q"]]

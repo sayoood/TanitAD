@@ -44,22 +44,29 @@ def teacher_costs(traj: np.ndarray, agents_xy: np.ndarray | None, v0: float, dt:
 # ------------------------------------------------------------------ Tier 1
 class EHead(nn.Module):
     """R^512 -> R^1024 -> R^24 reading the STATE only: lead gap / closing speed / lead accel at 0.5,1,2,3 s (12), log-sigma of the gap (4),
-    mode logits (4), onset quantiles q10/q50/q90 (3), has-lead logit (1)."""
+    mode logits (4), onset quantiles q10/q50/q90 (3), has-lead logit (1). Mode ids index MODE_ACC (brake, hold, accelerate, brake hard);
+    cut-outs are IGNORE for the mode head (supervision.py emits them separately as exo_mode4)."""
     def __init__(self, d=512):
         super().__init__(); self.m = MLP(d, 2 * d, 24)
     def forward(self, s):
         o = self.m(s)
-        return dict(gap=F.softplus(o[:, 0:4]) * 10.0, closing=o[:, 4:8], lacc=o[:, 8:12], logsig=o[:, 12:16], mode=o[:, 16:20],
+        return dict(gap=o[:, 0:4] * 10.0, closing=o[:, 4:8], lacc=o[:, 8:12], logsig=o[:, 12:16], mode=o[:, 16:20],
                     onset=torch.sort(F.softplus(o[:, 20:23]), -1).values * 3.0, has_lead=o[:, 23])
 
 
 def exo_loss(out: dict, tgt: dict):
     """L^exo: Huber on descriptors + CE on mode + quantile (pinball) on onset, all on supervised rows (tgt['w'] in {0,1}); has-lead BCE.
-    tgt: gap [B,4], closing [B,4], lacc [B,4], mode [B] (-100 ignore), onset [B], has_lead [B], w [B]."""
+    tgt: gap [B,4], closing [B,4], lacc [B,4], mode [B] (-100 ignore), onset [B], has_lead [B], w [B]; optional hmask [B,4] (horizon
+    observed). log-sigma is trained by a heteroscedastic Gaussian NLL of the gap forecast (sigma floored at 0.1 m), not regressed onto
+    track jitter, which is ~1 cm and carries no information (MEASURED, stream S)."""
     w = tgt["w"]; hl = tgt["has_lead"]
     m = (w * hl)
-    huber = sum(F.smooth_l1_loss(out[k], tgt[k], reduction="none").mean(-1) for k in ("gap", "closing", "lacc"))
-    L = (huber * m).sum() / m.sum().clamp(min=1.0)
+    hm = tgt.get("hmask", torch.ones_like(tgt["gap"]))
+    den = hm.sum(-1).clamp(min=1.0)
+    huber = sum((F.smooth_l1_loss(out[k], tgt[k], reduction="none") * hm).sum(-1) / den for k in ("gap", "closing", "lacc"))
+    sig = out["logsig"].exp().clamp(min=0.1)
+    nll = ((0.5 * ((tgt["gap"] - out["gap"].detach()) / sig) ** 2 + sig.log()) * hm).sum(-1) / den
+    L = ((huber + 0.1 * nll) * m).sum() / m.sum().clamp(min=1.0)
     ok = (tgt["mode"] >= 0) & (m > 0)
     if ok.any(): L = L + F.cross_entropy(out["mode"][ok], tgt["mode"][ok])
     q = torch.tensor([0.1, 0.5, 0.9], device=w.device)

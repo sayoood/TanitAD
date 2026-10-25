@@ -90,9 +90,11 @@ cuboids (track id, class among 10 dynamic classes, centre, size, yaw, timestamp)
 * **Lead identification**: the nearest agent whose footprint overlaps the ego's *logged future corridor*
   (ego path ± half-width + margin) within 0–80 m along-path; `has_lead`.
 * **Tier 1 targets** (24 outputs, matching `imagination.EHead`): gap, closing speed, lead longitudinal
-  acceleration at 0.5 / 1 / 2 / 3 s; gap log-σ target from track jitter; **mode** label among
-  {cruise, brake, accelerate, cut-out} (+cut-in recorded when an agent enters the corridor); **onset**
-  q10/q50/q90 of the mode change.
+  acceleration at 0.5 / 1 / 2 / 3 s (gap = lead arc position − v0·h, may be negative; the E-head gap output is linear); gap log-σ trained
+  by a heteroscedastic Gaussian NLL of the forecast (track jitter is ~1 cm, MEASURED, and is not a target); **mode** ids index
+  `imagination.MODE_ACC` = {brake −3, hold 0, accelerate +1.5, brake hard −6 m/s²}, which is what Tier 1 integrates; cut-outs are IGNORE
+  for the mode head and are emitted separately (`exo_mode4` = {cruise, brake, accelerate, cut-out}; cut-in flagged); **onset**
+  q10/q50/q90 of the mode change. Rows whose agent labels cover < 3 s carry J_w = 0 and do not train Tier 0 or the cost heads.
 * **Tier 0 / Tier 2 teacher cost** J(a) for each composed vocabulary candidate a (or for the top-K at
   Tier 2): `ttc` (min over agents of time-to-collision of the candidate's swept footprint vs the agents'
   *logged* futures), `clearance` (min distance), `progress deficit` (vs the logged path) — the 3 channels
