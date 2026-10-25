@@ -1,0 +1,100 @@
+[gate] profile v8f | commit c2fad328f517 | tree C:\Users\Admin\ar3_gt
+[gate] tree == git archive c2fad328f517 (3153 files, f8353d005aeddb96)
+[gate] REFUSAL: profile v8f requires --residual-prior in the launch argv (SPEC: NEW-1 is part of this arm)
+[gate] REFUSAL: profile v8f requires --ego-history in the launch argv (SPEC: NEW-1 is part of this arm)
+[gate] REFUSAL: profile v8f requires --slot-deep-supervision in the launch argv (SPEC_REFCV7 14 (A9 R2): per-layer supervision of both slot heads)
+[gate] REFUSAL: profile v8f requires --slot-vis1 in the launch argv (SPEC_REFCV7 14 + 15.1 (A9 R3, A10): VIS-1 targets and IGNORE semantics)
+[gate] REFUSAL: profile v8f requires --refcv8 in the launch argv (PLAN_REFCV8 R8-1: the tactical layer conditions generation and selection)
+[gate] REFUSAL: profile v8f requires --init-from in the launch argv (DESIGN 3.7: the warm start from refcv7 (every source key strict, new keys = refcv8 seams))
+[gate] REFUSAL: profile v8f requires --r8-v9-labels in the launch argv (WP-A INTEGRATION 2: the v9 release supervises the tactical layer and feeds nav / RC)
+[gate] REFUSAL: profile v8f requires --r8-v9-labels-eval in the launch argv (train and eval are supervised by ONE label release)
+[gate] REFUSAL: profile v8f requires --r8-nav-from-v9 in the launch argv (R8-2: the per-frame announced nav token)
+[gate] REFUSAL: profile v8f requires --r8-no-rc in the launch argv (PI ruling 2026-10-11 (Q-A): NO route checkpoint -- the nav command and its distance only)
+[gate] REFUSAL: profile v8f requires --join-defect-masks in the launch argv (MM binding 2026-10-04 item 6: the 693-box ego mask; SPEC_REFCV8 A2: re-mined over the 4,572-clip view = 1,068 boxes (refcv8_join_label_defects_train4572.json, md5 b2591cb2ec4f4089831124e4738a961c; the 4,508 old clips' entries identical))
+[gate] REFUSAL: profile v8f requires --grad-share-every in the launch argv (SPEC_WPB_LADDER: the in-run gradient-share instrument is on every refcv8 run)
+[gate] REFUSAL: profile v8f requires --max-speed-input-v6 in the launch argv (SPEC_REFCV8 8.3 (X3): the set-speed channel, the ceiling's source)
+[gate] REFUSAL: profile v8f requires --r8-speed-input in the launch argv (PI ruling 2026-10-11 (Q-B): the channel's source is the QUANTIZED max-speed LABEL (`--r8-speed-input label`; the trainer value lands in hold_r8label))
+[gate] REFUSAL: profile v8f requires --speed-max-sidecar-v6 in the launch argv (PI ruling 2026-10-11 (Q-B): the 4-way road-type label sidecar (train), refcv7's)
+[gate] REFUSAL: profile v8f requires --speed-max-sidecar-v6-eval in the launch argv (PI ruling 2026-10-11 (Q-B): the 4-way road-type label sidecar (eval), refcv7's)
+[gate] REFUSAL: profile v8f requires --pose-sync-sidecar in the launch argv (X10 (MM ruling 2026-10-04, closes SPEC X10): the pose-to-image timing correction (Data FlyWheel; tanitad/data/pose_sync.py))
+[gate] REFUSAL: profile v8f requires --ema-decay in the launch argv (R8-WARMUP (MM ruling 2026-10-11, SPEC_REFCV8 10.3): the weight EMA, 0.9998)
+[gate] REFUSAL: profile v8f requires --b1-guard-ref-ap2m in the launch argv (SPEC_REFCV8 10.1 B1 guard: refcv7-50,400's in-run box3d AP@2 m (min of last 22 rows))
+[gate] REFUSAL: profile v8f requires --b1-guard-step in the launch argv (SPEC_REFCV8 10.1 B1 guard: first read at step 1,000)
+[gate] REFUSAL: profile v8f requires --r8-alloc-emit in the launch argv (SPEC: NEW-1 is part of this arm)
+[gate] REFUSAL: profile v8f requires --p10-prior in the launch argv (PLAN_V8F section 6 (alpha-1): the frozen learned kinematic floor P10 is the residual prior)
+[gate] REFUSAL: profile v8f requires --p10-prior-sha256 in the launch argv (the P10 file's identity: checked at the build, stamped into config.json and ckpt.pt, re-checked at eval and at resume)
+[gate] REFUSAL: --graft-tac8-prior is REQUIRED ON for a v8f launch (SPEC_REFCV7 7, PI ruling E1) and the argv does not pass it
+[gate] REFUSAL: --graft-nav-compliance is REQUIRED ON for a v8f launch (SPEC_REFCV7 7, PI ruling E1) and the argv does not pass it
+[gate] REFUSAL: --speed-ceiling-filter is REQUIRED ON for a v8f launch (SPEC_REFCV7 7, PI ruling E1) and the argv does not pass it
+[gate] REFUSAL: --residual-prior p10_pose is REQUIRED for a v8f launch (PLAN_V8F section 6 (alpha-1): the ONE lever that differs from refcv8 -- the residual prior is the frozen POSE-ONLY P10 (alpha-0's `ha0_ext_pose` reads past poses only, so the input set is unchanged)) and the argv has None
+[gate] REFUSAL: --map-hires on is REQUIRED for a v8f launch (SPEC_REFCV7 8.1: the 10 cm map head) and the argv has None
+[gate] REFUSAL: --bev-source map_hires_pool is REQUIRED for a v8f launch (SPEC_REFCV7 11.1 (A6 option c): EVERY BEV consumer reads the pooled high-resolution BEV) and the argv has None
+[gate] REFUSAL: --map-hires-decision-rule prior_corrected is REQUIRED for a v8f launch (SPEC_REFCV7 9 item 1 (A4): the prior-corrected argmax) and the argv has None
+[gate] REFUSAL: --map-hires-x-max-m 100 is REQUIRED for a v8f launch (SPEC_REFCV7 12 (A7): 100 m ahead) and the argv has None
+[gate] REFUSAL: --map-hires-y-half-m 30 is REQUIRED for a v8f launch (SPEC_REFCV7 12 (A7): +-30 m) and the argv has None
+[gate] REFUSAL: --map-hires-grad-ckpt on is REQUIRED for a v8f launch (SPEC_REFCV7 12 item 4 (A7): checkpointing ON for the 10 cm decoder) and the argv has None
+[gate] REFUSAL: --bev-planner-crop-m 60 16 is REQUIRED for a v8f launch (SPEC_REFCV7 12 item 2 (A7): the planner BEV cropped to 60 m x +-16 m) and the argv has None
+[gate] REFUSAL: --w-map 0 is REQUIRED for a v8f launch (SPEC_REFCV7 11.1 (A6): the 0.5 m map head and loss are REMOVED) and the argv has None
+[gate] REFUSAL: --slot-presence-loss focal is REQUIRED for a v8f launch (SPEC_REFCV7 14 (A9 R1): sigmoid focal presence + the focal matching cost) and the argv has None
+[gate] REFUSAL: --slot-presence-prior 0.01 is REQUIRED for a v8f launch (SPEC_REFCV7 14 (A9 R1): the presence prior 0.01) and the argv has None
+[gate] REFUSAL: --slot-query-select learned_ref is REQUIRED for a v8f launch (SPEC_REFCV7 19.1 (A14.1): the box head's learned reference points (the full-model one-frame test PASS; the launch ruling 2026-09-27)) and the argv has None
+[gate] REFUSAL: --vis1-sidecar /home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz is REQUIRED for a v8f launch (SPEC_REFCV8 A2: the VIS-1 sidecar over 4,572 + 139 clips, sha256 b50ab62ff7a49335cdc664a56fbfbb64c983bca6bd0563d0d7ab11e2f6e10c04 (the 4,508 refcv7 clips' entries identical; 145 unjoined ADD clips as zero-frame entries, mask True)) and the argv has None
+[gate] REFUSAL: --map-hires-near-lift-m 20 is REQUIRED for a v8f launch (SPEC_REFCV7 17 (A12): the 0.1 m near-range lift over x 0-20 m; 23 (A18): the map path G-MAP-OVERFIT ran) and the argv has None
+[gate] REFUSAL: --map-hires-near-refine-blocks 1 is REQUIRED for a v8f launch (SPEC_REFCV7 20 (A15): ONE near refine block; 23 (A18): A15's configuration) and the argv has None
+[gate] REFUSAL: --r8-v9-md5 83e30bd3791f0767707eade5f4671759 is REQUIRED for a v8f launch (SPEC_REFCV8 A2: the 4,572-clip train release (the 4,369 clips row-identical to WP-A WPA-S3's f63ece41..., the control in v9_train4572/RESULT.md)) and the argv has None
+[gate] REFUSAL: --r8-v9-eval-md5 6b5c7f207cffc3b7eb3cd527fd433599 is REQUIRED for a v8f launch (WP-A LANDING_READY WPA-S3: the validated eval139 release) and the argv has None
+[gate] REFUSAL: --r8-v9-lat-variant a is REQUIRED for a v8f launch (D-WPA-1: lateral variant a (junction) is the default) and the argv has None
+[gate] REFUSAL: --r8-nav-args-dropout 0.5 is REQUIRED for a v8f launch (MM binding 2026-10-04: nav-argument dropout, token kept) and the argv has None
+[gate] REFUSAL: --r8-speed-unknown-p 0.45 is REQUIRED for a v8f launch (SPEC_REFCV8 8.3 (X3): the TRAINED unknown row at D4 / NavSim's no-limit share 0.45) and the argv has None
+[gate] REFUSAL: --r8-alloc-emit-start 1000 is REQUIRED for a v8f launch (MM ruling Q1 (I-2) + R8-WARMUP (2026-10-11): extras emitted from the end of the LR warmup (--warmup 1000, SPEC_REFCV8 sec. 10.3); the emission-OFF phase is identity-free (iw_diag + the split decode, I-W PASS 218 windows)) and the argv has None
+[gate] REFUSAL: --w-r8-cons 0.05 is REQUIRED for a v8f launch (SPEC_WPB: the constraint-head weight) and the argv has None
+[gate] REFUSAL: --r8-speed-input label is REQUIRED for a v8f launch (PI ruling 2026-10-11 (Q-B): the max-speed LABEL quantized to the road-type set {30, 50, 100, 120} km/h, not a past-only proxy and not the exact future speed; `label` is the trainer value landing in hold_r8label) and the argv has None
+[gate] REFUSAL: --speed-max-sidecar-v6 /home/nvidia/data/refcv6_speed_max_v8_train.jsonl is REQUIRED for a v8f launch (PI ruling 2026-10-11 (Q-B): refcv7-r101-s0's train label sidecar (its launch record)) and the argv has None
+[gate] REFUSAL: --speed-max-sidecar-v6-eval /home/nvidia/data/refcv6_speed_max_v8_eval.jsonl is REQUIRED for a v8f launch (PI ruling 2026-10-11 (Q-B): refcv7-r101-s0's eval label sidecar (its launch record)) and the argv has None
+[gate] REFUSAL: --ema-decay 0.9998 is REQUIRED for a v8f launch (R8-WARMUP (SPEC_REFCV8 10.3): EMA 0.9998, evaluated at every in-run eval) and the argv has None
+[gate] REFUSAL: --warmup 1000 is REQUIRED for a v8f launch (R8-WARMUP (SPEC_REFCV8 10.3): both LR groups re-warm over 1,000 steps (S_emit = the warmup length)) and the argv has None
+[gate] REFUSAL: --v2-cache /home/nvidia/data/refcv8-b1-416x1024-train-4572 is REQUIRED for a v8f launch (SPEC_REFCV8 A2: the 4,572-clip train view (manifest md5 77dafb50af0aedd1b940cf12c12518ef; n eval139 = 0)) and the argv has None
+[gate] REFUSAL: --agent-rig-extrinsics /home/nvidia/data/refcv8_train4572_eval139_extrinsics.json is REQUIRED for a v8f launch (SPEC_REFCV8 A2: 4,711 keys = the 4,508 refcv6 entries untouched + the 203 ADD clips) and the argv has None
+[gate] REFUSAL: --pose-sync-sidecar /home/nvidia/data/refcv8_pose_sync_sidecar.jsonl is REQUIRED for a v8f launch (SPEC_REFCV8 A2: 4,711 rows; every refcv6 row reproduced exactly (4,508 / 4,508)) and the argv has None
+[gate] REFUSAL: --clip-clock-sidecar /home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl is REQUIRED for a v8f launch (SPEC_REFCV8 A2: 4,686 rows; 33 stationary ADD clips clocked by the camera-timestamp route (validated on all 4,653 moving clips); unverified 22 / 4,572 = 0.481 % < 1 %) and the argv has None
+[gate] REFUSAL: --r8-v9-labels /home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz is REQUIRED for a v8f launch (SPEC_REFCV8 A2: the v9 train release over the 4,572 view) and the argv has None
+[gate] REFUSAL: --nav-compliance-tau-file /home/nvidia/data/refcv8/nav_compliance_tau_train4572.json is REQUIRED for a v8f launch (SPEC_REFCV8 A3: the FIX-4 nav tau record re-derived on the 4,572-clip view (sha256 9fa7ca38b529bacfe79209c4bb9ccad039c7af284e5080f1c4f856ea46ebb5a3)) and the argv has None
+[gate] REFUSAL: --nav-compliance-tau-rad 0.1806411302089691 is REQUIRED for a v8f launch (SPEC_REFCV8 A3: = the 4,572-view record's tau, by the registered FIX-4 rule (4,369-view value 0.18063741505146028)) and the argv has None
+[gate] REFUSAL: --r8-n-alloc 32 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json: allocation M 32) and the argv has None
+[gate] REFUSAL: --w-r8-alloc-l1 1.0 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json) and the argv has None
+[gate] REFUSAL: --w-r8-listwise 0.0 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the X1 listwise selector loss OFF -- V-R8-noLW CONFIRMED (5fef1b0): the listwise-trained selector is what lost the GT turns) and the argv has None
+[gate] REFUSAL: --w-r8-sat 0.1 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json) and the argv has None
+[gate] REFUSAL: --w-r8-subscore 0.5 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json) and the argv has None
+[gate] REFUSAL: --w-r8-v9-cons 0.05 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json) and the argv has None
+[gate] REFUSAL: --r8-lat-prior-dropout 0.3 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json) and the argv has None
+[gate] REFUSAL: --w-tac-v6 1.0 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-BUDGET closed): k 1 -- L2 PREMISE-UNMET under A1) and the argv has None
+[gate] REFUSAL: --w-map-hires 1.0 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-BUDGET closed): w 1 -- L3 FAILS under A1) and the argv has None
+[gate] REFUSAL: --p10-prior-sha256 e70a9ae30b4418705442bffdeb62d9810a43b0a6ccce0c177796c72295fe693d is REQUIRED for a v8f launch (the banked pose-only P10 (refit on the 4,572-clip train view, 74,604 bytes): a literal) and the argv has None
+[gate] REFUSAL: --w-map-hires must be passed with a value > 0 for a v8f launch (a built head with no live weight is declared-but-inert); the argv has None
+[gate] REFUSAL: --w-r8-cons must be passed with a value > 0 for a v8f launch (a built head with no live weight is declared-but-inert); the argv has None
+[gate] REFUSAL: --w-r8-v9-cons must be passed with a value > 0 for a v8f launch (a built head with no live weight is declared-but-inert); the argv has None
+[gate] job model (G-HYG, G-DVB) -> C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\ar3\raw\gate_v8f_profile_L\logs\job_model.log
+[gate]   G-HYG    ERROR
+[gate]   G-DVB    ERROR
+[gate]   G-LIVE   MISSING
+[gate]   G-CLOCK  MISSING
+[gate]   G-EVAL   MISSING
+[gate]   G-CKPT   MISSING
+[gate]   G-SUITE  MISSING
+[gate]   G-SUITE-PINNED MISSING
+[gate]   G-MAP-OVERFIT MISSING
+[gate]   G-BOX-OVERFIT MISSING
+[gate]   - profile v8f requires --residual-prior in the launch argv (SPEC: NEW-1 is part of this arm)
+[gate]   - profile v8f requires --ego-history in the launch argv (SPEC: NEW-1 is part of this arm)
+[gate]   - profile v8f requires --slot-deep-supervision in the launch argv (SPEC_REFCV7 14 (A9 R2): per-layer supervision of both slot heads)
+[gate]   - profile v8f requires --slot-vis1 in the launch argv (SPEC_REFCV7 14 + 15.1 (A9 R3, A10): VIS-1 targets and IGNORE semantics)
+[gate]   - profile v8f requires --refcv8 in the launch argv (PLAN_REFCV8 R8-1: the tactical layer conditions generation and selection)
+[gate]   - profile v8f requires --init-from in the launch argv (DESIGN 3.7: the warm start from refcv7 (every source key strict, new keys = refcv8 seams))
+[gate]   - profile v8f requires --r8-v9-labels in the launch argv (WP-A INTEGRATION 2: the v9 release supervises the tactical layer and feeds nav / RC)
+[gate]   - profile v8f requires --r8-v9-labels-eval in the launch argv (train and eval are supervised by ONE label release)
+[gate]   - profile v8f requires --r8-nav-from-v9 in the launch argv (R8-2: the per-frame announced nav token)
+[gate]   - profile v8f requires --r8-no-rc in the launch argv (PI ruling 2026-10-11 (Q-A): NO route checkpoint -- the nav command and its distance only)
+[gate]   - profile v8f requires --join-defect-masks in the launch argv (MM binding 2026-10-04 item 6: the 693-box ego mask; SPEC_REFCV8 A2: re-mined over the 4,572-clip view = 1,068 boxes (refcv8_join_label_defects_train4572.json, md5 b2591cb2ec4f4089831124e4738a961c; the 4,508 old clips' entries identical))
+[gate]   - profile v8f requires --grad-share-every in the launch argv (SPEC_WPB_LADDER: the in-run gradient-share instrument is on every refcv8 run)
+[gate] verdict FAIL -> C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\ar3\raw\gate_v8f_profile_L\FAIL_c2fad328f517.json
+ZZGATE-FAIL-c2fad328f517ZZ

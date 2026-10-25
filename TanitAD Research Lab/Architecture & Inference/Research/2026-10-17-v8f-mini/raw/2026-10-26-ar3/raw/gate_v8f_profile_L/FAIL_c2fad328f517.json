@@ -1,0 +1,281 @@
+{
+ "schema": "tanitad.launch_gate/1",
+ "kind": "launch-gate-token",
+ "verdict": "FAIL",
+ "binding": {
+  "profile": "v8f",
+  "commit": "c2fad328f517899dc8808c054d096824d96f66b2",
+  "tree_sha256": "f8353d005aeddb96dc6ed0b5c3854ac945ad8590fba95c4f4f899c223c3a6ae2",
+  "argv_sha256": "1df0cf3877ee85349546272d2cc7b133d4b02ed0a14b6e7e5d5676b0a4cb7288",
+  "argv": [
+   "--arm",
+   "M2b",
+   "--seed",
+   "0",
+   "--grid",
+   "pool4x10",
+   "--out",
+   "D:\\tanitad\\runs\\v8f_mini_full\\M2b-lora_s0",
+   "--cache-dir",
+   "D:\\tanitad\\cache_full",
+   "--v9-train",
+   "D:\\tanitad\\data\\v9\\v9_labels_train.npz",
+   "--v9-train-md5",
+   "83e30bd3791f0767707eade5f4671759",
+   "--lead-train",
+   "D:\\tanitad\\data\\v9\\lead_train4572.npz",
+   "--speed-train",
+   "D:\\tanitad\\data\\v9\\refcv6_speed_max_v8_train.jsonl",
+   "--join-train",
+   "D:\\tanitad\\runs\\v8f_mini_full\\join_train.npz",
+   "--p10",
+   "D:\\tanitad\\runs\\v8f_mini_full\\p10\\p10_prior.pt",
+   "--kin-mode",
+   "yaw",
+   "--tracks",
+   "D:\\tanitad\\cache_full\\native_tracks.pt",
+   "--exclude",
+   "540:600",
+   "--batch",
+   "64",
+   "--steps-mult",
+   "4",
+   "--device",
+   "cuda",
+   "--encoder",
+   "lora",
+   "--lora-r",
+   "32",
+   "--lora-alpha",
+   "32",
+   "--lora-targets",
+   "q,v",
+   "--enc-ckpt",
+   "--accum",
+   "64",
+   "--frames-root",
+   "<VENUE>\\lora_frames\\train"
+  ],
+  "trainer": "stack/scripts/refc_v3_train.py",
+  "gate_inputs": {
+   "gate:clock-reference[0]": "C:\\Users\\Admin\\ar3_gt\\stack\\tanitad\\configs\\refcv8_clock_reference\\q4c_grid_vs_egolog_ALLTRAIN.json",
+   "gate:clock-reference[1]": "C:\\Users\\Admin\\ar3_gt\\stack\\tanitad\\configs\\refcv8_clock_reference\\q4c_grid_vs_egolog_ADD203.json",
+   "gate:clock-reference[2]": "C:\\Users\\Admin\\ar3_gt\\stack\\tanitad\\configs\\refcv8_clock_reference\\q4c_grid_vs_egolog_ADD203_slowregime.json",
+   "gate:nav-tau-record": "C:\\Users\\Admin\\ar3_gt\\stack\\tanitad\\configs\\refcv8_nav_compliance_tau_train4572.json"
+  },
+  "data": {
+   "--cache-dir": {
+    "path": "D:\\tanitad\\cache_full",
+    "kind": "missing"
+   },
+   "--v9-train": {
+    "path": "D:\\tanitad\\data\\v9\\v9_labels_train.npz",
+    "kind": "missing"
+   },
+   "--lead-train": {
+    "path": "D:\\tanitad\\data\\v9\\lead_train4572.npz",
+    "kind": "missing"
+   },
+   "--speed-train": {
+    "path": "D:\\tanitad\\data\\v9\\refcv6_speed_max_v8_train.jsonl",
+    "kind": "missing"
+   },
+   "--join-train": {
+    "path": "D:\\tanitad\\runs\\v8f_mini_full\\join_train.npz",
+    "kind": "missing"
+   },
+   "--p10": {
+    "path": "D:\\tanitad\\runs\\v8f_mini_full\\p10\\p10_prior.pt",
+    "kind": "missing"
+   },
+   "--tracks": {
+    "path": "D:\\tanitad\\cache_full\\native_tracks.pt",
+    "kind": "missing"
+   },
+   "--frames-root": {
+    "path": "<VENUE>\\lora_frames\\train",
+    "kind": "missing"
+   },
+   "gate:clock-reference[0]": {
+    "path": "C:\\Users\\Admin\\ar3_gt\\stack\\tanitad\\configs\\refcv8_clock_reference\\q4c_grid_vs_egolog_ALLTRAIN.json",
+    "kind": "file",
+    "bytes": 2105483,
+    "sha256": "9528c86fbf4bb5bdccf19e1cfe32ecde72f83508a7e86da839d5c067a477cba2",
+    "method": "sha256-v1"
+   },
+   "gate:clock-reference[1]": {
+    "path": "C:\\Users\\Admin\\ar3_gt\\stack\\tanitad\\configs\\refcv8_clock_reference\\q4c_grid_vs_egolog_ADD203.json",
+    "kind": "file",
+    "bytes": 80288,
+    "sha256": "6d09ae10b84c44408fe2019bb0b7b030d184e30bfafdf4b2bbac30f1fa2a1c69",
+    "method": "sha256-v1"
+   },
+   "gate:clock-reference[2]": {
+    "path": "C:\\Users\\Admin\\ar3_gt\\stack\\tanitad\\configs\\refcv8_clock_reference\\q4c_grid_vs_egolog_ADD203_slowregime.json",
+    "kind": "file",
+    "bytes": 10283,
+    "sha256": "dd153fcf39a92e022ed6f5df99d1e0e03a36a59667b398a53eb483d502b326fd",
+    "method": "sha256-v1"
+   },
+   "gate:nav-tau-record": {
+    "path": "C:\\Users\\Admin\\ar3_gt\\stack\\tanitad\\configs\\refcv8_nav_compliance_tau_train4572.json",
+    "kind": "file",
+    "bytes": 2566,
+    "sha256": "9fa7ca38b529bacfe79209c4bb9ccad039c7af284e5080f1c4f856ea46ebb5a3",
+    "method": "sha256-v1"
+   }
+  },
+  "data_sha256": "0699b7408e409668ba4c0b2bbe1a07224c266a1417ba871c4000eeccc171b184"
+ },
+ "checks": {
+  "G-HYG": {
+   "status": "ERROR",
+   "evidence_path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\sha12:f8581f16b3a0\\scratchpad\\ar3\\raw\\gate_v8f_profile_L\\evidence\\G-HYG.json",
+   "evidence_sha256": "4d04b97baaa58cdf1d738fc36b933744ab11bbaba355e069a7f5bd91d111c23c",
+   "host": "FREEDOM2035",
+   "finished_utc": "2026-10-25T23:18:40Z",
+   "reasons": [
+    "GateError: --cpu-only but CUDA is visible (on Windows set CUDA_VISIBLE_DEVICES=-1; an EMPTY value deletes the variable)"
+   ]
+  },
+  "G-DVB": {
+   "status": "ERROR",
+   "evidence_path": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\sha12:f8581f16b3a0\\scratchpad\\ar3\\raw\\gate_v8f_profile_L\\evidence\\G-DVB.json",
+   "evidence_sha256": "aa5dde8ea65c4203212d2dfc30bfc11b17f8feadfa9f4c2b7628dd30b924a0fa",
+   "host": "FREEDOM2035",
+   "finished_utc": "2026-10-25T23:18:40Z",
+   "reasons": [
+    "GateError: --cpu-only but CUDA is visible (on Windows set CUDA_VISIBLE_DEVICES=-1; an EMPTY value deletes the variable)"
+   ]
+  },
+  "G-LIVE": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-CLOCK": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-EVAL": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-CKPT": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-SUITE": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-SUITE-PINNED": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-MAP-OVERFIT": {
+   "status": "MISSING",
+   "rejected": []
+  },
+  "G-BOX-OVERFIT": {
+   "status": "MISSING",
+   "rejected": []
+  }
+ },
+ "reasons": [
+  "profile v8f requires --residual-prior in the launch argv (SPEC: NEW-1 is part of this arm)",
+  "profile v8f requires --ego-history in the launch argv (SPEC: NEW-1 is part of this arm)",
+  "profile v8f requires --slot-deep-supervision in the launch argv (SPEC_REFCV7 14 (A9 R2): per-layer supervision of both slot heads)",
+  "profile v8f requires --slot-vis1 in the launch argv (SPEC_REFCV7 14 + 15.1 (A9 R3, A10): VIS-1 targets and IGNORE semantics)",
+  "profile v8f requires --refcv8 in the launch argv (PLAN_REFCV8 R8-1: the tactical layer conditions generation and selection)",
+  "profile v8f requires --init-from in the launch argv (DESIGN 3.7: the warm start from refcv7 (every source key strict, new keys = refcv8 seams))",
+  "profile v8f requires --r8-v9-labels in the launch argv (WP-A INTEGRATION 2: the v9 release supervises the tactical layer and feeds nav / RC)",
+  "profile v8f requires --r8-v9-labels-eval in the launch argv (train and eval are supervised by ONE label release)",
+  "profile v8f requires --r8-nav-from-v9 in the launch argv (R8-2: the per-frame announced nav token)",
+  "profile v8f requires --r8-no-rc in the launch argv (PI ruling 2026-10-11 (Q-A): NO route checkpoint -- the nav command and its distance only)",
+  "profile v8f requires --join-defect-masks in the launch argv (MM binding 2026-10-04 item 6: the 693-box ego mask; SPEC_REFCV8 A2: re-mined over the 4,572-clip view = 1,068 boxes (refcv8_join_label_defects_train4572.json, md5 b2591cb2ec4f4089831124e4738a961c; the 4,508 old clips' entries identical))",
+  "profile v8f requires --grad-share-every in the launch argv (SPEC_WPB_LADDER: the in-run gradient-share instrument is on every refcv8 run)",
+  "profile v8f requires --max-speed-input-v6 in the launch argv (SPEC_REFCV8 8.3 (X3): the set-speed channel, the ceiling's source)",
+  "profile v8f requires --r8-speed-input in the launch argv (PI ruling 2026-10-11 (Q-B): the channel's source is the QUANTIZED max-speed LABEL (`--r8-speed-input label`; the trainer value lands in hold_r8label))",
+  "profile v8f requires --speed-max-sidecar-v6 in the launch argv (PI ruling 2026-10-11 (Q-B): the 4-way road-type label sidecar (train), refcv7's)",
+  "profile v8f requires --speed-max-sidecar-v6-eval in the launch argv (PI ruling 2026-10-11 (Q-B): the 4-way road-type label sidecar (eval), refcv7's)",
+  "profile v8f requires --pose-sync-sidecar in the launch argv (X10 (MM ruling 2026-10-04, closes SPEC X10): the pose-to-image timing correction (Data FlyWheel; tanitad/data/pose_sync.py))",
+  "profile v8f requires --ema-decay in the launch argv (R8-WARMUP (MM ruling 2026-10-11, SPEC_REFCV8 10.3): the weight EMA, 0.9998)",
+  "profile v8f requires --b1-guard-ref-ap2m in the launch argv (SPEC_REFCV8 10.1 B1 guard: refcv7-50,400's in-run box3d AP@2 m (min of last 22 rows))",
+  "profile v8f requires --b1-guard-step in the launch argv (SPEC_REFCV8 10.1 B1 guard: first read at step 1,000)",
+  "profile v8f requires --r8-alloc-emit in the launch argv (SPEC: NEW-1 is part of this arm)",
+  "profile v8f requires --p10-prior in the launch argv (PLAN_V8F section 6 (alpha-1): the frozen learned kinematic floor P10 is the residual prior)",
+  "profile v8f requires --p10-prior-sha256 in the launch argv (the P10 file's identity: checked at the build, stamped into config.json and ckpt.pt, re-checked at eval and at resume)",
+  "--graft-tac8-prior is REQUIRED ON for a v8f launch (SPEC_REFCV7 7, PI ruling E1) and the argv does not pass it",
+  "--graft-nav-compliance is REQUIRED ON for a v8f launch (SPEC_REFCV7 7, PI ruling E1) and the argv does not pass it",
+  "--speed-ceiling-filter is REQUIRED ON for a v8f launch (SPEC_REFCV7 7, PI ruling E1) and the argv does not pass it",
+  "--residual-prior p10_pose is REQUIRED for a v8f launch (PLAN_V8F section 6 (alpha-1): the ONE lever that differs from refcv8 -- the residual prior is the frozen POSE-ONLY P10 (alpha-0's `ha0_ext_pose` reads past poses only, so the input set is unchanged)) and the argv has None",
+  "--map-hires on is REQUIRED for a v8f launch (SPEC_REFCV7 8.1: the 10 cm map head) and the argv has None",
+  "--bev-source map_hires_pool is REQUIRED for a v8f launch (SPEC_REFCV7 11.1 (A6 option c): EVERY BEV consumer reads the pooled high-resolution BEV) and the argv has None",
+  "--map-hires-decision-rule prior_corrected is REQUIRED for a v8f launch (SPEC_REFCV7 9 item 1 (A4): the prior-corrected argmax) and the argv has None",
+  "--map-hires-x-max-m 100 is REQUIRED for a v8f launch (SPEC_REFCV7 12 (A7): 100 m ahead) and the argv has None",
+  "--map-hires-y-half-m 30 is REQUIRED for a v8f launch (SPEC_REFCV7 12 (A7): +-30 m) and the argv has None",
+  "--map-hires-grad-ckpt on is REQUIRED for a v8f launch (SPEC_REFCV7 12 item 4 (A7): checkpointing ON for the 10 cm decoder) and the argv has None",
+  "--bev-planner-crop-m 60 16 is REQUIRED for a v8f launch (SPEC_REFCV7 12 item 2 (A7): the planner BEV cropped to 60 m x +-16 m) and the argv has None",
+  "--w-map 0 is REQUIRED for a v8f launch (SPEC_REFCV7 11.1 (A6): the 0.5 m map head and loss are REMOVED) and the argv has None",
+  "--slot-presence-loss focal is REQUIRED for a v8f launch (SPEC_REFCV7 14 (A9 R1): sigmoid focal presence + the focal matching cost) and the argv has None",
+  "--slot-presence-prior 0.01 is REQUIRED for a v8f launch (SPEC_REFCV7 14 (A9 R1): the presence prior 0.01) and the argv has None",
+  "--slot-query-select learned_ref is REQUIRED for a v8f launch (SPEC_REFCV7 19.1 (A14.1): the box head's learned reference points (the full-model one-frame test PASS; the launch ruling 2026-09-27)) and the argv has None",
+  "--vis1-sidecar /home/nvidia/data/refcv8/vis1_sidecar_refcv8b1_train4572_eval139.npz is REQUIRED for a v8f launch (SPEC_REFCV8 A2: the VIS-1 sidecar over 4,572 + 139 clips, sha256 b50ab62ff7a49335cdc664a56fbfbb64c983bca6bd0563d0d7ab11e2f6e10c04 (the 4,508 refcv7 clips' entries identical; 145 unjoined ADD clips as zero-frame entries, mask True)) and the argv has None",
+  "--map-hires-near-lift-m 20 is REQUIRED for a v8f launch (SPEC_REFCV7 17 (A12): the 0.1 m near-range lift over x 0-20 m; 23 (A18): the map path G-MAP-OVERFIT ran) and the argv has None",
+  "--map-hires-near-refine-blocks 1 is REQUIRED for a v8f launch (SPEC_REFCV7 20 (A15): ONE near refine block; 23 (A18): A15's configuration) and the argv has None",
+  "--r8-v9-md5 83e30bd3791f0767707eade5f4671759 is REQUIRED for a v8f launch (SPEC_REFCV8 A2: the 4,572-clip train release (the 4,369 clips row-identical to WP-A WPA-S3's f63ece41..., the control in v9_train4572/RESULT.md)) and the argv has None",
+  "--r8-v9-eval-md5 6b5c7f207cffc3b7eb3cd527fd433599 is REQUIRED for a v8f launch (WP-A LANDING_READY WPA-S3: the validated eval139 release) and the argv has None",
+  "--r8-v9-lat-variant a is REQUIRED for a v8f launch (D-WPA-1: lateral variant a (junction) is the default) and the argv has None",
+  "--r8-nav-args-dropout 0.5 is REQUIRED for a v8f launch (MM binding 2026-10-04: nav-argument dropout, token kept) and the argv has None",
+  "--r8-speed-unknown-p 0.45 is REQUIRED for a v8f launch (SPEC_REFCV8 8.3 (X3): the TRAINED unknown row at D4 / NavSim's no-limit share 0.45) and the argv has None",
+  "--r8-alloc-emit-start 1000 is REQUIRED for a v8f launch (MM ruling Q1 (I-2) + R8-WARMUP (2026-10-11): extras emitted from the end of the LR warmup (--warmup 1000, SPEC_REFCV8 sec. 10.3); the emission-OFF phase is identity-free (iw_diag + the split decode, I-W PASS 218 windows)) and the argv has None",
+  "--w-r8-cons 0.05 is REQUIRED for a v8f launch (SPEC_WPB: the constraint-head weight) and the argv has None",
+  "--r8-speed-input label is REQUIRED for a v8f launch (PI ruling 2026-10-11 (Q-B): the max-speed LABEL quantized to the road-type set {30, 50, 100, 120} km/h, not a past-only proxy and not the exact future speed; `label` is the trainer value landing in hold_r8label) and the argv has None",
+  "--speed-max-sidecar-v6 /home/nvidia/data/refcv6_speed_max_v8_train.jsonl is REQUIRED for a v8f launch (PI ruling 2026-10-11 (Q-B): refcv7-r101-s0's train label sidecar (its launch record)) and the argv has None",
+  "--speed-max-sidecar-v6-eval /home/nvidia/data/refcv6_speed_max_v8_eval.jsonl is REQUIRED for a v8f launch (PI ruling 2026-10-11 (Q-B): refcv7-r101-s0's eval label sidecar (its launch record)) and the argv has None",
+  "--ema-decay 0.9998 is REQUIRED for a v8f launch (R8-WARMUP (SPEC_REFCV8 10.3): EMA 0.9998, evaluated at every in-run eval) and the argv has None",
+  "--warmup 1000 is REQUIRED for a v8f launch (R8-WARMUP (SPEC_REFCV8 10.3): both LR groups re-warm over 1,000 steps (S_emit = the warmup length)) and the argv has None",
+  "--v2-cache /home/nvidia/data/refcv8-b1-416x1024-train-4572 is REQUIRED for a v8f launch (SPEC_REFCV8 A2: the 4,572-clip train view (manifest md5 77dafb50af0aedd1b940cf12c12518ef; n eval139 = 0)) and the argv has None",
+  "--agent-rig-extrinsics /home/nvidia/data/refcv8_train4572_eval139_extrinsics.json is REQUIRED for a v8f launch (SPEC_REFCV8 A2: 4,711 keys = the 4,508 refcv6 entries untouched + the 203 ADD clips) and the argv has None",
+  "--pose-sync-sidecar /home/nvidia/data/refcv8_pose_sync_sidecar.jsonl is REQUIRED for a v8f launch (SPEC_REFCV8 A2: 4,711 rows; every refcv6 row reproduced exactly (4,508 / 4,508)) and the argv has None",
+  "--clip-clock-sidecar /home/nvidia/data/refcv8_clip_clock_sidecar_ts33.jsonl is REQUIRED for a v8f launch (SPEC_REFCV8 A2: 4,686 rows; 33 stationary ADD clips clocked by the camera-timestamp route (validated on all 4,653 moving clips); unverified 22 / 4,572 = 0.481 % < 1 %) and the argv has None",
+  "--r8-v9-labels /home/nvidia/refcv8_v9labels/release_train4572/v9_labels_train.npz is REQUIRED for a v8f launch (SPEC_REFCV8 A2: the v9 train release over the 4,572 view) and the argv has None",
+  "--nav-compliance-tau-file /home/nvidia/data/refcv8/nav_compliance_tau_train4572.json is REQUIRED for a v8f launch (SPEC_REFCV8 A3: the FIX-4 nav tau record re-derived on the 4,572-clip view (sha256 9fa7ca38b529bacfe79209c4bb9ccad039c7af284e5080f1c4f856ea46ebb5a3)) and the argv has None",
+  "--nav-compliance-tau-rad 0.1806411302089691 is REQUIRED for a v8f launch (SPEC_REFCV8 A3: = the 4,572-view record's tau, by the registered FIX-4 rule (4,369-view value 0.18063741505146028)) and the argv has None",
+  "--r8-n-alloc 32 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json: allocation M 32) and the argv has None",
+  "--w-r8-alloc-l1 1.0 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json) and the argv has None",
+  "--w-r8-listwise 0.0 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the X1 listwise selector loss OFF -- V-R8-noLW CONFIRMED (5fef1b0): the listwise-trained selector is what lost the GT turns) and the argv has None",
+  "--w-r8-sat 0.1 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json) and the argv has None",
+  "--w-r8-subscore 0.5 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json) and the argv has None",
+  "--w-r8-v9-cons 0.05 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json) and the argv has None",
+  "--r8-lat-prior-dropout 0.3 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-RECIPE closed): the l1 recipe, refcv8-r101-s0.l1_recipe.json) and the argv has None",
+  "--w-tac-v6 1.0 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-BUDGET closed): k 1 -- L2 PREMISE-UNMET under A1) and the argv has None",
+  "--w-map-hires 1.0 is REQUIRED for a v8f launch (PI 2026-10-14 (R8-BUDGET closed): w 1 -- L3 FAILS under A1) and the argv has None",
+  "--p10-prior-sha256 e70a9ae30b4418705442bffdeb62d9810a43b0a6ccce0c177796c72295fe693d is REQUIRED for a v8f launch (the banked pose-only P10 (refit on the 4,572-clip train view, 74,604 bytes): a literal) and the argv has None",
+  "--w-map-hires must be passed with a value > 0 for a v8f launch (a built head with no live weight is declared-but-inert); the argv has None",
+  "--w-r8-cons must be passed with a value > 0 for a v8f launch (a built head with no live weight is declared-but-inert); the argv has None",
+  "--w-r8-v9-cons must be passed with a value > 0 for a v8f launch (a built head with no live weight is declared-but-inert); the argv has None",
+  "data input --cache-dir (D:\\tanitad\\cache_full) is missing on this host",
+  "data input --frames-root (<VENUE>\\lora_frames\\train) is missing on this host",
+  "data input --join-train (D:\\tanitad\\runs\\v8f_mini_full\\join_train.npz) is missing on this host",
+  "data input --lead-train (D:\\tanitad\\data\\v9\\lead_train4572.npz) is missing on this host",
+  "data input --p10 (D:\\tanitad\\runs\\v8f_mini_full\\p10\\p10_prior.pt) is missing on this host",
+  "data input --speed-train (D:\\tanitad\\data\\v9\\refcv6_speed_max_v8_train.jsonl) is missing on this host",
+  "data input --tracks (D:\\tanitad\\cache_full\\native_tracks.pt) is missing on this host",
+  "data input --v9-train (D:\\tanitad\\data\\v9\\v9_labels_train.npz) is missing on this host",
+  "G-HYG ERROR: GateError: --cpu-only but CUDA is visible (on Windows set CUDA_VISIBLE_DEVICES=-1; an EMPTY value deletes the variable)",
+  "G-DVB ERROR: GateError: --cpu-only but CUDA is visible (on Windows set CUDA_VISIBLE_DEVICES=-1; an EMPTY value deletes the variable)",
+  "OPEN ITEM V8F-RUNG-GEOMETRY: the tiny rung's step / batch / eval cadence (PLAN_V8F section 6: batch 8, ~4.5 h/arm, seeds 0 and 1) is not fixed: refcv8's full-run literals (--steps 48852, --batch 16, --eval-batches 8, --eval-every 500) and its B1 guard (--b1-guard-ref-ap2m 0.21211 is defined on the 128-window eval = 8 x 16, so a batch-8 rung reads a DIFFERENT window set; --b1-guard-step 1000) are therefore NOT in this profile's required_values (owner: the Master Mind (rung sizing; set at launch from refcv8's measured step time) -> closes by writing the six literals into required_values)"
+ ],
+ "gate_sha256": "06ea6b27264170be6d72db1d0444a866370a0978844777ea02db8a6c6db4dee2",
+ "host": {
+  "node": "FREEDOM2035",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "python": "3.13.5",
+  "torch": "2.11.0+cu128",
+  "cuda": false
+ },
+ "created_utc": "2026-10-25T23:18:42Z",
+ "key_id": "9c758acfb32dd587",
+ "hmac_sha256": "7f976e30cc35ae5bebccb26341492620f6b69764c3d3a4bae1f9cddb87244d47"
+}

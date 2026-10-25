@@ -2512,6 +2512,7 @@ passes. The two navtest reads (theta_DEC and A1) are part of the authorisation. 
   - AR-1, *the mini beats P10 at 2 seeds*: holds through HACC (`H-V8F-HACC-1`, T1-class open loop, with the post-map that is now part of `forward_infer`).
   - AR-2, *the LoRA smoke on box 2*: PASSED in run 3, with the training path's identity probe at rel L2 exactly 0.0.
   - Still to do: AR-3, a launch-gate PASS for the LoRA arm, and AR-4, the data staged on the A40.
+  - **AR-3 dry run (MM, 2026-10-26, `H-V8F-LORA-1`):** on v8F-mini's in-process gate, L's exact argv is refused on ONE item, the missing train frames (AR-4). The plan's AR-3 wording names the refcv8 profile and needs correcting. Two weak G-DVB entries (`accum`, `--amp`) are to be fixed before the run.
 
 **Options.**
 - **(a) A40 go for the LoRA run.** AR-3 and AR-4 are done first: the launch gate on the exact argv, and the data staged. The run then starts behind its PASS token. **MM recommends (a).** This is the "signal" you asked for, for compute to scale once dominance is shown.
