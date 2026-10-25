@@ -814,13 +814,16 @@ def test_an_old_checkpoint_scores_bit_for_bit_the_same_through_the_fixed_and_the
     assert json.dumps(ja, sort_keys=True) == json.dumps(jb, sort_keys=True)
 
 
+_WINDOW_CLASSES = {"V8FMiniWindows", "V8FMiniFrameWindows"}       # PREREG_V8F_LORA: the on-the-fly frame dataset subclasses it and takes the same clamp origin
+
+
 def _constructions_without_window_start(src, name="<src>"):
     """(name, line) of every call of `V8FMiniWindows` (as a bare name or an attribute) that does not pass `window_start=` explicitly. A `**kwargs` splat does not count: it cannot be verified."""
     bad, n = [], 0
     for node in ast.walk(ast.parse(src)):
         if isinstance(node, ast.Call):
             f = node.func
-            if (isinstance(f, ast.Attribute) and f.attr == "V8FMiniWindows") or (isinstance(f, ast.Name) and f.id == "V8FMiniWindows"):
+            if (isinstance(f, ast.Attribute) and f.attr in _WINDOW_CLASSES) or (isinstance(f, ast.Name) and f.id in _WINDOW_CLASSES):
                 n += 1
                 if "window_start" not in {k.arg for k in node.keywords}:
                     bad.append((name, node.lineno))
@@ -831,6 +834,8 @@ def test_the_static_check_flags_a_construction_without_the_keyword_and_accepts_o
     """The checker's own controls: it can fail (a missing keyword, a splat, a bare-name call) and it can pass."""
     assert _constructions_without_window_start("ds = D.V8FMiniWindows(s, J, [], hist=cfg.hist)") == ([("<src>", 1)], 1)
     assert _constructions_without_window_start("ds = V8FMiniWindows(s, J, [], hist=1, **kw)") == ([("<src>", 1)], 1)
+    assert _constructions_without_window_start("ds = D.V8FMiniFrameWindows(s, J, [], hist=1)") == ([("<src>", 1)], 1)
+    assert _constructions_without_window_start("ds = D.V8FMiniFrameWindows(s, J, [], hist=1, window_start=3)") == ([], 1)
     assert _constructions_without_window_start("ds = D.V8FMiniWindows(s, J, [], hist=cfg.hist, window_start=cfg.window_start)") == ([], 1)
     assert _constructions_without_window_start("x = D.train_windows(s, J, [], hist=1)") == ([], 0)
 

@@ -14,6 +14,12 @@ Arms (PREREG_V8F_MINI.md): M1, M1-navonly, M1-nocons, M2a, M2b are trained arms.
 (nav taken from another episode): it trains exactly M1 and is accepted here as an alias so the supervisor can name it.
 H-DATA-SCALE-1: ``--data-frac {0.25,0.5,1.0}`` and ``--steps-mult {1,2,4}``; S = one epoch of windows at 100 % of the
 TRAIN clips at the chosen batch size, the optimiser-step budget is ``S * steps-mult`` regardless of the data fraction.
+
+PREREG_V8F_LORA: ``--encoder lora`` runs the frame encoder (DINOv3 ViT-L/16, frozen, + LoRA r/alpha on q and v of every block) ON THE FLY on the frames
+behind the cache (``--frames-root``: ``<clip>.v2ep.pt``) and feeds the heads exactly the tensor the cache would have held (``tanitad.models.v8f_lora_encoder``).
+``--encoder cache`` (the default) is every earlier arm, bit for bit: none of the lora code runs, and nothing it imports is imported. ``--accum k`` splits the
+ENCODER's work of one effective batch into micro-batches of ``batch / k`` windows; the heads' loss is still evaluated once on the full batch (the gradient-cache
+scheme of ``cached_grad_step``), because plain accumulation is not exact for this model (masked-mean normalisers, SIGReg).
 """
 from __future__ import annotations
 
@@ -69,7 +75,14 @@ FLAG_CHECKS = {
     "w_wm": "cfg:w_wm", "detach_upper": "cfg:detach_upper", "synthetic": "run", "selfcheck_only": "run",
     "fit_join": "run", "workers": "run", "clip_grad": "opt:clip_grad", "threads": "run",
     "kin_mode": "cfg:kin_mode", "tracks": "path", "cons_absent": "lever:cons_absent",
+    # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
+    # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
+    "encoder": "enc:encoder", "lora_r": "enc:lora_r", "lora_alpha": "enc:lora_alpha", "lora_targets": "enc:lora_targets",
+    "lora_lr": "opt:lora_lr", "frames_root": "data:frames_missing", "accum": "enc:accum", "enc_ckpt": "enc:checkpointing",
 }
+
+LORA_PARSER_DEFAULTS = {"lora_r": 32, "lora_alpha": 32.0, "lora_targets": "q,v", "lora_lr": None, "frames_root": None, "accum": 1, "enc_ckpt": False}
+LIVE_PROBE_WINDOWS_LORA = 16          # G-LIVE through the real encoder: windows of the first batch (<= 16 x hmax frames), not all 64
 
 
 def build_parser():
@@ -140,6 +153,16 @@ def build_parser():
     ap.add_argument("--detach-upper", action="store_true")
     ap.add_argument("--synthetic", action="store_true", help="run on a tiny synthetic world (smoke / CI)")
     ap.add_argument("--selfcheck-only", action="store_true")
+    # ---- PREREG_V8F_LORA (M4): LoRA on the frozen DINOv3-L, encoded on the fly. Every flag has its G-DVB entry in FLAG_CHECKS.
+    ap.add_argument("--encoder", choices=("cache", "lora"), default="cache",
+                    help="cache (default) = the cached frozen pooled tokens, every earlier arm bit for bit; lora = DINOv3-L/16 + LoRA run on the fly on --frames-root")
+    ap.add_argument("--lora-r", dest="lora_r", type=int, default=32, help="LoRA rank (PREREG_V8F_LORA: 32)")
+    ap.add_argument("--lora-alpha", dest="lora_alpha", type=float, default=32.0, help="LoRA alpha (PREREG_V8F_LORA: 32; scaling = alpha / r)")
+    ap.add_argument("--lora-targets", dest="lora_targets", default="q,v", help="comma list among q,k,v,o (PREREG_V8F_LORA: q,v of all 24 blocks)")
+    ap.add_argument("--lora-lr", dest="lora_lr", type=float, default=None, help="the LoRA matrices' peak learning rate (default: --lr, the heads')")
+    ap.add_argument("--frames-root", dest="frames_root", default=None, help="--encoder lora: directory of <clip>.v2ep.pt (256x640 cylindrical PNG frames) for EVERY train clip")
+    ap.add_argument("--accum", type=int, default=1, help="--encoder lora: encoder micro-batches per effective batch (batch / accum windows each); the heads see the full batch")
+    ap.add_argument("--enc-ckpt", dest="enc_ckpt", action="store_true", help="--encoder lora: gradient checkpointing inside the encoder (needed for 8 GB)")
     return ap
 
 
@@ -168,9 +191,65 @@ def make_config(a) -> M.V8FMiniConfig:
                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"])
 
 
-def declared_vs_built(a, cfg, model, opt, data_info) -> list:
-    """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
+def bad_encoder(a, enc, data_info) -> list:
+    """The encoder half of the launch gate (PREREG_V8F_LORA proof 3). Empty = pass. With ``--encoder cache`` there must be NO encoder and every lora flag must be
+    at its default: a flag that is declared and builds nothing is exactly the class this file's header names."""
     bad = []
+    dfl = {k: build_parser().get_default(k) for k in LORA_PARSER_DEFAULTS}
+    if a.encoder == "cache":
+        if enc is not None:
+            bad.append("--encoder cache declared but an encoder was built")
+        moved = sorted(k for k in LORA_PARSER_DEFAULTS if getattr(a, k) != dfl[k])
+        if moved:
+            bad.append(f"--encoder cache declared but {moved} are set: a flag that builds nothing is refused, not ignored")
+        return bad
+    if enc is None:
+        return ["--encoder lora declared but no encoder was built"]
+    lv = enc.built_levers()
+    tg = parse_targets(a.lora_targets)
+    for k, want, got in (("encoder", "lora", lv["encoder"]), ("lora_r", a.lora_r, lv["lora_r"]), ("lora_alpha", a.lora_alpha, lv["lora_alpha"]),
+                         ("lora_targets", tg, lv["lora_targets"]), ("lora_dropout", 0.0, lv["lora_dropout"]), ("grid", a.grid[len("pool"):], lv["grid"]),
+                         ("checkpointing", bool(a.enc_ckpt), lv["checkpointing"]), ("fp8_ste", True, lv["fp8_ste"])):
+        if want != got:
+            bad.append(f"encoder {k}: declared {want!r} but built {got!r}")
+    if a.accum < 1 or a.batch % a.accum:
+        bad.append(f"accum {a.accum} must divide the effective batch {a.batch}")
+    # the exact trainable count, from the BUILT modules (r x (in + out) per adapted projection x targets x blocks), and the prereg's literal number
+    cfgb = getattr(enc.backbone, "config", None)
+    if cfgb is not None:
+        want_n = a.lora_r * 2 * cfgb.hidden_size * len(tg) * cfgb.num_hidden_layers
+        if lv["lora_blocks"] != cfgb.num_hidden_layers:
+            bad.append(f"LoRA wrapped {lv['lora_blocks']} blocks but the backbone has {cfgb.num_hidden_layers}")
+        if lv["lora_trainable"] != want_n or lv["lora_expected_trainable"] != want_n:
+            bad.append(f"LoRA trainable parameters: built {lv['lora_trainable']} (modules say {lv['lora_expected_trainable']}) != r x 2 x hidden x targets x blocks = {want_n}")
+        if (a.lora_r, tuple(tg), cfgb.hidden_size, cfgb.num_hidden_layers) == (32, ("q", "v"), 1024, 24) and lv["lora_trainable"] != 3_145_728:
+            bad.append(f"PREREG_V8F_LORA: trainable encoder parameters {lv['lora_trainable']} != 3,145,728")
+    try:
+        enc.assert_frozen()
+    except AssertionError as e:
+        bad.append(str(e))
+    if not lv["lora_B_zero_at_build"]:
+        bad.append("a LoRA B matrix is not zero at build: the identity property (L == B at step 0) is lost")
+    if lv["weights_sha256"] is not None and lv["weights_sha256"] != lv["builder_model_sha256"]:
+        bad.append(f"encoder weights sha256 {lv['weights_sha256']} is not the cache builder's {lv['builder_model_sha256']}")
+    if data_info.get("frames_missing"):
+        bad.append(f"--frames-root: {data_info['frames_missing']} train clips have no <clip>.v2ep.pt")
+    if not a.frames_root:
+        bad.append("--encoder lora needs --frames-root")
+    return bad
+
+
+def lora_lr_of(a) -> float:
+    return a.lr if a.lora_lr is None else a.lora_lr
+
+
+def parse_targets(spec: str) -> list:
+    return [t for t in (x.strip() for x in str(spec).split(",")) if t]
+
+
+def declared_vs_built(a, cfg, model, opt, data_info, enc=None) -> list:
+    """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
+    bad = bad_encoder(a, enc, data_info)
     parser_dests = {act.dest for act in build_parser()._actions if act.dest != "help"}
     missing = sorted(parser_dests - set(FLAG_CHECKS))
     if missing:
@@ -224,8 +303,15 @@ def declared_vs_built(a, cfg, model, opt, data_info) -> list:
         bad.append(f"wm {lv['wm']} declared but built gamma {built['wm_idm_gamma']}")
     # optimiser read-back
     lrs = {g["lr"] for g in opt.param_groups}
-    if lrs != {a.lr}:
-        bad.append(f"lr: declared {a.lr} but optimiser holds {lrs}")
+    want_lrs = {a.lr} | ({lora_lr_of(a)} if enc is not None else set())
+    if lrs != want_lrs:
+        bad.append(f"lr: declared {sorted(want_lrs)} but optimiser holds {sorted(lrs)}")
+    if enc is not None:
+        lg = [g for g in opt.param_groups if g.get("name") == "lora"]
+        if len(lg) != 1 or {id(p) for p in lg[0]["params"]} != {id(p) for p in enc.lora_parameters()}:
+            bad.append("the LoRA optimiser group does not hold exactly the encoder's LoRA matrices")
+        elif lg[0]["lr"] != lora_lr_of(a):
+            bad.append(f"lora_lr: declared {lora_lr_of(a)} but the LoRA group holds {lg[0]['lr']}")
     if {g["weight_decay"] for g in opt.param_groups if g["weight_decay"] > 0} not in ({a.wd}, set()):
         bad.append("weight decay not as declared")
     # data read-back
@@ -297,6 +383,143 @@ def live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
     return res
 
 
+# ------------------------------------------------------------------------------------------------ the encoder (PREREG_V8F_LORA)
+def build_encoder_raw(a, dev):
+    """The ONLY place the real weights are loaded (tests replace THIS, never :func:`make_encoder`): the cache builder's DINOv3 ViT-L/16 (bf16, local HF cache, no
+    token, no download) + LoRA."""
+    from tanitad.models import v8f_lora_encoder as L
+    return L.DinoV3LoRAEncoder.from_pretrained(r=a.lora_r, alpha=a.lora_alpha, targets=parse_targets(a.lora_targets), seed=a.seed,
+                                               grid=a.grid[len("pool"):], device=dev, dtype=torch.bfloat16)
+
+
+def make_encoder(a, dev):
+    """The on-the-fly encoder. The global RNG state (CPU and CUDA) is saved and restored around the build, so that nothing the loader or the adapter init draws can
+    move the heads' initialisation (``torch.manual_seed(seed)`` then ``V8FMini``): L's heads start exactly where B's did."""
+    st = torch.get_rng_state()
+    cst = torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None
+    try:
+        return build_encoder_raw(a, dev)
+    finally:
+        torch.set_rng_state(st)
+        if cst is not None:
+            torch.cuda.set_rng_state_all(cst)
+
+
+def enc_chunk(a, cfg) -> int:
+    """Frames per encoder micro-batch: (batch / accum) windows x hmax frames."""
+    return max(1, a.batch // max(1, a.accum)) * cfg.hmax
+
+
+def lora_step(model, enc, b, frames, fmap, a, dev, amp, p_gt, chunk, step, *, timing: bool = False, on_grads=None) -> tuple:
+    """One forward + backward of the full effective batch through heads and encoder (the gradient cache, ``cached_grad_step``), then the two gradient clips
+    (heads: B's rule on the heads alone; LoRA: its own norm -- a joint norm would change the heads' update whenever the LoRA gradient dominates, which is
+    not B's rule). The optimiser step is the caller's. -> ``(out, heads_grad_norm, lora_grad_norm)``."""
+    from tanitad.models import v8f_lora_encoder as L
+
+    def run_loss(feats):
+        bb = dict(b)
+        bb["feats"] = feats
+        with torch.autocast(device_type=dev.type, dtype=torch.bfloat16, enabled=amp):
+            out = model.loss(bb, p_gt=p_gt, gen=None)
+        T = out["terms"]
+        if not torch.isfinite(T["total"]):
+            raise SystemExit(f"ZZNONFINITE-LOSSZZ at step {step}: {({k: float(v) for k, v in T.items()})}")
+        return out
+    out = L.cached_grad_step(enc, frames, fmap, run_loss, chunk=chunk, device=dev, timing=timing)
+    if on_grads is not None:                           # the AR-2 smoke reads the RAW per-group gradients here (before the clips)
+        on_grads(model, enc)
+    gn = torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], a.clip_grad)
+    gn_l = torch.nn.utils.clip_grad_norm_(enc.lora_parameters(), a.clip_grad)
+    return out, gn, gn_l
+
+
+def identity_probe(enc, probe, dev, chunk) -> dict:
+    """The encoder at its INITIAL state (B = 0) on the probe's frames vs the cached tokens of the same windows (the dataset kept them): max / mean abs and
+    rel-L2. RECORDED, not gated: tau is the PI's/MM's to commit from the identity control (PREREG_V8F_LORA proof 1)."""
+    from tanitad.models import v8f_lora_encoder as L
+    with torch.no_grad():
+        pu = L.encode_chunked(enc, probe["frames_u8"], chunk, grad=False, device=dev).cpu()
+    mine = pu[probe["frame_map"]]
+    ref = probe["feats"].float()
+    d = (mine - ref).abs()
+    return {"n_frames_unique": int(pu.shape[0]), "n_values": int(d.numel()), "max_abs": float(d.max()), "mean_abs": float(d.mean()),
+            "rel_l2": float((mine - ref).norm() / ref.norm().clamp_min(1e-12)), "frac_bitwise_equal": float((mine == ref).float().mean())}
+
+
+def live_check_lora(model, enc, batch, cfg, a, dev, chunk, steps: int = 3, lr: float = 1e-3) -> dict:
+    """G-LIVE through the REAL encoder path (PREREG_V8F_LORA proof 2). Three optimiser steps (heads + LoRA) on a real probe batch, on a COPY of the heads and with
+    the LoRA state restored afterwards. Requires: every declared loss term finite; every head parameter non-zero at some step (as ``live_check``); the LoRA B
+    matrices non-zero at step 0 while the A matrices read EXACTLY 0.0 there (B = 0 at init, so dL/dA = B^T ... = 0 by construction -- a non-zero would mean B was
+    not zero) and non-zero afterwards; the frozen DINOv3 weights (the control) exactly 0.0."""
+    from tanitad.models import v8f_lora_encoder as L
+    frames, fmap = batch["frames_u8"], batch["frame_map"]
+    hb = to_dev({k: v for k, v in batch.items() if k not in ("frames_u8", "frame_map", "feats")}, dev)
+    m = copy.deepcopy(model).to(dev)
+    m.train()
+    sd0 = enc.lora_state_dict()
+    heads = [p for p in m.parameters() if p.requires_grad]
+    lora = enc.lora_parameters()
+    opt = torch.optim.AdamW([{"params": heads}, {"params": lora}], lr=lr)
+    acc = {n: 0.0 for n, p in m.named_parameters() if p.requires_grad}
+    accL = {n: 0.0 for n, p in enc.named_parameters() if "lora_" in n}
+    firstL, first, terms_seen, frozen = None, None, None, 0.0
+    try:
+        for s_ in range(steps):
+            opt.zero_grad(set_to_none=True)
+
+            def run_loss(feats, s_=s_):
+                bb = dict(hb)
+                bb["feats"] = feats
+                out = m.loss(bb, p_gt=0.5, gen=torch.Generator().manual_seed(s_))
+                for k, v in out["terms"].items():
+                    if not torch.isfinite(v):
+                        raise AssertionError(f"G-LIVE: loss term {k} is not finite at step {s_}: {float(v)}")
+                return out
+            out = L.cached_grad_step(enc, frames, fmap, run_loss, chunk=chunk, device=dev)
+            terms_seen = {k: float(v.detach()) for k, v in out["terms"].items()}
+            for n, p in m.named_parameters():
+                if p.requires_grad and p.grad is not None:
+                    acc[n] += float(p.grad.abs().sum())
+            if s_ == 0:
+                first = {n: float(p.grad.abs().sum()) for n, p in m.named_parameters() if p.requires_grad and p.grad is not None}
+            gL = {n: float(p.grad.abs().sum()) for n, p in enc.named_parameters() if "lora_" in n and p.grad is not None}
+            if s_ == 0:
+                firstL = gL
+            for n, g in gL.items():
+                accL[n] += g
+            frozen += sum(float(p.grad.abs().sum()) for n, p in enc.named_parameters() if "lora_" not in n and p.grad is not None)
+            opt.step()
+    finally:
+        enc.load_lora_state_dict(sd0)
+        for p in lora:
+            p.grad = None
+    expect = {"ckpt", "goal", "lat", "lon", "cons", "ade", "fde", "total"}
+    if cfg.consistency:
+        expect |= {f"pen_{r}" for r in M.RULES} | {f"pens_{r}" for r in M.RULES}
+    if cfg.wm != "off":
+        expect.add("wm")
+    missing = sorted(expect - set(terms_seen))
+    declared_dead = [n for n in acc if cfg.wm == "a" and ".idm_heads." in n]
+    dead = sorted(n for n, g in acc.items() if g == 0.0)
+    unexpected_dead = sorted(set(dead) - set(declared_dead))
+    ctrl = [float(p.grad.abs().sum()) if p.grad is not None else 0.0 for p in m.prior.parameters()]
+    A0 = sum(g for n, g in firstL.items() if "lora_A" in n)
+    B0 = sum(g for n, g in firstL.items() if "lora_B" in n)
+    b_dead = sorted(n for n, g in firstL.items() if "lora_B" in n and g == 0.0)
+    a_dead = sorted(n for n, g in accL.items() if "lora_A" in n and g == 0.0)
+    res = {"terms": terms_seen, "missing_terms": missing, "dead_params": dead, "unexpected_dead": unexpected_dead,
+           "control_prior_grad_sum": float(sum(ctrl)), "control_frozen_dinov3_grad_sum": float(frozen),
+           "lora_A_grad_step0": float(A0), "lora_B_grad_step0": float(B0), "lora_B_modules_dead_at_step0": b_dead, "lora_A_modules_dead_after_step1": a_dead,
+           "lora_A_grad_total": float(sum(v for n, v in accL.items() if "lora_A" in n)), "lora_B_grad_total": float(sum(v for n, v in accL.items() if "lora_B" in n)),
+           "n_lora_matrices": len(accL), "n_trainable_heads": len(acc), "steps": steps}
+    ok = (not missing and not unexpected_dead and res["control_prior_grad_sum"] == 0.0 and frozen == 0.0 and A0 == 0.0 and B0 > 0.0
+          and not b_dead and not a_dead and res["lora_A_grad_total"] > 0.0)
+    res["pass"] = bool(ok)
+    if not ok:
+        raise AssertionError("G-LIVE (lora) failed: " + json.dumps(res, default=str)[:1800])
+    return res
+
+
 # ------------------------------------------------------------------------------------------------ data
 def build_data(a, cfg):
     """-> (store, J, train_windows, clips, info). Joins the v9 release onto the cache grid unless a join npz exists."""
@@ -342,6 +565,8 @@ def build_data(a, cfg):
                  "excluded_sha256": hashlib.sha256(chr(10).join(excluded).encode("utf-8")).hexdigest() if excluded else None,
                  "train_sha256": hashlib.sha256(chr(10).join(sorted(clips, key=D.sha12)).encode("utf-8")).hexdigest()})
     lru = a.lru or max(8, int(1.5e9 // (J["n"].max() * cfg.n_tok * 1024 * 2)))
+    if a.encoder == "lora":
+        lru = a.lru or 50          # clips whose v2ep (~37 MB of PNGs) are held in RAM: >= the sampler's chunk (48) + 2
     info["lru"] = lru
     tracks = None
     if a.kin_mode == "yaw":
@@ -411,30 +636,63 @@ def main(argv=None):
             M.check_p10_units(a.p10, a.kin_mode)                 # REFUSES a prior whose declared units are not this mode's
         except ValueError as e:
             raise SystemExit(f"ZZDVB-REFUSEDZZ {e}")
-    ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
-                          window_start=cfg.window_start)
+    fstore = None
+    if a.encoder == "lora":
+        if not a.frames_root:
+            raise SystemExit("ZZDVB-REFUSEDZZ --encoder lora needs --frames-root")
+        fstore = D.FrameStore(a.frames_root, lru=info["lru"])
+        info["frames_missing"] = len(fstore.missing(clips))
+    if a.encoder == "lora":                                          # two NAMED constructions, so test_v8f_window_start's static guard can see both
+        ds = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                   window_start=cfg.window_start)
+    else:
+        ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                              window_start=cfg.window_start)
     info["ds_window_start"] = ds.window_start                       # the held-age clamp's origin, read back from the BUILT dataset (G-DVB compares it)
     prior = M.load_p10(a.p10) if not a.synthetic else M.P10Prior.synthetic(a.seed)
     mu, sd = M.cons_stats(J)
     model = M.V8FMini(cfg, prior, mu, sd).to(dev)
+    enc = None
+    if a.encoder == "lora":
+        enc = make_encoder(a, dev)                     # AFTER the heads: it must not move their initialisation (the global RNG is restored inside)
+        enc.set_checkpointing(a.enc_ckpt)
     decay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim >= 2]
     nodecay = [p for n, p in model.named_parameters() if p.requires_grad and p.ndim < 2]
-    opt = torch.optim.AdamW([{"params": decay, "weight_decay": a.wd}, {"params": nodecay, "weight_decay": 0.0}], lr=a.lr)
+    groups = [{"params": decay, "weight_decay": a.wd}, {"params": nodecay, "weight_decay": 0.0}]
+    if enc is not None:                                # the LoRA matrices (2-D: the same weight-decay rule as the heads), their own peak lr
+        groups.append({"params": enc.lora_parameters(), "weight_decay": a.wd, "lr": lora_lr_of(a), "name": "lora", "lr_mult": lora_lr_of(a) / a.lr})
+    opt = torch.optim.AdamW(groups, lr=a.lr)
     S = math.ceil(info["n_windows_all_clips"] / a.batch)
     total = a.steps or S * a.steps_mult
     sampler = D.ChunkedSampler(wins, a.batch, seed=a.seed, chunk=max(4, min(48, info["lru"] - 2)),
                                max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
     # ---- the launch gate
-    bad = declared_vs_built(a, cfg, model, opt, info)
+    bad = declared_vs_built(a, cfg, model, opt, info, enc)
     if bad:
         raise SystemExit("ZZDVB-REFUSEDZZ declared-vs-built: " + "; ".join(bad))
-    probe = D.collate([ds.item(*w) for w in next(sampler.epoch(0))])
-    live = live_check(model.cpu(), probe, cfg)
+    chunk = enc_chunk(a, cfg)
+    ident = None
+    if enc is None:
+        probe = D.collate([ds.item(*w) for w in next(sampler.epoch(0))])
+        live = live_check(model.cpu(), probe, cfg)
+    else:
+        ds_probe = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                         window_start=cfg.window_start, keep_cached=True)
+        probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
+        probe = {k: v for k, v in probe_f.items() if k not in ("frames_u8", "frame_map")}      # the cached tokens stay in `probe` (admissibility, identity)
+        live = live_check_lora(model, enc, probe_f, cfg, a, dev, chunk)
+        ident = identity_probe(enc, probe_f, dev, chunk)
     model.to(dev)
     adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
     model.to(dev).train()
-    sc = {"declared_vs_built": "PASS", "live": live, "admissibility": adm, "levers": model.built_levers(),
+    levers = model.built_levers()
+    if enc is not None:
+        levers["encoder"] = enc.built_levers()
+        levers["accum"] = {"accum": a.accum, "micro_windows": a.batch // a.accum, "chunk_frames": chunk}
+    sc = {"declared_vs_built": "PASS", "live": live, "admissibility": adm, "levers": levers,
           "steps_total": total, "S_steps_per_epoch_100pct": S, "info": info, "argv_sha": argv_sha(argv)}
+    if ident is not None:
+        sc["identity_probe"] = ident
     json.dump(sc, open(os.path.join(a.out, "selfcheck.json"), "w"), indent=1, default=str)
     if a.selfcheck_only:
         print("SELFCHECK PASS", json.dumps({k: sc[k] for k in ("steps_total", "info")}, default=str))
@@ -449,6 +707,8 @@ def main(argv=None):
         if ck["argv_sha"] != argv_sha(argv):
             raise SystemExit("ZZRESUME-REFUSEDZZ the checkpoint was written by a different argv")
         model.load_state_dict(ck["model"])
+        if enc is not None:
+            enc.load_lora_state_dict(ck["lora"])
         opt.load_state_dict(ck["opt"])
         step, ep, bi = ck["step"], ck["epoch"], ck["batch_in_epoch"]
         print(f"[resume] step {step} epoch {ep} batch {bi}", flush=True)
@@ -459,10 +719,13 @@ def main(argv=None):
         return a.lr * (0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * min((s - a.warmup) / max(total - a.warmup, 1), 1.0))))
 
     def save(final=False):
-        torch.save({"model": model.state_dict(), "opt": opt.state_dict(), "step": step, "epoch": ep, "batch_in_epoch": bi,
-                    "argv_sha": argv_sha(argv), "cfg": cfg.__dict__, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
-                    "grid": a.grid, "arm": a.arm, "seed": a.seed, "cons_mu": mu, "cons_sd": sd,
-                    "cfg_tuple_fields": {"wm_strides": list(cfg.wm_strides)}}, ck_path + ".tmp")
+        blob = {"model": model.state_dict(), "opt": opt.state_dict(), "step": step, "epoch": ep, "batch_in_epoch": bi,
+                "argv_sha": argv_sha(argv), "cfg": cfg.__dict__, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
+                "grid": a.grid, "arm": a.arm, "seed": a.seed, "cons_mu": mu, "cons_sd": sd,
+                "cfg_tuple_fields": {"wm_strides": list(cfg.wm_strides)}}
+        if enc is not None:             # `model` keeps B's layout (the unchanged v8f_mini_eval.py loads it); the LoRA matrices travel beside it
+            blob["lora"], blob["encoder_levers"] = enc.lora_state_dict(), enc.built_levers()
+        torch.save(blob, ck_path + ".tmp")
         os.replace(ck_path + ".tmp", ck_path)
 
     log = open(os.path.join(a.out, "train_log.jsonl"), "a", encoding="utf-8")
@@ -473,25 +736,35 @@ def main(argv=None):
         gen_batches = sampler.epoch(ep)
         for _ in range(bi):                                    # fast-forward within the epoch (indices only)
             next(gen_batches, None)
-        pf = Prefetch(gen_batches, lambda idx: D.collate([ds.item(*w) for w in idx]), depth=3)
+        if enc is None:
+            pf = Prefetch(gen_batches, lambda idx: D.collate([ds.item(*w) for w in idx]), depth=3)
+        else:
+            pf = Prefetch(gen_batches, lambda idx: D.collate_frames([ds.item(*w) for w in idx], fstore), depth=2)
         for b in pf:
+            fr = (b.pop("frames_u8"), b.pop("frame_map")) if enc is not None else None      # the frames stay on the host; the encoder moves them chunk by chunk
             b = to_dev(b, dev)
             for g in opt.param_groups:
-                g["lr"] = lr_at(step)
+                g["lr"] = lr_at(step) * g.get("lr_mult", 1.0)
             p_gt = M.p_gt_schedule(step, total, cfg.p_gt_start, cfg.p_gt_end)
             torch.manual_seed(a.seed * 1_000_003 + step)               # per-step RNG: a resumed run is the same run
             if os.environ.get("V8F_TRAIN_CRASH_AT") == str(step):      # test hook (resume test); never set in a launch
                 raise RuntimeError("V8F_TRAIN_CRASH_AT")
             model.train()
-            with torch.autocast(device_type=dev.type, dtype=torch.bfloat16, enabled=amp):
-                out = model.loss(b, p_gt=p_gt, gen=None)
-            T = out["terms"]
-            if not torch.isfinite(T["total"]):
-                raise SystemExit(f"ZZNONFINITE-LOSSZZ at step {step}: {({k: float(v) for k, v in T.items()})}")
-            opt.zero_grad(set_to_none=True)
-            T["total"].backward()
-            gn = torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], a.clip_grad)
-            opt.step()
+            if enc is None:
+                with torch.autocast(device_type=dev.type, dtype=torch.bfloat16, enabled=amp):
+                    out = model.loss(b, p_gt=p_gt, gen=None)
+                T = out["terms"]
+                if not torch.isfinite(T["total"]):
+                    raise SystemExit(f"ZZNONFINITE-LOSSZZ at step {step}: {({k: float(v) for k, v in T.items()})}")
+                opt.zero_grad(set_to_none=True)
+                T["total"].backward()
+                gn = torch.nn.utils.clip_grad_norm_([p for p in model.parameters() if p.requires_grad], a.clip_grad)
+                opt.step()
+            else:
+                opt.zero_grad(set_to_none=True)
+                out, gn, gn_l = lora_step(model, enc, b, fr[0], fr[1], a, dev, amp, p_gt, chunk, step)
+                T = out["terms"]
+                opt.step()
             step += 1
             bi += 1
             if step % a.log_every == 0 or step == total:
@@ -499,6 +772,8 @@ def main(argv=None):
                        "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
                 if "viol" in out:
                     rec["viol_any_batch"] = float(torch.stack(list(out["viol"].values())).any(0).float().mean())
+                if enc is not None:
+                    rec["lora_grad_norm"] = float(gn_l)
                 log.write(json.dumps(rec) + "\n"); log.flush()
                 print(f"[{step}/{total}] ade {rec['ade']:.3f} total {rec['total']:.3f} p_gt {p_gt:.2f}", flush=True)
             if step % a.ckpt_every == 0:
@@ -513,8 +788,10 @@ def main(argv=None):
     summary = {"done": True, "steps": step, "arm": a.arm, "seed": a.seed, "data_frac": a.data_frac,
                "steps_mult": a.steps_mult, "S": S, "n_clips": info["n_clips"], "n_windows": info["n_windows"],
                "exclude": a.exclude, "excluded_sha256": info.get("excluded_sha256"), "train_sha256": info.get("train_sha256"),
-               "seconds": time.time() - t0, "argv_sha": argv_sha(argv), "levers": model.built_levers(),
+               "seconds": time.time() - t0, "argv_sha": argv_sha(argv), "levers": levers,
                "selfcheck": "selfcheck.json"}
+    if enc is not None:
+        summary["encoder"] = "lora"
     json.dump(summary, open(os.path.join(a.out, "summary.json"), "w"), indent=1, default=str)      # LAST, atomically meaningful
     print("DONE", json.dumps({k: summary[k] for k in ("steps", "arm", "seed", "seconds")}))
     return 0

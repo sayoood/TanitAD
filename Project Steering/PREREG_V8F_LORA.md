@@ -84,3 +84,47 @@
   * evals not on one grid;
   * GT codes that differ;
   * any loss weight different from B's (`w_diff`).
+
+## Amendment 1 (2026-10-25, written with the instruments, before any LoRA training or smoke)
+
+**MEASURED by the instruments** (`…/2026-10-17-v8f-mini/raw/2026-10-25-lora/identity_control.{py,json,out}`, CPU):
+
+* **The cache encoding, from source.**
+  * The checkpoint is `facebook/dinov3-vitl16-pretrain-lvd1689m`; its safetensors sha256 `dcb2e451…8179` equals the builder's.
+  * Cache step g is raw frame 2g. Preprocessing is (x.bf16 / 255 − mean) / std in bf16, with no resize: 256 × 640 frames give 16 × 40 patches. CLS and the 4 register tokens are dropped.
+  * Pooling to 4 × 10 is in fp32, then the tokens are stored as fp8 e4m3fn. "fp8" is the storage dtype only; the encoder runs in bf16.
+  * A window of M2b reads up to 16 frames (hmax 16), so a batch of 64 is up to 1,024 encoder forward and backward passes.
+* **Same-device identity is EXACT.** On the same device, the LoRA module at B = 0 equals the builder's `encode_episode`: max abs 0.0 on the field and on the pooled fp8 payload (`SAME_DEVICE_bf16_cpu`).
+* **Against the STORED caches it is not exact, and the train cache differs most.**
+  * Eval frames, fp32 CPU, pooled fp8 vs the eval cache: rel-L2 3.7e-5 (`E_POOLED_fp32_cpu`). The same in bf16 on CPU: 1.3e-2 unquantised (`E_FIELD_bf16_cpu`).
+  * Eval frames rebuilt natively at 256: 3.65e-2, 60 % bitwise equal.
+  * **Train frames rebuilt natively at 256 vs the train cache, which was built through the `thor416` route on GPU in bf16:** rel-L2 7.9e-2 and 9.0e-2 (two clips × 12 frames), 32 % bitwise equal (`ROUTE_rebuilt_native256`).
+
+**What this changes (committed now):**
+
+1. **The frames L trains on must reproduce B's TRAIN cache, or the arm is two levers** (LoRA + a pixel-route shift).
+   * Before the AR-2 smoke, the route that built the train cache is reproduced: the script, the frame size, the rectification.
+   * A pooled-fp8 comparison against the train cache on ≥ 2 clips is then MEASURED on CPU fp32.
+2. **τ, set now from the same-device and device-noise measurements:**
+   * **τ_route = rel-L2 1e-3** on pooled fp8 against the stored cache, CPU fp32. That is about 27× the eval route's measured 3.7e-5, and 79× below the native-256 train gap.
+   * **τ_device:** on box 2's GPU (the device that built the train cache), the AR-2 smoke's on-the-fly B = 0 features against the train cache must reach rel-L2 ≤ 1e-3 too.
+   * Same device and same route must stay EXACT (0.0), as measured.
+3. **If the train route cannot be reproduced within τ_route, the base is rebuilt instead of the arm being weakened.**
+   * The train cache is re-encoded from the on-the-fly route with the frozen encoder, and B' = M2b is retrained on it at seeds 0 and 1, with F' from them.
+   * L is then read against B'. This needs its own box-2 go (≈ 6–16 h encode, ESTIMATED from `D3_SCOPING.md`, plus 2 × 4.4 h).
+4. **ε (eval):** a banked M2b checkpoint scored through the merged-encoder eval cache at LoRA = 0 reproduces its banked per-window ADE6 with a max |Δ| ≤ 1e-3 m. The eval cache is re-encoded on box 2's GPU at the merged weights.
+5. **Instrument defaults, accepted as built:**
+   * gradient-norm clipping by group (the heads by B's rule; LoRA by its own norm at the same max-norm);
+   * LoRA weight decay = `--wd`;
+   * A-matrices Kaiming-initialised from a PRIVATE generator, so the heads' initialisation stream is B's exactly;
+   * the fp8 storage quantisation kept in training as a straight-through estimator, so the heads see the fp8 grid the cache gives B;
+   * G-LIVE on 16 windows.
+6. **Accumulation is gradient caching, not plain accumulation.**
+   * Plain micro-batch accumulation is INEXACT for M2b, because its WM loss reads batch-level statistics (the instruments prove it).
+   * The arm encodes each micro-batch, computes the full-batch-64 loss on the features, and back-propagates the feature gradients through the encoder micro-batch by micro-batch. That is exact up to float order.
+7. **Data and venue (a PI decision, stated now):**
+   * on-the-fly training needs PNG frames for all 4,512 train clips, ≈ 160 GB ESTIMATED;
+   * box 2's D: has ≈ 81 GB free (MEASURED 2026-10-25).
+   * So a full run needs a disk provision on box 2, or the A40 with the frames on HF private (plan §13.5 AR-4).
+   * The venue rule above (≤ 36 h per seed projected) still applies once AR-2 measures the step time.
+* **Nothing else changes:** the bars, the estimator, the stage rule, the decision table, the refusals.

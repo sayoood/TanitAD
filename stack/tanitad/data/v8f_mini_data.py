@@ -552,7 +552,8 @@ def collate(items: list) -> dict:
     import torch
     out = {}
     stack = lambda key, dt=None: torch.as_tensor(np.stack([np.asarray(it[key]) for it in items]), dtype=dt)
-    out["feats"] = stack("feats", torch.float16)
+    if "feats" in items[0]:             # absent in --encoder lora batches: the frames are encoded on the fly (collate_frames)
+        out["feats"] = stack("feats", torch.float16)
     for k in ("frame_ok", "limit_ok", "gt_ok"):
         out[k] = stack(k, torch.bool)
     for k in ("p10f", "act", "nav", "pose", "limit", "gt", "base", "kin3", "s_h", "lead_gap_h", "pose_now", "pose_t",
@@ -572,6 +573,101 @@ def collate(items: list) -> dict:
                    "rc_ok": torch.as_tensor(np.stack([x["rc_ok"] for x in L])),
                    "lead_valid": torch.as_tensor([x["lead_valid"] for x in L])}
     return out
+
+
+# ------------------------------------------------------------------------------------------------ frames behind the cache (PREREG_V8F_LORA)
+FRAME_HW = (256, 640)             # the cache builder's cylindrical frame (a 16 x 40 grid of 16-px patches); tests shrink it, a launch never does
+
+
+class FrameStore:
+    """Lazy per-clip reader of the v2 episode (``<root>/<clip>.v2ep.pt``: PNG frames of the 256x640 cylindrical view) with an LRU of the compressed
+    payloads (~37 MB per clip). ``frames(clip, steps)`` decodes cache steps ``g`` (raw frame ``2 g``) with the cache builder's own decode."""
+
+    def __init__(self, root, lru: int = 50):
+        from collections import OrderedDict
+        self.root, self.lru, self._c = Path(root), int(lru), OrderedDict()
+
+    def path(self, clip: str) -> Path:
+        return self.root / f"{clip}.v2ep.pt"
+
+    def missing(self, clips) -> list:
+        return [c for c in clips if not self.path(c).is_file()]
+
+    def get(self, clip: str) -> dict:
+        if clip in self._c:
+            self._c.move_to_end(clip)
+            return self._c[clip]
+        import torch
+        o = torch.load(self.path(clip), map_location="cpu", weights_only=False)        # our own file; the builder loads it the same way
+        if o.get("clip_id") != clip:
+            raise ValueError(f"{self.path(clip)}: clip_id {o.get('clip_id')!r} != file stem (the label join key would be wrong)")
+        if str(o["codec"]) != "png" or (int(o["image_h"]), int(o["image_w"])) != tuple(FRAME_HW):
+            raise ValueError(f"{self.path(clip)}: codec {o['codec']} / frame {(o['image_h'], o['image_w'])} is not the cache builder's png {FRAME_HW}")
+        self._c[clip] = {k: o[k] for k in ("jpeg_buf", "jpeg_len", "codec")}
+        while len(self._c) > self.lru:
+            self._c.popitem(last=False)
+        return self._c[clip]
+
+    def n_cache_frames(self, clip: str) -> int:
+        return (int(self.get(clip)["jpeg_len"].shape[0]) + 1) // 2
+
+    def frames(self, clip: str, steps) -> "torch.Tensor":
+        from tanitad.models.v8f_lora_encoder import decode_cache_frames
+        return decode_cache_frames(self.get(clip), [int(g) for g in steps])
+
+
+class V8FMiniFrameWindows(V8FMiniWindows):
+    """``--encoder lora``: the same windows, but the batch carries the FRAMES behind ``feats`` instead of the cached tokens. ``item`` returns everything
+    the base class does, with ``feats`` replaced by ``fclip`` / ``fidx`` (the ``hmax`` cache steps ``t - hmax + 1 .. t`` clamped into the clip, the SAME
+    indices ``feats`` was gathered with). ``keep_cached`` keeps the cached ``feats`` too (the launch gate's identity probe)."""
+
+    def __init__(self, *a, keep_cached: bool = False, **kw):
+        super().__init__(*a, **kw)
+        self.keep_cached = bool(keep_cached)
+
+    def item(self, ci: int, t: int, a_t: int = 0, a_s: int = 0) -> dict:
+        it = super().item(ci, t, a_t, a_s)
+        idx = np.clip(np.arange(t - self.hmax + 1, t + 1), 0, it["T"] - 1)
+        if not self.keep_cached:
+            del it["feats"]
+        it["fclip"], it["fidx"] = str(self.J["clip"][ci]), idx.astype(np.int64)
+        return it
+
+
+def unique_frames(clips, idx: np.ndarray):
+    """``clips[b]`` and ``idx [B, F]`` (cache steps, already clamped into the clip) -> ``(keys, frame_map)``: ``keys`` the unique ``(clip, step)`` pairs in
+    first-seen order, ``frame_map [B, F]`` the position of each frame in ``keys``. Frames shared by windows of one clip, and a clip's clamped frame 0, are
+    encoded ONCE; autograd sums their gradients through the gather."""
+    seen: dict = {}
+    fm = np.empty(idx.shape, np.int64)
+    for b, c in enumerate(clips):
+        for f in range(idx.shape[1]):
+            k = (c, int(idx[b, f]))
+            j = seen.get(k)
+            if j is None:
+                j = seen[k] = len(seen)
+            fm[b, f] = j
+    return list(seen), fm
+
+
+def collate_frames(items: list, fstore: FrameStore) -> dict:
+    """``collate`` + the decoded frames: ``frames_u8`` uint8 ``[U, 3, 256, 640]`` (the unique frames of the batch) and ``frame_map`` long ``[B, hmax]``
+    (``feats[b, f]`` = the encoding of ``frames_u8[frame_map[b, f]]``). If the items kept the cached tokens they are returned as ``feats`` too."""
+    import torch
+    keys, fm = unique_frames([it["fclip"] for it in items], np.stack([it["fidx"] for it in items]))
+    by_clip: dict = {}
+    for j, (c, g) in enumerate(keys):
+        by_clip.setdefault(c, []).append((j, g))
+    frames = torch.empty((len(keys), 3, *FRAME_HW), dtype=torch.uint8)
+    T_of = {it["fclip"]: it["T"] for it in items}
+    for c, lst in by_clip.items():
+        if fstore.n_cache_frames(c) != T_of[c]:
+            raise ValueError(f"{c}: the v2ep has {fstore.n_cache_frames(c)} cache steps, the cache clip has {T_of[c]}")
+        fr = fstore.frames(c, [g for _, g in lst])
+        frames[torch.as_tensor([j for j, _ in lst])] = fr
+    b = collate(items)
+    b["frames_u8"], b["frame_map"] = frames, torch.as_tensor(fm)
+    return b
 
 
 class ChunkedSampler:
