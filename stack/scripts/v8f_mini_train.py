@@ -470,7 +470,7 @@ def live_check_lora(model, enc, batch, cfg, a, dev, chunk, steps: int = 3, lr: f
             def run_loss(feats, s_=s_):
                 bb = dict(hb)
                 bb["feats"] = feats
-                out = m.loss(bb, p_gt=0.5, gen=torch.Generator().manual_seed(s_))
+                out = m.loss(bb, p_gt=0.5, gen=torch.Generator(device=dev).manual_seed(s_))   # the generator lives on the model's device: a CPU one crashed AR-2's cuda smoke
                 for k, v in out["terms"].items():
                     if not torch.isfinite(v):
                         raise AssertionError(f"G-LIVE: loss term {k} is not finite at step {s_}: {float(v)}")

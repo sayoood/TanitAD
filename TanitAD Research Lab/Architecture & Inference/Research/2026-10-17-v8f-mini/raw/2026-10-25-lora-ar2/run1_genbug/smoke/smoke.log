@@ -1,0 +1,24 @@
+Loading weights:   0%|          | 0/415 [00:00<?, ?it/s]Loading weights:  70%|██████▉   | 290/415 [00:00<00:00, 2864.90it/s]Loading weights: 100%|██████████| 415/415 [00:00<00:00, 2983.37it/s]
+Traceback (most recent call last):
+  File "D:\tanitad\repo\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_lora_smoke.py", line 311, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "D:\tanitad\repo\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_lora_smoke.py", line 244, in main
+    rc = TR.main(targv)
+  File "D:\tanitad\repo\stack\scripts\v8f_mini_train.py", line 683, in main
+    live = live_check_lora(model, enc, probe_f, cfg, a, dev, chunk)
+  File "D:\tanitad\repo\stack\scripts\v8f_mini_train.py", line 478, in live_check_lora
+    out = L.cached_grad_step(enc, frames, fmap, run_loss, chunk=chunk, device=dev)
+  File "D:\tanitad\repo\stack\tanitad\models\v8f_lora_encoder.py", line 581, in cached_grad_step
+    out = run_loss(leaf[frame_map.to(leaf.device)])
+  File "D:\tanitad\repo\stack\scripts\v8f_mini_train.py", line 473, in run_loss
+    out = m.loss(bb, p_gt=0.5, gen=torch.Generator().manual_seed(s_))
+  File "D:\tanitad\repo\stack\tanitad\models\v8f_mini.py", line 660, in loss
+    out = self.forward(batch, p_gt, gen)
+  File "D:\tanitad\repo\stack\tanitad\models\v8f_mini.py", line 655, in forward
+    return self._forward(batch, self.p_gt if p_gt is None else p_gt, True, gen)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\tanitad\repo\stack\tanitad\models\v8f_mini.py", line 611, in _forward
+    use = (torch.rand(B, generator=gen, device=dev) < p_gt)[:, None] & b["lab_s"]["rc_ok"] & b["lab_s"]["has"][:, None]
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Expected a 'cuda' device type for generator but found 'cpu'
