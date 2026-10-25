@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=3179">
+<title>HiCAP Architecture Poster</title>
+<!--
+  HiCAP architecture poster, A0 portrait (841 x 1189 mm). Self-contained: inline CSS + inline SVG, system fonts only
+  (Inter, DejaVu Sans fallback), no network fetch. Render with `node render_poster.js` (Playwright/Chromium).
+  Every number is quoted from Paper/HiCAP/*.tex, Paper/HiCAP/design/HICAP_V10_SPEC.md or stack/tanitad/hicap/*.py and
+  carries its evidence class: M = MEASURED (ours, artifact in repo), P = PUBLISHED (cited), E = ESTIMATED (closed-form
+  arithmetic), H = HYPOTHESIS, I = INHERITED (programme document, not re-verified). Nothing has been trained.
+-->
+<style>
+@page { size: 841mm 1189mm; margin: 0; }
+:root {
+  --frz:#2F5597; --frz-f:#E8EEF9; --frz-t:#F2F6FC;
+  --trn:#C25E0E; --trn-f:#FDEEDF; --trn-t:#FFF7EE;
+  --cch:#1F7F5B; --cch-f:#E2F3EB;
+  --rul:#A8283A; --rul-f:#FBE8EA;
+  --img:#6446A3; --img-f:#EFEAF8;
+  --ink:#141C26; --ink2:#36404D; --mute:#5E6875; --line:#C7CED8; --bg2:#F4F6F9;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #ffffff; }
+body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.page {
+  width: 841mm; height: 1189mm; position: relative; overflow: hidden; background: #ffffff;
+  font-family: "Inter", "DejaVu Sans", "Noto Sans", sans-serif; color: var(--ink);
+  padding: 46px 60px 0 60px; font-size: 24px; line-height: 1.28;
+  font-feature-settings: "tnum" 1, "cv11" 1;
+}
+b, strong { font-weight: 700; }
+sub, sup { font-size: max(19px, 0.8em); line-height: 0; }
+.mono { font-family: "DejaVu Sans Mono", "Noto Sans Mono", monospace; font-size: max(19px, 0.9em); }
+.ev { font-style: normal; font-weight: 700; font-size: 19px; line-height: 1; display: inline-block; padding: 2px 6px 3px;
+      border-radius: 6px; margin-left: 4px; vertical-align: 2px; color: #fff; background: #5E6875; letter-spacing: .02em; }
+.ev.M { background: #1F7F5B; } .ev.P { background: #2F5597; } .ev.E { background: #8A6D1E; }
+.ev.H { background: #A8283A; } .ev.I { background: #6B7280; }
+.cn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%;
+      background: var(--ink); color: #fff; font-weight: 800; font-size: 20px; margin-right: 8px; flex: none; vertical-align: -6px; }
+.cn.k { background: var(--frz); font-size: 19px !important; }
+.hz { display: inline-block; font-weight: 800; font-size: 19px; padding: 2px 10px 3px; border-radius: 999px; color: #fff;
+      background: var(--trn); vertical-align: 2px; margin-left: 6px; white-space: nowrap; }
+.hz.r { background: var(--frz); } .hz.o { background: var(--cch); } .hz.g { background: #6B7280; }
+.lock { width: 24px; height: 28px; vertical-align: -4px; margin-right: 6px; }
+
+/* ---------------- title band ---------------- */
+.titleband { position: relative; height: 322px; display: grid; grid-template-columns: 210px 1fr; column-gap: 36px; }
+.logo svg { width: 210px; height: 210px; }
+.t1 { font-size: 86px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.0; margin: 2px 0 0; }
+.t1 .acc { color: var(--trn); }
+.t1 .accb { color: var(--frz); }
+.sub { font-size: 28px; color: var(--ink2); margin-top: 12px; line-height: 1.26; max-width: 2800px; }
+.strip { position: absolute; left: 0; right: 0; bottom: 0; height: 58px; display: flex; gap: 18px; align-items: center; }
+.status { display: flex; align-items: center; gap: 12px; background: #141C26; color: #fff; border-radius: 12px; padding: 0 20px;
+          height: 58px; font-size: 24px; font-weight: 600; white-space: nowrap; }
+.status .dot { width: 16px; height: 16px; border-radius: 50%; background: #F2A33A; box-shadow: 0 0 0 4px rgba(242,163,58,.3); }
+.who { font-size: 22px; color: var(--ink2); white-space: nowrap; }
+.kchips { position: absolute; right: 0; top: 100px; display: flex; gap: 10px; }
+.kchip { border: 2px solid var(--line); border-radius: 12px; padding: 6px 12px; font-size: 20px; white-space: nowrap; background: #fff; }
+.kchip b { font-size: 24px; }
+.evkey { position: absolute; right: 0; top: 0; width: 600px; font-size: 20px; color: var(--ink2); text-align: right; line-height: 1.55; }
+
+/* ---------------- hero ---------------- */
+.hero { position: relative; width: 3058px; height: 1924px; margin-top: 16px; }
+.hero svg.layer { position: absolute; left: 0; top: 0; width: 3058px; height: 1924px; overflow: visible; }
+.node { position: absolute; border-radius: 14px; padding: 9px 14px 8px; font-size: 20px; line-height: 1.27; overflow: hidden; background: #fff; }
+.node h4 { margin: 0 0 4px; font-size: 23px; line-height: 1.2; font-weight: 800; display: flex; align-items: center; flex-wrap: wrap; gap: 0 2px; }
+.node p { margin: 0; }
+.node .sm { font-size: 19px; color: var(--ink2); }
+.frz { background: var(--frz-f); border: 4px solid var(--frz); }
+.trn { background: var(--trn-f); border: 4px solid var(--trn); }
+.cch { background: var(--cch-f); border: 4px dashed var(--cch); }
+.rul { background: var(--rul-f); border: 4px solid var(--rul); }
+.ana { background: #F6F7F9; border: 4px solid #5E6875; }
+.inp { background: #ffffff; border: 3px solid #8C96A3; }
+.opt { border-style: dotted !important; border-width: 5px !important; }
+.node.frz h4 { color: #1D3E78; } .node.trn h4 { color: #8E4208; } .node.cch h4 { color: #135E42; } .node.rul h4 { color: #7E1828; }
+.card { display: grid; grid-template-columns: 58px 1fr; column-gap: 12px; align-items: center; padding-top: 5px !important; padding-bottom: 4px !important; }
+.card svg.ic { width: 56px; height: 56px; }
+.card h4 { margin: 0; font-size: 21px; }
+.card p { font-size: 19px; color: var(--ink2); margin: 1px 0 0; line-height: 1.22; }
+.bandtitle { position: absolute; font-size: 27px; font-weight: 800; letter-spacing: .02em; color: var(--ink); white-space: nowrap; }
+.bandtitle span { font-weight: 500; color: var(--ink2); font-size: 22px; letter-spacing: 0; }
+.lanelabel { position: absolute; font-size: 20px; font-weight: 800; letter-spacing: .04em; white-space: nowrap; }
+.wl { font-size: 19px; font-weight: 600; fill: var(--ink2); }
+.chip { border-radius: 9px; padding: 4px 9px; margin: 6px 0 0; font-size: 19px; line-height: 1.22; background: #fff; border: 2px solid #9ccbb6; }
+.chip.optc { border: 3px dotted #7c8794; }
+.tokstrip { display: flex; gap: 4px; height: 84px; margin: 8px 0 4px; }
+.seg { border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+       font-size: 19px; line-height: 1.15; padding: 2px 4px; font-weight: 600; }
+.seg small { font-size: 19px; font-weight: 500; }
+.s-f { background: #CFDCF2; border: 2px solid var(--frz); }
+.s-t { background: #FBD9B6; border: 2px solid var(--trn); }
+.s-q { background: var(--trn); color: #fff; border: 2px solid #8E4208; }
+.mini { display: grid; gap: 10px; }
+.box2 { border-radius: 10px; padding: 6px 12px; background: #fff; border: 2px solid #E3A66F; font-size: 19.5px; line-height: 1.25; }
+.box2.f { border-color: #8FA9D6; }
+.box2.g { border-color: #93C4AE; }
+.box2 b.h { font-size: 21px; }
+.rd { display: flex; gap: 6px; margin-top: 6px; }
+.rd div { flex: 1; text-align: center; border-radius: 8px; background: var(--trn); color: #fff; font-weight: 700; font-size: 20px; padding: 4px 0; line-height: 1.15; }
+.rd div small { display: block; font-weight: 500; font-size: 19px; }
+.pbar { display: flex; height: 44px; border-radius: 8px; overflow: hidden; margin-top: 6px; border: 2px solid #8E4208; }
+.pbar div { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 19px; font-weight: 700; white-space: nowrap; overflow: hidden; }
+ol.prune { margin: 4px 0 0; padding: 0; list-style: none; }
+ol.prune li { border-left: 6px solid var(--rul); background: #fff; padding: 4px 9px; margin: 6px 0 0; border-radius: 0 8px 8px 0; font-size: 19px; line-height: 1.24; }
+ol.prune li.soft { border-left-color: #D98C95; }
+ol.prune li.new { border-left-color: var(--cch); }
+ol.prune li.guard { border-left-color: var(--ink); background: #EEF0F3; }
+.tier { display: grid; grid-template-columns: 82px 1fr; gap: 10px; margin-top: 7px; background: #fff; border-radius: 10px; padding: 6px 10px; align-items: start; border: 2px solid #CFC3EA; }
+.tier .tn { background: var(--img); color: #fff; font-weight: 800; border-radius: 8px; text-align: center; padding: 4px 0; font-size: 20px; line-height: 1.15; }
+.tier .tn small { display: block; font-size: 19px; font-weight: 500; }
+.tier p { font-size: 19px; line-height: 1.24; }
+.legend { position: absolute; left: 2110px; top: 1716px; width: 948px; height: 200px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 22px; align-content: start; font-size: 19px; line-height: 1.2; }
+.legend .li { display: grid; grid-template-columns: 70px 1fr; gap: 10px; align-items: center; }
+.legend .sw { height: 36px; border-radius: 8px; }
+.legend .ttl { grid-column: 1 / -1; font-weight: 800; font-size: 22px; letter-spacing: .04em; }
+
+/* ---------------- panels ---------------- */
+.panels { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: 24px; row-gap: 22px; margin-top: 16px;
+          grid-template-rows: 640px 600px 584px 226px; }
+.panel { border: 3px solid #CDD3DC; border-radius: 18px; padding: 16px 24px 14px; overflow: hidden; background: #fff; position: relative; }
+.panel h3 { margin: 0 0 8px; font-size: 31px; line-height: 1.12; font-weight: 800; display: flex; align-items: center; gap: 12px; }
+.panel h3 .pl { width: 46px; height: 46px; border-radius: 10px; background: var(--ink); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 26px; flex: none; }
+.rn { display:inline-flex; align-items:center; justify-content:center; min-width:32px; height:32px; padding:0 4px; border-radius:16px; border:2.5px solid var(--mute); color:var(--ink2); font-size:19px; font-weight:800; margin-left:4px; vertical-align:1px; line-height:1; }
+.panel h3 .refs { margin-left: auto; font-size: 20px; font-weight: 600; color: var(--mute); white-space: nowrap; }
+.panel p, .panel li { font-size: 24px; line-height: 1.27; }
+.panel p { margin: 0 0 7px; }
+.panel ul { margin: 0 0 6px; padding-left: 24px; }
+.panel li { margin: 0 0 4px; }
+.panel .note { font-size: 20px; color: var(--ink2); line-height: 1.25; }
+.panel .eq { font-size: 23px; background: var(--bg2); border-radius: 10px; padding: 6px 12px; margin: 4px 0 8px; line-height: 1.32; }
+.panel .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.panel table { border-collapse: collapse; width: 100%; font-size: 20px; line-height: 1.22; }
+.panel th { text-align: left; font-weight: 800; border-bottom: 3px solid var(--ink); padding: 3px 6px; }
+.panel td { border-bottom: 1px solid #DCE0E6; padding: 3px 6px; vertical-align: top; }
+.panel .ok { color: #1F7F5B; font-weight: 800; }
+.panel .miss { color: #A8283A; font-weight: 800; }
+.mx td, .mx th { text-align: center; padding: 3px 3px; }
+.mx td:first-child, .mx th:first-child { text-align: left; }
+.mx .on { display: inline-block; width: 22px; height: 22px; border-radius: 50%; background: var(--trn); vertical-align: -3px; }
+.mx .bl { display: inline-block; width: 22px; height: 22px; border-radius: 4px; background: var(--cch); vertical-align: -3px; }
+.mx .fz { display: inline-block; width: 22px; height: 22px; border-radius: 4px; background: var(--frz); vertical-align: -3px; }
+.mx .op { display: inline-block; width: 22px; height: 22px; border-radius: 50%; border: 4px dotted var(--trn); vertical-align: -4px; }
+.hc { display: grid; grid-template-columns: repeat(5, 1fr); column-gap: 26px; row-gap: 3px; font-size: 20px; line-height: 1.24; }
+.hc div b { display: inline-block; min-width: 82px; color: var(--ink); }
+.hc .nw b { color: var(--cch); }
+.footer { position: absolute; left: 60px; right: 60px; bottom: 16px; height: 34px; font-size: 19px; color: var(--mute); display: flex; justify-content: space-between; }
+.adm { list-style: none; padding: 0 !important; margin: 0; }
+.adm li { display: grid; grid-template-columns: 34px 1fr; gap: 10px; margin: 0 0 7px; }
+.adm li .x { width: 30px; height: 30px; border-radius: 7px; background: var(--rul); color: #fff; font-weight: 800; font-size: 20px; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+</style>
+</head>
+<body>
+<!-- ============ shared SVG symbols (icons, camera wedges) ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-lock" viewBox="0 0 24 28"><rect x="2" y="12" width="20" height="15" rx="3" fill="currentColor"/><path d="M6 12V8a6 6 0 0 1 12 0v4" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="12" cy="19" r="2.3" fill="#fff"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 56 56"><rect x="20" y="6" width="16" height="28" rx="8" fill="none" stroke="#36404D" stroke-width="4"/><path d="M13 27a15 15 0 0 0 30 0M28 42v8M19 50h18" fill="none" stroke="#36404D" stroke-width="4" stroke-linecap="round"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 56 56"><circle cx="28" cy="28" r="21" fill="none" stroke="#36404D" stroke-width="4"/><ellipse cx="28" cy="28" rx="9" ry="21" fill="none" stroke="#36404D" stroke-width="3"/><path d="M8 21h40M8 35h40" stroke="#36404D" stroke-width="3"/></symbol>
+    <symbol id="i-film" viewBox="0 0 56 56"><rect x="4" y="14" width="30" height="22" rx="3" fill="#fff" stroke="#36404D" stroke-width="3"/><rect x="12" y="20" width="30" height="22" rx="3" fill="#fff" stroke="#36404D" stroke-width="3"/><rect x="20" y="26" width="32" height="22" rx="3" fill="#FBD9B6" stroke="#36404D" stroke-width="3"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 56 56"><path d="M8 40a20 20 0 1 1 40 0" fill="none" stroke="#36404D" stroke-width="4" stroke-linecap="round"/><path d="M28 40L40 22" stroke="#C25E0E" stroke-width="4" stroke-linecap="round"/><circle cx="28" cy="40" r="4" fill="#36404D"/></symbol>
+    <symbol id="i-nav" viewBox="0 0 56 56"><path d="M18 50V30a8 8 0 0 1 8-8h14" fill="none" stroke="#36404D" stroke-width="5" stroke-linecap="round"/><path d="M36 13l10 9-10 9z" fill="#36404D"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 56 56"><path d="M28 50s-14-15-14-27a14 14 0 0 1 28 0c0 12-14 27-14 27z" fill="none" stroke="#36404D" stroke-width="4"/><circle cx="28" cy="23" r="5" fill="#36404D"/></symbol>
+    <!-- camera rig: car body + 7 field-of-view wedges (front-wide, front-tele, cross L/R, rear L/R, rear-tele) -->
+    <path id="w-fw" d="M60 48 L21 25.5 A45 45 0 0 1 99 25.5 Z"/>
+    <path id="w-ft" d="M60 48 L50.4 3 A46 46 0 0 1 69.6 3 Z"/>
+    <path id="w-cl" d="M45 58 L20.4 40.8 A30 30 0 0 0 20.4 75.2 Z"/>
+    <path id="w-cr" d="M75 58 L99.6 40.8 A30 30 0 0 1 99.6 75.2 Z"/>
+    <path id="w-rl" d="M46 98 L17 104 A30 30 0 0 0 33 125 Z"/>
+    <path id="w-rr" d="M74 98 L103 104 A30 30 0 0 1 87 125 Z"/>
+    <path id="w-rt" d="M60 108 L68.3 146 A40 40 0 0 1 51.7 146 Z"/>
+    <rect id="car" x="45" y="48" width="30" height="62" rx="9"/>
+    <marker id="a-o" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L12 6L0 12z" fill="#C25E0E"/></marker>
+    <marker id="a-b" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L12 6L0 12z" fill="#2F5597"/></marker>
+    <marker id="a-g" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L12 6L0 12z" fill="#1F7F5B"/></marker>
+    <marker id="a-r" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L12 6L0 12z" fill="#A8283A"/></marker>
+    <marker id="a-k" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L12 6L0 12z" fill="#5E6875"/></marker>
+    <marker id="a-v" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L12 6L0 12z" fill="#6446A3"/></marker>
+  </defs>
+</svg>
+
+<div class="page">
+
+<!-- =============================== TITLE BAND =============================== -->
+<header class="titleband">
+  <div class="logo">
+    <svg viewBox="0 0 210 210" aria-label="TanitAD mark">
+      <rect x="4" y="4" width="202" height="202" rx="34" fill="#141C26"/>
+      <circle cx="105" cy="58" r="25" fill="none" stroke="#F2A33A" stroke-width="11"/>
+      <path d="M48 96 H162" stroke="#F2A33A" stroke-width="11" stroke-linecap="round"/>
+      <path d="M105 92 L58 176 H152 Z" fill="none" stroke="#ffffff" stroke-width="11" stroke-linejoin="round"/>
+      <text x="105" y="198" text-anchor="middle" font-size="22" font-weight="800" fill="#ffffff" letter-spacing="2">TanitAD</text>
+    </svg>
+  </div>
+  <div>
+    <div class="t1">HiCAP — Hierarchical Contrastive Action Priors<br>on a <span class="accb">frozen VLM backbone</span></div>
+    <div class="sub">A frozen Cosmos3-Edge reasoner read once per refresh, a 56 M contrastive hierarchy selecting among 262,144 factored trajectories under prior-encoded pruning, trustworthy imagination and elastic sensing —
+      plus the <b>v10 extensions</b>: agent supervision, an audio bridge, traffic-rule knowledge with a learned country label, optional reasoning text.</div>
+  </div>
+  <div class="evkey">evidence class on every number:
+    <i class="ev M">M</i> measured <i class="ev P">P</i> published <i class="ev E">E</i> estimated <i class="ev H">H</i> hypothesis <i class="ev I">I</i> inherited</div>
+  <div class="strip">
+    <div class="status"><span class="dot"></span>STATUS: architecture implemented and unit-tested on CPU; not yet trained</div>
+    <div class="who"><b>TanitAD programme</b> · PI: Sayed · design &amp; pre-registration poster · <b>2026-10-25</b></div>
+    <div class="who" style="margin-left:auto">v10 extensions specified 2026-10-25 (spec rev a); implementation streams S, A, T, R in progress</div>
+  </div>
+  <div class="kchips">
+      <div class="kchip"><b>2.43 B</b> frozen <i class="ev P">P</i></div>
+      <div class="kchip"><b>56.4 M + 1.88 M</b> trained <i class="ev M">M</i></div>
+      <div class="kchip"><b>1,024 × 256</b> = 262,144 trajectories</div>
+      <div class="kchip"><b>10 Hz</b> command · <b>2 Hz</b> refresh</div>
+      <div class="kchip"><b>53</b> CPU tests <i class="ev M">M</i></div>
+  </div>
+</header>
+
+<!-- =============================== HERO =============================== -->
+<section class="hero">
+  <!-- background layer: lanes -->
+  <svg class="layer" viewBox="0 0 3058 1924" aria-hidden="true">
+    <rect x="0" y="44" width="1770" height="516" rx="18" fill="#F2F6FC"/>
+    <rect x="0" y="592" width="1770" height="380" rx="18" fill="#FFF7EE"/>
+    <rect x="0" y="1025" width="3058" height="672" rx="18" fill="#FFFAF4"/>
+  </svg>
+
+  <div class="bandtitle" style="left:0;top:2px">A · SENSE → ENCODE <span>— the frozen backbone refreshes asynchronously; trainable tokens are rebuilt every tick</span></div>
+  <div class="lanelabel" style="left:580px;top:56px;color:#2F5597">REFRESH CLOCK · 2 Hz · ASYNCHRONOUS, OFF THE COMMAND PATH</div>
+  <div class="lanelabel" style="left:580px;top:602px;color:#C25E0E">COMMAND CLOCK · 10 Hz · EVERY TICK (FAST PATH)</div>
+  <div class="lanelabel" style="left:14px;top:56px;color:#36404D"><span class="cn">1</span>INPUTS</div>
+
+  <!-- ---------- inputs (upper lane) ---------- -->
+  <div class="node inp" style="left:0;top:92px;width:500px;height:208px;display:grid;grid-template-columns:100px 1fr;column-gap:12px;align-items:center">
+    <svg viewBox="0 0 120 150" style="width:100px;height:125px">
+      <use href="#w-ft" fill="#2F5597" fill-opacity=".22"/>
+      <use href="#w-fw" fill="#2F5597" fill-opacity=".55"/>
+      <use href="#w-cl" fill="#2F5597" fill-opacity=".22"/><use href="#w-cr" fill="#2F5597" fill-opacity=".22"/>
+      <use href="#w-rl" fill="#2F5597" fill-opacity=".22"/><use href="#w-rr" fill="#2F5597" fill-opacity=".22"/>
+      <use href="#w-rt" fill="#2F5597" fill-opacity=".22"/>
+      <use href="#car" fill="#141C26"/>
+    </svg>
+    <div>
+      <h4>CAMERAS · 7 views, elastic</h4>
+      <p class="sm"><b>front-wide 120°</b>, 256×640 → 160 tokens, always on</p>
+      <p class="sm">+ tele, cross L/R, rear L/R, rear-tele at 64 tok each</p>
+      <p class="sm">10 options T0–T3 · vision-only gate</p>
+      <p class="sm">cached today: front-wide only <i class="ev M">M</i></p>
+    </div>
+  </div>
+  <div class="node inp opt card" style="left:0;top:310px;width:500px;height:100px">
+    <svg class="ic"><use href="#i-mic"/></svg>
+    <div><h4>MICROPHONE · optional</h4><p>mono or array · 2 s log-mel, 0.5 s hop · no audio in any corpus <i class="ev M">M</i></p></div>
+  </div>
+  <div class="node inp opt card" style="left:0;top:420px;width:500px;height:130px">
+    <svg class="ic"><use href="#i-globe"/></svg>
+    <div><h4>COUNTRY via GNSS · optional</h4><p><i>supplied</i> arm only; the country <i>predicted</i> from vision (s1) is primary; both arms reported</p></div>
+  </div>
+
+  <!-- ---------- inputs (lower lane) ---------- -->
+  <div class="node inp card" style="left:0;top:636px;width:500px;height:76px">
+    <svg class="ic"><use href="#i-film"/></svg>
+    <div><h4>MOTION FRAMES · 3 × 64×160</h4><p>front-wide, 100 ms apart</p></div>
+  </div>
+  <div class="node inp card" style="left:0;top:720px;width:500px;height:76px">
+    <svg class="ic"><use href="#i-gauge"/></svg>
+    <div><h4>EGO · v, a<sub>lon</sub>, yaw rate</h4><p>no curvature (PI ruling 2026-10-25)</p></div>
+  </div>
+  <div class="node inp card" style="left:0;top:804px;width:500px;height:76px">
+    <svg class="ic"><use href="#i-nav"/></svg>
+    <div><h4>NAV COMMAND + 4 args</h4><p>follow / left / right · stamped oracle</p></div>
+  </div>
+  <div class="node inp card" style="left:0;top:888px;width:500px;height:76px">
+    <svg class="ic"><use href="#i-pin"/></svg>
+    <div><h4>ROUTE CHECKPOINT RC-A50</h4><p>x, y, ψ · σ 2 m / 0.75 m · drop ≥ 0.3 · oracle</p></div>
+  </div>
+
+  <!-- ---------- frozen reasoner ---------- -->
+  <div class="node frz" style="left:580px;top:92px;width:560px;height:346px">
+    <h4><span class="cn">2</span><svg class="lock" style="color:#2F5597"><use href="#i-lock"/></svg>FROZEN Cosmos3-Edge reasoner<span class="hz r">2 Hz</span></h4>
+    <p class="sm">2.43 B <i class="ev P">P</i> · prefill only, fixed short prompt, one frame per camera</p>
+    <svg viewBox="0 0 530 92" style="width:530px;height:92px;margin-top:0">
+      <rect x="0" y="16" width="124" height="54" rx="8" fill="#CFDCF2" stroke="#2F5597" stroke-width="2.5"/>
+      <text x="62" y="39" text-anchor="middle" font-size="19" font-weight="700" fill="#1D3E78">SigLIP2</text>
+      <text x="62" y="61" text-anchor="middle" font-size="19" fill="#1D3E78">0.49 B</text>
+      <path d="M126 43 H146" stroke="#2F5597" stroke-width="3" marker-end="url(#a-b)"/>
+      <g fill="#9CB4DE"><!-- 56 blocks -->
+        <rect x="150" y="18" width="380" height="50" rx="6" fill="#DCE6F6" stroke="#2F5597" stroke-width="2.5"/>
+      </g>
+      <g stroke="#9CB4DE" stroke-width="2">
+        <path d="M156.8 24V62M163.6 24V62M170.4 24V62M177.2 24V62M184 24V62M190.8 24V62M197.6 24V62M204.4 24V62M211.2 24V62M218 24V62M224.8 24V62M231.6 24V62M238.4 24V62M245.2 24V62M252 24V62M258.8 24V62M265.6 24V62M272.4 24V62M279.2 24V62M286 24V62M292.8 24V62M299.6 24V62M306.4 24V62M313.2 24V62M320 24V62M326.8 24V62M333.6 24V62M340.4 24V62M347.2 24V62M354 24V62M360.8 24V62M367.6 24V62M374.4 24V62M381.2 24V62M388 24V62M394.8 24V62M401.6 24V62M408.4 24V62M415.2 24V62M422 24V62M428.8 24V62M435.6 24V62M442.4 24V62M449.2 24V62M456 24V62M462.8 24V62M469.6 24V62M476.4 24V62M483.2 24V62M490 24V62M496.8 24V62M503.6 24V62M510.4 24V62M517.2 24V62"/>
+      </g>
+      <g stroke="#C25E0E" stroke-width="5"><path d="M340.4 18V68M435.6 18V68M524 18V68"/></g>
+      <text x="340" y="88" text-anchor="middle" font-size="19" font-weight="700" fill="#8E4208">28</text>
+      <text x="436" y="88" text-anchor="middle" font-size="19" font-weight="700" fill="#8E4208">42</text>
+      <text x="520" y="88" text-anchor="middle" font-size="19" font-weight="700" fill="#8E4208">56</text>
+      <text x="150" y="88" font-size="19" fill="#1D3E78">tap blocks →</text>
+      <text x="150" y="12" font-size="19" fill="#1D3E78" font-weight="700">Nemotron-dense LM · 56 blocks</text>
+    </svg>
+    <p class="sm">LM 1.41 B body + 0.54 B embeddings · taps at blocks <b>28 / 42 / 56</b> → adaptive pool → <b>128 tokens × 3 depths</b> + last-token state</p>
+    <p class="sm">KV cache of the latest prefill kept <span class="cn k" style="width:30px;height:30px;font-size:18px;margin:0 0 0 4px">K</span> → explanations</p>
+  </div>
+  <div class="node frz opt" style="left:580px;top:450px;width:560px;height:100px;padding-top:6px;padding-bottom:4px">
+    <h4><span class="cn">5</span><svg class="lock" style="color:#2F5597"><use href="#i-lock"/></svg>FROZEN audio encoder · optional</h4>
+    <p class="sm">Whisper-class · BEATs-base ≈ 90 M · CLAP</p>
+  </div>
+
+  <!-- ---------- tap cache + shared space ---------- -->
+  <div class="node frz" style="left:1168px;top:92px;width:594px;height:80px;border-style:dashed;padding:6px 12px">
+    <h4 style="font-size:21px;margin:0"><span class="cn">3</span>TAP CACHE · 3 × 128 × 2,048 per refresh</h4>
+    <p class="sm" style="margin-top:0">reused between refreshes with an age embedding · int8</p>
+  </div>
+  <div class="node cch" style="left:1220px;top:186px;width:480px;height:364px">
+    <h4><span class="cn">4</span>SHARED TEXT-EMBEDDING SPACE</h4>
+    <p class="sm">ℝ<sup>d<sub>v</sub></sup>, d<sub>v</sub> = 2,048 · via the frozen text path, <b>cached once</b></p>
+    <div class="chip"><b>node definitions</b> · strategic + tactical (NodeLibrary)</div>
+    <div class="chip"><b>country nodes × 25</b> · “driving in ⟨country⟩”</div>
+    <div class="chip"><b>rule embeddings r<sub>i</sub></b> · RuleBook v1, per country</div>
+    <div class="chip optc"><b>audio bridge → 8 tokens</b> (trained bridge)</div>
+    <div class="chip"><b>caption embeddings</b> · audio alignment targets</div>
+  </div>
+
+  <!-- ---------- lower lane: trainable tokenizers ---------- -->
+  <div class="node trn" style="left:580px;top:630px;width:560px;height:96px;padding:6px 12px">
+    <h4 style="font-size:21px;margin:0">Motion adapter M<sub>φ</sub> · 0.6 M <i class="ev M">M</i><span class="hz">10 Hz</span></h4>
+    <p class="sm">3 frames + 2 differences → 4 stride-2 convs → 4×4 pool → 16 tokens</p>
+  </div>
+  <div class="node trn" style="left:580px;top:736px;width:560px;height:230px">
+    <h4>Ego · nav · route tokens · 0.9 M <i class="ev M">M</i><span class="hz">10 Hz</span></h4>
+    <p class="sm">Fourier features (8 octaves) → MLP, one token each</p>
+    <p class="sm">nav token = embedding(command) + MLP(d<sub>next</sub>, d<sub>end</sub>, Δψ<sub>next</sub>, valid)</p>
+    <p class="sm">route = MLP(x, y, ψ, valid), RC-A50 noised during training</p>
+    <p class="sm">each has a <b>learned null row</b>: ego dropout, absent oracle, and the ego-zeroed, nav-zero and checkpoint-zero controls</p>
+  </div>
+
+  <!-- ---------- fusion ---------- -->
+  <div class="node trn" style="left:1790px;top:92px;width:1268px;height:874px;padding:12px 18px">
+    <h4 style="font-size:26px"><span class="cn">6</span>TRAINABLE HiCAP FUSION TRANSFORMER F<sub>θ</sub><span class="hz">10 Hz</span><span style="margin-left:auto;font-weight:600;font-size:20px;color:#36404D">reads cached frozen tokens; no gradient reaches the backbone</span></h4>
+    <div class="tokstrip">
+      <div class="seg s-f" style="flex:0 0 74px">1<small>last</small></div>
+      <div class="seg s-f" style="flex:1 1 auto">128 VLM tokens<small>softmax mix of 3 depths + age Fourier</small></div>
+      <div class="seg s-t" style="flex:0 0 150px">16 motion</div>
+      <div class="seg s-t" style="flex:0 0 68px">ego</div>
+      <div class="seg s-t" style="flex:0 0 68px">nav</div>
+      <div class="seg s-t" style="flex:0 0 80px">route</div>
+      <div class="seg s-q" style="flex:0 0 300px">6 level queries<small style="color:#fff">s1 · s2lat · s2lon · s3P · s3V · goal</small></div>
+    </div>
+    <div class="mini" style="grid-template-columns: 560px 1fr; margin-top:10px">
+      <div class="box2">
+        <svg viewBox="0 0 530 120" style="width:530px;height:120px">
+          <g fill="#FDEEDF" stroke="#C25E0E" stroke-width="2.5">
+            <rect x="50" y="4" width="430" height="34" rx="6"/><rect x="40" y="16" width="430" height="34" rx="6"/><rect x="30" y="28" width="430" height="34" rx="6"/>
+            <rect x="20" y="40" width="430" height="34" rx="6"/><rect x="10" y="52" width="430" height="34" rx="6"/><rect x="0" y="64" width="430" height="34" rx="6"/>
+          </g>
+          <text x="215" y="88" text-anchor="middle" font-size="20" font-weight="700" fill="#8E4208">6 × block · LN → MHA → LN → FFN</text>
+          <text x="0" y="118" font-size="19" fill="#36404D">d = 512 · 8 heads · FFN 2,048 · 18.9 M</text>
+          <text x="420" y="118" font-size="19" fill="#36404D" text-anchor="end"></text>
+        </svg>
+        <p style="margin:0;font-size:19px">cached-token projector 4.6 M <i class="ev M">M</i> · fusion 18.9 M <i class="ev M">M</i></p>
+        <p style="margin:2px 0 0;font-size:19px">≈ 160 input tokens · ≈ 8 GFLOP per tick, launch-bound <i class="ev E">E</i></p>
+      </div>
+      <div class="box2 g">
+        <b class="h"><span class="cn">7</span>Gated memory read (zero-init)</b>
+        <p style="margin:6px 0 4px;font-size:21px">q′<sub>ℓ</sub> = q<sub>ℓ</sub> + tanh(g<sub>ℓ</sub>) · CrossAttn(q<sub>ℓ</sub>, M), &nbsp;g<sub>ℓ</sub> = 0 at init</p>
+        <p style="margin:0;font-size:19.5px">M = <b>audio</b> 8 tokens (optional) ∪ <b>rule tokens</b> top-8 (v10) · per-level gates · one mechanism for every knowledge source · source absent ⇒ output <b>bit-exactly</b> the original <i class="ev M">M</i> (unit test)</p>
+        <p style="margin:4px 0 0;font-size:19.5px">rule memory feeds s1 / s2 queries — never the goal token</p>
+      </div>
+    </div>
+    <div class="box2" style="margin-top:10px">
+      <b class="h">Level readouts</b> &nbsp; s<sub>ℓ</sub> = norm(H<sub>ℓ</sub>(F<sub>θ</sub>(·)[q<sub>ℓ</sub>])), &nbsp;H<sub>ℓ</sub>: 512 → 1,024 → 512 · Matryoshka-nested widths 128 ⊂ 256 ⊂ 512 · five heads 5.3 M <i class="ev M">M</i>
+      <div class="rd">
+        <div>s1<small>strategic · 2 s</small></div><div>s2<sup>lat</sup><small>tactical · 0.5 s</small></div><div>s2<sup>lon</sup><small>tactical · 0.5 s</small></div>
+        <div>s3<sup>P</sup><small>path · 0.1 s</small></div><div>s3<sup>V</sup><small>profile · 0.1 s</small></div><div style="background:#8E4208">goal<small>22 goals + point</small></div>
+      </div>
+    </div>
+    <div class="box2" style="margin-top:10px">
+      <b class="h">Trainable parameters</b>, counted from the implementation (<span class="mono">HiCAP.n_params</span>, <span class="mono">HiCAPFull</span>): <b>56.4 M</b> core + <b>1.88 M</b> imagination &amp; elastic = 58.3 M <i class="ev M">M</i>
+      <div class="pbar">
+        <div style="flex:18.9;background:#C25E0E">fusion 18.9</div>
+        <div style="flex:13.7;background:#A14E0B">re-ranker 13.7</div>
+        <div style="flex:9.2;background:#D9772A">towers 9.2</div>
+        <div style="flex:5.3;background:#B5651F">H<sub>ℓ</sub> 5.3</div>
+        <div style="flex:4.6;background:#E08A44">proj 4.6</div>
+        <div style="flex:1.9;background:#8E4208"></div>
+        <div style="flex:1.4;background:#E9A267"></div>
+        <div style="flex:0.9;background:#B5651F"></div>
+        <div style="flex:0.6;background:#8E4208"></div>
+        <div style="flex:1.88;background:#6446A3"></div>
+      </div>
+      <p style="margin:4px 0 0;font-size:19px">towers = three text-node towers 8.1 + numeric path / profile towers 1.1 · then: goal / cost / refine / pair heads 1.9 · gated audio read 1.4 · ego/nav/route 0.9 · motion 0.6 · <span style="color:#6446A3;font-weight:700">imagination + elastic 1.88</span> (M) · v10 bridge, rule memory, country readout: <b>to be measured</b> · stages 1–2 train 42.7 M (re-ranker only in stage 3)</p>
+    </div>
+    <div class="box2" style="margin-top:10px;border-color:#C25E0E;border-style:dashed">
+      <b class="h">← Every tick</b>, 16 motion tokens and the ego, nav and route tokens join the sequence; the cached VLM tokens are re-read with their age, so the fusion never waits for a refresh.
+      Audio and rules enter only through the gated read <span class="rn">7</span>, never as input tokens: with the source absent the model is exactly the original. The parent level’s choice is never a token.
+    </div>
+  </div>
+
+  <!-- =============== band B =============== -->
+  <div class="bandtitle" style="right:0;top:978px">B · DECIDE <span>— coarse-to-fine retrieval → pruning → re-rank + imagination → verifier → command</span></div>
+
+  <div class="node trn" style="left:0;top:1040px;width:620px;height:170px">
+    <h4><span class="cn">8</span>s1 STRATEGIC<span class="hz">every 2 s</span></h4>
+    <p class="sm">7 declared / <b>5 usable</b> actions; band [8, 30] s, ≤ 12 s of future on this corpus; HOLD_MAIN_ROAD 2,468 / 4,719 clips <i class="ev I">I</i></p>
+    <p class="sm">node a<sub>v</sub> = norm(G([t<sub>v</sub>; φ(args)])), t<sub>v</sub> from the shared space <span class="rn">4</span></p>
+    <p class="sm">a parent restricts its children (hard beam), never fed as a feature</p>
+  </div>
+  <div class="node trn" style="left:680px;top:1040px;width:320px;height:170px">
+    <h4><span class="cn">9</span>COUNTRY readout <span class="hz o">v10</span></h4>
+    <p class="sm">on s1 · contrastive vs 25 country nodes · λ<sub>c</sub> = 0.1 → posterior p(c)</p>
+  </div>
+  <div class="node trn" style="left:0;top:1235px;width:620px;height:240px;padding:9px 10px 8px">
+    <h4>s2 TACTICAL · lat 3 × lon 7<span class="hz">every 0.5 s</span></h4>
+    <svg viewBox="0 0 592 116" style="width:592px;height:116px;display:block">
+      <g font-size="19" fill="#36404D" font-weight="600">
+        <text x="0" y="45">LANE_KEEP</text><text x="0" y="77">TURN_L</text><text x="0" y="109">TURN_R</text>
+      </g>
+      <g font-size="19" fill="#36404D" text-anchor="middle">
+        <text x="160" y="18">HOLD</text><text x="223" y="18">CREEP</text><text x="286" y="18">STOP</text><text x="349" y="18">FOLL.</text>
+        <text x="412" y="18">DEC.</text><text x="475" y="18">ACC.</text><text x="538" y="18">KEEP</text>
+      </g>
+      <g fill="#FBD9B6" stroke="#C25E0E" stroke-width="2">
+        <rect x="130" y="25" width="60" height="28" rx="4"/><rect x="193" y="25" width="60" height="28" rx="4"/><rect x="256" y="25" width="60" height="28" rx="4"/><rect x="319" y="25" width="60" height="28" rx="4"/><rect x="382" y="25" width="60" height="28" rx="4"/><rect x="445" y="25" width="60" height="28" rx="4"/><rect x="508" y="25" width="60" height="28" rx="4"/>
+        <rect x="130" y="57" width="60" height="28" rx="4"/><rect x="193" y="57" width="60" height="28" rx="4"/><rect x="256" y="57" width="60" height="28" rx="4"/><rect x="319" y="57" width="60" height="28" rx="4"/><rect x="382" y="57" width="60" height="28" rx="4"/><rect x="445" y="57" width="60" height="28" rx="4"/><rect x="508" y="57" width="60" height="28" rx="4"/>
+        <rect x="130" y="89" width="60" height="28" rx="4"/><rect x="193" y="89" width="60" height="28" rx="4"/><rect x="256" y="89" width="60" height="28" rx="4"/><rect x="319" y="89" width="60" height="28" rx="4"/><rect x="382" y="89" width="60" height="28" rx="4"/><rect x="445" y="89" width="60" height="28" rx="4"/><rect x="508" y="89" width="60" height="28" rx="4"/>
+      </g>
+    </svg>
+    <p class="sm">21 cells, <b>19 populated</b>, all ≥ 30 train rows <i class="ev M">M</i> · f<sub>2</sub> = τ⟨s2<sup>lat</sup>, a<sub>lat</sub>⟩ + τ⟨s2<sup>lon</sup>, a<sub>lon</sub>⟩ + b(lat, lon), b = −∞ for never-seen pairs</p>
+  </div>
+  <div class="node trn" style="left:680px;top:1235px;width:320px;height:210px">
+    <h4>RULE RETRIEVAL <span class="hz o">v10</span></h4>
+    <p class="sm">w<sub>i</sub> = Σ<sub>c</sub> p(c) · 1[i ∈ R<sub>c</sub>]</p>
+    <p class="sm">s<sub>i</sub> = ⟨W<sub>q</sub> q<sub>s2</sub>, W<sub>r</sub> r<sub>i</sub>⟩</p>
+    <p class="sm">top-8 by w<sub>i</sub> · softmax(s<sub>i</sub>) → memory <span class="cn" style="width:30px;height:30px;font-size:19px;margin:0">7</span>, prune, verify</p>
+  </div>
+  <div class="node trn" style="left:680px;top:1462px;width:320px;height:132px">
+    <h4>goal query</h4>
+    <p class="sm">22 goals (multi-label) + goal point (x, y, t) at 2 / 4 / 6 s — <b>predicted, never supplied</b></p>
+  </div>
+  <div class="node trn" style="left:0;top:1500px;width:620px;height:180px">
+    <h4>s3 TRAJECTORY · factored<span class="hz">every 0.1 s</span></h4>
+    <p class="sm"><b>K<sub>P</sub> = 1,024 paths × K<sub>V</sub> = 256 speed profiles = 262,144</b>, composed by arc-length re-parameterisation; the lateral class partitions paths, the longitudinal class partitions profiles</p>
+    <p class="sm">standstill sub-vocabulary hold / creep / stop (v<sub>0</sub> &lt; 0.5 m/s) · keep (20, 10) → 1,480 rows, 177× fewer <i class="ev E">E</i></p>
+  </div>
+
+  <div class="node rul" style="left:1070px;top:1040px;width:450px;height:640px">
+    <h4><span class="cn">10</span>PRIOR-ENCODED PRUNING</h4>
+    <p class="sm">no parameters · bitsets over a 1,024-bit path mask × 256-bit profile mask</p>
+    <ol class="prune">
+      <li><b>R1 physics</b> (accel 6, brake 10, lateral 9 m/s²) + continuity tubes: removes 78 % of a speed-agnostic set, keeps <b>881 / 881</b> logged futures <i class="ev M">M</i></li>
+      <li><b>R2</b> state admissibility (conformal) · <b>R3 route</b> (nav-fed arm only)</li>
+      <li class="new"><b>RULES (v10)</b>: speed cap, right-on-red removal; only removes what R1 kept</li>
+      <li class="soft"><b>R4</b> geometry goals (soft) · <b>R5</b> hysteresis (soft)</li>
+      <li><b>R6 conformal keep-sets</b>, Mondrian, episode-blocked: recall ≥ 1 − Σα<sub>ℓ</sub></li>
+      <li class="guard"><b>GUARD SET always survives</b>: hold-CTRA, gentle / firm / max brake, previous plan</li>
+    </ol>
+    <p class="sm" style="margin-top:6px"><b>262,144 → ≈ 200 → ≤ 32 → K = 16</b> (32 when the margin is small)</p>
+  </div>
+
+  <div class="node trn" style="left:1590px;top:1040px;width:710px;height:210px">
+    <h4><span class="cn">11</span>RE-RANK · MaxSim shortlist ≤ 32 → cross-attention</h4>
+    <p class="sm">candidates (path, profile, cell embeddings + 8 slots) attend to scene tokens · 3 layers · MoE FFN routed <b>deterministically by lateral class</b> (3 experts) · 13.7 M <i class="ev M">M</i>, stage 3 only</p>
+    <p class="sm">sub-scores ttc · clearance · progress deficit + logit · train K = 32, deploy K = 16 · 0.34 GMAC per tick <i class="ev E">E</i></p>
+  </div>
+  <div class="node trn" style="left:1590px;top:1280px;width:710px;height:400px;border-color:#6446A3;background:#F5F2FB">
+    <h4 style="color:#4A3080"><span class="cn" style="background:#6446A3">12</span>IMAGINATION · three tiers, cheapest first</h4>
+    <div class="tier"><div class="tn">T0<small>train only</small></div><p>outcome-aware soft target y(a) = 0.7 · softmax(−J<sub>teacher</sub>/T) + 0.3 · 1[a = a*] · zero inference cost</p></div>
+    <div class="tier"><div class="tn">T1<small>every tick</small></div><p>E-head 512 → 1,024 → 24 on the state only: lead gap, closing speed, lead accel at 0.5 / 1 / 2 / 3 s, mode, onset q10/50/90 → <b>J<sub>1</sub> = E<sub>m,τ</sub>[c(e<sub>a</sub>, x<sub>m,τ</sub>)]</b>, analytic</p></div>
+    <div class="tier"><div class="tn">T2<small>gated, top-8</small></div><p>two counterfactual cost heads; disagreement = <b>VETO</b>, never a trigger; learned benefit gate ≤ 30 % of ticks</p></div>
+    <p class="sm" style="margin-top:6px">score = τ⟨u, v⟩ + log priors − β<sub>1</sub>J<sub>1</sub> − β<sub>2</sub>J<sub>2</sub> → feasibility mask <b>last</b></p>
+  </div>
+
+  <div class="node frz opt" style="left:2370px;top:1040px;width:300px;height:500px">
+    <h4><span class="cn">13</span><svg class="lock" style="color:#2F5597"><use href="#i-lock"/></svg>SYSTEM-2 VERIFIER</h4>
+    <p class="sm">fires <b>only if</b> top-2 margin &lt; m<sub>min</sub> or the T2 heads disagree</p>
+    <p class="sm" style="margin-top:6px">top K<sub>2</sub> ≤ 8 survivors rendered as text (“lat=LANE_KEEP, lon=…, target 6 m/s”) + retrieved rules, after the cached scene prefix</p>
+    <p class="sm" style="margin-top:6px">frozen VLM adds λ · match score: <b>scores, never generates</b></p>
+    <p class="sm" style="margin-top:6px">≈ 58.6 ms (8 B, bf16) <i class="ev E">E</i> · deadline-bounded</p>
+  </div>
+
+  <div class="node trn" style="left:2740px;top:1040px;width:318px;height:230px;background:#fff;border-width:5px">
+    <h4><span class="cn">14</span>COMMAND</h4>
+    <p class="sm"><b>6 s trajectory @ 10 Hz</b> (60 steps; contract slots 0.5 … 6 s)</p>
+    <p class="sm" style="margin-top:4px">ŷ = π<sub>prior</sub>(e<sub>t</sub>) + ρ(v<sub>3</sub>) + δ: CTRA prior + leaf residual + refinement</p>
+  </div>
+  <div class="node trn" style="left:2740px;top:1285px;width:318px;height:110px;background:#fff">
+    <h4 style="font-size:21px">selected nodes</h4>
+    <p class="sm">strategic node · tactical cell (lat, lon) · path p, profile q</p>
+  </div>
+  <div class="node trn" style="left:2740px;top:1410px;width:318px;height:100px;background:#fff">
+    <h4 style="font-size:21px">confidence</h4>
+    <p class="sm">from the base score only (guard G5)</p>
+  </div>
+  <div class="node ana opt" style="left:2740px;top:1525px;width:318px;height:155px">
+    <h4 style="font-size:21px">explanation text <span class="cn k" style="width:30px;height:30px;margin:0 0 0 6px">K</span></h4>
+    <p class="sm">≤ 48 tokens, ≤ 0.5 Hz, from the refresh KV cache · <b>off the control path</b>, one-way</p>
+  </div>
+
+  <!-- ---------------- bottom strip: two clocks ---------------- -->
+  <svg class="layer" viewBox="0 0 3058 1924" style="pointer-events:none">
+    <g transform="translate(0,1716)">
+      <text x="0" y="24" font-size="24" font-weight="800" fill="#141C26">TWO CLOCKS</text>
+      <text x="170" y="24" font-size="20" fill="#36404D">command latency L<tspan font-size="19" dy="5">cmd</tspan><tspan dy="-5"> does not depend on backbone size to first order; the backbone only sets token age A and duty D · illustrative: Edge, 3 cameras, T</tspan><tspan font-size="19" dy="5">r</tspan><tspan dy="-5"> ≈ 62 ms, o = 15 ms</tspan></text>
+      <rect x="1990" y="5" width="40" height="24" rx="5" fill="#8A6D1E"/><text x="2010" y="23" text-anchor="middle" font-size="19" font-weight="700" fill="#fff">E</text>
+      <!-- axis labels -->
+      <g font-size="19" fill="#5E6875"><text x="260" y="50">t = 0</text><text x="1145" y="50" text-anchor="middle">0.5 s</text><text x="2030" y="50" text-anchor="end">1.0 s</text></g>
+      <!-- refresh lane -->
+      <text x="0" y="82" font-size="20" font-weight="800" fill="#2F5597">2 Hz refresh</text>
+      <rect x="260" y="58" width="1770" height="34" rx="6" fill="#F2F6FC"/>
+      <rect x="260" y="60" width="136" height="30" rx="5" fill="#2F5597"/><rect x="1145" y="60" width="136" height="30" rx="5" fill="#2F5597"/>
+      <text x="404" y="82" font-size="19" fill="#1D3E78" font-weight="600">VLM prefill (T<tspan font-size="19" dy="4">r</tspan><tspan dy="-4"> + o) → taps + KV cache</tspan></text>
+      <text x="840" y="82" font-size="19" fill="#5E6875">idle (duty D ≤ 0.5)</text>
+      <rect x="1290" y="62" width="120" height="26" rx="5" fill="#fff" stroke="#5E6875" stroke-width="3" stroke-dasharray="3 4"/>
+      <text x="1420" y="82" font-size="19" fill="#36404D">explanation ≤ 48 tokens (≤ 0.5 Hz, leftover duty)</text>
+      <!-- command lane -->
+      <text x="0" y="132" font-size="20" font-weight="800" fill="#C25E0E">10 Hz command</text>
+      <rect x="260" y="108" width="1770" height="34" rx="6" fill="#FFF7EE"/>
+      <g fill="#C25E0E">
+        <rect x="260" y="110" width="44" height="30" rx="4"/><rect x="437" y="110" width="44" height="30" rx="4"/><rect x="614" y="110" width="44" height="30" rx="4"/><rect x="791" y="110" width="44" height="30" rx="4"/><rect x="968" y="110" width="44" height="30" rx="4"/>
+        <rect x="1145" y="110" width="44" height="30" rx="4"/><rect x="1322" y="110" width="44" height="30" rx="4"/><rect x="1499" y="110" width="44" height="30" rx="4"/><rect x="1676" y="110" width="44" height="30" rx="4"/><rect x="1853" y="110" width="44" height="30" rx="4"/>
+      </g>
+      <path d="M396 92 L437 108" stroke="#2F5597" stroke-width="3" fill="none" marker-end="url(#a-b)"/>
+      <path d="M1281 92 L1322 108" stroke="#2F5597" stroke-width="3" fill="none" marker-end="url(#a-b)"/>
+      <!-- token age sawtooth -->
+      <text x="0" y="170" font-size="20" font-weight="800" fill="#36404D">token age A</text>
+      <text x="0" y="194" font-size="19" fill="#36404D">≤ T<tspan dy="4">r</tspan><tspan dy="-4"> + o + 1/f</tspan><tspan dy="4">r</tspan></text>
+      <path d="M260 160 L396 154 L396 191 L1281 154 L1281 191 L2030 160" fill="none" stroke="#36404D" stroke-width="3.5"/>
+      <line x1="260" y1="196" x2="2030" y2="196" stroke="#C7CED8" stroke-width="2"/>
+    </g>
+  </svg>
+
+  <div class="legend">
+    <div class="ttl">COLOUR KEY</div>
+    <div class="li"><div class="sw" style="background:var(--frz-f);border:4px solid var(--frz)"></div><div><b>FROZEN</b> 🔒 reasoner, audio encoder, verifier</div></div>
+    <div class="li"><div class="sw" style="background:var(--trn-f);border:4px solid var(--trn)"></div><div><b>TRAINED</b> fusion, heads, critics, gates</div></div>
+    <div class="li"><div class="sw" style="background:var(--cch-f);border:4px dashed var(--cch)"></div><div><b>CACHED ONCE</b> text embeddings, Stage-0 tables</div></div>
+    <div class="li"><div class="sw" style="background:#fff;border:5px dotted #5E6875"></div><div><b>OPTIONAL</b> mic, GNSS, verifier, explanation</div></div>
+    <div class="li"><div class="sw" style="background:var(--rul-f);border:4px solid var(--rul)"></div><div><b>ANALYTIC / RULES</b> no parameters</div></div>
+    <div class="li"><svg viewBox="0 0 70 36" style="width:70px;height:36px"><path d="M2 10H60" stroke="#C25E0E" stroke-width="5" marker-end="url(#a-o)"/><path d="M2 28H60" stroke="#2F5597" stroke-width="5" stroke-dasharray="10 7" marker-end="url(#a-b)"/></svg><div>10 Hz path · <span style="color:#2F5597;font-weight:700">2 Hz refresh</span> · dotted = optional</div></div>
+  </div>
+
+  <!-- foreground: wires -->
+  <svg class="layer" viewBox="0 0 3058 1924" aria-hidden="true" style="pointer-events:none">
+    <g fill="none" stroke-width="5" stroke-linejoin="round">
+      <!-- band A -->
+      <path d="M500 196 H576" stroke="#2F5597" stroke-dasharray="12 8" marker-end="url(#a-b)"/>
+      <path d="M500 360 H545 V500 H576" stroke="#5E6875" stroke-dasharray="3 8" stroke-linecap="round" marker-end="url(#a-k)"/>
+      <path d="M500 485 H530 V576 H1262 V554" stroke="#1F7F5B" stroke-dasharray="3 8" stroke-linecap="round" marker-end="url(#a-g)"/>
+      <path d="M1140 129 H1164" stroke="#2F5597" marker-end="url(#a-b)"/>
+      <path d="M1762 129 H1786" stroke="#2F5597" stroke-dasharray="12 8" marker-end="url(#a-b)"/>
+      <path d="M1140 300 H1216" stroke="#1F7F5B" stroke-dasharray="12 8" marker-end="url(#a-g)"/>
+      <path d="M1140 500 H1216" stroke="#5E6875" stroke-dasharray="3 8" stroke-linecap="round" marker-end="url(#a-k)"/>
+      <path d="M1700 380 H1786" stroke="#1F7F5B" marker-end="url(#a-g)"/>
+      <path d="M500 674 H576" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <path d="M500 758 H576" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <path d="M500 842 H576" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <path d="M500 926 H576" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <path d="M1140 678 H1786" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <path d="M1140 850 H1786" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <!-- Z connector -->
+      <path d="M1830 966 V1000 H310 V1034" stroke="#C25E0E" stroke-width="8" marker-end="url(#a-o)"/>
+      <!-- band B -->
+      <path d="M620 1110 H676" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <path d="M310 1210 V1231" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <path d="M840 1210 V1231" stroke="#1F7F5B" marker-end="url(#a-g)"/>
+      <path d="M620 1300 H676" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <path d="M310 1475 V1496" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <path d="M1000 1340 H1066" stroke="#A8283A" marker-end="url(#a-r)"/>
+      <path d="M1000 1528 H1066" stroke="#5E6875" stroke-dasharray="12 8" marker-end="url(#a-k)"/>
+      <path d="M620 1640 H1066" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <path d="M1520 1140 H1586" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <path d="M1945 1250 V1276" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <path d="M2300 1360 H2366" stroke="#2F5597" stroke-dasharray="3 8" stroke-linecap="round" marker-end="url(#a-b)"/>
+      <path d="M2670 1140 H2736" stroke="#C25E0E" marker-end="url(#a-o)"/>
+      <path d="M2300 1630 H2705 V1200 H2736" stroke="#C25E0E" marker-end="url(#a-o)"/>
+    </g>
+    <g class="wl">
+      <text x="760" y="568">supplied arm: the country selects R<tspan font-size="19" dy="4">c</tspan></text>
+      <text x="1463" y="666" text-anchor="middle">16 motion tokens</text>
+      <text x="1463" y="838" text-anchor="middle">ego · nav · route tokens (3)</text>
+      <text x="1745" y="370" text-anchor="middle">M</text>
+      <text x="1070" y="990" text-anchor="middle">6 unit-norm level readouts s1, s2lat, s2lon, s3P, s3V, goal → band B</text>
+      <text x="1033" y="1331" text-anchor="middle">rules</text>
+      <text x="1033" y="1519" text-anchor="middle">R4</text>
+      <text x="843" y="1630" text-anchor="middle">factored scores, classes → members</text>
+      <text x="1553" y="1130" text-anchor="middle">≈200</text>
+      <text x="2335" y="1350" text-anchor="middle">if</text>
+      <text x="2502" y="1620" text-anchor="middle">certain ticks: no verifier</text>
+    </g>
+  </svg>
+</section>
+
+<!-- =============================== PANELS =============================== -->
+<section class="panels">
+
+  <!-- (a) -->
+  <div class="panel" style="grid-column: span 4">
+    <h3><span class="pl">a</span>Multi-hierarchy and contrastive critics<span class="refs"><span class="rn">8</span><span class="rn">11</span></span></h3>
+    <p>Every level is a <b>dot-product critic</b> between a unit-norm state readout and cached node embeddings, trained with <b>level-wide negatives</b>: a sibling-only softmax leaves a per-parent offset free and mis-orders nodes across parents.</p>
+    <div class="eq">p̃<sub>ℓ</sub>(v | s) = softmax<sub>v′∈V<sub>ℓ</sub></sub>( τ<sub>ℓ</sub>⟨s<sub>ℓ</sub>, a<sub>v′</sub>⟩ + β<sub>ℓ</sub> log q̄<sub>ℓ</sub>(v′) ), &nbsp;τ = e<sup>θ</sup>, init 1/0.07, clamp 100</div>
+    <ul>
+      <li><b>Soft targets</b>: y(a) ∝ exp(−d<sub>tw</sub>(y*, ŷ<sub>a</sub>)² / 2σ²), σ = 0.5 m, summed up to ancestors ⇒ β = 0 by default</li>
+      <li><b>Consistency</b>: Σ<sub>ℓ</sub> KL( sg[p̂<sup>cascade</sup><sub>ℓ</sub>] ‖ p̃<sub>ℓ</sub> ) ties critics to the beam</li>
+      <li><b>Goal loss</b>: 22 goals, BCE (positive weight ≤ 50) + goal point at 2 / 4 / 6 s</li>
+      <li><b>Matryoshka</b> readouts at 128 / 256 / 512: a free option, expected to save nothing</li>
+      <li>Masked vs unmasked InfoNCE vs soft-target softmax is an <b>ablation (H-HC4)</b>, not assumed</li>
+    </ul>
+    <div class="eq" style="font-size:21px">L = Σ<sub>ℓ</sub>λ<sub>ℓ</sub>L<sup>voc</sup><sub>ℓ</sub> + λ<sub>c</sub>L<sup>cons</sup> + λ<sub>g</sub>L<sup>goal</sup> + λ<sub>k</sub>L<sup>cost</sup> + λ<sub>r</sub>L<sup>ref</sup> + λ<sub>i</sub>L<sup>img</sup> + λ<sub>a</sub>L<sup>aud</sup> + λ<sub>f</sub>L<sup>cfg</sup></div>
+    <div class="eq">a* = argmin<sub>a∈K</sub> Σ<sub>k</sub> w<sub>k</sub> ĉ<sub>k</sub>(s, a) − λ log p̂(a | s), &nbsp;w fixed a priori, λ fit on held-out <i>train</i> episodes</div>
+  </div>
+
+  <!-- (b) -->
+  <div class="panel" style="grid-column: span 4">
+    <h3><span class="pl">b</span>Knowledge injection: three routes<span class="refs"><span class="rn">4</span><span class="rn">7</span><span class="rn">9</span><span class="rn">10</span><span class="rn">13</span></span></h3>
+    <svg viewBox="0 0 950 150" style="width:950px;height:150px;display:block;margin:-2px 0 4px">
+      <rect x="0" y="22" width="250" height="106" rx="12" fill="#E2F3EB" stroke="#1F7F5B" stroke-width="3.5" stroke-dasharray="10 6"/>
+      <text x="125" y="58" text-anchor="middle" font-size="21" font-weight="800" fill="#135E42">text-defined</text>
+      <text x="125" y="84" text-anchor="middle" font-size="21" font-weight="800" fill="#135E42">nodes · rules ·</text>
+      <text x="125" y="110" text-anchor="middle" font-size="21" font-weight="800" fill="#135E42">countries</text>
+      <g fill="none" stroke-width="4.5"><path d="M252 50 C320 50 330 22 396 22" stroke="#C25E0E" marker-end="url(#a-o)"/><path d="M252 75 H396" stroke="#A8283A" marker-end="url(#a-r)"/><path d="M252 100 C320 100 330 128 396 128" stroke="#2F5597" marker-end="url(#a-b)"/></g>
+      <g font-size="20"><rect x="400" y="2" width="550" height="40" rx="8" fill="#FDEEDF" stroke="#C25E0E" stroke-width="2.5"/><text x="414" y="29"><tspan font-weight="800">① MEMORY</tspan> gated cross-attn into s1/s2 queries (7)</text>
+      <rect x="400" y="55" width="550" height="40" rx="8" fill="#FBE8EA" stroke="#A8283A" stroke-width="2.5"/><text x="414" y="82"><tspan font-weight="800">② PRUNE</tspan> numeric args → masks / priors (10)</text>
+      <rect x="400" y="108" width="550" height="40" rx="8" fill="#E8EEF9" stroke="#2F5597" stroke-width="2.5"/><text x="414" y="135"><tspan font-weight="800">③ VERIFY / EXPLAIN</tspan> rule texts in prompts (13, K)</text></g>
+    </svg>
+    <ul>
+      <li><b>NodeLibrary</b> (versioned): new token from its definition, ids never move</li>
+      <li><b>RuleBook</b> <span class="mono">rulebook_v1.json</span>: {rule_id, countries, text, args, road_type, effect ∈ {prune, prior, memory}, source}; UNVERIFIED without a 2nd source</li>
+      <li><b>Country</b>: 25-way readout on s1 (λ<sub>c</sub> 0.1); rules-null is bit-exact</li>
+      <li><b>Country-swap counterfactual (H-HC20)</b>: swapping p(c) may change the decision <i>only</i> on rule-relevant cells</li>
+    </ul>
+    <p class="note"><b>RuleBook v1 content</b>: driving side · default speed limits · right-turn-on-red · priority to the right · roundabout yield · emergency vehicles · pedestrian crossings · tram priority · school bus (US) · daytime lights.</p>
+    <p class="note">Corpus limits <i class="ev H">H</i>: all 25 countries drive on the right (driving side untestable); right-on-red differs only for 265 US clips and no traffic-light labels exist; speed limits are testable via the longitudinal family.</p>
+  </div>
+
+  <!-- (c) -->
+  <div class="panel" style="grid-column: span 4">
+    <h3><span class="pl">c</span>Imagination that can be trusted<span class="refs"><span class="rn">12</span></span></h3>
+    <p>Only the <b>exogenous</b> future is learned (the ego path is a known function of the candidate, so logs identify it under a non-reactive scene). Toy: <b>most of the gain is the target shape</b>.</p>
+    <table>
+      <tr><th>tier</th><th>toy result (3 seeds) <i class="ev M">M</i></th></tr>
+      <tr><td>T0 soft targets</td><td>regret 7.00 → 3.43 (paired Δ 3.57, 95 % [2.99, 4.19])</td></tr>
+      <tr><td>T1 E-head + J<sub>1</sub></td><td>regret 1.80 vs 47–72 for unstructured arms</td></tr>
+      <tr><td>T2 veto</td><td>AUROC 0.88 (recall 64 % at 5 % FP); learned gate: 65 % of gain at 30 % budget</td></tr>
+    </table>
+    <ul style="margin-top:8px">
+      <li><b>G1</b> feasibility mask last: infeasible over-braking 89.8 % → 0 % of toy ticks</li>
+      <li><b>G5</b> confidence from the base score only: an imagined cost flipped corr(conf, regret) −0.11 → +0.19</li>
+      <li><b>No gradient</b> from imagination into the selector or backbone</li>
+      <li><b>v10 supervision</b> from agent cuboids: lead in the logged corridor (0–80 m), 24 targets, J = ttc · clearance · progress — <i>open-loop, non-reactive</i></li>
+    </ul>
+    <p class="note">Also G2 coverage audit · G3 shuffled-cue control (R² on the exogenous residual) · G4 veto ≠ trigger · G6 β on <i>train</i> episodes · G7 marginalise every hidden factor · G8 per family + risk floor · G9 state-only E-head.</p>
+  </div>
+
+  <!-- (d) -->
+  <div class="panel" style="grid-column: span 4">
+    <h3><span class="pl">d</span>Audio bridge into the shared space<span class="refs"><span class="rn">5</span><span class="rn">4</span><span class="rn">7</span></span></h3>
+    <svg viewBox="0 0 950 126" style="width:950px;height:126px;display:block;margin:0 0 4px">
+      <g font-size="19" text-anchor="middle">
+        <rect x="0" y="30" width="120" height="64" rx="10" fill="#fff" stroke="#5E6875" stroke-width="3" stroke-dasharray="3 5"/><text x="60" y="58" font-weight="700">mic</text><text x="60" y="82">2 s / 0.5 s</text>
+        <rect x="160" y="30" width="190" height="64" rx="10" fill="#E8EEF9" stroke="#2F5597" stroke-width="3.5"/><text x="255" y="58" font-weight="700" fill="#1D3E78">FROZEN encoder</text><text x="255" y="82" fill="#1D3E78">log-mel → features</text>
+        <rect x="390" y="30" width="230" height="64" rx="10" fill="#FDEEDF" stroke="#C25E0E" stroke-width="3.5"/><text x="505" y="58" font-weight="700" fill="#8E4208">TRAINED bridge</text><text x="505" y="82" fill="#8E4208">2-layer perceiver → MLP</text>
+        <rect x="660" y="30" width="290" height="64" rx="10" fill="#E2F3EB" stroke="#1F7F5B" stroke-width="3.5" stroke-dasharray="9 5"/><text x="805" y="58" font-weight="700" fill="#135E42">8 tokens, width d<tspan dy="4">v</tspan></text><text x="805" y="82" fill="#135E42">→ gated read, g = 0</text>
+      </g>
+      <g fill="none" stroke-width="4"><path d="M120 62H156" stroke="#5E6875" marker-end="url(#a-k)"/><path d="M350 62H386" stroke="#2F5597" marker-end="url(#a-b)"/><path d="M620 62H656" stroke="#C25E0E" marker-end="url(#a-o)"/></g>
+      <text x="0" y="20" font-size="19" fill="#36404D">default (a): HiCAP fusion read · ablation (b): 8 soft tokens appended to the VLM prefill (omni pattern)</text>
+      <text x="0" y="120" font-size="19" fill="#36404D">encoders: Whisper-class (default) · BEATs-base ≈ 90 M · CLAP-HTSAT</text>
+    </svg>
+    <ul>
+      <li><b>A1</b> align: symmetric InfoNCE + cosine to the frozen text path’s caption embedding (AudioCaps, Clotho, AudioSet, UrbanSound8K, ESC-50, siren sets)</li>
+      <li><b>A2</b> event heads: class, bearing (array), distance, approaching — from event metadata only</li>
+      <li><b>A3</b> gate on synthetic events rendered from <b>real agent tracks</b> (delay, 1/r, Doppler, ITD/ILD); supervised through knowledge (“yield to emergency vehicles”), never a trajectory</li>
+      <li><b>7 controls</b>: null, shuffle, bearing flip, dose-response, onset shift, siren-without-vehicle, audio-only label probe at chance</li>
+    </ul>
+    <p class="note"><b>Omni analogy</b> <i class="ev P">P</i>: Qwen2.5/3-Omni and Gemma 3n project an audio encoder into the LM’s embedding space; HiCAP does this on a frozen driving backbone. No audio in any programme corpus <i class="ev M">M</i>.</p>
+  </div>
+
+  <!-- (e) -->
+  <div class="panel" style="grid-column: span 4">
+    <h3><span class="pl">e</span>Elastic sensing: cameras as a decision<span class="refs"><span class="rn">1</span></span></h3>
+    <svg viewBox="0 0 950 176" style="width:950px;height:176px;display:block;margin:0 0 4px">
+      <defs><style>.cw{fill:#D5DAE1}.on{fill:#2F5597;fill-opacity:.75}.cb{fill:#141C26}</style></defs>
+      <g font-size="19" text-anchor="middle" fill="#36404D" font-weight="700">
+        <text x="45" y="18">T0</text><text x="282" y="18">T1 · + one camera</text><text x="680" y="18">T2 · + two</text><text x="900" y="18">T3 · all 7</text>
+      </g>
+      <g transform="translate(5,24) scale(0.78)"><use href="#w-fw" class="on"/><use href="#w-ft" class="cw"/><use href="#w-cl" class="cw"/><use href="#w-cr" class="cw"/><use href="#w-rl" class="cw"/><use href="#w-rr" class="cw"/><use href="#w-rt" class="cw"/><use href="#car" class="cb"/></g>
+      <g transform="translate(100,24) scale(0.78)"><use href="#w-fw" class="on"/><use href="#w-ft" class="on"/><use href="#w-cl" class="cw"/><use href="#w-cr" class="cw"/><use href="#w-rl" class="cw"/><use href="#w-rr" class="cw"/><use href="#w-rt" class="cw"/><use href="#car" class="cb"/></g>
+      <g transform="translate(190,24) scale(0.78)"><use href="#w-fw" class="on"/><use href="#w-ft" class="cw"/><use href="#w-cl" class="on"/><use href="#w-cr" class="cw"/><use href="#w-rl" class="cw"/><use href="#w-rr" class="cw"/><use href="#w-rt" class="cw"/><use href="#car" class="cb"/></g>
+      <g transform="translate(280,24) scale(0.78)"><use href="#w-fw" class="on"/><use href="#w-ft" class="cw"/><use href="#w-cl" class="cw"/><use href="#w-cr" class="on"/><use href="#w-rl" class="cw"/><use href="#w-rr" class="cw"/><use href="#w-rt" class="cw"/><use href="#car" class="cb"/></g>
+      <g transform="translate(370,24) scale(0.78)"><use href="#w-fw" class="on"/><use href="#w-ft" class="cw"/><use href="#w-cl" class="cw"/><use href="#w-cr" class="cw"/><use href="#w-rl" class="on"/><use href="#w-rr" class="cw"/><use href="#w-rt" class="cw"/><use href="#car" class="cb"/></g>
+      <g transform="translate(460,24) scale(0.78)"><use href="#w-fw" class="on"/><use href="#w-ft" class="cw"/><use href="#w-cl" class="cw"/><use href="#w-cr" class="cw"/><use href="#w-rl" class="cw"/><use href="#w-rr" class="on"/><use href="#w-rt" class="cw"/><use href="#car" class="cb"/></g>
+      <g transform="translate(570,24) scale(0.78)"><use href="#w-fw" class="on"/><use href="#w-ft" class="on"/><use href="#w-cl" class="on"/><use href="#w-cr" class="cw"/><use href="#w-rl" class="cw"/><use href="#w-rr" class="cw"/><use href="#w-rt" class="cw"/><use href="#car" class="cb"/></g>
+      <g transform="translate(660,24) scale(0.78)"><use href="#w-fw" class="on"/><use href="#w-ft" class="on"/><use href="#w-cl" class="cw"/><use href="#w-cr" class="on"/><use href="#w-rl" class="cw"/><use href="#w-rr" class="cw"/><use href="#w-rt" class="cw"/><use href="#car" class="cb"/></g>
+      <g transform="translate(750,24) scale(0.78)"><use href="#w-fw" class="on"/><use href="#w-ft" class="cw"/><use href="#w-cl" class="on"/><use href="#w-cr" class="on"/><use href="#w-rl" class="cw"/><use href="#w-rr" class="cw"/><use href="#w-rt" class="cw"/><use href="#car" class="cb"/></g>
+      <g transform="translate(855,24) scale(0.78)"><use href="#w-fw" class="on"/><use href="#w-ft" class="on"/><use href="#w-cl" class="on"/><use href="#w-cr" class="on"/><use href="#w-rl" class="on"/><use href="#w-rr" class="on"/><use href="#w-rt" class="on"/><use href="#car" class="cb"/></g>
+      <g stroke="#C7CED8" stroke-width="2"><path d="M92 24V168M555 24V168M845 24V168"/></g>
+    </svg>
+    <p style="margin-bottom:4px"><b>10 options</b>, 160 + 64·(n − 1) tokens. A camera gate maps a situation to a camera set — a <b>situation classifier in disguise</b> — so the primary gate <b>G-V</b> reads only the front-wide embedding and its own previous option.</p>
+    <ul>
+      <li>loss Σ<sub>j</sub> p<sub>j</sub>[E<sub>j</sub>(x)·crit(x) + λ cost<sub>j</sub>] on cached per-option errors</li>
+      <li><b>keep-alive</b>: escalate in 1 tick, de-escalate after 3 ticks with margin 0.10; new camera in <b>shadow mode</b> for 2 ticks</li>
+      <li>dropout curriculum 40 / 20 / 15 / 25 % + configuration embedding, L<sup>cfg</sup></li>
+      <li>toy <i class="ev M">M</i>: ego-cue gate 0.951 at 1.64 camera units vs fixed-all 0.936 at 7; <b>vision-only 0.812</b></li>
+    </ul>
+  </div>
+
+  <!-- (h) -->
+  <div class="panel" style="grid-column: span 4">
+    <h3><span class="pl">h</span>Latency and budget: two clocks<span class="refs"><span class="rn">2</span><span class="rn">6</span><span class="rn">13</span></span></h3>
+    <div class="eq">A = T<sub>r</sub> + o + 1/f<sub>r</sub> &nbsp;·&nbsp; D = f<sub>r</sub>(T<sub>r</sub> + o) ≤ 0.5 &nbsp;·&nbsp; L<sub>cmd</sub> p95 ≤ 100 ms &nbsp;·&nbsp; fast path p95 ≤ 25 ms <i>while a refresh runs</i></div>
+    <table>
+      <tr><th>Cosmos3-Edge reasoner, ViT + prefill</th><th>1 cam</th><th>3 cam</th><th>3 cam × 3 fr</th></tr>
+      <tr><td>FP16 (NVIDIA CI precision) <i class="ev E">E</i></td><td>41</td><td>76</td><td>180 ms</td></tr>
+      <tr><td>NVFP4 (untested) <i class="ev E">E</i></td><td>22</td><td>43</td><td>109 ms</td></tr>
+    </table>
+    <svg viewBox="0 0 950 92" style="width:950px;height:92px;display:block;margin:10px 0 2px">
+      <text x="0" y="20" font-size="19" fill="#36404D">duty in one 500 ms period at 2 Hz (o = 15 ms):</text>
+      <rect x="0" y="30" width="950" height="26" rx="6" fill="#F2F6FC" stroke="#C7CED8" stroke-width="2"/>
+      <rect x="0" y="30" width="146" height="26" rx="6" fill="#2F5597"/>
+      <rect x="0" y="30" width="456" height="26" rx="6" fill="none" stroke="#8A6D1E" stroke-width="3" stroke-dasharray="7 5"/>
+      <line x1="475" y1="24" x2="475" y2="62" stroke="#A8283A" stroke-width="4"/>
+      <text x="0" y="84" font-size="19" fill="#1D3E78">Edge, 3 cam: (62 + 15) ms → D ≈ 0.15</text>
+      <text x="480" y="84" font-size="19" fill="#A8283A">limit 0.5</text>
+      <text x="600" y="84" font-size="19" fill="#8A6D1E">8 B, 3 cam × 3 fr: D = 0.48</text>
+    </svg>
+    <ul>
+      <li>8 B-class at 3 cameras: A ≤ 90 + 15 + 500 ≈ 0.6 s ≈ 9 m at 15 m/s <i class="ev E">E</i></li>
+      <li>fast path: fusion ≈ 8 GFLOP · cascade 0.34 GMAC · imagination ≈ 38 MFLOP <i class="ev E">E</i></li>
+      <li>verifier ≈ 58.6 ms, outside the L<sub>cmd</sub> claim; a deadline miss holds the last command</li>
+    </ul>
+    <p class="note">Rows scale NVIDIA-published Thor figures; <b>nothing here is a HiCAP timing</b>. The on-device bench (H-HC11) is written, not run. Edge bracket 28 / 62 / 130 ms at 1 / 3 / 7 cameras <i class="ev E">E</i>; D ≈ 0.15 is arithmetic on it.</p>
+  </div>
+
+  <!-- (f) -->
+  <div class="panel" style="grid-column: span 4">
+    <h3><span class="pl">f</span>Training schedule<span class="refs">spec §6</span></h3>
+    <table class="mx">
+      <tr><th>component / loss</th><th>S0</th><th>A1</th><th>1</th><th>2</th><th>3</th><th>opt</th></tr>
+      <tr><td>tap caches, text embeddings (nodes, rules, countries), vocabulary, imagination targets, country labels</td><td><span class="bl"></span></td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>audio bridge alignment (backbone + HiCAP frozen)</td><td></td><td><span class="on"></span></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>level critics + country readout, soft targets, Tier-0 shape</td><td></td><td></td><td><span class="on"></span></td><td><span class="on"></span></td><td><span class="on"></span></td><td></td></tr>
+      <tr><td>hard negatives, consistency KL, goal loss, Tier-1 E-head, rule-memory gate, camera dropout</td><td></td><td></td><td></td><td><span class="on"></span></td><td><span class="on"></span></td><td></td></tr>
+      <tr><td>re-ranker, Tier-2 heads + benefit gate, camera gate, audio gate (A3), 40 % replay</td><td></td><td></td><td></td><td></td><td><span class="on"></span></td><td></td></tr>
+      <tr><td>student distillation; text-channel LoRA for explanations</td><td></td><td></td><td></td><td></td><td></td><td><span class="op"></span></td></tr>
+      <tr><td>Cosmos3-Edge reasoner, audio encoder</td><td><span class="fz"></span></td><td><span class="fz"></span></td><td><span class="fz"></span></td><td><span class="fz"></span></td><td><span class="fz"></span></td><td><span class="fz"></span></td></tr>
+    </table>
+    <p class="note" style="margin-top:8px">Stage 0 tap caches: 148 GB int8 at 2 Hz, 188,640 refreshes <i class="ev E">E</i>, once per backbone and camera set. Hard negatives: ADE 0.25–1.0 m + speed-scaled copies.</p>
+    <p class="note"><span class="mx"><span class="bl"></span></span> built once · <span class="mx"><span class="on"></span></span> trained · <span class="mx"><span class="fz"></span></span> frozen. AdamW, no weight decay, lr = 2·10⁻³ √(1024/width) √(batch/1024), one-cycle, batch 2,048, 3 seeds + 1 replicate. Code today (<span class="mono">losses.py</span>): goal from stage 1; cost, refine, img, aud, cfg from stage 3 — spec §6 is the v10 target.</p>
+  </div>
+
+  <!-- (g) -->
+  <div class="panel" style="grid-column: span 4">
+    <h3><span class="pl">g</span>Data: v9 labels, v10 by reference<span class="refs">spec §0, §1, §4</span></h3>
+    <p style="margin-bottom:4px"><b>v9</b> <i class="ev I">I</i>: 4,369 train / 139 eval clips, 869,278 train rows at 10 Hz (≈ 24.1 h), every frame labelled. Census <i class="ev M">M</i>: lane keep 632,971 · turn L 48,830 · turn R 47,726 rows.</p>
+    <p style="margin-bottom:6px"><b>v10</b> <i class="ev M">M</i>: <b>country</b> 25 countries, 4,369 / 4,369 + 139 / 139 joined (100 %) · <b>agent cuboids</b> 4,585 / 4,719 clips, 29.4 M rows · <b>Alpamayo CoC</b> 4,729 clips × 1 anchor · <b>audio: none</b>.</p>
+    <table>
+      <tr><th>trained part</th><th>missing</th><th>filled by</th></tr>
+      <tr><td>core HiCAP</td><td class="miss">VLM tap caches</td><td>pod job E27 — blocks all training</td></tr>
+      <tr><td>imagination T0–T2</td><td class="miss">the producer</td><td><span class="mono">supervision.py</span> (stream S)</td></tr>
+      <tr><td>elastic gate</td><td class="miss">6 other cameras</td><td>upstream chunks via camera_ref</td></tr>
+      <tr><td>node towers, rules</td><td class="miss">embedding job</td><td>GPU minutes; RuleBook (stream R)</td></tr>
+      <tr><td>audio bridge</td><td class="miss">all of it</td><td>external sets + synthetic events</td></tr>
+      <tr><td>country · reasoning</td><td class="ok">nothing</td><td>zero-shot first; optional LoRA</td></tr>
+    </table>
+    <p class="note" style="margin-top:6px">Country balance <i class="ev M">M</i>: 68 (Slovenia) – 278 (Denmark) train clips per country, US 265; eval139: 23 countries, 5 with n = 1. Contamination <i class="ev M">M</i>: 4 / 139 eval clips excluded from H-HC2.</p>
+  </div>
+
+  <!-- (i) -->
+  <div class="panel" style="grid-column: span 4">
+    <h3><span class="pl">i</span>Admissibility rules<span class="refs">binding</span></h3>
+    <ul class="adm">
+      <li><span class="x">1</span><span>The <b>goal / route path never reads</b> the situation or country posterior; there is no situation-classifier head; rule memory never feeds the goal token.</span></li>
+      <li><span class="x">2</span><span><b>Vision-only gate</b>: G-V reads frames only; G-E (ego) is an ablation pending a ruling; G-T is not provided.</span></li>
+      <li><span class="x">3</span><span><b>Audio-off primary numbers</b>; audio-on is a paired arm; the audio-only label probe must sit at chance.</span></li>
+      <li><span class="x">4</span><span>Labels may use ego future and agents; inference sees frames, v, a<sub>lon</sub>, yaw rate and the <b>stamped oracle</b> nav / route, each with zeroed and shuffled controls.</span></li>
+      <li><span class="x">5</span><span>A parent restricts its children but is <b>never a feature</b> of the child readout; explanations never feed control.</span></li>
+      <li><span class="x">6</span><span>The <b>country label</b> (upstream metadata) is never an inference input except in the supplied GNSS arm; both arms reported.</span></li>
+      <li><span class="x">7</span><span>Four metric families, <b>per family, never pooled</b>; paired episode-cluster bootstrap on the full-set mean.</span></li>
+    </ul>
+  </div>
+
+  <!-- (j) -->
+  <div class="panel" style="grid-column: span 12">
+    <h3><span class="pl">j</span>Pre-registered (both outcomes committed) — and what is NOT yet measured<span class="refs">sec_protocol, spec §3.4</span></h3>
+    <div class="hc">
+      <div><b>H-HC0</b> gate: frozen + motion + v₀ k-NN vs v₀-only</div>
+      <div><b>H-HC1</b> motion adapter, ego zeroed</div>
+      <div><b>H-HC2</b> driving knowledge (Alpamayo pair)</div>
+      <div><b>H-HC3</b> tree vs flat on 262,144 entries</div>
+      <div><b>H-HC4</b> prior correction (InfoNCE variants)</div>
+      <div><b>H-HC5</b> vocabulary scale 2¹⁰ … 2¹⁸</div>
+      <div><b>H-HC6</b> pruning retention + coverage</div>
+      <div><b>H-HC7</b> re-score vs dot product</div>
+      <div><b>H-HC8</b> imagination (E-I0 probe first)</div>
+      <div><b>H-HC9</b> student (conditional)</div>
+      <div><b>H-HC10</b> elastic sensing (oracle camera first)</div>
+      <div><b>H-HC11</b> latency, contention, precision on Thor</div>
+      <div><b>H-HC12</b> audio T1–T4 + controls</div>
+      <div><b>H-HC13</b> data efficiency 3 / 10 / 30 / 100 %</div>
+      <div><b>H-HC14</b> closed loop, n ≥ 30 scenes</div>
+      <div><b>H-HC15</b> token age 0 / 0.5 / 1.0 / 1.5 s</div>
+      <div><b>H-HC16</b> backbone scale ladder 2 / 4 / 8 B</div>
+      <div><b>H-HC17</b> partial adaptation (LoRA)</div>
+      <div class="nw"><b>H-HC18</b> country acc. (vision-only) vs 1/25</div>
+      <div class="nw"><b>H-HC19</b> rules on / off, paired per family</div>
+      <div class="nw"><b>H-HC20</b> country-swap counterfactual</div>
+      <div style="grid-column: span 4; color:#A8283A"><b style="color:#A8283A">NOT MEASURED</b> no HiCAP model trained · no accuracy or driving metric · no Thor timing · tap caches never built · E-I0 not run · v10 parameter counts pending · closed-loop scenes provisioned: 1</div>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  <span>Sources: Paper/HiCAP/hicap.tex (sec_method, sec_imag, sec_elastic, sec_eff, sec_problem, sec_protocol, sec_limits) · Paper/HiCAP/design/HICAP_V10_SPEC.md rev a · stack/tanitad/hicap/</span>
+  <span>TanitAD · HiCAP poster · 2026-10-25 · nothing trained; every result shown is a toy, a mask check, a census or arithmetic</span>
+</div>
+</div>
+</body>
+</html>
