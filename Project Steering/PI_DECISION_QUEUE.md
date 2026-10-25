@@ -2483,7 +2483,9 @@ passes. The two navtest reads (theta_DEC and A1) are part of the authorisation. 
 
 **What does NOT wait on this:** the P6 rebuild and resume; SEARCH-PESSIMISTIC Stage 0, which needs 0 GPU on the 24-log table.
 
-## ⏳ OPEN (2026-10-26 ~00:15 Berlin) -- D-V8F-HACC-T1KIN: run HACC's T1-kin read on box 2, before or after OACC?
+## ✅ MOOT (MM, 2026-10-26 ~00:45 Berlin; filed ~00:15) -- D-V8F-HACC-T1KIN: run HACC's T1-kin read on box 2, before or after OACC?
+
+**Why moot (MEASURED):** the pooled eval cache is already on the dev box (`scratchpad/sfresh/cache/eval`, 141 / 141 clips, md5-verified), so the read needs no box-2 slot. It runs on the dev-box CPU inside the standing allocation (`PI-V8F-2026-10-25d`), pre-registered as `PREREG_V8F_T1KIN_HACC.md`. Box 2's queue (FLAT, then OACC) is unchanged. The question as filed is kept below.
 
 **Question.** May box 2 build the pooled eval cache and run the T1-kin read of HACC (`D-V8F-T1KIN-1`, instrument `stack/scripts/v8f_t1_eval.py`)? And should it run before OACC, which is queued to start by itself when FLAT ends?
 
