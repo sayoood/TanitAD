@@ -9,6 +9,7 @@ from .model import HiCAP
 from .losses import VocabTensors, node_embeddings
 from .vocab import FactoredVocab, compose, slots, DT
 from . import prune
+from .imagination import tier1_cost, compose_scores, confidence
 
 
 @dataclass
@@ -26,6 +27,11 @@ class CascadeCfg:
     lam_rerank: float = 1.0
     use_masks: bool = True
     nav_fed: bool = True
+    beta1: float = 0.0                    # Tier-1 weight (0 = ablation off)
+    beta2: float = 0.0                    # Tier-2 weight
+    veto_thr: float = 1.0
+    gate_thr: float = 0.5
+    tier2_topk: int = 8
 
 
 def maxsim(cand_tokens: torch.Tensor, scene: torch.Tensor) -> torch.Tensor:
@@ -86,6 +92,11 @@ def decide(m: HiCAP, V: VocabTensors, vocab: FactoredVocab, batch: dict, v0: flo
     a_cell = F.normalize(A["s2lat"][cls_p] + A["s2lon"][cls_q], dim=-1)
     ms = maxsim(torch.stack([a_p, a_q, a_cell], 1), scene)
     s2score = torch.as_tensor(prior) + cfg.lam_maxsim * ms
+    base_score = s2score.clone()                                     # G5: confidence is read from the BASE score only
+    J1 = None
+    if cfg.beta1 and hasattr(m, "ehead"):                            # Tier 1: exogenous E-head + analytic ego cost (state only, G9)
+        J1 = torch.from_numpy(tier1_cost(m.ehead(s["s2lon"]), 0, trajs, v0))
+        s2score = compose_scores(s2score, J1, None, cfg.beta1, 0.0)
     is_guard = torch.tensor([p < 0 for p in ps])
     margin = float((s2score.topk(min(2, n)).values[0] - s2score.topk(min(2, n)).values[-1])) if n > 1 else 9.0
     K = cfg.shortlist if margin < cfg.escalate_margin else cfg.deploy_k
@@ -99,6 +110,17 @@ def decide(m: HiCAP, V: VocabTensors, vocab: FactoredVocab, batch: dict, v0: flo
     cost, logit = cost[0], logit[0]
     w = torch.tensor(cfg.w_cost)
     obj = (cost * w).sum(-1) - cfg.lam * (s2score[sel] - torch.logsumexp(s2score[sel], 0)) - cfg.lam_rerank * logit
+    tier2_ran, vetoed = False, 0
+    if cfg.beta2 and hasattr(m, "tier2"):                            # Tier 2: only on the top-k survivors, only if the learned benefit gate fires
+        pr = torch.softmax(s2score[sel], -1)
+        gl = m.tier2.benefit_logit(s["s3P"], (pr.topk(min(2, len(pr))).values[0] - pr.topk(min(2, len(pr))).values[-1]).view(1), -(pr * pr.clamp(min=1e-9).log()).sum().view(1))
+        if float(torch.sigmoid(gl)) > cfg.gate_thr:
+            kk = min(cfg.tier2_topk, len(sel)); top = obj.topk(kk, largest=False).indices
+            c2 = m.tier2(s["s3P"], (a_p[sel][top] * a_q[sel][top]).unsqueeze(0))[:, 0]          # [2,kk,4]
+            vt = (c2[0] - c2[1]).abs().max(-1).values > cfg.veto_thr          # disagreement = VETO on out-of-vocabulary candidates, never a trigger
+            J2 = c2.mean(0).sum(-1)
+            obj = obj.clone(); obj[top] = obj[top] + cfg.beta2 * J2 + 1e3 * vt.float()
+            tier2_ran, vetoed = True, int(vt.sum())
     best = int(obj.argmin())
     chosen = int(sel[best])
     # refinement on the chosen open candidate
@@ -108,4 +130,5 @@ def decide(m: HiCAP, V: VocabTensors, vocab: FactoredVocab, batch: dict, v0: flo
         r = np.zeros((len(slots(trajs[:1])[0]), 2), np.float32)
     return dict(traj=trajs[chosen], slots=slots(trajs[chosen]) + r, path=ps[chosen], profile=qs[chosen], is_guard=bool(is_guard[chosen]),
                 n_composed=n, k_final=len(sel), s1_margin=margin, cell=(int(cls_p[chosen]), int(cls_q[chosen])),
-                lat_probs=lp_lat.exp().numpy(), lon_probs=lp_lon.exp().numpy())
+                lat_probs=lp_lat.exp().numpy(), lon_probs=lp_lon.exp().numpy(), confidence=float(confidence(base_score)),
+                tier1_used=J1 is not None, tier2_ran=tier2_ran, vetoed=vetoed)

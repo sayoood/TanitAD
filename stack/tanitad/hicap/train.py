@@ -11,6 +11,7 @@ from . import vocab as V
 from .model import HiCAP, HiCAPConfig
 from .losses import HiCAPLoss, VocabTensors, STAGES, lr_rule
 from .data import HiCAPWindows, collate, targets_from_distances, compute_priors
+from .full import HiCAPFull, FullLoss
 
 
 @dataclass
@@ -56,7 +57,7 @@ def batches(ds, batch, workers, seed, replay_ds=None, replay=0.0):
 def train(model: HiCAP, Vt: VocabTensors, vocab: V.FactoredVocab, ds: HiCAPWindows, cfg: TrainCfg, priors: dict | None = None, log=print):
     seed_all(cfg.seed); dev = cfg.device
     model.to(dev); Vt.to(dev)
-    crit = HiCAPLoss()
+    crit = FullLoss() if isinstance(model, HiCAPFull) else HiCAPLoss()
     os.makedirs(cfg.ckpt_dir, exist_ok=True)
     hist = []
     stage1_ds = ds

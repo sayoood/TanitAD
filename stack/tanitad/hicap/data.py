@@ -66,9 +66,10 @@ class V9Rows:
 
 class HiCAPWindows(Dataset):
     def __init__(self, cache_dir: str, rows: V9Rows, vocab: V.FactoredVocab, sha12s: list[str] | None = None,
-                 train: bool = True, stride: int = 1, require_label: bool = False, rc_variant: str = "A50", seed: int = 0, cfg=None):
+                 train: bool = True, stride: int = 1, require_label: bool = False, rc_variant: str = "A50", seed: int = 0, cfg=None,
+                 strat: np.ndarray | None = None):
         self.dir, self.rows, self.vocab, self.train, self.rc = cache_dir, rows, vocab, train, rc_variant
-        self.rng = np.random.default_rng(seed); self.cfg = cfg
+        self.rng = np.random.default_rng(seed); self.cfg = cfg; self.strat = strat       # strat_y per v9 row (strategic.py), None -> IGNORE
         self.clips: dict[str, dict] = {}
         self.index: list[tuple[str, int]] = []                 # (sha12, j)
         for s in (sha12s or rows.sha12):
@@ -127,7 +128,7 @@ class HiCAPWindows(Dataset):
             ego=torch.tensor([v0, a0, yaw], dtype=torch.float32) * torch.tensor([0.1, 0.2, 1.0]),
             nav=torch.tensor(int(np.nan_to_num(R["nav_token"][r])), dtype=torch.long), nav_args=torch.from_numpy(nav_args),
             route=torch.from_numpy(np.array([rc[0] / 50.0, rc[1] / 50.0, rc[2], 1.0], np.float32)), route_present=torch.tensor(route_present),
-            strat_y=torch.tensor(-100), lat_y=torch.tensor(lat if lat >= 0 else -100), lon_y=torch.tensor(lon if lon >= 0 else -100),
+            strat_y=torch.tensor(int(self.strat[r]) if self.strat is not None else -100), lat_y=torch.tensor(lat if lat >= 0 else -100), lon_y=torch.tensor(lon if lon >= 0 else -100),
             dP=torch.from_numpy(dP), dQ=torch.from_numpy(dQ), goal_y=torch.from_numpy(goal_y), goal_w=torch.from_numpy(goal_w),
             goal_pt=torch.from_numpy(gp / np.array([50.0, 50.0, 10.0], np.float32)), goal_pt_w=torch.ones(3),
             fut=torch.from_numpy(fut), v0=torch.tensor(v0, dtype=torch.float32), dv_log=torch.from_numpy(dv_log),

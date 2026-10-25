@@ -1,7 +1,7 @@
 # tanitad.hicap — reference implementation of the HiCAP architecture (paper `Paper/HiCAP/hicap.tex`)
 
-Status: **architecture, cached-feature dataset, 3-stage training loop and four-family evaluation implemented and unit-tested on CPU with synthetic data (32 tests); nothing trained on real data, backbone wrapper and pod cache builder not run (no GPU).**
-Test: `PYTHONPATH=stack:taniteval python -m pytest stack/tests/test_hicap_architecture.py stack/tests/test_hicap_data_train.py`
+Status: **architecture, cached-feature dataset, 3-stage training loop and four-family evaluation implemented and unit-tested on CPU with synthetic data (53 tests); nothing trained on real data, backbone wrapper and pod cache builder not run (no GPU).**
+Test: `PYTHONPATH=stack:taniteval python -m pytest stack/tests/test_hicap_architecture.py stack/tests/test_hicap_data_train.py stack/tests/test_hicap_full.py`
 
 | module | paper | content |
 |---|---|---|
@@ -17,4 +17,11 @@ Test: `PYTHONPATH=stack:taniteval python -m pytest stack/tests/test_hicap_archit
 | `evaluate.py` | protocol | longitudinal / lateral / trajectory families with episode-cluster bootstrap (taniteval.ci) and paired difference to hold-current; tactical accuracy; strategic and headway/TTC UNAVAILABLE with reasons |
 | `stack/scripts/build_hicap_cache.py` | §training-data | POD-side: factored vocabulary from TRAIN windows, per-clip cache from `build_episode` + Edge taps (not run) |
 
-Not yet implemented: agent-track cost targets (cost heads need the obstacle join), strategic labels (v7/v8.1 release), text-definition embeddings job, imagination tiers (E-head, Tier 2 critic), elastic-sensing gate, System-2 verifier, real-data conformal calibration. Those come with the experiments.
+| `imagination.py` | §imag | Tier 0 soft outcome-aware targets + teacher costs; Tier 1 E-head (24 outputs, state only) + analytic expectation over mode AND onset; Tier 2 two cost heads, veto, learned benefit gate; composition with feasibility mask last (G1), veto not trigger (G4), confidence from the base score only (G5) |
+| `elastic.py` | §elastic | 10 camera options (T0–T3), vision-only gate G-V, cost-sensitive full-information loss, asymmetric keep-alive + shadow mode, dropout curriculum 40/20/15/25, config embedding, L^cfg |
+| `knowledge.py` | §vocab, §prune | text-defined nodes: versioned NodeLibrary (new token from its definition, ids never move), System-2 verifier (fires only when uncertain, scores never generates) |
+| `distill.py` | §student | optional student: shared action tables, cos+MSE+KL distillation, decision-preservation margin condition |
+| `strategic.py` | §vocab | strategic labels from the v8.1 release mapped to v9 rows around the 8 s anchor |
+| `full.py` | whole | `HiCAPFull` (58.3 M) and `FullLoss` with every term active when its supervision is in the batch |
+
+Not yet implemented: the jobs that PRODUCE supervision for the new heads from the corpus (exogenous descriptors, counterfactual costs and per-option errors from the obstacle-track and extra-camera caches; `extra cameras do not exist yet`), the text-tower embedding job for node definitions, real-data conformal calibration, the audio tower and event-metadata training, the audio/native-omni test. Those come with the experiments.
