@@ -1,0 +1,1939 @@
+{
+ "prereg": "PREREG_V8F_LISTEN2",
+ "prereg_commit": "067c8b74",
+ "executed": "2026-10-25",
+ "tier": "T1-class open loop, DIAGNOSTIC (donor / mean inputs are interventions, not driving)",
+ "estimator": "paired episode-cluster bootstrap, B=2000, seed 0, 141 episodes (taniteval/ci.py); answers 'another draw of EPISODES', not 'another training run' (two seeds side by side) and not 'another inference run' (deterministic)",
+ "evidence_class": "MEASURED (ours); artifacts in this directory (runs/*.npz)",
+ "controls": {
+  "identity": {
+   "s0": {
+    "n_rows": 8,
+    "max_abs_diff_vs_clean": 0.0,
+    "rows_not_identical": [],
+    "pass": true,
+    "delta_zero": {
+     "n_cells": 18,
+     "max_abs_delta": 0.0,
+     "n_separated": 0,
+     "pass": true
+    }
+   },
+   "s1": {
+    "n_rows": 8,
+    "max_abs_diff_vs_clean": 0.0,
+    "rows_not_identical": [],
+    "pass": true,
+    "delta_zero": {
+     "n_cells": 18,
+     "max_abs_delta": 0.0,
+     "n_separated": 0,
+     "pass": true
+    }
+   }
+  },
+  "own_value": {
+   "s0": {
+    "n_rows": 19,
+    "max_abs_diff_vs_clean": 0.0,
+    "rows_not_identical": [],
+    "pass": true,
+    "delta_zero": {
+     "n_cells": 33,
+     "max_abs_delta": 0.0,
+     "n_separated": 0,
+     "pass": true
+    }
+   },
+   "s1": {
+    "n_rows": 19,
+    "max_abs_diff_vs_clean": 0.0,
+    "rows_not_identical": [],
+    "pass": true,
+    "delta_zero": {
+     "n_cells": 33,
+     "max_abs_delta": 0.0,
+     "n_separated": 0,
+     "pass": true
+    }
+   }
+  },
+  "reproduction": {
+   "s0": {
+    "levels": {
+     "S": {
+      "mine": 8.01224136352539,
+      "listen": 8.01224136352539,
+      "abs_diff": 0.0
+     },
+     "T-lat": {
+      "mine": 0.8156957183062286,
+      "listen": 0.8156957183062286,
+      "abs_diff": 0.0
+     },
+     "T-lon": {
+      "mine": 0.49915533884637825,
+      "listen": 0.49915533884637825,
+      "abs_diff": 0.0
+     },
+     "O": {
+      "mine": 2.1753060746752637,
+      "listen": 2.1753060638040864,
+      "abs_diff": 1.0871177291704726e-08
+     }
+    },
+    "max_level_diff": 1.0871177291704726e-08,
+    "max_perwindow_diff_vs_listen_clean": 0.0001068115234375,
+    "perwindow": {
+     "clean/S:ck_now": 3.0517578125e-05,
+     "clean/T:lat_pred": 0.0,
+     "clean/T:lon_pred": 0.0,
+     "clean/O:ade6": 3.516108830758924e-06,
+     "clean/O:ade2": 1.143512461165841e-06,
+     "clean/full:ckpt": 2.288818359375e-05,
+     "clean/full:goal_prob": 3.8743019104003906e-07,
+     "clean/full:cons_pred": 0.0001068115234375,
+     "clean/full:lat_logits": 9.5367431640625e-06,
+     "clean/full:lon_logits": 3.0994415283203125e-06,
+     "clean/full:traj30": 2.288818359375e-05,
+     "clean/full:code": 5.7220458984375e-06
+    },
+    "pass_1e-4": true,
+    "listen_cells_recomputed_maxabs_DIAGNOSTIC": {
+     "S/nav": 3.0517578125e-05,
+     "T/ck": 0.0,
+     "T/nav": 0.0,
+     "O/ego": 1.0448934656182018e-05,
+     "O/ck": 3.5384402714555563e-06,
+     "O/code": 1.068037079754447e-05,
+     "e1/nav@S vs LISTEN nav@S (ade6)": 6.683622871150874e-06,
+     "e1/nav@S S-row vs own S/nav cell (bit-identity expected)": 0.0
+    }
+   },
+   "s1": {
+    "levels": {
+     "S": {
+      "mine": 7.938448429107666,
+      "listen": 7.938449382781982,
+      "abs_diff": 9.5367431640625e-07
+     },
+     "T-lat": {
+      "mine": 0.8292251400240062,
+      "listen": 0.8292251400240062,
+      "abs_diff": 0.0
+     },
+     "T-lon": {
+      "mine": 0.509529097663864,
+      "listen": 0.509529097663864,
+      "abs_diff": 0.0
+     },
+     "O": {
+      "mine": 2.054566016801991,
+      "listen": 2.054566010448041,
+      "abs_diff": 6.3539498107445525e-09
+     }
+    },
+    "max_level_diff": 9.5367431640625e-07,
+    "max_perwindow_diff_vs_listen_clean": 0.0001220703125,
+    "perwindow": {
+     "clean/S:ck_now": 4.57763671875e-05,
+     "clean/T:lat_pred": 0.0,
+     "clean/T:lon_pred": 0.0,
+     "clean/O:ade6": 3.3012211200222907e-06,
+     "clean/O:ade2": 9.710532480333711e-07,
+     "clean/full:ckpt": 4.57763671875e-05,
+     "clean/full:goal_prob": 7.003545761108398e-07,
+     "clean/full:cons_pred": 0.0001220703125,
+     "clean/full:lat_logits": 5.7220458984375e-06,
+     "clean/full:lon_logits": 3.814697265625e-06,
+     "clean/full:traj30": 2.002716064453125e-05,
+     "clean/full:code": 6.67572021484375e-06
+    },
+    "pass_1e-4": true,
+    "listen_cells_recomputed_maxabs_DIAGNOSTIC": {
+     "S/nav": 2.288818359375e-05,
+     "T/ck": 0.0,
+     "T/nav": 0.0,
+     "O/ego": 9.007514421455198e-06,
+     "O/ck": 4.183669082280517e-06,
+     "O/code": 1.0126679093502844e-05,
+     "e1/nav@S vs LISTEN nav@S (ade6)": 3.6116513388861904e-06,
+     "e1/nav@S S-row vs own S/nav cell (bit-identity expected)": 0.0
+    }
+   }
+  },
+  "means": {
+   "s0": {
+    "n_windows": 9582,
+    "n_fit_windows_hblend": 9582,
+    "fit_clips_sha256": "458ce2975914b20c7dd91ed4b47032de55d86d9b8fda4df8a0cc0e3ca09921b1",
+    "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+    "native_tracks_sha256": "1db431f112b1bd7c426073c43c7df5fc75b2a032736c1e2020f02ffb118669e7",
+    "window_list_equal": {
+     "ci": true,
+     "t": true,
+     "a_t": true,
+     "a_s": true
+    },
+    "max_abs_traj30_vs_hblend_fit_windows_m": 2.6702880859375e-05,
+    "pass": true,
+    "pad_any_windows_per_layer": {
+     "S": 697,
+     "T": 421,
+     "O": 282
+    },
+    "mean_ages_ticks": [
+     0.9803798789396786,
+     2.8916718847839697
+    ],
+    "seconds": 53.0
+   },
+   "s1": {
+    "n_windows": 9582,
+    "n_fit_windows_hblend": 9582,
+    "fit_clips_sha256": "458ce2975914b20c7dd91ed4b47032de55d86d9b8fda4df8a0cc0e3ca09921b1",
+    "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+    "native_tracks_sha256": "1db431f112b1bd7c426073c43c7df5fc75b2a032736c1e2020f02ffb118669e7",
+    "window_list_equal": {
+     "ci": true,
+     "t": true,
+     "a_t": true,
+     "a_s": true
+    },
+    "max_abs_traj30_vs_hblend_fit_windows_m": 3.814697265625e-05,
+    "pass": true,
+    "pad_any_windows_per_layer": {
+     "S": 697,
+     "T": 421,
+     "O": 282
+    },
+    "mean_ages_ticks": [
+     0.9803798789396786,
+     2.8916718847839697
+    ],
+    "seconds": 51.8
+   }
+  },
+  "e1_invariance": {
+   "s0": {
+    "windows_asserted": 2399,
+    "windows": 2399,
+    "pass": true
+   },
+   "s1": {
+    "windows_asserted": 2399,
+    "windows": 2399,
+    "pass": true
+   },
+   "s0_d1": {
+    "windows_asserted": 2399,
+    "windows": 2399,
+    "pass": true
+   },
+   "s0_id": {
+    "windows_asserted": 2399,
+    "windows": 2399,
+    "pass": true
+   },
+   "s1_id": {
+    "windows_asserted": 2399,
+    "windows": 2399,
+    "pass": true
+   }
+  },
+  "required_present": {
+   "identity": [
+    "s0",
+    "s1"
+   ],
+   "own_value": [
+    "s0",
+    "s1"
+   ],
+   "reproduction": [
+    "s0",
+    "s1"
+   ],
+   "means": [
+    "s0",
+    "s1"
+   ],
+   "e1_invariance": [
+    "s0",
+    "s0_d1",
+    "s0_id",
+    "s1",
+    "s1_id"
+   ]
+  },
+  "all_present_pass": true,
+  "complete": true
+ },
+ "readings_fixed_before_data": "THAT THE TEXT LEAVES OPEN (all fixed here and in ``read2.py``, in code, BEFORE any LISTEN2 number was computed):\n  M1  \"the training-set mean of that input\": the mean over the 9,582 HBLEND training windows (``train_windows(hist, start)`` of the 141 fit clips, the\n      eval's cycle ages by window index) of the input AS THE LAYER READS IT at inference (``forward_infer``): per layer, at that layer's own tick, the\n      token its producer builds (ego / nav / limit), the scene tokens, S's checkpoints in the layer's frame (``ck_for_t`` for T, ``ck_for_o`` for O),\n      T's code, and the age pair. Every producer except the scene's is LINEAR, so the mean token of an input IS the producer of the mean input; the\n      scene mean is taken token by token over the windows whose frame is not padded, and the replacement scene is not padded (pad all False).\n  M2  mean ages: the mean (a_t, a_s) in ticks, fed as FLOAT tensors (the model only ever calls ``.float()`` on them).\n  M3  E2's \"largest effect\": the argmax over the row's input columns of the SIGNED delta (the harm direction of the PREREG's sign convention). With\n      delta(L, all) > 0 this equals R1's argmax of n = delta(L,X) / delta(L,all); it is used because 'all' may be undefined under mean replacement.\n  M4  E2 verdict: a row AGREES iff its argmax equals the grid's largest-n input at BOTH seeds; k = the number of agreeing rows; ROBUST iff k = 4,\n      PARTLY ROBUST iff k in {2, 3}, NOT ROBUST iff k < 2. The per-seed counts are reported beside.\n  M5  E3 \"max over the three single swaps\": the single swap with the largest MEAN ADE6 on the full set (per seed); E3 = joint - that swap, paired.\n      (A per-window maximum would be an upward-biased comparator and is reported only as a descriptive row.)\n  M6  E1 \"above the donor-seed floor\": |E1(s0, donor 0) - E1(s0, donor 1)| of the same metric, applied to BOTH seeds (LISTEN's R3).\n  M7  E1 outcome precedence: ROUTE FLOWS DOWN iff E1 > 0, separated and above the floor at both seeds; else PARALLEL PATH iff E1 is not separated\n      at either seed; else SEEDS DISAGREE.",
+ "run_meta": {
+  "s0": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "donor",
+   "seed": "s0",
+   "identity": false,
+   "donor_seed": 0,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 43.1,
+   "perm_sha256": "116c17f563630559ffb13f5c9c36d0a2cf32e612eedee48f5c8a4157373f6503",
+   "means_sha256": null
+  },
+  "s1": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "donor",
+   "seed": "s1",
+   "identity": false,
+   "donor_seed": 0,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s1\\ckpt_last.pt",
+   "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 40.6,
+   "perm_sha256": "116c17f563630559ffb13f5c9c36d0a2cf32e612eedee48f5c8a4157373f6503",
+   "means_sha256": null
+  },
+  "s0_d1": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "donor",
+   "seed": "s0",
+   "identity": false,
+   "donor_seed": 1,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 41.7,
+   "perm_sha256": "c712deb43c403e08a109e8e0e23538b3773456c0882f67e6286f395024f39cac",
+   "means_sha256": null
+  },
+  "s0_id": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "donor",
+   "seed": "s0",
+   "identity": true,
+   "donor_seed": null,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 47.2,
+   "perm_sha256": "792496bca39d08a97024759c08eab2b36ad9ca88408d71dcd990e193120c905c",
+   "means_sha256": null
+  },
+  "s1_id": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "donor",
+   "seed": "s1",
+   "identity": true,
+   "donor_seed": null,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 2399,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s1\\ckpt_last.pt",
+   "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 41.7,
+   "perm_sha256": "792496bca39d08a97024759c08eab2b36ad9ca88408d71dcd990e193120c905c",
+   "means_sha256": null
+  },
+  "s0_mean": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "mean",
+   "seed": "s0",
+   "identity": false,
+   "donor_seed": null,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 0,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 38.9,
+   "perm_sha256": null,
+   "means_sha256": "f09974ed69fa10840eccba2e155cab57e02630f14b9df1e8765ac864f57aef9a"
+  },
+  "s1_mean": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "mean",
+   "seed": "s1",
+   "identity": false,
+   "donor_seed": null,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 0,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s1\\ckpt_last.pt",
+   "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 42.6,
+   "perm_sha256": null,
+   "means_sha256": "cb7e4ba5d2cd39a4e562a190bc5b35e422ce12e4f907afcca64d3a14f75b5f3d"
+  },
+  "s0_own": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "own",
+   "seed": "s0",
+   "identity": false,
+   "donor_seed": null,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 0,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s0\\ckpt_last.pt",
+   "ckpt_sha256": "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 39.6,
+   "perm_sha256": null,
+   "means_sha256": null
+  },
+  "s1_own": {
+   "prereg": "PREREG_V8F_LISTEN2",
+   "prereg_commit": "067c8b74",
+   "mode": "own",
+   "seed": "s1",
+   "identity": false,
+   "donor_seed": null,
+   "n_windows": 2399,
+   "n_windows_asserted_E1_invariance": 0,
+   "ckpt": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\sfresh\\inputs\\M2b_s1\\ckpt_last.pt",
+   "ckpt_sha256": "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6",
+   "threads": 6,
+   "device": "cpu",
+   "ages": "cycle",
+   "seconds": 40.6,
+   "perm_sha256": null,
+   "means_sha256": null
+  }
+ },
+ "E1": {
+  "blocks": {
+   "s0": {
+    "rows": {
+     "S": {
+      "delta": 4.196533203125,
+      "lo": 2.9873,
+      "hi": 5.5222,
+      "separated": true,
+      "n_windows": 2319,
+      "n_episodes": 137,
+      "clean_level": 8.01224136352539
+     },
+     "T-lat": {
+      "delta": 0.44188919165058166,
+      "lo": 0.353,
+      "hi": 0.5068,
+      "separated": true,
+      "n_windows": 2107,
+      "n_episodes": 139,
+      "clean_level": 0.8156957183062286
+     },
+     "T-lon": {
+      "delta": 0.005702684022262372,
+      "lo": -0.0377,
+      "hi": 0.0491,
+      "separated": false,
+      "n_windows": 2240,
+      "n_episodes": 136,
+      "clean_level": 0.49915533884637825
+     },
+     "O": {
+      "delta": 0.7263808756637156,
+      "lo": 0.4259,
+      "hi": 1.0812,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "clean_level": 2.1753060746752637
+     },
+     "O-ade2": {
+      "delta": 0.030596345016195903,
+      "lo": 0.0173,
+      "hi": 0.0464,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "clean_level": 0.315539554897341
+     }
+    },
+    "ref": {
+     "S/nav@S": {
+      "delta": 4.196533203125,
+      "lo": 2.9873,
+      "hi": 5.5222,
+      "separated": true,
+      "n_windows": 2319,
+      "n_episodes": 137
+     },
+     "T/ck@T-lat": {
+      "delta": 0.3909776941085077,
+      "lo": 0.3033,
+      "hi": 0.467,
+      "separated": true,
+      "n_windows": 2107,
+      "n_episodes": 139
+     },
+     "T/ck@T-lon": {
+      "delta": 0.041283184859416344,
+      "lo": 0.0032,
+      "hi": 0.0704,
+      "separated": true,
+      "n_windows": 2240,
+      "n_episodes": 136
+     },
+     "T/nav@T-lat": {
+      "delta": 0.1729255892309346,
+      "lo": 0.0946,
+      "hi": 0.2562,
+      "separated": true,
+      "n_windows": 2107,
+      "n_episodes": 139
+     },
+     "T/nav@T-lon": {
+      "delta": 0.05204025438140103,
+      "lo": 0.019,
+      "hi": 0.0837,
+      "separated": true,
+      "n_windows": 2240,
+      "n_episodes": 136
+     },
+     "O/ego@O": {
+      "delta": 5.6973743334035,
+      "lo": 4.4888,
+      "hi": 6.9789,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "O/ck@O": {
+      "delta": 0.8725292434129663,
+      "lo": 0.5962,
+      "hi": 1.1933,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "O/code@O": {
+      "delta": 5.395215682941647,
+      "lo": 4.2098,
+      "hi": 6.6291,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     }
+    },
+    "fraction_E1_over_Tlat_x_ck": 1.1302158622070766,
+    "fraction_E1_over_Tlon_x_ck": 0.13813575773482598
+   },
+   "s1": {
+    "rows": {
+     "S": {
+      "delta": 3.9850516319274902,
+      "lo": 2.8064,
+      "hi": 5.1818,
+      "separated": true,
+      "n_windows": 2319,
+      "n_episodes": 137,
+      "clean_level": 7.938448429107666
+     },
+     "T-lat": {
+      "delta": 0.4185621262599287,
+      "lo": 0.3489,
+      "hi": 0.4827,
+      "separated": true,
+      "n_windows": 2107,
+      "n_episodes": 139,
+      "clean_level": 0.8292251400240062
+     },
+     "T-lon": {
+      "delta": 0.005048200717667206,
+      "lo": -0.0447,
+      "hi": 0.0437,
+      "separated": false,
+      "n_windows": 2240,
+      "n_episodes": 136,
+      "clean_level": 0.509529097663864
+     },
+     "O": {
+      "delta": 0.8214429926824809,
+      "lo": 0.5087,
+      "hi": 1.1724,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "clean_level": 2.054566016801991
+     },
+     "O-ade2": {
+      "delta": 0.03583047889693286,
+      "lo": 0.0215,
+      "hi": 0.0513,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "clean_level": 0.2914259676211891
+     }
+    },
+    "ref": {
+     "S/nav@S": {
+      "delta": 3.9850516319274902,
+      "lo": 2.8064,
+      "hi": 5.1818,
+      "separated": true,
+      "n_windows": 2319,
+      "n_episodes": 137
+     },
+     "T/ck@T-lat": {
+      "delta": 0.4064343711276091,
+      "lo": 0.3368,
+      "hi": 0.4635,
+      "separated": true,
+      "n_windows": 2107,
+      "n_episodes": 139
+     },
+     "T/ck@T-lon": {
+      "delta": 0.013020153872913831,
+      "lo": -0.0565,
+      "hi": 0.0812,
+      "separated": false,
+      "n_windows": 2240,
+      "n_episodes": 136
+     },
+     "T/nav@T-lat": {
+      "delta": 0.21634529162622662,
+      "lo": 0.1268,
+      "hi": 0.3194,
+      "separated": true,
+      "n_windows": 2107,
+      "n_episodes": 139
+     },
+     "T/nav@T-lon": {
+      "delta": 0.05170423494635962,
+      "lo": -0.0006,
+      "hi": 0.1199,
+      "separated": false,
+      "n_windows": 2240,
+      "n_episodes": 136
+     },
+     "O/ego@O": {
+      "delta": 4.7159335172927115,
+      "lo": 3.7223,
+      "hi": 5.8059,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "O/ck@O": {
+      "delta": 1.8940964379761849,
+      "lo": 1.4319,
+      "hi": 2.3974,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "O/code@O": {
+      "delta": 4.131994531498487,
+      "lo": 3.1383,
+      "hi": 5.1348,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     }
+    },
+    "fraction_E1_over_Tlat_x_ck": 1.0298393935007821,
+    "fraction_E1_over_Tlon_x_ck": 0.38772204744593003
+   },
+   "s0_d1": {
+    "rows": {
+     "S": {
+      "delta": 3.8274078369140625,
+      "lo": 2.6348,
+      "hi": 5.1123,
+      "separated": true,
+      "n_windows": 2319,
+      "n_episodes": 137,
+      "clean_level": 8.01224136352539
+     },
+     "T-lat": {
+      "delta": 0.3594049527724146,
+      "lo": 0.2657,
+      "hi": 0.4455,
+      "separated": true,
+      "n_windows": 2107,
+      "n_episodes": 139,
+      "clean_level": 0.8156957183062286
+     },
+     "T-lon": {
+      "delta": 0.004702217464592318,
+      "lo": -0.0211,
+      "hi": 0.0305,
+      "separated": false,
+      "n_windows": 2240,
+      "n_episodes": 136,
+      "clean_level": 0.49915533884637825
+     },
+     "O": {
+      "delta": 0.5556550831126077,
+      "lo": 0.3659,
+      "hi": 0.7741,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "clean_level": 2.1753060746752637
+     },
+     "O-ade2": {
+      "delta": 0.02152386480591878,
+      "lo": 0.0129,
+      "hi": 0.0316,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "clean_level": 0.315539554897341
+     }
+    },
+    "ref": {
+     "S/nav@S": {
+      "delta": 3.8274078369140625,
+      "lo": 2.6348,
+      "hi": 5.1123,
+      "separated": true,
+      "n_windows": 2319,
+      "n_episodes": 137
+     },
+     "T/ck@T-lat": {
+      "delta": 0.3534553373432594,
+      "lo": 0.2501,
+      "hi": 0.4712,
+      "separated": true,
+      "n_windows": 2107,
+      "n_episodes": 139
+     },
+     "T/ck@T-lon": {
+      "delta": 0.027426367967778253,
+      "lo": 0.0026,
+      "hi": 0.0619,
+      "separated": true,
+      "n_windows": 2240,
+      "n_episodes": 136
+     },
+     "T/nav@T-lat": {
+      "delta": 0.20571024373732438,
+      "lo": 0.1232,
+      "hi": 0.2922,
+      "separated": true,
+      "n_windows": 2107,
+      "n_episodes": 139
+     },
+     "T/nav@T-lon": {
+      "delta": 0.03531551234824215,
+      "lo": 0.0073,
+      "hi": 0.0654,
+      "separated": true,
+      "n_windows": 2240,
+      "n_episodes": 136
+     },
+     "O/ego@O": {
+      "delta": 6.007080691554787,
+      "lo": 4.781,
+      "hi": 7.3609,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "O/ck@O": {
+      "delta": 0.716595241678796,
+      "lo": 0.4789,
+      "hi": 0.9832,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "O/code@O": {
+      "delta": 5.536473309053935,
+      "lo": 4.3396,
+      "hi": 6.8563,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     }
+    },
+    "fraction_E1_over_Tlat_x_ck": 1.0168327219893618,
+    "fraction_E1_over_Tlon_x_ck": 0.1714487849837316
+   }
+  },
+  "donor_seed_floor": {
+   "S": 0.3691253662109375,
+   "T-lat": 0.08248423887816708,
+   "T-lon": 0.0010004665576700544,
+   "O": 0.17072579255110787,
+   "O-ade2": 0.009072480210277123
+  },
+  "flags": {
+   "s0": {
+    "delta": 0.44188919165058166,
+    "lo": 0.353,
+    "hi": 0.5068,
+    "separated": true,
+    "floor": 0.08248423887816708,
+    "positive": true,
+    "above_floor": true,
+    "bar_met": true
+   },
+   "s1": {
+    "delta": 0.4185621262599287,
+    "lo": 0.3489,
+    "hi": 0.4827,
+    "separated": true,
+    "floor": 0.08248423887816708,
+    "positive": true,
+    "above_floor": true,
+    "bar_met": true
+   }
+  },
+  "outcome": {
+   "headline": "ROUTE FLOWS DOWN",
+   "bar_met": {
+    "s0": true,
+    "s1": true
+   },
+   "separated": {
+    "s0": true,
+    "s1": true
+   },
+   "meaning": "T's lateral decision follows the route S derived from nav: nav -> S -> T is a working chain"
+  },
+  "meaning_committed": {
+   "ROUTE FLOWS DOWN": "T's lateral decision follows the route S derived from nav: nav -> S -> T is a working chain",
+   "PARALLEL PATH": "T-lateral reads S's checkpoints for something nav does not change; nav reaches T only directly. The hierarchy claim is narrowed to \"S -> O\" and \"nav -> T\"",
+   "SEEDS DISAGREE": "reported; seeds before windows"
+  }
+ },
+ "E2": {
+  "grid_argmax": {
+   "s0": {
+    "S": "nav",
+    "T-lat": "ck",
+    "T-lon": "ego",
+    "O": "ego"
+   },
+   "s1": {
+    "S": "nav",
+    "T-lat": "ck",
+    "T-lon": "ego",
+    "O": "ego"
+   }
+  },
+  "records": {
+   "s0": {
+    "rows": {
+     "S": {
+      "unit": "m",
+      "clean_level": 8.01224136352539,
+      "cells": {
+       "scene": {
+        "delta": 1.7732181549072266,
+        "lo": 1.2419,
+        "hi": 2.3478,
+        "separated": true,
+        "n_windows": 2319,
+        "n_episodes": 137,
+        "n": 0.4534451244419895,
+        "n_clipped": 0.4534451244419895
+       },
+       "ego": {
+        "delta": 1.225956916809082,
+        "lo": 0.8053,
+        "hi": 1.6532,
+        "separated": true,
+        "n_windows": 2319,
+        "n_episodes": 137,
+        "n": 0.31350016644291373,
+        "n_clipped": 0.31350016644291373
+       },
+       "nav": {
+        "delta": 2.1755409240722656,
+        "lo": 1.2087,
+        "hi": 3.244,
+        "separated": true,
+        "n_windows": 2319,
+        "n_episodes": 137,
+        "n": 0.5563265987969774,
+        "n_clipped": 0.5563265987969774
+       },
+       "limit": {
+        "delta": 0.0018215179443359375,
+        "lo": -0.0268,
+        "hi": 0.0305,
+        "separated": false,
+        "n_windows": 2319,
+        "n_episodes": 137,
+        "n": 0.0004657962860672039,
+        "n_clipped": 0.0004657962860672039
+       },
+       "ck": null,
+       "code": null,
+       "age": null,
+       "all": {
+        "delta": 3.91054630279541,
+        "lo": 2.8308,
+        "hi": 5.0553,
+        "separated": true,
+        "n_windows": 2319,
+        "n_episodes": 137
+       }
+      },
+      "all_defined": true
+     },
+     "T-lat": {
+      "unit": "F1",
+      "clean_level": 0.8156957183062286,
+      "cells": {
+       "scene": {
+        "delta": -0.02560494697940241,
+        "lo": -0.0776,
+        "hi": 0.0087,
+        "separated": false,
+        "n_windows": 2107,
+        "n_episodes": 139,
+        "n": -0.05134240088349568,
+        "n_clipped": 0.0
+       },
+       "ego": {
+        "delta": 0.03177588089045358,
+        "lo": -0.0313,
+        "hi": 0.0887,
+        "separated": false,
+        "n_windows": 2107,
+        "n_episodes": 139,
+        "n": 0.0637162036076965,
+        "n_clipped": 0.0637162036076965
+       },
+       "nav": {
+        "delta": 0.21803714594019674,
+        "lo": 0.1148,
+        "hi": 0.3197,
+        "separated": true,
+        "n_windows": 2107,
+        "n_episodes": 139,
+        "n": 0.43720264538568093,
+        "n_clipped": 0.43720264538568093
+       },
+       "limit": {
+        "delta": -0.02975483554556657,
+        "lo": -0.0732,
+        "hi": -0.0067,
+        "separated": true,
+        "n_windows": 2107,
+        "n_episodes": 139,
+        "n": -0.05966365390375123,
+        "n_clipped": 0.0
+       },
+       "ck": {
+        "delta": 0.3628270448756659,
+        "lo": 0.2655,
+        "hi": 0.4752,
+        "separated": true,
+        "n_windows": 2107,
+        "n_episodes": 139,
+        "n": 0.7275317384709259,
+        "n_clipped": 0.7275317384709259
+       },
+       "code": null,
+       "age": null,
+       "all": {
+        "delta": 0.4987095760773679,
+        "lo": 0.4201,
+        "hi": 0.5561,
+        "separated": true,
+        "n_windows": 2107,
+        "n_episodes": 139
+       }
+      },
+      "all_defined": true
+     },
+     "T-lon": {
+      "unit": "F1",
+      "clean_level": 0.49915533884637825,
+      "cells": {
+       "scene": {
+        "delta": 0.15049845848490284,
+        "lo": 0.0867,
+        "hi": 0.2077,
+        "separated": true,
+        "n_windows": 2240,
+        "n_episodes": 136,
+        "n": 0.3512850772996626,
+        "n_clipped": 0.3512850772996626
+       },
+       "ego": {
+        "delta": 0.22690243536878363,
+        "lo": 0.1625,
+        "hi": 0.2809,
+        "separated": true,
+        "n_windows": 2240,
+        "n_episodes": 136,
+        "n": 0.5296229632544751,
+        "n_clipped": 0.5296229632544751
+       },
+       "nav": {
+        "delta": 0.08388247923319564,
+        "lo": 0.0426,
+        "hi": 0.1192,
+        "separated": true,
+        "n_windows": 2240,
+        "n_episodes": 136,
+        "n": 0.19579378751229137,
+        "n_clipped": 0.19579378751229137
+       },
+       "limit": {
+        "delta": 0.06103379365070666,
+        "lo": 0.0124,
+        "hi": 0.1112,
+        "separated": true,
+        "n_windows": 2240,
+        "n_episodes": 136,
+        "n": 0.14246166463313584,
+        "n_clipped": 0.14246166463313584
+       },
+       "ck": {
+        "delta": 0.019852135460860343,
+        "lo": -0.0074,
+        "hi": 0.0494,
+        "separated": false,
+        "n_windows": 2240,
+        "n_episodes": 136,
+        "n": 0.04633774332400399,
+        "n_clipped": 0.04633774332400399
+       },
+       "code": null,
+       "age": null,
+       "all": {
+        "delta": 0.4284225781572857,
+        "lo": 0.3569,
+        "hi": 0.4887,
+        "separated": true,
+        "n_windows": 2240,
+        "n_episodes": 136
+       }
+      },
+      "all_defined": true
+     },
+     "O": {
+      "unit": "m",
+      "clean_level": 2.1753060746752637,
+      "cells": {
+       "scene": {
+        "delta": 0.1518628926383574,
+        "lo": 0.0933,
+        "hi": 0.2164,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": 0.4593545690961871,
+        "n_clipped": 0.4593545690961871
+       },
+       "ego": {
+        "delta": 3.177966744788947,
+        "lo": 2.7399,
+        "hi": 3.6383,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": 9.612707352617758,
+        "n_clipped": 1.0
+       },
+       "nav": {
+        "delta": 0.022506345157269347,
+        "lo": 0.0127,
+        "hi": 0.032,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": 0.06807714710312489,
+        "n_clipped": 0.06807714710312489
+       },
+       "limit": {
+        "delta": 0.4593345113830005,
+        "lo": 0.3038,
+        "hi": 0.6323,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": 1.3893940967515348,
+        "n_clipped": 1.0
+       },
+       "ck": {
+        "delta": 0.15837042337238616,
+        "lo": 0.1059,
+        "hi": 0.2168,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": 0.47903853483842107,
+        "n_clipped": 0.47903853483842107
+       },
+       "code": {
+        "delta": 4.1460404174884005,
+        "lo": 2.8638,
+        "hi": 5.5347,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": 12.540934630858747,
+        "n_clipped": 1.0
+       },
+       "age": {
+        "delta": 0.005430966766437173,
+        "lo": 0.001,
+        "hi": 0.0095,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": 0.016427577240434713,
+        "n_clipped": 0.016427577240434713
+       },
+       "all": {
+        "delta": 0.33060059234233474,
+        "lo": 0.182,
+        "hi": 0.484,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       }
+      },
+      "all_defined": true
+     }
+    },
+    "beside": {
+     "O-ade2": {
+      "unit": "m",
+      "clean_level": 0.315539554897341,
+      "cells": {
+       "scene": {
+        "delta": 0.006475037498451353,
+        "lo": 0.0025,
+        "hi": 0.0106,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "ego": {
+        "delta": 0.18267668086460098,
+        "lo": 0.1308,
+        "hi": 0.2346,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "nav": {
+        "delta": 0.006317490638176271,
+        "lo": 0.0043,
+        "hi": 0.0085,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "limit": {
+        "delta": 0.3489916079830564,
+        "lo": 0.2485,
+        "hi": 0.4571,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "ck": {
+        "delta": 0.010047371259431614,
+        "lo": 0.0064,
+        "hi": 0.0143,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "code": {
+        "delta": 0.32659392369588236,
+        "lo": 0.2025,
+        "hi": 0.4651,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "age": {
+        "delta": 0.0010428040468963284,
+        "lo": 0.0006,
+        "hi": 0.0015,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "all": {
+        "delta": -0.05969722200605121,
+        "lo": -0.099,
+        "hi": -0.029,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       }
+      }
+     }
+    },
+    "qnav": {}
+   },
+   "s1": {
+    "rows": {
+     "S": {
+      "unit": "m",
+      "clean_level": 7.938448429107666,
+      "cells": {
+       "scene": {
+        "delta": 1.9266085624694824,
+        "lo": 1.3471,
+        "hi": 2.5911,
+        "separated": true,
+        "n_windows": 2319,
+        "n_episodes": 137,
+        "n": 0.4851123929058938,
+        "n_clipped": 0.4851123929058938
+       },
+       "ego": {
+        "delta": 1.0001921653747559,
+        "lo": 0.6218,
+        "hi": 1.4174,
+        "separated": true,
+        "n_windows": 2319,
+        "n_episodes": 137,
+        "n": 0.25184441934003965,
+        "n_clipped": 0.25184441934003965
+       },
+       "nav": {
+        "delta": 2.1400113105773926,
+        "lo": 1.2482,
+        "hi": 3.1192,
+        "separated": true,
+        "n_windows": 2319,
+        "n_episodes": 137,
+        "n": 0.5388463582811057,
+        "n_clipped": 0.5388463582811057
+       },
+       "limit": {
+        "delta": 0.015301704406738281,
+        "lo": -0.048,
+        "hi": 0.1099,
+        "separated": false,
+        "n_windows": 2319,
+        "n_episodes": 137,
+        "n": 0.003852908465628731,
+        "n_clipped": 0.003852908465628731
+       },
+       "ck": null,
+       "code": null,
+       "age": null,
+       "all": {
+        "delta": 3.971468448638916,
+        "lo": 2.8499,
+        "hi": 5.166,
+        "separated": true,
+        "n_windows": 2319,
+        "n_episodes": 137
+       }
+      },
+      "all_defined": true
+     },
+     "T-lat": {
+      "unit": "F1",
+      "clean_level": 0.8292251400240062,
+      "cells": {
+       "scene": {
+        "delta": -0.004259364889070305,
+        "lo": -0.0382,
+        "hi": 0.0271,
+        "separated": false,
+        "n_windows": 2107,
+        "n_episodes": 139,
+        "n": -0.008315190579795937,
+        "n_clipped": 0.0
+       },
+       "ego": {
+        "delta": 0.05883306425456447,
+        "lo": 0.0125,
+        "hi": 0.1063,
+        "separated": true,
+        "n_windows": 2107,
+        "n_episodes": 139,
+        "n": 0.11485471529462303,
+        "n_clipped": 0.11485471529462303
+       },
+       "nav": {
+        "delta": 0.10986317831330605,
+        "lo": 0.043,
+        "hi": 0.1848,
+        "separated": true,
+        "n_windows": 2107,
+        "n_episodes": 139,
+        "n": 0.21447640415156854,
+        "n_clipped": 0.21447640415156854
+       },
+       "limit": {
+        "delta": -0.02745450770821445,
+        "lo": -0.0685,
+        "hi": -0.002,
+        "separated": true,
+        "n_windows": 2107,
+        "n_episodes": 139,
+        "n": -0.05359706665519061,
+        "n_clipped": 0.0
+       },
+       "ck": {
+        "delta": 0.3291917938652271,
+        "lo": 0.2492,
+        "hi": 0.4065,
+        "separated": true,
+        "n_windows": 2107,
+        "n_episodes": 139,
+        "n": 0.6426527368712318,
+        "n_clipped": 0.6426527368712318
+       },
+       "code": null,
+       "age": null,
+       "all": {
+        "delta": 0.5122389977951455,
+        "lo": 0.444,
+        "hi": 0.5635,
+        "separated": true,
+        "n_windows": 2107,
+        "n_episodes": 139
+       }
+      },
+      "all_defined": true
+     },
+     "T-lon": {
+      "unit": "F1",
+      "clean_level": 0.509529097663864,
+      "cells": {
+       "scene": {
+        "delta": 0.21604548262139212,
+        "lo": 0.1148,
+        "hi": 0.2873,
+        "separated": true,
+        "n_windows": 2240,
+        "n_episodes": 136,
+        "n": 0.4923593576712415,
+        "n_clipped": 0.4923593576712415
+       },
+       "ego": {
+        "delta": 0.25189698991626897,
+        "lo": 0.1563,
+        "hi": 0.317,
+        "separated": true,
+        "n_windows": 2240,
+        "n_episodes": 136,
+        "n": 0.5740635659197669,
+        "n_clipped": 0.5740635659197669
+       },
+       "nav": {
+        "delta": 0.025820338266176857,
+        "lo": -0.0287,
+        "hi": 0.0709,
+        "separated": false,
+        "n_windows": 2240,
+        "n_episodes": 136,
+        "n": 0.05884355927898595,
+        "n_clipped": 0.05884355927898595
+       },
+       "limit": {
+        "delta": 0.13940289007766898,
+        "lo": 0.021,
+        "hi": 0.1963,
+        "separated": true,
+        "n_windows": 2240,
+        "n_episodes": 136,
+        "n": 0.3176938327214977,
+        "n_clipped": 0.3176938327214977
+       },
+       "ck": {
+        "delta": -0.043771789681014917,
+        "lo": -0.0941,
+        "hi": -0.0067,
+        "separated": true,
+        "n_windows": 2240,
+        "n_episodes": 136,
+        "n": -0.09975422762823012,
+        "n_clipped": 0.0
+       },
+       "code": null,
+       "age": null,
+       "all": {
+        "delta": 0.43879633697477144,
+        "lo": 0.3407,
+        "hi": 0.5056,
+        "separated": true,
+        "n_windows": 2240,
+        "n_episodes": 136
+       }
+      },
+      "all_defined": true
+     },
+     "O": {
+      "unit": "m",
+      "clean_level": 2.054566016801991,
+      "cells": {
+       "scene": {
+        "delta": -0.011210645144922093,
+        "lo": -0.029,
+        "hi": 0.0055,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": -0.021227663214705653,
+        "n_clipped": 0.0
+       },
+       "ego": {
+        "delta": 2.305241711710972,
+        "lo": 1.9715,
+        "hi": 2.6818,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": 4.365038233937621,
+        "n_clipped": 1.0
+       },
+       "nav": {
+        "delta": 0.006436638201390732,
+        "lo": -0.0022,
+        "hi": 0.0153,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": 0.012187950488819144,
+        "n_clipped": 0.012187950488819144
+       },
+       "limit": {
+        "delta": 0.29819693891390386,
+        "lo": 0.2094,
+        "hi": 0.3964,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": 0.5646440600956596,
+        "n_clipped": 0.5646440600956596
+       },
+       "ck": {
+        "delta": 0.4976949743596184,
+        "lo": 0.3388,
+        "hi": 0.6868,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": 0.9423990468686771,
+        "n_clipped": 0.9423990468686771
+       },
+       "code": {
+        "delta": 3.1808548886905794,
+        "lo": 2.164,
+        "hi": 4.2987,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": 6.023035734259956,
+        "n_clipped": 1.0
+       },
+       "age": {
+        "delta": 0.00860516442578696,
+        "lo": 0.0031,
+        "hi": 0.0146,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141,
+        "n": 0.016294114208093683,
+        "n_clipped": 0.016294114208093683
+       },
+       "all": {
+        "delta": 0.5281148957156914,
+        "lo": 0.3755,
+        "hi": 0.6754,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       }
+      },
+      "all_defined": true
+     }
+    },
+    "beside": {
+     "O-ade2": {
+      "unit": "m",
+      "clean_level": 0.2914259676211891,
+      "cells": {
+       "scene": {
+        "delta": -0.00322509539513266,
+        "lo": -0.0056,
+        "hi": -0.001,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "ego": {
+        "delta": 0.11920647151975777,
+        "lo": 0.0778,
+        "hi": 0.1558,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "nav": {
+        "delta": 0.005584015862320879,
+        "lo": 0.0036,
+        "hi": 0.0075,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "limit": {
+        "delta": 0.1742053338380068,
+        "lo": 0.1205,
+        "hi": 0.2349,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "ck": {
+        "delta": 0.027361121741245886,
+        "lo": 0.0184,
+        "hi": 0.0371,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "code": {
+        "delta": 0.17146581786374493,
+        "lo": 0.0949,
+        "hi": 0.2543,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "age": {
+        "delta": 0.00031775984852594474,
+        "lo": -0.0005,
+        "hi": 0.0012,
+        "separated": false,
+        "n_windows": 2399,
+        "n_episodes": 141
+       },
+       "all": {
+        "delta": -0.05862271030029789,
+        "lo": -0.0995,
+        "hi": -0.0303,
+        "separated": true,
+        "n_windows": 2399,
+        "n_episodes": 141
+       }
+      }
+     }
+    },
+    "qnav": {}
+   }
+  },
+  "verdict": {
+   "headline": "PARTLY ROBUST",
+   "k_rows_agreeing_at_both_seeds": 3,
+   "rows_agree_at_both_seeds": {
+    "S": true,
+    "T-lat": true,
+    "T-lon": true,
+    "O": false
+   },
+   "k_per_seed": {
+    "s0": 3,
+    "s1": 3
+   },
+   "per_seed": {
+    "s0": {
+     "S": {
+      "argmax": "nav",
+      "grid_argmax": "nav",
+      "agrees": true,
+      "argmax_by_abs_DESCRIPTIVE": "nav",
+      "delta": 2.1755409240722656,
+      "lo": 1.2087,
+      "hi": 3.244,
+      "separated": true,
+      "runner_up": "scene",
+      "runner_up_delta": 1.7732181549072266,
+      "intervals_overlap": true,
+      "grid_cell_delta_under_mean": 2.1755409240722656
+     },
+     "T-lat": {
+      "argmax": "ck",
+      "grid_argmax": "ck",
+      "agrees": true,
+      "argmax_by_abs_DESCRIPTIVE": "ck",
+      "delta": 0.3628270448756659,
+      "lo": 0.2655,
+      "hi": 0.4752,
+      "separated": true,
+      "runner_up": "nav",
+      "runner_up_delta": 0.21803714594019674,
+      "intervals_overlap": true,
+      "grid_cell_delta_under_mean": 0.3628270448756659
+     },
+     "T-lon": {
+      "argmax": "ego",
+      "grid_argmax": "ego",
+      "agrees": true,
+      "argmax_by_abs_DESCRIPTIVE": "ego",
+      "delta": 0.22690243536878363,
+      "lo": 0.1625,
+      "hi": 0.2809,
+      "separated": true,
+      "runner_up": "scene",
+      "runner_up_delta": 0.15049845848490284,
+      "intervals_overlap": true,
+      "grid_cell_delta_under_mean": 0.22690243536878363
+     },
+     "O": {
+      "argmax": "code",
+      "grid_argmax": "ego",
+      "agrees": false,
+      "argmax_by_abs_DESCRIPTIVE": "code",
+      "delta": 4.1460404174884005,
+      "lo": 2.8638,
+      "hi": 5.5347,
+      "separated": true,
+      "runner_up": "ego",
+      "runner_up_delta": 3.177966744788947,
+      "intervals_overlap": true,
+      "grid_cell_delta_under_mean": 3.177966744788947
+     }
+    },
+    "s1": {
+     "S": {
+      "argmax": "nav",
+      "grid_argmax": "nav",
+      "agrees": true,
+      "argmax_by_abs_DESCRIPTIVE": "nav",
+      "delta": 2.1400113105773926,
+      "lo": 1.2482,
+      "hi": 3.1192,
+      "separated": true,
+      "runner_up": "scene",
+      "runner_up_delta": 1.9266085624694824,
+      "intervals_overlap": true,
+      "grid_cell_delta_under_mean": 2.1400113105773926
+     },
+     "T-lat": {
+      "argmax": "ck",
+      "grid_argmax": "ck",
+      "agrees": true,
+      "argmax_by_abs_DESCRIPTIVE": "ck",
+      "delta": 0.3291917938652271,
+      "lo": 0.2492,
+      "hi": 0.4065,
+      "separated": true,
+      "runner_up": "nav",
+      "runner_up_delta": 0.10986317831330605,
+      "intervals_overlap": false,
+      "grid_cell_delta_under_mean": 0.3291917938652271
+     },
+     "T-lon": {
+      "argmax": "ego",
+      "grid_argmax": "ego",
+      "agrees": true,
+      "argmax_by_abs_DESCRIPTIVE": "ego",
+      "delta": 0.25189698991626897,
+      "lo": 0.1563,
+      "hi": 0.317,
+      "separated": true,
+      "runner_up": "scene",
+      "runner_up_delta": 0.21604548262139212,
+      "intervals_overlap": true,
+      "grid_cell_delta_under_mean": 0.25189698991626897
+     },
+     "O": {
+      "argmax": "code",
+      "grid_argmax": "ego",
+      "agrees": false,
+      "argmax_by_abs_DESCRIPTIVE": "code",
+      "delta": 3.1808548886905794,
+      "lo": 2.164,
+      "hi": 4.2987,
+      "separated": true,
+      "runner_up": "ego",
+      "runner_up_delta": 2.305241711710972,
+      "intervals_overlap": true,
+      "grid_cell_delta_under_mean": 2.305241711710972
+     }
+    }
+   }
+  }
+ },
+ "E3": {
+  "blocks": {
+   "s0": {
+    "comparator": "ego",
+    "mean_ade6": {
+     "clean": 2.1753060746752637,
+     "joint": 4.037761457870081,
+     "ego": 7.8726804080787645,
+     "ck": 3.04783531808823,
+     "code": 7.570521757616911
+    },
+    "E3": {
+     "delta": -3.8349189502086833,
+     "lo": -4.9587,
+     "hi": -2.7662,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "joint_vs_clean": {
+     "delta": 1.8624553831948174,
+     "lo": 1.613,
+     "hi": 2.1276,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "single_vs_clean": {
+     "ego": {
+      "delta": 5.6973743334035,
+      "lo": 4.4888,
+      "hi": 6.9789,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "ck": {
+      "delta": 0.8725292434129663,
+      "lo": 0.5962,
+      "hi": 1.1933,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "code": {
+      "delta": 5.395215682941647,
+      "lo": 4.2098,
+      "hi": 6.6291,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     }
+    },
+    "joint_minus_each_single": {
+     "ego": {
+      "delta": -3.8349189502086833,
+      "lo": -4.9587,
+      "hi": -2.7662,
+      "separated": true
+     },
+     "ck": {
+      "delta": 0.9899261397818511,
+      "lo": 0.6007,
+      "hi": 1.3624,
+      "separated": true
+     },
+     "code": {
+      "delta": -3.5327602997468297,
+      "lo": -4.7775,
+      "hi": -2.3698,
+      "separated": true
+     }
+    },
+    "joint_minus_perwindow_max_DESCRIPTIVE": {
+     "delta": -8.24129868219531,
+     "lo": -9.5428,
+     "hi": -6.9431,
+     "separated": true
+    }
+   },
+   "s1": {
+    "comparator": "ego",
+    "mean_ade6": {
+     "clean": 2.054566016801991,
+     "joint": 3.5961360333071757,
+     "ego": 6.770499534094702,
+     "ck": 3.9486624547781757,
+     "code": 6.186560548300477
+    },
+    "E3": {
+     "delta": -3.174363500787526,
+     "lo": -4.2345,
+     "hi": -2.221,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "joint_vs_clean": {
+     "delta": 1.5415700165051849,
+     "lo": 1.3392,
+     "hi": 1.7332,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "single_vs_clean": {
+     "ego": {
+      "delta": 4.7159335172927115,
+      "lo": 3.7223,
+      "hi": 5.8059,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "ck": {
+      "delta": 1.8940964379761849,
+      "lo": 1.4319,
+      "hi": 2.3974,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "code": {
+      "delta": 4.131994531498487,
+      "lo": 3.1383,
+      "hi": 5.1348,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     }
+    },
+    "joint_minus_each_single": {
+     "ego": {
+      "delta": -3.174363500787526,
+      "lo": -4.2345,
+      "hi": -2.221,
+      "separated": true
+     },
+     "ck": {
+      "delta": -0.352526421471,
+      "lo": -0.8576,
+      "hi": 0.1115,
+      "separated": false
+     },
+     "code": {
+      "delta": -2.5904245149933014,
+      "lo": -3.6212,
+      "hi": -1.597,
+      "separated": true
+     }
+    },
+    "joint_minus_perwindow_max_DESCRIPTIVE": {
+     "delta": -6.575070153685358,
+     "lo": -7.7274,
+     "hi": -5.4051,
+     "separated": true
+    }
+   },
+   "s0_d1": {
+    "comparator": "ego",
+    "mean_ade6": {
+     "clean": 2.1753060746752637,
+     "joint": 3.9217938052969656,
+     "ego": 8.182386766230051,
+     "ck": 2.8919013163540597,
+     "code": 7.7117793837291995
+    },
+    "E3": {
+     "delta": -4.260592960933085,
+     "lo": -5.4385,
+     "hi": -3.1979,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "joint_vs_clean": {
+     "delta": 1.746487730621702,
+     "lo": 1.4811,
+     "hi": 2.0184,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141
+    },
+    "single_vs_clean": {
+     "ego": {
+      "delta": 6.007080691554787,
+      "lo": 4.781,
+      "hi": 7.3609,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "ck": {
+      "delta": 0.716595241678796,
+      "lo": 0.4789,
+      "hi": 0.9832,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     },
+     "code": {
+      "delta": 5.536473309053935,
+      "lo": 4.3396,
+      "hi": 6.8563,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141
+     }
+    },
+    "joint_minus_each_single": {
+     "ego": {
+      "delta": -4.260592960933085,
+      "lo": -5.4385,
+      "hi": -3.1979,
+      "separated": true
+     },
+     "ck": {
+      "delta": 1.029892488942906,
+      "lo": 0.6911,
+      "hi": 1.3699,
+      "separated": true
+     },
+     "code": {
+      "delta": -3.789985578432234,
+      "lo": -5.1415,
+      "hi": -2.5466,
+      "separated": true
+     }
+    },
+    "joint_minus_perwindow_max_DESCRIPTIVE": {
+     "delta": -8.659807144204086,
+     "lo": -9.991,
+     "hi": -7.3616,
+     "separated": true
+    }
+   }
+  },
+  "outcome": {
+   "headline": "INCOHERENCE",
+   "meaning": "O reacts to the CONTRADICTION between its inputs more than to a coherent foreign state"
+  }
+ },
+ "seconds_analysis": 53.0
+}
