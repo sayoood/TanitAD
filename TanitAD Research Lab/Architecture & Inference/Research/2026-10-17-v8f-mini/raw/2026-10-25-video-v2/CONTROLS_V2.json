@@ -1,0 +1,100 @@
+{
+ "spec": "SELECTION_V2.md controls; CPU float32 re-run of the banked M2b checkpoints; windows = the 4 of viz/out/selection.json, seeds M2b_s0 / M2b_s1",
+ "control_1_own_nav_all_layers_reproduces_B_own_code_plan": {
+  "chain_vs_forward_traj30": 0.0,
+  "chain_vs_forward_ckpt": 0.0,
+  "chain_vs_forward_lat": 0.0,
+  "own_nav_all_layers_vs_forward_traj30": 0.0,
+  "own_nav_all_layers_vs_forward_ckpt": 0.0,
+  "own_nav_all_layers_vs_forward_lat": 0.0,
+  "own_nav_all_layers_vs_forward_lon": 0.0,
+  "tolerance": 0.0,
+  "PASS": true,
+  "n_window_seed_pairs": 8,
+  "note": "B's own-code plan = model.forward_infer on the window. The chain (run_s -> run_t -> run_o with nav replaced) with the window's own nav at S, T and O, and with no override, is bit-identical to it at all 8 window-seed pairs: the injection harness changes nothing by itself."
+ },
+ "info_cpu_rerun_vs_banked_gpu": {
+  "own_traj30_vs_banked_pred": 1.5974044799804688e-05,
+  "own_ckpt_Sframe_vs_banked_ckpt": 7.62939453125e-06,
+  "own_ckpt_now_vs_banked_ckpt_reexpressed": 1.52587890625e-05,
+  "own_ade6_vs_banked_ade6": 2.8170279229300377e-06,
+  "fresh_ckpt_vs_sfresh_banked": 1.1444091796875e-05,
+  "fresh_traj30_vs_sfresh_banked_pred": 8.58306884765625e-06,
+  "held_ckpt_Sframe_vs_sfresh_cycle_banked": 1.52587890625e-05,
+  "unit": "metres (max abs over the 8 window-seed pairs); note: banked ckpt npz is in S's TICK frame, compared in that frame",
+  "tolerance_used": 0.0001,
+  "PASS": true
+ },
+ "control_2_drawn_plans_equal_banked_perwindow_arrays": {
+  "drawn_B_vs_source_tau": 0.0,
+  "drawn_H_vs_source": 0.0,
+  "drawn_P10_vs_source": 0.0,
+  "drawn_HS_vs_source": 0.0,
+  "tau_vs_kind_banked_pred": 0.0,
+  "ade6_recomputed_vs_banked_B": 0.0,
+  "ade6_recomputed_vs_banked_H": 0.0,
+  "ade6_recomputed_vs_banked_P10": 3.4898942757877194e-07,
+  "ade6_recomputed_vs_banked_HS": 0.0,
+  "ade6_B_vs_selection_json": 0.0,
+  "tolerance_m": 1e-05,
+  "PASS": true,
+  "n_window_seed_pairs": 8,
+  "note": "H/HS/B/P10 as drawn are the arrays read from hblend/hspec score_*_perwindow.npz (B = kind-own `tau`, P10 = `P`), at window indices taken from selection.json; ADE6 recomputed from the drawn arrays against GT equals the banked per-window ade6 (<= 3.5e-7 m)."
+ },
+ "control_3_frame_alignment_as_v1": {
+  "clips": {
+   "79e30ac2-c619-4d61-98a3-1007037b4d05": {
+    "steps_checked": 101,
+    "n_argmax_is_self": 101,
+    "psnr_min_db": 48.604469299316406,
+    "maxabs": 3
+   },
+   "45aea78c-7762-4e46-aef1-e9e22602b8fd": {
+    "steps_checked": 101,
+    "n_argmax_is_self": 101,
+    "psnr_min_db": 49.13282012939453,
+    "maxabs": 3
+   },
+   "51c01ba4-9000-4370-8abb-9fd22b397d05": {
+    "steps_checked": 101,
+    "n_argmax_is_self": 101,
+    "psnr_min_db": 48.833351135253906,
+    "maxabs": 3
+   },
+   "ed87040c-cf3c-4fe4-9a95-50c1114f0d38": {
+    "steps_checked": 101,
+    "n_argmax_is_self": 101,
+    "psnr_min_db": 48.781837463378906,
+    "maxabs": 3
+   }
+  },
+  "total_argmax_is_self": 404,
+  "total_steps": 404,
+  "psnr_min_db": 48.604469299316406,
+  "PASS": true,
+  "note": "Cache step j = native frame 2j; each of the 101 steps of the 4 clips was re-encoded and its DINOv3 feature argmax-matched against the banked cache (v1, `viz/out/align_control.json`); v2 draws frames with the SAME accessor (v2_lib.v2ep_frame) and the SAME step index. Not re-run in v2 (identical inputs, identical accessor)."
+ },
+ "control_4_zeroed_e_nav_structural_zero": {
+  "n_cells": 160,
+  "max_abs": 0.0,
+  "PASS": true,
+  "note": "e_nav.weight zeroed => the nav embedding is a constant; D6, D6_TURN_L/R, lat_sep and LR_dist must read EXACTLY 0.0 at every injection point (identity, not an estimate)."
+ },
+ "pre_declaration": {
+  "file": "SELECTION_V2.md",
+  "sha256": "c98f72aa8107dd9240da0bb05b3f32b6caa5487f1045e9ba746db036ad7a15a1",
+  "mtime_utc_epoch": 1792927525.0909257,
+  "every_output_written_after_it": {
+   "data/cf_windows.npz": true,
+   "data/cf_evalwide.npz": true,
+   "data/plans_pack.npz": true,
+   "data/tables.json": true,
+   "CONTROLS_V2_part1.json": true,
+   "CONTROLS_V2_part2.json": true,
+   "v8f_evidence_v2.mp4": true
+  },
+  "PASS": true,
+  "note": "SELECTION_V2.md was written before any run and has not been edited since (mtime precedes every output; sha256 recorded at the time of this merge)."
+ },
+ "ALL_PASS": true
+}
