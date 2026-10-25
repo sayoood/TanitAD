@@ -18788,6 +18788,95 @@
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-20-latency-budget/LATENCY_BUDGET_PROPOSAL.md"
    ]
+  },
+  "2608.03084": {
+   "key": "2608.03084",
+   "kind": "arxiv",
+   "title": "SUV: Future Scene Understanding as Video Generation for End-to-End Driving",
+   "authors": [
+    "Yibo Yuan",
+    "Jiacheng Fu",
+    "Jiangtong Zhu",
+    "Yi Li",
+    "Jianhua Han",
+    "Meng Tian",
+    "Zhuohan Liu",
+    "Zhiwei Xiong",
+    "Hang Xu",
+    "Jianwu Fang",
+    "Jianru Xue"
+   ],
+   "published": "2026-08-04",
+   "abstract": "End-to-end driving requires a coherent understanding of future scenes, yet existing methods model these scenes using task-specific heads and output formats, with limited scalability. Can video generation instead provide a shared predictor? We introduce SUV, a unified end-to-end driving framework that casts future Scene Understanding as Video generation using a pretrained video foundation model. SUV models future appearance, semantics, relative depth, and instance-level dynamics as video streams with a shared video expert, without stream-specific visual prediction heads. Through joint video-action attention, the action expert attends to the latent representations of all future streams and generates the ego trajectory. Experiments show that SUV directly predicts all four future streams, while controlled ablations show that structured future supervision and direct future-stream access yield",
+   "url": "https://arxiv.org/abs/2608.03084",
+   "path": "TanitAD Research Lab/Library/papers/2608.03084_SUV-Future-Scene-Understanding-as-Video-Generation-for-End-t.pdf",
+   "bytes": 4028725,
+   "sha256": "bde8b7f78e9a34dc859b5dae86dcfa1478f0fc3a005f51beeb57f11240fd0176",
+   "banked": "2026-10-25",
+   "tags": [
+    "navsim"
+   ],
+   "note": "SUV: single-front-camera NAVSIM navtest PDMS entry (candidate camera-only SOTA row)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-navsim-scope/NAVSIM_SCOPE.md"
+   ]
+  },
+  "2608.06008": {
+   "key": "2608.06008",
+   "kind": "arxiv",
+   "title": "Adaptive-WAM: Quality-Guided Early-Exit Planning from Intermediate Video-Diffusion Features",
+   "authors": [
+    "Sining Ang",
+    "Yuguang Yang",
+    "Yan Wang"
+   ],
+   "published": "2026-08-06",
+   "abstract": "Large video diffusion models provide rich spatiotemporal priors for autonomous driving, but existing world-action models often inherit the cost of iterative future-video generation even though deployment only requires an ego trajectory. We ask a more basic question: how much of a video diffusion model must be executed to make a reliable driving decision? Through a controlled study of video denoising timesteps and Diffusion Transformer (DiT) depth, we find that planning performance is largely insensitive to the tested video-noise levels, whereas strong trajectories can already be decoded from intermediate layers. Based on this observation, we introduce Adaptive-WAM, a quality-aware multi-exit planner built on a Wan2.2-5B backbone. Trajectory diffusion heads are attached to selected DiT blocks, and a lightweight trajectory-quality scorer terminates inference once the best trajectory decode",
+   "url": "https://arxiv.org/abs/2608.06008",
+   "path": "TanitAD Research Lab/Library/papers/2608.06008_Adaptive-WAM-Quality-Guided-Early-Exit-Planning-from-Interme.pdf",
+   "bytes": 11472519,
+   "sha256": "b8388c34a262ebbad0794c3da58afa1f81117d158728d3eea82f96e804094094",
+   "banked": "2026-10-25",
+   "tags": [
+    "navsim"
+   ],
+   "note": "Adaptive-WAM: front-camera-only NAVSIM navtest EPDMS entry (video-diffusion backbone)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-navsim-scope/NAVSIM_SCOPE.md"
+   ]
+  },
+  "2609.03602": {
+   "key": "2609.03602",
+   "kind": "arxiv",
+   "title": "SV-WAM: An Efficient Surround-View World-Action Model for End-to-End Autonomous Driving",
+   "authors": [
+    "Jinyang Wang",
+    "Shiwei Li",
+    "Junjian Wang",
+    "Zhiqiang Deng",
+    "Jianbin Gao",
+    "Yihang Zhao",
+    "Liu Liu",
+    "Yongjia Zhao",
+    "Jinlong Chen",
+    "Huirui Xu",
+    "Yifeng Pan",
+    "Kangwei Liu"
+   ],
+   "published": "2026-09-03",
+   "abstract": "World models (WMs) have demonstrated strong potential for end-to-end autonomous driving by learning predictive representations of future scene dynamics. However, generating future videos during inference introduces substantial computational overhead, leading many recent driving WMs to adopt a single front camera as input for efficient deployment. This design restricts spatial coverage in safety-critical maneuvers such as lane changes, merges, and turns. To address this limitation, we propose SV-WAM, a surround-view world-action model (WAM) that preserves full six-camera observations while maintaining efficient inference. SV-WAM leverages future-video prediction as dense training supervision for action learning within a shared generative model, rather than as an inference-time output. At the core of this design is an action-centered causal mask that prevents action tokens from attending t",
+   "url": "https://arxiv.org/abs/2609.03602",
+   "path": "TanitAD Research Lab/Library/papers/2609.03602_SV-WAM-An-Efficient-Surround-View-World-Action-Model-for-End.pdf",
+   "bytes": 38661385,
+   "sha256": "dbc51e64e73b220d005016441af70dd00760fccc823f671598a494cb800be0eb",
+   "banked": "2026-10-25",
+   "tags": [
+    "navsim"
+   ],
+   "note": "SV-WAM: surround-view world-action model, NAVSIM v2 navtest entry (latest WAM class)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-navsim-scope/NAVSIM_SCOPE.md"
+   ]
   }
  }
 }
