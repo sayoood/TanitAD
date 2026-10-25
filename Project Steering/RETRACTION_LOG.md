@@ -18653,3 +18653,15 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 
 **Class:** *a reference artifact's NAME taken as its provenance.* The probe compared against the cache it could find on the machine and labelled it "the train cache", and I quoted the label into a pre-registration within the hour. Same family as the `flagship4b` repo-name inversion and "absence at one location is not absence".
 * ⇒ Before a known-value or identity control is trusted, read the REFERENCE's own manifest (source, device, dtype, pipeline) and match it against the production manifest. A reference you did not match is not a control.
+
+### R69 -- "accel MAE stays a candidate input-lever gain" (R66, `RESULT_V8F_HIST.md` §6) was M2b_s0's own draw (2026-10-25, MM)
+
+**Claimed:** R66 narrowed GRID's and HIST's "consistent pattern" to accel MAE. It argued that their −0.123 / −0.092 m/s² were 4.6–6.1× the one seed-paired swing banked (0.020), so accel stayed a candidate.
+
+**Measured (`TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-dscale/run/accel_all_arms.out`, the banked evals):** against M2b_s0, every seed-0 arm lowers accel MAE: GRID −0.123, HIST −0.092, PGT −0.019, WC −0.169, and DSCALE's half-data arm **−0.183**.
+* M2b_s0's accel MAE (1.206) is the outlier; seed 1 reads 0.931.
+
+**Consequence:** no input lever has a supported driving gain. The G+H stack was already not pre-registered. The register rows carry the note.
+
+**Class:** *a gain measured against ONE baseline draw, with a floor taken from a different contrast.* The paired swing came from M2b − M1, but every arm is compared against M2b_s0, and M2b_s0 is the arm with the outlying value. A negative control (here, an arm that should not improve a metric) shows it at once.
+* ⇒ Before calling a one-seed delta a lever effect, put it next to the same delta for the OTHER arms on the same base. If unrelated levers, or a deliberately worse arm, "improve" the metric too, the base is the effect.
