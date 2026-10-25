@@ -182,6 +182,8 @@ class V8FMiniConfig:
                                        # bit for bit, RNG stream included); kind = an independent switch per sample AND per unit (CODE_MIX_UNITS). Training only: the eval never teacher-forces
     o_interface: str = "full"          # PREREG_V8F_FLAT (`--o-interface`): full = O reads S's checkpoints and T's code (every earlier arm, bit for bit); cut = O reads a CONSTANT for both (the FLAT control:
                                        # T's code = zeros AFTER every override, S's checkpoints = the nominal ck_nom with ok = 0). S and T are still built, trained and run
+    w_acc: float = 0.0                 # PREREG_V8F_OACC (`--w-acc`): the weight of the acceleration-matching term on O's plan (accel_term below). 0.0 = the term is NOT in the total = every earlier arm,
+                                       # bit for bit (the term is still LOGGED under T["acc"]). > 0 = OACC's X: its value is fixed by the PREREG's rule, written into the argv, never tuned
 
     @property
     def window_start_effective(self) -> int:
@@ -199,6 +201,8 @@ class V8FMiniConfig:
             raise ValueError(f"code_mix must be one of {CODE_MIX_MODES}, got {self.code_mix!r}")
         if self.o_interface not in O_INTERFACE_MODES:
             raise ValueError(f"o_interface must be one of {O_INTERFACE_MODES}, got {self.o_interface!r}")
+        if not (math.isfinite(self.w_acc) and self.w_acc >= 0.0):
+            raise ValueError(f"w_acc must be a finite number >= 0, got {self.w_acc!r}")
         if self.hmax < self.hist + self.max_age_s:
             raise ValueError("hmax must cover hist + max_age_s")
         if self.window_start != -1 and not 0 <= self.window_start <= self.hist - 1:
@@ -305,6 +309,29 @@ def upsample_prior(p30: Tensor) -> Tensor:
 
 def subsample_02(traj60: Tensor) -> Tensor:
     return traj60[:, 1::2]
+
+
+def traj_terms(traj30: Tensor, gt: Tensor, gok: Tensor) -> tuple:
+    """O's two position terms on the 0.2 s knots, ``(ade, fde)``: the mean / last-knot L2 distance to the GT, averaged over the GT-valid windows (``gok`` [B]). The loss reads this; so does the
+    w_acc rule of PREREG_V8F_OACC (``v8f_mini_eval_oacc.py wacc``), so the trajectory loss it balances against IS the trainer's, never a re-implementation."""
+    d = torch.sqrt(((traj30 - gt) ** 2).sum(-1) + 1e-9)
+    return (d.mean(1) * gok).sum() / gok.sum().clamp_min(1.0), (d[:, -1] * gok).sum() / gok.sum().clamp_min(1.0)
+
+
+def second_diff_02(xy: Tensor) -> Tensor:
+    """PREREG_V8F_OACC: the second difference, on the 0.2 s plan grid, of a plan ``[B, 30, 2]`` (tau = 0.2 ... 6.0 s) INCLUDING the origin knot (tau = 0, the ego at NOW), exactly as
+    ``upsample_prior`` prepends it: 31 knots -> 29 interior centres -> ``[B, 29, 2]``, in m per (0.2 s)^2. HSPEC's stage 2 uses the same 29 rows (``d2_matrix``)."""
+    P = torch.cat([xy.new_zeros(xy.shape[0], 1, 2), xy], 1)
+    return P[:, 2:] - 2.0 * P[:, 1:-1] + P[:, :-2]
+
+
+def accel_term(traj30: Tensor, gt: Tensor, gok: Tensor) -> Tensor:
+    """PREREG_V8F_OACC: ``1/|M| sum_{t in M} || D2 tau30(t) - D2 y30(t) ||^2`` -- O's plan against the human's, on the second difference. ``gok`` [B] is the GT-valid mask the ADE/FDE terms
+    use (a window's GT is valid for ALL 30 steps or for none: ``gt_future``), so M = the valid windows x the 29 centres, and the mean is over those cells. A batch with no valid window gives 0.0."""
+    d2 = second_diff_02(traj30) - second_diff_02(gt.to(traj30.dtype))
+    sq = (d2 ** 2).sum(-1)                                   # [B, 29]: the squared L2 norm over the two axes
+    g = gok.to(sq.dtype)
+    return (sq.mean(1) * g).sum() / g.sum().clamp_min(1.0)
 
 
 # ------------------------------------------------------------------------------------------------ hard projection
@@ -740,9 +767,8 @@ class V8FMini(nn.Module):
         T["cons"] = (hub * m).sum() / m.sum().clamp_min(1.0)
         # O: ADE / FDE on the 0.2 s knots
         gt, gok = batch["gt"], batch["gt_ok"].float()
-        d = torch.sqrt(((out["traj30"] - gt) ** 2).sum(-1) + 1e-9)
-        T["ade"] = (d.mean(1) * gok).sum() / gok.sum().clamp_min(1.0)
-        T["fde"] = (d[:, -1] * gok).sum() / gok.sum().clamp_min(1.0)
+        T["ade"], T["fde"] = traj_terms(out["traj30"], gt, gok)      # the same two lines as before, now ONE spelling that PREREG_V8F_OACC's w_acc rule also calls
+        T["acc"] = accel_term(out["traj30"], gt, gok)                # PREREG_V8F_OACC: always LOGGED (the G-LIVE probe and the reader read it); in the total only when w_acc > 0
         # consistency penalties
         lim = limit_ms_from_onehot(batch["limit"], batch["limit_ok"])
         if cfg.consistency:
@@ -759,6 +785,7 @@ class V8FMini(nn.Module):
             T["wm"] = wm["total"]
         total = (cfg.w_ckpt * T["ckpt"] + cfg.w_tac * (T["goal"] + 0.5 * (T["lat"] + T["lon"]) + cfg.w_cons * T["cons"])
                  + cfg.w_traj * (T["ade"] / 3.0 + 0.5 * T["fde"] / 6.0))
+        total = total + cfg.w_acc * T["acc"] if cfg.w_acc > 0.0 else total          # PREREG_V8F_OACC: ONE line (a mutation deletes it); w_acc 0 adds nothing: B's total, bit for bit
         if cfg.consistency:
             total = total + cfg.w_pen * sum(T[f"pen_{r}"] for r in RULES) + cfg.w_pen_self * sum(T[f"pens_{r}"] for r in RULES)
         if self.wm is not None:
@@ -794,6 +821,7 @@ class V8FMini(nn.Module):
                 "consistency": bool(cfg.consistency), "wm": "off" if self.wm is None else ("b" if self.wm.gamma > 0 else "a"),
                 "cons_absent": cfg.cons_absent, "code_mix": cfg.code_mix,        # PREREG_V8F_MIXO: the teacher-forcing granularity the BUILT model's _forward reads
                 "o_interface": cfg.o_interface,                                # PREREG_V8F_FLAT: what the BUILT model's _forward hands O (full: S's checkpoints + T's code; cut: constants)
+                "w_acc": cfg.w_acc,                                            # PREREG_V8F_OACC: the weight the BUILT loss gives the acceleration term (0.0 = not in the total)
                 "wm_idm_gamma": 0.0 if self.wm is None else float(self.wm.gamma),
                 "kin_mode": self.cfg.kin_mode, "wm_ch1_scale": None if self.wm is None else float(self.wm.ch1_scale),
                 "p_gt_start": cfg.p_gt_start, "p_gt_end": cfg.p_gt_end,      # PREREG_V8F_PGT: the scheduled-sampling schedule the train loop reads

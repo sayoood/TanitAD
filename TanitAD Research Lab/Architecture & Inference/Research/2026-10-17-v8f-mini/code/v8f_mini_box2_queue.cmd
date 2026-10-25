@@ -62,6 +62,13 @@ rem   v8f_mini_box2_queue.cmd trainflat SEED       PREREG_V8F_FLAT: one FLAT run
 rem   v8f_mini_box2_queue.cmd evalflat SEED        PREREG_V8F_FLAT: that run's four evals, tagged M2b-flat_s<SEED>: the standard eval (--project --families), absmask, the GT-code oracle (the identity read: FLAT's oracle ADE6 minus
 rem                                             its own must be exactly 0) and the all-latcons oracle; each skipped once its npz exists
 rem
+rem   v8f_mini_box2_queue.cmd waccoacc              PREREG_V8F_OACC: the w_acc RULE, computed once before launch: w_acc = 0.5 * L_traj(B_s0) / L_acc(B_s0) over HBLEND's fit windows (141 clips, 9,582 windows) with B's s0 checkpoint
+rem                                             (v8f_mini_eval_oacc.py wacc, CPU, cross-checked against HBLEND's banked arrays). Writes %RUNSM%\oacc\w_acc.json and w_acc.txt (the bare number the next stages read). Skipped once both exist
+rem   v8f_mini_box2_queue.cmd gateoacc              PREREG_V8F_OACC: the in-process launch gate for X = M2b + --w-acc <the rule's value> (the acceleration term on O's plan), no training. B is M2b (fixed in the PREREG): there is no BASE argument
+rem   v8f_mini_box2_queue.cmd trainoacc SEED        PREREG_V8F_OACC: one X run into %RUNSM%\M2b_s<SEED>_oacc (resumes; skipped once done). Seed 1 runs only if seed 0 passes PRIMARY-ACC and PRIMARY-KEEP (the chain decides)
+rem   v8f_mini_box2_queue.cmd evaloacc SEED         PREREG_V8F_OACC: that run's standard eval (--project --families), tagged M2b-oacc_s<SEED>; skipped once its npz exists
+rem   v8f_mini_box2_queue.cmd fitoacc SEED          PREREG_V8F_OACC: HBLEND's per-step weights RE-FITTED on X's own training windows (v8f_mini_eval_oacc.py hx, CPU): %RUNSM%\oacc\weights_M2b-oacc_s<SEED>.json (HX, the deployed form)
+rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
 rem
@@ -126,6 +133,11 @@ if /i "%~1"=="evalmixo" goto :evalmixo
 if /i "%~1"=="gateflat" goto :gateflat
 if /i "%~1"=="trainflat" goto :trainflat
 if /i "%~1"=="evalflat" goto :evalflat
+if /i "%~1"=="waccoacc" goto :waccoacc
+if /i "%~1"=="gateoacc" goto :gateoacc
+if /i "%~1"=="trainoacc" goto :trainoacc
+if /i "%~1"=="evaloacc" goto :evaloacc
+if /i "%~1"=="fitoacc" goto :fitoacc
 echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|kind^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED^|gategrid BASE^|traingrid SEED BASE^|evalgrid SEED BASE^|gatehist^|trainhist SEED^|evalhist SEED^|gatedscale^|traindscale SEED^|evaldscale SEED^|identitylora^|smokelora
 exit /b 2
 
@@ -879,4 +891,96 @@ if exist "%EV%\eval_%TG%-tacorc-all-latcons.npz" (echo [skip] eval %TG%-tacorc-a
 if errorlevel 1 (echo [FAIL] eval %TG%-tacorc-all-latcons - see %EV%\eval_%TG%-tacorc-all-latcons.log & exit /b 1)
 echo [ok] eval %TG%-tacorc-all-latcons
 :evalflat_4
+exit /b 0
+:waccoacc
+rem PREREG_V8F_OACC: the w_acc RULE, computed ONCE before launch, on the box that will train X. B's s0 checkpoint is the BANKED run's (the chain asserts its sha256 before this stage). The fit set is HBLEND's (fit_clips.json, k = 32), its
+rem banked arrays are the cross-check (rel 1e-3, else REFUSED rc 2). The two HBLEND files are COPIED to %OD% first so that no argument string carries the ampersand of the repo path.
+call :prep || exit /b 2
+set "OD=%RUNSM%\oacc"
+set "HB=%REPO%\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\2026-10-25-hblend"
+set "EVALOACC=%REPO%\stack\scripts\v8f_mini_eval_oacc.py"
+set "WX="%PY%" "%EVALOACC%" wacc --ckpt "%RUNSM%\M2b_s0\ckpt_last.pt" --fit-clips "%OD%\fit_clips.json" --cache-dir "%CACHEFULL%" --join-train "%RUNSM%\join_train.npz" --tracks "%TRACKS%" --banked-fit-windows "%OD%\fit_windows_M2b_s0.npz" --out "%OD%\w_acc.json" --out-txt "%OD%\w_acc.txt""
+if defined V8F_DRYRUN (echo %WX% & exit /b 0)
+if exist "%OD%\w_acc.json" if exist "%OD%\w_acc.txt" (echo [skip] w_acc & exit /b 0)
+if not exist "%OD%" mkdir "%OD%"
+copy /y "%HB%\fit_clips.json" "%OD%\fit_clips.json" >nul || (echo REFUSED: HBLEND's fit_clips.json did not copy & exit /b 2)
+copy /y "%HB%\fit_windows_M2b_s0.npz" "%OD%\fit_windows_M2b_s0.npz" >nul || (echo REFUSED: HBLEND's banked fit windows did not copy & exit /b 2)
+%WX% >> "%OD%\waccoacc.log" 2>&1
+if errorlevel 1 (echo [FAIL] w_acc rule - see %OD%\waccoacc.log & exit /b 1)
+if not exist "%OD%\w_acc.txt" (echo [FAIL] w_acc rule exited 0 without w_acc.txt & exit /b 1)
+echo [ok] w_acc
+exit /b 0
+
+:oaccwacc
+rem PREREG_V8F_OACC: the rule's value for the stages below, from the file the waccoacc stage wrote (an env WACC overrides it: the tests). The dry run of a box that has not computed it yet prints the placeholder WACC_FROM_RULE.
+if not defined OD set "OD=%RUNSM%\oacc"
+if not defined WACC if exist "%OD%\w_acc.txt" set /p WACC=<"%OD%\w_acc.txt"
+if not defined WACC if defined V8F_DRYRUN set "WACC=WACC_FROM_RULE"
+if not defined WACC (echo REFUSED: no w_acc - run the waccoacc stage first & exit /b 2)
+exit /b 0
+
+:gateoacc
+rem PREREG_V8F_OACC: X = M2b's levers with --w-acc <the rule's value> and nothing else (the acceleration term on O's plan: the second difference on the 0.2 s grid, origin knot included, plan minus GT, squared, mean over the GT-valid steps; the
+rem data, the 19,164 steps, the p_gt schedule 1.0 -> 0.2 and the eval are B's). The trainer's G-DVB checks the built w_acc against this argv, its G-LIVE requires the term in the loss dict and every weight alive, its acc_probe reads that the BUILT
+rem loss's total moves by exactly w_acc x the term and that O's head receives the term's gradient, and selfcheck.json records them (levers.w_acc, acc_probe); the chain asserts them before any training.
+call :prep || exit /b 2
+call :oaccwacc || exit /b 2
+rem ONE command string: the dry run prints exactly what the real run executes
+set "GX="%PY%" "%TRAIN%" --arm M2b --w-acc %WACC% --out "%RUNSM%\gate_M2b-oacc" %A% --selfcheck-only"
+if defined V8F_DRYRUN (echo %GX% & exit /b 0)
+%GX% > "%RUNSM%\gate_M2b-oacc.log" 2>&1
+if errorlevel 1 (echo [FAIL] gate M2b-oacc - see %RUNSM%\gate_M2b-oacc.log & exit /b 1)
+echo [ok] gate M2b-oacc
+exit /b 0
+
+:trainoacc
+rem PREREG_V8F_OACC: one X run. Its summary.json says arm M2b (the trainer's arm table is unchanged); its argv.json carries --w-acc <the rule's value>, its levers and its checkpoint the BUILT w_acc: code\v8f_oacc_read.py refuses a run where any is
+rem not. The run lives in M2b_s<SEED>_oacc, so it can never resume or be mistaken for B.
+call :prep || exit /b 2
+call :oaccwacc || exit /b 2
+if "%~2"=="" (echo REFUSED: trainoacc needs a SEED & exit /b 2)
+set "OUT=%RUNSM%\M2b_s%~2_oacc"
+if exist "%OUT%\summary.json" (echo [skip] M2b_s%~2_oacc & exit /b 0)
+rem ONE command string: the dry run prints exactly what the real run executes
+set "TX="%PY%" "%TRAIN%" --arm M2b --seed %~2 --grid pool4x10 --w-acc %WACC% --out "%OUT%" %A%"
+if defined V8F_DRYRUN (echo %TX% & exit /b 0)
+if not exist "%OUT%" mkdir "%OUT%"
+echo [%date% %time%] train M2b_s%~2_oacc
+%TX% >> "%OUT%\train.log" 2>&1
+if errorlevel 1 (echo [FAIL] train M2b_s%~2_oacc - see %OUT%\train.log & exit /b 1)
+if not exist "%OUT%\summary.json" (echo [FAIL] train M2b_s%~2_oacc exited 0 without summary.json & exit /b 1)
+exit /b 0
+
+:evaloacc
+rem PREREG_V8F_OACC: the ONE eval its reader needs, ONE command string that the dry run prints and the real run executes: the standard eval (--project --families) of THIS run's last checkpoint, which names its own config (cfg.w_acc):
+rem v8f_mini_eval.py builds the model from the checkpoint's cfg, so there is no flag to give it. Skipped once its npz exists.
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: evaloacc needs a SEED & exit /b 2)
+set "OUT=%RUNSM%\M2b_s%~2_oacc"
+set "TG=M2b-oacc_s%~2"
+set "E0="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG% %EC% %ER% --project --families"
+if defined V8F_DRYRUN (echo %E0% & exit /b 0)
+if not exist "%OUT%\summary.json" (echo REFUSED: %TG% has not finished training & exit /b 2)
+if exist "%EV%\eval_%TG%.npz" (echo [skip] eval %TG% & exit /b 0)
+%E0% >> "%EV%\eval_%TG%.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG% - see %EV%\eval_%TG%.log & exit /b 1)
+echo [ok] eval %TG%
+exit /b 0
+
+:fitoacc
+rem PREREG_V8F_OACC: HX = X with HBLEND's per-step weights RE-FITTED on X's own training windows (the deployed form): HBLEND's own closed form + clip + isotonic step (v8f_hblend.fit_weights) on THIS checkpoint's held outputs over HBLEND's fit
+rem windows (141 clips, 9,582 windows). CPU, forward only. The two HBLEND files were copied to %OD% by waccoacc (no ampersand in any argument). Skipped once the weights exist.
+call :prep || exit /b 2
+if "%~2"=="" (echo REFUSED: fitoacc needs a SEED & exit /b 2)
+set "OD=%RUNSM%\oacc"
+set "OUT=%RUNSM%\M2b_s%~2_oacc"
+set "EVALOACC=%REPO%\stack\scripts\v8f_mini_eval_oacc.py"
+set "FX="%PY%" "%EVALOACC%" hx --ckpt "%OUT%\ckpt_last.pt" --fit-clips "%OD%\fit_clips.json" --cache-dir "%CACHEFULL%" --join-train "%RUNSM%\join_train.npz" --tracks "%TRACKS%" --tag M2b-oacc_s%~2 --out "%OD%\weights_M2b-oacc_s%~2.json""
+if defined V8F_DRYRUN (echo %FX% & exit /b 0)
+if not exist "%OUT%\summary.json" (echo REFUSED: M2b-oacc_s%~2 has not finished training & exit /b 2)
+if exist "%OD%\weights_M2b-oacc_s%~2.json" (echo [skip] HX weights M2b-oacc_s%~2 & exit /b 0)
+if not exist "%OD%\fit_clips.json" (echo REFUSED: %OD%\fit_clips.json is missing - run waccoacc first & exit /b 2)
+%FX% >> "%OD%\fitoacc_s%~2.log" 2>&1
+if errorlevel 1 (echo [FAIL] HX fit M2b-oacc_s%~2 - see %OD%\fitoacc_s%~2.log & exit /b 1)
+echo [ok] HX weights M2b-oacc_s%~2
 exit /b 0

@@ -208,7 +208,7 @@ def test_default_model_is_the_saved_pre_amendment_model_bit_for_bit(world):
     for hist in (4, 10):
         old_f = {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)}
         new_f = {f.name for f in dataclasses.fields(M.V8FMiniConfig)}
-        assert new_f - old_f == {"window_start", "code_mix", "o_interface"} and old_f <= new_f      # code_mix: PREREG_V8F_MIXO, o_interface: PREREG_V8F_FLAT (widened from {"window_start"}; the pin's intent -- additions only -- is unchanged)
+        assert new_f - old_f == {"window_start", "code_mix", "o_interface", "w_acc"} and old_f <= new_f      # code_mix: PREREG_V8F_MIXO, o_interface: PREREG_V8F_FLAT (widened from {"window_start"}; the pin's intent -- additions only -- is unchanged)
         kw = dict(TINY, hist=hist, hmax=HMAX, wm="b", kin_mode="yaw")
         mu, sd = M.cons_stats(J)
         torch.manual_seed(3)
@@ -218,7 +218,7 @@ def test_default_model_is_the_saved_pre_amendment_model_bit_for_bit(world):
         sn, so = mn.state_dict(), mo.state_dict()
         assert sn.keys() == so.keys() and all(torch.equal(sn[k], so[k]) for k in sn)
         ln, lo = mn.built_levers(), mo.built_levers()
-        assert set(ln) - set(lo) == {"hist", "hmax", "window_start", "code_mix", "o_interface"} and set(lo) <= set(ln)      # + code_mix: PREREG_V8F_MIXO, + o_interface: PREREG_V8F_FLAT (additions only)
+        assert set(ln) - set(lo) == {"hist", "hmax", "window_start", "code_mix", "o_interface", "w_acc"} and set(lo) <= set(ln)      # + code_mix: PREREG_V8F_MIXO, + o_interface: PREREG_V8F_FLAT (additions only)
         assert {k: v for k, v in ln.items() if k in lo} == lo
         assert (ln["hist"], ln["hmax"], ln["window_start"]) == (hist, HMAX, hist - 1)
         wins = D.train_windows(store, J, world["names"]["train"], hist=hist)

@@ -169,7 +169,7 @@ def _old_pair(world, n=12, seed=2):
     J = DD.load_join(Path(world["root"]) / "join_train.npz")
     mu, sd = M.cons_stats(J)
     cfg = M.V8FMiniConfig(**{**_T.TINY, "wm": "off"})
-    kw = {k: v for k, v in cfg.__dict__.items() if k not in ("code_mix", "o_interface")}      # o_interface: PREREG_V8F_FLAT (the saved module predates both keys)
+    kw = {k: v for k, v in cfg.__dict__.items() if k not in ("code_mix", "o_interface", "w_acc")}      # o_interface: PREREG_V8F_FLAT, w_acc: PREREG_V8F_OACC (the saved module predates these keys)
     torch.manual_seed(3)
     new = M.V8FMini(cfg, M.P10Prior.synthetic(0), mu, sd)
     torch.manual_seed(3)
@@ -187,8 +187,8 @@ def test_whole_builds_the_saved_pre_change_model_and_forward_bit_for_bit_with_th
     sn, so = new.state_dict(), old.state_dict()
     assert sn.keys() == so.keys() and all(torch.equal(sn[k], so[k]) for k in sn), "identical built model"
     ln, lo = new.built_levers(), old.built_levers()
-    assert set(ln) - set(lo) == {"code_mix", "o_interface"} and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo      # + o_interface: PREREG_V8F_FLAT (additions only)
-    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == {"code_mix", "o_interface"}      # + o_interface: PREREG_V8F_FLAT
+    assert set(ln) - set(lo) == {"code_mix", "o_interface", "w_acc"} and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo      # + o_interface: PREREG_V8F_FLAT (additions only)
+    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == {"code_mix", "o_interface", "w_acc"}      # + o_interface: PREREG_V8F_FLAT
     for p in (0.0, 0.2, 0.5, 0.9, 1.0):
         gn, go = torch.Generator().manual_seed(11), torch.Generator().manual_seed(11)
         new.train(), old.train()
@@ -207,7 +207,7 @@ def test_whole_builds_the_saved_pre_change_model_and_forward_bit_for_bit_with_th
         ln_ = new.loss(b, p_gt=p, gen=torch.Generator().manual_seed(4))
         torch.manual_seed(5)
         lo_ = old.loss(b, p_gt=p, gen=torch.Generator().manual_seed(4))
-        assert ln_["terms"].keys() == lo_["terms"].keys() and all(torch.equal(ln_["terms"][k], lo_["terms"][k]) for k in ln_["terms"])
+        assert ln_["terms"].keys() - {"acc"} == lo_["terms"].keys() and all(torch.equal(ln_["terms"][k], lo_["terms"][k]) for k in lo_["terms"])      # "acc": PREREG_V8F_OACC logs the acceleration term at w_acc 0 too (it adds nothing to the total)
 
 
 def _trace(model, batches, steps=200, p0=1.0, p1=0.2, seed=17, lr=2e-3):
@@ -1177,6 +1177,7 @@ win = pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows
 MSTAGES = ("gatemixo", "trainmixo", "evalmixo")
 MIXO_LABELS = {"gatemixo", "trainmixo", "evalmixo"} | {f"evalmixo_{i}" for i in range(1, 8)}
 FLAT_LABELS = {"gateflat", "trainflat", "evalflat"} | {f"evalflat_{i}" for i in range(1, 5)}      # PREREG_V8F_FLAT appended these after MIXO's (test_v8f_flat.py pins them); widened here, nothing else
+OACC_LABELS = {"waccoacc", "oaccwacc", "gateoacc", "trainoacc", "evaloacc", "fitoacc"}         # PREREG_V8F_OACC appended these after FLAT's (test_v8f_oacc.py pins them); widened here, nothing else
 # PREREG_V8F_KIND's four labels as they stand at c0769eaa (sha256[:16] of "\n" + the text up to the next label): PREREG_V8F_MIXO appended AFTER them and edited none
 KIND_PINS = {"kind": "d1445aa3e2135915", "kindseed": "9c13c94705b73355", "kindown": "df45fbd31218aea9", "kindorc": "e7051ae3f70c3a4f"}
 _K = _load("test_v8f_kind_for_mixo", HERE_T / "test_v8f_kind.py") if (QUEUE.exists() and (HERE_T / "test_v8f_kind.py").exists()) else None
@@ -1234,7 +1235,7 @@ def test_queue_mixo_is_crlf_every_existing_label_is_byte_identical_and_only_the_
         assert label in blocks, f"the stage {label} was removed"
         assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
         assert "mixo" not in blocks[label].lower() and "code-mix" not in blocks[label], f"{label} mentions the new stages"
-    assert set(blocks) - FLAT_LABELS == set(_K.PRE_EXISTING) | set(KIND_PINS) | MIXO_LABELS and len(MIXO_LABELS) == 10, "the only new labels are the ten of this edit (and PREREG_V8F_FLAT's, pinned in test_v8f_flat.py)"
+    assert set(blocks) - FLAT_LABELS - OACC_LABELS == set(_K.PRE_EXISTING) | set(KIND_PINS) | MIXO_LABELS and len(MIXO_LABELS) == 10, "the only new labels are the ten of this edit (and PREREG_V8F_FLAT's, pinned in test_v8f_flat.py)"
     for st in MSTAGES:
         assert q.count(f'if /i "%~1"=="{st}" goto :{st}\n') == 1, "a stage nobody dispatches never runs"
         assert q.count(f"\n:{st}\n") == 1

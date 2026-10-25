@@ -77,6 +77,7 @@ FLAG_CHECKS = {
     "kin_mode": "cfg:kin_mode", "tracks": "path", "cons_absent": "lever:cons_absent",
     "code_mix": "lever:code_mix",             # PREREG_V8F_MIXO: argv -> make_config -> the BUILT model's levers (declared_vs_built) -> the probe of the code O actually read (code_mix_probe)
     "o_interface": "lever:o_interface",       # PREREG_V8F_FLAT: argv -> make_config -> the BUILT model's levers (declared_vs_built) -> G-LIVE's dead-weight set (live_check) -> the probe of what O is handed (o_interface_probe)
+    "w_acc": "cfg:w_acc",                     # PREREG_V8F_OACC: argv -> make_config -> the BUILT config AND built_levers (declared_vs_built) -> acc_probe (the BUILT loss's total moves by exactly w_acc x the acc term, and O's head receives its gradient)
     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
     "encoder": "enc:encoder", "lora_r": "enc:lora_r", "lora_alpha": "enc:lora_alpha", "lora_targets": "enc:lora_targets",
@@ -103,6 +104,9 @@ def build_parser():
                     help="PREREG_V8F_FLAT: what O reads of the layers above it. full (default) = S's checkpoints and T's code (every earlier arm, bit for bit, the RNG stream included); "
                          "cut = a CONSTANT in place of both (T's code = zeros after every override, S's checkpoints = the nominal ck_nom with ok = 0): the capacity-matched FLAT control. "
                          "S and T are still built, trained and run")
+    ap.add_argument("--w-acc", dest="w_acc", type=float, default=0.0,
+                    help="PREREG_V8F_OACC: the weight of the acceleration-matching term on O's plan (the second difference on the 0.2 s grid, origin knot included, of O's plan minus the GT's, squared, mean over the GT-valid steps). "
+                         "0.0 (default) = the term is not in the loss = every earlier arm, bit for bit. > 0 = OACC's X: the value comes from the PREREG's rule (v8f_mini_eval_oacc.py wacc), is written into the argv and never tuned")
     ap.add_argument("--cache-dir", default="C:/Users/Admin/refav1_hj_cache")
     ap.add_argument("--out", required=True)
     ap.add_argument("--v9-train", default="C:/Users/Admin/qland/work/refcv8_hf_v9/release/v9_labels_train.npz")
@@ -197,7 +201,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
-                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface)
+                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc)
 
 
 def bad_encoder(a, enc, data_info) -> list:
@@ -278,6 +282,12 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None) -> list:
     # PREREG_V8F_FLAT: the interface declared on the argv is the one the BUILT model's levers say (argv -> make_config -> cfg -> built_levers); o_interface_probe then reads what O is actually handed
     if built.get("o_interface") != a.o_interface:
         bad.append(f"lever o_interface: declared {a.o_interface} but built {built.get('o_interface')}")
+    # PREREG_V8F_OACC: the acceleration weight declared on the argv is the one the BUILT config and the BUILT model's levers say (argv -> make_config -> cfg -> built_levers); a NEGATIVE or non-finite weight is
+    # refused (a negative weight would REWARD roughness); acc_probe then reads that the BUILT loss's total actually moves by w_acc x the term
+    if not (math.isfinite(a.w_acc) and a.w_acc >= 0.0):
+        bad.append(f"w_acc {a.w_acc!r} is not a finite number >= 0")
+    if built.get("w_acc") != a.w_acc:
+        bad.append(f"lever w_acc: declared {a.w_acc} but built {built.get('w_acc')}")
     if not built["prior_frozen"]:
         bad.append("the P10 prior is not frozen")
     if model.cfg.n_tok != (40 if a.grid == "pool4x10" else 160):
@@ -291,7 +301,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None) -> list:
     if built["wm"] != "off" and built["wm_ch1_scale"] != M.CH1_SCALE[a.kin_mode]:
         bad.append(f"WM action channel 1 scale {built['wm_ch1_scale']} != {M.CH1_SCALE[a.kin_mode]} for kin_mode {a.kin_mode}")
     for f in ("hist", "hmax", "d", "n_q", "nb", "p_gt_start", "p_gt_end", "w_ckpt", "w_tac", "w_cons", "w_traj", "w_pen",
-              "w_pen_self", "w_wm", "detach_upper", "kin_mode"):
+              "w_pen_self", "w_wm", "detach_upper", "kin_mode", "w_acc"):
         want = {"hist": a.hist, "hmax": cfg.hmax, "d": a.d, "n_q": a.n_q, "nb": a.nb}.get(f, getattr(a, f, None))
         got = getattr(model.cfg, f)
         if want is not None and not (got == want or (isinstance(want, float) and abs(got - want) < 1e-12)):
@@ -374,7 +384,7 @@ def live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
         if s == 0:
             first = {n: float(p.grad.abs().sum()) for n, p in m.named_parameters() if p.requires_grad and p.grad is not None}
         opt.step()
-    expect = {"ckpt", "goal", "lat", "lon", "cons", "ade", "fde", "total"}
+    expect = {"ckpt", "goal", "lat", "lon", "cons", "ade", "fde", "acc", "total"}      # + acc: PREREG_V8F_OACC (always logged)
     if cfg.consistency:
         expect |= {f"pen_{r}" for r in M.RULES} | {f"pens_{r}" for r in M.RULES}
     if cfg.wm != "off":
@@ -542,6 +552,76 @@ def o_interface_probe(model, batch, cfg, shift: float = 2.5) -> dict:
     return res
 
 
+def acc_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
+    """G-LIVE for PREREG_V8F_OACC: the acceleration term REACHES THE LOSS THE TRAINER BACKPROPAGATES, with the declared weight, and O's head receives its gradient -- read from the BUILT model's own ``loss`` on the
+    real probe batch (a COPY, its own seeds), not from a unit test of the term. The loss is evaluated at the probe weight ``w`` (the declared one; 1.0 when 0.0 is declared, so a B-equivalent run still proves
+    the wire) and at 0.0, on the same batch, generator and global seed:
+
+      acc            finite and > 0 (an exactly-zero term would be a plan with the GT's own acceleration), and independent of the weight
+      contribution   total(w) - total(0) == w x acc  (to ``rtol`` and float32 rounding): the weight reaches the total. DELETE the line that adds the term and this reads 0.0 -> RED
+      O's head       sum |grad(total(w)) - grad(total(0))| over ``head_o.*`` > 0: the gradient the TERM gives O's head
+      controls       (a) the same loss twice at w = 0.0 gives gradients that differ by EXACTLY 0.0 (the probe is deterministic, so a difference above is the term's);
+                     (b) the frozen P10 prior's gradient difference is EXACTLY 0.0; (c) so is the world-model auxiliary's (it does not feed the plan), when built
+      declared 0.0   the contribution at the DECLARED weight is EXACTLY 0.0 (B's total, untouched)
+
+    Returns the record that selfcheck.json carries; any violation is an AssertionError, which the caller turns into a refusal."""
+    eps32 = float(torch.finfo(torch.float32).eps)
+    w_decl = float(cfg.w_acc)
+    w = w_decl if w_decl > 0.0 else 1.0
+    m = copy.deepcopy(model).cpu()
+    m.train()
+    named = [(n, p) for n, p in m.named_parameters() if p.requires_grad]
+
+    def run(w_):
+        m.cfg.w_acc = w_
+        for _, p in named:
+            p.grad = None
+        for p in m.prior.parameters():
+            p.grad = None
+        torch.manual_seed(20261025)
+        out = m.loss(batch, p_gt=0.5, gen=torch.Generator().manual_seed(11))
+        T = out["terms"]
+        for k, v in T.items():
+            if not torch.isfinite(v):
+                raise AssertionError(f"acc probe: loss term {k} is not finite at w_acc {w_}: {float(v)}")
+        T["total"].backward()
+        g = {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in named}
+        g["__prior__"] = torch.cat([(p.grad.detach().reshape(-1) if p.grad is not None else torch.zeros(p.numel())) for p in m.prior.parameters()])
+        return float(T["total"].detach()), float(T["acc"].detach()), g
+
+    t_w, acc_w, g_w = run(w)
+    t_0, acc_0, g_0 = run(0.0)
+    t_0b, _, g_0b = run(0.0)
+    dsum = lambda ga, gb, pre: float(sum((ga[n] - gb[n]).abs().sum() for n in ga if n.startswith(pre)))      # noqa: E731
+    contribution = t_w - t_0
+    want = w * acc_w
+    res = {"w_acc_declared": w_decl, "w_probe": w, "acc": acc_w, "acc_at_zero_weight": acc_0, "total_w": t_w, "total_0": t_0, "contribution": contribution, "w_x_acc": want,
+           "head_o_grad_diff": dsum(g_w, g_0, "head_o."), "read_o_grad_diff": dsum(g_w, g_0, "read_o."),
+           "control_repeat_total_diff": abs(t_0b - t_0), "control_repeat_grad_diff": dsum(g_0, g_0b, ""),
+           "control_prior_grad_diff": float((g_w["__prior__"] - g_0["__prior__"]).abs().sum()),
+           "control_wm_grad_diff": dsum(g_w, g_0, "wm.") if m.wm is not None else None}
+    if not math.isfinite(acc_w) or not acc_w > 0.0:
+        raise AssertionError(f"acc probe: the acceleration term reads {acc_w} on the probe batch (finite and > 0 required)")
+    if acc_w != acc_0:
+        raise AssertionError(f"acc probe: the logged acceleration term depends on the weight ({acc_w} at {w}, {acc_0} at 0): it is not the term")
+    if res["control_repeat_total_diff"] != 0.0 or res["control_repeat_grad_diff"] != 0.0:
+        raise AssertionError(f"acc probe: the probe is not deterministic (the same loss twice differs by {res['control_repeat_total_diff']} / {res['control_repeat_grad_diff']}): its differences mean nothing")
+    if not want > 64.0 * eps32 * max(abs(t_0), 1.0):
+        raise AssertionError(f"acc probe: w x acc = {want} is below float32 visibility against the total {t_0}: the probe cannot see the term; use a larger probe weight")
+    if abs(contribution - want) > rtol * want + 4.0 * eps32 * max(abs(t_w), abs(t_0)):
+        raise AssertionError(f"acc probe: the total moved by {contribution} when the weight went from 0 to {w}, the term is {acc_w} (w x acc = {want}): the term does not reach the loss with its weight")
+    if not res["head_o_grad_diff"] > 0.0:
+        raise AssertionError("acc probe: O's head receives no gradient from the acceleration term (the sum of |d total / d head_o| differences is 0.0)")
+    if res["control_prior_grad_diff"] != 0.0:
+        raise AssertionError(f"acc probe: the frozen P10 prior's gradient moved with the weight ({res['control_prior_grad_diff']}): the control must read exactly 0.0")
+    if res["control_wm_grad_diff"] not in (None, 0.0):
+        raise AssertionError(f"acc probe: the world-model auxiliary's gradient moved with the weight ({res['control_wm_grad_diff']}): it does not feed the plan, the control must read exactly 0.0")
+    if w_decl == 0.0:                                 # the DECLARED weight is 0: the total there is B's, and it reproduces exactly (the repeat control above: 0.0 difference)
+        res["declared_zero_total_reproduces_exactly"] = bool(t_0b == t_0)
+    res["pass"] = True
+    return res
+
+
 # ------------------------------------------------------------------------------------------------ the encoder (PREREG_V8F_LORA)
 def build_encoder_raw(a, dev):
     """The ONLY place the real weights are loaded (tests replace THIS, never :func:`make_encoder`): the cache builder's DINOv3 ViT-L/16 (bf16, local HF cache, no
@@ -652,7 +732,7 @@ def live_check_lora(model, enc, batch, cfg, a, dev, chunk, steps: int = 3, lr: f
         enc.load_lora_state_dict(sd0)
         for p in lora:
             p.grad = None
-    expect = {"ckpt", "goal", "lat", "lon", "cons", "ade", "fde", "total"}
+    expect = {"ckpt", "goal", "lat", "lon", "cons", "ade", "fde", "acc", "total"}      # + acc: PREREG_V8F_OACC (always logged)
     if cfg.consistency:
         expect |= {f"pen_{r}" for r in M.RULES} | {f"pens_{r}" for r in M.RULES}
     if cfg.wm != "off":
@@ -852,13 +932,17 @@ def main(argv=None):
         ocut = o_interface_probe(model, probe, cfg)       # PREREG_V8F_FLAT: what the BUILT model's O is handed under a perturbation of everything above it (cut: constants, traj60 invariant; full: it moves)
     except AssertionError as e:
         raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
+    try:
+        accp = acc_probe(model, probe, cfg)               # PREREG_V8F_OACC: the BUILT loss moves by exactly w_acc x the acceleration term, and O's head receives its gradient (a deleted line reads 0.0 and is refused)
+    except AssertionError as e:
+        raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
     adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
     model.to(dev).train()
     levers = model.built_levers()
     if enc is not None:
         levers["encoder"] = enc.built_levers()
         levers["accum"] = {"accum": a.accum, "micro_windows": a.batch // a.accum, "chunk_frames": chunk}
-    sc = {"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix, "o_interface_probe": ocut, "admissibility": adm, "levers": levers,
+    sc = {"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix, "o_interface_probe": ocut, "acc_probe": accp, "admissibility": adm, "levers": levers,
           "steps_total": total, "S_steps_per_epoch_100pct": S, "info": info, "argv_sha": argv_sha(argv)}
     if ident is not None:
         sc["identity_probe"] = ident

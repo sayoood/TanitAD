@@ -182,7 +182,7 @@ def _old_pair(world, n=12, seed=2, mod=None):
     mod = mod or M
     J = _J(world)
     cfg = mod.V8FMiniConfig(**{**_T.TINY, "wm": "off"})
-    kw = {k: v for k, v in cfg.__dict__.items() if k != "o_interface"}
+    kw = {k: v for k, v in cfg.__dict__.items() if k not in ("o_interface", "w_acc")}      # w_acc: PREREG_V8F_OACC (the saved module predates both keys)
     mu, sd = M.cons_stats(J)
     torch.manual_seed(3)
     new = mod.V8FMini(cfg, mod.P10Prior.synthetic(0), mu, sd)
@@ -215,8 +215,8 @@ def test_full_builds_the_saved_pre_change_model_and_forward_bit_for_bit_with_the
     sn, so = new.state_dict(), old.state_dict()
     assert sn.keys() == so.keys() and all(torch.equal(sn[k], so[k]) for k in sn), "identical built model"
     ln, lo = new.built_levers(), old.built_levers()
-    assert set(ln) - set(lo) == {"o_interface"} and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo
-    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == {"o_interface"}
+    assert set(ln) - set(lo) == {"o_interface", "w_acc"} and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo      # w_acc: PREREG_V8F_OACC (additions only)
+    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == {"o_interface", "w_acc"}      # w_acc: PREREG_V8F_OACC (additions only)
     _same_forward(_wake(new), _wake(old), b)                                                    # woken, identically: at zero-init O is blind to what it reads and the identity would be vacuous
     new, old, b, _ = _old_pair(world)
     for p in (0.3, 1.0):                                                                        # the loss
@@ -224,7 +224,7 @@ def test_full_builds_the_saved_pre_change_model_and_forward_bit_for_bit_with_the
         ln_ = new.loss(b, p_gt=p, gen=torch.Generator().manual_seed(4))
         torch.manual_seed(5)
         lo_ = old.loss(b, p_gt=p, gen=torch.Generator().manual_seed(4))
-        assert ln_["terms"].keys() == lo_["terms"].keys() and all(torch.equal(ln_["terms"][k], lo_["terms"][k]) for k in ln_["terms"])
+        assert ln_["terms"].keys() - {"acc"} == lo_["terms"].keys() and all(torch.equal(ln_["terms"][k], lo_["terms"][k]) for k in lo_["terms"])      # "acc": PREREG_V8F_OACC logs the acceleration term at w_acc 0 too (it adds nothing to the total)
     # the diagnostic and inference routes too (forward_diag with a code override is the eval's route)
     new.eval(), old.eval()
     with torch.no_grad():
@@ -1677,6 +1677,7 @@ needs_chain = pytest.mark.skipif(not CHAIN.exists(), reason="the v8F-mini packag
 win = pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows batch file")
 FSTAGES = ("gateflat", "trainflat", "evalflat")
 FLAT_LABELS = {"gateflat", "trainflat", "evalflat"} | {f"evalflat_{i}" for i in range(1, 5)}
+OACC_LABELS = {"waccoacc", "oaccwacc", "gateoacc", "trainoacc", "evaloacc", "fitoacc"}         # PREREG_V8F_OACC appended these after FLAT's (test_v8f_oacc.py pins them); widened here, nothing else
 # PREREG_V8F_MIXO's ten labels as they stand at the tip 18c62306 (sha256[:16] of "\n" + the text up to the next label): this edit appended AFTER them and edited none
 MIXO_PINS = {"gatemixo": "b2ea5430b698741c", "trainmixo": "419a7db33d684844", "evalmixo": "7acc0975f2aa9ef3", "evalmixo_1": "1cc5381d64b27142", "evalmixo_2": "a70ba66191aed3cf",
              "evalmixo_3": "5d326de83e5d37b1", "evalmixo_4": "0cde88e556e0b0e4", "evalmixo_5": "479e39bc5b10065b", "evalmixo_6": "77271eba1510a820", "evalmixo_7": "901e965d7b940ca4"}
@@ -1738,7 +1739,7 @@ def test_queue_flat_is_crlf_every_existing_label_is_byte_identical_and_only_the_
         assert label in blocks, f"the stage {label} was removed"
         assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
         assert "o-interface" not in blocks[label] and "_flat" not in blocks[label] and "M2b-flat" not in blocks[label], f"{label} mentions the new stages"
-    assert set(blocks) == set(_K.PRE_EXISTING) | set(_MX.KIND_PINS) | set(MIXO_PINS) | FLAT_LABELS and len(FLAT_LABELS) == 7, "the only new labels are the seven of this edit"
+    assert set(blocks) - OACC_LABELS == set(_K.PRE_EXISTING) | set(_MX.KIND_PINS) | set(MIXO_PINS) | FLAT_LABELS and len(FLAT_LABELS) == 7, "the only new labels are the seven of this edit"
     for st in FSTAGES:
         assert q.count(f'if /i "%~1"=="{st}" goto :{st}\n') == 1, "a stage nobody dispatches never runs"
         assert q.count(f"\n:{st}\n") == 1
@@ -1751,7 +1752,7 @@ def test_queue_flat_is_crlf_every_existing_label_is_byte_identical_and_only_the_
     assert usage.endswith("^|gatedscale^|traindscale SEED^|evaldscale SEED^|identitylora^|smokelora") and "flat" not in usage, "the usage line is untouched (the earlier pins on it stand)"
     for need in ("gateflat", "trainflat SEED", "evalflat SEED"):
         assert f"rem   v8f_mini_box2_queue.cmd {need}" in q, "the header documents the stage"
-    assert q.rstrip().endswith(":evalflat_4\nexit /b 0") and q.count("\n:gateflat\n") == 1
+    assert q.split("\n:waccoacc\n")[0].rstrip().endswith(":evalflat_4\nexit /b 0") and q.count("\n:gateflat\n") == 1      # PREREG_V8F_OACC's stages follow it (widened; FLAT's last label is still the last of its own)
     assert q.split("\n:gateflat\n")[0].endswith("\n:evalmixo_7\nexit /b 0"), "the new stages start right after the last old label, which keeps its text (MIXO's own convention)"
 
 
@@ -1789,7 +1790,7 @@ def test_queue_flat_runs_the_command_it_prints_static():
     q = _queue_text()
     for k in range(1, 5):
         assert q.count(f"\n:evalflat_{k}\n") == 1 and f"goto :evalflat_{k})" in q
-    assert q.rstrip().endswith(":evalflat_4\nexit /b 0")
+    assert q.split("\n:waccoacc\n")[0].rstrip().endswith(":evalflat_4\nexit /b 0")      # PREREG_V8F_OACC's stages follow it (widened)
 
 
 @needs_queue

@@ -1,0 +1,117 @@
+# suites.out (run 2) -- every stack/tests/test_v8f_*.py of the FINAL tree (a clean copy, C:/Users/Admin/oacc_final), CUDA_VISIBLE_DEVICES=-1, at most 2 concurrent pytest, SHORT basetemps (C:/Users/Admin/pt_oacc_s1 / s2: the first run's
+# long scratch-path basetemps broke fixtures on Windows and made it report 58 false regressions), C: free >= 4 GB before each run, basetemp deleted after each run, tmp_path_retention_policy=none.
+# A file with failing tests is re-run on the BASE tree (C:/Users/Admin/oacc_base = the export before any OACC change): a failure present on BOTH is PRE-EXISTING (environment / export), a failure ONLY on the final tree is a REGRESSION.
+
+stack/tests/test_v8f_beta.py: rc 0 | 35 passed in 55.47s | 57s
+stack/tests/test_v8f_beta_box2.py: rc 0 | 2 skipped in 0.21s | 1s
+stack/tests/test_v8f_cz.py: rc 0 | 6 passed, 1 warning in 9.72s | 11s
+stack/tests/test_v8f_dk.py: rc 0 | 25 passed in 14.69s | 15s
+stack/tests/test_v8f_dscale.py: rc 0 | 110 passed, 1 skipped, 1 warning in 147.65s (0:02:27) | 149s
+stack/tests/test_v8f_flat.py: rc 1 | 1 failed, 260 passed, 2 skipped, 1 warning in 301.72s (0:05:01) | 305s | failing 1: PRE-EXISTING 1 (also red on base: 1 failed, 260 passed, 2 skipped, 1 warning in 314.60s (0:05:14)), REGRESSION 0
+    PRE-EXISTING  stack\tests\test_v8f_flat.py::test_check_inputs_refuses_a_b_side_that_is_not_the_preregs
+stack/tests/test_v8f_grid.py: rc 0 | 137 passed, 1 warning in 161.22s (0:02:41) | 165s
+stack/tests/test_v8f_hist.py: rc 0 | 133 passed, 1 skipped, 1 warning in 144.83s (0:02:24) | 148s
+stack/tests/test_v8f_kind.py: rc 0 | 28 passed, 4 skipped, 1 warning in 195.79s (0:03:15) | 200s
+stack/tests/test_v8f_kindx_s1.py: rc 1 | 59 failed, 98 passed, 28 skipped, 3 errors in 95.77s (0:01:35) | 97s | failing 44: PRE-EXISTING 44 (also red on base: 59 failed, 98 passed, 28 skipped, 3 errors in 95.69s (0:01:35)), REGRESSION 0
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_a_kind_that_clears_at_s1_only_is_reported_and_is_a_carrier_at_neither_seed
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_carrier_when_the_s0_candidate_clears_2F_at_s1_too
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_chain_pins_agree_with_the_reader_the_manifest_the_prereg_and_the_mixo_chain
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_clears_is_inclusive_at_2F_and_needs_the_interval
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_controls_at_s0_are_untouched
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_controls_fail_when_the_s1_world_is_not_the_preregs[an
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_controls_fail_when_the_s1_world_is_not_the_preregs[own
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_controls_fail_when_the_s1_world_is_not_the_preregs[the
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_controls_fail_when_the_s1_world_is_not_the_preregs[trained
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_controls_pass_on_a_consistent_s1_world
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_mixos_argv_with_seed_1_passes_the_trainers_gate_on_the_new_tip_without_naming_o_interface
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_mutation_a_carrier_that_need_not_have_been_an_s0_candidate_turns_the_s1_only_row_red
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_mutation_a_lower_bar_turns_the_miss_row_red
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_mutation_an_argv_check_that_compares_nothing_turns_the_rows_red
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_mutation_an_identity_patch_that_selects_everything_turns_the_none_row_red
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_mutation_clears_that_ignores_the_interval_turns_the_not_separated_row_red
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_mutation_swapping_the_two_outcomes_turns_the_carrier_row_red
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_not_a_carrier_when_the_candidate_misses_2F_at_s1
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_not_a_carrier_when_the_point_clears_but_the_interval_does_not_exclude_zero
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl0-phase1
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl1-phase2
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl2-phase2
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_a_seed_argument_that_disagrees_with_its_configuration
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[own
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_s0_mode_still_names_candidate_and_no_candidate_and_never_the_s1_outcomes
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_seed_1_argv_is_mixos_with_the_seed_the_only_difference
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_seed_1_argv_that_differs_in_anything_else_is_refused[a
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_seed_1_argv_that_differs_in_anything_else_is_refused[another
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_seed_1_argv_that_differs_in_anything_else_is_refused[code-mix
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_seed_1_argv_that_differs_in_anything_else_is_refused[the
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_seed_1_builds_the_same_model_and_data_as_seed_0_apart_from_the_seed
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_the_banked_mixo_s0_argv_is_the_preregs_argv
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_the_banked_s0_read_is_the_candidate_this_confirmation_is_for
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_the_checkpoint_of_x_s1_must_not_be_x_s0s
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_the_driver_refuses_a_missing_checkpoint_and_one_that_changes_during_the_evals
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_the_driver_runs_the_ten_evals_in_order_restores_the_patch_skips_what_exists_and_checks_the_sha
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_the_identity_patch_selects_nothing_and_leaves_every_other_spec_alone
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_the_s1_reader_writes_the_deciding_block_before_it_computes_the_beside_block
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_the_tip_queues_own_trainmixo_lines_differ_in_the_seed_and_the_output_directory_only
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_the_trainers_own_gate_refuses_a_declared_cut_that_was_not_built_and_the_new_tip_names_its_flag
+    PRE-EXISTING  stack\tests\test_v8f_kindx_s1.py::test_two_s0_candidates_keep_their_s0_rank_and_only_the_confirmed_one_is_a_carrier
+stack/tests/test_v8f_kscore.py: rc 1 | 2 failed, 120 passed, 1 skipped in 225.38s (0:03:45) | 228s | failing 2: PRE-EXISTING 2 (also red on base: 2 failed, 120 passed, 1 skipped in 163.27s (0:02:43)), REGRESSION 0
+    PRE-EXISTING  stack\tests\test_v8f_kscore.py::test_constants_are_the_prereg_text
+    PRE-EXISTING  stack\tests\test_v8f_kscore.py::test_every_outcome_quotes_the_prereg_next_step
+stack/tests/test_v8f_lora.py: rc 1 | 15 failed, 18 passed, 7 skipped, 1 warning in 76.73s (0:01:16) | 80s | failing 15: PRE-EXISTING 15 (also red on base: 15 failed, 18 passed, 7 skipped, 1 warning in 33.18s), REGRESSION 0
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_a_detached_encoder_output_turns_the_gradient_check_red
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_b_zero_forward_is_the_frozen_forward_bit_for_bit[dtype0]
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_b_zero_forward_is_the_frozen_forward_bit_for_bit[dtype1]
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_checkpointing_changes_nothing_but_memory
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_collate_frames_hands_every_window_its_own_frames_and_leaves_collate_alone
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_end_to_end_identity_the_on_the_fly_feats_are_the_caches_feats_exactly_and_a_one_step_shift_is_caught
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_gradient_accumulation_is_exact_end_to_end_including_the_wm_sigreg_term
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_launch_gate_refuses_every_lie_about_the_built_encoder
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_lora_run_resumes_as_the_same_run
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_reachability_flag_to_loss_to_backward_end_to_end
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_smoke_script_runs_the_trainer_and_reports_the_ar2_checks_and_a_projection
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_step_one_has_nonzero_B_grads_and_exactly_zero_A_grads_then_A_wakes_up_and_the_frozen_control_reads_zero
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_the_encoder_build_never_moves_the_heads_initialisation
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_the_gradient_cache_equals_the_full_batch_gradient_and_plain_accumulation_does_not
+    PRE-EXISTING  stack\tests\test_v8f_lora.py::test_unique_frames_and_the_frame_store_refusals
+stack/tests/test_v8f_lora_ar2.py: rc 1 | 3 failed, 47 passed, 14 errors in 14.74s | 17s | failing 17: PRE-EXISTING 17 (also red on base: 3 failed, 47 passed, 14 errors in 16.29s), REGRESSION 0
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_main_writes_its_json_even_on_a_refusal
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_manifest_only_asserts_the_rows_and_never_builds_a_model
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[IMAGE_MEAN0_0.485_to_0.486]
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[IMAGE_STD2_0.225_to_0.226]
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_mutant_a_changed_preprocessing_constant_fails_and_is_restored[PIXEL_SCALE_255_to_256]
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_mutant_caught_on_a_non_qualifying_device_proves_nothing
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_mutant_that_changes_nothing_is_not_caught
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_run_a_frame_subset_never_qualifies
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_run_a_perturbed_stored_cache_with_a_consistent_row_fails
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_run_identity_passes_on_a_cache_the_builders_own_functions_made
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_run_on_cpu_is_refused_unless_labelled_and_then_never_qualifies
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_run_refuses_a_row_that_is_not_a_production_row_before_the_model_is_built
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_run_refuses_a_stored_file_that_is_not_the_one_the_row_describes
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_run_refuses_frames_that_are_not_the_ones_the_cache_was_encoded_from
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_driver_run_with_fewer_than_two_and_two_clips_never_qualifies
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_queue_ar2_stages_dry_the_declared_clips_the_controls_and_B_s_argv
+    PRE-EXISTING  stack\tests\test_v8f_lora_ar2.py::test_smoke_amp_is_off_by_default_the_census_uses_the_whole_clip_list_and_the_report_carries_tau_device
+stack/tests/test_v8f_lora_device.py: rc 0 | 3 passed in 0.30s | 1s
+stack/tests/test_v8f_lora_shape.py: rc 2 | 1 error in 3.19s | 4s | failing 1: PRE-EXISTING 1 (also red on base: 1 error in 1.84s), REGRESSION 0
+    PRE-EXISTING  stack\tests\test_v8f_lora_shape.py
+stack/tests/test_v8f_mini.py: rc 0 | 29 passed, 1 warning in 26.94s | 28s
+stack/tests/test_v8f_mini_full.py: rc 1 | 2 failed, 2 passed in 0.75s | 1s | failing 2: PRE-EXISTING 2 (also red on base: 2 failed, 2 passed in 0.72s), REGRESSION 0
+    PRE-EXISTING  stack\tests\test_v8f_mini_full.py::test_verdict_refuses_mixed_provenance
+    PRE-EXISTING  stack\tests\test_v8f_mini_full.py::test_verdict_wm1_passes_only_when_both_seeds_beat_2F
+stack/tests/test_v8f_mini_full_report.py: rc 1 | 1 failed, 8 passed in 3.81s | 5s | failing 1: PRE-EXISTING 1 (also red on base: 1 failed, 8 passed in 5.10s), REGRESSION 0
+    PRE-EXISTING  stack\tests\test_v8f_mini_full_report.py::test_the_default_ground_truth_is_the_eval141_grid
+stack/tests/test_v8f_mixo.py: rc 0 | 148 passed, 1 skipped, 1 warning in 177.85s (0:02:57) | 183s
+stack/tests/test_v8f_oacc.py: rc 0 | 132 passed, 6 warnings in 276.34s (0:04:36) | 278s
+stack/tests/test_v8f_pgt.py: rc 0 | 29 passed, 1 warning in 95.06s (0:01:35) | 97s
+stack/tests/test_v8f_smooth_read.py: rc 0 | 4 passed in 9.57s | 11s
+stack/tests/test_v8f_t1.py: rc 0 | 23 passed in 21.89s | 23s
+stack/tests/test_v8f_tac.py: rc 0 | 14 passed, 1 warning in 29.97s | 32s
+stack/tests/test_v8f_wc.py: rc 0 | 8 passed, 1 warning in 7.19s | 9s
+stack/tests/test_v8f_window_start.py: rc 0 | 77 passed, 1 warning in 104.23s (0:01:44) | 106s
+
+files: 26
+PRE-EXISTING failures: 83
+REGRESSIONS: none
