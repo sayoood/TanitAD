@@ -561,7 +561,7 @@ function scene5(t) {
       T(i === 0 ? 'first 128' : i === 1 ? 'first 256' : 'full 512', bx + bw - 6, yy + 60, { size: 14, color: C.mute, align: 'right' });
     });
     T('every prefix is a usable unit embedding — a free option', 1645, 690, { size: 16, align: 'center', color: C.text, maxW: 380 });
-    chip(1645, 770, 'trainable core 56.4 M', { align: 'center', col: C.trn, size: 16 });
+    chip(1645, 770, 'trainable core 56.39 M', { align: 'center', col: C.trn, size: 16 });
     ev(1645, 808, 'MEASURED · HiCAP.n_params', { align: 'center' });
     X.restore();
   }
@@ -907,8 +907,8 @@ function scene9(t) {
       X.strokeStyle = C.img; X.lineWidth = 2; X.strokeRect(x - 14, g[1] - 8, 28, 16);
     });
     T('4,585 / 4,719 clips · 29,415,112 cuboid rows', 660, 818, { size: 18, weight: 700 }); ev(1100, 818, 'MEASURED · V10 SPEC §0', {});
-    T('Tier-1 targets, Tier-0 / Tier-2 teacher costs (TTC, clearance, progress deficit)', 660, 850, { size: 15, color: C.mute });
-    T('caveat: logged agents do not react to a counterfactual ego — an open-loop target shape, not a simulator', 660, 880, { size: 15, color: C.rule, a: fade(t, 24.4) });
+    T('eval139: lead agrees with v9 on 90.1 % · gap within 2 m after the constant +3.55 m offset 92.1 % · logged trajectory collides on 0.26 % of rows', 660, 848, { size: 14, color: C.text, a: fade(t, 22.0) }); ev(1846, 818, 'MEASURED · v10_imag_eval139.stats.json', { align: 'right', a: fade(t, 22.0) });
+    T('caveat: logged agents do not react to a counterfactual ego — an open-loop target shape, not a simulator', 660, 878, { size: 15, color: C.rule, a: fade(t, 24.4) });
     X.restore();
   }
 }
@@ -927,12 +927,15 @@ function scene10(t) {
     for (let c = 0; c < 20; c++) for (let r = 0; r < 8; r++) { const v = hash(Math.floor(c + t * 4) * 13 + r * 7); X.fillStyle = hexA(C.img, 0.1 + 0.7 * v * (r < 3 ? 1 : 0.6)); X.fillRect(258 + c * 10.2, yc - 42 + r * 10.5, 9, 9); }
     T('log-mel · 2 s window · 0.5 s hop', 360, yc + 68, { size: 13, color: C.mute, align: 'center' });
     arrow([[472, yc], [512, yc]], { col: C.img, hs: 9 });
-    box(518, yc - 50, 260, 100, { kind: 'frz', title: 'frozen audio encoder', sub: 'Whisper-class default · BEATs / CLAP alternatives', ts: 17, ss: 13, lock: true });
+    box(518, yc - 50, 260, 100, { kind: 'frz', title: 'frozen audio encoder', ts: 18, lock: true });
+    T('Qwen3-Omni AuT recommended', 648, yc + 66, { size: 13, color: C.frz, align: 'center', weight: 600 }); T('(Apache-2.0) · BEATs contender', 648, yc + 84, { size: 13, color: C.frz, align: 'center', weight: 600 });
     arrow([[780, yc], [820, yc]], { col: C.img, hs: 9 });
-    box(826, yc - 50, 300, 100, { kind: 'trn', title: 'trainable bridge', sub: '2-layer perceiver · 8 latent queries → MLP', ts: 17, ss: 13, spark: true });
+    box(826, yc - 50, 300, 100, { kind: 'trn', title: 'trainable bridge', sub: '2-layer perceiver · 8 latent queries → MLP · 9.60 M', ts: 17, ss: 13, spark: true });
     arrow([[1128, yc], [1168, yc]], { col: C.img, hs: 9 });
     for (let i = 0; i < 8; i++) { X.fillStyle = hexA(C.img, 0.5 + 0.45 * hash(i + 3)); rr(1176 + i * 34, yc - 15, 28, 30, 5); X.fill(); }
     T('8 tokens in d_v', 1310, yc + 36, { size: 14, color: C.img, align: 'center', weight: 650 });
+    T('omni models bridge with a small projector (2.4–4.6 M)', 1470, yc - 30, { size: 14, color: C.mute, maxW: 390 });
+    T('ours: bridge + event heads 10.13 M at d_v 2,048', 1470, yc + 2, { size: 15, weight: 650, maxW: 390 }); ev(1470, yc + 34, 'MEASURED · RESEARCH NOTE R-G', {});
     X.restore();
     // alignment
     const aL = fade(t, 4.8, 16.9);
@@ -1036,17 +1039,19 @@ function scene11(t) {
   // explanation
   const aE = fade(t, 8.8);
   if (aE > 0) {
-    box(860, 565, 1000, 210, { kind: 'frz', dash: 'optional', a: aE, fa: 0.06 });
-    T('OPTIONAL EXPLANATION · frozen reasoner, reuses the refresh KV cache', 885, 592, { size: 14, weight: 700, color: C.frz, a: aE, ls: 1 });
-    T('Scene (cached). Decision: LANE_KEEP, FOLLOW, target ⟨v⟩ m/s. Applicable rules: ⟨r1; r2⟩. In one sentence, explain why.', 885, 630, { size: 15, mono: true, color: C.mute, a: aE, maxW: 950 });
-    T('→ ⟨one-sentence explanation⟩ — not yet trained', 885, 700, { size: 18, weight: 650, a: fade(t, 10), color: C.text });
-    let x = 885; ['≤ 48 tokens', '≤ 0.5 Hz', 'off the control path'].forEach(s => { x += chip(x, 748, s, { col: C.frz, size: 13, a: fade(t, 10.6) }) + 10; });
+    box(860, 560, 1000, 240, { kind: 'frz', dash: 'optional', a: aE, fa: 0.06 });
+    T('OPTIONAL EXPLANATION · frozen reasoner, reuses the refresh KV cache', 885, 586, { size: 14, weight: 700, color: C.frz, a: aE, ls: 1 });
+    T('Scene (cached). Decision: LANE_KEEP, FOLLOW, target ⟨v⟩ m/s. Applicable rules: ⟨r1; r2⟩. In one sentence, explain why.', 885, 618, { size: 15, mono: true, color: C.mute, a: aE, maxW: 950 });
+    T('→ ⟨one-sentence explanation⟩ — not yet trained', 885, 680, { size: 18, weight: 650, a: fade(t, 10), color: C.text });
+    let x = 885; ['≤ 48 tokens', '≤ 0.5 Hz', 'off the control path'].forEach(s => { x += chip(x, 718, s, { col: C.frz, size: 13, a: fade(t, 10.6) }) + 10; });
+    T('teacher text vs v9: longitudinal agreement 0.427 (κ 0.255) → filtered before use', 885, 754, { size: 14, color: C.text, a: fade(t, 11.2) }); ev(1846, 754, 'MEASURED', { align: 'right', a: fade(t, 11.2) });
+    T('per-frame regeneration pipeline built, not launched · ≈ 374 H100-h at 10 Hz', 885, 780, { size: 14, color: C.mute, a: fade(t, 11.6) }); ev(1846, 780, 'ESTIMATED', { align: 'right', a: fade(t, 11.6) });
   }
   // monitor
   const aM = fade(t, 13.2);
   if (aM > 0) {
-    panel(860, 795, 1000, 110, 'CONSISTENCY MONITOR', { a: aM, col: C.hl, ts: 14 });
-    T('explanation → frozen text path → nearest tactical node  ⇄  executed node → disagreement logged', 885, 860, { size: 16, a: aM, maxW: 950 });
+    panel(860, 815, 1000, 92, 'CONSISTENCY MONITOR', { a: aM, col: C.hl, ts: 14 });
+    T('explanation → frozen text path → nearest tactical node  ⇄  executed node → disagreement logged', 885, 874, { size: 16, a: aM, maxW: 950 });
   }
 }
 
@@ -1054,9 +1059,9 @@ function scene11(t) {
 function scene12(t) {
   const st = [
     [1.2, 80, 450, 'cch', 'STAGE 0 · offline, once', ['VLM tap caches', 'text embeddings: nodes · rules · countries', 'vocabulary build (1,024 × 256)', 'imagination supervision (agent tracks)', 'country labels'], 'cached'],
-    [8.8, 560, 340, 'trn', 'STAGE 1', ['critics on every level', '+ country readout', 'soft targets (Tier-0 shape)'], null],
-    [12.6, 940, 440, 'trn', 'STAGE 2', ['+ hard negatives', '+ consistency KL', '+ goal loss', '+ Tier-1 E-head', '+ rule-memory gate', '+ camera-dropout curriculum'], null],
-    [16.8, 1420, 440, 'trn', 'STAGE 3', ['+ candidate re-ranker', '+ Tier-2 heads + benefit gate', '+ camera gate', '+ audio gate (A3)', '40 % replay'], null],
+    [8.8, 560, 340, 'trn', 'STAGE 1', ['critics on every level (soft targets)', '+ goal loss', '+ country readout (λ 0.1)', 'Tier-0 shaping *', 'camera gate *'], null],
+    [12.6, 940, 440, 'trn', 'STAGE 2', ['+ hard negatives', '+ consistency KL', '40 % replay'], null],
+    [16.8, 1420, 440, 'trn', 'STAGE 3', ['+ candidate re-ranker', '+ cost heads · refinement', '+ L^cfg', '+ audio', '+ imagination: Tier-1 E-head, Tier-2 heads + benefit gate'], null],
   ];
   st.forEach((s, i) => {
     const a = fade(t, s[0]); if (a <= 0) return;
@@ -1066,10 +1071,12 @@ function scene12(t) {
     if (i < 3) { const xe = st[i + 1][1]; arrow([[s[1] + s[2] + 4, 480], [xe - 6, 480]], { col: C.mute, a: fade(t, st[i + 1][0] - 0.4), hs: 10 }); flow([[s[1] + s[2] + 4, 480], [xe - 6, 480]], t, { n: 2, col: C.cch, a: fade(t, st[i + 1][0]) }); }
   });
   box(80, 690, 470, 76, { kind: 'trn', a: fade(t, 5.0), s: pop(t, 5.0), title: 'A1 · audio bridge alignment', sub: 'independent · backbone and HiCAP frozen', ts: 17, ss: 14, align: 'left', spark: true });
-  box(1420, 690, 440, 76, { kind: 'grey', a: fade(t, 21.6), dash: 'optional', title: 'optional', sub: 'student distillation · text-channel LoRA for explanations', ts: 17, ss: 14, align: 'left' });
+  box(1500, 690, 360, 76, { kind: 'grey', a: fade(t, 21.6), dash: 'optional', title: 'optional', sub: 'student distillation · text-channel LoRA for explanations', ts: 17, ss: 14, align: 'left' });
   const aP = fade(t, 22.2);
-  const w1 = chip(600, 712, 'trainable 56.4 M + 1.88 M', { col: C.trn, size: 15, a: aP }); ev(612 + w1, 712, 'MEASURED', { a: aP });
-  const w2 = chip(600, 750, 'stages 1–2 train 42.7 M; re-ranker joins in stage 3', { col: C.trn, size: 14, a: aP }); ev(612 + w2, 750, 'MEASURED', { a: aP });
+  T('* whenever its supervision is in the batch', 580, 636, { size: 13, color: C.mute, a: fade(t, 9.6) });
+  T('rule-memory and audio gates start at 0 and are trained by the main losses once their source is attached', 1442, 606, { size: 13, color: C.mute, a: fade(t, 17.6), maxW: 400 });
+  const w1 = chip(600, 712, 'core 56.39 + imagination/elastic 1.88 + v10 knowledge 6.10 = 64.37 M', { col: C.trn, size: 14, a: aP }); ev(612 + w1, 712, 'MEASURED', { a: aP });
+  const w2 = chip(600, 750, 'with audio (d_audio = d_v) + bridge 9.60 M = 74.62 M', { col: C.trn, size: 14, a: aP }); ev(612 + w2, 750, 'MEASURED', { a: aP });
   const aF = fade(t, 21.0);
   box(80, 790, 1780, 110, { kind: 'frz', a: aF, s: pop(t, 21.0), title: 'FROZEN THROUGHOUT', sub: 'Cosmos3-Edge reasoner (2.43 B) · audio encoder · cached text embeddings of nodes, rules and countries · no gradient into the backbone', ts: 22, ss: 16, lock: true, align: 'left', pad: 24 });
 }
@@ -1079,7 +1086,7 @@ function scene13(t) {
   const aL = fade(t, 1.2, 15.2);
   if (aL > 0) {
     panel(80, 150, 820, 690, 'DATA · v10 = v9 + additions by reference', { a: aL, col: C.cch, ts: 15 });
-    const rows = [['v9 labels', 'base release (tactical labels, ego, windows)', 'cch'], ['+ v8.1 strategic', 'unchanged, by reference', 'cch'], ['+ country', '25 countries · 4,369 / 4,369 train clips mapped (built)', 'hl'], ['+ imagination supervision', 'from agent tracks + egomotion', 'img'], ['+ rules · reasoning text · camera refs', 'RuleBook, chain-of-causation text, upstream chunk index', 'cch']];
+    const rows = [['v9 labels', 'base release (tactical labels, ego, windows)', 'cch'], ['+ v8.1 strategic', 'unchanged, by reference', 'cch'], ['+ country', '25 countries · 4,508 / 4,508 clips · published (private HF)', 'hl'], ['+ imagination supervision', 'producer built · eval139 + 100-clip train sample (full train build not run)', 'img'], ['+ rules · reasoning text · camera refs', 'RuleBook v1 (106 records) · chain-of-causation text · camera refs', 'cch']];
     rows.forEach((r, i) => { const a = aL * fade(t, 1.5 + i * 0.35); box(110, 210 + i * 110, 760, 92, { kind: r[2], a, s: pop(t, 1.5 + i * 0.35), title: r[0], sub: r[1], align: 'left', ts: 20, ss: 15, dash: i === 0 ? null : 'cached' }); });
     ev(856, 452, 'MEASURED', { align: 'right', a: aL * fade(t, 2.4) });
     T('keyed by clip (sha12) — augment by reference, never by copy', 110, 790, { size: 16, color: C.mute, a: aL });
@@ -1089,18 +1096,19 @@ function scene13(t) {
     panel(940, 290, 920, 550, 'STATUS', { a: aS, col: C.hl, ts: 15 });
     X.save(); X.globalAlpha *= aS;
     const ok = (y, s, sub) => { X.strokeStyle = C.cch; X.lineWidth = 4; X.beginPath(); X.moveTo(972, y); X.lineTo(982, y + 10); X.lineTo(1000, y - 10); X.stroke(); T(s, 1020, y, { size: 19, weight: 650 }); T(sub, 1020, y + 28, { size: 14, color: C.mute }); };
-    ok(350, 'Architecture implemented and unit-tested on CPU', 'synthetic data · 53 tests · stack/tanitad/hicap');
-    ok(420, 'Country labels built (v10)', '25 countries, joined 100 % on train and eval139');
+    ok(345, 'Architecture incl. v10 implemented and unit-tested on CPU', '145 unit-test functions (def test_ count, MEASURED) · synthetic data');
+    ok(405, 'Country labels published (private HF)', '4,508 / 4,508 clips · 25 countries');
+    ok(465, 'RuleBook v1: 106 records', '73 PUBLISHED (official-domain search summaries) · 33 UNVERIFIED');
     const n = fade(t, 6.6);
-    X.globalAlpha = aS * n; rr(965, 475, 870, 120, 14); X.fillStyle = 'rgba(255,93,115,0.12)'; X.fill(); X.strokeStyle = C.rule; X.lineWidth = 2.5; X.stroke();
-    T('NOT YET TRAINED', 1400, 518, { size: 40, weight: 800, align: 'center', color: C.rule, ls: 3 });
-    T('no accuracy or driving metric exists · VLM tap caches never built', 1400, 562, { size: 16, align: 'center', color: C.text });
+    X.globalAlpha = aS * n; rr(965, 512, 870, 110, 14); X.fillStyle = 'rgba(255,93,115,0.12)'; X.fill(); X.strokeStyle = C.rule; X.lineWidth = 2.5; X.stroke();
+    T('NOT YET TRAINED', 1400, 552, { size: 40, weight: 800, align: 'center', color: C.rule, ls: 3 });
+    T('no accuracy or driving metric exists · VLM tap caches never built', 1400, 596, { size: 16, align: 'center', color: C.text });
     X.globalAlpha = aS * fade(t, 10.8);
-    T('NEXT', 972, 640, { size: 15, weight: 800, color: C.hl, ls: 2 });
-    box(972, 660, 360, 84, { kind: 'frz', title: 'pod: build VLM tap caches', sub: 'build_hicap_cache.py (never run)', ts: 17, ss: 13 });
-    arrow([[1336, 702], [1380, 702]], { col: C.hl, hs: 10 });
-    box(1386, 660, 450, 84, { kind: 'hl', title: 'H-HC0 gate', sub: 'k-NN on frozen + motion + v₀ vs a v₀-only k-NN', ts: 17, ss: 13 });
-    T('if not separated → change backbone or adapter before any head is trained', 972, 780, { size: 14, color: C.mute });
+    T('NEXT', 972, 652, { size: 15, weight: 800, color: C.hl, ls: 2 });
+    box(972, 670, 360, 84, { kind: 'frz', title: 'pod: build VLM tap caches', sub: 'build_hicap_cache.py (never run)', ts: 17, ss: 13 });
+    arrow([[1336, 712], [1380, 712]], { col: C.hl, hs: 10 });
+    box(1386, 670, 450, 84, { kind: 'hl', title: 'H-HC0 gate', sub: 'k-NN on frozen + motion + v₀ vs a v₀-only k-NN', ts: 17, ss: 13 });
+    T('if not separated → change backbone or adapter before any head is trained', 972, 790, { size: 14, color: C.mute });
     X.restore();
   }
 }
@@ -1113,7 +1121,7 @@ function endCard(t) {
     T('TanitAD programme · design and pre-registration paper (working draft) · v10 design spec rev a', 960, 580, { size: 18, align: 'center', a: aE, color: C.dim });
     const cols = [C.frz, C.trn, C.cch, C.rule, C.img, C.hl];
     cols.forEach((c, i) => { X.save(); X.globalAlpha = aE; X.fillStyle = c; X.fillRect(760 + i * 70, 640, 56, 6); X.restore(); });
-    T('implemented and unit-tested on CPU · not yet trained', 960, 700, { size: 20, align: 'center', a: aE, color: C.rule, weight: 650 });
+    T('architecture incl. v10 implemented and unit-tested on CPU · not yet trained', 960, 700, { size: 20, align: 'center', a: aE, color: C.rule, weight: 650 });
   }
 }
 
@@ -1155,7 +1163,7 @@ const CH = [
            [15.6, 20.0, 'One reader for all: zero-init gated cross-attention — every source removable bit-exactly.']] },
   { title: 'Fusion and the level queries', dur: 20, map: ['fus'], draw: scene5,
     vis: 'A wide trainable fusion transformer (6 layer slabs with attention arcs). Above it the token row builds: last-token state, 128 VLM tokens + age, 16 motion tokens, ego, nav, route, then 6 yellow level queries that descend through the layers and exit as s1, s2-lat, s2-lon, s3-P, s3-V, goal into readout heads (512→1024→512, L2-norm; goal head). Right: nested Matryoshka bars 128 ⊂ 256 ⊂ 512 and the 56.4 M chip.',
-    src: 'model.py HiCAPConfig (d 512, 6 layers, 8 heads, 128 VLM, 16 motion, LEVELS, matryoshka) and ReadoutHead; sec_method.tex (18.9 M fusion, 56.4 M)',
+    src: 'model.py HiCAPConfig (d 512, 6 layers, 8 heads, 128 VLM, 16 motion, LEVELS, matryoshka) and ReadoutHead; sec_method.tex (18.9 M fusion); V10 spec rev b §5 (core 56.39 M, MEASURED)',
     caps: [[1.0, 4.6, 'The fusion transformer — d = 512, 6 layers, 8 heads — is trained and runs at 10 Hz.'],
            [4.6, 8.4, 'It reads 128 cached VLM tokens (with age), 16 motion tokens, ego, nav and route tokens.'],
            [8.4, 12.0, 'Six learned level queries: s1, s2-lat, s2-lon, s3-path, s3-profile and goal.'],
@@ -1189,45 +1197,45 @@ const CH = [
            [12.2, 16.0, 'Then route, traffic rules, and conformal keep-sets with joint recall ≥ 1 − Σα.'],
            [16.0, 20.0, 'A guard set — hold, gentle / firm / maximum brake, previous plan — always survives.']] },
   { title: 'Imagination', dur: 28, map: ['img'], draw: scene9,
-    vis: 'Three violet tier panels. Tier 0: a one-hot bar chart morphs into the soft outcome-aware target, with its formula and "zero cost at inference". Tier 1: the E-head and three small forecast plots (gap, closing speed, lead accel at 0.5/1/2/3 s), mode bars, onset quantiles, and the J1 expectation. Tier 2: two cost heads over 8 survivors; where they disagree a red VETO stamp lands; benefit gate and guards listed. Bottom band: a mini BEV with agent cuboids moving on logged tracks, the measured coverage, and the non-reactive caveat.',
-    src: 'sec_imag.tex (tiers, y(a) formula, E-head 512→1024→24, J1, ≈3 MFLOP, top-8, veto, gate <= 30 %, G1, toy regret 7.00 → 3.43); imagination.py; V10 spec §0 and §3.1 (4,585 / 4,719 clips, 29,415,112 rows, modes, non-reactive caveat)',
+    vis: 'Three violet tier panels. Tier 0: a one-hot bar chart morphs into the soft outcome-aware target, with its formula and "zero cost at inference". Tier 1: the E-head and three small forecast plots (gap, closing speed, lead accel at 0.5/1/2/3 s), mode bars, onset quantiles, and the J1 expectation. Tier 2: two cost heads over 8 survivors; where they disagree a red VETO stamp lands; benefit gate and guards listed. Bottom band: a mini BEV with agent cuboids moving on logged tracks, the measured coverage, the eval139 cross-checks against v9 (lead agreement 90.1 %, gap within 2 m after the constant +3.55 m offset 92.1 %, logged trajectory collides on 0.26 % of rows), and the non-reactive caveat.',
+    src: 'sec_imag.tex (tiers, y(a) formula, E-head 512→1024→24, J1, ≈3 MFLOP, top-8, veto, gate <= 30 %, G1, toy regret 7.00 → 3.43); imagination.py; V10 spec §0 and §3.1 (4,585 / 4,719 clips, 29,415,112 rows, modes, non-reactive caveat); DataEng/v10/imag/v10_imag_eval139.stats.json (v9_agreement.valid_agreement 0.9007, median_signed_delta_m 3.55, within_2m_after_median_offset 0.9207, probe.logged.collide_frac 0.0026; 0 clips without an agent file)',
     caps: [[1.0, 4.8, 'Imagination is confined to what logs can identify — three tiers, cheapest first.'],
            [4.8, 8.6, 'Tier 0, training only: outcome-aware soft targets — free at inference.'],
            [8.6, 12.6, 'Tier 1, every tick: an E-head predicts lead gap, closing speed and lead acceleration.'],
            [12.6, 16.4, '…plus mode and onset; the cost is an expectation over both, the ego path analytic.'],
            [16.4, 20.6, 'Tier 2, gated, top-8: two counterfactual cost heads — disagreement is a VETO.'],
-           [20.6, 24.4, 'Supervision: the corpus\'s agent cuboid tracks, 4,585 clips.'],
+           [20.6, 24.4, 'Supervision from agent cuboid tracks; on eval139 the lead matches v9\'s on 90.1 % of rows.'],
            [24.4, 28.0, 'Caveat: logged agents do not react — the target is open-loop, not a simulator.']] },
   { title: 'Audio bridge and elastic sensing', dur: 26, map: ['mic', 'aud', 'cam'], draw: scene10,
-    vis: 'Audio chain: dotted mic → scrolling log-mel → frozen audio encoder (lock) → trainable perceiver bridge → 8 violet tokens; below, an event caption through the frozen text path with a two-way alignment arrow; the gated-residual formula with a g = 0 dial; a red MEASURED box (no audio in any corpus) and the alignment-data box. Then elastic sensing: a top-view ego car with 7 camera wedges, the vision-only G-V gate and its 10 options; cross-left escalates in shadow mode (dashed) then goes live, and de-escalates later on a tick strip.',
-    src: 'V10 spec §0 (no audio: 36 features, ffprobe), §3.2 (encoder, perceiver 8 queries, A1 InfoNCE + cosine, public sets, synthetic events); model.py GatedAudio; sec_elastic.tex (gate formula, 160/64 tokens, keep-alive 1 / 3 ticks, margin 0.10, shadow 2 ticks, G-V / G-E / G-T); elastic.py CAMERAS, OPTIONS',
-    caps: [[1.0, 4.8, 'Optional audio: mic → frozen audio encoder → trainable perceiver bridge → 8 tokens.'],
+    vis: 'Audio chain: dotted mic → scrolling log-mel → frozen audio encoder (lock; Qwen3-Omni AuT recommended, BEATs contender) → trainable perceiver bridge (9.60 M) → 8 violet tokens, with the note that omni models bridge with a 2.4–4.6 M projector and ours (bridge + event heads) is 10.13 M MEASURED; below, an event caption through the frozen text path with a two-way alignment arrow; the gated-residual formula with a g = 0 dial; a red MEASURED box (no audio in any corpus) and the alignment-data box. Then elastic sensing: a top-view ego car with 7 camera wedges, the vision-only G-V gate and its 10 options; cross-left escalates in shadow mode (dashed) then goes live, and de-escalates later on a tick strip.',
+    src: 'V10 spec §0 (no audio: 36 features, ffprobe), §3.2 (encoder, perceiver 8 queries, A1 InfoNCE + cosine, public sets, synthetic events), §5 (10.13 M); RG_audio_bridge.md + rg_audio_bridge_params_result.json (AuT Apache-2.0 recommended, BEATs contender, 2.4–4.6 M omni projectors, bridge 9,595,904); audio.py; model.py GatedAudio; sec_elastic.tex (gate formula, 160/64 tokens, keep-alive 1 / 3 ticks, margin 0.10, shadow 2 ticks, G-V / G-E / G-T); elastic.py CAMERAS, OPTIONS',
+    caps: [[1.0, 4.8, 'Optional audio: frozen encoder (Qwen3-Omni AuT recommended) → trainable bridge → 8 tokens.'],
            [4.8, 8.6, 'The bridge is aligned to the text path\'s embedding of an event caption.'],
            [8.6, 12.4, 'Gate g starts at zero: with no audio, the model is bit-exactly the audio-off model.'],
            [12.4, 16.8, 'Measured: no programme corpus has audio — alignment uses public sets and synthetic events.'],
            [16.8, 21.2, 'Elastic sensing: front-wide always on; a vision-only gate picks 1 of 10 camera options.'],
            [21.2, 26.0, 'Escalate in one tick, de-escalate after three; new cameras warm up in shadow mode.']] },
   { title: 'Outputs', dur: 18, map: ['out'], draw: scene11,
-    vis: 'Left: a bird\'s-eye road with the ego car and a lead car; 60 yellow waypoints appear (markers every second, illustrative). Right: selected nodes per level, a dashed confidence bar reading "not yet trained", a dotted explanation box with the prompt template and "⟨one-sentence explanation⟩ — not yet trained", and the consistency-monitor strip.',
-    src: 'vocab.py (T_STEPS = 60, DT = 0.1); sec_imag.tex G5; V10 spec §3.3 (prompt template, <= 48 tokens, <= 0.5 Hz, KV reuse, consistency monitor, off the control path)',
+    vis: 'Left: a bird\'s-eye road with the ego car and a lead car; 60 yellow waypoints appear (markers every second, illustrative). Right: selected nodes per level, a dashed confidence bar reading "not yet trained", a dotted explanation box with the prompt template and "⟨one-sentence explanation⟩ — not yet trained", the measured teacher-text agreement with v9 (longitudinal 0.427, κ 0.255 → filtered before use) and the per-frame pipeline status (built, not launched, ≈ 374 H100-h at 10 Hz ESTIMATED), and the consistency-monitor strip.',
+    src: 'vocab.py (T_STEPS = 60, DT = 0.1); sec_imag.tex G5; V10 spec §3.3 (prompt template, <= 48 tokens, <= 0.5 Hz, KV reuse, consistency monitor, off the control path); sec_v10.tex (0.427, κ 0.255, n 4,363); DataEng/v10/reasoning_dense/RUNBOOK.md (374 H100-h, vLLM batched, 10 Hz, ESTIMATED)',
     caps: [[1.0, 4.8, 'Output every tick: a 6 s trajectory at 10 Hz — 60 waypoints.'],
            [4.8, 8.6, 'Plus the selected nodes at every level, and a confidence from the base score only.'],
            [8.6, 13.0, 'Optional: the frozen reasoner explains the decision — off the control path, ≤ 0.5 Hz.'],
            [13.0, 18.0, 'A consistency monitor maps the explanation to a tactical node and logs disagreement.']] },
   { title: 'Training', dur: 26, map: ['trained'], draw: scene12,
-    vis: 'Four stage boxes build left to right with arrows and flowing particles: Stage 0 (dashed, offline caches), Stage 1, Stage 2, Stage 3, each listing its added terms; an independent A1 audio-bridge box; a dotted optional box (student, LoRA); measured parameter chips; and a full-width frozen bar with a lock.',
-    src: 'V10 spec §5–6 (schedule, frozen vs trained, 56.4 M + 1.88 M); sec_method.tex (42.7 M in stages 1–2, re-ranker stage 3); train.py (40 % replay)',
+    vis: 'Four stage boxes build left to right with arrows and flowing particles: Stage 0 (dashed, offline caches), Stage 1, Stage 2, Stage 3, each listing its added terms exactly as in losses.STAGES (stage 1: critics, goal loss, country readout, Tier-0 shaping and camera gate when supervised; stage 2: hard negatives, consistency KL, 40 % replay; stage 3: re-ranker, cost heads, refinement, L^cfg, audio, imagination), with the note that the rule-memory and audio gates start at 0; an independent A1 audio-bridge box; a dotted optional box (student, LoRA); measured parameter chips (56.39 + 1.88 + 6.10 = 64.37 M; 74.62 M with audio); and a full-width frozen bar with a lock.',
+    src: 'losses.STAGES (stage lambdas, hard negatives and 0.4 replay from stage 2); V10 spec rev b §5–6 (schedule = code, 56.4 / 1.88 / 6.10 / 64.37 / 74.62 M MEASURED); sec_v10.tex (knowledge 6.10 M: 3.67 + 2.10 + 0.33); rg_audio_bridge_params_result.json (bridge 9,595,904)',
     caps: [[1.0, 4.8, 'Stage 0, offline and once: tap caches, text embeddings, vocabulary, supervision, countries.'],
            [4.8, 8.6, 'Stage A1, independent: the audio bridge is aligned with everything else frozen.'],
-           [8.6, 12.4, 'Stage 1: critics on every level, including country, with soft targets.'],
-           [12.4, 16.6, 'Stage 2: + hard negatives, consistency, goal, Tier-1 E-head, rule gate, camera dropout.'],
-           [16.6, 20.8, 'Stage 3: + re-ranker, Tier 2 and benefit gate, camera and audio gates, 40 % replay.'],
-           [20.8, 26.0, 'Frozen throughout: the reasoner, audio encoder and cached embeddings. Student optional.']] },
+           [8.6, 12.4, 'Stage 1: level critics, goal loss and country readout (λ 0.1); Tier 0 when supervised.'],
+           [12.4, 16.6, 'Stage 2: + hard negatives and consistency KL, with 40 % replay.'],
+           [16.6, 20.8, 'Stage 3: + re-ranker, cost and refinement heads, L^cfg, audio and imagination.'],
+           [20.8, 26.0, 'Trainable 64.37 M measured (74.62 M with audio); the backbone stays frozen throughout.']] },
   { title: 'Data and status', dur: 17, map: ['all'], draw: scene13,
-    vis: 'Left: v10 composition blocks (v9 base; v8.1 strategic, country, imagination supervision, rules / reasoning / camera refs, dashed = by reference). Right: status — two check marks (implemented and CPU-tested; country labels built), a red "NOT YET TRAINED" banner, and the next steps: pod tap-cache build → H-HC0 gate. End card with the title.',
-    src: 'V10 spec §0, §4 (country 4,369 / 4,369; v10 components; build_hicap_cache.py never run); stack/tanitad/hicap/README.md (53 tests, CPU, synthetic, nothing trained); sec_protocol.tex H-HC0',
+    vis: 'Left: v10 composition blocks (v9 base; v8.1 strategic, country, imagination supervision, rules / reasoning / camera refs, dashed = by reference). Right: status — three check marks (architecture incl. v10 implemented and CPU-tested, 145 test functions; country labels published, 4,508 / 4,508 clips; RuleBook v1, 106 records, 73 PUBLISHED / 33 UNVERIFIED), a red "NOT YET TRAINED" banner, and the next steps: pod tap-cache build → H-HC0 gate. End card with the title.',
+    src: 'V10 spec §0, §4 (country 4,369 + 139 = 4,508; v10 components; build_hicap_cache.py never run); DataEng/v10/country/MANIFEST.json; commit c3fd4bc (country labels published, private HF); stack/tanitad/hicap/rulebook_v1.json (106 records: 73 PUBLISHED, 33 UNVERIFIED); DataEng/v10/imag/MANIFEST.json (sample build only); 145 `def test_` functions across stack/tests/test_hicap_*.py + test_alpamayo_dense_reasoning.py (MEASURED by grep); sec_protocol.tex H-HC0',
     caps: [[1.0, 5.4, 'Data: v9 labels, with v10 additions referenced by clip — never copied.'],
-           [5.4, 10.6, 'Status: implemented and unit-tested on CPU. NOT YET TRAINED — no results exist.'],
+           [5.4, 10.6, 'Status: architecture incl. v10 implemented and unit-tested on CPU. NOT YET TRAINED.'],
            [10.6, 15.4, 'Next: build the VLM tap caches on a pod, then run the H-HC0 gate.']] },
 ];
 let acc = 0; CH.forEach(c => { c.start = acc; acc += c.dur; });
