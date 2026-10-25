@@ -128,3 +128,30 @@
    * So a full run needs a disk provision on box 2, or the A40 with the frames on HF private (plan §13.5 AR-4).
    * The venue rule above (≤ 36 h per seed projected) still applies once AR-2 measures the step time.
 * **Nothing else changes:** the bars, the estimator, the stage rule, the decision table, the refusals.
+
+## Amendment 2 (2026-10-25, the same day, before any LoRA training or smoke): Amendment 1's route finding was WRONG (R68)
+
+* **Amendment 1 said the train cache was built through the `thor416` route and that native-256 frames differ from it by 8–9 %. That is false.**
+  * MEASURED (MM, `box2_ship/logs/v8f_dscale/manifest_train.jsonl`, box 2's production manifest pulled by the DSCALE chain): **4,572 / 4,572** rows read `source=local256, enc_dtype=bf16, device=cuda`. `raw/2026-10-25-lora-route/ROUTE.md` reports the 141 eval rows the same.
+  * The identity control's references were NOT the production caches:
+    * its train reference was `test_runscript`, a 38-clip dev-box smoke cache on the `thor416` route, never adopted;
+    * its eval reference was the 2026-08-30 Thor eps.
+  * ⛔ Do not cite `raw/2026-10-25-lora/identity_control.json`'s ROUTE, E_* or T_* cases as route evidence. Its SAME_DEVICE case (the module at B = 0 vs the builder's `encode_episode`, max abs 0.0) stands.
+* **The production pixel route IS reproduced** (`raw/2026-10-25-lora-route/`, CPU).
+  * The local rebuild of train clips `8f387977…` and `bf5ec76e…` equals the frame files box 2 encoded in every tensor. Re-saved under the production name they are byte-identical, with sha256 equal to box 2's control hashes.
+  * Eval clip `dca157a0`: all 201 frames equal.
+* **What is left is device numerics, not route.**
+  * On identical frames, CPU fp32 against GPU bf16 differs by rel-L2 0.029–0.035 (`compare_variants.*`), about 30× Amendment 1's τ_route.
+  * ⇒ **Amendment 1 item 2's τ_route (CPU fp32 vs the stored cache) is WITHDRAWN.** It could not pass by construction.
+* **The identity control is therefore SAME-DEVICE, on box 2's GPU** (the device that built `cache_full`):
+  * the on-the-fly B = 0 path (frames rebuilt by the production route, the builder's numerics) against `cache_full`'s stored pooled fp8 tokens;
+  * on ≥ 2 train and ≥ 2 eval clips;
+  * **PASS iff rel-L2 ≤ τ_device = 1e-3 on every clip** (Amendment 1 item 2's τ_device, unchanged). Bit-exact is expected: box 2's builder reproduced itself bit-exactly 5 / 5 times (INHERITED, the C5 control in `ROUTE.md`).
+  * It needs a new driver, because `identity_control.py:38-41` and `:212` hard-code the smoke-cache references. It also needs its own box-2 go (minutes of GPU), after the DSCALE chain ends: one job at a time.
+* **Numerics, pinned now:**
+  * the arm runs the frozen encoder in the builder's pure bf16 (weights loaded in bf16, `v8f_lora_encoder.py:376` as `dinov3_fp8_encode_ship.py:101`), with the LoRA matrices in fp32;
+  * **`--amp` (autocast) stays OFF**: it is UNMEASURED, and a numerics change of the size measured above would be a second lever;
+  * turning it on needs the same-device identity control to pass with it first.
+* **Amendment 1 item 3's fallback** (re-encode the train cache and retrain the base) is no longer expected, but stays as the rule if the same-device control fails. Its cost is ≈ 15.3 box-2 h with the dev box building the frames (ESTIMATED, `fallback_cost.*`).
+* **Amendment 1 item 7 stands.** Box 2 deleted 3,972 of the 4,572 train frame files after encoding, so the on-the-fly arm needs them rebuilt (≈ 160 GB).
+* **Nothing else changes:** the bars, the estimator, the stage rule, the decision table, the refusals.

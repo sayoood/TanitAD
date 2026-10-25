@@ -18639,3 +18639,17 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 **Class, two-sided:**
 - (a) *A procedure replayed from one document drops the step that lives in another.* The "100 % or STOP" rule was in the post-merge tool, not in the chain. ⇒ A pipeline's invariants must be enforced where the pipeline runs, not in the document that once ran it.
 - (b) *A declared fallback is a silent deviation once the reason for it is gone.* The trainer printed `scorer_cov` 0.895 on every step for 28 h and no check read it. ⇒ A metric that is printed but not gated is not a check. Same family as "built, tested, and unreachable from its caller".
+
+### R68 -- "the train cache was built through the thor416 route; native-256 frames differ from it by 8–9 %" (2026-10-25, MM)
+
+**Claimed:** `PREREG_V8F_LORA.md` Amendment 1 and the `H-V8F-LORA-1` register cell said the train-frame route was not reproduced, and made it the blocker for the AR-2 smoke.
+
+**Measured:**
+* Box 2's production train manifest: 4,572 / 4,572 rows `source=local256, bf16, cuda` (`box2_ship/logs/v8f_dscale/manifest_train.jsonl`).
+* The identity control's "train cache" was `test_runscript`, a 38-clip smoke cache on the `thor416` route, never adopted.
+* The production frames rebuild byte-identically (`TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-lora-route/ROUTE.md`).
+
+**Consequence:** Amendment 2 withdraws the route blocker and the CPU τ_route. The identity control becomes same-device on box 2's GPU. Nothing was trained on the claim.
+
+**Class:** *a reference artifact's NAME taken as its provenance.* The probe compared against the cache it could find on the machine and labelled it "the train cache", and I quoted the label into a pre-registration within the hour. Same family as the `flagship4b` repo-name inversion and "absence at one location is not absence".
+* ⇒ Before a known-value or identity control is trusted, read the REFERENCE's own manifest (source, device, dtype, pipeline) and match it against the production manifest. A reference you did not match is not a control.
