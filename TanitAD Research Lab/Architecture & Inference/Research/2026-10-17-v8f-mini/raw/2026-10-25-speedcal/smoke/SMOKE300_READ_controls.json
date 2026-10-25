@@ -1,0 +1,299 @@
+{
+ "tolerance_m": 0.0001,
+ "lstsq_tolerance": 1e-09,
+ "seeds": {
+  "s0": {
+   "control_1_identity_map_is_identity": {
+    "ade6_max_abs_dev_m": 0.0,
+    "pred_equal": true,
+    "paired_delta": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "map_is_identity": true,
+    "cells_unchanged": true,
+    "bar": "exactly 0.0 per window (PREREG: delta = 0.0), with a = 1 and b = 0",
+    "PASS": true
+   },
+   "control_2_fitted_map_is_lstsq": {
+    "bar": "|a, b - numpy lstsq| <= 1e-09 on every cell",
+    "cells": {
+     "lon_v_target_ms": {
+      "n": 9534,
+      "a_json": 1.0112914558258972,
+      "a_lstsq": 1.011291455825897,
+      "b_json": -0.9550355287148324,
+      "b_lstsq": -0.9550355287148359,
+      "max_abs_dev": 3.4416913763379853e-15,
+      "perm_a_json": 0.0025178128836842104,
+      "perm_a_lstsq": 0.0025178128836840226,
+      "perm_max_abs_dev": 5.329070518200751e-15,
+      "n_equals_mask": true,
+      "perm_is_a_nonidentity_permutation_of_the_targets": true
+     },
+     "v_a_ms": {
+      "n": 9582,
+      "a_json": 1.0985518182775835,
+      "a_lstsq": 1.098551818277584,
+      "b_json": 0.1326915631507557,
+      "b_lstsq": 0.13269156315075578,
+      "max_abs_dev": 4.440892098500626e-16,
+      "perm_a_json": -0.010404703212005538,
+      "perm_a_lstsq": -0.010404703212004792,
+      "perm_max_abs_dev": 1.4210854715202004e-14,
+      "n_equals_mask": true,
+      "perm_is_a_nonidentity_permutation_of_the_targets": true
+     },
+     "v_end_ms": {
+      "n": 9446,
+      "a_json": 0.9967704768037104,
+      "a_lstsq": 0.9967704768037111,
+      "b_json": -1.1217746601382537,
+      "b_lstsq": -1.1217746601382583,
+      "max_abs_dev": 4.6629367034256575e-15,
+      "perm_a_json": -0.023509975067369612,
+      "perm_a_lstsq": -0.02350997506737094,
+      "perm_max_abs_dev": 2.1316282072803006e-14,
+      "n_equals_mask": true,
+      "perm_is_a_nonidentity_permutation_of_the_targets": true
+     },
+     "v_lo_ms": {
+      "n": 9582,
+      "a_json": 1.0807745099049835,
+      "a_lstsq": 1.0807745099049844,
+      "b_json": -0.8635826119228707,
+      "b_lstsq": -0.8635826119228713,
+      "max_abs_dev": 8.881784197001252e-16,
+      "perm_a_json": 0.021985682478199854,
+      "perm_a_lstsq": 0.021985682478199847,
+      "perm_max_abs_dev": 1.7763568394002505e-15,
+      "n_equals_mask": true,
+      "perm_is_a_nonidentity_permutation_of_the_targets": true
+     },
+     "v_hi_ms": {
+      "n": 9582,
+      "a_json": 1.0475723772601642,
+      "a_lstsq": 1.0475723772601653,
+      "b_json": -0.24576627132352158,
+      "b_lstsq": -0.24576627132352583,
+      "max_abs_dev": 4.246603069191224e-15,
+      "perm_a_json": 0.0059031627451695354,
+      "perm_a_lstsq": 0.0059031627451699605,
+      "perm_max_abs_dev": 7.105427357601002e-15,
+      "n_equals_mask": true,
+      "perm_is_a_nonidentity_permutation_of_the_targets": true
+     }
+    },
+    "max_abs_dev": 2.1316282072803006e-14,
+    "fit_windows_match_json": true,
+    "fit_clips_disjoint_from_eval_clips": true,
+    "n_fit_clips": 141,
+    "n_eval_clips": 141,
+    "PASS": true,
+    "cal_eval_applied_the_fit_json_map": true,
+    "perm_eval_applied_the_fit_json_perm_map": true,
+    "ceiling_map_vs_lstsq_on_eval_cells_max_abs_dev": 1.4988010832439613e-15,
+    "ceiling_map_json_equals_applied": true
+   },
+   "control_3_gt_equals_kindx_speed_oracle": {
+    "ade6_max_abs_dev_m": 2.9940972678943467e-06,
+    "pred_max_abs_dev_m": 1.9073486328125e-05,
+    "driver_code_max_abs_dev": 0.0,
+    "bar": "ade6 <= 0.0001 m per window AND the driver's code == the eval's oracle code exactly (0.0)",
+    "PASS": true
+   },
+   "control_4_permuted_map_is_not_separated_better": {
+    "paired_delta": [
+     8.10886914920927,
+     3.9819,
+     13.0541
+    ],
+    "separated": true,
+    "separated_better": false,
+    "ade6_perm": 10.392317124935037,
+    "ade6_own": 2.2834479757257666,
+    "perm_slopes_a": [
+     0.0025178128836842104,
+     -0.010404703212005538,
+     -0.023509975067369612,
+     0.021985682478199854,
+     0.0059031627451695354
+    ],
+    "bar": "NOT (point < 0 and separated)",
+    "PASS": true
+   },
+   "guards": {
+    "own_equals_kindx_own_ade6_max_abs_dev_m": {
+     "kindx_own": 3.062798490383045e-06
+    },
+    "own_reproduces_the_references": true,
+    "hook_leaves_nonspeed_cells_alone": true,
+    "tactical_and_strategic_equal_to_X_s": true,
+    "every_mode_saw_the_same_own_cells": true,
+    "used_cells_are_the_map_applied_to_own_cells": {
+     "identity": true,
+     "cal": true,
+     "perm": true,
+     "ceiling": true
+    },
+    "gt_falls_back_to_own_where_no_v9_row": true,
+    "cal_is_live_it_moves_the_cells_and_the_plan": true,
+    "window_counts": {
+     "n_windows": 300,
+     "n_episodes": 18
+    },
+    "n_windows_without_v9_row": 17
+   },
+   "guards_PASS": true,
+   "PASS": true
+  },
+  "s1": {
+   "control_1_identity_map_is_identity": {
+    "ade6_max_abs_dev_m": 0.0,
+    "pred_equal": true,
+    "paired_delta": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "map_is_identity": true,
+    "cells_unchanged": true,
+    "bar": "exactly 0.0 per window (PREREG: delta = 0.0), with a = 1 and b = 0",
+    "PASS": true
+   },
+   "control_2_fitted_map_is_lstsq": {
+    "bar": "|a, b - numpy lstsq| <= 1e-09 on every cell",
+    "cells": {
+     "lon_v_target_ms": {
+      "n": 9534,
+      "a_json": 0.9894292831966648,
+      "a_lstsq": 0.9894292831966651,
+      "b_json": -0.09004193571063013,
+      "b_lstsq": -0.09004193571063085,
+      "max_abs_dev": 7.216449660063518e-16,
+      "perm_a_json": 0.003102103826797726,
+      "perm_a_lstsq": 0.003102103826797886,
+      "perm_max_abs_dev": 1.7763568394002505e-15,
+      "n_equals_mask": true,
+      "perm_is_a_nonidentity_permutation_of_the_targets": true
+     },
+     "v_a_ms": {
+      "n": 9582,
+      "a_json": 1.0650550770193066,
+      "a_lstsq": 1.0650550770193052,
+      "b_json": -0.6174707441955452,
+      "b_lstsq": -0.6174707441955456,
+      "max_abs_dev": 1.3322676295501878e-15,
+      "perm_a_json": -0.00703054600420007,
+      "perm_a_lstsq": -0.007030546004200042,
+      "perm_max_abs_dev": 3.552713678800501e-15,
+      "n_equals_mask": true,
+      "perm_is_a_nonidentity_permutation_of_the_targets": true
+     },
+     "v_end_ms": {
+      "n": 9446,
+      "a_json": 1.018362992739149,
+      "a_lstsq": 1.0183629927391504,
+      "b_json": -0.7938411983965352,
+      "b_lstsq": -0.7938411983965373,
+      "max_abs_dev": 2.1094237467877974e-15,
+      "perm_a_json": -0.02026031090427733,
+      "perm_a_lstsq": -0.0202603109042766,
+      "perm_max_abs_dev": 7.105427357601002e-15,
+      "n_equals_mask": true,
+      "perm_is_a_nonidentity_permutation_of_the_targets": true
+     },
+     "v_lo_ms": {
+      "n": 9582,
+      "a_json": 1.00404383189096,
+      "a_lstsq": 1.0040438318909604,
+      "b_json": 0.18040776796524582,
+      "b_lstsq": 0.1804077679652429,
+      "max_abs_dev": 2.914335439641036e-15,
+      "perm_a_json": 0.018608568115990785,
+      "perm_a_lstsq": 0.018608568115991802,
+      "perm_max_abs_dev": 1.7763568394002505e-14,
+      "n_equals_mask": true,
+      "perm_is_a_nonidentity_permutation_of_the_targets": true
+     },
+     "v_hi_ms": {
+      "n": 9582,
+      "a_json": 1.0166339670609104,
+      "a_lstsq": 1.0166339670609097,
+      "b_json": -0.15317693717553382,
+      "b_lstsq": -0.1531769371755334,
+      "max_abs_dev": 6.661338147750939e-16,
+      "perm_a_json": 0.007743678362738019,
+      "perm_a_lstsq": 0.007743678362737821,
+      "perm_max_abs_dev": 1.4210854715202004e-14,
+      "n_equals_mask": true,
+      "perm_is_a_nonidentity_permutation_of_the_targets": true
+     }
+    },
+    "max_abs_dev": 1.7763568394002505e-14,
+    "fit_windows_match_json": true,
+    "fit_clips_disjoint_from_eval_clips": true,
+    "n_fit_clips": 141,
+    "n_eval_clips": 141,
+    "PASS": true,
+    "cal_eval_applied_the_fit_json_map": true,
+    "perm_eval_applied_the_fit_json_perm_map": true,
+    "ceiling_map_vs_lstsq_on_eval_cells_max_abs_dev": 3.219646771412954e-15,
+    "ceiling_map_json_equals_applied": true
+   },
+   "control_3_gt_equals_kindx_speed_oracle": {
+    "ade6_max_abs_dev_m": 8.32464360644991e-06,
+    "pred_max_abs_dev_m": 5.7220458984375e-05,
+    "driver_code_max_abs_dev": 0.0,
+    "bar": "ade6 <= 0.0001 m per window AND the driver's code == the eval's oracle code exactly (0.0)",
+    "PASS": true
+   },
+   "control_4_permuted_map_is_not_separated_better": {
+    "paired_delta": [
+     8.58121697502636,
+     4.6789,
+     13.5669
+    ],
+    "separated": true,
+    "separated_better": false,
+    "ade6_perm": 10.655553892816242,
+    "ade6_own": 2.0743369177898825,
+    "perm_slopes_a": [
+     0.003102103826797726,
+     -0.00703054600420007,
+     -0.02026031090427733,
+     0.018608568115990785,
+     0.007743678362738019
+    ],
+    "bar": "NOT (point < 0 and separated)",
+    "PASS": true
+   },
+   "guards": {
+    "own_equals_kindx_own_ade6_max_abs_dev_m": {
+     "kindx_own": 7.872188862556584e-06
+    },
+    "own_reproduces_the_references": true,
+    "hook_leaves_nonspeed_cells_alone": true,
+    "tactical_and_strategic_equal_to_X_s": true,
+    "every_mode_saw_the_same_own_cells": true,
+    "used_cells_are_the_map_applied_to_own_cells": {
+     "identity": true,
+     "cal": true,
+     "perm": true,
+     "ceiling": true
+    },
+    "gt_falls_back_to_own_where_no_v9_row": true,
+    "cal_is_live_it_moves_the_cells_and_the_plan": true,
+    "window_counts": {
+     "n_windows": 300,
+     "n_episodes": 18
+    },
+    "n_windows_without_v9_row": 17
+   },
+   "guards_PASS": true,
+   "PASS": true
+  }
+ },
+ "PASS": true
+}

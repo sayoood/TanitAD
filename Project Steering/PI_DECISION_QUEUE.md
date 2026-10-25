@@ -2482,3 +2482,37 @@ passes. The two navtest reads (theta_DEC and A1) are part of the authorisation. 
 - **(c) Split navtest by session** (22 to fit, 22 to judge). Not recommended: it breaks the one-look discipline, and the navtest headline would no longer be clean.
 
 **What does NOT wait on this:** the P6 rebuild and resume; SEARCH-PESSIMISTIC Stage 0, which needs 0 GPU on the 24-log table.
+
+## ⏳ OPEN (2026-10-26 ~00:15 Berlin) -- D-V8F-HACC-T1KIN: run HACC's T1-kin read on box 2, before or after OACC?
+
+**Question.** May box 2 build the pooled eval cache and run the T1-kin read of HACC (`D-V8F-T1KIN-1`, instrument `stack/scripts/v8f_t1_eval.py`)? And should it run before OACC, which is queued to start by itself when FLAT ends?
+
+**Why (MEASURED, `H-V8F-HACC-1`):**
+- HACC (v8F's own plan, blended with 30 × 2 weights fitted on training windows) dominates the kinematic floor P10 on every row of the dominance read at both seeds. The only exceptions are distance keeping, which is not separated, and LEAD-VIOL at s1, which is not separated either.
+- That result is T1-class open loop only. `PREREG_V8F_HACC.md` names the T1-kin closed-loop read as the next tier, and says that tier needs a PI go for the pooled eval cache.
+- The floor itself runs away in its own loop at short replan periods (ADE6 2.487 m at m = 30, 3.44 m at m = 10; `D-V8F-T1KIN-1`). So the informative sweep is m ∈ {30, 10}, with 5 as a stress point.
+
+**Options.**
+- **(a) T1-kin first, then OACC.** It tests the result already in hand, at the tier that decides whether v8F drives. OACC is a training lever, and its result would need the same read afterwards. **MM recommends (a).**
+- **(b) OACC first, as queued, then T1-kin.**
+- **(c) Not now.** HACC stays an open-loop result.
+
+**What does NOT wait on this:** the post-map landing (`forward_infer`), SPEEDCAL's banking, FLAT's read, and the LoRA arm's launch-gate dry run (CPU).
+
+## ⏳ OPEN (2026-10-26 ~00:15 Berlin) -- D-V8F-SPEED-PERCEPTION: the A40 for the LoRA run (the perception lever); two of the four A40 readiness items now hold
+
+**Question.** SPEEDCAL read INFORMATION-LIMITED (`H-V8F-SPEEDCAL-1`), and its PREREG moves the speed lever to perception, which needs compute beyond box 2. The arm that implements perception already exists: `PREREG_V8F_LORA.md`, LoRA on DINOv3, with its instruments landed. Box 2 cannot run it: AR-2 run 3 projects **470 h per seed** there (MEASURED step time). Its venue rule therefore names the A40, at about 100+ GPU-hours per seed (ESTIMATED, Amendment 3). Do you give the A40 go?
+
+**Why now (MEASURED):**
+- **The lever is real.** Giving O the GT speed cells (T0, a diagnostic) cuts ADE6 by 0.72 / 0.67 m, so speed is the largest lever left. No affine map of T's own speed output recovers it: PRIMARY is separated at neither seed, and even a map fitted on the eval GT itself (T0) stays above −F at both.
+- **The cheaper routes are spent.** HIST (more history frames) missed its bar, although its longitudinal gains were separated. DSCALE read NOT DATA-LIMITED, and its committed next step is LoRA first.
+- **The A40 readiness gate** (`PLAN_V8F_REFAV1_HJEPA_2026-10-17.md` §13.5) now stands as follows:
+  - AR-1, *the mini beats P10 at 2 seeds*: holds through HACC (`H-V8F-HACC-1`, T1-class open loop, with the post-map that is now part of `forward_infer`).
+  - AR-2, *the LoRA smoke on box 2*: PASSED in run 3, with the training path's identity probe at rel L2 exactly 0.0.
+  - Still to do: AR-3, a launch-gate PASS for the LoRA arm, and AR-4, the data staged on the A40.
+
+**Options.**
+- **(a) A40 go for the LoRA run.** AR-3 and AR-4 are done first: the launch gate on the exact argv, and the data staged. The run then starts behind its PASS token. **MM recommends (a).** This is the "signal" you asked for, for compute to scale once dominance is shown.
+- **(b) Keep to box 2 and the dev-box CPU.** LoRA waits, and the open-loop result stands as HACC.
+
+**What does NOT wait on this:** AR-3's launch-gate dry run (CPU), the T1-kin read (`D-V8F-HACC-T1KIN`), and everything already queued on box 2.

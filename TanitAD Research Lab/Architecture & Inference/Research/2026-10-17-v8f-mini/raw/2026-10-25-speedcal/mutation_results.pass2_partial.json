@@ -1,0 +1,458 @@
+{
+ "src": "C:\\Users\\Admin\\sc_work",
+ "tests": "stack/tests/test_v8f_speedcal.py",
+ "n_mutants": 15,
+ "baseline_before": {
+  "rc": 0,
+  "seconds": 35.0,
+  "passed": 59,
+  "first_failed": null,
+  "first_failed_msg": null,
+  "kind": null,
+  "E_lines": [],
+  "red_controls": [],
+  "tail": [
+   "    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}",
+   "",
+   "-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html",
+   "59 passed, 1 warning in 33.47s"
+  ]
+ },
+ "mutants": [
+  {
+   "id": "M01",
+   "file": "stack/scripts/v8f_mini_eval_speedcal.py",
+   "breaks": "FIT ON EVAL INSTEAD OF TRAIN: the `cal` arm applies a map fitted on the EVAL GT (the identity eval's cells), not the training-window fit",
+   "expected_catcher": "control_2 (the applied map is the fit json's)",
+   "rc": 1,
+   "seconds": 22.2,
+   "passed": 12,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+   "first_failed_msg": null,
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"lstsq_tolerance\": 1e-09,"
+   ],
+   "red_controls": [
+    "control_2_fitted_map_is_lstsq"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 12 passed, 1 warning in 20.76s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M04",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedcal_read.py",
+   "breaks": "SWAP SEEDS in the reader: seed s reads the OTHER seed's eval dumps AND checks them as that seed (so the reader's own refusals do not fire)",
+   "expected_catcher": "controls (applied map, KINDX own)",
+   "rc": 1,
+   "seconds": 20.9,
+   "passed": 12,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+   "first_failed_msg": null,
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"lstsq_tolerance\": 1e-09,"
+   ],
+   "red_controls": [
+    "control_2_fitted_map_is_lstsq",
+    "control_3_gt_equals_kindx_speed_oracle",
+    "guards"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 12 passed, 1 warning in 19.50s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M12",
+   "file": "stack/scripts/v8f_mini_eval_speedcal.py",
+   "breaks": "the permutation seed moved off the committed one",
+   "expected_catcher": "perm seed pin / control_2",
+   "rc": 1,
+   "seconds": 15.2,
+   "passed": 7,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_fit_arrays_are_the_trainers_windows_and_what_the_controls_refit",
+   "first_failed_msg": null,
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: control 4's permutation is the COMMITTED fixed-seed one, as the fit actually used it",
+    "E   assert (20261025 == 20261025 and False)",
+    "E    +  where 20261025 = SC.PERM_SEED"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_fit_arrays_are_the_trainers_windows_and_what_the_controls_refit",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 7 passed, 1 warning in 13.71s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M19",
+   "file": "stack/scripts/v8f_mini_eval_speedcal.py",
+   "breaks": "the fit's checkpoint sha256 is no longer checked against the evaluated checkpoint",
+   "expected_catcher": "wrong-fit refusal",
+   "rc": 1,
+   "seconds": 15.8,
+   "passed": 10,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_the_evals_refuse_a_limited_fit_and_a_fit_on_other_cells",
+   "first_failed_msg": null,
+   "kind": "assertion",
+   "E_lines": [
+    "E   Failed: DID NOT RAISE SystemExit"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_the_evals_refuse_a_limited_fit_and_a_fit_on_other_cells",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 10 passed, 1 warning in 14.59s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M46",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedcal_read.py",
+   "breaks": "a LIMITED (smoke) eval is no longer refused",
+   "expected_catcher": "limited-run refusal",
+   "rc": 1,
+   "seconds": 20.4,
+   "passed": 53,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_refusals_of_load_all",
+   "first_failed_msg": "Assertio...",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: refused, but not for 'LIMITED run': SPEEDCAL READ REFUSED: the evals hold 14 windows over 2 episodes, the committed eval-141 grid has 2399 over 141",
+    "E",
+    "E   assert 'LIMITED run' in 'SPEEDCAL READ REFUSED: the evals hold 14 windows over 2 episodes, the committed eval-141 grid has 2399 over 141\\n'"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_refusals_of_load_all - Assertio...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 53 passed, 1 warning in 18.68s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M49",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedcal_read.py",
+   "breaks": "a LIMITED (smoke) FIT is no longer refused",
+   "expected_catcher": "limited-fit refusal",
+   "rc": 1,
+   "seconds": 21.9,
+   "passed": 53,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_refusals_of_load_all",
+   "first_failed_msg": "Failed: ...",
+   "kind": "assertion",
+   "E_lines": [
+    "E   Failed: DID NOT RAISE SystemExit"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_refusals_of_load_all - Failed: ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 53 passed, 1 warning in 20.42s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M57",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/devbox_ops/run_speedcal.sh",
+   "breaks": "a STOP no longer banks what exists",
+   "expected_catcher": "runner banks on stop",
+   "rc": 1,
+   "seconds": 38.1,
+   "passed": 58,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_runner_stops_with_the_marker_on_a_missing_input_and_still_banks_what_exists",
+   "first_failed_msg": null,
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: a STOP still banks what exists: a failed control is evidence",
+    "E   assert (False)",
+    "E    +  where False = exists()"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_runner_stops_with_the_marker_on_a_missing_input_and_still_banks_what_exists",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 58 passed, 1 warning in 36.69s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M01e",
+   "file": "stack/scripts/v8f_mini_eval_speedcal.py",
+   "breaks": "FIT ON EVAL INSTEAD OF TRAIN: the `cal` arm applies a map fitted on the EVAL GT (the identity eval's cells), not the training-window fit  [END-TO-END TESTS ONLY]",
+   "expected_catcher": "the controls",
+   "rc": 1,
+   "seconds": 16.8,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+   "first_failed_msg": null,
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"lstsq_tolerance\": 1e-09,"
+   ],
+   "red_controls": [
+    "control_2_fitted_map_is_lstsq"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 46 deselected, 1 warning in 15.56s"
+   ],
+   "verdict": "KILLED",
+   "must_be_red_one_of": [
+    "control_2_fitted_map_is_lstsq"
+   ],
+   "attributed": true
+  },
+  {
+   "id": "M05e",
+   "file": "stack/scripts/v8f_mini_eval_speedcal.py",
+   "breaks": "IDENTITY NOT EXACT: the identity map moves every cell by 1e-5  [END-TO-END TESTS ONLY]",
+   "expected_catcher": "the controls",
+   "rc": 1,
+   "seconds": 15.1,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+   "first_failed_msg": null,
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"lstsq_tolerance\": 1e-09,"
+   ],
+   "red_controls": [
+    "control_1_identity_map_is_identity",
+    "guards"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 46 deselected, 1 warning in 13.87s"
+   ],
+   "verdict": "KILLED",
+   "must_be_red_one_of": [
+    "control_1_identity_map_is_identity"
+   ],
+   "attributed": true
+  },
+  {
+   "id": "M09e",
+   "file": "stack/scripts/v8f_mini_eval_speedcal.py",
+   "breaks": "the fit is not least squares (a ridge-like shrinkage of the slope)  [END-TO-END TESTS ONLY]",
+   "expected_catcher": "the controls",
+   "rc": 1,
+   "seconds": 18.2,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+   "first_failed_msg": null,
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"lstsq_tolerance\": 1e-09,"
+   ],
+   "red_controls": [
+    "control_2_fitted_map_is_lstsq"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 46 deselected, 1 warning in 16.76s"
+   ],
+   "verdict": "KILLED",
+   "must_be_red_one_of": [
+    "control_2_fitted_map_is_lstsq"
+   ],
+   "attributed": true
+  },
+  {
+   "id": "M13e",
+   "file": "stack/scripts/v8f_mini_eval_speedcal.py",
+   "breaks": "the hook recalibrates four of the five speed cells (the first is left)  [END-TO-END TESTS ONLY]",
+   "expected_catcher": "the controls",
+   "rc": 1,
+   "seconds": 25.0,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+   "first_failed_msg": null,
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"lstsq_tolerance\": 1e-09,"
+   ],
+   "red_controls": [
+    "guards"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 46 deselected, 1 warning in 23.41s"
+   ],
+   "verdict": "KILLED",
+   "must_be_red_one_of": [
+    "guards",
+    "control_2_fitted_map_is_lstsq"
+   ],
+   "attributed": true
+  },
+  {
+   "id": "M14e",
+   "file": "stack/scripts/v8f_mini_eval_speedcal.py",
+   "breaks": "a and b swapped in the hook  [END-TO-END TESTS ONLY]",
+   "expected_catcher": "the controls",
+   "rc": 1,
+   "seconds": 22.9,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+   "first_failed_msg": null,
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"lstsq_tolerance\": 1e-09,"
+   ],
+   "red_controls": [
+    "control_1_identity_map_is_identity",
+    "control_4_permuted_map_is_not_separated_better",
+    "guards"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 46 deselected, 1 warning in 20.53s"
+   ],
+   "verdict": "KILLED",
+   "must_be_red_one_of": [
+    "control_1_identity_map_is_identity",
+    "control_2_fitted_map_is_lstsq",
+    "guards"
+   ],
+   "attributed": true
+  },
+  {
+   "id": "M15e",
+   "file": "stack/scripts/v8f_mini_eval_speedcal.py",
+   "breaks": "WRONG UNITS: the shift is not divided by the cell's sd (identity stays exact)  [END-TO-END TESTS ONLY]",
+   "expected_catcher": "the controls",
+   "rc": 1,
+   "seconds": 21.7,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+   "first_failed_msg": null,
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"lstsq_tolerance\": 1e-09,"
+   ],
+   "red_controls": [
+    "guards"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 46 deselected, 1 warning in 20.22s"
+   ],
+   "verdict": "KILLED",
+   "must_be_red_one_of": [
+    "guards"
+   ],
+   "attributed": true
+  },
+  {
+   "id": "M17e",
+   "file": "stack/scripts/v8f_mini_eval_speedcal.py",
+   "breaks": "the hook clobbers the 55 non-speed cells (zeros)  [END-TO-END TESTS ONLY]",
+   "expected_catcher": "the controls",
+   "rc": 1,
+   "seconds": 19.8,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+   "first_failed_msg": null,
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"lstsq_tolerance\": 1e-09,"
+   ],
+   "red_controls": [
+    "control_1_identity_map_is_identity",
+    "control_3_gt_equals_kindx_speed_oracle",
+    "guards"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 46 deselected, 1 warning in 18.48s"
+   ],
+   "verdict": "KILLED",
+   "must_be_red_one_of": [
+    "control_3_gt_equals_kindx_speed_oracle",
+    "guards"
+   ],
+   "attributed": true
+  },
+  {
+   "id": "M18e",
+   "file": "stack/scripts/v8f_mini_eval_speedcal.py",
+   "breaks": "the CEILING map is the TRAINING fit (not fitted on the eval GT)  [END-TO-END TESTS ONLY]",
+   "expected_catcher": "the controls",
+   "rc": 1,
+   "seconds": 17.9,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+   "first_failed_msg": null,
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"lstsq_tolerance\": 1e-09,"
+   ],
+   "red_controls": [
+    "control_2_fitted_map_is_lstsq"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedcal.py::test_e2e_controls_pass_and_the_arm_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 46 deselected, 1 warning in 16.66s"
+   ],
+   "verdict": "KILLED",
+   "must_be_red_one_of": [
+    "control_2_fitted_map_is_lstsq"
+   ],
+   "attributed": true
+  }
+ ],
+ "baseline_after": null
+}
