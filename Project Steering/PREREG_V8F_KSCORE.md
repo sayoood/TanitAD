@@ -64,3 +64,15 @@ Output: a softmax over k = 0..6.
 ## Compute and order
 
 On box 2, a forward pass of O with 7 hypotheses over the training windows plus scorer training: about 1–3 h per seed (ESTIMATED). The build touches the eval harness, not the trainer, so it can be built in parallel with OACC's build. Queue: after OACC on box 2, unless the PI allocates other compute.
+
+## Amendment 1 (2026-10-25, written BEFORE any KSCORE data: nothing has run on real data)
+
+The instrument build (`v8f_kscore.py read`) found that the outcome table does not cover one case: PRIMARY-B and PRIMARY-SEL pass, and
+SECONDARY fails **only** on speed MAE or accel MAE (CONSISTENCY(a) 'any' and LEAD-VIOL not separated-worse). It now reads, with this
+precedence: **COSTS SAFETY** if CONSISTENCY(a) 'any' or LEAD-VIOL is separated-worse at either seed (unchanged); otherwise:
+
+| outcome | condition | next (committed) |
+|---|---|---|
+| **COSTS DYNAMICS** | PRIMARY-B and PRIMARY-SEL at both seeds; SECONDARY separated-worse on speed or accel MAE only | reported; not deployed as is. Next: the same scorer re-read on top of OACC's base once OACC exists (descriptive until its own read) |
+
+Any state the table still does not map is a hard refusal (rc 2), never a default. No bar, input, setting or baseline changes.
