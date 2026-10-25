@@ -1,0 +1,82 @@
+{
+ "schema": "tanitad.v10_country/1",
+ "source": {
+  "repo": "nvidia/PhysicalAI-Autonomous-Vehicles",
+  "file": "metadata/data_collection.parquet",
+  "sha256": "9624750cadabf8028264cc1404e75e81777654be9def06b00e35c9f834b173d5",
+  "n_upstream_clips": 306152
+ },
+ "join": "v9 clip__sha12 = sha256(clip_id)[:12] -> UUID via corpus index/clip_index_v7.2_{train,eval}.json",
+ "inputs_sha256": {
+  "clip_index_v7.2_train.json": "ea1ffc719be2dc6c853c7f3536fe1f768a271ac93509006064b4ee9388d5f436",
+  "clip_index_v7.2_eval.json": "284edcbe4a8c874379084e67ed71f83c3d8722bb081c7d02704c0b4aed52d22e",
+  "v9_labels_train.npz": "ddd8e1411a8424842f93564d34c9ba80308f1cde89eb5a6dd8f2042f33f1ef1f",
+  "v9_labels_eval139.npz": "1ce7ea2d227fb3358e9b61bd68ba2f1fbe4b06b3f8c8f256eb6d7f594df02532"
+ },
+ "n_clips": {
+  "train": 4369,
+  "eval139": 139
+ },
+ "unmapped": 0,
+ "n_countries": {
+  "train": 25,
+  "eval139": 23
+ },
+ "per_country": {
+  "train": {
+   "Denmark": 278,
+   "France": 274,
+   "Italy": 266,
+   "Sweden": 266,
+   "Germany": 265,
+   "United States": 265,
+   "Spain": 243,
+   "Austria": 240,
+   "Portugal": 230,
+   "Belgium": 228,
+   "Netherlands": 213,
+   "Finland": 208,
+   "Poland": 200,
+   "Czechia": 149,
+   "Luxembourg": 135,
+   "Latvia": 117,
+   "Romania": 114,
+   "Greece": 110,
+   "Hungary": 99,
+   "Estonia": 88,
+   "Croatia": 87,
+   "Lithuania": 83,
+   "Slovakia": 73,
+   "Bulgaria": 70,
+   "Slovenia": 68
+  },
+  "eval139": {
+   "United States": 13,
+   "Sweden": 11,
+   "Netherlands": 11,
+   "Spain": 10,
+   "Austria": 9,
+   "Germany": 9,
+   "France": 8,
+   "Denmark": 7,
+   "Italy": 7,
+   "Belgium": 7,
+   "Poland": 7,
+   "Finland": 7,
+   "Latvia": 6,
+   "Portugal": 6,
+   "Greece": 5,
+   "Estonia": 4,
+   "Lithuania": 3,
+   "Croatia": 3,
+   "Hungary": 2,
+   "Czechia": 1,
+   "Luxembourg": 1,
+   "Bulgaria": 1,
+   "Romania": 1
+  }
+ },
+ "granularity": "clip-level; broadcast to every v9 row of the clip (a 20 s clip never crosses a border in this release: UNVERIFIED, upstream gives one country per clip)",
+ "admissibility": "label for the strategic country readout; never an inference input except in the explicitly supplied (GNSS) arm",
+ "output_sha256": "ca343955aee32402e1ed10e3b6f81bbc527ca63c227fb9650bd3a3783bbc5db0"
+}

@@ -1,0 +1,2720 @@
+{
+ "name": "TanitAD HiCAP RuleBook",
+ "version": 1,
+ "created": "2026-10-25",
+ "countries": [
+  "Austria",
+  "Belgium",
+  "Bulgaria",
+  "Croatia",
+  "Czechia",
+  "Denmark",
+  "Estonia",
+  "Finland",
+  "France",
+  "Germany",
+  "Greece",
+  "Hungary",
+  "Italy",
+  "Latvia",
+  "Lithuania",
+  "Luxembourg",
+  "Netherlands",
+  "Poland",
+  "Portugal",
+  "Romania",
+  "Slovakia",
+  "Slovenia",
+  "Spain",
+  "Sweden",
+  "United States"
+ ],
+ "schema": {
+  "rule_id": "stable string id; NEVER reused or renamed (append-only like NodeLibrary)",
+  "countries": "list of country names from `countries`",
+  "category": "speed_limit | right_turn_on_red | priority_to_right | roundabout | emergency_vehicle | pedestrian_crossing | tram | school_bus | daytime_lights | driving_side",
+  "road_type": "urban | rural | expressway | motorway | junction | signalised_junction | roundabout | pedestrian_crossing | any",
+  "effect": "prune (numeric/candidate mask) | prior (soft knowledge, memory route) | memory (retrieval only)",
+  "text": "one sentence, the string embedded by the frozen text path",
+  "args": "numeric / categorical arguments; speeds in km/h (v_default_kmh null = no general statutory limit)",
+  "source": "{title, url, ref}: statute or official government page",
+  "evidence": "PUBLISHED (official source stated the fact) | UNVERIFIED (not confirmed from an official source in this session)",
+  "verification": "how the evidence class was obtained",
+  "caveat": "optional honest limitation",
+  "version_added": "RuleBook version that introduced the record"
+ },
+ "evidence_policy": "PUBLISHED here means: a WebSearch restricted to the official government/legislative domain returned the value, on 2026-10-25. Direct page fetch was blocked by the session egress proxy, so no page was read verbatim and no second independent source was sought; re-verify against the URL before quoting in the paper. UNVERIFIED values are best knowledge and must not decide a GPU-day.",
+ "records": [
+  {
+   "rule_id": "SPD-DE-URBAN",
+   "countries": [
+    "Germany"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Germany the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Straßenverkehrs-Ordnung (StVO) § 3 Geschwindigkeit",
+    "url": "https://www.gesetze-im-internet.de/stvo_2013/__3.html",
+    "ref": "§ 3 Abs. 3 StVO"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Signs may permit a higher limit inside built-up areas."
+  },
+  {
+   "rule_id": "SPD-DE-RURAL",
+   "countries": [
+    "Germany"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Germany the default speed limit for cars outside built-up areas on ordinary roads is 100 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 100,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Straßenverkehrs-Ordnung (StVO) § 3 Geschwindigkeit",
+    "url": "https://www.gesetze-im-internet.de/stvo_2013/__3.html",
+    "ref": "§ 3 Abs. 3 StVO"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Does not apply on motorways nor on roads with structurally separated carriageways or >=2 marked lanes per direction (no general limit there)."
+  },
+  {
+   "rule_id": "SPD-DE-MOTORWAY",
+   "countries": [
+    "Germany"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prior",
+   "text": "In Germany there is no general statutory speed limit for cars on motorways; the advisory speed is 130 km/h.",
+   "args": {
+    "v_default_kmh": null,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_advisory_kmh": 130
+   },
+   "source": {
+    "title": "Autobahn-Richtgeschwindigkeits-Verordnung § 1",
+    "url": "https://www.gesetze-im-internet.de/babrigeschwv_1978/__1.html",
+    "ref": "BABRiGeschwV § 1"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "130 km/h is ADVISORY (Richtgeschwindigkeit), not a limit; many sections carry signed limits."
+  },
+  {
+   "rule_id": "SPD-FR-URBAN",
+   "countries": [
+    "France"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In France the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_ceiling_kmh": 70
+   },
+   "source": {
+    "title": "Code de la route, Article R413-2",
+    "url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037078246/2018-07-01",
+    "ref": "R413-2"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "May be raised to 70 km/h on sections with limited access and protected crossings."
+  },
+  {
+   "rule_id": "SPD-FR-RURAL",
+   "countries": [
+    "France"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In France the default speed limit for cars outside built-up areas on ordinary roads is 80 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 80,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Code de la route, Article R413-2",
+    "url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037078246/2018-07-01",
+    "ref": "R413-2"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "80 km/h on two-way roads without separator (2018 version confirmed); since 2020 the road authority may restore 90 km/h on some sections; current text not confirmed in this session."
+  },
+  {
+   "rule_id": "SPD-FR-EXPRESSWAY",
+   "countries": [
+    "France"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In France the default speed limit for cars on expressways is 110 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 110,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Code de la route, Article R413-2",
+    "url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037078246/2018-07-01",
+    "ref": "R413-2"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Roads with separated carriageways; value not confirmed in this session."
+  },
+  {
+   "rule_id": "SPD-FR-MOTORWAY",
+   "countries": [
+    "France"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In France the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Code de la route, Article R413-2",
+    "url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000037078246/2018-07-01",
+    "ref": "R413-2"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "110 km/h in rain (R413-2, not separately confirmed)."
+  },
+  {
+   "rule_id": "SPD-IT-URBAN",
+   "countries": [
+    "Italy"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Italy the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_ceiling_kmh": 70
+   },
+   "source": {
+    "title": "Codice della strada (D.Lgs. 285/1992), art. 142",
+    "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticolo?art.progressivo=0&art.idArticolo=142&art.versione=1&art.codiceRedazionale=092G0306&art.dataPubblicazioneGazzetta=1992-05-18&art.idGruppo=11&art.idSottoArticolo1=10&art.idSottoArticolo=1&art.flagTipoArticolo=0",
+    "ref": "art. 142 c. 1"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "70 km/h on expressly signed urban sections (Polizia di Stato)."
+  },
+  {
+   "rule_id": "SPD-IT-RURAL",
+   "countries": [
+    "Italy"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Italy the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Codice della strada (D.Lgs. 285/1992), art. 142",
+    "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticolo?art.progressivo=0&art.idArticolo=142&art.versione=1&art.codiceRedazionale=092G0306&art.dataPubblicazioneGazzetta=1992-05-18&art.idGruppo=11&art.idSottoArticolo1=10&art.idSottoArticolo=1&art.flagTipoArticolo=0",
+    "ref": "art. 142 c. 1"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Strade extraurbane secondarie e locali."
+  },
+  {
+   "rule_id": "SPD-IT-EXPRESSWAY",
+   "countries": [
+    "Italy"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In Italy the default speed limit for cars on expressways is 110 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 110,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Codice della strada (D.Lgs. 285/1992), art. 142",
+    "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticolo?art.progressivo=0&art.idArticolo=142&art.versione=1&art.codiceRedazionale=092G0306&art.dataPubblicazioneGazzetta=1992-05-18&art.idGruppo=11&art.idSottoArticolo1=10&art.idSottoArticolo=1&art.flagTipoArticolo=0",
+    "ref": "art. 142 c. 1"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Strade extraurbane principali; 90 km/h in bad weather (Polizia di Stato)."
+  },
+  {
+   "rule_id": "SPD-IT-MOTORWAY",
+   "countries": [
+    "Italy"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Italy the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Codice della strada (D.Lgs. 285/1992), art. 142",
+    "url": "https://www.gazzettaufficiale.it/atto/serie_generale/caricaArticolo?art.progressivo=0&art.idArticolo=142&art.versione=1&art.codiceRedazionale=092G0306&art.dataPubblicazioneGazzetta=1992-05-18&art.idGruppo=11&art.idSottoArticolo1=10&art.idSottoArticolo=1&art.flagTipoArticolo=0",
+    "ref": "art. 142 c. 1"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "110 km/h in bad weather (Polizia di Stato); also https://www.poliziadistato.it/articolo/limiti-di-velocita"
+  },
+  {
+   "rule_id": "SPD-ES-URBAN",
+   "countries": [
+    "Spain"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Spain the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_single_lane_per_direction_kmh": 30,
+    "v_single_platform_kmh": 20
+   },
+   "source": {
+    "title": "Real Decreto 970/2020 (Reglamento General de Circulación art. 48/50, consolidated)",
+    "url": "https://www.boe.es/buscar/pdf/2020/BOE-A-2020-13969-consolidado.pdf",
+    "ref": "RGC art. 48, 50"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "50 km/h applies to urban roads with >=2 lanes per direction; 30 km/h on roads with one lane per direction, 20 km/h on single-platform streets."
+  },
+  {
+   "rule_id": "SPD-ES-RURAL",
+   "countries": [
+    "Spain"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Spain the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_ceiling_kmh": 100
+   },
+   "source": {
+    "title": "DGT - nota de prensa campaña vigilancia velocidad",
+    "url": "https://www.dgt.es/comunicacion/notas-de-prensa/20260803-campana-vigilancia-agosto/"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Carreteras convencionales; the road owner may raise to 100 km/h only with physical separation of directions."
+  },
+  {
+   "rule_id": "SPD-ES-MOTORWAY",
+   "countries": [
+    "Spain"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Spain the default speed limit for cars on motorways is 120 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 120,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "DGT - nota de prensa campaña vigilancia velocidad",
+    "url": "https://www.dgt.es/comunicacion/notas-de-prensa/20260803-campana-vigilancia-agosto/"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Autopistas y autovías."
+  },
+  {
+   "rule_id": "SPD-AT-URBAN",
+   "countries": [
+    "Austria"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Austria the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Straßenverkehrsordnung 1960 § 20 Abs. 2 (RIS)",
+    "url": "https://www.ris.bka.gv.at/geltendefassung.wxe?abfrage=bundesnormen&gesetzesnummer=10011336",
+    "ref": "§ 20 Abs. 2 StVO 1960"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-AT-RURAL",
+   "countries": [
+    "Austria"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Austria the default speed limit for cars outside built-up areas on ordinary roads is 100 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 100,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Straßenverkehrsordnung 1960 § 20 Abs. 2 (RIS)",
+    "url": "https://www.ris.bka.gv.at/geltendefassung.wxe?abfrage=bundesnormen&gesetzesnummer=10011336",
+    "ref": "§ 20 Abs. 2 StVO 1960"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-AT-MOTORWAY",
+   "countries": [
+    "Austria"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Austria the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Straßenverkehrsordnung 1960 § 20 Abs. 2 (RIS)",
+    "url": "https://www.ris.bka.gv.at/geltendefassung.wxe?abfrage=bundesnormen&gesetzesnummer=10011336",
+    "ref": "§ 20 Abs. 2 StVO 1960"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-SE-URBAN",
+   "countries": [
+    "Sweden"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Sweden the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Trafikförordning (1998:1276)",
+    "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/trafikforordning-19981276_sfs-1998-1276/",
+    "ref": "3 kap. 17 §, 9 kap. 1 §"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Municipalities may set 30 or 40 km/h."
+  },
+  {
+   "rule_id": "SPD-SE-RURAL",
+   "countries": [
+    "Sweden"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Sweden the default speed limit for cars outside built-up areas on ordinary roads is 70 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 70,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Trafikförordning (1998:1276)",
+    "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/trafikforordning-19981276_sfs-1998-1276/",
+    "ref": "3 kap. 17 §, 9 kap. 1 §"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Base speed (bashastighet); many rural roads carry signed 80-100 km/h limits."
+  },
+  {
+   "rule_id": "SPD-SE-MOTORWAY",
+   "countries": [
+    "Sweden"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Sweden the default speed limit for cars on motorways is 110 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 110,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_ceiling_kmh": 120
+   },
+   "source": {
+    "title": "Trafikförordning (1998:1276)",
+    "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/trafikforordning-19981276_sfs-1998-1276/",
+    "ref": "3 kap. 17 §, 9 kap. 1 §"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Trafikverket may set 120 km/h on a motorway."
+  },
+  {
+   "rule_id": "SPD-DK-URBAN",
+   "countries": [
+    "Denmark"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Denmark the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Færdselsloven § 42 (Bekendtgørelse af færdselsloven)",
+    "url": "https://www.retsinformation.dk/eli/lta/2026/118/pdf",
+    "ref": "§ 42"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-DK-RURAL",
+   "countries": [
+    "Denmark"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Denmark the default speed limit for cars outside built-up areas on ordinary roads is 80 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 80,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Færdselsloven § 42 (Bekendtgørelse af færdselsloven)",
+    "url": "https://www.retsinformation.dk/eli/lta/2026/118/pdf",
+    "ref": "§ 42"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-DK-EXPRESSWAY",
+   "countries": [
+    "Denmark"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In Denmark the default speed limit for cars on expressways is 80 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 80,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_ceiling_kmh": 100
+   },
+   "source": {
+    "title": "Færdselsloven § 42 (Bekendtgørelse af færdselsloven)",
+    "url": "https://www.retsinformation.dk/eli/lta/2026/118/pdf",
+    "ref": "§ 42"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Motortrafikvej; may be signed up to 100 km/h."
+  },
+  {
+   "rule_id": "SPD-DK-MOTORWAY",
+   "countries": [
+    "Denmark"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Denmark the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Færdselsloven § 42 (Bekendtgørelse af færdselsloven)",
+    "url": "https://www.retsinformation.dk/eli/lta/2026/118/pdf",
+    "ref": "§ 42"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Many sections signed 110 km/h."
+  },
+  {
+   "rule_id": "SPD-PT-URBAN",
+   "countries": [
+    "Portugal"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Portugal the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Código da Estrada, artigo 27 (consolidated)",
+    "url": "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2013-116041830",
+    "ref": "art. 27"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Art. 27 table not readable in search results."
+  },
+  {
+   "rule_id": "SPD-PT-RURAL",
+   "countries": [
+    "Portugal"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Portugal the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Código da Estrada, artigo 27 (consolidated)",
+    "url": "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2013-116041830",
+    "ref": "art. 27"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Art. 27 table not readable in search results."
+  },
+  {
+   "rule_id": "SPD-PT-EXPRESSWAY",
+   "countries": [
+    "Portugal"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In Portugal the default speed limit for cars on expressways is 100 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 100,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Código da Estrada, artigo 27 (consolidated)",
+    "url": "https://diariodarepublica.pt/dr/legislacao-consolidada/lei/2013-116041830",
+    "ref": "art. 27"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Vias reservadas a automóveis e motociclos; art. 27 table not readable in search results."
+  },
+  {
+   "rule_id": "SPD-PT-MOTORWAY",
+   "countries": [
+    "Portugal"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Portugal the default speed limit for cars on motorways is 120 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 120,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "IMT - Recomendações para definição e sinalização de limites de velocidade máxima",
+    "url": "https://www.imt-ip.pt/wp-content/uploads/IMTT/Portugues/InfraestruturasRodoviarias/InovacaoNormalizacao/Divulgao%20Tcnica/MANUAL%20VELOCIDADE_PRP.PDF"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Confirmed as the 'limite geral de 120 km/h' in the IMT manual; art. 27 table itself not read."
+  },
+  {
+   "rule_id": "SPD-BE-URBAN",
+   "countries": [
+    "Belgium"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Belgium the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Arrêté royal du 1er décembre 1975 (code de la route), art. 11 (Wallex consolidated)",
+    "url": "https://wallex.wallonie.be/files/pdfs/22/11131_Arr%C3%AAt%C3%A9_royal_portant_r%C3%A8glement_g%C3%A9n%C3%A9ral_sur_la_police_de_la_circulation_routi%C3%A8re_et_de_l'usage_de_la_voie_publique__(AR_du_4_avril_2003,_art._1)_01-03-2024-30-08-2026.pdf",
+    "ref": "art. 11"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Brussels-Capital Region applies 30 km/h as the general urban limit (regional rule, not confirmed in this session)."
+  },
+  {
+   "rule_id": "SPD-BE-RURAL",
+   "countries": [
+    "Belgium"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Belgium the default speed limit for cars outside built-up areas on ordinary roads is 70 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 70,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_ceiling_kmh": 90
+   },
+   "source": {
+    "title": "Arrêté royal du 1er décembre 1975 (code de la route), art. 11 (Wallex consolidated)",
+    "url": "https://wallex.wallonie.be/files/pdfs/22/11131_Arr%C3%AAt%C3%A9_royal_portant_r%C3%A8glement_g%C3%A9n%C3%A9ral_sur_la_police_de_la_circulation_routi%C3%A8re_et_de_l'usage_de_la_voie_publique__(AR_du_4_avril_2003,_art._1)_01-03-2024-30-08-2026.pdf",
+    "ref": "art. 11"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "REGIONAL: Flanders 70 km/h, Wallonia and Brussels 90 km/h outside built-up areas (not confirmed in this session); 70 is the conservative value."
+  },
+  {
+   "rule_id": "SPD-BE-MOTORWAY",
+   "countries": [
+    "Belgium"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Belgium the default speed limit for cars on motorways is 120 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 120,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Arrêté royal du 1er décembre 1975 (code de la route), art. 11 (Wallex consolidated)",
+    "url": "https://wallex.wallonie.be/files/pdfs/22/11131_Arr%C3%AAt%C3%A9_royal_portant_r%C3%A8glement_g%C3%A9n%C3%A9ral_sur_la_police_de_la_circulation_routi%C3%A8re_et_de_l'usage_de_la_voie_publique__(AR_du_4_avril_2003,_art._1)_01-03-2024-30-08-2026.pdf",
+    "ref": "art. 11"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Art. 11: 120 km/h on public roads divided into >=4 lanes with directions separated by more than markings (covers motorways)."
+  },
+  {
+   "rule_id": "SPD-NL-URBAN",
+   "countries": [
+    "Netherlands"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Netherlands the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Reglement verkeersregels en verkeerstekens 1990 (RVV 1990)",
+    "url": "https://wetten.overheid.nl/BWBR0004825/",
+    "ref": "art. 20, 21"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Not shown in search results."
+  },
+  {
+   "rule_id": "SPD-NL-RURAL",
+   "countries": [
+    "Netherlands"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Netherlands the default speed limit for cars outside built-up areas on ordinary roads is 80 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 80,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Reglement verkeersregels en verkeerstekens 1990 (RVV 1990)",
+    "url": "https://wetten.overheid.nl/BWBR0004825/",
+    "ref": "art. 20, 21"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-NL-EXPRESSWAY",
+   "countries": [
+    "Netherlands"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In Netherlands the default speed limit for cars on expressways is 100 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 100,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Reglement verkeersregels en verkeerstekens 1990 (RVV 1990)",
+    "url": "https://wetten.overheid.nl/BWBR0004825/",
+    "ref": "art. 20, 21"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Autoweg."
+  },
+  {
+   "rule_id": "SPD-NL-MOTORWAY",
+   "countries": [
+    "Netherlands"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Netherlands the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_daytime_kmh": 100,
+    "daytime_hours": "06:00-19:00"
+   },
+   "source": {
+    "title": "Rijksoverheid - Wat is de maximumsnelheid voor auto's op de snelweg?",
+    "url": "https://www.rijksoverheid.nl/onderwerpen/verkeersveiligheid/vraag-en-antwoord/wat-is-de-maximumsnelheid-voor-auto-s-op-de-snelweg"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Statutory 130 km/h, but 100 km/h applies 06:00-19:00 on almost all motorways (signed); 100/120/130 at night."
+  },
+  {
+   "rule_id": "SPD-FI-URBAN",
+   "countries": [
+    "Finland"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Finland the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Tieliikennelaki 729/2018 (Finlex)",
+    "url": "https://www.finlex.fi/api/media/statute/49525/mainPdf/main.pdf"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-FI-RURAL",
+   "countries": [
+    "Finland"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Finland the default speed limit for cars outside built-up areas on ordinary roads is 80 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 80,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Tieliikennelaki 729/2018 (Finlex)",
+    "url": "https://www.finlex.fi/api/media/statute/49525/mainPdf/main.pdf"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-FI-MOTORWAY",
+   "countries": [
+    "Finland"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prior",
+   "text": "In Finland there is no general statutory speed limit for cars on motorways; limits are signed, typically 120 km/h.",
+   "args": {
+    "v_default_kmh": null,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_typical_kmh": 120
+   },
+   "source": {
+    "title": "Väylävirasto - Nopeusrajoitukset",
+    "url": "https://vayla.fi/en/-/asiakaspalvelun-ajankohtaiset-nopeusrajoitukset"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "The motorway sign carries no limit; limits are signed (typically 120 km/h, lower in winter)."
+  },
+  {
+   "rule_id": "SPD-PL-URBAN",
+   "countries": [
+    "Poland"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Poland the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Prawo o ruchu drogowym, art. 20 (ISAP)",
+    "url": "https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU20210000450/U/D20210450Lj.pdf",
+    "ref": "art. 20"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Older text had 60 km/h at night (23-5); art. 20 ust. 1a is repealed in the 2022 consolidated text."
+  },
+  {
+   "rule_id": "SPD-PL-RURAL",
+   "countries": [
+    "Poland"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Poland the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_ceiling_kmh": 100
+   },
+   "source": {
+    "title": "Prawo o ruchu drogowym, art. 20 (ISAP)",
+    "url": "https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU20210000450/U/D20210450Lj.pdf",
+    "ref": "art. 20"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "100 km/h on single-carriageway expressways and dual carriageways with >=2 lanes per direction."
+  },
+  {
+   "rule_id": "SPD-PL-EXPRESSWAY",
+   "countries": [
+    "Poland"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In Poland the default speed limit for cars on expressways is 120 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 120,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Prawo o ruchu drogowym, art. 20 (ISAP)",
+    "url": "https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU20210000450/U/D20210450Lj.pdf",
+    "ref": "art. 20"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Dual-carriageway expressway; single-carriageway expressway 100 km/h."
+  },
+  {
+   "rule_id": "SPD-PL-MOTORWAY",
+   "countries": [
+    "Poland"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Poland the default speed limit for cars on motorways is 140 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 140,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Prawo o ruchu drogowym, art. 20 (ISAP)",
+    "url": "https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU20210000450/U/D20210450Lj.pdf",
+    "ref": "art. 20"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-CZ-URBAN",
+   "countries": [
+    "Czechia"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Czechia the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Zákon č. 361/2000 Sb. o provozu na pozemních komunikacích, § 18",
+    "url": "https://www.zakonyprolidi.cz/cs/2000-361",
+    "ref": "§ 18"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-CZ-RURAL",
+   "countries": [
+    "Czechia"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Czechia the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Zákon č. 361/2000 Sb. o provozu na pozemních komunikacích, § 18",
+    "url": "https://www.zakonyprolidi.cz/cs/2000-361",
+    "ref": "§ 18"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-CZ-EXPRESSWAY",
+   "countries": [
+    "Czechia"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In Czechia the default speed limit for cars on expressways is 110 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 110,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Zákon č. 361/2000 Sb. o provozu na pozemních komunikacích, § 18",
+    "url": "https://www.zakonyprolidi.cz/cs/2000-361",
+    "ref": "§ 18"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Silnice pro motorová vozidla outside built-up areas."
+  },
+  {
+   "rule_id": "SPD-CZ-MOTORWAY",
+   "countries": [
+    "Czechia"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Czechia the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Zákon č. 361/2000 Sb. o provozu na pozemních komunikacích, § 18",
+    "url": "https://www.zakonyprolidi.cz/cs/2000-361",
+    "ref": "§ 18"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-LU-URBAN",
+   "countries": [
+    "Luxembourg"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Luxembourg the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Transports.lu - Respect des limitations de vitesse",
+    "url": "https://transports.public.lu/fr/conduire/code-de-la-route/respect-limitations-vitesse.html"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-LU-RURAL",
+   "countries": [
+    "Luxembourg"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Luxembourg the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Transports.lu - Respect des limitations de vitesse",
+    "url": "https://transports.public.lu/fr/conduire/code-de-la-route/respect-limitations-vitesse.html"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-LU-MOTORWAY",
+   "countries": [
+    "Luxembourg"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Luxembourg the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Transports.lu - Respect des limitations de vitesse",
+    "url": "https://transports.public.lu/fr/conduire/code-de-la-route/respect-limitations-vitesse.html"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "110 km/h in rain."
+  },
+  {
+   "rule_id": "SPD-LV-URBAN",
+   "countries": [
+    "Latvia"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Latvia the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Ceļu satiksmes noteikumi (MK noteikumi)",
+    "url": "https://likumi.lv/ta/id/274865",
+    "ref": "par. 128-129"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-LV-RURAL",
+   "countries": [
+    "Latvia"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Latvia the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Ceļu satiksmes noteikumi (MK noteikumi)",
+    "url": "https://likumi.lv/ta/id/274865",
+    "ref": "par. 128-129"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Higher values only where signed."
+  },
+  {
+   "rule_id": "SPD-RO-URBAN",
+   "countries": [
+    "Romania"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Romania the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_ceiling_kmh": 80
+   },
+   "source": {
+    "title": "OUG 195/2002 privind circulaţia pe drumurile publice (republicată), art. 49-50",
+    "url": "https://legislatie.just.ro/public/detaliidocument/74028",
+    "ref": "art. 49-50"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Administrators may raise to at most 80 km/h on some sectors."
+  },
+  {
+   "rule_id": "SPD-RO-RURAL",
+   "countries": [
+    "Romania"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Romania the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_ceiling_kmh": 100
+   },
+   "source": {
+    "title": "OUG 195/2002 privind circulaţia pe drumurile publice (republicată), art. 49-50",
+    "url": "https://legislatie.just.ro/public/detaliidocument/74028",
+    "ref": "art. 49-50"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "100 km/h on European (E) roads."
+  },
+  {
+   "rule_id": "SPD-RO-EXPRESSWAY",
+   "countries": [
+    "Romania"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In Romania the default speed limit for cars on expressways is 120 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 120,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "OUG 195/2002 privind circulaţia pe drumurile publice (republicată), art. 49-50",
+    "url": "https://legislatie.just.ro/public/detaliidocument/74028",
+    "ref": "art. 49-50"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Introduced by Law 134/2022."
+  },
+  {
+   "rule_id": "SPD-RO-MOTORWAY",
+   "countries": [
+    "Romania"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Romania the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "OUG 195/2002 privind circulaţia pe drumurile publice (republicată), art. 49-50",
+    "url": "https://legislatie.just.ro/public/detaliidocument/74028",
+    "ref": "art. 49-50"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-GR-URBAN",
+   "countries": [
+    "Greece"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Greece the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Κώδικας Οδικής Κυκλοφορίας (ν. 5209/2025; earlier ν. 2696/1999 art. 20)",
+    "url": "https://www.yme.gov.gr/getfile.php?id=7930"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Speed table not readable in search results; the code was re-enacted as law 5209/2025 with new numbering."
+  },
+  {
+   "rule_id": "SPD-GR-RURAL",
+   "countries": [
+    "Greece"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Greece the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Κώδικας Οδικής Κυκλοφορίας (ν. 5209/2025; earlier ν. 2696/1999 art. 20)",
+    "url": "https://www.yme.gov.gr/getfile.php?id=7930"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Speed table not readable in search results; the code was re-enacted as law 5209/2025 with new numbering."
+  },
+  {
+   "rule_id": "SPD-GR-EXPRESSWAY",
+   "countries": [
+    "Greece"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In Greece the default speed limit for cars on expressways is 110 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 110,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Κώδικας Οδικής Κυκλοφορίας (ν. 5209/2025; earlier ν. 2696/1999 art. 20)",
+    "url": "https://www.yme.gov.gr/getfile.php?id=7930"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Speed table not readable in search results; the code was re-enacted as law 5209/2025 with new numbering."
+  },
+  {
+   "rule_id": "SPD-GR-MOTORWAY",
+   "countries": [
+    "Greece"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Greece the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Κώδικας Οδικής Κυκλοφορίας (ν. 5209/2025; earlier ν. 2696/1999 art. 20)",
+    "url": "https://www.yme.gov.gr/getfile.php?id=7930"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Speed table not readable in search results; the code was re-enacted as law 5209/2025 with new numbering."
+  },
+  {
+   "rule_id": "SPD-HU-URBAN",
+   "countries": [
+    "Hungary"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Hungary the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "1/1975. (II. 5.) KPM-BM együttes rendelet (KRESZ) 26. §",
+    "url": "https://njt.hu/jogszabaly/1975-1-20-24.32",
+    "ref": "26. §"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-HU-RURAL",
+   "countries": [
+    "Hungary"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Hungary the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Police.hu - 45 éves a KRESZ",
+    "url": "https://www.police.hu/hu/hirek-es-informaciok/legfrissebb-hireink/kozlekedesrendeszet/45-eves-a-kresz"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-HU-EXPRESSWAY",
+   "countries": [
+    "Hungary"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In Hungary the default speed limit for cars on expressways is 110 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 110,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Police.hu - 45 éves a KRESZ",
+    "url": "https://www.police.hu/hu/hirek-es-informaciok/legfrissebb-hireink/kozlekedesrendeszet/45-eves-a-kresz"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Autóút."
+  },
+  {
+   "rule_id": "SPD-HU-MOTORWAY",
+   "countries": [
+    "Hungary"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Hungary the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Police.hu - 45 éves a KRESZ",
+    "url": "https://www.police.hu/hu/hirek-es-informaciok/legfrissebb-hireink/kozlekedesrendeszet/45-eves-a-kresz"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-EE-URBAN",
+   "countries": [
+    "Estonia"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Estonia the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_ceiling_kmh": 90
+   },
+   "source": {
+    "title": "Liiklusseadus § 15 (Riigi Teataja)",
+    "url": "https://riigiteataja.ee/akt/114112025022?leiaKehtiv=",
+    "ref": "§ 15 lg 1"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Local government may raise to 90 km/h."
+  },
+  {
+   "rule_id": "SPD-EE-RURAL",
+   "countries": [
+    "Estonia"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Estonia the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_ceiling_kmh": 120
+   },
+   "source": {
+    "title": "Liiklusseadus § 15 (Riigi Teataja)",
+    "url": "https://riigiteataja.ee/akt/114112025022?leiaKehtiv=",
+    "ref": "§ 15 lg 1"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Transport Administration may raise to 120 km/h (signed, typically summer on dual carriageways)."
+  },
+  {
+   "rule_id": "SPD-HR-URBAN",
+   "countries": [
+    "Croatia"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Croatia the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_ceiling_kmh": 80
+   },
+   "source": {
+    "title": "Zakon o sigurnosti prometa na cestama, čl. 53-54",
+    "url": "https://www.zakon.hr/z/78/zakon-o-sigurnosti-prometa-na-cestama",
+    "ref": "čl. 53-54"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "A sign may permit up to 80 km/h on some urban sections."
+  },
+  {
+   "rule_id": "SPD-HR-RURAL",
+   "countries": [
+    "Croatia"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Croatia the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Zakon o sigurnosti prometa na cestama, čl. 53-54",
+    "url": "https://www.zakon.hr/z/78/zakon-o-sigurnosti-prometa-na-cestama",
+    "ref": "čl. 53-54"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-HR-EXPRESSWAY",
+   "countries": [
+    "Croatia"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In Croatia the default speed limit for cars on expressways is 110 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 110,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Zakon o sigurnosti prometa na cestama, čl. 53-54",
+    "url": "https://www.zakon.hr/z/78/zakon-o-sigurnosti-prometa-na-cestama",
+    "ref": "čl. 53-54"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Roads reserved for motor vehicles and brze ceste."
+  },
+  {
+   "rule_id": "SPD-HR-MOTORWAY",
+   "countries": [
+    "Croatia"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Croatia the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Zakon o sigurnosti prometa na cestama, čl. 53-54",
+    "url": "https://www.zakon.hr/z/78/zakon-o-sigurnosti-prometa-na-cestama",
+    "ref": "čl. 53-54"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-LT-URBAN",
+   "countries": [
+    "Lithuania"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Lithuania the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Lietuvos policija - Kelių eismo taisyklių reikalavimai (KET 129, 131)",
+    "url": "https://policija.lrv.lt/lt/naujienos/policija-primena-kai-kuriuos-keliu-eismo-taisykliu-reikalavimus/",
+    "ref": "KET p. 129, 131"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "An older KET text had 60 km/h."
+  },
+  {
+   "rule_id": "SPD-LT-RURAL",
+   "countries": [
+    "Lithuania"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Lithuania the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Lietuvos policija - Kelių eismo taisyklių reikalavimai (KET 129, 131)",
+    "url": "https://policija.lrv.lt/lt/naujienos/policija-primena-kai-kuriuos-keliu-eismo-taisykliu-reikalavimus/",
+    "ref": "KET p. 129, 131"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Asphalt/concrete roads; 70 km/h on other surfaces."
+  },
+  {
+   "rule_id": "SPD-LT-EXPRESSWAY",
+   "countries": [
+    "Lithuania"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In Lithuania the default speed limit for cars on expressways is 120 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 120,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_winter_kmh": 110,
+    "winter_months": "Nov-Mar"
+   },
+   "source": {
+    "title": "Lietuvos policija - Kelių eismo taisyklių reikalavimai (KET 129, 131)",
+    "url": "https://policija.lrv.lt/lt/naujienos/policija-primena-kai-kuriuos-keliu-eismo-taisykliu-reikalavimus/",
+    "ref": "KET p. 129, 131"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Greitkelis; 110 km/h November-March."
+  },
+  {
+   "rule_id": "SPD-LT-MOTORWAY",
+   "countries": [
+    "Lithuania"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Lithuania the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_winter_kmh": 110,
+    "winter_months": "Nov-Mar"
+   },
+   "source": {
+    "title": "Lietuvos policija - Kelių eismo taisyklių reikalavimai (KET 129, 131)",
+    "url": "https://policija.lrv.lt/lt/naujienos/policija-primena-kai-kuriuos-keliu-eismo-taisykliu-reikalavimus/",
+    "ref": "KET p. 129, 131"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Automagistralė; 110 km/h November-March."
+  },
+  {
+   "rule_id": "SPD-SK-URBAN",
+   "countries": [
+    "Slovakia"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Slovakia the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Zákon č. 8/2009 Z. z. o cestnej premávke, § 16",
+    "url": "https://www.slov-lex.sk/ezbierky-fe/pravne-predpisy/SK/ZZ/2009/8/",
+    "ref": "§ 16"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-SK-RURAL",
+   "countries": [
+    "Slovakia"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Slovakia the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Zákon č. 8/2009 Z. z. o cestnej premávke, § 16",
+    "url": "https://www.slov-lex.sk/ezbierky-fe/pravne-predpisy/SK/ZZ/2009/8/",
+    "ref": "§ 16"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-SK-MOTORWAY",
+   "countries": [
+    "Slovakia"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Slovakia the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Zákon č. 8/2009 Z. z. o cestnej premávke, § 16",
+    "url": "https://www.slov-lex.sk/ezbierky-fe/pravne-predpisy/SK/ZZ/2009/8/",
+    "ref": "§ 16"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Motorways and expressways; 90 km/h on motorways inside built-up areas (not confirmed)."
+  },
+  {
+   "rule_id": "SPD-BG-URBAN",
+   "countries": [
+    "Bulgaria"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Bulgaria the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "МВР - Скорост (Закон за движението по пътищата, чл. 21)",
+    "url": "https://www.mvr.bg/opp/%D0%BF%D0%BE%D0%BB%D0%B5%D0%B7%D0%BD%D0%B0-%D0%B8%D0%BD%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%86%D0%B8%D1%8F1/%D0%B1%D0%B5%D0%B7%D0%BE%D0%BF%D0%B0%D1%81%D0%BD%D0%BE%D1%81%D1%82-%D0%BD%D0%B0-%D0%BF%D1%8A%D1%82%D1%8F/%D0%B2%D0%BE%D0%B4%D0%B0%D1%87%D0%B8-%D0%B8-%D0%BF%D1%8A%D1%82%D0%BD%D0%B8%D1%86%D0%B8/%D1%81%D0%BA%D0%BE%D1%80%D0%BE%D1%81%D1%82",
+    "ref": "ЗДвП чл. 21"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-BG-RURAL",
+   "countries": [
+    "Bulgaria"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Bulgaria the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "МВР - Скорост (Закон за движението по пътищата, чл. 21)",
+    "url": "https://www.mvr.bg/opp/%D0%BF%D0%BE%D0%BB%D0%B5%D0%B7%D0%BD%D0%B0-%D0%B8%D0%BD%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%86%D0%B8%D1%8F1/%D0%B1%D0%B5%D0%B7%D0%BE%D0%BF%D0%B0%D1%81%D0%BD%D0%BE%D1%81%D1%82-%D0%BD%D0%B0-%D0%BF%D1%8A%D1%82%D1%8F/%D0%B2%D0%BE%D0%B4%D0%B0%D1%87%D0%B8-%D0%B8-%D0%BF%D1%8A%D1%82%D0%BD%D0%B8%D1%86%D0%B8/%D1%81%D0%BA%D0%BE%D1%80%D0%BE%D1%81%D1%82",
+    "ref": "ЗДвП чл. 21"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-BG-EXPRESSWAY",
+   "countries": [
+    "Bulgaria"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In Bulgaria the default speed limit for cars on expressways is 120 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 120,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "МВР - Скорост (Закон за движението по пътищата, чл. 21)",
+    "url": "https://www.mvr.bg/opp/%D0%BF%D0%BE%D0%BB%D0%B5%D0%B7%D0%BD%D0%B0-%D0%B8%D0%BD%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%86%D0%B8%D1%8F1/%D0%B1%D0%B5%D0%B7%D0%BE%D0%BF%D0%B0%D1%81%D0%BD%D0%BE%D1%81%D1%82-%D0%BD%D0%B0-%D0%BF%D1%8A%D1%82%D1%8F/%D0%B2%D0%BE%D0%B4%D0%B0%D1%87%D0%B8-%D0%B8-%D0%BF%D1%8A%D1%82%D0%BD%D0%B8%D1%86%D0%B8/%D1%81%D0%BA%D0%BE%D1%80%D0%BE%D1%81%D1%82",
+    "ref": "ЗДвП чл. 21"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Скоростен път."
+  },
+  {
+   "rule_id": "SPD-BG-MOTORWAY",
+   "countries": [
+    "Bulgaria"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Bulgaria the default speed limit for cars on motorways is 140 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 140,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "МВР - Скорост (Закон за движението по пътищата, чл. 21)",
+    "url": "https://www.mvr.bg/opp/%D0%BF%D0%BE%D0%BB%D0%B5%D0%B7%D0%BD%D0%B0-%D0%B8%D0%BD%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%86%D0%B8%D1%8F1/%D0%B1%D0%B5%D0%B7%D0%BE%D0%BF%D0%B0%D1%81%D0%BD%D0%BE%D1%81%D1%82-%D0%BD%D0%B0-%D0%BF%D1%8A%D1%82%D1%8F/%D0%B2%D0%BE%D0%B4%D0%B0%D1%87%D0%B8-%D0%B8-%D0%BF%D1%8A%D1%82%D0%BD%D0%B8%D1%86%D0%B8/%D1%81%D0%BA%D0%BE%D1%80%D0%BE%D1%81%D1%82",
+    "ref": "ЗДвП чл. 21"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "An older art. 21 text had 130 km/h."
+  },
+  {
+   "rule_id": "SPD-SI-URBAN",
+   "countries": [
+    "Slovenia"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prune",
+   "text": "In Slovenia the default speed limit for cars inside built-up areas is 50 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 50,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_ceiling_kmh": 70
+   },
+   "source": {
+    "title": "Zakon o pravilih cestnega prometa (ZPrCP), 46. člen; novela ZPrCP-F",
+    "url": "https://pisrs.si/pregledPredpisa?id=ZAKO7404",
+    "ref": "46. člen"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Up to 70 km/h where signed."
+  },
+  {
+   "rule_id": "SPD-SI-RURAL",
+   "countries": [
+    "Slovenia"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prune",
+   "text": "In Slovenia the default speed limit for cars outside built-up areas on ordinary roads is 90 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 90,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Zakon o pravilih cestnega prometa (ZPrCP), 46. člen; novela ZPrCP-F",
+    "url": "https://pisrs.si/pregledPredpisa?id=ZAKO7404",
+    "ref": "46. člen"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-SI-EXPRESSWAY",
+   "countries": [
+    "Slovenia"
+   ],
+   "category": "speed_limit",
+   "road_type": "expressway",
+   "effect": "prune",
+   "text": "In Slovenia the default speed limit for cars on expressways is 110 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 110,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Zakon o pravilih cestnega prometa (ZPrCP), 46. člen; novela ZPrCP-F",
+    "url": "https://pisrs.si/pregledPredpisa?id=ZAKO7404",
+    "ref": "46. člen"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Hitra cesta; versions disagree (older law: 100 km/h on roads reserved for motor vehicles)."
+  },
+  {
+   "rule_id": "SPD-SI-MOTORWAY",
+   "countries": [
+    "Slovenia"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prune",
+   "text": "In Slovenia the default speed limit for cars on motorways is 130 km/h unless signed otherwise.",
+   "args": {
+    "v_default_kmh": 130,
+    "unit": "km/h",
+    "vehicle": "passenger car"
+   },
+   "source": {
+    "title": "Zakon o pravilih cestnega prometa (ZPrCP), 46. člen; novela ZPrCP-F",
+    "url": "https://pisrs.si/pregledPredpisa?id=ZAKO7404",
+    "ref": "46. člen"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "SPD-US-URBAN",
+   "countries": [
+    "United States"
+   ],
+   "category": "speed_limit",
+   "road_type": "urban",
+   "effect": "prior",
+   "text": "In United States there is no general statutory speed limit for cars inside built-up areas; limits are set by each state, roughly 40-56 km/h.",
+   "args": {
+    "v_default_kmh": null,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_range_kmh": [
+     40.2,
+     56.3
+    ],
+    "v_range_mph": [
+     25,
+     35
+    ]
+   },
+   "source": {
+    "title": "FHWA Freight Facts and Figures 2013, Table 3-16: Maximum Posted Speed Limits on Rural Interstates",
+    "url": "https://ops.fhwa.dot.gov/Freight/freight_analysis/nat_freight_stats/docs/13factsfigures/table3_16.htm"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "STATE-LEVEL: there is no national default; typical statutory urban defaults 25-35 mph (not confirmed in this session)."
+  },
+  {
+   "rule_id": "SPD-US-RURAL",
+   "countries": [
+    "United States"
+   ],
+   "category": "speed_limit",
+   "road_type": "rural",
+   "effect": "prior",
+   "text": "In United States there is no general statutory speed limit for cars outside built-up areas on ordinary roads; limits are set by each state, roughly 88-121 km/h.",
+   "args": {
+    "v_default_kmh": null,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_range_kmh": [
+     88.5,
+     120.7
+    ],
+    "v_range_mph": [
+     55,
+     75
+    ]
+   },
+   "source": {
+    "title": "FHWA Freight Facts and Figures 2013, Table 3-16: Maximum Posted Speed Limits on Rural Interstates",
+    "url": "https://ops.fhwa.dot.gov/Freight/freight_analysis/nat_freight_stats/docs/13factsfigures/table3_16.htm"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "STATE-LEVEL: rural non-interstate limits vary by state, typically 55-75 mph (not confirmed in this session)."
+  },
+  {
+   "rule_id": "SPD-US-MOTORWAY",
+   "countries": [
+    "United States"
+   ],
+   "category": "speed_limit",
+   "road_type": "motorway",
+   "effect": "prior",
+   "text": "In United States there is no general statutory speed limit for cars on motorways; limits are set by each state, roughly 88-129 km/h.",
+   "args": {
+    "v_default_kmh": null,
+    "unit": "km/h",
+    "vehicle": "passenger car",
+    "v_range_kmh": [
+     88.5,
+     128.7
+    ],
+    "v_range_mph": [
+     55,
+     80
+    ]
+   },
+   "source": {
+    "title": "FHWA Freight Facts and Figures 2013, Table 3-16: Maximum Posted Speed Limits on Rural Interstates",
+    "url": "https://ops.fhwa.dot.gov/Freight/freight_analysis/nat_freight_stats/docs/13factsfigures/table3_16.htm"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "STATE-LEVEL: the FHWA 2013 table lists rural-interstate car limits from 55/65 mph up to 75 mph, 80 mph on parts of I-10/I-20 in West Texas; DATED (2013) - some states have raised limits since (e.g. 85 mph on one Texas toll road, not confirmed)."
+  },
+  {
+   "rule_id": "RTOR-US",
+   "countries": [
+    "United States"
+   ],
+   "category": "right_turn_on_red",
+   "road_type": "signalised_junction",
+   "effect": "prune",
+   "text": "In the United States a right turn on a red light is permitted after a complete stop, yielding to pedestrians and cross traffic, unless a sign prohibits it.",
+   "args": {
+    "rtor": "permitted_after_stop_unless_signed"
+   },
+   "source": {
+    "title": "42 U.S.C. § 6322(c)(5) - State energy conservation plans",
+    "url": "https://uscode.house.gov/view.xhtml?req=(title:42+section:6322+edition:prelim)",
+    "ref": "§ 6322(c)(5)"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Federal law conditions state energy-plan funding on permitting RTOR 'to the maximum extent practicable consistent with safety'; the rule itself is state law. New York City prohibits RTOR unless signed (not confirmed in this session)."
+  },
+  {
+   "rule_id": "RTOR-DE",
+   "countries": [
+    "Germany"
+   ],
+   "category": "right_turn_on_red",
+   "road_type": "signalised_junction",
+   "effect": "prune",
+   "text": "In Germany a right turn on red is allowed only where a green-arrow sign (Zeichen 720) is mounted beside the red light, after a complete stop and without endangering others; otherwise red means stop.",
+   "args": {
+    "rtor": "green_arrow_sign_after_stop"
+   },
+   "source": {
+    "title": "StVO § 37 Wechsellichtzeichen, Dauerlichtzeichen und Grünpfeil",
+    "url": "https://www.gesetze-im-internet.de/stvo_2013/__37.html",
+    "ref": "§ 37 Abs. 2 Nr. 1"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "A cyclist-only green arrow variant exists; only from the right-most lane."
+  },
+  {
+   "rule_id": "RTOR-PL",
+   "countries": [
+    "Poland"
+   ],
+   "category": "right_turn_on_red",
+   "road_type": "signalised_junction",
+   "effect": "prune",
+   "text": "In Poland a right turn on red is allowed only when a green-arrow signal is lit beside the red light, after stopping before the signal and without hindering other road users.",
+   "args": {
+    "rtor": "green_arrow_signal_after_stop"
+   },
+   "source": {
+    "title": "Policja.pl - \"Zielona strzałka\" obowiązuje",
+    "url": "https://policja.pl/pol/aktualnosci/2866,34Zielona-strzalka34-obowiazuje.html",
+    "ref": "Rozporządzenie w sprawie znaków i sygnałów drogowych (S-2 + zielona strzałka)"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "RTOR-CZ",
+   "countries": [
+    "Czechia"
+   ],
+   "category": "right_turn_on_red",
+   "road_type": "signalised_junction",
+   "effect": "prune",
+   "text": "In Czechia a right turn on red is allowed only where a supplementary green arrow signal is lit, after stopping and giving way; otherwise red means stop.",
+   "args": {
+    "rtor": "green_arrow_signal_after_stop"
+   },
+   "source": {
+    "title": "Vyhláška č. 294/2015 Sb. (signal S 5 'doplňková zelená šipka')",
+    "url": "https://www.zakonyprolidi.cz/cs/2015-294",
+    "ref": "příloha 9, S 5"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "The S 5 supplementary green arrow exists in the decree; its stop-then-turn meaning was not confirmed in this session."
+  },
+  {
+   "rule_id": "RTOR-PROHIBITED",
+   "countries": [
+    "Austria",
+    "Belgium",
+    "Bulgaria",
+    "Croatia",
+    "Denmark",
+    "Estonia",
+    "Finland",
+    "France",
+    "Greece",
+    "Hungary",
+    "Italy",
+    "Latvia",
+    "Lithuania",
+    "Luxembourg",
+    "Netherlands",
+    "Portugal",
+    "Romania",
+    "Slovakia",
+    "Slovenia",
+    "Spain",
+    "Sweden"
+   ],
+   "category": "right_turn_on_red",
+   "road_type": "signalised_junction",
+   "effect": "prune",
+   "text": "A right turn on a red light is not permitted; a red light means stop, and turning is allowed only on a green (arrow) signal.",
+   "args": {
+    "rtor": "prohibited"
+   },
+   "source": {
+    "title": "Vienna Convention on Road Signs and Signals (1968), Art. 23",
+    "url": "https://unece.org/DAM/trans/conventn/Conv_road_signs_2006v_EN.pdf",
+    "ref": "Art. 23"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Not checked country by country; some of these countries may have green-arrow sign/signal exceptions (e.g. Slovakia, Lithuania, Latvia, Bulgaria) and cyclist-only exceptions (France, Belgium, Netherlands)."
+  },
+  {
+   "rule_id": "PRIO-RIGHT-EU",
+   "countries": [
+    "Austria",
+    "Belgium",
+    "Bulgaria",
+    "Croatia",
+    "Czechia",
+    "Denmark",
+    "Estonia",
+    "Finland",
+    "France",
+    "Germany",
+    "Greece",
+    "Hungary",
+    "Italy",
+    "Latvia",
+    "Lithuania",
+    "Luxembourg",
+    "Netherlands",
+    "Poland",
+    "Portugal",
+    "Romania",
+    "Slovakia",
+    "Slovenia",
+    "Spain",
+    "Sweden"
+   ],
+   "category": "priority_to_right",
+   "road_type": "junction",
+   "effect": "prior",
+   "text": "At an intersection without signs, signals or markings that regulate priority, give way to vehicles approaching from the right.",
+   "args": {
+    "yield_to": "right",
+    "condition": "unsigned_junction"
+   },
+   "source": {
+    "title": "Convention on Road Traffic (Vienna, 1968)",
+    "url": "https://unece.org/DAM/trans/conventn/Conv_road_traffic_EN.pdf",
+    "ref": "Art. 18 para. 4(a)"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "Convention text confirmed by official-domain WebSearch 2026-10-25; national application per country not individually verified",
+   "version_added": 1,
+   "caveat": "Art. 18(4)(a) binds Contracting Parties where traffic keeps to the right; each country applies it through national law (e.g. StVO § 8). Contracting-party status per country not checked (Spain may not be a party; its national code has the same rule - not confirmed)."
+  },
+  {
+   "rule_id": "PRIO-US",
+   "countries": [
+    "United States"
+   ],
+   "category": "priority_to_right",
+   "road_type": "junction",
+   "effect": "prior",
+   "text": "At an uncontrolled intersection, the first vehicle to arrive goes first; when two arrive at the same time, the driver on the left yields to the driver on the right.",
+   "args": {
+    "yield_to": "right",
+    "condition": "unsigned_junction_simultaneous_arrival"
+   },
+   "source": {
+    "title": "State vehicle codes (Uniform Vehicle Code § 11-401 pattern)",
+    "url": "https://www.nhtsa.gov/"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "STATE-LEVEL; not confirmed in this session. Four-way stops follow the same first-arrival-then-right pattern."
+  },
+  {
+   "rule_id": "RBT-FR",
+   "countries": [
+    "France"
+   ],
+   "category": "roundabout",
+   "road_type": "roundabout",
+   "effect": "prior",
+   "text": "In France a driver entering a roundabout (carrefour à sens giratoire) must give way to traffic already circulating on it.",
+   "args": {
+    "yield_to": "circulating"
+   },
+   "source": {
+    "title": "Code de la route, Article R415-10",
+    "url": "https://www.legifrance.gouv.fr/codes/article_lc/LEGIARTI000006842250",
+    "ref": "R415-10"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1
+  },
+  {
+   "rule_id": "RBT-GENERAL",
+   "countries": [
+    "Austria",
+    "Belgium",
+    "Bulgaria",
+    "Croatia",
+    "Czechia",
+    "Denmark",
+    "Estonia",
+    "Finland",
+    "Germany",
+    "Greece",
+    "Hungary",
+    "Italy",
+    "Latvia",
+    "Lithuania",
+    "Luxembourg",
+    "Netherlands",
+    "Poland",
+    "Portugal",
+    "Romania",
+    "Slovakia",
+    "Slovenia",
+    "Spain",
+    "Sweden",
+    "United States"
+   ],
+   "category": "roundabout",
+   "road_type": "roundabout",
+   "effect": "prior",
+   "text": "Traffic entering a roundabout gives way to traffic already circulating on it (normally signed with a give-way sign at each entry).",
+   "args": {
+    "yield_to": "circulating"
+   },
+   "source": {
+    "title": "Convention on Road Traffic (Vienna, 1968)",
+    "url": "https://unece.org/DAM/trans/conventn/Conv_road_traffic_EN.pdf",
+    "ref": "Art. 25 ter (2006 amendment)"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Practice in all 25 countries; the convention article and the national texts were not confirmed in this session. US: 'yield on entry' by state code and signage."
+  },
+  {
+   "rule_id": "EMV-EU",
+   "countries": [
+    "Austria",
+    "Belgium",
+    "Bulgaria",
+    "Croatia",
+    "Czechia",
+    "Denmark",
+    "Estonia",
+    "Finland",
+    "France",
+    "Germany",
+    "Greece",
+    "Hungary",
+    "Italy",
+    "Latvia",
+    "Lithuania",
+    "Luxembourg",
+    "Netherlands",
+    "Poland",
+    "Portugal",
+    "Romania",
+    "Slovakia",
+    "Slovenia",
+    "Spain",
+    "Sweden"
+   ],
+   "category": "emergency_vehicle",
+   "road_type": "any",
+   "effect": "memory",
+   "text": "When an emergency vehicle approaches with blue flashing lights and siren, leave room for it to pass and stop if necessary.",
+   "args": {
+    "action": "clear_way_stop_if_needed"
+   },
+   "source": {
+    "title": "Convention on Road Traffic (Vienna, 1968)",
+    "url": "https://unece.org/DAM/trans/conventn/Conv_road_traffic_EN.pdf",
+    "ref": "Art. 34 para. 1"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "Convention text confirmed by official-domain WebSearch 2026-10-25; national application per country not individually verified",
+   "version_added": 1,
+   "caveat": "Several countries additionally mandate an emergency corridor (Rettungsgasse) in queues - not confirmed per country."
+  },
+  {
+   "rule_id": "EMV-US",
+   "countries": [
+    "United States"
+   ],
+   "category": "emergency_vehicle",
+   "road_type": "any",
+   "effect": "memory",
+   "text": "When an emergency vehicle approaches with lights and siren, pull over to the right edge of the road and stop until it has passed; slow down or move over when passing stopped emergency vehicles.",
+   "args": {
+    "action": "pull_right_and_stop"
+   },
+   "source": {
+    "title": "State vehicle codes",
+    "url": "https://www.nhtsa.gov/"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "STATE-LEVEL; not confirmed in this session."
+  },
+  {
+   "rule_id": "PED-EU",
+   "countries": [
+    "Austria",
+    "Belgium",
+    "Bulgaria",
+    "Croatia",
+    "Czechia",
+    "Denmark",
+    "Estonia",
+    "Finland",
+    "France",
+    "Germany",
+    "Greece",
+    "Hungary",
+    "Italy",
+    "Latvia",
+    "Lithuania",
+    "Luxembourg",
+    "Netherlands",
+    "Poland",
+    "Portugal",
+    "Romania",
+    "Slovakia",
+    "Slovenia",
+    "Spain",
+    "Sweden"
+   ],
+   "category": "pedestrian_crossing",
+   "road_type": "pedestrian_crossing",
+   "effect": "memory",
+   "text": "At a marked pedestrian crossing without signals, approach at a speed that lets you stop and let pedestrians cross; when turning, give way to pedestrians crossing the road you turn into.",
+   "args": {
+    "action": "yield_to_pedestrians"
+   },
+   "source": {
+    "title": "Convention on Road Traffic (Vienna, 1968)",
+    "url": "https://unece.org/DAM/trans/conventn/Conv_road_traffic_EN.pdf",
+    "ref": "Art. 21 para. 2"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "Convention text confirmed by official-domain WebSearch 2026-10-25; national application per country not individually verified",
+   "version_added": 1,
+   "caveat": "Many countries require yielding to a pedestrian who is about to step onto the crossing (stricter than the convention); not confirmed per country."
+  },
+  {
+   "rule_id": "PED-US",
+   "countries": [
+    "United States"
+   ],
+   "category": "pedestrian_crossing",
+   "road_type": "pedestrian_crossing",
+   "effect": "memory",
+   "text": "Yield to pedestrians in marked or unmarked crosswalks at intersections, and to pedestrians when turning on a green or after stopping on red.",
+   "args": {
+    "action": "yield_to_pedestrians"
+   },
+   "source": {
+    "title": "State vehicle codes",
+    "url": "https://www.nhtsa.gov/"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "STATE-LEVEL; not confirmed in this session."
+  },
+  {
+   "rule_id": "TRAM-GENERAL",
+   "countries": [
+    "Austria",
+    "Belgium",
+    "Bulgaria",
+    "Croatia",
+    "Czechia",
+    "Denmark",
+    "Estonia",
+    "Finland",
+    "France",
+    "Germany",
+    "Greece",
+    "Hungary",
+    "Italy",
+    "Latvia",
+    "Lithuania",
+    "Luxembourg",
+    "Netherlands",
+    "Poland",
+    "Portugal",
+    "Romania",
+    "Slovakia",
+    "Slovenia",
+    "Spain",
+    "Sweden",
+    "United States"
+   ],
+   "category": "tram",
+   "road_type": "any",
+   "effect": "memory",
+   "text": "Trams generally have priority: do not obstruct tram tracks, give way to trams at junctions unless signed otherwise, and do not pass a tram stopped at a stop without a refuge while passengers board or alight.",
+   "args": {
+    "action": "yield_to_trams"
+   },
+   "source": {
+    "title": "National traffic codes (e.g. StVO § 2, § 9, § 20)",
+    "url": "https://www.gesetze-im-internet.de/stvo_2013/"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Applies where tram networks exist (not every country in this list has one); details differ by country; not confirmed in this session."
+  },
+  {
+   "rule_id": "SCHOOLBUS-US",
+   "countries": [
+    "United States"
+   ],
+   "category": "school_bus",
+   "road_type": "any",
+   "effect": "memory",
+   "text": "In the United States it is illegal to pass a school bus with red lights flashing and stop arm extended; stop and wait until the lights stop, the stop arm is withdrawn and the bus moves.",
+   "args": {
+    "action": "stop_until_bus_moves",
+    "condition": "school_bus_red_lights_stop_arm"
+   },
+   "source": {
+    "title": "NHTSA - Reducing the Illegal Passing of School Buses",
+    "url": "https://www.nhtsa.gov/school-bus-safety/reducing-illegal-passing-school-buses"
+   },
+   "evidence": "PUBLISHED",
+   "verification": "official-domain-restricted WebSearch 2026-10-25 (direct fetch blocked by egress)",
+   "version_added": 1,
+   "caveat": "Every state has the law; front approaches on divided roads may be exempt depending on the state."
+  },
+  {
+   "rule_id": "DRL-ALWAYS",
+   "countries": [
+    "Bulgaria",
+    "Czechia",
+    "Denmark",
+    "Estonia",
+    "Finland",
+    "Latvia",
+    "Lithuania",
+    "Poland",
+    "Slovakia",
+    "Slovenia",
+    "Sweden"
+   ],
+   "category": "daytime_lights",
+   "road_type": "any",
+   "effect": "memory",
+   "text": "Dipped headlights or daytime running lights must be on at all times while driving, including in daylight.",
+   "args": {
+    "lights": "always_on"
+   },
+   "source": {
+    "title": "National traffic codes",
+    "url": "https://unece.org/"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Country list from best knowledge, not confirmed in this session; no effect on the planning decision."
+  },
+  {
+   "rule_id": "DRL-OUTSIDE-URBAN",
+   "countries": [
+    "Hungary",
+    "Italy",
+    "Romania"
+   ],
+   "category": "daytime_lights",
+   "road_type": "rural",
+   "effect": "memory",
+   "text": "Dipped headlights or daytime running lights must be on in daylight outside built-up areas.",
+   "args": {
+    "lights": "on_outside_built_up"
+   },
+   "source": {
+    "title": "National traffic codes",
+    "url": "https://unece.org/"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Not confirmed in this session; Italy also on motorways."
+  },
+  {
+   "rule_id": "DRL-SEASONAL",
+   "countries": [
+    "Croatia"
+   ],
+   "category": "daytime_lights",
+   "road_type": "any",
+   "effect": "memory",
+   "text": "Dipped headlights or daytime running lights must be on in daylight during the winter period.",
+   "args": {
+    "lights": "on_in_winter_period"
+   },
+   "source": {
+    "title": "Zakon o sigurnosti prometa na cestama",
+    "url": "https://www.zakon.hr/z/78/zakon-o-sigurnosti-prometa-na-cestama"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Period boundaries not confirmed in this session."
+  },
+  {
+   "rule_id": "SIDE-RIGHT",
+   "countries": [
+    "Austria",
+    "Belgium",
+    "Bulgaria",
+    "Croatia",
+    "Czechia",
+    "Denmark",
+    "Estonia",
+    "Finland",
+    "France",
+    "Germany",
+    "Greece",
+    "Hungary",
+    "Italy",
+    "Latvia",
+    "Lithuania",
+    "Luxembourg",
+    "Netherlands",
+    "Poland",
+    "Portugal",
+    "Romania",
+    "Slovakia",
+    "Slovenia",
+    "Spain",
+    "Sweden",
+    "United States"
+   ],
+   "category": "driving_side",
+   "road_type": "any",
+   "effect": "memory",
+   "text": "Traffic keeps to the right; overtake on the left.",
+   "args": {
+    "side": "right"
+   },
+   "source": {
+    "title": "Convention on Road Traffic (Vienna, 1968)",
+    "url": "https://unece.org/DAM/trans/conventn/Conv_road_traffic_EN.pdf",
+    "ref": "Art. 10"
+   },
+   "evidence": "UNVERIFIED",
+   "verification": "not confirmed from an official source in this session",
+   "version_added": 1,
+   "caveat": "Uncontested for all 25 countries but not confirmed per country in this session; untestable in the corpus (no left-hand-traffic clips)."
+  }
+ ]
+}
