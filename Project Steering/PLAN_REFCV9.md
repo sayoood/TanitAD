@@ -137,3 +137,14 @@ A true-map input is privileged: P4 is an oracle bound, never a deployable arm (v
 * **Why:** the z_tac → progress relation is memorised on the trunk's training clips (held-out-episode R² inside train 0.54 / 0.25 / 0.27 / 0.33 → eval 0.41 / −0.27 / −0.49 / −0.55), while z_tac's distribution barely shifts (domain AUC 0.547).
 * **The lever survives.** Cross-fitted on clips refcv8 never trained on, z_tac beats the scalar floor, separated at both seeds (S2 −0.0044, S6 −0.129 m). The exploratory size of the prize vs the shipped stage: −0.0105 on S2, −0.20 m on S6 (not a claim).
 * **Consequence for refcv9's design:** the progress head must be fitted on a CLEAN CALIBRATION SPLIT (clips the trunk never trains on). Co-training it on the trunk's own clips would learn the memorised relation that failed here. Options and the PI decision: PI_DECISION in chat 2026-10-25. Package: `TanitAD Research Lab/Architecture & Inference/Research/2026-10-25-refcv9-l1/`.
+
+## 10. P4 result (Master Mind, 2026-10-25 ~22:40 Berlin) -- the planner does not read map content
+
+* **INCONCLUSIVE-INERT, pre-registered (R8-P4-GTMAP).** Injecting the TRUE map (mIoU 0.85 vs refcv8's own 0.22) into refcv8's BEV
+  leaves S6 ADE unchanged (+0.0096 / +0.0079, n.s.), and a WRONG map injected the same way does not hurt either.
+* **Consequence for the perception track:** P1 (in-model box set prediction) and P3 (thin-class loss / temporal fusion) improve
+  heads the planner does not consume, so neither can move driving as refcv8 is wired. They stay perception-quality work, not
+  planning levers, until refcv9 wires map content into the planner (e.g. map tokens in the decoder's cross-attention). That
+  wiring is an architecture change and a PI decision.
+* **What does move planning (measured today):** the longitudinal decision -- the oracle lon class (missed-decel 0.470 → 0.341, S6
+  ADE −0.150), a z_tac probe that beats the lon head (AUC 0.762 vs 0.685), and a progress head on a clean split (L1C, running).
