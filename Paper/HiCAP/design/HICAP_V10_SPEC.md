@@ -43,9 +43,9 @@ producer has all the inputs it needs in our own corpus.
 | Fusion, level queries, critics, factored vocabulary (core HiCAP) | frozen-VLM tap caches, motion frames, ego, v9 tactical labels | v9 labels ✓, egomotion ✓, front-wide mp4 ✓ | **VLM tap caches** (GPU build, `build_hicap_cache.py`, never run) | pod job E27 | all real training |
 | Strategic level (route decision) | strategic labels | v8.1: one label per clip at t0 = 8 s ✓ | denser strategic supervision | v10 keeps v8.1 by reference | weak but runnable |
 | **Strategic level — country** (new) | country per clip | ✓ upstream, joined 100 % | nothing | `stack/scripts/build_v10_country.py` (today) | — |
-| Imagination Tier 0 (outcome-aware targets) | per-candidate teacher cost J(a) | agent cuboids ✓ (4,585 clips), ego ✓, vocab ✓ | **the producer** | `supervision.py` (stream S) | Tier 0 |
-| Imagination Tier 1 (exogenous E-head) | lead gap / closing / lead-acc at 0.5–3 s, mode, onset | agent cuboids ✓; v9 has per-row lead gap/time-gap ✓ (cross-check) | **the producer** | `supervision.py` | Tier 1 |
-| Imagination Tier 2 (counterfactual cost heads) | cost of top-K candidates vs logged agent futures | agent cuboids ✓ | **the producer** (same) | `supervision.py` | Tier 2 |
+| Imagination Tier 0 (outcome-aware targets) | per-candidate teacher cost J(a) | agent cuboids ✓ (all 4,508 v9 clips), ego ✓, train vocab ✓ (`DataEng/v10/vocab`) | producer ✓, eval139 + 100-clip train built; **full train build** running | `supervision.py` | Tier 0 |
+| Imagination Tier 1 (exogenous E-head) | lead gap / closing / lead-acc at 0.5–3 s, mode, onset | agent cuboids ✓; v9 lead gap cross-check: 90.1 % lead agreement, 92.1 % gap within 2 m after +3.55 m offset (MEASURED, eval139) | full train build | `supervision.py` | Tier 1 |
+| Imagination Tier 2 (counterfactual cost heads) | cost of top-K candidates vs logged agent futures | agent cuboids ✓ | full train build (same job) | `supervision.py` | Tier 2 |
 | Elastic sensing gate | per-camera-option decision errors | front-wide only | **6 other cameras' caches** + the per-option error runs | pull upstream chunks by reference (v10 `camera_ref`), then per-option eval | gate |
 | Knowledge — node towers | frozen-text-tower embeddings of node definitions | definitions ✓ | **embedding job** (GPU, minutes) | pod job | real (not hashed) node embeddings |
 | **Knowledge — traffic rules** (new) | per-country rule texts + their embeddings | country ✓ | **RuleBook content + embedding job** | `rules.py` + `rulebook_v1.json` (stream R) | rule memory |
