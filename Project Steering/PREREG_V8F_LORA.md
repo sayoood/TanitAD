@@ -155,3 +155,32 @@
 * **Amendment 1 item 3's fallback** (re-encode the train cache and retrain the base) is no longer expected, but stays as the rule if the same-device control fails. Its cost is ≈ 15.3 box-2 h with the dev box building the frames (ESTIMATED, `fallback_cost.*`).
 * **Amendment 1 item 7 stands.** Box 2 deleted 3,972 of the 4,572 train frame files after encoding, so the on-the-fly arm needs them rebuilt (≈ 160 GB).
 * **Nothing else changes:** the bars, the estimator, the stage rule, the decision table, the refusals.
+
+## Amendment 3 (2026-10-25, after AR-2 run 2, before any LoRA training)
+
+**What AR-2 run 2 measured** (box 2, RTX 4060, tip `771a4eac`; `raw/2026-10-25-lora-ar2/run/`):
+* **Same-device identity control: PASS, bit for bit.** Rel L2 is exactly 0.0, with 100 % bitwise-equal tokens on all 6 clips. The pixel-scale mutant reads 0.028 and is caught.
+* **The TRAINING path's identity probe: FAIL as committed.** Rel L2 is 2.41e-2 against τ_device = 1e-3, so AR-2 fails.
+* **The smoke itself ran:** 200 steps at 2.02 s/step, peak 1.65 GiB allocated. The projection is 494 h per seed on box 2 (ESTIMATED), so the venue rule names the A40.
+
+**Diagnosis (MEASURED from the probe's own fields, `run/smoke/run/selfcheck.json`):**
+* 75.6 % of the 655,360 values are bitwise equal, the largest difference is 0.25 (one fp8 e4m3 step at that magnitude), and the mean absolute difference is 0.0019.
+* That is the signature of fp8 rounding-boundary flips from small bf16 differences upstream. A systematic error (mode, dropout, preprocessing, alignment) would leave almost nothing bitwise equal.
+* The probe encoded its 9 unique frames in ONE micro-batch of 9. The cache builder, and the identity driver that matched it bit for bit, encode in batches of 8.
+* Different batch shapes select different GEMM and attention kernels. Their last-ULP bf16 differences cross fp8 boundaries on about a quarter of the values. HYPOTHESIS until the rerun reads it.
+
+**The amendment (no bar moves; τ_device stays 1e-3):**
+1. Every encoder forward on the training path, with or without graph, runs on micro-batches of EXACTLY the builder's batch of 8 frames.
+   * The last partial micro-batch is padded to 8 by repeating its final frame.
+   * The pad outputs are discarded, and their upstream gradient is exactly zero, so the LoRA gradient is unchanged.
+   * The trainer refuses any other `chunk`.
+2. Pinned by tests:
+   * a spy asserts that every encoder call sees batch 8, including the last partial chunk;
+   * an analytic check: the pad rows' gradient is exactly 0.0;
+   * a mutant (chunk 16) turns a test RED.
+3. **AR-2 reruns** (identity + smoke, minutes of box 2, under the PI's AR-2 go). It passes only if the training path's probe meets τ_device.
+   * If it still misses, the cause is not batch shape. The arm stays two levers (Amendment 2's fallback) until it is found.
+
+**Venue (unchanged rule, new number):** 494 h per seed on box 2 means the A40. A full LoRA run there is ESTIMATED at about 100+ GPU-hours per seed, scaling the 4060's measured step time by an assumed 4–5× throughput. It needs the PI's go for the A40.
+* The register's ceiling for LoRA's stratum is 0.10 / 0.04 m (`D-V8F-T-ATTRIB-1`), below 2F.
+* ⇒ The MM recommends that the full run waits for `PREREG_V8F_KIND`. It is worth its cost only if the vision-side kinds (angle, geom, tte), or KIND's CURVE stratum, carry.

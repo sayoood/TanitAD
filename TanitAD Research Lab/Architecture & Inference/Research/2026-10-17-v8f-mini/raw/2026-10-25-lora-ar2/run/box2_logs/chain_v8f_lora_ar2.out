@@ -1,0 +1,23 @@
+10-25 06:55 waiting for the predecessor chain (/c/Users/Admin/box2_ship/logs/chain_v8f_dscale.out)
+10-25 06:55 boot0=2026-10-17 18:43:26
+10-25 06:56 launched pid=23372 rc=0 log=D:\tanitad\logs\v8flora10250655_refresh.log
+===== ZZJOB-END 25.10.2026  6:58:08,68 rc=0
+10-25 06:58 v8flora10250655_refresh rc=0
+10-25 06:58 box 2 code = tip 771a4eaca1666fc3bff1d9d98ba4a971a62887a5 (13 key files sha-checked; both v9 releases md5-checked)
+OK
+MANIFEST-OK 6 clips, 0 stored files md5-checked
+OK
+10-25 06:59 frames built by the production builder, equal to the banked ones tensor by tensor, shipped and sha256-checked (6 clips)
+10-25 06:59 launched pid=8448 rc=0 log=D:\tanitad\logs\telemetry_long.log
+10-25 07:01 launched pid=18720 rc=0 log=D:\tanitad\logs\v8flora10250655_identitylora.log
+===== ZZJOB-END 25.10.2026  7:02:00,43 rc=0
+10-25 07:02 v8flora10250655_identitylora rc=0
+OK
+10-25 07:02 identity control PASS, mutant caught
+10-25 07:02 launched pid=23692 rc=0 log=D:\tanitad\logs\v8flora10250655_smokelora.log
+===== ZZJOB-END 25.10.2026  7:09:30,32 rc=0
+10-25 07:09 v8flora10250655_smokelora rc=0
+identity PASS worst rel-L2 0.00e+00 (8f387977), mutant PIXEL_SCALE_255_to_256 caught at 2.79e-02 | smoke 200 steps: step 2.02 s, peak 1.65 GiB alloc / 1.93 reserved, smoke-path identity probe rel-L2 2.41e-02 (> 1e-3), projected 494.3 h/seed (ESTIMATED) -> A40 under AR-1 to AR-4 (plan 13.5): box 2 projects 494.3 h per seed > 36 h
+PROBLEM: the TRAINING path's identity probe misses tau_device: rel-L2 2.413e-02 > 0.001 (train with the builder's batch of 8, or find why the micro-batch changes the numerics, before any training)
+NOT OK
+ZZV8FMINI-STOP the AR-2 smoke did not pass its checks: see /c/Users/Admin/box2_ship/logs/v8f_lora_ar2/ar2_read.json

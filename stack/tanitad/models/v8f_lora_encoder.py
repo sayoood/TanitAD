@@ -540,13 +540,33 @@ def unique_frames(clips: Sequence[str], idx: np.ndarray) -> tuple[list, np.ndarr
 
 
 # --------------------------------------------------------------------------------------------- the exact accumulation
+#: PREREG_V8F_LORA Amendment 3: the cache builder encodes in batches of 8 (``dinov3_fp8_encode_ship.encode_episode``), and a different batch SHAPE
+#: picks different GEMM / attention kernels whose last-ULP bf16 differences cross fp8 rounding boundaries (AR-2 run 2: a 9-frame call read rel-L2
+#: 2.41e-2, 75.6 % bitwise equal). So every encoder call on the training path sees EXACTLY this many frames.
+BUILDER_BATCH = 8
+
+
+def pooled_builder_shaped(enc: DinoV3LoRAEncoder, x: torch.Tensor) -> torch.Tensor:
+    """``enc.pooled`` in calls of exactly ``BUILDER_BATCH`` frames; the last group is padded by repeating its final frame and the pad rows are
+    dropped, so they carry no output and receive exactly zero gradient."""
+    outs = []
+    for s in range(0, x.shape[0], BUILDER_BATCH):
+        g = x[s:s + BUILDER_BATCH]
+        n = g.shape[0]
+        if n < BUILDER_BATCH:
+            g = torch.cat([g, g[-1:].expand(BUILDER_BATCH - n, *g.shape[1:])])
+        outs.append(enc.pooled(g)[:n])
+    return torch.cat(outs)
+
+
 def encode_chunked(enc: DinoV3LoRAEncoder, frames_u8: torch.Tensor, chunk: int, *, grad: bool, device) -> torch.Tensor:
-    """Encode ``[U, 3, H, W]`` uint8 in chunks of ``chunk`` frames -> fp32 ``[U, n_tok, D]`` on ``device`` (no autograd unless ``grad``)."""
+    """Encode ``[U, 3, H, W]`` uint8 in chunks of ``chunk`` frames -> fp32 ``[U, n_tok, D]`` on ``device`` (no autograd unless ``grad``). Inside a
+    chunk the encoder runs builder-shaped (``pooled_builder_shaped``)."""
     outs = []
     ctx = contextlib.nullcontext() if grad else torch.no_grad()
     with ctx:
         for s in range(0, frames_u8.shape[0], chunk):
-            outs.append(enc.pooled(frames_u8[s:s + chunk].to(device)))
+            outs.append(pooled_builder_shaped(enc, frames_u8[s:s + chunk].to(device)))
     return torch.cat(outs)
 
 
@@ -588,7 +608,7 @@ def cached_grad_step(enc: DinoV3LoRAEncoder, frames_u8: torch.Tensor, frame_map:
         tm["heads_fwd_bwd_s"] = time.perf_counter() - t0
         t0 = time.perf_counter()
     for s in range(0, frames_u8.shape[0], chunk):
-        p = enc.pooled(frames_u8[s:s + chunk].to(device))
+        p = pooled_builder_shaped(enc, frames_u8[s:s + chunk].to(device))
         torch.autograd.backward(p, g[s:s + chunk])
     out["leaf_grad_abs_sum"] = float(g.abs().sum())
     if timing:
