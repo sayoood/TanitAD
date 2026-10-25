@@ -17,6 +17,8 @@
 
 > **Amendment A5 — 2026-10-25 (arrays read, md5-verified; `hicap_v9_screen_census.py/_result.json`, MEASURED).** v9: lateral 3 usable classes, longitudinal 7 ⇒ **3×7 = 21 tactical cells, 19 populated (all ≥ 30 train rows; 15 ≥ 30 on eval139)** — the 35-cell grid is void. **Contamination:** eval139: 4/139 (2.9 %, Wilson [1.1, 7.2]) in NVIDIA's 5k Alpamayo-1.5 calibration train sample, 0/139 in the 644-clip gold eval list; train 81/4,369 (1.85 %) and 3/4,369. The 4 eval clips (sha12 in the result JSON) are excluded from H-HC2. **First trial = Cosmos3-Edge (4 B)**, cache on the v9 train rows (869,278 rows ≈ 24.1 h; 2 Hz refresh ⇒ ~173 k ticks, ~136 GB int8 at d 2,048, 128 tokens, 3 depths — ESTIMATED), then H-HC0. Needs a GPU pod; not runnable in this container.
 
+> **Amendment A6 — 2026-10-25 (PI: compare Alpamayo 2 Edge, Cosmos 3 Nano, Cosmos 3 Edge).** Alpamayo 2 Edge is **announced** (web search summaries, Oct 2026: ~2 B reasoning VLA on Cosmos 3 Edge's Nemotron foundation, DRIVE AGX Thor, 10 Hz; INHERITED, pages not fetchable) but **no weights on the HF hub** (nvidia/* lists Alpamayo2-Super, Alpamayo-1.5-10B, Alpamayo-R1-10B only; 3 guessed ids 404). Plan: three-backbone comparison **Edge (general 2.43 B) / Nano (general 8.76 B) / Alpamayo 2 Edge (driving, Edge-sized)** on identical heads and cached-feature protocol; if Alpamayo 2 Edge is public, **H-HC2 = Alpamayo 2 Edge vs Cosmos3-Edge** (same architecture, size-matched — supersedes the 8 B pair, kept as fallback). Taps/cache pipeline is shared with Edge. VLA trajectory head is discarded; prompt-time taps only. Edge first (A3); Nano second; Alpamayo 2 Edge on release.
+
 ---
 
 ## 0. The claim under test
