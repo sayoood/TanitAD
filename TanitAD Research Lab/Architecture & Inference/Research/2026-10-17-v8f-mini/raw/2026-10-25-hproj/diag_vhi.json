@@ -1,0 +1,777 @@
+{
+ "label": "POST-HOC DIAGNOSTIC (not a PREREG row, no bar, no outcome change)",
+ "seeds": {
+  "M2b_s0": {
+   "n_windows": 2399,
+   "pred_v_hi_ms": {
+    "min": -3.2446718215942383,
+    "p05": 2.5662611961364745,
+    "median": 10.978113174438477,
+    "max": 32.787113189697266,
+    "n_nonpositive": 20,
+    "n_nonfinite": 0
+   },
+   "gt_v_hi_ms": {
+    "n_finite": 2351,
+    "median": 10.932068824768066
+   },
+   "posted_limit_ms_median": 13.88888888888889,
+   "pred_v_hi_vs_gt_v_hi_mae_ms": 1.681042188086564,
+   "n_windows_gt_v_hi_below_limit": 2084,
+   "n_windows_pred_v_hi_below_limit": 2223,
+   "GT_plan_vs_posted_limit_alone": {
+    "violation_rate": 0.0633597332221759,
+    "n": 152
+   },
+   "GT_plan_vs_rule_cap_min_limit_vhi": {
+    "violation_rate": 0.0633597332221759
+   },
+   "HPv_or_rate": {
+    "viol_any": 0.07961650687786578,
+    "viol_SPEED": 0.0,
+    "viol_STOP": 0.020008336807002917,
+    "viol_TURN": 0.0070862859524802,
+    "viol_LEAD": 0.06169237182159233,
+    "self_viol_any": 0.30804501875781576
+   },
+   "HPv_pr_rate": {
+    "viol_any": 0.15923301375573157,
+    "viol_SPEED": 0.10212588578574407,
+    "viol_STOP": 0.02209253855773239,
+    "viol_TURN": 0.007919966652771988,
+    "viol_LEAD": 0.07336390162567737,
+    "self_viol_any": 0.09045435598165902
+   },
+   "Bv_pr_rate": {
+    "viol_any": 0.13005418924551895,
+    "viol_SPEED": 0.0779491454772822,
+    "viol_STOP": 0.015839933305543976,
+    "viol_TURN": 0.007503126302626094,
+    "viol_LEAD": 0.057107127969987494,
+    "self_viol_any": 0.08045018757815757
+   },
+   "reference_rates_from_score_json": {
+    "B": {
+     "viol_any": 0.15964985410587745,
+     "viol_SPEED": 0.09545644018340975,
+     "viol_STOP": 0.018757815756565235,
+     "viol_TURN": 0.004168403501458941,
+     "viol_LEAD": 0.07253022092538558,
+     "self_viol_any": 0.22967903293038766
+    },
+    "H": {
+     "viol_any": 0.2601083784910379,
+     "viol_SPEED": 0.19549812421842436,
+     "viol_STOP": 0.02917882451021259,
+     "viol_TURN": 0.0070862859524802,
+     "viol_LEAD": 0.10421008753647353,
+     "self_viol_any": 0.3697373905794081
+    },
+    "HP": {
+     "viol_any": 0.2134222592746978,
+     "viol_SPEED": 0.1483951646519383,
+     "viol_STOP": 0.028761984160066693,
+     "viol_TURN": 0.006669445602334306,
+     "viol_LEAD": 0.09920800333472281,
+     "self_viol_any": 0.3405585660691955
+    },
+    "Bp": {
+     "viol_any": 0.15214672780325136,
+     "viol_SPEED": 0.09003751563151313,
+     "viol_STOP": 0.01834097540641934,
+     "viol_TURN": 0.005002084201750729,
+     "viol_LEAD": 0.07002917882451021,
+     "self_viol_any": 0.22551062942892872
+    }
+   },
+   "paired_vs_B": {
+    "HPv_or": {
+     "ade2": {
+      "mean": 0.2161,
+      "lo": 0.1432,
+      "hi": 0.2941,
+      "separated": true,
+      "lower_is_better": true,
+      "better": false,
+      "worse": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "ade6": {
+      "mean": -0.0264,
+      "lo": -0.1686,
+      "hi": 0.1284,
+      "separated": false,
+      "lower_is_better": true,
+      "better": false,
+      "worse": false,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "cons": {
+      "viol_any": {
+       "mean": -0.08,
+       "lo": -0.1075,
+       "hi": -0.0533,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_SPEED": {
+       "mean": -0.0955,
+       "lo": -0.1216,
+       "hi": -0.0725,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_STOP": {
+       "mean": 0.0013,
+       "lo": -0.0029,
+       "hi": 0.0054,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_TURN": {
+       "mean": 0.0029,
+       "lo": 0.0004,
+       "hi": 0.0058,
+       "separated": true,
+       "lower_is_better": true,
+       "better": false,
+       "worse": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_LEAD": {
+       "mean": -0.0108,
+       "lo": -0.0242,
+       "hi": 0.0017,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "self_viol_any": {
+       "mean": 0.0784,
+       "lo": 0.0538,
+       "hi": 0.1038,
+       "separated": true,
+       "lower_is_better": true,
+       "better": false,
+       "worse": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      }
+     }
+    },
+    "HPv_pr": {
+     "ade2": {
+      "mean": 0.5208,
+      "lo": 0.3989,
+      "hi": 0.642,
+      "separated": true,
+      "lower_is_better": true,
+      "better": false,
+      "worse": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "ade6": {
+      "mean": 0.9099,
+      "lo": 0.6393,
+      "hi": 1.2125,
+      "separated": true,
+      "lower_is_better": true,
+      "better": false,
+      "worse": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "cons": {
+      "viol_any": {
+       "mean": -0.0004,
+       "lo": -0.0171,
+       "hi": 0.0167,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_SPEED": {
+       "mean": 0.0067,
+       "lo": -0.0071,
+       "hi": 0.02,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_STOP": {
+       "mean": 0.0033,
+       "lo": -0.0004,
+       "hi": 0.0075,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_TURN": {
+       "mean": 0.0038,
+       "lo": 0.0008,
+       "hi": 0.0071,
+       "separated": true,
+       "lower_is_better": true,
+       "better": false,
+       "worse": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_LEAD": {
+       "mean": 0.0008,
+       "lo": -0.0109,
+       "hi": 0.0125,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "self_viol_any": {
+       "mean": -0.1392,
+       "lo": -0.1764,
+       "hi": -0.1037,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      }
+     }
+    },
+    "Bv_pr": {
+     "ade2": {
+      "mean": 0.5379,
+      "lo": 0.4171,
+      "hi": 0.658,
+      "separated": true,
+      "lower_is_better": true,
+      "better": false,
+      "worse": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "ade6": {
+      "mean": 1.136,
+      "lo": 0.8599,
+      "hi": 1.4312,
+      "separated": true,
+      "lower_is_better": true,
+      "better": false,
+      "worse": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "cons": {
+      "viol_any": {
+       "mean": -0.0296,
+       "lo": -0.0442,
+       "hi": -0.0171,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_SPEED": {
+       "mean": -0.0175,
+       "lo": -0.0279,
+       "hi": -0.0092,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_STOP": {
+       "mean": -0.0029,
+       "lo": -0.0071,
+       "hi": 0.0,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_TURN": {
+       "mean": 0.0033,
+       "lo": 0.0004,
+       "hi": 0.0071,
+       "separated": true,
+       "lower_is_better": true,
+       "better": false,
+       "worse": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_LEAD": {
+       "mean": -0.0154,
+       "lo": -0.025,
+       "hi": -0.0075,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "self_viol_any": {
+       "mean": -0.1492,
+       "lo": -0.1868,
+       "hi": -0.1133,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      }
+     }
+    }
+   }
+  },
+  "M2b_s1": {
+   "n_windows": 2399,
+   "pred_v_hi_ms": {
+    "min": -1.3984975814819336,
+    "p05": 4.495302295684814,
+    "median": 11.521305084228516,
+    "max": 38.10752868652344,
+    "n_nonpositive": 3,
+    "n_nonfinite": 0
+   },
+   "gt_v_hi_ms": {
+    "n_finite": 2351,
+    "median": 10.932068824768066
+   },
+   "posted_limit_ms_median": 13.88888888888889,
+   "pred_v_hi_vs_gt_v_hi_mae_ms": 1.675238037507356,
+   "n_windows_gt_v_hi_below_limit": 2084,
+   "n_windows_pred_v_hi_below_limit": 1980,
+   "GT_plan_vs_posted_limit_alone": {
+    "violation_rate": 0.0633597332221759,
+    "n": 152
+   },
+   "GT_plan_vs_rule_cap_min_limit_vhi": {
+    "violation_rate": 0.0633597332221759
+   },
+   "HPv_or_rate": {
+    "viol_any": 0.10254272613588995,
+    "viol_SPEED": 0.0,
+    "viol_STOP": 0.02417674030846186,
+    "viol_TURN": 0.008753647353063776,
+    "viol_LEAD": 0.08253438932888704,
+    "self_viol_any": 0.14422676115047936
+   },
+   "HPv_pr_rate": {
+    "viol_any": 0.21759066277615674,
+    "viol_SPEED": 0.15006252605252188,
+    "viol_STOP": 0.027094622759483118,
+    "viol_TURN": 0.008336807002917883,
+    "viol_LEAD": 0.11046269278866194,
+    "self_viol_any": 0.06961233847436432
+   },
+   "Bv_pr_rate": {
+    "viol_any": 0.1784076698624427,
+    "viol_SPEED": 0.10254272613588995,
+    "viol_STOP": 0.02542726135889954,
+    "viol_TURN": 0.006669445602334306,
+    "viol_LEAD": 0.09670696123384744,
+    "self_viol_any": 0.06877865777407254
+   },
+   "reference_rates_from_score_json": {
+    "B": {
+     "viol_any": 0.20967069612338474,
+     "viol_SPEED": 0.12546894539391412,
+     "viol_STOP": 0.027094622759483118,
+     "viol_TURN": 0.006669445602334306,
+     "viol_LEAD": 0.10837849103793247,
+     "self_viol_any": 0.14297624010004167
+    },
+    "H": {
+     "viol_any": 0.2851187994997916,
+     "viol_SPEED": 0.22384326802834514,
+     "viol_STOP": 0.029595664860358483,
+     "viol_TURN": 0.0070862859524802,
+     "viol_LEAD": 0.12630262609420592,
+     "self_viol_any": 0.21717382242601083
+    },
+    "HP": {
+     "viol_any": 0.2409337223843268,
+     "viol_SPEED": 0.17465610671112963,
+     "viol_STOP": 0.029595664860358483,
+     "viol_TURN": 0.0070862859524802,
+     "viol_LEAD": 0.1204668611921634,
+     "self_viol_any": 0.17173822426010837
+    },
+    "Bp": {
+     "viol_any": 0.18841183826594415,
+     "viol_SPEED": 0.106294289287203,
+     "viol_STOP": 0.026677782409337224,
+     "viol_TURN": 0.006669445602334306,
+     "viol_LEAD": 0.10337640683618174,
+     "self_viol_any": 0.12505210504376824
+    }
+   },
+   "paired_vs_B": {
+    "HPv_or": {
+     "ade2": {
+      "mean": 0.2406,
+      "lo": 0.1653,
+      "hi": 0.3207,
+      "separated": true,
+      "lower_is_better": true,
+      "better": false,
+      "worse": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "ade6": {
+      "mean": 0.0229,
+      "lo": -0.1189,
+      "hi": 0.1789,
+      "separated": false,
+      "lower_is_better": true,
+      "better": false,
+      "worse": false,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "cons": {
+      "viol_any": {
+       "mean": -0.1071,
+       "lo": -0.1351,
+       "hi": -0.0816,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_SPEED": {
+       "mean": -0.1255,
+       "lo": -0.156,
+       "hi": -0.0975,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_STOP": {
+       "mean": -0.0029,
+       "lo": -0.0067,
+       "hi": 0.0,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_TURN": {
+       "mean": 0.0021,
+       "lo": 0.0004,
+       "hi": 0.0042,
+       "separated": true,
+       "lower_is_better": true,
+       "better": false,
+       "worse": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_LEAD": {
+       "mean": -0.0258,
+       "lo": -0.04,
+       "hi": -0.0133,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "self_viol_any": {
+       "mean": 0.0013,
+       "lo": -0.0175,
+       "hi": 0.0196,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      }
+     }
+    },
+    "HPv_pr": {
+     "ade2": {
+      "mean": 0.2102,
+      "lo": 0.1401,
+      "hi": 0.2908,
+      "separated": true,
+      "lower_is_better": true,
+      "better": false,
+      "worse": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "ade6": {
+      "mean": 0.3696,
+      "lo": 0.212,
+      "hi": 0.5591,
+      "separated": true,
+      "lower_is_better": true,
+      "better": false,
+      "worse": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "cons": {
+      "viol_any": {
+       "mean": 0.0079,
+       "lo": -0.0096,
+       "hi": 0.025,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_SPEED": {
+       "mean": 0.0246,
+       "lo": 0.0067,
+       "hi": 0.0413,
+       "separated": true,
+       "lower_is_better": true,
+       "better": false,
+       "worse": true,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_STOP": {
+       "mean": 0.0,
+       "lo": -0.0017,
+       "hi": 0.0017,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_TURN": {
+       "mean": 0.0017,
+       "lo": -0.0008,
+       "hi": 0.0042,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_LEAD": {
+       "mean": 0.0021,
+       "lo": -0.0054,
+       "hi": 0.0092,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "self_viol_any": {
+       "mean": -0.0734,
+       "lo": -0.1014,
+       "hi": -0.0496,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      }
+     }
+    },
+    "Bv_pr": {
+     "ade2": {
+      "mean": 0.2289,
+      "lo": 0.1599,
+      "hi": 0.3081,
+      "separated": true,
+      "lower_is_better": true,
+      "better": false,
+      "worse": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "ade6": {
+      "mean": 0.4324,
+      "lo": 0.272,
+      "hi": 0.6205,
+      "separated": true,
+      "lower_is_better": true,
+      "better": false,
+      "worse": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "estimator": "paired_episode_cluster_bootstrap"
+     },
+     "cons": {
+      "viol_any": {
+       "mean": -0.0313,
+       "lo": -0.0467,
+       "hi": -0.0175,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_SPEED": {
+       "mean": -0.0229,
+       "lo": -0.0375,
+       "hi": -0.0104,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_STOP": {
+       "mean": -0.0017,
+       "lo": -0.0037,
+       "hi": -0.0004,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_TURN": {
+       "mean": 0.0,
+       "lo": -0.0017,
+       "hi": 0.0017,
+       "separated": false,
+       "lower_is_better": true,
+       "better": false,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "viol_LEAD": {
+       "mean": -0.0117,
+       "lo": -0.0175,
+       "hi": -0.0063,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      },
+      "self_viol_any": {
+       "mean": -0.0742,
+       "lo": -0.1033,
+       "hi": -0.0496,
+       "separated": true,
+       "lower_is_better": true,
+       "better": true,
+       "worse": false,
+       "n_windows": 2399,
+       "n_episodes": 141,
+       "estimator": "paired_episode_cluster_bootstrap"
+      }
+     }
+    }
+   }
+  }
+ }
+}
