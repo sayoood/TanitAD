@@ -25,7 +25,7 @@ The PI has ruled that a VLM is the backbone and that its size is bounded by late
 (visual tokens of width $d_v$, a text tower, optionally an audio input).
 
 \paragraph{Motion adapter.}
-Frozen image and video encoders were measured to fail at metric ego-motion in this programme (a frozen single-frame encoder scored $2.1675$\,m ADE, REF-A\evI), and the ego block is admitted by the programme's 2026-09-02 ruling that velocity at cycle time is a legal initial state (its scope for the longitudinal acceleration, yaw rate and curvature is a PI decision, \S\ref{sec:limits}); the adapter exists to recover metric motion from frames, measured by H-HC1 with the ego block zeroed, and the ego-zeroed row is reported for every family. The adapter $M_\phi$ ($\approx 2$\,M parameters)
+Frozen image and video encoders were measured to fail at metric ego-motion in this programme (a frozen single-frame encoder scored $2.1675$\,m ADE, REF-A\evI), and the ego block is admitted by the programme's 2026-09-02 ruling that velocity at cycle time is a legal initial state (extended by the PI on 2026-10-25 to longitudinal acceleration and yaw rate; curvature is excluded and is not fed, \S\ref{sec:limits}); the adapter exists to recover metric motion from frames, measured by H-HC1 with the ego block zeroed, and the ego-zeroed row is reported for every family. The adapter $M_\phi$ ($\approx 2$\,M parameters)
 therefore takes the three-frame stack (100\,ms apart) at $64\times160$, with inter-frame differences, and returns $N_m=16$ motion tokens. It is the only vision component
 that is trained, and it is trained on frame pairs, not on single frames.
 
