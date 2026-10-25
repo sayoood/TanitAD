@@ -1,0 +1,377 @@
+{
+ "outcome": "DOMINATES P10",
+ "committed_next_step_verbatim": "HACC becomes the deployed post-map: 30 x 2 buffers per model, zero training, folded into `forward_infer` under its own landing with tests. The evidence videos are re-rendered on HACC. The T1-kin closed-loop read on HACC (`D-V8F-T1KIN-1`) is the next tier and needs a PI go for the pooled eval cache",
+ "tier": "T1-class open loop (own held outputs; no recorded future action)",
+ "estimator": "paired episode-cluster bootstrap, B=2000, 141 episodes, seed 0 (taniteval/ci.py). Answers 'another draw of EPISODES' ONLY; training-seed variance only via the two seeds side by side and F = |ADE6(s0)-ADE6(s1)| (H-ESTIM-SEED-1); inference is deterministic (no inference-seed floor).",
+ "F_exact_m": 0.12074012131477874,
+ "KEEP_bar_m": 0.06037006065738937,
+ "DOM_both": true,
+ "KEEP_both": true,
+ "SMOOTHER_both": true,
+ "ACCEL_NEG_either": true,
+ "controls_all_pass": true,
+ "per_seed": {
+  "M2b_s0": {
+   "PRIMARY_DOM": {
+    "pass": true,
+    "all_better_ok": true,
+    "all_not_worse_ok": true,
+    "rows": {
+     "ADE2": {
+      "mean": -0.0106,
+      "lo": -0.015,
+      "hi": -0.0056,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "separated-better"
+     },
+     "ADE6": {
+      "mean": -0.5034,
+      "lo": -0.6073,
+      "hi": -0.405,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "separated-better"
+     },
+     "accel MAE": {
+      "mean": -0.0215,
+      "lo": -0.0345,
+      "hi": -0.0087,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "separated-better"
+     },
+     "curvature MAE": {
+      "mean": -0.0056,
+      "lo": -0.0096,
+      "hi": -0.0021,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "separated-better"
+     },
+     "speed MAE": {
+      "mean": -0.1132,
+      "lo": -0.1547,
+      "hi": -0.0666,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "along MAE": {
+      "mean": -0.2323,
+      "lo": -0.3042,
+      "hi": -0.1569,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "cross-track MAE": {
+      "mean": -0.4027,
+      "lo": -0.4906,
+      "hi": -0.3173,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "heading MAE": {
+      "mean": -1.5548,
+      "lo": -1.915,
+      "hi": -1.2099,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "yaw-rate MAE": {
+      "mean": -0.8374,
+      "lo": -1.1086,
+      "hi": -0.6108,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "plan-derived lateral decision agreement": {
+      "mean": 0.0809,
+      "lo": 0.0617,
+      "hi": 0.1017,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "plan-derived longitudinal decision agreement": {
+      "mean": 0.0479,
+      "lo": 0.0117,
+      "hi": 0.0821,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "CONSISTENCY(a) 'any'": {
+      "mean": -0.075,
+      "lo": -0.1017,
+      "hi": -0.0496,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "DK headway min (m)": {
+      "mean": 0.2132,
+      "lo": -0.0879,
+      "hi": 0.5363,
+      "separated": false,
+      "better": false,
+      "worse": false,
+      "need": "not separated-worse",
+      "two_sided_sensitivity_separated": false
+     },
+     "DK time-gap min (s)": {
+      "mean": 0.0702,
+      "lo": -0.0086,
+      "hi": 0.1593,
+      "separated": false,
+      "better": false,
+      "worse": false,
+      "need": "not separated-worse",
+      "two_sided_sensitivity_separated": false
+     },
+     "DK LEAD-VIOL at-risk share": {
+      "mean": -0.0353,
+      "lo": -0.0625,
+      "hi": -0.0124,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse",
+      "two_sided_sensitivity_separated": true
+     }
+    }
+   },
+   "PRIMARY_KEEP": {
+    "delta": 0.0151,
+    "lo": -0.003,
+    "hi": 0.032,
+    "bar_hi_le": 0.06037006065738937,
+    "pass": true,
+    "hi_le_prereg_printed_0.0604": true
+   },
+   "HACC_minus_H_accel_curvature": {
+    "accel": {
+     "mean": -0.1253,
+     "lo": -0.1504,
+     "hi": -0.1065,
+     "separated": true
+    },
+    "curvature": {
+     "mean": -0.0131,
+     "lo": -0.0196,
+     "hi": -0.0082,
+     "separated": true
+    },
+    "accel_sep_neg": true,
+    "curv_sep_neg": true
+   },
+   "lam_star": 9998.3519231137,
+   "m_star": 4,
+   "rule_branch": "qualified: the smallest grid lambda meeting all four train conditions"
+  },
+  "M2b_s1": {
+   "PRIMARY_DOM": {
+    "pass": true,
+    "all_better_ok": true,
+    "all_not_worse_ok": true,
+    "rows": {
+     "ADE2": {
+      "mean": -0.0083,
+      "lo": -0.0133,
+      "hi": -0.0026,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "separated-better"
+     },
+     "ADE6": {
+      "mean": -0.4708,
+      "lo": -0.5695,
+      "hi": -0.3748,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "separated-better"
+     },
+     "accel MAE": {
+      "mean": -0.0402,
+      "lo": -0.0509,
+      "hi": -0.0293,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "separated-better"
+     },
+     "curvature MAE": {
+      "mean": -0.0051,
+      "lo": -0.0083,
+      "hi": -0.0023,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "separated-better"
+     },
+     "speed MAE": {
+      "mean": -0.1306,
+      "lo": -0.1646,
+      "hi": -0.0934,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "along MAE": {
+      "mean": -0.239,
+      "lo": -0.2981,
+      "hi": -0.1754,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "cross-track MAE": {
+      "mean": -0.3344,
+      "lo": -0.4239,
+      "hi": -0.2484,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "heading MAE": {
+      "mean": -1.4346,
+      "lo": -1.8027,
+      "hi": -1.0956,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "yaw-rate MAE": {
+      "mean": -0.7927,
+      "lo": -1.0245,
+      "hi": -0.5881,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "plan-derived lateral decision agreement": {
+      "mean": 0.0704,
+      "lo": 0.0496,
+      "hi": 0.0917,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "plan-derived longitudinal decision agreement": {
+      "mean": 0.0604,
+      "lo": 0.0242,
+      "hi": 0.0963,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "CONSISTENCY(a) 'any'": {
+      "mean": -0.0463,
+      "lo": -0.0684,
+      "hi": -0.0242,
+      "separated": true,
+      "better": true,
+      "worse": false,
+      "need": "not separated-worse"
+     },
+     "DK headway min (m)": {
+      "mean": 0.1986,
+      "lo": -0.1648,
+      "hi": 0.5916,
+      "separated": false,
+      "better": false,
+      "worse": false,
+      "need": "not separated-worse",
+      "two_sided_sensitivity_separated": false
+     },
+     "DK time-gap min (s)": {
+      "mean": 0.0457,
+      "lo": -0.0489,
+      "hi": 0.1481,
+      "separated": false,
+      "better": false,
+      "worse": false,
+      "need": "not separated-worse",
+      "two_sided_sensitivity_separated": false
+     },
+     "DK LEAD-VIOL at-risk share": {
+      "mean": -0.0218,
+      "lo": -0.0487,
+      "hi": 0.0,
+      "separated": false,
+      "better": false,
+      "worse": false,
+      "need": "not separated-worse",
+      "two_sided_sensitivity_separated": false
+     }
+    }
+   },
+   "PRIMARY_KEEP": {
+    "delta": 0.0313,
+    "lo": 0.0026,
+    "hi": 0.0586,
+    "bar_hi_le": 0.06037006065738937,
+    "pass": true,
+    "hi_le_prereg_printed_0.0604": true
+   },
+   "HACC_minus_H_accel_curvature": {
+    "accel": {
+     "mean": -0.1062,
+     "lo": -0.136,
+     "hi": -0.0861,
+     "separated": true
+    },
+    "curvature": {
+     "mean": -0.0164,
+     "lo": -0.0247,
+     "hi": -0.0093,
+     "separated": true
+    },
+    "accel_sep_neg": true,
+    "curv_sep_neg": true
+   },
+   "lam_star": 36931.37570406851,
+   "m_star": 16,
+   "rule_branch": "qualified: the smallest grid lambda meeting all four train conditions"
+  }
+ },
+ "brief": {
+  "M2b_s0": {
+   "dom": true,
+   "keep": true,
+   "accel_sep_neg": true,
+   "curv_sep_neg": true
+  },
+  "M2b_s1": {
+   "dom": true,
+   "keep": true,
+   "accel_sep_neg": true,
+   "curv_sep_neg": true
+  }
+ }
+}
