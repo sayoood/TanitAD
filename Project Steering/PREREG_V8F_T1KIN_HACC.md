@@ -108,3 +108,21 @@ Per seed s ∈ {0, 1}:
 5. **PRIMARY is unchanged:** HACC − P10 ADE6 at m = 10, point ≤ −2F and the interval excluding 0, at both seeds.
 
 **Timestamp correction.** The header's "~00:45 Berlin" is wrong. The PREREG was written at about 00:20 Berlin and committed as `323624f2`, and the first run started at 00:24:55. The binding order is the commit, which precedes every run. The same wrong label is on `D-V8F-HACC-T1KIN`'s MOOT note.
+
+## Amendment 2 (2026-10-26 ~00:55 Berlin): C-1's second clause cannot pass by construction; it is replaced by its age-free half. Landed before any outcome row was read; PRIMARY unchanged
+
+**What was found** (on the 24-window plumbing smoke and the 17 cached-clip windows; no HACC − P10 row was computed):
+- §4 C-1 assumed the T1 tool's tick-0 plan `ol` is the open-loop eval's plan. That holds only when the two use the same sample-and-hold ages.
+- The banked open-loop eval runs `--ages cycle`: a_t = i mod 3, a_s = a_t + (i // 3) mod 5, per grid window i. The T1 tool's `--schedule periodic` starts every window at a_t = a_s = 0, and its CLI has no cycle schedule.
+- MEASURED (`raw/2026-10-26-t1kin-hacc/ages_probe.log`), the baked `M2b_s0_hacc.pt` on all 17 windows of the cached eval clip:
+  - with the eval's cycle ages, it reproduces the banked HACC plan to **6.4e-6 m**;
+  - with ages 0, it equals the banked plan where the cycle ages are also 0 (5.4e-6 m), and differs everywhere else by a **median 0.71 m, max 2.81 m**.
+- **Window alignment is correct.** On the smoke, the floor's first 10 knots equal HBLEND's banked P10 plans at the mapped grid windows to 3.8e-6 m.
+
+**The amendment:**
+1. **C-1 now reads:**
+   - (i) at m = 30, `cl` = `ol` exactly (unchanged);
+   - (ii) at m = 30, the floor `fl` equals HBLEND's banked P10 plan `P` (`raw/2026-10-25-hblend/score_M2b_s*_perwindow.npz`) at the mapped grid windows, to ≤ 1e-4 m, on all 2,399 windows. The floor ignores ages, so this is the age-free half of the original clause: it checks the window alignment and the state rebuild at tick 0.
+2. **The original second clause is reported beside, not gated:** |`ol` − banked HACC plan| per window (max and median), with the measured mechanism above.
+3. ⚠ **A consequence stated now: T1-kin − open loop (beside) mixes two effects,** self-action and the ages schedule (periodic from 0 against cycle). It is never quoted as the self-action effect alone. The PRIMARY (HACC − P10, both inside the T1 tool) is not affected: the floor reads no age.
+4. C-2, C-3, C-4, R-1..R-3, PRIMARY, DOMINANCE and the outcome table are unchanged.
