@@ -114,3 +114,7 @@ Within the CURVE stratum alone the angle gain is +0.773 m and geom +0.390 m (17 
 | leadgap | -0.005 | [-0.009, -0.001] | yes (tiny, negative) | +0.008 |
 
 Reading (descriptive, one seed): on X only speed and angle are missed by O when left wrong. tte and geom, necessary on B (+0.46 / +0.44), are not necessary on X, so on X their information is redundant with the rest of the code. That fits A_X > 1 above. Speed is both the only sufficient kind (gain +0.716) and the only large necessary one (+0.412), and its necessity is smaller than its gain, so part of what speed carries is also reachable through other kinds. Nothing here changes the outcome or the bar.
+
+## CORRECTION (2026-10-25, MM; R72)
+
+The STRATEGIC family is NOT paused for v8F. `PI-V8F-2026-10-17` (register): "R6 (strategic OFF) is superseded **for v8F**; the STRATEGIC family is un-paused for v8F". The label above quoted the superseded 2026-09-19 ruling. No number changes: the strategic block is bit-identical across every oracle arm by construction (the oracle replaces only the code O reads; S is the arm's own), so the family is reported as identical across arms, not as paused.

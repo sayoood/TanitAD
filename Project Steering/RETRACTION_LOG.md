@@ -18695,3 +18695,12 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 **Class:** *a comparison between two strata that a GATE selected, where the gate also drives the outcome.*
 * The route speaks only on slow junction turns, so "speaks vs silent" was "junction vs bend".
 * ⇒ Before reading a contrast between inputs-present and inputs-absent windows, find the rule that decides presence and compare like-for-like on the variables that rule uses.
+
+### R72 -- "the STRATEGIC family is PAUSED" (evidence video v2 segment 5 and closing card; the report's Video 2 caption; `RESULT_V8F_KINDX.md`; `RESULT_V8F_LISTEN2.md`) (2026-10-25, MM)
+
+**Wrong for v8F.** The 2026-09-19 pause (`PI_DECISION_QUEUE.md` item 25, quoted in CLAUDE.md) was superseded for this model line by `PI-V8F-2026-10-17`: "R6 (strategic OFF) is superseded for v8F; the STRATEGIC family is un-paused for v8F". MIXO's reader (`v8f_mixo_read.py`: `strategic_family = NOT PAUSED`) and the report body had it right; four documents and one video copied the older ruling from CLAUDE.md and the agent briefs that quote it.
+
+**Consequence:** no number changes. KINDX's strategic block is identical across its oracle arms by construction; LISTEN2's S row is the family's reading and was reported. Fixed: video v2.1 (`report/2026-10-25/v8f_evidence_v2_1.mp4`), correction notes appended to both results, register `D-V8F-VIDEO2-1`, the report's caption.
+
+**Class:** *a standing rule quoted from the always-loaded file after a later, scoped ruling in the register superseded it for this model line.*
+* ⇒ Before stating a family's status for an arm, check the register's PI rulings for that model line, not only CLAUDE.md.

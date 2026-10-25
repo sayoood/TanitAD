@@ -712,7 +712,7 @@ def s_card():
                  f"[{-ql1['hi']:.2f}, {-ql1['lo']:.2f}].  The banked eval scores S at held ages against NOW-frame labels, which is partly definitional: it pays for the distance driven since the tick.  "
                  f"Deployed behaviour is NOT shown; the deployed-schedule cost (fresh - held: {qs0['delta']:+.2f} / {qs1['delta']:+.2f} m) is the next strategic lever.",
             size=16, y0=720, h=170, n=146)
-    tx(fig, 24, 910, wrap("Strategic FAMILY: PAUSED by the PI ruling of 2026-09-19 (PI_DECISION_QUEUE.md item 25).  S appears here only as a diagnostic of its checkpoints; this is not a strategic-family pass and does not lift the pause.", 175), 12.5, "#b30000", "bold")
+    tx(fig, 24, 910, wrap("STRATEGIC family: un-paused for v8F by the PI ruling of 2026-10-17 (PI-V8F-2026-10-17).  S's checkpoint error above IS that family's metric: at the deployed (held) schedule S loses to the nav-only baseline at 50 m; ticked fresh it beats it.", 175), 12.5, "#b30000", "bold")
     footer(fig, "Source: sfresh/SFRESH_RESULT.md and sfresh/sfresh_numbers.json (PREREG_V8F_SFRESH, tip 583cfc02).  Estimator: paired episode-cluster bootstrap, B = 2,000, 141 episodes (another draw of EPISODES); training seeds side by side; deterministic inference.  "
                 "n = 2,319 windows with a valid 50 m label.  Tier T1-class open loop, DIAGNOSTIC.")
     return render(fig)
@@ -731,7 +731,7 @@ def closing_card():
                                          "Intervals = episode-cluster bootstrap (B = 2,000): they answer 'another draw of EPISODES' only.  Training variance = the two seeds side by side.  Inference is deterministic."),
         ("NOT SHOWN", "#D55E00", "Closed-loop driving.  External benchmarks (NAVSIM and others).\n\n"
                                 "Whether a synthetic command is right for the road: a TURN command on a straight road is an intervention.\n\n"
-                                "The STRATEGIC family result: paused by the PI ruling of 2026-09-19 (item 25).\n\n"
+                                "The STRATEGIC family at the deployed schedule: S held at its banked ages loses to the nav-only baseline at 50 m (+3.28 / +3.21 m).\n\n"
                                 "Still open: acceleration vs the prior at seed 0; the consistency cost of H / HS; the deployed S schedule."),
     ]
     for i, (ttl, col, body) in enumerate(boxes):

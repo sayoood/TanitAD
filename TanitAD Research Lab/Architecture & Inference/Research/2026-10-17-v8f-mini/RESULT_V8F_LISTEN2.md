@@ -193,3 +193,7 @@ The code under measurement (`listen2.py`, `read2.py`, `run_listen2.py`, `run_all
 | code | `listen2.py`, `read2.py`, `run_listen2.py`, `run_all2.sh`, `guard.ps1`, `build_result2.py`; LISTEN's harness copies `listen.py`, `listen_read.py`, `run_listen.py`, `test_listen.py`, `run_mutations.py`; `code/` (LISTEN's tip export) |
 | PREREG | `../grid_a2/PREREG_V8F_LISTEN2.md` |
 | repo | nothing staged, committed or pushed; `scratchpad/listen/` and the repo untouched |
+
+## CORRECTION (2026-10-25, MM; R72)
+
+The STRATEGIC family is NOT paused for v8F. `PI-V8F-2026-10-17` (register): "R6 (strategic OFF) is superseded **for v8F**; the STRATEGIC family is un-paused for v8F". The label above quoted the superseded 2026-09-19 ruling. No number changes: the S row (S's checkpoint error under each intervention) is the strategic family's reading and is reported above; it is not paused.
