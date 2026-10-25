@@ -88,3 +88,23 @@ Per seed s ∈ {0, 1}:
 * ⛔ Any "closed loop" or "drives" wording (§1).
 * ⛔ A SOTA claim: the comparator is the programme's own kinematic floor.
 * ⛔ Re-choosing m, the bar, or the settings after a number is seen. The PRIMARY is m = 10 with the instrument's defaults, as designed on 2026-10-22, before this checkpoint existed.
+
+## Amendment 1 (2026-10-26 ~00:30 Berlin): the DOMINANCE rows made computable, and a timestamp corrected. Landed before any real-data number was read; no bar moves
+
+**What was found, from the instrument's output schema on a 24-window plumbing smoke (its numbers were not read):** `analyze()` emits only TWO paired HACC − P10 rows, both under `paired_decision_grade.paired_model_minus_floor_t1`: `ade_m` and `speed_mae_mps`. It reports the four families per arm, but not paired. So §5's "no row that `analyze()` emits for HACC − P10 is separated-worse" would have read two rows, while the same sentence promises the four families. The amendment resolves the conflict toward the stricter reading.
+
+1. **The DOMINANCE rows are the four families' per-window components, computed by the canonical code on the executed tracks.**
+   - Code: `taniteval/taniteval/four_families.py` (`longitudinal`, `lateral`, and `_seq_geometry` at dt = 0.2 s), with the same masks that code applies.
+   - Inputs: the dumped executed tracks `cl` (HACC) and `fl` (P10) against the GT `g`.
+   - Paired estimator: `taniteval.ci.paired_episode_cluster_bootstrap`, B = 2,000, on the 141 episodes.
+   - Rows: ADE2, ADE6, and every scalar `longitudinal` and `lateral` return per window (speed, along-track, acceleration, heading, curvature, yaw rate, cross-track).
+   - A component that is undefined on a window (an empty mask) drops that window from BOTH arms of that row; the row's n is reported.
+2. **TACTICAL and STRATEGIC are NOT COMPUTED in this read.** The T1 dumps record no per-tick T code or S checkpoints. Each is reported with that reason and its n, as the binding four-family rule requires, and logged as a work item: a T1 dump of the per-tick code and checkpoints.
+3. **Distance keeping** is computed if `longitudinal` accepts the eval join's lead track on this window grid. Otherwise it is NOT COMPUTED, with the reason.
+4. **Reader controls, before any outcome row is read:**
+   - R-1: the reader's per-arm ADE6 equals the arm's full-set ADE in `analyze()`'s output to 1e-6 m.
+   - R-2: the reader's paired ADE6 point equals `paired_decision_grade.paired_model_minus_floor_t1.ade_m`'s point to 1e-6 m.
+   - R-3: a known-value check on synthetic tracks. An identical track reads exactly 0 on every row, and a constant 1 m lateral offset reads cross-track 1 m and along-track 0.
+5. **PRIMARY is unchanged:** HACC − P10 ADE6 at m = 10, point ≤ −2F and the interval excluding 0, at both seeds.
+
+**Timestamp correction.** The header's "~00:45 Berlin" is wrong. The PREREG was written at about 00:20 Berlin and committed as `323624f2`, and the first run started at 00:24:55. The binding order is the commit, which precedes every run. The same wrong label is on `D-V8F-HACC-T1KIN`'s MOOT note.
