@@ -1,0 +1,56 @@
+events = distinct (episode, absolute segment start); a window belongs to the event its label cells describe (A) or the next announced turn (B)
+
+[A]
+  CURVE        windows  156  episodes  15  distinct events  20  windows/episode median 10.0
+  SUPPRESSED   windows   21  episodes   2  distinct events   2  windows/episode median 10.5
+  UNRESOLVED   windows   17  episodes   4  distinct events   4  windows/episode median 4.5
+  HORIZON      windows   16  episodes   9  distinct events   9  windows/episode median 2.0
+
+[B]
+  HORIZON      windows   50  episodes   9  distinct events  10  windows/episode median 5.0
+  BAND_START   windows   40  episodes  19  distinct events  22  windows/episode median 2.0
+  UNRESOLVED   windows   17  episodes   8  distinct events   8  windows/episode median 2.0
+  LABEL_MASKED windows   13  episodes   2  distinct events   2  windows/episode median 6.5
+  BAND_EDGE    windows    4  episodes   4  distinct events   4  windows/episode median 1.0
+  TIMING       windows    4  episodes   4  distinct events   4  windows/episode median 1.0
+  SIGN_THETA   windows    1  episodes   1  distinct events   1  windows/episode median 1.0
+
+== CURVE (A): parameters of the label segment (join cells at rowT; vmin from the re-run turn table)
+  |dyaw| deg       p10    30.8  p25    46.6  median    91.6  p75   151.1  p90   190.6
+  R_arc m          p10    30.1  p25    48.1  median    62.7  p75    76.4  p90   115.8
+  vmin m/s         p10     8.6  p25     8.7  median    11.2  p75    12.5  p90    15.6
+  t_start s        p10    -6.8  p25    -3.1  median     0.2  p75     3.6  p90     5.8
+  t_end-t_start s  p10     3.4  p25     3.9  median     7.9  p75    12.2  p90    15.6
+  vmin bands: (8,10] 59  (10,12] 41  (12,15] 37  >15 19   [(8,10] = within 25 % of the gate = genuinely ambiguous]
+  |dyaw| bands: <30 14  30-60 60  60-120 20  >=120 62
+  M2b_s0: CURVE turn-cell SSE 1314.7 over 15 episodes; top-1 17.2%, top-3 44.1%, top-5 63.9%
+  M2b_s1: CURVE turn-cell SSE 1207.7 over 15 episodes; top-1 15.2%, top-3 43.0%, top-5 65.1%
+
+== SUPPRESSED (A)
+  episodes: ['dbad28c2', 'eb96a48b']  t_start median 3.1041977405548096
+
+== HORIZON (A): label t_start of the 16 silent is_turn windows (s)
+  t_start: [6.  6.1 6.3 6.6 6.7 6.7 6.8 7.2 7.3 7.3 7.3 7.4 7.4 7.5 7.9 7.9]
+
+== B causes: speed and time facts
+  BAND_START   n  40: v_now median   5.8 m/s (p10 2.0, p90 8.3); nav d_next median    0.0 m; d_ann median  34.8 m; windows at the 30 m floor (v<5 m/s) 14
+  HORIZON      n  50: v_now median   8.1 m/s (p10 0.9, p90 14.2); nav d_next median   30.4 m; d_ann median  48.8 m; windows at the 30 m floor (v<5 m/s) 12
+  LABEL_MASKED n  13: v_now median   1.1 m/s (p10 0.4, p90 1.4); nav d_next median    4.4 m; d_ann median  30.0 m; windows at the 30 m floor (v<5 m/s) 13
+  UNRESOLVED   n  17: v_now median   3.6 m/s (p10 0.5, p90 10.0); nav d_next median   27.7 m; d_ann median  30.0 m; windows at the 30 m floor (v<5 m/s) 10
+  BAND_EDGE    n   4: v_now median   4.6 m/s (p10 1.4, p90 5.1); nav d_next median    6.7 m; d_ann median  30.0 m; windows at the 30 m floor (v<5 m/s) 3
+  BAND_START: segment ends in 1.0 s (p10 0.5, p90 1.7); started 2.7 s ago; |dyaw| median 65 deg; dpsi6 (6 s path heading change at the tick) median |15.6| deg
+  B HORIZON evidence: 44 by pose-track end (>=8 s ahead), 6 by re-run table; 9 episodes
+  B HORIZON episodes: ['13c95b6a', '24fee8a5', '2cd0f4e4', '4c5264dd', '91e90a95', '9d3d1cd1', 'a0d95df6', 'c08bebe5', 'fe83e06e']
+
+== cause -> the lead's classes
+  A CURVE         156  -> threshold mismatch
+  A SUPPRESSED     21  -> label/nav policy defect
+  A HORIZON        16  -> horizon mismatch
+  A UNRESOLVED     17  -> unresolved (event beyond pose track)
+  B HORIZON        50  -> horizon mismatch
+  B BAND_EDGE       4  -> horizon mismatch (band edge)
+  B BAND_START     40  -> horizon/definition (label excludes the first 2 s)
+  B TIMING          4  -> timing offset (row pairing artefact)
+  B LABEL_MASKED   13  -> label censoring (reversing mask)
+  B SIGN_THETA      1  -> label rule (sign/theta)
+  B UNRESOLVED     17  -> unresolved

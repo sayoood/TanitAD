@@ -18679,3 +18679,19 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 
 **Class:** *a difference between training-log samples quoted without its sampling error and read as a mechanism.*
 * ⇒ Before reading a train-loss difference as fit or generalisation, compute its SE over the logged records. Compare train and eval only in the trainer's own units and reduction.
+
+### R71 -- "T is at chance on turn cells when the route is silent (0.95 SD) against 0.40 SD when it speaks" (`raw/2026-10-25-t-attrib/T_ATTRIB.md` rank 1, register `D-V8F-T-ATTRIB-1`) (2026-10-25, MM)
+
+**Claimed:** the strongest measured handle for a goal/route input: T's turn cells are at chance in 210 route-silent turn windows (RMSE 0.95 SD), and the same model reaches 0.40 SD when the route speaks.
+
+**Measured (`TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-navturn/NAVTURN_AUDIT.md`, `a2_classify.out`, `a3_error.out`):**
+* The nav token announces only `is_turn and not suppressed` turns (`stack/scripts/build_v9_labels.py:229-230, 264`), and `is_turn` requires vmin ≤ 8 m/s. The turn cells take ANY dominant ≥ 20° segment in [now + 2 s, now + 8 s] (`:817-830`).
+* So no speaking window can be a fast bend. 156 of the 210 (74.3 %) are fast bends, ramps and roundabouts that the speed gate alone rejects, and the class label calls none of them TURN.
+* Like-for-like (silent AND `is_turn`, 37 windows, 11 events, against 266 speaking): **0.651 [0.502, 0.752] against 0.410 [0.347, 0.472] SD** at s0, and 0.757 against 0.396 at s1. That set carries phi 0.015 / 0.020 of T's error, not 0.189 / 0.181.
+* "Route silent" is token-only: 51.8 % of FOLLOW windows still carry a valid distance to the next announced turn.
+
+**Consequence:** the route-input lever's proof of existence shrinks to a 0.65-vs-0.41 gap on 37 windows. Most of the 210's error is a label-definition mismatch (a metric and supervision question, 0 m of driving) plus perception of about 20 bend events. The driving ceiling of the whole stratum stays 0.161 / 0.142 m, below 2F. PREREG_V8F_KIND Amendment 1 reads which of the two holds the ADE.
+
+**Class:** *a comparison between two strata that a GATE selected, where the gate also drives the outcome.*
+* The route speaks only on slow junction turns, so "speaks vs silent" was "junction vs bend".
+* ⇒ Before reading a contrast between inputs-present and inputs-absent windows, find the rule that decides presence and compare like-for-like on the variables that rule uses.

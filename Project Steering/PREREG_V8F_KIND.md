@@ -61,3 +61,16 @@ The union of the six kinds must equal the existing `constraints` composite index
 * The kind partition is not a partition of the 26 cells, or its union is not `constraints`.
 * An eval's window set or episode list differs from the banked one, or a checkpoint's sha256 differs from the banked run.
 * An eval or a family is missing. A missing family is refused, never dropped.
+
+## Amendment 1 (2026-10-25, written before any KIND data, from `raw/2026-10-25-navturn/NAVTURN_AUDIT.md`)
+
+* **Beside, deciding nothing:** every single-kind gain_k and the union gain, split by WINDOW STRATUM on eval-141:
+  * **JUNCTION:** a dominant turn segment in the label band with `turn_is_turn` = 1;
+  * **CURVE:** `curve` = 1, a ≥ 20° segment that the nav's speed gate never announces (`stack/scripts/build_v9_labels.py:828-831`);
+  * **NO-TURN:** every other window.
+* The oracle replaces T's code per window, so this split IS the curve-only / junction-only oracle the audit proposes, at no extra eval.
+* Each stratum carries its n windows and n episodes and the paired episode-cluster bootstrap within the stratum. A stratum with fewer than 10 episodes is reported with its n and no interval.
+* **Why:** 74 % of the 210 "route-silent" turn windows are fast bends (R71).
+  * If the angle / tte / geom gains sit in CURVE windows, the lever is perception of bends (the encoder: it raises LoRA's prior), not a route input.
+  * If they sit in JUNCTION windows, a predicted-goal input stays on the list.
+* The committed outcome table above is unchanged.
