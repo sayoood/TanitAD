@@ -64,10 +64,23 @@ CODE_GROUPS = {
 }
 #: the two composites the Amendment 1 decision reads: the categorical DECISIONS vs the continuous CONSTRAINTS
 CODE_COMPOSITES = {"decisions": ("goal", "latdec", "londec"), "constraints": ("latcons", "lonspeed", "stoplead")}
+#: PREREG_V8F_KIND: a SECOND partition of the same 26 constraint cells, by what a cell MEASURES rather than by which decision it hangs off:
+#: speeds, angles, times-to-event, time gaps, geometry (metres of path) and lead gaps. Each cell is in exactly one kind and the six kinds' union is
+#: the ``constraints`` composite (pinned by test_v8f_kind.py). A kind's name must not collide with CODE_GROUPS / CODE_COMPOSITES. ``code_group_index``
+#: takes a kind anywhere it takes a group: ``speed``, ``speed+angle``, ``all-speed`` (GT everywhere EXCEPT the speed cells).
+CODE_KINDS = {
+    "speed": tuple(_C0 + CI[n] for n in ("lon_v_target_ms", "v_a_ms", "v_end_ms", "v_lo_ms", "v_hi_ms")),
+    "angle": tuple(_C0 + CI[n] for n in ("lat_theta_deg", "turn_dyaw_deg", "turn_exit_psi_deg")),
+    "tte": tuple(_C0 + CI[n] for n in ("turn_t_start_s", "turn_t_end_s", "lc_t_cross_s", "lon_t_reach_s", "lon_t_start_s")),
+    "timegap": tuple(_C0 + CI[n] for n in ("lead_tg_s", "lead_tg_min_s")),
+    "geom": tuple(_C0 + CI[n] for n in ("turn_d_start_m", "turn_len_m", "turn_r_arc_m", "turn_exit_x_m", "turn_exit_y_m", "lc_d_cross_m",
+                                         "lon_d_reach_m", "stop_x_m", "stop_y_m")),
+    "leadgap": tuple(_C0 + CI[n] for n in ("lead_gap_m", "lead_gap_min_m")),
+}
 
 
 def code_group_index(spec: str) -> list:
-    """``"goal+londec"`` | ``"decisions"`` | ``"all"`` | ``"all-<spec>"`` -> sorted code indices. Unknown names are refused.
+    """``"goal+londec"`` | ``"decisions"`` | ``"speed+angle"`` (a PREREG_V8F_KIND kind) | ``"all"`` | ``"all-<spec>"`` -> sorted code indices. Unknown names are refused.
     ``all-<spec>`` is the COMPLEMENT (PREREG_V8F_TAC Amendment 2's leave-one-out: GT everywhere except ``<spec>``)."""
     if spec == "all":
         return list(range(CODE_DIM))
@@ -77,15 +90,18 @@ def code_group_index(spec: str) -> list:
         if not keep:
             raise ValueError(f"code group {spec!r} selects nothing")
         return keep
-    names = []
+    names, idx = [], set()
     for part in spec.split("+"):
         if part in CODE_COMPOSITES:
             names.extend(CODE_COMPOSITES[part])
         elif part in CODE_GROUPS:
             names.append(part)
+        elif part in CODE_KINDS:                    # PREREG_V8F_KIND: a kind of constraint cell
+            idx.update(CODE_KINDS[part])
         else:
-            raise ValueError(f"unknown code group {part!r}: use {sorted(CODE_GROUPS) + sorted(CODE_COMPOSITES)} or 'all', joined by '+'")
-    return sorted({i for n in names for i in CODE_GROUPS[n]})
+            raise ValueError(f"unknown code group {part!r}: use {sorted(CODE_GROUPS) + sorted(CODE_COMPOSITES) + sorted(CODE_KINDS)} or 'all', joined by '+'")
+    idx.update(i for n in names for i in CODE_GROUPS[n])
+    return sorted(idx)
 
 
 LIMITS_MS = (30 / 3.6, 50 / 3.6, 100 / 3.6, 120 / 3.6)

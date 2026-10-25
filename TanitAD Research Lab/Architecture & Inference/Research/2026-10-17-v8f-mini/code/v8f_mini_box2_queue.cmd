@@ -48,6 +48,9 @@ rem                                             the stage exits 0 once both read
 rem   v8f_mini_box2_queue.cmd smokelora       PREREG_V8F_LORA proof 4 (AR-2): v8f_lora_smoke.py, 200 real-data steps at batch 1 through the trainer itself (--encoder lora --enc-ckpt, bf16 weights, --amp OFF) on windows drawn ONLY
 rem                                             from the declared train clips (--max-clips; frames shipped for exactly those), into %RUNSM%\lora_ar2\smoke. Exits 0 once smoke_report.json exists: the report carries its own
 rem                                             verdict, step time, peak memory and the projected hours of one 19,164-step seed (ESTIMATED), and the CHAIN reads it
+rem   v8f_mini_box2_queue.cmd kind    PREREG_V8F_KIND (eval only, ZERO training): which KIND of T's constraint cells is worth ADE6 to O. Per seed of the banked M2b (0 and 1), 15 evals into %EV%, tagged
+rem                                             M2b_s<SEED>-kind-<name>: own (T's own code, the standard eval: identity control 1), all (the full oracle: identity control 2), only-<k> and loo-<k> (GT in kind k's cells only /
+rem                                             everywhere EXCEPT kind k) for the six kinds speed angle tte timegap geom leadgap, and union (GT in all 26 constraint cells). Read by code8f_kind_read.py. Skipped once its npz exists
 rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
@@ -106,7 +109,8 @@ if /i "%~1"=="traindscale" goto :traindscale
 if /i "%~1"=="evaldscale" goto :evaldscale
 if /i "%~1"=="identitylora" goto :identitylora
 if /i "%~1"=="smokelora" goto :smokelora
-echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED^|gategrid BASE^|traingrid SEED BASE^|evalgrid SEED BASE^|gatehist^|trainhist SEED^|evalhist SEED^|gatedscale^|traindscale SEED^|evaldscale SEED^|identitylora^|smokelora
+if /i "%~1"=="kind" goto :kind
+echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|kind^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED^|gategrid BASE^|traingrid SEED BASE^|evalgrid SEED BASE^|gatehist^|trainhist SEED^|evalhist SEED^|gatedscale^|traindscale SEED^|evaldscale SEED^|identitylora^|smokelora
 exit /b 2
 
 rem train / eval are CALLED with the stage name dropped, so inside them %~1 = ARM, %~2 = SEED, %~3 = GRID
@@ -665,4 +669,46 @@ if not exist "%EV%\floors_perwindow.npz" (echo REFUSED: run floors first & exit 
 "%PY%" "%EVAL%" compare --runs %RUNSARG% --floors-npz "%EV%\floors_perwindow.npz" --out "%EV%\compare.json" %EC% > "%EV%\compare.log" 2>&1
 if errorlevel 1 (echo [FAIL] compare - see %EV%\compare.log & exit /b 1)
 echo [ok] compare
+exit /b 0
+:kind
+rem PREREG_V8F_KIND (eval only, ZERO training), the banked M2b at seeds 0 and 1: 15 evals per seed, each ONE command string that the dry run prints and the real run executes (the DSCALE recipe).
+rem Order per seed: own, all (the two identity controls), the six single-kind oracles, the six leave-one-out oracles, the union. Read by code\v8f_kind_read.py. Each eval is skipped once its npz exists.
+call :prep || exit /b 2
+for %%S in (0 1) do call :kindseed %%S || exit /b 1
+exit /b 0
+
+:kindseed
+call :kindown M2b %~1 || exit /b 1
+call :kindorc M2b %~1 all all || exit /b 1
+for %%K in (speed angle tte timegap geom leadgap) do call :kindorc M2b %~1 %%K only-%%K || exit /b 1
+for %%K in (speed angle tte timegap geom leadgap) do call :kindorc M2b %~1 all-%%K loo-%%K || exit /b 1
+call :kindorc M2b %~1 constraints union || exit /b 1
+exit /b 0
+
+:kindown
+rem args: ARM SEED. T's own code (--tac off) with the SAME flags as the banked standard eval (:eval): identity control 1 compares the two per window.
+set "OUT=%RUNSM%\%~1_s%~2"
+set "TG=%~1_s%~2-kind-own"
+set "EK="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG% %EC% %ER% --project --families"
+if defined V8F_DRYRUN (echo %EK% & exit /b 0)
+if not exist "%OUT%\summary.json" (echo REFUSED: %~1_s%~2 has not finished training & exit /b 2)
+if not exist "%EV%\eval_%~1_s%~2.npz" (echo REFUSED: the banked eval_%~1_s%~2.npz is missing from %EV% & exit /b 2)
+if exist "%EV%\eval_%TG%.npz" (echo [skip] eval %TG% & exit /b 0)
+%EK% >> "%EV%\eval_%TG%.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG% - see %EV%\eval_%TG%.log & exit /b 1)
+echo [ok] eval %TG%
+exit /b 0
+
+:kindorc
+rem args: ARM SEED GROUPSPEC NAME. The GT code in the cells GROUPSPEC names (all | <kind> | all-<kind> | constraints), T's own code elsewhere, tagged <ARM>_s<SEED>-kind-<NAME>.
+set "OUT=%RUNSM%\%~1_s%~2"
+set "TG=%~1_s%~2-kind-%~4"
+set "EK="%PY%" "%EVAL%" run --ckpt "%OUT%\ckpt_last.pt" --tag %TG% --tac oracle --tac-groups %~3 --tac-alpha 1 %EC% %ER%"
+if defined V8F_DRYRUN (echo %EK% & exit /b 0)
+if not exist "%OUT%\summary.json" (echo REFUSED: %~1_s%~2 has not finished training & exit /b 2)
+if not exist "%EV%\eval_%~1_s%~2-tacorc.npz" (echo REFUSED: the banked eval_%~1_s%~2-tacorc.npz is missing from %EV% & exit /b 2)
+if exist "%EV%\eval_%TG%.npz" (echo [skip] eval %TG% & exit /b 0)
+%EK% >> "%EV%\eval_%TG%.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %TG% - see %EV%\eval_%TG%.log & exit /b 1)
+echo [ok] eval %TG%
 exit /b 0

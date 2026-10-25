@@ -74,3 +74,14 @@ The union of the six kinds must equal the existing `constraints` composite index
   * If the angle / tte / geom gains sit in CURVE windows, the lever is perception of bends (the encoder: it raises LoRA's prior), not a route input.
   * If they sit in JUNCTION windows, a predicted-goal input stays on the list.
 * The committed outcome table above is unchanged.
+
+## Amendment 2 (2026-10-25, written with the instruments, before any KIND data)
+
+These are the reader's interpretations where the text above left a case open (`code/v8f_kind_read.py`, pinned by `stack/tests/test_v8f_kind.py`). None moves a bar.
+
+* **Eval count:** 15 per seed (the two identity controls, 6 single-kind, 6 leave-one-out and the union), 30 in all.
+* **A carrier needs both seeds:** a kind that clears 2F at only one seed is not a carrier at either. The outcome is then read from the other rows.
+* **Additivity undefined:** if gain_union ≤ 0 at a seed, A is undefined there and the outcome is MIXED.
+* **Small strata (Amendment 1):** a stratum with fewer than 10 episodes prints its point estimate and n, with no interval.
+* **One more refusal (rc 2):** a window-strata file that does not match the eval grid, in the read and in `--check-inputs`.
+* **The strata themselves:** `curve` and `turn_is_turn` are columns of the v9 label release, not of the shipped join. `raw/2026-10-25-kind/mk_window_strata.py` maps them through the join's own row mapping at the T-tick row, and the pairing equals the attribution's `table.npz`. On eval-141: JUNCTION 298 windows / 34 episodes, CURVE 140 / 17, NO-TURN 1,961 / 140. The 34 windows with no v9 row sit in NO-TURN.

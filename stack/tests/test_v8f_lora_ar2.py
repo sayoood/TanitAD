@@ -750,7 +750,8 @@ def test_queue_ar2_every_existing_stage_is_byte_identical():
         assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
         for new in ("lora", "LORA", "identity", "smokelora"):
             assert new not in blocks[label], (label, new)
-    assert set(blocks) == set(PRE_EXISTING) | {"loraenv", "identitylora", "smokelora"}, "the only new labels are the three of this edit"
+    # PREREG_V8F_KIND later added its own four labels (test_v8f_kind.py pins them and the byte-identity of every label here); this edit's three are still the only others
+    assert set(blocks) - {"kind", "kindseed", "kindown", "kindorc"} == set(PRE_EXISTING) | {"loraenv", "identitylora", "smokelora"}, "the only new labels are the three of this edit"
     for st in OLD_STAGES:
         assert f'if /i "%~1"=="{st}" goto :' in q, st
     labels = set(blocks)
