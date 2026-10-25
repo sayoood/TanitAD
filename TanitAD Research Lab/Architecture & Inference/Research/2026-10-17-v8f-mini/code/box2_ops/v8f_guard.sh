@@ -4,7 +4,7 @@
 #                STOP if >= 4 of the last 20 telemetry samples (15 s apart) read >= 61 C, or any one reads >= 63 C.
 #   TIME:        once the running trainer has logged >= 1,000 steps, its rate over the last 20 log records (1,000 steps) x the run's
 #                step total must stay <= 10 h. Above that the input pipeline, not the model, is the experiment: STOP and report.
-# Stop = Stop-Process on OUR job's python processes only (v8f_mini_train / v8f_mini_eval / v8f_lora_smoke / v8f_lora_identity_dev) and their workers. A stopped run resumes
+# Stop = Stop-Process on OUR job's python processes only (v8f_mini_train / v8f_mini_eval / v8f_lora_smoke / v8f_lora_identity_dev / v8f_kscore) and their workers. A stopped run resumes
 # from ckpt_last.pt on the same argv. Exits when the chain ends. Script polling, not model turns.
 # 2026-10-20: the end test is ANCHORED (^MARKER) and knows PREREG_V8F_TAC's chain (ZZV8FTAC-DONE / -STOP). Unanchored, the same
 # test in ra1runs_guard.sh matched a chain's own "waiting for <marker>" line and switched itself off (2026-10-20 22:43).
@@ -14,7 +14,7 @@ PY=C:/Users/Admin/venvs/tanitad/Scripts/python.exe
 MAXH=${V8F_MAX_RUN_H:-10}
 CHAIN_OUT=${V8F_CHAIN_OUT:-$L/chain_v8f_mini.out}       # chain_beta.sh points this at its own log; the default is the v8F-mini chain's
 kill_ours() {
-  $SSH "powershell -NoProfile -Command \"\$p = @(Get-CimInstance Win32_Process -Filter \\\"Name = 'python.exe'\\\"); \$ours = @(\$p | Where-Object { \$_.CommandLine -match 'v8f_mini_train|v8f_mini_eval|v8f_lora_smoke|v8f_lora_identity_dev' }); \$ids = @(\$ours | ForEach-Object { \$_.ProcessId }); \$kids = @(\$p | Where-Object { \$ids -contains \$_.ParentProcessId }); (\$ours + \$kids) | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -ErrorAction SilentlyContinue; 'stopped ' + \$_.ProcessId }\"" 2>/dev/null | tr -d '\r'
+  $SSH "powershell -NoProfile -Command \"\$p = @(Get-CimInstance Win32_Process -Filter \\\"Name = 'python.exe'\\\"); \$ours = @(\$p | Where-Object { \$_.CommandLine -match 'v8f_mini_train|v8f_mini_eval|v8f_lora_smoke|v8f_lora_identity_dev|v8f_kscore' }); \$ids = @(\$ours | ForEach-Object { \$_.ProcessId }); \$kids = @(\$p | Where-Object { \$ids -contains \$_.ParentProcessId }); (\$ours + \$kids) | ForEach-Object { Stop-Process -Id \$_.ProcessId -Force -ErrorAction SilentlyContinue; 'stopped ' + \$_.ProcessId }\"" 2>/dev/null | tr -d '\r'
 }
 echo "$(date '+%m-%d %H:%M') v8F guard armed (USB >= 4/20 samples >= 61 C or one >= 63 C; projected run > ${MAXH} h after 1,000 steps)"
 hi=0
