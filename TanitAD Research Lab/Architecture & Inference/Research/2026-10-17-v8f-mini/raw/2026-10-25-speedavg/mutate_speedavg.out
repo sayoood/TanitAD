@@ -1,0 +1,80 @@
+mutation check of 33 mutants (+ the end-to-end-only variants); copy under C:\Users\Admin\AppData\Local\Temp\claude\E--Projects-TanitAD\bfe78918-15e8-439b-8566-593ca3297bd8\scratchpad\m; python 3.13.5
+BASELINE (unmutated): rc 0  53 passed  37.0 s
+M01 KILLED          7.2 s  AVERAGE ONE CELL ONLY (replace_cells writes the first speed cell, not five)
+      caught by: stack\tests\test_v8f_speedavg.py::test_mean_cells_and_replace_cells_known_values  []  red controls: []
+M02 KILLED          5.7 s  SWAP SEEDS: `self` (control 1) averages X_s with the OTHER seed instead of with itself
+      caught by: stack\tests\test_v8f_speedavg.py::test_source_code_and_partner_of  [As...]  red controls: []
+M03 KILLED         26.0 s  SWAP OUTCOME ROWS: VARIANCE PAYS <-> BIAS, NOT VARIANCE in `decide`
+      caught by: stack\tests\test_v8f_speedavg.py::test_the_outcome_table[p00-p10-sec0-VARIANCE PAYS]  []  red controls: []
+M04 KILLED         21.1 s  DROP THE SEPARATION TEST from PRIMARY
+      caught by: stack\tests\test_v8f_speedavg.py::test_the_outcome_table[p07-p17-sec7-MIXED]  []  red controls: []
+M05 KILLED          6.1 s  averaging weights 0.6 / 0.4 instead of the plain mean
+      caught by: stack\tests\test_v8f_speedavg.py::test_mean_cells_and_replace_cells_known_values  []  red controls: []
+M06 KILLED          5.3 s  the speed cell set loses v_hi_ms (four cells, not the PREREG's five)
+      caught by: stack\tests\test_v8f_speedavg.py::test_speed_idx_is_the_preregs_five_cells_and_a_moved_cell_is_refused  []  red controls: []
+M07 KILLED          4.4 s  the hook averages ALL 60 cells, not only the five speed cells
+      caught by: stack\tests\test_v8f_speedavg.py::test_mean_cells_and_replace_cells_known_values  []  red controls: []
+M08 KILLED          7.0 s  `avg` averages X_s with ITSELF (the average moves nothing)
+      caught by: stack\tests\test_v8f_speedavg.py::test_source_code_and_partner_of  [As...]  red controls: []
+M09 KILLED          5.5 s  `gt` has no fallback to T's own code where the window has no v9 row
+      caught by: stack\tests\test_v8f_speedavg.py::test_source_code_and_partner_of  [As...]  red controls: []
+M10 KILLED          7.0 s  the wrapped forward_diag is never restored
+      caught by: stack\tests\test_v8f_speedavg.py::test_hook_modes_on_tiny_models  [Ass...]  red controls: []
+M11 KILLED          7.2 s  pair_violations no longer requires bitwise-equal cons_mu / cons_sd
+      caught by: stack\tests\test_v8f_speedavg.py::test_pair_violations_on_checkpoints  []  red controls: []
+M12 KILLED         22.0 s  F moved after the fact (0.1207 -> 0.1)
+      caught by: stack\tests\test_v8f_speedavg.py::test_primary_and_secondary_predicates  []  red controls: []
+M13 KILLED         20.1 s  PRIMARY boundary: exactly -F no longer meets it
+      caught by: stack\tests\test_v8f_speedavg.py::test_the_outcome_table[p01-p11-sec1-VARIANCE PAYS]  []  red controls: []
+M14 KILLED         21.6 s  PARTIAL row routed to MIXED
+      caught by: stack\tests\test_v8f_speedavg.py::test_the_outcome_table[p02-p12-sec2-PARTIAL]  []  red controls: []
+M15 KILLED         22.2 s  BIAS, NOT VARIANCE row unreachable
+      caught by: stack\tests\test_v8f_speedavg.py::test_the_outcome_table[p08-p18-sec8-BIAS, NOT VARIANCE]  []  red controls: []
+M16 KILLED         21.6 s  LEAD-VIOL dropped from SECONDARY
+      caught by: stack\tests\test_v8f_speedavg.py::test_secondary_each_of_the_six_metrics_can_fail_it  []  red controls: []
+M17 KILLED         18.7 s  separated-worse reads the CI's upper end, not its lower end
+      caught by: stack\tests\test_v8f_speedavg.py::test_primary_and_secondary_predicates  []  red controls: []
+M18 KILLED         20.7 s  CAPTURE numerator sign flipped
+      caught by: stack\tests\test_v8f_speedavg.py::test_capture_known_values_and_the_not_defined_case  []  red controls: []
+M19 KILLED         20.4 s  the tier stamp is the eval json's mislabelled T0 string
+      caught by: stack\tests\test_v8f_speedavg.py::test_build_result_block_and_output_text  []  red controls: []
+M20 KILLED         22.6 s  the PARTIAL condition text edited (the committed table is not the PREREG's)
+      caught by: stack\tests\test_v8f_speedavg.py::test_the_tables_text_is_the_preregs_text  []  red controls: []
+M21 KILLED         20.3 s  the controls' per-window tolerance loosened 1e-4 m -> 1 m
+      caught by: stack\tests\test_v8f_speedavg.py::test_arm_control_2_gt_that_is_not_kindxs_speed_oracle  []  red controls: []
+M22 KILLED         20.8 s  a LIMITED (smoke) run is no longer refused
+      caught by: stack\tests\test_v8f_speedavg.py::test_check_arm_refuses_a_limited_run_on_its_own  []  red controls: []
+M23 KILLED         21.7 s  the checkpoint sha256 check removed
+      caught by: stack\tests\test_v8f_speedavg.py::test_refusals_of_load_all  [Failed: ...]  red controls: []
+M24 KILLED         22.4 s  the mode / seed / tag check removed
+      caught by: stack\tests\test_v8f_speedavg.py::test_refusals_of_load_all  [Failed: ...]  red controls: []
+M25 KILLED         21.0 s  control 3 no longer gates the controls' PASS
+      caught by: stack\tests\test_v8f_speedavg.py::test_arm_control_3_own_that_is_not_the_banked_eval  []  red controls: []
+M26 KILLED         21.3 s  the cross-seed same-pair control forced to PASS
+      caught by: stack\tests\test_v8f_speedavg.py::test_arm_cross_seed_the_two_avg_arms_must_average_the_same_pair  []  red controls: []
+M27 KILLED         18.8 s  control 1 is no longer EXACTLY 0.0 per window (1e-3 m allowed)
+      caught by: stack\tests\test_v8f_speedavg.py::test_arm_control_1_self_average_that_is_not_identity  []  red controls: []
+M28 KILLED         22.3 s  the STOP marker renamed
+      caught by: stack\tests\test_v8f_speedavg.py::test_runner_refuses_when_kindx_did_not_make_speed_a_carrier[None-does not exist: this arm is CONDITIONAL]  []  red controls: []
+M29 KILLED         25.7 s  the runner no longer stops when KINDX's s1 read is absent (the arm is CONDITIONAL)
+      caught by: stack\tests\test_v8f_speedavg.py::test_runner_refuses_when_kindx_did_not_make_speed_a_carrier[None-does not exist: this arm is CONDITIONAL]  []  red controls: []
+M30 KILLED         23.9 s  the free-space guard is off
+      caught by: stack\tests\test_v8f_speedavg.py::test_runner_syntax_dry_run_and_load_bearing_lines  []  red controls: []
+M31 KILLED         22.4 s  X_s0's committed sha256 edited
+      caught by: stack\tests\test_v8f_speedavg.py::test_runner_syntax_dry_run_and_load_bearing_lines  []  red controls: []
+M32 KILLED         28.3 s  the runner accepts X_s0 == X_s1 (no second seed)
+      caught by: stack\tests\test_v8f_speedavg.py::test_runner_fetch_stage_stops_on_a_wrong_sha_and_on_the_same_checkpoint_twice  []  red controls: []
+M33 KILLED         21.7 s  a pulled checkpoint's sha256 mismatch no longer stops the runner
+      caught by: stack\tests\test_v8f_speedavg.py::test_runner_syntax_dry_run_and_load_bearing_lines  []  red controls: []
+M01e KILLED         17.0 s  AVERAGE ONE CELL ONLY (replace_cells writes the first speed cell, not five)  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live  []  red controls: ['control_2_gt_equals_kindx_speed_oracle', 'guards', 'cross_seed_same_pair']
+M02e KILLED         18.2 s  SWAP SEEDS: `self` (control 1) averages X_s with the OTHER seed instead of with itself  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live  []  red controls: ['control_1_self_average_is_identity', 'guards', 'cross_seed_same_pair']
+M05e KILLED         15.8 s  averaging weights 0.6 / 0.4 instead of the plain mean  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live  []  red controls: ['guards', 'control_1_self_average_is_identity', 'cross_seed_same_pair']
+M07e KILLED         14.6 s  the hook averages ALL 60 cells, not only the five speed cells  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live  []  red controls: ['control_2_gt_equals_kindx_speed_oracle', 'guards', 'cross_seed_same_pair']
+M08e KILLED         16.3 s  `avg` averages X_s with ITSELF (the average moves nothing)  [END-TO-END TESTS ONLY]
+      caught by: stack\tests\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live  []  red controls: ['guards', 'cross_seed_same_pair']
+BASELINE (restored): rc 0  53 passed  27.7 s
+SUMMARY {'KILLED': 38, 'CRASHED': 0, 'SURVIVED': 0, 'UNATTRIBUTED': 0, 'BAD': 0}  all killed and the restored tree green: True

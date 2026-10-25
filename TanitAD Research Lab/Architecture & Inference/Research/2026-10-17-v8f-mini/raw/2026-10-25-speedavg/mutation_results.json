@@ -1,0 +1,1020 @@
+{
+ "src": "C:\\Users\\Admin\\AppData\\Local\\Temp\\claude\\E--Projects-TanitAD\\bfe78918-15e8-439b-8566-593ca3297bd8\\scratchpad\\speedavg",
+ "tests": "stack/tests/test_v8f_speedavg.py",
+ "n_mutants": 38,
+ "baseline_before": {
+  "rc": 0,
+  "seconds": 37.0,
+  "passed": 53,
+  "first_failed": null,
+  "first_failed_msg": null,
+  "kind": null,
+  "E_lines": [],
+  "red_controls": [],
+  "tail": [
+   "    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}",
+   "",
+   "-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html",
+   "53 passed, 1 warning in 34.79s"
+  ]
+ },
+ "mutants": [
+  {
+   "id": "M01",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "AVERAGE ONE CELL ONLY (replace_cells writes the first speed cell, not five)",
+   "expected_catcher": "control_2 / the live average",
+   "rc": 1,
+   "seconds": 7.2,
+   "passed": 1,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_mean_cells_and_replace_cells_known_values",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: replace_cells changes only its cells and never its input",
+    "E   assert ([[1.0, 6.0, 3.0, 4.0]] == [[1.0, 6.0, 3.0, 8.0]]",
+    "E"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_mean_cells_and_replace_cells_known_values",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 1 passed in 5.78s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M02",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "SWAP SEEDS: `self` (control 1) averages X_s with the OTHER seed instead of with itself",
+   "expected_catcher": "control_1",
+   "rc": 1,
+   "seconds": 5.7,
+   "passed": 2,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_source_code_and_partner_of",
+   "first_failed_msg": "As...",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: assert (<object object at 0x000001AE203D59E0> is <object object at 0x000001AE203D59F0>)",
+    "E    +  where <object object at 0x000001AE203D59E0> = <function partner_of at 0x000001AE20749440>('self', <object object at 0x000001AE203D59F0>, <object object at 0x000001AE203D59E0>)",
+    "E    +    where <function partner_of at 0x000001AE20749440> = SA.partner_of"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_source_code_and_partner_of - As...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 2 passed in 4.20s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M03",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "SWAP OUTCOME ROWS: VARIANCE PAYS <-> BIAS, NOT VARIANCE in `decide`",
+   "expected_catcher": "decision table",
+   "rc": 1,
+   "seconds": 26.0,
+   "passed": 23,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_the_outcome_table[p00-p10-sec0-VARIANCE PAYS]",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {'outcome': 'BIAS, NOT VARIANCE', 'primary_met': {'s0': True, 's1': True}, 'primary_negative_and_separated': {'s0': True, 's1': True}, 'primary_separated': {'s0': True, 's1': True}, ...}",
+    "E   assert 'BIAS, NOT VARIANCE' == 'VARIANCE PAYS'",
+    "E"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_the_outcome_table[p00-p10-sec0-VARIANCE PAYS]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 23 passed, 1 warning in 24.15s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M04",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "DROP THE SEPARATION TEST from PRIMARY",
+   "expected_catcher": "primary / separation",
+   "rc": 1,
+   "seconds": 21.1,
+   "passed": 30,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_the_outcome_table[p07-p17-sec7-MIXED]",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {'outcome': 'VARIANCE PAYS', 'primary_met': {'s0': True, 's1': True}, 'primary_negative_and_separated': {'s0': False, 's1': True}, 'primary_separated': {'s0': False, 's1': True}, ...}",
+    "E   assert 'VARIANCE PAYS' == 'MIXED'",
+    "E"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_the_outcome_table[p07-p17-sec7-MIXED]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 30 passed, 1 warning in 19.19s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M05",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "averaging weights 0.6 / 0.4 instead of the plain mean",
+   "expected_catcher": "mean_cells / avg cells are the mean",
+   "rc": 1,
+   "seconds": 6.1,
+   "passed": 1,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_mean_cells_and_replace_cells_known_values",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   assert [[1.800000071...000381469727]] == [[2.0, 4.0, 5.0, 6.0]]",
+    "E",
+    "E     At index 0 diff: [1.8000000715255737, 3.6000001430511475, 4.599999904632568, 5.600000381469727] != [2.0, 4.0, 5.0, 6.0]"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_mean_cells_and_replace_cells_known_values",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 1 passed in 3.29s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M06",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "the speed cell set loses v_hi_ms (four cells, not the PREREG's five)",
+   "expected_catcher": "cell set pin",
+   "rc": 1,
+   "seconds": 5.3,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_speed_idx_is_the_preregs_five_cells_and_a_moved_cell_is_refused",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: the driver's cell set is the PREREG's five, by name and in order",
+    "E   assert ('lon_v_targe...s', 'v_lo_ms') == ('lon_v_targe...s', 'v_hi_ms')",
+    "E"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_speed_idx_is_the_preregs_five_cells_and_a_moved_cell_is_refused",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed in 3.18s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M07",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "the hook averages ALL 60 cells, not only the five speed cells",
+   "expected_catcher": "non-speed cells untouched",
+   "rc": 1,
+   "seconds": 4.4,
+   "passed": 1,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_mean_cells_and_replace_cells_known_values",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: replace_cells changes only its cells and never its input",
+    "E   assert ([[3.0, 6.0, 7.0, 8.0]] == [[1.0, 6.0, 3.0, 8.0]]",
+    "E"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_mean_cells_and_replace_cells_known_values",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 1 passed in 3.08s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M08",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "`avg` averages X_s with ITSELF (the average moves nothing)",
+   "expected_catcher": "avg is live",
+   "rc": 1,
+   "seconds": 7.0,
+   "passed": 2,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_source_code_and_partner_of",
+   "first_failed_msg": "As...",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: assert (<object object at 0x0000028FC71E99F0> is <object object at 0x0000028FC71E99F0> and <object object at 0x0000028FC71E99F0> is <object object at 0x0000028FC71E99E0>)",
+    "E    +  where <object object at 0x0000028FC71E99F0> = <function partner_of at 0x0000028FC7559440>('self', <object object at 0x0000028FC71E99F0>, <object object at 0x0000028FC71E99E0>)",
+    "E    +    where <function partner_of at 0x0000028FC7559440> = SA.partner_of"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_source_code_and_partner_of - As...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 2 passed in 4.57s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M09",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "`gt` has no fallback to T's own code where the window has no v9 row",
+   "expected_catcher": "control_2 / gt fallback",
+   "rc": 1,
+   "seconds": 5.5,
+   "passed": 2,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_source_code_and_partner_of",
+   "first_failed_msg": "As...",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: assert False",
+    "E    +  where False = <built-in method equal of type object at 0x00007FFAD35E8DE0>(tensor([[-0.7984, -1.5815,  0.0756, -0.6921,  0.5157, -1.3422, -0.3276,  0.2157,\\n         -1.3075,  0.6331, -0.3055, -...  0.5655, -1.7053, -0.0460,  0.7257, -0.2179, -0.9295,  1.5643, -1.1499,\\n         -1.0877,  1.0366, -0.4441, -1.0201]]), tensor([[-0.7984, -1.5815,  0.0756, -0.6921,  0.5157, -1.3422, -0.3276,  0.2157,\\n         -1.3075,  0.6331, -0.3055, -... -0.7145, -0.5352, -1.4120, -0.4871,  0.4755,  1.1109, -0.1459,  0.1190,\\n         -1.0170, -0.1822, -0.1683, -0.5783]]))",
+    "E    +    where <built-in method equal of type object at 0x00007FFAD35E8DE0> = torch.equal"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_source_code_and_partner_of - As...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 2 passed in 4.27s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M10",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "the wrapped forward_diag is never restored",
+   "expected_catcher": "restore",
+   "rc": 1,
+   "seconds": 7.0,
+   "passed": 6,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_hook_modes_on_tiny_models",
+   "first_failed_msg": "Ass...",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: restore() puts the original forward_diag back (checked after EVERY mode, not only at the end)",
+    "E   assert <function SpeedAvgHook.install.<locals>.<lambda> at 0x00000192ECEB9760> is <function V8FMini.forward_diag at 0x00000192FBBB5EE0>",
+    "E    +  where <function SpeedAvgHook.install.<locals>.<lambda> at 0x00000192ECEB9760> = <class 'tanitad.models.v8f_mini.V8FMini'>.forward_diag"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_hook_modes_on_tiny_models - Ass...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 6 passed in 5.54s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M11",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "pair_violations no longer requires bitwise-equal cons_mu / cons_sd",
+   "expected_catcher": "pair guard",
+   "rc": 1,
+   "seconds": 7.2,
+   "passed": 4,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_pair_violations_on_checkpoints",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: a different standardisation = a different code space",
+    "E   assert False",
+    "E    +  where False = any(<generator object test_pair_violations_on_checkpoints.<locals>.<genexpr> at 0x000001EC74F78D40>)"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_pair_violations_on_checkpoints",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 4 passed in 5.01s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M12",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "F moved after the fact (0.1207 -> 0.1)",
+   "expected_catcher": "F pin / boundary",
+   "rc": 1,
+   "seconds": 22.0,
+   "passed": 37,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_primary_and_secondary_predicates",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: assert (True and not True)",
+    "E    +  where True = <function primary_met at 0x000001C26D466FC0>({'point': -0.1207, 'delta': -0.1207, 'lo': -0.1607, 'hi': -0.0807, ...})",
+    "E    +    where <function primary_met at 0x000001C26D466FC0> = RD.primary_met"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_primary_and_secondary_predicates",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 37 passed, 1 warning in 19.57s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M13",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "PRIMARY boundary: exactly -F no longer meets it",
+   "expected_catcher": "boundary at exactly -F",
+   "rc": 1,
+   "seconds": 20.1,
+   "passed": 24,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_the_outcome_table[p01-p11-sec1-VARIANCE PAYS]",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {'outcome': 'PARTIAL', 'primary_met': {'s0': False, 's1': False}, 'primary_negative_and_separated': {'s0': True, 's1': True}, 'primary_separated': {'s0': True, 's1': True}, ...}",
+    "E   assert 'PARTIAL' == 'VARIANCE PAYS'",
+    "E"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_the_outcome_table[p01-p11-sec1-VARIANCE PAYS]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 24 passed, 1 warning in 18.52s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M14",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "PARTIAL row routed to MIXED",
+   "expected_catcher": "decision table",
+   "rc": 1,
+   "seconds": 21.6,
+   "passed": 25,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_the_outcome_table[p02-p12-sec2-PARTIAL]",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {'outcome': 'MIXED', 'primary_met': {'s0': False, 's1': True}, 'primary_negative_and_separated': {'s0': True, 's1': True}, 'primary_separated': {'s0': True, 's1': True}, ...}",
+    "E   assert 'MIXED' == 'PARTIAL'",
+    "E"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_the_outcome_table[p02-p12-sec2-PARTIAL]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 25 passed, 1 warning in 18.17s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M15",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "BIAS, NOT VARIANCE row unreachable",
+   "expected_catcher": "decision table",
+   "rc": 1,
+   "seconds": 22.2,
+   "passed": 31,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_the_outcome_table[p08-p18-sec8-BIAS, NOT VARIANCE]",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {'outcome': 'MIXED', 'primary_met': {'s0': False, 's1': False}, 'primary_negative_and_separated': {'s0': False, 's1': False}, 'primary_separated': {'s0': False, 's1': False}, ...}",
+    "E   assert 'MIXED' == 'BIAS, NOT VARIANCE'",
+    "E"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_the_outcome_table[p08-p18-sec8-BIAS, NOT VARIANCE]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 31 passed, 1 warning in 20.48s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M16",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "LEAD-VIOL dropped from SECONDARY",
+   "expected_catcher": "secondary: lead_viol",
+   "rc": 1,
+   "seconds": 21.6,
+   "passed": 38,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_secondary_each_of_the_six_metrics_can_fail_it",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: LEAD-VIOL",
+    "E   assert not True"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_secondary_each_of_the_six_metrics_can_fail_it",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 38 passed, 1 warning in 19.05s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M17",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "separated-worse reads the CI's upper end, not its lower end",
+   "expected_catcher": "secondary: separated-worse",
+   "rc": 1,
+   "seconds": 18.7,
+   "passed": 37,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_primary_and_secondary_predicates",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: assert (True and not True)",
+    "E    +  where True = <function separated_worse at 0x000001ADBA337100>({'lo': 0.01, 'hi': 0.2, 'delta': 0.1})",
+    "E    +    where <function separated_worse at 0x000001ADBA337100> = RD.separated_worse"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_primary_and_secondary_predicates",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 37 passed, 1 warning in 17.11s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M18",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "CAPTURE numerator sign flipped",
+   "expected_catcher": "capture",
+   "rc": 1,
+   "seconds": 20.7,
+   "passed": 39,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_capture_known_values_and_the_not_defined_case",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   assert (1.0 < 1e-12)",
+    "E    +  where 1.0 = abs((-0.5 - 0.5))"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_capture_known_values_and_the_not_defined_case",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 39 passed, 1 warning in 18.21s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M19",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "the tier stamp is the eval json's mislabelled T0 string",
+   "expected_catcher": "no T0 string",
+   "rc": 1,
+   "seconds": 20.4,
+   "passed": 42,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_build_result_block_and_output_text",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: assert 'T0-open-loop...acher-forced)' == 'T1-class ope...uture action)'",
+    "E",
+    "E     - T1-class open loop (own held outputs; no recorded future action)"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_build_result_block_and_output_text",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 42 passed, 1 warning in 18.71s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M20",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "the PARTIAL condition text edited (the committed table is not the PREREG's)",
+   "expected_catcher": "table equals PREREG",
+   "rc": 1,
+   "seconds": 22.6,
+   "passed": 41,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_the_tables_text_is_the_preregs_text",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: PARTIAL",
+    "E   assert \"**PARTIAL** | PRIMARY < 0 and separated at both seeds but above 0 | report CAPTURE; next: a temporal average of T's own speed cells over its last ticks (single model, zero training), under its own PREREG |\" in \"# PREREG_V8F_SPEEDAVG: is T's speed error variance? Average the two seeds' speed cells at inference (written 2026-10-...l per window (\\u2264 1e-4 m).\\\\n\\\\n\\u26d4 No cell set, averaging rule, bar or routing changes after any SPEEDAVG number is seen.\\\\n\""
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_the_tables_text_is_the_preregs_text",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 41 passed, 1 warning in 20.78s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M21",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "the controls' per-window tolerance loosened 1e-4 m -> 1 m",
+   "expected_catcher": "control arms",
+   "rc": 1,
+   "seconds": 20.3,
+   "passed": 13,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_arm_control_2_gt_that_is_not_kindxs_speed_oracle",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   assert (not True)"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_arm_control_2_gt_that_is_not_kindxs_speed_oracle",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 13 passed, 1 warning in 18.64s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M22",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "a LIMITED (smoke) run is no longer refused",
+   "expected_catcher": "limited-run refusal",
+   "rc": 1,
+   "seconds": 20.8,
+   "passed": 44,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_check_arm_refuses_a_limited_run_on_its_own",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   Failed: DID NOT RAISE SystemExit"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_check_arm_refuses_a_limited_run_on_its_own",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 44 passed, 1 warning in 19.23s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M23",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "the checkpoint sha256 check removed",
+   "expected_catcher": "wrong-sha refusal",
+   "rc": 1,
+   "seconds": 21.7,
+   "passed": 43,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_refusals_of_load_all",
+   "first_failed_msg": "Failed: ...",
+   "kind": "assertion",
+   "E_lines": [
+    "E   Failed: DID NOT RAISE SystemExit"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_refusals_of_load_all - Failed: ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 43 passed, 1 warning in 20.18s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M24",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "the mode / seed / tag check removed",
+   "expected_catcher": "mislabelled-mode refusal",
+   "rc": 1,
+   "seconds": 22.4,
+   "passed": 43,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_refusals_of_load_all",
+   "first_failed_msg": "Failed: ...",
+   "kind": "assertion",
+   "E_lines": [
+    "E   Failed: DID NOT RAISE SystemExit"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_refusals_of_load_all - Failed: ...",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 43 passed, 1 warning in 20.75s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M25",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "control 3 no longer gates the controls' PASS",
+   "expected_catcher": "control_3 arm",
+   "rc": 1,
+   "seconds": 21.0,
+   "passed": 14,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_arm_control_3_own_that_is_not_the_banked_eval",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: a red control 3 fails the seed and the whole control block",
+    "E   assert (not True)"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_arm_control_3_own_that_is_not_the_banked_eval",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 14 passed, 1 warning in 19.38s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M26",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "the cross-seed same-pair control forced to PASS",
+   "expected_catcher": "cross-seed arm",
+   "rc": 1,
+   "seconds": 21.3,
+   "passed": 20,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_arm_cross_seed_the_two_avg_arms_must_average_the_same_pair",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   assert (not True)"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_arm_cross_seed_the_two_avg_arms_must_average_the_same_pair",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 20 passed, 1 warning in 19.66s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M27",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_speedavg_read.py",
+   "breaks": "control 1 is no longer EXACTLY 0.0 per window (1e-3 m allowed)",
+   "expected_catcher": "control_1 exactness",
+   "rc": 1,
+   "seconds": 18.8,
+   "passed": 12,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_arm_control_1_self_average_that_is_not_identity",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   assert (not True)"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_arm_control_1_self_average_that_is_not_identity",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 12 passed, 1 warning in 17.42s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M28",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/devbox_ops/run_speedavg.sh",
+   "breaks": "the STOP marker renamed",
+   "expected_catcher": "runner markers",
+   "rc": 1,
+   "seconds": 22.3,
+   "passed": 47,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_runner_refuses_when_kindx_did_not_make_speed_a_carrier[None-does not exist: this arm is CONDITIONAL]",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: the STOP marker line itself carries the reason (a message printed without stopping does not count)",
+    "E   assert False",
+    "E    +  where False = any(<generator object test_runner_refuses_when_kindx_did_not_make_speed_a_carrier.<locals>.<genexpr> at 0x000001A4C4EAB5E0>)"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_runner_refuses_when_kindx_did_not_make_speed_a_carrier[None-does not exist: this arm is CONDITIONAL]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 47 passed, 1 warning in 20.73s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M29",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/devbox_ops/run_speedavg.sh",
+   "breaks": "the runner no longer stops when KINDX's s1 read is absent (the arm is CONDITIONAL)",
+   "expected_catcher": "runner refuses without KINDX s1",
+   "rc": 1,
+   "seconds": 25.7,
+   "passed": 47,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_runner_refuses_when_kindx_did_not_make_speed_a_carrier[None-does not exist: this arm is CONDITIONAL]",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: the STOP marker line itself carries the reason (a message printed without stopping does not count)",
+    "E   assert False",
+    "E    +  where False = any(<generator object test_runner_refuses_when_kindx_did_not_make_speed_a_carrier.<locals>.<genexpr> at 0x000001F5F0DEB1D0>)"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_runner_refuses_when_kindx_did_not_make_speed_a_carrier[None-does not exist: this arm is CONDITIONAL]",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 47 passed, 1 warning in 24.07s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M30",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/devbox_ops/run_speedavg.sh",
+   "breaks": "the free-space guard is off",
+   "expected_catcher": "runner load-bearing lines",
+   "rc": 1,
+   "seconds": 23.9,
+   "passed": 46,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_runner_syntax_dry_run_and_load_bearing_lines",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: MIN_FREE_KB=2097152",
+    "E   assert 'MIN_FREE_KB=2097152' in '#!/bin/bash\\n# run_speedavg.sh -- PREREG_V8F_SPEEDAVG on the DEV BOX (CPU, zero training). CONDITIONAL: run it only i...what \\'all\\' runs, in this order; the final marker is ZZSPEEDAVG-DONE <OUTCOME> or ZZSPEEDAVG-STOP <reason>\"\\nexit 0\\n'"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_runner_syntax_dry_run_and_load_bearing_lines",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 46 passed, 1 warning in 21.69s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M31",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/devbox_ops/run_speedavg.sh",
+   "breaks": "X_s0's committed sha256 edited",
+   "expected_catcher": "runner load-bearing lines",
+   "rc": 1,
+   "seconds": 22.4,
+   "passed": 46,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_runner_syntax_dry_run_and_load_bearing_lines",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: c6a628762790b4fc3f7634867fc15b8167b035692ff518203c9fc0b3c126250d",
+    "E   assert 'c6a628762790b4fc3f7634867fc15b8167b035692ff518203c9fc0b3c126250d' in \"== run_speedavg.sh --dry-run (nothing is read, written or launched; no torch is imported)\\nrepo C:/Users/Admin/AppDat... above are what 'all' runs, in this order; the final marker is ZZSPEEDAVG-DONE <OUTCOME> or ZZSPEEDAVG-STOP <reason>\\n\""
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_runner_syntax_dry_run_and_load_bearing_lines",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 46 passed, 1 warning in 20.73s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M32",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/devbox_ops/run_speedavg.sh",
+   "breaks": "the runner accepts X_s0 == X_s1 (no second seed)",
+   "expected_catcher": "runner load-bearing lines",
+   "rc": 1,
+   "seconds": 28.3,
+   "passed": 52,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_runner_fetch_stage_stops_on_a_wrong_sha_and_on_the_same_checkpoint_twice",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: 10-25 18:49:01 == fetch",
+    "E     10-25 18:49:01 sha256 ok M2b_s0_mixo 7271a88e07ea0d8ef6e7ec99ceecb993acaba7d4169890348d77eb95c5f429f9",
+    "E     10-25 18:49:01 sha256 ok M2b_s1_mixo 7271a88e07ea0d8ef6e7ec99ceecb993acaba7d4169890348d77eb95c5f429f9"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_runner_fetch_stage_stops_on_a_wrong_sha_and_on_the_same_checkpoint_twice",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 52 passed, 1 warning in 24.97s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M33",
+   "file": "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/devbox_ops/run_speedavg.sh",
+   "breaks": "a pulled checkpoint's sha256 mismatch no longer stops the runner",
+   "expected_catcher": "runner load-bearing lines",
+   "rc": 1,
+   "seconds": 21.7,
+   "passed": 46,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_runner_syntax_dry_run_and_load_bearing_lines",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: sha256 of $dst is $got, expected $want",
+    "E   assert 'sha256 of $dst is $got, expected $want' in '#!/bin/bash\\n# run_speedavg.sh -- PREREG_V8F_SPEEDAVG on the DEV BOX (CPU, zero training). CONDITIONAL: run it only i...what \\'all\\' runs, in this order; the final marker is ZZSPEEDAVG-DONE <OUTCOME> or ZZSPEEDAVG-STOP <reason>\"\\nexit 0\\n'"
+   ],
+   "red_controls": [],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_runner_syntax_dry_run_and_load_bearing_lines",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 46 passed, 1 warning in 20.06s"
+   ],
+   "verdict": "KILLED"
+  },
+  {
+   "id": "M01e",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "AVERAGE ONE CELL ONLY (replace_cells writes the first speed cell, not five)  [END-TO-END TESTS ONLY]",
+   "expected_catcher": "the controls",
+   "rc": 1,
+   "seconds": 17.0,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"seeds\": {"
+   ],
+   "red_controls": [
+    "control_2_gt_equals_kindx_speed_oracle",
+    "guards",
+    "cross_seed_same_pair"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 35 deselected, 1 warning in 15.42s"
+   ],
+   "verdict": "KILLED",
+   "must_be_red_one_of": [
+    "control_2_gt_equals_kindx_speed_oracle"
+   ],
+   "attributed": true
+  },
+  {
+   "id": "M02e",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "SWAP SEEDS: `self` (control 1) averages X_s with the OTHER seed instead of with itself  [END-TO-END TESTS ONLY]",
+   "expected_catcher": "the controls",
+   "rc": 1,
+   "seconds": 18.2,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"seeds\": {"
+   ],
+   "red_controls": [
+    "control_1_self_average_is_identity",
+    "guards",
+    "cross_seed_same_pair"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 35 deselected, 1 warning in 15.59s"
+   ],
+   "verdict": "KILLED",
+   "must_be_red_one_of": [
+    "control_1_self_average_is_identity"
+   ],
+   "attributed": true
+  },
+  {
+   "id": "M05e",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "averaging weights 0.6 / 0.4 instead of the plain mean  [END-TO-END TESTS ONLY]",
+   "expected_catcher": "the controls",
+   "rc": 1,
+   "seconds": 15.8,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"seeds\": {"
+   ],
+   "red_controls": [
+    "guards",
+    "control_1_self_average_is_identity",
+    "cross_seed_same_pair"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 35 deselected, 1 warning in 14.01s"
+   ],
+   "verdict": "KILLED",
+   "must_be_red_one_of": [
+    "control_1_self_average_is_identity",
+    "guards"
+   ],
+   "attributed": true
+  },
+  {
+   "id": "M07e",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "the hook averages ALL 60 cells, not only the five speed cells  [END-TO-END TESTS ONLY]",
+   "expected_catcher": "the controls",
+   "rc": 1,
+   "seconds": 14.6,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"seeds\": {"
+   ],
+   "red_controls": [
+    "control_2_gt_equals_kindx_speed_oracle",
+    "guards",
+    "cross_seed_same_pair"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 35 deselected, 1 warning in 13.07s"
+   ],
+   "verdict": "KILLED",
+   "must_be_red_one_of": [
+    "control_2_gt_equals_kindx_speed_oracle",
+    "guards"
+   ],
+   "attributed": true
+  },
+  {
+   "id": "M08e",
+   "file": "stack/scripts/v8f_mini_eval_speedavg.py",
+   "breaks": "`avg` averages X_s with ITSELF (the average moves nothing)  [END-TO-END TESTS ONLY]",
+   "expected_catcher": "the controls",
+   "rc": 1,
+   "seconds": 16.3,
+   "passed": 0,
+   "first_failed": "stack\\tests\\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live",
+   "first_failed_msg": "",
+   "kind": "assertion",
+   "E_lines": [
+    "E   AssertionError: {",
+    "E      \"tolerance_m\": 0.0001,",
+    "E      \"seeds\": {"
+   ],
+   "red_controls": [
+    "guards",
+    "cross_seed_same_pair"
+   ],
+   "tail": [
+    "=========================== short test summary info ===========================",
+    "FAILED stack\\tests\\test_v8f_speedavg.py::test_e2e_controls_pass_and_the_average_is_live",
+    "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!",
+    "1 failed, 35 deselected, 1 warning in 14.69s"
+   ],
+   "verdict": "KILLED",
+   "must_be_red_one_of": [
+    "guards",
+    "cross_seed_same_pair"
+   ],
+   "attributed": true
+  }
+ ],
+ "baseline_after": {
+  "rc": 0,
+  "seconds": 27.7,
+  "passed": 53,
+  "first_failed": null,
+  "first_failed_msg": null,
+  "kind": null,
+  "E_lines": [],
+  "red_controls": [],
+  "tail": [
+   "    \"sec\": time.time() - t0, **{k: float(v) for k, v in T.items()}}",
+   "",
+   "-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html",
+   "53 passed, 1 warning in 26.14s"
+  ]
+ },
+ "summary": {
+  "KILLED": 38,
+  "CRASHED": 0,
+  "SURVIVED": 0,
+  "UNATTRIBUTED": 0,
+  "BAD": 0
+ },
+ "ALL_KILLED_AND_RESTORED_GREEN": true
+}

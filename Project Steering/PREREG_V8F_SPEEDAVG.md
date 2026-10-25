@@ -33,3 +33,11 @@ For each seed s ∈ {0, 1}: X_s's own forward, with T's five speed cells (`lon_v
 3. X_s's own forward reproduces its banked eval per window (≤ 1e-4 m).
 
 ⛔ No cell set, averaging rule, bar or routing changes after any SPEEDAVG number is seen.
+
+## Amendment 1 (2026-10-25, MM): written BEFORE any SPEEDAVG data (no X_s1 exists; only a stand-in plumbing smoke ran)
+
+The instrument build found one case the PARTIAL row does not settle: PRIMARY negative and separated at both seeds, ≤ −F at one seed and above −F at the other (for example −0.30 / −0.05 m). It is fixed here, before data:
+* **That case is PARTIAL** (the both-seed bar is missed at one seed, which is what "but above −F" excludes from VARIANCE PAYS). `v8f_speedavg_read.py` applies this reading and sets `partial_reading_dependent: true` whenever the other literal reading (above −F at BOTH seeds) would have said MIXED; the result reports that flag.
+* Both seeds ≤ −F with a separated-worse SECONDARY stays **MIXED** (unchanged).
+
+Instrument: `stack/scripts/v8f_mini_eval_speedavg.py` (modes `avg` / `self` / `gt` / `own` = the arm and controls 1–3), `code/v8f_speedavg_read.py`, `code/devbox_ops/run_speedavg.sh` (dev-box CPU; pulls the two X checkpoints read-only from box 2 and sha-checks them; STOPs unless KINDX's seed-1 read made SPEED a carrier). Launch with `SPEEDAVG_SF`, `SPEEDAVG_OUT` and `SPEEDAVG_PY` set: the defaults point at the builder's scratch. 53 tests; 38 of 38 mutants RED.
