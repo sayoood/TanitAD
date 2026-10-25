@@ -643,7 +643,7 @@ def test_read_end_to_end_applies_the_table_and_controls_pass(pipe):
         assert ps["SECONDARY"]["lead_viol_at_risk"]["status"] == "OK" and ps["stack_HS"]["status"] == "NOT-INSTRUMENTED"
         assert ps["selector_accuracy"]["n_eval"] == 21 and sum(ps["selector_accuracy"]["kstar_eval_counts"]) == 21
     md = (pipe["run"] / "KSCORE_RESULT.md").read_text(encoding="utf-8")
-    assert md.startswith("# KSCORE_RESULT") and "PAUSED" in md and "Outcome (the PREREG table applied verbatim)" in md
+    assert md.startswith("# KSCORE_RESULT") and "NOT PAUSED for v8F" in md and "PAUSED (PI ruling 2026-09-19" not in md and "Outcome (the PREREG table applied verbatim)" in md
 
 
 def test_read_refuses_with_rc2_on_a_stop_control_a_missing_block_and_an_unmapped_state(world, pipe, tmp_path, monkeypatch):

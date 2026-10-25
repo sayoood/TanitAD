@@ -1239,7 +1239,7 @@ def write_md(path, READ, RES):
                              ("fw_lat_yaw_rate_mae_degps", "LATERAL", "yaw-rate MAE (deg/s)"), ("fw_lat_curvature_mae_1pm", "LATERAL", "curvature MAE (1/m)"),
                              ("fw_tac_lat_acc", "TACTICAL (plan-derived)", "lateral decision agreement"), ("fw_tac_lon_acc", "TACTICAL (plan-derived)", "longitudinal decision agreement")):
             L.append(f"| {fam} | {nm} | {fmt(R['paired_vs_B']['KSCORE'].get(key), 4)} |")
-        L.append("| STRATEGIC | - | PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE ITEM 25): O/T/S unchanged here, reported as paused, not as a pass |")
+        L.append("| STRATEGIC | - | NOT PAUSED for v8F (PI-V8F-2026-10-17; R72): S is B's own in every arm here (the scorer changes only which of O's hypothesis plans is deployed), so the family is identical across arms by construction; not a pass |")
         sa = R["selector_accuracy"]
         L.append(f"\nSelector accuracy vs k*: KSCORE {sa['KSCORE_vs_kstar']:.4f}, PERM {sa['PERM_vs_kstar']:.4f}, ARGMAX {sa['ARGMAX_vs_kstar']:.4f}, SEL-CONST (class {sa['const_class']}) "
                  f"{sa['CONST_vs_kstar']:.4f}, majority train class {sa['majority_train_class']} {sa['majority_train_class_acc_on_eval']:.4f}. k* counts (eval) {sa['kstar_eval_counts']}; "
@@ -1285,7 +1285,7 @@ def cmd_read(a):
     f_exact = abs(RES[0]["B_ade6_mean"] - RES[1]["B_ade6_mean"])
     ctl2 = all(RES[s]["ctl"]["control2_perm_scorer_vs_sel_const"]["pass"] for s in SEEDS)
     READ = {"prereg": PREREG, "decision": decision, "controls_all_pass": bool(ctl2), "F_exact": f_exact, "evidence_class": "MEASURED (ours), artifacts under " + str(run), "tier": TIER,
-            "estimator": ESTIMATOR, "strategic_family": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE ITEM 25)",
+            "estimator": ESTIMATOR, "strategic_family": "NOT PAUSED for v8F (PI-V8F-2026-10-17; R72): identical across arms by construction (S is B's own)",
             "per_seed": {f"s{s}": {k: RES[s][k] for k in ("PRIMARY_B", "PRIMARY_SEL", "SECONDARY", "seed_row", "selector_accuracy", "B_ade6_mean", "stack_H", "stack_HS", "lead_viol_kscore_minus_B",
                                                           "distance_keeping_kscore_minus_B")} | {"controls": RES[s]["ctl"]} for s in SEEDS}}
     jdump(READ, rc_path)

@@ -18704,3 +18704,17 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 
 **Class:** *a standing rule quoted from the always-loaded file after a later, scoped ruling in the register superseded it for this model line.*
 * ⇒ Before stating a family's status for an arm, check the register's PI rulings for that model line, not only CLAUDE.md.
+
+### R73 -- "the STRATEGIC family is PAUSED", again: `RESULT_V8F_KHYP.md` (two family tables and a bullet) and KSCORE's own output (`raw/2026-10-25-kscore/run/KSCORE_RESULT.md`, `READ.json` -> `strategic_family`) (2026-10-25, MM)
+
+**Wrong for v8F**, as R72. R72 fixed four documents and a video. Its sweep searched the DOCUMENTS, not the GENERATORS that write them: `raw/2026-10-25-khyp/khyp.py` and `stack/scripts/v8f_kscore.py` hard-coded the label. So KHYP's result (written before R72) was missed, and KSCORE (run after R72) printed the label again.
+
+**Consequence:** no number changes. Both are B-frozen selector reads with S as B's own, so the family is identical across arms by construction. Fixed:
+* `v8f_kscore.py`'s label now reads `NOT PAUSED for v8F`. `test_v8f_kscore.py` pins it and requires the old ruling's text to be absent; restoring the old label goes RED (`raw/2026-10-25-kscore/run/label_fix_tests.out`).
+* A correction note on `RESULT_V8F_KHYP.md`.
+* `RESULT_V8F_KSCORE.md` states the fix.
+
+`khyp.py` and the banked run outputs stay as written: they are records. Sweep of the live generators on tip `4f561a2c`: `grep -i paused` over `stack/scripts/v8f*`, the package `code/`, and the live readers in `raw/2026-10-25-{kindx,listen2,mixo}` finds no other hit (`v8f_mini_eval.py:94` writes `"paused": False`).
+
+**Class:** *a correction applied to a generator's outputs, and not to the generator, re-emits on the generator's next run.*
+* ⇒ When retracting a label, grep the code that writes it, not only the documents that carry it.
