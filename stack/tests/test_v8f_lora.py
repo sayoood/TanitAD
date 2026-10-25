@@ -800,7 +800,8 @@ def test_encoder_cache_is_the_pre_lora_trainer_bit_for_bit(tmp_path, arm):
         import subprocess
         out = tmp_path / "pre"
         env = dict(os.environ, CUDA_VISIBLE_DEVICES="-1", PYTHONPATH=os.pathsep.join([str(Path(pre) / "stack"), str(Path(pre) / "taniteval")]))
-        r = subprocess.run([sys.executable, str(Path(pre) / "stack" / "scripts" / "v8f_mini_train.py"), *common, "--out", str(out)], env=env, capture_output=True, text=True)
+        r = subprocess.run([sys.executable, str(Path(pre) / "stack" / "scripts" / "v8f_mini_train.py"), *common, "--out", str(out)], env=env, capture_output=True, text=True,
+                           encoding="utf-8")
         assert r.returncode == 0, r.stderr[-800:]
         assert _state_hash(torch.load(out / "ckpt_last.pt", weights_only=False)["model"]) == hs["noflag"]
     elif torch.__version__ == GOLDEN_CACHE_PATH["torch"]:

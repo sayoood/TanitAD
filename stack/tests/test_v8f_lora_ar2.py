@@ -1105,6 +1105,7 @@ def test_chain_ar2_load_bearing_lines_are_present():
         assert ln in c, f"missing from the chain: {ln!r}"
 
 
+@needs_queue
 def test_the_guard_can_kill_every_python_script_the_ar2_stages_launch():
     """Box 2 is the PI's machine: a TEMPERATURE stop must be able to kill the identity driver and the smoke mid-run, not only log it.
     v8f_guard.sh's kill_ours selects processes by one -match regex; every .py the identitylora / smokelora stages run must match it,
