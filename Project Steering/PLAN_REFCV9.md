@@ -50,7 +50,7 @@ recovers what the frozen stage already gives is worth nothing. Hence:
 | E1 (S2 vs `ha0_ext_pose`) without any post-hoc stage | fails: −0.0136 [−0.0286, +0.0018] at EMA-30k, not separated | passes AND beats the ego-scalar floor (−0.033) separated; T0 ceiling −0.081 | MEASURED floor and ceiling; in-model is HYPOTHESIS |
 | S2 ADE vs refcv7-50,400 | −0.023 only WITH the stage | ≤ −0.023 without it | MEASURED post-hoc |
 | S6 0–6 s in GT cruise vs refcv7 (compliant cruise windows) | +0.42 m worse; +0.20 with the shipped stage | ≤ 0 | MEASURED residual after the stage (L2) |
-| false braking in cruise | 0.266 (refcv7 0.091); 0.253 with the stage | ≤ 0.10, missed decel no worse than refcv8 + stage (0.358) | MEASURED gap; fix is HYPOTHESIS |
+| false braking in cruise | ~~0.266 (refcv7 0.091); 0.253 with the stage~~ **at per-frame nav (SHIP-R8 EMA-48,852): 0.137 with the stage, missed decel 0.470 (refcv7 0.091 / 0.559)** -- an operating point, not lost discrimination (braking AUC 0.744 vs 0.727, O-SAME, H-R9-L2-OPPOINT-1) | braking AUC above refcv7's, separated; FD ≤ 0.10 at MD ≤ refcv7's 0.559 | MEASURED; the old target was set on clip-fed EMA-30k numbers |
 | inference cost of the averaging gain | 4x | 1x | HYPOTHESIS (L3) |
 | windows the bars are decided on | 87.5 % (compliant only) | 100 % | MEASURED coverage (L4) |
 | sharp-turn refinement recovery | 57 % (refcv7 74 %) at 15k | ≥ 74 % | gated: decided at refcv8's final |
@@ -124,3 +124,9 @@ episodes (the CI answers *another draw of episodes* only — `H-ESTIM-SEED-1`):
 | **P4** | true-map planner oracle | the planner fed the TRUE map vs its OWN map through the identical path (an adapter's capacity cancels), a shuffled-GT arm that must not help, an identity control that must equal BASE bit-for-bit; both inference seeds, all four families | decides the rank of P1–P3 against L1 / L2 (Rule Zero §5): NO-HEADROOM ⇒ perception levers wait behind the planner; HEADROOM ⇒ its size becomes P1–P3's target | **RUNNING** on the dev-box GPU since 2026-10-25 04:41 CET (prereg sha256 `d9fc8245…`): a no-training δ-oracle on `map_hires_bev` that makes the frozen 10 cm decoder read the target map, TRUE − OWNMAP through the identical procedure, SHUF + identity controls |
 
 A true-map input is privileged: P4 is an oracle bound, never a deployable arm (vision-only inference rule).
+
+## 8. L2 re-read at the SHIP-R8 checkpoint (Master Mind, 2026-10-25 ~11:55 Berlin)
+
+* **The D2 premise was stale.** §1 D2 and §2 L2 quote EMA-30k numbers read with the CLIP-level nav feed. On the banked EMA-48,852 per-frame battery (compliant S6) refcv8 + stage reads false-decel 0.137 / missed-decel 0.470 vs refcv7 0.091 / 0.559.
+* **It is an operating point, not a defect in discrimination.** Pre-registered (`…/2026-10-25-refcv9-l2/roc/PREREG_L2_ROC.md`, sealed before data): braking AUC refcv8 + stage 0.7445 / 0.7361 vs refcv7 0.7266 / 0.7182 at inference seeds 0 / 1, Δ +0.018 [−0.008, +0.046] → **O-SAME** (one training seed). refcv8 trades false decels for caught decels on the same frontier.
+* **Consequence for the levers.** L2 as a threshold / lon-head calibration can only move along that frontier (its GPU arms run, queued on the dev-box lock; the 0-GPU bound already says the head alone cannot reach FD 0.10). The lever that would beat BOTH models is higher braking discrimination (AUC ~0.73 today): the speed-choice defect D1, i.e. **L1**. L1's arms are to be read on this AUC as well as on E1.
