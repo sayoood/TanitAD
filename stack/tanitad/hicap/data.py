@@ -67,9 +67,10 @@ class V9Rows:
 class HiCAPWindows(Dataset):
     def __init__(self, cache_dir: str, rows: V9Rows, vocab: V.FactoredVocab, sha12s: list[str] | None = None,
                  train: bool = True, stride: int = 1, require_label: bool = False, rc_variant: str = "A50", seed: int = 0, cfg=None,
-                 strat: np.ndarray | None = None):
+                 strat: np.ndarray | None = None, country: dict | None = None):
         self.dir, self.rows, self.vocab, self.train, self.rc = cache_dir, rows, vocab, train, rc_variant
         self.rng = np.random.default_rng(seed); self.cfg = cfg; self.strat = strat       # strat_y per v9 row (strategic.py), None -> IGNORE
+        self.country = country or {}                            # sha12 -> country_id (v10 country component; load_country), missing -> IGNORE
         self.clips: dict[str, dict] = {}
         self.index: list[tuple[str, int]] = []                 # (sha12, j)
         for s in (sha12s or rows.sha12):
@@ -128,11 +129,19 @@ class HiCAPWindows(Dataset):
             ego=torch.tensor([v0, a0, yaw], dtype=torch.float32) * torch.tensor([0.1, 0.2, 1.0]),
             nav=torch.tensor(int(np.nan_to_num(R["nav_token"][r])), dtype=torch.long), nav_args=torch.from_numpy(nav_args),
             route=torch.from_numpy(np.array([rc[0] / 50.0, rc[1] / 50.0, rc[2], 1.0], np.float32)), route_present=torch.tensor(route_present),
-            strat_y=torch.tensor(int(self.strat[r]) if self.strat is not None else -100), lat_y=torch.tensor(lat if lat >= 0 else -100), lon_y=torch.tensor(lon if lon >= 0 else -100),
+            strat_y=torch.tensor(int(self.strat[r]) if self.strat is not None else -100),
+            country_y=torch.tensor(int(self.country.get(s, -100))), lat_y=torch.tensor(lat if lat >= 0 else -100), lon_y=torch.tensor(lon if lon >= 0 else -100),
             dP=torch.from_numpy(dP), dQ=torch.from_numpy(dQ), goal_y=torch.from_numpy(goal_y), goal_w=torch.from_numpy(goal_w),
             goal_pt=torch.from_numpy(gp / np.array([50.0, 50.0, 10.0], np.float32)), goal_pt_w=torch.ones(3),
             fut=torch.from_numpy(fut), v0=torch.tensor(v0, dtype=torch.float32), dv_log=torch.from_numpy(dv_log),
             path_log=torch.from_numpy(path_log), eid=torch.tensor(cm["sid"]), k=torch.tensor(k))
+
+
+def load_country(parquet: str) -> dict:
+    """v10 country component (`country/v10_country.parquet`): sha12 -> country_id (rules.COUNTRIES order; a LABEL, never an input)."""
+    import pandas as pd
+    d = pd.read_parquet(parquet, columns=["sha12", "country_id"])
+    return {str(a): int(b) for a, b in zip(d.sha12, d.country_id) if int(b) >= 0}
 
 
 def collate(items: list[dict]) -> dict:

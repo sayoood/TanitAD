@@ -154,8 +154,9 @@ def test_strategic_rows_window_and_tokens(tmp_path):
 
 # ---------------- full model: parameters, loss with every supervision present, decision with imagination
 def test_full_param_budget_and_extra_heads():
-    n = HiCAPFull().n_params(); base = HiCAP().n_params()
-    assert 1e6 < n - base < 3e6, n - base
+    m = HiCAPFull(); n = m.n_params(); base = HiCAP().n_params(); kn = sum(p.numel() for p in m.knowledge_params())
+    assert 1e6 < n - base - kn < 3e6, n - base - kn          # imagination + elastic heads (1.88 M)
+    assert 4e6 < kn < 8e6, kn                                # v10 knowledge: country readout + rule memory + gated memory (6.1 M)
 
 
 def _full_batch(c, vocab, B=4):
