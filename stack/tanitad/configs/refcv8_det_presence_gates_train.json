@@ -1,0 +1,35 @@
+{
+ "schema": "tanitad.det_presence_gates/1",
+ "definition": "gate g on sigmoid(presence_logit) at the P = R point of the pooled greedy 2 m rows (detection_metrics.pr_equal_gate) on TRAIN; a slot is a detection iff sigmoid(presence_logit) >= g",
+ "gates": {
+  "box3d": 0.26599645614624023,
+  "agent": 0.2393922209739685
+ },
+ "provenance": {
+  "run": "refcv8-r101-s0-ema48852",
+  "checkpoint_step": 48852,
+  "checkpoint_md5": "b4364029b68f29a33eeb4aebbbbd002b",
+  "fit_split": "TRAIN",
+  "fit_set": "TRAIN-DIAG: 139 TRAIN episodes x 8 windows of the refcv8 train4572 cache (sha12-sorted, first 139 with a 10 cm GT file); EMA-48,852 weights; unshifted pose clock",
+  "tool": "stack/scripts/refit_perception_thresholds.py",
+  "tool_sha256": "5a6db392be352a07daa819c51eca0753e3cbbf890f2db81ccc190a34cdc30d61",
+  "n_windows": 1074,
+  "source_file": "train_diag.packs.pkl",
+  "source_md5": "985537b0895ec5ea882836a3835f99a6",
+  "train_precision_recall_at_gate": {
+   "box3d": [
+    0.37579013906447534,
+    0.37579013906447534
+   ],
+   "agent": [
+    0.24620733249051832,
+    0.24620733249051832
+   ]
+  },
+  "train_n_pos": {
+   "box3d": 3164,
+   "agent": 3164
+  },
+  "caveat": "fitted on ONE checkpoint of ONE run; the planner consumes the raw presence probability as a soft scale and is NOT re-gated by these values"
+ }
+}
