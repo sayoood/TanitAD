@@ -1,0 +1,680 @@
+{
+ "spec": "viz3 controls: HACC as drawn vs P + w (tau - P) and the banked per-window plan; every on-screen number vs its JSON source (binding registry + RESULT md cross-check + existence scan of every drawn numeric token); v2's controls re-read and re-executed. Every check below carries its tolerance; PASS is computed here, not copied.",
+ "control_H1_HACC_as_drawn_equals_P_plus_w_tau_minus_P_and_the_banked_plan": {
+  "per_seed": {
+   "M2b_s0": {
+    "n_windows": 2399,
+    "banked_HACC_vs_formula_maxabs_m": 0.0,
+    "weights_file": "hacc/weights_HACC_M2b_s0.json",
+    "weights_shape": [
+     30,
+     2
+    ],
+    "weights_sha256": "5b8e368fb06b6fea4ab710d071d2d94df58f1e28d4f0648ef6fab79ba664b1ed"
+   },
+   "M2b_s1": {
+    "n_windows": 2399,
+    "banked_HACC_vs_formula_maxabs_m": 0.0,
+    "weights_file": "hacc/weights_HACC_M2b_s1.json",
+    "weights_shape": [
+     30,
+     2
+    ],
+    "weights_sha256": "56f78bfefe6fed234bc44e1edb2a97cd47ac47f1a8c4b3ced8a69d1aded18469"
+   }
+  },
+  "per_window": {
+   "M2b_s0/JUNCTION": {
+    "drawn_vs_formula_P_plus_w_tau_minus_P_m": 0.0,
+    "drawn_vs_banked_perwindow_array_m": 0.0,
+    "drawn_P10_vs_hblend_P_m": 0.0,
+    "drawn_B_vs_hblend_tau_m": 0.0
+   },
+   "M2b_s0/CURVE": {
+    "drawn_vs_formula_P_plus_w_tau_minus_P_m": 0.0,
+    "drawn_vs_banked_perwindow_array_m": 0.0,
+    "drawn_P10_vs_hblend_P_m": 0.0,
+    "drawn_B_vs_hblend_tau_m": 0.0
+   },
+   "M2b_s0/NO-TURN": {
+    "drawn_vs_formula_P_plus_w_tau_minus_P_m": 0.0,
+    "drawn_vs_banked_perwindow_array_m": 0.0,
+    "drawn_P10_vs_hblend_P_m": 0.0,
+    "drawn_B_vs_hblend_tau_m": 0.0
+   },
+   "M2b_s0/FAILURE(worst)": {
+    "drawn_vs_formula_P_plus_w_tau_minus_P_m": 0.0,
+    "drawn_vs_banked_perwindow_array_m": 0.0,
+    "drawn_P10_vs_hblend_P_m": 0.0,
+    "drawn_B_vs_hblend_tau_m": 0.0
+   },
+   "M2b_s1/JUNCTION": {
+    "drawn_vs_formula_P_plus_w_tau_minus_P_m": 0.0,
+    "drawn_vs_banked_perwindow_array_m": 0.0,
+    "drawn_P10_vs_hblend_P_m": 0.0,
+    "drawn_B_vs_hblend_tau_m": 0.0
+   },
+   "M2b_s1/CURVE": {
+    "drawn_vs_formula_P_plus_w_tau_minus_P_m": 0.0,
+    "drawn_vs_banked_perwindow_array_m": 0.0,
+    "drawn_P10_vs_hblend_P_m": 0.0,
+    "drawn_B_vs_hblend_tau_m": 0.0
+   },
+   "M2b_s1/NO-TURN": {
+    "drawn_vs_formula_P_plus_w_tau_minus_P_m": 0.0,
+    "drawn_vs_banked_perwindow_array_m": 0.0,
+    "drawn_P10_vs_hblend_P_m": 0.0,
+    "drawn_B_vs_hblend_tau_m": 0.0
+   },
+   "M2b_s1/FAILURE(worst)": {
+    "drawn_vs_formula_P_plus_w_tau_minus_P_m": 0.0,
+    "drawn_vs_banked_perwindow_array_m": 0.0,
+    "drawn_P10_vs_hblend_P_m": 0.0,
+    "drawn_B_vs_hblend_tau_m": 0.0
+   }
+  },
+  "tolerance_m": 1e-05,
+  "max_abs_m": 0.0,
+  "deliberate_regression_arms": {
+   "axes_swapped_maxabs_m": 6.655847110754607,
+   "w_equals_1_maxabs_m": 20.425814477065316,
+   "must_exceed_m": 0.001,
+   "both_detected": true
+  },
+  "PASS": true,
+  "note": "HACC as drawn (the arrays the renderer reads, data/plans_pack3.npz) equals P + w (.) (tau - P) recomputed here from hblend's P and tau and the banked weights (30 x 2, axis 0 along / axis 1 cross), and equals the banked per-window plan hacc/score_<seed>_perwindow.npz, over ALL 2,399 windows (eval-wide) and at the 4 drawn windows. P as drawn for P10 is hblend's `P` (the P10 FILE differs from it by <= 1.53e-5 m, RESULT_V8F_HACC control 3)."
+ },
+ "control_H2_ade6_recomputed_from_drawn_plans_and_tables_equal_sources": {
+  "per_window": {
+   "M2b_s0/JUNCTION": {
+    "ade6_recomputed_vs_banked_B": 0.0,
+    "pack_ade6_B_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_H": 0.0,
+    "pack_ade6_H_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_P10": 3.6049552676331587e-08,
+    "pack_ade6_P10_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HS": 0.0,
+    "pack_ade6_HS_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HACC": 0.0,
+    "pack_ade6_HACC_vs_recomputed": 0.0
+   },
+   "M2b_s0/CURVE": {
+    "ade6_recomputed_vs_banked_B": 0.0,
+    "pack_ade6_B_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_H": 0.0,
+    "pack_ade6_H_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_P10": 2.6729553059823274e-07,
+    "pack_ade6_P10_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HS": 0.0,
+    "pack_ade6_HS_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HACC": 0.0,
+    "pack_ade6_HACC_vs_recomputed": 0.0
+   },
+   "M2b_s0/NO-TURN": {
+    "ade6_recomputed_vs_banked_B": 0.0,
+    "pack_ade6_B_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_H": 0.0,
+    "pack_ade6_H_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_P10": 1.1703266600271434e-07,
+    "pack_ade6_P10_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HS": 0.0,
+    "pack_ade6_HS_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HACC": 0.0,
+    "pack_ade6_HACC_vs_recomputed": 0.0
+   },
+   "M2b_s0/FAILURE(worst)": {
+    "ade6_recomputed_vs_banked_B": 0.0,
+    "pack_ade6_B_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_H": 0.0,
+    "pack_ade6_H_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_P10": 3.4898942757877194e-07,
+    "pack_ade6_P10_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HS": 0.0,
+    "pack_ade6_HS_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HACC": 0.0,
+    "pack_ade6_HACC_vs_recomputed": 0.0
+   },
+   "M2b_s1/JUNCTION": {
+    "ade6_recomputed_vs_banked_B": 0.0,
+    "pack_ade6_B_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_H": 0.0,
+    "pack_ade6_H_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_P10": 3.6049552676331587e-08,
+    "pack_ade6_P10_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HS": 0.0,
+    "pack_ade6_HS_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HACC": 0.0,
+    "pack_ade6_HACC_vs_recomputed": 0.0
+   },
+   "M2b_s1/CURVE": {
+    "ade6_recomputed_vs_banked_B": 0.0,
+    "pack_ade6_B_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_H": 0.0,
+    "pack_ade6_H_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_P10": 2.6729553059823274e-07,
+    "pack_ade6_P10_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HS": 0.0,
+    "pack_ade6_HS_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HACC": 0.0,
+    "pack_ade6_HACC_vs_recomputed": 0.0
+   },
+   "M2b_s1/NO-TURN": {
+    "ade6_recomputed_vs_banked_B": 0.0,
+    "pack_ade6_B_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_H": 0.0,
+    "pack_ade6_H_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_P10": 1.1703266600271434e-07,
+    "pack_ade6_P10_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HS": 0.0,
+    "pack_ade6_HS_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HACC": 0.0,
+    "pack_ade6_HACC_vs_recomputed": 0.0
+   },
+   "M2b_s1/FAILURE(worst)": {
+    "ade6_recomputed_vs_banked_B": 0.0,
+    "pack_ade6_B_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_H": 0.0,
+    "pack_ade6_H_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_P10": 3.4898942757877194e-07,
+    "pack_ade6_P10_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HS": 0.0,
+    "pack_ade6_HS_vs_recomputed": 0.0,
+    "ade6_recomputed_vs_banked_HACC": 0.0,
+    "pack_ade6_HACC_vs_recomputed": 0.0
+   }
+  },
+  "eval_wide": {
+   "M2b_s0": {
+    "ADE1_mean_of_banked_perwindow_vs_json_HACC": 1.784531366240405e-06,
+    "ADE2_mean_of_banked_perwindow_vs_json_HACC": 4.569984457383769e-05,
+    "ADE3_mean_of_banked_perwindow_vs_json_HACC": 1.49711917105666e-05,
+    "ADE4_mean_of_banked_perwindow_vs_json_HACC": 1.1579386378635093e-06,
+    "ADE5_mean_of_banked_perwindow_vs_json_HACC": 2.8352399451314625e-05,
+    "ADE6_mean_of_banked_perwindow_vs_json_HACC": 1.365079632176247e-05,
+    "json_rounding_allowance": 5.1e-05,
+    "B_H_P10_single_equal_to_hblend_json_ade1_6_mean_lo_hi_exact": true,
+    "B_H_P10_single_equal_to_tables_v2_exact": true,
+    "HS_single_in_tables_v2_equals_hspec_json_exact": true
+   },
+   "M2b_s1": {
+    "ADE1_mean_of_banked_perwindow_vs_json_HACC": 5.355013517352458e-06,
+    "ADE2_mean_of_banked_perwindow_vs_json_HACC": 1.006723078011973e-05,
+    "ADE3_mean_of_banked_perwindow_vs_json_HACC": 1.0839581531307818e-05,
+    "ADE4_mean_of_banked_perwindow_vs_json_HACC": 1.2908606343287055e-05,
+    "ADE5_mean_of_banked_perwindow_vs_json_HACC": 3.1389923817570775e-05,
+    "ADE6_mean_of_banked_perwindow_vs_json_HACC": 4.234455191509667e-05,
+    "json_rounding_allowance": 5.1e-05,
+    "B_H_P10_single_equal_to_hblend_json_ade1_6_mean_lo_hi_exact": true,
+    "B_H_P10_single_equal_to_tables_v2_exact": true,
+    "HS_single_in_tables_v2_equals_hspec_json_exact": true
+   }
+  },
+  "F_check": {
+   "F_exact_m_in_READ_json": 0.12074012131477874,
+   "abs_ADE6_B_s0_minus_s1_from_score_json_means": 0.12069999999999981,
+   "allowance": 0.0001
+  },
+  "tolerance_m": 1e-05,
+  "PASS": true
+ },
+ "control_N1_every_registered_on_screen_number_equals_its_json_source": {
+  "n_registered_numbers": 1089,
+  "n_bound_and_drawn": 1089,
+  "n_mismatch_or_not_drawn": 0,
+  "first_failures": [],
+  "n_distinct_sources": 11,
+  "sources": {
+   "hacc_read": {
+    "path": "<scratchpad>/hacc/READ.json",
+    "sha256": "f006cfcde9b88603756294611d1ff3b8a7f0aace386304b235e62b0bc3f3fcef"
+   },
+   "hacc_score_s0": {
+    "path": "<scratchpad>/hacc/score_M2b_s0.json",
+    "sha256": "7a878b164074000c02452c8b591e2ee57c2daa1e53564b1dd6baa2ebbd58045c"
+   },
+   "hacc_score_s1": {
+    "path": "<scratchpad>/hacc/score_M2b_s1.json",
+    "sha256": "2111461ea7cc5fd9fe59836175ec5d0b4d5f2eee68b01c0f128558746d9b9ec9"
+   },
+   "hacc_accel": {
+    "path": "<scratchpad>/hacc/accel_profile.json",
+    "sha256": "fb0a489e06f53def62d7b5e03b7f5d898b78ce7dac3ee0679051c5c0fa4c7bc2"
+   },
+   "hacc_dk": {
+    "path": "<scratchpad>/hacc/dk_read.json",
+    "sha256": "8e22daae19df62daada735108896965e155f3f06165283b782d5b954f98f800c"
+   },
+   "hacc_w_s0": {
+    "path": "<scratchpad>/hacc/weights_HACC_M2b_s0.json",
+    "sha256": "5b8e368fb06b6fea4ab710d071d2d94df58f1e28d4f0648ef6fab79ba664b1ed"
+   },
+   "hacc_w_s1": {
+    "path": "<scratchpad>/hacc/weights_HACC_M2b_s1.json",
+    "sha256": "56f78bfefe6fed234bc44e1edb2a97cd47ac47f1a8c4b3ced8a69d1aded18469"
+   },
+   "hblend_w_s0": {
+    "path": "<scratchpad>/hblend/weights_M2b_s0.json",
+    "sha256": "dd260b4eaf114454bdc2f0a55c9eb601fd62de4e4c13ec0dad590b4b30eeff9d"
+   },
+   "hblend_w_s1": {
+    "path": "<scratchpad>/hblend/weights_M2b_s1.json",
+    "sha256": "987a0b5f07393e399d1482f96ca9a01c338386d952594776edb3426cc6d65227"
+   },
+   "tables_v2": {
+    "path": "<scratchpad>/viz3/data/tables.json",
+    "sha256": "9fcf7c2246d1cad16675b4a1f60b47b514002ce862bfdee7ae01eb71443e8a15"
+   },
+   "aux3": {
+    "path": "<scratchpad>/viz3/data/aux3.json",
+    "sha256": "bcd35deb72eb6b50f9c876e5c49217c9a6ef807c3c64d33471d57e7aab439909"
+   }
+  },
+  "PASS": true,
+  "note": "Each registered number was produced by N() / ND() in the scene code from a JSON pointer; here the pointer is re-resolved from the file re-read in this process, re-formatted with the same spec, compared to the string the scene drew, and the string must occur in that frame's drawn text."
+ },
+ "control_N2_dominance_table_accel_bands_and_KEEP_equal_RESULT_md": {
+  "dominance_rows_x_seeds_compared_with_RESULT_md_section_4": 30,
+  "accel_band_rows_compared_with_RESULT_md_section_6": 10,
+  "accel_band_rows_found_on_screen": 10,
+  "KEEP_strings_from_md": {
+   "s0": "+0.0151 [-0.0030, +0.0320]",
+   "s1": "+0.0313 [+0.0026, +0.0586]"
+  },
+  "KEEP_found_on_screen": {
+   "s0": true,
+   "s1": true
+  },
+  "mismatches": [],
+  "PASS": true,
+  "note": "An independent second source: the PI-facing RESULT_V8F_HACC.md tables (generated by hacc/build_result.py from the same JSON) parsed as text and required to appear verbatim in the drawn text."
+ },
+ "control_N3_derived_aggregates_recomputed_independently_and_found_on_screen": {
+  "separated_better_rows_of_15": {
+   "M2b_s0": 13,
+   "M2b_s1": 12
+  },
+  "separated_worse_rows": 0,
+  "max_abs_ADE1_5_HACC_minus_H_m": 0.0101,
+  "KEEP_margin_s1_m": 0.001770060657389369,
+  "non_monotone_steps": {
+   "M2b_s0": {
+    "along": 4,
+    "cross": 18
+   },
+   "M2b_s1": {
+    "along": 7,
+    "cross": 18
+   }
+  },
+  "checks_found_on_screen": {
+   "caption_counts_13_12": true,
+   "caption_worse_rows": true,
+   "within_X_of_H": true,
+   "keep_margin": true,
+   "non_monotone_counts": true
+  },
+  "PASS": true
+ },
+ "control_N4_every_numeric_token_drawn_is_a_declared_constant_or_a_source_value": {
+  "n_numeric_tokens_scanned": 6977,
+  "n_distinct_unmatched": 0,
+  "unmatched_tokens_with_first_scene": {},
+  "corpus_size": 125389,
+  "declared_constants": [
+   "0",
+   "0,1",
+   "0.1",
+   "0.2",
+   "0.5",
+   "0.8",
+   "1",
+   "1.5",
+   "1.5e-5",
+   "1.6",
+   "10",
+   "10-14",
+   "100",
+   "11",
+   "1131",
+   "12",
+   "120",
+   "13",
+   "14",
+   "141",
+   "15",
+   "16",
+   "17",
+   "18",
+   "19",
+   "1e-5",
+   "2",
+   "2,000",
+   "2,319",
+   "2,399",
+   "2.0",
+   "2.2",
+   "2.6",
+   "2.8",
+   "20",
+   "2026",
+   "20260926",
+   "21",
+   "2158",
+   "22",
+   "23",
+   "24",
+   "25",
+   "256",
+   "26",
+   "27",
+   "28",
+   "29",
+   "2e-5",
+   "3",
+   "30",
+   "300",
+   "31",
+   "35",
+   "4",
+   "40",
+   "45",
+   "5",
+   "5.0",
+   "5.2",
+   "5.8",
+   "50",
+   "583cfc02",
+   "59",
+   "6",
+   "60",
+   "640",
+   "654",
+   "7",
+   "70",
+   "75",
+   "763",
+   "8",
+   "80",
+   "9",
+   "9,582",
+   "95",
+   "9a6551d5"
+  ],
+  "PASS": true,
+  "note": "EXISTENCE check, weaker than N1 (it cannot bind a number to its row): every numeric token drawn on ANY frame must be a declared constant (counts, ids, protocol values, band labels) or equal a value (at 0-5 decimals, abs, also x100) present in the source corpus (all JSON sources of the video + the LISTEN tables + small arrays of the banked npz). Anything else is a failure."
+ },
+ "control_B1_primary_row_intervals_reproduced_by_an_independent_bootstrap": {
+  "per_seed_row": {
+   "M2b_s0/ADE2": {
+    "own_mean_lo_hi": [
+     -0.010611830857168504,
+     -0.015166281054415141,
+     -0.005716530243877144
+    ],
+    "read_json_mean_lo_hi": [
+     -0.0106,
+     -0.015,
+     -0.0056
+    ],
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "tolerance": 0.0005,
+    "ok": true
+   },
+   "M2b_s0/ADE6": {
+    "own_mean_lo_hi": [
+     -0.5033784694739265,
+     -0.6115919391371315,
+     -0.40090740704195105
+    ],
+    "read_json_mean_lo_hi": [
+     -0.5034,
+     -0.6073,
+     -0.405
+    ],
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "tolerance": 0.006068999999999997,
+    "ok": true
+   },
+   "M2b_s0/accel MAE": {
+    "own_mean_lo_hi": [
+     -0.021543784004144244,
+     -0.03475468857345902,
+     -0.008315394774209495
+    ],
+    "read_json_mean_lo_hi": [
+     -0.0215,
+     -0.0345,
+     -0.0087
+    ],
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "tolerance": 0.0007740000000000001,
+    "ok": true
+   },
+   "M2b_s0/curvature MAE": {
+    "own_mean_lo_hi": [
+     -0.005624768962856895,
+     -0.009902428054771116,
+     -0.0022697647702492304
+    ],
+    "read_json_mean_lo_hi": [
+     -0.0056,
+     -0.0096,
+     -0.0021
+    ],
+    "n_windows": 2366,
+    "n_episodes": 141,
+    "tolerance": 0.0005,
+    "ok": true
+   },
+   "M2b_s1/ADE2": {
+    "own_mean_lo_hi": [
+     -0.008347463470962244,
+     -0.013215286321922932,
+     -0.002818346877224399
+    ],
+    "read_json_mean_lo_hi": [
+     -0.0083,
+     -0.0133,
+     -0.0026
+    ],
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "tolerance": 0.0005,
+    "ok": true
+   },
+   "M2b_s1/ADE6": {
+    "own_mean_lo_hi": [
+     -0.47084977571833386,
+     -0.5693499405425353,
+     -0.3748212986484391
+    ],
+    "read_json_mean_lo_hi": [
+     -0.4708,
+     -0.5695,
+     -0.3748
+    ],
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "tolerance": 0.005840999999999999,
+    "ok": true
+   },
+   "M2b_s1/accel MAE": {
+    "own_mean_lo_hi": [
+     -0.04020481853559147,
+     -0.051264615996298925,
+     -0.028777533021117293
+    ],
+    "read_json_mean_lo_hi": [
+     -0.0402,
+     -0.0509,
+     -0.0293
+    ],
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "tolerance": 0.000648,
+    "ok": true
+   },
+   "M2b_s1/curvature MAE": {
+    "own_mean_lo_hi": [
+     -0.005118437263391722,
+     -0.008585270619455397,
+     -0.0024993840039497857
+    ],
+    "read_json_mean_lo_hi": [
+     -0.0051,
+     -0.0083,
+     -0.0023
+    ],
+    "n_windows": 2366,
+    "n_episodes": 141,
+    "tolerance": 0.0005,
+    "ok": true
+   }
+  },
+  "PASS": true,
+  "note": "Independent numpy re-derivation (own seed, B = 2,000, resampling the 141 episodes, pooled window means) of the four primary rows of HACC - P10 from the banked per-window arrays; the READ.json intervals (taniteval/ci.py bootstrap, seed 0) must agree within 3 % of the interval width (the two bootstraps use different random streams) and exclude 0 on the better side. This is a cross-check, not a replacement of the registered estimator."
+ },
+ "control_V2_v2_controls_still_pass": {
+  "CONTROLS_V2.json_sha256": "fd47cd3f511ebeeae8e42d087629a65f41d0ca8db29503fdeda3fb5192bc257d",
+  "ALL_PASS_as_recorded": true,
+  "rederived": {
+   "control_1_all_zero": true,
+   "control_2_all_le_1e-5": true,
+   "control_3_all_self_and_psnr_ge_48": true,
+   "control_4_structural_zero_recorded": true
+  },
+  "rerun_on_v3_data": {
+   "structural_zero_cells": 160,
+   "structural_zero_max_abs": 0.0,
+   "D6_and_LR_recomputed_from_drawn_plans_max_abs_m": 9.5367431640625e-07,
+   "v3_pack_keys_of_v2_equal_v2_plans_pack_max_abs_m": 0.0,
+   "data_copies_byte_identical_to_viz2": {
+    "cf_windows.npz": true,
+    "cf_evalwide.json": true,
+    "tables.json": true
+   },
+   "SELECTION_V2.md_sha256": "c98f72aa8107dd9240da0bb05b3f32b6caa5487f1045e9ba746db036ad7a15a1",
+   "SELECTION_V2.md_sha256_recorded_by_v2": "c98f72aa8107dd9240da0bb05b3f32b6caa5487f1045e9ba746db036ad7a15a1",
+   "selection_unchanged": true,
+   "the_4_windows_are_those_of_SELECTION": {
+    "JUNCTION": {
+     "window": 1131,
+     "clip8": "79e30ac2",
+     "t": 35
+    },
+    "CURVE": {
+     "window": 654,
+     "clip8": "45aea78c",
+     "t": 31
+    },
+    "NO-TURN": {
+     "window": 763,
+     "clip8": "51c01ba4",
+     "t": 59
+    },
+    "FAILURE(worst)": {
+     "window": 2158,
+     "clip8": "ed87040c",
+     "t": 59
+    }
+   }
+  },
+  "model_level_rerun_CONTROLS_V3_part2": {
+   "control_1_v2_own_nav_all_layers_reproduces_forward": {
+    "chain_vs_forward_traj30": 0.0,
+    "own_nav_all_layers_vs_forward_traj30": 0.0,
+    "own_nav_all_layers_vs_forward_ckpt": 0.0,
+    "own_nav_all_layers_vs_forward_lat": 0.0,
+    "own_nav_all_layers_vs_forward_lon": 0.0,
+    "tolerance": 0.0,
+    "n_window_seed_pairs": 8,
+    "PASS": true
+   },
+   "regeneration_of_the_drawn_counterfactual_arrays": {
+    "max_abs_m": 1.52587890625e-05,
+    "tolerance": 0.0001,
+    "n_counterfactual_cells_regenerated": 96,
+    "PASS": true
+   },
+   "frame_accessor_pixel_identical_to_v2": {
+    "n_frames_compared": 8,
+    "n_not_identical": 0,
+    "PASS": true
+   },
+   "ALL_PASS": true,
+   "seconds": 5.4937169551849365
+  },
+  "PASS": true
+ },
+ "control_N5_independent_cross_checks_of_drawn_numbers_and_their_deliberate_regressions": {
+  "ade_table_cells_vs_RESULT_md_section_5": {
+   "n_cells": 48,
+   "n_md_values_parsed": 48,
+   "mismatches": [],
+   "tolerance": 0.0006,
+   "PASS": true
+  },
+  "gap_card_rows_vs_RESULT_md_section_5_verbatim": {
+   "n_cells_compared": 18,
+   "mismatches": [],
+   "PASS": true
+  },
+  "mechanism_card_weights_vs_RESULT_md_section_3": {
+   "n_values": 4,
+   "mismatches": [],
+   "PASS": true
+  },
+  "plans_frames_ade6_tables_vs_banked_perwindow_arrays": {
+   "n_rows": 20,
+   "mismatches": [],
+   "PASS": true
+  },
+  "nav_counterfactual_D6_and_spread_recomputed_from_drawn_plans_found_on_screen": {
+   "n_cells": 14,
+   "mismatches": [],
+   "PASS": true
+  },
+  "deliberate_regression_arms_all_detected": {
+   "N1_one_digit_flipped_is_detected": true,
+   "N2_one_md_cell_perturbed_is_not_found_on_screen": true,
+   "N4_an_invented_number_is_flagged": true,
+   "N5d_wrong_arm_value_is_not_found": true
+  },
+  "PASS": true
+ },
+ "control_W_forbidden_words": {
+  "occurrences_with_context": {
+   "\\bdrives\\b": [],
+   "\\bSOTA\\b": [],
+   "closed[- ]loop": [
+    "pen loop (NOT closed loop); interven",
+    " outputs; NOT closed loop).  The mod",
+    " outputs; NOT closed loop) 4  Better",
+    " outputs; NOT closed loop) 4  Better",
+    " outputs; NOT closed loop) 4  Better",
+    " outputs; NOT closed loop) 4  Better",
+    " outputs; NOT closed loop) 4  Better",
+    " outputs; NOT closed loop) 4  Better",
+    " outputs; NOT closed loop) 4  Better",
+    " outputs; NOT closed loop) 4  Better",
+    " outputs; NOT closed loop) 4  Better",
+    " outputs; NOT closed loop) 4  Better"
+   ]
+  },
+  "violations_after_removing_the_mandated_negation": {
+   "\\bdrives\\b": [],
+   "\\bSOTA\\b": [],
+   "closed[- ]loop": []
+  },
+  "PASS": true
+ },
+ "control_S_strategic_caption_not_stale": {
+  "strings_mentioning_pause": [],
+  "strategic_in_force_strings_found": 19,
+  "PASS": true
+ },
+ "ALL_PASS": true
+}
