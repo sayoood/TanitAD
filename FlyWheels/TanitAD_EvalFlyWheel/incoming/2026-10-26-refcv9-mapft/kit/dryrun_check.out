@@ -1,0 +1,32 @@
+IMPORT-OK tanitad -> F:\refcv9_mapft_scratch\tree\stack\tanitad\__init__.py
+IMPORT-OK trainer -> F:\refcv9_mapft_scratch\tree\stack\scripts\refc_v3_train.py | gate -> F:\refcv9_mapft_scratch\tree\stack\scripts\launch_gate.py
+SAMPLE BUDGET s_step=3.0 smoke_wall_s=600 -> N=5440 eval_every=1360 ema_decay=0.99816 (SAMPLE only: the real N comes from the Thor smoke)
+EMA file E:\refcv8_eval_kit\ckpt\ckpt_ema_48852.pt md5 matches the profile pin: True
+OK   P1 SMOKE argv parses with the landed parser    expect=parses    got=parses    201 tokens
+OK   P2 SMOKE argv accepted by map_only_ft.pin_args expect=accepted  got=accepted  
+OK   P1 FULL argv parses with the landed parser     expect=parses    got=parses    201 tokens
+OK   P2 FULL argv accepted by map_only_ft.pin_args  expect=accepted  got=accepted  
+OK   P3 FULL argv: gate rules (profile refcv8-mapft) expect=accepted  got=accepted  
+OK   R1 keep --grad-share-every 250 [trainer pin_args] expect=REFUSED   got=REFUSED   [map-only] ⛔ --r8-train-only-map refused: |   - --grad-share-every > 0: the instrument measures the trunk / bev025 / bev_pool groups, which 
+OK   R1 keep --grad-share-every 250 [gate rules]    expect=REFUSED   got=REFUSED   --grad-share-every is passed, but it is the gradient-share instrument measures the trunk / bev025 / bev_pool groups, all FROZEN: it must be 
+OK   R2 keep --b1-guard-ref-ap2m [trainer pin_args] expect=REFUSED   got=REFUSED   [map-only] ⛔ --r8-train-only-map refused: |   - --b1-guard-ref-ap2m: the B1 guard cuts the head LR on the EMA box3d AP -- the box head is FR
+OK   R2 keep --b1-guard-ref-ap2m [gate rules]       expect=REFUSED   got=REFUSED   --b1-guard-ref-ap2m is passed, but it is the B1 guard cuts the HEAD group's LR on the EMA box3d AP: under the map-only fine-tune the box hea
+OK   R3 keep --b1-guard-step [gate rules]           expect=REFUSED   got=REFUSED   --b1-guard-step is passed, but it is the B1 guard cuts the HEAD group's LR on the EMA box3d AP: under the map-only fine-tune the box head is
+OK   R4 --conflict-detector auto [trainer pin_args] expect=REFUSED   got=REFUSED   [map-only] ⛔ --r8-train-only-map refused: |   - --conflict-detector is not `off`: it measures planner-vs-perception gradient conflicts on th
+OK   R4 --conflict-detector auto [gate rules]       expect=REFUSED   got=REFUSED   --conflict-detector off is REQUIRED for a refcv8-mapft launch (PI D-R9-MAPHEAD-PRECISION: no trunk gradient exists to measure) and the argv 
+OK   R5 keep --conflict-every 50 [trainer pin_args] expect=REFUSED   got=REFUSED   [map-only] ⛔ --r8-train-only-map refused: |   - --conflict-every is set: the conflict detector is off under the flag, so the cadence would b
+OK   R5 keep --conflict-every 50 [gate rules]       expect=REFUSED   got=REFUSED   --conflict-every is passed, but it is the conflict detector is off under the map-only fine-tune (a dead cadence): it must be OFF for a refcv
+OK   R6 drop --init-from [trainer pin_args]         expect=REFUSED   got=REFUSED   [map-only] ⛔ --r8-train-only-map refused: |   - --init-from is not set: the fine-tune starts from the SHIPPED refcv8 EMA model (ckpt_ema_488
+OK   R6 drop --init-from [gate rules]               expect=REFUSED   got=REFUSED   profile refcv8-mapft requires --init-from in the launch argv (PI D-R9-MAPHEAD-PRECISION: the warm start IS the shipped refcv8 EMA model (md5
+OK   R7 drop --r8-train-only-map (flag absent) [gate rules] expect=REFUSED   got=REFUSED   profile refcv8-mapft requires --r8-train-only-map in the launch argv (PI D-R9-MAPHEAD-PRECISION (2026-10-26): train ONLY refine + near + nea
+OK   R8 add --r8-critic-drivable [trainer pin_args] expect=REFUSED   got=REFUSED   [map-only] ⛔ --r8-train-only-map refused: |   - --r8-critic-drivable: the planner's selection would READ the map head, so the three modules 
+OK   R8 add --r8-critic-drivable [gate rules]       expect=REFUSED   got=REFUSED   --r8-critic-drivable is passed, but it is the drivable critic makes the planner READ the map head: the three modules would stop being map-on
+OK   R9 add --trunk-bn-recalib 1 [trainer pin_args] expect=REFUSED   got=REFUSED   [map-only] ⛔ --r8-train-only-map refused: |   - --trunk-bn-recalib: it REWRITES the frozen trunk's BatchNorm statistics
+OK   R9 add --trunk-bn-recalib 1 [gate rules]       expect=REFUSED   got=REFUSED   --trunk-bn-recalib is passed, but it is BN recalibration REWRITES the frozen trunk's statistics: it must be OFF for a refcv8-mapft launch (p
+OK   R10 --w-map-hires 0 [trainer pin_args]         expect=REFUSED   got=REFUSED   [map-only] ⛔ --r8-train-only-map refused: |   - --w-map-hires is 0: the map-only modules would receive no gradient -- nothing would train
+OK   R11 add --b1-guard-ref-ap2m + --b1-guard-step [trainer pin_args] expect=REFUSED   got=REFUSED   [map-only] ⛔ --r8-train-only-map refused: |   - --b1-guard-ref-ap2m: the B1 guard cuts the head LR on the EMA box3d AP -- the box head is FR
+OK   R11 add --b1-guard-ref-ap2m + --b1-guard-step [gate rules] expect=REFUSED   got=REFUSED   --b1-guard-ref-ap2m is passed, but it is the B1 guard cuts the HEAD group's LR on the EMA box3d AP: under the map-only fine-tune the box hea
+OK   R12 --init-from file with the WRONG md5 [gate rules] expect=REFUSED   got=REFUSED   --r8-train-only-map: --init-from /home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt has md5 b036749818f0263a26603dad35613479, the profile pins b436402
+OK   C1 control: unbroken FULL argv [trainer pin_args] expect=accepted  got=accepted  steps=5440 warmup=200 ema=0.99816 eval_every=1360
+SUMMARY: 26/26 checks as expected
+ZZMAPFT-DRYCHECK-PASSZZ
