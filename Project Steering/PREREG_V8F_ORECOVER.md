@@ -170,3 +170,26 @@ Nothing else moves: the arms, the rows, F, the controls, the outcome table and t
     launch host.
 
 Nothing else moves: the arms, the decisive rows, F, the bars, ROBUST, PARTIAL and HARMS, and every committed next step.
+
+## Amendment 3 (`A3-2026-10-26`), before any run: ORC-0 names only `--ego-perturb-p 0`
+
+**When.** Written 2026-10-26, from the box-2 chain's dry run against the real trainer on synthetic data (`raw/2026-10-26-orcchain/`). No
+O-RECOVER run exists.
+
+**Why.** The trainer's own gate refuses perturbation-law flags while `--ego-perturb-p` is 0 (`EgoPerturb.problems`). A declared lever that
+does nothing is the programme's standing launch blocker, and the guard is kept. It refused ORC-0's argv as Amendment 2 wrote it, "identical
+to ORC's except `--ego-perturb-p` and `--out`", at both seeds. MEASURED: the ORC gates pass and the ORC-0 gates refuse.
+
+**Fixed now:**
+* ORC names every law flag at its registered value: `--ego-perturb-vscale 0.5 1.0`, `--ego-perturb-vmax 8.0`, `--ego-perturb-adrop 1.5`,
+  `--ego-perturb-yawrate-std 2.0`, and `--ego-perturb-seed <seed>`.
+* ORC-0 names only `--ego-perturb-p 0` from that family.
+* The pair rule now reads: ORC's and ORC-0's argv are identical except `--out`, `--ego-perturb-p`, and the ORC-only law flags. The reader
+  checks the law on each side.
+
+**Why the control is unchanged in substance:**
+* At p = 0 the law is never drawn, and the batch is returned as is.
+* The eligibility mask uses `vmax`, whose default of 8.0 m/s equals ORC's. So `ego_perturb_eligible`, the denominator of the reached-training
+  control, is computed identically on both arms.
+
+Nothing else moves.

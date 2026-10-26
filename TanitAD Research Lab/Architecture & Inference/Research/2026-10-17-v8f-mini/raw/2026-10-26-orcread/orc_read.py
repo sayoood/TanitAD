@@ -43,6 +43,9 @@ import numpy as np  # noqa: E402
 SEEDS = (0, 1)
 STEPS, LR, WARMUP, PGT_START, PGT_END = 3000, 1e-4, 100, 0.2, 0.2          # Amendment 1
 PERT_P = {"ORC": 0.3, "ORC0": 0.0}                                         # section 1 / Amendment 1 (named in every argv)
+# Amendment 3: the perturbation LAW, named on ORC only (+ --ego-perturb-seed <seed>); ORC-0 names none of them (the trainer refuses inert law flags at p = 0)
+LAW = {"--ego-perturb-vscale": (0.5, 1.0), "--ego-perturb-vmax": (8.0,), "--ego-perturb-adrop": (1.5,), "--ego-perturb-yawrate-std": (2.0,)}
+LAW_SEED = "--ego-perturb-seed"
 RATIO_CENTRE, RATIO_TOL = 0.3, 0.02                                        # section 3: 0.3 +- 0.02
 SEED_FLOOR = {"lat": 0.0124, "lon": 0.0073}                                # section 2: the T0 fresh values
 TWO_F = {"lat": 0.0248, "lon": 0.0146}                                     # 2F, committed
@@ -54,7 +57,7 @@ TIER = ("T1 (T1-kin: self-action OPEN loop, plain causal bucket, nav dead-reckon
         "T0 (teacher-forced own-code, eval-141) for R-T0")
 BANKED_M2B_SHA = {0: "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
                   1: "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6"}
-PREREG_ID = "Project Steering/PREREG_V8F_ORECOVER.md @28e28c88 + Amendment 1 (A1-2026-10-26) + Amendment 2 (A2-2026-10-26)"
+PREREG_ID = "Project Steering/PREREG_V8F_ORECOVER.md @28e28c88 + Amendment 1 (A1-2026-10-26) + Amendment 2 (A2-2026-10-26) + Amendment 3 (A3-2026-10-26)"
 # Amendment 2 replaces the NO EFFECT condition (the as-written table had a hole); the as-written table above stays verbatim, this is the condition in force.
 A2_NO_EFFECT = "no F1 row separated-better and ≥ 2F at both seeds, guards held"
 
@@ -410,6 +413,18 @@ def g_argv(tag, arm, seed, r):
     ok, v = one_value(fl, "--arm")
     if not ok or v != "M2b":
         bad.append(f"--arm {v}, expected M2b")
+    if arm == "ORC":                                                # A3: the law is named, once, at its registered values
+        for name, w in LAW.items():
+            occ = fl.get(name) or []
+            if len(occ) != 1 or len(occ[0]) != len(w) or not all(same_float(x, y) for x, y in zip(occ[0], w)):
+                bad.append(f"{name} {occ}, registered {list(w)} (named once)")
+        ok, v = one_value(fl, LAW_SEED)
+        if not ok or str(v) != str(seed):
+            bad.append(f"{LAW_SEED} {fl.get(LAW_SEED)}, registered {seed}")
+    else:                                                           # A3: ORC-0 names no law flag (inert at p = 0, and refused by the trainer's gate)
+        for name in list(LAW) + [LAW_SEED]:
+            if name in fl:
+                bad.append(f"{name} is named on ORC-0 (A3: ORC-0 names only --ego-perturb-p 0)")
     return not bad, bad or "argv names the registered fine-tune"
 
 
@@ -518,7 +533,7 @@ def g_token(tag, r, tok):
 def g_pair(seed, ro, r0, to, t0_, key):
     """ORC vs ORC-0 of one seed: argv identical except --ego-perturb-p (and --out); same init, data, steps."""
     bad = []
-    drop = {"--out", "--ego-perturb-p"}
+    drop = {"--out", "--ego-perturb-p", LAW_SEED} | set(LAW)                 # A3: the law is ORC-only; g_argv checks it on each side
     fo = {k: v for k, v in ro["flags"].items() if k not in drop}
     f0 = {k: v for k, v in r0["flags"].items() if k not in drop}
     if fo != f0:

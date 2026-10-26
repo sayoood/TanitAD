@@ -27,6 +27,7 @@ RAW = TREE / "TanitAD Research Lab" / "Architecture & Inference" / "Research" / 
 T1HD, T1K = RAW / "2026-10-26-t1hdread" / "t1hd_read.py", RAW / "2026-10-26-t1kin-hacc" / "t1k_read.py"
 PREREG = HERE / "PREREG_V8F_ORECOVER.28e28c88.md"
 PREREG_A2 = HERE / "PREREG_V8F_ORECOVER.A2.md"           # the landed text after Amendment 2 (pinned by sha256 at landing)
+PREREG_A3 = HERE / "PREREG_V8F_ORECOVER.A3.md"           # the landed text after Amendment 3: the A2 text plus the amendment, appended
 NB = 100                                                                    # TEST bootstrap size (the reader labels any B != 2000 'NOT A READ')
 
 spec_ = importlib.util.spec_from_file_location("orc_read_under_test", ORC_PATH)
@@ -106,9 +107,10 @@ def jedit(p, fn):
 
 def orc_argv(arm, s, root, p=None):
     p = (0.3 if arm == "ORC" else 0) if p is None else p
+    law = (["--ego-perturb-vscale", "0.5", "1.0", "--ego-perturb-adrop", "1.5", "--ego-perturb-vmax", "8.0", "--ego-perturb-yawrate-std", "2.0", "--ego-perturb-seed", str(s)]
+           if arm == "ORC" else [])                                 # A3: ORC-0 names only --ego-perturb-p 0
     return ["--arm", "M2b", "--seed", str(s), "--out", f"{root}/runs/{arm}_s{s}", "--init-ckpt", f"{root}/m2b/M2b_s{s}/ckpt_last.pt", "--steps", "3000", "--lr", "1e-4",
-            "--warmup", "100", "--p-gt-start", "0.2", "--p-gt-end", "0.2", "--ego-perturb-p", str(p), "--ego-perturb-vscale", "0.5", "1.0", "--ego-perturb-adrop", "1.5",
-            "--ego-perturb-vmax", "8.0", "--ego-perturb-yawrate-std", "2.0"]
+            "--warmup", "100", "--p-gt-start", "0.2", "--p-gt-end", "0.2", "--ego-perturb-p", str(p)] + law
 
 
 class Fx:
@@ -364,6 +366,16 @@ def test_a2_no_effect_text_is_the_amendments_verbatim():
     assert orc.A2_NO_EFFECT in txt.split("## Amendment 2")[1] and orc.A2_NO_EFFECT not in txt.split("## Amendment 2")[0]
 
 
+def test_a3_text_extends_a2_and_carries_the_pair_rule():
+    a2, a3 = PREREG_A2.read_bytes(), PREREG_A3.read_bytes()
+    assert a3.startswith(a2) and b"## Amendment 3" in a3[len(a2):] and b"## Amendment 3" not in a2
+    t = a3[len(a2):].decode("utf-8")
+    assert "ORC-0 names only `--ego-perturb-p 0`" in t and "identical except `--out`, `--ego-perturb-p`, and the ORC-only law flags" in t.replace("\n", " ")
+    for name, w in orc.LAW.items():                                  # the reader's law is the amendment's, value for value
+        assert f"`{name} {' '.join(str(x) for x in w)}`" in t, name
+    assert "Amendment 3 (A3-2026-10-26)" in orc.PREREG_ID
+
+
 def test_a2_table_is_complete_no_reachable_UNPLACED():
     # guards held: 0 / 1 / 2 heads moved -> NO EFFECT / PARTIAL / ROBUST; a guard failed -> HARMS. Every sign / separation / bar pattern places.
     import itertools
@@ -559,8 +571,10 @@ def test_g_pert_conflicting_records_fail():
     assert not ok and "conflicting" in str(det)
 
 
-GOOD = ["--arm", "M2b", "--seed", "0", "--out", "/o", "--init-ckpt", "/x/M2b_s0/ckpt_last.pt", "--steps", "3000", "--lr", "1e-4", "--warmup", "100", "--p-gt-start", "0.2",
-        "--p-gt-end", "0.2", "--ego-perturb-p", "0.3"]
+GOOD0 = ["--arm", "M2b", "--seed", "0", "--out", "/o", "--init-ckpt", "/x/M2b_s0/ckpt_last.pt", "--steps", "3000", "--lr", "1e-4", "--warmup", "100", "--p-gt-start", "0.2",
+         "--p-gt-end", "0.2", "--ego-perturb-p", "0"]
+LAW0 = ["--ego-perturb-vscale", "0.5", "1.0", "--ego-perturb-vmax", "8.0", "--ego-perturb-adrop", "1.5", "--ego-perturb-yawrate-std", "2.0", "--ego-perturb-seed", "0"]
+GOOD = [x if x != "0" or i != GOOD0.index("--ego-perturb-p") + 1 else "0.3" for i, x in enumerate(GOOD0)] + LAW0
 
 
 def test_g_argv_each_registered_flag():
@@ -578,9 +592,30 @@ def test_g_argv_each_registered_flag():
         assert not orc.g_argv("t", "ORC", 0, fake_rec(a))[0], flag
     assert not orc.g_argv("t", "ORC", 0, fake_rec(GOOD + ["--steps", "3000"]))[0]                                      # named twice
     assert not orc.g_argv("t", "ORC", 0, fake_rec([x.replace("M2b_s0", "M2b_s1") for x in GOOD]))[0]                  # the other seed's checkpoint
-    a = list(GOOD)
-    a[a.index("--ego-perturb-p") + 1] = "0"
-    assert orc.g_argv("t", "ORC0", 0, fake_rec(a))[0] is True and not orc.g_argv("t", "ORC", 0, fake_rec(a))[0]
+    assert orc.g_argv("t", "ORC0", 0, fake_rec(GOOD0))[0] is True and not orc.g_argv("t", "ORC", 0, fake_rec(GOOD0))[0]
+
+
+def test_g_argv_a3_law_on_orc_only():
+    for i in range(0, len(LAW0), 1):                                # ORC-0 naming ANY law flag (or the law seed) is refused
+        if LAW0[i].startswith("--"):
+            j = i + 1
+            while j < len(LAW0) and not LAW0[j].startswith("--"):
+                j += 1
+            ok, det = orc.g_argv("t", "ORC0", 0, fake_rec(GOOD0 + LAW0[i:j]))
+            assert not ok and any(LAW0[i] in d for d in det), (LAW0[i], det)
+            a = GOOD[:len(GOOD) - len(LAW0)] + LAW0[:i] + LAW0[j:]  # ORC missing that law flag is refused
+            ok, det = orc.g_argv("t", "ORC", 0, fake_rec(a))
+            assert not ok and any(LAW0[i] in d for d in det), (LAW0[i], det)
+    for flag, vals in (("--ego-perturb-vscale", ["0.5", "0.9"]), ("--ego-perturb-vmax", ["9.0"]), ("--ego-perturb-adrop", ["1.0"]), ("--ego-perturb-yawrate-std", ["0"]),
+                       ("--ego-perturb-seed", ["1"])):
+        a = list(GOOD)
+        k = a.index(flag)
+        a[k + 1:k + 1 + len(vals)] = vals
+        ok, det = orc.g_argv("t", "ORC", 0, fake_rec(a))
+        assert not ok and any(flag in d for d in det), (flag, det)
+    r_orc, r_0 = fake_rec(GOOD), fake_rec(GOOD0)                    # the pair: identical once --out, p and the ORC-only law are set aside
+    assert {k: v for k, v in r_orc["flags"].items() if k not in {"--out", "--ego-perturb-p", orc.LAW_SEED} | set(orc.LAW)} == \
+           {k: v for k, v in r_0["flags"].items() if k not in {"--out", "--ego-perturb-p"}}
 
 
 def test_g_token_binding():

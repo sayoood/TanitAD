@@ -37,6 +37,8 @@ def swap_table_rows(s):
 
 # id, what it breaks, edit, targeted -k
 MUTANTS = [
+    ("M24", "A3: a law flag on ORC-0 is not refused", sub('                bad.append(f"{name} is named on ORC-0 (A3: ORC-0 names only --ego-perturb-p 0)")', '                pass'), "a3_law"),
+    ("M25", "A3: ORC's law values are not checked", sub('    if arm == "ORC":                                                # A3: the law is named, once, at its registered values', '    if False:'), "a3_law"),
     ("M01", "flip a bar sign (>= 2F becomes <= 2F)", sub('sep_better(s, hd) and r["delta"] >= TWO_F[hd]', 'sep_better(s, hd) and r["delta"] <= TWO_F[hd]'), "decide"),
     ("M02", "drop a seed (SEEDS = (0,))", sub("SEEDS = (0, 1)", "SEEDS = (0,)"), "decide or world_ROBUST"),
     ("M03", "swap the lat / lon bars", sub('TWO_F = {"lat": 0.0248, "lon": 0.0146}', 'TWO_F = {"lat": 0.0146, "lon": 0.0248}'), "decide or committed"),

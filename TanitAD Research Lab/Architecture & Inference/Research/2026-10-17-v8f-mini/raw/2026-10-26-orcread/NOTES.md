@@ -21,3 +21,10 @@ rc 0 outcome written (prints sha256) | rc 2 REFUSED, **nothing written** | rc 3 
 ## Not done
 Checkpoint `cfg`/`built_levers` not opened (summary/selfcheck levers are); beside rows: S-POS vs CTRV and crawl fraction are carried per run (not paired), four families / HACC re-fit not computed; strategic family reported PAUSED. Real runtime is ~1 min per run (6-12 rollouts' K1-K7 at B 2000) -- run detached, not as a waiting agent.
 `pytest` cap: a venv launcher + child count as ONE run (the literal process count reads 2 for one run); the harness counts runs. Test fixtures are small-file heavy: E: mkdir is ~50 ms.
+
+## Amendment 3 (A3-2026-10-26, before any run)
+* `apply_a3.py`: `g_argv` requires ORC to name the law once at its registered values plus `--ego-perturb-seed <seed>`, and ORC-0 to name none
+  of it. `g_pair` drops the law flags from the compared set (`drop = {--out, --ego-perturb-p, --ego-perturb-seed} | LAW`).
+* `apply_a3b.py`: `PREREG_ID` names A3; `PREREG_V8F_ORECOVER.A3.md` is the landed PREREG with Amendment 3 appended; one test checks it extends A2
+  and carries the reader's law value for value.
+* `out/pytest_full_a3b.out`: 53 passed. `out/mutation_a3.out`: 25/25 mutants KILLED (M24, M25 are A3's).
