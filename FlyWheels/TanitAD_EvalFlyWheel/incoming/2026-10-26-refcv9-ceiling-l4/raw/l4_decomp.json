@@ -1,0 +1,192 @@
+{
+ "_evidence": "MEASURED. eval: dump extras of tree step48852ema_pf (fed ceiling + gt_max_speed_6s as the battery reads them); train: sidecar E:/refcv6_eval_kit/data/a6/refcv6_speed_max_v8_train.jsonl x v9 release v_now (all NOW rows with a full 6-s future, stride 1)",
+ "strict": "exceed iff gt_max_speed_6s > fed ceiling (A-R8-CLAMP-2 2.1)",
+ "eval139": {
+  "n_windows": 4754,
+  "n_clips": 139,
+  "n_exceed": 595,
+  "exceed_frac": 0.125158,
+  "causes": {
+   "i_snap_clamp_gt120_caused": 16,
+   "i_exceed_on_clamped_clips_any_cause": 34,
+   "i_check_exceed_but_le_raw_v_hi": 16,
+   "iv_unknown_band": 0,
+   "ii_temporal_label_from_other_time": 579,
+   "ii_by_window_position": {
+    "future_before_label_band": 151,
+    "future_overlaps_label_band": 265,
+    "now_after_label_band": 179
+   },
+   "ii_steps_above_fed_class": {
+    "1": 541,
+    "2": 11,
+    "3": 0
+   },
+   "excess_kmh_bins": {
+    "(0,5]": 371,
+    "(5,10]": 130,
+    "(10,20]": 83,
+    ">20": 11
+   },
+   "excess_kmh_quantiles": {
+    "p50": 3.46,
+    "p90": 13.75,
+    "max": 23.02
+   },
+   "iii_independent_ref_CoT_unit_stated": {
+    "n_windows_with_ref": 104,
+    "n_clips_with_ref": 3,
+    "n_exceed_with_ref": 16,
+    "exceed_and_human_above_CoT_limit": 16,
+    "exceed_and_CoT_limit_ge_human (fed class too low)": 0,
+    "fed_class_vs_CoT_limit_on_ref_windows": {
+     "fed_lt_cot": 0,
+     "fed_eq_cot": 0,
+     "fed_gt_cot": 104
+    }
+   }
+  },
+  "per_class": {
+   "30": {
+    "n_windows": 1612,
+    "n_clips": 47,
+    "n_exceed": 374,
+    "exceed_frac": 0.232,
+    "clamp": 0,
+    "temporal": 374,
+    "excess_kmh_p50": 3.71,
+    "exceed_clips": 27
+   },
+   "50": {
+    "n_windows": 1673,
+    "n_clips": 49,
+    "n_exceed": 145,
+    "exceed_frac": 0.0867,
+    "clamp": 0,
+    "temporal": 145,
+    "excess_kmh_p50": 2.58,
+    "exceed_clips": 12
+   },
+   "100": {
+    "n_windows": 1231,
+    "n_clips": 36,
+    "n_exceed": 33,
+    "exceed_frac": 0.0268,
+    "clamp": 0,
+    "temporal": 33,
+    "excess_kmh_p50": 10.66,
+    "exceed_clips": 2
+   },
+   "120": {
+    "n_windows": 238,
+    "n_clips": 7,
+    "n_exceed": 43,
+    "exceed_frac": 0.1807,
+    "clamp": 16,
+    "temporal": 27,
+    "excess_kmh_p50": 7.11,
+    "exceed_clips": 2
+   }
+  },
+  "clip_concentration": {
+   "n_clips_with_any_exceed": 43,
+   "top10pct_clips_share_of_exceed_windows": 0.195
+  }
+ },
+ "train": {
+  "n_windows": 607899,
+  "n_clips": 4572,
+  "n_exceed": 75082,
+  "exceed_frac": 0.123511,
+  "causes": {
+   "i_snap_clamp_gt120_caused": 4611,
+   "i_exceed_on_clamped_clips_any_cause": 10837,
+   "i_check_exceed_but_le_raw_v_hi": 4611,
+   "iv_unknown_band": 0,
+   "ii_temporal_label_from_other_time": 70471,
+   "ii_by_window_position": {
+    "future_before_label_band": 24214,
+    "future_overlaps_label_band": 50130,
+    "now_after_label_band": 738
+   },
+   "ii_steps_above_fed_class": {
+    "1": 61687,
+    "2": 1731,
+    "3": 0
+   },
+   "excess_kmh_bins": {
+    "(0,5]": 36851,
+    "(5,10]": 21179,
+    "(10,20]": 14665,
+    ">20": 2387
+   },
+   "excess_kmh_quantiles": {
+    "p50": 5.15,
+    "p90": 13.82,
+    "max": 50.12
+   },
+   "iii_independent_ref_CoT_unit_stated": {
+    "n_windows_with_ref": 4784,
+    "n_clips_with_ref": 36,
+    "n_exceed_with_ref": 968,
+    "exceed_and_human_above_CoT_limit": 799,
+    "exceed_and_CoT_limit_ge_human (fed class too low)": 169,
+    "fed_class_vs_CoT_limit_on_ref_windows": {
+     "fed_lt_cot": 399,
+     "fed_eq_cot": 1463,
+     "fed_gt_cot": 2922
+    }
+   }
+  },
+  "per_class": {
+   "30": {
+    "n_windows": 231491,
+    "n_clips": 1741,
+    "n_exceed": 44187,
+    "exceed_frac": 0.1909,
+    "clamp": 0,
+    "temporal": 44187,
+    "excess_kmh_p50": 4.86,
+    "exceed_clips": 822
+   },
+   "50": {
+    "n_windows": 211867,
+    "n_clips": 1593,
+    "n_exceed": 17514,
+    "exceed_frac": 0.0827,
+    "clamp": 0,
+    "temporal": 17514,
+    "excess_kmh_p50": 3.48,
+    "exceed_clips": 334
+   },
+   "100": {
+    "n_windows": 134815,
+    "n_clips": 1014,
+    "n_exceed": 1717,
+    "exceed_frac": 0.0127,
+    "clamp": 0,
+    "temporal": 1717,
+    "excess_kmh_p50": 2.52,
+    "exceed_clips": 41
+   },
+   "120": {
+    "n_windows": 29726,
+    "n_clips": 224,
+    "n_exceed": 11664,
+    "exceed_frac": 0.3924,
+    "clamp": 4611,
+    "temporal": 7053,
+    "excess_kmh_p50": 8.61,
+    "exceed_clips": 106
+   }
+  },
+  "clip_concentration": {
+   "n_clips_with_any_exceed": 1303,
+   "top10pct_clips_share_of_exceed_windows": 0.2203
+  },
+  "join": {
+   "n_sidecar_clips": 4572,
+   "n_joined_v9": 4572
+  }
+ }
+}

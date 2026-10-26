@@ -6014,6 +6014,15 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | beside | eval F-rate 0.68 % / 0.89 % (FIT 1.47 %); E1 -0.0473 / -0.0468, E3 -1.2044 / -1.1989; S6 compliance exceedance 0.0169 (= H2CN); MD effect inside A4d's fit-seed floor. |
 | status | NOT a shipped-stage candidate. Per the sealed s5 the refcv8 post-hoc progress line ENDS; candidates for the PI: H2CN_CAP8 / H2CN_DEPLOY8 / FACTORED_DEPLOY8. |
 
+### 16.22 refcv8-r101-s0 -- SHIPPED STAGE (PI, 2026-10-26 ~13:05 Berlin): H2CN_CAP8 *(decision record)*
+
+| | |
+|---|---|
+| decision | D-R8-SHIP-STAGE -> **H2CN_CAP8** (PI AskUserQuestion answer "H2CN_CAP8 (Recommended)"): the clean-split H2cn progress stage (§16.15, stage f293b7bd) with its progress clamped to the FED ceiling. PhysicalAI only; NavSim needs its own go. |
+| evidence (T1 self-action open loop, eval139, per-frame feed; inference seeds 0 / 1) | SHIP-R8 AMENDMENT 4b PASS every clause: E1 -0.0473 [-0.0587, -0.0364] / -0.0466, E3 -1.2038 [-1.5012, -0.9225] / -1.1972 vs ha0_ext_pose; **0 strict fed-ceiling exceedances**; A4d: the uncapped stage replicates across fit seeds (seed 0 best of 3 by ~0.07 m S6 ADE). |
+| caveat (H-R9-SPEEDINPUT-1) | the FED ceiling it clamps to is a clip-level future-ego signal (PI 10-11 `label` input); the cap is compliance with that input, not with a posted limit. |
+| not shipped | H2CN_DEPLOY8, FACTORED_DEPLOY8 (both PASS); HSGATE8 / MDFIX8 (FAIL, §16.20 / §16.21); H2cn-L (bars VOID). |
+
 ## 18. nt-a1-s0 — NT A1, the navtrain decision arm (PREREG_NT_DECIDE) [NAVSIM navtrain · ONE SEED · TRAINING]
 
 ### nt-a1-s0 — ▶ TRAINING since 2026-10-25 11:02 Berlin (CET, 10:02Z), on Thor, launched by the launch gate's PASS token

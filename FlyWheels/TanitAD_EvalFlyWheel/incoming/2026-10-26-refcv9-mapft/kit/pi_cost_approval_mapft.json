@@ -1,9 +1,8 @@
 {
- "max_s_per_step": 16.0,
- "pi_verbatim": "D-R9-MAPHEAD-PRECISION -> (a), cap 6 Thor-hours (PI AskUserQuestion answer 2026-10-26 ~03:30 Berlin, recorded in the Master Mind's note pi-decisions-2026-10-26-h2cn-maphead-factored)",
+ "max_s_per_step": 9.8,
+ "pi_verbatim": "Approve up to 9.8 s/step (Recommended)  [PI AskUserQuestion answer, 2026-10-26 ~13:05 Berlin, to: 'May the map-only fine-tune run if its 50-step smoke reads above 8.0 s/step?']; and on the cap: 'No, cap = smoke + run (Recommended)' [same session, to: 'Does ~3.5 h of gating count inside the 6 Thor-hour cap?']",
  "date": "2026-10-26",
- "status": "DRAFT-PREPARED-BY-LAUNCH-PREP-AGENT: NOT a PI s/step approval. The PI approved a 6 Thor-hour CAP, not a number of seconds per step. This file exists ONLY so that IF the gate's G-LIVE cost row exceeds 1.25x refcv6's 6.4 s/step (= 8.0 s/step) and the token reads PI-DECISION, the cap the PI DID approve can be expressed in the gate's own form. The Master Mind confirms (or replaces pi_verbatim with the PI's exact words) before passing --pi-cost-approval. Not expected to be needed: a FROZEN trunk does no backward through ResNet101 (refcv8 trained at ~9.7 s/step with it).",
- "formula": "max_s_per_step = 0.85 * (21600 - 1800 - smoke_wall_s_max) / 1000 with smoke_wall_s_max = 900 s -> 16.065 -> 16.0 (the largest s/step at which PREREG_MAPFT s1 still yields N >= 1000, i.e. still launches inside the 6 Thor-hour cap; above it the rule says STOP)",
- "context": "refcv8-mapft (map-only fine-tune); gate cost rule SPEC 6.2 item 5 (cost_ref_s_per_step 6.4, cost_max_ratio 1.25)",
- "recorded_by": "launch-prep agent (DRAFT for the Master Mind to confirm)"
+ "status": "PI-APPROVED (D-R9-MAPFT-COST). Replaces the launch-prep DRAFT (kept as pi_cost_approval_mapft.DRAFT_0800.json, max 16.0, which was NOT a PI number).",
+ "context": "refcv8-mapft (map-only fine-tune); gate cost rule SPEC 6.2 item 5 (cost_ref_s_per_step 6.4, cost_max_ratio 1.25 -> 8.0); the 6 Thor-h cap covers smoke + run only, gating outside it",
+ "recorded_by": "Master Mind"
 }

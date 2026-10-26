@@ -2611,3 +2611,25 @@ Not candidates: HSGATE8 FAIL (G2: FD +0.0135 separated above H2CN; `H-R9-HSGATE-
 MD -0.0078 [-0.0191, +0.0000] at 97.5 %, not separated; `H-R9-MDFIX-1`), so it does not join the list and the refcv8 post-hoc progress line ends
 (its sealed s5). The choice is H2CN_CAP8 (MM recommends) / H2CN_DEPLOY8 / FACTORED_DEPLOY8, on the rows above.
 
+## ✅ DECIDED (PI, 2026-10-26 ~13:05 Berlin; recorded ~13:15) -- D-R8-SHIP-STAGE, D-R9-MAPFT-COST, and the fresh obstacle-label download
+
+* **D-R8-SHIP-STAGE -> H2CN_CAP8** *"H2CN_CAP8 (Recommended)"* (MODEL_REGISTRY §16.22).
+* **D-R9-MAPFT-COST Q2 -> the 6 Thor-h cap covers smoke + run; gating runs outside it** *"No, cap = smoke + run (Recommended)"*.
+* **D-R9-MAPFT-COST Q3 -> approve up to 9.8 s/step** *"Approve up to 9.8 s/step (Recommended)"*; recorded in `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-refcv9-mapft/kit/pi_cost_approval_mapft.json` (the launch-prep DRAFT with 16.0 is kept beside it, superseded).
+* **Fresh obstacle.offline download (~190 MB, 295 clips, PhysicalAI-AV) -> YES** *"Yes, download (Recommended)"*: unblocks PREREG_LONHEAD_C (H-R9-FRESHLABEL-1); running since ~13:11.
+
+## ⏳ OPEN (2026-10-26 ~13:15 Berlin) -- D-R9-SPEED-INPUT: refcv8's fed speed ceiling is a future-ego signal; what does refcv9 feed instead?
+
+MEASURED (H-R9-SPEEDINPUT-1): the input chosen on 10-11 (`--r8-speed-input label`) is the clip-level max of the ego's own speed 2-6 s ahead, snapped
+to {30, 50, 100, 120} km/h (leak 0.224 train; the 0.05 bar). It is why the human 'exceeds' it on 12.5 % of eval windows (579 / 595 are timing).
+* **P1 -- is the ego's PAST speed (20 s, `speed_n2_kmh`, causal) an admissible input?** MM ruling Q5 already allows the past-only n2 source in the trainer; the 09-19 nuPlan note refused ego-dynamics ceilings (that refusal was about FUTURE ego). **MM recommends YES (C7):** compliance 96.9 %, leak ~0.02.
+* **P2 -- C7 drops the 30 km/h class;** the no-floor variant keeps it at 92.7 % compliance. MM recommends C7 as built.
+* **P3 -- should the channel mean a LEGAL limit or a DEMONSTRATED set speed?** A posted limit is measurably worse as a ceiling (humans under the sign on 52-61 % of windows) and needs a map / GPS join we do not have. MM recommends 'demonstrated set speed, past-only'.
+
+## ⏳ OPEN (2026-10-26 ~13:15 Berlin) -- D-R9-INMODEL: integrate R9-PF (refcv9's in-model progress head) into stack/, and its compute
+
+H-R9-INMODEL-1: implemented behind default-OFF flags, bit-identical with them off, 30 tests + mutation arms, smoke passes. Banked as a patch, NOT applied.
+* **Q1 -- may the patch edit `launch_gate.py`** (G-LIVE liveness rules for the new `w_r9_*` loss weights; nothing else in the gate)? Without it the gate's own test fails on the new flags.
+* **Q2 -- B9-1 reading:** the head is fitted in a second stage on the fresh split and written into the checkpoint. MM reads that as 'in the model' (one forward, no post-hoc file), and the fresh split then becomes a CALIBRATION split, no longer an unseen eval set.
+* **Q3 -- compute:** Phase A runs on refcv8's trunk at 0 Thor-h (dev box); Phase B (a refcv9 trunk with the head) is ~240 Thor-h ESTIMATED. Phase A first; Phase B is asked when A reads.
+
