@@ -57,7 +57,7 @@ TIER = ("T1 (T1-kin: self-action OPEN loop, plain causal bucket, nav dead-reckon
         "T0 (teacher-forced own-code, eval-141) for R-T0")
 BANKED_M2B_SHA = {0: "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8",
                   1: "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6"}
-PREREG_ID = "Project Steering/PREREG_V8F_ORECOVER.md @28e28c88 + Amendment 1 (A1-2026-10-26) + Amendment 2 (A2-2026-10-26) + Amendment 3 (A3-2026-10-26)"
+PREREG_ID = "Project Steering/PREREG_V8F_ORECOVER.md @28e28c88 + Amendment 1 (A1-2026-10-26) + Amendment 2 (A2-2026-10-26) + Amendment 3 (A3-2026-10-26) + Amendment 4 (A4-2026-10-26)"
 # Amendment 2 replaces the NO EFFECT condition (the as-written table had a hole); the as-written table above stays verbatim, this is the condition in force.
 A2_NO_EFFECT = "no F1 row separated-better and ≥ 2F at both seeds, guards held"
 
@@ -727,6 +727,15 @@ def read(cfg, backend, T, K):
                 raise Refusal(f"{tag}: manifest has no 't0' (the chain's standard T0 eval)")
             rec["t0json"], rec["t0arr"], t0_ok = t0_arrays(t0e, ckpt_tail)
             ctl.add(f"T0-CKPT:{tag}", t0_ok, f"T0 eval json ckpt {rec['t0json'].get('ckpt')!r} vs .../{ckpt_tail}")
+            t0f = e.get("t0_fresh")                                 # A4: K4's comparator is the arm's own T0 eval at --ages fresh, from its OWN key
+            if not t0f:
+                raise Refusal(f"{tag}: manifest has no 't0_fresh' (A4: K4 compares tick 0 with the arm's own T0 eval at --ages fresh)")
+            rec["t0fjson"] = jload(need(t0f["json"], f"{tag} fresh T0 eval json"))
+            ctl.add(f"T0F-CKPT:{tag}", tail2(str(rec["t0fjson"].get("ckpt", ""))) == ckpt_tail,
+                    f"fresh T0 eval json ckpt {rec['t0fjson'].get('ckpt')!r} vs .../{ckpt_tail}")
+            ages = (rec["t0json"].get("ages"), rec["t0fjson"].get("ages"))     # A4: R-T0 can never read the fresh eval, K4 never the standard one
+            ctl.add(f"T0-AGES:{tag}", ages == ("cycle", "fresh"),
+                    {"t0": ages[0], "t0_fresh": ages[1], "committed": ["cycle: box 2's standard eval (R-T0, T0-CKPT, the families)", "fresh: K4 only (A4)"]})
             runs[(arm, s)] = rec
     # ---------------- pair controls (ORC vs ORC-0)
     for s in SEEDS:
@@ -747,7 +756,7 @@ def read(cfg, backend, T, K):
             lj = jload(need(lg["json"], f"{tag} logged t1v8f json"))
             ctl.run(f"T1-CONFIG-logged:{tag}", lambda rec=rec, lpk=lpk, lj=lj: g_t1cfg(rec["tag"], lj, rec["ckpt_tail"], "logged", lpk.meta))
         # K4 (replaced for the fine-tuned arms): tick 0 equals the arm's OWN T0 eval to 1e-3
-        ok, det = backend.k4(lg, pk, rec["entry"]["t0"], s)
+        ok, det = backend.k4(lg, pk, rec["entry"]["t0_fresh"], s)
         if not ok and lg is None and isinstance(det, dict):
             det = {**det, "hint": "K4 is a LOGGED-bucket identity (the T1-HEADS PREREG ran it on a --limit logged run): a --limit causal run's tick 0 reads another speed bucket "
                                   "than the T0 eval, so it differs by construction. Supply a 't1_logged' run for this arm in the manifest."}
@@ -839,7 +848,7 @@ def parse_kv(items, what):
 
 def build_parser():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--manifest", required=True, help="runs.json: arms ORC / ORC0 (and optional M2b) x seeds, each with train_dir, token, t1{tag,ticks,dump_dir,json,k7}, [t1_logged], t0{json,npz}")
+    ap.add_argument("--manifest", required=True, help="runs.json: arms ORC / ORC0 (and optional M2b) x seeds, each with train_dir, token, t1{tag,ticks,dump_dir,json,k7}, [t1_logged], t0{json,npz} (box 2's standard eval), t0_fresh{json,npz} (A4: the --ages fresh eval K4 reads)")
     ap.add_argument("--out", required=True)
     ap.add_argument("--tool-root", required=True, help="the pinned export (stack + taniteval); READ-ONLY")
     ap.add_argument("--t1hd-read")

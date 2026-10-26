@@ -37,6 +37,15 @@ def swap_table_rows(s):
 
 # id, what it breaks, edit, targeted -k
 MUTANTS = [
+    ("M26", "A4: K4 reads the standard T0 eval", sub('backend.k4(lg, pk, rec["entry"]["t0_fresh"], s)', 'backend.k4(lg, pk, rec["entry"]["t0"], s)'), "a4"),
+    ("M27", "A4: the T0-AGES control is blind", sub('ages == ("cycle", "fresh"),', 'True,'), "a4"),
+    ("M28", "A4: the fresh eval's checkpoint is not checked", sub('tail2(str(rec["t0fjson"].get("ckpt", ""))) == ckpt_tail,', 'True,'), "a4"),
+    ("M29", "A4: a manifest without t0_fresh falls back to t0", sub("""            if not t0f:
+                raise Refusal(f"{tag}: manifest has no 't0_fresh' (A4""", """            if not t0f:
+                e["t0_fresh"] = t0f = e["t0"]
+            if False:
+                raise Refusal(f"{tag}: manifest has no 't0_fresh' (A4"""), "a4"),
+    ("M30", "A4: R-T0 reads the fresh eval", sub('            t0e = e.get("t0")\n', '            t0e = e.get("t0_fresh")\n'), "a4 or world_ROBUST"),
     ("M24", "A3: a law flag on ORC-0 is not refused", sub('                bad.append(f"{name} is named on ORC-0 (A3: ORC-0 names only --ego-perturb-p 0)")', '                pass'), "a3_law"),
     ("M25", "A3: ORC's law values are not checked", sub('    if arm == "ORC":                                                # A3: the law is named, once, at its registered values', '    if False:'), "a3_law"),
     ("M01", "flip a bar sign (>= 2F becomes <= 2F)", sub('sep_better(s, hd) and r["delta"] >= TWO_F[hd]', 'sep_better(s, hd) and r["delta"] <= TWO_F[hd]'), "decide"),

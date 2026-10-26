@@ -28,3 +28,16 @@ Checkpoint `cfg`/`built_levers` not opened (summary/selfcheck levers are); besid
 * `apply_a3b.py`: `PREREG_ID` names A3; `PREREG_V8F_ORECOVER.A3.md` is the landed PREREG with Amendment 3 appended; one test checks it extends A2
   and carries the reader's law value for value.
 * `out/pytest_full_a3b.out`: 53 passed. `out/mutation_a3.out`: 25/25 mutants KILLED (M24, M25 are A3's).
+
+## Amendment 4 (A4-2026-10-26, before any run)
+* `apply_a4.py`: K4's comparator is the arm's own T0 eval at `--ages fresh`, read from its OWN manifest key `t0_fresh`. R-T0, T0-CKPT and
+  the families stay on `t0`, box 2's standard eval. A manifest without `t0_fresh` is REFUSED. Two new controls:
+  * `T0-AGES`: `t0` must say `ages: cycle` and `t0_fresh` must say `ages: fresh`, so neither eval can stand in for the other;
+  * `T0F-CKPT`: the fresh eval names this run's checkpoint.
+* Tests (+4): the A4 text extends A3 and carries the K4 rule. K4 reads `t0_fresh` and R-T0 the standard eval. In the fixture the fresh eval is
+  7 m worse for ORC, so a reader that took R-T0 from it would read +7 m, and the synthetic K4 fails unless it is handed the `-fresh` file.
+  A missing `t0_fresh` is refused, and the ages and fresh-checkpoint controls fire on exactly the edited runs.
+* `out/pytest_full_a4.out`: **57 passed**. `out/mutation_a4.out`: **30/30 mutants KILLED** (M26-M30 are A4's). `out/snap_a4_check.out`:
+  the sources after the proof equal `snap_a4_SHA256.txt`, taken before it.
+* Correction to "Not done" above: the strategic family is NOT reported paused. The reader labels it "NOT PAUSED for v8F (PI ruling
+  2026-10-17, R73)" (`orc_read.py`, `strategic_family`), and a test pins that label. The note was stale.

@@ -28,6 +28,7 @@ T1HD, T1K = RAW / "2026-10-26-t1hdread" / "t1hd_read.py", RAW / "2026-10-26-t1ki
 PREREG = HERE / "PREREG_V8F_ORECOVER.28e28c88.md"
 PREREG_A2 = HERE / "PREREG_V8F_ORECOVER.A2.md"           # the landed text after Amendment 2 (pinned by sha256 at landing)
 PREREG_A3 = HERE / "PREREG_V8F_ORECOVER.A3.md"           # the landed text after Amendment 3: the A2 text plus the amendment, appended
+PREREG_A4 = HERE / "PREREG_V8F_ORECOVER.A4.md"           # the landed text after Amendment 4: the A3 text plus the amendment, appended
 NB = 100                                                                    # TEST bootstrap size (the reader labels any B != 2000 'NOT A READ')
 
 spec_ = importlib.util.spec_from_file_location("orc_read_under_test", ORC_PATH)
@@ -154,6 +155,7 @@ class Fx:
         if logged:
             e["t1_logged"] = self.write_t1(arm, s, W, f"{tag}_logged", "logged", tag, dumps=False)
         e["t0"] = self.write_t0(arm, s, W, tag)
+        e["t0_fresh"] = self.write_t0(arm, s, W, tag, ages="fresh")
         return e
 
     def write_t1(self, arm, s, W, t1tag, limit, tag, dumps=True):
@@ -180,12 +182,15 @@ class Fx:
         jdump(root / "t1" / f"t1v8f_{t1tag}.json", {"t1v8f": hdr, "paired_decision_grade": {"paired_model_minus_floor_t1": {"ade_m": {"delta": delta}}}})
         return {"tag": t1tag, "ticks": str(root / "t1" / f"ticks_{t1tag}.npz"), "dump_dir": str(d), "json": str(root / "t1" / f"t1v8f_{t1tag}.json")}
 
-    def write_t0(self, arm, s, W, tag):
+    def write_t0(self, arm, s, W, tag, ages="cycle"):
         root = self.root
         ade = (W["t0_1"][W["order"]] if arm == "ORC" else W["t0_0"])
-        jdump(root / "t0" / f"eval_{tag}.json", {"ckpt": f"{root}/runs/{tag}/ckpt_last.pt", "raw": {}})
-        np.savez(root / "t0" / f"eval_{tag}.npz", ade6=ade, eid=W["ci"], ckpt=np.zeros((len(ade), 3, 3)), lat_logits=np.zeros((len(ade), 5)), lon_logits=np.zeros((len(ade), 7)))
-        return {"json": str(root / "t0" / f"eval_{tag}.json"), "npz": str(root / "t0" / f"eval_{tag}.npz")}
+        nm = f"eval_{tag}" + ("-fresh" if ages == "fresh" else "")
+        if ages == "fresh":                     # A4: a different eval. ORC's is 7 m worse, so a reader that took R-T0 from it would read a +7 m point
+            ade = ade + (7.0 if arm == "ORC" else 0.0)
+        jdump(root / "t0" / f"{nm}.json", {"ckpt": f"{root}/runs/{tag}/ckpt_last.pt", "ages": ages, "raw": {}})
+        np.savez(root / "t0" / f"{nm}.npz", ade6=ade, eid=W["ci"], ckpt=np.zeros((len(ade), 3, 3)), lat_logits=np.zeros((len(ade), 5)), lon_logits=np.zeros((len(ade), 7)))
+        return {"json": str(root / "t0" / f"{nm}.json"), "npz": str(root / "t0" / f"{nm}.npz")}
 
     def save(self):
         jdump(self.root / "runs.json", self.manifest)
@@ -233,7 +238,8 @@ class SynBackend:
 
     def k4(self, entry_logged, pack, t0_entry, seed):
         tag = pack.meta["tag"].replace("_causal", "")
-        return (not ({("K4", tag)} & self.world.ctl_fail)), {"source": "synthetic"}
+        fresh = str(t0_entry["json"]).endswith("-fresh.json")          # A4: the synthetic K4 holds only against the arm's fresh-age eval
+        return (fresh and not ({("K4", tag)} & self.world.ctl_fail)), {"source": "synthetic", "t0_json": str(t0_entry["json"])}
 
 
 def read_args(fx, out, **kw):
@@ -374,6 +380,43 @@ def test_a3_text_extends_a2_and_carries_the_pair_rule():
     for name, w in orc.LAW.items():                                  # the reader's law is the amendment's, value for value
         assert f"`{name} {' '.join(str(x) for x in w)}`" in t, name
     assert "Amendment 3 (A3-2026-10-26)" in orc.PREREG_ID
+
+
+def test_a4_text_extends_a3_and_carries_the_k4_rule():
+    a3, a4 = PREREG_A3.read_bytes(), PREREG_A4.read_bytes()
+    assert a4.startswith(a3) and b"## Amendment 4" in a4[len(a3):] and b"## Amendment 4" not in a3
+    t = a4[len(a3):].decode("utf-8").replace("\n", " ")
+    assert "`v8f_mini_eval.py run --ages fresh`" in t and "R-T0, T0-CKPT and the four families stay on box 2's standard eval" in t
+    assert "separate manifest keys" in t and "Amendment 4 (A4-2026-10-26)" in orc.PREREG_ID
+
+
+def test_a4_k4_reads_t0_fresh_and_r_t0_reads_the_standard_eval(tmp_path, capsys):
+    """A4: K4's comparator is the fresh-age eval, from its own key; R-T0 stays on box 2's standard eval. The fixture's fresh eval is 7 m worse for ORC, so a
+    reader that took R-T0 from it would read a +7 m point; the synthetic K4 fails unless it is handed the -fresh file."""
+    rc, res, *_ = run(tmp_path, **STRONG)
+    assert rc == 0, capsys.readouterr().err
+    for tag in ("ORC_s0", "ORC0_s0", "ORC_s1", "ORC0_s1"):
+        assert all(res["controls_PASS"][f"{k}:{tag}"] for k in ("K4", "T0-AGES", "T0F-CKPT")), tag
+        assert res["controls"][f"K4:{tag}"]["detail"]["t0_json"].endswith(f"eval_{tag}-fresh.json")
+    for s in ("s0", "s1"):
+        assert abs(res["rows"][s]["R-T0"]["point"]) < 1.0, res["rows"][s]["R-T0"]
+    assert res["OUTCOME"]["OUTCOME"] == "ROBUST"
+
+
+def test_a4_refuses_a_manifest_without_t0_fresh(tmp_path, capsys):
+    rc, _, out, _ = run(tmp_path, edit=lambda fx: fx.manifest["arms"]["ORC0"]["1"].pop("t0_fresh"), **STRONG)
+    refused(capsys, rc, out, "ORC0_s1: manifest has no 't0_fresh'")
+
+
+def test_a4_t0_ages_and_the_fresh_ckpt_are_controls(tmp_path, capsys):
+    edits = chain(
+        lambda fx: jedit(fx.root / "t0" / "eval_ORC_s0.json", lambda o: o.update(ages="fresh")),          # R-T0 would read a fresh-age eval
+        lambda fx: jedit(fx.root / "t0" / "eval_ORC0_s1-fresh.json", lambda o: o.update(ages="cycle")),   # K4 would read a cycle-age eval
+        lambda fx: jedit(fx.root / "t0" / "eval_ORC_s1-fresh.json", lambda o: o.update(ckpt="/x/runs/ORC0_s1/ckpt_last.pt")),
+    )
+    rc, _, out, _ = run(tmp_path, edit=edits, **STRONG)
+    refused(capsys, rc, out, "T0-AGES:ORC_s0", "T0-AGES:ORC0_s1", "T0F-CKPT:ORC_s1",
+            absent=("T0-AGES:ORC0_s0", "T0-AGES:ORC_s1", "T0F-CKPT:ORC_s0", "T0F-CKPT:ORC0_s1", "T0-CKPT:ORC_s1"))
 
 
 def test_a2_table_is_complete_no_reachable_UNPLACED():

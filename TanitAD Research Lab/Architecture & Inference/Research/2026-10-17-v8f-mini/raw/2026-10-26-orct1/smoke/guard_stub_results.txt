@@ -1,0 +1,26 @@
+--- stub no_dump_heads
+10-26 12:22:10 DRY: guards: add_argument --dump-heads = 0, --dump-ticks = 1, causal in LIMIT_MODES = 1  (controls: --replan-steps = 1, no-such-flag = 0, logged = 1, no-such-limit = 0) in C:/Users/Admin/orct1/smoke/stubs/no_dump_heads
+10-26 12:22:10 DRY: REFUSED: C:/Users/Admin/orct1/smoke/stubs/no_dump_heads has no --dump-heads (grep 0; the control read 1, so the grep works): a rollout without the head columns cannot be read
+ZZORCT1-STOP REFUSED: C:/Users/Admin/orct1/smoke/stubs/no_dump_heads has no --dump-heads (grep 0; the control read 1, so the grep works): a rollout without the head columns cannot be read
+--- stub no_dump_ticks
+10-26 12:22:11 DRY: guards: add_argument --dump-heads = 1, --dump-ticks = 0, causal in LIMIT_MODES = 1  (controls: --replan-steps = 1, no-such-flag = 0, logged = 1, no-such-limit = 0) in C:/Users/Admin/orct1/smoke/stubs/no_dump_ticks
+10-26 12:22:11 DRY: REFUSED: C:/Users/Admin/orct1/smoke/stubs/no_dump_ticks has no --dump-ticks (grep 0; the control read 1, so the grep works)
+ZZORCT1-STOP REFUSED: C:/Users/Admin/orct1/smoke/stubs/no_dump_ticks has no --dump-ticks (grep 0; the control read 1, so the grep works)
+--- stub no_causal
+10-26 12:22:12 DRY: guards: add_argument --dump-heads = 1, --dump-ticks = 1, causal in LIMIT_MODES = 0  (controls: --replan-steps = 1, no-such-flag = 0, logged = 1, no-such-limit = 0) in C:/Users/Admin/orct1/smoke/stubs/no_causal
+10-26 12:22:12 DRY: REFUSED: C:/Users/Admin/orct1/smoke/stubs/no_causal has no causal bucket (LIMIT_MODES grep 0; the control read 1, so the grep works): the decisive rollout is --limit causal
+ZZORCT1-STOP REFUSED: C:/Users/Admin/orct1/smoke/stubs/no_causal has no causal bucket (LIMIT_MODES grep 0; the control read 1, so the grep works): the decisive rollout is --limit causal
+--- stub dump_heads_only_in_docstring
+10-26 12:22:12 DRY: guards: add_argument --dump-heads = 0, --dump-ticks = 1, causal in LIMIT_MODES = 1  (controls: --replan-steps = 1, no-such-flag = 0, logged = 1, no-such-limit = 0) in C:/Users/Admin/orct1/smoke/stubs/dump_heads_only_in_docstring
+10-26 12:22:12 DRY: REFUSED: C:/Users/Admin/orct1/smoke/stubs/dump_heads_only_in_docstring has no --dump-heads (grep 0; the control read 1, so the grep works): a rollout without the head columns cannot be read
+ZZORCT1-STOP REFUSED: C:/Users/Admin/orct1/smoke/stubs/dump_heads_only_in_docstring has no --dump-heads (grep 0; the control read 1, so the grep works): a rollout without the head columns cannot be read
+--- stub broken_control_replan
+10-26 12:22:12 DRY: grep control broken on C:/Users/Admin/orct1/smoke/stubs/broken_control_replan (positive control --replan-steps = 0, must be >= 1; negative control = 0, must be 0)
+ZZORCT1-STOP grep control broken on C:/Users/Admin/orct1/smoke/stubs/broken_control_replan (positive control --replan-steps = 0, must be >= 1; negative control = 0, must be 0)
+--- stub broken_control_limit
+10-26 12:22:13 DRY: grep control broken on LIMIT_MODES of C:/Users/Admin/orct1/smoke/stubs/broken_control_limit (positive control logged = 0, must be >= 1; negative control = 0, must be 0)
+ZZORCT1-STOP grep control broken on LIMIT_MODES of C:/Users/Admin/orct1/smoke/stubs/broken_control_limit (positive control logged = 0, must be >= 1; negative control = 0, must be 0)
+--- unmodified tool tree
+10-26 12:22:14 DRY: guards: add_argument --dump-heads = 1, --dump-ticks = 1, causal in LIMIT_MODES = 1  (controls: --replan-steps = 1, no-such-flag = 0, logged = 1, no-such-limit = 0) in E:/Projects/TanitAD-artifacts/v8f-t1heads-run/tool_81aa3e36
+10-26 12:22:21 DRY: == markers in C:/Users/Admin/orct1/logs/chain.out: ZZORCT1-DONE <n>/8 rollouts, reader rc <rc> ...  |  ZZORCT1-STOP <why>.  Nothing was written, launched or waited for.
+ZZORCT1-DRY-OK
