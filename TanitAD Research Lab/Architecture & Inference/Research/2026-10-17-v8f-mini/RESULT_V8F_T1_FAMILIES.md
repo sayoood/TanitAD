@@ -91,3 +91,5 @@ not blind**.
   Both need the per-tick head dump that is being built (a `--dump-heads`-class flag on `v8f_t1_eval`), then a re-run of the decisive configuration.
 * **The open gap at T1 is still the lateral one:** curvature at speed (`RESULT_V8F_T1_LATCOND`, CONDITIONED LATERAL DEFICIT). Its root cause is
   being diagnosed.
+
+**Update (2026-10-26, `R76`):** the "lateral" gap of §4 is localised. It is a low-speed launch CRAWL that the GT-speed-masked curvature row prices as lateral; at equal own speed HACC's curvature error equals P10's (`raw/2026-10-26-lcdiag/DIAGNOSIS.md`). The lever is the along weight: `PREREG_V8F_HACC_MC.md`.

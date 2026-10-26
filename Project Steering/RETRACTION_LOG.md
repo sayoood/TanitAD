@@ -18733,3 +18733,44 @@ largest measured effect*. A lever that the attribution assigns about 0.2 of the 
 **Class:** *a tolerance written as "exactly" on a float pipeline, in a control copied from its source.*
 * ⇒ Quote a control's tolerance from its source and cite the source.
 * ⇒ Never write "exactly" for a value that passes through a floating-point transform.
+
+### R75 -- C6 of `PREREG_V8F_T1_FAMILIES`: "the decisive HACC tracks rolled by one window must read separated-worse than P10" (2026-10-26, MM)
+
+**Wrong as written,** for two measured reasons:
+* **The arm was a near-copy, not a regression.** Grid windows are 0.8 s apart on a 6 s horizon, so a one-window roll barely moves the manoeuvre
+  class: rolled − unrolled HACC TAC-LAT −0.007, n.s.
+* **The comparator could not show it.** P10 is a weaker tactical arm than even the rolled HACC: TAC-LAT accuracy 0.593 against 0.723.
+
+The read was REFUSED, correctly, as written.
+
+**Consequence:**
+* Amendment 1 replaced C6 with C6A (speed-matched cross-episode donor tracks, compared with the arm itself). C6A reads separated-worse on all five
+  rows at both seeds.
+* The amendment was written AFTER the decisive rows were seen, so the read under it is reported as POST-DATA (`RESULT_V8F_T1_FAMILIES.md`).
+
+**Class:** *a deliberate-regression arm chosen without computing its expected effect on the rows it must move, against a comparator it cannot beat
+anyway.*
+* ⇒ Compute the regression arm's delta on a dev split (or reason it from the window spacing) before committing it.
+* ⇒ Compare a regression arm with the arm it degrades, not with a third arm.
+
+Same family as R74: a control written without computing what it tests.
+
+### R76 -- "the rest [of the L2 curvature excess] is real at speed: HACC's executed track at speed bends with a curvature profile further from the human's" (`RESULT_V8F_T1_LATCOND.md` "What this settles"; the register row `H-V8F-T1-LATCOND-1`; report v22–v23 §7.15) (2026-10-26, MM)
+
+**Wrong:** the zero-GPU diagnosis (`raw/2026-10-26-lcdiag/DIAGNOSIS.md`, MEASURED on the banked dumps) localises the excess.
+* 96 % / 88 % of it sits on pairs where the GT moves at ≥ 5.2 m/s but **HACC's own car is below 5.2 m/s**: low-speed launches in which HACC's loop
+  decelerates while the human pulls away.
+* **At equal own speed, HACC's curvature error equals P10's.** With both arms' own speeds ≥ 5.2 m/s, the excess is +0.0018 [+0.0002, +0.0036] /
+  +0.0015 n.s.
+* The deficit is therefore a LONGITUDINAL crawl that the lateral row prices as curvature. It is not a lateral-shape defect.
+* Its leading mechanism, still to be tested by intervention, is HACC's step-varying along weight: it injects a deceleration into the knots the replan
+  state reads.
+
+**Consequence:**
+* The pre-registered outcome, CONDITIONED LATERAL DEFICIT, **stands as written.** Only its interpretation is retracted.
+* The lever moves from the cross axis (HACC-LAT, already NOT FIXED, which this explains) to the along weight: `PREREG_V8F_HACC_MC.md`.
+* A row on the joint own-speed mask may only be read beside, because HACC's value on it is now known.
+
+**Class:** *a speed-conditioned lateral row masked on the GT's speed alone charges the ARM's own low-speed jitter to lateral control.*
+* It is the arm-side twin of `RETR-2026-09-26-YAWMASK` (there the jitter entered through the GT's speed).
+* ⇒ Any curvature or yaw-rate row conditioned on speed must state whose speed. Before calling an excess "lateral", split it by the arm's own speed.

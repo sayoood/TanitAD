@@ -53,3 +53,14 @@
   * ⛔ It is blocked on box-2 compute: FLAT is training now and OACC is queued behind it.
   * It also needs a diagnosis first. On train ticks, HACC's plan curvature from the same state is no worse than P10's, so the at-speed excess arises in the LOOP (state, seams), not in a single plan.
   * A root-cause diagnosis of the at-speed excess (zero-GPU) is the next unblocked step. It decides what the training lever, or a cheaper zero-training lever, must target.
+
+## Correction (2026-10-26, `R76`): the interpretation above is retracted; the outcome stands
+
+The zero-GPU diagnosis (`raw/2026-10-26-lcdiag/DIAGNOSIS.md`) localises the L2 excess: 96 % / 88 % of it sits on pairs where the GT moves ≥ 5.2 m/s
+but **HACC's own car is below 5.2 m/s**. These are low-speed launches in which HACC's loop crawls while the human pulls away.
+
+* At equal own speed, HACC's curvature error equals P10's: +0.0018 [+0.0002, +0.0036] / +0.0015 n.s. with both arms' own speeds ≥ 5.2 m/s.
+* ⇒ "HACC's executed track at speed bends with a curvature profile further from the human's" is **wrong**. The deficit is a longitudinal crawl
+  that the GT-speed-masked row prices as curvature.
+* **CONDITIONED LATERAL DEFICIT stands as the pre-registered outcome.**
+* The next lever is the along weight (`PREREG_V8F_HACC_MC.md`), not the cross axis.
