@@ -18822,3 +18822,17 @@ INFERENCE run say this?*). ⇒ For a sampling planner, a window's plan is a func
 subset or re-ordered roll with a banked roll per window; compare distributions against the inference-seed floor, or inject the bank's
 stream position. A code diff touching the path is a hypothesis, not a mechanism, until a same-position comparison separates the trees.
 
+## 2026-10-26 ~20:28 -- "NT A1's rc path getting no gradient is a finding about its design" (b8b4f08). Class: **A GATE FAIL READ WITHOUT THE RUN'S OWN PRE-LAUNCH DECLARATIONS**
+
+**What was claimed:** in PI item `D-NT-A1-ZGFAIL` and MODEL_REGISTRY §18, that the r8 route-command conditioning taking no gradient
+meant the navtrain fine-tune never trained route conditioning, i.e. a design finding.
+
+**What is true (MEASURED, `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-nt-a1-zerograd/`):** the launch gate's `refcv8-nt` profile
+admitted that group dead before launch under `--r8-no-rc` -- the PI's Q-A ruling (no route checkpoint) -- and the 12 map-only groups
+under `--map-min-coverage 0.0`; together 20 / 21 offenders. The FAIL came from the supervisor's empty `ZEROGRAD_ALLOW`, never
+reconciled with that list.
+
+**Class / rule:** before reading a post-run gate FAIL, match its offenders against the run's own pre-launch declarations (the
+launch gate's `live_dead_admitted` for that profile and argv). An offender that was declared is a wiring gap between two
+instruments; only an undeclared one is a finding.
+

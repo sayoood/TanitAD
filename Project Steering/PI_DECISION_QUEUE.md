@@ -2635,13 +2635,17 @@ H-R9-INMODEL-1: implemented behind default-OFF flags, bit-identical with them of
 
 ## ⏳ OPEN (2026-10-26 ~20:22 Berlin) -- D-NT-A1-ZGFAIL: NT A1 trained to completion but FAILED its binding zero-gradient gate; what is it?
 
-MODEL_REGISTRY §18 (status block). 21 / 822 parameters got no gradient in the navtrain fine-tune: the r8 route-command conditioning
-(`r8_rc_gate`, `r8_rc_to_cond`; never a gradient) and the map-hires refine / near / near_refine modules (gradient always zero). The
-allow-list was empty before launch, so the gate's FAIL is final by protocol and no done-marker exists.
-* **(a) Accept as a fine-tune artefact (MM-recommended to INVESTIGATE first, not to accept blind):** the map branch is unsupervised on
-  navtrain by design; but the rc conditioning path getting NO gradient means the navtrain fine-tune never trained route conditioning --
-  that is a finding about NT A1's design, not noise. MM proposes a 0-GPU check of whether navtrain batches feed the rc input at all,
-  before any NT A1 eval.
-* **(b) Treat NT A1 as failed** and re-plan the navtrain arm with route conditioning live and an explicit pre-launch allow-list.
-Nothing here blocks refcv9 PhysicalAI work; NT A1 has no eval read yet (any NavSim read needs your go).
+MODEL_REGISTRY §18 (status block). **CORRECTED 20:28 (MEASURED, `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-nt-a1-zerograd/`):** 20 of the 21 untrained parameters (106,952 of
+106,953 values) are in groups NT A1's own launch gate admitted dead BEFORE launch -- the route-checkpoint projection under
+`--r8-no-rc` (your Q-A ruling of 2026-10-11) and the 12 map-only groups under `--map-min-coverage 0.0` (K4: navtrain has no map GT).
+The 21st, `r8_rc_gate` (1 scalar), is behind the same `rc is not None` guard in code. The FAIL happened because the supervisor's
+allow-list was never filled from the launch gate's list. Two instruments with two lists that nobody reconciled; the training is not
+defective. ~~(a)'s claim that the rc path getting no gradient is a finding about NT A1's design~~ is RETRACTED: it is your ruling.
+* **(a) Re-gate (MM-recommended):** set `ZEROGRAD_ALLOW` to exactly the launch gate's pre-registered groups for this argv, plus
+  `r8_rc_gate` disclosed as the single addition (source-proven, not pre-listed); remove `ZEROGRAD_FAIL.json` deliberately, as
+  `sup_refcv7.sh:73-76` documents for a frozen-by-design parameter. CPU only; nothing on the planner changes.
+* **(b) Keep the FAIL final** and count NT A1 as not completed.
+Either way the durable fix is a kit change (derive the supervisor allow-list from the profile's admitted list at launch; name
+`r8_rc_gate` in refcv8's list) -- a gate edit, so it waits for your go. The map-only fine-tune is not exposed (its kit refuses
+`fire` without a zero-gradient rehearsal PASS). NT A1 has no eval read yet (any NavSim read needs your go).
 
