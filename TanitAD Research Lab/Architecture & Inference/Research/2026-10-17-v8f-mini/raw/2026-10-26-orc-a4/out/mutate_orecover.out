@@ -1,0 +1,89 @@
+23 mutants over 2 files, each anchor found exactly once
+baseline [all_at_rest]: 0 1 passed, 81 deselected in 6.67s
+baseline [config_mismatch]: 0 1 passed, 81 deselected, 1 warning in 12.56s
+baseline [does_not_hide]: 0 1 passed, 81 deselected in 7.43s
+baseline [draw_is_a_function]: 0 1 passed, 81 deselected in 6.44s
+baseline [every_new_flag_has]: 0 1 passed, 81 deselected in 7.66s
+baseline [exempts_exactly]: 0 1 passed, 81 deselected in 14.36s
+baseline [g_dvb_passes_what_was_built_and_refuses or launch_probe_passes]: 0 7 passed, 75 deselected in 9.13s
+baseline [g_dvb_passes_what_was_built_and_refuses or no_perturber_built or refused_declaration or illegal_or_empty]: 0 26 passed, 56 deselected in 9.10s
+baseline [g_dvb_reads_warmup or real_run_builds_the_declared_warmup]: 0 2 passed, 80 deselected, 1 warning in 9.13s
+baseline [init_ckpt_starts]: 0 1 passed, 81 deselected, 1 warning in 13.64s
+baseline [log_interval]: 0 1 passed, 81 deselected, 1 warning in 20.82s
+baseline [nav_progress_is_rebuilt or nav_rebuild_on_the_unmodified]: 0 2 passed, 80 deselected in 6.04s
+baseline [p1_changes_every or rebuild_equals]: 0 4 passed, 78 deselected in 5.75s
+baseline [perturbed_input_reaches or launch_probe_passes]: 0 3 passed, 79 deselected in 13.19s
+baseline [planned_finetune_argv]: 0 2 passed, 80 deselected, 1 warning in 16.88s
+baseline [real_run_applies]: 0 1 passed, 81 deselected, 1 warning in 10.15s
+baseline [vmax_is_strict]: 0 1 passed, 81 deselected in 3.48s
+RED      [v8f_mini_data.py] the line that applies the perturbation is deleted (data module): `out` is `batch`
+      [p1_changes_every or rebuild_equals] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_p1_changes_every_ego_input_below_vmax_and_none_above_and_the_targets_are_byte_identical[0.0] | 1 failed, 78 deselected in 4.61s
+      [perturbed_input_reaches or launch_probe_passes] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_the_perturbed_input_reaches_the_loss_gradient_and_p0_reads_exactly_zero[off] | 1 failed, 79 deselected in 4.78s
+      [real_run_applies] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_a_real_run_applies_the_perturbation_to_the_batch_the_loss_receives_and_the_counts_are_the_controls | 1 failed, 81 deselected, 1 warning in 7.07s
+RED      [v8f_mini_train.py] the loop does not apply the perturbation to the batch the loss receives
+      [real_run_applies] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_a_real_run_applies_the_perturbation_to_the_batch_the_loss_receives_and_the_counts_are_the_controls | 1 failed, 81 deselected in 7.74s
+RED      [v8f_mini_train.py] make_ego_perturb drops --ego-perturb-adrop (the built law is not the declared one)
+      [g_dvb_passes_what_was_built_and_refuses or launch_probe_passes] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_g_dvb_passes_what_was_built_and_refuses_a_mismatch_for_each_flag[ego_perturb_adrop] | 1 failed, 4 passed, 75 deselected in 7.58s
+RED      [v8f_mini_train.py] declared_vs_built does not read the ego perturber back
+      [g_dvb_passes_what_was_built_and_refuses or no_perturber_built or refused_declaration or illegal_or_empty] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_g_dvb_passes_what_was_built_and_refuses_a_mismatch_for_each_flag[ego_perturb_p] | 1 failed, 56 deselected in 3.43s
+RED      [v8f_mini_train.py] the flag has no declared-vs-built entry
+      [every_new_flag_has] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_every_new_flag_has_a_declared_vs_built_entry_and_the_defaults_are_off | 1 failed, 81 deselected in 2.19s
+RED      [v8f_mini_train.py] the probe is faked (never exercises the perturbed batch)
+      [real_run_applies] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_a_real_run_applies_the_perturbation_to_the_batch_the_loss_receives_and_the_counts_are_the_controls | 1 failed, 81 deselected, 1 warning in 7.51s
+RED      [v8f_mini_data.py] eligibility is v0 <= vmax (not strictly below)
+      [vmax_is_strict] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_vmax_is_strict_and_a_row_exactly_at_it_is_not_eligible | 1 failed, 81 deselected in 2.74s
+RED      [v8f_mini_data.py] the acceleration drop is not applied (a - 0)
+      [p1_changes_every or rebuild_equals] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_the_rebuild_equals_an_independent_recomputation[0.0] | 1 failed, 2 passed, 78 deselected in 3.27s
+RED      [v8f_mini_data.py] the base is not rebuilt
+      [p1_changes_every or rebuild_equals] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_p1_changes_every_ego_input_below_vmax_and_none_above_and_the_targets_are_byte_identical[0.0] | 1 failed, 78 deselected in 3.17s
+      [perturbed_input_reaches or launch_probe_passes] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_the_perturbed_input_reaches_the_loss_gradient_and_p0_reads_exactly_zero[off] | 1 failed, 79 deselected in 3.95s
+RED      [v8f_mini_data.py] the odometry is not rebuilt (pose_t stays true)
+      [p1_changes_every or rebuild_equals] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_the_rebuild_equals_an_independent_recomputation[0.0] | 1 failed, 2 passed, 78 deselected in 3.07s
+RED      [v8f_mini_data.py] the draws use the global RNG (a resumed run would draw something else)
+      [draw_is_a_function] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_a_draw_is_a_function_of_seed_and_step_only_and_never_touches_the_global_rng | 1 failed, 81 deselected in 3.31s
+RED      [v8f_mini_train.py] the perturbed count is not accumulated
+      [real_run_applies] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_a_real_run_applies_the_perturbation_to_the_batch_the_loss_receives_and_the_counts_are_the_controls | 1 failed, 81 deselected, 1 warning in 10.73s
+      [log_interval] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_the_log_interval_counts_add_up_to_the_totals | 1 failed, 81 deselected, 1 warning in 7.51s
+RED      [v8f_mini_train.py] the summary reports the eligible count as the perturbed one
+      [real_run_applies] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_a_real_run_applies_the_perturbation_to_the_batch_the_loss_receives_and_the_counts_are_the_controls | 1 failed, 81 deselected, 1 warning in 8.76s
+RED      [v8f_mini_data.py] the nav rebuild is dropped: nav[:, 3] keeps the TRUE travelled distance
+      [nav_progress_is_rebuilt or nav_rebuild_on_the_unmodified] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_nav_progress_is_rebuilt_on_exactly_the_frames_sharing_nows_token_and_validity | 1 failed, 80 deselected in 2.80s
+      [real_run_applies] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_a_real_run_applies_the_perturbation_to_the_batch_the_loss_receives_and_the_counts_are_the_controls | 1 failed, 81 deselected, 1 warning in 9.32s
+RED      [v8f_mini_data.py] nav is rebuilt across a manoeuvre boundary / validity change too (the token test is dropped)
+      [nav_progress_is_rebuilt or nav_rebuild_on_the_unmodified] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_nav_progress_is_rebuilt_on_exactly_the_frames_sharing_nows_token_and_validity | 1 failed, 80 deselected in 2.64s
+RED      [v8f_mini_train.py] the nav_kept count is not accumulated
+      [real_run_applies] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_a_real_run_applies_the_perturbation_to_the_batch_the_loss_receives_and_the_counts_are_the_controls | 1 failed, 81 deselected, 1 warning in 9.26s
+RED      [v8f_mini_train.py] the schedule is built with the warmup ignored
+      [g_dvb_reads_warmup or real_run_builds_the_declared_warmup] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_a_real_run_builds_the_declared_warmup_and_a_dropped_one_is_refused | 1 failed, 1 passed, 80 deselected in 4.08s
+      [planned_finetune_argv] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_the_planned_finetune_argv_is_accepted_and_every_lever_in_it_is_read_back[0.3] | 1 failed, 80 deselected in 3.58s
+RED      [v8f_mini_train.py] declared_vs_built does not read the schedule back
+      [g_dvb_reads_warmup or real_run_builds_the_declared_warmup] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_g_dvb_reads_warmup_back_from_the_built_schedule_and_refuses_a_lie | 1 failed, 80 deselected in 3.83s
+RED      [v8f_mini_train.py] the load line is dropped: the run starts from scratch (f)
+      [init_ckpt_starts] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_init_ckpt_starts_the_run_at_the_checkpoints_weights_with_an_empty_optimiser_at_step_0 | 1 failed, 81 deselected, 1 warning in 6.44s
+RED      [v8f_mini_train.py] the config clause is dropped: a config the strict load cannot see is accepted (g)
+      [config_mismatch] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_init_ckpt_is_refused_on_a_config_mismatch_that_a_strict_load_alone_would_accept | 1 failed, 81 deselected, 1 warning in 7.94s
+RED      [v8f_mini_train.py] the at-rest exemption is dropped: a correct rebuild on a row at rest is refused
+      [exempts_exactly] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_the_launch_probe_exempts_exactly_the_selected_rows_at_rest | 1 failed, 81 deselected in 4.93s
+RED      [v8f_mini_train.py] the at-rest exemption ignores the speed and the base: any decelerating row is exempt
+      [does_not_hide] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_the_at_rest_exemption_does_not_hide_a_moving_row_whose_base_is_not_rebuilt | 1 failed, 81 deselected in 7.85s
+RED      [v8f_mini_train.py] a batch whose selected rows are all at rest is accepted
+      [all_at_rest] rc=1: FAILED stack\tests\test_v8f_ego_perturb.py::test_the_launch_probe_refuses_a_batch_whose_selected_rows_are_all_at_rest | 1 failed, 81 deselected in 6.44s
+restored [all_at_rest]: 0 1 passed, 81 deselected in 3.22s
+restored [config_mismatch]: 0 1 passed, 81 deselected, 1 warning in 8.94s
+restored [does_not_hide]: 0 1 passed, 81 deselected in 3.36s
+restored [draw_is_a_function]: 0 1 passed, 81 deselected in 2.80s
+restored [every_new_flag_has]: 0 1 passed, 81 deselected in 2.15s
+restored [exempts_exactly]: 0 1 passed, 81 deselected in 6.10s
+restored [g_dvb_passes_what_was_built_and_refuses or launch_probe_passes]: 0 7 passed, 75 deselected in 5.83s
+restored [g_dvb_passes_what_was_built_and_refuses or no_perturber_built or refused_declaration or illegal_or_empty]: 0 26 passed, 56 deselected in 6.41s
+restored [g_dvb_reads_warmup or real_run_builds_the_declared_warmup]: 0 2 passed, 80 deselected, 1 warning in 6.01s
+restored [init_ckpt_starts]: 0 1 passed, 81 deselected, 1 warning in 11.13s
+restored [log_interval]: 0 1 passed, 81 deselected, 1 warning in 7.36s
+restored [nav_progress_is_rebuilt or nav_rebuild_on_the_unmodified]: 0 2 passed, 80 deselected in 2.67s
+restored [p1_changes_every or rebuild_equals]: 0 4 passed, 78 deselected in 3.11s
+restored [perturbed_input_reaches or launch_probe_passes]: 0 3 passed, 79 deselected in 8.05s
+restored [planned_finetune_argv]: 0 2 passed, 80 deselected, 1 warning in 11.00s
+restored [real_run_applies]: 0 1 passed, 81 deselected, 1 warning in 8.93s
+restored [vmax_is_strict]: 0 1 passed, 81 deselected in 2.66s
+byte-identical: True
+23/23 RED

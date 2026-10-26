@@ -37,8 +37,9 @@ The reader's separate K4 comparator key lands with the T1 chain, before any ORC 
 ## 5. Evidence (CPU; a fresh archive of 7f06ff00 that no other job read or mutated)
 * `out/pytest_ego_perturb.out`, `out/pytest_orc_chain_oacc.out`, `out/mutate_mixo_check.out` (the MIXO kill version's 162 anchors against
   the edited trainer), and the full O-RECOVER proof
-  (`out/mutate_orecover.out`). The proof and the two re-run mutate_oacc anchors were still running at landing (box 2 was idle), so they are
-  banked by a follow-up commit.
+  (`out/mutate_orecover.out`): **23/23 RED**, files restored byte-identical. It and the two re-run mutate_oacc anchors (`out/mutate_oacc_193_194.out`: **2/2 RED**, restored byte-identical;
+  `out/mutate_oacc_check_respelled.out`: 309 anchors, each found once) were still running at landing (box 2 was idle), so they are banked by this follow-up commit.
 * **Provenance after `R77`.** The landed files were SNAPSHOTTED (`snap_SHA256.txt`) while only read-only tests ran, before any mutation
   run, and the hold is built from the snapshot. After the proof's byte-identical restore, the tree is compared with the snapshot
-  (`out/snapshot_vs_restored.out`).
+  (`out/snapshot_vs_restored.out`): all four snapshot files match, and the queue (not snapshotted, not edited) equals 7f06ff00's.
+  `out/v8f_mini_train.py.vs7f06ff00.diff` is the restored tree's trainer against 7f06ff00, identical to the snapshot's diff.
