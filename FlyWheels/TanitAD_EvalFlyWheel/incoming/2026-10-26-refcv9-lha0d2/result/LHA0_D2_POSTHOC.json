@@ -1,0 +1,104 @@
+{
+ "status": "POST-HOC, NOT PRE-REGISTERED, NON-GATING (written after the sealed NO-GO was read); scores rebuilt through d2_khead's own functions and asserted equal to the sealed AUCs",
+ "eval139_strata_by_v0_ms": {
+  "v0 in [0,3)": {
+   "n": 217,
+   "n_decel": 29,
+   "auc_LH": 0.6594,
+   "auc_D2": 0.8179,
+   "auc_neg_a0": 0.8384,
+   "auc_fuse": 0.7812
+  },
+  "v0 in [3,8)": {
+   "n": 566,
+   "n_decel": 244,
+   "auc_LH": 0.7167,
+   "auc_D2": 0.6938,
+   "auc_neg_a0": 0.6991,
+   "auc_fuse": 0.7438
+  },
+  "v0 in [8,15)": {
+   "n": 1006,
+   "n_decel": 268,
+   "auc_LH": 0.7712,
+   "auc_D2": 0.7148,
+   "auc_neg_a0": 0.7161,
+   "auc_fuse": 0.8062
+  },
+  "v0 in [15,99)": {
+   "n": 706,
+   "n_decel": 98,
+   "auc_LH": 0.655,
+   "auc_D2": 0.7459,
+   "auc_neg_a0": 0.7054,
+   "auc_fuse": 0.7389
+  }
+ },
+ "spearman_D2_vs_LH_logit": {
+  "eval139": 0.3335,
+  "fresh_OOF": 0.3778
+ },
+ "fresh_OOF_fusion": {
+  "n": 5038,
+  "episodes": 280,
+  "auc": {
+   "LH_OOF": 0.6699,
+   "D2": 0.7614,
+   "fuse": 0.7569,
+   "neg_a0": 0.7699
+  },
+  "fuse_minus_LH_OOF": {
+   "point": 0.087,
+   "ci95": [
+    0.0598,
+    0.1162
+   ],
+   "boot_se": 0.0143
+  },
+  "fuse_minus_D2": {
+   "point": -0.0045,
+   "ci95": [
+    -0.0342,
+    0.0234
+   ],
+   "boot_se": 0.0146
+  },
+  "fuse_minus_neg_a0": {
+   "point": -0.013,
+   "ci95": [
+    -0.0532,
+    0.0263
+   ],
+   "boot_se": 0.0197
+  }
+ },
+ "eval139_reference_from_sealed_run": {
+  "fuse_minus_LH": {
+   "point": 0.045,
+   "ci95": [
+    0.0185,
+    0.0716
+   ],
+   "boot_se": 0.0137
+  },
+  "fuse_minus_D2": {
+   "point": 0.0398,
+   "ci95": [
+    0.0059,
+    0.0739
+   ],
+   "boot_se": 0.0173
+  }
+ },
+ "fresh_reference_from_LHA0_POSTHOC": {
+  "neg_a0_AUC": 0.7699,
+  "A_AUC": 0.6699,
+  "fuse_A+C3_minus_C3": {
+   "point": -0.0006,
+   "ci95": [
+    -0.038,
+    0.0341
+   ]
+  }
+ }
+}

@@ -1,0 +1,46 @@
+{
+ "accel_is_negative": true,
+ "b": -1.1518877479859284,
+ "complement_lon6_idx": [
+  0,
+  1,
+  5
+ ],
+ "d": 3,
+ "decel_set_lon6_idx": [
+  2,
+  3,
+  4
+ ],
+ "features": [
+  "a0",
+  "v0_over_10",
+  "psi_dot0"
+ ],
+ "fit_source": "fresh split only, 292 lead clips (lh_fit --lead-clips-only rows), no eval139 file read",
+ "head": "D2",
+ "lambda": 10.0,
+ "lambda_selection": "min mean OOF binary CE over the fit rows of the row set, LH's 5 folds, grid [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]",
+ "mu": [
+  0.00163542303325067,
+  1.18872356037006,
+  -0.00015372055050626103
+ ],
+ "n_fit_episodes": 290,
+ "n_fit_pos": 2109,
+ "n_fit_rows": 8178,
+ "n_iter": 8,
+ "objective": "sum CE + lambda/2 ||w||^2, intercept unpenalised (sklearn C = 1/lambda)",
+ "schema": "tanitad.refcv9_lha0d2.d2/1",
+ "score": "logit = ((x - mu) / sd) @ w + b,  x = [a0, v0/10, psi_dot0]  (a0 in m/s^2, psi_dot0 in rad/s, v0 in m/s)",
+ "sd": [
+  0.8330187606246624,
+  0.8662438219548438,
+  0.09807783056229004
+ ],
+ "w": [
+  -0.6700539946851863,
+  -0.1838352745925028,
+  -0.031043905799848736
+ ]
+}
