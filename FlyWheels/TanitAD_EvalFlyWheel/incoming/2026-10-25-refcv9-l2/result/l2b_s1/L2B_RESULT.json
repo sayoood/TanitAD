@@ -1,0 +1,275 @@
+{
+ "tool": "l2b_score.py",
+ "seed": 1,
+ "prereg_sha256": "089d7ab67a9c9f9600d84399e30d8a49e2e48f710bea7dc9e941e4e41382a7a0",
+ "prereg_seal_ok": true,
+ "trace": "F:/refcv9_l2_locus/locus_s1.npz",
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames (not driving performance)",
+ "estimator": "episode-cluster bootstrap (pair_read_r8.paired_cell -> taniteval.ci), B 2000, seed 0, over EPISODES: 'another draw of episodes' only; NOT another training run, NOT another inference run (seed 1 = replicate, never pooled)",
+ "controls": {
+  "K_G_fields": {
+   "n_windows": 4754,
+   "present_counts": {
+    "fan": 4754,
+    "sel_score": 4754,
+    "sel_score_v3": 4754,
+    "reach_keep": 4754,
+    "ceil_keep": 4754,
+    "emit_keep": 4754,
+    "kind": 4754,
+    "lon6": 4754,
+    "lat3": 4754,
+    "cons_raw": 4754,
+    "hyp_alloc": 4754,
+    "prior_path": 4754,
+    "bank": 4754
+   },
+   "fan_n_seen": [
+    149
+   ],
+   "batch_gt1": 0,
+   "pass": true
+  },
+  "K_B_emitted_equals_fan_at_sel_idx": {
+   "max_abs": 0.0,
+   "pass": true
+  },
+  "K_C_sel_idx_is_argmax_over_e9_eligible": {
+   "share": 1.0,
+   "pass": true,
+   "emitted_eligible_share": 1.0,
+   "mask_present": {
+    "reach_keep": true,
+    "ceil_keep": true,
+    "emit_keep": true
+   }
+  },
+  "K_A_reroll_equals_L1_BASEos": {
+   "n_compared": 4754,
+   "n_bit_equal": 4754,
+   "max_abs": 0.0,
+   "pass": true
+  },
+  "K_D_prior_path_equals_banked_prior8": {
+   "max_abs": 1.52587890625e-05,
+   "pass": true
+  },
+  "K_H_ade_definition_matches_battery": {
+   "max_abs": 1.8709462032973079e-06,
+   "pass": true
+  },
+  "K_F_set_sizes": {
+   "FB": 255,
+   "CT": 255,
+   "DR": 338,
+   "MB": 301,
+   "GT_cruise_compliant": 1856,
+   "FB_literal_s0": null,
+   "pass": true
+  },
+  "K_I_CT_identity": {
+   "emitted_is_cruise_share": 1.0,
+   "pass": true,
+   "balance": {
+    "v0_mean_FB": 14.833795670902028,
+    "v0_mean_CT": 14.826618395599665,
+    "nav_share_FB": [
+     0.9372549019607843,
+     0.00784313725490196,
+     0.054901960784313725
+    ],
+    "nav_share_CT": [
+     0.9372549019607843,
+     0.00784313725490196,
+     0.054901960784313725
+    ]
+   }
+  },
+  "K_J_emitted_candidate_class_matches": {
+   "share": 1.0,
+   "pass": true
+  },
+  "K_J_gap_nonnegative_when_emitted_is_argmax": {
+   "min_gap_all_sets": 0.0,
+   "pass": true
+  }
+ },
+ "controls_hard_pass": true,
+ "readings": {
+  "tau_good_cruise_m": 2.7813939051288927,
+  "tau_rule": "q90 of the CT windows' emitted staged ADE_6s",
+  "FB": {
+   "n": 255,
+   "EXIST": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n_windows": 255,
+    "n_episodes": 55
+   },
+   "GOOD": {
+    "mean": 0.9843,
+    "lo": 0.9657,
+    "hi": 0.9967,
+    "n_windows": 255,
+    "n_episodes": 55
+   },
+   "BASE_PICK_is_target": {
+    "mean": 0.1373,
+    "lo": 0.0913,
+    "hi": 0.1891,
+    "n_windows": 255,
+    "n_episodes": 55
+   },
+   "n_target_cands_median": 38.0,
+   "score_gap_emitted_minus_best_target(sel_score_v3)": {
+    "q10_50_90": [
+     0.07568359375000001,
+     0.6222639083862305,
+     1.411807918548584
+    ],
+    "n": 255
+   }
+  },
+  "CT": {
+   "n": 255,
+   "EXIST": {
+    "mean": 1.0,
+    "lo": 1.0,
+    "hi": 1.0,
+    "n_windows": 255,
+    "n_episodes": 85
+   },
+   "GOOD": {
+    "mean": 0.9765,
+    "lo": 0.9549,
+    "hi": 0.9926,
+    "n_windows": 255,
+    "n_episodes": 85
+   },
+   "BASE_PICK_is_target": {
+    "mean": 0.9647,
+    "lo": 0.9331,
+    "hi": 0.9912,
+    "n_windows": 255,
+    "n_episodes": 85
+   },
+   "n_target_cands_median": 47.0,
+   "score_gap_emitted_minus_best_target(sel_score_v3)": {
+    "q10_50_90": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "n": 255
+   }
+  },
+  "DR": {
+   "n": 338,
+   "EXIST": {
+    "mean": 0.997,
+    "lo": 0.9904,
+    "hi": 1.0,
+    "n_windows": 338,
+    "n_episodes": 64
+   },
+   "GOOD": {
+    "mean": 0.4172,
+    "lo": 0.3323,
+    "hi": 0.5128,
+    "n_windows": 338,
+    "n_episodes": 64
+   },
+   "BASE_PICK_is_target": {
+    "mean": 0.0207,
+    "lo": 0.0079,
+    "hi": 0.0363,
+    "n_windows": 338,
+    "n_episodes": 64
+   },
+   "n_target_cands_median": 28.0,
+   "score_gap_emitted_minus_best_target(sel_score_v3)": {
+    "q10_50_90": [
+     0.2305316925048828,
+     1.3399488925933838,
+     3.9704283714294437
+    ],
+    "n": 337
+   }
+  },
+  "MB": {
+   "n": 301,
+   "EXIST": {
+    "mean": 0.9967,
+    "lo": 0.989,
+    "hi": 1.0,
+    "n_windows": 301,
+    "n_episodes": 63
+   },
+   "GOOD": {
+    "mean": 0.9701,
+    "lo": 0.9396,
+    "hi": 0.994,
+    "n_windows": 301,
+    "n_episodes": 63
+   },
+   "BASE_PICK_is_target": {
+    "mean": 0.0698,
+    "lo": 0.0383,
+    "hi": 0.1066,
+    "n_windows": 301,
+    "n_episodes": 63
+   },
+   "n_target_cands_median": 74.0,
+   "score_gap_emitted_minus_best_target(sel_score_v3)": {
+    "q10_50_90": [
+     0.17438557744026184,
+     0.9321632385253906,
+     2.719635152816773
+    ],
+    "n": 300
+   }
+  }
+ },
+ "R1_label": "SELECTION",
+ "R2_label": "SELECTION",
+ "guard_existence_saturated": true,
+ "label": "SELECTION",
+ "label_basis": "R2 (GOOD-cruise existence; the class-level existence is saturated in FB and DR)",
+ "FD": {
+  "now": 0.13739224137931033,
+  "floor_if_every_SELECTION_window_fixed(class existence)": 0.0,
+  "floor_if_every_SELECTION_window_fixed(GOOD existence)": 0.0021551724137931034,
+  "n_GT_cruise_compliant": 1856
+ },
+ "headroom_descriptive": {
+  "ADE6_best_cruise_cand_minus_emitted": {
+   "mean": -1.6809,
+   "lo": -2.0781,
+   "hi": -1.2779,
+   "n_windows": 255,
+   "n_episodes": 55
+  },
+  "ADE6_gt_oracle_cand_minus_emitted": {
+   "mean": -2.8766,
+   "lo": -3.3194,
+   "hi": -2.4235,
+   "n_windows": 255,
+   "n_episodes": 55
+  },
+  "ADE6_emitted_FB_mean": 3.5240951130104134,
+  "ADE6_emitted_CT_mean": 1.5324995372884997
+ },
+ "base_pick": {
+  "FB_base_pick_class_shares(decel,cruise,accel)": [
+   0.8627450980392157,
+   0.13725490196078433,
+   0.0
+  ]
+ },
+ "scope": {
+  "windows": "S6 compliant",
+  "uncomputed": "distance-keeping (no lead track) and STRATEGIC (--no-strategic): n = 0"
+ },
+ "wall_s": 9.3
+}
