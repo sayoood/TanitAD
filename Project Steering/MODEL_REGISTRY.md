@@ -5996,6 +5996,15 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | vs RETIME_DEPLOY8 | FD separated below in all 6 cells; MD separated WORSE at FS1 (+0.0751), n.s. at FS0 / FS2. |
 | status | A4's PASS replicates across stage fits; quote §16.15's E3 with this floor beside it. |
 
+### 16.20 refcv8-r101-s0 -- HSGATE8, a per-window gate between the H2cn and the self-sharpened progress: FAIL (G2), MD gain attributed *(addendum to §16.15 / §16.17)*
+
+| | |
+|---|---|
+| what | logistic gate (15 inference-available features, lambda 0.1 by CV) emitting FACTORED_DEPLOY8's positions where it fires, H2CN_DEPLOY8's elsewhere; fitted on the L1C FRESH split (7,147 S6 rows, out-of-fold H2cn); frozen 198ef658 and registered 07:44:29 before any eval output; prereg PREREG_HSGATE 2331e1f3. |
+| bars (T1 open loop, eval139 S6 compliant, paired vs H2CN_DEPLOY8; inference seeds 0 / 1) | MD -0.0501 [-0.0845, -0.0224] / -0.0454 [-0.0767, -0.0186] separated below (G1 PASS); FD +0.0135 [+0.0047, +0.0243] / +0.0124 [+0.0037, +0.0234] separated above (**G2 FAIL**); G4 vs a rate-matched blind mix: MD -0.0375 / -0.0328 separated, FD n.s. (PASS: selection, not rate); G3 SHIP-R8 OVERALL PASS. MEASURED `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-refcv9-hsgate/result/HSGATE_VERDICT.json`. |
+| beside | F-rate 0.0877 / 0.0883 (S6 compliant); E1 -0.0444 / -0.0439, E3 -1.1932 / -1.1924 (vs ha0_ext_pose); S6 compliance exceedance 0.0169 (= H2CN_DEPLOY8; RETIME 0.0049, FACTORED 0.0040). |
+| status | NOT a shipped-stage candidate. Successor arm MDFIX8 sealed (PREREG_HSGATE_MDFIX 545ff217): relabelled gate, FD-capped threshold, power rule, G1 at 97.5 % for the second look. |
+
 ## 18. nt-a1-s0 — NT A1, the navtrain decision arm (PREREG_NT_DECIDE) [NAVSIM navtrain · ONE SEED · TRAINING]
 
 ### nt-a1-s0 — ▶ TRAINING since 2026-10-25 11:02 Berlin (CET, 10:02Z), on Thor, launched by the launch gate's PASS token

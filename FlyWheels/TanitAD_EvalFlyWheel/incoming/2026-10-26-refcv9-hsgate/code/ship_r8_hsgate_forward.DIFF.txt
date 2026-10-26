@@ -1,0 +1,360 @@
+--- ship_r8_sub/ship_r8_4c_forward.py
++++ ship_r8_hsgate_forward.py
+@@ -1,4 +1,11 @@
+-"""ship_r8_4c_forward.py -- SHIP-R8 AMENDMENT 4c: a COPY of ship_r8_sub_forward.py (left untouched: it is pinned by MANIFEST_4B) with ONE switch added,
++"""ship_r8_hsgate_forward.py -- PREREG_HSGATE (2331e1f3...) PHASE 2: a COPY of ship_r8_sub/ship_r8_4c_forward.py (left untouched; built by
++make_hsgate_forward.py, diff ship_r8_hsgate_forward.DIFF.txt) with ONE switch added, --hsgate (mode h2cn): FACTORED_DEPLOY8 (Amendment 5, the factored
++branch's code verbatim) is built on the SAME rows beside H2CN_DEPLOY8; the REGISTERED gate (HSGATE_FROZEN.json, sha256 == REGISTERED_HSGATE.sha256, checked
++BEFORE the first eval-side output) picks per window -> HSGATE8; identity arms HSGATE8_G0 (g := 0) / HSGATE8_G1 (g := 1); controls K_REG_HSGATE,
++K_FIT_HSGATE, K_ID0, K_ID1, K_EVALFEAT, K_LANDED (H2CN / FACTORED positions bit-equal the LANDED packages), K_GATE_SURF, K_TRACE, K_FEED.  --hsgate refuses
++any --out-root outside C:/Users/Admin/refcv8_pf/refcv9_hsgate and F:/refcv9_hsgate_scratch.
++
++ship_r8_4c_forward.py -- SHIP-R8 AMENDMENT 4c: a COPY of ship_r8_sub_forward.py (left untouched: it is pinned by MANIFEST_4B) with ONE switch added,
+ --h2cnl (mode h2cn): two more arms built from the SAME forward, H2CNL_DEPLOY8 (the registered H2cn-L stage, H2CNL_STAGE_FROZEN.pt) and H2CNL_MUT8 (the
+ registered mutation stage, H2CNL_MUT_STAGE.pt, fed the TRUE eval logits), plus K_REG_H2CNL / K_REG_H2CNL_MUT / K_FREEZE_H2CNL / K_JOIN_EVAL.  Every 4c
+ addition is NAMED (arms HL/HM, per_window_extra[*].h2cnl, the four controls) so the H2CN_DEPLOY8 reproduction can drop exactly them.  Diff:
+@@ -43,13 +50,19 @@
+ from pathlib import Path
+ 
+ HERE = Path(__file__).resolve().parent
++SUBDIR = Path("C:/Users/Admin/refcv8_pf/ship_r8_sub")                # READ-ONLY: the copied device's helpers are imported from there
++sys.path.insert(0, str(SUBDIR))
+ sys.path.insert(0, str(HERE))
+ import ship_r8_sub_common as C  # noqa: E402
++import hsgate_common as HG  # noqa: E402
+ 
+ import numpy as np  # noqa: E402
+ 
+ SCRIPT_SHA = C.sha256_file(__file__)            # hashed at IMPORT: the code that actually ran
+-COMMON_SHA = C.sha256_file(HERE / "ship_r8_sub_common.py")
++COMMON_SHA = C.sha256_file(SUBDIR / "ship_r8_sub_common.py")
++HSG_COMMON_SHA = C.sha256_file(HERE / "hsgate_common.py")
++REG_HSG = HG.WORK / "REGISTERED_HSGATE.sha256"                     # written by the Master Mind, NEVER here
++HSG_FROZEN, HSG_FIT_INFO = HG.WORK / "HSGATE_FROZEN.json", HG.WORK / "HSGATE_FIT_INFO.json"
+ PFPKG = C.PF_HOLD / "pfpkg"
+ REG_PF = Path("C:/Users/Admin/qland/hold_r8pf/REGISTERED_PF_TABLE.sha256")
+ REG_STAGE_DEFAULT = C.WORK / "REGISTERED_H2CN_STAGE.sha256"
+@@ -68,10 +81,15 @@
+ SURFS = ("S2", "S6")
+ SETS = ("compliant", "all")
+ EIGHT = {"H8": "H2CN_DEPLOY8", "HN": "H2CN_NEAR", "D8": "RETIME_DEPLOY8", "G1": "CONST_G1", "OS": "OSONLY_DEPLOY8", "FS": "FACTORED_SSOS_DEPLOY8", "FX": "FACTORED_DEPLOY8",
+-         "HC": "H2CN_CAP8", "HL": "H2CNL_DEPLOY8", "HM": "H2CNL_MUT8"}
++         "HC": "H2CN_CAP8", "HL": "H2CNL_DEPLOY8", "HM": "H2CNL_MUT8", "HS": "HSGATE8", "Z0": "HSGATE8_G0", "Z1": "HSGATE8_G1"}
+ PERSURF = {"HP": "H2CN_PERSURFACE"}
+ SCORED = {"h2cn": "H2CN_DEPLOY8", "factored": "FACTORED_DEPLOY8"}
+ CAP_MARGIN = 1e-6                                # Amendment 4b s1: the (1 - 1e-6) on every interval's advance
++
++
++def bit_eq(a, b) -> bool:
++    a, b = np.asarray(a), np.asarray(b)
++    return bool(a.dtype == b.dtype and a.shape == b.shape and a.tobytes() == b.tobytes())
+ 
+ 
+ def pf_lane():
+@@ -239,13 +257,15 @@
+ 
+ 
+ def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None, out_root: Path, reg_stage_file: Path, cap8: bool = False,
+-            h2cnl: bool = False, work_root: Path | None = None) -> int:
++            h2cnl: bool = False, work_root: Path | None = None, hsgate: bool = False) -> int:
+     t_start = time.time()
+     seals = C.check_amendment_seals()
+     if cap8:
+         seals = {**seals, "4b": C.check_amendment_4b_seal()}              # AMENDMENT 4b: refuses unless the sealed text is the file (only when --cap8)
+     if h2cnl:
+         seals = {**seals, "4c": HL.check_amendment_4c_seal()}              # AMENDMENT 4c: refuses unless the sealed text is the file (only when --h2cnl)
++    if hsgate:
++        seals = {**seals, "PREREG_HSGATE": HG.check_prereg()}              # PREREG_HSGATE: refuses unless the sealed text is the file
+     C.setup_paths()
+     PL = pf_lane()
+     reg_pf = PL.read_registered(REG_PF)
+@@ -258,7 +278,7 @@
+     AL, PH, PS = F.AL, F.PH, F.PS
+     if AL.RT is not RT:
+         raise SystemExit("[sub-fwd] two copies of a0k0_headroom_retime_r8 are loaded (the L1 helpers and the battery lane would disagree)")
+-    tag = f"{mode}" + ("_cap8" if cap8 else "") + ("_h2cnl" if h2cnl else "") + ("_scored" if scored else "") + (f"_MUTATION_{mutate}" if mutate else "")
++    tag = f"{mode}" + ("_cap8" if cap8 else "") + ("_h2cnl" if h2cnl else "") + ("_hsgate" if hsgate else "") + ("_scored" if scored else "") + (f"_MUTATION_{mutate}" if mutate else "")
+     work = (work_root or out_root) / ("mutation" if mutate else "work") / tag
+     work.mkdir(parents=True, exist_ok=True)
+     RT.OUT = work                                                         # RT.forward writes ONLY here (never into the registered package)
+@@ -327,8 +347,30 @@
+                 raise SystemExit("[sub-fwd] the H2CNL / H2CNL_MUT stage files carry the wrong mutation flag")
+             for s in seeds:
+                 exl[s] = load_eval_extras(tree, s)
++        hsg, landed = {}, {}
++        if hsgate:
++            # PREREG_HSGATE s1: the gate is frozen and its sha256 REGISTERED (REGISTERED_HSGATE.sha256, written by the MM) BEFORE any SCORE-side output
++            reg_g = C.read_seal(REG_HSG)
++            got_g = C.sha256_file(HSG_FROZEN) if HSG_FROZEN.exists() else ""
++            if len(reg_g) != 64 or len(got_g) != 64:
++                raise SystemExit(f"[hsgate-fwd] INCONCLUSIVE gate registration: registered '{reg_g}' file '{got_g}' -- refusing")
++            if reg_g != got_g:
++                raise SystemExit(f"[hsgate-fwd] the gate file hashes to {got_g}, the REGISTERED gate is {reg_g} -- refusing")
++            g_rec = {"arm": "HSGATE8", "registered_sha256": reg_g, "registration_file": str(REG_HSG), "registration_file_mtime_epoch": os.path.getmtime(REG_HSG),
++                     "gate_file": str(HSG_FROZEN), "gate_file_sha256": got_g, "gate_file_mtime_epoch": os.path.getmtime(HSG_FROZEN),
++                     "passed_epoch": time.time(), "passed_iso": time.strftime("%FT%T%z"),
++                     "rule": "PREREG_HSGATE s1: the gate is frozen and its sha256 registered by the Master Mind before any SCORE-side output; this record is written before the first one"}
++            (work / "REGISTRATION_GATE_HSGATE8.json").write_text(json.dumps(g_rec, indent=1), encoding="utf-8")
++            L2h, HLh = HG.load_l2_common()
++            hsg = {"gate": json.loads(HSG_FROZEN.read_text(encoding="utf-8")), "rec": g_rec, "L2": L2h, "HL": HLh}
++            for s in seeds:
++                fac[s] = load_factored_inputs(s, True)                          # Amendment 5's scored inputs (L1 os-only bank + SELFSHARP trace)
++                if s not in exl:
++                    exl[s] = load_eval_extras(tree, s)
++                landed[s] = {"H8": np.load(str(HG.LANDED_H8).format(seed=s), allow_pickle=False), "FX": np.load(str(HG.LANDED_FX).format(seed=s), allow_pickle=False),
++                             "files": {"H8": str(HG.LANDED_H8).format(seed=s), "FX": str(HG.LANDED_FX).format(seed=s)}}
+         arm_order = ["H2CN_DEPLOY8", "H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8", "RETIME_DEPLOY_PERSURFACE", "CONST_G1"] + (["H2CN_CAP8"] if cap8 else []) + \
+-                    (["H2CNL_DEPLOY8", "H2CNL_MUT8"] if h2cnl else [])
++                    (["H2CNL_DEPLOY8", "H2CNL_MUT8"] if h2cnl else []) + (["HSGATE8", "FACTORED_DEPLOY8", "HSGATE8_G0", "HSGATE8_G1"] if hsgate else [])
+     else:
+         for s in seeds:
+             fac[s] = load_factored_inputs(s, scored)
+@@ -336,11 +378,12 @@
+     # ---- the device (deploy8_forward_r8.forward's four hooks, arms replaced) ----------------------------------------------------------------------
+     cache, cur = {}, {"seed": None, "surf": None}
+     stash, kv, align, store, extra, compl = {}, {}, {}, {}, {}, {}
++    gate_keys = {}
+     orig_tl, orig_si, orig_ps = RT.tools_load, RT.surface_inputs, CR.prepare_seed
+     orig_apply, orig_diag, orig_fw = RT.retime_apply, RT.retime_diag, RT.frozen_weights
+     const1, const0 = {"knots_s": [0.5], "gains": [1.0]}, {"knots_s": [0.5], "gains": [0.0]}
+     KIND_OF = {"H2CN_DEPLOY8": "H8", "H2CN_NEAR": "HN", "RETIME_DEPLOY8": "D8", "CONST_G1": "G1", "OSONLY_DEPLOY8": "OS", "FACTORED_SSOS_DEPLOY8": "FS",
+-               "FACTORED_DEPLOY8": "FX", "H2CN_PERSURFACE": "HP", "H2CN_CAP8": "HC", "H2CNL_DEPLOY8": "HL", "H2CNL_MUT8": "HM"}
++               "FACTORED_DEPLOY8": "FX", "H2CN_PERSURFACE": "HP", "H2CN_CAP8": "HC", "H2CNL_DEPLOY8": "HL", "H2CNL_MUT8": "HM", "HSGATE8": "HS", "HSGATE8_G0": "Z0", "HSGATE8_G1": "Z1"}
+     classes = {k: type(f"_Rows{k}", (D8._Rows,), {"KIND": k}) for k in KIND_OF.values()}
+ 
+     def tools_load_once():
+@@ -472,6 +515,50 @@
+                     hl[f"n_windows_cast_positions_differ_from_H2CN_DEPLOY8_{EIGHT[kk]}"] = int((st[kk][0] != st["H8"][0]).any((1, 2)).sum())
+                     hl[f"mean_abs_progress_diff_vs_H2CN_DEPLOY8_m_{EIGHT[kk]}"] = float(np.abs(sL - s8).mean())
+                 ex["h2cnl"] = hl
++            if hsgate:
++                # PREREG_HSGATE s1: FACTORED_DEPLOY8 exactly as the factored branch builds it (Amendment 5), on the SAME rows as H2CN_DEPLOY8; HSGATE8 picks per window
++                b = fac[seed]
++                keys = list(zip(np.asarray(S["clip"], np.int64).tolist(), np.asarray(S["ws"], np.int64).tolist()))
++                jb = np.array([b["b1"]["idx"].get(k, -1) for k in keys])
++                jt = np.array([b["ts"]["idx"].get(k, -1) for k in keys])
++                if (jb < 0).any() or (jt < 0).any():
++                    raise SystemExit(f"[hsgate-fwd] {int((jb < 0).sum())} / {int((jt < 0).sum())} {surf} windows have no os-only bank / SELFSHARP trace entry")
++                P_os8 = np.ascontiguousarray(b["b1"]["plan8"][jb]).astype(np.float32)
++                P_ss8 = np.ascontiguousarray(b["ts"]["plan8"][jt]).astype(np.float32)
++                P_fx = compose(RT, P_os8, P_ss8)
++                st["in8"]["FX"] = P_fx
++                st["FX"] = (RS.retime_plan(P_fx, prior8, T8, table, cast=True), RS.retime_plan(P_fx, prior8, T8, table, cast=False))
++                sFX = RT.retime_progress(RT.polyline_geometry(P_fx)["L"][:, 1:], RT.prior_arc(prior8), g8)
++                e_ = exl[seed]
++                v0_ctx = ctx["v0"][rows]
++                rjh, jH = join_eval_extras(e_, S["clip"], S["ws"], v0_ctx, plan8, 0)
++                rjhm, _jhm = join_eval_extras(e_, S["clip"], S["ws"], v0_ctx, plan8, e_["stride"])
++                if not rjh["PASS"]:
++                    raise SystemExit(f"[hsgate-fwd] K-JOIN (eval extras) failed on {surf} seed {seed}: {rjh}")
++                Xg, parts = HG.features(hsg["L2"], hsg["HL"], AL, e_[HG.LOGIT_KEY][jH], e_[HG.V0_KEY][jH], st["FX"][0][:, HG.S6], st["H8"][0][:, HG.S6])
++                gw = np.asarray(HG.gate_decide(hsg["gate"], Xg), bool)
++                gm = gw[:, None, None]
++                st["HS"] = (np.where(gm, st["FX"][0], st["H8"][0]), np.where(gm, st["FX"][1], st["H8"][1]))
++                st["in8"]["HS"] = np.where(gm, P_fx, plan8)
++                st["s8"]["HS"] = np.where(gw[:, None], sFX, s8)
++                st["Z0"], st["Z1"] = st["H8"], st["FX"]                          # the identity arms: g := 0 / g := 1 through the SAME device
++                st["in8"]["Z1"] = P_fx
++                st["s8"]["Z0"] = s8
++                st["gate"] = gw
++                lk = {}
++                for kk in ("H8", "FX"):
++                    z_ = landed[seed][kk]
++                    lk[kk] = {"rows_aligned": bool(np.array_equal(z_[f"{surf}_clip"], np.asarray(S["clip"], np.int64)) and np.array_equal(z_[f"{surf}_ws"], np.asarray(S["ws"], np.int64))),
++                              "pos8_bit_equal": bit_eq(z_[f"{surf}_pos8"], st[kk][0]), "pos64_bit_equal": bit_eq(z_[f"{surf}_pos64"], st[kk][1][:, slots]),
++                              "plan8_bit_equal": bit_eq(z_[f"{surf}_plan8"], st["in8"].get(kk, plan8)), "prior8_bit_equal": bit_eq(z_[f"{surf}_prior8"], prior8)}
++                mh = np.asarray(S["mask"], bool)
++                ex["hsgate"] = {"join": rjh, "join_mutation_next_window": rjhm, "ws_stride": e_["stride"], "extras_file": e_["file"], "extras_file_sha256": e_["sha256"],
++                                "landed": lk, "n_windows": int(len(gw)), "n_compliant": int(mh.sum()), "n_F_all": int(gw.sum()), "n_F_compliant": int(gw[mh].sum()),
++                                "F_rate_all_windows": float(gw.mean()), "F_rate_compliant": (float(gw[mh].mean()) if mh.any() else None),
++                                "d_mean": float(parts["d"].mean()), "features_finite": bool(np.isfinite(Xg).all()),
++                                "windows_positions_differ_HSGATE8_vs_H2CN_DEPLOY8": int((st["HS"][0] != st["H8"][0]).any((1, 2)).sum()),
++                                "windows_positions_differ_HSGATE8_vs_FACTORED_DEPLOY8": int((st["HS"][0] != st["FX"][0]).any((1, 2)).sum())}
++                gate_keys[(seed, surf)] = (np.asarray(S["clip"], np.int64), np.asarray(S["ws"], np.int64), gw)
+             store_extra = {"X": X, "Z_rows": _j, "f2": f2, "f6": f6, "eid": np.asarray([str(e) for e in S["eid"]]), "mask": m, "G": S["X"]["G"], "O": O, "HP": HP, "dt": S["dt"]}
+             extra[(seed, surf)] = store_extra
+         else:
+@@ -504,7 +591,7 @@
+         lim_r, v0_r = cur["lim"][rows], ctx["v0"][rows]
+         eid_r, mk = np.asarray(S["eid"]), np.asarray(S["mask"], bool)
+         crow = {"panel_grid_horizons_ticks": hz, "full_plan_horizons_ticks": [int(h) for h in rc_["horizons"]], "arms": {}}
+-        for k_, nm_ in [("os", "os_model_plan")] + [(k2, EIGHT[k2]) for k2 in ("H8", "HN", "D8", "OS", "FS", "FX", "HC", "HL", "HM") if k2 in st]:
++        for k_, nm_ in [("os", "os_model_plan")] + [(k2, EIGHT[k2]) for k2 in ("H8", "HN", "D8", "OS", "FS", "FX", "HC", "HL", "HM", "HS") if k2 in st]:
+             full = plan8 if k_ == "os" else st[k_][0]
+             crow["arms"][nm_] = {"panel_grid": CR.compliance_sets(CR.pmax(V_cmp, full[:, slots], hz, rc_["tick_s"]), lim_r, v0_r, eid_r, {"all_windows": None, "compliant_set": mk}),
+                                  "full_plan_0_6s": CR.compliance_sets(CR.pmax(V_cmp, full, [int(h) for h in rc_["horizons"]], rc_["tick_s"]), lim_r, v0_r, eid_r,
+@@ -549,11 +636,14 @@
+             if k in ("D8", "G1"):
+                 g8 = st["g8"] if k == "D8" else np.ones(8)
+                 return D8.diag8(st["plan8"][rows], st["prior8"][rows], st[k][1][rows], st[k][0][rows], g8, st["plan8"].dtype)
+-            if k in ("OS", "FS", "FX"):
++            if k in ("OS", "FS", "FX", "Z1"):
+                 d = D8.diag8(st["in8"][k][rows], st["prior8"][rows], st[k][1][rows], st[k][0][rows], RS.gain_at(T8, table), st["plan8"].dtype)
+                 d["geometry_over"] = "the 8-slot stage call on the arm's own input plan (os-only / composed): positions vs that plan's 8-point polyline"
+                 return d
+-            if k in ("H8", "HN", "HC", "HL", "HM"):
++            if k == "HS":
++                return diag_progress(RT, st["in8"]["HS"][rows], st["HS"][1][rows], st["HS"][0][rows], st["s8"]["HS"][rows],
++                                     "HSGATE8: per window the chosen arm's positions against THAT arm's 8-point polyline (FACTORED: the composed plan; H2CN: the model plan)")
++            if k in ("H8", "HN", "HC", "HL", "HM", "Z0"):
+                 return diag_progress(RT, st["plan8"][rows], st[k][1][rows], st[k][0][rows], st["s8"][k][rows],
+                                      "the 8-slot H2cn call: positions at all 8 slots against the 8-point model-plan polyline (progress after max(s,0) + running max)"
+                                      + (" then clamped to the fed ceiling (Amendment 4b)" if k == "HC" else "")
+@@ -702,6 +792,75 @@
+             controls["K_JOIN_EVAL_detail"] = {k: {"join": v["join"], "mutation_next_window": v["join_mutation_next_window"], "x16_base_cols_bit_equal_X": v["x16_base_cols_bit_equal_X"]}
+                                               for k, v in hj.items()}
+             need += ["K_REG_H2CNL", "K_REG_H2CNL_MUT", "K_FREEZE_H2CNL", "K_JOIN_EVAL"]
++        if hsgate:
++            # PREREG_HSGATE s2.  In `need`: a failure WITHHOLDS (no FORWARD file, no verdict, no bars).
++            fe = reg_rec["first_eval_output_epoch"]
++            gr = hsg["rec"]
++            controls["K_REG_HSGATE"] = bool(len(gr["registered_sha256"]) == 64 and gr["registered_sha256"] == gr["gate_file_sha256"] == C.sha256_file(HSG_FROZEN)
++                                            and fe is not None and gr["passed_epoch"] < fe and gr["registration_file_mtime_epoch"] < fe)
++            controls["K_REG_HSGATE_detail"] = {**gr, "first_eval_output_epoch": fe, "first_eval_output_iso": time.strftime("%FT%T%z", time.localtime(fe or 0))}
++            fit = json.loads(HSG_FIT_INFO.read_text(encoding="utf-8")) if HSG_FIT_INFO.exists() else {}
++            fcs = fit.get("controls") or {}
++            controls["K_FIT_HSGATE"] = bool(fit.get("ALL_PASS") is True and fit.get("smoke_partial_trace") is False and fcs.get("K-RELOAD") is True
++                                            and (fit.get("gate_file") or {}).get("sha256") == gr["gate_file_sha256"])
++            controls["K_FIT_HSGATE_detail"] = {"fit_info": str(HSG_FIT_INFO), "fit_info_sha256": (C.sha256_file(HSG_FIT_INFO) if HSG_FIT_INFO.exists() else None),
++                                               "ALL_PASS": fit.get("ALL_PASS"), **{k_: (v_.get("PASS") if isinstance(v_, dict) else v_) for k_, v_ in fcs.items()
++                                                                                    if k_ in ("K-FRESH-SS", "K-JOIN", "K-OOF_PASS", "K-PATH", "K-PRIOR", "K-DETERM", "K-RELOAD")}}
++            mm0, mm1, n0, n1, pid = [], [], 0, 0, {}
++            for s in seeds:
++                for surf in SURFS:
++                    st_ = stash[(s, surf)]
++                    pid[f"{surf}|s{s}"] = {"G0_pos32": bit_eq(st_["Z0"][0], st_["H8"][0]), "G0_pos64": bit_eq(st_["Z0"][1], st_["H8"][1]),
++                                           "G1_pos32": bit_eq(st_["Z1"][0], st_["FX"][0]), "G1_pos64": bit_eq(st_["Z1"][1], st_["FX"][1])}
++                    for stn in SETS:
++                        A_ = res["seeds"][str(s)]["surfaces"][surf]["sets"][stn]["arms"]
++                        mm0 += [f"s{s}|{surf}|{stn}{m}" for m in D8.exact_equal(A_["HSGATE8_G0"], A_["H2CN_DEPLOY8"])]
++                        mm1 += [f"s{s}|{surf}|{stn}{m}" for m in D8.exact_equal(A_["HSGATE8_G1"], A_["FACTORED_DEPLOY8"])]
++                        n0 += D8.count_leaves(A_["HSGATE8_G0"])
++                        n1 += D8.count_leaves(A_["HSGATE8_G1"])
++            bars_id = {}
++            for stn in SETS:
++                for a_, b_ in (("HSGATE8_G0", "H2CN_DEPLOY8"), ("HSGATE8_G1", "FACTORED_DEPLOY8")):
++                    ka, kb = f"{stn}|{a_}", f"{stn}|{b_}"
++                    if ka in res.get("bars", {}) and kb in res.get("bars", {}):
++                        bars_id[ka] = not D8.exact_equal(res["bars"][ka], res["bars"][kb])
++            controls["K_ID0"] = bool(not mm0 and n0 > 0 and all(v["G0_pos32"] and v["G0_pos64"] for v in pid.values())
++                                     and all(v for k_, v in bars_id.items() if "G0" in k_))
++            controls["K_ID1"] = bool(not mm1 and n1 > 0 and all(v["G1_pos32"] and v["G1_pos64"] for v in pid.values())
++                                     and all(v for k_, v in bars_id.items() if "G1" in k_))
++            controls["K_ID_detail"] = {"positions": pid, "G0_cells_n_leaves": n0, "G0_cells_n_mismatches": len(mm0), "G0_first_mismatches": mm0[:10],
++                                       "G1_cells_n_leaves": n1, "G1_cells_n_mismatches": len(mm1), "G1_first_mismatches": mm1[:10], "bars_equal": bars_id}
++            hx = {k: v["hsgate"] for k, v in extra.items() if isinstance(k, str)}
++            kls = json.loads(HG.FRESH_KLABSRC.read_text(encoding="utf-8"))
++            controls["K_EVALFEAT"] = bool(kls.get("key") == HG.LOGIT_KEY == HL.LOGIT_KEY and (kls.get("K_LABSRC") or {}).get("pass") is True
++                                          and exl[0]["sha256"] == (kls.get("K_LABSRC") or {}).get("extras_sha256")
++                                          and all(Path(exl[s]["file"]).resolve() == Path(EVAL_EXTRAS.format(tree=tree, seed=s)).resolve() for s in seeds)
++                                          and len(hx) == 4 and all(v["join"]["PASS"] and not v["join_mutation_next_window"]["PASS"]
++                                                                   and v["join_mutation_next_window"]["red_by_crosscheck_alone"] and v["features_finite"] for v in hx.values()))
++            controls["K_EVALFEAT_detail"] = {"klabsrc_file": str(HG.FRESH_KLABSRC), "klabsrc_sha256": C.sha256_file(HG.FRESH_KLABSRC), "klabsrc_key": kls.get("key"),
++                                             "klabsrc_extras_sha256_s0": (kls.get("K_LABSRC") or {}).get("extras_sha256"),
++                                             "eval_extras": {str(s): {"file": exl[s]["file"], "sha256": exl[s]["sha256"]} for s in seeds},
++                                             "keys_used": [HG.LOGIT_KEY, HG.V0_KEY],
++                                             "joins": {k: {"join": v["join"], "mutation_next_window": v["join_mutation_next_window"]} for k, v in hx.items()}}
++            controls["K_LANDED"] = bool(len(hx) == 4 and all(all(all(x.values()) for x in v["landed"].values()) for v in hx.values()))
++            controls["K_LANDED_detail"] = {k: v["landed"] for k, v in hx.items()}
++            gs = {}
++            for s in seeds:
++                c2, w2, g2 = gate_keys[(s, "S2")]
++                c6, w6, g6 = gate_keys[(s, "S6")]
++                k2 = {(int(a__), int(b__)): bool(c__) for a__, b__, c__ in zip(c2, w2, g2)}
++                miss = sum((int(a__), int(b__)) not in k2 for a__, b__ in zip(c6, w6))
++                dif = sum(k2.get((int(a__), int(b__))) != bool(c__) for a__, b__, c__ in zip(c6, w6, g6))
++                gs[str(s)] = {"n_S6": int(len(g6)), "S6_rows_missing_in_S2": int(miss), "decisions_differ": int(dif)}
++            controls["K_GATE_SURF"] = bool(all(v["S6_rows_missing_in_S2"] == 0 and v["decisions_differ"] == 0 for v in gs.values()))
++            controls["K_GATE_SURF_detail"] = gs
++            trh = {str(s): trace_checks(fac[s]["rec"], True) for s in seeds}
++            controls["K_TRACE"] = bool(all(all(v.values()) for v in trh.values()))
++            controls["K_TRACE_detail"] = {"checks": trh, "inputs": {str(s): fac[s]["rec"] for s in seeds}}
++            fdh = {str(s): feed_checks(s, True) for s in seeds}
++            controls["K_FEED_perframe_full"] = bool(all(r["perframe_full"] for v in fdh.values() for r in v.values()))
++            controls["K_FEED_detail"] = fdh
++            need += ["K_REG_HSGATE", "K_FIT_HSGATE", "K_ID0", "K_ID1", "K_EVALFEAT", "K_LANDED", "K_GATE_SURF", "K_TRACE", "K_FEED_perframe_full"]
+     else:
+         ssos_pos, mism2, n2 = {}, [], 0
+         for s in seeds:
+@@ -728,10 +887,11 @@
+     controls["required"] = need
+     res["controls_rt"] = res["controls"]
+     res["controls"] = controls
+-    res.update({"tool": "ship_r8_4c_forward.py", "mode": mode, "scored_read": bool(scored), "tree_name": tree, "n_boot": RT.N_BOOT, "bootstrap_seed": 0, "seeds_run": list(seeds),
++    res.update({"tool": "ship_r8_hsgate_forward.py", "mode": mode, "scored_read": bool(scored), "tree_name": tree, "n_boot": RT.N_BOOT, "bootstrap_seed": 0, "seeds_run": list(seeds),
+                 "role": ("MUTATION RUN (deliberate regression; NOT a result)" if mutate else
+                          (f"SHIP-R8 AMENDMENT 4b: arm positions replaced; scored arm H2CN_CAP8 (H2CN_DEPLOY8 re-run beside it for the reproduction)" if cap8 else
+                           f"SHIP-R8 AMENDMENT 4c: arm positions replaced; scored arm H2CNL_DEPLOY8, mutation arm H2CNL_MUT8 beside (H2CN_DEPLOY8 re-run beside them for the reproduction)" if h2cnl else
++                          f"PREREG_HSGATE PHASE 2: scored arm HSGATE8 (per-window gate between FACTORED_DEPLOY8 and H2CN_DEPLOY8); identity arms HSGATE8_G0 / HSGATE8_G1 beside" if hsgate else
+                           f"SHIP-R8 AMENDMENT {'4' if mode == 'h2cn' else '5'}: arm positions replaced; scored arm {SCORED[mode]}") +
+                          ("" if (mode == "h2cn" or scored) else " NOT COMPUTED (identity / control arms only; the scored read is gated on the seed-1 replicate)")),
+                 "mutation": mutate, "amendments": seals, "arm_order": arm_order, "per_window_extra": {k: v for k, v in extra.items() if isinstance(k, str)},
+@@ -756,6 +916,12 @@
+             res[nm] = {"file": g_["stage_file"], "sha256": g_["stage_file_sha256"], "registered": g_["registered_sha256"], "registration_file": g_["registration_file"]}
+         res["h2cnl_eval_extras"] = {str(s): {"file": exl[s]["file"], "sha256": exl[s]["sha256"]} for s in seeds}
+         res["h2cnl_x_extra"] = HL.X_EXTRA
++    if hsgate:
++        res["hsgate"] = {"gate_file": str(HSG_FROZEN), "gate_sha256": hsg["rec"]["gate_file_sha256"], "registered": hsg["rec"]["registered_sha256"],
++                         "registration_file": str(REG_HSG), "prereg_sha256": seals["PREREG_HSGATE"]["sha256"], "hsgate_common_sha256": HSG_COMMON_SHA,
++                         "F_rate": {k: {kk: v["hsgate"][kk] for kk in ("n_windows", "n_compliant", "n_F_all", "n_F_compliant", "F_rate_all_windows", "F_rate_compliant")}
++                                    for k, v in extra.items() if isinstance(k, str)},
++                         "landed_inputs": {str(s): {k: {"file": f, "sha256": C.sha256_file(f)} for k, f in landed[s]["files"].items()} for s in seeds}}
+     if mutate:
+         red = {"stage": "K_PERSURF_identity_S2_vs_N1", "knot": "K_RETIME_identity_vs_registered_forward_deploy8", "draw": "K_SSOS_identity_bit_for_bit",
+                "cap105": "K_CAP_COMPLY"}[mutate]
+@@ -784,7 +950,7 @@
+         os.remove(wh)
+     RT.jdump(res, out)
+     # ---- per-arm npz packages (the consumer contract of deploy8_forward_r8, one arm per directory, for the TAC device) -------------------------------
+-    arms_npz = [a for a in arm_order if a in ("H2CN_DEPLOY8", "H2CN_NEAR", "RETIME_DEPLOY8", "FACTORED_DEPLOY8", "OSONLY_DEPLOY8", "H2CN_CAP8", "H2CNL_DEPLOY8", "H2CNL_MUT8")]
++    arms_npz = [a for a in arm_order if a in ("H2CN_DEPLOY8", "H2CN_NEAR", "RETIME_DEPLOY8", "FACTORED_DEPLOY8", "OSONLY_DEPLOY8", "H2CN_CAP8", "H2CNL_DEPLOY8", "H2CNL_MUT8", "HSGATE8")]
+     for arm in arms_npz:
+         ad = out_root / "arms" / tag / arm
+         ad.mkdir(parents=True, exist_ok=True)
+@@ -798,12 +964,17 @@
+                 arrs.update({f"{surf}_pos": p32[:, s_["slots"]], f"{surf}_pos64": p64[:, s_["slots"]], f"{surf}_pos8": p32, f"{surf}_os": s_["os"],
+                              f"{surf}_plan8": st["in8"].get(k, s_["plan8"]), f"{surf}_prior8": s_["prior8"], f"{surf}_clip": s_["clip"], f"{surf}_ws": s_["ws"],
+                              f"{surf}_eid": s_["eid"], f"{surf}_compliant": s_["compliant"], f"{surf}_slots": s_["slots"], f"{surf}_instants_s": s_["instants"], f"{surf}_rows": s_["rows"]})
+-            meta = {"tool": "ship_r8_4c_forward.py", "tree": tree, "inference_seed": seed, "arm": arm, "tier": RT.TIER, "mode": mode, "table_sha256": table["sha256"],
++            meta = {"tool": "ship_r8_hsgate_forward.py", "tree": tree, "inference_seed": seed, "arm": arm, "tier": RT.TIER, "mode": mode, "table_sha256": table["sha256"],
+                     "stage_sha256": stage_meta["stage_sha256"], "model_slot_horizons_ticks": HZ8, "slot_instants_s": T8.tolist(), "surface_slots": SLOTS,
+                     "consumer_contract": D8.CONTRACT.replace("RETIME_DEPLOY8", arm),
+                     "note": "<S>_os is the battery panel's os (row alignment); <S>_plan8 is the plan the arm was built on (the model plan, or the os-only / composed plan)"}
+             if mode == "h2cn":
+                 meta["h2cn_stage_sha256"] = reg_rec["gate"]["stage_file_sha256"]
++            if arm == "HSGATE8":
++                meta["hsgate_gate_sha256"] = hsg["rec"]["gate_file_sha256"]
++                meta["note_gate"] = "<S>_gate: the registered gate's per-window decision (True = FACTORED_DEPLOY8's positions, False = H2CN_DEPLOY8's)"
++                for surf_ in SURFS:
++                    arrs[f"{surf_}_gate"] = np.asarray(stash[(seed, surf_)]["gate"], bool)
+             if arm in ("H2CNL_DEPLOY8", "H2CNL_MUT8"):
+                 meta["h2cnl_stage_sha256"] = lstages["HL" if arm == "H2CNL_DEPLOY8" else "HM"]["gate"]["stage_file_sha256"]
+             arrs["meta_json"] = np.array(json.dumps(meta))
+@@ -836,6 +1007,7 @@
+     ap.add_argument("--out-root", default=str(C.WORK / "out"))
+     ap.add_argument("--h2cnl", action="store_true", help="h2cn: AMENDMENT 4c -- also build H2CNL_DEPLOY8 + H2CNL_MUT8 (the registered H2cn-L stages) + their controls")
+     ap.add_argument("--work-root", default=None, help="where the transient RT.forward work dir lives (default: --out-root); removed at the end")
++    ap.add_argument("--hsgate", action="store_true", help="h2cn: PREREG_HSGATE -- also build FACTORED_DEPLOY8 + HSGATE8 (+ G0 / G1 identity arms) + their controls")
+     a = ap.parse_args()
+     if os.environ.get("CUDA_VISIBLE_DEVICES") != "-1":
+         raise SystemExit("[sub-fwd] set CUDA_VISIBLE_DEVICES=-1 (CPU only)")
+@@ -854,7 +1026,18 @@
+         raise SystemExit("--h2cnl applies to --mode h2cn only, without --cap8")
+     if a.h2cnl and Path(a.out_root).resolve() in ((C.WORK / "out").resolve(), (C.WORK / "out_4b").resolve()):
+         raise SystemExit("[sub-fwd] REFUSING: --h2cnl must write to a NEW --out-root (the landed out/ and out_4b/ are never overwritten)")
+-    return forward(a.mode, a.tree, seeds, a.scored, a.mutate, Path(a.out_root), Path(a.registered_stage), a.cap8, a.h2cnl, Path(a.work_root) if a.work_root else None)
++    if a.hsgate:
++        if a.mode != "h2cn" or a.cap8 or a.h2cnl or a.mutate:
++            raise SystemExit("--hsgate applies to --mode h2cn only, without --cap8 / --h2cnl / --mutate")
++        okroots = (HG.WORK.resolve(), HG.SCRATCH.resolve())
++        for p_ in [Path(a.out_root)] + ([Path(a.work_root)] if a.work_root else []):
++            rp = p_.resolve()
++            if not any(rp == r_ or r_ in rp.parents for r_ in okroots):
++                raise SystemExit(f"[hsgate-fwd] REFUSING: {p_} is outside {okroots}")
++    else:
++        raise SystemExit("[hsgate-fwd] this copy runs ONLY with --hsgate (the 4c reads live in ship_r8_sub/ and are never re-run from here)")
++    return forward(a.mode, a.tree, seeds, a.scored, a.mutate, Path(a.out_root), Path(a.registered_stage), a.cap8, a.h2cnl, Path(a.work_root) if a.work_root else None,
++                   a.hsgate)
+ 
+ 
+ if __name__ == "__main__":
