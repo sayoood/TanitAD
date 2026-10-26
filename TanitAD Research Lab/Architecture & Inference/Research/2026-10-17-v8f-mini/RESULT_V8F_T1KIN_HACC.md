@@ -24,8 +24,8 @@
 | **yaw-rate MAE (deg/s), LAT** | **+4.2048 [+2.4880, +5.9866] WORSE** | +1.5304 [−0.0706, +3.1005] n.s. |
 | **curvature MAE (1/m), LAT** | **+0.0400 [+0.0262, +0.0550] WORSE** | **+0.0155 [+0.0077, +0.0242] WORSE** |
 | cross-track MAE (m), LAT | −0.5721 [−0.6914, −0.4608] better | −0.4325 [−0.5659, −0.3092] better |
-| TACTICAL / STRATEGIC | NOT COMPUTED: the T1 dumps carry no per-tick T code or S checkpoints (work item) | same |
-| distance keeping | NOT COMPUTED: `v8f_t1_eval` passes no lead track (`distance_keeping` UNAVAILABLE) | same |
+| TACTICAL / STRATEGIC | TACTICAL from the executed track (2026-10-26, `RESULT_V8F_T1_FAMILIES`, POST-DATA Amendment 1): NO WORSE; TAC-LAT +0.136, TAC-LON +0.131 accuracy, better. STRATEGIC and the model's own T code: NOT COMPUTED: the T1 dumps carry no per-tick T code or S checkpoints (work item) | TAC-LAT +0.092, TAC-LON +0.132, better; the rest same |
+| distance keeping | NO WORSE (2026-10-26, `RESULT_V8F_T1_FAMILIES`, POST-DATA Amendment 1; lead block joined by the reader, since `v8f_t1_eval` passes no lead track and `distance_keeping` is UNAVAILABLE in the tool): DK-TG -0.101 s, DK-HW -0.32 m, better; DK-VIOL n.s. | DK-TG -0.073 s better; DK-HW, DK-VIOL n.s. |
 
 Mean ADE6 at m = 10: HACC 2.614 / 2.649 m against P10 3.443 m. Masked rows: heading n = 2,373; yaw rate and curvature n = 2,366.
 

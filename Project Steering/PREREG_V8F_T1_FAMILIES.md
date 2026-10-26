@@ -94,3 +94,35 @@ Both apply to an executed T1 track exactly as to a plan.
 * **The model's own T-code decision quality at T1:** the dumps carry no per-tick T logits.
 
 Both need `v8f_t1_eval` re-run with a per-tick dump of the T and S heads. They remain NOT COMPUTED in the result, with this reason.
+
+## Amendment 1 (2026-10-26): C6 replaced. ⚠️ Written AFTER the decisive rows were computed and seen, so the amended read is POST-DATA
+
+**What failed.** C6 as written failed: the decisive HACC tracks rolled by one window, compared with P10, read *better* on TAC-LAT
+(+0.130) and TAC-LON (+0.112) and n.s. on DK-HW at s0. The read was therefore REFUSED, and that refusal stays in the record. The
+reasons are measured in `T1KF_READ.json`:
+
+1. **The roll is a near-copy, not a regression.** Consecutive grid windows are 0.8 s apart on a 6 s horizon, so the manoeuvre class
+   barely moves. Rolled − unrolled HACC: TAC-LAT −0.007 (n.s.), TAC-LON −0.019, DK-HW +0.15 (n.s.).
+2. **The comparator could never show it.** P10 is a weaker tactical arm than even the rolled HACC: TAC-LAT accuracy is 0.593 for P10,
+   0.723 for the rolled HACC and 0.729 for HACC.
+
+So the control was written without computing what it tests: the class of `R74` (N-3 of `PREREG_V8F_T1_LATCOND`), a second time
+today.
+
+**The disclosure.** This amendment is written after the reader reported the decisive HACC − P10 rows, as data, beside the refusal.
+* **What does not change:** the rows, the bars, the comparator, the estimator and the outcome table. Nothing in C6A depends on the
+  values of those rows.
+* **But the amended read is not blind,** and it is reported as **POST-DATA (Amendment 1)**, never as a blind pre-registered pass.
+
+**C6A, which replaces C6:**
+* **The known-bad arm:** for every window i, take the decisive HACC executed track of a window from a **different episode** whose
+  dump `v0` is nearest to window i's. Ties go to the lowest index.
+* **Why speed-matched:** it keeps the units guard (`check_pred`'s first-step ratio) honest, and it degrades only the fit to the scene:
+  the right speed, the wrong road and the wrong lead.
+* **Compared with:** the unshuffled HACC tracks, i.e. the arm itself. The control asks whether the instrument sees a known
+  degradation of this arm. It does not ask whether that degradation falls below P10.
+* **Must read, at s0:** TAC-LAT, TAC-LON and DK-HW each separated-worse. s1 is reported beside.
+* **C6 as written** is reported beside as FAILED, superseded by C6A.
+* **If C6A fails,** the read stays REFUSED, and the instrument's blindness becomes the work item.
+
+Nothing else moves.
