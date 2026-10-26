@@ -71,3 +71,16 @@ All are banked T1-kin m = 10 dumps on eval-141 (2,399 windows, 141 episodes):
 * ⛔ Choosing the threshold, the rows or the bar after a number is seen.
 * ⛔ Dropping the canonical rows from any report. They are reported beside, with their noise floor.
 * ⛔ Closed-loop or "drives" wording.
+
+## Amendment 1 (2026-10-26, before any model arm is read on the rows of §1)
+
+**What changes:** N-3's tolerance, and one implementation detail of L1, both written as definitions before any number.
+
+1. **N-3 is wrong by construction as written.** It says the circle gives "L1 = v²/r to 1e-6". The canonical geometry measures CHORDS: speed is chord length / dt, and the heading step is the chord-to-chord angle Δθ. So the discrete lateral acceleration of a sampled circle is exactly 2r·sin(Δθ/2)·Δθ / dt². For v = 10 m/s, r = 50 m and dt = 0.2 s, Δθ = 0.04 rad, and that is 1.99987 m/s², not 2.0. A 1e-6 bar on v²/r could never pass. **N-3 is now two checks:**
+   * against the discrete identity 2r·sin(Δθ/2)·Δθ / dt², to ≤ 1e-9;
+   * against v²/r, to ≤ 1e-3 (relative 5e-4).
+
+   This is the class of `R74`: a control tolerance written without computing the identity it tests.
+2. **L1's "speed" at a heading step (a PAIR of steps) is the pair's mean speed** v_mid = 0.5 (v_k + v_{k+1}) = ds_mid / dt. That is the same ds_mid the canonical curvature uses, so L1 = curvature × v_mid² on every masked pair. L2's and L3's "GT step speed ≥ 5.2 m/s" is the GT's v_mid at that pair.
+
+Nothing else moves: the rows, the threshold, the configurations, the bar and the outcome table are unchanged.
