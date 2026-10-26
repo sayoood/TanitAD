@@ -2537,3 +2537,20 @@ passes. The two navtest reads (theta_DEC and A1) are part of the authorisation. 
 **What does NOT wait on this:** `PREREG_V8F_HACC_LAT` (the lateral lever), the m = 5 stress read, FLAT and OACC on box 2.
 
 **MM update (2026-10-26 ~01:40): the headline no longer depends on this decision.** `PREREG_V8F_T1KIN_CAUSALBUCKET` (`d2ed136d`, before data) re-read the T1 result with a bucket built from the past 4 s of measured ego speed only: **CAUSAL KEEPS THE MARGIN**, HACC − P10 ADE6 −0.768 / −0.734 m, separated at both seeds (`RESULT_V8F_T1KIN_CAUSALBUCKET.md`). v8F's T1 statement is now made on the causal bucket; option (a) or (b) only decides whether the oracle-bucket numbers may also be quoted. The sidecar's own meta also records your 2026-09-16 authorisation of the future-ego derivation as a declared input.
+
+## ⏳ OPEN (2026-10-26 ~02:25 Berlin) -- D-R9-MAPHEAD-PRECISION: train refcv8's map head for PRECISION so the planner can use it (your 10-25 directive)
+
+**Question.** You asked that the planner use the map head: stay on drivable, avoid the red edges, prefer the lane. Tonight every way of doing that WITHOUT training was measured on refcv8 (EMA-48,852, T1 open loop on eval139, S6c, paired episode-cluster bootstrap B 2000; episodes only, one training seed). May the map head be trained for precision, which needs compute?
+
+**Why (MEASURED; rows `H-R9-MAPSEL-1`, `H-R9-MAPEDGE-1`, `H-R9-MAPEDGE-Q2-1`, `H-R9-MAPSOFT-1`, `H-R9-MAPSOFT-G-1` in GOALS_AND_CLAIMS.md; landed 4b5b9b1, e457400, 727a7e0 and this commit):**
+- **The defect is real and large:** refcv8's emitted plan touches a GT SIDEWALK cell in **17.9 %** of windows; the human driver 1.25 %.
+- **The prize is proven with the TRUE map:** selecting the same 149-candidate fan with the GT map cuts it to **1.7 %**, and ADE gets **better** (-0.076 [-0.125, -0.028] m). The map channel works; the fan holds compliant candidates in 99 % of windows.
+- **refcv8's OWN map cannot deliver it yet:** a hard own-map rule moves sidewalk -1.3 pp and costs ADE (+0.146 m); a soft cross-fitted cost keeps its weight at 0; with the near field gated out it is safe (no row worse) but a DERANGED map does just as well, so the own map adds nothing window-specific.
+- **Where it fails is localised:** the own sidewalk flags hit **8.3 % of real human paths at 0-10 m** (GT says 0.8 %), ~3 % precise there, ~54-67 % precise beyond 20 m. The drivable boundary finds 29 % of true edges (vs 0.2 % for the edge class; the GT boundary would find 96 %) at 21 % precision.
+
+**Options.**
+- **(a) A precision fine-tune of the map head on the existing SAM3 GT,** targeted at the measured defects: near-field sidewalk false alarms and drivable-boundary precision (a boundary / distance-transform term). Success is read with tonight's instruments unchanged (MAPSEL OWN arms + MAPSOFT-G, 0 GPU after one roll), against the GT-T1 bound. **MM recommends (a).** **Cost: NOT YET MEASURED.** Sizing it (cached inputs, head-only vs. trunk, which box) is the next 0-GPU step and comes back to you as numbers before any launch.
+- **(b) Skip the map head and train a map-conditioned selector/critic on GT-map labels in refcv9** (DrivableCritic exists, `refcv8_conditioning.py`). This is the MAPSEL template's lever, but at inference it would still read the own map, so (a) likely gates it.
+- **(c) Defer map-in-planner;** refcv9 proceeds without it.
+
+**What does NOT wait on this:** the sizing in (a); SELFSHARP / L2-B / L1C on the dev-box GPU; NT A1 on Thor.
