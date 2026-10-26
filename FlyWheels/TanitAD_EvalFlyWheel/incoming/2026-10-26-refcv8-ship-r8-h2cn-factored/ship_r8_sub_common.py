@@ -92,6 +92,21 @@ def check_amendment_seals() -> dict:
     return out
 
 
+AMENDMENT_4B = WORK / "SHIP_R8_AMENDMENT_4B_H2CN_CAP.md"
+
+
+def check_amendment_4b_seal() -> dict:
+    """Amendment 4b's seal (H2CN_CAP8).  Kept OUT of AMENDMENTS on purpose: check_amendment_seals() is recorded in every Amendment 4 / 5 output, and adding a
+    key there would change those records.  REFUSES (SystemExit) unless the file hashes to its seal (both sides 64 hex); an unreadable seal is INCONCLUSIVE."""
+    got = sha256_file(AMENDMENT_4B) if AMENDMENT_4B.is_file() else ""
+    want = read_seal(AMENDMENT_4B.with_suffix(".sha256"))
+    if len(got) != 64 or len(want) != 64:
+        raise SystemExit(f"[ship_r8_sub] INCONCLUSIVE seal for amendment 4b: file '{got}' seal '{want}' -- refusing")
+    if got != want:
+        raise SystemExit(f"[ship_r8_sub] amendment 4b ({AMENDMENT_4B.name}) does not match its seal ({got} != {want}) -- refusing")
+    return {"file": str(AMENDMENT_4B), "sha256": got, "seal_matches": True}
+
+
 def setup_paths() -> None:
     """sys.path as the registered lanes use it (chain_l1c.sh cpu(), chain_final_pf_r8.sh lane()): launch tree stack + taniteval + battery code."""
     os.environ.setdefault("R8_LAUNCH_TREE", str(T_TREE))

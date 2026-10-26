@@ -57,9 +57,11 @@ T8 = np.array([0.5, 1.0, 1.5, 2.0, 3.0, 4.0, 5.0, 6.0])
 SLOTS = C.SLOTS
 SURFS = ("S2", "S6")
 SETS = ("compliant", "all")
-EIGHT = {"H8": "H2CN_DEPLOY8", "HN": "H2CN_NEAR", "D8": "RETIME_DEPLOY8", "G1": "CONST_G1", "OS": "OSONLY_DEPLOY8", "FS": "FACTORED_SSOS_DEPLOY8", "FX": "FACTORED_DEPLOY8"}
+EIGHT = {"H8": "H2CN_DEPLOY8", "HN": "H2CN_NEAR", "D8": "RETIME_DEPLOY8", "G1": "CONST_G1", "OS": "OSONLY_DEPLOY8", "FS": "FACTORED_SSOS_DEPLOY8", "FX": "FACTORED_DEPLOY8",
+         "HC": "H2CN_CAP8"}
 PERSURF = {"HP": "H2CN_PERSURFACE"}
 SCORED = {"h2cn": "H2CN_DEPLOY8", "factored": "FACTORED_DEPLOY8"}
+CAP_MARGIN = 1e-6                                # Amendment 4b s1: the (1 - 1e-6) on every interval's advance
 
 
 def pf_lane():
@@ -84,6 +86,23 @@ def h2cn_progress(AL, prior8, f2, f6):
     a6 = AL.arc(prior8[:, SLOTS["S6"]])
     s = np.concatenate([a4 + f2, a6[:, 2:] + f6[:, 2:]], axis=1)
     return running_max(s)
+
+
+def cap_progress(s8, lim, scale: float = 1.0):
+    """Amendment 4b s1: s_cap[k] = min(s8[k], s_cap[k-1] + lim * (t[k] - t[k-1]) * (1 - 1e-6)) on the 8-slot grid T8, s_cap[-1] = 0, t[-1] = 0.
+    `lim` is the window's FED ceiling (float32 as the compliance row reads it), widened EXACTLY to float64 before use; a non-finite ceiling leaves the window
+    unclamped (+inf advance).  `scale` multiplies lim and is 1.0 for the registered arm; 1.05 exists ONLY for the deliberate-regression arm (--mutate cap105)."""
+    s8 = np.asarray(s8, np.float64)
+    lim = np.asarray(lim, np.float64) * scale
+    fin = np.isfinite(lim)
+    out = np.empty_like(s8)
+    prev, t_prev = np.zeros(len(s8), np.float64), 0.0
+    for k in range(s8.shape[1]):
+        dt = float(T8[k] - t_prev)
+        adv = np.where(fin, lim * dt * (1.0 - CAP_MARGIN), np.inf)
+        out[:, k] = np.minimum(s8[:, k], prev + adv)
+        prev, t_prev = out[:, k], float(T8[k])
+    return out
 
 
 def compose(RT, P_path, P_prog):
@@ -175,9 +194,11 @@ def feed_checks(seed: int, scored: bool) -> dict:
     return out
 
 
-def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None, out_root: Path, reg_stage_file: Path) -> int:
+def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None, out_root: Path, reg_stage_file: Path, cap8: bool = False) -> int:
     t_start = time.time()
     seals = C.check_amendment_seals()
+    if cap8:
+        seals = {**seals, "4b": C.check_amendment_4b_seal()}              # AMENDMENT 4b: refuses unless the sealed text is the file (only when --cap8)
     C.setup_paths()
     PL = pf_lane()
     reg_pf = PL.read_registered(REG_PF)
@@ -190,7 +211,7 @@ def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None
     AL, PH, PS = F.AL, F.PH, F.PS
     if AL.RT is not RT:
         raise SystemExit("[sub-fwd] two copies of a0k0_headroom_retime_r8 are loaded (the L1 helpers and the battery lane would disagree)")
-    tag = f"{mode}" + ("_scored" if scored else "") + (f"_MUTATION_{mutate}" if mutate else "")
+    tag = f"{mode}" + ("_cap8" if cap8 else "") + ("_scored" if scored else "") + (f"_MUTATION_{mutate}" if mutate else "")
     work = out_root / ("mutation" if mutate else "work") / tag
     work.mkdir(parents=True, exist_ok=True)
     RT.OUT = work                                                         # RT.forward writes ONLY here (never into the registered package)
@@ -241,7 +262,7 @@ def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None
             preds = {**preds, "S2": pred_mut}
         for s in seeds:
             zbank[s] = F.load_bank(L1_BANK / f"ztac_eval_s{s}.npz")
-        arm_order = ["H2CN_DEPLOY8", "H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8", "RETIME_DEPLOY_PERSURFACE", "CONST_G1"]
+        arm_order = ["H2CN_DEPLOY8", "H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8", "RETIME_DEPLOY_PERSURFACE", "CONST_G1"] + (["H2CN_CAP8"] if cap8 else [])
     else:
         for s in seeds:
             fac[s] = load_factored_inputs(s, scored)
@@ -253,7 +274,7 @@ def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None
     orig_apply, orig_diag, orig_fw = RT.retime_apply, RT.retime_diag, RT.frozen_weights
     const1, const0 = {"knots_s": [0.5], "gains": [1.0]}, {"knots_s": [0.5], "gains": [0.0]}
     KIND_OF = {"H2CN_DEPLOY8": "H8", "H2CN_NEAR": "HN", "RETIME_DEPLOY8": "D8", "CONST_G1": "G1", "OSONLY_DEPLOY8": "OS", "FACTORED_SSOS_DEPLOY8": "FS",
-               "FACTORED_DEPLOY8": "FX", "H2CN_PERSURFACE": "HP"}
+               "FACTORED_DEPLOY8": "FX", "H2CN_PERSURFACE": "HP", "H2CN_CAP8": "HC"}
     classes = {k: type(f"_Rows{k}", (D8._Rows,), {"KIND": k}) for k in KIND_OF.values()}
 
     def tools_load_once():
@@ -333,6 +354,33 @@ def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None
                   "persurface_at_progress_bit_equal_f64_cast": bool(pP32.tobytes() == pP64.astype(O.dtype).tobytes()),
                   "feats_all_rows_masked_bit_equal_feats_on_compliant_rows": bool(np.array_equal(X[m], Xm)),
                   "frac_progress_clipped_at_0_H8": float((np.concatenate([AL.arc(prior8[:, :4]) + f2, AL.arc(prior8[:, SLOTS['S6']])[:, 2:] + f6[:, 2:]], 1) < 0).any(1).mean())}
+            if cap8:
+                # AMENDMENT 4b: H2CN_CAP8 = the registered s8, clamped on the 8-slot grid to the window's FED ceiling (`lim`, exactly the compliance row's input)
+                scale = 1.05 if mutate == "cap105" else 1.0                     # 1.05 = the deliberate-regression arm only
+                sC = cap_progress(s8, lim, scale)
+                pC64 = RT.eval_polyline(geo, sC)
+                st["HC"] = (pC64.astype(plan8.dtype), pC64)
+                st["s8"]["HC"] = sC
+                # K-CAP-ID: lim := +inf everywhere -> bit-equal to H2CN_DEPLOY8 (the progress, the float64 positions, the cast positions)
+                sI = cap_progress(s8, np.full(len(s8), np.inf))
+                pI64 = RT.eval_polyline(geo, sI)
+                pI32 = pI64.astype(plan8.dtype)
+                limf64 = np.asarray(lim, np.float64)
+                nf = ~np.isfinite(limf64)
+                changed_c = (sC != s8).any(1)
+                changed_pos = (st["HC"][0] != st["H8"][0]).any((1, 2))
+                ex["cap8"] = {
+                    "lim_scale": scale, "margin": CAP_MARGIN, "n_windows": int(len(s8)), "n_compliant": int(m.sum()),
+                    "n_changed_by_clamp": int(changed_c.sum()), "share_changed_by_clamp": float(changed_c.mean()),
+                    "n_changed_by_clamp_compliant": int(changed_c[m].sum()), "share_changed_by_clamp_compliant": float(changed_c[m].mean()) if m.any() else None,
+                    "n_cast_positions_differ_from_H2CN_DEPLOY8": int(changed_pos.sum()),
+                    "n_nonfinite_lim": int(nf.sum()), "n_lim_le_0": int((limf64 <= 0).sum()),
+                    "lim_min_finite": float(limf64[~nf].min()) if (~nf).any() else None, "lim_max_finite": float(limf64[~nf].max()) if (~nf).any() else None,
+                    "nonfinite_lim_windows_bit_equal_H2CN_DEPLOY8": bool(st["HC"][0][nf].tobytes() == st["H8"][0][nf].tobytes() and st["HC"][1][nf].tobytes() == st["H8"][1][nf].tobytes()),
+                    "id_progress_bit_equal": bool(sI.tobytes() == s8.tobytes()), "id_pos64_bit_equal": bool(pI64.tobytes() == st["H8"][1].tobytes()),
+                    "id_pos_cast_bit_equal": bool(pI32.tobytes() == st["H8"][0].tobytes()),
+                    "mono_s_cap_nondecreasing_from_0": bool((np.diff(np.concatenate([np.zeros((len(sC), 1)), sC], axis=1), axis=1) >= 0).all() and np.isfinite(sC).all()),
+                    "s_cap_min": float(sC.min()), "max_progress_removed_m": float((s8 - sC).max())}
             store_extra = {"X": X, "Z_rows": _j, "f2": f2, "f6": f6, "eid": np.asarray([str(e) for e in S["eid"]]), "mask": m, "G": S["X"]["G"], "O": O, "HP": HP, "dt": S["dt"]}
             extra[(seed, surf)] = store_extra
         else:
@@ -365,7 +413,7 @@ def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None
         lim_r, v0_r = cur["lim"][rows], ctx["v0"][rows]
         eid_r, mk = np.asarray(S["eid"]), np.asarray(S["mask"], bool)
         crow = {"panel_grid_horizons_ticks": hz, "full_plan_horizons_ticks": [int(h) for h in rc_["horizons"]], "arms": {}}
-        for k_, nm_ in [("os", "os_model_plan")] + [(k2, EIGHT[k2]) for k2 in ("H8", "HN", "D8", "OS", "FS", "FX") if k2 in st]:
+        for k_, nm_ in [("os", "os_model_plan")] + [(k2, EIGHT[k2]) for k2 in ("H8", "HN", "D8", "OS", "FS", "FX", "HC") if k2 in st]:
             full = plan8 if k_ == "os" else st[k_][0]
             crow["arms"][nm_] = {"panel_grid": CR.compliance_sets(CR.pmax(V_cmp, full[:, slots], hz, rc_["tick_s"]), lim_r, v0_r, eid_r, {"all_windows": None, "compliant_set": mk}),
                                  "full_plan_0_6s": CR.compliance_sets(CR.pmax(V_cmp, full, [int(h) for h in rc_["horizons"]], rc_["tick_s"]), lim_r, v0_r, eid_r,
@@ -414,9 +462,10 @@ def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None
                 d = D8.diag8(st["in8"][k][rows], st["prior8"][rows], st[k][1][rows], st[k][0][rows], RS.gain_at(T8, table), st["plan8"].dtype)
                 d["geometry_over"] = "the 8-slot stage call on the arm's own input plan (os-only / composed): positions vs that plan's 8-point polyline"
                 return d
-            if k in ("H8", "HN"):
+            if k in ("H8", "HN", "HC"):
                 return diag_progress(RT, st["plan8"][rows], st[k][1][rows], st[k][0][rows], st["s8"][k][rows],
-                                     "the 8-slot H2cn call: positions at all 8 slots against the 8-point model-plan polyline (progress after max(s,0) + running max)")
+                                     "the 8-slot H2cn call: positions at all 8 slots against the 8-point model-plan polyline (progress after max(s,0) + running max)"
+                                     + (" then clamped to the fed ceiling (Amendment 4b)" if k == "HC" else ""))
             if k == "HP":
                 return diag_progress(RT, np.asarray(O), st["HP"][1][rows], st["HP"][0][rows], st["sP"][rows],
                                      "the per-surface H2cn form: positions against the surface's own os polyline")
@@ -510,6 +559,28 @@ def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None
                                         "beside_S6_positions_vs_l1c_banked_arms_S6_H2cn": s6_id}
         controls["K_ATPROG_persurface_bit_equal"] = bool(all(v.get("persurface_at_progress_bit_equal_f64_cast") for k, v in extra.items() if isinstance(k, str)))
         need += ["K_REG", "K_DISJ", "K_PERSURF_identity_S2_vs_N1", "K_ATPROG_persurface_bit_equal"]
+        if cap8:
+            # AMENDMENT 4b s2.  A failed control voids the clauses: it is in `need`, so ALL_PASS reads False and the run WITHHOLDS (no FORWARD file, no verdict).
+            cx = {k: v["cap8"] for k, v in extra.items() if isinstance(k, str)}
+            controls["K_CAP_ID"] = bool(len(cx) == 4 and all(v["id_progress_bit_equal"] and v["id_pos64_bit_equal"] and v["id_pos_cast_bit_equal"]
+                                                             and v["nonfinite_lim_windows_bit_equal_H2CN_DEPLOY8"] for v in cx.values()))
+            controls["K_CAP_MONO"] = bool(len(cx) == 4 and all(v["mono_s_cap_nondecreasing_from_0"] for v in cx.values()))
+            comply = {}
+            for key, crow in compl.items():
+                cc = crow["arms"]["H2CN_CAP8"]
+                for gname in ("panel_grid", "full_plan_0_6s"):
+                    for sname in ("all_windows", "compliant_set"):
+                        c_ = cc[gname][sname]
+                        er = c_.get("exceed_rate_strict") or {}
+                        comply[f"{key}|{gname}|{sname}"] = {"n_windows": c_.get("n_windows"), "n_exceed_strict": c_.get("n_exceed_strict"),
+                                                            "exceed_rate_strict_mean": er.get("mean"), "exceed_rate_strict_lo": er.get("lo"), "exceed_rate_strict_hi": er.get("hi"),
+                                                            "residual_excess_ms_on_exceeding_windows": c_.get("residual_excess_ms_on_exceeding_windows")}
+            controls["K_CAP_COMPLY"] = bool(len(comply) == 16 and all((v["n_windows"] or 0) > 0 and v["n_exceed_strict"] == 0 and v["exceed_rate_strict_mean"] == 0.0
+                                                                     for v in comply.values()))
+            controls["K_CAP_detail"] = {"rule": "Amendment 4b s2: K-CAP-ID (lim := +inf -> bit-equal H2CN_DEPLOY8), K-CAP-COMPLY (compliance row exceed_rate_strict == 0 on every set / grid / "
+                                                "surface / seed), K-CAP-MONO (s_cap non-decreasing); clamp-touched counts are reported, not pass/fail",
+                                        "per_surface_seed": cx, "compliance_of_H2CN_CAP8": comply, "lim_scale_used": 1.05 if mutate == "cap105" else 1.0}
+            need += ["K_CAP_ID", "K_CAP_COMPLY", "K_CAP_MONO"]
     else:
         ssos_pos, mism2, n2 = {}, [], 0
         for s in seeds:
@@ -538,7 +609,8 @@ def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None
     res["controls"] = controls
     res.update({"tool": "ship_r8_sub_forward.py", "mode": mode, "scored_read": bool(scored), "tree_name": tree, "n_boot": RT.N_BOOT, "bootstrap_seed": 0, "seeds_run": list(seeds),
                 "role": ("MUTATION RUN (deliberate regression; NOT a result)" if mutate else
-                         f"SHIP-R8 AMENDMENT {'4' if mode == 'h2cn' else '5'}: arm positions replaced; scored arm {SCORED[mode]}" +
+                         (f"SHIP-R8 AMENDMENT 4b: arm positions replaced; scored arm H2CN_CAP8 (H2CN_DEPLOY8 re-run beside it for the reproduction)" if cap8 else
+                          f"SHIP-R8 AMENDMENT {'4' if mode == 'h2cn' else '5'}: arm positions replaced; scored arm {SCORED[mode]}") +
                          ("" if (mode == "h2cn" or scored) else " NOT COMPUTED (identity / control arms only; the scored read is gated on the seed-1 replicate)")),
                 "mutation": mutate, "amendments": seals, "arm_order": arm_order, "per_window_extra": {k: v for k, v in extra.items() if isinstance(k, str)},
                 "compliance_row": {"rule": "A-R8-CLAMP-2 s2.3 (compliant_reread_r8.pmax + compliance_sets): exceed = planned_max_speed(arm plan) > refcv8's FED ceiling, strict; "
@@ -553,11 +625,14 @@ def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None
                 "wall_s": round(time.time() - t_start, 1), "generated": time.strftime("%FT%T%z")})
     if mode == "h2cn":
         res["h2cn_stage"] = {"file": str(C.STAGE_PT), "sha256": reg_rec["gate"]["stage_file_sha256"], "registered": reg_rec["gate"]["registered_sha256"]}
+    if cap8:
+        res["cap8"] = True
     if mutate:
-        red = {"stage": "K_PERSURF_identity_S2_vs_N1", "knot": "K_RETIME_identity_vs_registered_forward_deploy8", "draw": "K_SSOS_identity_bit_for_bit"}[mutate]
-        rec = {"tree": tree, "mode": mode, "mutation": mutate, "target_control": red, "target_control_value": controls.get(red), "ALL_PASS": controls["ALL_PASS"],
+        red = {"stage": "K_PERSURF_identity_S2_vs_N1", "knot": "K_RETIME_identity_vs_registered_forward_deploy8", "draw": "K_SSOS_identity_bit_for_bit",
+               "cap105": "K_CAP_COMPLY"}[mutate]
+        rec = {"tree": tree, "mode": mode, **({"cap8": True} if cap8 else {}), "mutation": mutate, "target_control": red, "target_control_value": controls.get(red), "ALL_PASS": controls["ALL_PASS"],
                "mutation_detected": bool(controls.get(red) is False and not controls["ALL_PASS"]),
-               "detail": controls.get({"stage": "K_PERSURF_detail", "knot": "K_RETIME_detail", "draw": "K_SSOS_detail"}[mutate]),
+               "detail": controls.get({"stage": "K_PERSURF_detail", "knot": "K_RETIME_detail", "draw": "K_SSOS_detail", "cap105": "K_CAP_detail"}[mutate]),
                "other_controls": {k: controls.get(k) for k in need}, "generated": res["generated"], "wall_s": res["wall_s"]}
         mp = out_root / "mutation" / f"MUTATION_{mode}_{mutate}_{tree}.json"
         mp.write_text(json.dumps(rec, indent=1, default=str), encoding="utf-8")
@@ -580,7 +655,7 @@ def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None
         os.remove(wh)
     RT.jdump(res, out)
     # ---- per-arm npz packages (the consumer contract of deploy8_forward_r8, one arm per directory, for the TAC device) -------------------------------
-    arms_npz = [a for a in arm_order if a in ("H2CN_DEPLOY8", "H2CN_NEAR", "RETIME_DEPLOY8", "FACTORED_DEPLOY8", "OSONLY_DEPLOY8")]
+    arms_npz = [a for a in arm_order if a in ("H2CN_DEPLOY8", "H2CN_NEAR", "RETIME_DEPLOY8", "FACTORED_DEPLOY8", "OSONLY_DEPLOY8", "H2CN_CAP8")]
     for arm in arms_npz:
         ad = out_root / "arms" / tag / arm
         ad.mkdir(parents=True, exist_ok=True)
@@ -624,7 +699,8 @@ def main() -> int:
     ap.add_argument("--mode", required=True, choices=("h2cn", "factored"))
     ap.add_argument("--tree", default="step48852ema_pf")
     ap.add_argument("--scored", action="store_true", help="factored: also compute FACTORED_DEPLOY8 (gated on the SSGUARD seed-1 replicate)")
-    ap.add_argument("--mutate", default=None, choices=("stage", "knot", "draw"))
+    ap.add_argument("--mutate", default=None, choices=("stage", "knot", "draw", "cap105"))
+    ap.add_argument("--cap8", action="store_true", help="h2cn: AMENDMENT 4b -- also build H2CN_CAP8 (the stage clamped to the fed ceiling) + K-CAP-ID / K-CAP-COMPLY / K-CAP-MONO")
     ap.add_argument("--registered-stage", default=str(REG_STAGE_DEFAULT))
     ap.add_argument("--out-root", default=str(C.WORK / "out"))
     a = ap.parse_args()
@@ -635,7 +711,13 @@ def main() -> int:
         raise SystemExit("--scored is the factored mode's gate; the h2cn mode always computes its scored arm (after the registration)")
     if a.mutate == "stage" and a.mode != "h2cn" or a.mutate == "draw" and a.mode != "factored":
         raise SystemExit(f"--mutate {a.mutate} does not apply to --mode {a.mode}")
-    return forward(a.mode, a.tree, seeds, a.scored, a.mutate, Path(a.out_root), Path(a.registered_stage))
+    if a.cap8 and a.mode != "h2cn":
+        raise SystemExit("--cap8 applies to --mode h2cn only")
+    if a.mutate == "cap105" and not a.cap8:
+        raise SystemExit("--mutate cap105 needs --cap8")
+    if a.cap8 and Path(a.out_root).resolve() == (C.WORK / "out").resolve():
+        raise SystemExit("[sub-fwd] REFUSING: --cap8 must write to a SEPARATE --out-root (the landed Amendment 4 / 5 outputs under out/ are never overwritten)")
+    return forward(a.mode, a.tree, seeds, a.scored, a.mutate, Path(a.out_root), Path(a.registered_stage), a.cap8)
 
 
 if __name__ == "__main__":

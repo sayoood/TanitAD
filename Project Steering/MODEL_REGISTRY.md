@@ -5966,6 +5966,16 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | status | Deliverable CANDIDATE; ships only after the in-model implementation (two planner passes on one trunk forward) reproduces these plans bit-for-bit. The shipped-stage choice is the PI's. |
 | caveats | One training seed; open loop; run from a frozen copy of the landed sub-read code (`ship_r8_sub_fx/`, directory constant re-pointed only) because the 4b build edits the live copy. |
 
+### 16.17 refcv8-r101-s0 -- H2cn clamped to the FED speed ceiling (H2CN_CAP8) PASSES SHIP-R8 (AMENDMENT 4b) *(addendum to §16.15)*
+
+| | |
+|---|---|
+| what | §16.15's H2cn stage with its progress clamped so each waypoint interval's arc speed <= refcv8's FED ceiling x (1 - 1e-6); amendment sealed 339363f5 before any number. |
+| SHIP-R8 (per-frame feed; seeds 0 / 1) | **PASS** -- (1) (1b) (2) (3) (4) (5) (7) PASS, (6) N/A. MEASURED `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-refcv8-ship-r8-h2cn-factored/out_4b/ship_r8/SHIP_R8_H2CN_CAP8.json`. E1 **-0.0473 [-0.0587, -0.0364] / -0.0466**; E3 **-1.2038 [-1.5012, -0.9225] / -1.1972** (DEPLOY8 -1.1975 / -1.1909). |
+| compliance | **0 strict exceedances** on all 16 cells (2 surfaces x 2 seeds x panel/full plan x all/compliant); DEPLOY8 0.0163 / 0.0169, RETIME 0.0049-0.0060 on the compliant full plan. Clamp touches 1.7 % of compliant windows. |
+| controls | K-CAP-ID / K-CAP-COMPLY / K-CAP-MONO PASS; all Amendment 4 controls PASS; DEPLOY8 reproduced bit-for-bit from the same forward (0 mismatches); mutation lim x 1.05 RED; analytic self-test 7/7. |
+| status | Recommended shipped stage for capped refcv8 (Master Mind); the choice between DEPLOY8 and CAP8 is the PI's. NavSim only with a separate go. |
+
 ## 18. nt-a1-s0 — NT A1, the navtrain decision arm (PREREG_NT_DECIDE) [NAVSIM navtrain · ONE SEED · TRAINING]
 
 ### nt-a1-s0 — ▶ TRAINING since 2026-10-25 11:02 Berlin (CET, 10:02Z), on Thor, launched by the launch gate's PASS token

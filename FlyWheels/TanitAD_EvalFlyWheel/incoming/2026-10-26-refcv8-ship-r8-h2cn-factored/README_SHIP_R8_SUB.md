@@ -216,3 +216,19 @@ The registration gate record (`REGISTRATION_GATE_H2CN.json`) is written into the
 
    These are episode-cluster rates, not a paired difference. H2CN_NEAR sits in between (≈0.009). This is a PI-relevant fact for the capped refcv8,
    reported beside the PASS, not folded into it.
+
+## AMENDMENT 4b -- `H2CN_CAP8` (the H2cn stage clamped to the FED ceiling), EvalFlyWheel 2026-10-26
+
+Sealed text: `SHIP_R8_AMENDMENT_4B_H2CN_CAP.md` (sha256 `339363f505393c268298f058a7b3ff96130667aab424c52e519eeec348b4b70b`, seal file beside it). **Everything writes to `out_4b/`; the landed `out/` is never touched**
+(`--cap8` refuses `--out-root out/`; the verdict refuses a cap8 forward with `--out-dir out/ship_r8`). Amendments 4 / 5 flows are unchanged: `--cap8` is the only switch.
+
+```
+bash run_ship_r8_sub.sh h2cn_cap8        # forward --mode h2cn --cap8 -> TAC (H2CN_CAP8, H2CN_DEPLOY8, H2CN_NEAR, RETIME_DEPLOY8) -> verdicts H2CN_CAP8 + H2CN_DEPLOY8 (reproduction)  ~640 s
+$PY -X utf8 ship_r8_sub_forward.py --mode h2cn --cap8 --mutate cap105 --out-root out_4b      # deliberate regression: clamp with lim*1.05 -> K-CAP-COMPLY must read RED
+$PY -X utf8 read_4b.py                   # REPRO_H2CN_DEPLOY8_vs_landed.json (exact leaf comparison vs the landed out/) + SUMMARY_4B.json
+$PY -X utf8 test_ship_r8_sub_cap8.py     # the clamp against analytic literals
+```
+* Arm: `cap_progress(s8, lim)` in `ship_r8_sub_forward.py` -- `s_cap[k] = min(s8[k], s_cap[k-1] + lim*(t[k]-t[k-1])*(1-1e-6))`, `lim` = `cur["lim"][rows]` widened float32 -> float64 exactly; non-finite `lim` = unclamped.
+* Controls (in `controls`, all in `required`, so a failure WITHHOLDS): `K_CAP_ID` (lim := +inf -> progress, float64 and cast positions bit-equal H2CN_DEPLOY8; non-finite-lim windows bit-equal), `K_CAP_COMPLY`
+  (compliance row `exceed_rate_strict` mean 0 and n_exceed 0 on 16 cells: 2 surfaces x 2 seeds x {panel grid, full plan} x {all_windows, compliant_set}), `K_CAP_MONO`. Clamp-touched counts: `per_window_extra[*].cap8`.
+* Verdict clause 1 for `H2CN_CAP8` = Amendment 4's clause-1 function (unedited) + the 4b seal re-hashed now == the forward's record + the three K-CAP controls.

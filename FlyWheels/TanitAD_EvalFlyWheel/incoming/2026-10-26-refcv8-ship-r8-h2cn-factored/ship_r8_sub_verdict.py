@@ -41,6 +41,8 @@ REG_SHIP = C.PF_HOLD / "raw" / "ship_r8" / f"SHIP_R8_{TREE}.json"
 REQUIRED = ("1", "1b", "2", "3", "4", "5", "6", "7")
 CL1_TEXT = {"H2CN_DEPLOY8": ("(1) [AMENDMENT 4] the frozen H2cn stage's sha256 == the registered one; the registration precedes the first eval-side stage output; "
                              "the fit used no eval139 / train4572 clip; H2CN_PERSURFACE and RETIME_DEPLOY8 identities hold"),
+            "H2CN_CAP8": ("(1) [AMENDMENT 4b] everything Amendment 4's clause 1 states (frozen stage sha256 == registered; registration precedes the first eval-side output; "
+                          "fresh-clip disjoint; H2CN_PERSURFACE and RETIME_DEPLOY8 identities) AND the Amendment 4b seal == its file (re-hashed now) AND K-CAP-ID, K-CAP-COMPLY, K-CAP-MONO"),
             "FACTORED_DEPLOY8": ("(1) [AMENDMENT 5] the registered table's sha256 checks (unchanged) AND the identity controls (P_ss := P_os == OSONLY bit for bit; "
                                  "RETIME_DEPLOY8 == registered) AND both input traces' sha256 + final + 4,754 windows + hook counters")}
 CL1B_A5 = "(1b) [AMENDMENT 5] FEED PARITY: the os-only rolls use the per-frame feed (perframe_full), asserted from the rolls' own manifests; not shown -> INCOMPLETE"
@@ -154,6 +156,45 @@ def clause1_a4(fd, rid) -> dict:
     return {"id": 1, "text": CL1_TEXT["H2CN_DEPLOY8"], "status": st, "reason": "; ".join(bad + unk) if (bad or unk) else
             "stage sha256 == registered (re-hashed now); registration precedes the first eval-side output; fresh-clip disjoint; H2CN_PERSURFACE and RETIME_DEPLOY8 identities hold; B 2000, seeds 0 and 1",
             "evidence": ev}
+
+
+def clause1_4b(fd, rid) -> dict:
+    """AMENDMENT 4b clause 1 = Amendment 4's clause 1 (unchanged function, run on the cap8 forward) AND the 4b seal re-hashed now == the forward's record AND the three
+    K-CAP controls.  Amendment 4's own conjunction is NOT edited; its status/reason are carried into this one."""
+    base = clause1_a4(fd, rid)
+    ctl = (fd or {}).get("controls") or {}
+    bad, unk = [], []
+    if base["status"] == "FAIL":
+        bad.append("Amendment 4 clause-1 conjunction: " + base["reason"])
+    elif base["status"] != "PASS":
+        unk.append("Amendment 4 clause-1 conjunction: " + base["reason"])
+    now = C.check_amendment_4b_seal()                                    # SystemExit if the sealed text is not the file (never a silent pass)
+    rec = ((fd or {}).get("amendments") or {}).get("4b") or {}
+    ev = dict(base["evidence"])
+    ev.update(amendment_4b_seal_now=now, amendment_4b_seal_forward_record=rec, forward_is_cap8_run=(fd or {}).get("cap8"))
+    if fd is None:
+        unk.append("the forward file is absent")
+    elif (fd or {}).get("cap8") is not True:
+        bad.append("the forward is not a --cap8 run")
+    if not rec:
+        unk.append("the forward carries no Amendment 4b seal record")
+    elif rec.get("sha256") != now["sha256"]:
+        bad.append("the Amendment 4b file hashed now != the sha256 the forward recorded")
+    for nm, key in (("K-CAP-ID (lim := +inf -> bit-equal H2CN_DEPLOY8)", "K_CAP_ID"), ("K-CAP-COMPLY (compliance-row exceed_rate_strict == 0 on every set)", "K_CAP_COMPLY"),
+                    ("K-CAP-MONO (s_cap non-decreasing)", "K_CAP_MONO")):
+        v = ctl.get(key)
+        ev[key] = v
+        if v is False:
+            bad.append(nm + " is false")
+        elif v is not True:
+            unk.append(nm + " not shown")
+    kd = ctl.get("K_CAP_detail") or {}
+    ev["K_CAP_per_surface_seed"] = kd.get("per_surface_seed")
+    ev["K_CAP_compliance_of_H2CN_CAP8"] = kd.get("compliance_of_H2CN_CAP8")
+    st = _status(bad, unk)
+    return {"id": 1, "text": CL1_TEXT["H2CN_CAP8"], "status": st, "reason": "; ".join(bad + unk) if (bad or unk) else
+            "Amendment 4's clause-1 conjunction holds on the cap8 forward; the Amendment 4b seal == its file (re-hashed now) and == the forward's record; "
+            "K-CAP-ID, K-CAP-COMPLY, K-CAP-MONO all true", "evidence": ev}
 
 
 def clause1b_a4(reg_ship) -> dict:
@@ -272,6 +313,8 @@ def render(v: dict) -> str:
                  (f" | E3 " + " | ".join(f"{s}: {fmt(x)}" for s, x in (b.get("E3") or {}).items()) if b.get("E3") else ""))
     if v["beside"].get("running_max_changed_windows"):
         L.append(f"* running-maximum changed windows per (surface, seed): {v['beside']['running_max_changed_windows']}")
+    if v["beside"].get("clamp_touched_windows"):
+        L.append(f"* windows changed by the 4b clamp per (surface, seed): {v['beside']['clamp_touched_windows']}")
     if v.get("next_step"):
         L += ["", f"NEXT (committed in the amendment): {v['next_step']}"]
     L += ["", f"inputs sha256: {json.dumps(v['inputs_sha256'])}", ""]
@@ -280,7 +323,7 @@ def render(v: dict) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--arm", choices=("H2CN_DEPLOY8", "FACTORED_DEPLOY8"))
+    ap.add_argument("--arm", choices=("H2CN_DEPLOY8", "H2CN_CAP8", "FACTORED_DEPLOY8"))
     ap.add_argument("--identity-only", action="store_true")
     ap.add_argument("--forward", required=True)
     ap.add_argument("--arms-dir", required=True)
@@ -312,14 +355,19 @@ def main() -> int:
     if not a.arm:
         ap.error("--arm is required unless --identity-only")
     arm = a.arm
-    amend = "4" if arm == "H2CN_DEPLOY8" else "5"
-    if fd is not None and fd.get("mode") != ("h2cn" if amend == "4" else "factored"):
+    amend = {"H2CN_DEPLOY8": "4", "H2CN_CAP8": "4b", "FACTORED_DEPLOY8": "5"}[arm]
+    h2 = amend in ("4", "4b")
+    if fd is not None and fd.get("mode") != ("h2cn" if h2 else "factored"):
         raise SystemExit(f"[sub-verdict] the forward file is mode {fd.get('mode')!r}, the arm {arm} needs Amendment {amend}'s forward")
+    if amend == "4b":
+        C.check_amendment_4b_seal()                                       # refuses before anything is read
+    if fd is not None and fd.get("cap8") and od.resolve() == (C.WORK / "out" / "ship_r8").resolve():
+        raise SystemExit("[sub-verdict] REFUSING: a --cap8 forward must be read into a SEPARATE --out-dir (the landed out/ship_r8 files are never overwritten)")
     tac = load(ad / arm / f"TAC_{TREE}.json")
     pr, pp = load(ri["pr"]["path"]), load(ri["pp"]["path"])
     pins = load(a.trace_pins) if a.trace_pins else None
-    c1 = clause1_a4(fd, rid) if amend == "4" else clause1_a5(fd, rid, reg_ship, pins)
-    c1b = clause1b_a4(reg_ship) if amend == "4" else clause1b_a5(fd)
+    c1 = clause1_4b(fd, rid) if amend == "4b" else (clause1_a4(fd, rid) if amend == "4" else clause1_a5(fd, rid, reg_ship, pins))
+    c1b = clause1b_a4(reg_ship) if h2 else clause1b_a5(fd)
     c25 = clauses_on(arm, fd, tac)
     c6, c7 = B.clause6(pr), B.clause7(pp)
     for c_, k in ((c6, "pr"), (c7, "pp")):
@@ -328,7 +376,8 @@ def main() -> int:
             c_.update(status="INCOMPLETE", reason=f"the registered {k} file no longer hashes to the registered verdict's record | " + c_["reason"])
     clauses = [c1, c1b] + c25 + [c6, c7]
     ov = overall(clauses)
-    beside_arms = ("H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8") if amend == "4" else ("OSONLY_DEPLOY8", "RETIME_DEPLOY8")
+    beside_arms = {"4": ("H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8"), "4b": ("H2CN_DEPLOY8", "H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8"),
+                   "5": ("OSONLY_DEPLOY8", "RETIME_DEPLOY8")}[amend]
     bes = {"arms": {}}
     for b_arm in beside_arms:
         cs = clauses_on(b_arm, fd, load(ad / b_arm / f"TAC_{TREE}.json"))
@@ -336,8 +385,12 @@ def main() -> int:
                               "E1": cs[0]["evidence"].get("cells"), "E3": cs[1]["evidence"].get("cells"), "FZR_NR_rows": nr_rows(fd, b_arm)}
     bes["scored_arm_FZR_NR_rows"] = nr_rows(fd, arm)
     bes["compliance_row"] = (fd or {}).get("compliance_row")
-    if amend == "4":
+    if h2:
         bes["running_max_changed_windows"] = {k: v.get("running_max_changed_windows_H2CN_DEPLOY8") for k, v in ((fd or {}).get("per_window_extra") or {}).items()}
+    if amend == "4b":
+        bes["clamp_touched_windows"] = {k: {kk: (v.get("cap8") or {}).get(kk) for kk in ("n_changed_by_clamp", "share_changed_by_clamp", "n_changed_by_clamp_compliant",
+                                                                                         "share_changed_by_clamp_compliant", "n_windows", "n_compliant", "n_nonfinite_lim")}
+                                        for k, v in ((fd or {}).get("per_window_extra") or {}).items()}
     nxt = None
     if amend == "4":
         if ov == "PASS":
@@ -355,6 +408,12 @@ def main() -> int:
             nxt = ("FAIL of H2CN_DEPLOY8 (reported first); it fails only on S6 clauses while H2CN_NEAR holds them -> a sealed AMENDMENT 4b making H2CN_NEAR the arm is the next step"
                    if (s6_only and near_holds) else "FAIL -> the shipped RETIME stage stays; the failing clause(s) " + ", ".join(fails) + " name the next lever")
             bes["next_step_reading"] = {"failing_clauses": fails, "s6_only": bool(s6_only), "H2CN_NEAR_holds_them": bool(near_holds)}
+    elif amend == "4b":
+        fails = [str(c["id"]) for c in clauses if c["status"] == "FAIL"]
+        nxt = {"PASS": "PASS -> the PI chooses the shipped stage between H2CN_DEPLOY8 (Amendment 4 PASS, ~3x RETIME's ceiling exceedance) and H2CN_CAP8 (0 exceedance by construction); "
+                       "the Master Mind's recommendation is H2CN_CAP8. NavSim only with a separate go.",
+               "FAIL": "FAIL -> clause(s) " + ", ".join(fails) + " named; H2CN_DEPLOY8 stands as Amendment 4 registered it, with its compliance row put to the PI.",
+               "INCOMPLETE": "INCOMPLETE -> a clause could not be shown (see the reasons); H2CN_DEPLOY8 stands as Amendment 4 registered it."}.get(ov)
     else:
         nxt = {"PASS": "PASS -> the factored decode is a refcv8 deliverable candidate; build the in-model implementation (two planner passes on one trunk forward) "
                        "and its bit-equal control before anything ships; NavSim only with a separate go.",
