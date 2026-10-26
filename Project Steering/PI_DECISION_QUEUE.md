@@ -2554,3 +2554,17 @@ passes. The two navtest reads (theta_DEC and A1) are part of the authorisation. 
 - **(c) Defer map-in-planner;** refcv9 proceeds without it.
 
 **What does NOT wait on this:** the sizing in (a); SELFSHARP / L2-B / L1C on the dev-box GPU; NT A1 on Thor.
+
+## ⏳ OPEN (2026-10-26 ~03:00 Berlin) -- D-R8-STAGE-H2CN: may refcv8's shipped re-timing stage be replaced by the clean-split nonlinear progress head, via the registered SHIP-R8 battery?
+
+**Question.** A small MLP progress head (67 k parameters) on refcv8's frozen z_tac, fitted ONLY on the 300 fresh PhysicalAI clips you approved on 10-25 (clips refcv8 never saw), beats the frozen per-frame RETIME stage refcv8 ships with. The pre-registered next step is the registered SHIP-R8 battery on the new stage, which changes the deliverable. Go?
+
+**Why (MEASURED, `H-R9-L1C-H2CN-1`; T1 open loop on eval139, S2 compliant 4,159 windows, both inference seeds, paired episode-cluster bootstrap B 2000, episodes only, one training seed):** ADE -0.013 m, FDE -0.025 m, speed MAE -0.016 m/s, along-track final -0.029 m, speed-within-0.5 m/s +1.5 pp, all separated at both seeds; no row worse at either seed; braking AUC 0.771 vs 0.745 / 0.736 (not separated). The clean split was the point: the same head fitted on refcv8's own training clips FAILED (L1 O2, 0ee472f).
+
+**Options.**
+- **(a) Run the registered SHIP-R8 battery on the H2cn stage** (dev-box GPU, the per-frame bank; the frozen table's gate file is the reference). If it passes SHIP-R8 as registered, H2cn becomes refcv8's stage; NavSim only with a separate go. **MM recommends (a).**
+- **(b) Do not touch refcv8; carry H2cn into refcv9 as a trained, clean-split stage** (no SHIP-R8 read now).
+
+**What does NOT wait on this:** SELFSHARP and L2-B on the dev-box GPU; the D-R9-MAPHEAD-PRECISION sizing; NT A1 on Thor.
+
+**Addendum to D-R9-MAPHEAD-PRECISION (MM, 2026-10-26 ~02:40, sizing step 1, MEASURED from `ckpt_ema_48852.pt` + its `config.json`):** the map head is **0.64 M parameters, 0.6 % of the 100.7 M model** (`_map_hires`: encoder 407 k, lift 131 k, near 66 k, refine 21 k, near_refine 18 k), so the trunk can stay frozen; it was trained with `--w-map-hires 1.0`, `prior_corrected` decisions and a **dedicated near-field lift (`--map-hires-near-lift-m 20`, one near-refine block)** -- the 0-10 m false alarms point at that branch first. The GT (`/home/nvidia/data/sam3_gt_v3`) and the training frames are on **Thor** (free after NT A1, ~19:30 10-26). GPU-hours are still unmeasured; they come next, before any launch.
