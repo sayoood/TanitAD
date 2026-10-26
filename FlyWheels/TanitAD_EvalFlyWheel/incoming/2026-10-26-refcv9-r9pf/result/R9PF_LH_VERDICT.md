@@ -1,3 +1,489 @@
+# R9PF_LH_VERDICT -- VOID (K-EQ precondition not completed; stopped by the MM)
+
+**tier:** T1 self-action OPEN LOOP on logged eval139 frames, not driving performance  
+**estimator:** paired episode-cluster bootstrap over EPISODES (taniteval.ci.paired_episode_cluster_bootstrap, B 2000, bootstrap seed 0, windows finite on BOTH sides), models fixed -- blind to training and inference variance; ONE refcv8 trunk seed; ONE LH fit; R9 profile fit seeds 0/1/2 = the training-variance read; inference seeds 0 / 1 reported separately, never pooled  
+**intervals (provisional bars):** required separations (PA-1a MD vs H8, PA-1b FD vs FX, PA-2 four ADE cells) on the 97.5 % interval; 'not separated above / worse' clauses (PA-1a FD, PA-1b MD, PA-G family rows + exceedance) on the 95 % interval; both from the SAME bootstrap draw
+
+**reason:** K-EQ precondition not completed; stopped by the MM. PREREG_R9PF_LH s2 needs R9-PF's K-EQ / K-OFF PASSED; K-OFF PASSED (run 1), K-EQ FAILED as written (run 1, CUDA vs CPU) and the device-matched K-EQ under AMENDMENT2 was stopped before any record existed.  
+**stopped by:** Master Mind, 2026-10-26 ~23:45 (seed-0 CPU roll PID killed by explicit PID); reason given: the provisional bars FAIL on every clause including PA-G, so the precondition could only turn VOID into FAIL, at ~13+ further CPU hours.
+
+## K-EQ under AMENDMENT2 -- partial
+
+* seed 0: 7 / 15 clip chunks = **241 windows** rolled on CPU (of >= 500 required); record exists: False. stopped by the Master Mind (explicit PID) at ~23:45 after ~6.6 h.
+* seed 1: 3 / 15 chunks = **103 windows**; record exists: False. killed by this agent at ~21:03 (its own PIDs) when the box's commit headroom fell to 1.23 GB (C: 0.2 GB free, pagefile could not grow).
+* **No K-EQ record exists, so no max |d| and no decision agreement exist** for the CPU in-forward roll. Rate MEASURED: ~47 min per ~34-window clip chunk alone (~80 s / window, 4 threads); the CUDA roll does a chunk in ~18 s.
+* DIAGNOSTIC, not registered (CUDA-roll inputs, CPU offline): batched vs one-at-a-time composition of the SAME inputs exceeds 2 ulp on s0: 13 / 515 (max 1.53e-05 m), s1: 14 / 515 (max 1.53e-05 m) -- the tolerance sits below the CPU's own batch-size rounding; K-EQ as written would very likely have failed device-matched too.
+
+## Provisional bars -- BESIDE, NOT A VERDICT (word had the precondition held: FAIL, s5 'Both FAIL')
+
+| arm | fit seed | PA-1a s0/s1 | PA-1b s0/s1 | PA-2 (vs RETIME; vs ha0_ext_pose) s0 / s1 | PA-G | PA-G rows |
+|---|---|---|---|---|---|---|
+| R9LH-ARG | fs0 | False/False | False/False | (False; True) / (False; True) | False | 29 |
+| R9LH-ARG | fs1 | False/False | False/False | (False; True) / (False; True) | False | 35 |
+| R9LH-ARG | fs2 | False/False | False/False | (False; True) / (False; True) | False | 32 |
+| R9LH-SOFT | fs0 | False/False | False/False | (False; True) / (False; True) | False | 23 |
+| R9LH-SOFT | fs1 | False/False | False/False | (True; True) / (True; True) | False | 30 |
+| R9LH-SOFT | fs2 | False/False | False/False | (True; True) / (True; True) | False | 24 |
+| R9DER-ARG | fs0 | False/False | False/False | (False; True) / (False; True) | False | 36 |
+| R9DER-ARG | fs1 | False/False | False/False | (False; True) / (False; True) | False | 34 |
+| R9DER-ARG | fs2 | False/False | False/False | (False; True) / (False; True) | False | 36 |
+
+### R9LH-ARG fs0 -- clause cells (S6 compliant unless named)
+
+| clause | seed 0 | seed 1 |
+|---|---|---|
+| PA-1a MD_vs_H2CN_975_sep_below | -0.0595 [-0.1123, -0.0073] SEP (0.4742 vs 0.5336, n=639/79 ep) | -0.0579 [-0.1116, -0.0065] SEP (0.4742 vs 0.5321, n=639/79 ep) |
+| PA-1a FD_vs_H2CN_95_not_sep_above | +0.0593 [+0.0234, +0.0974] SEP (0.1196 vs 0.0603, n=1856/135 ep) | +0.0593 [+0.0234, +0.0974] SEP (0.1196 vs 0.0603, n=1856/135 ep) |
+| PA-1b FD_vs_FACTORED_975_sep_below | -0.0307 [-0.0835, +0.0225] (0.1196 vs 0.1503, n=1856/135 ep) | -0.0329 [-0.0859, +0.0184] (0.1196 vs 0.1525, n=1856/135 ep) |
+| PA-1b MD_vs_FACTORED_95_not_sep_above | +0.0845 [+0.0206, +0.1575] SEP (0.4742 vs 0.3897, n=639/79 ep) | +0.0845 [+0.0250, +0.1513] SEP (0.4742 vs 0.3897, n=639/79 ep) |
+| PA-2 S2_ADE_vs_RETIME_975 | -0.0013 [-0.0097, +0.0063] (0.2503 vs 0.2516, n=4159/138 ep) | -0.0018 [-0.0099, +0.0055] (0.2511 vs 0.2529, n=4159/138 ep) |
+| PA-2 S6_ADE_vs_RETIME_975 | -0.0348 [-0.2327, +0.1424] (2.5067 vs 2.5415, n=3251/138 ep) | -0.0282 [-0.2175, +0.1456] (2.5139 vs 2.5422, n=3251/138 ep) |
+| PA-2 S2_E1_vs_ha0_ext_pose_975 | -0.0355 [-0.0492, -0.0223] SEP (0.2503 vs 0.2858, n=4159/138 ep) | -0.0347 [-0.0480, -0.0222] SEP (0.2511 vs 0.2858, n=4159/138 ep) |
+| PA-2 S6_E3_vs_ha0_ext_pose_975 | -0.9031 [-1.2646, -0.5630] SEP (2.5067 vs 3.4098, n=3251/138 ep) | -0.8959 [-1.2531, -0.5588] SEP (2.5139 vs 3.4098, n=3251/138 ep) |
+| PA-G exceedance vs H2CN (95 %) | -0.0021 [-0.0099, +0.0053] (0.0989 vs 0.1010, n=4754/139 ep) | -0.0021 [-0.0099, +0.0053] (0.0989 vs 0.1010, n=4754/139 ep) |
+| rates MD / FD / exceedance | 0.4742 / 0.1196 / 0.0989 | 0.4742 / 0.1196 / 0.0989 |
+
+PA-G rows separated WORSE than H2CN_DEPLOY8 (29):
+* `s0|S2|ADE|ade_m: +0.0116 [+0.0064, +0.0167] SEP (0.2503 vs 0.2387, n=4159/138 ep)`
+* `s0|S2|ADE|fde_m: +0.0224 [+0.0102, +0.0345] SEP (0.5374 vs 0.5151, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0183 [+0.0119, +0.0247] SEP (0.2312 vs 0.2130, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_mae_m: +0.0132 [+0.0072, +0.0191] SEP (0.2030 vs 0.1898, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_abs_final_m: +0.0250 [+0.0115, +0.0390] SEP (0.4450 vs 0.4199, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0136 [-0.0199, -0.0075] SEP (0.8740 vs 0.8876, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0527 [+0.0418, +0.0642] SEP (0.3445 vs 0.2919, n=4159/138 ep)`
+* `s0|S6|ADE|ade_m: +0.2944 [+0.2079, +0.3872] SEP (2.5067 vs 2.2123, n=3251/138 ep)`
+* `s0|S6|ADE|fde_m: +0.7822 [+0.5382, +1.0386] SEP (6.2093 vs 5.4271, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_mae_mps: +0.1320 [+0.0891, +0.1758] SEP (0.9146 vs 0.7826, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_mae_m: +0.2950 [+0.2087, +0.3887] SEP (2.0992 vs 1.8042, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_abs_final_m: +0.7587 [+0.5073, +1.0169] SEP (5.1414 vs 4.3827, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0351 [-0.0571, -0.0151] SEP (0.5319 vs 0.5670, n=3251/138 ep)`
+* `s0|S6|TACTICAL|TAC_traj_lon_correct: -0.0504 [-0.0882, -0.0132] SEP (0.5900 vs 0.6404, n=3251/138 ep)`
+* `s1|S2|ADE|ade_m: +0.0117 [+0.0066, +0.0169] SEP (0.2511 vs 0.2394, n=4159/138 ep)`
+* `s1|S2|ADE|fde_m: +0.0227 [+0.0105, +0.0349] SEP (0.5393 vs 0.5166, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0183 [+0.0119, +0.0247] SEP (0.2312 vs 0.2129, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_along_mae_m: +0.0132 [+0.0071, +0.0191] SEP (0.2031 vs 0.1899, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_along_abs_final_m: +0.0250 [+0.0114, +0.0387] SEP (0.4455 vs 0.4205, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0134 [-0.0197, -0.0073] SEP (0.8742 vs 0.8876, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0527 [+0.0418, +0.0642] SEP (0.3445 vs 0.2918, n=4159/138 ep)`
+* `s1|S6|ADE|ade_m: +0.2950 [+0.2071, +0.3875] SEP (2.5139 vs 2.2189, n=3251/138 ep)`
+* `s1|S6|ADE|fde_m: +0.7813 [+0.5378, +1.0375] SEP (6.2265 vs 5.4451, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_mae_mps: +0.1320 [+0.0891, +0.1758] SEP (0.9146 vs 0.7825, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_mae_m: +0.2940 [+0.2073, +0.3884] SEP (2.1008 vs 1.8068, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_abs_final_m: +0.7539 [+0.5043, +1.0119] SEP (5.1452 vs 4.3913, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0351 [-0.0572, -0.0152] SEP (0.5318 vs 0.5669, n=3251/138 ep)`
+* `s1|S6|TACTICAL|TAC_traj_lat_correct: -0.0037 [-0.0069, -0.0006] SEP (0.8890 vs 0.8926, n=3251/138 ep)`
+* `s1|S6|TACTICAL|TAC_traj_lon_correct: -0.0504 [-0.0882, -0.0132] SEP (0.5900 vs 0.6404, n=3251/138 ep)`
+
+### R9LH-ARG fs1 -- clause cells (S6 compliant unless named)
+
+| clause | seed 0 | seed 1 |
+|---|---|---|
+| PA-1a MD_vs_H2CN_975_sep_below | -0.0579 [-0.1138, -0.0032] SEP (0.4757 vs 0.5336, n=639/79 ep) | -0.0563 [-0.1116, -0.0027] SEP (0.4757 vs 0.5321, n=639/79 ep) |
+| PA-1a FD_vs_H2CN_95_not_sep_above | +0.0630 [+0.0272, +0.1023] SEP (0.1234 vs 0.0603, n=1856/135 ep) | +0.0630 [+0.0272, +0.1023] SEP (0.1234 vs 0.0603, n=1856/135 ep) |
+| PA-1b FD_vs_FACTORED_975_sep_below | -0.0269 [-0.0791, +0.0264] (0.1234 vs 0.1503, n=1856/135 ep) | -0.0291 [-0.0812, +0.0226] (0.1234 vs 0.1525, n=1856/135 ep) |
+| PA-1b MD_vs_FACTORED_95_not_sep_above | +0.0861 [+0.0220, +0.1586] SEP (0.4757 vs 0.3897, n=639/79 ep) | +0.0861 [+0.0256, +0.1516] SEP (0.4757 vs 0.3897, n=639/79 ep) |
+| PA-2 S2_ADE_vs_RETIME_975 | -0.0002 [-0.0086, +0.0077] (0.2514 vs 0.2516, n=4159/138 ep) | -0.0007 [-0.0092, +0.0070] (0.2522 vs 0.2529, n=4159/138 ep) |
+| PA-2 S6_ADE_vs_RETIME_975 | -0.0342 [-0.2292, +0.1372] (2.5073 vs 2.5415, n=3251/138 ep) | -0.0278 [-0.2152, +0.1371] (2.5144 vs 2.5422, n=3251/138 ep) |
+| PA-2 S2_E1_vs_ha0_ext_pose_975 | -0.0344 [-0.0492, -0.0204] SEP (0.2514 vs 0.2858, n=4159/138 ep) | -0.0337 [-0.0481, -0.0201] SEP (0.2522 vs 0.2858, n=4159/138 ep) |
+| PA-2 S6_E3_vs_ha0_ext_pose_975 | -0.9025 [-1.2636, -0.5550] SEP (2.5073 vs 3.4098, n=3251/138 ep) | -0.8954 [-1.2546, -0.5541] SEP (2.5144 vs 3.4098, n=3251/138 ep) |
+| PA-G exceedance vs H2CN (95 %) | +0.0036 [-0.0036, +0.0114] (0.1045 vs 0.1010, n=4754/139 ep) | +0.0036 [-0.0036, +0.0114] (0.1045 vs 0.1010, n=4754/139 ep) |
+| rates MD / FD / exceedance | 0.4757 / 0.1234 / 0.1045 | 0.4757 / 0.1234 / 0.1045 |
+
+PA-G rows separated WORSE than H2CN_DEPLOY8 (35):
+* `s0|S2|ADE|ade_m: +0.0127 [+0.0076, +0.0178] SEP (0.2514 vs 0.2387, n=4159/138 ep)`
+* `s0|S2|ADE|fde_m: +0.0305 [+0.0181, +0.0431] SEP (0.5456 vs 0.5151, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0218 [+0.0149, +0.0288] SEP (0.2348 vs 0.2130, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_mae_m: +0.0137 [+0.0080, +0.0193] SEP (0.2034 vs 0.1898, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_abs_final_m: +0.0318 [+0.0182, +0.0457] SEP (0.4517 vs 0.4199, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0238 [-0.0314, -0.0168] SEP (0.8638 vs 0.8876, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0586 [+0.0462, +0.0716] SEP (0.3505 vs 0.2919, n=4159/138 ep)`
+* `s0|S2|LATERAL|LAT_heading_mae_deg: +0.0060 [+0.0007, +0.0122] SEP (1.5040 vs 1.4981, n=3934/137 ep)`
+* `s0|S2|LATERAL|LAT_cross_mae_m: +0.0014 [+0.0002, +0.0029] SEP (0.0969 vs 0.0955, n=4159/138 ep)`
+* `s0|S2|TACTICAL|TAC_traj_lat_correct: -0.0017 [-0.0032, -0.0005] SEP (0.9620 vs 0.9637, n=4159/138 ep)`
+* `s0|S6|ADE|ade_m: +0.2950 [+0.2090, +0.3877] SEP (2.5073 vs 2.2123, n=3251/138 ep)`
+* `s0|S6|ADE|fde_m: +0.7677 [+0.5306, +1.0211] SEP (6.1948 vs 5.4271, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_mae_mps: +0.1252 [+0.0841, +0.1685] SEP (0.9078 vs 0.7826, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_mae_m: +0.2969 [+0.2120, +0.3919] SEP (2.1011 vs 1.8042, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_abs_final_m: +0.7484 [+0.5021, +1.0029] SEP (5.1311 vs 4.3827, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0289 [-0.0525, -0.0084] SEP (0.5380 vs 0.5670, n=3251/138 ep)`
+* `s0|S6|TACTICAL|TAC_traj_lon_correct: -0.0372 [-0.0724, -0.0016] SEP (0.6032 vs 0.6404, n=3251/138 ep)`
+* `s1|S2|ADE|ade_m: +0.0127 [+0.0077, +0.0177] SEP (0.2522 vs 0.2394, n=4159/138 ep)`
+* `s1|S2|ADE|fde_m: +0.0305 [+0.0184, +0.0430] SEP (0.5471 vs 0.5166, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0218 [+0.0149, +0.0288] SEP (0.2347 vs 0.2129, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_along_mae_m: +0.0136 [+0.0080, +0.0193] SEP (0.2036 vs 0.1899, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_along_abs_final_m: +0.0317 [+0.0180, +0.0458] SEP (0.4523 vs 0.4205, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0238 [-0.0314, -0.0168] SEP (0.8638 vs 0.8876, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0586 [+0.0462, +0.0716] SEP (0.3505 vs 0.2918, n=4159/138 ep)`
+* `s1|S2|LATERAL|LAT_heading_mae_deg: +0.0066 [+0.0011, +0.0134] SEP (1.5150 vs 1.5084, n=3934/137 ep)`
+* `s1|S2|LATERAL|LAT_yaw_rate_mae_radps_valid: +0.0002 [+0.0000, +0.0004] SEP (0.0177 vs 0.0175, n=3894/137 ep)`
+* `s1|S2|LATERAL|LAT_cross_mae_m: +0.0014 [+0.0003, +0.0028] SEP (0.0979 vs 0.0964, n=4159/138 ep)`
+* `s1|S6|ADE|ade_m: +0.2955 [+0.2093, +0.3880] SEP (2.5144 vs 2.2189, n=3251/138 ep)`
+* `s1|S6|ADE|fde_m: +0.7686 [+0.5300, +1.0231] SEP (6.2137 vs 5.4451, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_mae_mps: +0.1252 [+0.0841, +0.1685] SEP (0.9077 vs 0.7825, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_mae_m: +0.2961 [+0.2110, +0.3907] SEP (2.1029 vs 1.8068, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_abs_final_m: +0.7453 [+0.5018, +0.9988] SEP (5.1366 vs 4.3913, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0288 [-0.0524, -0.0082] SEP (0.5381 vs 0.5669, n=3251/138 ep)`
+* `s1|S6|TACTICAL|TAC_traj_lat_correct: -0.0037 [-0.0068, -0.0006] SEP (0.8890 vs 0.8926, n=3251/138 ep)`
+* `s1|S6|TACTICAL|TAC_traj_lon_correct: -0.0372 [-0.0724, -0.0016] SEP (0.6032 vs 0.6404, n=3251/138 ep)`
+
+### R9LH-ARG fs2 -- clause cells (S6 compliant unless named)
+
+| clause | seed 0 | seed 1 |
+|---|---|---|
+| PA-1a MD_vs_H2CN_975_sep_below | -0.0454 [-0.1042, +0.0136] (0.4883 vs 0.5336, n=639/79 ep) | -0.0438 [-0.1038, +0.0143] (0.4883 vs 0.5321, n=639/79 ep) |
+| PA-1a FD_vs_H2CN_95_not_sep_above | +0.0582 [+0.0243, +0.0950] SEP (0.1185 vs 0.0603, n=1856/135 ep) | +0.0582 [+0.0243, +0.0950] SEP (0.1185 vs 0.0603, n=1856/135 ep) |
+| PA-1b FD_vs_FACTORED_975_sep_below | -0.0318 [-0.0822, +0.0205] (0.1185 vs 0.1503, n=1856/135 ep) | -0.0339 [-0.0852, +0.0159] (0.1185 vs 0.1525, n=1856/135 ep) |
+| PA-1b MD_vs_FACTORED_95_not_sep_above | +0.0986 [+0.0335, +0.1703] SEP (0.4883 vs 0.3897, n=639/79 ep) | +0.0986 [+0.0372, +0.1654] SEP (0.4883 vs 0.3897, n=639/79 ep) |
+| PA-2 S2_ADE_vs_RETIME_975 | -0.0003 [-0.0090, +0.0078] (0.2512 vs 0.2516, n=4159/138 ep) | -0.0009 [-0.0095, +0.0069] (0.2520 vs 0.2529, n=4159/138 ep) |
+| PA-2 S6_ADE_vs_RETIME_975 | -0.0291 [-0.2273, +0.1458] (2.5125 vs 2.5415, n=3251/138 ep) | -0.0232 [-0.2110, +0.1451] (2.5189 vs 2.5422, n=3251/138 ep) |
+| PA-2 S2_E1_vs_ha0_ext_pose_975 | -0.0346 [-0.0486, -0.0210] SEP (0.2512 vs 0.2858, n=4159/138 ep) | -0.0338 [-0.0474, -0.0208] SEP (0.2520 vs 0.2858, n=4159/138 ep) |
+| PA-2 S6_E3_vs_ha0_ext_pose_975 | -0.8973 [-1.2617, -0.5531] SEP (2.5125 vs 3.4098, n=3251/138 ep) | -0.8908 [-1.2534, -0.5506] SEP (2.5189 vs 3.4098, n=3251/138 ep) |
+| PA-G exceedance vs H2CN (95 %) | +0.0025 [-0.0057, +0.0118] (0.1035 vs 0.1010, n=4754/139 ep) | +0.0025 [-0.0057, +0.0118] (0.1035 vs 0.1010, n=4754/139 ep) |
+| rates MD / FD / exceedance | 0.4883 / 0.1185 / 0.1035 | 0.4883 / 0.1185 / 0.1035 |
+
+PA-G rows separated WORSE than H2CN_DEPLOY8 (32):
+* `s0|S2|ADE|ade_m: +0.0125 [+0.0079, +0.0174] SEP (0.2512 vs 0.2387, n=4159/138 ep)`
+* `s0|S2|ADE|fde_m: +0.0272 [+0.0164, +0.0389] SEP (0.5423 vs 0.5151, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0188 [+0.0130, +0.0251] SEP (0.2318 vs 0.2130, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_mae_m: +0.0142 [+0.0090, +0.0196] SEP (0.2039 vs 0.1898, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_abs_final_m: +0.0298 [+0.0177, +0.0428] SEP (0.4497 vs 0.4199, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0172 [-0.0233, -0.0115] SEP (0.8704 vs 0.8876, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0437 [+0.0354, +0.0527] SEP (0.3355 vs 0.2919, n=4159/138 ep)`
+* `s0|S2|LATERAL|LAT_heading_mae_deg: +0.0047 [+0.0001, +0.0099] SEP (1.5002 vs 1.4954, n=3934/137 ep)`
+* `s0|S2|LATERAL|LAT_yaw_rate_mae_radps_valid: +0.0002 [+0.0000, +0.0003] SEP (0.0177 vs 0.0175, n=3891/137 ep)`
+* `s0|S6|ADE|ade_m: +0.3001 [+0.2167, +0.3906] SEP (2.5125 vs 2.2123, n=3251/138 ep)`
+* `s0|S6|ADE|fde_m: +0.8057 [+0.5634, +1.0603] SEP (6.2327 vs 5.4271, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_mae_mps: +0.1320 [+0.0912, +0.1758] SEP (0.9146 vs 0.7826, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_mae_m: +0.2967 [+0.2118, +0.3867] SEP (2.1009 vs 1.8042, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_abs_final_m: +0.7686 [+0.5189, +1.0264] SEP (5.1513 vs 4.3827, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0268 [-0.0488, -0.0072] SEP (0.5401 vs 0.5670, n=3251/138 ep)`
+* `s0|S6|TACTICAL|TAC_traj_lon_correct: -0.0474 [-0.0835, -0.0107] SEP (0.5930 vs 0.6404, n=3251/138 ep)`
+* `s1|S2|ADE|ade_m: +0.0126 [+0.0080, +0.0175] SEP (0.2520 vs 0.2394, n=4159/138 ep)`
+* `s1|S2|ADE|fde_m: +0.0271 [+0.0164, +0.0388] SEP (0.5437 vs 0.5166, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0188 [+0.0130, +0.0251] SEP (0.2317 vs 0.2129, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_along_mae_m: +0.0141 [+0.0090, +0.0196] SEP (0.2041 vs 0.1899, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_along_abs_final_m: +0.0298 [+0.0176, +0.0428] SEP (0.4503 vs 0.4205, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0172 [-0.0233, -0.0115] SEP (0.8704 vs 0.8876, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0437 [+0.0355, +0.0527] SEP (0.3355 vs 0.2918, n=4159/138 ep)`
+* `s1|S2|LATERAL|LAT_heading_mae_deg: +0.0051 [+0.0002, +0.0107] SEP (1.5113 vs 1.5062, n=3934/137 ep)`
+* `s1|S2|LATERAL|LAT_yaw_rate_mae_radps_valid: +0.0002 [+0.0000, +0.0003] SEP (0.0177 vs 0.0176, n=3891/137 ep)`
+* `s1|S6|ADE|ade_m: +0.3000 [+0.2163, +0.3903] SEP (2.5189 vs 2.2189, n=3251/138 ep)`
+* `s1|S6|ADE|fde_m: +0.8052 [+0.5642, +1.0599] SEP (6.2503 vs 5.4451, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_mae_mps: +0.1320 [+0.0912, +0.1758] SEP (0.9146 vs 0.7825, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_mae_m: +0.2961 [+0.2115, +0.3862] SEP (2.1029 vs 1.8068, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_abs_final_m: +0.7667 [+0.5209, +1.0250] SEP (5.1580 vs 4.3913, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0267 [-0.0487, -0.0071] SEP (0.5402 vs 0.5669, n=3251/138 ep)`
+* `s1|S6|TACTICAL|TAC_traj_lon_correct: -0.0474 [-0.0835, -0.0107] SEP (0.5930 vs 0.6404, n=3251/138 ep)`
+
+### R9LH-SOFT fs0 -- clause cells (S6 compliant unless named)
+
+| clause | seed 0 | seed 1 |
+|---|---|---|
+| PA-1a MD_vs_H2CN_975_sep_below | +0.0000 [-0.0383, +0.0373] (0.5336 vs 0.5336, n=639/79 ep) | +0.0016 [-0.0375, +0.0398] (0.5336 vs 0.5321, n=639/79 ep) |
+| PA-1a FD_vs_H2CN_95_not_sep_above | +0.0183 [-0.0056, +0.0431] (0.0787 vs 0.0603, n=1856/135 ep) | +0.0183 [-0.0056, +0.0431] (0.0787 vs 0.0603, n=1856/135 ep) |
+| PA-1b FD_vs_FACTORED_975_sep_below | -0.0717 [-0.1154, -0.0295] SEP (0.0787 vs 0.1503, n=1856/135 ep) | -0.0738 [-0.1179, -0.0312] SEP (0.0787 vs 0.1525, n=1856/135 ep) |
+| PA-1b MD_vs_FACTORED_95_not_sep_above | +0.1440 [+0.0772, +0.2189] SEP (0.5336 vs 0.3897, n=639/79 ep) | +0.1440 [+0.0804, +0.2146] SEP (0.5336 vs 0.3897, n=639/79 ep) |
+| PA-2 S2_ADE_vs_RETIME_975 | -0.0071 [-0.0148, -0.0002] SEP (0.2445 vs 0.2516, n=4159/138 ep) | -0.0076 [-0.0154, -0.0007] SEP (0.2453 vs 0.2529, n=4159/138 ep) |
+| PA-2 S6_ADE_vs_RETIME_975 | -0.1675 [-0.3494, +0.0011] (2.3740 vs 2.5415, n=3251/138 ep) | -0.1612 [-0.3387, +0.0022] (2.3809 vs 2.5422, n=3251/138 ep) |
+| PA-2 S2_E1_vs_ha0_ext_pose_975 | -0.0414 [-0.0538, -0.0293] SEP (0.2445 vs 0.2858, n=4159/138 ep) | -0.0405 [-0.0525, -0.0291] SEP (0.2453 vs 0.2858, n=4159/138 ep) |
+| PA-2 S6_E3_vs_ha0_ext_pose_975 | -1.0357 [-1.3768, -0.7118] SEP (2.3740 vs 3.4098, n=3251/138 ep) | -1.0288 [-1.3682, -0.7104] SEP (2.3809 vs 3.4098, n=3251/138 ep) |
+| PA-G exceedance vs H2CN (95 %) | -0.0093 [-0.0164, -0.0029] SEP (0.0917 vs 0.1010, n=4754/139 ep) | -0.0090 [-0.0160, -0.0029] SEP (0.0919 vs 0.1010, n=4754/139 ep) |
+| rates MD / FD / exceedance | 0.5336 / 0.0787 / 0.0917 | 0.5336 / 0.0787 / 0.0919 |
+
+PA-G rows separated WORSE than H2CN_DEPLOY8 (23):
+* `s0|S2|ADE|ade_m: +0.0058 [+0.0011, +0.0105] SEP (0.2445 vs 0.2387, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0104 [+0.0047, +0.0160] SEP (0.2234 vs 0.2130, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_mae_m: +0.0061 [+0.0007, +0.0115] SEP (0.1958 vs 0.1898, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0547 [+0.0429, +0.0665] SEP (0.3465 vs 0.2919, n=4159/138 ep)`
+* `s0|S2|LATERAL|LAT_curvature_mae_1pm_valid: +0.0000 [+0.0000, +0.0001] SEP (0.0037 vs 0.0037, n=3891/137 ep)`
+* `s0|S6|ADE|ade_m: +0.1617 [+0.0988, +0.2264] SEP (2.3740 vs 2.2123, n=3251/138 ep)`
+* `s0|S6|ADE|fde_m: +0.4479 [+0.2724, +0.6225] SEP (5.8750 vs 5.4271, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_mae_mps: +0.0720 [+0.0415, +0.1021] SEP (0.8546 vs 0.7826, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_mae_m: +0.1673 [+0.1026, +0.2328] SEP (1.9715 vs 1.8042, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_abs_final_m: +0.4556 [+0.2787, +0.6343] SEP (4.8383 vs 4.3827, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0314 [-0.0491, -0.0121] SEP (0.5356 vs 0.5670, n=3251/138 ep)`
+* `s0|S6|TACTICAL|TAC_traj_lon_correct: -0.0560 [-0.0908, -0.0229] SEP (0.5844 vs 0.6404, n=3251/138 ep)`
+* `s1|S2|ADE|ade_m: +0.0059 [+0.0013, +0.0106] SEP (0.2453 vs 0.2394, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0104 [+0.0047, +0.0161] SEP (0.2234 vs 0.2129, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_along_mae_m: +0.0060 [+0.0007, +0.0114] SEP (0.1960 vs 0.1899, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0547 [+0.0429, +0.0665] SEP (0.3465 vs 0.2918, n=4159/138 ep)`
+* `s1|S6|ADE|ade_m: +0.1620 [+0.0975, +0.2271] SEP (2.3809 vs 2.2189, n=3251/138 ep)`
+* `s1|S6|ADE|fde_m: +0.4475 [+0.2713, +0.6233] SEP (5.8926 vs 5.4451, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_mae_mps: +0.0720 [+0.0415, +0.1021] SEP (0.8545 vs 0.7825, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_mae_m: +0.1678 [+0.1033, +0.2335] SEP (1.9746 vs 1.8068, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_abs_final_m: +0.4567 [+0.2782, +0.6345] SEP (4.8480 vs 4.3913, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0312 [-0.0491, -0.0119] SEP (0.5357 vs 0.5669, n=3251/138 ep)`
+* `s1|S6|TACTICAL|TAC_traj_lon_correct: -0.0557 [-0.0906, -0.0225] SEP (0.5847 vs 0.6404, n=3251/138 ep)`
+
+### R9LH-SOFT fs1 -- clause cells (S6 compliant unless named)
+
+| clause | seed 0 | seed 1 |
+|---|---|---|
+| PA-1a MD_vs_H2CN_975_sep_below | -0.0047 [-0.0492, +0.0367] (0.5290 vs 0.5336, n=639/79 ep) | -0.0031 [-0.0475, +0.0388] (0.5290 vs 0.5321, n=639/79 ep) |
+| PA-1a FD_vs_H2CN_95_not_sep_above | +0.0124 [-0.0084, +0.0359] (0.0727 vs 0.0603, n=1856/135 ep) | +0.0124 [-0.0084, +0.0359] (0.0727 vs 0.0603, n=1856/135 ep) |
+| PA-1b FD_vs_FACTORED_975_sep_below | -0.0776 [-0.1152, -0.0397] SEP (0.0727 vs 0.1503, n=1856/135 ep) | -0.0797 [-0.1193, -0.0425] SEP (0.0727 vs 0.1525, n=1856/135 ep) |
+| PA-1b MD_vs_FACTORED_95_not_sep_above | +0.1393 [+0.0757, +0.2071] SEP (0.5290 vs 0.3897, n=639/79 ep) | +0.1393 [+0.0808, +0.2024] SEP (0.5290 vs 0.3897, n=639/79 ep) |
+| PA-2 S2_ADE_vs_RETIME_975 | -0.0080 [-0.0157, -0.0009] SEP (0.2436 vs 0.2516, n=4159/138 ep) | -0.0086 [-0.0163, -0.0019] SEP (0.2443 vs 0.2529, n=4159/138 ep) |
+| PA-2 S6_ADE_vs_RETIME_975 | -0.1937 [-0.3751, -0.0307] SEP (2.3478 vs 2.5415, n=3251/138 ep) | -0.1879 [-0.3620, -0.0263] SEP (2.3543 vs 2.5422, n=3251/138 ep) |
+| PA-2 S2_E1_vs_ha0_ext_pose_975 | -0.0423 [-0.0556, -0.0292] SEP (0.2436 vs 0.2858, n=4159/138 ep) | -0.0415 [-0.0548, -0.0289] SEP (0.2443 vs 0.2858, n=4159/138 ep) |
+| PA-2 S6_E3_vs_ha0_ext_pose_975 | -1.0620 [-1.4064, -0.7402] SEP (2.3478 vs 3.4098, n=3251/138 ep) | -1.0555 [-1.3893, -0.7373] SEP (2.3543 vs 3.4098, n=3251/138 ep) |
+| PA-G exceedance vs H2CN (95 %) | -0.0061 [-0.0109, -0.0015] SEP (0.0949 vs 0.1010, n=4754/139 ep) | -0.0063 [-0.0112, -0.0019] SEP (0.0947 vs 0.1010, n=4754/139 ep) |
+| rates MD / FD / exceedance | 0.5290 / 0.0727 / 0.0949 | 0.5290 / 0.0727 / 0.0947 |
+
+PA-G rows separated WORSE than H2CN_DEPLOY8 (30):
+* `s0|S2|ADE|ade_m: +0.0049 [+0.0010, +0.0090] SEP (0.2436 vs 0.2387, n=4159/138 ep)`
+* `s0|S2|ADE|fde_m: +0.0125 [+0.0024, +0.0231] SEP (0.5276 vs 0.5151, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0089 [+0.0035, +0.0144] SEP (0.2219 vs 0.2130, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_mae_m: +0.0044 [+0.0000, +0.0090] SEP (0.1942 vs 0.1898, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0104 [-0.0166, -0.0045] SEP (0.8772 vs 0.8876, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0345 [+0.0238, +0.0447] SEP (0.3263 vs 0.2919, n=4159/138 ep)`
+* `s0|S2|LATERAL|LAT_heading_mae_deg: +0.0067 [+0.0025, +0.0120] SEP (1.5025 vs 1.4958, n=3934/138 ep)`
+* `s0|S2|LATERAL|LAT_yaw_rate_mae_radps_valid: +0.0001 [+0.0000, +0.0003] SEP (0.0176 vs 0.0175, n=3894/137 ep)`
+* `s0|S2|LATERAL|LAT_cross_mae_m: +0.0013 [+0.0002, +0.0025] SEP (0.0968 vs 0.0955, n=4159/138 ep)`
+* `s0|S6|ADE|ade_m: +0.1355 [+0.0779, +0.1941] SEP (2.3478 vs 2.2123, n=3251/138 ep)`
+* `s0|S6|ADE|fde_m: +0.3454 [+0.1916, +0.5008] SEP (5.7724 vs 5.4271, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_mae_mps: +0.0511 [+0.0241, +0.0780] SEP (0.8337 vs 0.7826, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_mae_m: +0.1384 [+0.0802, +0.1986] SEP (1.9426 vs 1.8042, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_abs_final_m: +0.3545 [+0.1964, +0.5166] SEP (4.7372 vs 4.3827, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0164 [-0.0325, -0.0001] SEP (0.5506 vs 0.5670, n=3251/138 ep)`
+* `s0|S6|TACTICAL|TAC_traj_lon_correct: -0.0338 [-0.0628, -0.0061] SEP (0.6066 vs 0.6404, n=3251/138 ep)`
+* `s1|S2|ADE|ade_m: +0.0049 [+0.0011, +0.0090] SEP (0.2443 vs 0.2394, n=4159/138 ep)`
+* `s1|S2|ADE|fde_m: +0.0126 [+0.0024, +0.0232] SEP (0.5292 vs 0.5166, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0090 [+0.0035, +0.0144] SEP (0.2219 vs 0.2129, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0104 [-0.0166, -0.0045] SEP (0.8772 vs 0.8876, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0345 [+0.0238, +0.0447] SEP (0.3263 vs 0.2918, n=4159/138 ep)`
+* `s1|S2|LATERAL|LAT_heading_mae_deg: +0.0067 [+0.0023, +0.0122] SEP (1.5131 vs 1.5064, n=3934/138 ep)`
+* `s1|S2|LATERAL|LAT_yaw_rate_mae_radps_valid: +0.0001 [+0.0000, +0.0003] SEP (0.0177 vs 0.0175, n=3894/137 ep)`
+* `s1|S2|LATERAL|LAT_cross_mae_m: +0.0013 [+0.0003, +0.0025] SEP (0.0977 vs 0.0964, n=4159/138 ep)`
+* `s1|S6|ADE|ade_m: +0.1354 [+0.0780, +0.1937] SEP (2.3543 vs 2.2189, n=3251/138 ep)`
+* `s1|S6|ADE|fde_m: +0.3452 [+0.1913, +0.5008] SEP (5.7903 vs 5.4451, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_mae_mps: +0.0511 [+0.0242, +0.0780] SEP (0.8337 vs 0.7825, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_mae_m: +0.1393 [+0.0808, +0.1991] SEP (1.9461 vs 1.8068, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_abs_final_m: +0.3577 [+0.1999, +0.5179] SEP (4.7490 vs 4.3913, n=3251/138 ep)`
+* `s1|S6|TACTICAL|TAC_traj_lon_correct: -0.0338 [-0.0631, -0.0061] SEP (0.6066 vs 0.6404, n=3251/138 ep)`
+
+### R9LH-SOFT fs2 -- clause cells (S6 compliant unless named)
+
+| clause | seed 0 | seed 1 |
+|---|---|---|
+| PA-1a MD_vs_H2CN_975_sep_below | +0.0188 [-0.0295, +0.0654] (0.5524 vs 0.5336, n=639/79 ep) | +0.0203 [-0.0276, +0.0673] (0.5524 vs 0.5321, n=639/79 ep) |
+| PA-1a FD_vs_H2CN_95_not_sep_above | +0.0178 [-0.0048, +0.0430] (0.0781 vs 0.0603, n=1856/135 ep) | +0.0178 [-0.0048, +0.0430] (0.0781 vs 0.0603, n=1856/135 ep) |
+| PA-1b FD_vs_FACTORED_975_sep_below | -0.0722 [-0.1131, -0.0343] SEP (0.0781 vs 0.1503, n=1856/135 ep) | -0.0744 [-0.1144, -0.0364] SEP (0.0781 vs 0.1525, n=1856/135 ep) |
+| PA-1b MD_vs_FACTORED_95_not_sep_above | +0.1628 [+0.0967, +0.2321] SEP (0.5524 vs 0.3897, n=639/79 ep) | +0.1628 [+0.1000, +0.2292] SEP (0.5524 vs 0.3897, n=639/79 ep) |
+| PA-2 S2_ADE_vs_RETIME_975 | -0.0089 [-0.0173, -0.0017] SEP (0.2427 vs 0.2516, n=4159/138 ep) | -0.0094 [-0.0175, -0.0022] SEP (0.2435 vs 0.2529, n=4159/138 ep) |
+| PA-2 S6_ADE_vs_RETIME_975 | -0.1728 [-0.3569, -0.0134] SEP (2.3687 vs 2.5415, n=3251/138 ep) | -0.1670 [-0.3462, -0.0093] SEP (2.3751 vs 2.5422, n=3251/138 ep) |
+| PA-2 S2_E1_vs_ha0_ext_pose_975 | -0.0431 [-0.0562, -0.0304] SEP (0.2427 vs 0.2858, n=4159/138 ep) | -0.0424 [-0.0553, -0.0298] SEP (0.2435 vs 0.2858, n=4159/138 ep) |
+| PA-2 S6_E3_vs_ha0_ext_pose_975 | -1.0410 [-1.3938, -0.7085] SEP (2.3687 vs 3.4098, n=3251/138 ep) | -1.0347 [-1.3798, -0.7110] SEP (2.3751 vs 3.4098, n=3251/138 ep) |
+| PA-G exceedance vs H2CN (95 %) | -0.0099 [-0.0160, -0.0042] SEP (0.0911 vs 0.1010, n=4754/139 ep) | -0.0099 [-0.0160, -0.0042] SEP (0.0911 vs 0.1010, n=4754/139 ep) |
+| rates MD / FD / exceedance | 0.5524 / 0.0781 / 0.0911 | 0.5524 / 0.0781 / 0.0911 |
+
+PA-G rows separated WORSE than H2CN_DEPLOY8 (24):
+* `s0|S2|ADE|ade_m: +0.0040 [+0.0002, +0.0080] SEP (0.2427 vs 0.2387, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0058 [+0.0009, +0.0110] SEP (0.2187 vs 0.2130, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0057 [-0.0108, -0.0006] SEP (0.8819 vs 0.8876, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0182 [+0.0118, +0.0249] SEP (0.3100 vs 0.2919, n=4159/138 ep)`
+* `s0|S2|LATERAL|LAT_heading_mae_deg: +0.0055 [+0.0012, +0.0101] SEP (1.4999 vs 1.4944, n=3933/138 ep)`
+* `s0|S2|LATERAL|LAT_yaw_rate_mae_radps_valid: +0.0001 [+0.0000, +0.0003] SEP (0.0176 vs 0.0175, n=3894/137 ep)`
+* `s0|S6|ADE|ade_m: +0.1564 [+0.0941, +0.2192] SEP (2.3687 vs 2.2123, n=3251/138 ep)`
+* `s0|S6|ADE|fde_m: +0.4368 [+0.2657, +0.6107] SEP (5.8639 vs 5.4271, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_mae_mps: +0.0678 [+0.0382, +0.0972] SEP (0.8504 vs 0.7826, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_mae_m: +0.1566 [+0.0948, +0.2194] SEP (1.9608 vs 1.8042, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_abs_final_m: +0.4296 [+0.2585, +0.5979] SEP (4.8123 vs 4.3827, n=3251/138 ep)`
+* `s0|S6|TACTICAL|TAC_traj_lon_correct: -0.0504 [-0.0835, -0.0186] SEP (0.5900 vs 0.6404, n=3251/138 ep)`
+* `s1|S2|ADE|ade_m: +0.0040 [+0.0002, +0.0081] SEP (0.2435 vs 0.2394, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0058 [+0.0009, +0.0110] SEP (0.2187 vs 0.2129, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0059 [-0.0109, -0.0007] SEP (0.8817 vs 0.8876, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0182 [+0.0118, +0.0249] SEP (0.3100 vs 0.2918, n=4159/138 ep)`
+* `s1|S2|LATERAL|LAT_heading_mae_deg: +0.0050 [+0.0007, +0.0094] SEP (1.5100 vs 1.5051, n=3933/138 ep)`
+* `s1|S2|LATERAL|LAT_yaw_rate_mae_radps_valid: +0.0001 [+0.0000, +0.0002] SEP (0.0177 vs 0.0175, n=3894/137 ep)`
+* `s1|S6|ADE|ade_m: +0.1562 [+0.0942, +0.2187] SEP (2.3751 vs 2.2189, n=3251/138 ep)`
+* `s1|S6|ADE|fde_m: +0.4370 [+0.2658, +0.6093] SEP (5.8821 vs 5.4451, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_mae_mps: +0.0678 [+0.0383, +0.0972] SEP (0.8503 vs 0.7825, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_mae_m: +0.1570 [+0.0947, +0.2189] SEP (1.9637 vs 1.8068, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_abs_final_m: +0.4311 [+0.2604, +0.5990] SEP (4.8224 vs 4.3913, n=3251/138 ep)`
+* `s1|S6|TACTICAL|TAC_traj_lon_correct: -0.0504 [-0.0835, -0.0186] SEP (0.5900 vs 0.6404, n=3251/138 ep)`
+
+### R9DER-ARG fs0 -- clause cells (S6 compliant unless named)
+
+| clause | seed 0 | seed 1 |
+|---|---|---|
+| PA-1a MD_vs_H2CN_975_sep_below | +0.2269 [+0.1486, +0.3016] SEP (0.7606 vs 0.5336, n=639/79 ep) | +0.2285 [+0.1519, +0.3020] SEP (0.7606 vs 0.5321, n=639/79 ep) |
+| PA-1a FD_vs_H2CN_95_not_sep_above | +0.1272 [+0.0610, +0.1982] SEP (0.1875 vs 0.0603, n=1856/135 ep) | +0.1272 [+0.0610, +0.1982] SEP (0.1875 vs 0.0603, n=1856/135 ep) |
+| PA-1b FD_vs_FACTORED_975_sep_below | +0.0372 [-0.0525, +0.1251] (0.1875 vs 0.1503, n=1856/135 ep) | +0.0350 [-0.0560, +0.1245] (0.1875 vs 0.1525, n=1856/135 ep) |
+| PA-1b MD_vs_FACTORED_95_not_sep_above | +0.3709 [+0.2860, +0.4549] SEP (0.7606 vs 0.3897, n=639/79 ep) | +0.3709 [+0.2843, +0.4545] SEP (0.7606 vs 0.3897, n=639/79 ep) |
+| PA-2 S2_ADE_vs_RETIME_975 | +0.0087 [-0.0005, +0.0169] (0.2602 vs 0.2516, n=4159/138 ep) | +0.0081 [-0.0012, +0.0164] (0.2610 vs 0.2529, n=4159/138 ep) |
+| PA-2 S6_ADE_vs_RETIME_975 | +0.2785 [+0.0363, +0.4974] SEP (2.8201 vs 2.5415, n=3251/138 ep) | +0.2876 [+0.0467, +0.5084] SEP (2.8298 vs 2.5422, n=3251/138 ep) |
+| PA-2 S2_E1_vs_ha0_ext_pose_975 | -0.0256 [-0.0369, -0.0145] SEP (0.2602 vs 0.2858, n=4159/138 ep) | -0.0248 [-0.0356, -0.0142] SEP (0.2610 vs 0.2858, n=4159/138 ep) |
+| PA-2 S6_E3_vs_ha0_ext_pose_975 | -0.5897 [-0.9325, -0.2586] SEP (2.8201 vs 3.4098, n=3251/138 ep) | -0.5800 [-0.9165, -0.2544] SEP (2.8298 vs 3.4098, n=3251/138 ep) |
+| PA-G exceedance vs H2CN (95 %) | -0.0044 [-0.0139, +0.0044] (0.0966 vs 0.1010, n=4754/139 ep) | -0.0044 [-0.0139, +0.0044] (0.0966 vs 0.1010, n=4754/139 ep) |
+| rates MD / FD / exceedance | 0.7606 / 0.1875 / 0.0966 | 0.7606 / 0.1875 / 0.0966 |
+
+PA-G rows separated WORSE than H2CN_DEPLOY8 (36):
+* `s0|S2|ADE|ade_m: +0.0215 [+0.0149, +0.0281] SEP (0.2602 vs 0.2387, n=4159/138 ep)`
+* `s0|S2|ADE|fde_m: +0.0435 [+0.0277, +0.0594] SEP (0.5586 vs 0.5151, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0342 [+0.0248, +0.0432] SEP (0.2472 vs 0.2130, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_mae_m: +0.0240 [+0.0163, +0.0316] SEP (0.2137 vs 0.1898, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_abs_final_m: +0.0472 [+0.0295, +0.0644] SEP (0.4671 vs 0.4199, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0299 [-0.0411, -0.0193] SEP (0.8577 vs 0.8876, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.1197 [+0.0867, +0.1540] SEP (0.4115 vs 0.2919, n=4159/138 ep)`
+* `s0|S2|TACTICAL|TAC_traj_lon_correct: -0.0255 [-0.0424, -0.0079] SEP (0.8415 vs 0.8670, n=4159/138 ep)`
+* `s0|S6|ADE|ade_m: +0.6077 [+0.4625, +0.7580] SEP (2.8201 vs 2.2123, n=3251/138 ep)`
+* `s0|S6|ADE|fde_m: +1.7110 [+1.2894, +2.1552] SEP (7.1381 vs 5.4271, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_mae_mps: +0.3036 [+0.2338, +0.3774] SEP (1.0862 vs 0.7826, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_mae_m: +0.6067 [+0.4533, +0.7652] SEP (2.4109 vs 1.8042, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_abs_final_m: +1.6872 [+1.2484, +2.1390] SEP (6.0699 vs 4.3827, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0589 [-0.0861, -0.0321] SEP (0.5081 vs 0.5670, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_accel_mae_mps2: +0.0773 [+0.0465, +0.1094] SEP (0.5005 vs 0.4233, n=3251/138 ep)`
+* `s0|S6|LATERAL|LAT_cross_mae_m: +0.0477 [+0.0031, +0.0938] SEP (0.8868 vs 0.8391, n=3251/138 ep)`
+* `s0|S6|LATERAL|LAT_cross_abs_final_m: +0.1600 [+0.0356, +0.2949] SEP (2.2780 vs 2.1181, n=3251/138 ep)`
+* `s0|S6|TACTICAL|TAC_traj_lon_correct: -0.1556 [-0.1998, -0.1125] SEP (0.4848 vs 0.6404, n=3251/138 ep)`
+* `s1|S2|ADE|ade_m: +0.0216 [+0.0149, +0.0282] SEP (0.2610 vs 0.2394, n=4159/138 ep)`
+* `s1|S2|ADE|fde_m: +0.0436 [+0.0278, +0.0595] SEP (0.5601 vs 0.5166, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0342 [+0.0248, +0.0432] SEP (0.2472 vs 0.2129, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_along_mae_m: +0.0238 [+0.0161, +0.0314] SEP (0.2137 vs 0.1899, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_along_abs_final_m: +0.0465 [+0.0287, +0.0638] SEP (0.4670 vs 0.4205, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0299 [-0.0410, -0.0192] SEP (0.8577 vs 0.8876, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.1197 [+0.0867, +0.1541] SEP (0.4115 vs 0.2918, n=4159/138 ep)`
+* `s1|S2|TACTICAL|TAC_traj_lon_correct: -0.0257 [-0.0424, -0.0081] SEP (0.8413 vs 0.8670, n=4159/138 ep)`
+* `s1|S6|ADE|ade_m: +0.6108 [+0.4660, +0.7619] SEP (2.8298 vs 2.2189, n=3251/138 ep)`
+* `s1|S6|ADE|fde_m: +1.7218 [+1.3046, +2.1675] SEP (7.1669 vs 5.4451, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_mae_mps: +0.3036 [+0.2338, +0.3774] SEP (1.0862 vs 0.7825, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_mae_m: +0.6088 [+0.4544, +0.7661] SEP (2.4156 vs 1.8068, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_abs_final_m: +1.6957 [+1.2594, +2.1467] SEP (6.0870 vs 4.3913, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0588 [-0.0861, -0.0320] SEP (0.5082 vs 0.5669, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_accel_mae_mps2: +0.0773 [+0.0464, +0.1094] SEP (0.5006 vs 0.4233, n=3251/138 ep)`
+* `s1|S6|LATERAL|LAT_cross_mae_m: +0.0491 [+0.0020, +0.0967] SEP (0.8952 vs 0.8461, n=3251/138 ep)`
+* `s1|S6|LATERAL|LAT_cross_abs_final_m: +0.1661 [+0.0352, +0.3056] SEP (2.3046 vs 2.1385, n=3251/138 ep)`
+* `s1|S6|TACTICAL|TAC_traj_lon_correct: -0.1556 [-0.1998, -0.1125] SEP (0.4848 vs 0.6404, n=3251/138 ep)`
+
+### R9DER-ARG fs1 -- clause cells (S6 compliant unless named)
+
+| clause | seed 0 | seed 1 |
+|---|---|---|
+| PA-1a MD_vs_H2CN_975_sep_below | +0.2238 [+0.1463, +0.2986] SEP (0.7574 vs 0.5336, n=639/79 ep) | +0.2269 [+0.1523, +0.3002] SEP (0.7590 vs 0.5321, n=639/79 ep) |
+| PA-1a FD_vs_H2CN_95_not_sep_above | +0.1293 [+0.0626, +0.1980] SEP (0.1897 vs 0.0603, n=1856/135 ep) | +0.1288 [+0.0626, +0.1980] SEP (0.1891 vs 0.0603, n=1856/135 ep) |
+| PA-1b FD_vs_FACTORED_975_sep_below | +0.0393 [-0.0496, +0.1283] (0.1897 vs 0.1503, n=1856/135 ep) | +0.0366 [-0.0557, +0.1255] (0.1891 vs 0.1525, n=1856/135 ep) |
+| PA-1b MD_vs_FACTORED_95_not_sep_above | +0.3678 [+0.2801, +0.4522] SEP (0.7574 vs 0.3897, n=639/79 ep) | +0.3693 [+0.2828, +0.4530] SEP (0.7590 vs 0.3897, n=639/79 ep) |
+| PA-2 S2_ADE_vs_RETIME_975 | -0.0001 [-0.0085, +0.0075] (0.2515 vs 0.2516, n=4159/138 ep) | -0.0007 [-0.0094, +0.0071] (0.2522 vs 0.2529, n=4159/138 ep) |
+| PA-2 S6_ADE_vs_RETIME_975 | +0.1448 [-0.0793, +0.3507] (2.6863 vs 2.5415, n=3251/138 ep) | +0.1537 [-0.0632, +0.3578] (2.6958 vs 2.5422, n=3251/138 ep) |
+| PA-2 S2_E1_vs_ha0_ext_pose_975 | -0.0343 [-0.0467, -0.0223] SEP (0.2515 vs 0.2858, n=4159/138 ep) | -0.0336 [-0.0457, -0.0221] SEP (0.2522 vs 0.2858, n=4159/138 ep) |
+| PA-2 S6_E3_vs_ha0_ext_pose_975 | -0.7235 [-1.0541, -0.4135] SEP (2.6863 vs 3.4098, n=3251/138 ep) | -0.7139 [-1.0401, -0.4136] SEP (2.6958 vs 3.4098, n=3251/138 ep) |
+| PA-G exceedance vs H2CN (95 %) | -0.0034 [-0.0120, +0.0048] (0.0976 vs 0.1010, n=4754/139 ep) | -0.0034 [-0.0120, +0.0048] (0.0976 vs 0.1010, n=4754/139 ep) |
+| rates MD / FD / exceedance | 0.7574 / 0.1897 / 0.0976 | 0.7590 / 0.1891 / 0.0976 |
+
+PA-G rows separated WORSE than H2CN_DEPLOY8 (34):
+* `s0|S2|ADE|ade_m: +0.0128 [+0.0072, +0.0183] SEP (0.2515 vs 0.2387, n=4159/138 ep)`
+* `s0|S2|ADE|fde_m: +0.0325 [+0.0177, +0.0469] SEP (0.5475 vs 0.5151, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0296 [+0.0211, +0.0382] SEP (0.2425 vs 0.2130, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_mae_m: +0.0136 [+0.0075, +0.0196] SEP (0.2034 vs 0.1898, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_abs_final_m: +0.0337 [+0.0176, +0.0502] SEP (0.4536 vs 0.4199, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0279 [-0.0376, -0.0176] SEP (0.8597 vs 0.8876, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.1011 [+0.0791, +0.1231] SEP (0.3930 vs 0.2919, n=4159/138 ep)`
+* `s0|S2|TACTICAL|TAC_traj_lon_correct: -0.0221 [-0.0381, -0.0055] SEP (0.8449 vs 0.8670, n=4159/138 ep)`
+* `s0|S6|ADE|ade_m: +0.4740 [+0.3447, +0.6061] SEP (2.6863 vs 2.2123, n=3251/138 ep)`
+* `s0|S6|ADE|fde_m: +1.3469 [+0.9698, +1.7249] SEP (6.7740 vs 5.4271, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_mae_mps: +0.2397 [+0.1776, +0.3045] SEP (1.0224 vs 0.7826, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_mae_m: +0.4740 [+0.3416, +0.6077] SEP (2.2782 vs 1.8042, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_abs_final_m: +1.3294 [+0.9427, +1.7050] SEP (5.7122 vs 4.3827, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0459 [-0.0717, -0.0197] SEP (0.5210 vs 0.5670, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_accel_mae_mps2: +0.0607 [+0.0335, +0.0883] SEP (0.4840 vs 0.4233, n=3251/138 ep)`
+* `s0|S6|LATERAL|LAT_cross_abs_final_m: +0.1149 [+0.0012, +0.2384] SEP (2.2329 vs 2.1181, n=3251/138 ep)`
+* `s0|S6|TACTICAL|TAC_traj_lon_correct: -0.1430 [-0.1877, -0.1008] SEP (0.4974 vs 0.6404, n=3251/138 ep)`
+* `s1|S2|ADE|ade_m: +0.0128 [+0.0072, +0.0182] SEP (0.2522 vs 0.2394, n=4159/138 ep)`
+* `s1|S2|ADE|fde_m: +0.0324 [+0.0178, +0.0470] SEP (0.5490 vs 0.5166, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0296 [+0.0212, +0.0382] SEP (0.2425 vs 0.2129, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_along_mae_m: +0.0135 [+0.0073, +0.0194] SEP (0.2034 vs 0.1899, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_along_abs_final_m: +0.0330 [+0.0169, +0.0497] SEP (0.4536 vs 0.4205, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0279 [-0.0376, -0.0176] SEP (0.8597 vs 0.8876, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.1012 [+0.0792, +0.1231] SEP (0.3930 vs 0.2918, n=4159/138 ep)`
+* `s1|S2|TACTICAL|TAC_traj_lon_correct: -0.0221 [-0.0381, -0.0055] SEP (0.8449 vs 0.8670, n=4159/138 ep)`
+* `s1|S6|ADE|ade_m: +0.4769 [+0.3473, +0.6085] SEP (2.6958 vs 2.2189, n=3251/138 ep)`
+* `s1|S6|ADE|fde_m: +1.3583 [+0.9763, +1.7352] SEP (6.8034 vs 5.4451, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_mae_mps: +0.2398 [+0.1777, +0.3046] SEP (1.0224 vs 0.7825, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_mae_m: +0.4758 [+0.3430, +0.6098] SEP (2.2826 vs 1.8068, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_abs_final_m: +1.3382 [+0.9505, +1.7119] SEP (5.7296 vs 4.3913, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0461 [-0.0718, -0.0198] SEP (0.5208 vs 0.5669, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_accel_mae_mps2: +0.0607 [+0.0335, +0.0882] SEP (0.4840 vs 0.4233, n=3251/138 ep)`
+* `s1|S6|LATERAL|LAT_cross_abs_final_m: +0.1207 [+0.0046, +0.2489] SEP (2.2592 vs 2.1385, n=3251/138 ep)`
+* `s1|S6|TACTICAL|TAC_traj_lon_correct: -0.1427 [-0.1871, -0.1008] SEP (0.4977 vs 0.6404, n=3251/138 ep)`
+
+### R9DER-ARG fs2 -- clause cells (S6 compliant unless named)
+
+| clause | seed 0 | seed 1 |
+|---|---|---|
+| PA-1a MD_vs_H2CN_975_sep_below | +0.2567 [+0.1842, +0.3271] SEP (0.7903 vs 0.5336, n=639/79 ep) | +0.2582 [+0.1857, +0.3286] SEP (0.7903 vs 0.5321, n=639/79 ep) |
+| PA-1a FD_vs_H2CN_95_not_sep_above | +0.1185 [+0.0539, +0.1851] SEP (0.1789 vs 0.0603, n=1856/135 ep) | +0.1185 [+0.0539, +0.1851] SEP (0.1789 vs 0.0603, n=1856/135 ep) |
+| PA-1b FD_vs_FACTORED_975_sep_below | +0.0286 [-0.0592, +0.1140] (0.1789 vs 0.1503, n=1856/135 ep) | +0.0264 [-0.0636, +0.1140] (0.1789 vs 0.1525, n=1856/135 ep) |
+| PA-1b MD_vs_FACTORED_95_not_sep_above | +0.4006 [+0.3211, +0.4789] SEP (0.7903 vs 0.3897, n=639/79 ep) | +0.4006 [+0.3216, +0.4796] SEP (0.7903 vs 0.3897, n=639/79 ep) |
+| PA-2 S2_ADE_vs_RETIME_975 | +0.0078 [-0.0017, +0.0165] (0.2594 vs 0.2516, n=4159/138 ep) | +0.0072 [-0.0024, +0.0160] (0.2601 vs 0.2529, n=4159/138 ep) |
+| PA-2 S6_ADE_vs_RETIME_975 | +0.1672 [-0.0591, +0.3718] (2.7087 vs 2.5415, n=3251/138 ep) | +0.1751 [-0.0479, +0.3785] (2.7172 vs 2.5422, n=3251/138 ep) |
+| PA-2 S2_E1_vs_ha0_ext_pose_975 | -0.0264 [-0.0379, -0.0149] SEP (0.2594 vs 0.2858, n=4159/138 ep) | -0.0257 [-0.0371, -0.0147] SEP (0.2601 vs 0.2858, n=4159/138 ep) |
+| PA-2 S6_E3_vs_ha0_ext_pose_975 | -0.7010 [-1.0345, -0.3901] SEP (2.7087 vs 3.4098, n=3251/138 ep) | -0.6926 [-1.0220, -0.3868] SEP (2.7172 vs 3.4098, n=3251/138 ep) |
+| PA-G exceedance vs H2CN (95 %) | -0.0061 [-0.0145, +0.0015] (0.0949 vs 0.1010, n=4754/139 ep) | -0.0061 [-0.0145, +0.0015] (0.0949 vs 0.1010, n=4754/139 ep) |
+| rates MD / FD / exceedance | 0.7903 / 0.1789 / 0.0949 | 0.7903 / 0.1789 / 0.0949 |
+
+PA-G rows separated WORSE than H2CN_DEPLOY8 (36):
+* `s0|S2|ADE|ade_m: +0.0207 [+0.0146, +0.0272] SEP (0.2594 vs 0.2387, n=4159/138 ep)`
+* `s0|S2|ADE|fde_m: +0.0465 [+0.0308, +0.0628] SEP (0.5615 vs 0.5151, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0294 [+0.0213, +0.0380] SEP (0.2423 vs 0.2130, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_mae_m: +0.0230 [+0.0160, +0.0301] SEP (0.2127 vs 0.1898, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_along_abs_final_m: +0.0501 [+0.0332, +0.0681] SEP (0.4700 vs 0.4199, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0284 [-0.0378, -0.0191] SEP (0.8592 vs 0.8876, n=4159/138 ep)`
+* `s0|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0592 [+0.0452, +0.0727] SEP (0.3510 vs 0.2919, n=4159/138 ep)`
+* `s0|S2|TACTICAL|TAC_traj_lon_correct: -0.0176 [-0.0329, -0.0015] SEP (0.8495 vs 0.8670, n=4159/138 ep)`
+* `s0|S6|ADE|ade_m: +0.4964 [+0.3659, +0.6295] SEP (2.7087 vs 2.2123, n=3251/138 ep)`
+* `s0|S6|ADE|fde_m: +1.4068 [+1.0337, +1.7793] SEP (6.8339 vs 5.4271, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_mae_mps: +0.2465 [+0.1832, +0.3119] SEP (1.0291 vs 0.7826, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_mae_m: +0.4918 [+0.3548, +0.6295] SEP (2.2960 vs 1.8042, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_along_abs_final_m: +1.3789 [+0.9903, +1.7633] SEP (5.7616 vs 4.3827, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0436 [-0.0666, -0.0194] SEP (0.5233 vs 0.5670, n=3251/138 ep)`
+* `s0|S6|LONGITUDINAL|LON_accel_mae_mps2: +0.0583 [+0.0324, +0.0847] SEP (0.4815 vs 0.4233, n=3251/138 ep)`
+* `s0|S6|LATERAL|LAT_cross_mae_m: +0.0423 [+0.0027, +0.0854] SEP (0.8814 vs 0.8391, n=3251/138 ep)`
+* `s0|S6|LATERAL|LAT_cross_abs_final_m: +0.1384 [+0.0235, +0.2614] SEP (2.2565 vs 2.1181, n=3251/138 ep)`
+* `s0|S6|TACTICAL|TAC_traj_lon_correct: -0.1443 [-0.1874, -0.1028] SEP (0.4962 vs 0.6404, n=3251/138 ep)`
+* `s1|S2|ADE|ade_m: +0.0207 [+0.0145, +0.0272] SEP (0.2601 vs 0.2394, n=4159/138 ep)`
+* `s1|S2|ADE|fde_m: +0.0463 [+0.0306, +0.0627] SEP (0.5629 vs 0.5166, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_mae_mps: +0.0294 [+0.0213, +0.0380] SEP (0.2423 vs 0.2129, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_along_mae_m: +0.0228 [+0.0158, +0.0300] SEP (0.2127 vs 0.1899, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_along_abs_final_m: +0.0494 [+0.0324, +0.0674] SEP (0.4700 vs 0.4205, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_speed_within_0p5: -0.0284 [-0.0378, -0.0191] SEP (0.8592 vs 0.8876, n=4159/138 ep)`
+* `s1|S2|LONGITUDINAL|LON_accel_mae_mps2: +0.0592 [+0.0453, +0.0727] SEP (0.3510 vs 0.2918, n=4159/138 ep)`
+* `s1|S2|TACTICAL|TAC_traj_lon_correct: -0.0176 [-0.0329, -0.0015] SEP (0.8495 vs 0.8670, n=4159/138 ep)`
+* `s1|S6|ADE|ade_m: +0.4983 [+0.3682, +0.6304] SEP (2.7172 vs 2.2189, n=3251/138 ep)`
+* `s1|S6|ADE|fde_m: +1.4155 [+1.0394, +1.7881] SEP (6.8606 vs 5.4451, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_mae_mps: +0.2466 [+0.1833, +0.3120] SEP (1.0291 vs 0.7825, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_mae_m: +0.4937 [+0.3584, +0.6304] SEP (2.3005 vs 1.8068, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_along_abs_final_m: +1.3871 [+0.9997, +1.7679] SEP (5.7784 vs 4.3913, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_speed_within_0p5: -0.0435 [-0.0665, -0.0192] SEP (0.5234 vs 0.5669, n=3251/138 ep)`
+* `s1|S6|LONGITUDINAL|LON_accel_mae_mps2: +0.0583 [+0.0324, +0.0847] SEP (0.4816 vs 0.4233, n=3251/138 ep)`
+* `s1|S6|LATERAL|LAT_cross_mae_m: +0.0415 [+0.0019, +0.0846] SEP (0.8876 vs 0.8461, n=3251/138 ep)`
+* `s1|S6|LATERAL|LAT_cross_abs_final_m: +0.1393 [+0.0223, +0.2654] SEP (2.2779 vs 2.1385, n=3251/138 ep)`
+* `s1|S6|TACTICAL|TAC_traj_lon_correct: -0.1443 [-0.1874, -0.1028] SEP (0.4962 vs 0.6404, n=3251/138 ep)`
+
+## Five worst PA-G rows (R9LH-ARG / R9LH-SOFT fs0, both seeds; ranked by |delta| / |reference mean|)
+
+* `R9LH-SOFT fs0 s1 S2 LONGITUDINAL LON_accel_mae_mps2: +0.0547 [+0.0429, +0.0665] SEP (0.3465 vs 0.2918, n=4159/138 ep)` (relative +0.1874)
+* `R9LH-SOFT fs0 s0 S2 LONGITUDINAL LON_accel_mae_mps2: +0.0547 [+0.0429, +0.0665] SEP (0.3465 vs 0.2919, n=4159/138 ep)` (relative +0.1874)
+* `R9LH-ARG fs0 s1 S2 LONGITUDINAL LON_accel_mae_mps2: +0.0527 [+0.0418, +0.0642] SEP (0.3445 vs 0.2918, n=4159/138 ep)` (relative +0.1806)
+* `R9LH-ARG fs0 s0 S2 LONGITUDINAL LON_accel_mae_mps2: +0.0527 [+0.0418, +0.0642] SEP (0.3445 vs 0.2919, n=4159/138 ep)` (relative +0.1806)
+* `R9LH-ARG fs0 s0 S6 LONGITUDINAL LON_along_abs_final_m: +0.7587 [+0.5073, +1.0169] SEP (5.1414 vs 4.3827, n=3251/138 ep)` (relative +0.1731)
+
+## Decision stats -- disagreement with the GT regime on GT-decel windows (S6 compliant, fit-seed independent)
+
+| arm | seed | GT-decel windows | disagree | rate | called cruise | called accel | false decel on GT cruise |
+|---|---|---|---|---|---|---|---|
+| R9LH-ARG | s0 | 639 | 322 | 0.5039 | 247 | 75 | 0.1288 |
+| R9LH-ARG | s1 | 639 | 322 | 0.5039 | 247 | 75 | 0.1288 |
+| R9LH-SOFT | s0 | 639 | 339 | 0.5305 | 272 | 67 | 0.1029 |
+| R9LH-SOFT | s1 | 639 | 339 | 0.5305 | 272 | 67 | 0.1029 |
+| R9DER-ARG | s0 | 639 | 570 | 0.8920 | 481 | 89 | 0.2128 |
+| R9DER-ARG | s1 | 639 | 570 | 0.8920 | 481 | 89 | 0.2128 |
+
+STRATEGIC n/a (refcv8 runs --no-strategic; n = 0). Distance-keeping n/a (no lead-agent join in the eval139 panel; n = 0). The full four-family tables are in the provisional JSON (`cells.<arm>_fs<k>.s<seed>.fam_{S2,S6}_vs_H8_95`).
+
+## Run-1 record (kept verbatim; sha256 json ebc82e313519..., md 41f247e761a7...)
+
+```
 # R9PF_LH_VERDICT -- VOID
 
 **tier:** T1 self-action OPEN LOOP on logged eval139 frames, not driving performance  
@@ -9,3 +495,5 @@
 No R9LH-ARG / R9LH-SOFT / R9DER-ARG composition was run: the precondition is checked first, and a VOID arm is not scored.
 
 **Unblock:** R9-PF K-EQ resolved (CPU roll discriminating CUDA-vs-CPU head arithmetic + a Master-Mind ruling on the tolerance), then rerun this prereg.
+```
+
