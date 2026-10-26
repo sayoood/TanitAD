@@ -108,3 +108,21 @@ Both regression arms are compared with the arm they degrade, not with a third ar
 
 * The S and T outputs of the beside configurations (strict, logged) beyond K4.
 * Any training arm.
+
+## Amendment 1 (2026-10-26): the reader's interpretations adopted, before any decisive head output was read
+
+`raw/2026-10-26-t1hdread/NOTES.md` items 1–20 are adopted as written. The four that resolve the text, each consistent with the sections above:
+1. **CTRV's curvature** is the mean of `_pose_kappa0` over the 10 raw frames (1 s) before S's row, on the rebuilt executed track (logged
+   frames before t0). A second curvature rule, CTRV2, is reported beside only and decides nothing.
+2. **"The same windows" for the T rows** are the windows with a scored tick-0 cell and at least one scored cell at ticks 1–2.
+3. **K6** is a level comparison: F1(donor cells) − F1(own cells) on the same cells.
+4. **The F1 reducer is unchanged.** It is wrapped with an integer cast, because the bootstrap passes float arrays and numpy 2.5 rejects float
+   indices.
+
+**What existed when this was written:**
+* The decisive causal s1 rollout had finished. Only its K2, K3 and executed-track-rebuild checks were computed, as a scale test. No S or T row
+  of any real run was computed.
+* Both deliberate-regression effects had been computed on the banked T0 evals before any T1 data (the `R75` lesson): K5 mirror − S is +3.5 /
+  +8.6 / +17.7 m and K6 donor − self is −0.48 / −0.30 F1, all separated.
+
+Nothing else moves.
