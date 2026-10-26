@@ -1,0 +1,66 @@
+{
+ "tag": "CB1_s1_m10",
+ "ckpt": "C:/Users/Admin/hlat/ckpt/hlatCB1_s1.pt",
+ "kin_mode": "yaw",
+ "tier": "T1 (self-action OPEN loop; ego state = own executed motion)",
+ "replan_steps": 10,
+ "replan_hz": 0.5,
+ "schedule": "periodic",
+ "scene": "logged",
+ "nav": "deadreckon",
+ "limit": "logged",
+ "n_windows": 2399,
+ "model_keys_read": [
+  "a_s",
+  "a_t",
+  "base",
+  "feats",
+  "frame_ok",
+  "limit",
+  "limit_ok",
+  "nav",
+  "p10f",
+  "pose_now",
+  "pose_s",
+  "pose_t"
+ ],
+ "windows_with_envelope_clip": {
+  "cl": 163,
+  "fl": 178
+ },
+ "envelope_ms": 60.0,
+ "strict": {
+  "kinematics": true,
+  "route": true,
+  "camera": false,
+  "speed_bucket": false
+ },
+ "open_channels": [
+  "camera stream (logged frames after t0 carry the human's ego-motion)",
+  "speed bucket from the human's realised future max speed (D-SPEEDBAND-EGO-ECHO-1)"
+ ],
+ "acts": {
+  "cl": {
+   "mean_abs_a_mps2": 1.828084198646394,
+   "zero_accel_frac": 0.001839847062712912,
+   "zero_tol_mps2": 0.001,
+   "n_windows": 2399,
+   "n_steps": 29
+  },
+  "ol": {
+   "mean_abs_a_mps2": 0.49766907652988346,
+   "zero_accel_frac": 0.0018829684782452458,
+   "zero_tol_mps2": 0.001,
+   "n_windows": 2399,
+   "n_steps": 29
+  },
+  "fl": {
+   "mean_abs_a_mps2": 1.9884897157185277,
+   "zero_accel_frac": 0.0012073996349053484,
+   "zero_tol_mps2": 0.001,
+   "n_windows": 2399,
+   "n_steps": 29
+  }
+ },
+ "hacc_gate_v": 0.0
+}

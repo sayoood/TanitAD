@@ -35,6 +35,8 @@ Mean ADE6 at m = 10: 2.675 / 2.710 m with the causal bucket, 2.614 / 2.649 m wit
 * ⇒ v8F's T1 result can be stated on an input built from the past alone.
 * ⇒ `D-V8F-SPEEDBUCKET-T1` stops gating the headline.
 
+⚠ **Erratum (2026-10-26).** The PREREG's header says it was written "~01:40 Berlin". That label is wrong: its commit `d2ed136d` is 01:12:47 +0100, and the first datum (the C-L1 smoke) 01:17:26. The commit order is the evidence that it preceded the data; the header was a mis-estimated clock. `PREREG_V8F_T1KIN_STRICT`'s "~01:55" is wrong the same way (commit `963906e8` at 01:45:51).
+
 ## Controls (all read before the outcome)
 
 | control | result |
