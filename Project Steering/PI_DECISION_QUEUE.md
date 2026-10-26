@@ -2665,3 +2665,12 @@ zero-gradient gate and K-FROZEN read exactly that. G-MAP-OVERFIT stays required;
 * Done 21:29 Berlin: verdict **PASS** (0 offenders, 21 allowed), done-marker written, no relaunch. MODEL_REGISTRY §18;
   evidence `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-nt-a1-zerograd/regate/`. NT A1 still has no NavSim read -- that needs a separate go.
 
+## ✅ DECIDED (PI, 2026-10-26 ~22:30 Berlin, in chat; recorded ~22:31) -- two gate items blocking the map fine-tune (C2 8cd8067)
+
+* **16 v8f-mini research gate records** (`*gate_token.json`) failed the full-tree secret scan -> *"Pin all 16 by exact bytes"*.
+  `tools/secret_scan.py` PINNED_TOKEN_JSON_RECORDS + the test literal; no credential shape in any (eight carry an hmac signature field).
+* **160 v8f tests fail on Thor's stack-only tree** (they read Research Lab files) -> *"Pin for map fine-tune only"*: `refcv8-mapft`
+  has its own env-failure pin (`stack/ops/launch_gate_thor_env_failures_mapft.json`, 328 ids); every other profile keeps the shared
+  list, so the NEXT launch on another profile will meet the same 160 and needs its own decision. The 2 encoding-hygiene failures
+  were code defects in v8f files and were fixed, not pinned.
+
