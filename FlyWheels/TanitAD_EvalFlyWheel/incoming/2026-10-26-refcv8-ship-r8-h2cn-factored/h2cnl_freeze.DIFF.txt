@@ -1,0 +1,507 @@
+--- h2cn_freeze.py	2026-10-26 04:13:02.463435200 +0100
++++ h2cnl_freeze.py	2026-10-26 05:37:14.172951200 +0100
+@@ -1,25 +1,41 @@
+-"""h2cn_freeze.py -- SHIP-R8 AMENDMENT 4 section 1: fit the H2cn progress stage on the 300 FRESH clips only, freeze it, and STOP.  CPU only.
+-NEW file (EvalFlyWheel 2026-10-26).  NO eval-window output of the stage is computed here (Amendment 4: registration precedes any eval-side output).
++"""h2cnl_freeze.py -- SHIP-R8 AMENDMENT 4c section 1: fit the H2cn-L progress stage on the 300 FRESH clips only, freeze it, and STOP.  CPU only.
++NEW file (EvalFlyWheel 2026-10-26), derived from h2cn_freeze.py (unified diff: h2cnl_freeze.DIFF.txt).  NO eval-window output of the stage is computed
++here (Amendment 4c: registration precedes any eval-side output).  REGISTERED_H2CNL_STAGE.sha256 is NEVER written here (the Master Mind writes it).
++
++The fit is Amendment 4's H2cn fit (`h2cn_freeze.py` / `l1c_h2cn_confirm.py`: `l1c_fit_score.load_fresh`, bank F:/l1c/bank/ztac_fresh.npz joined on (clip, ws),
++target arc(G) - arc(HP), `l1_fit_score.h2n_fit(X, Z, H, eid, 0)` once per surface) with ONE change: X gains 6 columns, the softmax of the 6 LON6 logits
++(`l2_common.lon6` of `nav_true.tacv6_lon_logits`) of the SAME forward (fresh tree dump_s0/refcv6_extras.npz, joined on (clip index, ws)), appended as
++X[:, 10:16] -- standardised with the X stats exactly like the other X columns (`l1_fit_score.mlp_inputs`).  The ONE fitting call is `fit_surface()`;
++with extra=None it is Amendment 4's call verbatim.
++
++Outputs (deterministic content, no timestamp inside the .pt):  H2CNL_STAGE_FROZEN.pt / .sha256, H2CNL_MUT_STAGE.pt / .sha256 (the mutation arm, for
++phase 2), H2CNL_FREEZE_INFO.json.  The stage records the 16-column X contract (`x_extra`) and `load_stage_l()` REFUSES any other X width.
++
++Controls (any failure: no .pt / .sha256 is left behind, H2CNL_FREEZE_WITHHELD.json, rc 4):
++  K-SEAL       amendments 4, 4b, 4c, 5 match their seals; the registered H2cn stage file matches REGISTERED_H2CN_STAGE.sha256
++  K-LON6       l2_common.LON6_V7_IDS == the literal (0, 1, 3, 4, 5, 7); lon6 picks those columns of an identity; softmax(0) == 1/6 (analytic)
++  K-DISJ       as Amendment 4 (fresh vs eval139 + train4572, independent sources) + its mutation arm (one eval139 clip injected) must read RED
++  K-JOIN       every fresh FIT row joins EXACTLY one extras row (extras keys unique, none missing); joined ws / clip index equal; independent
++               cross-checks: extras v0 == panel v0, extras clip sha12 == panel sha12, extras nav_true.traj at the surface slots == panel plan O
++               (the logits come from the forward whose plan the stage re-times); mutation arm: the join on ws + one window stride (the NEXT window of
++               the same clip, a key that exists) must read RED -- and RED by the v0 / plan cross-checks ALONE on the rows it does join
++  K-H2CN-REPRO fit_surface(extra=None) reproduces the REGISTERED H2cn stage bit-for-bit: CV record (wd, epochs, cv_l1_sum, n_params) == H2CN_FREEZE_INFO.json
++               and the registered blob; state_dict + standardisation stats bit-equal to the registered file; predictions on the fresh FIT rows bit-equal
++               to the registered file's predictor; train R2 == the record.  Comparator mutation (one weight moved 1 ulp) must read RED.
++               For the mutation stage: its base arrays (X, Z, H, eid) hash-equal the reproduced ones, i.e. dropping its 6 columns IS the reproduced fit.
++  K-FIT        (L and MUT) n_fresh == the registered fit's; n_params == the literal (H2cn's + 6 x 128); wd in the grid; 1 <= epochs <= 200
++  K-RELOAD     each stage re-loaded FROM ITS FILE predicts the fresh FIT rows bit-for-bit like h2n_fit's own closure
++  K-DETERM     each payload serialised twice (and rebuilt once) is byte-identical
++  K-MUT        the mutation permutation is a bijection, every row receives a DIFFERENT episode's logits, column marginals preserved exactly
+ 
+-The fit is EXACTLY `l1c_h2cn_confirm.py`'s: `l1c_fit_score.load_fresh` (tree step48852ema_fresh, compliant fresh rows), bank F:/l1c/bank/ztac_fresh.npz
+-joined on (clip, ws), target arc(G) - arc(HP), `l1_fit_score.h2n_fit(X, Z, H, eid, 0)` once per surface (S2: 4 outputs, S6: 6 outputs).  The fitted networks
+-are taken out of h2n_fit's returned closure (no refit, no copy of the training code) and written with their standardisation stats and chosen (wd, epochs)
+-to ONE file, H2CN_STAGE_FROZEN.pt (deterministic content: no timestamp inside), + H2CN_STAGE_FROZEN.sha256 + H2CN_FREEZE_INFO.json.
+-
+-Controls (any failure: no .pt / .sha256 is left behind, rc 4):
+-  K-SEAL     both amendments match their seals
+-  K-DISJ     fresh-clip disjointness vs eval139 + train4572 from independent sources (ship_r8_sub_common.fresh_disjointness) -- and its MUTATION arm
+-             (one eval139 clip injected into the fresh set) must read RED
+-  K-FIT      (wd, epochs, n_params, n_fresh) equal H2CN_RESULT.json's fits (the PASSED fit) -- cv_l1_sum is reported beside (exact or not)
+-  K-RELOAD   the stage re-loaded FROM THE FILE predicts the fresh FIT rows bit-for-bit like h2n_fit's own closure
+-  K-DETERM   the payload serialised twice (and rebuilt once) is byte-identical (the sha256 is a property of the content; serialised in memory, so the
+-             zip root is torch's fixed "archive", not a file name)
+-
+-    CUDA_VISIBLE_DEVICES=-1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 R8_NO_POSE_SYNC=1 python -X utf8 h2cn_freeze.py
++    CUDA_VISIBLE_DEVICES=-1 OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 R8_NO_POSE_SYNC=1 python -X utf8 h2cnl_freeze.py
+ """
+ from __future__ import annotations
+ 
+ import argparse
++import hashlib
++import importlib.util
++import io
+ import json
+ import os
+ import sys
+@@ -32,7 +48,169 @@
+ 
+ import numpy as np  # noqa: E402
+ 
+-H2CN_RESULT = Path("C:/Users/Admin/refcv8_pf/refcv9_l1c/result_h2cn/H2CN_RESULT.json")
++H2CN_INFO = C.WORK / "H2CN_FREEZE_INFO.json"
++REG_H2CN = C.WORK / "REGISTERED_H2CN_STAGE.sha256"
++AMD_4C = C.WORK / "SHIP_R8_AMENDMENT_4C_H2CNL.md"
++STAGE_L_PT, STAGE_L_SHA = C.WORK / "H2CNL_STAGE_FROZEN.pt", C.WORK / "H2CNL_STAGE_FROZEN.sha256"
++MUT_PT, MUT_SHA = C.WORK / "H2CNL_MUT_STAGE.pt", C.WORK / "H2CNL_MUT_STAGE.sha256"
++REG_L = C.WORK / "REGISTERED_H2CNL_STAGE.sha256"                 # written by the Master Mind, NEVER here
++INFO_L, WITHHELD_L = C.WORK / "H2CNL_FREEZE_INFO.json", C.WORK / "H2CNL_FREEZE_WITHHELD.json"
++TMP_DIR = C.WORK
++STAGE_L_SCHEMA = "tanitad.ship_r8_sub.h2cnl_stage/1"
++L2_COMMON = Path("C:/Users/Admin/refcv8_pf/refcv9_l2/code/l2_common.py")
++FRESH_EXTRAS = C.FRESH_TREE_ROOT / C.FRESH_TREE / "dump_s0" / "refcv6_extras.npz"
++LOGIT_KEY = "nav_true.tacv6_lon_logits"
++LON6_V7_IDS_LITERAL = (0, 1, 3, 4, 5, 7)
++N_X_BASE, N_X_EXTRA = 10, 6
++N_PARAMS_L = {"S2": 68100, "S6": 68358}       # (15 + 512 + 1) * 128 + (128 + 1) * d_out, d_out 4 / 6 (H2cn: 67332 / 67590)
++MLP_WD_GRID, MLP_MAX_EP = (1e-4, 1e-2, 1e-1), 200
++MUT_SEED = 0
++X_EXTRA = {"n_cols": N_X_EXTRA, "x_cols": [N_X_BASE, N_X_BASE + N_X_EXTRA], "d_x": N_X_BASE + N_X_EXTRA,
++           "build": "p = softmax(l2_common.lon6(refcv6_extras['nav_true.tacv6_lon_logits'][row])) in float64, softmax(l) = exp(l - max(l)) / sum; "
++                    "row = the extras row of the SAME forward joined on (clip_index, ws); X = concat[progress_scalar.feats (10 cols, col 0 = 1), p], "
++                    "standardised with xmu / xsd like every X column (l1_fit_score.mlp_inputs)",
++           "lon6_classes": ["FOLLOW", "CRUISE", "BRAKE_TO", "CREEP", "HOLD", "ACCELERATE"], "lon6_v7_ids": list(LON6_V7_IDS_LITERAL),
++           "logit_key": LOGIT_KEY, "fresh_source": str(FRESH_EXTRAS),
++           "eval_source": "C:/Users/Admin/refcv8_eval_archive/battery/step48852ema_pf/dump_s{seed}/refcv6_extras.npz, joined on (clip_index, ws)",
++           "builder": "h2cnl_freeze.lon6_softmax"}
++
++
++def check_amendment_4c_seal() -> dict:
++    got = C.sha256_file(AMD_4C) if AMD_4C.is_file() else ""
++    want = C.read_seal(AMD_4C.with_suffix(".sha256"))
++    if len(got) != 64 or len(want) != 64:
++        raise SystemExit(f"[freezeL] INCONCLUSIVE seal for amendment 4c: file '{got}' seal '{want}' -- refusing")
++    if got != want:
++        raise SystemExit(f"[freezeL] amendment 4c does not match its seal ({got} != {want}) -- refusing")
++    return {"file": str(AMD_4C), "sha256": got, "seal_matches": True}
++
++
++def load_l2_common():
++    spec = importlib.util.spec_from_file_location("_l2_common_h2cnl", str(L2_COMMON))
++    m = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(m)
++    return m
++
++
++def lon6_softmax(L2, logits8):
++    """THE extra-column builder (fit side and eval side): softmax over l2_common.lon6(logits8), float64, max-subtracted."""
++    lg = L2.lon6(logits8)
++    e = np.exp(lg - lg.max(1, keepdims=True))
++    return e / e.sum(1, keepdims=True)
++
++
++def bit_equal(a, b) -> bool:
++    a, b = np.asarray(a), np.asarray(b)
++    return bool(a.dtype == b.dtype and a.shape == b.shape and a.tobytes() == b.tobytes())
++
++
++def digest(*arrs) -> str:
++    h = hashlib.sha256()
++    for a in arrs:
++        a = np.ascontiguousarray(np.asarray(a))
++        h.update(str((a.dtype.str, a.shape)).encode())
++        h.update(a.tobytes() if a.dtype.kind != "U" else "\x00".join(a.ravel().tolist()).encode("utf-8"))
++    return h.hexdigest()
++
++
++def fit_surface(F, X, Z, H, eid, extra):
++    """THE fit of Amendment 4c, one call per surface.  extra=None IS Amendment 4's H2cn call (h2cn_freeze.py: F.h2n_fit(tr['X'], Ztr, Htr, tr['eid'], 0));
++    extra=[n, 6] appends the LON6 softmax as X columns 10..15.  Returns (closure, info, X_in)."""
++    Xin = X if extra is None else np.concatenate([X, np.asarray(extra, np.float64)], 1)
++    pn, info = F.h2n_fit(Xin, Z, H, eid, 0)
++    return pn, info, Xin
++
++
++def cross_episode_derangement(eid, seed):
++    """A seeded PERMUTATION of the FIT rows in which every row receives the row of a DIFFERENT episode (column marginals preserved exactly).  Episodes are
++    laid out as contiguous blocks (episode order and the rows inside each block shuffled by `seed`); layout position i receives position (i + m) mod n,
++    m = the largest episode's row count, so no block maps into itself (needs n >= 2m)."""
++    rng = np.random.default_rng(seed)
++    u = np.unique(eid)
++    blocks = [rng.permutation(np.where(eid == u[k])[0]) for k in rng.permutation(len(u))]
++    lay = np.concatenate(blocks)
++    n, m = len(lay), max(len(b) for b in blocks)
++    if n < 2 * m:
++        raise SystemExit(f"[freezeL] derangement impossible: n {n} < 2 x largest episode {m}")
++    perm = np.empty(n, np.int64)
++    perm[lay] = lay[(np.arange(n) + m) % n]
++    return perm
++
++
++def extras_join(ex, ex12, tr, surf, ws_shift=0) -> tuple:
++    """Join the fresh FIT rows of `surf` to the extras rows on (clip index, ws + ws_shift).  Returns (rows, record)."""
++    keys = list(zip(ex["clip_index"].tolist(), ex["ws"].tolist()))
++    idx = {}
++    for j, k in enumerate(keys):
++        idx.setdefault(k, []).append(j)
++    n_dup = int(sum(len(v) - 1 for v in idx.values()))
++    hits = [idx.get((int(c), int(w) + ws_shift), []) for c, w in zip(tr["clip"], tr["ws"])]
++    n_missing, n_multi = int(sum(len(h) == 0 for h in hits)), int(sum(len(h) > 1 for h in hits))
++    j = np.asarray([h[0] if len(h) == 1 else -1 for h in hits], np.int64)
++    ok = j >= 0
++    jj = np.where(ok, j, 0)
++    rec = {"rows": int(len(j)), "extras_rows": int(len(keys)), "extras_duplicate_keys": n_dup, "missing": n_missing, "multi": n_multi,
++           "ws_equal": bool(ok.all() and np.array_equal(ex["ws"][jj], np.asarray(tr["ws"], np.int64) + ws_shift)),
++           "clip_equal": bool(ok.all() and np.array_equal(ex["clip_index"][jj], np.asarray(tr["clip"], np.int64))),
++           "v0_maxabs": float(np.abs(ex["v0"][jj].astype(np.float64) - np.asarray(tr["v0"], np.float64))[ok].max()) if ok.any() else None,
++           "sha12_mismatch": int(sum(ex12[str(int(c))] != s for c, s in zip(ex["clip_index"][jj][ok], np.asarray(tr["sha12"])[ok]))),
++           "plan_vs_O_maxabs": float(np.abs(ex["nav_true.traj"][jj][:, C.SLOTS[surf]].astype(np.float64) - np.asarray(tr["O"], np.float64))[ok].max()) if ok.any() else None,
++           "ws_shift": ws_shift}
++    rec["PASS"] = bool(n_dup == 0 and n_missing == 0 and n_multi == 0 and rec["ws_equal"] and rec["clip_equal"] and rec["v0_maxabs"] is not None
++                       and rec["v0_maxabs"] <= 1e-5 and rec["sha12_mismatch"] == 0 and rec["plan_vs_O_maxabs"] <= 1e-5)
++    return j, rec
++
++
++def build_payload(fits, prov, kind, mutation=None) -> dict:
++    """Amendment 4's stage payload (C.stage_payload) + the 16-column X contract.  Deterministic content only."""
++    p = C.stage_payload({s: {k: v for k, v in d.items() if not k.startswith("_")} for s, d in fits.items()}, prov)
++    p["schema"] = STAGE_L_SCHEMA
++    p["kind"] = kind
++    p["x_extra"] = dict(X_EXTRA)
++    p["use"] = ("s_k = arc(prior8)[slot] + f_surf(X, Z)_j ; X = concat[progress_scalar.feats(win, lim) (10 cols, col 0 = 1), LON6 softmax (6 cols, x_extra)] "
++                "(16 cols), Z = z_tac (512) ; f(X, Z) = net(concat[(X[:,1:]-xmu)/xsd, (Z-zmu)/zsd]) float64 (l1_fit_score.mlp_inputs) ; load with "
++                "h2cnl_freeze.load_stage_l (refuses X of any other width)")
++    for s in p["surfaces"]:
++        p["surfaces"][s]["d_x"] = N_X_BASE + N_X_EXTRA
++    if mutation is not None:
++        p["mutation"] = mutation
++    return p
++
++
++def load_stage_l(path: Path, registered_sha: str | None = None) -> tuple:
++    """Load an H2cn-L stage (frozen or mutation).  With `registered_sha`, REFUSES unless sha256(file) equals it (both 64 hex).  Returns (preds, blob, sha);
++    preds[surf](X16, Z) REFUSES an X whose width is not the recorded 16 columns."""
++    import torch
++    got = C.sha256_file(path)
++    if registered_sha is not None:
++        reg = C.hex64(registered_sha)
++        if len(got) != 64 or len(reg) != 64:
++            raise SystemExit(f"[h2cnl] INCONCLUSIVE stage sha256: file '{got}' registered '{reg}' -- refusing")
++        if got != reg:
++            raise SystemExit(f"[h2cnl] the stage file hashes to {got}, the REGISTERED stage is {reg} -- refusing")
++    blob = torch.load(path, map_location="cpu", weights_only=True)
++    if blob.get("schema") != STAGE_L_SCHEMA:
++        raise SystemExit(f"[h2cnl] stage schema {blob.get('schema')!r} != {STAGE_L_SCHEMA}")
++    xe = blob.get("x_extra") or {}
++    if int(xe.get("n_cols", -1)) != N_X_EXTRA or int(xe.get("d_x", -1)) != N_X_BASE + N_X_EXTRA or list(xe.get("lon6_v7_ids", [])) != list(LON6_V7_IDS_LITERAL):
++        raise SystemExit(f"[h2cnl] stage x_extra contract {xe!r} is not the 6-column LON6 softmax")
++    C.setup_paths()
++    import l1_fit_score as F
++    preds = {}
++    for surf, d in blob["surfaces"].items():
++        net = C.make_net(d["d_in"], d["d_out"])
++        net.load_state_dict(d["state_dict"], strict=True)
++        net.eval()
++        st = {k: d["st"][k].numpy().astype(np.float64) for k in ("xmu", "xsd", "zmu", "zsd")}
++        dx = int(d["d_x"])
++
++        def pred(Xe, Ze, _net=net, _st=st, _dx=dx, _s=surf):
++            if np.asarray(Xe).ndim != 2 or np.asarray(Xe).shape[1] != _dx:
++                raise SystemExit(f"[h2cnl] {_s}: the stage expects X with {_dx} columns (feats 10 + LON6 softmax 6), got {np.asarray(Xe).shape}")
++            with torch.no_grad():
++                return _net(torch.from_numpy(F.mlp_inputs(Xe, Ze, _st))).numpy()
++        preds[surf] = pred
++    return preds, blob, got
+ 
+ 
+ def main() -> int:
+@@ -40,18 +218,47 @@
+     ap.add_argument("--bank-fresh", default="F:/l1c/bank")
+     ap.add_argument("--tree-root", default=str(C.FRESH_TREE_ROOT))
+     ap.add_argument("--tree", default=C.FRESH_TREE)
++    ap.add_argument("--smoke-dir", default=None, help="DEV ONLY: 3 epochs, wd 0.1 only, EVERY output under this dir (never the package dir); "
++                                                       "K-H2CN-REPRO is recorded but cannot pass and does not stop the smoke")
+     a = ap.parse_args()
+     t0 = time.time()
++    global STAGE_L_PT, STAGE_L_SHA, MUT_PT, MUT_SHA, INFO_L, WITHHELD_L, TMP_DIR
++    smoke = a.smoke_dir is not None
++    if smoke:
++        sd = Path(a.smoke_dir).resolve()
++        if sd == C.WORK.resolve() or C.WORK.resolve() in sd.parents:
++            raise SystemExit("[freezeL] --smoke-dir must be outside the package dir")
++        sd.mkdir(parents=True, exist_ok=True)
++        STAGE_L_PT, STAGE_L_SHA, MUT_PT, MUT_SHA = sd / STAGE_L_PT.name, sd / STAGE_L_SHA.name, sd / MUT_PT.name, sd / MUT_SHA.name
++        INFO_L, WITHHELD_L, TMP_DIR = sd / INFO_L.name, sd / WITHHELD_L.name, sd
+     seals = C.check_amendment_seals()
+-    print("[freeze] amendment seals OK", flush=True)
+-    for p in (C.STAGE_PT, C.STAGE_SHA):
++    seals["4b"] = C.check_amendment_4b_seal()
++    seals["4c"] = check_amendment_4c_seal()
++    print("[freezeL] amendment seals OK (4, 4b, 4c, 5)", flush=True)
++    for p in (STAGE_L_PT, STAGE_L_SHA, MUT_PT, MUT_SHA, REG_L):
+         if p.exists():
+-            raise SystemExit(f"[freeze] REFUSING: {p} already exists (a frozen stage is written ONCE; move it aside deliberately to re-freeze)")
++            raise SystemExit(f"[freezeL] REFUSING: {p} already exists (a frozen stage is written ONCE, and registration follows the freeze)")
++    reg_h2cn, h2cn_file_sha, h2cn_seal = C.read_seal(REG_H2CN), C.sha256_file(C.STAGE_PT), C.read_seal(C.STAGE_SHA)
++    if not (len(reg_h2cn) == len(h2cn_file_sha) == len(h2cn_seal) == 64 and reg_h2cn == h2cn_file_sha == h2cn_seal):
++        raise SystemExit(f"[freezeL] the registered H2cn stage does not verify (registered '{reg_h2cn}', file '{h2cn_file_sha}', seal '{h2cn_seal}')")
+     C.setup_paths()
+     import torch
+     import l1c_fit_score as L
+     F, AL, RT = L.F, L.AL, L.RT
+     import retime_trainfit_r8 as TF
++    if smoke:
++        F.MLP_MAX_EP, F.MLP_WD = 3, (1e-1,)
++    L2 = load_l2_common()
++    # ---- K-LON6 (literal + analytic)
++    eye = np.eye(8)
++    sm0 = lon6_softmax(L2, np.zeros((3, 8)))
++    k_lon6 = {"v7_ids_literal": bool(tuple(L2.LON6_V7_IDS) == LON6_V7_IDS_LITERAL),
++              "lon6_of_identity": bool(np.array_equal(L2.lon6(eye), eye[:, list(LON6_V7_IDS_LITERAL)])),
++              "softmax_zero_is_uniform": bool(np.abs(sm0 - 1.0 / 6.0).max() <= 1e-15), "classes": list(L2.LON6)}
++    k_lon6["PASS"] = bool(k_lon6["v7_ids_literal"] and k_lon6["lon6_of_identity"] and k_lon6["softmax_zero_is_uniform"]
++                          and k_lon6["classes"] == X_EXTRA["lon6_classes"])
++    if not k_lon6["PASS"]:
++        raise SystemExit(f"[freezeL] K-LON6 failed: {k_lon6}")
+     tools = RT.tools_load()
+     TF.TRAIN_ROOT, TF.TRAIN_TREE = a.tree_root, a.tree
+     _cp, CR2 = TF._patch_archive(TF.TRAIN_ROOT)
+@@ -63,82 +270,166 @@
+     disj = C.fresh_disjointness({s: np.unique(trs[s]["sha12"]) for s in trs})
+     disj_mut = C.fresh_disjointness(None, inject_eval_clip=True)
+     k_disj = bool(disj["PASS"] and not disj_mut["PASS"] and disj_mut["intersections"]["fresh12_x_eval139"] == 1)
+-    print(f"[freeze] K-DISJ pass={disj['PASS']} mutation_red={not disj_mut['PASS']}", flush=True)
+-    if not k_disj:
+-        C.WORK.joinpath("H2CN_FREEZE_WITHHELD.json").write_text(json.dumps({"K-DISJ": disj, "K-DISJ_mutation": disj_mut}, indent=1, default=str), encoding="utf-8")
+-        raise SystemExit("[freeze] WITHHELD: fresh-clip disjointness failed (or its mutation arm did not go RED)")
+-    ref = json.loads(H2CN_RESULT.read_text(encoding="utf-8"))
+-    fits, info_out, k_fit, k_reload = {}, {}, {}, {}
++    print(f"[freezeL] K-DISJ pass={disj['PASS']} mutation_red={not disj_mut['PASS']}", flush=True)
++    # ---- K-JOIN (before any fit) + its mutation arm (ws + 1)
++    ex = np.load(FRESH_EXTRAS, allow_pickle=False)
++    ex = {k: ex[k] for k in ("clip_index", "ws", "v0", "nav_true.traj", LOGIT_KEY)}
++    ex12 = json.load(open(str(FRESH_EXTRAS) + ".json", encoding="utf-8"))["clip_sha12_by_index"]
++    o = np.lexsort((ex["ws"], ex["clip_index"]))
++    dws = np.diff(ex["ws"][o])[np.diff(ex["clip_index"][o]) == 0]
++    stride = int(np.median(dws))                  # the window stride of the roll (the mutation joins the NEXT window of the same clip)
++    k_join, k_join_mut, P6, P6m, k_mut = {}, {}, {}, {}, {}
++    for surf in ("S2", "S6"):
++        j, k_join[surf] = extras_join(ex, ex12, trs[surf], surf)
++        _jm, k_join_mut[surf] = extras_join(ex, ex12, trs[surf], surf, ws_shift=stride)
++        km = k_join_mut[surf]
++        km["red_by_crosscheck_alone"] = bool(km["v0_maxabs"] is not None and (km["v0_maxabs"] > 1e-5 or km["plan_vs_O_maxabs"] > 1e-5)
++                                             and km["missing"] < km["rows"] // 2)
++        if k_join[surf]["PASS"]:
++            P6[surf] = lon6_softmax(L2, ex[LOGIT_KEY][j])
++            eid = trs[surf]["eid"]
++            perm = cross_episode_derangement(eid, MUT_SEED)
++            P6m[surf] = P6[surf][perm]
++            k_mut[surf] = {"bijection": bool(np.array_equal(np.sort(perm), np.arange(len(perm)))), "every_row_other_episode": bool((eid[perm] != eid).all()),
++                           "marginals_preserved": bool(all(np.array_equal(np.sort(P6m[surf][:, c]), np.sort(P6[surf][:, c])) for c in range(N_X_EXTRA))),
++                           "argmax_agreement_after_permutation": float((P6m[surf].argmax(1) == P6[surf].argmax(1)).mean()), "seed": MUT_SEED,
++                           "perm_sha256": digest(perm)}
++            k_mut[surf]["PASS"] = bool(k_mut[surf]["bijection"] and k_mut[surf]["every_row_other_episode"] and k_mut[surf]["marginals_preserved"])
++    k_join_ok = bool(all(v["PASS"] for v in k_join.values()) and not any(v["PASS"] for v in k_join_mut.values())
++                     and all(v["red_by_crosscheck_alone"] for v in k_join_mut.values()))
++    print(f"[freezeL] K-JOIN pass={k_join_ok} ({ {s: k_join[s]['PASS'] for s in k_join} }, mutation_red={ {s: not k_join_mut[s]['PASS'] for s in k_join_mut} })", flush=True)
++    if not (k_disj and k_join_ok and all(v.get("PASS") for v in k_mut.values()) and len(k_mut) == 2):
++        WITHHELD_L.write_text(json.dumps({"K-DISJ": disj, "K-DISJ_mutation": disj_mut, "K-JOIN": k_join, "K-JOIN_mutation": k_join_mut, "K-MUT": k_mut},
++                                         indent=1, default=str), encoding="utf-8")
++        raise SystemExit("[freezeL] WITHHELD: disjointness / join / mutation-permutation control failed (or a mutation arm did not go RED)")
++    ref = json.loads(H2CN_INFO.read_text(encoding="utf-8"))
++    preds_reg, blob_reg, _sha_reg = C.load_stage(C.STAGE_PT, registered_sha=reg_h2cn)
++    fits_l, fits_m, info_out, k_fit, k_repro = {}, {}, {}, {}, {}
+     for surf in ("S2", "S6"):
+         tr = trs[surf]
+         Ztr, jtr = F.join(fresh, tr["clip"], tr["ws"])
+         Htr = AL.arc(tr["G"]) - AL.arc(tr["HP"])
++        base_digest = digest(tr["X"], Ztr, Htr, tr["eid"])
++        meta = {"n_fresh": int(len(Htr)), "n_fresh_episodes": int(len(np.unique(tr["eid"]))), "n_fresh_clips": int(len(np.unique(tr["sha12"])))}
++        # ---- K-H2CN-REPRO: the same call with the 6 columns DROPPED
+         t1 = time.time()
+-        pn, info = F.h2n_fit(tr["X"], Ztr, Htr, tr["eid"], 0)
+-        net, st = C.net_and_stats_of(pn)
+-        fits[surf] = {"net": net, "st": st, "info": info, "n_fresh": int(len(Htr)), "n_fresh_episodes": int(len(np.unique(tr["eid"]))),
+-                      "n_fresh_clips": int(len(np.unique(tr["sha12"])))}
+-        rf = ref["fits"][surf]
+-        k_fit[surf] = {"wd": [info["wd"], rf["H2cn"]["wd"]], "epochs": [info["epochs"], rf["H2cn"]["epochs"]], "n_params": [info["n_params"], rf["H2cn"]["n_params"]],
+-                       "n_fresh": [int(len(Htr)), rf["n_fresh"]], "cv_l1_sum": [info["cv_l1_sum"], rf["H2cn"]["cv_l1_sum"]],
+-                       "cv_l1_sum_exact": bool(info["cv_l1_sum"] == rf["H2cn"]["cv_l1_sum"]),
+-                       "cv_l1_sum_absdiff": float(abs(info["cv_l1_sum"] - rf["H2cn"]["cv_l1_sum"]))}
+-        k_fit[surf]["PASS"] = bool(info["wd"] == rf["H2cn"]["wd"] and info["epochs"] == rf["H2cn"]["epochs"] and info["n_params"] == rf["H2cn"]["n_params"]
+-                                   and int(len(Htr)) == rf["n_fresh"])
+-        fits[surf]["_pred_closure_fresh"] = pn(tr["X"], Ztr)
+-        fits[surf]["_XZ"] = (tr["X"], Ztr)
+-        info_out[surf] = {**info, "wall_s": round(time.time() - t1, 1), "n_fresh_rows": int(len(Htr)), "n_fresh_episodes": fits[surf]["n_fresh_episodes"],
+-                          "n_fresh_clips": fits[surf]["n_fresh_clips"], "train_R2_closure": F.r2(fits[surf]["_pred_closure_fresh"], Htr),
+-                          "bank_v0_vs_panel_maxabs": float(np.nanmax(np.abs(fresh["v0_in"][jtr] - tr["v0"])))}
+-        print(f"[freeze] {surf} fit wd={info['wd']} epochs={info['epochs']} cv={info['cv_l1_sum']!r} K-FIT={k_fit[surf]['PASS']} ({info_out[surf]['wall_s']} s)", flush=True)
++        pr, inf_r, _ = fit_surface(F, tr["X"], Ztr, Htr, tr["eid"], None)
++        net_r, st_r = C.net_and_stats_of(pr)
++        rs, rb = ref["fits"][surf], blob_reg["surfaces"][surf]
++        p_rep, p_reg = pr(tr["X"], Ztr), preds_reg[surf](tr["X"], Ztr)
++        sd_r = {k: v.detach().numpy() for k, v in net_r.state_dict().items()}
++        sd_eq = bool(set(sd_r) == set(rb["state_dict"]) and all(bit_equal(sd_r[k], rb["state_dict"][k].numpy()) for k in sd_r))
++        st_eq = bool(all(bit_equal(np.asarray(st_r[k], np.float64), rb["st"][k].numpy()) for k in ("xmu", "xsd", "zmu", "zsd")))
++        k0 = next(iter(sd_r))
++        moved = {k: v.copy() for k, v in sd_r.items()}
++        moved[k0].ravel()[0] = np.nextafter(moved[k0].ravel()[0], np.inf)
++        cmp_mut_red = not all(bit_equal(moved[k], rb["state_dict"][k].numpy()) for k in moved)
++        k_repro[surf] = {"cv_record": {"wd": [inf_r["wd"], rs["wd"], rb["wd"]], "epochs": [inf_r["epochs"], rs["epochs"], rb["epochs"]],
++                                       "cv_l1_sum": [inf_r["cv_l1_sum"], rs["cv_l1_sum"], rb["cv_l1_sum"]], "n_params": [inf_r["n_params"], rs["n_params"], rb["n_params"]]},
++                         "cv_record_exact": bool(inf_r["wd"] == rs["wd"] == rb["wd"] and inf_r["epochs"] == rs["epochs"] == rb["epochs"]
++                                                 and inf_r["cv_l1_sum"] == rs["cv_l1_sum"] == rb["cv_l1_sum"] and inf_r["n_params"] == rs["n_params"] == rb["n_params"]),
++                         "n_fresh_rows": [meta["n_fresh"], rs["n_fresh_rows"], rb["n_fresh_rows"]],
++                         "state_dict_bit_equal": sd_eq, "stats_bit_equal": st_eq,
++                         "pred_bit_equal_vs_registered_file": bit_equal(p_rep, p_reg), "pred_max_abs": float(np.abs(p_rep - p_reg).max()),
++                         "train_R2_equal_record": bool(F.r2(p_rep, Htr) == rs["train_R2_closure"]),
++                         "comparator_mutation_red": bool(cmp_mut_red), "base_digest": base_digest, "wall_s": round(time.time() - t1, 1)}
++        k_repro[surf]["PASS"] = bool(k_repro[surf]["cv_record_exact"] and meta["n_fresh"] == rs["n_fresh_rows"] == rb["n_fresh_rows"] and sd_eq and st_eq
++                                     and k_repro[surf]["pred_bit_equal_vs_registered_file"] and k_repro[surf]["train_R2_equal_record"] and cmp_mut_red)
++        print(f"[freezeL] {surf} K-H2CN-REPRO={k_repro[surf]['PASS']} wd={inf_r['wd']} ep={inf_r['epochs']} cv={inf_r['cv_l1_sum']!r} ({k_repro[surf]['wall_s']} s)", flush=True)
++        if not k_repro[surf]["PASS"] and not smoke:
++            WITHHELD_L.write_text(json.dumps({"K-H2CN-REPRO": k_repro, "K-DISJ": k_disj, "K-JOIN": k_join}, indent=1, default=str), encoding="utf-8")
++            print("[freezeL] WITHHELD: K-H2CN-REPRO failed  ZZH2CNLFREEZEWITHHELDZZ", flush=True)
++            return 4
++        del pr, net_r
++        # ---- the H2cn-L fit and the mutation fit (same call, extra columns real / deranged)
++        for tag, extra, store in (("L", P6[surf], fits_l), ("MUT", P6m[surf], fits_m)):
++            t1 = time.time()
++            pn, info, Xin = fit_surface(F, tr["X"], Ztr, Htr, tr["eid"], extra)
++            net, st = C.net_and_stats_of(pn)
++            store[surf] = {"net": net, "st": st, "info": info, **meta, "_pred_closure_fresh": pn(Xin, Ztr), "_XZ": (Xin, Ztr)}
++            kf = {"n_fresh": [meta["n_fresh"], rs["n_fresh_rows"]], "n_params": [info["n_params"], N_PARAMS_L[surf]], "wd": info["wd"], "epochs": info["epochs"],
++                  "wd_in_grid": bool(info["wd"] in MLP_WD_GRID), "epochs_in_range": bool(1 <= info["epochs"] <= MLP_MAX_EP),
++                  "base_digest_equal_repro": bool(digest(Xin[:, :N_X_BASE], Ztr, Htr, tr["eid"]) == base_digest),
++                  "x_extra_cols_equal_built": bool(bit_equal(Xin[:, N_X_BASE:], extra))}
++            kf["PASS"] = bool(meta["n_fresh"] == rs["n_fresh_rows"] and info["n_params"] == N_PARAMS_L[surf] and kf["wd_in_grid"] and kf["epochs_in_range"]
++                              and kf["base_digest_equal_repro"] and kf["x_extra_cols_equal_built"] and Xin.shape[1] == N_X_BASE + N_X_EXTRA)
++            k_fit[f"{tag}_{surf}"] = kf
++            info_out[f"{tag}_{surf}"] = {**info, "wall_s": round(time.time() - t1, 1), "n_fresh_rows": meta["n_fresh"], "n_fresh_episodes": meta["n_fresh_episodes"],
++                                         "n_fresh_clips": meta["n_fresh_clips"], "train_R2_closure": F.r2(store[surf]["_pred_closure_fresh"], Htr),
++                                         "bank_v0_vs_panel_maxabs": float(np.nanmax(np.abs(fresh["v0_in"][jtr] - tr["v0"]))),
++                                         "x_extra_fresh_stats": {"mean": P6[surf].mean(0).tolist(), "std": P6[surf].std(0).tolist(),
++                                                                 "min": P6[surf].min(0).tolist(), "max": P6[surf].max(0).tolist()}}
++            print(f"[freezeL] {surf} {tag} fit wd={info['wd']} epochs={info['epochs']} cv={info['cv_l1_sum']!r} K-FIT={kf['PASS']} ({info_out[f'{tag}_{surf}']['wall_s']} s)", flush=True)
+     code = {n: C.sha256_file(p) for n, p in (("l1_fit_score.py", C.L1_CODE / "l1_fit_score.py"), ("l1c_fit_score.py", C.L1C_CODE / "l1c_fit_score.py"),
+                                              ("l1c_h2cn_confirm.py", C.L1C_CODE / "l1c_h2cn_confirm.py"),
+-                                             ("progress_scalar.py", C.L1_CODE / "probe_repro/progress_scalar.py"),
+-                                             ("ship_r8_sub_common.py", HERE / "ship_r8_sub_common.py"), ("h2cn_freeze.py", Path(__file__).resolve()))}
+-    prov = {"amendment_4_sha256": seals["4"]["sha256"], "amendment_5_sha256": seals["5"]["sha256"], "code_sha256": code,
++                                             ("progress_scalar.py", C.L1_CODE / "probe_repro/progress_scalar.py"), ("l2_common.py", L2_COMMON),
++                                             ("ship_r8_sub_common.py", HERE / "ship_r8_sub_common.py"), ("h2cn_freeze.py", HERE / "h2cn_freeze.py"),
++                                             ("h2cnl_freeze.py", Path(__file__).resolve()))}
++    prov = {"amendment_4_sha256": seals["4"]["sha256"], "amendment_4b_sha256": seals["4b"]["sha256"], "amendment_4c_sha256": seals["4c"]["sha256"],
++            "amendment_5_sha256": seals["5"]["sha256"], "code_sha256": code, "registered_h2cn_stage_sha256": reg_h2cn,
+             "fresh_bank": {"file": str(bank_path), "sha256": C.sha256_file(bank_path)}, "fresh_tree": f"{a.tree_root}/{a.tree}",
+-            "fit_reference": {"file": str(H2CN_RESULT), "sha256": C.sha256_file(H2CN_RESULT)}, "fit_seed": 0, "torch": str(torch.__version__),
++            "fresh_extras": {"file": str(FRESH_EXTRAS), "sha256": C.sha256_file(FRESH_EXTRAS)},
++            "fit_reference": {"file": str(H2CN_INFO), "sha256": C.sha256_file(H2CN_INFO)}, "fit_seed": 0, "torch": str(torch.__version__),
+             "threads": {"OMP_NUM_THREADS": os.environ.get("OMP_NUM_THREADS"), "MKL_NUM_THREADS": os.environ.get("MKL_NUM_THREADS"), "torch_get_num_threads": torch.get_num_threads()}}
+-    payload = C.stage_payload({s: {k: v for k, v in d.items() if not k.startswith("_")} for s, d in fits.items()}, prov)
+-    import io
++    mutation = {"kind": "LON6 softmax rows permuted across FIT episodes BEFORE the fit (h2cnl_freeze.cross_episode_derangement); every row receives a "
++                        "different episode's 6 columns; marginals preserved", "seed": MUT_SEED, "per_surface": k_mut,
++                "eval_use": "phase 2 feeds this stage the TRUE eval-side LON6 softmax (only the FIT rows were deranged)"}
+ 
+     def ser(obj) -> bytes:                       # in-memory: torch.save names the zip root after a FILE's name, a buffer gets the fixed root "archive"
+         f = io.BytesIO()
+         torch.save(obj, f)
+         return f.getvalue()
+-    b1 = ser(payload)
+-    k_det = bool(b1 == ser(payload) == ser(C.stage_payload({s: {k: v for k, v in d.items() if not k.startswith("_")} for s, d in fits.items()}, prov)))
+-    tmp1 = C.WORK / "_freeze_tmp1.pt"
+-    tmp1.write_bytes(b1)
+-    # ---- K-RELOAD from the temp file (bit-for-bit vs the closure, on the fresh FIT rows only)
+-    preds, blob, sha_tmp = C.load_stage(tmp1)
+-    for surf in ("S2", "S6"):
+-        X, Z = fits[surf]["_XZ"]
+-        p_file = preds[surf](X, Z)
+-        p_cl = fits[surf]["_pred_closure_fresh"]
+-        k_reload[surf] = {"bit_equal": bool(p_file.dtype == p_cl.dtype and p_file.shape == p_cl.shape and p_file.tobytes() == p_cl.tobytes()),
+-                          "max_abs": float(np.abs(p_file - p_cl).max()), "rows": int(len(X)), "d_out": int(p_cl.shape[1])}
+-    ok = bool(k_disj and all(v["PASS"] for v in k_fit.values()) and all(v["bit_equal"] for v in k_reload.values()) and k_det)
+-    info_json = {"tool": "h2cn_freeze.py", "role": "SHIP-R8 AMENDMENT 4 section 1: the frozen H2cn stage (fit on FRESH rows only); NO eval-window output computed",
+-                 "amendments": seals, "controls": {"K-SEAL": True, "K-DISJ": k_disj, "K-FIT": k_fit, "K-RELOAD": k_reload, "K-DETERM": k_det, "ALL_PASS": ok},
++    k_det, k_reload, blobs = {}, {}, {}
++    for tag, fits, kind, mu in (("L", fits_l, "H2CNL (Amendment 4c stage)", None), ("MUT", fits_m, "H2CNL_MUT (Amendment 4c mutation arm, read beside)", mutation)):
++        b1 = ser(build_payload(fits, prov, kind, mu))
++        k_det[tag] = bool(b1 == ser(build_payload(fits, prov, kind, mu)) == ser(build_payload(fits, prov, kind, mu)))
++        tmp = TMP_DIR / f"_freezeL_tmp_{tag}.pt"
++        tmp.write_bytes(b1)
++        preds, _blob, sha_tmp = load_stage_l(tmp)
++        blobs[tag] = (tmp, sha_tmp)
++        for surf in ("S2", "S6"):
++            X, Z = fits[surf]["_XZ"]
++            p_file, p_cl = preds[surf](X, Z), fits[surf]["_pred_closure_fresh"]
++            k_reload[f"{tag}_{surf}"] = {"bit_equal": bit_equal(p_file, p_cl), "max_abs": float(np.abs(p_file - p_cl).max()), "rows": int(len(X)), "d_out": int(p_cl.shape[1])}
++        try:                                     # the width guard must refuse the 10-column H2cn X
++            preds["S2"](fits["S2"]["_XZ"][0][:, :N_X_BASE], fits["S2"]["_XZ"][1])
++            k_reload[f"{tag}_width_guard_refuses_10_cols"] = False
++        except SystemExit:
++            k_reload[f"{tag}_width_guard_refuses_10_cols"] = True
++    ok = bool(k_disj and k_join_ok and k_lon6["PASS"] and all(v["PASS"] for v in k_mut.values()) and (smoke or all(v["PASS"] for v in k_repro.values()))
++              and all(v["PASS"] for v in k_fit.values()) and all((v["bit_equal"] if isinstance(v, dict) else v) for v in k_reload.values()) and all(k_det.values()))
++    info_json = {"tool": "h2cnl_freeze.py", "smoke": smoke, "role": "SHIP-R8 AMENDMENT 4c section 1: the frozen H2cn-L stage + its mutation stage (fit on FRESH rows only); "
++                 "NO eval-window output computed; REGISTERED_H2CNL_STAGE.sha256 NOT written (the Master Mind registers)",
++                 "amendments": seals, "x_extra": X_EXTRA,
++                 "controls": {"K-SEAL": True, "K-LON6": k_lon6, "K-DISJ": k_disj, "K-JOIN": k_join, "K-JOIN_mutation_next_window": k_join_mut, "ws_stride": stride, "K-JOIN_PASS": k_join_ok,
++                              "K-H2CN-REPRO": k_repro, "K-H2CN-REPRO_MUT": {s: {"base_digest_equal_repro": k_fit[f"MUT_{s}"]["base_digest_equal_repro"],
++                                                                                "reads": "the mutation fit's base arrays (X[:, :10], Z, H, eid) hash-equal the arrays "
++                                                                                         "whose 6-column-dropped fit reproduced the registered H2cn stage bit-for-bit"}
++                                                                            for s in ("S2", "S6")},
++                              "K-FIT": k_fit, "K-RELOAD": k_reload, "K-DETERM": k_det, "K-MUT": k_mut, "ALL_PASS": ok},
+                  "disjointness": disj, "disjointness_mutation_arm": disj_mut, "fits": info_out, "provenance": prov,
+                  "fit_reference_values": {s: ref["fits"][s] for s in ("S2", "S6")},
+                  "generated": time.strftime("%FT%T%z"), "wall_s": round(time.time() - t0, 1)}
+     if not ok:
+-        os.remove(tmp1)
+-        (C.WORK / "H2CN_FREEZE_WITHHELD.json").write_text(json.dumps(info_json, indent=1, default=str), encoding="utf-8")
+-        print("[freeze] WITHHELD: a control failed -> H2CN_FREEZE_WITHHELD.json  ZZH2CNFREEZEWITHHELDZZ", flush=True)
++        for tmp, _s in blobs.values():
++            os.remove(tmp)
++        WITHHELD_L.write_text(json.dumps(info_json, indent=1, default=str), encoding="utf-8")
++        print("[freezeL] WITHHELD: a control failed -> H2CNL_FREEZE_WITHHELD.json  ZZH2CNLFREEZEWITHHELDZZ", flush=True)
+         return 4
+-    os.replace(tmp1, C.STAGE_PT)
+-    sha = C.sha256_file(C.STAGE_PT)
+-    if sha != sha_tmp or len(sha) != 64:
+-        raise SystemExit(f"[freeze] the moved stage file hashes to {sha}, the checked temp file to {sha_tmp}")
+-    C.STAGE_SHA.write_text(f"{sha}  {C.STAGE_PT.name}\n", encoding="utf-8")
+-    info_json["stage_file"] = {"path": str(C.STAGE_PT), "sha256": sha, "bytes": C.STAGE_PT.stat().st_size, "written_epoch": C.STAGE_PT.stat().st_mtime}
+-    (C.WORK / "H2CN_FREEZE_INFO.json").write_text(json.dumps(info_json, indent=1, default=str), encoding="utf-8")
+-    chk = json.loads((C.WORK / "H2CN_FREEZE_INFO.json").read_text(encoding="utf-8"))           # assert on the ARTIFACTS
+-    assert chk["controls"]["ALL_PASS"] is True and chk["stage_file"]["sha256"] == C.read_seal(C.STAGE_SHA) == C.sha256_file(C.STAGE_PT)
+-    print(f"[freeze] WROTE {C.STAGE_PT} sha256 {sha} wall {info_json['wall_s']} s  ZZH2CNFREEZEOKZZ", flush=True)
++    for tag, dst, dsha in (("L", STAGE_L_PT, STAGE_L_SHA), ("MUT", MUT_PT, MUT_SHA)):
++        tmp, sha_tmp = blobs[tag]
++        os.replace(tmp, dst)
++        sha = C.sha256_file(dst)
++        if sha != sha_tmp or len(sha) != 64:
++            raise SystemExit(f"[freezeL] the moved stage file {dst.name} hashes to {sha}, the checked temp file to {sha_tmp}")
++        dsha.write_text(f"{sha}  {dst.name}\n", encoding="utf-8")
++        info_json["stage_file" if tag == "L" else "mutation_stage_file"] = {"path": str(dst), "sha256": sha, "bytes": dst.stat().st_size, "written_epoch": dst.stat().st_mtime}
++    INFO_L.write_text(json.dumps(info_json, indent=1, default=str), encoding="utf-8")
++    chk = json.loads(INFO_L.read_text(encoding="utf-8"))           # assert on the ARTIFACTS
++    assert chk["controls"]["ALL_PASS"] is True and chk["stage_file"]["sha256"] == C.read_seal(STAGE_L_SHA) == C.sha256_file(STAGE_L_PT)
++    assert chk["mutation_stage_file"]["sha256"] == C.read_seal(MUT_SHA) == C.sha256_file(MUT_PT) and not REG_L.exists()
++    print(f"[freezeL] WROTE {STAGE_L_PT.name} sha256 {chk['stage_file']['sha256']} ; {MUT_PT.name} sha256 {chk['mutation_stage_file']['sha256']} "
++          f"wall {info_json['wall_s']} s  ZZH2CNLFREEZEOKZZ", flush=True)
+     return 0
+ 
+ 

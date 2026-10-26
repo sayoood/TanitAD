@@ -1,0 +1,25 @@
+VERDICT: VOID (K-MUT-L1: the mutation arm H2CNL_MUT8 also passes L1, so the MD gain is not attributable to the lon decision; Amendment 4c s2 voids the bars); read mechanically beside (NOT admissible as bars): L1 PASS, L2 FAIL, L3 PASS
+
+# SHIP-R8 AMENDMENT 4c -- bars L1 / L2 / L3 (H2CNL_DEPLOY8 vs H2CN_DEPLOY8, same battery draw)
+
+tier: T1 self-action OPEN LOOP on logged eval139 frames (not driving performance)
+estimator: pair_read_r8.paired_cell -> taniteval.ci.paired_episode_cluster_bootstrap, B 2000, bootstrap seed 0, over EPISODES with the models FIXED: answers 'another draw of episodes' only -- not another training run (one training seed, one stage fit), not another inference run (seeds 0 and 1 reported separately)
+population: S6 surface, compliant windows (E['compliant']); FD on GT-cruise windows, MD on GT-decel windows (l2_common.lon_indicators, plan class from the LAST chord, +-1.5 m/s vs v0)
+
+| cell (S6 compliant) | s0 | s1 |
+|---|---|---|
+| H2CNL_DEPLOY8-H2CN_DEPLOY8|MD | -0.0908 [-0.1362, -0.0505] SEP (0.4429 vs 0.5336, n=639) | -0.0892 [-0.1349, -0.0497] SEP (0.4429 vs 0.5321, n=639) |
+| H2CNL_DEPLOY8-H2CN_DEPLOY8|FD | +0.0436 [+0.0240, +0.0652] SEP (0.1040 vs 0.0603, n=1856) | +0.0436 [+0.0240, +0.0652] SEP (0.1040 vs 0.0603, n=1856) |
+| H2CNL_MUT8-H2CN_DEPLOY8|MD | -0.0282 [-0.0527, -0.0061] SEP (0.5055 vs 0.5336, n=639) | -0.0266 [-0.0494, -0.0059] SEP (0.5055 vs 0.5321, n=639) |
+| H2CNL_MUT8-H2CN_DEPLOY8|FD | +0.0140 [+0.0032, +0.0245] SEP (0.0744 vs 0.0603, n=1856) | +0.0140 [+0.0032, +0.0245] SEP (0.0744 vs 0.0603, n=1856) |
+| H2CNL_DEPLOY8-RETIME_DEPLOY8|MD | -0.0266 [-0.1075, +0.0584] (0.4429 vs 0.4695, n=639) | -0.0282 [-0.1084, +0.0549] (0.4429 vs 0.4710, n=639) |
+| H2CNL_DEPLOY8-RETIME_DEPLOY8|FD | -0.0329 [-0.0729, +0.0078] (0.1040 vs 0.1369, n=1856) | -0.0334 [-0.0727, +0.0081] (0.1040 vs 0.1374, n=1856) |
+| H2CN_DEPLOY8-RETIME_DEPLOY8|MD | +0.0642 [-0.0118, +0.1473] (0.5336 vs 0.4695, n=639) | +0.0610 [-0.0157, +0.1425] (0.5321 vs 0.4710, n=639) |
+| H2CN_DEPLOY8-RETIME_DEPLOY8|FD | -0.0765 [-0.1164, -0.0377] SEP (0.0603 vs 0.1369, n=1856) | -0.0770 [-0.1197, -0.0380] SEP (0.0603 vs 0.1374, n=1856) |
+
+L1 True | L2 False | L3 PASS | mutation passes L1: True
+controls: {"K-ALIGN": true, "K-H8-POS_bit_equal_landed": true, "K-DIAG_reproduces_H2CN_FDMD_DIAG": true, "K-ZERO_known_zero": true, "K-MUT-L1_mutation_does_not_pass_L1": false, "ALL_PASS": false}
+
+NEXT (committed in the amendment): H2CN_DEPLOY8 stands: L1 is void (not attributable) and L2 fails on its own (FD separated ABOVE H2CN_DEPLOY8 at both seeds: the amendment's FAIL-L2 branch). The amendment's committed lever for an L1 that does not hold is a learned per-window gate between H2cn progress and the self-sharpened progress, fitted on the fresh split -- BLOCKED on one SELFSHARP GPU roll on the fresh clips and on its pre-registration (Master Mind).
+
+ZZBARS4CENDZZ

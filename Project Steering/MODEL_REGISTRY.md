@@ -5976,6 +5976,16 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | controls | K-CAP-ID / K-CAP-COMPLY / K-CAP-MONO PASS; all Amendment 4 controls PASS; DEPLOY8 reproduced bit-for-bit from the same forward (0 mismatches); mutation lim x 1.05 RED; analytic self-test 7/7. |
 | status | Recommended shipped stage for capped refcv8 (Master Mind); the choice between DEPLOY8 and CAP8 is the PI's. NavSim only with a separate go. |
 
+### 16.18 refcv8-r101-s0 -- H2cn-L (H2cn + the lon head's softmax as input): SHIP-R8 PASS, bars VOID, L2 FAIL (AMENDMENT 4c) *(addendum to §16.15)*
+
+| | |
+|---|---|
+| what | §16.15's H2cn recipe with the 6-class lon softmax (`nav_true.tacv6_lon_logits`) as 6 extra inputs; fresh-split fit (S2 wd 0.01 / 17 epochs, S6 wd 1e-4 / 33 epochs); stage 46a6b11a registered 06:08:07 before any eval output; amendment sealed d3a9347b. |
+| SHIP-R8 (per-frame feed; seeds 0 / 1) | **PASS** (L3) -- E1 **-0.0504 [-0.0620, -0.0392] / -0.0496**; E3 **-1.1994 [-1.4940, -0.9164] / -1.1935**. MEASURED `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-refcv8-ship-r8-h2cn-factored/out_4c/ship_r8/SHIP_R8_H2CNL_DEPLOY8.json`. |
+| bars vs H2CN_DEPLOY8 (S6 compliant) | **VOID** (K-MUT-L1: the scrambled-logits refit also passes L1). Mechanical: MD -0.0908 [-0.1362, -0.0505] (0.443 vs 0.534), FD **+0.0436 [+0.0240, +0.0652]** (0.104 vs 0.060) -- L2 FAIL at both seeds. `out_4c/BARS_4C.json`. |
+| compliance | strict fed-ceiling exceedance on S6 compliant windows 29/3251 (H2CN 55, RETIME 16, CAP8 0) at s0. |
+| status | Not a shipping candidate; H2CN_DEPLOY8 / H2CN_CAP8 stand (§16.15 / §16.17). |
+
 ## 18. nt-a1-s0 — NT A1, the navtrain decision arm (PREREG_NT_DECIDE) [NAVSIM navtrain · ONE SEED · TRAINING]
 
 ### nt-a1-s0 — ▶ TRAINING since 2026-10-25 11:02 Berlin (CET, 10:02Z), on Thor, launched by the launch gate's PASS token

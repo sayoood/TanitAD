@@ -1,0 +1,296 @@
+--- ship_r8_sub_forward.py	2026-10-26 05:09:26.428330200 +0100
++++ ship_r8_4c_forward.py	2026-10-26 06:13:41.288248800 +0100
+@@ -1,4 +1,10 @@
+-"""ship_r8_sub_forward.py -- the registered SHIP-R8 battery device (deploy8_forward_r8.py) with the arm positions replaced per SHIP-R8 AMENDMENT 4
++"""ship_r8_4c_forward.py -- SHIP-R8 AMENDMENT 4c: a COPY of ship_r8_sub_forward.py (left untouched: it is pinned by MANIFEST_4B) with ONE switch added,
++--h2cnl (mode h2cn): two more arms built from the SAME forward, H2CNL_DEPLOY8 (the registered H2cn-L stage, H2CNL_STAGE_FROZEN.pt) and H2CNL_MUT8 (the
++registered mutation stage, H2CNL_MUT_STAGE.pt, fed the TRUE eval logits), plus K_REG_H2CNL / K_REG_H2CNL_MUT / K_FREEZE_H2CNL / K_JOIN_EVAL.  Every 4c
++addition is NAMED (arms HL/HM, per_window_extra[*].h2cnl, the four controls) so the H2CN_DEPLOY8 reproduction can drop exactly them.  Diff:
++ship_r8_4c_forward.DIFF.txt.  --h2cnl refuses out/ and out_4b/ as --out-root.
++
++ship_r8_sub_forward.py -- the registered SHIP-R8 battery device (deploy8_forward_r8.py) with the arm positions replaced per SHIP-R8 AMENDMENT 4
+ (--mode h2cn: the frozen H2cn progress stage) or AMENDMENT 5 (--mode factored: native os-only path x self-sharpened progress, then RETIME_DEPLOY8).
+ CPU only, zero GPU.  NEW file (EvalFlyWheel 2026-10-26).  The battery code is IMPORTED and monkeypatched exactly as its sibling builds do (pf_lane.configure
+ re-points it at the REGISTERED per-frame table; deploy8_forward_r8's own four-hook device replaces only the ARM POSITIONS); nothing is edited.
+@@ -47,6 +53,10 @@
+ PFPKG = C.PF_HOLD / "pfpkg"
+ REG_PF = Path("C:/Users/Admin/qland/hold_r8pf/REGISTERED_PF_TABLE.sha256")
+ REG_STAGE_DEFAULT = C.WORK / "REGISTERED_H2CN_STAGE.sha256"
++import h2cnl_freeze as HL  # noqa: E402   AMENDMENT 4c: the H2cn-L stage loader (load_stage_l), the extra-column builder (lon6_softmax) and the 4c seal
++REG_L_DEFAULT = C.WORK / "REGISTERED_H2CNL_STAGE.sha256"
++REG_M_DEFAULT = C.WORK / "REGISTERED_H2CNL_MUT_STAGE.sha256"
++EVAL_EXTRAS = "C:/Users/Admin/refcv8_eval_archive/battery/{tree}/dump_s{seed}/refcv6_extras.npz"
+ L1_BANK = Path("C:/Users/Admin/refcv8_pf/refcv9_l1/bank")
+ SS_BANK = Path("F:/refcv9_selfsharp")
+ H2CN_RESULT = Path("C:/Users/Admin/refcv8_pf/refcv9_l1c/result_h2cn")
+@@ -58,7 +68,7 @@
+ SURFS = ("S2", "S6")
+ SETS = ("compliant", "all")
+ EIGHT = {"H8": "H2CN_DEPLOY8", "HN": "H2CN_NEAR", "D8": "RETIME_DEPLOY8", "G1": "CONST_G1", "OS": "OSONLY_DEPLOY8", "FS": "FACTORED_SSOS_DEPLOY8", "FX": "FACTORED_DEPLOY8",
+-         "HC": "H2CN_CAP8"}
++         "HC": "H2CN_CAP8", "HL": "H2CNL_DEPLOY8", "HM": "H2CNL_MUT8"}
+ PERSURF = {"HP": "H2CN_PERSURFACE"}
+ SCORED = {"h2cn": "H2CN_DEPLOY8", "factored": "FACTORED_DEPLOY8"}
+ CAP_MARGIN = 1e-6                                # Amendment 4b s1: the (1 - 1e-6) on every interval's advance
+@@ -194,11 +204,48 @@
+     return out
+ 
+ 
+-def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None, out_root: Path, reg_stage_file: Path, cap8: bool = False) -> int:
++def load_eval_extras(tree: str, seed: int) -> dict:
++    """AMENDMENT 4c: the battery tree's own extras of inference seed `seed` (the SAME forward the plan came from), indexed on (clip_index, ws)."""
++    p = Path(EVAL_EXTRAS.format(tree=tree, seed=seed))
++    z = np.load(p, allow_pickle=False)
++    e = {"file": str(p), "sha256": C.sha256_file(p), **{k: z[k] for k in ("clip_index", "ws", "v0", "nav_true.traj", HL.LOGIT_KEY)}}
++    idx = {}
++    for j, k in enumerate(zip(e["clip_index"].tolist(), e["ws"].tolist())):
++        idx.setdefault(k, []).append(j)
++    o = np.lexsort((e["ws"], e["clip_index"]))
++    dws = np.diff(e["ws"][o])[np.diff(e["clip_index"][o]) == 0]
++    e.update(_idx=idx, n_dup=int(sum(len(v) - 1 for v in idx.values())), stride=int(np.median(dws)))
++    return e
++
++
++def join_eval_extras(e: dict, clip, ws, v0, plan8, ws_shift: int = 0) -> tuple:
++    """AMENDMENT 4c K-JOIN (eval side): every eval row joins EXACTLY one extras row on (clip index, ws + ws_shift); independent cross-checks: extras v0 == the
++    battery ctx v0 and extras nav_true.traj == the 8-slot plan the arms re-time (bit for bit: the logits come from the SAME forward)."""
++    hits = [e["_idx"].get((int(c), int(w) + ws_shift), []) for c, w in zip(clip, ws)]
++    j = np.asarray([h[0] if len(h) == 1 else -1 for h in hits], np.int64)
++    ok = j >= 0
++    jj = np.where(ok, j, 0)
++    rec = {"rows": int(len(j)), "extras_rows": int(len(e["ws"])), "extras_duplicate_keys": e["n_dup"], "missing": int(sum(len(h) == 0 for h in hits)),
++           "multi": int(sum(len(h) > 1 for h in hits)), "ws_shift": int(ws_shift),
++           "ws_equal": bool(ok.all() and np.array_equal(e["ws"][jj], np.asarray(ws, np.int64) + ws_shift)),
++           "clip_equal": bool(ok.all() and np.array_equal(e["clip_index"][jj], np.asarray(clip, np.int64))),
++           "v0_maxabs": float(np.abs(e["v0"][jj].astype(np.float64) - np.asarray(v0, np.float64))[ok].max()) if ok.any() else None,
++           "traj_bit_equal_plan8": bool(ok.all() and e["nav_true.traj"][jj].tobytes() == np.ascontiguousarray(plan8).tobytes()),
++           "traj_vs_plan8_maxabs": float(np.abs(e["nav_true.traj"][jj].astype(np.float64) - np.asarray(plan8, np.float64))[ok].max()) if ok.any() else None}
++    rec["PASS"] = bool(rec["extras_duplicate_keys"] == 0 and rec["missing"] == 0 and rec["multi"] == 0 and rec["ws_equal"] and rec["clip_equal"]
++                       and rec["v0_maxabs"] is not None and rec["v0_maxabs"] <= 1e-5 and rec["traj_bit_equal_plan8"])
++    rec["red_by_crosscheck_alone"] = bool(rec["v0_maxabs"] is not None and (rec["v0_maxabs"] > 1e-5 or rec["traj_vs_plan8_maxabs"] > 1e-5) and rec["missing"] < rec["rows"] // 2)
++    return rec, j
++
++
++def forward(mode: str, tree: str, seeds: tuple, scored: bool, mutate: str | None, out_root: Path, reg_stage_file: Path, cap8: bool = False,
++            h2cnl: bool = False, work_root: Path | None = None) -> int:
+     t_start = time.time()
+     seals = C.check_amendment_seals()
+     if cap8:
+         seals = {**seals, "4b": C.check_amendment_4b_seal()}              # AMENDMENT 4b: refuses unless the sealed text is the file (only when --cap8)
++    if h2cnl:
++        seals = {**seals, "4c": HL.check_amendment_4c_seal()}              # AMENDMENT 4c: refuses unless the sealed text is the file (only when --h2cnl)
+     C.setup_paths()
+     PL = pf_lane()
+     reg_pf = PL.read_registered(REG_PF)
+@@ -211,8 +258,8 @@
+     AL, PH, PS = F.AL, F.PH, F.PS
+     if AL.RT is not RT:
+         raise SystemExit("[sub-fwd] two copies of a0k0_headroom_retime_r8 are loaded (the L1 helpers and the battery lane would disagree)")
+-    tag = f"{mode}" + ("_cap8" if cap8 else "") + ("_scored" if scored else "") + (f"_MUTATION_{mutate}" if mutate else "")
+-    work = out_root / ("mutation" if mutate else "work") / tag
++    tag = f"{mode}" + ("_cap8" if cap8 else "") + ("_h2cnl" if h2cnl else "") + ("_scored" if scored else "") + (f"_MUTATION_{mutate}" if mutate else "")
++    work = (work_root or out_root) / ("mutation" if mutate else "work") / tag
+     work.mkdir(parents=True, exist_ok=True)
+     RT.OUT = work                                                         # RT.forward writes ONLY here (never into the registered package)
+     CR.OUT, CP.OUT = work / "cr_unused", work / "cp_unused"
+@@ -262,7 +309,26 @@
+             preds = {**preds, "S2": pred_mut}
+         for s in seeds:
+             zbank[s] = F.load_bank(L1_BANK / f"ztac_eval_s{s}.npz")
+-        arm_order = ["H2CN_DEPLOY8", "H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8", "RETIME_DEPLOY_PERSURFACE", "CONST_G1"] + (["H2CN_CAP8"] if cap8 else [])
++        lstages, exl = {}, {}
++        if h2cnl:
++            L2 = HL.load_l2_common()
++            for kk, regf, ptf in (("HL", REG_L_DEFAULT, HL.STAGE_L_PT), ("HM", REG_M_DEFAULT, HL.MUT_PT)):
++                rs_ = C.read_seal(regf)
++                if len(rs_) != 64:
++                    raise SystemExit(f"[sub-fwd] REFUSING: no registered {EIGHT[kk]} stage sha256 in {regf} (Amendment 4c s1: registered BEFORE any eval-side output)")
++                pr_, bl_, sh_ = HL.load_stage_l(ptf, rs_)                       # refuses unless sha256(file) == registered
++                g_ = {"arm": EIGHT[kk], "registered_sha256": rs_, "registration_file": str(regf), "registration_file_mtime_epoch": os.path.getmtime(regf),
++                      "stage_file": str(ptf), "stage_file_sha256": sh_, "stage_file_mtime_epoch": os.path.getmtime(ptf), "stage_kind": bl_.get("kind"),
++                      "stage_is_mutation": bool(bl_.get("mutation") is not None), "passed_epoch": time.time(), "passed_iso": time.strftime("%FT%T%z"),
++                      "rule": "SHIP-R8 AMENDMENT 4c s1: the frozen stage's sha256 is registered BEFORE any eval-side output; this record is written before the first one"}
++                (work / f"REGISTRATION_GATE_{EIGHT[kk]}.json").write_text(json.dumps(g_, indent=1), encoding="utf-8")
++                lstages[kk] = {"preds": pr_, "gate": g_}
++            if lstages["HL"]["gate"]["stage_is_mutation"] or not lstages["HM"]["gate"]["stage_is_mutation"]:
++                raise SystemExit("[sub-fwd] the H2CNL / H2CNL_MUT stage files carry the wrong mutation flag")
++            for s in seeds:
++                exl[s] = load_eval_extras(tree, s)
++        arm_order = ["H2CN_DEPLOY8", "H2CN_NEAR", "H2CN_PERSURFACE", "RETIME_DEPLOY8", "RETIME_DEPLOY_PERSURFACE", "CONST_G1"] + (["H2CN_CAP8"] if cap8 else []) + \
++                    (["H2CNL_DEPLOY8", "H2CNL_MUT8"] if h2cnl else [])
+     else:
+         for s in seeds:
+             fac[s] = load_factored_inputs(s, scored)
+@@ -274,7 +340,7 @@
+     orig_apply, orig_diag, orig_fw = RT.retime_apply, RT.retime_diag, RT.frozen_weights
+     const1, const0 = {"knots_s": [0.5], "gains": [1.0]}, {"knots_s": [0.5], "gains": [0.0]}
+     KIND_OF = {"H2CN_DEPLOY8": "H8", "H2CN_NEAR": "HN", "RETIME_DEPLOY8": "D8", "CONST_G1": "G1", "OSONLY_DEPLOY8": "OS", "FACTORED_SSOS_DEPLOY8": "FS",
+-               "FACTORED_DEPLOY8": "FX", "H2CN_PERSURFACE": "HP", "H2CN_CAP8": "HC"}
++               "FACTORED_DEPLOY8": "FX", "H2CN_PERSURFACE": "HP", "H2CN_CAP8": "HC", "H2CNL_DEPLOY8": "HL", "H2CNL_MUT8": "HM"}
+     classes = {k: type(f"_Rows{k}", (D8._Rows,), {"KIND": k}) for k in KIND_OF.values()}
+ 
+     def tools_load_once():
+@@ -381,6 +447,31 @@
+                     "id_pos_cast_bit_equal": bool(pI32.tobytes() == st["H8"][0].tobytes()),
+                     "mono_s_cap_nondecreasing_from_0": bool((np.diff(np.concatenate([np.zeros((len(sC), 1)), sC], axis=1), axis=1) >= 0).all() and np.isfinite(sC).all()),
+                     "s_cap_min": float(sC.min()), "max_progress_removed_m": float((s8 - sC).max())}
++            if h2cnl:
++                # AMENDMENT 4c: H2CNL_DEPLOY8 / H2CNL_MUT8 = Amendment 4's 8-slot call with X := concat[X, softmax(lon6(logits))] of the SAME forward
++                e_ = exl[seed]
++                v0_ctx = ctx["v0"][rows]
++                rj, jL = join_eval_extras(e_, S["clip"], S["ws"], v0_ctx, plan8, 0)
++                rjm, _jm = join_eval_extras(e_, S["clip"], S["ws"], v0_ctx, plan8, e_["stride"])
++                if not rj["PASS"]:
++                    raise SystemExit(f"[sub-fwd] K-JOIN (eval) failed on {surf} seed {seed}: {rj}")
++                P6 = HL.lon6_softmax(L2, e_[HL.LOGIT_KEY][jL])
++                X16 = np.concatenate([X, P6], 1)
++                hl = {"join": rj, "join_mutation_next_window": rjm, "ws_stride": e_["stride"], "extras_file_sha256": e_["sha256"],
++                      "x16_base_cols_bit_equal_X": bool(X16[:, :X.shape[1]].tobytes() == np.ascontiguousarray(X).tobytes() and X.shape[1] == HL.N_X_BASE),
++                      "lon6_softmax_rows_sum_to_1_maxdev": float(np.abs(P6.sum(1) - 1.0).max()), "lon6_softmax_mean": P6.mean(0).tolist()}
++                for kk in ("HL", "HM"):
++                    pr_ = lstages[kk]["preds"]
++                    g2, g6 = pr_["S2"](X16, Z), pr_["S6"](X16, Z)
++                    sL, chL = h2cn_progress(AL, prior8, g2, g6)
++                    pL = RT.eval_polyline(geo, sL)
++                    st[kk] = (pL.astype(plan8.dtype), pL)
++                    st["s8"][kk] = sL
++                    hl[f"running_max_changed_windows_{EIGHT[kk]}"] = int(chL.sum())
++                    hl[f"frac_progress_clipped_at_0_{EIGHT[kk]}"] = float((np.concatenate([AL.arc(prior8[:, :4]) + g2, AL.arc(prior8[:, SLOTS['S6']])[:, 2:] + g6[:, 2:]], 1) < 0).any(1).mean())
++                    hl[f"n_windows_cast_positions_differ_from_H2CN_DEPLOY8_{EIGHT[kk]}"] = int((st[kk][0] != st["H8"][0]).any((1, 2)).sum())
++                    hl[f"mean_abs_progress_diff_vs_H2CN_DEPLOY8_m_{EIGHT[kk]}"] = float(np.abs(sL - s8).mean())
++                ex["h2cnl"] = hl
+             store_extra = {"X": X, "Z_rows": _j, "f2": f2, "f6": f6, "eid": np.asarray([str(e) for e in S["eid"]]), "mask": m, "G": S["X"]["G"], "O": O, "HP": HP, "dt": S["dt"]}
+             extra[(seed, surf)] = store_extra
+         else:
+@@ -413,7 +504,7 @@
+         lim_r, v0_r = cur["lim"][rows], ctx["v0"][rows]
+         eid_r, mk = np.asarray(S["eid"]), np.asarray(S["mask"], bool)
+         crow = {"panel_grid_horizons_ticks": hz, "full_plan_horizons_ticks": [int(h) for h in rc_["horizons"]], "arms": {}}
+-        for k_, nm_ in [("os", "os_model_plan")] + [(k2, EIGHT[k2]) for k2 in ("H8", "HN", "D8", "OS", "FS", "FX", "HC") if k2 in st]:
++        for k_, nm_ in [("os", "os_model_plan")] + [(k2, EIGHT[k2]) for k2 in ("H8", "HN", "D8", "OS", "FS", "FX", "HC", "HL", "HM") if k2 in st]:
+             full = plan8 if k_ == "os" else st[k_][0]
+             crow["arms"][nm_] = {"panel_grid": CR.compliance_sets(CR.pmax(V_cmp, full[:, slots], hz, rc_["tick_s"]), lim_r, v0_r, eid_r, {"all_windows": None, "compliant_set": mk}),
+                                  "full_plan_0_6s": CR.compliance_sets(CR.pmax(V_cmp, full, [int(h) for h in rc_["horizons"]], rc_["tick_s"]), lim_r, v0_r, eid_r,
+@@ -462,10 +553,11 @@
+                 d = D8.diag8(st["in8"][k][rows], st["prior8"][rows], st[k][1][rows], st[k][0][rows], RS.gain_at(T8, table), st["plan8"].dtype)
+                 d["geometry_over"] = "the 8-slot stage call on the arm's own input plan (os-only / composed): positions vs that plan's 8-point polyline"
+                 return d
+-            if k in ("H8", "HN", "HC"):
++            if k in ("H8", "HN", "HC", "HL", "HM"):
+                 return diag_progress(RT, st["plan8"][rows], st[k][1][rows], st[k][0][rows], st["s8"][k][rows],
+                                      "the 8-slot H2cn call: positions at all 8 slots against the 8-point model-plan polyline (progress after max(s,0) + running max)"
+-                                     + (" then clamped to the fed ceiling (Amendment 4b)" if k == "HC" else ""))
++                                     + (" then clamped to the fed ceiling (Amendment 4b)" if k == "HC" else "")
++                                     + (" with X + the LON6 softmax of the same forward (Amendment 4c)" if k in ("HL", "HM") else ""))
+             if k == "HP":
+                 return diag_progress(RT, np.asarray(O), st["HP"][1][rows], st["HP"][0][rows], st["sP"][rows],
+                                      "the per-surface H2cn form: positions against the surface's own os polyline")
+@@ -581,6 +673,35 @@
+                                                 "surface / seed), K-CAP-MONO (s_cap non-decreasing); clamp-touched counts are reported, not pass/fail",
+                                         "per_surface_seed": cx, "compliance_of_H2CN_CAP8": comply, "lim_scale_used": 1.05 if mutate == "cap105" else 1.0}
+             need += ["K_CAP_ID", "K_CAP_COMPLY", "K_CAP_MONO"]
++        if h2cnl:
++            # AMENDMENT 4c s2.  In `need`: a failure WITHHOLDS (no FORWARD file, no verdict).
++            fe = reg_rec["first_eval_output_epoch"]
++            kr = {}
++            for kk in ("HL", "HM"):
++                g_ = lstages[kk]["gate"]
++                kr[kk] = bool(len(g_["registered_sha256"]) == 64 and g_["registered_sha256"] == g_["stage_file_sha256"] and fe is not None
++                              and g_["passed_epoch"] < fe and g_["registration_file_mtime_epoch"] < fe)
++            controls["K_REG_H2CNL"], controls["K_REG_H2CNL_MUT"] = kr["HL"], kr["HM"]
++            controls["K_REG_H2CNL_detail"] = {EIGHT[kk]: {**lstages[kk]["gate"], "first_eval_output_epoch": fe,
++                                                          "first_eval_output_iso": time.strftime("%FT%T%z", time.localtime(fe or 0))} for kk in ("HL", "HM")}
++            fil = json.loads(HL.INFO_L.read_text(encoding="utf-8")) if HL.INFO_L.exists() else {}
++            fc = fil.get("controls") or {}
++            controls["K_FREEZE_H2CNL"] = bool(fc.get("ALL_PASS") is True and fil.get("smoke") is False
++                                              and (fil.get("stage_file") or {}).get("sha256") == lstages["HL"]["gate"]["stage_file_sha256"]
++                                              and (fil.get("mutation_stage_file") or {}).get("sha256") == lstages["HM"]["gate"]["stage_file_sha256"])
++            controls["K_FREEZE_H2CNL_detail"] = {"freeze_info": str(HL.INFO_L), "freeze_info_sha256": C.sha256_file(HL.INFO_L) if HL.INFO_L.exists() else None,
++                                                 "ALL_PASS": fc.get("ALL_PASS"), "smoke": fil.get("smoke"), "K-DISJ": fc.get("K-DISJ"), "K-JOIN_PASS": fc.get("K-JOIN_PASS"),
++                                                 "K-H2CN-REPRO": {s_: (fc.get("K-H2CN-REPRO") or {}).get(s_, {}).get("PASS") for s_ in SURFS},
++                                                 "K-FIT": {k_: v_.get("PASS") for k_, v_ in (fc.get("K-FIT") or {}).items()},
++                                                 "K-RELOAD": {k_: (v_.get("bit_equal") if isinstance(v_, dict) else v_) for k_, v_ in (fc.get("K-RELOAD") or {}).items()},
++                                                 "K-DETERM": fc.get("K-DETERM"), "K-MUT": {k_: v_.get("PASS") for k_, v_ in (fc.get("K-MUT") or {}).items()},
++                                                 "stage_sha256": (fil.get("stage_file") or {}).get("sha256"), "mutation_stage_sha256": (fil.get("mutation_stage_file") or {}).get("sha256")}
++            hj = {k: v["h2cnl"] for k, v in extra.items() if isinstance(k, str)}
++            controls["K_JOIN_EVAL"] = bool(len(hj) == 4 and all(v["join"]["PASS"] and not v["join_mutation_next_window"]["PASS"]
++                                                                 and v["join_mutation_next_window"]["red_by_crosscheck_alone"] and v["x16_base_cols_bit_equal_X"] for v in hj.values()))
++            controls["K_JOIN_EVAL_detail"] = {k: {"join": v["join"], "mutation_next_window": v["join_mutation_next_window"], "x16_base_cols_bit_equal_X": v["x16_base_cols_bit_equal_X"]}
++                                              for k, v in hj.items()}
++            need += ["K_REG_H2CNL", "K_REG_H2CNL_MUT", "K_FREEZE_H2CNL", "K_JOIN_EVAL"]
+     else:
+         ssos_pos, mism2, n2 = {}, [], 0
+         for s in seeds:
+@@ -607,9 +728,10 @@
+     controls["required"] = need
+     res["controls_rt"] = res["controls"]
+     res["controls"] = controls
+-    res.update({"tool": "ship_r8_sub_forward.py", "mode": mode, "scored_read": bool(scored), "tree_name": tree, "n_boot": RT.N_BOOT, "bootstrap_seed": 0, "seeds_run": list(seeds),
++    res.update({"tool": "ship_r8_4c_forward.py", "mode": mode, "scored_read": bool(scored), "tree_name": tree, "n_boot": RT.N_BOOT, "bootstrap_seed": 0, "seeds_run": list(seeds),
+                 "role": ("MUTATION RUN (deliberate regression; NOT a result)" if mutate else
+                          (f"SHIP-R8 AMENDMENT 4b: arm positions replaced; scored arm H2CN_CAP8 (H2CN_DEPLOY8 re-run beside it for the reproduction)" if cap8 else
++                          f"SHIP-R8 AMENDMENT 4c: arm positions replaced; scored arm H2CNL_DEPLOY8, mutation arm H2CNL_MUT8 beside (H2CN_DEPLOY8 re-run beside them for the reproduction)" if h2cnl else
+                           f"SHIP-R8 AMENDMENT {'4' if mode == 'h2cn' else '5'}: arm positions replaced; scored arm {SCORED[mode]}") +
+                          ("" if (mode == "h2cn" or scored) else " NOT COMPUTED (identity / control arms only; the scored read is gated on the seed-1 replicate)")),
+                 "mutation": mutate, "amendments": seals, "arm_order": arm_order, "per_window_extra": {k: v for k, v in extra.items() if isinstance(k, str)},
+@@ -627,6 +749,13 @@
+         res["h2cn_stage"] = {"file": str(C.STAGE_PT), "sha256": reg_rec["gate"]["stage_file_sha256"], "registered": reg_rec["gate"]["registered_sha256"]}
+     if cap8:
+         res["cap8"] = True
++    if h2cnl:
++        res["h2cnl"] = True
++        for kk, nm in (("HL", "h2cnl_stage"), ("HM", "h2cnl_mut_stage")):
++            g_ = lstages[kk]["gate"]
++            res[nm] = {"file": g_["stage_file"], "sha256": g_["stage_file_sha256"], "registered": g_["registered_sha256"], "registration_file": g_["registration_file"]}
++        res["h2cnl_eval_extras"] = {str(s): {"file": exl[s]["file"], "sha256": exl[s]["sha256"]} for s in seeds}
++        res["h2cnl_x_extra"] = HL.X_EXTRA
+     if mutate:
+         red = {"stage": "K_PERSURF_identity_S2_vs_N1", "knot": "K_RETIME_identity_vs_registered_forward_deploy8", "draw": "K_SSOS_identity_bit_for_bit",
+                "cap105": "K_CAP_COMPLY"}[mutate]
+@@ -655,7 +784,7 @@
+         os.remove(wh)
+     RT.jdump(res, out)
+     # ---- per-arm npz packages (the consumer contract of deploy8_forward_r8, one arm per directory, for the TAC device) -------------------------------
+-    arms_npz = [a for a in arm_order if a in ("H2CN_DEPLOY8", "H2CN_NEAR", "RETIME_DEPLOY8", "FACTORED_DEPLOY8", "OSONLY_DEPLOY8", "H2CN_CAP8")]
++    arms_npz = [a for a in arm_order if a in ("H2CN_DEPLOY8", "H2CN_NEAR", "RETIME_DEPLOY8", "FACTORED_DEPLOY8", "OSONLY_DEPLOY8", "H2CN_CAP8", "H2CNL_DEPLOY8", "H2CNL_MUT8")]
+     for arm in arms_npz:
+         ad = out_root / "arms" / tag / arm
+         ad.mkdir(parents=True, exist_ok=True)
+@@ -669,12 +798,14 @@
+                 arrs.update({f"{surf}_pos": p32[:, s_["slots"]], f"{surf}_pos64": p64[:, s_["slots"]], f"{surf}_pos8": p32, f"{surf}_os": s_["os"],
+                              f"{surf}_plan8": st["in8"].get(k, s_["plan8"]), f"{surf}_prior8": s_["prior8"], f"{surf}_clip": s_["clip"], f"{surf}_ws": s_["ws"],
+                              f"{surf}_eid": s_["eid"], f"{surf}_compliant": s_["compliant"], f"{surf}_slots": s_["slots"], f"{surf}_instants_s": s_["instants"], f"{surf}_rows": s_["rows"]})
+-            meta = {"tool": "ship_r8_sub_forward.py", "tree": tree, "inference_seed": seed, "arm": arm, "tier": RT.TIER, "mode": mode, "table_sha256": table["sha256"],
++            meta = {"tool": "ship_r8_4c_forward.py", "tree": tree, "inference_seed": seed, "arm": arm, "tier": RT.TIER, "mode": mode, "table_sha256": table["sha256"],
+                     "stage_sha256": stage_meta["stage_sha256"], "model_slot_horizons_ticks": HZ8, "slot_instants_s": T8.tolist(), "surface_slots": SLOTS,
+                     "consumer_contract": D8.CONTRACT.replace("RETIME_DEPLOY8", arm),
+                     "note": "<S>_os is the battery panel's os (row alignment); <S>_plan8 is the plan the arm was built on (the model plan, or the os-only / composed plan)"}
+             if mode == "h2cn":
+                 meta["h2cn_stage_sha256"] = reg_rec["gate"]["stage_file_sha256"]
++            if arm in ("H2CNL_DEPLOY8", "H2CNL_MUT8"):
++                meta["h2cnl_stage_sha256"] = lstages["HL" if arm == "H2CNL_DEPLOY8" else "HM"]["gate"]["stage_file_sha256"]
+             arrs["meta_json"] = np.array(json.dumps(meta))
+             np.savez(ad / f"DEPLOY8_POS_{tree}_s{seed}.npz", **arrs)
+         # the TAC device's cross-check inputs: this run's FORWARD file under the battery's name + the registered per-surface file (K6)
+@@ -703,6 +834,8 @@
+     ap.add_argument("--cap8", action="store_true", help="h2cn: AMENDMENT 4b -- also build H2CN_CAP8 (the stage clamped to the fed ceiling) + K-CAP-ID / K-CAP-COMPLY / K-CAP-MONO")
+     ap.add_argument("--registered-stage", default=str(REG_STAGE_DEFAULT))
+     ap.add_argument("--out-root", default=str(C.WORK / "out"))
++    ap.add_argument("--h2cnl", action="store_true", help="h2cn: AMENDMENT 4c -- also build H2CNL_DEPLOY8 + H2CNL_MUT8 (the registered H2cn-L stages) + their controls")
++    ap.add_argument("--work-root", default=None, help="where the transient RT.forward work dir lives (default: --out-root); removed at the end")
+     a = ap.parse_args()
+     if os.environ.get("CUDA_VISIBLE_DEVICES") != "-1":
+         raise SystemExit("[sub-fwd] set CUDA_VISIBLE_DEVICES=-1 (CPU only)")
+@@ -717,7 +850,11 @@
+         raise SystemExit("--mutate cap105 needs --cap8")
+     if a.cap8 and Path(a.out_root).resolve() == (C.WORK / "out").resolve():
+         raise SystemExit("[sub-fwd] REFUSING: --cap8 must write to a SEPARATE --out-root (the landed Amendment 4 / 5 outputs under out/ are never overwritten)")
+-    return forward(a.mode, a.tree, seeds, a.scored, a.mutate, Path(a.out_root), Path(a.registered_stage), a.cap8)
++    if a.h2cnl and (a.mode != "h2cn" or a.cap8):
++        raise SystemExit("--h2cnl applies to --mode h2cn only, without --cap8")
++    if a.h2cnl and Path(a.out_root).resolve() in ((C.WORK / "out").resolve(), (C.WORK / "out_4b").resolve()):
++        raise SystemExit("[sub-fwd] REFUSING: --h2cnl must write to a NEW --out-root (the landed out/ and out_4b/ are never overwritten)")
++    return forward(a.mode, a.tree, seeds, a.scored, a.mutate, Path(a.out_root), Path(a.registered_stage), a.cap8, a.h2cnl, Path(a.work_root) if a.work_root else None)
+ 
+ 
+ if __name__ == "__main__":
