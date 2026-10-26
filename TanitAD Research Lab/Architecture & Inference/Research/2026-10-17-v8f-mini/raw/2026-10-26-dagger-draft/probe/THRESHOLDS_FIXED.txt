@@ -1,0 +1,12 @@
+PREREG_V8F_DAGGER: matching and cut constants, fixed BEFORE any probe or rollout ran (2026-10-26, draft).
+Written before probe_dagger_cost.py was run; its sha256 is printed by the probe and quoted in DESIGN_NOTES.md.
+
+OFF_ROUTE_LAT_M      = 3.0    # = t1hd_read.py OFF_ROUTE_M (the decisive reader's own cut); here applied to the perpendicular distance to the logged polyline
+OFF_ROUTE_HEAD_DEG   = 30.0   # |wrap(psi_own - psi_logged[r'])| above this: no DAgger sample (ESTIMATED; guards loops / crossings)
+ARC_TIE_M            = 0.05   # rows whose cumulative logged arc lies within this of the nearest arc are tied (a stationary stretch)
+TIE_RULE             = "among tied rows the one nearest in time to the own state's clock row j; then the earlier row"
+CANDIDATE_ROWS       = "[t0, T-1] of the same clip (the T1-HEADS candidate set), 0.2 s pose grid, world xy"
+END_EDGE             = "r' > T-31 (no complete 6 s logged future at r'): no DAgger sample, counted"
+TICKS                = "1 and 2 of an m = 10 rollout (j = t0 + 10, t0 + 20); tick 0 is the logged state and is never an own state"
+P_DAG_NO_EFFECT      = 0.3
+P_DAG_HARMS          = 0.1
