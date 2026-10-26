@@ -75,7 +75,7 @@ def build(art: str, out: str, pfx: str, runs: list[tuple[str, int]], replicate: 
             e["t0_fresh"] = f
         arms[ARM_READER[arm]][str(seed)] = e
     m = {"seeds": [0, 1], "arms": arms,
-         "provenance": {"prereg": "Project Steering/PREREG_V8F_ORECOVER.md + Amendments 1-3", "built_by": "orct1_manifest.py (the dev-box T1 chain, orc_t1_chain.sh)",
+         "provenance": {"prereg": "Project Steering/PREREG_V8F_ORECOVER.md + Amendments 1-4", "built_by": "orct1_manifest.py (the dev-box T1 chain, orc_t1_chain.sh)",
                         "t1": "v8f_t1_eval.py run --replan-steps 10 --nav deadreckon --scene logged --schedule periodic --dump-ticks --dump-heads, plain (no post-map)",
                         "M2b_arm": "absent on purpose: no plain-M2b T1-kin run with heads exists; ORC - M2b is a T0 beside row (Amendment 2)"}}
     if label:

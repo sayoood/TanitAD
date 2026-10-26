@@ -1,5 +1,5 @@
 #!/bin/bash
-# PREREG_V8F_ORECOVER (Project Steering/PREREG_V8F_ORECOVER.md + Amendments 1-3), the DEV-BOX CPU part, as ONE detached chain (ZERO training, ZERO GPU, box 2 is never touched):
+# PREREG_V8F_ORECOVER (Project Steering/PREREG_V8F_ORECOVER.md + Amendments 1-4), the DEV-BOX CPU part, as ONE detached chain (ZERO training, ZERO GPU, box 2 is never touched):
 #   for each of the four runs, in the PREREG's order (section 5):  ORC s0, ORC-0 s0, ORC s1, ORC-0 s1
 #     1. wait until box 2's pull of that run to E:/Projects/TanitAD-artifacts/v8f-orecover/M2b_s<S>_<orc|orc0>/ is COMPLETE  (orct1_pullcheck.py: SHA256SUMS.txt lists exactly the eight files the box-2
 #        chain hashes after its last scp, each file exists, is non-empty and re-hashes to the listed sha256, summary.json done).  By CONTENT: never on a half-pulled file, never on a stale SHA256SUMS.txt.
@@ -267,7 +267,7 @@ if [ "$DRY" = 1 ]; then
   fi
   say "  each writes $OUTm/t1v8f_<tag>.json, $OUTm/ticks/ticks_<tag>.npz, $OUTm/dump_<tag>/ep*.npz (>= $NDUMP), then $OUTm/done_<tag>.txt (checkpoint sha256 + tool digest)"
   say "== manifest: $(fmt "${MANI[@]}" --write "$OUTm/runs.json")"
-  "$PY" "$Hm/orct1_manifest.py" manifest --art "$ARTm" --out "$OUTm" --pfx "$PFX" --runs "$RUNSCSV" --dry-run $([ "$SMOKE" = 1 ] && echo "--smoke-replicate $REP") | sed 's/^/    /'
+  "${MANI[@]}" --dry-run | sed 's/^/    /'      # the SAME argv the real run writes with (it carries --t0-fresh-dir: Amendment 4)
   say "== --m2b-sha: $(fmt "${M2BS[@]}")   (the runs' own summary.json / selfcheck.json levers.init_ckpt.sha256, all equal per seed; the READER compares them with the PREREG's 601cb435... / 6104fb15...)"
   mk_reader_cmd '<0: M2b_s0 init sha256>' '<1: M2b_s1 init sha256>'
   say "== reader: $(fmt "${RDCMD[@]}")"
