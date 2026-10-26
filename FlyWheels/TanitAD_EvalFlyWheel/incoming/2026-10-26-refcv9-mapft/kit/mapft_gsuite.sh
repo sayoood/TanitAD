@@ -122,7 +122,9 @@ devbox-pinned)
   ST="$([ -s "$EV" ] && "$DEVPY" -I -c "import json,sys; print(json.load(open(sys.argv[1],encoding='utf-8')).get('status'))" "$EV" 2>/dev/null)"
   say "G-SUITE-PINNED evidence: ${ST:-MISSING} ($EV)"
   [ "$ST" = PASS ] || die "the dev-box pinned suite did not produce a PASS record (tail of $LOG: $(tail -c 300 "$LOG" | tr '\n' ' '))"
-  TAR="$STAGE/ev_${C12}.tar"; tar -cf "$TAR" -C "$OUT" . || die "tar of the evidence failed"
+  # --force-local: GNU tar reads an archive name with a colon (F:/...) as host:path and refuses "Cannot connect to F"
+  # (MEASURED 2026-10-27 00:14, the first time a PASS reached this line; the operator shipped by hand)
+  TAR="$STAGE/ev_${C12}.tar"; tar --force-local -cf "$TAR" -C "$OUT" . || die "tar of the evidence failed"
   LM="$(md5of "$TAR")"; D="$ROOT/devbox_evidence_$C12"
   rcp "$TAR" "$ROOT" || die "scp of the evidence failed"
   RM="$(rsh "md5sum $ROOT/ev_${C12}.tar | cut -c1-32" | tr -d '\r')"; [ "$RM" = "$LM" ] || die "evidence md5 mismatch local $LM remote $RM"
