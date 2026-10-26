@@ -38,12 +38,14 @@ INIT=/home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt; INIT_BYTES=403200712; INIT_MD5=b4
 V9_MD5=83e30bd3791f0767707eade5f4671759; V9_EVAL_MD5=6b5c7f207cffc3b7eb3cd527fd433599
 CODE=""; COMMIT=""; DEVEV=""; SUITE=""; PICOST=""; SKIPNT=0; CHECKMD5=0; ZGOFF=0
 # the post-run zero-gradient gate (sup_refcv7.sh G5) reads the OPTIMIZER state; the positive control = at least one TRAINED map-only parameter
+MAPBF=""
 ZG_CONTROL='_map_hires\.(refine|near|near_refine)\..*'
 while [ $# -gt 0 ]; do case "$1" in
   --root) ROOT="$2"; shift 2;; --code) CODE="$2"; shift 2;; --commit) COMMIT="$2"; shift 2;;
   --devbox-evidence) DEVEV="$2"; shift 2;; --suite-verdict) SUITE="$2"; shift 2;; --pi-cost-approval) PICOST="$2"; shift 2;;
   --skip-nt-done) SKIPNT=1; shift;; --check-init-md5) CHECKMD5=1; shift;;
   --zerograd-off) ZGOFF=1; shift;;
+  --map-bind-from) MAPBF="$2"; shift 2;;   # C1 (MM option A): reuse a prior bind dir's MAP record+closure; the gate re-asserts the closure against THIS tree
   *) echo "REFUSED: unknown argument $1"; exit 2;; esac; done
 CODE="${CODE:-$ROOT/launch_tree}"
 SARGV="$ROOT/argv/mapft_argv_smoke.json"; ARGV="$ROOT/argv/$ARM.argv.json"; SD="$ROOT/smoke"; SRES="$SD/SMOKE_RESULT.json"
@@ -269,7 +271,7 @@ gate|redarms)
   else pf PF-OK "(dry-run: Thor-only preflights skipped: sizes, md5s, remap files, run dir, imports, disk)"; fi
   NF="$(grep -c '^PF-FAIL' "$PF")"; cat "$PF"
   [ "$NF" = 0 ] || die "$NF preflight failure(s) in $PF"
-  MAPREC="$BD/run_map/g_map_overfit.json"; MAPCLO="$BD/map_closure.json"; BOXREC="$BD/run_box/gbo_binding.json"; BOXCLO="$BD/box_closure.json"
+  MBD="${MAPBF:-$BD}"; MAPREC="$MBD/run_map/g_map_overfit.json"; MAPCLO="$MBD/map_closure.json"; BOXREC="$BD/run_box/gbo_binding.json"; BOXCLO="$BD/box_closure.json"
   A=(run --profile refcv8-mapft --stage thor --tree "$CODE" --commit "$COMMIT" --argv-file "$ARGV" --eval-kit /home/nvidia
      --eval-remap-overrides "$EVO" --map-overfit-record "$MAPREC" --map-overfit-closure "$MAPCLO"
      --box-overfit-record "$BOXREC" --box-overfit-closure "$BOXCLO")
@@ -284,7 +286,10 @@ gate|redarms)
     say "gate command: $PY $GATE ${A[*]}"
     [ "$DRY" = 1 ] && { echo "ZZMAPFTGATE-DRYOKZZ"; exit 0; }
     [ -n "$DEVEV" ] && [ -n "$SUITE" ] || die "--devbox-evidence and --suite-verdict are required (G-SUITE-PINNED and G-SUITE are required checks)"
-    for k2 in map box; do
+    NEEDBOX="$(pyval 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L; print(int("G-BOX-OVERFIT" in L.PROFILES["refcv8-mapft"]["required_checks"]))' "$CODE")"
+    case "$NEEDBOX" in 1) KINDS="map box";; 0) KINDS="map";; *) die "cannot read refcv8-mapft required_checks from $CODE";; esac
+    say "binding records checked: $KINDS (G-BOX-OVERFIT required=$NEEDBOX)"
+    for k2 in $KINDS; do
       [ "$k2" = map ] && { R="$MAPREC"; C="$MAPCLO"; } || { R="$BOXREC"; C="$BOXCLO"; }
       [ -s "$R" ] && [ -s "$C" ] || die "no binding $k2 record/closure under $BD (run 'bind' on THIS commit and THIS argv first)"
       py "$HERE/refcv8_assemble_argv.py" --assert-closure "$C" > "$WORK/$k2.closure.txt" 2>&1 9>&- 200>&-
