@@ -5941,6 +5941,18 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | SHIP-R8 across the family so far | EMA-48,852 + RETIME **PASS** (E1 -0.0343); theta_0.5 FAIL on E1 only (+0.0013, tie); theta_PLAN FAIL on E1, NR and TAC (+0.0563). |
 | reading | Mixing refcv7's planning stack with refcv8's perception breaks the speed profile on PhysicalAI while NavSim navtrain prefers it (73.9 vs 63.4). Partial blends are not coherent models, so each needs its own PhysicalAI read; NavSim navtrain does not predict SHIP-R8. |
 | caveats | One training seed; open loop; post-hoc arms ordered by the registered family rule (bda74c7 / fc67bf6 / bf9865d). |
+### 16.15 refcv8-r101-s0 -- EMA-48,852 + the clean-split H2cn progress stage PASSES SHIP-R8 (AMENDMENT 4) *(addendum to §16.1 / §16.14)*
+
+| | |
+|---|---|
+| what | refcv8 EMA-48,852 (unchanged) with its RETIME stage replaced by the H2cn progress stage: per-surface progress heads fitted on the 300-clip FRESH split (`H-R9-L1C-H2CN-1`), frozen as `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-refcv8-ship-r8-h2cn-factored/H2CN_STAGE_FROZEN.pt` (sha256 `f293b7bd…6f32`) and registered 2026-10-26 04:24:43 CET before any eval-window output (`REG-R8-H2CN-STAGE-1`). PI decision D-R8-STAGE-H2CN (a). |
+| SHIP-R8 (AMENDMENT 4; per-frame feed; seeds 0 / 1) | **PASS** -- clauses (1) (1b) (2) (3) (4) (5) (7) PASS, (6) N/A. MEASURED `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-refcv8-ship-r8-h2cn-factored/out/ship_r8/SHIP_R8_H2CN_DEPLOY8.json`. Tier T1 self-action open loop on logged eval139 frames; paired episode-cluster bootstrap B 2000 over episodes; compliant S2 4,159 / S6 3,251 windows, 138 episodes. |
+| E1 / E3 vs `ha0_ext_pose` | E1 S2 **-0.0471 [-0.0585, -0.0363] / -0.0464** (RETIME -0.0342 / -0.0329); E3 S6 **-1.1975 [-1.4942, -0.9168] / -1.1909** (RETIME -0.8682 / -0.8676). |
+| vs refcv7-50,400 (S6) | ADE -0.2964 [-0.4396, -0.1606] / -0.2820; along-track final -0.818 / -0.799; speed MAE -0.113 / -0.113 -- all separated better (RETIME's S6 ADE vs refcv7 was +0.033 / +0.041, not separated). TAC lon S2 +0.032 / +0.026, S6 +0.041 / +0.042 separated better; lat not separated. |
+| compliance row (beside, no clause) | ⚠️ the stage plans above refcv8's FED speed ceiling on S2 **0.0163** / S6 **0.0169** of compliant windows vs RETIME 0.0055-0.0060 / 0.0049-0.0055 (os 0). ~3x RETIME. Goes to the PI with the ship. |
+| status | **Shipping stage for refcv8 per AMENDMENT 4's committed next step** (PhysicalAI). NavSim only with a separate PI go. The factored-decode read (AMENDMENT 5) is gated on the SSGUARD seed-1 replicate; its identity / control arms already pass. |
+| caveats | One training seed; open loop; the fresh split is 300 clips (rig A 80 / B 220). |
+
 ## 18. nt-a1-s0 — NT A1, the navtrain decision arm (PREREG_NT_DECIDE) [NAVSIM navtrain · ONE SEED · TRAINING]
 
 ### nt-a1-s0 — ▶ TRAINING since 2026-10-25 11:02 Berlin (CET, 10:02Z), on Thor, launched by the launch gate's PASS token
