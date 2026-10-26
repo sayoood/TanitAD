@@ -40,8 +40,9 @@ for _p in (os.path.join(REPO, "stack"), os.path.join(REPO, "taniteval")):
 from tanitad.data import v8f_mini_data as D  # noqa: E402
 from tanitad.models import v8f_mini as M  # noqa: E402
 from taniteval import floors_kin as fk  # noqa: E402
+from tanitad.refs.refcv6_max_speed import speed_max_bin  # noqa: E402  (the sidecar's own containing-window rule)
 
-DT = D.DT                    # 0.2 s: the cache step
+DT = D.DT                   # 0.2 s: the cache step
 H = D.HORIZON                # 30 steps = 6 s
 EPS_M = 1e-3                 # a tangent shorter than 1 mm per 0.2 s interval holds the previous heading (plan_kin_t's convention)
 #: the ONLY physical bound the executor applies: no executed 0.2 s step is longer than V_ENV_MS * 0.2 s (60 m/s = 216 km/h, beyond
@@ -54,7 +55,12 @@ NO_READ = frozenset({"act", "pose"})
 MODEL_KEYS = frozenset(M.INFERENCE_INPUT_KEYS) - NO_READ
 NAV_MODES = ("deadreckon", "logged")
 SCENE_MODES = ("logged", "frozen")
-LIMIT_MODES = ("logged", "off")
+LIMIT_MODES = ("logged", "off", "causal", "causal_all")
+#: PREREG_V8F_T1KIN_CAUSALBUCKET: ``causal`` reads the max MEASURED ego speed over the last CAUSAL_STEPS + 1 rows [j - 20, j] (4 s; logged
+#: up to t0, own executed after), ``causal_all`` over [0, j]; both snapped by ``speed_max_bin``. Rows after j are NaN by WindowState's
+#: construction, and the slice ends at j anyway.
+CAUSAL_STEPS = 20
+CAUSAL_STATS = {}            # per run: ticks, ticks with no finite past, agreement with the logged bucket, 4 x 4 confusion (logged x causal)
 SCHEDULES = ("periodic", "fresh")
 TIER_DOCTRINE = ("EVAL_DOCTRINE.md, PI amendment 2026-09-02: T0 and T1 are both OPEN LOOP; T2 is the only closed loop and is not "
                  "provisioned. T1 here = the ego state is the model's OWN executed motion; the camera stream is logged. "
@@ -221,7 +227,7 @@ class _OneClipStore:
         return self.d
 
 
-def build_item(ds, proxy, st: WindowState, tick: int, a_t: int, a_s: int, scene: str, limit: str) -> dict:
+def build_item(ds, proxy, st: WindowState, tick: int, a_t: int, a_s: int, scene: str, limit: str, stats: dict | None = None) -> dict:
     proxy.d = st.d
     it = ds.item(st.ci, st.j, a_t, a_s)
     idc = np.clip(np.arange(st.j - ds.hmax + 1, st.j + 1), 0, st.T - 1)
@@ -232,7 +238,31 @@ def build_item(ds, proxy, st: WindowState, tick: int, a_t: int, a_s: int, scene:
         it["feats"], it["frame_ok"] = st.scene0
     if limit == "off":
         it["limit"], it["limit_ok"] = np.zeros(4, np.float32), False
+    elif limit in ("causal", "causal_all"):
+        logged = np.asarray(it["limit"], np.float32).copy() if bool(it["limit_ok"]) else None
+        it["limit"], it["limit_ok"] = causal_bucket(st.d["v"], st.j, CAUSAL_STEPS if limit == "causal" else None)
+        if stats is not None:
+            stats["ticks"] = stats.get("ticks", 0) + 1
+            if not it["limit_ok"]:
+                stats["no_finite_past"] = stats.get("no_finite_past", 0) + 1
+            elif logged is not None:
+                cm = stats.setdefault("confusion_logged_x_causal", [[0] * 4 for _ in range(4)])
+                cm[int(logged.argmax())][int(it["limit"].argmax())] += 1
     return it
+
+
+def causal_bucket(v, j: int, steps: int | None):
+    """The PREREG_V8F_T1KIN_CAUSALBUCKET bucket at step ``j``: ``speed_max_bin`` of the max finite speed over rows [j - steps, j] (or
+    [0, j] when ``steps`` is None). Reads NOTHING after row j. No finite row -> (zeros, False), the ``--limit off`` format."""
+    lo = 0 if steps is None else max(0, j - steps)
+    w = np.asarray(v[lo:j + 1], np.float64)
+    w = w[np.isfinite(w)]
+    if w.size == 0:
+        return np.zeros(4, np.float32), False
+    i, _ = speed_max_bin(float(max(w.max(), 0.0)))
+    oh = np.zeros(4, np.float32)
+    oh[i] = 1.0
+    return oh, True
 
 
 # ------------------------------------------------------------------------------------------------ planners
@@ -270,7 +300,8 @@ def rollout(planner, states, ds, proxy, *, m: int = 1, schedule: str = "periodic
     for n in range(H // m):
         step = n * m
         a_t, a_s = ages_for(step, schedule, k_t, k_s)
-        items = [build_item(ds, proxy, st, n, a_t, a_s, scene, limit) for st in states]
+        stats = CAUSAL_STATS if hasattr(planner, "keys_read") else None          # the MODEL's ticks only (the floor reads no bucket)
+        items = [build_item(ds, proxy, st, n, a_t, a_s, scene, limit, stats) for st in states]
         full = D.collate(items)
         batch = {k: full[k].to(device) for k in MODEL_KEYS}
         plan = planner(batch)
@@ -409,12 +440,16 @@ def cmd_run(a):
               "replan_steps": a.replan_steps, "replan_hz": 5.0 / a.replan_steps, "schedule": a.schedule, "scene": a.scene, "nav": a.nav,
               "limit": a.limit, "n_windows": len(wins), "model_keys_read": sorted(keys),
               "windows_with_envelope_clip": n_clip, "envelope_ms": V_ENV_MS,
-              "strict": {"kinematics": True, "route": a.nav == "deadreckon", "camera": a.scene == "frozen", "speed_bucket": a.limit == "off"},
+              "strict": {"kinematics": True, "route": a.nav == "deadreckon", "camera": a.scene == "frozen", "speed_bucket": a.limit != "logged"},
               "open_channels": ["camera stream (logged frames after t0 carry the human's ego-motion)" if a.scene == "logged" else "",
                                 "route countdown from the logged human position" if a.nav == "logged" else "",
                                 "speed bucket from the human's realised future max speed (D-SPEEDBAND-EGO-ECHO-1)" if a.limit == "logged" else ""],
               "acts": {k: fk.acts_check(v, DT) for k, v in arms.items() if k in ("cl", "fl", "ol")}}
     header["open_channels"] = [c for c in header["open_channels"] if c]
+    if a.limit in ("causal", "causal_all"):                              # only then: --limit logged / off outputs stay byte-identical (C-L1)
+        header["causal_bucket"] = {"rule": "speed_max_bin(max finite measured ego speed over rows "
+                                           + (f"[j - {CAUSAL_STEPS}, j])" if a.limit == "causal" else "[0, j])"),
+                                   "stats_model_ticks": CAUSAL_STATS}
     os.makedirs(a.out_dir, exist_ok=True)
     if a.no_analyze:
         json.dump(header, open(os.path.join(a.out_dir, f"t1v8f_{a.tag}.json"), "w"), indent=1)

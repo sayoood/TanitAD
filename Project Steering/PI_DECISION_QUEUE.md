@@ -2535,3 +2535,5 @@ passes. The two navtest reads (theta_DEC and A1) are part of the authorisation. 
 - **(b) Withhold the T1 claim until a non-oracle bucket exists.**
 
 **What does NOT wait on this:** `PREREG_V8F_HACC_LAT` (the lateral lever), the m = 5 stress read, FLAT and OACC on box 2.
+
+**MM update (2026-10-26 ~01:40): the headline no longer depends on this decision.** `PREREG_V8F_T1KIN_CAUSALBUCKET` (`d2ed136d`, before data) re-read the T1 result with a bucket built from the past 4 s of measured ego speed only: **CAUSAL KEEPS THE MARGIN**, HACC − P10 ADE6 −0.768 / −0.734 m, separated at both seeds (`RESULT_V8F_T1KIN_CAUSALBUCKET.md`). v8F's T1 statement is now made on the causal bucket; option (a) or (b) only decides whether the oracle-bucket numbers may also be quoted. The sidecar's own meta also records your 2026-09-16 authorisation of the future-ego derivation as a declared input.

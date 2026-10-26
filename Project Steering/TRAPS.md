@@ -627,6 +627,14 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
   - ⚠️ **From Python on Windows, `bash` can resolve to `System32\bash.exe`, the WSL launcher, which fails when no distro is
     installed.** The test uses the first bash that actually runs `echo ok`.
 
+- ⛔ **A MUTATION PROOF ON A TREE THAT A LIVE CHAIN READS SILENTLY CHANGES THE CHAIN'S CODE, AND NOTHING IN THE RESULT WOULD SHOW IT.** MEASURED 2026-10-26 (`PREREG_V8F_T1KIN_CAUSALBUCKET`):
+  * **What happened:** the C-L2 mutation proof `sed`-edited `stack/scripts/v8f_t1_eval.py` in the patched export for about 14 s. A detached chain was running from that export, and both decisive runs STARTED at 01:19:00, inside that window.
+  * **Why it is silent:** Python compiles its main script once, at start. Each run would have carried whichever mutant sat on disk at that second for its whole 6 min, and its JSON would look normal.
+  * **What was done:** the runs were killed by explicit PID and re-run, with their partial outputs banked under `killed_0119/` of that package's run directory.
+  * ⇒ **Mutate only a COPY that no chain reads.** Make every chain assert the sha256 of the files its runs import, BEFORE and AFTER each run, so that the file a result came from is pinned and not assumed.
+  * ⚠ **When pinning a checkout against a git blob, strip CR first.** `git archive` under autocrlf writes CRLF, so the raw hash never equals the blob's. The same chain's first guard refused a correct tree on exactly that.
+  * ⚠ **The same family:** a `git checkout` or pull in a tree a job runs from, and a `uv pip install` into a venv a job is using.
+
 ## Git hygiene — the mistake that has now happened twice
 
 **`git commit` and `git commit --amend` both commit the ENTIRE INDEX, not the files you
