@@ -2658,3 +2658,10 @@ launch must prove about the box head is that it does NOT move, and G-LIVE's bit 
 zero-gradient gate and K-FROZEN read exactly that. G-MAP-OVERFIT stays required; refcv8 and refcv8-nt still require the box check
 (pinned in `stack/tests/test_map_only_ft.py`). No action needed unless you want the check restored as a vacuous pass instead.
 
+## ✅ DECIDED (PI, 2026-10-26 ~21:20 Berlin, in chat; recorded ~21:31) -- D-NT-A1-ZGFAIL: re-gate NT A1
+
+* PI, verbatim: *"re-gate NT A1 with the pre-declared allow-list"*. The MM's dry run then showed the pre-declared list alone FAILS on
+  `r8_rc_gate` (1 scalar); asked, the PI chose *"Include it, disclosed (Recommended)"*.
+* Done 21:29 Berlin: verdict **PASS** (0 offenders, 21 allowed), done-marker written, no relaunch. MODEL_REGISTRY §18;
+  evidence `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-nt-a1-zerograd/regate/`. NT A1 still has no NavSim read -- that needs a separate go.
+

@@ -88,3 +88,13 @@ def test_bash_emit_and_config_json_argv(tmp_path, capsys):
 def test_unknown_profile_refuses():
     with pytest.raises(SystemExit):
         Z.derive("no-such-profile", ARGV)
+
+
+def test_bash_emit_is_LF_only_at_the_process_boundary(tmp_path):
+    """The emitted line is SOURCED by bash on Thor; a CR turns the array into one garbled element."""
+    import subprocess
+    cfg = tmp_path / "config.json"
+    cfg.write_text(json.dumps({"argv": ARGV}), encoding="utf-8")
+    out = subprocess.run([sys.executable, str(Path(Z.__file__)), "--profile", "refcv8-nt", "--argv", str(cfg),
+                          "--emit", "bash"], capture_output=True, check=True).stdout
+    assert out.startswith(b"ZEROGRAD_ALLOW=(") and out.endswith(b")\n") and b"\r" not in out

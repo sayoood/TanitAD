@@ -97,7 +97,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     if a.json_out:
         Path(a.json_out).write_text(json.dumps(rec, indent=1), encoding="utf-8")
     if a.emit == "bash":
-        print("ZEROGRAD_ALLOW=(" + " ".join(shlex.quote(r["pattern"]) for r in rows) + ")")
+        # LF only: the line is sourced by bash, and a CRLF from a Windows console makes it ONE garbled element
+        # (MEASURED 2026-10-26 on Thor: n=1 instead of 23)
+        line = "ZEROGRAD_ALLOW=(" + " ".join(shlex.quote(r["pattern"]) for r in rows) + ")\n"
+        sys.stdout.flush()
+        if hasattr(sys.stdout, "buffer"):
+            sys.stdout.buffer.write(line.encode("utf-8"))
+        else:
+            sys.stdout.write(line)
+        sys.stdout.flush()
     else:
         print(json.dumps(rec, indent=1))
     return rc
