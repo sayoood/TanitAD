@@ -1,0 +1,98 @@
+{
+ "tool": "k_head.py",
+ "prereg": "PREREG_LONHEAD_C.md s2 K-HEAD (+ AMENDMENT1)",
+ "registered_sha256": {
+  "PREREG_LONHEAD_C.md": "6c81d4b0510c463743ed814491710eea6e0f0384088ca296d20e39e444321048",
+  "PREREG_LONHEAD_C_AMENDMENT1.md": "715b9df1d78fed24fc8acc6a5f6363dc15265dd3656579ae531cff1cddebb2c8",
+  "LH_FROZEN.pt": "6fd3ea1e3700a15b6506176bc855355d0cc1eefb3d87d390584e791d98e1d8f6",
+  "DER_FROZEN.pt": "08d1085d8d4407f2c6113c07be0fed04616f373cd102fe678c3a52d3d46c1f7e",
+  "LH_FIT_INFO.json": "a7e53f5edeb026434eb6000b33f9f19466ef3d21d36cd074133daaace198ba93",
+  "code/lh_fit.py": "fb330f7f23b2fea249e1527e804c454062a06ffa0cbe4b612ff551f57f5b62d9"
+ },
+ "script_sha256": "ff0c18b1cb78b7f5bbff29cab2d67f52d50027659b2806ce3043f62e901f63ca",
+ "word": "GO: LH point AUC > 0.685 -> rolls run",
+ "go": true,
+ "reference_auc": 0.685,
+ "LH_point_auc": 0.7305,
+ "tier": "T0 diagnostic on logged eval139 frames (a head read on the frozen trunk's z_tac at t0; no planner, no roll)",
+ "estimator": "Mann-Whitney AUC (average-rank ties); CI = EPISODE-RESAMPLING bootstrap (B 2000, seed 0) with the head scores held fixed (leadinfo_d.py WAuc kernel). Answers 'another draw of EPISODES'; blind to training and head-fit variance (one fit).",
+ "population": {
+  "s6_windows": 3668,
+  "compliant": 3251,
+  "gt_decel_compliant": 639,
+  "gt_cruise_compliant": 1856,
+  "union_n": 2495,
+  "n_episodes": 136,
+  "decel_base_rate": 0.2561,
+  "inference_seed": 0
+ },
+ "score": "P(BRAKE_TO+CREEP+HOLD) / (P(BRAKE_TO+CREEP+HOLD) + P(FOLLOW+CRUISE)) of the 6-way LON6 softmax (the 0.685 reference's D4 renormalisation)",
+ "inputs": {
+  "z_tac_bank": "C:\\Users\\Admin\\refcv8_pf\\refcv9_l1\\bank\\ztac_eval_s0.npz",
+  "z_tac_bank_sha256": "e807c0d7d43ece24e39b6b23d1d5504162222bddca2e24b86c7e7b0d48bd1586",
+  "v0": "bank v0_in (the value the roll fed the model)",
+  "v0_in_vs_extras_v0_maxabs": 0.0,
+  "v0_in_vs_s6_v0_maxabs": 0.0,
+  "z_tac_s0_equals_s1_bitwise": "MEASURED in this session: max |z_s0 - z_s1| = 0.0 and max |v0_in_s0 - v0_in_s1| = 0.0 on all 4,754 keys"
+ },
+ "controls": {
+  "K-REF_0.685": {
+   "native_head_renorm_auc": 0.6851,
+   "want": 0.6851,
+   "pass": true
+  },
+  "K-CONST_0.5": {
+   "auc": 0.5,
+   "pass": true
+  },
+  "K-WAUC_unit_weights": {
+   "LH": true,
+   "DER": true,
+   "native": true
+  },
+  "v0_join_exact": true,
+  "ALL_PASS": true
+ },
+ "result": {
+  "LH": {
+   "auc": 0.7305,
+   "ci95": [
+    0.6749,
+    0.7855
+   ]
+  },
+  "DER": {
+   "auc": 0.4267,
+   "ci95": [
+    0.3647,
+    0.4918
+   ]
+  },
+  "native": {
+   "auc": 0.6851,
+   "ci95": [
+    0.6134,
+    0.7552
+   ]
+  },
+  "LH_minus_native": {
+   "point": 0.0454,
+   "ci95": [
+    -0.0125,
+    0.1054
+   ]
+  },
+  "LH_minus_DER": {
+   "point": 0.3038,
+   "ci95": [
+    0.2167,
+    0.3937
+   ]
+  },
+  "literal_unrenormalised_beside": {
+   "LH": 0.725,
+   "native": 0.6745
+  }
+ },
+ "wall_s": 3.9
+}
