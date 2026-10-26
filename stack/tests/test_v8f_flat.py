@@ -36,6 +36,7 @@ import math
 import os
 import re
 import shutil
+import tempfile
 import subprocess
 import sys
 import types
@@ -696,7 +697,7 @@ def test_o_is_handed_the_constants_on_every_training_step_of_the_cut_run_and_the
         for o in train:
             if tag == "cut":
                 B = o["code"].shape[0]
-                assert o["mode"] == "cut" and torch.equal(o["code"], torch.zeros_like(o["code"])) and torch.equal(o["ck_o"], o["nom"][None].expand(B, -1, -1)) and torch.equal(o["ck_ok"], torch.zeros(B, 3))
+                assert o["mode"] == "cut" and torch.equal(o["code"], torch.zeros_like(o["code"])) and torch.equal(o["ck_o"], o["nom"][None].expand(B, -1, -1)) and torch.equal(o["ck_ok"], torch.zeros(B, 3, device=o["ck_ok"].device))
             else:
                 assert o["mode"] == "full" and float(o["code"].abs().sum()) > 0.0 and float(o["ck_ok"].min()) == 1.0
     assert runs["cut"]["sm"]["levers"]["params"] == runs["full"]["sm"]["levers"]["params"], "the lever adds no parameter"
@@ -1839,10 +1840,16 @@ def test_queue_flat_refuses_missing_arguments(tmp_path):
 @win
 def test_queue_flat_leaves_every_other_stage_untouched(tmp_path):
     """The edit only ADDS stages: the neighbouring arms' lines read as they did, and none of them mentions the lever."""
-    env = dict(REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
-    for args in ("train M2b 0", "trainmixo 0", "evalmixo 0", "gatemixo", "trainpgt 0", "trainhist 0", "traindscale 0", "gatearm M2b", "gatepgt", "gategrid M2b", "kind", "evalhist 0"):
-        rc, ln = _dry(args, env)
-        assert rc == 0 and len(ln) >= 1 and all("--o-interface" not in x and "M2b-flat" not in x and "_s0_flat" not in x for x in ln), (args, ln)
+    # a SHORT base: cmd.exe's 8,191-char line limit makes `evalmixo 0` exit 255 under pytest's ~91-char tmp_path
+    # (MEASURED 2026-10-26 on the launch gate's full-commit archive: a base of <= 80 chars passes, 91 fails)
+    base = Path(tempfile.mkdtemp(prefix="q8"))
+    try:
+        env = dict(REPO=str(REPO), RUNSM=str(base / "runsm"), CACHEFULL=str(base / "cf"), V9=str(base / "v9"))
+        for args in ("train M2b 0", "trainmixo 0", "evalmixo 0", "gatemixo", "trainpgt 0", "trainhist 0", "traindscale 0", "gatearm M2b", "gatepgt", "gategrid M2b", "kind", "evalhist 0"):
+            rc, ln = _dry(args, env)
+            assert rc == 0 and len(ln) >= 1 and all("--o-interface" not in x and "M2b-flat" not in x and "_s0_flat" not in x for x in ln), (args, ln)
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
 
 
 @needs_queue

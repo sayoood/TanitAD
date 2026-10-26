@@ -27,6 +27,7 @@ import math
 import os
 import re
 import shutil
+import tempfile
 import subprocess
 import sys
 from pathlib import Path
@@ -2071,12 +2072,18 @@ def test_queue_oacc_refuses_missing_arguments(tmp_path):
 @win
 def test_queue_oacc_leaves_every_other_stage_untouched(tmp_path):
     """The edit only ADDS stages: the neighbouring arms' lines read as they did, and none of them mentions the lever."""
-    env = dict(REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
-    for args in ("train M2b 0", "trainmixo 0", "evalmixo 0", "gatemixo", "trainflat 0", "evalflat 0", "gateflat", "trainpgt 0", "trainhist 0", "traindscale 0", "gatearm M2b", "gatepgt",
-                 "gategrid M2b", "kind", "evalhist 0"):
-        rc, ln = _dry(args, env)
-        ln = [x.replace(str(tmp_path), "").replace(str(REPO), "") for x in ln]                  # the tmp dir is named after this test, the repo path after the work dir: neither is a stage's text
-        assert rc == 0 and len(ln) >= 1 and all("--w-acc" not in x and "oacc" not in x and "WACC" not in x for x in ln), (args, ln)
+    # a SHORT base: cmd.exe's 8,191-char line limit makes `evalmixo 0` exit 255 under pytest's ~91-char tmp_path
+    # (MEASURED 2026-10-26 on the launch gate's full-commit archive: a base of <= 80 chars passes, 91 fails)
+    base = Path(tempfile.mkdtemp(prefix="q8"))
+    try:
+        env = dict(REPO=str(REPO), RUNSM=str(base / "runsm"), CACHEFULL=str(base / "cf"), V9=str(base / "v9"))
+        for args in ("train M2b 0", "trainmixo 0", "evalmixo 0", "gatemixo", "trainflat 0", "evalflat 0", "gateflat", "trainpgt 0", "trainhist 0", "traindscale 0", "gatearm M2b", "gatepgt",
+                     "gategrid M2b", "kind", "evalhist 0"):
+            rc, ln = _dry(args, env)
+            ln = [x.replace(str(base), "").replace(str(REPO), "") for x in ln]                  # the tmp dir is a mkdtemp name, the repo path after the work dir: neither is a stage's text
+            assert rc == 0 and len(ln) >= 1 and all("--w-acc" not in x and "oacc" not in x and "WACC" not in x for x in ln), (args, ln)
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
 
 
 def _oacc_tree(tmp):

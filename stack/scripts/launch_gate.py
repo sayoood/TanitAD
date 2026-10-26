@@ -1206,6 +1206,11 @@ PROFILES["refcv8-mapft"] = dict(
     required_checks=tuple(c for c in _R8["required_checks"] if c != "G-BOX-OVERFIT"),
     #: the Thor env-failure pin is the MAP-FINE-TUNE'S OWN copy (PI 2026-10-26 ~22:30, 'Pin for map fine-tune only'): the shared
     #: list + 160 v8f-mini ENV ids (tree scope; the file's last amendment). Every other profile keeps the shared list.
+    #: the pinned v8f files run on the dev box too (G-SUITE (b)); one of them reads a LIVE box-2 chain export that exists only
+    #: while that chain runs, so it skips on any other machine or day (MEASURED on C2's archive). Registered for THIS profile.
+    suite_pinned_skip_ok=tuple(_R8["suite_pinned_skip_ok"]) + (
+        (r"tests\.test_v8f_kindx_s1::test_the_running_kscore_chain_is_the_one_in_the_tree",
+         r"^(the export the running chain was launched from is gone|box2_ship is not on this machine)$"),),
     suite_env_failures=("stack/ops/launch_gate_thor_env_failures_mapft.json",
                         "1af7c5dd7e45b31f0f419e992764d31a20f72e743d55c5b971f4c79162ef02f9"),
     required_flags=tuple(f for f in _R8["required_flags"] if f not in _mapft_drop) + (_MAPFT_FLAG, "--conflict-detector"),
