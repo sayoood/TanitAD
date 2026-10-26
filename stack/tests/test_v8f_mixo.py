@@ -468,6 +468,90 @@ def test_the_probe_reads_the_code_o_receives_kind_is_partial_whole_is_not_and_a_
         TR.code_mix_probe(broken, b, broken.cfg)
 
 
+def _tampered_forward(monkeypatch, tamper):
+    """A stand-in for a model whose mixing line is wrong in ONE specific way: every `_forward` of the model class returns the code O 'read' that `tamper(model, batch, code)` says (a clone of
+    the real one), so the probe reads the tensor a broken model would have handed O. Undone by `monkeypatch` at the end of the test."""
+    f0 = M.V8FMini._forward
+
+    def fwd(self, b, p_gt, use_labels, gen=None, code_override=None):
+        out = f0(self, b, p_gt, use_labels, gen, code_override)
+        out["code"] = tamper(self, b, out["code"].clone())
+        return out
+    monkeypatch.setattr(M.V8FMini, "_forward", fwd)
+
+
+def test_the_probe_refuses_a_code_that_is_neither_the_gt_nor_t_s_own_on_a_labelled_window(world, monkeypatch):
+    model, b = _mixed_batch(world, n=16)
+    mk = _kind_of(model)
+    assert TR.code_mix_probe(mk, b, mk.cfg)["pass"] is True, "the control: the untampered kind model is admitted on this very batch"
+    i = int(b["lab_t"]["has"].nonzero()[0])
+
+    def corrupt(self, bb, code):
+        code[i, 0] += 1000.0                                           # a labelled sample, the decisions unit: not a value either source holds
+        return code
+    _tampered_forward(monkeypatch, corrupt)
+    with pytest.raises(AssertionError, match="neither the GT value nor T's own"):
+        TR.code_mix_probe(mk, b, mk.cfg)
+
+
+def test_the_probe_refuses_an_unlabelled_window_that_read_the_gt_code(world, monkeypatch):
+    model, b = _mixed_batch(world, n=16)
+    mk = _kind_of(model)
+    has = b["lab_t"]["has"]
+    assert has.any() and (~has).any()
+    assert TR.code_mix_probe(mk, b, mk.cfg)["pass"] is True, "the control: the untampered kind model hands an unlabelled window T's own code only"
+
+    def leak(self, bb, code):
+        code[~has] = self._code_gt(bb["lab_t"])[~has]                   # a window with no T label reads a (meaningless) GT code
+        return code
+    _tampered_forward(monkeypatch, leak)
+    with pytest.raises(AssertionError, match="UNLABELLED window read the GT code"):
+        TR.code_mix_probe(mk, b, mk.cfg)
+
+
+def test_the_probe_refuses_a_unit_whose_two_sources_agree_on_a_labelled_window(world, monkeypatch):
+    model, b = _mixed_batch(world, n=16)
+    mk = _kind_of(model)
+    assert TR.code_mix_probe(mk, b, mk.cfg)["pass"] is True, "the control: T's own code differs from the GT code on every unit of every labelled window"
+    gt = mk._code_gt(b["lab_t"])
+    i = int(b["lab_t"]["has"].nonzero()[0])
+    pred0 = M.V8FMini._code_pred
+
+    def pred(self, tout):
+        c = pred0(self, tout).clone()
+        c[i, :34] = gt[i, :34]                                          # on window i the decisions unit of T's own code IS the GT: whichever source the mask drew, the read cannot be told
+        return c
+    monkeypatch.setattr(M.V8FMini, "_code_pred", pred)
+    with pytest.raises(AssertionError, match="equals the GT code on a labelled window"):
+        TR.code_mix_probe(mk, b, mk.cfg)
+
+
+def test_the_probe_refuses_a_unit_whose_gt_share_is_far_from_p_gt(world):
+    model, b = _mixed_batch(world, n=64)
+    mk = _kind_of(model)
+    assert int(b["lab_t"]["has"].sum()) >= 32, "two draws of >= 32 labelled windows reach the probe's 64-sample floor"
+    pk = TR.code_mix_probe(mk, b, mk.cfg)
+    assert pk["pass"] is True and pk["n_draws_samples"] >= 64 and all(abs(r - 0.5) <= 0.25 for r in pk["unit_gt_rate"].values()), "the control: the real mask's shares sit at p_gt"
+    unit = torch.as_tensor(M.CODE_UNIT_OF, dtype=torch.long)
+    # a per-unit mask (partial codes DO occur, so the 'no partial code' refusal is not what fires) whose switches are Bernoulli(0.95), not Bernoulli(p_gt = 0.5)
+    mk._code_mix_mask = lambda has, p, gen=None: (torch.rand(has.shape[0], M.N_CODE_UNITS, generator=gen) < 0.95)[:, unit] & has[:, None]
+    with pytest.raises(AssertionError, match="far from p_gt"):
+        TR.code_mix_probe(mk, b, mk.cfg)
+
+
+def test_a_failed_code_mix_probe_refuses_the_launch_before_the_gate_record_is_written(tmp_path, monkeypatch):
+    """The probe's AssertionError must reach the caller as the launch refusal: `TR.main` exits with the refusal marker and writes no selfcheck.json (which is the record the reader and the
+    supervisor read as 'the gate passed'). A probe whose failure is swallowed would train on a lever nothing proved."""
+    def failing(model, probe, cfg, *a, **k):
+        raise AssertionError("code_mix probe: forced failure for this test")
+    monkeypatch.setattr(TR, "code_mix_probe", failing)
+    out = tmp_path / "refused"
+    with pytest.raises(SystemExit) as e:
+        TR.main(["--out", str(out), *COMMON, "--steps", "2", "--code-mix", "kind", "--selfcheck-only"])
+    assert "ZZDVB-REFUSEDZZ" in str(e.value.code) and "forced failure for this test" in str(e.value.code), e.value.code
+    assert not (out / "selfcheck.json").exists(), "no gate record is written for a refused launch"
+
+
 # =============================================================================================================================================
 # (E) REACHABILITY FROM THE ACTUAL CALLER: PREREG PROOF 4
 # =============================================================================================================================================
@@ -952,6 +1036,30 @@ def _other_gt(z):
     z["tac_code"] = np.where(np.arange(n)[:, None] % 7 == 3, z["tac_code"] + 1.0, z["tac_code"])
 
 
+def _nonfinite_first(val):
+    def go(z):
+        a = np.asarray(z["ade6"], np.float64).copy()
+        a[0] = val
+        z["ade6"] = a
+    return go
+
+
+def _flip_fallback(z):
+    """One window the oracle arm says has a v9 row where the other oracle arm says it has none."""
+    fb = np.asarray(z["tac_oracle_fallback"], bool).copy()
+    fb[0] = ~fb[0]
+    z["tac_oracle_fallback"] = fb
+
+
+def _bad_latcons_oracle(z):
+    """The all-latcons oracle carries something other than the GT in the constraint slots OUTSIDE latcons (the slots it must leave at the label)."""
+    _, WC = R._modules()
+    lat_cols = [WC.C0 + i for i in WC.GROUPS["latcons"]]
+    keep = [c for c in range(WC.C0, WC.C0 + WC.N_CONS) if c not in lat_cols]
+    z["tac_code"] = np.asarray(z["tac_code"]).copy()
+    z["tac_code"][:, keep] += 1.0
+
+
 MUT = {                                # name -> (mutator(f), a message fragment)
     "x summary missing": (lambda f: (_xr(f) / "summary.json").unlink(), "is missing"),
     "x checkpoint missing": (lambda f: (_xr(f) / "ckpt_last.pt").unlink(), "is missing"),
@@ -1034,6 +1142,13 @@ MUT = {                                # name -> (mutator(f), a message fragment
     "a grid with other window counts": (lambda f: f["args"].extend(["--n-windows", "2399"]), "committed eval-141 grid"),
     "a grid with other episode counts": (lambda f: f["args"].extend(["--n-episodes", "141"]), "committed eval-141 grid"),
     "x eval missing": (lambda f: _xe(f, 0, "-tacorc-all-latcons.npz").unlink(), "is missing"),
+    # ---- added after MIXO's mutation proof read 148/162: the refusals below had no test that could see them go
+    "x tacpred holds a NaN ade6": (lambda f: _npz_edit(_xe(f, 0, "-tacpred.npz"), _nonfinite_first(np.nan)), "holds a non-finite ade6"),
+    "x alpha-0.5 oracle holds an inf ade6": (lambda f: _npz_edit(_xe(f, 1, "-tacorc-constraints-a50.npz"), _nonfinite_first(np.inf)), "holds a non-finite ade6"),
+    "b alpha-0.5 oracle holds a NaN ade6": (lambda f: _npz_edit(f["eval"] / "eval_M2b_s1-tacorc-constraints-a50.npz", _nonfinite_first(np.nan)), "holds a non-finite ade6"),
+    "x oracle arms disagree about the windows without a v9 row": (lambda f: _npz_edit(_xe(f, 0, "-tacorc-constraints-a50.npz"), _flip_fallback), "disagree about which windows have no v9 row"),
+    "x all-latcons oracle is not the GT outside latcons": (lambda f: _npz_edit(_xe(f, 0, "-tacorc-all-latcons.npz"), _bad_latcons_oracle), "does not carry the GT constraint slots outside latcons"),
+    "b was built with code_mix kind": (lambda f: _lev(_br(f) / "summary.json", lambda l: l.update(code_mix="kind")), "is not the whole-code run"),
 }
 
 
@@ -1493,6 +1608,8 @@ def test_chain_mixo_syntax_and_dry_run_prints_the_queue_lines(tmp_path):
     assert r.returncode == 0, r.stderr
     env = dict(os.environ, V8F_QUEUE=str(QUEUE), TMPDIR=tmp_path.as_posix())
     env.pop("V8F_DRYRUN", None)
+    for k in ("REPO", "RUNSM", "CACHEFULL", "V9", "PY"):     # the same keys _dry(clean_paths=True) drops: a caller's PY (a runner) must not leak into the chain
+        env.pop(k, None)
     r = subprocess.run([bash, str(CHAIN), "--dry-run"], env=env, capture_output=True, text=True, timeout=180, encoding="utf-8", stdin=subprocess.DEVNULL)
     assert r.returncode == 0, r.stderr
     out = r.stdout.splitlines()
@@ -1760,3 +1877,106 @@ def test_the_dose_identity_cells_are_enforced_on_their_own(tmp_path, no_known, c
     assert R.main(["--stage", "final", *f["args"]]) == 2
     err = capsys.readouterr().err
     assert "IDENTITY CONTROL FAILED" in err and "dose_half" in err, err[-300:]
+
+
+# ---- added after MIXO's mutation proof read 148/162: the committed bars and refusals below had no test that could see them go --------------------
+def _judged(point, separated=True):
+    return {"primary": {"point": point, "separated": separated}, "dm": {"learned": False, "rise_over_committed": 0.0}}
+
+
+@needs_pkg
+def test_reader_judge_a_primary_exactly_at_minus_2F_clears_and_one_step_short_of_it_does_not():
+    """PREREG: a seed PASSES iff delta <= -2F (inclusive), separated, and below zero. The boundary is the committed constant itself, not a value measured in a world."""
+    bar = R.BAR_2F
+    assert R.judge(_judged(-bar))["passed"] is True, "delta exactly -2F clears (the bar is inclusive)"
+    assert R.judge(_judged(float(np.nextafter(-bar, 0.0))))["passed"] is False, "the next representable value above -2F does not"
+    assert R.judge(_judged(-bar - 1e-9))["passed"] is True
+    assert R.judge(_judged(-bar, separated=False))["passed"] is False, "a point at the bar that the episodes do not support is a miss"
+    assert R.judge(_judged(0.0))["passed"] is False and R.judge(_judged(bar))["passed"] is False, "no improvement, and a worsening, are never a pass"
+    assert R.judge(_judged(-bar))["bar_2F_m"] == bar == 0.2415
+
+
+def _verdict_rows(passed, learned):
+    return {f"s{s}": {"judge": {"passed": passed[s], "dm": {"learned": learned[s]}}} for s in (0, 1)}
+
+
+@needs_pkg
+def test_reader_verdict_a_fail_is_o_learned_only_if_the_d_m_read_says_so_at_every_seed_that_missed():
+    """`verdict` is a pure function of the per-seed judgments. `read` refuses a final read after a seed-0 miss, so through `main` at most seed 1 can have missed; the function itself is
+    still defined for both seeds missing, and its rule (the PREREG splits a FAIL by D-M at the seed(s) that MISSED) is pinned here."""
+    both_missed = (False, False)
+    assert R.verdict("final", _verdict_rows(both_missed, (True, False)), (0, 1))[1] == "FAIL-O-DID-NOT-LEARN", "one missed seed did not learn: the FAIL is not an O-LEARNED one"
+    assert R.verdict("final", _verdict_rows(both_missed, (False, True)), (0, 1))[1] == "FAIL-O-DID-NOT-LEARN"
+    assert R.verdict("final", _verdict_rows(both_missed, (True, True)), (0, 1))[1] == "FAIL-O-LEARNED"
+    assert R.verdict("final", _verdict_rows(both_missed, (False, False)), (0, 1))[1] == "FAIL-O-DID-NOT-LEARN"
+    # the reachable case: seed 0 passed, seed 1 missed -- only seed 1's D-M counts; a passed seed's flag is ignored
+    assert R.verdict("final", _verdict_rows((True, False), (False, True)), (0, 1)) == (None, "FAIL-O-LEARNED", "extension")
+    assert R.verdict("final", _verdict_rows((True, False), (True, False)), (0, 1)) == (None, "FAIL-O-DID-NOT-LEARN", "extension")
+    assert R.verdict("final", _verdict_rows((True, True), (False, False)), (0, 1)) == (None, "PASS", "n/a")
+
+
+COMMITTED_NEXT = {"PASS": "X becomes the base; KIND is re-read on X",
+                  "FAIL-O-LEARNED": "O now consumes partial codes, but T is too wrong where O reads it: the T-side arm on the kind KIND ranks first",
+                  "FAIL-O-DID-NOT-LEARN": "O cannot use a mixed code at this capacity or with these inputs: an O-capacity or O-input arm, under its own PREREG (an architecture change: PI go)"}
+
+
+@needs_pkg
+def test_reader_next_step_texts_are_the_committed_ones_in_full_and_each_cell_of_the_preregs_table_holds_exactly_that_text():
+    """The outcome table's three next-step cells, COMMITTED before the data. A text that is a prefix of the committed one (a dropped clause) is not the committed text, so the comparison is
+    equality, and against the PREREG's own table cell (`| <text> |`) when that file is in the checkout, not substring containment."""
+    assert R.NEXT_TEXT == COMMITTED_NEXT
+    for k, v in COMMITTED_NEXT.items():
+        assert R.NEXT[k].endswith(f"Next: {v}."), f"{k}: what the read prints as the next step is not the committed text"
+    if PREREG.exists():
+        text = PREREG.read_text(encoding="utf-8")
+        for k, v in COMMITTED_NEXT.items():
+            assert f"| {v} |" in text, f"{k}: the PREREG's outcome-table cell is not exactly {v!r}"
+
+
+@needs_pkg
+@pytest.mark.parametrize("cell, suf", [("dose_half", "-tacorc-constraints-a50"), ("dose_full", "-tacorc-constraints")])
+def test_check_inputs_enforces_the_dose_identity_cells_on_their_own(tmp_path, no_known, capsys, monkeypatch, cell, suf):
+    """The pre-launch check of B's side: PGT's identity control trips first on a globally biased estimator; this one is biased ONLY on one of B's dose oracles against itself, so only
+    this reader's own check-inputs dose cells can see it (the read's twin of this test is `test_the_dose_identity_cells_are_enforced_on_their_own`)."""
+    f = _mworld(tmp_path / "c", seeds=())
+    for p in list(f["eval"].glob(f"eval_{XT}*")):
+        p.unlink()
+    import taniteval.ci as ci
+    orig = ci.paired_episode_cluster_bootstrap
+    target = np.load(f["eval"] / f"eval_M2b_s0{suf}.npz")["ade6"].astype(np.float64)
+
+    def biased(a, b, *r, **k):
+        o = orig(a, b, *r, **k)
+        if np.array_equal(np.asarray(a, np.float64), target) and np.array_equal(np.asarray(b, np.float64), target):
+            o = dict(o, delta=o["delta"] + 1e-9)
+        return o
+    capsys.readouterr()
+    assert R.main(["--check-inputs", *f["args"]]) == 0, "the control: the same B side passes with the estimator unbiased"
+    capsys.readouterr()
+    monkeypatch.setattr(ci, "paired_episode_cluster_bootstrap", biased)
+    assert R.main(["--check-inputs", *f["args"]]) == 2
+    err = capsys.readouterr().err
+    assert "IDENTITY CONTROL FAILED" in err and cell in err, err[-300:]
+
+
+@needs_pkg
+def test_reader_refuses_when_the_lead_windows_of_the_distance_keeping_read_are_not_the_lead_blocks_join(tmp_path, no_known, capsys, monkeypatch):
+    f = _mworld(tmp_path / "w")
+    orig = R.PGT.dk_read
+
+    def other_lead(a, DK, ctx, Z, block, kk, *r, **k):
+        res = orig(a, DK, ctx, Z, block, kk, *r, **k)
+        if kk != 10:
+            return res
+        pw = dict(res["perwindow"])
+        pw["is_lead"] = ~np.asarray(pw["is_lead"], bool)                   # the read scored a different set of lead windows than the block's join says
+        return dict(res, perwindow=pw)
+    capsys.readouterr()
+    assert R.main(["--stage", "final", *f["args"]]) == 0, "the control: the unmodified read passes"
+    f["out"].unlink()
+    capsys.readouterr()
+    monkeypatch.setattr(R.PGT, "dk_read", other_lead)
+    assert R.main(["--stage", "final", *f["args"]]) == 2
+    err = capsys.readouterr().err
+    assert "MIXO READ REFUSED" in err and "LEAD windows of the distance-keeping read" in err, err[-300:]
+    assert not f["out"].exists()

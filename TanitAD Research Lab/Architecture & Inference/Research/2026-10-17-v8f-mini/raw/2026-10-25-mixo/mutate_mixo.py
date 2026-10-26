@@ -70,7 +70,7 @@ MUT = [
     M(MODEL, "kind is not gated by has: an unlabelled window may read the GT code", "return (draw & has[:, None])[:, unit]", "return draw[:, unit]", "model"),
     M(MODEL, "kind's p is inverted (the draw is > p_gt)", "generator=gen, device=has.device) < p_gt", "generator=gen, device=has.device) > p_gt", "model"),
     M(MODEL, "kind ignores p_gt (a fixed 0.5)", "generator=gen, device=has.device) < p_gt", "generator=gen, device=has.device) < 0.5", "model"),
-    M(MODEL, "CODE_UNIT_OF is reversed: each index reads another unit's switch", "for i in range(CODE_DIM))\n\n\nLIMITS_MS", "for i in range(CODE_DIM))[::-1]\n\n\nLIMITS_MS", "model"),
+    M(MODEL, "CODE_UNIT_OF is reversed: each index reads another unit's switch", "for i in range(CODE_DIM))\n\n\n#: PREREG_V8F_FLAT (`--o-interface`)", "for i in range(CODE_DIM))[::-1]\n\n\n#: PREREG_V8F_FLAT (`--o-interface`)", "model"),
     MM(MODEL, "a HOLE in the unit partition with the import guard weakened (the partition test must catch it)",
        [('CODE_MIX_UNITS = {"decisions": tuple(i for n in CODE_COMPOSITES["decisions"] for i in CODE_GROUPS[n]), **CODE_KINDS}',
          'CODE_MIX_UNITS = {"decisions": tuple(i for n in CODE_COMPOSITES["decisions"] for i in CODE_GROUPS[n])[1:], **CODE_KINDS}'),
@@ -98,7 +98,7 @@ MUT = [
     M(EVAL, "the evaluator grows a code_mix path", "import argparse\n", "import argparse  # code_mix\n", "model"),
     # =========================================================================================================== the trainer: flag, make_config, G-DVB, the probe
     M(TRAIN, "the flag has no declared-vs-built entry", '    "code_mix": "lever:code_mix",', "   ", "model"),
-    M(TRAIN, "make_config drops the lever", 'cons_absent=lv["cons_absent"], code_mix=a.code_mix)', 'cons_absent=lv["cons_absent"])', "model"),
+    M(TRAIN, "make_config drops the lever", 'cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface', 'cons_absent=lv["cons_absent"], o_interface=a.o_interface', "model"),
     off(TRAIN, "declared-vs-built does not compare the built code_mix", '    if built.get("code_mix") != a.code_mix:', "model"),
     off(TRAIN, "kind on a constant p_gt is not refused", '    if a.code_mix == "kind" and built["p_gt_start"] == built["p_gt_end"] and built["p_gt_start"] in (0.0, 1.0):', "model"),
     M(TRAIN, "the flag's default is kind", 'choices=M.CODE_MIX_MODES, default="whole",', 'choices=M.CODE_MIX_MODES, default="kind",', "model"),
@@ -111,7 +111,7 @@ MUT = [
     off(TRAIN, "the probe does not refuse a unit share far from p_gt", "        if any(abs(r - p_gt) > 0.25 for r in rate) and n_seen >= 64:", "model", repl="False"),
     M(TRAIN, "the probe is faked (never reads the code O receives)", "        mix = code_mix_probe(model, probe, cfg)",
       '        mix = {"code_mix": cfg.code_mix, "pass": True, "n_partial": 1, "n_draws_samples": 1}', "model"),
-    M(TRAIN, "the probe's refusal does not stop the run", '        raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")', '        mix = {"code_mix": cfg.code_mix, "pass": False, "error": str(e)}', "model"),
+    M(TRAIN, "the probe's refusal does not stop the run", '        raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")\n    try:\n        ocut = o_interface_probe', '        mix = {"code_mix": cfg.code_mix, "pass": False, "error": str(e)}\n    try:\n        ocut = o_interface_probe', "model"),
     M(TRAIN, "selfcheck.json omits the probe", '"code_mix_probe": mix, ', "", "model"),
     # =========================================================================================================== the reader: bars, decision table
     M(READER, "the 2F bar is 0.2400", "BAR_2F = 0.2415 ", "BAR_2F = 0.2400 ", "reader"),
@@ -275,8 +275,8 @@ print(f"{len(MUT)} mutants over {len(orig)} files, each anchor found exactly onc
 if CHECK:
     sys.exit(0)
 
-BASE = Path("C:/Users/Admin/pt_mixo") / "mut"
-BASE.parent.mkdir(exist_ok=True)
+BASE = Path(os.environ.get("MIXO_MUT_BASE", "C:/Users/Admin/mixo_kill/tmp")) / "mut"   # default unchanged; MIXO_MUT_BASE moves the scratch off C:
+BASE.parent.mkdir(parents=True, exist_ok=True)
 ENV = {**os.environ, "CUDA_VISIBLE_DEVICES": "-1", "PYTHONIOENCODING": "utf-8", "PYTHONDONTWRITEBYTECODE": "1"}
 
 
