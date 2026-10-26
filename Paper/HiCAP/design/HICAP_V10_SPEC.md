@@ -26,6 +26,7 @@ architecture poster and a motion-graphics video.*
 | Audio in shipped video | **none**: `ffprobe` of 2/2 corpus `camera/<clip>.mp4` → one stream, `hevc` 1920×1080@30, no audio stream | ffprobe |
 | Agent tracks in our corpus | `agents/obstacle_offline/*.parquet` (+`index.parquet`): **4,585 / 4,719** clips, 29,415,112 cuboid rows, 6 clips with zero cuboids, 134 clips without a source file | `AGENTS_MANIFEST.json`, `index.parquet` |
 | Reasoning text in our corpus | `alpamayo/records.parquet`: `nvidia/Alpamayo2-Super` outputs for **4,729 clips at one anchor t0 = 5.1 s**: tasks `trajectory, meta_action (CoT + meta action), auto_labeling (chain_of_causation), vqa, grounding_via_vqa` | pandas |
+| Alpamayo coverage re-checked 2026-10-26 | augmentation repo: 1 branch, 9 commits, only `records.parquet` / manifest / VQA bank; **one anchor per clip (t0 = 5.1 s), 5 tasks**; the trajectory task stores `pred_xyz_shape`, ADE/FDE and plot metadata, **not the trajectory coordinates**; no Alpamayo output in any other `Sayood/*` dataset (incl. the 2,252-file internal manifest) | HF API tree/commits/refs |
 | NVIDIA OOD reasoning | `reasoning/ood_reasoning.parquet`: 1,740 clips with per-event chain-of-causation strings; **50** overlap our corpus | pandas |
 | Cameras in our corpus | front-wide only (`camera/<clip>.mp4`, 4,719 files, 61.6 GB); the other 6 cameras exist only upstream (chunked zips) | `MANIFEST.json:camera` |
 | The 6 other cameras upstream | **all 7 cameras present for 4,508/4,508 v9 clips**, in 1,363 upstream chunks; whole-chunk pull 11.5 TB, member-only range-read **≈ 384 GB ESTIMATED** | `stack/scripts/build_v10_camera_ref.py` → `DataEng/v10/camera_ref/MANIFEST.json` |
@@ -120,7 +121,7 @@ Training, three stages, backbone and HiCAP frozen during A1:
 * **A1 bridge alignment** (contrastive, CLAP-style, symmetric InfoNCE + cosine to the caption): pooled
   bridge output vs the frozen text path's embedding of the caption, on public audio–caption / tagged
   sets (AudioCaps, Clotho, AudioSet strong labels for siren / horn / train horn / reversing beeper /
-  tyre squeal / crash, UrbanSound8K, ESC-50, emergency-siren sets). Licences checked per set.
+  tyre squeal / crash, UrbanSound8K, ESC-50, emergency-siren sets). Licences recorded per set; research licences suffice (PI ruling 2026-10-26: research programme).
 * **A2 event heads** on the bridge tokens: class, bearing (array only), distance bin, approaching — from
   event metadata only (never driving labels; the label-echo argument of `sec_elastic.tex`).
 * **A3 gate**: HiCAP's gate g trained on synthetic events rendered from **real agent tracks** of our corpus

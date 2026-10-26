@@ -123,3 +123,19 @@ def test_ehead_gap_is_linear():
     with torch.no_grad():
         h.m.net[-1].bias.fill_(-1.0); h.m.net[-1].weight.zero_()
     assert (h(torch.randn(2, 8))["gap"] < 0).all()                     # negative gap targets are representable (stream S: up to 3.7 %)
+
+
+@pytest.mark.parametrize("stage", [1, 2, 3])
+def test_clm_pure_arm_trains_with_hicap_losses(stage):
+    from tanitad.hicap.clm_pure import CLMPure
+    from tanitad.hicap.losses import HiCAPLoss
+    c = HiCAPConfig(**SMALL); torch.manual_seed(0)
+    p, lat, dv, lon, v0 = synth_world(); vocab = V.build_factored_vocab(p, lat, dv, lon, v0, K_P=48, K_V=24, floor_P=4, floor_V=2)
+    m = CLMPure(c, width=32); b = label_batch(c, vocab, 4)
+    total, parts = HiCAPLoss()(m, build_vt(c, vocab), b, stage=stage)
+    assert torch.isfinite(total); total.backward()
+    assert not hasattr(m, "fusion")
+    b2 = dict(b, frames=torch.zeros_like(b["frames"]), ego=torch.zeros_like(b["ego"]), vlm=torch.zeros_like(b["vlm"]))
+    with torch.no_grad():                                                  # reads ONLY the last-token state
+        s1, *_ = m.encode(b); s2, *_ = m.encode(b2)
+    for k in s1: assert torch.equal(s1[k], s2[k])
