@@ -1192,7 +1192,12 @@ _MAPFT_OPEN_ITEMS = (
 _mapft_drop = set(_MAPFT_B1) | {"--grad-share-every"}
 PROFILES["refcv8-mapft"] = dict(
     _R8, name="refcv8-mapft",
-    open_items=_MAPFT_OPEN_ITEMS,
+    # MAPFT-BUDGET CLOSED (open-only): PREREG_MAPFT s1 (sealed f8774a7b) fixes the budget BY RULE from the
+    # measured 50-step smoke (N = min(10000, floor(0.85*(21600 - smoke_wall_s - 1800)/s_step)), N < 1000 -> STOP);
+    # the token binds the FULL argv by content, so the N that launches is the N that was gated.
+    # (open-only: the budget flags stay unpinned by the profile; the argv sha256 in the token is the pin)
+    # MM 2026-10-26 ~20:10, PI D-R9-MAPHEAD-PRECISION gate route
+    open_items=(),
     required_flags=tuple(f for f in _R8["required_flags"] if f not in _mapft_drop) + (_MAPFT_FLAG, "--conflict-detector"),
     required_flags_why=dict({k: v for k, v in (_R8.get("required_flags_why") or {}).items() if k not in _mapft_drop}, **{
         _MAPFT_FLAG: "PI D-R9-MAPHEAD-PRECISION (2026-10-26): train ONLY refine + near + near_refine, planner bit-identical",

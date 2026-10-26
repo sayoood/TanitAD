@@ -483,7 +483,7 @@ def test_the_profile_literals():
     assert MAPFT["required_values"]["--conflict-detector"] == "off"
     for f in ("--steps", "--warmup", "--ema-decay", "--eval-every", "--b1-guard-ref-ap2m", "--b1-guard-step"):
         assert f not in MAPFT["required_values"], f
-    assert [it["id"] for it in MAPFT["open_items"]] == ["MAPFT-BUDGET"]
+    assert MAPFT["open_items"] == ()          # MAPFT-BUDGET CLOSED (mapft_close_budget.py, mode open-only)
     assert MAPFT["map_hires"]["ga_keys"] == ("ga_mh_refine", "ga_mh_near", "ga_mh_near_refine")
     assert MAPFT["map_hires"]["ga_keys_zero"] == ("ga_mh_lift", "ga_mh_encoder", "ga_mh_trunk_s8_stage")
 
