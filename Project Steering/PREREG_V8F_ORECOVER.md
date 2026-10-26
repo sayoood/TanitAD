@@ -96,3 +96,28 @@ Box 2 runs OACC (now), then MIXO, then **O-RECOVER**: ORC s0, ORC-0 s0, ORC s1, 
 * Each runs through the launch gate.
 * The chain's predecessor predicate reads MIXO's end marker.
 * The T1 evals run on the dev-box CPU as each pair of checkpoints arrives, gated on C: ≥ 2 GB free.
+
+## Amendment 1 (`A1-2026-10-26`), before the lever's code and before any run: the fine-tune mechanics fixed
+
+**When.** Written 2026-10-26, about 30 minutes after the PREREG landed (`7ff43701`). No O-RECOVER code is landed and no O-RECOVER run exists.
+
+**Why.** §1 says "fine-tuned for 3,000 steps" without saying how. `stack/scripts/v8f_mini_train.py` has no way to start from another run's
+checkpoint, only `--resume` from its own output directory. Its schedule (`lr_at`, `M.p_gt_schedule`) is laid over the run's own step budget, so
+a fine-tune would otherwise restart M2b's teacher forcing at p_gt 1.0.
+
+**Fixed now, for ORC and ORC-0 alike.**
+* `--init-ckpt <M2b_s{seed}/ckpt_last.pt>`: a new default-off lever, built with the perturbation flags.
+  * It loads the model weights strictly into the freshly built M2b. The optimizer is fresh and the step is 0.
+  * The path and its sha256 are recorded in `built_levers`, with a G-DVB entry.
+  * An existing `ckpt_last.pt` in the run's own output still resumes, as today.
+* `--steps 3000 --lr 1e-4 --warmup 100`. The trainer's cosine then runs 1e-4 → 1e-5 over the 3,000 steps.
+  * ESTIMATED choice, not tuned on any read: M2b ended at 3e-5 (0.1 × 3e-4). A peak of 1e-4 is about 1/3 of M2b's.
+* `--p-gt-start 0.2 --p-gt-end 0.2`: O's teacher forcing is held at M2b's final value, so the fine-tune does not re-open the schedule.
+* `--ego-perturb-p 0.3` (ORC) or `--ego-perturb-p 0` (ORC-0) is always NAMED in the argv, because the flag's default disables it.
+* `--seed` is the seed of the M2b checkpoint being fine-tuned.
+
+**Disclosed consequence.** ORC-0 is not M2b: it has 3,000 more steps under a different LR and p_gt path.
+* That is exactly why ORC-0 is the control.
+* ORC − M2b stays a beside row, and is never decisive.
+
+Nothing else moves: the arms, the rows, F, the controls, the outcome table and the committed next steps.
