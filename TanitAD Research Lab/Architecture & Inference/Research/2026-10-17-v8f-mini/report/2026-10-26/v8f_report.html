@@ -89,7 +89,7 @@ mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; padding: 4
 
 <script type="text/plain" id="md-src"># v8F-mini: a three-level hierarchy over frozen visual features with a typed tactical interface, and a rigorous account of what does and does not move six-second driving error
 
-**Status:** research report, v22 of 2026-10-26, results through repository tip `9f677298` (branch `agent/arch-inf-20260803`; the code line references in §10 are at `a99ca5d6`). Open-loop results only (T0, T1 and the self-action T1-kin); **no closed-loop (T2) number exists** and no published baseline exists on this split. The PI's bar of "dominant driving results" is **not met** (§8.3).
+**Status:** research report, v23 of 2026-10-26, results through repository tip `9f677298` (branch `agent/arch-inf-20260803`; the code line references in §10 are at `a99ca5d6`). Open-loop results only (T0, T1 and the self-action T1-kin); **no closed-loop (T2) number exists** and no published baseline exists on this split. The PI's bar of "dominant driving results" is **not met** (§8.3).
 
 **Evidence classes used throughout.** **[M]** MEASURED (ours, artifact named) · **[P]** PUBLISHED (library key; the PDF is banked, but descriptions here follow the library index entry, UNVERIFIED beyond it) · **[I]** INHERITED (another document, not re-verified by me) · **[E]** ESTIMATED · **[H]** HYPOTHESIS · **[U]** UNVERIFIED. Every result carries its **tier** (T0 teacher-forced / oracle; T1 self-action open loop; T2 closed loop, unprovisioned) and its **estimator** (§5.3). Paths starting `R/` mean `TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/`.
 
@@ -565,7 +565,7 @@ O's kinematic prior keeps its own ego input, so the O × ego cell measures O's r
 
 ### 7.14 The nav command, layer by layer (evidence video 2)
 
-The second video (`v8f_evidence_v3.mp4`, 216 s, below; v3 adds HACC to every plan panel and a chapter on dominance over P10, row 1m) shows §7.12–7.13 on real frames and adds one measurement, a **nav counterfactual**. For every eval window, a constant command (FOLLOW, TURN LEFT or TURN RIGHT, next turn at 30 m) is written into the nav input of the named layer(s). Everything else stays the window's own, and the model runs its own S → T → O chain. **D6** is the mean distance at 6 s between the TURN LEFT / TURN RIGHT plans and the FOLLOW plan.
+The second video (`v8f_evidence_v4.mp4`, 381 s, below; v3 added HACC to every plan panel and a chapter on dominance over P10, row 1m; v4 adds chapter 7, the T1-kin executed tracks of §7.15 on seven rule-selected windows with failures kept, the per-window distribution, and the causal, strict and lateral-gap cards) shows §7.12–7.13 on real frames and adds one measurement, a **nav counterfactual**. For every eval window, a constant command (FOLLOW, TURN LEFT or TURN RIGHT, next turn at 30 m) is written into the nav input of the named layer(s). Everything else stays the window's own, and the model runs its own S → T → O chain. **D6** is the mean distance at 6 s between the TURN LEFT / TURN RIGHT plans and the FOLLOW plan.
 
 **How far the command moves the 6 s plan** (MEASURED, T1-class open loop, an intervention on the input, not driving; 2,399 windows, episode-cluster bootstrap, B = 2,000, 141 episodes):
 
@@ -753,8 +753,8 @@ window.MathJax = { tex: { inlineMath: [["\\(", "\\)"]], displayMath: [["$$", "$$
   if (h714) {
     const fig2 = document.createElement("figure");
     fig2.className = "video";
-    fig2.innerHTML = '<video controls muted playsinline preload="metadata" src="v8f_evidence_v3.mp4"></video>' +
-      '<figcaption><b>Video 2 (v3, 216 s)</b>Seven chapters: who listens to what (§7.13); the nav counterfactual on four pre-declared windows and over all 2,399; better plans by horizon, now with HACC drawn beside H, P10, B and the logged path; ' +
+    fig2.innerHTML = '<video controls muted playsinline preload="metadata" src="v8f_evidence_v4.mp4"></video>' +
+      '<figcaption><b>Video 2 (v4, 381 s)</b>Eight chapters; v4 adds chapter 7, <b>T1-kin: the model on its own motion</b> (seven windows chosen by a rule fixed before any per-window T1 number, failures kept; the per-window distribution; the causal, strict and lateral-gap cards; self-action OPEN loop, not closed loop). The v3 chapters: who listens to what (§7.13); the nav counterfactual on four pre-declared windows and over all 2,399; better plans by horizon, now with HACC drawn beside H, P10, B and the logged path; ' +
       '<b>dominance over the kinematic prior</b> (HACC − P10 on all 15 rows, both seeds, and where the acceleration gap went); S at its own tick; closing. ' +
       'Arms M2b and M2b + HACC, seeds 0 and 1, T1-class open loop, NOT closed loop; P10 is the programme’s kinematic floor, not the state of the art. The counterfactual is an intervention on the model’s input, not driving. The strategic family is in force for v8F (PI, 2026-10-17).</figcaption>';
     h714.parentNode.insertBefore(fig2, h714.nextElementSibling);
