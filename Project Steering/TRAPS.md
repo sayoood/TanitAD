@@ -772,3 +772,36 @@ them under subjects about unrelated work.
 ⚠️ **This does not replace reading `git diff --cached --name-only` first.** When foreign work
 genuinely belongs in your commit, take it and **name it in the message** — a recorded sweep is
 recoverable, a silent one is not.
+
+- ⛔ **A FLOAT32 ROUNDING BAR TAKEN AT THE RESULT'S MAGNITUDE FAILS UNDER CANCELLATION, AND A SMOKE WILL NOT SHOW IT.** MEASURED 2026-10-26
+  (`PREREG_V8F_HACC_MC`, Amendments 1 and 2).
+  * Amendment 1 set C-1's bar to "|d| ≤ 1 float32 ulp at |plan|", calibrated on a 24-window smoke (0.50 ulp).
+  * The full run then REFUSED: 1.16–3.72 ulp, on 1–3 of 86,364 tick-knots. All of them sat on a near-stationary tick where the blend's
+    result (−0.0017 m) is smaller than its operands (P +0.0046 m, τ −0.0267 m), which have opposite signs.
+  * At the largest operand, every run read 0.49997–0.50000 ulp, and the regression arm still failed by 5.2e6 ulp.
+  * ⇒ **Set a rounding bar at the largest operand of the operation that rounds**, `spacing(float32(max(|a|, |b|, |result|)))`, never at
+    its output. This is the `R74` class, a third time in one day, and this time inside the amendment written to fix it.
+
+- ⛔ **cmd.exe REFUSES A LINE OVER 8,191 CHARACTERS ("Die eingegebene Zeile ist zu lang" / "The input line is too long"), AND THE QUEUE IS NEAR
+  IT.** MEASURED 2026-10-26.
+  * `v8f_mini_box2_queue.cmd evalmixo`'s dry-run echo line is about 8,092 characters with a 57-character checkout and a long pytest root.
+  * A longer checkout or `--basetemp` / `--tmp` pushes it over. Then `test_queue_oacc_leaves_every_other_stage_untouched`, the MIXO
+    real-line tests and the KINDX trainmixo-line test fail. Every mutation baseline built on them fails the same way.
+  * This happened three times in one day: the HMC chain's C-7 suite, the OACC `--only` mutation baselines, and an agent's "pre-existing
+    failures" on its long-path export.
+  * ⇒ **Keep checkouts and pytest roots short** (`E:/Projects/TanitAD-artifacts/<short>/tree`, `--basetemp <short>/p/x`). A queue-test
+    failure from a long path is the environment, not the code: re-run it on a short path before calling it a regression.
+
+- ⚠️ **`pytest --basetemp X` ERRORS EVERY `tmp_path` TEST WHEN X's PARENT DOES NOT EXIST.** It reports "2 errors in 4.68 s" and no failure.
+  A wrapper that only greps for "failed" reads it as clean. ⇒ `mkdir -p` the parent first, and treat `error` like `failed`.
+
+- ⛔ **A HOLD BUILT FROM A TREE THAT A MUTATION RUN IS EDITING LANDS A MUTANT, AND EVIDENCE MADE BEFORE THE RUN CANNOT SEE IT.** MEASURED 2026-10-26
+  (`R77`).
+  * `04d56671` landed `v8f_mini_train.py` with `if False:` in place of `if acc_w != acc_0:`. The hold builder had read the file from the tree
+    where `mutate_oacc.py` was running its trainer mutants. The banked "10 changed lines" diff was made before that run, so the evidence and
+    the landed bytes disagreed silently.
+  * A second copy from the same tree put another mutant into a re-check tree.
+  * Caught by a later builder's tip-equality assertion, before any run trained on it.
+  * ⇒ **Never build a hold, or copy files, from a tree with a running mutation proof.** Each lander-side check compares the bytes it lands
+    against a blob or the banked diff. After every code landing, run the touched test files on an archive of the LANDED tip, never only on the
+    tree you assembled.

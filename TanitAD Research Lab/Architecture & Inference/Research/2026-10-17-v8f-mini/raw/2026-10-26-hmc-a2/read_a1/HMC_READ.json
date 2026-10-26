@@ -1,0 +1,960 @@
+{
+ "prereg": "Project Steering/PREREG_V8F_HACC_MC.md @ 8d4b936d",
+ "tier": "T1-kin (self-action OPEN loop; never 'closed loop')",
+ "tool_tree": "E:/Projects/TanitAD-artifacts/v8f-mini-hacc-mc/tool_81aa3e36",
+ "SMOKE": false,
+ "label": "REAL",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B 2000, seed 0, per seed, arm - P10 and arm - HACC on the same windows. It answers 'another draw of EPISODES'; it is blind to training variance (H-ESTIM-SEED-1) and the two training seeds are the only replicate; no inference seed is varied (this planner is deterministic).",
+ "amendments_applied": {
+  "c1_bar": "ulp32",
+  "c1_amendment": "A1-2026-10-26",
+  "c4_clause2": "tail0",
+  "c4_amendment": "A1-2026-10-26"
+ },
+ "controls": {
+  "P-1": {
+   "PASS": true,
+   "runs": {
+    "MCH_s0_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCH_s0_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCH_s1_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCH_s1_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCF_s0_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCF_s0_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCF_s1_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "MCF_s1_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "STEEP_s0_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "STEEP_s0_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "STEEP_s1_m10": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    },
+    "STEEP_s1_m30": {
+     "checks": {
+      "replan_steps": true,
+      "scene_logged": true,
+      "nav_deadreckon": true,
+      "schedule_periodic": true,
+      "limit": true,
+      "n_windows": true,
+      "causal_bucket_header": true,
+      "ticks_split_eval": true,
+      "ticks_replan_steps": true,
+      "ticks_ckpt_is_the_baked_file": true,
+      "header_ckpt_is_the_baked_file": true,
+      "ckpt_sha256_is_the_reported_one": true,
+      "n_ticks": true,
+      "episode_files": true,
+      "no_hacc_gate": true,
+      "table_in_loop_is_the_baked_table": true,
+      "window_order_equals_banked": true
+     },
+     "PASS": true,
+     "limit": "causal"
+    }
+   },
+   "what": "each run is the pre-registered configuration of the right baked checkpoint (guards against a wrong ckpt / wrong flags reading as a result)"
+  },
+  "C-1": {
+   "PASS": false,
+   "bar": "max|d| <= 1 ulp32 of |plan| (AMENDMENT A1-2026-10-26)",
+   "runs": {
+    "MCH_s0_m10": {
+     "n_ticks": 7197,
+     "knots": 12,
+     "max_abs_d_m": 1.5147368230827851e-05,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      6507,
+      12
+     ],
+     "plan_along_at_argmax_m": 293.96875,
+     "n_tick_knots_over_bar": 5233,
+     "frac_tick_knots_over_bar": 0.060592376453151776,
+     "max_d_over_ulp32_of_plan": 1.1591265797615051,
+     "max_abs_plan_along_m": 473.8965759277344,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 6.103515625e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 6869.0,
+     "const_c_float32": 0.20022018253803253,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false
+    },
+    "MCH_s0_m30": {
+     "n_ticks": 2399,
+     "knots": 12,
+     "max_abs_d_m": 3.7934380543447332e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      1625,
+      12
+     ],
+     "plan_along_at_argmax_m": 75.59456634521484,
+     "n_tick_knots_over_bar": 1560,
+     "frac_tick_knots_over_bar": 0.054189245518966235,
+     "max_d_over_ulp32_of_plan": 1.1591265797615051,
+     "max_abs_plan_along_m": 88.58345031738281,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 1.52587890625e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 6869.0,
+     "const_c_float32": 0.20022018253803253,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false
+    },
+    "MCH_s1_m10": {
+     "n_ticks": 7197,
+     "knots": 12,
+     "max_abs_d_m": 4.821689572054311e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      1716,
+      12
+     ],
+     "plan_along_at_argmax_m": 206.87376403808594,
+     "n_tick_knots_over_bar": 5215,
+     "frac_tick_knots_over_bar": 0.060383956278078826,
+     "max_d_over_ulp32_of_plan": 3.7216784954071045,
+     "max_abs_plan_along_m": 206.87376403808594,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 3.0517578125e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 2386.0,
+     "const_c_float32": 0.21978281438350677,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false
+    },
+    "MCH_s1_m30": {
+     "n_ticks": 2399,
+     "knots": 12,
+     "max_abs_d_m": 3.79748394152557e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      838,
+      10
+     ],
+     "plan_along_at_argmax_m": 74.4885025024414,
+     "n_tick_knots_over_bar": 1589,
+     "frac_tick_knots_over_bar": 0.05519660969848548,
+     "max_d_over_ulp32_of_plan": 3.7216784954071045,
+     "max_abs_plan_along_m": 88.82241821289062,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 7.62939453125e-06,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 302.0,
+     "const_c_float32": 0.21978281438350677,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false
+    },
+    "MCF_s0_m10": {
+     "n_ticks": 7197,
+     "knots": 12,
+     "max_abs_d_m": 6.9873599386482965e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      1528,
+      12
+     ],
+     "plan_along_at_argmax_m": 152.4679412841797,
+     "n_tick_knots_over_bar": 5202,
+     "frac_tick_knots_over_bar": 0.0602334305960817,
+     "max_d_over_ulp32_of_plan": 2.461057424545288,
+     "max_abs_plan_along_m": 291.59033203125,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 3.0517578125e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 6869.0,
+     "const_c_float32": 0.3070783317089081,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false
+    },
+    "MCF_s0_m30": {
+     "n_ticks": 2399,
+     "knots": 12,
+     "max_abs_d_m": 3.810032694673282e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      846,
+      9
+     ],
+     "plan_along_at_argmax_m": 65.74864959716797,
+     "n_tick_knots_over_bar": 1630,
+     "frac_tick_knots_over_bar": 0.056620814228150615,
+     "max_d_over_ulp32_of_plan": 2.461057424545288,
+     "max_abs_plan_along_m": 89.11811065673828,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 1.52587890625e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 6869.0,
+     "const_c_float32": 0.3070783317089081,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false
+    },
+    "MCF_s1_m10": {
+     "n_ticks": 7197,
+     "knots": 12,
+     "max_abs_d_m": 3.813459443335887e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      833,
+      12
+     ],
+     "plan_along_at_argmax_m": 68.60456848144531,
+     "n_tick_knots_over_bar": 5027,
+     "frac_tick_knots_over_bar": 0.05820712333842805,
+     "max_d_over_ulp32_of_plan": 1.4872896671295166,
+     "max_abs_plan_along_m": 190.42984008789062,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 3.0517578125e-05,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 938.0,
+     "const_c_float32": 0.3468058705329895,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false
+    },
+    "MCF_s1_m30": {
+     "n_ticks": 2399,
+     "knots": 12,
+     "max_abs_d_m": 3.8125081118778326e-06,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      1577,
+      11
+     ],
+     "plan_along_at_argmax_m": 67.53112030029297,
+     "n_tick_knots_over_bar": 1599,
+     "frac_tick_knots_over_bar": 0.05554397665694039,
+     "max_d_over_ulp32_of_plan": 1.4872896671295166,
+     "max_abs_plan_along_m": 89.53951263427734,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 7.62939453125e-06,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 302.0,
+     "const_c_float32": 0.3468058705329895,
+     "table_constant_over_knots_1_12": true,
+     "PASS_literal_1e-6": false,
+     "PASS_ulp32": false
+    }
+   },
+   "deliberate_regression": {
+    "HACC_table_on_MCH_s0_m10": {
+     "n_ticks": 7197,
+     "knots": 12,
+     "max_abs_d_m": 1.797342102606308,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      7001,
+      12
+     ],
+     "plan_along_at_argmax_m": 81.0047836303711,
+     "n_tick_knots_over_bar": 80066,
+     "frac_tick_knots_over_bar": 0.9270760965216989,
+     "max_d_over_ulp32_of_plan": 714924880.0,
+     "max_abs_plan_along_m": 473.8965759277344,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 1.7973403930664062,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 714924880.0,
+     "MUST_FAIL": true,
+     "regression_fails_as_it_must": true
+    },
+    "HACC_table_on_MCH_s1_m10": {
+     "n_ticks": 7197,
+     "knots": 12,
+     "max_abs_d_m": 2.0058123029812123,
+     "bar_m": 1e-06,
+     "PASS": false,
+     "argmax_tick_knot": [
+      6219,
+      12
+     ],
+     "plan_along_at_argmax_m": 78.14154815673828,
+     "n_tick_knots_over_bar": 80020,
+     "frac_tick_knots_over_bar": 0.9265434671854014,
+     "max_d_over_ulp32_of_plan": 105608703.5360589,
+     "max_abs_plan_along_m": 206.87376403808594,
+     "float32_lerp_replica_max_abs_vs_dumped_plan_m": 2.0058135986328125,
+     "float32_lerp_replica_max_over_ulp32_of_plan": 105608707.0,
+     "MUST_FAIL": true,
+     "regression_fails_as_it_must": true
+    }
+   }
+  },
+  "C-2": {
+   "PASS": true,
+   "bar": "max|MC-H - HACC| executed at m = 10 > 1e-2 m (MC-F, STEEP beside)",
+   "runs": {
+    "MCH_s0": {
+     "max_abs_cl_minus_HACC_banked_m": 59.619472009731524,
+     "gating": true,
+     "PASS": true
+    },
+    "MCF_s0": {
+     "max_abs_cl_minus_HACC_banked_m": 47.86594162079737,
+     "gating": false,
+     "PASS": true
+    },
+    "STEEP_s0": {
+     "max_abs_cl_minus_HACC_banked_m": 58.717042307048075,
+     "gating": false,
+     "PASS": true
+    },
+    "MCH_s1": {
+     "max_abs_cl_minus_HACC_banked_m": 61.356355516022866,
+     "gating": true,
+     "PASS": true
+    },
+    "MCF_s1": {
+     "max_abs_cl_minus_HACC_banked_m": 51.229760175294146,
+     "gating": false,
+     "PASS": true
+    },
+    "STEEP_s1": {
+     "max_abs_cl_minus_HACC_banked_m": 72.33527608278762,
+     "gating": false,
+     "PASS": true
+    }
+   }
+  },
+  "C-3": {
+   "PASS": true,
+   "bar": "exactly 0.0 (<= 1e-9) on MC-H and MC-F ticks (v0, a0, kappa0)",
+   "runs": {
+    "MCH_s0_m10": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCH_s0_m30": {
+     "n_ticks": 2399,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCH_s1_m10": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCH_s1_m30": {
+     "n_ticks": 2399,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCF_s0_m10": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCF_s0_m30": {
+     "n_ticks": 2399,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCF_s1_m10": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    },
+    "MCF_s1_m30": {
+     "n_ticks": 2399,
+     "max_abs_v0_mps": 0.0,
+     "max_abs_a0_mps2": 0.0,
+     "max_abs_kappa0_1pm": 0.0,
+     "median_a0_mps2": 0.0,
+     "frac_ticks_nonzero_a0": 0.0,
+     "bar": 1e-09,
+     "is_zero": true,
+     "PASS": true
+    }
+   },
+   "deliberate_regression": {
+    "MCH_ticks_HACC_table_s0": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 2.683060201729564,
+     "max_abs_a0_mps2": 15.278930206314683,
+     "max_abs_kappa0_1pm": 0.6,
+     "median_a0_mps2": -0.24148235923313166,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "MCH_ticks_STEEP_table_s0": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 6.7795395521335,
+     "max_abs_a0_mps2": 37.05374019691561,
+     "max_abs_kappa0_1pm": 0.6,
+     "median_a0_mps2": -0.37129459328754777,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "STEEP_own_ticks_STEEP_table_s0": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 7.504090702488426,
+     "max_abs_a0_mps2": 38.629562971051726,
+     "max_abs_kappa0_1pm": 0.6,
+     "median_a0_mps2": -0.16426747543953013,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "HACC_TRAIN_known_value_s0": {
+     "n": 1747,
+     "median_ramp_a0_mps2": -0.15876310085314316,
+     "banked": -0.1588,
+     "abs_diff": 3.689914685683915e-05,
+     "bar": 0.002,
+     "PASS": true
+    },
+    "MCH_ticks_HACC_table_s1": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 4.249470076441639,
+     "max_abs_a0_mps2": 11.50791822688924,
+     "max_abs_kappa0_1pm": 0.12667517157565403,
+     "median_a0_mps2": -0.1499666303201197,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "MCH_ticks_STEEP_table_s1": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 9.838510474736374,
+     "max_abs_a0_mps2": 25.27883489584405,
+     "max_abs_kappa0_1pm": 0.5427884527755287,
+     "median_a0_mps2": -0.17734643853108523,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "STEEP_own_ticks_STEEP_table_s1": {
+     "n_ticks": 7197,
+     "max_abs_v0_mps": 9.91213691716591,
+     "max_abs_a0_mps2": 17.479958226542642,
+     "max_abs_kappa0_1pm": 0.6,
+     "median_a0_mps2": -0.11708441148940096,
+     "frac_ticks_nonzero_a0": 1.0,
+     "bar": 1e-09,
+     "is_zero": false,
+     "MUST_BE_NONZERO": true,
+     "regression_fires_as_it_must": true
+    },
+    "HACC_TRAIN_known_value_s1": {
+     "n": 1747,
+     "median_ramp_a0_mps2": -0.0726273800838051,
+     "banked": -0.0726,
+     "abs_diff": 2.7380083805095268e-05,
+     "bar": 0.002,
+     "PASS": true
+    }
+   },
+   "note": "HACC's own EVAL ticks are not in the pre-registered matrix: HACC's regression is its table through the same instrument on the MC-H ticks, plus its TRAIN known value (-0.1588 / -0.0726 +- 2e-3, n = 1,747)"
+  },
+  "C-4": {
+   "PASS": true,
+   "C-4": {
+    "clause1": {
+     "s0": {
+      "c_closed_form": 0.30707832486066766,
+      "c_grid_argmin_201pt": 0.305,
+      "abs_diff": 0.0020783248606676685,
+      "bar": 0.005,
+      "PASS": true
+     },
+     "s1": {
+      "c_closed_form": 0.34680587498548143,
+      "c_grid_argmin_201pt": 0.34500000000000003,
+      "abs_diff": 0.0018058749854814038,
+      "bar": 0.005,
+      "PASS": true
+     }
+    },
+    "clause2": {
+     "s0": {
+      "c": -0.0,
+      "PASS": true,
+      "variant": "tail0 (AMENDMENT A1-2026-10-26): GT := P with the held tail also zeroed",
+      "literal_value_for_the_record": 0.3094034378411479
+     },
+     "s1": {
+      "c": -0.0,
+      "PASS": true,
+      "variant": "tail0 (AMENDMENT A1-2026-10-26): GT := P with the held tail also zeroed",
+      "literal_value_for_the_record": 0.3488629300801739
+     }
+    },
+    "ok": true
+   },
+   "TRAIN_qualification_bar_ade6_le_HACC_plus_F_half": {
+    "s0": true,
+    "s1": true
+   },
+   "tables_reproduce_probe12_and_PREREG_values": true,
+   "source": "BAKE_REPORT_MC.json (built before any eval run)"
+  },
+  "C-5": {
+   "PASS": true,
+   "bar": "T1KIN's C-1(i) <= 1e-9, C-1(ii) <= 1e-4 + unique grid + eid, C-2 floor ADE6 = 2.48699212 +- 1e-5 (m30), plus the m10 P10 loop = the banked HACC dump's floor <= 1e-9 (same windows, batch 32, 8 threads: a same-composition identity)",
+   "runs": {
+    "MCH_s0": {
+     "max_abs_cl_minus_ol_m30_m": 1.1368683772161603e-13,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878909092171e-05,
+     "grid_indices_unique": true,
+     "n_windows": 2399,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 2.486992117746755,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": true,
+     "P10_loop_m10_equals_banked": true,
+     "PASS": true
+    },
+    "MCF_s0": {
+     "max_abs_cl_minus_ol_m30_m": 1.1368683772161603e-13,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878909092171e-05,
+     "grid_indices_unique": true,
+     "n_windows": 2399,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 2.486992117746755,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": true,
+     "P10_loop_m10_equals_banked": true,
+     "PASS": true
+    },
+    "STEEP_s0": {
+     "max_abs_cl_minus_ol_m30_m": 1.1368683772161603e-13,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878909092171e-05,
+     "grid_indices_unique": true,
+     "n_windows": 2399,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 2.486992117746755,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": true,
+     "P10_loop_m10_equals_banked": true,
+     "PASS": true
+    },
+    "MCH_s1": {
+     "max_abs_cl_minus_ol_m30_m": 1.4210854715202004e-13,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878909092171e-05,
+     "grid_indices_unique": true,
+     "n_windows": 2399,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 2.486992117746755,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": true,
+     "P10_loop_m10_equals_banked": true,
+     "PASS": true
+    },
+    "MCF_s1": {
+     "max_abs_cl_minus_ol_m30_m": 1.4210854715202004e-13,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878909092171e-05,
+     "grid_indices_unique": true,
+     "n_windows": 2399,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 2.486992117746755,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": true,
+     "P10_loop_m10_equals_banked": true,
+     "PASS": true
+    },
+    "STEEP_s1": {
+     "max_abs_cl_minus_ol_m30_m": 1.4210854715202004e-13,
+     "max_abs_floor_vs_banked_P10_plan_m": 1.525878909092171e-05,
+     "grid_indices_unique": true,
+     "n_windows": 2399,
+     "eid_equals_banked_grid": true,
+     "floor_m30_ade6_m": 2.486992117746755,
+     "floor_m10_max_abs_vs_banked_HACC_dump_fl_m": 0.0,
+     "C1i_open_loop_identity": true,
+     "C1ii_age_free_identity": true,
+     "C2_floor_ade6": true,
+     "P10_loop_m10_equals_banked": true,
+     "PASS": true
+    }
+   }
+  },
+  "C-6": {
+   "s0": {
+    "delta": 0.021,
+    "lo": 0.0099,
+    "hi": 0.0351,
+    "separated": true,
+    "n_windows": 2106,
+    "n_episodes": 135,
+    "banked": 0.021,
+    "abs_diff": 0.0,
+    "PASS": true
+   },
+   "s1": {
+    "delta": 0.0082,
+    "lo": 0.0026,
+    "hi": 0.0148,
+    "separated": true,
+    "n_windows": 2106,
+    "n_episodes": 135,
+    "banked": 0.0082,
+    "abs_diff": 0.0,
+    "PASS": true
+   },
+   "PASS": true,
+   "beside_float64_originals_L2_HACC_minus_P10": {
+    "s0": {
+     "delta": 0.021,
+     "lo": 0.0099,
+     "hi": 0.0351,
+     "separated": true,
+     "n_windows": 2106,
+     "n_episodes": 135
+    },
+    "s1": {
+     "delta": 0.0082,
+     "lo": 0.0026,
+     "hi": 0.0148,
+     "separated": true,
+     "n_windows": 2106,
+     "n_episodes": 135
+    }
+   }
+  },
+  "C-6b": {
+   "PASS": true,
+   "what": "M1 / M2 / M1(P10) of HACC reproduce the PREREG's printed 0.0536 / 0.0277, +0.0202 / +0.0072, 0.0137",
+   "runs": {
+    "s0": {
+     "M1": 0.05356095056476456,
+     "M2": 0.020246303286083366,
+     "M1_P10": 0.013674524324522491,
+     "matches_4dp": {
+      "M1": true,
+      "M2": true,
+      "M1_P10": true
+     }
+    },
+    "s1": {
+     "M1": 0.02766066649558236,
+     "M2": 0.007205373095043685,
+     "M1_P10": 0.013674524324522491,
+     "matches_4dp": {
+      "M1": true,
+      "M2": true,
+      "M1_P10": true
+     }
+    }
+   }
+  },
+  "C-7": {
+   "PASS": true,
+   "suite_last_line": "226 passed, 1 skipped, 6 warnings in 580.74s (0:09:40)"
+  }
+ },
+ "controls_failed": [
+  "C-1"
+ ],
+ "controls_all_pass": false,
+ "seconds_controls": 94.41223812103271,
+ "OUTCOME": {
+  "outcome": "REFUSED",
+  "refused_on": [
+   "C-1"
+  ],
+  "text": "any control fails -> no outcome row (PREREG section 6)"
+ }
+}

@@ -79,6 +79,10 @@ def c1_reach(z, w, k_flat=12, bar=1e-6):
            "argmax_tick_knot": [int(i[0]), int(i[1] + 1)], "plan_along_at_argmax_m": float(H[i[0], i[1], 0]),
            "n_tick_knots_over_bar": int((np.abs(d) > bar).sum()), "frac_tick_knots_over_bar": float((np.abs(d) > bar).mean()),
            "max_d_over_ulp32_of_plan": float((np.abs(d) / ulp).max()), "max_abs_plan_along_m": float(np.abs(H[:, :k_flat, 0]).max())}
+    # PREREG Amendment 2: the ulp at the blend's LARGEST OPERAND. Under cancellation (a near-stationary tick: P and tau of opposite sign, the result
+    # smaller than both) the float32 roundings inside the blend are at the operands' scale, which a ulp at |plan| understates.
+    M = np.maximum(np.maximum(np.abs(P[:, :k_flat, 0]), np.abs(T[:, :k_flat, 0])), np.abs(H[:, :k_flat, 0]))
+    out["max_d_over_ulp32_of_max_operand"] = float((np.abs(d) / np.spacing(M.astype(np.float32)).astype(np.float64)).max())
     P32, T32 = torch.as_tensor(P.astype(np.float32)), torch.as_tensor(T.astype(np.float32))
     assert np.array_equal(P32.double().numpy(), P) and np.array_equal(T32.double().numpy(), T), "the dumped P / tau are not float32-exact"
     w32 = torch.as_tensor(np.asarray(w, np.float32))[None].expand_as(P32)

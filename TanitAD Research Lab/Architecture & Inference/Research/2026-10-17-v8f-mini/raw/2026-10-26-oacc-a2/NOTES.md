@@ -20,8 +20,9 @@
 * `out/mutate_oacc_check.out`: 309 mutants, each anchor found exactly once.
 * `out/mutate_orecover.out`: 20/20 RED, files restored byte-identical.
 * `out/mutate_oacc_sel.out`: the 21 OACC mutants on the acc probe, the built levers and the new weight check (#35-#50, #150, #151,
-  #153, #161, #162). The run was still going at landing (about 5 min a mutant), so it is banked by a follow-up commit, not here.
-  Box 2 was idle, and the run tests the tests: the suites and the real-record check above already pass.
+  #153, #161, #162): **21/21 RED**, files restored byte-identical (banked by a follow-up commit; the run was still going at landing).
+  ⛔ **R77:** the trainer this hold landed carried one of these mutants (`if False:`, line 745), copied from the tree while the run was
+  editing it. Restored in 7f06ff00; no run trained on it.
 * ⚠️ **A cmd.exe trap, seen twice today.** `queue.cmd evalmixo`'s dry-run echo line sits near cmd.exe's 8,191-character limit (8,092 chars
   with a 57-char checkout and a long pytest root). A longer temp path makes `test_queue_oacc_leaves_every_other_stage_untouched` fail with
   "The input line is too long". Keep the checkout and `--basetemp` / `--tmp` short. The first `mutate_oacc` baselines here failed exactly so.

@@ -24,7 +24,7 @@ ap.add_argument("--out", default=None)
 ap.add_argument("--controls-only", action="store_true")
 ap.add_argument("--smoke", action="store_true", help="plumbing test on the 24-window SMOKE chain output (banked arrays subset to the same grid windows)")
 ap.add_argument("--force-rows-under-refusal", action="store_true", help="compute the rows even if a control failed; written ONLY to rows_UNDER_REFUSAL.json, never an outcome")
-ap.add_argument("--c1-bar", choices=("literal", "ulp32"), default="literal")
+ap.add_argument("--c1-bar", choices=("literal", "ulp32", "ulp32max"), default="literal")   # ulp32 = Amendment 1, ulp32max = Amendment 2
 ap.add_argument("--c1-amendment", default="")
 ap.add_argument("--c4-clause2", choices=("literal", "tail0"), default="literal")
 ap.add_argument("--c4-amendment", default="")
@@ -144,7 +144,8 @@ def c1():
                 r["table_constant_over_knots_1_12"] = bool(np.all(TAB[(arm, s)][:12, 0] == TAB[(arm, s)][0, 0]))
                 r["PASS_literal_1e-6"] = r["PASS"]
                 r["PASS_ulp32"] = bool(r["max_d_over_ulp32_of_plan"] <= 1.0)
-                r["PASS"] = (r["PASS_literal_1e-6"] if A.c1_bar == "literal" else r["PASS_ulp32"]) and r["table_constant_over_knots_1_12"]
+                r["PASS_ulp32max"] = bool(r["max_d_over_ulp32_of_max_operand"] <= 1.0)
+                r["PASS"] = {"literal": r["PASS_literal_1e-6"], "ulp32": r["PASS_ulp32"], "ulp32max": r["PASS_ulp32max"]}[A.c1_bar] and r["table_constant_over_knots_1_12"]
                 res[f"{arm}_s{s}_m{m}"] = r
                 ok &= r["PASS"]
     reg = {}
@@ -154,7 +155,8 @@ def c1():
         r["regression_fails_as_it_must"] = bool(not r["PASS"] and r["max_abs_d_m"] > 1e-3)
         reg[f"HACC_table_on_MCH_s{s}_m10"] = r
         ok &= r["regression_fails_as_it_must"]
-    return {"PASS": bool(ok), "bar": "max|d| <= 1e-6 m (literal)" if A.c1_bar == "literal" else f"max|d| <= 1 ulp32 of |plan| (AMENDMENT {A.c1_amendment})",
+    return {"PASS": bool(ok), "bar": {"literal": "max|d| <= 1e-6 m (literal)", "ulp32": f"max|d| <= 1 ulp32 of |plan| (AMENDMENT {A.c1_amendment})",
+                                      "ulp32max": f"max|d| <= 1 ulp32 of max(|P|, |tau|, |plan|) (AMENDMENT {A.c1_amendment})"}[A.c1_bar],
             "runs": res, "deliberate_regression": reg}
 
 
@@ -309,7 +311,7 @@ for k in order:
     c = REP["controls"][k]
     if k == "C-1":
         for tg, r in c["runs"].items():
-            print(f"   C-1 {tg:14s} max|d| {r['max_abs_d_m']:.3e} m  = {r['max_d_over_ulp32_of_plan']:.2f} ulp32  literal {r['PASS_literal_1e-6']}  ulp32 {r['PASS_ulp32']}  (max |plan| {r['max_abs_plan_along_m']:.1f} m)")
+            print(f"   C-1 {tg:14s} max|d| {r['max_abs_d_m']:.3e} m  = {r['max_d_over_ulp32_of_plan']:.2f} ulp32  literal {r['PASS_literal_1e-6']}  ulp32 {r['PASS_ulp32']}  | {r['max_d_over_ulp32_of_max_operand']:.5f} ulp32 of the largest operand, A2 {r['PASS_ulp32max']}  (max |plan| {r['max_abs_plan_along_m']:.1f} m)")
         for tg, r in c["deliberate_regression"].items():
             print(f"   C-1 REGRESSION {tg}: max|d| {r['max_abs_d_m']:.3e} m -> fails as it must: {r['regression_fails_as_it_must']}")
     if k == "C-4":
@@ -389,7 +391,7 @@ for s in L.SEEDS:
                 launch[f"{r}_arm_minus_P10"] = L.paired(Cx[r][sub], Cf[r][sub], eid[sub])
                 launch[f"{r}_arm_minus_HACC"] = L.paired(Cx[r][sub], HACC_ROWS[s][r][sub], eid[sub])
         arm_out["beside"] = {"L2_joint_own_speed_mask_arm_minus_P10": jm, "joint_mask_fraction_of_fast_pairs_kept": kept, "launch_subset": launch,
-                             "families_not_computed": {"TACTICAL": "NOT COMPUTED: the T1 dumps record no per-tick T code (work item)", "STRATEGIC": "PAUSED (PI_DECISION_QUEUE ITEM 25) and not computed: no per-tick S checkpoints in the T1 dumps",
+                             "families_not_computed": {"TACTICAL": "NOT COMPUTED: the T1 dumps record no per-tick T code (work item)", "STRATEGIC": "NOT COMPUTED: no per-tick S checkpoints in the T1 dumps (work item). NOT paused for v8F (PI ruling 2026-10-17, R73); the ITEM 25 pause was refcv6's",
                                                        "DISTANCE_KEEPING": "NOT COMPUTED: v8f_t1_eval passes no lead track to analyze()"}}
         # beside: m = 30 (the tick-0 plan executed whole), arm - P10
         d30 = DATA[(arm, s, 30)]
