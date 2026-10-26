@@ -6005,6 +6005,15 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | beside | F-rate 0.0877 / 0.0883 (S6 compliant); E1 -0.0444 / -0.0439, E3 -1.1932 / -1.1924 (vs ha0_ext_pose); S6 compliance exceedance 0.0169 (= H2CN_DEPLOY8; RETIME 0.0049, FACTORED 0.0040). |
 | status | NOT a shipped-stage candidate. Successor arm MDFIX8 sealed (PREREG_HSGATE_MDFIX 545ff217): relabelled gate, FD-capped threshold, power rule, G1 at 97.5 % for the second look. |
 
+### 16.21 refcv8-r101-s0 -- MDFIX8, the HSGATE gate relabelled to 'fixes a missed decel': FAIL (G1, G4) -- the post-hoc progress line ends *(addendum to §16.20)*
+
+| | |
+|---|---|
+| what | §16.20's gate with label `GT-decel AND class(P_F)==decel AND class(P_H-OOF)!=decel`, lambda 0.1 fixed, FD-capped threshold (c 0.002 by a pre-stated power rule); frozen ef760a45, registered 08:23:06 before any eval output; prereg PREREG_HSGATE_MDFIX 545ff217 (second eval look, disclosed; G1 at 97.5 %). |
+| bars (T1 open loop, eval139 S6 compliant, paired vs H2CN_DEPLOY8; inference seeds 0 / 1) | MD -0.0078 [-0.0191, +0.0000] / -0.0125 [-0.0283, -0.0016] at 97.5 % (**G1 FAIL** at s0); FD +0.0016 / +0.0011 n.s. (G2 PASS); G4 FAIL (MD vs rate-matched mix n.s. at s0); G3 SHIP-R8 OVERALL PASS. MEASURED `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-refcv9-hsgate/result/MDFIX_VERDICT.json`. |
+| beside | eval F-rate 0.68 % / 0.89 % (FIT 1.47 %); E1 -0.0473 / -0.0468, E3 -1.2044 / -1.1989; S6 compliance exceedance 0.0169 (= H2CN); MD effect inside A4d's fit-seed floor. |
+| status | NOT a shipped-stage candidate. Per the sealed s5 the refcv8 post-hoc progress line ENDS; candidates for the PI: H2CN_CAP8 / H2CN_DEPLOY8 / FACTORED_DEPLOY8. |
+
 ## 18. nt-a1-s0 — NT A1, the navtrain decision arm (PREREG_NT_DECIDE) [NAVSIM navtrain · ONE SEED · TRAINING]
 
 ### nt-a1-s0 — ▶ TRAINING since 2026-10-25 11:02 Berlin (CET, 10:02Z), on Thor, launched by the launch gate's PASS token

@@ -2607,3 +2607,7 @@ Candidates that PASS SHIP-R8 (per-frame feed, inference seeds 0 / 1):
 Not candidates: HSGATE8 FAIL (G2: FD +0.0135 separated above H2CN; `H-R9-HSGATE-1`); H2cn-L / A4c (bars VOID).
 **Waiting on:** MDFIX8 (PREREG_HSGATE_MDFIX 545ff217, gate registered 08:23, scoring now, CPU only). It joins the list only if it PASSES; this item is asked when it reads.
 
+**UPDATE to D-R8-SHIP-STAGE (MM, 2026-10-26 ~08:41 Berlin): the measurement it waited on has read -- the item is now OPEN.** MDFIX8 FAIL (G1 at seed 0:
+MD -0.0078 [-0.0191, +0.0000] at 97.5 %, not separated; `H-R9-MDFIX-1`), so it does not join the list and the refcv8 post-hoc progress line ends
+(its sealed s5). The choice is H2CN_CAP8 (MM recommends) / H2CN_DEPLOY8 / FACTORED_DEPLOY8, on the rows above.
+
