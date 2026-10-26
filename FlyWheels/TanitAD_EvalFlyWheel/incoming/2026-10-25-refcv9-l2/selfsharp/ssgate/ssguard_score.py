@@ -74,12 +74,17 @@ def main() -> int:
     lab = np.load(L2 / "bank" / "oracle_labels.npz")
     forced = {(int(c), int(w)): (int(v) in G.LON6) for c, w, v in zip(lab["clip_index"], lab["ws"], lab["lon_v7"])}
     eq = [np.array_equal(torc["plan8"][i], b1["plan8"][b1["idx"][k]]) for k, i in torc["idx"].items() if not forced.get(k, False)]
-    ctl["K-IND"] = {"pass": bool(len(eq) > 0 and all(eq)), "n_unforced": len(eq), "seed": 0}
+    k_ind = {"pass": bool(len(eq) > 0 and all(eq)), "n_unforced": len(eq), "seed": 0}
+    if sd == 0:
+        ctl["K-IND"] = k_ind
+    else:                                                    # PREREG_SSGUARD_S1 section 3: "K-IND is a property of the roll code and was measured at
+        not_remeasured = {"K-IND": {"rule": "PREREG_SSGUARD_S1 s3: measured at seed 0, not re-measured",   # seed 0; it is not re-measured" -- the
+                                    "cross_seed_value_not_a_control": k_ind}}                              # s0 oracle trace vs the s1 bank is a cross-draw
     if sd != 0:
         mt = json.loads(str(np.load(Path(a.bank_ss) / f"trace_selfsharp_s{sd}.npz")["meta_json"]))["counters"]
         ctl["K-HOOK"] = {"pass": bool(mt["calls"] == 4754 and mt["hook_applied"] == 4754 and mt["hook_calls_unarmed"] == 0 and mt["batch_gt1"] == 0 and mt["multi_hook_in_call"] == 0),
                          "counters": {k: mt[k] for k in ("calls", "hook_applied", "hook_calls_unarmed", "batch_gt1", "multi_hook_in_call")}}
-    res = {"tool": "ssguard_score.py", "seed": sd, "prereg_sha256": pre, "script_sha256": G.sha(__file__), "estimator": G.ESTIMATOR,
+    res = {"tool": "ssguard_score.py", "seed": sd, "controls_not_remeasured": (not_remeasured if sd != 0 else {}), "prereg_sha256": pre, "script_sha256": G.sha(__file__), "estimator": G.ESTIMATOR,
            "tier": "T1 self-action OPEN LOOP on logged eval139 frames (not driving performance)", "controls": ctl,
            "families_not_computed": {"LONGITUDINAL distance-keeping (headway/TTC)": "no lead-agent track in the banked refcv8 dumps; n = 0",
                                      "STRATEGIC": "refcv8 runs --no-strategic; n = 0", "S2 rows": "PENDING"},
