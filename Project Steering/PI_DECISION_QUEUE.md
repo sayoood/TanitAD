@@ -2581,3 +2581,29 @@ passes. The two navtest reads (theta_DEC and A1) are part of the authorisation. 
 
 **PI DECISION 2026-10-26 ~06:40 Berlin (asked in chat; the PI chose the recommended option):**
 - **D-V8F-ORECOVER -> queue it** *"Yes: queue O-RECOVER on box 2 after OACC and MIXO, through the launch gate, both seeds, under its own pre-registration."* Registered as `Project Steering/PREREG_V8F_ORECOVER.md` (`H-V8F-ORECOVER-1`), landed before the lever's code and before any run. Box 2 order: OACC (running) -> MIXO -> O-RECOVER (ORC s0, ORC-0 s0, ORC s1, ORC-0 s1), each through the launch gate; the T1 reads run on the dev-box CPU.
+
+## ⏳ OPEN (2026-10-26 ~08:30 Berlin) -- D-R9-MAPFT-COST: two cost questions the map-only fine-tune needs answered before it can fire (~19:00, after NT A1)
+
+Context: D-R9-MAPHEAD-PRECISION -> (a), cap 6 Thor-hours. The kit is landed and rehearsed on the dev box (`FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-refcv9-mapft/kit/RUNBOOK_MAPFT.md`).
+The budget formula `N = min(10000, floor(0.85*(21600 - smoke_wall_s - 1800)/s_step))` covers the smoke and the run only.
+
+**Q2 -- does gating count inside the 6 Thor-h cap?** Gating = bind (~2 h, INHERITED from the NT A1 chain), the gate and two RED arms: ~3.5 h ESTIMATED.
+* **(a) No -- the cap covers the smoke and the fine-tune; gating runs beside it and is logged (RECOMMENDED).** Thor occupancy ~8 h in total; the run gets its full N.
+* (b) Yes -- ~2.5 h are left for the run; at 8 s/step N ~ 1,100, just above the kit's N < 1000 STOP, so a slower smoke ends the arm before it trains.
+
+**Q3 -- s/step cost approval.** The kit needs a PI cost-approval file only if the 50-step smoke reads > 8.0 s/step.
+* **(a) Approve up to 9.8 s/step (RECOMMENDED; the same ceiling you approved for NT A1).** Above it the kit stops and asks.
+* (b) No pre-approval -- the arm stops at the smoke if > 8.0 s/step and waits for you.
+
+**Default if unanswered by ~19:00:** the smoke and the budget step run (no cap is spent beyond the 50-step smoke); the fire step WAITS for Q2 / Q3.
+
+## ⏳ PENDING ONE MEASUREMENT (2026-10-26 ~08:30 Berlin) -- D-R8-SHIP-STAGE: which post-hoc stage ships with refcv8 on PhysicalAI?
+
+All T1 self-action OPEN LOOP on logged eval139 frames (not driving performance); paired episode-cluster bootstrap over EPISODES; one refcv8 training seed.
+Candidates that PASS SHIP-R8 (per-frame feed, inference seeds 0 / 1):
+* **H2CN_CAP8 (MM RECOMMENDS)** -- E3 -1.2038 / -1.1972 vs ha0_ext_pose, **0 strict fed-ceiling exceedances** (`R8-SHIP-H2CN-1`, A4b).
+* H2CN_DEPLOY8 -- E3 -1.1975 / -1.1909; replicated across stage fit seeds (A4d, seed 0 is the best of three by ~0.07 m); S6 fed-ceiling exceedance 0.0169 (RETIME 0.0049).
+* FACTORED_DEPLOY8 -- A5 PASS, replicated at seed 1; S6 exceedance 0.0040; needs the self-sharpened decode at inference (latency UNMEASURED vs the 100 ms budget).
+Not candidates: HSGATE8 FAIL (G2: FD +0.0135 separated above H2CN; `H-R9-HSGATE-1`); H2cn-L / A4c (bars VOID).
+**Waiting on:** MDFIX8 (PREREG_HSGATE_MDFIX 545ff217, gate registered 08:23, scoring now, CPU only). It joins the list only if it PASSES; this item is asked when it reads.
+
