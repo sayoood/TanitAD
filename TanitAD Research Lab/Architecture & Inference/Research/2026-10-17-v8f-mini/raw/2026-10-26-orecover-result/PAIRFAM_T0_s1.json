@@ -1,0 +1,1370 @@
+{
+ "schema": "v8f-paired-families-v1",
+ "tier": "T1-class open loop (own held outputs; no recorded future action)",
+ "contrast": "A - B (A is the arm under test, B the base)",
+ "estimator": "paired episode-cluster bootstrap, B=2000, 141 episodes",
+ "variance_answered": "another draw of EPISODES with the models held fixed. Each arm is ONE training seed: a separated cell is necessary, not sufficient, for a lever effect (H-ESTIM-SEED-1); no replicate arm exists in this read",
+ "strategic_family": "ACTIVE for v8F-mini (PI-V8F-2026-10-17; R72/R73): reported in full",
+ "a": {
+  "label": "ORC_s1",
+  "npz": "E:/Projects/TanitAD-artifacts/v8f-orecover/M2b_s1_orc/eval_M2b-orc_s1.npz",
+  "sha256": "919b5d4a200b47563ce544481b255afb4227495a13a35e54ce5285274c0dfac3",
+  "eval_json": "E:/Projects/TanitAD-artifacts/v8f-orecover/M2b_s1_orc/eval_M2b-orc_s1.json"
+ },
+ "b": {
+  "label": "ORC0_s1",
+  "npz": "E:/Projects/TanitAD-artifacts/v8f-orecover/M2b_s1_orc0/eval_M2b-orc0_s1.npz",
+  "sha256": "c9f9a69a0e3e41ae6cc1f5a6190f7ab93807f417e6ef536a4af9863aa2f12a4d",
+  "eval_json": "E:/Projects/TanitAD-artifacts/v8f-orecover/M2b_s1_orc0/eval_M2b-orc0_s1.json"
+ },
+ "inputs_sha256": {
+  "eval_grid_windows.json": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+  "eval141_kin.npz": "be57e283c3f037abd60d49814e84b05124a9667586894dfc6d1c3ecd191ba203",
+  "join_eval141.npz": "f0ea722f59c1a4d8ba81ce7f9b204dd3a28950fc1c16778f63c2962786e5206a"
+ },
+ "n_windows": 2399,
+ "n_episodes": 141,
+ "n_boot": 2000,
+ "seed": 0,
+ "ages": "cycle",
+ "kin_mode": "yaw",
+ "alignment": {
+  "n_windows": 2399,
+  "n_episodes": 141,
+  "eid_identical": true,
+  "ade6_recompute_max_dev": {
+   "A": 0.0,
+   "B": 0.0
+  },
+  "ck_nan_mask_equals_grid_label_mask": {
+   "A": true,
+   "B": true
+  }
+ },
+ "tactical": {
+  "plan_derived": {
+   "lateral_decision": {
+    "accuracy": {
+     "status": "OK",
+     "a": 0.8429,
+     "b": 0.8537,
+     "a_point": 0.8428511879949979,
+     "b_point": 0.8536890370987912,
+     "delta": -0.0108,
+     "lo": -0.0196,
+     "hi": -0.0029,
+     "separated": true,
+     "p_delta_gt0": 0.002,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_boot": 2000,
+     "a_ci": [
+      0.8115,
+      0.8725
+     ],
+     "b_ci": [
+      0.8235,
+      0.8828
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "all 2,399 grid windows (no mask)"
+    },
+    "kappa": {
+     "status": "OK",
+     "a": 0.6602,
+     "b": 0.6779,
+     "a_point": 0.6601531000659085,
+     "b_point": 0.6779167398196821,
+     "delta": -0.0178,
+     "lo": -0.0366,
+     "hi": -0.0005,
+     "separated": true,
+     "p_delta_gt0": 0.02,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_boot": 2000,
+     "a_ci": [
+      0.5962,
+      0.7183
+     ],
+     "b_ci": [
+      0.6146,
+      0.7335
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "all 2,399 grid windows (no mask)"
+    }
+   },
+   "longitudinal_decision": {
+    "accuracy": {
+     "status": "OK",
+     "a": 0.5715,
+     "b": 0.5677,
+     "a_point": 0.5714881200500208,
+     "b_point": 0.5677365568987078,
+     "delta": 0.0038,
+     "lo": -0.0088,
+     "hi": 0.0183,
+     "separated": false,
+     "p_delta_gt0": 0.687,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_boot": 2000,
+     "a_ci": [
+      0.5315,
+      0.6107
+     ],
+     "b_ci": [
+      0.5256,
+      0.6065
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "all 2,399 grid windows (no mask)"
+    },
+    "kappa": {
+     "status": "OK",
+     "a": 0.3436,
+     "b": 0.3391,
+     "a_point": 0.3435976219982198,
+     "b_point": 0.3391332044414055,
+     "delta": 0.0045,
+     "lo": -0.0144,
+     "hi": 0.0251,
+     "separated": false,
+     "p_delta_gt0": 0.674,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_boot": 2000,
+     "a_ci": [
+      0.2843,
+      0.3992
+     ],
+     "b_ci": [
+      0.2763,
+      0.3935
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "all 2,399 grid windows (no mask)"
+    }
+   },
+   "maneuver_5way_collapsed": {
+    "accuracy": {
+     "status": "OK",
+     "a": 0.5723,
+     "b": 0.5732,
+     "a_point": 0.5723218007503126,
+     "b_point": 0.5731554814506045,
+     "delta": -0.0008,
+     "lo": -0.0146,
+     "hi": 0.0158,
+     "separated": false,
+     "p_delta_gt0": 0.4355,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_boot": 2000,
+     "a_ci": [
+      0.5321,
+      0.6118
+     ],
+     "b_ci": [
+      0.5323,
+      0.6126
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "all 2,399 grid windows (no mask)"
+    },
+    "kappa": {
+     "status": "OK",
+     "a": 0.4469,
+     "b": 0.4478,
+     "a_point": 0.4468561437730768,
+     "b_point": 0.4477900709589724,
+     "delta": -0.0009,
+     "lo": -0.0182,
+     "hi": 0.0192,
+     "separated": false,
+     "p_delta_gt0": 0.451,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "n_boot": 2000,
+     "a_ci": [
+      0.3931,
+      0.498
+     ],
+     "b_ci": [
+      0.3926,
+      0.4996
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "all 2,399 grid windows (no mask)"
+    }
+   },
+   "_labeller": "trajectory-derived: four_families.maneuver_kinematics -> refc_tactical.factor_from_kinematics; the same labeller reads the human path (grid GT) and each arm's plan. These are EXECUTED manoeuvres on both sides."
+  },
+  "goal_setting": {
+   "goal_point_error_m": {
+    "status": "OK",
+    "a": 6.0302,
+    "b": 5.9517,
+    "a_point": 6.030242530178631,
+    "b_point": 5.951707229131825,
+    "delta": 0.0785,
+    "lo": -0.0265,
+    "hi": 0.1814,
+    "separated": false,
+    "p_delta_gt0": 0.9285,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "n_boot": 2000,
+    "a_ci": [
+     5.4918,
+     6.6067
+    ],
+    "b_ci": [
+     5.4073,
+     6.5228
+    ],
+    "better": "lower",
+    "unit": "m",
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_reason": "all 2,399 grid windows (no mask)",
+    "_is": "the final-displacement error (FDE6), reported for continuity as the eval does"
+   },
+   "goal_long_bias_m": {
+    "status": "OK",
+    "a": -0.9781,
+    "b": -1.1751,
+    "a_point": -0.9780631818631814,
+    "b_point": -1.175084564072988,
+    "delta": 0.197,
+    "lo": 0.068,
+    "hi": 0.3209,
+    "separated": true,
+    "p_delta_gt0": 1.0,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "n_boot": 2000,
+    "a_ci": [
+     -1.6231,
+     -0.392
+    ],
+    "b_ci": [
+     -1.7969,
+     -0.5868
+    ],
+    "better": null,
+    "unit": "m",
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_reason": "all 2,399 grid windows (no mask)"
+   },
+   "goal_lat_bias_m": {
+    "status": "OK",
+    "a": -0.1044,
+    "b": -0.0537,
+    "a_point": -0.1043789003100286,
+    "b_point": -0.05369747773872053,
+    "delta": -0.0507,
+    "lo": -0.1352,
+    "hi": 0.0353,
+    "separated": false,
+    "p_delta_gt0": 0.132,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "n_boot": 2000,
+    "a_ci": [
+     -0.568,
+     0.3522
+    ],
+    "b_ci": [
+     -0.4754,
+     0.3648
+    ],
+    "better": null,
+    "unit": "m",
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_reason": "all 2,399 grid windows (no mask)"
+   },
+   "goal_bearing_mae_deg": {
+    "status": "OK",
+    "a": 3.9245,
+    "b": 3.6224,
+    "a_point": 3.9245139215576104,
+    "b_point": 3.622422366627127,
+    "delta": 0.3021,
+    "lo": 0.0258,
+    "hi": 0.6524,
+    "separated": true,
+    "p_delta_gt0": 0.989,
+    "n_windows": 2367,
+    "n_episodes": 141,
+    "n_boot": 2000,
+    "a_ci": [
+     2.8291,
+     5.3521
+    ],
+    "b_ci": [
+     2.6326,
+     4.9093
+    ],
+    "better": "lower",
+    "unit": "deg",
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_reason": "2,367 of 2,399 windows: the 32 whose human goal is within 0.5 m of the origin carry no bearing (mask: |gt[-1]| > 0.5 m)"
+   },
+   "goal_bearing_bias_deg": {
+    "status": "OK",
+    "a": -0.0868,
+    "b": -0.0873,
+    "a_point": -0.08680714212119896,
+    "b_point": -0.0873141507123945,
+    "delta": 0.0005,
+    "lo": -0.311,
+    "hi": 0.3627,
+    "separated": false,
+    "p_delta_gt0": 0.4815,
+    "n_windows": 2367,
+    "n_episodes": 141,
+    "n_boot": 2000,
+    "a_ci": [
+     -1.4068,
+     0.9474
+    ],
+    "b_ci": [
+     -1.2964,
+     0.7827
+    ],
+    "better": null,
+    "unit": "deg",
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_reason": "2,367 of 2,399 windows: the 32 whose human goal is within 0.5 m of the origin carry no bearing (mask: |gt[-1]| > 0.5 m)"
+   },
+   "goal_range_ratio": {
+    "status": "OK",
+    "a": 1.0106,
+    "b": 0.9922,
+    "a_point": 1.0106389406863163,
+    "b_point": 0.9921734552339938,
+    "delta": 0.0185,
+    "lo": 0.0094,
+    "hi": 0.0287,
+    "separated": true,
+    "p_delta_gt0": 1.0,
+    "n_windows": 2367,
+    "n_episodes": 141,
+    "n_boot": 2000,
+    "a_ci": [
+     0.974,
+     1.0515
+    ],
+    "b_ci": [
+     0.9602,
+     1.027
+    ],
+    "better": null,
+    "unit": "ratio (1.0 = the human's reach)",
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_reason": "2,367 of 2,399 windows: the 32 whose human goal is within 0.5 m of the origin carry no bearing (mask: |gt[-1]| > 0.5 m)"
+   }
+  },
+  "heads": {
+   "lateral": {
+    "macro_f1": {
+     "status": "OK",
+     "a": 0.8537,
+     "b": 0.8418,
+     "a_point": 0.8537393949644635,
+     "b_point": 0.8417886894951562,
+     "delta": 0.012,
+     "lo": -0.0091,
+     "hi": 0.0306,
+     "separated": false,
+     "p_delta_gt0": 0.888,
+     "n_windows": 2107,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "a_ci": [
+      0.8027,
+      0.8949
+     ],
+     "b_ci": [
+      0.7906,
+      0.8844
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "2,107 of 2,399 windows are labelled (mask: has & lat_cls >= 0): 34 have no v9 label row (has False) and 258 have a row with no lateral class (IGNORE)",
+     "support": [
+      1910,
+      47,
+      150,
+      0,
+      0
+     ]
+    },
+    "accuracy": {
+     "status": "OK",
+     "a": 0.9578,
+     "b": 0.9554,
+     "a_point": 0.9577598481252966,
+     "b_point": 0.9553868058851448,
+     "delta": 0.0024,
+     "lo": -0.0015,
+     "hi": 0.0066,
+     "separated": false,
+     "p_delta_gt0": 0.8505,
+     "n_windows": 2107,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "a_ci": [
+      0.9384,
+      0.9744
+     ],
+     "b_ci": [
+      0.9355,
+      0.9727
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "2,107 of 2,399 windows are labelled (mask: has & lat_cls >= 0): 34 have no v9 label row (has False) and 258 have a row with no lateral class (IGNORE)"
+    },
+    "kappa": {
+     "status": "OK",
+     "a": 0.7638,
+     "b": 0.7489,
+     "a_point": 0.7637538251438403,
+     "b_point": 0.7489090886040646,
+     "delta": 0.0148,
+     "lo": -0.0083,
+     "hi": 0.0387,
+     "separated": false,
+     "p_delta_gt0": 0.8975,
+     "n_windows": 2107,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "a_ci": [
+      0.6746,
+      0.8389
+     ],
+     "b_ci": [
+      0.6619,
+      0.8214
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "2,107 of 2,399 windows are labelled (mask: has & lat_cls >= 0): 34 have no v9 label row (has False) and 258 have a row with no lateral class (IGNORE)"
+    },
+    "_note": "macro-F1 is over the classes present among the labels of the resample (the eval's `C.macro_f1`); accuracy and kappa are the same definitions as the plan-derived rows, over the labelled windows. Accuracy and kappa of the heads are not in the eval JSON."
+   },
+   "longitudinal": {
+    "macro_f1": {
+     "status": "OK",
+     "a": 0.5026,
+     "b": 0.4979,
+     "a_point": 0.5025615917160533,
+     "b_point": 0.4979341768563201,
+     "delta": 0.0046,
+     "lo": -0.0582,
+     "hi": 0.0589,
+     "separated": false,
+     "p_delta_gt0": 0.497,
+     "n_windows": 2240,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "a_ci": [
+      0.3914,
+      0.5829
+     ],
+     "b_ci": [
+      0.4068,
+      0.5721
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "2,240 of 2,399 windows are labelled (mask: has & lon_cls >= 0): 34 have no v9 label row (has False) and 125 have a row with no longitudinal class (IGNORE)",
+     "support": [
+      24,
+      44,
+      131,
+      434,
+      395,
+      475,
+      737
+     ]
+    },
+    "accuracy": {
+     "status": "OK",
+     "a": 0.6304,
+     "b": 0.6214,
+     "a_point": 0.6303571428571428,
+     "b_point": 0.6214285714285714,
+     "delta": 0.0089,
+     "lo": -0.0097,
+     "hi": 0.0284,
+     "separated": false,
+     "p_delta_gt0": 0.8,
+     "n_windows": 2240,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "a_ci": [
+      0.5786,
+      0.6798
+     ],
+     "b_ci": [
+      0.5723,
+      0.6682
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "2,240 of 2,399 windows are labelled (mask: has & lon_cls >= 0): 34 have no v9 label row (has False) and 125 have a row with no longitudinal class (IGNORE)"
+    },
+    "kappa": {
+     "status": "OK",
+     "a": 0.5195,
+     "b": 0.5109,
+     "a_point": 0.5195254941215237,
+     "b_point": 0.510862875668549,
+     "delta": 0.0087,
+     "lo": -0.0143,
+     "hi": 0.0327,
+     "separated": false,
+     "p_delta_gt0": 0.7495,
+     "n_windows": 2240,
+     "n_episodes": 136,
+     "n_boot": 2000,
+     "a_ci": [
+      0.4565,
+      0.5793
+     ],
+     "b_ci": [
+      0.4493,
+      0.566
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "2,240 of 2,399 windows are labelled (mask: has & lon_cls >= 0): 34 have no v9 label row (has False) and 125 have a row with no longitudinal class (IGNORE)"
+    },
+    "_note": "macro-F1 is over the classes present among the labels of the resample (the eval's `C.macro_f1`); accuracy and kappa are the same definitions as the plan-derived rows, over the labelled windows. Accuracy and kappa of the heads are not in the eval JSON."
+   },
+   "goal": {
+    "macro_f1": {
+     "status": "OK",
+     "a": 0.2651,
+     "b": 0.2865,
+     "a_point": 0.2650622806919006,
+     "b_point": 0.2865419214853404,
+     "delta": -0.0215,
+     "lo": -0.0439,
+     "hi": 0.0061,
+     "separated": false,
+     "p_delta_gt0": 0.067,
+     "n_windows": 2365,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "a_ci": [
+      0.2233,
+      0.3049
+     ],
+     "b_ci": [
+      0.2378,
+      0.329
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "2,365 of 2,399 windows have a v9 label row (34 do not: has False); the cells scored are the 23,657 (window, token) pairs with goal_w set, threshold goal_prob > 0.5"
+    },
+    "token_accuracy": {
+     "status": "OK",
+     "a": 0.9584,
+     "b": 0.9588,
+     "a_point": 0.9583632751405504,
+     "b_point": 0.9587859830071438,
+     "delta": -0.0004,
+     "lo": -0.0024,
+     "hi": 0.0013,
+     "separated": false,
+     "p_delta_gt0": 0.3305,
+     "n_windows": 2365,
+     "n_episodes": 139,
+     "n_boot": 2000,
+     "a_ci": [
+      0.9514,
+      0.9649
+     ],
+     "b_ci": [
+      0.952,
+      0.9652
+     ],
+     "better": "higher",
+     "unit": "",
+     "estimator": "paired_episode_cluster_bootstrap",
+     "n_reason": "2,365 of 2,399 windows have a v9 label row (34 do not: has False); the cells scored are the 23,657 (window, token) pairs with goal_w set, threshold goal_prob > 0.5 (micro accuracy over those cells: dominated by the all-negative majority, so read it beside the macro-F1)"
+    },
+    "per_token": {
+     "FOLLOW_LANE": {
+      "status": "OK",
+      "a": 0.9737,
+      "b": 0.9737,
+      "a_point": 0.9736980536559705,
+      "b_point": 0.9737118822292324,
+      "delta": -0.0,
+      "lo": -0.0022,
+      "hi": 0.0024,
+      "separated": false,
+      "p_delta_gt0": 0.4965,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "a_ci": [
+       0.9609,
+       0.9843
+      ],
+      "b_ci": [
+       0.961,
+       0.9842
+      ],
+      "better": "higher",
+      "unit": "",
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_reason": "2,107 labelled windows, 1,910 positive",
+      "n_positive": 1910,
+      "n_labelled": 2107
+     },
+     "TURN_L": {
+      "status": "OK",
+      "a": 0.7961,
+      "b": 0.7736,
+      "a_point": 0.7961165048543689,
+      "b_point": 0.7735849056603774,
+      "delta": 0.0225,
+      "lo": -0.0296,
+      "hi": 0.0717,
+      "separated": false,
+      "p_delta_gt0": 0.804,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "a_ci": [
+       0.6897,
+       0.8833
+      ],
+      "b_ci": [
+       0.6667,
+       0.8627
+      ],
+      "better": "higher",
+      "unit": "",
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_reason": "2,320 labelled windows, 47 positive",
+      "n_positive": 47,
+      "n_labelled": 2320
+     },
+     "TURN_R": {
+      "status": "OK",
+      "a": 0.7419,
+      "b": 0.7427,
+      "a_point": 0.7419354838709677,
+      "b_point": 0.742671009771987,
+      "delta": -0.0007,
+      "lo": -0.0224,
+      "hi": 0.0205,
+      "separated": false,
+      "p_delta_gt0": 0.4515,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "a_ci": [
+       0.632,
+       0.8298
+      ],
+      "b_ci": [
+       0.6273,
+       0.8306
+      ],
+      "better": "higher",
+      "unit": "",
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_reason": "2,320 labelled windows, 150 positive",
+      "n_positive": 150,
+      "n_labelled": 2320
+     },
+     "YIELD_FOR_TURN_L": {
+      "status": "POINT_ONLY",
+      "a": 0.4444,
+      "b": 0.375,
+      "a_point": 0.4444444444444444,
+      "b_point": 0.375,
+      "delta": 0.06944444444444442,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_labelled": 2107,
+      "n_positive": 11,
+      "reason": "the token's F1 is undefined on at least one resample (no positive label in the drawn episodes), so no percentile interval exists; the point values are reported"
+     },
+     "YIELD_FOR_TURN_R": {
+      "status": "POINT_ONLY",
+      "a": 0.0,
+      "b": 0.1818,
+      "a_point": 0.0,
+      "b_point": 0.18181818181818182,
+      "delta": -0.18181818181818182,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_labelled": 2107,
+      "n_positive": 10,
+      "reason": "the token's F1 is undefined on at least one resample (no positive label in the drawn episodes), so no percentile interval exists; the point values are reported"
+     },
+     "YIELD": {
+      "status": "OK",
+      "a": 0.0667,
+      "b": 0.1414,
+      "a_point": 0.06666666666666667,
+      "b_point": 0.1414141414141414,
+      "delta": -0.0747,
+      "lo": -0.1469,
+      "hi": 0.0,
+      "separated": false,
+      "p_delta_gt0": 0.0,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "a_ci": [
+       0.0,
+       0.2
+      ],
+      "b_ci": [
+       0.0,
+       0.3299
+      ],
+      "better": "higher",
+      "unit": "",
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_reason": "695 labelled windows, 85 positive",
+      "n_positive": 85,
+      "n_labelled": 695
+     },
+     "STOP_POINT": {
+      "status": "OK",
+      "a": 0.2299,
+      "b": 0.2905,
+      "a_point": 0.22988505747126436,
+      "b_point": 0.2905027932960894,
+      "delta": -0.0606,
+      "lo": -0.1363,
+      "hi": 0.0044,
+      "separated": false,
+      "p_delta_gt0": 0.037,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "a_ci": [
+       0.0886,
+       0.3659
+      ],
+      "b_ci": [
+       0.1383,
+       0.4233
+      ],
+      "better": "higher",
+      "unit": "",
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_reason": "2,246 labelled windows, 131 positive",
+      "n_positive": 131,
+      "n_labelled": 2246
+     },
+     "SPEED_BAND": {
+      "status": "UNAVAILABLE",
+      "n_windows": 0,
+      "n_labelled": 0,
+      "n_positive": 0,
+      "reason": "no positive label for this token among its 0 labelled windows on this grid, so its F1 is undefined (the eval reports None)"
+     },
+     "CORRIDOR_OFFSET": {
+      "status": "OK",
+      "a": 0.3503,
+      "b": 0.3158,
+      "a_point": 0.3502824858757062,
+      "b_point": 0.3157894736842105,
+      "delta": 0.0345,
+      "lo": -0.0397,
+      "hi": 0.1266,
+      "separated": false,
+      "p_delta_gt0": 0.801,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "a_ci": [
+       0.1806,
+       0.5075
+      ],
+      "b_ci": [
+       0.1266,
+       0.4878
+      ],
+      "better": "higher",
+      "unit": "",
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_reason": "695 labelled windows, 120 positive",
+      "n_positive": 120,
+      "n_labelled": 695
+     },
+     "EVADE_IN_CORRIDOR": {
+      "status": "OK",
+      "a": 0.4457,
+      "b": 0.4659,
+      "a_point": 0.44571428571428573,
+      "b_point": 0.4659090909090909,
+      "delta": -0.0202,
+      "lo": -0.1285,
+      "hi": 0.0875,
+      "separated": false,
+      "p_delta_gt0": 0.3605,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "a_ci": [
+       0.2722,
+       0.6032
+      ],
+      "b_ci": [
+       0.2857,
+       0.6227
+      ],
+      "better": "higher",
+      "unit": "",
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_reason": "695 labelled windows, 110 positive",
+      "n_positive": 110,
+      "n_labelled": 695
+     },
+     "OVERTAKE_VEHICLE": {
+      "status": "POINT_ONLY",
+      "a": 0.0,
+      "b": 0.0,
+      "a_point": 0.0,
+      "b_point": 0.0,
+      "delta": 0.0,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_labelled": 695,
+      "n_positive": 20,
+      "reason": "the token's F1 is undefined on at least one resample (no positive label in the drawn episodes), so no percentile interval exists; the point values are reported"
+     },
+     "MERGE": {
+      "status": "POINT_ONLY",
+      "a": 0.0,
+      "b": 0.0,
+      "a_point": 0.0,
+      "b_point": 0.0,
+      "delta": 0.0,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_labelled": 695,
+      "n_positive": 25,
+      "reason": "the token's F1 is undefined on at least one resample (no positive label in the drawn episodes), so no percentile interval exists; the point values are reported"
+     },
+     "GAP_TARGET": {
+      "status": "OK",
+      "a": 0.0328,
+      "b": 0.0328,
+      "a_point": 0.03278688524590164,
+      "b_point": 0.03278688524590164,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "p_delta_gt0": 0.0,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "a_ci": [
+       0.0,
+       0.1081
+      ],
+      "b_ci": [
+       0.0,
+       0.1081
+      ],
+      "better": "higher",
+      "unit": "",
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_reason": "695 labelled windows, 60 positive",
+      "n_positive": 60,
+      "n_labelled": 695
+     },
+     "REACT_ON_ONCOMING": {
+      "status": "OK",
+      "a": 0.0,
+      "b": 0.0,
+      "a_point": 0.0,
+      "b_point": 0.0,
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "separated": false,
+      "p_delta_gt0": 0.0,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "a_ci": [
+       0.0,
+       0.0
+      ],
+      "b_ci": [
+       0.0,
+       0.0
+      ],
+      "better": "higher",
+      "unit": "",
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_reason": "695 labelled windows, 50 positive",
+      "n_positive": 50,
+      "n_labelled": 695
+     },
+     "TAKE_EXIT_L": {
+      "status": "UNAVAILABLE",
+      "n_windows": 695,
+      "n_labelled": 695,
+      "n_positive": 0,
+      "reason": "no positive label for this token among its 695 labelled windows on this grid, so its F1 is undefined (the eval reports None)"
+     },
+     "TAKE_EXIT_R": {
+      "status": "POINT_ONLY",
+      "a": 0.0,
+      "b": 0.1143,
+      "a_point": 0.0,
+      "b_point": 0.11428571428571428,
+      "delta": -0.11428571428571428,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_labelled": 695,
+      "n_positive": 30,
+      "reason": "the token's F1 is undefined on at least one resample (no positive label in the drawn episodes), so no percentile interval exists; the point values are reported"
+     },
+     "TRAFFIC_LIGHT_REACT": {
+      "status": "UNAVAILABLE",
+      "n_windows": 695,
+      "n_labelled": 695,
+      "n_positive": 0,
+      "reason": "no positive label for this token among its 695 labelled windows on this grid, so its F1 is undefined (the eval reports None)"
+     },
+     "TRAFFIC_LIGHT_REACT_RED": {
+      "status": "OK",
+      "a": 0.5347,
+      "b": 0.6168,
+      "a_point": 0.5346534653465347,
+      "b_point": 0.616822429906542,
+      "delta": -0.0822,
+      "lo": -0.2077,
+      "hi": 0.0072,
+      "separated": false,
+      "p_delta_gt0": 0.0445,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "a_ci": [
+       0.1269,
+       0.7937
+      ],
+      "b_ci": [
+       0.1429,
+       0.8357
+      ],
+      "better": "higher",
+      "unit": "",
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_reason": "720 labelled windows, 65 positive",
+      "n_positive": 65,
+      "n_labelled": 720
+     },
+     "TRAFFIC_LIGHT_REACT_YELLOW": {
+      "status": "POINT_ONLY",
+      "a": 0.0,
+      "b": 0.0,
+      "a_point": 0.0,
+      "b_point": 0.0,
+      "delta": 0.0,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_labelled": 695,
+      "n_positive": 15,
+      "reason": "the token's F1 is undefined on at least one resample (no positive label in the drawn episodes), so no percentile interval exists; the point values are reported"
+     },
+     "TRAFFIC_LIGHT_REACT_GREEN": {
+      "status": "OK",
+      "a": 0.42,
+      "b": 0.42,
+      "a_point": 0.42,
+      "b_point": 0.42,
+      "delta": 0.0,
+      "lo": -0.1448,
+      "hi": 0.1023,
+      "separated": false,
+      "p_delta_gt0": 0.506,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_boot": 2000,
+      "a_ci": [
+       0.1333,
+       0.6742
+      ],
+      "b_ci": [
+       0.1489,
+       0.65
+      ],
+      "better": "higher",
+      "unit": "",
+      "estimator": "paired_episode_cluster_bootstrap",
+      "n_reason": "695 labelled windows, 75 positive",
+      "n_positive": 75,
+      "n_labelled": 695
+     },
+     "LANE_CHANGE_L": {
+      "status": "POINT_ONLY",
+      "a": 0.0,
+      "b": 0.0,
+      "a_point": 0.0,
+      "b_point": 0.0,
+      "delta": 0.0,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_labelled": 695,
+      "n_positive": 15,
+      "reason": "the token's F1 is undefined on at least one resample (no positive label in the drawn episodes), so no percentile interval exists; the point values are reported"
+     },
+     "LANE_CHANGE_R": {
+      "status": "POINT_ONLY",
+      "a": 0.0,
+      "b": 0.0,
+      "a_point": 0.0,
+      "b_point": 0.0,
+      "delta": 0.0,
+      "n_windows": 2365,
+      "n_episodes": 139,
+      "n_labelled": 695,
+      "n_positive": 10,
+      "reason": "the token's F1 is undefined on at least one resample (no positive label in the drawn episodes), so no percentile interval exists; the point values are reported"
+     }
+    }
+   }
+  },
+  "unavailable_by_design": {
+   "anchor_selection": {
+    "status": "UNAVAILABLE",
+    "n": 2399,
+    "reason": "each dump's arm commits to ONE path per window: there is no candidate fan and no selection to score (a work item, not a pass)"
+   },
+   "selected_vs_executed": {
+    "status": "UNAVAILABLE",
+    "n": 2399,
+    "reason": "both label streams are EXECUTED manoeuvres; scoring a declared decision against the driven path needs a tactical head's selection, which a trajectory dump does not carry (a work item, not a pass)"
+   }
+  },
+  "kinematics_provenance": {
+   "A": {
+    "n_windows": 2399,
+    "n_heading_held_from_last_moving_step": 39,
+    "n_never_moved": 39,
+    "min_ds_m": 0.1,
+    "dt_s": 0.2,
+    "caveats": [
+     "dyaw is the PATH TANGENT at the horizon, not the vehicle yaw",
+     "v0/v1 are one-step CHORD speeds, not the recorded poses[:,3]",
+     "heading is HELD at the last moving step when the window ends stationary \u2014 dropping those windows would delete brake_stop from the denominator"
+    ]
+   },
+   "B": {
+    "n_windows": 2399,
+    "n_heading_held_from_last_moving_step": 25,
+    "n_never_moved": 28,
+    "min_ds_m": 0.1,
+    "dt_s": 0.2,
+    "caveats": [
+     "dyaw is the PATH TANGENT at the horizon, not the vehicle yaw",
+     "v0/v1 are one-step CHORD speeds, not the recorded poses[:,3]",
+     "heading is HELD at the last moving step when the window ends stationary \u2014 dropping those windows would delete brake_stop from the denominator"
+    ]
+   }
+  }
+ },
+ "strategic": {
+  "status": "ACTIVE for v8F-mini (PI-V8F-2026-10-17; R72/R73): reported in full",
+  "arcs_m": [
+   30,
+   50,
+   80
+  ],
+  "position_error_m": {
+   "30": {
+    "status": "OK",
+    "a": 6.9836,
+    "b": 6.9734,
+    "a_point": 6.983568767479137,
+    "b_point": 6.9733598467399975,
+    "delta": 0.0102,
+    "lo": -0.0264,
+    "hi": 0.0488,
+    "separated": false,
+    "p_delta_gt0": 0.714,
+    "n_windows": 2322,
+    "n_episodes": 137,
+    "n_boot": 2000,
+    "a_ci": [
+     6.3773,
+     7.6617
+    ],
+    "b_ci": [
+     6.3526,
+     7.6537
+    ],
+    "better": "lower",
+    "unit": "m",
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_reason": "2,322 of 2,399 windows: `ck_pos_err` is NaN in both dumps at exactly the 77 windows without a valid 30 m checkpoint label (34 have no v9 label row, has False; 43 have a row but no valid checkpoint at 30 m)"
+   },
+   "50": {
+    "status": "OK",
+    "a": 8.0172,
+    "b": 8.0194,
+    "a_point": 8.01716889971293,
+    "b_point": 8.019410365175595,
+    "delta": -0.0022,
+    "lo": -0.0813,
+    "hi": 0.0781,
+    "separated": false,
+    "p_delta_gt0": 0.4865,
+    "n_windows": 2319,
+    "n_episodes": 137,
+    "n_boot": 2000,
+    "a_ci": [
+     7.3401,
+     8.7562
+    ],
+    "b_ci": [
+     7.3187,
+     8.7802
+    ],
+    "better": "lower",
+    "unit": "m",
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_reason": "2,319 of 2,399 windows: `ck_pos_err` is NaN in both dumps at exactly the 80 windows without a valid 50 m checkpoint label (34 have no v9 label row, has False; 46 have a row but no valid checkpoint at 50 m)"
+   },
+   "80": {
+    "status": "OK",
+    "a": 11.2339,
+    "b": 11.3127,
+    "a_point": 11.2338793489184,
+    "b_point": 11.312671574130622,
+    "delta": -0.0788,
+    "lo": -0.327,
+    "hi": 0.1337,
+    "separated": false,
+    "p_delta_gt0": 0.255,
+    "n_windows": 2294,
+    "n_episodes": 136,
+    "n_boot": 2000,
+    "a_ci": [
+     10.1015,
+     12.4965
+    ],
+    "b_ci": [
+     10.124,
+     12.6047
+    ],
+    "better": "lower",
+    "unit": "m",
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_reason": "2,294 of 2,399 windows: `ck_pos_err` is NaN in both dumps at exactly the 105 windows without a valid 80 m checkpoint label (34 have no v9 label row, has False; 71 have a row but no valid checkpoint at 80 m)"
+   }
+  },
+  "heading_error_deg": {
+   "30": {
+    "status": "OK",
+    "a": 4.2636,
+    "b": 4.2653,
+    "a_point": 4.2636011656040385,
+    "b_point": 4.265325307337128,
+    "delta": -0.0017,
+    "lo": -0.2482,
+    "hi": 0.1878,
+    "separated": false,
+    "p_delta_gt0": 0.525,
+    "n_windows": 2322,
+    "n_episodes": 137,
+    "n_boot": 2000,
+    "a_ci": [
+     3.1559,
+     5.6748
+    ],
+    "b_ci": [
+     3.0997,
+     5.8018
+    ],
+    "better": "lower",
+    "unit": "deg",
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_reason": "2,322 of 2,399 windows: `ck_pos_err` is NaN in both dumps at exactly the 77 windows without a valid 30 m checkpoint label (34 have no v9 label row, has False; 43 have a row but no valid checkpoint at 30 m)"
+   },
+   "50": {
+    "status": "OK",
+    "a": 6.9973,
+    "b": 7.2285,
+    "a_point": 6.99728758840094,
+    "b_point": 7.228466959998448,
+    "delta": -0.2312,
+    "lo": -0.7013,
+    "hi": 0.1262,
+    "separated": false,
+    "p_delta_gt0": 0.143,
+    "n_windows": 2319,
+    "n_episodes": 137,
+    "n_boot": 2000,
+    "a_ci": [
+     5.3768,
+     8.7974
+    ],
+    "b_ci": [
+     5.4616,
+     9.2624
+    ],
+    "better": "lower",
+    "unit": "deg",
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_reason": "2,319 of 2,399 windows: `ck_pos_err` is NaN in both dumps at exactly the 80 windows without a valid 50 m checkpoint label (34 have no v9 label row, has False; 46 have a row but no valid checkpoint at 50 m)"
+   },
+   "80": {
+    "status": "OK",
+    "a": 13.3181,
+    "b": 13.4372,
+    "a_point": 13.318082540035174,
+    "b_point": 13.437235341918718,
+    "delta": -0.1192,
+    "lo": -0.6331,
+    "hi": 0.3461,
+    "separated": false,
+    "p_delta_gt0": 0.3475,
+    "n_windows": 2294,
+    "n_episodes": 136,
+    "n_boot": 2000,
+    "a_ci": [
+     10.1446,
+     16.872
+    ],
+    "b_ci": [
+     10.224,
+     17.0119
+    ],
+    "better": "lower",
+    "unit": "deg",
+    "estimator": "paired_episode_cluster_bootstrap",
+    "n_reason": "2,294 of 2,399 windows: `ck_pos_err` is NaN in both dumps at exactly the 105 windows without a valid 80 m checkpoint label (34 have no v9 label row, has False; 71 have a row but no valid checkpoint at 80 m)"
+   }
+  },
+  "heading_rebuild": {
+   "status": "OK",
+   "rebuild_vs_stored_ck_pos_err_max_dev_m": {
+    "A": 0.0,
+    "B": 0.0
+   }
+  }
+ },
+ "summary": {
+  "tactical": {
+   "n_cells": 44,
+   "n_ok": 31,
+   "n_unavailable": 5,
+   "n_point_only": 8,
+   "separated": [
+    {
+     "cell": "tactical.plan_derived.lateral_decision.accuracy",
+     "delta": -0.0108,
+     "lo": -0.0196,
+     "hi": -0.0029,
+     "reading": "A worse"
+    },
+    {
+     "cell": "tactical.plan_derived.lateral_decision.kappa",
+     "delta": -0.0178,
+     "lo": -0.0366,
+     "hi": -0.0005,
+     "reading": "A worse"
+    },
+    {
+     "cell": "tactical.goal_setting.goal_long_bias_m",
+     "delta": 0.197,
+     "lo": 0.068,
+     "hi": 0.3209,
+     "reading": "A higher"
+    },
+    {
+     "cell": "tactical.goal_setting.goal_bearing_mae_deg",
+     "delta": 0.3021,
+     "lo": 0.0258,
+     "hi": 0.6524,
+     "reading": "A worse"
+    },
+    {
+     "cell": "tactical.goal_setting.goal_range_ratio",
+     "delta": 0.0185,
+     "lo": 0.0094,
+     "hi": 0.0287,
+     "reading": "A higher"
+    }
+   ]
+  },
+  "strategic": {
+   "n_cells": 6,
+   "n_ok": 6,
+   "n_unavailable": 0,
+   "n_point_only": 0,
+   "separated": []
+  }
+ },
+ "controls": [
+  {
+   "name": "identity: the pipeline run on A against A",
+   "condition": "exactly 0.0 [0.0, 0.0], not separated, on every cell",
+   "n_cells": 45,
+   "n_not_zero": 0,
+   "not_zero": [],
+   "ok": true
+  },
+  {
+   "arm": "A",
+   "n_checked": 119,
+   "n_failed": 0,
+   "max_abs_diff": 0.0,
+   "failed": [],
+   "ok": true,
+   "name": "reproduction of arm A's own point values against eval_M2b-orc_s1.json"
+  },
+  {
+   "arm": "B",
+   "n_checked": 119,
+   "n_failed": 0,
+   "max_abs_diff": 5.551115123125783e-17,
+   "failed": [],
+   "ok": true,
+   "name": "reproduction of arm B's own point values against eval_M2b-orc0_s1.json"
+  }
+ ],
+ "controls_ok": true
+}
