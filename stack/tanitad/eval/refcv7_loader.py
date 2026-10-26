@@ -510,6 +510,11 @@ def _build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict
     rec["withheld_bank"] = tr._apply_withheld_bank(model, args, [], device)
     if wb and wb.get("mode") != rec["withheld_bank"]["mode"]:
         raise SystemExit(f"[{LOADER}] withheld bank {rec['withheld_bank']} != stamp {wb}")
+    # ---- train() (PI D-R9-MAPHEAD-PRECISION): `--r8-train-only-map` freezes everything but the three map-only
+    # modules right before its first data read; REPLAYED, so this build's own G-DVB below sees the build the run
+    # trained (the eval settings at the end freeze every parameter anyway) ------------------------------------ #
+    if bool(getattr(args, "r8_train_only_map", False)):
+        rec["map_only_ft"] = tr._mof.apply_freeze(model)
     # ---- the STRICT load (train():8979-8982 loads a checkpoint the same way -- strict, and
     # BEFORE its G-DVB check at 8995) -------------------------------------------------------- #
     anc_before = {k: v.detach().clone() for k, v in model.state_dict().items()

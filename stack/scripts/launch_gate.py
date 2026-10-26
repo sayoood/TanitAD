@@ -829,6 +829,10 @@ PROFILES["refcv8"] = dict(
         #  kept: the EXACT future-max sidecar measured D4 LEAK 0.238 against the 0.05 bar (SPEC_REFCV8 8.3); the PI's
         #  ruling is that the 4-way road-type quantization, not the exact future speed, is what the channel carries.
         #  The RC entry above replaces the certified noised RC-A50 inputs (along 2.0 m, lat 0.75 m, dropout 0.3).)
+        # PI D-R9-MAPHEAD-PRECISION (2026-10-26): the map-only fine-tune freezes the planner -- it launches ONLY under
+        # its own profile `refcv8-mapft`, whose G-DVB / G-LIVE read the freeze (this profile's G-LIVE would not)
+        (("--r8-train-only-map",), "the map-only fine-tune (PI D-R9-MAPHEAD-PRECISION) -- launched under profile "
+                                   "refcv8-mapft only"),
     ),
     #: PI Q-B: the channel's source is the label; the past-only proxies are refused by value
     #: R8-RECIPE CLOSED 2026-10-15 (PI 2026-10-14): the prior-free group is OFF -- `()` refuses the boolean's mere
@@ -1144,6 +1148,75 @@ PROFILES["refcv8-nt"] = dict(
     box_overfit=dict(_R8["box_overfit"], frameset_profile="refcv8-nt",
                      frameset_md5="bb60278ce8d763cc5151cbcc1cb32735",
                      addendum_md5="a9515574d356a359e08fc39dbac46d71", n_frames=16, n_pos=122, n_ignore=108),
+)
+
+
+# --------------------------------------------------------------------------------------------- #
+# refcv8-mapft: the MAP-ONLY fine-tune (PI decision D-R9-MAPHEAD-PRECISION, 2026-10-26)          #
+# --------------------------------------------------------------------------------------------- #
+#: The PI, 2026-10-26 (option (a), cap 6 Thor-hours): "fine-tune ONLY the map-only modules (refine + near +
+#: near_refine, 105,032 params; planner bit-identical, assert it), incl. the launch-gate route for a freeze-all-but-map
+#: trainer flag". = refcv8's profile (every refcv8 rule still binds: the architecture, the data, the recipe values) with
+#: `--r8-train-only-map` REQUIRED, the warm start bound by CONTENT to the shipped EMA model, the instruments that read
+#: frozen gradients (B1 guard, gradient share, conflict detector) refused, and G-DVB / G-LIVE reading the freeze.
+#: The gate edits are authorised for THIS flag only; nothing else in the gate changes.
+_MAPFT_FLAG = "--r8-train-only-map"
+#: the three map-only modules -- LITERALS (the trainer's map_only_ft.MAP_ONLY_MODULES is checked against them, never read)
+_MAPFT_MODULES = ("_map_hires.refine", "_map_hires.near", "_map_hires.near_refine")
+#: the trainable leaf groups and their sizes on the refcv8 build, MEASURED 2026-10-26 off the shipped
+#: E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt state_dict (refine 20,936 + near 65,600 + near_refine 18,496); the same 12
+#: group NAMES as `_NT_MAP_ONLY_GROUPS` (read independently off the NT smoke's ckpt_0.pt, 2026-10-21)
+_MAPFT_GROUPS = {
+    "_map_hires.refine.inp.0": 2048, "_map_hires.refine.inp.1": 64, "_map_hires.refine.conv1": 9216,
+    "_map_hires.refine.norm1": 64, "_map_hires.refine.conv2": 9216, "_map_hires.refine.norm2": 64,
+    "_map_hires.refine.cls": 264, "_map_hires.near.lift": 32, "_map_hires.near.lift.proj": 65568,
+    "_map_hires.near_refine.0.c1": 9216, "_map_hires.near_refine.0.n1": 64, "_map_hires.near_refine.0.c2": 9216}
+_MAPFT_NUMEL = 105_032
+#: `--init-from` bound by CONTENT, not by path: the shipped refcv8 EMA model ckpt_ema_48852.pt (ckpt_48852.md5; the
+#: trainer also refuses any file whose kind is not ema_model_only). Shipping it to Thor is the Master Mind's.
+_MAPFT_INIT_MD5 = "b4364029b68f29a33eeb4aebbbbd002b"
+_MAPFT_B1 = ("--b1-guard-ref-ap2m", "--b1-guard-step")
+_MAPFT_GS = ("--grad-share-every", "--grad-share-terms", "--grad-share-at")
+#: refcv8's full-run literals that do NOT carry over: the step budget is decided from the measured smoke cost
+_MAPFT_BUDGET = ("--steps", "--warmup", "--ema-decay", "--eval-every")
+_MAPFT_OPEN_ITEMS = (
+    {"id": "MAPFT-BUDGET",
+     "what": "the map-only run's --steps / --warmup / --ema-decay / --eval-every are not fixed: refcv8's full-run literals "
+             "(48,852 / 1,000 / 0.9998 / 500) are NOT inherited. PI 2026-10-26: cap 6 Thor-hours, the 50-step timing "
+             "smoke FIRST (this gate's G-LIVE `cost` row is that measurement), stop if the measured cost would exceed the "
+             "cap. ⚠️ --ema-decay 0.9998 averages over ~5,000 steps: a run much shorter than that exports an EMA that "
+             "is mostly the INIT map head",
+     "owner": "the Master Mind (sizing from the measured s/step; the PI's 6 Thor-hour cap binds)",
+     "closes_when": "the four literals are written into PROFILES['refcv8-mapft']['required_values'] from the measured "
+                    "G-LIVE cost, steps x s/step <= 6 h"},)
+_mapft_drop = set(_MAPFT_B1) | {"--grad-share-every"}
+PROFILES["refcv8-mapft"] = dict(
+    _R8, name="refcv8-mapft",
+    open_items=_MAPFT_OPEN_ITEMS,
+    required_flags=tuple(f for f in _R8["required_flags"] if f not in _mapft_drop) + (_MAPFT_FLAG, "--conflict-detector"),
+    required_flags_why=dict({k: v for k, v in (_R8.get("required_flags_why") or {}).items() if k not in _mapft_drop}, **{
+        _MAPFT_FLAG: "PI D-R9-MAPHEAD-PRECISION (2026-10-26): train ONLY refine + near + near_refine, planner bit-identical",
+        "--init-from": "PI D-R9-MAPHEAD-PRECISION: the warm start IS the shipped refcv8 EMA model (md5 bound below)",
+        "--conflict-detector": "the detector reads trunk gradients; the trunk is FROZEN (`off`, required by value)"}),
+    required_values=dict({k: v for k, v in _R8["required_values"].items() if k not in set(_MAPFT_B1) | set(_MAPFT_BUDGET)},
+                         **{"--conflict-detector": "off"}),
+    required_values_why=dict({k: v for k, v in (_R8.get("required_values_why") or {}).items()
+                              if k not in set(_MAPFT_B1) | set(_MAPFT_BUDGET)}, **{
+        "--conflict-detector": "PI D-R9-MAPHEAD-PRECISION: no trunk gradient exists to measure"}),
+    forbidden_levers=tuple(e for e in _R8["forbidden_levers"] if _MAPFT_FLAG not in e[0]) + (
+        (_MAPFT_B1, "the B1 guard cuts the HEAD group's LR on the EMA box3d AP: under the map-only fine-tune the box "
+                    "head is FROZEN (its AP cannot move) and there is no head / encoder group to cut"),
+        (_MAPFT_GS, "the gradient-share instrument measures the trunk / bev025 / bev_pool groups, all FROZEN"),
+        (("--conflict-every",), "the conflict detector is off under the map-only fine-tune (a dead cadence)"),
+        (("--trunk-bn-recalib",), "BN recalibration REWRITES the frozen trunk's statistics"),
+        (("--r8-critic-drivable", "--w-r8-drivable"), "the drivable critic makes the planner READ the map head: the "
+                                                      "three modules would stop being map-only")),
+    #: ga-reach: the map-only parts must be > 0 (they train); the SHARED parts must read EXACTLY 0.0 (frozen)
+    map_hires=dict(_R8["map_hires"], ga_keys=("ga_mh_refine", "ga_mh_near", "ga_mh_near_refine"),
+                   ga_keys_zero=("ga_mh_lift", "ga_mh_encoder", "ga_mh_trunk_s8_stage")),
+    #: the map-only literals G-DVB (built set) / G-LIVE (gradients + bit identity) / the argv rules (init md5) read
+    map_only={"flag": _MAPFT_FLAG, "modules": _MAPFT_MODULES, "groups": dict(_MAPFT_GROUPS),
+              "numel": _MAPFT_NUMEL, "init_from_md5": _MAPFT_INIT_MD5},
 )
 
 
@@ -2290,6 +2363,183 @@ def amendment_ack_reasons(prof: dict, pmap: list[tuple[str, str]] | None = None)
     return [], det
 
 
+_MD5_CACHE: dict = {}
+
+
+def _md5_cached(path: str) -> str:
+    st = os.stat(path)
+    key = (os.path.abspath(path), st.st_size, st.st_mtime_ns)
+    if key not in _MD5_CACHE:
+        h = hashlib.md5()
+        with open(path, "rb") as f:
+            for blk in iter(lambda: f.read(1 << 22), b""):
+                h.update(blk)
+        _MD5_CACHE[key] = h.hexdigest()
+    return _MD5_CACHE[key]
+
+
+def _under_any(name: str, mods: Iterable[str]) -> bool:
+    return any(name == m or name.startswith(m + ".") for m in mods)
+
+
+def map_only_init_reasons(prof: dict, argv: list[str],
+                          pmap: list[tuple[str, str]] | None = None) -> tuple[list[str], dict]:
+    """PI D-R9-MAPHEAD-PRECISION: the `--init-from` file IS the shipped EMA model -- its md5 (of the bytes THIS host
+    reads) equals the profile's literal. Inert for a profile without `map_only`."""
+    mo = prof.get("map_only")
+    if not mo:
+        return [], {"on": False}
+    det: dict[str, Any] = {"on": True, "md5_pinned": mo["init_from_md5"]}
+    v = flag_values(argv, "--init-from")
+    if not v:
+        return [f"{mo['flag']}: --init-from is not passed -- the warm start must be the shipped EMA model "
+                f"(md5 {mo['init_from_md5']})"], det
+    local = map_path(v[0], pmap or [])
+    det["path"], det["local"] = v[0], local
+    if not Path(local).is_file():
+        return [f"{mo['flag']}: --init-from {v[0]} is not readable on this host ({local}) -- its content cannot be "
+                f"bound to the shipped EMA model"], det
+    det["md5"] = _md5_cached(local)
+    if det["md5"] != mo["init_from_md5"]:
+        return [f"{mo['flag']}: --init-from {v[0]} has md5 {det['md5']}, the profile pins {mo['init_from_md5']} (the "
+                f"shipped refcv8 EMA model ckpt_ema_48852.pt) -- the frozen planner would not be the shipped one"], det
+    return [], det
+
+
+def map_only_built_reasons(prof: dict, argv: list[str], model) -> tuple[list[str], dict]:
+    """G-DVB, the gate's OWN read of the BUILT model under the map-only profile: the trainable set is EXACTLY the
+    profile's literal leaf groups at their literal sizes (refcv8: 12 groups, 105,032 values), every one of them
+    trainable, nothing outside the three modules trainable. Independent of the trainer's map_only_ft module."""
+    mo = prof.get("map_only")
+    if not mo:
+        return [], {"on": False}
+    if model is None or not callable(getattr(model, "named_parameters", None)):
+        return ["MAP-ONLY: no built model to read the freeze off"], {"on": True}
+    mods = tuple(mo["modules"])
+    tr = [(n, int(p.numel())) for n, p in model.named_parameters() if p.requires_grad]
+    groups: dict[str, int] = {}
+    for n, k in tr:
+        g = n.rsplit(".", 1)[0] if "." in n else n
+        groups[g] = groups.get(g, 0) + k
+    outside = [n for n, _ in tr if not _under_any(n, mods)]
+    frozen_map = [n for n, p in model.named_parameters() if _under_any(n, mods) and not p.requires_grad]
+    det = {"on": True, "trainable_numel": int(sum(k for _, k in tr)), "trainable_groups": groups,
+           "outside_sample": outside[:5], "n_outside": len(outside), "frozen_map_only_sample": frozen_map[:5]}
+    reasons = []
+    if not has_flag(argv, mo["flag"]):
+        reasons.append(f"MAP-ONLY: {mo['flag']} is not in the argv")
+    if outside:
+        reasons.append(f"MAP-ONLY: {len(outside)} parameter(s) OUTSIDE {list(mods)} are trainable, e.g. {outside[:3]} "
+                       f"-- the planner would train")
+    if frozen_map:
+        reasons.append(f"MAP-ONLY: {len(frozen_map)} map-only parameter(s) are frozen, e.g. {frozen_map[:3]}")
+    if groups != dict(mo["groups"]):
+        reasons.append(f"MAP-ONLY: the trainable leaf groups are {sorted(groups)[:6]}... ({len(groups)}, "
+                       f"{det['trainable_numel']} values); the profile's literal is {len(mo['groups'])} groups, "
+                       f"{mo['numel']} values")
+    if det["trainable_numel"] != int(mo["numel"]):
+        reasons.append(f"MAP-ONLY: {det['trainable_numel']} trainable values, the PI's decision is {mo['numel']}")
+    return reasons, det
+
+
+def judge_map_only_live(prof: dict, rec: dict | None, grads: dict) -> tuple[list[str], dict]:
+    """G-LIVE under the map-only profile, replacing "every group has a gradient" with: every MAP-ONLY leaf group (the
+    literal list) is the optimizer's set and received a FINITE NON-ZERO gradient; every FROZEN parameter received NO
+    gradient (`.grad` None or exactly zero at every optimizer step); and every frozen parameter AND buffer is
+    BIT-IDENTICAL after the live steps to its value at the first training forward (after the warm start)."""
+    mo = prof.get("map_only")
+    if not mo:
+        return [], {"on": False}
+    reasons: list[str] = []
+    rec = rec or {}
+    det: dict[str, Any] = {"on": True, "opt_steps": rec.get("opt_steps", 0),
+                           "n_frozen_params_tracked": rec.get("n_frozen_params_tracked", 0),
+                           "n_frozen_tensors_checked": rec.get("n_frozen_tensors_checked", 0),
+                           "arm": rec.get("arm")}
+    want = dict(mo["groups"])
+    have = {g["group"]: g for g in (grads.get("groups") or [])}
+    det["trained_groups"] = {g: {"numel": e["numel"], "nz_params": e["nz_params"], "params": e["params"]}
+                             for g, e in have.items()}
+    extra = sorted(set(have) - set(want))
+    missing = sorted(set(want) - set(have))
+    if extra:
+        reasons.append(f"MAP-ONLY G-LIVE: the optimizer trains {len(extra)} group(s) OUTSIDE the map-only modules: "
+                       f"{extra[:4]}")
+    if missing:
+        reasons.append(f"MAP-ONLY G-LIVE: {len(missing)} map-only group(s) are not trained: {missing[:4]}")
+    numel = int(sum(int(have[g]["numel"]) for g in have if g in want))
+    det["trained_map_only_numel"] = numel
+    if numel != int(mo["numel"]):
+        reasons.append(f"MAP-ONLY G-LIVE: {numel} map-only values trained, the literal is {mo['numel']}")
+    if int(rec.get("opt_steps", 0) or 0) == 0:
+        reasons.append("MAP-ONLY G-LIVE: no optimizer step was observed")
+    dead = [g for g in want if g in have and int(have[g]["nz_params"]) == 0]
+    if dead:
+        reasons.append(f"MAP-ONLY G-LIVE: {len(dead)} map-only group(s) received NO non-zero gradient: {dead[:4]}")
+    nonfin = [n for n in (grads.get("nonfinite_params") or []) if _under_any(n, mo["modules"])]
+    if nonfin:
+        reasons.append(f"MAP-ONLY G-LIVE: non-finite gradients on map-only {nonfin[:4]}")
+    fg = dict(rec.get("frozen_grad_nz") or {})
+    det["frozen_with_gradient"] = sorted(fg)[:10]
+    if not int(rec.get("n_frozen_params_tracked", 0) or 0):
+        reasons.append("MAP-ONLY G-LIVE: no frozen parameter was tracked -- the frozen-gradient check read nothing")
+    if fg:
+        reasons.append(f"MAP-ONLY G-LIVE: {len(fg)} FROZEN parameter(s) received a non-zero gradient, e.g. "
+                       f"{sorted(fg)[:4]}")
+    ch = list(rec.get("frozen_changed") or [])
+    det["frozen_changed"] = ch[:20]
+    if not int(rec.get("n_frozen_tensors_checked", 0) or 0):
+        reasons.append("MAP-ONLY G-LIVE: the frozen state was never snapshotted -- bit identity is unchecked")
+    if ch:
+        reasons.append(f"MAP-ONLY G-LIVE: {len(ch)} FROZEN tensor(s) (parameters / buffers) CHANGED over the live "
+                       f"steps, e.g. {ch[:4]} -- the planner is not bit-identical")
+    return reasons, det
+
+
+def apply_mapft_build_arm(ctx: Any, pat: "_Patcher", T: Any) -> str | None:
+    """The map-only profile's regression arms at the BUILD (G-DVB): the trainer's freeze leaves ONE planner parameter
+    trainable (`mapft_planner_trainable`) or freezes the map-only modules too (`mapft_map_frozen`)."""
+    if not (arm_is(ctx, "mapft_planner_trainable") or arm_is(ctx, "mapft_map_frozen")):
+        return None
+    mof = getattr(T, "_mof", None)
+    if mof is None or not callable(getattr(mof, "apply_freeze", None)):
+        return "arm requested but the trainer has no map_only_ft.apply_freeze (the arm cannot install)"
+    orig = mof.apply_freeze
+    mods = tuple((ctx.prof.get("map_only") or {}).get("modules") or _MAPFT_MODULES)
+
+    def wrapped(model, _o=orig):
+        r = _o(model)
+        _mapft_inject(ctx, model, None, mods)
+        return r
+    pat.set(mof, "apply_freeze", wrapped)
+    return f"{ctx.arm}: injected after the trainer's map-only freeze"
+
+
+def _mapft_inject(ctx: Any, model, opt, mods) -> str | None:
+    """The defect itself: the PLANNER DECODER trainable again (and, with an optimizer, IN it), or every map-only
+    parameter frozen. The whole `core.decoder.` subtree is un-frozen, not one tensor: a single tensor could be one the
+    loss never reaches (a declared grad-unreachable head), and an arm that moves nothing would ESCAPE."""
+    if arm_is(ctx, "mapft_planner_trainable"):
+        cands = [(n, p) for n, p in model.named_parameters() if not _under_any(n, mods)]
+        pick = [(n, p) for n, p in cands if n.startswith("core.decoder.")] or cands
+        if not pick:
+            return None
+        for _n, p in pick:
+            p.requires_grad_(True)
+            if opt is not None:
+                opt.param_groups[0]["params"].append(p)
+        return (f"mapft_planner_trainable: {len(pick)} planner tensor(s) un-frozen (first {pick[0][0]})"
+                + (" and added to the optimizer" if opt is not None else ""))
+    if arm_is(ctx, "mapft_map_frozen"):
+        k = 0
+        for n, p in model.named_parameters():
+            if _under_any(n, mods):
+                p.requires_grad_(False)
+                k += 1
+        return f"mapft_map_frozen: {k} map-only tensors frozen"
+    return None
+
+
 def profile_argv_rules(prof: dict, argv: list[str], options: dict | None = None,
                        pmap: list[tuple[str, str]] | None = None) -> tuple[list[str], list[str]]:
     """The profile's rules that read the ARGV alone -> (refusals, pi_pending). ONE definition,
@@ -2302,6 +2552,7 @@ def profile_argv_rules(prof: dict, argv: list[str], options: dict | None = None,
     refusals += nav_tau_reasons(prof, argv, options.get("nav_tau_record"), pmap)[0]
     refusals += required_on_reasons(prof, argv)[0]
     refusals += amendment_ack_reasons(prof, pmap)[0]
+    refusals += map_only_init_reasons(prof, argv, pmap)[0]
     return refusals, pi_pending_reasons(prof, argv)
 
 
@@ -3763,6 +4014,11 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
                            "ga_groups": {}, "ga_on": None}
     pat = _Patcher()
     state: dict[str, Any] = {"model": None, "opt": None, "names": {}, "dpos": None}
+    # refcv8-mapft (PI D-R9-MAPHEAD-PRECISION): frozen-gradient + frozen-state record (None on any other profile)
+    mo_mods = tuple((ctx.prof.get("map_only") or {}).get("modules") or ())
+    if mo_mods:
+        rec["map_only"] = {"opt_steps": 0, "frozen_grad_nz": {}, "n_frozen_params_tracked": 0,
+                           "n_frozen_tensors_checked": 0, "frozen_changed": [], "arm": None}
     prior_keys = tuple(ctx.prof.get("residual_prior_keys", ()))
     want_prior = residual_prior_on(ctx.argv)
     hires = hires_on(ctx.prof, ctx.argv)
@@ -3926,6 +4182,10 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
         rec["ga_on"] = (getattr(model, "_perception", None) is not None
                         or getattr(model, "tac_decoder_v6", None) is not None)
         orig_step = opt.step
+        if mo_mods:
+            # EVERY parameter outside the map-only modules, by name, fixed here -- whatever is trainable later
+            state["mo_frozen"] = [(n_, p_) for n_, p_ in model.named_parameters() if not _under_any(n_, mo_mods)]
+            rec["map_only"]["n_frozen_params_tracked"] = len(state["mo_frozen"])
 
         def step_wrap(*a, **k):
             rec["step_times"].append(time.perf_counter())
@@ -3939,6 +4199,13 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
                             r["nz_steps"] += 1
                         if not bool(torch.isfinite(g).all()):
                             r["nonfinite"] = True
+                if mo_mods:
+                    mo_ = rec["map_only"]
+                    mo_["opt_steps"] += 1
+                    for n_, p_ in state.get("mo_frozen") or ():
+                        g = p_.grad
+                        if g is not None and bool(torch.count_nonzero(g) > 0):
+                            mo_["frozen_grad_nz"][n_] = mo_["frozen_grad_nz"].get(n_, 0) + 1
             return orig_step(*a, **k)
         opt.step = step_wrap
         if arm_is(ctx, "presence_saturated"):
@@ -3958,6 +4225,10 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
         cur_batch["b"] = batch if model.training else None   # read by the G-MAP class probe
         if model.training:
             cur_batch["last_train"] = batch
+        if model.training and mo_mods and "mo_snap" not in state:
+            # the frozen state AFTER the warm start / resume, BEFORE the first update (digests, CPU)
+            state["mo_snap"] = {k_: tensor_digest(v_) for k_, v_ in model.state_dict().items()
+                                if not _under_any(k_, mo_mods)}
         if model.training:
             if snapshot == "post_load" and "post_load" not in rec:
                 rec["post_load"] = {"model": state_digests(model.state_dict()),
@@ -3998,6 +4269,14 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
 
     def ntb_wrap(it, dl, sampler, dpos, _orig=T.next_train_batch):
         state["dpos"] = dpos
+        if mo_mods and not state.get("mo_arm_done") and state["model"] is not None:
+            # refcv8-mapft's LIVE arms: the defect lands AFTER every startup guard of the trainer, so it is this
+            # gate's G-LIVE judgement (not the trainer's refusal) that must turn it RED
+            state["mo_arm_done"] = True
+            note = _mapft_inject(ctx, state["model"], state["opt"], mo_mods)
+            if note:
+                rec["map_only"]["arm"] = note
+                _say("arm: " + note)
         return _orig(it, dl, sampler, dpos)
 
     orig_iter = T.ResumableEpochSampler.__iter__
@@ -4050,6 +4329,12 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
             rec["cuda_max_mem_gb"] = round(torch.cuda.max_memory_allocated() / 2 ** 30, 3)
     except Exception:                                     # noqa: BLE001
         pass
+    if mo_mods and state["model"] is not None and state.get("mo_snap") is not None:
+        # BEFORE the grad-unreachable probe below (it runs one more training forward + backward)
+        now = {k_: tensor_digest(v_) for k_, v_ in state["model"].state_dict().items()
+               if not _under_any(k_, mo_mods)}
+        rec["map_only"]["n_frozen_tensors_checked"] = len(state["mo_snap"])
+        rec["map_only"]["frozen_changed"] = sorted(k_ for k_, d_ in state["mo_snap"].items() if now.get(k_) != d_)
     if snapshot == "final" and state["model"] is not None:
         rec["final"] = {"model": state_digests(state["model"].state_dict()),
                         "opt": optimizer_digests(state["opt"].state_dict())}
@@ -5581,6 +5866,9 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
     _p10_arm = apply_p10_arm(ctx, pat, T)                  # v8F alpha-1's arms act at the BUILD (zeroed / unfrozen / ...)
     if _p10_arm:
         _say("arm: " + _p10_arm)
+    _mapft_arm = apply_mapft_build_arm(ctx, pat, T)        # refcv8-mapft's arms act at the trainer's freeze
+    if _mapft_arm:
+        _say("arm: " + _mapft_arm)
     if arm_is(ctx, "undeclared_equalize") or arm_is(ctx, "drop_fix3_field"):
         orig_pin = T._pin_trainer_cfg
 
@@ -5726,6 +6014,9 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         br_, bd_ = box_required_reasons(ctx.prof, model, args)
         det["box_required"] = bd_
         reasons += br_
+        mor_, mod_ = map_only_built_reasons(ctx.prof, ctx.argv, model)     # refcv8-mapft only (inert otherwise)
+        det["map_only"] = mod_
+        reasons += mor_
         tfr, tfd = tau_file_flag_reasons(ctx.prof, ctx.argv, parser,
                                          ctx.options.get("nav_tau_record"), pmap)
         det["nav_tau_file_flag"] = tfd
@@ -6138,6 +6429,10 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         gr_, gd_ = judge_grad_unreachable_probe(run1.get("grad_unreachable_probe"))
         det["grad_unreachable_probe"] = gd_
         reasons += gr_
+        # refcv8-mapft (PI D-R9-MAPHEAD-PRECISION): map-only gradients, frozen gradients, frozen bit identity
+        mor_, mod_ = judge_map_only_live(ctx.prof, run1.get("map_only"), gt)
+        det["map_only"] = mod_
+        reasons += mor_
         b1r, b1d = judge_b1_reach(argv1, rows1)
         det["b1_guard_reach"] = b1d
         reasons += b1r

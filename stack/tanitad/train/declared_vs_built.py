@@ -1411,6 +1411,11 @@ _BYPASS_ARGV = {"--no-strategic": "no_strategic", "--graft-tac8-prior": "graft_t
 #: `v6.FROZEN_EXTERNAL_FLAG`), read BY NAME so this module imports neither torch nor v6
 _GRAD_UNREACHABLE_ATTR = "_tanitad_grad_unreachable"
 _FROZEN_EXTERNAL_ATTR = "_tanitad_frozen_external"
+#: ``--r8-train-only-map`` (PI D-R9-MAPHEAD-PRECISION, 2026-10-26): the ROOT model's freeze record
+#: (``map_only_ft.MARKER_ATTR``), read BY NAME like the two above. Its ``modules`` are the ONLY trainable subtrees;
+#: every parameter outside them is frozen BY THAT DECLARATION. The trainable set itself is held against argv by the
+#: flag's own ``built`` lever (``map_only_ft.dvb_check``).
+_MAP_ONLY_ATTR = "_tanitad_map_only_ft"
 
 
 def expected_grad_unreachable(args) -> dict[str, str]:
@@ -1501,7 +1506,12 @@ def check_grad_unreachable(model, args) -> list[Mismatch]:
             out.append(Mismatch(f"grad_unreachable[{p}]", "requires_grad False",
                                 f"{len(live)} trainable tensor(s)", p,
                                 f"declared frozen but trainable again: {live[:3]}"))
-    stray = [n for n, t in params if not t.requires_grad and not any(_under(n, p) for p in decl)]
+    # the map-only fine-tune declares everything OUTSIDE its modules frozen; a frozen parameter INSIDE them is
+    # still undeclared (a map-only module frozen too trains nothing -- the flag's red arm)
+    _mo = getattr(model, _MAP_ONLY_ATTR, None)
+    _mo_mods = tuple((_mo or {}).get("modules") or ()) if isinstance(_mo, dict) else ()
+    stray = [n for n, t in params if not t.requires_grad and not any(_under(n, p) for p in decl)
+             and not (_mo_mods and not any(_under(n, m) for m in _mo_mods))]
     if stray:
         out.append(Mismatch("frozen parameters", "declared (grad-unreachable / frozen-external)",
                             f"{len(stray)} undeclared", "model.named_parameters()",

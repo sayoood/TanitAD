@@ -290,7 +290,10 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # + v7F R1 equivalent (audit 2026-10-18): --plan-vmax-clamp ("built": model.cfg.plan_vmax_clamp) (278 -> 279)
     # + H-NT-DECIDE-1 (navtrain fine-tune, input-path only): --window-starts / --nt-heldout / --nt-heldout-sha256 /
     #   --nt-token-table / --r8-speed-unknown-always ("data") and --snapshot-steps ("runtime") (279 -> 285)
-    assert len(dvb.REGISTRY) == 285
+    # + PI D-R9-MAPHEAD-PRECISION (2026-10-26): --r8-train-only-map ("built": the trainable set read off the model,
+    #   map_only_ft.dvb_check) (285 -> 286)
+    assert len(dvb.REGISTRY) == 286
+    assert dvb.REGISTRY["r8_train_only_map"].kind == "built"
     for _d, _k in (("window_starts", "data"), ("nt_heldout", "data"), ("nt_heldout_sha256", "data"),
                    ("nt_token_table", "data"), ("r8_speed_unknown_always", "data"), ("snapshot_steps", "runtime")):
         assert dvb.REGISTRY[_d].kind == _k

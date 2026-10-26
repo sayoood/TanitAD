@@ -100,6 +100,7 @@ from tanitad.refs import refcv8_conditioning as r8c  # noqa: E402  refcv8 WP-B
 from tanitad.train import refcv8_train as r8train  # noqa: E402  refcv8 WP-B (trainer side)
 from tanitad.train import grad_share as _gshare  # noqa: E402  refcv8 X4: the in-run P-GRAD statistic
 from tanitad.train import weight_ema as _wema  # noqa: E402  refcv8 R8-WARMUP: weight EMA + the B1 guard
+from tanitad.train import map_only_ft as _mof  # noqa: E402  PI D-R9-MAPHEAD-PRECISION: --r8-train-only-map
 # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
 # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
 # absent). Its trainer integration arrived in d014414, swept in from a worktree that
@@ -158,6 +159,8 @@ from tanitad.models import map_head_hires as _mhr  # noqa: E402
 # lives (the registry is pinned two-way against `build_parser`). Never at the module's
 # import: a tree without the flags must not carry their entries.
 _mhr.register_dvb_levers(_dvb.register)
+# PI D-R9-MAPHEAD-PRECISION (2026-10-26): --r8-train-only-map is a `built` lever (the trainable set read off the model)
+_mof.register_dvb_levers(_dvb.register)
 import numpy as _np  # noqa: E402
 
 # --- v3-only loss weights (everything shared is imported above) --------------
@@ -850,6 +853,7 @@ def _pin_r8_label_source(args) -> None:
 def _pin_refcv8(cfg, args) -> None:
     """refcv8 WP-B (DESIGN.md sec. 3) -- argv -> cfg.refcv8, with refusals that fire before config.json."""
     _pin_ema_guard(args)
+    _mof.pin_args(args)          # PI D-R9-MAPHEAD-PRECISION: --r8-train-only-map's refusals (a no-op when off)
     _gse = int(getattr(args, "grad_share_every", 0) or 0)
     if _gse < 0 or (_gse > 0 and _gse % max(1, int(getattr(args, "log_every", 50) or 50)) != 0):
         raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
@@ -5610,7 +5614,8 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
     # unconditional update EMA'd the HELD-OUT split's label marginals into core.lat/lon_log_prior
     # (buffers that shape decodes via logit_adjust). The v1 trainer gates the same call on
     # model.training (refc_train.py:521); so does this one now.
-    if model.training:
+    # --r8-train-only-map: the class-prior EMA writes a PLANNER buffer, which the map-only fine-tune keeps frozen
+    if model.training and getattr(model, _mof.MARKER_ATTR, None) is None:
         model.core.update_tactical_prior(lat_k, lon_k)
     # the z_tac surface's labels: v7.2 when supplied, else the same kin3
     use_v7 = "lat_v7" in batch
@@ -8192,7 +8197,7 @@ def refcv6_flags_from_args(args) -> "_rv6.DiffusionFlags | None":
     return flags if flags.any_on else None
 
 
-def assert_optimizer_matches_recipe(opt, args) -> dict:
+def assert_optimizer_matches_recipe(opt, args, model=None) -> dict:
     """REFUSE to start if the optimizer that will RUN is not the recipe the run claims.
 
     ⛔⛔ WHY. MEASURED 2026-09-22: `build_optimizer` produced the DiffusionDrive recipe
@@ -8204,7 +8209,21 @@ def assert_optimizer_matches_recipe(opt, args) -> dict:
 
     Only the `dd` optimizer carries a recipe to check; `adam` (the single-group default)
     is reported and passed through.
+
+    ``--r8-train-only-map`` (PI D-R9-MAPHEAD-PRECISION): the recipe is ONE AdamW group `map_only`
+    holding exactly the map-only parameters (`map_only_ft.optimizer_problems`); it needs ``model``.
     """
+    if _mof.is_on(args):
+        if model is None:
+            raise SystemExit("[v3] ⛔ --r8-train-only-map: the optimizer recipe check needs the model")
+        _bad = _mof.optimizer_problems(opt, model, args)
+        if _bad:
+            raise SystemExit("[v3] ⛔ THE OPTIMIZER THAT WILL RUN IS NOT THE MAP-ONLY RECIPE:\n  - "
+                             + "\n  - ".join(_bad))
+        return {"opt": "dd", "type": type(opt).__name__, "map_only": True,
+                "groups": [{"name": g.get("name", "?"), "lr": float(g["lr"]),
+                            "weight_decay": float(g.get("weight_decay", 0.0)),
+                            "n_tensors": len(g["params"])} for g in opt.param_groups]}
     opt_name = str(getattr(args, "opt", "adam"))
     info = {"opt": opt_name, "type": type(opt).__name__,
             "groups": [{"name": g.get("name", "?"), "lr": float(g["lr"]),
@@ -8397,6 +8416,9 @@ def build_optimizer(model, args):
     survives the schedule instead of being overwritten by it — which is the
     silent way a paramwise config stops meaning anything.
     """
+    if _mof.is_on(args):
+        # PI D-R9-MAPHEAD-PRECISION: ONE AdamW group `map_only` = exactly the parameters `apply_freeze` left trainable
+        return _mof.build_optimizer(model, args)
     kind = str(getattr(args, "opt", "adam"))
     if kind == "adam":
         return torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -9410,6 +9432,17 @@ def train(args) -> dict:
               "the trivial floor. This is almost certainly NOT what you want.",
               flush=True)
 
+    # ⭐ PI D-R9-MAPHEAD-PRECISION (`--r8-train-only-map`): the model is COMPLETE here and no data has been read.
+    # Freeze everything but the three map-only modules NOW, so G-DVB (the trainer's below, and the launch gate's,
+    # which captures the model at the first data read) sees the build this run trains, and build_optimizer collects
+    # exactly the map-only parameters. OFF: None, nothing runs.
+    _mof_rec = _mof.apply_freeze(model) if _mof.is_on(args) else None
+    if _mof_rec is not None:
+        print("[map-only] FROZEN all but %s: %d tensors / %d params trainable, %d tensors / %d params frozen, "
+              "%d running-stat norms pinned" % (list(_mof.MAP_ONLY_MODULES), _mof_rec["n_trainable_tensors"],
+                                                 _mof_rec["n_trainable_params"], _mof_rec["n_frozen_tensors"],
+                                                 _mof_rec["n_frozen_params"], _mof_rec["frozen_norms_pinned"]),
+              flush=True)
     # data — raw epcache, v2 compressed cache, or CI-synthetic; exactly one
     n_src = sum(1 for s in (args.data_root, args.v2_cache,
                             args.synth_episodes) if s)
@@ -10193,7 +10226,7 @@ def train(args) -> dict:
     # ⛔ THE RECIPE IS CHECKED ON THE OBJECT THAT WILL RUN, AT STARTUP. See
     # `assert_optimizer_matches_recipe`: the 2026-09-22 review measured the encoder
     # multiplier destroyed every step while config.json stamped it, and no guard saw it.
-    assert_optimizer_matches_recipe(opt, args)
+    assert_optimizer_matches_recipe(opt, args, model=model)
     sched = lambda s: (s + 1) / max(1, args.warmup) if s < args.warmup else \
         0.5 * (1.0 + math.cos(math.pi * (s - args.warmup)
                               / max(1, args.steps - args.warmup)))   # noqa: E731
@@ -10234,6 +10267,18 @@ def train(args) -> dict:
     # Here -- after the withheld bank, the optimizer and any resume, BEFORE the seam stamp,
     # config.json and the first step -- every registered lever is read off the modules, and any
     # mismatch REFUSES.
+    # ⭐ PI D-R9-MAPHEAD-PRECISION: the frozen planner IS the shipped one -- every tensor against --init-from (the
+    # shipped EMA model) bit for bit (fresh: all of them; resume: the frozen ones), then the guard that re-reads the
+    # frozen tensors at every logged / saved step. OFF: nothing runs.
+    _mof_guard = _mof_src = None
+    if _mof_rec is not None:
+        _mof_src, _mof_rec["init_from"] = _mof.load_source(args.init_from)
+        _mof_rec["init_from"]["verify"] = _mof.verify_against_source(model, _mof_src, fresh=not ck.exists())
+        _mof_guard = _mof.FrozenStateGuard(_mof_src)
+        print("[map-only] --init-from %s (md5 %s, kind %s, step %s): %s over %d keys" % (
+            args.init_from, _mof_rec["init_from"]["md5"][:8], _mof_rec["init_from"]["kind"],
+            _mof_rec["init_from"]["step"], _mof_rec["init_from"]["verify"]["result"],
+            _mof_rec["init_from"]["verify"]["checked_keys"]), flush=True)
     _dvb.refuse_on_mismatch(model, args, build_parser(), where="train")
     # ⛔ M18: the record is CHECKED before it is written. A knob that does not
     # reach config.json refuses the run here, not in an audit months later.
@@ -10583,6 +10628,8 @@ def train(args) -> dict:
         and getattr(args, "r8_speed_input", None) not in r8train.R8_SPEED_PAST_ONLY)
     r8train.assert_r8_speed_stamp(_run_config, getattr(args, "r8_speed_input", None),
                                   enc8=bool(getattr(args, "r8_speed_enc8", False)))
+    if _mof_rec is not None:              # PI D-R9-MAPHEAD-PRECISION: the flag, the trainable list + count, the source
+        _run_config["map_only_ft"] = _mof_rec
     (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1),
                                          encoding="utf-8")
 
@@ -10664,7 +10711,9 @@ def train(args) -> dict:
     # fresh shadow starts from the weights step 1 will actually train, and a resumed one is loaded over them.
     _ema = _b1 = None
     if float(getattr(args, "ema_decay", 0.0) or 0.0) > 0.0:
-        _ema = _wema.WeightEMA(model, float(args.ema_decay))
+        # --r8-train-only-map: the shadow holds the map-only tensors ONLY (a frozen tensor's EMA is itself)
+        _ema = _wema.WeightEMA(model, float(args.ema_decay),
+                               exclude=(_mof.ema_exclude if _mof_rec is not None else None))
         if _ema_resume is not None:
             try:
                 _ema.load_state_dict(_ema_resume, model)
@@ -10686,6 +10735,20 @@ def train(args) -> dict:
             "resumed at %d updates" % _ema.num_updates if _ema_resume is not None else "fresh",
             "; B1 guard armed: ref %.5f at step >= %d" % (_b1["ref_ap2m"], _b1["guard_step"])
             if _b1 is not None else ""), flush=True)
+    if _mof_rec is not None:
+        # ⭐ PI D-R9-MAPHEAD-PRECISION: the EMA shadows the map-only tensors only, and on a fresh start raw == EMA ==
+        # the shipped model; then the frozen state is read once more before step 1
+        _mof_bad = (_mof.ema_problems(_ema, model, _mof_src, fresh=not ck.exists()) if _ema is not None else [])
+        if _mof_bad:
+            raise SystemExit("[map-only] ⛔ the EMA is not the map-only EMA:\n  - " + "\n  - ".join(_mof_bad))
+        _mof_guard.assert_ok(model, "start (step %d)" % step)
+        _mof_rec["ema_check"] = ("no EMA (--ema-decay 0)" if _ema is None else
+                                 "shadow = %d map-only tensors; %s" % (
+                                     len(_ema.shadow), "fresh: raw == EMA == --init-from, bit for bit"
+                                     if not ck.exists() else "resumed"))
+        _run_config["map_only_ft"] = _mof_rec
+        (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1), encoding="utf-8")
+        _mof_src = None                   # the guard keeps the frozen reference; the map-only source is not needed
     t0, model = time.time(), model.train()
     # the data POSITION, saved in ckpt.pt -- a resumed run continues the same permutation
     _dpos = {"epoch": _train_sampler.epoch, "batch": _train_sampler.skip_batches}
@@ -10914,6 +10977,9 @@ def train(args) -> dict:
         if _ema is not None:                 # refcv8 R8-WARMUP: after EVERY optimiser step (off: not executed)
             _ema.update(model)
         step += 1
+        if _mof_guard is not None and (step % args.log_every == 0 or step == args.steps
+                                       or step % args.save_every == 0):
+            _mof_guard.assert_ok(model, "step %d" % step)     # BEFORE any row or checkpoint of this step is written
         if step % args.log_every == 0 or step == args.steps:
             # ⚠️ The tensor filter silently DROPPED every plain-float
             # diagnostic — `tac_label_v7`, `tac_label_rows`, `nav_injected`
@@ -12512,6 +12578,14 @@ def build_parser() -> argparse.ArgumentParser:
     g8.add_argument("--init-from", default=None,
                     help="WARM START: load this checkpoint's model state (every source key strict; every missing key "
                          "must be a refcv8 seam; fresh optimiser) when --out has no ckpt.pt of its own")
+    g8.add_argument("--r8-train-only-map", action="store_true",
+                    help="PI D-R9-MAPHEAD-PRECISION (2026-10-26): train ONLY the 10 cm map head's map-only modules "
+                         "(_map_hires.refine / .near / .near_refine; 105,032 params on refcv8) -- everything else is "
+                         "FROZEN and asserted bit-identical (parameters, BN statistics, the class-prior buffers, the "
+                         "EMA). Needs --refcv8 --map-hires on with the near lift + a near refine block, --opt dd, "
+                         "--conflict-detector off and --init-from = the SHIPPED EMA model (kind ema_model_only); "
+                         "refuses the B1 guard, the gradient-share instrument, BN recalibration and the drivable critic. "
+                         "One AdamW group `map_only` at --lr. config.json['map_only_ft'] records the trainable list.")
     g8.add_argument("--r8-derange-feed", action="store_true",
                     help="DELIBERATE-REGRESSION arm (training only): the planner reads ANOTHER window's tactical "
                          "output (roll by one row); the tactical loss still trains on the window's own outputs")

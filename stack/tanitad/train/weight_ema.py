@@ -65,16 +65,17 @@ def _shadow_dtype(t: Tensor) -> torch.dtype:
     return t.dtype if t.dtype in (torch.float32, torch.float64) else torch.float32
 
 
-def _live_tensors(model) -> dict:
+def _live_tensors(model, exclude=None) -> dict:
     """name -> live tensor for everything the EMA covers. De-duplicated by OBJECT identity (a tied parameter appears
     under several state_dict names and must be exchanged once: exchanging it twice would hand the second shadow the
-    first's EMA value and the swap-out would restore the wrong thing)."""
+    first's EMA value and the swap-out would restore the wrong thing). ``exclude(name) -> True`` drops a tensor the
+    caller declares FROZEN (``--r8-train-only-map``: everything outside the map-only modules); ``None`` = the tip."""
     out, seen = {}, set()
     for name, t in model.state_dict(keep_vars=True).items():
         if id(t) in seen:
             continue
         covered = t.requires_grad if isinstance(t, torch.nn.Parameter) else t.is_floating_point()
-        if not covered:
+        if not covered or (exclude is not None and exclude(name)):
             continue
         seen.add(id(t))
         out[name] = t
@@ -84,11 +85,15 @@ def _live_tensors(model) -> dict:
 class WeightEMA:
     """Exponential moving average of a model's trainable weights. See the module docstring."""
 
-    def __init__(self, model, decay: float) -> None:
+    def __init__(self, model, decay: float, exclude=None) -> None:
+        """``exclude`` (OPT-IN, ``None`` = the tip): ``exclude(state_dict name) -> True`` for a tensor the caller has
+        FROZEN -- it is not shadowed, so its EMA IS the live tensor bit for bit (``lerp(x, x, w)`` would turn a -0.0
+        into +0.0). ``refc_v3_train`` passes ``map_only_ft.ema_exclude`` under ``--r8-train-only-map``."""
         decay = float(decay)
         if not (0.0 < decay < 1.0) or not math.isfinite(decay):
             raise EMAStateError(f"EMA decay {decay!r} must be in (0, 1)")
-        live = _live_tensors(model)
+        self._exclude = exclude
+        live = _live_tensors(model, exclude)
         if not live:
             raise EMAStateError("the model has no trainable parameter and no floating buffer to average")
         self.decay = decay
@@ -113,7 +118,7 @@ class WeightEMA:
 
     # ---------------------------------------------------------------- guards
     def _live_checked(self, model) -> dict:
-        live = _live_tensors(model)
+        live = _live_tensors(model, self._exclude)
         if set(live) != set(self.shadow):
             missing = sorted(set(self.shadow) - set(live))[:3]
             extra = sorted(set(live) - set(self.shadow))[:3]
