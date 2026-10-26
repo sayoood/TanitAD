@@ -807,8 +807,18 @@ def ego_perturb_probe(model, batch, cfg, ego) -> dict:
         res["rows_changed"][k] = int(ch.sum())
         if bool(ch[~sel].any()):
             raise AssertionError(f"ego probe: {k} changed on a row the perturbation did not select")
-        if k in ("p10f", "base", "kin3", "p10_t") and not bool(ch[sel].all()):
-            raise AssertionError(f"ego probe: {k} is unchanged on {int((~ch[sel]).sum())} of {n_sel} selected rows: the rebuild did not reach it")
+        need = sel
+        if k == "base":                               # PREREG_V8F_ORECOVER Amendment 4: a selected row AT REST cannot move. Logged v0 = 0 (so s v0 = 0) and a perturbed a0 <= 0 keep
+            # the kinematic base identically 0 before and after (MEASURED on box 2's gate batch, 2026-10-26: 1 of 29 rows, v0 = a0 = 0). Exactly those rows are exempt and counted;
+            # every other selected row must still change, and at least one must exist.
+            at_rest = (sel & (batch["kin3"][:, 0] == 0.0) & (pert["kin3"][:, 1] <= 0.0)
+                       & (batch["base"].reshape(B, -1) == 0.0).all(1) & (pert["base"].reshape(B, -1) == 0.0).all(1))
+            res["base_rows_at_rest_exempt"] = int(at_rest.sum())
+            need = sel & ~at_rest
+            if not bool(need.any()):
+                raise AssertionError(f"ego probe: all {n_sel} selected rows are at rest: the base cannot show the rebuild")
+        if k in ("p10f", "base", "kin3", "p10_t") and not bool(ch[need].all()):
+            raise AssertionError(f"ego probe: {k} is unchanged on {int((~ch[need]).sum())} of {int(need.sum())} selected rows: the rebuild did not reach it")
     kept_moved = sorted(k for k in batch if k not in D.EGO_PERTURB_REBUILT and pert[k] is not batch[k])
     if kept_moved:
         raise AssertionError(f"ego probe: {kept_moved} are not the same objects after the perturbation: targets, labels and kept inputs must not be touched")

@@ -467,6 +467,58 @@ def test_the_launch_probe_refuses_a_rebuild_that_leaves_one_tensor_unperturbed(w
         TR.ego_perturb_probe(model, b, cfg, D.EgoPerturb(p=0.3))
 
 
+def _at_rest(b, r):
+    """Put row r of a collated batch AT REST: logged v0 = a0 = 0 at NOW (kin3, and p10f's NOW frame, which the rebuild reads) and a kinematic base of 0."""
+    b["kin3"][r, 0] = 0.0
+    b["kin3"][r, 1] = 0.0
+    b["p10f"][r, -1, 0] = 0.0
+    b["p10f"][r, -1, 1] = 0.0
+    b["base"][r] = 0.0
+    return b
+
+
+def test_the_launch_probe_exempts_exactly_the_selected_rows_at_rest(world):
+    """PREREG_V8F_ORECOVER Amendment 4. MEASURED on box 2's real gate batch (2026-10-26): 1 of 29 selected rows was at rest (v0 = a0 = 0, |base| = 0); its base stayed 0
+    after the perturbation (a0 - d <= 0 at zero speed cannot move the car), and the probe refused a correct rebuild. Such a row is exempt from the base clause and COUNTED;
+    the unmodified batch exempts none."""
+    model, b0, cfg = _probe_parts(world)
+    assert TR.ego_perturb_probe(model, b0, cfg, D.EgoPerturb(p=0.3, seed=1))["base_rows_at_rest_exempt"] == 0
+    r = int(torch.nonzero(D.EgoPerturb(p=0.3, seed=1).eligible(b0)).flatten()[0])
+    b = _at_rest(_clone(b0), r)
+    pert = D.EgoPerturb(p=0.3, seed=1).apply(b, D.EgoPerturb.PROBE_STEP, p=1.0)
+    assert bool((pert["base"][r] == 0).all()) and float(pert["kin3"][r, 1]) <= 0.0, "the physics the exemption rests on: a row at rest keeps base 0"
+    res = TR.ego_perturb_probe(model, b, cfg, D.EgoPerturb(p=0.3, seed=1))
+    assert res["pass"] is True and res["base_rows_at_rest_exempt"] == 1
+
+
+def test_the_at_rest_exemption_does_not_hide_a_moving_row_whose_base_is_not_rebuilt(world, monkeypatch):
+    """The exemption needs v0 = 0 AND base 0 before and after: a MOVING row whose perturbed a0 <= 0 and whose base the rebuild skips is still refused."""
+    model, b, cfg = _probe_parts(world)
+    e = D.EgoPerturb(p=0.3, seed=1)
+    pert = e.apply(b, D.EgoPerturb.PROBE_STEP, p=1.0)
+    sel = e.last["sel"]
+    assert bool((sel & (b["kin3"][:, 0] > 0.0) & (pert["kin3"][:, 1] <= 0.0)).any()), "the test needs a moving row that decelerates after the perturbation"
+    orig = D.EgoPerturb._rebuilt
+
+    def keep_base_where_decelerating(batch, rows, s, d, n):
+        r = orig(batch, rows, s, d, n)
+        dec = r["kin3"][rows, 1] <= 0.0
+        r["base"][rows[dec]] = batch["base"][rows[dec]]
+        return r
+    monkeypatch.setattr(D.EgoPerturb, "_rebuilt", staticmethod(keep_base_where_decelerating))
+    with pytest.raises(AssertionError, match="base is unchanged"):
+        TR.ego_perturb_probe(model, b, cfg, D.EgoPerturb(p=0.3, seed=1))
+
+
+def test_the_launch_probe_refuses_a_batch_whose_selected_rows_are_all_at_rest(world):
+    model, b0, cfg = _probe_parts(world)
+    b = _clone(b0)
+    for r in torch.nonzero(D.EgoPerturb(p=0.3, seed=1).eligible(b0)).flatten().tolist():
+        _at_rest(b, r)
+    with pytest.raises(AssertionError, match="selected rows are at rest: the base cannot show the rebuild"):
+        TR.ego_perturb_probe(model, b, cfg, D.EgoPerturb(p=0.3, seed=1))
+
+
 def test_the_launch_probe_refuses_a_perturbation_that_touches_a_target(world, monkeypatch):
     model, b, cfg = _probe_parts(world)
     orig = D.EgoPerturb._rebuilt

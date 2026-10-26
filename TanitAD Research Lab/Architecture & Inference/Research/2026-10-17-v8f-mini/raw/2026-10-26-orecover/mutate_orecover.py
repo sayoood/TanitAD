@@ -67,6 +67,12 @@ MUT = [
      [("    model.load_state_dict(sd, strict=True)\n    cur = model.state_dict()", "    cur = model.state_dict()")], [SEL_F]),
     (TRAIN, "the config clause is dropped: a config the strict load cannot see is accepted (g)",
      [("    if diff:\n        raise ValueError(\"config mismatch", "    if False:\n        raise ValueError(\"config mismatch")], ["config_mismatch"]),
+    # ---- Amendment 4: the at-rest exemption of the probe's base clause (exactly the rows at rest, counted; never a moving row)
+    (TRAIN, "the at-rest exemption is dropped: a correct rebuild on a row at rest is refused", [("            need = sel & ~at_rest\n", "            need = sel\n")], ["exempts_exactly"]),
+    (TRAIN, "the at-rest exemption ignores the speed and the base: any decelerating row is exempt",
+     [('            at_rest = (sel & (batch["kin3"][:, 0] == 0.0) & (pert["kin3"][:, 1] <= 0.0)\n                       & (batch["base"].reshape(B, -1) == 0.0).all(1) & (pert["base"].reshape(B, -1) == 0.0).all(1))',
+       '            at_rest = (sel & (pert["kin3"][:, 1] <= 0.0))')], ["does_not_hide"]),
+    (TRAIN, "a batch whose selected rows are all at rest is accepted", [("            if not bool(need.any()):\n                raise AssertionError(f\"ego probe: all", "            if False:\n                raise AssertionError(f\"ego probe: all")], ["all_at_rest"]),
 ]
 
 if LIST:
