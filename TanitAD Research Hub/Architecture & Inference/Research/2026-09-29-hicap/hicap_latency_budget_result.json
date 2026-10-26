@@ -1,0 +1,788 @@
+{
+ "evidence_class": "ESTIMATED",
+ "assumptions": {
+  "BW_EFF": 0.7,
+  "OVERHEAD_MS": 15.0,
+  "DUTY_MAX": 0.5,
+  "TOK_PER_CAM": 160,
+  "TOK_PROMPT": 64,
+  "VLM_MEM_BUDGET_GB": 64.0
+ },
+ "measured_models": {
+  "Qwen3-VL-2B": {
+   "1cam x 1f": {
+    "n": 224,
+    "vit": 11.4,
+    "prefill": 12.1,
+    "total": 23.5,
+    "extrapolated_below_292": true,
+    "age_worst_ms_at_2Hz": 538.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": true,
+     "10Hz": true
+    }
+   },
+   "3cam x 1f": {
+    "n": 544,
+    "vit": 34.2,
+    "prefill": 14.9,
+    "total": 49.1,
+    "extrapolated_below_292": false,
+    "age_worst_ms_at_2Hz": 564.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": true,
+     "10Hz": false
+    }
+   },
+   "7cam x 1f": {
+    "n": 1184,
+    "vit": 79.8,
+    "prefill": 20.5,
+    "total": 100.3,
+    "extrapolated_below_292": false,
+    "age_worst_ms_at_2Hz": 615.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": false,
+     "10Hz": false
+    }
+   },
+   "3cam x 3f": {
+    "n": 1504,
+    "vit": 102.6,
+    "prefill": 23.3,
+    "total": 125.9,
+    "extrapolated_below_292": false,
+    "age_worst_ms_at_2Hz": 641.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": false,
+     "10Hz": false
+    }
+   }
+  },
+  "Qwen3-VL-4B": {
+   "1cam x 1f": {
+    "n": 224,
+    "vit": 11.6,
+    "prefill": 20.8,
+    "total": 32.4,
+    "extrapolated_below_292": true,
+    "age_worst_ms_at_2Hz": 547.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": true,
+     "10Hz": true
+    }
+   },
+   "3cam x 1f": {
+    "n": 544,
+    "vit": 34.8,
+    "prefill": 28.0,
+    "total": 62.8,
+    "extrapolated_below_292": false,
+    "age_worst_ms_at_2Hz": 578.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": true,
+     "10Hz": false
+    }
+   },
+   "7cam x 1f": {
+    "n": 1184,
+    "vit": 81.2,
+    "prefill": 42.6,
+    "total": 123.8,
+    "extrapolated_below_292": false,
+    "age_worst_ms_at_2Hz": 639.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": false,
+     "10Hz": false
+    }
+   },
+   "3cam x 3f": {
+    "n": 1504,
+    "vit": 104.4,
+    "prefill": 49.8,
+    "total": 154.2,
+    "extrapolated_below_292": false,
+    "age_worst_ms_at_2Hz": 669.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": false,
+     "10Hz": false
+    }
+   }
+  },
+  "Qwen3.5-4B": {
+   "1cam x 1f": {
+    "n": 224,
+    "vit": 10.9,
+    "prefill": 29.1,
+    "total": 40.0,
+    "extrapolated_below_292": true,
+    "age_worst_ms_at_2Hz": 555.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": true,
+     "10Hz": false
+    }
+   },
+   "3cam x 1f": {
+    "n": 544,
+    "vit": 32.7,
+    "prefill": 40.7,
+    "total": 73.4,
+    "extrapolated_below_292": false,
+    "age_worst_ms_at_2Hz": 588.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": true,
+     "10Hz": false
+    }
+   },
+   "7cam x 1f": {
+    "n": 1184,
+    "vit": 76.3,
+    "prefill": 63.9,
+    "total": 140.2,
+    "extrapolated_below_292": false,
+    "age_worst_ms_at_2Hz": 655.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": false,
+     "10Hz": false
+    }
+   },
+   "3cam x 3f": {
+    "n": 1504,
+    "vit": 98.1,
+    "prefill": 75.5,
+    "total": 173.6,
+    "extrapolated_below_292": false,
+    "age_worst_ms_at_2Hz": 689.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": false,
+     "10Hz": false
+    }
+   }
+  },
+  "Qwen3-VL-8B": {
+   "1cam x 1f": {
+    "n": 224,
+    "vit": 15.7,
+    "prefill": 29.3,
+    "total": 45.0,
+    "extrapolated_below_292": true,
+    "age_worst_ms_at_2Hz": 560.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": true,
+     "10Hz": false
+    }
+   },
+   "3cam x 1f": {
+    "n": 544,
+    "vit": 47.1,
+    "prefill": 42.5,
+    "total": 89.6,
+    "extrapolated_below_292": false,
+    "age_worst_ms_at_2Hz": 605.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": false,
+     "10Hz": false
+    }
+   },
+   "7cam x 1f": {
+    "n": 1184,
+    "vit": 109.9,
+    "prefill": 68.9,
+    "total": 178.8,
+    "extrapolated_below_292": false,
+    "age_worst_ms_at_2Hz": 694.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": false,
+     "10Hz": false
+    }
+   },
+   "3cam x 3f": {
+    "n": 1504,
+    "vit": 141.3,
+    "prefill": 82.1,
+    "total": 223.4,
+    "extrapolated_below_292": false,
+    "age_worst_ms_at_2Hz": 738.0,
+    "duty_ok": {
+     "2Hz": true,
+     "5Hz": false,
+     "10Hz": false
+    }
+   }
+  }
+ },
+ "bracketed_models": {
+  "Cosmos3-Edge reasoner (2.4B)": {
+   "kind": "dense",
+   "body_active_B": 1.41,
+   "total_B": 2.4,
+   "note": "Nemotron-dense 2B + SigLIP2-SO400M; eager-BF16 row exists (P), no TRT row",
+   "rows": {
+    "1cam x 1f": {
+     "n": 224,
+     "vit": 15.7,
+     "prefill_opt": 12.1,
+     "prefill_pes": 12.1,
+     "total_opt": 27.8,
+     "total_pes": 27.8,
+     "weight_floor_ms": 7.1,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": true,
+      "10Hz": true
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": true,
+      "10Hz": true
+     },
+     "age_worst_ms_at_2Hz_pes": 543.0
+    },
+    "3cam x 1f": {
+     "n": 544,
+     "vit": 47.1,
+     "prefill_opt": 14.9,
+     "prefill_pes": 14.9,
+     "total_opt": 62.0,
+     "total_pes": 62.0,
+     "weight_floor_ms": 7.1,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": true,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": true,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 577.0
+    },
+    "7cam x 1f": {
+     "n": 1184,
+     "vit": 109.9,
+     "prefill_opt": 20.5,
+     "prefill_pes": 20.5,
+     "total_opt": 130.4,
+     "total_pes": 130.4,
+     "weight_floor_ms": 7.1,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 645.0
+    },
+    "3cam x 3f": {
+     "n": 1504,
+     "vit": 141.3,
+     "prefill_opt": 23.3,
+     "prefill_pes": 23.3,
+     "total_opt": 164.6,
+     "total_pes": 164.6,
+     "weight_floor_ms": 7.1,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 680.0
+    }
+   }
+  },
+  "Cosmos-Reason2-8B (= Qwen3-VL-8B arch)": {
+   "kind": "dense",
+   "body_active_B": 6.95,
+   "total_B": 8.3,
+   "note": "architecture equivalence from the HF card (INHERITED); timing = 8B row",
+   "rows": {
+    "1cam x 1f": {
+     "n": 224,
+     "vit": 15.7,
+     "prefill_opt": 29.3,
+     "prefill_pes": 29.3,
+     "total_opt": 45.0,
+     "total_pes": 45.0,
+     "weight_floor_ms": 24.4,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": true,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": true,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 560.0
+    },
+    "3cam x 1f": {
+     "n": 544,
+     "vit": 47.1,
+     "prefill_opt": 42.5,
+     "prefill_pes": 42.5,
+     "total_opt": 89.6,
+     "total_pes": 89.6,
+     "weight_floor_ms": 24.4,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 605.0
+    },
+    "7cam x 1f": {
+     "n": 1184,
+     "vit": 109.9,
+     "prefill_opt": 68.9,
+     "prefill_pes": 68.9,
+     "total_opt": 178.8,
+     "total_pes": 178.8,
+     "weight_floor_ms": 24.4,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 694.0
+    },
+    "3cam x 3f": {
+     "n": 1504,
+     "vit": 141.3,
+     "prefill_opt": 82.1,
+     "prefill_pes": 82.1,
+     "total_opt": 223.4,
+     "total_pes": 223.4,
+     "weight_floor_ms": 24.4,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 738.0
+    }
+   }
+  },
+  "Alpamayo-1.5 VLM (8.2B)": {
+   "kind": "dense",
+   "body_active_B": 6.95,
+   "total_B": 8.3,
+   "note": "Cosmos-Reason2 backbone (P: recipes), taken as the 8B row (INHERITED equivalence); 2.3B expert not counted",
+   "rows": {
+    "1cam x 1f": {
+     "n": 224,
+     "vit": 15.7,
+     "prefill_opt": 29.3,
+     "prefill_pes": 29.3,
+     "total_opt": 45.0,
+     "total_pes": 45.0,
+     "weight_floor_ms": 24.4,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": true,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": true,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 560.0
+    },
+    "3cam x 1f": {
+     "n": 544,
+     "vit": 47.1,
+     "prefill_opt": 42.5,
+     "prefill_pes": 42.5,
+     "total_opt": 89.6,
+     "total_pes": 89.6,
+     "weight_floor_ms": 24.4,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 605.0
+    },
+    "7cam x 1f": {
+     "n": 1184,
+     "vit": 109.9,
+     "prefill_opt": 68.9,
+     "prefill_pes": 68.9,
+     "total_opt": 178.8,
+     "total_pes": 178.8,
+     "weight_floor_ms": 24.4,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 694.0
+    },
+    "3cam x 3f": {
+     "n": 1504,
+     "vit": 141.3,
+     "prefill_opt": 82.1,
+     "prefill_pes": 82.1,
+     "total_opt": 223.4,
+     "total_pes": 223.4,
+     "weight_floor_ms": 24.4,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 738.0
+    }
+   }
+  },
+  "Cosmos-Reason2-32B (= Qwen3-VL-32B arch)": {
+   "kind": "dense",
+   "body_active_B": 31.2,
+   "total_B": 33.0,
+   "note": "body/hidden from config arithmetic, UNVERIFIED; ViT assumed SO400M",
+   "rows": {
+    "1cam x 1f": {
+     "n": 224,
+     "vit": 15.7,
+     "prefill_opt": 97.1,
+     "prefill_pes": 131.5,
+     "total_opt": 112.8,
+     "total_pes": 147.2,
+     "weight_floor_ms": 97.1,
+     "beyond_2x_measured": true,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 662.0
+    },
+    "3cam x 1f": {
+     "n": 544,
+     "vit": 47.1,
+     "prefill_opt": 124.8,
+     "prefill_pes": 190.7,
+     "total_opt": 171.9,
+     "total_pes": 237.8,
+     "weight_floor_ms": 97.1,
+     "beyond_2x_measured": true,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": false,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 753.0
+    },
+    "7cam x 1f": {
+     "n": 1184,
+     "vit": 109.9,
+     "prefill_opt": 271.6,
+     "prefill_pes": 309.2,
+     "total_opt": 381.5,
+     "total_pes": 419.1,
+     "weight_floor_ms": 97.1,
+     "beyond_2x_measured": true,
+     "duty_ok_opt": {
+      "2Hz": false,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": false,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 934.0
+    },
+    "3cam x 3f": {
+     "n": 1504,
+     "vit": 141.3,
+     "prefill_opt": 345.0,
+     "prefill_pes": 368.4,
+     "total_opt": 486.3,
+     "total_pes": 509.7,
+     "weight_floor_ms": 97.1,
+     "beyond_2x_measured": true,
+     "duty_ok_opt": {
+      "2Hz": false,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": false,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 1025.0
+    }
+   }
+  },
+  "Qwen3-Omni-30B-A3B (MoE, 3.3B active)": {
+   "kind": "moe",
+   "body_active_B": 3.3,
+   "total_B": 30.5,
+   "note": "Thinker MoE; text Qwen3-30B-A3B NVFP4 pf@2048=137.7 ms (P); ViT/audio not in that row",
+   "rows": {
+    "1cam x 1f": {
+     "n": 224,
+     "vit": 15.7,
+     "prefill_opt": 89.8,
+     "prefill_pes": 137.7,
+     "total_opt": 105.5,
+     "total_pes": 153.4,
+     "weight_floor_ms": 89.8,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 668.0
+    },
+    "3cam x 1f": {
+     "n": 544,
+     "vit": 47.1,
+     "prefill_opt": 89.8,
+     "prefill_pes": 137.7,
+     "total_opt": 136.9,
+     "total_pes": 184.8,
+     "weight_floor_ms": 89.8,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 700.0
+    },
+    "7cam x 1f": {
+     "n": 1184,
+     "vit": 109.9,
+     "prefill_opt": 89.8,
+     "prefill_pes": 137.7,
+     "total_opt": 199.7,
+     "total_pes": 247.6,
+     "weight_floor_ms": 89.8,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": false,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 763.0
+    },
+    "3cam x 3f": {
+     "n": 1504,
+     "vit": 141.3,
+     "prefill_opt": 89.8,
+     "prefill_pes": 137.7,
+     "total_opt": 231.1,
+     "total_pes": 279.0,
+     "weight_floor_ms": 89.8,
+     "beyond_2x_measured": false,
+     "duty_ok_opt": {
+      "2Hz": true,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "duty_ok_pes": {
+      "2Hz": false,
+      "5Hz": false,
+      "10Hz": false
+     },
+     "age_worst_ms_at_2Hz_pes": 794.0
+    }
+   }
+  }
+ },
+ "max_dense_body_B": {
+  "2Hz_1cam_x_1f": {
+   "pes": 52.0,
+   "opt": 60.4,
+   "beyond_2x_measured_range": true
+  },
+  "2Hz_3cam_x_1f": {
+   "pes": 30.7,
+   "opt": 46.9,
+   "beyond_2x_measured_range": true
+  },
+  "2Hz_7cam_x_1f": {
+   "pes": 12.6,
+   "opt": 14.3,
+   "beyond_2x_measured_range": false
+  },
+  "2Hz_3cam_x_3f": {
+   "pes": 7.9,
+   "opt": 8.4,
+   "beyond_2x_measured_range": false
+  },
+  "5Hz_1cam_x_1f": {
+   "pes": 16.4,
+   "opt": 22.2,
+   "beyond_2x_measured_range": true
+  },
+  "5Hz_3cam_x_1f": {
+   "pes": 5.9,
+   "opt": 9.4,
+   "beyond_2x_measured_range": false
+  },
+  "5Hz_7cam_x_1f": {
+   "pes": 0.0,
+   "opt": 0.0,
+   "beyond_2x_measured_range": false
+  },
+  "5Hz_3cam_x_3f": {
+   "pes": 0.0,
+   "opt": 0.0,
+   "beyond_2x_measured_range": false
+  },
+  "10Hz_1cam_x_1f": {
+   "pes": 4.0,
+   "opt": 4.0,
+   "beyond_2x_measured_range": false
+  },
+  "10Hz_3cam_x_1f": {
+   "pes": 0.0,
+   "opt": 0.0,
+   "beyond_2x_measured_range": false
+  },
+  "10Hz_7cam_x_1f": {
+   "pes": 0.0,
+   "opt": 0.0,
+   "beyond_2x_measured_range": false
+  },
+  "10Hz_3cam_x_3f": {
+   "pes": 0.0,
+   "opt": 0.0,
+   "beyond_2x_measured_range": false
+  }
+ },
+ "cache_GB": {
+  "Cosmos3-Edge reasoner (2.4B)": 148.0,
+  "Cosmos-Reason2-8B (= Qwen3-VL-8B arch)": 297.0,
+  "Alpamayo-1.5 VLM (8.2B)": 297.0,
+  "Cosmos-Reason2-32B (= Qwen3-VL-32B arch)": 371.0,
+  "Qwen3-Omni-30B-A3B (MoE, 3.3B active)": 148.0
+ },
+ "memory_GB": {
+  "Cosmos3-Edge reasoner (2.4B)": {
+   "NVFP4": 1.4,
+   "FP8": 2.4,
+   "BF16": 4.8
+  },
+  "Cosmos-Reason2-8B (= Qwen3-VL-8B arch)": {
+   "NVFP4": 4.7,
+   "FP8": 8.3,
+   "BF16": 16.6
+  },
+  "Alpamayo-1.5 VLM (8.2B)": {
+   "NVFP4": 4.7,
+   "FP8": 8.3,
+   "BF16": 16.6
+  },
+  "Cosmos-Reason2-32B (= Qwen3-VL-32B arch)": {
+   "NVFP4": 18.6,
+   "FP8": 33.0,
+   "BF16": 66.0
+  },
+  "Qwen3-Omni-30B-A3B (MoE, 3.3B active)": {
+   "NVFP4": 17.2,
+   "FP8": 30.5,
+   "BF16": 61.0
+  }
+ },
+ "regression_vs_sec_eff_table_thor": "PASS (12 cells within 0.15 ms)"
+}

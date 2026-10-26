@@ -1,0 +1,206 @@
+{
+ "n_clips_built": 139,
+ "skipped": {
+  "no_uuid": 0,
+  "no_agent_file": 0,
+  "no_egomotion": 0
+ },
+ "sec_per_clip": {
+  "mean": 6.943480491638184,
+  "median": 5.530642032623291,
+  "p90": 15.103409767150879
+ },
+ "rows": {
+  "in_built_clips": 27664,
+  "exo_w": 22151,
+  "exo_w_frac": 0.8007157316367842,
+  "J_w": 22049
+ },
+ "lead": {
+  "has_lead_frac_of_labelled": 0.42666245316238544,
+  "n_has_lead": 9451,
+  "gap0_median_m": 27.64889907836914,
+  "exo_gap_negative_frac": [
+   0.0021161781822029413,
+   0.0033858850915247066,
+   0.012697069093217649,
+   0.03692730927944133
+  ],
+  "hmask_frac": [
+   0.9946037530899048,
+   0.9900539517402649,
+   0.9824357032775879,
+   0.9724896550178528
+  ],
+  "logsig_median": [
+   -4.864085674285889,
+   -4.8762288093566895,
+   -4.882044792175293,
+   -4.905425548553467
+  ],
+  "cutin_frac_of_labelled": 0.029344047672791296,
+  "cutout_frac_of_lead": 0.08993757274362502,
+  "lead_class_counts": {
+   "automobile": 8753,
+   "heavy_truck": 279,
+   "rider": 297,
+   "trailer": 16,
+   "bus": 106
+  }
+ },
+ "mode_dist": {
+  "exo_mode": {
+   "brake": 490,
+   "hold": 5869,
+   "accelerate": 2052,
+   "brake_hard": 66,
+   "IGNORE": 974
+  },
+  "exo_mode4": {
+   "cruise": 5869,
+   "brake": 556,
+   "accelerate": 2052,
+   "cut_out": 850,
+   "IGNORE": 124
+  },
+  "onset_median_s_nonhold": 0.2013300657272339
+ },
+ "v9_agreement": {
+  "lag_rows": 20,
+  "n_rows_compared": 19600,
+  "valid_confusion": {
+   "both": 7766,
+   "ours_only": 544,
+   "v9_only": 1403,
+   "neither": 9887
+  },
+  "valid_agreement": 0.9006632653061224,
+  "n_gap_pairs": 7766,
+  "median_abs_delta_m": 3.6045160566840906,
+  "median_signed_delta_m": 3.5504972030222772,
+  "within_2m": 0.005408189544166882,
+  "within_2m_after_median_offset": 0.9206798866855525,
+  "p90_abs_delta_m": 4.3874277981864696,
+  "tg_median_abs_delta_s": 0.38608486143565324,
+  "tg_median_abs_delta_s_after_offset": 0.029476557046701712
+ },
+ "probe": {
+  "logged": {
+   "collide_frac": 0.0026305047847974966,
+   "J_mean": 0.38676485419273376,
+   "clear_median_m": 2.4887657165527344
+  },
+  "const_v0": {
+   "collide_frac": 0.04920858088802213,
+   "J_mean": 0.568785548210144,
+   "clear_median_m": 2.4332025051116943
+  },
+  "brake3": {
+   "collide_frac": 0.011111615039230804,
+   "J_mean": 1.0147194862365723,
+   "clear_median_m": 3.8532280921936035
+  },
+  "brake6": {
+   "collide_frac": 0.015646968116467867,
+   "J_mean": 1.1795508861541748,
+   "clear_median_m": 4.064384937286377
+  },
+  "acc1.5": {
+   "collide_frac": 0.21982856365368045,
+   "J_mean": 0.855327844619751,
+   "clear_median_m": 1.4917912483215332
+  },
+  "shift+3.5": {
+   "collide_frac": 0.29089754637398524,
+   "J_mean": 1.178394079208374,
+   "clear_median_m": 2.7289669513702393
+  },
+  "shift-3.5": {
+   "collide_frac": 0.294299061181913,
+   "J_mean": 1.2078239917755127,
+   "clear_median_m": 3.487271308898926
+  },
+  "straight_v0": {
+   "collide_frac": 0.1317066533629643,
+   "J_mean": 0.7234067916870117,
+   "clear_median_m": 2.543276309967041
+  }
+ },
+ "meta": {
+  "schema": "tanitad.v10_imag/1",
+  "producer": "stack/tanitad/hicap/supervision.py",
+  "v9": "v9_labels_eval139.npz",
+  "constants": {
+   "H_T": [
+    0.5,
+    1.0,
+    2.0,
+    3.0
+   ],
+   "MODE_ACC": [
+    -3.0,
+    0.0,
+    1.5,
+    -6.0
+   ],
+   "MODE_NAMES": [
+    "brake",
+    "hold",
+    "accelerate",
+    "brake_hard"
+   ],
+   "MODE4_NAMES": [
+    "cruise",
+    "brake",
+    "accelerate",
+    "cut_out"
+   ],
+   "COST_CHANNELS": [
+    "ttc",
+    "clearance",
+    "progress_deficit"
+   ],
+   "FAMILIES": [
+    "safety",
+    "comfort",
+    "progress",
+    "lateral"
+   ],
+   "CF_MASK": [
+    1.0,
+    1.0,
+    1.0,
+    0.0
+   ],
+   "EGO_LEN": 4.9,
+   "EGO_WID": 1.95,
+   "EGO_REAR_TO_CENTER": 1.45,
+   "CORRIDOR_HALF_W": 1.25,
+   "LEAD_MAX_S": 80.0,
+   "TTC_THR": 3.0,
+   "CLEAR_THR": 2.0,
+   "J_WEIGHTS": [
+    4.0,
+    2.0,
+    1.0
+   ],
+   "MODE_SUSTAIN_S": 1.0,
+   "LEAD_CLASSES": [
+    "automobile",
+    "heavy_truck",
+    "bus",
+    "other_vehicle",
+    "trailer",
+    "train_or_tram_car",
+    "rider"
+   ]
+  },
+  "vocab": "DataEng/v10/vocab/vocab_v9train_ego.npz",
+  "n_cand": 5,
+  "skipped": {
+   "no_uuid": 0,
+   "no_agent_file": 0,
+   "no_egomotion": 0
+  }
+ }
+}

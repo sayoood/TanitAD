@@ -1,0 +1,861 @@
+{
+ "what": "Alpamayo2-Super meta_action text vs v9 tactical label at the row aligned to t0 = 5.1 s (MEASURED)",
+ "keyword_table": "tanitad.hicap.reasoning.META_LON_TO_LON9 / META_LANE_TO_LAT9 / META_LATERAL_TO_LAT9 (Lane line primary; Lateral line only where Lane is absent)",
+ "definitions": {
+  "strict": "teacher primary class == v9 class",
+  "partial_label": "teacher primary class in the v9 partial-label allowed set (lon: FOLLOW-undetermined rows allow {class, FOLLOW})",
+  "compatible": "(lon only) teacher compatible set intersects the v9 allowed set",
+  "chance": "sum_c p_text(c) p_v9(c) over the scored rows",
+  "ci": "percentile bootstrap over clips (one anchor per clip => clip = cluster), 2000 resamples, seed 0",
+  "band": "v9 labels describe [NOW+2, NOW+8] s; the teacher's meta action describes its own predicted future from t0"
+ },
+ "excluded_global": {
+  "meta_action_rows_unaligned:clip_not_in_v9": 211,
+  "meta_action_rows_unaligned:clip_not_in_clip_index": 10
+ },
+ "headline": {
+  "lon_strict": 0.42677057070822827,
+  "lon_strict_ci95": [
+   0.412560165024066,
+   0.4418977767591107
+  ],
+  "lon_compatible": 0.6555122622049049,
+  "lon_chance": 0.23031236615657608,
+  "lon_kappa": 0.25524407033882174,
+  "lon_n": 4363,
+  "lat_a_strict": 0.8551143833815409,
+  "lat_a_strict_ci95": [
+   0.8438075203786485,
+   0.8666841966868262
+  ],
+  "lat_a_chance": 0.7888654963223257,
+  "lat_a_kappa": 0.31377574913266265,
+  "lat_a_n": 3803
+ },
+ "by_scope": {
+  "all": {
+   "lon": {
+    "n": 4363,
+    "excluded": {
+     "v9_lon_ignore": 136,
+     "v9_reversing": 9
+    },
+    "strict": {
+     "rate": 0.42677057070822827,
+     "ci95_clip_bootstrap": [
+      0.412560165024066,
+      0.4418977767591107
+     ]
+    },
+    "partial_label": {
+     "rate": 0.42677057070822827,
+     "ci95_clip_bootstrap": [
+      0.41164336465734586,
+      0.4409867063946825
+     ]
+    },
+    "chance_strict_from_marginals": 0.23031236615657608,
+    "cohen_kappa_strict": 0.25524407033882174,
+    "text_marginal": {
+     "KEEP": 1126,
+     "DECELERATE": 1732,
+     "ACCELERATE": 1247,
+     "STOP": 258
+    },
+    "v9_marginal": {
+     "FOLLOW": 814,
+     "ACCELERATE": 1081,
+     "DECELERATE": 890,
+     "KEEP": 1280,
+     "CREEP": 54,
+     "HOLD": 37,
+     "STOP": 207
+    },
+    "confusion": {
+     "Gentle Acceleration -> ACCELERATE": 484,
+     "Gentle Acceleration -> CREEP": 2,
+     "Gentle Acceleration -> DECELERATE": 91,
+     "Gentle Acceleration -> FOLLOW": 193,
+     "Gentle Acceleration -> IGNORE": 35,
+     "Gentle Acceleration -> KEEP": 283,
+     "Gentle Acceleration -> STOP": 15,
+     "Gentle Deceleration -> ACCELERATE": 154,
+     "Gentle Deceleration -> CREEP": 18,
+     "Gentle Deceleration -> DECELERATE": 539,
+     "Gentle Deceleration -> FOLLOW": 273,
+     "Gentle Deceleration -> IGNORE": 49,
+     "Gentle Deceleration -> KEEP": 394,
+     "Gentle Deceleration -> STOP": 98,
+     "Maintain Speed -> ACCELERATE": 132,
+     "Maintain Speed -> CREEP": 7,
+     "Maintain Speed -> DECELERATE": 139,
+     "Maintain Speed -> FOLLOW": 259,
+     "Maintain Speed -> IGNORE": 40,
+     "Maintain Speed -> KEEP": 575,
+     "Maintain Speed -> STOP": 14,
+     "Stop -> ACCELERATE": 158,
+     "Stop -> CREEP": 26,
+     "Stop -> DECELERATE": 1,
+     "Stop -> FOLLOW": 21,
+     "Stop -> HOLD": 37,
+     "Stop -> IGNORE": 3,
+     "Stop -> KEEP": 3,
+     "Stop -> STOP": 12,
+     "Strong Acceleration -> ACCELERATE": 135,
+     "Strong Acceleration -> CREEP": 1,
+     "Strong Acceleration -> DECELERATE": 3,
+     "Strong Acceleration -> FOLLOW": 38,
+     "Strong Acceleration -> KEEP": 1,
+     "Strong Acceleration -> STOP": 1,
+     "Strong Deceleration -> ACCELERATE": 18,
+     "Strong Deceleration -> DECELERATE": 117,
+     "Strong Deceleration -> FOLLOW": 30,
+     "Strong Deceleration -> IGNORE": 9,
+     "Strong Deceleration -> KEEP": 24,
+     "Strong Deceleration -> STOP": 67
+    },
+    "compatible": {
+     "rate": 0.6555122622049049,
+     "ci95_clip_bootstrap": [
+      0.6413018565207426,
+      0.668805867522347
+     ]
+    }
+   },
+   "lat_a": {
+    "n": 3803,
+    "excluded": {
+     "v9_lat_ignore": 438,
+     "text_unmapped:<missing>/<missing>": 258,
+     "v9_reversing": 9
+    },
+    "strict": {
+     "rate": 0.8551143833815409,
+     "ci95_clip_bootstrap": [
+      0.8438075203786485,
+      0.8666841966868262
+     ]
+    },
+    "partial_label": {
+     "rate": 0.8551143833815409,
+     "ci95_clip_bootstrap": [
+      0.8440704706810412,
+      0.8656389692348145
+     ]
+    },
+    "chance_strict_from_marginals": 0.7888654963223257,
+    "cohen_kappa_strict": 0.31377574913266265,
+    "text_marginal": {
+     "LANE_KEEP": 3547,
+     "LANE_CHANGE_R": 71,
+     "LANE_CHANGE_L": 14,
+     "TURN_R": 94,
+     "TURN_L": 77
+    },
+    "v9_marginal": {
+     "LANE_KEEP": 3202,
+     "TURN_R": 320,
+     "TURN_L": 281
+    },
+    "confusion": {
+     "<missing> -> IGNORE": 3,
+     "Lane Keep -> IGNORE": 400,
+     "Lane Keep -> LANE_KEEP": 3040,
+     "Lane Keep -> TURN_L": 195,
+     "Lane Keep -> TURN_R": 230,
+     "Left Lane Change -> IGNORE": 8,
+     "Left Lane Change -> LANE_KEEP": 14,
+     "Right Lane Change -> IGNORE": 8,
+     "Right Lane Change -> LANE_KEEP": 59,
+     "Right Lane Change -> TURN_L": 1,
+     "Right Lane Change -> TURN_R": 11,
+     "Slightly Shift Left -> IGNORE": 8,
+     "Slightly Shift Left -> LANE_KEEP": 52,
+     "Slightly Shift Left -> TURN_L": 3,
+     "Slightly Shift Left -> TURN_R": 2,
+     "Slightly Shift Right -> IGNORE": 1,
+     "Slightly Shift Right -> LANE_KEEP": 19,
+     "Slightly Shift Right -> TURN_L": 3,
+     "Slightly Shift Right -> TURN_R": 3,
+     "Turn Left -> IGNORE": 5,
+     "Turn Left -> LANE_KEEP": 6,
+     "Turn Left -> TURN_L": 69,
+     "Turn Left -> TURN_R": 2,
+     "Turn Right -> IGNORE": 5,
+     "Turn Right -> LANE_KEEP": 12,
+     "Turn Right -> TURN_L": 10,
+     "Turn Right -> TURN_R": 72
+    },
+    "confusion_lateral_line_diag": {
+     "<missing> -> LANE_KEEP": 189,
+     "<missing> -> TURN_L": 35,
+     "<missing> -> TURN_R": 34,
+     "Go Straight -> LANE_KEEP": 2140,
+     "Go Straight -> TURN_L": 43,
+     "Go Straight -> TURN_R": 63,
+     "Sharp Steer Left -> LANE_KEEP": 12,
+     "Sharp Steer Left -> TURN_L": 84,
+     "Sharp Steer Left -> TURN_R": 7,
+     "Sharp Steer Right -> LANE_KEEP": 13,
+     "Sharp Steer Right -> TURN_L": 15,
+     "Sharp Steer Right -> TURN_R": 98,
+     "Steer Left -> LANE_KEEP": 422,
+     "Steer Left -> TURN_L": 82,
+     "Steer Left -> TURN_R": 21,
+     "Steer Right -> LANE_KEEP": 615,
+     "Steer Right -> TURN_L": 57,
+     "Steer Right -> TURN_R": 131
+    }
+   },
+   "lat_b": {
+    "n": 3805,
+    "excluded": {
+     "v9_lat_ignore": 436,
+     "text_unmapped:<missing>/<missing>": 258,
+     "v9_reversing": 9
+    },
+    "strict": {
+     "rate": 0.8149802890932983,
+     "ci95_clip_bootstrap": [
+      0.8021024967148489,
+      0.8268068331143232
+     ]
+    },
+    "partial_label": {
+     "rate": 0.8149802890932983,
+     "ci95_clip_bootstrap": [
+      0.802365308804205,
+      0.8273324572930355
+     ]
+    },
+    "chance_strict_from_marginals": 0.7523705754065213,
+    "cohen_kappa_strict": 0.2528363250431987,
+    "text_marginal": {
+     "LANE_KEEP": 3549,
+     "LANE_CHANGE_R": 71,
+     "LANE_CHANGE_L": 14,
+     "TURN_R": 94,
+     "TURN_L": 77
+    },
+    "v9_marginal": {
+     "LANE_KEEP": 3051,
+     "TURN_R": 399,
+     "TURN_L": 355
+    },
+    "confusion": {
+     "<missing> -> IGNORE": 3,
+     "Lane Keep -> IGNORE": 398,
+     "Lane Keep -> LANE_KEEP": 2889,
+     "Lane Keep -> TURN_L": 269,
+     "Lane Keep -> TURN_R": 309,
+     "Left Lane Change -> IGNORE": 8,
+     "Left Lane Change -> LANE_KEEP": 14,
+     "Right Lane Change -> IGNORE": 8,
+     "Right Lane Change -> LANE_KEEP": 59,
+     "Right Lane Change -> TURN_L": 1,
+     "Right Lane Change -> TURN_R": 11,
+     "Slightly Shift Left -> IGNORE": 8,
+     "Slightly Shift Left -> LANE_KEEP": 52,
+     "Slightly Shift Left -> TURN_L": 3,
+     "Slightly Shift Left -> TURN_R": 2,
+     "Slightly Shift Right -> IGNORE": 1,
+     "Slightly Shift Right -> LANE_KEEP": 19,
+     "Slightly Shift Right -> TURN_L": 3,
+     "Slightly Shift Right -> TURN_R": 3,
+     "Turn Left -> IGNORE": 5,
+     "Turn Left -> LANE_KEEP": 6,
+     "Turn Left -> TURN_L": 69,
+     "Turn Left -> TURN_R": 2,
+     "Turn Right -> IGNORE": 5,
+     "Turn Right -> LANE_KEEP": 12,
+     "Turn Right -> TURN_L": 10,
+     "Turn Right -> TURN_R": 72
+    },
+    "confusion_lateral_line_diag": {
+     "<missing> -> LANE_KEEP": 188,
+     "<missing> -> TURN_L": 36,
+     "<missing> -> TURN_R": 34,
+     "Go Straight -> LANE_KEEP": 2128,
+     "Go Straight -> TURN_L": 48,
+     "Go Straight -> TURN_R": 70,
+     "Sharp Steer Left -> LANE_KEEP": 12,
+     "Sharp Steer Left -> TURN_L": 84,
+     "Sharp Steer Left -> TURN_R": 7,
+     "Sharp Steer Right -> LANE_KEEP": 13,
+     "Sharp Steer Right -> TURN_L": 15,
+     "Sharp Steer Right -> TURN_R": 98,
+     "Steer Left -> LANE_KEEP": 361,
+     "Steer Left -> TURN_L": 143,
+     "Steer Left -> TURN_R": 23,
+     "Steer Right -> LANE_KEEP": 537,
+     "Steer Right -> TURN_L": 65,
+     "Steer Right -> TURN_R": 201
+    }
+   }
+  },
+  "train": {
+   "lon": {
+    "n": 4231,
+    "excluded": {
+     "v9_lon_ignore": 130,
+     "v9_reversing": 8
+    },
+    "strict": {
+     "rate": 0.42661309383124557,
+     "ci95_clip_bootstrap": [
+      0.41219569841645,
+      0.44103639801465366
+     ]
+    },
+    "partial_label": {
+     "rate": 0.42661309383124557,
+     "ci95_clip_bootstrap": [
+      0.41148073741432284,
+      0.4415031907350508
+     ]
+    },
+    "chance_strict_from_marginals": 0.2304135422999402,
+    "cohen_kappa_strict": 0.25494153329783853,
+    "text_marginal": {
+     "ACCELERATE": 1217,
+     "DECELERATE": 1674,
+     "KEEP": 1087,
+     "STOP": 253
+    },
+    "v9_marginal": {
+     "ACCELERATE": 1049,
+     "FOLLOW": 786,
+     "DECELERATE": 865,
+     "KEEP": 1241,
+     "STOP": 202,
+     "CREEP": 52,
+     "HOLD": 36
+    },
+    "confusion": {
+     "Gentle Acceleration -> ACCELERATE": 470,
+     "Gentle Acceleration -> CREEP": 2,
+     "Gentle Acceleration -> DECELERATE": 88,
+     "Gentle Acceleration -> FOLLOW": 188,
+     "Gentle Acceleration -> IGNORE": 34,
+     "Gentle Acceleration -> KEEP": 279,
+     "Gentle Acceleration -> STOP": 15,
+     "Gentle Deceleration -> ACCELERATE": 151,
+     "Gentle Deceleration -> CREEP": 17,
+     "Gentle Deceleration -> DECELERATE": 524,
+     "Gentle Deceleration -> FOLLOW": 256,
+     "Gentle Deceleration -> IGNORE": 45,
+     "Gentle Deceleration -> KEEP": 382,
+     "Gentle Deceleration -> STOP": 97,
+     "Maintain Speed -> ACCELERATE": 125,
+     "Maintain Speed -> CREEP": 6,
+     "Maintain Speed -> DECELERATE": 135,
+     "Maintain Speed -> FOLLOW": 254,
+     "Maintain Speed -> IGNORE": 39,
+     "Maintain Speed -> KEEP": 554,
+     "Maintain Speed -> STOP": 13,
+     "Stop -> ACCELERATE": 155,
+     "Stop -> CREEP": 26,
+     "Stop -> DECELERATE": 1,
+     "Stop -> FOLLOW": 21,
+     "Stop -> HOLD": 36,
+     "Stop -> IGNORE": 3,
+     "Stop -> KEEP": 2,
+     "Stop -> STOP": 12,
+     "Strong Acceleration -> ACCELERATE": 131,
+     "Strong Acceleration -> CREEP": 1,
+     "Strong Acceleration -> DECELERATE": 3,
+     "Strong Acceleration -> FOLLOW": 38,
+     "Strong Acceleration -> KEEP": 1,
+     "Strong Acceleration -> STOP": 1,
+     "Strong Deceleration -> ACCELERATE": 17,
+     "Strong Deceleration -> DECELERATE": 114,
+     "Strong Deceleration -> FOLLOW": 29,
+     "Strong Deceleration -> IGNORE": 9,
+     "Strong Deceleration -> KEEP": 23,
+     "Strong Deceleration -> STOP": 64
+    },
+    "compatible": {
+     "rate": 0.6546915622784212,
+     "ci95_clip_bootstrap": [
+      0.6402741668636256,
+      0.6693453084377216
+     ]
+    }
+   },
+   "lat_a": {
+    "n": 3679,
+    "excluded": {
+     "v9_lat_ignore": 429,
+     "text_unmapped:<missing>/<missing>": 253,
+     "v9_reversing": 8
+    },
+    "strict": {
+     "rate": 0.8540364229410166,
+     "ci95_clip_bootstrap": [
+      0.8423484642565915,
+      0.8654593639575971
+     ]
+    },
+    "partial_label": {
+     "rate": 0.8540364229410166,
+     "ci95_clip_bootstrap": [
+      0.8426202772492525,
+      0.8654525686327806
+     ]
+    },
+    "chance_strict_from_marginals": 0.7862988372181511,
+    "cohen_kappa_strict": 0.31697340735582974,
+    "text_marginal": {
+     "LANE_KEEP": 3429,
+     "LANE_CHANGE_R": 67,
+     "TURN_L": 77,
+     "TURN_R": 93,
+     "LANE_CHANGE_L": 13
+    },
+    "v9_marginal": {
+     "LANE_KEEP": 3089,
+     "TURN_L": 279,
+     "TURN_R": 311
+    },
+    "confusion": {
+     "<missing> -> IGNORE": 3,
+     "Lane Keep -> IGNORE": 391,
+     "Lane Keep -> LANE_KEEP": 2933,
+     "Lane Keep -> TURN_L": 193,
+     "Lane Keep -> TURN_R": 224,
+     "Left Lane Change -> IGNORE": 8,
+     "Left Lane Change -> LANE_KEEP": 13,
+     "Right Lane Change -> IGNORE": 8,
+     "Right Lane Change -> LANE_KEEP": 56,
+     "Right Lane Change -> TURN_L": 1,
+     "Right Lane Change -> TURN_R": 10,
+     "Slightly Shift Left -> IGNORE": 8,
+     "Slightly Shift Left -> LANE_KEEP": 50,
+     "Slightly Shift Left -> TURN_L": 3,
+     "Slightly Shift Left -> TURN_R": 1,
+     "Slightly Shift Right -> IGNORE": 1,
+     "Slightly Shift Right -> LANE_KEEP": 19,
+     "Slightly Shift Right -> TURN_L": 3,
+     "Slightly Shift Right -> TURN_R": 3,
+     "Turn Left -> IGNORE": 5,
+     "Turn Left -> LANE_KEEP": 6,
+     "Turn Left -> TURN_L": 69,
+     "Turn Left -> TURN_R": 2,
+     "Turn Right -> IGNORE": 5,
+     "Turn Right -> LANE_KEEP": 12,
+     "Turn Right -> TURN_L": 10,
+     "Turn Right -> TURN_R": 71
+    },
+    "confusion_lateral_line_diag": {
+     "<missing> -> LANE_KEEP": 187,
+     "<missing> -> TURN_L": 33,
+     "<missing> -> TURN_R": 33,
+     "Go Straight -> LANE_KEEP": 2063,
+     "Go Straight -> TURN_L": 42,
+     "Go Straight -> TURN_R": 58,
+     "Sharp Steer Left -> LANE_KEEP": 12,
+     "Sharp Steer Left -> TURN_L": 83,
+     "Sharp Steer Left -> TURN_R": 6,
+     "Sharp Steer Right -> LANE_KEEP": 13,
+     "Sharp Steer Right -> TURN_L": 15,
+     "Sharp Steer Right -> TURN_R": 97,
+     "Steer Left -> LANE_KEEP": 410,
+     "Steer Left -> TURN_L": 82,
+     "Steer Left -> TURN_R": 21,
+     "Steer Right -> LANE_KEEP": 591,
+     "Steer Right -> TURN_L": 57,
+     "Steer Right -> TURN_R": 129
+    }
+   },
+   "lat_b": {
+    "n": 3681,
+    "excluded": {
+     "v9_lat_ignore": 427,
+     "text_unmapped:<missing>/<missing>": 253,
+     "v9_reversing": 8
+    },
+    "strict": {
+     "rate": 0.8144525944036947,
+     "ci95_clip_bootstrap": [
+      0.8011409942950285,
+      0.8266775332790003
+     ]
+    },
+    "partial_label": {
+     "rate": 0.8144525944036947,
+     "ci95_clip_bootstrap": [
+      0.8014058679706602,
+      0.8264058679706602
+     ]
+    },
+    "chance_strict_from_marginals": 0.7503547110535751,
+    "cohen_kappa_strict": 0.25675582992425416,
+    "text_marginal": {
+     "LANE_KEEP": 3431,
+     "LANE_CHANGE_R": 67,
+     "TURN_L": 77,
+     "TURN_R": 93,
+     "LANE_CHANGE_L": 13
+    },
+    "v9_marginal": {
+     "LANE_KEEP": 2945,
+     "TURN_L": 351,
+     "TURN_R": 385
+    },
+    "confusion": {
+     "<missing> -> IGNORE": 3,
+     "Lane Keep -> IGNORE": 389,
+     "Lane Keep -> LANE_KEEP": 2789,
+     "Lane Keep -> TURN_L": 265,
+     "Lane Keep -> TURN_R": 298,
+     "Left Lane Change -> IGNORE": 8,
+     "Left Lane Change -> LANE_KEEP": 13,
+     "Right Lane Change -> IGNORE": 8,
+     "Right Lane Change -> LANE_KEEP": 56,
+     "Right Lane Change -> TURN_L": 1,
+     "Right Lane Change -> TURN_R": 10,
+     "Slightly Shift Left -> IGNORE": 8,
+     "Slightly Shift Left -> LANE_KEEP": 50,
+     "Slightly Shift Left -> TURN_L": 3,
+     "Slightly Shift Left -> TURN_R": 1,
+     "Slightly Shift Right -> IGNORE": 1,
+     "Slightly Shift Right -> LANE_KEEP": 19,
+     "Slightly Shift Right -> TURN_L": 3,
+     "Slightly Shift Right -> TURN_R": 3,
+     "Turn Left -> IGNORE": 5,
+     "Turn Left -> LANE_KEEP": 6,
+     "Turn Left -> TURN_L": 69,
+     "Turn Left -> TURN_R": 2,
+     "Turn Right -> IGNORE": 5,
+     "Turn Right -> LANE_KEEP": 12,
+     "Turn Right -> TURN_L": 10,
+     "Turn Right -> TURN_R": 71
+    },
+    "confusion_lateral_line_diag": {
+     "<missing> -> LANE_KEEP": 186,
+     "<missing> -> TURN_L": 34,
+     "<missing> -> TURN_R": 33,
+     "Go Straight -> LANE_KEEP": 2051,
+     "Go Straight -> TURN_L": 47,
+     "Go Straight -> TURN_R": 65,
+     "Sharp Steer Left -> LANE_KEEP": 12,
+     "Sharp Steer Left -> TURN_L": 83,
+     "Sharp Steer Left -> TURN_R": 6,
+     "Sharp Steer Right -> LANE_KEEP": 13,
+     "Sharp Steer Right -> TURN_L": 15,
+     "Sharp Steer Right -> TURN_R": 97,
+     "Steer Left -> LANE_KEEP": 351,
+     "Steer Left -> TURN_L": 141,
+     "Steer Left -> TURN_R": 23,
+     "Steer Right -> LANE_KEEP": 518,
+     "Steer Right -> TURN_L": 65,
+     "Steer Right -> TURN_R": 194
+    }
+   }
+  },
+  "eval139": {
+   "lon": {
+    "n": 132,
+    "excluded": {
+     "v9_lon_ignore": 6,
+     "v9_reversing": 1
+    },
+    "strict": {
+     "rate": 0.4318181818181818,
+     "ci95_clip_bootstrap": [
+      0.3484848484848485,
+      0.5151515151515151
+     ]
+    },
+    "partial_label": {
+     "rate": 0.4318181818181818,
+     "ci95_clip_bootstrap": [
+      0.3484848484848485,
+      0.5151515151515151
+     ]
+    },
+    "chance_strict_from_marginals": 0.2270431588613407,
+    "cohen_kappa_strict": 0.2649242649242649,
+    "text_marginal": {
+     "KEEP": 39,
+     "DECELERATE": 58,
+     "ACCELERATE": 30,
+     "STOP": 5
+    },
+    "v9_marginal": {
+     "FOLLOW": 28,
+     "ACCELERATE": 32,
+     "DECELERATE": 25,
+     "KEEP": 39,
+     "CREEP": 2,
+     "HOLD": 1,
+     "STOP": 5
+    },
+    "confusion": {
+     "Gentle Acceleration -> ACCELERATE": 14,
+     "Gentle Acceleration -> DECELERATE": 3,
+     "Gentle Acceleration -> FOLLOW": 5,
+     "Gentle Acceleration -> IGNORE": 1,
+     "Gentle Acceleration -> KEEP": 4,
+     "Gentle Deceleration -> ACCELERATE": 3,
+     "Gentle Deceleration -> CREEP": 1,
+     "Gentle Deceleration -> DECELERATE": 15,
+     "Gentle Deceleration -> FOLLOW": 17,
+     "Gentle Deceleration -> IGNORE": 4,
+     "Gentle Deceleration -> KEEP": 12,
+     "Gentle Deceleration -> STOP": 1,
+     "Maintain Speed -> ACCELERATE": 7,
+     "Maintain Speed -> CREEP": 1,
+     "Maintain Speed -> DECELERATE": 4,
+     "Maintain Speed -> FOLLOW": 5,
+     "Maintain Speed -> IGNORE": 1,
+     "Maintain Speed -> KEEP": 21,
+     "Maintain Speed -> STOP": 1,
+     "Stop -> ACCELERATE": 3,
+     "Stop -> HOLD": 1,
+     "Stop -> KEEP": 1,
+     "Strong Acceleration -> ACCELERATE": 4,
+     "Strong Deceleration -> ACCELERATE": 1,
+     "Strong Deceleration -> DECELERATE": 3,
+     "Strong Deceleration -> FOLLOW": 1,
+     "Strong Deceleration -> KEEP": 1,
+     "Strong Deceleration -> STOP": 3
+    },
+    "compatible": {
+     "rate": 0.6818181818181818,
+     "ci95_clip_bootstrap": [
+      0.5984848484848485,
+      0.7651515151515151
+     ]
+    }
+   },
+   "lat_a": {
+    "n": 124,
+    "excluded": {
+     "v9_lat_ignore": 9,
+     "text_unmapped:<missing>/<missing>": 5,
+     "v9_reversing": 1
+    },
+    "strict": {
+     "rate": 0.8870967741935484,
+     "ci95_clip_bootstrap": [
+      0.8306451612903226,
+      0.9356854838709666
+     ]
+    },
+    "partial_label": {
+     "rate": 0.8870967741935484,
+     "ci95_clip_bootstrap": [
+      0.8306451612903226,
+      0.9435483870967742
+     ]
+    },
+    "chance_strict_from_marginals": 0.8677809573361083,
+    "cohen_kappa_strict": 0.14608952287260166,
+    "text_marginal": {
+     "LANE_KEEP": 118,
+     "LANE_CHANGE_R": 4,
+     "LANE_CHANGE_L": 1,
+     "TURN_R": 1
+    },
+    "v9_marginal": {
+     "LANE_KEEP": 113,
+     "TURN_R": 9,
+     "TURN_L": 2
+    },
+    "confusion": {
+     "Lane Keep -> IGNORE": 9,
+     "Lane Keep -> LANE_KEEP": 107,
+     "Lane Keep -> TURN_L": 2,
+     "Lane Keep -> TURN_R": 6,
+     "Left Lane Change -> LANE_KEEP": 1,
+     "Right Lane Change -> LANE_KEEP": 3,
+     "Right Lane Change -> TURN_R": 1,
+     "Slightly Shift Left -> LANE_KEEP": 2,
+     "Slightly Shift Left -> TURN_R": 1,
+     "Turn Right -> TURN_R": 1
+    },
+    "confusion_lateral_line_diag": {
+     "<missing> -> LANE_KEEP": 2,
+     "<missing> -> TURN_L": 2,
+     "<missing> -> TURN_R": 1,
+     "Go Straight -> LANE_KEEP": 77,
+     "Go Straight -> TURN_L": 1,
+     "Go Straight -> TURN_R": 5,
+     "Sharp Steer Left -> TURN_L": 1,
+     "Sharp Steer Left -> TURN_R": 1,
+     "Sharp Steer Right -> TURN_R": 1,
+     "Steer Left -> LANE_KEEP": 12,
+     "Steer Right -> LANE_KEEP": 24,
+     "Steer Right -> TURN_R": 2
+    }
+   },
+   "lat_b": {
+    "n": 124,
+    "excluded": {
+     "v9_lat_ignore": 9,
+     "text_unmapped:<missing>/<missing>": 5,
+     "v9_reversing": 1
+    },
+    "strict": {
+     "rate": 0.8306451612903226,
+     "ci95_clip_bootstrap": [
+      0.7661290322580645,
+      0.8870967741935484
+     ]
+    },
+    "partial_label": {
+     "rate": 0.8306451612903226,
+     "ci95_clip_bootstrap": [
+      0.7580645161290323,
+      0.8951612903225806
+     ]
+    },
+    "chance_strict_from_marginals": 0.8143860561914672,
+    "cohen_kappa_strict": 0.08759635599159107,
+    "text_marginal": {
+     "LANE_KEEP": 118,
+     "LANE_CHANGE_R": 4,
+     "LANE_CHANGE_L": 1,
+     "TURN_R": 1
+    },
+    "v9_marginal": {
+     "LANE_KEEP": 106,
+     "TURN_R": 14,
+     "TURN_L": 4
+    },
+    "confusion": {
+     "Lane Keep -> IGNORE": 9,
+     "Lane Keep -> LANE_KEEP": 100,
+     "Lane Keep -> TURN_L": 4,
+     "Lane Keep -> TURN_R": 11,
+     "Left Lane Change -> LANE_KEEP": 1,
+     "Right Lane Change -> LANE_KEEP": 3,
+     "Right Lane Change -> TURN_R": 1,
+     "Slightly Shift Left -> LANE_KEEP": 2,
+     "Slightly Shift Left -> TURN_R": 1,
+     "Turn Right -> TURN_R": 1
+    },
+    "confusion_lateral_line_diag": {
+     "<missing> -> LANE_KEEP": 2,
+     "<missing> -> TURN_L": 2,
+     "<missing> -> TURN_R": 1,
+     "Go Straight -> LANE_KEEP": 77,
+     "Go Straight -> TURN_L": 1,
+     "Go Straight -> TURN_R": 5,
+     "Sharp Steer Left -> TURN_L": 1,
+     "Sharp Steer Left -> TURN_R": 1,
+     "Sharp Steer Right -> TURN_R": 1,
+     "Steer Left -> LANE_KEEP": 10,
+     "Steer Left -> TURN_L": 2,
+     "Steer Right -> LANE_KEEP": 19,
+     "Steer Right -> TURN_R": 7
+    }
+   }
+  }
+ },
+ "row_offset_sweep_diag": {
+  "-40": {
+   "lon_strict": 0.4378316032295271,
+   "n_lon": 4335,
+   "lat_a_strict": 0.881405176967776,
+   "n_lat": 3786
+  },
+  "-35": {
+   "lon_strict": 0.45416858590511283,
+   "n_lon": 4342,
+   "lat_a_strict": 0.8858204992033988,
+   "n_lat": 3766
+  },
+  "-30": {
+   "lon_strict": 0.4613259668508287,
+   "n_lon": 4344,
+   "lat_a_strict": 0.8828042328042328,
+   "n_lat": 3780
+  },
+  "-25": {
+   "lon_strict": 0.4713858883015399,
+   "n_lon": 4351,
+   "lat_a_strict": 0.8787638668779715,
+   "n_lat": 3786
+  },
+  "-20": {
+   "lon_strict": 0.46865671641791046,
+   "n_lon": 4355,
+   "lat_a_strict": 0.8764845605700713,
+   "n_lat": 3789
+  },
+  "-15": {
+   "lon_strict": 0.46559633027522934,
+   "n_lon": 4360,
+   "lat_a_strict": 0.8718085106382979,
+   "n_lat": 3760
+  },
+  "-10": {
+   "lon_strict": 0.456108182443273,
+   "n_lon": 4363,
+   "lat_a_strict": 0.8658342189160467,
+   "n_lat": 3764
+  },
+  "-5": {
+   "lon_strict": 0.44515685825509504,
+   "n_lon": 4367,
+   "lat_a_strict": 0.8593418259023354,
+   "n_lat": 3768
+  },
+  "0": {
+   "lon_strict": 0.42677057070822827,
+   "n_lon": 4363,
+   "lat_a_strict": 0.8551143833815409,
+   "n_lat": 3803
+  },
+  "5": {
+   "lon_strict": 0.4055045871559633,
+   "n_lon": 4360,
+   "lat_a_strict": 0.8454258675078864,
+   "n_lat": 3804
+  },
+  "10": {
+   "lon_strict": 0.3853211009174312,
+   "n_lon": 4360,
+   "lat_a_strict": 0.8356597313668686,
+   "n_lat": 3797
+  },
+  "15": {
+   "lon_strict": 0.36995412844036696,
+   "n_lon": 4360,
+   "lat_a_strict": 0.8322324966974901,
+   "n_lat": 3785
+  },
+  "20": {
+   "lon_strict": 0.3546017902226303,
+   "n_lon": 4357,
+   "lat_a_strict": 0.8257775434897207,
+   "n_lat": 3794
+  },
+  "25": {
+   "lon_strict": 0.34107101815674556,
+   "n_lon": 4351,
+   "lat_a_strict": 0.8214754528747703,
+   "n_lat": 3809
+  },
+  "30": {
+   "lon_strict": 0.3160073597056118,
+   "n_lon": 4348,
+   "lat_a_strict": 0.8229084191079441,
+   "n_lat": 3789
+  },
+  "35": {
+   "lon_strict": 0.30639963167587475,
+   "n_lon": 4344,
+   "lat_a_strict": 0.8238259485274608,
+   "n_lat": 3769
+  },
+  "40": {
+   "lon_strict": 0.2971415398801291,
+   "n_lon": 4338,
+   "lat_a_strict": 0.8229551451187335,
+   "n_lat": 3790
+  }
+ }
+}

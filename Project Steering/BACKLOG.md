@@ -57,3 +57,45 @@ Strike items through when done, with the commit.
 | D3 | **H26 hierarchical cross-alignment proof** (task #15, core goal) |
 | D4 | **Own dataset / lake v0** — ingest at scale + HF push (task #5) |
 | D5 | **flagship-v2 10k gate** mechanism diagnostic (task #28) |
+
+## E. HiCAP (added 2026-09-29; design in `Paper/HiCAP/`, pre-registration `PREREG_HICAP.md`)
+
+| # | item | GPU? | what unblocks it |
+|---|---|---|---|
+| E1 | ⭐ **Push the PI branch `agent/arch-inf-20260803`** (vocab_v7.py, v7_labels.py, refc_v3*.py, s2_geom_emit_v7.py) — the whole REF-C line is on one disk + Drive, main is stale | 0 | PI / the owning stream; nothing HiCAP can be executed from git until it lands |
+| E2 | **Recover the 40 canonical val clip UUIDs** (manifest keeps a 4-char prefix) and rerun the overlap test against NVIDIA's public lists (RA Appendix B) | 0 | the val-40 selection manifest / raw root; gates ANY driving-aware backbone read |
+| E3 | **H-HC0 gate**: k-NN over frozen VLM+motion features vs hold-speed on non-steady windows | ~0.5 GPU-day (feature cache) | E1; a Qwen3.5-4B feature cache of the v7 corpus at 2 Hz (~74–148 GB int8, `hicap_cost_model_result.json`) |
+| E4 | **Decode & cache the other upstream cameras** (cross_left/right, rear, tele) with the same cylindrical projection and per-clip `cy` crop | CPU/IO | unblocks H-HC10 (elastic cameras) |
+| E5 | **Synthetic siren/horn injection pipeline** (SNR, Doppler, azimuth, cabin floor) + audio-null/shuffled controls | 0 | ~~ruling on audio at inference~~ RESOLVED 2026-09-29 (optional at inference); needs the audio-off-primary reporting rule of H-HC12 |
+| E6 | **Build the per-cell residual codebooks** over the CTRA prior on TRAIN residuals; cell assignment for windows outside the ±2 s label band via the frozen emitter thresholds | 0 (CPU) | E1 (emitter code) |
+| E7 | **Reconcile the two REF-C lineages in the registry** (parity REF-C-base/XL on val-40 vs refcv3→refcv6 on 4,823 windows) and the `--sel-refined` contradiction (registry §4.8 vs REFCV6 review §3.1) | 0 | PI/registry owner |
+| E8 | **ffprobe the shipped `camera/<clip_id>.mp4`** for an audio track (never probed) | 0 | HF access |
+| E9 | **E-R2 (CPU)**: product vocabularies at N = 2¹⁰…2¹⁸ from the TRAIN split, oracle-in-set ADE on val, matched-N ratios | 0 | committed val windows + train egomotion; decides whether 262,144 buys anything (H-HC5) |
+| E10 | **E-I0 probe** (~0.1 GPU-h): does the frozen state carry lead gap / closing speed? (v₀-only baseline, shuffled cue) | ~0.1 GPU-h | cached VLM embeddings (E3); gates ALL imagination work beyond Tier 0 (H-HC8) |
+| E11 | **E-C3 oracle-camera value by manoeuvre** on a ~30-chunk side-study (front-tele 49 GB first) | CPU/IO + 1 eval | PI spend approval; a null result retires elasticity and ships front-only (H-HC10) |
+| E12 | **E-G1 vision-only gate probe**: frozen-VLM front embedding → 7-way situation, per-class recall + calibration | ~0 | cached embeddings (E3); decides whether the vision-only gate G-V is viable |
+| E13 | **E-R3 / E-R6 / E-R10** (0 GPU): class-conditional episode-blocked conformal survival; survivor-cache age; minted-cell agreement over [2,6] s | 0 | committed val windows + train egomotion |
+| E14 | **147-clip v7-eval contamination screen** against NVIDIA's public training-sample lists (alpamayo-recipes), Wilson interval; read H-HC2 only on clean clips | 0 | none (full clip IDs exist in corpus `a48251e89c7a8603`) |
+| E15 | **Joint lateral × longitudinal census** of the v7 labels (is 35 = 5 × 7 real?) and a pair-admissibility table from it | 0 | label blobs (Drive/HF) |
+| E16 | **Re-run the masked/unmasked InfoNCE comparison on real cached features** (H-HC4) with held-out β and q̂ from the train split | ~0.2 GPU-h | E3 cache |
+
+| E17 | ⭐ **Run the on-Thor backbone benchmark** (`Research/2026-09-29-hicap/hicap_backbone_latency_bench.py`: ViT / prefill / pooling timed separately with CUDA events, fast-path proxy **concurrent** with a refresh, `max_memory_allocated` only) for Qwen3-VL-2B/4B/8B and the Cosmos-Reason2 / Cosmos3-Edge candidates; emit the JSON verdict block of H-HC11 | Thor time | PI access to a Thor; script is written and mock-tested, NOT run on any GPU. Turns every ESTIMATED row of `hicap_latency_budget_result.json` into MEASURED or refutes it |
+| E18 | **Build TensorRT-Edge-LLM NVFP4 engines** for the 8 B-class candidates (Cosmos-Reason2-8B, Qwen3-VL-8B) and the 2.4 B Cosmos3-Edge reasoner; save pooled features from BF16 and NVFP4 on the same real frames for the drift check (`--compare-features`) | Thor + build time | E17; no published TRT row exists for these models |
+| E19 | **Token-age sensitivity (H-HC15)**: fast path on cached tokens aged 0/0.5/1.0/1.5 s, trained with and without age jitter | ~0.3 GPU-h | E3 cache (the same feature cache, read at lagged ticks) |
+| E20 | **Scale-ladder feature caches (H-HC16)**: Qwen3-VL-2B/4B/8B at 2 Hz, one frame per camera, 3 depths × 128 tokens int8 (148 / 148–185 / 297 GB by hidden width — assumed) — watch the per-pod quota with a real `dd` test | GPU-days total, one-off | E3 done for the smallest tier first; gated on H-HC0 pass |
+| E21 | ✅ PARTLY DONE 2026-10-25 (cards, schema, manifests read; arrays blocked — needs `us.aws.cdn.hf.co` allowed) ⭐ **Read the v9 tactical-label release manifest on HF** (dataset id, schema, clips/hours, vocabulary strings, skip-hash, eval split) as used by refcv8 and v8f; diff against the v7 numbers in `Paper/HiCAP/app_vocab.tex`; regenerate every dependent table | 0 | HF access / PI Drive manifest; not found in repo or Drive search 2026-10-25 |
+| E22 | **Red team of the latency/Cosmos/Amendments A1–A3 material** (the 2026-09-29 run died on the spend limit) | agent | none |
+| E23 | **Look for a driving-tuned Cosmos3-Edge/Nano checkpoint on the HF hub** (card list unreachable from the cloud container) | 0 | HF access |
+| E24 | ⭐ **Evaluate `Cosmos3-Nano-Transfer-Auto`** (PI, 2026-10-25: a driving version of Cosmos 3 exists) as the driving-tuned backbone / H-HC2 pair member; read its card (licence, architecture, AV data, whether the reasoner tower is separable), add to the ladder and the latency tables | 0 | HF reachable from the container: huggingface.co is blocked by the environment network policy and `Keys.txt` (git-ignored) is not in the cloud checkout |
+| E25 | ✅ DONE 2026-10-25 (4/139 eval hits; see A5) **Contamination screen on the 139 v9 eval + 4,369 train clips**: sha12 = sha256(clip_id)[:12] from the npz `clip__sha12`, against the UUIDs in `NVlabs/alpamayo-recipes` (`data/0417_5k_train_set_for_calibration_25.10.parquet`, `1005_7cam_gold_eval_metadb_public.parquet`, both fetched) — hash the NVIDIA ids and intersect | 0 | allow `us.aws.cdn.hf.co` (npz files 8 MB / 254 MB) |
+| E26 | ✅ census done (3×7=21 cells, 19 populated); conformal keep-sets and appendix still to regenerate. Re-derive the tactical cell grid, conformal keep-sets and Appendix vocab for the **[2,8] s v9 band** | 0 | E21 arrays |
+| E27 | ⭐ **Cosmos3-Edge first trial**: HF eager loader, one front frame per refresh at 256×640 (160 tok), taps at block indices 28/42/56, pooled to 128 tokens, int8 cache for the 4,369 train + 139 eval v9 clips; then H-HC0 k-NN gate vs hold-speed and a v0-only k-NN (exclude the 4 contaminated eval clips from H-HC2 only) | A40-class pod, cache ≈ 0.5 GPU-day | GPU pod + PI go; no Thor run before the plan closes |
+| E28 | **Watch for Alpamayo 2 Edge weights** (announced Oct 2026, ~2 B, Cosmos 3 Edge base): poll `huggingface.co/api/models?search=alpamayo` and NVlabs/alpamayo2 releases; on release read card (licence, architecture identity with Cosmos3-Edge, separable reasoner, taps), add it as the driving-tuned member of the Edge / Nano / Alpamayo-2-Edge comparison | 0 | release |
+| E29 | **Three-backbone run order**: (1) Cosmos3-Edge cache + H-HC0, (2) Cosmos3-Nano reasoner (hidden 4096, 297 GB cache — use 1 front camera first), (3) Alpamayo 2 Edge when public; identical heads, seeds, v9 windows, four families, paired bootstrap | pod | E27, E28 |
+| E30 | **v10 country labels** (`stack/scripts/build_v10_country.py` → `DataEng/v10/country/`); publish to HF is the PI's call | 0 | — |
+| E31 | **Imagination supervision full build** (`build_hicap_imag_supervision.py` over 4,585 clips with agent files; cross-check vs v9 lead gap) | CPU/pod | stream S |
+| E32 | **RuleBook source audit** — every rule record has an official source or stays UNVERIFIED; second-source check for speed limits | 0 | stream R |
+| E33 | **Text-path embedding job** for node definitions, country nodes and rules on Cosmos3-Edge (and Nano) — minutes on a GPU | pod | E27 loader |
+| E34 | **Audio bridge A1 alignment** on public audio–caption sets (licences per set first; see RG_audio_bridge.md) | pod | stream A |
+| E35 | **Explanation channel zero-shot run** on eval139 windows with the Edge reasoner (KV-cache reuse), H-HC21 metrics | pod | E27 |
+| E36 | **Six extra cameras by reference** — `camera_ref` table to upstream chunks; pull on the pod for elastic-sensing per-option runs | pod | — |

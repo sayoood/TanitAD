@@ -1,0 +1,114 @@
+{
+ "conventions": {
+  "weight_stream_Bps": 191100000000.0,
+  "eff_flops": 25714285714285.715,
+  "refresh_hz": 2.0,
+  "evidence": "ESTIMATED (arithmetic); params as marked"
+ },
+ "towers": {
+  "whisper-large-v3 encoder (2 s block, not the 30 s pad)": {
+   "params": 636968960,
+   "params_evidence": "MEASURED header",
+   "input_sr_hz": 16000,
+   "tokens_in_per_2s": 100,
+   "tokens_out_per_2s": 50,
+   "gflop_per_window": 130.2,
+   "weight_floor_ms": 6.67,
+   "compute_ms": 5.06,
+   "T_window_ms_ESTIMATED": 6.67,
+   "duty_at_2Hz": 0.0133,
+   "note": "Whisper itself pads every input to 30 s (1500 positions) -> x15 the FLOPs; Qwen2.5-Omni runs it in 2 s blocks (report p.5)"
+  },
+  "whisper-large-v3 encoder, 30 s padded (native)": {
+   "params": 636968960,
+   "params_evidence": "MEASURED header",
+   "input_sr_hz": 16000,
+   "tokens_in_per_2s": 1500,
+   "tokens_out_per_2s": 750,
+   "gflop_per_window": 2297.5,
+   "weight_floor_ms": 6.67,
+   "compute_ms": 89.35,
+   "T_window_ms_ESTIMATED": 89.35,
+   "duty_at_2Hz": 0.1787,
+   "note": "for contrast"
+  },
+  "Qwen2.5-Omni-3B audio tower (Whisper-v3 init + Linear 1280->2048)": {
+   "params": 637676544,
+   "params_evidence": "MEASURED header",
+   "input_sr_hz": 16000,
+   "tokens_in_per_2s": 100,
+   "tokens_out_per_2s": 50,
+   "gflop_per_window": 130.4,
+   "weight_floor_ms": 6.67,
+   "compute_ms": 5.07,
+   "T_window_ms_ESTIMATED": 6.67,
+   "duty_at_2Hz": 0.0133,
+   "note": "Qwen RESEARCH licence (non-commercial)"
+  },
+  "Qwen3-Omni AuT encoder (thinker.audio_tower)": {
+   "params": 647927168,
+   "params_evidence": "MEASURED header",
+   "input_sr_hz": 16000,
+   "tokens_in_per_2s": 25,
+   "tokens_out_per_2s": 25,
+   "gflop_per_window": 40.8,
+   "weight_floor_ms": 6.78,
+   "compute_ms": 1.59,
+   "T_window_ms_ESTIMATED": 6.78,
+   "duty_at_2Hz": 0.0136,
+   "note": "3 x Conv2d(3x3, s2, 480 ch) front end ~8.3 GFLOP per 2 s (computed from config)"
+  },
+  "Gemma-4 E2B/E4B audio tower": {
+   "params": 304825088,
+   "params_evidence": "MEASURED header",
+   "input_sr_hz": 16000,
+   "tokens_in_per_2s": 50,
+   "tokens_out_per_2s": 50,
+   "gflop_per_window": 31.1,
+   "weight_floor_ms": 3.19,
+   "compute_ms": 1.21,
+   "T_window_ms_ESTIMATED": 3.19,
+   "duty_at_2Hz": 0.0064,
+   "note": "40 ms/token"
+  },
+  "Gemma-3n E4B audio tower (USM-based)": {
+   "params": 681348640,
+   "params_evidence": "MEASURED header (unsloth mirror; google repo gated)",
+   "input_sr_hz": 16000,
+   "tokens_in_per_2s": 50,
+   "tokens_out_per_2s": 12.5,
+   "gflop_per_window": 68.8,
+   "weight_floor_ms": 7.13,
+   "compute_ms": 2.68,
+   "T_window_ms_ESTIMATED": 7.13,
+   "duty_at_2Hz": 0.0143,
+   "note": "conformer runs at 40 ms frames, output decimated x4 -> 160 ms/token"
+  },
+  "BEATs-iter3 base": {
+   "params": 90000000,
+   "params_evidence": "ESTIMATED (12 x 768, ffn 3072, patch 16x16; weights not on HF)",
+   "input_sr_hz": 16000,
+   "tokens_in_per_2s": 96,
+   "tokens_out_per_2s": 96,
+   "gflop_per_window": 17.7,
+   "weight_floor_ms": 0.94,
+   "compute_ms": 0.69,
+   "T_window_ms_ESTIMATED": 0.94,
+   "duty_at_2Hz": 0.0019,
+   "note": "128 fbank x 200 frames -> 12 x 8 patches"
+  },
+  "CLAP HTSAT (laion/clap-htsat-unfused audio branch)": {
+   "params": 28000000,
+   "params_evidence": "ESTIMATED (Swin-T-like: depths 2-2-6-2, width 96)",
+   "input_sr_hz": 48000,
+   "tokens_in_per_2s": null,
+   "tokens_out_per_2s": 1,
+   "gflop_per_window": 9.0,
+   "weight_floor_ms": 0.29,
+   "compute_ms": 0.35,
+   "T_window_ms_ESTIMATED": 0.35,
+   "duty_at_2Hz": 0.0007,
+   "note": "fixed 10 s @ 48 kHz input (repeat-pad), ~9 GFLOP per call ESTIMATED; one pooled 512-d embedding"
+  }
+ }
+}

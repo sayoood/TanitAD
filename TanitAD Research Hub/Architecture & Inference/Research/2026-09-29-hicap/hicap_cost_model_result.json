@@ -1,0 +1,399 @@
+{
+ "evidence_class": "ESTIMATED (closed-form arithmetic; no timing measured)",
+ "d": 512,
+ "thor_bw_Bps": 273000000000.0,
+ "tick_hz": 10.0,
+ "tree": {
+  "strategic": 5,
+  "tactical_cells": 35,
+  "beams": {
+   "strategic": 2,
+   "cell": 4,
+   "coarse_code": 8
+  }
+ },
+ "retrieval": [
+  {
+   "codes_per_cell": 4096,
+   "coarse_x_fine": "64x64",
+   "flat_leaves": 143360,
+   "beam_nodes_touched": 2379,
+   "node_ratio": 60.3,
+   "flat_MB_bf16": 146.8,
+   "beam_MB_bf16": 2.436,
+   "flat_GBps_at_10Hz_bf16": 1.468,
+   "flat_share_of_273GBps_bf16": 0.00538,
+   "beam_share_of_273GBps_bf16": 8.92e-05,
+   "flat_MB_int8": 73.4,
+   "beam_MB_int8": 1.218,
+   "flat_GBps_at_10Hz_int8": 0.734,
+   "flat_share_of_273GBps_int8": 0.00269,
+   "beam_share_of_273GBps_int8": 4.46e-05
+  },
+  {
+   "codes_per_cell": 16384,
+   "coarse_x_fine": "128x128",
+   "flat_leaves": 573440,
+   "beam_nodes_touched": 4683,
+   "node_ratio": 122.5,
+   "flat_MB_bf16": 587.2,
+   "beam_MB_bf16": 4.795,
+   "flat_GBps_at_10Hz_bf16": 5.872,
+   "flat_share_of_273GBps_bf16": 0.02151,
+   "beam_share_of_273GBps_bf16": 0.0001757,
+   "flat_MB_int8": 293.6,
+   "beam_MB_int8": 2.398,
+   "flat_GBps_at_10Hz_int8": 2.936,
+   "flat_share_of_273GBps_int8": 0.01075,
+   "beam_share_of_273GBps_int8": 8.78e-05
+  },
+  {
+   "codes_per_cell": 65536,
+   "coarse_x_fine": "256x256",
+   "flat_leaves": 2293760,
+   "beam_nodes_touched": 9291,
+   "node_ratio": 246.9,
+   "flat_MB_bf16": 2348.81,
+   "beam_MB_bf16": 9.514,
+   "flat_GBps_at_10Hz_bf16": 23.488,
+   "flat_share_of_273GBps_bf16": 0.08604,
+   "beam_share_of_273GBps_bf16": 0.0003485,
+   "flat_MB_int8": 1174.41,
+   "beam_MB_int8": 4.757,
+   "flat_GBps_at_10Hz_int8": 11.744,
+   "flat_share_of_273GBps_int8": 0.04302,
+   "beam_share_of_273GBps_int8": 0.0001742
+  },
+  {
+   "codes_per_cell": 262144,
+   "coarse_x_fine": "512x512",
+   "flat_leaves": 9175040,
+   "beam_nodes_touched": 18507,
+   "node_ratio": 495.8,
+   "flat_MB_bf16": 9395.24,
+   "beam_MB_bf16": 18.951,
+   "flat_GBps_at_10Hz_bf16": 93.952,
+   "flat_share_of_273GBps_bf16": 0.34415,
+   "beam_share_of_273GBps_bf16": 0.0006942,
+   "flat_MB_int8": 4697.62,
+   "beam_MB_int8": 9.476,
+   "flat_GBps_at_10Hz_int8": 46.976,
+   "flat_share_of_273GBps_int8": 0.17207,
+   "beam_share_of_273GBps_int8": 0.0003471
+  }
+ ],
+ "factored_product": [
+  {
+   "K_P": 1024,
+   "K_V": 256,
+   "keep": [
+    20,
+    10
+   ],
+   "N_composed": 262144,
+   "rows_touched": 1480,
+   "node_ratio": 177.1,
+   "flat_MB_bf16": 268.4,
+   "flat_ms_at_273GBps_bf16": 0.98,
+   "factored_MB_bf16": 1.516,
+   "flat_MB_int8": 134.2,
+   "flat_ms_at_273GBps_int8": 0.49,
+   "factored_MB_int8": 0.758
+  },
+  {
+   "K_P": 2048,
+   "K_V": 512,
+   "keep": [
+    32,
+    16
+   ],
+   "N_composed": 1048576,
+   "rows_touched": 3072,
+   "node_ratio": 341.3,
+   "flat_MB_bf16": 1073.7,
+   "flat_ms_at_273GBps_bf16": 3.93,
+   "factored_MB_bf16": 3.146,
+   "flat_MB_int8": 536.9,
+   "flat_ms_at_273GBps_int8": 1.97,
+   "factored_MB_int8": 1.573
+  },
+  {
+   "K_P": 4096,
+   "K_V": 1024,
+   "keep": [
+    40,
+    20
+   ],
+   "N_composed": 4194304,
+   "rows_touched": 5920,
+   "node_ratio": 708.5,
+   "flat_MB_bf16": 4295.0,
+   "flat_ms_at_273GBps_bf16": 15.73,
+   "factored_MB_bf16": 6.062,
+   "flat_MB_int8": 2147.5,
+   "flat_ms_at_273GBps_int8": 7.87,
+   "factored_MB_int8": 3.031
+  }
+ ],
+ "prefill": [
+  {
+   "config": "all 7 cams x 256 tok @10Hz",
+   "params_B": 2.0,
+   "tokens": 1856,
+   "TFLOP_per_pass": 7.42,
+   "sustained_TFLOPs": 74.24
+  },
+  {
+   "config": "all 7 cams x 256 tok @10Hz",
+   "params_B": 4.0,
+   "tokens": 1856,
+   "TFLOP_per_pass": 14.85,
+   "sustained_TFLOPs": 148.48
+  },
+  {
+   "config": "all 7 cams x 256 tok @10Hz",
+   "params_B": 8.0,
+   "tokens": 1856,
+   "TFLOP_per_pass": 29.7,
+   "sustained_TFLOPs": 296.96
+  },
+  {
+   "config": "3 cams x 128 tok @10Hz",
+   "params_B": 2.0,
+   "tokens": 448,
+   "TFLOP_per_pass": 1.79,
+   "sustained_TFLOPs": 17.92
+  },
+  {
+   "config": "3 cams x 128 tok @10Hz",
+   "params_B": 4.0,
+   "tokens": 448,
+   "TFLOP_per_pass": 3.58,
+   "sustained_TFLOPs": 35.84
+  },
+  {
+   "config": "3 cams x 128 tok @10Hz",
+   "params_B": 8.0,
+   "tokens": 448,
+   "TFLOP_per_pass": 7.17,
+   "sustained_TFLOPs": 71.68
+  },
+  {
+   "config": "3 cams x 128 tok @2Hz",
+   "params_B": 2.0,
+   "tokens": 448,
+   "TFLOP_per_pass": 1.79,
+   "sustained_TFLOPs": 3.58
+  },
+  {
+   "config": "3 cams x 128 tok @2Hz",
+   "params_B": 4.0,
+   "tokens": 448,
+   "TFLOP_per_pass": 3.58,
+   "sustained_TFLOPs": 7.17
+  },
+  {
+   "config": "3 cams x 128 tok @2Hz",
+   "params_B": 8.0,
+   "tokens": 448,
+   "TFLOP_per_pass": 7.17,
+   "sustained_TFLOPs": 14.34
+  },
+  {
+   "config": "1 cam x 128 tok @2Hz",
+   "params_B": 2.0,
+   "tokens": 192,
+   "TFLOP_per_pass": 0.77,
+   "sustained_TFLOPs": 1.54
+  },
+  {
+   "config": "1 cam x 128 tok @2Hz",
+   "params_B": 4.0,
+   "tokens": 192,
+   "TFLOP_per_pass": 1.54,
+   "sustained_TFLOPs": 3.07
+  },
+  {
+   "config": "1 cam x 128 tok @2Hz",
+   "params_B": 8.0,
+   "tokens": 192,
+   "TFLOP_per_pass": 3.07,
+   "sustained_TFLOPs": 6.14
+  },
+  {
+   "config": "1 cam x 64 tok @2Hz",
+   "params_B": 2.0,
+   "tokens": 128,
+   "TFLOP_per_pass": 0.51,
+   "sustained_TFLOPs": 1.02
+  },
+  {
+   "config": "1 cam x 64 tok @2Hz",
+   "params_B": 4.0,
+   "tokens": 128,
+   "TFLOP_per_pass": 1.02,
+   "sustained_TFLOPs": 2.05
+  },
+  {
+   "config": "1 cam x 64 tok @2Hz",
+   "params_B": 8.0,
+   "tokens": 128,
+   "TFLOP_per_pass": 2.05,
+   "sustained_TFLOPs": 4.1
+  }
+ ],
+ "thor_latency_estimate": [
+  {
+   "model": "Qwen3-VL-2B",
+   "cameras": 1,
+   "tokens": 224,
+   "vit_ms": 11.4,
+   "prefill_ms": 12.1,
+   "total_ms": 23.5
+  },
+  {
+   "model": "Qwen3-VL-2B",
+   "cameras": 3,
+   "tokens": 544,
+   "vit_ms": 34.2,
+   "prefill_ms": 14.9,
+   "total_ms": 49.1
+  },
+  {
+   "model": "Qwen3-VL-2B",
+   "cameras": 7,
+   "tokens": 1184,
+   "vit_ms": 79.8,
+   "prefill_ms": 20.5,
+   "total_ms": 100.3
+  },
+  {
+   "model": "Qwen3-VL-4B",
+   "cameras": 1,
+   "tokens": 224,
+   "vit_ms": 11.6,
+   "prefill_ms": 20.8,
+   "total_ms": 32.4
+  },
+  {
+   "model": "Qwen3-VL-4B",
+   "cameras": 3,
+   "tokens": 544,
+   "vit_ms": 34.8,
+   "prefill_ms": 28.0,
+   "total_ms": 62.8
+  },
+  {
+   "model": "Qwen3-VL-4B",
+   "cameras": 7,
+   "tokens": 1184,
+   "vit_ms": 81.2,
+   "prefill_ms": 42.6,
+   "total_ms": 123.8
+  },
+  {
+   "model": "Qwen3.5-4B",
+   "cameras": 1,
+   "tokens": 224,
+   "vit_ms": 10.9,
+   "prefill_ms": 29.1,
+   "total_ms": 40.0
+  },
+  {
+   "model": "Qwen3.5-4B",
+   "cameras": 3,
+   "tokens": 544,
+   "vit_ms": 32.7,
+   "prefill_ms": 40.7,
+   "total_ms": 73.4
+  },
+  {
+   "model": "Qwen3.5-4B",
+   "cameras": 7,
+   "tokens": 1184,
+   "vit_ms": 76.3,
+   "prefill_ms": 63.9,
+   "total_ms": 140.2
+  },
+  {
+   "model": "Qwen3-VL-8B",
+   "cameras": 1,
+   "tokens": 224,
+   "vit_ms": 15.7,
+   "prefill_ms": 29.3,
+   "total_ms": 45.0
+  },
+  {
+   "model": "Qwen3-VL-8B",
+   "cameras": 3,
+   "tokens": 544,
+   "vit_ms": 47.1,
+   "prefill_ms": 42.5,
+   "total_ms": 89.6
+  },
+  {
+   "model": "Qwen3-VL-8B",
+   "cameras": 7,
+   "tokens": 1184,
+   "vit_ms": 109.9,
+   "prefill_ms": 68.9,
+   "total_ms": 178.8
+  }
+ ],
+ "cache_size": [
+  {
+   "refresh_hz": 2.0,
+   "tokens": 128,
+   "d_v": 2048,
+   "depths": 3,
+   "bytes_per_elem": 1,
+   "ticks": 188640,
+   "GB": 148.4
+  },
+  {
+   "refresh_hz": 2.0,
+   "tokens": 64,
+   "d_v": 2048,
+   "depths": 3,
+   "bytes_per_elem": 1,
+   "ticks": 188640,
+   "GB": 74.2
+  },
+  {
+   "refresh_hz": 2.0,
+   "tokens": 128,
+   "d_v": 2048,
+   "depths": 3,
+   "bytes_per_elem": 2,
+   "ticks": 188640,
+   "GB": 296.7
+  },
+  {
+   "refresh_hz": 10.0,
+   "tokens": 128,
+   "d_v": 2048,
+   "depths": 3,
+   "bytes_per_elem": 1,
+   "ticks": 943200,
+   "GB": 741.8
+  },
+  {
+   "refresh_hz": 10.0,
+   "tokens": 64,
+   "d_v": 2048,
+   "depths": 3,
+   "bytes_per_elem": 1,
+   "ticks": 943200,
+   "GB": 370.9
+  },
+  {
+   "refresh_hz": 10.0,
+   "tokens": 128,
+   "d_v": 2048,
+   "depths": 3,
+   "bytes_per_elem": 2,
+   "ticks": 943200,
+   "GB": 1483.5
+  }
+ ]
+}
