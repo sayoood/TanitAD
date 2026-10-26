@@ -148,3 +148,18 @@ A true-map input is privileged: P4 is an oracle bound, never a deployable arm (v
   wiring is an architecture change and a PI decision.
 * **What does move planning (measured today):** the longitudinal decision -- the oracle lon class (missed-decel 0.470 → 0.341, S6
   ADE −0.150), a z_tac probe that beats the lon head (AUC 0.762 vs 0.685), and a progress head on a clean split (L1C, running).
+
+## 11. 2026-10-26 results -- what refcv9 now has to build (Master Mind, ~05:25 Berlin)
+
+All MEASURED, T1 self-action open loop on logged eval139 frames, paired episode-cluster bootstrap over episodes, one training seed.
+
+| finding | number | refcv9 consequence |
+|---|---|---|
+| A clean-split PROGRESS head beats the shipped re-timing stage (SHIP-R8 A4 PASS, 2da6a63) | E3 -1.198 vs RETIME -0.868; FD 0.137 -> 0.060 separated | progress is its own head, trained on clips the trunk never saw (L1C), and the PATH comes from the planner |
+| ... but it misses decels | MD 0.47 -> 0.53 (n.s.) | the progress head must consume the lon decision -- sealed test A4c (H2cn-L) |
+| refcv8's lon head is right but not confident; its sharpened argmax, applied to the SPEED only, catches decels (SSGUARD, REPLICATED 160f583; SHIP-R8 A5 PASS aea2580) | MD -0.08 separated, no row worse | "lon class drives the speed profile only": lat and lon are decoded separately |
+| false brake is a SELECTION event (L2-B, 2afb84f) | GOOD cruise candidate exists in 98 % of FB windows | under a separate progress head the selection only picks the path; the FD lever moves to the progress head (above) |
+| off-road is a PATH problem the fan already solves -- with the GT map (MAPPATH, de0bdc1) | sidewalk 17.9 % -> 2.2 % with GT; own map: no gain | the planner must read a PRECISE map: map-only fine-tune now (PI-authorised, 6 Thor-h); in refcv9 the selection reads the map head |
+| the own map's false alarms sit in the never-supervised ego zone (x < 4 m) | sidewalk precision 0.10 at 0-1 m vs 0.65-0.75 beyond 4 m | refcv9 supervises (or masks at inference) the near field; `--map-lift-valid-mask` left it unsupervised |
+
+Still running: SELCOR (train-fitted selection correction, fresh-clip roll), A4b (H2cn clamped to the fed ceiling: H2cn plans above it ~3x as often as RETIME), A4c, the map-only fine-tune infrastructure. The shipped-stage choice (H2cn / H2cn-capped / H2cn-L / factored) goes to the PI as one item when A4b and A4c have read.
