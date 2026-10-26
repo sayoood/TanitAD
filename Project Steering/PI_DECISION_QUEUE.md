@@ -2674,3 +2674,29 @@ zero-gradient gate and K-FROZEN read exactly that. G-MAP-OVERFIT stays required;
   list, so the NEXT launch on another profile will meet the same 160 and needs its own decision. The 2 encoding-hygiene failures
   were code defects in v8f files and were fixed, not pinned.
 
+
+## ⏳ OPEN (2026-10-27 ~00:30 Berlin) -- D-R9-FRESH2: may I download a second fresh PhysicalAI-AV pull (~600 clips, ~8.6 GB)? Every decel-decision lever is now blocked on unseen clips
+
+**Why now.** R9PF_LH (4993ae0, `H-R9-R9PF-LH-1`): refcv9's profiles TRANSFER a correct decel decision (GT regime: S6 ADE -0.40 m) and AMPLIFY a wrong one
+(LH: +0.29 m; LH misses 50.4 % of GT decels) -- **decision quality binds**. The two candidate fixes cannot be confirmed with what we hold:
+* the D2 + LH fusion reads +0.0450 [+0.0185, +0.0716] over LH (eval139, T0 label level, POST-HOC, beside `H-R9-LHA0-D2-1`), but **eval139 is barred** for further
+  decode variants (PREREG_R9PF_LH s5) and **eval141 is eval139 + 2 clips** (not independent);
+* a LH refit on more clean clips (the head cannot be fitted on the trunk's own clips: it memorises, `refcv9-progress-head-needs-clean-split`) has no clips to grow on;
+* D-R9-INMODEL's B9-1 reading (your open Q2) turns the 300-clip fresh split into a CALIBRATION split, so the in-model path ALSO needs a new unseen eval set.
+The 120 untouched candidates of the first pull give ~107 episodes: minimum detectable dAUC ~+0.042 at 80 % power -- only the full observed effect, no margin for winner's curse.
+
+**The ask.** Re-run `l1c_select.py --n-eligible 1020` (same eligibility E1-E5, same sha256(clip_id) order -- the first 420 reproduce byte for byte, so nothing already used moves)
+and fetch ranks 421-1020 with the same `l1c_fetch.py` (front-wide mp4 + egomotion + calibration) plus `fetch_fresh_obstacle.py`'s obstacle.offline parquet for the same clips.
+Raw ids stay under `F:/l1c/select/`; the repo carries sha12 only.
+
+**Numbers** (MEASURED on the first pull, `F:/l1c/select/fetch_manifest.jsonl`, 330 fetched: 13.6 MB/clip, 17.3 s/clip, 300/330 usable; obstacle parquet ~0.64 MB/clip):
+| | clips | disk (F:, 428 GB free) | fetch, sequential | usable episodes | min. detectable dAUC (80 %, one-sided 2.5 %) |
+|---|---|---|---|---|---|
+| **(A) recommended** | 600 | ~8.6 GB | ~2.9 h, 0 Thor-h | ~530: CONFIRM ~360 + GROW ~170 | CONFIRM: **~+0.023** |
+| (B) confirm only | 300 | ~4.3 GB | ~1.4 h | ~265, all CONFIRM | ~+0.027 |
+| (C) no download | -- | -- | -- | 107 (leftover) | ~+0.042 |
+Power is ESTIMATED: the eval139 D2 K-HEAD paired-bootstrap SE (0.0135 at 136 episodes) scaled by 1/sqrt(n); it assumes FRESH2 windows per episode match eval139's.
+
+**On approval, in this order:** (1) `PREREG_FRESH2` sealed BEFORE any FRESH2 file is opened -- the CONFIRM/GROW split rule (by sha256 rank, fixed now), K-HEAD bars
+for fusion vs LH and grown-LH vs LH on CONFIRM, constant and within-episode-permuted controls; (2) fetch; (3) the T0 label read; (4) a T1 roll pre-registration
+(R9 profiles fed the confirmed decision, vs H2CN) only if the label level clears. Nothing here needs Thor.
