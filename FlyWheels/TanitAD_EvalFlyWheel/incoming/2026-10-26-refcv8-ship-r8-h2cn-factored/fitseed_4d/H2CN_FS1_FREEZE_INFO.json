@@ -1,0 +1,426 @@
+{
+ "tool": "h2cn_freeze.py",
+ "fit_seed": 1,
+ "role": "SHIP-R8 AMENDMENT 4d: the H2cn stage re-fitted at fit seed 1 (fit on FRESH rows only); NO eval-window output computed",
+ "amendments": {
+  "4": {
+   "file": "C:\\Users\\Admin\\refcv8_pf\\ship_r8_sub_fs\\SHIP_R8_AMENDMENT_4_H2CN.md",
+   "sha256": "57b377162b99fc9e9f33307e35fd2cd6211494f5e174d6cc8566dddeb4d04634",
+   "seal_matches": true
+  },
+  "5": {
+   "file": "C:\\Users\\Admin\\refcv8_pf\\ship_r8_sub_fs\\SHIP_R8_AMENDMENT_5_FACTORED.md",
+   "sha256": "b100c470d65ef99131f833191321a3c3194a3875eb126b20e5ce266ee8d991bc",
+   "seal_matches": true
+  },
+  "4d": {
+   "file": "C:\\Users\\Admin\\refcv8_pf\\ship_r8_sub_fs\\SHIP_R8_AMENDMENT_4D_H2CN_FITSEED.md",
+   "sha256": "624d5d3bb700df348dd23e0daf223d517e7550465925d6f7b807a32ffca1b2f2",
+   "seal_matches": true
+  }
+ },
+ "controls": {
+  "K-SEAL": true,
+  "K-DISJ": true,
+  "K-RELOAD": {
+   "S2": {
+    "bit_equal": true,
+    "max_abs": 0.0,
+    "rows": 9135,
+    "d_out": 4
+   },
+   "S6": {
+    "bit_equal": true,
+    "max_abs": 0.0,
+    "rows": 7147,
+    "d_out": 6
+   }
+  },
+  "K-DETERM": true,
+  "K-DATA": {
+   "S2": {
+    "n_fresh": [
+     9135,
+     9135
+    ],
+    "n_params": [
+     67332,
+     67332
+    ],
+    "PASS": true
+   },
+   "S6": {
+    "n_fresh": [
+     7147,
+     7147
+    ],
+    "n_params": [
+     67590,
+     67590
+    ],
+    "PASS": true
+   }
+  },
+  "K-SEED-MOVES": {
+   "vs": "C:\\Users\\Admin\\refcv8_pf\\ship_r8_sub_fs\\H2CN_FS0_STAGE_FROZEN.pt",
+   "vs_sha256": "0d127b270df05035313d580156356b58688344b815df9fc6740a37a438751b7f",
+   "per_surface": {
+    "S2": {
+     "n_tensors": 8,
+     "n_differ": 4,
+     "differ": [
+      "state_dict.0.bias",
+      "state_dict.0.weight",
+      "state_dict.2.bias",
+      "state_dict.2.weight"
+     ],
+     "bit_equal": false,
+     "scalars_equal": {
+      "wd": true,
+      "epochs": false,
+      "cv_l1_sum": false,
+      "n_params": true,
+      "d_in": true,
+      "d_out": true,
+      "n_fresh_rows": true
+     }
+    },
+    "S6": {
+     "n_tensors": 8,
+     "n_differ": 4,
+     "differ": [
+      "state_dict.0.bias",
+      "state_dict.0.weight",
+      "state_dict.2.bias",
+      "state_dict.2.weight"
+     ],
+     "bit_equal": false,
+     "scalars_equal": {
+      "wd": false,
+      "epochs": false,
+      "cv_l1_sum": false,
+      "n_params": true,
+      "d_in": true,
+      "d_out": true,
+      "n_fresh_rows": true
+     }
+    }
+   },
+   "predictions": {
+    "S2": {
+     "max_abs_pred_diff_vs_seed0_on_fresh_fit_rows": 0.5486927619374209
+    },
+    "S6": {
+     "max_abs_pred_diff_vs_seed0_on_fresh_fit_rows": 9.533975765520688
+    }
+   },
+   "PASS": true
+  },
+  "K-FIT_vs_seed0 (descriptive)": {
+   "S2": {
+    "wd": [
+     0.1,
+     0.1
+    ],
+    "epochs": [
+     14,
+     27
+    ],
+    "cv_l1_sum": [
+     6863.122110581397,
+     6862.878090439847
+    ],
+    "equal_to_seed0_choice": false
+   },
+   "S6": {
+    "wd": [
+     0.01,
+     0.1
+    ],
+    "epochs": [
+     25,
+     19
+    ],
+    "cv_l1_sum": [
+     82264.06245700573,
+     83756.56720561179
+    ],
+    "equal_to_seed0_choice": false
+   }
+  },
+  "K-FIT_vs_seed0_raw (descriptive)": {
+   "S2": {
+    "wd": [
+     0.1,
+     0.1
+    ],
+    "epochs": [
+     14,
+     27
+    ],
+    "n_params": [
+     67332,
+     67332
+    ],
+    "n_fresh": [
+     9135,
+     9135
+    ],
+    "cv_l1_sum": [
+     6863.122110581397,
+     6862.878090439847
+    ],
+    "cv_l1_sum_exact": false,
+    "cv_l1_sum_absdiff": 0.2440201415492993,
+    "PASS": false
+   },
+   "S6": {
+    "wd": [
+     0.01,
+     0.1
+    ],
+    "epochs": [
+     25,
+     19
+    ],
+    "n_params": [
+     67590,
+     67590
+    ],
+    "n_fresh": [
+     7147,
+     7147
+    ],
+    "cv_l1_sum": [
+     82264.06245700573,
+     83756.56720561179
+    ],
+    "cv_l1_sum_exact": false,
+    "cv_l1_sum_absdiff": 1492.5047486060648,
+    "PASS": false
+   }
+  },
+  "ALL_PASS": true
+ },
+ "disjointness": {
+  "sources": {
+   "fresh_ids": {
+    "file": "F:\\l1c\\select\\final_ids_fresh.json",
+    "sha256": "04ff350eb37e00e8ccde395498a70ac737fb3c269fe584c81dfe5bcb626e628a",
+    "n": 300
+   },
+   "v9_eval139": {
+    "file": "E:\\refcv8_eval_kit\\data\\refcv8_v9labels\\release\\v9_labels_eval139.npz",
+    "md5": "6b5c7f207cffc3b7eb3cd527fd433599",
+    "md5_pinned": "6b5c7f207cffc3b7eb3cd527fd433599",
+    "n": 139
+   },
+   "v9_train4572": {
+    "file": "E:\\refcv8_eval_kit\\data\\refcv8_v9labels\\release_train4572\\v9_labels_train.npz",
+    "md5": "83e30bd3791f0767707eade5f4671759",
+    "md5_pinned": "83e30bd3791f0767707eade5f4671759",
+    "n": 4572
+   },
+   "extrinsics_train4572_eval139": {
+    "file": "E:\\refcv8_eval_kit\\data\\refcv8_train4572_eval139_extrinsics.json",
+    "sha256": "933c779b52a0fbb20e37445a933d49d8fa7a630307d3b5eceaeb1a751cc3eb1a",
+    "n": 4711
+   },
+   "eval_tree_dump_json": {
+    "file": "C:\\Users\\Admin\\refcv8_eval_archive\\battery\\step48852ema_pf\\dump_s0\\refcv6_extras.npz.json",
+    "n": 139
+   },
+   "fresh_tree_dump_json": {
+    "file": "F:\\l1c\\tree\\step48852ema_fresh\\dump_s0\\refcv6_extras.npz.json",
+    "n": 300
+   },
+   "programme_digest_lists": {
+    "parity_train": 2400,
+    "deployed_val40": 40,
+    "v72_eval": 147
+   }
+  },
+  "fit_rows_S2_n_clips": 297,
+  "fit_rows_S6_n_clips": 297,
+  "consistency": {
+   "v9_md5s_pinned": true,
+   "counts": true,
+   "xcheck_fresh_ids_eq_fresh_dump": true,
+   "xcheck_v9_eval_eq_eval_dump": true,
+   "xcheck_extrinsics_sha12_eq_train_union_eval": true,
+   "xcheck_train_eval_disjoint": true,
+   "fit_rows_S2_subset_of_fresh": true,
+   "fit_rows_S6_subset_of_fresh": true
+  },
+  "intersections": {
+   "fresh_full_x_extrinsics_full": 0,
+   "fresh12_x_eval139": 0,
+   "fresh12_x_train4572": 0,
+   "fresh12_x_eval_dump": 0,
+   "fresh_full_x_parity_train": 0,
+   "fresh_full_x_deployed_val40": 0,
+   "fresh_full_x_v72_eval": 0,
+   "fit_rows_S2_x_train4572_or_eval139": 0,
+   "fit_rows_S6_x_train4572_or_eval139": 0
+  },
+  "disjoint": true,
+  "PASS": true,
+  "mutation_injected_one_eval139_clip": false
+ },
+ "disjointness_mutation_arm": {
+  "sources": {
+   "fresh_ids": {
+    "file": "F:\\l1c\\select\\final_ids_fresh.json",
+    "sha256": "04ff350eb37e00e8ccde395498a70ac737fb3c269fe584c81dfe5bcb626e628a",
+    "n": 300
+   },
+   "v9_eval139": {
+    "file": "E:\\refcv8_eval_kit\\data\\refcv8_v9labels\\release\\v9_labels_eval139.npz",
+    "md5": "6b5c7f207cffc3b7eb3cd527fd433599",
+    "md5_pinned": "6b5c7f207cffc3b7eb3cd527fd433599",
+    "n": 139
+   },
+   "v9_train4572": {
+    "file": "E:\\refcv8_eval_kit\\data\\refcv8_v9labels\\release_train4572\\v9_labels_train.npz",
+    "md5": "83e30bd3791f0767707eade5f4671759",
+    "md5_pinned": "83e30bd3791f0767707eade5f4671759",
+    "n": 4572
+   },
+   "extrinsics_train4572_eval139": {
+    "file": "E:\\refcv8_eval_kit\\data\\refcv8_train4572_eval139_extrinsics.json",
+    "sha256": "933c779b52a0fbb20e37445a933d49d8fa7a630307d3b5eceaeb1a751cc3eb1a",
+    "n": 4711
+   },
+   "eval_tree_dump_json": {
+    "file": "C:\\Users\\Admin\\refcv8_eval_archive\\battery\\step48852ema_pf\\dump_s0\\refcv6_extras.npz.json",
+    "n": 139
+   },
+   "fresh_tree_dump_json": {
+    "file": "F:\\l1c\\tree\\step48852ema_fresh\\dump_s0\\refcv6_extras.npz.json",
+    "n": 300
+   },
+   "programme_digest_lists": {
+    "parity_train": 2400,
+    "deployed_val40": 40,
+    "v72_eval": 147
+   }
+  },
+  "consistency": {
+   "v9_md5s_pinned": true,
+   "counts": true,
+   "xcheck_fresh_ids_eq_fresh_dump": true,
+   "xcheck_v9_eval_eq_eval_dump": true,
+   "xcheck_extrinsics_sha12_eq_train_union_eval": true,
+   "xcheck_train_eval_disjoint": true
+  },
+  "intersections": {
+   "fresh_full_x_extrinsics_full": 1,
+   "fresh12_x_eval139": 1,
+   "fresh12_x_train4572": 0,
+   "fresh12_x_eval_dump": 1,
+   "fresh_full_x_parity_train": 0,
+   "fresh_full_x_deployed_val40": 0,
+   "fresh_full_x_v72_eval": 1
+  },
+  "disjoint": false,
+  "PASS": false,
+  "mutation_injected_one_eval139_clip": true
+ },
+ "fits": {
+  "S2": {
+   "wd": 0.1,
+   "epochs": 14,
+   "cv_l1_sum": 6863.122110581397,
+   "n_params": 67332,
+   "wall_s": 327.8,
+   "n_fresh_rows": 9135,
+   "n_fresh_episodes": 297,
+   "n_fresh_clips": 297,
+   "train_R2_closure": [
+    0.5317642084014547,
+    0.21083551290692215,
+    0.18220589203328375,
+    0.24242651172767404
+   ],
+   "bank_v0_vs_panel_maxabs": 0.0
+  },
+  "S6": {
+   "wd": 0.01,
+   "epochs": 25,
+   "cv_l1_sum": 82264.06245700573,
+   "n_params": 67590,
+   "wall_s": 262.3,
+   "n_fresh_rows": 7147,
+   "n_fresh_episodes": 297,
+   "n_fresh_clips": 297,
+   "train_R2_closure": [
+    0.14661245924719235,
+    0.2665053213808728,
+    0.4069809289678983,
+    0.49851317473058876,
+    0.5657353417038242,
+    0.6129260980254612
+   ],
+   "bank_v0_vs_panel_maxabs": 0.0
+  }
+ },
+ "provenance": {
+  "amendment_4_sha256": "57b377162b99fc9e9f33307e35fd2cd6211494f5e174d6cc8566dddeb4d04634",
+  "amendment_5_sha256": "b100c470d65ef99131f833191321a3c3194a3875eb126b20e5ce266ee8d991bc",
+  "amendment_4d_sha256": "624d5d3bb700df348dd23e0daf223d517e7550465925d6f7b807a32ffca1b2f2",
+  "code_sha256": {
+   "l1_fit_score.py": "bf1a50962ca7b55347336642ff1a2d72ad5f0e565ffa73e5e2acaa34fc272b11",
+   "l1c_fit_score.py": "5d9e355614074e23d4153b4387ea6423da06fc52ca3c80d80186cb4f2e9344da",
+   "l1c_h2cn_confirm.py": "4120e2ced9807e3dedcf5e625a671e5b52ad4ccdb994150a278564870b023736",
+   "progress_scalar.py": "5838bb24dc6b191ad091a490394b5d1b2e8243632c81509915b54668b74042c8",
+   "ship_r8_sub_common.py": "a62ee93c26f0a757305febc3f7dab19b4c79253acc6a2efcbb76f27fb438c2d7",
+   "h2cn_freeze.py": "2a31f3f1e16f6f48942660bb0a732d1acfd0445379f4dc7020a2964ac6405877"
+  },
+  "fresh_bank": {
+   "file": "F:\\l1c\\bank\\ztac_fresh.npz",
+   "sha256": "c07c7849c7ba897aea29ee0068d970ae5d511a13f88f4113f25c033a3fa20755"
+  },
+  "fresh_tree": "F:\\l1c\\tree/step48852ema_fresh",
+  "fit_reference": {
+   "file": "C:\\Users\\Admin\\refcv8_pf\\refcv9_l1c\\result_h2cn\\H2CN_RESULT.json",
+   "sha256": "48c38b5bc06fdf4206f581ce415f350decbb1f40aea235aff114360067bffd1c"
+  },
+  "fit_seed": 1,
+  "torch": "2.11.0+cu128",
+  "threads": {
+   "OMP_NUM_THREADS": "4",
+   "MKL_NUM_THREADS": "4",
+   "torch_get_num_threads": 4
+  }
+ },
+ "fit_reference_values": {
+  "S2": {
+   "H2cn": {
+    "wd": 0.1,
+    "epochs": 27,
+    "cv_l1_sum": 6862.878090439847,
+    "n_params": 67332,
+    "wall_s": 214.1
+   },
+   "n_fresh": 9135
+  },
+  "S6": {
+   "H2cn": {
+    "wd": 0.1,
+    "epochs": 19,
+    "cv_l1_sum": 83756.56720561179,
+    "n_params": 67590,
+    "wall_s": 183.5
+   },
+   "n_fresh": 7147
+  }
+ },
+ "generated": "2026-10-26T06:02:50+0100",
+ "wall_s": 611.8,
+ "stage_file": {
+  "path": "C:\\Users\\Admin\\refcv8_pf\\ship_r8_sub_fs\\H2CN_FS1_STAGE_FROZEN.pt",
+  "sha256": "21780cf8a94f035f4b3996e314dd7daa4da881cc297f8d4e63f28109cabb620d",
+  "bytes": 1103539,
+  "written_epoch": 1792990969.3923688
+ }
+}

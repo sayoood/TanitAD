@@ -5986,6 +5986,16 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | compliance | strict fed-ceiling exceedance on S6 compliant windows 29/3251 (H2CN 55, RETIME 16, CAP8 0) at s0. |
 | status | Not a shipping candidate; H2CN_DEPLOY8 / H2CN_CAP8 stand (§16.15 / §16.17). |
 
+### 16.19 refcv8-r101-s0 -- the H2cn stage at FIT seeds 1 and 2: SHIP-R8 PASS REPLICATED (AMENDMENT 4d) *(addendum to §16.15)*
+
+| | |
+|---|---|
+| what | §16.15's H2cn recipe re-fit at fit seeds 1 / 2 (the seed sets the CV folds and the MLP init); CV re-selected per seed (S6 wd 0.01 / 25 ep at FS1, 0.1 / 21 at FS2); stages 21780cf8 / b1fb318c registered before any eval output; amendment sealed 624d5d3b. |
+| SHIP-R8 (per-frame feed; inference seeds 0 / 1) | **PASS at both fit seeds** (every clause; (6) N/A). E1 FS1 -0.0470 / -0.0463, FS2 -0.0471 / -0.0463; E3 FS1 -1.1190 / -1.1129, FS2 -1.1303 / -1.1247 (seed 0: -1.1975 / -1.1909). MEASURED `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-refcv8-ship-r8-h2cn-factored/fitseed_4d/out_4d/READ_4D.json`. |
+| fit-seed floor (vs seed 0, same draw) | S6 ADE +0.0785 [+0.0205, +0.1565] (FS1), +0.0671 [+0.0073, +0.1451] (FS2), separated -- seed 0 is the best of three; S2 ADE, FD, MD n.s. |
+| vs RETIME_DEPLOY8 | FD separated below in all 6 cells; MD separated WORSE at FS1 (+0.0751), n.s. at FS0 / FS2. |
+| status | A4's PASS replicates across stage fits; quote §16.15's E3 with this floor beside it. |
+
 ## 18. nt-a1-s0 — NT A1, the navtrain decision arm (PREREG_NT_DECIDE) [NAVSIM navtrain · ONE SEED · TRAINING]
 
 ### nt-a1-s0 — ▶ TRAINING since 2026-10-25 11:02 Berlin (CET, 10:02Z), on Thor, launched by the launch gate's PASS token
