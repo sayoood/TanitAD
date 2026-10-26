@@ -1,45 +1,57 @@
 {
- "schema": "tanitad.v10_imag_manifest/1",
- "component": "imag",
- "status": "SAMPLE: eval139 all 139 clips + train first 100 clips in v9 order (--limit 100); full train build NOT run",
- "producer": {
-  "stack/tanitad/hicap/supervision.py": "b27b20f89086a9f85a0c5ad46ce310b8",
-  "stack/scripts/build_hicap_imag_supervision.py": "0c757f3c07e1dac533ba8e85000c7837"
+ "schema": "tanitad.v10_imag/2",
+ "built": "2026-10-26",
+ "producer": "stack/tanitad/hicap/supervision.py via stack/scripts/build_hicap_imag_supervision.py (40 shards train, 4 eval139; --merge)",
+ "inputs": {
+  "agents": "Sayood/tanitad-v7-training-corpus agents/obstacle_offline (upstream obstacle.offline cuboids)",
+  "egomotion": "egomotion/egomotion_alpamayo.tar",
+  "v9": "Sayood/tanitad-refcv8-v9-labels",
+  "vocab": "vocab/vocab_v9train_ego.npz (train split only, K_P 1024 x K_V 275)"
  },
- "base_commit": "20135ac571d4b20a7d702bb0a83d51f8138bfe35",
- "built": "2026-10-25",
- "sources": {
-  "corpus": "Sayood/tanitad-v7-training-corpus: agents/obstacle_offline/*.parquet (+index.parquet), egomotion/egomotion_alpamayo.tar",
-  "v9": "v9_labels_eval139.npz / v9_labels_train.npz (HF Sayood/tanitad-refcv8-v9-labels)",
-  "uuid_map": "index/clip_index_v7.2_{train,eval}.json"
- },
- "alignment": "row r of v10_imag_<split>.npz == row r of v9_labels_<split>.npz (clip table copied); clips not built have exo_w = J_w = 0",
- "candidate_set": "probe set only (8 vocabulary-free candidates, verification); J_teacher/cand_p/cand_q need a TRAIN-split FactoredVocab (--vocab) and were NOT produced",
- "files": {
-  "v10_imag_eval139.npz": {
-   "bytes": 2709092,
-   "md5": "75bfab356e13228902562764759941a0"
+ "alignment": "row r == v9 row r of the split; clip table clip__*; mode ids = imagination.MODE_ACC (brake, hold, accelerate, brake_hard); cut-outs IGNORE (exo_mode4 separate)",
+ "caveat": "teacher costs are open-loop and NON-REACTIVE (logged agents); one-sided rule drops agents whose first contact is from behind",
+ "measured": {
+  "train": {
+   "n_clips_built": 4369,
+   "rows_exo_w_frac": 0.8092428429110136,
+   "v9_lead_agreement": 0.873740838067267,
+   "v9_rows_compared": 621048,
+   "gap_within_2m_after_offset": 0.9448665614709111,
+   "gap_offset_m": 3.5489353091680513,
+   "logged_collide_frac": 0.003765790123580156
   },
-  "v10_imag_eval139.stats.json": {
-   "bytes": 4176,
-   "md5": "4fcd403707e7cbef0192a928719c8aa9"
-  },
-  "v10_imag_train_sample100.npz": {
-   "bytes": 2087579,
-   "md5": "057c3b1b1d12a4a750212b5a8177bdd5"
-  },
-  "v10_imag_train_sample100.stats.json": {
-   "bytes": 4142,
-   "md5": "cbed8a37c6cbd06d85a945dbe02a0e77"
+  "eval139": {
+   "n_clips_built": 139,
+   "v9_lead_agreement": 0.9006632653061224,
+   "gap_within_2m_after_offset": 0.9206798866855525,
+   "logged_collide_frac": 0.0026305047847974966
   }
  },
- "args": [
-  "eval139: --v9 v9_labels_eval139.npz",
-  "train: --v9 v9_labels_train.npz --limit 100"
- ],
- "producer_md5_at_build": {
-  "stack/tanitad/hicap/supervision.py": "b27b20f89086a9f85a0c5ad46ce310b8",
-  "stack/scripts/build_hicap_imag_supervision.py": "a162ec458bbc1531a7941a109aad9764"
+ "files": {
+  "imag/v10_imag_train.npz": {
+   "sha256": "ed90a44d935bbed43df08237c6c81754338a5918993e71c7a4084612fbbe90bb",
+   "bytes": 162931448
+  },
+  "imag/v10_imag_eval139.npz": {
+   "sha256": "f6ab29edc4800f7f84cc54e95b295ca1cfb655d8da44e580c78e0052f181aee3",
+   "bytes": 5268399
+  },
+  "imag/v10_imag_train.stats.json": {
+   "sha256": "66834cbc0ac3417fa1edae73f18bd87f1d87af1aa5c8e6ff0de5967ed4e5b2c3",
+   "bytes": 4248
+  },
+  "imag/v10_imag_eval139.stats.json": {
+   "sha256": "81c0278bb6976c51b5e98f0d2ba9e79f7c4f5a6d59d18717f9e502fcdcad14b3",
+   "bytes": 4177
+  },
+  "vocab/vocab_v9train_ego.npz": {
+   "sha256": "01d1ccc6e87a3cc313843de7221140b732e56425766788c84a9e316e5ae45667",
+   "bytes": 1314919
+  },
+  "vocab/vocab_v9train_ego.npz.json": {
+   "sha256": "c4fdf561376e0cb3483f97a70dd32e3aab6efabd59af956ec3b39349898dfd6b",
+   "bytes": 226
+  }
  },
- "producer_note": "the CLI later gained --shard/--merge (verified: a 2-shard merge of 4 eval139 clips is array-identical to the single-process build); the build path that produced these files is unchanged"
+ "repo_copies": "eval139 npz + all stats + vocab in sayoood/TanitAD DataEng/v10/{imag,vocab}; the 163 MB train npz is on HF only"
 }

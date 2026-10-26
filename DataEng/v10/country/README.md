@@ -61,3 +61,18 @@ those stay in `Sayood/tanitad-refcv8-v9-labels` and `Sayood/tanitad-v7-training-
 
 ## Licence
 Derived from NVIDIA PhysicalAI-AV metadata; the upstream licence terms apply. Private dataset of the TanitAD programme.
+
+# v10.1 — imagination supervision + train-split vocabulary (2026-10-26)
+
+| file | content |
+|---|---|
+| `imag/v10_imag_train.npz` (163 MB) | per v9 train row (869,278 rows, 4,369 clips): lead descriptors `exo_*` (gap / closing / lead accel at 0.5/1/2/3 s, horizon mask, mode, onset, has-lead), label weight `exo_w`, teacher costs over 5 vocabulary candidates `cand_p, cand_q, J_teacher, cost_t, cf_cost, cf_mask, y_tier0, star`, `J_w`, probe costs, clip table `clip__*` |
+| `imag/v10_imag_eval139.npz` | the same for the 139 eval clips |
+| `imag/*.stats.json`, `imag/MANIFEST.json` | MEASURED coverage, v9 cross-check, sha256 of every file |
+| `vocab/vocab_v9train_ego.npz` | train-split factored vocabulary: 1,024 paths × 275 speed profiles (incl. standstill), from 55,149 train windows |
+| `code/` | producer and builders (repo `sayoood/TanitAD`) |
+
+MEASURED (train / eval139): rows with agent supervision 80.9 % / 80.1 %; lead agreement with v9 87.4 % (621,048 rows) / 90.1 %;
+gap within 2 m after the constant +3.55 m reference offset (bumper vs rear axle) 94.5 % / 92.1 %; logged trajectory "collides" on
+0.38 % / 0.26 % of rows. Teacher costs are open-loop and NON-REACTIVE (logged agents do not respond to a counterfactual ego).
+Labels may use agents and the future; none of this is an inference input.
