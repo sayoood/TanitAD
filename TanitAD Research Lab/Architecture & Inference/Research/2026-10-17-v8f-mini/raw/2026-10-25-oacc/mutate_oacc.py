@@ -261,6 +261,7 @@ MUT = [
     off(READER, "a second lever on the argv is accepted", "if fx != fb:", "reader"),
     off(READER, "the built lever need not be recorded", 'if lg.get("w_acc") is None:', "reader"),
     off(READER, "other built levers may differ from B's", "if diff:", "reader"),
+    off(READER, "loss weights may differ from B's (Amendment 2)", "if w_bad:", "reader"),
     off(READER, "the parameter count may differ from B's", 'if not pb or pb != px or lg.get("n_params_trainable") != lb.get("n_params_trainable"):', "reader"),
     off(READER, "a non-positive or unrecorded w_acc record is accepted", 'if not (isinstance(w_acc, (int, float)) and w_acc > 0 and wj.get("schema") == "v8f-oacc-wacc-v1"):', "reader"),
     M(READER, "the s1_required key is not written", '"s1_required": bool(s1), ', "", "reader"),

@@ -194,7 +194,11 @@ def _flags(argv):
     return out
 
 
-def check_x_run(s, sm, argv, sc, rsm, rargv, w_acc, *, n_train=4512, holdout=None, lever_skip=("w_acc", "o_interface", "code_mix", "params", "n_params_trainable")) -> list:
+#: B's BUILT loss weights that its older record does not list (MEASURED 2026-10-26: the cfg of the banked M2b_s0 / M2b_s1 checkpoints; PREREG_V8F_OACC Amendment 2)
+W_B_BUILT = {"w_tac": 1.0, "w_cons": 0.5}
+
+
+def check_x_run(s, sm, argv, sc, rsm, rargv, w_acc, *, n_train=4512, holdout=None, lever_skip=("w_acc", "o_interface", "code_mix", "params", "n_params_trainable", "residual_zero_init", "w")) -> list:
     """The reasons seed ``s``'s X run is not B's plus ONE lever (empty = fine). ``rsm`` / ``rargv``: the banked B_s run's summary and argv. The launch-gate PASS token is selfcheck.json's."""
     bad, tag = [], x_tag(s)
     fl, rfl = _flags(argv), _flags(rargv)
@@ -253,6 +257,11 @@ def check_x_run(s, sm, argv, sc, rsm, rargv, w_acc, *, n_train=4512, holdout=Non
         diff = sorted(k for k in set(lg) & set(lb) if k not in lever_skip and lg[k] != lb[k])
         if diff:
             bad.append(f"{tag}: {w}.json built levers {diff} differ from B_s{s}'s")
+        # PREREG_V8F_OACC Amendment 2: `w` key by key; a weight B's older record does not carry must equal B's BUILT config (W_B_BUILT)
+        wb, wx = lb.get("w") or {}, lg.get("w") or {}
+        w_bad = sorted(k for k in set(wb) | set(wx) if wx.get(k) != (wb[k] if k in wb else W_B_BUILT.get(k, "absent from B's config")))
+        if w_bad:
+            bad.append(f"{tag}: {w}.json built loss weights {w_bad} differ from B_s{s}'s (a weight B's record lacks must equal B's built config {W_B_BUILT})")
         pb, px = lb.get("params") or {}, lg.get("params") or {}
         if not pb or pb != px or lg.get("n_params_trainable") != lb.get("n_params_trainable"):
             bad.append(f"{tag}: {w}.json parameter counts {px} / {lg.get('n_params_trainable')} are not B's {pb} / {lb.get('n_params_trainable')} (the lever adds no parameter)")

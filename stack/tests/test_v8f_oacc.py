@@ -1094,6 +1094,29 @@ def test_check_x_run_accepts_b_plus_one_lever_and_names_every_defect():
 
 
 @needs_reader
+def test_check_x_run_amendment_2_record_formats():
+    """PREREG_V8F_OACC Amendment 2: B's older record (residual_zero_init after training, `w` without w_tac / w_cons) against X's current one is
+    ONE lever; any real loss-weight difference is still refused, by its name."""
+    sm, argv, sc, rsm, rargv = _gate_records()
+    new_w = {"w_pen": 0.5, "w_pen_self": 0.25, "w_wm": 0.1, "w_tac": 1.0, "w_cons": 0.5}
+    for rec in (sm, sc):
+        rec["levers"] = dict(rec["levers"], w=dict(new_w), residual_zero_init=True)
+    rsm["levers"] = dict(rsm["levers"], w={"w_pen": 0.5, "w_pen_self": 0.25, "w_wm": 0.1}, residual_zero_init=False)
+    assert _no_crash(RD.check_x_run, 0, sm, argv, sc, rsm, rargv, 42.9311, holdout="H") == []
+    for key, val in (("w_tac", 2.0), ("w_cons", 0.25), ("w_wm", 0.2), ("w_pen", None), ("w_new", 1.0)):
+        w2 = dict(new_w)
+        if val is None:
+            w2.pop(key)
+        else:
+            w2[key] = val
+        sm2 = dict(sm, levers=dict(sm["levers"], w=w2))
+        got = _no_crash(RD.check_x_run, 0, sm2, argv, sc, rsm, rargv, 42.9311, holdout="H")
+        assert got and any("loss weights" in g and key in g for g in got), (key, got)
+    rsm2 = dict(rsm, levers=dict(rsm["levers"], w={"w_pen": 0.5, "w_pen_self": 0.25, "w_wm": 0.1, "w_tac": 2.0}))   # B's record carries w_tac: compared as recorded
+    assert any("w_tac" in g for g in _no_crash(RD.check_x_run, 0, sm, argv, sc, rsm2, rargv, 42.9311, holdout="H"))
+
+
+@needs_reader
 def test_check_x_run_names_each_clause_of_the_token_by_its_own_message():
     """One defect per case, and the message of THAT clause must be in the reasons: a clause that a neighbour also catches is not tested by `not refused` (the first review's mutation run found the PASS-token clause unpinned)."""
     sm, argv, sc, rsm, rargv = _gate_records()
