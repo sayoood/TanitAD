@@ -1,0 +1,22 @@
+{
+ "verdict": "VOID",
+ "prereg": {
+  "file": "C:\\Users\\Admin\\refcv8_pf\\refcv9_r9pf\\PREREG_R9PF_LH.md",
+  "sha256": "6de4e4bb0e8abfe0ada03e3e0e401faea9996857ed80744547b923c4f9f2bd59"
+ },
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames, not driving performance",
+ "estimator": "paired episode-cluster bootstrap over EPISODES, B 2000 seed 0 -- blind to training and inference variance; fit seeds 0/1/2 = training-variance read",
+ "reason": "PREREG_R9PF_LH s2: 'R9-PF's own K-EQ / K-OFF must have PASSED in its final verdict, or this arm is VOID.' R9PF_PA_VERDICT = VOID; K-OFF PASS, K-EQ FAIL (seed 0: 28 / 515 windows over 2 ulp, seed 1: 24 / 515; decision agreement 100 %).",
+ "arms_composed": [],
+ "note": "No R9LH-ARG / R9LH-SOFT / R9DER-ARG composition was run: the precondition is checked first, and a VOID arm is not scored.",
+ "unblock": "R9-PF K-EQ resolved (CPU roll discriminating CUDA-vs-CPU head arithmetic + a Master-Mind ruling on the tolerance), then rerun this prereg.",
+ "r9pf_verdict": {
+  "file": "C:\\Users\\Admin\\refcv8_pf\\refcv9_r9pf\\result\\R9PF_PA_VERDICT.json",
+  "sha256": "8c6f3c4602aebc30c12e5a0ed70ba24f37b54a51bf804c483b937c6dcc3bdf65"
+ },
+ "keq_record": {
+  "file": "C:\\Users\\Admin\\refcv8_pf\\refcv9_r9pf\\result\\R9PF_KEQ.json",
+  "sha256": "d1de8a28b421379659b24bfa38787e30b3f8ce0452268db367d90faf7b281da7"
+ },
+ "generated": "2026-10-26T16:19:55+0100"
+}
