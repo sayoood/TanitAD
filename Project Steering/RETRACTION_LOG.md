@@ -18803,3 +18803,22 @@ mutants. Found at ~12:15, before any run trained on the landed trainer.
 twin of the TRAPS entry "a mutation proof on a tree that a live chain reads". There the reader was a chain; here it is the lander.
 * ⇒ Never build a hold, or copy into another tree, from a tree with a running mutation proof.
 * ⇒ A hold builder compares every code file it lands against its banked diff, or against a blob, not against the tree it reads.
+
+## 2026-10-26 ~16:34 -- "planner-path code changed between fb47a58 and the tip" (refcv8 plan drift). Class: **A STOCHASTIC ROLL COMPARED WINDOW-BY-WINDOW ACROSS DIFFERENT STREAM POSITIONS**
+
+**What was claimed:** a 70-window calibration roll of refcv8 on the tip tree selected different paths from the banked fb47a58 roll on
+70 / 70 windows (max 7.24 m), and I attributed it to planner code changed since fb47a58 (`kinematic_prior.py`, `refc_v3.py`, ...) -- in
+PREREG_REFCV9_INMODEL_PA_AMENDMENT1 s(a), in GOALS_AND_CLAIMS H-R9-R9PF-PA-1, in a status report, and in a memory note.
+
+**What is true (H-R9-TREEDRIFT-1, MEASURED):** all 8 trees are bit-identical on the same 70 windows. The planner samples, its noise comes
+from the CUDA Philox state whose offset advances by 4 per forward, and the banked windows sat at rows 4,705-4,739 / 8,889-8,923 of a
+10,456-window roll. Replaying that stream position reproduces the bank bit for bit; one position off breaks it.
+
+**Why it was believable:** the git diff showed ~1,600 changed lines in the planner path, and the roll was deterministic run-to-run -- so
+'deterministic + different' read as 'different code'. Determinism of a roll does not make its noise position-independent.
+
+**Class / rule:** same family as `same-seed-rerun-is-a-fresh-draw` and the inference-variance rule in CLAUDE.md (*would another
+INFERENCE run say this?*). ⇒ For a sampling planner, a window's plan is a function of (inputs, seed, STREAM POSITION). Never compare a
+subset or re-ordered roll with a banked roll per window; compare distributions against the inference-seed floor, or inject the bank's
+stream position. A code diff touching the path is a hypothesis, not a mechanism, until a same-position comparison separates the trees.
+
