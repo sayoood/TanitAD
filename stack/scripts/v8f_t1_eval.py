@@ -18,6 +18,13 @@ NO MODEL CHANGE: ``V8FMini.forward_infer`` is called as is; no new input, no new
 The scoring is ``taniteval/tools/t1_eval.py::analyze`` (four families, S-curve, lag, paired episode-cluster bootstrap),
 fed per-episode dumps in its schema -- not re-implemented.
 
+``--dump-ticks DIR`` (PREREG_V8F_HACC_LAT, carried from the hlat build): one row per (window, tick) of the MODEL's rollout -- O's plan before the post-map (tau), the prior (P), the plan the
+model issued, the measured ego speed v0 at the tick, the logged future in the tick's EXECUTED frame (GT, "rejoin the human's path") and the window / episode / clip ids.
+``--dump-heads`` (needs ``--dump-ticks``; T1-HEADS) adds, to the SAME rows, what the S head and the T head emitted in the very ``forward_infer`` call that produced the plan -- exactly the
+tensors ``v8f_mini_eval.py``'s T0 eval scores (``checkpoint_metrics`` / ``tactical_metrics`` / ``self_consistency``): ``s_ckpt`` (+ its NOW-frame and window-origin-frame forms),
+``t_goal_prob``, ``t_lat_logits``, ``t_lon_logits``, ``t_cons_pred``, and the poses that frame them. Both flags default OFF; absent, the tool's output is unchanged bit for bit
+(control C-T, and ``tests/test_v8f_t1_heads.py``). The P10 floor has no heads and is never recorded.
+
 Modes:  run  (rollout + dumps + analysis)   |   analyze  (re-score existing dumps)
 """
 from __future__ import annotations
@@ -266,15 +273,28 @@ def causal_bucket(v, j: int, steps: int | None):
 
 
 # ------------------------------------------------------------------------------------------------ planners
-def model_planner(model, device):
+#: the S / T head outputs ``--dump-heads`` keeps from ``forward_infer`` (the names ``v8f_mini_eval.cmd_run`` collects into ``outs``); float32, as the T0 eval stores them
+HEAD_KEYS = ("ckpt", "goal_prob", "lat_logits", "lon_logits", "cons_pred")
+
+
+def model_planner(model, device, keep_aux: bool = False, keep_heads: bool = False):
+    """The model's plan. ``keep_aux`` (``--dump-ticks``) additionally keeps, per call, O's plan before the post-map (``tau``), the prior (``P``) and the gate flags;
+    ``keep_heads`` (``--dump-heads``) keeps :data:`HEAD_KEYS` of the SAME ``forward_infer`` call (never a second call). Neither changes any output."""
     import torch
 
     def plan(batch):
         with torch.no_grad():
             out = model.forward_infer(batch)
         plan.keys_read = set(out["_keys_read"])
+        if keep_aux:
+            plan.aux = {"tau": out.get("traj30_o", out["traj30"]).double().cpu().numpy(), "P": out["p10"].double().cpu().numpy(),
+                        "fired": None if "hacc_gate_fired" not in out else out["hacc_gate_fired"].cpu().numpy()}
+        if keep_heads:
+            plan.heads = {k: out[k].float().cpu().numpy() for k in HEAD_KEYS}
         return out["traj30"].float().cpu().numpy()
     plan.keys_read = set()
+    plan.aux = None
+    plan.heads = None
     return plan
 
 
@@ -286,6 +306,93 @@ def floor_planner(model, device):
         with torch.no_grad():
             return model.prior(batch["p10f"][:, -1].float(), batch["base"].float()).float().cpu().numpy()
     return plan
+
+
+# ------------------------------------------------------------------------------------------------ the tick recorder (--dump-ticks, --dump-heads)
+def gt_in_frame(pose_grid, pose_now, j: int):
+    """The logged future ``pose_grid[j+1 .. j+30]`` in the frame of ``pose_now`` = (x, y, yaw, ...): the SAME arithmetic as ``floors_kin.gt_waypoints`` / ``v8f_mini_data.gt_future`` (rotation by
+    ``-yaw``), with the origin pose replaced by the EXECUTED pose. At tick 0 the executed pose IS the logged pose, so this equals the store's ``gt[t0]`` (control C-T2). ``ok`` False (NaN GT) when the logged clip
+    ends before ``j + 30`` (the same ``t <= T - 31`` rule as ``gt_future``)."""
+    pg = np.asarray(pose_grid, np.float64)
+    if j + H > len(pg) - 1:
+        return np.full((H, 2), np.nan), False
+    d = pg[j + 1:j + 1 + H, :2] - np.asarray(pose_now, np.float64)[None, :2]
+    c, s = np.cos(-pose_now[2]), np.sin(-pose_now[2])
+    return np.stack([d[:, 0] * c - d[:, 1] * s, d[:, 0] * s + d[:, 1] * c], axis=-1), True
+
+
+class TickRecorder:
+    """The ``hook`` of :func:`rollout` that keeps the tick samples. ``hook(n, batch, plan, states)`` runs BEFORE the plan is committed, so ``st.j`` and ``st.d['pose'][st.j]`` are the tick's executed state.
+
+    ``heads=True`` (``--dump-heads``) adds the S / T head outputs of the tick's own ``forward_infer`` call (``planner.heads``) under :attr:`HEAD_FIELDS`:
+      * ``s_ckpt``      [N, 3, 3] f32  S's checkpoints (x, y, psi) at the 30 / 50 / 80 m arcs, RAW, in S's TICK frame = the executed pose at step ``j - age_s`` (``s_pose``); what ``forward_infer`` emits
+      * ``s_ckpt_now``  [N, 3, 3] f32  the same in the NOW frame (the executed pose at the tick, ``pose``[:3]) by ``transform_ckpt`` -- the frame ``v8f_mini_eval._ckpt_to_now`` scores in
+      * ``s_ckpt_w0``   [N, 3, 3] f32  the same in the WINDOW-ORIGIN frame (the logged pose at ``t0`` = ``pose_w0``): the one frame every tick of a window shares, whatever the executed path did
+      * ``s_pose``      [N, 3]    f32  the world pose (x, y, yaw) of S's tick frame, as the batch gave it to the model
+      * ``t_goal_prob`` [N, 22]   f32  T's goal tokens (sigmoid), ``v8f_mini.GOAL22`` order     * ``t_lat_logits`` [N, 5] f32  * ``t_lon_logits`` [N, 7] f32  * ``t_cons_pred`` [N, C] f32 (de-standardised)
+      * ``t_pose``      [N, 3]    f32  the world pose of T's tick frame (``j - age_t``)
+      * ``pose_w0``     [N, 3]    f64  the window-origin pose (x, y, yaw): ``st.d['pose'][t0][:3]`` (rows <= t0 are logged, never overwritten)
+    T and S are the model's SAMPLE-AND-HOLD heads: their outputs at tick ``j`` belong to the frames ``j - age_t`` / ``j - age_s`` (``age_t`` / ``age_s`` are in the dump)."""
+
+    FIELDS = ("tau", "P", "plan", "gt", "gt_ok", "v0", "pose", "fired", "win", "ci", "t0", "tick", "j", "age_t", "age_s")
+    RAW_HEAD_FIELDS = ("s_ckpt", "s_pose", "t_goal_prob", "t_lat_logits", "t_lon_logits", "t_cons_pred", "t_pose", "pose_w0")      # recorded per tick
+    HEAD_FIELDS = RAW_HEAD_FIELDS + ("s_ckpt_now", "s_ckpt_w0")                                                                      # + the two frames derived at save()
+
+    def __init__(self, planner, store, J, heads: bool = False):
+        self.planner, self.store, self.J, self.heads = planner, store, J, bool(heads)
+        self.rows = {k: [] for k in self.FIELDS + (self.RAW_HEAD_FIELDS if self.heads else ())}
+        self.clip = []
+        self.base = 0                                                    # the index of the chunk's first window in the run's window list
+
+    def __call__(self, n, batch, plan, states):
+        aux = self.planner.aux
+        if aux is None:
+            raise RuntimeError("--dump-ticks needs a planner built with keep_aux=True")
+        hd = self.planner.heads
+        if self.heads and hd is None:
+            raise RuntimeError("--dump-heads needs a planner built with keep_heads=True")
+        v0 = batch["p10f"][:, -1, 0].double().cpu().numpy()             # the measured ego speed the prior (and the gate) read: exactly p10f[:, -1, 0]
+        if self.heads:
+            pose_s, pose_t = batch["pose_s"].float().cpu().numpy(), batch["pose_t"].float().cpu().numpy()
+        for b, st in enumerate(states):
+            clip = str(self.J["clip"][st.ci])
+            pose_now = np.array(st.d["pose"][st.j], np.float64)
+            gt, ok = gt_in_frame(self.store.get(clip)["pose"], pose_now, st.j)
+            r = self.rows
+            r["tau"].append(aux["tau"][b]); r["P"].append(aux["P"][b]); r["plan"].append(np.asarray(plan[b], np.float64))
+            r["gt"].append(gt); r["gt_ok"].append(ok); r["v0"].append(v0[b]); r["pose"].append(pose_now[:4])
+            r["fired"].append(False if aux["fired"] is None else bool(aux["fired"][b]))
+            r["win"].append(self.base + b); r["ci"].append(st.ci); r["t0"].append(st.t0); r["tick"].append(n); r["j"].append(st.j)
+            r["age_t"].append(int(batch["a_t"][b])); r["age_s"].append(int(batch["a_s"][b]))
+            if self.heads:
+                r["s_ckpt"].append(hd["ckpt"][b])
+                r["s_pose"].append(pose_s[b])
+                r["t_goal_prob"].append(hd["goal_prob"][b])
+                r["t_lat_logits"].append(hd["lat_logits"][b])
+                r["t_lon_logits"].append(hd["lon_logits"][b])
+                r["t_cons_pred"].append(hd["cons_pred"][b])
+                r["t_pose"].append(pose_t[b])
+                r["pose_w0"].append(np.array(st.d["pose"][st.t0][:3], np.float64))
+            self.clip.append(clip)
+
+    def _ckpt_frames(self, out):
+        """``s_ckpt_now`` / ``s_ckpt_w0``: the raw checkpoints re-expressed by the model's own ``transform_ckpt`` (float32, as ``_forward`` does for O)."""
+        import torch
+        ck, ps = torch.as_tensor(out["s_ckpt"]), torch.as_tensor(out["s_pose"])
+        now = torch.as_tensor(out["pose"][:, :3].astype(np.float32))
+        w0 = torch.as_tensor(out["pose_w0"].astype(np.float32))
+        return M.transform_ckpt(ck, ps, now).numpy(), M.transform_ckpt(ck, ps, w0).numpy()
+
+    def save(self, path, extra: dict | None = None):
+        out = {k: np.asarray(v) for k, v in self.rows.items()}
+        if self.heads and len(out["s_ckpt"]):
+            out["s_ckpt_now"], out["s_ckpt_w0"] = self._ckpt_frames(out)
+        out["clip"] = np.asarray(self.clip)
+        for k, v in (extra or {}).items():
+            out[k] = np.asarray(v)
+        os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
+        np.savez(path, **out)
+        return out
 
 
 # ------------------------------------------------------------------------------------------------ the rollout
@@ -382,6 +489,8 @@ def build_parser():
     p.add_argument("--n-boot", type=int, default=2000)
     p.add_argument("--device", default="auto")
     p.add_argument("--no-analyze", action="store_true")
+    p.add_argument("--dump-ticks", default="", help="PREREG_V8F_HACC_LAT: a directory; writes ticks_<tag>.npz = one row per (window, tick) of the model's rollout (tau, P, plan, v0, GT in the executed frame, ids)")
+    p.add_argument("--dump-heads", action="store_true", help="T1-HEADS (needs --dump-ticks): add the S head and T head outputs of each tick's forward_infer call to those rows (s_ckpt*, t_goal_prob, t_lat_logits, t_lon_logits, t_cons_pred + poses)")
     p = sub.add_parser("analyze")
     p.add_argument("--dump-dir", required=True)
     p.add_argument("--out", required=True)
@@ -391,6 +500,8 @@ def build_parser():
 
 def cmd_run(a):
     import torch
+    if a.dump_heads and not a.dump_ticks:
+        raise SystemExit("REFUSED: --dump-heads adds columns to the --dump-ticks file; it needs --dump-ticks DIR (a flag that silently writes nothing is worse than none)")
     ck = torch.load(a.ckpt, map_location="cpu", weights_only=False)
     cfg = M.V8FMiniConfig(**ck["cfg"])
     if cfg.kin_mode != "yaw":
@@ -412,12 +523,18 @@ def cmd_run(a):
     kw = dict(m=a.replan_steps, schedule=a.schedule, scene=a.scene, limit=a.limit, device=dev)
     cl, ol, fl, ha0, g, v0, keys = [], [], [], [], [], [], set()
     n_clip = {"cl": 0, "fl": 0}
+    rec = None
     t_start = time.time()
     for b0 in range(0, len(wins), a.batch):
         chunk = wins[b0:b0 + a.batch]
-        mp = model_planner(model, dev)
+        mp = model_planner(model, dev, keep_aux=bool(a.dump_ticks), keep_heads=bool(a.dump_heads))
         st_m = make_states(store, tracks, J, chunk, a.nav)
-        plan0, exe = rollout(mp, st_m, ds, proxy, **kw)
+        if a.dump_ticks:
+            rec = rec or TickRecorder(mp, store, J, heads=a.dump_heads)
+            rec.planner, rec.base = mp, b0
+            plan0, exe = rollout(mp, st_m, ds, proxy, hook=rec, **kw)
+        else:
+            plan0, exe = rollout(mp, st_m, ds, proxy, **kw)
         keys |= mp.keys_read
         st_f = make_states(store, tracks, J, chunk, a.nav)
         _, exe_f = rollout(floor_planner(model, dev), st_f, ds, proxy, **kw)
@@ -450,6 +567,11 @@ def cmd_run(a):
         header["causal_bucket"] = {"rule": "speed_max_bin(max finite measured ego speed over rows "
                                            + (f"[j - {CAUSAL_STEPS}, j])" if a.limit == "causal" else "[0, j])"),
                                    "stats_model_ticks": CAUSAL_STATS}
+    if a.dump_ticks:                                                     # only then: flags absent => the header (and the result JSON) is byte-identical to the pre-flag tool's
+        tick_path = os.path.join(a.dump_ticks, f"ticks_{a.tag}.npz")
+        rec.save(tick_path, {"split": "eval", "tag": a.tag, "ckpt": a.ckpt, "replan_steps": a.replan_steps, "n_windows": len(wins), "clip_names": np.asarray(J["clip"])})
+        header["ticks_file"] = tick_path
+        header["ticks_heads"] = bool(a.dump_heads)
     os.makedirs(a.out_dir, exist_ok=True)
     if a.no_analyze:
         json.dump(header, open(os.path.join(a.out_dir, f"t1v8f_{a.tag}.json"), "w"), indent=1)
