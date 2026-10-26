@@ -1,6 +1,6 @@
 # v8F-mini: a three-level hierarchy over frozen visual features with a typed tactical interface, and a rigorous account of what does and does not move six-second driving error
 
-**Status:** research report, v23 of 2026-10-26, results through repository tip `9f677298` (branch `agent/arch-inf-20260803`; the code line references in §10 are at `a99ca5d6`). Open-loop results only (T0, T1 and the self-action T1-kin); **no closed-loop (T2) number exists** and no published baseline exists on this split. The PI's bar of "dominant driving results" is **not met** (§8.3).
+**Status:** research report, v24 of 2026-10-26, results through repository tip `8d4b936d` (branch `agent/arch-inf-20260803`; the code line references in §10 are at `a99ca5d6`). Open-loop results only (T0, T1 and the self-action T1-kin); **no closed-loop (T2) number exists** and no published baseline exists on this split. The PI's bar of "dominant driving results" is **not met** (§8.3).
 
 **Evidence classes used throughout.** **[M]** MEASURED (ours, artifact named) · **[P]** PUBLISHED (library key; the PDF is banked, but descriptions here follow the library index entry, UNVERIFIED beyond it) · **[I]** INHERITED (another document, not re-verified by me) · **[E]** ESTIMATED · **[H]** HYPOTHESIS · **[U]** UNVERIFIED. Every result carries its **tier** (T0 teacher-forced / oracle; T1 self-action open loop; T2 closed loop, unprovisioned) and its **estimator** (§5.3). Paths starting `R/` mean `TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/`.
 
@@ -16,7 +16,7 @@ On a 141-episode, 2,399-window evaluation split (open loop, own held outputs), M
 
 The contribution we defend is **diagnostic**. Feeding O the ground-truth tactical code cuts 6 s ADE from about 2.1 to about 1.0 m (T0 oracle), so the interface is used and carries about 1.1 m of headroom, but (i) the headroom sits in the 26 continuous constraint cells *as a set*, (ii) the response of O to closing T's error is **convex** (a quarter of the way buys 8–16 % of the gain), (iii) T is **fit-limited**, not data-limited (halving the data moves it 6 %, not separated) and 88 % of its squared error is shared across seven trained arms, and (iv) O **cannot use a partly right code**: single-kind oracles make driving worse, and additivity is −0.30 / −0.55 against a 0.8 bar. We trace (iv) to the whole-code teacher forcing and pre-register the O-side repair (per-kind code mixing, `PREREG_V8F_MIXO`). Throughout, we report refutations, five retracted readings of our own (R63, R66, R69, R70, R71) and the variance structure that makes single-seed lever claims unreliable. We claim neither state of the art nor closed-loop driving. The dominance above is over the programme's own kinematic floor, in open loop. In a self-action open loop it becomes a margin, not dominance (next paragraph); T2, the closed-loop tier, is not provisioned.
 
-**The margin survives the model's own motion [M].** In T1-kin, the ego state the model reads is rebuilt from its own executed motion at every 2 s replan, while the cameras stay logged. There, HACC beats the floor driven the same way by **0.83 / 0.79 m** of 6 s ADE at both seeds, and the margin is 0.79 / 0.71 m with the cameras frozen at the first frame. It is not dominance: curvature is worse at both seeds. About a third of that excess is millimetre noise near standstill, and the rest is real at speed (§7.15). And it does not need the future-derived speed bucket the corpus supplies. Rebuilt from the last 4 s of measured speed alone, the bucket keeps a margin of **0.77 / 0.73 m** at both seeds, and costs 0.06 m against the oracle one. With both open channels closed at once (the first frame held for 6 s, plus the past-only bucket), the margin is still **0.73 / 0.64 m** (§7.15).
+**The margin survives the model's own motion [M].** In T1-kin, the ego state the model reads is rebuilt from its own executed motion at every 2 s replan, while the cameras stay logged. There, HACC beats the floor driven the same way by **0.83 / 0.79 m** of 6 s ADE at both seeds, and the margin is 0.79 / 0.71 m with the cameras frozen at the first frame. It is not dominance: curvature is worse at both seeds. About a third of that excess is millimetre noise near standstill. The rest is not a lateral defect but a launch crawl: HACC's own car is still slow where the human pulls away, and at equal own speed its curvature error equals the floor's (§7.15). On the executed tracks, the tactical manoeuvre agrees with the human's more often than the floor's, and the headway behind a lead is closer to the human's (both families NO WORSE, under a disclosed post-data amendment of one control; §7.15). And it does not need the future-derived speed bucket the corpus supplies. Rebuilt from the last 4 s of measured speed alone, the bucket keeps a margin of **0.77 / 0.73 m** at both seeds, and costs 0.06 m against the oracle one. With both open channels closed at once (the first frame held for 6 s, plus the past-only bucket), the margin is still **0.73 / 0.64 m** (§7.15).
 
 ---
 
@@ -507,7 +507,7 @@ The second video (`v8f_evidence_v4.mp4`, 381 s, below; v3 added HACC to every pl
 | **curvature MAE (1/m, LAT)** | **+0.040, worse** | **+0.016, worse** |
 | **yaw-rate MAE (deg/s, LAT)** | **+4.20, worse** | +1.53, n.s. |
 
-**Outcome: T1 BEATS THE FLOOR** (the pre-registered table, verbatim). PRIMARY holds at both seeds; DOMINANCE fails on the lateral rows. The tactical and strategic families are not computed at T1 (the dumps carry no per-tick T code; a work item). Every control passed, and the read was re-derived independently to the draw.
+**Outcome: T1 BEATS THE FLOOR** (the pre-registered table, verbatim). PRIMARY holds at both seeds; DOMINANCE fails on the lateral rows. The tactical and strategic families are not computed at T1 in this read (the dumps carry no per-tick T code; a work item). The tactical family from the executed track and distance keeping were read later on the same dumps (below). Every control passed, and the read was re-derived independently to the draw.
 
 * **The loop widens the margin.** One shot (m = 30) gives −0.53 m. At m = 10 the floor degrades from 2.49 to 3.44 m in its own loop, while HACC degrades from 1.96 to 2.61 / 2.65 m. At a 1 s replan (m = 5) both loops run away (floor 5.41 m, HACC 5.26 / 4.94 m); HACC − P10 is −0.15 m (not separated) / −0.47 m (separated).
 * **The post-map is what keeps the loop smooth.** Plain M2b at m = 10 also beats the floor on ADE6 (−0.41 / −0.65 m) but is **+1.22 / +1.08 m/s² worse in acceleration**. HACC removes that roughness.
@@ -528,8 +528,23 @@ The second video (`v8f_evidence_v4.mp4`, 381 s, below; v3 added HACC to every pl
   3. **Well-conditioned rows** (`PREREG_V8F_T1_LATCOND`, rows fixed from the instrument alone, before any arm was read on them).
      * Lateral-acceleration MAE is **not** worse (−0.11 / −0.12 m/s²).
      * Curvature MAE at GT speed ≥ 5.2 m/s **is** worse: +0.021 [+0.010, +0.035] / +0.008 [+0.003, +0.015] 1/m. Outcome **CONDITIONED LATERAL DEFICIT**.
-     * ⇒ About a third of the excess was the instrument's. The rest is a real curvature-profile mismatch at speed, while heading, cross-track and lateral acceleration are better or equal.
-     * From the same state, HACC's single plan is no worse than the floor's, so the excess arises in the loop. Its root cause is being diagnosed (zero GPU) before the committed box-2 lateral lever is specified.
+     * ⇒ About a third of the excess was the instrument's. ~~The rest is a real curvature-profile mismatch at speed~~ (retracted, `R76`, step 4), while heading, cross-track and lateral acceleration are better or equal.
+  4. **The root cause [M]** (zero-GPU diagnosis on the banked dumps, `raw/2026-10-26-lcdiag/DIAGNOSIS.md`).
+     * 96 % / 88 % of the L2 excess sits on pairs where the GT moves ≥ 5.2 m/s but **HACC's own car is below 5.2 m/s**. These are low-speed launches (332 / 220 windows): the human accelerates from 5.7 to 6.8 m/s, while HACC's loop decelerates to 4.8 m/s.
+     * **At equal own speed, HACC's curvature error equals the floor's.** With both cars' own speeds ≥ 5.2 m/s, the excess is +0.0018 / +0.0015 1/m, n.s. at s1.
+     * ⇒ The "lateral deficit at speed" is a **longitudinal crawl** that a curvature row masked on the GT's speed charges to lateral control: the arm-side twin of the yaw-mask retraction. This also explains why HACC-LAT, which acted on the cross axis, changed nothing.
+     * **The leading mechanism** (measured, not yet tested by intervention): HACC's along weight ramps from 0.14 to 0.32 across knots 8–11, the knots the replan state reads. Its step variation adds a term (dw/dk)·(O − P) to the plan's velocity that is in neither plan. That term is 79 % / 74 % of HACC's tick-1 acceleration gap to the floor in the launch windows.
+     * **Next (pre-registered, `PREREG_V8F_HACC_MC`, before any arm):** MC-H holds the along weight constant over the executed knots 1–12 (zero training). A 5× steeper ramp is the deliberate-regression arm. Both outcomes are committed, including the risk that the ramp also offsets the floor's own acceleration overshoot, and with it part of the margin.
+* ⭐ **The tactical and distance-keeping families at T1 [M]** (`PREREG_V8F_T1_FAMILIES`; `RESULT_V8F_T1_FAMILIES.md`).
+  * The canonical factored labeller is applied to the executed tracks. `lead_metrics` scores them against the logged (non-reactive) lead of the banked lead block: 743 LEAD windows.
+  * **As written, the read was REFUSED:** its deliberate-regression control (a one-window roll) was a near-copy, against a comparator it could not beat (`R75`).
+  * **Amendment 1, written after the rows were seen and so reported as POST-DATA,** replaced it with speed-matched tracks from another episode. That arm reads separated-worse on all five rows at both seeds.
+  * **Outcome under it: TACTICAL NO WORSE, DISTANCE KEEPING NO WORSE.**
+    * Lateral manoeuvre agreement with the human: +0.136 / +0.092 (0.73 / 0.69 vs 0.59).
+    * Longitudinal manoeuvre agreement: +0.131 / +0.132.
+    * The time gap to the lead is closer to the human's by 0.10 / 0.07 s.
+    * All of these are separated-better. LEAD-VIOL is n.s.
+  * These describe what the car DID. What the T head DECIDED, and the strategic family, need a per-tick head dump that is being built.
 
 ---
 
