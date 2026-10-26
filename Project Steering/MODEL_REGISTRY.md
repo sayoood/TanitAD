@@ -5953,6 +5953,19 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 | status | **Shipping stage for refcv8 per AMENDMENT 4's committed next step** (PhysicalAI). NavSim only with a separate PI go. The factored-decode read (AMENDMENT 5) is gated on the SSGUARD seed-1 replicate; its identity / control arms already pass. |
 | caveats | One training seed; open loop; the fresh split is 300 clips (rig A 80 / B 220). |
 
+### 16.16 refcv8-r101-s0 -- the FACTORED decode (native path x self-sharpened progress) PASSES SHIP-R8 (AMENDMENT 5) *(addendum to §16.15)*
+
+| | |
+|---|---|
+| what | refcv8 EMA-48,852 unchanged; per window the native os-only plan's PATH re-sampled at the per-instant arc length of the SELFSHARP (own lon argmax forced) plan, then the registered RETIME stage. Gated on the SSGUARD seed-1 replicate (REPLICATED, 160f583); PI pre-authorisation D-R8-FACTORED-DECODE. |
+| SHIP-R8 (AMENDMENT 5; per-frame feed; seeds 0 / 1) | **PASS** -- (1) (1b) (2) (3) (4) (5) (7) PASS, (6) N/A. MEASURED `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-refcv8-ship-r8-h2cn-factored/out/ship_r8/SHIP_R8_FACTORED_DEPLOY8.json`; T1 open loop on logged eval139 frames; paired episode-cluster bootstrap B 2000 over episodes. |
+| E1 / E3 vs `ha0_ext_pose` | E1 **-0.0331 [-0.0453, -0.0214] / -0.0309**; E3 **-0.9883 [-1.2959, -0.6863] / -0.9816**. Same os-only draw, refcv8 itself (OSONLY_DEPLOY8): E1 -0.0337 / -0.0329, E3 -0.8793 / -0.8676. |
+| vs refcv7-50,400 | FZR-NR ADE / LON / LAT PASS, FZR-LAT holds; TAC lon S2 +0.0257 / +0.0197 separated better, S6 +0.019 n.s.; lat n.s. |
+| compliance row (beside) | strict exceed 0.004-0.007 (RETIME's level; the model plan 0). |
+| relation to §16.15 | The two stages both re-time progress and are NOT stacked: H2cn (battery draw) cuts false decels 0.137 -> 0.060 (separated) but misses more decels (0.47 -> 0.53, n.s.); the factored decode catches decels (MD -0.08 separated) with FD n.s. (descriptive `refcv9_l2c/result/H2CN_FDMD_DIAG.txt`). Sealed next: Amendment 4b (H2cn ceiling-capped) and 4c (H2cn-L, progress head given the lon decision). |
+| status | Deliverable CANDIDATE; ships only after the in-model implementation (two planner passes on one trunk forward) reproduces these plans bit-for-bit. The shipped-stage choice is the PI's. |
+| caveats | One training seed; open loop; run from a frozen copy of the landed sub-read code (`ship_r8_sub_fx/`, directory constant re-pointed only) because the 4b build edits the live copy. |
+
 ## 18. nt-a1-s0 — NT A1, the navtrain decision arm (PREREG_NT_DECIDE) [NAVSIM navtrain · ONE SEED · TRAINING]
 
 ### nt-a1-s0 — ▶ TRAINING since 2026-10-25 11:02 Berlin (CET, 10:02Z), on Thor, launched by the launch gate's PASS token
