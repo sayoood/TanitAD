@@ -2519,3 +2519,19 @@ passes. The two navtest reads (theta_DEC and A1) are part of the authorisation. 
 - **(b) Keep to box 2 and the dev-box CPU.** LoRA waits, and the open-loop result stands as HACC.
 
 **What does NOT wait on this:** AR-3's launch-gate dry run (CPU), the T1-kin read (`D-V8F-HACC-T1KIN`), and everything already queued on box 2.
+
+## ⏳ OPEN (2026-10-26 ~01:10 Berlin) -- D-V8F-SPEEDBUCKET-T1: is v8F's T1 result admissible on the declared speed bucket, or must it be re-read with a non-oracle speed input?
+
+**Question.** The speed bucket (`limit`) is one of your declared inputs (*"measured ego dynamics, max target speed and nav"*, `PI-V8F-2026-10-17`). On PhysicalAI it is built from the max of the ego's realised future speed (`D-SPEEDBAND-EGO-ECHO-1`). Should v8F's headline T1 result be stated on that input, with the dependency declared, or only on a non-oracle speed input?
+
+**Why (MEASURED, `RESULT_V8F_T1KIN_HACC.md`, T1-kin m = 10, HACC − P10 ADE6):**
+- With the bucket: −0.829 / −0.795 m, separated at both seeds.
+- With the cameras frozen at t0: −0.787 / −0.706 m, still separated.
+- With the bucket **removed**: +0.238 / +0.078 m, not separated. HACC loses about 1 m, and its accel becomes worse than the floor's.
+- ⇒ The camera channel flatters little; the speed bucket carries the margin. "Off" is also out of the training distribution, so this mixes information with the absent-input response.
+
+**Options.**
+- **(a) State the result on the declared bucket, with the dependency in the headline.** The non-oracle variant is pre-registered next: a bucket built only from information available at t0. A causal speed-limit proxy from the past ego speed is the zero-training candidate; a perception-side speed input belongs to the LoRA arm. **MM recommends (a).** The input is yours and declared, and the dependency is reported, never hidden.
+- **(b) Withhold the T1 claim until a non-oracle bucket exists.**
+
+**What does NOT wait on this:** `PREREG_V8F_HACC_LAT` (the lateral lever), the m = 5 stress read, FLAT and OACC on box 2.
