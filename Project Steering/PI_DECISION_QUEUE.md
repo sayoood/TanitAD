@@ -2633,3 +2633,15 @@ H-R9-INMODEL-1: implemented behind default-OFF flags, bit-identical with them of
 * **Q2 -- B9-1 reading:** the head is fitted in a second stage on the fresh split and written into the checkpoint. MM reads that as 'in the model' (one forward, no post-hoc file), and the fresh split then becomes a CALIBRATION split, no longer an unseen eval set.
 * **Q3 -- compute:** Phase A runs on refcv8's trunk at 0 Thor-h (dev box); Phase B (a refcv9 trunk with the head) is ~240 Thor-h ESTIMATED. Phase A first; Phase B is asked when A reads.
 
+## ⏳ OPEN (2026-10-26 ~20:22 Berlin) -- D-NT-A1-ZGFAIL: NT A1 trained to completion but FAILED its binding zero-gradient gate; what is it?
+
+MODEL_REGISTRY §18 (status block). 21 / 822 parameters got no gradient in the navtrain fine-tune: the r8 route-command conditioning
+(`r8_rc_gate`, `r8_rc_to_cond`; never a gradient) and the map-hires refine / near / near_refine modules (gradient always zero). The
+allow-list was empty before launch, so the gate's FAIL is final by protocol and no done-marker exists.
+* **(a) Accept as a fine-tune artefact (MM-recommended to INVESTIGATE first, not to accept blind):** the map branch is unsupervised on
+  navtrain by design; but the rc conditioning path getting NO gradient means the navtrain fine-tune never trained route conditioning --
+  that is a finding about NT A1's design, not noise. MM proposes a 0-GPU check of whether navtrain batches feed the rc input at all,
+  before any NT A1 eval.
+* **(b) Treat NT A1 as failed** and re-plan the navtrain arm with route conditioning live and an explicit pre-launch allow-list.
+Nothing here blocks refcv9 PhysicalAI work; NT A1 has no eval read yet (any NavSim read needs your go).
+

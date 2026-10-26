@@ -6025,6 +6025,16 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 
 ## 18. nt-a1-s0 — NT A1, the navtrain decision arm (PREREG_NT_DECIDE) [NAVSIM navtrain · ONE SEED · TRAINING]
 
+### nt-a1-s0 -- ■ TRAINING COMPLETE 2026-10-26 18:50 Berlin (step 12,478 = steps requested); ZERO-GRADIENT GATE **FAIL** -> NO done-marker (MM, ~20:22)
+
+| | |
+|---|---|
+| run | trainer `summary.json` `"done": true`, `ckpt.pt` at step 12,478 (`ckpt_step_is_final` True); Thor `/home/nvidia/r8ns/nt/runs/nt-a1-s0/`. MEASURED (read-only ssh). |
+| gate | the supervisor's post-run zero-gradient gate (binding; a FAIL is FINAL): **21 of 822 registered parameters untrained**, 0 failed controls, allow-list EMPTY. `ZEROGRAD_FAIL.json`, `zerograd_summary.json`, `zerograd_gate.json` beside the run. |
+| which | (i) **3 x `a_no_state`** (never received a gradient): `core.decoder.r8_rc_gate`, `core.decoder.r8_rc_to_cond.{weight,bias}` -- the r8 route-command conditioning path. (ii) **18 x `b_zero_state`** (optimizer state, gradient always zero): `_map_hires.refine.*` (11), `_map_hires.near.lift.*` (3), `_map_hires.near_refine.0.*` (4) -- exactly the map modules the PI-authorised map-only fine-tune trains. |
+| reading (HYPOTHESIS, not verified) | NT A1 fine-tunes refcv8 on navtrain; the map-hires branch has no supervision there and the rc conditioning path may be unused on navtrain batches, so these parameters keep refcv8's values rather than being 'untrained'. The gate cannot tell that apart, and its allow-list was empty BEFORE launch -- allow-listing them now would be a post-hoc reclassification -> PI item `D-NT-A1-ZGFAIL`. |
+| status | COMPLETE, GATE-FAIL; no eval read (any NavSim read needs a separate PI go). Thor released to the map-only fine-tune (C0 32005adc). |
+
 ### nt-a1-s0 — ▶ TRAINING since 2026-10-25 11:02 Berlin (CET, 10:02Z), on Thor, launched by the launch gate's PASS token
 
 | | |
