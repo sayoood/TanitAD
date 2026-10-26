@@ -484,6 +484,11 @@ def test_the_profile_literals():
     for f in ("--steps", "--warmup", "--ema-decay", "--eval-every", "--b1-guard-ref-ap2m", "--b1-guard-step"):
         assert f not in MAPFT["required_values"], f
     assert MAPFT["open_items"] == ()          # MAPFT-BUDGET CLOSED (mapft_close_budget.py, mode open-only)
+    # the box head is frozen: G-BOX-OVERFIT has no subject here (and ONLY here); the map overfit stays required
+    assert MAPFT["required_checks"] == ("G-HYG", "G-DVB", "G-LIVE", "G-CLOCK", "G-EVAL", "G-CKPT", "G-SUITE",
+                                        "G-SUITE-PINNED", "G-MAP-OVERFIT")
+    assert "G-BOX-OVERFIT" in LG.PROFILES["refcv8"]["required_checks"]
+    assert "G-BOX-OVERFIT" in LG.PROFILES["refcv8-nt"]["required_checks"]
     assert MAPFT["map_hires"]["ga_keys"] == ("ga_mh_refine", "ga_mh_near", "ga_mh_near_refine")
     assert MAPFT["map_hires"]["ga_keys_zero"] == ("ga_mh_lift", "ga_mh_encoder", "ga_mh_trunk_s8_stage")
 

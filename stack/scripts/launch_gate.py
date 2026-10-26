@@ -1198,6 +1198,12 @@ PROFILES["refcv8-mapft"] = dict(
     # (open-only: the budget flags stay unpinned by the profile; the argv sha256 in the token is the pin)
     # MM 2026-10-26 ~20:10, PI D-R9-MAPHEAD-PRECISION gate route
     open_items=(),
+    #: G-BOX-OVERFIT is NOT required (MM 2026-10-26 ~21:20, inside the same PI gate route). It proves the box head CAN
+    #: learn its targets; under --r8-train-only-map the box head is FROZEN, so the check has no subject, and its replay
+    #: refuses the declared freeze (g_box_overfit._build_model does not apply map_only_ft.apply_freeze). What this launch
+    #: must prove about the box head is that it does NOT move: G-LIVE's bit identity of every non-map tensor (map_only
+    #: below), the RED arms, the zero-gradient gate and K-FROZEN read exactly that. G-MAP-OVERFIT stays required.
+    required_checks=tuple(c for c in _R8["required_checks"] if c != "G-BOX-OVERFIT"),
     required_flags=tuple(f for f in _R8["required_flags"] if f not in _mapft_drop) + (_MAPFT_FLAG, "--conflict-detector"),
     required_flags_why=dict({k: v for k, v in (_R8.get("required_flags_why") or {}).items() if k not in _mapft_drop}, **{
         _MAPFT_FLAG: "PI D-R9-MAPHEAD-PRECISION (2026-10-26): train ONLY refine + near + near_refine, planner bit-identical",
