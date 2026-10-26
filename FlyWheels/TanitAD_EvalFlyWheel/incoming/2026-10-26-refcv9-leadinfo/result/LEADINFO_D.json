@@ -1,0 +1,575 @@
+{
+ "prereg": "PREREG_LEADINFO_D.md",
+ "tier": "DIAGNOSTIC on logged eval139 labels (no planner); GT features are an UPPER BOUND, never an inference input",
+ "estimator": "5-fold episode-grouped cross-fit (fold seed 0) of L2 logistic regression (C=1, standardised on the fit fold); score = AUC of the out-of-fold P(decel). Delta-AUC CI: EPISODE-RESAMPLING bootstrap (B=2000, seed 0) -- draw the episodes with replacement, recompute AUC(B)-AUC(A) on the resampled windows with the out-of-fold predictions held FIXED, 2.5/97.5 percentiles. NOT taniteval.ci (a paired bootstrap of per-episode deltas is invalid for an AUC). Answers: would another draw of EPISODES say this? -- it is blind to training-run and to inference-run variance (the models here are convex, so the former is nil).",
+ "deviations": [
+  "D1 path: the prereg names C:/Users/Admin/a40-rescue/b1_train_plus_eval_agents.jsonl.xz, which does not exist (the project drive D: is E: on this box). Used E:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz (sha256 a705a632cef07508...), BYTE-IDENTICAL to E:\\Projects\\TanitAD-artifacts\\a40-rescue\\b1_train_plus_eval_agents.jsonl.xz (sha256 equal: True).",
+  "D2 coverage rule: windows with no join record at ws are counted/reported and EXCLUDED from the B/C comparison (NO_LABEL is not 'road clear'); A is fitted/scored on the SAME covered windows so A, B, C are paired. AUC(A) and AUC(lon head) on the full union population are reported beside it.",
+  "D3 details the prereg leaves open (fixed in code BEFORE any AUC was computed, none tuned): range_x = the agent CENTRE cx (not the rear edge); the corridor is tested on the centre (|cy| <= 1.8, 0 < cx <= 80, both ends inclusive at 1.8 / 80); all join classes count (persons, riders, animals included) and occluded flags are ignored (GT upper bound; the selected leads are 0 % occluded anyway); range_rate uses the Euclidean range r = hypot(cx, cy) of the SAME track_id, baseline 1.0 s (10 frames) or, if that frame/track is absent, the oldest of 0.9..0.3 s; lead_speed = world displacement of the track over that baseline using the dump's ep_poses (pose index == join frame_idx, asserted by the shift sweep); no usable history (2 of 920 leads) -> rate 0 and lead_speed = v0; no lead -> lateral 0, lead_speed 0, range 80, rate 0, flag 0, time gap 80 / max(v0, 1). 'Past 1.0 s' is 10 provider frames (join t_s step 0.1007 s, used for dt).",
+  "D4 head reference: the prereg's literal 'P(decel classes) from the softmax' (BRAKE_TO+CREEP+HOLD of the 6-logit softmax) reads 0.6745 on the full union; the brief's 0.685 is reproduced (0.6851) by the renormalised score decel/(decel+cruise). Both are reported; the literal one is the primary 'lon head alone' row.",
+  "D5 (implementation note, not a departure): prereg s3's 'paired episode-cluster bootstrap with the out-of-fold predictions held fixed' is implemented as the brief says -- resample EPISODES (B 2000, seed 0), recompute AUC on the resampled windows for A, B, C on the SAME draw -- NOT taniteval.ci's per-episode-delta form, which is invalid for an AUC; the bootstrap universe is the 135 episodes with >= 1 covered union window (136 episodes have a union window, 139 exist)."
+ ],
+ "seal": {
+  "prereg_sha256": "8f02a6ddd3c6cf72bc748fdc5aebccee51f27fc54a02c9586259d5cbe3c1670e",
+  "sealed_equal": true
+ },
+ "synthetic_controls": {
+  "all_pass": true,
+  "n": 18,
+  "cases": {
+   "found_at_20_0": {
+    "pass": true,
+    "detail": {
+     "flag": 1.0,
+     "range_x": 20.0,
+     "lat_y": 0.0,
+     "time_gap": 2.0
+    }
+   },
+   "behind_(-20,0)": {
+    "pass": true,
+    "detail": {
+     "flag": 0.0,
+     "want": 0.0
+    }
+   },
+   "lateral_(20,3.0)": {
+    "pass": true,
+    "detail": {
+     "flag": 0.0,
+     "want": 0.0
+    }
+   },
+   "beyond_(90,0)": {
+    "pass": true,
+    "detail": {
+     "flag": 0.0,
+     "want": 0.0
+    }
+   },
+   "x_zero_(0,0)": {
+    "pass": true,
+    "detail": {
+     "flag": 0.0,
+     "want": 0.0
+    }
+   },
+   "edge_y_(20,1.8)": {
+    "pass": true,
+    "detail": {
+     "flag": 1.0,
+     "want": 1.0
+    }
+   },
+   "edge_y_(20,-1.8)": {
+    "pass": true,
+    "detail": {
+     "flag": 1.0,
+     "want": 1.0
+    }
+   },
+   "edge_x_(80,0)": {
+    "pass": true,
+    "detail": {
+     "flag": 1.0,
+     "want": 1.0
+    }
+   },
+   "over_edge_y_(20,1.81)": {
+    "pass": true,
+    "detail": {
+     "flag": 0.0,
+     "want": 0.0
+    }
+   },
+   "nearest_in_corridor": {
+    "pass": true,
+    "detail": {
+     "range_x": 20.0,
+     "lat_y": 1.0
+    }
+   },
+   "no_lead_defaults": {
+    "pass": true,
+    "detail": {
+     "flag": 0.0,
+     "range_x": 80.0,
+     "range_rate": 0.0,
+     "time_gap": 8.0
+    }
+   },
+   "no_label_is_none": {
+    "pass": true,
+    "detail": {}
+   },
+   "moving_lead_rate_-2_speed_8": {
+    "pass": true,
+    "detail": {
+     "range_rate": -2.0,
+     "lead_speed": 8.0,
+     "hist_k": 10
+    }
+   },
+   "stationary_lead_rate_-10_speed_0": {
+    "pass": true,
+    "detail": {
+     "range_rate": -10.0,
+     "lead_speed": 0.0
+    }
+   },
+   "stationary_lead_turning_ego_world_speed_0": {
+    "pass": true,
+    "detail": {
+     "flag": 1.0,
+     "range_x": 20.0,
+     "lat_y": 0.0,
+     "range_rate": -9.943232650030623,
+     "lead_speed": 7.105427357601002e-15
+    }
+   },
+   "history_fallback_k7": {
+    "pass": true,
+    "detail": {
+     "hist_ok": true,
+     "hist_k": 7,
+     "range_rate": -1.9999999999999987
+    }
+   },
+   "track_absent_no_history": {
+    "pass": true,
+    "detail": {
+     "hist_ok": false,
+     "range_rate": 0.0,
+     "lead_speed": 10.0
+    }
+   },
+   "causal_future_frame_ignored": {
+    "pass": true,
+    "detail": {}
+   }
+  }
+ },
+ "population": {
+  "s6_windows": 3668,
+  "compliant": 3251,
+  "gt_decel_compliant": 639,
+  "gt_cruise_compliant": 1856,
+  "gt_accel_compliant_excluded": 756,
+  "union_n": 2495,
+  "union_base_rate_decel": 0.2561,
+  "source": "l2_common.lon_indicators(E['os'], E, compliant): fd finite == GT-cruise population, md finite == GT-decel population (the GT class does not depend on the plan argument)"
+ },
+ "join": {
+  "join_path": "E:\\refcv6_eval_kit\\data\\joins\\b1_train_plus_eval_agents.jsonl.xz",
+  "join_sha256": "a705a632cef07508d435cb152feac43b0d15137a09b08a527b5235da23d3d053",
+  "prereg_named_path": "C:/Users/Admin/a40-rescue/b1_train_plus_eval_agents.jsonl.xz",
+  "prereg_named_path_exists": false,
+  "alt_copy": "E:\\Projects\\TanitAD-artifacts\\a40-rescue\\b1_train_plus_eval_agents.jsonl.xz",
+  "alt_copy_sha256": "a705a632cef07508d435cb152feac43b0d15137a09b08a527b5235da23d3d053",
+  "cache": "reused",
+  "episodes_in_join": 139,
+  "records_kept": 26394
+ },
+ "pose_alignment_controls": {
+  "ep_poses_col3_equals_v0_at_ws": {
+   "max_abs_diff": 0.0,
+   "p99": 0.0,
+   "n": 3668,
+   "reading": "ep_poses[ws, 3] (episode speed at the NOW frame) vs the battery's v0 -- ws indexes the pose rows"
+  },
+  "all_ws_listed_in_dump_decisions": true,
+  "pose_vs_join_frame_shift_sweep": {
+   "shifts": {
+    "-3": {
+     "n_tracks": 7996,
+     "p10_std_m": 0.2957827450171394,
+     "p25_std_m": 0.5307855906139014,
+     "min_std_m": 0.02630421330670201
+    },
+    "-2": {
+     "n_tracks": 7996,
+     "p10_std_m": 0.22939594227454052,
+     "p25_std_m": 0.3926275149210129,
+     "min_std_m": 0.026100624402924318
+    },
+    "-1": {
+     "n_tracks": 7996,
+     "p10_std_m": 0.16281114088864174,
+     "p25_std_m": 0.2629326816227249,
+     "min_std_m": 0.02606587949969538
+    },
+    "0": {
+     "n_tracks": 7996,
+     "p10_std_m": 0.1090165049002446,
+     "p25_std_m": 0.17417317884209882,
+     "min_std_m": 0.019256984112576897
+    },
+    "1": {
+     "n_tracks": 7996,
+     "p10_std_m": 0.16118067736781844,
+     "p25_std_m": 0.26783377799145486,
+     "min_std_m": 0.014093560623458153
+    },
+    "2": {
+     "n_tracks": 7996,
+     "p10_std_m": 0.2221319234102168,
+     "p25_std_m": 0.38627521340675874,
+     "min_std_m": 0.01730766153407471
+    },
+    "3": {
+     "n_tracks": 7996,
+     "p10_std_m": 0.28912964354050363,
+     "p25_std_m": 0.5165038547260571,
+     "min_std_m": 0.023227489466779314
+    }
+   },
+   "best_shift_by_p10": 0,
+   "aligned_at_zero": true
+  }
+ },
+ "coverage": {
+  "union_windows": 2495,
+  "with_join_record_at_ws": 2348,
+  "without": 147,
+  "decel_pop": {
+   "n": 639,
+   "covered": 617
+  },
+  "cruise_pop": {
+   "n": 1856,
+   "covered": 1731
+  },
+  "fraction": 0.9411,
+  "episodes_in_union": 136,
+  "episodes_with_any_covered_union_window": 135,
+  "uncovered_union_windows_by_episode_index": {
+   "4": 12,
+   "38": 10,
+   "46": 25,
+   "51": 10,
+   "58": 19,
+   "85": 15,
+   "89": 3,
+   "90": 9,
+   "99": 22,
+   "105": 7,
+   "135": 15
+  }
+ },
+ "lead_features": {
+  "columns": [
+   "flag",
+   "range_x",
+   "lat_y",
+   "range_rate",
+   "lead_speed",
+   "time_gap"
+  ],
+  "frame_convention": "join agents are in the EGO frame of their own frame (+x forward, +y left); the lead is the nearest centre (smallest cx) with 0 < cx <= 80 m and |cy| <= 1.8 m at the NOW frame ws (= the window origin t0; refc_v3_train.py:4635 lookup(eid, t + w - 1)); all join classes count (automobile, truck, bus, person, rider, ...), occluded or not (GT upper bound)",
+  "lead_present_rate_all": 0.3918,
+  "lead_present_rate_decel_windows": 0.4003,
+  "lead_present_rate_cruise_windows": 0.3888,
+  "n_decel_windows": 617,
+  "n_cruise_windows": 1731,
+  "leads_with_usable_history": 918,
+  "leads_total": 920,
+  "leads_dup_track_id": 0,
+  "lead_occluded_share": 0.0,
+  "lead_range_x_quantiles_m_q05_q25_q50_q75_q95": [
+   9.69,
+   20.96,
+   31.67,
+   47.86,
+   72.36
+  ],
+  "n_leads_range_lt_3m": 2,
+  "history_k_counts": {
+   "0": 2,
+   "4": 1,
+   "5": 1,
+   "6": 2,
+   "7": 5,
+   "8": 8,
+   "9": 6,
+   "10": 895
+  },
+  "presence_diff_decel_minus_cruise": {
+   "point": 0.0115,
+   "ci95": [
+    -0.101,
+    0.1191
+   ],
+   "estimator": "episode-resampling bootstrap B2000 seed0"
+  },
+  "pose_free_consistency": {
+   "n": 918,
+   "median_abs_diff_ms": 0.158,
+   "p90_abs_diff_ms": 1.816,
+   "corr": 0.8402,
+   "reading": "world-frame lead speed (ego poses) vs v0 + Euclidean range rate; they differ by the ego speed change over the past second"
+  }
+ },
+ "real_control_lead_vs_ego_1s_travel": {
+  "definition": "windows in the GT-cruise population with v0 > 10 m/s and GT displacement at +1 s > 10 m (the ego keeps cruising at > 10 m/s): count windows with a lead whose range cx < the ego's GT 1 s travel (a lead inside the distance the ego covers in the next second while the ego keeps cruising is physically implausible); NOT filtered on",
+  "n_windows_cruising_gt10": 1022,
+  "n_with_lead": 320,
+  "n_lead_centre_closer_than_1s_travel": 21,
+  "n_lead_rear_edge_closer_than_1s_travel": 39,
+  "min_over_windows_of_(range_x - travel_1s)_m": -4.8,
+  "same_count_all_covered_windows_with_travel_gt10": {
+   "n": 1290,
+   "n_with_lead": 427,
+   "n_closer": 29
+  },
+  "contrast_decel_windows_travel_gt10_closer": 8,
+  "extra_closer_cases_are_followers": {
+   "n_closer": 21,
+   "time_gap_s_range": [
+    0.745,
+    1.009
+   ],
+   "lead_speed_over_v0_min_median_max": [
+    0.987,
+    1.071,
+    1.163
+   ],
+   "n_with_lead_slower_than_0.9_v0 (collision course while the GT ego keeps cruising)": 0,
+   "n_episodes": 5,
+   "reading": "all of them are short-gap following (time gap < 1 s, lead speed ~ ego speed) -- compatible with the GT ego cruising; a misaligned join or pose would instead give leads at ego-frame positions the GT path drives through at a closing speed"
+  }
+ },
+ "results": {
+  "A": {
+   "auc": 0.7143,
+   "ci95": [
+    0.6429,
+    0.78
+   ]
+  },
+  "B": {
+   "auc": 0.7437,
+   "ci95": [
+    0.6803,
+    0.8037
+   ]
+  },
+  "C": {
+   "auc": 0.7083,
+   "ci95": [
+    0.6378,
+    0.7751
+   ]
+  },
+  "lon_head": {
+   "auc": 0.6794,
+   "ci95": [
+    0.6084,
+    0.7482
+   ]
+  },
+  "C_within_episode": {
+   "auc": 0.7033,
+   "ci95": [
+    0.6293,
+    0.7723
+   ]
+  },
+  "lead_only_with_v0": {
+   "auc": 0.6357,
+   "ci95": [
+    0.5689,
+    0.7048
+   ]
+  },
+  "v0_only": {
+   "auc": 0.5689,
+   "ci95": [
+    0.4937,
+    0.6452
+   ]
+  },
+  "lon_head_8logit_softmax": {
+   "auc": 0.6794
+  },
+  "delta_B_minus_A": {
+   "point": 0.0293,
+   "ci95": [
+    -0.0027,
+    0.0618
+   ]
+  },
+  "delta_C_minus_A": {
+   "point": -0.006,
+   "ci95": [
+    -0.011,
+    -0.0014
+   ]
+  },
+  "delta_B_minus_C": {
+   "point": 0.0353,
+   "ci95": [
+    0.0031,
+    0.0677
+   ]
+  },
+  "delta_Cwithin_minus_A_DESCRIPTIVE": {
+   "point": -0.0111,
+   "ci95": [
+    -0.0239,
+    0.0029
+   ]
+  },
+  "delta_A_minus_lon_head_DESCRIPTIVE": {
+   "point": 0.0349,
+   "ci95": [
+    -0.0175,
+    0.0906
+   ]
+  },
+  "lon_head_full_union_population": {
+   "auc": 0.6745,
+   "n": 2495,
+   "reference": "0.685 measured earlier (as stated in the brief)"
+  },
+  "lon_head_renorm_decel_over_decel_plus_cruise": {
+   "auc_full_union": 0.6851,
+   "auc_analysis_set": 0.6884,
+   "n_full_union": 2495,
+   "reading": "KNOWN-VALUE CONTROL: reproduces the 0.685 of the brief; the prereg's literal 'P(decel classes) from the softmax' is the un-renormalised sum, reported as 'lon_head' above (0.6745 on the full union)"
+  },
+  "DESCRIPTIVE_lead_present_subset_logistic": {
+   "n_windows": 920,
+   "n_decel": 247,
+   "n_episodes": 84,
+   "A": {
+    "auc": 0.6339,
+    "ci95": [
+     0.5259,
+     0.737
+    ]
+   },
+   "B": {
+    "auc": 0.6759,
+    "ci95": [
+     0.5782,
+     0.7709
+    ]
+   },
+   "C": {
+    "auc": 0.6227,
+    "ci95": [
+     0.5212,
+     0.7218
+    ]
+   },
+   "delta_B_minus_A": {
+    "point": 0.042,
+    "ci95": [
+     -0.0278,
+     0.1138
+    ]
+   },
+   "delta_C_minus_A": {
+    "point": -0.0112,
+    "ci95": [
+     -0.0233,
+     0.0001
+    ]
+   }
+  },
+  "DESCRIPTIVE_nonlinear_probe_hgb": {
+   "A": {
+    "auc": 0.7391,
+    "ci95": [
+     0.6666,
+     0.806
+    ]
+   },
+   "B": {
+    "auc": 0.7559,
+    "ci95": [
+     0.6843,
+     0.8208
+    ]
+   },
+   "C": {
+    "auc": 0.7402,
+    "ci95": [
+     0.6675,
+     0.8062
+    ]
+   },
+   "delta_B_minus_A": {
+    "point": 0.0168,
+    "ci95": [
+     -0.0062,
+     0.044
+    ]
+   },
+   "delta_C_minus_A": {
+    "point": 0.0011,
+    "ci95": [
+     -0.0039,
+     0.0068
+    ]
+   },
+   "config": "HistGradientBoostingClassifier(max_iter=150, learning_rate=0.05, max_depth=3, min_samples_leaf=40, l2_regularization=1.0, early_stopping=False, random_state=0); NOT tuned"
+  }
+ },
+ "n": {
+  "windows": 2348,
+  "episodes": 135,
+  "n_decel": 617,
+  "n_cruise": 1731,
+  "decel_base_rate": 0.2628,
+  "join_coverage_of_union": 0.9411,
+  "bootstrap_B": 2000,
+  "bootstrap_seed": 0,
+  "folds": 5,
+  "fold_seed": 0,
+  "windows_per_fold": [
+   406,
+   499,
+   400,
+   536,
+   507
+  ],
+  "episodes_per_fold": [
+   27,
+   27,
+   27,
+   27,
+   27
+  ]
+ },
+ "controls_C": {
+  "permutation": "window-level seed-0 permutation of the lead block with EVERY donor in a DIFFERENT episode (asserted); v0 and the lon-head features stay with their own window",
+  "n_donor_in_other_episode": 2348,
+  "n": 2348
+ },
+ "word": "LEAD-INFO ABSENT",
+ "word_clauses": {
+  "clause1_dAUC_BA_ge_0.03_and_ci_lo_gt_0": false,
+  "clause2_dAUC_CA_ci_contains_0": false,
+  "dAUC_BA": 0.0293,
+  "ci_BA": [
+   -0.0027,
+   0.0618
+  ],
+  "dAUC_CA": -0.006,
+  "ci_CA": [
+   -0.011,
+   -0.0014
+  ]
+ },
+ "next_per_prereg": "the traffic-light state (the v7.2 GT TL labels as the upper bound), same diagnostic",
+ "fold_assignment_sha12": "35c7bf8cbf3a",
+ "inputs_sha256": {
+  "prereg": "8f02a6ddd3c6cf72bc748fdc5aebccee51f27fc54a02c9586259d5cbe3c1670e",
+  "join_xz": "a705a632cef07508d435cb152feac43b0d15137a09b08a527b5235da23d3d053",
+  "extras_npz_dump_s0": "d84f17b8b222f5d457c841dfa099f40e1085cb77a27e025563ecaf47283e23d4",
+  "s6_manifest_s0": "964459a30a31582d9a94dc4262b7d9b46cef593c92b4f4f6190cb5ceef43ed2b",
+  "code_leadinfo_d.py": "741e9a52198d6d1619465db40ec7979d72ca3388d4cfef831c705fb0fe67ff8d"
+ },
+ "elapsed_s": 10.4
+}
