@@ -742,7 +742,7 @@ def acc_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
            "control_wm_grad_diff": dsum(g_w, g_0, "wm.") if m.wm is not None else None}
     if not math.isfinite(acc_w) or not acc_w > 0.0:
         raise AssertionError(f"acc probe: the acceleration term reads {acc_w} on the probe batch (finite and > 0 required)")
-    if False:
+    if acc_w != acc_0:
         raise AssertionError(f"acc probe: the logged acceleration term depends on the weight ({acc_w} at {w}, {acc_0} at 0): it is not the term")
     if res["control_repeat_total_diff"] != 0.0 or res["control_repeat_grad_diff"] != 0.0:
         raise AssertionError(f"acc probe: the probe is not deterministic (the same loss twice differs by {res['control_repeat_total_diff']} / {res['control_repeat_grad_diff']}): its differences mean nothing")

@@ -18774,3 +18774,32 @@ Same family as R74: a control written without computing what it tests.
 **Class:** *a speed-conditioned lateral row masked on the GT's speed alone charges the ARM's own low-speed jitter to lateral control.*
 * It is the arm-side twin of `RETR-2026-09-26-YAWMASK` (there the jitter entered through the GT's speed).
 * ⇒ Any curvature or yaw-rate row conditioned on speed must state whose speed. Before calling an excess "lateral", split it by the arm's own speed.
+
+### R77 -- "`v8f_mini_train.py`: 10 changed lines vs 98713259 ... behaviour unchanged" (commit `04d56671`, PREREG_V8F_OACC Amendment 2's landing; `raw/2026-10-26-oacc-a2/NOTES.md`) (2026-10-26, MM)
+
+**Wrong:** the trainer that landed in `04d56671` carried ONE MORE changed line than the banked diff: an OACC mutation-proof mutant,
+`if False:` in place of `if acc_w != acc_0:` (line 745, the acc probe's refusal "the logged acceleration term depends on the weight").
+* The hold builder copied the trainer out of `E:/Projects/TanitAD-artifacts/oaccfix/tree` at ~11:40, while `mutate_oacc.py` was running its
+  trainer mutants (#35-#50) in that same tree. The banked diff (`out/v8f_mini_train.py.vs98713259.diff`, 10 lines) had been made at 11:28,
+  before the mutation run started, so the evidence and the landed bytes disagreed and nothing compared them.
+* The other three files of that hold (`v8f_oacc_read.py`, `test_v8f_oacc.py`, `mutate_oacc.py`) are byte-identical to the restored tree.
+* The same race put a second mutant (`selfcheck.json` omits `acc_probe`, line 1216) into the MIXO re-check tree (`E:/.../mx/tree`), copied
+  at ~11:35 from the same tree. That re-check's trainer-mutant result is therefore void and is re-run.
+
+**Caught by:** the MIXO hold builder's own assertion that the re-check tree's trainer equals the tip's. It read DIFF, and the diff showed both
+mutants. Found at ~12:15, before any run trained on the landed trainer.
+
+**Impact, MEASURED:**
+* **OACC seed 0 (COSTS POSITION) is unaffected.** X_s0 was trained at 06:03 from an earlier export. The 11:44 relaunch skipped training, and
+  its read used the landed reader, which is correct. Its re-run gate (11:52) did execute the mutated probe, and that gate gated nothing.
+* **O-RECOVER:** its chain had started at 12:10 and refreshed box 2 to `034ad7f1`. It was stopped at the refresh stage, before any gate or
+  training, and is relaunched on the fixed tip.
+* On a correct model the disabled refusal never fires, so a run trained on the mutant would have trained identically. Its launch gate would
+  still have run with one check off, and its token would have bound to a commit carrying a mutated trainer. That is not admissible.
+
+**Fix:** the trainer is restored to the restored tree's bytes, which equal 98713259 plus exactly the 10 banked lines.
+
+**Class:** *a hold built from a tree that a mutation run is editing lands a mutant, and evidence made before the run cannot see it.* This is the
+twin of the TRAPS entry "a mutation proof on a tree that a live chain reads". There the reader was a chain; here it is the lander.
+* ⇒ Never build a hold, or copy into another tree, from a tree with a running mutation proof.
+* ⇒ A hold builder compares every code file it lands against its banked diff, or against a blob, not against the tree it reads.
