@@ -1,0 +1,458 @@
+{
+ "prereg": "Project Steering/PREREG_V8F_HACC_MC.md @ 8d4b936d",
+ "built": "2026-10-26 04:22:29",
+ "tier": "zero training; CPU",
+ "tables": {
+  "prereg": "Project Steering/PREREG_V8F_HACC_MC.md @ 8d4b936d",
+  "tier": "TRAIN-side fit and qualification only; no eval array is opened",
+  "seeds": {
+   "s0": {
+    "lam_star": 9998.3519231137,
+    "train_ticks": {
+     "path": "C:/Users/Admin/hlat/dumps_train/ticks_HACC_s0_m10_train.npz",
+     "sha256": "ef1719c689b16c805c4f068d5c4db7526a03a006684f5071331f5456dc04dcab",
+     "split": "train",
+     "n_clips": 141,
+     "n_windows": 9582,
+     "checked": "split == train; clips subset of fit_clips.json; disjoint from the eval-141 join"
+    },
+    "n_tick0_windows": 9582,
+    "reproduces_probe12": {
+     "c_mc_f_vs_probe12": 0.0,
+     "c_mc_h_vs_probe12b": 0.0,
+     "grid_vs_probe12": 0.0,
+     "w_along_mc_f_vs_probe12_4dp": 0.0,
+     "w_along_steep_vs_probe12_4dp": 0.0,
+     "n_tick0_windows": 9582,
+     "n_tick0_expected": 9582,
+     "PASS": true
+    },
+    "C-4": {
+     "clause1_closed_form_vs_grid_argmin": {
+      "c_closed_form": 0.30707832486066766,
+      "c_grid_argmin_201pt": 0.305,
+      "abs_diff": 0.0020783248606676685,
+      "bar": 0.005,
+      "PASS": true
+     },
+     "clause2_regression_GT_is_P_gives_c_zero": {
+      "c": 0.3094034378411479,
+      "c_raw_unclipped": 0.3094034378411479,
+      "bar": "c = 0 (the PREREG says 'as stated'; no tolerance is printed, so exact 0 and <= 1e-9 are both reported)",
+      "PASS": false
+     },
+     "beside_NOT_A_CONTROL": {
+      "c_data_only_lambda0": 0.08434479412710397,
+      "c_regression_with_held_tail_also_zeroed": -0.0,
+      "HACC_w_along_knot13": 0.36734694738210244,
+      "HACC_w_along_knot10": 0.200220178988411,
+      "reading": "with lambda* > 0 the fit is pinned by D2-continuity with the HELD tail (HACC's w at knots 13+), not by the data: GT := P moves c by +0.0023 only; the data-only c is 0.0843"
+     },
+     "PASS": false
+    },
+    "train_qualification": {
+     "P10": {
+      "ade2": 0.2186,
+      "ade6": 2.5502,
+      "prereg_ade6": 2.5502,
+      "prereg_ade2": 0.2186,
+      "matches_prereg_4dp": true
+     },
+     "HACC": {
+      "ade2": 0.2109,
+      "ade6": 2.0373,
+      "prereg_ade6": 2.0373,
+      "prereg_ade2": 0.2109,
+      "matches_prereg_4dp": true
+     },
+     "MC-H": {
+      "ade2": 0.2179,
+      "ade6": 2.0397,
+      "prereg_ade6": 2.0397,
+      "prereg_ade2": 0.2179,
+      "matches_prereg_4dp": true,
+      "ade6_minus_HACC_m": 0.0023999999999997357,
+      "BAR_ade6_le_HACC_plus_F_half": true
+     },
+     "MC-F": {
+      "ade2": 0.2276,
+      "ade6": 2.0429,
+      "prereg_ade6": 2.0429,
+      "prereg_ade2": 0.2276,
+      "matches_prereg_4dp": true,
+      "ade6_minus_HACC_m": 0.005599999999999827,
+      "BAR_ade6_le_HACC_plus_F_half": true
+     },
+     "STEEP": {
+      "ade2": 0.2112,
+      "ade6": 2.0382,
+      "prereg_ade6": 2.0382,
+      "prereg_ade2": null,
+      "matches_prereg_4dp": true,
+      "ade6_minus_HACC_m": 0.0008999999999996788,
+      "BAR_ade6_le_HACC_plus_F_half": true
+     }
+    },
+    "train_bar_ade6_le_HACC_plus": 0.0604,
+    "TRAIN_BAR_PASS": true,
+    "tables": {
+     "MC-H": {
+      "path": "C:/Users/Admin/hmc/tables/table_MCH_M2b_s0.json",
+      "file_sha256": "2e7f2518b3360d6b3770beb943084bb96fe9d47b89896a122ec04aa4bd4008e2",
+      "canonical_sha256": "c5e73554623cacdbe6d64e8fb42f57520d3d6158e0684bcba9be50fe8785a3e4",
+      "c": 0.200220178988411,
+      "w_along_knots_1_14": [
+       0.20022,
+       0.20022,
+       0.20022,
+       0.20022,
+       0.20022,
+       0.20022,
+       0.20022,
+       0.20022,
+       0.20022,
+       0.20022,
+       0.20022,
+       0.20022,
+       0.367347,
+       0.407297
+      ]
+     },
+     "MC-F": {
+      "path": "C:/Users/Admin/hmc/tables/table_MCF_M2b_s0.json",
+      "file_sha256": "4c599fd8c1c72c3696f19e700b7e953e06b8a26a64b578d212581428dd6bf508",
+      "canonical_sha256": "c475ff04765d8a736e774ffc632c31d8bcb2a505f5d4d4a078ae5e5328d40033",
+      "c": 0.30707832486066766,
+      "w_along_knots_1_14": [
+       0.307078,
+       0.307078,
+       0.307078,
+       0.307078,
+       0.307078,
+       0.307078,
+       0.307078,
+       0.307078,
+       0.307078,
+       0.307078,
+       0.307078,
+       0.307078,
+       0.367347,
+       0.407297
+      ]
+     },
+     "STEEP": {
+      "path": "C:/Users/Admin/hmc/tables/table_STEEP_M2b_s0.json",
+      "file_sha256": "1fff87d14fddb61aedf17d09c19fcef604f5fdd44cebe95bb276a4f098eed5cf",
+      "canonical_sha256": "0cf9dd30dea63fe3904a6311154a9782addab0890102b8094ff7d34ddb7fc584",
+      "c": null,
+      "w_along_knots_1_14": [
+       0.0,
+       0.0,
+       0.037388,
+       0.0,
+       0.015119,
+       0.025646,
+       0.043637,
+       0.0,
+       0.15,
+       0.3,
+       0.45,
+       0.6,
+       0.367347,
+       0.407297
+      ]
+     }
+    },
+    "seconds": 7.29283881187439
+   },
+   "s1": {
+    "lam_star": 36931.37570406851,
+    "train_ticks": {
+     "path": "C:/Users/Admin/hlat/dumps_train/ticks_HACC_s1_m10_train.npz",
+     "sha256": "82f852475ea41f385d8bcb5984dc4c2d6f86b30e79acf56bf59536000c0da1cb",
+     "split": "train",
+     "n_clips": 141,
+     "n_windows": 9582,
+     "checked": "split == train; clips subset of fit_clips.json; disjoint from the eval-141 join"
+    },
+    "n_tick0_windows": 9582,
+    "reproduces_probe12": {
+     "c_mc_f_vs_probe12": 0.0,
+     "c_mc_h_vs_probe12b": 0.0,
+     "grid_vs_probe12": 0.0,
+     "w_along_mc_f_vs_probe12_4dp": 0.0,
+     "w_along_steep_vs_probe12_4dp": 0.0,
+     "n_tick0_windows": 9582,
+     "n_tick0_expected": 9582,
+     "PASS": true
+    },
+    "C-4": {
+     "clause1_closed_form_vs_grid_argmin": {
+      "c_closed_form": 0.34680587498548143,
+      "c_grid_argmin_201pt": 0.34500000000000003,
+      "abs_diff": 0.0018058749854814038,
+      "bar": 0.005,
+      "PASS": true
+     },
+     "clause2_regression_GT_is_P_gives_c_zero": {
+      "c": 0.3488629300801739,
+      "c_raw_unclipped": 0.3488629300801739,
+      "bar": "c = 0 (the PREREG says 'as stated'; no tolerance is printed, so exact 0 and <= 1e-9 are both reported)",
+      "PASS": false
+     },
+     "beside_NOT_A_CONTROL": {
+      "c_data_only_lambda0": 0.0720440920019929,
+      "c_regression_with_held_tail_also_zeroed": -0.0,
+      "HACC_w_along_knot13": 0.4088125260599587,
+      "HACC_w_along_knot10": 0.21978281425434176,
+      "reading": "with lambda* > 0 the fit is pinned by D2-continuity with the HELD tail (HACC's w at knots 13+), not by the data: GT := P moves c by +0.0021 only; the data-only c is 0.0720"
+     },
+     "PASS": false
+    },
+    "train_qualification": {
+     "P10": {
+      "ade2": 0.2186,
+      "ade6": 2.5502,
+      "prereg_ade6": 2.5502,
+      "prereg_ade2": 0.2186,
+      "matches_prereg_4dp": true
+     },
+     "HACC": {
+      "ade2": 0.2119,
+      "ade6": 1.9865,
+      "prereg_ade6": 1.9865,
+      "prereg_ade2": 0.2119,
+      "matches_prereg_4dp": true
+     },
+     "MC-H": {
+      "ade2": 0.2186,
+      "ade6": 1.9887,
+      "prereg_ade6": 1.9887,
+      "prereg_ade2": 0.2186,
+      "matches_prereg_4dp": true,
+      "ade6_minus_HACC_m": 0.0021999999999999797,
+      "BAR_ade6_le_HACC_plus_F_half": true
+     },
+     "MC-F": {
+      "ade2": 0.2295,
+      "ade6": 1.9925,
+      "prereg_ade6": 1.9925,
+      "prereg_ade2": 0.2295,
+      "matches_prereg_4dp": true,
+      "ade6_minus_HACC_m": 0.006000000000000005,
+      "BAR_ade6_le_HACC_plus_F_half": true
+     },
+     "STEEP": {
+      "ade2": 0.2118,
+      "ade6": 1.9874,
+      "prereg_ade6": 1.9874,
+      "prereg_ade2": null,
+      "matches_prereg_4dp": true,
+      "ade6_minus_HACC_m": 0.0009000000000001229,
+      "BAR_ade6_le_HACC_plus_F_half": true
+     }
+    },
+    "train_bar_ade6_le_HACC_plus": 0.0604,
+    "TRAIN_BAR_PASS": true,
+    "tables": {
+     "MC-H": {
+      "path": "C:/Users/Admin/hmc/tables/table_MCH_M2b_s1.json",
+      "file_sha256": "a302d7c7dbb90a94cc317ba5fc6dddaf53a9d5f8221c236e6dc296235ec433d6",
+      "canonical_sha256": "89d9ec6971da649b55ad17b12c92f393ef1e3976437c520efdeceec624fe7016",
+      "c": 0.21978281425434176,
+      "w_along_knots_1_14": [
+       0.219783,
+       0.219783,
+       0.219783,
+       0.219783,
+       0.219783,
+       0.219783,
+       0.219783,
+       0.219783,
+       0.219783,
+       0.219783,
+       0.219783,
+       0.219783,
+       0.408813,
+       0.460393
+      ]
+     },
+     "MC-F": {
+      "path": "C:/Users/Admin/hmc/tables/table_MCF_M2b_s1.json",
+      "file_sha256": "03becfba5824b69aafaff7c4852bab19b1841d722b5ac001ca7d87a3d2c22430",
+      "canonical_sha256": "d43cbb6fdd720ae49423b210f9471460520f471e8339a9c968c34e4efc39fbca",
+      "c": 0.34680587498548143,
+      "w_along_knots_1_14": [
+       0.346806,
+       0.346806,
+       0.346806,
+       0.346806,
+       0.346806,
+       0.346806,
+       0.346806,
+       0.346806,
+       0.346806,
+       0.346806,
+       0.346806,
+       0.346806,
+       0.408813,
+       0.460393
+      ]
+     },
+     "STEEP": {
+      "path": "C:/Users/Admin/hmc/tables/table_STEEP_M2b_s1.json",
+      "file_sha256": "eb47ebb98835d9301b3de1fa3a9e8b054374fc5538c1134b8169b401a9851553",
+      "canonical_sha256": "c20085092339f1cc597b33ac425087d2f4fbc338965ca1a227c23141563fc473",
+      "c": null,
+      "w_along_knots_1_14": [
+       0.0,
+       0.0,
+       0.058097,
+       0.0,
+       0.009519,
+       0.034844,
+       0.053569,
+       0.0,
+       0.15,
+       0.3,
+       0.45,
+       0.6,
+       0.408813,
+       0.460393
+      ]
+     }
+    },
+    "seconds": 7.895907163619995
+   }
+  },
+  "C4_PASS_as_written": false,
+  "TRAIN_BAR_PASS": true,
+  "reproduces_probe12_and_prereg_values": true
+ },
+ "ckpts": {
+  "s0": {
+   "seed": 0,
+   "source_ckpt": "E:/Projects/TanitAD-artifacts/v8f-mini-hacc/M2b_s0_hacc.pt",
+   "source_sha256": "71de3c6195ce651ee656d26579bd68a0cc5d7370090044140ed634fe10b627c0",
+   "n_verify_windows": 48,
+   "arms": {
+    "MC-H": {
+     "out": "E:/Projects/TanitAD-artifacts/v8f-mini-hacc-mc/M2b_s0_hmc_MCH.pt",
+     "sha256": "ceb347853a90d22c1e158761bd1fd6e8cce5f1f78b6fbcd3a033a5468b98b62e",
+     "bytes": 86961655,
+     "table_file": "C:/Users/Admin/hmc/tables/table_MCH_M2b_s0.json",
+     "table_file_sha256": "2e7f2518b3360d6b3770beb943084bb96fe9d47b89896a122ec04aa4bd4008e2",
+     "canonical_sha256": "c5e73554623cacdbe6d64e8fb42f57520d3d6158e0684bcba9be50fe8785a3e4",
+     "other_tensors_bit_identical_to_shipped_HACC": 276,
+     "hacc_w_equals_float32_table": true,
+     "baked_vs_runtime_set": "bit-identical on every output tensor",
+     "max_abs_vs_HACC_traj30_m": 0.22942733764648438,
+     "max_abs_vs_HACC_traj30_along_m": 0.22942733764648438,
+     "max_abs_vs_HACC_traj30_cross_m": 0.0,
+     "seconds": 3.5253548622131348
+    },
+    "MC-F": {
+     "out": "E:/Projects/TanitAD-artifacts/v8f-mini-hacc-mc/M2b_s0_hmc_MCF.pt",
+     "sha256": "e1c029da5cb8760c87792b84020ae4793f37d2f3428820909c37f9ae638556aa",
+     "bytes": 86961655,
+     "table_file": "C:/Users/Admin/hmc/tables/table_MCF_M2b_s0.json",
+     "table_file_sha256": "4c599fd8c1c72c3696f19e700b7e953e06b8a26a64b578d212581428dd6bf508",
+     "canonical_sha256": "c475ff04765d8a736e774ffc632c31d8bcb2a505f5d4d4a078ae5e5328d40033",
+     "other_tensors_bit_identical_to_shipped_HACC": 276,
+     "hacc_w_equals_float32_table": true,
+     "baked_vs_runtime_set": "bit-identical on every output tensor",
+     "max_abs_vs_HACC_traj30_m": 0.4363670349121094,
+     "max_abs_vs_HACC_traj30_along_m": 0.4363670349121094,
+     "max_abs_vs_HACC_traj30_cross_m": 0.0,
+     "seconds": 3.6239664554595947
+    },
+    "STEEP": {
+     "out": "E:/Projects/TanitAD-artifacts/v8f-mini-hacc-mc/M2b_s0_hmc_STEEP.pt",
+     "sha256": "5dac871961e2b0e7652cd84d8b70dc242f9b086080275981338bbf25fae740bb",
+     "bytes": 86963733,
+     "table_file": "C:/Users/Admin/hmc/tables/table_STEEP_M2b_s0.json",
+     "table_file_sha256": "1fff87d14fddb61aedf17d09c19fcef604f5fdd44cebe95bb276a4f098eed5cf",
+     "canonical_sha256": "0cf9dd30dea63fe3904a6311154a9782addab0890102b8094ff7d34ddb7fc584",
+     "other_tensors_bit_identical_to_shipped_HACC": 276,
+     "hacc_w_equals_float32_table": true,
+     "baked_vs_runtime_set": "bit-identical on every output tensor",
+     "max_abs_vs_HACC_traj30_m": 0.5509939193725586,
+     "max_abs_vs_HACC_traj30_along_m": 0.5509939193725586,
+     "max_abs_vs_HACC_traj30_cross_m": 0.0,
+     "seconds": 4.533868789672852
+    }
+   },
+   "control_bake_path_with_HACC_table_equals_shipped": true
+  },
+  "s1": {
+   "seed": 1,
+   "source_ckpt": "E:/Projects/TanitAD-artifacts/v8f-mini-hacc/M2b_s1_hacc.pt",
+   "source_sha256": "32e4809dc4204e70544bceb5c3c57d54310c387decd3b95ae0a830177616523a",
+   "n_verify_windows": 48,
+   "arms": {
+    "MC-H": {
+     "out": "E:/Projects/TanitAD-artifacts/v8f-mini-hacc-mc/M2b_s1_hmc_MCH.pt",
+     "sha256": "3d05a2b2e5bb84f0643f6693457e9a7e26ce23400d9d544a21a934c505dae88a",
+     "bytes": 86961655,
+     "table_file": "C:/Users/Admin/hmc/tables/table_MCH_M2b_s1.json",
+     "table_file_sha256": "a302d7c7dbb90a94cc317ba5fc6dddaf53a9d5f8221c236e6dc296235ec433d6",
+     "canonical_sha256": "89d9ec6971da649b55ad17b12c92f393ef1e3976437c520efdeceec624fe7016",
+     "other_tensors_bit_identical_to_shipped_HACC": 276,
+     "hacc_w_equals_float32_table": true,
+     "baked_vs_runtime_set": "bit-identical on every output tensor",
+     "max_abs_vs_HACC_traj30_m": 0.3573722839355469,
+     "max_abs_vs_HACC_traj30_along_m": 0.3573722839355469,
+     "max_abs_vs_HACC_traj30_cross_m": 0.0,
+     "seconds": 3.523143768310547
+    },
+    "MC-F": {
+     "out": "E:/Projects/TanitAD-artifacts/v8f-mini-hacc-mc/M2b_s1_hmc_MCF.pt",
+     "sha256": "f102e649186d24cd52231fe2e35ce52e5bb83188fb82340ce0dfbc84c5a1ad73",
+     "bytes": 86961655,
+     "table_file": "C:/Users/Admin/hmc/tables/table_MCF_M2b_s1.json",
+     "table_file_sha256": "03becfba5824b69aafaff7c4852bab19b1841d722b5ac001ca7d87a3d2c22430",
+     "canonical_sha256": "d43cbb6fdd720ae49423b210f9471460520f471e8339a9c968c34e4efc39fbca",
+     "other_tensors_bit_identical_to_shipped_HACC": 276,
+     "hacc_w_equals_float32_table": true,
+     "baked_vs_runtime_set": "bit-identical on every output tensor",
+     "max_abs_vs_HACC_traj30_m": 0.5291557312011719,
+     "max_abs_vs_HACC_traj30_along_m": 0.5291557312011719,
+     "max_abs_vs_HACC_traj30_cross_m": 0.0,
+     "seconds": 3.43973445892334
+    },
+    "STEEP": {
+     "out": "E:/Projects/TanitAD-artifacts/v8f-mini-hacc-mc/M2b_s1_hmc_STEEP.pt",
+     "sha256": "f4ed69b330b371ab1d889eca51e831dfe2db6f45745601982757603d5adffd86",
+     "bytes": 86963733,
+     "table_file": "C:/Users/Admin/hmc/tables/table_STEEP_M2b_s1.json",
+     "table_file_sha256": "eb47ebb98835d9301b3de1fa3a9e8b054374fc5538c1134b8169b401a9851553",
+     "canonical_sha256": "c20085092339f1cc597b33ac425087d2f4fbc338965ca1a227c23141563fc473",
+     "other_tensors_bit_identical_to_shipped_HACC": 276,
+     "hacc_w_equals_float32_table": true,
+     "baked_vs_runtime_set": "bit-identical on every output tensor",
+     "max_abs_vs_HACC_traj30_m": 0.7125988006591797,
+     "max_abs_vs_HACC_traj30_along_m": 0.7125988006591797,
+     "max_abs_vs_HACC_traj30_cross_m": 0.0,
+     "seconds": 3.7750909328460693
+    }
+   },
+   "control_bake_path_with_HACC_table_equals_shipped": true
+  }
+ },
+ "C-4_as_written_PASS": false,
+ "TRAIN_BAR_PASS": true,
+ "input_pins": {
+  "hmc_lib_sha256": "7792d7f001b66c9618b7fd40c933f8532e1a86b3ca2d50c0facc7d61275cc9b6",
+  "hmc_bake_sha256": "d3cbc927cc9f4fa99e9ec53feae89d2a203c1dbd87a3d6b6666de38c162ce435",
+  "ref_snapshots": [
+   "5610114d3e09501347ed0ac65e44790eb2954eb5d5b703af089a64e845dbf5e4 *t1k_read_repo.py",
+   "9a5623e5f737677e6fe0cf6df41c3588b11282423e27008830a7914253f7a7ca *t1klc_read.py",
+   "798089e8abfeb56dfe9e8f6a755448f416be8dfbec948df08638fa997c038a06 *lcdiag/common.py",
+   "46a943cfac3f15b2c02172ebc7c62cf0e1d6806ace268c771197bcb2b826acae *lcdiag/probe12_mc_trainfit.py",
+   "fa8ab7a2be3116f16b34694acf19dbeca6cf59d96e31f570f161702438d73ed5 *lcdiag/probe12b_mch.py",
+   "bba44f8aa21ead84b9f80fd999714d917b9468dde16657852e83280bee952dd5 *lcdiag/probe2_conditioning.py",
+   "8360556d0bf11624c62f9bca2e49035e5bee8021d16f2f4e98d122ea81ceb034 *lcdiag/statekin.py",
+   ""
+  ]
+ }
+}

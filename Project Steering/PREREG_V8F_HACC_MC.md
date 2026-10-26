@@ -117,3 +117,25 @@ MC-F and m = 30 are reported beside. A MC-F win does not promote MC-F without it
 * **Launch.** It goes through `launch_gate.py`, with a new G-DVB entry for the perturbation flag. The G-LIVE check requires a non-zero gradient with perturbed inputs.
 * **Eval.** Under HACC (re-fitted on TRAIN by HACC's rule) and under MC-H, same T1 protocol and bars.
 * ⚠ It needs PI / MM sign-off for box-2 time. FLAT and OACC are queued there.
+
+## Amendment 1 (`A1-2026-10-26`), before any eval run: two controls corrected, the build's interpretations adopted
+
+**When.** Written 2026-10-26, from a 24-window SMOKE of the built chain (`raw/2026-10-26-hmc-build/`, every output labelled SMOKE). No eval run
+exists, and no outcome row (L2, ADE, M1 / M2 or any family row) of any arm has been read on any split.
+
+1. **C-1's bar was unreachable by construction.** The dumped `plan` is float32, so |d| is its rounding. SMOKE reads 3.2–3.7e-6 m (0.497–0.500
+   ulp32, with the plan up to 98 m), against a bar of 1e-6 m. This is the class of `R74`, the third time today.
+   * **New bar:** max over ticks and knots 1–12 of |d| / spacing(float32(|plan|)) ≤ 1, i.e. one float32 ulp at the plan's magnitude.
+   * **Unchanged:** the regression arm, HACC's table through the same check. It reads 1.5–1.7 m on SMOKE and must still FAIL.
+2. **C-4 clause 2 is not an identity of the fit as specified.** The fit couples knot 12 to the held tail through its D2 term (HACC's w_along at
+   knot 13 is 0.367 / 0.409), so "GT := P gives c = 0" reads 0.3094 / 0.3489.
+   * **New clause 2:** GT := P **with the held tail also set to 0** gives c = 0. This is an identity of the fitter.
+   * **Disclosed consequence:** MC-F's c is set by continuity with HACC's tail, not by the data (data-only c is 0.084 / 0.072). MC-F is therefore
+     "the tail-continuation constant". It stays a beside arm and decides nothing.
+3. **The build's interpretations are adopted as written:** `raw/2026-10-26-hmc-build/INTERPRETATIONS.md` §B, items 1–10. Among them, the outcome
+   word is the FIRST matching row in table order, and every matching row is listed.
+
+Nothing else moves: the arms, the TRAIN bar, the rows, F, the outcome table and the committed next steps.
+
+The reader applies this amendment only when invoked with `--c1-bar ulp32 --c4-clause2 tail0` and `--c1-amendment` / `--c4-amendment A1-2026-10-26`.
+Without those flags it applies the literal text and REFUSES.
