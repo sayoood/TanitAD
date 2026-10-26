@@ -2665,12 +2665,3 @@ zero-gradient gate and K-FROZEN read exactly that. G-MAP-OVERFIT stays required;
 * Done 21:29 Berlin: verdict **PASS** (0 offenders, 21 allowed), done-marker written, no relaunch. MODEL_REGISTRY §18;
   evidence `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-26-nt-a1-zerograd/regate/`. NT A1 still has no NavSim read -- that needs a separate go.
 
-## ℹ️ MM NOTE (2026-10-26 ~21:38 Berlin) -- map-only fine-tune: the launch gate no longer requires G-BOX-OVERFIT for `refcv8-mapft` (C1 7e14cad)
-
-Inside your D-R9-MAPHEAD-PRECISION gate route; disclosed here because it removes a required check. The C0 launch stopped at the box
-overfit bind: its harness replays the model build but not the map-only freeze, so it refused the declared `--r8-train-only-map`.
-Fixing the replay would not help: under this profile the box head is FROZEN, so a box overfit run has nothing to train. What the
-launch must prove about the box head is that it does NOT move, and G-LIVE's bit identity of every non-map tensor, the RED arms, the
-zero-gradient gate and K-FROZEN read exactly that. G-MAP-OVERFIT stays required; refcv8 and refcv8-nt still require the box check
-(pinned in `stack/tests/test_map_only_ft.py`). No action needed unless you want the check restored as a vacuous pass instead.
-
