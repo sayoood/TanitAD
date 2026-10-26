@@ -121,3 +121,52 @@ a fine-tune would otherwise restart M2b's teacher forcing at p_gt 1.0.
 * ORC − M2b stays a beside row, and is never decisive.
 
 Nothing else moves: the arms, the rows, F, the controls, the outcome table and the committed next steps.
+
+## Amendment 2 (`A2-2026-10-26`), before any run: three defects the reader exposed, fixed before data
+
+**When.** Written 2026-10-26, from the reader's build on SYNTHETIC inputs and a wiring smoke on the banked T1-HEADS runs
+(`raw/2026-10-26-orcread/`). No O-RECOVER run exists. No ORC or ORC-0 checkpoint, rollout or eval exists.
+
+1. **K4 cannot pass on a `--limit causal` run, by construction.**
+   * Tick 0 of a causal run reads the past-only speed bucket, while the arm's T0 eval reads the corpus's. MEASURED on the banked T1-HEADS M2b
+     runs (`out/smoke_real.out`): the causal run's tick 0 differs from its T0 eval by lon F1 0.045 and lat 0.0075; the logged run's by 0.0.
+   * T1-HEADS ran K4 on a `--limit logged` run for exactly this reason.
+   * **Fix:** each of ORC and ORC-0, at both seeds, gets one more T1-kin run with `--limit logged`, otherwise identical, used ONLY for K4.
+     That is 4 extra dev-box CPU rollouts.
+   * The decisive rows still come from the causal runs, unchanged.
+2. **The §4 table had a hole.** A head separated-better at both seeds, but below 2F at one of them, matched no row.
+   * **NO EFFECT now reads:** no F1 row separated-better and ≥ 2F at both seeds, guards held.
+   * Disclosed consequence: a head that is separated-better but under the bar is NO EFFECT. Its rows are reported, and it is never called an
+     effect.
+   * With this, the table is complete. Guards held gives ROBUST, PARTIAL or NO EFFECT by how many heads cleared the bar; a failed guard gives
+     HARMS; a failed control gives REFUSED.
+3. **K7 had no reference for a plain arm.** "The run is the banked run" referred to T1-HEADS' banked HACC dumps; no O-RECOVER dump is banked.
+   * **New K7:** the executed track rebuilt from the dumped plans equals the dumped track and tick poses to ≤ 1e-9 m, per run. It reads 0.0
+     on the banked runs.
+
+**How the build meets §1's "every ego input is rebuilt consistently", stated so it cannot be read two ways:**
+* `p10f`, `kin3`, `p10_t`, `base`, `pose`, `pose_t` and `pose_s` are rebuilt from one perturbed state: v' = s·v, a' = a − d and
+  ω' = s·ω + n per history frame.
+* `nav`'s distance to the next manoeuvre is rebuilt like the pose history, scaled by s behind NOW. Its frame-to-frame differences would
+  otherwise carry the logged speed. A history frame across a manoeuvre boundary cannot be scaled, so it stays logged and is counted.
+* Kept on purpose: the scene, the corpus speed bucket `limit` (an input M2b is trained on, unchanged here), the hold ages, `pose_now`, and
+  every target and label.
+
+**Which launch gate.** For this trainer, §1's "through `launch_gate.py`" means its own in-process gate, as for every v8F-mini arm.
+* That gate is `v8f_mini_train.py --selfcheck-only`: G-DVB (`FLAG_CHECKS` / `declared_vs_built`, now with entries for the perturbation
+  flags, `--init-ckpt` and `--warmup`) and the G-LIVE probes, including a perturbed batch.
+* `stack/scripts/launch_gate.py` is the refcv8 gate and never reads this trainer.
+* The box-2 chain runs the gate once per run, four times in all. Each writes a PASS token binding the commit, the sha256 of that run's
+  training argv, and the data manifest.
+
+**Also fixed here, so the read cannot drift:**
+* **ORC − M2b is read at T0 only**, from the eval JSONs, so no M2b T1-kin run is needed.
+* **The STRATEGIC family is NOT paused for v8F** (PI ruling 2026-10-17). S-POS against CTRV is reported beside, per run, and decides nothing.
+* **The reader's interpretations are adopted as written:** `raw/2026-10-26-orcread/NOTES.md`, items 1–3 and 7–10. Among them:
+  * the F1 rows score only cells scored in both runs;
+  * bars are inclusive;
+  * ORC's and ORC-0's argv must be identical except `--ego-perturb-p` and `--out`;
+  * the launch-gate token is checked for its binding to the argv and data, but its HMAC is not verified, because the key lives on the
+    launch host.
+
+Nothing else moves: the arms, the decisive rows, F, the bars, ROBUST, PARTIAL and HARMS, and every committed next step.

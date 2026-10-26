@@ -78,6 +78,12 @@ FLAG_CHECKS = {
     "code_mix": "lever:code_mix",             # PREREG_V8F_MIXO: argv -> make_config -> the BUILT model's levers (declared_vs_built) -> the probe of the code O actually read (code_mix_probe)
     "o_interface": "lever:o_interface",       # PREREG_V8F_FLAT: argv -> make_config -> the BUILT model's levers (declared_vs_built) -> G-LIVE's dead-weight set (live_check) -> the probe of what O is handed (o_interface_probe)
     "w_acc": "cfg:w_acc",                     # PREREG_V8F_OACC: argv -> make_config -> the BUILT config AND built_levers (declared_vs_built) -> acc_probe (the BUILT loss's total moves by exactly w_acc x the acc term, and O's head receives its gradient)
+    # PREREG_V8F_HACC_MC section 7 (O-RECOVER): the ego-state perturbation. `ego:<k>` = equals the BUILT perturber's lever (D.EgoPerturb.built_levers(), the object the training loop calls
+    # `.apply` on): argv -> make_ego_perturb -> the perturber -> declared_vs_built (bad_ego_perturb) -> G-LIVE on a perturbed batch + ego_perturb_probe (the perturbed tensors reach the loss
+    # gradient, a p = 0 control reads EXACTLY 0.0) -> `b = ego.apply(b, step)` in the loop. With --ego-perturb-p 0 (the default) none of it runs and nothing it imports is imported.
+    "ego_perturb_p": "ego:ego_perturb_p", "ego_perturb_vscale": "ego:ego_perturb_vscale", "ego_perturb_vmax": "ego:ego_perturb_vmax", "ego_perturb_adrop": "ego:ego_perturb_adrop",
+    "ego_perturb_yawrate_std": "ego:ego_perturb_yawrate_std", "ego_perturb_seed": "ego:ego_perturb_seed",
+    "init_ckpt": "data:init_ckpt",            # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
     "encoder": "enc:encoder", "lora_r": "enc:lora_r", "lora_alpha": "enc:lora_alpha", "lora_targets": "enc:lora_targets",
@@ -107,6 +113,25 @@ def build_parser():
     ap.add_argument("--w-acc", dest="w_acc", type=float, default=0.0,
                     help="PREREG_V8F_OACC: the weight of the acceleration-matching term on O's plan (the second difference on the 0.2 s grid, origin knot included, of O's plan minus the GT's, squared, mean over the GT-valid steps). "
                          "0.0 (default) = the term is not in the loss = every earlier arm, bit for bit. > 0 = OACC's X: the value comes from the PREREG's rule (v8f_mini_eval_oacc.py wacc), is written into the argv and never tuned")
+    # ---- PREREG_V8F_HACC_MC section 7 (O-RECOVER): an ego-state perturbation of the kinematic inputs; targets and labels are never touched. Every flag defaults to OFF (the defaults are
+    # data.EGO_PERTURB_DEFAULTS), and every flag has its G-DVB entry in FLAG_CHECKS and its clause in bad_ego_perturb.
+    ap.add_argument("--ego-perturb-p", dest="ego_perturb_p", type=float, default=D.EGO_PERTURB_DEFAULTS["p"],
+                    help="O-RECOVER: the share of ELIGIBLE training samples (logged v0 < --ego-perturb-vmax) whose ego state is replaced by a perturbed one before the loss. 0.0 (default) = off = every earlier arm, bit for bit "
+                         "(no draw, no copy). PREREG_V8F_HACC_MC section 7: 0.3. Needs --kin-mode yaw")
+    ap.add_argument("--ego-perturb-vscale", dest="ego_perturb_vscale", type=float, nargs=2, metavar=("LO", "HI"), default=list(D.EGO_PERTURB_DEFAULTS["vscale"]),
+                    help="the speed multiplier s ~ U(LO, HI) (0 < LO <= HI <= 1), one draw per sample, applied to v and to the yaw rate of every real history frame (the same path at the lower speed)")
+    ap.add_argument("--ego-perturb-vmax", dest="ego_perturb_vmax", type=float, default=D.EGO_PERTURB_DEFAULTS["vmax"],
+                    help="eligibility: only windows whose LOGGED v0 is below this (m/s) can be perturbed")
+    ap.add_argument("--ego-perturb-adrop", dest="ego_perturb_adrop", type=float, default=D.EGO_PERTURB_DEFAULTS["adrop"],
+                    help="the acceleration offset d ~ U(0, ADROP) m/s^2, subtracted from a on every real history frame")
+    ap.add_argument("--ego-perturb-yawrate-std", dest="ego_perturb_yawrate_std", type=float, default=D.EGO_PERTURB_DEFAULTS["yawrate_std_deg"],
+                    help="the LATERAL lever: an offset n ~ N(0, STD) deg/s added to the measured yaw rate (and, through it, to kappa, the heading history and the odometry) of the whole window. 0.0 (default) = lateral off")
+    ap.add_argument("--ego-perturb-seed", dest="ego_perturb_seed", type=int, default=D.EGO_PERTURB_DEFAULTS["seed"],
+                    help="the perturbation's own seed: the draws of step k are a function of (seed, k) only, on a private generator (a resumed run draws what an uninterrupted run drew)")
+    ap.add_argument("--init-ckpt", dest="init_ckpt", default="",
+                    help="O-RECOVER's start state: when set and --out holds no ckpt_last.pt, load the MODEL weights of this checkpoint (a v8f_mini_train ckpt, e.g. M2b's) STRICTLY into the freshly built model (its architecture "
+                         "config must match the built one, else the launch is REFUSED), at step 0 with a FRESH optimiser and schedule. An existing ckpt_last.pt in --out still resumes as ever (resume wins). The path and the file's "
+                         "sha256 are recorded in the levers. Default \"\" = off = every earlier arm, bit for bit")
     ap.add_argument("--cache-dir", default="C:/Users/Admin/refav1_hj_cache")
     ap.add_argument("--out", required=True)
     ap.add_argument("--v9-train", default="C:/Users/Admin/qland/work/refcv8_hf_v9/release/v9_labels_train.npz")
@@ -260,9 +285,124 @@ def parse_targets(spec: str) -> list:
     return [t for t in (x.strip() for x in str(spec).split(",")) if t]
 
 
-def declared_vs_built(a, cfg, model, opt, data_info, enc=None) -> list:
+def make_ego_perturb(a):
+    """argv -> the perturber the training loop calls ``.apply`` on (PREREG_V8F_HACC_MC section 7). The ONE place the six flags become an object; ``bad_ego_perturb`` compares it back to the argv."""
+    return D.EgoPerturb(p=a.ego_perturb_p, vscale=a.ego_perturb_vscale, vmax=a.ego_perturb_vmax, adrop=a.ego_perturb_adrop,
+                        yawrate_std_deg=a.ego_perturb_yawrate_std, seed=a.ego_perturb_seed, kin_mode=a.kin_mode)
+
+
+def bad_ego_perturb(a, ego) -> list:
+    """The O-RECOVER half of the launch gate (G-DVB). Empty = pass. Every ego flag is read back from the BUILT perturber (``ego``); with no perturber built every one must be at its default
+    (a flag that builds nothing is refused, not ignored); the built law must be a legal one; and a lever declared without an effect is refused."""
+    dfl = {k: build_parser().get_default(k) for k in ("ego_perturb_p", "ego_perturb_vscale", "ego_perturb_vmax", "ego_perturb_adrop", "ego_perturb_yawrate_std", "ego_perturb_seed")}
+    declared = {k: getattr(a, k) for k in dfl}
+    if ego is None:
+        moved = sorted(k for k in dfl if declared[k] != dfl[k])
+        return [f"{moved} are set but no ego perturber was built: a flag that builds nothing is refused, not ignored"] if moved else []
+    bad = []
+    lv = ego.built_levers()
+    for k, want in declared.items():
+        got = lv.get(k)
+        want = list(want) if isinstance(want, (list, tuple)) else want
+        if got != want:
+            bad.append(f"lever {k}: declared {want!r} but built {got!r}")
+    if lv.get("kin_mode") != a.kin_mode:
+        bad.append(f"ego perturber kin_mode: declared {a.kin_mode} but built {lv.get('kin_mode')}")
+    bad += [f"ego perturber: {m}" for m in ego.problems()]
+    return bad
+
+
+def bad_init_ckpt(a, data_info) -> list:
+    """``--init-ckpt`` read back (G-DVB): declared -> the record exists, names the declared path, carries the file's sha256, and EITHER the model state really IS that checkpoint's (``load_init_ckpt`` compared every
+    tensor after the load) OR the load was skipped because ``--out`` already holds a ckpt_last.pt (resume wins); not declared -> nothing was loaded."""
+    got = data_info.get("init_ckpt")
+    if not a.init_ckpt:
+        return ["init_ckpt not declared but a checkpoint was loaded"] if got else []
+    if not got:
+        return [f"init_ckpt {a.init_ckpt!r} declared but no checkpoint was loaded"]
+    bad = []
+    if os.path.abspath(a.init_ckpt) != got.get("path"):
+        bad.append(f"init_ckpt: declared {os.path.abspath(a.init_ckpt)!r} but built {got.get('path')!r}")
+    if not (isinstance(got.get("sha256"), str) and len(got["sha256"]) == 64):
+        bad.append(f"init_ckpt: the checkpoint's sha256 is not recorded ({got.get('sha256')!r})")
+    if got.get("applied"):
+        if got.get("n_mismatch_after_load") != 0 or not got.get("n_tensors"):
+            bad.append(f"init_ckpt: after the load {got.get('n_mismatch_after_load')} of {got.get('n_tensors')} tensors differ from the checkpoint's")
+    elif got.get("skipped") != "resume":
+        bad.append(f"init_ckpt: declared but neither applied nor skipped for a resume ({got.get('skipped')!r})")
+    return bad
+
+
+#: the architecture-defining fields of V8FMiniConfig: a checkpoint may start a fine-tune only for a model of THIS shape and wiring (the training levers -- w_*, p_gt_*, code_mix, o_interface, cons_absent,
+#: consistency, detach_upper -- may differ: a fine-tune moves them on purpose)
+INIT_CKPT_MATCH = ("d", "heads", "ff", "d_feat", "n_tok", "hist", "hmax", "n_q", "depth_s", "depth_t", "depth_o", "nb", "res_scale_m", "navonly", "wm", "wm_dim", "wm_strides", "wm_beta", "wm_gamma",
+                   "kin_mode", "max_age_t", "max_age_s")
+
+
+def load_init_ckpt(path, model, cfg, apply: bool = True) -> dict:
+    """Start state of a fine-tune. Hash the file; REFUSE (ValueError) a checkpoint whose architecture config differs from the BUILT one (``INIT_CKPT_MATCH``); then, if ``apply``, load its MODEL weights into
+    ``model`` strictly (keys and shapes) and READ THEM BACK: every tensor of the checkpoint is compared with the model's after the load. ``apply`` is False when ``--out`` already holds a ckpt_last.pt (resume
+    wins): the file is still hashed and config-checked, nothing is loaded. Returns the record the levers, selfcheck.json and the checkpoint carry."""
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for blk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(blk)
+    ck = torch.load(path, map_location="cpu", weights_only=False)
+    if not isinstance(ck, dict) or "model" not in ck or not isinstance(ck.get("cfg"), dict):
+        raise ValueError("not a v8f_mini_train checkpoint (no 'model' / 'cfg')")
+    norm = lambda v: tuple(v) if isinstance(v, (list, tuple)) else v          # noqa: E731
+    diff = {k: (norm(ck["cfg"][k]), norm(getattr(cfg, k))) for k in INIT_CKPT_MATCH if k in ck["cfg"] and norm(ck["cfg"][k]) != norm(getattr(cfg, k))}
+    if diff:
+        raise ValueError("config mismatch between the checkpoint and the model this argv builds (checkpoint vs built): " + "; ".join(f"{k}: {v[0]!r} != {v[1]!r}" for k, v in sorted(diff.items())))
+    sd = ck["model"]
+    rec = {"path": os.path.abspath(path), "sha256": h.hexdigest(), "applied": bool(apply), "skipped": None if apply else "resume", "n_tensors": len(sd), "n_mismatch_after_load": None,
+           "source_step": ck.get("step"), "source_arm": ck.get("arm"), "source_seed": ck.get("seed"), "source_argv_sha": ck.get("argv_sha")}
+    if not apply:
+        return rec
+    model.load_state_dict(sd, strict=True)
+    cur = model.state_dict()
+    rec["n_mismatch_after_load"] = sum(1 for k in sd if not torch.equal(cur[k].detach().cpu(), sd[k].detach().cpu()))
+    return rec
+
+
+class LRSchedule:
+    """The loop's learning-rate schedule: linear warmup over ``warmup`` steps to ``lr``, then a cosine to 0.1 x ``lr`` at ``total``. ONE definition: the loop CALLS it and ``bad_schedule`` (G-DVB) READS IT BACK
+    -- the declared ``--warmup`` is checked against the schedule that was built, not against the argv it was built from."""
+
+    def __init__(self, lr: float, warmup: int, total: int):
+        self.lr, self.warmup, self.total = lr, warmup, total
+
+    def __call__(self, s):
+        if s < self.warmup:
+            return self.lr * (s + 1) / self.warmup
+        return self.lr * (0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * min((s - self.warmup) / max(self.total - self.warmup, 1), 1.0))))
+
+    def built_levers(self) -> dict:
+        return {"lr": self.lr, "warmup": self.warmup, "total": self.total}
+
+
+def bad_schedule(a, sched) -> list:
+    """G-DVB for ``--warmup`` (and the peak ``--lr``): the BUILT schedule's warmup / peak equal the argv's, AND its behaviour says the same -- the first step is lr / warmup and the last warmup step reaches lr.
+    With no schedule built, ``--warmup`` must be at its default (a flag that builds nothing is refused, not ignored)."""
+    dfl = build_parser().get_default("warmup")
+    if sched is None:
+        return [f"warmup {a.warmup} is set but no learning-rate schedule was built: a flag that builds nothing is refused, not ignored"] if a.warmup != dfl else []
+    bad = []
+    if sched.warmup != a.warmup:
+        bad.append(f"lever warmup: declared {a.warmup} but the built schedule's warmup is {sched.warmup}")
+    if sched.lr != a.lr:
+        bad.append(f"lever lr: declared {a.lr} but the built schedule's peak is {sched.lr}")
+    if a.warmup >= 1:
+        first, last = sched(0), sched(a.warmup - 1)
+        if not (abs(first - a.lr / a.warmup) <= 1e-12 * max(abs(a.lr), 1.0) and abs(last - a.lr) <= 1e-12 * max(abs(a.lr), 1.0)):
+            bad.append(f"warmup {a.warmup}: the built schedule reads {first!r} at step 0 and {last!r} at step {a.warmup - 1}, not {a.lr / a.warmup!r} and {a.lr!r}")
+    return bad
+
+
+def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None) -> list:
     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
     bad = bad_encoder(a, enc, data_info)
+    bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
     parser_dests = {act.dest for act in build_parser()._actions if act.dest != "help"}
     missing = sorted(parser_dests - set(FLAG_CHECKS))
     if missing:
@@ -622,6 +762,123 @@ def acc_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
     return res
 
 
+def ego_perturb_probe(model, batch, cfg, ego) -> dict:
+    """G-LIVE for O-RECOVER (PREREG_V8F_HACC_MC section 7): the ego perturbation REACHES THE LOSS THE TRAINER BACKPROPAGATES -- read from the BUILT model's own ``loss`` on the real probe batch (a COPY, its own
+    seeds), through the SAME ``ego.apply`` the training loop calls. With the lever off (the default) there is nothing to prove and nothing runs (the pre-change model and loss).
+
+      partition    every key ``forward_infer`` reads is in ``EGO_PERTURB_REBUILT`` or ``EGO_PERTURB_KEPT``: no ego tensor the model reads is left unperturbed by omission
+      batch        at p = 1 every selected row differs in p10f, base, kin3 and p10_t; every unselected row is byte-identical in every rebuilt tensor; every other key is the SAME object
+      law          the selected rows' speed ratio lies in [LO, HI] and the acceleration drop in [0, ADROP]
+      G-LIVE       ``live_check`` on the PERTURBED batch: every loss term finite, every trainable group gets a non-zero gradient, the frozen prior reads EXACTLY 0.0
+      gradient     sum |grad(total on the perturbed batch) - grad(total on the unperturbed batch)| > 0 and the loss moves; with p1 replaced alone and with base replaced alone the loss moves too
+      controls     (a) the same loss twice on the unperturbed batch differs by EXACTLY 0.0 (the probe is deterministic); (b) p = 0 returns the SAME batch object and its loss / gradient differ from the
+                   unperturbed ones by EXACTLY 0.0; (c) the frozen P10 prior's gradient difference is EXACTLY 0.0; (d) so is the world-model auxiliary's (``act`` is its transition record and is NOT perturbed)
+
+    A violation is an AssertionError, which the caller turns into a refusal. DELETE the line in ``EgoPerturb.apply`` that applies the rebuild, or the ``ego.apply`` line in the loop's input path, and the
+    batch / gradient clauses read 0.0 and the gate refuses the launch."""
+    if not ego.active:
+        return {"ego_perturb": "off", "pass": True, "skipped": "--ego-perturb-p 0: the perturbation is not applied; the default run is the pre-change run"}
+    m = copy.deepcopy(model).cpu()
+    m.train()
+    pert = ego.apply(batch, ego.PROBE_STEP, p=1.0)
+    last = dict(ego.last)
+    sel = last["sel"]
+    n_sel = int(sel.sum())
+    if n_sel < 1:
+        raise AssertionError(f"ego probe: no ELIGIBLE window (logged v0 < {ego.vmax} m/s) among the {last['n_rows']} probe windows: the perturbation cannot be seen")
+    B = int(sel.numel())
+    res = {"p_declared": ego.p, "n_rows": B, "n_eligible": last["n_eligible"], "n_selected_at_p1": n_sel}
+
+    m.eval()
+    with torch.no_grad():
+        keys = set(m.forward_infer(batch)["_keys_read"])
+    m.train()
+    stray = sorted(keys - set(D.EGO_PERTURB_REBUILT) - set(D.EGO_PERTURB_KEPT))
+    if stray:
+        raise AssertionError(f"ego probe: forward_infer reads {stray}, which is neither rebuilt nor kept by the perturbation: an input the perturbation leaves unaccounted for")
+    res["keys_read"] = sorted(keys)
+
+    def changed(x, y):                                                           # [B] bool: row differs (NaN == NaN)
+        same = (x == y) | (torch.isnan(x) & torch.isnan(y)) if x.is_floating_point() else (x == y)
+        return (~same).reshape(x.shape[0], -1).any(1)
+    res["rows_changed"] = {}
+    for k in D.EGO_PERTURB_REBUILT:
+        ch = changed(pert[k], batch[k])
+        res["rows_changed"][k] = int(ch.sum())
+        if bool(ch[~sel].any()):
+            raise AssertionError(f"ego probe: {k} changed on a row the perturbation did not select")
+        if k in ("p10f", "base", "kin3", "p10_t") and not bool(ch[sel].all()):
+            raise AssertionError(f"ego probe: {k} is unchanged on {int((~ch[sel]).sum())} of {n_sel} selected rows: the rebuild did not reach it")
+    kept_moved = sorted(k for k in batch if k not in D.EGO_PERTURB_REBUILT and pert[k] is not batch[k])
+    if kept_moved:
+        raise AssertionError(f"ego probe: {kept_moved} are not the same objects after the perturbation: targets, labels and kept inputs must not be touched")
+
+    k0, k1 = batch["kin3"][sel].double(), pert["kin3"][sel].double()
+    pos = k0[:, 0] > 1e-3
+    ratio = k1[pos, 0] / k0[pos, 0]
+    drop = k0[:, 1] - k1[:, 1]
+    lo, hi = ego.vscale
+    res["speed_ratio_range"] = [float(ratio.min()), float(ratio.max())] if ratio.numel() else None
+    res["accel_drop_range"] = [float(drop.min()), float(drop.max())]
+    if ratio.numel() and not bool(((ratio >= lo - 1e-4) & (ratio <= hi + 1e-4)).all()):
+        raise AssertionError(f"ego probe: the speed ratio {res['speed_ratio_range']} is outside the declared [{lo}, {hi}]")
+    if not bool(((drop >= -1e-4) & (drop <= ego.adrop + 1e-4)).all()):
+        raise AssertionError(f"ego probe: the acceleration drop {res['accel_drop_range']} is outside the declared [0, {ego.adrop}]")
+
+    lp = live_check(m, pert, cfg)                                                # G-LIVE on the PERTURBED batch (its own deep copy)
+    res["live_perturbed"] = {"pass": lp["pass"], "terms": lp["terms"], "control_prior_grad_sum": lp["control_prior_grad_sum"], "groups_grad": lp["groups_grad"]}
+
+    named = [(n, p) for n, p in m.named_parameters() if p.requires_grad]
+
+    def run(b, grad=True):
+        for _, p in named:
+            p.grad = None
+        for p in m.prior.parameters():
+            p.grad = None
+        torch.manual_seed(20261026)
+        with torch.set_grad_enabled(grad):
+            T = m.loss(b, p_gt=0.5, gen=torch.Generator().manual_seed(13))["terms"]
+            for k, v in T.items():
+                if not torch.isfinite(v):
+                    raise AssertionError(f"ego probe: loss term {k} is not finite: {float(v)}")
+            if not grad:
+                return float(T["total"].detach()), None, None
+            T["total"].backward()
+        g = {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in named}
+        gp = torch.cat([(p.grad.detach().reshape(-1) if p.grad is not None else torch.zeros(p.numel())) for p in m.prior.parameters()])
+        return float(T["total"].detach()), g, gp
+    dsum = lambda ga, gb, pre: float(sum((ga[n] - gb[n]).abs().sum() for n in ga if n.startswith(pre)))      # noqa: E731
+    t0, g0, gp0 = run(batch)
+    t0b, g0b, _ = run(batch)
+    t1, g1, gp1 = run(pert)
+    b_zero = ego.apply(batch, ego.PROBE_STEP, p=0.0)
+    tz, gz, _ = run(b_zero)
+    res.update({"total_unperturbed": t0, "total_perturbed": t1, "loss_diff": t1 - t0, "grad_diff_all": dsum(g1, g0, ""),
+                "grad_diff_by_group": {pre: dsum(g1, g0, pre) for pre in ("adapter", "e_ego", "read_s", "read_t", "read_o", "head_s", "head_o", "wm.")},
+                "control_repeat_loss_diff": abs(t0b - t0), "control_repeat_grad_diff": dsum(g0, g0b, ""),
+                "control_p0_same_object": b_zero is batch, "control_p0_loss_diff": abs(tz - t0), "control_p0_grad_diff": dsum(gz, g0, ""),
+                "control_prior_grad_diff": float((gp1 - gp0).abs().sum()), "control_wm_grad_diff": dsum(g1, g0, "wm.") if m.wm is not None else None})
+    only = {}
+    for name in ("p10f", "base", "pose_t", "pose_s", "kin3", "p10_t"):         # one rebuilt tensor at a time: which of them the loss reads
+        only[name] = run({**batch, name: pert[name]}, grad=False)[0] - t0
+    res["loss_diff_replacing_only"] = only
+    if res["control_repeat_loss_diff"] != 0.0 or res["control_repeat_grad_diff"] != 0.0:
+        raise AssertionError(f"ego probe: the probe is not deterministic (the same loss twice differs by {res['control_repeat_loss_diff']} / {res['control_repeat_grad_diff']}): its differences mean nothing")
+    if not res["control_p0_same_object"] or res["control_p0_loss_diff"] != 0.0 or res["control_p0_grad_diff"] != 0.0:
+        raise AssertionError(f"ego probe: p = 0 is not the identity (same object {res['control_p0_same_object']}, loss diff {res['control_p0_loss_diff']}, grad diff {res['control_p0_grad_diff']}): the control must read exactly 0.0")
+    if not (res["loss_diff"] != 0.0 and res["grad_diff_all"] > 0.0):
+        raise AssertionError(f"ego probe: the perturbed batch moves the loss by {res['loss_diff']} and the gradient by {res['grad_diff_all']}: the perturbation does not reach the loss the trainer backpropagates")
+    for name in ("p10f", "base"):
+        if not only[name] != 0.0:
+            raise AssertionError(f"ego probe: replacing {name} alone does not move the loss: the model does not read the rebuilt {name}")
+    if res["control_prior_grad_diff"] != 0.0:
+        raise AssertionError(f"ego probe: the frozen P10 prior's gradient moved with the perturbation ({res['control_prior_grad_diff']}): the control must read exactly 0.0")
+    if res["control_wm_grad_diff"] not in (None, 0.0):
+        raise AssertionError(f"ego probe: the world-model auxiliary's gradient moved with the perturbation ({res['control_wm_grad_diff']}): act is its transition record and is not perturbed, the control must read exactly 0.0")
+    res["pass"] = True
+    return res
+
+
 # ------------------------------------------------------------------------------------------------ the encoder (PREREG_V8F_LORA)
 def build_encoder_raw(a, dev):
     """The ONLY place the real weights are loaded (tests replace THIS, never :func:`make_encoder`): the cache builder's DINOv3 ViT-L/16 (bf16, local HF cache, no
@@ -867,6 +1124,7 @@ def main(argv=None):
         torch.set_num_threads(a.threads)
     os.makedirs(a.out, exist_ok=True)
     cfg = make_config(a)
+    ego = make_ego_perturb(a)                                        # O-RECOVER (PREREG_V8F_HACC_MC section 7): off by default; the object the loop applies, G-DVB reads back and the probes exercise
     dev = torch.device("cuda" if (a.device == "auto" and torch.cuda.is_available()) else ("cpu" if a.device == "auto" else a.device))
     torch.manual_seed(a.seed)
     np.random.seed(a.seed)
@@ -893,6 +1151,11 @@ def main(argv=None):
     prior = M.load_p10(a.p10) if not a.synthetic else M.P10Prior.synthetic(a.seed)
     mu, sd = M.cons_stats(J)
     model = M.V8FMini(cfg, prior, mu, sd).to(dev)
+    if a.init_ckpt:                                                  # O-RECOVER's start state: the MODEL weights of an earlier checkpoint (before the optimiser, the probes and the gate); a resume of THIS run wins
+        try:
+            info["init_ckpt"] = load_init_ckpt(a.init_ckpt, model, cfg, apply=not (os.path.exists(os.path.join(a.out, "ckpt_last.pt")) and not a.no_resume))
+        except Exception as e:                                       # noqa: BLE001  a missing / foreign / mismatched checkpoint is a REFUSAL, not a crash
+            raise SystemExit(f"ZZDVB-REFUSEDZZ init-ckpt {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
     enc = None
     if a.encoder == "lora":
         enc = make_encoder(a, dev)                     # AFTER the heads: it must not move their initialisation (the global RNG is restored inside)
@@ -908,7 +1171,8 @@ def main(argv=None):
     sampler = D.ChunkedSampler(wins, a.batch, seed=a.seed, chunk=max(4, min(48, info["lru"] - 2)),
                                max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
     # ---- the launch gate
-    bad = declared_vs_built(a, cfg, model, opt, info, enc)
+    lr_at = LRSchedule(a.lr, a.warmup, total)                        # the loop's schedule, built BEFORE the gate so that G-DVB can read --warmup back from it
+    bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at)
     if bad:
         raise SystemExit("ZZDVB-REFUSEDZZ declared-vs-built: " + "; ".join(bad))
     chunk = enc_chunk(a, cfg)
@@ -936,14 +1200,22 @@ def main(argv=None):
         accp = acc_probe(model, probe, cfg)               # PREREG_V8F_OACC: the BUILT loss moves by exactly w_acc x the acceleration term, and O's head receives its gradient (a deleted line reads 0.0 and is refused)
     except AssertionError as e:
         raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
+    try:
+        egop = ego_perturb_probe(model, probe, cfg, ego)  # O-RECOVER: G-LIVE on a PERTURBED batch; the perturbed tensors reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
+    except AssertionError as e:
+        raise SystemExit(f"ZZDVB-REFUSEDZZ ego-perturb: {e}")
     adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
     model.to(dev).train()
     levers = model.built_levers()
+    levers["ego_perturb"] = ego.built_levers()                        # recorded like every other lever (selfcheck.json, summary.json, the checkpoint)
+    levers["init_ckpt"] = info.get("init_ckpt")
+    levers["lr_schedule"] = lr_at.built_levers()                       # the built warmup / peak / total the loop calls (G-DVB read --warmup back from it)
     if enc is not None:
         levers["encoder"] = enc.built_levers()
         levers["accum"] = {"accum": a.accum, "micro_windows": a.batch // a.accum, "chunk_frames": chunk}
     sc = {"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix, "o_interface_probe": ocut, "acc_probe": accp, "admissibility": adm, "levers": levers,
           "steps_total": total, "S_steps_per_epoch_100pct": S, "info": info, "argv_sha": argv_sha(argv)}
+    sc["ego_perturb_probe"] = egop
     if ident is not None:
         sc["identity_probe"] = ident
     json.dump(sc, open(os.path.join(a.out, "selfcheck.json"), "w"), indent=1, default=str)
@@ -955,6 +1227,8 @@ def main(argv=None):
     # ---- resume
     ck_path = os.path.join(a.out, "ckpt_last.pt")
     step, ep, bi = 0, 0, 0
+    ego_tot = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # O-RECOVER's run totals (samples seen, eligible = logged v0 < vmax, perturbed, nav frames left as logged); carried in the checkpoint so a resumed run keeps counting
+    ego_int = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # ... and since the last log line
     if os.path.exists(ck_path) and not a.no_resume:
         ck = torch.load(ck_path, map_location="cpu", weights_only=False)
         if ck["argv_sha"] != argv_sha(argv):
@@ -964,18 +1238,15 @@ def main(argv=None):
             enc.load_lora_state_dict(ck["lora"])
         opt.load_state_dict(ck["opt"])
         step, ep, bi = ck["step"], ck["epoch"], ck["batch_in_epoch"]
+        ego_tot.update(ck.get("ego_totals") or {})
         print(f"[resume] step {step} epoch {ep} batch {bi}", flush=True)
-
-    def lr_at(s):
-        if s < a.warmup:
-            return a.lr * (s + 1) / a.warmup
-        return a.lr * (0.1 + 0.9 * 0.5 * (1 + math.cos(math.pi * min((s - a.warmup) / max(total - a.warmup, 1), 1.0))))
 
     def save(final=False):
         blob = {"model": model.state_dict(), "opt": opt.state_dict(), "step": step, "epoch": ep, "batch_in_epoch": bi,
                 "argv_sha": argv_sha(argv), "cfg": cfg.__dict__, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
                 "grid": a.grid, "arm": a.arm, "seed": a.seed, "cons_mu": mu, "cons_sd": sd,
-                "cfg_tuple_fields": {"wm_strides": list(cfg.wm_strides)}}
+                "cfg_tuple_fields": {"wm_strides": list(cfg.wm_strides)},
+                "ego_perturb": ego.built_levers(), "init_ckpt": info.get("init_ckpt"), "ego_totals": dict(ego_tot)}          # O-RECOVER: what was BUILT, beside the config, and the counts so far
         if enc is not None:             # `model` keeps B's layout (the unchanged v8f_mini_eval.py loads it); the LoRA matrices travel beside it
             blob["lora"], blob["encoder_levers"] = enc.lora_state_dict(), enc.built_levers()
         torch.save(blob, ck_path + ".tmp")
@@ -995,6 +1266,12 @@ def main(argv=None):
             pf = Prefetch(gen_batches, lambda idx: D.collate_frames([ds.item(*w) for w in idx], fstore), depth=2)
         for b in pf:
             fr = (b.pop("frames_u8"), b.pop("frame_map")) if enc is not None else None      # the frames stay on the host; the encoder moves them chunk by chunk
+            b = ego.apply(b, step)                                 # O-RECOVER: the kinematic inputs of the selected samples are rebuilt from a perturbed ego state; targets and labels are untouched (off: `b` itself)
+            for c_ in (ego_int, ego_tot):                          # the control counts: samples seen, eligible (logged v0 < vmax), perturbed (exactly 0 when the lever is off)
+                c_["rows"] += ego.last["n_rows"]
+                c_["eligible"] += ego.last["n_eligible"]
+                c_["n"] += ego.last["n_selected"]
+                c_["nav_kept"] += ego.last["ego_perturb_nav_kept"]
             b = to_dev(b, dev)
             for g in opt.param_groups:
                 g["lr"] = lr_at(step) * g.get("lr_mult", 1.0)
@@ -1025,6 +1302,9 @@ def main(argv=None):
                        "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
                 if "viol" in out:
                     rec["viol_any_batch"] = float(torch.stack(list(out["viol"].values())).any(0).float().mean())
+                rec["ego_perturb_n"], rec["ego_perturb_eligible"], rec["ego_perturb_rows"] = ego_int["n"], ego_int["eligible"], ego_int["rows"]      # per log interval (the steps since the last line)
+                rec["ego_perturb_nav_kept"] = ego_int["nav_kept"]
+                ego_int.update(rows=0, eligible=0, n=0, nav_kept=0)
                 if enc is not None:
                     rec["lora_grad_norm"] = float(gn_l)
                 log.write(json.dumps(rec) + "\n"); log.flush()
@@ -1042,7 +1322,8 @@ def main(argv=None):
                "steps_mult": a.steps_mult, "S": S, "n_clips": info["n_clips"], "n_windows": info["n_windows"],
                "exclude": a.exclude, "excluded_sha256": info.get("excluded_sha256"), "train_sha256": info.get("train_sha256"),
                "seconds": time.time() - t0, "argv_sha": argv_sha(argv), "levers": levers,
-               "selfcheck": "selfcheck.json"}
+               "selfcheck": "selfcheck.json",
+               "ego_perturb_n": ego_tot["n"], "ego_perturb_eligible": ego_tot["eligible"], "ego_perturb_rows": ego_tot["rows"], "ego_perturb_nav_kept": ego_tot["nav_kept"]}      # O-RECOVER run totals: exactly 0 perturbed at p = 0; perturbed == eligible at p = 1
     if enc is not None:
         summary["encoder"] = "lora"
     json.dump(summary, open(os.path.join(a.out, "summary.json"), "w"), indent=1, default=str)      # LAST, atomically meaningful

@@ -1,0 +1,99 @@
+..............................ssssssssssssssssssssssssssssssssssssssssss [ 48%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss..F..FF...ss [ 96%]
+..sss                                                                    [100%]
+================================== FAILURES ===================================
+____________________ test_queue_mixo_stages_dry_one_lever _____________________
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/orecover_build/pt/f_v8f_mixo/test_queue_mixo_stages_dry_one0')
+
+    @needs_queue
+    @win
+    def test_queue_mixo_stages_dry_one_lever(tmp_path):
+        env = dict(REPO=str(REPO), RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
+        rc, ln = _dry("gatemixo", env)
+        assert rc == 0 and len(ln) == 1 and "--selfcheck-only" in ln[0] and "gate_M2b-mixo" in ln[0], ln
+        t = _argv_of(ln[0])
+        assert t[t.index("--arm"):t.index("--arm") + 4] == ["--arm", "M2b", "--code-mix", "kind"] and t.count("--code-mix") == 1, ln
+        rc, ln = _dry("trainmixo 1", env)
+        assert rc == 0 and len(ln) == 1, ln
+        t = _argv_of(ln[0])
+        assert t[t.index("--arm") + 1] == "M2b" and t[t.index("--seed") + 1] == "1" and t[t.index("--code-mix") + 1] == "kind" and t.count("--code-mix") == 1, ln
+        assert t[t.index("--grid") + 1] == "pool4x10" and t.count("--grid") == 1 and t[t.index("--out") + 1].endswith("M2b_s1_mixo"), ln
+        assert "--exclude 540:600" in ln[0] and "--kin-mode yaw" in ln[0] and "--steps-mult 4" in ln[0] and "--batch 64" in ln[0], ln
+        for no in ("--w-cons", "--w-tac", "--w-wm", "--hmax", "--steps ", "--p-gt", "--hist", "--window-start"):
+            assert no not in ln[0], f"ONE lever: {no} is not on the line"
+        rc, ev = _dry("evalmixo 0", env)
+>       assert rc == 0 and len(ev) == 7, ev
+E       AssertionError: []
+E       assert (255 == 0)
+
+stack\tests\test_v8f_mixo.py:1308: AssertionError
+_______ test_queue_mixo_real_lines_execute_exactly_the_printed_commands _______
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/orecover_build/pt/f_v8f_mixo/test_queue_mixo_real_lines_exe0')
+
+    @needs_queue
+    @win
+    def test_queue_mixo_real_lines_execute_exactly_the_printed_commands(tmp_path):
+        repo, rec = _H._fake_tree(tmp_path)
+        env = dict(os.environ, REPO=str(repo), PY=sys.executable, RUNSM=str(tmp_path / "runsm"), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
+        env.pop("V8F_DRYRUN", None)
+    
+        def real(args):
+            r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=env, capture_output=True, text=True, timeout=180, encoding="utf-8")
+            assert r.returncode == 0, (args, r.stdout, r.stderr)
+            return [json.loads(x) for x in rec.read_text(encoding="utf-8").splitlines()] if rec.exists() else []
+    
+        def printed(args):
+            r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=dict(env, V8F_DRYRUN="1"), capture_output=True, text=True, timeout=60, encoding="utf-8")
+            return [_argv_of(x)[2:] for x in r.stdout.splitlines() if ".py" in x]       # drop python.exe and the script: sys.argv[1:]
+        want_gate, want_train, want_eval = printed("gatemixo"), printed("trainmixo 1"), printed("evalmixo 1")        # BEFORE the runs: a finished stage prints [skip]
+>       assert len(want_gate) == 1 and len(want_train) == 1 and len(want_eval) == 7
+E       AssertionError: assert (1 == 1 and 1 == 1 and 0 == 7)
+E        +  where 1 = len([['--arm', 'M2b', '--code-mix', 'kind', '--out', 'E:\\Projects\\TanitAD-artifacts\\orecover_build\\pt\\f_v8f_mixo\\test_queue_mixo_real_lines_exe0\\runsm\\gate_M2b-mixo', ...]])
+E        +  and   1 = len([['--arm', 'M2b', '--seed', '1', '--grid', 'pool4x10', ...]])
+E        +  and   0 = len([])
+
+stack\tests\test_v8f_mixo.py:1360: AssertionError
+_ test_queue_mixo_real_stages_notice_failures_and_skip_exactly_what_is_finished _
+
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/orecover_build/pt/f_v8f_mixo/test_queue_mixo_real_stages_no0')
+
+    @needs_queue
+    @win
+    def test_queue_mixo_real_stages_notice_failures_and_skip_exactly_what_is_finished(tmp_path):
+        repo, rec = _H._fake_tree(tmp_path)
+        runsm = tmp_path / "runsm"
+        ev = runsm / "eval"
+        base = dict(os.environ, REPO=str(repo), PY=sys.executable, RUNSM=str(runsm), CACHEFULL=str(tmp_path / "cf"), V9=str(tmp_path / "v9"))
+        base.pop("V8F_DRYRUN", None)
+    
+        def stage(args, **extra):
+            r = subprocess.run(f'cmd /c ""{QUEUE}" {args}"', env=dict(base, **extra), capture_output=True, text=True, timeout=180, encoding="utf-8")
+            return r.returncode, r.stdout
+    
+        def evals():
+            return [json.loads(x) for x in rec.read_text(encoding="utf-8").splitlines() if '"eval"' in x] if rec.exists() else []
+        rc, out = stage("gatemixo", FAKE_TRAIN="fail")
+        assert rc == 1 and "[FAIL] gate M2b-mixo" in out
+        rc, out = stage("trainmixo 1", FAKE_TRAIN="fail")
+        assert rc == 1 and "[FAIL] train M2b_s1_mixo - see" in out
+        rc, out = stage("trainmixo 1", FAKE_TRAIN="nosummary")                     # a trainer that exits 0 WITHOUT a summary (a crash that swallowed its code)
+        assert rc == 1 and "exited 0 without summary.json" in out
+        rc, out = stage("evalmixo 1")                                              # evaluation refuses a run that has not finished training
+>       assert rc == 2 and "has not finished training" in out and not evals()
+E       assert (255 == 2)
+
+stack\tests\test_v8f_mixo.py:1400: AssertionError
+============================== warnings summary ===============================
+tests/test_v8f_mixo.py::test_trainer_argv_reaches_the_config_the_checkpoint_the_records_and_the_gate
+  E:\Projects\TanitAD-artifacts\orecover_build\tree_new\stack\scripts\v8f_mini_train.py:1302: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_mixo.py::test_queue_mixo_stages_dry_one_lever - A...
+FAILED stack\tests\test_v8f_mixo.py::test_queue_mixo_real_lines_execute_exactly_the_printed_commands
+FAILED stack\tests\test_v8f_mixo.py::test_queue_mixo_real_stages_notice_failures_and_skip_exactly_what_is_finished
+3 failed, 39 passed, 107 skipped, 1 warning in 63.36s (0:01:03)

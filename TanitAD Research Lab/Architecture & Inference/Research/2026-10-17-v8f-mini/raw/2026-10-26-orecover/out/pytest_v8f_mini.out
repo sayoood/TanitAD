@@ -1,0 +1,32 @@
+................F............                                            [100%]
+================================== FAILURES ===================================
+_____________________ test_five_hand_checked_real_windows _____________________
+
+    @pytest.mark.skipif(not os.path.exists("C:/Users/Admin/qland/work/refcv8_hf_v9/release/v9_labels_eval139.npz"),
+                        reason="local v9 eval139 release not present")
+    def test_five_hand_checked_real_windows():
+        """Pinned from raw/join_check.json (the release rows, re-derived by build_v9_labels.rc_fields from the ego log, and
+        cross-read against the v2ep poses): clock exact, RC bit-identical to the builder, speed matches the poses."""
+        from tanitad.data.v9_labels import load_v9_release
+        rel = load_v9_release("C:/Users/Admin/qland/work/refcv8_hf_v9/release/v9_labels_eval139.npz",
+                              expect_md5="6b5c7f207cffc3b7eb3cd527fd433599")
+        pins = [("10804db8", 35, 7.081525, (29.9699, 0.3773, -0.748), (49.9225, -0.2784, 0.1574), 4.9823),
+                ("480d7910", 47, 9.627721, (30.0002, -0.0252, -0.0543), (50.0002, -0.052, -0.1078), 31.4377),
+                ("91929cea", 59, 11.994035, (29.9743, -1.118, -3.4838), (49.9086, -2.6974, -5.4043), 7.6617),
+                ("b99058dc", 23, 4.808529, (29.9978, -0.3473, -0.9017), (49.995, -0.5664, 0.1245), 8.17),
+                ("f1a94fee", 39, 7.977197, (29.8471, 2.7474, 7.1904), (49.7253, 4.8528, 4.6743), 3.4963)]
+>       grid = json.load(open(PKG / "raw" / "eval_grid_windows.json", encoding="utf-8"))
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Projects\\TanitAD-artifacts\\orecover_build\\tree_new\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\eval_grid_windows.json'
+
+stack\tests\test_v8f_mini.py:437: FileNotFoundError
+============================== warnings summary ===============================
+tests/test_v8f_mini.py::test_penalty_is_differentiable_and_zero_when_consistent
+  E:\Projects\TanitAD-artifacts\orecover_build\tree_new\stack\tests\test_v8f_mini.py:266: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(P["pen"]["SPEED"][0]) == pytest.approx(0.5, abs=1e-6)             # 5 - 4 - tol 0.5 = 0.5 over
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_mini.py::test_five_hand_checked_real_windows - Fi...
+1 failed, 28 passed, 1 warning in 35.48s

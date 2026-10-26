@@ -575,6 +575,187 @@ def collate(items: list) -> dict:
     return out
 
 
+# ------------------------------------------------------------------------------------------------ O-RECOVER: the ego-state perturbation (PREREG_V8F_HACC_MC section 7)
+#: The lever's OFF state. The trainer's parser takes its defaults from HERE, so the flags and the object cannot disagree about "off".
+EGO_PERTURB_DEFAULTS = {"p": 0.0, "vscale": (0.5, 1.0), "vmax": 8.0, "adrop": 1.5, "yawrate_std_deg": 0.0, "seed": 0}
+#: The batch tensors REBUILT from the perturbed ego state: every ego-state tensor ``forward_infer`` reads (``p10f``, ``base``, ``pose_t``, ``pose_s``, ``nav``) plus the ones that carry the same state
+#: without being read (``kin3``, ``p10_t``, ``pose``), so that no tensor holds the unperturbed value. ``nav`` is rebuilt in its progress channel only (``nav[:, 3]`` = d_next / 100 per history frame: its
+#: frame-to-frame differences ARE the travelled distance, i.e. the true logged speed), on the frames that share NOW's manoeuvre token and validity.
+EGO_PERTURB_REBUILT = ("p10f", "base", "kin3", "p10_t", "pose", "pose_t", "pose_s", "nav")
+#: Read by ``forward_infer`` and KEPT, each for a stated reason: the scene (``feats``, ``frame_ok``: the cameras are the true ones), the speed-limit bucket (``limit``, ``limit_ok``: a sidecar label,
+#: not ego state), the hold ages (``a_t``, ``a_s``: the sampler's schedule) and the present pose (``pose_now``: the anchor -- the cameras, the labels and every target live in this frame).
+EGO_PERTURB_KEPT = ("feats", "frame_ok", "limit", "limit_ok", "a_t", "a_s", "pose_now")
+#: ``act`` is the world-model auxiliary's TRANSITION RECORD (the action that produced the real frame-to-frame change): ``forward_infer`` never reads it (``v8f_t1_eval.NO_READ``) and in the
+#: loss it reaches ``T["wm"]`` only. Perturbing it would pair counterfactual actions with real frames and corrupt the IDM term, so it stays true.
+EGO_PERTURB_RECORD = ("act",)
+
+
+class EgoPerturb:
+    """O-RECOVER's ego-state perturbation, applied to a collated training batch (CPU or device tensors) just before ``model.loss``.
+
+    THE LAW (PREREG_V8F_HACC_MC section 7). A sample is *eligible* when its NOW frame is a real kinematic row and the LOGGED ``v0 = kin3[:, 0] < vmax``. Each eligible sample is *selected* with
+    probability ``p``. A selected sample's ego state is replaced, on every real history frame of its window, by (v, a, omega) -> (s v, a - d, s omega + n), with ``s ~ U(vscale)``, ``d ~ U(0, adrop)``
+    and ``n ~ N(0, yawrate_std)`` (deg/s, converted), ONE draw per sample. ``s omega`` is the same path at the lower speed (yaw rate = curvature x speed), so with ``yawrate_std = 0`` the
+    path is unchanged and only the speed and the acceleration move; ``n`` is the lateral lever and is OFF by default. The kinematic triple is then REBUILT through the programme's one
+    spelling: ``kappa = kinematic_prior._pose_kappa0(omega, v)``, the 8 P10 features by ``floors_kin.kin_features``, the kd_x base by ``kdx_base(.., "kappa")``. The odometry the model reads
+    (``pose_t``, ``pose_s``) is rebuilt from the same state: displacements from NOW scale by ``s`` and the heading history shifts by ``-n x age`` (NOW stays the anchor). The route progress
+    ``nav[:, 3]`` (d_next / 100) is the same distance seen from the route: ``nav'[k, 3] = clip(nav[NOW, 3] + s (nav[k, 3] - nav[NOW, 3]), 0, 3)`` on the real history frames whose nav token
+    (argmax of ``nav[:, :3]``) and validity (``nav[:, 4]``) equal NOW's; a frame across a manoeuvre boundary cannot be scaled and is left as logged -- it is COUNTED (``ego_perturb_nav_kept``).
+
+    TARGETS ARE NEVER TOUCHED: ``gt``, ``gt_ok``, ``s_h``, ``lead_gap_h``, every ``lab*`` dict, ``limit`` and the scene are the SAME objects in the returned batch. ``apply`` returns the
+    input batch itself (no copy, no random draw) when the lever is off, so a default run is bit-identical to a run without this class.
+
+    DETERMINISM: the draws come from a private generator seeded by (``seed``, ``step``) and never touch the global RNG, so a resumed run draws what an uninterrupted run drew."""
+
+    PROBE_STEP = -1
+
+    def __init__(self, p=0.0, vscale=(0.5, 1.0), vmax=8.0, adrop=1.5, yawrate_std_deg=0.0, seed=0, kin_mode="yaw"):
+        self.p, self.vscale, self.vmax = float(p), (float(vscale[0]), float(vscale[1])), float(vmax)
+        self.adrop, self.yawrate_std_deg, self.seed, self.kin_mode = float(adrop), float(yawrate_std_deg), int(seed), str(kin_mode)
+        self.last = None
+
+    @property
+    def active(self) -> bool:
+        return self.p > 0.0
+
+    def built_levers(self) -> dict:
+        """What the BUILT perturber applies (the G-DVB 'built' side; recorded in selfcheck.json / summary.json ``levers`` and in the checkpoint)."""
+        return {"ego_perturb_p": self.p, "ego_perturb_vscale": list(self.vscale), "ego_perturb_vmax": self.vmax, "ego_perturb_adrop": self.adrop,
+                "ego_perturb_yawrate_std": self.yawrate_std_deg, "ego_perturb_seed": self.seed, "kin_mode": self.kin_mode,
+                "rebuilt": list(EGO_PERTURB_REBUILT), "kept": list(EGO_PERTURB_KEPT), "record": list(EGO_PERTURB_RECORD)}
+
+    def law_problems(self) -> list:
+        """Range problems of the law itself (empty = a legal law). ``apply`` refuses on any of them."""
+        bad, fin = [], math.isfinite
+        lo, hi = self.vscale
+        if not (fin(self.p) and 0.0 <= self.p <= 1.0):
+            bad.append(f"ego_perturb_p {self.p!r} is not in [0, 1]")
+        if not (fin(lo) and fin(hi) and 0.0 < lo <= hi <= 1.0):
+            bad.append(f"ego_perturb_vscale {self.vscale!r} must satisfy 0 < LO <= HI <= 1 (the lever slows the car)")
+        if not (fin(self.vmax) and self.vmax > 0.0):
+            bad.append(f"ego_perturb_vmax {self.vmax!r} is not a finite number > 0")
+        if not (fin(self.adrop) and self.adrop >= 0.0):
+            bad.append(f"ego_perturb_adrop {self.adrop!r} is not a finite number >= 0")
+        if not (fin(self.yawrate_std_deg) and self.yawrate_std_deg >= 0.0):
+            bad.append(f"ego_perturb_yawrate_std {self.yawrate_std_deg!r} is not a finite number >= 0")
+        if self.seed < 0:
+            bad.append(f"ego_perturb_seed {self.seed!r} is negative")
+        return bad
+
+    def problems(self) -> list:
+        """``law_problems`` plus the declaration's own: needs the yaw representation; a perturbation that moves nothing, and levers set while ``p`` is 0, are 'declared and do nothing'."""
+        bad = self.law_problems()
+        if self.active and self.kin_mode != "yaw":
+            bad.append(f"ego_perturb_p {self.p} needs --kin-mode yaw (the lateral state is the measured yaw rate); got {self.kin_mode!r}")
+        if self.active and self.vscale == (1.0, 1.0) and self.adrop == 0.0 and self.yawrate_std_deg == 0.0:
+            bad.append("ego_perturb_p > 0 but vscale = (1, 1), adrop = 0 and yawrate_std = 0: the perturbation moves nothing -- a lever that is declared and does nothing")
+        if not self.active:
+            lv = self.built_levers()
+            moved = [k for k, dflt in (("ego_perturb_vscale", list(EGO_PERTURB_DEFAULTS["vscale"])), ("ego_perturb_vmax", EGO_PERTURB_DEFAULTS["vmax"]), ("ego_perturb_adrop", EGO_PERTURB_DEFAULTS["adrop"]),
+                                       ("ego_perturb_yawrate_std", EGO_PERTURB_DEFAULTS["yawrate_std_deg"]), ("ego_perturb_seed", EGO_PERTURB_DEFAULTS["seed"])) if lv[k] != dflt]
+            if moved:
+                bad.append(f"{moved} are set while ego_perturb_p is 0: a lever that is declared and does nothing")
+        return bad
+
+    def eligible(self, batch: dict):
+        """[B] bool: the samples the law may perturb -- the NOW frame is a real kinematic row with a finite kin3 and the LOGGED v0 is below ``vmax``. A function of the logged state only, so it
+        does not depend on ``p`` or on any draw."""
+        import torch
+        return (batch["t"] >= 1) & batch["frame_ok"][:, -1] & torch.isfinite(batch["kin3"]).all(-1) & (batch["kin3"][:, 0] < self.vmax)
+
+    def _seed_of(self, step: int) -> int:
+        return (self.seed * 1_000_003 + int(step)) % (1 << 62)
+
+    def apply(self, batch: dict, step: int, *, p=None) -> dict:
+        """The perturbed batch for training step ``step`` (a shallow copy; ``batch`` is not modified), or ``batch`` itself when the lever is off. ``p`` overrides the probability for this call
+        only (the launch gate's probes: 1.0 = every eligible sample, 0.0 = the control)."""
+        import torch
+        p = self.p if p is None else float(p)
+        if not p > 0.0:
+            # off: the SAME batch back, no random draw, no copy. The eligible count is still taken (a read-only mask on the logged v0), so a p = 0 run reports the same control denominator as a p = 1 run
+            elig = self.eligible(batch)
+            self.last = {"step": int(step), "p": 0.0, "n_rows": int(elig.numel()), "n_eligible": int(elig.sum()), "n_selected": 0, "ego_perturb_nav_kept": 0}
+            return batch
+        bad = self.law_problems()
+        if self.kin_mode != "yaw":
+            bad.append(f"the perturbation needs --kin-mode yaw, got {self.kin_mode!r}")
+        if bad:
+            raise ValueError("ego perturbation REFUSED: " + "; ".join(bad))
+        dev, B = batch["p10f"].device, int(batch["p10f"].shape[0])
+        g = torch.Generator().manual_seed(self._seed_of(step))
+        u = torch.rand(3, B, generator=g, dtype=torch.float64)                  # selection, speed scale, accel drop
+        z = torch.randn(B, generator=g, dtype=torch.float64)                    # yaw-rate offset (a fixed draw order: std = 0 only multiplies it by 0)
+        lo, hi = self.vscale
+        s, d, n = lo + (hi - lo) * u[1], self.adrop * u[2], (self.yawrate_std_deg * math.pi / 180.0) * z
+        elig = self.eligible(batch)
+        sel =(u[0] < p).to(dev) & elig
+        rows = sel.nonzero(as_tuple=True)[0]
+        sel_c = sel.detach().cpu()
+        nav_kept = int(self._nav_masks(batch, rows)[1].sum()) if rows.numel() else 0        # real history frames of selected samples left as logged (another manoeuvre token / validity than NOW's)
+        self.last = {"step": int(step), "p": p, "n_rows": B, "n_eligible": int(elig.sum()), "n_selected": int(rows.numel()), "ego_perturb_nav_kept": nav_kept, "sel": sel_c.clone(),
+                     "scale": torch.where(sel_c, s, torch.ones_like(s)), "drop": torch.where(sel_c, d, torch.zeros_like(d)), "yaw_offset": torch.where(sel_c, n, torch.zeros_like(n))}
+        out = dict(batch)
+        if rows.numel():
+            r = rows.cpu()
+            out.update(self._rebuilt(batch, rows, s[r].to(dev), d[r].to(dev), n[r].to(dev)))         # the ONE line that applies the perturbation: delete it and `out` is `batch`
+        return out
+
+    @staticmethod
+    def _hist_valid(batch: dict, rows):
+        """[N, F] bool: the history frames of ``rows`` that are REAL kinematic rows (cache step >= 1: row 0 is NaN in the store; padded frames are not rows; ``frame_ok``)."""
+        import torch
+        p10f = batch["p10f"]
+        F = int(p10f.shape[1])
+        idx = batch["t"][rows, None] - (F - 1) + torch.arange(F, device=p10f.device)[None]           # the cache step of each history frame
+        return (idx >= 1) & batch["frame_ok"][rows]
+
+    @staticmethod
+    def _nav_masks(batch: dict, rows):
+        """([N, F] rebuilt, [N, F] kept): among the real history frames of ``rows``, those whose nav token (argmax of nav[:, :3]) AND validity (nav[:, 4]) equal NOW's are rebuilt; the others
+        (a manoeuvre boundary inside the history) are kept as logged."""
+        vm = EgoPerturb._hist_valid(batch, rows)
+        nav = batch["nav"][rows]
+        same = (nav[..., :3].argmax(-1) == nav[:, -1:, :3].argmax(-1)) & (nav[..., 4] == nav[:, -1:, 4])
+        return vm & same, vm & ~same
+
+    @staticmethod
+    def _rebuilt(batch: dict, rows, s, d, n) -> dict:
+        """The ``EGO_PERTURB_REBUILT`` tensors of ``batch`` with ``rows`` replaced by their rebuild from the perturbed state; ``s``, ``d``, ``n`` are float64 [N] (scale, accel drop, yaw-rate offset in rad/s)."""
+        import torch
+        from tanitad.models.kinematic_prior import _pose_kappa0
+        f64 = torch.float64
+        p10f, pose = batch["p10f"], batch["pose"]
+        F, dev, N = int(p10f.shape[1]), p10f.device, int(rows.numel())
+        vm = EgoPerturb._hist_valid(batch, rows)                                                     # a REAL kinematic row (row 0 is NaN in the store, padded rows are not rows)
+        P = p10f[rows]
+        v, a, om = P[..., 0].to(f64), P[..., 1].to(f64), batch["act"][rows][..., 1].to(f64)         # kin3's (v, a) are p10f's first two features; omega is the lateral record
+        s_, n_ = s[:, None], n[:, None]
+        v2, a2, om2 = s_ * v, a - d[:, None], s_ * om + n_
+        kin2 = torch.stack([v2, a2, _pose_kappa0(om2, v2)], -1)                                      # [N, F, 3]: (v, a, kappa) of the perturbed state
+        feat2 = torch.from_numpy(_fk().kin_features(kin2.reshape(-1, 3).cpu().numpy())).reshape(N, F, 8).to(device=dev, dtype=p10f.dtype)
+        kin_now = kin2[:, -1]
+        new = {"p10f": p10f.clone(), "kin3": batch["kin3"].clone(), "p10_t": batch["p10_t"].clone(), "base": batch["base"].clone(), "pose": pose.clone(),
+               "pose_t": batch["pose_t"].clone(), "pose_s": batch["pose_s"].clone(), "nav": batch["nav"].clone()}
+        new["p10f"][rows] = torch.where(vm[..., None], feat2, P)
+        new["kin3"][rows] = kin_now.to(batch["kin3"].dtype)
+        new["p10_t"][rows] = feat2[:, -1]
+        new["base"][rows] = torch.from_numpy(kdx_base(kin_now.cpu().numpy(), KIN_UNITS["yaw"])).to(device=dev, dtype=batch["base"].dtype)
+        Pz = pose[rows].to(f64)
+        now, age = Pz[:, -1:, :], (F - 1 - torch.arange(F, device=dev)).to(f64)
+        xy2 = now[..., :2] + s[:, None, None] * (Pz[..., :2] - now[..., :2])                         # same path, s x the distance behind NOW
+        yaw2 = Pz[..., 2] - n_ * age[None] * DT                                                      # the heading history of a car turning at omega + n; NOW is the anchor
+        pose2 = torch.where(vm[..., None], torch.cat([xy2, yaw2[..., None]], -1), Pz).to(pose.dtype)
+        new["pose"][rows] = pose2
+        k = torch.arange(N, device=dev)
+        new["pose_t"][rows] = pose2[k, F - 1 - batch["a_t"][rows]]
+        new["pose_s"][rows] = pose2[k, F - 1 - batch["a_s"][rows]]
+        nav_r, nav_ok = batch["nav"][rows], EgoPerturb._nav_masks(batch, rows)[0]
+        now3 = nav_r[:, -1:, 3].to(f64)
+        nav3 = (now3 + s[:, None] * (nav_r[..., 3].to(f64) - now3)).clamp(0.0, 3.0)                  # the distance behind NOW scales by s (d_next grows backwards in time); NOW is the anchor
+        new["nav"][rows, :, 3] = torch.where(nav_ok, nav3.to(nav_r.dtype), nav_r[..., 3])            # token and validity (channels 0-2 and 4) are never touched
+        return new
+
+
 # ------------------------------------------------------------------------------------------------ frames behind the cache (PREREG_V8F_LORA)
 FRAME_HW = (256, 640)             # the cache builder's cylindrical frame (a 16 x 40 grid of 16-px patches); tests shrink it, a launch never does
 
