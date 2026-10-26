@@ -489,6 +489,11 @@ def test_the_profile_literals():
                                         "G-SUITE-PINNED", "G-MAP-OVERFIT")
     assert "G-BOX-OVERFIT" in LG.PROFILES["refcv8"]["required_checks"]
     assert "G-BOX-OVERFIT" in LG.PROFILES["refcv8-nt"]["required_checks"]
+    # the env-failure pin: the map fine-tune has its OWN copy (PI 2026-10-26); refcv8 keeps the shared list
+    assert MAPFT["suite_env_failures"][0] == "stack/ops/launch_gate_thor_env_failures_mapft.json"
+    assert LG.PROFILES["refcv8"]["suite_env_failures"][0] == "stack/ops/launch_gate_thor_env_failures.json"
+    pin, why = LG.env_failure_pin(MAPFT, ROOT.parent)
+    assert why is None and pin["n_ids"] == 328 and len(pin["ids"]) == 328
     assert MAPFT["map_hires"]["ga_keys"] == ("ga_mh_refine", "ga_mh_near", "ga_mh_near_refine")
     assert MAPFT["map_hires"]["ga_keys_zero"] == ("ga_mh_lift", "ga_mh_encoder", "ga_mh_trunk_s8_stage")
 

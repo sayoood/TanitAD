@@ -1204,6 +1204,10 @@ PROFILES["refcv8-mapft"] = dict(
     #: must prove about the box head is that it does NOT move: G-LIVE's bit identity of every non-map tensor (map_only
     #: below), the RED arms, the zero-gradient gate and K-FROZEN read exactly that. G-MAP-OVERFIT stays required.
     required_checks=tuple(c for c in _R8["required_checks"] if c != "G-BOX-OVERFIT"),
+    #: the Thor env-failure pin is the MAP-FINE-TUNE'S OWN copy (PI 2026-10-26 ~22:30, 'Pin for map fine-tune only'): the shared
+    #: list + 160 v8f-mini ENV ids (tree scope; the file's last amendment). Every other profile keeps the shared list.
+    suite_env_failures=("stack/ops/launch_gate_thor_env_failures_mapft.json",
+                        "1af7c5dd7e45b31f0f419e992764d31a20f72e743d55c5b971f4c79162ef02f9"),
     required_flags=tuple(f for f in _R8["required_flags"] if f not in _mapft_drop) + (_MAPFT_FLAG, "--conflict-detector"),
     required_flags_why=dict({k: v for k, v in (_R8.get("required_flags_why") or {}).items() if k not in _mapft_drop}, **{
         _MAPFT_FLAG: "PI D-R9-MAPHEAD-PRECISION (2026-10-26): train ONLY refine + near + near_refine, planner bit-identical",

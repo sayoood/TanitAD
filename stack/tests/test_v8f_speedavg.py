@@ -50,7 +50,7 @@ def _find_bash():
     for c in ("C:/Program Files/Git/bin/bash.exe", shutil.which("bash")):
         if c and os.path.exists(c):
             try:
-                r = subprocess.run([c, "-c", "echo ok; command -v df >/dev/null && echo df"], capture_output=True, text=True, timeout=60)
+                r = subprocess.run([c, "-c", "echo ok; command -v df >/dev/null && echo df"], capture_output=True, text=True, encoding="utf-8", timeout=60)
             except (OSError, subprocess.SubprocessError):
                 continue
             if r.stdout.split() == ["ok", "df"]:
@@ -743,7 +743,7 @@ def test_runner_syntax_dry_run_and_load_bearing_lines(tmp_path):
     assert subprocess.run([BASH, "-n", str(RUNNER)], capture_output=True).returncode == 0
     out_dir = tmp_path / "never"
     env = dict(os.environ, SPEEDAVG_OUT=str(out_dir).replace("\\", "/"), SPEEDAVG_B2=str(tmp_path / "nobox").replace("\\", "/"), SPEEDAVG_PY=sys.executable.replace("\\", "/"))
-    r = subprocess.run([BASH, str(RUNNER), "--dry-run"], capture_output=True, text=True, env=env, timeout=120)
+    r = subprocess.run([BASH, str(RUNNER), "--dry-run"], capture_output=True, text=True, encoding="utf-8", env=env, timeout=120)
     assert r.returncode == 0, r.stderr[-2000:]
     o = r.stdout
     for need in ("== check", "== fetch", "== evals seed 0 (own, self, gt, avg)", "== evals seed 1 (own, self, gt, avg)", "== read", "--check-inputs", "ZZSPEEDAVG-DONE", "ZZSPEEDAVG-STOP",
@@ -799,7 +799,7 @@ def _runner_world(tmp_path, read_s1=None, **extra):
 
 
 def _runner(env, stage):
-    return subprocess.run([BASH, str(RUNNER), stage], capture_output=True, text=True, env=env, timeout=120)
+    return subprocess.run([BASH, str(RUNNER), stage], capture_output=True, text=True, encoding="utf-8", env=env, timeout=120)
 
 
 @bash

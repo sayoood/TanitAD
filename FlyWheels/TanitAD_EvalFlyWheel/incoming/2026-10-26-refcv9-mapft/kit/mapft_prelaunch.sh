@@ -317,15 +317,19 @@ gate|redarms)
   TOKM="$GATE_OUT/PASS_$C12.json"
   [ "$DRY" = 1 ] || [ -s "$TOKM" ] || die "run 'gate' first: the MAIN token $TOKM is the arm-free CONTROL"
   RED="$ROOT/red_$C12"; mkdir -p "$RED" 2>/dev/null
+  # launch_gate.py run puts --stage and --checks in ONE mutually-exclusive group: "--stage thor" + "--checks" is an argparse
+  # error (rc 2, no arm token -> UNGRADED -> a false "freeze guard is decorative").  MEASURED 2026-10-26 on C1 7e14cad3.  The arms
+  # therefore take A WITHOUT its --stage pair; --checks G-DVB,G-LIVE selects the checks.
+  AR=(); i=0; while [ $i -lt ${#A[@]} ]; do if [ "${A[$i]}" = --stage ]; then i=$((i+2)); else AR+=("${A[$i]}"); i=$((i+1)); fi; done
   for ARMN in mapft_planner_trainable mapft_map_frozen; do
-    AA=("${A[@]}" --out-dir "$RED/$ARMN" --checks G-DVB,G-LIVE --arm "$ARMN")
+    AA=("${AR[@]}" --out-dir "$RED/$ARMN" --checks G-DVB,G-LIVE --arm "$ARMN")
     say "RED arm $ARMN: $PY $GATE ${AA[*]}"
   done
   [ "$DRY" = 1 ] && { echo "ZZMAPFTRED-DRYOKZZ"; exit 0; }
   gpu_take
   NBAD=0
   for ARMN in mapft_planner_trainable mapft_map_frozen; do
-    AA=("${A[@]}" --out-dir "$RED/$ARMN" --checks G-DVB,G-LIVE --arm "$ARMN")
+    AA=("${AR[@]}" --out-dir "$RED/$ARMN" --checks G-DVB,G-LIVE --arm "$ARMN")
     "$PY" "$GATE" "${AA[@]}" > "$RED/$ARMN.log" 2>&1 9>&- 200>&-
     grade_arm "$ARMN" "$RED/$ARMN" "$TOKM" > "$RED/$ARMN.grade.txt"
     say "$(cat "$RED/$ARMN.grade.txt")"

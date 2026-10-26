@@ -1,0 +1,2029 @@
+{
+ "schema": "tanitad.launch_gate.thor_env_failures/2",
+ "what": "MAPFT-ONLY copy of stack/ops/launch_gate_thor_env_failures.json (profile refcv8-mapft; every other profile keeps the shared list). Thor full-suite failures G-SUITE admits. ENV: classified ENVIRONMENTAL (absent Research Lab files in a stack/taniteval/tools-only tree, HF offline without the weights, no git repo, no scipy in the training venv, aarch64 numerics / core count) -- Master Mind 2026-09-27. FLAKY: intermittent on BOTH trees, each with its cited record. G-SUITE (a) admits a Thor failure ONLY if its id is here; G-SUITE (b) runs every FILE below on the dev box, on a full-commit archive, where they must PASS (or skip for a registered reason; a FLAKY id may fail only with its record cited).",
+ "source": {
+  "verdict_json": "qland/work/thorgate_b2_0201/verdict.json (fixes batch 2 gate)",
+  "verdict_sha256": "70c66cba4d4f8f902cc6b7ee491eb7f3473c42b69b4a09da8cfa5162ec13f573",
+  "tip": "06380de73d82673433db79bcdfd266e417a32063"
+ },
+ "n_ids": 328,
+ "ids": [
+  "tests.test_amp_and_threads::test_the_reordering_ACTUALLY_changes_the_thread_pool",
+  "tests.test_anchor_prefilter::test_prefilter_is_BIT_EXACT_on_every_candidate_it_decodes",
+  "tests.test_bench_suite_gpu_gap::test_deliberate_regression_gate_that_ignores_training_goes_red",
+  "tests.test_bench_suite_gpu_gap::test_override_does_not_open_the_gpu",
+  "tests.test_bench_suite_gpu_gap::test_refusals_carry_the_queue_command",
+  "tests.test_bench_suite_gpu_gap::test_shared_device_gate_literals[auto-pids2-6163.0-False-REFUSE]",
+  "tests.test_bench_suite_gpu_gap::test_shared_device_gate_literals[cpu-pids6-10.0-False-REFUSE]",
+  "tests.test_bench_suite_gpu_gap::test_shared_device_gate_literals[cpu-pids7-10.0-True-CPU]",
+  "tests.test_bench_suite_gpu_gap::test_shared_device_gate_literals[cuda-pids4-6163.0-False-REFUSE]",
+  "tests.test_bench_suite_gpu_gap::test_the_override_and_the_accepted_pids_are_recorded",
+  "tests.test_bev_consumer_fov::test_the_banked_p8_frame_is_recoverable_from_the_launch_chains",
+  "tests.test_bev_lift::test_d_validity_mask_vs_lidar_cam_vis_on_real_clips",
+  "tests.test_build_parity_guard::test_a_single_contaminated_clip_is_enough_to_refuse",
+  "tests.test_build_parity_guard::test_a_truncated_oracle_is_refused_not_silently_under_excluding",
+  "tests.test_build_parity_guard::test_a_typo_in_role_or_mode_refuses_rather_than_weakening_the_check",
+  "tests.test_build_parity_guard::test_audit_requires_a_reason_and_voids_decision_grade",
+  "tests.test_build_parity_guard::test_epcache_gate_is_scoped_to_physicalai_clip_sources",
+  "tests.test_build_parity_guard::test_exclude_mode_drops_exactly_the_contaminated_clips",
+  "tests.test_build_parity_guard::test_positive_control_a_clean_corpus_passes",
+  "tests.test_build_parity_guard::test_the_gate_refuses_when_its_oracle_is_missing",
+  "tests.test_build_parity_guard::test_the_refusal_never_prints_a_clip_id",
+  "tests.test_build_parity_guard::test_the_six_val_episodes_are_derived_from_the_oracle",
+  "tests.test_build_parity_guard::test_train_role_does_not_refuse_the_parity_train_corpus",
+  "tests.test_build_parity_guard::test_undeclared_role_refuses_the_alpamayo_corpus",
+  "tests.test_build_parity_guard::test_v2_compressed_build_refuses_before_any_download",
+  "tests.test_build_parity_guard::test_val_role_flips_the_check_to_the_train_split",
+  "tests.test_decision_check::test_frozen_encoder_also_surfaces_the_comparative_arm_decision",
+  "tests.test_decision_check::test_frozen_encoder_surfaces_D003_the_decision_C129_violated",
+  "tests.test_decision_check::test_refa_surfaces_the_measured_arm",
+  "tests.test_decision_check::test_retraction_log_is_searched_too",
+  "tests.test_decision_check::test_the_record_files_the_tool_depends_on_exist",
+  "tests.test_emission_squash::test_tanh_gradient_is_EXACTLY_zero_from_raw_10_not_51",
+  "tests.test_eval_contamination::test_a_clean_eval_split_passes",
+  "tests.test_eval_contamination::test_a_sanctioned_audit_passes_but_is_stamped_not_decision_grade",
+  "tests.test_eval_contamination::test_a_tampered_digest_set_is_refused",
+  "tests.test_eval_contamination::test_a_train_corpus_with_no_val_clips_passes",
+  "tests.test_eval_contamination::test_filter_removes_exactly_the_contaminated_clips",
+  "tests.test_eval_contamination::test_loading_the_labels_as_an_EVAL_set_is_refused",
+  "tests.test_eval_contamination::test_one_contaminated_clip_refuses_the_whole_eval_split",
+  "tests.test_eval_contamination::test_s2_labels_report_discloses_contamination_into_every_run_config",
+  "tests.test_eval_contamination::test_the_201_are_derived_from_ids_not_read_from_the_banked_list",
+  "tests.test_eval_contamination::test_the_alpamayo_corpus_swallows_6_of_the_40_deployed_val_episodes",
+  "tests.test_eval_contamination::test_the_aug120_label_leg_is_entirely_inside_the_parity_train_split",
+  "tests.test_eval_contamination::test_the_deployed_val_digest_set_is_cross_checked_by_a_second_source",
+  "tests.test_eval_contamination::test_the_digest_set_reproduces_the_committed_manifest_clip_membership",
+  "tests.test_eval_contamination::test_the_mint_refuses_a_clip_set_that_is_not_the_parity_split",
+  "tests.test_eval_contamination::test_the_refusal_never_prints_a_clip_id",
+  "tests.test_kingate_contract::test_the_gate_result_is_stamped_T0_until_a_T1_leg_exists",
+  "tests.test_launch_closure_audit::test_launch_sources_exist_or_the_whole_audit_silently_narrows",
+  "tests.test_mm_commit_page_fault_fallback::test_add_page_fault_still_commits_via_cacheinfo",
+  "tests.test_mm_commit_page_fault_fallback::test_shim_is_actually_in_the_loop",
+  "tests.test_openloop_suite::test_all_four_families_present_and_never_pooled",
+  "tests.test_openloop_suite::test_arm_json_roundtrip_is_the_contract_with_another_stream",
+  "tests.test_openloop_suite::test_criteria_checker_reports_zero_violations",
+  "tests.test_openloop_suite::test_forbidden_estimator_is_never_a_decision_grade_interval",
+  "tests.test_p10_pose_prior::test_a_fit_clips_are_TRAIN_clips_only_and_disjoint_from_eval139_and_eval141",
+  "tests.test_p10_pose_prior::test_a_the_package_copy_and_the_shipped_copy_are_the_same_bytes_and_the_fit_record_says_what_it_fit",
+  "tests.test_pdm_proxy::test_poly_deriv_is_scipy_savgol_with_a_full_window[2-1]",
+  "tests.test_pdm_proxy::test_poly_deriv_is_scipy_savgol_with_a_full_window[2-2]",
+  "tests.test_pdm_proxy::test_poly_deriv_is_scipy_savgol_with_a_full_window[3-2]",
+  "tests.test_perception_floor_homogeneity::test_a_homogeneous_corpus_passes_so_the_refusals_mean_something",
+  "tests.test_perception_floor_homogeneity::test_every_clip_carries_the_liveness_control_and_no_errors",
+  "tests.test_perception_floor_homogeneity::test_every_record_stamps_its_floor_and_its_schema",
+  "tests.test_perception_floor_homogeneity::test_the_census_refuses_a_pre_schema_record_that_stamps_nothing",
+  "tests.test_perception_floor_homogeneity::test_the_census_refuses_a_record_carrying_an_error_entry",
+  "tests.test_perception_floor_homogeneity::test_the_census_refuses_a_record_detected_at_a_different_floor",
+  "tests.test_perception_floor_homogeneity::test_the_census_refuses_a_record_whose_filename_and_content_disagree",
+  "tests.test_perception_floor_homogeneity::test_the_census_refuses_a_record_whose_liveness_control_is_dead",
+  "tests.test_perception_floor_homogeneity::test_the_corpus_is_one_detection_floor_and_one_schema",
+  "tests.test_perception_floor_homogeneity::test_the_local_and_far_side_censuses_are_the_same_predicate",
+  "tests.test_perception_floor_homogeneity::test_the_manifest_cannot_lie_about_its_own_coverage",
+  "tests.test_perception_floor_homogeneity::test_the_perception_layer_covers_the_whole_cohort",
+  "tests.test_refa_v1_ema_targets::test_OFF_path_identity_state_dict_keys_and_fixed_seed_loss_unchanged[hier]",
+  "tests.test_refa_v1_ema_targets::test_OFF_path_identity_state_dict_keys_and_fixed_seed_loss_unchanged[nohier]",
+  "tests.test_refa_v1_precision::test_OFF_path_identity_every_step1_instrument_matches_the_pre_edit_trainer[default]",
+  "tests.test_refa_v1_precision::test_OFF_path_identity_every_step1_instrument_matches_the_pre_edit_trainer[explicit-fp32]",
+  "tests.test_refa_v1_precision::test_tf32_on_cpu_is_a_numeric_noop_that_still_stamps_the_config",
+  "tests.test_refa_v1_speed_channel::test_OFF_path_identity_state_dict_keys_and_fixed_seed_loss_unchanged[hier]",
+  "tests.test_refa_v1_speed_channel::test_OFF_path_identity_state_dict_keys_and_fixed_seed_loss_unchanged[nohier]",
+  "tests.test_refcv6_diffusion::test_all_flags_off_is_BIT_IDENTICAL_on_64_windows",
+  "tests.test_refcv6_diffusion::test_bitidentity_baseline_MUTATION_pointing_at_HEAD_goes_RED",
+  "tests.test_refcv6_diffusion::test_bitidentity_baseline_is_PINNED_and_really_pre_refcv6",
+  "tests.test_refcv6_no_session_paths::test_MUT_the_guard_would_fire_on_a_real_owned_file",
+  "tests.test_refcv6_no_session_paths::test_no_owned_file_carries_a_session_id_or_scratchpad_path",
+  "tests.test_refcv6_no_session_paths::test_verify_patch_takes_its_paths_from_arguments",
+  "tests.test_refcv6_trunk::test_both_feature_maps_have_the_documented_shapes[resnet34.a1_in1k-256-512-hw0]",
+  "tests.test_refcv6_trunk::test_both_feature_maps_have_the_documented_shapes[resnet34.a1_in1k-256-512-hw1]",
+  "tests.test_refcv6_trunk::test_channel_counts_come_from_timm_feature_info_not_a_hardcode[resnet34.a1_in1k-256-512]",
+  "tests.test_refcv6_trunk::test_every_candidate_the_PI_may_launch_is_VERIFIABLE[resnet34.a1_in1k-256-512]",
+  "tests.test_refcv6_trunk::test_fusion_reads_the_NEWEST_frame_not_the_oldest",
+  "tests.test_refcv6_trunk::test_identity_init_makes_frame_history_a_REMOVABLE_graft[attn]",
+  "tests.test_refcv6_trunk::test_identity_init_makes_frame_history_a_REMOVABLE_graft[concat1x1]",
+  "tests.test_refcv6_trunk::test_imagenet_normalisation_is_applied_EXACTLY_ONCE",
+  "tests.test_refcv6_trunk::test_inflation_WITHOUT_the_divide_does_NOT_reproduce",
+  "tests.test_refcv6_trunk::test_nine_channel_inflation_reproduces_three[grey]",
+  "tests.test_refcv6_trunk::test_nine_channel_inflation_reproduces_three[random]",
+  "tests.test_refcv6_trunk::test_nine_channel_normalisation_TILES_rather_than_averages",
+  "tests.test_refcv6_trunk::test_plain_init_fusion_does_NOT_reproduce_the_single_frame_trunk",
+  "tests.test_refcv6_trunk::test_shared_mode_runs_K_passes_of_a_THREE_channel_stem",
+  "tests.test_refcv6_trunk::test_the_two_chosen_backbones_report_DIFFERENT_widths",
+  "tests.test_refcv6_trunk::test_timm_trunk_honours_the_REFC_ENCODER_CONTRACT",
+  "tests.test_refcv6_trunk::test_trunk_loads_REAL_imagenet_weights_not_just_no_exception",
+  "tests.test_refcv6_trunk::test_trunk_reports_its_parameter_counts",
+  "tests.test_resim::test_cli_requires_sessions_root_or_demo",
+  "tests.test_resim::test_frame_fetch_and_guards",
+  "tests.test_resim::test_index_served",
+  "tests.test_resim::test_sample_bundle_serves_over_fastapi",
+  "tests.test_resim::test_session_fetch_and_404",
+  "tests.test_resim::test_sessions_list",
+  "tests.test_resim::test_static_asset_served",
+  "tests.test_rl_gate_statistic::test_the_family_ordering_is_a_property_of_the_statistics_not_of_our_data",
+  "tests.test_rl_gate_statistic::test_the_rate_is_bit_identical_under_a_magnitude_change_and_the_wmr_is_not",
+  "tests.test_rl_gate_statistic::test_the_split_rule_is_deterministic_and_content_addressed",
+  "tests.test_rl_veto_explicit::test_driver_arm_table_declares_the_veto",
+  "tests.test_runbook_commands::test_every_runbook_flag_is_a_real_trainer_flag",
+  "tests.test_runbook_commands::test_every_runbook_launch_line_passes_the_trainers_own_preflight",
+  "tests.test_runbook_commands::test_no_runbook_launch_line_builds_a_selector_while_SEL1_is_refused",
+  "tests.test_runbook_commands::test_runbook_carries_thors_only_admissible_memory_probe",
+  "tests.test_runbook_commands::test_runbook_launch_lines_are_exactly_what_v6_chain_emits",
+  "tests.test_runbook_commands::test_runbook_names_every_probe_S_S_requires",
+  "tests.test_runbook_commands::test_runbook_quotes_the_pre_registered_SW_thresholds",
+  "tests.test_runbook_commands::test_step_zero_dry_run_actually_runs",
+  "tests.test_runbook_commands::test_step_zero_md5_list_is_the_real_import_closure",
+  "tests.test_runbook_commands::test_the_extractor_cannot_match_its_own_documentation",
+  "tests.test_runbook_commands::test_the_pinned_thor_config_is_the_chains_own_default_shape",
+  "tests.test_runbook_commands::test_the_runbook_contains_launch_lines_at_all",
+  "tests.test_runbook_commands::test_this_test_would_actually_fail_on_a_stale_runbook",
+  "tests.test_runbook_commands::test_thor_constants_in_the_lines_are_the_committed_ones",
+  "tests.test_s1_gate::test_GATE_takes_the_free_candidate_and_CONST_changes_NOTHING",
+  "tests.test_s1_gate::test_HUMAN_ROUND_TRIP_on_smooth_paths",
+  "tests.test_s1_gate::test_candidate_states_equal_the_HUMAN_constructor_on_the_same_path",
+  "tests.test_s1_gate::test_every_pick_is_SCORED_against_the_RECORDED_future",
+  "tests.test_s1_gate::test_spline_CIRCLE_yaw_rate_is_v_over_R",
+  "tests.test_s1_gate::test_spline_REFUSES_to_extrapolate_past_its_last_knot",
+  "tests.test_s1_gate::test_spline_STRAIGHT_constant_velocity_is_EXACT",
+  "tests.test_s1_gate::test_the_checker_itself_reads_the_collision",
+  "tests.test_s3_deploy_probe::test_rho_on_reachable_drops_degenerate_windows_instead_of_inventing_a_value",
+  "tests.test_secret_scan::test_hook_is_installed_and_current",
+  "tests.test_sitclf::test_late_fusion_beats_both_unimodal_arms",
+  "tests.test_sitclf::test_late_fusion_is_out_of_fit",
+  "tests.test_sitclf::test_late_fusion_masks_invalid_rows_to_minus_inf",
+  "tests.test_sitclf::test_late_fusion_rejects_misaligned_inputs",
+  "tests.test_sitclf::test_late_fusion_with_an_uninformative_column_does_not_collapse",
+  "tests.test_sitclf_deploy::test_fusing_the_camera_null_is_worse_than_fusing_the_camera",
+  "tests.test_sitclf_deploy::test_fusion_is_out_of_fold_on_whole_clusters",
+  "tests.test_sitclf_deploy::test_fusion_keeps_both_modalities_and_is_not_a_passthrough",
+  "tests.test_sitclf_deploy::test_fusion_repairs_the_swamped_deployed_arm",
+  "tests.test_sitclf_deploy::test_invalid_rows_come_back_minus_inf",
+  "tests.test_sitclf_deploy::test_paired_report_does_not_separate_an_arm_from_itself",
+  "tests.test_sitclf_deploy::test_report_carries_all_four_families_with_reasons",
+  "tests.test_sitclf_deploy::test_report_marks_lat_lon_unavailable_without_ego",
+  "tests.test_sitclf_deploy::test_report_never_pools_the_families_into_one_score",
+  "tests.test_sitclf_deploy::test_report_separates_a_genuinely_better_arm",
+  "tests.test_sitclf_deploy::test_single_column_fusion_cannot_manufacture_a_gain",
+  "tests.test_sitclf_deploy::test_vision_only_arms_builds_the_full_control_panel",
+  "tests.test_sitclf_deploy::test_vision_only_degrades_to_primary_when_only_one_vision_arm_exists",
+  "tests.test_tactical_goal_underpowered_matches_census::test_census_artifact_is_readable_and_populated",
+  "tests.test_tactical_goal_underpowered_matches_census::test_census_token_set_matches_the_declared_vocabulary",
+  "tests.test_tactical_goal_underpowered_matches_census::test_mutation_a_dropped_token_is_detected_and_named",
+  "tests.test_tactical_goal_underpowered_matches_census::test_mutation_a_stale_token_is_detected_and_named",
+  "tests.test_tactical_goal_underpowered_matches_census::test_mutation_a_zero_count_token_would_be_reported_not_hidden",
+  "tests.test_tactical_goal_underpowered_matches_census::test_mutation_the_comparison_actually_reads_the_counts",
+  "tests.test_tactical_goal_underpowered_matches_census::test_mutation_the_correct_set_is_accepted",
+  "tests.test_tactical_goal_underpowered_matches_census::test_pinning_on_the_status_field_would_be_circular",
+  "tests.test_tactical_goal_underpowered_matches_census::test_the_two_thresholds_are_distinct_and_both_declared",
+  "tests.test_tactical_goal_underpowered_matches_census::test_underpowered_equals_the_census_set_below_the_metric_floor",
+  "tests.test_v6_st_launch_fixes::test_E4_the_resolution_is_banked_with_its_reasons",
+  "tests.test_v8f_flat::test_a_seed_state_needs_the_librarys_separated_flag_on_top_of_the_side_of_the_interval",
+  "tests.test_v8f_kindx_s1::test_a_kind_that_clears_at_s1_only_is_reported_and_is_a_carrier_at_neither_seed",
+  "tests.test_v8f_kindx_s1::test_carrier_when_the_s0_candidate_clears_2F_at_s1_too",
+  "tests.test_v8f_kindx_s1::test_chain_pins_agree_with_the_reader_the_manifest_the_prereg_and_the_mixo_chain",
+  "tests.test_v8f_kindx_s1::test_chain_syntax_and_text_have_the_load_bearing_lines_in_the_right_order",
+  "tests.test_v8f_kindx_s1::test_clears_is_inclusive_at_2F_and_needs_the_interval",
+  "tests.test_v8f_kindx_s1::test_controls_at_s0_are_untouched",
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[an oracle arm moves a window with no v9 row]",
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[own differs from the standard eval by 1e-3 m]",
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[the identity oracle gains something]",
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[the sha256 on the record is not the file's]",
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[trained and after-eval sha256 disagree]",
+  "tests.test_v8f_kindx_s1::test_controls_pass_on_a_consistent_s1_world",
+  "tests.test_v8f_kindx_s1::test_hold_texts_name_their_reason",
+  "tests.test_v8f_kindx_s1::test_mutation_a_carrier_that_need_not_have_been_an_s0_candidate_turns_the_s1_only_row_red",
+  "tests.test_v8f_kindx_s1::test_mutation_a_lower_bar_turns_the_miss_row_red",
+  "tests.test_v8f_kindx_s1::test_mutation_an_argv_check_that_compares_nothing_turns_the_rows_red",
+  "tests.test_v8f_kindx_s1::test_mutation_an_unknown_stop_text_that_proceeds_turns_the_unknown_rows_red",
+  "tests.test_v8f_kindx_s1::test_mutation_clears_that_ignores_the_interval_turns_the_not_separated_row_red",
+  "tests.test_v8f_kindx_s1::test_mutation_ignoring_the_box_level_evidence_turns_the_evidence_check_red",
+  "tests.test_v8f_kindx_s1::test_mutation_letting_the_refresh_job_rc_through_turns_its_rows_red",
+  "tests.test_v8f_kindx_s1::test_mutation_swapping_the_two_outcomes_turns_the_carrier_row_red",
+  "tests.test_v8f_kindx_s1::test_mutation_widening_the_run_level_regex_to_any_job_name_turns_the_wrong_chain_rows_red",
+  "tests.test_v8f_kindx_s1::test_not_a_carrier_when_the_candidate_misses_2F_at_s1",
+  "tests.test_v8f_kindx_s1::test_not_a_carrier_when_the_point_clears_but_the_interval_does_not_exclude_zero",
+  "tests.test_v8f_kindx_s1::test_predecessor_done_proceeds_and_no_end_marker_waits",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[00]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[01]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[02]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[03]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[04]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[05]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[06]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[07]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[08]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[09]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[10]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[11]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[12]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[13]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[14]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[15]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[16]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[17]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[18]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[19]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[20]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[21]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[22]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[23]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[24]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[25]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[26]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[27]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[28]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[29]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[30]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[31]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[32]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[33]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[34]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[35]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[36]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[37]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[38]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[39]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[40]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[41]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[42]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[43]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[44]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[45]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[46]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[47]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[48]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[49]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[50]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[51]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[52]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[53]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[54]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[55]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[56]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[57]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[58]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[59]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[60]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[61]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[62]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[63]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[64]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[65]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[66]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[67]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[68]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[69]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[70]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[71]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[72]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[73]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[74]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[75]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZCRASH box 2 rebooted: 2026-10-24 07:00:00 -> 2026-10-25 13:01:00]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZGUARD-STOP TEMP 10-25 13:00 USB HDD: 12 of the last 20 samples >= 61 C, max 63 C]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZGUARD-STOP TIME 10-25 13:00 M2b_s0_mixo projects 11.2 h (> 10 h) at 2.1 s/step]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZTIMEOUT 1320 polls]",
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZUNREACHABLE 12 min]",
+  "tests.test_v8f_kindx_s1::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl0-phase1 is not PASS]",
+  "tests.test_v8f_kindx_s1::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl1-phase2 is not PASS]",
+  "tests.test_v8f_kindx_s1::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl2-phase2 is not PASS]",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_a_seed_argument_that_disagrees_with_its_configuration",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an eval is missing]",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an eval scored X_s0's checkpoint]",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an oracle declared alpha 0.5]",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an oracle declared another group]",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[own is not T's own code]",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read has a candidate that is not a kind]",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read has another bar]",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read is NO CANDIDATE]",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read is another checkpoint]",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read's controls did not pass]",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the arms are on another window list]",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the strategic family is missing]",
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the tactical family is missing]",
+  "tests.test_v8f_kindx_s1::test_s0_mode_still_names_candidate_and_no_candidate_and_never_the_s1_outcomes",
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_is_mixos_with_the_seed_the_only_difference",
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[a flag is dropped-<lambda>]",
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[a lever flag is added-<lambda>]",
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another arm-<lambda>]",
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another batch size-<lambda>]",
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another exclude-<lambda>]",
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another grid-<lambda>]",
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another steps multiplier-<lambda>]",
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[code-mix whole-<lambda>]",
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[the output directory is B's-<lambda>]",
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[the output directory is X_s0's-<lambda>]",
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[the seed is 2-<lambda>]",
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[the seed is still 0-<lambda>]",
+  "tests.test_v8f_kindx_s1::test_the_banked_mixo_s0_argv_is_the_preregs_argv",
+  "tests.test_v8f_kindx_s1::test_the_banked_s0_read_is_the_candidate_this_confirmation_is_for",
+  "tests.test_v8f_kindx_s1::test_the_checkpoint_of_x_s1_must_not_be_x_s0s",
+  "tests.test_v8f_kindx_s1::test_the_guard_that_is_already_running_matches_the_driver_without_a_change",
+  "tests.test_v8f_kindx_s1::test_the_read_job_stop_is_named_verdict_level_and_the_gate_stop_gate_level",
+  "tests.test_v8f_kindx_s1::test_the_s1_reader_writes_the_deciding_block_before_it_computes_the_beside_block",
+  "tests.test_v8f_kindx_s1::test_the_stop_table_covers_every_text_of_kscores_chain_source_so_a_new_one_cannot_slip_through_unclassified",
+  "tests.test_v8f_kindx_s1::test_the_wait_loop_calls_the_same_predicate_and_the_chain_stops_on_a_hold",
+  "tests.test_v8f_kindx_s1::test_two_s0_candidates_keep_their_s0_rank_and_only_the_confirmed_one_is_a_carrier",
+  "tests.test_v8f_kscore::test_constants_are_the_prereg_text",
+  "tests.test_v8f_kscore::test_eval_picks_and_sel_const_come_from_the_train_windows",
+  "tests.test_v8f_kscore::test_every_outcome_quotes_the_prereg_next_step",
+  "tests.test_v8f_kscore::test_fit_refuses_a_missing_or_tampered_token",
+  "tests.test_v8f_kscore::test_gate_passed_with_every_probe_alive",
+  "tests.test_v8f_kscore::test_gate_refuses_declared_vs_built_mismatches",
+  "tests.test_v8f_kscore::test_mutation_delete_the_scene_input_makes_the_gate_fail",
+  "tests.test_v8f_kscore::test_mutation_unfreeze_B_makes_the_gate_fail",
+  "tests.test_v8f_kscore::test_read_end_to_end_applies_the_table_and_controls_pass",
+  "tests.test_v8f_kscore::test_read_refuses_with_rc2_on_a_stop_control_a_missing_block_and_an_unmapped_state",
+  "tests.test_v8f_kscore::test_shards_are_resumable_and_complete",
+  "tests.test_v8f_lora_shape::test_the_constant_is_the_builders_loop_and_the_identity_drivers",
+  "tests.test_v8f_oacc::test_the_hx_fit_is_hblends_own_closed_form_on_the_checkpoints_held_outputs",
+  "tests.test_v8f_tac::test_the_v8f_guard_ends_only_on_a_line_start_marker_of_its_chains"
+ ],
+ "n_flaky": 1,
+ "flaky": [
+  {
+   "id": "tests.test_flagship_v4::test_graft_tau_to_zero_makes_the_class_posterior_one_hot",
+   "sub": "stack",
+   "file": "tests/test_flagship_v4.py",
+   "record": "TanitAD Research Lab/Architecture & Inference/Research/2026-09-26-declared-vs-built/raw/thor_gate_b3/verdict_addendum.json",
+   "record_sha256": "91016fd69b9835605dff45c7acfcc708c6ae4cc2a27661c8fd7cc10fe4bacab7",
+   "measured": "Thor gate env, 3+3 reruns (fixes batch 3): TIP failed 1/3 at 0.8314, CAND 1/3 at 0.8716; the launch gate re-measured 1/6 as-is and 0/6 with torch.manual_seed(0) as the test's first line (2026-09-27, /home/nvidia/gate_lg_0353/flaky/)",
+   "why": "unseeded head init and a stochastic decoder; the one-hot threshold 1 - 1e-6 sits on a knife-edge",
+   "proposed_fix": "insert `torch.manual_seed(0)` as the first statement of the test (the pattern test_flagship_v4.py already uses at its line 432)"
+  }
+ ],
+ "n_files": 40,
+ "files": [
+  {
+   "sub": "stack",
+   "file": "tests/test_amp_and_threads.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_anchor_prefilter.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_bev_consumer_fov.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_bev_lift.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_decision_check.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_emission_squash.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_flagship_v4.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_kingate_contract.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_launch_closure_audit.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_mm_commit_page_fault_fallback.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_openloop_suite.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_p10_pose_prior.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_pdm_proxy.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_perception_floor_homogeneity.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_refa_v1_ema_targets.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_refa_v1_precision.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_refa_v1_speed_channel.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_refcv6_diffusion.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_refcv6_no_session_paths.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_resim.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_rl_gate_statistic.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_rl_veto_explicit.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_s1_gate.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_s3_deploy_probe.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_secret_scan.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_sitclf.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_tactical_goal_underpowered_matches_census.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_v6_st_launch_fixes.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_v8f_tac.py"
+  },
+  {
+   "sub": "taniteval",
+   "file": "tests/test_bench_suite_gpu_gap.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_v8f_flat.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_v8f_kscore.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_v8f_lora_shape.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_v8f_oacc.py"
+  }
+ ],
+ "id_to_file": {
+  "tests.test_amp_and_threads::test_the_reordering_ACTUALLY_changes_the_thread_pool": {
+   "sub": "stack",
+   "file": "tests/test_amp_and_threads.py"
+  },
+  "tests.test_anchor_prefilter::test_prefilter_is_BIT_EXACT_on_every_candidate_it_decodes": {
+   "sub": "stack",
+   "file": "tests/test_anchor_prefilter.py"
+  },
+  "tests.test_bench_suite_gpu_gap::test_deliberate_regression_gate_that_ignores_training_goes_red": {
+   "sub": "taniteval",
+   "file": "tests/test_bench_suite_gpu_gap.py"
+  },
+  "tests.test_bench_suite_gpu_gap::test_override_does_not_open_the_gpu": {
+   "sub": "taniteval",
+   "file": "tests/test_bench_suite_gpu_gap.py"
+  },
+  "tests.test_bench_suite_gpu_gap::test_refusals_carry_the_queue_command": {
+   "sub": "taniteval",
+   "file": "tests/test_bench_suite_gpu_gap.py"
+  },
+  "tests.test_bench_suite_gpu_gap::test_shared_device_gate_literals[auto-pids2-6163.0-False-REFUSE]": {
+   "sub": "taniteval",
+   "file": "tests/test_bench_suite_gpu_gap.py"
+  },
+  "tests.test_bench_suite_gpu_gap::test_shared_device_gate_literals[cpu-pids6-10.0-False-REFUSE]": {
+   "sub": "taniteval",
+   "file": "tests/test_bench_suite_gpu_gap.py"
+  },
+  "tests.test_bench_suite_gpu_gap::test_shared_device_gate_literals[cpu-pids7-10.0-True-CPU]": {
+   "sub": "taniteval",
+   "file": "tests/test_bench_suite_gpu_gap.py"
+  },
+  "tests.test_bench_suite_gpu_gap::test_shared_device_gate_literals[cuda-pids4-6163.0-False-REFUSE]": {
+   "sub": "taniteval",
+   "file": "tests/test_bench_suite_gpu_gap.py"
+  },
+  "tests.test_bench_suite_gpu_gap::test_the_override_and_the_accepted_pids_are_recorded": {
+   "sub": "taniteval",
+   "file": "tests/test_bench_suite_gpu_gap.py"
+  },
+  "tests.test_bev_consumer_fov::test_the_banked_p8_frame_is_recoverable_from_the_launch_chains": {
+   "sub": "stack",
+   "file": "tests/test_bev_consumer_fov.py"
+  },
+  "tests.test_bev_lift::test_d_validity_mask_vs_lidar_cam_vis_on_real_clips": {
+   "sub": "stack",
+   "file": "tests/test_bev_lift.py"
+  },
+  "tests.test_build_parity_guard::test_a_single_contaminated_clip_is_enough_to_refuse": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_build_parity_guard::test_a_truncated_oracle_is_refused_not_silently_under_excluding": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_build_parity_guard::test_a_typo_in_role_or_mode_refuses_rather_than_weakening_the_check": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_build_parity_guard::test_audit_requires_a_reason_and_voids_decision_grade": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_build_parity_guard::test_epcache_gate_is_scoped_to_physicalai_clip_sources": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_build_parity_guard::test_exclude_mode_drops_exactly_the_contaminated_clips": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_build_parity_guard::test_positive_control_a_clean_corpus_passes": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_build_parity_guard::test_the_gate_refuses_when_its_oracle_is_missing": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_build_parity_guard::test_the_refusal_never_prints_a_clip_id": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_build_parity_guard::test_the_six_val_episodes_are_derived_from_the_oracle": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_build_parity_guard::test_train_role_does_not_refuse_the_parity_train_corpus": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_build_parity_guard::test_undeclared_role_refuses_the_alpamayo_corpus": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_build_parity_guard::test_v2_compressed_build_refuses_before_any_download": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_build_parity_guard::test_val_role_flips_the_check_to_the_train_split": {
+   "sub": "stack",
+   "file": "tests/test_build_parity_guard.py"
+  },
+  "tests.test_decision_check::test_frozen_encoder_also_surfaces_the_comparative_arm_decision": {
+   "sub": "stack",
+   "file": "tests/test_decision_check.py"
+  },
+  "tests.test_decision_check::test_frozen_encoder_surfaces_D003_the_decision_C129_violated": {
+   "sub": "stack",
+   "file": "tests/test_decision_check.py"
+  },
+  "tests.test_decision_check::test_refa_surfaces_the_measured_arm": {
+   "sub": "stack",
+   "file": "tests/test_decision_check.py"
+  },
+  "tests.test_decision_check::test_retraction_log_is_searched_too": {
+   "sub": "stack",
+   "file": "tests/test_decision_check.py"
+  },
+  "tests.test_decision_check::test_the_record_files_the_tool_depends_on_exist": {
+   "sub": "stack",
+   "file": "tests/test_decision_check.py"
+  },
+  "tests.test_emission_squash::test_tanh_gradient_is_EXACTLY_zero_from_raw_10_not_51": {
+   "sub": "stack",
+   "file": "tests/test_emission_squash.py"
+  },
+  "tests.test_eval_contamination::test_a_clean_eval_split_passes": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_a_sanctioned_audit_passes_but_is_stamped_not_decision_grade": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_a_tampered_digest_set_is_refused": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_a_train_corpus_with_no_val_clips_passes": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_filter_removes_exactly_the_contaminated_clips": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_loading_the_labels_as_an_EVAL_set_is_refused": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_one_contaminated_clip_refuses_the_whole_eval_split": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_s2_labels_report_discloses_contamination_into_every_run_config": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_the_201_are_derived_from_ids_not_read_from_the_banked_list": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_the_alpamayo_corpus_swallows_6_of_the_40_deployed_val_episodes": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_the_aug120_label_leg_is_entirely_inside_the_parity_train_split": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_the_deployed_val_digest_set_is_cross_checked_by_a_second_source": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_the_digest_set_reproduces_the_committed_manifest_clip_membership": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_the_mint_refuses_a_clip_set_that_is_not_the_parity_split": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_eval_contamination::test_the_refusal_never_prints_a_clip_id": {
+   "sub": "stack",
+   "file": "tests/test_eval_contamination.py"
+  },
+  "tests.test_kingate_contract::test_the_gate_result_is_stamped_T0_until_a_T1_leg_exists": {
+   "sub": "stack",
+   "file": "tests/test_kingate_contract.py"
+  },
+  "tests.test_launch_closure_audit::test_launch_sources_exist_or_the_whole_audit_silently_narrows": {
+   "sub": "stack",
+   "file": "tests/test_launch_closure_audit.py"
+  },
+  "tests.test_mm_commit_page_fault_fallback::test_add_page_fault_still_commits_via_cacheinfo": {
+   "sub": "stack",
+   "file": "tests/test_mm_commit_page_fault_fallback.py"
+  },
+  "tests.test_mm_commit_page_fault_fallback::test_shim_is_actually_in_the_loop": {
+   "sub": "stack",
+   "file": "tests/test_mm_commit_page_fault_fallback.py"
+  },
+  "tests.test_openloop_suite::test_all_four_families_present_and_never_pooled": {
+   "sub": "stack",
+   "file": "tests/test_openloop_suite.py"
+  },
+  "tests.test_openloop_suite::test_arm_json_roundtrip_is_the_contract_with_another_stream": {
+   "sub": "stack",
+   "file": "tests/test_openloop_suite.py"
+  },
+  "tests.test_openloop_suite::test_criteria_checker_reports_zero_violations": {
+   "sub": "stack",
+   "file": "tests/test_openloop_suite.py"
+  },
+  "tests.test_openloop_suite::test_forbidden_estimator_is_never_a_decision_grade_interval": {
+   "sub": "stack",
+   "file": "tests/test_openloop_suite.py"
+  },
+  "tests.test_p10_pose_prior::test_a_fit_clips_are_TRAIN_clips_only_and_disjoint_from_eval139_and_eval141": {
+   "sub": "stack",
+   "file": "tests/test_p10_pose_prior.py"
+  },
+  "tests.test_p10_pose_prior::test_a_the_package_copy_and_the_shipped_copy_are_the_same_bytes_and_the_fit_record_says_what_it_fit": {
+   "sub": "stack",
+   "file": "tests/test_p10_pose_prior.py"
+  },
+  "tests.test_pdm_proxy::test_poly_deriv_is_scipy_savgol_with_a_full_window[2-1]": {
+   "sub": "stack",
+   "file": "tests/test_pdm_proxy.py"
+  },
+  "tests.test_pdm_proxy::test_poly_deriv_is_scipy_savgol_with_a_full_window[2-2]": {
+   "sub": "stack",
+   "file": "tests/test_pdm_proxy.py"
+  },
+  "tests.test_pdm_proxy::test_poly_deriv_is_scipy_savgol_with_a_full_window[3-2]": {
+   "sub": "stack",
+   "file": "tests/test_pdm_proxy.py"
+  },
+  "tests.test_perception_floor_homogeneity::test_a_homogeneous_corpus_passes_so_the_refusals_mean_something": {
+   "sub": "stack",
+   "file": "tests/test_perception_floor_homogeneity.py"
+  },
+  "tests.test_perception_floor_homogeneity::test_every_clip_carries_the_liveness_control_and_no_errors": {
+   "sub": "stack",
+   "file": "tests/test_perception_floor_homogeneity.py"
+  },
+  "tests.test_perception_floor_homogeneity::test_every_record_stamps_its_floor_and_its_schema": {
+   "sub": "stack",
+   "file": "tests/test_perception_floor_homogeneity.py"
+  },
+  "tests.test_perception_floor_homogeneity::test_the_census_refuses_a_pre_schema_record_that_stamps_nothing": {
+   "sub": "stack",
+   "file": "tests/test_perception_floor_homogeneity.py"
+  },
+  "tests.test_perception_floor_homogeneity::test_the_census_refuses_a_record_carrying_an_error_entry": {
+   "sub": "stack",
+   "file": "tests/test_perception_floor_homogeneity.py"
+  },
+  "tests.test_perception_floor_homogeneity::test_the_census_refuses_a_record_detected_at_a_different_floor": {
+   "sub": "stack",
+   "file": "tests/test_perception_floor_homogeneity.py"
+  },
+  "tests.test_perception_floor_homogeneity::test_the_census_refuses_a_record_whose_filename_and_content_disagree": {
+   "sub": "stack",
+   "file": "tests/test_perception_floor_homogeneity.py"
+  },
+  "tests.test_perception_floor_homogeneity::test_the_census_refuses_a_record_whose_liveness_control_is_dead": {
+   "sub": "stack",
+   "file": "tests/test_perception_floor_homogeneity.py"
+  },
+  "tests.test_perception_floor_homogeneity::test_the_corpus_is_one_detection_floor_and_one_schema": {
+   "sub": "stack",
+   "file": "tests/test_perception_floor_homogeneity.py"
+  },
+  "tests.test_perception_floor_homogeneity::test_the_local_and_far_side_censuses_are_the_same_predicate": {
+   "sub": "stack",
+   "file": "tests/test_perception_floor_homogeneity.py"
+  },
+  "tests.test_perception_floor_homogeneity::test_the_manifest_cannot_lie_about_its_own_coverage": {
+   "sub": "stack",
+   "file": "tests/test_perception_floor_homogeneity.py"
+  },
+  "tests.test_perception_floor_homogeneity::test_the_perception_layer_covers_the_whole_cohort": {
+   "sub": "stack",
+   "file": "tests/test_perception_floor_homogeneity.py"
+  },
+  "tests.test_refa_v1_ema_targets::test_OFF_path_identity_state_dict_keys_and_fixed_seed_loss_unchanged[hier]": {
+   "sub": "stack",
+   "file": "tests/test_refa_v1_ema_targets.py"
+  },
+  "tests.test_refa_v1_ema_targets::test_OFF_path_identity_state_dict_keys_and_fixed_seed_loss_unchanged[nohier]": {
+   "sub": "stack",
+   "file": "tests/test_refa_v1_ema_targets.py"
+  },
+  "tests.test_refa_v1_precision::test_OFF_path_identity_every_step1_instrument_matches_the_pre_edit_trainer[default]": {
+   "sub": "stack",
+   "file": "tests/test_refa_v1_precision.py"
+  },
+  "tests.test_refa_v1_precision::test_OFF_path_identity_every_step1_instrument_matches_the_pre_edit_trainer[explicit-fp32]": {
+   "sub": "stack",
+   "file": "tests/test_refa_v1_precision.py"
+  },
+  "tests.test_refa_v1_precision::test_tf32_on_cpu_is_a_numeric_noop_that_still_stamps_the_config": {
+   "sub": "stack",
+   "file": "tests/test_refa_v1_precision.py"
+  },
+  "tests.test_refa_v1_speed_channel::test_OFF_path_identity_state_dict_keys_and_fixed_seed_loss_unchanged[hier]": {
+   "sub": "stack",
+   "file": "tests/test_refa_v1_speed_channel.py"
+  },
+  "tests.test_refa_v1_speed_channel::test_OFF_path_identity_state_dict_keys_and_fixed_seed_loss_unchanged[nohier]": {
+   "sub": "stack",
+   "file": "tests/test_refa_v1_speed_channel.py"
+  },
+  "tests.test_refcv6_diffusion::test_all_flags_off_is_BIT_IDENTICAL_on_64_windows": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_diffusion.py"
+  },
+  "tests.test_refcv6_diffusion::test_bitidentity_baseline_MUTATION_pointing_at_HEAD_goes_RED": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_diffusion.py"
+  },
+  "tests.test_refcv6_diffusion::test_bitidentity_baseline_is_PINNED_and_really_pre_refcv6": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_diffusion.py"
+  },
+  "tests.test_refcv6_no_session_paths::test_MUT_the_guard_would_fire_on_a_real_owned_file": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_no_session_paths.py"
+  },
+  "tests.test_refcv6_no_session_paths::test_no_owned_file_carries_a_session_id_or_scratchpad_path": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_no_session_paths.py"
+  },
+  "tests.test_refcv6_no_session_paths::test_verify_patch_takes_its_paths_from_arguments": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_no_session_paths.py"
+  },
+  "tests.test_refcv6_trunk::test_both_feature_maps_have_the_documented_shapes[resnet34.a1_in1k-256-512-hw0]": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_both_feature_maps_have_the_documented_shapes[resnet34.a1_in1k-256-512-hw1]": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_channel_counts_come_from_timm_feature_info_not_a_hardcode[resnet34.a1_in1k-256-512]": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_every_candidate_the_PI_may_launch_is_VERIFIABLE[resnet34.a1_in1k-256-512]": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_fusion_reads_the_NEWEST_frame_not_the_oldest": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_identity_init_makes_frame_history_a_REMOVABLE_graft[attn]": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_identity_init_makes_frame_history_a_REMOVABLE_graft[concat1x1]": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_imagenet_normalisation_is_applied_EXACTLY_ONCE": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_inflation_WITHOUT_the_divide_does_NOT_reproduce": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_nine_channel_inflation_reproduces_three[grey]": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_nine_channel_inflation_reproduces_three[random]": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_nine_channel_normalisation_TILES_rather_than_averages": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_plain_init_fusion_does_NOT_reproduce_the_single_frame_trunk": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_shared_mode_runs_K_passes_of_a_THREE_channel_stem": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_the_two_chosen_backbones_report_DIFFERENT_widths": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_timm_trunk_honours_the_REFC_ENCODER_CONTRACT": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_trunk_loads_REAL_imagenet_weights_not_just_no_exception": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_refcv6_trunk::test_trunk_reports_its_parameter_counts": {
+   "sub": "stack",
+   "file": "tests/test_refcv6_trunk.py"
+  },
+  "tests.test_resim::test_cli_requires_sessions_root_or_demo": {
+   "sub": "stack",
+   "file": "tests/test_resim.py"
+  },
+  "tests.test_resim::test_frame_fetch_and_guards": {
+   "sub": "stack",
+   "file": "tests/test_resim.py"
+  },
+  "tests.test_resim::test_index_served": {
+   "sub": "stack",
+   "file": "tests/test_resim.py"
+  },
+  "tests.test_resim::test_sample_bundle_serves_over_fastapi": {
+   "sub": "stack",
+   "file": "tests/test_resim.py"
+  },
+  "tests.test_resim::test_session_fetch_and_404": {
+   "sub": "stack",
+   "file": "tests/test_resim.py"
+  },
+  "tests.test_resim::test_sessions_list": {
+   "sub": "stack",
+   "file": "tests/test_resim.py"
+  },
+  "tests.test_resim::test_static_asset_served": {
+   "sub": "stack",
+   "file": "tests/test_resim.py"
+  },
+  "tests.test_rl_gate_statistic::test_the_family_ordering_is_a_property_of_the_statistics_not_of_our_data": {
+   "sub": "stack",
+   "file": "tests/test_rl_gate_statistic.py"
+  },
+  "tests.test_rl_gate_statistic::test_the_rate_is_bit_identical_under_a_magnitude_change_and_the_wmr_is_not": {
+   "sub": "stack",
+   "file": "tests/test_rl_gate_statistic.py"
+  },
+  "tests.test_rl_gate_statistic::test_the_split_rule_is_deterministic_and_content_addressed": {
+   "sub": "stack",
+   "file": "tests/test_rl_gate_statistic.py"
+  },
+  "tests.test_rl_veto_explicit::test_driver_arm_table_declares_the_veto": {
+   "sub": "stack",
+   "file": "tests/test_rl_veto_explicit.py"
+  },
+  "tests.test_runbook_commands::test_every_runbook_flag_is_a_real_trainer_flag": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_runbook_commands::test_every_runbook_launch_line_passes_the_trainers_own_preflight": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_runbook_commands::test_no_runbook_launch_line_builds_a_selector_while_SEL1_is_refused": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_runbook_commands::test_runbook_carries_thors_only_admissible_memory_probe": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_runbook_commands::test_runbook_launch_lines_are_exactly_what_v6_chain_emits": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_runbook_commands::test_runbook_names_every_probe_S_S_requires": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_runbook_commands::test_runbook_quotes_the_pre_registered_SW_thresholds": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_runbook_commands::test_step_zero_dry_run_actually_runs": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_runbook_commands::test_step_zero_md5_list_is_the_real_import_closure": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_runbook_commands::test_the_extractor_cannot_match_its_own_documentation": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_runbook_commands::test_the_pinned_thor_config_is_the_chains_own_default_shape": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_runbook_commands::test_the_runbook_contains_launch_lines_at_all": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_runbook_commands::test_this_test_would_actually_fail_on_a_stale_runbook": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_runbook_commands::test_thor_constants_in_the_lines_are_the_committed_ones": {
+   "sub": "stack",
+   "file": "tests/test_runbook_commands.py"
+  },
+  "tests.test_s1_gate::test_GATE_takes_the_free_candidate_and_CONST_changes_NOTHING": {
+   "sub": "stack",
+   "file": "tests/test_s1_gate.py"
+  },
+  "tests.test_s1_gate::test_HUMAN_ROUND_TRIP_on_smooth_paths": {
+   "sub": "stack",
+   "file": "tests/test_s1_gate.py"
+  },
+  "tests.test_s1_gate::test_candidate_states_equal_the_HUMAN_constructor_on_the_same_path": {
+   "sub": "stack",
+   "file": "tests/test_s1_gate.py"
+  },
+  "tests.test_s1_gate::test_every_pick_is_SCORED_against_the_RECORDED_future": {
+   "sub": "stack",
+   "file": "tests/test_s1_gate.py"
+  },
+  "tests.test_s1_gate::test_spline_CIRCLE_yaw_rate_is_v_over_R": {
+   "sub": "stack",
+   "file": "tests/test_s1_gate.py"
+  },
+  "tests.test_s1_gate::test_spline_REFUSES_to_extrapolate_past_its_last_knot": {
+   "sub": "stack",
+   "file": "tests/test_s1_gate.py"
+  },
+  "tests.test_s1_gate::test_spline_STRAIGHT_constant_velocity_is_EXACT": {
+   "sub": "stack",
+   "file": "tests/test_s1_gate.py"
+  },
+  "tests.test_s1_gate::test_the_checker_itself_reads_the_collision": {
+   "sub": "stack",
+   "file": "tests/test_s1_gate.py"
+  },
+  "tests.test_s3_deploy_probe::test_rho_on_reachable_drops_degenerate_windows_instead_of_inventing_a_value": {
+   "sub": "stack",
+   "file": "tests/test_s3_deploy_probe.py"
+  },
+  "tests.test_secret_scan::test_hook_is_installed_and_current": {
+   "sub": "stack",
+   "file": "tests/test_secret_scan.py"
+  },
+  "tests.test_sitclf::test_late_fusion_beats_both_unimodal_arms": {
+   "sub": "stack",
+   "file": "tests/test_sitclf.py"
+  },
+  "tests.test_sitclf::test_late_fusion_is_out_of_fit": {
+   "sub": "stack",
+   "file": "tests/test_sitclf.py"
+  },
+  "tests.test_sitclf::test_late_fusion_masks_invalid_rows_to_minus_inf": {
+   "sub": "stack",
+   "file": "tests/test_sitclf.py"
+  },
+  "tests.test_sitclf::test_late_fusion_rejects_misaligned_inputs": {
+   "sub": "stack",
+   "file": "tests/test_sitclf.py"
+  },
+  "tests.test_sitclf::test_late_fusion_with_an_uninformative_column_does_not_collapse": {
+   "sub": "stack",
+   "file": "tests/test_sitclf.py"
+  },
+  "tests.test_sitclf_deploy::test_fusing_the_camera_null_is_worse_than_fusing_the_camera": {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  "tests.test_sitclf_deploy::test_fusion_is_out_of_fold_on_whole_clusters": {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  "tests.test_sitclf_deploy::test_fusion_keeps_both_modalities_and_is_not_a_passthrough": {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  "tests.test_sitclf_deploy::test_fusion_repairs_the_swamped_deployed_arm": {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  "tests.test_sitclf_deploy::test_invalid_rows_come_back_minus_inf": {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  "tests.test_sitclf_deploy::test_paired_report_does_not_separate_an_arm_from_itself": {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  "tests.test_sitclf_deploy::test_report_carries_all_four_families_with_reasons": {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  "tests.test_sitclf_deploy::test_report_marks_lat_lon_unavailable_without_ego": {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  "tests.test_sitclf_deploy::test_report_never_pools_the_families_into_one_score": {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  "tests.test_sitclf_deploy::test_report_separates_a_genuinely_better_arm": {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  "tests.test_sitclf_deploy::test_single_column_fusion_cannot_manufacture_a_gain": {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  "tests.test_sitclf_deploy::test_vision_only_arms_builds_the_full_control_panel": {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  "tests.test_sitclf_deploy::test_vision_only_degrades_to_primary_when_only_one_vision_arm_exists": {
+   "sub": "stack",
+   "file": "tests/test_sitclf_deploy.py"
+  },
+  "tests.test_tactical_goal_underpowered_matches_census::test_census_artifact_is_readable_and_populated": {
+   "sub": "stack",
+   "file": "tests/test_tactical_goal_underpowered_matches_census.py"
+  },
+  "tests.test_tactical_goal_underpowered_matches_census::test_census_token_set_matches_the_declared_vocabulary": {
+   "sub": "stack",
+   "file": "tests/test_tactical_goal_underpowered_matches_census.py"
+  },
+  "tests.test_tactical_goal_underpowered_matches_census::test_mutation_a_dropped_token_is_detected_and_named": {
+   "sub": "stack",
+   "file": "tests/test_tactical_goal_underpowered_matches_census.py"
+  },
+  "tests.test_tactical_goal_underpowered_matches_census::test_mutation_a_stale_token_is_detected_and_named": {
+   "sub": "stack",
+   "file": "tests/test_tactical_goal_underpowered_matches_census.py"
+  },
+  "tests.test_tactical_goal_underpowered_matches_census::test_mutation_a_zero_count_token_would_be_reported_not_hidden": {
+   "sub": "stack",
+   "file": "tests/test_tactical_goal_underpowered_matches_census.py"
+  },
+  "tests.test_tactical_goal_underpowered_matches_census::test_mutation_the_comparison_actually_reads_the_counts": {
+   "sub": "stack",
+   "file": "tests/test_tactical_goal_underpowered_matches_census.py"
+  },
+  "tests.test_tactical_goal_underpowered_matches_census::test_mutation_the_correct_set_is_accepted": {
+   "sub": "stack",
+   "file": "tests/test_tactical_goal_underpowered_matches_census.py"
+  },
+  "tests.test_tactical_goal_underpowered_matches_census::test_pinning_on_the_status_field_would_be_circular": {
+   "sub": "stack",
+   "file": "tests/test_tactical_goal_underpowered_matches_census.py"
+  },
+  "tests.test_tactical_goal_underpowered_matches_census::test_the_two_thresholds_are_distinct_and_both_declared": {
+   "sub": "stack",
+   "file": "tests/test_tactical_goal_underpowered_matches_census.py"
+  },
+  "tests.test_tactical_goal_underpowered_matches_census::test_underpowered_equals_the_census_set_below_the_metric_floor": {
+   "sub": "stack",
+   "file": "tests/test_tactical_goal_underpowered_matches_census.py"
+  },
+  "tests.test_v6_st_launch_fixes::test_E4_the_resolution_is_banked_with_its_reasons": {
+   "sub": "stack",
+   "file": "tests/test_v6_st_launch_fixes.py"
+  },
+  "tests.test_v8f_tac::test_the_v8f_guard_ends_only_on_a_line_start_marker_of_its_chains": {
+   "sub": "stack",
+   "file": "tests/test_v8f_tac.py"
+  },
+  "tests.test_v8f_flat::test_a_seed_state_needs_the_librarys_separated_flag_on_top_of_the_side_of_the_interval": {
+   "sub": "stack",
+   "file": "tests/test_v8f_flat.py"
+  },
+  "tests.test_v8f_kindx_s1::test_a_kind_that_clears_at_s1_only_is_reported_and_is_a_carrier_at_neither_seed": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_carrier_when_the_s0_candidate_clears_2F_at_s1_too": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_chain_pins_agree_with_the_reader_the_manifest_the_prereg_and_the_mixo_chain": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_chain_syntax_and_text_have_the_load_bearing_lines_in_the_right_order": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_clears_is_inclusive_at_2F_and_needs_the_interval": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_controls_at_s0_are_untouched": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[an oracle arm moves a window with no v9 row]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[own differs from the standard eval by 1e-3 m]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[the identity oracle gains something]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[the sha256 on the record is not the file's]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[trained and after-eval sha256 disagree]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_controls_pass_on_a_consistent_s1_world": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_hold_texts_name_their_reason": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_mutation_a_carrier_that_need_not_have_been_an_s0_candidate_turns_the_s1_only_row_red": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_mutation_a_lower_bar_turns_the_miss_row_red": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_mutation_an_argv_check_that_compares_nothing_turns_the_rows_red": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_mutation_an_unknown_stop_text_that_proceeds_turns_the_unknown_rows_red": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_mutation_clears_that_ignores_the_interval_turns_the_not_separated_row_red": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_mutation_ignoring_the_box_level_evidence_turns_the_evidence_check_red": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_mutation_letting_the_refresh_job_rc_through_turns_its_rows_red": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_mutation_swapping_the_two_outcomes_turns_the_carrier_row_red": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_mutation_widening_the_run_level_regex_to_any_job_name_turns_the_wrong_chain_rows_red": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_not_a_carrier_when_the_candidate_misses_2F_at_s1": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_not_a_carrier_when_the_point_clears_but_the_interval_does_not_exclude_zero": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_done_proceeds_and_no_end_marker_waits": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[00]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[01]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[02]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[03]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[04]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[05]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[06]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[07]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[08]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[09]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[10]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[11]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[12]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[13]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[14]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[15]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[16]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[17]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[18]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[19]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[20]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[21]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[22]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[23]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[24]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[25]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[26]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[27]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[28]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[29]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[30]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[31]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[32]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[33]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[34]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[35]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[36]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[37]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[38]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[39]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[40]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[41]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[42]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[43]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[44]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[45]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[46]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[47]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[48]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[49]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[50]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[51]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[52]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[53]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[54]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[55]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[56]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[57]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[58]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[59]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[60]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[61]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[62]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[63]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[64]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[65]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[66]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[67]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[68]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[69]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[70]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[71]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[72]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[73]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[74]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[75]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZCRASH box 2 rebooted: 2026-10-24 07:00:00 -> 2026-10-25 13:01:00]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZGUARD-STOP TEMP 10-25 13:00 USB HDD: 12 of the last 20 samples >= 61 C, max 63 C]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZGUARD-STOP TIME 10-25 13:00 M2b_s0_mixo projects 11.2 h (> 10 h) at 2.1 s/step]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZTIMEOUT 1320 polls]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZUNREACHABLE 12 min]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl0-phase1 is not PASS]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl1-phase2 is not PASS]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl2-phase2 is not PASS]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_a_seed_argument_that_disagrees_with_its_configuration": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an eval is missing]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an eval scored X_s0's checkpoint]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an oracle declared alpha 0.5]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an oracle declared another group]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[own is not T's own code]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read has a candidate that is not a kind]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read has another bar]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read is NO CANDIDATE]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read is another checkpoint]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read's controls did not pass]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the arms are on another window list]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the strategic family is missing]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the tactical family is missing]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_s0_mode_still_names_candidate_and_no_candidate_and_never_the_s1_outcomes": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_is_mixos_with_the_seed_the_only_difference": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[a flag is dropped-<lambda>]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[a lever flag is added-<lambda>]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another arm-<lambda>]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another batch size-<lambda>]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another exclude-<lambda>]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another grid-<lambda>]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another steps multiplier-<lambda>]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[code-mix whole-<lambda>]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[the output directory is B's-<lambda>]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[the output directory is X_s0's-<lambda>]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[the seed is 2-<lambda>]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[the seed is still 0-<lambda>]": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_the_banked_mixo_s0_argv_is_the_preregs_argv": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_the_banked_s0_read_is_the_candidate_this_confirmation_is_for": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_the_checkpoint_of_x_s1_must_not_be_x_s0s": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_the_guard_that_is_already_running_matches_the_driver_without_a_change": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_the_read_job_stop_is_named_verdict_level_and_the_gate_stop_gate_level": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_the_s1_reader_writes_the_deciding_block_before_it_computes_the_beside_block": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_the_stop_table_covers_every_text_of_kscores_chain_source_so_a_new_one_cannot_slip_through_unclassified": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_the_wait_loop_calls_the_same_predicate_and_the_chain_stops_on_a_hold": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kindx_s1::test_two_s0_candidates_keep_their_s0_rank_and_only_the_confirmed_one_is_a_carrier": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kindx_s1.py"
+  },
+  "tests.test_v8f_kscore::test_constants_are_the_prereg_text": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kscore.py"
+  },
+  "tests.test_v8f_kscore::test_eval_picks_and_sel_const_come_from_the_train_windows": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kscore.py"
+  },
+  "tests.test_v8f_kscore::test_every_outcome_quotes_the_prereg_next_step": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kscore.py"
+  },
+  "tests.test_v8f_kscore::test_fit_refuses_a_missing_or_tampered_token": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kscore.py"
+  },
+  "tests.test_v8f_kscore::test_gate_passed_with_every_probe_alive": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kscore.py"
+  },
+  "tests.test_v8f_kscore::test_gate_refuses_declared_vs_built_mismatches": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kscore.py"
+  },
+  "tests.test_v8f_kscore::test_mutation_delete_the_scene_input_makes_the_gate_fail": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kscore.py"
+  },
+  "tests.test_v8f_kscore::test_mutation_unfreeze_B_makes_the_gate_fail": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kscore.py"
+  },
+  "tests.test_v8f_kscore::test_read_end_to_end_applies_the_table_and_controls_pass": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kscore.py"
+  },
+  "tests.test_v8f_kscore::test_read_refuses_with_rc2_on_a_stop_control_a_missing_block_and_an_unmapped_state": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kscore.py"
+  },
+  "tests.test_v8f_kscore::test_shards_are_resumable_and_complete": {
+   "sub": "stack",
+   "file": "tests/test_v8f_kscore.py"
+  },
+  "tests.test_v8f_lora_shape::test_the_constant_is_the_builders_loop_and_the_identity_drivers": {
+   "sub": "stack",
+   "file": "tests/test_v8f_lora_shape.py"
+  },
+  "tests.test_v8f_oacc::test_the_hx_fit_is_hblends_own_closed_form_on_the_checkpoints_held_outputs": {
+   "sub": "stack",
+   "file": "tests/test_v8f_oacc.py"
+  }
+ },
+ "amendments": [
+  {
+   "date": "2026-10-22",
+   "by": "Master Mind",
+   "added_ids": [
+    "tests.test_p10_pose_prior::test_a_fit_clips_are_TRAIN_clips_only_and_disjoint_from_eval139_and_eval141",
+    "tests.test_p10_pose_prior::test_a_the_package_copy_and_the_shipped_copy_are_the_same_bytes_and_the_fit_record_says_what_it_fit",
+    "tests.test_v8f_tac::test_the_v8f_guard_ends_only_on_a_line_start_marker_of_its_chains"
+   ],
+   "added_files": [
+    "tests/test_p10_pose_prior.py",
+    "tests/test_v8f_tac.py"
+   ],
+   "class": "ENV (tree scope): each reads a TanitAD Research Lab package file that a stack/taniteval-only Thor gate tree does not carry",
+   "measured": "Thor suite for 947b05f2f4b3 (/home/nvidia/r8ns/nt/suite_947b05f2f4b3, 2026-10-22 05:23): FileNotFoundError / is_file() False on '.../2026-10-20-v8f-rung-alpha/raw/p10_pose/{fit_clip_ids.txt,p10_pose_prior.pt}' and '.../2026-10-17-v8f-mini/code/box2_ops/v8f_guard.sh'; failing on BOTH TIP (e0da2ea) and CAND",
+   "not_admitted": "the same run's other 3 out-of-list failures are CODE defects and were FIXED in this commit instead: test_text_encoding_is_explicit x2 (55 bare text-mode call sites in 9 test files) and test_hjepa::test_sigreg_gloo_two_process (file:/// + POSIX path -> file:////; Path.as_uri())",
+   "dev_box_half": "G-SUITE (b) now also runs tests/test_p10_pose_prior.py and tests/test_v8f_tac.py on the full-commit archive, where they must PASS",
+   "authorized": "PI (Sayed), 2026-10-22 ~05:50 Berlin, in chat: 'Admit the 3' -- after the auto-mode classifier flagged the Master Mind's own edit as a possible CI bypass and it was put to the PI"
+  },
+  {
+   "date": "2026-10-26",
+   "by": "Master Mind",
+   "scope": "profile refcv8-mapft ONLY (this file); the shared list is unchanged",
+   "added_ids": [
+    "tests.test_v8f_flat::test_a_seed_state_needs_the_librarys_separated_flag_on_top_of_the_side_of_the_interval",
+    "tests.test_v8f_kindx_s1::test_a_kind_that_clears_at_s1_only_is_reported_and_is_a_carrier_at_neither_seed",
+    "tests.test_v8f_kindx_s1::test_carrier_when_the_s0_candidate_clears_2F_at_s1_too",
+    "tests.test_v8f_kindx_s1::test_chain_pins_agree_with_the_reader_the_manifest_the_prereg_and_the_mixo_chain",
+    "tests.test_v8f_kindx_s1::test_chain_syntax_and_text_have_the_load_bearing_lines_in_the_right_order",
+    "tests.test_v8f_kindx_s1::test_clears_is_inclusive_at_2F_and_needs_the_interval",
+    "tests.test_v8f_kindx_s1::test_controls_at_s0_are_untouched",
+    "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[an oracle arm moves a window with no v9 row]",
+    "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[own differs from the standard eval by 1e-3 m]",
+    "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[the identity oracle gains something]",
+    "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[the sha256 on the record is not the file's]",
+    "tests.test_v8f_kindx_s1::test_controls_fail_when_the_s1_world_is_not_the_preregs[trained and after-eval sha256 disagree]",
+    "tests.test_v8f_kindx_s1::test_controls_pass_on_a_consistent_s1_world",
+    "tests.test_v8f_kindx_s1::test_hold_texts_name_their_reason",
+    "tests.test_v8f_kindx_s1::test_mutation_a_carrier_that_need_not_have_been_an_s0_candidate_turns_the_s1_only_row_red",
+    "tests.test_v8f_kindx_s1::test_mutation_a_lower_bar_turns_the_miss_row_red",
+    "tests.test_v8f_kindx_s1::test_mutation_an_argv_check_that_compares_nothing_turns_the_rows_red",
+    "tests.test_v8f_kindx_s1::test_mutation_an_unknown_stop_text_that_proceeds_turns_the_unknown_rows_red",
+    "tests.test_v8f_kindx_s1::test_mutation_clears_that_ignores_the_interval_turns_the_not_separated_row_red",
+    "tests.test_v8f_kindx_s1::test_mutation_ignoring_the_box_level_evidence_turns_the_evidence_check_red",
+    "tests.test_v8f_kindx_s1::test_mutation_letting_the_refresh_job_rc_through_turns_its_rows_red",
+    "tests.test_v8f_kindx_s1::test_mutation_swapping_the_two_outcomes_turns_the_carrier_row_red",
+    "tests.test_v8f_kindx_s1::test_mutation_widening_the_run_level_regex_to_any_job_name_turns_the_wrong_chain_rows_red",
+    "tests.test_v8f_kindx_s1::test_not_a_carrier_when_the_candidate_misses_2F_at_s1",
+    "tests.test_v8f_kindx_s1::test_not_a_carrier_when_the_point_clears_but_the_interval_does_not_exclude_zero",
+    "tests.test_v8f_kindx_s1::test_predecessor_done_proceeds_and_no_end_marker_waits",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[00]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[01]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[02]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[03]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[04]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[05]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[06]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[07]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[08]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[09]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[10]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[11]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[12]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[13]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[14]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[15]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[16]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[17]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[18]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[19]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[20]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[21]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[22]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[23]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[24]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[25]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[26]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[27]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[28]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[29]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[30]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[31]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[32]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[33]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[34]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[35]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[36]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[37]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[38]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[39]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[40]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[41]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[42]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[43]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[44]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[45]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[46]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[47]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[48]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[49]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[50]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[51]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[52]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[53]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[54]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[55]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[56]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[57]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[58]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[59]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[60]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[61]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[62]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[63]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[64]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[65]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[66]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[67]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[68]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[69]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[70]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[71]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[72]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[73]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[74]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_is_classified_run_verdict_gate_proceed_and_everything_else_holds[75]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZCRASH box 2 rebooted: 2026-10-24 07:00:00 -> 2026-10-25 13:01:00]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZGUARD-STOP TEMP 10-25 13:00 USB HDD: 12 of the last 20 samples >= 61 C, max 63 C]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZGUARD-STOP TIME 10-25 13:00 M2b_s0_mixo projects 11.2 h (> 10 h) at 2.1 s/step]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZTIMEOUT 1320 polls]",
+    "tests.test_v8f_kindx_s1::test_predecessor_stop_with_box_level_evidence_in_its_logs_holds[ZZUNREACHABLE 12 min]",
+    "tests.test_v8f_kindx_s1::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl0-phase1 is not PASS]",
+    "tests.test_v8f_kindx_s1::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl1-phase2 is not PASS]",
+    "tests.test_v8f_kindx_s1::test_reader_reads_no_gain_while_a_control_phase_is_not_pass[ctl2-phase2 is not PASS]",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_a_seed_argument_that_disagrees_with_its_configuration",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an eval is missing]",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an eval scored X_s0's checkpoint]",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an oracle declared alpha 0.5]",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[an oracle declared another group]",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[own is not T's own code]",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read has a candidate that is not a kind]",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read has another bar]",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read is NO CANDIDATE]",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read is another checkpoint]",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[s0 read's controls did not pass]",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the arms are on another window list]",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the strategic family is missing]",
+    "tests.test_v8f_kindx_s1::test_reader_refuses_rc2_with_the_reason_and_writes_nothing[the tactical family is missing]",
+    "tests.test_v8f_kindx_s1::test_s0_mode_still_names_candidate_and_no_candidate_and_never_the_s1_outcomes",
+    "tests.test_v8f_kindx_s1::test_seed_1_argv_is_mixos_with_the_seed_the_only_difference",
+    "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[a flag is dropped-<lambda>]",
+    "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[a lever flag is added-<lambda>]",
+    "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another arm-<lambda>]",
+    "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another batch size-<lambda>]",
+    "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another exclude-<lambda>]",
+    "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another grid-<lambda>]",
+    "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[another steps multiplier-<lambda>]",
+    "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[code-mix whole-<lambda>]",
+    "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[the output directory is B's-<lambda>]",
+    "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[the output directory is X_s0's-<lambda>]",
+    "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[the seed is 2-<lambda>]",
+    "tests.test_v8f_kindx_s1::test_seed_1_argv_that_differs_in_anything_else_is_refused[the seed is still 0-<lambda>]",
+    "tests.test_v8f_kindx_s1::test_the_banked_mixo_s0_argv_is_the_preregs_argv",
+    "tests.test_v8f_kindx_s1::test_the_banked_s0_read_is_the_candidate_this_confirmation_is_for",
+    "tests.test_v8f_kindx_s1::test_the_checkpoint_of_x_s1_must_not_be_x_s0s",
+    "tests.test_v8f_kindx_s1::test_the_guard_that_is_already_running_matches_the_driver_without_a_change",
+    "tests.test_v8f_kindx_s1::test_the_read_job_stop_is_named_verdict_level_and_the_gate_stop_gate_level",
+    "tests.test_v8f_kindx_s1::test_the_s1_reader_writes_the_deciding_block_before_it_computes_the_beside_block",
+    "tests.test_v8f_kindx_s1::test_the_stop_table_covers_every_text_of_kscores_chain_source_so_a_new_one_cannot_slip_through_unclassified",
+    "tests.test_v8f_kindx_s1::test_the_wait_loop_calls_the_same_predicate_and_the_chain_stops_on_a_hold",
+    "tests.test_v8f_kindx_s1::test_two_s0_candidates_keep_their_s0_rank_and_only_the_confirmed_one_is_a_carrier",
+    "tests.test_v8f_kscore::test_constants_are_the_prereg_text",
+    "tests.test_v8f_kscore::test_eval_picks_and_sel_const_come_from_the_train_windows",
+    "tests.test_v8f_kscore::test_every_outcome_quotes_the_prereg_next_step",
+    "tests.test_v8f_kscore::test_fit_refuses_a_missing_or_tampered_token",
+    "tests.test_v8f_kscore::test_gate_passed_with_every_probe_alive",
+    "tests.test_v8f_kscore::test_gate_refuses_declared_vs_built_mismatches",
+    "tests.test_v8f_kscore::test_mutation_delete_the_scene_input_makes_the_gate_fail",
+    "tests.test_v8f_kscore::test_mutation_unfreeze_B_makes_the_gate_fail",
+    "tests.test_v8f_kscore::test_read_end_to_end_applies_the_table_and_controls_pass",
+    "tests.test_v8f_kscore::test_read_refuses_with_rc2_on_a_stop_control_a_missing_block_and_an_unmapped_state",
+    "tests.test_v8f_kscore::test_shards_are_resumable_and_complete",
+    "tests.test_v8f_lora_shape::test_the_constant_is_the_builders_loop_and_the_identity_drivers",
+    "tests.test_v8f_oacc::test_the_hx_fit_is_hblends_own_closed_form_on_the_checkpoints_held_outputs"
+   ],
+   "added_files": [
+    "tests/test_v8f_flat.py",
+    "tests/test_v8f_kindx_s1.py",
+    "tests/test_v8f_kscore.py",
+    "tests/test_v8f_lora_shape.py",
+    "tests/test_v8f_oacc.py"
+   ],
+   "class": "ENV (tree scope): v8f-mini tests that read TanitAD Research Lab package files a stack/taniteval-only Thor tree does not carry",
+   "measured": "Thor suite for C1 7e14cad33969 (/home/nvidia/r8ns/mapft/suite_7e14cad33969): verdict PASS (0 regressions), 162 failures outside the shared pin, failing on BOTH TIP (10e9dfd) and CAND; FileNotFoundError / empty globs on v8f-mini raw paths",
+   "not_admitted": "test_text_encoding_is_explicit x2 are CODE defects (35 bare text-mode / open() sites in 6 v8f files) and are FIXED in this commit",
+   "dev_box_half": "G-SUITE (b) now also runs the added v8f test files on the full-commit archive, where they must PASS",
+   "authorized": "PI (Sayed), 2026-10-26 ~22:30 Berlin, in chat: 'Pin for map fine-tune only (Recommended)'"
+  }
+ ]
+}

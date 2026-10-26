@@ -623,6 +623,7 @@ def _gate_token_refusal(data: bytes | None) -> str | None:
 # judged are the ones the MODE scans (staged blob / tree file / tracked worktree file), exactly as for
 # the exemption above. A sixth record gets no rule: it gets a PI decision and a line here.
 _REFE_RAW = "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/"
+_V8F_RAW = "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
 PINNED_TOKEN_JSON_RECORDS: dict[str, str] = {
     # schema fastneg-census-v1, kind "gate_token": 12 sha256 bindings + G-* check verdicts + pass flag
     _REFE_RAW + "2026-10-19-fastneg-census/raw/gate_token.json":
@@ -640,6 +641,42 @@ PINNED_TOKEN_JSON_RECORDS: dict[str, str] = {
     # no schema field: privgeom-safe pins (arrays/labels/subset sha256, code_pins, gate verdicts)
     _REFE_RAW + "2026-10-19-privgeom-safe/raw/gate_token.json":
         "19dff56ff6b61da08fce38d1e562b940e815f8819e93aaeb9053bdca31138899",
+    # ---- PI decision 2026-10-26 ~22:30 Berlin, in chat: "Pin all 16 by exact bytes". The v8f-mini stream's research
+    # gate records (10-25/26). MEASURED on the tip blobs: no credential shape matches; the eight orecover
+    # `launch_gate_token.json` records carry an `hmac` SIGNATURE field (not key material) and are not launch-gate
+    # token records by schema/kind. One line per record, exact bytes, as for the five above.
+    _V8F_RAW + "2026-10-25-kindx-s1/gate_token.json":
+        "0ba5b3b734a3bef04b4ee434dcabfe300aa316c8aa37672b2dc5e1a5efe322ca",
+    _V8F_RAW + "2026-10-25-kscore/run/fit/s0/gate_token.json":
+        "edf15422b8922bbeb5de9e926b60511808fb131f20f2255989e68ee9016aea2c",
+    _V8F_RAW + "2026-10-25-kscore/run/fit/s0_perm/gate_token.json":
+        "e83a16e2aeaf70de97cc237c11ec3b166e80cfeaf5ef43a0af47e595f315ebd7",
+    _V8F_RAW + "2026-10-25-kscore/run/fit/s1/gate_token.json":
+        "08dbb925420a14c11d0a68ac98be0e264ca95eeb583f355b990a2435257df456",
+    _V8F_RAW + "2026-10-25-kscore/run/fit/s1_perm/gate_token.json":
+        "1d6bd57f35e761ecbb689897c6dc00dec937cc4f289e3557d84e954cdfd3045f",
+    _V8F_RAW + "2026-10-25-mixo/run/gate_token.json":
+        "45f300cd4c734b6d3b4e5b5c22c171ba25d6126c9e5f66b185152235c9468628",
+    _V8F_RAW + "2026-10-25-oacc/run/gate_token.json":
+        "439b6b0c92c55bf73158961561d845b078fe190df9fe44916ea2f6f74a6f1244",
+    _V8F_RAW + "2026-10-26-flat/gate_token.json":
+        "f37de2d9538a9f409751e85e37381695cfa94c6dec32f1c5b29d2425fa06078f",
+    _V8F_RAW + "2026-10-26-orecover-result/inputs/M2b_s0_orc/launch_gate_token.json":
+        "16debc22719dcbcc8b93f35379c193a4a02e43b201c3585e50225e3b98f41efe",
+    _V8F_RAW + "2026-10-26-orecover-result/inputs/M2b_s0_orc0/launch_gate_token.json":
+        "24c1fcb3a59c0b2846b30f56f521b692931fb764094c8c92fb46a53e4326fc20",
+    _V8F_RAW + "2026-10-26-orecover-result/inputs/M2b_s1_orc/launch_gate_token.json":
+        "bba576287de03f1db179b59fab064a0f467c3669fd787dd1799cb8fc4b695900",
+    _V8F_RAW + "2026-10-26-orecover-result/inputs/M2b_s1_orc0/launch_gate_token.json":
+        "1a53493cbc65134a032ee3e06e1fdcdd750f4337c0fa1c020a0ac3880d543ba1",
+    _V8F_RAW + "2026-10-26-orecover-run/runs/M2b_s0_orc/launch_gate_token.json":
+        "16debc22719dcbcc8b93f35379c193a4a02e43b201c3585e50225e3b98f41efe",
+    _V8F_RAW + "2026-10-26-orecover-run/runs/M2b_s0_orc0/launch_gate_token.json":
+        "24c1fcb3a59c0b2846b30f56f521b692931fb764094c8c92fb46a53e4326fc20",
+    _V8F_RAW + "2026-10-26-orecover-run/runs/M2b_s1_orc/launch_gate_token.json":
+        "bba576287de03f1db179b59fab064a0f467c3669fd787dd1799cb8fc4b695900",
+    _V8F_RAW + "2026-10-26-orecover-run/runs/M2b_s1_orc0/launch_gate_token.json":
+        "1a53493cbc65134a032ee3e06e1fdcdd750f4337c0fa1c020a0ac3880d543ba1",
 }
 
 

@@ -530,7 +530,7 @@ def find_commit(a) -> str | None:
     if tip.exists():
         return tip.read_text(encoding="utf-8").strip().split()[0]
     try:
-        r = subprocess.run(["git", "-C", str(REPO), "-c", "safe.directory=*", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=20)
+        r = subprocess.run(["git", "-C", str(REPO), "-c", "safe.directory=*", "rev-parse", "HEAD"], capture_output=True, text=True, encoding="utf-8", timeout=20)
         if r.returncode == 0 and r.stdout.strip():
             return r.stdout.strip()
     except Exception:

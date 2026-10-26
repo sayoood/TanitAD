@@ -123,7 +123,7 @@ def fit_argv(world, run_dir, ck, seed, extra=()):
 
 def make_lead_block(world, path):
     r = world["root"]
-    grid = json.load(open(r / "eval_grid_windows.json"))
+    grid = json.load(open(r / "eval_grid_windows.json", encoding="utf-8"))
     J = D.load_join(r / "join_eval.npz")
     X = D.eval_context(grid, r / "eval_kin.npz", J, kin_mode="steer")
     order = grid["order"]
@@ -479,7 +479,7 @@ def pipe(world, tmp_path_factory):
 
 def test_shards_are_resumable_and_complete(world, pipe, tmp_path):
     run = pipe["run"]
-    meta = json.load(open(run / "hyps" / "M2b_s0_train.meta.json"))
+    meta = json.load(open(run / "hyps" / "M2b_s0_train.meta.json", encoding="utf-8"))
     sdir = run / "hyps" / "M2b_s0_train_shards"
     shards = sorted(sdir.glob("shard_*.npz"))
     assert meta["n_windows"] == 135 and len(shards) == meta["n_shards"] >= 2 and meta["own_diag_maxabs_over_windows"] == 0.0
@@ -494,8 +494,8 @@ def test_shards_are_resumable_and_complete(world, pipe, tmp_path):
 
 def test_gate_passed_with_every_probe_alive(pipe):
     for d in ("s0", "s1", "s0_perm", "s1_perm"):
-        sc = json.load(open(pipe["run"] / "fit" / d / "selfcheck.json"))
-        tok = json.load(open(pipe["run"] / "fit" / d / "gate_token.json"))
+        sc = json.load(open(pipe["run"] / "fit" / d / "selfcheck.json", encoding="utf-8"))
+        tok = json.load(open(pipe["run"] / "fit" / d / "gate_token.json", encoding="utf-8"))
         assert sc["gate"] == "PASS" and sc["declared_vs_built"] == "PASS" and sc["live"]["pass"] is True and sc["inputs_identity"]["pass"] is True
         lv = sc["live"]
         assert lv["B_grad_abs_sum"] == 0.0, "B is frozen: EXACTLY 0.0"
@@ -505,7 +505,7 @@ def test_gate_passed_with_every_probe_alive(pipe):
         assert sc["own_diag_maxabs"] == 0.0 and set(sc["keys_read"]) <= set(M.INFERENCE_INPUT_KEYS)
         assert tok["gate"] == "PASS" and tok["commit"] == "c0ffee1" and tok["selfcheck_sha256"] == K.sha256_file(pipe["run"] / "fit" / d / "selfcheck.json")
         assert tok["prereg_pinned"] is False and tok["perm_labels"] == d.endswith("perm") and tok["inputs"]["n_windows"] == 135
-        sm = json.load(open(pipe["run"] / "fit" / d / "summary.json"))
+        sm = json.load(open(pipe["run"] / "fit" / d / "summary.json", encoding="utf-8"))
         assert sm["done"] is True and sm["gate"] == "PASS" and sm["steps"] == 2 * -(-135 // 32) and sm["token_sha256"] == K.sha256_file(pipe["run"] / "fit" / d / "gate_token.json")
 
 
@@ -521,11 +521,11 @@ def test_the_box2_guard_can_read_our_fit_logs(pipe, tmp_path):
     fit = pipe["run"] / "fit" / "s0"
     rows = [json.loads(x) for x in open(fit / "train_log.jsonl", encoding="utf-8") if x.strip()]
     assert rows and all("step" in r and "sec" in r for r in rows), "the guard's reader needs step and sec in every record"
-    sc = json.load(open(fit / "selfcheck.json"))
+    sc = json.load(open(fit / "selfcheck.json", encoding="utf-8"))
     assert sc["steps_total"] == sc["plan"]["steps_total"] > 0, "the guard reads steps_total at the TOP level"
     synth = tmp_path / "tail.jsonl"
     synth.write_text("".join(json.dumps({"step": 1000 + 50 * i, "sec": 100.0 + 5.0 * i}) + "\n" for i in range(21)), encoding="utf-8")
-    r = subprocess.run([sys.executable, "-I", "-c", snip, str(synth), str(fit / "selfcheck.json")], capture_output=True, text=True, timeout=60)
+    r = subprocess.run([sys.executable, "-I", "-c", snip, str(synth), str(fit / "selfcheck.json")], capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert r.returncode == 0, r.stderr
     hours, rate, step, total = r.stdout.split()
     assert float(rate) == pytest.approx(0.1) and int(step) == 2000 and int(total) == sc["steps_total"], r.stdout
@@ -542,7 +542,7 @@ def test_fit_refuses_a_missing_or_tampered_token(world, pipe, tmp_path):
     with pytest.raises(K.Refused):
         K.verify_token(out / "nope.json", {"commit": "x"})
     assert K.main(fit_argv(world, run2, pipe["cks"][0], 0, ["--gate-only"])) == 0               # issue one
-    tok = json.load(open(out / "gate_token.json"))
+    tok = json.load(open(out / "gate_token.json", encoding="utf-8"))
     for k, v in (("commit", "deadbeef"), ("argv_sha", "0" * 16), ("gate", "FAIL")):             # a token for another commit / argv / a FAILED gate
         bad = dict(tok, **{k: v})
         K.jdump(bad, out / "gate_token.json")
@@ -559,7 +559,7 @@ def test_mutation_delete_the_scene_input_makes_the_gate_fail(world, pipe, tmp_pa
     run_hyps(world, run2, pipe["cks"][0], 0, ("train",))
     monkeypatch.setattr(K, "scene_at_now", lambda model, adapt, frame_ok: torch.zeros(adapt.shape[0], model.cfg.hist, model.cfg.d))
     assert K.main(fit_argv(world, run2, pipe["cks"][0], 0)) == 3
-    sc = json.load(open(run2 / "fit" / "s0" / "selfcheck.json"))
+    sc = json.load(open(run2 / "fit" / "s0" / "selfcheck.json", encoding="utf-8"))
     assert sc["gate"] == "FAIL" and not (run2 / "fit" / "s0" / "gate_token.json").exists() and not (run2 / "fit" / "s0" / "ckpt_last.pt").exists()
     assert sc["inputs_identity"]["pass"] is False or sc["live"]["scorer_grad_on_B_inputs"]["scene_proj"] == 0.0
 
@@ -569,7 +569,7 @@ def test_mutation_unfreeze_B_makes_the_gate_fail(world, pipe, tmp_path, monkeypa
     run_hyps(world, run2, pipe["cks"][0], 0, ("train",))
     monkeypatch.setattr(K, "featurize_batch", lambda model, b: K.featurize_t(model, b))          # MUTATION: the featuriser keeps B's autograd graph
     assert K.main(fit_argv(world, run2, pipe["cks"][0], 0)) == 3
-    sc = json.load(open(run2 / "fit" / "s0" / "selfcheck.json"))
+    sc = json.load(open(run2 / "fit" / "s0" / "selfcheck.json", encoding="utf-8"))
     assert sc["gate"] == "FAIL" and sc["live"]["pass"] is False and sc["live"]["B_grad_abs_sum"] > 0.0, "B's parameters received a gradient: the gate must read it"
     assert not (run2 / "fit" / "s0" / "gate_token.json").exists()
 
@@ -580,19 +580,19 @@ def test_gate_refuses_declared_vs_built_mismatches(world, pipe, tmp_path, monkey
     real_build = K.build_scorer
     monkeypatch.setattr(K, "build_scorer", lambda hid, mode, d=256, hist=4: real_build(hid * 2, mode, d=d, hist=hist))      # built hid != declared hid
     assert K.main(fit_argv(world, run2, pipe["cks"][0], 0)) == 3
-    assert any("hid: declared 16" in b for b in json.load(open(run2 / "fit" / "s0" / "selfcheck.json"))["declared_vs_built"])
+    assert any("hid: declared 16" in b for b in json.load(open(run2 / "fit" / "s0" / "selfcheck.json", encoding="utf-8"))["declared_vs_built"])
     monkeypatch.undo()
     real_perm = K.permute_labels
     monkeypatch.setattr(K, "permute_labels", lambda y, seed=0: np.asarray(y))                      # --perm-labels declared, labels not permuted
     assert K.main(fit_argv(world, run2, pipe["cks"][0], 0, ["--perm-labels"])) == 3
-    assert any("perm_labels declared" in b for b in json.load(open(run2 / "fit" / "s0_perm" / "selfcheck.json"))["declared_vs_built"])
+    assert any("perm_labels declared" in b for b in json.load(open(run2 / "fit" / "s0_perm" / "selfcheck.json", encoding="utf-8"))["declared_vs_built"])
     monkeypatch.undo()
     monkeypatch.setitem(K.FLAG_CHECKS, "zz_new_lever", "run")                                      # a check for a flag that does not exist
     assert K.main(fit_argv(world, run2, pipe["cks"][0], 0)) == 3
     monkeypatch.undo()
     monkeypatch.delitem(K.FLAG_CHECKS, "hid")                                                      # a flag with no declared-vs-built entry is refused
     assert K.main(fit_argv(world, run2, pipe["cks"][0], 0)) == 3
-    assert any("flags without a declared-vs-built entry" in b and "hid" in b for b in json.load(open(run2 / "fit" / "s0" / "selfcheck.json"))["declared_vs_built"])
+    assert any("flags without a declared-vs-built entry" in b and "hid" in b for b in json.load(open(run2 / "fit" / "s0" / "selfcheck.json", encoding="utf-8"))["declared_vs_built"])
     assert real_perm is K.permute_labels or True
 
 
@@ -617,7 +617,7 @@ def test_prereg_pins_are_enforced_at_real_size():
 # ------------------------------------------------------------------------------------------------ eval + read, end to end
 def test_eval_picks_and_sel_const_come_from_the_train_windows(pipe):
     for s in (0, 1):
-        sel = json.load(open(pipe["run"] / "fit" / f"s{s}" / "sel_const.json"))
+        sel = json.load(open(pipe["run"] / "fit" / f"s{s}" / "sel_const.json", encoding="utf-8"))
         z = np.load(pipe["run"] / "eval" / f"kscore_s{s}.npz")
         tr, _ = K.load_split(pipe["run"], s, "train", ("tau", "gt"))
         assert sel["chosen_on"] == "train" and sel["n_windows"] == 135
@@ -629,7 +629,7 @@ def test_eval_picks_and_sel_const_come_from_the_train_windows(pipe):
 
 def test_read_end_to_end_applies_the_table_and_controls_pass(pipe):
     assert pipe["rc_read"] == 0
-    R = json.load(open(pipe["run"] / "READ.json"))
+    R = json.load(open(pipe["run"] / "READ.json", encoding="utf-8"))
     assert R["decision"]["outcome"] in K.NEXT
     assert R["decision"]["committed_next_step_quoted"] == K.NEXT[R["decision"]["outcome"]]
     for s in ("s0", "s1"):
@@ -650,22 +650,22 @@ def test_read_refuses_with_rc2_on_a_stop_control_a_missing_block_and_an_unmapped
     run = pipe["run"]
     argv = ["read", "--smoke", "--no-banked", "--n-boot", "20", "--dk-reader", str(DKR_P)] + common(world, run)
     assert K.main(argv + ["--lead-block", str(tmp_path / "missing.npz")]) == 2                    # LEAD-VIOL cannot be read: the table maps no state without it
-    assert json.load(open(run / "READ.json"))["status"] == "STOPPED"
+    assert json.load(open(run / "READ.json", encoding="utf-8"))["status"] == "STOPPED"
     lb = str(pipe["lead_block"])
     monkeypatch.setattr(K, "decide", lambda per: (_ for _ in ()).throw(K.Unmapped("test: a state with no row")))
     assert K.main(argv + ["--lead-block", lb]) == 2
-    assert json.load(open(run / "READ.json"))["status"] == "UNMAPPED"
+    assert json.load(open(run / "READ.json", encoding="utf-8"))["status"] == "UNMAPPED"
     monkeypatch.undo()
     # control 3: B's own-code ADE6 must round to the PREREG's banked 4 dp -> on a random-init B it does not
     assert K.main(["read", "--smoke", "--n-boot", "20", "--lead-block", lb, "--dk-reader", str(DKR_P)] + common(world, run)) == 2
-    assert "CONTROL 3" in json.dumps(json.load(open(run / "READ.json"))["stops"])
+    assert "CONTROL 3" in json.dumps(json.load(open(run / "READ.json", encoding="utf-8"))["stops"])
     # control 1 stop: tamper the stored forced logits (the forced scorer no longer reproduces SEL-ARGMAX)
     z = dict(np.load(run / "eval" / "kscore_s0.npz"))
     good = z["logits_forced"].copy()
     z["logits_forced"] = -good
     np.savez(run / "eval" / "kscore_s0.npz", **z)
     assert K.main(argv + ["--lead-block", lb]) == 2
-    assert "CONTROL 1" in json.dumps(json.load(open(run / "READ.json"))["stops"])
+    assert "CONTROL 1" in json.dumps(json.load(open(run / "READ.json", encoding="utf-8"))["stops"])
     z["logits_forced"] = good
     np.savez(run / "eval" / "kscore_s0.npz", **z)
     assert K.main(argv + ["--lead-block", lb]) == 0
@@ -681,7 +681,7 @@ def _bash():
         if not c:
             continue
         try:
-            r = subprocess.run([c, "--version"], capture_output=True, text=True, timeout=20)
+            r = subprocess.run([c, "--version"], capture_output=True, text=True, encoding="utf-8", timeout=20)
             if r.returncode == 0 and "GNU bash" in r.stdout:
                 return c
         except Exception:
@@ -693,7 +693,7 @@ def test_chain_syntax_and_dry_run_prints_the_exact_stage_commands(tmp_path):
     bash = _bash()
     if bash is None:
         pytest.skip("bash is needed to run the chain's --dry-run")
-    r = subprocess.run([bash, "-n", str(CHAIN)], capture_output=True, text=True, timeout=60)
+    r = subprocess.run([bash, "-n", str(CHAIN)], capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert r.returncode == 0, r.stderr
     env = dict(os.environ, KSCORE_PYX=sys.executable, KSCORE_COMMIT_DRY="abc123")
     r = subprocess.run([bash, str(CHAIN), "--dry-run"], env=env, capture_output=True, text=True, timeout=180, stdin=subprocess.DEVNULL, encoding="utf-8")
@@ -1098,7 +1098,7 @@ def test_hyps_stage_peak_memory_at_real_size_is_under_2_gb(tmp_path):
         "o=K.enumerate_window_batch(m,ds,wins,0,16,torch.device('cpu'),np.float16)\n"
         "pm=psutil.Process().memory_info()\n"
         "print(json.dumps({'peak_commit_gb':getattr(pm,'peak_pagefile',pm.rss)/2**30,'peak_wset_gb':getattr(pm,'peak_wset',pm.rss)/2**30,'params':sum(p.numel() for p in m.parameters())}))\n")
-    r = subprocess.run([sys.executable, "-I", "-c", code], capture_output=True, text=True, timeout=600, env=dict(os.environ, OPENBLAS_NUM_THREADS="1", MKL_NUM_THREADS="1"), stdin=subprocess.DEVNULL)
+    r = subprocess.run([sys.executable, "-I", "-c", code], capture_output=True, text=True, encoding="utf-8", timeout=600, env=dict(os.environ, OPENBLAS_NUM_THREADS="1", MKL_NUM_THREADS="1"), stdin=subprocess.DEVNULL)
     assert r.returncode == 0, r.stderr[-2000:]
     j = json.loads(r.stdout.strip().splitlines()[-1])
     print("HYPS_PEAK", j)

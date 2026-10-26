@@ -70,7 +70,7 @@ def _bash():
         if not c:
             continue
         try:
-            r = subprocess.run([c, "--version"], capture_output=True, text=True, timeout=20)
+            r = subprocess.run([c, "--version"], capture_output=True, text=True, encoding="utf-8", timeout=20)
             if r.returncode == 0 and "GNU bash" in r.stdout:
                 return c
         except Exception:
@@ -810,7 +810,7 @@ def test_the_tip_queues_own_trainmixo_lines_differ_in_the_seed_and_the_output_di
         (tmp_path / f"l{s}.txt").write_text(ln[0], encoding="utf-8")
     a, b = D.tokens(lines[0]), D.tokens(lines[1])
     assert D.seed_only_violations(a, b) == [] and a[a.index("--seed") + 1] == "0" and b[b.index("--seed") + 1] == "1" and "--o-interface" not in b
-    assert subprocess.run([sys.executable, str(DRIVER), "assert-argv", "--base", str(tmp_path / "l0.txt"), "--other", str(tmp_path / "l1.txt")], capture_output=True, text=True).returncode == 0
+    assert subprocess.run([sys.executable, str(DRIVER), "assert-argv", "--base", str(tmp_path / "l0.txt"), "--other", str(tmp_path / "l1.txt")], capture_output=True, text=True, encoding="utf-8").returncode == 0
     # and the QUEUE's line is the argv MIXO's seed-0 run was banked with (the seed-0 form of the line, flag for flag, up to the python paths)
     banked = D.load_argv(str(S0_ARGV))
     assert a[2:] == banked, "the tip queue's `trainmixo 0` line is exactly the argv MIXO's seed-0 run recorded"
@@ -1172,7 +1172,7 @@ def test_the_guard_that_is_already_running_matches_the_driver_without_a_change()
 # =============================================================================================================================================
 @needs_bash
 def test_chain_syntax_and_text_have_the_load_bearing_lines_in_the_right_order():
-    r = subprocess.run([BASH, "-n", str(CHAIN)], capture_output=True, text=True, timeout=60)
+    r = subprocess.run([BASH, "-n", str(CHAIN)], capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert r.returncode == 0, r.stderr
     raw = CHAIN.read_bytes()
     assert b"\r\n" not in raw

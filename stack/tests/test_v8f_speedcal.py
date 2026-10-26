@@ -53,7 +53,7 @@ def _find_bash():
     for c in ("C:/Program Files/Git/bin/bash.exe", shutil.which("bash")):
         if c and os.path.exists(c):
             try:
-                r = subprocess.run([c, "-c", "echo ok; command -v df >/dev/null && echo df"], capture_output=True, text=True, timeout=60)
+                r = subprocess.run([c, "-c", "echo ok; command -v df >/dev/null && echo df"], capture_output=True, text=True, encoding="utf-8", timeout=60)
             except (OSError, subprocess.SubprocessError):
                 continue
             if r.stdout.split() == ["ok", "df"]:
@@ -995,7 +995,7 @@ def test_runner_syntax_dry_run_and_load_bearing_lines(tmp_path):
     assert subprocess.run([BASH, "-n", str(RUNNER)], capture_output=True).returncode == 0
     out_dir = tmp_path / "never"
     env = dict(os.environ, SPEEDCAL_OUT=_fwd(out_dir), SPEEDCAL_B2=_fwd(tmp_path / "nobox"), SPEEDCAL_PY=_fwd(sys.executable), SPEEDCAL_BANK=_fwd(tmp_path / "nobank"))
-    r = subprocess.run([BASH, str(RUNNER), "--dry-run"], capture_output=True, text=True, env=env, timeout=180)
+    r = subprocess.run([BASH, str(RUNNER), "--dry-run"], capture_output=True, text=True, encoding="utf-8", env=env, timeout=180)
     assert r.returncode == 0, r.stderr[-2000:]
     o = r.stdout
     for need in ("== check", "== fit seed 0", "== fit seed 1", "== evals seed 0 (own, identity, gt, cal, perm, ceiling)", "== evals seed 1 (own, identity, gt, cal, perm, ceiling)", "== evalsB seed 0",
@@ -1030,10 +1030,10 @@ def test_runner_stops_with_the_marker_on_a_missing_input_and_still_banks_what_ex
     (out / "some_result.txt").write_text("evidence", encoding="utf-8")
     bank = tmp_path / "bank"
     env = dict(os.environ, SPEEDCAL_OUT=_fwd(out), SPEEDCAL_B2=_fwd(tmp_path / "nobox"), SPEEDCAL_SC=_fwd(tmp_path / "nosc"), SPEEDCAL_PY=_fwd(sys.executable), SPEEDCAL_BANK=_fwd(bank))
-    r = subprocess.run([BASH, str(RUNNER), "check"], capture_output=True, text=True, env=env, timeout=120)
+    r = subprocess.run([BASH, str(RUNNER), "check"], capture_output=True, text=True, encoding="utf-8", env=env, timeout=120)
     assert r.returncode == 3 and "ZZSPEEDCAL-STOP" in r.stdout and ("missing input" in r.stdout or "less than 4 GB" in r.stdout), r.stdout[-1500:]
     assert (bank / "some_result.txt").exists() and (bank / "some_result.txt").read_text(encoding="utf-8") == "evidence", "a STOP still banks what exists: a failed control is evidence"
-    r2 = subprocess.run([BASH, str(RUNNER), "nonsense"], capture_output=True, text=True, env=env, timeout=60)
+    r2 = subprocess.run([BASH, str(RUNNER), "nonsense"], capture_output=True, text=True, encoding="utf-8", env=env, timeout=60)
     assert r2.returncode == 2
 
 
@@ -1048,7 +1048,7 @@ def test_bank_survives_a_destination_path_longer_than_windows_max_path(tmp_path)
     bank = deep / "bank"
     assert len(str(bank)) > 300
     env = dict(os.environ, SPEEDCAL_OUT=_fwd(out), SPEEDCAL_B2=_fwd(tmp_path / "nobox"), SPEEDCAL_SC=_fwd(tmp_path / "nosc"), SPEEDCAL_PY=_fwd(sys.executable), SPEEDCAL_BANK=_fwd(bank))
-    r = subprocess.run([BASH, str(RUNNER), "bank"], capture_output=True, text=True, env=env, timeout=120)
+    r = subprocess.run([BASH, str(RUNNER), "bank"], capture_output=True, text=True, encoding="utf-8", env=env, timeout=120)
     assert r.returncode == 0 and "banked 1 files" in r.stdout, (r.stdout[-800:], r.stderr[-800:])
     got = str(bank / "sub" / "r.txt")
     got = ("\\\\?\\" + os.path.abspath(got)) if os.name == "nt" else got

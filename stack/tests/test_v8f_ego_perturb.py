@@ -992,7 +992,7 @@ sys.exit(TR.main(["--out", out] + extra))
 
 
 def _child(mode, out, extra):
-    r = subprocess.run([sys.executable, "-I", "-c", CHILD, str(REPO), mode, str(out), json.dumps(extra), str(REF_DATA), str(REF_TRAIN)], capture_output=True, text=True, timeout=900,
+    r = subprocess.run([sys.executable, "-I", "-c", CHILD, str(REPO), mode, str(out), json.dumps(extra), str(REF_DATA), str(REF_TRAIN)], capture_output=True, text=True, encoding="utf-8", timeout=900,
                        env={**os.environ, "CUDA_VISIBLE_DEVICES": "-1", "PYTHONDONTWRITEBYTECODE": "1"})
     assert r.returncode == 0, (mode, r.stdout[-1500:], r.stderr[-2500:])
 
