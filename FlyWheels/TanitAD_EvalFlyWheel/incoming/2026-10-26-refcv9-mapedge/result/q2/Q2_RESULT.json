@@ -1,0 +1,126 @@
+{
+ "tool": "mapedge_q2.py",
+ "prereg_sha256": "be11ea00bb28c8d1ca925fc9a92759279d7beee68800a2a149f91a169eca8472",
+ "script_sha256": "414aae1a61bf504ccd8df1f398ce9e43965773660136fc2aa225d2f16569c075",
+ "label": "headline",
+ "controls": {
+  "Q2-K1_reproduces_MAPSEL_s0": {
+   "pass": true,
+   "n_arms": 13,
+   "mismatches": []
+  },
+  "Q2-K2_mapsel_controls_as_in_mapsel": {
+   "pass": true,
+   "failing_here": [],
+   "failing_in_mapsel": []
+  },
+  "Q2-K3_noop_equals_OWN-T1": {
+   "pass": true
+  }
+ },
+ "bars": {
+  "E1": true,
+  "E2": false,
+  "E3": true,
+  "E4": false
+ },
+ "E1_cell": {
+  "delta": -0.0331,
+  "lo": -0.0483,
+  "hi": -0.0187,
+  "separated": true,
+  "n_windows": 3198,
+  "n_episodes": 136,
+  "mean_new": 0.2523452157598499,
+  "mean_ref": 0.28549093183239527
+ },
+ "E3_cell": {
+  "delta": 0.065,
+  "lo": 0.0384,
+  "hi": 0.093,
+  "separated": true,
+  "n_windows": 3198,
+  "n_episodes": 136,
+  "mean_new": 0.3505315822388993,
+  "mean_ref": 0.28549093183239527
+ },
+ "E2_worse_rows": [
+  "S6c_stage:ade_m",
+  "S6c_stage:fde_m",
+  "S6c_stage:LON_speed_mae_mps",
+  "S6c_stage:LON_along_mae_m",
+  "S6c_stage:LON_along_abs_final_m",
+  "S6c_stage:LON_speed_within_0p5",
+  "S6c_stage:LON_accel_mae_mps2",
+  "S6c_stage:LAT_heading_mae_deg",
+  "S6c_stage:LAT_curvature_mae_1pm_valid",
+  "S6c_stage:LAT_yaw_rate_mae_radps_valid",
+  "S6c_stage:LAT_cross_mae_m",
+  "S6c_stage:LAT_cross_abs_final_m",
+  "S6c_stage:TAC_traj_lat_correct",
+  "S6c_stage:TAC_traj_lon_correct",
+  "S6c_stage:false_decel",
+  "S2c_stage:ade_m",
+  "S2c_stage:fde_m",
+  "S2c_stage:LON_speed_mae_mps",
+  "S2c_stage:LON_along_mae_m",
+  "S2c_stage:LON_along_abs_final_m",
+  "S2c_stage:LON_speed_within_0p5",
+  "S2c_stage:LON_accel_mae_mps2",
+  "S2c_stage:LAT_heading_mae_deg",
+  "S2c_stage:LAT_curvature_mae_1pm_valid",
+  "S2c_stage:LAT_yaw_rate_mae_radps_valid",
+  "S2c_stage:LAT_cross_mae_m",
+  "S2c_stage:LAT_cross_abs_final_m",
+  "S2c_stage:TAC_traj_lat_correct",
+  "S2c_stage:TAC_traj_lon_correct"
+ ],
+ "C4": false,
+ "GT-T12_clears_E1_E2_E4": false,
+ "verdict": "FAIL (E2, E4)",
+ "next": "the edge rule costs driving quality: a soft edge cost (rank penalty) instead of a hard filter.",
+ "rates_S6c": {
+  "BASE": {
+   "off_drivable": 0.17917448405253283,
+   "edge_contact": 0.28549093183239527,
+   "lane_cross": 0.2939317319848293
+  },
+  "HUMAN": {
+   "off_drivable": 0.012507817385866166,
+   "edge_contact": 0.1485303314571607,
+   "lane_cross": 0.19405815423514539
+  },
+  "OWN-T1": {
+   "off_drivable": 0.1657285803627267,
+   "edge_contact": 0.2707942464040025,
+   "lane_cross": 0.29077117572692796
+  },
+  "OWN-T12": {
+   "off_drivable": 0.16604127579737335,
+   "edge_contact": 0.2707942464040025,
+   "lane_cross": 0.2914032869785082
+  },
+  "GT-T12": {
+   "off_drivable": 0.01125703564727955,
+   "edge_contact": 0.06097560975609756,
+   "lane_cross": 0.27465233881163087
+  },
+  "OWN-BND-T12": {
+   "off_drivable": 0.14915572232645402,
+   "edge_contact": 0.2523452157598499,
+   "lane_cross": 0.30151706700379266
+  },
+  "DER-BND-T12": {
+   "off_drivable": 0.27360850531582237,
+   "edge_contact": 0.3505315822388993,
+   "lane_cross": 0.35967130214917825
+  }
+ },
+ "edge_minus_HUMAN": {
+  "BASE": 0.13696060037523455,
+  "OWN-T12": 0.1222639149468418,
+  "GT-T12": -0.08755472170106315,
+  "OWN-BND-T12": 0.1038148843026892,
+  "DER-BND-T12": 0.20200125078173858
+ }
+}

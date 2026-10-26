@@ -1,0 +1,236 @@
+{
+ "tool": "mapsel_score.py",
+ "seed": 0,
+ "prereg_sha256": "e9be326e692a6402e70bf79c98097770a5cec24259f27d1d6a01d179c64a3bc9",
+ "amendment1_sha256": "36721a290765ce85fa81e3029cbf50bb7f4b1f8d741975fa0df159cb36e84076",
+ "prereg_seal_ok": true,
+ "trace": "F:/refcv9_mapsel/trace_smoke.npz",
+ "n_windows": 308,
+ "tier": "T1 self-action OPEN LOOP on logged eval139 frames (not driving performance); GT-* arms = T0-ORACLE BOUND (privileged map)",
+ "controls": {
+  "K_G_fields": {
+   "n_windows": 308,
+   "present_counts": {
+    "fan": 308,
+    "sel_score": 308,
+    "sel_score_v3": 308,
+    "reach_keep": 308,
+    "ceil_keep": 308,
+    "emit_keep": 308,
+    "kind": 308,
+    "lon6": 308,
+    "lat3": 308,
+    "cons_raw": 308,
+    "hyp_alloc": 308,
+    "prior_path": 308,
+    "bank": 308
+   },
+   "fan_n_seen": [
+    149
+   ],
+   "batch_gt1": 0,
+   "rule_seen": [
+    "prior_corrected"
+   ],
+   "logit_shapes": [
+    [
+     1,
+     8,
+     1000,
+     600
+    ]
+   ],
+   "decide_mismatch_cells": 0,
+   "decide_checked": 28,
+   "n_stack": 3,
+   "pass": true
+  },
+  "K_B_emitted_equals_fan_at_sel_idx": {
+   "max_abs": 0.0,
+   "pass": true
+  },
+  "K_C_sel_idx_is_argmax_over_e9_eligible": {
+   "share": 1.0,
+   "pass": true,
+   "emitted_eligible_share": 1.0
+  },
+  "K_A_roll_equals_L1_BASEos": {
+   "n_compared": 308,
+   "n_bit_equal": 308,
+   "max_abs": 0.0,
+   "pass": true
+  },
+  "K_RAST_all_windows_have_a_raster": {
+   "missing": 0,
+   "n": 308,
+   "pass": true
+  },
+  "K_LC_JOIN": {
+   "n_checked": 393,
+   "n_agree": 359,
+   "agree": 0.9134860050890585,
+   "clips_checked": 12,
+   "clips_agree_ge_0p99": 11,
+   "ok": true,
+   "n_lc_windows": 0,
+   "pass": true
+  },
+  "TAU_CAL": {
+   "tau": 0.686274528503418,
+   "rule": "AMENDMENT 1: tau = quantile_0.99(method=higher) of the HUMAN paths' MAX own-map P^(sidewalk) over the in-range FP5 points (S6-valid human windows with an own raster); a candidate is rejected iff its max P^(sidewalk) > tau; privileged GT trajectories, NO outcome metric; calibrated ON THE EVAL human paths (a train-side calibration is not available in this roll)",
+   "n_human_paths": 237,
+   "human_pass_frac_at_tau": 0.9915611814345991,
+   "human_pass_frac_at_hard_rule_0p502": 0.8987341772151899,
+   "hard_rule_plan_level_false_alarm_rate_on_human_paths": 0.10126582278481011,
+   "human_max_psw_quantiles_0.5_0.9_0.95_0.99": [
+    0.12156862765550613,
+    0.4901960909366609,
+    0.6447059035301208,
+    0.6848627638816833
+   ],
+   "pass": true
+  },
+  "K_LIVE_own_map_beats_deranged_donor": {
+   "acc_own_vs_GT_drivable": 0.8430341795793544,
+   "acc_deranged_donor_vs_GT_drivable": 0.7150661786622606,
+   "n_gt_windows": 308,
+   "margin_required": 0.02,
+   "pass": true
+  },
+  "K_DERANGED_donor_is_another_episode": {
+   "pass": true,
+   "n_no_donor": 0
+  },
+  "K_BASE_arm_equals_emitted_pick": {
+   "share": 1.0,
+   "pass": true
+  }
+ },
+ "hard_controls_pass": true,
+ "candidate_level": {
+  "arms": {
+   "BASE": {
+    "changed_pick_share": 0.0,
+    "fallback_share_t1_t2_t3": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "kept_set_size_median": 134.0
+   },
+   "GT-T1": {
+    "changed_pick_share": 0.045454545454545456,
+    "fallback_share_t1_t2_t3": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "kept_set_size_median": 74.0
+   },
+   "GT-T12": {
+    "changed_pick_share": 0.10714285714285714,
+    "fallback_share_t1_t2_t3": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "kept_set_size_median": 66.0
+   },
+   "GT-T123": {
+    "changed_pick_share": 0.19480519480519481,
+    "fallback_share_t1_t2_t3": [
+     0.0,
+     0.0,
+     0.06493506493506493
+    ],
+    "kept_set_size_median": 41.0
+   },
+   "OWN-T1": {
+    "changed_pick_share": 0.05194805194805195,
+    "fallback_share_t1_t2_t3": [
+     0.06493506493506493,
+     0.0,
+     0.0
+    ],
+    "kept_set_size_median": 72.5
+   },
+   "OWN-T12": {
+    "changed_pick_share": 0.05194805194805195,
+    "fallback_share_t1_t2_t3": [
+     0.06493506493506493,
+     0.0,
+     0.0
+    ],
+    "kept_set_size_median": 72.5
+   },
+   "OWN-T123": {
+    "changed_pick_share": 0.05519480519480519,
+    "fallback_share_t1_t2_t3": [
+     0.06493506493506493,
+     0.0,
+     0.003246753246753247
+    ],
+    "kept_set_size_median": 70.0
+   },
+   "DER-T1": {
+    "changed_pick_share": 0.2305194805194805,
+    "fallback_share_t1_t2_t3": [
+     0.03571428571428571,
+     0.0,
+     0.0
+    ],
+    "kept_set_size_median": 72.5
+   },
+   "DER-T12": {
+    "changed_pick_share": 0.23376623376623376,
+    "fallback_share_t1_t2_t3": [
+     0.03571428571428571,
+     0.0,
+     0.0
+    ],
+    "kept_set_size_median": 72.5
+   },
+   "DER-T123": {
+    "changed_pick_share": 0.24675324675324675,
+    "fallback_share_t1_t2_t3": [
+     0.03571428571428571,
+     0.0,
+     0.006493506493506494
+    ],
+    "kept_set_size_median": 63.0
+   },
+   "OWN-CAL-T1": {
+    "changed_pick_share": 0.016233766233766232,
+    "fallback_share_t1_t2_t3": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "kept_set_size_median": 95.5
+   },
+   "DER-CAL-T1": {
+    "changed_pick_share": 0.11688311688311688,
+    "fallback_share_t1_t2_t3": [
+     0.00974025974025974,
+     0.0,
+     0.0
+    ],
+    "kept_set_size_median": 101.0
+   }
+  },
+  "base_pick_candidate_flag_rate": {
+   "gt": {
+    "off": 0.045454545454545456,
+    "edge": 0.09740259740259741,
+    "lane": 0.18181818181818182
+   },
+   "own": {
+    "off": 0.11688311688311688,
+    "edge": 0.0,
+    "lane": 0.006493506493506494
+   }
+  }
+ },
+ "lc_exception_active": true,
+ "wall_s": 24.6
+}
