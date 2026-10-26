@@ -163,3 +163,19 @@ All MEASURED, T1 self-action open loop on logged eval139 frames, paired episode-
 | the own map's false alarms sit in the never-supervised ego zone (x < 4 m) | sidewalk precision 0.10 at 0-1 m vs 0.65-0.75 beyond 4 m | refcv9 supervises (or masks at inference) the near field; `--map-lift-valid-mask` left it unsupervised |
 
 Still running: SELCOR (train-fitted selection correction, fresh-clip roll), A4b (H2cn clamped to the fed ceiling: H2cn plans above it ~3x as often as RETIME), A4c, the map-only fine-tune infrastructure. The shipped-stage choice (H2cn / H2cn-capped / H2cn-L / factored) goes to the PI as one item when A4b and A4c have read.
+
+## 12. 2026-10-26 morning -- the decel DECISION is the bottleneck, and no post-hoc channel carries it (Master Mind, ~08:12 Berlin)
+
+All T1 self-action open loop on logged eval139 frames or DIAGNOSTICS on its labels; paired / resampling bootstrap over EPISODES; one training seed.
+
+| finding | number | consequence |
+|---|---|---|
+| four post-hoc levers move refcv8 ALONG one missed-decel / false-decel frontier (H2cn, H2cn-L = A4c, SELFSHARP, SELCOR) | e.g. A4c vs H2cn: MD -0.091, FD +0.044 (both sep.); SELCOR: FD -0.019, MD +0.019 (both sep.); a scrambled-input refit alone moves MD -0.028 | re-weighting what refcv8 already outputs cannot beat the frontier; attribution needs rate-matched / refit controls (`H-R9-SELCOR-1`, A4c) |
+| the fan HOLDS the answer | GT-oracle pick MD 0.075 / FD 0.057 (vs BASE 0.47 / 0.14) | selection headroom is large; the missing piece is information, not candidates |
+| H2cn's PASS is a lever effect across stage fits (A4d, 048c8b5) | PASS at fit seeds 0/1/2; FD vs RETIME sep. below in all 6 cells; seed 0 is the best of 3 (others S6 ADE +0.07 m sep.); MD vs RETIME sep. worse at FS1 | quote E3 with the fit-seed floor; the MD cost is real |
+| the lead agent does not carry it (`H-R9-LEADINFO-1`) | GT lead +0.029 AUC [-0.003, +0.062] over lon head + v0 (0.714); lead present 40.0 % before decels vs 38.9 % before cruise | no lead-feature stage |
+| nor the curve ahead, nor a crosswalk ahead (`H-R9-CHANNELS-1`) | curve +0.005; own crosswalk -0.011; GT crosswalk -0.012 | no geometry / map-ahead feature stage; traffic-light state is BLOCKED (clip-level labels only) |
+
+**refcv9 consequence:** train the lon DECISION itself -- a lon head fitted on a clean split (the L1C lesson), with supervision richer than the
+5-way softmax: the measured headroom inside the trunk is the z_tac linear probe (decel AUC 0.762 vs the head's 0.685). The post-hoc stage line
+on refcv8 ends with the PI's stage choice (H2CN_DEPLOY8 / H2CN_CAP8 / FACTORED_DEPLOY8, and HSGATE8 iff PREREG_HSGATE passes, in scoring).
