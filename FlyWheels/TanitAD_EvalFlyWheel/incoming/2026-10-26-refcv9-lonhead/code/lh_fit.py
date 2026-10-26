@@ -55,10 +55,13 @@ def sha256_bytes(b: bytes) -> str:
 
 
 # --------------------------------------------------------------------------------------------------------------- data
-def load_fresh(release: Path, allow_no_lead: bool) -> dict:
+def load_fresh(release: Path, allow_no_lead: bool, lead_clips_only: bool = False) -> dict:
     z_rel = np.load(release, allow_pickle=False)
     n_clip, n_lead = int(len(z_rel["clip__has_lead"])), int(z_rel["clip__has_lead"].sum())
-    if n_lead != n_clip and not allow_no_lead:
+    nolead_s12 = {str(s) for s, h in zip(z_rel["clip__sha12"], z_rel["clip__has_lead"]) if not bool(h)}
+    if lead_clips_only:                     # PREREG_LONHEAD_C_AMENDMENT1 (715b9df1): the 8 clips with NO obstacle.offline are excluded whole
+        assert len(nolead_s12) == 8 and n_clip == 300 and n_lead == 292, (len(nolead_s12), n_clip, n_lead)
+    if n_lead != n_clip and not allow_no_lead and not lead_clips_only:
         raise SystemExit(f"[lh_fit] REFUSING: the fresh release carries the lead pass on {n_lead}/{n_clip} clips -- its targets are NOT the "
                          f"battery's function (K-LABEL B); rebuild it with code/chain_label_pipeline.sh fresh")
     r = KL.trainer_lon_targets(KL.FRESH, 0, release=str(release), md5=KL.md5_file(release))
@@ -76,13 +79,21 @@ def load_fresh(release: Path, allow_no_lead: bool) -> dict:
     dv0 = float(np.abs(v0 - ex["v0"].astype(np.float64)).max())
     lab = r["lon"]
     keep = np.isin(lab, LON6_V7)
+    if lead_clips_only:
+        jx = json.load(open(Path(KL.FRESH["dumps"][0]) / "refcv6_extras.npz.json", encoding="utf-8"))
+        i2s = {int(k): str(v) for k, v in jx["clip_sha12_by_index"].items()}
+        s12 = np.array([i2s[int(c)] for c in r["clip_index"]])
+        lead_ok = ~np.isin(s12, sorted(nolead_s12))
+        assert len(set(s12[~lead_ok])) == 8, len(set(s12[~lead_ok]))
+        keep = keep & lead_ok
     y = np.array([LON6_V7.index(int(v)) if v in LON6_V7 else -1 for v in lab])
     return {"Z": bk["z_tac"].astype(np.float64)[j][keep], "v0": v0[keep], "y": y[keep], "eid": r["clip_index"][keep], "ws": r["ws"][keep],
             "n_windows": int(len(lab)), "n_rows": int(keep.sum()), "n_episodes": int(len(np.unique(r["clip_index"][keep]))),
             "class_counts": {f"{LON6_V7[k]} {KL.LON7[LON6_V7[k]]}": int((y[keep] == k).sum()) for k in range(6)},
             "checks": {**r["checks"], "bank_v0_in_vs_extras_v0_maxabs": dv0, "bank_final": bool(meta.get("final")),
                        "bank_n_windows": int(meta.get("n_windows", -1))},
-            "sources": {"release": str(release), "release_md5": KL.md5_file(release), "release_has_lead_clips": n_lead, "release_n_clips": n_clip,
+            "sources": {"release": str(release), "release_md5": KL.md5_file(release), "release_has_lead_clips": n_lead, "release_n_clips": n_clip, "lead_clips_only": bool(lead_clips_only),
+                        "excluded_nolead_clip_sha12": sorted(nolead_s12) if lead_clips_only else [],
                         "bank": str(BANK), "bank_sha256": sha256_file(BANK)}}
 
 
@@ -283,12 +294,13 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--release", default=str(FRESH_LEAD_RELEASE))
     ap.add_argument("--out", default=str(ROOT))
+    ap.add_argument("--lead-clips-only", action="store_true", help="PREREG_LONHEAD_C_AMENDMENT1: fit only the clips the lead pass covers")
     ap.add_argument("--allow-no-lead", action="store_true", help="MECHANICS TEST ONLY: writes under <out>/_mechanics_only, never the frozen names")
     a = ap.parse_args()
     t0 = time.time()
     out = Path(a.out) / ("_mechanics_only" if a.allow_no_lead else "")
     out.mkdir(parents=True, exist_ok=True)
-    D = load_fresh(Path(a.release), a.allow_no_lead)
+    D = load_fresh(Path(a.release), a.allow_no_lead, a.lead_clips_only)
     missing = [k for k, n in D["class_counts"].items() if n < 10]
     if missing and not a.allow_no_lead:
         raise SystemExit(f"[lh_fit] REFUSING: LON6 classes with < 10 fresh rows: {missing}")
