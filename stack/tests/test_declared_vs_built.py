@@ -292,7 +292,12 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     #   --nt-token-table / --r8-speed-unknown-always ("data") and --snapshot-steps ("runtime") (279 -> 285)
     # + PI D-R9-MAPHEAD-PRECISION (2026-10-26): --r8-train-only-map ("built": the trainable set read off the model,
     #   map_only_ft.dvb_check) (285 -> 286)
-    assert len(dvb.REGISTRY) == 286
+    # + refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md, 2026-10-26): --r9-progress-head / --r9-calib-stage / --r9-decision /
+    #   --r9-hidden / --r9-decel-tau / --r9-seed ("built") and --w-r9-prog / --w-r9-regime ("loss"), registered by
+    #   refcv9_progress.register_dvb_levers (286 -> 294)
+    # + refcv9 GT-in-pool schedule (H-R9-ALLOC-ORACLE-1, 2026-10-27): --r9-alloc-force-schedule / --r9-alloc-force-seed
+    #   ("built", read off model._r9_alloc_force), registered by refcv9_alloc_force.register_dvb_levers (294 -> 296)
+    assert len(dvb.REGISTRY) == 296
     assert dvb.REGISTRY["r8_train_only_map"].kind == "built"
     for _d, _k in (("window_starts", "data"), ("nt_heldout", "data"), ("nt_heldout_sha256", "data"),
                    ("nt_token_table", "data"), ("r8_speed_unknown_always", "data"), ("snapshot_steps", "runtime")):

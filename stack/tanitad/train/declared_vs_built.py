@@ -1416,6 +1416,10 @@ _FROZEN_EXTERNAL_ATTR = "_tanitad_frozen_external"
 #: every parameter outside them is frozen BY THAT DECLARATION. The trainable set itself is held against argv by the
 #: flag's own ``built`` lever (``map_only_ft.dvb_check``).
 _MAP_ONLY_ATTR = "_tanitad_map_only_ft"
+#: ``--r9-calib-stage`` (refcv9 R9-PF, REFCV9_INMODEL_DESIGN.md): the same shape of ROOT record
+#: (``refcv9_progress.CALIB_MARKER_ATTR``) -- its ``modules`` (the progress head) are the ONLY trainable subtrees; the
+#: trainable set is held against argv by the flag's own ``built`` lever (``refcv9_progress.register_dvb_levers``).
+_R9_CALIB_ATTR = "_tanitad_r9_calib"
 
 
 def expected_grad_unreachable(args) -> dict[str, str]:
@@ -1510,8 +1514,11 @@ def check_grad_unreachable(model, args) -> list[Mismatch]:
     # still undeclared (a map-only module frozen too trains nothing -- the flag's red arm)
     _mo = getattr(model, _MAP_ONLY_ATTR, None)
     _mo_mods = tuple((_mo or {}).get("modules") or ()) if isinstance(_mo, dict) else ()
+    _r9 = getattr(model, _R9_CALIB_ATTR, None)
+    _r9_mods = tuple((_r9 or {}).get("modules") or ()) if isinstance(_r9, dict) else ()
     stray = [n for n, t in params if not t.requires_grad and not any(_under(n, p) for p in decl)
-             and not (_mo_mods and not any(_under(n, m) for m in _mo_mods))]
+             and not (_mo_mods and not any(_under(n, m) for m in _mo_mods))
+             and not (_r9_mods and not any(_under(n, m) for m in _r9_mods))]
     if stray:
         out.append(Mismatch("frozen parameters", "declared (grad-unreachable / frozen-external)",
                             f"{len(stray)} undeclared", "model.named_parameters()",

@@ -557,8 +557,13 @@ def r8_before_forward(model, batch: Mapping[str, Tensor], device, traj_tgt: Tens
     tf = gen.rand((b,), dev) < float(getattr(model, "_r8_tf_ratio", cfg.tf_start))
     # the deliberate-regression arm's derange is a TRAINING-only diagnostic: eval feeds every model its own output
     model._r8_derange_feed = bool(model.training and getattr(model, "_r8_derange_train", False))
+    pool = None
     if model.training:
-        model.set_r8_teacher(hyp, cons, tf)
+        # refcv9 --r9-alloc-force-schedule: the per-window GT-in-pool coin from the schedule's PRIVATE stream (drawn
+        # after `tf`, never from `gen`). Absent (every refcv8 run): nothing drawn, the call below is the tip's.
+        _pf = getattr(model, "_r9_alloc_force", None)
+        pool = None if _pf is None else _pf.mask(hyp)
+        model.set_r8_teacher(hyp, cons, tf, **({} if pool is None else {"pool": pool}))
     fwd: dict[str, Any] = {}
     legal = (not model.training) and bool(getattr(model, "_r8_legal_row", False))
     if "r8_nav_raw" in batch:
@@ -621,9 +626,12 @@ def r8_before_forward(model, batch: Mapping[str, Tensor], device, traj_tgt: Tens
                         torch.full_like(gl, -100))
     go_v7 = torch.where(go >= 0, torch.as_tensor(r8c.LON6_V7_IDS, device=dev)[go.clamp_min(0)],
                         torch.full_like(go, -100))
-    return {"fwd": fwd, "gt_lat3": gl, "gt_lon6": go, "gt_hyp": hyp, "gt_lat_v7": gl_v7, "gt_lon_v7": go_v7,
+    prep = {"fwd": fwd, "gt_lat3": gl, "gt_lon6": go, "gt_hyp": hyp, "gt_lat_v7": gl_v7, "gt_lon_v7": go_v7,
             "cons_t": ct, "lat_t": lat_t, "lat_v": lat_v, "lon_t": lon_t, "lon_v": lon_v, "tf": tf, "v9c": v9c,
             "tac_rows": tac_rows, "drv_map": drv_map}
+    if pool is not None:                                  # refcv9 --r9-alloc-force-schedule only
+        prep["r9_pool"] = pool
+    return prep
 
 
 def r8_losses(model, out: Mapping[str, Tensor], prep: Mapping[str, Any], traj_tgt: Tensor,
@@ -639,6 +647,11 @@ def r8_losses(model, out: Mapping[str, Tensor], prep: Mapping[str, Any], traj_tg
     # (1) constraint heads -- the GT-active query only
     if prep.get("tac_rows") is not None:
         tele["r8v9_tac_rows"] = float(prep["tac_rows"])
+    if prep.get("r9_pool") is not None:
+        # refcv9 --r9-alloc-force-schedule: the scheduled p and the share of windows whose GT was forced into the pool
+        # (`r8_alloc_gt_rows` below counts the rows whose pool HOLDS the GT, forced or allocated by the posterior)
+        tele["r9_pool_p"] = float(getattr(getattr(model, "_r9_alloc_force", None), "last_p", None) or 0.0)
+        tele["r9_pool_forced_frac"] = float(prep["r9_pool"].to(torch.float32).mean())
     # (1b) MM ruling Q2: the v9 constraint vectors on the GT-active query of the v9 class (masked: PARTIAL / absent /
     # undefined). A BUILT head with no target in a TRAINING batch is refused (the dead-seam class), never skipped.
     if "r8_v9_lat_c" in out:
@@ -943,7 +956,8 @@ def warm_start_from(model, path: str) -> dict:
     if unexpected:
         raise SystemExit(f"[refcv8] --init-from {path}: {len(unexpected)} source key(s) the build does not have, "
                          f"e.g. {sorted(unexpected)[:3]} -- the build is not a superset of the source")
-    undeclared = [k for k in missing if not is_refcv8_key(k)]
+    from tanitad.refs.refcv9_progress import is_refcv9_key   # refcv9 R9-PF: the progress head is a new seam too
+    undeclared = [k for k in missing if not is_refcv8_key(k) and not is_refcv9_key(k)]
     if undeclared:
         raise SystemExit(f"[refcv8] --init-from {path}: {len(undeclared)} key(s) missing from the source are NOT "
                          f"refcv8 seams, e.g. {sorted(undeclared)[:3]} -- they would start from random init")

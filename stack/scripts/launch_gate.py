@@ -3676,6 +3676,11 @@ LIVE_WEIGHT_RULES: dict[str, tuple[Callable, tuple[str, ...], float, str]] = {
     "w_r8_v9_cons": (lambda a: bool(getattr(a, "refcv8", False)) and _w(a, "w_r8_v9_cons") > 0
                      and bool(getattr(a, "r8_v9_labels", None)), ("r8_v9_cons",), 1.0,
                      "refcv8 v9 constraint vectors (MM ruling Q2)"),
+    # refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): live only in the calibration stage, where the R9 loss IS the loss
+    "w_r9_prog": (lambda a: bool(getattr(a, "r9_progress_head", False)) and bool(getattr(a, "r9_calib_stage", False))
+                  and _w(a, "w_r9_prog") > 0, ("r9_l_prog",), 1.0, "refcv9 R9-PF progress L1"),
+    "w_r9_regime": (lambda a: bool(getattr(a, "r9_progress_head", False)) and bool(getattr(a, "r9_calib_stage", False))
+                    and _w(a, "w_r9_regime") > 0, ("r9_l_regime",), 1.0, "refcv9 R9-PF decision CE"),
 }
 #: every field of `refcv6_diffusion.DiffusionFlags` -> the loss keys it declares ( () = none,
 #: with the reason). ⛔ EXHAUSTIVE for the same reason.

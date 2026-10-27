@@ -109,6 +109,7 @@ from tanitad.refs import refcv6_max_speed as v6ms
 from tanitad.refs import refcv6_selection as v6sel
 from tanitad.refs import refcv6_tactical as v6tac
 from tanitad.refs import refcv8_conditioning as r8c
+from tanitad.refs import refcv9_progress as r9p  # refcv9 R9-PF (--r9-progress-head; OFF builds nothing)
 # ⭐ refcv7 (PI 2026-09-19): DrivoR's proven planning heads on the refcv6 build.
 # Module scope for the same reason as the three above.
 from tanitad.refs import refcv7_heads as r7h
@@ -652,6 +653,9 @@ class RefCV3Config:
     # ⭐ refcv8 WP-B (DESIGN.md sec. 3): the tactical-conditioning switches. `enable=False` (the default) builds
     # nothing -- a refcv7 config is unchanged, field for field, in everything it builds.
     refcv8: "r8c.R8Config" = field(default_factory=lambda: r8c.R8Config())
+    # ⭐ refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): the clean-split, regime-factored progress head. `enable=False`
+    # (the default) builds nothing and enters no code path -- a refcv8 config is unchanged in everything it builds.
+    refcv9: "r9p.R9Config" = field(default_factory=lambda: r9p.R9Config())
 
     @property
     def n_goal_taus(self) -> int:
@@ -1510,6 +1514,12 @@ class RefCV3Model(nn.Module):
         _r8 = getattr(cfg, "refcv8", None)
         if _r8 is not None and _r8.enable:
             self.enable_refcv8(_r8)
+        # ⭐ refcv9 R9-PF -- built AFTER refcv8, from a DEDICATED stream inside a forked RNG (the refcv8 lesson): an OFF
+        # build, and every module the trainer builds after the model, are byte-identical to refcv8's.
+        self.r9_prog = None
+        _r9 = getattr(cfg, "refcv9", None)
+        if _r9 is not None and _r9.enable:
+            self.enable_refcv9(_r9)
         # ⛔⛔ refcv7 RESTART FREEZE: LAST, after every module exists (BYPASS_DECLARATIONS).
         # Consumes no RNG, so every parameter's init is exactly what it was before.
         self._bypass_declared = declare_bypassed_by_flag(self)
@@ -2037,6 +2047,8 @@ class RefCV3Model(nn.Module):
                 if tch is not None:
                     r8_feed.update(force_hyp=tch["hyp"], force_cons=tch["cons"], force_tf=tch["tf"],
                                    force_min=int(tch.get("min", 4)))
+                    if tch.get("pool") is not None:                 # refcv9 --r9-alloc-force-schedule only
+                        r8_feed["force_pool"] = tch["pool"]
                 cache.update(r8_logp_lat3=lp_l, r8_logp_lon6=lp_o)
             feeds = v6tac.planner_feeds(
                 out, valid_threshold=cfg.tac_decoder_valid_threshold)
@@ -2091,13 +2103,64 @@ class RefCV3Model(nn.Module):
         self.r8_enabled = True
         return self.r8_n_params
 
-    def set_r8_teacher(self, hyp: Tensor, cons: Tensor, tf: Tensor) -> None:
+    def enable_refcv9(self, r9cfg) -> int:
+        """Build the R9-PF progress head on THIS model -- at construction or POST HOC on a loaded checkpoint (the
+        calibration stage). It reads only `z_tac` (detached), the observed pose window's t0 scalars, the fed ceiling and
+        the residual prior's path; refused on a build that lacks any of them. Returns the new-parameter count."""
+        from tanitad.models import kinematic_prior as _kp9
+        if self.r9_prog is not None:
+            raise ValueError("[refcv9] the progress head is already built")
+        if getattr(self.core, "ego_hist", None) is None:
+            raise ValueError("[refcv9] the progress head reads the OBSERVED pose window's t0 scalars; this build has no "
+                             "ego-history encoder (--ego-history)")
+        if getattr(self.core.decoder, "residual_prior", _kp9.RESIDUAL_PRIOR_OFF) == _kp9.RESIDUAL_PRIOR_OFF:
+            raise ValueError("[refcv9] the progress target is the residual over the PRIOR's arc; this build has no "
+                             "residual prior (--residual-prior)")
+        hz = [int(h) for h in self.core.decoder.anchor_horizons]
+        if 50 not in hz or 60 not in hz:
+            raise ValueError(f"[refcv9] the decision needs the 5.0 s and 6.0 s slots; the plan's horizons are {hz}")
+        if r9cfg.decision not in r9p.DECISIONS:
+            raise ValueError(f"[refcv9] unknown decision {r9cfg.decision!r}")
+        self.cfg.refcv9 = r9cfg
+        r9cfg.enable = True
+        with torch.random.fork_rng(devices=[]):
+            torch.manual_seed(int(r9cfg.seed) + r9p.R9_INIT_SEED_OFFSET)
+            self.r9_prog = r9p.R9ProgressHead(int(self.cfg.d_tac), len(hz), int(r9cfg.hidden))
+        return r9p.count_params(self.r9_prog)
+
+    def _r9_forward(self, out: dict, cache: dict, traj: Tensor, v_max_ms: Tensor | None,
+                    v_max_valid: Tensor | None, win: tuple) -> Tensor:
+        """R9-PF in the E9 block: head outputs always (the calibration loss reads them); the RE-TIMING of the selected
+        path only in eval(), BEFORE the ceiling clamp. The path's vertices are detached; lateral is untouched."""
+        c = self.cfg.refcv9
+        if "z_tac" not in cache:
+            raise ValueError("[refcv9] the progress head reads z_tac; this forward produced none (hierarchy arm only)")
+        if "residual_prior_path" not in out:
+            raise ValueError("[refcv9] the forward exported no residual_prior_path: the target progress is undefined")
+        poses, n_past = win
+        n_past = int(self.core.cfg.window if n_past is None else n_past)
+        v0w, a0, om = r9p.ego_t0(poses, n_past, float(self.core.ego_hist.cfg.dt))
+        x = r9p.admissible_scalars(v0w, a0, om, v_max_ms, v_max_valid).to(traj.device)
+        s_p = r9p.arc_at_slots(out["residual_prior_path"].to(torch.float32))
+        lon = cache.get("tacv6_lon_logits", cache.get("lon_logits_tac"))
+        r9o = r9p.head_forward(self.r9_prog, c, cache["z_tac"].to(torch.float32), x, s_p, lon)
+        out.update(r9o)
+        if not self.training:
+            out["traj_preretime"] = traj
+            traj = r9p.retime(traj, r9o["r9_s_target"]).to(traj.dtype)
+        return traj
+
+    def set_r8_teacher(self, hyp: Tensor, cons: Tensor, tf: Tensor, pool: Tensor | None = None) -> None:
         """TRAINING: the window's GT hypothesis (joint id, -1 = none) [B], its normalised constraint [B, 4] and the
-        scheduled-sampling coin [B] (True = teacher-force the GT constraint). Consumed by the next forward."""
+        scheduled-sampling coin [B] (True = teacher-force the GT constraint). Consumed by the next forward.
+        ``pool`` [B] bool (refcv9 ``--r9-alloc-force-schedule``; None = every refcv8 run): True = force the GT
+        hypothesis into the window's allocated pool, False = the predicted posterior's pool alone (as at inference)."""
         if not self.r8_enabled:
             raise ValueError("[refcv8] set_r8_teacher on a build without the refcv8 seams")
         self._r8_teacher = {"hyp": hyp, "cons": cons, "tf": tf.to(torch.bool),
                             "min": int(self.cfg.refcv8.alloc_min_each) * 2}
+        if pool is not None:
+            self._r8_teacher["pool"] = pool.to(torch.bool)
 
     def set_r8_force(self, lat3: int | None = None, lon6: int | None = None,
                      cons: Tensor | None = None, min_alloc: int | None = None) -> None:
@@ -2551,6 +2614,13 @@ class RefCV3Model(nn.Module):
                 f"with d_bev 0 and report the arm as agent-only.")
         if _bh is not None:
             _core_kw["bev_hook"] = _bh
+        # refcv9 R9-PF: the observed pose window, read BEFORE the core pops it (OFF: nothing is read)
+        _r9_win = None
+        if self.r9_prog is not None:
+            _r9_win = ((ego_poses, ego_n_past) if ego_poses is not None
+                       else getattr(self.core, "_ego_window", None))
+            if _r9_win is None:
+                raise ValueError("[refcv9] the progress head is built but no observed pose window reached the forward")
         out = self.core(frames, nav_cmd, v0, steps=steps, lan=lan,
                         nav_known=nav_known, ego_keep=ego_keep,
                         hierarchy_hook=self._hook(cache, nav_cmd, ego_state,
@@ -2653,6 +2723,10 @@ class RefCV3Model(nn.Module):
         out.update(e9_tele)
         idx = rank.argmax(dim=1)
         traj = fan[torch.arange(b, device=fan.device), idx]
+        if self.r9_prog is not None:
+            # ⭐ refcv9 R9-PF: the PATH is the selection's; the SPEED is the clean-split head's decision profile.
+            # Before the clamp, so the fed ceiling stays the last word.
+            traj = self._r9_forward(out, cache, traj, v_max_ms, v_max_valid, _r9_win)
         if bool(getattr(self.cfg, "plan_vmax_clamp", False)) and not self.training:
             # ⛔ v7F R1 EQUIVALENT. The argmax filter above CHOOSES; this CLAMPS. A row with no compliant
             # candidate keeps its whole fan (counted in `e9_ceil_dead_frac`), so without this the emitted plan

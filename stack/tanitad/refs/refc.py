@@ -2558,7 +2558,14 @@ class AnchoredDiffusionDecoder(nn.Module):
             m = int(cfg.n_alloc)
             joint = (lp_l[:, :, None] + lp_o[:, None, :]).reshape(b, -1)
             force = r8.get('force_hyp')
-            hyp = r8c.allocate(joint, m, int(cfg.alloc_top_k), int(cfg.alloc_min_each), force=force,
+            # refcv9 --r9-alloc-force-schedule (H-R9-ALLOC-ORACLE-1): a window whose pool coin is False is allocated
+            # from the PREDICTED posterior alone, as at inference. The GT id `force` still keys the constraint
+            # teacher-forcing below, which touches only an allocated candidate that IS the GT hypothesis -- so an
+            # un-forced GT the posterior did not allocate is simply absent. No coin (every refcv8 run): unchanged.
+            fpool = r8.get('force_pool')
+            force_a = force if (force is None or fpool is None) else torch.where(
+                fpool.to(device=force.device, dtype=torch.bool), force, torch.full_like(force, -1))
+            hyp = r8c.allocate(joint, m, int(cfg.alloc_top_k), int(cfg.alloc_min_each), force=force_a,
                                force_min=int(r8.get('force_min', 4)))
             # ⛔ eval: the source-anchor choice is a function of the inference seed (R8Generator.rand_eval, 2026-10-12)
             src_a, lvl = r8c.select_source_anchors(lat_b, lon_b, hyp, self.r8_gen, training=self.training)

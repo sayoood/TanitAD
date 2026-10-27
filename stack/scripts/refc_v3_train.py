@@ -101,6 +101,8 @@ from tanitad.train import refcv8_train as r8train  # noqa: E402  refcv8 WP-B (tr
 from tanitad.train import grad_share as _gshare  # noqa: E402  refcv8 X4: the in-run P-GRAD statistic
 from tanitad.train import weight_ema as _wema  # noqa: E402  refcv8 R8-WARMUP: weight EMA + the B1 guard
 from tanitad.train import map_only_ft as _mof  # noqa: E402  PI D-R9-MAPHEAD-PRECISION: --r8-train-only-map
+from tanitad.refs import refcv9_progress as _r9p  # noqa: E402  refcv9 R9-PF: --r9-progress-head (OFF: nothing)
+from tanitad.train import refcv9_alloc_force as _r9af  # noqa: E402  refcv9: --r9-alloc-force-schedule (OFF: nothing)
 # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
 # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
 # absent). Its trainer integration arrived in d014414, swept in from a worktree that
@@ -161,6 +163,10 @@ from tanitad.models import map_head_hires as _mhr  # noqa: E402
 _mhr.register_dvb_levers(_dvb.register)
 # PI D-R9-MAPHEAD-PRECISION (2026-10-26): --r8-train-only-map is a `built` lever (the trainable set read off the model)
 _mof.register_dvb_levers(_dvb.register)
+# refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): the progress head is a `built` lever, its weights `loss` levers
+_r9p.register_dvb_levers(_dvb.register)
+# refcv9 GT-in-pool schedule (H-R9-ALLOC-ORACLE-1): the attached schedule's spec / seed, read off the built model
+_r9af.register_dvb_levers(_dvb.register)
 import numpy as _np  # noqa: E402
 
 # --- v3-only loss weights (everything shared is imported above) --------------
@@ -785,6 +791,12 @@ def _pin_trainer_cfg(cfg: v3.RefCV3Config, args) -> v3.RefCV3Config:
     _pin_refcv6_tactical(cfg, args)
     _pin_refcv7(cfg, args)
     _pin_refcv8(cfg, args)
+    # refcv9 R9-PF: argv -> cfg.refcv9 (OFF: the default R9Config, which builds nothing)
+    _r9p.pin_args(args)
+    if _r9p.is_on(args):
+        cfg.refcv9 = _r9p.config_from_args(args)
+    # refcv9 --r9-alloc-force-schedule: a malformed spec / a dead combination is refused at argv time (OFF: nothing)
+    _r9af.pin_args(args)
     # ⛔⛔ G-HYG: the strict config classes refuse an undeclared attribute AT ASSIGNMENT; this
     # walk catches the two routes that bypass `__setattr__` (a `__dict__` write, and a config
     # class of another module that is not decorated) before any model is built from it.
@@ -2970,6 +2982,23 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
                            "`r8_drv_logit` in `out`)"),
         "mask": None,
         "already": "_pin_refcv8 (dead without --refcv8; critic <-> weight both ways) + G-DVB `r8_critic_drivable`",
+    },
+    "w_r9_prog": {
+        "flag": "--w-r9-prog",
+        "term": "refcv9 R9-PF progress L1 (teacher-forced decision profile vs the human's arc over the prior)",
+        "gate": lambda a: (bool(getattr(a, "r9_progress_head", False)) and bool(getattr(a, "r9_calib_stage", False)),
+                           "--w-r9-prog needs --r9-progress-head AND --r9-calib-stage (no head => no `r9_profiles`)"),
+        "mask": None,
+        "already": "refcv9_progress.pin_args (head without stage refused; weight 0 with the head refused) + G-DVB",
+    },
+    "w_r9_regime": {
+        "flag": "--w-r9-regime",
+        "term": "refcv9 R9-PF decision CE (decel / cruise / accel, the MD/FD metric's GT definition)",
+        "gate": lambda a: (bool(getattr(a, "r9_progress_head", False)) and bool(getattr(a, "r9_calib_stage", False)),
+                           "--w-r9-regime needs --r9-progress-head AND --r9-calib-stage (no head => no "
+                           "`r9_regime_logits`)"),
+        "mask": None,
+        "already": "refcv9_progress.pin_args (weight 0 refused under --r9-decision regime) + G-DVB",
     },
     "w_r8_v9_cons": {
         "flag": "--w-r8-v9-cons",
@@ -5342,6 +5371,17 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                       mode: str = "diffusion",
                       ablate_frames: bool = False,
                       log_metrics: bool = True) -> dict:
+    # ⭐ refcv9 R9-PF CALIBRATION STAGE: the frozen model runs its INFERENCE path (eval: no ego / prior / conditioning
+    # dropout, no teacher) so the head is fitted on the features it will read at deployment; only the head's own
+    # BatchNorm accumulates its standardisation statistics. OFF (or not training): this block is not entered.
+    if model.training and _r9p.calib_stage_active(model):
+        model.eval()
+        model.r9_prog.train()
+        try:
+            return compute_losses_v3(model, batch, device, mode=mode, ablate_frames=ablate_frames,
+                                     log_metrics=log_metrics)
+        finally:
+            model.train()
     cfg = model.cfg
     core = cfg.core
     # refcv8 SPEC_WPB_LADDER: the information control of a regression arm (training only; roll-by-one, no RNG)
@@ -6695,6 +6735,15 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         extra["r8_total"] = _l8.detach()
         extra["r8"] = _l8                       # attached, ALREADY weighted (grad_share enters it at 1.0)
         extra.update(_t8)
+    # ---- refcv9 R9-PF: the progress + decision loss (calibration rows; in the calibration stage it IS the loss) ---- #
+    if getattr(model, "r9_prog", None) is not None:
+        if "r9_profiles" not in out:
+            raise SystemExit("[refcv9] the progress head is built but the forward emitted no r9_profiles")
+        _l9, _t9 = _r9p.r9_losses(cfg.refcv9, out, traj_tgt, slot_valid, v0, core.trajectory.horizons)
+        extra.update(_t9)
+        extra["r9_total"] = _l9.detach()
+        if _r9p.calib_stage_active(model):
+            loss = _l9
     return {"loss": loss, "traj": loss_traj, "cls": loss_cls, "law": loss_law,
             "route": loss_route, "lat": loss_lat, "lon": loss_lon,
             "lat_tac": loss_lat_tac, "lon_tac": loss_lon_tac,
@@ -9437,6 +9486,19 @@ def train(args) -> dict:
     # which captures the model at the first data read) sees the build this run trains, and build_optimizer collects
     # exactly the map-only parameters. OFF: None, nothing runs.
     _mof_rec = _mof.apply_freeze(model) if _mof.is_on(args) else None
+    # refcv9 R9-PF calibration stage: every tensor outside the progress head frozen (OFF: None, nothing runs)
+    _r9_rec = (_r9p.apply_calib_freeze(model) if (_r9p.is_on(args) and bool(getattr(args, "r9_calib_stage", False)))
+               else None)
+    if _r9_rec is not None:
+        print("[refcv9] calibration stage: %d params trainable (the progress head), %d frozen"
+              % (_r9_rec["n_trainable"], _r9_rec["n_frozen"]), flush=True)
+    # refcv9 --r9-alloc-force-schedule (H-R9-ALLOC-ORACLE-1): attached to the BUILT model before any data is read, so
+    # G-DVB (here and in the launch gate's capture) reads it. OFF: None, nothing attached.
+    _r9af_rec = _r9af.attach(model, args)
+    if _r9af_rec is not None:
+        print("[refcv9] GT-in-pool schedule %s (seed %d): p = %.4f at step 0, %.4f at step %d" % (
+            _r9af_rec["spec"], _r9af_rec["seed"], _r9af_rec["p_at_step0"], _r9af_rec["p_at_last_step"],
+            _r9af_rec["last_step"]), flush=True)
     if _mof_rec is not None:
         print("[map-only] FROZEN all but %s: %d tensors / %d params trainable, %d tensors / %d params frozen, "
               "%d running-stat norms pinned" % (list(_mof.MAP_ONLY_MODULES), _mof_rec["n_trainable_tensors"],
@@ -10576,6 +10638,10 @@ def train(args) -> dict:
         "refcv6_tactical": _refcv6_tactical_block(args, model, tac_goal_stats),
         # ⭐ refcv8 WP-B: every switch + the dedicated seed + the new-parameter count (None on a refcv7 arm)
         "init_from": _init_stamp,
+        "refcv9": (None if getattr(model, "r9_prog", None) is None else
+                   dict(model.cfg.refcv9.to_dict(), n_params=_r9p.count_params(model.r9_prog), calib_stage=_r9_rec)),
+        # refcv9 --r9-alloc-force-schedule: the schedule, its seed and its p at the first / last step (None when off)
+        "r9_alloc_force": _r9af_rec,
         "refcv8": (dict(model.cfg.refcv8.to_dict(), n_params=int(getattr(model, "r8_n_params", 0)),
                          rc_dropout=float(args.r8_rc_dropout), nav_args_dropout=float(args.r8_nav_args_dropout),
                          v7_policy_scope=(ds._v7_scope.to_dict() if getattr(ds, "_v7_scope", None) else None),
@@ -10819,6 +10885,7 @@ def train(args) -> dict:
         if bool(getattr(model, "r8_enabled", False)):
             _r8c = model.cfg.refcv8
             model._r8_tf_ratio = r8train.tf_ratio(step, args.steps, _r8c.tf_start, _r8c.tf_end)
+            _r9af.apply_step(model, step)                   # refcv9 GT-in-pool schedule (absent: no-op)
             model._r8_rc_dropout = float(args.r8_rc_dropout)
             model._r8_nav_args_dropout = float(args.r8_nav_args_dropout)
             model._r8_rc_noise = (float(args.r8_rc_noise_along_m), float(args.r8_rc_noise_lat_m))
@@ -12586,6 +12653,35 @@ def build_parser() -> argparse.ArgumentParser:
                          "--conflict-detector off and --init-from = the SHIPPED EMA model (kind ema_model_only); "
                          "refuses the B1 guard, the gradient-share instrument, BN recalibration and the drivable critic. "
                          "One AdamW group `map_only` at --lr. config.json['map_only_ft'] records the trainable list.")
+    g9 = ap.add_argument_group("refcv9 R9-PF (clean-split, regime-factored progress head; REFCV9_INMODEL_DESIGN.md)")
+    g9.add_argument("--r9-progress-head", action="store_true",
+                    help="build the R9-PF head: [z_tac.detach(); 9 t0 scalars] -> a 3-way lon decision + one arc-length "
+                         "profile per decision; at eval the SELECTED path is re-timed to the decided profile before the "
+                         "ceiling clamp (path from the planner, speed from the head). Trains ONLY with --r9-calib-stage.")
+    g9.add_argument("--r9-calib-stage", action="store_true",
+                    help="stage 2: freeze every tensor outside the head, run the model's inference path, loss = R9 only. "
+                         "Run on a CLEAN split (clips the trunk never trained on), from --init-from = the final EMA model.")
+    g9.add_argument("--r9-decision", default="regime", choices=_r9p.DECISIONS,
+                    help="the speed decision: the head's own clean-split regime (default) or the trunk lon head's "
+                         "argmax grouped into regimes (the in-model SELFSHARP control)")
+    g9.add_argument("--r9-hidden", type=int, default=128, help="the head's hidden width (H2cn: 128)")
+    g9.add_argument("--r9-decel-tau", type=float, default=None,
+                    help="operating point: decide decel iff p_decel >= tau (fixed on the calibration split); "
+                         "default argmax")
+    g9.add_argument("--r9-seed", type=int, default=20261026, help="the head's dedicated init stream")
+    g9.add_argument("--w-r9-prog", type=float, default=0.0,
+                    help="weight of the masked-mean L1 progress loss; REQUIRED > 0 with --r9-progress-head (design: "
+                         "1.0). Default 0.0 = the REFC_WEIGHT_GATES zero-default invariant")
+    g9.add_argument("--w-r9-regime", type=float, default=0.0,
+                    help="weight of the decision cross-entropy; REQUIRED > 0 with --r9-decision regime (design: 1.0). "
+                         "Default 0.0 = the REFC_WEIGHT_GATES zero-default invariant")
+    g9.add_argument("--r9-alloc-force-schedule", default=None,
+                    help="H-R9-ALLOC-ORACLE-1: P(the window's GT joint hypothesis is forced into its allocated pool) "
+                         "per training step -- 'const:<p>' or 'linear:<p0>:<p1>:<start>:<end>'. 'const:1.0' = refcv8 "
+                         "as trained; 'const:0.0' = the predicted-only pool of inference. Needs --refcv8 and "
+                         "--r8-n-alloc > 0. Default: absent (refcv8, bit-identical)")
+    g9.add_argument("--r9-alloc-force-seed", type=int, default=_r9af.DEFAULT_SEED,
+                    help="seed of the schedule's PRIVATE per-(seed, step) coin stream (moves no other draw)")
     g8.add_argument("--r8-derange-feed", action="store_true",
                     help="DELIBERATE-REGRESSION arm (training only): the planner reads ANOTHER window's tactical "
                          "output (roll by one row); the tactical loss still trains on the window's own outputs")
