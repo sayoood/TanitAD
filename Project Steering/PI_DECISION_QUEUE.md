@@ -2700,3 +2700,13 @@ Power is ESTIMATED: the eval139 D2 K-HEAD paired-bootstrap SE (0.0135 at 136 epi
 **On approval, in this order:** (1) `PREREG_FRESH2` sealed BEFORE any FRESH2 file is opened -- the CONFIRM/GROW split rule (by sha256 rank, fixed now), K-HEAD bars
 for fusion vs LH and grown-LH vs LH on CONFIRM, constant and within-episode-permuted controls; (2) fetch; (3) the T0 label read; (4) a T1 roll pre-registration
 (R9 profiles fed the confirmed decision, vs H2CN) only if the label level clears. Nothing here needs Thor.
+
+## ✅ DECIDED (PI, 2026-10-27 ~06:55 Berlin, in chat; recorded ~07:05) -- D-R9-FRESH2 (600 clips) and D-R9-INMODEL Q1 (gate edit)
+
+* **D-R9-FRESH2:** "600 clips (Recommended)". `PREREG_FRESH2.md` sealed 07:01:52 (sha256 956f87cd...) BEFORE the selection ran; `l1c_select.py --n-eligible 1020`
+  reproduced rows 1-420 byte for byte (STOP check passed); `l1c_fetch.py --first 420 --count 600` started ~07:04 on the dev box (F:, 0 Thor-h).
+  Package: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-27-refcv9-fresh2/`.
+* **D-R9-INMODEL Q1:** "Yes, liveness rules only" -- the refcv9 patch may edit `launch_gate.py` to add G-LIVE liveness rules for the `w_r9_*` loss weights,
+  nothing else in the gate.
+* **Still open, the PI asked for clarification (answered in chat):** D-R9-SPEED-INPUT (current speed vs maximum allowed speed) and the refcv9 training
+  scale (what is trained, frozen, initialised, and the expected effect).
