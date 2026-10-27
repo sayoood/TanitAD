@@ -1,0 +1,18 @@
+[extract] parity {'n_clips': 4512, 'n_windows': 306566, 'excluded_sha256': 'f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9'} -> OK
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\speedread_run\run_with_taniteval.py", line 11, in <module>
+    runpy.run_path(script, run_name="__main__")
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<frozen runpy>", line 287, in run_path
+  File "<frozen runpy>", line 98, in _run_module_code
+  File "<frozen runpy>", line 88, in _run_code
+  File "F:/TanitAD-scratch/speedread/tree_f3971165/stack/scripts/v8f_mini_eval_speedread.py", line 785, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "F:/TanitAD-scratch/speedread/tree_f3971165/stack/scripts/v8f_mini_eval_speedread.py", line 781, in main
+    return {"extract": cmd_extract, "fit": cmd_fit, "evals": cmd_evals, "read": cmd_read}[a.cmd](a)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "F:/TanitAD-scratch/speedread/tree_f3971165/stack/scripts/v8f_mini_eval_speedread.py", line 611, in cmd_extract
+    ego[i0:i0 + len(items)] = eg
+    ~~~^^^^^^^^^^^^^^^^^^^^
+ValueError: could not broadcast input array from shape (128,22) into shape (128,23)

@@ -12,9 +12,9 @@ THE PROBE. A read-out of the five GT speed cells (physical m/s, at T's tick fram
   input   = exactly the slice `V8FMini.run_t` reads: the `hist` = 4 scene frames ending at T's tick (last_t = F-1-a_t), `p10f` / `nav` at the tick, `limit`, `limit_ok`. S's checkpoints are NOT
             used (they are S's output, computed from the same input class). Keys read: READ_KEYS, a subset of the model's INFERENCE_INPUT_KEYS (checked).
   vector  = per-frame token mean of the 4 frames (4 x 1024) + T's tick frame pooled 4x10 -> 2x5 (10 x 1024) = 14,336 scene dims -> PCA 512 (fitted on every 16th TRAIN window, unsupervised)
-            + 23 ego dims (p10f 8, nav 5, limit 5, limit_ok 1, frame_ok 4); standardised with TRAIN statistics.
+            + the ego dims (p10f 8, nav 5, limit at its data width (4 on the real cache), limit_ok 1, frame_ok 4: 22); standardised with TRAIN statistics.
   LIN     = ridge per cell; lambda from LAMBDAS by grouped CV over TRAIN folds 1-4 (fold = sha256(clip) mod 5); refit on all TRAIN folds.
-  MLP     = 535 -> 256 -> 256 -> 5 (GELU, dropout 0.1, AdamW); early stopping on TRAIN fold 0 (held-out clips), fitted on folds 1-4. Hyper-parameters fixed here, never tuned.
+  MLP     = (512 + d_ego, 534 on the real cache) -> 256 -> 256 -> 5 (GELU, dropout 0.1, AdamW); early stopping on TRAIN fold 0 (held-out clips), fitted on folds 1-4. Hyper-parameters fixed here, never tuned.
   PRIMARY = whichever of LIN / MLP has the lower fold-0 (held-out TRAIN clips) RMSE, in train-SD units averaged over cells. Chosen in `fit`, BEFORE any eval batch is opened.
   floors  = CONST (the train mean per cell: skill exactly 0.0, the no-information value), EGO-only LIN / MLP (beside: does vision add?), PERM (the PRIMARY's class on permuted targets).
 
@@ -114,7 +114,7 @@ def ego_raw(inp: dict) -> np.ndarray:
 
 
 def window_vectors(batch, grid=(4, 10), hist: int = HIST):
-    """-> (scene [B, 14336], ego [B, 23]) float32: the read-out's whole view of a window."""
+    """-> (scene [B, 14336], ego [B, d_ego]) float32: the read-out's whole view of a window (d_ego = 22 on the real cache)."""
     inp = t_tick_inputs(batch, hist)
     return scene_raw(inp["tok"], inp["ok"], grid), ego_raw(inp)
 
@@ -596,7 +596,7 @@ def cmd_extract(a):
     os.makedirs(a.out, exist_ok=True)
     d_scene = HIST * 1024 + POOL_TO[0] * POOL_TO[1] * 1024
     S = np.lib.format.open_memmap(os.path.join(a.out, "scene_raw.npy"), mode="w+", dtype=np.float16, shape=(n, d_scene))
-    ego, Y, Mk = np.zeros((n, 23), np.float32), np.full((n, 5), np.nan), np.zeros((n, 5), bool)
+    ego, Y, Mk = None, np.full((n, 5), np.nan), np.zeros((n, 5), bool)      # ego is allocated at the first batch: its width follows the data (A1)
     win_arr = np.zeros((n, 4), np.int64)
     for i0 in range(0, n, a.batch):
         items = []
@@ -607,6 +607,8 @@ def cmd_extract(a):
             win_arr[i] = (c_i, t, items[-1]["a_t"], items[-1]["a_s"])
         bt = D.collate(items)
         sc, eg = window_vectors(bt, grid)
+        if ego is None:
+            ego = np.zeros((n, eg.shape[1]), np.float32)          # 22 on the real cache (`limit` is 4-wide); the draft hard-coded 23
         S[i0:i0 + len(items)] = sc.astype(np.float16)
         ego[i0:i0 + len(items)] = eg
         Y[i0:i0 + len(items)], Mk[i0:i0 + len(items)] = speed_targets(bt, ci)
@@ -616,7 +618,7 @@ def cmd_extract(a):
     clip_of = np.array([str(J["clip"][w[0]]) for w in win_arr])
     np.savez(os.path.join(a.out, "train_arrays.npz"), ego=ego, y=Y, m=Mk, win=win_arr, clip=clip_of)
     rec = {"schema": SCHEMA, "parity": parity, "parity_ok": ok, "cache": a.cache, "grid": a.grid, "join_sha256": sha256_file(a.join), "tracks_sha256": sha256_file(a.tracks),
-           "window_list_sha256": sha256_text(json.dumps(win_arr.tolist())), "speed_cells": list(SPEED_CELLS), "ages": "cycle (a_t = i % 3, a_s = a_t + (i // 3) % 5), clamped by the dataset"}
+           "window_list_sha256": sha256_text(json.dumps(win_arr.tolist())), "speed_cells": list(SPEED_CELLS), "d_ego": int(ego.shape[1]), "ages": "cycle (a_t = i % 3, a_s = a_t + (i // 3) % 5), clamped by the dataset"}
     json.dump(rec, open(os.path.join(a.out, "extract.json"), "w", encoding="utf-8", newline="\n"), indent=1)
     return 0
 

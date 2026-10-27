@@ -8,6 +8,7 @@ the read-out's value (the emitting line), with the tick slice mirrored against t
 from __future__ import annotations
 
 import importlib.util
+import json
 import os
 import sys
 import types
@@ -385,3 +386,49 @@ def test_read_rows_reports_capture_and_perm_guard():
     paired = lambda a, b, eid, n: r(float(np.mean(a) - np.mean(b)), float(np.mean(a) - np.mean(b)) - 0.01, float(np.mean(a) - np.mean(b)) + 0.01)
     rows = SR.read_rows(ev, paired, 10)
     assert rows[0]["capture"] == pytest.approx(1.0) and rows[0]["perm_not_separated_better"] is False
+
+
+# ------------------------------------------------------------------------------------------------ (A1) the extract follows the data's ego width
+@pytest.mark.parametrize("lim_w", [4, 5])
+def test_extract_sizes_ego_from_the_data(tmp_path, monkeypatch, lim_w):
+    """A1-2026-10-27: the real cache's `limit` is 4-wide, so ego is 22 dims; the draft hard-coded 23 and the first real extract stopped on a
+    broadcast error. cmd_extract, run end to end on a stub data layer, must store ego at the data's own width and equal window_vectors."""
+    fn, d, n_win = 10, 1024, 7
+    g = np.random.default_rng(5)
+
+    def item(c_i, t, a_t, a_s):
+        ok = np.ones(fn, bool)
+        return {"feats": torch.from_numpy(g.standard_normal((fn, 40, d)).astype(np.float16)), "frame_ok": torch.from_numpy(ok),
+                "p10f": torch.from_numpy(g.standard_normal((fn, 8)).astype(np.float32)), "nav": torch.from_numpy(g.standard_normal((fn, 5)).astype(np.float32)),
+                "limit": torch.from_numpy(g.standard_normal(lim_w).astype(np.float32)), "limit_ok": torch.tensor(True),
+                "a_t": torch.tensor(a_t), "a_s": torch.tensor(a_s), "lab_t": {"cons": torch.from_numpy(g.standard_normal(26)), "has": torch.tensor(True)}}
+
+    def collate(items):
+        out = {}
+        for k in items[0]:
+            if k == "lab_t":
+                out[k] = {kk: torch.stack([it[k][kk] for it in items]) for kk in items[0][k]}
+            else:
+                out[k] = torch.stack([it[k] for it in items])
+        return out
+
+    seen = []
+    fake_d = types.SimpleNamespace(
+        read_manifest=lambda cache, split: [(f"c{i}", None) for i in range(3)], sha12=lambda c: c, select_train_clips=lambda cl, frac: list(cl),
+        load_join=lambda p: {"clip": np.array(["c0", "c1", "c2"])}, load_native_tracks=lambda p: {}, ClipStore=lambda *a, **k: None,
+        train_windows=lambda store, J, clips, hist: [(i % 3, 5, 0, 0) for i in range(n_win)],
+        V8FMiniWindows=lambda *a, **k: types.SimpleNamespace(item=lambda *x: seen.append(item(*x)) or seen[-1]), collate=collate)
+    fake_m = types.SimpleNamespace(CI={n: i for i, n in enumerate(SR.SPEED_CELLS)})
+    monkeypatch.setattr(SR, "_stack_imports", lambda: (fake_d, fake_m))
+    for f in ("join.npz", "tracks.pt"):
+        (tmp_path / f).write_bytes(b"x")
+    a = types.SimpleNamespace(cache=str(tmp_path), join=str(tmp_path / "join.npz"), tracks=str(tmp_path / "tracks.pt"), grid="pool4x10",
+                              out=str(tmp_path / "out"), batch=4, allow_parity_mismatch=True)
+    assert SR.cmd_extract(a) == 0
+    tr = np.load(tmp_path / "out" / "train_arrays.npz")
+    want = 8 + 5 + lim_w + 1 + SR.HIST
+    assert tr["ego"].shape == (n_win, want)
+    _, eg = SR.window_vectors(collate(seen), (4, 10))
+    np.testing.assert_array_equal(tr["ego"], eg)
+    rec = json.load(open(tmp_path / "out" / "extract.json", encoding="utf-8"))
+    assert rec["d_ego"] == want and rec["parity_ok"] is False
