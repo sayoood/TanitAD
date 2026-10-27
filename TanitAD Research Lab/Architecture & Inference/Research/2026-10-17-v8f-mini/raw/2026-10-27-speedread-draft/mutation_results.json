@@ -1,0 +1,192 @@
+{
+ "baseline": {
+  "rc": 0,
+  "tail": [
+   "25 passed in 5.97s"
+  ]
+ },
+ "mutants": [
+  {
+   "name": "M01 substitute: the write of the new cells deleted",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 23 deselected in 1.90s"
+   ],
+   "k": "substitute or hook_hands"
+  },
+  {
+   "name": "M02 new_speed_std: the read-out's value replaced by T's own",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 24 deselected in 1.82s"
+   ],
+   "k": "hook_hands"
+  },
+  {
+   "name": "M03 hook: O handed T's own code instead of the new one",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 23 deselected in 1.99s"
+   ],
+   "k": "hook"
+  },
+  {
+   "name": "M04 hook: the tick-mirror check deleted",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 23 deselected in 2.12s"
+   ],
+   "k": "hook"
+  },
+  {
+   "name": "M05 tick slice: a_t ignored",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 23 deselected in 1.81s"
+   ],
+   "k": "tick_slice or no_frame"
+  },
+  {
+   "name": "M06 tick slice: p10f read at NOW, not at T's tick",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 24 deselected in 1.76s"
+   ],
+   "k": "tick_slice"
+  },
+  {
+   "name": "M07 scene: the padded-frame mask dropped",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 23 deselected in 1.73s"
+   ],
+   "k": "padded or tick_slice"
+  },
+  {
+   "name": "M08 ridge: the intercept dropped",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 24 deselected in 3.63s"
+   ],
+   "k": "planted"
+  },
+  {
+   "name": "M09 read-out: the linear bias dropped",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 24 deselected in 3.37s"
+   ],
+   "k": "planted"
+  },
+  {
+   "name": "M10 selection inverted",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 23 deselected in 4.64s"
+   ],
+   "k": "nonlinear or selection"
+  },
+  {
+   "name": "M11 permutation removed",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 22 deselected in 3.81s"
+   ],
+   "k": "permute or perm"
+  },
+  {
+   "name": "M12 skill: the train-mean base replaced by the eval mean",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 24 deselected in 4.00s"
+   ],
+   "k": "const"
+  },
+  {
+   "name": "M13 decide: the INFO IN INPUT row deleted",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 16 deselected in 1.77s"
+   ],
+   "k": "decide"
+  },
+  {
+   "name": "M14 separated-better reads lo, not hi",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 4 passed, 16 deselected in 1.75s"
+   ],
+   "k": "decide"
+  },
+  {
+   "name": "M15 C1 loosened",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 24 deselected in 1.82s"
+   ],
+   "k": "controls"
+  },
+  {
+   "name": "M16 C-PATH deleted",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 24 deselected in 1.92s"
+   ],
+   "k": "controls"
+  },
+  {
+   "name": "M17 the read/alt aliases not restored on load",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 23 deselected in 3.64s"
+   ],
+   "k": "roundtrip"
+  },
+  {
+   "name": "M18 folds not by clip",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 24 deselected in 1.81s"
+   ],
+   "k": "folds"
+  },
+  {
+   "name": "M19 the perm control computed from the REAL read-out",
+   "status": "KILLED",
+   "rc": 1,
+   "tail": [
+    "1 failed, 24 deselected in 3.54s"
+   ],
+   "k": "const_reads"
+  }
+ ],
+ "summary": {
+  "KILLED": 19,
+  "SURVIVED": 0,
+  "BAD": 0
+ },
+ "baseline_after": {
+  "rc": 0,
+  "tail": [
+   "25 passed in 4.97s"
+  ]
+ }
+}
