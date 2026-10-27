@@ -772,8 +772,18 @@ def g_bank_config(B, eval_ids):
     cst = c.get("constants") if isinstance(c.get("constants"), dict) else {}
     if c.get("schema") != BANK_SCHEMA:
         bad.append(f"common.schema {c.get('schema')!r}, expected {BANK_SCHEMA!r}")
-    if c.get("partial") is not False or c.get("limit_clips") is not None:
-        bad.append(f"the bank is PARTIAL (partial {c.get('partial')!r}, limit_clips {c.get('limit_clips')!r}): a --limit-clips bank is a smoke, never the bank an arm trains on")
+    # The generator's `--limit-clips` convention (stack/scripts/v8f_dagger_bank.py, tree dagt1_tree_b43c7a9a; the lines are pinned verbatim in fixtures/generator_a2/LIMIT_SITES.txt):
+    #   :399  the flag is `type=int, default=0` -- 0 means NO LIMIT (read as such at :254 `if a.limit_clips` and :336 `common["limit_clips"] or ...`);
+    #   :263 / :289  it writes `"limit_clips": a.limit_clips, "partial": bool(a.limit_clips)`.
+    # So a COMPLETE bank carries `limit_clips: 0` with `partial: False` (this predicate once demanded `limit_clips is None` and refused every real bank). None is accepted as the same "no limit".
+    # Complete  <=>  partial is False and limit_clips is 0 / None.  partial != bool(limit_clips) is a document the generator cannot write: refused under its own message.
+    part, lim = c.get("partial"), c.get("limit_clips")
+    if not (isinstance(part, bool) and (lim is None or is_count(lim))):
+        bad.append(f"the bank's partial / limit_clips are not the generator's types (partial must be a JSON bool, limit_clips a non-negative int or null): partial {part!r}, limit_clips {lim!r}")
+    elif part != bool(lim):
+        bad.append(f"the bank's partial flag and limit_clips contradict each other (partial {part!r}, limit_clips {lim!r}): the generator writes partial = bool(limit_clips), 0 meaning no limit, so this is not a document it wrote")
+    elif part:
+        bad.append(f"the bank is PARTIAL (partial {part!r}, limit_clips {lim!r}): a --limit-clips bank is a smoke, never the bank an arm trains on")
     if c.get("rollout") != BANK_ROLLOUT:
         bad.append(f"common.rollout {c.get('rollout')!r}, registered {BANK_ROLLOUT}")
     for k, v in MATCH_CONSTANTS.items():

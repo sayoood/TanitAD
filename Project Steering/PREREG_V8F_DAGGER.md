@@ -285,3 +285,37 @@ Each is its own control, so a failure names which one. The deliberate regression
 
 Nothing else moves: the arms, the rows, F, 2F, the replicate floor, the bars, the controls, the outcome table, the committed next steps and
 the queue.
+
+## Amendment 2 (`A2-2026-10-27`): BANK-CONFIG reads `limit_clips` with the generator's own convention. POST-DATA, CONTROL-ONLY
+
+**When, exactly.**
+* The four runs finished on box 2 at 05:55 on 2026-10-27, and the dev-box T1 chain finished its 8 rollouts.
+* The pre-registered reader (`dag_read.py`, sha256 `f5e9d618…`) ran from 06:02:06 to 06:02:10 and returned **REFUSED** (rc 2, nothing
+  written). Its log is `raw/2026-10-27-dagger-run/dag_read_refused.out`, sha256 `14e4c387…`.
+* It refused on exactly one control, at both seeds: **BANK-CONFIG**, *"the bank is PARTIAL (partial False, limit_clips 0)"*.
+* The refusal is raised at the bank stage, before COVERAGE and before any arm is read. No outcome row was computed, and none was seen by
+  anyone.
+* This amendment was written after that refusal and before any re-read.
+
+**What was wrong.** The control was wrong, not the bank.
+* The generator (`stack/scripts/v8f_dagger_bank.py`) declares `--limit-clips` with `default=0`, meaning no limit (:399).
+* It writes `"limit_clips": a.limit_clips, "partial": bool(a.limit_clips)` (:263, :289), and reads 0 as no limit itself (:254, :336).
+* The reader's predicate `c.get("limit_clips") is not None` (`dag_read.py:775`) treats that 0 as a limit.
+* Its tests built their synthetic full banks with `None`, and the only real bank they saw (the 12-clip smoke) is genuinely partial. So the
+  mismatch was never exercised.
+* MEASURED, the banks are complete:
+  * `PROVENANCE.json` reads `partial: False, limit_clips: None` at both seeds;
+  * the trainer's launch gate measured **4,512 clips / 306,566 windows** per seed, which is §1's registered TRAIN size;
+  * COVERAGE reads 0.756 (s0) and 0.769 (s1).
+
+**What changes.** BANK-CONFIG's completeness clause only. A bank is complete iff `partial is False` and `limit_clips` is 0 or None. The
+inconsistent pairs are refused with their own message:
+* `partial` False with `limit_clips` > 0;
+* `partial` True with `limit_clips` 0.
+
+The real 12-clip smoke is still refused. A test pins the generator's convention against its source text. New mutants of the predicate are
+killed, and the reader's full suite and mutation proof are re-run on the final bytes before the re-read.
+
+**What does not change.** Every other clause of BANK-CONFIG, every other control, the arms, the rows, F, 2F, the replicate floor, the bars,
+the outcome table and the committed next steps. The re-read uses the same manifest, the same runs and the same estimator. It runs once,
+after this amendment and the fixed reader have landed.

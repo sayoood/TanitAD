@@ -191,7 +191,7 @@ def make_bank(m2b_sha, n_elig=250000, clips=None):
     cov = {"n_windows": N_WIN, "n_eligible": n_elig, "fraction": n_elig / N_WIN, "min": 0.5, "blocked": n_elig / N_WIN < 0.5}
     rbt = {"1": dict(TICK1), "2": dict(TICK2)}
     c = man["common"]
-    c.update(ckpt_sha256=m2b_sha, partial=False, limit_clips=None, window_list_sha256=WIN_SHA, thresholds_file_sha256=THR_SHA)
+    c.update(ckpt_sha256=m2b_sha, partial=False, limit_clips=0, window_list_sha256=WIN_SHA, thresholds_file_sha256=THR_SHA)      # exactly what the generator writes for a complete bank: `--limit-clips` default 0 = no limit, partial = bool(0) (fixtures/generator_a2/LIMIT_SITES.txt)
     c["train"] = {"exclude": "540:600", "n_clips": 4512, "n_excluded": 0, "n_windows": N_WIN, "train_sha256": TRAIN_SHA}
     c["eval"] = {**c["eval"], "clips": sorted(EVAL_IDS), "n_clips": 141, "overlap": 0}
     man.update(n_shards=2, partial=False, n_records=2 * N_WIN, coverage=dict(cov), reasons_by_tick=json.loads(json.dumps(rbt)))
@@ -199,7 +199,7 @@ def make_bank(m2b_sha, n_elig=250000, clips=None):
     shard_provs = []
     for k in range(2):
         sp = json.loads(json.dumps(sp0))
-        sp["plan"].update(shard=[k, 2], window_list_sha256=WIN_SHA, train_sha256=TRAIN_SHA, n_train_clips=4512, n_train_windows=N_WIN, limit_clips=None, partial=False, shard_windows=half)
+        sp["plan"].update(shard=[k, 2], window_list_sha256=WIN_SHA, train_sha256=TRAIN_SHA, n_train_clips=4512, n_train_windows=N_WIN, limit_clips=0, partial=False, shard_windows=half)
         sp["inputs"]["ckpt"]["sha256"] = m2b_sha
         sp.update(n_records=2 * half, kb0_tick0_identity={"checked": half, "mismatch": 0}, kb1_replay={"chunks": 24, "windows": 768, "mismatch_chunks": 0, "frac": 0.005, "seed": 0},
                   kb3_eval_disjoint={"n_eval_clips": 141, "overlap": 0})
@@ -1240,8 +1240,12 @@ def test_the_real_generator_smoke_reads_exactly_as_NOTES_md_reports():
     assert cv["n_windows"] == 804 and cv["n_eligible_windows"] == 580 and cv["n_states_before_cuts"] == 1608 and cv["n_states_kept"] == 1120 and cv["cuts"]["nonfinite"] == 0
     assert dag.bank_clip_names(B) == sorted(tr) and B["man_sha256"] == "c23c35b5607360400b1d779584ec613ae70d48ea10ac91ca61fc9ac3ab8b5d13"
     assert B["man"]["common"]["thresholds_file_sha256"].startswith("438366d5") and B["man"]["common"]["constants_sha256"].startswith("8f94b3b5")   # the PREREG's sha is the FILE's, not the constants dict's
-    assert not dag.g_bank_config(B, ev)[0] and dag.g_bank_config({**B, "man": {**B["man"], "common": {**B["man"]["common"], "partial": False, "limit_clips": None,
-                                                                                                  "train": {**B["man"]["common"]["train"], "n_clips": 4512, "n_windows": 306566}}}}, ev)[0]
+    assert B["man"]["common"]["partial"] is True and B["man"]["common"]["limit_clips"] == 12            # the smoke IS partial: the generator's own pair (True, 12), refused as a smoke
+    assert not dag.g_bank_config(B, ev)[0] and "is PARTIAL" in dag.g_bank_config(B, ev)[1][0]
+    full = {**B, "man": {**B["man"], "common": {**B["man"]["common"], "partial": False, "limit_clips": 0,         # the same document as the generator writes it for a COMPLETE bank (limit_clips 0, partial False)
+                                                 "train": {**B["man"]["common"]["train"], "n_clips": 4512, "n_windows": 306566}}}}
+    assert dag.g_bank_config(full, ev)[0]
+    assert dag.g_bank_config({**full, "man": {**full["man"], "common": {**full["man"]["common"], "limit_clips": None}}}, ev)[0]       # None (no limit) is read the same way
 
 
 FIXTURE_SHAS = {"PROVENANCE.json": "6c780d62261a53254867ebca2e2c100dfb31ebd73ef2f2ba820ce7195020ad45", "bank.json": "c23c35b5607360400b1d779584ec613ae70d48ea10ac91ca61fc9ac3ab8b5d13",
@@ -1375,6 +1379,126 @@ def test_bank_config_is_section_1_and_2():
         assert not dag.g_bank_config(B, EVAL_IDS)[0], nm
     assert not dag.g_bank_config(good_bank(), [])[0]                                      # an empty eval list proves nothing
     assert not dag.g_bank_config(good_bank(), EVAL_IDS[:-1])[0]                           # the eval list given is not the one the generator checked
+
+
+# ---- the `--limit-clips` convention (A2): 0 = no limit, partial = bool(limit_clips). The reader once demanded `limit_clips is None` and refused every real bank (BANK-CONFIG at both seeds).
+GEN_SITES = HERE / "fixtures" / "generator_a2" / "LIMIT_SITES.txt"
+GEN_SRC = pathlib.Path(os.environ.get("DAG_GEN_PATH", "E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a/stack/scripts/v8f_dagger_bank.py"))
+
+
+def gen_sites():
+    """{line number: line} -- the bank generator's limit_clips / partial lines, verbatim (fixtures/generator_a2/LIMIT_SITES.txt, a mechanical extract: scratch/extract_generator_limit_sites.py)."""
+    rows = [ln.split("\t", 1) for ln in GEN_SITES.read_text(encoding="utf-8").splitlines() if ln and not ln.startswith("#")]
+    return {int(n): t for n, t in rows}
+
+
+def config_verdict(partial, limit_clips, B=None):
+    """(ok, messages) of BANK-CONFIG for an otherwise good bank whose completeness fields are (partial, limit_clips)."""
+    B = B or good_bank()
+    B["man"]["common"].update(partial=partial, limit_clips=limit_clips)
+    ok, det = dag.g_bank_config(B, EVAL_IDS)
+    return ok, ([] if ok else det)
+
+
+def test_the_generators_limit_clips_convention_is_pinned_to_its_source_text():
+    """The convention is read out of the generator's source text, then the reader is held to it: a complete bank is what the generator writes at its DEFAULT, and the 12-clip smoke is what it writes at --limit-clips 12."""
+    import re
+    sites = gen_sites()
+    assert sorted(sites) == [254, 263, 289, 336, 340, 364, 368, 399]
+    m = re.search(r'add_argument\("--limit-clips", type=int, default=(-?\d+)\b', sites[399])
+    assert m, sites[399]
+    default = int(m.group(1))
+    assert default == 0 and "(the bank is then marked PARTIAL)" in sites[399]                            # 0 = no limit, and a limit marks the bank partial
+    assert "if a.limit_clips else list(clips)" in sites[254]                                              # the generator READS 0 as 'no limit' (falsy) ...
+    assert 'common["limit_clips"] or common["train"]["n_clips"]' in sites[336]                            # ... and so does its merge step
+    for n in (263, 289):                                                                                  # plan and common both write the flag as given and partial as its truth value
+        assert '"limit_clips": a.limit_clips, "partial": bool(a.limit_clips)' in sites[n], n
+    assert 'not common["partial"]' in sites[340] and '"partial": common["partial"]' in sites[364]       # bank.json's partial is common's
+    written = lambda lim: {"limit_clips": lim, "partial": bool(lim)}                                      # what lines 263 / 289 write for --limit-clips <lim>
+    full = written(default)
+    assert full == {"limit_clips": 0, "partial": False}
+    ok, det = config_verdict(full["partial"], full["limit_clips"])
+    assert ok, det                                                                                        # the bank the generator writes by default PASSES BANK-CONFIG
+    B = good_bank()
+    assert {k: B["man"]["common"][k] for k in full} == full and all({k: sp["plan"][k] for k in full} == full for sp in B["shard_provs"])   # and the synthetic banks carry exactly that
+    for lim in (12, 1, 4511):                                                                             # every --limit-clips N the generator accepts writes a PARTIAL bank, refused as a smoke
+        w = written(lim)
+        ok, det = config_verdict(w["partial"], w["limit_clips"])
+        assert not ok and len(det) == 1 and "is PARTIAL" in det[0], (lim, det)
+
+
+@pytest.mark.skipif(not GEN_SRC.exists(), reason="the bank generator's source (tree dagt1_tree_b43c7a9a) is not on this machine; the verbatim extract is still tested above")
+def test_the_extract_of_the_generators_limit_sites_is_the_generators_source():
+    """Drift detector: the lines the reader's convention was read from are the generator's lines now. A changed site (or a new one) fails here, and the extract must be re-made on purpose."""
+    live = [ln for ln in GEN_SRC.read_bytes().decode("utf-8").split("\n") if "limit_clips" in ln or "limit-clips" in ln or '"partial"' in ln]
+    assert live == list(gen_sites().values())
+
+
+def test_bank_config_follows_the_generators_limit_clips_convention(tmp_path):
+    # --- a bank built exactly as the generator writes a COMPLETE bank (limit_clips 0, partial False): PASS, in memory, through the loader and through the bank stage
+    ok, det = config_verdict(False, 0)
+    assert ok and det == []
+    B = good_bank()
+    assert B["man"]["common"]["limit_clips"] == 0 and B["man"]["common"]["partial"] is False
+    L = dag.load_bank(write_bank(B, tmp_path / "b"))
+    assert L["man"]["common"]["limit_clips"] == 0 and L["man"]["common"]["partial"] is False
+    assert dag.g_bank_config(L, EVAL_IDS)[0] is True
+    ctl = dag.Ctl()
+    dag.bank_stage(ctl, 0, L, "ab" * 32, EVAL_IDS, CLIPS)
+    assert ctl.items["BANK-CONFIG:s0"]["PASS"] and not ctl.failed(), ctl.failed()
+    assert dag.header_summary(L)["limit_clips"] == 0 and dag.header_summary(L)["partial"] is False       # reported as written
+    # --- the other spelling of 'no limit' (null) is read the same way (kept case)
+    ok, det = config_verdict(False, None)
+    assert ok and det == []
+    # --- the real 12-clip smoke's pair is a smoke, refused as PARTIAL (and only as that)
+    ok, det = config_verdict(True, 12)
+    assert not ok and len(det) == 1 and "is PARTIAL" in det[0] and "contradict" not in det[0] and "types" not in det[0]
+    # --- each pair the generator cannot write (partial != bool(limit_clips)) is refused under its OWN message
+    for pair in ((False, 12), (False, 1), (True, 0), (True, None)):
+        ok, det = config_verdict(*pair)
+        assert not ok and len(det) == 1, (pair, det)
+        assert "contradict each other" in det[0] and "PARTIAL" not in det[0] and "types" not in det[0], (pair, det)
+        assert f"partial {pair[0]!r}, limit_clips {pair[1]!r}" in det[0], (pair, det)
+    # --- a value of the wrong JSON type is refused under a third message (a string 'false', an int 0, a float 0.0, a bool limit, a negative limit are not what the generator writes)
+    for pair in ((None, 0), ("false", 0), (0, 0), (1, 12), (False, False), (False, "0"), (False, 0.0), (False, -1), (True, True), (False, [])):
+        ok, det = config_verdict(*pair)
+        assert not ok and len(det) == 1 and "not the generator's types" in det[0] and "PARTIAL" not in det[0] and "contradict" not in det[0], (pair, det)
+    # --- a bank with the keys missing altogether is not complete either (null / absent partial is not False)
+    B = good_bank()
+    B["man"]["common"].pop("partial")
+    ok, det = dag.g_bank_config(B, EVAL_IDS)
+    assert not ok and any("not the generator's types" in d for d in det)
+    B = good_bank()
+    B["man"]["common"].pop("limit_clips")                                                                 # absent limit_clips == null == no limit; partial False: complete
+    assert dag.g_bank_config(B, EVAL_IDS)[0] is True
+    # --- the verdict changes nothing else BANK-CONFIG holds: a complete bank with one other defect fails on that defect alone
+    B = good_bank()
+    B["man"]["common"]["rollout"].update(limit="logged")
+    ok, det = dag.g_bank_config(B, EVAL_IDS)
+    assert not ok and len(det) == 1 and "common.rollout" in det[0]
+
+
+def test_world_limit_clips_0_and_null_banks_read_at_both_seeds(tmp_path):
+    def null_limit(B):                                                                                    # seed 0: `limit_clips: null` (the kept case); seed 1: the generator's 0 (make_bank's default)
+        B["man"]["common"]["limit_clips"] = None
+        for sp in B["shard_provs"]:
+            sp["plan"]["limit_clips"] = None
+    rc, res, out, fx = run(tmp_path, fxkw={"bank_mods": {0: null_limit}}, **STRONG)
+    assert rc == 0 and res["controls_PASS"]["BANK-CONFIG:s0"] and res["controls_PASS"]["BANK-CONFIG:s1"]
+    assert res["bank"]["s0"]["header"]["limit_clips"] is None and res["bank"]["s1"]["header"]["limit_clips"] == 0
+    assert res["bank"]["s0"]["header"]["partial"] is False and res["bank"]["s1"]["header"]["partial"] is False
+
+
+def test_world_limit_clips_partial_and_contradictory_banks_are_refused_at_bank_config(tmp_path, capsys):
+    def contradiction(B):                                                                                 # seed 0: partial False but a limit of 12
+        B["man"]["common"]["limit_clips"] = 12
+
+    def smoke(B):                                                                                         # seed 1: the 12-clip smoke's pair, every document agreeing on partial
+        B["man"]["common"].update(partial=True, limit_clips=12)
+        B["man"]["partial"] = B["prov"]["partial"] = True
+    rc, _, out, _ = run(tmp_path, fxkw={"bank_mods": {0: contradiction, 1: smoke}}, **STRONG)
+    err = refused(capsys, rc, out, "BANK-CONFIG:s0", "contradict each other", "BANK-CONFIG:s1", "is PARTIAL", absent=("BANK-FILES", "K-B0:", "K-B1:", "K-B2:", "K-B3.1:", "K-B3.3:", "K-B4:", "K-B5:", "BANK-ACCOUNTING"))
+    assert err.count("is PARTIAL") == 1 and err.count("contradict each other") == 1                         # one message per seed, each its own
 
 
 def test_kb0_checks_every_window_and_sums_the_shards():
@@ -1580,7 +1704,7 @@ def test_bank_accounting_and_coverage_arithmetic():
         fn(B)
         assert not dag.g_bank_accounting(B)[0], nm
     B = good_bank()                                                                          # a PARTIAL bank's window count is its own (BANK-CONFIG refuses partial banks)
-    B["man"]["common"]["partial"] = True
+    B["man"]["common"].update(partial=True, limit_clips=12)
     B["man"]["common"]["train"]["n_windows"] = 999
     assert dag.g_bank_accounting(B)[0]
     for nm, fn in {"reason": lambda B: both(B, lambda d: d["reasons_by_tick"]["1"].pop("off_head")), "neg": lambda B: both(B, lambda d: d["reasons_by_tick"]["1"].update(off_lat=-1)),

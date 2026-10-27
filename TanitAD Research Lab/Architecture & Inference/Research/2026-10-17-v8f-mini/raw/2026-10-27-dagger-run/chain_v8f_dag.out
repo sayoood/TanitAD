@@ -1,0 +1,147 @@
+ORC predicate (rc 0): HARMS 0.1 a50dbba9fee93828b17b8b1b71335b2db73e249fd7ab9e78c9b4ea4e3577afd6
+10-27 01:14 ORC read HARMS (sha256 a50dbba9fee93828...): the DAG arm runs at p = 0.1
+10-27 01:14 waiting for the predecessor chain (/c/Users/Admin/box2_ship/logs/chain_v8f_orc.out: end marker ^ZZV8FMINI-DONE, stop marker ^ZZV8FMINI-STOP; log present: yes)
+10-27 01:14 boot0=2026-10-17 18:43:26
+10-27 01:15 launched pid=5584 rc=0 log=D:\tanitad\logs\v8fdag10270114_refresh.log
+===== ZZJOB-END 27.10.2026  1:18:13,99 rc=0
+10-27 01:18 v8fdag10270114_refresh rc=0
+10-27 01:18 box 2 code = tip b43c7a9a1cf6d6d8f739fcf7b1740b366c241050 (13 key files sha-checked; both v9 releases md5-checked)
+10-27 01:18 before the banks: both M2b checkpoints are the banked runs' (sha256 asserted)
+10-27 01:18 launched pid=5356 rc=0 log=D:\tanitad\logs\telemetry_long.log
+10-27 01:20 launched pid=20164 rc=0 log=D:\tanitad\logs\v8fdag10270114_bank_s0.log
+===== ZZJOB-END 27.10.2026  2:13:01,73 rc=0
+10-27 02:13 v8fdag10270114_bank_s0 rc=0
+10-27 02:13 bank s0: the small files (bank.json, PROVENANCE.json, bank_stage.log, 4 shard provenance) fetched to /e/Projects/TanitAD-artifacts/v8f-dagger/bank_s0 (bank.json sha256 197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f); the shard npz follow only if the controls pass
+10-27 02:13 launched pid=11252 rc=0 log=D:\tanitad\logs\v8fdag10270114_bank_s1.log
+===== ZZJOB-END 27.10.2026  3:04:42,57 rc=0
+10-27 03:05 v8fdag10270114_bank_s1 rc=0
+10-27 03:05 bank s1: the small files (bank.json, PROVENANCE.json, bank_stage.log, 4 shard provenance) fetched to /e/Projects/TanitAD-artifacts/v8f-dagger/bank_s1 (bank.json sha256 36c7aea964dafe9423253aa479c2fc6cdfc93848395b593315cba812f5f04d4d); the shard npz follow only if the controls pass
+ZZDAG-JUDGE {"blocked_seeds": [], "coverage_min": 0.5, "outcome": "PASS", "refused_because": [], "seeds": [{"bad": [], "bank_sha256": "197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f", "controls": {"BANK-FILES": true, "COMPLETE": true, "COVERAGE `blocked` flag agrees with n_eligible / n_windows < 0.5": true, "COVERAGE record is well-formed (denominator = the TRAIN window count)": true, "K-B0 tick-0 identity on every window": true, "K-B1 replay bit-exact": true, "K-B2 on-policy: the bank's checkpoint is the banked M2b": true, "K-B3 eval-141 disjoint": true, "K-B4 matcher synthetic cases (PROVENANCE.json controls.K-B4: PASS True and all six cases True)": true, "K-B5 re-anchoring (PROVENANCE.json controls.K-B5: PASS True, both errors <= 1e-4 m)": true, "PROVENANCE.json agrees with bank.json on coverage": true, "ROLLOUT=PREREG-1": true, "SCHEMA": true, "SHARDS": true, "TRAIN list is M2b's (clips, windows)": true}, "coverage": {"blocked": false, "fraction": 0.7556284780438797, "min": 0.5, "n_eligible": 231650, "n_windows": 306566}, "extra_controls_in_provenance": {"K-B4": {"PASS": true, "cases": {"end_edge": true, "heading_cut": true, "lateral_cut": true, "loop": true, "stationary_tie": true, "straight": true}, "n_shards_checked": 4, "run_at": "generation (every shard) and at the merge"}, "K-B5": {"PASS": true, "log_pose_sha256_by_shard": ["94ba6afb27717fa457735eead2231e75ffecc67299d1b936465ddb405b31876a", "6b9d65f2ecfcd680ee294545b8212751a9f044b9e281ee1823bb2cd3b3f58fa2", "ba00b76d1f37dede5ee54b672e159ff69c15ba12f15a1b1d86275c326522d112", "e022749e2ee3135dc8fc6f8d69c1b3abc5f81dd2ed2430bb3bbb37bd048b273e"], "max_pose_now_err_m": 0.0, "max_pose_now_yaw_err_rad": 0.0, "max_reanchor_vs_pose_now_m": 0.0, "max_rel_transform_err_float64_m": 2.2886110608463075e-13,
+ZZDAG-JUDGE-PASS every bank control passed and the eligible fraction of TRAIN windows is >= 0.5 at both seeds: the four gates are queued next
+a0aa57ae78cf8c66134b08d41e4d455b7ea8fc07e8a22e7426c964418656c3de *PROVENANCE.json
+197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f *bank.json
+c4a13f3f25d81da9a9225d603c2028342819d3412038c5857854f1759bf843b8 *shard_000of004.provenance.json
+f0ec50175044a7f03c4c21e6a80d85f09f5edf3b275303b289cd60c609be93ca *shard_001of004.provenance.json
+1c1ac03c578b462b017a89d20ae14ba2afe178538a260700af663b3a0e36c6e0 *shard_002of004.provenance.json
+58885c35b8bae8f3be01c302a0cddb18b91aede6511da4d9ddb7e9b57ee3b04a *shard_003of004.provenance.json
+692e43c4f00c5acaccf6f566e2dcee34aeef7d06bbf38653061bcd89bb5485dc *shard_000of004.npz
+b323c95b8b4ae3fd46a5ea563d682625d4d990e94e89691f2115107cc421b5af *shard_001of004.npz
+9d244c4f661733ae1dfa30cfa40522d579249b6df6e2365c0a00e07cec2e04e1 *shard_002of004.npz
+edf6fd71192d739cefe9ae688273de8f94a0fd153fd59228f403cf422875ed85 *shard_003of004.npz
+e27f3342b986bfcc692f9c29dab003830b677101ec1c16894ff2f688d07553f4 *bank_stage.log
+10-27 03:05 bank s0 pulled to /e/Projects/TanitAD-artifacts/v8f-dagger/bank_s0 (11 files: PROVENANCE.json, bank.json, shard provenance, shard npz, bank_stage.log; sha256 in SHA256SUMS.txt; bank.json sha256 197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f)
+d6e31c17bdae5fa75cee8144b7c90e3094c73843d01ab082fca4d6094e00e73c *PROVENANCE.json
+36c7aea964dafe9423253aa479c2fc6cdfc93848395b593315cba812f5f04d4d *bank.json
+63df329f7109ad336253e65a3cdfede5edb0fe36056d176f5981c4cd6cb0f7ba *shard_000of004.provenance.json
+e33a05b1384754acb1b3c7728917f1f0ac4707ab3282cb29b7935f8ff90d5af1 *shard_001of004.provenance.json
+106427384807a4c13a77444a68d7a298e2a389bb501e02547b3e6ea2b93ec19d *shard_002of004.provenance.json
+082eb154bcc0dade4ee9bee98f06e777561b22d5153161a129ecffb8acfe420b *shard_003of004.provenance.json
+a8c4d7c9c9263f53ba3e4d7c295e4b8b16ea1c06abbe44da4294ab8221383c87 *shard_000of004.npz
+088f4e1f41395a1ffebbd02718c41d9cda8639544a8c7427f22ffe725ce596ec *shard_001of004.npz
+8e976c782f301afceb38a452be38c57213017bbb6310ec69dda5111eb25ae5c4 *shard_002of004.npz
+e7cf88fb541bd4fc26278b83bcc5c8788e1efe1d49b352bc5e0f9d29621410c0 *shard_003of004.npz
+47faa5369285ac24377ed7370a64d3a8942b445b339f19151cb940fb1f2d4c43 *bank_stage.log
+10-27 03:06 bank s1 pulled to /e/Projects/TanitAD-artifacts/v8f-dagger/bank_s1 (11 files: PROVENANCE.json, bank.json, shard provenance, shard npz, bank_stage.log; sha256 in SHA256SUMS.txt; bank.json sha256 36c7aea964dafe9423253aa479c2fc6cdfc93848395b593315cba812f5f04d4d)
+10-27 03:06 launched pid=13076 rc=0 log=D:\tanitad\logs\v8fdag10270114_gate_M2b_s0_dag.log
+===== ZZJOB-END 27.10.2026  3:07:27,53 rc=0
+10-27 03:07 v8fdag10270114_gate_M2b_s0_dag rc=0
+DAG gate: PASS | dag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff 10549.0703125 | params 7214495 | lru 174
+DAG gate: PASS | dag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff 10549.0703125 | params 7214495 | lru 174
+gate token written for M2b_s0_dag commit b43c7a9a1cf6d6d8f739fcf7b1740b366c241050 argv_sha256 3f329acff3bc610d
+10-27 03:07 launched pid=3064 rc=0 log=D:\tanitad\logs\v8fdag10270114_gate_M2b_s0_dag0.log
+===== ZZJOB-END 27.10.2026  3:08:10,06 rc=0
+10-27 03:08 v8fdag10270114_gate_M2b_s0_dag0 rc=0
+DAG gate: PASS | dag0 s0 | p 0.0 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff None | params 7214495 | lru 174
+DAG gate: PASS | dag0 s0 | p 0.0 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff None | params 7214495 | lru 174
+gate token written for M2b_s0_dag0 commit b43c7a9a1cf6d6d8f739fcf7b1740b366c241050 argv_sha256 10a87e6a376b836f
+10-27 03:08 launched pid=8468 rc=0 log=D:\tanitad\logs\v8fdag10270114_gate_M2b_s1_dag.log
+===== ZZJOB-END 27.10.2026  3:09:12,89 rc=0
+10-27 03:09 v8fdag10270114_gate_M2b_s1_dag rc=0
+DAG gate: PASS | dag s1 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 6104fb15dc21 | probe grad diff 8218.2587890625 | params 7214495 | lru 174
+DAG gate: PASS | dag s1 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 6104fb15dc21 | probe grad diff 8218.2587890625 | params 7214495 | lru 174
+gate token written for M2b_s1_dag commit b43c7a9a1cf6d6d8f739fcf7b1740b366c241050 argv_sha256 911683300588385a
+10-27 03:09 launched pid=13604 rc=0 log=D:\tanitad\logs\v8fdag10270114_gate_M2b_s1_dag0.log
+===== ZZJOB-END 27.10.2026  3:09:47,74 rc=0
+10-27 03:10 v8fdag10270114_gate_M2b_s1_dag0 rc=0
+DAG gate: PASS | dag0 s1 | p 0.0 | clips 4512 steps 3000 windows 306566 | init 6104fb15dc21 | probe grad diff None | params 7214495 | lru 174
+DAG gate: PASS | dag0 s1 | p 0.0 | clips 4512 steps 3000 windows 306566 | init 6104fb15dc21 | probe grad diff None | params 7214495 | lru 174
+gate token written for M2b_s1_dag0 commit b43c7a9a1cf6d6d8f739fcf7b1740b366c241050 argv_sha256 7f80b270de64f0a4
+10-27 03:10 launched pid=10092 rc=0 log=D:\tanitad\logs\v8fdag10270114_t_M2b_s0_dag.log
+===== ZZJOB-END 27.10.2026  3:48:40,03 rc=0
+10-27 03:48 v8fdag10270114_t_M2b_s0_dag rc=0
+10-27 03:48 M2b_s0_dag checkpoint sha256 (trained) d186fd0bcfa7ee9f...
+10-27 03:48 launched pid=16172 rc=0 log=D:\tanitad\logs\v8fdag10270114_e_M2b_s0_dag.log
+===== ZZJOB-END 27.10.2026  3:50:41,32 rc=0
+10-27 03:50 v8fdag10270114_e_M2b_s0_dag rc=0
+10-27 03:50 M2b_s0_dag checkpoint sha256 (after_evals) d186fd0bcfa7ee9f...
+d186fd0bcfa7ee9fbfe5c9de543fe85edda7c3e6b9c56c898958f027ae2b8cb1 *ckpt_last.pt
+28e3ab68ea302091266dc89395d016c28fb4eb64528fc7aa0df03673fd1ad15c *eval_M2b-dag_s0.json
+b147dc1bed03a89f54914bd74e256c698209a5c68e322219cf1208fb8721f615 *eval_M2b-dag_s0.npz
+c9dccad2e1677c97197a40246ff156b35e4fd5c959f5f387adb7696e42da521f *selfcheck.json
+06ae1555ad278f4d323fdae33987f079d5b85005f35bddfd56dbc362d6ad4b41 *summary.json
+50e9d01d3dee881367a4eb1433903b05cc093c83d7bccc32a518e2290d9f3ce3 *argv.json
+ea259813eebb8c2eae9f5b753c0c40dc46e05c80e286e9ec28d3f0eda3080517 *train_log.jsonl
+2752a52e0172298d375d6851927dd32a87c589eafa9948ceacb3c733a6f620db *launch_gate_token.json
+10-27 03:51 M2b_s0_dag pulled to /e/Projects/TanitAD-artifacts/v8f-dagger/M2b_s0_dag (checkpoint sha256 d186fd0bcfa7ee9fbfe5c9de543fe85edda7c3e6b9c56c898958f027ae2b8cb1)
+DAG run record: PASS | dag s0 | argv sha16 bf47d07701bde74a | steps 3000
+DAG swap-reached: PASS | dag s0 | dagger_n 14688 / eligible 145037 = 0.10127071023256135 (must lie in 0.1 +- 0.02)
+10-27 03:51 launched pid=9552 rc=0 log=D:\tanitad\logs\v8fdag10270114_t_M2b_s0_dag0.log
+===== ZZJOB-END 27.10.2026  4:29:31,18 rc=0
+10-27 04:29 v8fdag10270114_t_M2b_s0_dag0 rc=0
+10-27 04:29 M2b_s0_dag0 checkpoint sha256 (trained) 313a5d2bbdd749ee...
+10-27 04:29 launched pid=11020 rc=0 log=D:\tanitad\logs\v8fdag10270114_e_M2b_s0_dag0.log
+===== ZZJOB-END 27.10.2026  4:31:42,01 rc=0
+10-27 04:31 v8fdag10270114_e_M2b_s0_dag0 rc=0
+10-27 04:31 M2b_s0_dag0 checkpoint sha256 (after_evals) 313a5d2bbdd749ee...
+313a5d2bbdd749ee8d9745bf0ac2195f204b2999ebc8a06f2b473a6e31876c0f *ckpt_last.pt
+30803288803086db345a96ae7fe417fd53031e07e7045f8df4df37634f845522 *eval_M2b-dag0_s0.json
+4c0084c594b54124570a704a866c8ad848983578826a8c5f286f36b888dae6dd *eval_M2b-dag0_s0.npz
+fba160602aebd57d75dc6785e85f0625078b68c52e10b2e2253669ccab06d12d *selfcheck.json
+a30751711847f9cfbe09d3704ba85945cf4ca359419a1a34381c3ec63baafeca *summary.json
+32e7a3c5d0592d4a923bf28cdfc61d2de372060c33a96a0e0e1b5ba8e8490e50 *argv.json
+61520e18fbf793d74550e90844683837cfdfed00ac75ebcba864c662be614d45 *train_log.jsonl
+e0f7a84d52b6810569cc53f1e3379ec7206a6de47138af1fd39c10842ee3a273 *launch_gate_token.json
+10-27 04:31 M2b_s0_dag0 pulled to /e/Projects/TanitAD-artifacts/v8f-dagger/M2b_s0_dag0 (checkpoint sha256 313a5d2bbdd749ee8d9745bf0ac2195f204b2999ebc8a06f2b473a6e31876c0f)
+DAG run record: PASS | dag0 s0 | argv sha16 034314810379c18a | steps 3000
+DAG swap-reached: PASS | dag0 s0 | dagger_n 0 (must be exactly 0) | eligible 0
+10-27 04:32 launched pid=21756 rc=0 log=D:\tanitad\logs\v8fdag10270114_t_M2b_s1_dag.log
+===== ZZJOB-END 27.10.2026  5:10:53,99 rc=0
+10-27 05:11 v8fdag10270114_t_M2b_s1_dag rc=0
+10-27 05:11 M2b_s1_dag checkpoint sha256 (trained) 1d12ec2eb825990d...
+10-27 05:11 launched pid=2208 rc=0 log=D:\tanitad\logs\v8fdag10270114_e_M2b_s1_dag.log
+===== ZZJOB-END 27.10.2026  5:13:08,22 rc=0
+10-27 05:13 v8fdag10270114_e_M2b_s1_dag rc=0
+10-27 05:13 M2b_s1_dag checkpoint sha256 (after_evals) 1d12ec2eb825990d...
+1d12ec2eb825990d57dcc45dda50b5178d1d733961b47ab0e3d50e6155fa39ef *ckpt_last.pt
+05e3aac1f9c32326392dddad2170c2278072adb9b4122f0b272ba3a4e491bd04 *eval_M2b-dag_s1.json
+8fc07dc18c4e11f8c0debd18d204dfd5a4b5638947ca31d1974ff3f0659ad68f *eval_M2b-dag_s1.npz
+c27dd77107be69f94b8767eeceab5877585d460c646db9041ae60d5b81985869 *selfcheck.json
+e77f9e0125695ff01ff8fa12898663fbb9a32672160fded821d9a32d86ed6b6f *summary.json
+38a591e3e5a05c6f72669a268aaf99591af167758296720d650c46ebba4541b3 *argv.json
+1743795795eeb9cf9e5f046dbef0e8f08e985d9dfb028cc62859a261d72bbf07 *train_log.jsonl
+47e41624b04d44afbea46df87067f48081de1df9bdb42c82fe9d9bddd025f533 *launch_gate_token.json
+10-27 05:13 M2b_s1_dag pulled to /e/Projects/TanitAD-artifacts/v8f-dagger/M2b_s1_dag (checkpoint sha256 1d12ec2eb825990d57dcc45dda50b5178d1d733961b47ab0e3d50e6155fa39ef)
+DAG run record: PASS | dag s1 | argv sha16 34258e0b454a3726 | steps 3000
+DAG swap-reached: PASS | dag s1 | dagger_n 14839 / eligible 147199 = 0.10080910875753232 (must lie in 0.1 +- 0.02)
+10-27 05:13 launched pid=23504 rc=0 log=D:\tanitad\logs\v8fdag10270114_t_M2b_s1_dag0.log
+===== ZZJOB-END 27.10.2026  5:51:45,91 rc=0
+10-27 05:52 v8fdag10270114_t_M2b_s1_dag0 rc=0
+10-27 05:52 M2b_s1_dag0 checkpoint sha256 (trained) 758370c574d4eebb...
+10-27 05:52 launched pid=17684 rc=0 log=D:\tanitad\logs\v8fdag10270114_e_M2b_s1_dag0.log
+===== ZZJOB-END 27.10.2026  5:54:43,99 rc=0
+10-27 05:54 v8fdag10270114_e_M2b_s1_dag0 rc=0
+10-27 05:54 M2b_s1_dag0 checkpoint sha256 (after_evals) 758370c574d4eebb...
+758370c574d4eebb5fea4eeb2f033a481b92d0aafd5608c8639b9068ca915bab *ckpt_last.pt
+b6eaa245eea46e48439e8a1451fef92e27598d43091a8d3d1d19ffaea25191b4 *eval_M2b-dag0_s1.json
+50569468526753f3c0f82a8ccc5750e14cc153796c8842fa724f1e676cbb2107 *eval_M2b-dag0_s1.npz
+d930a91128dda30813cf664b47c178a7ec13249232457a1a970c3e2926ea905e *selfcheck.json
+d822b0cd2de639ece3995dc15a49c42d1d82d1d5ff8bd01040f981e13a5c2432 *summary.json
+75dbf0bc0c53e82f49adc051969e49b6517e27619c6d80cd8946752c1f26f125 *argv.json
+94501d34a7b56ecc64c0369f345b018c2aecb5532eaf520f00d453261d6371b0 *train_log.jsonl
+b157b6fbc85ef8b7fb648f7ad15d48c4e2a779367da87aedaa0662fba5d3a2be *launch_gate_token.json
+10-27 05:54 M2b_s1_dag0 pulled to /e/Projects/TanitAD-artifacts/v8f-dagger/M2b_s1_dag0 (checkpoint sha256 758370c574d4eebb5fea4eeb2f033a481b92d0aafd5608c8639b9068ca915bab)
+DAG run record: PASS | dag0 s1 | argv sha16 1eeb9bb854779c18 | steps 3000
+DAG swap-reached: PASS | dag0 s1 | dagger_n 0 (must be exactly 0) | eligible 0
+10-27 05:55 after the last run: both M2b checkpoints are the banked runs' (sha256 asserted)
+10-27 05:55 summary: M2b_s0_dag=d186fd0bcfa7 M2b_s0_dag0=313a5d2bbdd7 M2b_s1_dag=1d12ec2eb825 M2b_s1_dag0=758370c574d4 
+ZZV8FMINI-DONE 10-27 05:55 tip b43c7a9a1cf6d6d8f739fcf7b1740b366c241050: PREREG_V8F_DAGGER: banks s0/s1 (COVERAGE >= 0.5; PROVENANCE.json, bank.json, shard provenance and shard npz published), DAG (p 0.1) / DAG-0 x seeds 0 and 1 trained (3,000 steps each), T0-evaluated (standard) and pulled to /e/Projects/TanitAD-artifacts/v8f-dagger (sha256 in each SHA256SUMS.txt); the T1-kin rollouts, the fresh-age T0 evals and the reader run on the dev box (NOT here) (boot unchanged 2026-10-17 18:43:26)

@@ -1,0 +1,307 @@
+M01 KILLED (RED)        1.2s  [-k 'decide']  flip a bar sign (>= bar becomes <= bar)
+      pytest tail: FAILED test_dag_read.py::test_decide_robust_partial_noeffect_harms - Assertio... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 107 deselected in 0.60s
+M02 KILLED (RED)        1.1s  [-k 'decide or world_ROBUST']  drop a seed (SEEDS = (0,))
+      pytest tail: FAILED test_dag_read.py::test_decide_robust_partial_noeffect_harms - dag_read... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 105 deselected in 0.60s
+M03 KILLED (RED)        2.1s  [-k 'decide or committed']  swap the lat / lon bars
+      pytest tail: FAILED test_dag_read.py::test_committed_numbers_are_the_preregs - assert ((0.... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 105 deselected in 0.63s
+M04 KILLED (RED)        1.2s  [-k 'g_reached']  skip a control (the replaced-fraction band)
+      pytest tail: FAILED test_dag_read.py::test_g_reached_ratio_band_is_inclusive_and_exact - A... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 112 deselected in 0.53s
+M05 KILLED (RED)       10.0s  [-k 'ticks_ge1 or matched_cells or world_ROBUST']  off-by-one tick >= 1 (ticks >= 2)
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: [taniteval] tani... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 111 deselected in 8.57s
+M23 KILLED (RED)       21.8s  [-k 'ticks_ge1 or matched_cells or world_ROBUST']  off-by-one tick, non-crashing (ticks 0-1 instead of 1-2)
+      pytest tail: FAILED test_dag_read.py::test_ticks_ge1_only_tick0_never_enters - AssertionEr... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 2 passed, 111 deselected in 19.82s
+M06 KILLED (RED)        9.8s  [-k 'F1_sign or world_ROBUST']  wrong reducer direction (DAG0 - DAG)
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: assert ('NO EFFE... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 112 deselected in 8.40s
+M07 KILLED (RED)        1.3s  [-k 'table_verbatim']  outcome order swap (ROBUST and PARTIAL rows trade places)
+      pytest tail: FAILED test_dag_read.py::test_table_verbatim_and_in_order - assert (('PARTIAL... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.69s
+M08 KILLED (RED)       18.9s  [-k 'different_windows or other_windows or t0_episodes']  pair runs by different windows (the SAME-WINDOWS control is blind)
+      pytest tail: FAILED test_dag_read.py::test_refuse_pairing_by_different_windows - Assertion... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 112 deselected in 16.95s
+M09 KILLED (RED)        0.9s  [-k 'decide or HARMS']  R-ADE guard direction (separated-BETTER counts as worse)
+      pytest tail: FAILED test_dag_read.py::test_decide_robust_partial_noeffect_harms - Assertio... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 1 passed, 103 deselected in 0.45s
+M10 KILLED (RED)        0.9s  [-k 'guard_boundaries']  R-T0 bar is exclusive (>= F/2 is above)
+      pytest tail: FAILED test_dag_read.py::test_decide_harms_conditions_and_guard_boundaries - ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.44s
+M11 KILLED (RED)       14.3s  [-k 'matched_cells']  matched cells off (each run's own cells)
+      pytest tail: FAILED test_dag_read.py::test_matched_cells_only - assert (503 == 659) | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 12.46s
+M12 KILLED (RED)       15.3s  [-k 'every_arm_control']  the K1-K7 results of a T1 run are ignored
+      pytest tail: FAILED test_dag_read.py::test_refuse_every_arm_control_is_wired_into_the_read | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 12.34s
+M14 KILLED (RED)        1.5s  [-k 'g_init_sha or every_arm_control']  the init-checkpoint sha control always passes
+      pytest tail: FAILED test_dag_read.py::test_g_init_sha_sources - assert not True | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 113 deselected in 0.65s
+M15 KILLED (RED)        1.4s  [-k 'g_reached_dag0 or every_arm_control']  DAG-0 may replace samples (n == 0 not required)
+      pytest tail: FAILED test_dag_read.py::test_g_reached_dag0_exactly_zero_and_keys_present - ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 113 deselected in 0.60s
+M16 KILLED (RED)        1.5s  [-k 'g_token or every_arm_control']  the launch-gate verdict is not read
+      pytest tail: FAILED test_dag_read.py::test_g_token_binding - assert not True | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 113 deselected in 0.51s
+M17 KILLED (RED)        1.4s  [-k 'k1_own']  the reader's own K1 identity control is blind
+      pytest tail: FAILED test_dag_read.py::test_k1_own_rows_identity_control_fires - assert (no... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.76s
+M18 KILLED (RED)        1.4s  [-k 'decide or HARMS']  the guards ignore R-T0
+      pytest tail: FAILED test_dag_read.py::test_decide_robust_partial_noeffect_harms - Assertio... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 1 passed, 103 deselected in 0.49s
+M19 KILLED (RED)        1.2s  [-k 'decide or world_PARTIAL']  a head that clears at ONE seed counts as clearing at both
+      pytest tail: FAILED test_dag_read.py::test_decide_replicate_floor_raises_the_bar_per_seed_and_inclusively | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 2 passed, 105 deselected in 0.73s
+M20 KILLED (RED)        1.5s  [-k 'decide']  separation is not required for 'better'
+      pytest tail: FAILED test_dag_read.py::test_decide_both_seeds_and_separation_are_needed - A... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 3 passed, 107 deselected in 0.74s
+M21 KILLED (RED)       16.6s  [-k 'g_argv or world_ROBUST']  the registered DAG --dagger-p is not checked against the arm (0.0 for both)
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: [taniteval] tani... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 110 deselected in 14.63s
+M22 KILLED (RED)       14.2s  [-k 'failed_control or every_arm_control']  a failed control still computes rows (REFUSED does not stop the read)
+      pytest tail: FAILED test_dag_read.py::test_refuse_every_arm_control_is_wired_into_the_read | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 113 deselected in 11.86s
+M26 KILLED (RED)       13.6s  [-k 'k4_reads or t0_ages or world_ROBUST']  K4 reads the standard T0 eval
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: [taniteval] tani... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 111 deselected in 10.56s
+M27 KILLED (RED)       13.4s  [-k 't0_ages']  the T0-AGES control is blind
+      pytest tail: FAILED test_dag_read.py::test_t0_ages_and_the_fresh_ckpt_are_controls - Asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 11.02s
+M28 KILLED (RED)       27.2s  [-k 't0_ages']  the fresh eval's checkpoint is not checked
+      pytest tail: FAILED test_dag_read.py::test_t0_ages_and_the_fresh_ckpt_are_controls - Asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 25.25s
+M29 KILLED (RED)       15.7s  [-k 'without_t0_fresh']  a manifest without t0_fresh falls back to t0
+      pytest tail: FAILED test_dag_read.py::test_refuses_a_manifest_without_t0_fresh - Assertion... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 13.96s
+M30 KILLED (RED)       19.4s  [-k 'k4_reads or world_ROBUST']  R-T0 reads the fresh eval
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: [taniteval] tani... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 112 deselected in 16.39s
+N01 KILLED (RED)        1.8s  [-k 'bar_is or replicate_floor']  the bar ignores RF (always 2F)
+      pytest tail: FAILED test_dag_read.py::test_bar_is_max_of_2F_and_2RF - AssertionError: asse... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 110 deselected in 0.76s
+N02 KILLED (RED)        1.5s  [-k 'bar_is or replicate_floor']  the bar uses RF, not 2 x RF
+      pytest tail: FAILED test_dag_read.py::test_bar_is_max_of_2F_and_2RF - AssertionError: asse... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 110 deselected in 0.75s
+N03 KILLED (RED)       16.2s  [-k 'replicate_floor_is_absolute']  RF is the signed gap (ORC-0 better than DAG-0 reads as no floor)
+      pytest tail: FAILED test_dag_read.py::test_replicate_floor_is_absolute_when_ORC0_is_the_better_replicate | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 12.56s
+N04 KILLED (RED)       14.6s  [-k 'replicate_floor_reads_only']  RF is read on each run's own cells, not the cells scored in both
+      pytest tail: FAILED test_dag_read.py::test_replicate_floor_reads_only_the_cells_scored_in_both | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 12.89s
+N05 KILLED (RED)       15.8s  [-k 'world_ROBUST or replicate_floor']  RF is DAG vs ORC-0 (the lever's own effect) instead of DAG-0 vs ORC-0
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: assert ('NO EFFE... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 1 passed, 109 deselected in 14.02s
+N45 KILLED (RED)       24.7s  [-k 'world_ROBUST or replicate_floor']  bar_binding label inverted
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: assert (0.0 == 0... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 1 passed, 109 deselected in 22.55s
+N46 KILLED (RED)       17.7s  [-k 'replicate_floor']  'clears' is judged against 2F, not the bar
+      pytest tail: FAILED test_dag_read.py::test_replicate_floor_is_the_matched_f1_gap_of_DAG0_and_ORC0_and_raises_the_bar | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 1 passed, 111 deselected in 15.80s
+N47 KILLED (RED)        2.1s  [-k 'decide_replicate or replicate_floor_raises']  decide() uses 2F, not the bar
+      pytest tail: FAILED test_dag_read.py::test_decide_replicate_floor_raises_the_bar_per_seed_and_inclusively | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 1.51s
+N44 KILLED (RED)       13.5s  [-k 'world_ROBUST']  ORC-0 is not read (no replicate arm)
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: [taniteval] tani... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 113 deselected in 10.76s
+N06 KILLED (RED)        1.9s  [-k 'committed_numbers']  p is 0.3, not the registered 0.1
+      pytest tail: FAILED test_dag_read.py::test_committed_numbers_are_the_preregs - assert (0.3... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.81s
+N07 KILLED (RED)       14.1s  [-k 'world_ROBUST or g_argv']  DAG-0 is expected at the DAG p
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: [taniteval] tani... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 110 deselected in 11.75s
+N08 KILLED (RED)        1.7s  [-k 'g_argv_each']  --ego-perturb-p 0 is not required on the arms
+      pytest tail: FAILED test_dag_read.py::test_g_argv_each_registered_flag - AssertionError: (... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.92s
+N09 KILLED (RED)        1.5s  [-k 'ego_perturbation_levers']  the ego-perturbation law may ride along on an arm
+      pytest tail: FAILED test_dag_read.py::test_g_argv_the_ego_perturbation_levers_are_never_combined | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.74s
+N10 KILLED (RED)        2.5s  [-k 'dagger_flags_belong']  DAG-0 may name the DAG-only flags
+      pytest tail: FAILED test_dag_read.py::test_g_argv_dagger_flags_belong_to_dag_only - Assert... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 1.66s
+N11 KILLED (RED)        1.5s  [-k 'dagger_flags_belong']  DAG may omit --dagger-bank
+      pytest tail: FAILED test_dag_read.py::test_g_argv_dagger_flags_belong_to_dag_only - Assert... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.85s
+N12 KILLED (RED)        1.4s  [-k 'dagger_flags_belong']  DAG may declare a malformed bank sha256
+      pytest tail: FAILED test_dag_read.py::test_g_argv_dagger_flags_belong_to_dag_only - Assert... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.70s
+N13 KILLED (RED)        1.6s  [-k 'dagger_flags_belong']  DAG may omit --dagger-seed
+      pytest tail: FAILED test_dag_read.py::test_g_argv_dagger_flags_belong_to_dag_only - Assert... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.69s
+N14 KILLED (RED)       10.2s  [-k 'world_ROBUST or g_pair']  the pair rule does not set the DAG-only flags aside
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: [taniteval] tani... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 112 deselected in 8.76s
+N15 KILLED (RED)        1.1s  [-k 'g_pair']  the pair rule sets --lr aside too (a second lever slips through)
+      pytest tail: FAILED test_dag_read.py::test_g_pair_drops_only_the_dagger_flags - AssertionE... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.52s
+N16 KILLED (RED)        1.8s  [-k 'g_pair or g_replicate']  SUMMARY_SAME forgets the TRAIN-list sha
+      pytest tail: FAILED test_dag_read.py::test_g_pair_drops_only_the_dagger_flags - AssertionE... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 113 deselected in 0.84s
+N17 KILLED (RED)        9.3s  [-k 'arm_stage_bank or every_arm_control']  the ORC0-REPLICATE control is not wired
+      pytest tail: FAILED test_dag_read.py::test_refuse_every_arm_control_is_wired_into_the_read | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 101 deselected in 7.93s
+N18 KILLED (RED)        1.0s  [-k 'g_replicate']  ORC-0 may already name --dagger-p
+      pytest tail: FAILED test_dag_read.py::test_g_replicate_orc0_is_dag0_minus_dagger_p - asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.49s
+N19 KILLED (RED)        1.1s  [-k 'coverage_boundary or committed_numbers']  COVERAGE_MIN is 0.4
+      pytest tail: FAILED test_dag_read.py::test_committed_numbers_are_the_preregs - assert (0.4... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 113 deselected in 0.51s
+N20 KILLED (RED)        8.2s  [-k 'coverage_boundary']  COVERAGE is exclusive (exactly 0.5 is blocked)
+      pytest tail: FAILED test_dag_read.py::test_coverage_boundary_exactly_half_launches_one_window_short_is_blocked | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 6.85s
+N21 KILLED (RED)       13.4s  [-k 'BLOCKED']  COVERAGE never blocks
+      pytest tail: FAILED test_dag_read.py::test_coverage_boundary_exactly_half_launches_one_window_short_is_blocked | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 110 deselected in 11.70s
+N22 KILLED (RED)        8.6s  [-k 'world_BLOCKED']  COVERAGE reads seed 0 only
+      pytest tail: FAILED test_dag_read.py::test_world_BLOCKED_reports_the_stats_and_reads_no_arm | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 7.38s
+N23 KILLED (RED)        7.2s  [-k 'REFUSED_beats']  a failed bank control does not stop the read before COVERAGE (BLOCKED beats REFUSED)
+      pytest tail: FAILED test_dag_read.py::test_REFUSED_beats_BLOCKED - AssertionError: [tanite... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 6.06s
+N24 KILLED (RED)        7.5s  [-k 'world_BLOCKED or coverage_boundary']  the eligible fraction counts kept states, not eligible windows
+      pytest tail: FAILED test_dag_read.py::test_coverage_boundary_exactly_half_launches_one_window_short_is_blocked | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 113 deselected in 6.26s
+N25 KILLED (RED)       10.9s  [-k 'BLOCKED']  BLOCKED returns rc 0
+      pytest tail: FAILED test_dag_read.py::test_coverage_boundary_exactly_half_launches_one_window_short_is_blocked | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 110 deselected in 9.56s
+N26 KILLED (RED)        0.9s  [-k 'table_verbatim']  the BLOCKED row's condition text is not the PREREG's
+      pytest tail: FAILED test_dag_read.py::test_table_verbatim_and_in_order - AssertionError: a... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.47s
+N27 KILLED (RED)        1.0s  [-k 'clip_overlap']  K-B3.3 overlap by clip id is blind
+      pytest tail: FAILED test_dag_read.py::test_clip_overlap_by_id_and_by_sid_and_empty_eval - ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.46s
+N28 KILLED (RED)        0.9s  [-k 'clip_overlap']  K-B3.3 overlap by stable sid is blind
+      pytest tail: FAILED test_dag_read.py::test_clip_overlap_by_id_and_by_sid_and_empty_eval - ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.45s
+N29 KILLED (RED)        0.9s  [-k 'clip_overlap or bank_stage_refuses']  an empty eval-141 list is accepted
+      pytest tail: FAILED test_dag_read.py::test_clip_overlap_by_id_and_by_sid_and_empty_eval - ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 113 deselected in 0.46s
+N31 KILLED (RED)        1.0s  [-k 'kb33']  the reader's own K-B3.3 deliberate regression (one eval clip injected) is dropped
+      pytest tail: FAILED test_dag_read.py::test_kb33_bank_clips_and_eval141_are_disjoint_and_the_regression_fires | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.51s
+N32 KILLED (RED)        1.0s  [-k 'kb33']  K-B3.3 ignores the generator's own recorded eval overlap
+      pytest tail: FAILED test_dag_read.py::test_kb33_bank_clips_and_eval141_are_disjoint_and_the_regression_fires | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.49s
+N30 KILLED (RED)        6.7s  [-k 'bank_stage_names']  K-B3.3 is not wired into the bank stage
+      pytest tail: FAILED test_dag_read.py::test_bank_stage_names_every_failed_bank_control - As... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 5.56s
+N81 KILLED (RED)        1.0s  [-k 'kb31']  K-B3.1 accepts a bank clip that is not in TRAIN
+      pytest tail: FAILED test_dag_read.py::test_kb31_bank_clips_are_a_subset_of_TRAIN_by_name_and_fewer_is_fine | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.51s
+N82 KILLED (RED)        1.1s  [-k 'kb31']  K-B3.1's deliberate regression (a non-TRAIN clip injected) is dropped
+      pytest tail: FAILED test_dag_read.py::test_kb31_bank_clips_are_a_subset_of_TRAIN_by_name_and_fewer_is_fine | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.59s
+N83 KILLED (RED)        1.1s  [-k 'kb31 or fewer']  K-B3.1 reads Amendment 1 backwards: EQUALITY of the clip sets is required (the draft's reading)
+      pytest tail: FAILED test_dag_read.py::test_kb31_bank_clips_are_a_subset_of_TRAIN_by_name_and_fewer_is_fine | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 113 deselected in 0.55s
+N84 KILLED (RED)        1.1s  [-k 'kb31']  K-B3.1 accepts an empty TRAIN list
+      pytest tail: FAILED test_dag_read.py::test_kb31_bank_clips_are_a_subset_of_TRAIN_by_name_and_fewer_is_fine | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.56s
+N85 KILLED (RED)        1.0s  [-k 'kb31']  K-B3.1 accepts a bank with no clips
+      pytest tail: FAILED test_dag_read.py::test_kb31_bank_clips_are_a_subset_of_TRAIN_by_name_and_fewer_is_fine | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.50s
+N62 KILLED (RED)        7.5s  [-k 'bank_stage_names']  K-B3.1 is not wired into the bank stage
+      pytest tail: FAILED test_dag_read.py::test_bank_stage_names_every_failed_bank_control - As... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 6.14s
+N52 KILLED (RED)        1.2s  [-k 'kb32']  K-B3.2 ignores the trainer's TRAIN window-list sha
+      pytest tail: FAILED test_dag_read.py::test_kb32_trainer_window_list_sha_is_the_banks_on_both_arms | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.62s
+N86 KILLED (RED)        1.2s  [-k 'kb32 or train_list']  the trainer's value is read on DAG only (DAG-0's is not looked at)
+      pytest tail: FAILED test_dag_read.py::test_kb32_trainer_window_list_sha_is_the_banks_on_both_arms | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 113 deselected in 0.63s
+N87 KILLED (RED)        1.5s  [-k 'kb32']  the trainer's value may differ between DAG and DAG-0
+      pytest tail: FAILED test_dag_read.py::test_kb32_trainer_window_list_sha_is_the_banks_on_both_arms | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.95s
+N88 KILLED (RED)        1.5s  [-k 'kb32']  a trainer value with conflicting records in one run is accepted
+      pytest tail: FAILED test_dag_read.py::test_kb32_trainer_window_list_sha_is_the_banks_on_both_arms | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.63s
+N59 KILLED (RED)       43.8s  [-k 'arm_stage']  K-B3.2 is not wired into the read
+      pytest tail: FAILED test_dag_read.py::test_refuse_arm_stage_bank_and_replicate_controls[trainer_window_list_sha_differs_between_the_arms-<lambda>-needles6-absent6] | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 6 passed, 100 deselected in 38.55s
+N89 KILLED (RED)        1.4s  [-k 'train_list or arm_stage']  TRAIN-LIST does not hash the clip list against the trainer's
+      pytest tail: FAILED test_dag_read.py::test_train_list_binds_the_clip_list_to_the_trainer_and_the_generators_plan | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 99 deselected in 0.68s
+N90 KILLED (RED)        1.3s  [-k 'train_list or arm_stage']  TRAIN-LIST does not compare with the generator's TRAIN plan
+      pytest tail: FAILED test_dag_read.py::test_train_list_binds_the_clip_list_to_the_trainer_and_the_generators_plan | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 99 deselected in 0.76s
+N91 KILLED (RED)       40.3s  [-k 'arm_stage']  TRAIN-LIST is not wired into the read
+      pytest tail: FAILED test_dag_read.py::test_refuse_arm_stage_bank_and_replicate_controls[trainer_clip_list_sha-<lambda>-needles4-absent4] | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 4 passed, 100 deselected in 34.38s
+N33 KILLED (RED)        1.4s  [-k 'kb0']  K-B0 may check a subset of the windows
+      pytest tail: FAILED test_dag_read.py::test_kb0_checks_every_window_and_sums_the_shards - F... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.61s
+N92 KILLED (RED)        1.8s  [-k 'kb0']  K-B0 may check zero windows of a zero-window bank
+      pytest tail: FAILED test_dag_read.py::test_kb0_checks_every_window_and_sums_the_shards - F... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.66s
+N93 KILLED (RED)        1.5s  [-k 'kb0']  K-B0 tolerates a tick-0 mismatch
+      pytest tail: FAILED test_dag_read.py::test_kb0_checks_every_window_and_sums_the_shards - F... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.81s
+N94 KILLED (RED)        2.1s  [-k 'kb0']  K-B0 reads the first shard only
+      pytest tail: FAILED test_dag_read.py::test_kb0_checks_every_window_and_sums_the_shards - d... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 1.30s
+N34 KILLED (RED)        1.6s  [-k 'kb1']  K-B1 may replay a single window
+      pytest tail: FAILED test_dag_read.py::test_kb1_replays_half_a_percent_of_the_rollouts_bit_for_bit | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.74s
+N95 KILLED (RED)        1.8s  [-k 'kb1']  K-B1 tolerates a replay mismatch
+      pytest tail: FAILED test_dag_read.py::test_kb1_replays_half_a_percent_of_the_rollouts_bit_for_bit | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.77s
+N96 KILLED (RED)        1.6s  [-k 'kb1']  K-B1 accepts a replay fraction below 0.5 %
+      pytest tail: FAILED test_dag_read.py::test_kb1_replays_half_a_percent_of_the_rollouts_bit_for_bit | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.93s
+N97 KILLED (RED)        1.9s  [-k 'kb1']  K-B1 reads the first shard only
+      pytest tail: FAILED test_dag_read.py::test_kb1_replays_half_a_percent_of_the_rollouts_bit_for_bit | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 1.02s
+N35 KILLED (RED)        1.5s  [-k 'kb2']  K-B2 does not compare the generator's checkpoint with M2b
+      pytest tail: FAILED test_dag_read.py::test_kb2_generator_checkpoint_must_be_the_m2b_checkpoint | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.69s
+N98 KILLED (RED)        1.7s  [-k 'kb2']  K-B2 does not look at the shards' checkpoint
+      pytest tail: FAILED test_dag_read.py::test_kb2_generator_checkpoint_must_be_the_m2b_checkpoint | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.69s
+N36 KILLED (RED)        2.2s  [-k 'kb4']  K-B4 does not require every matcher case
+      pytest tail: FAILED test_dag_read.py::test_kb4_every_matcher_case_and_kb5_tolerance_come_from_the_generators_controls_block | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 2 passed, 112 deselected in 1.39s
+N37 KILLED (RED)        2.1s  [-k 'kb4']  K-B5 tolerance is 1.0 m
+      pytest tail: FAILED test_dag_read.py::test_kb4_every_matcher_case_and_kb5_tolerance_come_from_the_generators_controls_block | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 2 passed, 112 deselected in 1.23s
+N38 KILLED (RED)        1.9s  [-k 'kb4']  a K-B4 / K-B5 record need not say PASS
+      pytest tail: FAILED test_dag_read.py::test_kb4_every_matcher_case_and_kb5_tolerance_come_from_the_generators_controls_block | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 2 passed, 112 deselected in 1.05s
+N99 KILLED (RED)        4.0s  [-k 'kb4']  a missing K-B4 / K-B5 record is accepted
+      pytest tail: FAILED test_dag_read.py::test_kb4_every_matcher_case_and_kb5_tolerance_come_from_the_generators_controls_block | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 2 passed, 112 deselected in 3.31s
+N60 KILLED (RED)       15.2s  [-k 'bank_stage_names']  K-B5 is not wired into the bank stage
+      pytest tail: FAILED test_dag_read.py::test_bank_stage_names_every_failed_bank_control - As... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 12.50s
+N100 KILLED (RED)       10.5s  [-k 'bank_stage_names']  K-B4 is not wired into the bank stage
+      pytest tail: FAILED test_dag_read.py::test_bank_stage_names_every_failed_bank_control - As... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 8.78s
+N101 KILLED (RED)       13.0s  [-k 'bank_stage_names']  K-B0 is not wired into the bank stage
+      pytest tail: FAILED test_dag_read.py::test_bank_stage_names_every_failed_bank_control - As... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 11.18s
+N102 KILLED (RED)       10.9s  [-k 'bank_stage_names']  K-B1 is not wired into the bank stage
+      pytest tail: FAILED test_dag_read.py::test_bank_stage_names_every_failed_bank_control - As... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 9.36s
+N103 KILLED (RED)       12.0s  [-k 'bank_stage_names']  K-B2 is not wired into the bank stage
+      pytest tail: FAILED test_dag_read.py::test_bank_stage_names_every_failed_bank_control - As... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 9.89s
+N39 KILLED (RED)        1.1s  [-k 'bank_config']  BANK-CONFIG ignores the rollout configuration
+      pytest tail: FAILED test_dag_read.py::test_bank_config_is_section_1_and_2 - AssertionError... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.52s
+N40 KILLED (RED)        1.9s  [-k 'bank_config']  BANK-CONFIG ignores the matching-constants sha256 (probe/THRESHOLDS_FIXED.txt)
+      pytest tail: FAILED test_dag_read.py::test_bank_config_is_section_1_and_2 - AssertionError... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.78s
+N41 KILLED (RED)        1.1s  [-k 'bank_config']  BANK-CONFIG ignores the TRAIN window count
+      pytest tail: FAILED test_dag_read.py::test_bank_config_is_section_1_and_2 - AssertionError... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.57s
+N43 KILLED (RED)        1.5s  [-k 'bank_config']  BANK-CONFIG ignores the TRAIN clip count
+      pytest tail: FAILED test_dag_read.py::test_bank_config_is_section_1_and_2 - AssertionError... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.78s
+N48 KILLED (RED)        1.0s  [-k 'bank_config']  BANK-CONFIG ignores hmax
+      pytest tail: FAILED test_dag_read.py::test_bank_config_is_section_1_and_2 - AssertionError... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.51s
+N42 KILLED (RED)        1.1s  [-k 'bank_config']  BANK-CONFIG accepts a PARTIAL (--limit-clips) bank
+      pytest tail: FAILED test_dag_read.py::test_bank_config_is_section_1_and_2 - AssertionError... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.57s
+N104 KILLED (RED)        1.1s  [-k 'bank_config']  BANK-CONFIG looks at the partial flag only (limit_clips is ignored)
+      pytest tail: FAILED test_dag_read.py::test_bank_config_is_section_1_and_2 - AssertionError... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.48s
+N105 KILLED (RED)        1.3s  [-k 'bank_config']  BANK-CONFIG ignores the matching constants the generator recorded
+      pytest tail: FAILED test_dag_read.py::test_bank_config_is_section_1_and_2 - AssertionError... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.87s
+N106 KILLED (RED)        1.1s  [-k 'bank_config']  BANK-CONFIG ignores the cut-reason list
+      pytest tail: FAILED test_dag_read.py::test_bank_config_is_section_1_and_2 - AssertionError... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.50s
+N107 KILLED (RED)        0.9s  [-k 'bank_config']  BANK-CONFIG does not hold the generator's eval list to the one given to the reader
+      pytest tail: FAILED test_dag_read.py::test_bank_config_is_section_1_and_2 - AssertionError... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.50s
+N108 KILLED (RED)        1.0s  [-k 'bank_config']  BANK-CONFIG accepts a non-hex sha256
+      pytest tail: FAILED test_dag_read.py::test_bank_config_is_section_1_and_2 - AssertionError... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.49s
+N109 KILLED (RED)        1.1s  [-k 'bank_config']  BANK-CONFIG ignores the schema
+      pytest tail: FAILED test_dag_read.py::test_bank_config_is_section_1_and_2 - AssertionError... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.63s
+N110 KILLED (RED)        9.4s  [-k 'bank_stage_names']  BANK-CONFIG is not wired into the bank stage
+      pytest tail: FAILED test_dag_read.py::test_bank_stage_names_every_failed_bank_control - As... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 8.08s
+N111 KILLED (RED)        1.0s  [-k 'bank_files']  BANK-FILES: bank.json is not held to the report's bank_sha256
+      pytest tail: FAILED test_dag_read.py::test_bank_files_hashes_and_counts - AssertionError: ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.46s
+N112 KILLED (RED)        1.1s  [-k 'bank_files']  BANK-FILES: a shard file is not held to the manifest's sha256
+      pytest tail: FAILED test_dag_read.py::test_bank_files_hashes_and_counts - AssertionError: ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.56s
+N113 KILLED (RED)        0.9s  [-k 'bank_files']  BANK-FILES: the record counts need not add up
+      pytest tail: FAILED test_dag_read.py::test_bank_files_hashes_and_counts - AssertionError: ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.48s
+N114 KILLED (RED)        1.0s  [-k 'bank_files']  BANK-FILES: the partial flags need not agree
+      pytest tail: FAILED test_dag_read.py::test_bank_files_hashes_and_counts - AssertionError: ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.49s
+N115 KILLED (RED)        1.1s  [-k 'bank_files']  BANK-FILES: a clip may appear in two shards
+      pytest tail: FAILED test_dag_read.py::test_bank_files_hashes_and_counts - AssertionError: ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.54s
+N116 KILLED (RED)        1.2s  [-k 'bank_files']  BANK-FILES: a clip INDEX may repeat across shards
+      pytest tail: FAILED test_dag_read.py::test_bank_files_hashes_and_counts - AssertionError: ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.69s
+N117 KILLED (RED)        1.2s  [-k 'bank_files']  BANK-FILES: the shard provenance may describe other files
+      pytest tail: FAILED test_dag_read.py::test_bank_files_hashes_and_counts - AssertionError: ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.72s
+N118 KILLED (RED)        1.6s  [-k 'bank_files']  BANK-FILES: a shard's window-list sha may differ from the manifest's
+      pytest tail: FAILED test_dag_read.py::test_bank_files_hashes_and_counts - AssertionError: ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.74s
+N119 KILLED (RED)        1.3s  [-k 'bank_files']  BANK-FILES: the shard count need not agree
+      pytest tail: FAILED test_dag_read.py::test_bank_files_hashes_and_counts - AssertionError: ... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.71s
+N121 KILLED (RED)       28.0s  [-k 'bank_files or arm_stage']  BANK-FILES is not wired into the bank stage
+      pytest tail: FAILED test_dag_read.py::test_refuse_arm_stage_bank_and_replicate_controls[bank_manifest_altered-<lambda>-needles2-absent2] | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 3 passed, 99 deselected in 25.76s
+N122 KILLED (RED)       23.9s  [-k 'loader or key_structure or arm_stage']  the loader trusts the report's bank sha256 instead of hashing bank.json
+      pytest tail: FAILED test_dag_read.py::test_refuse_arm_stage_bank_and_replicate_controls[bank_manifest_altered-<lambda>-needles2-absent2] | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 4 passed, 98 deselected in 21.83s
+N123 KILLED (RED)       29.9s  [-k 'loader or key_structure or arm_stage']  the loader trusts the manifest's shard sha256 instead of hashing the shard file
+      pytest tail: FAILED test_dag_read.py::test_refuse_arm_stage_bank_and_replicate_controls[bank_shard_altered-<lambda>-needles3-absent3] | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 5 passed, 98 deselected in 26.99s
+N49 KILLED (RED)        1.4s  [-k 'bank_accounting']  BANK-ACCOUNTING ignores that every tick holds n_windows own states (2 x windows in all)
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - Asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.48s
+N124 KILLED (RED)        1.9s  [-k 'bank_accounting']  BANK-ACCOUNTING accepts extra / missing ticks
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - Asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.82s
+N50 KILLED (RED)        1.1s  [-k 'bank_accounting']  BANK-ACCOUNTING ignores the states-vs-n_records equality
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - Asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.54s
+N125 KILLED (RED)        1.2s  [-k 'bank_accounting']  BANK-ACCOUNTING compares the states with PROVENANCE's n_records only
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - Asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.57s
+N51 KILLED (RED)        1.3s  [-k 'bank_accounting']  BANK-ACCOUNTING ignores a conflicting stated fraction
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - Asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.64s
+N126 KILLED (RED)        1.1s  [-k 'bank_accounting']  BANK-ACCOUNTING: eligible windows may exceed the kept states
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - Asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.58s
+N127 KILLED (RED)        1.4s  [-k 'bank_accounting']  BANK-ACCOUNTING: eligible windows may exceed the windows
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - Asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.60s
+N128 KILLED (RED)        1.8s  [-k 'bank_accounting']  BANK-ACCOUNTING ignores the stated min / blocked flag
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - Asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 1.21s
+N129 KILLED (RED)        1.4s  [-k 'bank_accounting']  BANK-ACCOUNTING: bank.json's coverage / reasons may differ from PROVENANCE's
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - Asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.62s
+N130 KILLED (RED)        1.5s  [-k 'bank_accounting']  BANK-ACCOUNTING compares bank.json's coverage only (not its reasons)
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - Asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.58s
+N131 KILLED (RED)        1.3s  [-k 'bank_accounting']  BANK-ACCOUNTING ignores the window count of the TRAIN plan
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - Asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.58s
+N132 KILLED (RED)        1.1s  [-k 'bank_accounting']  BANK-ACCOUNTING compares the window count even for a partial bank
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - asser... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.60s
+N133 KILLED (RED)        1.5s  [-k 'bank_accounting']  coverage_of accepts a zero-window bank
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - ZeroD... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.89s
+N134 KILLED (RED)        1.3s  [-k 'bank_accounting']  coverage_of accepts a missing reason count
+      pytest tail: FAILED test_dag_read.py::test_bank_accounting_and_coverage_arithmetic - KeyEr... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.65s
+N61 KILLED (RED)        9.1s  [-k 'bank_stage_names']  BANK-ACCOUNTING is not wired into the bank stage
+      pytest tail: FAILED test_dag_read.py::test_bank_stage_names_every_failed_bank_control - As... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 7.64s
+N54 KILLED (RED)        1.0s  [-k 'bank_declared']  BANK-DECLARED ignores that --dagger-bank-sha256 is named exactly once with one value
+      pytest tail: FAILED test_dag_read.py::test_bank_declared_argv_trainer_record_init_and_bank_hash | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.53s
+N55 KILLED (RED)        1.1s  [-k 'bank_declared']  BANK-DECLARED: the recorded bank sha256 is not held to the sha256 of bank.json (comparison B)
+      pytest tail: FAILED test_dag_read.py::test_bank_declared_argv_trainer_record_init_and_bank_hash | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.48s
+N139 KILLED (RED)        1.1s  [-k 'bank_declared']  BANK-DECLARED: the argv's --dagger-bank-sha256 is not held to the recorded levers.dagger_bank_sha256 (comparison A)
+      pytest tail: FAILED test_dag_read.py::test_bank_declared_argv_trainer_record_init_and_bank_hash | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.56s
+N56 KILLED (RED)        1.1s  [-k 'bank_declared']  BANK-DECLARED (K-B2 on the arm) ignores the init checkpoint
+      pytest tail: FAILED test_dag_read.py::test_bank_declared_argv_trainer_record_init_and_bank_hash | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.45s
+N58 KILLED (RED)        9.9s  [-k 'arm_stage or every_arm_control']  BANK-DECLARED is not wired into the read
+      pytest tail: FAILED test_dag_read.py::test_refuse_every_arm_control_is_wired_into_the_read | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 99 deselected in 8.75s
+N135 KILLED (RED)        8.7s  [-k 'world_ROBUST']  the window-list key defaults to the CLIP-list key
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: [taniteval] tani... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 113 deselected in 7.53s
+N136 KILLED (RED)        8.3s  [-k 'world_ROBUST']  the clip-list key defaults to the window-list key
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: [taniteval] tani... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 113 deselected in 7.14s
+N63 KILLED (RED)        0.9s  [-k 'harms_branches or outcome_block or world_HARMS']  HARMS at p = 0.1 resolves to the wrong branch
+      pytest tail: FAILED test_dag_read.py::test_harms_branches_are_substrings_of_the_cell_and_resolve_by_p | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 111 deselected in 0.45s
+N141 KILLED (RED)        7.8s  [-k 'section_4 or world_ROBUST or g_pair']  the pair rule does not set --dagger-p aside (DAG at p 0.1 vs DAG-0 at 0 is then 'another lever')
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: [taniteval] tani... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 111 deselected in 6.73s
+N142 KILLED (RED)        1.2s  [-k 'section_4 or dagger_flags_belong']  the DAG-only flag set is two flags (--dagger-seed is not one of them)
+      pytest tail: FAILED test_dag_read.py::test_section_4_names_FOUR_dagger_flags_and_the_reader_follows_it_exactly | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 1 passed, 113 deselected in 0.50s
+N143 KILLED (RED)       11.1s  [-k 'section_4 or world_ROBUST']  the DAG-only flag set also holds --dagger-p (DAG-0 may not name it)
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: [taniteval] tani... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 112 deselected in 7.45s
+N144 KILLED (RED)        1.0s  [-k 'section_4']  DAG-0 is not required to NAME --dagger-p (the registered value is not checked on DAG-0)
+      pytest tail: FAILED test_dag_read.py::test_section_4_names_FOUR_dagger_flags_and_the_reader_follows_it_exactly | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.48s
+N64 KILLED (RED)        1.3s  [-k 'prereg_file']  the PREREG id names another commit
+      pytest tail: FAILED test_dag_read.py::test_prereg_file_is_the_landed_draft_plus_amendment_1 | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.71s
+N137 KILLED (RED)        1.1s  [-k 'prereg_file']  the PREREG id drops Amendment 1
+      pytest tail: FAILED test_dag_read.py::test_prereg_file_is_the_landed_draft_plus_amendment_1 | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.50s
+N138 KILLED (RED)        1.1s  [-k 'prereg_file']  the pinned sha256 of the landed PREREG is another file's
+      pytest tail: FAILED test_dag_read.py::test_prereg_file_is_the_landed_draft_plus_amendment_1 | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 114 deselected in 0.50s
+N65 KILLED (RED)        9.0s  [-k 'strategic_label or world_ROBUST']  the STRATEGIC family is labelled paused
+      pytest tail: FAILED test_dag_read.py::test_world_ROBUST - AssertionError: assert (True and... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 112 deselected in 7.76s
+N66 KILLED (RED)        2.1s  [-k 'strategic_label or committed']  T1-kin is called a closed loop
+      pytest tail: FAILED test_dag_read.py::test_strategic_label_and_tier_strings_are_pinned - a... | !!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!! | 1 failed, 2 passed, 112 deselected in 1.26s
+mutation rc=0
