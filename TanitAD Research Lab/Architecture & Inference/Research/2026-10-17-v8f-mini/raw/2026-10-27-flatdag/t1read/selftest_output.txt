@@ -1,0 +1,124 @@
+PASS L0 F, 2F, F/2, B, COVERAGE, swap constants are the PREREG's
+PASS L1 the real pinned PREREG: section 2 + 4 cells verbatim, no problem
+PASS L1b PREREG text with a bar changed in the PRIMARY row -> a problem is reported
+PASS L1b PREREG text with an outcome condition changed -> a problem is reported
+PASS L1b PREREG text with two outcome rows swapped -> a problem is reported
+PASS L1b PREREG text with a section-2 row dropped -> a problem is reported
+PASS L1b PREREG text with the order sentence changed -> a problem is reported
+PASS L1b PREREG text with control C-F3 dropped -> a problem is reported
+PASS L1b PREREG text with an extra outcome row appended -> a problem is reported
+PASS L1c the pin check passes the pinned file and refuses another file
+PASS L2 primary_state: exactly -2F and separated is MET (inclusive)
+PASS L2 primary_state: just above -2F is SHORT
+PASS L2 primary_state: past -2F but not separated is NS (a bar is not a CI)
+PASS L2 primary_state: separated-worse is WORSE; not separated positive is NS
+PASS L2 primary_met agrees
+PASS L3 sep_worse: error row, positive separated is worse; negative separated is not
+PASS L3 sep_worse: agreement row (TAC), NEGATIVE separated is worse
+PASS L3 sep_worse: an unseparated row is never worse
+PASS L3 sep_better is the mirror
+PASS L4 family_flags: accel (error up), TAC-LAT (agreement down) and M1 are separated-worse; the NOT COMPUTED row is listed and never worse
+PASS L4 family_flags: the table-only reading leaves M1 out
+PASS L4 family_flags: a label with no declared direction is read as an ERROR row (up = worse), never as agreement
+PASS L4 family_flags: no worse row on a clean table
+PASS L5 HIERARCHY BEATS FLAT: both seeds MET, no family row worse
+PASS L5 one seed MET and the other SHORT -> NOT ESTABLISHED
+PASS L5 one seed MET and the other not separated -> NOT ESTABLISHED
+PASS L5 a family row separated-worse at seed 0 only blocks the claim -> NOT ESTABLISHED
+PASS L5 a family row separated-worse at seed 1 only blocks the claim -> NOT ESTABLISHED
+PASS L5 FLAT BETTER if ADE6 is separated-worse at seed 1 only (even with seed 0 MET)
+PASS L5 FLAT BETTER if ADE6 is separated-worse at seed 0 only
+PASS L5 FLAT BETTER precedes HIERARCHY BEATS FLAT (a worse seed cannot be a claim)
+PASS L5 BLOCKED precedes FLAT BETTER and HIERARCHY BEATS FLAT
+PASS L5 REFUSED precedes everything
+PASS L5 NOT ESTABLISHED is the catch-all (SHORT, SHORT)
+PASS L5 matching rows are returned in table order, NOT ESTABLISHED last
+PASS L5 decide refuses a call without both seeds
+PASS L5 outcome_block carries the PREREG's condition and committed next verbatim
+PASS L5 outcome_rc: 0 placed outcomes, 2 REFUSED, 4 BLOCKED, 3 UNPLACED
+PASS L6 enumerate_cells: 128 cells, none unplaced, decide() == the independent table, every row reached
+PASS L7 guards_beside: R-T0 point == F/2 holds (inclusive); just above fails; R-ADE separated-worse fails
+PASS L8 build_check passes on the real pulled FLAT-DAG s0 record (cut built, e_code dead, O invariant, swap share in 0.1 +- 0.02)
+PASS L8 o_interface built full -> BUILD-CUT-LEVER fails (named)
+PASS L8 e_code alive -> BUILD-CUT-GRAD fails (named)
+PASS L8 e_code NOT among the measured dead parameters (declared only) -> BUILD-CUT-GRAD fails
+PASS L8 a second dead parameter beside e_code -> BUILD-CUT-GRAD fails
+PASS L8 an unexpectedly dead parameter -> BUILD-CUT-GRAD fails
+PASS L8 O moves under a perturbation -> BUILD-CUT-INVARIANT fails (named)
+PASS L8 the probe itself not passing -> BUILD-CUT-INVARIANT fails
+PASS L8 swap share 14000/144182 = 0.0971: outside 0.1 +- 0.02
+PASS L8 swap share 10000/144182 = 0.0694: outside 0.1 +- 0.02
+PASS L8 swap share 14581/144182 = 0.1011: inside 0.1 +- 0.02
+PASS L8 swap share 17000/144182 = 0.1179: inside 0.1 +- 0.02
+PASS L8 swap share 18000/144182 = 0.1248: outside 0.1 +- 0.02
+PASS L8 p = 0 arm with dagger_n 3 -> BUILD-SWAP fails; with 0 passes
+PASS L9 flat_argv_problems: the real FLAT-DAG s0 argv is FLAT's plus exactly the recipe
+PASS L9 an extra non-recipe flag is reported
+PASS L9 --o-interface not named is reported
+PASS L9 --o-interface named by neither side (a banked FLAT argv without it) -> still reported (cut must be NAMED)
+PASS L9 --o-interface full is reported
+PASS L9 a shared flag with another value than FLAT's is reported
+PASS L9 a missing recipe flag is reported for flatdag; flatdag0 must NOT carry the bank flags
+PASS L10 rollout_argv_problems: differing only in --ckpt/--tag/--out-dir/--dump-ticks is clean
+PASS L10 a changed --limit is reported
+PASS L10 a changed --scene is reported
+PASS L10 a different token count is reported
+PASS L11 oracle identity: equal arrays on a code-changing oracle -> clean
+PASS L11 one window differs by 1e-9 -> reported
+PASS L11 a prediction differs by 1e-9 -> reported
+PASS L11 mode absmask (not an oracle) -> reported
+PASS L11 frac_code_changed 0 (a zero would say nothing) -> reported
+PASS L11 no json at all -> reported
+PASS L11 another eval grid -> reported
+PASS L12 rows_diff: equal rows -> no difference, max 0.0; a metadata label is skipped
+PASS L12 rows_diff: a 1e-6 difference is reported
+PASS L12 rows_diff: a flipped separated flag is reported
+PASS L12 rows_diff: a different n is reported
+PASS L12 rows_diff: a row on one side only is reported
+PASS L13 g_argv: init FLAT_s0 is accepted and handed to the reader's own clause
+PASS L13 g_argv: init M2b_s0, DAG_s0 or FLAT_s1 for seed 0 is refused
+PASS L14 COVERAGE 0.49: BLOCKED reasons = 2 (the minimum is inclusive 0.5)
+PASS L14 COVERAGE 0.5: BLOCKED reasons = 0 (the minimum is inclusive 0.5)
+PASS L14 COVERAGE 0.51: BLOCKED reasons = 0 (the minimum is inclusive 0.5)
+PASS L15 family_of routes controls to C-F1..C-F4
+PASS P1 a synthetic complete FLAT-DAG s0 pull is COMPLETE
+PASS P1 the sums are 9 names with the oracle -tacorc.npz
+PASS P2 a SHA256SUMS.txt younger than 3 s is INCOMPLETE (may still be filling)
+PASS P3 8 of the 9 names listed -> INCOMPLETE
+PASS P4 a listed file absent -> INCOMPLETE
+PASS P5 a file whose sha256 differs from the sums -> INCOMPLETE
+PASS P6 summary.json done false -> INCOMPLETE
+PASS P7 a box-2 fresh-age eval in the sums -> WRONG (never waited for)
+PASS P8 flatdag0's directory holding a --dagger-p 0.1 run -> WRONG
+PASS P9 flatdag's directory holding a --dagger-p 0 run -> WRONG
+PASS P8b flatdag0's directory holding a --dagger-p 0.1 run WITHOUT the bank flags -> WRONG (by the p alone)
+PASS P8c flatdag0's directory naming the bank flags with --dagger-p 0 -> WRONG (by the bank flags alone)
+PASS P10 argv without --o-interface cut -> WRONG
+PASS P11 init-ckpt = M2b_s0 (not FLAT_s0) -> WRONG
+PASS P11 init-ckpt = DAG_s0 -> WRONG
+PASS P12 the M2b/iteration-1 bank (not FLAT's own) -> WRONG
+PASS P13 --out naming another run -> WRONG
+PASS P14 summary.json levers.init_ckpt.sha256 not FLAT_s0's -> WRONG
+PASS P15 argv --seed 0 in a seed-1 directory -> WRONG
+PASS P16 an unknown arm or an absent directory -> INCOMPLETE
+PASS P17 the REAL pulls M2b_s0_flatdag, M2b_s0_flatdag0, M2b_s1_flatdag are COMPLETE
+PASS P18 the REAL banks s0 and s1 are COMPLETE (11 files, bank.json == the gate's declared sha256)
+PASS P19 a bank with the wrong expected shard count is WRONG
+PASS C1 baseline dry-run ends ZZFLATDAGT1-DRY-OK, rc 0
+PASS C2 four rollout commands: FLAT-DAG s0, FLAT-DAG-0 s0 (lane s0), FLAT-DAG s1, FLAT-DAG-0 s1 (lane s1), tags never FLAT_s..
+PASS C3 every rollout is --limit causal --dump-heads --dump-ticks, m=10, deadreckon, logged scene, periodic, on CPU, on the pulled checkpoint
+PASS C4 no logged-bucket rollout and no fresh-T0 command is planned
+PASS C5 the pulls are reported by name (four run states and two banks)
+PASS C6 the reader command carries the FLAT shas slots, the pinned PREREGs and writes only under v8f-flatdag-t1
+PASS C7 the dry run says the box-2 DONE gate and the bank gate come after the lanes
+PASS C8 the default box-2 watcher is the box-2 chain's own log (read-only)
+PASS C9 C: gate: 2047 MB free STOPs (rc 1, ZZFLATDAGT1-STOP)
+PASS C9 C: gate: exactly 2048 MB passes
+PASS C10 E: gate: 1499 MB free STOPs
+PASS C10 E: gate: exactly 1500 MB passes
+PASS C11 a tampered PREREG (one number changed) STOPs on its pin
+PASS C12 a missing tool tree STOPs
+PASS C14 control: a three-file tree whose tool builds from ck[cfg] passes the cfg guard (and stops later, at --help, for lack of imports)
+PASS C14 a tool that does NOT build the model from the checkpoint's cfg STOPs on that guard
+PASS C13 bash -n flatdag_t1_chain.sh (the real-run branch is at least syntactically valid)
+SELFTEST: 123/123 checks as expected (86 s)

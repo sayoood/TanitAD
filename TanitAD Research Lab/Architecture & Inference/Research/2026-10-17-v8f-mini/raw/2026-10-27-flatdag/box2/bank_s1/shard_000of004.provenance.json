@@ -1,0 +1,211 @@
+{
+ "schema": "v8f-dagger-bank-v1",
+ "kind": "shard",
+ "created_unix": 1793118202.9001749,
+ "argv": [
+  "D:\\tanitad\\repo\\stack\\scripts\\v8f_dagger_bank.py",
+  "gen",
+  "--ckpt",
+  "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s1_flat\\ckpt_last.pt",
+  "--m2b-argv",
+  "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s1_flat\\argv.json",
+  "--cache-dir",
+  "D:\\tanitad\\cache_full",
+  "--tracks",
+  "D:\\tanitad\\cache_full\\native_tracks.pt",
+  "--join-train",
+  "D:\\tanitad\\runs\\v8f_mini_full\\join_train.npz",
+  "--eval-grid",
+  "D:\\tanitad\\runs\\v8f_mini_full\\dagpin\\eval_grid_windows.json",
+  "--batch",
+  "32",
+  "--threads",
+  "2",
+  "--device",
+  "cuda",
+  "--expect-clips",
+  "4512",
+  "--expect-windows",
+  "306566",
+  "--out-dir",
+  "D:\\tanitad\\runs\\v8f_mini_full\\dagger_bank_flat\\s1",
+  "--shard",
+  "0",
+  "--n-shards",
+  "4"
+ ],
+ "plan": {
+  "mode": "gen",
+  "shard": [
+   0,
+   4
+  ],
+  "n_train_clips": 4512,
+  "n_train_windows": 306566,
+  "window_list_sha256": "e144adcd9b6273f2b44ad7dfa162931b90e159f7b3911e0893b25777b2ae8168",
+  "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+  "limit_clips": 0,
+  "partial": false,
+  "shard_clips": 1128,
+  "shard_windows": 76643,
+  "chunks": 2396,
+  "batch": 32,
+  "est_records": 153286,
+  "est_shard_bytes": 168001456,
+  "replay_chunks": 12,
+  "eval_clips": 141,
+  "eval_overlap": 0,
+  "ckpt_sha256": null,
+  "hmax": 16,
+  "readable_rows": {
+   "j_min": 13,
+   "first_row_read": 4
+  },
+  "device": "cuda"
+ },
+ "inputs": {
+  "ckpt": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s1_flat\\ckpt_last.pt",
+   "sha256": "6fdfc9b02ce87248c5315dd7604d3642a3b39f7ae0f593ec6b6ef5ef8df64c95",
+   "bytes": 86969237
+  },
+  "m2b_argv": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s1_flat\\argv.json",
+   "sha256": "8d894b6bd27cfb93061a8a81eac90e073b78a0cc12853df196b0c81365a1ba4e",
+   "bytes": 756
+  },
+  "tracks": {
+   "path": "D:\\tanitad\\cache_full\\native_tracks.pt",
+   "sha256": "1db431f112b1bd7c426073c43c7df5fc75b2a032736c1e2020f02ffb118669e7",
+   "bytes": 16591688
+  },
+  "join_train": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\join_train.npz",
+   "sha256": "978f41bf4f1e4c8b75bdfad31d39ee184b59634feb5da902157d306595ac3124",
+   "bytes": 34696488
+  },
+  "eval_grid": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\dagpin\\eval_grid_windows.json",
+   "sha256": "659c3b65e364ea5de87a4e17d076eba5645df95cdcf39d8abc08caab1b2d594c",
+   "bytes": 21050
+  }
+ },
+ "tool_sha256": {
+  "stack/tanitad/data/v8f_dagger.py": "b20cc058b17e1029ddb138dc84f434333bf6b0b2746c5b76e996cef17c176bd3",
+  "stack/scripts/v8f_dagger_bank.py": "893dd6547b361c34fd2307f9efaf0b9bf822a1476506d3aa65498d7dbba53da3",
+  "stack/scripts/v8f_t1_eval.py": "61e140edb9da01acbbba4eef81e74bbb68b57e2ff31842e05958759446d97397",
+  "stack/tanitad/data/v8f_mini_data.py": "0e4a8cea438532424addb14d3c28a8f0b34f6c1ca33562384c3e389141f49588",
+  "stack/tanitad/models/v8f_mini.py": "8ec5e19037b681242a13f3642818b2a82e84395b0b5436bc5ff17f39822c5b3a"
+ },
+ "versions": {
+  "torch": "2.11.0+cu128",
+  "numpy": "2.5.1",
+  "python": "3.13.13"
+ },
+ "device": "cuda",
+ "threads": 2,
+ "n_records": 153286,
+ "reasons_by_tick": {
+  "1": {
+   "ok": 60164,
+   "off_lat": 206,
+   "off_head": 5598,
+   "end_edge": 10675,
+   "nonfinite": 0
+  },
+  "2": {
+   "ok": 38000,
+   "off_lat": 11681,
+   "off_head": 11086,
+   "end_edge": 15876,
+   "nonfinite": 0
+  }
+ },
+ "coverage": {
+  "n_windows": 76643,
+  "n_eligible": 57294,
+  "fraction": 0.7475438070012917,
+  "min": 0.5,
+  "blocked": false
+ },
+ "kb0_tick0_identity": {
+  "checked": 76643,
+  "mismatch": 0
+ },
+ "kb1_replay": {
+  "chunks": 12,
+  "windows": 384,
+  "mismatch_chunks": 0,
+  "frac": 0.005,
+  "seed": 0
+ },
+ "kb3_eval_disjoint": {
+  "n_eval_clips": 141,
+  "overlap": 0
+ },
+ "controls": {
+  "K-B4": {
+   "PASS": true,
+   "cases": {
+    "straight": true,
+    "stationary_tie": true,
+    "lateral_cut": true,
+    "heading_cut": true,
+    "end_edge": true,
+    "loop": true
+   }
+  },
+  "K-B5": {
+   "PASS": true,
+   "max_pose_now_err_m": 0.0,
+   "max_pose_now_yaw_err_rad": 0.0,
+   "max_reanchor_vs_pose_now_m": 0.0,
+   "max_rel_transform_err_m": 6.114566140956352e-05,
+   "max_rel_transform_yaw_err_rad": 9.429399567828511e-07,
+   "max_rel_transform_err_float64_m": 2.155536886927163e-13,
+   "tol_m": 0.0001,
+   "n_records": 153286,
+   "n_skipped_nonfinite": 0,
+   "n_pairs": 39138568,
+   "sample": "all records with a finite own pose and a logged row at r' (reason != nonfinite); no sampling, no seed",
+   "measured_on": "the float32 tensors the swap emits (reanchor_rows, cast to float32), against the logged float64 poses",
+   "log_pose_sha256": "e219498abe82556714b42e5c1f504f484875e6c6c8a8495638ec54dba567a701"
+  }
+ },
+ "causal_bucket_stats": {
+  "ticks": 231081,
+  "confusion_logged_x_causal": [
+   [
+    63274,
+    18260,
+    1376,
+    13
+   ],
+   [
+    15550,
+    59890,
+    8524,
+    36
+   ],
+   [
+    1246,
+    5772,
+    41894,
+    2841
+   ],
+   [
+    0,
+    0,
+    1139,
+    11266
+   ]
+  ]
+ },
+ "file_sha256": "969d328db4b2b085b1aa71bc7044659f72f7fa6382070292ffce453bec7b8c55",
+ "content_sha256": "fadc571ae616e38f67e2e59e9e171b9ca0e2ec5e823c143d3a10e8d70ddf1b29",
+ "seconds": {
+  "rollout": 3033.7394280433655,
+  "total": 3052.70858502388
+ },
+ "warnings": []
+}

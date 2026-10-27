@@ -1,0 +1,156 @@
+10-27 15:26 waiting for the predecessor chain (/c/Users/Admin/box2_ship/logs/chain_v8f_dagoacc.out: end markers ^ZZV8FMINI-DONE / ^ZZV8FMINI-STOP; log present: yes)
+10-27 15:36 predecessor verdict: GO the predecessor STOPPED on its own (ZZV8FMINI-STOP gate DAG-OACC assertions M2b_s0_dagoacc) and released the box: the arms are independent
+10-27 15:36 boot0=2026-10-17 18:43:26
+F1 (INIT_CKPT_MATCH names o_interface): INIT_CKPT_MATCH has 23 keys and names o_interface
+10-27 15:37 code archive /c/Users/Admin/box2_ship/repo_v8fflatdag_tip.tar: 4085760 bytes, 63 paths
+10-27 15:37 launched pid=15528 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_refresh.log
+===== ZZJOB-END 27.10.2026 15:37:07,33 rc=0
+10-27 15:37 v8fflatdag10271526_refresh rc=0
+10-27 15:37 box 2 code = tip 3101dbf1dab6399252dbcec7f2f1ada7325a8317 (13 key files sha-checked; both v9 releases md5-checked)
+10-27 15:38 before the banks: box 2's M2b_s0_flat/summary.json differs from the repo blob in bytes only (JSON)
+10-27 15:38 before the banks: box 2's M2b_s1_flat/summary.json differs from the repo blob in bytes only (JSON)
+10-27 15:38 before the banks: FLAT_s0 and FLAT_s1 (checkpoint sha256; argv.json, summary.json = the repo blobs) are the banked FLAT runs'
+10-27 15:38 launched pid=17312 rc=0 log=D:\tanitad\logs\telemetry_long.log
+10-27 15:39 launched pid=6048 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_bank_s0.log
+===== ZZJOB-END 27.10.2026 16:31:46,05 rc=0
+10-27 16:32 v8fflatdag10271526_bank_s0 rc=0
+10-27 16:32 bank s0: the small files (bank.json, PROVENANCE.json, bank_stage.log, 4 shard provenance) fetched to /e/Projects/TanitAD-artifacts/v8f-flatdag/bank_s0 (bank.json sha256 1fa89521d9c0f452f03e29176cd3ac6bb85c6cb478e6316b3806e0bdedb540c3); the shard npz follow only if the controls pass
+10-27 16:32 launched pid=24352 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_bank_s1.log
+===== ZZJOB-END 27.10.2026 17:23:44,18 rc=0
+10-27 17:24 v8fflatdag10271526_bank_s1 rc=0
+10-27 17:24 bank s1: the small files (bank.json, PROVENANCE.json, bank_stage.log, 4 shard provenance) fetched to /e/Projects/TanitAD-artifacts/v8f-flatdag/bank_s1 (bank.json sha256 f52475553fd6ff3f8097861f29f572280f37e05519bd47755c0ec315efebbdf6); the shard npz follow only if the controls pass
+ZZOAF-JUDGE {"blocked_seeds": [], "coverage_min": 0.5, "outcome": "PASS", "refused_because": [], "seeds": [{"bad": [], "bank_sha256": "1fa89521d9c0f452f03e29176cd3ac6bb85c6cb478e6316b3806e0bdedb540c3", "controls": {"BANK-FILES": true, "COMPLETE": true, "COVERAGE `blocked` flag agrees with n_eligible / n_windows < 0.5": true, "COVERAGE record is well-formed (denominator = the TRAIN window count)": true, "K-B0 tick-0 identity on every window": true, "K-B1 replay bit-exact": true, "K-B2 on-policy: the bank's checkpoint is the banked GENERATOR's (DAG_s<seed> / FLAT_s<seed>)": true, "K-B3 eval-141 disjoint": true, "K-B4 matcher synthetic cases (PROVENANCE.json controls.K-B4: PASS True and all six cases True)": true, "K-B5 re-anchoring (PROVENANCE.json controls.K-B5: PASS True, both errors <= 1e-4 m)": true, "PROVENANCE.json agrees with bank.json on coverage": true, "ROLLOUT=PREREG-1": true, "SCHEMA": true, "SHARDS": true, "TRAIN list is M2b's (clips, windows; the generator's data flags are M2b's)": true}, "coverage": {"blocked": false, "fraction": 0.7508203779936458, "min": 0.5, "n_eligible": 230176, "n_windows": 306566}, "extra_controls_in_provenance": {"K-B4": {"PASS": true, "cases": {"end_edge": true, "heading_cut": true, "lateral_cut": true, "loop": true, "stationary_tie": true, "straight": true}, "n_shards_checked": 4, "run_at": "generation (every shard) and at the merge"}, "K-B5": {"PASS": true, "log_pose_sha256_by_shard": ["5b0aef530de4f989576e23bf76160dde1d44822c22beba13f5915e554c39787c", "668ef7c3b0b23105b9f5d9378702fa22daa6b569506f341d0e718256a014563d", "cfecab39c56ef2e560dc3f397428851ce786fc461dc76599b5cda81506cf97dc", "ad52d9c4ce96c5de0673b0e601736fe94ccf414a4f39281a5eb24f2533c9b03d"], "max_pose_now_err_m": 0.0, "max_pose_now_yaw_err_rad": 0.0, "max_reanchor_vs_p
+ZZFLATDAG-JUDGE-PASS every bank control passed and the eligible fraction of TRAIN windows is >= 0.5 at both seeds: the four gates are queued next
+701930154318b966c6210d9aa10d95505ed49873a1a613564a2d724ce46366e3 *PROVENANCE.json
+1fa89521d9c0f452f03e29176cd3ac6bb85c6cb478e6316b3806e0bdedb540c3 *bank.json
+360be06bf0c8792e94a7df6b9a07478a61aa64c1c58d21479bde186a07c1d961 *shard_000of004.provenance.json
+a8ec509820f4d5e3b3094088d719a710d5a5a6fe65e7d2be8a7b5a56305cbc04 *shard_001of004.provenance.json
+b64a27c9aef047ceec4ca568e8d057aeaa20f1e5b230bbb852ed9b76e6158abd *shard_002of004.provenance.json
+3182add122131b36c44a9f0461e9d57b228693ed5fcc6c2a2db9a2249d28e207 *shard_003of004.provenance.json
+198db00e9a3c5eab8c080138cc512bf0c5c02d5f67bde8c9a995f872481091de *shard_000of004.npz
+c11b42d3b9e1d6aa5a9ce669f5eea2e58dcb72ab6a9fd351db7935cc44464089 *shard_001of004.npz
+fa31c788a14cde9552840bb7ccf9f1bd48244e77df50672898facc0410f65fe4 *shard_002of004.npz
+6990d3eefe6a9389473f78eb7d140be768bff287d7d16da779d5230a5e8a46a1 *shard_003of004.npz
+b5880bfd5db09a1c2c8ec790470ef11103065da2db214a478299864776a35bcd *bank_stage.log
+10-27 17:24 bank s0 pulled to /e/Projects/TanitAD-artifacts/v8f-flatdag/bank_s0 (11 files: PROVENANCE.json, bank.json, shard provenance, shard npz, bank_stage.log; sha256 in SHA256SUMS.txt; bank.json sha256 1fa89521d9c0f452f03e29176cd3ac6bb85c6cb478e6316b3806e0bdedb540c3)
+36db2be29b1024ef8b393281f53f027da75803dfccee45d4c9493dfaad68ee9d *PROVENANCE.json
+f52475553fd6ff3f8097861f29f572280f37e05519bd47755c0ec315efebbdf6 *bank.json
+ff27732e1fb0d697988d70a03be79b0faf9e474600d2e465816879c4ad0c5f40 *shard_000of004.provenance.json
+2d03005b3c06213b29511bd9dd3fe390674d430db6e52849d3d08e3cf4f83173 *shard_001of004.provenance.json
+d1529faad2a52bab3dc2d56d8ed8b18f88f5d6fbfab8cb632279305804cea20b *shard_002of004.provenance.json
+8e80ec476e6272df8cf6145335989215b62e6a3568840984811a8b1001ffacb0 *shard_003of004.provenance.json
+969d328db4b2b085b1aa71bc7044659f72f7fa6382070292ffce453bec7b8c55 *shard_000of004.npz
+694ca09472b5b236f7d76d37f2c97dc759c17fd2afe6ba01069e8692847d78c3 *shard_001of004.npz
+dfee2b8f851a71e218f87524636bad0cf802a6e596f29318e8e3c14828bd78c2 *shard_002of004.npz
+c53a59ff2cd70141649df178dbb13421103c891881fd71b0545106b4f7659528 *shard_003of004.npz
+143189108a7d92ac1e1fa1430fdb42f4f355ee21a52dc006643de9dfffb6dda5 *bank_stage.log
+10-27 17:25 bank s1 pulled to /e/Projects/TanitAD-artifacts/v8f-flatdag/bank_s1 (11 files: PROVENANCE.json, bank.json, shard provenance, shard npz, bank_stage.log; sha256 in SHA256SUMS.txt; bank.json sha256 f52475553fd6ff3f8097861f29f572280f37e05519bd47755c0ec315efebbdf6)
+10-27 17:25 launched pid=5928 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_gate_M2b_s0_flatdag.log
+===== ZZJOB-END 27.10.2026 17:26:46,03 rc=0
+10-27 17:27 v8fflatdag10271526_gate_M2b_s0_flatdag rc=0
+OAF gate: PASS | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe grad diff 6185.556640625 | params 7214495 | lru 174
+OAF gate: PASS | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe grad diff 6185.556640625 | params 7214495 | lru 174
+gate token written for M2b_s0_flatdag commit 3101dbf1dab6399252dbcec7f2f1ada7325a8317 argv_sha256 4bdaa4d01bbe54d3
+10-27 17:27 launched pid=20492 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_gate_M2b_s0_flatdag0.log
+===== ZZJOB-END 27.10.2026 17:27:29,02 rc=0
+10-27 17:27 v8fflatdag10271526_gate_M2b_s0_flatdag0 rc=0
+OAF gate: PASS | flatdag0 s0 | p 0.0 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe grad diff None | params 7214495 | lru 174
+OAF gate: PASS | flatdag0 s0 | p 0.0 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe grad diff None | params 7214495 | lru 174
+gate token written for M2b_s0_flatdag0 commit 3101dbf1dab6399252dbcec7f2f1ada7325a8317 argv_sha256 e5f00d8a4c5d5c65
+10-27 17:27 launched pid=22188 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_gate_M2b_s1_flatdag.log
+===== ZZJOB-END 27.10.2026 17:28:43,66 rc=0
+10-27 17:28 v8fflatdag10271526_gate_M2b_s1_flatdag rc=0
+OAF gate: PASS | flatdag s1 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 6fdfc9b02ce8 | probe grad diff 6031.60107421875 | params 7214495 | lru 174
+OAF gate: PASS | flatdag s1 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 6fdfc9b02ce8 | probe grad diff 6031.60107421875 | params 7214495 | lru 174
+gate token written for M2b_s1_flatdag commit 3101dbf1dab6399252dbcec7f2f1ada7325a8317 argv_sha256 f8fa8f3016df2989
+10-27 17:28 launched pid=24048 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_gate_M2b_s1_flatdag0.log
+===== ZZJOB-END 27.10.2026 17:29:16,42 rc=0
+10-27 17:29 v8fflatdag10271526_gate_M2b_s1_flatdag0 rc=0
+OAF gate: PASS | flatdag0 s1 | p 0.0 | clips 4512 steps 3000 windows 306566 | init 6fdfc9b02ce8 | probe grad diff None | params 7214495 | lru 174
+OAF gate: PASS | flatdag0 s1 | p 0.0 | clips 4512 steps 3000 windows 306566 | init 6fdfc9b02ce8 | probe grad diff None | params 7214495 | lru 174
+gate token written for M2b_s1_flatdag0 commit 3101dbf1dab6399252dbcec7f2f1ada7325a8317 argv_sha256 1a6861be05147d37
+10-27 17:29 launched pid=3960 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_t_M2b_s0_flatdag.log
+===== ZZJOB-END 27.10.2026 18:07:57,78 rc=0
+10-27 18:08 v8fflatdag10271526_t_M2b_s0_flatdag rc=0
+10-27 18:08 M2b_s0_flatdag checkpoint sha256 (trained) 629819f7f969d67e...
+10-27 18:08 launched pid=10080 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_e_M2b_s0_flatdag.log
+===== ZZJOB-END 27.10.2026 18:10:32,72 rc=0
+10-27 18:10 v8fflatdag10271526_e_M2b_s0_flatdag rc=0
+10-27 18:10 M2b_s0_flatdag checkpoint sha256 (after_evals) 629819f7f969d67e...
+629819f7f969d67e5b61a711379683c5c28921becd0b67c8e4efd9cbbd5936b3 *ckpt_last.pt
+826700d8f7732bc1a6553ae07c8eb7fd5e6e408a27ad38712c3b1d2c65cffe69 *eval_M2b-flatdag_s0.json
+a07a2e0d0099b70c208dc5849442a17413ad8372edfff0273757948a8680ec0f *eval_M2b-flatdag_s0.npz
+bbb0eb0387a57390c5849bfb680bdc7a6d4c2be768b3146116948d3e507bf1d4 *eval_M2b-flatdag_s0-tacorc.npz
+afd851ea535370e574f7243d2fcd65477f700c180c5320a3814ef51a64bb3c96 *selfcheck.json
+ff502073b24771f1d2dd585bf3f7acd44ace076381e6bafcdf8cf0fb2e47f284 *summary.json
+97c6dfedbae9a017bf25273286263458a41be2455867b7a88085261bc0eeb72b *argv.json
+e8529e08523a8934720bd82cc87bd8c20a99cca3147d8297ee4b923f702ddf94 *train_log.jsonl
+3e2f86e33129605af9827fa711825e875ad7bb6b0e8eb015311cf012d3d30a9f *launch_gate_token.json
+10-27 18:11 M2b_s0_flatdag pulled to /e/Projects/TanitAD-artifacts/v8f-flatdag/M2b_s0_flatdag (checkpoint sha256 629819f7f969d67e5b61a711379683c5c28921becd0b67c8e4efd9cbbd5936b3)
+FLATDAG run record: PASS | flatdag s0 | argv sha16 43364fc1cb7becb3 | steps 3000 | o_interface cut
+FLATDAG swap-reached: PASS | flatdag s0 | dagger_n 14581 / eligible 144182 = 0.1011291284626375 (must lie in 0.1 +- 0.02)
+10-27 18:11 launched pid=22188 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_t_M2b_s0_flatdag0.log
+===== ZZJOB-END 27.10.2026 18:49:53,40 rc=0
+10-27 18:50 v8fflatdag10271526_t_M2b_s0_flatdag0 rc=0
+10-27 18:50 M2b_s0_flatdag0 checkpoint sha256 (trained) 5dc2bc3ff411ebc6...
+10-27 18:50 launched pid=8684 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_e_M2b_s0_flatdag0.log
+===== ZZJOB-END 27.10.2026 18:52:23,28 rc=0
+10-27 18:52 v8fflatdag10271526_e_M2b_s0_flatdag0 rc=0
+10-27 18:52 M2b_s0_flatdag0 checkpoint sha256 (after_evals) 5dc2bc3ff411ebc6...
+5dc2bc3ff411ebc6e7b3a3320064e9315600a9dd2878b31e356c051932ab3eba *ckpt_last.pt
+9fa284a0c3230bc347d9d74eb67c650d185a55e69b9a000c121913cb392c093c *eval_M2b-flatdag0_s0.json
+8929c62ec2261012509cfc8564753453a6df5e0a74bf9ec6ce4e03b8214fa879 *eval_M2b-flatdag0_s0.npz
+9f271c124975b648bf6c1f76698a37237772031363b05b90e0c43ef68773a1f0 *eval_M2b-flatdag0_s0-tacorc.npz
+c08065f4b8c60ab1c8fdb78f722fb398f776553ee443b1a053eb4f52398e0945 *selfcheck.json
+75e628b77b797f3f9cbce139a06d6bfb4238f7a31a9103ecfed1a6b1c4b56ae0 *summary.json
+1c3250aa6570ee4cbc3830128b591fbd746a06b99d5f73d2f90496a1d664b128 *argv.json
+2d1d5d9a352dc18882621d9bb94074d0acac053d9ef09e2735c98e9dc2da7f7c *train_log.jsonl
+7be615029be2f37fc1c206520053856980cdc9b4ecee4ea1b9cfb2d93cba3c15 *launch_gate_token.json
+10-27 18:52 M2b_s0_flatdag0 pulled to /e/Projects/TanitAD-artifacts/v8f-flatdag/M2b_s0_flatdag0 (checkpoint sha256 5dc2bc3ff411ebc6e7b3a3320064e9315600a9dd2878b31e356c051932ab3eba)
+FLATDAG run record: PASS | flatdag0 s0 | argv sha16 a45fb0aefe831e42 | steps 3000 | o_interface cut
+FLATDAG swap-reached: PASS | flatdag0 s0 | dagger_n 0 (must be exactly 0) | eligible 0
+10-27 18:52 launched pid=11032 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_t_M2b_s1_flatdag.log
+===== ZZJOB-END 27.10.2026 19:32:05,40 rc=0
+10-27 19:32 v8fflatdag10271526_t_M2b_s1_flatdag rc=0
+10-27 19:32 M2b_s1_flatdag checkpoint sha256 (trained) df1fe1c4dadb4157...
+10-27 19:32 launched pid=6524 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_e_M2b_s1_flatdag.log
+===== ZZJOB-END 27.10.2026 19:34:31,65 rc=0
+10-27 19:34 v8fflatdag10271526_e_M2b_s1_flatdag rc=0
+10-27 19:34 M2b_s1_flatdag checkpoint sha256 (after_evals) df1fe1c4dadb4157...
+df1fe1c4dadb41578c9a05ca31f87cec826d7cef7d278a4444f4c7a86aafb521 *ckpt_last.pt
+c4c7cefbd6c8493e7ee83b23caa76497d1bd67c8d5d1eca221f1b42d28fb2b22 *eval_M2b-flatdag_s1.json
+5fc6da96c5c08a8b89b6f69dd18f38321e23d69a9d0c6f6ee242fdc20c320a3f *eval_M2b-flatdag_s1.npz
+852662cb46bee05dd257611953489ad663bd422a5885b1433d976e6a1957d22b *eval_M2b-flatdag_s1-tacorc.npz
+347e6daca4b52c99433c7696dd5701302894e9f859995551644e3683ee02d6b4 *selfcheck.json
+fe161d2c7e8b67e1e20bfa4bc9e4b7712fafd5348bc338f3a8371519447fa81c *summary.json
+39d63ce7d5601d80ab41f5b46f020aec1b472bd97880bfef3f43409946ac3656 *argv.json
+8e52fabd35ea88c2f248cb518e00e66f4a997061b6b76690f0f1081749c70e4d *train_log.jsonl
+cf392ed467a980e1304024c21e41581d5e629a7f4b653616e3e7b4311a4e1914 *launch_gate_token.json
+10-27 19:35 M2b_s1_flatdag pulled to /e/Projects/TanitAD-artifacts/v8f-flatdag/M2b_s1_flatdag (checkpoint sha256 df1fe1c4dadb41578c9a05ca31f87cec826d7cef7d278a4444f4c7a86aafb521)
+FLATDAG run record: PASS | flatdag s1 | argv sha16 9152223f41b85164 | steps 3000 | o_interface cut
+FLATDAG swap-reached: PASS | flatdag s1 | dagger_n 14426 / eligible 143592 = 0.10046520697531897 (must lie in 0.1 +- 0.02)
+10-27 19:35 launched pid=22708 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_t_M2b_s1_flatdag0.log
+===== ZZJOB-END 27.10.2026 20:14:32,13 rc=0
+10-27 20:14 v8fflatdag10271526_t_M2b_s1_flatdag0 rc=0
+10-27 20:14 M2b_s1_flatdag0 checkpoint sha256 (trained) 668fd099f7332026...
+10-27 20:14 launched pid=20720 rc=0 log=D:\tanitad\logs\v8fflatdag10271526_e_M2b_s1_flatdag0.log
+===== ZZJOB-END 27.10.2026 20:16:42,27 rc=0
+10-27 20:17 v8fflatdag10271526_e_M2b_s1_flatdag0 rc=0
+10-27 20:17 M2b_s1_flatdag0 checkpoint sha256 (after_evals) 668fd099f7332026...
+668fd099f73320261b5991160a28c5d7379652f3dfda89897b93a9b7318c5aea *ckpt_last.pt
+6dd8b7f69d5ae8a0b2e6eac4b203b6b00840b64e2b5efcb49618c35476efc675 *eval_M2b-flatdag0_s1.json
+5bcef4b8f2f2a514692845e6c57465b19bc5e4e3c7b59e5ea9ffba1ab3983244 *eval_M2b-flatdag0_s1.npz
+3d41bacc83903fc7b8dd288908fc6f110e8c059f53cd67ebdb2ecd362d7ca0fc *eval_M2b-flatdag0_s1-tacorc.npz
+bbf99d00d31bc362d1c92e572f3952e44439d436949ecd4fef328a42ed38ef61 *selfcheck.json
+cf2f2032c3455718813ba212c1cc80d7305dca4d87acb32475799977a4624559 *summary.json
+6ee6da83145b91b2e6fb4edeb68bf6e7f03e092fef3c955a2640090dd7b318ff *argv.json
+4bfcf4459310cd1ee94d179fb04499ddea142107c82ed65195571c6d4dfed852 *train_log.jsonl
+9bfa91b64084d5ce3af7cc2ccc4f248f305a98e08561ff763035795a89c18258 *launch_gate_token.json
+10-27 20:17 M2b_s1_flatdag0 pulled to /e/Projects/TanitAD-artifacts/v8f-flatdag/M2b_s1_flatdag0 (checkpoint sha256 668fd099f73320261b5991160a28c5d7379652f3dfda89897b93a9b7318c5aea)
+FLATDAG run record: PASS | flatdag0 s1 | argv sha16 aecf9f37b1d47a1b | steps 3000 | o_interface cut
+FLATDAG swap-reached: PASS | flatdag0 s1 | dagger_n 0 (must be exactly 0) | eligible 0
+10-27 20:17 after the last run: box 2's M2b_s0_flat/summary.json differs from the repo blob in bytes only (JSON)
+10-27 20:17 after the last run: box 2's M2b_s1_flat/summary.json differs from the repo blob in bytes only (JSON)
+10-27 20:17 after the last run: FLAT_s0 and FLAT_s1 (checkpoint sha256; argv.json, summary.json = the repo blobs) are the banked FLAT runs'
+10-27 20:17 summary: M2b_s0_flatdag=629819f7f969 M2b_s0_flatdag0=5dc2bc3ff411 M2b_s1_flatdag=df1fe1c4dadb M2b_s1_flatdag0=668fd099f733 
+ZZV8FMINI-DONE 10-27 20:17 tip 3101dbf1dab6399252dbcec7f2f1ada7325a8317: PREREG_V8F_FLATDAG: banks s0/s1 of FLAT (COVERAGE >= 0.5; PROVENANCE.json, bank.json, shard provenance and shard npz published), FLATDAG (p 0.1) / FLATDAG-0 x seeds 0 and 1 trained (3,000 steps each, from FLAT, --o-interface cut), T0-evaluated (standard + the GT-code oracle) and pulled to /e/Projects/TanitAD-artifacts/v8f-flatdag (sha256 in each SHA256SUMS.txt); the T1-kin rollouts and the reader run on the dev box (NOT here) (boot unchanged 2026-10-17 18:43:26)
