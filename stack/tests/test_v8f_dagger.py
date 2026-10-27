@@ -77,7 +77,7 @@ def write_inputs(world, hmax, wm, name):
     ck = root / f"ck_{name}.pt"
     torch.save({"cfg": dataclasses.asdict(cfg), "model": model.state_dict(), "grid": "pool4x10"}, ck)
     av = root / "argv.json"
-    json.dump({"argv": ["--arm", "M2b", "--seed", "0", "--out", "x", "--kin-mode", "yaw", "--batch", "8", "--d", "32", "--n-q", "2"]}, open(av, "w"))
+    json.dump({"argv": ["--arm", "M2b", "--seed", "0", "--out", "x", "--kin-mode", "yaw", "--batch", "8", "--d", "32", "--n-q", "2"]}, open(av, "w", encoding="utf-8"))
     return ck, av, J, model, cfg
 
 
@@ -475,7 +475,7 @@ def test_the_generator_is_deterministic_and_reuses_the_t1_rollout(fx10, world, t
 # ------------------------------------------------------------------------------------------------ K-B3 / K-B2 / COVERAGE
 def test_kb3_a_bank_holding_an_eval_clip_is_refused_and_the_clean_bank_reads_overlap_exactly_zero(fx10, world):
     train = world["names"]["train"]
-    ev = list(json.load(open(world["root"] / "eval_grid_windows.json"))["order"])
+    ev = list(json.load(open(world["root"] / "eval_grid_windows.json", encoding="utf-8"))["order"])
     sha = fx10.bank.header["window_list_sha256"]
     ok = fx10.bank.check_train_only(train_clips=train, eval_clips=ev, train_window_list_sha256=sha)
     assert ok["overlap_with_eval"] == 0 and ok["n_bank_clips"] == 4 and ok["n_eval_clips"] == 3, "the control"
@@ -492,10 +492,10 @@ def test_kb3_a_bank_holding_an_eval_clip_is_refused_and_the_clean_bank_reads_ove
 
 
 def test_kb3_the_generator_refuses_an_eval_clip_in_the_train_list_before_any_rollout(fx10, world, tmp_path):
-    grid = json.load(open(world["root"] / "eval_grid_windows.json"))
+    grid = json.load(open(world["root"] / "eval_grid_windows.json", encoding="utf-8"))
     grid["order"] = grid["order"] + world["names"]["train"][:1]                        # an eval grid that contains a TRAIN clip
     gp = tmp_path / "grid_bad.json"
-    json.dump(grid, open(gp, "w"))
+    json.dump(grid, open(gp, "w", encoding="utf-8"))
     args = gen_args(world, fx10.ck, fx10.av, tmp_path / "out_bad")
     args[args.index("--eval-grid") + 1] = str(gp)
     with pytest.raises(SystemExit, match="REFUSED.*eval clip"):

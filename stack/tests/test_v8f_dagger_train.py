@@ -74,7 +74,7 @@ def pack(tmp_path_factory):
     k.ck = root / "init_tame.pt"
     torch.save(blob, k.ck)
     av = root / "argv.json"
-    json.dump({"argv": ["--arm", "M2b", "--seed", "5", "--out", "x", "--kin-mode", "yaw", "--batch", "8", "--d", "32", "--n-q", "2"]}, open(av, "w"))
+    json.dump({"argv": ["--arm", "M2b", "--seed", "5", "--out", "x", "--kin-mode", "yaw", "--batch", "8", "--d", "32", "--n-q", "2"]}, open(av, "w", encoding="utf-8"))
     k.bank = root / "bank"
     w = k.world
     assert B.main(["gen", "--ckpt", str(k.ck), "--m2b-argv", str(av), "--cache-dir", str(w), "--tracks", str(w / "native_tracks.pt"), "--join-train", str(w / "join_train.npz"),
@@ -441,9 +441,9 @@ def test_k_b3_the_banks_recorded_eval_list_and_the_caches_eval_manifest_are_read
     def world(name, order, manifest=()):
         out = tmp_path / name
         (out / "_synthetic" / "eval").mkdir(parents=True)
-        json.dump({"order": list(order)}, open(out / "_synthetic" / "eval_grid_windows.json", "w"))
+        json.dump({"order": list(order)}, open(out / "_synthetic" / "eval_grid_windows.json", "w", encoding="utf-8"))
         if manifest:
-            open(out / "_synthetic" / "eval" / "manifest.jsonl", "w").write("".join(json.dumps({"clip": c, "n_frames": 60}) + "\n" for c in manifest))
+            open(out / "_synthetic" / "eval" / "manifest.jsonl", "w", encoding="utf-8").write("".join(json.dumps({"clip": c, "n_frames": 60}) + "\n" for c in manifest))
         return TR.build_parser().parse_args(["--out", str(out), *GATE_ARGV, *DAG(pack, 0.1)])
     only_header = clone_bank(pack.bank, tmp_path / "hdr", shard_fn=rename_clip(None, "syn-eval-777"), common_fn=lambda c: {**c, "eval": {**c["eval"], "clips": [*c["eval"]["clips"], "syn-eval-777"]}})
     a_h = world("w1", ["syn-eval-000", "syn-eval-001"])
@@ -973,7 +973,7 @@ sys.exit(TR.main(["--out", out] + extra))
 
 
 def _child(mode, out, extra):
-    r = subprocess.run([sys.executable, "-c", CHILD, str(REPO), mode, str(out), json.dumps(extra), str(REF_TRAIN)], capture_output=True, text=True, timeout=900,
+    r = subprocess.run([sys.executable, "-c", CHILD, str(REPO), mode, str(out), json.dumps(extra), str(REF_TRAIN)], capture_output=True, text=True, encoding="utf-8", timeout=900,
                        env={**os.environ, "CUDA_VISIBLE_DEVICES": "-1", "PYTHONDONTWRITEBYTECODE": "1"})
     assert r.returncode == 0, (mode, r.stdout[-1500:], r.stderr[-2500:])
 

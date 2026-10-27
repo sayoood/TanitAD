@@ -533,6 +533,15 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
                         "--agent-rig-extrinsics", str(extr),
                         "--map-hires", "on",
                         "--map-hires-class-weights", "w.json"],
+        # refcv9 (aeb5446): the near-field precision term `--w-map-fp` reads the 10 cm head's logits on its labelled
+        # windows, so it REFUSES without `--map-hires on` and `--w-map-hires > 0` (`map_precision`'s pin). ⛔ Each refusal
+        # is CORRECT; this row satisfies them (the w_map_hires row + the 10 cm weight) rather than weakening one.
+        "w_map_fp": ["--trunk", "timm", "--trunk-frozen-bn",
+                     "--map-gt-root", "m",
+                     "--agent-rig-camera", "extrinsics",
+                     "--agent-rig-extrinsics", str(extr),
+                     "--map-hires", "on",
+                     "--map-hires-class-weights", "w.json", "--w-map-hires", "1.0"],
         # ⭐ refcv8 WP-B (2026-10-04), the same shape once more: every `--w-r8-*` weight REFUSES without
         # `--refcv8` (a dead flag), and `--refcv8` refuses without `--arm hier` (in `base`), `--tac-decoder-v6`
         # (TACV6_ON) and `--sampler ddim`; the DDIM sampler in turn refuses without a v0-conditioned vocabulary
