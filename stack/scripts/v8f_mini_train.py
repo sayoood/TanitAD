@@ -42,10 +42,13 @@ for p in (os.path.join(REPO, "stack"), os.path.join(REPO, "taniteval")):
     if p not in sys.path:
         sys.path.insert(0, p)
 
+from tanitad.data import v8f_dagger as DG  # noqa: E402      PREREG_V8F_DAGGER: the own-state bank + the swap (the DATA library; `--dagger-p 0` = no bank is read and no row is swapped)
 from tanitad.data import v8f_mini_data as D  # noqa: E402
 from tanitad.models import v8f_mini as M  # noqa: E402
 
 PKG = os.path.join(REPO, "TanitAD Research Lab", "Architecture & Inference", "Research", "2026-10-17-v8f-mini")
+#: PREREG_V8F_DAGGER K-B3: the eval-141 clip list the own-state bank must be disjoint from (the same file the bank generator is given as --eval-grid; the trainer takes no flag for it)
+DAGGER_EVAL_GRID = os.path.join(PKG, "raw", "eval_grid_windows.json")
 
 ARM_SPECS = {
     "M1": dict(navonly=False, consistency=True, wm="off"),
@@ -83,6 +86,10 @@ FLAG_CHECKS = {
     # gradient, a p = 0 control reads EXACTLY 0.0) -> `b = ego.apply(b, step)` in the loop. With --ego-perturb-p 0 (the default) none of it runs and nothing it imports is imported.
     "ego_perturb_p": "ego:ego_perturb_p", "ego_perturb_vscale": "ego:ego_perturb_vscale", "ego_perturb_vmax": "ego:ego_perturb_vmax", "ego_perturb_adrop": "ego:ego_perturb_adrop",
     "ego_perturb_yawrate_std": "ego:ego_perturb_yawrate_std", "ego_perturb_seed": "ego:ego_perturb_seed",
+    # PREREG_V8F_DAGGER (H-V8F-DAGGER-1): the on-policy own-state swap. `dagger:<k>` = equals the BUILT swap's lever (DG.DaggerSwap.built_levers(), the object the training loop calls `.apply` on):
+    # argv -> make_dagger (bank load + K-B2 + K-B3 + COVERAGE) -> the swap -> declared_vs_built (bad_dagger) -> G-LIVE on a swapped batch + dagger_probe (the swapped own-state tensors reach the loss
+    # gradient, a p = 0 control reads EXACTLY 0.0) -> `b = dag.apply(b, step)` in the loop. With --dagger-p 0 (the default) no bank is read and no row is swapped.
+    "dagger_p": "dagger:dagger_p", "dagger_bank": "dagger:dagger_bank", "dagger_bank_sha256": "dagger:dagger_bank_sha256", "dagger_seed": "dagger:dagger_seed",
     "init_ckpt": "data:init_ckpt",            # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
@@ -128,6 +135,20 @@ def build_parser():
                     help="the LATERAL lever: an offset n ~ N(0, STD) deg/s added to the measured yaw rate (and, through it, to kappa, the heading history and the odometry) of the whole window. 0.0 (default) = lateral off")
     ap.add_argument("--ego-perturb-seed", dest="ego_perturb_seed", type=int, default=D.EGO_PERTURB_DEFAULTS["seed"],
                     help="the perturbation's own seed: the draws of step k are a function of (seed, k) only, on a private generator (a resumed run draws what an uninterrupted run drew)")
+    # ---- PREREG_V8F_DAGGER: on-policy own states, supervised with the human's labels at the matched route point. Every flag defaults to OFF (the defaults are DG.DAGGER_DEFAULTS), and every flag has its
+    # G-DVB entry in FLAG_CHECKS and its clause in bad_dagger. The arm's argv must NAME --dagger-p (DAG-0 names only `--dagger-p 0`: a bank or seed declared while p is 0 is refused).
+    ap.add_argument("--dagger-p", dest="dagger_p", type=float, default=DG.DAGGER_DEFAULTS["p"],
+                    help="PREREG_V8F_DAGGER: the share of ELIGIBLE training samples (the drawn window has >= 1 own state with r' = t that passed every cut) whose ego tensors are replaced by one of the model's OWN T1-kin "
+                         "states, labels unchanged. 0.0 (default) = off = every earlier arm, bit for bit (no bank read, no draw, no copy). The arm's value is fixed by PREREG section 4 / Amendment 1 (0.1), never a default here. Needs --kin-mode yaw")
+    ap.add_argument("--dagger-bank", dest="dagger_bank", default="",
+                    help="the own-state bank: the merged directory (or its bank.json) written by v8f_dagger_bank.py merge. Loaded, hashed and checked at launch (K-B2 on-policy against --init-ckpt, K-B3 TRAIN-only / window-list "
+                         "sha256 / disjoint from eval-141, COVERAGE >= 0.5); its sha256 (the manifest's) is recorded as levers.dagger_bank_sha256 and must equal --dagger-bank-sha256. Default \"\" = none")
+    ap.add_argument("--dagger-bank-sha256", dest="dagger_bank_sha256", default="",
+                    help="PREREG_V8F_DAGGER section 4: the sha256 (64 hex) of the bank's bank.json that THIS arm declares it trains on. REQUIRED when --dagger-p > 0 (DAG names all four flags) and REFUSED when --dagger-p is 0 "
+                         "(a lever that is declared and does nothing). The bank is loaded against it (a bank with another manifest sha256 is refused at load) and the launch gate re-hashes bank.json from disk and refuses if it "
+                         "differs. Default \"\" = none")
+    ap.add_argument("--dagger-seed", dest="dagger_seed", type=int, default=DG.DAGGER_DEFAULTS["seed"],
+                    help="the swap's own seed: the draws of step k are a function of (seed, k) only, on a private generator (a resumed run draws what an uninterrupted run drew)")
     ap.add_argument("--init-ckpt", dest="init_ckpt", default="",
                     help="O-RECOVER's start state: when set and --out holds no ckpt_last.pt, load the MODEL weights of this checkpoint (a v8f_mini_train ckpt, e.g. M2b's) STRICTLY into the freshly built model (its architecture "
                          "config must match the built one, else the launch is REFUSED), at step 0 with a FRESH optimiser and schedule. An existing ckpt_last.pt in --out still resumes as ever (resume wins). The path and the file's "
@@ -312,6 +333,153 @@ def bad_ego_perturb(a, ego) -> list:
     return bad
 
 
+def is_sha256_hex(s) -> bool:
+    """A full sha256 as hex: exactly 64 hex digits (either case). A truncated hash copied from a log line is NOT an identity, so it is refused rather than prefix-matched."""
+    return isinstance(s, str) and len(s) == 64 and all(c in "0123456789abcdefABCDEF" for c in s)
+
+
+def dagger_bank_manifest(path) -> str:
+    """The file whose sha256 IS the bank's identity (``DaggerBank.load``): a merged bank's ``bank.json`` (a directory is resolved to the one inside it); a bare shard names itself."""
+    return os.path.join(path, "bank.json") if os.path.isdir(path) else path
+
+
+def dagger_eval_clips(a, header) -> tuple:
+    """K-B3's eval side: the eval-141 clips the own-state bank must be disjoint from -> (sorted clip list, {source: n}). The union of every source that exists, so a bank cannot hide an eval clip behind
+    ONE incomplete list: (1) the canonical grid ``eval_grid_windows.json`` (the repo's, or the synthetic world's own for ``--synthetic``) -- REQUIRED, without it the check cannot run and the launch is refused;
+    (2) the eval list the bank's own header recorded at generation; (3) the cache's ``eval`` manifest when the cache has one."""
+    grid = os.path.join(a.out, "_synthetic", "eval_grid_windows.json") if a.synthetic else DAGGER_EVAL_GRID
+    if not os.path.exists(grid):
+        raise DG.BankRefused(f"K-B3: the canonical eval-141 grid {grid} does not exist: the eval-disjointness check cannot run, and a check that cannot run is a refusal")
+    src = {"grid": [str(c) for c in json.load(open(grid, encoding="utf-8"))["order"]]}
+    hdr = [str(c) for c in (header.get("eval") or {}).get("clips") or []]
+    if hdr:
+        src["bank_header"] = hdr
+    root = os.path.join(a.out, "_synthetic") if a.synthetic else a.cache_dir
+    if os.path.exists(os.path.join(root, "eval", "manifest.jsonl")):
+        src["cache_eval_manifest"] = [c for c, _ in D.read_manifest(root, "eval")]
+    if not src["grid"]:
+        raise DG.BankRefused(f"K-B3: the eval-141 grid {grid} lists no clip: the eval-disjointness check would pass vacuously")
+    return sorted(set().union(*map(set, src.values()))), {k: len(v) for k, v in src.items()}
+
+
+def load_dagger_bank(a, J, wins, clips, info) -> tuple:
+    """``--dagger-bank`` -> (the bank re-indexed to this trainer's join, the controls record). The PREREG's controls, each refusing with its own message (``DG.BankRefused``):
+
+      load      every shard re-hashed against the manifest (``DaggerBank.load``); a bare shard / unmerged bank is refused
+      K-B3 (1)  the bank is not PARTIAL and every bank clip is in the arm's TRAIN clip list (``clips``: after --exclude / --data-frac / --max-clips) -- a clip the join lacks is refused again at the re-index
+      K-B3 (2)  the TRAIN window-list sha256 the bank recorded == this trainer's ``windows_sha256(J["clip"], wins)``
+      K-B3 (3)  bank clips INTERSECT eval-141 = empty (clip id AND stable sid)   -- read FIRST, so an injected eval clip is named as an eval clip
+      K-B2      the bank's generating checkpoint sha256 == ``--init-ckpt``'s (the file the model was started from)
+      COVERAGE  the eligible fraction of THIS trainer's TRAIN windows >= 0.5, else BLOCKED: the arm does not launch
+    """
+    bank0 = DG.DaggerBank.load(a.dagger_bank, expect_sha256=a.dagger_bank_sha256 or None)         # the declared --dagger-bank-sha256: a bank whose manifest hashes otherwise is refused here, before any control is read
+    if bank0.manifest is None:
+        raise DG.BankRefused(f"{a.dagger_bank}: a bare shard, not a merged bank (no bank.json): the bank's identity is the manifest's sha256")
+    eval_clips, eval_src = dagger_eval_clips(a, bank0.header)
+    wsha = DG.windows_sha256(J["clip"], wins)
+    kb3 = bank0.check_train_only(train_clips=clips, eval_clips=eval_clips, train_window_list_sha256=wsha)
+    init = info.get("init_ckpt") or {}
+    if not init.get("sha256"):
+        raise DG.BankRefused("K-B2: --dagger-bank needs --init-ckpt (the bank's generating checkpoint is compared with the file this run starts from)")
+    kb2 = bank0.check_on_policy(init["sha256"])
+    bank = DG.DaggerBank(bank0.a, bank0.header, clip_names=J["clip"], manifest=bank0.manifest, sha256=bank0.sha256, path=bank0.path)
+    cov = bank.coverage(wins)
+    if cov["blocked"]:
+        raise DG.BankRefused(f"COVERAGE {cov['fraction']:.4f} < {cov['min']} ({cov['n_eligible']} of {cov['n_windows']} TRAIN windows have an eligible own state): the arm does not launch (outcome BLOCKED, PREREG_V8F_DAGGER section 7)")
+    ctl = {"bank_path": bank.path, "bank_sha256": bank.sha256, "n_records": bank.n, "reason_counts": bank.reason_counts(), "coverage": cov,
+           "kb2": {**kb2, "init_ckpt_sha256": init["sha256"]}, "kb3": {**kb3, "window_list_sha256": wsha, "eval_sources": eval_src, "n_eval_clips_checked": len(eval_clips)}}
+    return bank, ctl
+
+
+def make_dagger(a, J, wins, clips, info):
+    """argv -> the swap the training loop calls ``.apply`` on (PREREG_V8F_DAGGER). The ONE place the three flags become an object; ``bad_dagger`` compares it back to the argv. With ``--dagger-p 0`` no bank is
+    read (a ``--dagger-bank`` declared at p = 0 builds nothing and is refused by the gate: a lever that is declared and does nothing). A refused bank stops the launch before the gate."""
+    bank = None
+    if a.dagger_bank and a.dagger_p > 0:
+        try:
+            bank, ctl = load_dagger_bank(a, J, wins, clips, info)
+        except DG.BankRefused as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ dagger-bank {a.dagger_bank}: {e}")
+        except Exception as e:                                       # noqa: BLE001  a missing / foreign / corrupt bank is a REFUSAL, not a crash
+            raise SystemExit(f"ZZDVB-REFUSEDZZ dagger-bank {a.dagger_bank}: {type(e).__name__}: {str(e)[:600]}")
+        info["dagger"] = ctl                                         # selfcheck.json carries the controls that were read
+    return DG.DaggerSwap(bank, p=a.dagger_p, seed=a.dagger_seed, kin_mode=a.kin_mode)
+
+
+def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
+    """The DAgger half of the launch gate (G-DVB). Empty = pass. Every flag is read back from the BUILT swap (``dag``); with no swap built every one must be at its default (a flag that builds nothing is
+    refused, not ignored). Beyond the flags: the bank's path and sha256 against the declaration (the file on disk is re-hashed), K-B2 / K-B3 / COVERAGE were read (the record exists and says so), the bank's
+    generating configuration equals PREREG section 1's and this model's, the exclusivity with --ego-perturb-p, and a lever declared without an effect (DAG-only flags at p = 0) is refused."""
+    dfl = {k: build_parser().get_default(k) for k in ("dagger_p", "dagger_bank", "dagger_bank_sha256", "dagger_seed")}
+    declared = {k: getattr(a, k) for k in dfl}
+    if dag is None:
+        moved = sorted(k for k in dfl if declared[k] != dfl[k])
+        return [f"{moved} are set but no DAgger swap was built: a flag that builds nothing is refused, not ignored"] if moved else []
+    bad = []
+    lv = dag.built_levers()
+    for k in ("dagger_p", "dagger_seed"):
+        if lv.get(k) != declared[k]:
+            bad.append(f"lever {k}: declared {declared[k]!r} but built {lv.get(k)!r}")
+    if lv.get("kin_mode") != a.kin_mode:
+        bad.append(f"DAgger swap kin_mode: declared {a.kin_mode} but built {lv.get('kin_mode')}")
+    bad += [f"DAgger swap: {m}" for m in dag.problems()]
+    if a.dagger_p > 0 and a.ego_perturb_p > 0:
+        bad.append(f"--dagger-p {a.dagger_p} together with --ego-perturb-p {a.ego_perturb_p}: the two levers are never combined in one arm (PREREG_V8F_DAGGER section 4)")
+    if a.dagger_bank_sha256 and not is_sha256_hex(a.dagger_bank_sha256):
+        bad.append(f"--dagger-bank-sha256 {a.dagger_bank_sha256!r} is not a sha256 (64 hex digits): a truncated hash identifies nothing")
+    if a.dagger_p > 0 and not a.dagger_bank_sha256:
+        bad.append(f"--dagger-bank-sha256 is required when --dagger-p is {a.dagger_p} (DAG names all four flags, PREREG_V8F_DAGGER section 4): the arm must declare which bank it trains on")
+    if a.dagger_p <= 0 and a.dagger_bank_sha256:
+        bad.append(f"--dagger-bank-sha256 is declared while --dagger-p is {a.dagger_p}: a lever that is declared and does nothing (DAG-0 names only --dagger-p 0)")
+    if not a.dagger_bank:
+        if lv.get("dagger_bank") is not None:
+            bad.append(f"lever dagger_bank: no --dagger-bank declared but the swap holds the bank {lv.get('dagger_bank')!r}")
+        if a.dagger_bank_sha256 and a.dagger_p > 0:
+            bad.append(f"--dagger-bank-sha256 {a.dagger_bank_sha256[:12]} is declared but no --dagger-bank names a bank to hash")
+        return bad
+    if dag.bank is None:
+        bad.append(f"lever dagger_bank: declared {a.dagger_bank!r} but no bank was built (--dagger-p {a.dagger_p}: a declared bank at p = 0 builds nothing)")
+        return bad
+    want = os.path.normcase(os.path.abspath(dagger_bank_manifest(a.dagger_bank)))
+    got = os.path.normcase(os.path.abspath(str(lv.get("dagger_bank"))))
+    if want != got:
+        bad.append(f"lever dagger_bank: declared {want!r} but built {got!r}")
+    disk = DG.sha256_file(dagger_bank_manifest(a.dagger_bank)) if os.path.exists(dagger_bank_manifest(a.dagger_bank)) else None
+    if lv.get("dagger_bank_sha256") != disk:
+        bad.append(f"lever dagger_bank_sha256: the file {a.dagger_bank!r} hashes to {disk!r} but the swap was built from {lv.get('dagger_bank_sha256')!r}")
+    if a.dagger_bank_sha256 and a.dagger_bank_sha256.lower() != disk:
+        bad.append(f"lever dagger_bank_sha256: --dagger-bank-sha256 declares {a.dagger_bank_sha256.lower()!r} but the bank manifest {dagger_bank_manifest(a.dagger_bank)!r} hashes to {disk!r}")
+    hdr = dag.bank.header
+    if hdr.get("schema") != DG.SCHEMA:
+        bad.append(f"bank schema {hdr.get('schema')!r} != {DG.SCHEMA!r}")
+    if hdr.get("rollout") != DG.ROLLOUT:
+        bad.append(f"bank rollout configuration {hdr.get('rollout')!r} != PREREG section 1's {DG.ROLLOUT!r}")
+    if hdr.get("constants_sha256") != DG.constants_sha256():
+        bad.append(f"bank matching constants sha256 {str(hdr.get('constants_sha256'))[:12]} != this tree's {DG.constants_sha256()[:12]}")
+    if cfg is not None:
+        for k in ("hist", "hmax", "max_age_t", "max_age_s", "window_start", "kin_mode"):
+            if (hdr.get("cfg") or {}).get(k) != getattr(cfg, k):
+                bad.append(f"bank was generated with cfg.{k} = {(hdr.get('cfg') or {}).get(k)!r}, this model has {getattr(cfg, k)!r}")
+        if lv.get("bank_hmax") != cfg.hmax:
+            bad.append(f"bank history length {lv.get('bank_hmax')} != the model's hmax {cfg.hmax}")
+    ctl = (data_info or {}).get("dagger")
+    if not ctl:
+        bad.append("a bank is built but no K-B2 / K-B3 / COVERAGE record was read (the controls did not run)")
+    else:
+        if ctl.get("bank_sha256") != lv.get("dagger_bank_sha256"):
+            bad.append(f"the controls were read on bank {str(ctl.get('bank_sha256'))[:12]} but the swap holds {str(lv.get('dagger_bank_sha256'))[:12]}")
+        if (ctl.get("kb2") or {}).get("ckpt_sha256") != hdr.get("ckpt_sha256"):
+            bad.append("K-B2 was not read against this bank's generating checkpoint")
+        init_sha = ((data_info or {}).get("init_ckpt") or {}).get("sha256")
+        if init_sha != hdr.get("ckpt_sha256"):
+            bad.append(f"K-B2: the bank was generated by checkpoint {str(hdr.get('ckpt_sha256'))[:12]} but this run started from {str(init_sha)[:12]} (--init-ckpt): the states are not on-policy for this init")
+        if (ctl.get("kb3") or {}).get("window_list_sha256") != hdr.get("window_list_sha256") or (ctl.get("kb3") or {}).get("overlap_with_eval") != 0:
+            bad.append("K-B3 was not read against this bank's window list / with an empty eval overlap")
+        if not isinstance(ctl.get("coverage"), dict) or ctl["coverage"].get("blocked") is not False:
+            bad.append(f"COVERAGE is not recorded as passed: {ctl.get('coverage')!r}")
+    return bad
+
+
 def bad_init_ckpt(a, data_info) -> list:
     """``--init-ckpt`` read back (G-DVB): declared -> the record exists, names the declared path, carries the file's sha256, and EITHER the model state really IS that checkpoint's (``load_init_ckpt`` compared every
     tensor after the load) OR the load was skipped because ``--out`` already holds a ckpt_last.pt (resume wins); not declared -> nothing was loaded."""
@@ -399,10 +567,11 @@ def bad_schedule(a, sched) -> list:
     return bad
 
 
-def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None) -> list:
+def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None) -> list:
     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
     bad = bad_encoder(a, enc, data_info)
     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
+    bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
     parser_dests = {act.dest for act in build_parser()._actions if act.dest != "help"}
     missing = sorted(parser_dests - set(FLAG_CHECKS))
     if missing:
@@ -889,6 +1058,143 @@ def ego_perturb_probe(model, batch, cfg, ego) -> dict:
     return res
 
 
+def dagger_probe(model, batch, cfg, dag) -> dict:
+    """G-LIVE for DAgger (PREREG_V8F_DAGGER section 6): the swapped own-state tensors REACH THE LOSS THE TRAINER BACKPROPAGATES -- read from the BUILT model's own ``loss`` on the real probe batch (a COPY, its own
+    seeds), through the SAME ``dag.apply`` the training loop calls, at p = 1. With the lever off (the default) there is nothing to prove and nothing runs (the pre-change model and loss).
+
+      partition    every key ``forward_infer`` reads is in ``DG.REBUILT`` or ``DG.KEPT``: no ego tensor the model reads is left un-swapped by omission
+      batch        the swapped batch holds EXACTLY the keys of the logged one; every selected row is the window's own matched state (the record's clip and r' are the row's (ci, t), its kin3 IS the bank's);
+                   every selected row changes in p10f, base, kin3 and p10_t -- except a row whose own ego is BIT-IDENTICAL to the logged one (exempted and counted; at least one non-identical row must
+                   exist, ORC A4's rule generalised) and, for ``base`` alone, a row at rest in both (v0 = 0, base = 0: it cannot move); NO unselected row changes in any rebuilt tensor
+      kept         every key outside ``DG.REBUILT`` is the SAME object (targets, labels, images, ages, the anchor ``pose_now``, ``act``); ``lab_s`` differs in ``rc`` only, and ``rc`` equals its frame change
+                   (``DG.rc_frame_change``, recomputed here from the logged and the swapped ``pose_s``) to 1e-5 on the selected rows and is untouched on the others
+      G-LIVE       ``live_check`` on the SWAPPED batch: every loss term finite, every trainable group gets a non-zero gradient, the frozen prior reads EXACTLY 0.0
+      gradient     sum |grad(total on the swapped batch) - grad(total on the logged batch)| > 0 and the loss moves; replacing ``p10f`` alone moves the loss too
+      controls     (a) the same loss twice on the logged batch differs by EXACTLY 0.0 (the probe is deterministic); (b) p = 0 returns the SAME batch object and its loss / gradient differ from the logged
+                   ones by EXACTLY 0.0; (c) the frozen P10 prior's gradient difference is EXACTLY 0.0; (d) so is the world-model auxiliary's (``act`` is its transition record and is KEPT)
+
+    A violation is an AssertionError, which the caller turns into a refusal. DELETE the line in ``DaggerSwap.apply`` that applies the swap, or the ``dag.apply`` line in the loop's input path, and the batch / gradient
+    clauses read 0.0 and the gate refuses the launch."""
+    if not dag.active:
+        return {"dagger": "off", "pass": True, "skipped": "--dagger-p 0: no row is swapped; the default run is the pre-change run"}
+    m = copy.deepcopy(model).cpu()
+    m.train()
+    pert = dag.apply(batch, dag.PROBE_STEP, p=1.0)
+    last = dict(dag.last)
+    sel = last["sel"]
+    n_sel = int(sel.sum())
+    if n_sel < 1:
+        raise AssertionError(f"dagger probe: no ELIGIBLE window (an own state with r' = t that passed every cut) among the {last['n_rows']} probe windows: the swap cannot be seen")
+    B = int(sel.numel())
+    res = {"p_declared": dag.p, "n_rows": B, "n_eligible": last["n_eligible"], "n_selected_at_p1": n_sel}
+
+    if set(pert) != set(batch):
+        raise AssertionError(f"dagger probe: the swap changed the batch's keys (added {sorted(set(pert) - set(batch))}, removed {sorted(set(batch) - set(pert))}): it may replace the named ego tensors and nothing else")
+    m.eval()
+    with torch.no_grad():
+        keys = set(m.forward_infer(batch)["_keys_read"])
+    m.train()
+    stray = sorted(keys - set(DG.REBUILT) - set(DG.KEPT))
+    if stray:
+        raise AssertionError(f"dagger probe: forward_infer reads {stray}, which is neither replaced nor kept by the swap: an input the swap leaves unaccounted for")
+    res["keys_read"] = sorted(keys)
+
+    def changed(x, y):                                                           # [B] bool: row differs (NaN == NaN)
+        same = (x == y) | (torch.isnan(x) & torch.isnan(y)) if x.is_floating_point() else (x == y)
+        return (~same).reshape(x.shape[0], -1).any(1)
+    for k in DG.REBUILT:
+        if pert[k].shape != batch[k].shape or pert[k].dtype != batch[k].dtype:
+            raise AssertionError(f"dagger probe: {k} changed shape / dtype under the swap ({tuple(batch[k].shape)} {batch[k].dtype} -> {tuple(pert[k].shape)} {pert[k].dtype})")
+    ch = {k: changed(pert[k], batch[k]) for k in DG.REBUILT}
+    res["rows_changed"] = {k: int(v.sum()) for k, v in ch.items()}
+    for k in DG.REBUILT:
+        if bool(ch[k][~sel].any()):
+            raise AssertionError(f"dagger probe: {k} changed on a row the swap did not select")
+    idx = np.asarray(last["record_idx"])
+    rec = dag.bank.gather(idx)
+    sel_rows = sel.nonzero(as_tuple=True)[0]
+    if not (np.array_equal(rec["r"].astype(np.int64), batch["t"][sel_rows].numpy()) and np.array_equal(dag.bank.ci[idx], batch["ci"][sel_rows].numpy())
+            and bool((dag.bank.reason[idx] == DG.OK).all())):
+        raise AssertionError("dagger probe: a selected row was swapped for a record that is not its window's own matched, uncut state (clip, r' = t, reason ok)")
+    if not bool((pert["kin3"][sel_rows] == torch.from_numpy(rec["kin3"]).to(batch["kin3"].dtype)).all()):
+        raise AssertionError("dagger probe: the swapped kin3 of a selected row is not the bank record's own kin3: the swap does not write the bank's state into the batch")
+    identical = sel & ~torch.stack([ch[k] for k in ("p10f", "base", "kin3", "p10_t")]).any(0)          # selected rows whose own ego equals the logged one bit for bit
+    need = sel & ~identical
+    res["selected_rows_bit_identical_exempt"] = int(identical.sum())
+    if not bool(need.any()):
+        raise AssertionError(f"dagger probe: all {n_sel} selected rows carry an own ego state bit-identical to the logged one: the swap cannot be seen")
+    base_rest = (need & (batch["kin3"][:, 0] == 0.0) & (pert["kin3"][:, 0] == 0.0) & (batch["base"].reshape(B, -1) == 0.0).all(1) & (pert["base"].reshape(B, -1) == 0.0).all(1))
+    res["base_rows_at_rest_exempt"] = int(base_rest.sum())
+    for k in ("p10f", "base", "kin3", "p10_t"):
+        req = need & ~base_rest if k == "base" else need
+        if not bool(ch[k][req].all()):
+            raise AssertionError(f"dagger probe: {k} is unchanged on {int((~ch[k][req]).sum())} of {int(req.sum())} selected rows: the swap did not reach it")
+    kept_moved = sorted(k for k in batch if k not in DG.REBUILT and k != "lab_s" and pert[k] is not batch[k])
+    if kept_moved:
+        raise AssertionError(f"dagger probe: {kept_moved} are not the same objects after the swap: targets, labels and kept inputs must not be touched")
+    ls0, ls1 = batch["lab_s"], pert["lab_s"]
+    if set(ls0) != set(ls1) or [k for k in ls0 if k != "rc" and ls1[k] is not ls0[k]]:
+        raise AssertionError(f"dagger probe: lab_s changed in more than rc ({sorted(k for k in ls0 if k != 'rc' and ls1.get(k) is not ls0[k])}): rc is the one label tensor re-expressed")
+    if bool(changed(ls1["rc"], ls0["rc"])[~sel].any()):
+        raise AssertionError("dagger probe: lab_s.rc changed on a row the swap did not select")
+    want_rc = DG.rc_frame_change(ls0["rc"][sel_rows], ls0["rc_ok"][sel_rows], batch["pose_s"][sel_rows], pert["pose_s"][sel_rows])
+    res["rc_max_abs_err"] = float((ls1["rc"][sel_rows].double() - want_rc.double()).abs().max())
+    if not res["rc_max_abs_err"] <= 1e-5:
+        raise AssertionError(f"dagger probe: lab_s.rc differs from its frame change by {res['rc_max_abs_err']} (> 1e-5): the labels were not re-expressed in the swapped S frame")
+
+    lp = live_check(m, pert, cfg)                                                # G-LIVE on the SWAPPED batch (its own deep copy)
+    res["live_swapped"] = {"pass": lp["pass"], "terms": lp["terms"], "control_prior_grad_sum": lp["control_prior_grad_sum"], "groups_grad": lp["groups_grad"]}
+
+    named = [(n, p) for n, p in m.named_parameters() if p.requires_grad]
+
+    def run(b, grad=True):
+        for _, p in named:
+            p.grad = None
+        for p in m.prior.parameters():
+            p.grad = None
+        torch.manual_seed(20261026)
+        with torch.set_grad_enabled(grad):
+            T = m.loss(b, p_gt=0.5, gen=torch.Generator().manual_seed(13))["terms"]
+            for k, v in T.items():
+                if not torch.isfinite(v):
+                    raise AssertionError(f"dagger probe: loss term {k} is not finite: {float(v)}")
+            if not grad:
+                return float(T["total"].detach()), None, None
+            T["total"].backward()
+        g = {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in named}
+        gp = torch.cat([(p.grad.detach().reshape(-1) if p.grad is not None else torch.zeros(p.numel())) for p in m.prior.parameters()])
+        return float(T["total"].detach()), g, gp
+    dsum = lambda ga, gb, pre: float(sum((ga[n] - gb[n]).abs().sum() for n in ga if n.startswith(pre)))      # noqa: E731
+    t0, g0, gp0 = run(batch)
+    t0b, g0b, _ = run(batch)
+    t1, g1, gp1 = run(pert)
+    b_zero = dag.apply(batch, dag.PROBE_STEP, p=0.0)
+    tz, gz, _ = run(b_zero)
+    res.update({"total_logged": t0, "total_swapped": t1, "loss_diff": t1 - t0, "grad_diff_all": dsum(g1, g0, ""),
+                "grad_diff_by_group": {pre: dsum(g1, g0, pre) for pre in ("adapter", "e_ego", "read_s", "read_t", "read_o", "head_s", "head_o", "wm.")},
+                "control_repeat_loss_diff": abs(t0b - t0), "control_repeat_grad_diff": dsum(g0, g0b, ""),
+                "control_p0_same_object": b_zero is batch, "control_p0_loss_diff": abs(tz - t0), "control_p0_grad_diff": dsum(gz, g0, ""),
+                "control_prior_grad_diff": float((gp1 - gp0).abs().sum()), "control_wm_grad_diff": dsum(g1, g0, "wm.") if m.wm is not None else None})
+    only = {}
+    for name in ("p10f", "base", "pose_t", "pose_s", "kin3", "p10_t"):          # one swapped tensor at a time: which of them the loss reads
+        only[name] = run({**batch, name: pert[name]}, grad=False)[0] - t0
+    res["loss_diff_replacing_only"] = only
+    if res["control_repeat_loss_diff"] != 0.0 or res["control_repeat_grad_diff"] != 0.0:
+        raise AssertionError(f"dagger probe: the probe is not deterministic (the same loss twice differs by {res['control_repeat_loss_diff']} / {res['control_repeat_grad_diff']}): its differences mean nothing")
+    if not res["control_p0_same_object"] or res["control_p0_loss_diff"] != 0.0 or res["control_p0_grad_diff"] != 0.0:
+        raise AssertionError(f"dagger probe: p = 0 is not the identity (same object {res['control_p0_same_object']}, loss diff {res['control_p0_loss_diff']}, grad diff {res['control_p0_grad_diff']}): the control must read exactly 0.0")
+    if not (res["loss_diff"] != 0.0 and res["grad_diff_all"] > 0.0):
+        raise AssertionError(f"dagger probe: the swapped batch moves the loss by {res['loss_diff']} and the gradient by {res['grad_diff_all']}: the swap does not reach the loss the trainer backpropagates")
+    if not only["p10f"] != 0.0:
+        raise AssertionError("dagger probe: replacing p10f alone does not move the loss: the model does not read the swapped p10f")
+    if 0.0 != res["control_prior_grad_diff"]:
+        raise AssertionError(f"dagger probe: the frozen P10 prior's gradient moved with the swap ({res['control_prior_grad_diff']}): the control must read exactly 0.0")
+    if res["control_wm_grad_diff"] not in (0.0, None):
+        raise AssertionError(f"dagger probe: the world-model auxiliary's gradient moved with the swap ({res['control_wm_grad_diff']}): act is its transition record and is kept, the control must read exactly 0.0")
+    res["pass"] = True
+    return res
+
+
 # ------------------------------------------------------------------------------------------------ the encoder (PREREG_V8F_LORA)
 def build_encoder_raw(a, dev):
     """The ONLY place the real weights are loaded (tests replace THIS, never :func:`make_encoder`): the cache builder's DINOv3 ViT-L/16 (bf16, local HF cache, no
@@ -1089,6 +1395,7 @@ def build_data(a, cfg):
     info.update({"n_windows_all_clips": len(allw), "n_windows": len(wins),
                  "window_start": D.effective_window_start(cfg.hist, cfg.window_start),         # what train_windows was asked for ...
                  "window_t_min": min((w[1] for w in allw), default=None)})                      # ... and what the built list actually starts at (read back)
+    info["train_window_list_sha256"] = DG.windows_sha256(J["clip"], wins)                       # the TRAIN WINDOW list's digest, recorded on EVERY run (summary.json, beside train_sha256): the bank's `window_list_sha256` is this value, and the reader (K-B3.2) compares the two on both arms
     return store, J, wins, clips, info
 
 
@@ -1166,6 +1473,7 @@ def main(argv=None):
             info["init_ckpt"] = load_init_ckpt(a.init_ckpt, model, cfg, apply=not (os.path.exists(os.path.join(a.out, "ckpt_last.pt")) and not a.no_resume))
         except Exception as e:                                       # noqa: BLE001  a missing / foreign / mismatched checkpoint is a REFUSAL, not a crash
             raise SystemExit(f"ZZDVB-REFUSEDZZ init-ckpt {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
+    dag = make_dagger(a, J, wins, clips, info)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
     enc = None
     if a.encoder == "lora":
         enc = make_encoder(a, dev)                     # AFTER the heads: it must not move their initialisation (the global RNG is restored inside)
@@ -1182,7 +1490,7 @@ def main(argv=None):
                                max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
     # ---- the launch gate
     lr_at = LRSchedule(a.lr, a.warmup, total)                        # the loop's schedule, built BEFORE the gate so that G-DVB can read --warmup back from it
-    bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at)
+    bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag)
     if bad:
         raise SystemExit("ZZDVB-REFUSEDZZ declared-vs-built: " + "; ".join(bad))
     chunk = enc_chunk(a, cfg)
@@ -1216,8 +1524,15 @@ def main(argv=None):
         egop = ego_perturb_probe(model, probe, cfg, ego)  # O-RECOVER: G-LIVE on a PERTURBED batch; the perturbed tensors reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
     except AssertionError as e:
         raise SystemExit(f"ZZDVB-REFUSEDZZ ego-perturb: {e}")
+    try:
+        dagp = dagger_probe(model, probe, cfg, dag)       # PREREG_V8F_DAGGER: G-LIVE on a SWAPPED batch; the own-state tensors reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
+    except (AssertionError, ValueError) as e:
+        raise SystemExit(f"ZZDVB-REFUSEDZZ dagger: {e}")
     levers = model.built_levers()
     levers["ego_perturb"] = ego.built_levers()                        # recorded like every other lever (selfcheck.json, summary.json, the checkpoint)
+    levers["dagger"] = dag.built_levers()                             # PREREG_V8F_DAGGER: what was BUILT (the bank's path and sha256 included) ...
+    levers["dagger_p"], levers["dagger_bank_sha256"] = dag.p, dag.bank_sha256          # ... and the two values the reader keys on, flat (0.0 / None when the lever is off)
+    levers["dagger_bank_sha256_declared"] = a.dagger_bank_sha256 or None              # ... and the hash the argv DECLARED (--dagger-bank-sha256); the gate has just required it to equal the built one (None when the lever is off)
     levers["init_ckpt"] = info.get("init_ckpt")
     levers["lr_schedule"] = lr_at.built_levers()                       # the built warmup / peak / total the loop calls (G-DVB read --warmup back from it)
     if enc is not None:
@@ -1226,6 +1541,7 @@ def main(argv=None):
     sc = {"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix, "o_interface_probe": ocut, "acc_probe": accp, "admissibility": adm, "levers": levers,
           "steps_total": total, "S_steps_per_epoch_100pct": S, "info": info, "argv_sha": argv_sha(argv)}
     sc["ego_perturb_probe"] = egop
+    sc["dagger_probe"] = dagp
     if ident is not None:
         sc["identity_probe"] = ident
     json.dump(sc, open(os.path.join(a.out, "selfcheck.json"), "w"), indent=1, default=str)
@@ -1239,6 +1555,8 @@ def main(argv=None):
     step, ep, bi = 0, 0, 0
     ego_tot = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # O-RECOVER's run totals (samples seen, eligible = logged v0 < vmax, perturbed, nav frames left as logged); carried in the checkpoint so a resumed run keeps counting
     ego_int = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # ... and since the last log line
+    dag_tot = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # PREREG_V8F_DAGGER's run totals (samples seen, eligible = an own state with r' = t, swapped, nav frames left as logged); carried in the checkpoint
+    dag_int = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # ... and since the last log line
     if os.path.exists(ck_path) and not a.no_resume:
         ck = torch.load(ck_path, map_location="cpu", weights_only=False)
         if ck["argv_sha"] != argv_sha(argv):
@@ -1249,6 +1567,7 @@ def main(argv=None):
         opt.load_state_dict(ck["opt"])
         step, ep, bi = ck["step"], ck["epoch"], ck["batch_in_epoch"]
         ego_tot.update(ck.get("ego_totals") or {})
+        dag_tot.update(ck.get("dagger_totals") or {})
         print(f"[resume] step {step} epoch {ep} batch {bi}", flush=True)
 
     def save(final=False):
@@ -1256,7 +1575,8 @@ def main(argv=None):
                 "argv_sha": argv_sha(argv), "cfg": cfg.__dict__, "p10_path": os.path.abspath(a.p10) if not a.synthetic else "",
                 "grid": a.grid, "arm": a.arm, "seed": a.seed, "cons_mu": mu, "cons_sd": sd,
                 "cfg_tuple_fields": {"wm_strides": list(cfg.wm_strides)},
-                "ego_perturb": ego.built_levers(), "init_ckpt": info.get("init_ckpt"), "ego_totals": dict(ego_tot)}          # O-RECOVER: what was BUILT, beside the config, and the counts so far
+                "ego_perturb": ego.built_levers(), "init_ckpt": info.get("init_ckpt"), "ego_totals": dict(ego_tot),
+                "dagger": dag.built_levers(), "dagger_totals": dict(dag_tot)}          # O-RECOVER: what was BUILT, beside the config, and the counts so far
         if enc is not None:             # `model` keeps B's layout (the unchanged v8f_mini_eval.py loads it); the LoRA matrices travel beside it
             blob["lora"], blob["encoder_levers"] = enc.lora_state_dict(), enc.built_levers()
         torch.save(blob, ck_path + ".tmp")
@@ -1282,6 +1602,12 @@ def main(argv=None):
                 c_["eligible"] += ego.last["n_eligible"]
                 c_["n"] += ego.last["n_selected"]
                 c_["nav_kept"] += ego.last["ego_perturb_nav_kept"]
+            b = dag.apply(b, step)                                 # PREREG_V8F_DAGGER: the ego tensors of the selected samples are the model's OWN T1-kin state at the matched route point; targets and labels stay the human's (off: `b` itself)
+            for c_ in (dag_int, dag_tot):                          # the control counts: samples seen, eligible (an own state with r' = t), swapped (exactly 0 when the lever is off), nav frames left as logged
+                c_["rows"] += dag.last["n_rows"]
+                c_["eligible"] += dag.last["n_eligible"]
+                c_["n"] += dag.last["n_selected"]
+                c_["nav_kept"] += dag.last["dagger_nav_kept"]
             b = to_dev(b, dev)
             for g in opt.param_groups:
                 g["lr"] = lr_at(step) * g.get("lr_mult", 1.0)
@@ -1315,6 +1641,9 @@ def main(argv=None):
                 rec["ego_perturb_n"], rec["ego_perturb_eligible"], rec["ego_perturb_rows"] = ego_int["n"], ego_int["eligible"], ego_int["rows"]      # per log interval (the steps since the last line)
                 rec["ego_perturb_nav_kept"] = ego_int["nav_kept"]
                 ego_int.update(rows=0, eligible=0, n=0, nav_kept=0)
+                if dag.active:
+                    rec["dagger_n"], rec["dagger_eligible"], rec["dagger_rows"], rec["dagger_nav_kept"] = dag_int["n"], dag_int["eligible"], dag_int["rows"], dag_int["nav_kept"]          # per log interval
+                dag_int.update(rows=0, eligible=0, n=0, nav_kept=0)
                 if enc is not None:
                     rec["lora_grad_norm"] = float(gn_l)
                 log.write(json.dumps(rec) + "\n"); log.flush()
@@ -1331,9 +1660,11 @@ def main(argv=None):
     summary = {"done": True, "steps": step, "arm": a.arm, "seed": a.seed, "data_frac": a.data_frac,
                "steps_mult": a.steps_mult, "S": S, "n_clips": info["n_clips"], "n_windows": info["n_windows"],
                "exclude": a.exclude, "excluded_sha256": info.get("excluded_sha256"), "train_sha256": info.get("train_sha256"),
+               "train_window_list_sha256": info.get("train_window_list_sha256"),
                "seconds": time.time() - t0, "argv_sha": argv_sha(argv), "levers": levers,
                "selfcheck": "selfcheck.json",
-               "ego_perturb_n": ego_tot["n"], "ego_perturb_eligible": ego_tot["eligible"], "ego_perturb_rows": ego_tot["rows"], "ego_perturb_nav_kept": ego_tot["nav_kept"]}      # O-RECOVER run totals: exactly 0 perturbed at p = 0; perturbed == eligible at p = 1
+               "ego_perturb_n": ego_tot["n"], "ego_perturb_eligible": ego_tot["eligible"], "ego_perturb_rows": ego_tot["rows"], "ego_perturb_nav_kept": ego_tot["nav_kept"],
+               "dagger_n": dag_tot["n"], "dagger_eligible": dag_tot["eligible"], "dagger_rows": dag_tot["rows"], "dagger_nav_kept": dag_tot["nav_kept"]}      # PREREG_V8F_DAGGER run totals: exactly 0 swapped at p = 0; swapped == eligible at p = 1      # O-RECOVER run totals: exactly 0 perturbed at p = 0; perturbed == eligible at p = 1
     if enc is not None:
         summary["encoder"] = "lora"
     json.dump(summary, open(os.path.join(a.out, "summary.json"), "w"), indent=1, default=str)      # LAST, atomically meaningful

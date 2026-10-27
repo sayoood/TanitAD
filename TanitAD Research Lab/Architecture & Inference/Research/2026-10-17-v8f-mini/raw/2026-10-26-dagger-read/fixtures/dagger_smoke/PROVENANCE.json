@@ -1,0 +1,70 @@
+{
+ "schema": "v8f-dagger-bank-v1",
+ "kind": "bank",
+ "created_unix": 1793043052.7424924,
+ "shard_provenance": [
+  "shard_000of001.provenance.json"
+ ],
+ "n_records": 1608,
+ "coverage": {
+  "n_windows": 804,
+  "n_eligible": 580,
+  "fraction": 0.7213930348258707,
+  "min": 0.5,
+  "blocked": false
+ },
+ "reasons_by_tick": {
+  "1": {
+   "ok": 683,
+   "off_lat": 0,
+   "off_head": 2,
+   "end_edge": 119,
+   "nonfinite": 0
+  },
+  "2": {
+   "ok": 437,
+   "off_lat": 179,
+   "off_head": 24,
+   "end_edge": 164,
+   "nonfinite": 0
+  }
+ },
+ "partial": true,
+ "controls": {
+  "K-B4": {
+   "PASS": true,
+   "cases": {
+    "straight": true,
+    "stationary_tie": true,
+    "lateral_cut": true,
+    "heading_cut": true,
+    "end_edge": true,
+    "loop": true
+   },
+   "run_at": "generation (every shard) and at the merge",
+   "n_shards_checked": 1
+  },
+  "K-B5": {
+   "PASS": true,
+   "max_pose_now_err_m": 0.0,
+   "max_pose_now_yaw_err_rad": 0.0,
+   "max_reanchor_vs_pose_now_m": 0.0,
+   "max_rel_transform_err_m": 1.504511633759493e-05,
+   "max_rel_transform_yaw_err_rad": 1.7350965286766495e-07,
+   "max_rel_transform_err_float64_m": 5.114577690390551e-14,
+   "tol_m": 0.0001,
+   "n_records": 1608,
+   "n_skipped_nonfinite": 0,
+   "n_pairs": 410556,
+   "sample": "all records with a finite own pose and a logged row at r' (reason != nonfinite); no sampling, no seed",
+   "n_shards": 1,
+   "measured_on": "the float32 tensors the swap emits (reanchor_rows, cast to float32), against the logged float64 poses",
+   "log_pose_sha256_by_shard": [
+    "8193481de2b180fa570f648e46874b44778adc28752364133d43f9594126df2f"
+   ]
+  }
+ },
+ "warnings": [],
+ "bank_sha256": "c23c35b5607360400b1d779584ec613ae70d48ea10ac91ca61fc9ac3ab8b5d13",
+ "manifest": "bank.json"
+}

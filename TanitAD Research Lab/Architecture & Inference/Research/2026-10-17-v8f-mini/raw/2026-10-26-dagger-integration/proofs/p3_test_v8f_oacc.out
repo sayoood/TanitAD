@@ -1,0 +1,271 @@
+...........................................F.........FFFF............... [ 54%]
+.............................................................            [100%]
+================================== FAILURES ===================================
+___ test_the_next_texts_and_the_four_outcome_names_are_the_preregs_verbatim ___
+
+    @needs_reader
+    def test_the_next_texts_and_the_four_outcome_names_are_the_preregs_verbatim():
+        rows = {}
+>       for ln in PREREG.read_text(encoding="utf-8").splitlines():
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_oacc.py:934: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('E:/Projects/TanitAD-artifacts/di/tree/Project Steering/PREREG_V8F_OACC.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Projects\\TanitAD-artifacts\\di\\tree\\Project Steering\\PREREG_V8F_OACC.md'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_oacc_reader_world_x_equal_to_b_reads_no_effect_and_every_value_is_the_oracles _
+
+fab = {'I': <v8f_oacc_read_t.Instruments object at 0x000001B0B0592A50>, 'world': ({'order': ['01be5919-6e61-45ba-a193-5f447e...10143807e-01]]], shape=(2399, 30, 2)), ...}), 'base': WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/oacc_fab0')}
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_oacc_reader_world_x_equal0')
+capsys = <_pytest.capture.CaptureFixture object at 0x000001B0B0537ED0>
+
+    @needs_reader
+    @needs_real
+    def test_oacc_reader_world_x_equal_to_b_reads_no_effect_and_every_value_is_the_oracles(fab, tmp_path, capsys):
+        base = _world(fab, "same", lambda s, tau, p: tau)
+        rc, err, r, out = _read(base, "0", tmp_path, capsys)
+        assert rc == 0, err
+        assert "s1_required" in r, "the record says whether seed 1 is required"
+        assert r["OUTCOME"] == "NO EFFECT" and r["s1_required"] is False and r["seeds_read"] == [0]
+        s0 = r["per_seed"]["s0"]
+        assert s0["PRIMARY_ACC"]["mean"] == 0.0 and s0["PRIMARY_ACC"]["separated"] is False and s0["PRIMARY_ACC"]["pass"] is False, "X == B: the paired accel difference is exactly 0 and not separated"
+        assert s0["PRIMARY_KEEP"]["mean"] == 0.0 and s0["PRIMARY_KEEP"]["pass"] is True and s0["state"] == {"ACC": False, "KEEP": True, "DOM": s0["DOMINANCE"]["pass"]}
+        exp = _assert_world(fab, base, r, 0, 40, decoys=False)
+        assert exp["acc"]["mean"] == 0.0
+        assert abs(r["F"] - 0.1207) < 5e-4 and r["keep_bar"] == r["F"] / 2 and r["n_windows"] == 2399 and r["n_episodes"] == 141 and r["w_acc"] == 42.9311 and r["estimator"].startswith("paired episode-cluster bootstrap, B=40")
+        assert s0["identity_controls"]["all_pass"] is True and s0["identity_controls"]["w1_vs_X_pred_maxabs_m"] <= 1e-4 and s0["identity_controls"]["P_vs_P10_file_maxabs_m"] <= 1e-4
+        fams = s0["beside"]["families"]
+        bjB = json.loads((RAWF / "eval_M2b_s0.json").read_text(encoding="utf-8"))["raw"]
+        assert fams["strategic"]["status"].startswith("READ (switched on") and "PAUSED" not in json.dumps(r)
+        assert fams["strategic"]["B"] == _nan_none(bjB["strategic"]) and fams["strategic"]["X"] == _nan_none(bjB["strategic"]) and fams["strategic"]["B"] is not None, "the strategic family is READ from both evals"
+        assert fams["tactical"]["B"] == _nan_none(bjB["tactical"]) and fams["tactical"]["X"] is not None
+        assert fams["strategic"]["identical_to_B"] is True and fams["strategic"]["identical_by_construction"] is False and fams["tactical"]["HX_equals_X_by_construction"] is True
+        assert set(fams["distance_keeping_k30"]["pairs"]) >= {"HX_s0__minus__P10", "X_s0__minus__B_s0"}
+        assert r["checkpoint_sha256"].get("M2b_s0") == RD.BANKED_CKPT_SHA["M2b_s0"] and r["checkpoint_sha256"].get("M2b-oacc_s0") == s0["ckpt_sha256"], "the record names the measured checkpoints"
+>       want_next = f"NO EFFECT: {_prereg_next('NO EFFECT')}."
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_oacc.py:1534: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_oacc.py:1459: in _prereg_next
+    for ln in PREREG.read_text(encoding="utf-8").splitlines():
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('E:/Projects/TanitAD-artifacts/di/tree/Project Steering/PREREG_V8F_OACC.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Projects\\TanitAD-artifacts\\di\\tree\\Project Steering\\PREREG_V8F_OACC.md'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_oacc_reader_world_costly_x_passes_acc_fails_keep_and_reads_costs_position _
+
+fab = {'I': <v8f_oacc_read_t.Instruments object at 0x000001B0B0592A50>, 'world': ({'order': ['01be5919-6e61-45ba-a193-5f447e...10143807e-01]]], shape=(2399, 30, 2)), ...}), 'base': WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/oacc_fab0')}
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_oacc_reader_world_costly_0')
+capsys = <_pytest.capture.CaptureFixture object at 0x000001B0AB059D10>
+
+    @needs_reader
+    @needs_real
+    def test_oacc_reader_world_costly_x_passes_acc_fails_keep_and_reads_costs_position(fab, tmp_path, capsys):
+        base = _world(fab, "costly", _tau_costly)
+        rc, err, r, _ = _read(base, "0", tmp_path, capsys)
+        assert rc == 0, err
+        exp = _assert_world(fab, base, r, 0, 40)
+        s0 = r["per_seed"]["s0"]
+        assert exp["state"]["ACC"] is True and exp["state"]["KEEP"] is False and s0["PRIMARY_KEEP"]["hi"] > exp["bar"] + 0.1, "a lateral drift growing to 1.5 m: ADE6 worse by far more than F/2"
+>       assert r["OUTCOME"] == "COSTS POSITION" and r["s1_required"] is False and r["next"] == f"COSTS POSITION: {_prereg_next('COSTS POSITION')}." and r["reading"].startswith("PREREG_V8F_OACC: COSTS POSITION; w_acc 42.9311;")
+                                                                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_oacc.py:1550: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_oacc.py:1459: in _prereg_next
+    for ln in PREREG.read_text(encoding="utf-8").splitlines():
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('E:/Projects/TanitAD-artifacts/di/tree/Project Steering/PREREG_V8F_OACC.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Projects\\TanitAD-artifacts\\di\\tree\\Project Steering\\PREREG_V8F_OACC.md'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_ test_oacc_reader_world_smoothed_x_every_read_is_the_hand_computed_one_pending_seed_1_then_smoother_not_dominant _
+
+fab = {'I': <v8f_oacc_read_t.Instruments object at 0x000001B0B0592A50>, 'world': ({'order': ['01be5919-6e61-45ba-a193-5f447e...10143807e-01]]], shape=(2399, 30, 2)), ...}), 'base': WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/oacc_fab0')}
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_oacc_reader_world_smoothe0')
+capsys = <_pytest.capture.CaptureFixture object at 0x000001B0AB1569E0>
+
+    @needs_reader
+    @needs_real
+    def test_oacc_reader_world_smoothed_x_every_read_is_the_hand_computed_one_pending_seed_1_then_smoother_not_dominant(fab, tmp_path, capsys):
+        base = _world(fab, "smooth", lambda s, tau, p: _smooth(tau, 4))
+        rc, err, r0, _ = _read(base, "0", tmp_path, capsys, name="r0.json")
+        assert rc == 0, err
+        exp0 = _assert_world(fab, base, r0, 0, 40)
+        assert exp0["state"] == {"ACC": True, "KEEP": True, "DOM": False} and exp0["acc"]["mean"] < 0 and exp0["acc"]["separated"] and exp0["keep"]["hi"] <= exp0["bar"], "the world: ACC and KEEP pass, DOMINANCE fails"
+        assert exp0["dom_rows"]["ADE2"]["better"] is False and exp0["dom_rows"]["curvature MAE"]["worse"] is True and exp0["dom_rows"]["ADE6"]["better"] is True and exp0["dom_rows"]["accel MAE"]["better"] is True, "ADE2 is not separated-better and curvature is separated-WORSE"
+        assert r0["OUTCOME"] == "PENDING SEED 1" and r0["s1_required"] is True and r0["next"] is None and r0["seeds_read"] == [0] and list(r0["per_seed"]) == ["s0"]
+        assert r0["reading"].startswith("PREREG_V8F_OACC: PENDING SEED 1; w_acc 42.9311;") and "DOMINANCE HX - P10 FAIL" in r0["reading"]
+        rc, err, r, out = _read(base, "0,1", tmp_path, capsys, name="r01.json")
+        assert rc == 0, err
+        exp1 = _assert_world(fab, base, r, 1, 40)
+        _assert_world(fab, base, r, 0, 40, decoys=False)
+        assert exp1["state"]["ACC"] is True and exp1["state"]["KEEP"] is True and exp1["state"]["DOM"] is False
+        assert r["seeds_read"] == [0, 1] and r["seed_states"] == {"s0": exp0["state"], "s1": exp1["state"]} and r["s1_required"] is False
+>       assert r["OUTCOME"] == "SMOOTHER, NOT DOMINANT" and r["next"] == f"SMOOTHER, NOT DOMINANT: {_prereg_next('SMOOTHER, NOT DOMINANT')}."
+                                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_oacc.py:1571: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_oacc.py:1459: in _prereg_next
+    for ln in PREREG.read_text(encoding="utf-8").splitlines():
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('E:/Projects/TanitAD-artifacts/di/tree/Project Steering/PREREG_V8F_OACC.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Projects\\TanitAD-artifacts\\di\\tree\\Project Steering\\PREREG_V8F_OACC.md'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+_____ test_oacc_reader_world_near_gt_x_dominates_its_prior_at_both_seeds ______
+
+fab = {'I': <v8f_oacc_read_t.Instruments object at 0x000001B0B0592A50>, 'world': ({'order': ['01be5919-6e61-45ba-a193-5f447e...10143807e-01]]], shape=(2399, 30, 2)), ...}), 'base': WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/oacc_fab0')}
+tmp_path = WindowsPath('E:/Projects/TanitAD-artifacts/di/bt/cur/test_oacc_reader_world_near_gt0')
+capsys = <_pytest.capture.CaptureFixture object at 0x000001B0AAF2AEA0>
+
+    @needs_reader
+    @needs_real
+    def test_oacc_reader_world_near_gt_x_dominates_its_prior_at_both_seeds(fab, tmp_path, capsys):
+        base = _world(fab, "near", _tau_near(fab))
+        rc, err, r, _ = _read(base, "0,1", tmp_path, capsys)
+        assert rc == 0, err
+        exp0 = _assert_world(fab, base, r, 0, 40)
+        exp1 = _assert_world(fab, base, r, 1, 40)
+        assert exp0["state"] == {"ACC": True, "KEEP": True, "DOM": True} and exp1["state"] == {"ACC": True, "KEEP": True, "DOM": True}
+        assert all(exp0["dom_rows"][nm]["better"] for nm, _, need in _DOM_SPEC if need == "better") and not any(r_["worse"] for r_ in exp0["dom_rows"].values()), "every DOMINANCE row is separated-better in this world"
+        assert r["OUTCOME"] == "DOMINATES ITS PRIOR" and r["s1_required"] is False and r["seed_states"] == {"s0": exp0["state"], "s1": exp1["state"]}
+>       assert r["next"] == f"DOMINATES ITS PRIOR: {_prereg_next('DOMINATES ITS PRIOR')}." and r["reading"].startswith("PREREG_V8F_OACC: DOMINATES ITS PRIOR; w_acc 42.9311;") and "DOMINANCE HX - P10 PASS / PASS" in r["reading"]
+                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_oacc.py:1588: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_oacc.py:1459: in _prereg_next
+    for ln in PREREG.read_text(encoding="utf-8").splitlines():
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:546: in read_text
+    return PathBase.read_text(self, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_abc.py:632: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = WindowsPath('E:/Projects/TanitAD-artifacts/di/tree/Project Steering/PREREG_V8F_OACC.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'E:\\Projects\\TanitAD-artifacts\\di\\tree\\Project Steering\\PREREG_V8F_OACC.md'
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\pathlib\_local.py:537: FileNotFoundError
+============================== warnings summary ===============================
+tests/test_v8f_oacc.py::test_traj_terms_is_the_losses_own_spelling_of_ade_and_fde
+  E:\Projects\TanitAD-artifacts\di\tree\stack\tests\test_v8f_oacc.py:237: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(ade) == pytest.approx(d.mean(1)[ok].mean(), rel=1e-5) and float(fde) == pytest.approx(d[:, -1][ok].mean(), rel=1e-5)
+
+tests/test_v8f_oacc.py::test_oacc_reader_world_x_equal_to_b_reads_no_effect_and_every_value_is_the_oracles
+tests/test_v8f_oacc.py::test_oacc_reader_world_costly_x_passes_acc_fails_keep_and_reads_costs_position
+tests/test_v8f_oacc.py::test_oacc_reader_world_smoothed_x_every_read_is_the_hand_computed_one_pending_seed_1_then_smoother_not_dominant
+tests/test_v8f_oacc.py::test_oacc_reader_world_near_gt_x_dominates_its_prior_at_both_seeds
+tests/test_v8f_oacc.py::test_oacc_reader_refuses_a_hx_evaluation_without_a_family
+  E:\Projects\TanitAD-artifacts\di\tree\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\code\v8f_oacc_read.py:441: RuntimeWarning: Mean of empty slice
+    strat_pair = {"mean_over_checkpoints": BE.paired_row(np.nanmean(cx, 1), np.nanmean(cb, 1), eid, nb), "per_checkpoint": [BE.paired_row(cx[:, j], cb[:, j], eid, nb) for j in range(cx.shape[1])]}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_oacc.py::test_the_next_texts_and_the_four_outcome_names_are_the_preregs_verbatim
+FAILED stack\tests\test_v8f_oacc.py::test_oacc_reader_world_x_equal_to_b_reads_no_effect_and_every_value_is_the_oracles
+FAILED stack\tests\test_v8f_oacc.py::test_oacc_reader_world_costly_x_passes_acc_fails_keep_and_reads_costs_position
+FAILED stack\tests\test_v8f_oacc.py::test_oacc_reader_world_smoothed_x_every_read_is_the_hand_computed_one_pending_seed_1_then_smoother_not_dominant
+FAILED stack\tests\test_v8f_oacc.py::test_oacc_reader_world_near_gt_x_dominates_its_prior_at_both_seeds
+5 failed, 128 passed, 6 warnings in 728.64s (0:12:08)

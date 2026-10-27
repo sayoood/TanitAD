@@ -1,0 +1,134 @@
+
+:dagname
+rem PREREG_V8F_DAGGER: the helper of the stages below (called by them, never dispatched). %1 = ARM (dag | dag0), %2 = SEED (0 | 1). Sets the names ONCE: DAGS (arm), DAGSEED, DAGOUT (the run directory), DAGTAG (the T0 eval tag), DAGGATE (the gate directory), DAGBANK (the seed's own-state bank),
+rem DAGPIN (the pinned TRAINING argv), DAGGRID (eval-141's grid, COPIED out of the repo path: its ampersand must never reach an argument string), DAGTOOL. Anything else is REFUSED (rc 2).
+set "DAGS="
+if /i "%~1"=="dag" set "DAGS=dag"
+if /i "%~1"=="dag0" set "DAGS=dag0"
+if not defined DAGS (echo REFUSED: ARM must be dag or dag0, got "%~1" & exit /b 2)
+if "%~2"=="" (echo REFUSED: a SEED is needed & exit /b 2)
+if not "%~2"=="0" if not "%~2"=="1" (echo REFUSED: SEED must be 0 or 1, got "%~2" & exit /b 2)
+set "DAGSEED=%~2"
+set "DAGOUT=%RUNSM%\M2b_s%~2_%DAGS%"
+set "DAGTAG=M2b-%DAGS%_s%~2"
+set "DAGGATE=%RUNSM%\gate_M2b-%DAGS%_s%~2"
+set "DAGBANK=%RUNSM%\dagger_bank\s%~2"
+set "DAGPIN=%RUNSM%\dagpin\M2b_s%~2_%DAGS%.train.argv.txt"
+set "DAGGRID=%RUNSM%\dagpin\eval_grid_windows.json"
+set "DAGTOOL=%REPO%\stack\scripts\v8f_dagger_queue_tool.py"
+exit /b 0
+
+:prepdag
+rem PREREG_V8F_DAGGER: eval-141's grid (the bank must be disjoint from it) is COPIED to a path without an ampersand, as :prep copies the P10 prior. Dry run: nothing is touched.
+if defined V8F_DRYRUN exit /b 0
+if not defined DAGGRID (echo REFUSED: :prepdag needs :dagname first & exit /b 2)
+if not exist "%RUNSM%\dagpin" mkdir "%RUNSM%\dagpin"
+copy /y "%REPO%\TanitAD Research Lab\Architecture & Inference\Research\2026-10-17-v8f-mini\raw\eval_grid_windows.json" "%DAGGRID%" >nul || (echo REFUSED: eval_grid_windows.json did not copy & exit /b 2)
+exit /b 0
+
+:dagarm
+rem PREREG_V8F_DAGGER section 4 and Amendment 1: the helper of the gate and train stages (called by them, never dispatched). %1 = ARM (dag | dag0), %2 = SEED (0 | 1), %3 = P (dag only: 0.1 after ORC read HARMS, 0.3 after NO EFFECT; dag0 takes none).
+rem The fine-tune is ORC Amendment 1's, unchanged (DAGF0), with --ego-perturb-p NAMED as 0 on both arms and --dagger-p always NAMED (the flag's default disables the lever). DAG-0 = DAGF0 + --dagger-p 0 and NOTHING else: the trainer's gate refuses a bank, a bank hash or a seed declared while p is 0.
+rem DAG = DAGF0 + --dagger-p P --dagger-bank <the seed's bank> --dagger-bank-sha256 <sha256 of bank.json, computed HERE from the file> --dagger-seed <SEED>. The pair rule is therefore: the two argv differ in --out, --dagger-p's value and the three DAG-only flags, and nowhere else.
+call :dagname %~1 %~2 || exit /b 2
+set "DAGP=0"
+set "DAGSHA="
+set "DAGF0=--init-ckpt "%RUNSM%\M2b_s%~2\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0"
+if /i "%DAGS%"=="dag0" (
+  if not "%~3"=="" (echo REFUSED: dag0 takes no P, got "%~3" - a lever declared and inert & exit /b 2)
+  set "DAGF=%DAGF0% --dagger-p 0"
+  exit /b 0
+)
+if "%~3"=="" (echo REFUSED: dag needs P, 0.1 after ORC read HARMS or 0.3 after NO EFFECT & exit /b 2)
+if not "%~3"=="0.1" if not "%~3"=="0.3" (echo REFUSED: P must be 0.1 or 0.3, got "%~3" & exit /b 2)
+set "DAGP=%~3"
+if defined V8F_DRYRUN goto :dagarm_dry
+if not exist "%DAGBANK%\bank.json" (echo REFUSED: no merged bank at %DAGBANK% - run bankdag %~2 first & exit /b 2)
+if not exist "%RUNSM%\dagpin" mkdir "%RUNSM%\dagpin"
+"%PY%" "%DAGTOOL%" sha "%DAGBANK%\bank.json" > "%RUNSM%\dagpin\bank_sha_s%~2.txt"
+if errorlevel 1 (echo REFUSED: could not hash %DAGBANK%\bank.json & exit /b 2)
+set /p DAGSHA=<"%RUNSM%\dagpin\bank_sha_s%~2.txt"
+goto :dagarm_have
+:dagarm_dry
+rem the dry run of a box that has no bank yet prints a placeholder; an env DAGSHA_DRY (the chain, which hashed the PULLED bank.json, and the tests) supplies the value. It is read ONLY here, never by a real run.
+if defined DAGSHA_DRY (set "DAGSHA=%DAGSHA_DRY%") else (set "DAGSHA=BANK_SHA256_OF_BANK_JSON")
+:dagarm_have
+if not defined DAGSHA (echo REFUSED: no bank sha256 & exit /b 2)
+set "DAGF=%DAGF0% --dagger-p %DAGP% --dagger-bank "%DAGBANK%" --dagger-bank-sha256 %DAGSHA% --dagger-seed %~2"
+exit /b 0
+
+:bankdag
+rem PREREG_V8F_DAGGER section 1 and 8: the own-state bank of the BANKED M2b_s<SEED> checkpoint (frozen, PLAIN, one pass, ticks 1 and 2, TRAIN only), FOUR clip-sharded generator processes then the merge, ONE command string that the dry run prints and the real run executes.
+rem It depends only on M2b and the TRAIN cache, so it may run before ORC's read. v8f_dagger_queue_tool.py bank fans out v8f_dagger_bank.py gen --shard K --n-shards 4 (a finished shard is skipped), then runs merge; rc != 0 if any shard or the merge failed.
+rem --threads 2 per process: the safe-mode affinity mask is 0xFF (8 logical CPUs). --device cuda: the forwards run on the GPU (DESIGN_NOTES section 4). The bank is written beside the M2b runs, never into a run directory.
+call :prep || exit /b 2
+call :dagname dag %~2 || exit /b 2
+call :prepdag || exit /b 2
+set "BX="%PY%" "%DAGTOOL%" bank --n-shards 4 --out-dir "%DAGBANK%" -- --ckpt "%RUNSM%\M2b_s%~2\ckpt_last.pt" --m2b-argv "%RUNSM%\M2b_s%~2\argv.json" --cache-dir "%CACHEFULL%" --tracks "%TRACKS%" --join-train "%RUNSM%\join_train.npz" --eval-grid "%DAGGRID%" --batch 32 --threads 2 --device cuda --expect-clips 4512 --expect-windows 306566"
+if defined V8F_DRYRUN (echo %BX% & exit /b 0)
+if exist "%DAGBANK%\bank.json" if exist "%DAGBANK%\PROVENANCE.json" (echo [skip] bank s%~2 & exit /b 0)
+if not exist "%RUNSM%\M2b_s%~2\ckpt_last.pt" (echo REFUSED: %RUNSM%\M2b_s%~2\ckpt_last.pt is missing & exit /b 2)
+if not exist "%RUNSM%\M2b_s%~2\argv.json" (echo REFUSED: %RUNSM%\M2b_s%~2\argv.json is missing & exit /b 2)
+if not exist "%DAGBANK%" mkdir "%DAGBANK%"
+echo [%date% %time%] bank s%~2
+%BX% >> "%DAGBANK%\bank_stage.log" 2>&1
+if errorlevel 1 (echo [FAIL] bank s%~2 - see %DAGBANK%\bank_stage.log & exit /b 1)
+if not exist "%DAGBANK%\bank.json" (echo [FAIL] bank s%~2 exited 0 without bank.json & exit /b 1)
+echo [ok] bank s%~2
+exit /b 0
+
+:gatedag
+rem PREREG_V8F_DAGGER section 6 ("Launch gate"): the trainer's own in-process gate (v8f_mini_train.py --selfcheck-only: G-DVB incl. bad_dagger, --init-ckpt and --warmup; G-LIVE incl. dagger_probe on a SWAPPED batch). The gate's argv is the run's argv with --out and --selfcheck-only changed and nothing else.
+rem THE TOKEN BINDS THE TRAINING ARGV, SO THE TRAINING ARGV IS PINNED HERE: this stage writes the exact TRAINING line it derives from to %DAGPIN% (a re-pin that differs from an existing pin is REFUSED, never silently replaced), and traindag runs THAT FILE. The bank's sha256 is computed here, from bank.json.
+call :prep || exit /b 2
+call :dagarm %~2 %~3 %~4 || exit /b 2
+set "TX="%PY%" "%TRAIN%" --arm M2b --seed %DAGSEED% --grid pool4x10 --out "%DAGOUT%" %A% %DAGF%"
+set "GX="%PY%" "%TRAIN%" --arm M2b --seed %DAGSEED% --grid pool4x10 --out "%DAGGATE%" %A% %DAGF% --selfcheck-only"
+if defined V8F_DRYRUN (echo %GX% & exit /b 0)
+if not exist "%RUNSM%\dagpin" mkdir "%RUNSM%\dagpin"
+>"%DAGPIN%.new" echo %TX%
+if exist "%DAGPIN%" (
+  fc /b "%DAGPIN%" "%DAGPIN%.new" >nul
+  if errorlevel 1 (echo REFUSED: %DAGPIN% pins another training argv than the one derived now - delete it only if the bank or the levers were deliberately changed & exit /b 2)
+) else (
+  copy /y "%DAGPIN%.new" "%DAGPIN%" >nul || (echo REFUSED: could not pin the training argv & exit /b 2)
+)
+%GX% > "%DAGGATE%.log" 2>&1
+if errorlevel 1 (echo [FAIL] gate M2b-%DAGS%_s%DAGSEED% - see %DAGGATE%.log & exit /b 1)
+echo [ok] gate M2b-%DAGS%_s%DAGSEED%
+exit /b 0
+
+:traindag
+rem PREREG_V8F_DAGGER: one fine-tune run. Its summary.json says arm M2b (the trainer's arm table is unchanged); its argv.json carries the whole fine-tune and its levers and checkpoint the BUILT values.
+rem The line that runs is the PINNED one: the stage re-derives the training line from the current bank.json and the current files, REFUSES unless that is byte-identical (fc /b) to the pin the gate tokenised, then executes the line READ FROM THE PIN FILE. The run lives in M2b_s<SEED>_dag / _dag0, so it can never resume or be mistaken for B.
+call :prep || exit /b 2
+call :dagarm %~2 %~3 %~4 || exit /b 2
+set "TX="%PY%" "%TRAIN%" --arm M2b --seed %DAGSEED% --grid pool4x10 --out "%DAGOUT%" %A% %DAGF%"
+if defined V8F_DRYRUN (echo %TX% & exit /b 0)
+if exist "%DAGOUT%\summary.json" (echo [skip] M2b_s%DAGSEED%_%DAGS% & exit /b 0)
+if not exist "%DAGPIN%" (echo REFUSED: no pinned training argv at %DAGPIN% - gatedag %DAGS% %DAGSEED% must pass first & exit /b 2)
+>"%DAGPIN%.chk" echo %TX%
+fc /b "%DAGPIN%" "%DAGPIN%.chk" >nul
+if errorlevel 1 (echo REFUSED: the training argv derived now differs from the one the gate tokenised - bank.json or a lever changed since the gate & exit /b 2)
+set "TXP="
+for /f "usebackq delims=" %%L in ("%DAGPIN%") do set "TXP=%%L"
+if not defined TXP (echo REFUSED: the pin file is empty & exit /b 2)
+if not exist "%DAGOUT%" mkdir "%DAGOUT%"
+echo [%date% %time%] train M2b_s%DAGSEED%_%DAGS%
+%TXP% >> "%DAGOUT%\train.log" 2>&1
+if errorlevel 1 (echo [FAIL] train M2b_s%DAGSEED%_%DAGS% - see %DAGOUT%\train.log & exit /b 1)
+if not exist "%DAGOUT%\summary.json" (echo [FAIL] train M2b_s%DAGSEED%_%DAGS% exited 0 without summary.json & exit /b 1)
+exit /b 0
+
+:evaldag
+rem PREREG_V8F_DAGGER section 5: the T0 eval its reader needs for R-T0, T0-CKPT and the four families at T0: the standard eval (--project --families) of THIS run's last checkpoint (--ages cycle, v8f_mini_eval.py's default), ONE command string. Skipped once its npz exists. FLAT on purpose.
+call :prep || exit /b 2
+call :dagname %~2 %~3 || exit /b 2
+set "E0="%PY%" "%EVAL%" run --ckpt "%DAGOUT%\ckpt_last.pt" --tag %DAGTAG% %EC% %ER% --project --families"
+if defined V8F_DRYRUN (echo %E0% & exit /b 0)
+if not exist "%DAGOUT%\summary.json" (echo REFUSED: %DAGTAG% has not finished training & exit /b 2)
+if exist "%EV%\eval_%DAGTAG%.npz" (echo [skip] eval %DAGTAG% & exit /b 0)
+%E0% >> "%EV%\eval_%DAGTAG%.log" 2>&1
+if errorlevel 1 (echo [FAIL] eval %DAGTAG% - see %EV%\eval_%DAGTAG%.log & exit /b 1)
+echo [ok] eval %DAGTAG%
+exit /b 0

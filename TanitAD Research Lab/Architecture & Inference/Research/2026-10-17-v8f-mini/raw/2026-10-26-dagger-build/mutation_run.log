@@ -1,0 +1,106 @@
+BEFORE 41a31de92fcd8c26b61f4ffb29e40b3d39cedd9b809e72d01f0a958e0dcfbd2b stack\scripts\v8f_dagger_bank.py
+BEFORE 831f64f8b5106bf8b75597bfdc6c9996efa7f68c41458e49f2ea5f4e5e5df441 stack\tanitad\data\v8f_dagger.py
+57 mutants over 2 files, each anchor found exactly once, each mutant compiles
+baseline [bank_rows_are]: rc 0  2 passed, 33 deselected in 20.55s
+baseline [constants]: rc 0  1 passed, 34 deselected in 3.71s
+baseline [constants or kb4]: rc 0  4 passed, 31 deselected in 3.22s
+baseline [draw_among]: rc 0  1 passed, 34 deselected in 14.42s
+baseline [draws_are or p_zero or p_is_a_parameter or draw_among]: rc 0  7 passed, 28 deselected in 16.93s
+baseline [draws_are or p_zero or p_is_a_parameter or draw_among or swap_reachability]: rc 0  8 passed, 27 deselected in 16.65s
+baseline [dry_run]: rc 0  1 passed, 34 deselected in 26.45s
+baseline [kb1]: rc 0  1 passed, 34 deselected in 15.15s
+baseline [kb1 or generator_is_deterministic]: rc 0  2 passed, 33 deselected in 20.89s
+baseline [kb2]: rc 0  1 passed, 34 deselected in 10.57s
+baseline [kb3]: rc 0  2 passed, 33 deselected in 10.79s
+baseline [kb3_the_generator]: rc 0  1 passed, 34 deselected in 10.45s
+baseline [kb4]: rc 0  3 passed, 32 deselected in 1.88s
+baseline [kb5]: rc 0  2 passed, 33 deselected in 10.73s
+baseline [kb5 or swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap]: rc 0  8 passed, 27 deselected in 12.09s
+baseline [kb5 or tick0_swap]: rc 0  3 passed, 32 deselected in 13.92s
+baseline [off_route or kb2]: rc 0  2 passed, 33 deselected in 11.95s
+baseline [shard_roundtrip]: rc 0  1 passed, 34 deselected in 11.39s
+baseline [shard_roundtrip or bank_holds or bank_rows_are]: rc 0  4 passed, 31 deselected in 20.22s
+baseline [swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap]: rc 0  6 passed, 29 deselected in 10.51s
+baseline [tick0_identity]: rc 0  1 passed, 34 deselected in 10.58s
+RED   [v8f_dagger.py] lateral cut dropped   -k 'kb4'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb4_the_seven_probe_cases - asser...
+RED   [v8f_dagger.py] lateral cut inclusive (>=)   -k 'kb4'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb4_cut_boundaries_cut_order_and_the_candidate_set
+RED   [v8f_dagger.py] heading cut dropped   -k 'kb4'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb4_the_seven_probe_cases - asser...
+SURVIVED  [v8f_dagger.py] heading cut inclusive (>=)   -k 'kb4'  ->  3 passed, 32 deselected in 1.91s
+RED   [v8f_dagger.py] end edge off by one   -k 'kb4'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb4_cut_boundaries_cut_order_and_the_candidate_set
+RED   [v8f_dagger.py] end edge dropped   -k 'kb4'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb4_the_seven_probe_cases - asser...
+RED   [v8f_dagger.py] cut order: the end edge before the off-route cuts   -k 'kb4'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb4_cut_boundaries_cut_order_and_the_candidate_set
+RED   [v8f_dagger.py] stationary tie: the first row (the reader's first-minimum rule), not the row nearest in time   -k 'kb4'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb4_the_seven_probe_cases - Asser...
+SURVIVED  [v8f_dagger.py] stationary tie: the LATER row on equal time distance   -k 'kb4'  ->  3 passed, 32 deselected in 3.04s
+RED   [v8f_dagger.py] tie set = the probe's band around the nearest distance (not 'within 0.05 m of that nearest arc')   -k 'kb4'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb4_tie_set_is_arc_ties_only_and_ties_break_by_time_then_the_earlier_row
+RED   [v8f_dagger.py] tie set = the nearest row only (no 0.05 m tolerance)   -k 'kb4'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb4_the_seven_probe_cases - Asser...
+RED   [v8f_dagger.py] projection onto the infinite line, not the segment   -k 'kb4'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb4_cut_boundaries_cut_order_and_the_candidate_set
+RED   [v8f_dagger.py] candidate rows start at 0, not at t0   -k 'kb4'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb4_the_seven_probe_cases - asser...
+RED   [v8f_dagger.py] the replan step is not 10   -k 'constants'  ->  FAILED stack/tests/test_v8f_dagger.py::test_constants_are_the_preregs_and_p_is_nowhere_hard_coded
+RED   [v8f_dagger.py] no re-anchoring: the own poses stay in the world frame   -k 'kb5 or swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb5_re_anchoring_keeps_pose_now_and_the_held_frame_relative_transforms
+RED   [v8f_dagger.py] the identity short-circuit is dropped (own NOW == logged NOW is not bit-exact)   -k 'kb5 or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb5_re_anchoring_keeps_pose_now_and_the_held_frame_relative_transforms
+RED   [v8f_dagger.py] re-anchoring drops the heading   -k 'kb5'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb5_re_anchoring_keeps_pose_now_and_the_held_frame_relative_transforms
+RED   [v8f_dagger.py] THE swap line is deleted: `out` is `batch`   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_swap_reachability_differs_exactly_in_the_ego_tensors
+RED   [v8f_dagger.py] kin3 is not replaced   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_swap_reachability_differs_exactly_in_the_ego_tensors
+RED   [v8f_dagger.py] base is not rebuilt from the own kin3   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_swap_reachability_differs_exactly_in_the_ego_tensors
+RED   [v8f_dagger.py] p10_t is the frame before NOW   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_the_rebuild_is_the_stored_own_state_and_agrees_with_orcs_rebuild_at_the_identity
+RED   [v8f_dagger.py] p10f keeps the logged value on every frame   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_swap_reachability_differs_exactly_in_the_ego_tensors
+RED   [v8f_dagger.py] pose_t ignores the age   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_a_tick0_swap_is_the_identity_on_the_whole_batch_and_the_loss_difference_is_exactly_zero
+RED   [v8f_dagger.py] pose_s ignores the age   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_a_tick0_swap_is_the_identity_on_the_whole_batch_and_the_loss_difference_is_exactly_zero
+RED   [v8f_dagger.py] nav progress is not rebuilt   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_swap_reachability_differs_exactly_in_the_ego_tensors
+SURVIVED  [v8f_dagger.py] nav: the token / validity test is dropped (rebuilt across a manoeuvre boundary)   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  6 passed, 29 deselected in 15.93s
+RED   [v8f_dagger.py] nav: progress is rebuilt on frames WITHOUT a route too (the PREREG's letter; see NAV_REBUILD_INVALID)   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_swap_reachability_differs_exactly_in_the_ego_tensors
+RED   [v8f_dagger.py] nav: the distance behind NOW is dropped   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_nav_progress_follows_the_own_arc_and_leaves_the_token_alone
+RED   [v8f_dagger.py] lab_s.rc keeps the logged frame (no frame change)   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_swap_reachability_differs_exactly_in_the_ego_tensors
+RED   [v8f_dagger.py] rc: the identity at a_s = 0 is not exact (no coincident-frame short-circuit)   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_rc_is_re_expressed_not_changed - ...
+RED   [v8f_dagger.py] rc: placeholders (rc_ok False) are moved too   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_rc_is_re_expressed_not_changed - ...
+RED   [v8f_dagger.py] the natural-frame logic uses the OWN pose_s on both sides (rc moved by the wrong source frame)   -k 'swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap'  ->  FAILED stack/tests/test_v8f_dagger.py::test_swap_reachability_differs_exactly_in_the_ego_tensors
+RED   [v8f_dagger.py] the draws come from the global RNG   -k 'draws_are or p_zero or p_is_a_parameter or draw_among'  ->  FAILED stack/tests/test_v8f_dagger.py::test_draws_are_a_function_of_seed_and_step_and_never_touch_the_global_rng
+RED   [v8f_dagger.py] eligibility is ignored (every row may be selected)   -k 'draws_are or p_zero or p_is_a_parameter or draw_among or swap_reachability'  ->  FAILED stack/tests/test_v8f_dagger.py::test_swap_reachability_differs_exactly_in_the_ego_tensors
+RED   [v8f_dagger.py] p = 0 returns a copy, not the same batch   -k 'draws_are or p_zero or p_is_a_parameter or draw_among'  ->  FAILED stack/tests/test_v8f_dagger.py::test_p_zero_returns_the_same_batch_p_one_swaps_every_eligible_row
+RED   [v8f_dagger.py] the draw among a window's states always takes the first   -k 'draw_among'  ->  FAILED stack/tests/test_v8f_dagger.py::test_the_draw_among_a_windows_eligible_own_states_is_uniform_and_only_eligible
+RED   [v8f_dagger.py] a cut record is eligible (only reason == ok may be swapped in)   -k 'off_route or kb2'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb2_on_policy_and_coverage - asse...
+RED   [v8f_dagger.py] K-B3: the eval-clip refusal is removed (both checks)   -k 'kb3'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb3_a_bank_holding_an_eval_clip_is_refused_and_the_clean_bank_reads_overlap_exactly_zero
+RED   [v8f_dagger.py] K-B3: the TRAIN-subset check is removed   -k 'kb3'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb3_a_bank_holding_an_eval_clip_is_refused_and_the_clean_bank_reads_overlap_exactly_zero
+RED   [v8f_dagger.py] K-B3: the window-list sha256 is not compared   -k 'kb3'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb3_a_bank_holding_an_eval_clip_is_refused_and_the_clean_bank_reads_overlap_exactly_zero
+RED   [v8f_dagger.py] a partial bank may train an arm   -k 'dry_run'  ->  FAILED stack/tests/test_v8f_dagger.py::test_dry_run_writes_nothing_limit_clips_marks_partial_and_merge_checks_the_shards
+RED   [v8f_dagger.py] K-B2: the on-policy check is removed   -k 'kb2'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb2_on_policy_and_coverage - Fail...
+RED   [v8f_dagger.py] the shard's sha256 and content hash are not verified at load   -k 'shard_roundtrip'  ->  FAILED stack/tests/test_v8f_dagger.py::test_shard_roundtrip_is_deterministic_and_the_manifest_refuses_a_tampered_shard
+RED   [v8f_dagger.py] the declared bank sha256 is not compared   -k 'shard_roundtrip'  ->  FAILED stack/tests/test_v8f_dagger.py::test_shard_roundtrip_is_deterministic_and_the_manifest_refuses_a_tampered_shard
+RED   [v8f_dagger.py] COVERAGE counts states, not windows   -k 'kb2'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb2_on_policy_and_coverage - asse...
+RED   [v8f_dagger.py] the rollout configuration constant says nav = logged   -k 'constants'  ->  FAILED stack/tests/test_v8f_dagger.py::test_constants_are_the_preregs_and_p_is_nowhere_hard_coded
+RED   [v8f_dagger.py] the off-route lateral constant is moved   -k 'constants or kb4'  ->  FAILED stack/tests/test_v8f_dagger.py::test_constants_are_the_preregs_and_p_is_nowhere_hard_coded
+RED   [v8f_dagger.py] p is given a non-zero default   -k 'constants'  ->  FAILED stack/tests/test_v8f_dagger.py::test_constants_are_the_preregs_and_p_is_nowhere_hard_coded
+RED   [v8f_dagger_bank.py] tick 0 is stored as an own state   -k 'shard_roundtrip or bank_holds or bank_rows_are'  ->  FAILED stack/tests/test_v8f_dagger.py::test_bank_holds_ticks_1_and_2_only_with_the_prereg_record_and_counts_every_cut
+RED   [v8f_dagger_bank.py] the history window is shifted by one row   -k 'shard_roundtrip or bank_holds or bank_rows_are'  ->  FAILED stack/tests/test_v8f_dagger.py::test_bank_rows_are_the_t1_rollouts_own_states_and_no_logged_future_leaks[fx10]
+RED   [v8f_dagger_bank.py] K-B0 is not checked   -k 'tick0_identity'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb0_tick0_identity_and_a_leaky_state_is_refused
+RED   [v8f_dagger_bank.py] K-B1 never compares the replay   -k 'kb1'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb1_replay_is_bit_exact_and_a_stochastic_planner_fails_it
+RED   [v8f_dagger_bank.py] the eval-clip refusal is removed from the generator   -k 'kb3_the_generator'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb3_the_generator_refuses_an_eval_clip_in_the_train_list_before_any_rollout
+RED   [v8f_dagger_bank.py] --limit-clips does not mark the bank partial   -k 'dry_run'  ->  FAILED stack/tests/test_v8f_dagger.py::test_dry_run_writes_nothing_limit_clips_marks_partial_and_merge_checks_the_shards
+RED   [v8f_dagger_bank.py] every shard takes every clip   -k 'dry_run'  ->  FAILED stack/tests/test_v8f_dagger.py::test_dry_run_writes_nothing_limit_clips_marks_partial_and_merge_checks_the_shards
+RED   [v8f_dagger_bank.py] the replay set is empty   -k 'kb1 or generator_is_deterministic'  ->  FAILED stack/tests/test_v8f_dagger.py::test_kb1_replay_is_bit_exact_and_a_stochastic_planner_fails_it
+RED   [v8f_dagger_bank.py] the rollout is not the decisive configuration (--limit logged instead of causal)   -k 'bank_rows_are'  ->  FAILED stack/tests/test_v8f_dagger.py::test_bank_rows_are_the_t1_rollouts_own_states_and_no_logged_future_leaks[fx10]
+AFTER  41a31de92fcd8c26b61f4ffb29e40b3d39cedd9b809e72d01f0a958e0dcfbd2b stack\scripts\v8f_dagger_bank.py
+AFTER  831f64f8b5106bf8b75597bfdc6c9996efa7f68c41458e49f2ea5f4e5e5df441 stack\tanitad\data\v8f_dagger.py
+RESTORED byte-identical: True
+final baseline [bank_rows_are]: rc 0  2 passed, 33 deselected in 17.16s
+final baseline [constants]: rc 0  1 passed, 34 deselected in 1.83s
+final baseline [constants or kb4]: rc 0  4 passed, 31 deselected in 1.81s
+final baseline [draw_among]: rc 0  1 passed, 34 deselected in 14.04s
+final baseline [draws_are or p_zero or p_is_a_parameter or draw_among]: rc 0  7 passed, 28 deselected in 14.68s
+final baseline [draws_are or p_zero or p_is_a_parameter or draw_among or swap_reachability]: rc 0  8 passed, 27 deselected in 13.34s
+final baseline [dry_run]: rc 0  1 passed, 34 deselected in 21.54s
+final baseline [kb1]: rc 0  1 passed, 34 deselected in 12.34s
+final baseline [kb1 or generator_is_deterministic]: rc 0  2 passed, 33 deselected in 20.21s
+final baseline [kb2]: rc 0  1 passed, 34 deselected in 11.70s
+final baseline [kb3]: rc 0  2 passed, 33 deselected in 11.20s
+final baseline [kb3_the_generator]: rc 0  1 passed, 34 deselected in 11.66s
+final baseline [kb4]: rc 0  3 passed, 32 deselected in 2.15s
+final baseline [kb5]: rc 0  2 passed, 33 deselected in 10.35s
+final baseline [kb5 or swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap]: rc 0  8 passed, 27 deselected in 10.99s
+final baseline [kb5 or tick0_swap]: rc 0  3 passed, 32 deselected in 11.78s
+final baseline [off_route or kb2]: rc 0  2 passed, 33 deselected in 11.99s
+final baseline [shard_roundtrip]: rc 0  1 passed, 34 deselected in 12.07s
+final baseline [shard_roundtrip or bank_holds or bank_rows_are]: rc 0  4 passed, 31 deselected in 20.99s
+final baseline [swap_reachability or swap_item or rc_is or rebuild_is or nav_progress or tick0_swap]: rc 0  6 passed, 29 deselected in 11.56s
+final baseline [tick0_identity]: rc 0  1 passed, 34 deselected in 10.60s
+54 of 57 mutants killed; SURVIVORS: ['heading cut inclusive (>=)', 'stationary tie: the LATER row on equal time distance', 'nav: the token / validity test is dropped (rebuilt across a manoeuvre boundary)']

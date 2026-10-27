@@ -686,9 +686,9 @@ def test_the_encoder_build_never_moves_the_heads_initialisation(tiny_trainer, tm
     seen = {}
     orig = TR.declared_vs_built
 
-    def spy(a, cfg, model, opt, info, enc=None):
+    def spy(a, cfg, model, opt, info, *rest, **kw):                                             # forwards whatever the trainer passes (ego, sched, dag were added after this test)
         seen[a.encoder] = ({k: v.clone() for k, v in model.state_dict().items()}, torch.get_rng_state().clone())
-        return orig(a, cfg, model, opt, info, enc)
+        return orig(a, cfg, model, opt, info, *rest, **kw)
     monkeypatch.setattr(TR, "declared_vs_built", spy)
     cache_argv = ["--synthetic", "--batch", "4", "--d", "32", "--n-q", "2", "--steps", "2", "--threads", "1", "--kin-mode", "yaw", "--seed", "5", "--arm", "M1",
                   "--selfcheck-only", "--out"]

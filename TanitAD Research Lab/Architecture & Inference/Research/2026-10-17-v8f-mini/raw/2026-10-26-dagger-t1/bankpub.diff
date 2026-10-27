@@ -1,0 +1,1161 @@
+--- a/dagt1/dagt1_pullcheck.py
++++ b/dagt1/dagt1_pullcheck.py
+@@ -1,29 +1,40 @@
+ #!/usr/bin/env python3
+-"""dagt1_pullcheck.py -- is one DAgger run's pull to the dev box COMPLETE?   (PREREG_V8F_DAGGER dev-box T1 chain; CPU only; read-only)
++"""dagt1_pullcheck.py -- is one DAgger run's pull, or one seed's bank, on the dev box COMPLETE?   (PREREG_V8F_DAGGER dev-box T1 chain; CPU only; read-only)
+ 
+-    python dagt1_pullcheck.py run  <ART> <dag|dag0> <seed> [--b2-fresh auto|0|1]
++    python dagt1_pullcheck.py run  <ART> <dag|dag0> <seed>
+       rc 0   prints  COMPLETE <ckpt sha256> <why>
+       rc 1   prints  INCOMPLETE <the first reason>          (the caller waits)
+-      rc 3   prints  WRONG <the contradiction>              (the files verify but the run is not the one asked for: the caller STOPS, waiting would never fix it)
+-    python dagt1_pullcheck.py bank <ART> <seed>
+-      rc 0   prints  COMPLETE <bank.json sha256> <why>      rc 1 prints INCOMPLETE <reason>
+-
+-Source of the layout: box 2's chain (dagq/box2_ship/chain_v8f_dag.sh, `runone` and `bank_one`; ART = DAG_ART, default E:/Projects/TanitAD-artifacts/v8f-dagger):
+-
+-    <ART>/M2b_s<S>_<dag|dag0>/   ckpt_last.pt  eval_M2b-<arm>_s<S>.{json,npz}  [eval_M2b-<arm>_s<S>-fresh.{json,npz}]  selfcheck.json summary.json argv.json train_log.jsonl launch_gate_token.json
+-    <ART>/bank_s<S>/             bank.json PROVENANCE.json bank_stage.log shard_00<k>of004.provenance.json   (+ shard_00<k>of004.npz: NOT pulled by the box-2 chain today, but dag_read.load_bank
+-                                 reads each shard's header_json for the bank's clip names and hashes the file, so a bank directory without them is INCOMPLETE for the reader)
+-
+-and only AFTER the last `scp` returns the chain hashes the files into <ART>/<run>/SHA256SUMS.txt.  Which files that is depends on one open decision of the box-2 build (O1 of dagq/NOTES.md): the
+-standard T0 eval is always there; the FRESH-age T0 eval (K4's comparator, PREREG section 5 puts it on the dev box CPU) is pulled from box 2 only if the box-2 chain keeps `evaldagfresh`.  So the sums
+-file must list EXACTLY ONE of two exact sets -- 8 names (no box-2 fresh eval) or 10 names (with it) -- and --b2-fresh 0|1 pins which one (default auto = either, each exact).
++      rc 3   prints  WRONG <the contradiction>              (the files verify, or the sums carry a forbidden entry, but this is not the run asked for: the caller STOPS, waiting would never fix it)
++    python dagt1_pullcheck.py bank <ART> <seed> [--expect-shards N]
++      rc 0   prints  COMPLETE <bank.json sha256> <why>      rc 1 prints INCOMPLETE <reason>      rc 3 prints WRONG <the contradiction>
++
++Source of the layout: box 2's chain (dagq/box2_ship/chain_v8f_dag.sh, `publish_bank_one` and `runone`; ART = DAG_ART, default E:/Projects/TanitAD-artifacts/v8f-dagger):
++
++    <ART>/M2b_s<S>_<dag|dag0>/   ckpt_last.pt  eval_M2b-<arm>_s<S>.{json,npz}  selfcheck.json summary.json argv.json train_log.jsonl launch_gate_token.json   SHA256SUMS.txt = EXACTLY these 8 names
++                                 [gate/pin.txt, gate/selfcheck.json: the box-2 gate's pinned training argv and its record; not in the sums; pin.txt is read by the bank check below]
++    <ART>/bank_s<S>/             PROVENANCE.json  bank.json  shard_KKKofNNN.provenance.json (N of them)  shard_KKKofNNN.npz (N of them)  bank_stage.log     SHA256SUMS.txt = EXACTLY these 3 + 2N names (11 for the queue's N = 4)
++
++The four kinds of bank file are what dag_read.load_bank needs: PROVENANCE.json (`bank.{s}.report`), bank.json (`bank_file`; its sha256 IS the bank's identity), the shard provenance files, and the shard npz (their `header_json`
++member is the ONLY place the bank's clips are listed by name: K-B3.1).  The box-2 chain writes SHA256SUMS.txt LAST, after every file is pulled and verified, and only for a bank that passed every control and COVERAGE.
++
++NO FRESH-AGE EVAL FROM BOX 2 (decision O1, 2026-10-26: the fresh-age T0 comparator runs on the dev box CPU only, so K-EQ never compares a CUDA eval with a CPU tick 0).  A run's sums therefore list EXACTLY the 8 names above.
++A SHA256SUMS.txt that carries a fresh-age eval (eval_*-fresh.{json,npz}: the 10-name form of a box-2 chain that still runs `evaldagfresh`) is refused as WRONG, never accepted and never waited for.
+ 
+ A run is COMPLETE iff, by CONTENT and not by presence (the orct1 rule):
+-  1. SHA256SUMS.txt exists, was not modified in the last MIN_AGE_S seconds, ends with a newline, lists exactly one of the two sets (every name once);
++  1. SHA256SUMS.txt exists, was not modified in the last MIN_AGE_S seconds, ends with a newline, lists exactly the 8 names (every name once);
+   2. every listed file exists, is non-empty and its streamed sha256 equals the listed one;
+   3. the four small JSON records parse and summary.json says done: true.
+-It is WRONG (rc 3) when, with 1-3 holding, the run's own records contradict its identity: summary arm / seed, the argv's --seed / --init-ckpt / --out / --dagger-p, or the DAG-only flags
++It is WRONG (rc 3) when the sums carry a box-2 fresh eval, or, with 1-3 holding, the run's own records contradict its identity: summary arm / seed, the argv's --seed / --init-ckpt / --out / --dagger-p, or the DAG-only flags
+ (dag names all four dagger flags, dag0 only --dagger-p 0).  A dag0 directory that holds DAG's run (or the other way round) is therefore a STOP, never a wait.
++
++A bank is COMPLETE iff:
++  1. SHA256SUMS.txt exists, aged, newline-terminated, no name twice; it lists PROVENANCE.json and bank.json and both verify;
++  2. the expected name set DERIVED from those two files (bank.json n_shards / shards[].file, PROVENANCE.shard_provenance) equals the listed set EXACTLY (3 + 2N names);
++  3. every listed file exists, is non-empty and hashes to the listed sha256;
++  4. no verified file contradicts another (WRONG if so): PROVENANCE.bank_sha256 == sha256(bank.json); every shard npz hashes to bank.json's file_sha256 AND to its shard provenance's;
++  5. bank.json's sha256 equals the `--dagger-bank-sha256` that box 2's trainer gate DECLARED in the training argv it pinned (<ART>/M2b_s<S>_dag/gate/pin.txt): the bank on disk is the bank DAG s<S> was gated on.
++     (the pin not yet pulled = INCOMPLETE; a pin that names another sha256, or none, = WRONG).
++It does NOT judge the science (K-B*, COVERAGE): that is the box-2 chain's and the reader's job.
+ """
+ from __future__ import annotations
+ 
+@@ -37,8 +48,10 @@
+ MIN_AGE_S = 3.0          # SHA256SUMS.txt is written by `sha256sum | tee`: a file younger than this may still be filling
+ ARMS = ("dag", "dag0")
+ LINE = re.compile(r"^([0-9a-f]{64}) [ *](.+)$")
++FRESH_NAME = re.compile(r"^eval_.+-fresh\.(json|npz)$")
+ DAG_ONLY = ("--dagger-bank", "--dagger-bank-sha256", "--dagger-seed")
+ BANK_KIND, BANK_SCHEMA = "bank", "v8f-dagger-bank-v1"
++BANK_STAGE_LOG = "bank_stage.log"
+ 
+ 
+ def run_name(arm: str, seed: int) -> str:
+@@ -50,24 +63,27 @@
+ 
+ 
+ def base_files(arm: str, seed: int) -> list[str]:
++    """THE accepted set of a run's SHA256SUMS.txt: 8 names, no fresh-age eval (decision O1)."""
+     tg = eval_tag(arm, seed)
+     return ["ckpt_last.pt", f"eval_{tg}.json", f"eval_{tg}.npz", "selfcheck.json", "summary.json", "argv.json", "train_log.jsonl", "launch_gate_token.json"]
+ 
+ 
+-def fresh_files(arm: str, seed: int) -> list[str]:
++def box2_fresh_files(arm: str, seed: int) -> list[str]:
++    """What a box-2 chain that still ran `evaldagfresh` would also have listed (the 10-name form).  Never accepted: used only to name the refusal."""
+     tg = eval_tag(arm, seed)
+     return [f"eval_{tg}-fresh.json", f"eval_{tg}-fresh.npz"]
+ 
+ 
+-def expected_sets(arm: str, seed: int, b2_fresh: str = "auto") -> dict[str, list[str]]:
+-    sets = {"std8": base_files(arm, seed), "std8+b2fresh10": base_files(arm, seed) + fresh_files(arm, seed)}
+-    if b2_fresh == "0":
+-        return {"std8": sets["std8"]}
+-    if b2_fresh == "1":
+-        return {"std8+b2fresh10": sets["std8+b2fresh10"]}
+-    if b2_fresh != "auto":
+-        raise SystemExit(f"--b2-fresh must be auto, 0 or 1, got {b2_fresh!r}")
+-    return sets
++def bank_names(n: int) -> dict[str, list[str]]:
++    """{kind: [file names]} of a bank of n shards, in the generator's naming (v8f_dagger_bank.py: shard_KKKofNNN.{npz,provenance.json})."""
++    return {"provenance": ["PROVENANCE.json"], "manifest": ["bank.json"],
++            "shard_provenance": [f"shard_{k:03d}of{n:03d}.provenance.json" for k in range(n)],
++            "shard_npz": [f"shard_{k:03d}of{n:03d}.npz" for k in range(n)], "stage_log": [BANK_STAGE_LOG]}
++
++
++def bank_flat(n: int) -> list[str]:
++    nm = bank_names(n)
++    return [x for k in ("provenance", "manifest", "shard_provenance", "shard_npz", "stage_log") for x in nm[k]]
+ 
+ 
+ def sha256_file(path: str) -> str:
+@@ -106,6 +122,30 @@
+     return str(p).replace("\\", "/").rstrip("/")
+ 
+ 
++def read_sums(d: str, min_age_s: float, now: float | None) -> tuple[dict[str, str] | None, str]:
++    """(listed {name: sha256}, '') or (None, why-INCOMPLETE): SHA256SUMS.txt exists, is not younger than min_age_s, ends with a newline, every line is `<sha256>  <name>`, no name twice."""
++    sums = os.path.join(d, "SHA256SUMS.txt")
++    if not os.path.isfile(sums):
++        return None, f"{d} has no SHA256SUMS.txt yet (the box-2 chain writes it after the last scp returns)"
++    age = (time.time() if now is None else now) - os.path.getmtime(sums)
++    if age < min_age_s:
++        return None, f"SHA256SUMS.txt was modified {age:.1f} s ago (< {min_age_s} s): it may still be filling"
++    with open(sums, encoding="utf-8", errors="replace", newline="") as f:
++        text = f.read()
++    if not text.endswith("\n"):
++        return None, "SHA256SUMS.txt does not end with a newline (its last line may be partial)"
++    listed: dict[str, str] = {}
++    for raw in text.splitlines():
++        m = LINE.match(raw.rstrip("\r"))
++        if not m:
++            return None, f"SHA256SUMS.txt has a line that is not '<sha256>  <name>': {raw[:80]!r}"
++        name = m.group(2).strip()
++        if name in listed:
++            return None, f"SHA256SUMS.txt lists {name} twice"
++        listed[name] = m.group(1)
++    return listed, ""
++
++
+ def identity_problems(arm: str, seed: int, d: str) -> list[str]:
+     """The run's own records must say it is THIS arm and seed.  Called only once the files verify (so a half-pulled file cannot read as a contradiction)."""
+     bad = []
+@@ -152,47 +192,28 @@
+     return bad
+ 
+ 
+-def check(art: str, arm: str, seed: int, b2_fresh: str = "auto", min_age_s: float = MIN_AGE_S, now: float | None = None) -> tuple[str, str, str]:
++def check(art: str, arm: str, seed: int, min_age_s: float = MIN_AGE_S, now: float | None = None) -> tuple[str, str, str]:
+     """-> (status COMPLETE | INCOMPLETE | WRONG, reason, ckpt sha256 ('' unless COMPLETE))"""
+     if arm not in ARMS:
+         return "INCOMPLETE", f"unknown arm {arm!r}", ""
+     d = os.path.join(art, run_name(arm, seed))
+     if not os.path.isdir(d):
+         return "INCOMPLETE", f"no run directory {d} yet", ""
+-    sums = os.path.join(d, "SHA256SUMS.txt")
+-    if not os.path.isfile(sums):
+-        return "INCOMPLETE", f"{d} has no SHA256SUMS.txt yet (the box-2 chain writes it after the last scp returns)", ""
+-    age = (time.time() if now is None else now) - os.path.getmtime(sums)
+-    if age < min_age_s:
+-        return "INCOMPLETE", f"SHA256SUMS.txt was modified {age:.1f} s ago (< {min_age_s} s): it may still be filling", ""
+-    with open(sums, encoding="utf-8", errors="replace", newline="") as f:
+-        text = f.read()
+-    if not text.endswith("\n"):
+-        return "INCOMPLETE", "SHA256SUMS.txt does not end with a newline (its last line may be partial)", ""
+-    listed: dict[str, str] = {}
+-    for raw in text.splitlines():
+-        m = LINE.match(raw.rstrip("\r"))
+-        if not m:
+-            return "INCOMPLETE", f"SHA256SUMS.txt has a line that is not '<sha256>  <name>': {raw[:80]!r}", ""
+-        name = m.group(2).strip()
+-        if name in listed:
+-            return "INCOMPLETE", f"SHA256SUMS.txt lists {name} twice", ""
+-        listed[name] = m.group(1)
+-    sets = expected_sets(arm, seed, b2_fresh)
+-    which = next((k for k, v in sets.items() if sorted(listed) == sorted(v)), None)
+-    if which is None:
++    listed, why = read_sums(d, min_age_s, now)
++    if listed is None:
++        return "INCOMPLETE", why, ""
++    carried = sorted(n for n in listed if FRESH_NAME.match(n))
++    if carried:                                                      # decision O1: the fresh-age eval is a dev-box CPU step; a box-2 SUMS that lists one is another build's pull, and waiting cannot fix it
++        return "WRONG", (f"SHA256SUMS.txt in {run_name(arm, seed)} carries a box-2 fresh-age eval {carried}: decision O1 (2026-10-26) puts the fresh-age T0 eval on the dev box CPU only, so the only accepted "
++                         f"form is the {len(base_files(arm, seed))}-name one without it; this pull came from a box-2 chain that still runs evaldagfresh"), ""
++    want = base_files(arm, seed)
++    if sorted(listed) != sorted(want):
+         for oa in ARMS:                                              # a directory that lists ANOTHER run's file names holds that run's pull: waiting would never fix it
+             for osd in (0, 1):
+-                if (oa, osd) == (arm, seed):
+-                    continue
+-                for k, v in expected_sets(oa, osd, "auto").items():
+-                    if sorted(listed) == sorted(v):
+-                        return "WRONG", f"SHA256SUMS.txt in {run_name(arm, seed)} lists {run_name(oa, osd)}'s files ({k}): this directory holds another run's pull", ""
+-        first = next(iter(sets.values()))
+-        miss, extra = sorted(set(first) - set(listed)), sorted(set(listed) - set(first))
+-        return "INCOMPLETE", (f"SHA256SUMS.txt lists {len(listed)} names, which is none of the accepted exact sets {{{', '.join(f'{k}: {len(v)}' for k, v in sets.items())}}} "
+-                              f"(against {next(iter(sets))}: missing {miss}, unexpected {extra})"), ""
+-    want = sets[which]
++                if (oa, osd) != (arm, seed) and sorted(listed) == sorted(base_files(oa, osd)):
++                    return "WRONG", f"SHA256SUMS.txt in {run_name(arm, seed)} lists {run_name(oa, osd)}'s files: this directory holds another run's pull", ""
++        miss, extra = sorted(set(want) - set(listed)), sorted(set(listed) - set(want))
++        return "INCOMPLETE", f"SHA256SUMS.txt lists {len(listed)} names, not the exact set of {len(want)} (missing {miss}, unexpected {extra})", ""
+     for name in want:
+         p = os.path.join(d, name)
+         if not os.path.isfile(p):
+@@ -214,82 +235,145 @@
+     bad = identity_problems(arm, seed, d)
+     if bad:
+         return "WRONG", f"{run_name(arm, seed)} verifies but is not this run: " + "; ".join(bad), ""
+-    return "COMPLETE", f"set {which} ({len(want)} files) present, non-empty, sha256-verified against SHA256SUMS.txt; summary.json done; identity of {run_name(arm, seed)} consistent", listed["ckpt_last.pt"]
++    return "COMPLETE", f"{len(want)} files present, non-empty, sha256-verified against SHA256SUMS.txt; summary.json done; identity of {run_name(arm, seed)} consistent", listed["ckpt_last.pt"]
+ 
+ 
+ # ---------------------------------------------------------------------------------------------------------------- the bank directory
+-def check_bank(art: str, seed: int) -> tuple[bool, str, str]:
+-    """-> (complete, reason, bank.json sha256).  By content: bank.json hashes to PROVENANCE.bank_sha256; every shard provenance file named exists and parses; every shard npz the manifest lists
+-    exists and hashes to the manifest's file_sha256 (the reader loads them).  Does NOT judge the science (K-B*, COVERAGE): that is the reader's and the box-2 chain's job."""
++def argv_of(text: str) -> list[str] | None:
++    """The training argv of a pinned queue line: the tokens after v8f_mini_train.py, double quotes grouping and removed (the box-2 chain's own tokenisation).  None if the line names no trainer."""
++    t = [x.strip('"') for x in re.findall(r'"[^"]*"|\S+', text.strip())]
++    k = next((i for i, x in enumerate(t) if x.lower().endswith("v8f_mini_train.py")), None)
++    return None if k is None else t[k + 1:]
++
++
++def declared_bank_sha(art: str, seed: int) -> tuple[str, str]:
++    """-> (status, value-or-reason): the `--dagger-bank-sha256` the trainer gate of DAG s<seed> pinned (box 2's <RUNSM>\\dagpin\\M2b_s<S>_dag.train.argv.txt, pulled by the box-2 chain to <ART>/M2b_s<S>_dag/gate/pin.txt)."""
++    pin = os.path.join(art, run_name("dag", seed), "gate", "pin.txt")
++    if not os.path.isfile(pin) or os.path.getsize(pin) == 0:
++        return "INCOMPLETE", f"{pin} is not pulled yet: the bank cannot be tied to the sha256 box 2's trainer gate declared for DAG s{seed}"
++    with open(pin, encoding="utf-8", errors="replace") as f:
++        argv = argv_of(f.read())
++    if argv is None:
++        return "WRONG", f"{pin} is not a training line (no v8f_mini_train.py in it)"
++    fl = flags_of(argv)
++    v = one(fl, "--dagger-bank-sha256")
++    if v is None:
++        return "WRONG", f"{pin} names --dagger-bank-sha256 {len(fl.get('--dagger-bank-sha256', []))} time(s) or with no single value: DAG s{seed} was not gated on a declared bank"
++    if not re.fullmatch(r"[0-9a-f]{64}", v):
++        return "WRONG", f"{pin} declares --dagger-bank-sha256 {v!r}, which is not a sha256"
++    return "OK", v
++
++
++def check_bank_status(art: str, seed: int, min_age_s: float = MIN_AGE_S, now: float | None = None, expect_shards: int | None = None) -> tuple[str, str, str]:
++    """-> (COMPLETE | INCOMPLETE | WRONG, reason, bank.json sha256 ('' unless COMPLETE)).  See the module docstring for the five conditions."""
+     d = os.path.join(art, f"bank_s{seed}")
+-    pp = os.path.join(d, "PROVENANCE.json")
+-    if not os.path.isfile(pp):
+-        return False, f"{pp} is absent (the bank report)", ""
++    if not os.path.isdir(d):
++        return "INCOMPLETE", f"no bank directory {d} yet", ""
++    listed, why = read_sums(d, min_age_s, now)
++    if listed is None:
++        return "INCOMPLETE", why.replace("(the box-2 chain writes it after the last scp returns)", "(the box-2 chain writes it LAST: after the bank controls and COVERAGE passed and every shard npz is pulled and verified)"), ""
++    for nm in ("PROVENANCE.json", "bank.json"):                     # the two files the expected set is derived from: listed, present, verified FIRST
++        p = os.path.join(d, nm)
++        if nm not in listed:
++            return "INCOMPLETE", f"SHA256SUMS.txt does not list {nm} ({len(listed)} names listed)", ""
++        if not os.path.isfile(p) or os.path.getsize(p) == 0:
++            return "INCOMPLETE", f"{nm} is absent or empty", ""
++        got = sha256_file(p)
++        if got != listed[nm]:
++            return "INCOMPLETE", f"{nm} sha256 {got[:12]} != the listed {listed[nm][:12]} (half-pulled, or replaced after SHA256SUMS.txt was written)", ""
+     try:
+-        with open(pp, encoding="utf-8") as f:
++        with open(os.path.join(d, "PROVENANCE.json"), encoding="utf-8") as f:
+             prov = json.load(f)
+-    except (OSError, ValueError) as e:
+-        return False, f"PROVENANCE.json does not parse: {e}", ""
+-    if not isinstance(prov, dict) or prov.get("kind") != BANK_KIND or prov.get("schema") != BANK_SCHEMA:
+-        return False, f"PROVENANCE.json kind/schema {prov.get('kind') if isinstance(prov, dict) else None!r}/{prov.get('schema') if isinstance(prov, dict) else None!r}, not {BANK_KIND!r}/{BANK_SCHEMA!r}", ""
+-    mp = os.path.join(d, str(prov.get("manifest") or "bank.json"))
+-    if not os.path.isfile(mp) or os.path.getsize(mp) == 0:
+-        return False, f"{mp} is absent or empty (the bank manifest)", ""
+-    msha = sha256_file(mp)
+-    if msha != prov.get("bank_sha256"):
+-        return False, f"bank.json hashes to {msha[:12]}, not PROVENANCE.bank_sha256 {str(prov.get('bank_sha256'))[:12]}", ""
+-    try:
+-        with open(mp, encoding="utf-8") as f:
++        with open(os.path.join(d, "bank.json"), encoding="utf-8") as f:
+             man = json.load(f)
+     except (OSError, ValueError) as e:
+-        return False, f"bank.json does not parse: {e}", ""
++        return "INCOMPLETE", f"PROVENANCE.json / bank.json does not parse: {type(e).__name__}: {e}", ""
++    if not isinstance(prov, dict) or prov.get("kind") != BANK_KIND or prov.get("schema") != BANK_SCHEMA:
++        return "INCOMPLETE", f"PROVENANCE.json kind/schema {prov.get('kind') if isinstance(prov, dict) else None!r}/{prov.get('schema') if isinstance(prov, dict) else None!r}, not {BANK_KIND!r}/{BANK_SCHEMA!r}", ""
++    n = man.get("n_shards") if isinstance(man, dict) else None
+     shards = man.get("shards") if isinstance(man, dict) else None
+-    if not isinstance(shards, list) or not shards:
+-        return False, "bank.json lists no shards", ""
+-    for nm in prov.get("shard_provenance") or []:
++    if not isinstance(n, int) or isinstance(n, bool) or n < 1 or not isinstance(shards, list) or len(shards) != n:
++        return "INCOMPLETE", f"bank.json lists n_shards {n!r} with {len(shards) if isinstance(shards, list) else shards!r} shard entries", ""
++    if expect_shards is not None and n != expect_shards:
++        return "WRONG", f"bank.json has {n} shards, the box-2 queue's bankdag runs {expect_shards}", ""
++    names = bank_names(n)
++    if [s.get("file") for s in sorted(shards, key=lambda s: s.get("k", -1))] != names["shard_npz"]:
++        return "WRONG", f"bank.json shards name {[s.get('file') for s in shards]}, not {names['shard_npz']}", ""
++    if prov.get("shard_provenance") != names["shard_provenance"] or prov.get("manifest", "bank.json") != "bank.json":
++        return "WRONG", f"PROVENANCE.json names shard_provenance {prov.get('shard_provenance')!r} / manifest {prov.get('manifest')!r}, not {names['shard_provenance']} / bank.json", ""
++    want = bank_flat(n)
++    if sorted(listed) != sorted(want):
++        miss, extra = sorted(set(want) - set(listed)), sorted(set(listed) - set(want))
++        hint = " (the shard npz are what dag_read.load_bank reads the bank's clip names from, K-B3.1: a bank without them would REFUSE)" if any(x.endswith(".npz") for x in miss) else ""
++        return "INCOMPLETE", f"SHA256SUMS.txt lists {len(listed)} names, not the exact set of {len(want)} (missing {miss}, unexpected {extra}){hint}", ""
++    for nm in want:
+         p = os.path.join(d, nm)
+-        if not os.path.isfile(p) or os.path.getsize(p) == 0:
+-            return False, f"shard provenance {nm} is absent or empty", ""
+-    if len(prov.get("shard_provenance") or []) != len(shards):
+-        return False, f"PROVENANCE names {len(prov.get('shard_provenance') or [])} shard provenance files, bank.json lists {len(shards)} shards", ""
+-    for s in shards:
+-        p = os.path.join(d, str(s.get("file")))
+         if not os.path.isfile(p):
+-            return False, (f"shard {s.get('file')} is not in {d}: the box-2 chain pulls only the small files, but dag_read.load_bank reads every shard's header_json (the bank's clip names, K-B3) "
+-                           f"and hashes the file, so the reader would REFUSE"), ""
++            return "INCOMPLETE", f"{nm} is listed but absent", ""
+         if os.path.getsize(p) == 0:
+-            return False, f"shard {s.get('file')} is empty", ""
+-        got = sha256_file(p)
+-        if got != s.get("file_sha256"):
+-            return False, f"shard {s.get('file')} sha256 {got[:12]} != bank.json's {str(s.get('file_sha256'))[:12]} (half-pulled?)", ""
+-    return True, f"PROVENANCE + bank.json (sha256-bound) + {len(shards)} shard provenance + {len(shards)} shard npz (sha256-verified) present", msha
++            return "INCOMPLETE", f"{nm} is empty", ""
++    for nm in want:
++        got = sha256_file(os.path.join(d, nm))
++        if got != listed[nm]:
++            return "INCOMPLETE", f"{nm} sha256 {got[:12]} != the listed {listed[nm][:12]} (half-pulled, or replaced after SHA256SUMS.txt was written)", ""
++    msha = listed["bank.json"]
++    if prov.get("bank_sha256") != msha:                              # both files verified against the sums and still disagree: no wait will fix it
++        return "WRONG", f"bank.json hashes to {msha[:12]}, not PROVENANCE.bank_sha256 {str(prov.get('bank_sha256'))[:12]}", ""
++    by_k = {s.get("k"): s for s in shards}
++    for k, (npz, pn) in enumerate(zip(names["shard_npz"], names["shard_provenance"])):
++        if listed[npz] != by_k[k].get("file_sha256"):
++            return "WRONG", f"shard {npz} hashes to {listed[npz][:12]}, not bank.json's file_sha256 {str(by_k[k].get('file_sha256'))[:12]}", ""
++        try:
++            with open(os.path.join(d, pn), encoding="utf-8") as f:
++                sp = json.load(f)
++        except (OSError, ValueError) as e:
++            return "INCOMPLETE", f"shard provenance {pn} does not parse: {type(e).__name__}: {e}", ""
++        if not isinstance(sp, dict) or sp.get("file_sha256") != listed[npz]:
++            return "WRONG", f"shard provenance {pn} records file_sha256 {str(sp.get('file_sha256') if isinstance(sp, dict) else None)[:12]}, the npz hashes to {listed[npz][:12]}", ""
++    st, v = declared_bank_sha(art, seed)
++    if st != "OK":
++        return st, v, ""
++    if v != msha:
++        return "WRONG", (f"bank.json in {d} hashes to {msha[:12]}, but box 2's trainer gate declared --dagger-bank-sha256 {v[:12]} for DAG s{seed} "
++                         f"({os.path.join(art, run_name('dag', seed), 'gate', 'pin.txt')}): this is not the bank that run was gated on"), ""
++    return "COMPLETE", (f"{len(want)} files = PROVENANCE.json + bank.json (sha256-bound, == the gate's declared --dagger-bank-sha256) + {n} shard provenance + {n} shard npz (== bank.json's file_sha256) + {BANK_STAGE_LOG}, "
++                        f"all present, non-empty, sha256-verified against SHA256SUMS.txt"), msha
++
++
++def check_bank(art: str, seed: int, min_age_s: float = MIN_AGE_S, now: float | None = None, expect_shards: int | None = None) -> tuple[bool, str, str]:
++    """-> (complete, reason, bank.json sha256): check_bank_status with the verdict folded to a bool (a WRONG reason says so)."""
++    st, why, sha = check_bank_status(art, seed, min_age_s, now, expect_shards)
++    return st == "COMPLETE", (f"WRONG: {why}" if st == "WRONG" else why), sha
+ 
+ 
+ def main(argv=None) -> int:
+     a = list(sys.argv[1:] if argv is None else argv)
+-    usage = "usage: dagt1_pullcheck.py run <ART> <dag|dag0> <seed> [--b2-fresh auto|0|1]  |  bank <ART> <seed>"
++    usage = "usage: dagt1_pullcheck.py run <ART> <dag|dag0> <seed>  |  bank <ART> <seed> [--expect-shards N]"
+     if not a:
+         print(usage, file=sys.stderr)
+         return 2
+     if a[0] == "run":
+-        b2 = "auto"
+-        if "--b2-fresh" in a:
+-            k = a.index("--b2-fresh")
+-            b2 = a[k + 1] if k + 1 < len(a) else ""
+-            del a[k:k + 2]
+-        if len(a) != 4 or not a[3].isdigit():
+-            print(usage, file=sys.stderr)
++        if len(a) != 4 or not a[3].isdigit():                        # --b2-fresh was REMOVED with decision O1: a caller that still passes it is told, not silently served
++            print(usage + ("   (--b2-fresh was removed: box 2 pulls no fresh-age eval, decision O1)" if "--b2-fresh" in a else ""), file=sys.stderr)
+             return 2
+-        st, why, sha = check(a[1], a[2], int(a[3]), b2)
++        st, why, sha = check(a[1], a[2], int(a[3]))
+         print(f"{st} {sha} {why}" if st == "COMPLETE" else f"{st} {why}")
+         return {"COMPLETE": 0, "INCOMPLETE": 1, "WRONG": 3}[st]
+     if a[0] == "bank":
++        exp = None
++        if "--expect-shards" in a:
++            k = a.index("--expect-shards")
++            if k + 1 >= len(a) or not a[k + 1].isdigit():
++                print(usage, file=sys.stderr)
++                return 2
++            exp = int(a[k + 1])
++            del a[k:k + 2]
+         if len(a) != 3 or not a[2].isdigit():
+             print(usage, file=sys.stderr)
+             return 2
+-        ok, why, sha = check_bank(a[1], int(a[2]))
+-        print(f"COMPLETE {sha} {why}" if ok else f"INCOMPLETE {why}")
+-        return 0 if ok else 1
++        st, why, sha = check_bank_status(a[1], int(a[2]), expect_shards=exp)
++        print(f"COMPLETE {sha} {why}" if st == "COMPLETE" else f"{st} {why}")
++        return {"COMPLETE": 0, "INCOMPLETE": 1, "WRONG": 3}[st]
+     print(usage, file=sys.stderr)
+     return 2
+ 
+--- a/dagt1/dagt1_manifest.py
++++ b/dagt1/dagt1_manifest.py
+@@ -9,7 +9,9 @@
+ 
+ Schema = what dag_read.load_manifest / read() consume (dag_read.py, test_dag_read.Fx is the fixture):
+     {"seeds": [0, 1], "arms": {"DAG": {"0": E, "1": E}, "DAG0": {...}, "ORC0": {...}},
+-     "bank": {"0": {"report": <ART>/bank_s0/PROVENANCE.json}, "1": {...}}, "eval141_clip_ids": <json list>, "train_clip_ids": <json list>}
++     "bank": {"0": {"report": <ART>/bank_s0/PROVENANCE.json, "bank_file": <ART>/bank_s0/bank.json}, "1": {...}}, "eval141_clip_ids": <json list>, "train_clip_ids": <json list>}
++    bank.{s}: the PULLED copies box 2's chain publishes (the 11-name SHA256SUMS.txt of <ART>/bank_s<S>/: PROVENANCE.json, bank.json, the shard provenance files, the shard npz, bank_stage.log); the reader
++    reads the shard provenance and the shard npz BESIDE `report` (load_bank), so all of them must sit in that one directory; `bank_file` is the pulled bank.json (its sha256 is the bank's identity)
+     E = {"ckpt_tail": "M2b_s0_dag/ckpt_last.pt", "train_dir": <ART>/M2b_s0_dag (argv.json summary.json selfcheck.json), "token": <ART>/M2b_s0_dag/launch_gate_token.json   (DAG / DAG0 only),
+          "t1": {"tag", "ticks", "dump_dir", "json"}        the decisive --limit causal rollout            "t1_logged": same, --limit logged (K4 only)
+          "t0": {"json", "npz"}                             box 2's standard T0 eval (--ages cycle): R-T0, T0-CKPT
+@@ -112,7 +114,8 @@
+                  "t0_fresh": {"json": fwd(f"{orc_t1}/t0fresh/eval_M2b-orc0_s{seed}-fresh.json"), "npz": fwd(f"{orc_t1}/t0fresh/eval_M2b-orc0_s{seed}-fresh.npz")}}
+         arms["ORC0"][str(seed)] = e
+     m = {"seeds": [0, 1], "arms": arms,
+-         "bank": {str(s): {"report": fwd(f"{art}/bank_s{(replicate[1] if replicate else s)}/PROVENANCE.json")} for s in (0, 1)},
++         "bank": {str(s): {"report": fwd(f"{art}/bank_s{(replicate[1] if replicate else s)}/PROVENANCE.json"),
++                           "bank_file": fwd(f"{art}/bank_s{(replicate[1] if replicate else s)}/bank.json")} for s in (0, 1)},      # the PULLED copies; the shard provenance and the shard npz are read beside the report
+          "eval141_clip_ids": fwd(f"{ids_dir}/eval141_clip_ids.json"), "train_clip_ids": fwd(f"{ids_dir}/train_clip_ids.json"),
+          "provenance": {"prereg": "Project Steering/PREREG_V8F_DAGGER.md + Amendment 1 (A1-2026-10-26), claim row H-V8F-DAGGER-1",
+                         "built_by": "dagt1_manifest.py (the dev-box T1 chain, dag_t1_chain.sh)",
+@@ -237,9 +240,18 @@
+                         bad.append(f"{lab} {key}: the done record names checkpoint {str(dr.get('ckpt_sha256'))[:12]}, the pulled one is {sha[:12]}")
+     for s, be in (m.get("bank") or {}).items():
+         if not smoke:
+-            ok, why, _ = PC.check_bank(os.path.dirname(os.path.dirname(be["report"])), int(os.path.basename(os.path.dirname(be["report"])).rsplit("_s", 1)[1]))
++            bdir = os.path.dirname(be["report"])
++            bseed = int(os.path.basename(bdir).rsplit("_s", 1)[1])
++            if bseed != int(s) or os.path.basename(be["report"]) != "PROVENANCE.json":
++                bad.append(f"bank s{s}: the report {be['report']} is not .../bank_s{s}/PROVENANCE.json (another seed's bank)")
++            ok, why, _ = PC.check_bank(os.path.dirname(bdir), bseed)                  # the queue's 4-shard count is the chain's bank gate (--expect-shards 4); here: the bank on disk is complete and self-consistent
+             if not ok:
+                 bad.append(f"bank s{s}: {why}")
++            bf = be.get("bank_file")
++            if not bf:
++                bad.append(f"bank s{s}: no bank_file (the pulled bank.json the reader's bank identity is hashed from)")
++            elif fwd(bf) != fwd(os.path.join(bdir, "bank.json")):
++                bad.append(f"bank s{s}: bank_file {bf} is not the pulled {fwd(os.path.join(bdir, 'bank.json'))} beside the report")
+     for k in ("eval141_clip_ids", "train_clip_ids"):
+         need_file(m[k], k)
+     return bad
+--- a/dagt1/dagt1_selftest.py
++++ b/dagt1/dagt1_selftest.py
+@@ -5,8 +5,9 @@
+     python dagt1_selftest.py [<root>] [--quick] [--no-mutants]       default root E:/Projects/TanitAD-artifacts/dagt1/bt      rc 0 = every check as expected
+ 
+ Sections
+-  A  dagt1_pullcheck.run   completeness / WRONG-run of a box-2 pull (the orct1 mutants, plus the two exact file sets, plus the identity records)
+-  B  dagt1_pullcheck.bank  completeness of a pulled bank directory, incl. the shard npz the box-2 chain does not pull today
++  A  dagt1_pullcheck.run   completeness / WRONG-run of a box-2 pull (the orct1 mutants, the exact 8-name set, the identity records, and decision O1: a SUMS that carries a box-2 fresh-age eval is REFUSED)
++  B  dagt1_pullcheck.bank  completeness of a pulled bank directory as box-2's chain now publishes it (11 names: PROVENANCE.json, bank.json, shard provenance, SHARD NPZ, bank_stage.log), the cross-file
++                           contradictions (WRONG), bank.json == the --dagger-bank-sha256 box 2's trainer gate declared (the pin), and the REAL generator's smoke bank read by the reader's own loader
+   C  dagt1_manifest        ids (derive + verify against the banked train_sha256), m2bsha, orc0 reuse, tool-tree parity, manifest + verify
+   D  the READER           the manifest this chain writes is loaded and READ by dag_read.py's own main() (imported read-only from dagread, test_dag_read's synthetic world and bank
+                           generator as fixtures); the positive control must read as a clean outcome, every deliberate regression must be REFUSED by the reader as well
+@@ -89,7 +90,7 @@
+     ARTS.append(art)
+     d = os.path.join(art, P.run_name(arm, seed))
+     os.makedirs(d)
+-    names = P.base_files(arm, seed) + (P.fresh_files(arm, seed) if fresh else [])
++    names = P.base_files(arm, seed) + (P.box2_fresh_files(arm, seed) if fresh else [])
+     argv = argv_for(arm, seed)
+     if argv_edit:
+         argv = argv_edit(argv)
+@@ -135,8 +136,8 @@
+ 
+     ARTS.clear()
+ 
+-    def expect(name, want, art, arm="dag", seed=0, b2="auto", min_age=P.MIN_AGE_S):
+-        st, why, s = P.check(art, arm, seed, b2, min_age_s=min_age)
++    def expect(name, want, art, arm="dag", seed=0, min_age=P.MIN_AGE_S):
++        st, why, s = P.check(art, arm, seed, min_age_s=min_age)
+         good = (st == want) and (bool(s) == (want == "COMPLETE"))
+         out.append((name, good, f"{st}: {why[:120]}"))
+ 
+@@ -182,16 +183,25 @@
+     expect("PC12 summary.json done: false (sums match) -> INCOMPLETE", "INCOMPLETE", art)
+     art, d = make_run(P); open(os.path.join(d, "argv.json"), "w").write("{truncated"); write_sums(d, names8()); age(d)
+     expect("PC13 argv.json not parseable (sums match) -> INCOMPLETE", "INCOMPLETE", art)
+-    # the two exact sets
++    # decision O1 (2026-10-26): box 2 pulls NO fresh-age eval (the CPU comparator runs on the dev box only). The ONLY accepted SUMS is the 8-name one; a SUMS that carries a fresh eval is REFUSED (WRONG: the chain STOPs, it never waits 40 h for it)
+     art, d = make_run(P, fresh=True); age(d)
+-    expect("PC20 the 10-name set (box 2 also pulled the fresh eval), auto -> COMPLETE", "COMPLETE", art)
+-    expect("PC21 ... but --b2-fresh 0 refuses it (8 expected)", "INCOMPLETE", art, b2="0")
+-    expect("PC22 ... and --b2-fresh 1 accepts it", "COMPLETE", art, b2="1")
++    expect("PC20 [O1] the 10-name SUMS (box 2 also pulled the fresh-age eval) -> WRONG (refused), although every listed file exists and re-hashes", "WRONG", art)
++    st, why, _ = P.check(art, "dag", 0)
++    out.append(("PC20b ... and the refusal NAMES the fresh eval file and decision O1", "eval_M2b-dag_s0-fresh.json" in why and "O1" in why, why[:110]))
++    art, d = make_run(P, fresh=True); write_sums(d, names8() + P.box2_fresh_files("dag", 0)[:1]); age(d)
++    expect("PC21 [O1] 9 names: the 8 plus ONLY the fresh JSON -> WRONG", "WRONG", art)
++    art, d = make_run(P, "dag0", 1, fresh=True); age(d)
++    expect("PC22 [O1] the 10-name SUMS of a dag0 s1 run -> WRONG", "WRONG", art, "dag0", 1)
++    art, d = make_run(P, fresh=True); write_sums(d, [n for n in names8() if n != "train_log.jsonl"] + P.box2_fresh_files("dag", 0)); age(d)
++    expect("PC23 [O1] [single fault] a fresh pair in place of train_log.jsonl (still 9 names) -> WRONG, not INCOMPLETE: the fresh entry decides, not the count", "WRONG", art)
++    art, d = make_run(P, fresh=True); age(d)
++    rc = P.main(["run", art, "dag", "0"])
++    out.append(("PC24 CLI rc 3 on the 10-name SUMS", rc == 3, f"rc {rc}"))
++    with contextlib.redirect_stderr(io.StringIO()) as es_:
++        rc = P.main(["run", art, "dag", "0", "--b2-fresh", "1"])
++    out.append(("PC25 the removed --b2-fresh switch is REFUSED by the CLI (rc 2, says it was removed), not silently ignored", rc == 2 and "removed" in es_.getvalue(), f"rc {rc}: {es_.getvalue()[:100]}"))
+     art, d = make_run(P); age(d)
+-    expect("PC23 the 8-name set is refused by --b2-fresh 1 (10 expected)", "INCOMPLETE", art, b2="1")
+-    expect("PC24 ... and accepted by --b2-fresh 0", "COMPLETE", art, b2="0")
+-    art, d = make_run(P, fresh=True); write_sums(d, names8() + P.fresh_files("dag", 0)[:1]); age(d)
+-    expect("PC25 9 names (only one of the fresh pair) -> INCOMPLETE", "INCOMPLETE", art)
++    out.append(("PC26 the 8 names are the whole accepted set: exactly 8, none of them a fresh-age eval", len(names8()) == 8 and not any("fresh" in n for n in names8()), str(len(names8()))))
+     # WRONG: the files verify, the run is not the one asked for -> the chain must STOP, not wait
+     art, d = make_run(P, "dag0", 0, argv_edit=lambda a: [x if x != "M2b_s0_dag0" else x for x in a] + []); age(d)
+     shutil.copytree(d, os.path.join(art, "M2b_s0_dag")); age(os.path.join(art, "M2b_s0_dag"))
+@@ -233,6 +243,228 @@
+     return [(tag + n, o, w) for n, o, w in out]
+ 
+ 
++# ====================================================================================================================== B: the pulled bank directory (the box-2 chain's `publish_bank_one` output) + the trainer gate's declared bank sha256
++BKS: list[str] = []           # the bank worlds of the current bk_tests() call (removed at its end)
++
++
++def pin_line(bank_sha, seed=0):
++    """what box 2's gatedag pins and the box-2 chain pulls to <ART>/M2b_s<S>_dag/gate/pin.txt: the TRAINING line the queue prints (python, trainer, then the argv)"""
++    argv = argv_for("dag", seed, bank_sha=bank_sha)
++    return '"D:\\tanitad\\venv\\Scripts\\python.exe" "D:\\tanitad\\repo\\stack\\scripts\\v8f_mini_train.py" ' + " ".join(f'"{x}"' if " " in x else x for x in argv) + "\n"
++
++
++def write_pin(art, seed, bank_sha, text=None):
++    p = os.path.join(art, PC.run_name("dag", seed), "gate", "pin.txt")
++    os.makedirs(os.path.dirname(p), exist_ok=True)
++    with open(p, "w", encoding="utf-8", newline="\n") as f:
++        f.write(text if text is not None else pin_line(bank_sha, seed))
++    return p
++
++
++def seal_bank(art, seed, n_shards, bank_sha, pin=True):
++    """the box-2 chain's last steps for one seed: bank_stage.log, SHA256SUMS.txt over the 3 + 2N names (written LAST, aged), and the DAG run's pinned gate argv declaring bank.json's sha256"""
++    d = os.path.join(art, f"bank_s{seed}")
++    with open(os.path.join(d, "bank_stage.log"), "w", encoding="utf-8", newline="\n") as f:
++        f.write("bank stage log (synthetic)\n")
++    write_sums(d, PC.bank_flat(n_shards))
++    age(d)
++    if pin:
++        write_pin(art, seed, bank_sha)
++
++
++def bk_tests(P, TD, tag=""):
++    """-> list of (name, ok, why): every check of section B against the module P (the real one, or a mutant of it).  Each test builds on a fresh SEALED bank world (the TD fixture's REAL-layout bank: PROVENANCE.json, bank.json,
++    2 shard provenance, 2 shard npz, + bank_stage.log + the 7-name SHA256SUMS.txt + the gate's pin)."""
++    out = []
++    BKS.clear()
++
++    def world(seed=0):
++        N[0] += 1
++        art = os.path.join(BASE, f"bk{N[0]}")
++        BKS.append(art)
++        B = TD.make_bank("a" * 64)
++        TD.write_bank(B, os.path.join(art, f"bank_s{seed}"))
++        seal_bank(art, seed, len(B["shards"]), B["man_sha256"])
++        return art, B
++
++    def bdir(art, seed=0):
++        return os.path.join(art, f"bank_s{seed}")
++
++    def reseal(art, B, seed=0):
++        write_sums(bdir(art, seed), PC.bank_flat(len(B["shards"])))
++        age(bdir(art, seed))
++
++    def edit_json(p, fn):
++        o = rjson(p)
++        fn(o)
++        with open(p, "w", encoding="utf-8", newline="\n") as f:
++            f.write(json.dumps(o, sort_keys=True, indent=1) + "\n")
++
++    def edit_manifest(art, B, fn, fix_provenance=True, seal=True):
++        """edit bank.json; optionally make PROVENANCE.bank_sha256 follow it and reseal, so ONLY the intended contradiction is left"""
++        edit_json(os.path.join(bdir(art), "bank.json"), fn)
++        msha = sha(open(os.path.join(bdir(art), "bank.json"), "rb").read())
++        write_pin(art, 0, msha)                                  # the gate's declared sha follows the edited bank.json, so the declared-sha guard stays out of every test below it
++        if fix_provenance:
++            edit_json(os.path.join(bdir(art), "PROVENANCE.json"), lambda o: o.update(bank_sha256=msha))
++        if seal:
++            reseal(art, B)
++
++    def expect(name, want, art, seed=0, why_has=None, exp=None, min_age=P.MIN_AGE_S):
++        st, why, s_ = P.check_bank_status(art, seed, min_age, expect_shards=exp)
++        good = st == want and (bool(s_) == (want == "COMPLETE")) and (why_has is None or why_has in why)
++        out.append((name, good, f"{st}: {why[:150]}"))
++
++    art, B = world()
++    nm0 = B["man"]["shards"][0]["file"]
++    st, why, s_ = P.check_bank_status(art, 0)
++    out.append(("BK0 positive control: a complete SEALED bank (PROVENANCE.json, bank.json, 2 shard provenance, 2 shard npz, bank_stage.log; 7-name SHA256SUMS.txt; the gate's pin declares bank.json's sha256) is COMPLETE and returns bank.json's sha256",
++                st == "COMPLETE" and s_ == B["man_sha256"], why[:120]))
++    out.append(("BK0b ... the reason counts 7 files (3 + 2 x 2 shards)", "7 files" in why, why[:60]))
++    ok, why, s2 = P.check_bank(art, 0)
++    out.append(("BK0c check_bank (the bool wrapper the manifest verifier calls) agrees", ok and s2 == B["man_sha256"], why[:60]))
++    out.append(("BK0e the queue's 4-shard bank is 11 names: 3 + 2 x 4 (PROVENANCE.json, bank.json, 4 shard provenance, 4 shard npz, bank_stage.log)", len(P.bank_flat(4)) == 11 and len(set(P.bank_flat(4))) == 11 and len(P.bank_flat(2)) == 7, str(len(P.bank_flat(4)))))
++    art, B = world(1)
++    expect("BK0d positive control, seed 1: its own bank directory and ITS OWN DAG run's pin", "COMPLETE", art, 1)
++
++    # ---- THE HOLE: what the box-2 chain published before (small files only, no sums, no shard npz) is not a bank the reader can read
++    art, B = world()
++    for f in B["man"]["shards"]:
++        os.remove(os.path.join(bdir(art), f["file"]))
++    os.remove(os.path.join(bdir(art), "SHA256SUMS.txt"))
++    expect("BK1 [the hole] the OLD box-2 publication (small files only: no shard npz, no SHA256SUMS.txt) -> INCOMPLETE", "INCOMPLETE", art, why_has="no SHA256SUMS.txt")
++    small = [n for n in PC.bank_flat(2) if not n.endswith(".npz")]
++    write_sums(bdir(art), small)
++    age(bdir(art))
++    expect("BK1b [the hole] a SHA256SUMS.txt over the small files ONLY (the npz left out) -> INCOMPLETE, names the missing shard npz and says the reader needs them (K-B3.1)", "INCOMPLETE", art, why_has="K-B3.1")
++    st, why, _ = P.check_bank_status(art, 0)
++    out.append(("BK1c ... and the missing list names shard_000of002.npz", nm0 in why, why[:140]))
++
++    # ---- a missing / damaged shard under an intact sums file
++    art, B = world(); os.remove(os.path.join(bdir(art), nm0))
++    expect("BK2 a shard npz that is listed but absent (SHA256SUMS.txt intact) -> INCOMPLETE", "INCOMPLETE", art, why_has="listed but absent")
++    art, B = world(); b_ = bytearray(open(os.path.join(bdir(art), nm0), "rb").read()); b_[len(b_) // 2] ^= 1; open(os.path.join(bdir(art), nm0), "wb").write(bytes(b_))
++    expect("BK3 [shard sha mismatch] one flipped bit in a shard npz under an intact SHA256SUMS.txt -> INCOMPLETE (half-pulled, or replaced)", "INCOMPLETE", art, why_has="sha256")
++    art, B = world(); open(os.path.join(bdir(art), nm0), "wb").write(b""); reseal(art, B)
++    expect("BK4 an EMPTY shard npz whose (empty) sha256 is the one listed -> INCOMPLETE", "INCOMPLETE", art, why_has="is empty")
++    art, B = world(); os.remove(os.path.join(bdir(art), B["prov"]["shard_provenance"][1]))
++    expect("BK5 a shard provenance file listed but absent -> INCOMPLETE", "INCOMPLETE", art, why_has="listed but absent")
++    art, B = world(); os.remove(os.path.join(bdir(art), "PROVENANCE.json"))
++    expect("BK6 PROVENANCE.json (the bank report) absent -> INCOMPLETE", "INCOMPLETE", art, why_has="PROVENANCE.json is absent")
++    art, B = world(); os.remove(os.path.join(bdir(art), "bank_stage.log"))
++    expect("BK7 bank_stage.log listed but absent -> INCOMPLETE", "INCOMPLETE", art, why_has="listed but absent")
++    art, B = world(); open(os.path.join(bdir(art), "bank.json"), "ab").write(b" ")
++    expect("BK8 bank.json edited AFTER SHA256SUMS.txt was written (a stale seal) -> INCOMPLETE", "INCOMPLETE", art, why_has="sha256")
++
++    # ---- single-fault contradictions between files that each verify against the sums: WRONG, no wait fixes them
++    art, B = world(); edit_manifest(art, B, lambda o: o["shards"][0].update(file_sha256="0" * 64))
++    expect("BK9 [single fault] [shard sha mismatch vs bank.json] bank.json records another file_sha256 for shard 0 (PROVENANCE.bank_sha256 and the sums follow): the npz hashes to the listed value, not bank.json's -> WRONG", "WRONG", art, why_has="not bank.json's file_sha256")
++    art, B = world(); edit_manifest(art, B, lambda o: o.update(note="edited"), fix_provenance=False)
++    expect("BK10 [single fault] [bank.json sha != the report's] bank.json differs from what PROVENANCE.bank_sha256 names, the sums describe the edited file -> WRONG", "WRONG", art, why_has="PROVENANCE.bank_sha256")
++    art, B = world(); edit_json(os.path.join(bdir(art), B["prov"]["shard_provenance"][1]), lambda o: o.update(file_sha256="0" * 64)); reseal(art, B)
++    expect("BK11 [single fault] a shard provenance records another file_sha256 than its npz -> WRONG", "WRONG", art, why_has="shard provenance")
++    art, B = world(); edit_manifest(art, B, lambda o: o["shards"][1].update(file="other.npz"))
++    expect("BK12 bank.json names a shard npz that is not the generator's (shard_KKKofNNN.npz) -> WRONG", "WRONG", art, why_has="bank.json shards name")
++    art, B = world(); edit_json(os.path.join(bdir(art), "PROVENANCE.json"), lambda o: o.update(shard_provenance=o["shard_provenance"][:1])); reseal(art, B)
++    expect("BK13 PROVENANCE.json names one shard provenance file of two -> WRONG", "WRONG", art, why_has="shard_provenance")
++    art, B = world(); edit_json(os.path.join(bdir(art), "PROVENANCE.json"), lambda o: o.update(schema="v0")); reseal(art, B)
++    expect("BK14 PROVENANCE.json of another schema (sums describe it) -> INCOMPLETE", "INCOMPLETE", art, why_has="schema")
++    art, B = world()
++    expect("BK15 [--expect-shards] the queue's four shards demanded of a two-shard bank -> WRONG", "WRONG", art, why_has="bankdag runs 4", exp=4)
++
++    # ---- the SUMS file itself
++    art, B = world(); write_sums(bdir(art), PC.bank_flat(2), extra="gen_shard_0.log"); age(bdir(art))
++    expect("BK16 SHA256SUMS.txt lists an 8th, unexpected name -> INCOMPLETE (exact set)", "INCOMPLETE", art, why_has="unexpected ['gen_shard_0.log']")
++    art, B = world(); write_sums(bdir(art), [n for n in PC.bank_flat(2) if n != "bank_stage.log"]); age(bdir(art))
++    expect("BK17 SHA256SUMS.txt lists 6 of the 7 names (the stage log left out) -> INCOMPLETE", "INCOMPLETE", art, why_has="missing ['bank_stage.log']")
++    art, B = world(); write_sums(bdir(art), PC.bank_flat(2), newline=False); age(bdir(art))
++    expect("BK18 SHA256SUMS.txt without its final newline -> INCOMPLETE", "INCOMPLETE", art, why_has="newline")
++    art, B = world(); t_ = os.path.join(bdir(art), "SHA256SUMS.txt"); first_ = open(t_, "rb").read().splitlines(True)[0]
++    with open(t_, "ab") as f_:
++        f_.write(first_)
++    age(bdir(art))
++    expect("BK19 SHA256SUMS.txt lists one name twice -> INCOMPLETE", "INCOMPLETE", art, why_has="twice")
++    art, B = world(); os.utime(os.path.join(bdir(art), "SHA256SUMS.txt"), None)
++    expect("BK20 SHA256SUMS.txt modified < 3 s ago (it may still be filling) -> INCOMPLETE", "INCOMPLETE", art, why_has="modified")
++    st, why, _ = P.check_bank_status(art, 0, min_age_s=-3600.0)
++    out.append(("BK20b same bank with min_age 0 -> COMPLETE (so BK20 failed ONLY on the age)", st == "COMPLETE", why[:80]))
++    expect("BK21 a seed whose bank directory does not exist -> INCOMPLETE", "INCOMPLETE", os.path.join(BASE, "nowhere"))
++
++    # ---- the bank is the bank the TRAINER GATE declared
++    art, B = world(); write_pin(art, 0, "e" * 64)
++    expect("BK22 [declared sha] box 2's pinned gate argv declares another --dagger-bank-sha256 than bank.json's -> WRONG, naming the pin", "WRONG", art, why_has="pin.txt")
++    art, B = world(); os.remove(os.path.join(art, "M2b_s0_dag", "gate", "pin.txt"))
++    expect("BK23 [declared sha] the pin is not pulled yet -> INCOMPLETE (the bank cannot be tied to the gate)", "INCOMPLETE", art, why_has="not pulled yet")
++    art, B = world(); write_pin(art, 0, None, text=pin_line(B["man_sha256"]) .replace("--dagger-bank-sha256", "--zz-bank-sha256"))
++    expect("BK24 [declared sha] the pinned argv names no --dagger-bank-sha256 -> WRONG", "WRONG", art, why_has="was not gated on a declared bank")
++    art, B = world(); write_pin(art, 0, None, text=pin_line(B["man_sha256"]).rstrip("\n") + f" --dagger-bank-sha256 {'e' * 64}\n")
++    expect("BK25 [declared sha] the pinned argv names --dagger-bank-sha256 twice -> WRONG", "WRONG", art, why_has="time(s) or with no single value")
++    art, B = world(); write_pin(art, 0, None, text="not a training line\n")
++    expect("BK26 [declared sha] the pin is not a training line -> WRONG", "WRONG", art, why_has="not a training line")
++    art, B = world(); write_pin(art, 0, None, text=pin_line("xyz"))
++    expect("BK27 [declared sha] the pinned value is not a sha256 -> WRONG", "WRONG", art, why_has="not a sha256")
++    art, B = world(1); write_pin(art, 0, B["man_sha256"], text=pin_line(B["man_sha256"], 0)); os.remove(os.path.join(art, "M2b_s1_dag", "gate", "pin.txt"))
++    expect("BK28 [declared sha] seed 1's bank is judged against seed 1's own DAG pin only: a seed-0 pin does not stand in for it -> INCOMPLETE", "INCOMPLETE", art, 1, why_has="not pulled yet")
++
++    # ---- CLI
++    art, B = world()
++    with contextlib.redirect_stdout(io.StringIO()) as so_:
++        rc_ok = P.main(["bank", art, "0"])
++    out.append(("BK30 CLI rc 0 on a complete bank, printing `COMPLETE <bank.json sha256> ...`", rc_ok == 0 and so_.getvalue().startswith(f"COMPLETE {B['man_sha256']} "), so_.getvalue()[:90]))
++    with contextlib.redirect_stdout(io.StringIO()):
++        rc_inc = P.main(["bank", art, "1"])
++        rc_wrong = P.main(["bank", art, "0", "--expect-shards", "4"])
++    out.append(("BK31 CLI rc 1 on an absent bank directory, rc 3 on a WRONG one", rc_inc == 1 and rc_wrong == 3, f"rc {rc_inc} / {rc_wrong}"))
++    for a_ in BKS:
++        shutil.rmtree(a_, ignore_errors=True)
++    BKS.clear()
++    return [(tag + n, o, w) for n, o, w in out]
++
++
++SMOKE_BANK = f"{R}/di/tree/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-build/smoke_kb45"
++
++
++def smoke_bank_tests(P, TD, tag=""):
++    """The REAL bank generator's 12-clip, 1-shard smoke bank (read-only source, copied) as a 'pulled' bank_s0: sealed the way box 2's chain seals a bank (stage log + the 5-name SHA256SUMS.txt + the gate's pin),
++    judged by P, and then READ BY THE READER's own loader (dag_read.load_bank / g_bank_files / bank_clip_names, imported read-only).  MEASURED on real generator output, not on a synthetic bank."""
++    out = []
++    if not all(os.path.isfile(f"{SMOKE_BANK}/{n}") for n in ("PROVENANCE.json", "bank.json", "shard_000of001.npz", "shard_000of001.provenance.json")):
++        return [(tag + "SB0 the real smoke bank files are present (read-only source)", False, SMOKE_BANK)]
++    N[0] += 1
++    art = os.path.join(BASE, f"smoke{N[0]}")
++    d = os.path.join(art, "bank_s0")
++    os.makedirs(d)
++    for nm in ("PROVENANCE.json", "bank.json", "shard_000of001.npz", "shard_000of001.provenance.json"):
++        shutil.copyfile(f"{SMOKE_BANK}/{nm}", os.path.join(d, nm))
++    msha = sha(open(os.path.join(d, "bank.json"), "rb").read())
++    seal_bank(art, 0, 1, msha)
++    st, why, s_ = P.check_bank_status(art, 0, expect_shards=1)
++    out.append(("SB0 [real generator output] the 12-clip smoke bank, copied and sealed as box 2's chain seals it (5 names: PROVENANCE.json, bank.json, 1 shard provenance, 1 shard npz, bank_stage.log), is COMPLETE", st == "COMPLETE" and s_ == msha, f"{st}: {why[:110]}"))
++    st, why, _ = P.check_bank_status(art, 0, expect_shards=4)
++    out.append(("SB1 ... and the same bank is WRONG against the queue's 4 shards", st == "WRONG" and "bankdag runs 4" in why, f"{st}: {why[:80]}"))
++    rp, bf = os.path.join(d, "PROVENANCE.json"), os.path.join(d, "bank.json")
++    try:
++        B = TD.dag.load_bank(rp, bf)
++        names = TD.dag.bank_clip_names(B)
++        ok_f, det = TD.dag.g_bank_files(B)
++        out.append(("SB2 [the reader] dag_read.load_bank reads the PULLED copies (report + bank_file) with the shard npz beside them: bank.json's sha256 is the identity the pull check returned, the shard files are the manifest's, and K-B3.1's clip names come from the npz",
++                    B["man_sha256"] == s_ == msha and ok_f and len(names) > 0, f"g_bank_files {ok_f}: {str(det)[:100]}; {len(names)} clip names"))
++        hdr = json.loads(bytes(np.load(os.path.join(d, "shard_000of001.npz"))["header_json"]).decode("utf-8"))
++        out.append(("SB3 ... and those names are the ones the npz header_json carries (read independently)", names == sorted(set(hdr["clips"].values() if isinstance(hdr["clips"], dict) else hdr["clips"])), f"{len(names)} names"))
++    except Exception as ex:                                                  # noqa: BLE001
++        out.append(("SB2 [the reader] dag_read.load_bank reads the PULLED copies", False, f"{type(ex).__name__}: {str(ex)[:160]}"))
++    os.rename(os.path.join(d, "shard_000of001.npz"), os.path.join(d, "shard_000of001.npz.x"))
++    try:
++        TD.dag.load_bank(rp, bf)
++        out.append(("SB4 [the hole, reproduced on the reader] WITHOUT the shard npz (what the box-2 chain pulled before: the small files only) dag_read.load_bank REFUSES", False, "load_bank accepted a bank with no shard npz"))
++    except TD.dag.Refusal as ex:
++        out.append(("SB4 [the hole, reproduced on the reader] WITHOUT the shard npz (what the box-2 chain pulled before: the small files only) dag_read.load_bank REFUSES, naming the shard", "shard_000of001.npz" in str(ex), str(ex)[:110]))
++    st, why, _ = P.check_bank_status(art, 0, expect_shards=1)
++    out.append(("SB5 ... and the pull check calls that same directory INCOMPLETE (never COMPLETE), so the chain waits for the npz rather than handing the reader a bank it will refuse", st == "INCOMPLETE", f"{st}: {why[:90]}"))
++    shutil.rmtree(art, ignore_errors=True)
++    return [(tag + n, o, w) for n, o, w in out]
++
++
+ # ====================================================================================================================== the synthetic reader world, in THIS chain's layout
+ def load_reader_fixtures():
+     import test_dag_read as TD
+@@ -264,6 +496,8 @@
+             for arm, reader_arm in (("dag", "DAG"), ("dag0", "DAG0"), ("orc0", "ORC0")):
+                 self.write_run(arm, reader_arm, s, W.s[s])
+         self.sums()
++        for s in (0, 1):                                                  # the box-2 chain's bank publication: bank_stage.log + the 7-name SHA256SUMS.txt (this fixture's banks have 2 shards) + the gate's pin declaring bank.json's sha256
++            seal_bank(self.art, s, 2, self.fx.bank_sha[s])
+         return self
+ 
+     def write_run(self, arm, reader_arm, s, Ws):
+@@ -383,41 +617,10 @@
+     # ------------------------------------------------------------------------------------------------ A
+     RES.extend(pc_tests(PC))
+ 
+-    # ------------------------------------------------------------------------------------------------ B: the bank directory
++    # ------------------------------------------------------------------------------------------------ B: the pulled bank directory
+     TD = load_reader_fixtures()
+-    N[0] += 1
+-    bart = os.path.join(BASE, f"bankart{N[0]}")
+-    B = TD.make_bank("a" * 64)
+-    TD.write_bank(B, os.path.join(bart, "bank_s0"))
+-    ok, why, bs = PC.check_bank(bart, 0)
+-    rec("BK0 positive control: a complete bank directory (PROVENANCE, bank.json, shard provenance, shard npz) is COMPLETE", ok and bs == B["man_sha256"], why[:120])
+-    bd = os.path.join(bart, "bank_s0")
+-
+-    def bk(name, edit, undo, want_in=None):
+-        edit()
+-        ok_, why_, _ = PC.check_bank(bart, 0)
+-        undo()
+-        rec(name, (not ok_) and (want_in is None or want_in in why_), why_[:140])
+-    sh0 = B["shards"][0]["file"]
+-    keep = open(os.path.join(bd, sh0), "rb").read()
+-    bk("BK1 a shard npz that was never pulled (what the box-2 chain does today) -> INCOMPLETE, saying the reader needs it", lambda: os.rename(os.path.join(bd, sh0), os.path.join(bd, sh0 + ".x")),
+-       lambda: os.rename(os.path.join(bd, sh0 + ".x"), os.path.join(bd, sh0)), "dag_read.load_bank")
+-    flipped = bytearray(keep)
+-    flipped[len(flipped) // 2] ^= 1
+-    bk("BK2 one flipped bit in a shard npz -> INCOMPLETE", lambda: open(os.path.join(bd, sh0), "wb").write(bytes(flipped)), lambda: open(os.path.join(bd, sh0), "wb").write(keep), "sha256")
+-    pj = open(os.path.join(bd, "PROVENANCE.json"), "rb").read()
+-    bk("BK3 PROVENANCE.json absent (the bank report) -> INCOMPLETE", lambda: os.remove(os.path.join(bd, "PROVENANCE.json")), lambda: open(os.path.join(bd, "PROVENANCE.json"), "wb").write(pj), "absent")
+-    bj = open(os.path.join(bd, "bank.json"), "rb").read()
+-    bk("BK4 bank.json edited after PROVENANCE named its sha256 -> INCOMPLETE", lambda: open(os.path.join(bd, "bank.json"), "wb").write(bj + b" "), lambda: open(os.path.join(bd, "bank.json"), "wb").write(bj), "PROVENANCE.bank_sha256")
+-    spn = B["prov"]["shard_provenance"][0]
+-    spb = open(os.path.join(bd, spn), "rb").read()
+-    bk("BK5 a shard provenance file missing -> INCOMPLETE", lambda: os.remove(os.path.join(bd, spn)), lambda: open(os.path.join(bd, spn), "wb").write(spb), "shard provenance")
+-    pjo = rjson(os.path.join(bd, "PROVENANCE.json"))
+-    bk("BK6 PROVENANCE.json of another schema -> INCOMPLETE", lambda: wjson(os.path.join(bd, "PROVENANCE.json"), {**pjo, "schema": "v0"}), lambda: open(os.path.join(bd, "PROVENANCE.json"), "wb").write(pj), "schema")
+-    ok, why, _ = PC.check_bank(bart, 1)
+-    rec("BK7 a seed whose bank directory does not exist -> INCOMPLETE", not ok, why[:100])
+-    rc = PC.main(["bank", bart, "0"])
+-    rec("BK8 CLI rc 0 on a complete bank, rc 1 on an absent one", rc == 0 and PC.main(["bank", bart, "1"]) == 1, f"rc {rc}")
++    RES.extend(bk_tests(PC, TD))
++    RES.extend(smoke_bank_tests(PC, TD))
+ 
+     # ------------------------------------------------------------------------------------------------ C: manifest module
+     PK = "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini"
+@@ -580,6 +783,24 @@
+     # --- MISSING BANK REPORT, MISSING FRESH EVAL
+     bp = m["bank"]["0"]["report"]
+     mutant("MF30 [missing bank report] bank_s0/PROVENANCE.json absent -> refused", lambda: os.rename(bp, bp + ".x"), lambda: os.rename(bp + ".x", bp), "bank s0")
++    # --- THE BANK FILES the reader needs beside the report (the hole): bank_file, the shard npz, the sha256 the gate declared
++    b0, b1 = m["bank"]["0"], m["bank"]["1"]
++    kb0 = dict(b0)
++    bd0 = os.path.dirname(bp)
++    npz0 = os.path.join(bd0, "shard_000of002.npz")
++    pin0 = os.path.join(WD.art, "M2b_s0_dag", "gate", "pin.txt")
++    rec("MF31a the manifest's bank entries carry report AND bank_file, both in the pulled bank_s<S>/ directory (the build writes them; nothing else)", all(sorted(v) == ["bank_file", "report"] and v["bank_file"] == v["report"][:-len("PROVENANCE.json")] + "bank.json" for v in m["bank"].values()), str(b0)[:140])
++    pin_keep = open(pin0, "rb").read()
++    bank_cases = [      # (label, edit, undo, the needle the refusal must carry); reused by the manifest-mutant harness below
++        ("MF31 [bank_file elsewhere] bank_file is a bank.json that is not the pulled one beside the report -> refused", lambda: b0.__setitem__("bank_file", b0["bank_file"] + ".elsewhere"), lambda: b0.update(kb0), "is not the pulled"),
++        ("MF32 [bank_file missing] the manifest's bank entry carries no bank_file -> refused", lambda: b0.pop("bank_file"), lambda: b0.update(kb0), "no bank_file"),
++        ("MF33 [seed-swapped bank] seed 0's entry points at seed 1's bank directory (report AND bank_file: only the seed test sees it) -> refused", lambda: b0.update(report=b1["report"], bank_file=b1["bank_file"]), lambda: b0.update(kb0), "another seed's bank"),
++        ("MF34 [shard npz missing] a shard npz of the pulled bank absent (what the box-2 chain pulled before this change: the small files only) -> refused", lambda: os.rename(npz0, npz0 + ".x"), lambda: os.rename(npz0 + ".x", npz0), "listed but absent"),
++        ("MF35 [declared sha] box 2's gate declared another --dagger-bank-sha256 than the pulled bank.json hashes to -> refused", lambda: write_pin(WD.art, 0, "e" * 64), lambda: open(pin0, "wb").write(pin_keep), "not the bank that run was gated on"),
++        ("MF36 [declared sha] the DAG s0 pin is not pulled -> refused", lambda: os.rename(pin0, pin0 + ".x"), lambda: os.rename(pin0 + ".x", pin0), "not pulled yet"),
++    ]
++    for lab_, ed_, un_, nd_ in bank_cases:
++        mutant(lab_, ed_, un_, nd_)
+     fz = e_d["t0_fresh"]["npz"]
+     mutant("MF40 [fresh eval missing] DAG s0's fresh T0 eval npz absent -> refused", lambda: os.rename(fz, fz + ".x"), lambda: os.rename(fz + ".x", fz), "t0_fresh npz")
+     fj = e_0["t0_fresh"]["json"]
+@@ -709,6 +930,11 @@
+     read_with("RD15 the reader REFUSES a manifest without the ORC-0 replicate (RF has no floor)", lambda m2: m2["arms"].pop("ORC0"), "ORC0")
+     read_with("RD16 the reader REFUSES a manifest without the TRAIN id list", lambda m2: m2.pop("train_clip_ids"), "train_clip_ids")
+     read_with("RD17 [wrong checkpoint] the reader REFUSES a standard T0 eval that scored another arm's checkpoint (T0-CKPT)", lambda m2: m2["arms"]["DAG0"]["0"]["t0"].update(json=e_d["t0"]["json"], npz=e_d["t0"]["npz"]), "T0-CKPT:DAG0_s0")
++    read_with("RD18 [bank_file absent] the reader REFUSES a manifest whose bank_file names a bank.json that is not there", lambda m2: m2["bank"]["0"].update(bank_file=m2["bank"]["0"]["bank_file"] + ".gone"), "the bank manifest (bank.json)")
++    sh0 = os.path.join(os.path.dirname(m["bank"]["0"]["report"]), "shard_000of002.npz")
++    read_with("RD19 [shard npz missing] the reader REFUSES a bank whose shard npz is not beside the report (K-B3.1 reads the clip names from it)", lambda m2: os.rename(sh0, sh0 + ".x"), "shard shard_000of002.npz", lambda: os.rename(sh0 + ".x", sh0))
++    old_layout = [os.path.join(os.path.dirname(m["bank"]["1"]["report"]), f"shard_{i:03d}of002.npz") for i in (0, 1)]
++    read_with("RD20 [the old layout] the reader REFUSES seed 1's bank pulled the way the box-2 chain used to pull it (every small file, NO shard npz)", lambda m2: [os.rename(p_, p_ + ".x") for p_ in old_layout], "bank seed 1 report: shard", lambda: [os.rename(p_ + ".x", p_) for p_ in old_layout])
+     WD_t_rd = time.time() - t_rd
+ 
+     # ------------------------------------------------------------------------------------------------ E: the chain script
+@@ -725,8 +951,9 @@
+     rec("CH2 [C: boundary] 2047 MB STOPs, ", rc == 1 and "ZZDAGT1-STOP" in out, f"rc {rc}")
+     rc, out, dt = chain({"DAGT1_TEST_CFREE_MB": "2048", "DAGT1_TREE": f"{R}/rt4/tree"})
+     rec("CH3 [wrong tree] rt4/tree (no DAgger trainer) is REFUSED, naming the missing flag", rc == 1 and "ZZDAGT1-STOP" in out and "is not the DAgger tip" in out, out.strip().splitlines()[-1][:170] if out.strip() else "")
+-    rc, out, dt = chain({"DAGT1_TEST_CFREE_MB": "2048", "DAGT1_B2_FRESH": "2"})
+-    rec("CH4 a bad DAGT1_B2_FRESH is refused", rc == 1 and "DAGT1_B2_FRESH must be" in out, "")
++    for v_ in ("1", "2"):
++        rc, out, dt = chain({"DAGT1_TEST_CFREE_MB": "2048", "DAGT1_B2_FRESH": v_})
++        rec(f"CH4 [O1] DAGT1_B2_FRESH={v_} (the removed 'expect a box-2 fresh eval' switch) STOPs the chain, saying it was REMOVED and why, and never reaches the plan", rc == 1 and "ZZDAGT1-STOP" in out and "REMOVED" in out and "O1" in out and "ZZDAGT1-DRY-OK" not in out, out.strip().splitlines()[-1][:150] if out.strip() else "")
+     rc, out, dt = chain({"DAGT1_TEST_CFREE_MB": "3000", "DAGT1_SMOKE": "0", "DAGT1_TREE": f"{R}/dagt1/nonexistent_tree"})
+     rec("CH5 a tree that does not exist is refused", rc == 1 and "ZZDAGT1-STOP" in out, "")
+     chain_src = open(os.path.join(HERE, "dag_t1_chain.sh"), encoding="utf-8").read()
+@@ -772,6 +999,10 @@
+         c_paths = sorted(set(re.findall(r"[Cc]:[/\\][^\s'\"]*", full)))
+         stray = [p_ for p_ in c_paths if not p_.replace("\\", "/").startswith(("C:/Users/Admin/venvs/tanitad/", "C:/Users/Admin/dagread/"))]
+         rec("CH21 [nothing new on C:] every C: path in the rendered plan is the interpreter or the (read-only) reader; the inputs, tree, outputs, logs and ids are all on E:", not stray and f"{R}/sfresh_inputs/inputs/native_tracks.pt" in full, f"stray {stray[:3]}")
++        bank_lines = [ln for ln in full.splitlines() if re.search(r"bank_s[01]  (INCOMPLETE|COMPLETE|WRONG)", ln)]
++        rec("CH22 [bank files + O1] the plan states the 4-shard bank gate (11 names, bank.json == the gate's declared --dagger-bank-sha256), probes each bank with --expect-shards 4, accepts no box-2 fresh eval, and passes no --b2-fresh; the source STOPs on a WRONG bank (rc 3) and on the removed switch",
++            "--expect-shards 4" in chain_src and "EXACTLY the 11 names" in full and "--dagger-bank-sha256" in full and "box-2 fresh eval: none accepted" in full and "--b2-fresh" not in full and "--b2-fresh" not in chain_src
++            and len(bank_lines) == 2 and re.search(r"\[ \$rc -eq 3 \] && stop \"the pulled bank s\$s is WRONG", chain_src) is not None, f"{len(bank_lines)} bank lines")
+         del full
+     else:
+         rec("CH10..CH21 skipped (--quick)", True, "")
+@@ -784,7 +1015,7 @@
+         muts = [
+             ("M01 delete the sha256 compare", "        if got != listed[name]:\n            return \"INCOMPLETE\"", "        if False:\n            return \"INCOMPLETE\""),
+             ("M02 delete the SHA256SUMS age test", "    if age < min_age_s:", "    if False:"),
+-            ("M03 accept any name set", "    if which is None:", "    if False:"),
++            ("M03 accept any name set", "    if sorted(listed) != sorted(want):\n        for oa in ARMS:", "    if False:\n        for oa in ARMS:"),
+             ("M04 delete the summary done test", "        if name == \"summary.json\" and rec.get(\"done\") is not True:", "        if False:"),
+             ("M05 delete the final-newline test", "    if not text.endswith(\"\\n\"):", "    if False:"),
+             ("M06 delete the non-empty test", "        if os.path.getsize(p) == 0:\n            return \"INCOMPLETE\", f\"{name} is empty\"", "        if False:\n            return \"INCOMPLETE\", f\"{name} is empty\""),
+@@ -792,9 +1023,23 @@
+             ("M08 delete the identity test (WRONG never fires)", "    if bad:\n        return \"WRONG\"", "    if False:\n        return \"WRONG\""),
+             ("M09 drop the --out identity test", "    if out is None or os.path.basename(norm(out)) != run_name(arm, seed):", "    if False:"),
+             ("M10 drop the dag0 DAG-only-flag test", "    if arm == \"dag0\":\n        for n in DAG_ONLY:", "    if False:\n        for n in DAG_ONLY:"),
+-            ("M11 the 10-name set is not accepted", "    sets = {\"std8\": base_files(arm, seed), \"std8+b2fresh10\": base_files(arm, seed) + fresh_files(arm, seed)}", "    sets = {\"std8\": base_files(arm, seed)}"),
+-            ("M12 the bank check does not require the shard npz", "        if not os.path.isfile(p):\n            return False, (f\"shard", "        if False:\n            return False, (f\"shard"),
+-            ("M13 the bank check does not hash bank.json against PROVENANCE", "    if msha != prov.get(\"bank_sha256\"):", "    if False:"),
++            ("M11 [O1] a SUMS that carries a box-2 fresh-age eval is no longer refused", "    if carried:", "    if False:"),
++            ("M12 the bank check does not require the shard npz to exist", "        if not os.path.isfile(p):\n            return \"INCOMPLETE\", f\"{nm} is listed but absent\"", "        if False:\n            return \"INCOMPLETE\", f\"{nm} is listed but absent\""),
++            ("M13 the bank check does not compare bank.json's sha256 with PROVENANCE.bank_sha256", "    if prov.get(\"bank_sha256\") != msha:", "    if False:"),
++            ("M14 the bank check does not compare bank.json with the sha256 the trainer gate declared", "    if v != msha:", "    if False:"),
++            ("M15 the bank check does not compare a shard npz with bank.json's file_sha256", "        if listed[npz] != by_k[k].get(\"file_sha256\"):", "        if False:"),
++            ("M16 the bank check does not compare a shard npz with its shard provenance", "        if not isinstance(sp, dict) or sp.get(\"file_sha256\") != listed[npz]:", "        if False:"),
++            ("M17 the bank check accepts any name set in SHA256SUMS.txt", "    if sorted(listed) != sorted(want):\n        miss, extra = sorted(set(want) - set(listed)), sorted(set(listed) - set(want))\n        hint", "    if False:\n        miss, extra = sorted(set(want) - set(listed)), sorted(set(listed) - set(want))\n        hint"),
++            ("M18 the bank check ignores --expect-shards", "    if expect_shards is not None and n != expect_shards:", "    if False:"),
++            ("M19 the declared-sha lookup does not need the pin", "    if not os.path.isfile(pin) or os.path.getsize(pin) == 0:", "    if False:"),
++            ("M20 the declared-sha lookup accepts a pin that names the flag twice / not at all", "    if v is None:\n        return \"WRONG\"", "    if False:\n        return \"WRONG\""),
++            ("M21 the declared-sha lookup reads seed 0's pin for every seed", "    pin = os.path.join(art, run_name(\"dag\", seed), \"gate\", \"pin.txt\")", "    pin = os.path.join(art, run_name(\"dag\", 0), \"gate\", \"pin.txt\")"),
++            ("M22 SHA256SUMS.txt may list a name twice", "        if name in listed:", "        if False:"),
++            ("M23 bank.json's shard names are not checked against the generator's naming", "    if [s.get(\"file\") for s in sorted(shards, key=lambda s: s.get(\"k\", -1))] != names[\"shard_npz\"]:", "    if False:"),
++            ("M24 PROVENANCE.shard_provenance is not checked against the generator's naming", "    if prov.get(\"shard_provenance\") != names[\"shard_provenance\"] or prov.get(\"manifest\", \"bank.json\") != \"bank.json\":", "    if False:"),
++            ("M25 PROVENANCE.json of another kind / schema is accepted", "    if not isinstance(prov, dict) or prov.get(\"kind\") != BANK_KIND or prov.get(\"schema\") != BANK_SCHEMA:", "    if False:"),
++            ("M26 the bank CLI drops --expect-shards", "        st, why, sha = check_bank_status(a[1], int(a[2]), expect_shards=exp)", "        st, why, sha = check_bank_status(a[1], int(a[2]))"),
++            ("M27 the run CLI no longer refuses the removed --b2-fresh switch", "        if len(a) != 4 or not a[3].isdigit():", "        if False:"),
+         ]
+         killed = 0
+         for name, a, b in muts:
+@@ -806,30 +1051,17 @@
+             spec = importlib.util.spec_from_file_location("pc_mut", mp)
+             pm = importlib.util.module_from_spec(spec)
+             spec.loader.exec_module(pm)
+-            try:
+-                res_ = pc_tests(pm, "[mut] ")
+-                bad_ = [n for n, o, _ in res_ if not o]
+-            except Exception as ex:                          # noqa: BLE001  -- a mutant that crashes the checker is detected (the chain would STOP on a crashed checker)
+-                bad_ = [f"crash {type(ex).__name__}"]
+-                for a_ in ARTS:
+-                    shutil.rmtree(a_, ignore_errors=True)
+-                ARTS.clear()
+-            if name.startswith(("M12", "M13")):                            # bank checks are exercised by section B, which is not in pc_tests: re-run it against the mutant
+-                bart_m = os.path.join(BASE, "bankmut_" + name[:3])
+-                Bm = TD.make_bank("a" * 64)
+-                TD.write_bank(Bm, os.path.join(bart_m, "bank_s0"))
+-                bdm = os.path.join(bart_m, "bank_s0")
+-                if name.startswith("M12"):
+-                    os.remove(os.path.join(bdm, Bm["shards"][0]["file"]))
+-                else:
+-                    open(os.path.join(bdm, "bank.json"), "ab").write(b" ")
++            bad_ = []
++            for suite, fn_ in (("A", lambda: pc_tests(pm, "[mut] ")), ("B", lambda: bk_tests(pm, TD, "[mut] ")), ("SB", lambda: smoke_bank_tests(pm, TD, "[mut] "))):
+                 try:
+-                    ok_, why_, _ = pm.check_bank(bart_m, 0)
+-                except Exception as ex_:                            # noqa: BLE001  -- a traceback is a verdict without its reason: the chain would print rc 1 and no cause
+-                    ok_, why_ = False, f"crash {type(ex_).__name__}"
+-                lost_reason = (not ok_) and name.startswith("M12") and "is not in" not in why_            # the check's job includes NAMING the shard the box-2 chain did not pull
+-                bad_ = bad_ + (["BK-mutant"] if (ok_ or lost_reason) else [])
+-            rec(f"{name}: a check turns RED", bool(bad_), f"{len(bad_)} red: {', '.join(bad_[:3])}")
++                    bad_ += [n for n, o, _ in fn_() if not o]
++                except Exception as ex:                      # noqa: BLE001  -- a mutant that crashes the checker is detected (the chain would STOP on a crashed checker)
++                    bad_.append(f"crash {suite} {type(ex).__name__}")
++                    for a_ in ARTS + BKS:
++                        shutil.rmtree(a_, ignore_errors=True)
++                    ARTS.clear()
++                    BKS.clear()
++            rec(f"{name}: a check turns RED", bool(bad_), f"{len(bad_)} red: {', '.join(x[:60] for x in bad_[:3])}")
+             killed += bool(bad_)
+         src2 = open(os.path.join(HERE, "dagt1_manifest.py"), encoding="utf-8").read()
+         muts2 = [
+@@ -842,12 +1074,15 @@
+             ("N07 drop the distinct-checkpoint test", "                if sha in shas:", "                if False:"),
+             ("N08 drop the done-record sha test", "                    if dr.get(\"ckpt_sha256\") != sha:", "                    if False:"),
+             ("N09 drop t0_fresh requirement", "            if \"t0_fresh\" not in e:", "            if False:"),
+-            ("N10 drop the bank check", "        if not smoke:\n            ok, why, _ = PC.check_bank", "        if False:\n            ok, why, _ = PC.check_bank"),
++            ("N10 drop the bank check", "            ok, why, _ = PC.check_bank(os.path.dirname(bdir), bseed)", "            ok, why, _ = True, \"\", \"\""),
+             ("N11 drop the id-list existence test", "    for k in (\"eval141_clip_ids\", \"train_clip_ids\"):\n        need_file(m[k], k)", "    pass"),
+             ("N12 drop the banked-init test", "        if require_banked and res[seed] != BANKED_M2B_SHA[seed]:", "        if False:"),
+             ("N13 drop the TRAIN-list hash test", "    if got_t != want_train:", "    if False:"),
+             ("N14 drop the done-record sha at ORC-0", "            if dr.get(\"ckpt_sha256\") != got:", "            if False:"),
+             ("N15 parity: a modified line is not a violation", "        if all(op[0] in (\"equal\", \"insert\") for op in ops):", "        if True:"),
++            ("N16 bank_file may be a bank.json elsewhere than the pulled one beside the report", "            elif fwd(bf) != fwd(os.path.join(bdir, \"bank.json\")):", "            elif False:"),
++            ("N17 a bank entry may point at another seed's bank directory", "            if bseed != int(s) or os.path.basename(be[\"report\"]) != \"PROVENANCE.json\":", "            if False:"),
++            ("N18 a bank entry may carry no bank_file", "            if not bf:", "            if False:"),
+         ]
+         for name, a, b in muts2:
+             if a not in src2:
+@@ -866,13 +1101,13 @@
+             red = []
+             # re-run the manifest regressions against the mutant: verify() on the mutated worlds, make_ids / m2b_sha / orc0 / parity on theirs
+             try:
+-                def tryv(label, edit, undo, mmod=mm):
++                def tryv(label, edit, undo, mmod=mm, needle=None):
+                     edit()
+                     try:
+                         b_ = mmod.verify(m, 2)
+                     finally:
+                         undo()
+-                    if not b_:
++                    if not b_ or (needle is not None and not any(needle in x for x in b_)):          # with a needle: the refusal must still carry the reason the real verifier gives
+                         red.append(label)
+                 tryv("MF10", e_json("t1", e_0, f"{WD.art}/M2b_s0_dag/ckpt_last.pt"), lambda: st["u"]())
+                 tryv("MF12", ed12, lambda: e_0.__setitem__("ckpt_tail", st["k"]))
+@@ -883,6 +1118,8 @@
+                 tryv("MF20", ed20, lambda: e_0.update(st["k"]))
+                 tryv("MF21", ed21, lambda: e_0["t1"].update(st["k"]))
+                 tryv("MF30", lambda: os.rename(bp, bp + ".x"), lambda: os.rename(bp + ".x", bp))
++                for lab_, ed_, un_, nd_ in bank_cases:
++                    tryv(lab_[:4], ed_, un_, needle=nd_)
+                 tryv("MF40", lambda: os.rename(fz, fz + ".x"), lambda: os.rename(fz + ".x", fz))
+                 tryv("MF42", lambda: e_d.pop("t0_fresh"), lambda: e_d.__setitem__("t0_fresh", st["f"]))
+                 tryv("MF44", lambda: os.rename(ip, ip + ".x"), lambda: os.rename(ip + ".x", ip))
+--- a/dagt1/dag_t1_chain.sh
++++ b/dagt1/dag_t1_chain.sh
+@@ -2,16 +2,18 @@
+ # PREREG_V8F_DAGGER (Project Steering/PREREG_V8F_DAGGER.md at 55548f9b = the draft + Amendment 1), section 5 + 8: the DEV-BOX CPU part, as ONE detached chain (ZERO training, ZERO GPU, box 2 is never touched).
+ # It is orc_t1_chain.sh (orct1, ORC Amendments 2-4) re-parametrised for the DAgger arms.  BUILT AND SELF-TESTED, NOT LAUNCHED.
+ #   for each of the four runs, in the PREREG's order (section 8, item 2):  DAG s0, DAG-0 s0, DAG s1, DAG-0 s1
+-#     1. wait until box 2's pull of that run to <ART>/M2b_s<S>_<dag|dag0>/ is COMPLETE  (dagt1_pullcheck.py: SHA256SUMS.txt lists exactly one of the two accepted sets, every file exists, is non-empty and
++#     1. wait until box 2's pull of that run to <ART>/M2b_s<S>_<dag|dag0>/ is COMPLETE  (dagt1_pullcheck.py: SHA256SUMS.txt lists EXACTLY the 8 names, every file exists, is non-empty and
+ #        re-hashes to the listed sha256, summary.json done, and the run's own records say it IS this arm and seed).  By CONTENT: never on a half-pulled file, never on a stale SHA256SUMS.txt.
+-#        A directory that verifies but is ANOTHER run's (a dag0 dir holding DAG's records) is not waited for: the chain STOPs.
++#        A directory that verifies but is ANOTHER run's (a dag0 dir holding DAG's records), or whose SHA256SUMS.txt carries a box-2 fresh-age eval (decision O1: the 10-name form), is not waited for: the chain STOPs.
+ #     2. two T1-kin rollouts on eval-141, plain (no post-map), CPU:
+ #          v8f_t1_eval.py run --replan-steps 10 --nav deadreckon --scene logged --schedule periodic --limit causal --dump-ticks --dump-heads     (decisive)
+ #          v8f_t1_eval.py run ... --limit logged ...                                                                                            (K4 only, ORC Amendment 2)
+ #     3. the fresh-age T0 eval of the checkpoint on CPU (v8f_mini_eval.py run --ages fresh ...): K4's comparator (ORC Amendment 4; PREREG section 5).  Box 2 runs only the standard eval (R-T0, T0-CKPT).
+ #   two lanes (A: every --limit causal rollout, B: every --limit logged rollout + the fresh evals), so AT MOST 2 rollout processes at once; CUDA_VISIBLE_DEVICES=-1.
+ #   ORC-0 is NOT re-run: the reader reads the banked O-RECOVER ORC-0 outputs (<ORC_T1>, <ORC_ART>) for the replicate floor RF.  The chain checks they are present and bound to the banked checkpoints.
+-#   after all four runs: the bank directories must be COMPLETE (the reader loads each shard), dagt1_manifest.py writes the reader manifest runs.json, then dag_read.py runs with every required argument.
++#   after all four runs: the bank directories must be COMPLETE (dagt1_pullcheck.py bank: the box-2 chain's 11-name SHA256SUMS.txt over PROVENANCE.json, bank.json, the 4 shard provenance files, the 4 shard npz -- the reader
++#   loads every shard npz for the bank's clip names -- and bank_stage.log, all re-hashed; bank.json's sha256 == the --dagger-bank-sha256 box 2's trainer gate declared in the argv it pinned), dagt1_manifest.py writes the reader
++#   manifest runs.json (bank.{s}.report and bank_file = the pulled copies), then dag_read.py runs with every required argument.
+ #
+ #   bash dag_t1_chain.sh --dry-run     prints every guard result, path, pull state, the EXACT command of every rollout / eval, the manifest it would write and the reader command; touches nothing.
+ #   bash dag_t1_chain.sh               the real chain.  RESUME = re-run the same command: a finished rollout (json + ticks + 141 episode dumps + a done record naming THIS checkpoint's sha256 and tool
+@@ -30,7 +32,7 @@
+ #   DAGT1_ART           where box 2's chain pulls (DAG_ART of chain_v8f_dag.sh; default E:/Projects/TanitAD-artifacts/v8f-dagger)       DAGT1_OUT / DAGT1_LOG  rollout+read output (E:) / chain log
+ #   DAGT1_ORC_ART / DAGT1_ORC_T1   the banked O-RECOVER pull / T1 outputs (ORC-0 is read from there)          DAGT1_ORC_TOOL_TREE  the tool tree that rolled ORC-0 out (default: the tree= line of <ORC_T1>/PINS.txt)
+ #   DAGT1_PARITY=off    WAIVE the parity guard (loudly; a PI decision, written into PINS.txt)
+-#   DAGT1_B2_FRESH      auto (default: SHA256SUMS lists either exact set) | 0 (box 2 pulls no fresh eval) | 1 (it does: the dagq build with evaldagfresh)      DAGT1_B2_OUT  OPTIONAL: the box-2 chain's log; a ZZV8FMINI-STOP after this chain started stops it
++#   DAGT1_B2_OUT        OPTIONAL: the box-2 chain's log; a ZZV8FMINI-STOP after this chain started stops it      (DAGT1_B2_FRESH was REMOVED with decision O1: box 2 pulls no fresh-age eval; setting it STOPs the chain)
+ #   DAGT1_M2B_SHA_JSON  OPTIONAL: the box-2 chain's ckpt_sha256.json (cross-check)       DAGT1_MAX_WAIT_H  longest wait for ONE pull, hours (40)      DAGT1_BANK_WAIT_H  longest wait for the bank directories before the reader (12)
+ #   DAGT1_C_MIN_MB      C: free MB the chain needs (default 2048 = PREREG section 8 "C: >= 2 GB"; checked at the start AND before every rollout; the pagefile is on C:)
+ #   DAGT1_SMOKE=1       plumbing test only: 24 windows, tags SMOKE_, outputs under dagt1/smoke, marker ZZDAGT1-SMOKE-DONE, stand-in run(s) from DAGT1_RUNS (default dag:0), the manifest replicates that one run, no bank gate.
+@@ -48,7 +50,6 @@
+ ORC_ART=${DAGT1_ORC_ART:-/e/Projects/TanitAD-artifacts/v8f-orecover}; ORC_T1=${DAGT1_ORC_T1:-/e/Projects/TanitAD-artifacts/v8f-orecover-t1}
+ REL=${DAGT1_TRAIN_RELEASE:-/e/Projects/TanitAD-artifacts/_s2build-copy-20260919/release/v72/s2_labels_v7.2_train.jsonl.gz}
+ PREREG_SHA=${DAGT1_PREREG_SHA:-a4df4b8f44d9a322a1907338c990dee09d03fb35e1e136e6c60eb72a790f60f9}   # the LANDED PREREG (draft + Amendment 1) the reader was built and mutation-tested against
+-B2F=${DAGT1_B2_FRESH:-auto}
+ if [ "$SMOKE" = 1 ]; then
+   TAGP="[SMOKE] "; PFX=SMOKE_; MAXW=24; NDUMP=1; POLL=${DAGT1_POLL_S:-2}; DONE_MARK=ZZDAGT1-SMOKE-DONE
+   ART=${DAGT1_ART:-$H/smoke/art}; OUT=${DAGT1_OUT:-$H/smoke/out}; LOG=${DAGT1_LOG:-$H/smoke/logs}
+@@ -88,7 +89,7 @@
+ }
+ for r in "${RUNS[@]}"; do case "$r" in dag:[01]|dag0:[01]) ;; *) stop "bad run spec '$r' (arm:seed, arm in dag/dag0, seed 0/1)" ;; esac; done
+ [ "$SMOKE" = 1 ] || [ "${DAGT1_RUNS:-}" = "" ] || say "NOTE: DAGT1_RUNS is ignored outside SMOKE (the PREREG runs ALL FOUR)"
+-case "$B2F" in auto|0|1) ;; *) stop "DAGT1_B2_FRESH must be auto, 0 or 1 (got '$B2F')" ;; esac
++[ -z "${DAGT1_B2_FRESH:-}" ] || stop "DAGT1_B2_FRESH='$DAGT1_B2_FRESH' is set, but that switch was REMOVED (decision O1, 2026-10-26): box 2 runs no fresh-age eval and a SHA256SUMS.txt that carries one is refused; the fresh-age T0 eval is a dev-box CPU step of this chain. Unset it."
+ CF0=$(cfree_mb)
+ [ "$CF0" -ge "$CMIN" ] || stop "C: has $CF0 MB free (< $CMIN MB): PREREG_V8F_DAGGER section 8 gates this chain on C: >= 2 GB free (the pagefile is on C:; a full C: killed torch start-ups before)"
+ say "C: gate: $CF0 MB free >= $CMIN MB"
+@@ -216,7 +217,7 @@
+   t0=$(date +%s)
+   while :; do
+     nostop
+-    out=$("$PY" "$Hm/dagt1_pullcheck.py" run "$ARTm" "$arm" "$s" --b2-fresh "$B2F" 2>&1 < /dev/null); rc=$?
++    out=$("$PY" "$Hm/dagt1_pullcheck.py" run "$ARTm" "$arm" "$s" 2>&1 < /dev/null); rc=$?
+     if [ $rc -eq 0 ]; then PULL_SHA=$(echo "$out" | cut -d' ' -f2); say "pull of $(rundir "$arm" "$s") is COMPLETE: ckpt sha256 ${PULL_SHA:0:16}... ($(echo "$out" | cut -d' ' -f3-))"; return 0; fi
+     [ $rc -eq 3 ] && stop "the pulled $(rundir "$arm" "$s") is WRONG, waiting cannot fix it: $out"
+     [ $((n % 30)) -eq 0 ] && say "waiting for the pull of $(rundir "$arm" "$s") ($(( ($(date +%s) - t0) / 60 )) min): $out"
+@@ -298,13 +299,14 @@
+ }
+ 
+ # ------------------------------------------------------------------------------------------------ 2  the bank gate, the manifest and the reader
+-bank_gate() {   # the reader loads every bank shard (clip names, K-B3): wait until both bank directories are COMPLETE by content, else STOP with the reason
++bank_gate() {   # the reader loads every bank shard npz (clip names, K-B3): wait until both bank directories are COMPLETE by content (the 11-name SHA256SUMS.txt, re-hashed; bank.json == the sha256 the trainer gate declared), STOP on a WRONG bank or a timeout
+   local s t0=$(date +%s) n out rc
+   [ "$SMOKE" = 1 ] && { say "SMOKE: the bank gate is skipped"; return 0; }
+   for s in 0 1; do
+     n=0
+     while :; do
+-      out=$("$PY" "$Hm/dagt1_pullcheck.py" bank "$ARTm" "$s" 2>&1 < /dev/null); rc=$?
++      out=$("$PY" "$Hm/dagt1_pullcheck.py" bank "$ARTm" "$s" --expect-shards 4 2>&1 < /dev/null); rc=$?
++      [ $rc -eq 3 ] && stop "the pulled bank s$s is WRONG, waiting cannot fix it: $out"
+       [ $rc -eq 0 ] && { say "bank s$s is COMPLETE: bank.json sha256 $(echo "$out" | cut -d' ' -f2 | cut -c1-16)... ($(echo "$out" | cut -d' ' -f3-))"; break; }
+       [ $((n % 30)) -eq 0 ] && say "waiting for the bank s$s directory ($(( ($(date +%s) - t0) / 60 )) min): $out"
+       n=$((n + 1)); nostop
+@@ -324,11 +326,11 @@
+ 
+ # ------------------------------------------------------------------------------------------------ --dry-run: print and leave
+ if [ "$DRY" = 1 ]; then
+-  say "C: free $(cfree_mb) MB (the chain needs >= $CMIN MB, at start and before every rollout); threads OMP/MKL $OMP_NUM_THREADS, CUDA_VISIBLE_DEVICES='$CUDA_VISIBLE_DEVICES', max 2 rollout processes (lane causal + lane logged), poll $POLL s, max wait $((MAXWAIT_S / 3600)) h per pull, box-2 fresh eval: $B2F"
++  say "C: free $(cfree_mb) MB (the chain needs >= $CMIN MB, at start and before every rollout); threads OMP/MKL $OMP_NUM_THREADS, CUDA_VISIBLE_DEVICES='$CUDA_VISIBLE_DEVICES', max 2 rollout processes (lane causal + lane logged), poll $POLL s, max wait $((MAXWAIT_S / 3600)) h per pull, box-2 fresh eval: none accepted (decision O1: a SHA256SUMS.txt that carries one is refused)"
+   say "box-2 stop watcher: $([ -n "${DAGT1_B2_OUT:-}" ] && echo "$DAGT1_B2_OUT (ZZV8FMINI-STOP lines now: $B2STOP0)" || echo 'OFF (DAGT1_B2_OUT unset)')"
+   say "== the four runs in the PREREG's order, and the state of each pull right now"
+-  for spec in "${RUNS[@]}"; do arm=${spec%%:*}; s=${spec##*:}; say "  $(rundir "$arm" "$s")  $("$PY" "$Hm/dagt1_pullcheck.py" run "$ARTm" "$arm" "$s" --b2-fresh "$B2F" 2>&1 < /dev/null | cut -c1-220)"; done
+-  for s in 0 1; do say "  bank_s$s  $("$PY" "$Hm/dagt1_pullcheck.py" bank "$ARTm" "$s" 2>&1 < /dev/null | cut -c1-260)"; done
++  for spec in "${RUNS[@]}"; do arm=${spec%%:*}; s=${spec##*:}; say "  $(rundir "$arm" "$s")  $("$PY" "$Hm/dagt1_pullcheck.py" run "$ARTm" "$arm" "$s" 2>&1 < /dev/null | cut -c1-220)"; done
++  for s in 0 1; do say "  bank_s$s  $("$PY" "$Hm/dagt1_pullcheck.py" bank "$ARTm" "$s" --expect-shards 4 2>&1 < /dev/null | cut -c1-260)"; done
+   say "== rollouts (lane A = causal, lane B = logged; lane order = the run order; each starts when ITS pull is complete; ckpt = <ART>/<run>/ckpt_last.pt)"
+   for lim in causal logged; do
+     for spec in "${RUNS[@]}"; do arm=${spec%%:*}; s=${spec##*:}
+@@ -343,7 +345,7 @@
+   "${MANI[@]}" --dry-run | sed 's/^/    /'      # the SAME argv the real run writes with
+   say "== --m2b-sha: $(fmt "${M2BS[@]}")   (the runs' own summary.json / selfcheck.json levers.init_ckpt.sha256, DAG / DAG-0 / ORC-0 all equal per seed and equal to the banked 601cb435... / 6104fb15...)"
+   mk_reader_cmd '<0: M2b_s0 init sha256>' '<1: M2b_s1 init sha256>'
+-  say "== bank gate: both <ART>/bank_s<S>/ directories must be COMPLETE (PROVENANCE + bank.json + shard provenance + the shard npz the reader loads) before the reader runs (wait up to $((BANKWAIT_S / 3600)) h)"
++  say "== bank gate: both <ART>/bank_s<S>/ directories must be COMPLETE before the reader runs: SHA256SUMS.txt over EXACTLY the 11 names (PROVENANCE.json, bank.json, 4 shard provenance, 4 shard npz, bank_stage.log), every file re-hashed, bank.json == the --dagger-bank-sha256 in <ART>/M2b_s<S>_dag/gate/pin.txt (wait up to $((BANKWAIT_S / 3600)) h; WRONG = STOP)"
+   say "== reader: $(fmt "${RDCMD[@]}")"
+   say "   -> $OUTm/read/DAG_READ.json (rc 0 outcome written | 2 REFUSED, nothing written | 3 UNPLACED | 4 BLOCKED); reader stdout/stderr -> $LOGm/dag_read.out"
+   say "== markers in $LOGm/chain.out: $DONE_MARK <n>/$(( ${#RUNS[@]} * 2 )) rollouts, reader rc <rc> ...  |  ZZDAGT1-STOP <why>.  Nothing was written, launched or waited for."
+--- a/dagt1/dag_t1_chain.cmd
++++ b/dagt1/dag_t1_chain.cmd
+@@ -1,5 +1,5 @@
+ @echo off
+ rem Detached launcher for dag_t1_chain.sh (start it through WMI Win32_Process.Create, as orc_t1_chain.cmd / hmc_chain.cmd). Arguments pass through (--dry-run).
+-rem Optional environment goes HERE (a WMI-created process does not inherit the caller's shell): DAGT1_TREE, DAGT1_B2_OUT, DAGT1_B2_FRESH, DAGT1_M2B_SHA_JSON, DAGT1_MAX_WAIT_H, DAGT1_READER, DAGT1_ART, DAGT1_OUT.
++rem Optional environment goes HERE (a WMI-created process does not inherit the caller's shell): DAGT1_TREE, DAGT1_B2_OUT, DAGT1_M2B_SHA_JSON, DAGT1_MAX_WAIT_H, DAGT1_READER, DAGT1_ART, DAGT1_OUT.
+ if not exist "E:\Projects\TanitAD-artifacts\dagt1\logs" mkdir "E:\Projects\TanitAD-artifacts\dagt1\logs"
+ "C:\Program Files\Git\bin\bash.exe" -lc "bash /e/Projects/TanitAD-artifacts/dagt1/dag_t1_chain.sh %* < /dev/null" < NUL > E:\Projects\TanitAD-artifacts\dagt1\logs\dag_t1_chain.launch.out 2>&1
+--- a/dagt1/NOTES.md
++++ b/dagt1/NOTES.md
+@@ -9,8 +9,8 @@
+ 
+ 1. waits for box 2's pull `<ART>/M2b_s<S>_<dag|dag0>/` to be COMPLETE by content (`dagt1_pullcheck.py run`);
+ 2. two T1-kin rollouts, plain, CPU, with the registered flags (`--limit causal` decisive, `--limit logged` for K4): the orct1 command, tags `DAG_s0_m10_causal_heads` etc.;
+-3. the fresh-age T0 eval of the checkpoint on CPU (`v8f_mini_eval.py run --ages fresh`, K4's comparator); box 2 runs only the standard eval;
+-4. two lanes (causal; logged + fresh eval) = at most 2 processes. After all four runs: the bank gate, `dagt1_manifest.py manifest`, `m2bsha`, then `dag_read.py`. Markers `ZZDAGT1-DONE <n>/8 ..., reader rc <rc>` or `ZZDAGT1-STOP <why>`.
++3. the fresh-age T0 eval of the checkpoint on CPU (`v8f_mini_eval.py run --ages fresh`, K4's comparator); box 2 runs only the standard eval (decision O1, enforced: section 3);
++4. two lanes (causal; logged + fresh eval) = at most 2 processes. After all four runs: the bank gate (both pulled `bank_s<S>/` directories COMPLETE: 11 files each, bank.json == the gate's declared `--dagger-bank-sha256`; `--expect-shards 4`; a WRONG bank STOPs), `dagt1_manifest.py manifest`, `m2bsha`, then `dag_read.py`. Markers `ZZDAGT1-DONE <n>/8 ..., reader rc <rc>` or `ZZDAGT1-STOP <why>`.
+ 
+ ORC-0 is not re-run. The manifest points its `ORC0` arm at the banked `E:/Projects/TanitAD-artifacts/v8f-orecover-t1/` (rollouts, fresh evals) and `v8f-orecover/` (pull); the chain checks at start that they are present and bound to the banked checkpoints (`dagt1_manifest.py orc0`, MEASURED OK on the real files: `dry_run_real_config.txt`).
+ 
+@@ -31,31 +31,38 @@
+ 
+ ## 3. The completion signal, and what it does that orct1's did not
+ 
+-`dagt1_pullcheck.py run` (source: `dagq/box2_ship/chain_v8f_dag.sh` `runone`): `SHA256SUMS.txt` must exist, be older than 3 s, end with a newline and list **exactly one of two sets**: 8 names (no fresh eval from box 2) or 10 (`+ eval_M2b-<arm>_s<S>-fresh.{json,npz}`). Reason: dagq's open decision O1 (whether box 2 keeps `evaldagfresh`) is unresolved and its build is being revised; `--b2-fresh 0|1` (env `DAGT1_B2_FRESH`) pins one. Then every file exists, is non-empty and re-hashes; the four JSONs parse; `summary.json done`.
+-New: a third state **WRONG** (rc 3, the chain STOPs, it does not wait 40 h): the files verify, or the sums list another run's names, but the run's own records say it is not this one (summary arm/seed, argv `--seed` / `--init-ckpt` / `--out`, `--dagger-p` 0.1 vs 0, the three DAG-only flags on a DAG-0 dir, built `dagger_p`). A dag0 directory holding DAG's run is a STOP.
+-`dagt1_pullcheck.py bank`: PROVENANCE + `bank.json` (sha256 == `PROVENANCE.bank_sha256`) + shard provenance + the **shard npz** hashing to `bank.json`'s `file_sha256`.
++`dagt1_pullcheck.py run` (source: `dagq/box2_ship/chain_v8f_dag.sh` `runone`): `SHA256SUMS.txt` must exist, be older than 3 s, end with a newline and list **EXACTLY the 8 names** `ckpt_last.pt, eval_M2b-<arm>_s<S>.{json,npz}, selfcheck.json, summary.json, argv.json, train_log.jsonl, launch_gate_token.json`. Then every file exists, is non-empty and re-hashes; the four JSONs parse; `summary.json done`.
++**Decision O1 (ruled 2026-10-26) is ENFORCED, not tolerated:** box 2 pulls no fresh-age eval (the fresh-age T0 comparator is this chain's CPU step, so K-EQ never compares CUDA with CPU). The old "8 or 10 names" form is gone: a SHA256SUMS.txt that lists `eval_*-fresh.{json,npz}` is **WRONG** (rc 3, the chain STOPs, the message names the file and O1), whether it lists 10 names, 9, or a fresh pair in place of another file (PC20-PC23). The `--b2-fresh` switch is REMOVED: the CLI answers rc 2 "removed", and the chain STOPs if `DAGT1_B2_FRESH` is set (CH4).
++A third state **WRONG** (rc 3, the chain STOPs, it does not wait 40 h): the files verify, or the sums carry the forbidden fresh entry, or list another run's names, but the run's own records say it is not this one (summary arm/seed, argv `--seed` / `--init-ckpt` / `--out`, `--dagger-p` 0.1 vs 0, the three DAG-only flags on a DAG-0 dir, built `dagger_p`). A dag0 directory holding DAG's run is a STOP.
++
++`dagt1_pullcheck.py bank <ART> <seed> --expect-shards 4` (source: the box-2 chain's `publish_bank_one`; the hole this closes is section 6, item 2 of the earlier revision): the pulled `<ART>/bank_s<S>/` must hold **EXACTLY 11 names** `PROVENANCE.json, bank.json, shard_00{0..3}of004.provenance.json, shard_00{0..3}of004.npz, bank_stage.log`, listed in a SHA256SUMS.txt that is aged, newline-terminated and has no name twice. The expected set is DERIVED from `bank.json` (`n_shards`, `shards[].file`) and `PROVENANCE.shard_provenance`, not hard-coded; every file exists, is non-empty and re-hashes (INCOMPLETE otherwise: the chain waits). Contradictions among files that each verify are **WRONG** (rc 3, STOP): `PROVENANCE.bank_sha256 != sha256(bank.json)`; a shard npz that hashes to neither `bank.json`'s `file_sha256` nor its shard provenance's; shard names that are not the generator's; a bank with a shard count other than the queue's 4. Finally `bank.json`'s sha256 must equal the `--dagger-bank-sha256` that box 2's TRAINER GATE declared in the argv it pinned (`<ART>/M2b_s<S>_dag/gate/pin.txt`, pulled by the box-2 chain): the bank on disk is the bank DAG s<S> was gated on (pin not pulled yet = INCOMPLETE; another sha, no flag, or the flag twice = WRONG). The npz are what `dag_read.load_bank` reads the bank's clip names from (`header_json`, K-B3.1): a bank without them is REFUSED by the reader, which is why their absence is INCOMPLETE here and never COMPLETE.
+ 
+ ## 4. Manifest (the reader's schema, `dag_read.load_manifest`)
+ 
+-`{"seeds":[0,1], "arms":{"DAG":{..},"DAG0":{..},"ORC0":{..}}, "bank":{"0":{"report":<ART>/bank_s0/PROVENANCE.json},"1":{..}}, "eval141_clip_ids":.., "train_clip_ids":..}`; entry = `ckpt_tail, train_dir, token (DAG/DAG0), t1, t1_logged, t0 (box 2's standard eval, R-T0), t0_fresh (CPU, K4)`. `dagt1_manifest.py verify` refuses: another arm's ckpt_tail / train_dir / paths (shared between two arms), a rollout or T0 eval that scored another checkpoint, a done record naming another checkpoint than the pulled sha256, equal checkpoint sha256 in two arms, the banked init in place of a fine-tune, wrong T0 ages (`cycle` / `fresh`), a missing `t0_fresh`, dumps below 141, an incomplete bank directory, missing id lists.
++`{"seeds":[0,1], "arms":{"DAG":{..},"DAG0":{..},"ORC0":{..}}, "bank":{"0":{"report":<ART>/bank_s0/PROVENANCE.json,"bank_file":<ART>/bank_s0/bank.json},"1":{..}}, "eval141_clip_ids":.., "train_clip_ids":..}` (both bank paths are the PULLED copies; the reader reads the shard provenance and the shard npz beside `report`, and hashes `bank_file` for the bank's identity); entry = `ckpt_tail, train_dir, token (DAG/DAG0), t1, t1_logged, t0 (box 2's standard eval, R-T0), t0_fresh (CPU, K4)`. `dagt1_manifest.py verify` refuses: another arm's ckpt_tail / train_dir / paths (shared between two arms), a rollout or T0 eval that scored another checkpoint, a done record naming another checkpoint than the pulled sha256, equal checkpoint sha256 in two arms, the banked init in place of a fine-tune, wrong T0 ages (`cycle` / `fresh`), a missing `t0_fresh`, dumps below 141, an incomplete bank directory (the 11-name form above), a `bank_file` that is not the pulled `bank.json` beside the report, a missing `bank_file`, an entry that points at another seed's bank, a missing id list.
+ **The two id lists the reader needs are derived, then verified** (`dagt1_manifest.py ids`): `eval141_clip_ids` = the eval grid's `order` (141); `train_clip_ids` = the v7.2 label release's 4,572 `clip_id`s minus `sorted(sha12)[540:600]` (the trainer's `--exclude 540:600`). MEASURED: the result hashes to **`37f4f9ee...` = the `train_sha256` and `f6a1dee0...` = the `excluded_sha256` that M2b s0 and s1 recorded** (`box2_ship/logs/v8f_mini/runs/M2b_s*/summary.json`); the chain REFUSES to write the lists otherwise. Release: `_s2build-copy-20260919/release/v72/s2_labels_v7.2_train.jsonl.gz`.
+ 
+ ## 5. Proof: `dagt1_selftest.py` (output `selftest_output.txt`)
+ 
+-**MEASURED** (`selftest_output.txt`, 2026-10-26 21:02-21:10, 445 s, exit 0): **153/153 as expected.** By section: PC 38 (pull completeness and identity, incl. the single-fault PC37b), BK 9 (bank directory), ID 5 (the two id lists), OR 5 (ORC-0 reuse), TP 7 (tool-tree parity: the real DAgger tip against the ORC-0 tool tree, plus mini trees), MS 4 (`--m2b-sha`), MF 26 (manifest `verify`: wrong checkpoint for an arm, DAG-0 pointing at DAG's run, missing bank report, missing fresh eval, and four single-fault regressions MF50-MF53), RD 10 (the reader), CH 20 (the chain's dry run: C: < 2 GB STOP at 1500 and 2047 MB, wrong tree, bad `DAGT1_B2_FRESH`, missing tree, the inputs default on E: and its override, the full rendered plan of 4 + 4 rollouts and 4 fresh evals with no C: path except the interpreter and the read-only reader), **M 13 + N 15 = 28 textual mutants of the two checkers, 28/28 killed** (control N00 reads green).
+-History, so the count is not read as a first-try result. The first full run (20:47) was 128/144: (a) CH10-CH20 failed because the tool's own `--help` printed no usage while C: and memory were under pressure (an environment failure, not a missing flag); the chain now tells a crashed `--help` from a missing flag, retries once, and quotes the output. (b) Seven mutants survived: M09, N01, N02, N03, N07 because every regression tripped several guards at once (a fault is caught by the other guards, so no single guard was proven): single-fault regressions PC37b and MF50-MF53 were added; M12 was equivalent in verdict (a traceback instead of the reason): the harness now requires the check to NAME the missing shard; N15's harness tree had lost a module in TP6, so a standing violation hid the mutation: the tree is restored and the one file is judged.
+-Dry-run evidence: `dry_run_real_config.txt` (the real configuration, 246 lines, ends `ZZDAGT1-DRY-OK`, rc 0, rendered with `DAGT1_TEST_CFREE_MB=3000` because C: is below the gate) and `dry_run_C_gate_refused.txt` (the same chain with the real C: reading: `ZZDAGT1-STOP`).
++**MEASURED** (`selftest_output.txt`, 2026-10-26 22:21-22:37, 940 s, exit 0): **219/219 as expected** (was 153/153 before the bank-file revision). By section: PC 40 (pull completeness and identity, incl. the single-fault PC37b and the O1 refusals PC20-PC26), BK 38 + SB 6 (the pulled bank directory, below), ID 5 (the two id lists), OR 5 (ORC-0 reuse), TP 7 (tool-tree parity: the real DAgger tip against the ORC-0 tool tree, plus mini trees), MS 4 (`--m2b-sha`), MF 33 (manifest `verify`: wrong checkpoint for an arm, DAG-0 pointing at DAG's run, missing bank report, missing fresh eval, four single-fault regressions MF50-MF53, and the six new bank regressions MF31-MF36), RD 13 (the reader), CH 22 (the chain's dry run: C: < 2 GB STOP at 1500 and 2047 MB, wrong tree, the removed `DAGT1_B2_FRESH` STOPs (CH4, both values), missing tree, the inputs default on E: and its override, the full rendered plan of 4 + 4 rollouts and 4 fresh evals with no C: path except the interpreter and the read-only reader, and CH22: the 4-shard bank gate, rc-3 STOP, no `--b2-fresh`), **M 27 + N 18 = 45 textual mutants of the two checkers, 45/45 killed** (was 28/28; control N00 reads green).
++**New regressions of this revision (all MEASURED, all required to fail FOR THEIR OWN NAMED REASON):**
++* **O1 (PC20-PC26, CH4)**: the 10-name SUMS, a 9-name SUMS with only the fresh JSON, a dag0 s1 10-name SUMS, and a single-fault SUMS that swaps a fresh pair in for `train_log.jsonl` are all WRONG (rc 3, the refusal names the file and O1); the CLI rc 3; `--b2-fresh` is refused with rc 2 ("removed"); `DAGT1_B2_FRESH=1|2` STOPs the chain; the accepted set is exactly the 8 names.
++* **Bank files (BK0-BK31, SB0-SB5)**: the old box-2 publication (small files only, no SHA256SUMS.txt) is INCOMPLETE and a SUMS over the small files only is INCOMPLETE with the K-B3.1 hint (the hole); a shard npz listed but absent, empty, or with one flipped bit; a shard provenance or the stage log or PROVENANCE.json absent; bank.json edited after the seal; and, as single faults (every other guard held quiet), **a shard npz whose sha256 differs from bank.json's `file_sha256` (BK9), a bank.json whose sha256 differs from PROVENANCE.bank_sha256 (BK10), a shard provenance with another `file_sha256` (BK11), a foreign shard name (BK12), PROVENANCE naming 1 of 2 shard provenance (BK13), a 2-shard bank against the queue's 4 (BK15)** are WRONG or INCOMPLETE as designed; SUMS with an unexpected 8th name, 6 of 7 names, no final newline, a name twice, or too young; and the declared sha: **a bank.json whose sha256 differs from the `--dagger-bank-sha256` box 2's gate declared (BK22, MF35) is WRONG**, the pin not pulled is INCOMPLETE, a pin naming the flag twice / not at all / a non-sha256 / not a training line is WRONG, seed 1 is judged against seed 1's own pin. SB0-SB5 use the REAL generator's smoke bank (copied, sealed as box 2 seals it): COMPLETE with 1 shard, WRONG against the queue's 4, read by the reader's own `load_bank` / `g_bank_files` / `bank_clip_names` (12 clip names, equal to the npz header read independently), and the same directory without its npz is INCOMPLETE here and REFUSED by `load_bank`.
++* **Manifest and reader (MF31-MF36, RD18-RD20)**: `bank_file` elsewhere than the pulled bank.json beside the report, `bank_file` absent from the entry, an entry pointing at the other seed's bank, a missing shard npz, a declared-sha mismatch, a missing pin are all refused by `verify`; the reader REFUSES a manifest whose `bank_file` is absent, whose shard npz is not beside the report, and seed 1's bank in the old layout (no npz at all).
++History of the bank-file revision (so 219/219 is not read as a first-try result): the first run of the new tests (`--quick --no-mutants`, 21:57) was 158/159, the one failure BK19 (a name listed twice): appending the duplicate line refreshed the SUMS' mtime and the age test fired first, so the test did not reach the duplicate-name guard; fixed by aging the file after the edit (the test now reaches it, and mutant M22 deletes exactly that guard). The 17 new mutants (M14-M27 on the bank checks and CLIs, N16-N18 on the manifest's bank entries) and the 4 re-anchored ones (M11 on the O1 refusal, M12 / M13 on the new bank code, N10) were all killed on the first full mutant run; before it, a script confirmed that each of the 45 mutation anchors occurs exactly once in its source.
++History of the first build, so the count is not read as a first-try result either. The first full run (20:47) was 128/144: (a) CH10-CH20 failed because the tool's own `--help` printed no usage while C: and memory were under pressure (an environment failure, not a missing flag); the chain now tells a crashed `--help` from a missing flag, retries once, and quotes the output. (b) Seven mutants survived: M09, N01, N02, N03, N07 because every regression tripped several guards at once (a fault is caught by the other guards, so no single guard was proven): single-fault regressions PC37b and MF50-MF53 were added; M12 was equivalent in verdict (a traceback instead of the reason): the harness now requires the check to NAME the missing shard; N15's harness tree had lost a module in TP6, so a standing violation hid the mutation: the tree is restored and the one file is judged.
++Dry-run evidence: `dry_run_real_config.txt` (the real configuration, regenerated 22:23 by the final selftest run (= `dry_run_selftest.txt` + `rc 0`), 248 lines, ends `ZZDAGT1-DRY-OK`, rc 0, rendered with `DAGT1_TEST_CFREE_MB=3000`; it now shows the 4-shard bank gate, `bank_file` in the manifest and "box-2 fresh eval: none accepted") and `dry_run_C_gate_refused.txt` (the same chain with the real C: reading: `ZZDAGT1-STOP`).
+ 
+ The reader proof (section D) is the strong one: the manifest this chain's builder writes is READ by `dag_read.main()` (imported read-only from `C:/Users/Admin/dagread`; `test_dag_read`'s synthetic world and real-layout bank generator as fixtures, the tick-file step replaced by its `SynBackend`, adapted to this chain's tags): rc 0, an outcome row, **176 controls, every one PASS**; and each deliberate regression is REFUSED by the reader as well as by `verify` (wrong checkpoint for an arm: `T1-CONFIG:DAG0_s0`, `T0-CKPT:DAG0_s0`; DAG-0 pointing at DAG's run: `ARGV:DAG0_s0`; missing bank report; missing fresh eval; no ORC-0; no TRAIN list).
+ The synthetic outcome word means nothing. The reader's `RealBackend` (the tick-file analysis on the real eval cache) is `orc_read.py`'s, proven at A4; it was not re-run here.
+ 
+ ## 6. OPEN DEFECTS and decisions (for the Master Mind / PI)
+ 
+-1. **C: has too little room, now (MEASURED).** 2.3 GB free at 20:08, 1.07 GB at 20:35, 0.28 GB at about 20:50 (`df -m /c`). The chain's start gate (`DAGT1_C_MIN_MB`, default 2048 = PREREG section 8 "C: >= 2 GB") therefore REFUSES a real start: `dry_run_C_gate_refused.txt`. I do not know the writer (not my outputs: every temp and output of this work is on E:, `TMP` pointed there; no file over 50 MB was modified under `C:/Users/Admin` in the last 90 min). Because of this the SMOKE chain (two torch processes) was NOT run: `dagt1_smoke.py` is built, see HANDOFF.
+-2. **Bank shards are not pulled by the box-2 chain.** `chain_v8f_dag.sh` `bank_one` pulls `bank.json`, `PROVENANCE.json`, `bank_stage.log` and the shard provenance files only. `dag_read.load_bank` reads every shard npz's `header_json` (the bank's clip names, K-B3) and hashes it, so the reader REFUSES. The chain's bank gate waits for them (up to `DAGT1_BANK_WAIT_H`, 12 h) and then STOPs with that reason (MEASURED: `selftest_output.txt` BK1). Fix in dagq (pull the 4 shards, ESTIMATED ~0.7 GB per seed) or in the reader (accept names from PROVENANCE).
++1. **C: has too little room, now (MEASURED).** 2.3 GB free at 20:08, 1.07 GB at 20:35, 0.28 GB at about 20:50 (`df -m /c`). The chain's start gate (`DAGT1_C_MIN_MB`, default 2048 = PREREG section 8 "C: >= 2 GB") therefore REFUSES a real start: `dry_run_C_gate_refused.txt`. I do not know the writer (not my outputs: every temp and output of this work is on E:, `TMP` pointed there; no file over 50 MB was modified under `C:/Users/Admin` in the last 90 min). Because of this the SMOKE chain (two torch processes) was NOT run: `dagt1_smoke.py` is built, see HANDOFF. (Later reading, MEASURED `df -h /c` at about 21:50: 4.4 GB free, i.e. above the gate again; the smoke chain is still not run, and other agents' pytest runs share the machine.)
++2. **CLOSED 2026-10-26 (22:xx): the bank shards ARE now pulled by the box-2 chain.** Before, `chain_v8f_dag.sh` pulled `bank.json`, `PROVENANCE.json`, `bank_stage.log` and the shard provenance files only, so `dag_read.load_bank` (which reads every shard npz's `header_json`, the bank's clip names, K-B3.1) would have REFUSED on real data. The box-2 chain now publishes all 11 files per seed after the bank judge (K-B0..K-B5 + COVERAGE) passed, with a SHA256SUMS.txt written last (`dagq/NOTES.md` section 10); this chain pulls nothing itself, it verifies (section 3) and `dagt1_manifest.py` points `bank.{s}.report` / `bank_file` at the pulled copies. MEASURED on the REAL generator's smoke bank (a 12-clip, 1-shard bank copied and sealed the way box 2 seals it): the pull check calls it COMPLETE, the reader's own `load_bank` / `g_bank_files` read it, and the same directory WITHOUT the npz is INCOMPLETE here and REFUSED by `load_bank` (`selftest_output.txt` SB0-SB5). Pull size ESTIMATED ~0.664 GB per seed (1.329 GB both), `dagq/NOTES.md` section 10. Still open on the other side: the real K-B4 / K-B5 records on a real bank (item 3).
+ 3. **K-B4 / K-B5**: `PROVENANCE.json controls.K-B4/K-B5` are not written by the generator yet (reader NOTES E8); the reader REFUSES until they are. The synthetic banks carry them (test_dag_read's `make_bank`).
+ 4. **The tree is not frozen** (section 2). **The reader is not landed** (`DAGT1_READER`).
+-5. **O1 (fresh eval)**: handled by the two exact sets; the manifest always takes the CPU eval as `t0_fresh`. If box 2 also pulls `evaldagfresh`, those two files are hash-verified and unused.
++5. **O1 (fresh eval) RULED and enforced**: this chain accepts ONLY the 8-name SUMS (section 3); the manifest always takes the CPU eval as `t0_fresh`. A SHA256SUMS.txt that carries a box-2 fresh eval is refused (WRONG, STOP), no longer verified and ignored; the `--b2-fresh` / `DAGT1_B2_FRESH` switch is removed. A box-2 chain build that still runs `evaldagfresh` therefore cannot feed this chain; `dagq` removed that stage (its queue answers `evaldagfresh` with the usage line, rc 2).
+ 6. The T1 inputs (`native_tracks.pt`, v9, p10, the 141-clip cache) are read from `E:/Projects/TanitAD-artifacts/sfresh_inputs` by default (the Master Mind's md5-verified copy, moved off C: on 2026-10-26 at his request; `DAGT1_INPUTS` overrides it, as `ORCT_INPUTS` did). The chain md5-asserts them again at start; `CH6` / `CH6b` / `CH7` / `CH21` pin the default to E:, the override, and that no rendered path is on C: except the interpreter and the read-only reader. The scratchpad copy is no longer read by any new run.
+ 7. `DAGT1_B2_OUT` (the box-2 chain's log, `C:/Users/Admin/box2_ship/logs/chain_v8f_dag.out`) is OFF by default; set it in the `.cmd` so a `ZZV8FMINI-STOP` (PARKED / BLOCKED / REFUSED) stops this chain instead of letting it wait 40 h.
+ 
+--- a/dagt1/HANDOFF.md
++++ b/dagt1/HANDOFF.md
+@@ -1,14 +1,15 @@
+ # HANDOFF: dagt1, the dev-box CPU T1 chain of PREREG_V8F_DAGGER. BUILT AND SELF-TESTED, NOT LAUNCHED, SMOKE CHAIN NOT RUN. 2026-10-26
+ 
+ ## State
+-`dag_t1_chain.sh` (+ `.cmd`), `dagt1_pullcheck.py`, `dagt1_manifest.py`, `dagt1_selftest.py` (counts in `selftest_output.txt`), `dagt1_smoke.py`, `loader_test.sh` are in `E:/Projects/TanitAD-artifacts/dagt1/`. Detail: `NOTES.md`.
++`dag_t1_chain.sh` (+ `.cmd`), `dagt1_pullcheck.py`, `dagt1_manifest.py`, `dagt1_selftest.py` (counts in `selftest_output.txt`: 219/219, incl. 45/45 mutants), `dagt1_smoke.py`, `loader_test.sh` are in `E:/Projects/TanitAD-artifacts/dagt1/`. Detail: `NOTES.md`.
++Revised 2026-10-26 22:xx: the bank-file hole is closed (this chain verifies the 11 bank files per seed the box-2 chain now publishes, and the manifest carries `bank_file`), and decision O1 is enforced (a SHA256SUMS.txt carrying a box-2 fresh eval is refused; `DAGT1_B2_FRESH` / `--b2-fresh` removed). `bankpub.diff` in this directory is the change (code and docs, against the bytes before this revision).
+ The reader (`C:/Users/Admin/dagread/dag_read.py`) reads this chain's manifest cleanly on a synthetic world (176 controls PASS) and REFUSES each deliberate regression.
+ Not run: the SMOKE chain. Reason: C: fell to about 0.28 GB free (2.3 GB at 20:08); two torch processes on a nearly full system drive was not worth the risk, and the chain's own start gate (C: >= 2 GB, PREREG section 8) refuses a real start in that state (`dry_run_C_gate_refused.txt`).
+ 
+ ## Next steps (a fresh, cheap agent)
+ 1. Free C: to >= 2 GB (PI-only deletes; see memory `devbox-drive-letter-and-detached-jobs`: runaway task outputs, orphan `lg_full_*`, `box2_ship` tip tars).
+ 2. SMOKE (about 3 min, CPU): `python dagt1_smoke.py setup` (copies an 87 MB stand-in checkpoint), then `DAGT1_SMOKE=1 DAGT1_RUNS=dag:0 bash dag_t1_chain.sh`, then `python dagt1_smoke.py check`. Expected end: `ZZDAGT1-SMOKE-DONE 2/2 rollouts, reader rc 2 (REFUSED, nothing written)`. Re-run the same command to see the resume (`skip ...`).
+-3. Inputs: the chain reads the T1 inputs from `E:/Projects/TanitAD-artifacts/sfresh_inputs` by default (`DAGT1_INPUTS` overrides); nothing of it is read from C:. Before the real launch: (a) land the DAgger code, export the landed tip to a directory, set `DAGT1_TREE` to it (not `rt4/tree`; the chain refuses that); (b) set `DAGT1_READER` to the landed `dag_read.py`; (c) dagq must pull the bank shard npz (open defect 2 in NOTES.md) and the generator must write K-B4/K-B5; (d) `bash dag_t1_chain.sh --dry-run` must end `ZZDAGT1-DRY-OK`.
++3. Inputs: the chain reads the T1 inputs from `E:/Projects/TanitAD-artifacts/sfresh_inputs` by default (`DAGT1_INPUTS` overrides); nothing of it is read from C:. Before the real launch: (a) land the DAgger code, export the landed tip to a directory, set `DAGT1_TREE` to it (not `rt4/tree`; the chain refuses that); (b) set `DAGT1_READER` to the landed `dag_read.py`; (c) the box-2 chain (dagq) now publishes the 11 bank files per seed with a SHA256SUMS.txt (the shard npz were the former open defect 2, CLOSED: NOTES.md section 6, `dagq/NOTES.md` section 10, ESTIMATED pull ~0.66 GB per seed) and this chain's bank gate verifies them against the trainer gate's declared `--dagger-bank-sha256`; the generator must still write K-B4/K-B5 on a real bank; box 2 pulls NO fresh-age eval (decision O1: a SHA256SUMS.txt carrying one is refused; `DAGT1_B2_FRESH` is removed and STOPs if set); (d) `bash dag_t1_chain.sh --dry-run` must end `ZZDAGT1-DRY-OK`.
+ 4. Launch, detached, with the box-2 stop watcher (edit the `.cmd` environment line, a WMI process does not inherit the shell):
+ ```
+ $si = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{CreateFlags=[uint32]0x08000200}

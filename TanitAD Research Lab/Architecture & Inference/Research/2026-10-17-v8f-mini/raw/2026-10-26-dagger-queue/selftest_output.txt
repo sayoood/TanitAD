@@ -1,0 +1,294 @@
+== A. the real queue through cmd.exe, V8F_DRYRUN: what every stage would run
+PASS  s0 DAG: --dagger-p 0.1 once; bank = RUNSM\dagger_bank\s0; sha = the stage's; --dagger-seed 0; --ego-perturb-p 0
+PASS  s0 DAG: the fine-tune of ORC Amendment 1 (init = this seed's M2b, 3000 steps, lr 1e-4, warmup 100, p_gt 0.2 -> 0.2, --seed 0)
+PASS  s0 DAG-0: names --dagger-p 0 once and NONE of the three DAG-only flags (the trainer's gate refuses them at p = 0); --ego-perturb-p 0; no ego law flag
+PASS  s0: no second lever on either arm
+PASS  s0 PAIR RULE: DAG and DAG-0 argv are identical once --out, --dagger-p and the three DAG-only flags are removed
+PASS  s0 PAIR RULE: --out differs and neither run directory is the banked M2b or an ORC directory
+PASS  s0 PAIR RULE: DAG names exactly the three extra flags ['--dagger-bank', '--dagger-bank-sha256', '--dagger-seed']; every flag both name has the same value except --out and --dagger-p
+PASS  s0 dag: GATE argv == TRAIN argv with --out and --selfcheck-only changed, --selfcheck-only exactly once
+PASS  s0 dag: gate --out is its own gate_M2b-dag_s0, never the run directory
+PASS  s0 dag0: GATE argv == TRAIN argv with --out and --selfcheck-only changed, --selfcheck-only exactly once
+PASS  s0 dag0: gate --out is its own gate_M2b-dag0_s0, never the run directory
+PASS  s0: the ONE T0 eval is the standard one: tag M2b-dag_s0, NO --ages (the default cycle), this run's checkpoint, --project --families (K4's fresh-age comparator is NOT run on box 2: dev-box CPU, PREREG section 5)
+PASS  s0 dag gate: PREREG section 4 -- `--ego-perturb-p 0` is NAMED, exactly once, with the value 0 (the flag's default would disable the lever by omission)
+PASS  s0 dag train: PREREG section 4 -- `--ego-perturb-p 0` is NAMED, exactly once, with the value 0 (the flag's default would disable the lever by omission)
+PASS  s0 dag0 gate: PREREG section 4 -- `--ego-perturb-p 0` is NAMED, exactly once, with the value 0 (the flag's default would disable the lever by omission)
+PASS  s0 dag0 train: PREREG section 4 -- `--ego-perturb-p 0` is NAMED, exactly once, with the value 0 (the flag's default would disable the lever by omission)
+PASS  s0: the ego-perturbation check itself is not blind -- an argv with the flag dropped, with a value 0.3, or with it twice FAILS it
+CAUGHT (deliberate regression) s0: no `evaldagfresh` stage exists in the queue any more (O1: K4's fresh-age comparator runs on the dev-box CPU, not here) -- the queue answers `usage` with rc 2 and prints no eval line
+PASS  s1 DAG: --dagger-p 0.1 once; bank = RUNSM\dagger_bank\s1; sha = the stage's; --dagger-seed 1; --ego-perturb-p 0
+PASS  s1 DAG: the fine-tune of ORC Amendment 1 (init = this seed's M2b, 3000 steps, lr 1e-4, warmup 100, p_gt 0.2 -> 0.2, --seed 1)
+PASS  s1 DAG-0: names --dagger-p 0 once and NONE of the three DAG-only flags (the trainer's gate refuses them at p = 0); --ego-perturb-p 0; no ego law flag
+PASS  s1: no second lever on either arm
+PASS  s1 PAIR RULE: DAG and DAG-0 argv are identical once --out, --dagger-p and the three DAG-only flags are removed
+PASS  s1 PAIR RULE: --out differs and neither run directory is the banked M2b or an ORC directory
+PASS  s1 PAIR RULE: DAG names exactly the three extra flags ['--dagger-bank', '--dagger-bank-sha256', '--dagger-seed']; every flag both name has the same value except --out and --dagger-p
+PASS  s1 dag: GATE argv == TRAIN argv with --out and --selfcheck-only changed, --selfcheck-only exactly once
+PASS  s1 dag: gate --out is its own gate_M2b-dag_s1, never the run directory
+PASS  s1 dag0: GATE argv == TRAIN argv with --out and --selfcheck-only changed, --selfcheck-only exactly once
+PASS  s1 dag0: gate --out is its own gate_M2b-dag0_s1, never the run directory
+PASS  s1: the ONE T0 eval is the standard one: tag M2b-dag_s1, NO --ages (the default cycle), this run's checkpoint, --project --families (K4's fresh-age comparator is NOT run on box 2: dev-box CPU, PREREG section 5)
+PASS  s1 dag gate: PREREG section 4 -- `--ego-perturb-p 0` is NAMED, exactly once, with the value 0 (the flag's default would disable the lever by omission)
+PASS  s1 dag train: PREREG section 4 -- `--ego-perturb-p 0` is NAMED, exactly once, with the value 0 (the flag's default would disable the lever by omission)
+PASS  s1 dag0 gate: PREREG section 4 -- `--ego-perturb-p 0` is NAMED, exactly once, with the value 0 (the flag's default would disable the lever by omission)
+PASS  s1 dag0 train: PREREG section 4 -- `--ego-perturb-p 0` is NAMED, exactly once, with the value 0 (the flag's default would disable the lever by omission)
+PASS  s1: the ego-perturbation check itself is not blind -- an argv with the flag dropped, with a value 0.3, or with it twice FAILS it
+CAUGHT (deliberate regression) s1: no `evaldagfresh` stage exists in the queue any more (O1: K4's fresh-age comparator runs on the dev-box CPU, not here) -- the queue answers `usage` with rc 2 and prints no eval line
+PASS  s0: DAG-0 argv == the TIP queue's ORC-0 argv + `--dagger-p 0`, once --out is removed (the replicate-floor claim of PREREG section 4)
+PASS  s1: DAG-0 argv == the TIP queue's ORC-0 argv + `--dagger-p 0`, once --out is removed (the replicate-floor claim of PREREG section 4)
+CAUGHT (deliberate regression) `gatedag dag 0` (dag without P) is REFUSED, rc 2, says REFUSED, and prints no trainer line
+CAUGHT (deliberate regression) `gatedag dag 0 0.2` (P = 0.2) is REFUSED, rc 2, says REFUSED, and prints no trainer line
+CAUGHT (deliberate regression) `gatedag dag 0 0` (P = 0 on dag) is REFUSED, rc 2, says REFUSED, and prints no trainer line
+CAUGHT (deliberate regression) `gatedag dag0 0 0.1` (dag0 with a P) is REFUSED, rc 2, says REFUSED, and prints no trainer line
+CAUGHT (deliberate regression) `gatedag dag0 0 0` (dag0 with a P of 0 (a lever declared and inert)) is REFUSED, rc 2, says REFUSED, and prints no trainer line
+CAUGHT (deliberate regression) `gatedag dagx 0 0.1` (an unknown arm) is REFUSED, rc 2, says REFUSED, and prints no trainer line
+CAUGHT (deliberate regression) `gatedag dag 2 0.1` (seed 2) is REFUSED, rc 2, says REFUSED, and prints no trainer line
+CAUGHT (deliberate regression) `gatedag dag 0.1` (a missing seed) is REFUSED, rc 2, says REFUSED, and prints no trainer line
+CAUGHT (deliberate regression) `traindag dag 0 0.5` (train with P 0.5) is REFUSED, rc 2, says REFUSED, and prints no trainer line
+CAUGHT (deliberate regression) `evaldag dag 5` (eval seed 5) is REFUSED, rc 2, says REFUSED, and prints no trainer line
+CAUGHT (deliberate regression) `bankdag 7` (bank seed 7) is REFUSED, rc 2, says REFUSED, and prints no trainer line
+PASS  gatedag dag 0 0.1 is accepted and carries --dagger-p 0.1
+PASS  gatedag dag 0 0.3 is accepted and carries --dagger-p 0.3
+PASS  existing stage `trainorc orc0 0` prints byte-identical lines from the tip queue and the new queue
+PASS  existing stage `trainorc orc 1` prints byte-identical lines from the tip queue and the new queue
+PASS  existing stage `gateorc orc 0` prints byte-identical lines from the tip queue and the new queue
+PASS  existing stage `gateorc orc0 1` prints byte-identical lines from the tip queue and the new queue
+PASS  existing stage `evalorc orc 1` prints byte-identical lines from the tip queue and the new queue
+PASS  existing stage `gate` prints byte-identical lines from the tip queue and the new queue
+PASS  existing stage `train M2b 0` prints byte-identical lines from the tip queue and the new queue
+PASS  existing stage `eval M2b 0` prints byte-identical lines from the tip queue and the new queue
+PASS  existing stage `gatehist` prints byte-identical lines from the tip queue and the new queue
+PASS  existing stage `trainoacc 0` prints byte-identical lines from the tip queue and the new queue
+PASS  s0 bank: 4 shards into dagger_bank\s0; from M2b_s0's checkpoint and argv.json; the cache, tracks, join and eval grid as arguments; --expect-clips 4512 --expect-windows 306566; on cuda
+PASS  s0 bank: no ampersand reaches an argument (the eval grid is the COPY), and the line has no --shard / --n-shards / --out-dir among the generator arguments
+PASS  s1 bank: 4 shards into dagger_bank\s1; from M2b_s1's checkpoint and argv.json; the cache, tracks, join and eval grid as arguments; --expect-clips 4512 --expect-windows 306566; on cuda
+PASS  s1 bank: no ampersand reaches an argument (the eval grid is the COPY), and the line has no --shard / --n-shards / --out-dir among the generator arguments
+== B. the real queue through cmd.exe, NOT dry, on a fake box (stub trainer / eval / bank generator; the real shard tool)
+PASS  bankdag 0: rc 0, four shards launched with --shard 0..3 --n-shards 4, merge ran, bank.json written
+PASS  bankdag 0: every generator got the same arguments except --shard (and the same --out-dir), --ckpt = M2b_s0's checkpoint, --device cuda, --threads 2, --batch 32
+PASS  bankdag 0: eval grid was COPIED to a path without an ampersand and that copy is what the generators got
+PASS  bankdag 1: rc 0, four shards launched with --shard 0..3 --n-shards 4, merge ran, bank.json written
+PASS  bankdag 1: every generator got the same arguments except --shard (and the same --out-dir), --ckpt = M2b_s1's checkpoint, --device cuda, --threads 2, --batch 32
+PASS  bankdag 1: eval grid was COPIED to a path without an ampersand and that copy is what the generators got
+PASS  bankdag 0 again: skipped (bank.json and PROVENANCE.json exist)
+PASS  gatedag dag 0 0.1: rc 0 and the stub trainer saw the gate argv
+PASS  the pin carries the sha256 COMPUTED FROM bank.json on this box, and ignores an env DAGSHA_DRY (the dry-run override is never read by a real run)
+PASS  the argv the gate ACTUALLY ran == the pinned training argv with --out and --selfcheck-only changed
+PASS  traindag dag 0 0.1: rc 0, summary.json exists
+PASS  BYTE-IDENTITY: the argv the trainer RECEIVED in training == the pinned line's tokens == the gate's (--out / --selfcheck-only aside); the token's argv_sha256 is therefore the sha256 of what ran
+PASS  the line the chain PLANS (dry run, DAGSHA_DRY = sha of the pulled bank.json) has the same flags as the pin box 2 wrote, up to box 2's paths (the chain compares them verbatim on the real box)
+PASS  traindag again: skipped once summary.json exists
+PASS  DAG-0 s0 gate and train ran; DAG and DAG-0 ARGV AS RECEIVED differ only in --out, --dagger-p and the three DAG-only flags
+PASS  evaldag dag 0: ran, wrote eval_M2b-dag_s0.npz, and NO `-fresh` eval file exists (O1: the fresh-age comparator is the dev box's)
+PASS  the standard eval ran WITHOUT --ages
+PASS  PREREG section 4 on what actually RAN: the gate, the DAG training and the DAG-0 training each RECEIVED `--ego-perturb-p 0` exactly once
+PASS  evaldag again: skipped once its npz exists
+PASS  s1 DAG gate ran and pinned its argv
+CAUGHT (deliberate regression) ONE CHANGED BYTE in the pinned argv (--steps 3000 -> 3001): traindag REFUSES, rc 2, and the trainer is not executed
+CAUGHT (deliberate regression) a changed lever in the pin (--lr 1e-4 -> 1e-5): traindag REFUSES (the line it would build now differs from the pin)
+CAUGHT (deliberate regression) bank.json changed (one byte appended) AFTER the gate: traindag REFUSES, the pin is for another bank sha256
+CAUGHT (deliberate regression) RE-GATING after the bank changed: the stage REFUSES to replace a pin that differs (never a silent re-pin)
+PASS  positive control: with the pin and bank.json restored byte-for-byte, traindag runs and the received argv == the pin
+CAUGHT (deliberate regression) traindag dag0 1 WITHOUT its gate: REFUSED (no pinned argv), rc 2, nothing executed
+CAUGHT (deliberate regression) evaldag dag0 1 before training: REFUSED, rc 2
+CAUGHT (deliberate regression) a trainer that exits nonzero: traindag exits nonzero (the chain stops on it) and no summary.json is claimed
+== C. the chain's decisions on files
+PASS  ORC predicate on the REAL read (HARMS): run, p = 0.1, sha256 a50dbba9... (the value PREREG_V8F_DAGGER Amendment 1 records)
+PASS  ORC predicate: NO EFFECT -> run at p = 0.3
+PASS  ORC predicate: HARMS -> run at p = 0.1
+CAUGHT (deliberate regression) ORC predicate REFUSES ROBUST (rc 4 = PARKED: the arm is parked, not run)
+CAUGHT (deliberate regression) ORC predicate REFUSES PARTIAL (rc 4 = PARKED: the arm is parked, not run)
+CAUGHT (deliberate regression) ORC predicate REFUSES REFUSED (rc 2)
+CAUGHT (deliberate regression) ORC predicate REFUSES UNPLACED (rc 2)
+CAUGHT (deliberate regression) ORC predicate REFUSES SOMETHING ELSE (rc 2)
+CAUGHT (deliberate regression) ORC predicate REFUSES a HARMS read with one FAILED control (a read with a failed control is not an outcome)
+CAUGHT (deliberate regression) ORC predicate REFUSES another PREREG's read file
+CAUGHT (deliberate regression) ORC predicate REFUSES a read matching two table rows
+CAUGHT (deliberate regression) ORC predicate REFUSES a missing file (a missing file is not a HARMS)
+PASS  bank judge: all controls pass, coverage 0.62 / 0.58 -> PASS (rc 0)
+PASS  bank judge: coverage EXACTLY 0.5 is a PASS (the PREREG says >= 0.5, inclusive)
+CAUGHT (deliberate regression) bank judge: coverage 153,282 / 306,566 (just under 0.5) -> BLOCKED (rc 3)
+CAUGHT (deliberate regression) bank judge: coverage 0.49 at seed 1 only -> BLOCKED for the whole chain (rc 3): the decisive read needs both seeds
+CAUGHT (deliberate regression) bank judge: both seeds below 0.5 -> BLOCKED
+CAUGHT (deliberate regression) bank judge: coverage 0.3 but the bank's own `blocked` flag says False -> REFUSED (rc 2): the fraction is recomputed, the flag must agree
+CAUGHT (deliberate regression) bank judge: a K-B1 replay mismatch AND coverage < 0.5 -> REFUSED, not BLOCKED (a failed control takes precedence: PREREG section 7)
+CAUGHT (deliberate regression) bank judge: K-B0 mismatch -> REFUSED (rc 2) and the failed control is NAMED (K-B0)
+CAUGHT (deliberate regression) bank judge: K-B0 not every window checked -> REFUSED (rc 2) and the failed control is NAMED (K-B0)
+CAUGHT (deliberate regression) bank judge: K-B1 not run (0 chunks) -> REFUSED (rc 2) and the failed control is NAMED (K-B1)
+CAUGHT (deliberate regression) bank judge: K-B2: generated by another checkpoint -> REFUSED (rc 2) and the failed control is NAMED (K-B2)
+CAUGHT (deliberate regression) bank judge: K-B3: an eval clip in the bank -> REFUSED (rc 2) and the failed control is NAMED (K-B3)
+CAUGHT (deliberate regression) bank judge: K-B3: a shard saw an eval overlap -> REFUSED (rc 2) and the failed control is NAMED (K-B3)
+CAUGHT (deliberate regression) bank judge: PARTIAL bank -> REFUSED (rc 2) and the failed control is NAMED (COMPLETE)
+CAUGHT (deliberate regression) bank judge: TRAIN list is not 4,512 clips -> REFUSED (rc 2) and the failed control is NAMED (TRAIN list)
+CAUGHT (deliberate regression) bank judge: TRAIN window count differs -> REFUSED (rc 2) and the failed control is NAMED (TRAIN list)
+CAUGHT (deliberate regression) bank judge: rollout is not PREREG section 1's -> REFUSED (rc 2) and the failed control is NAMED (ROLLOUT)
+CAUGHT (deliberate regression) bank judge: wrong schema -> REFUSED (rc 2) and the failed control is NAMED (SCHEMA)
+CAUGHT (deliberate regression) bank judge: a shard provenance missing a record -> REFUSED (rc 2) and the failed control is NAMED (BANK-FILES)
+CAUGHT (deliberate regression) bank judge: coverage denominator is not the TRAIN window count -> REFUSED (rc 2) and the failed control is NAMED (COVERAGE record)
+PASS  bank judge: K-B4 (PASS True, six cases True) and K-B5 (PASS True, both errors 3e-6 / 2e-6 <= 1e-4) recorded at both seeds -> PASS, and both controls are in the verdict
+CAUGHT (deliberate regression) bank judge: a MISSING K-B4 record -> REFUSED (rc 2) and the failed control is NAMED (K-B4)
+CAUGHT (deliberate regression) bank judge: a MISSING K-B5 record -> REFUSED (rc 2) and the failed control is NAMED (K-B5)
+CAUGHT (deliberate regression) bank judge: no `controls` block in PROVENANCE.json at all (the generator that does not write K-B4 / K-B5) -> REFUSED (rc 2) and the failed control is NAMED (K-B4)
+CAUGHT (deliberate regression) bank judge: a MISSING K-B4 record at seed 1 only -> REFUSED (rc 2) and the failed control is NAMED (K-B4)
+CAUGHT (deliberate regression) bank judge: K-B4 PASS false -> REFUSED (rc 2) and the failed control is NAMED (K-B4)
+CAUGHT (deliberate regression) bank judge: K-B5 PASS false -> REFUSED (rc 2) and the failed control is NAMED (K-B5)
+CAUGHT (deliberate regression) bank judge: K-B4 PASS absent (a lower-case `pass` key is not the reader's key) -> REFUSED (rc 2) and the failed control is NAMED (K-B4)
+CAUGHT (deliberate regression) bank judge: K-B5 PASS = 1 (truthy, not the boolean True the reader requires) -> REFUSED (rc 2) and the failed control is NAMED (K-B5)
+CAUGHT (deliberate regression) bank judge: K-B4 record is not a dict -> REFUSED (rc 2) and the failed control is NAMED (K-B4)
+CAUGHT (deliberate regression) bank judge: K-B4 case `straight` false (PASS still True) -> REFUSED (rc 2) and the failed control is NAMED (straight)
+CAUGHT (deliberate regression) bank judge: K-B4 case `stationary_tie` false (PASS still True) -> REFUSED (rc 2) and the failed control is NAMED (stationary_tie)
+CAUGHT (deliberate regression) bank judge: K-B4 case `lateral_cut` false (PASS still True) -> REFUSED (rc 2) and the failed control is NAMED (lateral_cut)
+CAUGHT (deliberate regression) bank judge: K-B4 case `heading_cut` false (PASS still True) -> REFUSED (rc 2) and the failed control is NAMED (heading_cut)
+CAUGHT (deliberate regression) bank judge: K-B4 case `end_edge` false (PASS still True) -> REFUSED (rc 2) and the failed control is NAMED (end_edge)
+CAUGHT (deliberate regression) bank judge: K-B4 case `loop` false (PASS still True) -> REFUSED (rc 2) and the failed control is NAMED (loop)
+CAUGHT (deliberate regression) bank judge: K-B4 case `loop` absent -> REFUSED (rc 2) and the failed control is NAMED (loop)
+CAUGHT (deliberate regression) bank judge: K-B4 `cases` is not a dict -> REFUSED (rc 2) and the failed control is NAMED (K-B4)
+CAUGHT (deliberate regression) bank judge: K-B4 case recorded 1 instead of True -> REFUSED (rc 2) and the failed control is NAMED (straight)
+CAUGHT (deliberate regression) bank judge: K-B5 max_pose_now_err_m = 2e-4 (> 1e-4) -> REFUSED (rc 2) and the failed control is NAMED (max_pose_now_err_m)
+CAUGHT (deliberate regression) bank judge: K-B5 max_rel_transform_err_m = 2e-4 (> 1e-4) -> REFUSED (rc 2) and the failed control is NAMED (max_rel_transform_err_m)
+CAUGHT (deliberate regression) bank judge: K-B5 max_pose_now_err_m missing -> REFUSED (rc 2) and the failed control is NAMED (max_pose_now_err_m)
+CAUGHT (deliberate regression) bank judge: K-B5 max_rel_transform_err_m is NaN -> REFUSED (rc 2) and the failed control is NAMED (max_rel_transform_err_m)
+CAUGHT (deliberate regression) bank judge: K-B5 error recorded as a string -> REFUSED (rc 2) and the failed control is NAMED (max_pose_now_err_m)
+CAUGHT (deliberate regression) bank judge: K-B5 error recorded as the boolean True -> REFUSED (rc 2) and the failed control is NAMED (max_rel_transform_err_m)
+CAUGHT (deliberate regression) bank judge: K-B5 error 2e-4 at seed 1 only -> REFUSED (rc 2) and the failed control is NAMED (max_pose_now_err_m)
+CAUGHT (deliberate regression) bank judge: a MISSING K-B4 record AND coverage 0.3 -> REFUSED, not BLOCKED (a failed control takes precedence) -> REFUSED (rc 2) and the failed control is NAMED (K-B4)
+PASS  bank judge: K-B5 errors EXACTLY 1e-4 pass (the reader's rule is `<=`, inclusive)
+PASS  bank judge: K-B5 errors recorded 0 (int) and 0.0 pass
+PASS  bank judge: a control key BEYOND K-B4 / K-B5 in PROVENANCE.json is REPORTED, never required, never fatal
+== D. chain_v8f_dag.sh
+PASS  chain --judge-only (HARMS, both banks fine): rc 0, prints ZZDAG-JUDGE-PASS (the gates would be queued next) and no stop marker
+CAUGHT (deliberate regression) chain --judge-only with coverage 0.49 at s1: rc 3, prints ZZDAG-BLOCKED and `ZZV8FMINI-STOP BLOCKED`, says no gate was queued, and never prints the all-gates line
+CAUGHT (deliberate regression) chain --judge-only with a failed K-B1: rc 2, ZZDAG-REFUSED + ZZV8FMINI-STOP REFUSED, no gate queued
+CAUGHT (deliberate regression) chain --judge-only with a MISSING K-B4 record at seed 1: rc 2, ZZDAG-REFUSED names K-B4, ZZV8FMINI-STOP REFUSED, no gate queued, never ZZDAG-JUDGE-PASS
+CAUGHT (deliberate regression) chain --judge-only with ORC = ROBUST: the arm is PARKED before the banks are even looked at (rc 1, ZZV8FMINI-STOP, no ZZDAG-JUDGE-PASS)
+CAUGHT (deliberate regression) the REAL entry with ORC = ROBUST stops at once with `ZZV8FMINI-STOP PARKED` (before AFTER_OUT, the busy marker or any box-2 call)
+PASS  the REAL entry with ORC = HARMS but no AFTER_OUT: refuses (`ZZV8FMINI-STOP AFTER_OUT is not set`), touches nothing
+PASS  chain source order: banks -> judge -> `if [ $jr != 0 ]` stop -> PUBLISH the banks (outside that if) -> ORC re-read -> ALL gates -> trains (a BLOCKED / REFUSED judge reaches stop before any publish, gate_one or runone)
+CAUGHT (deliberate regression) chain source with the BLOCKED stop deleted: the order check goes RED
+CAUGHT (deliberate regression) chain source with the judge's `if [ $jr != 0 ]` disabled: the order check goes RED
+CAUGHT (deliberate regression) chain source with the real flow's publish call deleted (the banks would never reach the dev box): the order check goes RED
+CAUGHT (deliberate regression) chain source with the publish call moved BEFORE the judge (a REFUSED / BLOCKED bank would be moved): the order check goes RED
+PASS  chain: bank_one / bank_fetch_small pull only the SMALL files the judge reads (no shard npz), assert box 2's bank.json sha256 == the pulled one, and remove an earlier attempt's SHA256SUMS.txt first
+PASS  chain: publish_bank_one names the files with `bank-files`, pulls only `--kind shard_npz`, compares box 2's sha256 with the pulled file's, verifies BEFORE sealing, writes SHA256SUMS.txt with `sha256sum | tee`, re-verifies with --require-sums and removes a failed seal
+PASS  chain: the token is written only after `check` passes; the pin is pulled from box 2 and given to the assertions (--pin-line)
+PASS  chain: a busy marker is only removed by a chain that took it (a refused / parked chain never deletes another chain's marker)
+PASS  chain: ORC_READ.json is re-read byte-identically (sha256) before the gates
+PASS  chain --dry-run: rc 0; all four runs planned in the PREREG's order (DAG s0, DAG-0 s0, DAG s1, DAG-0 s1); each gate line is the train line with --out / --selfcheck-only changed (SAME); p = 0.1
+PASS  chain --dry-run: four distinct token argv_sha256 values, and the DAG ones carry the dry-run bank sha256 in the line they bind
+PASS  chain --dry-run: for BOTH seeds the publish plan names the FOUR kinds explicitly (PROVENANCE.json, bank.json, 4 shard provenance, 4 shard npz) + the stage log, the exact 11-name SHA256SUMS.txt and the ESTIMATED size
+PASS  chain --check-tree on the integrated tree (rg/tree, the di/tree files + the shard tool): every lever pattern is present
+CAUGHT (deliberate regression) chain --check-tree on the PRE-CHANGE tip (2a78f059: no DAgger trainer, no bank): FAILS and names the missing apply line
+PASS  (the loop line exists exactly once, indented, in the integrated trainer; the same text also sits in a comment)
+CAUGHT (deliberate regression) chain --check-tree on the integrated trainer with the LOOP LINE `b = dag.apply(b, step)` deleted (the comment still contains the text): FAILS
+== E. gate_dag_assert.py on the REAL trainer's selfcheck.json (rg/out, written by real_gate_proof.py)
+PASS  real_gate_proof.py (the REAL v8f_mini_train.py --selfcheck-only on CPU, synthetic world, the queue's own tail): 17/17 cases pass, incl. 8 refusals of what the queue must never emit
+PASS  gate_dag_assert check on the REAL DAG selfcheck.json: every assertion holds
+PASS  gate_dag_assert check on the REAL DAG-0 selfcheck.json: every assertion holds
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [control_p0_loss_diff]: the p = 0 control reads 1e-9 instead of exactly 0.0
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [prior control]: the frozen-prior control reads 1e-12
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [does not reach the loss]: the swapped batch does not move the loss (loss_diff 0)
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [dagger_probe]: the probe did not pass
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [no eligible window]: no eligible window in the probe
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [bank sha256]: declared bank sha256 differs from the built one
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [bank sha256]: the built bank sha256 is not the pulled bank.json's
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [does not start from the banked]: the init checkpoint is not the banked M2b
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [not applied]: the init checkpoint was not applied
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [K-B2]: K-B2 in the gate: the bank's checkpoint is another one
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [COVERAGE in the gate]: COVERAGE blocked in the gate
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [overlap with eval-141]: K-B3: overlap with eval-141
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [window-list sha256]: K-B3: window-list sha256 is not the bank's
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [steps 2999]: steps_total is 2999
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [built dagger_p]: built dagger_p is 0.3 while the run declares 0.1
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [built dagger_seed]: built dagger_seed is 1 on seed 0
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [dead set]: a dead parameter group
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [ego_perturb_probe]: the ego-perturbation probe is not 'off' (the two levers combined)
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [ran an argv other than]: the gate ran another argv (argv_sha differs)
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [declared_vs_built]: declared_vs_built is not PASS
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [control_prior_grad_diff]: the P10 prior's gradient moved with the swap
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [frame-change error]: the lab_s.rc frame change is off by 1e-3
+CAUGHT (deliberate regression) gate_dag_assert REFUSES (rc 1) for the right reason [built bank path]: bank path is not .../dagger_bank/s0/bank.json
+PASS  gate_dag_assert with a --b-summary equal to the built model's levers (loss weights, parameter groups, window set, TRAIN list): PASS
+CAUGHT (deliberate regression) gate_dag_assert REFUSES [parameter group] against the banked-B comparison: B has another parameter group size
+CAUGHT (deliberate regression) gate_dag_assert REFUSES [w_pen] against the banked-B comparison: B's w_pen differs
+CAUGHT (deliberate regression) gate_dag_assert REFUSES [n_params_trainable] against the banked-B comparison: B's trainable parameter count differs
+CAUGHT (deliberate regression) gate_dag_assert REFUSES [TRAIN list] against the banked-B comparison: B's TRAIN list differs
+CAUGHT (deliberate regression) gate_dag_assert REFUSES [window set] against the banked-B comparison: B's window set differs
+PASS  the REAL banked M2b_s0 summary.json has every key the --b-summary comparison reads (levers.w.{w_pen,w_pen_self,w_wm}, levers.params, levers.n_params_trainable, train_sha256, n_windows)
+CAUGHT (deliberate regression) gate_dag_assert REFUSES a DAG-0 selfcheck whose probe is not 'off'
+CAUGHT (deliberate regression) gate_dag_assert REFUSES a DAG-0 that built a bank hash (a lever declared and inert)
+CAUGHT (deliberate regression) gate_dag_assert REFUSES [THE PIN IS NOT]: the PIN differs from the planned training line by one token (box 2 would run another argv than the token binds)
+CAUGHT (deliberate regression) gate_dag_assert REFUSES [carries --selfcheck-only]: the TRAIN line carries --selfcheck-only
+CAUGHT (deliberate regression) gate_dag_assert REFUSES [gate argv is not the training argv]: the gate line is not the train line (--lr changed)
+CAUGHT (deliberate regression) gate_dag_assert REFUSES [names --ego-perturb-vmax]: the train line names --ego-perturb-vmax (a law flag at p = 0)
+CAUGHT (deliberate regression) gate_dag_assert REFUSES [second lever]: the train line sets a second lever (--w-acc 0.5)
+CAUGHT (deliberate regression) gate_dag_assert REFUSES [does not name --dagger-bank-sha256 exactly once]: the train line does not name --dagger-bank-sha256
+CAUGHT (deliberate regression) gate_dag_assert REFUSES a DAG-0 line that names --dagger-bank
+CAUGHT (deliberate regression) gate_dag_assert REFUSES a DAG-0 line that names --dagger-seed
+PASS  token: written after the assertions pass; kind/verdict; binding = (commit, sha256 of the PINNED training argv, the gate's train_sha256); carries the bank sha256, p and the ORC read sha256
+PASS  token: the argv_sha256 it binds differs from the GATE argv's sha256 (it binds the training run's argv, not the gate's)
+CAUGHT (deliberate regression) token: NOT written when an assertion fails
+CAUGHT (deliberate regression) token: NOT written for a commit that is not 40 hex
+== F. the shard tool, the guard copy, the banked hashes, the additive queue diff
+PASS  shard tool: 4 shards launched concurrently, merge ran, rc 0, prints the bank sha256
+PASS  shard tool: second call skips (a merged bank exists)
+CAUGHT (deliberate regression) shard tool: shard 2 fails while shard 1 is still running -> rc 1, the slow shard is TERMINATED, NO merge, no bank.json
+PASS  shard tool: resume runs only the missing shards (2 and 3) and merges
+CAUGHT (deliberate regression) shard tool REFUSES a generator argument that is set by the tool (--shard), rc 2
+PASS  shard tool: `sha FILE` prints the file's sha256
+CAUGHT (deliberate regression) shard tool: `sha` of a missing file is REFUSED (rc 2)
+PASS  guard copy: differs from v8f_guard.sh in exactly the kill pattern (1 line replaced) and one added comment line; the new pattern adds v8f_dagger_bank and v8f_dagger_queue_tool
+PASS  chain CKPT_SHA == chain_v8f_orc.sh's CKPT_SHA (s0 601cb435..., s1 6104fb15...)
+PASS  M2b_s0: sha256 of the BANKED checkpoint file on this disk == the chain's value
+PASS  M2b_s1: sha256 of the BANKED checkpoint file on this disk == the chain's value
+PASS  raw/full/MANIFEST.md names both banked checkpoint hashes
+PASS  the staged queue is exactly tip + doc + dispatch + stages (re-derived from the additions)
+PASS  the staged queue's diff against the tip has NO removed and NO replaced line (insertions only)
+PASS  the tip queue's SHA256 is the committed blob's (2a78f059) c92ca88d...
+== G. the banks the chain publishes to the dev box (the four kinds the reader needs, SHA256SUMS.txt, nothing moved before the judge passes)
+PASS  bank names: the FOUR kinds the reader needs are listed explicitly (PROVENANCE.json, bank.json, 4 shard provenance, 4 shard npz) + the stage log = 11 names
+PASS  bank-verify on a complete published bank (no SHA256SUMS.txt required): ok, 11 files, every kind non-empty
+CAUGHT (deliberate regression) bank-verify --require-sums with NO SHA256SUMS.txt: not ok, says it is absent
+PASS  bank-verify --require-sums on a SHA256SUMS.txt written independently (hashlib) over exactly the 11 files: ok
+CAUGHT (deliberate regression) bank-verify: a shard npz that was never pulled (shard 2) -> not ok, and the reason names it ('shard_002of004.npz is absent')
+CAUGHT (deliberate regression) bank-verify: an EMPTY shard npz (shard 1) -> not ok, and the reason names it ('shard_001of004.npz is empty')
+CAUGHT (deliberate regression) bank-verify: one flipped bit in shard 3's npz (same size) -> not ok, and the reason names it ('shard npz shard_003of004.npz hashes to')
+CAUGHT (deliberate regression) bank-verify: bank.json edited after PROVENANCE.json named its sha256 -> not ok, and the reason names it ('PROVENANCE.bank_sha256')
+CAUGHT (deliberate regression) bank-verify: a shard provenance file missing -> not ok, and the reason names it ('shard_002of004.provenance.json is absent')
+CAUGHT (deliberate regression) bank-verify: a shard provenance that records another file_sha256 -> not ok, and the reason names it ('records file_sha256')
+CAUGHT (deliberate regression) bank-verify: PROVENANCE.json missing -> not ok, and the reason names it ('cannot read bank.json / PROVENANCE.json')
+CAUGHT (deliberate regression) bank-verify: bank.json missing -> not ok, and the reason names it ('cannot read bank.json / PROVENANCE.json')
+CAUGHT (deliberate regression) bank-verify: bank_stage.log missing -> not ok, and the reason names it ('bank_stage.log is absent')
+CAUGHT (deliberate regression) bank-verify: bank.json says 3 shards (the queue runs 4) -> not ok, and the reason names it ("the queue's bankdag runs 4")
+CAUGHT (deliberate regression) bank-verify: PROVENANCE.json lists 3 of the 4 shard provenance files -> not ok, and the reason names it ('shard_provenance is')
+CAUGHT (deliberate regression) bank-verify: bank.json names a shard npz that is not the generator's -> not ok, and the reason names it ('bank.json shards name')
+CAUGHT (deliberate regression) bank-verify: SHA256SUMS.txt lists 10 names (a shard npz left out) -> not ok, and the reason names it ('expected exactly 11')
+CAUGHT (deliberate regression) bank-verify: SHA256SUMS.txt lists a 12th, unexpected name -> not ok, and the reason names it ("unexpected ['gen_shard_0.log']")
+CAUGHT (deliberate regression) bank-verify: SHA256SUMS.txt carries a wrong hash for one npz -> not ok, and the reason names it ('lists 000000000000 for shard_001of004.npz')
+CAUGHT (deliberate regression) bank-verify: SHA256SUMS.txt without a final newline (a partial last line) -> not ok, and the reason names it ('does not end with a newline')
+CAUGHT (deliberate regression) bank-verify: SHA256SUMS.txt lists a name twice -> not ok, and the reason names it ('twice')
+PASS  bank-files --kind shard_npz (CLI): the 4 npz names, one per line
+PASS  bank-files --kind small (CLI): every file but the npz (7 names: what the judge reads + the log)
+CAUGHT (deliberate regression) bank-files on a directory with no bank.json: rc 2 and a reason (the chain's `names=$(...) || stop` then stops; an empty list would silently pull nothing)
+PASS  bank-verify (CLI) on the sealed good bank: rc 0, one ZZDAG-BANKFILES line with n_files 11
+PASS  ESTIMATED size of one seed's published bank (smoke 804 windows -> 306,566 windows; the arithmetic is bank-plan's): 0.62-0.72 GB, almost all of it the shard npz
+PASS  bank-plan (CLI) prints the four kinds, `exactly 11 names` and the ESTIMATED size
+== H. the chain's own publish flow, offline (--publish-only: the REAL bank_fetch_small -> judge -> publish_bank_one; only pull / rsha / stop are replaced)
+PASS  chain --publish-only (REAL fetch -> judge -> publish; a stand-in for box 2): rc 0, ZZDAG-JUDGE-PASS, then BOTH seeds publish into bank_s0 / bank_s1: 11 files each, SHA256SUMS.txt = 11 lines whose hashes equal both the pulled files' and the stand-in box's (hashlib, independent of the chain)
+PASS  chain --publish-only: the marker is the checkpoints' one (`bank s<S> pulled to <dir> (11 files ...)`), printed for each seed AFTER the judge's PASS and never before; the small-file fetch does not use that marker
+CAUGHT (deliberate regression) chain --publish-only with COVERAGE 0.49 at seed 1 (BLOCKED): stops with `ZZV8FMINI-STOP BLOCKED`, NO shard npz was pulled for either seed, NO SHA256SUMS.txt
+CAUGHT (deliberate regression) chain --publish-only with a MISSING K-B4 record at seed 1 (REFUSED): stops with `ZZV8FMINI-STOP REFUSED`, no shard npz for EITHER seed (seed 0 was fine and is still not moved), no SHA256SUMS.txt
+CAUGHT (deliberate regression) chain --publish-only with shard 3's npz ABSENT on box 2 (seed 1): `ZZV8FMINI-STOP pull ...`, seed 1 gets NO SHA256SUMS.txt (never sealed), seed 0 (complete) is sealed
+CAUGHT (deliberate regression) chain --publish-only with a shard npz that does not hash to bank.json's file_sha256 (the generator's record): `nothing was sealed`, NO SHA256SUMS.txt at that seed, rc 1
+CAUGHT (deliberate regression) chain --publish-only with a TRANSFER that corrupts (box 2's own sha256 of shard 2 != the pulled file's): `ZZV8FMINI-STOP bank s0: box 2's shard_002of004.npz sha256 ... != the pulled file's`, no SHA256SUMS.txt
+CAUGHT (deliberate regression) chain --publish-only over a directory that holds an EARLIER attempt's SHA256SUMS.txt, with an npz missing now: that SHA256SUMS.txt is REMOVED at the start of the fetch (a stale seal can never describe a new, incomplete pull)
+CAUGHT (deliberate regression) chain --publish-only whose sha256sum drops one line (a SHORT SHA256SUMS.txt): the post-seal `bank-verify --require-sums` catches it, `SHA256SUMS.txt does not verify (removed)`, the short file is REMOVED, rc 1
+PASS  (control for the wrapper) the same BASH_ENV sha256sum function WITHOUT FAKE_DROP seals both banks normally: the failure above came from the dropped line, not from the wrapper
+PASS  chain --publish-only refuses to run without DAG_ART (it never writes the real artifact directory)
+PASS  chain: the real flow calls publish_bank_one for both seeds exactly once, AFTER the judge's stop, and nowhere before it
+SELFTEST: 127/127 checks pass (0 failed); 153/153 deliberate regressions caught (0 missed); 90 s
+RESULT: ALL PASS
+ (it never writes the real artifact directory)
+PASS  chain: the real flow calls publish_bank_one for both seeds exactly once, AFTER the judge's stop, and nowhere before it
+SELFTEST: 127/127 checks pass (0 failed); 153/153 deliberate regressions caught (0 missed); 90 s
+RESULT: ALL PASS

@@ -1,0 +1,338 @@
+BEFORE 38e0a15773986c202cc64c1f101238462371a107ef06751667216774b17bf1bd stack/scripts/v8f_mini_train.py
+BEFORE 85b6206dcb8251918896bd595b796503222943b3a787d5ec98dcb4638ac3f2a1 stack/tests/test_v8f_dagger_train.py
+BEFORE 65ea1e3a5c05117862c0bceb384849cadf5eb5c372f5fb0152b02984b9f4c158 TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-train/pre_dagger_v8f_mini_train.py.ref
+BEFORE b20cc058b17e1029ddb138dc84f434333bf6b0b2746c5b76e996cef17c176bd3 stack/tanitad/data/v8f_dagger.py
+BEFORE 893dd6547b361c34fd2307f9efaf0b9bf822a1476506d3aa65498d7dbba53da3 stack/scripts/v8f_dagger_bank.py
+BEFORE dfcb07d4f08e6f3125705312c658eb8f8d9d4962c93eb5b6576def2a6ac3ce37 stack/tests/test_v8f_dagger.py
+105 mutants, each anchor found exactly once in its region, each mutated text compiles
+== group flags: baseline (unmutated copy) on  -k "test_the_four_flags or test_a_flag_without_an_entry or test_g_dvb_passes_what_was_built or test_g_dvb_refuses_a_swap_bui..."
+    rc=0 35 passed, 62 deselected, 1 warning in 91.07s (0:01:31)  [93s]
+  F01_p_default_is_not_off: --dagger-p defaults to OFF (DG.DAGGER_DEFAULTS, 0.0)
+    rc=1 1 failed, 96 deselected in 1.91s  [3s]
+    KILLED F01_p_default_is_not_off
+  F02_seed_has_no_gdvb_entry: every flag has a FLAG_CHECKS entry (dagger_seed)
+    rc=1 1 failed, 92 deselected in 1.98s  [3s]
+    KILLED F02_seed_has_no_gdvb_entry
+  F03_bank_has_no_gdvb_entry: every flag has a FLAG_CHECKS entry (dagger_bank)
+    rc=1 1 failed, 92 deselected in 1.77s  [3s]
+    KILLED F03_bank_has_no_gdvb_entry
+  F04_gate_does_not_compare_p: G-DVB: the built p is the declared p
+    rc=1 1 failed, 96 deselected, 1 warning in 24.95s  [26s]
+    KILLED F04_gate_does_not_compare_p
+  F05_gate_does_not_compare_seed: G-DVB: the built seed is the declared seed
+    rc=1 1 failed, 96 deselected, 1 warning in 23.59s  [25s]
+    KILLED F05_gate_does_not_compare_seed
+  F06_gate_does_not_compare_kin_mode: G-DVB: the built swap's kin_mode is the declared one
+    rc=1 1 failed, 96 deselected, 1 warning in 23.53s  [25s]
+    KILLED F06_gate_does_not_compare_kin_mode
+  F07_gate_ignores_the_swaps_own_problems: G-DVB: a lever declared without an effect / illegal law is refused (swap.problems())
+    rc=1 1 failed, 85 deselected, 1 warning in 27.12s  [28s]
+    KILLED F07_gate_ignores_the_swaps_own_problems
+  F08_ego_exclusivity_dropped: --dagger-p > 0 with --ego-perturb-p > 0 is refused
+    rc=1 1 failed, 5 passed, 86 deselected, 1 warning in 34.76s  [36s]
+    KILLED F08_ego_exclusivity_dropped
+  F09_no_swap_built_not_refused: a declared flag with no swap built is refused (a flag that builds nothing)
+    rc=1 1 failed, 93 deselected, 1 warning in 25.87s  [27s]
+    KILLED F09_no_swap_built_not_refused
+  F10_declared_bank_with_no_bank_built: a bank declared at p = 0 builds nothing and is refused
+    rc=1 1 failed, 6 passed, 86 deselected, 1 warning in 37.29s  [38s]
+    KILLED F10_declared_bank_with_no_bank_built
+  B01_bank_path_not_compared: G-DVB: the bank's path against the declaration
+    rc=1 1 failed, 96 deselected, 1 warning in 30.89s  [32s]
+    KILLED B01_bank_path_not_compared
+  B02_bank_sha_not_read_back: G-DVB: the bank's sha256 against the file on disk
+    rc=1 1 failed, 96 deselected, 1 warning in 31.39s  [33s]
+    KILLED B02_bank_sha_not_read_back
+  K16_wrong_seed_built: argv --dagger-seed becomes the built seed
+    rc=1 1 failed, 96 deselected, 1 warning in 29.47s  [31s]
+    KILLED K16_wrong_seed_built
+  K17_wrong_p_built: argv --dagger-p becomes the built p
+    rc=1 1 failed, 96 deselected, 1 warning in 29.51s  [31s]
+    KILLED K17_wrong_p_built
+  S01_sha_default_is_not_off: --dagger-bank-sha256 defaults to none (off = every earlier arm)
+    rc=1 1 failed, 96 deselected in 1.93s  [3s]
+    KILLED S01_sha_default_is_not_off
+  S02_sha_has_no_gdvb_entry: every flag has a FLAG_CHECKS entry (dagger_bank_sha256)
+    rc=1 1 failed, 92 deselected in 1.96s  [3s]
+    KILLED S02_sha_has_no_gdvb_entry
+  S03_sha_not_among_the_no_swap_defaults: a declared --dagger-bank-sha256 with no swap built is refused
+    rc=1 1 failed, 3 passed, 93 deselected, 1 warning in 27.49s  [29s]
+    KILLED S03_sha_not_among_the_no_swap_defaults
+  S04_sha_not_required_at_p_above_zero: --dagger-bank-sha256 is REQUIRED when --dagger-p > 0 (DAG names all four)
+    rc=1 1 failed, 7 passed, 85 deselected, 1 warning in 34.40s  [36s]
+    KILLED S04_sha_not_required_at_p_above_zero
+  S05_sha_not_refused_at_p_zero: --dagger-bank-sha256 is REFUSED when --dagger-p is 0 (declared and does nothing; DAG-0 names only --dagger-p 0)
+    rc=1 1 failed, 8 passed, 85 deselected, 1 warning in 40.28s  [41s]
+    KILLED S05_sha_not_refused_at_p_zero
+  S06_sha_without_a_bank_not_refused: a declared --dagger-bank-sha256 with no --dagger-bank at p > 0 is refused (nothing to hash)
+    rc=1 1 failed, 10 passed, 86 deselected, 1 warning in 45.89s  [47s]
+    KILLED S06_sha_without_a_bank_not_refused
+  S07_gate_does_not_compare_declared_to_disk: the gate re-hashes bank.json and refuses a declared hash that differs
+    rc=1 1 failed, 96 deselected, 1 warning in 29.06s  [30s]
+    KILLED S07_gate_does_not_compare_declared_to_disk
+  S08_gate_compares_case_sensitively: the declared hash is compared as a hash (hex is case-blind)
+    rc=1 1 failed, 96 deselected, 1 warning in 30.45s  [32s]
+    KILLED S08_gate_compares_case_sensitively
+  S09_shape_check_dropped: a declared value that is not a full sha256 is refused with its own message
+    rc=1 1 failed, 91 deselected, 1 warning in 29.96s  [31s]
+    KILLED S09_shape_check_dropped
+  S10_shape_accepts_a_wrong_length: a sha256 is exactly 64 hex digits (a truncated hash identifies nothing)
+    rc=1 1 failed, 1 passed, 90 deselected, 1 warning in 31.36s  [33s]
+    KILLED S10_shape_accepts_a_wrong_length
+  S11_shape_accepts_non_hex: a sha256 is hex
+    rc=1 1 failed, 2 passed, 90 deselected, 1 warning in 35.08s  [36s]
+    KILLED S11_shape_accepts_non_hex
+  S12_shape_rejects_capitals: hex is case-blind
+    rc=1 1 failed, 95 deselected, 1 warning in 31.65s  [33s]
+    KILLED S12_shape_rejects_capitals
+  S13_load_ignores_the_declared_sha: the bank is loaded against the declared hash (a bank with another manifest is refused at load)
+    rc=1 1 failed, 96 deselected, 1 warning in 33.51s  [35s]
+    KILLED S13_load_ignores_the_declared_sha
+== group gbank: baseline (unmutated copy) on  -k "test_g_dvb_refuses_a_bank_generated or test_g_dvb_refuses_a_bank_whose_history or test_g_dvb_refuses_missing_or_failed o..."
+    rc=0 8 passed, 89 deselected, 1 warning in 41.49s  [43s]
+  B03_schema_not_checked: G-DVB: the bank's schema
+    rc=1 1 failed, 92 deselected, 1 warning in 29.66s  [31s]
+    KILLED B03_schema_not_checked
+  B04_rollout_not_checked: G-DVB: the bank's configuration equals PREREG section 1 (rollout)
+    rc=1 1 failed, 1 passed, 92 deselected, 1 warning in 29.72s  [31s]
+    KILLED B04_rollout_not_checked
+  B05_constants_not_checked: G-DVB: the bank's matching constants sha256
+    rc=1 1 failed, 2 passed, 92 deselected, 1 warning in 28.50s  [30s]
+    KILLED B05_constants_not_checked
+  B06_cfg_not_checked: G-DVB: the bank was generated with this model's cfg
+    rc=1 1 failed, 3 passed, 92 deselected, 1 warning in 26.87s  [28s]
+    KILLED B06_cfg_not_checked
+  B07_hmax_not_checked: G-DVB: the bank's history length is the model's hmax
+    rc=1 1 failed, 96 deselected, 1 warning in 24.15s  [25s]
+    KILLED B07_hmax_not_checked
+  B08_controls_record_not_required: G-DVB: K-B2 / K-B3 / COVERAGE were read (the record exists)
+    rc=1 1 failed, 96 deselected, 1 warning in 23.64s  [25s]
+    KILLED B08_controls_record_not_required
+  B09_controls_bank_not_matched: G-DVB: the controls were read on THIS bank
+    rc=1 1 failed, 96 deselected, 1 warning in 25.87s  [27s]
+    KILLED B09_controls_bank_not_matched
+  B10_kb2_record_not_matched: G-DVB: K-B2 was read against this bank's generating checkpoint
+    rc=1 1 failed, 96 deselected, 1 warning in 24.91s  [26s]
+    KILLED B10_kb2_record_not_matched
+  B11_init_ckpt_not_reread: G-DVB: K-B2 re-read at the gate (the run's init checkpoint sha256)
+    rc=1 1 failed, 96 deselected, 1 warning in 24.90s  [26s]
+    KILLED B11_init_ckpt_not_reread
+  B12_kb3_record_not_matched: G-DVB: K-B3 was read with this bank's window list and an empty eval overlap
+    rc=1 1 failed, 96 deselected, 1 warning in 26.26s  [27s]
+    KILLED B12_kb3_record_not_matched
+  B13_coverage_record_not_required: G-DVB: COVERAGE is recorded as passed
+    rc=1 1 failed, 96 deselected, 1 warning in 25.55s  [27s]
+    KILLED B13_coverage_record_not_required
+== group kb: baseline (unmutated copy) on  -k "test_k_b3 or test_k_b2 or test_coverage_below or test_a_missing_bank or test_p_zero_reads_no_bank or test_the_bank_is_re..."
+    rc=0 12 passed, 85 deselected, 1 warning in 49.39s  [51s]
+  K01_bare_shard_accepted: the bank is a merged bank (its manifest's sha256 is its identity)
+    rc=1 1 failed, 96 deselected, 1 warning in 27.65s  [29s]
+    KILLED K01_bare_shard_accepted
+  K02_eval_overlap_not_checked: K-B3 check 3: bank clips are disjoint from eval-141
+    rc=1 1 failed, 91 deselected, 1 warning in 27.70s  [29s]
+    KILLED K02_eval_overlap_not_checked
+  K03_train_list_is_the_join: K-B3 check 1: every bank clip is in the ARM's TRAIN clip list (not merely in the join)
+    rc=1 1 failed, 5 passed, 91 deselected, 1 warning in 33.41s  [35s]
+    KILLED K03_train_list_is_the_join
+  K04_window_sha_is_the_banks_own: K-B3 check 2: the bank's window-list sha256 equals the TRAINER's
+    rc=1 1 failed, 3 passed, 92 deselected, 1 warning in 30.07s  [31s]
+    KILLED K04_window_sha_is_the_banks_own
+  K05_kb2_not_checked: K-B2: the bank's generating checkpoint is the --init-ckpt
+    rc=1 1 failed, 96 deselected, 1 warning in 24.97s  [26s]
+    KILLED K05_kb2_not_checked
+  K06_init_ckpt_not_required: K-B2 needs --init-ckpt
+    rc=1 1 failed, 96 deselected, 1 warning in 25.14s  [26s]
+    KILLED K06_init_ckpt_not_required
+  K07_coverage_not_enforced: COVERAGE < 0.5 blocks the launch
+    rc=1 1 failed, 96 deselected, 1 warning in 24.54s  [26s]
+    KILLED K07_coverage_not_enforced
+  K08_bank_not_re_indexed_by_name: the bank is re-indexed to the trainer's join BY NAME
+    rc=1 1 failed, 96 deselected, 1 warning in 24.03s  [25s]
+    KILLED K08_bank_not_re_indexed_by_name
+  K09_controls_not_recorded: the controls that were read are recorded in info (selfcheck.json) and read back by the gate
+    rc=1 1 failed, 95 deselected, 1 warning in 22.48s  [23s]
+    KILLED K09_controls_not_recorded
+  K10_grid_not_required: K-B3: the canonical eval-141 grid is REQUIRED (a check that cannot run is a refusal)
+    rc=1 1 failed, 96 deselected, 1 warning in 30.63s  [32s]
+    KILLED K10_grid_not_required
+  K11_header_eval_list_ignored: K-B3: the bank's own recorded eval list is also read
+    rc=1 1 failed, 96 deselected, 1 warning in 28.08s  [29s]
+    KILLED K11_header_eval_list_ignored
+  K12_cache_eval_manifest_ignored: K-B3: the cache's eval manifest is also read
+    rc=1 1 failed, 96 deselected, 1 warning in 25.20s  [26s]
+    KILLED K12_cache_eval_manifest_ignored
+  K13_vacuous_grid_accepted: K-B3: a grid that lists no clip is refused
+    rc=1 1 failed, 96 deselected, 1 warning in 27.52s  [29s]
+    KILLED K13_vacuous_grid_accepted
+  K14_synthetic_grid_path: K-B3: --synthetic reads the synthetic world's own grid
+    rc=1 1 failed, 96 deselected, 1 warning in 25.91s  [27s]
+    KILLED K14_synthetic_grid_path
+  K15_bank_read_at_p_zero: --dagger-p 0 reads no bank
+    rc=1 1 failed, 96 deselected, 1 warning in 23.89s  [25s]
+    KILLED K15_bank_read_at_p_zero
+== group probe: baseline (unmutated copy) on  -k "test_the_probe..."
+    rc=0 20 passed, 77 deselected, 1 warning in 59.08s  [60s]
+  P01_off_not_skipped: the probe does nothing when the lever is off
+    rc=1 96 deselected, 1 error in 8.70s  [10s]
+    KILLED P01_off_not_skipped
+  P02_no_eligible_window_accepted: the probe needs an eligible window
+    rc=1 1 failed, 96 deselected, 1 warning in 26.18s  [27s]
+    KILLED P02_no_eligible_window_accepted
+  P03_batch_keys_not_compared: the swap changes no key of the batch
+    rc=1 1 failed, 96 deselected, 1 warning in 30.62s  [32s]
+    KILLED P03_batch_keys_not_compared
+  P04_stray_input_accepted: every key forward_infer reads is replaced or kept
+    rc=1 1 failed, 96 deselected, 1 warning in 29.85s  [31s]
+    KILLED P04_stray_input_accepted
+  P05_shape_dtype_not_compared: the swap keeps every replaced tensor's shape and dtype
+    rc=1 1 failed, 96 deselected, 1 warning in 26.48s  [28s]
+    KILLED P05_shape_dtype_not_compared
+  P06_unselected_row_change_accepted: no unselected row changes in any replaced tensor
+    rc=1 1 failed, 96 deselected, 1 warning in 24.15s  [25s]
+    KILLED P06_unselected_row_change_accepted
+  P07_record_not_the_windows_own: a selected row is swapped for ITS window's own matched, uncut state
+    rc=1 1 failed, 96 deselected, 1 warning in 22.17s  [23s]
+    KILLED P07_record_not_the_windows_own
+  P08_kin3_not_the_banks: the swapped kin3 IS the bank record's
+    rc=1 1 failed, 96 deselected, 1 warning in 20.78s  [22s]
+    KILLED P08_kin3_not_the_banks
+  P09_no_identical_exemption: a selected row whose own ego is bit-identical to the logged one is exempted and counted
+    rc=1 1 failed, 96 deselected, 1 warning in 22.40s  [24s]
+    KILLED P09_no_identical_exemption
+  P10_all_identical_accepted: at least one non-identical selected row must exist
+    rc=1 1 failed, 96 deselected, 1 warning in 26.14s  [27s]
+    KILLED P10_all_identical_accepted
+  P11_no_base_at_rest_exemption: a base that cannot move at rest is exempted and counted
+    rc=1 1 failed, 96 deselected, 1 warning in 21.31s  [22s]
+    KILLED P11_no_base_at_rest_exemption
+  P12_changed_rows_not_required: every selected row changes in p10f, base, kin3 and p10_t
+    rc=1 1 failed, 93 deselected, 1 warning in 23.73s  [25s]
+    KILLED P12_changed_rows_not_required
+  P13_p10f_not_in_loop: ... p10f
+    rc=1 1 failed, 93 deselected, 1 warning in 22.89s  [24s]
+    KILLED P13_p10f_not_in_loop
+  P14_base_not_in_loop: ... base
+    rc=1 1 failed, 1 passed, 93 deselected, 1 warning in 23.52s  [25s]
+    KILLED P14_base_not_in_loop
+  P15_p10_t_not_in_loop: ... p10_t
+    rc=1 1 failed, 2 passed, 93 deselected, 1 warning in 24.19s  [25s]
+    KILLED P15_p10_t_not_in_loop
+  P16_kept_objects_not_checked: every kept key is the SAME object
+    rc=1 1 failed, 96 deselected, 1 warning in 23.29s  [24s]
+    KILLED P16_kept_objects_not_checked
+  P17_lab_s_more_than_rc: lab_s differs in rc only
+    rc=1 1 failed, 96 deselected, 1 warning in 24.90s  [26s]
+    KILLED P17_lab_s_more_than_rc
+  P18_rc_unselected_change: lab_s.rc is untouched on unselected rows
+    rc=1 1 failed, 96 deselected, 1 warning in 25.42s  [27s]
+    KILLED P18_rc_unselected_change
+  P19_rc_frame_change_not_checked: lab_s.rc equals its frame change to 1e-5
+    rc=1 1 failed, 96 deselected, 1 warning in 23.47s  [25s]
+    KILLED P19_rc_frame_change_not_checked
+  P20_no_g_live_on_swapped_batch: live_check on the swapped batch
+    rc=1 1 failed, 96 deselected, 1 warning in 23.91s  [25s]
+    KILLED P20_no_g_live_on_swapped_batch
+  P21_determinism_not_required: control: the same loss twice differs by exactly 0.0
+    rc=1 1 failed, 96 deselected, 1 warning in 33.20s  [34s]
+    KILLED P21_determinism_not_required
+  P22_p0_identity_not_required: control: p = 0 returns the same object, loss and gradient differ by exactly 0.0
+    rc=1 1 failed, 96 deselected, 1 warning in 22.56s  [24s]
+    KILLED P22_p0_identity_not_required
+  P23_loss_move_not_required: the swap moves the loss and the gradient
+    rc=1 1 failed, 96 deselected, 1 warning in 26.58s  [28s]
+    KILLED P23_loss_move_not_required
+  P24_p10f_alone_not_required: replacing p10f alone moves the loss
+    rc=1 1 failed, 96 deselected, 1 warning in 24.69s  [26s]
+    KILLED P24_p10f_alone_not_required
+  P25_prior_control_not_required: control: the frozen P10 prior's gradient difference is exactly 0.0
+    rc=1 1 failed, 96 deselected, 1 warning in 22.24s  [23s]
+    KILLED P25_prior_control_not_required
+  P26_wm_control_not_required: control: the world-model auxiliary's gradient difference is exactly 0.0
+    rc=1 1 failed, 96 deselected, 1 warning in 25.19s  [26s]
+    KILLED P26_wm_control_not_required
+  P27_p0_control_is_p1: control: the p = 0 batch is dag.apply(p = 0)
+    rc=1 1 failed, 96 deselected, 1 warning in 24.81s  [26s]
+    KILLED P27_p0_control_is_p1
+  P28_probe_not_at_p1: the probe swaps at p = 1 (every eligible row)
+    rc=1 1 failed, 96 deselected, 1 warning in 23.83s  [25s]
+    KILLED P28_probe_not_at_p1
+== group e2e: baseline (unmutated copy) on  -k "test_a_default_run or test_dag_0 or test_flags_to_config or test_p_one or test_a_real_run_gives or test_the_check_that_t..."
+    rc=0 18 passed, 79 deselected, 1 warning in 170.44s (0:02:50)  [172s]
+  W01_apply_line_deleted: the loop applies the swap (b = dag.apply(b, step))
+    rc=1 95 deselected, 1 error in 9.49s  [11s]
+    KILLED W01_apply_line_deleted
+  W02_swap_never_built: the swap main() builds is make_dagger(...)
+    rc=1 1 failed, 95 deselected, 1 warning in 24.33s  [26s]
+    KILLED W02_swap_never_built
+  W03_gate_not_given_the_swap: declared_vs_built reads the BUILT swap
+    rc=1 1 failed, 89 deselected, 1 warning in 23.86s  [25s]
+    KILLED W03_gate_not_given_the_swap
+  W04_probe_not_run: the in-process gate runs dagger_probe
+    rc=1 1 failed, 96 deselected, 1 warning in 30.85s  [32s]
+    KILLED W04_probe_not_run
+  W05_flat_levers_not_recorded: levers.dagger_p / levers.dagger_bank_sha256 are recorded
+    rc=1 1 failed, 95 deselected, 1 warning in 32.08s  [33s]
+    KILLED W05_flat_levers_not_recorded
+  W06_levers_dagger_not_recorded: levers.dagger (the built lever dict) is recorded
+    rc=1 1 failed, 95 deselected, 1 warning in 28.26s  [29s]
+    KILLED W06_levers_dagger_not_recorded
+  W07_summary_dagger_n_is_zero: summary.json carries dagger_n
+    rc=1 1 failed, 95 deselected, 1 warning in 31.53s  [33s]
+    KILLED W07_summary_dagger_n_is_zero
+  W08_selected_not_counted: the run total dagger_n counts the swapped rows
+    rc=1 1 failed, 95 deselected, 1 warning in 33.22s  [34s]
+    KILLED W08_selected_not_counted
+  W09_eligible_counts_selected: the run total dagger_eligible counts the eligible rows
+    rc=1 1 failed, 95 deselected, 1 warning in 47.20s  [48s]
+    KILLED W09_eligible_counts_selected
+  W10_rows_not_counted: the run total dagger_rows counts the samples seen
+    rc=1 1 failed, 95 deselected, 1 warning in 42.34s  [44s]
+    KILLED W10_rows_not_counted
+  W11_resume_forgets_totals: a resumed run keeps counting
+    rc=1 1 failed, 96 deselected, 1 warning in 50.94s  [52s]
+    KILLED W11_resume_forgets_totals
+  W12_checkpoint_drops_totals: the checkpoint carries the totals
+    rc=1 1 failed, 95 deselected, 1 warning in 24.98s  [26s]
+    KILLED W12_checkpoint_drops_totals
+  W13_interval_counts_dropped: the log carries per-interval counts when the lever is on
+    rc=1 1 failed, 96 deselected, 1 warning in 24.99s  [26s]
+    KILLED W13_interval_counts_dropped
+  W14_log_keys_always: a default run's log is the pre-change log (no dagger keys)
+    rc=1 1 failed, 96 deselected, 1 warning in 24.09s  [25s]
+    KILLED W14_log_keys_always
+  W15_interval_not_reset: the interval counters restart at every log line
+    rc=1 1 failed, 96 deselected, 1 warning in 25.04s  [26s]
+    KILLED W15_interval_not_reset
+  S14_declared_sha_not_recorded: levers.dagger_bank_sha256_declared records the declared hash
+    rc=1 1 failed, 96 deselected, 1 warning in 31.62s  [33s]
+    KILLED S14_declared_sha_not_recorded
+== group ident: baseline (unmutated copy) on  -k "test_defaults_reproduce or test_the_saved_reference or test_the_single_applying_lines..."
+    rc=0 3 passed, 94 deselected in 19.32s  [20s]
+  I01_default_log_keys_differ: the default run IS the pre-change run, key for key (no dagger keys in the log at p = 0)
+    rc=1 1 failed, 96 deselected in 20.38s  [21s]
+    KILLED I01_default_log_keys_differ
+  I02_default_summary_loses_a_pre_change_key: the default run IS the pre-change run: the summary keeps every pre-change key
+    rc=1 1 failed, 96 deselected in 24.23s  [25s]
+    KILLED I02_default_summary_loses_a_pre_change_key
+== group wsha: baseline (unmutated copy) on  -k "test_every_run_records_the_train_window_list_sha256 or test_defaults_reproduce..."
+    rc=0 2 passed, 95 deselected, 1 warning in 62.47s (0:01:02)  [63s]
+  W01_window_sha_not_in_info: build_data records the TRAIN window-list digest for every run
+    rc=1 1 failed, 96 deselected, 1 warning in 25.38s  [26s]
+    KILLED W01_window_sha_not_in_info
+  W02_window_sha_not_in_summary: summary.json carries the digest at the level of train_sha256
+    rc=1 1 failed, 96 deselected, 1 warning in 24.35s  [25s]
+    KILLED W02_window_sha_not_in_summary
+  W03_window_sha_only_for_dagger_arms: the digest is recorded on EVERY run (default and DAG-0 too), not only when the lever is on
+    rc=1 1 failed, 96 deselected, 1 warning in 22.58s  [24s]
+    KILLED W03_window_sha_only_for_dagger_arms
+  W04_window_sha_of_a_shorter_list: the digest is over the window list the trainer BUILT (all of it)
+    rc=1 1 failed, 96 deselected, 1 warning in 24.62s  [26s]
+    KILLED W04_window_sha_of_a_shorter_list
+  W05_window_sha_of_the_clip_list: the digest is a hash of WINDOWS (clip:t), not of the clip list
+    rc=1 1 failed, 96 deselected, 1 warning in 27.48s  [28s]
+    KILLED W05_window_sha_of_the_clip_list
+  W06_summary_key_renamed: the key is the reader's name, train_window_list_sha256
+    rc=1 1 failed, 95 deselected, 1 warning in 24.68s  [26s]
+    KILLED W06_summary_key_renamed
+delivered files changed during the run: none
+105 of 105 mutants killed
