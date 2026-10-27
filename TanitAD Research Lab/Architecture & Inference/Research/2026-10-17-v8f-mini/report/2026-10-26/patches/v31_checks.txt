@@ -1,0 +1,46 @@
+checks.txt for report v31 (source tip 569a9d9b; v30 blobs read with git cat-file; run 2026-10-27T22:36Z)
+
+### superset_check.py 569a9d9b:<repo>/V8F_SCIENTIFIC_REPORT.md  <v31 V8F_SCIENTIFIC_REPORT.md>  none
+tip tokens: 861 numbers, 275 code spans | waived: 0
+ZZSUPERSET-OKZZ
+### demote_check.py 569a9d9b:<repo>/V8F_SCIENTIFIC_REPORT.md  <v31 V8F_SCIENTIFIC_REPORT.md>  none
+ZZDEMOTE-OKZZ
+
+### superset_check.py 569a9d9b:<repo>/v8f_report.html  <v31 v8f_report.html>  none
+tip tokens: 871 numbers, 277 code spans | waived: 0
+ZZSUPERSET-OKZZ
+### demote_check.py 569a9d9b:<repo>/v8f_report.html  <v31 v8f_report.html>  none
+ZZDEMOTE-OKZZ
+
+== bytes / line endings / encoding
+V8F_SCIENTIFIC_REPORT.md: 152776 bytes, CR bytes=0, LF bytes=1051, BOM=False, utf-8 decode OK
+v8f_report.html: 164196 bytes, CR bytes=0, LF bytes=1200, BOM=False, utf-8 decode OK
+patches/patch_v31.py: 31688 bytes, CR bytes=0, LF bytes=302, BOM=False, utf-8 decode OK
+== html == page_template_v30.html with %%MD%% replaced by the v31 md: True
+== html contains the v31 sections: True
+== diff v30 -> v31 md: 201 added/changed lines, 3 v30 lines replaced or removed
+   REPLACED v30 line: **Status:** research report, v30 of 2026-10-27, results through repository tip `93aa1956` (branch `agent/arch- ...
+   REPLACED v30 line: The levers aimed at those rows are DAgger iteration 2 and DAG-OACC, both on box 2. Attribution to the hierarch ...
+   REPLACED v30 line: | 1t | **DAG-HACC** (zero training): HACC's rule re-fitted on DAG, read on Read A with KEEP | DOMINANT / LONGI ...
+== banned words in added/changed lines:
+   void: 0
+   superseded: 0
+   retracted: 0
+   formerly: 0
+   no longer: 0
+   correction: 0
+   withdrawn: 0
+== 'closed loop' / 'closed-loop' / 'drives' in added lines: ['closed-loop']
+== tier stamps: lines in 7.22/7.23 mentioning T1-kin: 18
+== 7.22: families present: {'LONGITUDINAL': True, 'LATERAL': True, 'TACTICAL': True, 'STRATEGIC': True} | estimator B = 2,000: True | 141 episodes: True
+== 7.23: families present: {'LONGITUDINAL': True, 'LATERAL': True, 'TACTICAL': True, 'STRATEGIC': True} | estimator B = 2,000: True | 141 episodes: True
+== patch_v31.py re-run on the v30 tree reproduces both deliverables byte for byte: True | report v31 built 150636
+
+Note on the 'closed-loop' hit above: it is in two v30-carried lines only (the status line's "no closed-loop (T2) number exists" and the v30 section 8.3
+paragraph's "there is no closed-loop evidence"), both negations. patch_v31.py asserts that none of the text it inserts contains "closed loop",
+"closed-loop" or "drives", or any of the seven banned words.
+Not run: a browser render (the page loads marked and MathJax from CDNs; no network was used). Instead the md was parsed with a local marked 16.4.2 using the
+template's own pre-processing: tables 19 -> 23 (the four new tables), h3 36 -> 38 (7.22, 7.23), math spans 232 -> 233 (the one in row 1u), no table
+with inconsistent column counts, 8.4 rows 1t-1x have 5 pipes each.
+
+CR bytes (all deliverables, counted with python on the final bytes): V8F_SCIENTIFIC_REPORT.md 0, v8f_report.html 0, patches/patch_v31.py 0, NUMBERS_AUDIT.md 0, checks.txt 0.
