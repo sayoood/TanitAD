@@ -1,0 +1,537 @@
+--- a/stack/tanitad/models/v8f_mini.py
++++ b/stack/tanitad/models/v8f_mini.py
+@@ -27,6 +27,7 @@
+ from __future__ import annotations
+ 
+ import ast
++import hashlib
+ import inspect
+ import json
+ import math
+@@ -124,6 +125,26 @@
+ #: S and T are still built, trained on their own losses and run; T still reads S. Only the wires into O are cut.
+ O_INTERFACE_MODES = ("full", "cut")
+ 
++#: PREREG_V8F_TEGOCUT (`--t-ego`): what T's EGO token is. ``full`` (the default, every earlier arm bit for bit, the RNG stream included) = ``e_ego(standardise(p10f[last_t]))``, T's own reading of the
++#: executed motion. ``const`` = the CONSTANT ``t_ego_c`` (a frozen, non-trainable buffer: the init checkpoint's ``e_ego.bias``, i.e. the token M2b itself emits at the P10 fit's mean kinematic state),
++#: at training AND inference. ONLY T's ego slot changes: S's and O's ego tokens, the P10 prior and ``e_ego`` itself are untouched.
++T_EGO_MODES = ("full", "const")
++
++
++def tensor_sha256(x) -> str:
++    """The sha256 of ``x``'s float32 bytes (C order): the ONE definition of 'the same bytes' for the T-EGOCUT constant (the model's lever, the trainer's init record and the tests all call it)."""
++    return hashlib.sha256(torch.as_tensor(x).detach().cpu().to(torch.float32).contiguous().numpy().tobytes()).hexdigest()
++
++
++def check_t_ego_c(c, d: int) -> Tensor:
++    """Validate a T-EGOCUT constant: shape ``[d]`` and finite (REFUSED with ``ValueError`` otherwise). Returns it as a float32 tensor (a copy)."""
++    t = torch.as_tensor(c).detach().to(torch.float32).clone()
++    if tuple(t.shape) != (int(d),):
++        raise ValueError(f"t_ego_c must have shape [{d}], got {list(t.shape)}")
++    if not bool(torch.isfinite(t).all()):
++        raise ValueError("t_ego_c must be finite")
++    return t
++
+ 
+ LIMITS_MS = (30 / 3.6, 50 / 3.6, 100 / 3.6, 120 / 3.6)
+ #: the scale the WM auxiliary divides action channel 1 by, per kin mode (PI ruling D-PI-YAWRATE-1): the recorded steer angle
+@@ -186,6 +207,8 @@
+                                        # T's code = zeros AFTER every override, S's checkpoints = the nominal ck_nom with ok = 0). S and T are still built, trained and run
+     w_acc: float = 0.0                 # PREREG_V8F_OACC (`--w-acc`): the weight of the acceleration-matching term on O's plan (accel_term below). 0.0 = the term is NOT in the total = every earlier arm,
+                                        # bit for bit (the term is still LOGGED under T["acc"]). > 0 = OACC's X: its value is fixed by the PREREG's rule, written into the argv, never tuned
++    t_ego: str = "full"                # PREREG_V8F_TEGOCUT (`--t-ego`): full = T reads its own ego token (every earlier arm, bit for bit, the RNG stream included); const = T's ego slot is the frozen buffer
++                                       # `t_ego_c` (the init checkpoint's e_ego.bias) at training AND inference. S's and O's ego tokens are untouched. A `const` model whose buffer is absent REFUSES at the forward
+ 
+     @property
+     def window_start_effective(self) -> int:
+@@ -203,6 +226,8 @@
+             raise ValueError(f"code_mix must be one of {CODE_MIX_MODES}, got {self.code_mix!r}")
+         if self.o_interface not in O_INTERFACE_MODES:
+             raise ValueError(f"o_interface must be one of {O_INTERFACE_MODES}, got {self.o_interface!r}")
++        if self.t_ego not in T_EGO_MODES:
++            raise ValueError(f"t_ego must be one of {T_EGO_MODES}, got {self.t_ego!r}")
+         if not (math.isfinite(self.w_acc) and self.w_acc >= 0.0):
+             raise ValueError(f"w_acc must be a finite number >= 0, got {self.w_acc!r}")
+         if self.hmax < self.hist + self.max_age_s:
+@@ -609,6 +634,7 @@
+         self.register_buffer("ck_nom", torch.tensor([[a, 0.0, 0.0] for a in CKPT_ARCS]))
+         self.register_buffer("ck_scale", torch.tensor([10.0, 10.0, 0.5]))
+         self.register_buffer("hacc_w", None)       # PREREG_V8F_HACC post-map weights [30, 2]: ABSENT by default (a None buffer is not in the state dict: every earlier checkpoint loads and runs bit for bit)
++        self.register_buffer("t_ego_c", None)      # PREREG_V8F_TEGOCUT: T's constant ego token [d]: ABSENT by default (same pattern: not in the state dict, no Parameter, no RNG draw: every earlier checkpoint loads and runs bit for bit)
+         # scene adapter (shared) -- the only place frozen features meet trainable weights
+         self.adapter = nn.Sequential(nn.LayerNorm(cfg.d_feat), nn.Linear(cfg.d_feat, d))
+         self.pos = nn.Parameter(torch.randn(cfg.n_tok, d) * 0.02)
+@@ -637,6 +663,21 @@
+     def _ego(self, f8):
+         return self.e_ego(self.prior.standardise(f8))
+ 
++    def _t_ego_const(self, B: int) -> Tensor:
++        """PREREG_V8F_TEGOCUT: T's constant ego token, the SAME ``t_ego_c`` for every one of the ``B`` samples ([B, d], a view: no copy, no gradient path, no RNG draw). A model built ``const`` whose buffer is
++        absent REFUSES here (the buffer is set from the init checkpoint by :meth:`set_t_ego_const`, or arrives with a state dict that carries it): it never falls back to the live token."""
++        if self.t_ego_c is None:
++            raise RuntimeError("t_ego='const' but the t_ego_c buffer is absent: set_t_ego_const(<the init checkpoint's e_ego.bias>) or load a state dict that carries t_ego_c")
++        return self.t_ego_c[None].expand(B, -1)
++
++    def set_t_ego_const(self, c) -> None:
++        """Set T's constant ego token: ``c`` [d], finite (:func:`check_t_ego_c`), stored as a float32 BUFFER (not a Parameter: the optimiser never sees it, it follows ``.to(device)`` and is saved with the state
++        dict). Only a model built ``t_ego='const'`` takes one: on a ``full`` model it is REFUSED (a ``full`` model has no such buffer, and its state dict would then carry a key it must not)."""
++        if self.cfg.t_ego != "const":
++            raise ValueError(f"set_t_ego_const needs a model built with t_ego='const', this one is {self.cfg.t_ego!r}")
++        t = check_t_ego_c(c, self.cfg.d).to(self.basis.device)
++        self.register_buffer("t_ego_c", t)
++
+     @staticmethod
+     def _at(x: Tensor, idx: Tensor) -> Tensor:                     # x [B, F, ...] -> x[b, idx[b]]
+         return x[torch.arange(x.shape[0], device=x.device), idx]
+@@ -683,7 +724,8 @@
+     def run_t(self, b, adapt, last_t, ck_t, ck_ok):
+         cfg = self.cfg
+         i = last_t
+-        cond = torch.stack([self._ego(self._at(b["p10f"], i)), self.e_nav(self._at(b["nav"], i)),
++        ego_tok = self._t_ego_const(i.shape[0]) if cfg.t_ego == "const" else self._ego(self._at(b["p10f"], i))      # PREREG_V8F_TEGOCUT: ONE line (a mutation deletes it); full = the pre-change token, op for op
++        cond = torch.stack([ego_tok, self.e_nav(self._at(b["nav"], i)),
+                             self.e_lim(torch.cat([b["limit"], b["limit_ok"][:, None].float()], -1)),
+                             self._ck_cond(ck_t, ck_ok)], 1)
+         sc, pad = (self._scene(adapt, b["frame_ok"], i) if not cfg.navonly else (None, None))
+@@ -823,6 +865,11 @@
+             hacc_check_weights(state_dict[key])
+             if self.hacc_w is None:
+                 self.register_buffer("hacc_w", torch.zeros(K30, 2, device=self.basis.device))
++        tkey = prefix + "t_ego_c"                                        # PREREG_V8F_TEGOCUT: ONLY a model BUILT const takes the constant a state dict carries (shape / finiteness checked); a `full` model leaves
++        if tkey in state_dict and self.cfg.t_ego == "const":              # the buffer absent, so a strict load REFUSES the key (an unexpected key): a checkpoint whose config lost `t_ego` is never evaluated with the live token
++            check_t_ego_c(state_dict[tkey], self.cfg.d)
++            if self.t_ego_c is None:
++                self.register_buffer("t_ego_c", torch.zeros(self.cfg.d, device=self.basis.device))
+         super()._load_from_state_dict(state_dict, prefix, local_metadata, strict, missing_keys, unexpected_keys, error_msgs)
+ 
+     def forward_diag(self, batch: dict, code_override: Tensor) -> dict:
+@@ -922,6 +969,8 @@
+                 "cons_absent": cfg.cons_absent, "code_mix": cfg.code_mix,        # PREREG_V8F_MIXO: the teacher-forcing granularity the BUILT model's _forward reads
+                 "o_interface": cfg.o_interface,                                # PREREG_V8F_FLAT: what the BUILT model's _forward hands O (full: S's checkpoints + T's code; cut: constants)
+                 "w_acc": cfg.w_acc,                                            # PREREG_V8F_OACC: the weight the BUILT loss gives the acceleration term (0.0 = not in the total)
++                "t_ego": cfg.t_ego,                                            # PREREG_V8F_TEGOCUT: what T's ego slot is in the BUILT model's run_t (full: its own token; const: the frozen buffer) ...
++                "t_ego_c_sha256": None if self.t_ego_c is None else tensor_sha256(self.t_ego_c),     # ... and the sha256 of that buffer's float32 bytes (None = absent = every earlier arm)
+                 "wm_idm_gamma": 0.0 if self.wm is None else float(self.wm.gamma),
+                 "kin_mode": self.cfg.kin_mode, "wm_ch1_scale": None if self.wm is None else float(self.wm.ch1_scale),
+                 "p_gt_start": cfg.p_gt_start, "p_gt_end": cfg.p_gt_end,      # PREREG_V8F_PGT: the scheduled-sampling schedule the train loop reads
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -90,6 +90,10 @@
+     # argv -> make_dagger (bank load + K-B2 + K-B3 + COVERAGE) -> the swap -> declared_vs_built (bad_dagger) -> G-LIVE on a swapped batch + dagger_probe (the swapped own-state tensors reach the loss
+     # gradient, a p = 0 control reads EXACTLY 0.0) -> `b = dag.apply(b, step)` in the loop. With --dagger-p 0 (the default) no bank is read and no row is swapped.
+     "dagger_p": "dagger:dagger_p", "dagger_bank": "dagger:dagger_bank", "dagger_bank_sha256": "dagger:dagger_bank_sha256", "dagger_seed": "dagger:dagger_seed",
++    # PREREG_V8F_TEGOCUT (H-V8F-TEGOCUT-1): T's ego token replaced by a constant. `lever:t_ego` = equals the BUILT model's lever (built_levers()["t_ego"]):
++    # argv -> make_config (cfg.t_ego) -> the init checkpoint's e_ego.bias read from the FILE -> model.set_t_ego_const -> declared_vs_built (bad_t_ego) -> G-LIVE (t_ego_probe) -> `run_t`'s ego slot.
++    # With --t-ego full (the default) no constant is read, the buffer is absent and nothing of the lever runs.
++    "t_ego": "lever:t_ego",
+     "init_ckpt": "data:init_ckpt",            # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
+     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
+     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
+@@ -149,6 +153,10 @@
+                          "differs. Default \"\" = none")
+     ap.add_argument("--dagger-seed", dest="dagger_seed", type=int, default=DG.DAGGER_DEFAULTS["seed"],
+                     help="the swap's own seed: the draws of step k are a function of (seed, k) only, on a private generator (a resumed run draws what an uninterrupted run drew)")
++    ap.add_argument("--t-ego", dest="t_ego", choices=M.T_EGO_MODES, default="full",
++                    help="PREREG_V8F_TEGOCUT: what T's EGO token is. full (default) = T reads its own ego state, e_ego(standardise(p10f[last_t])) (every earlier arm, bit for bit, the RNG stream included); "
++                         "const = a frozen, non-trainable buffer t_ego_c = the --init-ckpt FILE's e_ego.bias, at training AND inference (S's and O's ego tokens, the P10 prior and e_ego itself are untouched). "
++                         "const needs --init-ckpt (without M2b's token there is nothing to freeze) and is never combined with --ego-perturb-p / --dagger-p")
+     ap.add_argument("--init-ckpt", dest="init_ckpt", default="",
+                     help="O-RECOVER's start state: when set and --out holds no ckpt_last.pt, load the MODEL weights of this checkpoint (a v8f_mini_train ckpt, e.g. M2b's) STRICTLY into the freshly built model (its architecture "
+                          "config must match the built one, else the launch is REFUSED), at step 0 with a FRESH optimiser and schedule. An existing ckpt_last.pt in --out still resumes as ever (resume wins). The path and the file's "
+@@ -247,7 +255,7 @@
+                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
+                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
+                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
+-                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc)
++                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, t_ego=a.t_ego)
+ 
+ 
+ def bad_encoder(a, enc, data_info) -> list:
+@@ -480,6 +488,59 @@
+     return bad
+ 
+ 
++def bad_t_ego(a, model, data_info) -> list:
++    """The T-EGOCUT half of the launch gate (G-DVB). Empty = pass. The declared ``--t-ego`` is read back from the BUILT model (its config AND its levers); then
++
++      full    the buffer is ABSENT (a ``full`` model with a constant is a state dict carrying a key it must not) and no constant is recorded
++      const   needs ``--init-ckpt`` (without M2b's token there is nothing to freeze); the buffer is present, [d], float32 and finite; its bytes EQUAL the init checkpoint FILE's ``e_ego.bias`` bit for bit (the file is
++              re-read here, and its sha256 must be the one the init record carries); it is a BUFFER (not in ``parameters()``, ``requires_grad`` False) and the flag added no Parameter (the built parameter names and shapes
++              equal those of a twin built ``full``); never combined with ``--ego-perturb-p`` or ``--dagger-p`` (one lever per arm)"""
++    bad = []
++    lv = model.built_levers()
++    if lv.get("t_ego") != a.t_ego or model.cfg.t_ego != a.t_ego:
++        bad.append(f"lever t_ego: declared {a.t_ego!r} but built {lv.get('t_ego')!r} (cfg {model.cfg.t_ego!r})")
++    c = model.t_ego_c
++    if a.t_ego != "const":
++        if c is not None:
++            bad.append("--t-ego full is declared but the model carries a t_ego_c buffer")
++        if lv.get("t_ego_c_sha256") is not None:
++            bad.append(f"--t-ego full is declared but a constant is recorded: {lv.get('t_ego_c_sha256')!r}")
++        return bad
++    if not a.init_ckpt:
++        bad.append("--t-ego const needs --init-ckpt: without M2b's token there is nothing to freeze (the constant is the init checkpoint's e_ego.bias)")
++    if a.ego_perturb_p > 0 or a.dagger_p > 0:
++        bad.append(f"--t-ego const together with --ego-perturb-p {a.ego_perturb_p} / --dagger-p {a.dagger_p}: the levers are never combined in one arm")
++    if c is None:
++        bad.append("--t-ego const is declared but no t_ego_c buffer was built: T would refuse at the forward")
++        return bad
++    if c.dtype != torch.float32 or tuple(c.shape) != (model.cfg.d,) or not bool(torch.isfinite(c).all()):
++        bad.append(f"t_ego_c must be a finite float32 [{model.cfg.d}], got {c.dtype} {list(c.shape)}")
++    if c.requires_grad or any(p is c for p in model.parameters()) or any(n.split(".")[-1] == "t_ego_c" for n, _ in model.named_parameters()):
++        bad.append("t_ego_c is trainable: it must be a frozen BUFFER, never a Parameter (the optimiser must not see it)")
++    if lv.get("t_ego_c_sha256") != M.tensor_sha256(c):
++        bad.append(f"lever t_ego_c_sha256 {lv.get('t_ego_c_sha256')!r} is not the sha256 of the built buffer")
++    rec = (data_info or {}).get("init_ckpt") or {}
++    if a.init_ckpt:
++        if not rec.get("e_ego_bias_sha256"):
++            bad.append("the init record carries no e_ego_bias_sha256: the constant was not read from the init checkpoint")
++        elif rec["e_ego_bias_sha256"] != lv.get("t_ego_c_sha256"):
++            bad.append(f"t_ego_c sha256 {str(lv.get('t_ego_c_sha256'))[:12]} != the init checkpoint's e_ego.bias sha256 {rec['e_ego_bias_sha256'][:12]}: c must be the init FILE's e_ego.bias")
++        try:
++            want = read_init_t_ego_c(a.init_ckpt)
++        except Exception as e:                                       # noqa: BLE001  an unreadable / foreign file is a refusal
++            bad.append(f"the init checkpoint cannot be re-read for t_ego_c: {type(e).__name__}: {str(e)[:200]}")
++        else:
++            if want.shape != c.shape or not torch.equal(want, c.detach().cpu()):
++                bad.append("t_ego_c is not bit-identical to the init checkpoint file's e_ego.bias (re-read from disk)")
++    import dataclasses
++    with torch.random.fork_rng(devices=[]):                          # the twin's random initialisation must not move the RNG stream the run (and its probes) will use
++        twin = M.V8FMini(dataclasses.replace(model.cfg, t_ego="full"), model.prior)
++    sig = lambda m: [(n, tuple(p.shape), p.requires_grad) for n, p in m.named_parameters()]      # noqa: E731
++    if sig(model) != sig(twin):
++        bad.append("the --t-ego flag changed the model's parameter list: it must add no Parameter (the optimiser state layout and n_params_trainable must equal a --t-ego full model's)")
++    return bad
++
++
+ def bad_init_ckpt(a, data_info) -> list:
+     """``--init-ckpt`` read back (G-DVB): declared -> the record exists, names the declared path, carries the file's sha256, and EITHER the model state really IS that checkpoint's (``load_init_ckpt`` compared every
+     tensor after the load) OR the load was skipped because ``--out`` already holds a ckpt_last.pt (resume wins); not declared -> nothing was loaded."""
+@@ -525,6 +586,10 @@
+     sd = ck["model"]
+     rec = {"path": os.path.abspath(path), "sha256": h.hexdigest(), "applied": bool(apply), "skipped": None if apply else "resume", "n_tensors": len(sd), "n_mismatch_after_load": None,
+            "source_step": ck.get("step"), "source_arm": ck.get("arm"), "source_seed": ck.get("seed"), "source_argv_sha": ck.get("argv_sha")}
++    if cfg.t_ego == "const":                          # PREREG_V8F_TEGOCUT: the sha256 of the FILE's e_ego.bias bytes (read here, from the file, whether or not the load is applied): G-DVB compares the built constant to it
++        if "e_ego.bias" not in sd:
++            raise ValueError("--t-ego const needs the init checkpoint's e_ego.bias, and this checkpoint has none")
++        rec["e_ego_bias_sha256"] = M.tensor_sha256(sd["e_ego.bias"])
+     if not apply:
+         return rec
+     model.load_state_dict(sd, strict=True)
+@@ -533,6 +598,15 @@
+     return rec
+ 
+ 
++def read_init_t_ego_c(path) -> torch.Tensor:
++    """PREREG_V8F_TEGOCUT: T's constant ego token = the init checkpoint FILE's ``model["e_ego.bias"]`` ([d] float32), read from the file. NEVER from the live model: on a resume the init is not applied (the live model is a random
++    initialisation at gate time) and later in training ``e_ego.bias`` drifts with S's and O's training of ``e_ego``. It is c = ``e_ego(standardise(xm))`` exactly, because ``standardise(xm)`` = 0."""
++    ck = torch.load(path, map_location="cpu", weights_only=False)
++    if not isinstance(ck, dict) or not isinstance(ck.get("model"), dict) or "e_ego.bias" not in ck["model"]:
++        raise ValueError("--t-ego const needs the init checkpoint's e_ego.bias, and this file has none")
++    return ck["model"]["e_ego.bias"].detach().to(torch.float32).clone()
++
++
+ class LRSchedule:
+     """The loop's learning-rate schedule: linear warmup over ``warmup`` steps to ``lr``, then a cosine to 0.1 x ``lr`` at ``total``. ONE definition: the loop CALLS it and ``bad_schedule`` (G-DVB) READS IT BACK
+     -- the declared ``--warmup`` is checked against the schedule that was built, not against the argv it was built from."""
+@@ -572,6 +646,7 @@
+     bad = bad_encoder(a, enc, data_info)
+     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
+     bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
++    bad += bad_t_ego(a, model, data_info)                                                        # PREREG_V8F_TEGOCUT: --t-ego read back from the BUILT model; the constant against the init FILE's e_ego.bias
+     parser_dests = {act.dest for act in build_parser()._actions if act.dest != "help"}
+     missing = sorted(parser_dests - set(FLAG_CHECKS))
+     if missing:
+@@ -1058,6 +1133,175 @@
+     return res
+ 
+ 
++T_EGO_OUT_KEYS = ("goal_logits", "lat_logits", "lon_logits", "cons_std")
++
++
++def _t_ego_base(m0, mode: str):
++    """A COPY of ``m0`` set to ``mode`` ('const' | 'full') for :func:`t_ego_probe`. A ``full`` launch's probe still has to SEE the const branch: its constant is then this copy's own ``e_ego.bias`` (what M2b's init file would hold)."""
++    m = copy.deepcopy(m0)
++    m.cfg.t_ego = mode
++    if mode == "const" and m.t_ego_c is None:
++        m.register_buffer("t_ego_c", m.e_ego.bias.detach().clone())
++    return m
++
++
++def _t_ego_core(base, batch) -> tuple:
++    """The forward half of one branch of :func:`t_ego_probe` (clauses a, b, h, f, c) on a COPY of ``base``. Returns (record, T's outputs). Every number is a plain float / bool, so two runs compare exactly."""
++    m = copy.deepcopy(base)
++    B = int(batch["feats"].shape[0])
++    r = {"mode": m.cfg.t_ego}
++    donor = batch["p10f"].roll(1, 0)
++    cap = {}
++    for nm in ("read_s", "read_t", "read_o"):                           # the cond each reader is HANDED, captured at the reader's own input: the tensors the actual caller `_forward` passes
++        rd = getattr(m, nm)
++
++        def fwd_(cond, *a, _nm=nm, _f0=rd.forward, **k):
++            cap[_nm] = cond.detach().clone()
++            return _f0(cond, *a, **k)
++        rd.forward = fwd_
++    run_t0 = m.run_t
++
++    def run_t_(b, adapt, last_t, ck_t, ck_ok):
++        cap["run_t"] = (adapt, last_t, ck_t, ck_ok)
++        return run_t0(b, adapt, last_t, ck_t, ck_ok)
++    m.run_t = run_t_
++    m.eval()
++    with torch.no_grad():
++        out = m._forward(batch, 0.0, False)
++        adapt, last_t, ck_t, ck_ok = cap["run_t"]
++        last_now = torch.full((B,), batch["feats"].shape[1] - 1, dtype=torch.long)
++        last_s = last_now - batch["a_s"]
++        live_t = m._ego(m._at(batch["p10f"], last_t))                    # T's own token, computed outside run_t (the control)
++        r["donor_moves_the_live_token"] = bool((live_t != m._ego(m._at(donor, last_t))).any())
++        r["c_differs_from_the_live_token"] = bool((m.t_ego_c[None] != live_t).any()) if m.t_ego_c is not None else None
++        slot = cap["read_t"][:, 0]                                       # (a) TOKEN: the ego slot of the cond that read_t receives
++        r["a_token_is_c_every_row"] = bool(m.t_ego_c is not None and torch.equal(slot, m.t_ego_c[None].expand(B, -1)))
++        r["a_token_is_the_live_token"] = bool(torch.equal(slot, live_t))
++        r["h_s_token_is_its_own"] = bool(torch.equal(cap["read_s"][:, 0], m._ego(m._at(batch["p10f"], last_s))))        # (h) S and O keep their OWN ego tokens, whatever T does
++        r["h_o_token_is_its_own"] = bool(torch.equal(cap["read_o"][:, 0], m._ego(m._at(batch["p10f"], last_now))))
++        t0 = run_t0(batch, adapt, last_t, ck_t, ck_ok)                   # (b) INVARIANCE: run_t on a DONOR p10f, the checkpoint input held fixed
++        t1 = run_t0({**batch, "p10f": donor}, adapt, last_t, ck_t, ck_ok)
++        r["b_max_abs_dT_under_donor_p10f"] = {k: float((t1[k] - t0[k]).abs().max()) for k in T_EGO_OUT_KEYS}
++        base_out = m.forward_infer(batch)                                # (f) RESIDUAL (recorded, never gating): back door 2 (S's checkpoint token) and back door 3 (the odometry in it)
++        d1 = m.forward_infer({**batch, "p10f": donor})
++        d2 = m.forward_infer({**batch, "p10f": donor, "pose_t": batch["pose_t"].roll(1, 0), "pose_s": batch["pose_s"].roll(1, 0)})
++        dT = lambda o, o2: max(float((o[k] - o2[k]).abs().max()) for k in ("goal_logits", "lat_logits", "lon_logits"))      # noqa: E731
++        r["f_residual_dT_donor_p10f"], r["f_residual_dT_donor_p10f_and_poses"] = dT(base_out, d1), dT(base_out, d2)
++        keys = sorted(base_out["_keys_read"])
++        outs = {k: out[k].detach().clone() for k in T_EGO_OUT_KEYS}
++    mg = copy.deepcopy(base)                                             # (c) GRADIENT: T's own loss terms w.r.t. e_ego, the checkpoint input held fixed AND detached (detach_upper on this copy)
++    mg.cfg.detach_upper = True
++    mg.train()
++    T = mg.loss(batch, p_gt=0.0)["terms"]
++    gr = torch.autograd.grad(T["goal"] + T["lat"] + T["lon"] + T["cons"], [mg.e_ego.weight, mg.e_ego.bias, *mg.read_t.parameters()], allow_unused=True)
++    z = lambda g: 0.0 if g is None else float(g.abs().sum())      # noqa: E731
++    r["c_grad_T_terms_wrt_e_ego"] = z(gr[0]) + z(gr[1])
++    r["c_grad_T_terms_wrt_read_t"] = sum(z(g) for g in gr[2:])
++    return r, outs, keys
++
++
++def _t_ego_train(base, batch, steps: int = 3, lr: float = 1e-3) -> dict:
++    """The training half of one branch (clauses d, e): live_check's own three AdamW steps on a COPY of ``base``. (d) the gradient accumulated on read_t, trunk_t, h_goal, h_lat, h_lon, h_cons and e_ego; (e) the buffer
++    is a buffer (not a Parameter) and its bytes after the steps."""
++    m = copy.deepcopy(base)
++    m.train()
++    r = {"e_is_a_buffer_not_a_parameter": bool(m.t_ego_c is not None and not m.t_ego_c.requires_grad and not any(p is m.t_ego_c for p in m.parameters()) and "t_ego_c" in dict(m.named_buffers()))}
++    before = m.t_ego_c.detach().clone() if m.t_ego_c is not None else None
++    grp = {"read_t": m.read_t, "trunk_t": m.trunk_t, "h_goal": m.h_goal, "h_lat": m.h_lat, "h_lon": m.h_lon, "h_cons": m.h_cons, "e_ego": m.e_ego}
++    acc = {k: 0.0 for k in grp}
++    opt = torch.optim.AdamW([p for p in m.parameters() if p.requires_grad], lr=lr)
++    for s_ in range(steps):
++        opt.zero_grad(set_to_none=False)
++        m.loss(batch, p_gt=0.5, gen=torch.Generator().manual_seed(s_))["terms"]["total"].backward()
++        for k, v in grp.items():
++            acc[k] += sum(float(p.grad.abs().sum()) for p in v.parameters() if p.grad is not None)
++        opt.step()
++    r["d_grad_by_group"] = acc
++    r["e_max_abs_change_of_c_after_3_steps"] = None if before is None else float((m.t_ego_c.detach() - before).abs().max())
++    return r
++
++
++def t_ego_probe(model, batch, cfg) -> dict:
++    """G-LIVE for PREREG_V8F_TEGOCUT: what T's ego token IS, read from the tensors the BUILT model's readers are handed in a forward of a COPY on the real probe batch (its own seeds; the donor is the batch's p10f rolled by
++    one row). BOTH branches run in every gate (the copy's ``cfg.t_ego`` is flipped), so each has the control that proves the probe can see the other:
++
++      clause                                                                              const must read                        full must read (the control)
++      (a) TOKEN       the ego slot of the cond that ``read_t`` receives                   c on every row, bit for bit           T's own ``_ego(p10f[last_t])`` on every row
++      (b) INVARIANCE  ``run_t`` on a donor p10f, the checkpoint input held fixed          every T output moves by EXACTLY 0.0   moves (> 0)
++      (c) GRADIENT    grad of T's loss terms w.r.t. e_ego, checkpoint input detached      EXACTLY 0.0 (and > 0 on read_t)      > 0
++      (d) STILL TRAINS  grad of the total on read_t, trunk_t, h_goal, h_lat, h_lon, h_cons, e_ego  > 0 for each                 > 0 for each
++      (e) FROZEN      ``t_ego_c`` is a buffer, not a Parameter; its bytes after 3 AdamW steps         change EXACTLY 0.0           (buffer present on the copy, unused)
++      (h) S AND O     their ego slots are their own ``_ego(p10f[last_s])`` / ``_ego(p10f[last_o])``   unchanged                       unchanged
++      (g) DETERMINISM the forward half run twice (a, b, c, f, h), checked FIRST                       differs by EXACTLY 0.0         same
++      (i) EFFECT      recorded, never gating: the same weights, const vs full: T's outputs (it follows from (a) and the controls)
++      (f) RESIDUAL    recorded, never gating: forward_infer on a donor p10f (and donor p10f + poses): the size of back doors 2 and 3
++      admissibility   ``_keys_read`` is the same set under both branches and inside INFERENCE_INPUT_KEYS
++
++    A violation is an AssertionError, which the caller turns into a refusal. DELETE the line in ``run_t`` that swaps the buffer in and (a), (b) and (c) read the live token; make ``t_ego_c`` a Parameter and (e) fails. A ``full``
++    launch whose batch cannot tell a donor from its own window (one window, or a donor p10f identical on every row) is recorded as SKIPPED and not refused (the default arm is the pre-change model); a ``const`` launch refuses:
++    its probe would be blind."""
++    strict = cfg.t_ego == "const"
++    B = int(batch["feats"].shape[0])
++    if B < 2:
++        if not strict:
++            return {"t_ego": cfg.t_ego, "n_windows": B, "pass": True, "skipped": "the probe batch holds a single window (a donor window cannot differ from its own); the full arm is the default and the pre-change model"}
++        raise AssertionError("t_ego probe: the probe batch has a single window: a donor window cannot be told from its own")
++    res = {"t_ego": cfg.t_ego, "n_windows": B, "branches": {}}
++    with torch.random.fork_rng(devices=[]):
++        m0 = copy.deepcopy(model).cpu()
++        br, outs, keys = {}, {}, {}
++        for mode in ("const", "full"):
++            base = _t_ego_base(m0, mode)
++            r, outs[mode], keys[mode] = _t_ego_core(base, batch)
++            r2, o2, k2 = _t_ego_core(base, batch)
++            r["g_determinism_max_abs_diff"] = max(float((outs[mode][k] - o2[k]).abs().max()) for k in T_EGO_OUT_KEYS)
++            r["g_record_identical"] = bool(r == {**r2, "g_determinism_max_abs_diff": r["g_determinism_max_abs_diff"]} and keys[mode] == k2)
++            br[mode] = r
++            if r["donor_moves_the_live_token"] and (mode == "full" or r["c_differs_from_the_live_token"]):
++                br[mode].update(_t_ego_train(base, batch))
++        blind = sorted(mode for mode, r in br.items() if "d_grad_by_group" not in r)
++    if blind:
++        if strict:
++            raise AssertionError(f"t_ego probe: the probe batch cannot tell a donor p10f from the window's own, or c from the live token (branches {blind}): the probe is blind")
++        return {**res, "pass": True, "skipped": f"the probe batch cannot discriminate (branches {blind}); the full arm is the default and the pre-change model", "branches": br}
++    c_, f_ = br["const"], br["full"]
++    res["branches"] = br
++    res["i_effect_max_abs_dT_const_vs_full"] = max(float((outs["const"][k] - outs["full"][k]).abs().max()) for k in T_EGO_OUT_KEYS)
++    res["keys_read"] = keys["const"]
++    for mode, r in br.items():                                           # (g) FIRST: a probe whose two runs differ cannot judge any other clause
++        if r["g_determinism_max_abs_diff"] != 0.0 or not r["g_record_identical"]:
++            raise AssertionError(f"t_ego probe: {mode}: the probe is not deterministic (the same branch twice differs by {r['g_determinism_max_abs_diff']}, identical record {r['g_record_identical']}): its differences mean nothing")
++    if not (c_["a_token_is_c_every_row"] and not c_["a_token_is_the_live_token"]):
++        raise AssertionError(f"t_ego probe: const is declared but the ego slot of the cond read_t receives is not the constant on every row (is c: {c_['a_token_is_c_every_row']}, is the live token: {c_['a_token_is_the_live_token']}): T still reads its own ego state")
++    if not (f_["a_token_is_the_live_token"] and not f_["a_token_is_c_every_row"]):
++        raise AssertionError(f"t_ego probe: the full branch (the control) does not read T's own token (is the live token: {f_['a_token_is_the_live_token']}, is c: {f_['a_token_is_c_every_row']}): the probe cannot see a token")
++    for k, v in c_["b_max_abs_dT_under_donor_p10f"].items():
++        if v != 0.0:
++            raise AssertionError(f"t_ego probe: const is declared but T's {k} moved by {v} under a donor p10f (the checkpoint input held fixed): T still depends on its own ego state")
++    if not any(v > 0.0 for v in f_["b_max_abs_dT_under_donor_p10f"].values()):
++        raise AssertionError("t_ego probe: the full branch (the control) did not move under a donor p10f: the probe cannot see a change")
++    if c_["c_grad_T_terms_wrt_e_ego"] != 0.0:
++        raise AssertionError(f"t_ego probe: const is declared but the gradient of T's loss terms w.r.t. e_ego is {c_['c_grad_T_terms_wrt_e_ego']}, not EXACTLY 0.0: T's loss still reaches e_ego through its own ego token")
++    if not f_["c_grad_T_terms_wrt_e_ego"] > 0.0:
++        raise AssertionError("t_ego probe: the full branch (the control) has a zero gradient of T's loss terms w.r.t. e_ego: the probe cannot see a gradient")
++    if not (c_["c_grad_T_terms_wrt_read_t"] > 0.0 and f_["c_grad_T_terms_wrt_read_t"] > 0.0):
++        raise AssertionError("t_ego probe: T's loss terms do not reach read_t: the probe's T-gradient is not connected to T")
++    for mode, r in br.items():
++        dead = sorted(k for k, v in r["d_grad_by_group"].items() if not v > 0.0)
++        if dead:
++            raise AssertionError(f"t_ego probe: {mode}: no gradient on {dead} (the gradient on read_t, trunk_t, h_goal, h_lat, h_lon, h_cons and e_ego must each be > 0): a group the cut must leave trainable is dead")
++        if not (r["h_s_token_is_its_own"] and r["h_o_token_is_its_own"]):
++            raise AssertionError(f"t_ego probe: {mode}: S's / O's ego token is not its own live token (S: {r['h_s_token_is_its_own']}, O: {r['h_o_token_is_its_own']}): the cut changed a layer it must not touch")
++    if not c_["e_is_a_buffer_not_a_parameter"]:
++        raise AssertionError("t_ego probe: t_ego_c is a Parameter / trainable / not a registered buffer: the constant must be frozen")
++    if c_["e_max_abs_change_of_c_after_3_steps"] != 0.0:
++        raise AssertionError(f"t_ego probe: t_ego_c moved by {c_['e_max_abs_change_of_c_after_3_steps']} under three optimiser steps: the constant must not train")
++    if keys["const"] != keys["full"] or set(keys["const"]) - set(M.INFERENCE_INPUT_KEYS):
++        raise AssertionError(f"t_ego probe: the keys forward_infer reads differ between the branches or leave the admissible set: const {keys['const']} full {keys['full']}")
++    res["pass"] = True
++    return res
++
++
+ def dagger_probe(model, batch, cfg, dag) -> dict:
+     """G-LIVE for DAgger (PREREG_V8F_DAGGER section 6): the swapped own-state tensors REACH THE LOSS THE TRAINER BACKPROPAGATES -- read from the BUILT model's own ``loss`` on the real probe batch (a COPY, its own
+     seeds), through the SAME ``dag.apply`` the training loop calls, at p = 1. With the lever off (the default) there is nothing to prove and nothing runs (the pre-change model and loss).
+@@ -1473,6 +1717,11 @@
+             info["init_ckpt"] = load_init_ckpt(a.init_ckpt, model, cfg, apply=not (os.path.exists(os.path.join(a.out, "ckpt_last.pt")) and not a.no_resume))
+         except Exception as e:                                       # noqa: BLE001  a missing / foreign / mismatched checkpoint is a REFUSAL, not a crash
+             raise SystemExit(f"ZZDVB-REFUSEDZZ init-ckpt {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
++        if a.t_ego == "const":                                       # PREREG_V8F_TEGOCUT: T's constant = the init FILE's e_ego.bias, read from the file (never from the live model: on a resume the init is not applied)
++            try:
++                model.set_t_ego_const(read_init_t_ego_c(a.init_ckpt))
++            except Exception as e:                                   # noqa: BLE001
++                raise SystemExit(f"ZZDVB-REFUSEDZZ t-ego {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
+     dag = make_dagger(a, J, wins, clips, info)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
+     enc = None
+     if a.encoder == "lora":
+@@ -1525,6 +1774,10 @@
+     except AssertionError as e:
+         raise SystemExit(f"ZZDVB-REFUSEDZZ ego-perturb: {e}")
+     try:
++        tegop = t_ego_probe(model, probe, cfg)            # PREREG_V8F_TEGOCUT: what T's ego token IS in the BUILT model (const: the constant on every row, T invariant to its own p10f, e_ego's T-gradient EXACTLY 0.0; full: the control that sees each)
++    except AssertionError as e:
++        raise SystemExit(f"ZZDVB-REFUSEDZZ t-ego: {e}")
++    try:
+         dagp = dagger_probe(model, probe, cfg, dag)       # PREREG_V8F_DAGGER: G-LIVE on a SWAPPED batch; the own-state tensors reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
+     except (AssertionError, ValueError) as e:
+         raise SystemExit(f"ZZDVB-REFUSEDZZ dagger: {e}")
+@@ -1542,6 +1795,7 @@
+           "steps_total": total, "S_steps_per_epoch_100pct": S, "info": info, "argv_sha": argv_sha(argv)}
+     sc["ego_perturb_probe"] = egop
+     sc["dagger_probe"] = dagp
++    sc["t_ego_probe"] = tegop
+     if ident is not None:
+         sc["identity_probe"] = ident
+     json.dump(sc, open(os.path.join(a.out, "selfcheck.json"), "w"), indent=1, default=str)
+--- a/stack/tests/test_v8f_flat.py
++++ b/stack/tests/test_v8f_flat.py
+@@ -183,7 +183,7 @@
+     mod = mod or M
+     J = _J(world)
+     cfg = mod.V8FMiniConfig(**{**_T.TINY, "wm": "off"})
+-    kw = {k: v for k, v in cfg.__dict__.items() if k not in ("o_interface", "w_acc")}      # w_acc: PREREG_V8F_OACC (the saved module predates both keys)
++    kw = {k: v for k, v in cfg.__dict__.items() if k not in ("o_interface", "w_acc", "t_ego")}      # w_acc: PREREG_V8F_OACC, t_ego: PREREG_V8F_TEGOCUT (the saved module predates these keys)
+     mu, sd = M.cons_stats(J)
+     torch.manual_seed(3)
+     new = mod.V8FMini(cfg, mod.P10Prior.synthetic(0), mu, sd)
+@@ -216,8 +216,8 @@
+     sn, so = new.state_dict(), old.state_dict()
+     assert sn.keys() == so.keys() and all(torch.equal(sn[k], so[k]) for k in sn), "identical built model"
+     ln, lo = new.built_levers(), old.built_levers()
+-    assert set(ln) - set(lo) == {"o_interface", "w_acc"} and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo      # w_acc: PREREG_V8F_OACC (additions only)
+-    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == {"o_interface", "w_acc"}      # w_acc: PREREG_V8F_OACC (additions only)
++    assert set(ln) - set(lo) == {"o_interface", "w_acc", "t_ego", "t_ego_c_sha256"} and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo      # w_acc: PREREG_V8F_OACC, t_ego / t_ego_c_sha256: PREREG_V8F_TEGOCUT (additions only)
++    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == {"o_interface", "w_acc", "t_ego"}      # w_acc: PREREG_V8F_OACC, t_ego: PREREG_V8F_TEGOCUT (additions only)
+     _same_forward(_wake(new), _wake(old), b)                                                    # woken, identically: at zero-init O is blind to what it reads and the identity would be vacuous
+     new, old, b, _ = _old_pair(world)
+     for p in (0.3, 1.0):                                                                        # the loss
+--- a/stack/tests/test_v8f_mixo.py
++++ b/stack/tests/test_v8f_mixo.py
+@@ -169,7 +169,7 @@
+     J = DD.load_join(Path(world["root"]) / "join_train.npz")
+     mu, sd = M.cons_stats(J)
+     cfg = M.V8FMiniConfig(**{**_T.TINY, "wm": "off"})
+-    kw = {k: v for k, v in cfg.__dict__.items() if k not in ("code_mix", "o_interface", "w_acc")}      # o_interface: PREREG_V8F_FLAT, w_acc: PREREG_V8F_OACC (the saved module predates these keys)
++    kw = {k: v for k, v in cfg.__dict__.items() if k not in ("code_mix", "o_interface", "w_acc", "t_ego")}      # o_interface: PREREG_V8F_FLAT, w_acc: PREREG_V8F_OACC, t_ego: PREREG_V8F_TEGOCUT (the saved module predates these keys)
+     torch.manual_seed(3)
+     new = M.V8FMini(cfg, M.P10Prior.synthetic(0), mu, sd)
+     torch.manual_seed(3)
+@@ -187,8 +187,8 @@
+     sn, so = new.state_dict(), old.state_dict()
+     assert sn.keys() == so.keys() and all(torch.equal(sn[k], so[k]) for k in sn), "identical built model"
+     ln, lo = new.built_levers(), old.built_levers()
+-    assert set(ln) - set(lo) == {"code_mix", "o_interface", "w_acc"} and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo      # + o_interface: PREREG_V8F_FLAT (additions only)
+-    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == {"code_mix", "o_interface", "w_acc"}      # + o_interface: PREREG_V8F_FLAT
++    assert set(ln) - set(lo) == {"code_mix", "o_interface", "w_acc", "t_ego", "t_ego_c_sha256"} and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo      # + o_interface: PREREG_V8F_FLAT, + t_ego / t_ego_c_sha256: PREREG_V8F_TEGOCUT (additions only)
++    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == {"code_mix", "o_interface", "w_acc", "t_ego"}      # + o_interface: PREREG_V8F_FLAT, + t_ego: PREREG_V8F_TEGOCUT
+     for p in (0.0, 0.2, 0.5, 0.9, 1.0):
+         gn, go = torch.Generator().manual_seed(11), torch.Generator().manual_seed(11)
+         new.train(), old.train()
+--- a/stack/tests/test_v8f_oacc.py
++++ b/stack/tests/test_v8f_oacc.py
+@@ -244,7 +244,7 @@
+ def _old_pair(world, n=12, seed=2):
+     J = _J(world)
+     cfg = M.V8FMiniConfig(**{**_T.TINY, "wm": "off"})
+-    kw = {k: v for k, v in cfg.__dict__.items() if k != "w_acc"}
++    kw = {k: v for k, v in cfg.__dict__.items() if k not in ("w_acc", "t_ego")}      # t_ego: PREREG_V8F_TEGOCUT (the saved module predates it)
+     mu, sd = M.cons_stats(J)
+     torch.manual_seed(3)
+     new = M.V8FMini(cfg, M.P10Prior.synthetic(0), mu, sd)
+@@ -262,8 +262,8 @@
+     sn, so = new.state_dict(), old.state_dict()
+     assert sn.keys() == so.keys() and all(torch.equal(sn[k], so[k]) for k in sn), "identical built model"
+     ln, lo = new.built_levers(), old.built_levers()
+-    assert set(ln) - set(lo) == {"w_acc"} and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo and ln["w_acc"] == 0.0     # additions only
+-    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == {"w_acc"}
++    assert set(ln) - set(lo) == {"w_acc", "t_ego", "t_ego_c_sha256"} and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo and ln["w_acc"] == 0.0     # additions only (+ t_ego / t_ego_c_sha256: PREREG_V8F_TEGOCUT)
++    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == {"w_acc", "t_ego"}      # + t_ego: PREREG_V8F_TEGOCUT
+     _wake(new), _wake(old)
+     for p in (0.0, 0.3, 1.0):
+         torch.manual_seed(5)
+--- a/stack/tests/test_v8f_window_start.py
++++ b/stack/tests/test_v8f_window_start.py
+@@ -208,7 +208,7 @@
+     for hist in (4, 10):
+         old_f = {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)}
+         new_f = {f.name for f in dataclasses.fields(M.V8FMiniConfig)}
+-        assert new_f - old_f == {"window_start", "code_mix", "o_interface", "w_acc"} and old_f <= new_f      # code_mix: PREREG_V8F_MIXO, o_interface: PREREG_V8F_FLAT (widened from {"window_start"}; the pin's intent -- additions only -- is unchanged)
++        assert new_f - old_f == {"window_start", "code_mix", "o_interface", "w_acc", "t_ego"} and old_f <= new_f      # code_mix: PREREG_V8F_MIXO, o_interface: PREREG_V8F_FLAT, t_ego: PREREG_V8F_TEGOCUT (widened from {"window_start"}; the pin's intent -- additions only -- is unchanged)
+         kw = dict(TINY, hist=hist, hmax=HMAX, wm="b", kin_mode="yaw")
+         mu, sd = M.cons_stats(J)
+         torch.manual_seed(3)
+@@ -218,7 +218,7 @@
+         sn, so = mn.state_dict(), mo.state_dict()
+         assert sn.keys() == so.keys() and all(torch.equal(sn[k], so[k]) for k in sn)
+         ln, lo = mn.built_levers(), mo.built_levers()
+-        assert set(ln) - set(lo) == {"hist", "hmax", "window_start", "code_mix", "o_interface", "w_acc"} and set(lo) <= set(ln)      # + code_mix: PREREG_V8F_MIXO, + o_interface: PREREG_V8F_FLAT (additions only)
++        assert set(ln) - set(lo) == {"hist", "hmax", "window_start", "code_mix", "o_interface", "w_acc", "t_ego", "t_ego_c_sha256"} and set(lo) <= set(ln)      # + code_mix: PREREG_V8F_MIXO, + o_interface: PREREG_V8F_FLAT, + t_ego / t_ego_c_sha256: PREREG_V8F_TEGOCUT (additions only)
+         assert {k: v for k, v in ln.items() if k in lo} == lo
+         assert (ln["hist"], ln["hmax"], ln["window_start"]) == (hist, HMAX, hist - 1)
+         wins = D.train_windows(store, J, world["names"]["train"], hist=hist)
