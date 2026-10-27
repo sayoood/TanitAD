@@ -6061,6 +6061,15 @@ Raw: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-11-r7base-fourfamily/raw/l
 
 ## 19. refcv8-mapft-s0 — refcv8's map-only fine-tune for PRECISION (PREREG_MAPFT) [NON-PARITY · ONE SEED · TRAINING]
 
+### refcv8-mapft-s0 -- ■ COMPLETE 2026-10-27 ~06:15 Berlin (step 4,129 of 4,129, 0 errors, 1 launch, zero-gradient gate PASS); PREREG_MAPFT **FAIL (M1, M2)** -- the map did not improve (MM, ~07:40)
+
+| | |
+|---|---|
+| run | `summary.json` done, step 4,129; `model_ema.pt` (scored) + `ckpt.pt`; fetched to `F:/refcv9_mapft/post/run/`, 8 files sha256-equal to Thor's `MANIFEST.sha256`. MEASURED. |
+| controls | K-FROZEN PASS (only `_map_hires.{refine, near, near_refine}` changed, raw + EMA views); K-PLAN-ID PASS (plan, fan, sel bit-equal on 4,754 / 4,754 windows); K-RAST-MOVED PASS; the MAPPATH controls PASS. |
+| bars | M1 sidewalk delta 0.0000 [0, 0], M2 edge delta 0.0000 [0, 0] (the cross-fit chose zero map weight); M3 / M4 / M5 hold. Hard filter on the MAPFT map: off-drivable 0.1710 vs 0.1792 (GT map 0.0219). `GOALS_AND_CLAIMS` `H-R9-MAPFT-1`. |
+| why | map loss flat (train 0.886 -> 0.904; in-run eval 0.947 -> 0.935): refcv8's map CE was converged and the recipe kept it; corridor precision 5-40 m unchanged. Next (PREREG s5): a precision-targeted map term -- PI decision. |
+
 ### refcv8-mapft-s0 — ▶ TRAINING since 2026-10-27 01:29 Berlin (00:29Z), on Thor, launched by the launch gate's PASS token
 
 | | |

@@ -2710,3 +2710,19 @@ for fusion vs LH and grown-LH vs LH on CONFIRM, constant and within-episode-perm
   nothing else in the gate.
 * **Still open, the PI asked for clarification (answered in chat):** D-R9-SPEED-INPUT (current speed vs maximum allowed speed) and the refcv9 training
   scale (what is trained, frozen, initialised, and the expected effect).
+
+## ✅ DECIDED (PI, 2026-10-27 ~07:25-07:35 Berlin, in chat; recorded ~07:45) -- refcv9: inputs, anti-cheating bars, training scale
+
+* **Speed band (D-R9-SPEED-INPUT):** "Keep refcv8's future-derived band". The PI's intent, verbatim: *"the current measured speed, the history of ego
+  data and the speed band ... We should just assure that the model is cheating and just taking spped and ego dynamics and predict, it should rely on
+  reacting on the envrionment based on camera starting with the surrent ego state and derive the correct actions up to 6 seconds"* (read as: assure the
+  model is NOT cheating). Disclosed to the PI before the decision: the band is the ego's own max speed 2-6 s AHEAD (`s2_geom_emit_v7.py` SPEED_BAND;
+  leak 0.224 vs the 0.05 bar). Every refcv9 result states that the band is future-derived.
+* **Anti-cheating controls BINDING for refcv9:** (1) a CAMERA-BLIND arm (camera features shuffled across windows, ego inputs unchanged) must be clearly
+  worse on all four metric families; (2) refcv9 must beat an EGO-ONLY floor (a regression on the ego inputs alone; `H-R9-SCALAR-FLOOR-1` showed such a
+  floor passes E1 without vision) on all four families.
+* **Training scale:** "Warm start, smoke first" -- init refcv8 EMA-48,852, perception frozen, the planner / tactical heads trained, the R9 progress head
+  fitted on fresh clips (trunk frozen), cost measured by a 50-step smoke before launch (ESTIMATED 12-25 Thor-h, to be re-derived now that the speed
+  input stays).
+* **MAPFT read (for the map part of the recipe):** FAIL, map not improved (`H-R9-MAPFT-1`) -- refcv9 keeps refcv8's map head unless a precision-targeted
+  map term is approved.
