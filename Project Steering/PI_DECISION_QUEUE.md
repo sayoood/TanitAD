@@ -2726,3 +2726,11 @@ for fusion vs LH and grown-LH vs LH on CONFIRM, constant and within-episode-perm
   input stays).
 * **MAPFT read (for the map part of the recipe):** FAIL, map not improved (`H-R9-MAPFT-1`) -- refcv9 keeps refcv8's map head unless a precision-targeted
   map term is approved.
+
+## ✅ DECIDED (PI, 2026-10-27 ~19:10 Berlin, in chat; recorded ~19:30) -- refcv9 warm start: Thor cap, gate profile, map term
+
+* **Thor cap:** "48 Thor-h" for the refcv9 warm-start run (the 50-step smoke sets N to fit; measured bounds 3.97 s/step map-only, 8.9 s/step full refcv8).
+* **Gate profile:** "Yes, add the profile" -- `refcv9-warm` in `launch_gate.py` (beyond the liveness rules approved for D-R9-INMODEL Q1).
+* **Map term:** "Yes, include it" -- the map head is trained in the same run with a precision-targeted term; attribution by reading the map bar on
+  refcv9's own rasters with refcv8's planner trace held fixed (W6 in the draft).
+* Recipe draft: `FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-10-27-refcv9-warm/DRAFT_PREREG_REFCV9_WARM.md` (sealed after the code lands and the smoke).
