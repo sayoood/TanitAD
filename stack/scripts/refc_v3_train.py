@@ -103,6 +103,7 @@ from tanitad.train import weight_ema as _wema  # noqa: E402  refcv8 R8-WARMUP: w
 from tanitad.train import map_only_ft as _mof  # noqa: E402  PI D-R9-MAPHEAD-PRECISION: --r8-train-only-map
 from tanitad.refs import refcv9_progress as _r9p  # noqa: E402  refcv9 R9-PF: --r9-progress-head (OFF: nothing)
 from tanitad.train import refcv9_alloc_force as _r9af  # noqa: E402  refcv9: --r9-alloc-force-schedule (OFF: nothing)
+from tanitad.train import map_precision as _mfp  # noqa: E402  refcv9 warm start: --w-map-fp (OFF: nothing)
 # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
 # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
 # absent). Its trainer integration arrived in d014414, swept in from a worktree that
@@ -161,8 +162,11 @@ from tanitad.models import map_head_hires as _mhr  # noqa: E402
 # lives (the registry is pinned two-way against `build_parser`). Never at the module's
 # import: a tree without the flags must not carry their entries.
 _mhr.register_dvb_levers(_dvb.register)
-# PI D-R9-MAPHEAD-PRECISION (2026-10-26): --r8-train-only-map is a `built` lever (the trainable set read off the model)
+# PI D-R9-MAPHEAD-PRECISION (2026-10-26): --r8-train-only-map is a `built` lever (the trainable set read off the model);
+# refcv9 warm start (PI 2026-10-27): --r9-train-only too (the trainable sets read off the model)
 _mof.register_dvb_levers(_dvb.register)
+# refcv9 warm start: --w-map-fp is a `loss` lever (the weight the 10 cm map term reads, model._w_map_fp)
+_mfp.register_dvb_levers(_dvb.register)
 # refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): the progress head is a `built` lever, its weights `loss` levers
 _r9p.register_dvb_levers(_dvb.register)
 # refcv9 GT-in-pool schedule (H-R9-ALLOC-ORACLE-1): the attached schedule's spec / seed, read off the built model
@@ -866,6 +870,8 @@ def _pin_refcv8(cfg, args) -> None:
     """refcv8 WP-B (DESIGN.md sec. 3) -- argv -> cfg.refcv8, with refusals that fire before config.json."""
     _pin_ema_guard(args)
     _mof.pin_args(args)          # PI D-R9-MAPHEAD-PRECISION: --r8-train-only-map's refusals (a no-op when off)
+    #                              refcv9 warm start: --r9-train-only's refusals (the same machinery; a no-op when off)
+    _mfp.pin_args(args)          # refcv9 warm start: --w-map-fp's refusals (a no-op at the default 0)
     _gse = int(getattr(args, "grad_share_every", 0) or 0)
     if _gse < 0 or (_gse > 0 and _gse % max(1, int(getattr(args, "log_every", 50) or 50)) != 0):
         raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
@@ -2982,6 +2988,22 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
                            "`r8_drv_logit` in `out`)"),
         "mask": None,
         "already": "_pin_refcv8 (dead without --refcv8; critic <-> weight both ways) + G-DVB `r8_critic_drivable`",
+    },
+    "w_map_fp": {
+        "flag": "--w-map-fp",
+        "term": "refcv9 map precision: mean over GT-drivable near-field corridor cells (x 0-20 m, |y| < 3 m) of the "
+                "10 cm head's p_sidewalk + p_edge",
+        # the term reads the 10 cm head's logits and the batch's map_fine (the CE's labelled windows): every condition
+        # of `w_map_hires`, plus that weight itself being live
+        "gate": lambda a: (
+            str(getattr(a, "map_hires", "off")) == "on"
+            and float(getattr(a, "w_map_hires", 0.0) or 0.0) > 0.0
+            and REFC_WEIGHT_GATES["w_map_hires"]["gate"](a)[0],
+            "--w-map-fp needs `--map-hires on` AND a live --w-map-hires (every condition of the 10 cm map term): it "
+            "reads that head's logits and that term's labelled windows"),
+        "mask": None,
+        "already": "map_precision.pin_args (needs the 10 cm head; refused under a freeze that does not train the map) "
+                   "+ G-DVB `w_map_fp` (model._w_map_fp is the declared weight; absent at 0)",
     },
     "w_r9_prog": {
         "flag": "--w-r9-prog",
@@ -5106,11 +5128,15 @@ def _map_hires_loss(model, out: dict, batch: dict, device, extra: dict,
     sel = lab.nonzero(as_tuple=False).flatten()
     extra["map_hires_n_windows"] = float(lab.shape[0])
     extra["map_hires_n_labelled"] = float(int(lab.sum()))
+    _w_fp = float(getattr(model, _mfp.MODEL_ATTR, 0.0) or 0.0)    # refcv9 --w-map-fp (absent: 0, nothing below)
     if not int(lab.sum()):
         # a COUNTED zero on the branch's own graph, never an absent key
         term = logits.sum() * 0.0
         extra["map_hires"] = term
         extra["n_map_hires_cells"] = 0.0
+        if _w_fp > 0.0:
+            extra[_mfp.LOSS_KEY] = logits.sum() * 0.0
+            extra[_mfp.COUNT_KEY] = 0.0
         return term
     lv = (pout["map_hires_lift_valid"].index_select(0, sel)
           if bool(getattr(model, "_map_lift_valid_mask", True)) else None)
@@ -5131,6 +5157,14 @@ def _map_hires_loss(model, out: dict, batch: dict, device, extra: dict,
     for k, v in row.items():
         if k != "loss":
             extra[k] = v
+    if _w_fp > 0.0:
+        # ⭐ refcv9 --w-map-fp (PI 2026-10-27): the near-field corridor's false-positive mass on GT-drivable cells, on
+        # the SAME labelled windows and codes as the CE (tanitad/train/map_precision.py); logged every step
+        _fp = _mfp.map_fp_loss(logits.index_select(0, sel), batch["map_fine"].to(device).index_select(0, sel),
+                               x_max_m=float(br.cfg.x_max_m), y_half_m=float(br.cfg.y_half_m))
+        extra[_mfp.LOSS_KEY] = _fp["loss"]
+        extra[_mfp.COUNT_KEY] = float(_fp["n_cells"])
+        return w * row["loss"] + _w_fp * _fp["loss"]
     return w * row["loss"]
 
 
@@ -8264,11 +8298,17 @@ def assert_optimizer_matches_recipe(opt, args, model=None) -> dict:
     """
     if _mof.is_on(args):
         if model is None:
-            raise SystemExit("[v3] ⛔ --r8-train-only-map: the optimizer recipe check needs the model")
+            raise SystemExit("[v3] ⛔ %s: the optimizer recipe check needs the model"
+                             % ("--r9-train-only" if _mof.is_r9(args) else "--r8-train-only-map"))
         _bad = _mof.optimizer_problems(opt, model, args)
         if _bad:
-            raise SystemExit("[v3] ⛔ THE OPTIMIZER THAT WILL RUN IS NOT THE MAP-ONLY RECIPE:\n  - "
-                             + "\n  - ".join(_bad))
+            raise SystemExit("[v3] ⛔ THE OPTIMIZER THAT WILL RUN IS NOT THE %s RECIPE:\n  - "
+                             % ("TRAIN-ONLY" if _mof.is_r9(args) else "MAP-ONLY") + "\n  - ".join(_bad))
+        if _mof.is_r9(args):
+            return {"opt": "dd", "type": type(opt).__name__, "train_only": list(_mof.r9_sets(args)),
+                    "groups": [{"name": g.get("name", "?"), "lr": float(g["lr"]),
+                                "weight_decay": float(g.get("weight_decay", 0.0)),
+                                "n_tensors": len(g["params"])} for g in opt.param_groups]}
         return {"opt": "dd", "type": type(opt).__name__, "map_only": True,
                 "groups": [{"name": g.get("name", "?"), "lr": float(g["lr"]),
                             "weight_decay": float(g.get("weight_decay", 0.0)),
@@ -9251,6 +9291,13 @@ def train(args) -> dict:
             "fine_spec": dict(_hext.fine_spec),
             "loss": "hard-label CE, 8 classes, ignore_index 255, class-weighted",
         }
+        if _mfp.is_on(args):                 # refcv9 --w-map-fp: absent (no attribute, no key) for a default run
+            setattr(model, _mfp.MODEL_ATTR, _mfp.weight(args))
+            map_hires_stamp["map_fp"] = _mfp.stamp(args, float(_hext.x_max_m), float(_hext.y_half_m),
+                                                   tuple(_hcfg.out_hw))
+            print("[v3] refcv9 map precision: --w-map-fp %g on corridor rows %s cols %s (%d cells)" % (
+                _mfp.weight(args), map_hires_stamp["map_fp"]["corridor_rows"],
+                map_hires_stamp["map_fp"]["corridor_cols"], map_hires_stamp["map_fp"]["n_corridor_cells"]), flush=True)
         if _hcts is not None:                 # absent (not null) for a default run: config.json unchanged
             map_hires_stamp["class_thresholds"] = {
                 k: _hcts[k] for k in ("path", "sha256", "schema", "tau_phat_logit", "provenance")}
@@ -9485,7 +9532,11 @@ def train(args) -> dict:
     # Freeze everything but the three map-only modules NOW, so G-DVB (the trainer's below, and the launch gate's,
     # which captures the model at the first data read) sees the build this run trains, and build_optimizer collects
     # exactly the map-only parameters. OFF: None, nothing runs.
-    _mof_rec = _mof.apply_freeze(model) if _mof.is_on(args) else None
+    _mof_rec = (_mof.apply_freeze(model) if _mof.is_r8(args) else
+                # refcv9 warm start (PI 2026-10-27): --r9-train-only <sets> -- the same machinery, the named sets
+                _mof.apply_train_only(model, _mof.r9_sets(args)) if _mof.is_r9(args) else None)
+    _mof_mods = None if _mof_rec is None else tuple(_mof_rec["modules"])      # the TRAINABLE modules (None: no freeze)
+    _mof_tag = _mof.freeze_tag(_mof_rec)
     # refcv9 R9-PF calibration stage: every tensor outside the progress head frozen (OFF: None, nothing runs)
     _r9_rec = (_r9p.apply_calib_freeze(model) if (_r9p.is_on(args) and bool(getattr(args, "r9_calib_stage", False)))
                else None)
@@ -9500,11 +9551,15 @@ def train(args) -> dict:
             _r9af_rec["spec"], _r9af_rec["seed"], _r9af_rec["p_at_step0"], _r9af_rec["p_at_last_step"],
             _r9af_rec["last_step"]), flush=True)
     if _mof_rec is not None:
-        print("[map-only] FROZEN all but %s: %d tensors / %d params trainable, %d tensors / %d params frozen, "
-              "%d running-stat norms pinned" % (list(_mof.MAP_ONLY_MODULES), _mof_rec["n_trainable_tensors"],
+        print("[%s] FROZEN all but %s: %d tensors / %d params trainable, %d tensors / %d params frozen, "
+              "%d running-stat norms pinned" % (_mof_tag, list(_mof_mods), _mof_rec["n_trainable_tensors"],
                                                  _mof_rec["n_trainable_params"], _mof_rec["n_frozen_tensors"],
                                                  _mof_rec["n_frozen_params"], _mof_rec["frozen_norms_pinned"]),
               flush=True)
+        if _mof_rec.get("per_set"):
+            print("[r9-train-only] sets %s: %s" % (_mof_rec["sets"], {s: (v["n_tensors"], v["n_params"])
+                                                                      for s, v in _mof_rec["per_set"].items()}),
+                  flush=True)
     # data — raw epcache, v2 compressed cache, or CI-synthetic; exactly one
     n_src = sum(1 for s in (args.data_root, args.v2_cache,
                             args.synth_episodes) if s)
@@ -10335,10 +10390,11 @@ def train(args) -> dict:
     _mof_guard = _mof_src = None
     if _mof_rec is not None:
         _mof_src, _mof_rec["init_from"] = _mof.load_source(args.init_from)
-        _mof_rec["init_from"]["verify"] = _mof.verify_against_source(model, _mof_src, fresh=not ck.exists())
-        _mof_guard = _mof.FrozenStateGuard(_mof_src)
-        print("[map-only] --init-from %s (md5 %s, kind %s, step %s): %s over %d keys" % (
-            args.init_from, _mof_rec["init_from"]["md5"][:8], _mof_rec["init_from"]["kind"],
+        _mof_rec["init_from"]["verify"] = _mof.verify_against_source(model, _mof_src, fresh=not ck.exists(),
+                                                                     modules=_mof_mods)
+        _mof_guard = _mof.FrozenStateGuard(_mof_src, modules=_mof_mods)
+        print("[%s] --init-from %s (md5 %s, kind %s, step %s): %s over %d keys" % (
+            _mof_tag, args.init_from, _mof_rec["init_from"]["md5"][:8], _mof_rec["init_from"]["kind"],
             _mof_rec["init_from"]["step"], _mof_rec["init_from"]["verify"]["result"],
             _mof_rec["init_from"]["verify"]["checked_keys"]), flush=True)
     _dvb.refuse_on_mismatch(model, args, build_parser(), where="train")
@@ -10695,7 +10751,7 @@ def train(args) -> dict:
     r8train.assert_r8_speed_stamp(_run_config, getattr(args, "r8_speed_input", None),
                                   enc8=bool(getattr(args, "r8_speed_enc8", False)))
     if _mof_rec is not None:              # PI D-R9-MAPHEAD-PRECISION: the flag, the trainable list + count, the source
-        _run_config["map_only_ft"] = _mof_rec
+        _run_config["r9_train_only" if _mof.is_r9(args) else "map_only_ft"] = _mof_rec
     (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1),
                                          encoding="utf-8")
 
@@ -10779,7 +10835,7 @@ def train(args) -> dict:
     if float(getattr(args, "ema_decay", 0.0) or 0.0) > 0.0:
         # --r8-train-only-map: the shadow holds the map-only tensors ONLY (a frozen tensor's EMA is itself)
         _ema = _wema.WeightEMA(model, float(args.ema_decay),
-                               exclude=(_mof.ema_exclude if _mof_rec is not None else None))
+                               exclude=(_mof.ema_exclude_for(_mof_mods) if _mof_rec is not None else None))
         if _ema_resume is not None:
             try:
                 _ema.load_state_dict(_ema_resume, model)
@@ -10804,15 +10860,18 @@ def train(args) -> dict:
     if _mof_rec is not None:
         # ⭐ PI D-R9-MAPHEAD-PRECISION: the EMA shadows the map-only tensors only, and on a fresh start raw == EMA ==
         # the shipped model; then the frozen state is read once more before step 1
-        _mof_bad = (_mof.ema_problems(_ema, model, _mof_src, fresh=not ck.exists()) if _ema is not None else [])
+        _mof_bad = (_mof.ema_problems(_ema, model, _mof_src, fresh=not ck.exists(), modules=_mof_mods)
+                    if _ema is not None else [])
         if _mof_bad:
-            raise SystemExit("[map-only] ⛔ the EMA is not the map-only EMA:\n  - " + "\n  - ".join(_mof_bad))
+            raise SystemExit("[%s] ⛔ the EMA is not the %s EMA:\n  - " % (_mof_tag, _mof_tag)
+                             + "\n  - ".join(_mof_bad))
         _mof_guard.assert_ok(model, "start (step %d)" % step)
         _mof_rec["ema_check"] = ("no EMA (--ema-decay 0)" if _ema is None else
-                                 "shadow = %d map-only tensors; %s" % (
-                                     len(_ema.shadow), "fresh: raw == EMA == --init-from, bit for bit"
+                                 "shadow = %d %s tensors; %s" % (
+                                     len(_ema.shadow), "map-only" if _mof_tag == "map-only" else "trainable",
+                                     "fresh: raw == EMA == --init-from, bit for bit"
                                      if not ck.exists() else "resumed"))
-        _run_config["map_only_ft"] = _mof_rec
+        _run_config["r9_train_only" if _mof.is_r9(args) else "map_only_ft"] = _mof_rec
         (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1), encoding="utf-8")
         _mof_src = None                   # the guard keeps the frozen reference; the map-only source is not needed
     t0, model = time.time(), model.train()
@@ -12653,6 +12712,19 @@ def build_parser() -> argparse.ArgumentParser:
                          "--conflict-detector off and --init-from = the SHIPPED EMA model (kind ema_model_only); "
                          "refuses the B1 guard, the gradient-share instrument, BN recalibration and the drivable critic. "
                          "One AdamW group `map_only` at --lr. config.json['map_only_ft'] records the trainable list.")
+    g8.add_argument("--r9-train-only", default=None, metavar="SET[,SET]",
+                    help="refcv9 WARM START (PI 2026-10-27): train ONLY the named module sets, freeze everything else "
+                         "(perception) with --r8-train-only-map's machinery (requires_grad, one AdamW group "
+                         "`train_only` at --lr, pinned norms, the class-prior write skipped, the EMA exclusion, the "
+                         "shipped-EMA warm start checked bit for bit, the frozen-state guard on every logged / saved "
+                         "step). Sets: `planner` = core.decoder (186 tensors / 15,365,801 values on refcv8), `map` = "
+                         "the three map-only modules (= --r8-train-only-map). Needs --refcv8 --opt dd --init-from = the "
+                         "SHIPPED EMA model --conflict-detector off. config.json['r9_train_only'] records the sets, the "
+                         "trainable list and the counts.")
+    g8.add_argument("--w-map-fp", type=float, default=0.0,
+                    help="refcv9 map precision term (PI 2026-10-27): + w x mean over GT-drivable cells of the "
+                         "near-field corridor (x 0-20 m, |y| < 3 m) of the 10 cm head's p_sidewalk + p_edge. 0 (the "
+                         "default) = no term, no key, the tip's graph. Logged as `map_fp` every training step.")
     g9 = ap.add_argument_group("refcv9 R9-PF (clean-split, regime-factored progress head; REFCV9_INMODEL_DESIGN.md)")
     g9.add_argument("--r9-progress-head", action="store_true",
                     help="build the R9-PF head: [z_tac.detach(); 9 t0 scalars] -> a 3-way lon decision + one arc-length "

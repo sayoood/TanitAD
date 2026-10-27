@@ -32,6 +32,25 @@ WHAT "FROZEN" MUST MEAN -- every route by which a frozen tensor can move is clos
       logged / saved step and REFUSES on the first drifted byte.
 
 EVERY EXPECTATION IS A LITERAL: the three module paths, the 105,032 / 12-group refcv8 count, the init file's kind.
+
+THE GENERALISATION: ``--r9-train-only <set>[,<set>]`` (refcv9 WARM START, PI 2026-10-27: "warm start from refcv8
+EMA-48,852; perception FROZEN; planner + tactical heads TRAINED; the map head ALSO trained")
+    Trains the UNION of NAMED module sets and freezes everything else with exactly the machinery above (requires_grad,
+    the optimizer, the pinned norms, the class-prior write skipped, the EMA exclusion, the shipped-EMA warm start
+    checked bit for bit, :class:`FrozenStateGuard` on every frozen parameter AND buffer). The sets, as LITERALS:
+      * ``map``     = :data:`MAP_ONLY_MODULES`. ``--r9-train-only map`` trains, freezes and optimises exactly what
+                      ``--r8-train-only-map`` does; the old flag is kept and its behaviour is bit-identical to the tip.
+      * ``planner`` = :data:`PLANNER_MODULES` = ``core.decoder``: EXACTLY the tensor set the launch gate's
+                      ``mapft_planner_trainable`` RED arm un-freezes (``launch_gate._mapft_inject``: the parameters
+                      outside the map modules whose name starts with ``core.decoder.``). MEASURED 2026-10-27 on the
+                      REAL refcv8-r101-s0 build (CPU, ``refcv7_loader.build_model`` + a strict load of
+                      ckpt_ema_48852.pt): 186 tensors, 15,365,801 values; ``planner,map`` = 204 tensors, 15,470,833
+                      values -- the arm's MEASURED "186 tensors / 15,470,833 values incl. the map's 105,032".
+    "Perception" = every parameter outside the chosen sets.
+    ⚠️ STATED, NOT HIDDEN: ``core.decoder`` does NOT hold the TACTICAL heads (``tac_decoder_v6``, ``phi_tac``,
+    ``lat_head_tac`` / ``lon_head_tac``, ``tac_goal_head``, ``tac_latent_proj``, ``core.tactical_trunk``,
+    ``core.lat_head`` / ``core.lon_head``, ...). Under ``planner,map`` they are FROZEN together with the perception.
+    Training them needs a THIRD named set -- a model-design decision, not a default taken here.
 """
 from __future__ import annotations
 
@@ -47,7 +66,12 @@ __all__ = ["SCHEMA", "FLAG", "DEST", "MAP_ONLY_MODULES", "MARKER_ATTR", "GROUP_N
            "is_map_only", "is_on", "pin_args", "apply_freeze", "pin_frozen_norms", "leaf_groups",
            "build_optimizer", "optimizer_problems", "bit_equal", "load_source", "verify_against_source",
            "FrozenStateGuard", "ema_exclude", "ema_problems", "grad_dependent_tensors", "dvb_check",
-           "register_dvb_levers"]
+           "register_dvb_levers",
+           # refcv9 --r9-train-only
+           "R9_SCHEMA", "R9_FLAG", "R9_DEST", "R9_GROUP_NAME", "PLANNER_MODULES", "TRAIN_ONLY_SETS",
+           "REFCV8_PLANNER_TENSORS", "REFCV8_PLANNER_NUMEL", "REFCV8_MAP_ONLY_TENSORS",
+           "is_r8", "is_r9", "r9_spec", "r9_sets", "parse_sets", "modules_of_sets", "trainable_modules",
+           "is_trainable_under", "ema_exclude_for", "apply_train_only", "freeze_tag", "dvb_check_r9"]
 
 SCHEMA = "map_only_ft/1"
 FLAG = "--r8-train-only-map"
@@ -72,6 +96,22 @@ REFCV8_MAP_ONLY_GROUPS: dict = {
 #: the shipped refcv8 EMA model (E:/refcv8_eval_kit/ckpt/ckpt_ema_48852.pt, ckpt_48852.md5)
 REFCV8_EMA_48852_MD5 = "b4364029b68f29a33eeb4aebbbbd002b"
 
+# ---- refcv9 --r9-train-only (PI 2026-10-27) ------------------------------------------------------------------- #
+R9_SCHEMA = "train_only_ft/1"
+R9_FLAG = "--r9-train-only"
+R9_DEST = "r9_train_only"
+#: the optimizer's one parameter group under --r9-train-only (refcv8's dd HEAD group: AdamW, --weight-decay, --lr --
+#: the group every non-encoder module of refcv8, the decoder and the map head included, trained in)
+R9_GROUP_NAME = "train_only"
+#: the planner = EXACTLY what `launch_gate._mapft_inject`'s `mapft_planner_trainable` arm un-freezes (the module docstring)
+PLANNER_MODULES: tuple = ("core.decoder",)
+#: the named sets, in their CANONICAL order (a spec is normalised to it: `map,planner` == `planner,map`)
+TRAIN_ONLY_SETS: dict = {"planner": PLANNER_MODULES, "map": MAP_ONLY_MODULES}
+#: refcv8-r101-s0 (48,852 config) -- MEASURED 2026-10-27 on the REAL build (the module docstring)
+REFCV8_PLANNER_TENSORS = 186
+REFCV8_PLANNER_NUMEL = 15_365_801
+REFCV8_MAP_ONLY_TENSORS = 18
+
 
 class MapOnlyError(SystemExit):
     """A refusal of the map-only fine-tune (a ``SystemExit``, like every other trainer refusal)."""
@@ -91,15 +131,135 @@ def ema_exclude(name: str) -> bool:
     return not is_map_only(name)
 
 
-def is_on(args) -> bool:
+def is_trainable_under(name: str, modules: Iterable[str]) -> bool:
+    """True for a parameter / buffer / module path inside one of ``modules`` (dot-boundary prefixes)."""
+    return any(_under(str(name), p) for p in modules)
+
+
+def ema_exclude_for(modules: Iterable[str]) -> Callable:
+    """``WeightEMA(exclude=...)`` for a trainable module set: every tensor OUTSIDE it is frozen. The map-only set
+    returns :func:`ema_exclude` ITSELF (``--r8-train-only-map``'s EMA is the tip's, object for object)."""
+    mods = tuple(modules)
+    if mods == MAP_ONLY_MODULES:
+        return ema_exclude
+    return lambda name, _m=mods: not is_trainable_under(name, _m)
+
+
+def is_r8(args) -> bool:
+    """``--r8-train-only-map`` declared."""
     return bool(getattr(args, DEST, False))
+
+
+def r9_spec(args) -> str | None:
+    """``--r9-train-only``'s raw value (None when absent)."""
+    v = getattr(args, R9_DEST, None)
+    return None if v is None or str(v) == "" else str(v)
+
+
+def is_r9(args) -> bool:
+    """``--r9-train-only`` declared."""
+    return r9_spec(args) is not None
+
+
+def is_on(args) -> bool:
+    """A train-only freeze is declared: ``--r8-train-only-map`` OR ``--r9-train-only``."""
+    return is_r8(args) or is_r9(args)
+
+
+def parse_sets(spec) -> tuple:
+    """``"planner,map"`` -> ``("planner", "map")``, in the CANONICAL order of :data:`TRAIN_ONLY_SETS`. REFUSES an empty
+    name, an unknown set and a repeated one (a typo must never train a different set than the one declared)."""
+    parts = [p.strip() for p in str(spec).split(",")]
+    if any(not p for p in parts):
+        raise MapOnlyError(f"[r9-train-only] ⛔ {R9_FLAG} {spec!r}: an empty set name (e.g. `planner,map`)")
+    unknown = [p for p in parts if p not in TRAIN_ONLY_SETS]
+    if unknown:
+        raise MapOnlyError(f"[r9-train-only] ⛔ {R9_FLAG} {spec!r}: unknown set(s) {unknown}; the named sets are "
+                           f"{list(TRAIN_ONLY_SETS)}")
+    dup = sorted({p for p in parts if parts.count(p) > 1})
+    if dup:
+        raise MapOnlyError(f"[r9-train-only] ⛔ {R9_FLAG} {spec!r}: set(s) {dup} named twice")
+    return tuple(s for s in TRAIN_ONLY_SETS if s in parts)
+
+
+def r9_sets(args) -> tuple | None:
+    """The declared sets (canonical order), or None when ``--r9-train-only`` is absent."""
+    spec = r9_spec(args)
+    return None if spec is None else parse_sets(spec)
+
+
+def modules_of_sets(sets: Iterable[str]) -> tuple:
+    """The module paths of the named sets, in the sets' order."""
+    out: list = []
+    for s in sets:
+        out += list(TRAIN_ONLY_SETS[s])
+    return tuple(out)
+
+
+def trainable_modules(args) -> tuple | None:
+    """The module paths the declared freeze TRAINS (None when no freeze is declared)."""
+    if is_r8(args):
+        return MAP_ONLY_MODULES
+    sets = r9_sets(args)
+    return None if sets is None else modules_of_sets(sets)
+
+
+def freeze_tag(rec: dict | None) -> str:
+    """The log / refusal tag of a freeze record: ``map-only`` (``--r8-train-only-map``) or ``r9-train-only``."""
+    return "r9-train-only" if isinstance(rec, dict) and rec.get("flag") == R9_FLAG else "map-only"
 
 
 # ================================================================================================================= #
 # argv                                                                                                              #
 # ================================================================================================================= #
+def _pin_r9(args) -> None:
+    """``--r9-train-only``'s refusals (the map-only fine-tune's, scoped to the declared sets)."""
+    sets = r9_sets(args)
+    bad = []
+    if not bool(getattr(args, "refcv8", False)):
+        bad.append("--refcv8 is not set: the warm start is defined on the refcv8 build (refcv8 EMA-48,852)")
+    if "map" in sets:
+        if str(getattr(args, "map_hires", "off") or "off") != "on":
+            bad.append("--map-hires is not `on`: the `map` set has no 10 cm map head to train")
+        if not float(getattr(args, "map_hires_near_lift_m", 0.0) or 0.0) > 0.0:
+            bad.append("--map-hires-near-lift-m is 0: the `near` module of the `map` set is not built")
+        if not int(getattr(args, "map_hires_near_refine_blocks", 0) or 0) >= 1:
+            bad.append("--map-hires-near-refine-blocks is 0: the `near_refine` module of the `map` set is not built")
+        if not float(getattr(args, "w_map_hires", 0.0) or 0.0) > 0.0:
+            bad.append("--w-map-hires is 0: the `map` set would receive no gradient from its CE")
+    if str(getattr(args, "opt", "adam")) != "dd":
+        bad.append("--opt is not dd: every trained module (the decoder, the map head) was trained in refcv8's AdamW "
+                   "head group (wd 1e-4, the head rate)")
+    if not getattr(args, "init_from", None):
+        bad.append("--init-from is not set: the warm start is the SHIPPED refcv8 EMA model (ckpt_ema_48852.pt), or "
+                   "the frozen perception is not the shipped perception")
+    if getattr(args, "b1_guard_ref_ap2m", None) is not None:
+        bad.append("--b1-guard-ref-ap2m: the B1 guard cuts the head LR on the EMA box3d AP -- the box head is FROZEN "
+                   "(perception; its AP cannot move) and there is no head/encoder group to cut")
+    if int(getattr(args, "grad_share_every", 0) or 0) > 0:
+        bad.append("--grad-share-every > 0: the instrument measures the trunk / bev025 / bev_pool groups, which are "
+                   "FROZEN -- it would read nothing (and its fp32 replay is a full extra forward)")
+    if str(getattr(args, "conflict_detector", "auto") or "auto") != "off":
+        bad.append("--conflict-detector is not `off`: it measures planner-vs-perception gradient conflicts on the "
+                   "trunk, which is FROZEN -- pass --conflict-detector off")
+    if int(getattr(args, "conflict_every", 1) or 1) != 1:
+        bad.append("--conflict-every is set: the conflict detector is off under the flag, so the cadence would be "
+                   "stamped and read by nothing -- drop it")
+    if int(getattr(args, "trunk_bn_recalib", 0) or 0) > 0:
+        bad.append("--trunk-bn-recalib: it REWRITES the frozen trunk's BatchNorm statistics")
+    if bool(getattr(args, "r8_critic_drivable", False)):
+        bad.append("--r8-critic-drivable: not in the refcv8 build the warm start loads (inputs unchanged from refcv8, "
+                   "PI 2026-10-27), and it makes the planner's selection READ the map head")
+    if bool(getattr(args, "r9_calib_stage", False)):
+        bad.append("--r9-calib-stage: the R9-PF calibration stage is its OWN freeze (the progress head only) -- two "
+                   "freezes cannot both hold in one run")
+    if bad:
+        raise MapOnlyError(f"[r9-train-only] ⛔ {R9_FLAG} {','.join(sets)} refused:\n  - " + "\n  - ".join(bad))
+
+
 def pin_args(args) -> None:
     """The flag's refusals, before config.json and before any model is built. A no-op when the flag is off.
+    ``--r9-train-only`` is pinned by :func:`_pin_r9`; the two flags together are refused (ONE freeze per run).
 
     Needs: ``--refcv8``, ``--map-hires on`` with the near lift AND a near refine block (the PI named all three
     modules), a positive ``--w-map-hires`` (else nothing trains), ``--opt dd`` (the recipe the map head was trained
@@ -110,6 +270,12 @@ def pin_args(args) -> None:
     frozen trunk statistics), and the drivable critic (the planner would READ the map head -- the map-only modules
     would stop being map-only)."""
     if not is_on(args):
+        return
+    if is_r8(args) and is_r9(args):
+        raise MapOnlyError(f"[map-only] ⛔ {FLAG} and {R9_FLAG} together: ONE freeze per run "
+                           f"(`{R9_FLAG} map` trains what {FLAG} trains)")
+    if is_r9(args):
+        _pin_r9(args)
         return
     bad = []
     if not bool(getattr(args, "refcv8", False)):
@@ -169,12 +335,14 @@ def leaf_groups(names_numel: Iterable[tuple]) -> dict:
     return out
 
 
-def pin_frozen_norms(model) -> int:
-    """Pin every norm with RUNNING statistics outside the map-only modules to eval, permanently (its ``train`` is
-    replaced: ``nn.Module.train`` recurses, and the trainer calls ``model.train()`` after every eval). -> how many."""
+def pin_frozen_norms(model, modules: Iterable[str] = MAP_ONLY_MODULES) -> int:
+    """Pin every norm with RUNNING statistics outside the trainable ``modules`` (default: the map-only modules) to
+    eval, permanently (its ``train`` is replaced: ``nn.Module.train`` recurses, and the trainer calls
+    ``model.train()`` after every eval). -> how many."""
+    mods = tuple(modules)
     k = 0
     for name, m in model.named_modules():
-        if is_map_only(name):
+        if is_trainable_under(name, mods):
             continue
         has_stats = (isinstance(m, nn.modules.batchnorm._BatchNorm)
                      or (isinstance(m, nn.modules.instancenorm._InstanceNorm)
@@ -228,6 +396,64 @@ def apply_freeze(model) -> dict:
     return rec
 
 
+def apply_train_only(model, sets: Iterable[str]) -> dict:
+    """``--r9-train-only``: train the UNION of the named sets, freeze every other parameter, pin the frozen norms,
+    stamp the record on the model (the SAME marker attribute as :func:`apply_freeze`, so ``compute_losses_v3`` skips
+    the class-prior write and ``declared_vs_built.check_grad_unreachable`` reads the trainable ``modules``).
+    -> the record ``config.json["r9_train_only"]`` carries. REFUSES an unknown set, a set whose module is not built or
+    holds no parameter, and a parameter TIED across the trainable / frozen boundary."""
+    sets = tuple(sets)
+    bad_sets = [s for s in sets if s not in TRAIN_ONLY_SETS]
+    if not sets or bad_sets:
+        raise MapOnlyError(f"[r9-train-only] ⛔ {R9_FLAG}: sets {list(sets)} (unknown: {bad_sets}); the named sets are "
+                           f"{list(TRAIN_ONLY_SETS)}")
+    sets = tuple(s for s in TRAIN_ONLY_SETS if s in sets)
+    mods = modules_of_sets(sets)
+    missing = [p for p in mods if _resolve(model, p) is None]
+    if missing:
+        raise MapOnlyError(f"[r9-train-only] ⛔ {R9_FLAG} {','.join(sets)}: the built model has no {missing} -- every "
+                           f"module of a declared set must be built")
+    owners: dict = {}
+    for n, p in model.named_parameters(remove_duplicate=False):
+        owners.setdefault(id(p), set()).add(is_trainable_under(n, mods))
+    tied = [n for n, p in model.named_parameters() if len(owners[id(p)]) > 1]
+    if tied:
+        raise MapOnlyError(f"[r9-train-only] ⛔ {R9_FLAG}: {len(tied)} parameter(s) are TIED across the trainable / "
+                           f"frozen boundary, e.g. {tied[:3]} -- training them would move the frozen side")
+    trainable, n_frozen, numel_frozen = [], 0, 0
+    per_set = {s: {"modules": list(TRAIN_ONLY_SETS[s]), "n_tensors": 0, "n_params": 0} for s in sets}
+    for n, p in model.named_parameters():
+        want = is_trainable_under(n, mods)
+        p.requires_grad_(want)
+        if want:
+            trainable.append((n, int(p.numel())))
+            for s in sets:
+                if is_trainable_under(n, TRAIN_ONLY_SETS[s]):
+                    per_set[s]["n_tensors"] += 1
+                    per_set[s]["n_params"] += int(p.numel())
+        else:
+            n_frozen += 1
+            numel_frozen += int(p.numel())
+    empty = [s for s in sets if per_set[s]["n_tensors"] == 0]
+    if empty:
+        raise MapOnlyError(f"[r9-train-only] ⛔ {R9_FLAG}: the set(s) {empty} hold no parameter -- nothing of them "
+                           f"would train")
+    pinned = pin_frozen_norms(model, mods)
+    rec = {"schema": R9_SCHEMA, "flag": R9_FLAG, "sets": list(sets), "modules": list(mods),
+           "trainable": [n for n, _ in trainable],
+           "n_trainable_tensors": len(trainable),
+           "n_trainable_params": int(sum(k for _, k in trainable)),
+           "per_set": per_set,
+           "trainable_leaf_groups": leaf_groups(trainable),
+           "n_frozen_tensors": n_frozen, "n_frozen_params": int(numel_frozen),
+           "frozen_norms_pinned": int(pinned),
+           "group": R9_GROUP_NAME,
+           "buffer_writes_skipped": ["core.update_tactical_prior (lat/lon class-prior EMA)"],
+           "ema": "shadows the trainable tensors only (WeightEMA exclude=ema_exclude_for(modules))"}
+    setattr(model, MARKER_ATTR, rec)
+    return rec
+
+
 # ================================================================================================================= #
 # the optimizer                                                                                                     #
 # ================================================================================================================= #
@@ -237,6 +463,8 @@ def build_optimizer(model, args):
     if getattr(model, MARKER_ATTR, None) is None:
         raise MapOnlyError(f"[map-only] ⛔ {FLAG}: build_optimizer before apply_freeze -- the optimizer would hold "
                            f"the whole model")
+    if getattr(model, MARKER_ATTR).get("flag") == R9_FLAG:
+        return _build_optimizer_r9(model, args, getattr(model, MARKER_ATTR))
     params = [p for _n, p in model.named_parameters() if p.requires_grad]
     names = [n for n, p in model.named_parameters() if p.requires_grad]
     stray = [n for n in names if not is_map_only(n)]
@@ -251,10 +479,62 @@ def build_optimizer(model, args):
     return opt
 
 
+def _build_optimizer_r9(model, args, rec: dict):
+    """``--r9-train-only``: refcv8's dd HEAD-group recipe -- AdamW, ``--weight-decay``, the head rate ``--lr`` (every
+    module the declared sets name trained in that group in refcv8) -- as ONE group ``train_only`` holding exactly the
+    trainable parameters (:func:`apply_train_only`)."""
+    mods = tuple(rec.get("modules") or ())
+    params = [p for _n, p in model.named_parameters() if p.requires_grad]
+    names = [n for n, p in model.named_parameters() if p.requires_grad]
+    stray = [n for n in names if not is_trainable_under(n, mods)]
+    if stray or not params or not mods:
+        raise MapOnlyError(f"[r9-train-only] ⛔ {R9_FLAG}: the trainable set is not the declared sets "
+                           f"{rec.get('sets')} (outside: {stray[:3]}, n trainable {len(params)})")
+    opt = torch.optim.AdamW([{"params": params, "lr": float(args.lr),
+                              "weight_decay": float(getattr(args, "weight_decay", 1e-4)),
+                              "name": R9_GROUP_NAME}], lr=float(args.lr))
+    print(f"[r9-train-only] opt AdamW wd={getattr(args, 'weight_decay', 1e-4)} group `{R9_GROUP_NAME}` "
+          f"lr={float(args.lr):.3e} ({len(params)} tensors, {sum(int(p.numel()) for p in params)} params; sets "
+          f"{rec.get('sets')}); everything else FROZEN", flush=True)
+    return opt
+
+
+def _optimizer_problems_r9(opt, model, args, rec: dict) -> list:
+    """:func:`optimizer_problems` under ``--r9-train-only``: one AdamW group ``train_only`` holding exactly the
+    parameters of the declared sets (by identity), each trainable; no other parameter trainable."""
+    mods = tuple(rec.get("modules") or ())
+    bad = []
+    if type(opt).__name__ != "AdamW":
+        bad.append(f"optimizer is {type(opt).__name__}, the recipe is AdamW")
+    if [g.get("name") for g in opt.param_groups] != [R9_GROUP_NAME]:
+        bad.append(f"param groups {[g.get('name') for g in opt.param_groups]} != ['{R9_GROUP_NAME}']")
+    want = {id(p) for n, p in model.named_parameters() if is_trainable_under(n, mods)}
+    held = [p for g in opt.param_groups for p in g["params"]]
+    if not mods or {id(p) for p in held} != want or len(held) != len(want):
+        bad.append(f"the optimizer holds {len(held)} tensors, the declared sets {rec.get('sets')} {len(want)} "
+                   f"(not the same set)")
+    if any(not p.requires_grad for p in held):
+        bad.append("a tensor in the optimizer is frozen")
+    live = [n for n, p in model.named_parameters() if p.requires_grad and not is_trainable_under(n, mods)]
+    if live:
+        bad.append(f"{len(live)} parameter(s) OUTSIDE the declared sets {rec.get('sets')} are trainable, e.g. "
+                   f"{live[:3]}")
+    for g in opt.param_groups:
+        if abs(float(g.get("weight_decay", 0.0)) - float(getattr(args, "weight_decay", 1e-4))) > 1e-12:
+            bad.append(f"group weight_decay {g.get('weight_decay')} != {getattr(args, 'weight_decay', 1e-4)}")
+        lr0 = float(g.get("initial_lr", g.get("lr")))
+        if abs(lr0 - float(args.lr)) > 1e-15:
+            bad.append(f"group peak lr {lr0} != --lr {args.lr}")
+    return bad
+
+
 def optimizer_problems(opt, model, args) -> list:
     """What makes ``opt`` NOT the map-only recipe ([] = it is): AdamW, one group named ``map_only`` at ``--lr`` with
     ``--weight-decay``, holding exactly the map-only parameters (by identity), each trainable; no other parameter
-    trainable."""
+    trainable. A model frozen by ``--r9-train-only`` is read against ITS recipe (:func:`_optimizer_problems_r9`)."""
+    _rec = getattr(model, MARKER_ATTR, None)
+    if isinstance(_rec, dict) and _rec.get("flag") == R9_FLAG:
+        return _optimizer_problems_r9(opt, model, args, _rec)
     bad = []
     if type(opt).__name__ != "AdamW":
         bad.append(f"optimizer is {type(opt).__name__}, the recipe is AdamW")
@@ -326,31 +606,40 @@ def load_source(path: str) -> tuple:
     return state["model"], rec
 
 
-def verify_against_source(model, src: dict, *, fresh: bool) -> dict:
-    """Every key of the model's state_dict against the source file, bit for bit: the NON-map keys always (raw == the
-    shipped EMA model), the map-only keys too on a FRESH start (a resume has trained them). REFUSES a key set that
-    differs (the build is not the source's architecture) and any differing tensor."""
+def verify_against_source(model, src: dict, *, fresh: bool, modules: Iterable[str] = MAP_ONLY_MODULES) -> dict:
+    """Every key of the model's state_dict against the source file, bit for bit: the FROZEN keys (outside the
+    trainable ``modules``; default the map-only ones) always (raw == the shipped EMA model), the trainable keys too on
+    a FRESH start (a resume has trained them). REFUSES a key set that differs (the build is not the source's
+    architecture) and any differing tensor."""
+    mods = tuple(modules)
+    r9 = mods != MAP_ONLY_MODULES
+    tag, what = ("r9-train-only", "frozen perception") if r9 else ("map-only", "frozen planner")
     sd = model.state_dict()
     if set(sd) != set(src):
-        raise MapOnlyError(f"[map-only] ⛔ the model and --init-from have different keys (model-only "
+        raise MapOnlyError(f"[{tag}] ⛔ the model and --init-from have different keys (model-only "
                            f"{sorted(set(sd) - set(src))[:3]}, file-only {sorted(set(src) - set(sd))[:3]}): the "
                            f"build is not the shipped model's architecture")
-    diff = [k for k, v in sd.items() if (fresh or not is_map_only(k)) and not bit_equal(v, src[k])]
+    diff = [k for k, v in sd.items() if (fresh or not is_trainable_under(k, mods)) and not bit_equal(v, src[k])]
     if diff:
-        raise MapOnlyError(f"[map-only] ⛔ {len(diff)} tensor(s) differ from --init-from "
-                           f"({'fresh start' if fresh else 'resume: frozen tensors'}), e.g. {diff[:4]} -- the frozen "
-                           f"planner is not the shipped planner")
-    n_map = sum(1 for k in sd if is_map_only(k))
+        raise MapOnlyError(f"[{tag}] ⛔ {len(diff)} tensor(s) differ from --init-from "
+                           f"({'fresh start' if fresh else 'resume: frozen tensors'}), e.g. {diff[:4]} -- the "
+                           f"{what} is not the shipped {what.split(' ', 1)[1]}")
+    n_map = sum(1 for k in sd if is_trainable_under(k, mods))
+    if r9:
+        return {"checked_keys": (len(sd) if fresh else len(sd) - n_map), "n_keys": len(sd),
+                "n_trainable_keys": n_map, "fresh": bool(fresh), "result": "bit-identical"}
     return {"checked_keys": (len(sd) if fresh else len(sd) - n_map), "n_keys": len(sd), "n_map_only_keys": n_map,
             "fresh": bool(fresh), "result": "bit-identical"}
 
 
 class FrozenStateGuard:
-    """The frozen tensors' REFERENCE = the init file's non-map tensors (CPU). :meth:`changed` re-reads every frozen
-    parameter AND buffer of the live model against it; :meth:`assert_ok` REFUSES on the first drifted byte."""
+    """The frozen tensors' REFERENCE = the init file's tensors OUTSIDE the trainable ``modules`` (default: the
+    map-only ones), on CPU. :meth:`changed` re-reads every frozen parameter AND buffer of the live model against it;
+    :meth:`assert_ok` REFUSES on the first drifted byte."""
 
-    def __init__(self, src: dict):
-        self.ref = {k: v.detach().to("cpu") for k, v in src.items() if not is_map_only(k)}
+    def __init__(self, src: dict, modules: Iterable[str] = MAP_ONLY_MODULES):
+        self.modules = tuple(modules)
+        self.ref = {k: v.detach().to("cpu") for k, v in src.items() if not is_trainable_under(k, self.modules)}
         self.n_checks = 0
 
     def changed(self, model) -> list:
@@ -363,19 +652,26 @@ class FrozenStateGuard:
     def assert_ok(self, model, where: str) -> None:
         bad = self.changed(model)
         if bad:
+            if self.modules != MAP_ONLY_MODULES:
+                raise MapOnlyError(f"[r9-train-only] ⛔ {where}: {len(bad)} FROZEN tensor(s) changed, e.g. {bad[:4]} -- "
+                                   f"{R9_FLAG} trains only {list(self.modules)}; the frozen perception is no longer "
+                                   f"the shipped perception; refusing to continue or save")
             raise MapOnlyError(f"[map-only] ⛔ {where}: {len(bad)} FROZEN tensor(s) changed, e.g. {bad[:4]} -- the "
                                f"planner is no longer the shipped planner; refusing to continue or save")
 
 
-def ema_problems(ema, model, src: dict | None = None, *, fresh: bool = False) -> list:
-    """The EMA under the flag ([] = sound): it shadows EXACTLY the map-only tensors; on a fresh start every shadow
-    equals the live tensor AND the source (raw == EMA == the shipped model at step 0)."""
+def ema_problems(ema, model, src: dict | None = None, *, fresh: bool = False,
+                 modules: Iterable[str] = MAP_ONLY_MODULES) -> list:
+    """The EMA under the flag ([] = sound): it shadows EXACTLY the trainable tensors (default: the map-only ones); on
+    a fresh start every shadow equals the live tensor AND the source (raw == EMA == the shipped model at step 0)."""
+    mods = tuple(modules)
+    where = "the map-only modules" if mods == MAP_ONLY_MODULES else f"the trainable modules {list(mods)}"
     bad = []
     keys = set(getattr(ema, "shadow", {}) or {})
-    outside = sorted(k for k in keys if not is_map_only(k))
+    outside = sorted(k for k in keys if not is_trainable_under(k, mods))
     if outside:
-        bad.append(f"the EMA shadows {len(outside)} tensor(s) outside the map-only modules, e.g. {outside[:3]}")
-    want = {n for n, p in model.named_parameters() if is_map_only(n) and p.requires_grad}
+        bad.append(f"the EMA shadows {len(outside)} tensor(s) outside {where}, e.g. {outside[:3]}")
+    want = {n for n, p in model.named_parameters() if is_trainable_under(n, mods) and p.requires_grad}
     if not want <= keys:
         bad.append(f"the EMA does not shadow {sorted(want - keys)[:3]}")
     if fresh:
@@ -417,9 +713,15 @@ def dvb_check(model, args) -> list:
     parameters under the three literal module paths (all three built, each parameter trainable), and the freeze
     record the model carries counts what is really trainable."""
     from tanitad.train.declared_vs_built import Mismatch
-    declared = is_on(args)
+    declared = is_r8(args)
     rec = getattr(model, MARKER_ATTR, None)
     if not callable(getattr(model, "named_parameters", None)):
+        return []
+    if isinstance(rec, dict) and rec.get("flag") == R9_FLAG:
+        # the freeze is --r9-train-only's: ITS lever (`dvb_check_r9`) reads it; this one reads --r8-train-only-map only
+        if declared:
+            return [Mismatch(FLAG, True, f"a {R9_FLAG} freeze {rec.get('sets')}", f"model.{MARKER_ATTR}",
+                             "argv declares the map-only fine-tune but the build carries the train-only freeze")]
         return []
     if not declared:
         if rec is not None:
@@ -449,6 +751,54 @@ def dvb_check(model, args) -> list:
     return out
 
 
+def dvb_check_r9(model, args) -> list:
+    """G-DVB ``built`` lever: declared ``--r9-train-only <sets>`` <=> the BUILT model carries THAT freeze (the record's
+    sets and modules are the declared ones) and its trainable set is EXACTLY the parameters under the sets' literal
+    module paths (all built, each parameter trainable, nothing outside trainable), counted by the record."""
+    from tanitad.train.declared_vs_built import Mismatch
+    if not callable(getattr(model, "named_parameters", None)):
+        return []
+    try:
+        sets = r9_sets(args)
+    except MapOnlyError as e:
+        return [Mismatch(R9_FLAG, r9_spec(args), "unparseable", "argv", str(e))]
+    rec = getattr(model, MARKER_ATTR, None)
+    mine = isinstance(rec, dict) and rec.get("flag") == R9_FLAG
+    if sets is None:
+        if mine:
+            return [Mismatch(R9_FLAG, None, f"a train-only freeze {rec.get('sets')}", f"model.{MARKER_ATTR}",
+                             "the build trains only the named sets and argv does not declare it")]
+        return []
+    if not mine:
+        return [Mismatch(R9_FLAG, ",".join(sets), "no train-only freeze" if rec is None else f"a {rec.get('flag')} "
+                         f"freeze", f"model.{MARKER_ATTR}",
+                         "argv declares the train-only freeze but the built model was not frozen by it")]
+    out = []
+    mods = modules_of_sets(sets)
+    if list(rec.get("sets") or []) != list(sets) or list(rec.get("modules") or []) != list(mods):
+        out.append(Mismatch(R9_FLAG, {"sets": list(sets), "modules": list(mods)},
+                            {"sets": rec.get("sets"), "modules": rec.get("modules")}, f"model.{MARKER_ATTR}",
+                            "the built freeze is not the declared one"))
+    missing = [p for p in mods if _resolve(model, p) is None]
+    if missing:
+        out.append(Mismatch(R9_FLAG, list(mods), f"missing {missing}", "model", "a module of a declared set is not built"))
+    tr = [(n, int(p.numel())) for n, p in model.named_parameters() if p.requires_grad]
+    outside = [n for n, _ in tr if not is_trainable_under(n, mods)]
+    if outside:
+        out.append(Mismatch(R9_FLAG, f"trainable = the sets {list(sets)} only", f"{len(outside)} trainable outside",
+                            "model.named_parameters()", f"the perception freeze is broken, e.g. {outside[:3]}"))
+    frozen_in = [n for n, p in model.named_parameters() if is_trainable_under(n, mods) and not p.requires_grad]
+    if frozen_in:
+        out.append(Mismatch(R9_FLAG, f"every parameter of the sets {list(sets)} trainable", f"{len(frozen_in)} frozen",
+                            "model.named_parameters()", f"e.g. {frozen_in[:3]}"))
+    numel = sum(k for _, k in tr)
+    if int(rec.get("n_trainable_params", -1)) != numel:
+        out.append(Mismatch(R9_FLAG, f"record n_trainable_params {rec.get('n_trainable_params')}", numel,
+                            f"model.{MARKER_ATTR}", "the freeze record does not count what is trainable"))
+    return out
+
+
 def register_dvb_levers(register: Callable) -> None:
     """Called by the trainer at import (the registry is pinned two-way against its parser)."""
     register(DEST, "built", dvb_check)
+    register(R9_DEST, "built", dvb_check_r9)

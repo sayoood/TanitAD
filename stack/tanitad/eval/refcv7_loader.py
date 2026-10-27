@@ -515,6 +515,9 @@ def _build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict
     # trained (the eval settings at the end freeze every parameter anyway) ------------------------------------ #
     if bool(getattr(args, "r8_train_only_map", False)):
         rec["map_only_ft"] = tr._mof.apply_freeze(model)
+    elif callable(getattr(tr._mof, "is_r9", None)) and tr._mof.is_r9(args):
+        # refcv9 warm start (PI 2026-10-27): `--r9-train-only <sets>` -- the same replay, the named sets
+        rec["r9_train_only"] = tr._mof.apply_train_only(model, tr._mof.r9_sets(args))
     # ---- the STRICT load (train():8979-8982 loads a checkpoint the same way -- strict, and
     # BEFORE its G-DVB check at 8995) -------------------------------------------------------- #
     anc_before = {k: v.detach().clone() for k, v in model.state_dict().items()
@@ -612,6 +615,9 @@ def build_map_hires_block(tr, model, args, device) -> dict | None:
     _hcfg = map_hires_config(tr, args, _hcws["sha256"])                 # train():8019-8027
     model._map_hires = _mhr.build_map_hires_branch(model, _hcfg).to(device)   # train():8028
     model._w_map_hires = float(args.w_map_hires)                        # train():8029
+    _mfp = getattr(tr, "_mfp", None)                                    # train(): refcv9 --w-map-fp (absent at 0)
+    if _mfp is not None and _mfp.is_on(args):
+        setattr(model, _mfp.MODEL_ATTR, _mfp.weight(args))
     model._map_hires_class_weight = _hcw.to(device)                     # train():8030
     model._map_hires_class_weight_stamp = _hcws                         # train():8031
     if getattr(args, "map_hires_class_thresholds", None):               # train(): F1/F2, OPT-IN

@@ -297,8 +297,12 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     #   refcv9_progress.register_dvb_levers (286 -> 294)
     # + refcv9 GT-in-pool schedule (H-R9-ALLOC-ORACLE-1, 2026-10-27): --r9-alloc-force-schedule / --r9-alloc-force-seed
     #   ("built", read off model._r9_alloc_force), registered by refcv9_alloc_force.register_dvb_levers (294 -> 296)
-    assert len(dvb.REGISTRY) == 296
+    # + refcv9 WARM START (PI 2026-10-27): --r9-train-only ("built": the trainable sets read off the model,
+    #   map_only_ft.dvb_check_r9) and --w-map-fp ("loss": model._w_map_fp, map_precision.dvb_check) (296 -> 298)
+    assert len(dvb.REGISTRY) == 298
     assert dvb.REGISTRY["r8_train_only_map"].kind == "built"
+    assert dvb.REGISTRY["r9_train_only"].kind == "built"
+    assert dvb.REGISTRY["w_map_fp"].kind == "loss"
     for _d, _k in (("window_starts", "data"), ("nt_heldout", "data"), ("nt_heldout_sha256", "data"),
                    ("nt_token_table", "data"), ("r8_speed_unknown_always", "data"), ("snapshot_steps", "runtime")):
         assert dvb.REGISTRY[_d].kind == _k
