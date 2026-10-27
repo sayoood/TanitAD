@@ -63,24 +63,11 @@ gpu_take() {  # the protocol: a blocking lock, then an EMPTY GPU.  The yield mar
   NAPPS="$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -c '[0-9]')"
   [ "$NAPPS" = 0 ] || die "the GPU is not empty under the lock ($NAPPS compute app(s)): never share the GPU"
 }
-grade_arm() {   # $1 arm  $2 dir holding the arm run's token  $3 the arm-free MAIN token (the CONTROL) -> one ARM-... line, read from the TOKENS
-  pyval 'import json,glob,sys
-arm,d,main=sys.argv[1],sys.argv[2],sys.argv[3]
-def tok_of(path):
-    t=None
-    for f in sorted(glob.glob(path)):
-        try: j=json.load(open(f))
-        except Exception: continue
-        if j.get("kind")=="launch-gate-token": t=j
-    return t
-tok=tok_of(d+"/*.json"); ctl=tok_of(main)
-if tok is None or ctl is None: print("ARM-"+arm+"-UNGRADED(no arm token or no control token)"); raise SystemExit
-ck=tok.get("checks",{}); cc=ctl.get("checks",{})
-bad=[c for c in ("G-DVB","G-LIVE") if ck.get(c,{}).get("status") in ("FAIL","ERROR")]
-# CAUGHT = the arm token is not PASS, one of the two checks is RED WITH A MAP-ONLY REASON of its own, and the arm-free MAIN token read PASS on that same check
-sig=[c for c in bad if any("map-only" in r.lower() for r in ck[c].get("reasons",[]))]
-ctl_ok=all(cc.get(c,{}).get("status")=="PASS" for c in sig) and bool(sig)
-print("ARM-"+arm+("-CAUGHT" if (tok.get("verdict")!="PASS" and sig and ctl_ok) else "-ESCAPED-OR-MISCREDITED") + " verdict=" + str(tok.get("verdict")) + " red_checks=" + ",".join(bad) + " map_only_reason_on=" + ",".join(sig) + " control_pass=" + str(ctl_ok))' "$1" "$2" "$3"
+grade_arm() {   # $1 arm  $2 dir holding the arm run's token  $3 the arm-free MAIN token (the CONTROL) -> one ARM-... line
+  # read from the arm run's EVIDENCE files, NOT its token: launch_gate.finalize rejects arm evidence, so an arm token's checks are
+  # MISSING by construction and the token-based grader this replaces could never report a catch (MEASURED 2026-10-27 on C3 a0c93c84).
+  # The rule and its literal / mutation tests: kit/mapft_grade_arm.py, kit/test_mapft_grade_arm.py.
+  py "$KIT/mapft_grade_arm.py" "$1" "$2" "$3" 9>&- 200>&- | tr -d '\r'
 }
 nt_finished() {   # NT A1's supervisor/trainer DONE-MARKER is the trigger (CLAUDE.md: the marker, not a guess)
   [ -s "$NT_RUN/summary.json" ] && grep -q '"done"[[:space:]]*:[[:space:]]*true' "$NT_RUN/summary.json" 2>/dev/null
@@ -313,7 +300,7 @@ gate|redarms)
   # ------------------------------------------------------------------------------------- redarms
   # PREREG_MAPFT s1: "launch only on a PASS of profile refcv8-mapft (incl. its two RED arms)".  Each arm re-installs ONE defect through the
   # real gate CLI (`--arm X`, never an edited file) on G-DVB + G-LIVE and must come out NOT-PASS with a map-only reason, while the MAIN
-  # gate token (already PASS) read PASS on the same two checks (the control).
+  # gate token (already PASS) read PASS on the same two checks (the control). Graded from the arm's evidence files (grade_arm).
   TOKM="$GATE_OUT/PASS_$C12.json"
   [ "$DRY" = 1 ] || [ -s "$TOKM" ] || die "run 'gate' first: the MAIN token $TOKM is the arm-free CONTROL"
   RED="$ROOT/red_$C12"; mkdir -p "$RED" 2>/dev/null

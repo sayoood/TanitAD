@@ -29,7 +29,7 @@ rcp() { if [ "$DRY" = 1 ]; then say "DRY scp: $1 -> $HOST:$ROOT/"; return 0; fi;
 md5of() { md5sum "$1" 2>/dev/null | cut -c1-32; }
 
 # Thor-side kit = what mapft_prelaunch.sh / mapft_postrun.sh read at $ROOT/kit ($KIT) + the smoke argv the `smoke` mode wants at $ROOT/argv
-KIT_FILES="mapft_prelaunch.sh mapft_postrun.sh make_mapft_argv.py mapft_kfrozen.py mapft_gsuite_precheck.py refcv8_launch_argv_base.json mapft_argv_smoke.json pi_cost_approval_mapft.json"
+KIT_FILES="mapft_prelaunch.sh mapft_grade_arm.py mapft_postrun.sh make_mapft_argv.py mapft_kfrozen.py mapft_gsuite_precheck.py refcv8_launch_argv_base.json mapft_argv_smoke.json pi_cost_approval_mapft.json"
 
 case "$MODE" in
 kit)
