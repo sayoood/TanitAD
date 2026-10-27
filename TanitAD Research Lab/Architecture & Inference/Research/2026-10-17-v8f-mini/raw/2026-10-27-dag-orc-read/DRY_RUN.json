@@ -1,0 +1,234 @@
+{
+ "DRY_RUN": true,
+ "controls_PASS": {
+  "STATIC": true,
+  "K-P0": true,
+  "SLOTS-BANKED": true,
+  "SUMMARY:CTRL_s0": true,
+  "K-INIT:CTRL_s0": true,
+  "ARGV:CTRL_s0": true,
+  "K-GATE:CTRL_s0": true,
+  "CTRL-CKPT:CTRL_s0": true,
+  "K-PAIR-selfcheck:CTRL_s0": true,
+  "SUMMARY:CTRL_s1": true,
+  "K-INIT:CTRL_s1": true,
+  "ARGV:CTRL_s1": true,
+  "K-GATE:CTRL_s1": true,
+  "CTRL-CKPT:CTRL_s1": true,
+  "K-PAIR-selfcheck:CTRL_s1": true
+ },
+ "controls": {
+  "STATIC": {
+   "PASS": true,
+   "detail": "staged readers, Read A's banked inputs, PREREG text, RF0 pin"
+  },
+  "K-P0": {
+   "PASS": true,
+   "detail": {
+    "RF0_sha256": "1608d70b21b6b6a4...",
+    "inputs": "PINS.txt tool files + the recorded dump digests re-hashed",
+    "rollout_files_checked": 0
+   }
+  },
+  "SLOTS-BANKED": {
+   "PASS": true,
+   "detail": {
+    "CTRL": {
+     "s0": "PRESENT",
+     "s1": "PRESENT"
+    },
+    "DAG": {
+     "s0": "PRESENT",
+     "s1": "PRESENT"
+    }
+   }
+  },
+  "SUMMARY:CTRL_s0": {
+   "PASS": true,
+   "detail": {
+    "argv_sha": "126b68ca8d72abfb",
+    "steps": 3000
+   }
+  },
+  "K-INIT:CTRL_s0": {
+   "PASS": true,
+   "detail": {
+    "init_sha256": "d186fd0bcfa7ee9f...",
+    "sources": [
+     "summary:levers.init_ckpt.sha256",
+     "selfcheck:levers.init_ckpt.sha256"
+    ]
+   }
+  },
+  "ARGV:CTRL_s0": {
+   "PASS": true,
+   "detail": "argv names the registered fine-tune"
+  },
+  "K-GATE:CTRL_s0": {
+   "PASS": true,
+   "detail": {
+    "commit": "1d4f4fbb11922f4dd62b51871d898c03e0c88635",
+    "argv_sha256": "499d1a93a09a282f95116cf5c53b938787131b62b7f299a322c948b466c161b3",
+    "data_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+    "hmac": "absent"
+   }
+  },
+  "CTRL-CKPT:CTRL_s0": {
+   "PASS": true,
+   "detail": {
+    "ckpt_sha256": "603b9151f5119886",
+    "PREREG": "603b9151f5119886"
+   }
+  },
+  "K-PAIR-selfcheck:CTRL_s0": {
+   "PASS": true,
+   "detail": "A / REP / B argv built from DAG2-0's banked argv pass K-PAIR; DAG2-0's own argv does not pass as A"
+  },
+  "SUMMARY:CTRL_s1": {
+   "PASS": true,
+   "detail": {
+    "argv_sha": "ca17ec6555580ba0",
+    "steps": 3000
+   }
+  },
+  "K-INIT:CTRL_s1": {
+   "PASS": true,
+   "detail": {
+    "init_sha256": "1d12ec2eb825990d...",
+    "sources": [
+     "summary:levers.init_ckpt.sha256",
+     "selfcheck:levers.init_ckpt.sha256"
+    ]
+   }
+  },
+  "ARGV:CTRL_s1": {
+   "PASS": true,
+   "detail": "argv names the registered fine-tune"
+  },
+  "K-GATE:CTRL_s1": {
+   "PASS": true,
+   "detail": {
+    "commit": "1d4f4fbb11922f4dd62b51871d898c03e0c88635",
+    "argv_sha256": "87baebb959025741dbf4d7907f08a62107f988797fbd6ca45dfdd4bb050b1d3b",
+    "data_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+    "hmac": "absent"
+   }
+  },
+  "CTRL-CKPT:CTRL_s1": {
+   "PASS": true,
+   "detail": {
+    "ckpt_sha256": "f4234ac11854076b",
+    "PREREG": "f4234ac11854076b"
+   }
+  },
+  "K-PAIR-selfcheck:CTRL_s1": {
+   "PASS": true,
+   "detail": "A / REP / B argv built from DAG2-0's banked argv pass K-PAIR; DAG2-0's own argv does not pass as A"
+  }
+ },
+ "slots": {
+  "A": {
+   "s0": "MISSING",
+   "s1": "MISSING"
+  },
+  "CTRL": {
+   "s0": "PRESENT",
+   "s1": "PRESENT"
+  },
+  "REP": {
+   "s0": "MISSING",
+   "s1": "MISSING"
+  },
+  "B": {
+   "s0": "MISSING",
+   "s1": "MISSING"
+  },
+  "DAG": {
+   "s0": "PRESENT",
+   "s1": "PRESENT"
+  }
+ },
+ "slots_detail": {
+  "A": {
+   "s0": {
+    "state": "MISSING",
+    "missing": [
+     "no manifest entry"
+    ]
+   },
+   "s1": {
+    "state": "MISSING",
+    "missing": [
+     "no manifest entry"
+    ]
+   }
+  },
+  "CTRL": {
+   "s0": {
+    "state": "PRESENT",
+    "missing": []
+   },
+   "s1": {
+    "state": "PRESENT",
+    "missing": []
+   }
+  },
+  "REP": {
+   "s0": {
+    "state": "MISSING",
+    "missing": [
+     "no manifest entry"
+    ]
+   },
+   "s1": {
+    "state": "MISSING",
+    "missing": [
+     "no manifest entry"
+    ]
+   }
+  },
+  "B": {
+   "s0": {
+    "state": "MISSING",
+    "missing": [
+     "no manifest entry"
+    ]
+   },
+   "s1": {
+    "state": "MISSING",
+    "missing": [
+     "no manifest entry"
+    ]
+   }
+  },
+  "DAG": {
+   "s0": {
+    "state": "PRESENT",
+    "missing": []
+   },
+   "s1": {
+    "state": "PRESENT",
+    "missing": []
+   }
+  }
+ },
+ "new_arms_missing": {
+  "A": [
+   "s0",
+   "s1"
+  ],
+  "REP": [
+   "s0",
+   "s1"
+  ],
+  "B": [
+   "s0",
+   "s1"
+  ]
+ },
+ "wall_s": 0.9,
+ "prereg": "Project Steering/PREREG_V8F_DAG_ORC.md @ 3b7b404e",
+ "prereg_sha256": "38bc688b173cdb8c94b8a4ce37a29876cb7b9b1cf8170043afc22290aca0c4ee",
+ "rf0_sha256": "1608d70b21b6b6a45136a6d96828f70b5bbabd9c0ceb84db136927593c79ad0f",
+ "reader_sha256": "a4907f4e4707de8005cc4865544ac56e35a7b626c07a4eb36a6f97625b0eb943"
+}
