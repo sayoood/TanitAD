@@ -504,7 +504,10 @@ def bad_init_ckpt(a, data_info) -> list:
 #: the architecture-defining fields of V8FMiniConfig: a checkpoint may start a fine-tune only for a model of THIS shape and wiring (the training levers -- w_*, p_gt_*, code_mix, o_interface, cons_absent,
 #: consistency, detach_upper -- may differ: a fine-tune moves them on purpose)
 INIT_CKPT_MATCH = ("d", "heads", "ff", "d_feat", "n_tok", "hist", "hmax", "n_q", "depth_s", "depth_t", "depth_o", "nb", "res_scale_m", "navonly", "wm", "wm_dim", "wm_strides", "wm_beta", "wm_gamma",
-                   "kin_mode", "max_age_t", "max_age_s")
+                   "kin_mode", "max_age_t", "max_age_s",
+                   "o_interface")                      # PREREG_V8F_FLATDAG: a checkpoint trained under the cut must be fine-tuned under the cut (and a full one under full). The key is read only when the checkpoint HAS it:
+                                                       # checkpoints written before --o-interface existed (every M2b) carry none and load exactly as before. Without it a FLAT-DAG argv that forgets `--o-interface cut`
+                                                       # builds FULL, loads the cut weights and PASSES the gate (MEASURED oaccflat_check/RESULT.md F1); the run is then REFUSED only by C-F3, hours later
 
 
 def load_init_ckpt(path, model, cfg, apply: bool = True) -> dict:

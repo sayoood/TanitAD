@@ -44,6 +44,18 @@ HOLD = "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9"
 BOX2 = dict(REPO=r"D:\tanitad\repo", PY=r"D:\tanitad\venv\Scripts\python.exe", CACHEFULL=r"D:\tanitad\cache_full", V9=r"D:\tanitad\data\v9", RUNSM=r"D:\tanitad\runs\v8f_mini_full")
 ORC_LABELS = {"orcarm", "gateorc", "trainorc", "evalorc"}
 ORC_STAGES = ("gateorc", "trainorc", "evalorc")
+# Labels appended AFTER the ORC edit by later, insertion-only edits, each declared with its PREREG. They are tested by their own builds
+# (raw/2026-10-26-dagger-queue/, raw/2026-10-27-dagger2-queue/); here they only have to sit after the ORC region and leave it untouched.
+# A label that is in none of PRE_LABELS, ORC_LABELS and LATER_LABELS still turns the test below RED: a new edit declares itself here.
+LATER_LABELS = {
+    "dagname": "PREREG_V8F_DAGGER", "prepdag": "PREREG_V8F_DAGGER", "dagarm": "PREREG_V8F_DAGGER", "dagarm_dry": "PREREG_V8F_DAGGER",
+    "dagarm_have": "PREREG_V8F_DAGGER", "bankdag": "PREREG_V8F_DAGGER", "gatedag": "PREREG_V8F_DAGGER", "traindag": "PREREG_V8F_DAGGER",
+    "evaldag": "PREREG_V8F_DAGGER",
+    "dag2arm": "PREREG_V8F_DAGGER2", "dag2arm_dry": "PREREG_V8F_DAGGER2", "dag2arm_have": "PREREG_V8F_DAGGER2", "bankdag2": "PREREG_V8F_DAGGER2",
+}
+LATER_FIRST = "dagname"                                                       # the first label after the ORC region
+LATER_HEADER = tuple(f"rem   v8f_mini_box2_queue.cmd {st} " for st in ("bankdag", "gatedag", "traindag", "evaldag", "bankdag2")) \
+    + ("rem   gatedag / traindag / evaldag also take ARM dag2 ",)           # the later edits' usage lines in the header
 LAW = ("--ego-perturb-vscale", "--ego-perturb-vmax", "--ego-perturb-adrop", "--ego-perturb-yawrate-std", "--ego-perturb-seed")     # PREREG Amendment 3: named by ORC, by NONE of ORC-0
 RUNS = (("orc", 0), ("orc0", 0), ("orc", 1), ("orc0", 1))                  # the PREREG's order (section 5): ORC s0, ORC-0 s0, ORC s1, ORC-0 s1
 # sha256[:16] of "\n" + the text of each label of the queue AT 98713259 (the programme's pin convention) and of the 41 other stages' dry-run output (lines with .py) under the fixed environment of
@@ -98,6 +110,11 @@ def _queue_text():
 def _blocks():
     parts = re.split(r"(?m)^(:[A-Za-z0-9_]+)$", _queue_text())
     return {parts[i][1:]: parts[i + 1] for i in range(1, len(parts), 2)}
+
+
+def _orc_region():
+    """ORC's own region: from :orcarm up to the first label a later edit appended (LATER_FIRST)."""
+    return _queue_text().split("\n:orcarm\n", 1)[1].split(f"\n:{LATER_FIRST}\n", 1)[0]
 
 
 def _block(label):
@@ -196,7 +213,9 @@ def test_queue_is_crlf_every_older_label_is_byte_identical_and_only_the_four_orc
     for label, h in PRE_LABELS.items():
         assert label in blocks, f"the stage {label} was removed"
         assert _sha16("\n" + blocks[label]) == h, f"the stage {label} was edited"
-    assert set(blocks) == set(PRE_LABELS) | ORC_LABELS and len(ORC_LABELS) == 4, "the only new labels are the four of this edit"
+    assert len(ORC_LABELS) == 4 and ORC_LABELS <= set(blocks), "the four labels of this edit are present"
+    assert set(blocks) == set(PRE_LABELS) | ORC_LABELS | set(LATER_LABELS), \
+        f"a label that is neither older, ORC's nor a declared later edit: {sorted(set(blocks) - set(PRE_LABELS) - ORC_LABELS - set(LATER_LABELS))}"
     for st in ORC_STAGES:
         assert q.count(f'if /i "%~1"=="{st}" goto :{st}\n') == 1, "a stage nobody dispatches never runs"
         assert q.count(f"\n:{st}\n") == 1
@@ -210,10 +229,23 @@ def test_queue_is_crlf_every_older_label_is_byte_identical_and_only_the_four_orc
         and pre[i + 5].startswith("rem   v8f_mini_box2_queue.cmd evalorc ARM SEED"), "the header documents the three stages"
     rest = pre[:i + 1] + pre[i + 6:]
     rest = [x for x in rest if not (x.startswith('if /i "%~1"==') and any(s in x for s in ORC_STAGES))]
+    # the later edits' own preamble lines: their usage lines (DAGGER also added one "rem" separator after them) and their dispatch lines
+    k = next((n for n, x in enumerate(rest) if x.startswith(LATER_HEADER)), None)
+    if k is not None:
+        m = k
+        while m < len(rest) and rest[m].startswith(LATER_HEADER):
+            m += 1
+        assert rest[k - 1] == "rem" and rest[m] == "rem", "the later usage lines sit as one block between two separators"
+        rest = rest[:k] + rest[m + 1:]
+    later_disp = {f'if /i "%~1"=="{st}" goto :{st}' for st in LATER_LABELS}
+    rest = [x for x in rest if x not in later_disp]
+    assert not any(x.startswith(LATER_HEADER) for x in rest), "a later usage line outside the block"
     assert _sha16("\n".join(rest)) == PRE_PREAMBLE, "the preamble changed beyond this edit's own lines (the usage line, the environment and the dispatch of every older stage are untouched)"
     assert q.split("\n:orcarm\n")[0].endswith("\n:fitoacc\n" + q.split("\n:fitoacc\n", 1)[1].split("\n:orcarm\n")[0]) and q.split("\n:orcarm\n")[0].endswith("echo [ok] HX weights M2b-oacc_s%~2\nexit /b 0"), \
         "the new stages start right after the last old label, which keeps its text"
-    assert q.rstrip().endswith("echo [ok] eval %TG%\nexit /b 0"), "the new stages are the tail of the file"
+    assert ("\n:orcarm\n" + _orc_region()).rstrip().endswith("echo [ok] eval %TG%\nexit /b 0"), "ORC's region ends with evalorc"
+    tail = re.findall(r"(?m)^:([A-Za-z0-9_]+)$", q.split("\n:evalorc\n", 1)[1])
+    assert tail and tail[0] == LATER_FIRST and set(tail) == set(LATER_LABELS), "every label after ORC's region is a declared later edit"
 
 
 @needs_queue
@@ -238,11 +270,11 @@ def test_queue_orc_stages_are_one_flat_command_string_each_that_the_dry_run_prin
         "the fine-tune's levers are written ONCE, here: --ego-perturb-p, then %ORCL% (the five law flags for ORC, NOTHING for ORC-0: Amendment 3)"
     lw = 'if /i "%~1"=="orc" set "ORCL= --ego-perturb-vscale 0.5 1.0 --ego-perturb-vmax 8.0 --ego-perturb-adrop 1.5 --ego-perturb-yawrate-std 2.0 --ego-perturb-seed %~2"'
     assert arm.count('set "ORCL="') == 1 and arm.count(lw) == 1 and arm.index('set "ORCL="') < arm.index(lw) < arm.index(f), "ORCL is emptied, then set for ORC ONLY, then read by ORCF"
-    assert all(sum(x.count(fl) for x in _code(_queue_text().split("\n:orcarm\n")[1].split("\n"))) == 1 for fl in LAW), "each law flag is written once in the whole new region, inside ORC's ORCL"
+    assert all(sum(x.count(fl) for x in _code(_orc_region().split("\n"))) == 1 for fl in LAW), "each law flag is written once in ORC's region, inside ORC's ORCL"
     assert not any(fl in x for fl in LAW for x in arm if x != lw), "no other line of the helper names a law flag (ORC-0 reaches none)"
     assert '(set "ORCP=0.3" & set "ORCS=orc")' in " ".join(x.split("if /i \"%~1\"==\"orc\" ")[-1] for x in arm if x.startswith('if /i "%~1"=="orc" '))
     assert 'if /i "%~1"=="orc0" (set "ORCP=0" & set "ORCS=orc0")' in arm, "p differs between the arms HERE and nowhere else"
-    assert sum(x.count("--ego-perturb-p") for x in _code(_queue_text().split("\n:orcarm\n")[1].split("\n"))) == 1, "--ego-perturb-p appears once in the CODE of the whole new region"
+    assert sum(x.count("--ego-perturb-p") for x in _code(_orc_region().split("\n"))) == 1, "--ego-perturb-p appears once in the CODE of ORC's region"
     for label in ("orcarm", *ORC_STAGES):
         body = _block(label)
         assert not any(x.rstrip().endswith("(") for x in body), f"{label}: a multi-line parenthesised block (an `exit /b 1` inside one returns rc 0 from `cmd /c`, MEASURED by the PGT build)"

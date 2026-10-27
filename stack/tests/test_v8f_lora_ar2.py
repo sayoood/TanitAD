@@ -755,7 +755,8 @@ def test_queue_ar2_every_existing_stage_is_byte_identical():
     flat = {"gateflat", "trainflat", "evalflat"} | {f"evalflat_{i}" for i in range(1, 5)}      # PREREG_V8F_FLAT appended these (test_v8f_flat.py pins them); widened here, nothing else
     oacc = {"waccoacc", "oaccwacc", "gateoacc", "trainoacc", "evaloacc", "fitoacc"}          # PREREG_V8F_OACC appended these (test_v8f_oacc.py pins them); widened here, nothing else
     orc = {"orcarm", "gateorc", "trainorc", "evalorc"}          # PREREG_V8F_ORECOVER appended these (test_v8f_orc_chain.py pins them); widened here, nothing else
-    assert set(blocks) - {"kind", "kindseed", "kindown", "kindorc"} - mixo - flat - oacc - orc == set(PRE_EXISTING) | {"loraenv", "identitylora", "smokelora"}, "the only new labels are the three of this edit"
+    dag = {"dagname", "prepdag", "dagarm", "dagarm_dry", "dagarm_have", "bankdag", "gatedag", "traindag", "evaldag", "dag2arm", "dag2arm_dry", "dag2arm_have", "bankdag2"}      # PREREG_V8F_DAGGER / PREREG_V8F_DAGGER2 appended these after ORC's (widened here, nothing else)
+    assert set(blocks) - {"kind", "kindseed", "kindown", "kindorc"} - mixo - flat - oacc - orc - dag == set(PRE_EXISTING) | {"loraenv", "identitylora", "smokelora"}, "the only new labels are the three of this edit"
     for st in OLD_STAGES:
         assert f'if /i "%~1"=="{st}" goto :' in q, st
     labels = set(blocks)

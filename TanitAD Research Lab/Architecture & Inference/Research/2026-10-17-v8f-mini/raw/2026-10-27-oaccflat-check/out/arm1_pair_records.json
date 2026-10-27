@@ -1,0 +1,91 @@
+{
+ "cases": [
+  {
+   "name": "DAG's banked argv.json sha equals TR.argv_sha(argv) (the function the gate uses) = bf47d07701bde74a",
+   "ok": true,
+   "detail": "{'computed': 'bf47d07701bde74a', 'file': 'bf47d07701bde74a', 'summary': 'bf47d07701bde74a'}"
+  },
+  {
+   "name": "Amendment-2 reader (tip check_x_run, unchanged) returns NO refusal for the simulated DAG-OACC vs DAG pair",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "DAG's own summary-vs-selfcheck lever differences (the record-format class of Amendment 2) are all inside lever_skip or equal-by-construction",
+   "ok": true,
+   "detail": "{'differing_keys': [], 'not_in_lever_skip': []}"
+  },
+  {
+   "name": "residual_zero_init reads False in BOTH of DAG's records (--init-ckpt loads head_o.2 before the readout), so Amendment 2's summary-False/selfcheck-True mismatch cannot arise for this pair; it is in lever_skip anyway",
+   "ok": true,
+   "detail": "{'summary': False, 'selfcheck': False}"
+  },
+  {
+   "name": "DAG's real `w` record carries w_tac / w_cons itself (no older-format B): no weight is 'absent from B's config'",
+   "ok": true,
+   "detail": "{'w_pen': 0.5, 'w_pen_self': 0.25, 'w_wm': 0.1, 'w_tac': 1.0, 'w_cons': 0.5}"
+  },
+  {
+   "name": "independent one-lever assertion: DAG-OACC argv == DAG argv except --w-acc + --out; --w-acc named exactly once; bank sha256 identical",
+   "ok": true,
+   "detail": "7b443c6e5876751f"
+  },
+  {
+   "name": "RED (reader refuses) when a second lever differs: --lr 2e-4",
+   "ok": true,
+   "detail": "[\"M2b-oacc_s0: argv differs from B_s0's in ['--lr'] besides --w-acc and --out -- not one lever\"]"
+  },
+  {
+   "name": "RED (reader refuses) when the DAgger seed differs: --dagger-seed 1",
+   "ok": true,
+   "detail": "[\"M2b-oacc_s0: argv differs from B_s0's in ['--dagger-seed'] besides --w-acc and --out -- not one lever\"]"
+  },
+  {
+   "name": "RED (reader refuses) when the bank sha256 differs",
+   "ok": true,
+   "detail": "[\"M2b-oacc_s0: argv differs from B_s0's in ['--dagger-bank-sha256'] besides --w-acc and --out -- not one lever\"]"
+  },
+  {
+   "name": "RED (reader refuses) when the init checkpoint differs: --init-ckpt other",
+   "ok": true,
+   "detail": "[\"M2b-oacc_s0: argv differs from B_s0's in ['--init-ckpt'] besides --w-acc and --out -- not one lever\"]"
+  },
+  {
+   "name": "RED (reader refuses) when the dagger share differs: --dagger-p 0.3",
+   "ok": true,
+   "detail": "[\"M2b-oacc_s0: argv differs from B_s0's in ['--dagger-p'] besides --w-acc and --out -- not one lever\"]"
+  },
+  {
+   "name": "RED when --w-acc is named twice",
+   "ok": true,
+   "detail": "['M2b-oacc_s0: argv --w-acc 1.0 (named 2 times), expected 49.6969 exactly once']"
+  },
+  {
+   "name": "RED when the BUILT w_acc (levers) is not the argv's value",
+   "ok": true,
+   "detail": "[\"M2b-oacc_s0: summary.json built w_acc 0.0, the rule's value is 49.6969\", \"M2b-oacc_s0: selfcheck.json built w_acc 0.0, the rule's value is 49.6969\"]"
+  },
+  {
+   "name": "Amendment 2 stays STRICT: RED when a loss weight differs (w_tac 2.0)",
+   "ok": true,
+   "detail": "[\"M2b-oacc_s0: summary.json built loss weights ['w_tac'] differ from B_s0's (a weight B's record lacks must equal B's built config {'w_tac': 1.0, 'w_cons': 0.5})\", \"M2b-oacc_s0: selfcheck.json built loss weights ['w_tac'] differ from B_s0's (a weight B's record lacks must equal B's built config {'w_tac': 1.0, 'w_cons': 0.5})\"]"
+  },
+  {
+   "name": "Amendment 2: a residual_zero_init difference ALONE is not a refusal",
+   "ok": true,
+   "detail": "[]"
+  },
+  {
+   "name": "RED when the comparator's argv already names --w-acc",
+   "ok": true,
+   "detail": "['B_s0: argv names --w-acc: B is the banked M2b, which predates the flag']"
+  }
+ ],
+ "t0": 1793091545.9750195,
+ "mutant": null,
+ "tree": "E:\\Projects\\TanitAD-artifacts\\dagt1_tree_b43c7a9a",
+ "seconds": 0.012369394302368164,
+ "n_pass": 16,
+ "n_cases": 16,
+ "all_pass": true
+}

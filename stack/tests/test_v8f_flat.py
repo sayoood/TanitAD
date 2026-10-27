@@ -1679,6 +1679,8 @@ win = pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows
 FSTAGES = ("gateflat", "trainflat", "evalflat")
 FLAT_LABELS = {"gateflat", "trainflat", "evalflat"} | {f"evalflat_{i}" for i in range(1, 5)}
 ORC_LABELS = {"orcarm", "gateorc", "trainorc", "evalorc"}           # PREREG_V8F_ORECOVER appended these (test_v8f_orc_chain.py pins them); widened here, nothing else
+DAG_LABELS = {"dagname", "prepdag", "dagarm", "dagarm_dry", "dagarm_have", "bankdag", "gatedag", "traindag", "evaldag",      # PREREG_V8F_DAGGER appended these after ORC's; widen
+              "dag2arm", "dag2arm_dry", "dag2arm_have", "bankdag2"}                                                  # PREREG_V8F_DAGGER2, after DAGGER's
 OACC_LABELS = {"waccoacc", "oaccwacc", "gateoacc", "trainoacc", "evaloacc", "fitoacc"}         # PREREG_V8F_OACC appended these after FLAT's (test_v8f_oacc.py pins them); widened here, nothing else
 # PREREG_V8F_MIXO's ten labels as they stand at the tip 18c62306 (sha256[:16] of "\n" + the text up to the next label): this edit appended AFTER them and edited none
 MIXO_PINS = {"gatemixo": "b2ea5430b698741c", "trainmixo": "419a7db33d684844", "evalmixo": "7acc0975f2aa9ef3", "evalmixo_1": "1cc5381d64b27142", "evalmixo_2": "a70ba66191aed3cf",
@@ -1741,7 +1743,7 @@ def test_queue_flat_is_crlf_every_existing_label_is_byte_identical_and_only_the_
         assert label in blocks, f"the stage {label} was removed"
         assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
         assert "o-interface" not in blocks[label] and "_flat" not in blocks[label] and "M2b-flat" not in blocks[label], f"{label} mentions the new stages"
-    assert set(blocks) - OACC_LABELS - ORC_LABELS == set(_K.PRE_EXISTING) | set(_MX.KIND_PINS) | set(MIXO_PINS) | FLAT_LABELS and len(FLAT_LABELS) == 7, "the only new labels are the seven of this edit"
+    assert set(blocks) - OACC_LABELS - ORC_LABELS - DAG_LABELS == set(_K.PRE_EXISTING) | set(_MX.KIND_PINS) | set(MIXO_PINS) | FLAT_LABELS and len(FLAT_LABELS) == 7, "the only new labels are the seven of this edit"
     for st in FSTAGES:
         assert q.count(f'if /i "%~1"=="{st}" goto :{st}\n') == 1, "a stage nobody dispatches never runs"
         assert q.count(f"\n:{st}\n") == 1

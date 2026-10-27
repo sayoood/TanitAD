@@ -1,0 +1,62 @@
+F.F...F                                                                  [100%]
+================================== FAILURES ===================================
+_____ test_a_cut_checkpoint_with_an_argv_that_forgets_the_cut_is_refused ______
+
+cks = ({'cut': WindowsPath('E:/Projects/TanitAD-artifacts/oaccflat_check/work/pt_nofix/oi0/cut/ckpt_last.pt'), 'full': Windo...heck/work/pt_nofix/oi0/old_no_key.pt')}, WindowsPath('E:/Projects/TanitAD-artifacts/oaccflat_check/work/pt_nofix/oi0'))
+
+    def test_a_cut_checkpoint_with_an_argv_that_forgets_the_cut_is_refused(cks):
+        out, root = cks
+        rc = gate(root, "g1", out["cut"])
+>       assert isinstance(rc, str) and "ZZDVB-REFUSEDZZ init-ckpt" in rc and "o_interface: 'cut' != 'full'" in rc, rc
+E       AssertionError: 0
+E       assert (False)
+E        +  where False = isinstance(0, str)
+
+stack\tests\test_v8f_init_ckpt_o_interface.py:55: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+[1/2] ade 6.218 total 85.265 p_gt 1.00
+[2/2] ade 8.835 total 95.107 p_gt 0.60
+DONE {"steps": 2, "arm": "M2b", "seed": 5, "seconds": 1.1445589065551758}
+[1/2] ade 6.218 total 85.265 p_gt 1.00
+[2/2] ade 8.835 total 95.107 p_gt 0.60
+DONE {"steps": 2, "arm": "M2b", "seed": 5, "seconds": 1.1323916912078857}
+---------------------------- Captured stdout call -----------------------------
+SELFCHECK PASS {"steps_total": 11, "info": {"batch": 16, "md5_overridden": false, "n_clips": 6, "n_clips_expected": 6, "n_clips_all": 6, "n_excluded": 0, "n_excluded_declared": 0, "excluded_in_train": 0, "excluded_sha256": null, "train_sha256": "85246e69cd8370088cd96d5a538d2ea43ad508b13a833f5e6060e454109e1d62", "lru": 305, "kin_mode": "yaw", "n_windows_all_clips": 162, "n_windows": 162, "window_start": 3, "window_t_min": 3, "train_window_list_sha256": "0af276801dd714d975425aec011f46666af3df29d2511ea1260191e65267b538", "p10_units": null, "ds_window_start": 3, "init_ckpt": {"path": "E:\\Projects\\TanitAD-artifacts\\oaccflat_check\\work\\pt_nofix\\oi0\\cut\\ckpt_last.pt", "sha256": "58f771865fa19703805df8dd6b525048811e7ae4d8c7438b861d8fb0447f5b32", "applied": true, "skipped": null, "n_tensors": 276, "n_mismatch_after_load": 0, "source_step": 2, "source_arm": "M2b", "source_seed": 5, "source_argv_sha": "e9319cd49109a57a"}}}
+____________ test_a_full_checkpoint_with_a_cut_argv_is_refused_too ____________
+
+cks = ({'cut': WindowsPath('E:/Projects/TanitAD-artifacts/oaccflat_check/work/pt_nofix/oi0/cut/ckpt_last.pt'), 'full': Windo...heck/work/pt_nofix/oi0/old_no_key.pt')}, WindowsPath('E:/Projects/TanitAD-artifacts/oaccflat_check/work/pt_nofix/oi0'))
+
+    def test_a_full_checkpoint_with_a_cut_argv_is_refused_too(cks):
+        out, root = cks
+        rc = gate(root, "g3", out["full"], ["--o-interface", "cut"])
+>       assert isinstance(rc, str) and "ZZDVB-REFUSEDZZ init-ckpt" in rc and "o_interface: 'full' != 'cut'" in rc, rc
+E       AssertionError: 0
+E       assert (False)
+E        +  where False = isinstance(0, str)
+
+stack\tests\test_v8f_init_ckpt_o_interface.py:69: AssertionError
+---------------------------- Captured stdout call -----------------------------
+SELFCHECK PASS {"steps_total": 11, "info": {"batch": 16, "md5_overridden": false, "n_clips": 6, "n_clips_expected": 6, "n_clips_all": 6, "n_excluded": 0, "n_excluded_declared": 0, "excluded_in_train": 0, "excluded_sha256": null, "train_sha256": "85246e69cd8370088cd96d5a538d2ea43ad508b13a833f5e6060e454109e1d62", "lru": 305, "kin_mode": "yaw", "n_windows_all_clips": 162, "n_windows": 162, "window_start": 3, "window_t_min": 3, "train_window_list_sha256": "0af276801dd714d975425aec011f46666af3df29d2511ea1260191e65267b538", "p10_units": null, "ds_window_start": 3, "init_ckpt": {"path": "E:\\Projects\\TanitAD-artifacts\\oaccflat_check\\work\\pt_nofix\\oi0\\full\\ckpt_last.pt", "sha256": "0097b4232d332a462ba6efbc5c1c94948954dfd18ee59e4c17e4af699fc6ce62", "applied": true, "skipped": null, "n_tensors": 276, "n_mismatch_after_load": 0, "source_step": 2, "source_arm": "M2b", "source_seed": 5, "source_argv_sha": "8633e6fbf0263613"}}}
+_ test_the_match_tuple_names_o_interface_exactly_once_and_keeps_every_architecture_key _
+
+    def test_the_match_tuple_names_o_interface_exactly_once_and_keeps_every_architecture_key():
+        keys = TR.INIT_CKPT_MATCH
+>       assert keys.count("o_interface") == 1
+E       AssertionError: assert 0 == 1
+E        +  where 0 = <built-in method count of tuple object at 0x000002D13F1C83C0>('o_interface')
+E        +    where <built-in method count of tuple object at 0x000002D13F1C83C0> = ('d', 'heads', 'ff', 'd_feat', 'n_tok', 'hist', ...).count
+
+stack\tests\test_v8f_init_ckpt_o_interface.py:85: AssertionError
+============================== warnings summary ===============================
+stack/tests/test_v8f_init_ckpt_o_interface.py::test_a_cut_checkpoint_with_an_argv_that_forgets_the_cut_is_refused
+  E:\Projects\TanitAD-artifacts\dagt1_tree_b43c7a9a\stack\scripts\v8f_mini_train.py:1638: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED stack/tests/test_v8f_init_ckpt_o_interface.py::test_a_cut_checkpoint_with_an_argv_that_forgets_the_cut_is_refused
+FAILED stack/tests/test_v8f_init_ckpt_o_interface.py::test_a_full_checkpoint_with_a_cut_argv_is_refused_too
+FAILED stack/tests/test_v8f_init_ckpt_o_interface.py::test_the_match_tuple_names_o_interface_exactly_once_and_keeps_every_architecture_key
+3 failed, 4 passed, 1 warning in 31.77s
+done

@@ -1878,6 +1878,8 @@ win = pytest.mark.skipif(sys.platform != "win32", reason="the queue is a Windows
 OSTAGES = ("waccoacc", "gateoacc", "trainoacc", "evaloacc", "fitoacc")
 OACC_LABELS = set(OSTAGES) | {"oaccwacc"}
 ORC_LABELS = {"orcarm", "gateorc", "trainorc", "evalorc"}           # PREREG_V8F_ORECOVER appended these after OACC's (test_v8f_orc_chain.py pins them); widened here, nothing else
+DAG_LABELS = {"dagname", "prepdag", "dagarm", "dagarm_dry", "dagarm_have", "bankdag", "gatedag", "traindag", "evaldag",      # PREREG_V8F_DAGGER appended these after ORC's; widen
+              "dag2arm", "dag2arm_dry", "dag2arm_have", "bankdag2"}                                                  # PREREG_V8F_DAGGER2, after DAGGER's
 # PREREG_V8F_FLAT's seven labels as they stand at the tip 4f561a2c (sha256[:16] of "\n" + the text up to the next label): this edit appended AFTER them and edited none
 FLAT_PINS = {"gateflat": "cec296bd862eedcd", "trainflat": "9e28a04f9c79af1e", "evalflat": "024f6a7e06886322", "evalflat_1": "2f90baa2f624c148", "evalflat_2": "f3c16ba44e719907",
              "evalflat_3": "ea291c4013c2b747", "evalflat_4": "901e965d7b940ca4"}
@@ -1951,7 +1953,7 @@ def test_queue_oacc_is_crlf_every_existing_label_is_byte_identical_and_only_the_
         assert label in blocks, f"the stage {label} was removed"
         assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
         assert "w-acc" not in blocks[label] and "oacc" not in blocks[label] and "WACC" not in blocks[label], f"{label} mentions the new stages"
-    assert set(blocks) - ORC_LABELS == set(_K.PRE_EXISTING) | set(_MX.KIND_PINS) | set(MIXO_PINS) | set(FLAT_PINS) | OACC_LABELS and len(OACC_LABELS) == 6, "the only new labels are the six of this edit"
+    assert set(blocks) - ORC_LABELS - DAG_LABELS == set(_K.PRE_EXISTING) | set(_MX.KIND_PINS) | set(MIXO_PINS) | set(FLAT_PINS) | OACC_LABELS and len(OACC_LABELS) == 6, "the only new labels are the six of this edit"
     for st in OSTAGES:
         assert q.count(f'if /i "%~1"=="{st}" goto :{st}\n') == 1, "a stage nobody dispatches never runs"
         assert q.count(f"\n:{st}\n") == 1
