@@ -1,0 +1,277 @@
+BLINDING: OFF (--real-pulls): the pulled eval_M2b-dag2* files are stream-hashed
+PASS T1 the pinned PREREG_V8F_DAGGER2.md (1446333d blob) holds exactly the six amended outcome-table rows the reader codes
+PASS T2 table order
+PASS T3 pinned PREREG sha256 (the 1446333d blob)
+PASS T4 table_problems on the pinned amended text: none
+PASS T5 the AS-LANDED text (everything before Amendment 1) is not the amended table
+PASS T6 a PREREG whose PARTIAL condition is the as-landed one is refused
+PASS T7 a PREREG whose PARTIAL committed next is the as-landed one is refused
+PASS T8 an amended table with a row missing is refused
+PASS T9 the PARTIAL row is Amendment 1's, written out independently of the reader
+PASS O16 (c0,c1,m0,m1)=(0, 0, 0, 0) -> ['NO EFFECT']
+PASS O16 (c0,c1,m0,m1)=(0, 1, 0, 0) -> ['NO EFFECT']
+PASS O16 (c0,c1,m0,m1)=(1, 0, 0, 0) -> ['NO EFFECT']
+PASS O16 (c0,c1,m0,m1)=(1, 1, 0, 0) -> ['NO EFFECT']
+PASS O16 (c0,c1,m0,m1)=(1, 1, 1, 1) -> ['FIXED']
+PASS O16 (c0,c1,m0,m1)=(1, 0, 1, 1) -> ['PARTIAL']
+PASS O16 (c0,c1,m0,m1)=(0, 1, 1, 1) -> ['PARTIAL']
+PASS O16 (c0,c1,m0,m1)=(0, 0, 1, 1) -> ['PARTIAL']
+PASS O16 (c0,c1,m0,m1)=(1, 0, 1, 0) -> ['PARTIAL']
+PASS O16 (c0,c1,m0,m1)=(1, 1, 1, 0) -> ['PARTIAL']
+PASS O16 (c0,c1,m0,m1)=(0, 0, 1, 0) -> ['PARTIAL']
+PASS O16 (c0,c1,m0,m1)=(0, 1, 1, 0) -> ['PARTIAL']
+PASS O16 (c0,c1,m0,m1)=(0, 1, 0, 1) -> ['PARTIAL']
+PASS O16 (c0,c1,m0,m1)=(1, 1, 0, 1) -> ['PARTIAL']
+PASS O16 (c0,c1,m0,m1)=(0, 0, 0, 1) -> ['PARTIAL']
+PASS O16 (c0,c1,m0,m1)=(1, 0, 0, 1) -> ['PARTIAL']
+PASS O1 FIXED: outcome word, condition and committed next carried verbatim
+PASS O1 PARTIAL(a): outcome word, condition and committed next carried verbatim
+PASS O1 PARTIAL(b): outcome word, condition and committed next carried verbatim
+PASS O1 PARTIAL(b, newly placed): outcome word, condition and committed next carried verbatim
+PASS O1 NO EFFECT: outcome word, condition and committed next carried verbatim
+PASS O2 guard R-TLAT fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS
+PASS O2 guard R-TLAT fails at s0 (base (0, 0, 0, 0)) -> HARMS and only HARMS
+PASS O2 guard R-TLON fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS
+PASS O2 guard R-TLON fails at s0 (base (0, 0, 0, 0)) -> HARMS and only HARMS
+PASS O2 guard R-ADE fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS
+PASS O2 guard R-ADE fails at s0 (base (0, 0, 0, 0)) -> HARMS and only HARMS
+PASS O2 guard R-T0 fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS
+PASS O2 guard R-T0 fails at s0 (base (0, 0, 0, 0)) -> HARMS and only HARMS
+PASS O2 guard NEWLY-WORSE fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS
+PASS O2 guard NEWLY-WORSE fails at s0 (base (0, 0, 0, 0)) -> HARMS and only HARMS
+PASS O2 guard R-TLAT fails at s1 (base (1, 1, 1, 1)) -> HARMS and only HARMS
+PASS O2 guard R-TLAT fails at s1 (base (0, 0, 0, 0)) -> HARMS and only HARMS
+PASS O2 guard R-TLON fails at s1 (base (1, 1, 1, 1)) -> HARMS and only HARMS
+PASS O2 guard R-TLON fails at s1 (base (0, 0, 0, 0)) -> HARMS and only HARMS
+PASS O2 guard R-ADE fails at s1 (base (1, 1, 1, 1)) -> HARMS and only HARMS
+PASS O2 guard R-ADE fails at s1 (base (0, 0, 0, 0)) -> HARMS and only HARMS
+PASS O2 guard R-T0 fails at s1 (base (1, 1, 1, 1)) -> HARMS and only HARMS
+PASS O2 guard R-T0 fails at s1 (base (0, 0, 0, 0)) -> HARMS and only HARMS
+PASS O2 guard NEWLY-WORSE fails at s1 (base (1, 1, 1, 1)) -> HARMS and only HARMS
+PASS O2 guard NEWLY-WORSE fails at s1 (base (0, 0, 0, 0)) -> HARMS and only HARMS
+PASS O3 R-T0 exactly 0.0604 holds (inclusive)
+PASS O4 a guard that reads worse but is NOT separated holds
+PASS O5 BLOCKED block
+PASS O6 REFUSED cell
+PASS O7 UNPLACED carries no outcome word and no committed next, and says it is unreachable since Amendment 1
+PASS O8 decide2 needs both seeds
+PASS O9 (c0,c1,m0,m1)=(0, 0, 0, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, False, None)
+PASS O11 (0, 0, 0, 0): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == False
+PASS O9 (c0,c1,m0,m1)=(0, 1, 0, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, False, None)
+PASS O11 (0, 1, 0, 0): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == False
+PASS O9 (c0,c1,m0,m1)=(1, 0, 0, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, False, None)
+PASS O11 (1, 0, 0, 0): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == False
+PASS O9 (c0,c1,m0,m1)=(1, 1, 0, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, False, None)
+PASS O11 (1, 1, 0, 0): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == False
+PASS O9 (c0,c1,m0,m1)=(1, 1, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, True, None)
+PASS O11 (1, 1, 1, 1): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == False
+PASS O9 (c0,c1,m0,m1)=(1, 0, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, True, None)
+PASS O11 (1, 0, 1, 1): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == True, clause b (R-MOVE at exactly one seed) == False
+PASS O9 (c0,c1,m0,m1)=(0, 1, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, True, None)
+PASS O11 (0, 1, 1, 1): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == True, clause b (R-MOVE at exactly one seed) == False
+PASS O9 (c0,c1,m0,m1)=(0, 0, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (False, True, None)
+PASS O11 (0, 0, 1, 1): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == True, clause b (R-MOVE at exactly one seed) == False
+PASS O9 (c0,c1,m0,m1)=(1, 0, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')
+PASS O11 (1, 0, 1, 0): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == True
+PASS O9 (c0,c1,m0,m1)=(1, 1, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')
+PASS O11 (1, 1, 1, 0): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == True
+PASS O9 (c0,c1,m0,m1)=(0, 0, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')
+PASS O11 (0, 0, 1, 0): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == True
+PASS O9 (c0,c1,m0,m1)=(0, 1, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')
+PASS O11 (0, 1, 1, 0): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == True
+PASS O9 (c0,c1,m0,m1)=(0, 1, 0, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')
+PASS O11 (0, 1, 0, 1): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == True
+PASS O9 (c0,c1,m0,m1)=(1, 1, 0, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')
+PASS O11 (1, 1, 0, 1): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == True
+PASS O9 (c0,c1,m0,m1)=(0, 0, 0, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')
+PASS O11 (0, 0, 0, 1): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == True
+PASS O9 (c0,c1,m0,m1)=(1, 0, 0, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True, False, 'one seed')
+PASS O11 (1, 0, 0, 1): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == False, clause b (R-MOVE at exactly one seed) == True
+PASS O10 HARMS on base (1, 1, 1, 1): DAG stays the base (adopts_DAG2 False), no PARTIAL_one_seed, no qualifier
+PASS O10 HARMS on base (0, 0, 1, 0): DAG stays the base (adopts_DAG2 False), no PARTIAL_one_seed, no qualifier
+PASS O10 HARMS on base (1, 0, 1, 1): DAG stays the base (adopts_DAG2 False), no PARTIAL_one_seed, no qualifier
+PASS O10 HARMS on base (0, 0, 0, 0): DAG stays the base (adopts_DAG2 False), no PARTIAL_one_seed, no qualifier
+PASS O12 a one-seed R-MOVE with R-CRAWL failing there is PARTIAL (one seed), carries PARTIAL's condition and committed next, and adopts nothing
+PASS U1 a cell whose row is missing from the table comes back UNPLACED: no outcome word, no matching row, no condition, no committed next
+PASS U2 UNPLACED exits with rc 3
+PASS U3 UNPLACED adopts nothing and carries no qualifier
+PASS U4 every placed outcome exits 0
+PASS W1 write_out (0, 0, 1, 0): prints and writes outcome_qualifier='one seed', adopts_DAG2=False, rc 0
+PASS W1 write_out (1, 1, 1, 1): prints and writes outcome_qualifier=None, adopts_DAG2=True, rc 0
+PASS W1 write_out (1, 0, 1, 1): prints and writes outcome_qualifier=None, adopts_DAG2=True, rc 0
+PASS E1 inputs/enumerate_cells.py is the pinned blob of 1446333d (sha256)
+PASS E2 enumerate_cells.py exits 0: no placed cell moves and no cell is unplaced under the amended partition
+PASS E3 the hand-written EXPECT16 equals the enumeration's amended partition on all 16 cells
+PASS E4 amended counts: FIXED 1 / PARTIAL 11 / NO EFFECT 4, nothing unplaced
+PASS E5 as landed: FIXED 1 / PARTIAL 7 / NO EFFECT 4 / unplaced 4, and the unplaced cells are exactly NEWLY_PLACED
+PASS E6 the reader's outcome equals the enumeration's amended outcome on every one of the 16 cells
+PASS B1 bars == the PREREG's printed bars
+PASS B2 RF constants are the PREREG's
+PASS B3 bars literal 0.0248 / 0.0248 / 0.0502 / 0.0278
+PASS B4 clears is inclusive at the bar
+PASS B5 clears needs separation
+PASS B6 a negative delta never clears
+PASS C1 crawl set s0
+PASS C2 crawl set s1
+PASS C3 s0: the crawl set is the banked DAG - P10 separated-worse rows minus accel / DK-VIOL (MEASURED, banked READ_A.json)
+PASS C3 s1: the crawl set is the banked DAG - P10 separated-worse rows minus accel / DK-VIOL (MEASURED, banked READ_A.json)
+PASS C4 s0: all rows ns -> R-CRAWL true, R-MOVE false
+PASS C5 s0: curvature MAE separated-worse for DAG2 - P10 breaks R-CRAWL only
+PASS C6 s0: curvature MAE not better for DAG2 - DAG2-0 breaks R-MOVE only
+PASS C7 s0: curvature MAE separated-BETTER vs P10 holds R-CRAWL
+PASS C5 s0: L2 curvature MAE (GT>=5.2) separated-worse for DAG2 - P10 breaks R-CRAWL only
+PASS C6 s0: L2 curvature MAE (GT>=5.2) not better for DAG2 - DAG2-0 breaks R-MOVE only
+PASS C7 s0: L2 curvature MAE (GT>=5.2) separated-BETTER vs P10 holds R-CRAWL
+PASS C5 s0: M1 crawl share separated-worse for DAG2 - P10 breaks R-CRAWL only
+PASS C6 s0: M1 crawl share not better for DAG2 - DAG2-0 breaks R-MOVE only
+PASS C7 s0: M1 crawl share separated-BETTER vs P10 holds R-CRAWL
+PASS C4 s1: all rows ns -> R-CRAWL true, R-MOVE false
+PASS C5 s1: curvature MAE separated-worse for DAG2 - P10 breaks R-CRAWL only
+PASS C6 s1: curvature MAE not better for DAG2 - DAG2-0 breaks R-MOVE only
+PASS C7 s1: curvature MAE separated-BETTER vs P10 holds R-CRAWL
+PASS C5 s1: L2 curvature MAE (GT>=5.2) separated-worse for DAG2 - P10 breaks R-CRAWL only
+PASS C6 s1: L2 curvature MAE (GT>=5.2) not better for DAG2 - DAG2-0 breaks R-MOVE only
+PASS C7 s1: L2 curvature MAE (GT>=5.2) separated-BETTER vs P10 holds R-CRAWL
+PASS C5 s1: M1 crawl share separated-worse for DAG2 - P10 breaks R-CRAWL only
+PASS C6 s1: M1 crawl share not better for DAG2 - DAG2-0 breaks R-MOVE only
+PASS C7 s1: M1 crawl share separated-BETTER vs P10 holds R-CRAWL
+PASS C5 s1: yaw-rate MAE separated-worse for DAG2 - P10 breaks R-CRAWL only
+PASS C6 s1: yaw-rate MAE not better for DAG2 - DAG2-0 breaks R-MOVE only
+PASS C7 s1: yaw-rate MAE separated-BETTER vs P10 holds R-CRAWL
+PASS C8 s0: yaw-rate and accel are NOT in C_0 (a worse yaw-rate / accel does not break s0's R-CRAWL)
+PASS C9 s1: yaw-rate IS in C_1
+PASS G1 all guards held
+PASS G2 R-TLAT alone fails
+PASS G2 R-TLON alone fails
+PASS G2 R-ADE alone fails
+PASS G2 R-T0 alone fails
+PASS G3 not separated -> held
+PASS N1 rows worse for DAG and still worse for DAG2 are NOT new
+PASS N2 a row ns for DAG and worse for DAG2 IS new
+PASS N3 accel and DK-VIOL are exempt, held, and reported
+PASS N4 DK-HW is NOT exempt
+PASS N5 a STRATEGIC row newly worse counts
+PASS N6 an agreement row (higher is better) newly worse (negative delta) counts
+PASS N7 an agreement row with a POSITIVE separated delta is better, not worse
+PASS N8 a better row never violates
+PASS N9 a NOT COMPUTED row cannot be judged and is never silently passing
+PASS N10 worse for DAG, ns for DAG2: not new
+PASS L1 init DAG_s0 accepted; the reader's own clause sees the M2b-shaped tail; the record is not mutated
+PASS L2 an M2b init (iteration 1) is refused and the reader is not asked
+PASS L3 the other seed's DAG is refused
+PASS L4 no --init-ckpt is refused
+PASS L5 the ORC0 slot IS DAG2-0's directory -> ok
+PASS L6 an ORC0 slot that is another directory is refused
+PASS L7 coverage minimum
+PASS L8 REAL: the pulled DAG2 s0 record passes the patched ARGV control
+PASS L9 REAL: the iteration-1 DAG s0 record (init M2b) is REFUSED by the patched ARGV control
+--- LOGIC (T/O/U/W/E/B/C/G/N/L): 166/166 (0 s)
+PASS P1 a COMPLETE dag2 run
+PASS P2 a COMPLETE dag20 run
+PASS P dag2 whose init is M2b (an iteration-1 run) -> WRONG
+PASS P dag2 whose init is the other seed's DAG -> WRONG
+PASS P dag2 fed the ITERATION-1 bank -> WRONG
+PASS P dag2 with --dagger-seed of the other seed -> WRONG
+PASS P dag2 naming --dagger-p 0 (a DAG2-0 run in the dag2 slot) -> WRONG
+PASS P dag2 without --dagger-bank-sha256 -> WRONG
+PASS P dag20 naming a bank -> WRONG
+PASS P dag20 naming --dagger-p 0.1 -> WRONG
+PASS P dag20 naming --dagger-p 0.1 with a CONSISTENT summary (only the arm clause can catch it) -> WRONG
+PASS P dag2 naming --dagger-p 0 with a CONSISTENT summary (only the arm clause can catch it) -> WRONG
+PASS P dag2 with the 10-name SUMS (a box-2 fresh eval listed, decision O1) -> WRONG
+PASS P a seed-1 dir whose argv says --seed 0 -> WRONG
+PASS P a dag20 directory holding DAG2's run -> WRONG (a STOP, never a wait)
+PASS P REAL pulled M2b_s0_dag2 -> COMPLETE (MEASURED)
+PASS P REAL pulled M2b_s0_dag20 -> COMPLETE (MEASURED)
+PASS P REAL iteration-2 bank s0 -> COMPLETE and == the gate's declared sha (MEASURED)
+PASS P REAL iteration-2 bank s1 -> COMPLETE and == the gate's declared sha (MEASURED)
+PASS P arms are exactly dag2 / dag20
+PASS P the pin read is the DAG2 gate's
+--- PULLCHECK (P): 21/21 (41 s)
+PASS CH real
+PASS CH order
+PASS CH paths
+PASS CH out_not_dag
+PASS CH c1500
+PASS CH c2047
+PASS CH c2048
+PASS CH e1499
+PASS CH badtree
+PASS CH b2fresh
+PASS CH prereg_tamper
+PASS CH static defaults
+--- CHAIN (CH): 12/12 (130 s)
+
+=== MUTATION PROOF: each mutant is one defect in a copy; killed iff a check goes RED ===
+control (unmutated): GREEN
+control (unmutated COPIES in _mut/, where every mutant lives): GREEN
+M01 KILLED   s0's C also holds yaw-rate   [3 red; first: C1 crawl set s0]
+M02 KILLED   s1's C drops yaw-rate   [3 red; first: C2 crawl set s1]
+M03 KILLED   s0's C drops L2   [2 red; first: C1 crawl set s0]
+M04 KILLED   RF lon s0 halved   [3 red; first: B1 bars == the PREREG's printed bars]
+M05 KILLED   R-T0 bar moved   [5 red; first: O2 guard R-T0 fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS]
+M06 KILLED   accel no longer exempt   [3 red; first: C3 s0: the crawl set is the banked DAG - P10 separated-worse rows minus accel / DK-VIOL (M]
+M07 KILLED   DK-HW exempt   [1 red; first: N4 DK-HW is NOT exempt]
+M08 KILLED   R-CRAWL demands separated-better   [23 red; first: O16 (c0,c1,m0,m1)=(1, 1, 1, 1) -> ['FIXED']]
+M09 KILLED   R-MOVE accepts not-worse   [43 red; first: O16 (c0,c1,m0,m1)=(0, 0, 0, 0) -> ['NO EFFECT']]
+M10 KILLED   R-TLAT direction flipped   [58 red; first: O16 (c0,c1,m0,m1)=(0, 0, 0, 0) -> ['NO EFFECT']]
+M11 KILLED   R-TLON guard dropped   [5 red; first: O2 guard R-TLON fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS]
+M12 KILLED   R-ADE guard reads better   [55 red; first: O16 (c0,c1,m0,m1)=(0, 0, 0, 0) -> ['NO EFFECT']]
+M13 KILLED   R-T0 bar strict   [2 red; first: O3 R-T0 exactly 0.0604 holds (inclusive)]
+M14 KILLED   newly-worse counts rows that were already worse   [40 red; first: O16 (c0,c1,m0,m1)=(0, 0, 0, 0) -> ['NO EFFECT']]
+M15 KILLED   newly-worse skips STRATEGIC   [1 red; first: N5 a STRATEGIC row newly worse counts]
+M16 KILLED   no exemption   [1 red; first: N3 accel and DK-VIOL are exempt, held, and reported]
+M17 KILLED   FIXED needs one seed   [16 red; first: O16 (c0,c1,m0,m1)=(1, 0, 1, 1) -> ['PARTIAL']]
+M18 KILLED   PARTIAL(a) with one seed's move   [6 red; first: O11 (1, 0, 1, 0): PARTIAL clause a (R-MOVE at both seeds, R-CRAWL fails somewhere) == Fals]
+M19 KILLED   PARTIAL(b) R-MOVE at least one seed (== 1 -> >= 1)   [5 red; first: O16 (c0,c1,m0,m1)=(1, 1, 1, 1) -> ['FIXED']]
+M20 KILLED   NO EFFECT on one seed's failure   [8 red; first: O16 (c0,c1,m0,m1)=(1, 0, 1, 0) -> ['PARTIAL']]
+M21 KILLED   guards ignored   [24 red; first: O2 guard R-TLAT fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS]
+M22 KILLED   a table gap silently becomes PARTIAL   [3 red; first: U1 a cell whose row is missing from the table comes back UNPLACED: no outcome word, no mat]
+M23 KILLED   seed 1's guards ignored   [10 red; first: O2 guard R-TLAT fails at s1 (base (1, 1, 1, 1)) -> HARMS and only HARMS]
+M24 KILLED   RF ignored in the bars   [2 red; first: B1 bars == the PREREG's printed bars]
+M25 KILLED   bar strict   [1 red; first: B4 clears is inclusive at the bar]
+M26 KILLED   sep_worse flipped   [80 red; first: O16 (c0,c1,m0,m1)=(0, 0, 0, 0) -> ['NO EFFECT']]
+M27 KILLED   BLOCKED reads REFUSED   [1 red; first: O5 BLOCKED block]
+M28 KILLED   coverage minimum lowered   [2 red; first: O5 BLOCKED block]
+M29 KILLED   init tail is the iteration-1 one   [4 red; first: L1 init DAG_s0 accepted; the reader's own clause sees the M2b-shaped tail; the record is n]
+M30 KILLED   init tail check removed   [3 red; first: L2 an M2b init (iteration 1) is refused and the reader is not asked]
+M31 KILLED   ORC0 slot may be any directory   [1 red; first: L6 an ORC0 slot that is another directory is refused]
+M32 KILLED   R-MOVE reads DAG2 - P10   [48 red; first: O16 (c0,c1,m0,m1)=(1, 1, 1, 1) -> ['FIXED']]
+M33 KILLED   newly-worse baseline is DAG2-0   [39 red; first: O16 (c0,c1,m0,m1)=(0, 0, 0, 0) -> ['NO EFFECT']]
+M34 KILLED   PREREG pin changed   [2 red; first: T1 the pinned PREREG_V8F_DAGGER2.md (1446333d blob) holds exactly the six amended outcome-]
+M35 KILLED   FIXED's committed next edited   [2 red; first: T1 the pinned PREREG_V8F_DAGGER2.md (1446333d blob) holds exactly the six amended outcome-]
+M36 KILLED   newly-worse clause not a guard   [4 red; first: O2 guard NEWLY-WORSE fails at s0 (base (1, 1, 1, 1)) -> HARMS and only HARMS]
+M37 KILLED   R-CRAWL reads DAG - P10   [6 red; first: O16 (c0,c1,m0,m1)=(1, 1, 1, 1) -> ['FIXED']]
+M38 KILLED   PARTIAL(b) as landed: R-CRAWL and R-MOVE at one seed only (4 cells unplaced again)   [18 red; first: O16 (c0,c1,m0,m1)=(0, 0, 1, 0) -> ['PARTIAL']]
+M39 KILLED   adopts_DAG2 ignores the both-seeds condition (a one-seed PARTIAL adopts)   [10 red; first: O9 (c0,c1,m0,m1)=(1, 0, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True]
+M40 KILLED   FIXED does not adopt   [2 red; first: O9 (c0,c1,m0,m1)=(1, 1, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (Fals]
+M41 KILLED   adopts_DAG2 on R-MOVE at ONE seed (all -> any)   [10 red; first: O9 (c0,c1,m0,m1)=(1, 0, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True]
+M42 KILLED   PARTIAL_one_seed without the PARTIAL condition   [1 red; first: O10 HARMS on base (0, 0, 1, 0): DAG stays the base (adopts_DAG2 False), no PARTIAL_one_see]
+M43 KILLED   PARTIAL_one_seed for a both-seeds PARTIAL (== 1 -> >= 1)   [4 red; first: O9 (c0,c1,m0,m1)=(1, 0, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (Fals]
+M44 KILLED   outcome_qualifier on every PARTIAL   [4 red; first: O9 (c0,c1,m0,m1)=(1, 0, 1, 1): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (Fals]
+M45 KILLED   outcome_qualifier never set   [10 red; first: O9 (c0,c1,m0,m1)=(1, 0, 1, 0): (PARTIAL_one_seed, adopts_DAG2, outcome_qualifier) == (True]
+M46 KILLED   UNPLACED exits 0 instead of 3   [1 red; first: U2 UNPLACED exits with rc 3]
+M47 KILLED   PARTIAL condition as landed   [4 red; first: T1 the pinned PREREG_V8F_DAGGER2.md (1446333d blob) holds exactly the six amended outcome-]
+M48 KILLED   PARTIAL committed next as landed (on DAG2 states)   [4 red; first: T1 the pinned PREREG_V8F_DAGGER2.md (1446333d blob) holds exactly the six amended outcome-]
+M49 KILLED   the table is read from the FIRST (as-landed) table in the file   [2 red; first: T1 the pinned PREREG_V8F_DAGGER2.md (1446333d blob) holds exactly the six amended outcome-]
+M50 KILLED   a PREREG without the amendment heading is not refused   [2 red; first: T5]
+P01 KILLED   init tail reverted to M2b   [5 red; first: P1 a COMPLETE dag2 run]
+P02 KILLED   iteration-1 bank accepted   [1 red; first: P dag2 fed the ITERATION-1 bank -> WRONG]
+P03 KILLED   dag20 p-check removed   [1 red; first: P dag20 naming --dagger-p 0.1 with a CONSISTENT summary (only the arm clause can catch it)]
+P04 KILLED   pin read from the dag20 gate   [3 red; first: P REAL iteration-2 bank s0 -> COMPLETE and == the gate's declared sha (MEASURED)]
+P05 KILLED   arm names are DAG's   [18 red; first: P1 a COMPLETE dag2 run]
+P06 KILLED   --dagger-seed unchecked   [1 red; first: P dag2 with --dagger-seed of the other seed -> WRONG]
+C01 KILLED   run order swapped   [['scenario order red']]
+C02 KILLED   OUT is DAG's output directory   [['scenario out_not_dag red', 'scenario paths red']]
+C03 KILLED   ART is DAG's pull directory   [['scenario real red', 'static defaults red']]
+C04 KILLED   C: gate removed   [['scenario c1500 red']]
+C05 KILLED   E: gate removed   [['scenario e1499 red']]
+C06 KILLED   rollout tags are DAG's   [['scenario real red', 'scenario order red']]
+C07 KILLED   another tool tree   [['scenario real red', 'scenario order red']]
+C08 KILLED   PREREG pin check removed   [['scenario prereg_tamper red']]
+C09 KILLED   the removed switch accepted   [['scenario b2fresh red']]
+C10 KILLED   C: gate lowered   [['scenario c1500 red']]
+C11 KILLED   PREREG default is the as-landed (1d4f4fbb) dagland copy   [['scenario order red', 'static defaults red']]
+C12 KILLED   PREREG pin is the as-landed sha   [['scenario order red', 'static defaults red']]
+
+SELFTEST: 199/199 checks as expected; MUTANTS: 68/68 killed; not killed: []; control green; 455 s
