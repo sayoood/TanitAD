@@ -1,0 +1,489 @@
+{
+ "tool": "fresh2_stage1.py --run",
+ "prereg": "PREREG_FRESH2.md s3 (sha256 956f87cd...)",
+ "pins": {
+  "PREREG_FRESH2.md": "956f87cdf88e6cbcd5c1ad824ad187e55f15796f23564b3b7d674cfd917dfebe",
+  "LH_FROZEN.pt": "6fd3ea1e3700a15b6506176bc855355d0cc1eefb3d87d390584e791d98e1d8f6",
+  "D2_FROZEN.json": "69135b9145e38e7b8b13fb1dac85ebda20b7db9b836c85032e7c4af2d25d2fc5",
+  "d2_common.py": "73b0a6107c32ca6f8b22a6b16919a2fe5829bb5977f2512fcf4b42cfa171aec7",
+  "d2_khead.py": "f5ca118e44dd1dcd4e6a16bda6430d187e5114ea841dac4bf28d77feed30cba7",
+  "lh_fit.py": "fb330f7f23b2fea249e1527e804c454062a06ffa0cbe4b612ff551f57f5b62d9"
+ },
+ "reading": {
+  "file": "READING_FRESH2.md",
+  "sha256": "4d7ac0d13fcac0e3123c27ee54a6baac7e85b150054bf928bdf2eeb086f38fc3"
+ },
+ "LH_G": {
+  "file": "F:\\l1c\\fresh2\\lhg\\LH_G_FROZEN.pt",
+  "sha256": "8769b0b47cbcfde1f860f5a8ebcf74453661d8846d4ef897914cae0611deb563",
+  "registered": "8769b0b47cbcfde1f860f5a8ebcf74453661d8846d4ef897914cae0611deb563",
+  "variant": "logistic",
+  "hp": 100.0,
+  "n_rows": 13407
+ },
+ "tier": "T0 label-level diagnostic (heads read the frozen refcv8 EMA-48,852 trunk's t0 z_tac / measured t0 ego state; no planner, no roll) -- never driving performance",
+ "estimator": "Mann-Whitney AUC (average-rank ties); paired episode-cluster bootstrap over CONFIRM episodes (B 2000, seed 0, every arm on the same draws); CI = 2.5/97.5 percentiles of the paired difference. Answers 'another draw of EPISODES with the scores held fixed' ONLY -- not another training run (one refcv8 trunk, one fit per head) and not another inference run (heads deterministic).",
+ "population": {
+  "confirm_clips": 384,
+  "confirm_dump_windows": 13385,
+  "s6_valid": 10359,
+  "compliant": 8916,
+  "gt_decel": 1902,
+  "gt_cruise": 4306,
+  "union_n": 6208,
+  "n_episodes": 365
+ },
+ "arms": {
+  "LH": {
+   "auc": 0.6339,
+   "auc_unrounded": 0.6338509638325316,
+   "ci95": [
+    0.5864,
+    0.6817
+   ],
+   "n_windows": 6208,
+   "n_decel": 1902,
+   "n_episodes": 365,
+   "d": 513
+  },
+  "D2": {
+   "auc": 0.7157,
+   "auc_unrounded": 0.7156841772637207,
+   "ci95": [
+    0.688,
+    0.7432
+   ],
+   "n_windows": 6208,
+   "n_decel": 1902,
+   "n_episodes": 365,
+   "d": 3
+  },
+  "FUSE": {
+   "auc": 0.6981,
+   "auc_unrounded": 0.6981235192329388,
+   "ci95": [
+    0.6592,
+    0.7369
+   ],
+   "n_windows": 6208,
+   "n_decel": 1902,
+   "n_episodes": 365,
+   "d": 516
+  },
+  "constant": {
+   "auc": 0.5,
+   "auc_unrounded": 0.5,
+   "ci95": [
+    0.5,
+    0.5
+   ],
+   "n_windows": 6208,
+   "n_decel": 1902,
+   "n_episodes": 365,
+   "d": 0
+  },
+  "FUSE_perm": {
+   "auc": 0.654,
+   "auc_unrounded": 0.6540024605580553,
+   "ci95": [
+    0.6138,
+    0.6933
+   ],
+   "n_windows": 6208,
+   "n_decel": 1902,
+   "n_episodes": 365,
+   "d": 516
+  },
+  "neg_a0_raw": {
+   "auc": 0.7341,
+   "auc_unrounded": 0.734088912201838,
+   "ci95": [
+    0.7071,
+    0.7593
+   ],
+   "n_windows": 6208,
+   "n_decel": 1902,
+   "n_episodes": 365,
+   "d": 1
+  },
+  "D2_perm": {
+   "auc": 0.6239,
+   "auc_unrounded": 0.6239430418416969,
+   "ci95": [
+    0.595,
+    0.653
+   ],
+   "n_windows": 6208,
+   "n_decel": 1902,
+   "n_episodes": 365,
+   "d": 3
+  },
+  "LH_G": {
+   "auc": 0.6287,
+   "auc_unrounded": 0.6287372961114098,
+   "ci95": [
+    0.5798,
+    0.677
+   ],
+   "n_windows": 6208,
+   "n_decel": 1902,
+   "n_episodes": 365,
+   "d": 513
+  }
+ },
+ "deltas_vs_LH": {
+  "D2": {
+   "point": 0.0818,
+   "ci95": [
+    0.0334,
+    0.1262
+   ],
+   "boot_se": 0.0237
+  },
+  "FUSE": {
+   "point": 0.0643,
+   "ci95": [
+    0.0423,
+    0.0847
+   ],
+   "boot_se": 0.0109
+  },
+  "constant": {
+   "point": -0.1339,
+   "ci95": [
+    -0.1817,
+    -0.0864
+   ],
+   "boot_se": 0.0244
+  },
+  "FUSE_perm": {
+   "point": 0.0202,
+   "ci95": [
+    -0.0026,
+    0.0417
+   ],
+   "boot_se": 0.0113
+  },
+  "neg_a0_raw": {
+   "point": 0.1002,
+   "ci95": [
+    0.0441,
+    0.1534
+   ],
+   "boot_se": 0.0282
+  },
+  "D2_perm": {
+   "point": -0.0099,
+   "ci95": [
+    -0.0616,
+    0.0382
+   ],
+   "boot_se": 0.0257
+  },
+  "LH_G": {
+   "point": -0.0051,
+   "ci95": [
+    -0.016,
+    0.0056
+   ],
+   "boot_se": 0.0055
+  }
+ },
+ "bars": {
+  "F-1": {
+   "word": "PASS",
+   "delta_vs_LH": 0.0643,
+   "ci95": [
+    0.0423,
+    0.0847
+   ],
+   "delta_unrounded": 0.06427255540040722,
+   "ci_lo_unrounded": 0.04234088241009874,
+   "clears_bar": true,
+   "gap_to_bar": 0.0,
+   "bar": "AUC(FUSE) - AUC(LH) >= +0.020 AND the paired CI lower bound > 0"
+  },
+  "FUSE_perm_vs_F-1_bar": {
+   "delta_vs_LH": 0.0202,
+   "ci95": [
+    -0.0026,
+    0.0417
+   ],
+   "delta_unrounded": 0.020151496725523743,
+   "ci_lo_unrounded": -0.0025508630018447774,
+   "clears_bar": false,
+   "gap_to_bar": 0.0,
+   "must_not_clear": true
+  },
+  "G-1": {
+   "word": "FAIL",
+   "delta_vs_LH": -0.0051,
+   "ci95": [
+    -0.016,
+    0.0056
+   ],
+   "delta_unrounded": -0.005113667721121762,
+   "ci_lo_unrounded": -0.01597155732510618,
+   "clears_bar": false,
+   "gap_to_bar": 0.0251,
+   "bar": "AUC(LH_G) - AUC(LH) >= +0.020 AND the paired CI lower bound > 0"
+  },
+  "controls": {
+   "constant_reads_0.5000": {
+    "auc": 0.5,
+    "pass": true
+   },
+   "WAuc_unit_weights_eq_AUC": {
+    "LH": true,
+    "D2": true,
+    "FUSE": true,
+    "constant": true,
+    "FUSE_perm": true,
+    "neg_a0_raw": true,
+    "D2_perm": true,
+    "LH_G": true
+   },
+   "controls_all_pass": true
+  }
+ },
+ "outcome_committed_s4": "F-1 and/or G-1 PASS: the passing decision (FUSE) is the decel decision for refcv9's progress profiles; stage 2 = a T1 roll pre-registration drafted and sealed BEFORE any roll",
+ "four_families": {
+  "TACTICAL": "this read (decel-vs-cruise decision quality of the lon decision head, AUC)",
+  "LONGITUDINAL": "n/a at T0 label level: no plan / speed profile is produced here (stage 2's T1 roll would carry it)",
+  "LATERAL": "n/a: the decision read is longitudinal only; no path is produced",
+  "STRATEGIC": "n/a: no route / goal decision is read here"
+ },
+ "beside_LON6_label_reading": {
+  "status": "BESIDE, non-gating (READING_FRESH2.md)",
+  "definition": "GT = LON6 label (lead pass): decel {BRAKE_TO, CREEP, HOLD} vs cruise {FOLLOW, CRUISE}; S6-valid & compliant CONFIRM windows on lead-pass clips",
+  "release_md5": "755faad0a5080b5afae6171b2887cc1a",
+  "label_checks": {
+   "windows_sha12_eq_dump_sha12": true,
+   "release_sid_eq_stable_episode_id": true,
+   "n_clips_dump": 576,
+   "n_clips_release": 576,
+   "ws_minus_t": [
+    "0"
+   ],
+   "n_windows": 20070,
+   "n_join_refused": 0,
+   "n_g3_excluded_windows": 0,
+   "n_g3_excluded_clips": 0
+  },
+  "n_confirm_clips_without_lead": 11,
+  "arms": {
+   "LH": {
+    "auc": 0.768,
+    "auc_unrounded": 0.768026974957718,
+    "ci95": [
+     0.7291,
+     0.8046
+    ],
+    "n_windows": 6053,
+    "n_decel": 1884,
+    "n_episodes": 342,
+    "d": 513
+   },
+   "D2": {
+    "auc": 0.6866,
+    "auc_unrounded": 0.686556929393425,
+    "ci95": [
+     0.6504,
+     0.7229
+    ],
+    "n_windows": 6053,
+    "n_decel": 1884,
+    "n_episodes": 342,
+    "d": 3
+   },
+   "FUSE": {
+    "auc": 0.7708,
+    "auc_unrounded": 0.7707600940925311,
+    "ci95": [
+     0.7342,
+     0.805
+    ],
+    "n_windows": 6053,
+    "n_decel": 1884,
+    "n_episodes": 342,
+    "d": 516
+   },
+   "constant": {
+    "auc": 0.5,
+    "auc_unrounded": 0.5,
+    "ci95": [
+     0.5,
+     0.5
+    ],
+    "n_windows": 6053,
+    "n_decel": 1884,
+    "n_episodes": 342,
+    "d": 0
+   },
+   "FUSE_perm": {
+    "auc": 0.7623,
+    "auc_unrounded": 0.762312213440728,
+    "ci95": [
+     0.7287,
+     0.7939
+    ],
+    "n_windows": 6053,
+    "n_decel": 1884,
+    "n_episodes": 342,
+    "d": 516
+   },
+   "neg_a0_raw": {
+    "auc": 0.6237,
+    "auc_unrounded": 0.6236631053489027,
+    "ci95": [
+     0.5867,
+     0.6611
+    ],
+    "n_windows": 6053,
+    "n_decel": 1884,
+    "n_episodes": 342,
+    "d": 1
+   },
+   "D2_perm": {
+    "auc": 0.6558,
+    "auc_unrounded": 0.6557922467876588,
+    "ci95": [
+     0.6226,
+     0.6873
+    ],
+    "n_windows": 6053,
+    "n_decel": 1884,
+    "n_episodes": 342,
+    "d": 3
+   },
+   "LH_G": {
+    "auc": 0.7738,
+    "auc_unrounded": 0.7738247473134789,
+    "ci95": [
+     0.734,
+     0.811
+    ],
+    "n_windows": 6053,
+    "n_decel": 1884,
+    "n_episodes": 342,
+    "d": 513
+   }
+  },
+  "deltas_vs_LH": {
+   "D2": {
+    "point": -0.0815,
+    "ci95": [
+     -0.1247,
+     -0.04
+    ],
+    "boot_se": 0.0218
+   },
+   "FUSE": {
+    "point": 0.0027,
+    "ci95": [
+     -0.0221,
+     0.0256
+    ],
+    "boot_se": 0.0121
+   },
+   "constant": {
+    "point": -0.268,
+    "ci95": [
+     -0.3046,
+     -0.2291
+    ],
+    "boot_se": 0.0198
+   },
+   "FUSE_perm": {
+    "point": -0.0057,
+    "ci95": [
+     -0.0288,
+     0.0163
+    ],
+    "boot_se": 0.0114
+   },
+   "neg_a0_raw": {
+    "point": -0.1444,
+    "ci95": [
+     -0.1923,
+     -0.097
+    ],
+    "boot_se": 0.0244
+   },
+   "D2_perm": {
+    "point": -0.1122,
+    "ci95": [
+     -0.1537,
+     -0.0697
+    ],
+    "boot_se": 0.0222
+   },
+   "LH_G": {
+    "point": 0.0058,
+    "ci95": [
+     -0.0079,
+     0.0191
+    ],
+    "boot_se": 0.0069
+   }
+  },
+  "bars_descriptive": {
+   "F-1": {
+    "word": "FAIL",
+    "delta_vs_LH": 0.0027,
+    "ci95": [
+     -0.0221,
+     0.0256
+    ],
+    "delta_unrounded": 0.002733119134813111,
+    "ci_lo_unrounded": -0.022139588790894987,
+    "clears_bar": false,
+    "gap_to_bar": 0.0173,
+    "bar": "AUC(FUSE) - AUC(LH) >= +0.020 AND the paired CI lower bound > 0"
+   },
+   "FUSE_perm_vs_F-1_bar": {
+    "delta_vs_LH": -0.0057,
+    "ci95": [
+     -0.0288,
+     0.0163
+    ],
+    "delta_unrounded": -0.005714761516990019,
+    "ci_lo_unrounded": -0.028755059788690467,
+    "clears_bar": false,
+    "gap_to_bar": 0.0257,
+    "must_not_clear": true
+   },
+   "G-1": {
+    "word": "FAIL",
+    "delta_vs_LH": 0.0058,
+    "ci95": [
+     -0.0079,
+     0.0191
+    ],
+    "delta_unrounded": 0.005797772355760955,
+    "ci_lo_unrounded": -0.007888865524767169,
+    "clears_bar": false,
+    "gap_to_bar": 0.0142,
+    "bar": "AUC(LH_G) - AUC(LH) >= +0.020 AND the paired CI lower bound > 0"
+   },
+   "controls": {
+    "constant_reads_0.5000": {
+     "auc": 0.5,
+     "pass": true
+    },
+    "WAuc_unit_weights_eq_AUC": {
+     "LH": true,
+     "D2": true,
+     "FUSE": true,
+     "constant": true,
+     "FUSE_perm": true,
+     "neg_a0_raw": true,
+     "D2_perm": true,
+     "LH_G": true
+    },
+    "controls_all_pass": true
+   }
+  }
+ },
+ "wall_s": 7.6
+}
