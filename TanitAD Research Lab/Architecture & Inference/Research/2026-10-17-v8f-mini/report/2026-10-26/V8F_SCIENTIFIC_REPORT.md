@@ -1,6 +1,6 @@
 # v8F-mini: a three-level hierarchy over frozen visual features with a typed tactical interface, and a rigorous account of what does and does not move six-second driving error
 
-**Status:** research report, v26 of 2026-10-26, results through repository tip `28e28c88` (branch `agent/arch-inf-20260803`; the code line references in §10 are at `a99ca5d6`). Open-loop results only (T0, T1 and the self-action T1-kin); **no closed-loop (T2) number exists** and no published baseline exists on this split. The PI's bar of "dominant driving results" is **not met** (§8.3).
+**Status:** research report, v29 of 2026-10-27, results through repository tip `bdf8d561` (branch `agent/arch-inf-20260803`; the code line references in §10 are at `a99ca5d6`). Open-loop results only (T0, T1 and the self-action T1-kin); **no closed-loop (T2) number exists** and no published baseline exists on this split. The PI's bar of "dominant driving results" is **not met** (§8.3).
 
 **Evidence classes used throughout.** **[M]** MEASURED (ours, artifact named) · **[P]** PUBLISHED (library key; the PDF is banked, but descriptions here follow the library index entry, UNVERIFIED beyond it) · **[I]** INHERITED (another document, not re-verified by me) · **[E]** ESTIMATED · **[H]** HYPOTHESIS · **[U]** UNVERIFIED. Every result carries its **tier** (T0 teacher-forced / oracle; T1 self-action open loop; T2 closed loop, unprovisioned) and its **estimator** (§5.3). Paths starting `R/` mean `TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/`.
 
@@ -25,7 +25,13 @@ The contribution we defend is **diagnostic**. Feeding O the ground-truth tactica
 * T's decisions DEGRADE. Lateral macro-F1 falls from 0.85 to 0.61 / 0.63, and longitudinal from 0.46 to 0.34 / 0.36. The turn classes lose half their F1.
 * The drop holds where the cameras T saw are the very row it is scored on. So it is T reacting to its own ego state, not the replayed cameras.
 
-Together with FLAT, this places the hierarchy's defect at the T level and its interface to O, not at S. The pre-registered fix is O-RECOVER (`PREREG_V8F_ORECOVER`): a fine-tune on ego states perturbed off the logged trajectory, against the same fine-tune unperturbed, queued on box 2 on the PI's go (§7.15, §8.4).
+Together with FLAT, this places the hierarchy's defect at the T level and its interface to O, not at S. The pre-registered fix was O-RECOVER (`PREREG_V8F_ORECOVER`): a fine-tune on ego states perturbed off the logged trajectory, against the same fine-tune unperturbed. It read **HARMS** at both seeds (§7.18), so the committed next was on-policy states in DAgger form at p = 0.1 (`PREREG_V8F_DAGGER`). That arm read **ROBUST** at both seeds (§7.19): T's lateral and longitudinal decisions on the model's own motion improve past every pre-registered bar, and the executed 6 s ADE falls by 0.54 / 0.40 m.
+
+**Two further levers were read on 2026-10-26, and neither is dominant [M].**
+* **OACC**, an acceleration-matching loss on O (seed 0): the acceleration error falls by 0.566 m/s², separated. But the ADE6 upper bound (+0.126 m) exceeds the +F/2 bar, and curvature is separated-worse than P10. The committed outcome is COSTS POSITION (§7.16).
+* **HACC-MC**, a constant along weight (zero training): the launch crawl falls, and a 5× steeper ramp raises it, at both seeds. So the mechanism is real. But curvature at speed stays separated-worse than P10 at seed 0, and ADE6 rises by 0.14 / 0.21 m. The committed outcome is MECHANISM-NOT-ENOUGH (§7.17), whose committed next is O-RECOVER.
+* **O-RECOVER**, a 3,000-step fine-tune on perturbed ego states against the same fine-tune unperturbed (two seeds): the committed outcome is HARMS (§7.18). T0 ADE6 rises by +0.110 / +0.085 m, above the +F/2 bar at both seeds, and the T1-kin ADE6 is separated-worse at seed 0. The arm does buy lateral skill on the model's own motion: heading, curvature and yaw-rate errors are separated-better at both seeds at T1-kin. The cost is T0 longitudinal error, separated-worse at both seeds. ORC is not adopted; the committed next is the DAgger arm at p = 0.1.
+* **DAgger** (p = 0.1, two seeds): 10 % of training samples are replaced by the model's OWN rolled-out states, labelled from the human future, against the same 3,000-step fine-tune with p = 0. The committed outcome is **ROBUST** (§7.19), with all 176 controls passing. At T1-kin, T's lateral macro-F1 rises by +0.108 / +0.118 and its longitudinal macro-F1 by +0.055 / +0.081, separated and past bars that include the run-to-run replicate floor. The executed ADE6 falls by 0.54 / 0.40 m (2.28 against 2.82 m, and 2.46 against 2.86 m), and S's checkpoints beat a kinematic arc at every horizon. T0 ADE6 is unchanged at seed 0 and +0.048 m at seed 1, inside the +F/2 guard. It is the first v8F training lever to clear a T1 bar on both heads. DAG is adopted as the base, and its dominance over P10 and its FLAT repeat are pre-registered and running (`PREREG_V8F_DAG_REREAD`).
 
 ---
 
@@ -569,6 +575,116 @@ The second video (`v8f_evidence_v4.mp4`, 381 s, below; v3 added HACC to every pl
     * The control is ORC-0, the same fine-tune unperturbed.
     * **ROBUST** needs both F1 rows ≥ 2F better, separated at both seeds, with ADE guarded.
 
+
+### 7.16 OACC: an acceleration-matching loss buys smoothness and costs position
+
+* **Setup** (`PREREG_V8F_OACC` with Amendments 1 and 2). X = M2b fine-tuned with an added loss on the second difference of O's 0.2 s plan
+  against the GT's. Its weight, w_acc = 42.9311, was fixed by a train-only rule before any data. Seed 1 runs only if seed 0 passes
+  PRIMARY-ACC and PRIMARY-KEEP.
+* **Result [M]** (`RESULT_V8F_OACC.md`, `oacc_read_s0.json`). T1-class open loop over 2,399 windows / 141 episodes; paired
+  episode-cluster bootstrap, B = 2,000; X − B, or HX − P10 for the deployed blend:
+
+| read | point [95 %] | bar | result |
+|---|---|---|---|
+| PRIMARY-ACC: accel MAE X − B | −0.5663 [−0.6724, −0.4711] m/s², separated | < 0, separated | passed |
+| PRIMARY-KEEP: ADE6 X − B | +0.0451 [−0.0322, +0.1262] m | upper bound ≤ +F/2 = +0.0604 m | **failed** |
+| DOMINANCE: HX − P10 | 14 of 15 rows met; curvature MAE +0.0084 [+0.0039, +0.0139], separated-worse | every row | **failed** |
+
+* **Outcome, as committed: COSTS POSITION.** Seed 1 is not trained, and the weight rule is not re-tuned, both as committed.
+* It is one training seed. The intervals answer "would another draw of episodes say this?", not "would another training run?".
+
+### 7.17 HACC-MC: a constant along weight shrinks the launch crawl, but not enough
+
+* **Setup** (`PREREG_V8F_HACC_MC` with Amendments 1 and 2; zero training). MC-H holds HACC's along weight constant over the executed knots 1–12.
+  The constant c is HACC's own banked w_along at knot 10, 0.2002 / 0.2198. STEEP, a 5× steeper ramp, is the deliberate-regression arm.
+* **Result [M]** (`RESULT_V8F_HACC_MC.md`). T1-kin at m = 10, a self-action open loop; paired episode-cluster bootstrap, B = 2,000, 141 episodes:
+
+| | seed 0 | seed 1 |
+|---|---|---|
+| launch crawl M1: MC-H / HACC / STEEP | 0.0184 / 0.0536 / 0.0850 | 0.0151 / 0.0277 / 0.0504 |
+| L2 (curvature at GT ≥ 5.2 m/s): MC-H − P10 | +0.0028 [+0.0004, +0.0055], separated-worse | +0.0013 [−0.0014, +0.0039], not separated |
+| ADE6: MC-H − HACC | +0.1383 m | +0.2060 m |
+
+* The crawl falls with the constant weight and rises with the steep one at both seeds, so the step-varying weight is a real cause.
+* It is not the whole cause: L2 stays separated-worse at seed 0, and ADE6 misses KEEP. O's own slow launch intent carries the rest.
+* **Controls.** All nine pass under Amendment 2, which is post-data and control-only. The Amendment 1 read REFUSED on control C-1: its
+  float bar was blind to cancellation at a tiny |plan|. Amendment 2 measures the bar in ulps of the largest operand, and its exact timeline
+  is disclosed.
+* **Outcome, as committed: MECHANISM-NOT-ENOUGH.** The committed next is the box-2 training lever, O-RECOVER.
+
+
+### 7.18 O-RECOVER: perturbed-state training buys lateral skill on the model's own motion and costs position
+
+* **Setup** (`PREREG_V8F_ORECOVER` with Amendments 1–4, all before any run). ORC = M2b fine-tuned 3,000 steps with 30 % of eligible samples
+  moved off the logged trajectory and their route rebuilt; ORC-0 = the same fine-tune unperturbed. Both seeds, trained on box 2 through the
+  launch gate; the T1-kin read on the dev-box CPU. The reader is `orc_read.py` (sha256 `91a9e971…`).
+* **Result [M]** (`RESULT_V8F_ORECOVER.md`, `ORC_READ.json` sha256 `a50dbba9…`). Paired episode-cluster bootstrap, B = 2,000, 141 episodes,
+  2,399 windows; ORC − ORC-0:
+
+| row | tier | seed 0 | seed 1 | bar | result |
+|---|---|---|---|---|---|
+| R-TLAT: lat macro-F1, ticks ≥ 1 | T1-kin | +0.0331 [−0.0079, +0.0730] | +0.0351 [−0.0004, +0.0671] | separated-better and ≥ 2F (0.0248) | not met at either seed |
+| R-TLON: lon macro-F1, ticks ≥ 1 | T1-kin | −0.0214 [−0.0497, +0.0131] | +0.0312 [+0.0063, +0.0542] | separated-better and ≥ 2F (0.0146) | met at seed 1 only |
+| R-ADE: ADE6, m | T1-kin | **+0.1100 [+0.0083, +0.2283]**, separated-worse | +0.0355 [−0.0363, +0.1047] | not separated-worse | **failed at seed 0** |
+| R-T0: ADE6, m | T0 | **+0.1103 [+0.0443, +0.1856]** | **+0.0849 [+0.0378, +0.1324]** | point ≤ +F/2 = 0.0604 | **failed at both seeds** |
+
+* **The four families** (ORC − ORC-0, same estimator):
+  * **LATERAL, T1-kin:** separated-better at both seeds. Heading −1.31 / −1.00 deg, curvature −0.054 / −0.022 1/m, yaw rate −6.59 / −3.16 deg/s.
+    Cross-track is not separated.
+  * **LONGITUDINAL, T0:** separated-worse at both seeds. Speed +0.059 / +0.021 m/s, accel +0.131 / +0.055 m/s², along-track +0.113 / +0.075 m.
+    At T1-kin only accel at seed 0 is separated (worse). The programme's anti-echo block admits no longitudinal claim for any of the four runs,
+    so these are contrasts, not capability statements.
+  * **TACTICAL:** the plan-derived lateral decision agreement is separated-better at T1-kin at both seeds (+0.022 / +0.038). The T0 goal-head
+    F1 is separated-worse at seed 0 (−0.030).
+  * **STRATEGIC** (not paused for v8F, R73; decides nothing): S's checkpoint errors at 30 / 50 / 80 m are not separated at T0 at either seed.
+* **Controls.** All 104 pass, including perturbation reach (ORC shares 0.2998 / 0.3022 against 0.3; exactly 0 for ORC-0), K4 against the
+  arm's own fresh-age T0 eval, and K7 (the executed track rebuilt from the dumped plans).
+* **Reading.** The perturbation teaches recovery from the model's own lateral drift, which is what §7.15 asked for. It costs T0 position,
+  mainly along-track, by 0.70–0.91 F. F is the only run-to-run measure on this rig, so a single replicate could not split that cost from
+  training noise. Either way, the cost breaks the pre-registered guard.
+* **Outcome, as committed: HARMS.** ORC is not adopted. The committed next is the NO EFFECT row's arm at p = 0.1: on-policy own states from
+  frozen M2b at T1-kin ticks 1–2, TRAIN windows only (`PREREG_V8F_DAGGER` with Amendment 1, `2a78f059`).
+
+
+### 7.19 DAgger: supervising T on the model's own states repairs its decisions on its own motion
+
+* **Setup** (`PREREG_V8F_DAGGER` + Amendment 1, `2a78f059`, before any bank or run).
+  * **The bank.** Frozen M2b is rolled out at T1-kin (m = 10, causal bucket, dead-reckoned nav, PLAIN) over the 4,512 TRAIN clips. Its own
+    states at ticks 1–2 are kept with their own 16-row ego history and re-anchored poses, and labelled from the human future at the
+    matched route point.
+  * **COVERAGE:** 0.756 / 0.769 of the windows are eligible, against a bar of 0.5.
+  * **DAG:** M2b fine-tuned 3,000 steps with p = 0.1 of eligible samples swapped for a bank state. The swap share reached 0.1013 / 0.1008.
+  * **DAG-0:** the same argv with p = 0 (swap share exactly 0).
+  * Both seeds were trained on box 2 through the launch gate, and read on the dev-box CPU.
+* **The amendment.** The first read REFUSED at the bank stage, before any row: the reader read the generator's `limit_clips` 0 (no limit) as
+  a limit. Amendment 2 (`7d29172b`) is post-data and control-only. It aligned that one clause with the generator, and the reader was
+  re-proved (160 / 160 mutants) and run once.
+* **Result [M]** (`raw/2026-10-27-dagger-run/read/DAG_READ.json`, sha256 `3393fdd5…`). Paired episode-cluster bootstrap, B = 2,000, 141
+  episodes, 2,399 windows, DAG − DAG-0. A head clears at a seed iff it is separated-better with point ≥ max(2F, 2·RF). RF is the replicate
+  floor: DAG-0 against ORC-0, a same-argv replicate trained by another build.
+
+| row | tier | seed 0 | seed 1 | bar s0 / s1 | result |
+|---|---|---|---|---|---|
+| R-TLAT: lat macro-F1, ticks ≥ 1 | T1-kin | **+0.1082 [+0.0491, +0.1572]** (0.603 vs 0.495) | **+0.1184 [+0.0755, +0.1585]** (0.639 vs 0.520) | 0.0248 / 0.0248 | **clears at both** |
+| R-TLON: lon macro-F1, ticks ≥ 1 | T1-kin | **+0.0554 [+0.0300, +0.0847]** (0.321 vs 0.266) | **+0.0806 [+0.0560, +0.1043]** (0.331 vs 0.251) | 0.0502 / 0.0278 (2·RF) | **clears at both** |
+| R-ADE: ADE6, m | T1-kin | **−0.5435 [−0.7564, −0.3690]** (2.278 vs 2.821) | **−0.4046 [−0.5496, −0.2782]** (2.456 vs 2.861) | not separated-worse | held, separated-better |
+| R-T0: ADE6, m | T0 | +0.0019 [−0.0230, +0.0266] | +0.0483 [+0.0178, +0.0807] | point ≤ +F/2 = 0.0604 | held |
+
+* **Size against the noise.** R-TLAT is 4.4× / 4.8× 2F. R-TLON is 1.10× / 2.90× its replicate-floor bar, so the s0 margin is the thinnest in
+  the table. R-ADE is 4.5 F / 3.4 F.
+* **STRATEGIC, beside** (unpaired, within each run, not paused for v8F). S-POS against CTRV at 30 / 50 / 80 m:
+  * DAG: −1.72 / −4.48 / −9.69 m (s0) and −1.87 / −4.90 / −10.33 m (s1), all separated.
+  * DAG-0: separated only at 80 m at s0 (−3.89 m). At s1 it is separated-worse at 30 m (+0.81 m).
+* **Reading.** DAgger does what §7.15 diagnosed was missing. T was trained only on the human's states, so on its own drifted states its
+  decisions degraded; supervising it on those states repairs them. It does not buy logged-state accuracy: tick-0 F1 and T0 ADE are flat or
+  slightly worse. The gain is specific to the model's own state distribution, which is the one it is deployed on.
+  * T1 lateral F1 (0.60 / 0.64) is still below tick 0's (0.85). The gap narrows; it is not closed.
+* **Outcome, as committed: ROBUST.** DAG is adopted as the base. The committed next:
+  * T1 dominance over P10 is re-read on DAG with a registered bar;
+  * FLAT's repeat is run, at its own tier and at T1-kin;
+  * if the crawl rows still fail, DAgger iteration 2 follows.
+  `PREREG_V8F_DAG_REREAD` (`bdf8d561`) registered these before any of their rows.
+
 ---
 
 ## 8. Discussion
@@ -582,11 +698,12 @@ The second video (`v8f_evidence_v4.mp4`, 381 s, below; v3 added HACC to every pl
 5. The variance structure of this rig is quantified, and it dictates experimental design (§5.3): replicates and seeds, not windows.
 6. **The margin over the floor survives the model's own motion** (T1-kin, §7.15): 0.83 / 0.79 m of 6 s ADE at both seeds, and 0.79 / 0.71 m with the cameras frozen at the first frame. It holds with a speed bucket built from the past alone (0.77 / 0.73 m), and it is not dominance.
 7. **The strategic level works on the model's own motion** (§7.15): S's checkpoints beat a kinematic arc at 30 / 50 / 80 m, separated at both seeds.
+8. **Own-state supervision repairs T on the model's own motion** (§7.19): DAgger at p = 0.1 lifts T's lateral and longitudinal macro-F1 at T1-kin past bars that include the run-to-run replicate floor, at both seeds, and cuts the executed 6 s ADE by 0.54 / 0.40 m against its own fine-tune control.
 
 ### 8.2 What is not established
 
 * That the **hierarchy** (rather than the frozen prior, the features or the labels) is responsible for the K-1 gain. The capacity-matched FLAT control (`PREREG_V8F_FLAT`) reads **NOT ESTABLISHED**: M2b − FLAT −0.036 / −0.003 m ADE6, n.s. (§7.15).
-* That **T's decisions hold on the model's own motion**: they do not. Lateral F1 falls from 0.85 to 0.61 / 0.63 at T1 (§7.15). O-RECOVER is the pre-registered lever.
+* That **T's decisions hold on the model's own motion**: they do not. Lateral F1 falls from 0.85 to 0.61 / 0.63 at T1 (§7.15). O-RECOVER moved the lateral errors on the model's own motion but read HARMS on position (§7.18). DAgger (§7.19) lifts lat F1 at ticks ≥ 1 to 0.60 / 0.64 (DAG-0 0.49 / 0.52), separated and past its bar. The gap to tick 0's 0.85 narrows; it is not closed.
 * That the **strategic layer** adds anything over a nav-only kinematic extrapolation *on the deployed schedule*: at its own tick it does (−2.4 to −2.5 m at 50 m, §7.8); on the deployed schedule its checkpoint metric includes the travel since its tick, and whether that staleness costs the plan is unmeasured.
 * Any **driving** claim: all numbers are open loop (T0/T1), and no T2 closed-loop run exists. The T1-kin read (§7.15) keeps the human's cameras. Its speed input can be built from the past alone without losing the margin, but frozen cameras together with that causal bucket are not measured. Without the post-map, the raw arms are worse than the floor at 2 s and in acceleration.
 * That any T-side lever can reach the headroom. T_ATTRIB's ceilings are ≤ 0.17 m for every stratum considered **[E]**, below $2F$.
@@ -606,7 +723,7 @@ The PI's bar is **met on one axis only**. In open loop, the deployed form of the
 | 1d | **HPROJ**: H + the posted-limit hard projection | PRIMARY-C 'any' HP − B upper bound $\le+0.02$ AND ADE6 / ADE2 kept | **FAILED** (`RESULT_V8F_HPROJ.md`, `305386b4`): 'any' +0.054 / +0.031. The speed cap that binds is the human's own v_hi, which a posted-limit projection cannot see |
 | 1e | **HGATE**: H re-fitted on unconstrained training windows, used only where T predicts no FOLLOW / STOP / TURN and no exceedance of its own v_hi | the same two bars, both seeds | **FAILED** (`RESULT_V8F_HGATE.md`, `583cfc02`): 'any' HG − B +0.020 [+0.008, +0.034] / +0.029 [+0.018, +0.040] against an upper-bound bar of +0.02; ADE6 −0.037 / −0.027 m and ADE2 −0.020 / −0.021 m, separated. T's predicted v_hi is the weak trigger (precision 0.06 / 0.14). The post-processing line ends; the lever moves to T |
 | 1f | **HSPEC**: H's residual also shrunk per cosine coefficient (stage 2: a second-difference objective, weight by a train-only rule) | dominance over P10 on every family at both seeds; ADE6 kept within $F/2$ of H | **SMOOTHER, NOT DOMINANT** (`RESULT_V8F_HSPEC.md`, `17fc9abb`): HS − P10 ADE6 −0.511 / −0.490 m and ADE2 −0.005 / −0.005 m, separated; accel +0.026 (s0, separated-worse) / +0.006 (ns); curvature not separated; every other family row not worse. Weights fitted on the eval itself still cannot reach P10's accel at s0: O's residual has no acceleration skill |
-| 1g | **OACC**: O trained with an acceleration-matching term (second difference of its plan against the GT's; weight fixed by a pre-launch rule) | accel MAE X − B < 0, separated; ADE6 within $F/2$; the H-blended X dominates P10 on HSPEC's row | **pre-registered** (`PREREG_V8F_OACC`, `17fc9abb`; Amendment 1 `ea67b7a0` fixed eight readings before any data, incl. w_acc = 42.9311 from the train-only rule); launch gate PASS (`bf43fd58`); **training on box 2** since 2026-10-26 06:13 (s0, then s1 if s0 passes) |
+| 1g | **OACC**: O trained with an acceleration-matching term (second difference of its plan against the GT's; weight fixed by a pre-launch rule) | accel MAE X − B < 0, separated; ADE6 within $F/2$; the H-blended X dominates P10 on HSPEC's row | **read 2026-10-26: COSTS POSITION** (seed 0; ACC passed, KEEP and DOMINANCE failed, §7.16); seed 1 not trained, as committed; `RESULT_V8F_OACC.md`; pre-registered `PREREG_V8F_OACC` (`17fc9abb`) with Amendment 1 (`ea67b7a0`), launch gate PASS (`bf43fd58`), training began 2026-10-26 06:13 |
 | 1h | **KHYP**: 7 one-hot longitudinal codes through O, then a selector on model outputs | SEL-LEARN − B ≤ −F, separated, both seeds | **HEADROOM, NO SELECTOR** (`RESULT_V8F_KHYP.md`, `4a59a711`): the oracle best of 7 is −0.42 / −0.36 m ADE6 (T0 headroom), but the deployable selector gives −0.098 (s0) / +0.020 (s1). At s0 it equals "always class 5", so the gain is a bias correction of T's longitudinal decision, not selection |
 | 1i | **KSCORE**: a scorer trained on the full training set (B frozen) reading O's 7 hypotheses, T's softmax, the scene and ego | ≤ −F vs B AND better than the best train-chosen constant class, both separated, both seeds | **NOT PREDICTABLE** (`RESULT_V8F_KSCORE.md`, `de270934`): KSCORE − B −0.100 [−0.146, −0.058] (s0, separated, 0.021 m short of −F) / +0.004 [−0.027, +0.032] (s1); KSCORE − SEL-CONST −0.0005 / −0.0072 m, not separated. On the full training set (306,566 windows), the s0 gain is still the constant class 5, picked on 86.6 % of windows, and at s0 it is separated-worse on CONSISTENCY(a) and LEAD-VIOL. The oracle's 0.36–0.42 m are not reachable by choosing among O's plans from B's frozen features. The longitudinal lever moves to O's own speed profile (row 1g) |
 | 1j | **KINDX**: KIND's per-kind oracle re-read on X (MIXO's s0 checkpoint), now that O consumes partial codes | CANDIDATE: some kind's gain ≥ 2F, separated at s0 ⇒ train X at s1 and re-read; NO CANDIDATE ⇒ longitudinal line stays top | **CANDIDATE: SPEED** (`4070e29a`, T0, s0): gain_speed(X) +0.716 [+0.623, +0.818] m (B: +0.270); every other kind ≤ 0.11 m; **seed 1: CARRIER (speed)** (`02e13a10`): gain_speed(X_s1) +0.668 [+0.575, +0.761] m (B_s1 +0.185); no other kind clears 2F at either seed. B's tte / geom gains are negative at s1 (−0.315 / −0.421), X's positive at both: MIXO's mechanism replicates |
@@ -614,9 +731,11 @@ The PI's bar is **met on one axis only**. In open loop, the deployed form of the
 | 1l | **SPEEDCAL**: an affine map per speed cell (10 numbers per seed), fitted on HBLEND's TRAINING windows and applied to T's own output | PRIMARY ≤ −F, separated, both seeds; CEILING (the eval-fitted map, T0) separates *head bias* from *information-limited* | **INFORMATION-LIMITED** (`RESULT_V8F_SPEEDCAL.md`, `bb85eff7`, T1-class; CEILING T0): +0.037 [−0.010, +0.086] (s0) / −0.006 [−0.016, +0.004] (s1), separated at neither seed; even the eval-fitted map stays above −F (+0.030 / −0.008). The map does cut the speed-cell RMSE (`v_a_ms` 1.92 → 1.33 m/s at s0) while ADE6 does not move. The speed error O responds to is per-window, not a head bias: the lever moves to perception (row 2). Independently re-read |
 | 1m | **HACC**: H's per-step weight re-fitted on TRAINING windows with a second-difference (accel) term and no monotone constraint; λ by a train-only rule; zero training | HSPEC's dominance row over P10 at BOTH seeds; ADE6 within F/2 of H | **DOMINATES P10** (`RESULT_V8F_HACC.md`, `c8ea1623`, T1-class): every row separated-better or not separated at both seeds, nothing separated-worse. ADE6 −0.503 / −0.471 m, accel MAE −0.022 / −0.040 m/s², curvature −0.0056 / −0.0051. KEEP vs H passes, but s1 is thin (+0.0586 against +0.0604). Independently re-derived. Folded into `forward_infer` as an optional buffer, absent by default and bit-identical (`ba27d62d`); the videos are re-rendered on HACC (v3). At T1-kin: **T1 BEATS THE FLOOR** (row 6, §7.15) |
 | 1n | **HACC-LAT** (zero training): arm A, HACC's weights and λ rule re-fitted on T1-kin ticks of TRAINING windows; arm B, the cross axis falls back to P10 below a train-chosen speed gate | T1 DOMINANCE over P10 at both seeds, and ADE6 within F/2 of HACC | **NOT FIXED** (`RESULT_V8F_HACC_LAT.md`, T1): arm A −0.22 / +0.05 m ADE6 against P10, far worse than HACC; arm B −0.88 / −0.76 m, but curvature is still worse. Followed by the noise floor and `PREREG_V8F_T1_LATCOND` (CONDITIONED LATERAL DEFICIT, §7.15) |
-| 1o | **HACC-MC** (zero training): HACC's along weight held constant over the executed knots 1–12; a 5× steeper ramp is the deliberate-regression arm | FIXED-KEEP: L2 (MC-H − P10) not separated-worse, MC-H − HACC ADE6 upper bound ≤ +F/2 and the crawl fraction M1 below HACC's, all at both seeds | **pre-registered** (`PREREG_V8F_HACC_MC` with Amendment 1, `19d7e069`); running on the dev-box CPU |
+| 1o | **HACC-MC** (zero training): HACC's along weight held constant over the executed knots 1–12; a 5× steeper ramp is the deliberate-regression arm | FIXED-KEEP: L2 (MC-H − P10) not separated-worse, MC-H − HACC ADE6 upper bound ≤ +F/2 and the crawl fraction M1 below HACC's, all at both seeds | **read 2026-10-26: MECHANISM-NOT-ENOUGH** (§7.17; all controls PASS after Amendment 2, which is post-data and control-only; pre-registered with Amendment 1 at `19d7e069`); committed next: O-RECOVER |
 | 1p | **T1 heads**: S and T outputs on the model's own motion, scored at the matched route point | S − CTRV ≤ 0 separated at every arc; T F1 Δ within 2F | **S ADDS ROUTE / T DEGRADES** (`RESULT_V8F_T1_HEADS.md`, `c96f3b69`, T1): S − CTRV −1.18 / −3.27 / −7.79 m (s0); lat F1 0.848 → 0.614 / 0.858 → 0.632 |
-| 1q | **O-RECOVER**: M2b fine-tuned 3,000 steps on perturbed ego states (ORC) against the same fine-tune unperturbed (ORC-0) | ROBUST: T1 lat AND lon F1 ORC − ORC-0 ≥ 2F, separated, both seeds; T1 ADE6 not separated-worse; T0 ADE6 ≤ +F/2 | **pre-registered** (`PREREG_V8F_ORECOVER` + Amendment 1, `28e28c88`, before code and runs); PI go 2026-10-26; box 2 after OACC and MIXO |
+| 1q | **O-RECOVER**: M2b fine-tuned 3,000 steps on perturbed ego states (ORC) against the same fine-tune unperturbed (ORC-0) | ROBUST: T1 lat AND lon F1 ORC − ORC-0 ≥ 2F, separated, both seeds; T1 ADE6 not separated-worse; T0 ADE6 ≤ +F/2 | **read 2026-10-26: HARMS** (§7.18; `RESULT_V8F_ORECOVER.md`, `8c10066a`; 104 / 104 controls PASS; pre-registered at `28e28c88` with Amendments 1–4). R-T0 +0.110 / +0.085 m against +F/2; R-ADE separated-worse at s0. T1-kin LATERAL separated-better at both seeds. Not adopted |
+| 1r | **DAgger** (p = 0.1): M2b fine-tuned with 10 % of samples swapped for M2b's own T1-kin states at ticks 1–2 (TRAIN only, route-paired), against the same fine-tune with p = 0 (DAG-0) | the PREREG's outcome table; bar max(2F, 2·RF), with RF read from DAG-0 against ORC-0 | **read 2026-10-27: ROBUST** (§7.19; `DAG_READ.json`, 176 / 176 controls PASS; Amendment 2, post-data and control-only, before the one re-read). R-TLAT +0.108 / +0.118, R-TLON +0.055 / +0.081, both clearing at both seeds; T1-kin ADE6 −0.54 / −0.40 m. Adopted as the base |
+| 1s | **DAG re-reads** (zero training): (A) DAG − P10 at T1-kin on all four families; (B) DAG − FLAT at FLAT's tier and at T1-kin | A DOMINANT: ADE6 separated-better by ≥ 2F, no family row separated-worse, and a separated-better row in every family, at both seeds. B ESTABLISHED: ADE6 ≤ −2F, separated at both seeds; B at T1-kin is confounded by DAgger and is attributed only by FLAT-DAG | **pre-registered** (`PREREG_V8F_DAG_REREAD`, `bdf8d561`, before any of its rows); running on the dev-box CPU |
 | 2 | **LoRA on DINOv3** | PRIMARY $<-2F$, sep., both seeds; MECHANISM latcons RMSE fall ≥ 12.5 %. Prior **LOW [E]**: a pass needs T about 25 % of the way to the GT (≈ 0.19 m) while no lever has moved T by more than 6 % | pre-registered; AR-2 passed; 470 h/seed on box 2 ⇒ A40. Of the A40 readiness gate, AR-1 (the mini beats P10 at two seeds) now holds through HACC and AR-2 passed; AR-3 (the launch gate) is being dry-run on CPU. SPEEDCAL makes this the speed lever; the A40 go is asked for |
 | 3 | **Strategic read under `--ages fresh`** (zero training) | Q-LAYER fresh S − baseline at 50 m; Q-STALE fresh − cycle | **STALENESS ARTEFACT** (`RESULT_V8F_SFRESH.md`, `f547c11b`): Q-LAYER −2.43 / −2.53 m, Q-STALE −5.72 / −5.73 m, separated at both seeds. S adds over nav-only kinematics; the deployed tick schedule is the strategic lever |
 | 4 | **Seed replicates** of any arm that moves a headline | the cheapest discriminating experiment on this rig (§5.3) | standing |
