@@ -6,24 +6,43 @@ the camera-blind and ego-only-floor controls are BINDING; `launch_gate.py` may g
 
 ## 1. The arm REFCV9-W (one arm, one training seed)
 * **Init:** refcv8 EMA-48,852 (`ckpt_ema_48852.pt`, md5 b4364029b68f29a33eeb4aebbbbd002b). Same corpus, data, batch 16 and argv as refcv8 except below.
-* **Frozen:** perception (image backbone, BEV lift, box head), by `--r9-train-only planner,map` (FrozenStateGuard + G-DVB).
-* **Trained:** the planner + tactical heads -- the tensor set the MAPFT `mapft_planner_trainable` RED arm unfroze (186 tensors; 15,470,833 values
-  incl. the 105,032 map values) -- AND the map head (PI 2026-10-27: "include it"), with a precision-targeted term `--w-map-fp` (expected own-map
-  sidewalk + edge probability on GT-drivable cells of the near-field corridor, x 0-20 m, |y| < 3 m). MEASURED motivation: MAPFT's converged CE did
-  not move the map (`H-R9-MAPFT-1`); own sidewalk flags are 25 % precise at 0-5 m and 63 % of them sit on GT-drivable cells.
+* **Frozen:** perception (image backbone, BEV lift, box head), by `--r9-train-only planner,tactical,map` (FrozenStateGuard + G-DVB).
+* **Trained:** three literal module sets (`map_only_ft.TRAIN_ONLY_SETS`, a17de18, MEASURED on the real build): `planner` = `core.decoder` minus
+  the 5 subtrees the build declares frozen (178 tensors, 15,254,091 values); `tactical` = 11 modules outside `core.decoder` (tactical trunk,
+  tactical decoder, lat / lon heads, behaviour gate, nav-to-tactical, ...; 113 tensors, 5,476,306 values); together with `map` 309 tensors,
+  20,835,429 values; `map` = `_map_hires.{refine, near, near_refine}` (18 tensors, 105,032 values;
+  PI 2026-10-27: "include it"), with a precision-targeted term `--w-map-fp` (expected own-map sidewalk + edge probability on GT-drivable cells
+  of the near-field corridor, x 0-20 m, |y| < 3 m). MEASURED motivation: MAPFT's converged CE did not move the map (`H-R9-MAPFT-1`); own sidewalk
+  flags are 25 % precise at 0-5 m and 63 % of them sit on GT-drivable cells. ⚠️ An earlier draft line read "186 tensors; 15,470,833 values" for
+  planner + tactical: that was planner + map (204 tensors), and the tactical set was not in it.
+* **Map-term weight (fixed from the smoke, never from eval):** the smoke runs with a provisional `--w-map-fp 1.0`; then
+  `w = 0.1 x map_hires_loss / map_fp_loss` at the smoke's FIRST logged step, rounded to one significant figure (the term starts at a tenth of the
+  map CE's scale).
+* **Warm-start schedule hygiene:** `--r8-alloc-emit-start 0` (refcv8 is past its 1,000-step emit delay; a warm start must not hide its allocated
+  candidates); refcv8's GT-constraint teacher-forcing ratio is HELD at its end-of-run value, never restarted at 1.0:
+  `--r8-tf-start 0.25 --r8-tf-end 0.25` (refcv8's schedule reads 0.25 at step 48,851; required by the profile).
 * **The one training change (measured motivation):** `--r9-alloc-force-schedule` -- the GT hypothesis is no longer always forced into the 32 allocated
   candidates during training (`H-R9-ALLOC-ORACLE-1`: refcv8 never trains on a pool that lacks the right class, but at inference a wrong decel call fills
   the pool with braking candidates; `H-R9-L2B-LOCUS-1`: on 98 % of false-brake windows a GOOD cruise candidate is in the fan and the selector misses it).
-  Schedule: forced with probability 1.0 -> 0.0 linearly over the first half of the run, 0.0 after (predicted-only pools, as at inference).
-* **Budget:** N from the 50-step smoke by the MAPFT rule form (`N = min(Nmax, floor(0.85 x (cap - smoke - 1800) / s_step))`), cap = the PI's Thor-h
-  figure; `--warmup 200 --lr 1e-4`; EMA horizon N/10; scored weights = EMA at step N.
+  Schedule: forced with probability 1.0 -> 0.0 linearly over the first half of the run, 0.0 after (predicted-only pools, as at inference):
+  `--r9-alloc-force-schedule linear:1.0:0.0:0:<floor(N/2)>`, the end step checked against `--steps` by the profile.
+* **Budget:** N from the 50-step smoke by the MAPFT rule form in exact rational arithmetic:
+  `N = min(25000, floor(0.85 x (172800 - smoke_wall_s - RESERVE_S) / s_step))`, 172,800 s = the PI's 48 Thor-h; RESERVE_S = 1.5 x the MEASURED cost of
+  4 in-run evals + 1 save (from the MAPFT run log, stated in the kit); **N < 4000 -> STOP** (the second, predicted-only half of the schedule would be
+  under 2,000 steps), report s_step to the PI. `--warmup 200 --lr 1e-4 --eval-every max(500, N // 4) --ema-decay round(1 - 10 / N, 5)`; scored
+  weights = EMA at step N.
 * **Stage 2 (dev box, 0 Thor-h):** the R9-PF progress head (`REFCV9_INMODEL_DESIGN.md`, 70,299 params, trunk frozen) fitted on the clean calibration
   clips (L1C 300 + FRESH2 GROW), with the decel decision PREREG_FRESH2 confirmed: FUSE (`H-R9-FRESH2-1`, F-1 PASS +0.0643 [+0.0423, +0.0847] on
   kinematic GT; G-1 FAIL). Disclosed: raw -a0 alone read 0.7341 there, above FUSE's 0.6981 -- the decision's gain is ego dynamics, which is why
-  W4 / W5 below are binding. Written into the checkpoint.
+  W4 / W5 below are binding. Written into the checkpoint. ⚠️ The tactical trunk trains in stage 1, so `z_tac` changes: the LH head is REFIT on
+  refcv9's own `z_tac` (same clips, same fit protocol as FRESH2); D2 is built on a0 and is unaffected. FRESH2's AUCs are refcv8's and are not
+  carried over -- stage 2 re-reads F-1 on the CONFIRM windows with refcv9's LH before the decision is written in.
 
 ## 2. Controls (a failed control voids the bars)
-* **K-FROZEN:** only the declared planner / tactical tensors changed (raw + EMA), perception and map bit-equal to refcv8.
+* **K-FROZEN:** every changed tensor (raw + EMA) is in the declared planner / tactical / map sets, named per set; perception bit-equal to refcv8
+  (`assert_map_only_finetune.py`, generalised to the r9 sets).
+* **K-REF-ANTICHEAT (beside, measured before launch):** the camera-blind and ego-only-floor instruments are first run on refcv8 EMA-48,852 + H2cn
+  (`2026-10-27-refcv9-anticheat/`). If refcv8 already fails W4 or W5, that is reported to the PI before refcv9 fires: the warm start inherits it.
 * **K-BASE:** the battery re-scores refcv8 EMA-48,852 + H2cn and reproduces its banked registered table (`REGISTERED_PF_TABLE.sha256`).
 * **CAMERA-BLIND (PI, binding):** REFCV9-W with each window's camera tokens replaced by those of a window from ANOTHER episode (one fixed derangement,
   seed 0), every ego input unchanged.
@@ -52,5 +71,7 @@ B 2000 seed 0 over EPISODES; inference seeds 0 AND 1 must both hold; reference =
 
 ## 5. Open before sealing
 Decided by the PI 2026-10-27: Thor cap **48 h**; the `refcv9-warm` profile may be added; the map term joins this run. Landed: the R9-PF head +
-`--r9-alloc-force-schedule` + liveness rules (690f84b). Before sealing: `--r9-train-only`, `--w-map-fp` and the `refcv9-warm` profile reviewed and
-landed; the 50-step smoke's `s_step` and N; the weight `w` of the map term fixed from the smoke's loss scales (stated, not tuned on eval).
+`--r9-alloc-force-schedule` + liveness rules (690f84b); `--r9-train-only planner,map`, `--w-map-fp`, the `refcv9-warm` profile + 2 RED arms
+(aeb5446); the `tactical` set + the emit-start / teacher-forcing / schedule argv rules (a17de18); R9W-BUDGET and R9W-MAP-FP-WEIGHT closed
+open-only (both fixed by the rules above, the token's argv sha256 pins them). K-REF-ANTICHEAT: W5 PASS on refcv8 (3d4cac2), W4 rolling.
+Before sealing: the 50-step smoke's `s_step`, N and `w`.

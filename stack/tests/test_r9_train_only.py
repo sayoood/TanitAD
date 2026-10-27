@@ -697,14 +697,17 @@ def test_the_profile_literals():
     assert "--r9-train-only" not in forb
     assert [(g, f) for g, f, _w in R9W["live_dead_admitted"]] == [
         ("core.decoder.r8_rc_to_cond", "--r8-no-rc"), ("core.decoder.r8_rc_gate", "--r8-no-rc")]
-    assert [o["id"] for o in R9W["open_items"]] == ["R9W-BUDGET", "R9W-MAP-FP-WEIGHT"]
+    # R9W-BUDGET + R9W-MAP-FP-WEIGHT closed open-only (MM 2026-10-27, the MAPFT-BUDGET precedent); the record stays
+    assert R9W["open_items"] == ()
+    assert [o["id"] for o in LG._R9W_OPEN_ITEMS] == ["R9W-BUDGET", "R9W-MAP-FP-WEIGHT"]
     assert ("w = 0.1 x map_hires / map_fp at the smoke's FIRST LOGGED step, rounded to ONE significant figure"
-            in R9W["open_items"][1]["what"])
+            in LG._R9W_OPEN_ITEMS[1]["what"])
     assert R9W["map_hires"]["ga_keys"] == ("ga_mh_refine", "ga_mh_near", "ga_mh_near_refine")
     assert R9W["map_hires"]["ga_keys_zero"] == ("ga_mh_lift", "ga_mh_encoder", "ga_mh_trunk_s8_stage")
     assert LG.REFCV9_ARMS == ("refcv9_perception_trainable", "refcv9_planner_frozen")
-    # the open items BLOCK a pass (finalize reads them); refcv8-mapft is untouched
-    assert len(LG.open_item_reasons(R9W)) == 2 and LG.open_item_reasons(LG.PROFILES["refcv8-mapft"]) == []
+    # no open item blocks a pass now; MUTATION control: re-opening the recorded items blocks it again
+    assert LG.open_item_reasons(R9W) == [] and LG.open_item_reasons(LG.PROFILES["refcv8-mapft"]) == []
+    assert len(LG.open_item_reasons(dict(R9W, open_items=LG._R9W_OPEN_ITEMS))) == 2
     assert LG.PROFILES["refcv8-mapft"]["map_only"]["flag"] == "--r8-train-only-map"
     assert "alloc_force_rule" not in LG.PROFILES["refcv8-mapft"] and "alloc_force_rule" not in LG.PROFILES["refcv8"]
 

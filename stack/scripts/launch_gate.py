@@ -1387,7 +1387,13 @@ _R9W_LIVE_DEAD = tuple(r for r in _R8["live_dead_admitted"]
      "(PI Q-A 2026-10-11) feeds none -- exactly zero gradient by construction"),)
 PROFILES["refcv9-warm"] = dict(
     _R8, name="refcv9-warm",
-    open_items=_R9W_OPEN_ITEMS,
+    # R9W-BUDGET + R9W-MAP-FP-WEIGHT CLOSED (open-only, the MAPFT-BUDGET precedent): DRAFT_PREREG_REFCV9_WARM s1 fixes both
+    # BY RULE from the measured 50-step smoke -- N = min(25000, floor(0.85*(172800 - smoke_wall_s - RESERVE_S)/s_step)),
+    # N < 4000 -> STOP; w = 0.1 x map_hires / map_fp at the smoke's first logged step, one significant figure
+    # (make_r9w_argv.py derive-w). The token binds the FULL argv by content, so the N and w that launch are the ones
+    # gated; the argv rules below still require --w-map-fp present and positive and the schedule end at floor(steps/2).
+    # _R9W_OPEN_ITEMS stays as the record of what was open. MM 2026-10-27 ~21:40, inside the PI's refcv9-warm profile go.
+    open_items=(),
     #: G-BOX-OVERFIT is NOT required, for refcv8-mapft's reason (MM 2026-10-26 ~21:20): the box head is PERCEPTION and
     #: FROZEN here, so the check has no subject (and its replay does not apply the declared freeze). What this launch
     #: must prove about the box head is that it does NOT move: G-LIVE's bit identity of every frozen tensor (map_only
