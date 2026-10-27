@@ -1,0 +1,215 @@
+== A. the real queue through cmd.exe, V8F_DRYRUN: what DAG2 / DAG2-0 / bankdag2 would run
+PASS  s0 DAG2: --dagger-p 0.1 once; bank = RUNSM\dagger_bank_dag2\s0 (NOT the iteration-1 dagger_bank); sha = the stage's; --dagger-seed 0; --ego-perturb-p 0
+PASS  s0 DAG2: --init-ckpt = DAG_s0's checkpoint (M2b_s0_dag\ckpt_last.pt), NOT M2b's; --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --seed 0
+PASS  s0 DAG2-0: --init-ckpt = DAG_s0's checkpoint; names --dagger-p 0 once and NONE of the three DAG-only flags; --ego-perturb-p 0; no ego law flag
+PASS  s0: no second lever on either DAG2 arm
+PASS  s0 'every other flag exactly as DAG's argv': DAG2 == DAG once --out, --init-ckpt and --dagger-bank are removed (same sha, same --dagger-seed, same schedule, same data flags)
+PASS  s0 'every other flag exactly as DAG-0's': DAG2-0 == DAG-0 once --out and --init-ckpt are removed
+PASS  s0 PAIR RULE: DAG2 and DAG2-0 are identical once --out, --dagger-p and the three DAG-only flags are removed; they differ in exactly {--out, --dagger-p} on the shared flags, and DAG2 names exactly the three extra flags
+PASS  s0: run dirs are M2b_s0_dag2 / _dag20 (never DAG's, DAG-0's, M2b's)
+PASS  s0 dag2: GATE argv == TRAIN argv with --out and --selfcheck-only changed, --selfcheck-only exactly once; gate --out is gate_M2b-dag2_s0
+PASS  s0 dag2 gate: `--ego-perturb-p 0` NAMED exactly once with the value 0
+PASS  s0 dag2 train: `--ego-perturb-p 0` NAMED exactly once with the value 0
+PASS  s0 dag2: the ONE T0 eval is the standard one: tag M2b-dag2_s0, this run's checkpoint, no --ages, --project --families
+PASS  s0 dag20: GATE argv == TRAIN argv with --out and --selfcheck-only changed, --selfcheck-only exactly once; gate --out is gate_M2b-dag20_s0
+PASS  s0 dag20 gate: `--ego-perturb-p 0` NAMED exactly once with the value 0
+PASS  s0 dag20 train: `--ego-perturb-p 0` NAMED exactly once with the value 0
+PASS  s0 dag20: the ONE T0 eval is the standard one: tag M2b-dag20_s0, this run's checkpoint, no --ages, --project --families
+PASS  s0 bankdag2: the generator is DAG_s0's: --ckpt = M2b_s0_dag\ckpt_last.pt, --m2b-argv = M2b_s0_dag\argv.json, --out-dir = dagger_bank_dag2\s0
+PASS  s0 bankdag2 == bankdag in everything else: same token count, and the ONLY differing tokens are the three paths (--out-dir, --ckpt, --m2b-argv); same shards 4, cache, tracks, join, eval grid, batch, threads, device cuda, --expect-clips 4512 --expect-windows 306566
+PASS  s0 bankdag2: no ampersand reaches an argument; the iteration-1 bank directory '\dagger_bank\s' appears nowhere in the line
+PASS  s1 DAG2: --dagger-p 0.1 once; bank = RUNSM\dagger_bank_dag2\s1 (NOT the iteration-1 dagger_bank); sha = the stage's; --dagger-seed 1; --ego-perturb-p 0
+PASS  s1 DAG2: --init-ckpt = DAG_s1's checkpoint (M2b_s1_dag\ckpt_last.pt), NOT M2b's; --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --seed 1
+PASS  s1 DAG2-0: --init-ckpt = DAG_s1's checkpoint; names --dagger-p 0 once and NONE of the three DAG-only flags; --ego-perturb-p 0; no ego law flag
+PASS  s1: no second lever on either DAG2 arm
+PASS  s1 'every other flag exactly as DAG's argv': DAG2 == DAG once --out, --init-ckpt and --dagger-bank are removed (same sha, same --dagger-seed, same schedule, same data flags)
+PASS  s1 'every other flag exactly as DAG-0's': DAG2-0 == DAG-0 once --out and --init-ckpt are removed
+PASS  s1 PAIR RULE: DAG2 and DAG2-0 are identical once --out, --dagger-p and the three DAG-only flags are removed; they differ in exactly {--out, --dagger-p} on the shared flags, and DAG2 names exactly the three extra flags
+PASS  s1: run dirs are M2b_s1_dag2 / _dag20 (never DAG's, DAG-0's, M2b's)
+PASS  s1 dag2: GATE argv == TRAIN argv with --out and --selfcheck-only changed, --selfcheck-only exactly once; gate --out is gate_M2b-dag2_s1
+PASS  s1 dag2 gate: `--ego-perturb-p 0` NAMED exactly once with the value 0
+PASS  s1 dag2 train: `--ego-perturb-p 0` NAMED exactly once with the value 0
+PASS  s1 dag2: the ONE T0 eval is the standard one: tag M2b-dag2_s1, this run's checkpoint, no --ages, --project --families
+PASS  s1 dag20: GATE argv == TRAIN argv with --out and --selfcheck-only changed, --selfcheck-only exactly once; gate --out is gate_M2b-dag20_s1
+PASS  s1 dag20 gate: `--ego-perturb-p 0` NAMED exactly once with the value 0
+PASS  s1 dag20 train: `--ego-perturb-p 0` NAMED exactly once with the value 0
+PASS  s1 dag20: the ONE T0 eval is the standard one: tag M2b-dag20_s1, this run's checkpoint, no --ages, --project --families
+PASS  s1 bankdag2: the generator is DAG_s1's: --ckpt = M2b_s1_dag\ckpt_last.pt, --m2b-argv = M2b_s1_dag\argv.json, --out-dir = dagger_bank_dag2\s1
+PASS  s1 bankdag2 == bankdag in everything else: same token count, and the ONLY differing tokens are the three paths (--out-dir, --ckpt, --m2b-argv); same shards 4, cache, tracks, join, eval grid, batch, threads, device cuda, --expect-clips 4512 --expect-windows 306566
+PASS  s1 bankdag2: no ampersand reaches an argument; the iteration-1 bank directory '\dagger_bank\s' appears nowhere in the line
+CAUGHT (deliberate regression) `gatedag dag2 0` (dag2 without P) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+CAUGHT (deliberate regression) `gatedag dag2 0 0.3` (dag2 with P = 0.3 (iteration 1's other value)) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+CAUGHT (deliberate regression) `gatedag dag2 0 0.2` (P = 0.2) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+CAUGHT (deliberate regression) `gatedag dag2 0 0` (P = 0 on dag2) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+CAUGHT (deliberate regression) `traindag dag2 1 0.5` (train with P 0.5) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+CAUGHT (deliberate regression) `gatedag dag20 0 0.1` (dag20 with a P) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+CAUGHT (deliberate regression) `gatedag dag20 0 0` (dag20 with a P of 0 (a lever declared and inert)) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+CAUGHT (deliberate regression) `traindag dag20 1 0.1` (train dag20 with a P) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+CAUGHT (deliberate regression) `gatedag dag3 0 0.1` (an unknown arm) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+CAUGHT (deliberate regression) `gatedag dag2 2 0.1` (seed 2) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+CAUGHT (deliberate regression) `gatedag dag2 0.1` (a missing seed) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+CAUGHT (deliberate regression) `evaldag dag2 5` (eval seed 5) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+CAUGHT (deliberate regression) `bankdag2 7` (bank seed 7) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+CAUGHT (deliberate regression) `bankdag2` (bankdag2 without a seed) is REFUSED: rc 2, says REFUSED, prints no trainer / bank line
+PASS  gatedag dag2 0 0.1 is accepted (rc 0) and carries --dagger-p 0.1
+PASS  TEXT: the new queue is the tip queue with lines INSERTED only (every tip line, in order, is in the new file; 0 removed, 0 changed)
+PASS  TEXT: the new queue re-derives byte-for-byte from build_queue.py (tip sha256 pinned) and every line ends CRLF (no lone LF / CR)
+PASS  TEXT: the tip queue is the pinned 8e121ea8 file
+== S. every EXISTING stage prints byte-identical lines from the tip queue (8e121ea8) and the new queue
+PASS  34 stage invocations (the DAG selftest's 10 + bankdag / gatedag / traindag / evaldag for dag and dag0 at both seeds + the iteration-1 refusals): rc and every printed line identical
+PASS  SWEEP: all 47 dispatched stage names x 4 argument shapes (188 invocations, scratch paths): rc and output identical between the tip queue and the new queue
+PASS  labels: every tip label is still there; the new queue adds exactly :bankdag2, :dag2arm, :dag2arm_dry and :dag2arm_have
+== B. the real queue through cmd.exe, NOT dry, on a fake box (stub trainer / eval / bank generator; the real shard tool)
+CAUGHT (deliberate regression) bankdag2 REFUSES while DAG_s0 has no summary.json (a half-trained DAG is a different generator): rc 2, no bank directory, no generator ran
+PASS  bankdag2 0: rc 0, [ok], merged bank.json + PROVENANCE.json in dagger_bank_dag2\s0 (4 shards)
+PASS  bankdag2 0: the generators RECEIVED --ckpt = M2b_s0_dag\ckpt_last.pt and --m2b-argv = M2b_s0_dag\argv.json (and 4 distinct shards)
+PASS  bankdag2 0 again: [skip] (a finished bank is not regenerated)
+PASS  bankdag2 1: rc 0, [ok], merged bank.json + PROVENANCE.json in dagger_bank_dag2\s1 (4 shards)
+PASS  bankdag2 1: the generators RECEIVED --ckpt = M2b_s1_dag\ckpt_last.pt and --m2b-argv = M2b_s1_dag\argv.json (and 4 distinct shards)
+PASS  bankdag2 1 again: [skip] (a finished bank is not regenerated)
+PASS  the iteration-1 bank directory dagger_bank was NEVER created by bankdag2
+PASS  gatedag dag2 0: rc 0, [ok]; the trainer RECEIVED --selfcheck-only and --init-ckpt = DAG's checkpoint; the pin M2b_s0_dag2.train.argv.txt exists
+PASS  gatedag dag2 0: the bank sha256 in the argv is the sha256 of THIS bank.json (computed on the box), the bank dir is dagger_bank_dag2\s0
+PASS  traindag dag2 0: rc 0; the argv the trainer RECEIVED is byte-identical to the pinned tokens (it ran the PIN); summary.json written
+PASS  traindag dag2 0 again: [skip]
+PASS  evaldag dag2 0: rc 0; the eval RECEIVED this run's checkpoint M2b_s0_dag2\ckpt_last.pt and tag M2b-dag2_s0
+PASS  gatedag dag20 0: rc 0, [ok]; the trainer RECEIVED --selfcheck-only and --init-ckpt = DAG's checkpoint; the pin M2b_s0_dag20.train.argv.txt exists
+PASS  gatedag dag20 0: needs no bank and names none
+PASS  traindag dag20 0: rc 0; the argv the trainer RECEIVED is byte-identical to the pinned tokens (it ran the PIN); summary.json written
+PASS  traindag dag20 0 again: [skip]
+PASS  evaldag dag20 0: rc 0; the eval RECEIVED this run's checkpoint M2b_s0_dag20\ckpt_last.pt and tag M2b-dag20_s0
+PASS  gatedag dag2 1: rc 0, [ok]; the trainer RECEIVED --selfcheck-only and --init-ckpt = DAG's checkpoint; the pin M2b_s1_dag2.train.argv.txt exists
+PASS  gatedag dag2 1: the bank sha256 in the argv is the sha256 of THIS bank.json (computed on the box), the bank dir is dagger_bank_dag2\s1
+PASS  traindag dag2 1: rc 0; the argv the trainer RECEIVED is byte-identical to the pinned tokens (it ran the PIN); summary.json written
+PASS  traindag dag2 1 again: [skip]
+PASS  evaldag dag2 1: rc 0; the eval RECEIVED this run's checkpoint M2b_s1_dag2\ckpt_last.pt and tag M2b-dag2_s1
+PASS  gatedag dag20 1: rc 0, [ok]; the trainer RECEIVED --selfcheck-only and --init-ckpt = DAG's checkpoint; the pin M2b_s1_dag20.train.argv.txt exists
+PASS  gatedag dag20 1: needs no bank and names none
+PASS  traindag dag20 1: rc 0; the argv the trainer RECEIVED is byte-identical to the pinned tokens (it ran the PIN); summary.json written
+PASS  traindag dag20 1 again: [skip]
+PASS  evaldag dag20 1: rc 0; the eval RECEIVED this run's checkpoint M2b_s1_dag20\ckpt_last.pt and tag M2b-dag20_s1
+PASS  re-gating the SAME bank is accepted (the pin is unchanged)
+CAUGHT (deliberate regression) a pin that differs from the line derived now (--steps 3000 -> 3001) makes gatedag REFUSE and does not replace the pin
+CAUGHT (deliberate regression) traindag REFUSES when the pin differs from the line derived now
+CAUGHT (deliberate regression) traindag REFUSES when bank.json changed by one byte after the gate
+CAUGHT (deliberate regression) traindag with no pin (no gate) REFUSES
+CAUGHT (deliberate regression) evaldag before training REFUSES
+CAUGHT (deliberate regression) gatedag dag2 with P 0.3 REFUSES on the fake box too, and runs no trainer
+CAUGHT (deliberate regression) a failing gate (trainer rc 3) makes gatedag exit non-zero with [FAIL]
+PASS  ISOLATION: the iteration-1 run directories (M2b_s0/1, M2b_s0/1_dag) are byte-for-byte what they were before the whole DAG2 session
+PASS  ISOLATION: no file named dag / dag0 appeared (no M2b_s?_dag0, no dagpin\M2b_s?_dag.train..., no gate_M2b-dag_s?, no gate_M2b-dag0_s?)
+== C. the chain's decisions on files: the DAG-read predicate and the bank judge
+PASS  dag-predicate on the REAL DAG_READ.json: rc 0, prints `ROBUST <the pinned sha256>`
+PASS  dag-predicate's built-in pin is the one in the brief (3393fdd5...)
+CAUGHT (deliberate regression) a re-serialised copy of the REAL read (same content, different bytes) is NOT the pinned file: rc 2, 'not the pinned DAG read'
+CAUGHT (deliberate regression) a (self-pinned) read with outcome PARTIAL: rc 4, STOP, names the outcome
+CAUGHT (deliberate regression) a (self-pinned) read with outcome DOMINANT: rc 4, STOP, names the outcome
+CAUGHT (deliberate regression) a (self-pinned) read with outcome REFUSED: rc 4, STOP, names the outcome
+CAUGHT (deliberate regression) a (self-pinned) read with outcome HARMS: rc 4, STOP, names the outcome
+CAUGHT (deliberate regression) a (self-pinned) read with outcome NO EFFECT: rc 4, STOP, names the outcome
+CAUGHT (deliberate regression) ROBUST with two matching table rows: rc 2 (not exactly one)
+CAUGHT (deliberate regression) ROBUST with one failed control: rc 2 (a read with a failed control is not an outcome)
+CAUGHT (deliberate regression) ROBUST under another PREREG's claim row (ORC's): rc 2
+CAUGHT (deliberate regression) no OUTCOME row: rc 2
+CAUGHT (deliberate regression) an EMPTY controls_PASS (nothing was checked): rc 2
+CAUGHT (deliberate regression) a missing file: rc 2
+CAUGHT (deliberate regression) an unreadable (non-JSON) file: rc 2
+PASS  judge FORMAT CHECK: the REAL iteration-1 banks pass the DAG2 judge when their own generator (M2b) is the expected one (every control + COVERAGE 0.756 / 0.769 >= 0.5): the judge reads the real bank format
+CAUGHT (deliberate regression) the REAL iteration-1 banks are REFUSED as DAG2's evidence (generator = M2b, expected = DAG): rc 2, exactly the two K-B2 failures, every other control passes
+PASS  judge: the real banks re-labelled with DAG's checkpoint sha256 (small files only) PASS, COVERAGE >= 0.5 at both seeds
+CAUGHT (deliberate regression) judge: K-B4 record missing at s1 -> rc 2 (REFUSED), names 'K-B4'
+CAUGHT (deliberate regression) judge: K-B5 record missing at s0 -> rc 2 (REFUSED), names 'K-B5'
+CAUGHT (deliberate regression) judge: K-B4 case `loop` False at s0 -> rc 2 (REFUSED), names 'K-B4'
+CAUGHT (deliberate regression) judge: K-B5 error 2e-4 at s1 -> rc 2 (REFUSED), names 'K-B5'
+CAUGHT (deliberate regression) judge: K-B5 PASS not True at s0 -> rc 2 (REFUSED), names 'K-B5'
+CAUGHT (deliberate regression) judge: K-B1 mismatch chunk at s1 -> rc 2 (REFUSED), names 'K-B1'
+CAUGHT (deliberate regression) judge: K-B0 mismatch at s0 -> rc 2 (REFUSED), names 'K-B0'
+CAUGHT (deliberate regression) judge: bank flagged partial at s1 -> rc 2 (REFUSED), names 'COMPLETE'
+CAUGHT (deliberate regression) judge: TRAIN exclude changed at s0 -> rc 2 (REFUSED), names 'TRAIN list'
+CAUGHT (deliberate regression) judge: rollout configuration changed at s1 -> rc 2 (REFUSED), names 'ROLLOUT'
+CAUGHT (deliberate regression) judge: eval overlap 1 at s0 -> rc 2 (REFUSED), names 'K-B3'
+CAUGHT (deliberate regression) judge: generator checkpoint = M2b at s1 (the iteration-1 bank re-used) -> rc 2 (REFUSED), names 'K-B2'
+CAUGHT (deliberate regression) judge: COVERAGE 0.49 at s1 (flag consistent) -> rc 3 BLOCKED
+CAUGHT (deliberate regression) judge: COVERAGE `blocked` flag disagrees with the fraction at s0 -> rc 2 (REFUSED), names 'COVERAGE'
+PASS  judge BOUNDARY: coverage exactly 0.5 at s1 passes (inclusive)
+PASS  argv-sha of the training line == an independent sha256 of the compact JSON argv; argv-same SAME for (gate, train) and DIFFERENT when --steps differs
+== D. chain_v8f_dag2.sh
+PASS  chain --dry-run: rc 0, DAG read ROBUST (pinned), arm DAG2 at p 0.1, predecessor = the DAG chain's log
+PASS  chain --dry-run: the four runs in PREREG_V8F_DAGGER2's order after bank s0 and bank s1: DAG2 s0, DAG2-0 s0, DAG2 s1, DAG2-0 s1
+PASS  chain --dry-run: every gate line is 'SAME' as its training line (4 of 4), prints the bank line `bankdag2` twice and never the iteration-1 `bankdag`/`dagger_bank\s`
+PASS  chain --dry-run: the four planned token argv_sha256 values equal an independent sha256 of the queue's printed training argv
+PASS  chain --dry-run touched no box: no ssh / scp call
+PASS  chain --check-tree on a tree carrying the trainer lever, the generator AND the new queue: rc 0 (all patterns found)
+CAUGHT (deliberate regression) chain --check-tree on the tip's queue (DAG stages only): rc 1, every DAG2 queue insertion is reported MISSING (and nothing of the trainer lever is)
+CAUGHT (deliberate regression) chain --check-tree with the trainer's --dagger-p flag renamed: rc 1 and the missing pattern is named
+PASS  chain --judge-only (pinned ROBUST read, both banks fine): rc 0, prints ZZDAG2-JUDGE-PASS and no stop marker
+CAUGHT (deliberate regression) chain --judge-only on the REAL iteration-1 banks: rc 2, ZZDAG2-REFUSED naming K-B2, ZZV8FMINI-STOP REFUSED, no gate queued, never ZZDAG2-JUDGE-PASS
+CAUGHT (deliberate regression) chain --judge-only with coverage 0.49 at s1: rc 3, ZZDAG2-BLOCKED and `ZZV8FMINI-STOP BLOCKED`, 'no gate was queued', never the all-gates line
+CAUGHT (deliberate regression) the REAL entry with a pinned-but-PARTIAL read stops at once (rc 1, ZZV8FMINI-STOP, before AFTER_OUT / the busy marker / any box-2 call)
+CAUGHT (deliberate regression) the REAL entry with a pinned-but-failed control read stops at once (rc 1, ZZV8FMINI-STOP, before AFTER_OUT / the busy marker / any box-2 call)
+CAUGHT (deliberate regression) the REAL entry with a read that is not the PINNED file stops at once: ZZV8FMINI-STOP, 'not the pinned DAG read'
+PASS  the REAL entry with the true read but no AFTER_OUT: refuses (`ZZV8FMINI-STOP AFTER_OUT is not set`), touches nothing
+PASS  no ssh / scp call in any chain mode so far (shim log empty)
+PASS  EXPORT list: exactly the closure (56 python files of the four entry scripts) + the 7 repo data files they open; 63 paths, no duplicates
+PASS  the 13 KEY files the chain sha-checks on box 2 are all inside the export
+PASS  the export does NOT carry the B1 lead block, the whole taniteval/ or the whole v8f-mini package (the DAG chain's 1.45 GB tar), and the size cap is 300 MB
+PASS  the export's first path exists on the tip (git cat-file)
+PASS  the chain asserts box 2's DAG ckpt_last.pt, argv.json and summary.json (sha256) before the banks and after the last run, from the SHA256SUMS.txt values
+PASS  the three sha arrays in the chain are exactly SHA256SUMS.txt's values (DAG_s0, DAG_s1), and the checkpoint values are the brief's
+PASS  the M2b checkpoint hashes are NOT in the chain (the lineage root is not read by DAGGER2)
+PASS  chain source order: banks -> judge -> `if [ $jr != 0 ]` stop -> PUBLISH the banks -> DAG-read re-check -> ALL gates -> trains
+CAUGHT (deliberate regression) chain source with the BLOCKED stop deleted: the order check goes RED
+CAUGHT (deliberate regression) chain source with the judge's `if [ $jr != 0 ]` disabled: the order check goes RED
+PASS  the chain's bank/publish paths are the iteration-2 directory only (no `dagger_bank/s`), its logs / markers / job names are its own (no `v8fdag_`, `chain_v8f_dag.`, `ZZDAG-`, `v8f_guard_dag.sh`)
+PASS  --publish-only on a stand-in box with the banks in dagger_bank_dag2\s<S>: rc 0, ZZDAG2-PUBLISH-ONLY-DONE, 11 files + SHA256SUMS.txt per seed in <ART>/bank_s<S>
+CAUGHT (deliberate regression) --publish-only on a box whose banks are in the ITERATION-1 directory (dagger_bank\s<S>) and none in dagger_bank_dag2: rc 1 (the chain looks only in dagger_bank_dag2)
+CAUGHT (deliberate regression) --publish-only without DAG2_ART set refuses (it never writes the real artifact directory)
+PASS  no ssh / scp call in any chain mode (shim log empty)
+PASS  v8f_guard_dag2.sh == the installed v8f_guard_dag.sh except the first comment line (anchored end test, bank-generator kill list unchanged)
+PASS  run_chain_v8f_dag2.cmd: CRLF, AFTER_OUT = the DAG chain's log, runs chain_v8f_dag2.sh into chain_v8f_dag2.out
+PASS  wake_v8fdag2.sh watches chain_v8f_dag2.out, the DAG2 markers and gate lines (and bash -n is clean)
+PASS  bash -n is clean on the chain, its template and the guard
+== E. gate_dag2_assert.py on the REAL DAG corpus gate (selfcheck.json written by the real trainer on box 2) and doctored copies
+PASS  the dry-run GATE line for DAG s0 (real bank sha256) reproduces the line box 2 actually ran: sha256(' '.join(argv))[:16] == the real selfcheck.json's argv_sha
+PASS  the dry-run TRAIN line for DAG s0 is the pin box 2 wrote (gate/pin.txt)
+PASS  the DAG2 asserter PASSES the REAL DAG corpus gate (as DAG2 with DAG's path tails): 4,512 clips, 306,566 windows, holdout sha, K-B2 vs the init, COVERAGE, B-summary comparison, queue lines
+CAUGHT (deliberate regression) with the DAG2 defaults (init tail ..._dag\ckpt_last.pt, bank dir dagger_bank_dag2) the REAL iteration-1 DAG gate is REFUSED: the init path and the bank path are not DAG2's
+CAUGHT (deliberate regression) asserter: init sha256 is not the expected generator's -> REFUSED (names 'does not start from')
+CAUGHT (deliberate regression) asserter: K-B2: the bank's checkpoint differs from the init -> REFUSED (names 'K-B2')
+CAUGHT (deliberate regression) asserter: built dagger_p 0.3 -> REFUSED (names 'built dagger_p')
+CAUGHT (deliberate regression) asserter: built bank sha256 is another bank's -> REFUSED (names 'bank sha256')
+CAUGHT (deliberate regression) asserter: COVERAGE blocked -> REFUSED (names 'COVERAGE')
+CAUGHT (deliberate regression) asserter: dagger_probe failed -> REFUSED (names 'dagger_probe')
+CAUGHT (deliberate regression) asserter: probe control p0 loss diff not 0 -> REFUSED (names 'control_p0_loss_diff')
+CAUGHT (deliberate regression) asserter: ego perturbation not off -> REFUSED (names 'ego_perturb')
+CAUGHT (deliberate regression) asserter: steps 2999 -> REFUSED (names 'steps')
+CAUGHT (deliberate regression) asserter: holdout set differs -> REFUSED (names 'holdout')
+CAUGHT (deliberate regression) asserter: window count differs -> REFUSED (names 'n_windows_all_clips')
+CAUGHT (deliberate regression) asserter: a dead parameter -> REFUSED (names 'G-LIVE dead set')
+CAUGHT (deliberate regression) asserter: the gate's argv_sha differs from the queue line -> REFUSED (names 'argv_sha')
+CAUGHT (deliberate regression) asserter: n_params_trainable differs from B's -> REFUSED (names 'n_params_trainable')
+CAUGHT (deliberate regression) asserter: the expected init is DAG_s0's sha but the gate started from M2b (the iteration-1 run offered as DAG2's gate) -> REFUSED
+CAUGHT (deliberate regression) asserter: --p 0.3 -> REFUSED (built dagger_p / the lines do not carry 0.3)
+CAUGHT (deliberate regression) asserter: a pin that is not the planned training argv -> REFUSED
+CAUGHT (deliberate regression) asserter: arm dag20 offered the DAG (bank-carrying) gate -> REFUSED
+PASS  the token is written after the assertions pass: prereg PREREG_V8F_DAGGER2, binds the sha256 of the training argv, carries dag_read_sha256 and the init checkpoint's sha
+CAUGHT (deliberate regression) no token is written when an assertion fails
+== F. the chain's edited blocks run as bash against stubs: box-2 checkpoint assertions, the dev-box DAG staging, the export tar
+PASS  box-2 assertion (ckptsha_b) PASSES when DAG_s0 / DAG_s1 ckpt_last.pt, argv.json, summary.json hash to SHA256SUMS.txt's values
+CAUGHT (deliberate regression) box-2 assertion: DAG_s0's ckpt_last.pt on box 2 differs -> STOP naming M2b_s0_dag/ckpt_last.pt
+CAUGHT (deliberate regression) box-2 assertion: DAG_s0's argv.json on box 2 differs -> STOP naming M2b_s0_dag/argv.json
+CAUGHT (deliberate regression) box-2 assertion: DAG_s0's summary.json on box 2 differs -> STOP naming M2b_s0_dag/summary.json
+CAUGHT (deliberate regression) box-2 assertion: DAG_s1's ckpt_last.pt on box 2 differs -> STOP naming M2b_s1_dag/ckpt_last.pt
+CAUGHT (deliberate regression) box-2 assertion: DAG_s1's argv.json on box 2 differs -> STOP naming M2b_s1_dag/argv.json
+CAUGHT (deliberate regression) box-2 assertion: DAG_s1's summary.json on box 2 differs -> STOP naming M2b_s1_dag/summary.json
+CAUGHT (deliberate regression) box-2 assertion: box 2 cannot be hashed for one file (no answer) -> STOP 'cannot hash'
+CAUGHT (deliberate regression) box-2 assertion: box 2 offers M2b_s<S>/ files instead of DAG's -> STOP (the box has no M2b_s<S>_dag hash)
+PASS  dev-box staging: the pulled DAG ckpt / argv / summary are hashed against SHA256SUMS.txt's values and summary.json is staged as the comparator
+CAUGHT (deliberate regression) dev-box staging: a pulled summary.json that is not the banked one -> STOP naming the file
+CAUGHT (deliberate regression) dev-box staging: the pulled DAG run directory is missing -> STOP
+PASS  export tar: the real `git archive` of the 63 paths at the tip builds a tar of 4.1 MB (<= 300 MB), named repo_v8fdag2_tip.tar (the DAG chain's repo_v8fdag_tip.tar is a different name)
+PASS  export tar: it contains the queue, the eval grid, eval141_kin / join_eval141, the thresholds file, the P10 prior, the trainer / eval / bank / tool; and NOTHING from taniteval/results, B1 or the 986 MB v8f-mini package
+CAUGHT (deliberate regression) export tar: a tar above the cap (1000 bytes) -> STOP 'must be 1..'
+CAUGHT (deliberate regression) export tar: a listed path that is not on the tip -> STOP before the archive is built
+
+SUMMARY: 113/113 checks pass, 93/93 deliberate regressions caught, 0 missed  (75 s)  -> ALL GREEN

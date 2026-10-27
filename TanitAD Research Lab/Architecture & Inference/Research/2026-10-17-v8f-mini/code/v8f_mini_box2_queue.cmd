@@ -78,6 +78,8 @@ rem   v8f_mini_box2_queue.cmd bankdag SEED              PREREG_V8F_DAGGER sectio
 rem   v8f_mini_box2_queue.cmd gatedag ARM SEED [P]     PREREG_V8F_DAGGER: the in-process launch gate for ONE fine-tune run, ARM dag (--dagger-p P, P = 0.1 after ORC read HARMS, 0.3 after NO EFFECT; the bank's sha256 is computed HERE from bank.json) or dag0 (--dagger-p 0, no P): the argv of its training run with --out and --selfcheck-only changed, nothing else. The TRAINING argv is PINNED to %RUNSM%\dagpin\ by this stage
 rem   v8f_mini_box2_queue.cmd traindag ARM SEED [P]    PREREG_V8F_DAGGER: one fine-tune run into %RUNSM%\M2b_s<SEED>_dag / _dag0 (resumes; skipped once done). It runs the PINNED line the gate tokenised, after checking that the line it would build now is byte-identical to it
 rem   v8f_mini_box2_queue.cmd evaldag ARM SEED         PREREG_V8F_DAGGER: that run's standard T0 eval (--project --families), tagged M2b-dag_s<SEED> / M2b-dag0_s<SEED>; skipped once its npz exists
+rem   v8f_mini_box2_queue.cmd bankdag2 SEED             PREREG_V8F_DAGGER2 section 1: the own-state bank of DAG_s<SEED> (M2b_s<SEED>_dag\ckpt_last.pt, frozen, PLAIN, one pass, TRAIN only), the SAME rollout configuration and expectations as bankdag: four clip-sharded generators then the merge, into %RUNSM%\dagger_bank_dag2\s<SEED> (never the iteration-1 dagger_bank). Skipped once bank.json and PROVENANCE.json exist
+rem   gatedag / traindag / evaldag also take ARM dag2 (DAG_s<SEED> fine-tuned with --dagger-p 0.1 on the iteration-2 bank; P is fixed at 0.1, any other P is REFUSED) and dag20 (the same argv with --dagger-p 0; takes no P): PREREG_V8F_DAGGER2 section 4. Init = %RUNSM%\M2b_s<SEED>_dag\ckpt_last.pt; run M2b_s<SEED>_dag2 / _dag20; tag M2b-dag2_s<SEED> / M2b-dag20_s<SEED>; pin dagpin\M2b_s<SEED>_dag2.train.argv.txt
 rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
@@ -155,6 +157,7 @@ if /i "%~1"=="bankdag" goto :bankdag
 if /i "%~1"=="gatedag" goto :gatedag
 if /i "%~1"=="traindag" goto :traindag
 if /i "%~1"=="evaldag" goto :evaldag
+if /i "%~1"=="bankdag2" goto :bankdag2
 echo usage: v8f_mini_box2_queue.cmd gate^|train ARM SEED [GRID]^|eval ARM SEED [GRID]^|floors^|compare^|tac^|tacgrp^|tacgrp2^|kind^|tacabs^|gatearm ARM^|tacabsarm ARM SEED^|gatewc^|trainwc SEED^|evalwc SEED^|gatepgt^|trainpgt SEED^|evalpgt SEED^|gategrid BASE^|traingrid SEED BASE^|evalgrid SEED BASE^|gatehist^|trainhist SEED^|evalhist SEED^|gatedscale^|traindscale SEED^|evaldscale SEED^|identitylora^|smokelora
 exit /b 2
 
@@ -1071,6 +1074,8 @@ rem DAGPIN (the pinned TRAINING argv), DAGGRID (eval-141's grid, COPIED out of t
 set "DAGS="
 if /i "%~1"=="dag" set "DAGS=dag"
 if /i "%~1"=="dag0" set "DAGS=dag0"
+if /i "%~1"=="dag2" set "DAGS=dag2"
+if /i "%~1"=="dag20" set "DAGS=dag20"
 if not defined DAGS (echo REFUSED: ARM must be dag or dag0, got "%~1" & exit /b 2)
 if "%~2"=="" (echo REFUSED: a SEED is needed & exit /b 2)
 if not "%~2"=="0" if not "%~2"=="1" (echo REFUSED: SEED must be 0 or 1, got "%~2" & exit /b 2)
@@ -1079,6 +1084,8 @@ set "DAGOUT=%RUNSM%\M2b_s%~2_%DAGS%"
 set "DAGTAG=M2b-%DAGS%_s%~2"
 set "DAGGATE=%RUNSM%\gate_M2b-%DAGS%_s%~2"
 set "DAGBANK=%RUNSM%\dagger_bank\s%~2"
+if /i "%DAGS%"=="dag2" set "DAGBANK=%RUNSM%\dagger_bank_dag2\s%~2"
+if /i "%DAGS%"=="dag20" set "DAGBANK=%RUNSM%\dagger_bank_dag2\s%~2"
 set "DAGPIN=%RUNSM%\dagpin\M2b_s%~2_%DAGS%.train.argv.txt"
 set "DAGGRID=%RUNSM%\dagpin\eval_grid_windows.json"
 set "DAGTOOL=%REPO%\stack\scripts\v8f_dagger_queue_tool.py"
@@ -1097,6 +1104,8 @@ rem PREREG_V8F_DAGGER section 4 and Amendment 1: the helper of the gate and trai
 rem The fine-tune is ORC Amendment 1's, unchanged (DAGF0), with --ego-perturb-p NAMED as 0 on both arms and --dagger-p always NAMED (the flag's default disables the lever). DAG-0 = DAGF0 + --dagger-p 0 and NOTHING else: the trainer's gate refuses a bank, a bank hash or a seed declared while p is 0.
 rem DAG = DAGF0 + --dagger-p P --dagger-bank <the seed's bank> --dagger-bank-sha256 <sha256 of bank.json, computed HERE from the file> --dagger-seed <SEED>. The pair rule is therefore: the two argv differ in --out, --dagger-p's value and the three DAG-only flags, and nowhere else.
 call :dagname %~1 %~2 || exit /b 2
+if /i "%DAGS%"=="dag2" goto :dag2arm
+if /i "%DAGS%"=="dag20" goto :dag2arm
 set "DAGP=0"
 set "DAGSHA="
 set "DAGF0=--init-ckpt "%RUNSM%\M2b_s%~2\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0"
@@ -1197,4 +1206,55 @@ if exist "%EV%\eval_%DAGTAG%.npz" (echo [skip] eval %DAGTAG% & exit /b 0)
 %E0% >> "%EV%\eval_%DAGTAG%.log" 2>&1
 if errorlevel 1 (echo [FAIL] eval %DAGTAG% - see %EV%\eval_%DAGTAG%.log & exit /b 1)
 echo [ok] eval %DAGTAG%
+exit /b 0
+:dag2arm
+rem PREREG_V8F_DAGGER2 section 4: reached ONLY from :dagarm (never called, never dispatched) with DAGS = dag2 | dag20 and :dagname's names set. %1 = ARM, %2 = SEED (0 | 1), %3 = P (dag2: 0.1 only; dag20 takes none).
+rem The fine-tune is DAG's, unchanged, except that it starts from DAG_s<SEED> (M2b_s<SEED>_dag), the checkpoint that GENERATED the iteration-2 bank: --init-ckpt "%RUNSM%\M2b_s<SEED>_dag\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0.
+rem DAG2 = that + --dagger-p 0.1 --dagger-bank <%RUNSM%\dagger_bank_dag2\s<SEED>> --dagger-bank-sha256 <sha256 of its bank.json, computed HERE> --dagger-seed <SEED>. DAG2-0 = that + --dagger-p 0 and NOTHING else (the trainer's gate refuses a bank, a bank hash or a seed declared while p is 0).
+set "DAGP=0"
+set "DAGSHA="
+set "DAGF0=--init-ckpt "%RUNSM%\M2b_s%~2_dag\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0"
+if /i "%DAGS%"=="dag20" (
+  if not "%~3"=="" (echo REFUSED: dag20 takes no P, got "%~3" - a lever declared and inert & exit /b 2)
+  set "DAGF=%DAGF0% --dagger-p 0"
+  exit /b 0
+)
+if "%~3"=="" (echo REFUSED: dag2 needs P, which is fixed at 0.1 by PREREG_V8F_DAGGER2 & exit /b 2)
+if not "%~3"=="0.1" (echo REFUSED: dag2's P is fixed at 0.1 by PREREG_V8F_DAGGER2, got "%~3" & exit /b 2)
+set "DAGP=%~3"
+if defined V8F_DRYRUN goto :dag2arm_dry
+if not exist "%DAGBANK%\bank.json" (echo REFUSED: no merged bank at %DAGBANK% - run bankdag2 %~2 first & exit /b 2)
+if not exist "%RUNSM%\dagpin" mkdir "%RUNSM%\dagpin"
+"%PY%" "%DAGTOOL%" sha "%DAGBANK%\bank.json" > "%RUNSM%\dagpin\bank_sha_dag2_s%~2.txt"
+if errorlevel 1 (echo REFUSED: could not hash %DAGBANK%\bank.json & exit /b 2)
+set /p DAGSHA=<"%RUNSM%\dagpin\bank_sha_dag2_s%~2.txt"
+goto :dag2arm_have
+:dag2arm_dry
+rem the dry run of a box that has no iteration-2 bank yet prints a placeholder; an env DAGSHA_DRY (the chain, which hashed the PULLED bank.json, and the tests) supplies the value. It is read ONLY here, never by a real run.
+if defined DAGSHA_DRY (set "DAGSHA=%DAGSHA_DRY%") else (set "DAGSHA=BANK_SHA256_OF_BANK_JSON")
+:dag2arm_have
+if not defined DAGSHA (echo REFUSED: no bank sha256 & exit /b 2)
+set "DAGF=%DAGF0% --dagger-p %DAGP% --dagger-bank "%DAGBANK%" --dagger-bank-sha256 %DAGSHA% --dagger-seed %~2"
+exit /b 0
+
+:bankdag2
+rem PREREG_V8F_DAGGER2 section 1: the own-state bank of DAG_s<SEED> (M2b_s<SEED>_dag\ckpt_last.pt, frozen, PLAIN, one pass, ticks 1 and 2, TRAIN only), FOUR clip-sharded generator processes then the merge, ONE command string that the dry run prints and the real run executes.
+rem It is bankdag's line with ONE change of generator: --ckpt and --m2b-argv are DAG's (the TRAIN list is rebuilt from DAG's argv.json; DAG's data flags are M2b's, only its fine-tune and --dagger-* flags are added), and --out-dir is the iteration-2 directory. The rollout configuration and the --expect-* numbers are bankdag's.
+rem It needs DAG FINISHED (summary.json beside the checkpoint): the trainer rewrites ckpt_last.pt during training, and a bank of a half-trained DAG would be a different generator.
+call :prep || exit /b 2
+call :dagname dag2 %~2 || exit /b 2
+call :prepdag || exit /b 2
+set "DAGGEN=%RUNSM%\M2b_s%~2_dag"
+set "BX="%PY%" "%DAGTOOL%" bank --n-shards 4 --out-dir "%DAGBANK%" -- --ckpt "%DAGGEN%\ckpt_last.pt" --m2b-argv "%DAGGEN%\argv.json" --cache-dir "%CACHEFULL%" --tracks "%TRACKS%" --join-train "%RUNSM%\join_train.npz" --eval-grid "%DAGGRID%" --batch 32 --threads 2 --device cuda --expect-clips 4512 --expect-windows 306566"
+if defined V8F_DRYRUN (echo %BX% & exit /b 0)
+if exist "%DAGBANK%\bank.json" if exist "%DAGBANK%\PROVENANCE.json" (echo [skip] bank dag2 s%~2 & exit /b 0)
+if not exist "%DAGGEN%\summary.json" (echo REFUSED: %DAGGEN%\summary.json is missing - DAG_s%~2 has not finished training & exit /b 2)
+if not exist "%DAGGEN%\ckpt_last.pt" (echo REFUSED: %DAGGEN%\ckpt_last.pt is missing & exit /b 2)
+if not exist "%DAGGEN%\argv.json" (echo REFUSED: %DAGGEN%\argv.json is missing & exit /b 2)
+if not exist "%DAGBANK%" mkdir "%DAGBANK%"
+echo [%date% %time%] bank dag2 s%~2
+%BX% >> "%DAGBANK%\bank_stage.log" 2>&1
+if errorlevel 1 (echo [FAIL] bank dag2 s%~2 - see %DAGBANK%\bank_stage.log & exit /b 1)
+if not exist "%DAGBANK%\bank.json" (echo [FAIL] bank dag2 s%~2 exited 0 without bank.json & exit /b 1)
+echo [ok] bank dag2 s%~2
 exit /b 0
