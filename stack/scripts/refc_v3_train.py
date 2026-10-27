@@ -1062,8 +1062,13 @@ def _pin_refcv8(cfg, args) -> None:
                          "generated and never matched to GT (SPEC_WPB T2 uses 1.0)")
     # ---- MM ruling Q1 (SPEC_REFCV8 sec. 3.1, I-2): the extra candidates' EMISSION schedule ---------------------- #
     _es = getattr(args, "r8_alloc_emit_start", None)
+    # ⭐ refcv9 WARM START (MM 2026-10-27, R9W-EMIT-START): the run warm-starts from refcv8's EMA model, whose extra
+    # candidates were EMITTED from refcv8 step 1,000 to its end -- so emission from step 0 IS the step-0 identity of
+    # the emitted plan (I-2 read against the model actually loaded), and a start >= 1 would HIDE them. Declared as an
+    # explicit `--r8-alloc-emit-start 0`, admitted ONLY with --r9-train-only; absent / every other run: unchanged.
+    _es0_r9 = _es is not None and int(_es) == 0 and _mof.is_r9(args)
     if _es is not None:
-        if int(_es) < 1:
+        if int(_es) < 1 and not _es0_r9:
             raise SystemExit(f"[refcv8] --r8-alloc-emit-start {_es} must be >= 1: emission from step 0 is the "
                              f"un-scheduled default (pass no start)")
         if not (r.alloc_emit or r.prior_free_emit):
@@ -1081,7 +1086,7 @@ def _pin_refcv8(cfg, args) -> None:
                          "supervised")
     if r.w_drivable > 0.0 and not r.critic_drivable:
         raise SystemExit("[refcv8] --w-r8-drivable > 0 without --r8-critic-drivable: a weight with no critic")
-    if getattr(args, "init_from", None) and r8train.emits_at_step0(r):
+    if getattr(args, "init_from", None) and r8train.emits_at_step0(r) and not _es0_r9:
         raise SystemExit("[refcv8] ⛔ a WARM-STARTED run (--init-from) that emits extra candidates from step 0 "
                          "breaks step-0 identity of the emitted plan (I-2, MM ruling Q1): pass --r8-alloc-emit-start "
                          "S_emit >= 1, or drop the emission flag")
@@ -9536,6 +9541,8 @@ def train(args) -> dict:
                 # refcv9 warm start (PI 2026-10-27): --r9-train-only <sets> -- the same machinery, the named sets
                 _mof.apply_train_only(model, _mof.r9_sets(args)) if _mof.is_r9(args) else None)
     _mof_mods = None if _mof_rec is None else tuple(_mof_rec["modules"])      # the TRAINABLE modules (None: no freeze)
+    # the declared grad-unreachable subtrees INSIDE them stay frozen (--r9-train-only records them; r8: none)
+    _mof_decl = () if _mof_rec is None else tuple(_mof_rec.get("declared_frozen") or ())
     _mof_tag = _mof.freeze_tag(_mof_rec)
     # refcv9 R9-PF calibration stage: every tensor outside the progress head frozen (OFF: None, nothing runs)
     _r9_rec = (_r9p.apply_calib_freeze(model) if (_r9p.is_on(args) and bool(getattr(args, "r9_calib_stage", False)))
@@ -10391,8 +10398,8 @@ def train(args) -> dict:
     if _mof_rec is not None:
         _mof_src, _mof_rec["init_from"] = _mof.load_source(args.init_from)
         _mof_rec["init_from"]["verify"] = _mof.verify_against_source(model, _mof_src, fresh=not ck.exists(),
-                                                                     modules=_mof_mods)
-        _mof_guard = _mof.FrozenStateGuard(_mof_src, modules=_mof_mods)
+                                                                     modules=_mof_mods, declared=_mof_decl)
+        _mof_guard = _mof.FrozenStateGuard(_mof_src, modules=_mof_mods, declared=_mof_decl)
         print("[%s] --init-from %s (md5 %s, kind %s, step %s): %s over %d keys" % (
             _mof_tag, args.init_from, _mof_rec["init_from"]["md5"][:8], _mof_rec["init_from"]["kind"],
             _mof_rec["init_from"]["step"], _mof_rec["init_from"]["verify"]["result"],
@@ -10835,7 +10842,8 @@ def train(args) -> dict:
     if float(getattr(args, "ema_decay", 0.0) or 0.0) > 0.0:
         # --r8-train-only-map: the shadow holds the map-only tensors ONLY (a frozen tensor's EMA is itself)
         _ema = _wema.WeightEMA(model, float(args.ema_decay),
-                               exclude=(_mof.ema_exclude_for(_mof_mods) if _mof_rec is not None else None))
+                               exclude=(_mof.ema_exclude_for(_mof_mods, _mof_decl) if _mof_rec is not None
+                                        else None))
         if _ema_resume is not None:
             try:
                 _ema.load_state_dict(_ema_resume, model)
@@ -10860,7 +10868,8 @@ def train(args) -> dict:
     if _mof_rec is not None:
         # ⭐ PI D-R9-MAPHEAD-PRECISION: the EMA shadows the map-only tensors only, and on a fresh start raw == EMA ==
         # the shipped model; then the frozen state is read once more before step 1
-        _mof_bad = (_mof.ema_problems(_ema, model, _mof_src, fresh=not ck.exists(), modules=_mof_mods)
+        _mof_bad = (_mof.ema_problems(_ema, model, _mof_src, fresh=not ck.exists(), modules=_mof_mods,
+                                      declared=_mof_decl)
                     if _ema is not None else [])
         if _mof_bad:
             raise SystemExit("[%s] ⛔ the EMA is not the %s EMA:\n  - " % (_mof_tag, _mof_tag)
@@ -12717,10 +12726,12 @@ def build_parser() -> argparse.ArgumentParser:
                          "(perception) with --r8-train-only-map's machinery (requires_grad, one AdamW group "
                          "`train_only` at --lr, pinned norms, the class-prior write skipped, the EMA exclusion, the "
                          "shipped-EMA warm start checked bit for bit, the frozen-state guard on every logged / saved "
-                         "step). Sets: `planner` = core.decoder (186 tensors / 15,365,801 values on refcv8), `map` = "
-                         "the three map-only modules (= --r8-train-only-map). Needs --refcv8 --opt dd --init-from = the "
-                         "SHIPPED EMA model --conflict-detector off. config.json['r9_train_only'] records the sets, the "
-                         "trainable list and the counts.")
+                         "step). Sets: `planner` = core.decoder (178 trained tensors / 15,254,091 values on refcv8; "
+                         "its declared grad-unreachable subtrees stay frozen), `tactical` = the eleven tactical-branch "
+                         "modules (map_only_ft.TACTICAL_MODULES; 113 / 5,476,306), `map` = the three map-only modules "
+                         "(= --r8-train-only-map). Needs --refcv8 --opt dd --init-from = the SHIPPED EMA model "
+                         "--conflict-detector off. config.json['r9_train_only'] records the sets, the trainable list, "
+                         "the declared-frozen subtrees and the counts.")
     g8.add_argument("--w-map-fp", type=float, default=0.0,
                     help="refcv9 map precision term (PI 2026-10-27): + w x mean over GT-drivable cells of the "
                          "near-field corridor (x 0-20 m, |y| < 3 m) of the 10 cm head's p_sidewalk + p_edge. 0 (the "

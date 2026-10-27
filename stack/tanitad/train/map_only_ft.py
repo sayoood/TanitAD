@@ -46,11 +46,36 @@ EMA-48,852; perception FROZEN; planner + tactical heads TRAINED; the map head AL
                       REAL refcv8-r101-s0 build (CPU, ``refcv7_loader.build_model`` + a strict load of
                       ckpt_ema_48852.pt): 186 tensors, 15,365,801 values; ``planner,map`` = 204 tensors, 15,470,833
                       values -- the arm's MEASURED "186 tensors / 15,470,833 values incl. the map's 105,032".
+      * ``tactical`` = :data:`TACTICAL_MODULES` (PI 2026-10-27, R9W-TACTICAL closed: "planner + tactical heads
+                      trained"). ``core.decoder`` does NOT hold the tactical heads; these eleven modules are the
+                      tactical branch -- each one's only consumer is the tactical state / decision / goal path
+                      (``refc_v3.RefCV3Model``, ``refc.RefCModel``):
+                        - ``phi_tac``               E5: the tactical state z_tac (PhiTac over the pooled sequence);
+                        - ``nav_to_tac``            E13: nav -> z_tac (zero-init projection of the nav embedding);
+                        - ``lat_head_tac`` / ``lon_head_tac``  E6: the factored tactical decision heads on z_tac;
+                        - ``tac_goal_head``         E8: the tactical geometric goals off z_tac;
+                        - ``tac_latent_proj``       E7: z_tac -> the decoder's target-latent FiLM port;
+                        - ``tac_decoder_v6``        refcv6 s4: the DETR behaviour decoder (22 tactical tokens);
+                        - ``tac_behaviour_gate_v6`` refcv6: the valid-behaviour set -> selection gate;
+                        - ``core.tactical_trunk`` / ``core.lat_head`` / ``core.lon_head``  the core's lat / lon
+                          manoeuvre heads (the tactical class decision; their posterior feeds the decoder's priors).
+                      NOT tactical, and FROZEN under every set: ``nav_inj`` (the nav embedding, SHARED with the
+                      strategic ``nav_to_str``), ``gstr_embed`` / ``gstr_film`` (the STRATEGIC goal's FiLM on z_tac),
+                      ``str_goal_head`` / ``core.strategic`` / ``core.route_head`` (strategic), ``scorer`` /
+                      ``goal_gate`` (E9: OPERATIVE selection over the decoder's fan -- the tactical goal enters it
+                      DETACHED), ``core.law_head`` (the planner's LAW aux), ``core.measurement`` / ``core.ego_hist``
+                      (ego input encoders), ``core.agent_*`` / ``_perception.*`` / ``core.encoder`` / the shared map
+                      parts (perception).
     "Perception" = every parameter outside the chosen sets.
-    ⚠️ STATED, NOT HIDDEN: ``core.decoder`` does NOT hold the TACTICAL heads (``tac_decoder_v6``, ``phi_tac``,
-    ``lat_head_tac`` / ``lon_head_tac``, ``tac_goal_head``, ``tac_latent_proj``, ``core.tactical_trunk``,
-    ``core.lat_head`` / ``core.lon_head``, ...). Under ``planner,map`` they are FROZEN together with the perception.
-    Training them needs a THIRD named set -- a model-design decision, not a default taken here.
+    ⛔ A DECLARED grad-unreachable subtree INSIDE a set stays FROZEN (``tanitad/models/_gradreach.py``): the build
+    froze it because no loss can reach it (e.g. ``core.decoder.offset_head`` / ``control_head`` on a sampler build,
+    ``core.decoder.ctx_to_cond`` under ``--no-strategic``, ``lat/lon_to_anchor`` under ``--graft-tac8-prior``), and
+    re-enabling it is the stage-freeze defect ``declared_vs_built.check_grad_unreachable`` refuses ("declared frozen
+    but trainable again"). MEASURED on the REAL refcv8 build: 5 such subtrees under ``core.decoder``, 8 tensors /
+    111,710 values -- so ``planner`` TRAINS 178 tensors / 15,254,091 values (the gate arm's 186 counts the declared
+    ones too); ``tactical`` 113 / 5,476,306 (none declared); ``planner,tactical,map`` 309 / 20,835,429. They are
+    recorded (``declared_frozen``) and guarded as frozen: the optimizer, the EMA, the source check and
+    :class:`FrozenStateGuard` all treat them as frozen.
 """
 from __future__ import annotations
 
@@ -71,7 +96,9 @@ __all__ = ["SCHEMA", "FLAG", "DEST", "MAP_ONLY_MODULES", "MARKER_ATTR", "GROUP_N
            "R9_SCHEMA", "R9_FLAG", "R9_DEST", "R9_GROUP_NAME", "PLANNER_MODULES", "TRAIN_ONLY_SETS",
            "REFCV8_PLANNER_TENSORS", "REFCV8_PLANNER_NUMEL", "REFCV8_MAP_ONLY_TENSORS",
            "is_r8", "is_r9", "r9_spec", "r9_sets", "parse_sets", "modules_of_sets", "trainable_modules",
-           "is_trainable_under", "ema_exclude_for", "apply_train_only", "freeze_tag", "dvb_check_r9"]
+           "is_trainable_under", "ema_exclude_for", "apply_train_only", "freeze_tag", "dvb_check_r9",
+           "TACTICAL_MODULES", "REFCV8_TACTICAL_TENSORS", "REFCV8_TACTICAL_NUMEL", "REFCV8_PLANNER_DECLARED_FROZEN",
+           "declared_prefixes", "is_trained"]
 
 SCHEMA = "map_only_ft/1"
 FLAG = "--r8-train-only-map"
@@ -105,12 +132,24 @@ R9_DEST = "r9_train_only"
 R9_GROUP_NAME = "train_only"
 #: the planner = EXACTLY what `launch_gate._mapft_inject`'s `mapft_planner_trainable` arm un-freezes (the module docstring)
 PLANNER_MODULES: tuple = ("core.decoder",)
-#: the named sets, in their CANONICAL order (a spec is normalised to it: `map,planner` == `planner,map`)
-TRAIN_ONLY_SETS: dict = {"planner": PLANNER_MODULES, "map": MAP_ONLY_MODULES}
-#: refcv8-r101-s0 (48,852 config) -- MEASURED 2026-10-27 on the REAL build (the module docstring)
-REFCV8_PLANNER_TENSORS = 186
-REFCV8_PLANNER_NUMEL = 15_365_801
+#: the tactical branch (PI 2026-10-27, R9W-TACTICAL: "planner + tactical heads trained") -- the module docstring says
+#: why each one is tactical and which neighbours are NOT
+TACTICAL_MODULES: tuple = ("phi_tac", "nav_to_tac", "lat_head_tac", "lon_head_tac", "tac_goal_head", "tac_latent_proj",
+                           "tac_decoder_v6", "tac_behaviour_gate_v6", "core.tactical_trunk", "core.lat_head",
+                           "core.lon_head")
+#: the named sets, in their CANONICAL order (a spec is normalised to it: `map,tactical,planner` == `planner,tactical,map`)
+TRAIN_ONLY_SETS: dict = {"planner": PLANNER_MODULES, "tactical": TACTICAL_MODULES, "map": MAP_ONLY_MODULES}
+#: refcv8-r101-s0 (48,852 config) -- MEASURED 2026-10-27 on the REAL build (the module docstring): the TRAINED
+#: tensors / values of each set (a declared grad-unreachable subtree inside a set stays frozen)
+REFCV8_PLANNER_TENSORS = 178
+REFCV8_PLANNER_NUMEL = 15_254_091
 REFCV8_MAP_ONLY_TENSORS = 18
+REFCV8_TACTICAL_TENSORS = 113
+REFCV8_TACTICAL_NUMEL = 5_476_306
+#: the declared grad-unreachable subtrees INSIDE `planner` on the refcv8 build (8 tensors, 111,710 values)
+REFCV8_PLANNER_DECLARED_FROZEN: tuple = ("core.decoder.offset_head", "core.decoder.ctx_to_cond",
+                                         "core.decoder.lat_to_anchor", "core.decoder.lon_to_anchor",
+                                         "core.decoder.control_head")
 
 
 class MapOnlyError(SystemExit):
@@ -136,13 +175,27 @@ def is_trainable_under(name: str, modules: Iterable[str]) -> bool:
     return any(_under(str(name), p) for p in modules)
 
 
-def ema_exclude_for(modules: Iterable[str]) -> Callable:
-    """``WeightEMA(exclude=...)`` for a trainable module set: every tensor OUTSIDE it is frozen. The map-only set
-    returns :func:`ema_exclude` ITSELF (``--r8-train-only-map``'s EMA is the tip's, object for object)."""
-    mods = tuple(modules)
-    if mods == MAP_ONLY_MODULES:
+def is_trained(name: str, modules: Iterable[str], declared: Iterable[str] = ()) -> bool:
+    """True for a tensor the freeze TRAINS: inside one of ``modules`` and NOT inside a declared grad-unreachable
+    subtree (``declared``: dot-boundary prefixes)."""
+    return is_trainable_under(name, modules) and not is_trainable_under(name, tuple(declared))
+
+
+def declared_prefixes(model) -> dict:
+    """``{module path: reason}`` of every subtree the BUILT model declared grad-unreachable
+    (``tanitad/models/_gradreach.py``)."""
+    from tanitad.models._gradreach import grad_unreachable_prefixes
+    return grad_unreachable_prefixes(model) if callable(getattr(model, "named_modules", None)) else {}
+
+
+def ema_exclude_for(modules: Iterable[str], declared: Iterable[str] = ()) -> Callable:
+    """``WeightEMA(exclude=...)`` for a trainable module set: every tensor OUTSIDE it, or inside a declared
+    grad-unreachable subtree, is frozen. The map-only set with nothing declared returns :func:`ema_exclude` ITSELF
+    (``--r8-train-only-map``'s EMA is the tip's, object for object)."""
+    mods, dec = tuple(modules), tuple(declared)
+    if mods == MAP_ONLY_MODULES and not dec:
         return ema_exclude
-    return lambda name, _m=mods: not is_trainable_under(name, _m)
+    return lambda name, _m=mods, _d=dec: not is_trained(name, _m, _d)
 
 
 def is_r8(args) -> bool:
@@ -420,10 +473,16 @@ def apply_train_only(model, sets: Iterable[str]) -> dict:
     if tied:
         raise MapOnlyError(f"[r9-train-only] ⛔ {R9_FLAG}: {len(tied)} parameter(s) are TIED across the trainable / "
                            f"frozen boundary, e.g. {tied[:3]} -- training them would move the frozen side")
+    # a DECLARED grad-unreachable subtree inside a set stays frozen (the build froze it: no loss reaches it)
+    decl_all = declared_prefixes(model)
+    decl = {k: v for k, v in decl_all.items() if is_trainable_under(k, mods)}
+    dec = tuple(decl)
+    n_decl = sum(1 for n, _ in model.named_parameters() if is_trainable_under(n, dec))
+    numel_decl = sum(int(q.numel()) for n, q in model.named_parameters() if is_trainable_under(n, dec))
     trainable, n_frozen, numel_frozen = [], 0, 0
     per_set = {s: {"modules": list(TRAIN_ONLY_SETS[s]), "n_tensors": 0, "n_params": 0} for s in sets}
     for n, p in model.named_parameters():
-        want = is_trainable_under(n, mods)
+        want = is_trained(n, mods, dec)
         p.requires_grad_(want)
         if want:
             trainable.append((n, int(p.numel())))
@@ -440,6 +499,8 @@ def apply_train_only(model, sets: Iterable[str]) -> dict:
                            f"would train")
     pinned = pin_frozen_norms(model, mods)
     rec = {"schema": R9_SCHEMA, "flag": R9_FLAG, "sets": list(sets), "modules": list(mods),
+           "declared_frozen": dict(sorted(decl.items())),
+           "n_declared_frozen_tensors": int(n_decl), "n_declared_frozen_params": int(numel_decl),
            "trainable": [n for n, _ in trainable],
            "n_trainable_tensors": len(trainable),
            "n_trainable_params": int(sum(k for _, k in trainable)),
@@ -449,7 +510,7 @@ def apply_train_only(model, sets: Iterable[str]) -> dict:
            "frozen_norms_pinned": int(pinned),
            "group": R9_GROUP_NAME,
            "buffer_writes_skipped": ["core.update_tactical_prior (lat/lon class-prior EMA)"],
-           "ema": "shadows the trainable tensors only (WeightEMA exclude=ema_exclude_for(modules))"}
+           "ema": "shadows the trainable tensors only (WeightEMA exclude=ema_exclude_for(modules, declared_frozen))"}
     setattr(model, MARKER_ATTR, rec)
     return rec
 
@@ -484,9 +545,10 @@ def _build_optimizer_r9(model, args, rec: dict):
     module the declared sets name trained in that group in refcv8) -- as ONE group ``train_only`` holding exactly the
     trainable parameters (:func:`apply_train_only`)."""
     mods = tuple(rec.get("modules") or ())
+    dec = tuple(rec.get("declared_frozen") or ())
     params = [p for _n, p in model.named_parameters() if p.requires_grad]
     names = [n for n, p in model.named_parameters() if p.requires_grad]
-    stray = [n for n in names if not is_trainable_under(n, mods)]
+    stray = [n for n in names if not is_trained(n, mods, dec)]
     if stray or not params or not mods:
         raise MapOnlyError(f"[r9-train-only] ⛔ {R9_FLAG}: the trainable set is not the declared sets "
                            f"{rec.get('sets')} (outside: {stray[:3]}, n trainable {len(params)})")
@@ -503,12 +565,13 @@ def _optimizer_problems_r9(opt, model, args, rec: dict) -> list:
     """:func:`optimizer_problems` under ``--r9-train-only``: one AdamW group ``train_only`` holding exactly the
     parameters of the declared sets (by identity), each trainable; no other parameter trainable."""
     mods = tuple(rec.get("modules") or ())
+    dec = tuple(rec.get("declared_frozen") or ())
     bad = []
     if type(opt).__name__ != "AdamW":
         bad.append(f"optimizer is {type(opt).__name__}, the recipe is AdamW")
     if [g.get("name") for g in opt.param_groups] != [R9_GROUP_NAME]:
         bad.append(f"param groups {[g.get('name') for g in opt.param_groups]} != ['{R9_GROUP_NAME}']")
-    want = {id(p) for n, p in model.named_parameters() if is_trainable_under(n, mods)}
+    want = {id(p) for n, p in model.named_parameters() if is_trained(n, mods, dec)}
     held = [p for g in opt.param_groups for p in g["params"]]
     if not mods or {id(p) for p in held} != want or len(held) != len(want):
         bad.append(f"the optimizer holds {len(held)} tensors, the declared sets {rec.get('sets')} {len(want)} "
@@ -519,6 +582,9 @@ def _optimizer_problems_r9(opt, model, args, rec: dict) -> list:
     if live:
         bad.append(f"{len(live)} parameter(s) OUTSIDE the declared sets {rec.get('sets')} are trainable, e.g. "
                    f"{live[:3]}")
+    undead = [n for n, p in model.named_parameters() if p.requires_grad and is_trainable_under(n, dec)]
+    if undead:
+        bad.append(f"{len(undead)} DECLARED grad-unreachable parameter(s) are trainable again, e.g. {undead[:3]}")
     for g in opt.param_groups:
         if abs(float(g.get("weight_decay", 0.0)) - float(getattr(args, "weight_decay", 1e-4))) > 1e-12:
             bad.append(f"group weight_decay {g.get('weight_decay')} != {getattr(args, 'weight_decay', 1e-4)}")
@@ -606,12 +672,13 @@ def load_source(path: str) -> tuple:
     return state["model"], rec
 
 
-def verify_against_source(model, src: dict, *, fresh: bool, modules: Iterable[str] = MAP_ONLY_MODULES) -> dict:
+def verify_against_source(model, src: dict, *, fresh: bool, modules: Iterable[str] = MAP_ONLY_MODULES,
+                          declared: Iterable[str] = ()) -> dict:
     """Every key of the model's state_dict against the source file, bit for bit: the FROZEN keys (outside the
     trainable ``modules``; default the map-only ones) always (raw == the shipped EMA model), the trainable keys too on
     a FRESH start (a resume has trained them). REFUSES a key set that differs (the build is not the source's
     architecture) and any differing tensor."""
-    mods = tuple(modules)
+    mods, dec = tuple(modules), tuple(declared)
     r9 = mods != MAP_ONLY_MODULES
     tag, what = ("r9-train-only", "frozen perception") if r9 else ("map-only", "frozen planner")
     sd = model.state_dict()
@@ -619,12 +686,12 @@ def verify_against_source(model, src: dict, *, fresh: bool, modules: Iterable[st
         raise MapOnlyError(f"[{tag}] ⛔ the model and --init-from have different keys (model-only "
                            f"{sorted(set(sd) - set(src))[:3]}, file-only {sorted(set(src) - set(sd))[:3]}): the "
                            f"build is not the shipped model's architecture")
-    diff = [k for k, v in sd.items() if (fresh or not is_trainable_under(k, mods)) and not bit_equal(v, src[k])]
+    diff = [k for k, v in sd.items() if (fresh or not is_trained(k, mods, dec)) and not bit_equal(v, src[k])]
     if diff:
         raise MapOnlyError(f"[{tag}] ⛔ {len(diff)} tensor(s) differ from --init-from "
                            f"({'fresh start' if fresh else 'resume: frozen tensors'}), e.g. {diff[:4]} -- the "
                            f"{what} is not the shipped {what.split(' ', 1)[1]}")
-    n_map = sum(1 for k in sd if is_trainable_under(k, mods))
+    n_map = sum(1 for k in sd if is_trained(k, mods, dec))
     if r9:
         return {"checked_keys": (len(sd) if fresh else len(sd) - n_map), "n_keys": len(sd),
                 "n_trainable_keys": n_map, "fresh": bool(fresh), "result": "bit-identical"}
@@ -637,9 +704,9 @@ class FrozenStateGuard:
     map-only ones), on CPU. :meth:`changed` re-reads every frozen parameter AND buffer of the live model against it;
     :meth:`assert_ok` REFUSES on the first drifted byte."""
 
-    def __init__(self, src: dict, modules: Iterable[str] = MAP_ONLY_MODULES):
-        self.modules = tuple(modules)
-        self.ref = {k: v.detach().to("cpu") for k, v in src.items() if not is_trainable_under(k, self.modules)}
+    def __init__(self, src: dict, modules: Iterable[str] = MAP_ONLY_MODULES, declared: Iterable[str] = ()):
+        self.modules, self.declared = tuple(modules), tuple(declared)
+        self.ref = {k: v.detach().to("cpu") for k, v in src.items() if not is_trained(k, self.modules, self.declared)}
         self.n_checks = 0
 
     def changed(self, model) -> list:
@@ -661,14 +728,14 @@ class FrozenStateGuard:
 
 
 def ema_problems(ema, model, src: dict | None = None, *, fresh: bool = False,
-                 modules: Iterable[str] = MAP_ONLY_MODULES) -> list:
+                 modules: Iterable[str] = MAP_ONLY_MODULES, declared: Iterable[str] = ()) -> list:
     """The EMA under the flag ([] = sound): it shadows EXACTLY the trainable tensors (default: the map-only ones); on
     a fresh start every shadow equals the live tensor AND the source (raw == EMA == the shipped model at step 0)."""
-    mods = tuple(modules)
+    mods, dec = tuple(modules), tuple(declared)
     where = "the map-only modules" if mods == MAP_ONLY_MODULES else f"the trainable modules {list(mods)}"
     bad = []
     keys = set(getattr(ema, "shadow", {}) or {})
-    outside = sorted(k for k in keys if not is_trainable_under(k, mods))
+    outside = sorted(k for k in keys if not is_trained(k, mods, dec))
     if outside:
         bad.append(f"the EMA shadows {len(outside)} tensor(s) outside {where}, e.g. {outside[:3]}")
     want = {n for n, p in model.named_parameters() if is_trainable_under(n, mods) and p.requires_grad}
@@ -787,7 +854,12 @@ def dvb_check_r9(model, args) -> list:
     if outside:
         out.append(Mismatch(R9_FLAG, f"trainable = the sets {list(sets)} only", f"{len(outside)} trainable outside",
                             "model.named_parameters()", f"the perception freeze is broken, e.g. {outside[:3]}"))
-    frozen_in = [n for n, p in model.named_parameters() if is_trainable_under(n, mods) and not p.requires_grad]
+    dec = tuple(rec.get("declared_frozen") or ())
+    frozen_in = [n for n, p in model.named_parameters() if is_trained(n, mods, dec) and not p.requires_grad]
+    undead = [n for n, p in model.named_parameters() if is_trainable_under(n, dec) and p.requires_grad]
+    if undead:
+        out.append(Mismatch(R9_FLAG, "declared grad-unreachable subtrees frozen", f"{len(undead)} trainable",
+                            "model.named_parameters()", f"a declared subtree is trainable again, e.g. {undead[:3]}"))
     if frozen_in:
         out.append(Mismatch(R9_FLAG, f"every parameter of the sets {list(sets)} trainable", f"{len(frozen_in)} frozen",
                             "model.named_parameters()", f"e.g. {frozen_in[:3]}"))

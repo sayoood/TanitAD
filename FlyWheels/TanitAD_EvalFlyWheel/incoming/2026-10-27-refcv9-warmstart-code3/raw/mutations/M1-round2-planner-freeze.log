@@ -1,0 +1,75 @@
+.FFFF                                                                    [100%]
+================================== FAILURES ===================================
+___ test_R8_RIG_the_trainable_frozen_and_declared_counts_of_each_set[sets1] ___
+
+sets = ('planner',)
+
+    @pytest.mark.parametrize("sets", list(R8RIG_COUNTS))
+    def test_R8_RIG_the_trainable_frozen_and_declared_counts_of_each_set(sets):
+        _cfg, model = _r8rig()
+        assert (sum(1 for _ in model.parameters()), sum(int(p.numel()) for p in model.parameters())) == R8RIG_TOTAL
+        rec = M.apply_train_only(model, sets)
+        got = (rec["n_trainable_tensors"], rec["n_trainable_params"], rec["n_frozen_tensors"], rec["n_frozen_params"],
+               len(rec["trainable_leaf_groups"]), rec["n_declared_frozen_tensors"], rec["n_declared_frozen_params"])
+>       assert got == R8RIG_COUNTS[sets]
+E       assert (92, 69378, 2...7, 48, 4, ...) == (88, 68322, 2...3, 46, 4, ...)
+E         
+E         At index 0 diff: 92 != 88
+E         Use -v to get more diff
+
+tests\test_r9_train_only.py:208: AssertionError
+___ test_R8_RIG_the_trainable_frozen_and_declared_counts_of_each_set[sets2] ___
+
+sets = ('planner', 'tactical')
+
+    @pytest.mark.parametrize("sets", list(R8RIG_COUNTS))
+    def test_R8_RIG_the_trainable_frozen_and_declared_counts_of_each_set(sets):
+        _cfg, model = _r8rig()
+        assert (sum(1 for _ in model.parameters()), sum(int(p.numel()) for p in model.parameters())) == R8RIG_TOTAL
+        rec = M.apply_train_only(model, sets)
+        got = (rec["n_trainable_tensors"], rec["n_trainable_params"], rec["n_frozen_tensors"], rec["n_frozen_params"],
+               len(rec["trainable_leaf_groups"]), rec["n_declared_frozen_tensors"], rec["n_declared_frozen_params"])
+>       assert got == R8RIG_COUNTS[sets]
+E       assert (177, 122356,...9, 92, 4, ...) == (173, 121300,...5, 90, 4, ...)
+E         
+E         At index 0 diff: 177 != 173
+E         Use -v to get more diff
+
+tests\test_r9_train_only.py:208: AssertionError
+____ test_REAL_BUILD_the_trainable_frozen_and_declared_counts_of_each_set _____
+
+real_build = {'tanitad': 'F:\\refcv9_code3\\tree\\stack\\tanitad\\__init__.py', 'dvb_build': [], 'total': [848, 100598182], 'counts...l': [113, 5476306, 735, 95121876, 0, 0, ...], 'planner,map': [204, 15470833, 644, 85127349, 8, 111710, ...], ...}, ...}
+
+    def test_REAL_BUILD_the_trainable_frozen_and_declared_counts_of_each_set(real_build):
+        assert real_build["dvb_build"] == []
+        assert tuple(real_build["total"]) == REAL_TOTAL
+        for spec, want in REAL_COUNTS.items():
+            got = real_build["counts"][spec]
+>           assert tuple(got[:6]) == want, (spec, got[:6])
+E           AssertionError: ('planner', [186, 15365801, 662, 85232381, 8, 111710])
+E           assert (186, 1536580...81, 8, 111710) == (178, 1525409...91, 8, 111710)
+E             
+E             At index 0 diff: 186 != 178
+E             Use -v to get more diff
+
+tests\test_r9_train_only.py:341: AssertionError
+_ test_DECLARED_the_built_declarations_inside_the_sets_stay_frozen_and_every_check_is_clean _
+
+tmp_path = WindowsPath('F:/c_overflow_2026-10-26/tmp/mut_M1-round2-planner-freeze/test_DECLARED_the_built_declar0')
+
+    def test_DECLARED_the_built_declarations_inside_the_sets_stay_frozen_and_every_check_is_clean(tmp_path):
+        cfg, m, args, rec, _src = _r8rig_pt(tmp_path)
+        assert sorted(rec["declared_frozen"]) == list(R8RIG_DECLARED)
+>       assert [str(x) for x in D.check_grad_unreachable(m, args)] == []
+E       assert ["grad_unreac..._head.bias']"] == []
+E         
+E         Left contains 2 more items, first extra item: "grad_unreachable[core.decoder.control_head]: declared 'requires_grad False' but BUILT '2 trainable tensor(s)' (read f...l_head) -- declared frozen but trainable again: ['core.decoder.control_head.weight', 'core.decoder.control_head.bias']"
+E         Use -v to get more diff
+
+tests\test_r9_train_only.py:235: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_r9_train_only.py::test_R8_RIG_the_trainable_frozen_and_declared_counts_of_each_set[sets1]
+FAILED tests/test_r9_train_only.py::test_R8_RIG_the_trainable_frozen_and_declared_counts_of_each_set[sets2]
+FAILED tests/test_r9_train_only.py::test_REAL_BUILD_the_trainable_frozen_and_declared_counts_of_each_set
+FAILED tests/test_r9_train_only.py::test_DECLARED_the_built_declarations_inside_the_sets_stay_frozen_and_every_check_is_clean
+4 failed, 1 passed in 26.89s

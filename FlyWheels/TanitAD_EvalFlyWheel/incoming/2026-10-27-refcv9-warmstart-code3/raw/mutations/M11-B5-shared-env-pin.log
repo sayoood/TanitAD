@@ -1,0 +1,17 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+________ test_B5_the_profile_resolves_to_refcv8_mapfts_env_failure_pin ________
+
+    def test_B5_the_profile_resolves_to_refcv8_mapfts_env_failure_pin():
+        want = ("stack/ops/launch_gate_thor_env_failures_mapft.json",
+                "1af7c5dd7e45b31f0f419e992764d31a20f72e743d55c5b971f4c79162ef02f9")
+>       assert R9W["suite_env_failures"] == want == LG.PROFILES["refcv8-mapft"]["suite_env_failures"]
+E       AssertionError: assert ('stack/ops/l...8a1932acaf21') == ('stack/ops/l...c79162ef02f9')
+E         
+E         At index 0 diff: 'stack/ops/launch_gate_thor_env_failures.json' != 'stack/ops/launch_gate_thor_env_failures_mapft.json'
+E         Use -v to get more diff
+
+tests\test_r9_train_only.py:715: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_r9_train_only.py::test_B5_the_profile_resolves_to_refcv8_mapfts_env_failure_pin
+1 failed in 5.16s

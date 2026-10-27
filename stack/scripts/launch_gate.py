@@ -833,6 +833,11 @@ PROFILES["refcv8"] = dict(
         # its own profile `refcv8-mapft`, whose G-DVB / G-LIVE read the freeze (this profile's G-LIVE would not)
         (("--r8-train-only-map",), "the map-only fine-tune (PI D-R9-MAPHEAD-PRECISION) -- launched under profile "
                                    "refcv8-mapft only"),
+        # MM 2026-10-27 (refcv9 round 3): the refcv9 warm-start freeze launches ONLY under its own profile `refcv9-warm`,
+        # whose G-DVB / G-LIVE read the freeze (this profile's G-LIVE would not); inherited by refcv8-nt, refcv8-mapft
+        # and v8f, which take this tuple
+        (("--r9-train-only",), "the refcv9 warm-start freeze (PI 2026-10-27) -- launched under profile refcv9-warm "
+                               "only"),
     ),
     #: PI Q-B: the channel's source is the label; the past-only proxies are refused by value
     #: R8-RECIPE CLOSED 2026-10-15 (PI 2026-10-14): the prior-free group is OFF -- `()` refuses the boolean's mere
@@ -1245,18 +1250,30 @@ PROFILES["refcv8-mapft"] = dict(
 #: The PI, 2026-10-27: "warm start from refcv8 EMA-48,852; perception FROZEN; planner + tactical heads TRAINED; the map
 #: head ALSO trained, with a precision-targeted loss; inputs unchanged from refcv8; a `refcv9-warm` profile may be added
 #: to launch_gate.py; Thor cap 48 h". = refcv8's profile (every refcv8 rule still binds: the architecture, the data, the
-#: recipe values) with `--r9-train-only planner,map` REQUIRED, the warm start bound by CONTENT to the shipped EMA model
-#: (the map-only route's machinery, `map_only` below), the instruments that read frozen gradients refused, the map
-#: precision term and the GT-in-pool schedule (H-R9-ALLOC-ORACLE-1) required, R9-PF (a separate stage) forbidden.
+#: recipe values) with `--r9-train-only planner,tactical,map` REQUIRED, the warm start bound by CONTENT to the shipped
+#: EMA model (the map-only route's machinery, `map_only` below), the instruments that read frozen gradients refused,
+#: the map precision term and the GT-in-pool schedule (H-R9-ALLOC-ORACLE-1) required, R9-PF (a separate stage)
+#: forbidden. MM 2026-10-27 (round 3): R9W-TACTICAL / -EMIT-START / -TF-RESTART / -SCHEDULE CLOSED as rules below.
 _R9W_FLAG = "--r9-train-only"
-#: the trainable sets, as the argv literal (map_only_ft.TRAIN_ONLY_SETS: planner = core.decoder, map = the 3 modules)
-_R9W_SETS = "planner,map"
-#: the trainable modules -- LITERALS (the trainer's map_only_ft.modules_of_sets(("planner", "map")) is checked against
-#: them, never read). `core.decoder` = EXACTLY what `_mapft_inject`'s `mapft_planner_trainable` arm un-freezes
-_R9W_MODULES = ("core.decoder", "_map_hires.refine", "_map_hires.near", "_map_hires.near_refine")
-#: the trainable leaf groups and their sizes on the REAL refcv8-r101-s0 build, MEASURED 2026-10-27 (CPU,
-#: `refcv7_loader.build_model` on ckpt_ema_48852.pt, strict load, G-DVB clean): 111 groups = 99 of core.decoder (186
-#: tensors, 15,365,801 values) + the 12 map-only groups of `_MAPFT_GROUPS` (18 tensors, 105,032 values)
+#: the trainable sets, as the argv literal (map_only_ft.TRAIN_ONLY_SETS, canonical order)
+_R9W_SETS = "planner,tactical,map"
+#: the trainable modules -- LITERALS (the trainer's map_only_ft.modules_of_sets(...) is checked against them, never
+#: read): planner = core.decoder (what `_mapft_inject`'s `mapft_planner_trainable` arm un-freezes); tactical = the
+#: eleven tactical-branch modules (map_only_ft's docstring says why each is tactical and which neighbours are not);
+#: map = the three map-only modules
+_R9W_TACTICAL = ("phi_tac", "nav_to_tac", "lat_head_tac", "lon_head_tac", "tac_goal_head", "tac_latent_proj",
+                 "tac_decoder_v6", "tac_behaviour_gate_v6", "core.tactical_trunk", "core.lat_head", "core.lon_head")
+_R9W_MODULES = ("core.decoder",) + _R9W_TACTICAL + ("_map_hires.refine", "_map_hires.near", "_map_hires.near_refine")
+#: the DECLARED grad-unreachable subtrees INSIDE the sets on the refcv8 build (tanitad/models/_gradreach.py): FROZEN by
+#: the build, frozen by the freeze, out of the optimizer -- MEASURED 2026-10-27 on the REAL build (8 tensors, 111,710
+#: values): the sampler build's offset_head / control_head, --no-strategic's ctx_to_cond, --graft-tac8-prior's
+#: lat_to_anchor / lon_to_anchor. G-DVB holds the built model's declarations inside the sets EQUAL to this literal
+_R9W_DECLARED_FROZEN = ("core.decoder.control_head", "core.decoder.ctx_to_cond", "core.decoder.lat_to_anchor",
+                        "core.decoder.lon_to_anchor", "core.decoder.offset_head")
+#: the TRAINED leaf groups and their sizes on the REAL refcv8-r101-s0 build, MEASURED 2026-10-27 (CPU,
+#: `refcv7_loader.build_model` on ckpt_ema_48852.pt, strict load, G-DVB clean; F:/refcv9_code3 real_r8_probe_tip.json):
+#: 164 groups = 94 of core.decoder (178 tensors, 15,254,091 values; the 5 declared subtrees excluded) + 58 tactical
+#: (113 tensors, 5,476,306) + the 12 map-only groups of `_MAPFT_GROUPS` (18 tensors, 105,032)
 _R9W_GROUPS = {
     "core.decoder": 2, "core.decoder.feat_proj": 786_816, "core.decoder.traj_proj": 6528,
     "core.decoder.cond_proj": 49_536, "core.decoder.time_embed": 1152, "core.decoder.layers.0": 1,
@@ -1288,10 +1305,8 @@ _R9W_GROUPS = {
     "core.decoder.layers.3.cross_agent": 443_520, "core.decoder.layers.3.cross_agent.out_proj": 147_840,
     "core.decoder.layers.3.bev_wp": 1, "core.decoder.layers.3.bev_wp.attention_weights": 3080,
     "core.decoder.layers.3.bev_wp.value_proj": 37_248, "core.decoder.layers.3.bev_wp.output_proj": 147_840,
-    "core.decoder.conf_head": 385, "core.decoder.offset_head": 6160, "core.decoder.ctx_to_cond": 98_688,
-    "core.decoder.lat_to_anchor": 351, "core.decoder.lon_to_anchor": 351, "core.decoder.tac8_lat_to_anchor": 936,
-    "core.decoder.tac8_lon_to_anchor": 936, "core.decoder.tgt_proj": 196_992,
-    "core.decoder.tgt_film.to_scale_shift": 295_680, "core.decoder.control_head": 6160,
+    "core.decoder.conf_head": 385, "core.decoder.tac8_lat_to_anchor": 936, "core.decoder.tac8_lon_to_anchor": 936,
+    "core.decoder.tgt_proj": 196_992, "core.decoder.tgt_film.to_scale_shift": 295_680,
     "core.decoder.time_mlp.1": 591_360, "core.decoder.time_mlp.3": 590_208, "core.decoder.ego_to_cond": 12_672,
     "core.decoder.cascade.control_heads.0": 6160, "core.decoder.cascade.control_heads.1": 6160,
     "core.decoder.cascade.control_heads.2": 6160, "core.decoder.cascade.control_heads.3": 6160,
@@ -1302,63 +1317,71 @@ _R9W_GROUPS = {
     "core.decoder.r8_mod.proj.0": 13_824, "core.decoder.r8_mod.proj.1": 13_824, "core.decoder.r8_mod.proj.2": 13_824,
     "core.decoder.r8_mod.proj.3": 13_824, "core.decoder.r8_sel": 4, "core.decoder.r8_rc_to_cond": 1920,
     "core.decoder.r8_sub": 4, "core.decoder.r8_sub.mlp.0": 52_480, "core.decoder.r8_sub.mlp.2": 516,
-    "_map_hires.refine.inp.0": 2048, "_map_hires.refine.inp.1": 64, "_map_hires.refine.conv1": 9216,
-    "_map_hires.refine.norm1": 64, "_map_hires.refine.conv2": 9216, "_map_hires.refine.norm2": 64,
-    "_map_hires.refine.cls": 264, "_map_hires.near.lift": 32, "_map_hires.near.lift.proj": 65_568,
-    "_map_hires.near_refine.0.c1": 9216, "_map_hires.near_refine.0.n1": 64, "_map_hires.near_refine.0.c2": 9216}
-_R9W_NUMEL = 15_470_833
+    "core.tactical_trunk.0": 786_816, "core.lat_head": 1155, "core.lon_head": 1155, "phi_tac.in_proj": 524_544,
+    "phi_tac.blocks.0.conv1": 196_864, "phi_tac.blocks.0.conv2": 196_864, "phi_tac.blocks.1.conv1": 196_864,
+    "phi_tac.blocks.1.conv2": 196_864, "phi_tac.blocks.2.conv1": 196_864, "phi_tac.blocks.2.conv2": 196_864,
+    "phi_tac.norms.0": 512, "phi_tac.norms.1": 512, "phi_tac.norms.2": 512, "phi_tac.out.0": 131_584,
+    "phi_tac.out.2": 262_656, "nav_to_tac": 33_280, "lat_head_tac": 4104, "lon_head_tac": 4104,
+    "tac_decoder_v6.queries": 9728, "tac_decoder_v6.agent_in": 98_560, "tac_decoder_v6.bev_in": 24_832,
+    "tac_decoder_v6.source_code": 512, "tac_decoder_v6.kv_norm": 512, "tac_decoder_v6.layers.0.film.proj": 5632,
+    "tac_decoder_v6.layers.0.n1": 512, "tac_decoder_v6.layers.0.n2": 512, "tac_decoder_v6.layers.0.n3": 512,
+    "tac_decoder_v6.layers.0.self_attn": 197_376, "tac_decoder_v6.layers.0.self_attn.out_proj": 65_792,
+    "tac_decoder_v6.layers.0.cross_attn": 197_376, "tac_decoder_v6.layers.0.cross_attn.out_proj": 65_792,
+    "tac_decoder_v6.layers.0.ff.0": 263_168, "tac_decoder_v6.layers.0.ff.2": 262_400,
+    "tac_decoder_v6.layers.1.film.proj": 5632, "tac_decoder_v6.layers.1.n1": 512, "tac_decoder_v6.layers.1.n2": 512,
+    "tac_decoder_v6.layers.1.n3": 512, "tac_decoder_v6.layers.1.self_attn": 197_376,
+    "tac_decoder_v6.layers.1.self_attn.out_proj": 65_792, "tac_decoder_v6.layers.1.cross_attn": 197_376,
+    "tac_decoder_v6.layers.1.cross_attn.out_proj": 65_792, "tac_decoder_v6.layers.1.ff.0": 263_168,
+    "tac_decoder_v6.layers.1.ff.2": 262_400, "tac_decoder_v6.out_norm": 512, "tac_decoder_v6.validity_head": 257,
+    "tac_decoder_v6.conf_head": 257, "tac_decoder_v6.lat_head": 257, "tac_decoder_v6.lon_head": 257,
+    "tac_decoder_v6.r8_cons_lat": 514, "tac_decoder_v6.r8_cons_lon": 514, "tac_decoder_v6.r8_film.0.proj": 5632,
+    "tac_decoder_v6.r8_film.1.proj": 5632, "tac_decoder_v6.r8_v9_lat_c": 3084, "tac_decoder_v6.r8_v9_lon_c": 2570,
+    "tac_decoder_v6.r8_v9_speed": 1028, "tac_behaviour_gate_v6.proj": 2574, "tac_goal_head": 6156,
+    "tac_latent_proj": 262_656, "_map_hires.refine.inp.0": 2048, "_map_hires.refine.inp.1": 64,
+    "_map_hires.refine.conv1": 9216, "_map_hires.refine.norm1": 64, "_map_hires.refine.conv2": 9216,
+    "_map_hires.refine.norm2": 64, "_map_hires.refine.cls": 264, "_map_hires.near.lift": 32,
+    "_map_hires.near.lift.proj": 65_568, "_map_hires.near_refine.0.c1": 9216, "_map_hires.near_refine.0.n1": 64,
+    "_map_hires.near_refine.0.c2": 9216}
+_R9W_NUMEL = 20_835_429
 _R9W_SCHED_FLAG = "--r9-alloc-force-schedule"
 _R9W_MAPFP_FLAG = "--w-map-fp"
+#: R9W-SCHEDULE (MM 2026-10-27): forced with p 1.0 -> 0.0 linearly over the FIRST HALF of the run, 0.0 after; the end
+#: step is floor(--steps / 2) of THIS argv (`r9_schedule_reasons`)
+_R9W_SCHED_RULE = {"flag": _R9W_SCHED_FLAG, "kind": "linear", "p0": 1.0, "p1": 0.0, "start": 0,
+                   "end_of": "--steps", "end_div": 2}
+#: R9W-TF-RESTART (MM 2026-10-27): refcv8's GT-constraint teacher-forcing ratio is HELD at its end-of-run value.
+#: refcv8-r101-s0's config.json: --r8-tf-start 1.0 --r8-tf-end 0.25 --steps 48852, and refcv8_train.tf_ratio is linear
+#: over steps 0 .. steps-1, so the ratio of its LAST step (48,851) is exactly 0.25; start = end = 0.25 holds it there
+_R9W_TF_HOLD = "0.25"
 #: R9-PF is a SEPARATE stage-2 fit (REFCV9_INMODEL_DESIGN s1, S2): never in this run
 _R9W_PF_FLAGS = ("--r9-progress-head", "--r9-calib-stage", "--w-r9-prog", "--w-r9-regime", "--r9-decision",
                  "--r9-hidden", "--r9-decel-tau", "--r9-seed")
 _R9W_OPEN_ITEMS = (
-    {"id": "R9W-TACTICAL",
-     "what": "the PI's 2026-10-27 decision says 'planner + TACTICAL HEADS trained'; `--r9-train-only planner,map` trains "
-             "core.decoder (+ the map) ONLY. MEASURED on the real refcv8 build: the tactical heads are OUTSIDE "
-             "core.decoder and stay FROZEN under this argv -- tac_decoder_v6 (72 tensors, 2,272,802), phi_tac (24, "
-             "2,101,504), core.tactical_trunk (2, 786,816), tac_latent_proj (2, 262,656), tac_goal_head (2, 6,156), "
-             "lat_head_tac / lon_head_tac (2 + 2, 4,104 each), core.lat_head / core.lon_head (2 + 2, 1,155 each), "
-             "tac_behaviour_gate_v6 (1, 2,574), nav_to_tac (2, 33,280). The DRAFT prereg's 'planner + tactical heads = "
-             "the arm's set' is therefore not what the arm's set is",
-     "owner": "the Master Mind (model design: a `tactical` set as a literal module list in map_only_ft.TRAIN_ONLY_SETS "
-              "+ this profile's _R9W_MODULES / _R9W_GROUPS / _R9W_NUMEL, or a PI ruling that the decoder alone is meant)",
-     "closes_when": "the trained set matches the PI's wording, or the PI rules that `planner,map` is the intended set"},
     {"id": "R9W-BUDGET",
      "what": "--steps / --warmup / --ema-decay / --eval-every are not fixed: refcv8's full-run literals (48,852 / 1,000 / "
              "0.9998 / 500) are NOT inherited. PI 2026-10-27: Thor cap 48 h; N from the 50-step smoke (this gate's "
              "G-LIVE `cost` row) by the MAPFT rule form, N = min(Nmax, floor(0.85 x (cap - smoke - 1800) / s_step)); "
-             "DRAFT prereg: --warmup 200, --lr 1e-4, EMA horizon N/10",
-     "owner": "the Master Mind (sizing from the measured s/step; the PI's 48 Thor-hour cap binds)",
+             "DRAFT prereg: --warmup 200, --lr 1e-4, EMA horizon N/10. The schedule rule then reads its end step "
+             "floor(N / 2) off the same --steps",
+     "owner": "the operator, from the smoke (the PI's 48 Thor-hour cap binds)",
      "closes_when": "the literals are written here, or closed open-only as MAPFT-BUDGET was (the token's argv sha256 pins N)"},
-    {"id": "R9W-SCHEDULE",
-     "what": "the --r9-alloc-force-schedule literal: DRAFT prereg 'forced with probability 1.0 -> 0.0 linearly over the "
-             "first half of the run, 0.0 after' = `linear:1.0:0.0:0:<N//2>` (or <warmup> as the start) -- needs N",
-     "owner": "the Master Mind / PI", "closes_when": "the literal is written into required_values"},
     {"id": "R9W-MAP-FP-WEIGHT",
-     "what": "the --w-map-fp literal: DRAFT prereg s5 'the weight w of the map term fixed from the smoke's loss scales "
-             "(stated, not tuned on eval)'; this profile requires it present and positive only",
-     "owner": "the Master Mind (from this gate's smoke rows: `map_hires` vs `map_fp`)",
+     "what": "the --w-map-fp literal, fixed from the smoke's loss scales (stated, not tuned on eval) by the MM's RULE "
+             "(2026-10-27): w = 0.1 x map_hires / map_fp at the smoke's FIRST LOGGED step, rounded to ONE significant "
+             "figure; this profile requires it present and positive until then",
+     "owner": "the operator, from this gate's smoke rows (`map_hires`, `map_fp`)",
      "closes_when": "the literal is written into required_values"},
-    {"id": "R9W-TF-RESTART",
-     "what": "refcv8's constraint teacher-forcing schedule RESTARTS on a warm start: tf_ratio(step, steps, 1.0, 0.25) "
-             "begins at 1.0 again although refcv8 ended at 0.25 (refc_v3_train.py, the per-step r8 block); decide "
-             "--r8-tf-start / --r8-tf-end explicitly (e.g. 0.25 / 0.25 = continue where refcv8 ended)",
-     "owner": "the Master Mind", "closes_when": "both literals are in required_values"},
-    {"id": "R9W-EMIT-START",
-     "what": "the inherited --r8-alloc-emit-start 1000 re-runs refcv8's emission-OFF phase for 1,000 steps on a model "
-             "that already emits its allocated extras; decide 0, or keep 1000 deliberately",
-     "owner": "the Master Mind", "closes_when": "the literal is decided here"},
 )
 _r9w_drop = set(_MAPFT_B1) | {"--grad-share-every"}
-#: G-LIVE's admitted dead groups, DERIVED FROM THE FROZEN SET: refcv8's rows whose group is INSIDE the trainable modules
-#: (a frozen group is not in the optimizer, so neither G-LIVE nor the supervisor's zero-gradient gate reads it) + ONE
-#: parameter the supervisor reads by name: core.decoder.r8_rc_gate (zero-init scalar applied only when r8['rc'] is not
-#: None -- refc.py `_r8t + self.r8_rc_gate * ...`; --r8-no-rc feeds none). MEASURED on NT A1 (2026-10-26): it was the
-#: one offender of the supervisor's gate outside the admitted groups. Its G-LIVE leaf group `core.decoder` is live
-#: (navc_gate trains), so the row admits nothing there; zerograd_allow_from_gate.py turns it into the exact allow pattern.
+#: G-LIVE's admitted dead groups, RE-DERIVED for planner,tactical,map (MM 2026-10-27): refcv8's rows whose group is
+#: TRAINED here -- inside the sets and NOT a declared subtree (a declared group is frozen and out of the optimizer, so
+#: neither G-LIVE nor the supervisor's zero-gradient gate reads it: ctx_to_cond / lat_to_anchor / lon_to_anchor drop
+#: out) -- + ONE parameter the supervisor reads by name: core.decoder.r8_rc_gate (zero-init scalar applied only when
+#: r8['rc'] is not None; --r8-no-rc feeds none; MEASURED on NT A1 2026-10-26 as the one offender outside the admitted
+#: groups; its leaf group `core.decoder` is live through navc_gate). refcv8 admits NO tactical group: none is dead.
 _R9W_LIVE_DEAD = tuple(r for r in _R8["live_dead_admitted"]
-                       if any(r[0] == m or r[0].startswith(m + ".") for m in _R9W_MODULES)) + (
+                       if any(r[0] == m or r[0].startswith(m + ".") for m in _R9W_MODULES)
+                       and not any(r[0] == d or r[0].startswith(d + ".") for d in _R9W_DECLARED_FROZEN)) + (
     ("core.decoder.r8_rc_gate", "--r8-no-rc",
      "the route-checkpoint bearing gate (zero-init); refc.py applies it only when r8['rc'] is not None, and --r8-no-rc "
      "(PI Q-A 2026-10-11) feeds none -- exactly zero gradient by construction"),)
@@ -1370,24 +1393,48 @@ PROFILES["refcv9-warm"] = dict(
     #: must prove about the box head is that it does NOT move: G-LIVE's bit identity of every frozen tensor (map_only
     #: below), the RED arms and the trainer's FrozenStateGuard. G-MAP-OVERFIT stays required: the map head trains.
     required_checks=tuple(c for c in _R8["required_checks"] if c != "G-BOX-OVERFIT"),
+    #: B5 (launch-kit dry-run, MM 2026-10-27): the Thor env-failure pin is refcv8-mapft's OWN copy -- the SAME file and
+    #: sha256 literal, read by the SAME mechanism (`env_failure_pin`: the file ships in the tree, its sha256 must equal
+    #: this literal). refcv9-warm runs the map fine-tune's tree on the same Thor, so the shared list (168 ids, 35 files)
+    #: would read the 160 v8f-mini ENV ids it lacks as failures; the mapft copy carries them (328 ids, 40 files). Its
+    #: pinned v8f files run on the dev box too, so refcv8-mapft's one registered skip is registered here as well
+    suite_env_failures=("stack/ops/launch_gate_thor_env_failures_mapft.json",
+                        "1af7c5dd7e45b31f0f419e992764d31a20f72e743d55c5b971f4c79162ef02f9"),
+    suite_pinned_skip_ok=tuple(_R8["suite_pinned_skip_ok"]) + (
+        (r"tests\.test_v8f_kindx_s1::test_the_running_kscore_chain_is_the_one_in_the_tree",
+         r"^(the export the running chain was launched from is gone|box2_ship is not on this machine)$"),),
     required_flags=tuple(f for f in _R8["required_flags"] if f not in _r9w_drop) + (
-        _R9W_FLAG, "--conflict-detector", _R9W_MAPFP_FLAG, _R9W_SCHED_FLAG, "--r9-alloc-force-seed"),
+        _R9W_FLAG, "--conflict-detector", _R9W_MAPFP_FLAG, _R9W_SCHED_FLAG, "--r9-alloc-force-seed",
+        "--r8-alloc-emit-start", "--r8-tf-start", "--r8-tf-end", "--steps"),
     required_flags_why=dict({k: v for k, v in (_R8.get("required_flags_why") or {}).items() if k not in _r9w_drop}, **{
-        _R9W_FLAG: "PI 2026-10-27: perception FROZEN; the planner (core.decoder) and the map head trained",
+        _R9W_FLAG: "PI 2026-10-27: perception FROZEN; the planner (core.decoder), the tactical heads and the map head "
+                   "trained",
         "--init-from": "PI 2026-10-27: the warm start IS refcv8 EMA-48,852 (md5 bound by map_only below)",
         "--conflict-detector": "the detector reads trunk gradients; the trunk is FROZEN (`off`, required by value)",
         _R9W_MAPFP_FLAG: "PI 2026-10-27: the map head is trained WITH a precision-targeted term (value: R9W-MAP-FP-WEIGHT)",
-        _R9W_SCHED_FLAG: "H-R9-ALLOC-ORACLE-1: the predicted-only pool inference sees, in training (value: R9W-SCHEDULE)",
-        "--r9-alloc-force-seed": "the schedule's PRIVATE per-(seed, step) coin stream, written as a literal"}),
+        _R9W_SCHED_FLAG: "H-R9-ALLOC-ORACLE-1: the predicted-only pool inference sees, in training (form: "
+                         "r9_schedule_reasons)",
+        "--r9-alloc-force-seed": "the schedule's PRIVATE per-(seed, step) coin stream, written as a literal",
+        "--steps": "the schedule's end step is floor(--steps / 2) (value: R9W-BUDGET)"}),
     required_values=dict({k: v for k, v in _R8["required_values"].items() if k not in set(_MAPFT_B1) | set(_MAPFT_BUDGET)},
-                         **{"--conflict-detector": "off", _R9W_FLAG: _R9W_SETS, "--r9-alloc-force-seed": "20261027"}),
+                         **{"--conflict-detector": "off", _R9W_FLAG: _R9W_SETS, "--r9-alloc-force-seed": "20261027",
+                            "--r8-alloc-emit-start": "0", "--r8-tf-start": _R9W_TF_HOLD,
+                            "--r8-tf-end": _R9W_TF_HOLD}),
     required_values_why=dict({k: v for k, v in (_R8.get("required_values_why") or {}).items()
                               if k not in set(_MAPFT_B1) | set(_MAPFT_BUDGET)}, **{
         "--conflict-detector": "PI 2026-10-27: perception frozen, no trunk gradient exists to measure",
-        _R9W_FLAG: "PI 2026-10-27; the sets' modules are map_only_ft.TRAIN_ONLY_SETS (planner = core.decoder)",
-        "--r9-alloc-force-seed": "refcv9_alloc_force.DEFAULT_SEED (a literal, not re-derived)"}),
+        _R9W_FLAG: "PI 2026-10-27 + R9W-TACTICAL closed (MM 2026-10-27): planner + tactical heads + map head trained; "
+                   "the sets' modules are map_only_ft.TRAIN_ONLY_SETS",
+        "--r9-alloc-force-seed": "refcv9_alloc_force.DEFAULT_SEED (a literal, not re-derived)",
+        "--r8-alloc-emit-start": "R9W-EMIT-START closed (MM 2026-10-27): refcv8 emitted its allocated candidates from "
+                                 "step 1,000 to its end, so the warm start emits them from step 0 -- a start >= 1 "
+                                 "would HIDE them; the trainer admits 0 under --r9-train-only only",
+        "--r8-tf-start": "R9W-TF-RESTART closed (MM 2026-10-27): refcv8's ratio at its last step, tf_ratio(48851, 48852, "
+                         "1.0, 0.25) = 0.25 exactly, HELD (start = end)",
+        "--r8-tf-end": "R9W-TF-RESTART closed: start = end = 0.25 is the constant ratio refcv8 ended at"}),
     required_positive=tuple(_R8["required_positive"]) + (_R9W_MAPFP_FLAG,),
-    forbidden_levers=tuple(_R8["forbidden_levers"]) + (
+    #: refcv8's own refusal of --r9-train-only is the one entry NOT inherited (this IS that profile)
+    forbidden_levers=tuple(e for e in _R8["forbidden_levers"] if _R9W_FLAG not in e[0]) + (
         (_MAPFT_B1, "the B1 guard cuts the HEAD group's LR on the EMA box3d AP: the box head is FROZEN (perception) and "
                     "there is no head / encoder group to cut"),
         (_MAPFT_GS, "the gradient-share instrument measures the trunk / bev025 / bev_pool groups, all FROZEN"),
@@ -1400,10 +1447,12 @@ PROFILES["refcv9-warm"] = dict(
     #: ga-reach: the map-only parts must be > 0 (they train); the SHARED map parts must read EXACTLY 0.0 (frozen)
     map_hires=dict(_R8["map_hires"], ga_keys=("ga_mh_refine", "ga_mh_near", "ga_mh_near_refine"),
                    ga_keys_zero=("ga_mh_lift", "ga_mh_encoder", "ga_mh_trunk_s8_stage")),
-    #: the train-only literals G-DVB (built set) / G-LIVE (gradients + frozen bit identity) / the argv rules (init md5)
-    #: read -- the map-only route's machinery, keyed by THIS profile's flag, modules, groups and numel
+    #: the train-only literals G-DVB (built set + declared subtrees) / G-LIVE (gradients + frozen bit identity) / the
+    #: argv rules (init md5) read -- the map-only route's machinery, keyed by THIS profile's literals
     map_only={"flag": _R9W_FLAG, "modules": _R9W_MODULES, "groups": dict(_R9W_GROUPS),
-              "numel": _R9W_NUMEL, "init_from_md5": _MAPFT_INIT_MD5},
+              "numel": _R9W_NUMEL, "init_from_md5": _MAPFT_INIT_MD5, "declared_frozen": _R9W_DECLARED_FROZEN},
+    #: R9W-SCHEDULE (MM 2026-10-27): the schedule's literal form, its end step read off THIS argv's --steps
+    alloc_force_rule=dict(_R9W_SCHED_RULE),
 )
 
 
@@ -2593,6 +2642,10 @@ def map_only_init_reasons(prof: dict, argv: list[str],
     return [], det
 
 
+#: `tanitad.models._gradreach.GRAD_UNREACHABLE_FLAG`, read BY NAME (a test holds the two equal)
+_GRAD_UNREACHABLE_ATTR = "_tanitad_grad_unreachable"
+
+
 def map_only_built_reasons(prof: dict, argv: list[str], model) -> tuple[list[str], dict]:
     """G-DVB, the gate's OWN read of the BUILT model under the map-only profile: the trainable set is EXACTLY the
     profile's literal leaf groups at their literal sizes (refcv8: 12 groups, 105,032 values), every one of them
@@ -2603,18 +2656,33 @@ def map_only_built_reasons(prof: dict, argv: list[str], model) -> tuple[list[str
     if model is None or not callable(getattr(model, "named_parameters", None)):
         return ["MAP-ONLY: no built model to read the freeze off"], {"on": True}
     mods = tuple(mo["modules"])
+    decl = tuple(mo.get("declared_frozen") or ())
     tr = [(n, int(p.numel())) for n, p in model.named_parameters() if p.requires_grad]
     groups: dict[str, int] = {}
     for n, k in tr:
         g = n.rsplit(".", 1)[0] if "." in n else n
         groups[g] = groups.get(g, 0) + k
     outside = [n for n, _ in tr if not _under_any(n, mods)]
-    frozen_map = [n for n, p in model.named_parameters() if _under_any(n, mods) and not p.requires_grad]
+    frozen_map = [n for n, p in model.named_parameters()
+                  if _under_any(n, mods) and not _under_any(n, decl) and not p.requires_grad]
+    # the build's OWN declarations inside the modules (the module attribute `_gradreach.GRAD_UNREACHABLE_FLAG`, read by
+    # name: this check is independent of the trainer's map_only_ft) must be EXACTLY the profile's literal, and frozen
+    built_decl = sorted(n for n, m in model.named_modules()
+                        if getattr(m, _GRAD_UNREACHABLE_ATTR, None) and _under_any(n, mods))
+    undead = [n for n, p in model.named_parameters() if _under_any(n, decl) and p.requires_grad]
     det = {"on": True, "trainable_numel": int(sum(k for _, k in tr)), "trainable_groups": groups,
-           "outside_sample": outside[:5], "n_outside": len(outside), "frozen_map_only_sample": frozen_map[:5]}
+           "outside_sample": outside[:5], "n_outside": len(outside), "frozen_map_only_sample": frozen_map[:5],
+           "declared_frozen_built": built_decl}
     reasons = []
     if not has_flag(argv, mo["flag"]):
         reasons.append(f"MAP-ONLY: {mo['flag']} is not in the argv")
+    if built_decl != sorted(decl):
+        reasons.append(f"MAP-ONLY: the build's declared grad-unreachable subtrees inside the trained modules are "
+                       f"{built_decl}; the profile's literal is {sorted(decl)} -- a declaration would hide a trained "
+                       f"group, or a dead one would be trained")
+    if undead:
+        reasons.append(f"MAP-ONLY: {len(undead)} DECLARED grad-unreachable parameter(s) are trainable again, e.g. "
+                       f"{undead[:3]}")
     if outside:
         reasons.append(f"MAP-ONLY: {len(outside)} parameter(s) OUTSIDE {list(mods)} are trainable, e.g. {outside[:3]} "
                        f"-- the planner would train")
@@ -2806,7 +2874,44 @@ def profile_argv_rules(prof: dict, argv: list[str], options: dict | None = None,
     refusals += required_on_reasons(prof, argv)[0]
     refusals += amendment_ack_reasons(prof, pmap)[0]
     refusals += map_only_init_reasons(prof, argv, pmap)[0]
+    refusals += r9_schedule_reasons(prof, argv)[0]
     return refusals, pi_pending_reasons(prof, argv)
+
+
+def r9_schedule_reasons(prof: dict, argv: list[str]) -> tuple[list[str], dict]:
+    """R9W-SCHEDULE (MM 2026-10-27): the profile's `alloc_force_rule` -- the GT-in-pool schedule is
+    `linear:<p0>:<p1>:<start>:<end>` with the profile's p0 / p1 / start and end = floor(<end_of> / end_div) of THIS argv
+    (refcv9-warm: linear:1.0:0.0:0:floor(--steps / 2)). Numbers compared as numbers, the form exactly. Inert without
+    the rule."""
+    ru = prof.get("alloc_force_rule")
+    if not ru:
+        return [], {"on": False}
+    f = ru["flag"]
+    det: dict[str, Any] = {"on": True, "rule": dict(ru)}
+    v, n = flag_values(argv, f), flag_values(argv, ru["end_of"])
+    if not v or not n:
+        return [f"R9W-SCHEDULE: {f} and {ru['end_of']} are both required (the end step is "
+                f"floor({ru['end_of']} / {ru['end_div']}))"], det
+    try:
+        end = int(n[0]) // int(ru["end_div"])
+    except ValueError:
+        return [f"R9W-SCHEDULE: {ru['end_of']} {n[0]!r} is not an integer"], det
+    want = f"{ru['kind']}:{ru['p0']}:{ru['p1']}:{ru['start']}:{end}"
+    det.update(value=v[0], want=want, end=end)
+    parts = str(v[0]).split(":")
+    ok = len(parts) == 5 and parts[0] == ru["kind"]
+    if ok:
+        try:
+            ok = (float(parts[1]) == float(ru["p0"]) and float(parts[2]) == float(ru["p1"])
+                  and parts[3].lstrip("-").isdigit() and int(parts[3]) == int(ru["start"])
+                  and parts[4].lstrip("-").isdigit() and int(parts[4]) == end)
+        except ValueError:
+            ok = False
+    det["ok"] = bool(ok)
+    if not ok:
+        return [f"R9W-SCHEDULE: {f} {v[0]!r} is not the rule's {want!r} (p {ru['p0']} -> {ru['p1']} from step "
+                f"{ru['start']} to floor({ru['end_of']} {n[0]} / {ru['end_div']}) = {end})"], det
+    return [], det
 
 
 def open_item_reasons(prof: dict) -> list[str]:
@@ -4279,6 +4384,11 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
     state: dict[str, Any] = {"model": None, "opt": None, "names": {}, "dpos": None}
     # refcv8-mapft (PI D-R9-MAPHEAD-PRECISION): frozen-gradient + frozen-state record (None on any other profile)
     mo_mods = tuple((ctx.prof.get("map_only") or {}).get("modules") or ())
+    # refcv9-warm: the declared grad-unreachable subtrees INSIDE the modules are frozen too (none on refcv8-mapft)
+    mo_decl = tuple((ctx.prof.get("map_only") or {}).get("declared_frozen") or ())
+
+    def mo_is_frozen(n_):
+        return not _under_any(n_, mo_mods) or _under_any(n_, mo_decl)
     if mo_mods:
         rec["map_only"] = {"opt_steps": 0, "frozen_grad_nz": {}, "n_frozen_params_tracked": 0,
                            "n_frozen_tensors_checked": 0, "frozen_changed": [], "arm": None}
@@ -4447,7 +4557,7 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
         orig_step = opt.step
         if mo_mods:
             # EVERY parameter outside the map-only modules, by name, fixed here -- whatever is trainable later
-            state["mo_frozen"] = [(n_, p_) for n_, p_ in model.named_parameters() if not _under_any(n_, mo_mods)]
+            state["mo_frozen"] = [(n_, p_) for n_, p_ in model.named_parameters() if mo_is_frozen(n_)]
             rec["map_only"]["n_frozen_params_tracked"] = len(state["mo_frozen"])
 
         def step_wrap(*a, **k):
@@ -4491,7 +4601,7 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
         if model.training and mo_mods and "mo_snap" not in state:
             # the frozen state AFTER the warm start / resume, BEFORE the first update (digests, CPU)
             state["mo_snap"] = {k_: tensor_digest(v_) for k_, v_ in model.state_dict().items()
-                                if not _under_any(k_, mo_mods)}
+                                if mo_is_frozen(k_)}
         if model.training:
             if snapshot == "post_load" and "post_load" not in rec:
                 rec["post_load"] = {"model": state_digests(model.state_dict()),
@@ -4596,7 +4706,7 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
     if mo_mods and state["model"] is not None and state.get("mo_snap") is not None:
         # BEFORE the grad-unreachable probe below (it runs one more training forward + backward)
         now = {k_: tensor_digest(v_) for k_, v_ in state["model"].state_dict().items()
-               if not _under_any(k_, mo_mods)}
+               if mo_is_frozen(k_)}
         rec["map_only"]["n_frozen_tensors_checked"] = len(state["mo_snap"])
         rec["map_only"]["frozen_changed"] = sorted(k_ for k_, d_ in state["mo_snap"].items() if now.get(k_) != d_)
     if snapshot == "final" and state["model"] is not None:

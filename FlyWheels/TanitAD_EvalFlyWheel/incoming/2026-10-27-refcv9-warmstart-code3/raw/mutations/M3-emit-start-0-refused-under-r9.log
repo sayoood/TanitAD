@@ -1,0 +1,460 @@
+FF                                                                       [100%]
+================================== FAILURES ===================================
+________ test_R9W_EMIT_START_zero_is_admitted_under_the_r9_freeze_only ________
+
+    def test_R9W_EMIT_START_zero_is_admitted_under_the_r9_freeze_only():
+>       assert _pin8(_ON8 + ["--r8-alloc-emit", "--r8-alloc-emit-start", "0"] + _R9PT).emit_start == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_r9_train_only.py:612: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+tests\test_r9_train_only.py:607: in _pin8
+    T._pin_refcv8(cfg, args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cfg = namespace(refcv8=R8Config(enable=True, modulate_base=True, base_constraints=False, n_alloc=8, alloc_top_k=4, alloc_min..., speed_input='', v9_cons=False, w_v9_cons=0.0, emit_start=0, speed_enc8=False, critic_drivable=False, w_drivable=0.0))
+args = Namespace(size='small', arm='hier', data_root=None, v2_cache=None, prefetch_factor=1, u8_batches=False, eval_cache=Non...args=False, nav_from_v7=False, goal_point_inject=False, goal_point_geo_prior=False, goal_point_t=4.0, goal_point_w=0.0)
+
+    def _pin_refcv8(cfg, args) -> None:
+        """refcv8 WP-B (DESIGN.md sec. 3) -- argv -> cfg.refcv8, with refusals that fire before config.json."""
+        _pin_ema_guard(args)
+        _mof.pin_args(args)          # PI D-R9-MAPHEAD-PRECISION: --r8-train-only-map's refusals (a no-op when off)
+        #                              refcv9 warm start: --r9-train-only's refusals (the same machinery; a no-op when off)
+        _mfp.pin_args(args)          # refcv9 warm start: --w-map-fp's refusals (a no-op at the default 0)
+        _gse = int(getattr(args, "grad_share_every", 0) or 0)
+        if _gse < 0 or (_gse > 0 and _gse % max(1, int(getattr(args, "log_every", 50) or 50)) != 0):
+            raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
+                             f"{getattr(args, 'log_every', 50)}: a reading taken on a step that is not logged is "
+                             f"computed and thrown away")
+        try:
+            _gs_keep_pin = _gshare.parse_keep(getattr(args, "grad_share_terms", None))
+        except ValueError as e:
+            raise SystemExit(f"[refcv8] --grad-share-terms: {e}")
+        if _gs_keep_pin is not None and _gse == 0:
+            raise SystemExit("[refcv8] --grad-share-terms names terms but --grad-share-every is 0: the instrument is off, "
+                             "so the flag would be recorded in config.json and do nothing")
+        try:
+            _gshare.parse_at(getattr(args, "grad_share_at", None), _gse, int(getattr(args, "steps", 0) or 0))
+        except ValueError as e:
+            raise SystemExit(f"[refcv8] --grad-share-at: {e}")
+        if bool(getattr(args, "smoke_seed_ego_frames", False)) and int(getattr(args, "steps", 0) or 0) > 100:
+            raise SystemExit("[v3] --smoke-seed-ego-frames is a SMOKE flag (it adds an extra, hand-picked batch): "
+                             "refused above --steps 100")
+        if not bool(getattr(args, "refcv8", False)):
+            # SPEC_WPB_LADDER sec. 1 (registered): EVERY arm, V0 included, feeds the past-only N2 with the trained unknown
+            # row. Without --refcv8 that is a SPEED-ONLY mode: the v9 release is joined for its input column alone (the
+            # arm's own labels stay its targets); every other refcv8 flag stays a dead flag.
+            _so = getattr(args, "r8_speed_input", None)
+            _spd_ok = (("r8_speed_input", "r8_speed_unknown_p", "r8_roll_speed_input", "r8_v9_labels",
+                        "r8_v9_labels_eval") if _so else ())
+            for k in ("r8_n_alloc", "w_r8_listwise", "w_r8_sat", "w_r8_subscore", "w_r8_cons", "w_r8_alloc_l1",
+                      "r8_prior_free_group",
+                      "r8_lat_prior_dropout", "r8_v9_labels", "r8_v9_labels_eval", "r8_nav_from_v9",
+                      "r8_no_rc", "r8_derange_feed", "r8_rc_roll", "r8_roll_targets",
+                      "r8_speed_input", "r8_speed_unknown_p", "r8_roll_speed_input", "w_r8_v9_cons",
+                      "r8_alloc_emit_start", "r8_speed_enc8", "r8_critic_drivable", "w_r8_drivable"):
+                if k in _spd_ok:
+                    continue
+                v = getattr(args, k, None)
+                if v not in (None, False, 0, 0.0):
+                    raise SystemExit(f"[refcv8] --{k.replace('_', '-')} without --refcv8: a dead flag (refused)")
+            if _so:
+                _side = [f for f in ("speed_max_sidecar_v6", "speed_max_sidecar_v6_eval") if getattr(args, f, None)]
+                _label = str(_so) == r8train.R8_SPEED_LABEL
+                if _side and not _label:       # PI 2026-10-11: the `label` source IS the sidecar; n2 / n3 still refuse it
+                    raise SystemExit("[refcv8] ⛔ X3: --r8-speed-input with the v8 FUTURE-MAX sidecar (--%s): one channel, "
+                                     "one source, and the sidecar is the oracle (D4 LEAK 0.238)"
+                                     % " / --".join(f.replace("_", "-") for f in _side))
+                if not bool(getattr(args, "max_speed_input_v6", False)):
+                    raise SystemExit("[refcv8] --r8-speed-input names the SOURCE of the 4-way set-speed channel; the "
+                                     "channel itself is --max-speed-input-v6 (pass both)")
+                if _label:
+                    _pin_r8_label_source(args)
+                else:
+                    if not getattr(args, "r8_v9_labels", None):
+                        raise SystemExit("[refcv8] --r8-speed-input reads the v9 release's past-only column: pass "
+                                         "--r8-v9-labels")
+                    if getattr(args, "eval_cache", None) and not getattr(args, "r8_v9_labels_eval", None):
+                        raise SystemExit("[refcv8] --r8-speed-input with an --eval-cache but no --r8-v9-labels-eval: the "
+                                         "eval split would have no past-only speed source")
+                _sp = getattr(args, "r8_speed_unknown_p", None)
+                if _sp is not None and not 0.0 < float(_sp) < 1.0:
+                    raise SystemExit(f"[refcv8] --r8-speed-unknown-p {_sp} must be in (0, 1): the unknown row is a "
+                                     f"TRAINED input (X3) and a known row must exist")
+                if bool(getattr(args, "r8_roll_speed_input", False)) and int(getattr(args, "batch", 0) or 0) < 2:
+                    raise SystemExit("[refcv8] --r8-roll-speed-input needs --batch >= 2 (a roll over one row is the "
+                                     "identity)")
+                cfg.refcv8.speed_input = str(_so)
+            return
+        if args.arm != "hier" or not bool(getattr(args, "tac_decoder_v6", False)):
+            raise SystemExit("[refcv8] --refcv8 needs --arm hier and --tac-decoder-v6 (the conditioning reads the "
+                             "behaviour decoder)")
+        if str(getattr(args, "sampler", "none")) != "ddim":
+            raise SystemExit("[refcv8] --refcv8 conditions the DDIM sampler; pass --sampler ddim")
+        if bool(getattr(args, "refcv7", False)):
+            raise SystemExit("[refcv8] --refcv8 with --refcv7 (WTA + scorer): two re-rankers, not attributable")
+        if float(args.r8_rc_dropout) < r8train.RC_DROPOUT_MIN:
+            raise SystemExit(f"[refcv8] --r8-rc-dropout {args.r8_rc_dropout} < {r8train.RC_DROPOUT_MIN} "
+                             f"(MM binding 2026-10-04)")
+        if not (0.0 < float(args.r8_nav_args_dropout) < 1.0):
+            raise SystemExit("[refcv8] --r8-nav-args-dropout must be in (0, 1): NavSim-legal agents get the bare "
+                             "command only, so the model must train with 'unknown distance/time' rows")
+        # ---- the v9 release (WP-A INTEGRATION.md; MM binding 2026-10-04 items 1-6) ----------------------------- #
+        if getattr(args, "r8_v9_labels", None) or getattr(args, "r8_v9_labels_eval", None):
+            r8train._v9()                     # the reader must be in this tree (SystemExit names it otherwise)
+        if getattr(args, "r8_v9_labels_eval", None) and not getattr(args, "r8_v9_labels", None):
+            raise SystemExit("[refcv8] ⛔ --r8-v9-labels-eval without --r8-v9-labels: the eval would score v9 "
+                             "targets the model was never trained on")
+        if (getattr(args, "r8_v9_labels", None) and getattr(args, "eval_cache", None)
+                and not getattr(args, "r8_v9_labels_eval", None)):
+            raise SystemExit("[refcv8] ⛔ --r8-v9-labels with an --eval-cache but no --r8-v9-labels-eval: train and "
+                             "eval would be supervised by two different label releases (v9 vs v7.2)")
+        # ---- the deliberate-regression arms' flags (SPEC_WPB_LADDER sec. 2): training-only, roll-by-one, no RNG ---- #
+        _regr = [k for k in ("r8_derange_feed", "r8_rc_roll", "r8_roll_targets", "r8_roll_speed_input")
+                 if getattr(args, k, None)]
+        if _regr and int(getattr(args, "batch", 0) or 0) < 2:
+            raise SystemExit("[refcv8] ⛔--%s needs --batch >= 2: a roll by one row over a batch of one is "
+                             "the identity, so the regression arm would be the treatment arm" % " / --".join(
+                                 k.replace("_", "-") for k in _regr))
+        if bool(getattr(args, "r8_rc_roll", False)) and (not getattr(args, "r8_v9_labels", None)
+                                                           or bool(getattr(args, "r8_no_rc", False))):
+            raise SystemExit("[refcv8] ⛔--r8-rc-roll needs a route checkpoint to roll (--r8-v9-labels, "
+                             "and not --r8-no-rc)")
+        _rt = getattr(args, "r8_roll_targets", None)
+        if _rt == "map" and not (str(getattr(args, "map_hires", "off")) == "on"
+                                  and float(getattr(args, "w_map_hires", 0.0) or 0.0) > 0.0):
+            raise SystemExit("[refcv8] ⛔--r8-roll-targets map needs --map-hires on with --w-map-hires > 0 "
+                             "(no 10 cm map target to roll)")
+        if _rt == "tac" and not float(getattr(args, "w_tac_v6", 0.0) or 0.0) > 0.0:
+            raise SystemExit("[refcv8] ⛔--r8-roll-targets tac needs --w-tac-v6 > 0 (no tactical loss "
+                             "would read the rolled targets)")
+        if bool(getattr(args, "r8_nav_from_v9", False)) and not getattr(args, "r8_v9_labels", None):
+            raise SystemExit("[refcv8] ⛔ --r8-nav-from-v9 without --r8-v9-labels: there is no v9 nav token to feed")
+        if (float(args.r8_rc_noise_along_m) < r8train.RC_NOISE_ALONG_M
+                or float(args.r8_rc_noise_lat_m) < r8train.RC_NOISE_LAT_M):
+            raise SystemExit(f"[refcv8] ⛔ route-checkpoint training noise ({args.r8_rc_noise_along_m}, "
+                             f"{args.r8_rc_noise_lat_m}) m is below the E2'-CERTIFIED ({r8train.RC_NOISE_ALONG_M}, "
+                             f"{r8train.RC_NOISE_LAT_M}) m: the CLEAN checkpoint carries future speed (WP-A INTEGRATION "
+                             f"sec. 4)")
+        # ---- X3 (SPEC_REFCV8 sec. 8.3; MM ruling Q5): the speed input is PAST-ONLY; the v8 future-max sidecar is refused -- #
+        _si = getattr(args, "r8_speed_input", None)
+        _side = [f for f in ("speed_max_sidecar_v6", "speed_max_sidecar_v6_eval") if getattr(args, f, None)]
+        if _side and _si != r8train.R8_SPEED_LABEL:      # PI 2026-10-11: `label` IS the sidecar; n2 / n3 / none refuse it
+            raise SystemExit("[refcv8] ⛔ X3: --%s on a refcv8 run feeds the v8 FUTURE-MAX sidecar -- a future-ego "
+                             "speed ORACLE input (K12; D4 LEAK 0.238 against the 0.05 bar, SPEC_REFCV8 sec. 8.3). The speed "
+                             "channel's source is --r8-speed-input n2 (past-only, MM ruling Q5)."
+                             % " / --".join(f.replace("_", "-") for f in _side))
+        if bool(getattr(args, "max_speed_input_v6", False)) and not _si:
+            raise SystemExit("[refcv8] ⛔ X3: --max-speed-input-v6 on a refcv8 run without --r8-speed-input: the "
+                             "channel has no past-only source (N2 / N3, MM ruling Q5)")
+        if _si:
+            if not bool(getattr(args, "max_speed_input_v6", False)):
+                raise SystemExit("[refcv8] --r8-speed-input names the SOURCE of the 4-way set-speed channel; the "
+                                 "channel itself is --max-speed-input-v6 (pass both)")
+            if _si == r8train.R8_SPEED_LABEL:
+                _pin_r8_label_source(args)
+            elif not getattr(args, "r8_v9_labels", None):
+                raise SystemExit("[refcv8] --r8-speed-input reads the v9 release's past-only column: pass --r8-v9-labels")
+            _sp = getattr(args, "r8_speed_unknown_p", None)
+            if _sp is not None and not 0.0 < float(_sp) < 1.0:
+                raise SystemExit(f"[refcv8] --r8-speed-unknown-p {_sp} must be in (0, 1): the unknown row is a TRAINED "
+                                 f"input (X3) and a known row must exist")
+        if bool(getattr(args, "r8_speed_enc8", False)) and _si != "n2":
+            raise SystemExit("[refcv8] --r8-speed-enc8 encodes the N2 LADDER: it needs --r8-speed-input n2 (N3 has three "
+                             "classes, `label` has the four road-type steps; with no source there is nothing to encode)")
+        if not _si and (getattr(args, "r8_speed_unknown_p", None) is not None
+                        or bool(getattr(args, "r8_roll_speed_input", False))):
+            raise SystemExit("[refcv8] --r8-speed-unknown-p / --r8-roll-speed-input without --r8-speed-input: "
+                             "there is no past-only speed input to drop or roll (a dead flag)")
+        if bool(getattr(args, "r8_speed_unknown_always", False)) and _si != "label":
+            raise SystemExit("[refcv8] --r8-speed-unknown-always (H-NT-DECIDE-1) declares the LABEL source's train "
+                             "sidecar all-unknown: it needs --r8-speed-input label (a dead flag otherwise)")
+        if getattr(args, "agent_join", None) and not getattr(args, "join_defect_masks", None):
+            # MM binding 2026-10-04 item 6: the 693-box ego-footprint mask is APPLIED on refcv8 (the 8-clip drop list
+            # is NOT -- PI decision 8 is open, the default is keep). WP-C's list reproduces D3's 693 boxes / 18 clips.
+            raise SystemExit("[refcv8] ⛔ --refcv8 with --agent-join needs --join-defect-masks "
+                             "(stack/tanitad/configs/refcv8_join_label_defects.json): the ego-as-agent boxes must be "
+                             "masked on refcv8 (MM binding 2026-10-04)")
+        r = cfg.refcv8
+        r.enable = True
+        r.modulate_base = not bool(args.r8_no_modulate_base)
+        r.base_constraints = bool(args.r8_base_constraints)
+        r.n_alloc = int(args.r8_n_alloc)
+        r.alloc_top_k = int(args.r8_alloc_top_k)
+        r.alloc_emit = bool(args.r8_alloc_emit)
+        r.prior_free_group = bool(args.r8_prior_free_group)
+        r.prior_free_emit = bool(args.r8_prior_free_emit)
+        r.lat_prior_dropout = float(args.r8_lat_prior_dropout)
+        r.cond_dropout = float(args.r8_cond_dropout)
+        r.tf_start, r.tf_end = float(args.r8_tf_start), float(args.r8_tf_end)
+        r.w_cons = float(args.w_r8_cons)
+        r.w_sat = float(args.w_r8_sat)
+        r.w_alloc_l1 = float(args.w_r8_alloc_l1)
+        r.w_listwise = float(args.w_r8_listwise)
+        r.w_subscore = float(args.w_r8_subscore)
+        r.w_v9_cons = float(getattr(args, "w_r8_v9_cons", 0.0) or 0.0)
+        r.v9_cons = r.w_v9_cons > 0.0
+        if r.v9_cons and not getattr(args, "r8_v9_labels", None):
+            raise SystemExit("[refcv8] --w-r8-v9-cons > 0 without --r8-v9-labels: the v9 constraint heads would be built "
+                             "and supervised by nothing (MM ruling Q2 reads the v9 release's constraint vectors)")
+        r.seed = int(args.r8_seed)
+        r.speed_input = str(_si or "")
+        r.speed_enc8 = bool(getattr(args, "r8_speed_enc8", False))
+        if r.w_sat > 0.0 and r.n_alloc <= 0:
+            raise SystemExit("[refcv8] --w-r8-sat > 0 with no allocated candidates: L_sat acts on the allocated set "
+                             "only (never the base fan) -- it would train nothing")
+        if r.w_cons <= 0.0:
+            raise SystemExit("[refcv8] --w-r8-cons 0: the constraint heads would be built and never supervised "
+                             "(pass it explicitly; SPEC_WPB uses 0.05 -- the default is 0.0 by the weight invariant)")
+        if r.n_alloc > 0 and r.w_alloc_l1 <= 0.0:
+            raise SystemExit("[refcv8] --r8-n-alloc > 0 with --w-r8-alloc-l1 0: the allocated candidates would be "
+                             "generated and never matched to GT (SPEC_WPB T2 uses 1.0)")
+        # ---- MM ruling Q1 (SPEC_REFCV8 sec. 3.1, I-2): the extra candidates' EMISSION schedule ---------------------- #
+        _es = getattr(args, "r8_alloc_emit_start", None)
+        # ⭐ refcv9 WARM START (MM 2026-10-27, R9W-EMIT-START): the run warm-starts from refcv8's EMA model, whose extra
+        # candidates were EMITTED from refcv8 step 1,000 to its end -- so emission from step 0 IS the step-0 identity of
+        # the emitted plan (I-2 read against the model actually loaded), and a start >= 1 would HIDE them. Declared as an
+        # explicit `--r8-alloc-emit-start 0`, admitted ONLY with --r9-train-only; absent / every other run: unchanged.
+        _es0_r9 = _es is not None and int(_es) == 0 and _mof.is_r9(args)
+        if _es is not None:
+            if int(_es) < 1:
+>               raise SystemExit(f"[refcv8] --r8-alloc-emit-start {_es} must be >= 1: emission from step 0 is the "
+                                 f"un-scheduled default (pass no start)")
+E               SystemExit: [refcv8] --r8-alloc-emit-start 0 must be >= 1: emission from step 0 is the un-scheduled default (pass no start)
+
+scripts\refc_v3_train.py:1072: SystemExit
+_____________ test_GATE_the_warm_start_launch_argv_has_no_refusal _____________
+
+r9_launch = (['--arm', 'hier', '--size', 'small', '--trunk', 'timm', ...], {'trainer': 'stack/scripts/refc_v3_train.py', 'required...r-r9\\r9w0')], WindowsPath('F:/c_overflow_2026-10-26/tmp/mut_M3-emit-start-0-refused-under-r9/r9w0/ckpt_ema_48852.pt'))
+
+    def test_GATE_the_warm_start_launch_argv_has_no_refusal(r9_launch):
+        a, prof, opts, pmap, _ = r9_launch
+        refusals, pending = LG.profile_argv_rules(prof, a, opts, pmap)
+        assert refusals == [] and pending == [], refusals
+        assert "--r8-alloc-emit" in a                                  # refcv8's emission flag, inherited
+        # the trainer's own argv pins accept it too, and pin the emission start and the held ratio
+        args = T.build_parser().parse_args(a)
+        M.pin_args(args)
+        from tanitad.train import map_precision as MP
+        MP.pin_args(args)
+        cfg = types.SimpleNamespace(refcv8=r8c.R8Config())
+>       T._pin_refcv8(cfg, args)
+
+tests\test_r9_train_only.py:786: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+cfg = namespace(refcv8=R8Config(enable=True, modulate_base=True, base_constraints=False, n_alloc=32, alloc_top_k=4, alloc_mi...ed_input='label', v9_cons=True, w_v9_cons=0.05, emit_start=0, speed_enc8=False, critic_drivable=False, w_drivable=0.0))
+args = Namespace(size='small', arm='hier', data_root=None, v2_cache=['/home/nvidia/data/refcv8-b1-416x1024-train-4572'], pref..._args=False, nav_from_v7=True, goal_point_inject=False, goal_point_geo_prior=False, goal_point_t=4.0, goal_point_w=0.0)
+
+    def _pin_refcv8(cfg, args) -> None:
+        """refcv8 WP-B (DESIGN.md sec. 3) -- argv -> cfg.refcv8, with refusals that fire before config.json."""
+        _pin_ema_guard(args)
+        _mof.pin_args(args)          # PI D-R9-MAPHEAD-PRECISION: --r8-train-only-map's refusals (a no-op when off)
+        #                              refcv9 warm start: --r9-train-only's refusals (the same machinery; a no-op when off)
+        _mfp.pin_args(args)          # refcv9 warm start: --w-map-fp's refusals (a no-op at the default 0)
+        _gse = int(getattr(args, "grad_share_every", 0) or 0)
+        if _gse < 0 or (_gse > 0 and _gse % max(1, int(getattr(args, "log_every", 50) or 50)) != 0):
+            raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
+                             f"{getattr(args, 'log_every', 50)}: a reading taken on a step that is not logged is "
+                             f"computed and thrown away")
+        try:
+            _gs_keep_pin = _gshare.parse_keep(getattr(args, "grad_share_terms", None))
+        except ValueError as e:
+            raise SystemExit(f"[refcv8] --grad-share-terms: {e}")
+        if _gs_keep_pin is not None and _gse == 0:
+            raise SystemExit("[refcv8] --grad-share-terms names terms but --grad-share-every is 0: the instrument is off, "
+                             "so the flag would be recorded in config.json and do nothing")
+        try:
+            _gshare.parse_at(getattr(args, "grad_share_at", None), _gse, int(getattr(args, "steps", 0) or 0))
+        except ValueError as e:
+            raise SystemExit(f"[refcv8] --grad-share-at: {e}")
+        if bool(getattr(args, "smoke_seed_ego_frames", False)) and int(getattr(args, "steps", 0) or 0) > 100:
+            raise SystemExit("[v3] --smoke-seed-ego-frames is a SMOKE flag (it adds an extra, hand-picked batch): "
+                             "refused above --steps 100")
+        if not bool(getattr(args, "refcv8", False)):
+            # SPEC_WPB_LADDER sec. 1 (registered): EVERY arm, V0 included, feeds the past-only N2 with the trained unknown
+            # row. Without --refcv8 that is a SPEED-ONLY mode: the v9 release is joined for its input column alone (the
+            # arm's own labels stay its targets); every other refcv8 flag stays a dead flag.
+            _so = getattr(args, "r8_speed_input", None)
+            _spd_ok = (("r8_speed_input", "r8_speed_unknown_p", "r8_roll_speed_input", "r8_v9_labels",
+                        "r8_v9_labels_eval") if _so else ())
+            for k in ("r8_n_alloc", "w_r8_listwise", "w_r8_sat", "w_r8_subscore", "w_r8_cons", "w_r8_alloc_l1",
+                      "r8_prior_free_group",
+                      "r8_lat_prior_dropout", "r8_v9_labels", "r8_v9_labels_eval", "r8_nav_from_v9",
+                      "r8_no_rc", "r8_derange_feed", "r8_rc_roll", "r8_roll_targets",
+                      "r8_speed_input", "r8_speed_unknown_p", "r8_roll_speed_input", "w_r8_v9_cons",
+                      "r8_alloc_emit_start", "r8_speed_enc8", "r8_critic_drivable", "w_r8_drivable"):
+                if k in _spd_ok:
+                    continue
+                v = getattr(args, k, None)
+                if v not in (None, False, 0, 0.0):
+                    raise SystemExit(f"[refcv8] --{k.replace('_', '-')} without --refcv8: a dead flag (refused)")
+            if _so:
+                _side = [f for f in ("speed_max_sidecar_v6", "speed_max_sidecar_v6_eval") if getattr(args, f, None)]
+                _label = str(_so) == r8train.R8_SPEED_LABEL
+                if _side and not _label:       # PI 2026-10-11: the `label` source IS the sidecar; n2 / n3 still refuse it
+                    raise SystemExit("[refcv8] ⛔ X3: --r8-speed-input with the v8 FUTURE-MAX sidecar (--%s): one channel, "
+                                     "one source, and the sidecar is the oracle (D4 LEAK 0.238)"
+                                     % " / --".join(f.replace("_", "-") for f in _side))
+                if not bool(getattr(args, "max_speed_input_v6", False)):
+                    raise SystemExit("[refcv8] --r8-speed-input names the SOURCE of the 4-way set-speed channel; the "
+                                     "channel itself is --max-speed-input-v6 (pass both)")
+                if _label:
+                    _pin_r8_label_source(args)
+                else:
+                    if not getattr(args, "r8_v9_labels", None):
+                        raise SystemExit("[refcv8] --r8-speed-input reads the v9 release's past-only column: pass "
+                                         "--r8-v9-labels")
+                    if getattr(args, "eval_cache", None) and not getattr(args, "r8_v9_labels_eval", None):
+                        raise SystemExit("[refcv8] --r8-speed-input with an --eval-cache but no --r8-v9-labels-eval: the "
+                                         "eval split would have no past-only speed source")
+                _sp = getattr(args, "r8_speed_unknown_p", None)
+                if _sp is not None and not 0.0 < float(_sp) < 1.0:
+                    raise SystemExit(f"[refcv8] --r8-speed-unknown-p {_sp} must be in (0, 1): the unknown row is a "
+                                     f"TRAINED input (X3) and a known row must exist")
+                if bool(getattr(args, "r8_roll_speed_input", False)) and int(getattr(args, "batch", 0) or 0) < 2:
+                    raise SystemExit("[refcv8] --r8-roll-speed-input needs --batch >= 2 (a roll over one row is the "
+                                     "identity)")
+                cfg.refcv8.speed_input = str(_so)
+            return
+        if args.arm != "hier" or not bool(getattr(args, "tac_decoder_v6", False)):
+            raise SystemExit("[refcv8] --refcv8 needs --arm hier and --tac-decoder-v6 (the conditioning reads the "
+                             "behaviour decoder)")
+        if str(getattr(args, "sampler", "none")) != "ddim":
+            raise SystemExit("[refcv8] --refcv8 conditions the DDIM sampler; pass --sampler ddim")
+        if bool(getattr(args, "refcv7", False)):
+            raise SystemExit("[refcv8] --refcv8 with --refcv7 (WTA + scorer): two re-rankers, not attributable")
+        if float(args.r8_rc_dropout) < r8train.RC_DROPOUT_MIN:
+            raise SystemExit(f"[refcv8] --r8-rc-dropout {args.r8_rc_dropout} < {r8train.RC_DROPOUT_MIN} "
+                             f"(MM binding 2026-10-04)")
+        if not (0.0 < float(args.r8_nav_args_dropout) < 1.0):
+            raise SystemExit("[refcv8] --r8-nav-args-dropout must be in (0, 1): NavSim-legal agents get the bare "
+                             "command only, so the model must train with 'unknown distance/time' rows")
+        # ---- the v9 release (WP-A INTEGRATION.md; MM binding 2026-10-04 items 1-6) ----------------------------- #
+        if getattr(args, "r8_v9_labels", None) or getattr(args, "r8_v9_labels_eval", None):
+            r8train._v9()                     # the reader must be in this tree (SystemExit names it otherwise)
+        if getattr(args, "r8_v9_labels_eval", None) and not getattr(args, "r8_v9_labels", None):
+            raise SystemExit("[refcv8] ⛔ --r8-v9-labels-eval without --r8-v9-labels: the eval would score v9 "
+                             "targets the model was never trained on")
+        if (getattr(args, "r8_v9_labels", None) and getattr(args, "eval_cache", None)
+                and not getattr(args, "r8_v9_labels_eval", None)):
+            raise SystemExit("[refcv8] ⛔ --r8-v9-labels with an --eval-cache but no --r8-v9-labels-eval: train and "
+                             "eval would be supervised by two different label releases (v9 vs v7.2)")
+        # ---- the deliberate-regression arms' flags (SPEC_WPB_LADDER sec. 2): training-only, roll-by-one, no RNG ---- #
+        _regr = [k for k in ("r8_derange_feed", "r8_rc_roll", "r8_roll_targets", "r8_roll_speed_input")
+                 if getattr(args, k, None)]
+        if _regr and int(getattr(args, "batch", 0) or 0) < 2:
+            raise SystemExit("[refcv8] ⛔--%s needs --batch >= 2: a roll by one row over a batch of one is "
+                             "the identity, so the regression arm would be the treatment arm" % " / --".join(
+                                 k.replace("_", "-") for k in _regr))
+        if bool(getattr(args, "r8_rc_roll", False)) and (not getattr(args, "r8_v9_labels", None)
+                                                           or bool(getattr(args, "r8_no_rc", False))):
+            raise SystemExit("[refcv8] ⛔--r8-rc-roll needs a route checkpoint to roll (--r8-v9-labels, "
+                             "and not --r8-no-rc)")
+        _rt = getattr(args, "r8_roll_targets", None)
+        if _rt == "map" and not (str(getattr(args, "map_hires", "off")) == "on"
+                                  and float(getattr(args, "w_map_hires", 0.0) or 0.0) > 0.0):
+            raise SystemExit("[refcv8] ⛔--r8-roll-targets map needs --map-hires on with --w-map-hires > 0 "
+                             "(no 10 cm map target to roll)")
+        if _rt == "tac" and not float(getattr(args, "w_tac_v6", 0.0) or 0.0) > 0.0:
+            raise SystemExit("[refcv8] ⛔--r8-roll-targets tac needs --w-tac-v6 > 0 (no tactical loss "
+                             "would read the rolled targets)")
+        if bool(getattr(args, "r8_nav_from_v9", False)) and not getattr(args, "r8_v9_labels", None):
+            raise SystemExit("[refcv8] ⛔ --r8-nav-from-v9 without --r8-v9-labels: there is no v9 nav token to feed")
+        if (float(args.r8_rc_noise_along_m) < r8train.RC_NOISE_ALONG_M
+                or float(args.r8_rc_noise_lat_m) < r8train.RC_NOISE_LAT_M):
+            raise SystemExit(f"[refcv8] ⛔ route-checkpoint training noise ({args.r8_rc_noise_along_m}, "
+                             f"{args.r8_rc_noise_lat_m}) m is below the E2'-CERTIFIED ({r8train.RC_NOISE_ALONG_M}, "
+                             f"{r8train.RC_NOISE_LAT_M}) m: the CLEAN checkpoint carries future speed (WP-A INTEGRATION "
+                             f"sec. 4)")
+        # ---- X3 (SPEC_REFCV8 sec. 8.3; MM ruling Q5): the speed input is PAST-ONLY; the v8 future-max sidecar is refused -- #
+        _si = getattr(args, "r8_speed_input", None)
+        _side = [f for f in ("speed_max_sidecar_v6", "speed_max_sidecar_v6_eval") if getattr(args, f, None)]
+        if _side and _si != r8train.R8_SPEED_LABEL:      # PI 2026-10-11: `label` IS the sidecar; n2 / n3 / none refuse it
+            raise SystemExit("[refcv8] ⛔ X3: --%s on a refcv8 run feeds the v8 FUTURE-MAX sidecar -- a future-ego "
+                             "speed ORACLE input (K12; D4 LEAK 0.238 against the 0.05 bar, SPEC_REFCV8 sec. 8.3). The speed "
+                             "channel's source is --r8-speed-input n2 (past-only, MM ruling Q5)."
+                             % " / --".join(f.replace("_", "-") for f in _side))
+        if bool(getattr(args, "max_speed_input_v6", False)) and not _si:
+            raise SystemExit("[refcv8] ⛔ X3: --max-speed-input-v6 on a refcv8 run without --r8-speed-input: the "
+                             "channel has no past-only source (N2 / N3, MM ruling Q5)")
+        if _si:
+            if not bool(getattr(args, "max_speed_input_v6", False)):
+                raise SystemExit("[refcv8] --r8-speed-input names the SOURCE of the 4-way set-speed channel; the "
+                                 "channel itself is --max-speed-input-v6 (pass both)")
+            if _si == r8train.R8_SPEED_LABEL:
+                _pin_r8_label_source(args)
+            elif not getattr(args, "r8_v9_labels", None):
+                raise SystemExit("[refcv8] --r8-speed-input reads the v9 release's past-only column: pass --r8-v9-labels")
+            _sp = getattr(args, "r8_speed_unknown_p", None)
+            if _sp is not None and not 0.0 < float(_sp) < 1.0:
+                raise SystemExit(f"[refcv8] --r8-speed-unknown-p {_sp} must be in (0, 1): the unknown row is a TRAINED "
+                                 f"input (X3) and a known row must exist")
+        if bool(getattr(args, "r8_speed_enc8", False)) and _si != "n2":
+            raise SystemExit("[refcv8] --r8-speed-enc8 encodes the N2 LADDER: it needs --r8-speed-input n2 (N3 has three "
+                             "classes, `label` has the four road-type steps; with no source there is nothing to encode)")
+        if not _si and (getattr(args, "r8_speed_unknown_p", None) is not None
+                        or bool(getattr(args, "r8_roll_speed_input", False))):
+            raise SystemExit("[refcv8] --r8-speed-unknown-p / --r8-roll-speed-input without --r8-speed-input: "
+                             "there is no past-only speed input to drop or roll (a dead flag)")
+        if bool(getattr(args, "r8_speed_unknown_always", False)) and _si != "label":
+            raise SystemExit("[refcv8] --r8-speed-unknown-always (H-NT-DECIDE-1) declares the LABEL source's train "
+                             "sidecar all-unknown: it needs --r8-speed-input label (a dead flag otherwise)")
+        if getattr(args, "agent_join", None) and not getattr(args, "join_defect_masks", None):
+            # MM binding 2026-10-04 item 6: the 693-box ego-footprint mask is APPLIED on refcv8 (the 8-clip drop list
+            # is NOT -- PI decision 8 is open, the default is keep). WP-C's list reproduces D3's 693 boxes / 18 clips.
+            raise SystemExit("[refcv8] ⛔ --refcv8 with --agent-join needs --join-defect-masks "
+                             "(stack/tanitad/configs/refcv8_join_label_defects.json): the ego-as-agent boxes must be "
+                             "masked on refcv8 (MM binding 2026-10-04)")
+        r = cfg.refcv8
+        r.enable = True
+        r.modulate_base = not bool(args.r8_no_modulate_base)
+        r.base_constraints = bool(args.r8_base_constraints)
+        r.n_alloc = int(args.r8_n_alloc)
+        r.alloc_top_k = int(args.r8_alloc_top_k)
+        r.alloc_emit = bool(args.r8_alloc_emit)
+        r.prior_free_group = bool(args.r8_prior_free_group)
+        r.prior_free_emit = bool(args.r8_prior_free_emit)
+        r.lat_prior_dropout = float(args.r8_lat_prior_dropout)
+        r.cond_dropout = float(args.r8_cond_dropout)
+        r.tf_start, r.tf_end = float(args.r8_tf_start), float(args.r8_tf_end)
+        r.w_cons = float(args.w_r8_cons)
+        r.w_sat = float(args.w_r8_sat)
+        r.w_alloc_l1 = float(args.w_r8_alloc_l1)
+        r.w_listwise = float(args.w_r8_listwise)
+        r.w_subscore = float(args.w_r8_subscore)
+        r.w_v9_cons = float(getattr(args, "w_r8_v9_cons", 0.0) or 0.0)
+        r.v9_cons = r.w_v9_cons > 0.0
+        if r.v9_cons and not getattr(args, "r8_v9_labels", None):
+            raise SystemExit("[refcv8] --w-r8-v9-cons > 0 without --r8-v9-labels: the v9 constraint heads would be built "
+                             "and supervised by nothing (MM ruling Q2 reads the v9 release's constraint vectors)")
+        r.seed = int(args.r8_seed)
+        r.speed_input = str(_si or "")
+        r.speed_enc8 = bool(getattr(args, "r8_speed_enc8", False))
+        if r.w_sat > 0.0 and r.n_alloc <= 0:
+            raise SystemExit("[refcv8] --w-r8-sat > 0 with no allocated candidates: L_sat acts on the allocated set "
+                             "only (never the base fan) -- it would train nothing")
+        if r.w_cons <= 0.0:
+            raise SystemExit("[refcv8] --w-r8-cons 0: the constraint heads would be built and never supervised "
+                             "(pass it explicitly; SPEC_WPB uses 0.05 -- the default is 0.0 by the weight invariant)")
+        if r.n_alloc > 0 and r.w_alloc_l1 <= 0.0:
+            raise SystemExit("[refcv8] --r8-n-alloc > 0 with --w-r8-alloc-l1 0: the allocated candidates would be "
+                             "generated and never matched to GT (SPEC_WPB T2 uses 1.0)")
+        # ---- MM ruling Q1 (SPEC_REFCV8 sec. 3.1, I-2): the extra candidates' EMISSION schedule ---------------------- #
+        _es = getattr(args, "r8_alloc_emit_start", None)
+        # ⭐ refcv9 WARM START (MM 2026-10-27, R9W-EMIT-START): the run warm-starts from refcv8's EMA model, whose extra
+        # candidates were EMITTED from refcv8 step 1,000 to its end -- so emission from step 0 IS the step-0 identity of
+        # the emitted plan (I-2 read against the model actually loaded), and a start >= 1 would HIDE them. Declared as an
+        # explicit `--r8-alloc-emit-start 0`, admitted ONLY with --r9-train-only; absent / every other run: unchanged.
+        _es0_r9 = _es is not None and int(_es) == 0 and _mof.is_r9(args)
+        if _es is not None:
+            if int(_es) < 1:
+>               raise SystemExit(f"[refcv8] --r8-alloc-emit-start {_es} must be >= 1: emission from step 0 is the "
+                                 f"un-scheduled default (pass no start)")
+E               SystemExit: [refcv8] --r8-alloc-emit-start 0 must be >= 1: emission from step 0 is the un-scheduled default (pass no start)
+
+scripts\refc_v3_train.py:1072: SystemExit
+=========================== short test summary info ===========================
+FAILED tests/test_r9_train_only.py::test_R9W_EMIT_START_zero_is_admitted_under_the_r9_freeze_only
+FAILED tests/test_r9_train_only.py::test_GATE_the_warm_start_launch_argv_has_no_refusal
+2 failed in 6.26s

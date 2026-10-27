@@ -1,0 +1,28 @@
+F                                                                        [100%]
+================================== FAILURES ===================================
+_____ test_ASSERT_TOOL_r9_also_frozen_holds_a_declared_subtree_bit_equal ______
+
+tmp_path = WindowsPath('F:/c_overflow_2026-10-26/tmp/mut_M8-AT-ignores-also-frozen/test_ASSERT_TOOL_r9_also_froze0')
+
+    def test_ASSERT_TOOL_r9_also_frozen_holds_a_declared_subtree_bit_equal(tmp_path):
+        src = _r9_state()
+        dst = copy.deepcopy(src)
+        dst["core.decoder.offset_head.weight"] = dst["core.decoder.offset_head.weight"] + 0.25
+        rc, res = _at(src, dst, tmp_path, "--sets", "planner,tactical,map", "--also-frozen", "core.decoder.offset_head")
+>       assert rc == 1 and [r["key"] for r in res["views"]["ema"]["frozen_changed"]] == ["core.decoder.offset_head.weight"]
+E       assert (0 == 1)
+
+tests\test_r9_train_only.py:1050: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[assert-map-only] src F:\c_overflow_2026-10-26\tmp\mut_M8-AT-ignores-also-frozen\test_ASSERT_TOOL_r9_also_froze0\src.pt (view `ema`, step 48852) -> dst F:\c_overflow_2026-10-26\tmp\mut_M8-AT-ignores-also-frozen\test_ASSERT_TOOL_r9_also_froze0\dst.pt (step 3000, views ['ema'])
+  [ema] non-map tensors checked 5, changed 0; keys missing 0, extra 0; map-only tensors 8, changed 1 -> PASS
+    perception (every tensor outside the sets ['planner', 'tactical', 'map']) + also-frozen {'core.decoder.offset_head': 1}: 5 checked, 0 changed
+    set `planner`: 1 of 2 tensors changed; per module {'core.decoder': 1}
+      planner changed: core.decoder.offset_head.weight
+    set `tactical`: 0 of 3 tensors changed; per module {'phi_tac': 0, 'nav_to_tac': 0, 'lat_head_tac': 0, 'lon_head_tac': 0, 'tac_goal_head': 0, 'tac_latent_proj': 0, 'tac_decoder_v6': 0, 'tac_behaviour_gate_v6': 0, 'core.tactical_trunk': 0, 'core.lat_head': 0, 'core.lon_head': 0}
+    set `map`: 0 of 3 tensors changed; per module {'_map_hires.refine': 0, '_map_hires.near': 0, '_map_hires.near_refine': 0}
+    NOTE: modules with NO changed tensor: ['phi_tac', 'nav_to_tac', 'lat_head_tac', 'lon_head_tac', 'tac_goal_head', 'tac_latent_proj', 'tac_decoder_v6', 'tac_behaviour_gate_v6', 'core.tactical_trunk', 'core.lat_head', 'core.lon_head', '_map_hires.refine', '_map_hires.near', '_map_hires.near_refine']
+[assert-map-only] PASS
+=========================== short test summary info ===========================
+FAILED tests/test_r9_train_only.py::test_ASSERT_TOOL_r9_also_frozen_holds_a_declared_subtree_bit_equal
+1 failed in 5.14s
