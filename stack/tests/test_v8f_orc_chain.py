@@ -45,7 +45,7 @@ BOX2 = dict(REPO=r"D:\tanitad\repo", PY=r"D:\tanitad\venv\Scripts\python.exe", C
 ORC_LABELS = {"orcarm", "gateorc", "trainorc", "evalorc"}
 ORC_STAGES = ("gateorc", "trainorc", "evalorc")
 # Labels appended AFTER the ORC edit by later, insertion-only edits, each declared with its PREREG. They are tested by their own builds
-# (raw/2026-10-26-dagger-queue/, raw/2026-10-27-dagger2-queue/, raw/2026-10-27-oaccflat-queue/); here they only have to sit after the ORC region and leave it untouched.
+# (raw/2026-10-26-dagger-queue/, raw/2026-10-27-dagger2-queue/, raw/2026-10-27-oaccflat-queue/, raw/2026-10-27-dag-orc-queue/); here they only have to sit after the ORC region and leave it untouched.
 # A label that is in none of PRE_LABELS, ORC_LABELS and LATER_LABELS still turns the test below RED: a new edit declares itself here.
 LATER_LABELS = {
     "dagname": "PREREG_V8F_DAGGER", "prepdag": "PREREG_V8F_DAGGER", "dagarm": "PREREG_V8F_DAGGER", "dagarm_dry": "PREREG_V8F_DAGGER",
@@ -54,11 +54,13 @@ LATER_LABELS = {
     "dag2arm": "PREREG_V8F_DAGGER2", "dag2arm_dry": "PREREG_V8F_DAGGER2", "dag2arm_have": "PREREG_V8F_DAGGER2", "bankdag2": "PREREG_V8F_DAGGER2",
     "dagoaccarm": "PREREG_V8F_DAG_OACC", "dagoaccarm_dry": "PREREG_V8F_DAG_OACC", "dagoaccarm_have": "PREREG_V8F_DAG_OACC", "dagoaccwacc": "PREREG_V8F_DAG_OACC", "dagoaccwacc_dry": "PREREG_V8F_DAG_OACC", "dagoaccwacc_have": "PREREG_V8F_DAG_OACC", "waccdag": "PREREG_V8F_DAG_OACC",
     "flatdagarm": "PREREG_V8F_FLATDAG", "flatdagarm_dry": "PREREG_V8F_FLATDAG", "flatdagarm_have": "PREREG_V8F_FLATDAG", "evalflatdag": "PREREG_V8F_FLATDAG", "evalflatdag_1": "PREREG_V8F_FLATDAG", "evalflatdag_2": "PREREG_V8F_FLATDAG", "bankflat": "PREREG_V8F_FLATDAG",
+    "dagorcarm": "PREREG_V8F_DAG_ORC",
 }
 LATER_FIRST = "dagname"                                                       # the first label after the ORC region
 LATER_HEADER = tuple(f"rem   v8f_mini_box2_queue.cmd {st} " for st in ("bankdag", "gatedag", "traindag", "evaldag", "bankdag2")) \
     + ("rem   gatedag / traindag / evaldag also take ARM dag2 ", "rem   gatedag / traindag / evaldag also take ARM dagoacc ", "rem   gatedag / traindag / evaldag also take ARM flatdag ",
-       "rem   v8f_mini_box2_queue.cmd waccdag ", "rem   v8f_mini_box2_queue.cmd bankflat ")           # the later edits' usage lines in the header
+       "rem   v8f_mini_box2_queue.cmd waccdag ", "rem   v8f_mini_box2_queue.cmd bankflat ",
+       "rem   gatedag / traindag / evaldag also take ARM dagorc ")           # the later edits' usage lines in the header
 LAW = ("--ego-perturb-vscale", "--ego-perturb-vmax", "--ego-perturb-adrop", "--ego-perturb-yawrate-std", "--ego-perturb-seed")     # PREREG Amendment 3: named by ORC, by NONE of ORC-0
 RUNS = (("orc", 0), ("orc0", 0), ("orc", 1), ("orc0", 1))                  # the PREREG's order (section 5): ORC s0, ORC-0 s0, ORC s1, ORC-0 s1
 # sha256[:16] of "\n" + the text of each label of the queue AT 98713259 (the programme's pin convention) and of the 41 other stages' dry-run output (lines with .py) under the fixed environment of

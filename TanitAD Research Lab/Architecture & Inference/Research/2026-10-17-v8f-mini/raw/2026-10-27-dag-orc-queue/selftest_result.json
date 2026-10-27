@@ -1,0 +1,1528 @@
+{
+ "sections": "S,A,B,C,D,E",
+ "checks": [
+  {
+   "name": "S0 tip queue is the pinned 3b7b404e file (sha256 6d26a613...)",
+   "ok": true
+  },
+  {
+   "name": "S1 the staged queue is CRLF throughout and ends with CRLF",
+   "ok": true
+  },
+  {
+   "name": "S2 every tip line occurs in the staged queue in the same order (0 lines removed or changed)",
+   "ok": true
+  },
+  {
+   "name": "S3 the staged queue adds exactly 20 lines (1 doc, 3 :dagname, 3 :dagarm, 13 :dagorcarm)",
+   "ok": true
+  },
+  {
+   "name": "S4 the added lines (those the in-order match of the tip's lines does not consume) are exactly the builder's constants",
+   "ok": true
+  },
+  {
+   "name": "S5 the staged queue equals a fresh run of build_queue.build() (byte for byte)",
+   "ok": true
+  },
+  {
+   "name": "S6 245 stage invocations (50 dispatched stage names x 4 shapes + the DAG-family arms) print byte-identical output on the tip queue and the staged queue",
+   "ok": true
+  },
+  {
+   "name": "S7 the real (non-dry) run of `gatedag dag 0` behaves identically (rc, output)",
+   "ok": true
+  },
+  {
+   "name": "S7 the real (non-dry) run of `traindag dag2 0 0.1` behaves identically (rc, output)",
+   "ok": true
+  },
+  {
+   "name": "S7 the real (non-dry) run of `evaldag dagoacc 1` behaves identically (rc, output)",
+   "ok": true
+  },
+  {
+   "name": "A1 dagorc s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+   "ok": true
+  },
+  {
+   "name": "A2 dagorc s0: the GATE line == the train line with --out and --selfcheck-only changed",
+   "ok": true
+  },
+  {
+   "name": "A3 dagorc s0: --ego-perturb-p NAMED once with 0.3; --dagger-p NAMED once with 0; --init-ckpt is DAG_s0's (not M2b's)",
+   "ok": true
+  },
+  {
+   "name": "A4 dagorc s0: the five law flags once each at their registered values (seed = 0); no DAgger bank flag; --seed 0",
+   "ok": true
+  },
+  {
+   "name": "A5 dagorc s0: run / gate / tag / pin names are indexed by the init seed",
+   "ok": true
+  },
+  {
+   "name": "A1 dagorcrep s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+   "ok": true
+  },
+  {
+   "name": "A2 dagorcrep s0: the GATE line == the train line with --out and --selfcheck-only changed",
+   "ok": true
+  },
+  {
+   "name": "A3 dagorcrep s0: --ego-perturb-p NAMED once with 0; --dagger-p NAMED once with 0; --init-ckpt is DAG_s0's (not M2b's)",
+   "ok": true
+  },
+  {
+   "name": "A4 dagorcrep s0: no law flag, no DAgger bank flag; --seed 10",
+   "ok": true
+  },
+  {
+   "name": "A5 dagorcrep s0: run / gate / tag / pin names are indexed by the init seed",
+   "ok": true
+  },
+  {
+   "name": "A1 dagorc01 s0: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+   "ok": true
+  },
+  {
+   "name": "A2 dagorc01 s0: the GATE line == the train line with --out and --selfcheck-only changed",
+   "ok": true
+  },
+  {
+   "name": "A3 dagorc01 s0: --ego-perturb-p NAMED once with 0.1; --dagger-p NAMED once with 0; --init-ckpt is DAG_s0's (not M2b's)",
+   "ok": true
+  },
+  {
+   "name": "A4 dagorc01 s0: the five law flags once each at their registered values (seed = 0); no DAgger bank flag; --seed 0",
+   "ok": true
+  },
+  {
+   "name": "A5 dagorc01 s0: run / gate / tag / pin names are indexed by the init seed",
+   "ok": true
+  },
+  {
+   "name": "A1 dagorc s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+   "ok": true
+  },
+  {
+   "name": "A2 dagorc s1: the GATE line == the train line with --out and --selfcheck-only changed",
+   "ok": true
+  },
+  {
+   "name": "A3 dagorc s1: --ego-perturb-p NAMED once with 0.3; --dagger-p NAMED once with 0; --init-ckpt is DAG_s1's (not M2b's)",
+   "ok": true
+  },
+  {
+   "name": "A4 dagorc s1: the five law flags once each at their registered values (seed = 1); no DAgger bank flag; --seed 1",
+   "ok": true
+  },
+  {
+   "name": "A5 dagorc s1: run / gate / tag / pin names are indexed by the init seed",
+   "ok": true
+  },
+  {
+   "name": "A1 dagorcrep s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+   "ok": true
+  },
+  {
+   "name": "A2 dagorcrep s1: the GATE line == the train line with --out and --selfcheck-only changed",
+   "ok": true
+  },
+  {
+   "name": "A3 dagorcrep s1: --ego-perturb-p NAMED once with 0; --dagger-p NAMED once with 0; --init-ckpt is DAG_s1's (not M2b's)",
+   "ok": true
+  },
+  {
+   "name": "A4 dagorcrep s1: no law flag, no DAgger bank flag; --seed 11",
+   "ok": true
+  },
+  {
+   "name": "A5 dagorcrep s1: run / gate / tag / pin names are indexed by the init seed",
+   "ok": true
+  },
+  {
+   "name": "A1 dagorc01 s1: the TRAIN line == DAG2-0's banked argv.json + the registered change, only --out differs (K-PAIR)",
+   "ok": true
+  },
+  {
+   "name": "A2 dagorc01 s1: the GATE line == the train line with --out and --selfcheck-only changed",
+   "ok": true
+  },
+  {
+   "name": "A3 dagorc01 s1: --ego-perturb-p NAMED once with 0.1; --dagger-p NAMED once with 0; --init-ckpt is DAG_s1's (not M2b's)",
+   "ok": true
+  },
+  {
+   "name": "A4 dagorc01 s1: the five law flags once each at their registered values (seed = 1); no DAgger bank flag; --seed 1",
+   "ok": true
+  },
+  {
+   "name": "A5 dagorc01 s1: run / gate / tag / pin names are indexed by the init seed",
+   "ok": true
+  },
+  {
+   "name": "A6 dagorc01 s0 differs from dagorc s0 in --ego-perturb-p only (0.3 -> 0.1) and --out",
+   "ok": true
+  },
+  {
+   "name": "A7 dagorcrep s0 differs from DAG2-0's banked argv in --seed only (10 vs 0) and --out",
+   "ok": true
+  },
+  {
+   "name": "A6 dagorc01 s1 differs from dagorc s1 in --ego-perturb-p only (0.3 -> 0.1) and --out",
+   "ok": true
+  },
+  {
+   "name": "A7 dagorcrep s1 differs from DAG2-0's banked argv in --seed only (11 vs 1) and --out",
+   "ok": true
+  },
+  {
+   "name": "A12 dagorc: an inherited DAGSHA_DRY / WACCDAG_DRY / DAGF / DAGF0 / DAGSHA / DAGP / DAGORCP / DAGORCL in the environment changes nothing",
+   "ok": true
+  },
+  {
+   "name": "A12 dagorcrep: an inherited DAGSHA_DRY / WACCDAG_DRY / DAGF / DAGF0 / DAGSHA / DAGP / DAGORCP / DAGORCL in the environment changes nothing",
+   "ok": true
+  },
+  {
+   "name": "A12 dagorc01: an inherited DAGSHA_DRY / WACCDAG_DRY / DAGF / DAGF0 / DAGSHA / DAGP / DAGORCP / DAGORCL in the environment changes nothing",
+   "ok": true
+  },
+  {
+   "name": "A13 the existing arm dag2 still prints its DAGGER-family lines (no dagorc flag leaks in)",
+   "ok": true
+  },
+  {
+   "name": "A13 the existing arm dag20 still prints its DAGGER-family lines (no dagorc flag leaks in)",
+   "ok": true
+  },
+  {
+   "name": "A13 the existing arm dagoacc still prints its DAGGER-family lines (no dagorc flag leaks in)",
+   "ok": true
+  },
+  {
+   "name": "A14 exactly one usage line documents the three arms, inside the header block (before the first label)",
+   "ok": true
+  },
+  {
+   "name": "A15 :dagorcarm is the last label of the file and is reached only from :dagarm (no dispatch line names it)",
+   "ok": true
+  },
+  {
+   "name": "B1 gatedag dagorc 0 (real run): rc 0, '[ok] gate M2b-dagorc_s0'",
+   "ok": true
+  },
+  {
+   "name": "B2 the training argv is PINNED to dagpin\\M2b_s0_dagorc.train.argv.txt, with the lever and without --selfcheck-only",
+   "ok": true
+  },
+  {
+   "name": "B3 the gate ran the trainer with --selfcheck-only and the train argv (stub saw it)",
+   "ok": true
+  },
+  {
+   "name": "B4 a second gate with an unchanged argv is accepted (idempotent pin)",
+   "ok": true
+  },
+  {
+   "name": "B9 traindag dagorc 0 runs the PINNED line: rc 0 and the stub's argv is the pin's",
+   "ok": true
+  },
+  {
+   "name": "B10 a finished run is skipped, not re-trained",
+   "ok": true
+  },
+  {
+   "name": "B11 evaldag after training: rc 0, '[ok] eval M2b-dagorc_s0', the npz exists",
+   "ok": true
+  },
+  {
+   "name": "B12 gatedag dagorcrep 1 (real run): rc 0, the trainer gets --seed 11 and --ego-perturb-p 0 and no law flag",
+   "ok": true
+  },
+  {
+   "name": "B13 traindag dagorcrep 1 (real run): lands in M2b_s1_dagorcrep (not M2b_s11_...), pin M2b_s1_dagorcrep.train.argv.txt",
+   "ok": true
+  },
+  {
+   "name": "B14 isolation: no dagger_bank* directory, no bank_sha / w_acc file, no iteration-1 run directory was created",
+   "ok": true
+  },
+  {
+   "name": "B15 the DAgger queue tool was never called by a DAG-ORC stage",
+   "ok": true
+  },
+  {
+   "name": "C1 dagorc s0: the asserter ACCEPTS DAG2-0's real gate + ORC's real ego probe/levers (spliced) with the queue's lines",
+   "ok": true
+  },
+  {
+   "name": "C1 dagorc s1: the asserter ACCEPTS DAG2-0's real gate + ORC's real ego probe/levers (spliced) with the queue's lines",
+   "ok": true
+  },
+  {
+   "name": "C1 dagorcrep s0: the asserter ACCEPTS DAG2-0's REAL gate record (seed relabelled) with the queue's lines",
+   "ok": true
+  },
+  {
+   "name": "C1 dagorcrep s1: the asserter ACCEPTS DAG2-0's REAL gate record (seed relabelled) with the queue's lines",
+   "ok": true
+  },
+  {
+   "name": "C1 dagorc01 s0: the asserter ACCEPTS DAG2-0's real gate + ORC's real ego probe/levers (spliced, p 0.1 doctored) with the queue's lines",
+   "ok": true
+  },
+  {
+   "name": "C1 dagorc01 s1: the asserter ACCEPTS DAG2-0's real gate + ORC's real ego probe/levers (spliced, p 0.1 doctored) with the queue's lines",
+   "ok": true
+  },
+  {
+   "name": "C2 the fixtures the REAL tip trainer wrote exist (reach_synthetic.py): 5 gates",
+   "ok": true
+  },
+  {
+   "name": "C2 dagorc01 s0: the asserter ACCEPTS the gate record the REAL tip trainer wrote for the queue's argv (synthetic world, expectations overridden)",
+   "ok": true
+  },
+  {
+   "name": "C2 dagorc s0: the asserter ACCEPTS the gate record the REAL tip trainer wrote for the queue's argv (synthetic world, expectations overridden)",
+   "ok": true
+  },
+  {
+   "name": "C2 dagorc s1: the asserter ACCEPTS the gate record the REAL tip trainer wrote for the queue's argv (synthetic world, expectations overridden)",
+   "ok": true
+  },
+  {
+   "name": "C2 dagorcrep s0: the asserter ACCEPTS the gate record the REAL tip trainer wrote for the queue's argv (synthetic world, expectations overridden)",
+   "ok": true
+  },
+  {
+   "name": "C2 dagorcrep s1: the asserter ACCEPTS the gate record the REAL tip trainer wrote for the queue's argv (synthetic world, expectations overridden)",
+   "ok": true
+  },
+  {
+   "name": "C3c control: a no-op edit of the same record is still accepted (the doctoring harness does not break positives)",
+   "ok": true
+  },
+  {
+   "name": "C4 the token is written after a passing check and binds the commit, the PINNED training argv's sha256 and the data sha256; names the arm and the dose",
+   "ok": true
+  },
+  {
+   "name": "C4 REP s1's token records trainer_seed 11 and ego_perturb_p 0.0",
+   "ok": true
+  },
+  {
+   "name": "C5 dagorc s0: the run record of a correct run PASSES",
+   "ok": true
+  },
+  {
+   "name": "C5 dagorc s1: the run record of a correct run PASSES",
+   "ok": true
+  },
+  {
+   "name": "C5 dagorcrep s0: the run record of a correct run PASSES",
+   "ok": true
+  },
+  {
+   "name": "C5 dagorcrep s1: the run record of a correct run PASSES",
+   "ok": true
+  },
+  {
+   "name": "C5 dagorc01 s0: the run record of a correct run PASSES",
+   "ok": true
+  },
+  {
+   "name": "C5 dagorc01 s1: the run record of a correct run PASSES",
+   "ok": true
+  },
+  {
+   "name": "C6 A: n/eligible = 0.3 exactly passes",
+   "ok": true
+  },
+  {
+   "name": "C6 A: n/eligible = 0.32 (the upper edge, inclusive) passes",
+   "ok": true
+  },
+  {
+   "name": "C6 A: n/eligible = 0.28 (the lower edge, inclusive) passes",
+   "ok": true
+  },
+  {
+   "name": "C6 B: n/eligible = 0.1 passes",
+   "ok": true
+  },
+  {
+   "name": "C6 REP: n exactly 0 with eligible > 0 passes",
+   "ok": true
+  },
+  {
+   "name": "C6 the REAL trainer's synthetic REP run summary (ego_perturb_n exactly 0, eligible > 0) satisfies the control",
+   "ok": true
+  },
+  {
+   "name": "C7 one-lever dagorc s0: the queue's line prints ONE-LEVER",
+   "ok": true
+  },
+  {
+   "name": "C7 one-lever dagorc s1: the queue's line prints ONE-LEVER",
+   "ok": true
+  },
+  {
+   "name": "C7 one-lever dagorcrep s0: the queue's line prints ONE-LEVER",
+   "ok": true
+  },
+  {
+   "name": "C7 one-lever dagorcrep s1: the queue's line prints ONE-LEVER",
+   "ok": true
+  },
+  {
+   "name": "C7 one-lever dagorc01 s0: the queue's line prints ONE-LEVER",
+   "ok": true
+  },
+  {
+   "name": "C7 one-lever dagorc01 s1: the queue's line prints ONE-LEVER",
+   "ok": true
+  },
+  {
+   "name": "D1 bash -n chain_v8f_dagorc.sh",
+   "ok": true
+  },
+  {
+   "name": "D1 bash -n v8f_guard_dagorc.sh",
+   "ok": true
+  },
+  {
+   "name": "D1 bash -n wake_v8fdagorc.sh",
+   "ok": true
+  },
+  {
+   "name": "D2 chain_v8f_dagorc.sh: LF only (a CR in a bash script is a syntax error on box-side bash)",
+   "ok": true
+  },
+  {
+   "name": "D2 v8f_guard_dagorc.sh: LF only (a CR in a bash script is a syntax error on box-side bash)",
+   "ok": true
+  },
+  {
+   "name": "D2 wake_v8fdagorc.sh: LF only (a CR in a bash script is a syntax error on box-side bash)",
+   "ok": true
+  },
+  {
+   "name": "D2 chain_v8f_dagorc.sh.in: LF only (a CR in a bash script is a syntax error on box-side bash)",
+   "ok": true
+  },
+  {
+   "name": "D2 run_chain_v8f_dagorc.cmd: CRLF throughout",
+   "ok": true
+  },
+  {
+   "name": "D3 the chain is byte-for-byte a fresh regeneration from the template + the banked artifacts (make_chain --check)",
+   "ok": true
+  },
+  {
+   "name": "D4 every pinned sha256 / BUILD_REF is the banked artifact's (DAG_s ckpt / argv / summary; DAG2-0 argv / summary; the installed libs; 1d4f4fbb; DAG-OACC r2's own copy of the DAG pins)",
+   "ok": true
+  },
+  {
+   "name": "D5 the guard is DAG-OACC's guard line for line except the one comment line",
+   "ok": true
+  },
+  {
+   "name": "D5 the guard's anchored end test knows the markers the chain prints (so it exits when the chain ends)",
+   "ok": true
+  },
+  {
+   "name": "D5 the launcher is the DAG-OACC r2 launcher with the names changed: AFTER_OUT = the DAG-OACC r2 chain's log, own .sh, own .out, stdin from NUL",
+   "ok": true
+  },
+  {
+   "name": "D5 the waker reads the chain's own .out and the guard's .out the chain writes",
+   "ok": true
+  },
+  {
+   "name": "D5 the waker's markers are the ones the chain / asserter print (ZZDAGORC-CONTROL-FAIL, ZZDISK-FLOOR-STOP, `gate token written for` x4, ` pulled to `)",
+   "ok": true
+  },
+  {
+   "name": "D6 order: the four A / REP gates, then their four runs, then (unless DAGORC_SKIP_B=1) B's gates and runs",
+   "ok": true
+  },
+  {
+   "name": "D6 the run order is PREREG section 10's: A s0, REP s0, A s1, REP s1, then B s0, B s1",
+   "ok": true
+  },
+  {
+   "name": "D6 runone: train -> ckpt hash -> eval -> hash again -> pull -> run record -> K-REACH, each with a hard stop",
+   "ok": true
+  },
+  {
+   "name": "D6 gate_one: the queue's gate -> pull -> the asserter's `check` (hard stop) -> only then the token",
+   "ok": true
+  },
+  {
+   "name": "D6 disk floors: the START floor precedes the wait, the re-check follows it, and pulls go through the floor",
+   "ok": true
+  },
+  {
+   "name": "D6 BOX2_BUSY is taken atomically (noclobber) AFTER the wait, and nothing is created on box 2's behalf before it (mkdir of $E only after the busy marker)",
+   "ok": true
+  },
+  {
+   "name": "D6 the refresh refuses a tip without the stages / levers BEFORE anything is shipped to box 2",
+   "ok": true
+  },
+  {
+   "name": "D6 the lever list names the loop's ego.apply, the probe call, the summary counter and the queue lines",
+   "ok": true
+  },
+  {
+   "name": "D6 nothing in the chain hard-codes C:/Users/Admin/box2_ship (every path comes from OAF_SHIP_DIR / the chain's own dir) except the default",
+   "ok": true
+  },
+  {
+   "name": "D7 --dry-run on the staged queue: rc 0, every run's planned line is ONE-LEVER and gate==train: 6 runs in PREREG order",
+   "ok": true
+  },
+  {
+   "name": "D7 --dry-run touched nothing: no box-2 call, no BOX2_BUSY.txt",
+   "ok": true
+  },
+  {
+   "name": "D7 --dry-run prints the queue's own training line for dagorc s0",
+   "ok": true
+  },
+  {
+   "name": "D7 --dry-run prints the queue's own training line for dagorc s1",
+   "ok": true
+  },
+  {
+   "name": "D7 --dry-run prints the queue's own training line for dagorcrep s0",
+   "ok": true
+  },
+  {
+   "name": "D7 --dry-run prints the queue's own training line for dagorcrep s1",
+   "ok": true
+  },
+  {
+   "name": "D7 --dry-run prints the queue's own training line for dagorc01 s0",
+   "ok": true
+  },
+  {
+   "name": "D7 --dry-run prints the queue's own training line for dagorc01 s1",
+   "ok": true
+  },
+  {
+   "name": "D7 DAGORC_SKIP_B=1 drops B: 4 runs, no dagorc01",
+   "ok": true
+  },
+  {
+   "name": "D8 --check-tree on the composed tip + staged queue: every lever pattern is present (rc 0)",
+   "ok": true
+  },
+  {
+   "name": "D9 predecessor ZZV8FMINI-DONE, BOX2_BUSY released -> GO",
+   "ok": true
+  },
+  {
+   "name": "D9 predecessor STOP of its own, BOX2_BUSY released -> GO (a stopped predecessor must not idle box 2)",
+   "ok": true
+  },
+  {
+   "name": "D10 a BOX2_BUSY.txt that is not ours is never removed by a chain that did not take it",
+   "ok": true
+  },
+  {
+   "name": "D10 the installed box2_ship has no DAG-ORC file (nothing here installs anything)",
+   "ok": true
+  },
+  {
+   "name": "E1 the chain ends rc 0 with ZZV8FMINI-DONE and releases BOX2_BUSY",
+   "ok": true
+  },
+  {
+   "name": "E1 the four A / REP gates run FIRST, in order, before any training",
+   "ok": true
+  },
+  {
+   "name": "E1 then train -> eval per run in PREREG order A s0, REP s0, A s1, REP s1",
+   "ok": true
+  },
+  {
+   "name": "E1 B's two gates and two runs come AFTER the four A / REP runs",
+   "ok": true
+  },
+  {
+   "name": "E1 the stages each ran exactly once (nothing retrained, nothing re-gated)",
+   "ok": true
+  },
+  {
+   "name": "E1 every run is pulled to the artifact dir with a SHA256SUMS.txt whose every line verifies",
+   "ok": true
+  },
+  {
+   "name": "E1 the chain prints one `pulled to` line, one PASS run record and one PASS K-REACH per run",
+   "ok": true
+  },
+  {
+   "name": "E1 every run has a launch-gate token bound to the remote tip, the gate verdict PASS, and the training argv's sha256",
+   "ok": true
+  },
+  {
+   "name": "E1 a token exists only AFTER its gate passed: the gates' stage calls all precede every training stage and each token file is newer than its gate selfcheck",
+   "ok": true
+  },
+  {
+   "name": "E1 K-BUILD is recorded against 1d4f4fbb: data and model blobs IDENTICAL, the trainer CHANGED (the F1 hunk) with its diff",
+   "ok": true
+  },
+  {
+   "name": "E1 K-REACH numbers printed: A / B at their p, REP exactly 0",
+   "ok": true
+  },
+  {
+   "name": "E1 the tip the chain exported is the remote's dagorc-new (the staged stages), not the local mirror's old ref",
+   "ok": true
+  },
+  {
+   "name": "E1 the guard ran against the fake box and exited when the chain ended (its log says so)",
+   "ok": true
+  },
+  {
+   "name": "E1 the checkpoints were hashed on box 2 after training and after the evals (equal), and the pulled ones equal them",
+   "ok": true
+  },
+  {
+   "name": "E1b DAGORC_SKIP_B=1: a complete chain of exactly the four A / REP runs (4 gates + 4 x train/eval = 12 stages), no dagorc01 anywhere, ZZV8FMINI-DONE",
+   "ok": true
+  },
+  {
+   "name": "E9 no DAG-ORC file appeared in the installed box2_ship during the whole section (the harness wrote only under its own scratch)",
+   "ok": true
+  }
+ ],
+ "regressions": [
+  {
+   "name": "A8 gatedag dagorc 0 0.1: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 gatedag dagorc 0 0.3: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 gatedag dagorc 0 x: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 gatedag dagorc 0 0: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 gatedag dagorcrep 0 0.1: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 gatedag dagorcrep 0 0.3: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 gatedag dagorcrep 0 x: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 gatedag dagorcrep 0 0: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 gatedag dagorc01 0 0.1: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 gatedag dagorc01 0 0.3: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 gatedag dagorc01 0 x: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 gatedag dagorc01 0 0: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A9 gatedag dagorc 2: a seed other than 0 / 1 is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A9 gatedag dagorc -1: a seed other than 0 / 1 is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A9 gatedag dagorc 10: a seed other than 0 / 1 is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A9 gatedag dagorc a: a seed other than 0 / 1 is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A10 gatedag dagorc (no seed) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A11 gatedag dagorcx 0: an unknown arm is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A11 gatedag dagorc2 0: an unknown arm is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A11 gatedag dagorcrep0 0: an unknown arm is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A11 gatedag orc 0: an unknown arm is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 traindag dagorc 0 0.1: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 traindag dagorc 0 0.3: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 traindag dagorc 0 x: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 traindag dagorc 0 0: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 traindag dagorcrep 0 0.1: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 traindag dagorcrep 0 0.3: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 traindag dagorcrep 0 x: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 traindag dagorcrep 0 0: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 traindag dagorc01 0 0.1: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 traindag dagorc01 0 0.3: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 traindag dagorc01 0 x: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A8 traindag dagorc01 0 0: any extra argument (a P) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A9 traindag dagorc 2: a seed other than 0 / 1 is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A9 traindag dagorc -1: a seed other than 0 / 1 is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A9 traindag dagorc 10: a seed other than 0 / 1 is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A9 traindag dagorc a: a seed other than 0 / 1 is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A10 traindag dagorc (no seed) is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A11 traindag dagorcx 0: an unknown arm is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A11 traindag dagorc2 0: an unknown arm is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A11 traindag dagorcrep0 0: an unknown arm is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "A11 traindag orc 0: an unknown arm is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "B5 a re-gate against a pin that names another argv is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "B6 traindag against a tampered pin is REFUSED (the line derived now differs from the one the gate tokenised)",
+   "caught": true
+  },
+  {
+   "name": "B7 traindag before its gate is REFUSED (no pinned training argv)",
+   "caught": true
+  },
+  {
+   "name": "B8 evaldag before the training finished is REFUSED",
+   "caught": true
+  },
+  {
+   "name": "B16 control: the existing `gatedag dag 0 0.1` on the same box still REFUSES without its bank",
+   "caught": true
+  },
+  {
+   "name": "C2n real-trainer record doctored: built p 0.1 instead of 0.3",
+   "caught": true
+  },
+  {
+   "name": "C2n real-trainer record doctored: probe grad_diff_all 0",
+   "caught": true
+  },
+  {
+   "name": "C2n real-trainer record doctored: probe control_prior_grad_diff 1e-9",
+   "caught": true
+  },
+  {
+   "name": "C2n real-trainer record doctored: init sha another checkpoint",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: init sha256 is another checkpoint (M2b's, not DAG_s0's)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: init_ckpt not applied",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: init_ckpt read-back mismatches > 0",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: init_ckpt path is M2b's directory",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: info.init_ckpt disagrees with levers.init_ckpt",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: steps_total 2999",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: built lr 2e-4",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: built p_gt 0.2 -> 0.0",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: declared_vs_built FAIL",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: G-LIVE prior control 1e-9",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: G-LIVE dead param",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: lru absent",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: excluded set is not the RA-1 holdout",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: train list is not DAG2-0's",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: a parameter group count differs from DAG2-0's",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: w_acc built 49.7 (a second lever)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: o_interface built cut (a second lever)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe reads 'off' on A",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe p_declared 0.1 on A",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe saw no eligible window",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe: the perturbed batch does not move the gradient",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe: the perturbed batch does not move the loss",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe control control_repeat_loss_diff = 1e-9",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe control control_repeat_grad_diff = 1e-9",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe control control_p0_loss_diff = 1e-9",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe control control_p0_grad_diff = 1e-9",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe control control_prior_grad_diff = 1e-9",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe: p = 0 is not the identity",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe: the world-model gradient moved",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe: G-LIVE on the perturbed batch failed",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ego probe: pass False",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: built p 0.1 on A (declared 0.3)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: built p 0.0 on A",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: built ego_perturb_vscale [0.4, 1.0] (the law differs)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: built ego_perturb_vmax 6.0 (the law differs)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: built ego_perturb_adrop 1.0 (the law differs)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: built ego_perturb_yawrate_std 1.0 (the law differs)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: built ego_perturb_seed 1 (the law differs)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: built kin_mode 'steer' (the law differs)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s1: A s1 built seed 0 (the law seed must be S)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc01 s0: B built p 0.3",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc01 s0: B probe p_declared 0.3",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorcrep s0: REP: the ego probe is not 'off'",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorcrep s0: REP: built p 0.3",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorcrep s0: REP: built yawrate_std 2.0 (a law value built at p 0)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: the DAgger probe is not 'off'",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: dagger_probe pass False",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: dagger_probe absent",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: built dagger_p 0.1",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: a bank hash was built",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorcrep s0: a bank hash was declared",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: info carries a DAgger control record",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines carry p 0.1",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines drop one law flag (--ego-perturb-adrop)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines change the law seed",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines name a law flag twice",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines drop --dagger-p 0 (the lever must be NAMED)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines name --dagger-p 0.1",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines name a bank",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines name --dagger-seed",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines carry a second lever (--w-acc 49.7)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines carry --o-interface cut",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines carry --no-resume",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines start from M2b_s0 (the old init)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines: --seed 10 (REP's seed)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines: --steps 3001",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines: --lr 2e-4",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: A's lines: --warmup 50",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ONE-LEVER only: --threads 3 appended identically to train, gate and pin (no other rule fires)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ONE-LEVER only: --batch 32 on train, gate and pin",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ONE-LEVER only: --exclude 1:2 on train, gate and pin",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: ONE-LEVER only: the same law flags and values in another order",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: the gate line differs from the train line (another batch size, train unchanged)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: the pin differs from the planned train line (another lr)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: the gate line carries no --selfcheck-only",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: the selfcheck's argv_sha is another argv's",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorcrep s0: REP's lines name a law flag (--ego-perturb-seed 0: equal to the trainer's default, so only this rule can see it)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorcrep s0: REP's lines name --ego-perturb-p 0.3",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorcrep s0: REP's lines carry --seed 0 (DAG2-0's seed: not a replicate)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorcrep s1: REP s1's lines carry --seed 10 (s0's)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorcrep s0: REP's lines carry --seed 12",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc01 s0: B's lines carry p 0.3 (A's dose)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc01 s0: B's lines carry p 0.2",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: the one-lever reference argv is seed 1's (a mispaired reference)",
+   "caught": true
+  },
+  {
+   "name": "C3 dagorc s0: the comparator B is the other seed's summary (its TRAIN list / window set are the same, its parameter groups too: only an UNRELATED summary may differ -> a doctored copy)",
+   "caught": true
+  },
+  {
+   "name": "C3 --seed 2 is REFUSED (rc 2: DAG_s exists for seeds 0 and 1 only)",
+   "caught": true
+  },
+  {
+   "name": "C4n a commit that is not 40 hex: no token",
+   "caught": true
+  },
+  {
+   "name": "C4n a failing check writes NO token",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: argv.json is not the planned argv (a lr changed)",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: the pin is not the planned argv",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: argv.json sha is another",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: summary.json argv_sha is another",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: selfcheck.json argv_sha is another",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: summary.json done false",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: summary.json steps 2999",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: summary.json seed 7",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: summary.json arm M1",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: the run's own selfcheck is not a PASS",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: init sha256 is M2b's (K-INIT)",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: init not applied",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: init path is M2b's",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: built p 0.1 on A",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: built law seed 1 on A s0",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: built vmax 6.0",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: built dagger_p 0.1",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc s0: run record: dagger_n 5 (a row was swapped)",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorcrep s0: run record: REP: built p 0.3",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorcrep s1: run record: REP s1: summary seed 1 (the DAG seed, not the replicate's 11)",
+   "caught": true
+  },
+  {
+   "name": "C5 dagorc01 s0: run record: B: built p 0.3",
+   "caught": true
+  },
+  {
+   "name": "C6 A: 0.321 is outside the band",
+   "caught": true
+  },
+  {
+   "name": "C6 A: 0.279 is outside the band",
+   "caught": true
+  },
+  {
+   "name": "C6 A: n = 0 (the loop line deleted) fails",
+   "caught": true
+  },
+  {
+   "name": "C6 A: eligible = 0 fails",
+   "caught": true
+  },
+  {
+   "name": "C6 A: n > eligible fails",
+   "caught": true
+  },
+  {
+   "name": "C6 B at A's rate 0.3 fails",
+   "caught": true
+  },
+  {
+   "name": "C6 A at B's rate 0.1 fails",
+   "caught": true
+  },
+  {
+   "name": "C6 REP: n = 1 fails (a perturbed row on the control)",
+   "caught": true
+  },
+  {
+   "name": "C6 REP: eligible = 0 fails (a zero that proves nothing)",
+   "caught": true
+  },
+  {
+   "name": "C6 A: the keys are absent",
+   "caught": true
+  },
+  {
+   "name": "C6 A: n is a bool / a float (not a count)",
+   "caught": true
+  },
+  {
+   "name": "C6 the REAL trainer run with the loop's `ego.apply` line DELETED (ego_perturb_n 0) is refused by K-REACH",
+   "caught": true
+  },
+  {
+   "name": "C7 one-lever dagorc s0: an extra flag prints NOT-ONE-LEVER",
+   "caught": true
+  },
+  {
+   "name": "C7 one-lever dagorc s0: lr changed prints NOT-ONE-LEVER",
+   "caught": true
+  },
+  {
+   "name": "C7 one-lever dagorc s0: a law flag dropped prints NOT-ONE-LEVER",
+   "caught": true
+  },
+  {
+   "name": "C7 one-lever dagorc s0: p 0.1 on A prints NOT-ONE-LEVER",
+   "caught": true
+  },
+  {
+   "name": "C7 one-lever dagorc s0: --dagger-p 0.1 prints NOT-ONE-LEVER",
+   "caught": true
+  },
+  {
+   "name": "C7 one-lever dagorc s0: the init is M2b's prints NOT-ONE-LEVER",
+   "caught": true
+  },
+  {
+   "name": "C7 one-lever dagorcrep s0: --seed 0 prints NOT-ONE-LEVER",
+   "caught": true
+  },
+  {
+   "name": "C7 one-lever dagorc s0 on seed 1's line prints NOT-ONE-LEVER",
+   "caught": true
+  },
+  {
+   "name": "D1 a truncated chain fails bash -n (the check is real)",
+   "caught": true
+  },
+  {
+   "name": "D3 a chain with one byte changed is not the regeneration",
+   "caught": true
+  },
+  {
+   "name": "D4 a doctored CKPT_SHA is caught",
+   "caught": true
+  },
+  {
+   "name": "D4 a doctored D20_ARGV_SHA is caught",
+   "caught": true
+  },
+  {
+   "name": "D4 a doctored OAF_LIB_SHA is caught",
+   "caught": true
+  },
+  {
+   "name": "D4 a doctored OAF_CHECKS_SHA is caught",
+   "caught": true
+  },
+  {
+   "name": "D4 a doctored BUILD_REF is caught",
+   "caught": true
+  },
+  {
+   "name": "D7 --dry-run refuses a queue where law_vmax is changed",
+   "caught": true
+  },
+  {
+   "name": "D7 --dry-run refuses a queue where p_wrong is changed",
+   "caught": true
+  },
+  {
+   "name": "D7 --dry-run refuses a queue where rep_seed is changed",
+   "caught": true
+  },
+  {
+   "name": "D7 --dry-run refuses a queue where dagger_p is changed",
+   "caught": true
+  },
+  {
+   "name": "D7 --dry-run refuses a queue where steps is changed",
+   "caught": true
+  },
+  {
+   "name": "D7 --dry-run refuses the tip queue (no DAG-ORC stages)",
+   "caught": true
+  },
+  {
+   "name": "D8 --check-tree refuses a tree where noapply",
+   "caught": true
+  },
+  {
+   "name": "D8 --check-tree refuses a tree where noprobe",
+   "caught": true
+  },
+  {
+   "name": "D8 --check-tree refuses a tree where noseedflag",
+   "caught": true
+  },
+  {
+   "name": "D8 --check-tree refuses a tree where nocount",
+   "caught": true
+  },
+  {
+   "name": "D8 --check-tree refuses a tree where noinit",
+   "caught": true
+  },
+  {
+   "name": "D8 --check-tree refuses a tree where noclass",
+   "caught": true
+  },
+  {
+   "name": "D8 --check-tree refuses a tree where noorcarm",
+   "caught": true
+  },
+  {
+   "name": "D8 --check-tree on a directory that does not exist is a usage error",
+   "caught": true
+  },
+  {
+   "name": "D8 --check-tree refuses the repo tip as it is TODAY (queue without the stages): the chain would not start until they land",
+   "caught": true
+  },
+  {
+   "name": "D9 predecessor STOP with a ZZGUARD-STOP line (the box may be hot) -> HALT, no GO",
+   "caught": true
+  },
+  {
+   "name": "D9 predecessor DONE but BOX2_BUSY still held -> HALT",
+   "caught": true
+  },
+  {
+   "name": "D9 predecessor STOP with BOX2_BUSY held -> BUSY three times, then HALT (never GO)",
+   "caught": true
+  },
+  {
+   "name": "D9 no end marker yet -> WAIT (never GO)",
+   "caught": true
+  },
+  {
+   "name": "D9 an echoed `waiting for ^ZZV8FMINI-DONE` line (the marker is ANCHORED) -> WAIT (never GO)",
+   "caught": true
+  },
+  {
+   "name": "D9 the predecessor's log does not exist -> WAIT (never GO)",
+   "caught": true
+  },
+  {
+   "name": "D9 AFTER_OUT unset -> STOP (no default predecessor log: a default can already be satisfied by an OLD log)",
+   "caught": true
+  },
+  {
+   "name": "D10 AFTER_OUT unset: STOP before anything is touched",
+   "caught": true
+  },
+  {
+   "name": "D10 the asserter is not installed beside the chain: STOP before anything is touched",
+   "caught": true
+  },
+  {
+   "name": "D10 the run-record / K-REACH helper is not installed: STOP before anything is touched",
+   "caught": true
+  },
+  {
+   "name": "D10 oaf_lib.sh differs from the proven file: STOP (a changed lib is a changed chain)",
+   "caught": true
+  },
+  {
+   "name": "D10 v8f_oaf_chain_checks.py differs from the proven file: STOP",
+   "caught": true
+  },
+  {
+   "name": "D10 the disk floor: E: could not take the six runs above 1 GiB -> ZZDISK-FLOOR-STOP before the wait",
+   "caught": true
+  },
+  {
+   "name": "D10 the artifact directory's parent does not exist -> STOP",
+   "caught": true
+  },
+  {
+   "name": "D10 the predecessor was stopped by the guard -> HALT before the busy marker is taken",
+   "caught": true
+  },
+  {
+   "name": "E2 a gate whose init checkpoint is NOT DAG_s0's: STOP at that gate; no training started, no token for it",
+   "caught": true
+  },
+  {
+   "name": "E2 a gate whose ego probe moves no gradient (A s1): the first two gates pass, the third STOPs; no training started",
+   "caught": true
+  },
+  {
+   "name": "E2 REP s0's run APPLIED the perturbation (ego_perturb_n 123): ZZDAGORC-CONTROL-FAIL after REP s0, the s1 pair never trains",
+   "caught": true
+  },
+  {
+   "name": "E2 A s0's loop never applied the perturbation (ego_perturb_n 0 although the gate passed): ZZDAGORC-CONTROL-FAIL, nothing after it trains",
+   "caught": true
+  },
+  {
+   "name": "E2 A s0's argv.json is not the planned training argv: the run record STOPs",
+   "caught": true
+  },
+  {
+   "name": "E2 A s0's training job exits rc 1: STOP, no eval, nothing after it",
+   "caught": true
+  },
+  {
+   "name": "E2 box 2's DAG_s1 checkpoint is not the banked one: STOP before any gate",
+   "caught": true
+  },
+  {
+   "name": "E2 a v9 release whose md5 is not the pinned one: STOP before any gate",
+   "caught": true
+  },
+  {
+   "name": "E2 box 2's trainer is not the tip's: STOP before any gate",
+   "caught": true
+  },
+  {
+   "name": "E2 a pull that lands A s0's checkpoint with the right size and one byte wrong: STOP at the pulled-checkpoint hash, nothing after it trains",
+   "caught": true
+  },
+  {
+   "name": "E2 an eval that rewrites the checkpoint it evaluated (hashed after training and again after the evals): STOP",
+   "caught": true
+  },
+  {
+   "name": "E3 the remote tip WITHOUT the queue stages (dagorc-old = 3b7b404e): the chain refuses at the refresh, ships nothing, launches no job, releases BOX2_BUSY",
+   "caught": true
+  },
+  {
+   "name": "E3 a remote tip with the stages but WITHOUT the trainer's `b = ego.apply(b, step)` loop line: the chain refuses at the refresh (the lever is declared and gated and never applied)",
+   "caught": true
+  }
+ ],
+ "pass": true
+}

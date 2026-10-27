@@ -226,6 +226,7 @@ ORC_LABELS = {"orcarm", "gateorc", "trainorc", "evalorc"}                       
 DAG_LABELS = {"dagname", "prepdag", "dagarm", "dagarm_dry", "dagarm_have", "bankdag", "gatedag", "traindag", "evaldag", "dag2arm", "dag2arm_dry", "dag2arm_have", "bankdag2"}      # PREREG_V8F_DAGGER / PREREG_V8F_DAGGER2 appended these after ORC's (widened here, nothing else)
 DAG_LABELS |= {"dagoaccarm", "dagoaccarm_dry", "dagoaccarm_have", "dagoaccwacc", "dagoaccwacc_dry", "dagoaccwacc_have", "waccdag"}      # PREREG_V8F_DAG_OACC, after DAGGER2's
 DAG_LABELS |= {"flatdagarm", "flatdagarm_dry", "flatdagarm_have", "evalflatdag", "evalflatdag_1", "evalflatdag_2", "bankflat"}      # PREREG_V8F_FLATDAG, after DAG-OACC's
+DAG_LABELS |= {"dagorcarm"}      # PREREG_V8F_DAG_ORC, after FLAT-DAG's
 OLD_DISPATCH = ("gate", "train", "eval", "floors", "compare", "tac", "tacgrp", "tacgrp2", "tacabs", "gatearm", "tacabsarm", "gatewc", "trainwc", "evalwc", "gatepgt", "trainpgt",
                 "evalpgt", "gategrid", "traingrid", "evalgrid", "gatehist", "trainhist", "evalhist", "gatedscale", "traindscale", "evaldscale", "identitylora", "smokelora")
 needs_queue = pytest.mark.skipif(not QUEUE.exists(), reason="the v8F-mini package is not in this checkout")

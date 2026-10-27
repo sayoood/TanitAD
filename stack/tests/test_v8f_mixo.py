@@ -1296,6 +1296,7 @@ ORC_LABELS = {"orcarm", "gateorc", "trainorc", "evalorc"}           # PREREG_V8F
 DAG_LABELS = {"dagname", "prepdag", "dagarm", "dagarm_dry", "dagarm_have", "bankdag", "gatedag", "traindag", "evaldag", "dag2arm", "dag2arm_dry", "dag2arm_have", "bankdag2"}      # PREREG_V8F_DAGGER / PREREG_V8F_DAGGER2 appended these after ORC's (widened here, nothing else)
 DAG_LABELS |= {"dagoaccarm", "dagoaccarm_dry", "dagoaccarm_have", "dagoaccwacc", "dagoaccwacc_dry", "dagoaccwacc_have", "waccdag"}      # PREREG_V8F_DAG_OACC, after DAGGER2's
 DAG_LABELS |= {"flatdagarm", "flatdagarm_dry", "flatdagarm_have", "evalflatdag", "evalflatdag_1", "evalflatdag_2", "bankflat"}      # PREREG_V8F_FLATDAG, after DAG-OACC's
+DAG_LABELS |= {"dagorcarm"}      # PREREG_V8F_DAG_ORC, after FLAT-DAG's
 OACC_LABELS = {"waccoacc", "oaccwacc", "gateoacc", "trainoacc", "evaloacc", "fitoacc"}         # PREREG_V8F_OACC appended these after FLAT's (test_v8f_oacc.py pins them); widened here, nothing else
 # PREREG_V8F_KIND's four labels as they stand at c0769eaa (sha256[:16] of "\n" + the text up to the next label): PREREG_V8F_MIXO appended AFTER them and edited none
 KIND_PINS = {"kind": "d1445aa3e2135915", "kindseed": "9c13c94705b73355", "kindown": "df45fbd31218aea9", "kindorc": "e7051ae3f70c3a4f"}
