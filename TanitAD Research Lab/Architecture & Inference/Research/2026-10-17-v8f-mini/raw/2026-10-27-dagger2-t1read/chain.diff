@@ -1,0 +1,277 @@
+--- dagt1/dag_t1_chain.sh
++++ dag2_t1_chain.sh
+@@ -2,15 +2,12 @@
+-# PREREG_V8F_DAGGER (Project Steering/PREREG_V8F_DAGGER.md at 55548f9b = the draft + Amendment 1), section 5 + 8: the DEV-BOX CPU part, as ONE detached chain (ZERO training, ZERO GPU, box 2 is never touched).
+-# It is orc_t1_chain.sh (orct1, ORC Amendments 2-4) re-parametrised for the DAgger arms.  BUILT AND SELF-TESTED, NOT LAUNCHED.
+-#   for each of the four runs, in the PREREG's order (section 8, item 2):  DAG s0, DAG-0 s0, DAG s1, DAG-0 s1
+-#     1. wait until box 2's pull of that run to <ART>/M2b_s<S>_<dag|dag0>/ is COMPLETE  (dagt1_pullcheck.py: SHA256SUMS.txt lists EXACTLY the 8 names, every file exists, is non-empty and
+-#        re-hashes to the listed sha256, summary.json done, and the run's own records say it IS this arm and seed).  By CONTENT: never on a half-pulled file, never on a stale SHA256SUMS.txt.
+-#        A directory that verifies but is ANOTHER run's (a dag0 dir holding DAG's records), or whose SHA256SUMS.txt carries a box-2 fresh-age eval (decision O1: the 10-name form), is not waited for: the chain STOPs.
+-#     2. two T1-kin rollouts on eval-141, plain (no post-map), CPU:
+-#          v8f_t1_eval.py run --replan-steps 10 --nav deadreckon --scene logged --schedule periodic --limit causal --dump-ticks --dump-heads     (decisive)
+-#          v8f_t1_eval.py run ... --limit logged ...                                                                                            (K4 only, ORC Amendment 2)
+-#     3. the fresh-age T0 eval of the checkpoint on CPU (v8f_mini_eval.py run --ages fresh ...): K4's comparator (ORC Amendment 4; PREREG section 5).  Box 2 runs only the standard eval (R-T0, T0-CKPT).
+-#   two lanes (A: every --limit causal rollout, B: every --limit logged rollout + the fresh evals), so AT MOST 2 rollout processes at once; CUDA_VISIBLE_DEVICES=-1.
+-#   ORC-0 is NOT re-run: the reader reads the banked O-RECOVER ORC-0 outputs (<ORC_T1>, <ORC_ART>) for the replicate floor RF.  The chain checks they are present and bound to the banked checkpoints.
+-#   after all four runs: the bank directories must be COMPLETE (dagt1_pullcheck.py bank: the box-2 chain's 11-name SHA256SUMS.txt over PROVENANCE.json, bank.json, the 4 shard provenance files, the 4 shard npz -- the reader
+-#   loads every shard npz for the bank's clip names -- and bank_stage.log, all re-hashed; bank.json's sha256 == the --dagger-bank-sha256 box 2's trainer gate declared in the argv it pinned), dagt1_manifest.py writes the reader
+-#   manifest runs.json (bank.{s}.report and bank_file = the pulled copies), then dag_read.py runs with every required argument.
++# PREREG_V8F_DAGGER2 (Project Steering/PREREG_V8F_DAGGER2.md @ 1446333d = as amended by Amendment 1, A1-2026-10-27, sha256 c4239e45...): the DEV-BOX CPU part, as ONE detached chain (ZERO training, ZERO GPU, box 2 is never touched).
++# DERIVED from dag_t1_chain.sh (the chain that ran PREREG_V8F_DAGGER's four runs end to end) by mk_dag2_helpers.py (chain.diff).  BUILT AND SELF-TESTED, NOT LAUNCHED.
++#   for each of the four runs, in the PREREG's order:  DAG2 s0, DAG2-0 s0, DAG2 s1, DAG2-0 s1      (arms dag2 / dag20; box 2 pulls them to <ART>/M2b_s<S>_dag2 and <ART>/M2b_s<S>_dag20)
++#     1. wait until the pull is COMPLETE by content (dag2t1_pullcheck.py: SHA256SUMS.txt lists EXACTLY the 8 names, every file re-hashes, summary.json done, and the run's own records say it IS
++#        this arm and seed: init = DAG_s<S>, dag2 names all four dagger flags with the iteration-2 bank, dag20 only --dagger-p 0).  A dag20 directory holding DAG2's run is a STOP.
++#     2. two T1-kin rollouts on eval-141, plain, CPU, DAG's exact settings and tool tree:  --limit causal (decisive) and --limit logged (K4 only), tags DAG2_s<S>_m10_<limit>_heads / DAG20_...
++#     3. the fresh-age T0 eval of the checkpoint on CPU (K4's comparator).  Box 2 runs only the standard eval (R-T0).
++#   two lanes (A: every causal rollout, B: every logged rollout + the fresh evals), so AT MOST 2 rollout processes at once; CUDA_VISIBLE_DEVICES=-1.
++#   ORC-0 is not used: PREREG_V8F_DAGGER2 change 3 fixes RF (no replicate of DAG2-0 is trained).  DAG's banked outputs (v8f-dagger-t1/, dagreread/) are READ, never re-run: they are the DAG - P10 baseline of the
++#   newly-worse clause.  The chain checks at start that they are present and are the pinned files (dag2t1_manifest.py dagbase).
++#   after all four runs: the bank gate (both pulled <ART>/bank_s<S>/ COMPLETE: 11 files each, bank.json == the --dagger-bank-sha256 box 2's gate declared for DAG2 s<S>), dag2t1_manifest.py writes runs.json,
++#   then dag2_read.py (which runs the DAGGER reader on DAG2 / DAG2-0 and Read A's rows) writes DAG2_READ.json.
+@@ -18,5 +15,5 @@
+-#   bash dag_t1_chain.sh --dry-run     prints every guard result, path, pull state, the EXACT command of every rollout / eval, the manifest it would write and the reader command; touches nothing.
+-#   bash dag_t1_chain.sh               the real chain.  RESUME = re-run the same command: a finished rollout (json + ticks + 141 episode dumps + a done record naming THIS checkpoint's sha256 and tool
+-#                                      digest) is skipped, an incomplete rollout of an earlier attempt is MOVED to <OUT>/_incomplete_*/ (never deleted) and redone.
+-# Markers (own log, <LOG>/chain.out):   ZZDAGT1-DONE <n>/8 rollouts, reader rc <rc> ...   |   ZZDAGT1-STOP <reason>   (STOP also touches <LOG>/STOP; the other lane stops at its next step).
+-#   The reader's own rc is reported: 0 = an outcome row was written, 2 = REFUSED (a control failed; nothing written), 3 = UNPLACED, 4 = BLOCKED (written; no arm read).  rc 2 is a finished chain with a verdict "fix and re-run".
++#   bash dag2_t1_chain.sh --dry-run    prints every guard result, path, pull state, the EXACT command of every rollout / eval, the manifest and the reader command; touches nothing.
++#   bash dag2_t1_chain.sh              the real chain.  RESUME = re-run the same command (a finished rollout is skipped by a done record naming THIS checkpoint's sha256 and the tool digest;
++#                                      an incomplete earlier attempt is MOVED to <OUT>/_incomplete_*, never deleted).
++# Markers (own log, <LOG>/chain.out):  ZZDAG2T1-DONE <n>/8 rollouts, reader rc <rc> ...  |  ZZDAG2T1-STOP <reason>   (STOP also touches <LOG>/STOP; the other lane stops at its next step).
++#   Reader rc: 0 = an outcome row was written (FIXED / PARTIAL / NO EFFECT / HARMS), 2 = REFUSED (a control failed; nothing written), 3 = UNPLACED (defensive: unreachable since Amendment 1 made the table complete), 4 = BLOCKED (written).
+@@ -24,6 +21,4 @@
+-# WHICH TREE (the single tree parameter):  DAGT1_TREE = the tree the T1 / T0 tools, the reader's --tool-root, the eval grid / join / kin and the T1-HEADS reader modules are taken from.
+-#   It MUST be a tree that carries the DAgger trainer (the lever greps below, the same facts as chain_v8f_dag.sh's LEVER list), i.e. the LANDED DAgger tip exported to a directory, so the checkpoints and the tools that
+-#   score them come from one commit.  Until the DAgger code lands, the only such tree is the integration tree E:/Projects/TanitAD-artifacts/di/tree (tip 2a78f059 + the DAgger files, STAGED): that is the default.
+-#   NOT rt4/tree (the O-RECOVER-era export: no v8f_dagger.py, no --dagger-* flags; the lever greps REFUSE it) and not the T1-HEADS tool tree.  MEASURED (dagt1/NOTES.md section 2): the eval loaders do NOT need the
+-#   trainer (they read ck["cfg"] and ck["model"] only) and every module they can import is identical to the ORC-0 tool tree's but one additive block, so the tree is a provenance requirement, not a numerical one;
+-#   the parity guard below re-asserts that for whatever tree is given, so the replicate floor never compares two different tools.
++# WHICH TREE:  DAG2T1_TREE = the tool tree DAG's rollouts used (default E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a), so DAG and DAG2 are scored by ONE tool.  The chain asserts it carries the DAgger
++#   trainer (lever greps) and is IDENTICAL to the tree that rolled DAG out (the tree= line of <DAG_T1>/PINS.txt; same directory = trivially identical; another directory = file-by-file parity).
++# DISK (MEASURED 2026-10-27): DAG's T1 outputs are 1.3 GB (8 rollouts x ~150 MB + ticks + T0).  E: has ~1.7 GB free: the chain gates on E: (DAG2T1_E_MIN_MB, default 1500 at start, 200 before each rollout) in
++#   addition to the registered C: >= 2048 MB gate.  If E: is short the chain WAITS (up to 2 h) for space, then STOPs; it never deletes anything.
+@@ -31,8 +26,4 @@
+-#   DAGT1_TREE          the tree (above)                                          DAGT1_READER   dag_read.py (default C:/Users/Admin/dagread/dag_read.py, the final reader: 112 tests, 153/153 mutants)
+-#   DAGT1_ART           where box 2's chain pulls (DAG_ART of chain_v8f_dag.sh; default E:/Projects/TanitAD-artifacts/v8f-dagger)       DAGT1_OUT / DAGT1_LOG  rollout+read output (E:) / chain log
+-#   DAGT1_ORC_ART / DAGT1_ORC_T1   the banked O-RECOVER pull / T1 outputs (ORC-0 is read from there)          DAGT1_ORC_TOOL_TREE  the tool tree that rolled ORC-0 out (default: the tree= line of <ORC_T1>/PINS.txt)
+-#   DAGT1_PARITY=off    WAIVE the parity guard (loudly; a PI decision, written into PINS.txt)
+-#   DAGT1_B2_OUT        OPTIONAL: the box-2 chain's log; a ZZV8FMINI-STOP after this chain started stops it      (DAGT1_B2_FRESH was REMOVED with decision O1: box 2 pulls no fresh-age eval; setting it STOPs the chain)
+-#   DAGT1_M2B_SHA_JSON  OPTIONAL: the box-2 chain's ckpt_sha256.json (cross-check)       DAGT1_MAX_WAIT_H  longest wait for ONE pull, hours (40)      DAGT1_BANK_WAIT_H  longest wait for the bank directories before the reader (12)
+-#   DAGT1_C_MIN_MB      C: free MB the chain needs (default 2048 = PREREG section 8 "C: >= 2 GB"; checked at the start AND before every rollout; the pagefile is on C:)
+-#   DAGT1_SMOKE=1       plumbing test only: 24 windows, tags SMOKE_, outputs under dagt1/smoke, marker ZZDAGT1-SMOKE-DONE, stand-in run(s) from DAGT1_RUNS (default dag:0), the manifest replicates that one run, no bank gate.
++#   DAG2T1_TREE  DAG2T1_READER (dag2_read.py)  DAG2T1_DAG_READER (dag_read.py, pinned)  DAG2T1_READERS (dagreread/reader_src)  DAG2T1_READA_CODE (dag2t1/readA_code)  DAG2T1_LEAD_BLOCK
++#   DAG2T1_ART (box 2's pull dir, default E:/Projects/TanitAD-artifacts/v8f-dagger2)   DAG2T1_OUT / DAG2T1_LOG   DAG2T1_DAG_ART / DAG2T1_DAG_T1 (DAG's banked pull / T1 outputs)
++#   DAG2T1_PREREG2 (PREREG_V8F_DAGGER2.md; sha256-pinned)   DAG2T1_B2_OUT (box-2 chain log; a ZZV8FMINI-STOP after this chain started stops it)   DAG2T1_MAX_WAIT_H (40)   DAG2T1_BANK_WAIT_H (12)
++#   DAG2T1_C_MIN_MB (2048)   DAG2T1_E_MIN_MB (1500)   DAG2T1_M2B_SHA_JSON (box-2 ckpt_sha256.json cross-check)   DAG2T1_TEST_CFREE_MB / DAG2T1_TEST_EFREE_MB (--dry-run only)
+@@ -42 +33 @@
+-case "${1:-}" in --dry-run) DRY=1 ;; "") ;; *) echo "usage: dag_t1_chain.sh [--dry-run]   (configuration = DAGT1_* environment variables, see the header)"; exit 2 ;; esac
++case "${1:-}" in --dry-run) DRY=1 ;; "") ;; *) echo "usage: dag2_t1_chain.sh [--dry-run]   (configuration = DAG2T1_* environment variables, see the header)"; exit 2 ;; esac
+@@ -44 +35 @@
+-SMOKE=${DAGT1_SMOKE:-0}
++SMOKE=0
+@@ -47,15 +38,14 @@
+-TT=${DAGT1_TREE:-E:/Projects/TanitAD-artifacts/di/tree}
+-READER=${DAGT1_READER:-C:/Users/Admin/dagread/dag_read.py}
+-SF=${DAGT1_INPUTS:-/e/Projects/TanitAD-artifacts/sfresh_inputs}                              # on E: (the Master Mind's md5-verified copy of the T1-HEADS inputs; nothing of this chain lives on C:)
+-ORC_ART=${DAGT1_ORC_ART:-/e/Projects/TanitAD-artifacts/v8f-orecover}; ORC_T1=${DAGT1_ORC_T1:-/e/Projects/TanitAD-artifacts/v8f-orecover-t1}
+-REL=${DAGT1_TRAIN_RELEASE:-/e/Projects/TanitAD-artifacts/_s2build-copy-20260919/release/v72/s2_labels_v7.2_train.jsonl.gz}
+-PREREG_SHA=${DAGT1_PREREG_SHA:-a4df4b8f44d9a322a1907338c990dee09d03fb35e1e136e6c60eb72a790f60f9}   # the LANDED PREREG (draft + Amendment 1) the reader was built and mutation-tested against
+-if [ "$SMOKE" = 1 ]; then
+-  TAGP="[SMOKE] "; PFX=SMOKE_; MAXW=24; NDUMP=1; POLL=${DAGT1_POLL_S:-2}; DONE_MARK=ZZDAGT1-SMOKE-DONE
+-  ART=${DAGT1_ART:-$H/smoke/art}; OUT=${DAGT1_OUT:-$H/smoke/out}; LOG=${DAGT1_LOG:-$H/smoke/logs}
+-  IFS=, read -ra RUNS <<< "${DAGT1_RUNS:-dag:0}"; REP=${RUNS[0]}
+-else
+-  TAGP=""; PFX=""; MAXW=0; NDUMP=141; POLL=60; DONE_MARK=ZZDAGT1-DONE; REP=""
+-  ART=${DAGT1_ART:-/e/Projects/TanitAD-artifacts/v8f-dagger}; OUT=${DAGT1_OUT:-/e/Projects/TanitAD-artifacts/v8f-dagger-t1}; LOG=${DAGT1_LOG:-$H/logs}
+-  RUNS=(dag:0 dag0:0 dag:1 dag0:1)         # FOUR runs, ALWAYS ALL FOUR, in the PREREG's order; no run is conditional on another's read (DAGT1_RUNS is honoured in SMOKE only)
+-fi
++TT=${DAG2T1_TREE:-E:/Projects/TanitAD-artifacts/dagt1_tree_b43c7a9a}
++READER=${DAG2T1_READER:-$Hm/dag2_read.py}                                                       # dag2_read.py (this directory)
++DAGR=${DAG2T1_DAG_READER:-C:/Users/Admin/dagread/dag_read.py}                                    # the DAGGER reader dag2_read imports (sha256-pinned inside dag2_read.py)
++RSRC=${DAG2T1_READERS:-/e/Projects/TanitAD-artifacts/dagreread/reader_src}                       # Read A's reader sources (the files committed at bdf8d561)
++RCODE=${DAG2T1_READA_CODE:-$Hm/readA_code}                                                       # Read A's driver code (rr_lib.py, readA.py, build_report.py; sha256-pinned copies of dagreread/code/)
++LEADBLK=${DAG2T1_LEAD_BLOCK:-$Hm/inputs/b1_eval_lead_block_k30.npz}                                 # a sha256-verified copy (7a879baa...) of the repo blob 1d4f4fbb:<v8f-mini>/raw/2026-10-22-dk/b1_eval_lead_block_k30.npz, staged next to this chain (the old default lived in a session scratchpad)
++SF=${DAG2T1_INPUTS:-/e/Projects/TanitAD-artifacts/sfresh_inputs}                                 # on E: (the Master Mind's md5-verified copy of the T1-HEADS inputs; nothing of this chain lives on C:)
++DAG_ART=${DAG2T1_DAG_ART:-/e/Projects/TanitAD-artifacts/v8f-dagger}; DAG_T1=${DAG2T1_DAG_T1:-/e/Projects/TanitAD-artifacts/v8f-dagger-t1}     # DAG's banked pull / T1 outputs (READ only)
++REL=${DAG2T1_TRAIN_RELEASE:-/e/Projects/TanitAD-artifacts/_s2build-copy-20260919/release/v72/s2_labels_v7.2_train.jsonl.gz}
++PREREG_SHA=${DAG2T1_PREREG_SHA:-a4df4b8f44d9a322a1907338c990dee09d03fb35e1e136e6c60eb72a790f60f9}   # PREREG_V8F_DAGGER.md (landed text; the DAGGER reader checks its table cells in it)
++PREREG2=${DAG2T1_PREREG2:-$Hm/inputs/PREREG_V8F_DAGGER2.md}; PREREG2_SHA=c4239e4590ee26e30ce6f525987aca82e3fb8ff034b7264321e2d0faa724f1c6   # PREREG_V8F_DAGGER2.md @ 1446333d (Amendment 1): the staged blob copy; dagland/'s copy is the as-landed 1d4f4fbb text
++TAGP=""; PFX=""; MAXW=0; NDUMP=141; POLL=60; DONE_MARK=ZZDAG2T1-DONE; REP=""
++ART=${DAG2T1_ART:-/e/Projects/TanitAD-artifacts/v8f-dagger2}; OUT=${DAG2T1_OUT:-/e/Projects/TanitAD-artifacts/v8f-dagger2-t1}; LOG=${DAG2T1_LOG:-$H/logs}
++RUNS=(dag2:0 dag20:0 dag2:1 dag20:1)     # FOUR runs, ALWAYS ALL FOUR, in the PREREG's order (DAG2 s0, DAG2-0 s0, DAG2 s1, DAG2-0 s1); no run is conditional on another's read
+@@ -65 +55,2 @@
+-SFu=$(cygpath -u "$SF"); SFm=$(m "$SF"); ORC_ARTm=$(m "$ORC_ART"); ORC_T1m=$(m "$ORC_T1"); ORC_T1u=$(cygpath -u "$ORC_T1"); RELm=$(m "$REL"); READERm=$(m "$READER")
++SFu=$(cygpath -u "$SF"); SFm=$(m "$SF"); DAG_ARTm=$(m "$DAG_ART"); DAG_T1m=$(m "$DAG_T1"); DAG_T1u=$(cygpath -u "$DAG_T1"); RELm=$(m "$REL"); READERm=$(m "$READER"); DAGRm=$(m "$DAGR"); RSRCm=$(m "$RSRC")
++RCODEm=$(m "$RCODE"); LEADBLKm=$(m "$LEADBLK"); PREREG2m=$(m "$PREREG2")
+@@ -70 +61 @@
+-MAXWAIT_S=$(( ${DAGT1_MAX_WAIT_H:-40} * 3600 )); BANKWAIT_S=$(( ${DAGT1_BANK_WAIT_H:-12} * 3600 )); CMIN=${DAGT1_C_MIN_MB:-2048}
++MAXWAIT_S=$(( ${DAG2T1_MAX_WAIT_H:-40} * 3600 )); BANKWAIT_S=$(( ${DAG2T1_BANK_WAIT_H:-12} * 3600 )); CMIN=${DAG2T1_C_MIN_MB:-2048}
+@@ -74 +65 @@
+-  stop() { say "$*"; echo "ZZDAGT1-STOP $*"; exit 1; }
++  stop() { say "$*"; echo "ZZDAG2T1-STOP $*"; exit 1; }
+@@ -78 +69 @@
+-  stop() { say "STOP: $*"; echo "ZZDAGT1-STOP $*" >> "$LOGu/chain.out"; touch "$LOGu/STOP"; exit 1; }
++  stop() { say "STOP: $*"; echo "ZZDAG2T1-STOP $*" >> "$LOGu/chain.out"; touch "$LOGu/STOP"; exit 1; }
+@@ -80 +71 @@
+-  say "=== dag_t1_chain start (tree $TTm, reader $READERm, ART $ARTm, OUT $OUTm; runs $RUNSCSV)"
++  say "=== dag2_t1_chain start (tree $TTm, reader $READERm, ART $ARTm, OUT $OUTm; runs $RUNSCSV)"
+@@ -84,2 +75,2 @@
+-rundir() { echo "M2b_s${2}_${1}"; }                                   # rundir <arm> <seed>: the directory box 2's chain pulls into (M2b_s0_dag, M2b_s0_dag0, ...)
+-armU() { if [ "$1" = dag ]; then echo DAG; else echo DAG0; fi; }
++rundir() { echo "M2b_s${2}_${1}"; }                                   # rundir <arm> <seed>: the directory box 2's chain pulls into (M2b_s0_dag2, M2b_s0_dag20, ...)
++armU() { if [ "$1" = dag2 ]; then echo DAG2; else echo DAG20; fi; }
+@@ -88,5 +79,5 @@
+-  if [ -n "${DAGT1_TEST_CFREE_MB:-}" ] && { [ "$DRY" = 1 ] || [ "$SMOKE" = 1 ]; }; then echo "$DAGT1_TEST_CFREE_MB"; else df -m /c | awk 'NR==2{print $4}'; fi
+-}
+-for r in "${RUNS[@]}"; do case "$r" in dag:[01]|dag0:[01]) ;; *) stop "bad run spec '$r' (arm:seed, arm in dag/dag0, seed 0/1)" ;; esac; done
+-[ "$SMOKE" = 1 ] || [ "${DAGT1_RUNS:-}" = "" ] || say "NOTE: DAGT1_RUNS is ignored outside SMOKE (the PREREG runs ALL FOUR)"
+-[ -z "${DAGT1_B2_FRESH:-}" ] || stop "DAGT1_B2_FRESH='$DAGT1_B2_FRESH' is set, but that switch was REMOVED (decision O1, 2026-10-26): box 2 runs no fresh-age eval and a SHA256SUMS.txt that carries one is refused; the fresh-age T0 eval is a dev-box CPU step of this chain. Unset it."
++  if [ -n "${DAG2T1_TEST_CFREE_MB:-}" ] && { [ "$DRY" = 1 ] || [ "$SMOKE" = 1 ]; }; then echo "$DAG2T1_TEST_CFREE_MB"; else df -m /c | awk 'NR==2{print $4}'; fi
++}
++for r in "${RUNS[@]}"; do case "$r" in dag2:[01]|dag20:[01]) ;; *) stop "bad run spec '$r' (arm:seed, arm in dag2/dag20, seed 0/1)" ;; esac; done
++[ "${DAG2T1_RUNS:-}" = "" ] || say "NOTE: DAG2T1_RUNS is ignored (the PREREG runs ALL FOUR, in its order)"
++[ -z "${DAG2T1_B2_FRESH:-}" ] || stop "DAG2T1_B2_FRESH='$DAG2T1_B2_FRESH' is set, but that switch was REMOVED (decision O1, 2026-10-26): box 2 runs no fresh-age eval and a SHA256SUMS.txt that carries one is refused; the fresh-age T0 eval is a dev-box CPU step of this chain. Unset it."
+@@ -94 +85 @@
+-[ "$CF0" -ge "$CMIN" ] || stop "C: has $CF0 MB free (< $CMIN MB): PREREG_V8F_DAGGER section 8 gates this chain on C: >= 2 GB free (the pagefile is on C:; a full C: killed torch start-ups before)"
++[ "$CF0" -ge "$CMIN" ] || stop "C: has $CF0 MB free (< $CMIN MB): PREREG_V8F_DAGGER section 8 gates this chain on C: >= 2 GB free (the pagefile is on C:; a full C: killed torch start-ups before; inherited by PREREG_V8F_DAGGER2)"
+@@ -95,0 +87,5 @@
++EMIN=${DAG2T1_E_MIN_MB:-1500}; EROLL=${DAG2T1_E_ROLL_MB:-200}
++efree_mb() { if [ -n "${DAG2T1_TEST_EFREE_MB:-}" ] && [ "$DRY" = 1 ]; then echo "$DAG2T1_TEST_EFREE_MB"; else df -m /e | awk 'NR==2{print $4}'; fi; }
++EF0=$(efree_mb)
++[ "$EF0" -ge "$EMIN" ] || stop "E: has $EF0 MB free (< $EMIN MB): DAG's T1 outputs were 1.3 GB (MEASURED) and this chain writes the same amount to $OUTm; free E: first (PI-only deletes)"
++say "E: gate: $EF0 MB free >= $EMIN MB (the outputs are ~1.3 GB, MEASURED for DAG)"
+@@ -129,9 +125,8 @@
+-# ------------------------------------------------------------------------------------------------ 0b  parity with the tool tree that rolled ORC-0 out (the replicate floor compares DAG-0 with it)
+-ORC_TT=${DAGT1_ORC_TOOL_TREE:-}
+-[ -n "$ORC_TT" ] || ORC_TT=$(grep '^tree=' "$ORC_T1u/PINS.txt" 2>/dev/null | head -1 | cut -c6-)
+-if [ "${DAGT1_PARITY:-on}" = off ]; then
+-  say "PARITY GUARD WAIVED (DAGT1_PARITY=off): the tool tree $TTm is NOT checked against the ORC-0 tool tree; the replicate floor may then compare two different tools"
+-  PARITY_LINE="WAIVED"
+-else
+-  [ -n "$ORC_TT" ] && [ -d "$(cygpath -u "$ORC_TT")" ] || stop "the ORC-0 tool tree is unknown (no tree= line in $ORC_T1u/PINS.txt; set DAGT1_ORC_TOOL_TREE), so tool parity cannot be checked"
+-  PAR=$("$PY" -I "$Hm/dagt1_manifest.py" parity --tree "$TTm" --ref "$(m "$ORC_TT")" 2>&1 < /dev/null); prc=$?
++# ------------------------------------------------------------------------------------------------ 0b  the tool tree is the tree that rolled DAG out (one tool scores DAG and DAG2)
++DAG_TT=${DAG2T1_DAG_TOOL_TREE:-}
++[ -n "$DAG_TT" ] || DAG_TT=$(grep '^tree=' "$DAG_T1/PINS.txt" 2>/dev/null | head -1 | cut -c6-)
++[ -n "$DAG_TT" ] && [ -d "$(cygpath -u "$DAG_TT")" ] || stop "DAG's tool tree is unknown (no tree= line in $DAG_T1/PINS.txt; set DAG2T1_DAG_TOOL_TREE), so tool identity cannot be checked"
++if [ "$(m "$DAG_TT")" = "$TTm" ]; then
++  PARITY_LINE="IDENTICAL: the tool tree IS the tree that rolled DAG out ($TTm)"
++else
++  PAR=$("$PY" -I "$Hm/dag2t1_manifest.py" parity --tree "$TTm" --ref "$(m "$DAG_TT")" 2>&1 < /dev/null); prc=$?
+@@ -139,2 +134,8 @@
+-  [ $prc -eq 0 ] || stop "PARITY REFUSED: the T1 / T0 tools of $TTm are not the tools that rolled ORC-0 out ($(m "$ORC_TT")): $(echo "$PAR" | tr '\n' ' ' | cut -c1-500)"
+-  say "tool parity with the ORC-0 tool tree $(m "$ORC_TT"): $PARITY_LINE"
++  [ $prc -eq 0 ] || stop "PARITY REFUSED: the T1 / T0 tools of $TTm are not the tools that rolled DAG out ($(m "$DAG_TT")): $(echo "$PAR" | tr '\n' ' ' | cut -c1-500)"
++fi
++say "tool identity with the tree that rolled DAG out: $PARITY_LINE"
++if [ -d "$(cygpath -u "${DAG2T1_TIP_MIRROR:-C:/Users/Admin/tanitad-push}")" ]; then
++  TIPC=$("$PY" -I "$Hm/dag2t1_manifest.py" treetip --tree "$TTm" --git-dir "$(m "${DAG2T1_TIP_MIRROR:-C:/Users/Admin/tanitad-push}")" --tip "${DAG2T1_TIP:-1d4f4fbb}" 2>&1 < /dev/null) || stop "tree vs tip: $(echo "$TIPC" | tr '\n' ' ' | cut -c1-500)"
++  say "$TIPC"
++else
++  say "tree vs tip check SKIPPED: no tip mirror at ${DAG2T1_TIP_MIRROR:-C:/Users/Admin/tanitad-push}"
+@@ -149,3 +150,6 @@
+-[ "$(ls "$SFu/cache/eval/clips" 2>/dev/null | wc -l)" = 141 ] || stop "eval cache $CACHEm is not 141 clips (the T1-HEADS inputs are E:/Projects/TanitAD-artifacts/sfresh_inputs; DAGT1_INPUTS names another copy; is the copy finished?)"
+-for f in "$READER" "$T1HD" "$T1K" "$PREREG" "$REL"; do [ -f "$f" ] || stop "input missing: $f"; done
+-[ "$(sha256sum < "$PREREG" | cut -c1-64)" = "$PREREG_SHA" ] || stop "the tree's PREREG_V8F_DAGGER.md is not the landed text the reader was built for (sha256 ${PREREG_SHA:0:12}...): an amendment landed? re-pin deliberately (DAGT1_PREREG_SHA) after re-reading the reader"
++[ "$(ls "$SFu/cache/eval/clips" 2>/dev/null | wc -l)" = 141 ] || stop "eval cache $CACHEm is not 141 clips (the T1-HEADS inputs are E:/Projects/TanitAD-artifacts/sfresh_inputs; DAG2T1_INPUTS names another copy; is the copy finished?)"
++for f in "$READER" "$DAGR" "$T1HD" "$T1K" "$PREREG" "$PREREG2" "$REL" "$LEADBLK"; do [ -f "$f" ] || stop "input missing: $f (the lead block lives in the repo: git -C <mirror> show 1d4f4fbb:<v8f-mini>/raw/2026-10-22-dk/b1_eval_lead_block_k30.npz)"; done
++[ "$(sha256sum < "$PREREG2" | cut -c1-64)" = "$PREREG2_SHA" ] || stop "PREREG_V8F_DAGGER2.md at $PREREG2 is not the pinned text (sha256 ${PREREG2_SHA:0:12}...): the PREREG is binding, nothing may differ"
++SC=$("$PY" -I "$Hm/dag2_read.py" --static-check --tool-root "$TTm" --dag-read "$DAGRm" --readers "$RSRCm" --reada-code "$RCODEm" --lead-block "$LEADBLKm" --prereg2 "$PREREG2m" 2>&1 < /dev/null) || stop "dag2_read static check: $(echo "$SC" | tr '\n' ' ' | cut -c1-500)"
++say "dag2_read static check: $(echo "$SC" | tail -1) (pinned reader sources, Read A driver code, DAG's banked reads, the lead block, PREREG_V8F_DAGGER2 outcome-table cells verbatim)"
++[ "$(sha256sum < "$PREREG" | cut -c1-64)" = "$PREREG_SHA" ] || stop "the tree's PREREG_V8F_DAGGER.md is not the landed text the reader was built for (sha256 ${PREREG_SHA:0:12}...): an amendment landed? re-pin deliberately (DAG2T1_PREREG_SHA) after re-reading the reader"
+@@ -166,2 +170,2 @@
+-    echo "reader=dag_read.py $(fsha "$READER")"; echo "reader=t1hd_read.py $(fsha "$T1HD")"; echo "reader=t1k_read.py $(fsha "$T1K")"; echo "reader=PREREG $(fsha "$PREREG")"
+-    echo "orc_tool_tree=${ORC_TT:-unknown}"; echo "parity=$PARITY_LINE"; echo "release=$(fsha "$REL")"; t0_pins; }
++    echo "reader=dag2_read.py $(fsha "$READER")"; echo "reader=dag_read.py $(fsha "$DAGR")"; echo "prereg2=$(fsha "$PREREG2")"; echo "reader=t1hd_read.py $(fsha "$T1HD")"; echo "reader=t1k_read.py $(fsha "$T1K")"; echo "reader=PREREG $(fsha "$PREREG")"
++    echo "dag_tool_tree=${DAG_TT:-unknown}"; echo "parity=$PARITY_LINE"; echo "release=$(fsha "$REL")"; t0_pins; }
+@@ -179 +183 @@
+-  for nm in dag_read.py:"$READER" t1hd_read.py:"$T1HD" t1k_read.py:"$T1K" PREREG:"$PREREG"; do
++  for nm in dag2_read.py:"$READER" dag_read.py:"$DAGR" t1hd_read.py:"$T1HD" t1k_read.py:"$T1K" PREREG:"$PREREG"; do
+@@ -186,7 +190,3 @@
+-# ------------------------------------------------------------------------------------------------ 0d  the REUSED ORC-0 outputs and the two id lists (fail now, not after hours of rollouts)
+-if [ "$SMOKE" = 1 ]; then
+-  say "SMOKE: the ORC-0 reuse check is skipped (the manifest replicates the stand-in run into the ORC-0 slots)"
+-else
+-  O0=$("$PY" -I "$Hm/dagt1_manifest.py" orc0 --orc-art "$ORC_ARTm" --orc-t1 "$ORC_T1m" 2>&1 < /dev/null) || stop "ORC-0 outputs: $(echo "$O0" | tr '\n' ' ' | cut -c1-500)"
+-  say "$O0"
+-fi
++# ------------------------------------------------------------------------------------------------ 0d  DAG's BANKED outputs (read, never re-run) and the two id lists (fail now, not after hours of rollouts)
++DB=$("$PY" -I "$Hm/dag2t1_manifest.py" dagbase --dag-art "$DAG_ARTm" --dag-t1 "$DAG_T1m" 2>&1 < /dev/null) || stop "DAG's banked outputs: $(echo "$DB" | tr '\n' ' ' | cut -c1-500)"
++say "$DB"
+@@ -194 +194 @@
+-  I0=$("$PY" -I "$Hm/dagt1_manifest.py" ids --grid "$GRID" --release "$RELm" --out-dir "$IDS" --dry-run 2>&1 < /dev/null) || stop "id lists: $(echo "$I0" | tr '\n' ' ' | cut -c1-500)"
++  I0=$("$PY" -I "$Hm/dag2t1_manifest.py" ids --grid "$GRID" --release "$RELm" --out-dir "$IDS" --dry-run 2>&1 < /dev/null) || stop "id lists: $(echo "$I0" | tr '\n' ' ' | cut -c1-500)"
+@@ -197 +197 @@
+-  I0=$("$PY" -I "$Hm/dagt1_manifest.py" ids --grid "$GRID" --release "$RELm" --out-dir "$IDS" 2>&1 < /dev/null) || stop "id lists: $(echo "$I0" | tr '\n' ' ' | cut -c1-500)"
++  I0=$("$PY" -I "$Hm/dag2t1_manifest.py" ids --grid "$GRID" --release "$RELm" --out-dir "$IDS" 2>&1 < /dev/null) || stop "id lists: $(echo "$I0" | tr '\n' ' ' | cut -c1-500)"
+@@ -204,0 +205,4 @@
++emin_wait() {   # emin_wait <what>: block (up to 2 h) until E: has EROLL MB again; never deletes anything
++  local w=0 what=$1
++  while [ "$(efree_mb)" -lt "$EROLL" ]; do nostop; [ $w -eq 0 ] && say "$what: waiting for E: >= $EROLL MB free (now $(efree_mb) MB)"; w=$((w + 1)); [ $w -ge 120 ] && stop "E: under $EROLL MB free for 2 h"; sleep 60; done
++}
+@@ -212 +216 @@
+-b2count() { if [ -n "${DAGT1_B2_OUT:-}" ] && [ -f "$DAGT1_B2_OUT" ]; then grep -c '^ZZV8FMINI-STOP' "$DAGT1_B2_OUT"; else echo 0; fi; }
++b2count() { if [ -n "${DAG2T1_B2_OUT:-}" ] && [ -f "$DAG2T1_B2_OUT" ]; then grep -c '^ZZV8FMINI-STOP' "$DAG2T1_B2_OUT"; else echo 0; fi; }
+@@ -220 +224 @@
+-    out=$("$PY" "$Hm/dagt1_pullcheck.py" run "$ARTm" "$arm" "$s" 2>&1 < /dev/null); rc=$?
++    out=$("$PY" "$Hm/dag2t1_pullcheck.py" run "$ARTm" "$arm" "$s" 2>&1 < /dev/null); rc=$?
+@@ -225 +229 @@
+-    [ "$(b2count)" -gt "$B2STOP0" ] && stop "the box-2 chain wrote a ZZV8FMINI-STOP after this chain started ($DAGT1_B2_OUT): no more pulls are coming ($(grep '^ZZV8FMINI-STOP' "$DAGT1_B2_OUT" | tail -1 | cut -c1-200))"
++    [ "$(b2count)" -gt "$B2STOP0" ] && stop "the box-2 chain wrote a ZZV8FMINI-STOP after this chain started ($DAG2T1_B2_OUT): no more pulls are coming ($(grep '^ZZV8FMINI-STOP' "$DAG2T1_B2_OUT" | tail -1 | cut -c1-200))"
+@@ -245 +249 @@
+-  cmin_wait "$tag"
++  cmin_wait "$tag"; emin_wait "$tag"
+@@ -260 +264 @@
+-  printf '{"tag": "%s", "limit": "%s", "ckpt_sha256": "%s", "tool_digest": "%s", "n_dumps": %s, "wall_s": %s, "smoke": %s}\n' "$tag" "$lim" "$sha" "$TOOLD" "$(n_dumps "$tag")" "$(( $(date +%s) - t0 ))" "$([ "$SMOKE" = 1 ] && echo true || echo false)" > "$OUTu/done_$tag.txt"
++  printf '{"tag": "%s", "limit": "%s", "ckpt_sha256": "%s", "tool_digest": "%s", "n_dumps": %s, "wall_s": %s, "smoke": %s}\n' "$tag" "$lim" "$sha" "$TOOLD" "$(n_dumps "$tag")" "$(( $(date +%s) - t0 ))" "false" > "$OUTu/done_$tag.txt"
+@@ -308 +312 @@
+-      out=$("$PY" "$Hm/dagt1_pullcheck.py" bank "$ARTm" "$s" --expect-shards 4 2>&1 < /dev/null); rc=$?
++      out=$("$PY" "$Hm/dag2t1_pullcheck.py" bank "$ARTm" "$s" --expect-shards 4 2>&1 < /dev/null); rc=$?
+@@ -318,8 +322,8 @@
+-mk_reader_cmd() {   # mk_reader_cmd <m2b sha s0> <m2b sha s1>  ->  RDCMD
+-  RDCMD=("$PY" -I "$READERm" --manifest "$OUTm/runs.json" --out "$OUTm/read/DAG_READ.json" --tool-root "$TTm" --t1hd-read "$T1HD" --t1k-read "$T1K"
+-         --eval-cache "$CACHEm" --tracks "$TRACKS" --eval-grid "$GRID" --eval-join "$JOIN" --m2b-sha "0=$1" --m2b-sha "1=$2" --prereg "$PREREG")
+-}
+-MANI=("$PY" -I "$Hm/dagt1_manifest.py" manifest --art "$ARTm" --out "$OUTm" --orc-art "$ORC_ARTm" --orc-t1 "$ORC_T1m" --ids-dir "$IDS" --pfx "$PFX" --runs "$RUNSCSV" --n-dump-min "$NDUMP" --t0-fresh-dir "$T0DIR")
+-M2BS=("$PY" -I "$Hm/dagt1_manifest.py" m2bsha --art "$ARTm" --orc-art "$ORC_ARTm" --runs "$RUNSCSV")
+-[ -n "${DAGT1_M2B_SHA_JSON:-}" ] && M2BS+=(--b2-json "$(m "$DAGT1_M2B_SHA_JSON")")
+-if [ "$SMOKE" = 1 ]; then MANI+=(--smoke-replicate "$REP" --label "SMOKE: ONE stand-in run replicated into every slot; NOT a DAgger read"); M2BS+=(--smoke-replicate "$REP"); fi
++mk_reader_cmd() {   # mk_reader_cmd <init sha s0> <init sha s1>  ->  RDCMD   (the checkpoint DAG2 / DAG2-0 started from = DAG_s<S>, from the runs' own records)
++  RDCMD=("$PY" -I "$READERm" --manifest "$OUTm/runs.json" --out "$OUTm/read/DAG2_READ.json" --tool-root "$TTm" --t1hd-read "$T1HD" --t1k-read "$T1K"
++         --eval-cache "$CACHEm" --tracks "$TRACKS" --eval-grid "$GRID" --eval-join "$JOIN" --init-sha "0=$1" --init-sha "1=$2" --prereg "$PREREG" --prereg2 "$PREREG2m"
++         --dag-read "$DAGRm" --readers "$RSRCm" --reada-code "$RCODEm" --lead-block "$LEADBLKm" --dag-t1 "$DAG_T1m")
++}
++MANI=("$PY" -I "$Hm/dag2t1_manifest.py" manifest --art "$ARTm" --out "$OUTm" --ids-dir "$IDS" --runs "$RUNSCSV" --n-dump-min "$NDUMP" --t0-fresh-dir "$T0DIR" --dag-art "$DAG_ARTm")
++M2BS=("$PY" -I "$Hm/dag2t1_manifest.py" initsha --art "$ARTm" --dag-art "$DAG_ARTm" --runs "$RUNSCSV")
++[ -n "${DAG2T1_M2B_SHA_JSON:-}" ] && M2BS+=(--b2-json "$(m "$DAG2T1_M2B_SHA_JSON")")
+@@ -330 +334 @@
+-  say "box-2 stop watcher: $([ -n "${DAGT1_B2_OUT:-}" ] && echo "$DAGT1_B2_OUT (ZZV8FMINI-STOP lines now: $B2STOP0)" || echo 'OFF (DAGT1_B2_OUT unset)')"
++  say "box-2 stop watcher: $([ -n "${DAG2T1_B2_OUT:-}" ] && echo "$DAG2T1_B2_OUT (ZZV8FMINI-STOP lines now: $B2STOP0)" || echo 'OFF (DAG2T1_B2_OUT unset)')"
+@@ -332,2 +336,2 @@
+-  for spec in "${RUNS[@]}"; do arm=${spec%%:*}; s=${spec##*:}; say "  $(rundir "$arm" "$s")  $("$PY" "$Hm/dagt1_pullcheck.py" run "$ARTm" "$arm" "$s" 2>&1 < /dev/null | cut -c1-220)"; done
+-  for s in 0 1; do say "  bank_s$s  $("$PY" "$Hm/dagt1_pullcheck.py" bank "$ARTm" "$s" --expect-shards 4 2>&1 < /dev/null | cut -c1-260)"; done
++  for spec in "${RUNS[@]}"; do arm=${spec%%:*}; s=${spec##*:}; say "  $(rundir "$arm" "$s")  $("$PY" "$Hm/dag2t1_pullcheck.py" run "$ARTm" "$arm" "$s" 2>&1 < /dev/null | cut -c1-220)"; done
++  for s in 0 1; do say "  bank_s$s  $("$PY" "$Hm/dag2t1_pullcheck.py" bank "$ARTm" "$s" --expect-shards 4 2>&1 < /dev/null | cut -c1-260)"; done
+@@ -343 +347 @@
+-  say "== ORC-0: reused from $ORC_T1m (rollouts, fresh evals) and $ORC_ARTm (pull); NOT re-run"
++  say "== DAG banked outputs ($DAG_T1m, $DAG_ARTm, dagreread/) are READ for the DAG - P10 baseline of the newly-worse clause; NOT re-run.  RF is fixed (PREREG change 3): no ORC-0, no replicate"
+@@ -346,2 +350,2 @@
+-  say "== --m2b-sha: $(fmt "${M2BS[@]}")   (the runs' own summary.json / selfcheck.json levers.init_ckpt.sha256, DAG / DAG-0 / ORC-0 all equal per seed and equal to the banked 601cb435... / 6104fb15...)"
+-  mk_reader_cmd '<0: M2b_s0 init sha256>' '<1: M2b_s1 init sha256>'
++  say "== --init-sha: $(fmt "${M2BS[@]}")   (the runs' own summary.json / selfcheck.json levers.init_ckpt.sha256: DAG2 and DAG2-0 equal per seed and equal to DAG_s<S>'s ckpt, d186fd0b... / 1d12ec2e...)"
++  mk_reader_cmd '<0: DAG_s0 ckpt sha256>' '<1: DAG_s1 ckpt sha256>'
+@@ -350,3 +354,3 @@
+-  say "   -> $OUTm/read/DAG_READ.json (rc 0 outcome written | 2 REFUSED, nothing written | 3 UNPLACED | 4 BLOCKED); reader stdout/stderr -> $LOGm/dag_read.out"
+-  say "== markers in $LOGm/chain.out: $DONE_MARK <n>/$(( ${#RUNS[@]} * 2 )) rollouts, reader rc <rc> ...  |  ZZDAGT1-STOP <why>.  Nothing was written, launched or waited for."
+-  echo "ZZDAGT1-DRY-OK"
++  say "   -> $OUTm/read/DAG2_READ.json (rc 0 outcome written | 2 REFUSED, nothing written | 3 UNPLACED | 4 BLOCKED); reader stdout/stderr -> $LOGm/dag2_read.out"
++  say "== markers in $LOGm/chain.out: $DONE_MARK <n>/$(( ${#RUNS[@]} * 2 )) rollouts, reader rc <rc> ...  |  ZZDAG2T1-STOP <why>.  Nothing was written, launched or waited for."
++  echo "ZZDAG2T1-DRY-OK"
+@@ -378,2 +382,2 @@
+-OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 "${RDCMD[@]}" > "$LOGu/dag_read.out" 2>&1 < /dev/null; RRC=$?
+-say "reader rc=$RRC: $(grep -a -E '"OUTCOME"|REFUSED|UNPLACED|BLOCKED|wrote ' "$LOGu/dag_read.out" | head -3 | tr '\n' ' ' | cut -c1-400)"
++OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 "${RDCMD[@]}" > "$LOGu/dag2_read.out" 2>&1 < /dev/null; RRC=$?
++say "reader rc=$RRC: $(grep -a -E '"OUTCOME"|REFUSED|UNPLACED|BLOCKED|wrote ' "$LOGu/dag2_read.out" | head -3 | tr '\n' ' ' | cut -c1-400)"
+@@ -381 +385 @@
+-echo "$DONE_MARK $n/$NEED rollouts, reader rc $RRC ($(case $RRC in 0) echo 'outcome row written' ;; 2) echo 'REFUSED, nothing written' ;; 3) echo UNPLACED ;; 4) echo 'BLOCKED, written' ;; *) echo 'reader crashed' ;; esac)): $OUTm/read/DAG_READ.json  log $LOGm/dag_read.out" >> "$LOGu/chain.out"
++echo "$DONE_MARK $n/$NEED rollouts, reader rc $RRC ($(case $RRC in 0) echo 'outcome row written' ;; 2) echo 'REFUSED, nothing written' ;; 3) echo UNPLACED ;; 4) echo 'BLOCKED, written' ;; *) echo 'reader crashed' ;; esac)): $OUTm/read/DAG2_READ.json  log $LOGm/dag2_read.out" >> "$LOGu/chain.out"

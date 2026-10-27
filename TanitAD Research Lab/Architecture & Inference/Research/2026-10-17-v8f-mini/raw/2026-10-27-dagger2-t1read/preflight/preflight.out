@@ -1,0 +1,90 @@
+PASS M2B-CKPT:s0  {'passed': 'd186fd0bcfa7ee9f', 'DAG_s0': 'd186fd0bcfa7ee9f'}
+PASS BANK-FILES:s0  {'bank_sha256': '90c43c66f52f250d41ff23e837d5fb31d1592cf2aad14afacd7ded011734b589', 'n_shards': 4, 'n_records': 613132, 'n_bank_clips': 4512}
+PASS BANK-CONFIG:s0  {'rollout': {'executor': 'plan', 'limit': 'causal', 'nav': 'deadreckon', 'post_map': 'none (PLAIN)', 'replan_steps': 10, 'scene': 'logged', 'schedule': 'periodic'}, 'thre
+PASS K-B0:s0  {'checked': 306566, 'n_windows': 306566, 'mismatch': 0, 'verified_by_reader': False}
+PASS K-B1:s0  {'chunks': 48, 'windows': 1536, 'required': 1532, 'mismatch_chunks': 0, 'verified_by_reader': False}
+PASS K-B2:s0  {'generator_ckpt_sha256': 'd186fd0bcfa7ee9fbfe5c9de543fe85edda7c3e6b9c56c898958f027ae2b8cb1', 'verified_by_reader': "common.ckpt_sha256 and every shard's inputs.ckpt.sha2
+PASS K-B3.1:s0  {'n_bank_clips': 4512, 'n_train_clips': 4512, 'n_train_clips_without_bank_records': 0, 'deliberate_regression': 'refused', 'verified_by_reader': 'clip names from the shar
+PASS K-B3.3:s0  {'n_bank_clips': 4512, 'n_eval_clips': 141, 'overlap': 0, 'deliberate_regression': 'refused', 'verified_by_reader': 'ids and stable sids vs the eval-141 list'}
+PASS K-B4:s0  {'cases': ['straight', 'stationary_tie', 'lateral_cut', 'heading_cut', 'end_edge', 'loop'], 'verified_by_reader': False}
+PASS K-B5:s0  {'max_pose_now_err_m': 0.0, 'max_rel_transform_err_m': 6.084483043917513e-05, 'verified_by_reader': False}
+PASS BANK-ACCOUNTING:s0  {'n_windows': 306566, 'n_eligible_windows': 236980, 'eligible_fraction': 0.7730146200165706, 'n_states_before_cuts': 613132, 'n_states_kept': 433301, 'cuts': {'off_lat': 
+PASS COVERAGE:s0  {'n_windows': 306566, 'n_eligible_windows': 236980, 'eligible_fraction': 0.7730146200165706, 'n_states_before_cuts': 613132, 'n_states_kept': 433301, 'cuts': {'off_lat': 
+PASS M2B-CKPT:s1  {'passed': '1d12ec2eb825990d', 'DAG_s1': '1d12ec2eb825990d'}
+PASS BANK-FILES:s1  {'bank_sha256': 'a06c8289b20854a6933264e95dca201ea7d9e2723fd0b2248872f56361ea689a', 'n_shards': 4, 'n_records': 613132, 'n_bank_clips': 4512}
+PASS BANK-CONFIG:s1  {'rollout': {'executor': 'plan', 'limit': 'causal', 'nav': 'deadreckon', 'post_map': 'none (PLAIN)', 'replan_steps': 10, 'scene': 'logged', 'schedule': 'periodic'}, 'thre
+PASS K-B0:s1  {'checked': 306566, 'n_windows': 306566, 'mismatch': 0, 'verified_by_reader': False}
+PASS K-B1:s1  {'chunks': 48, 'windows': 1536, 'required': 1532, 'mismatch_chunks': 0, 'verified_by_reader': False}
+PASS K-B2:s1  {'generator_ckpt_sha256': '1d12ec2eb825990d57dcc45dda50b5178d1d733961b47ab0e3d50e6155fa39ef', 'verified_by_reader': "common.ckpt_sha256 and every shard's inputs.ckpt.sha2
+PASS K-B3.1:s1  {'n_bank_clips': 4512, 'n_train_clips': 4512, 'n_train_clips_without_bank_records': 0, 'deliberate_regression': 'refused', 'verified_by_reader': 'clip names from the shar
+PASS K-B3.3:s1  {'n_bank_clips': 4512, 'n_eval_clips': 141, 'overlap': 0, 'deliberate_regression': 'refused', 'verified_by_reader': 'ids and stable sids vs the eval-141 list'}
+PASS K-B4:s1  {'cases': ['straight', 'stationary_tie', 'lateral_cut', 'heading_cut', 'end_edge', 'loop'], 'verified_by_reader': False}
+PASS K-B5:s1  {'max_pose_now_err_m': 0.0, 'max_rel_transform_err_m': 6.062156583535184e-05, 'verified_by_reader': False}
+PASS BANK-ACCOUNTING:s1  {'n_windows': 306566, 'n_eligible_windows': 234317, 'eligible_fraction': 0.7643280729108903, 'n_states_before_cuts': 613132, 'n_states_kept': 424481, 'cuts': {'off_lat': 
+PASS COVERAGE:s1  {'n_windows': 306566, 'n_eligible_windows': 234317, 'eligible_fraction': 0.7643280729108903, 'n_states_before_cuts': 613132, 'n_states_kept': 424481, 'cuts': {'off_lat': 
+PASS SUMMARY:DAG_s0  {'argv_sha': 'a4a3e878c2ecf6d3', 'steps': 3000}
+PASS INIT-CKPT:DAG_s0  {'init_sha256': 'd186fd0bcfa7ee9fbfe5c9de543fe85edda7c3e6b9c56c898958f027ae2b8cb1', 'sources': ['summary:levers.init_ckpt.sha256', 'selfcheck:levers.init_ckpt.sha256']}
+PASS ARGV:DAG_s0  argv names the registered fine-tune
+PASS DAGGER-REACHED:DAG_s0  {'dagger_n': 14965, 'dagger_eligible': 148387, 'ratio': 0.10085115272901266}
+PASS GATE-TOKEN:DAG_s0  {'commit': '1d4f4fbb11922f4dd62b51871d898c03e0c88635', 'argv_sha256': '8c50f07aae1e3b5f7b42b680c111f820e4436123eead30803b21eacf7e29d18a', 'data_sha256': '37f4f9ee468e0872
+PASS BANK-DECLARED:DAG_s0  {'bank_sha256': '90c43c66f52f250d41ff23e837d5fb31d1592cf2aad14afacd7ded011734b589', 'built_records': ['summary:levers.dagger_bank_sha256', 'selfcheck:levers.dagger_bank_s
+PASS SUMMARY:DAG0_s0  {'argv_sha': '126b68ca8d72abfb', 'steps': 3000}
+PASS INIT-CKPT:DAG0_s0  {'init_sha256': 'd186fd0bcfa7ee9fbfe5c9de543fe85edda7c3e6b9c56c898958f027ae2b8cb1', 'sources': ['summary:levers.init_ckpt.sha256', 'selfcheck:levers.init_ckpt.sha256']}
+PASS ARGV:DAG0_s0  argv names the registered fine-tune
+PASS DAGGER-REACHED:DAG0_s0  {'dagger_n': 0}
+PASS GATE-TOKEN:DAG0_s0  {'commit': '1d4f4fbb11922f4dd62b51871d898c03e0c88635', 'argv_sha256': '499d1a93a09a282f95116cf5c53b938787131b62b7f299a322c948b466c161b3', 'data_sha256': '37f4f9ee468e0872
+PASS PAIR:s0  same init, steps, data, seed; argv identical except --out, --dagger-p and the DAG-only flags
+PASS ORC0-SLOT-SELF:s0  PREREG_V8F_DAGGER2 change 3: no replicate of DAG2-0 is trained; the ORC0 slot is DAG2-0's own entry (its RF row must read exactly 0.0) and RF is RF_FIXED
+PASS K-B3.2:s0  {'window_list_sha256': 'e144adcd9b6273f2b44ad7dfa162931b90e159f7b3911e0893b25777b2ae8168', 'trainer': {'DAG': 'e144adcd9b6273f2b44ad7dfa162931b90e159f7b3911e0893b25777b2a
+PASS TRAIN-LIST:s0  {'train_sha256': '37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1', 'trainer': {'DAG': '37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1'
+PASS SUMMARY:DAG_s1  {'argv_sha': 'bad2e0d13d56cfae', 'steps': 3000}
+PASS INIT-CKPT:DAG_s1  {'init_sha256': '1d12ec2eb825990d57dcc45dda50b5178d1d733961b47ab0e3d50e6155fa39ef', 'sources': ['summary:levers.init_ckpt.sha256', 'selfcheck:levers.init_ckpt.sha256']}
+PASS ARGV:DAG_s1  argv names the registered fine-tune
+PASS DAGGER-REACHED:DAG_s1  {'dagger_n': 14719, 'dagger_eligible': 146288, 'ratio': 0.10061659192825112}
+PASS GATE-TOKEN:DAG_s1  {'commit': '1d4f4fbb11922f4dd62b51871d898c03e0c88635', 'argv_sha256': 'a1914e6bc13921965669c57bbd92b44ab0b6d5a00a6416ef2481b4515ba2a547', 'data_sha256': '37f4f9ee468e0872
+PASS BANK-DECLARED:DAG_s1  {'bank_sha256': 'a06c8289b20854a6933264e95dca201ea7d9e2723fd0b2248872f56361ea689a', 'built_records': ['summary:levers.dagger_bank_sha256', 'selfcheck:levers.dagger_bank_s
+{
+ "state": {
+  "coverage_s0": {
+   "n_windows": 306566,
+   "n_eligible_windows": 236980,
+   "eligible_fraction": 0.7730146200165706,
+   "n_states_before_cuts": 613132,
+   "n_states_kept": 433301,
+   "cuts": {
+    "off_lat": 30285,
+    "off_head": 24556,
+    "end_edge": 124990,
+    "nonfinite": 0
+   },
+   "states_by_tick": {
+    "1": 306566,
+    "2": 306566
+   },
+   "stated_fraction": 0.7730146200165706
+  },
+  "coverage_s1": {
+   "n_windows": 306566,
+   "n_eligible_windows": 234317,
+   "eligible_fraction": 0.7643280729108903,
+   "n_states_before_cuts": 613132,
+   "n_states_kept": 424481,
+   "cuts": {
+    "off_lat": 29100,
+    "off_head": 40047,
+    "end_edge": 119504,
+    "nonfinite": 0
+   },
+   "states_by_tick": {
+    "1": 306566,
+    "2": 306566
+   },
+   "stated_fraction": 0.7643280729108903
+  },
+  "DAG0_s1": "not pulled"
+ },
+ "controls": 45,
+ "failed": []
+}
+wrote E:/Projects/TanitAD-artifacts/dag2t1/preflight/PREFLIGHT.json  sha256 0ce6053140b9a50c611cb4f87abb95fab5feaa40fba0fe87fde29a1b577d57f1
+preflight rc=0
