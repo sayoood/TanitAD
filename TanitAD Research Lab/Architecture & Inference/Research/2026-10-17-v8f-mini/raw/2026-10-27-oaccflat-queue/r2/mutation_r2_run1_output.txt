@@ -1,0 +1,95 @@
+MUTATION PROOF -- the r2 files of the DAG-OACC re-run (asserter r2, move-aside lib, r2 chain, launcher, waker)
+workers 2; scratch F:\TanitAD-scratch\oaf_r2_tmp\mw
+CONTROL (unmutated, all sections E,D,RA,RB,RC): rc 0, GREEN  [RESULT: 63/63 checks pass, 103/103 deliberate regressions caught, 0 missed; 0 failed checks (55 s)]  (55 s)
+A2: KILLED   [E,RA] (17 s, 8 red) -- the identity is never applied: a from-scratch record (residual_zero_init True) is judged as a fine-tune
+      by: FAIL  RA6 from-scratch (residual_zero_init True) with read_o_grad_diff 0.0: r2 PASSES the acc_probe rule, and returns exactly what the first attempt's asserter returned (r2 did not weaken the identity
+A1: KILLED   [E,RA] (17 s, 18 red) -- the residual_zero_init condition is DROPPED: the exact-0.0 identity applies to every record (the real fine-tune gate would be refused again)
+      by: FAIL  E1 dagoacc s0: the check passes on the doctored real gate   [OAF gate: ["acc_probe read_o_grad_diff = 864.7907104492188 (levers.residual_zero_init is True: O's last layer is zero, so read_o gets
+A3: KILLED   [E,RA] (17 s, 3 red) -- fine-tune branch: `> 0.0` -> `>= 0.0` (a read_o that receives NOTHING passes)
+      by: MISSED (deliberate regression) RA3 real gate with read_o_grad_diff 0.0 (the term does not reach read_o although the head is trained): r2 REFUSES  <- PASS | dagoacc s0 | p 0.1 | clips 4512 steps 3000 w
+A4: KILLED   [E,RA] (17 s, 2 red) -- fine-tune branch: finite() dropped (inf and True pass)
+      by: MISSED (deliberate regression) RA3 real gate with read_o_grad_diff inf: r2 REFUSES  <- PASS | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352673 | probe grad diff 14264.3652
+A5: KILLED   [E,RA] (18 s, 3 red) -- from-scratch branch weakened: exactly 0.0 -> any non-negative finite value
+      by: MISSED (deliberate regression) RA7 from-scratch record with read_o_grad_diff 864.79: r2 REFUSES (the zero-layer identity is broken)  <- 
+A6: KILLED   [E,RA] (17 s, 10 red) -- the undecidable branch removed (a missing / non-bool residual_zero_init is silently accepted)
+      by: MISSED (deliberate regression) RA8 residual_zero_init None with read_o_grad_diff 0.0: r2 REFUSES (neither True nor False: cannot be judged)
+A8: KILLED   [E,RA] (18 s, 3 red) -- a registered control dropped from the loop (control_prior_grad_diff)
+      by: MISSED (deliberate regression) RA3 real gate with registered control control_prior_grad_diff = 1e-9: r2 REFUSES  <- PASS | dagoacc s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 601cb4352673
+A7: KILLED   [E,RA] (18 s, 18 red) -- the FIRST ATTEMPT's rule is back: read_o_grad_diff among the exact-0.0 controls
+      by: FAIL  E1 dagoacc s0: the check passes on the doctored real gate   [OAF gate: ['acc_probe control read_o_grad_diff = 864.7907104492188 (must be exactly 0.0)'] | dagoacc s0 | p 0.1 | clips 4512 steps 30
+A9: KILLED   [E,RA] (19 s, 2 red) -- `zi is True` -> `zi == True` (the int 1 is taken for True)
+      by: MISSED (deliberate regression) RA8 residual_zero_init int 1 with read_o_grad_diff 0.0: r2 REFUSES (neither True nor False: cannot be judged)
+A10: KILLED   [E,RA] (19 s, 2 red) -- `zi is False` -> `zi == False` (the int 0 is taken for False)
+      by: MISSED (deliberate regression) RA8 residual_zero_init int 0 with read_o_grad_diff 0.0: r2 REFUSES (neither True nor False: cannot be judged)   [["acc_probe read_o_grad_diff = 0.0 (levers.residual_zero
+A11: KILLED   [E,RA] (17 s, 15 red) -- residual_zero_init is read from acc_probe instead of levers
+      by: FAIL  E1 dagoacc s0: the check passes on the doctored real gate   [OAF gate: ['levers.residual_zero_init = None is neither True nor False: the read_o_grad_diff reading 864.7907104492188 cannot be judg
+A12: KILLED   [E,RA] (17 s, 5 red) -- from-scratch branch inverted: a NON-zero reading passes, exactly 0.0 is refused
+      by: FAIL  RA6 from-scratch (residual_zero_init True) with read_o_grad_diff 0.0: r2 PASSES the acc_probe rule, and returns exactly what the first attempt's asserter returned (r2 did not weaken the identity
+A13: KILLED   [E,RA] (17 s, 9 red) -- wacc_problems no longer returns the read_o failure (the rule's `bad` is built into a throw-away list)
+      by: MISSED (deliberate regression) RA3 real gate with read_o_grad_diff 0.0 (the term does not reach read_o although the head is trained): r2 REFUSES  <- PASS | dagoacc s0 | p 0.1 | clips 4512 steps 3000 w
+A14: KILLED   [E,RA] (17 s, 3 red) -- flatdag logic touched (the cut check no longer requires exactly-zero perturbation effects) -- outside the one allowed change
+      by: MISSED (deliberate regression) E4 flatdag: o_interface_probe: O moved with the donor code  <- PASS | flatdag s0 | p 0.1 | clips 4512 steps 3000 windows 306566 | init 8496934a2ce2 | probe grad diff 105
+L1: KILLED   [RB,RC] (9 s, 5 red) -- the box-2 job DELETES instead of renaming (ren -> rd /s /q)
+      by: FAIL  RC1 the job text: CRLF throughout, six `call :aside` items, exactly one `ren`, exactly one redirection (the aside marker line) and nothing that deletes, overwrites, copies or moves (no del / era
+L2: KILLED   [RB,RC] (10 s, 1 red) -- the 'both exist' refusal removed from the job (ren is left to fail on its own)
+      by: MISSED (deliberate regression) RC7 the item and its aside sibling BOTH exist (no marker): ASIDE-FAIL 'refusing to overwrite or to guess', rc 1, no marker, not one byte changed in either tree   [(1, '=
+L3: KILLED   [RB,RC] (10 s, 5 red) -- the job never writes its marker
+      by: FAIL  RC1 the job text: CRLF throughout, six `call :aside` items, exactly one `ren`, exactly one redirection (the aside marker line) and nothing that deletes, overwrites, copies or moves (no del / era
+L4: KILLED   [RB,RC] (9 s, 2 red) -- the job ignores its marker (a relaunch moves / refuses r2's own files)
+      by: FAIL  RC4 IDEMPOTENT: a second launch prints ASIDE-ALREADY-DONE, touches nothing (rc 0, digest equal)   [===== r2 aside 27.10.2026 16:05:09,84
+L5: KILLED   [RB,RC] (10 s, 8 red) -- an item is missing from the job (the gate log of seed 0)
+      by: FAIL  RB8 EXECUTED: the dev box's pull dir was renamed to <ART>_r1_assert_stop with its content (selfcheck.json preserved), <ART> itself is gone; after six ASIDE reports the chain went on to the code 
+L6: KILLED   [RB,RC] (10 s, 8 red) -- an item is missing from the job (the seed-0 dagpin file: a moved pin could never refuse)
+      by: FAIL  RB8 EXECUTED: the dev box's pull dir was renamed to <ART>_r1_assert_stop with its content (selfcheck.json preserved), <ART> itself is gone; after six ASIDE reports the chain went on to the code 
+L7: KILLED   [RB,RC] (10 s, 10 red) -- the w_acc record directory is added to the moved items (the stage that passed C-O3 would be recomputed / lost)
+      by: FAIL  RB8 EXECUTED: the dev box's pull dir was renamed to <ART>_r1_assert_stop with its content (selfcheck.json preserved), <ART> itself is gone; after six ASIDE reports the chain went on to the code 
+L8: KILLED   [RB,RC] (10 s, 2 red) -- a failed rename is reported as success (ASIDE-FAIL exits 0)
+      by: MISSED (deliberate regression) RC6 a rename that FAILS (a file inside the gate dir is held open): the job ends rc 1 with ASIDE-FAIL and ZZJOB-END rc=1, writes NO marker, and leaves the tree as it was 
+L9: KILLED   [RB,RC] (1 s, 2 red) -- the LOCAL aside deletes instead of renaming (mv -> rm -rf)
+      by: FAIL  RB7 EXECUTED under shims: the box-2 call sequence of the r2 chain is exactly [boot probe, scp of the r2aside job, launch of the r2aside job, wait for it] and nothing else -- no code archive, no 
+L10: KILLED   [RB,RC] (11 s, 3 red) -- the local overwrite guard removed (an existing aside copy is moved into / over)
+      by: FAIL  RB14 a relaunch with r2's own <ART> and the first attempt's aside copy both present: ASIDE-KEPT, neither tree changed   [b'ASIDE-MOVED F:/TanitAD-scratch/oaf_r2_tmp/mw/w2/st/oqf/r2art to F:/Tani
+L11: KILLED   [RB,RC] (12 s, 3 red) -- the local aside is skipped in r2_aside_all
+      by: FAIL  RB8 EXECUTED: the dev box's pull dir was renamed to <ART>_r1_assert_stop with its content (selfcheck.json preserved), <ART> itself is gone; after six ASIDE reports the chain went on to the code 
+L13: KILLED   [RB,RC] (7 s, 5 red) -- the chain does not wait for the aside job
+      by: FAIL  RB7 EXECUTED under shims: the box-2 call sequence of the r2 chain is exactly [boot probe, scp of the r2aside job, launch of the r2aside job, wait for it] and nothing else -- no code archive, no 
+L12: KILLED   [RB,RC] (9 s, 4 red) -- the count of ASIDE lines is no longer asserted
+      by: MISSED (deliberate regression) RB10 a SHORT aside report (2 of 6 items) stops the chain: ZZV8FMINI-STOP 'expected 6', no code refresh, BOX2_BUSY released (the pull dir was already renamed -- preserved
+L15: KILLED   [RB,RC] (8 s, 3 red) -- the job is shipped but never launched
+      by: FAIL  RB7 EXECUTED under shims: the box-2 call sequence of the r2 chain is exactly [boot probe, scp of the r2aside job, launch of the r2aside job, wait for it] and nothing else -- no code archive, no 
+L14: KILLED   [RB,RC] (8 s, 2 red) -- ALREADY-DONE is judged against six lines
+      by: FAIL  RB12 a RELAUNCH (box marker present: ONE ASIDE-ALREADY-DONE line; no pull dir): accepted, the chain goes on to the code refresh (stops at the missing tip); <ART> is not created or renamed   [ ve
+C1: KILLED   [RB,D] (37 s, 9 red) -- the r2_aside_all call is removed from the real run
+      by: FAIL  RB5 order in the real run: predecessor wait < BOX2_BUSY taken < boot probe < r2_aside_all < every other box-2 / git action (the aside is the first action after BOX2_BUSY and the boot probe)   [{
+C2: KILLED   [RB,D] (39 s, 3 red) -- a second r2_aside_all runs BEFORE BOX2_BUSY is taken
+      by: FAIL  RB5 order in the real run: predecessor wait < BOX2_BUSY taken < boot probe < r2_aside_all < every other box-2 / git action (the aside is the first action after BOX2_BUSY and the boot probe)   [{
+C3: KILLED   [RB,D] (39 s, 2 red) -- the chain asserts with the FIRST attempt's asserter
+      by: FAIL  RB3 no non-comment line of the r2 chain names a first-attempt log / marker / tar / asserter or anything of FLAT-DAG (every write target is r2's own)   [{"the first attempt's asserter": 1, "the f
+C4: KILLED   [RB,D] (38 s, 1 red) -- the chain's logs dir is the first attempt's (its lines / runs / pulled evidence would be overwritten)
+      by: FAIL  RB3 no non-comment line of the r2 chain names a first-attempt log / marker / tar / asserter or anything of FLAT-DAG (every write target is r2's own)   [{"the first attempt's asserter": 0, "the f
+C5: KILLED   [RB,D] (40 s, 1 red) -- the guard log is the first attempt's
+      by: FAIL  RB3 no non-comment line of the r2 chain names a first-attempt log / marker / tar / asserter or anything of FLAT-DAG (every write target is r2's own)   [{"the first attempt's asserter": 0, "the f
+C6: KILLED   [RB,D] (41 s, 1 red) -- the guard watches the first attempt's chain log (it would never see r2's end marker)
+      by: FAIL  RB3 no non-comment line of the r2 chain names a first-attempt log / marker / tar / asserter or anything of FLAT-DAG (every write target is r2's own)   [{"the first attempt's asserter": 0, "the f
+C7: KILLED   [RB,D] (37 s, 1 red) -- the code archive overwrites the first attempt's tar name (local)
+      by: FAIL  RB3 no non-comment line of the r2 chain names a first-attempt log / marker / tar / asserter or anything of FLAT-DAG (every write target is r2's own)   [{"the first attempt's asserter": 0, "the f
+C8: SURVIVED [RB,D] (38 s, 0 red) -- the 'r2 files not installed' refusal removed from the real entry
+C9: KILLED   [RB,D] (26 s, 8 red) -- oaf_r2_lib.sh is not sourced
+      by: FAIL  RB7 EXECUTED under shims: the box-2 call sequence of the r2 chain is exactly [boot probe, scp of the r2aside job, launch of the r2aside job, wait for it] and nothing else -- no code archive, no 
+C10: KILLED   [RB,D] (37 s, 9 red) -- the aside runs AFTER the local mkdir of the chain's own dirs (not the first action)
+      by: FAIL  RB5 order in the real run: predecessor wait < BOX2_BUSY taken < boot probe < r2_aside_all < every other box-2 / git action (the aside is the first action after BOX2_BUSY and the boot probe)   [{
+C11: KILLED   [RB,D] (41 s, 1 red) -- the two runs are in the wrong order (seed 1 first)
+      by: FAIL  D22 the chain's run list is s0 then s1 of the arm dagoacc, P = 0.1
+C12: KILLED   [RB,D] (41 s, 2 red) -- one hex digit of DAG_s0's checkpoint sha256 changed in the chain
+      by: FAIL  D6 --co3-only on an equal record: ZZDAGOACC-CO3-PASS   [as evaluated with checkpoint d186fd0bcfa7ee9f, not DAG_s0's e186fd0bcfa7ee9f"], "outcome": "REFUSED", "rtol": 0.0001, "w_acc": {"box": 49.
+W1: KILLED   [RB] (8 s, 1 red) -- the launcher waits on the DAG2 chain's log, not FLAT-DAG's (it would start while FLAT-DAG holds box 2, or never wait at all)
+      by: FAIL  RB3b the launcher names the FLAT-DAG log exactly once, as AFTER_OUT (read by the predecessor poll), and the r2 chain log as its own output; the waker polls only r2's log / guard / marker
+W2: KILLED   [RB] (6 s, 1 red) -- the launcher writes to the first attempt's chain log
+      by: FAIL  RB3b the launcher names the FLAT-DAG log exactly once, as AFTER_OUT (read by the predecessor poll), and the r2 chain log as its own output; the waker polls only r2's log / guard / marker
+W3: KILLED   [RB] (7 s, 1 red) -- the waker polls the first attempt's log
+      by: FAIL  RB3b the launcher names the FLAT-DAG log exactly once, as AFTER_OUT (read by the predecessor poll), and the r2 chain log as its own output; the waker polls only r2's log / guard / marker
+C13: KILLED   [RB,D] (38 s, 1 red) -- C-O3's STOP swallowed
+      by: FAIL  D8b the real run's C-O3 line is in its exact STOP form (`co3 ... || { echo ZZDAGOACC-CO3-STOP ...; stop ...; }`): a mismatch cannot fall through (TEXT-PINNED: the decision itself is executed by 
+
+SUMMARY: 44/45 mutants killed, 1 survived, 0 anchor errors, 0 runner errors; control green
+  NOT A CLEAN KILL: C8 SURVIVED -- the 'r2 files not installed' refusal removed from the real entry
