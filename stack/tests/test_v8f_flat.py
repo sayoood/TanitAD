@@ -1681,6 +1681,8 @@ FLAT_LABELS = {"gateflat", "trainflat", "evalflat"} | {f"evalflat_{i}" for i in 
 ORC_LABELS = {"orcarm", "gateorc", "trainorc", "evalorc"}           # PREREG_V8F_ORECOVER appended these (test_v8f_orc_chain.py pins them); widened here, nothing else
 DAG_LABELS = {"dagname", "prepdag", "dagarm", "dagarm_dry", "dagarm_have", "bankdag", "gatedag", "traindag", "evaldag",      # PREREG_V8F_DAGGER appended these after ORC's; widen
               "dag2arm", "dag2arm_dry", "dag2arm_have", "bankdag2"}                                                  # PREREG_V8F_DAGGER2, after DAGGER's
+DAG_LABELS |= {"dagoaccarm", "dagoaccarm_dry", "dagoaccarm_have", "dagoaccwacc", "dagoaccwacc_dry", "dagoaccwacc_have", "waccdag"}      # PREREG_V8F_DAG_OACC, after DAGGER2's
+DAG_LABELS |= {"flatdagarm", "flatdagarm_dry", "flatdagarm_have", "evalflatdag", "evalflatdag_1", "evalflatdag_2", "bankflat"}      # PREREG_V8F_FLATDAG, after DAG-OACC's
 OACC_LABELS = {"waccoacc", "oaccwacc", "gateoacc", "trainoacc", "evaloacc", "fitoacc"}         # PREREG_V8F_OACC appended these after FLAT's (test_v8f_oacc.py pins them); widened here, nothing else
 # PREREG_V8F_MIXO's ten labels as they stand at the tip 18c62306 (sha256[:16] of "\n" + the text up to the next label): this edit appended AFTER them and edited none
 MIXO_PINS = {"gatemixo": "b2ea5430b698741c", "trainmixo": "419a7db33d684844", "evalmixo": "7acc0975f2aa9ef3", "evalmixo_1": "1cc5381d64b27142", "evalmixo_2": "a70ba66191aed3cf",
