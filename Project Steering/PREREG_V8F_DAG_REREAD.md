@@ -132,3 +132,32 @@ family named.
 * A family row that cannot be computed is reported with its reason and n. It never silently counts as passing.
 * STRATEGIC is reported (not paused for v8F, PI 2026-10-17, R73).
 * Package: `raw/2026-10-27-dag-reread/`. Result: `RESULT_V8F_DAG_REREAD.md`. The register row is updated in the same landing.
+
+## Amendment 1 (`A1-2026-10-27`): control C5 read for what it is meant to show. POST-DATA, CONTROL-ONLY
+
+**When, exactly.** The reads ran on 2026-10-27, and every row of Read A, B-1 and B-2 was computed and seen before this amendment. As written,
+C5 does not pass:
+* **C5-1:** the FLAT rollouts' argv differs from DAG's in `--ckpt` and `--tag`, as registered, and also in `--out-dir` and `--dump-ticks`. Those
+  two were pointed into the re-read package, so that nothing would be written into DAG's banked directory (`raw/C5.json`, `argv/`).
+* **C5-3** cannot be executed as written. The T1 tool's `model_keys_read` lists the INPUT keys the tool hands the model. That list is
+  identical for FLAT and DAG, because the cut is inside O, not in the inputs. It never could have shown the cut.
+
+So B-2, as written, is **REFUSED**. Read A and B-1 do not depend on C5, and their outcomes stand as computed.
+
+**What changes, C5 only.**
+* **C5-1** reads: *"every setting flag is byte-equal to DAG's. Only `--ckpt`, `--tag` and the two output-location flags `--out-dir` /
+  `--dump-ticks` differ."* MEASURED: `tool_settings_equal_DAG: all equal` at both seeds. The output flags choose where files are written and
+  enter no computation.
+* **C5-3** reads: *"the rolled-out checkpoint is the cut model"*, shown by two facts on the same checkpoint bytes (C5-2: sha256 `8496934a…` /
+  `6fdfc9b0…`, unchanged before and after):
+  * its saved config has `o_interface: cut`, against `full` for DAG (`raw/C5.json`);
+  * B-1's identity row, FLAT's GT-code oracle − own, reads **exactly +0.0000 [0, 0]** at both seeds on that checkpoint's eval. So O's
+    output does not move when S's and T's codes are replaced by the ground truth's.
+
+**What does not change.** Every row, bar, estimator, every other control, and the outcome tables of §5. B-2 is read once more against the same
+rows, with C5 as amended.
+
+**Disclosure.** This amendment is written after B-2's rows were seen, and they meet the bar. It is admissible only because:
+* it touches a control and no row;
+* both changed clauses test the same property as before (same computation, cut model), with evidence that existed before the read;
+* the read as written is reported REFUSED beside the amended outcome.

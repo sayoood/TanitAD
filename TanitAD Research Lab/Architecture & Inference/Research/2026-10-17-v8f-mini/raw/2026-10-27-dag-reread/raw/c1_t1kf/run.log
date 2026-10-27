@@ -1,0 +1,43 @@
+[prep] decisive s0 8s
+[prep] decisive s1 8s
+[prep] logged s0 7s
+[prep] logged s1 7s
+[prep] strict s0 8s
+[prep] strict s1 7s
+[rows] decisive s0 2s
+[rows] decisive s1 2s
+[rows] logged s0 2s
+[rows] logged s1 2s
+[rows] strict s0 2s
+[rows] strict s1 3s
+
+=== CONTROLS ===
+  X3_one_grid_one_gt                         PASS=True
+  C3_join                                    PASS=True
+  C4_kinematic_contract                      PASS=True
+  C2_labeller_on_GT                          PASS=True
+  C5_dumps_ade6                              PASS=True
+  C1_identity                                PASS=True
+  C6_deliberate_regression_AS_WRITTEN        PASS=False
+  C6A_deliberate_regression_amendment1       PASS=True
+  X1_indicator_vs_instrument_accuracy        PASS=True
+  X2_dk_rows_vs_pair_block                   PASS=True
+
+=== DECISIVE (HACC causal) rows, arm - P10 ===
+ seed 0  (F per row: TAC-LAT=0.0446, TAC-LON=0.0004168, DK-VIOL=0.005042, DK-HW=0.02369, DK-TG=0.02826)
+   TAC-LAT  delta 0.1363 [0.1009, 0.1747] sep=True worse=False n=2399
+   TAC-LON  delta 0.1313 [0.0838, 0.1769] sep=True worse=False n=2399
+   DK-VIOL  delta -0.0134 [-0.0375, 0.0069] sep=False worse=False n=595 n_at_risk=595
+   DK-HW    delta -0.3225 [-0.6003, -0.0775] sep=True worse=False n=715
+   DK-TG    delta -0.1013 [-0.1643, -0.05] sep=True worse=False n=654
+ seed 1  (F per row: TAC-LAT=0.0446, TAC-LON=0.0004168, DK-VIOL=0.005042, DK-HW=0.02369, DK-TG=0.02826)
+   TAC-LAT  delta 0.0917 [0.05, 0.1348] sep=True worse=False n=2399
+   TAC-LON  delta 0.1317 [0.0859, 0.1742] sep=True worse=False n=2399
+   DK-VIOL  delta -0.0084 [-0.0285, 0.0084] sep=False worse=False n=595 n_at_risk=595
+   DK-HW    delta -0.2676 [-0.5554, 0.0036] sep=False worse=False n=716
+   DK-TG    delta -0.0734 [-0.1238, -0.0278] sep=True worse=False n=654
+
+window states: {'LEAD': 743, 'NO_LEAD': 552, 'NOT_STRAIGHT': 931, 'NO_LABEL': 173}
+OUTCOME: "NO WORSE" (TACTICAL) "NO WORSE" (DISTANCE KEEPING) refused: []
+runtime 145.2 s -> E:/Projects/TanitAD-artifacts/dagreread/raw/c1_t1kf/T1KF_READ_A1_HACC_reproduction.json
+ZZDONE rc=0

@@ -1,0 +1,453 @@
+{
+ "prereg": "Project Steering/PREREG_V8F_DAG_REREAD.md @ bdf8d561",
+ "claim_row": "H-V8F-DAG-REREAD-1",
+ "tier": "T1-kin (self-action OPEN loop) for Read A and B-2; T1-class open loop on eval-141 for B-1",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B=2000, seed 0, episodes",
+ "F_m": 0.1207,
+ "two_F_m": 0.2415,
+ "READ_A": {
+  "OUTCOME": "MARGIN, NOT DOMINANT",
+  "flags": {
+   "outcome": "MARGIN, NOT DOMINANT",
+   "D1_both": true,
+   "D2_both": false,
+   "D3_both": true,
+   "crawl_rows_fail": true,
+   "M1_separated_worse_at_ge1_seed": true
+  },
+  "per_seed": {
+   "s0": {
+    "D1": true,
+    "D2": false,
+    "D3": true,
+    "separated_worse_rows": [
+     "accel MAE",
+     "DK-VIOL",
+     "curvature MAE",
+     "L2 curvature MAE (GT>=5.2)"
+    ],
+    "M1_separated_worse": true,
+    "L2_separated_worse": true,
+    "ADE6": {
+     "delta": -1.1656,
+     "lo": -1.3437,
+     "hi": -0.9963,
+     "separated": true,
+     "mean_arm": 2.2777030508105325,
+     "mean_ref": 3.443279013457244,
+     "n": "2399/141"
+    },
+    "M1": {
+     "delta": 0.047,
+     "lo": 0.0296,
+     "hi": 0.0673,
+     "separated": true,
+     "mean_arm": 0.06998956345060632,
+     "mean_ref": 0.02295177580131704,
+     "pooled_M1_arm": 0.044149462799310625,
+     "pooled_M1_P10": 0.013674524324522491,
+     "M2": 0.029891010361319185,
+     "n": "2106/135"
+    },
+    "L2": {
+     "delta": 0.0288,
+     "lo": 0.0165,
+     "hi": 0.0433,
+     "separated": true,
+     "mean_arm": 0.04537565441314313,
+     "mean_ref": 0.016540340744098478,
+     "n": "2106/135"
+    }
+   },
+   "s1": {
+    "D1": true,
+    "D2": false,
+    "D3": true,
+    "separated_worse_rows": [
+     "accel MAE",
+     "yaw-rate MAE",
+     "curvature MAE",
+     "L2 curvature MAE (GT>=5.2)"
+    ],
+    "M1_separated_worse": true,
+    "L2_separated_worse": true,
+    "ADE6": {
+     "delta": -0.9868,
+     "lo": -1.1778,
+     "hi": -0.806,
+     "separated": true,
+     "mean_arm": 2.456459174682651,
+     "mean_ref": 3.443279013457244,
+     "n": "2399/141"
+    },
+    "M1": {
+     "delta": 0.0614,
+     "lo": 0.0409,
+     "hi": 0.0859,
+     "separated": true,
+     "mean_arm": 0.08438504253968931,
+     "mean_ref": 0.02295177580131704,
+     "pooled_M1_arm": 0.05943991778609704,
+     "pooled_M1_P10": 0.013674524324522491,
+     "M2": 0.058482500395545756,
+     "n": "2106/135"
+    },
+    "L2": {
+     "delta": 0.0604,
+     "lo": 0.0356,
+     "hi": 0.093,
+     "separated": true,
+     "mean_arm": 0.07694946521792227,
+     "mean_ref": 0.016540340744098478,
+     "n": "2106/135"
+    }
+   }
+  },
+  "committed_next_verbatim": "the failing rows are named. If they are crawl rows (L2, curvature, yaw-rate, M1): DAgger iteration 2. Otherwise the failing family's lever, under its own PREREG",
+  "non_crawl_failing_rows": {
+   "s0": [
+    "accel MAE",
+    "DK-VIOL"
+   ],
+   "s1": [
+    "accel MAE"
+   ]
+  },
+  "beside": {
+   "DAG_minus_HACC": {
+    "s0": {
+     "same_windows_and_gt": true,
+     "ADE6": {
+      "delta": -0.3976,
+      "lo": -0.5103,
+      "hi": -0.2903,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "mean_a": 2.2777030508105325,
+      "mean_b": 2.675308305904701,
+      "separated_better": true,
+      "separated_worse": false
+     },
+     "L2": {
+      "delta": 0.0078,
+      "lo": -0.0039,
+      "hi": 0.018,
+      "separated": false,
+      "n_windows": 2106,
+      "n_episodes": 135,
+      "mean_a": 0.04537565441314313,
+      "mean_b": 0.037556319745897355,
+      "separated_better": false,
+      "separated_worse": false
+     }
+    },
+    "s1": {
+     "same_windows_and_gt": true,
+     "ADE6": {
+      "delta": -0.2532,
+      "lo": -0.3775,
+      "hi": -0.1236,
+      "separated": true,
+      "n_windows": 2399,
+      "n_episodes": 141,
+      "mean_a": 2.456459174682651,
+      "mean_b": 2.709635998904177,
+      "separated_better": true,
+      "separated_worse": false
+     },
+     "L2": {
+      "delta": 0.0522,
+      "lo": 0.0298,
+      "hi": 0.0822,
+      "separated": true,
+      "n_windows": 2106,
+      "n_episodes": 135,
+      "mean_a": 0.07694946521792227,
+      "mean_b": 0.024702738836156136,
+      "separated_better": false,
+      "separated_worse": true
+     }
+    }
+   },
+   "DAG0_minus_P10_outcome_if_applied": {
+    "outcome": "MARGIN, NOT DOMINANT",
+    "D1_both": true,
+    "D2_both": false,
+    "D3_both": false,
+    "crawl_rows_fail": true,
+    "M1_separated_worse_at_ge1_seed": true
+   },
+   "STRICT_worse_rows": {
+    "s0": [
+     "accel MAE",
+     "curvature MAE",
+     "L2 curvature MAE (GT>=5.2)"
+    ],
+    "s1": [
+     "accel MAE",
+     "yaw-rate MAE",
+     "curvature MAE",
+     "L2 curvature MAE (GT>=5.2)"
+    ]
+   }
+  }
+ },
+ "READ_B1": {
+  "OUTCOME": "NOT ESTABLISHED",
+  "seed_states": [
+   "M",
+   "M"
+  ],
+  "PRIMARY_DAG_minus_FLAT": {
+   "s0": {
+    "point": -0.2377729367882322,
+    "delta": -0.2378,
+    "lo": -0.342,
+    "hi": -0.1404,
+    "separated": true,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "mean_a": 1.9735520378029008,
+    "mean_b": 2.211324974591133
+   },
+   "s1": {
+    "point": 0.04067721741406061,
+    "delta": 0.0407,
+    "lo": -0.0395,
+    "hi": 0.1157,
+    "separated": false,
+    "n_windows": 2399,
+    "n_episodes": 141,
+    "mean_a": 2.0984145297409005,
+    "mean_b": 2.05773731232684
+   }
+  },
+  "beside": {
+   "s0": {
+    "beside_DAG0_minus_FLAT": {
+     "point": -0.23965703560761997,
+     "delta": -0.2397,
+     "lo": -0.3433,
+     "hi": -0.1374,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 1.971667938983513,
+     "mean_b": 2.211324974591133
+    },
+    "beside_M2b_minus_FLAT_banked_arm": {
+     "point": -0.036018836511586994,
+     "delta": -0.036,
+     "lo": -0.1127,
+     "hi": 0.035,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.175306138079546,
+     "mean_b": 2.211324974591133
+    },
+    "beside_DAG_minus_DAG0": {
+     "point": 0.0018840988193877806,
+     "delta": 0.0019,
+     "lo": -0.023,
+     "hi": 0.0266,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 1.9735520378029008,
+     "mean_b": 1.971667938983513
+    }
+   },
+   "s1": {
+    "beside_DAG0_minus_FLAT": {
+     "point": -0.007662457193367445,
+     "delta": -0.0077,
+     "lo": -0.0816,
+     "hi": 0.0612,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.0500748551334724,
+     "mean_b": 2.05773731232684
+    },
+    "beside_M2b_minus_FLAT_banked_arm": {
+     "point": -0.003171295562072629,
+     "delta": -0.0032,
+     "lo": -0.0813,
+     "hi": 0.076,
+     "separated": false,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.0545660167647672,
+     "mean_b": 2.05773731232684
+    },
+    "beside_DAG_minus_DAG0": {
+     "point": 0.04833967460742805,
+     "delta": 0.0483,
+     "lo": 0.0178,
+     "hi": 0.0807,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.0984145297409005,
+     "mean_b": 2.0500748551334724
+    }
+   }
+  },
+  "identity": {
+   "DAG_DAG_exact_zero": {
+    "s0": true,
+    "s1": true
+   },
+   "FLAT_oracle_minus_own": {
+    "s0": {
+     "oracle_minus_own": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "point": 0.0
+     },
+     "max_abs_per_window_dade6": 0.0,
+     "max_abs_dpred_oracle": 0.0,
+     "max_abs_dpred_all_latcons": 0.0,
+     "frac_code_changed": 0.9858274280950396,
+     "n_oracle_fallback_no_v9_row": 34
+    },
+    "s1": {
+     "oracle_minus_own": {
+      "delta": 0.0,
+      "lo": 0.0,
+      "hi": 0.0,
+      "point": 0.0
+     },
+     "max_abs_per_window_dade6": 0.0,
+     "max_abs_dpred_oracle": 0.0,
+     "max_abs_dpred_all_latcons": 0.0,
+     "frac_code_changed": 0.9858274280950396,
+     "n_oracle_fallback_no_v9_row": 34
+    }
+   }
+  },
+  "controls": {
+   "C1_flat_reader_M2b_minus_FLAT": {
+    "PASS": true
+   },
+   "C2_identity_DAG_DAG_exact_zero": {
+    "PASS": true
+   },
+   "FLAT_oracle_identity_row_exact_zero": {
+    "PASS": true
+   }
+  }
+ },
+ "READ_B2": {
+  "PRIMARY_DAG_minus_FLAT": {
+   "s0": {
+    "ADE6_DAG_minus_FLAT": {
+     "delta": -0.5957,
+     "lo": -0.7378,
+     "hi": -0.4568,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.2777030508105325,
+     "mean_b": 2.873413968796623
+    },
+    "meets_bar": true,
+    "bar": "point <= -2F = -0.2415 m and separated (CI excludes 0)"
+   },
+   "s1": {
+    "ADE6_DAG_minus_FLAT": {
+     "delta": -0.3505,
+     "lo": -0.4695,
+     "hi": -0.2293,
+     "separated": true,
+     "n_windows": 2399,
+     "n_episodes": 141,
+     "mean_a": 2.456459174682651,
+     "mean_b": 2.8069643364343757
+    },
+    "meets_bar": true,
+    "bar": "point <= -2F = -0.2415 m and separated (CI excludes 0)"
+   }
+  },
+  "outcome_if_controls_accepted": "B-2 ESTABLISHED",
+  "OUTCOME_DECLARED": "HELD: C5-1 (argv differs in 2 output-path flags beyond --ckpt/--tag) and C5-3 (model_keys_read cannot show the cut interface) are not met as written; Master Mind amendment decision",
+  "DAG0_minus_FLAT": {
+   "s0": {
+    "delta": -0.5957,
+    "DAG0": {
+     "delta": -0.0522,
+     "lo": -0.2432,
+     "hi": 0.1675,
+     "separated": false
+    }
+   },
+   "s1": {
+    "delta": -0.3505,
+    "DAG0": {
+     "delta": 0.0541,
+     "lo": -0.1083,
+     "hi": 0.2198,
+     "separated": false
+    }
+   }
+  }
+ },
+ "CONTROLS": {
+  "C1": {
+   "t1k_read_comps_ADE6_and_t1klc_L2": {
+    "PASS_git_packed": true,
+    "PASS_f64": true
+   },
+   "t1kf_read_a1_TAC_LAT": "PASS (raw/c1_t1kf: max abs diff vs banked T1KF_READ_A1.json = 0)",
+   "v8f_flat_read_M2b_minus_FLAT": {
+    "PASS": true,
+    "note": "reader's own load_all/paired; full read() not run (M2b ckpts absent)"
+   },
+   "M1_M2_extra": true
+  },
+  "C2": {
+   "comps_rows": "PASS",
+   "t1kf_internal_C1_identity": "PASS",
+   "B1": true
+  },
+  "C3": true,
+  "C4": true,
+  "C5": {
+   "s0": {
+    "C5_1_literal": false,
+    "C5_1_differing_flags": [
+     "--ckpt",
+     "--dump-ticks",
+     "--out-dir",
+     "--tag"
+    ],
+    "C5_2_sha": true,
+    "C5_3_model_keys_read_identical_to_DAG": true,
+    "C5_3_substitute_ckpt_cfg": {
+     "o_interface": "cut",
+     "n_cfg_keys": 37,
+     "DAG_o_interface": "full"
+    }
+   },
+   "s1": {
+    "C5_1_literal": false,
+    "C5_1_differing_flags": [
+     "--ckpt",
+     "--dump-ticks",
+     "--out-dir",
+     "--tag"
+    ],
+    "C5_2_sha": true,
+    "C5_3_model_keys_read_identical_to_DAG": true,
+    "C5_3_substitute_ckpt_cfg": {
+     "o_interface": "cut",
+     "n_cfg_keys": 37,
+     "DAG_o_interface": "full"
+    }
+   }
+  }
+ }
+}
