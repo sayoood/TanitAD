@@ -1,0 +1,19 @@
+..ss...............s.................sssssssssssssssssssssssssssssssssss [ 27%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 54%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 82%]
+ssssssssssssssssssssssssssssssssssssss.....ssF.                          [100%]
+================================== FAILURES ===================================
+_ test_a_seed_state_needs_the_librarys_separated_flag_on_top_of_the_side_of_the_interval _
+
+    def test_a_seed_state_needs_the_librarys_separated_flag_on_top_of_the_side_of_the_interval():
+        """Mutants #37 / #39 (the `separated` conjunct of LO / HI is dropped). The reader takes `separated` FROM the library and the PREREG's rule names it (LO iff Delta <= -2F AND the interval is
+        separated below 0): a record whose flag says 'not separated' is never LO or HI, whatever its bounds say. (From the library's own output the two cannot disagree -- see the next test --
+        so this pins the rule at the function's boundary, the only place a record that disagrees with itself can be handed in.)"""
+>       bar = R.BAR_2F
+              ^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'BAR_2F'
+
+stack\tests\test_v8f_flat.py:2514: AttributeError
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_flat.py::test_a_seed_state_needs_the_librarys_separated_flag_on_top_of_the_side_of_the_interval
+1 failed, 40 passed, 222 skipped in 30.74s

@@ -1,0 +1,761 @@
+FFFFFFFFFFFFFFFFFF.FFFFFFFFFFFFFFFFF                                     [100%]
+================================== FAILURES ===================================
+________________ test_launch_mask_against_hand_computed_labels ________________
+
+    def test_launch_mask_against_hand_computed_labels():
+        v0 = torch.tensor([c[0] for c in MASK_CASES], dtype=torch.float32)
+        gt = mk_gt(len(MASK_CASES), [(c[1], c[2]) for c in MASK_CASES])
+        gok = torch.tensor([c[3] for c in MASK_CASES], dtype=torch.bool)
+>       got = M.launch_mask(v0, gt, gok)
+              ^^^^^^^^^^^^^
+E       AttributeError: module 'tanitad.models.v8f_mini' has no attribute 'launch_mask'
+
+stack\tests\test_v8f_launch_intent.py:116: AttributeError
+________ test_the_inequality_is_greater_or_equal_at_the_exact_boundary ________
+
+    def test_the_inequality_is_greater_or_equal_at_the_exact_boundary():
+        """The registered inequality is ``>=``: a chord speed EXACTLY v0 + 1 is a launch. v0 is set from the function's own arithmetic so the equality is exact in float64."""
+        gt = mk_gt(3, [(0.8, 0.0), (0.8, 0.0), (0.8, 0.0)])
+>       v6 = torch.linalg.norm((gt[:, 29] - gt[:, 28]).to(torch.float64), dim=-1) / M.LAUNCH_DT
+                                                                                    ^^^^^^^^^^^
+E       AttributeError: module 'tanitad.models.v8f_mini' has no attribute 'LAUNCH_DT'
+
+stack\tests\test_v8f_launch_intent.py:125: AttributeError
+____________ test_the_v0_bound_is_strict_and_is_the_registered_six ____________
+
+    def test_the_v0_bound_is_strict_and_is_the_registered_six():
+>       assert (M.LAUNCH_V0_MAX, M.LAUNCH_DV, M.LAUNCH_DT, M.LAUNCH_KNOT_LO, M.LAUNCH_KNOT_HI) == (6.0, 1.0, 0.2, 1, 12)
+                ^^^^^^^^^^^^^^^
+E       AttributeError: module 'tanitad.models.v8f_mini' has no attribute 'LAUNCH_V0_MAX'
+
+stack\tests\test_v8f_launch_intent.py:135: AttributeError
+_________________ test_only_the_last_two_knots_set_the_chord __________________
+
+    def test_only_the_last_two_knots_set_the_chord():
+        """Knots 29 and 30 (indices 28, 29) and nothing else: junk on every other knot moves nothing, a change of knot 29's position does."""
+        chords = [(0.8, 0.0), (0.5, 0.0)]
+        a = mk_gt(2, chords, junk=True)
+        b = mk_gt(2, chords, junk=False)
+        v0 = torch.tensor([2.0, 2.0])
+        ok = torch.ones(2, dtype=torch.bool)
+>       assert M.launch_mask(v0, a, ok).tolist() == M.launch_mask(v0, b, ok).tolist() == [True, False]
+               ^^^^^^^^^^^^^
+E       AttributeError: module 'tanitad.models.v8f_mini' has no attribute 'launch_mask'
+
+stack\tests\test_v8f_launch_intent.py:148: AttributeError
+__ test_the_mask_agrees_with_an_independent_numpy_spelling_on_random_labels ___
+
+    def test_the_mask_agrees_with_an_independent_numpy_spelling_on_random_labels():
+        rng = np.random.default_rng(3)
+        n = 4000
+        v0 = rng.uniform(0.0, 12.0, n)
+        gt = np.cumsum(rng.normal(0.0, 0.6, (n, 30, 2)), axis=1).astype(np.float32)
+        gok = rng.random(n) > 0.1
+        ref = gok & (v0 < 6.0) & (np.linalg.norm(gt[:, 29].astype(np.float64) - gt[:, 28].astype(np.float64), axis=-1) / 0.2 >= v0 + 1.0)
+>       got = M.launch_mask(torch.from_numpy(v0), torch.from_numpy(gt), torch.from_numpy(gok)).numpy()
+              ^^^^^^^^^^^^^
+E       AttributeError: module 'tanitad.models.v8f_mini' has no attribute 'launch_mask'
+
+stack\tests\test_v8f_launch_intent.py:164: AttributeError
+_________________ test_the_term_equals_a_hand_computed_value __________________
+
+    def test_the_term_equals_a_hand_computed_value():
+        rng = np.random.default_rng(5)
+        traj = torch.from_numpy(rng.normal(0, 2, (6, 30, 2)).astype(np.float32))
+        gt = torch.from_numpy(rng.normal(0, 2, (6, 30, 2)).astype(np.float32))
+        gok = torch.tensor([1.0, 1.0, 1.0, 0.0, 1.0, 1.0])
+        launch = torch.tensor([True, False, True, True, True, False])
+>       got = float(M.launch_along_term(traj, gt, gok, launch))
+                    ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'tanitad.models.v8f_mini' has no attribute 'launch_along_term'
+
+stack\tests\test_v8f_launch_intent.py:175: AttributeError
+_______ test_the_denominator_is_every_gt_valid_row_not_the_launch_rows ________
+
+    def test_the_denominator_is_every_gt_valid_row_not_the_launch_rows():
+        """ADE's own normaliser: the same term over 4 GT-valid rows, 1 of them launch, is a QUARTER of that row's own value."""
+        traj = torch.zeros(4, 30, 2)
+        gt = torch.zeros(4, 30, 2)
+        gt[:, :12, 0] = 2.0                                   # |dx| = 2 on knots 1..12
+>       one = float(M.launch_along_term(traj, gt, torch.ones(4), torch.tensor([True, False, False, False])))
+                    ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'tanitad.models.v8f_mini' has no attribute 'launch_along_term'
+
+stack\tests\test_v8f_launch_intent.py:187: AttributeError
+_ test_the_gradient_is_nonzero_on_launch_rows_along_knots_1_to_12_and_EXACTLY_zero_everywhere_else _
+
+    def test_the_gradient_is_nonzero_on_launch_rows_along_knots_1_to_12_and_EXACTLY_zero_everywhere_else():
+        rng = np.random.default_rng(1)
+        traj = torch.from_numpy(rng.normal(0, 2, (6, 30, 2)).astype(np.float32)).requires_grad_(True)
+        gt = torch.from_numpy(rng.normal(0, 2, (6, 30, 2)).astype(np.float32))
+        gok = torch.tensor([1.0, 1.0, 1.0, 0.0, 1.0, 1.0])
+        launch = torch.tensor([True, False, True, True, True, False])
+>       M.launch_along_term(traj, gt, gok, launch).backward()
+        ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'tanitad.models.v8f_mini' has no attribute 'launch_along_term'
+
+stack\tests\test_v8f_launch_intent.py:200: AttributeError
+_______ test_an_all_false_mask_reads_exactly_zero_in_value_and_gradient _______
+
+    def test_an_all_false_mask_reads_exactly_zero_in_value_and_gradient():
+        traj = torch.randn(5, 30, 2, requires_grad=True)
+>       t = M.launch_along_term(traj, torch.randn(5, 30, 2), torch.ones(5), torch.zeros(5, dtype=torch.bool))
+            ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'tanitad.models.v8f_mini' has no attribute 'launch_along_term'
+
+stack\tests\test_v8f_launch_intent.py:211: AttributeError
+______________________ test_off_adds_no_term_and_no_key _______________________
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+
+    def test_off_adds_no_term_and_no_key(pack):
+        model, batch, cfg, _ = real_batch(pack)
+        T, _ = terms(model, batch, 0.0, None)
+>       assert "launch_along" not in T and cfg.launch_intent_w == 0.0 and model.built_levers()["launch_intent_w"] == 0.0
+                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'launch_intent_w'
+
+stack\tests\test_v8f_launch_intent.py:220: KeyError
+---------------------------- Captured stdout setup ----------------------------
+[1/2] ade 7.258 total 80.931 p_gt 1.00
+[2/2] ade 4.967 total 70.105 p_gt 0.60
+DONE {"steps": 2, "arm": "M2b", "seed": 5, "seconds": 0.4983673095703125}
+[200/342 windows] 5s
+[342/342 windows] 8s
+wrote F:\TanitAD-scratch\launch_intent\tmp\bt_final_red_on_tip\run\dagt0\bank\shard_000of001.npz  records 684  coverage 0.6462  K-B0 {'checked': 342, 'mismatch': 0}  K-B1 {'chunks': 5, 'windows': 40, 'mismatch_chunks': 0}
+wrote F:\TanitAD-scratch\launch_intent\tmp\bt_final_red_on_tip\run\dagt0\bank\bank.json  bank sha256 064b5f42b19125864d40cfe92cfc1fcb20a1429ba6cb28d316af6ab700db66f7  records 684  coverage 0.6462  K-B4 True  K-B5 True
+_ test_on_the_total_moves_by_exactly_w_traj_W_term_over_3_and_the_term_is_the_hand_value _
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+
+    def test_on_the_total_moves_by_exactly_w_traj_W_term_over_3_and_the_term_is_the_hand_value(pack):
+        model, batch, cfg, _ = real_batch(pack)
+        n = batch["gt"].shape[0]
+        mask = torch.zeros(n, dtype=torch.bool)
+        mask[::2] = True
+        T0, _ = terms(model, batch, 0.0, mask)
+        T1, out = terms(model, batch, 1.5, mask)
+        want_term = hand_term(out["traj30"], batch["gt"], batch["gt_ok"].tolist(), mask.tolist())
+>       assert float(T1["launch_along"]) > 0.0 and abs(float(T1["launch_along"]) - want_term) < 1e-5 * max(1.0, want_term), (float(T1["launch_along"]), want_term)
+                     ^^^^^^^^^^^^^^^^^^
+E       KeyError: 'launch_along'
+
+stack\tests\test_v8f_launch_intent.py:233: KeyError
+_ test_the_gradient_to_O_is_nonzero_with_the_mask_and_EXACTLY_zero_with_an_all_false_mask _
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+
+    def test_the_gradient_to_O_is_nonzero_with_the_mask_and_EXACTLY_zero_with_an_all_false_mask(pack):
+        model, batch, cfg, _ = real_batch(pack)
+        n = batch["gt"].shape[0]
+        on = torch.zeros(n, dtype=torch.bool)
+        on[: n // 2] = True
+    
+        def grads(W, mask):
+            model.zero_grad(set_to_none=True)
+            T, _ = terms(model, batch, W, mask)
+            T["total"].backward()
+            return {k: (p.grad.clone() if p.grad is not None else torch.zeros_like(p)) for k, p in model.named_parameters() if p.requires_grad}
+    
+        g0, g0b = grads(0.0, on), grads(0.0, on)
+        assert sum(float((g0[k] - g0b[k]).abs().sum()) for k in g0) == 0.0, "the control: the probe is deterministic"
+        gw, gn = grads(2.0, on), grads(2.0, torch.zeros(n, dtype=torch.bool))
+        head = lambda g: sum(float((g[k] - g0[k]).abs().sum()) for k in g if k.startswith("head_o."))      # noqa: E731
+>       assert head(gw) > 0.0, "the term gives O's head a gradient"
+E       AssertionError: the term gives O's head a gradient
+E       assert 0.0 > 0.0
+E        +  where 0.0 = <function test_the_gradient_to_O_is_nonzero_with_the_mask_and_EXACTLY_zero_with_an_all_false_mask.<locals>.<lambda> at 0x00000278B05EFC40>({'pos': tensor([[-2.4583e-04,  1.7620e-04,  4.2066e-05,  ..., -9.1219e-07,\n         -2.5205e-05, -1.1039e-04],\n       ...ter.0.bias': tensor([-7.6054e-05, -6.9670e-04,  3.2344e-04,  ...,  4.0464e-05,\n        -4.0675e-04,  2.6787e-04]), ...})
+
+stack\tests\test_v8f_launch_intent.py:265: AssertionError
+_________________ test_a_missing_launch_key_is_refused_loudly _________________
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+
+    def test_a_missing_launch_key_is_refused_loudly(pack):
+        model, batch, _, _ = real_batch(pack)
+>       with pytest.raises(ValueError, match="no `launch` mask"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValueError
+
+stack\tests\test_v8f_launch_intent.py:271: Failed
+___________ test_the_config_refuses_a_negative_or_non_finite_weight ___________
+
+    def test_the_config_refuses_a_negative_or_non_finite_weight():
+        for bad in (-0.1, float("nan"), float("inf"), -float("inf")):
+            with pytest.raises(ValueError, match="launch_intent_w"):
+>               M.V8FMiniConfig(**{**TINY, "launch_intent_w": bad})
+E               TypeError: V8FMiniConfig.__init__() got an unexpected keyword argument 'launch_intent_w'
+
+stack\tests\test_v8f_launch_intent.py:278: TypeError
+________ test_the_flag_has_a_gdvb_entry_and_the_parser_default_is_off _________
+
+    def test_the_flag_has_a_gdvb_entry_and_the_parser_default_is_off():
+>       assert TR.FLAG_CHECKS["launch_intent_w"] == "cfg:launch_intent_w"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'launch_intent_w'
+
+stack\tests\test_v8f_launch_intent.py:284: KeyError
+_______ test_a_flag_without_a_gdvb_entry_is_refused_by_the_gate_itself ________
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000278AD7BB360>
+
+    def test_a_flag_without_a_gdvb_entry_is_refused_by_the_gate_itself(pack, monkeypatch):
+>       parts = gate_parts(pack, ["--launch-intent-w", "1.5"])
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_launch_intent.py:290: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_dagger_train.py:166: in gate_parts
+    a = TR.build_parser().parse_args(["--out", str(out or pk.init_out), *GATE_ARGV, *extra])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1902: in parse_args
+    self.error(msg)
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2658: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = ArgumentParser(prog='__main__.py', usage=None, description='v8F-mini training (track M): S -> T -> O on the cached fro...-testable, 8 GB GPU-sized.', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = '__main__.py: error: unrecognized arguments: --launch-intent-w 1.5\n'
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2645: SystemExit
+---------------------------- Captured stderr call -----------------------------
+usage: __main__.py [-h]
+                   [--arm {M1,M1-navonly,M1-navshuf,M1-nocons,M2a,M2b,M2b-cz}]
+                   [--navonly] [--no-consistency] [--wm {off,a,b}]
+                   [--cons-absent {mask,zero}] [--code-mix {whole,kind}]
+                   [--o-interface {full,cut}] [--w-acc W_ACC]
+                   [--ego-perturb-p EGO_PERTURB_P]
+                   [--ego-perturb-vscale LO HI]
+                   [--ego-perturb-vmax EGO_PERTURB_VMAX]
+                   [--ego-perturb-adrop EGO_PERTURB_ADROP]
+                   [--ego-perturb-yawrate-std EGO_PERTURB_YAWRATE_STD]
+                   [--ego-perturb-seed EGO_PERTURB_SEED] [--dagger-p DAGGER_P]
+                   [--dagger-bank DAGGER_BANK]
+                   [--dagger-bank-sha256 DAGGER_BANK_SHA256]
+                   [--dagger-seed DAGGER_SEED] [--ego-perturb-with-dagger]
+                   [--init-ckpt INIT_CKPT] [--cache-dir CACHE_DIR] --out OUT
+                   [--v9-train V9_TRAIN] [--v9-train-md5 V9_TRAIN_MD5]
+                   [--speed-train SPEED_TRAIN] [--lead-train LEAD_TRAIN]
+                   [--join-train JOIN_TRAIN] [--fit-join] [--p10 P10]
+                   [--kin-mode {steer,yaw}] [--tracks TRACKS]
+                   [--grid {pool4x10,pool8x20}] [--data-frac DATA_FRAC]
+                   [--max-clips MAX_CLIPS] [--exclude EXCLUDE]
+                   [--steps-mult STEPS_MULT] [--steps STEPS] [--batch BATCH]
+                   [--seed SEED] [--lr LR] [--wd WD] [--warmup WARMUP]
+                   [--clip-grad CLIP_GRAD] [--device DEVICE] [--amp]
+                   [--lru LRU] [--workers WORKERS] [--threads THREADS]
+                   [--ckpt-every CKPT_EVERY] [--log-every LOG_EVERY]
+                   [--resume] [--no-resume] [--hist HIST]
+                   [--window-start WINDOW_START] [--hmax HMAX] [--d D]
+                   [--n-q N_Q] [--nb NB] [--p-gt-start P_GT_START]
+                   [--p-gt-end P_GT_END] [--w-ckpt W_CKPT] [--w-tac W_TAC]
+                   [--w-cons W_CONS] [--w-traj W_TRAJ] [--w-pen W_PEN]
+                   [--w-pen-self W_PEN_SELF] [--w-wm W_WM] [--detach-upper]
+                   [--synthetic] [--selfcheck-only] [--encoder {cache,lora}]
+                   [--lora-r LORA_R] [--lora-alpha LORA_ALPHA]
+                   [--lora-targets LORA_TARGETS] [--lora-lr LORA_LR]
+                   [--frames-root FRAMES_ROOT] [--accum ACCUM] [--enc-ckpt]
+__main__.py: error: unrecognized arguments: --launch-intent-w 1.5
+_____________ test_gdvb_refuses_an_argv_the_build_did_not_honour ______________
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+
+    def test_gdvb_refuses_an_argv_the_build_did_not_honour(pack):
+>       parts = gate_parts(pack, ["--launch-intent-w", "1.5"])
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_launch_intent.py:298: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_dagger_train.py:166: in gate_parts
+    a = TR.build_parser().parse_args(["--out", str(out or pk.init_out), *GATE_ARGV, *extra])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1902: in parse_args
+    self.error(msg)
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2658: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = ArgumentParser(prog='__main__.py', usage=None, description='v8F-mini training (track M): S -> T -> O on the cached fro...-testable, 8 GB GPU-sized.', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = '__main__.py: error: unrecognized arguments: --launch-intent-w 1.5\n'
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2645: SystemExit
+---------------------------- Captured stderr call -----------------------------
+usage: __main__.py [-h]
+                   [--arm {M1,M1-navonly,M1-navshuf,M1-nocons,M2a,M2b,M2b-cz}]
+                   [--navonly] [--no-consistency] [--wm {off,a,b}]
+                   [--cons-absent {mask,zero}] [--code-mix {whole,kind}]
+                   [--o-interface {full,cut}] [--w-acc W_ACC]
+                   [--ego-perturb-p EGO_PERTURB_P]
+                   [--ego-perturb-vscale LO HI]
+                   [--ego-perturb-vmax EGO_PERTURB_VMAX]
+                   [--ego-perturb-adrop EGO_PERTURB_ADROP]
+                   [--ego-perturb-yawrate-std EGO_PERTURB_YAWRATE_STD]
+                   [--ego-perturb-seed EGO_PERTURB_SEED] [--dagger-p DAGGER_P]
+                   [--dagger-bank DAGGER_BANK]
+                   [--dagger-bank-sha256 DAGGER_BANK_SHA256]
+                   [--dagger-seed DAGGER_SEED] [--ego-perturb-with-dagger]
+                   [--init-ckpt INIT_CKPT] [--cache-dir CACHE_DIR] --out OUT
+                   [--v9-train V9_TRAIN] [--v9-train-md5 V9_TRAIN_MD5]
+                   [--speed-train SPEED_TRAIN] [--lead-train LEAD_TRAIN]
+                   [--join-train JOIN_TRAIN] [--fit-join] [--p10 P10]
+                   [--kin-mode {steer,yaw}] [--tracks TRACKS]
+                   [--grid {pool4x10,pool8x20}] [--data-frac DATA_FRAC]
+                   [--max-clips MAX_CLIPS] [--exclude EXCLUDE]
+                   [--steps-mult STEPS_MULT] [--steps STEPS] [--batch BATCH]
+                   [--seed SEED] [--lr LR] [--wd WD] [--warmup WARMUP]
+                   [--clip-grad CLIP_GRAD] [--device DEVICE] [--amp]
+                   [--lru LRU] [--workers WORKERS] [--threads THREADS]
+                   [--ckpt-every CKPT_EVERY] [--log-every LOG_EVERY]
+                   [--resume] [--no-resume] [--hist HIST]
+                   [--window-start WINDOW_START] [--hmax HMAX] [--d D]
+                   [--n-q N_Q] [--nb NB] [--p-gt-start P_GT_START]
+                   [--p-gt-end P_GT_END] [--w-ckpt W_CKPT] [--w-tac W_TAC]
+                   [--w-cons W_CONS] [--w-traj W_TRAJ] [--w-pen W_PEN]
+                   [--w-pen-self W_PEN_SELF] [--w-wm W_WM] [--detach-upper]
+                   [--synthetic] [--selfcheck-only] [--encoder {cache,lora}]
+                   [--lora-r LORA_R] [--lora-alpha LORA_ALPHA]
+                   [--lora-targets LORA_TARGETS] [--lora-lr LORA_LR]
+                   [--frames-root FRAMES_ROOT] [--accum ACCUM] [--enc-ckpt]
+__main__.py: error: unrecognized arguments: --launch-intent-w 1.5
+_ test_gdvb_refuses_a_non_finite_or_negative_argv_value_and_a_weight_that_w_traj_zeroes _
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+
+    def test_gdvb_refuses_a_non_finite_or_negative_argv_value_and_a_weight_that_w_traj_zeroes(pack):
+>       parts = gate_parts(pack, ["--launch-intent-w", "1.5"])
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_launch_intent.py:310: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\tests\test_v8f_dagger_train.py:166: in gate_parts
+    a = TR.build_parser().parse_args(["--out", str(out or pk.init_out), *GATE_ARGV, *extra])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1902: in parse_args
+    self.error(msg)
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2658: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = ArgumentParser(prog='__main__.py', usage=None, description='v8F-mini training (track M): S -> T -> O on the cached fro...-testable, 8 GB GPU-sized.', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = '__main__.py: error: unrecognized arguments: --launch-intent-w 1.5\n'
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2645: SystemExit
+---------------------------- Captured stderr call -----------------------------
+usage: __main__.py [-h]
+                   [--arm {M1,M1-navonly,M1-navshuf,M1-nocons,M2a,M2b,M2b-cz}]
+                   [--navonly] [--no-consistency] [--wm {off,a,b}]
+                   [--cons-absent {mask,zero}] [--code-mix {whole,kind}]
+                   [--o-interface {full,cut}] [--w-acc W_ACC]
+                   [--ego-perturb-p EGO_PERTURB_P]
+                   [--ego-perturb-vscale LO HI]
+                   [--ego-perturb-vmax EGO_PERTURB_VMAX]
+                   [--ego-perturb-adrop EGO_PERTURB_ADROP]
+                   [--ego-perturb-yawrate-std EGO_PERTURB_YAWRATE_STD]
+                   [--ego-perturb-seed EGO_PERTURB_SEED] [--dagger-p DAGGER_P]
+                   [--dagger-bank DAGGER_BANK]
+                   [--dagger-bank-sha256 DAGGER_BANK_SHA256]
+                   [--dagger-seed DAGGER_SEED] [--ego-perturb-with-dagger]
+                   [--init-ckpt INIT_CKPT] [--cache-dir CACHE_DIR] --out OUT
+                   [--v9-train V9_TRAIN] [--v9-train-md5 V9_TRAIN_MD5]
+                   [--speed-train SPEED_TRAIN] [--lead-train LEAD_TRAIN]
+                   [--join-train JOIN_TRAIN] [--fit-join] [--p10 P10]
+                   [--kin-mode {steer,yaw}] [--tracks TRACKS]
+                   [--grid {pool4x10,pool8x20}] [--data-frac DATA_FRAC]
+                   [--max-clips MAX_CLIPS] [--exclude EXCLUDE]
+                   [--steps-mult STEPS_MULT] [--steps STEPS] [--batch BATCH]
+                   [--seed SEED] [--lr LR] [--wd WD] [--warmup WARMUP]
+                   [--clip-grad CLIP_GRAD] [--device DEVICE] [--amp]
+                   [--lru LRU] [--workers WORKERS] [--threads THREADS]
+                   [--ckpt-every CKPT_EVERY] [--log-every LOG_EVERY]
+                   [--resume] [--no-resume] [--hist HIST]
+                   [--window-start WINDOW_START] [--hmax HMAX] [--d D]
+                   [--n-q N_Q] [--nb NB] [--p-gt-start P_GT_START]
+                   [--p-gt-end P_GT_END] [--w-ckpt W_CKPT] [--w-tac W_TAC]
+                   [--w-cons W_CONS] [--w-traj W_TRAJ] [--w-pen W_PEN]
+                   [--w-pen-self W_PEN_SELF] [--w-wm W_WM] [--detach-upper]
+                   [--synthetic] [--selfcheck-only] [--encoder {cache,lora}]
+                   [--lora-r LORA_R] [--lora-alpha LORA_ALPHA]
+                   [--lora-targets LORA_TARGETS] [--lora-lr LORA_LR]
+                   [--frames-root FRAMES_ROOT] [--accum ACCUM] [--enc-ckpt]
+__main__.py: error: unrecognized arguments: --launch-intent-w 1.5
+_________________ test_the_probe_is_off_and_silent_at_w_zero __________________
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+
+    def test_the_probe_is_off_and_silent_at_w_zero(pack):
+        model, batch, cfg, _ = real_batch(pack)
+>       r = TR.launch_intent_probe(model, batch, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'v8f_mini_train' has no attribute 'launch_intent_probe'
+
+stack\tests\test_v8f_launch_intent.py:329: AttributeError
+____ test_the_probe_passes_on_a_real_batch_and_records_the_natural_counts _____
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000278AD6520F0>
+
+    def test_the_probe_passes_on_a_real_batch_and_records_the_natural_counts(pack, monkeypatch):
+>       monkeypatch.setattr(M, "LAUNCH_V0_MAX", 40.0)         # the synthetic world is mostly fast: widen v0 so the natural mask holds rows
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: <module 'tanitad.models.v8f_mini' from 'F:\\TanitAD-scratch\\launch_intent\\pristine\\stack\\tanitad\\models\\v8f_mini.py'> has no attribute 'LAUNCH_V0_MAX'
+
+stack\tests\test_v8f_launch_intent.py:334: AttributeError
+_ test_the_probe_sees_the_wire_even_when_the_probe_batch_holds_no_natural_launch_row _
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000278ABD65D00>
+
+    def test_the_probe_sees_the_wire_even_when_the_probe_batch_holds_no_natural_launch_row(pack, monkeypatch):
+>       monkeypatch.setattr(M, "LAUNCH_V0_MAX", -1.0)         # nothing is a launch: the natural mask is empty
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: <module 'tanitad.models.v8f_mini' from 'F:\\TanitAD-scratch\\launch_intent\\pristine\\stack\\tanitad\\models\\v8f_mini.py'> has no attribute 'LAUNCH_V0_MAX'
+
+stack\tests\test_v8f_launch_intent.py:346: AttributeError
+__ test_deliberate_regression_a_term_that_never_reaches_the_loss_is_refused ___
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000278AD7A4AF0>
+
+    def test_deliberate_regression_a_term_that_never_reaches_the_loss_is_refused(pack, monkeypatch):
+        model, batch, cfg, _ = real_batch(pack)
+        cfg.launch_intent_w = 1.5
+>       monkeypatch.setattr(M, "launch_along_term", lambda traj, gt, gok, launch: (traj * 0.0).sum() + 1.0)   # a term with value but no dependence on O
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: <module 'tanitad.models.v8f_mini' from 'F:\\TanitAD-scratch\\launch_intent\\pristine\\stack\\tanitad\\models\\v8f_mini.py'> has no attribute 'launch_along_term'
+
+stack\tests\test_v8f_launch_intent.py:356: AttributeError
+_ test_deliberate_regression_a_term_that_ignores_the_mask_is_refused_by_the_all_false_control _
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000278B05DE950>
+
+    def test_deliberate_regression_a_term_that_ignores_the_mask_is_refused_by_the_all_false_control(pack, monkeypatch):
+        model, batch, cfg, _ = real_batch(pack)
+        cfg.launch_intent_w = 1.5
+>       orig = M.launch_along_term
+               ^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'tanitad.models.v8f_mini' has no attribute 'launch_along_term'
+
+stack\tests\test_v8f_launch_intent.py:364: AttributeError
+_ test_deliberate_regression_a_deleted_total_line_reads_zero_contribution_and_is_refused _
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000278B04A7850>
+
+    def test_deliberate_regression_a_deleted_total_line_reads_zero_contribution_and_is_refused(pack, monkeypatch):
+        model, batch, cfg, _ = real_batch(pack)
+        cfg.launch_intent_w = 1.5
+        orig_loss = M.V8FMini.loss
+    
+        def loss_without_the_line(self, b, p_gt=None, gen=None):
+            out = orig_loss(self, b, p_gt, gen)
+            W = self.cfg.launch_intent_w
+            if W > 0.0:                                        # the total WITHOUT the launch line: subtract what the line added
+                out["terms"]["total"] = out["terms"]["total"] - self.cfg.w_traj * W * out["terms"]["launch_along"] / 3.0
+            return out
+        monkeypatch.setattr(M.V8FMini, "loss", loss_without_the_line)
+        with pytest.raises(AssertionError, match="does not reach the loss with its weight|contribution|moved by"):
+>           TR.launch_intent_probe(model, batch, cfg)
+            ^^^^^^^^^^^^^^^^^^^^^^
+E           AttributeError: module 'v8f_mini_train' has no attribute 'launch_intent_probe'
+
+stack\tests\test_v8f_launch_intent.py:383: AttributeError
+_____ test_a_real_run_reaches_the_loss_and_records_what_the_loss_received _____
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+tmp_path = WindowsPath('F:/TanitAD-scratch/launch_intent/tmp/bt_final_red_on_tip/run/test_a_real_run_reaches_the_lo0')
+lspy = []
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000278B1A64AA0>
+
+    def test_a_real_run_reaches_the_loss_and_records_what_the_loss_received(pack, tmp_path, lspy, monkeypatch):
+>       monkeypatch.setattr(M, "LAUNCH_V0_MAX", 40.0)
+E       AttributeError: <module 'tanitad.models.v8f_mini' from 'F:\\TanitAD-scratch\\launch_intent\\pristine\\stack\\tanitad\\models\\v8f_mini.py'> has no attribute 'LAUNCH_V0_MAX'
+
+stack\tests\test_v8f_launch_intent.py:402: AttributeError
+_ test_a_default_run_records_the_lever_off_and_adds_no_launch_key_to_the_log_summary_or_checkpoint _
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+tmp_path = WindowsPath('F:/TanitAD-scratch/launch_intent/tmp/bt_final_red_on_tip/run/test_a_default_run_records_the0')
+
+    def test_a_default_run_records_the_lever_off_and_adds_no_launch_key_to_the_log_summary_or_checkpoint(pack, tmp_path):
+        assert TR.main(_run(tmp_path / "d", ["--steps", "3"])) == 0
+        s, sc, log = _summary(tmp_path / "d"), _selfcheck(tmp_path / "d"), _log(tmp_path / "d")
+>       assert s["levers"]["launch_intent_w"] == 0.0 and sc["levers"]["launch_intent_w"] == 0.0 and sc["launch_intent_probe"]["launch_intent"] == "off"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'launch_intent_w'
+
+stack\tests\test_v8f_launch_intent.py:426: KeyError
+---------------------------- Captured stdout call -----------------------------
+[1/3] ade 7.258 total 80.931 p_gt 1.00
+[2/3] ade 4.967 total 70.105 p_gt 0.73
+[3/3] ade 5.664 total 73.449 p_gt 0.47
+DONE {"steps": 3, "arm": "M2b", "seed": 5, "seconds": 0.6528365612030029}
+______________ test_naming_w_zero_is_the_absent_flag_bit_for_bit ______________
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+tmp_path = WindowsPath('F:/TanitAD-scratch/launch_intent/tmp/bt_final_red_on_tip/run/test_naming_w_zero_is_the_abse0')
+
+    def test_naming_w_zero_is_the_absent_flag_bit_for_bit(pack, tmp_path):
+        assert TR.main(_run(tmp_path / "a", ["--steps", "3"])) == 0
+>       assert TR.main(_run(tmp_path / "b", ["--steps", "3", "--launch-intent-w", "0.0"])) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+stack\tests\test_v8f_launch_intent.py:436: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+stack\scripts\v8f_mini_train.py:1634: in main
+    a = build_parser().parse_args(argv)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:1902: in parse_args
+    self.error(msg)
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2658: in error
+    self.exit(2, _('%(prog)s: error: %(message)s\n') % args)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = ArgumentParser(prog='__main__.py', usage=None, description='v8F-mini training (track M): S -> T -> O on the cached fro...-testable, 8 GB GPU-sized.', formatter_class=<class 'argparse.HelpFormatter'>, conflict_handler='error', add_help=True)
+status = 2
+message = '__main__.py: error: unrecognized arguments: --launch-intent-w 0.0\n'
+
+    def exit(self, status=0, message=None):
+        if message:
+            self._print_message(message, _sys.stderr)
+>       _sys.exit(status)
+E       SystemExit: 2
+
+C:\Users\Admin\AppData\Local\Programs\Python\Python313\Lib\argparse.py:2645: SystemExit
+---------------------------- Captured stdout call -----------------------------
+[1/3] ade 7.258 total 80.931 p_gt 1.00
+[2/3] ade 4.967 total 70.105 p_gt 0.73
+[3/3] ade 5.664 total 73.449 p_gt 0.47
+DONE {"steps": 3, "arm": "M2b", "seed": 5, "seconds": 0.6284506320953369}
+---------------------------- Captured stderr call -----------------------------
+usage: __main__.py [-h]
+                   [--arm {M1,M1-navonly,M1-navshuf,M1-nocons,M2a,M2b,M2b-cz}]
+                   [--navonly] [--no-consistency] [--wm {off,a,b}]
+                   [--cons-absent {mask,zero}] [--code-mix {whole,kind}]
+                   [--o-interface {full,cut}] [--w-acc W_ACC]
+                   [--ego-perturb-p EGO_PERTURB_P]
+                   [--ego-perturb-vscale LO HI]
+                   [--ego-perturb-vmax EGO_PERTURB_VMAX]
+                   [--ego-perturb-adrop EGO_PERTURB_ADROP]
+                   [--ego-perturb-yawrate-std EGO_PERTURB_YAWRATE_STD]
+                   [--ego-perturb-seed EGO_PERTURB_SEED] [--dagger-p DAGGER_P]
+                   [--dagger-bank DAGGER_BANK]
+                   [--dagger-bank-sha256 DAGGER_BANK_SHA256]
+                   [--dagger-seed DAGGER_SEED] [--ego-perturb-with-dagger]
+                   [--init-ckpt INIT_CKPT] [--cache-dir CACHE_DIR] --out OUT
+                   [--v9-train V9_TRAIN] [--v9-train-md5 V9_TRAIN_MD5]
+                   [--speed-train SPEED_TRAIN] [--lead-train LEAD_TRAIN]
+                   [--join-train JOIN_TRAIN] [--fit-join] [--p10 P10]
+                   [--kin-mode {steer,yaw}] [--tracks TRACKS]
+                   [--grid {pool4x10,pool8x20}] [--data-frac DATA_FRAC]
+                   [--max-clips MAX_CLIPS] [--exclude EXCLUDE]
+                   [--steps-mult STEPS_MULT] [--steps STEPS] [--batch BATCH]
+                   [--seed SEED] [--lr LR] [--wd WD] [--warmup WARMUP]
+                   [--clip-grad CLIP_GRAD] [--device DEVICE] [--amp]
+                   [--lru LRU] [--workers WORKERS] [--threads THREADS]
+                   [--ckpt-every CKPT_EVERY] [--log-every LOG_EVERY]
+                   [--resume] [--no-resume] [--hist HIST]
+                   [--window-start WINDOW_START] [--hmax HMAX] [--d D]
+                   [--n-q N_Q] [--nb NB] [--p-gt-start P_GT_START]
+                   [--p-gt-end P_GT_END] [--w-ckpt W_CKPT] [--w-tac W_TAC]
+                   [--w-cons W_CONS] [--w-traj W_TRAJ] [--w-pen W_PEN]
+                   [--w-pen-self W_PEN_SELF] [--w-wm W_WM] [--detach-upper]
+                   [--synthetic] [--selfcheck-only] [--encoder {cache,lora}]
+                   [--lora-r LORA_R] [--lora-alpha LORA_ALPHA]
+                   [--lora-targets LORA_TARGETS] [--lora-lr LORA_LR]
+                   [--frames-root FRAMES_ROOT] [--accum ACCUM] [--enc-ckpt]
+__main__.py: error: unrecognized arguments: --launch-intent-w 0.0
+_ test_an_all_false_mask_trains_bit_for_bit_like_the_unweighted_run_and_a_real_mask_does_not _
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+tmp_path = WindowsPath('F:/TanitAD-scratch/launch_intent/tmp/bt_final_red_on_tip/run/test_an_all_false_mask_trains_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000278ABD3B2F0>
+
+    def test_an_all_false_mask_trains_bit_for_bit_like_the_unweighted_run_and_a_real_mask_does_not(pack, tmp_path, monkeypatch):
+        """The analytic identity: a mask that admits nothing adds 0.0 to the total and 0.0 to every gradient, so the weights equal W = 0's. A mask that admits rows must move them (not vacuous)."""
+        assert TR.main(_run(tmp_path / "w0", ["--steps", "4"])) == 0
+>       monkeypatch.setattr(M, "LAUNCH_V0_MAX", -1.0)
+E       AttributeError: <module 'tanitad.models.v8f_mini' from 'F:\\TanitAD-scratch\\launch_intent\\pristine\\stack\\tanitad\\models\\v8f_mini.py'> has no attribute 'LAUNCH_V0_MAX'
+
+stack\tests\test_v8f_launch_intent.py:447: AttributeError
+---------------------------- Captured stdout call -----------------------------
+[1/4] ade 7.258 total 80.931 p_gt 1.00
+[2/4] ade 4.967 total 70.105 p_gt 0.80
+[3/4] ade 5.664 total 73.449 p_gt 0.60
+[4/4] ade 9.301 total 82.390 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.7763373851776123}
+_________ test_the_mask_is_the_LOGGED_state_not_the_swapped_own_state _________
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+tmp_path = WindowsPath('F:/TanitAD-scratch/launch_intent/tmp/bt_final_red_on_tip/run/test_the_mask_is_the_LOGGED_st0')
+lspy = []
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000278B1A12190>
+
+    def test_the_mask_is_the_LOGGED_state_not_the_swapped_own_state(pack, tmp_path, lspy, monkeypatch):
+        """Labels only. With the DAgger swap ON, a swapped sample's ``kin3`` is the model's OWN state; the launch mask must still be the one of the LOGGED v0 and the GT. Recomputed from the clip store."""
+>       monkeypatch.setattr(M, "LAUNCH_V0_MAX", 40.0)
+E       AttributeError: <module 'tanitad.models.v8f_mini' from 'F:\\TanitAD-scratch\\launch_intent\\pristine\\stack\\tanitad\\models\\v8f_mini.py'> has no attribute 'LAUNCH_V0_MAX'
+
+stack\tests\test_v8f_launch_intent.py:460: AttributeError
+______ test_the_mask_is_taken_before_the_stages_and_attached_after_them _______
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+tmp_path = WindowsPath('F:/TanitAD-scratch/launch_intent/tmp/bt_final_red_on_tip/run/test_the_mask_is_taken_before_0')
+lspy = []
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000278B1A13230>
+
+    def test_the_mask_is_taken_before_the_stages_and_attached_after_them(pack, tmp_path, lspy, monkeypatch):
+        """The stages return their own batch dict: the key must be on the dict the LOSS gets, with the swap or the perturbation ON."""
+>       monkeypatch.setattr(M, "LAUNCH_V0_MAX", 40.0)
+E       AttributeError: <module 'tanitad.models.v8f_mini' from 'F:\\TanitAD-scratch\\launch_intent\\pristine\\stack\\tanitad\\models\\v8f_mini.py'> has no attribute 'LAUNCH_V0_MAX'
+
+stack\tests\test_v8f_launch_intent.py:477: AttributeError
+_ test_a_resumed_run_keeps_counting_and_trains_what_an_uninterrupted_run_trained _
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+tmp_path = WindowsPath('F:/TanitAD-scratch/launch_intent/tmp/bt_final_red_on_tip/run/test_a_resumed_run_keeps_count0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x00000278AD558D50>
+
+    def test_a_resumed_run_keeps_counting_and_trains_what_an_uninterrupted_run_trained(pack, tmp_path, monkeypatch):
+>       monkeypatch.setattr(M, "LAUNCH_V0_MAX", 40.0)
+E       AttributeError: <module 'tanitad.models.v8f_mini' from 'F:\\TanitAD-scratch\\launch_intent\\pristine\\stack\\tanitad\\models\\v8f_mini.py'> has no attribute 'LAUNCH_V0_MAX'
+
+stack\tests\test_v8f_launch_intent.py:483: AttributeError
+__ test_the_dose_rule_gives_one_third_at_the_measured_f_and_the_registered_W __
+
+    def test_the_dose_rule_gives_one_third_at_the_measured_f_and_the_registered_W():
+        f = F_MEASURED
+        assert abs(f - 0.16185095542232342) < 1e-12
+        w = float(f"{(1 - f) / (2 * f) - 1:.6g}")
+        assert w == W_A == 1.58926
+>       assert abs(TR.launch_weight_share(round(f * 1_000_000), 1_000_000, W_A) - 1 / 3) < 1e-5
+                   ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'v8f_mini_train' has no attribute 'launch_weight_share'
+
+stack\tests\test_v8f_launch_intent.py:505: AttributeError
+____________________ test_launch_weight_share_hand_values _____________________
+
+    def test_launch_weight_share_hand_values():
+>       assert abs(TR.launch_weight_share(10, 100, 1.0) - 20 / 110) < 1e-15
+                   ^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: module 'v8f_mini_train' has no attribute 'launch_weight_share'
+
+stack\tests\test_v8f_launch_intent.py:511: AttributeError
+___________ test_flag_off_reproduces_the_unmodified_tip_bit_for_bit ___________
+
+pack = <test_v8f_dagger_train.Pack object at 0x00000278AD6C5E80>
+tmp_path = WindowsPath('F:/TanitAD-scratch/launch_intent/tmp/bt_final_red_on_tip/run/test_flag_off_reproduces_the_u0')
+
+    def test_flag_off_reproduces_the_unmodified_tip_bit_for_bit(pack, tmp_path):
+        """K-BUILD: the golden was written by the unmodified tip (d7208328) for (a) a DAG-OACC-style argv, (b) an ORC-style argv and (c) plain M2b -- 4 CPU steps each on the trainer's synthetic world. With the
+        flag absent this tree must give the same log (every loss, every logged key), the same final weights and optimiser state, the same counters, and the same SET of keys in summary.json and in the checkpoint
+        (the checkpoint's ``cfg`` gains ONE key, ``launch_intent_w`` = 0.0; levers gain the four launch keys; selfcheck.json gains ``launch_intent_probe``)."""
+        got = {}
+        for name in ("dag", "orc", "m2b"):
+            assert TR.main(_run(tmp_path / name, argv_family(pack, name))) == 0
+            got[name] = digest(tmp_path / name)
+        got["_fixture"] = {"bank_content_sha256": bank_identity(pack), "torch": torch.__version__}
+        if WRITE_GOLDEN:
+            GOLDEN.write_text(json.dumps(got, indent=1, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+            pytest.skip("golden written from the unmodified tip")
+        want = json.loads(GOLDEN.read_text(encoding="utf-8"))
+        assert want["_fixture"]["bank_content_sha256"] == bank_identity(pack), "the fixture bank is the golden's bank, record for record"
+        for name in ("dag", "orc", "m2b"):
+            g, w = got[name], want[name]
+            assert g["log"] == w["log"] and len(w["log"]) == 4, f"{name}: every logged number and every logged key"
+            assert (g["model_sha256"], g["opt_sha256"]) == (w["model_sha256"], w["opt_sha256"]), f"{name}: final weights and optimiser state, bit for bit (torch {want['_fixture']['torch']} wrote the golden, {torch.__version__} read it)"
+            assert (g["ego_totals"], g["dagger_totals"], g["counters"]) == (w["ego_totals"], w["dagger_totals"], w["counters"]), f"{name}: the counters"
+            assert g["summary_keys"] == w["summary_keys"] and g["ckpt_keys"] == w["ckpt_keys"], f"{name}: a flag-off run's summary.json / checkpoint carry no new top-level key"
+            assert g["levers_ego"] == w["levers_ego"] and g["levers_dagger_p"] == w["levers_dagger_p"]
+>           assert {k: v for k, v in g["cfg"].items() if k != "launch_intent_w"} == w["cfg"] and g["cfg"]["launch_intent_w"] == 0.0 and "launch_intent_w" not in w["cfg"], f"{name}: the config gains only launch_intent_w = 0.0"
+                                                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'launch_intent_w'
+
+stack\tests\test_v8f_launch_intent.py:580: KeyError
+---------------------------- Captured stdout call -----------------------------
+[1/4] ade 8.421 total 58.805 p_gt 0.20
+[2/4] ade 6.468 total 55.524 p_gt 0.20
+[3/4] ade 5.821 total 53.133 p_gt 0.20
+[4/4] ade 11.245 total 61.673 p_gt 0.20
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.8059689998626709}
+[1/4] ade 6.931 total 49.432 p_gt 0.20
+[2/4] ade 4.776 total 46.392 p_gt 0.20
+[3/4] ade 5.875 total 44.371 p_gt 0.20
+[4/4] ade 9.289 total 49.409 p_gt 0.20
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.8553035259246826}
+[1/4] ade 7.258 total 80.931 p_gt 1.00
+[2/4] ade 4.967 total 70.105 p_gt 0.80
+[3/4] ade 5.664 total 73.449 p_gt 0.60
+[4/4] ade 9.301 total 82.390 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.8597390651702881}
+______________ test_the_single_applying_lines_exist_exactly_once ______________
+
+    def test_the_single_applying_lines_exist_exactly_once():
+        """`tools/run_mutations.py` deletes / breaks these; an anchor that is not found exactly once would make a mutation test vacuous."""
+        t = TRAIN_P.read_text(encoding="utf-8")
+        m = MODEL_P.read_text(encoding="utf-8")
+>       assert t.count("                lmask = launch_stage(b)") == 1
+E       assert 0 == 1
+E        +  where 0 = <built-in method count of str object at 0x00000278B2047030>('                lmask = launch_stage(b)')
+E        +    where <built-in method count of str object at 0x00000278B2047030> = '#!/usr/bin/env python3\n"""v8F-mini training (track M): S -> T -> O on the cached frozen DINOv3-L pooled features. CP... for k in ("steps", "arm", "seed", "seconds")}))\n    return 0\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n'.count
+
+stack\tests\test_v8f_launch_intent.py:591: AssertionError
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_launch_intent.py::test_launch_mask_against_hand_computed_labels
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_inequality_is_greater_or_equal_at_the_exact_boundary
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_v0_bound_is_strict_and_is_the_registered_six
+FAILED stack\tests\test_v8f_launch_intent.py::test_only_the_last_two_knots_set_the_chord
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_mask_agrees_with_an_independent_numpy_spelling_on_random_labels
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_term_equals_a_hand_computed_value
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_denominator_is_every_gt_valid_row_not_the_launch_rows
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_gradient_is_nonzero_on_launch_rows_along_knots_1_to_12_and_EXACTLY_zero_everywhere_else
+FAILED stack\tests\test_v8f_launch_intent.py::test_an_all_false_mask_reads_exactly_zero_in_value_and_gradient
+FAILED stack\tests\test_v8f_launch_intent.py::test_off_adds_no_term_and_no_key
+FAILED stack\tests\test_v8f_launch_intent.py::test_on_the_total_moves_by_exactly_w_traj_W_term_over_3_and_the_term_is_the_hand_value
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_gradient_to_O_is_nonzero_with_the_mask_and_EXACTLY_zero_with_an_all_false_mask
+FAILED stack\tests\test_v8f_launch_intent.py::test_a_missing_launch_key_is_refused_loudly
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_config_refuses_a_negative_or_non_finite_weight
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_flag_has_a_gdvb_entry_and_the_parser_default_is_off
+FAILED stack\tests\test_v8f_launch_intent.py::test_a_flag_without_a_gdvb_entry_is_refused_by_the_gate_itself
+FAILED stack\tests\test_v8f_launch_intent.py::test_gdvb_refuses_an_argv_the_build_did_not_honour
+FAILED stack\tests\test_v8f_launch_intent.py::test_gdvb_refuses_a_non_finite_or_negative_argv_value_and_a_weight_that_w_traj_zeroes
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_probe_is_off_and_silent_at_w_zero
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_probe_passes_on_a_real_batch_and_records_the_natural_counts
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_probe_sees_the_wire_even_when_the_probe_batch_holds_no_natural_launch_row
+FAILED stack\tests\test_v8f_launch_intent.py::test_deliberate_regression_a_term_that_never_reaches_the_loss_is_refused
+FAILED stack\tests\test_v8f_launch_intent.py::test_deliberate_regression_a_term_that_ignores_the_mask_is_refused_by_the_all_false_control
+FAILED stack\tests\test_v8f_launch_intent.py::test_deliberate_regression_a_deleted_total_line_reads_zero_contribution_and_is_refused
+FAILED stack\tests\test_v8f_launch_intent.py::test_a_real_run_reaches_the_loss_and_records_what_the_loss_received
+FAILED stack\tests\test_v8f_launch_intent.py::test_a_default_run_records_the_lever_off_and_adds_no_launch_key_to_the_log_summary_or_checkpoint
+FAILED stack\tests\test_v8f_launch_intent.py::test_naming_w_zero_is_the_absent_flag_bit_for_bit
+FAILED stack\tests\test_v8f_launch_intent.py::test_an_all_false_mask_trains_bit_for_bit_like_the_unweighted_run_and_a_real_mask_does_not
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_mask_is_the_LOGGED_state_not_the_swapped_own_state
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_mask_is_taken_before_the_stages_and_attached_after_them
+FAILED stack\tests\test_v8f_launch_intent.py::test_a_resumed_run_keeps_counting_and_trains_what_an_uninterrupted_run_trained
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_dose_rule_gives_one_third_at_the_measured_f_and_the_registered_W
+FAILED stack\tests\test_v8f_launch_intent.py::test_launch_weight_share_hand_values
+FAILED stack\tests\test_v8f_launch_intent.py::test_flag_off_reproduces_the_unmodified_tip_bit_for_bit
+FAILED stack\tests\test_v8f_launch_intent.py::test_the_single_applying_lines_exist_exactly_once
+35 failed, 1 passed in 36.44s

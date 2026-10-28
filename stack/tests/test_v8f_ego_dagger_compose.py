@@ -98,7 +98,8 @@ def test_flag_off_reproduces_the_unmodified_tip_bit_for_bit(pack, tmp_path):
         assert (g["ego_totals"], g["dagger_totals"], g["counters"]) == (w["ego_totals"], w["dagger_totals"], w["counters"]), f"{name}: the counters"
         assert g["summary_keys"] == w["summary_keys"] and g["ckpt_keys"] == w["ckpt_keys"], f"{name}: a flag-off run's summary.json / checkpoint carry no new key"
         assert g["levers_ego"] == w["levers_ego"] and g["levers_dagger_p"] == w["levers_dagger_p"]
-        assert set(g["levers_keys"]) - set(w["levers_keys"]) <= {"ego_perturb_with_dagger", "ego_dagger_overlap_n", "ego_perturb_stream"} and set(w["levers_keys"]) <= set(g["levers_keys"]), f"{name}: levers only GAIN the three flag fields"
+        assert set(g["levers_keys"]) - set(w["levers_keys"]) <= {"ego_perturb_with_dagger", "ego_dagger_overlap_n", "ego_perturb_stream",
+                                                              "launch_intent_w", "launch_intent", "launch_n", "launch_eligible"} and set(w["levers_keys"]) <= set(g["levers_keys"]), f"{name}: levers only GAIN the three composition fields and the four launch-intent fields (PREREG_V8F_LAUNCH_INTENT: the built definition is recorded, W 0.0 when off)"
     assert want["dag"]["counters"]["dagger_n"] > 0 and want["orc"]["counters"]["ego_perturb_n"] > 0, "the golden is not vacuous: the DAG family swapped rows and the ORC family perturbed rows"
     assert want["orc"]["counters"]["dagger_n"] == 0 and want["dag"]["counters"]["ego_perturb_n"] == 0 and want["m2b"]["counters"]["dagger_n"] == want["m2b"]["counters"]["ego_perturb_n"] == 0
 

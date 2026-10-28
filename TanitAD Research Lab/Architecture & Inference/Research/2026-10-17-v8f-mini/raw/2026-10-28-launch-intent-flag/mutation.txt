@@ -1,0 +1,87 @@
+MUTATION PROOF  2026-10-28 11:14:40  tree=F:/TanitAD-scratch/launch_intent/mut
+tests: stack/tests/test_v8f_launch_intent.py  sha256 1acc33d699801923  (the unmutated trainer 0d708b3cb841bc1f, model b337ccecd3abfa42)
+CONTROL (no mutation) -k 'LOGGED_state_not_the_swapped': rc=0  [1 passed, 35 deselected in 21.12s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'LOGGED_state_not_the_swapped or real_run_reaches': rc=0  [2 passed, 34 deselected in 23.23s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'build_did_not_honour': rc=0  [1 passed, 35 deselected in 15.11s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'config_refuses': rc=0  [1 passed, 35 deselected in 1.98s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'denominator': rc=0  [1 passed, 35 deselected in 1.90s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'exact_boundary': rc=0  [1 passed, 35 deselected in 1.94s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'gdvb_entry or default_run or flag_off': rc=0  [4 passed, 32 deselected in 30.82s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'gdvb_entry or without_a_gdvb': rc=0  [2 passed, 34 deselected in 15.77s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'gdvb_entry or without_a_gdvb or build_did_not_honour': rc=0  [3 passed, 33 deselected in 15.36s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'gradient_is_nonzero or all_false_mask or hand_computed': rc=0  [6 passed, 30 deselected in 48.68s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'gradient_is_nonzero or term_equals or registered_six': rc=0  [3 passed, 33 deselected in 2.07s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'hand_computed or numpy_spelling': rc=0  [3 passed, 33 deselected in 1.95s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'ignores_the_mask': rc=0  [1 passed, 35 deselected in 15.37s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'last_two_knots or hand_computed or numpy_spelling': rc=0  [4 passed, 32 deselected in 2.02s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'off_adds_no_term or default_run': rc=0  [2 passed, 34 deselected in 18.08s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'real_run_reaches': rc=0  [1 passed, 35 deselected in 18.48s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'real_run_reaches or resumed': rc=0  [2 passed, 34 deselected in 35.99s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'sees_the_wire or probe_passes or real_run_reaches': rc=0  [3 passed, 33 deselected in 19.22s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'term_equals or gradient_is_nonzero': rc=0  [2 passed, 34 deselected in 1.93s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'total_moves': rc=0  [1 passed, 35 deselected in 15.29s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'total_moves or real_run_reaches or probe_passes': rc=0  [3 passed, 33 deselected in 20.71s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'v0_bound_is_strict or hand_computed': rc=0  [3 passed, 33 deselected in 1.87s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'w_traj_zeroes': rc=0  [1 passed, 35 deselected in 15.60s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'weight_share_hand_values or dose_rule or real_run_reaches': rc=0  [3 passed, 33 deselected in 20.33s]   <- must be 0 (GREEN)
+M01_total_line_deleted: RED (killed)  rule: delete the ONE line that adds the term to the total
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_on_the_total_moves_by_exactly_w_traj_W_term_over_3_and_the_term_is_the_hand_value   [1 failed, 33 deselected in 14.78s]
+M02_ge_to_gt: RED (killed)  rule: flip the registered >= to > in the launch mask
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_the_inequality_is_greater_or_equal_at_the_exact_boundary   [1 failed, 35 deselected in 1.95s]
+M03_v0_strict_to_le: RED (killed)  rule: v0 < 6 becomes v0 <= 6
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_launch_mask_against_hand_computed_labels   [1 failed, 33 deselected in 1.98s]
+M04_chord_on_knots_28_27: RED (killed)  rule: the chord is taken over knots 28 -> 29 instead of 29 -> 30
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_launch_mask_against_hand_computed_labels   [1 failed, 32 deselected in 1.98s]
+M05_chord_x_only: RED (killed)  rule: the chord speed reads the along component only
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_launch_mask_against_hand_computed_labels   [1 failed, 33 deselected in 1.99s]
+M06_knots_to_13: RED (killed)  rule: the up-weighted horizon is knots 1-13
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_the_v0_bound_is_strict_and_is_the_registered_six   [1 failed, 33 deselected in 2.02s]
+M07_knots_from_2: RED (killed)  rule: the up-weighted horizon starts at knot 2
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_the_v0_bound_is_strict_and_is_the_registered_six   [1 failed, 33 deselected in 1.95s]
+M08_cross_axis: RED (killed)  rule: the term reads the cross axis instead of the along axis
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_the_term_equals_a_hand_computed_value   [1 failed, 34 deselected in 1.93s]
+M09_denominator_launch_rows: RED (killed)  rule: the term is normalised by the launch rows instead of every GT-valid row
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_the_denominator_is_every_gt_valid_row_not_the_launch_rows   [1 failed, 35 deselected in 1.92s]
+M10_mask_ignored_in_term: RED (killed)  rule: the term ignores the mask (every GT-valid row is up-weighted)
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_the_term_equals_a_hand_computed_value   [1 failed, 1 passed, 30 deselected in 1.91s]
+M11_mask_after_the_stages: RED (killed)  rule: the mask is taken AFTER the ego stages (the swapped own state, not the label)
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_the_mask_is_the_LOGGED_state_not_the_swapped_own_state   [1 failed, 35 deselected in 37.35s]
+M12_attach_deleted: RED (killed)  rule: delete `b["launch"] = lmask` in the loop
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_a_real_run_reaches_the_loss_and_records_what_the_loss_received   [1 failed, 35 deselected in 16.74s]
+M13_loop_never_launches: RED (killed)  rule: the loop's launch_on is never true: the lever is declared, built, probed and never applied
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_a_real_run_reaches_the_loss_and_records_what_the_loss_received   [1 failed, 35 deselected in 16.88s]
+M14_flag_checks_entry_deleted: RED (killed)  rule: the flag has no G-DVB entry in FLAG_CHECKS
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_the_flag_has_a_gdvb_entry_and_the_parser_default_is_off   [1 failed, 34 deselected in 1.90s]
+M15_gdvb_readback_deleted: RED (killed)  rule: delete the G-DVB declared == built read-back of the lever
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_gdvb_refuses_an_argv_the_build_did_not_honour   [1 failed, 35 deselected in 15.37s]
+M16_built_lever_constant: RED (killed)  rule: built_levers reports 0.0 whatever was built
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_a_flag_without_a_gdvb_entry_is_refused_by_the_gate_itself   [1 failed, 1 passed, 33 deselected in 14.74s]
+M17_probe_stubbed: RED (killed)  rule: the G-LIVE probe is not run (a stub that always passes)
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_a_real_run_reaches_the_loss_and_records_what_the_loss_received   [1 failed, 35 deselected in 16.36s]
+M18_share_without_the_one: RED (killed)  rule: launch_weight_share gives launch samples W instead of 1 + W
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_a_real_run_reaches_the_loss_and_records_what_the_loss_received   [1 failed, 33 deselected in 17.15s]
+M19_launch_n_not_counted: RED (killed)  rule: the loop does not count the launch rows
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_a_real_run_reaches_the_loss_and_records_what_the_loss_received   [1 failed, 35 deselected in 17.28s]
+M20_checkpoint_loses_totals: RED (killed)  rule: the checkpoint does not carry the launch totals (a resume would lose them)
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_a_real_run_reaches_the_loss_and_records_what_the_loss_received   [1 failed, 34 deselected in 17.35s]
+M21_default_on: RED (killed)  rule: the parser default is 1.0 (the lever is on unless switched off)
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_the_flag_has_a_gdvb_entry_and_the_parser_default_is_off   [1 failed, 32 deselected in 1.95s]
+M22_guard_ge: RED (killed)  rule: the loss computes the term at W = 0 as well (guard > becomes >=)
+    first failing: ERROR stack\tests\test_v8f_launch_intent.py::test_off_adds_no_term_and_no_key   [34 deselected, 1 error in 4.04s]
+M23_scale_third_dropped: RED (killed)  rule: the total adds w_traj x W x term, without ADE's / 3 scale
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_on_the_total_moves_by_exactly_w_traj_W_term_over_3_and_the_term_is_the_hand_value   [1 failed, 33 deselected in 13.89s]
+M24_w_traj_dropped: RED (killed)  rule: the total adds W x term / 3, without the w_traj factor
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_on_the_total_moves_by_exactly_w_traj_W_term_over_3_and_the_term_is_the_hand_value   [1 failed, 35 deselected in 14.16s]
+M25_negative_weight_allowed: RED (killed)  rule: the config accepts a negative weight
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_the_config_refuses_a_negative_or_non_finite_weight   [1 failed, 35 deselected in 1.89s]
+M26_forced_mask_empty: RED (killed)  rule: the probe's forced mask admits no row (the wire cannot be seen)
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_the_probe_passes_on_a_real_batch_and_records_the_natural_counts   [1 failed, 33 deselected in 14.44s]
+M27_allfalse_control_deleted: RED (killed)  rule: delete the probe's all-False-mask control
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_deliberate_regression_a_term_that_ignores_the_mask_is_refused_by_the_all_false_control   [1 failed, 35 deselected in 14.26s]
+M28_probe_batch_mask_deleted: RED (killed)  rule: the gate's probe batch carries no mask
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_a_real_run_reaches_the_loss_and_records_what_the_loss_received   [1 failed, 35 deselected in 14.23s]
+M29_wtraj_clause_deleted: RED (killed)  rule: delete the G-DVB w_traj > 0 clause
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_gdvb_refuses_a_non_finite_or_negative_argv_value_and_a_weight_that_w_traj_zeroes   [1 failed, 35 deselected in 13.98s]
+M30_launch_stage_wrong_column: RED (killed)  rule: launch_stage reads kin3's second column (a0) as v0
+    first failing: FAILED stack\tests\test_v8f_launch_intent.py::test_the_mask_is_the_LOGGED_state_not_the_swapped_own_state   [1 failed, 1 passed, 34 deselected in 21.71s]
+SUMMARY: 30/30 mutants killed; survivors: none

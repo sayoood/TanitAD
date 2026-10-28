@@ -186,6 +186,9 @@ class V8FMiniConfig:
                                        # T's code = zeros AFTER every override, S's checkpoints = the nominal ck_nom with ok = 0). S and T are still built, trained and run
     w_acc: float = 0.0                 # PREREG_V8F_OACC (`--w-acc`): the weight of the acceleration-matching term on O's plan (accel_term below). 0.0 = the term is NOT in the total = every earlier arm,
                                        # bit for bit (the term is still LOGGED under T["acc"]). > 0 = OACC's X: its value is fixed by the PREREG's rule, written into the argv, never tuned
+    launch_intent_w: float = 0.0       # PREREG_V8F_LAUNCH_INTENT (`--launch-intent-w`): W, the extra weight on O's ALONG-TRACK distance over knots 1-12 (tau 0.2-2.4 s, the executed horizon at m = 10) for the samples
+                                       # `launch_mask` marks (GT-launch: v0 < 6 m/s and the GT chord speed over the last 0.2 s of the horizon >= v0 + 1 m/s). 0.0 = the term is NOT in the total and NOT computed =
+                                       # every earlier arm, bit for bit (no new tensor op, no new T key). > 0 = the batch must carry `launch` (the trainer computes it from the LOGGED state before any ego stage)
 
     @property
     def window_start_effective(self) -> int:
@@ -205,6 +208,8 @@ class V8FMiniConfig:
             raise ValueError(f"o_interface must be one of {O_INTERFACE_MODES}, got {self.o_interface!r}")
         if not (math.isfinite(self.w_acc) and self.w_acc >= 0.0):
             raise ValueError(f"w_acc must be a finite number >= 0, got {self.w_acc!r}")
+        if not (math.isfinite(self.launch_intent_w) and self.launch_intent_w >= 0.0):
+            raise ValueError(f"launch_intent_w must be a finite number >= 0, got {self.launch_intent_w!r}")
         if self.hmax < self.hist + self.max_age_s:
             raise ValueError("hmax must cover hist + max_age_s")
         if self.window_start != -1 and not 0 <= self.window_start <= self.hist - 1:
@@ -383,6 +388,34 @@ def accel_term(traj30: Tensor, gt: Tensor, gok: Tensor) -> Tensor:
     sq = (d2 ** 2).sum(-1)                                   # [B, 29]: the squared L2 norm over the two axes
     g = gok.to(sq.dtype)
     return (sq.mean(1) * g).sum() / g.sum().clamp_min(1.0)
+
+
+# ------------------------------------------------------------------------------------------------ PREREG_V8F_LAUNCH_INTENT: the GT-launch mask and the up-weighted along-track term
+#: The GT-launch definition, one spelling (PREREG_V8F_HACC_MC section 5, `hmc_read.py`): the logged v0 below LAUNCH_V0_MAX (m/s) AND the GT chord speed over the LAST 0.2 s of the 6 s horizon
+#: (knots 29 -> 30, i.e. 5.8 -> 6.0 s) at least v0 + LAUNCH_DV. Label-side: the GT future and the LOGGED ego speed; nothing of it is read at inference.
+LAUNCH_V0_MAX, LAUNCH_DV, LAUNCH_DT = 6.0, 1.0, 0.2
+#: The executed horizon at m = 10 (PREREG_V8F_HACC_MC section 2): knots 1-12 of the 0.2 s grid (tau 0.2 ... 2.4 s), 1-based. As slice bounds into the 30-knot plan: [LAUNCH_KNOT_LO - 1 : LAUNCH_KNOT_HI].
+LAUNCH_KNOT_LO, LAUNCH_KNOT_HI = 1, 12
+
+
+def launch_mask(v0: Tensor, gt: Tensor, gok: Tensor) -> Tensor:
+    """``[B]`` bool: the GT-launch samples. ``v0`` [B] is the LOGGED ego speed at NOW (``kin3[:, 0]``), ``gt`` [B, 30, 2] the GT waypoints in the ego frame at NOW, ``gok`` [B] the GT-valid mask. A function of the
+    logged state and the GT future ONLY (the trainer calls it BEFORE any ego stage rebuilds ``kin3``). A NaN v0 gives False. ``>=`` is the registered inequality (a chord speed exactly v0 + 1 is a launch)."""
+    v6 = torch.linalg.norm((gt[:, 29] - gt[:, 28]).to(torch.float64), dim=-1) / LAUNCH_DT
+    v0 = v0.to(torch.float64)
+    return (gok.to(torch.float64) > 0.0) & (v0 < LAUNCH_V0_MAX) & (v6 >= v0 + LAUNCH_DV)
+
+
+def launch_along_term(traj30: Tensor, gt: Tensor, gok: Tensor, launch: Tensor) -> Tensor:
+    """The up-weighted term's value at unit weight: ``sum_b gok_b launch_b (1/30) sum_{k in 1..12} |traj_x - gt_x|_k / sum_b gok_b`` -- the ALONG-axis (x of the ego frame at NOW), knots 1-12 slice of the SAME per-knot
+    distance ``traj_terms`` averages (same 1e-9 smoothing, same 1/30, same denominator), restricted to the launch samples. In the total it enters as ``w_traj * W * term / 3`` (ADE's own scale), so on a launch sample
+    the along-axis slice of O's position loss carries weight 1 + W where the cross error is 0, and a NON-launch sample's loss is the tip's, bit for bit."""
+    lo, hi = LAUNCH_KNOT_LO - 1, LAUNCH_KNOT_HI
+    dx = traj30[:, lo:hi, 0] - gt[:, lo:hi, 0]
+    d = torch.sqrt(dx ** 2 + 1e-9)
+    per = d.sum(1) / float(traj30.shape[1])
+    g = gok * launch.to(gok.dtype)
+    return (per * g).sum() / gok.sum().clamp_min(1.0)
 
 
 # ------------------------------------------------------------------------------------------------ hard projection
@@ -869,6 +902,10 @@ class V8FMini(nn.Module):
         gt, gok = batch["gt"], batch["gt_ok"].float()
         T["ade"], T["fde"] = traj_terms(out["traj30"], gt, gok)      # the same two lines as before, now ONE spelling that PREREG_V8F_OACC's w_acc rule also calls
         T["acc"] = accel_term(out["traj30"], gt, gok)                # PREREG_V8F_OACC: always LOGGED (the G-LIVE probe and the reader read it); in the total only when w_acc > 0
+        if cfg.launch_intent_w > 0.0:                                # PREREG_V8F_LAUNCH_INTENT: computed ONLY when declared (0.0 = no new tensor op, no new T key = the tip, bit for bit)
+            if "launch" not in batch:
+                raise ValueError("launch_intent_w > 0 but the batch carries no `launch` mask: the trainer computes it from the LOGGED state before any ego stage (v8f_mini_train.py launch stage)")
+            T["launch_along"] = launch_along_term(out["traj30"], gt, gok, batch["launch"])
         # consistency penalties
         lim = limit_ms_from_onehot(batch["limit"], batch["limit_ok"])
         if cfg.consistency:
@@ -886,6 +923,7 @@ class V8FMini(nn.Module):
         total = (cfg.w_ckpt * T["ckpt"] + cfg.w_tac * (T["goal"] + 0.5 * (T["lat"] + T["lon"]) + cfg.w_cons * T["cons"])
                  + cfg.w_traj * (T["ade"] / 3.0 + 0.5 * T["fde"] / 6.0))
         total = total + cfg.w_acc * T["acc"] if cfg.w_acc > 0.0 else total          # PREREG_V8F_OACC: ONE line (a mutation deletes it); w_acc 0 adds nothing: B's total, bit for bit
+        total = total + cfg.w_traj * cfg.launch_intent_w * T["launch_along"] / 3.0 if cfg.launch_intent_w > 0.0 else total      # PREREG_V8F_LAUNCH_INTENT: ONE line (a mutation deletes it); W 0 adds nothing: the tip's total
         if cfg.consistency:
             total = total + cfg.w_pen * sum(T[f"pen_{r}"] for r in RULES) + cfg.w_pen_self * sum(T[f"pens_{r}"] for r in RULES)
         if self.wm is not None:
@@ -922,6 +960,7 @@ class V8FMini(nn.Module):
                 "cons_absent": cfg.cons_absent, "code_mix": cfg.code_mix,        # PREREG_V8F_MIXO: the teacher-forcing granularity the BUILT model's _forward reads
                 "o_interface": cfg.o_interface,                                # PREREG_V8F_FLAT: what the BUILT model's _forward hands O (full: S's checkpoints + T's code; cut: constants)
                 "w_acc": cfg.w_acc,                                            # PREREG_V8F_OACC: the weight the BUILT loss gives the acceleration term (0.0 = not in the total)
+                "launch_intent_w": cfg.launch_intent_w,                       # PREREG_V8F_LAUNCH_INTENT: the extra along-track weight the BUILT loss gives GT-launch samples (0.0 = not in the total)
                 "wm_idm_gamma": 0.0 if self.wm is None else float(self.wm.gamma),
                 "kin_mode": self.cfg.kin_mode, "wm_ch1_scale": None if self.wm is None else float(self.wm.ch1_scale),
                 "p_gt_start": cfg.p_gt_start, "p_gt_end": cfg.p_gt_end,      # PREREG_V8F_PGT: the scheduled-sampling schedule the train loop reads
