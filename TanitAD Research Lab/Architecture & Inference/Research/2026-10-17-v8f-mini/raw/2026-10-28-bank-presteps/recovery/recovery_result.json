@@ -1,0 +1,842 @@
+{
+ "deliverable": "H-ST-RECOVERYLABEL zero-training step",
+ "frozen_cards_sha256": "3202a62fbf7699005c60f7a6ae37fb544e4bf0a0f0564b7a9115ee7bf865fd5b",
+ "frozen_amendment_1_sha256": "4676bdb8d27c1095c942782889ab9a04932e5aa1cfe1fcda650285ca365b93c7",
+ "frozen_amendment_2_sha256": "17cce25fa237989efa589e299c491803377db5cb5265bc475d98bd15d8369f47",
+ "tier": "T1-kin rollout states on TRAIN (DAgger bank); labels offline",
+ "evidence_class": "MEASURED",
+ "gate_real_panel": {
+  "identity_windows": 1000,
+  "identity_bit_equal": 1000,
+  "off_route_records": 400,
+  "real_labeller_emitted": 67,
+  "real_labeller_violations": 0,
+  "regression_arm_ignore_offset": {
+   "labelled": 305,
+   "records_failing_gate": 304,
+   "fraction": 0.9967213114754099
+  },
+  "regression_arm_no_clip_no_check": {
+   "labelled": 257,
+   "records_failing_gate": 257,
+   "fraction": 1.0
+  },
+  "G_REC_real_labeller_PASS": true,
+  "G_REC_ignore_offset_FAILS": true
+ },
+ "pytest": "== recovery/ (labeller unit + real-panel)\n........................                                                 [100%]\n24 passed in 6.39s\n== scripts/ (bootstrap equivalence to taniteval/ci.py)\n...                                                                      [100%]\n3 passed in 0.13s\n",
+ "crosscheck_vs_stack_recover_controls": {
+  "n_compared": 66,
+  "n_skipped_zero_length_step": 1,
+  "max_abs_diff": {
+   "speed": 0.0,
+   "accel": 0.0,
+   "lat_acc": 1.7763568394002505e-15
+  },
+  "PASS": true
+ },
+ "V1_registered": {
+  "s0": {
+   "seed": "s0",
+   "frozen_cards_sha256": "3202a62fbf7699005c60f7a6ae37fb544e4bf0a0f0564b7a9115ee7bf865fd5b",
+   "frozen_amendment_1_sha256": "4676bdb8d27c1095c942782889ab9a04932e5aa1cfe1fcda650285ca365b93c7",
+   "labeller_sha256": {
+    "labeller.py": "9637a8ef5f0b6af38282c12c66ff52a532fb765be42291b177b11ff1d4bdaad4"
+   },
+   "tier": "T1-kin rollout states on TRAIN (DAgger bank); labels are offline (may use anything)",
+   "evidence_class": "MEASURED",
+   "n_cut_records_labelled": 95930,
+   "seconds": 67.3,
+   "kept": {
+    "tick1": {
+     "ok": 242357,
+     "baseline_kept_fraction": 0.7905540731848933,
+     "ceiling_if_all_offroute_recovered": 0.8608880306361436,
+     "off_lat": {
+      "n": 560,
+      "emitted": 115,
+      "refused_infeasible": 353,
+      "no_logged_future": 89,
+      "nonfinite": 0,
+      "path_exhausted": 3,
+      "degenerate": 0,
+      "emitted_identity": 0
+     },
+     "off_head": {
+      "n": 21002,
+      "emitted": 1258,
+      "refused_infeasible": 14308,
+      "no_logged_future": 2949,
+      "nonfinite": 0,
+      "path_exhausted": 34,
+      "degenerate": 2453,
+      "emitted_identity": 0
+     },
+     "recovered_emitted": 1373,
+     "kept_fraction_with_recovery": 0.7950327172615359,
+     "end_edge_stays_cut": 42647
+    },
+    "tick2": {
+     "ok": 165093,
+     "baseline_kept_fraction": 0.5385235153278576,
+     "ceiling_if_all_offroute_recovered": 0.7811074939817201,
+     "off_lat": {
+      "n": 37652,
+      "emitted": 12346,
+      "refused_infeasible": 12864,
+      "no_logged_future": 11600,
+      "nonfinite": 0,
+      "path_exhausted": 275,
+      "degenerate": 567,
+      "emitted_identity": 0
+     },
+     "off_head": {
+      "n": 36716,
+      "emitted": 4988,
+      "refused_infeasible": 22645,
+      "no_logged_future": 7561,
+      "nonfinite": 0,
+      "path_exhausted": 245,
+      "degenerate": 1277,
+      "emitted_identity": 0
+     },
+     "recovered_emitted": 17334,
+     "kept_fraction_with_recovery": 0.5950659890529283,
+     "end_edge_stays_cut": 67105
+    }
+   },
+   "feasibility": {
+    "n_emitted": 18707,
+    "n_emitted_with_checker_violation": 0,
+    "violation_rate_emitted": 0.0,
+    "n_refused_infeasible": 50170,
+    "refusals_by_status": {
+     "emitted": 18707,
+     "refused_infeasible": 50170,
+     "no_logged_future": 22199,
+     "nonfinite": 0,
+     "path_exhausted": 557,
+     "degenerate": 4297,
+     "emitted_identity": 0
+    }
+   },
+   "deviation_m": {
+    "mean_over_k": {
+     "n": 18707,
+     "mean": 2.9856192073869847,
+     "p5": 0.9303965999683804,
+     "p25": 1.7338683761518876,
+     "p50": 2.62516002212587,
+     "p75": 3.783309299462486,
+     "p95": 6.258094094400545,
+     "p99": 8.677545284405783,
+     "max": 45.59359769559419
+    },
+    "max_over_k": {
+     "n": 18707,
+     "mean": 5.005828332593471,
+     "p5": 2.0848238561590002,
+     "p25": 3.753552104477907,
+     "p50": 4.64210986484684,
+     "p75": 5.9065641003023215,
+     "p95": 8.822787619460133,
+     "p99": 11.702362334100943,
+     "max": 62.21136886227886
+    },
+    "end_6s": {
+     "n": 18707,
+     "mean": 2.0793797151525872,
+     "p5": 0.16776434593925618,
+     "p25": 0.8161813664038076,
+     "p50": 1.6077849302789178,
+     "p75": 2.868011739231137,
+     "p95": 5.267444356175172,
+     "p99": 8.148533883512194,
+     "max": 62.21136886227886
+    },
+    "off_lat_mean_over_k": {
+     "n": 12461,
+     "mean": 3.185833178377727,
+     "p5": 1.1381788918472802,
+     "p25": 1.8665259165709485,
+     "p50": 2.764939912384405,
+     "p75": 3.9735466387715,
+     "p95": 6.645669858543061,
+     "p99": 9.277358891133437,
+     "max": 45.59359769559419
+    },
+    "off_head_mean_over_k": {
+     "n": 6246,
+     "mean": 2.5861849626678626,
+     "p5": 0.6771513930235978,
+     "p25": 1.4555050632779314,
+     "p50": 2.3377133388643596,
+     "p75": 3.3821439778366993,
+     "p95": 5.3967248842362086,
+     "p99": 7.0384311514775,
+     "max": 10.912423326008966
+    }
+   },
+   "target_row_k_j_hist": {
+    "5": 29,
+    "10": 1123,
+    "15": 6480,
+    "20": 5690,
+    "25": 4566,
+    "30": 819
+   },
+   "arrival_step_k_e_quantiles": {
+    "n": 18707,
+    "mean": 20.224675255252045,
+    "p5": 11.0,
+    "p25": 16.0,
+    "p50": 21.0,
+    "p75": 25.0,
+    "p95": 28.0,
+    "p99": 30.0,
+    "max": 30.0
+   },
+   "human_label_baseline_beside": {
+    "n_sampled": 4000,
+    "n_with_violation_at_0.2s": 117,
+    "rate": 0.02925
+   }
+  },
+  "s1": {
+   "seed": "s1",
+   "frozen_cards_sha256": "3202a62fbf7699005c60f7a6ae37fb544e4bf0a0f0564b7a9115ee7bf865fd5b",
+   "frozen_amendment_1_sha256": "4676bdb8d27c1095c942782889ab9a04932e5aa1cfe1fcda650285ca365b93c7",
+   "labeller_sha256": {
+    "labeller.py": "9637a8ef5f0b6af38282c12c66ff52a532fb765be42291b177b11ff1d4bdaad4"
+   },
+   "tier": "T1-kin rollout states on TRAIN (DAgger bank); labels are offline (may use anything)",
+   "evidence_class": "MEASURED",
+   "n_cut_records_labelled": 83973,
+   "seconds": 58.6,
+   "kept": {
+    "tick1": {
+     "ok": 247102,
+     "baseline_kept_fraction": 0.8060319800630207,
+     "ceiling_if_all_offroute_recovered": 0.8567290567120946,
+     "off_lat": {
+      "n": 446,
+      "emitted": 91,
+      "refused_infeasible": 286,
+      "no_logged_future": 65,
+      "nonfinite": 0,
+      "path_exhausted": 4,
+      "degenerate": 0,
+      "emitted_identity": 0
+     },
+     "off_head": {
+      "n": 15096,
+      "emitted": 2085,
+      "refused_infeasible": 8100,
+      "no_logged_future": 2501,
+      "nonfinite": 0,
+      "path_exhausted": 31,
+      "degenerate": 2379,
+      "emitted_identity": 0
+     },
+     "recovered_emitted": 2176,
+     "kept_fraction_with_recovery": 0.813129962226731,
+     "end_edge_stays_cut": 43922
+    },
+    "tick2": {
+     "ok": 167663,
+     "baseline_kept_fraction": 0.5469067019826074,
+     "ceiling_if_all_offroute_recovered": 0.7701245408818982,
+     "off_lat": {
+      "n": 44358,
+      "emitted": 17380,
+      "refused_infeasible": 11524,
+      "no_logged_future": 14675,
+      "nonfinite": 0,
+      "path_exhausted": 391,
+      "degenerate": 388,
+      "emitted_identity": 0
+     },
+     "off_head": {
+      "n": 24073,
+      "emitted": 4880,
+      "refused_infeasible": 13458,
+      "no_logged_future": 4959,
+      "nonfinite": 0,
+      "path_exhausted": 103,
+      "degenerate": 673,
+      "emitted_identity": 0
+     },
+     "recovered_emitted": 22260,
+     "kept_fraction_with_recovery": 0.6195174937860036,
+     "end_edge_stays_cut": 70472
+    }
+   },
+   "feasibility": {
+    "n_emitted": 24436,
+    "n_emitted_with_checker_violation": 0,
+    "violation_rate_emitted": 0.0,
+    "n_refused_infeasible": 33368,
+    "refusals_by_status": {
+     "emitted": 24436,
+     "refused_infeasible": 33368,
+     "no_logged_future": 22200,
+     "nonfinite": 0,
+     "path_exhausted": 529,
+     "degenerate": 3440,
+     "emitted_identity": 0
+    }
+   },
+   "deviation_m": {
+    "mean_over_k": {
+     "n": 24436,
+     "mean": 2.7527784773984245,
+     "p5": 0.806430412478709,
+     "p25": 1.5908582658574113,
+     "p50": 2.3987734752847123,
+     "p75": 3.4901145824255186,
+     "p95": 5.927184457071331,
+     "p99": 8.257489436064619,
+     "max": 34.20009716016856
+    },
+    "max_over_k": {
+     "n": 24436,
+     "mean": 4.969867185235595,
+     "p5": 1.8796912932249819,
+     "p25": 3.6575950799703403,
+     "p50": 4.6510822233979985,
+     "p75": 6.017816983051661,
+     "p95": 8.843716152262235,
+     "p99": 11.451063345809787,
+     "max": 43.64297351769976
+    },
+    "end_6s": {
+     "n": 24436,
+     "mean": 1.7298052705594085,
+     "p5": 0.12825303008277347,
+     "p25": 0.6400975609156476,
+     "p50": 1.31001381790989,
+     "p75": 2.376257234552453,
+     "p95": 4.6085182019959525,
+     "p99": 7.244249299236099,
+     "max": 43.64297351769976
+    },
+    "off_lat_mean_over_k": {
+     "n": 17471,
+     "mean": 3.0005418098029377,
+     "p5": 1.0816478908909195,
+     "p25": 1.775442721996192,
+     "p50": 2.6180863055597414,
+     "p75": 3.759123963274913,
+     "p95": 6.360600810433045,
+     "p99": 8.708769209431416,
+     "max": 34.20009716016856
+    },
+    "off_head_mean_over_k": {
+     "n": 6965,
+     "mean": 2.1312891478306932,
+     "p5": 0.5810973326071085,
+     "p25": 1.2047633919387588,
+     "p50": 1.906921554249993,
+     "p75": 2.803580966300959,
+     "p95": 4.526901681099734,
+     "p99": 6.18393993864049,
+     "max": 10.212022319736214
+    }
+   },
+   "target_row_k_j_hist": {
+    "5": 51,
+    "10": 1755,
+    "15": 7720,
+    "20": 8300,
+    "25": 5726,
+    "30": 884
+   },
+   "arrival_step_k_e_quantiles": {
+    "n": 24436,
+    "mean": 19.94131609101326,
+    "p5": 11.0,
+    "p25": 16.0,
+    "p50": 20.0,
+    "p75": 24.0,
+    "p95": 28.0,
+    "p99": 30.0,
+    "max": 30.0
+   },
+   "human_label_baseline_beside": {
+    "n_sampled": 4000,
+    "n_with_violation_at_0.2s": 106,
+    "rate": 0.0265
+   }
+  }
+ },
+ "V2_posthoc": {
+  "s0": {
+   "seed": "s0",
+   "frozen_cards_sha256": "3202a62fbf7699005c60f7a6ae37fb544e4bf0a0f0564b7a9115ee7bf865fd5b",
+   "frozen_amendment_1_sha256": "4676bdb8d27c1095c942782889ab9a04932e5aa1cfe1fcda650285ca365b93c7",
+   "labeller_sha256": {
+    "labeller.py": "9637a8ef5f0b6af38282c12c66ff52a532fb765be42291b177b11ff1d4bdaad4",
+    "labeller_v2.py": "52b9fd3693923c72598f553d7917566bcf6b9a0f6be3f34805d55888baecb6a1"
+   },
+   "variant": "V2 POST-HOC (arc lookahead ladder)",
+   "tier": "T1-kin rollout states on TRAIN (DAgger bank); labels are offline (may use anything)",
+   "evidence_class": "MEASURED",
+   "n_cut_records_labelled": 95930,
+   "seconds": 68.7,
+   "kept": {
+    "tick1": {
+     "ok": 242357,
+     "baseline_kept_fraction": 0.7905540731848933,
+     "ceiling_if_all_offroute_recovered": 0.8608880306361436,
+     "off_lat": {
+      "n": 560,
+      "emitted": 96,
+      "refused_infeasible": 337,
+      "no_logged_future": 89,
+      "nonfinite": 0,
+      "path_exhausted": 38,
+      "degenerate": 0,
+      "emitted_identity": 0
+     },
+     "off_head": {
+      "n": 21002,
+      "emitted": 1337,
+      "refused_infeasible": 11305,
+      "no_logged_future": 2949,
+      "nonfinite": 0,
+      "path_exhausted": 5411,
+      "degenerate": 0,
+      "emitted_identity": 0
+     },
+     "recovered_emitted": 1433,
+     "kept_fraction_with_recovery": 0.7952284336814911,
+     "end_edge_stays_cut": 42647
+    },
+    "tick2": {
+     "ok": 165093,
+     "baseline_kept_fraction": 0.5385235153278576,
+     "ceiling_if_all_offroute_recovered": 0.7811074939817201,
+     "off_lat": {
+      "n": 37652,
+      "emitted": 8467,
+      "refused_infeasible": 15977,
+      "no_logged_future": 11600,
+      "nonfinite": 0,
+      "path_exhausted": 1608,
+      "degenerate": 0,
+      "emitted_identity": 0
+     },
+     "off_head": {
+      "n": 36716,
+      "emitted": 4860,
+      "refused_infeasible": 19146,
+      "no_logged_future": 7561,
+      "nonfinite": 0,
+      "path_exhausted": 5149,
+      "degenerate": 0,
+      "emitted_identity": 0
+     },
+     "recovered_emitted": 13327,
+     "kept_fraction_with_recovery": 0.5819953941402504,
+     "end_edge_stays_cut": 67105
+    }
+   },
+   "feasibility": {
+    "n_emitted": 14760,
+    "n_emitted_with_checker_violation": 0,
+    "violation_rate_emitted": 0.0,
+    "n_refused_infeasible": 46765,
+    "refusals_by_status": {
+     "emitted": 14760,
+     "refused_infeasible": 46765,
+     "no_logged_future": 22199,
+     "nonfinite": 0,
+     "path_exhausted": 12206,
+     "degenerate": 0,
+     "emitted_identity": 0
+    }
+   },
+   "deviation_m": {
+    "mean_over_k": {
+     "n": 14760,
+     "mean": 2.8918709547743533,
+     "p5": 0.8494337318964702,
+     "p25": 1.5810805960373004,
+     "p50": 2.469798378712734,
+     "p75": 3.721645536781156,
+     "p95": 6.281295961266086,
+     "p99": 8.845693501103481,
+     "max": 26.286281509377993
+    },
+    "max_over_k": {
+     "n": 14760,
+     "mean": 4.811672079462522,
+     "p5": 1.898149302078309,
+     "p25": 3.524977984471073,
+     "p50": 4.379649780988505,
+     "p75": 5.763008262657316,
+     "p95": 8.723140999211548,
+     "p99": 11.88585203556513,
+     "max": 32.87363596908537
+    },
+    "end_6s": {
+     "n": 14760,
+     "mean": 2.0742152226805337,
+     "p5": 0.17721131754960476,
+     "p25": 0.8114825024416081,
+     "p50": 1.5829765173805928,
+     "p75": 2.768342816008618,
+     "p95": 5.468926794041597,
+     "p99": 8.632479999674693,
+     "max": 32.87363596908537
+    },
+    "off_lat_mean_over_k": {
+     "n": 8563,
+     "mean": 3.1272529328168406,
+     "p5": 0.9659794121398848,
+     "p25": 1.683886348592734,
+     "p50": 2.6034269981580467,
+     "p75": 3.998222916895681,
+     "p95": 6.909584720607763,
+     "p99": 10.16699771090149,
+     "max": 26.286281509377993
+    },
+    "off_head_mean_over_k": {
+     "n": 6197,
+     "mean": 2.5666206920701713,
+     "p5": 0.6512305858426052,
+     "p25": 1.4248427564388646,
+     "p50": 2.3074548459353177,
+     "p75": 3.4189148809031904,
+     "p95": 5.418186726167682,
+     "p99": 6.9992597241952845,
+     "max": 13.859892495970639
+    }
+   },
+   "target_arc_m_hist": {
+    "6": 72,
+    "10": 351,
+    "15": 2206,
+    "22": 5026,
+    "32": 3624,
+    "45": 2080,
+    "60": 1401
+   },
+   "arrival_step_k_e_quantiles": {
+    "n": 14760,
+    "mean": 20.357046070460704,
+    "p5": 12.0,
+    "p25": 16.0,
+    "p50": 20.0,
+    "p75": 25.0,
+    "p95": 29.0,
+    "p99": 30.0,
+    "max": 30.0
+   },
+   "human_label_baseline_beside": {
+    "n_sampled": 4000,
+    "n_with_violation_at_0.2s": 117,
+    "rate": 0.02925
+   }
+  },
+  "s1": {
+   "seed": "s1",
+   "frozen_cards_sha256": "3202a62fbf7699005c60f7a6ae37fb544e4bf0a0f0564b7a9115ee7bf865fd5b",
+   "frozen_amendment_1_sha256": "4676bdb8d27c1095c942782889ab9a04932e5aa1cfe1fcda650285ca365b93c7",
+   "labeller_sha256": {
+    "labeller.py": "9637a8ef5f0b6af38282c12c66ff52a532fb765be42291b177b11ff1d4bdaad4",
+    "labeller_v2.py": "52b9fd3693923c72598f553d7917566bcf6b9a0f6be3f34805d55888baecb6a1"
+   },
+   "variant": "V2 POST-HOC (arc lookahead ladder)",
+   "tier": "T1-kin rollout states on TRAIN (DAgger bank); labels are offline (may use anything)",
+   "evidence_class": "MEASURED",
+   "n_cut_records_labelled": 83973,
+   "seconds": 57.2,
+   "kept": {
+    "tick1": {
+     "ok": 247102,
+     "baseline_kept_fraction": 0.8060319800630207,
+     "ceiling_if_all_offroute_recovered": 0.8567290567120946,
+     "off_lat": {
+      "n": 446,
+      "emitted": 72,
+      "refused_infeasible": 270,
+      "no_logged_future": 65,
+      "nonfinite": 0,
+      "path_exhausted": 39,
+      "degenerate": 0,
+      "emitted_identity": 0
+     },
+     "off_head": {
+      "n": 15096,
+      "emitted": 2137,
+      "refused_infeasible": 6435,
+      "no_logged_future": 2501,
+      "nonfinite": 0,
+      "path_exhausted": 4023,
+      "degenerate": 0,
+      "emitted_identity": 0
+     },
+     "recovered_emitted": 2209,
+     "kept_fraction_with_recovery": 0.8132376062577064,
+     "end_edge_stays_cut": 43922
+    },
+    "tick2": {
+     "ok": 167663,
+     "baseline_kept_fraction": 0.5469067019826074,
+     "ceiling_if_all_offroute_recovered": 0.7701245408818982,
+     "off_lat": {
+      "n": 44358,
+      "emitted": 11733,
+      "refused_infeasible": 16360,
+      "no_logged_future": 14675,
+      "nonfinite": 0,
+      "path_exhausted": 1590,
+      "degenerate": 0,
+      "emitted_identity": 0
+     },
+     "off_head": {
+      "n": 24073,
+      "emitted": 4765,
+      "refused_infeasible": 11553,
+      "no_logged_future": 4959,
+      "nonfinite": 0,
+      "path_exhausted": 2796,
+      "degenerate": 0,
+      "emitted_identity": 0
+     },
+     "recovered_emitted": 16498,
+     "kept_fraction_with_recovery": 0.6007221935896349,
+     "end_edge_stays_cut": 70472
+    }
+   },
+   "feasibility": {
+    "n_emitted": 18707,
+    "n_emitted_with_checker_violation": 0,
+    "violation_rate_emitted": 0.0,
+    "n_refused_infeasible": 34618,
+    "refusals_by_status": {
+     "emitted": 18707,
+     "refused_infeasible": 34618,
+     "no_logged_future": 22200,
+     "nonfinite": 0,
+     "path_exhausted": 8448,
+     "degenerate": 0,
+     "emitted_identity": 0
+    }
+   },
+   "deviation_m": {
+    "mean_over_k": {
+     "n": 18707,
+     "mean": 2.6088615346874646,
+     "p5": 0.7146126442629512,
+     "p25": 1.4110225396645646,
+     "p50": 2.1445069369128342,
+     "p75": 3.3704457069532285,
+     "p95": 6.084691360334791,
+     "p99": 8.402546869990417,
+     "max": 22.521493284105418
+    },
+    "max_over_k": {
+     "n": 18707,
+     "mean": 4.690035673769359,
+     "p5": 1.6795583176397741,
+     "p25": 3.400439338638205,
+     "p50": 4.252758264761776,
+     "p75": 5.691061382061088,
+     "p95": 8.792180175618544,
+     "p99": 11.494222174957615,
+     "max": 27.10842558541821
+    },
+    "end_6s": {
+     "n": 18707,
+     "mean": 1.7039379755966793,
+     "p5": 0.12904304154707338,
+     "p25": 0.6045927955143902,
+     "p50": 1.2334767864511313,
+     "p75": 2.299714359987564,
+     "p95": 4.831863121658118,
+     "p99": 7.51092496457328,
+     "max": 26.943514815505182
+    },
+    "off_lat_mean_over_k": {
+     "n": 11805,
+     "mean": 2.880987144579944,
+     "p5": 0.9153675268514836,
+     "p25": 1.5484737231868622,
+     "p50": 2.3416050700596007,
+     "p75": 3.6922376389638947,
+     "p95": 6.6285903373284825,
+     "p99": 8.931652039529752,
+     "max": 22.521493284105418
+    },
+    "off_head_mean_over_k": {
+     "n": 6902,
+     "mean": 2.1434250199409095,
+     "p5": 0.565994431890544,
+     "p25": 1.1875945654488542,
+     "p50": 1.8947471521484882,
+     "p75": 2.823646768460536,
+     "p95": 4.504951689087491,
+     "p99": 6.421532540520147,
+     "max": 13.401641716917048
+    }
+   },
+   "target_arc_m_hist": {
+    "6": 81,
+    "10": 535,
+    "15": 3048,
+    "22": 6318,
+    "32": 4374,
+    "45": 2735,
+    "60": 1616
+   },
+   "arrival_step_k_e_quantiles": {
+    "n": 18707,
+    "mean": 19.76923076923077,
+    "p5": 11.0,
+    "p25": 15.0,
+    "p50": 20.0,
+    "p75": 24.0,
+    "p95": 29.0,
+    "p99": 30.0,
+    "max": 30.0
+   },
+   "human_label_baseline_beside": {
+    "n_sampled": 4000,
+    "n_with_violation_at_0.2s": 106,
+    "rate": 0.0265
+   }
+  }
+ },
+ "refusal_breakdown_s0": {
+  "n_tick2_cut_records": 74368,
+  "overall": {
+   "degenerate": 0.0248,
+   "emitted": 0.2331,
+   "no_logged_future": 0.2577,
+   "path_exhausted": 0.007,
+   "refused_infeasible": 0.4775
+  },
+  "by_own_speed_mps": {
+   "0-1": {
+    "n": 4442,
+    "emitted": 0.0556,
+    "refused_infeasible": 0.6783,
+    "no_logged_future": 0.208,
+    "degenerate": 0.0581,
+    "path_exhausted": 0.0
+   },
+   "1-3": {
+    "n": 29855,
+    "emitted": 0.112,
+    "refused_infeasible": 0.6277,
+    "no_logged_future": 0.2115,
+    "degenerate": 0.046,
+    "path_exhausted": 0.0027
+   },
+   "3-6": {
+    "n": 14660,
+    "emitted": 0.3374,
+    "refused_infeasible": 0.3643,
+    "no_logged_future": 0.2778,
+    "degenerate": 0.0123,
+    "path_exhausted": 0.0082
+   },
+   "6-10": {
+    "n": 7138,
+    "emitted": 0.3861,
+    "refused_infeasible": 0.2578,
+    "no_logged_future": 0.3432,
+    "degenerate": 0.0039,
+    "path_exhausted": 0.009
+   },
+   "10-100": {
+    "n": 18273,
+    "emitted": 0.3305,
+    "refused_infeasible": 0.3598,
+    "no_logged_future": 0.2955,
+    "degenerate": 0.0003,
+    "path_exhausted": 0.0139
+   }
+  },
+  "by_heading_error_deg": {
+   "0-30": {
+    "n": 27354,
+    "emitted": 0.3956,
+    "refused_infeasible": 0.282,
+    "no_logged_future": 0.3122,
+    "degenerate": 0.0042,
+    "path_exhausted": 0.006
+   },
+   "30-60": {
+    "n": 20208,
+    "emitted": 0.2726,
+    "refused_infeasible": 0.4505,
+    "no_logged_future": 0.2445,
+    "degenerate": 0.0283,
+    "path_exhausted": 0.0042
+   },
+   "60-90": {
+    "n": 13672,
+    "emitted": 0.066,
+    "refused_infeasible": 0.7023,
+    "no_logged_future": 0.1945,
+    "degenerate": 0.0334,
+    "path_exhausted": 0.0038
+   },
+   "90-181": {
+    "n": 13134,
+    "emitted": 0.0077,
+    "refused_infeasible": 0.6921,
+    "no_logged_future": 0.23,
+    "degenerate": 0.0534,
+    "path_exhausted": 0.0168
+   }
+  },
+  "by_lateral_error_m": {
+   "0-3": {
+    "n": 36716,
+    "emitted": 0.1359,
+    "refused_infeasible": 0.6168,
+    "no_logged_future": 0.2059,
+    "degenerate": 0.0348,
+    "path_exhausted": 0.0067
+   },
+   "3-5": {
+    "n": 26518,
+    "emitted": 0.3725,
+    "refused_infeasible": 0.3079,
+    "no_logged_future": 0.2982,
+    "degenerate": 0.0176,
+    "path_exhausted": 0.0038
+   },
+   "5-8": {
+    "n": 7887,
+    "emitted": 0.2805,
+    "refused_infeasible": 0.3756,
+    "no_logged_future": 0.3304,
+    "degenerate": 0.0076,
+    "path_exhausted": 0.006
+   },
+   "8-15": {
+    "n": 2727,
+    "emitted": 0.0913,
+    "refused_infeasible": 0.5262,
+    "no_logged_future": 0.3509,
+    "degenerate": 0.0125,
+    "path_exhausted": 0.0191
+   },
+   "15-1000000000.0": {
+    "n": 520,
+    "emitted": 0.0115,
+    "refused_infeasible": 0.5827,
+    "no_logged_future": 0.25,
+    "degenerate": 0.0115,
+    "path_exhausted": 0.1442
+   }
+  },
+  "stationary_human_share_among_degenerate": 1.0,
+  "note": "outcome shares within each bin; no_logged_future is the end-edge condition hidden by the matcher's cut order"
+ }
+}
