@@ -824,14 +824,19 @@
    "sha256": "a887dc13b3cf672b800968d3c8011d3d2741d8d68b342a0b4a390f7d4fe67ce1",
    "banked": "2026-08-23",
    "tags": [
+    "data-selection",
+    "data-stages-2026-10-28",
     "label-adjudication",
     "latency-budget",
-    "opponent-alpamayo"
+    "opponent-alpamayo",
+    "training-stages"
    ],
-   "note": "NVIDIA open 10B reasoning VLA (Cosmos-Reason + diffusion trajectory decoder + Chain-of-Causation data, SFT then RL): claimed +12pct hard-case planning, -35pct close encounters closed-loop, 99 ms; weights+code public | latency-budget: Tab.14 end-to-end 99 ms on RTX 6000 Pro Blackwell (vision 3.43, prefill 16.54, reasoning 70, traj 8.75); traj-only 29 ms",
+   "note": "NVIDIA open 10B reasoning VLA (Cosmos-Reason + diffusion trajectory decoder + Chain-of-Causation data, SFT then RL): claimed +12pct hard-case planning, -35pct close encounters closed-loop, 99 ms; weights+code public | latency-budget: Tab.14 end-to-end 99 ms on RTX 6000 Pro Blackwell (vision 3.43, prefill 16.54, reasoning 70, traj 8.75); traj-only 29 ms | Alpamayo-R1 2025: clip selection around explicit decisions e.g. resume at traffic light (Fig 3, p10); RL data = high model/reward-disagreement samples plus an equal random mix (p22); 80,000 h internal corpus (p23).",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-20-latency-budget/LATENCY_BUDGET_PROPOSAL.md",
     "TanitAD Research Lab/Data Engineering/Research/2026-08-30-label-source-adjudication/RESULT.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md",
     "TanitAD Research Lab/Opponent Analysis/2026-08-22-lab-run-001/RESULT.md"
    ]
   },
@@ -1252,12 +1257,16 @@
    "sha256": "12b032cfd451b8ace4b18145dbe24382d2cbe2eda6b562331bc86799bbaafd5e",
    "banked": "2026-08-23",
    "tags": [
+    "data-stages-2026-10-28",
     "imitation",
-    "input-pipeline"
+    "input-pipeline",
+    "training-stages"
    ],
-   "note": "DAgger: dataset aggregation, no-regret online imitation | DAgger: no-regret online IL; theory of compounding error / covariate shift in behaviour cloning (T^2 eps vs T eps)",
+   "note": "DAgger: dataset aggregation, no-regret online imitation | DAgger: no-regret online IL; theory of compounding error / covariate shift in behaviour cloning (T^2 eps vs T eps) | DAgger: supervised BC error grows quadratically in horizon T (p3); DAgger-style aggregation gives linear growth.",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md",
     "products/P4-training-pipelines/METHOD_LIBRARY.md"
    ]
   },
@@ -1279,12 +1288,20 @@
    "sha256": "263508045450e05e3bd3f6a9fce6d5b240d17a728dd268c59eed1b868a716ed8",
    "banked": "2026-08-23",
    "tags": [
+    "crawl-variance-2026-10-28",
+    "data-scaling",
+    "data-stages-2026-10-28",
     "imitation-ad",
-    "input-pipeline"
+    "inertia-copycat",
+    "input-pipeline",
+    "variance-reduction"
    ],
-   "note": "Limitations of behavior cloning for autonomous driving | Codevilla et al: the INERTIA problem (spurious stop-stays-stopped correlation from observation history) + dataset bias/variance; behaviour cloning limitations measured in CARLA NoCrash",
+   "note": "Limitations of behavior cloning for autonomous driving | Codevilla et al: the INERTIA problem (spurious stop-stays-stopped correlation from observation history) + dataset bias/variance; behaviour cloning limitations measured in CARLA NoCrash | inertia problem named; speed-prediction branch (CILRS) up to +14 pp NoCrash vs CILR (p.6) but inertia not eliminated (p.7); 12-seed success-rate variance 4-42 % (Table 3, p.8) | Codevilla 2019: diminishing returns after a certain amount of demonstrations, even degradation on unseen environments (p2); inertia problem (p3).",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md",
     "products/P4-training-pipelines/METHOD_LIBRARY.md"
    ]
   },
@@ -1305,14 +1322,21 @@
    "sha256": "631b0794f2bb4b25afcb8d8a07abd27b10ca0de7812d5553caf2430921722be5",
    "banked": "2026-08-23",
    "tags": [
+    "crawl-variance-2026-10-28",
+    "data-stages-2026-10-28",
     "imitation-ad",
+    "inertia-copycat",
     "input-pipeline",
-    "refcv8-tactical-conditioning"
+    "refcv8-tactical-conditioning",
+    "training-stages"
    ],
-   "note": "ChauffeurNet: BC + synthesized perturbations & auxiliary losses | ChauffeurNet: trajectory perturbation + past-motion dropout; without them the policy cannot recover from drift (ablation M0-M4) | ChauffeurNet p8,12-13: past-motion dropout p=0.5 (keep only current pose); imitation dropout p=0.5; no isolated ablation of past dropout",
+   "note": "ChauffeurNet: BC + synthesized perturbations & auxiliary losses | ChauffeurNet: trajectory perturbation + past-motion dropout; without them the policy cannot recover from drift (ablation M0-M4) | ChauffeurNet p8,12-13: past-motion dropout p=0.5 (keep only current pose); imitation dropout p=0.5; no isolated ablation of past dropout | past-motion dropout (50% of examples keep only current pose, p.8) used in every ablation model M0-M4 -> NO isolated measured effect (p.13-14) | ChauffeurNet: past-motion dropout on 50% of examples forces the net off the extrapolate-the-history shortcut (Sec 4.2, p8).",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md",
     "products/P4-training-pipelines/METHOD_LIBRARY.md"
    ]
   },
@@ -1946,10 +1970,13 @@
    "sha256": "49ceef4c6f3c6dad72213302d443b1a733bb92b61b443b760c9095c430ba3b6d",
    "banked": "2026-08-23",
    "tags": [
-    "rl-ad"
+    "data-stages-2026-10-28",
+    "rl-ad",
+    "training-stages"
    ],
-   "note": "RAD: end-to-end driving policy via large-scale 3DGS closed-loop RL",
+   "note": "RAD: end-to-end driving policy via large-scale 3DGS closed-loop RL | RAD 2025: IL pretrain then IL+RL post-training: collision rate 0.229 (IL) / 0.143 (RL) / 0.089 (IL+RL); ADD 0.238 / 0.345 / 0.257 (Sec 4.2, p8).",
    "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md",
     "products/P4-training-pipelines/METHOD_LIBRARY.md"
    ]
   },
@@ -2034,13 +2061,17 @@
    "tags": [
     "action-conditioning",
     "closed-loop-wm",
+    "crawl-variance-2026-10-28",
+    "inertia-copycat",
     "input-pipeline"
    ],
-   "note": "queued for the action-conditioning review | Causal confusion in imitation learning: MORE information (past action / longer history) yields WORSE policies; the confounded 'no-frame-history' policy beats the history one",
+   "note": "queued for the action-conditioning review | Causal confusion in imitation learning: MORE information (past action / longer history) yields WORSE policies; the confounded 'no-frame-history' policy beats the history one | history can hurt BC; fix needs interventions (env interaction or expert queries, p.5-6); relays Wang et al. GTA-V HISTORY worse deployed (Table 1, p.4, SECONDARY)",
    "cited_by": [
     "Project Steering/GOALS_AND_CLAIMS.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
    ]
   },
   "2402.15391": {
@@ -2427,11 +2458,14 @@
     "anti-echo-control",
     "benchmark-portfolio",
     "benchmarks",
-    "ego-input"
+    "crawl-variance-2026-10-28",
+    "ego-input",
+    "inertia-copycat"
    ],
-   "note": "PDM CoRL2023: the planner and scoring function PDMS is named after | PDM: open-loop ego-forecasting and closed-loop planning fundamentally misaligned; best open-loop uses ONLY centerline; rule-based PDM-Closed wins closed-loop nuPlan",
+   "note": "PDM CoRL2023: the planner and scoring function PDMS is named after | PDM: open-loop ego-forecasting and closed-loop planning fundamentally misaligned; best open-loop uses ONLY centerline; rule-based PDM-Closed wins closed-loop nuPlan | nuPlan open-loop vs closed-loop score misaligned; ego-history adds little and lowers CLS (p.4)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
@@ -2538,15 +2572,18 @@
     "anti-echo-control",
     "benchmark-portfolio",
     "benchmarks",
+    "crawl-variance-2026-10-28",
     "ego-status-leak",
+    "inertia-copycat",
     "input-pipeline",
     "nuscenes",
     "nuscenes-openloop-planning"
    ],
-   "note": "AD-MLP: ego-status-only MLP tops nuScenes open-loop L2; the shortcut NAVSIM claims to fix | AD-MLP: ego-state-only MLP, no perception, matches SOTA open-loop L2 on nuScenes; uses ST-P3 (TemAvg) eval | AD-MLP: perception-free MLP (past traj+velocity only) cuts nuScenes open-loop L2 ~20pct vs perception methods - the open-loop indictment | AD-MLP: an MLP on ego state ALONE (no perception) beats camera E2E methods on nuScenes open-loop L2 - open-loop metrics can be won by echoing ego state | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6)",
+   "note": "AD-MLP: ego-status-only MLP tops nuScenes open-loop L2; the shortcut NAVSIM claims to fix | AD-MLP: ego-state-only MLP, no perception, matches SOTA open-loop L2 on nuScenes; uses ST-P3 (TemAvg) eval | AD-MLP: perception-free MLP (past traj+velocity only) cuts nuScenes open-loop L2 ~20pct vs perception methods - the open-loop indictment | AD-MLP: an MLP on ego state ALONE (no perception) beats camera E2E methods on nuScenes open-loop L2 - open-loop metrics can be won by echoing ego state | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6) | ego-state-only MLP matches perception-based planners on L2, ~20 % lower avg L2 (abstract p.1)",
    "cited_by": [
     "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
@@ -2875,9 +2912,11 @@
     "anti-echo-control",
     "benchmark-portfolio",
     "benchmarks",
+    "crawl-variance-2026-10-28",
     "data-efficiency",
     "driving",
     "ego-input",
+    "inertia-copycat",
     "input-pipeline",
     "nuscenes",
     "nuscenes-openloop-planning",
@@ -2886,7 +2925,7 @@
     "sota-2026-09-03",
     "sota-2026-09-03-decodability"
    ],
-   "note": "BEV-Planner Is Ego Status All You Need: quantifies the nuScenes ego shortcut; proposes CCR | BEV-Planner: nuScenes too simple -> ego-status dominates planning; open-loop metrics do not comprehensively assess planning quality | BEV-Planner: ego status dominates open-loop nuScenes planning; open-loop L2 is a misleading metric, and ego-state shortcut inflates it | Is Ego Status All You Need: an ego-status-only MLP matches full E2E planners on nuScenes open-loop; the deployment-input ablation that exposes it | 73.9% of nuScenes is straight driving; a model that loses its input adopts a straight policy and WINS the pooled average - the mix-artefact hypothesis this stratification tested and refuted on our corpus | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6) | Ego Status p2-5: Ego-MLP (v,a,yaw,cmd) L2 0.35 m on par with UniAD/VAD; VAD blank images L2 0.46 vs 0.37, v x0.0 -> 6.16 m (Table 2)",
+   "note": "BEV-Planner Is Ego Status All You Need: quantifies the nuScenes ego shortcut; proposes CCR | BEV-Planner: nuScenes too simple -> ego-status dominates planning; open-loop metrics do not comprehensively assess planning quality | BEV-Planner: ego status dominates open-loop nuScenes planning; open-loop L2 is a misleading metric, and ego-state shortcut inflates it | Is Ego Status All You Need: an ego-status-only MLP matches full E2E planners on nuScenes open-loop; the deployment-input ablation that exposes it | 73.9% of nuScenes is straight driving; a model that loses its input adopts a straight policy and WINS the pooled average - the mix-artefact hypothesis this stratification tested and refuted on our corpus | nuScenes open-loop planning row re-read from the banked PDF for the W6 harness (protocol-tagged external comparability only; H-EVAL-6) | Ego Status p2-5: Ego-MLP (v,a,yaw,cmd) L2 0.35 m on par with UniAD/VAD; VAD blank images L2 0.46 vs 0.37, v x0.0 -> 6.16 m (Table 2) | ego velocity dominates planning: VAD with input v=0 -> near-stationary output, avg L2 6.16 m vs 0.37 m; blank images barely change L2 (Table 2, p.5)",
    "cited_by": [
     "FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-19-nuscenes-planning-harness/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
@@ -2894,6 +2933,8 @@
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-sota-decodability/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-29-benchmark-portfolio/RESULT.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
@@ -4717,16 +4758,20 @@
    "banked": "2026-08-30",
    "tags": [
     "closed-loop-wm",
+    "crawl-variance-2026-10-28",
+    "inertia-copycat",
     "input-pipeline",
     "refc-ego",
     "refcv8-tactical-conditioning"
    ],
-   "note": "Copycat problem: longer observation histories make behavioural cloning WORSE; adversarial removal of prev-action nuisance info fixes it | Copycat: target-conditioned adversary + IB; the ACTION-PREDICTABILITY PROBE is the transferable echo detector | Copycat p4-7: copycat shortcut = predicting previous action; input Dropout-BC on history performed uniformly poorly (Table 2); fix = target-conditioned adversary + IB",
+   "note": "Copycat problem: longer observation histories make behavioural cloning WORSE; adversarial removal of prev-action nuisance info fixes it | Copycat: target-conditioned adversary + IB; the ACTION-PREDICTABILITY PROBE is the transferable echo detector | Copycat p4-7: copycat shortcut = predicting previous action; input Dropout-BC on history performed uniformly poorly (Table 2); fix = target-conditioned adversary + IB | copycat = predicting previous action from history; BC-OH policies can fail to start moving (p.4); adversarial FCA improves 5-seed MuJoCo returns (Table 2, p.7); Dropout-BC uniformly poor (p.7)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-t1-floor-action-sensitivity/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
    ]
   },
   "1604.07316": {
@@ -5631,14 +5676,18 @@
    "banked": "2026-08-30",
    "tags": [
     "data-efficiency",
+    "data-scaling",
+    "data-stages-2026-10-28",
     "input-pipeline",
     "refe-sizing"
    ],
-   "note": "Data scaling laws for E2E AD: trained at 512x960 from 3840x2160 native; ADE power law Y=0.6833*X^-0.188, r=-0.963; NO resolution ablation | Data scaling laws for imitation-learning E2E AD: Y = 0.6833 X^(-0.188), Pearson r = -0.963 (NO R2 reported), fit window 10^4 to 4x10^6 demonstrations -- 10^3 is OUTSIDE the fit and the paper says nothing there",
+   "note": "Data scaling laws for E2E AD: trained at 512x960 from 3840x2160 native; ADE power law Y=0.6833*X^-0.188, r=-0.963; NO resolution ablation | Data scaling laws for imitation-learning E2E AD: Y = 0.6833 X^(-0.188), Pearson r = -0.963 (NO R2 reported), fit window 10^4 to 4x10^6 demonstrations -- 10^3 is OUTSIDE the fit and the paper says nothing there | Zheng 2024: open-loop ADE power law Y=0.6833 X^-0.188 (p5); closed loop is not a power law; at constant total volume, doubling a long-tail scenario type gives +9.7..16.9%, quadrupling +22.8..32.9% (p6).",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
    ]
   },
   "2305.02008": {
@@ -6374,13 +6423,17 @@
    "sha256": "e7f1066f87c7f2e2c1f3322e9cd2d8df06788c615dbe301fb8bd23cf45715ac4",
    "banked": "2026-08-30",
    "tags": [
+    "data-scaling",
+    "data-stages-2026-10-28",
     "input-pipeline",
     "refe-sizing"
    ],
-   "note": "Waymo 'Scaling Laws of Motion Forecasting and Planning' (Baniodeh 2025): the primary data/model scaling-law curve for driving - axis-7 crux | Waymo scaling laws of motion forecasting and planning: N_opt ~ C^(0.63+-0.08), D_opt ~ C^(0.44+-0.06), i.e. optimal model size should grow ~1.5x as fast as training examples; optimal models are 50x smaller than an LLM at the same compute",
+   "note": "Waymo 'Scaling Laws of Motion Forecasting and Planning' (Baniodeh 2025): the primary data/model scaling-law curve for driving - axis-7 crux | Waymo scaling laws of motion forecasting and planning: N_opt ~ C^(0.63+-0.08), D_opt ~ C^(0.44+-0.06), i.e. optimal model size should grow ~1.5x as fast as training examples; optimal models are 50x smaller than an LLM at the same compute | Baniodeh 2025: ~500k h; optimal model size grows 1.5x as fast as data (abstract p1); 10 observed miles of OTHER agents = 2-3 demonstrated miles (p19).",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
    ]
   },
   "2605.00066": {
@@ -6560,11 +6613,14 @@
    "sha256": "497a2c8a034c5e281a262c5384368993a708d9266311a9750d9b09376ef99127",
    "banked": "2026-08-30",
    "tags": [
-    "anti-echo-control"
+    "anti-echo-control",
+    "data-stages-2026-10-28",
+    "training-stages"
    ],
-   "note": "",
+   "note": "AD-R1 2025: naive optimistic world-model RL lowers PDMS 88.1 to 85.3; counterfactual synthesis restores 89.1 (p7); progress reward prevents the frozen robot (p18).",
    "cited_by": [
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-08-30-anti-echo-control-precedent/RESULT.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md",
     "TanitAD Research Lab/Opponent Analysis/Research/2026-08-30-anti-echo-control-precedent/RESULT.md"
    ]
   },
@@ -7016,18 +7072,23 @@
    "sha256": "ab74aeb623c4adaaf7bf54dcc734402e56447339641f8aaf1fbb0c497fe7197c",
    "banked": "2026-08-30",
    "tags": [
+    "crawl-variance-2026-10-28",
     "ego-input",
+    "inertia-copycat",
     "input-pipeline",
     "refcv8-tactical-conditioning",
     "route-checkpoint",
-    "target-point-shortcut"
+    "target-point-shortcut",
+    "variance-reduction"
    ],
-   "note": "Hidden Biases of End-to-End Driving Models (TransFuser++): dataset-size and design ablations on CARLA driving score | Hidden Biases p1-5: TP conditioned vs NC conditioned RC 84 vs 56 (Table 1); TP shortcut = extrapolating waypoints to nearest TP; fixes: attention pooling + shift/rotation aug, not TP placement | WP-A v9 SPEC: TP-conditioned TransFuser RC 84+-7 vs NC 56+-12 (Table 1); TP shortcut = waypoints extrapolated to the nearest TP, cuts corners when the TP lies behind a turn (3.1, Fig 3); attention pooling RC 93+-3 (Table 2); TPs ~30 m apart (up to 50 m); path sampled at fixed distances keeps speed out (3.3)",
+   "note": "Hidden Biases of End-to-End Driving Models (TransFuser++): dataset-size and design ablations on CARLA driving score | Hidden Biases p1-5: TP conditioned vs NC conditioned RC 84 vs 56 (Table 1); TP shortcut = extrapolating waypoints to nearest TP; fixes: attention pooling + shift/rotation aug, not TP placement | WP-A v9 SPEC: TP-conditioned TransFuser RC 84+-7 vs NC 56+-12 (Table 1); TP shortcut = waypoints extrapolated to the nearest TP, cuts corners when the TP lies behind a turn (3.1, Fig 3); attention pooling RC 93+-3 (Table 2); TPs ~30 m apart (up to 50 m); path sampled at fixed distances keeps speed out (3.3) | L1 waypoint regression interpolates multimodal future velocity; mode depends on training run (p.5-6); speed-bin classification gives same DS 50+-3 vs 49+-8 (Table 3, p.6); 3-seed std reporting",
    "cited_by": [
     "FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-04-v9-labels/SPEC.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-tactical-conditioning/DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
    ]
   },
   "2504.04338": {
@@ -7055,13 +7116,16 @@
    "banked": "2026-08-30",
    "tags": [
     "data-efficiency",
+    "data-scaling",
+    "data-stages-2026-10-28",
     "refe-sizing",
     "resnet-trunk"
    ],
-   "note": "NVIDIA/Stanford data scaling laws for E2E AD, 8192 h: open-loop FDE follows a power law but closed-loop MDBF PLATEAUS at 256 h | resnet-trunk review 2026-09-15: NVIDIA E2E data scaling 16-8192 h, ResNet-18/50; open-loop power law, closed-loop plateau ~256 h (§6) | Data scaling laws for E2E AD: Table 4 -- refitting the SAME estimator on only the low-data end gives an exponent 2.74x shallower (-0.1274 vs -0.3486) and an extrapolation loss 8.2x worse; +13.1M ENCODER params bought a 63% data reduction while the 7.2M prediction head was held constant",
+   "note": "NVIDIA/Stanford data scaling laws for E2E AD, 8192 h: open-loop FDE follows a power law but closed-loop MDBF PLATEAUS at 256 h | resnet-trunk review 2026-09-15: NVIDIA E2E data scaling 16-8192 h, ResNet-18/50; open-loop power law, closed-loop plateau ~256 h (§6) | Data scaling laws for E2E AD: Table 4 -- refitting the SAME estimator on only the low-data end gives an exponent 2.74x shallower (-0.1274 vs -0.3486) and an extrapolation loss 8.2x worse; +13.1M ENCODER params bought a 63% data reduction while the 7.2M prediction head was held constant | Naumann 2025: 16-8192 h; 1% FDE gain needs ~4,000 h more, 3% ~29,000 h (p7); closed-loop MDBF plateaus at 256 h (p8).",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
    ]
   },
   "2403.02877": {
@@ -7111,11 +7175,14 @@
    "banked": "2026-08-30",
    "tags": [
     "data-efficiency",
+    "data-selection",
+    "data-stages-2026-10-28",
     "refe-sizing"
    ],
-   "note": "MOSAIC: the only navtrain planner study at 10^2-10^3 clip budgets (100-2400 clips, 3 seeds, EPDMS 84.66-90.18); they did NOT shrink the model at small budgets, they raised EPOCHS (60 at <=800 clips, 50 at 1600, 45 at 2400); entropy-uncertainty selection is WORSE than random at every navtrain budget",
+   "note": "MOSAIC: the only navtrain planner study at 10^2-10^3 clip budgets (100-2400 clips, 3 seeds, EPDMS 84.66-90.18); they did NOT shrink the model at small budgets, they raised EPOCHS (60 at <=800 clips, 50 at 1600, 45 at 2400); entropy-uncertainty selection is WORSE than random at every navtrain budget | MOSAIC 2026: hard-first (metric-ranked) selection beats random and coreset in added-data NAVSIM; up to 1.1 EPDMS above next best (p6).",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
    ]
   },
   "2504.19077": {
@@ -7165,11 +7232,15 @@
    "sha256": "ed12a79cc3c5b47d988d18ffe801d4de1b03ff36755da8717e8f504769979f90",
    "banked": "2026-08-30",
    "tags": [
-    "data-efficiency"
+    "data-efficiency",
+    "data-selection",
+    "data-stages-2026-10-28"
    ],
-   "note": "",
+   "note": "Sorscher 2022: keep HARD examples when total data is abundant, keep EASY examples when scarce (Fig 1B, p2).",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
    ]
   },
   "2302.06960": {
@@ -7545,12 +7616,15 @@
    "banked": "2026-08-30",
    "tags": [
     "data-efficiency",
+    "data-scaling",
+    "data-stages-2026-10-28",
     "refe-sizing"
    ],
-   "note": "Data scaling laws in imitation learning for robotic manipulation: Table 2a at ~800 demos -- DINOv2 ViT-L fully fine-tuned 0.90, LoRA rank-8 0.72, FROZEN 0.00; Table 2c scaling the action decoder small/base/large = 0.88/0.90/0.83 while the ENCODER gave 0.66/0.81/0.90",
+   "note": "Data scaling laws in imitation learning for robotic manipulation: Table 2a at ~800 demos -- DINOv2 ViT-L fully fine-tuned 0.90, LoRA rank-8 0.72, FROZEN 0.00; Table 2c scaling the action decoder small/base/large = 0.88/0.90/0.83 while the ENCODER gave 0.66/0.81/0.90 | Lin 2024: diversity of environments/objects matters far more than the number of demonstrations; extra demonstrations per environment saturate (abstract p1).",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-data-efficiency-thesis/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
    ]
   },
   "2301.01006": {
@@ -9687,13 +9761,17 @@
    "sha256": "6dd6c2fb57bb35caa44b9115b87f2dae38654d8726a7a03d66c3946d8b529ab0",
    "banked": "2026-09-03",
    "tags": [
+    "crawl-variance-2026-10-28",
     "ego-input",
+    "inertia-copycat",
     "refc-ego"
    ],
-   "note": "PlanTF: State Dropout Encoder — per-scalar ego-state tokens, position/heading EXEMPT from dropout; rate ablation p=0.25/0.50/0.75, best closed-loop at 0.75",
+   "note": "PlanTF: State Dropout Encoder — per-scalar ego-state tokens, position/heading EXEMPT from dropout; rate ablation p=0.25/0.50/0.75, best closed-loop at 0.75 | history input NR-CLS 56.5 vs state-only 81-86 (Table I, p.3); kinematic-token dropout SDE p=0.75: NR-CLS 86.48 vs 77.28 (Table VIII, p.7) / +3.29 (Table II, p.4); no seeds reported",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-05-ego-input-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
    ]
   },
   "2408.03601": {
@@ -9934,11 +10012,15 @@
    "sha256": "555d3832aed1016337c5cbd6f11f462edebfd2a908068dd8383051529820f12e",
    "banked": "2026-09-03",
    "tags": [
+    "crawl-variance-2026-10-28",
+    "inertia-copycat",
     "refc-ego"
    ],
-   "note": "Keyframe-Focused: zero-cost BC loss reweighting by action-predictability error (APE)",
+   "note": "Keyframe-Focused: zero-cost BC loss reweighting by action-predictability error (APE) | CARLA NoCrash-Dense %success: BC-OH 33.0+-4.2 -> keyframe-reweight 43.4+-0.8; HistoryDropout 34.0+-2.6 and DAgger(120k) 35.2+-3.1 ~ BC-OH; BCPD/ActFreq reweights WORSE than BC-OH (Table 1, p.7)",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-refc-ego-inputs-and-anti-echo/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
    ]
   },
   "2603.18561": {
@@ -10117,11 +10199,15 @@
    "sha256": "d9c38a21e68051cf379ccd84f30b3a9e4a49a822127e262c80000b91c4d72ba2",
    "banked": "2026-09-03",
    "tags": [
-    "v7-seed-transfer"
+    "crawl-variance-2026-10-28",
+    "v7-seed-transfer",
+    "variance-reduction"
    ],
-   "note": "What is being transferred in transfer learning: module criticality, block re-initialisation experiments - how much pretrained benefit survives partial transfer (to verify in full)",
+   "note": "What is being transferred in transfer learning: module criticality, block re-initialisation experiments - how much pretrained benefit survives partial transfer (to verify in full) | models fine-tuned from the same pretrained weights stay in one basin, close in parameter space (abstract p.1)",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-v7-issue-audit/LIT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-03-v7-issue-audit/LIT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
    ]
   },
   "1711.02257": {
@@ -14298,14 +14384,16 @@
    "banked": "2026-09-15",
    "tags": [
     "A5",
+    "crawl-variance-2026-10-28",
     "drivor-analysis",
     "navsim-scorer-trade",
     "recovered-orphan",
     "refe-rl-posttrain",
     "safety-head-lit",
+    "variance-reduction",
     "zero-tail"
    ],
-   "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | CLOVER: closed-loop value estimation and ranking for E2E planning, NAVSIM | CLOVER Tab.5: Oracle@64 PDMS 0.9933-0.9976 vs selected 0.9369-0.9448 (gap 0.050-0.056) on 12,146 navtest scenes; Tab.1 NC 99.1 DAC 99.0 PDMS 94.5 | safety-head-lit: App. p8/p27 scorer calibration (s>=0.95 -> true mean 0.9753), Tab.20 p30 backbone swap moves test top-1 only 92.4->92.7; Tab.10 p16 261-candidate bank families",
+   "note": "navhard EPDMS source for E-BE-S1S2-1 Stage-1 fingerprint | index row lost to the pre-2026-08-23 concurrent-write race; bytes verified by sha256, row rebuilt | CLOVER: closed-loop value estimation and ranking for E2E planning, NAVSIM | CLOVER Tab.5: Oracle@64 PDMS 0.9933-0.9976 vs selected 0.9369-0.9448 (gap 0.050-0.056) on 12,146 navtest scenes; Tab.1 NC 99.1 DAC 99.0 PDMS 94.5 | safety-head-lit: App. p8/p27 scorer calibration (s>=0.95 -> true mean 0.9753), Tab.20 p30 backbone swap moves test top-1 only 92.4->92.7; Tab.10 p16 261-candidate bank families | 3 training seeds: NAVSIM v1 PDMS 94.488/94.502/94.492, spread <0.02 on a ~12k-scene aggregate (Table 21, App. G, p.30-31)",
    "cited_by": [
     "TanitAD Research Lab/2026-10-17-LAB-RUN-018.md",
     "TanitAD Research Lab/2026-10-18-LAB-RUN-019.md",
@@ -14313,6 +14401,8 @@
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/RL_POSTTRAIN_REVIEW.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-18-ep-rl-lit/REPORT.md",
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-19-safety-head-lit/REPORT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md",
     "TanitAD Research Lab/Benchmarks & Evals/Research/2026-09-15-epdms-stage1-fingerprint/RESULT.md"
    ]
   },
@@ -17407,11 +17497,15 @@
    "sha256": "3c2a42657519910609fd0006bf813c91c76d333b467f3eeb792e823ac30ab9a1",
    "banked": "2026-10-11",
    "tags": [
+    "data-selection",
+    "data-stages-2026-10-28",
     "refe-data-selection"
    ],
-   "note": "FlowDrive: nuPlan Val14 sampling ablation (abstract-level, verify in review): scenario-type reweighting vs none vs trajectory-pattern balancing | FlowDrive Table 2a nuPlan Val14(R): no weighting 81.91, scenario-type 80.08, trajectory-cluster inverse-frequency 85.37; single run",
+   "note": "FlowDrive: nuPlan Val14 sampling ablation (abstract-level, verify in review): scenario-type reweighting vs none vs trajectory-pattern balancing | FlowDrive Table 2a nuPlan Val14(R): no weighting 81.91, scenario-type 80.08, trajectory-cluster inverse-frequency 85.37; single run | FlowDrive 2025: Val14(R) sampler ablation: none 81.91, scenario-type 80.08, trajectory-cluster 85.37 (Table 2a, p9).",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/DATA_SELECTION_REVIEW.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/DATA_SELECTION_REVIEW.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
    ]
   },
   "2512.19270": {
@@ -17487,11 +17581,15 @@
    "sha256": "f3c10b59a5f2c5c9b39687211df615a85e8977c9ea637c5fccadea258cbc92d4",
    "banked": "2026-10-11",
    "tags": [
+    "data-scaling",
+    "data-selection",
+    "data-stages-2026-10-28",
     "refe-data-selection"
    ],
-   "note": "Zero-shot curricula: difficulty-prioritised scenarios, -15% collisions with 10% of the training data (Waymo-style sim, not NAVSIM)",
+   "note": "Zero-shot curricula: difficulty-prioritised scenarios, -15% collisions with 10% of the training data (Waymo-style sim, not NAVSIM) | Bronstein 2022: a random 10% subset equals the full set; difficulty-prioritised training: -15% collisions, +14% route adherence with 10% of the data (abstract p1).",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/DATA_SELECTION_REVIEW.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-11-refe-data-and-rl/DATA_SELECTION_REVIEW.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
    ]
   },
   "2510.24166": {
@@ -20174,6 +20272,1011 @@
    "note": "SAM-Road - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "1612.01474": {
+   "key": "1612.01474",
+   "kind": "arxiv",
+   "title": "Simple and Scalable Predictive Uncertainty Estimation using Deep Ensembles",
+   "authors": [
+    "Balaji Lakshminarayanan",
+    "Alexander Pritzel",
+    "Charles Blundell"
+   ],
+   "published": "2016-12-05",
+   "abstract": "Deep neural networks (NNs) are powerful black box predictors that have recently achieved impressive performance on a wide spectrum of tasks. Quantifying predictive uncertainty in NNs is a challenging and yet unsolved problem. Bayesian NNs, which learn a distribution over weights, are currently the state-of-the-art for estimating predictive uncertainty; however these require significant modifications to the training procedure and are computationally expensive compared to standard (non-Bayesian) NNs. We propose an alternative to Bayesian NNs that is simple to implement, readily parallelizable, requires very little hyperparameter tuning, and yields high quality predictive uncertainty estimates. Through a series of experiments on classification and regression benchmarks, we demonstrate that our method produces well-calibrated uncertainty estimates which are as good or better than approximate",
+   "url": "https://arxiv.org/abs/1612.01474",
+   "path": "TanitAD Research Lab/Library/papers/1612.01474_Simple-and-Scalable-Predictive-Uncertainty-Estimation-using.pdf",
+   "bytes": 1487133,
+   "sha256": "185b16b3530d9c886b3c3811581a815b4dccee3b31b8705177ce8a3a31c259e5",
+   "banked": "2026-10-28",
+   "tags": [
+    "crawl-variance-2026-10-28",
+    "variance-reduction"
+   ],
+   "note": "M=5 recommended; random init + data shuffling suffices, bagging hurts (p.4-5)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
+   ]
+  },
+  "1803.05407": {
+   "key": "1803.05407",
+   "kind": "arxiv",
+   "title": "Averaging Weights Leads to Wider Optima and Better Generalization",
+   "authors": [
+    "Pavel Izmailov",
+    "Dmitrii Podoprikhin",
+    "Timur Garipov",
+    "Dmitry Vetrov",
+    "Andrew Gordon Wilson"
+   ],
+   "published": "2018-03-14",
+   "abstract": "Deep neural networks are typically trained by optimizing a loss function with an SGD variant, in conjunction with a decaying learning rate, until convergence. We show that simple averaging of multiple points along the trajectory of SGD, with a cyclical or constant learning rate, leads to better generalization than conventional training. We also show that this Stochastic Weight Averaging (SWA) procedure finds much flatter solutions than SGD, and approximates the recent Fast Geometric Ensembling (FGE) approach with a single model. Using SWA we achieve notable improvement in test accuracy over conventional SGD training on a range of state-of-the-art residual networks, PyramidNets, DenseNets, and Shake-Shake networks on CIFAR-10, CIFAR-100, and ImageNet. In short, SWA is extremely easy to implement, improves generalization, and has almost no computational overhead.",
+   "url": "https://arxiv.org/abs/1803.05407",
+   "path": "TanitAD Research Lab/Library/papers/1803.05407_Averaging-Weights-Leads-to-Wider-Optima-and-Better-Generaliz.pdf",
+   "bytes": 733206,
+   "sha256": "e8d364405f461d619149bbb3ff4653a669b1a42934751b56f731f085f815c830",
+   "banked": "2026-10-28",
+   "tags": [
+    "crawl-variance-2026-10-28",
+    "variance-reduction"
+   ],
+   "note": "SWA +1.3 to +1.9 pp CIFAR-100 at 1.5x budget (Table 1, p.8); generalisation, not seed-variance",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
+   ]
+  },
+  "1912.05671": {
+   "key": "1912.05671",
+   "kind": "arxiv",
+   "title": "Linear Mode Connectivity and the Lottery Ticket Hypothesis",
+   "authors": [
+    "Jonathan Frankle",
+    "Gintare Karolina Dziugaite",
+    "Daniel M. Roy",
+    "Michael Carbin"
+   ],
+   "published": "2019-12-11",
+   "abstract": "We study whether a neural network optimizes to the same, linearly connected minimum under different samples of SGD noise (e.g., random data order and augmentation). We find that standard vision models become stable to SGD noise in this way early in training. From then on, the outcome of optimization is determined to a linearly connected region. We use this technique to study iterative magnitude pruning (IMP), the procedure used by work on the lottery ticket hypothesis to identify subnetworks that could have trained in isolation to full accuracy. We find that these subnetworks only reach full accuracy when they are stable to SGD noise, which either occurs at initialization for small-scale settings (MNIST) or early in training for large-scale settings (ResNet-50 and Inception-v3 on ImageNet).",
+   "url": "https://arxiv.org/abs/1912.05671",
+   "path": "TanitAD Research Lab/Library/papers/1912.05671_Linear-Mode-Connectivity-and-the-Lottery-Ticket-Hypothesis.pdf",
+   "bytes": 5572453,
+   "sha256": "571122004882d47a2e01c4955eb66a8b07856dcc636a225a028899ee3ef5fd90",
+   "banked": "2026-10-28",
+   "tags": [
+    "crawl-variance-2026-10-28",
+    "variance-reduction"
+   ],
+   "note": "networks become stable to SGD noise early in training -> same linearly connected region (abstract p.1)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
+   ]
+  },
+  "2002.06305": {
+   "key": "2002.06305",
+   "kind": "arxiv",
+   "title": "Fine-Tuning Pretrained Language Models: Weight Initializations, Data Orders, and Early Stopping",
+   "authors": [
+    "Jesse Dodge",
+    "Gabriel Ilharco",
+    "Roy Schwartz",
+    "Ali Farhadi",
+    "Hannaneh Hajishirzi",
+    "Noah Smith"
+   ],
+   "published": "2020-02-15",
+   "abstract": "Fine-tuning pretrained contextual word embedding models to supervised downstream tasks has become commonplace in natural language processing. This process, however, is often brittle: even with the same hyperparameter values, distinct random seeds can lead to substantially different results. To better understand this phenomenon, we experiment with four datasets from the GLUE benchmark, fine-tuning BERT hundreds of times on each while varying only the random seeds. We find substantial performance increases compared to previously reported results, and we quantify how the performance of the best-found model varies as a function of the number of fine-tuning trials. Further, we examine two factors influenced by the choice of random seed: weight initialization and training data order. We find that both contribute comparably to the variance of out-of-sample performance, and that some weight init",
+   "url": "https://arxiv.org/abs/2002.06305",
+   "path": "TanitAD Research Lab/Library/papers/2002.06305_Fine-Tuning-Pretrained-Language-Models-Weight-Initialization.pdf",
+   "bytes": 843093,
+   "sha256": "68ae08d15db8130fe6d261562437725977a3dfe112e974839d7c760c464aa6e5",
+   "banked": "2026-10-28",
+   "tags": [
+    "crawl-variance-2026-10-28",
+    "data-stages-2026-10-28",
+    "training-stages",
+    "variance-reduction"
+   ],
+   "note": "same hyperparameters, different seeds -> substantially different results; init and data order contribute comparably to variance (abstract p.1) | Dodge 2020: weight init and data order contribute comparably to fine-tuning variance (abstract, p1).",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2006.04884": {
+   "key": "2006.04884",
+   "kind": "arxiv",
+   "title": "On the Stability of Fine-tuning BERT: Misconceptions, Explanations, and Strong Baselines",
+   "authors": [
+    "Marius Mosbach",
+    "Maksym Andriushchenko",
+    "Dietrich Klakow"
+   ],
+   "published": "2020-06-08",
+   "abstract": "Fine-tuning pre-trained transformer-based language models such as BERT has become a common practice dominating leaderboards across various NLP benchmarks. Despite the strong empirical performance of fine-tuned models, fine-tuning is an unstable process: training the same model with multiple random seeds can result in a large variance of the task performance. Previous literature (Devlin et al., 2019; Lee et al., 2020; Dodge et al., 2020) identified two potential reasons for the observed instability: catastrophic forgetting and small size of the fine-tuning datasets. In this paper, we show that both hypotheses fail to explain the fine-tuning instability. We analyze BERT, RoBERTa, and ALBERT, fine-tuned on commonly used datasets from the GLUE benchmark, and show that the observed instability is caused by optimization difficulties that lead to vanishing gradients. Additionally, we show that ",
+   "url": "https://arxiv.org/abs/2006.04884",
+   "path": "TanitAD Research Lab/Library/papers/2006.04884_On-the-Stability-of-Fine-tuning-BERT-Misconceptions-Explanat.pdf",
+   "bytes": 1655855,
+   "sha256": "c3bdbf08b76d3da7a4540a65722fa3ed3d91edc49eed10754400f9b2096c06ca",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-stages-2026-10-28",
+    "training-stages"
+   ],
+   "note": "Mosbach 2021: fine-tuning instability = optimisation difficulty (vanishing gradients) plus generalisation differences; a stabilised schedule fixes most of it (abstract p1).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2108.03298": {
+   "key": "2108.03298",
+   "kind": "arxiv",
+   "title": "What Matters in Learning from Offline Human Demonstrations for Robot Manipulation",
+   "authors": [
+    "Ajay Mandlekar",
+    "Danfei Xu",
+    "Josiah Wong",
+    "Soroush Nasiriany",
+    "Chen Wang",
+    "Rohun Kulkarni",
+    "Li Fei-Fei",
+    "Silvio Savarese",
+    "Yuke Zhu",
+    "Roberto Martín-Martín"
+   ],
+   "published": "2021-08-06",
+   "abstract": "Imitating human demonstrations is a promising approach to endow robots with various manipulation capabilities. While recent advances have been made in imitation learning and batch (offline) reinforcement learning, a lack of open-source human datasets and reproducible learning methods make assessing the state of the field difficult. In this paper, we conduct an extensive study of six offline learning algorithms for robot manipulation on five simulated and three real-world multi-stage manipulation tasks of varying complexity, and with datasets of varying quality. Our study analyzes the most critical challenges when learning from offline human data for manipulation. Based on the study, we derive a series of lessons including the sensitivity to different algorithmic design choices, the dependence on the quality of the demonstrations, and the variability based on the stopping criteria due to ",
+   "url": "https://arxiv.org/abs/2108.03298",
+   "path": "TanitAD Research Lab/Library/papers/2108.03298_What-Matters-in-Learning-from-Offline-Human-Demonstrations-f.pdf",
+   "bytes": 10782355,
+   "sha256": "18283ff9cbb9645de4ccf32ca2de472f452e89761287e7ed578e3a1066bea5f1",
+   "banked": "2026-10-28",
+   "tags": [
+    "crawl-variance-2026-10-28",
+    "variance-reduction"
+   ],
+   "note": "selecting by val loss or last checkpoint is 10-100 % worse than best checkpoint (p.7, Fig. 4a); 3-seed averages",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
+   ]
+  },
+  "2109.01903": {
+   "key": "2109.01903",
+   "kind": "arxiv",
+   "title": "Robust fine-tuning of zero-shot models",
+   "authors": [
+    "Mitchell Wortsman",
+    "Gabriel Ilharco",
+    "Jong Wook Kim",
+    "Mike Li",
+    "Simon Kornblith",
+    "Rebecca Roelofs",
+    "Raphael Gontijo-Lopes",
+    "Hannaneh Hajishirzi",
+    "Ali Farhadi",
+    "Hongseok Namkoong",
+    "Ludwig Schmidt"
+   ],
+   "published": "2021-09-04",
+   "abstract": "Large pre-trained models such as CLIP or ALIGN offer consistent accuracy across a range of data distributions when performing zero-shot inference (i.e., without fine-tuning on a specific dataset). Although existing fine-tuning methods substantially improve accuracy on a given target distribution, they often reduce robustness to distribution shifts. We address this tension by introducing a simple and effective method for improving robustness while fine-tuning: ensembling the weights of the zero-shot and fine-tuned models (WiSE-FT). Compared to standard fine-tuning, WiSE-FT provides large accuracy improvements under distribution shift, while preserving high accuracy on the target distribution. On ImageNet and five derived distribution shifts, WiSE-FT improves accuracy under distribution shift by 4 to 6 percentage points (pp) over prior work while increasing ImageNet accuracy by 1.6 pp. WiS",
+   "url": "https://arxiv.org/abs/2109.01903",
+   "path": "TanitAD Research Lab/Library/papers/2109.01903_Robust-fine-tuning-of-zero-shot-models.pdf",
+   "bytes": 2226747,
+   "sha256": "2c94c2d7741ecea77040176d3f01f65c06d789ddabb6934a67eb1f1b0e7c252a",
+   "banked": "2026-10-28",
+   "tags": [
+    "crawl-variance-2026-10-28",
+    "variance-reduction"
+   ],
+   "note": "weight interpolation init<->fine-tuned: +1.6 pp ImageNet, +4-6 pp under shift (abstract p.1)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
+   ]
+  },
+  "2112.03908": {
+   "key": "2112.03908",
+   "kind": "arxiv",
+   "title": "Causal Imitative Model for Autonomous Driving",
+   "authors": [
+    "Mohammad Reza Samsami",
+    "Mohammadhossein Bahari",
+    "Saber Salehkaleybar",
+    "Alexandre Alahi"
+   ],
+   "published": "2021-12-07",
+   "abstract": "Imitation learning is a powerful approach for learning autonomous driving policy by leveraging data from expert driver demonstrations. However, driving policies trained via imitation learning that neglect the causal structure of expert demonstrations yield two undesirable behaviors: inertia and collision. In this paper, we propose Causal Imitative Model (CIM) to address inertia and collision problems. CIM explicitly discovers the causal model and utilizes it to train the policy. Specifically, CIM disentangles the input to a set of latent variables, selects the causal variables, and determines the next position by leveraging the selected variables. Our experiments show that our method outperforms previous work in terms of inertia and collision rates. Moreover, thanks to exploiting the causal structure, CIM shrinks the input dimension to only two, hence, can adapt to new environments in a ",
+   "url": "https://arxiv.org/abs/2112.03908",
+   "path": "TanitAD Research Lab/Library/papers/2112.03908_Causal-Imitative-Model-for-Autonomous-Driving.pdf",
+   "bytes": 470461,
+   "sha256": "c3995f1e652a42332bcdf1dfe65d9745cde2e652e311cc165baa7b675afbddf0",
+   "banked": "2026-10-28",
+   "tags": [
+    "crawl-variance-2026-10-28",
+    "inertia-copycat"
+   ],
+   "note": "causal-variable selection cuts CARLA inertia 40 % -> 6 % (Town01, DIM vs CIM, Table 1, p.8); needs disentangled-latent architecture",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
+   ]
+  },
+  "2203.05482": {
+   "key": "2203.05482",
+   "kind": "arxiv",
+   "title": "Model soups: averaging weights of multiple fine-tuned models improves accuracy without increasing inference time",
+   "authors": [
+    "Mitchell Wortsman",
+    "Gabriel Ilharco",
+    "Samir Yitzhak Gadre",
+    "Rebecca Roelofs",
+    "Raphael Gontijo-Lopes",
+    "Ari S. Morcos",
+    "Hongseok Namkoong",
+    "Ali Farhadi",
+    "Yair Carmon",
+    "Simon Kornblith",
+    "Ludwig Schmidt"
+   ],
+   "published": "2022-03-10",
+   "abstract": "The conventional recipe for maximizing model accuracy is to (1) train multiple models with various hyperparameters and (2) pick the individual model which performs best on a held-out validation set, discarding the remainder. In this paper, we revisit the second step of this procedure in the context of fine-tuning large pre-trained models, where fine-tuned models often appear to lie in a single low error basin. We show that averaging the weights of multiple models fine-tuned with different hyperparameter configurations often improves accuracy and robustness. Unlike a conventional ensemble, we may average many models without incurring any additional inference or memory costs -- we call the results \"model soups.\" When fine-tuning large pre-trained models such as CLIP, ALIGN, and a ViT-G pre-trained on JFT, our soup recipe provides significant improvements over the best model in a hyperparam",
+   "url": "https://arxiv.org/abs/2203.05482",
+   "path": "TanitAD Research Lab/Library/papers/2203.05482_Model-soups-averaging-weights-of-multiple-fine-tuned-models.pdf",
+   "bytes": 1616512,
+   "sha256": "226ac91243bdf4ebe79652991f59fa1c0c84d5d624a50b88210bf7e9316869e3",
+   "banked": "2026-10-28",
+   "tags": [
+    "crawl-variance-2026-10-28",
+    "variance-reduction"
+   ],
+   "note": "greedy soup +0.7 pp over best of hyperparameter sweep (ImageNet 81.03 vs 80.38); uniform soup 79.97 < best individual (Table 3, p.6); soups beat EMA/SWA-only models (App. L, p.30)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
+   ]
+  },
+  "2205.09739": {
+   "key": "2205.09739",
+   "kind": "arxiv",
+   "title": "Diverse Weight Averaging for Out-of-Distribution Generalization",
+   "authors": [
+    "Alexandre Ramé",
+    "Matthieu Kirchmeyer",
+    "Thibaud Rahier",
+    "Alain Rakotomamonjy",
+    "Patrick Gallinari",
+    "Matthieu Cord"
+   ],
+   "published": "2022-05-19",
+   "abstract": "Standard neural networks struggle to generalize under distribution shifts in computer vision. Fortunately, combining multiple networks can consistently improve out-of-distribution generalization. In particular, weight averaging (WA) strategies were shown to perform best on the competitive DomainBed benchmark; they directly average the weights of multiple networks despite their nonlinearities. In this paper, we propose Diverse Weight Averaging (DiWA), a new WA strategy whose main motivation is to increase the functional diversity across averaged models. To this end, DiWA averages weights obtained from several independent training runs: indeed, models obtained from different runs are more diverse than those collected along a single run thanks to differences in hyperparameters and training procedures. We motivate the need for diversity by a new bias-variance-covariance-locality decompositio",
+   "url": "https://arxiv.org/abs/2205.09739",
+   "path": "TanitAD Research Lab/Library/papers/2205.09739_Diverse-Weight-Averaging-for-Out-of-Distribution-Generalizat.pdf",
+   "bytes": 10381675,
+   "sha256": "baae9490af344b5a3bf197558bd35b29519757b080616b0c6f79e22f7d344186",
+   "banked": "2026-10-28",
+   "tags": [
+    "crawl-variance-2026-10-28",
+    "variance-reduction"
+   ],
+   "note": "bias-variance-covariance-locality decomposition: weight averaging succeeds when the variance term dominates (abstract p.1)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
+   ]
+  },
+  "2209.14981": {
+   "key": "2209.14981",
+   "kind": "arxiv",
+   "title": "Stop Wasting My Time! Saving Days of ImageNet and BERT Training with Latest Weight Averaging",
+   "authors": [
+    "Jean Kaddour"
+   ],
+   "published": "2022-09-29",
+   "abstract": "Training vision or language models on large datasets can take days, if not weeks. We show that averaging the weights of the k latest checkpoints, each collected at the end of an epoch, can speed up the training progression in terms of loss and accuracy by dozens of epochs, corresponding to time savings up to ~68 and ~30 GPU hours when training a ResNet50 on ImageNet and RoBERTa-Base model on WikiText-103, respectively. We also provide the code and model checkpoint trajectory to reproduce the results and facilitate research on reusing historical weights for faster convergence.",
+   "url": "https://arxiv.org/abs/2209.14981",
+   "path": "TanitAD Research Lab/Library/papers/2209.14981_Stop-Wasting-My-Time-Saving-Days-of-ImageNet-and-BERT-Traini.pdf",
+   "bytes": 912227,
+   "sha256": "af71aae8ae1ecc22975b81afa0f87287b53b06c324eaabb16cf80d7e6e48211b",
+   "banked": "2026-10-28",
+   "tags": [
+    "crawl-variance-2026-10-28",
+    "variance-reduction"
+   ],
+   "note": "averaging the k latest epoch-end checkpoints speeds progress by dozens of epochs (abstract p.1)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
+   ]
+  },
+  "2210.02174": {
+   "key": "2210.02174",
+   "kind": "arxiv",
+   "title": "CW-ERM: Improving Autonomous Driving Planning with Closed-loop Weighted Empirical Risk Minimization",
+   "authors": [
+    "Eesha Kumar",
+    "Yiming Zhang",
+    "Stefano Pini",
+    "Simon Stent",
+    "Ana Ferreira",
+    "Sergey Zagoruyko",
+    "Christian S. Perone"
+   ],
+   "published": "2022-10-05",
+   "abstract": "The imitation learning of self-driving vehicle policies through behavioral cloning is often carried out in an open-loop fashion, ignoring the effect of actions to future states. Training such policies purely with Empirical Risk Minimization (ERM) can be detrimental to real-world performance, as it biases policy networks towards matching only open-loop behavior, showing poor results when evaluated in closed-loop. In this work, we develop an efficient and simple-to-implement principle called Closed-loop Weighted Empirical Risk Minimization (CW-ERM), in which a closed-loop evaluation procedure is first used to identify training data samples that are important for practical driving performance and then we these samples to help debias the policy network. We evaluate CW-ERM in a challenging urban driving dataset and show that this procedure yields a significant reduction in collisions as well ",
+   "url": "https://arxiv.org/abs/2210.02174",
+   "path": "TanitAD Research Lab/Library/papers/2210.02174_CW-ERM-Improving-Autonomous-Driving-Planning-with-Closed-loo.pdf",
+   "bytes": 1475162,
+   "sha256": "6bd222dd9b43e8dd1cfa3946279b5194d07488a66a2e0d3b542d066c767143c8",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28",
+    "training-stages"
+   ],
+   "note": "CW-ERM 2022: closed-loop rollouts identify the samples that matter; upsampling them cuts collisions, up to ~35% on some metrics on the test set (p4).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2212.11419": {
+   "key": "2212.11419",
+   "kind": "arxiv",
+   "title": "Imitation Is Not Enough: Robustifying Imitation with Reinforcement Learning for Challenging Driving Scenarios",
+   "authors": [
+    "Yiren Lu",
+    "Justin Fu",
+    "George Tucker",
+    "Xinlei Pan",
+    "Eli Bronstein",
+    "Rebecca Roelofs",
+    "Benjamin Sapp",
+    "Brandyn White",
+    "Aleksandra Faust",
+    "Shimon Whiteson",
+    "Dragomir Anguelov",
+    "Sergey Levine"
+   ],
+   "published": "2022-12-21",
+   "abstract": "Imitation learning (IL) is a simple and powerful way to use high-quality human driving data, which can be collected at scale, to produce human-like behavior. However, policies based on imitation learning alone often fail to sufficiently account for safety and reliability concerns. In this paper, we show how imitation learning combined with reinforcement learning using simple rewards can substantially improve the safety and reliability of driving policies over those learned from imitation alone. In particular, we train a policy on over 100k miles of urban driving data, and measure its effectiveness in test scenarios grouped by different levels of collision likelihood. Our analysis shows that while imitation can perform well in low-difficulty scenarios that are well-covered by the demonstration data, our proposed approach significantly improves robustness on the most challenging scenarios ",
+   "url": "https://arxiv.org/abs/2212.11419",
+   "path": "TanitAD Research Lab/Library/papers/2212.11419_Imitation-Is-Not-Enough-Robustifying-Imitation-with-Reinforc.pdf",
+   "bytes": 2201142,
+   "sha256": "d334a26fb81a46b53b8737a89dd75c8a5d2452d74b0374fd9bfad40879efcd4e",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-stages-2026-10-28",
+    "training-stages"
+   ],
+   "note": "Imitation Is Not Enough 2022: BC+SAC cuts failure rate 9.74% (BC) to 3.72% on the hardest subset; pure SAC route progress falls to 77.8% (Table II, p6; 38%/40% claim p2).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2303.09540": {
+   "key": "2303.09540",
+   "kind": "arxiv",
+   "title": "SemDeDup: Data-efficient learning at web-scale through semantic deduplication",
+   "authors": [
+    "Amro Abbas",
+    "Kushal Tirumala",
+    "Dániel Simig",
+    "Surya Ganguli",
+    "Ari S. Morcos"
+   ],
+   "published": "2023-03-16",
+   "abstract": "Progress in machine learning has been driven in large part by massive increases in data. However, large web-scale datasets such as LAION are largely uncurated beyond searches for exact duplicates, potentially leaving much redundancy. Here, we introduce SemDeDup, a method which leverages embeddings from pre-trained models to identify and remove semantic duplicates: data pairs which are semantically similar, but not exactly identical. Removing semantic duplicates preserves performance and speeds up learning. Analyzing a subset of LAION, we show that SemDeDup can remove 50% of the data with minimal performance loss, effectively halving training time. Moreover, performance increases out of distribution. Also, analyzing language models trained on C4, a partially curated dataset, we show that SemDeDup improves over prior approaches while providing efficiency gains. SemDeDup provides an example",
+   "url": "https://arxiv.org/abs/2303.09540",
+   "path": "TanitAD Research Lab/Library/papers/2303.09540_SemDeDup-Data-efficient-learning-at-web-scale-through-semant.pdf",
+   "bytes": 18814320,
+   "sha256": "2bb0ab3f969ff0c441aece8c9983671b8cb1bf87d6904225f6bc2ec5aaa3c6b5",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28"
+   ],
+   "note": "SemDeDup 2023: embed, k-means, drop near-duplicates within clusters; 50% of LAION-440M removed with minimal loss (abstract p1; method p4).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2303.14186": {
+   "key": "2303.14186",
+   "kind": "arxiv",
+   "title": "TRAK: Attributing Model Behavior at Scale",
+   "authors": [
+    "Sung Min Park",
+    "Kristian Georgiev",
+    "Andrew Ilyas",
+    "Guillaume Leclerc",
+    "Aleksander Madry"
+   ],
+   "published": "2023-03-24",
+   "abstract": "The goal of data attribution is to trace model predictions back to training data. Despite a long line of work towards this goal, existing approaches to data attribution tend to force users to choose between computational tractability and efficacy. That is, computationally tractable methods can struggle with accurately attributing model predictions in non-convex settings (e.g., in the context of deep neural networks), while methods that are effective in such regimes require training thousands of models, which makes them impractical for large models or datasets. In this work, we introduce TRAK (Tracing with the Randomly-projected After Kernel), a data attribution method that is both effective and computationally tractable for large-scale, differentiable models. In particular, by leveraging only a handful of trained models, TRAK can match the performance of attribution methods that require ",
+   "url": "https://arxiv.org/abs/2303.14186",
+   "path": "TanitAD Research Lab/Library/papers/2303.14186_TRAK-Attributing-Model-Behavior-at-Scale.pdf",
+   "bytes": 18269691,
+   "sha256": "407fc348aa2e2b22a2a5f279924d78413e04c0a8e7b61c891b013aa9cafc6993",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28"
+   ],
+   "note": "TRAK 2023: cheap data attribution from random projections of per-sample gradients; matches far costlier methods (abstract p1).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2304.08742": {
+   "key": "2304.08742",
+   "kind": "arxiv",
+   "title": "Behavior Retrieval: Few-Shot Imitation Learning by Querying Unlabeled Datasets",
+   "authors": [
+    "Maximilian Du",
+    "Suraj Nair",
+    "Dorsa Sadigh",
+    "Chelsea Finn"
+   ],
+   "published": "2023-04-18",
+   "abstract": "Enabling robots to learn novel visuomotor skills in a data-efficient manner remains an unsolved problem with myriad challenges. A popular paradigm for tackling this problem is through leveraging large unlabeled datasets that have many behaviors in them and then adapting a policy to a specific task using a small amount of task-specific human supervision (i.e. interventions or demonstrations). However, how best to leverage the narrow task-specific supervision and balance it with offline data remains an open question. Our key insight in this work is that task-specific data not only provides new data for an agent to train on but can also inform the type of prior data the agent should use for learning. Concretely, we propose a simple approach that uses a small amount of downstream expert data to selectively query relevant behaviors from an offline, unlabeled dataset (including many sub-optima",
+   "url": "https://arxiv.org/abs/2304.08742",
+   "path": "TanitAD Research Lab/Library/papers/2304.08742_Behavior-Retrieval-Few-Shot-Imitation-Learning-by-Querying-U.pdf",
+   "bytes": 3971631,
+   "sha256": "3b2865b95593e20138779d99b2e52c9a8d0709193ff9c2886c1ff3c0a1ffb2b3",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28"
+   ],
+   "note": "Behavior Retrieval 2023: use a little target data to query relevant behaviours from a large offline set; beats goal-conditioned methods by 20% (abstract p1).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2308.12284": {
+   "key": "2308.12284",
+   "kind": "arxiv",
+   "title": "D4: Improving LLM Pretraining via Document De-Duplication and Diversification",
+   "authors": [
+    "Kushal Tirumala",
+    "Daniel Simig",
+    "Armen Aghajanyan",
+    "Ari S. Morcos"
+   ],
+   "published": "2023-08-23",
+   "abstract": "Over recent years, an increasing amount of compute and data has been poured into training large language models (LLMs), usually by doing one-pass learning on as many tokens as possible randomly selected from large-scale web corpora. While training on ever-larger portions of the internet leads to consistent performance improvements, the size of these improvements diminishes with scale, and there has been little work exploring the effect of data selection on pre-training and downstream performance beyond simple de-duplication methods such as MinHash. Here, we show that careful data selection (on top of de-duplicated data) via pre-trained model embeddings can speed up training (20% efficiency gains) and improves average downstream accuracy on 16 NLP tasks (up to 2%) at the 6.7B model scale. Furthermore, we show that repeating data intelligently consistently outperforms baseline training (wh",
+   "url": "https://arxiv.org/abs/2308.12284",
+   "path": "TanitAD Research Lab/Library/papers/2308.12284_D4-Improving-LLM-Pretraining-via-Document-De-Duplication-and.pdf",
+   "bytes": 1283964,
+   "sha256": "1b52a4b065c2d2b4f8c96251006671838d2ffa86a5e6729bf96507f6fb4c1c9c",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28"
+   ],
+   "note": "D4 2023: dedup + SSL-prototype diversification: 20% efficiency gain, up to +2% on 16 tasks; repeating data intelligently beats baseline, repeating random data is worse (abstract p1).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2310.20650": {
+   "key": "2310.20650",
+   "kind": "arxiv",
+   "title": "Addressing Limitations of State-Aware Imitation Learning for Autonomous Driving",
+   "authors": [
+    "Luca Cultrera",
+    "Federico Becattini",
+    "Lorenzo Seidenari",
+    "Pietro Pala",
+    "Alberto Del Bimbo"
+   ],
+   "published": "2023-10-31",
+   "abstract": "Conditional Imitation learning is a common and effective approach to train autonomous driving agents. However, two issues limit the full potential of this approach: (i) the inertia problem, a special case of causal confusion where the agent mistakenly correlates low speed with no acceleration, and (ii) low correlation between offline and online performance due to the accumulation of small errors that brings the agent in a previously unseen state. Both issues are critical for state-aware models, yet informing the driving agent of its internal state as well as the state of the environment is of crucial importance. In this paper we propose a multi-task learning agent based on a multi-stage vision transformer with state token propagation. We feed the state of the vehicle along with the representation of the environment as a special token of the transformer and propagate it throughout the net",
+   "url": "https://arxiv.org/abs/2310.20650",
+   "path": "TanitAD Research Lab/Library/papers/2310.20650_Addressing-Limitations-of-State-Aware-Imitation-Learning-for.pdf",
+   "bytes": 4512112,
+   "sha256": "c7d9e2b8741fd05d656112b28704fbb82b4a5921c5025287044c77602b73fb96",
+   "banked": "2026-10-28",
+   "tags": [
+    "crawl-variance-2026-10-28",
+    "inertia-copycat"
+   ],
+   "note": "stop/go loss + state token + state-noise injection: inertia failures 17/9/16 % -> 1/1/6 % (train) and 40/20/22 % -> 8/2/4 % (new weather) on NoCrash (Table V, p.7); speed noise sigma=1 (p.8)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-28-crawl-variance-lit/REVIEW.md"
+   ]
+  },
+  "2402.16720": {
+   "key": "2402.16720",
+   "kind": "arxiv",
+   "title": "Think2Drive: Efficient Reinforcement Learning by Thinking in Latent World Model for Quasi-Realistic Autonomous Driving (in CARLA-v2)",
+   "authors": [
+    "Qifeng Li",
+    "Xiaosong Jia",
+    "Shaobo Wang",
+    "Junchi Yan"
+   ],
+   "published": "2024-02-26",
+   "abstract": "Real-world autonomous driving (AD) especially urban driving involves many corner cases. The lately released AD simulator CARLA v2 adds 39 common events in the driving scene, and provide more quasi-realistic testbed compared to CARLA v1. It poses new challenge to the community and so far no literature has reported any success on the new scenarios in V2 as existing works mostly have to rely on specific rules for planning yet they cannot cover the more complex cases in CARLA v2. In this work, we take the initiative of directly training a planner and the hope is to handle the corner cases flexibly and effectively, which we believe is also the future of AD. To our best knowledge, we develop the first model-based RL method named Think2Drive for AD, with a world model to learn the transitions of the environment, and then it acts as a neural simulator to train the planner. This paradigm signific",
+   "url": "https://arxiv.org/abs/2402.16720",
+   "path": "TanitAD Research Lab/Library/papers/2402.16720_Think2Drive-Efficient-Reinforcement-Learning-by-Thinking-in.pdf",
+   "bytes": 4053167,
+   "sha256": "8ad50c498512580b8c3c2c8946b8123576723db33e1054a2b361cf456e9f97c1",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-stages-2026-10-28",
+    "training-stages"
+   ],
+   "note": "Think2Drive 2024: model-based RL in a compact latent world model, expert-level in CARLA v2 in 3 days on one A6000 (abstract p1); reward comes from the simulator.",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2406.01544": {
+   "key": "2406.01544",
+   "kind": "arxiv",
+   "title": "Validity Learning on Failures: Mitigating the Distribution Shift in Autonomous Vehicle Planning",
+   "authors": [
+    "Fazel Arasteh",
+    "Mohammed Elmahgiubi",
+    "Behzad Khamidehi",
+    "Hamidreza Mirkhani",
+    "Weize Zhang",
+    "Cao Tongtong",
+    "Kasra Rezaee"
+   ],
+   "published": "2024-06-03",
+   "abstract": "The planning problem constitutes a fundamental aspect of the autonomous driving framework. Recent strides in representation learning have empowered vehicles to comprehend their surrounding environments, thereby facilitating the integration of learning-based planning strategies. Among these approaches, Imitation Learning stands out due to its notable training efficiency. However, traditional Imitation Learning methodologies encounter challenges associated with the co-variate shift phenomenon. We propose Validity Learning on Failures, VL(on failure), as a remedy to address this issue. The essence of our method lies in deploying a pre-trained planner across diverse scenarios. Instances where the planner deviates from its immediate objectives, such as maintaining a safe distance from obstacles or adhering to traffic rules, are flagged as failures. The states corresponding to these failures a",
+   "url": "https://arxiv.org/abs/2406.01544",
+   "path": "TanitAD Research Lab/Library/papers/2406.01544_Validity-Learning-on-Failures-Mitigating-the-Distribution-Sh.pdf",
+   "bytes": 612054,
+   "sha256": "1c78aa85cc9fa5162cc38e045fc68984f3b087a38a3bdaad23a630bbd92f0f64",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-stages-2026-10-28",
+    "training-stages"
+   ],
+   "note": "VL(on failure) 2024: roll out a pre-trained planner, collect failure states, train a validity objective without expert labels (abstract p1; abstract-level read).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2408.14037": {
+   "key": "2408.14037",
+   "kind": "arxiv",
+   "title": "Re-Mix: Optimizing Data Mixtures for Large Scale Imitation Learning",
+   "authors": [
+    "Joey Hejna",
+    "Chethan Bhateja",
+    "Yichen Jiang",
+    "Karl Pertsch",
+    "Dorsa Sadigh"
+   ],
+   "published": "2024-08-26",
+   "abstract": "Increasingly large imitation learning datasets are being collected with the goal of training foundation models for robotics. However, despite the fact that data selection has been of utmost importance in vision and natural language processing, little work in robotics has questioned what data such models should actually be trained on. In this work we investigate how to weigh different subsets or ``domains'' of robotics datasets for robot foundation model pre-training. Concrete, we use distributionally robust optimization (DRO) to maximize worst-case performance across all possible downstream domains. Our method, Re-Mix, addresses the wide range of challenges that arise when applying DRO to robotics datasets including variability in action spaces and dynamics across different datasets. Re-Mix employs early stopping, action normalization, and discretization to counteract these issues. Throu",
+   "url": "https://arxiv.org/abs/2408.14037",
+   "path": "TanitAD Research Lab/Library/papers/2408.14037_Re-Mix-Optimizing-Data-Mixtures-for-Large-Scale-Imitation-Le.pdf",
+   "bytes": 1441812,
+   "sha256": "739449e2336e8abc1c8256c30dd536ed506cb100e6b1ed4aaa3fbc9b35dea34d",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28"
+   ],
+   "note": "Re-Mix 2024: DRO domain weights beat uniform by 38% and human weights by 32% on Open X-Embodiment (abstract p1).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2409.16663": {
+   "key": "2409.16663",
+   "kind": "arxiv",
+   "title": "Mitigating Covariate Shift in Imitation Learning for Autonomous Vehicles Using Latent Space Generative World Models",
+   "authors": [
+    "Alexander Popov",
+    "Alperen Degirmenci",
+    "David Wehr",
+    "Shashank Hegde",
+    "Ryan Oldja",
+    "Alexey Kamenev",
+    "Bertrand Douillard",
+    "David Nistér",
+    "Urs Muller",
+    "Ruchi Bhargava",
+    "Stan Birchfield",
+    "Nikolai Smolyanskiy"
+   ],
+   "published": "2024-09-25",
+   "abstract": "We propose the use of latent space generative world models to address the covariate shift problem in autonomous driving. A world model is a neural network capable of predicting an agent's next state given past states and actions. By leveraging a world model during training, the driving policy effectively mitigates covariate shift without requiring an excessive amount of training data. During end-to-end training, our policy learns how to recover from errors by aligning with states observed in human demonstrations, so that at runtime it can recover from perturbations outside the training distribution. Additionally, we introduce a novel transformer-based perception encoder that employs multi-view cross-attention and a learned scene query. We present qualitative and quantitative results, demonstrating significant improvements upon prior state of the art in closed-loop testing in the CARLA si",
+   "url": "https://arxiv.org/abs/2409.16663",
+   "path": "TanitAD Research Lab/Library/papers/2409.16663_Mitigating-Covariate-Shift-in-Imitation-Learning-for-Autonom.pdf",
+   "bytes": 2853371,
+   "sha256": "4f838307281ff7a105324f52df370d207c5cf349e105bd455b052a47f9907beb",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-stages-2026-10-28",
+    "training-stages"
+   ],
+   "note": "Popov 2024: a latent-space generative world model during training teaches recovery and mitigates covariate shift in CARLA (abstract p1; abstract-level read).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2412.05334": {
+   "key": "2412.05334",
+   "kind": "arxiv",
+   "title": "Closed-Loop Supervised Fine-Tuning of Tokenized Traffic Models",
+   "authors": [
+    "Zhejun Zhang",
+    "Peter Karkus",
+    "Maximilian Igl",
+    "Wenhao Ding",
+    "Yuxiao Chen",
+    "Boris Ivanovic",
+    "Marco Pavone"
+   ],
+   "published": "2024-12-05",
+   "abstract": "Traffic simulation aims to learn a policy for traffic agents that, when unrolled in closed-loop, faithfully recovers the joint distribution of trajectories observed in the real world. Inspired by large language models, tokenized multi-agent policies have recently become the state-of-the-art in traffic simulation. However, they are typically trained through open-loop behavior cloning, and thus suffer from covariate shift when executed in closed-loop during simulation. In this work, we present Closest Among Top-K (CAT-K) rollouts, a simple yet effective closed-loop fine-tuning strategy to mitigate covariate shift. CAT-K fine-tuning only requires existing trajectory data, without reinforcement learning or generative adversarial imitation. Concretely, CAT-K fine-tuning enables a small 7M-parameter tokenized traffic simulation policy to outperform a 102M-parameter model from the same model fa",
+   "url": "https://arxiv.org/abs/2412.05334",
+   "path": "TanitAD Research Lab/Library/papers/2412.05334_Closed-Loop-Supervised-Fine-Tuning-of-Tokenized-Traffic-Mode.pdf",
+   "bytes": 2211057,
+   "sha256": "62f8f7fab9db1be9dc7c582fd1962a127a47c56c6c9d6dcf318e20d7f9fd27be",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-stages-2026-10-28",
+    "training-stages"
+   ],
+   "note": "CAT-K 2024: closest-among-top-K closed-loop SFT; the 7M model reaches RMM 0.7702 vs 0.7614 for the 102M model of the family and 0.7591 for its own BC base (p1, p6).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2412.15182": {
+   "key": "2412.15182",
+   "kind": "arxiv",
+   "title": "STRAP: Robot Sub-Trajectory Retrieval for Augmented Policy Learning",
+   "authors": [
+    "Marius Memmel",
+    "Jacob Berg",
+    "Bingqing Chen",
+    "Abhishek Gupta",
+    "Jonathan Francis"
+   ],
+   "published": "2024-12-19",
+   "abstract": "Robot learning is witnessing a significant increase in the size, diversity, and complexity of pre-collected datasets, mirroring trends in domains such as natural language processing and computer vision. Many robot learning methods treat such datasets as multi-task expert data and learn a multi-task, generalist policy by training broadly across them. Notably, while these generalist policies can improve the average performance across many tasks, the performance of generalist policies on any one task is often suboptimal due to negative transfer between partitions of the data, compared to task-specific specialist policies. In this work, we argue for the paradigm of training policies during deployment given the scenarios they encounter: rather than deploying pre-trained policies to unseen problems in a zero-shot manner, we non-parametrically retrieve and train models directly on relevant data",
+   "url": "https://arxiv.org/abs/2412.15182",
+   "path": "TanitAD Research Lab/Library/papers/2412.15182_STRAP-Robot-Sub-Trajectory-Retrieval-for-Augmented-Policy-Le.pdf",
+   "bytes": 11713696,
+   "sha256": "d1a68efc86b44a2a545430d27ceeb89c3cce3e35b0316e8dbe1ceb0c04c403f8",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28"
+   ],
+   "note": "STRAP 2024: DINOv2 features + dynamic time warping retrieve relevant sub-trajectories from a large offline corpus (p2, p7; Table 1 p9).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2502.08623": {
+   "key": "2502.08623",
+   "kind": "arxiv",
+   "title": "Robot Data Curation with Mutual Information Estimators",
+   "authors": [
+    "Joey Hejna",
+    "Suvir Mirchandani",
+    "Ashwin Balakrishna",
+    "Annie Xie",
+    "Ayzaan Wahid",
+    "Jonathan Tompson",
+    "Pannag Sanketi",
+    "Dhruv Shah",
+    "Coline Devin",
+    "Dorsa Sadigh"
+   ],
+   "published": "2025-02-12",
+   "abstract": "The performance of imitation learning policies often hinges on the datasets with which they are trained. Consequently, investment in data collection for robotics has grown across both industrial and academic labs. However, despite the marked increase in the quantity of demonstrations collected, little work has sought to assess the quality of said data despite mounting evidence of its importance in other areas such as vision and language. In this work, we take a critical step towards addressing the data quality in robotics. Given a dataset of demonstrations, we aim to estimate the relative quality of individual demonstrations in terms of both action diversity and predictability. To do so, we estimate the average contribution of a trajectory towards the mutual information between states and actions in the entire dataset, which captures both the entropy of the marginal action distribution a",
+   "url": "https://arxiv.org/abs/2502.08623",
+   "path": "TanitAD Research Lab/Library/papers/2502.08623_Robot-Data-Curation-with-Mutual-Information-Estimators.pdf",
+   "bytes": 3904215,
+   "sha256": "d4c1a5fcf262c5ce35c3dee85d892f82ff0243bf70dac142e5267704e47f1bdd",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28"
+   ],
+   "note": "DemInf 2025: kNN mutual-information estimate on VAE embeddings ranks demonstration quality; filtering gives +5-10% on RoboMimic (abstract p1).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2503.01650": {
+   "key": "2503.01650",
+   "kind": "arxiv",
+   "title": "CAPS: Context-Aware Priority Sampling for Enhanced Imitation Learning in Autonomous Driving",
+   "authors": [
+    "Hamidreza Mirkhani",
+    "Behzad Khamidehi",
+    "Ehsan Ahmadi",
+    "Mohammed Elmahgiubi",
+    "Weize Zhang",
+    "Fazel Arasteh",
+    "Umar Rajguru",
+    "Kasra Rezaee",
+    "Dongfeng Bai"
+   ],
+   "published": "2025-03-03",
+   "abstract": "In this paper, we introduce Context-Aware Priority Sampling (CAPS), a novel method designed to enhance data efficiency in learning-based autonomous driving systems. CAPS addresses the challenge of imbalanced datasets in imitation learning by leveraging Vector Quantized Variational Autoencoders (VQ-VAEs). In this way, we can get structured and interpretable data representations, which help to reveal meaningful patterns in the data. These patterns are used to group the data into clusters, with each sample being assigned a cluster ID. The cluster IDs are then used to re-balance the dataset, ensuring that rare yet valuable samples receive higher priority during training. We evaluate our method through closed-loop experiments in the CARLA simulator. The results on Bench2Drive scenarios demonstrate the effectiveness of CAPS in enhancing model generalization, with substantial improvements in bo",
+   "url": "https://arxiv.org/abs/2503.01650",
+   "path": "TanitAD Research Lab/Library/papers/2503.01650_CAPS-Context-Aware-Priority-Sampling-for-Enhanced-Imitation.pdf",
+   "bytes": 2373780,
+   "sha256": "4bb6c89dfeae64425bdb83948b04f12f2d3a9b85b97967d48d270d1d8645f61c",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28"
+   ],
+   "note": "CAPS 2025: VQ-VAE trajectory clusters + priority sampling; Bench2Drive driving score 59.5 to 66.7, success 48.2 to 52.9%, completion time 71.4 to 50.0 s (p5).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2503.03707": {
+   "key": "2503.03707",
+   "kind": "arxiv",
+   "title": "Curating Demonstrations using Online Experience",
+   "authors": [
+    "Annie S. Chen",
+    "Alec M. Lessing",
+    "Yuejiang Liu",
+    "Chelsea Finn"
+   ],
+   "published": "2025-03-05",
+   "abstract": "Many robot demonstration datasets contain heterogeneous demonstrations of varying quality. This heterogeneity may benefit policy pre-training, but can hinder robot performance when used with a final imitation learning objective. In particular, some strategies in the data may be less reliable than others or may be underrepresented in the data, leading to poor performance when such strategies are sampled at test time. Moreover, such unreliable or underrepresented strategies can be difficult even for people to discern, and sifting through demonstration datasets is time-consuming and costly. On the other hand, policy performance when trained on such demonstrations can reflect the reliability of different strategies. We thus propose for robots to self-curate based on online robot experience (Demo-SCORE). More specifically, we train and cross-validate a classifier to discern successful policy ",
+   "url": "https://arxiv.org/abs/2503.03707",
+   "path": "TanitAD Research Lab/Library/papers/2503.03707_Curating-Demonstrations-using-Online-Experience.pdf",
+   "bytes": 5139817,
+   "sha256": "7053780c793ebd76e3508192d57ab6a8f3a325abb1d69c5daa1cf760e26e182b",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28"
+   ],
+   "note": "Demo-SCORE 2025: classifier on policy-rollout success filters demonstrations; +15-35% absolute success (abstract p1).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2504.17838": {
+   "key": "2504.17838",
+   "kind": "arxiv",
+   "title": "CaRL: Learning Scalable Planning Policies with Simple Rewards",
+   "authors": [
+    "Bernhard Jaeger",
+    "Daniel Dauner",
+    "Jens Beißwenger",
+    "Simon Gerstenecker",
+    "Kashyap Chitta",
+    "Andreas Geiger"
+   ],
+   "published": "2025-04-24",
+   "abstract": "We investigate reinforcement learning (RL) for privileged planning in autonomous driving. State-of-the-art approaches for this task are rule-based, but these methods do not scale to the long tail. RL, on the other hand, is scalable and does not suffer from compounding errors like imitation learning. Contemporary RL approaches for driving use complex shaped rewards that sum multiple individual rewards, \\eg~progress, position, or orientation rewards. We show that PPO fails to optimize a popular version of these rewards when the mini-batch size is increased, which limits the scalability of these approaches. Instead, we propose a new reward design based primarily on optimizing a single intuitive reward term: route completion. Infractions are penalized by terminating the episode or multiplicatively reducing route completion. We find that PPO scales well with higher mini-batch sizes when train",
+   "url": "https://arxiv.org/abs/2504.17838",
+   "path": "TanitAD Research Lab/Library/papers/2504.17838_CaRL-Learning-Scalable-Planning-Policies-with-Simple-Rewards.pdf",
+   "bytes": 3205962,
+   "sha256": "058d84e690bfef38e60a73b7eaa6a6293cc47b21893b75c05ec2238edd595e2c",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-stages-2026-10-28",
+    "training-stages"
+   ],
+   "note": "CaRL 2025: privileged PPO with a single route-completion reward scales to 300M samples (CARLA) and 500M (nuPlan) on an 8-GPU node (abstract p1).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2505.09603": {
+   "key": "2505.09603",
+   "kind": "arxiv",
+   "title": "DataMIL: Selecting Data for Robot Imitation Learning with Datamodels",
+   "authors": [
+    "Shivin Dass",
+    "Alaa Khaddaj",
+    "Logan Engstrom",
+    "Aleksander Madry",
+    "Andrew Ilyas",
+    "Roberto Martín-Martín"
+   ],
+   "published": "2025-05-14",
+   "abstract": "Recently, the robotics community has amassed ever larger and more diverse datasets to train generalist policies. However, while these policies achieve strong mean performance across a variety of tasks, they often underperform on individual, specialized tasks and require further tuning on newly acquired task-specific data. Combining task-specific data with carefully curated subsets of large prior datasets via co-training can produce better specialized policies, but selecting data naively may actually harm downstream performance. To address this, we introduce DataMIL, a data selection framework built on the datamodels paradigm that reasons about data selection in an end-to-end manner, using the policy itself to identify which data points will most improve performance. Unlike standard practices that filter data using human notions of quality (e.g., based on semantic or visual similarity), D",
+   "url": "https://arxiv.org/abs/2505.09603",
+   "path": "TanitAD Research Lab/Library/papers/2505.09603_DataMIL-Selecting-Data-for-Robot-Imitation-Learning-with-Dat.pdf",
+   "bytes": 4355246,
+   "sha256": "fbe8697db6071d065661a1e5f90dd7f86a9257cad0f8daed6925a63b2075dc97",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28"
+   ],
+   "note": "DataMIL 2025: datamodel-based selection with a surrogate loss on target data; naive similarity-based selection can harm (abstract p1).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2505.16394": {
+   "key": "2505.16394",
+   "kind": "arxiv",
+   "title": "Raw2Drive: Reinforcement Learning with Aligned World Models for End-to-End Autonomous Driving (in CARLA v2)",
+   "authors": [
+    "Zhenjie Yang",
+    "Xiaosong Jia",
+    "Qifeng Li",
+    "Xue Yang",
+    "Maoqing Yao",
+    "Junchi Yan"
+   ],
+   "published": "2025-05-22",
+   "abstract": "Reinforcement Learning (RL) can mitigate the causal confusion and distribution shift inherent to imitation learning (IL). However, applying RL to end-to-end autonomous driving (E2E-AD) remains an open problem for its training difficulty, and IL is still the mainstream paradigm in both academia and industry. Recently Model-based Reinforcement Learning (MBRL) have demonstrated promising results in neural planning; however, these methods typically require privileged information as input rather than raw sensor data. We fill this gap by designing Raw2Drive, a dual-stream MBRL approach. Initially, we efficiently train an auxiliary privileged world model paired with a neural planner that uses privileged information as input. Subsequently, we introduce a raw sensor world model trained via our proposed Guidance Mechanism, which ensures consistency between the raw sensor world model and the privil",
+   "url": "https://arxiv.org/abs/2505.16394",
+   "path": "TanitAD Research Lab/Library/papers/2505.16394_Raw2Drive-Reinforcement-Learning-with-Aligned-World-Models-f.pdf",
+   "bytes": 3886312,
+   "sha256": "0214f7a0626704d1c8600fcd7b267f7e2e42b8638c34ad458717f369a0f73e8d",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-stages-2026-10-28",
+    "training-stages"
+   ],
+   "note": "Raw2Drive 2025: dual-stream model-based RL for raw-sensor E2E driving; needs a privileged world model first (abstract p1).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2505.20981": {
+   "key": "2505.20981",
+   "kind": "arxiv",
+   "title": "RefAV: Towards Planning-Centric Scenario Mining",
+   "authors": [
+    "Cainan Davidson",
+    "Deva Ramanan",
+    "Neehar Peri"
+   ],
+   "published": "2025-05-27",
+   "abstract": "Autonomous Vehicles (AVs) collect and pseudo-label terabytes of multi-modal data localized to HD maps during normal fleet testing. However, identifying interesting and safety-critical scenarios from uncurated driving logs remains a significant challenge. Traditional scenario mining techniques are error-prone and prohibitively time-consuming, often relying on hand-crafted structured queries. In this work, we revisit spatio-temporal scenario mining through the lens of recent vision-language models (VLMs) to detect whether a described scenario occurs in a driving log and, if so, precisely localize it in both time and space. To address this problem, we introduce RefAV, a large-scale dataset of 10,000 diverse natural language queries that describe complex multi-agent interactions relevant to motion planning derived from 1000 driving logs in the Argoverse 2 Sensor dataset. We evaluate several ",
+   "url": "https://arxiv.org/abs/2505.20981",
+   "path": "TanitAD Research Lab/Library/papers/2505.20981_RefAV-Towards-Planning-Centric-Scenario-Mining.pdf",
+   "bytes": 17101747,
+   "sha256": "0def1da2538cdb761fa2d7ac82e53d95ad507d86f120d632ec9c85d665b7a34a",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28"
+   ],
+   "note": "RefAV 2025: natural-language scenario mining over HD-map-localised logs; off-the-shelf VLMs perform poorly (abstract p1); needs maps.",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2506.19121": {
+   "key": "2506.19121",
+   "kind": "arxiv",
+   "title": "CUPID: Curating Data your Robot Loves with Influence Functions",
+   "authors": [
+    "Christopher Agia",
+    "Rohan Sinha",
+    "Jingyun Yang",
+    "Rika Antonova",
+    "Marco Pavone",
+    "Haruki Nishimura",
+    "Masha Itkina",
+    "Jeannette Bohg"
+   ],
+   "published": "2025-06-23",
+   "abstract": "In robot imitation learning, policy performance is tightly coupled with the quality and composition of the demonstration data. Yet, developing a precise understanding of how individual demonstrations contribute to downstream outcomes - such as closed-loop task success or failure - remains a persistent challenge. We propose CUPID, a robot data curation method based on a novel influence function-theoretic formulation for imitation learning policies. Given a set of evaluation rollouts, CUPID estimates the influence of each training demonstration on the policy's expected return. This enables ranking and selection of demonstrations according to their impact on the policy's closed-loop performance. We use CUPID to curate data by 1) filtering out training demonstrations that harm policy performance and 2) subselecting newly collected trajectories that will most improve the policy. Extensive sim",
+   "url": "https://arxiv.org/abs/2506.19121",
+   "path": "TanitAD Research Lab/Library/papers/2506.19121_CUPID-Curating-Data-your-Robot-Loves-with-Influence-Function.pdf",
+   "bytes": 12350326,
+   "sha256": "ecc67dcdf296c39f14162e30dc29e8d490df4319236dddb2a93c30dd28c86b3c",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28"
+   ],
+   "note": "CUPID 2025: influence functions (TRAK projections) on closed-loop outcomes; <33% curated data matches SOTA on Transport MH (abstract p1, p7).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2603.15185": {
+   "key": "2603.15185",
+   "kind": "arxiv",
+   "title": "What Matters for Scalable and Robust Learning in End-to-End Driving Planners?",
+   "authors": [
+    "David Holtz",
+    "Niklas Hanselmann",
+    "Simon Doll",
+    "Marius Cordts",
+    "Bernt Schiele"
+   ],
+   "published": "2026-03-16",
+   "abstract": "End-to-end autonomous driving has gained significant attention for its potential to learn robust behavior in interactive scenarios and scale with data. Popular architectures often build on separate modules for perception and planning connected through latent representations, such as bird's eye view feature grids, to maintain end-to-end differentiability. This paradigm emerged mostly on open-loop datasets, with evaluation focusing not only on driving performance, but also intermediate perception tasks. Unfortunately, architectural advances that excel in open-loop often fail to translate to scalable learning of robust closed-loop driving. In this paper, we systematically re-examine the impact of common architectural patterns on closed-loop performance: (1) high-resolution perceptual representations, (2) disentangled trajectory representations, and (3) generative planning. Crucially, our an",
+   "url": "https://arxiv.org/abs/2603.15185",
+   "path": "TanitAD Research Lab/Library/papers/2603.15185_What-Matters-for-Scalable-and-Robust-Learning-in-End-to-End.pdf",
+   "bytes": 12338736,
+   "sha256": "69a58ef3fc1fbc592f48c6ba6f0f1a5a54807976c31dd1bdf8f227f2fa438657",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-scaling",
+    "data-stages-2026-10-28"
+   ],
+   "note": "BevAD 2026: closed-loop point-estimator planners decelerate after ~8,000 training scenes, diffusion planners stay linear to 16,000 (p6, Fig 4).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "2609.20756": {
+   "key": "2609.20756",
+   "kind": "arxiv",
+   "title": "OPTED: On-Policy Fine-Tuning for End-to-End Driving using a Render-Free Teacher",
+   "authors": [
+    "Damiano Da Col",
+    "Maximilian Igl",
+    "Peter Karkus",
+    "Kashyap Chitta",
+    "Boris Ivanovic",
+    "Marco Pavone",
+    "Konrad Schindler",
+    "Christos Sakaridis"
+   ],
+   "published": "2026-09-17",
+   "abstract": "As scaling pre-training data alone yields diminishing returns, post-training is becoming increasingly important across physical AI domains such as autonomous driving. End-to-end driving policies are pre-trained in open loop with behavior cloning on human demonstrations. However, compounding errors during closed-loop deployment can take the vehicle outside the training data distribution, increasing the risk of safety-critical incidents. Closed-loop post-training can mitigate this risk but requires costly simulation for sensor-based policies. We propose OPTED (on-policy fine-tuning for end-to-end driving) which decouples reinforcement learning from the post-training of the end-to-end policy: a privileged teacher is trained using RL on vectorized inputs (HD-map and bounding boxes). This teacher then provides supervision to the pre-trained student during closed-loop post-training. We apply O",
+   "url": "https://arxiv.org/abs/2609.20756",
+   "path": "TanitAD Research Lab/Library/papers/2609.20756_OPTED-On-Policy-Fine-Tuning-for-End-to-End-Driving-using-a-R.pdf",
+   "bytes": 3028747,
+   "sha256": "0e1f937041bb7d707b809b9f570302fcfc4f38e894003f412dea89f683764648",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-stages-2026-10-28",
+    "training-stages"
+   ],
+   "note": "OPTED 2026-09: on-policy supervision from an RL-trained privileged teacher (HD-map + boxes): LTFv6 26.5 to 41.8, VaVAM 3.9 to 37.1 scene score; BC at logged states 12.8 / 25.2 (Table I p4, text p6).",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
+   ]
+  },
+  "prakash2020-darb": {
+   "key": "prakash2020-darb",
+   "kind": "local",
+   "doc_type": "paper",
+   "title": "Exploring Data Aggregation in Policy Learning for Vision-based Urban Autonomous Driving",
+   "authors": [],
+   "published": "",
+   "abstract": "",
+   "url": "https://www.cvlibs.net/publications/Prakash2020CVPR.pdf",
+   "path": "TanitAD Research Lab/Library/papers/prakash2020-darb_Exploring-Data-Aggregation-in-Policy-Learning-for-Vision-bas.pdf",
+   "bytes": 485265,
+   "sha256": "75cb75a2d61a0f5998f67ca907dd2fe63d568d6ffd34a5dbdb5674eb996de22e",
+   "banked": "2026-10-28",
+   "tags": [
+    "data-selection",
+    "data-stages-2026-10-28",
+    "training-stages"
+   ],
+   "note": "DARB (Prakash CVPR 2020): critical-state sampling + replay buffer in DAgger: +16% success; prediction uncertainty does not correlate with critical states (abstract, p8). Not on arXiv; cvlibs.net copy.",
+   "cited_by": [
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/HYPOTHESES.md",
+    "TanitAD Research Lab/Data Engineering/Research/2026-10-28-data-stages-lit/REVIEW.md"
    ]
   }
  }
