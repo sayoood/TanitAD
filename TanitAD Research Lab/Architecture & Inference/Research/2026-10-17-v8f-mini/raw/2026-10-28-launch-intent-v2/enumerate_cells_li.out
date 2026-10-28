@@ -1,0 +1,71 @@
+cells enumerated: 524,288 (controls 1 bit x 5 guards x 2 seeds x R-CRAWL / R-MOVE / R-KEEP / R-NOBASE x 2 seeds)
+cells per outcome row (each cell matches exactly one row):
+  REFUSED                   262,144
+  HARMS                     261,888
+  FIXED / ADOPTED                 1
+  FIXED / NOT ADOPTED            15
+  PARTIAL / ADOPTED               3
+  PARTIAL / NOT ADOPTED          45
+  PARTIAL / ONE SEED            128
+  NO EFFECT                      64
+per-row counts equal DAG-ORC's registered counts: True
+guarded cells (controls pass, every guard held): 256 = 16 (R-CRAWL, R-MOVE) x 16 (R-KEEP, R-NOBASE)
+projection of the guarded cells on (R-CRAWL s0, s1, R-MOVE s0, s1), adoption ignored: {'FIXED': 1, 'PARTIAL': 11, 'NO EFFECT': 4}
+PREREG_V8F_DAGGER2 Amendment 1 on the same 16 cells:                                  {'FIXED': 1, 'PARTIAL': 11, 'NO EFFECT': 4}
+cells that differ from DAGGER2 A1: []
+adopting rows reachable only with R-MOVE at both seeds: checked on every cell
+dose cascade: 128 (A row, B trained, B row) combinations, all with a next; final reader:
+  A FIXED / ADOPTED            16
+  A FIXED / NOT ADOPTED         8
+  A HARMS                       8
+  A NO EFFECT                  16
+  A PARTIAL / ADOPTED          16
+  A PARTIAL / NOT ADOPTED       8
+  A PARTIAL / ONE SEED         16
+  A REFUSED                    16
+  B FIXED / ADOPTED             3
+  B FIXED / NOT ADOPTED         3
+  B HARMS                       3
+  B NO EFFECT                   3
+  B PARTIAL / ADOPTED           3
+  B PARTIAL / NOT ADOPTED       3
+  B PARTIAL / ONE SEED          3
+  B REFUSED                     3
+NEXT-LAUNCH (M-LAUNCH moved at both seeds x the row that sent the programme here):
+  mlaunch_moved=True  from HARMS_B              -> LOOP-STATE
+  mlaunch_moved=True  from PARTIAL / ONE SEED   -> LOOP-STATE
+  mlaunch_moved=True  from NO EFFECT            -> LOOP-STATE
+  mlaunch_moved=True  from PARTIAL / ADOPTED    -> LOOP-STATE
+  mlaunch_moved=False from HARMS_B              -> LAUNCH-INTENT-HI
+  mlaunch_moved=False from PARTIAL / ONE SEED   -> LAUNCH-INTENT-HI
+  mlaunch_moved=False from NO EFFECT            -> LAUNCH-INTENT-HI
+  mlaunch_moved=False from PARTIAL / ADOPTED    -> LAUNCH-INTENT-HI
+launch routing (base is DAG-OACC x another lever adopted in front):
+  base_is_dagoacc=True  other_adopted=True  -> HOLD
+  base_is_dagoacc=True  other_adopted=False -> LAUNCH as written
+  base_is_dagoacc=False other_adopted=True  -> HOLD
+  base_is_dagoacc=False other_adopted=False -> HOLD
+dose at the measured f = 0.161851: W_A = 1.58926 (share 1/3), W_B = 0.726175 (share 1/4), W_HI = 4.17852 (share 1/2); share at W_A 0.333333, at W_B 0.250000; the UNWEIGHTED share is f = 0.161851
+committed next, arm A:
+  REFUSED                  fix the failing control and re-read; no outcome row is reported
+  HARMS                    A is not adopted; read B (the lower dose) under this same table (train B first, with its own PI go)
+  FIXED / ADOPTED          adopt A as the base; Read A re-run on A (DOMINANT there is the dominance claim)
+  FIXED / NOT ADOPTED      the lever is attributed but A cannot replace DAG-OACC: B (the lower dose) under this table, with its own PI go
+  PARTIAL / ADOPTED        adopt A as the base; the crawl rows that still fail R-CRAWL go to NEXT-LAUNCH on A's states
+  PARTIAL / NOT ADOPTED    the lever is attributed but A cannot replace DAG-OACC: B (the lower dose) under this table, with its own PI go
+  PARTIAL / ONE SEED       not adopted and never called an effect; NEXT-LAUNCH on DAG-OACC states
+  NO EFFECT                the along-track weight on launch samples is not the crawl's lever at this dose; NEXT-LAUNCH on DAG-OACC states
+committed next, arm B (read only after A: HARMS or NOT ADOPTED):
+  REFUSED                  fix the failing control and re-read; no outcome row is reported
+  HARMS                    B is not adopted; the launch weight cannot be dosed under the guards (A and B both HARMS); NEXT-LAUNCH on DAG-OACC states
+  FIXED / ADOPTED          adopt B as the base; Read A re-run on B (DOMINANT there is the dominance claim)
+  FIXED / NOT ADOPTED      the lever is attributed but B cannot replace DAG-OACC either (A and B both fail adoption); NEXT-LAUNCH on DAG-OACC states
+  PARTIAL / ADOPTED        adopt B as the base; the crawl rows that still fail R-CRAWL go to NEXT-LAUNCH on B's states
+  PARTIAL / NOT ADOPTED    the lever is attributed but B cannot replace DAG-OACC either (A and B both fail adoption); NEXT-LAUNCH on DAG-OACC states
+  PARTIAL / ONE SEED       not adopted and never called an effect; NEXT-LAUNCH on DAG-OACC states
+  NO EFFECT                the along-track weight on launch samples is not the crawl's lever at this dose; NEXT-LAUNCH on DAG-OACC states
+v2 bar: 2 * max(F, RF0); crawl bars {'yaw-rate MAE': 1.107, 'curvature MAE': 0.0526, 'L2 curvature MAE (GT>=5.2)': 0.0136, 'M1 crawl share': 0.0096} each below the CTRL - P10 gap at both seeds; the v1 bars {'yaw-rate MAE': 31.7106, 'curvature MAE': 0.2648, 'L2 curvature MAE (GT>=5.2)': 0.174, 'M1 crawl share': 0.0776} sit above it at >= 1 seed
+simulated realised shares (ESTIMATED, trainer seeds 0 / 1 / 10 / 11): {'A': [0.3315, 0.3307, 0.3256, 0.3281], 'B': [0.2484, 0.2478, 0.2435, 0.2456], 'HI': [0.4979, 0.4971, 0.4912, 0.4941]}
+per-seed composition: a seed's predicate is the AND of its main-pair and replicate-pair values (all four combinations checked, both per-seed values reachable); 200,000 seeded random pair-level assignments (9 predicates x 2 seeds x 2 pairs, controls on or off) each matched exactly one of the 8 rows, and all 8 rows were reached; a miss in either pair is a miss at the seed (three hand-made cases)
+pair-level random draw, rows reached: {'NO EFFECT': 15454, 'FIXED / NOT ADOPTED': 16847, 'PARTIAL / ONE SEED': 55309, 'HARMS': 59913, 'PARTIAL / NOT ADOPTED': 24098, 'REFUSED': 20048, 'PARTIAL / ADOPTED': 5008, 'FIXED / ADOPTED': 3323}
+FAILS: none

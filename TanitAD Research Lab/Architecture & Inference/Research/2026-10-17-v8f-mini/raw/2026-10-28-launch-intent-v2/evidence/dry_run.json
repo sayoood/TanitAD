@@ -1,0 +1,410 @@
+{
+ "DRY_RUN": true,
+ "note": "the banked dag-orc dumps stand in for the pairs; no LAUNCH-INTENT run exists or is read",
+ "standin_map": {
+  "A": "DAG-ORC A",
+  "Arep": "DAG-ORC A (plumbing stand-in)",
+  "CTRL": "DAG-OACC",
+  "REP": "REP (DAG-ORC r2)"
+ },
+ "banked_tables_vs_reader": {
+  "A_CTRL:s0": {
+   "n_rows": 19,
+   "n_differences": 0,
+   "max_abs_delta_lo_hi": 0.0,
+   "differences": []
+  },
+  "A_CTRL:s1": {
+   "n_rows": 19,
+   "n_differences": 0,
+   "max_abs_delta_lo_hi": 0.0,
+   "differences": []
+  },
+  "A_P10:s0": {
+   "n_rows": 19,
+   "n_differences": 0,
+   "max_abs_delta_lo_hi": 0.0,
+   "differences": []
+  },
+  "A_P10:s1": {
+   "n_rows": 19,
+   "n_differences": 0,
+   "max_abs_delta_lo_hi": 0.0,
+   "differences": []
+  },
+  "CTRL_P10:s0": {
+   "n_rows": 19,
+   "n_differences": 0,
+   "max_abs_delta_lo_hi": 0.0,
+   "differences": []
+  },
+  "CTRL_P10:s1": {
+   "n_rows": 19,
+   "n_differences": 0,
+   "max_abs_delta_lo_hi": 0.0,
+   "differences": []
+  },
+  "REP_CTRL:s0": {
+   "n_rows": 19,
+   "n_differences": 0,
+   "max_abs_delta_lo_hi": 0.0,
+   "differences": []
+  },
+  "REP_CTRL:s1": {
+   "n_rows": 19,
+   "n_differences": 0,
+   "max_abs_delta_lo_hi": 0.0,
+   "differences": []
+  }
+ },
+ "RF": {
+  "reader_equals_RF_REP_json": true,
+  "reader_equals_DAGORC_READ_floors_RF": true
+ },
+ "main_pair_composition_with_DAG_ORC_bars_vs_banked_per_seed_predicates": {
+  "s0": {
+   "flags": true,
+   "guards": true,
+   "R-CRAWL_rows": true,
+   "R-MOVE_rows": true,
+   "domain": true,
+   "R-NEW_fires": true,
+   "R-NOBASE_violations": true,
+   "T0_point": true,
+   "KEEP_point": true
+  },
+  "s1": {
+   "flags": true,
+   "guards": true,
+   "R-CRAWL_rows": true,
+   "R-MOVE_rows": true,
+   "domain": true,
+   "R-NEW_fires": true,
+   "R-NOBASE_violations": true,
+   "T0_point": true,
+   "KEEP_point": true
+  }
+ },
+ "standin_outcome_v2_bars": {
+  "NOTE": "NOT A LAUNCH-INTENT RESULT: DAG-ORC's A on stand-in pairs",
+  "OUTCOME": "HARMS",
+  "flags": {
+   "controls_pass": true,
+   "guards_held_per_seed": {
+    "s0": {
+     "R-TLAT": true,
+     "R-TLON": true,
+     "R-ADE": false,
+     "R-T0": false,
+     "R-NEW": true
+    },
+    "s1": {
+     "R-TLAT": true,
+     "R-TLON": false,
+     "R-ADE": true,
+     "R-T0": false,
+     "R-NEW": true
+    }
+   },
+   "R-CRAWL": {
+    "s0": false,
+    "s1": false
+   },
+   "R-MOVE": {
+    "s0": false,
+    "s1": true
+   },
+   "R-KEEP": {
+    "s0": false,
+    "s1": true
+   },
+   "R-NOBASE": {
+    "s0": true,
+    "s1": true
+   }
+  },
+  "crawl_bars_v2": {
+   "yaw-rate MAE": 1.107,
+   "curvature MAE": 0.0526,
+   "L2 curvature MAE (GT>=5.2)": 0.0136,
+   "M1 crawl share": 0.0096
+  }
+ },
+ "DAG_OACC_minus_P10_vs_DAGOACC_READ": {
+  "s0": {
+   "n_rows": 19,
+   "max_abs_delta_lo_hi": 0.0,
+   "separated_flags_equal": true
+  },
+  "s1": {
+   "n_rows": 19,
+   "max_abs_delta_lo_hi": 0.0,
+   "separated_flags_equal": true
+  }
+ },
+ "slow_draw_method_vs_rep_s0_speedcells_json": {
+  "n_cells_compared": 20,
+  "n_differences": 0,
+  "differences": [],
+  "labels": {
+   "REP_s0": "SLOW-T",
+   "A_s0": null,
+   "REP_s1": null,
+   "A_s1": null
+  }
+ },
+ "K_ZERO": {
+  "K-ZERO:REP-REP": true,
+  "K-ZERO:RF-of-REP-as-CTRL": true,
+  "K-ZERO:A-A:s0": true,
+  "K-ZERO:A-A:s1": true,
+  "K-ZERO:Arep-Arep:s0": true,
+  "K-ZERO:Arep-Arep:s1": true,
+  "K-ZERO:CTRL-CTRL:s0": true,
+  "K-ZERO:CTRL-CTRL:s1": true,
+  "K-ZERO:REP-REP:s0": true,
+  "K-ZERO:REP-REP:s1": true
+ },
+ "K_REP_LICENCE": {
+  "K-REP-LICENCE:s0": {
+   "PASS": true,
+   "detail": {
+    "swap_ratio": 0.10134607274461951,
+    "init": "601cb43526731786",
+    "bank": "197a68bb540be5a7",
+    "commits": [
+     "aeb54468",
+     "8c24823f"
+    ]
+   }
+  },
+  "K-REP-LICENCE:s1": {
+   "PASS": true,
+   "detail": {
+    "swap_ratio": 0.09989907815685557,
+    "init": "6104fb15dc21d524",
+    "bank": "36c7aea964dafe94",
+    "commits": [
+     "aeb54468",
+     "8c24823f"
+    ]
+   }
+  }
+ },
+ "controls_PASS": {
+  "PIN:DAGORC_READ.json": true,
+  "PIN:RF_REP.json": true,
+  "PIN:DAGOACC_READ.json": true,
+  "PIN:rep_s0_speedcells.json": true,
+  "STATIC": true,
+  "K-P0": true,
+  "K-INIT:A_s0": true,
+  "K-PAIR:A_s0": true,
+  "K-INIT:Arep_s0": true,
+  "K-PAIR:Arep_s0": true,
+  "K-INIT:CTRL_s0": true,
+  "K-REGISTERED:CTRL_s0": true,
+  "K-SHARE:CTRL_s0": true,
+  "K-INIT:REP_s0": true,
+  "K-REGISTERED:REP_s0": true,
+  "K-SHARE:REP_s0": true,
+  "K-PAIR:REP_s0": true,
+  "K-INIT:A_s1": true,
+  "K-PAIR:A_s1": true,
+  "K-INIT:Arep_s1": true,
+  "K-PAIR:Arep_s1": true,
+  "K-INIT:CTRL_s1": true,
+  "K-REGISTERED:CTRL_s1": true,
+  "K-SHARE:CTRL_s1": true,
+  "K-INIT:REP_s1": true,
+  "K-REGISTERED:REP_s1": true,
+  "K-SHARE:REP_s1": true,
+  "K-PAIR:REP_s1": true,
+  "K-REP-LICENCE:s0": true,
+  "K-REP-LICENCE:s1": true,
+  "SUMMARY:A_s0": true,
+  "K-GATE:A_s0": true,
+  "K1:A_s0": true,
+  "K2:A_s0": true,
+  "K3:A_s0": true,
+  "K5:A_s0": true,
+  "K6:A_s0": true,
+  "K7:A_s0": true,
+  "GRID:A_s0": true,
+  "T1-CONFIG:A_s0": true,
+  "K2-logged:A_s0": true,
+  "K3-logged:A_s0": true,
+  "GRID-logged:A_s0": true,
+  "T1-CONFIG-logged:A_s0": true,
+  "K4:A_s0": true,
+  "T0F-CKPT:A_s0": true,
+  "T0-CKPT:A_s0": true,
+  "DUMP-WINDOWS:A_s0": true,
+  "GRID-COUNTS:A_s0": true,
+  "R2-ADE6:A_s0": true,
+  "SUMMARY:A_s1": true,
+  "K-GATE:A_s1": true,
+  "K1:A_s1": true,
+  "K2:A_s1": true,
+  "K3:A_s1": true,
+  "K5:A_s1": true,
+  "K6:A_s1": true,
+  "K7:A_s1": true,
+  "GRID:A_s1": true,
+  "T1-CONFIG:A_s1": true,
+  "K2-logged:A_s1": true,
+  "K3-logged:A_s1": true,
+  "GRID-logged:A_s1": true,
+  "T1-CONFIG-logged:A_s1": true,
+  "K4:A_s1": true,
+  "T0F-CKPT:A_s1": true,
+  "T0-CKPT:A_s1": true,
+  "DUMP-WINDOWS:A_s1": true,
+  "GRID-COUNTS:A_s1": true,
+  "R2-ADE6:A_s1": true,
+  "SUMMARY:Arep_s0": true,
+  "K-GATE:Arep_s0": true,
+  "K1:Arep_s0": true,
+  "K2:Arep_s0": true,
+  "K3:Arep_s0": true,
+  "K5:Arep_s0": true,
+  "K6:Arep_s0": true,
+  "K7:Arep_s0": true,
+  "GRID:Arep_s0": true,
+  "T1-CONFIG:Arep_s0": true,
+  "K2-logged:Arep_s0": true,
+  "K3-logged:Arep_s0": true,
+  "GRID-logged:Arep_s0": true,
+  "T1-CONFIG-logged:Arep_s0": true,
+  "K4:Arep_s0": true,
+  "T0F-CKPT:Arep_s0": true,
+  "T0-CKPT:Arep_s0": true,
+  "DUMP-WINDOWS:Arep_s0": true,
+  "GRID-COUNTS:Arep_s0": true,
+  "R2-ADE6:Arep_s0": true,
+  "SUMMARY:Arep_s1": true,
+  "K-GATE:Arep_s1": true,
+  "K1:Arep_s1": true,
+  "K2:Arep_s1": true,
+  "K3:Arep_s1": true,
+  "K5:Arep_s1": true,
+  "K6:Arep_s1": true,
+  "K7:Arep_s1": true,
+  "GRID:Arep_s1": true,
+  "T1-CONFIG:Arep_s1": true,
+  "K2-logged:Arep_s1": true,
+  "K3-logged:Arep_s1": true,
+  "GRID-logged:Arep_s1": true,
+  "T1-CONFIG-logged:Arep_s1": true,
+  "K4:Arep_s1": true,
+  "T0F-CKPT:Arep_s1": true,
+  "T0-CKPT:Arep_s1": true,
+  "DUMP-WINDOWS:Arep_s1": true,
+  "GRID-COUNTS:Arep_s1": true,
+  "R2-ADE6:Arep_s1": true,
+  "SUMMARY:CTRL_s0": true,
+  "K-GATE:CTRL_s0": true,
+  "K1:CTRL_s0": true,
+  "K2:CTRL_s0": true,
+  "K3:CTRL_s0": true,
+  "K5:CTRL_s0": true,
+  "K6:CTRL_s0": true,
+  "K7:CTRL_s0": true,
+  "GRID:CTRL_s0": true,
+  "T1-CONFIG:CTRL_s0": true,
+  "T0-CKPT:CTRL_s0": true,
+  "DUMP-WINDOWS:CTRL_s0": true,
+  "GRID-COUNTS:CTRL_s0": true,
+  "R2-ADE6:CTRL_s0": true,
+  "SUMMARY:CTRL_s1": true,
+  "K-GATE:CTRL_s1": true,
+  "K1:CTRL_s1": true,
+  "K2:CTRL_s1": true,
+  "K3:CTRL_s1": true,
+  "K5:CTRL_s1": true,
+  "K6:CTRL_s1": true,
+  "K7:CTRL_s1": true,
+  "GRID:CTRL_s1": true,
+  "T1-CONFIG:CTRL_s1": true,
+  "T0-CKPT:CTRL_s1": true,
+  "DUMP-WINDOWS:CTRL_s1": true,
+  "GRID-COUNTS:CTRL_s1": true,
+  "R2-ADE6:CTRL_s1": true,
+  "SUMMARY:REP_s0": true,
+  "K-GATE:REP_s0": true,
+  "K1:REP_s0": true,
+  "K2:REP_s0": true,
+  "K3:REP_s0": true,
+  "K5:REP_s0": true,
+  "K6:REP_s0": true,
+  "K7:REP_s0": true,
+  "GRID:REP_s0": true,
+  "T1-CONFIG:REP_s0": true,
+  "T0-CKPT:REP_s0": true,
+  "DUMP-WINDOWS:REP_s0": true,
+  "GRID-COUNTS:REP_s0": true,
+  "R2-ADE6:REP_s0": true,
+  "SUMMARY:REP_s1": true,
+  "K-GATE:REP_s1": true,
+  "K1:REP_s1": true,
+  "K2:REP_s1": true,
+  "K3:REP_s1": true,
+  "K5:REP_s1": true,
+  "K6:REP_s1": true,
+  "K7:REP_s1": true,
+  "GRID:REP_s1": true,
+  "T1-CONFIG:REP_s1": true,
+  "T0-CKPT:REP_s1": true,
+  "DUMP-WINDOWS:REP_s1": true,
+  "GRID-COUNTS:REP_s1": true,
+  "R2-ADE6:REP_s1": true,
+  "C4-WINDOWS:A-vs-CTRL:s0": true,
+  "C3-FLOOR:A-vs-CTRL:s0": true,
+  "C4-WINDOWS:Arep-vs-CTRL:s0": true,
+  "C3-FLOOR:Arep-vs-CTRL:s0": true,
+  "C4-WINDOWS:REP-vs-CTRL:s0": true,
+  "C3-FLOOR:REP-vs-CTRL:s0": true,
+  "C4-WINDOWS:A-vs-CTRL:s1": true,
+  "C3-FLOOR:A-vs-CTRL:s1": true,
+  "C4-WINDOWS:Arep-vs-CTRL:s1": true,
+  "C3-FLOOR:Arep-vs-CTRL:s1": true,
+  "C4-WINDOWS:REP-vs-CTRL:s1": true,
+  "C3-FLOOR:REP-vs-CTRL:s1": true,
+  "K-ZERO:REP-REP": true,
+  "K-ZERO:RF-of-REP-as-CTRL": true,
+  "K-ZERO:A-A:s0": true,
+  "K-ZERO:A-A:s1": true,
+  "K-ZERO:Arep-Arep:s0": true,
+  "K-ZERO:Arep-Arep:s1": true,
+  "K-ZERO:CTRL-CTRL:s0": true,
+  "K-ZERO:CTRL-CTRL:s1": true,
+  "K-ZERO:REP-REP:s0": true,
+  "K-ZERO:REP-REP:s1": true,
+  "ADE-LINK:A-CTRL:s0": true,
+  "T0-WINDOWS:A-CTRL:s0": true,
+  "ADE-LINK:A-CTRL:s1": true,
+  "T0-WINDOWS:A-CTRL:s1": true,
+  "ADE-LINK:Arep-REP:s0": true,
+  "T0-WINDOWS:Arep-REP:s0": true,
+  "ADE-LINK:Arep-REP:s1": true,
+  "T0-WINDOWS:Arep-REP:s1": true,
+  "K1-LI-ROWS": true,
+  "K-RC:DAG-ORC-tables": true,
+  "K-RC:RF": true,
+  "K-RC:v1-bars": true,
+  "K-RC:composition": true,
+  "K-RC:DAGOACC_READ": true,
+  "K-RC:slow-draw-method": true,
+  "SLOW-DRAW:REP_s0-alone": true
+ },
+ "n_controls": 204,
+ "failed_controls": {},
+ "wall_s": 516.4,
+ "reader_sha256": "5e950dcff2993653dffbe9b4f01ea17eb4d7b1721b7c41a669e0dc43c559fc35",
+ "pins": {
+  "DAGORC_READ.json": "70a7a3a46e520311ade0cf2e1c71203010a25185ef5eb82b9d34b988b9548112",
+  "RF_REP.json": "64c9444d486939be8dbbf61ef67028c35aa56b13c5d4bdbbc71d6e17e6fc497a",
+  "DAGOACC_READ.json": "9e6bd4f6940fb3e868d4d8aede50cf47c082a3833f014c34bb87ff201c99a894",
+  "rep_s0_speedcells.json": "9788df70043ca3e5a4bdf902dd7eb16205348c28dd38b4533f310d643e95188f"
+ }
+}
