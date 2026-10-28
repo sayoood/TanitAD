@@ -493,3 +493,23 @@ Written 2026-10-28 ~02:30 by the Master Mind.
 *Two seeded generators with the same formula and the same seed are one generator.* Two levers can be independent in a specification and
 still be coupled in a build. The test that exposes this has to reproduce the registered argv's seeds together with overlapping
 eligibility; a fixture with either one alone passes.
+
+## Amendment 3 (A3-2026-10-28): the PI's routing decision after the read. No criterion, row, bar, floor or outcome changes
+
+Written 2026-10-28 by the Master Mind, after `RESULT_V8F_DAG_ORC.md` (landed `ea5e3d3b`) read **HARMS** for arm A. It records a routing
+decision that the table assigns to the PI. A1 section 4 says B is trained only with its own PI go.
+
+* **The decision.** Asked whether box 2 should run the redesigned LAUNCH-INTENT next and skip B, the PI answered, verbatim, *"Yes, queue it"*
+  (2026-10-28). B (p = 0.1) is therefore **not trained and not read**.
+* **What follows from the table.** The HARMS row's committed next for B was *"not adopted; the perturbation cannot be dosed under the
+  guards, and NEXT-CRAWL follows"*. Without B, the route goes straight to **NEXT-CRAWL**, which on DAG-OACC's states is **LAUNCH-INTENT**
+  (A1 section 3; N0 read NOT NAVMOVE; COMPOSE is not met). LAUNCH-INTENT runs under its own PREREG, `PREREG_V8F_LAUNCH_INTENT`. Before
+  any LAUNCH-INTENT data, that PREREG changed its bar and arms (four same-seed pairs; bar 2 × max(F, RF0)). Its own text says why: DAG-ORC's
+  replicate-floor bar exceeds the whole crawl gap to P10 on every crawl row.
+* **What this amendment does not do.**
+  * A's outcome stays **HARMS**, read under the table as written.
+  * No DAG-ORC bar, floor (RF0, RF), row, guard or control is re-read.
+  * The arithmetic beside the read (B would have had to exceed A's crawl effect 3.0–11.4×; `RESULT_V8F_DAG_ORC.md` section 6) informed the
+    recommendation to the PI. It decides nothing here.
+* **Disclosed.** This amendment is written after the read. It changes only which registered branch is taken next, under the PI's decision,
+  and the evidence that branch will produce belongs to LAUNCH-INTENT's PREREG, not to this one.
