@@ -1,0 +1,433 @@
+#!/usr/bin/env bash
+# ============================================================================================================================================================================================================
+# r2 -- THE RE-RUN of PREREG_V8F_DAG_ORC Amendment 1 (DAG-OACC base), ALL FOUR RUNS FROM THEIR GATES (2026-10-28). The r1 chain (chain_v8f_dagoaccorc.sh) passed its four gates, trained and evaluated A s0 (M2b_s0_dagoaccorc), pulled it,
+#   and STOPPED on K-REACH: ego 19161/76898 = 0.2492, must lie in 0.3 +- 0.02 (swap 14688/145037 = 0.1013 in range, overlap 0). The swap and the perturbation shared ONE RNG stream; the trainer fix gives the perturbation a domain-separated stream
+#   on the composed path. REP s0, A s1 and REP s1 never ran. This chain is r1 with ONLY these differences (everything else -- the K-REACH bands, the registered argv, the one-lever rule, the guard, the pulls, the tokens -- is r1's, line for line):
+#   1. r2_aside_all (oaf_dagoaccorc_r2_lib.sh) is the FIRST action after BOX2_BUSY is taken and the boot probe answered, before anything else touches box 2 or E:: every r1 artifact is RENAMED to <name>_r1_kreach_stop (never deleted, never
+#      overwritten) -- the dev box's $ART, then (one cmd job) box 2's run dirs, gate dirs + logs, pinned argv (+ .new / .chk) and T0 eval files of ALL FOUR runs (all four gates re-run at the new commit; the queue SKIPS a stage whose summary.json /
+#      eval npz exists). A relaunch of r2 keeps r2's own progress (an aside marker on each side).
+#   2. AFTER_OUT = the r1 chain's log, and the predecessor check is r2's: GO ONLY when that log ENDED in exactly "ZZV8FMINI-STOP reached-control fail M2b_s0_dagoaccorc" (v8f_dagoaccorc_r2_chain_checks.py pred-verdict-r2); a DONE, any other STOP,
+#      a ZZGUARD-STOP or a disk-floor stop HALTs. (oaf_lib.sh's own wait_predecessor, which GOes after ANY predecessor STOP, is overridden by the r2 lib.)
+#   3. STREAM_PATTERN (below): the lever grep ALSO requires the landed fix's stream separation. While it is the placeholder, --check-tree and a real run REFUSE.
+#   4. STREAM_RECORD (below): the run-record check ALSO requires the separated stream recorded on A and absent on REP (NONE = the fix records no field). While it is the placeholder, a real run REFUSES.
+#   5. its own names, so r1's evidence is never overwritten: chain_v8f_dagoaccorc_r2.out, v8fdagoaccorc_r2_guard.out, v8fdagoaccorc_r2_current.txt, logs/v8f_dagoaccorc_r2/, repo_v8fdagoaccorc_r2_tip.tar, TIP_V8FDAGOACCORC_R2.txt; the r2 lib and r2
+#      checks (v8f_dagoaccorc_r2_chain_checks.py) are sha256-pinned like the r1 helpers. The dev-box pull dir stays $ART (the reader and the T1-kin rollouts look there); r1's is $ART_r1_kreach_stop.
+# ============================================================================================================================================================================================================
+# PREREG_V8F_DAG_ORC, RE-BASED ON DAG-OACC by Amendment 1 (A1-2026-10-27): O-RECOVER's launch-recovery perturbation composed with DAG-OACC's DAgger swap. ONE lever on DAG-OACC's banked argv; its control is the banked DAG-OACC run (reused, NOT retrained).
+#   A   (dagoaccorc)    = DAG-OACC_s's training argv VERBATIM (init M2b_s<S>, 3,000 steps, --dagger-p 0.1 on the iteration-1 bank, --w-acc W) + --ego-perturb-p 0.3 and ORC's five law flags (vscale 0.5 1.0, vmax 8.0, adrop 1.5, yawrate-std 2.0, seed = S)
+#                         + --ego-perturb-with-dagger (the swap is drawn first, the perturbation only on samples the swap did not replace), own --out
+#   REP (dagoaccorcrep) = DAG-OACC_s's argv with --seed 10 (init M2b_s0) / 11 (init M2b_s1), own --out: the replicate floor RF
+#   B (p 0.1) is NOT queued (Amendment 1 section 4): it is trained only on A's HARMS, with its own PI go.
+# This file is GENERATED from chain_v8f_dagoaccorc.sh.in by make_chain.py (every pinned sha256 / value is COPIED from a banked artifact, never retyped). BUILT, NOT LAUNCHED: it runs only on the PI's go.
+# One chain, in Amendment 1's order, ONE job at a time on box 2 (mk_v8f_job.py, SAFE MODE):
+#   1. (r2) FIRST wait for the predecessor (AFTER_OUT, REQUIRED, no default: the r1 DAG-ORC chain's log, chain_v8f_dagoaccorc.out): GO ONLY after it ENDED in exactly ZZV8FMINI-STOP reached-control fail M2b_s0_dagoaccorc (pred-verdict-r2) with its BOX2_BUSY
+#      released; HALT on a DONE, any other STOP, a ZZGUARD-STOP or a BOX2_BUSY that stays held. Then the FIRST action is r2_aside_all (every r1 artifact renamed aside on both sides). Take BOX2_BUSY atomically, refresh box 2's code from the REMOTE tip with a SMALL export (repo_v8fdagoaccorc_r2_tip.tar, <= 300 MB asserted) and REFUSE a tip without the queue stages / the perturbation levers / the
+#      composition flag (--ego-perturb-with-dagger: until the trainer carries it a real launch stops here BY DESIGN), sha-check the key files, md5-check the v9 releases, record the K-BUILD diff (trainer / data / model / dagger blobs
+#      against aeb54468), assert box 2's M2b_s<S> checkpoint (K-INIT), the iteration-1 bank.json and w_acc.txt are the banked ones, and DAG-OACC's argv.json / summary.json on the dev box
+#   2. the four gates of A and REP first (`gatedag ARM S`, the trainer's own in-process gate), each pulled and asserted HERE (gate_dagoaccorc_r2_assert.py: G-DVB, the built perturbation stream, the swap AND the perturbation reach the loss with every control exactly 0.0, the
+#      acc term, init = M2b_s<S>, the composition flag built, the ONE-LEVER rule against DAG-OACC's banked argv), then the LAUNCH-GATE TOKEN (never by hand); then, in the order A s0, REP s0, A s1, REP s1: `traindag` (3,000 steps) -> `evaldag`
+#      (the standard T0 eval) -> pull to $ART/<run>/ (every pull behind the 1 GiB floor on E:) -> the run record is asserted (K-GATE / K-INIT) -> K-REACH is PRINTED and ENFORCED (A: swap 0.1 +- 0.02, ego 0.3 +- 0.02 on the non-swapped
+#      eligible, overlap exactly 0; REP: swap 0.1 +- 0.02, ego exactly 0, flag absent: the gate does not cover the loop's draw)
+#   NOT HERE: the T1-kin rollouts and the reader: dev-box CPU.
+#   chain_v8f_dagoaccorc_r2.sh --dry-run                PRINTS every stage line and the checks, touches nothing
+#   chain_v8f_dagoaccorc_r2.sh --check-tree ROOT     OFFLINE: the tip-carries-the-lever greps applied to a directory (REFUSES a tree without add_argument("--ego-perturb-with-dagger") or without STREAM_PATTERN, and while STREAM_PATTERN is the placeholder)
+#   chain_v8f_dagoaccorc_r2.sh --wait-only           OFFLINE: only the r2 predecessor wait (AFTER_OUT = the r1 log, BOX2_BUSY.txt in $B): prints ZZOAF-WAIT-GO or the STOP marker
+#   AFTER_OUT=<the r1 log> chain_v8f_dagoaccorc_r2.sh   the real run
+# Markers in ITS OWN log (chain_v8f_dagoaccorc_r2.out): ZZV8FMINI-DONE / ZZV8FMINI-STOP (v8f_guard_dagoaccorc.sh's anchored end test knows them), ZZDAGOACCORC-CONTROL-FAIL, ZZDISK-FLOOR-STOP. Script polling, not model turns.
+# TIMEOUTS (polls of 30 s): gate 120, train 1,320 (11 h, one above the guard's 10 h cap), eval 600.
+PK="TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini"
+R=D:/tanitad/runs/v8f_mini_full
+CH=dagoaccorc
+OACC_CKPT_SHA=(67265ec1666fae3a6d51e924ee06dfb68b2cd0630afc62e42f3a46182b8bc45f 90b01474819082a6d32a9000d63a4954e0074916140abdbbcb67b353f7ac3333)      # DAG-OACC_s0 / _s1 ckpt_last.pt (v8f-dagoacc/M2b_s<S>_dagoacc/SHA256SUMS.txt): the CTRL of every contrast (printed, not re-hashed: 87 MB, banked on the dev box)
+OACC_ARGV_SHA=(c0942f79cee91f255ee6e3975fbe88695eab9ae157d2b85ab31ed599b06942c0 c7dc8740c4e7be230d123b876b5d718517bd2bd2ec736504ddaeb46dff067f77)      # DAG-OACC_s0 / _s1 argv.json: the ONE-LEVER reference
+OACC_SUMM_SHA=(5e4a760729251c7698f2c0a703d83a739545b05604a11e6563b223833e585050 85e32d570c1461e14128ccf36b17c5fa7a5db407a23f9ddb4ffadeed6b70d614)      # DAG-OACC_s0 / _s1 summary.json: the gate comparator "B" (same data, weights, parameter groups, w_acc)
+M2B_SHA=(601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8 6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6)      # M2b_s0 / M2b_s1 ckpt_last.pt: DAG-OACC's launch-gate token init_ckpt_sha256 (K-INIT: the init of DAG-OACC, A and REP)
+BANK1_SHA=(197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f 36c7aea964dafe9423253aa479c2fc6cdfc93848395b593315cba812f5f04d4d)      # the ITERATION-1 bank.json sha256 of seed 0 / 1: DAG-OACC's argv.json --dagger-bank-sha256 (K-PAIR: A and REP use DAG-OACC's bank)
+WACC=49.6969      # DAG-OACC's w_acc (v8f-dagoacc/wacc/w_acc.txt; DAG-OACC's argv.json names the same token)
+WACC_TXT_SHA=43a04741101853c1ace317915261850caa2afffb6c40a5ea1f945cbd47d8f9b1      # sha256 of that w_acc.txt: box 2's %RUNSM%\dagoacc\w_acc.txt (the file the queue's :dagoaccwacc reads) must hash to it
+ASSERT_SHA=0ceb0c60e3da3fdb13014b1cecdaa01968e6472de67cff4e3a1344d9e0783c6e      # gate_dagoaccorc_r2_assert.py as reviewed (r1's asserter + ego_stream_problems: levers.ego_perturb_stream EXACTLY 1 on A / 0 on REP; gen/build_r2_asserter.py): a changed asserter is a changed chain
+DCHECKS_SHA=22f2eccd8f581d8f5ee593c82ec7a1d43b974be08d6b62d45a1ab795e9ebe171      # v8f_dagoaccorc_r2_chain_checks.py as reviewed (r1's file + pred-verdict-r2 + the stream-record clause; gen/build_r2_checks.py)
+R2LIB_SHA=a6da712c88089ead511513ec3cfc43672a3db33db3de45b0d9290892abc1822e      # oaf_dagoaccorc_r2_lib.sh as reviewed (r2_aside_all / wait_predecessor override; gen/build_r2_lib.py): a changed lib is a changed chain
+OAF_LIB_SHA=026e8927608b7bd4a6818be9a4e849aa7d63d22b6a171445b52c10ec1c9ad29e      # the INSTALLED oaf_lib.sh this chain sources (proven by FLAT-DAG, DAG-OACC and DAG-ORC's chains): a changed lib is a changed chain
+OAF_CHECKS_SHA=d1e48176cd2fea05dc1ab0b7678370da514a0de58a1ab55d37fd14d72a20a84f      # the INSTALLED v8f_oaf_chain_checks.py (disk-check / pred-verdict / argv-sha / argv-same)
+BUILD_REF=aeb544683b1c6b70e29f241fe7133d4290a1b4a5      # aeb54468: the commit DAG-OACC trained at (K-BUILD's reference; DAG-OACC's launch-gate token binding.commit)
+BUILD_FILES=(stack/scripts/v8f_mini_train.py stack/tanitad/data/v8f_mini_data.py stack/tanitad/models/v8f_mini.py stack/tanitad/data/v8f_dagger.py)
+RUNS=("dagoaccorc 0" "dagoaccorcrep 0" "dagoaccorc 1" "dagoaccorcrep 1")      # Amendment 1 section 1: A s0, REP s0, A s1, REP s1 (a stopped chain still leaves complete seed pairs first); ARM SEED. B is not queued.
+PY=C:/Users/Admin/venvs/tanitad/Scripts/python.exe
+ART=${DAGOACCORC_ART:-/e/Projects/TanitAD-artifacts/v8f-dag-orc-oacc}
+OACC_DIR=${DAGOACCORC_OACC_DIR:-/e/Projects/TanitAD-artifacts/v8f-dagoacc}      # DAG-OACC's banked run: argv.json (the ONE-LEVER reference), summary.json (the comparator), wacc/w_acc.txt; read-only, no eval_* file is ever opened
+DAG1_DIR=${DAGOACCORC_DAG1_DIR:-/e/Projects/TanitAD-artifacts/v8f-dagger}      # the iteration-1 bank's pulled copy (bank_s<S>/bank.json: the K-B3 reference); read-only here
+B=${OAF_SHIP_DIR:-/c/Users/Admin/box2_ship}; L=$B/logs; E=$L/v8f_dagoaccorc_r2
+HERE_SHIP=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)      # the helper scripts sit beside this file (box2_ship when installed)
+CHECKS=$HERE_SHIP/v8f_oaf_chain_checks.py; DCHECKS=$HERE_SHIP/v8f_dagoaccorc_r2_chain_checks.py; ASSERT=$HERE_SHIP/gate_dagoaccorc_r2_assert.py; R2LIB=$HERE_SHIP/oaf_dagoaccorc_r2_lib.sh
+DAG_STEPS=3000
+GUARD_OUT=$L/v8fdagoaccorc_r2_guard.out
+FLOOR_BYTES=1073741824      # a pull must leave >= 1 GiB free on E:
+NEED_BYTES=${DAGOACCORC_NEED_BYTES:-805306368}      # four runs x (checkpoint 87 MB + evals 3 MB + the rest) ESTIMATED ~0.4 GB: refuse at the start if E: could not take them above the floor
+BUSY_TAKEN=0
+rn() { echo "M2b_s${2}_${1}"; }       # rn <arm> <seed>: the run's directory under $R (M2b_s0_dagoaccorc, ...; REP is indexed by the INIT seed)
+rt() { echo "M2b-${1}_s${2}"; }       # rt <arm> <seed>: the run's eval tag
+rg() { echo "gate_M2b-${1}_s${2}"; }  # rg <arm> <seed>: the run's gate directory under $R
+# ################################################################################################################################################################################################################
+# r2: THE TWO VARIABLES THE MASTER MIND SETS FROM THE LANDED TRAINER FIX (nothing else pins them; `python make_chain_r2.py --stream-pattern ... --stream-record ...` rewrites exactly these two lines, or edit them here).
+#   STREAM_PATTERN = "<file>|<grep -E pattern>", exactly like a LEVER record below: a line that only the trainer WITH the domain-separated perturbation stream contains (--check-tree and the real run's lever grep require it).
+#   STREAM_RECORD  = NONE | <dotted.path> | <dotted.path>=<A json> | <dotted.path>=<A json>;<REP json>: where the fix records the stream in the run's summary.json AND selfcheck.json. NONE = the fix records no field (then K-REACH's perturbed share is the only evidence).
+#   SET 2026-10-28 by the Master Mind from the staged trainer fix (dagland/compose_fix/stage): v8f_mini_data.py:595 `EGO_PERTURB_COMPOSED_STREAM = 1` (absent from e7ea20d1, the r1 tip); the trainer records levers.ego_perturb_stream (v8f_mini_train.py:1739):
+#   EXACTLY the int 1 on A, EXACTLY the int 0 on REP (absent fails; the gate asserter and the run-record check both enforce it).
+#   While either still contains "<<UNSET", --check-tree (STREAM_PATTERN) and a real run (both) REFUSE before anything is waited for or shipped.
+STREAM_PATTERN='stack/tanitad/data/v8f_mini_data.py|^EGO_PERTURB_COMPOSED_STREAM = 1[[:space:]]*$'
+STREAM_RECORD='levers.ego_perturb_stream=1;0'
+# ################################################################################################################################################################################################################
+# the lever-in-the-tip checks: "<file>|<grep -E pattern>". `.` = a backslash in the queue patterns.
+LEVER=(
+  'stack/scripts/v8f_mini_train.py|add_argument\("--ego-perturb-with-dagger"'
+  'stack/scripts/v8f_mini_train.py|"ego_perturb_with_dagger"'
+  'stack/scripts/v8f_mini_train.py|"ego_dagger_overlap_n"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--ego-perturb-p"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--ego-perturb-vscale"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--ego-perturb-vmax"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--ego-perturb-adrop"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--ego-perturb-yawrate-std"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--ego-perturb-seed"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--w-acc"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--dagger-p"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--dagger-bank"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--dagger-bank-sha256"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--dagger-seed"'
+  'stack/scripts/v8f_mini_train.py|add_argument\("--init-ckpt"'
+  'stack/scripts/v8f_mini_train.py|"ego_perturb_p": "ego:ego_perturb_p"'
+  'stack/scripts/v8f_mini_train.py|"ego_perturb_seed": "ego:ego_perturb_seed"'
+  'stack/scripts/v8f_mini_train.py|"w_acc": "cfg:w_acc"'
+  'stack/scripts/v8f_mini_train.py|"dagger_p": "dagger:dagger_p"'
+  'stack/scripts/v8f_mini_train.py|"dagger_bank_sha256": "dagger:dagger_bank_sha256"'
+  'stack/scripts/v8f_mini_train.py|"init_ckpt": "data:init_ckpt"'
+  'stack/scripts/v8f_mini_train.py|^def ego_perturb_probe'
+  'stack/scripts/v8f_mini_train.py|^def acc_probe'
+  'stack/scripts/v8f_mini_train.py|egop = ego_perturb_probe\(model, probe, cfg, ego\)'
+  'stack/scripts/v8f_mini_train.py|^ +b = ego\.apply\(b, step'      # no closing paren: the composed path may pass the swap's mask on this call
+  'stack/scripts/v8f_mini_train.py|^ +b = dag\.apply\(b, step'
+  'stack/scripts/v8f_mini_train.py|"ego_perturb_n": ego_tot\["n"\]'
+  'stack/scripts/v8f_mini_train.py|"dagger_n": dag_tot\["n"\]'
+  'stack/tanitad/models/v8f_mini.py|T\["acc"\] = accel_term'
+  'stack/tanitad/models/v8f_mini.py|total = total \+ cfg\.w_acc \* T\["acc"\] if cfg\.w_acc > 0\.0 else total'
+  'stack/tanitad/data/v8f_mini_data.py|^class EgoPerturb'
+  'stack/tanitad/data/v8f_mini_data.py|^    def apply\(self, batch'
+  'stack/tanitad/data/v8f_dagger.py|^class DaggerSwap'
+  # the DAG-OACC-ORC queue insertions (the queue file on the tip; `.` = a backslash)
+  "$PK/code/v8f_mini_box2_queue.cmd|^:dagoaccorcarm"
+  "$PK/code/v8f_mini_box2_queue.cmd|goto :dagoaccorcarm"
+  "$PK/code/v8f_mini_box2_queue.cmd|DAGS=dagoaccorc\""
+  "$PK/code/v8f_mini_box2_queue.cmd|DAGS=dagoaccorcrep\""
+  "$PK/code/v8f_mini_box2_queue.cmd|call :dagoaccarm %~1 %~2 0\.1"
+  "$PK/code/v8f_mini_box2_queue.cmd|--ego-perturb-with-dagger\""
+  "$PK/code/v8f_mini_box2_queue.cmd|--ego-perturb-seed %~2\""
+  "$PK/code/v8f_mini_box2_queue.cmd|DAGSEED=1%~2"
+  "$PK/code/v8f_mini_box2_queue.cmd|--ego-perturb-p %DAGORCP%%DAGORCL% --dagger-p %DAGP% --dagger-bank"
+)
+STAGES=(gatedag traindag evaldag dagname dagarm dagoaccarm dagoaccwacc dagoaccorcarm)
+stream_pattern_problem() {   # rc 0 = STREAM_PATTERN cannot be used (prints why)
+  case $STREAM_PATTERN in
+    *'<<'*|'') echo "STREAM_PATTERN is still the placeholder: the Master Mind sets it from the landed trainer fix (a '<file>|<grep -E pattern>' record)"; return 0 ;;
+    *'|'*) return 1 ;;
+    *) echo "STREAM_PATTERN is not a '<file>|<grep -E pattern>' record: $STREAM_PATTERN"; return 0 ;;
+  esac
+}
+stream_record_problem() {   # rc 0 = STREAM_RECORD cannot be used (prints why)
+  case $STREAM_RECORD in
+    *'<<'*|'') echo "STREAM_RECORD is still the placeholder: the Master Mind sets it from the landed trainer fix (NONE | <dotted.path> | <dotted.path>=<json>)"; return 0 ;;
+    *) return 1 ;;
+  esac
+}
+stream_vars_check() {   # the real run's early refusal: nothing is waited for, taken or shipped while either variable is unset
+  local w
+  w=$(stream_pattern_problem) && { echo "ZZV8FMINI-STOP $w"; return 1; }
+  w=$(stream_record_problem) && { echo "ZZV8FMINI-STOP $w"; return 1; }
+  return 0
+}
+lever_check() {   # lever_check <git tip | tree ROOT>: 0 iff every LEVER pattern AND the r2 STREAM_PATTERN is in its file
+  local mode=$1 ref=$2 rec f pat miss=0
+  local w; w=$(stream_pattern_problem) && { echo "MISSING $w"; miss=$((miss+1)); }
+  for rec in "${LEVER[@]}" "$STREAM_PATTERN"; do
+    case $rec in *'<<'*|'') continue ;; esac      # the placeholder is reported above
+    f=${rec%%|*}; pat=${rec#*|}
+    if [ "$mode" = tree ]; then grep -qE -- "$pat" "$ref/$f" 2>/dev/null; else git -C $MIRROR show "$ref:$f" 2>/dev/null | grep -qE -- "$pat"; fi \
+      || { echo "MISSING in $f: $pat"; miss=$((miss+1)); }
+  done
+  [ $miss = 0 ]
+}
+lib_check() {   # the sourced files and the two reviewed helpers are the proven ones
+  [ "$(sha256sum "$HERE_SHIP/oaf_lib.sh" | cut -c1-64)" = "$OAF_LIB_SHA" ] || { echo "ZZV8FMINI-STOP $HERE_SHIP/oaf_lib.sh is not the proven file ($OAF_LIB_SHA): nothing was touched"; return 1; }
+  [ "$(sha256sum "$CHECKS" | cut -c1-64)" = "$OAF_CHECKS_SHA" ] || { echo "ZZV8FMINI-STOP $CHECKS is not the proven file ($OAF_CHECKS_SHA): nothing was touched"; return 1; }
+  [ "$(sha256sum "$ASSERT" 2>/dev/null | cut -c1-64)" = "$ASSERT_SHA" ] || { echo "ZZV8FMINI-STOP $ASSERT is not the reviewed asserter ($ASSERT_SHA): nothing was touched"; return 1; }
+  [ "$(sha256sum "$DCHECKS" 2>/dev/null | cut -c1-64)" = "$DCHECKS_SHA" ] || { echo "ZZV8FMINI-STOP $DCHECKS is not the reviewed checks file ($DCHECKS_SHA): nothing was touched"; return 1; }
+  [ "$(sha256sum "$R2LIB" 2>/dev/null | cut -c1-64)" = "$R2LIB_SHA" ] || { echo "ZZV8FMINI-STOP $R2LIB is not the reviewed r2 lib ($R2LIB_SHA): nothing was touched"; return 1; }
+}
+if [ "${1:-}" = "--check-tree" ]; then
+  [ -d "${2:-}" ] || { echo "usage: --check-tree ROOT"; exit 2; }
+  MIRROR=none; if lever_check tree "$2"; then echo "lever check: every one of $((${#LEVER[@]}+1)) patterns (the ${#LEVER[@]} lever greps + STREAM_PATTERN) is in $2"; exit 0; fi; echo "lever check: FAILED"; exit 1
+fi
+lib_check || exit 1
+source "$HERE_SHIP/oaf_lib.sh"
+source "$R2LIB"      # r2: r2_aside_all / r2_aside_job_text / r2_aside_local and the OVERRIDING wait_predecessor (a NEW file: oaf_lib.sh and oaf_r2_lib.sh are not touched)
+plan() {   # plan <queue file> <arm> <seed> <bank sha> <w_acc>: GL / TL / EL = the lines the queue prints for the run's gate / train / eval stages. rc 1 if a stage prints no trainer / eval line
+  GL=$(dry_stage "$1" "$4" "$5" gatedag $2 $3 | grep -a 'v8f_mini_train.py'); TL=$(dry_stage "$1" "$4" "$5" traindag $2 $3 | grep -a 'v8f_mini_train.py')
+  EL=$(dry_stage "$1" "" "" evaldag $2 $3 | grep -a 'v8f_mini_eval.py')
+  [ -n "$GL" ] && [ -n "$TL" ] && [ -n "$EL" ]
+}
+if [ "${1:-}" = "--wait-only" ]; then
+  AFTER_OUT=${AFTER_OUT:-}; [ -n "$AFTER_OUT" ] || { echo "ZZV8FMINI-STOP AFTER_OUT is not set"; exit 1; }
+  wait_predecessor; echo "ZZOAF-WAIT-GO"; exit 0
+fi
+if [ "${1:-}" = "--dry-run" ]; then
+  QF=${V8F_QUEUE:-}
+  if [ -z "$QF" ]; then
+    MIRROR=${MIRROR:-/c/Users/Admin/tanitad-push}; BR=${BR:-agent/arch-inf-20260803}
+    T=$(git -C $MIRROR ls-remote origin $BR | cut -f1); QF=${TMPDIR:-/tmp}/v8fdagoaccorc_queue_dry_$T.cmd
+    git -C $MIRROR show "$T:$PK/code/v8f_mini_box2_queue.cmd" > "$QF" || { echo "ZZV8FMINI-STOP no queue at the tip"; exit 1; }
+  fi
+  echo "== predecessor (r2)"; echo "wait for ${AFTER_OUT:-<UNSET: a real run REFUSES to start without AFTER_OUT>}: GO ONLY after the r1 DAG-ORC chain ENDED in exactly ^ZZV8FMINI-STOP reached-control fail M2b_s0_dagoaccorc (pred-verdict-r2) with BOX2_BUSY released; HALT on a DONE, any other STOP, a ZZGUARD-STOP, a disk-floor stop or a held BOX2_BUSY"
+  echo "== r2 aside (the FIRST action after BOX2_BUSY is taken and the boot probe answered; renames only, never a delete or an overwrite)"
+  echo "dev box: $ART -> ${ART}${R2_SUF} (ASIDE-KEPT if ${ART}${R2_SUF} already exists: the earlier launch moved r1 aside and $ART is r2 progress), then $ART is created empty"
+  echo "box 2 ($(r2_box_items | wc -l) items, runs root D:\\tanitad\\runs\\v8f_mini_full; marker r2_aside_done.txt -> ASIDE-ALREADY-DONE on a relaunch): each -> <item>${R2_SUF}"; r2_box_items | sed 's/^/  /'
+  echo "-- the box-2 job text:"; r2_aside_job_text 'D:\tanitad\runs\v8f_mini_full' | tr -d '\r' | sed 's/^/  | /'
+  echo "== r2 stream separation (a real run REFUSES while either is the placeholder)"
+  echo "STREAM_PATTERN=$STREAM_PATTERN"; echo "STREAM_RECORD=$STREAM_RECORD"
+  w=$(stream_pattern_problem) && echo "!! $w"; w=$(stream_record_problem) && echo "!! $w"
+  echo "== pinned (asserted on box 2 before the gates and after the last run; DAG-OACC's argv / summary asserted on the dev box)"
+  for s in 0 1; do echo "init M2b_s$s $R/M2b_s${s}/ckpt_last.pt ${M2B_SHA[$s]}; iteration-1 bank.json ${BANK1_SHA[$s]}; CTRL = DAG-OACC_s$s (checkpoint ${OACC_CKPT_SHA[$s]}, argv.json ${OACC_ARGV_SHA[$s]}, summary.json ${OACC_SUMM_SHA[$s]})"; done
+  echo "w_acc $WACC (w_acc.txt sha256 $WACC_TXT_SHA, box 2: $R/dagoacc/w_acc.txt); K-BUILD reference $BUILD_REF"
+  echo "== runs (order): ${RUNS[*]}"
+  echo "== launch-gate token (written by the chain, one per run, after the gate's assertions pass; never by hand)"
+  echo '{"kind": "launch-gate-token", "verdict": "PASS", "prereg": "PREREG_V8F_DAG_ORC", "amendment": "A1-2026-10-27 (re-based on DAG-OACC)", "binding": {"commit": "<the remote tip, 40 hex>", "argv_sha256": "<launch_gate.argv_sha256 of THE TRAINING ARGV as pinned by box 2>", "data_sha256": "<the gate selfcheck'"'"'s info.train_sha256>"}, ...}'
+  for run in "${RUNS[@]}"; do
+    set -- $run; arm=$1; s=$2; sh=DAG_DRY_SHA$s; sha=${!sh:-${BANK1_SHA[$s]}}
+    plan "$QF" $arm $s "$sha" "$WACC" || { echo "ZZV8FMINI-STOP the queue prints no gate / train / eval line for $(rn $arm $s)"; exit 1; }
+    echo "== $(rn $arm $s): init $R/M2b_s${s}/ckpt_last.pt (${M2B_SHA[$s]}), tag $(rt $arm $s), gate $(rg $arm $s), bank sha256 $sha, --w-acc $WACC"
+    echo "-- gatedag $arm $s"; echo "$GL"
+    echo "-- traindag $arm $s"; echo "$TL"
+    echo "-- evaldag $arm $s"; echo "$EL"
+    printf '%s' "$TL" > ${TMPDIR:-/tmp}/v8fdagoaccorc_tl_$$.txt; printf '%s' "$GL" > ${TMPDIR:-/tmp}/v8fdagoaccorc_gl_$$.txt
+    echo "-- token argv_sha256 (the training argv): $(argvsha ${TMPDIR:-/tmp}/v8fdagoaccorc_tl_$$.txt)"
+    same=$($PY "$(cygpath -m $CHECKS)" argv-same "$(cygpath -m ${TMPDIR:-/tmp}/v8fdagoaccorc_gl_$$.txt)" "$(cygpath -m ${TMPDIR:-/tmp}/v8fdagoaccorc_tl_$$.txt)"); echo "-- gate argv = training argv with --out and --selfcheck-only changed: $same"
+    ol=$($PY "$(cygpath -m $DCHECKS)" one-lever --ref-argv-json "$(cygpath -m "$OACC_DIR/M2b_s${s}_dagoacc/argv.json")" --line "$(cygpath -m ${TMPDIR:-/tmp}/v8fdagoaccorc_tl_$$.txt)" --arm $arm --seed $s)
+    echo "-- planned line == DAG-OACC's banked argv.json argv + the registered change for $arm (only --out differing): $ol"
+    rm -f ${TMPDIR:-/tmp}/v8fdagoaccorc_tl_$$.txt ${TMPDIR:-/tmp}/v8fdagoaccorc_gl_$$.txt
+    [ "$same" = SAME ] && [ "$ol" = ONE-LEVER ] || { echo "ZZV8FMINI-STOP the planned lines are not the one-lever DAG-ORC (DAG-OACC base) argv ($(rn $arm $s))"; exit 1; }
+  done
+  echo "== not run here: the T1-kin rollouts (dev box CPU) and the reader"
+  exit 0
+fi
+# ======================================================================== the real run
+if [ -z "${AFTER_OUT:-}" ]; then
+  echo "ZZV8FMINI-STOP AFTER_OUT is not set: this chain has no default predecessor log (a default can already be satisfied by an OLD log). Set AFTER_OUT to the log of the chain that holds box 2 now."
+  exit 1
+fi
+stream_vars_check || exit 1      # r2: STREAM_PATTERN / STREAM_RECORD must be set from the landed fix BEFORE anything is waited for, taken or shipped
+[ -d "$(dirname "$ART")" ] || { echo "ZZV8FMINI-STOP $(dirname "$ART") does not exist: the artifacts have nowhere to go"; exit 1; }
+mkdir -p "$ART" || { echo "ZZV8FMINI-STOP cannot create $ART"; exit 1; }
+disk_floor "$ART" "$NEED_BYTES" "the four DAG-ORC (DAG-OACC base) runs"      # a named STOP before anything is waited for or taken
+MIRROR=${OAF_MIRROR:-/c/Users/Admin/tanitad-push}; BR=${OAF_BR:-agent/arch-inf-20260803}
+# EXPORT: what box 2's queue READS from the repo -- DAG-OACC r2's list (the import closure of the entry scripts, the same trainer closure plus the DAgger bank / queue-tool files). Generated by make_chain.py from the INSTALLED chain_v8f_dagoacc_r2.sh, never typed.
+# The tar has a NEW name; no existing tar is overwritten or deleted.
+EXPORT=(
+  'TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-refav1-hj-mini/raw/p10_yaw4512/p10_eval_pred6.npy'
+  'TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-refav1-hj-mini/raw/p10_yaw4512/p10_prior.pt'
+  'TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd'
+  'TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-hblend/fit_clips.json'
+  'TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-26-dagger-draft/probe/THRESHOLDS_FIXED.txt'
+  'TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval141_kin.npz'
+  'TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/eval_grid_windows.json'
+  'TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/join_eval141.npz'
+  'stack/scripts/v8f_dagger_bank.py'
+  'stack/scripts/v8f_dagger_queue_tool.py'
+  'stack/scripts/v8f_mini_eval.py'
+  'stack/scripts/v8f_mini_eval_oacc.py'
+  'stack/scripts/v8f_mini_train.py'
+  'stack/scripts/v8f_t1_eval.py'
+  'stack/tanitad/__init__.py'
+  'stack/tanitad/channel_admissibility.py'
+  'stack/tanitad/config.py'
+  'stack/tanitad/data/__init__.py'
+  'stack/tanitad/data/_contract.py'
+  'stack/tanitad/data/calib.py'
+  'stack/tanitad/data/comma2k19.py'
+  'stack/tanitad/data/metadrive_env.py'
+  'stack/tanitad/data/stats.py'
+  'stack/tanitad/data/toy_driving.py'
+  'stack/tanitad/data/v8f_dagger.py'
+  'stack/tanitad/data/v8f_mini_data.py'
+  'stack/tanitad/data/v9_labels.py'
+  'stack/tanitad/models/__init__.py'
+  'stack/tanitad/models/_validate.py'
+  'stack/tanitad/models/ego_history.py'
+  'stack/tanitad/models/encoder.py'
+  'stack/tanitad/models/fourbrain.py'
+  'stack/tanitad/models/hjepa.py'
+  'stack/tanitad/models/imagination.py'
+  'stack/tanitad/models/inverse_dynamics.py'
+  'stack/tanitad/models/kinematic.py'
+  'stack/tanitad/models/kinematic_prior.py'
+  'stack/tanitad/models/metric_dynamics.py'
+  'stack/tanitad/models/p10_prior.py'
+  'stack/tanitad/models/predictor.py'
+  'stack/tanitad/models/readout.py'
+  'stack/tanitad/models/sigreg.py'
+  'stack/tanitad/models/v8f_beta.py'
+  'stack/tanitad/models/v8f_lora_encoder.py'
+  'stack/tanitad/models/v8f_mini.py'
+  'stack/tanitad/refs/__init__.py'
+  'stack/tanitad/refs/anchor_meta.py'
+  'stack/tanitad/refs/refa.py'
+  'stack/tanitad/refs/refb.py'
+  'stack/tanitad/refs/refc_sampler.py'
+  'stack/tanitad/refs/refc_tactical.py'
+  'stack/tanitad/refs/refcv6_max_speed.py'
+  'stack/tanitad/train/__init__.py'
+  'stack/tanitad/train/config_hygiene.py'
+  'taniteval/taniteval/__init__.py'
+  'taniteval/taniteval/ci.py'
+  'taniteval/taniteval/floors_kin.py'
+  'taniteval/taniteval/four_families.py'
+  'taniteval/taniteval/lead_metrics.py'
+  'taniteval/taniteval/lead_source.py'
+  'taniteval/taniteval/progress.py'
+  'taniteval/taniteval/strategic_optionset.py'
+  'taniteval/taniteval/v0_antiecho.py'
+  'taniteval/taniteval/v8f_beta_eval.py'
+  'taniteval/taniteval/v8f_consistency.py'
+)
+EXPORT_MAX_BYTES=314572800
+SSH="ssh -o BatchMode=yes -o ConnectTimeout=20 tanitad-box2"
+SCP="scp -q -o BatchMode=yes -o ConnectTimeout=20"
+MIN_FREE_GB=8
+GATE_POLLS=120; TRAIN_POLLS=1320; EVAL_POLLS=600
+TAG=$(date '+%m%d%H%M')
+CUR=$L/v8fdagoaccorc_r2_current.txt
+wait_predecessor
+[ -f $B/BOX2_BUSY.txt ] && { echo "ZZV8FMINI-STOP busy marker present: $(cat $B/BOX2_BUSY.txt)"; exit 1; }
+# the marker is taken ATOMICALLY (noclobber): two chains that wait on the same predecessor cannot both pass the test above and both write it
+( set -C; echo "v8F-mini PREREG_V8F_DAG_ORC Amendment 1 r2 (the re-run after the r1 K-REACH stop; re-based on DAG-OACC: A = DAG-OACC's argv + the launch-recovery ego perturbation p 0.3 composed with the swap; replicate; both gates per run, then ${#RUNS[@]} 3,000-step fine-tunes of M2b_s<S> with standard T0 evals) since $(date '+%m-%d %H:%M'). Do NOT launch box 2 jobs while this file exists." > $B/BOX2_BUSY.txt ) 2>/dev/null \
+  || { echo "ZZV8FMINI-STOP busy marker taken while arming: $(cat $B/BOX2_BUSY.txt 2>/dev/null)"; exit 1; }
+BUSY_TAKEN=1
+BOOT0=$(boot); [ -n "$BOOT0" ] || stop "box 2 unreachable"
+echo "$(date '+%m-%d %H:%M') boot0=$BOOT0"
+# ---- r2: the FIRST action on box 2 and on E: after BOX2_BUSY and the boot probe: every r1 artifact is moved ASIDE (renamed, never deleted), the dev box's $ART and box 2's runs / gates / pins / evals (oaf_dagoaccorc_r2_lib.sh)
+r2_aside_all
+disk_floor "$ART" "$NEED_BYTES" "the four DAG-ORC (DAG-OACC base) runs (re-checked after the wait)"
+mkdir -p $E/runs $E/lines      # only now: a chain that refused or stopped while waiting has touched nothing
+# ---- 1. code refresh from the remote tip
+git -C $MIRROR fetch -q origin $BR; T=$(git -C $MIRROR ls-remote origin $BR | cut -f1)
+git -C $MIRROR cat-file -e "$T^{commit}" || stop "remote tip $T is not in the mirror"
+QT=$B/v8fdagoaccorc_queue_$TAG.cmd; git -C $MIRROR show "$T:$PK/code/v8f_mini_box2_queue.cmd" | tr -d '\r' > $QT
+QC=$B/v8fdagoaccorc_queue_$TAG.crlf.cmd; git -C $MIRROR show "$T:$PK/code/v8f_mini_box2_queue.cmd" > $QC      # the committed bytes (CRLF): what cmd.exe can run for the dry-run lines
+for st in "${STAGES[@]}"; do grep -q "^:$st\$\|^if /i \"%~1\"==\"$st\" goto" $QT || stop "the tip's queue has no $st stage"; done
+lever_check git "$T" || stop "the tip does not carry the DAG-ORC queue stages / the perturbation levers / the composition flag --ego-perturb-with-dagger (the greps above): land them first"
+for xf in "${EXPORT[@]}"; do git -C $MIRROR cat-file -e "$T:$xf" || stop "the tip has no $xf (the export list names only files box 2 reads)"; done
+git -C $MIRROR cat-file -e "$T:$PK/raw/eval_grid_windows.json" || stop "the tip has no eval-141 grid"
+# K-BUILD: the launch commit's trainer / data / model / dagger blobs against the commit DAG-OACC was trained at. RECORDED (the judgement -- identical, or every hunk behind a default-off flag with a passing bit-identity test -- is the reader's)
+{ echo "K-BUILD (PREREG_V8F_DAG_ORC Amendment 1): the launch commit $T against $BUILD_REF (the commit DAG-OACC was trained at)"
+  for f in "${BUILD_FILES[@]}"; do
+    a=$(git -C $MIRROR rev-parse "$BUILD_REF:$f"); b=$(git -C $MIRROR rev-parse "$T:$f")
+    echo "$f $BUILD_REF=$a tip=$b $([ "$a" = "$b" ] && echo IDENTICAL || echo CHANGED)"
+    [ "$a" = "$b" ] || git -C $MIRROR -c core.autocrlf=false diff "$BUILD_REF" "$T" -- "$f"
+  done; } > "$ART/K-BUILD.txt" 2>&1
+echo "$(date '+%m-%d %H:%M') K-BUILD recorded: $(grep -ac ' IDENTICAL$' "$ART/K-BUILD.txt") of ${#BUILD_FILES[@]} files identical to $BUILD_REF ($ART/K-BUILD.txt)"
+git -C $MIRROR -c core.autocrlf=false archive --format=tar -o $B/repo_v8fdagoaccorc_r2_tip.tar $T -- "${EXPORT[@]}" || stop "archive"
+tsz=$(stat -c %s $B/repo_v8fdagoaccorc_r2_tip.tar); [ "$tsz" -gt 0 ] && [ "$tsz" -le $EXPORT_MAX_BYTES ] || stop "the code archive is $tsz bytes (must be 1..$EXPORT_MAX_BYTES)"
+echo "$(date '+%m-%d %H:%M') code archive $B/repo_v8fdagoaccorc_r2_tip.tar: $tsz bytes, ${#EXPORT[@]} paths"
+$SCP $B/repo_v8fdagoaccorc_r2_tip.tar tanitad-box2:D:/tanitad/repo_v8fdagoaccorc_r2_tip.tar || stop "ship the code archive"
+printf '@echo off\r\necho ===== refresh %s %%DATE%% %%TIME%%\r\ntar -xf D:\\tanitad\\repo_v8fdagoaccorc_r2_tip.tar -C D:\\tanitad\\repo\r\nset RC=%%ERRORLEVEL%%\r\necho %s> D:\\tanitad\\repo\\TIP_V8FDAGOACCORC_R2.txt\r\necho ===== ZZJOB-END %%DATE%% %%TIME%% rc=%%RC%%\r\n' "$T" "$T" > $B/v8fdagoaccorc${TAG}_refresh.cmd
+$SCP $B/v8fdagoaccorc${TAG}_refresh.cmd tanitad-box2:D:/tanitad/jobs/ || stop "ship refresh job"
+launch v8fdagoaccorc${TAG}_refresh || stop "launch refresh"
+waitrc v8fdagoaccorc${TAG}_refresh 40
+KEYSHA=""
+for f in stack/scripts/v8f_mini_train.py stack/scripts/v8f_mini_eval.py stack/scripts/v8f_dagger_queue_tool.py stack/tanitad/models/v8f_mini.py stack/tanitad/data/v8f_mini_data.py stack/tanitad/data/v8f_dagger.py \
+         "$PK/code/v8f_mini_box2_queue.cmd" "$PK/raw/eval_grid_windows.json"; do
+  l=$(git -C $MIRROR show "$T:$f" | sha256sum | cut -c1-64)
+  [ "$l" = "$(rsha "D:/tanitad/repo/$f" SHA256)" ] || stop "box 2 $f != tip $T"
+  KEYSHA="$KEYSHA\"$f\": \"$l\", "
+done
+for kv in v9_labels_train.npz=83e30bd3791f0767707eade5f4671759 v9_labels_eval139.npz=6b5c7f207cffc3b7eb3cd527fd433599; do
+  [ "${kv#*=}" = "$(rsha "D:/tanitad/data/v9/${kv%%=*}" MD5)" ] || stop "box 2 v9 ${kv%%=*} md5 != ${kv#*=}"
+done
+echo "$(date '+%m-%d %H:%M') box 2 code = tip $T (${#KEYSHA} chars of key-file sha256; both v9 releases md5-checked)"
+CK=$E/ckpt_sha256.json
+# ---- 2. the base is fixed (Amendment 1 section 1): M2b_s<S> (the init of every arm, K-INIT), the iteration-1 bank (K-PAIR) and w_acc are the banked ones on box 2; DAG-OACC (the control and the one-lever reference) is the banked run on the dev box
+pinned_b() {   # pinned_b <phase>
+  local s g
+  for s in 0 1; do
+    g=$(rsha "$R/M2b_s${s}/ckpt_last.pt" SHA256); [ "$g" = "${M2B_SHA[$s]}" ] || stop "$1: box 2's M2b_s${s} checkpoint sha256 '$g' != the banked M2b's ${M2B_SHA[$s]} (the init of DAG-OACC, A and REP)"
+    g=$(rsha "$R/dagger_bank/s${s}/bank.json" SHA256); [ "$g" = "${BANK1_SHA[$s]}" ] || stop "$1: box 2's iteration-1 bank s${s} bank.json sha256 '$g' != the one DAG-OACC's argv names ${BANK1_SHA[$s]}"
+  done
+  g=$(rsha "$R/dagoacc/w_acc.txt" SHA256); [ "$g" = "$WACC_TXT_SHA" ] || stop "$1: box 2's $R/dagoacc/w_acc.txt sha256 '$g' != the banked w_acc.txt's $WACC_TXT_SHA (the file :dagoaccwacc reads)"
+  echo "$(date '+%m-%d %H:%M') $1: M2b_s0/s1 (the init), the iteration-1 banks and w_acc.txt are the banked ones (sha256 asserted)"
+}
+rm -f $CK
+pinned_b "before the gates"
+for s in 0 1; do      # the dev box's copies: DAG-OACC's argv is the ONE-LEVER reference, its summary the gate comparator "B", the bank.json the K-B3 reference
+  for f in argv.json summary.json; do
+    case $f in argv.json) exp=${OACC_ARGV_SHA[$s]} ;; *) exp=${OACC_SUMM_SHA[$s]} ;; esac
+    [ -f "$OACC_DIR/M2b_s${s}_dagoacc/$f" ] || stop "DAG-OACC's banked $OACC_DIR/M2b_s${s}_dagoacc/$f is missing"
+    g=$(sha256sum "$OACC_DIR/M2b_s${s}_dagoacc/$f" | cut -c1-64); [ "$g" = "$exp" ] || stop "DAG-OACC's banked $OACC_DIR/M2b_s${s}_dagoacc/$f sha256 $g != SHA256SUMS.txt's $exp"
+  done
+  [ "$(sha256sum "$DAG1_DIR/bank_s${s}/bank.json" 2>/dev/null | cut -c1-64)" = "${BANK1_SHA[$s]}" ] || stop "the dev box's iteration-1 bank_s$s/bank.json is not the one DAG-OACC's argv names"
+done
+[ "$(sha256sum "$OACC_DIR/wacc/w_acc.txt" 2>/dev/null | cut -c1-64)" = "$WACC_TXT_SHA" ] || stop "the banked $OACC_DIR/wacc/w_acc.txt is not the pinned file ($WACC_TXT_SHA)"
+fr=$($SSH "powershell -NoProfile -Command \"[int]((Get-PSDrive D).Free / 1GB)\"" 2>/dev/null | tr -d '\r' | grep -E '^[0-9]+$' | head -1)
+[ -n "$fr" ] && [ "$fr" -ge $MIN_FREE_GB ] || stop "box 2's D: has '$fr' GB free (< $MIN_FREE_GB): the checkpoints and the evals need room"
+$SSH "powershell -NoProfile -Command \"if (Test-Path D:/tanitad/logs/telemetry.stop) { Remove-Item D:/tanitad/logs/telemetry.stop }\"" 2>/dev/null
+launch telemetry_long || echo "$(date '+%m-%d %H:%M') telemetry did not launch"
+tl() { $SSH "powershell -NoProfile -Command \"Get-Content D:/tanitad/logs/telemetry_full.csv -Tail 1\"" 2>/dev/null | tr -d '\r'; }
+sleep ${OAF_TELEMETRY_S:-45}; t1=$(tl); sleep ${OAF_TELEMETRY_S2:-35}; t2=$(tl)
+[[ $t2 == 20* && $t2 != "$t1" ]] || stop "no fresh telemetry ($t1 / $t2): the temperature guard would be blind"
+grep -qF "'^(ZZV8FMINI|" $B/v8f_guard_dagoaccorc.sh || stop "v8f_guard_dagoaccorc.sh does not know this chain's markers (anchored): it would never exit"
+echo "" > $CUR
+V8F_CHAIN_OUT=$L/chain_v8f_dagoaccorc_r2.out V8F_CURRENT=$CUR bash $B/v8f_guard_dagoaccorc.sh > $GUARD_OUT 2>&1 &
+gate_one() {   # gate_one <arm> <seed>: the run's in-process launch gate on box 2, pulled and asserted HERE, then its launch-gate token (written by this function, never by hand)
+  local arm=$1 s=$2 g gd SC pin xa
+  g=$(rn $arm $s); gd=$(rg $arm $s); SC="$ART/$g/gate/selfcheck.json"; pin="$ART/$g/gate/pin.txt"
+  plan "$QC" $arm $s "${BANK1_SHA[$s]}" "$WACC" || stop "the tip's queue prints no gate / train / eval line for $g"
+  mkdir -p "$ART/$g/gate" "$E/lines"
+  printf '%s\n' "$GL" > "$E/lines/$g.gate.txt"; printf '%s\n' "$TL" > "$E/lines/$g.train.txt"; printf '%s\n' "$EL" > "$E/lines/$g.eval.txt"
+  GATE_LOG="$R/$gd.log"; queue "gate_$g" $GATE_POLLS gatedag $arm $s; GATE_LOG=
+  pull "$gd/selfcheck.json" "$ART/$g/gate"
+  pull_opt "$gd.log" "$ART/$g/gate"
+  pull "dagpin/M2b_s${s}_${arm}.train.argv.txt" "$ART/$g/gate"; mv -f "$ART/$g/gate/M2b_s${s}_${arm}.train.argv.txt" "$pin"
+  xa=(--selfcheck "$(cygpath -m $SC)" --gate-line "$(cygpath -m $E/lines/$g.gate.txt)" --train-line "$(cygpath -m $E/lines/$g.train.txt)" --pin-line "$(cygpath -m $pin)" --arm $arm --seed $s --banked-init-sha ${M2B_SHA[$s]}
+      --bank-sha ${BANK1_SHA[$s]} --bank-json "$(cygpath -m $DAG1_DIR/bank_s$s/bank.json)" --w-acc $WACC
+      --b-summary "$(cygpath -m $OACC_DIR/M2b_s${s}_dagoacc/summary.json)" --ref-argv-json "$(cygpath -m $OACC_DIR/M2b_s${s}_dagoacc/argv.json)")
+  $PY "$(cygpath -m $ASSERT)" check "${xa[@]}" || stop "gate DAG-ORC (DAG-OACC base) assertions $g"
+  $PY "$(cygpath -m $ASSERT)" token "${xa[@]}" --commit "$T" --queue-sha "$(sha256sum $QT | cut -c1-64)" --key-sha-json "{${KEYSHA%, }}" --run $g --out "$(cygpath -m $ART/$g/launch_gate_token.json)" || stop "write the gate token $g"
+}
+ckptsha_x() {   # ckptsha_x <arm> <seed> <trained|after_evals>
+  local g h h0; g=$(rn $1 $2)
+  h=$(rsha "$R/$g/ckpt_last.pt" SHA256); [ -n "$h" ] || stop "cannot hash box 2's $g checkpoint ($3)"
+  if [ "$3" = after_evals ]; then h0=$(ckget "$(rt $1 $2)_trained"); [ "$h" = "$h0" ] || stop "$g's checkpoint changed during the evals: $h != $h0"; fi
+  ckset "$(rt $1 $2)_$3" "$h"
+  echo "$(date '+%m-%d %H:%M') $g checkpoint sha256 ($3) ${h:0:16}..."
+}
+runone() {   # runone <arm> <seed>: train, standard T0 eval, pull, record and print the checkpoint sha256, assert the run's record and the REACHED control
+  local arm=$1 s=$2 g tg f x l
+  g=$(rn $arm $s); tg=$(rt $arm $s)
+  echo "$g" > $CUR
+  queue "t_$g" $TRAIN_POLLS traindag $arm $s
+  echo "" > $CUR
+  ckptsha_x $arm $s trained
+  queue "e_$g" $EVAL_POLLS evaldag $arm $s
+  ckptsha_x $arm $s after_evals
+  for f in selfcheck.json summary.json argv.json train_log.jsonl train.log ckpt_last.pt; do pull "$g/$f" "$ART/$g"; done
+  for x in json npz log; do pull "eval/eval_$tg.$x" "$ART/$g"; done
+  pull_opt "eval/eval_${tg}_proj.npz" "$ART/$g"
+  l=$(sha256sum "$ART/$g/ckpt_last.pt" | cut -c1-64); [ "$l" = "$(ckget "${tg}_after_evals")" ] || stop "$g: the pulled checkpoint's sha256 $l != the value measured on box 2"
+  ( cd "$ART/$g" && sha256sum ckpt_last.pt "eval_$tg.json" "eval_$tg.npz" selfcheck.json summary.json argv.json train_log.jsonl launch_gate_token.json | tee SHA256SUMS.txt )
+  echo "$(date '+%m-%d %H:%M') $g pulled to $ART/$g (checkpoint sha256 $l)"
+  $PY "$(cygpath -m $DCHECKS)" run-record --run-dir "$(cygpath -m $ART/$g)" --train-line "$(cygpath -m $E/lines/$g.train.txt)" --pin-line "$(cygpath -m $ART/$g/gate/pin.txt)" --arm $arm --seed $s --banked-init-sha ${M2B_SHA[$s]} \
+      --bank-sha ${BANK1_SHA[$s]} --w-acc $WACC --steps $DAG_STEPS --stream-record "$STREAM_RECORD" || stop "run DAG-ORC (DAG-OACC base) record $g"
+  $PY "$(cygpath -m $DCHECKS)" reached --summary "$(cygpath -m $ART/$g/summary.json)" --arm $arm || { echo "ZZDAGOACCORC-CONTROL-FAIL $g: the swap and/or the perturbation did not reach training as registered (K-REACH: the gate does not cover the loop's draw); the reader would REFUSE this run"; stop "reached-control fail $g"; }
+  grep ZZGUARD-STOP $GUARD_OUT 2>/dev/null && stop "guard stop"
+}
+for run in "${RUNS[@]}"; do set -- $run; gate_one $1 $2; done
+for run in "${RUNS[@]}"; do set -- $run; runone $1 $2; done
+pinned_b "after the last run"
+echo "$(date '+%m-%d %H:%M') summary: $(for run in "${RUNS[@]}"; do set -- $run; echo -n "$(rn $1 $2)=$(ckget "$(rt $1 $2)_after_evals" | cut -c1-12) "; done)"
+finish "PREREG_V8F_DAG_ORC Amendment 1 (DAG-OACC base) r2: ${#RUNS[@]} runs (${RUNS[*]}) each through its gate (G-DVB, swap probe, ego probe, acc probe, ONE-LEVER against DAG-OACC's banked argv), trained 3,000 steps from M2b_s<S>, T0-evaluated (standard) and pulled to $ART (sha256 in each SHA256SUMS.txt; K-REACH enforced); B is not queued; the T1-kin rollouts and the reader run on the dev box (NOT here)"

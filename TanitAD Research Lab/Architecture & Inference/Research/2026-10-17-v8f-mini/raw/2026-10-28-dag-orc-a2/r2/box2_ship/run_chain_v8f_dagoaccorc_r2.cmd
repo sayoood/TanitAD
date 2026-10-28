@@ -1,0 +1,3 @@
+@echo off
+rem PREREG_V8F_DAG_ORC (Amendment 1, DAG-OACC base) r2 on box 2: ALL FOUR RUNS FROM THEIR GATES after the r1 chain's K-REACH stop. NOT RUN: needs the PI's go and the landed trainer fix (STREAM_PATTERN / STREAM_RECORD set). AFTER_OUT = the r1 chain's log: the chain GOes ONLY if it ENDED in exactly ZZV8FMINI-STOP reached-control fail M2b_s0_dagoaccorc with BOX2_BUSY released; anything else HALTs.
+"C:\Program Files\Git\bin\bash.exe" -lc "AFTER_OUT=/c/Users/Admin/box2_ship/logs/chain_v8f_dagoaccorc.out bash /c/Users/Admin/box2_ship/chain_v8f_dagoaccorc_r2.sh < /dev/null > /c/Users/Admin/box2_ship/logs/chain_v8f_dagoaccorc_r2.out 2>&1" < NUL

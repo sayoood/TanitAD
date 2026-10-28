@@ -1,0 +1,250 @@
+== A: gate asserter, worlds
+ok   A1 dagoaccorc s0: a gate built from DAG-OACC's REAL gate record (A: + the real ego probe) PASSES every assertion
+ok   A1 dagoaccorc s1: a gate built from DAG-OACC's REAL gate record (A: + the real ego probe) PASSES every assertion
+ok   A1 dagoaccorcrep s0: a gate built from DAG-OACC's REAL gate record (A: + the real ego probe) PASSES every assertion
+ok   A1 dagoaccorcrep s1: a gate built from DAG-OACC's REAL gate record (A: + the real ego probe) PASSES every assertion
+ok   A2 token: written only after the checks pass, bound to the commit, the TRAINING argv sha256, the data sha256
+ok   A3 token records the arm, ego p 0.3, the composition flag, w_acc, the bank sha, dagger_p, the amendment
+ok   A4 token: NOT written when a check fails (declared_vs_built FAIL)
+ok   A5 seeds other than 0 / 1 are refused
+== A-mut: deliberate regressions of the gate (each must be REFUSED, and by the check built for it)
+killed   MA01 dagoaccorc s0: ego probe reads off on A (the apply was deleted)
+killed   MA02 dagoaccorc s0: ego probe pass False
+killed   MA03 dagoaccorc s0: ego probe: the perturbed batch moves no gradient
+killed   MA04 dagoaccorc s0: ego probe: control_p0_grad_diff != 0
+killed   MA05 dagoaccorc s0: ego probe: control_p0_loss_diff != 0
+killed   MA06 dagoaccorc s0: ego probe: control_prior_grad_diff != 0
+killed   MA07 dagoaccorc s0: ego probe: control_repeat_grad_diff != 0
+killed   MA08 dagoaccorc s0: ego probe: p = 0 is not the identity object
+killed   MA09 dagoaccorc s0: ego probe: the WM auxiliary's gradient moved
+killed   MA10 dagoaccorc s0: ego probe: G-LIVE on the perturbed batch failed
+killed   MA11 dagoaccorc s0: ego probe: the frozen prior moved on the perturbed batch
+killed   MA12 dagoaccorc s0: ego probe: no eligible window
+killed   MA13 dagoaccorc s0: ego probe: declared p 0.1
+killed   MA14 dagoaccorc s0: composed probe batch has an overlap
+killed   MA15 dagoaccorc s0: built ego p 0.1
+killed   MA16 dagoaccorc s0: built vscale changed
+killed   MA17 dagoaccorc s1: built ego seed != S
+killed   MA18 dagoaccorc s0: built yaw-rate std 0
+killed   MA19 dagoaccorc s0: composition flag not built on A (False)
+killed   MA20 dagoaccorc s0: composition flag absent from the built levers on A
+killed   MA21 dagoaccorcrep s0: REP builds the composition flag
+killed   MA22 dagoaccorcrep s0: REP built ego p 0.3
+killed   MA23 dagoaccorcrep s1: REP: the ego probe is ON
+killed   MA24 dagoaccorc s1: swap probe fails
+killed   MA25 dagoaccorcrep s0: swap probe: no gradient
+killed   MA26 dagoaccorc s0: swap probe: control_p0_loss_diff != 0
+killed   MA27 dagoaccorc s0: swap probe: p = 0 not the identity
+killed   MA28 dagoaccorcrep s1: swap probe: G-LIVE on the swapped batch failed
+killed   MA29 dagoaccorc s0: swap probe: frame-change error 1e-3
+killed   MA30 dagoaccorc s0: built dagger_p 0.2
+killed   MA31 dagoaccorcrep s0: built bank sha256 differs
+killed   MA32 dagoaccorc s0: K-B2: the bank was made by another checkpoint
+killed   MA33 dagoaccorc s0: COVERAGE blocked
+killed   MA34 dagoaccorc s0: K-B3: overlap with eval-141
+killed   MA35 dagoaccorcrep s1: K-B3: another TRAIN window list
+killed   MA36 dagoaccorc s0: acc_probe missing
+killed   MA37 dagoaccorc s1: acc_probe: read_o_grad_diff 0 on a TRAINED head
+killed   MA38 dagoaccorcrep s0: acc_probe: control_prior_grad_diff != 0
+killed   MA39 dagoaccorc s0: built w_acc 40
+killed   MA40 dagoaccorc s0: declared_vs_built FAIL
+killed   MA41 dagoaccorcrep s1: G-LIVE: the prior moved
+killed   MA42 dagoaccorc s1: G-LIVE: a dead parameter group
+killed   MA43 dagoaccorc s0: K-INIT: init checkpoint is another file
+killed   MA44 dagoaccorcrep s0: K-INIT: init not applied
+killed   MA45 dagoaccorc s0: K-INIT: init path is the other seed's
+killed   MA46 dagoaccorc s0: steps 2000
+killed   MA47 dagoaccorcrep s1: lr schedule 3e-4
+killed   MA48 dagoaccorc s0: p_gt 1.0 -> 0.2
+killed   MA49 dagoaccorc s0: n_clips 4000
+killed   MA50 dagoaccorcrep s0: holdout is another set
+killed   MA51 dagoaccorc s0: TRAIN list differs from DAG-OACC's
+killed   MA52 dagoaccorc s0: w_cons moved (a second lever)
+killed   MA53 dagoaccorc s0: parameter groups differ from DAG-OACC's
+killed   MA54 dagoaccorc s0: window set differs
+killed   MA55 dagoaccorc s0: lru not recorded
+killed   MA56 dagoaccorc s0: o_interface cut
+killed   MA57 dagoaccorc s0: code_mix moved
+killed   MA58 dagoaccorc s0: A line lacks --ego-perturb-with-dagger
+killed   MA59 dagoaccorc s0: A line names the flag twice
+killed   MA60 dagoaccorc s1: A line has the flag BEFORE --w-acc (not the last token)
+killed   MA61 dagoaccorc s0: A line: vscale 0.5 0.9
+killed   MA62 dagoaccorc s1: A line: ego seed != S
+killed   MA63 dagoaccorc s0: A line: p 0.1 (the dose fallback B, not queued)
+killed   MA64 dagoaccorc s0: A line: --dagger-p 0.2
+killed   MA65 dagoaccorc s1: A line: --dagger-p 0 (the swap is off)
+killed   MA66 dagoaccorc s0: A line: another bank sha256
+killed   MA67 dagoaccorc s0: A line: --w-acc 50
+killed   MA68 dagoaccorc s1: A line: --dagger-seed other
+killed   MA69 dagoaccorc s0: A line: a second lever (--hist 10)
+killed   MA70 dagoaccorc s0: A line: steps 6000
+killed   MA71 dagoaccorc s0: A line: init is the other seed's M2b
+killed   MA72 dagoaccorcrep s0: REP line: --seed 0 (not 10)
+killed   MA73 dagoaccorcrep s0: REP line: --seed 11 for s0
+killed   MA74 dagoaccorcrep s0: REP line names the composition flag
+killed   MA75 dagoaccorcrep s1: REP line names a law flag at p 0
+killed   MA76 dagoaccorcrep s0: REP line: --ego-perturb-p 0.3
+killed   MA77 dagoaccorc s0: the pin is not the planned training line
+killed   MA78 dagoaccorcrep s0: the gate line lacks --selfcheck-only
+killed   MA79 dagoaccorc s0: the gate argv differs from the training argv (--batch 32)
+killed   MA80 dagoaccorc s1: the selfcheck's argv_sha is another line's
+== K: run record, K-REACH, one-lever
+ok   K1 dagoaccorc s0: a run record built from DAG-OACC's REAL summary / selfcheck passes
+ok   K1 dagoaccorc s1: a run record built from DAG-OACC's REAL summary / selfcheck passes
+ok   K1 dagoaccorcrep s0: a run record built from DAG-OACC's REAL summary / selfcheck passes
+ok   K1 dagoaccorcrep s1: a run record built from DAG-OACC's REAL summary / selfcheck passes
+killed   MK01 run-record dagoaccorc s0: argv.json is not the planned argv
+killed   MK02 run-record dagoaccorcrep s1: summary argv_sha differs
+killed   MK03 run-record dagoaccorc s0: run not done
+killed   MK04 run-record dagoaccorc s1: steps 2999
+killed   MK05 run-record dagoaccorcrep s0: REP trained with seed 0 (not 10)
+killed   MK06 run-record dagoaccorc s0: run's own selfcheck not a PASS
+killed   MK07 run-record dagoaccorc s0: K-INIT: init checkpoint is another file
+killed   MK08 run-record dagoaccorcrep s1: init not applied
+killed   MK09 run-record dagoaccorc s0: built ego p 0.1 on A
+killed   MK10 run-record dagoaccorc s1: built ego seed wrong
+killed   MK11 run-record dagoaccorc s0: composition flag not built on A
+killed   MK12 run-record dagoaccorcrep s0: composition flag built on REP
+killed   MK13 run-record dagoaccorc s0: built dagger_p 0
+killed   MK14 run-record dagoaccorcrep s0: another bank built
+killed   MK15 run-record dagoaccorc s1: w_acc 0 built
+ok   K2 K-REACH REP passes on DAG-OACC's REAL banked summary (swap 14688/145037 = 0.101, ego_perturb_n exactly 0, flag absent)
+ok   K3 K-REACH A passes: swap 0.1, ego 0.3 of the non-swapped eligible, overlap exactly 0, flag True
+killed   MR01 K-REACH dagoaccorc: A: swap fraction 0.2
+killed   MR02 K-REACH dagoaccorc: A: swap fraction 0 (the swap never ran)
+killed   MR03 K-REACH dagoaccorc: A: ego fraction 0.5
+killed   MR04 K-REACH dagoaccorc: A: ego_perturb_n 0 (the perturbation never ran)
+killed   MR05 K-REACH dagoaccorc: A: ego fraction 0.33 (outside 0.3 +- 0.02)
+killed   MR06 K-REACH dagoaccorc: A: overlap 1 (a sample both swapped and perturbed)
+killed   MR07 K-REACH dagoaccorc: A: overlap absent
+killed   MR08 K-REACH dagoaccorc: A: composition flag False
+killed   MR09 K-REACH dagoaccorc: A: composition flag absent
+killed   MR10 K-REACH dagoaccorc: A: eligible 0
+killed   MR11 K-REACH dagoaccorcrep: REP: ego_perturb_n 5 (a perturbation leaked into the replicate)
+killed   MR12 K-REACH dagoaccorcrep: REP: swap fraction 0.3
+killed   MR13 K-REACH dagoaccorcrep: REP: swap never ran
+killed   MR14 K-REACH dagoaccorcrep: REP: composition flag True
+killed   MR15 K-REACH dagoaccorcrep: REP: ego eligible 0
+ok   K4 one-lever dagoaccorc s0: ONE-LEVER on the registered line
+ok   K4 one-lever dagoaccorc s1: ONE-LEVER on the registered line
+ok   K4 one-lever dagoaccorcrep s0: ONE-LEVER on the registered line
+ok   K4 one-lever dagoaccorcrep s1: ONE-LEVER on the registered line
+killed   MK-OL01 one-lever dagoaccorc s0: A line lacks --ego-perturb-with-dagger
+killed   MK-OL02 one-lever dagoaccorc s0: A line names the flag twice
+killed   MK-OL03 one-lever dagoaccorc s1: A line has the flag BEFORE --w-acc (not the last token)
+killed   MK-OL04 one-lever dagoaccorc s0: A line: vscale 0.5 0.9
+killed   MK-OL05 one-lever dagoaccorc s1: A line: ego seed != S
+killed   MK-OL06 one-lever dagoaccorc s0: A line: p 0.1 (the dose fallback B, not queued)
+killed   MK-OL07 one-lever dagoaccorc s0: A line: --dagger-p 0.2
+killed   MK-OL08 one-lever dagoaccorc s1: A line: --dagger-p 0 (the swap is off)
+killed   MK-OL09 one-lever dagoaccorc s0: A line: another bank sha256
+killed   MK-OL10 one-lever dagoaccorc s0: A line: --w-acc 50
+killed   MK-OL11 one-lever dagoaccorc s1: A line: --dagger-seed other
+killed   MK-OL12 one-lever dagoaccorc s0: A line: a second lever (--hist 10)
+killed   MK-OL13 one-lever dagoaccorc s0: A line: steps 6000
+killed   MK-OL14 one-lever dagoaccorc s0: A line: init is the other seed's M2b
+killed   MK-OL15 one-lever dagoaccorcrep s0: REP line: --seed 0 (not 10)
+killed   MK-OL16 one-lever dagoaccorcrep s0: REP line: --seed 11 for s0
+killed   MK-OL17 one-lever dagoaccorcrep s0: REP line names the composition flag
+killed   MK-OL18 one-lever dagoaccorcrep s1: REP line names a law flag at p 0
+killed   MK-OL19 one-lever dagoaccorcrep s0: REP line: --ego-perturb-p 0.3
+== C2: the r2 chain script (dry-run, check-tree, STREAM_PATTERN, real-run refusals, tampered helpers)
+ok   C2-1 --dry-run (placeholder chain) on the patched queue: rc 0, 4 SAME, 4 ONE-LEVER, the registered order, the r2 predecessor line, 44 aside items, both STREAM placeholders flagged
+ok   C2-2 --dry-run on a chain with STREAM_PATTERN / STREAM_RECORD set: rc 0 and NO placeholder warning
+ok   C2-3 the dry-run touched nothing (no BOX2_BUSY.txt, no logs/, no art/ in the ship dir)
+ok   C2-4 --check-tree with the PLACEHOLDER STREAM_PATTERN (a tree that has everything else): REFUSED, naming STREAM_PATTERN
+ok   C2-5 --check-tree with STREAM_PATTERN set on a tree WITHOUT the stream separation (flag, queue, overlap record all present): REFUSED, naming the missing pattern
+ok   C2-6 --check-tree with STREAM_PATTERN set on a tree WITH it: PASS, one pattern more than r1's chain on the same tree
+ok   C2-7 a STREAM_PATTERN that is not a '<file>|<ERE>' record: REFUSED
+killed   MC-s1 the lever loop forgets STREAM_PATTERN: a tree WITHOUT the stream separation is accepted (the C2-5 refusal is gone)
+killed   MC-s2 stream_pattern_problem always says fine: the PLACEHOLDER chain accepts a tree (the C2-4 refusal is gone)
+killed   MC-s3 a non-record STREAM_PATTERN is accepted as a record (the C2-7 refusal is gone)
+ok   C2-8 a real run with STREAM_PATTERN unset STOPs at once, before any wait, naming it; nothing was taken (no BOX2_BUSY.txt, no logs/, no art/)
+ok   C2-9 a real run with STREAM_PATTERN set but STREAM_RECORD unset STOPs at once, naming STREAM_RECORD
+ok   C2-10 a real run with AFTER_OUT unset STOPs (no default predecessor)
+killed   MC-s4 the early stream_vars_check is removed: the placeholder chain goes on to WAIT for the predecessor (the C2-8 refusal is gone)
+killed   MC-t gate_dagoaccorc_assert.py tampered: the chain STOPs before touching anything (reviewed asserter)
+killed   MC-t v8f_dagoaccorc_r2_chain_checks.py tampered: the chain STOPs before touching anything (reviewed checks)
+killed   MC-t oaf_dagoaccorc_r2_lib.sh tampered: the chain STOPs before touching anything (reviewed r2 lib)
+killed   MC-t oaf_lib.sh tampered: the chain STOPs before touching anything (proven file)
+killed   MC-t v8f_oaf_chain_checks.py tampered: the chain STOPs before touching anything (proven file)
+killed   MC-t oaf_dagoaccorc_r2_lib.sh missing: the chain STOPs (nothing was touched)
+killed   MC-t v8f_dagoaccorc_r2_chain_checks.py missing: the chain STOPs (nothing was touched)
+killed   MC chain mutant: w_acc pinned as 50: the dry run STOPs (not the one-lever argv)
+killed   MC chain mutant: seed-0 bank pinned wrong: the dry run STOPs (not the one-lever argv)
+killed   MC chain mutant: runs in another order: the dry run prints the wrong order (the registered one is absent)
+ok   C2-11 r2_aside_all is called exactly once, AFTER wait_predecessor, BOX2_BUSY and the boot probe and BEFORE the disk re-check, mkdir $E, the fetch, the archive, telemetry, K-BUILD and the queue copy
+killed   MC-o1 r2_aside_all moved to after the code refresh starts (the fetch): the order check refuses
+killed   MC-o2 r2_aside_all moved BEFORE the boot probe: the order check refuses
+killed   MC-o3 r2_aside_all deleted from the chain: the order check refuses
+== X1: the r2 predecessor rule (GO only after the r1 chain's K-REACH stop)
+ok   X1-1 pred_verdict_r2 gives the registered verdict on all 24 logs (GO only for r1's real log)
+     live r1 log sha256 == snapshot: True
+killed   MX1-01 pred_verdict_r2 does not require the log to END in exactly the expected stop (any single stop, text after it): the predecessor table catches it
+killed   MX1-02 pred_verdict_r2 accepts a stop that merely STARTS with the expected text: the predecessor table catches it
+killed   MX1-03 pred_verdict_r2 ignores a DONE: the predecessor table catches it
+killed   MX1-04 pred_verdict_r2 ignores a guard stop: the predecessor table catches it
+killed   MX1-05 pred_verdict_r2 ignores a disk-floor stop: the predecessor table catches it
+killed   MX1-06 pred_verdict_r2 accepts several stop lines: the predecessor table catches it
+killed   MX1-07 pred_verdict_r2 ignores BOX2_BUSY: the predecessor table catches it
+killed   MX1-08 pred_verdict_r2 does not require the CONTROL-FAIL line: the predecessor table catches it
+killed   MX1-09 pred_verdict_r2 does not require the K-REACH FAIL line: the predecessor table catches it
+killed   MX1-10 pred_verdict_r2 expects the stop of seed 1: the predecessor table catches it
+killed   MX1-11 pred_verdict_r2 treats no stop as GO: the predecessor table catches it
+ok   X1-3 --wait-only on r1's real log: GO (ZZOAF-WAIT-GO)
+ok   X1-4 --wait-only on a log that ended in DONE: HALT (STOP, no GO)
+ok   X1-5 --wait-only on a log that ended in ANOTHER stop: HALT (the generic oaf_lib wait would have GONE)
+ok   X1-6 --wait-only on r1's real log while BOX2_BUSY.txt is held: no GO (STOP after the re-checks)
+ok   X1-7 --wait-only with no r1 log / no end marker: keeps WAITING (no GO, killed by the timeout)
+== X2: the stream-record clause of the run-record check
+ok   X2-1 stream_problems gives the registered answer on all 24 rows (A: present / equal to the literal; REP: absent)
+killed   MX2-01 stream_problems A without the field passes: the stream table catches it
+killed   MX2-02 stream_problems the literal is ignored: the stream table catches it
+killed   MX2-03 stream_problems REP carrying the stream passes: the stream table catches it
+killed   MX2-04 stream_problems the placeholder spec passes: the stream table catches it
+killed   MX2-05 stream_problems NONE is not skipped: the stream table catches it
+killed   MX2-06 stream_problems an empty field value counts as a stream: the stream table catches it
+killed   MX2-07 stream_problems 'shared' counts as a separated stream: the stream table catches it
+ok   X2-2 run_record with the stream-record argument: A with the stream passes, A without it FAILS, REP without passes, REP carrying it FAILS, NONE skips
+ok   X2-3 run_record WITHOUT the argument (K section) is r1's: passes on the real records (the clause is skipped, nothing else changed)
+killed   MX2-08 run_record never CALLS the stream clause: the run-record table catches it
+killed   MX2-09 the chain does not pass --stream-record to run-record: the text check refuses
+== X3: r2_aside_all (dev box rename + the box-2 cmd job) on a scratch tree, with the REAL lib text and cmd.exe
+ok   X3-0 the lib lists 44 box-2 items: 4 run dirs, 4 gate dirs + 4 logs, 12 pin files, 20 eval files
+ok   X3-1 the REAL lib: first launch renames EVERY r1 artifact (dev box and box 2) with content preserved and decoys untouched; a relaunch is idempotent and keeps r2's progress; a lost marker + an aside copy is REFUSED without overwriting
+ok   X3-2 the REAL lib: a job that died midway (no marker) is retried: the rest is moved, the moved items are not moved twice
+ok   X3-3 the box-2 job text contains no del / rmdir / move / copy / xcopy / robocopy / Remove-Item / rm (renames and the marker line only)
+ok   X3-4 the :aside subroutine is DAG-OACC r2's (modulo the suffix): build_r2_lib.render() asserts it and reproduces the lib on disk byte for byte
+ok   X3-5 the r2 checks file on disk == build_r2_checks.derive(r1's file) byte for byte
+killed   MX3-01 the aside lib the eval npz are not in the item list (the queue would SKIP the eval and r2 would pull the refused run's): the scratch-tree scenarios catch it
+killed   MX3-02 the aside lib the run directories are not in the item list (the queue would SKIP the training): the scratch-tree scenarios catch it
+killed   MX3-03 the aside lib the pinned argv is not in the item list: the scratch-tree scenarios catch it
+killed   MX3-04 the aside lib the suffix is the OACC one (_r1_assert_stop): the scratch-tree scenarios catch it
+killed   MX3-05 the aside lib the job DELETES instead of renaming: the scratch-tree scenarios catch it
+killed   MX3-06 the aside lib the job no longer refuses when the aside copy exists: the scratch-tree scenarios catch it
+killed   MX3-07 the aside lib the job writes no marker (a relaunch would re-process r2's own files): the scratch-tree scenarios catch it
+killed   MX3-08 the aside lib the dev-box rename is a delete: the scratch-tree scenarios catch it
+killed   MX3-09 the aside lib the dev-box aside ignores an existing aside copy (mv INTO it): the scratch-tree scenarios catch it
+killed   MX3-10 the aside lib $ART is not re-created after the rename: the scratch-tree scenarios catch it
+killed   MX3-11 the r2 wait falls back to oaf_lib's generic pred-verdict (GO after ANY predecessor stop): --wait-only on a log that ended in another stop must HALT (X1-5)
+== X4: what r2 must NOT have changed
+ok   X4-1 K-REACH (reached, _count_pair), one_lever, findk, argv_sha256 are SOURCE-IDENTICAL to r1's checks (the bands 0.1 +- 0.02 / 0.3 +- 0.02 / overlap exactly 0 are unchanged)
+ok   X4-2 run_record is r1's plus exactly the one stream clause
+killed   MX4-1 a loosened K-REACH tolerance (0.05) in the r2 checks: the source-identity check refuses it
+ok   X4-3 the asserter in r2's box2_ship is byte-identical to r1's AND to the installed one
+ok   X4-4 the r2 chain carries r1's pins, RUNS, K-REACH call, LEVER greps, EXPORT, gate_one / runone (+ the one stream argument) / pinned_b / plan / ckptsha_x unchanged
+killed   MX4-2 a chain whose RUNS differ from r1's: the invariant check refuses it
+ok   X4-5 the r2 chain's STREAM_* lines are the ONLY unset-able part: make_chain_r2.py --check regenerates the file on disk byte for byte (STREAM_* read from the file)
+ok   X4-6 the r2 runner .cmd starts the r2 chain with AFTER_OUT = r1's log and logs to the r2 log (CRLF)
+ok   X4-7 the installed guard's anchored end test matches an r2 stop line (and the r2 chain's own 'waiting' echo does not)
+== X5: the r2 waker
+ok   X5-1 the waker wakes on the r2 chain's STOP marker
+ok   X5-2 the waker wakes once on the four gate tokens, with r1's gates-seen marker already present (r2 has its own marker)
+ok   X5-3 the waker wakes on the K-REACH named stop
+ok   X5-4 the waker wakes on a guard stop (exit 4)
+killed   MX5-1 a waker sharing r1's gates-seen marker stays asleep when r1's marker exists
+killed   MX5-2 a waker reading r1's log name never sees the r2 chain's stop
+
+SELFTEST: 55/55 tests pass; MUTATION: 181/181 mutants killed, 0 survivors
+ZZSELFTEST-R2-END PASS
+ZZWRAPPER-END rc=0 

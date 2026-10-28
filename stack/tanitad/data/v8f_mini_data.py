@@ -588,6 +588,11 @@ EGO_PERTURB_KEPT = ("feats", "frame_ok", "limit", "limit_ok", "a_t", "a_s", "pos
 #: ``act`` is the world-model auxiliary's TRANSITION RECORD (the action that produced the real frame-to-frame change): ``forward_infer`` never reads it (``v8f_t1_eval.NO_READ``) and in the
 #: loss it reaches ``T["wm"]`` only. Perturbing it would pair counterfactual actions with real frames and corrupt the IDM term, so it stays true.
 EGO_PERTURB_RECORD = ("act",)
+#: The stream id the COMPOSED stage (``--ego-perturb-with-dagger``) gives the perturbation's generator. 0 = the original stream (``(seed * 1_000_003 + step) % 2**62``): every non-composed path. The DAgger swap
+#: draws its selection from the SAME formula, so at equal seeds the two generators were one generator and the swap's uniform u was ALSO the perturbation's: a sample both levers may take was swapped iff u < p_swap and
+#: perturbed iff p_swap <= u < p_ego, i.e. P(perturbed | not swapped) = (p_ego - p_swap) / (1 - p_swap) -- 0.222, not 0.3, at the registered 0.1 / 0.3 (MEASURED 2026-10-28, box 2: 19161 / 76898 = 0.2492).
+#: A non-zero stream mixes a domain separator into the seed, so the perturbation's stream is independent of the swap's whatever the two seeds are. Only the composed stage sets it.
+EGO_PERTURB_COMPOSED_STREAM = 1
 
 
 class EgoPerturb:
@@ -609,13 +614,18 @@ class EgoPerturb:
 
     COMPOSITION WITH THE DAGGER SWAP (AMEND1 section 1, ``--ego-perturb-with-dagger``): ``apply(.., exclude=mask)`` removes the ``mask`` samples (the rows the swap replaced) from the ELIGIBLE set before the
     selection, so no sample is both swapped and perturbed, and ``n_eligible`` counts the eligible samples that were NOT excluded. The mask does not touch the draws: every sample's (selection, scale, drop, yaw
-    offset) are what they are without it. ``exclude=None`` (the default) is the pre-change path, line for line."""
+    offset) are what they are without it. ``exclude=None`` (the default) is the pre-change path, line for line.
+
+    STREAM (PREREG_V8F_DAG_ORC Amendment 1 section 1: the perturbation is drawn "at its own p and from its own seeded generator", independent of the swap): ``stream`` 0 (the default) is the original generator,
+    bit for bit; a non-zero ``stream`` (``EGO_PERTURB_COMPOSED_STREAM``, set by ``EgoDaggerCompose`` when the composition is on) seeds the generator from a hash of (``stream``, ``seed``, ``step``), so it is NOT the
+    DAgger swap's generator even when the two seeds are equal."""
 
     PROBE_STEP = -1
 
-    def __init__(self, p=0.0, vscale=(0.5, 1.0), vmax=8.0, adrop=1.5, yawrate_std_deg=0.0, seed=0, kin_mode="yaw"):
+    def __init__(self, p=0.0, vscale=(0.5, 1.0), vmax=8.0, adrop=1.5, yawrate_std_deg=0.0, seed=0, kin_mode="yaw", stream=0):
         self.p, self.vscale, self.vmax = float(p), (float(vscale[0]), float(vscale[1])), float(vmax)
         self.adrop, self.yawrate_std_deg, self.seed, self.kin_mode = float(adrop), float(yawrate_std_deg), int(seed), str(kin_mode)
+        self.stream = int(stream)                                               # 0 = the original generator (every non-composed path); non-zero = a domain-separated one (see ``_seed_of``)
         self.last = None
 
     @property
@@ -624,9 +634,12 @@ class EgoPerturb:
 
     def built_levers(self) -> dict:
         """What the BUILT perturber applies (the G-DVB 'built' side; recorded in selfcheck.json / summary.json ``levers`` and in the checkpoint)."""
-        return {"ego_perturb_p": self.p, "ego_perturb_vscale": list(self.vscale), "ego_perturb_vmax": self.vmax, "ego_perturb_adrop": self.adrop,
-                "ego_perturb_yawrate_std": self.yawrate_std_deg, "ego_perturb_seed": self.seed, "kin_mode": self.kin_mode,
-                "rebuilt": list(EGO_PERTURB_REBUILT), "kept": list(EGO_PERTURB_KEPT), "record": list(EGO_PERTURB_RECORD)}
+        lv = {"ego_perturb_p": self.p, "ego_perturb_vscale": list(self.vscale), "ego_perturb_vmax": self.vmax, "ego_perturb_adrop": self.adrop,
+              "ego_perturb_yawrate_std": self.yawrate_std_deg, "ego_perturb_seed": self.seed, "kin_mode": self.kin_mode,
+              "rebuilt": list(EGO_PERTURB_REBUILT), "kept": list(EGO_PERTURB_KEPT), "record": list(EGO_PERTURB_RECORD)}
+        if self.stream:                                                          # only a domain-separated generator names its stream: a stream-0 record is the pre-change record, key for key
+            lv["ego_perturb_stream"] = self.stream
+        return lv
 
     def law_problems(self) -> list:
         """Range problems of the law itself (empty = a legal law). ``apply`` refuses on any of them."""
@@ -644,6 +657,8 @@ class EgoPerturb:
             bad.append(f"ego_perturb_yawrate_std {self.yawrate_std_deg!r} is not a finite number >= 0")
         if self.seed < 0:
             bad.append(f"ego_perturb_seed {self.seed!r} is negative")
+        if self.stream < 0:
+            bad.append(f"ego_perturb_stream {self.stream!r} is negative")
         return bad
 
     def problems(self) -> list:
@@ -678,7 +693,11 @@ class EgoPerturb:
         return elig & ~exclude.to(device=elig.device, dtype=torch.bool)
 
     def _seed_of(self, step: int) -> int:
-        return (self.seed * 1_000_003 + int(step)) % (1 << 62)
+        base = (self.seed * 1_000_003 + int(step)) % (1 << 62)
+        if not self.stream:
+            return base                                                          # stream 0: the original formula, bit for bit (every non-composed path)
+        h = hashlib.sha256(f"ego_perturb_stream/{self.stream}/{base}".encode("ascii")).digest()
+        return int.from_bytes(h[:8], "little") % (1 << 62)                       # a domain-separated stream: not the DAgger swap's, at any pair of seeds
 
     def apply(self, batch: dict, step: int, *, p=None, exclude=None) -> dict:
         """The perturbed batch for training step ``step`` (a shallow copy; ``batch`` is not modified), or ``batch`` itself when the lever is off. ``p`` overrides the probability for this call

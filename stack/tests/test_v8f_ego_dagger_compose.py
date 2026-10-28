@@ -8,7 +8,7 @@ The flag is default-OFF. THIS file proves the composition is REACHABLE from the 
         ->  summary.json / selfcheck.json / train_log.jsonl / the checkpoint (ego_dagger_overlap_n, ego_perturb_with_dagger, dagger_n / dagger_eligible, ego_perturb_n / ego_perturb_eligible)
 
 and that with the flag OFF every existing argv builds and trains bit-identically (K-BUILD): ``ego_dagger_compose_golden.json`` was written by the UNMODIFIED tip (66b6c80e) on the three argv families
-below; this tree must reproduce it key for key and bit for bit. ``mutation.txt`` (the deliverable beside this file) deletes one rule at a time and requires this file to go RED.
+below; this tree must reproduce it key for key and bit for bit. Section 7 (2026-10-28) proves the perturbation draws from a stream INDEPENDENT of the swap's even at equal seeds (the box-2 defect: 0.2492 instead of 0.3). ``mutation.txt`` (the deliverable beside this file) deletes one rule at a time and requires this file to go RED.
 """
 from __future__ import annotations
 
@@ -98,7 +98,7 @@ def test_flag_off_reproduces_the_unmodified_tip_bit_for_bit(pack, tmp_path):
         assert (g["ego_totals"], g["dagger_totals"], g["counters"]) == (w["ego_totals"], w["dagger_totals"], w["counters"]), f"{name}: the counters"
         assert g["summary_keys"] == w["summary_keys"] and g["ckpt_keys"] == w["ckpt_keys"], f"{name}: a flag-off run's summary.json / checkpoint carry no new key"
         assert g["levers_ego"] == w["levers_ego"] and g["levers_dagger_p"] == w["levers_dagger_p"]
-        assert set(g["levers_keys"]) - set(w["levers_keys"]) <= {"ego_perturb_with_dagger", "ego_dagger_overlap_n"} and set(w["levers_keys"]) <= set(g["levers_keys"]), f"{name}: levers only GAIN the two flag fields"
+        assert set(g["levers_keys"]) - set(w["levers_keys"]) <= {"ego_perturb_with_dagger", "ego_dagger_overlap_n", "ego_perturb_stream"} and set(w["levers_keys"]) <= set(g["levers_keys"]), f"{name}: levers only GAIN the three flag fields"
     assert want["dag"]["counters"]["dagger_n"] > 0 and want["orc"]["counters"]["ego_perturb_n"] > 0, "the golden is not vacuous: the DAG family swapped rows and the ORC family perturbed rows"
     assert want["orc"]["counters"]["dagger_n"] == 0 and want["dag"]["counters"]["ego_perturb_n"] == 0 and want["m2b"]["counters"]["dagger_n"] == want["m2b"]["counters"]["ego_perturb_n"] == 0
 
@@ -289,10 +289,10 @@ def test_composition_overlap_is_exactly_zero_the_shares_are_the_declared_p_and_t
         tot["protected"] += int((sw & el_logged).sum())
         if step < 12:                                                                                      # row-level: swapped rows are the swap alone, the rest is the perturbation alone
             ref_sw = DG.DaggerSwap(bank, p=0.1, seed=3, kin_mode="yaw").apply(batch, step)
-            ref_pe = D.EgoPerturb(p=0.3, vscale=(0.5, 1.0), vmax=8.0, adrop=1.5, yawrate_std_deg=2.0, seed=7, kin_mode="yaw").apply(batch, step)
+            ref_pe = D.EgoPerturb(p=0.3, vscale=(0.5, 1.0), vmax=8.0, adrop=1.5, yawrate_std_deg=2.0, seed=7, kin_mode="yaw", stream=D.EGO_PERTURB_COMPOSED_STREAM).apply(batch, step)   # the composed stage's own stream (independent of the swap's)
             for k in D.EGO_PERTURB_REBUILT:
                 assert bool(_same(out[k], ref_sw[k])[sw].all()), f"step {step}: {k} of a swapped row is the bank's, untouched by the perturber"
-                assert bool(_same(out[k], ref_pe[k])[~sw].all()), f"step {step}: {k} of a non-swapped row is what the perturbation alone gives it"
+                assert bool(_same(out[k], ref_pe[k])[~sw].all()), f"step {step}: {k} of a non-swapped row is what the perturbation alone (on the composed stage's stream) gives it"
             assert bool(_same(out["lab_s"]["rc"], ref_sw["lab_s"]["rc"]).all())
             rows = (sw & el_logged).nonzero(as_tuple=True)[0]
             tot["differs"] += int((~_same(out["kin3"], ref_pe["kin3"])[rows]).sum())                       # where the exclusion mattered, the composed row is NOT what the perturbation alone gives
@@ -417,6 +417,158 @@ def test_the_log_interval_overlap_counts_add_up_and_a_flag_off_log_has_no_overla
     assert not any(k.startswith("ego_dagger") for r in _log(tmp_path / "off") for k in r) and "ego_dagger_overlap_n" not in _summary(tmp_path / "off") and "ego_perturb_with_dagger" not in _summary(tmp_path / "off")
 
 
+# ------------------------------------------------------------------------------------------------ 7. INDEPENDENT STREAMS (the box-2 defect, MEASURED 2026-10-28)
+# The swap and the perturbation seeded their generators from ONE formula; the arm's registered seeds are equal (--dagger-seed 0, --ego-perturb-seed 0); both take their selection uniform from row 0 of
+# torch.rand(k, B), so the swap's uniform WAS the perturbation's: a sample eligible for both was swapped iff u < p_swap and perturbed iff p_swap <= u < p_ego, and P(perturbed | not swapped) was
+# (p_ego - p_swap) / (1 - p_swap) = 0.222, not 0.3 (box 2: ego_perturb_n / ego_perturb_eligible = 19161 / 76898 = 0.2492). The tests above used UNEQUAL seeds (3 and 7): they could not see it.
+def _binom_tol(p, n, k=5.0):
+    """k binomial standard deviations of a share p over n independent trials."""
+    return k * (p * (1.0 - p) / n) ** 0.5
+
+
+@pytest.mark.parametrize("p_dag, p_ego, seed, steps", [(0.5, 0.5, 0, 30), (0.1, 0.3, 0, 80), (0.1, 0.3, 3, 80)])
+def test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p(pack, p_dag, p_ego, seed, steps):
+    """The defect, stated as the probability it broke. EQUAL seeds, every swap-eligible sample also perturbation-eligible (vmax lifted): P(perturbed | not swapped) must be p_ego within a binomial tolerance.
+    Shared stream: max(p_ego - p_dag, 0) / (1 - p_dag) -- 0.0 at 0.5 / 0.5 and 0.222 at the registered 0.1 / 0.3. The test asserts its own POWER: the shared-stream value is outside the tolerance."""
+    batch, bank, _ = world_batch(pack)
+    comp = make_stage(bank, p_dag=p_dag, p_ego=p_ego, dseed=seed, eseed=seed, vmax=1e6)
+    ego, dag = comp.ego, comp.dag
+    both = dag.eligible(batch) & ego.eligible(batch)
+    assert int(both.sum()) >= 100 and bool(both.equal(dag.eligible(batch))), "every swap-eligible sample is also perturbation-eligible, and there are enough of them"
+    n = k = n_el = k_sw = 0
+    for step in range(steps):
+        comp.apply(batch, step)
+        sw, pe = dag.last["sel"], ego.last["sel"]
+        free = both & ~sw
+        assert comp.overlap == 0 and bool((pe <= (ego.eligible(batch) & ~sw)).all()), "a perturbed sample is an eligible, non-swapped one"
+        n += int(free.sum())
+        k += int((pe & free).sum())
+        n_el += int(both.sum())
+        k_sw += int((sw & both).sum())
+    shared = max(p_ego - p_dag, 0.0) / (1.0 - p_dag)                                                         # what ONE shared stream gives
+    assert abs(shared - p_ego) > 2 * _binom_tol(p_ego, n), f"power: the shared-stream value {shared:.4f} must be well outside {p_ego} +- {_binom_tol(p_ego, n):.4f} (n={n})"
+    assert abs(k / n - p_ego) <= _binom_tol(p_ego, n), f"P(perturbed | not swapped, eligible for both) = {k}/{n} = {k / n:.4f}, declared {p_ego} (a shared stream gives {shared:.4f})"
+    assert abs(k_sw / n_el - p_dag) <= _binom_tol(p_dag, n_el), f"the swap's own share {k_sw}/{n_el}"
+
+
+def test_the_swaps_and_the_perturbations_selection_uniforms_are_not_one_stream_on_the_composed_path(pack, monkeypatch):
+    """Read the uniforms the two levers ACTUALLY draw (a spy on ``torch.rand``: the swap draws rand(2, B), the perturbation rand(3, B), selection = row 0): equal seeds, composed stage -> not equal, and uncorrelated.
+    The CONTROL: the same seeds on an UNSEPARATED perturber (stream 0, the pre-fix generator) read EXACTLY equal -- the spy can see the defect."""
+    batch, bank, _ = world_batch(pack)
+    B = int(batch["t"].shape[0])
+    drawn = []
+    orig = torch.rand
+
+    def spy_rand(*size, **kw):
+        out = orig(*size, **kw)
+        if kw.get("generator") is not None and len(size) == 2 and size[1] == B and size[0] in (2, 3):
+            drawn.append((size[0], out[0].clone()))
+        return out
+    monkeypatch.setattr(torch, "rand", spy_rand)
+    for seed in (0, 3):
+        comp = make_stage(bank, p_dag=0.1, p_ego=0.3, dseed=seed, eseed=seed)
+        assert comp.dag.seed == comp.ego.seed == seed
+        for step in (0, 1, 7, 1000):
+            drawn.clear()
+            comp.apply(batch, step)
+            assert [d[0] for d in drawn] == [2, 3], "the swap draws first (rand(2, B)), then the perturbation (rand(3, B))"
+            u_swap, u_ego = drawn[0][1], drawn[1][1]
+            assert not torch.equal(u_swap, u_ego), f"seed {seed} step {step}: the swap's and the perturbation's selection uniforms are the same numbers"
+            assert abs(float(np.corrcoef(u_swap.numpy(), u_ego.numpy())[0, 1])) < 0.25, "and they are uncorrelated (B = 342: 0.25 is 4.6 standard deviations)"
+            assert comp.dag._seed_of(step) != comp.ego._seed_of(step)
+        plain = D.EgoPerturb(p=0.3, vscale=(0.5, 1.0), vmax=8.0, adrop=1.5, yawrate_std_deg=2.0, seed=seed, kin_mode="yaw")             # stream 0: the pre-fix generator
+        drawn.clear()
+        comp.dag.apply(batch, 7)
+        plain.apply(batch, 7)
+        assert torch.equal(drawn[0][1], drawn[1][1]) and comp.dag._seed_of(7) == plain._seed_of(7), "CONTROL: at equal seeds an unseparated perturber draws exactly the swap's uniforms"
+
+
+def test_seed_of_stream_zero_is_the_original_formula_and_a_stream_is_a_deterministic_separate_one():
+    """stream 0 (every non-composed path) is the original formula, bit for bit; a stream is a pure function of (stream, seed, step), in [0, 2**62), never the original seed, collision-free over a grid."""
+    for seed in (0, 1, 3, 7, 12345):
+        e0 = D.EgoPerturb(p=0.3, seed=seed)
+        es = D.EgoPerturb(p=0.3, seed=seed, stream=D.EGO_PERTURB_COMPOSED_STREAM)
+        dg = DG.DaggerSwap(None, p=0.1, seed=seed)
+        assert e0.stream == 0 and es.stream == D.EGO_PERTURB_COMPOSED_STREAM != 0
+        for step in (-1, 0, 1, 99, 10 ** 6):
+            assert e0._seed_of(step) == (seed * 1_000_003 + step) % (1 << 62) == dg._seed_of(step), "stream 0 is the original formula (and the swap's)"
+            assert es._seed_of(step) != e0._seed_of(step) and es._seed_of(step) == es._seed_of(step) and 0 <= es._seed_of(step) < (1 << 62)
+    grid = {D.EgoPerturb(p=0.3, seed=s, stream=1)._seed_of(t) for s in range(20) for t in range(500)}
+    assert len(grid) == 20 * 500, "no two (seed, step) pairs share a seed within one stream"
+    assert D.EgoPerturb(p=0.3, seed=3, stream=1)._seed_of(5) != D.EgoPerturb(p=0.3, seed=3, stream=2)._seed_of(5), "two stream ids are two streams"
+    assert D.EgoPerturb(p=0.3, stream=-1).law_problems() and not D.EgoPerturb(p=0.3, stream=0).law_problems() and "ego_perturb_stream" not in D.EgoPerturb(p=0.3).built_levers(), \
+        "a negative stream is illegal; a stream-0 lever record is the pre-change record (no new key)"
+
+
+def test_the_trainer_run_at_the_box2_shape_equal_seeds_overlapping_eligibility_perturbs_its_declared_share(pack, tmp_path):
+    """The box-2 defect through the real caller: the registered argv shape (--dagger-p 0.1, --ego-perturb-p 0.3, BOTH seeds 0, the law's vmax 8) on the trainer's synthetic world, whose eligibility overlaps as the real
+    corpus does (140 of 204 perturbation-eligible windows are also swap-eligible). summary.json's ego_perturb_n / ego_perturb_eligible must be 0.3 +- 0.02 (box 2 read 0.2492; e7ea20d1 reads ~0.25 here)."""
+    common = list(COMMON)
+    common[common.index("--batch") + 1] = "64"
+    assert TR.main(_run(tmp_path / "box2", ["--steps", "200", *COMPOSED(pack, 0.1, 0.3, dseed=0, eseed=0)], common)) == 0
+    s = _summary(tmp_path / "box2")
+    assert s["ego_perturb_with_dagger"] is True and s["ego_dagger_overlap_n"] == 0
+    n_el = s["ego_perturb_eligible"]
+    assert n_el >= 4725, f"power: {n_el} eligible samples is 3 standard deviations of 0.02 or better (0.21 * (3 / 0.02) ** 2 = 4725)"
+    share = s["ego_perturb_n"] / n_el
+    assert abs(share - 0.3) <= 0.02, f"ego_perturb_n / ego_perturb_eligible = {s['ego_perturb_n']} / {n_el} = {share:.4f}, registered 0.3 +- 0.02"
+    sw = s["dagger_n"] / s["dagger_eligible"]
+    assert abs(sw - 0.1) <= 0.02, f"dagger_n / dagger_eligible = {s['dagger_n']} / {s['dagger_eligible']} = {sw:.4f}, registered 0.1 +- 0.02"
+
+
+def test_the_run_record_names_the_perturbation_stream_and_a_flag_off_record_names_stream_zero(pack, tmp_path):
+    S = D.EGO_PERTURB_COMPOSED_STREAM
+    assert TR.main(_run(tmp_path / "c", ["--steps", "2", "--ckpt-every", "1", *COMPOSED(pack, 0.5, 0.5, dseed=0, eseed=0)])) == 0
+    sc, s = _selfcheck(tmp_path / "c"), _summary(tmp_path / "c")
+    ck = torch.load(tmp_path / "c" / "ckpt_last.pt", map_location="cpu", weights_only=False)
+    assert sc["levers"]["ego_perturb_stream"] == s["levers"]["ego_perturb_stream"] == S != 0, "levers.ego_perturb_stream: the BUILT stream, in the selfcheck and the summary"
+    assert sc["levers"]["ego_perturb"]["ego_perturb_stream"] == S and ck["ego_perturb"]["ego_perturb_stream"] == S and ck["ego_perturb_stream"] == S
+    assert TR.main(_run(tmp_path / "dag", ["--steps", "2", *DAG(pack, 0.5, 3)])) == 0
+    assert TR.main(_run(tmp_path / "orc", ["--steps", "2", *argv_family(pack, "orc")[2:]])) == 0
+    for name in ("dag", "orc"):
+        sc, s = _selfcheck(tmp_path / name), _summary(tmp_path / name)
+        ck = torch.load(tmp_path / name / "ckpt_last.pt", map_location="cpu", weights_only=False)
+        assert sc["levers"]["ego_perturb_stream"] == s["levers"]["ego_perturb_stream"] == 0, f"{name}: a flag-off record reads stream 0"
+        assert "ego_perturb_stream" not in sc["levers"]["ego_perturb"] and "ego_perturb_stream" not in ck["ego_perturb"] and "ego_perturb_stream" not in ck, f"{name}: no new key in the ego record or the checkpoint"
+
+
+def _unseparated(ego, dag, on):
+    comp = TR.EgoDaggerCompose(ego, dag, on=on)
+    comp.ego.stream = 0                                                                                   # the pre-fix stage: composed, perturbation on the original generator
+    return comp
+
+
+def _separated_off(ego, dag):
+    ego.stream = D.EGO_PERTURB_COMPOSED_STREAM                                                            # a stage that is NOT composed but whose perturber was left on the composed stream
+    return TR.EgoDaggerCompose(ego, dag, on=False)
+
+
+@pytest.mark.parametrize("name, flag, make, msg", [
+    ("composed_without_separation", True, lambda a, ego, dag: _unseparated(ego, dag, on=True), "draws from stream 0 but the declaration needs 1"),
+    ("separation_without_the_flag", False, lambda a, ego, dag: _separated_off(ego, dag), "draws from stream 1 but the declaration needs 0"),
+])
+def test_gdvb_deliberate_regression_a_perturbation_that_is_not_on_the_declared_stream_is_refused(pack, name, flag, make, msg):
+    bad = _gate(pack, COMPOSED(pack, flag=flag), make)
+    assert any(msg in m for m in bad), bad
+    assert _gate(pack, COMPOSED(pack)) == [], "CONTROL: the real stage reads clean"
+
+
+def test_a_composed_checkpoint_from_before_the_stream_separation_is_not_resumed_on_another_generator(pack, tmp_path, monkeypatch):
+    """e7ea20d1's composed checkpoint carries no ``ego_perturb_stream`` (= stream 0). Same argv, so the argv_sha matches -- the resume must still be REFUSED: the perturbation would switch generators mid-run."""
+    common = [*COMMON, "--steps", "4", "--ckpt-every", "1", *COMPOSED(pack, 0.5, 0.5)]
+    monkeypatch.setenv("V8F_TRAIN_CRASH_AT", "2")
+    with pytest.raises(RuntimeError, match="V8F_TRAIN_CRASH_AT"):
+        TR.main(["--out", str(tmp_path / "old"), *common])
+    monkeypatch.delenv("V8F_TRAIN_CRASH_AT")
+    p = tmp_path / "old" / "ckpt_last.pt"
+    ck = torch.load(p, map_location="cpu", weights_only=False)
+    assert ck["ego_perturb_stream"] == D.EGO_PERTURB_COMPOSED_STREAM
+    del ck["ego_perturb_stream"]                                                                           # what the pre-fix trainer wrote
+    torch.save(ck, p)
+    with pytest.raises(SystemExit, match=r"ZZRESUME-REFUSEDZZ .*stream 0 but this build draws stream 1"):
+        TR.main(["--out", str(tmp_path / "old"), *common])
+
+
 # ------------------------------------------------------------------------------------------------ the mutation anchors
 def test_the_single_applying_lines_exist_exactly_once():
     """`mutation.txt`'s mutants delete these; an anchor that is not found exactly once would make a mutation test vacuous. The flag-off path keeps the two ORIGINAL applying lines (the other suites' anchors)."""
@@ -430,6 +582,11 @@ def test_the_single_applying_lines_exist_exactly_once():
     assert s.count("    bad += bad_ego_dagger(a, comp, ego, dag) ") == 1
     assert s.count("    res[\"ego_perturb_probe_on_composed\"] = ego_perturb_probe(model, swapped, cfg, ego, exclude=sw)") == 1
     assert s.count("            b = ego.apply(b, step) ") == 1 and s.count("            b = dag.apply(b, step) ") == 1, "the flag-off path: the two original lines, once each"
+    assert s.count("            self.ego.stream = D.EGO_PERTURB_COMPOSED_STREAM ") == 1
+    assert s.count("        if comp.on and int(ck.get(\"ego_perturb_stream\", 0)) != ego.stream: ") == 1
+    assert s.count("    if comp.ego.stream != want_stream:") == 1
+    assert s.count("    levers[\"ego_perturb_stream\"] = comp.ego.stream ") == 1
     d = DATA_P.read_text(encoding="utf-8")
+    assert d.count("        if not self.stream:\n            return base ") == 1
     assert d.count("        return elig & ~exclude.to(device=elig.device, dtype=torch.bool)") == 1
     assert d.count("        elig = self.eligible_free(batch, exclude)\n        sel =(u[0] < p)") == 1

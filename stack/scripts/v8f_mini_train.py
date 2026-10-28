@@ -496,14 +496,21 @@ class EgoDaggerCompose:
       2. the perturbation is then drawn, at its own p and from its own seeded generator, ONLY on the samples the swap did not replace (``ego.apply(.., exclude=<the swap's mask>)``);
       3. no sample is both swapped and perturbed: ``overlap`` is MEASURED from the two selection masks after both applies (not inferred from the exclusion), and a nonzero count raises.
 
+    INDEPENDENT STREAMS (Amendment 1 section 1: "at its own p and from its own seeded generator"). The swap and the perturbation seed their generators from ONE formula, ``(seed * 1_000_003 + step) % 2**62``, and the
+    arm's registered seeds are equal, so unseparated they were one generator: the selection uniform of the swap was the perturbation's too, and P(perturbed | not swapped) was (p_ego - p_swap) / (1 - p_swap) = 0.222,
+    not 0.3 (box 2, 2026-10-28: 19161 / 76898 = 0.2492). When ``on`` is True this stage therefore sets ``ego.stream = D.EGO_PERTURB_COMPOSED_STREAM`` -- a domain-separated seed for the PERTURBATION only; the swap's
+    generator, and every non-composed path, is untouched (bit-identical).
+
     ``on`` False (the flag is not named): the loop never calls this object; it runs its two original lines (``ego.apply`` then ``dag.apply``), so every existing argv is the pre-change run."""
 
     def __init__(self, ego, dag, on: bool = False):
         self.ego, self.dag, self.on = ego, dag, bool(on)
+        if self.on:
+            self.ego.stream = D.EGO_PERTURB_COMPOSED_STREAM         # the perturbation's generator is independent of the swap's, whatever the two seeds are (off: the perturber is not touched)
         self.overlap = 0
 
     def built_levers(self) -> dict:
-        return {"ego_perturb_with_dagger": self.on, "order": ["dagger_swap", "ego_perturb"] if self.on else ["ego_perturb", "dagger_swap"]}
+        return {"ego_perturb_with_dagger": self.on, "order": ["dagger_swap", "ego_perturb"] if self.on else ["ego_perturb", "dagger_swap"], "ego_perturb_stream": self.ego.stream}
 
     def problems(self) -> list:
         """A composition declared without BOTH built levers on is a lever that is declared and does nothing."""
@@ -546,6 +553,10 @@ def bad_ego_dagger(a, comp, ego, dag) -> list:
         bad.append(f"lever ego_perturb_with_dagger: declared {declared!r} but built {got!r}")
     if comp.ego is not ego or comp.dag is not dag:
         bad.append("ego+dagger composition: the stage does not hold the perturber and the swap that the gate reads back and the probes exercise")
+    want_stream = D.EGO_PERTURB_COMPOSED_STREAM if declared else 0
+    if comp.ego.stream != want_stream:
+        bad.append(f"ego+dagger composition: the BUILT perturbation draws from stream {comp.ego.stream} but the declaration needs {want_stream} "
+                   f"({'independent of the swap' if declared else 'the original generator'}): the perturbation and the swap would not be the independent draws Amendment 1 section 1 registers")
     bad += [f"ego+dagger composition: {m}" for m in comp.problems()]
     return bad
 
@@ -1725,6 +1736,7 @@ def main(argv=None):
     levers["dagger_p"], levers["dagger_bank_sha256"] = dag.p, dag.bank_sha256          # ... and the two values the reader keys on, flat (0.0 / None when the lever is off)
     levers["dagger_bank_sha256_declared"] = a.dagger_bank_sha256 or None              # ... and the hash the argv DECLARED (--dagger-bank-sha256); the gate has just required it to equal the built one (None when the lever is off)
     levers["ego_perturb_with_dagger"] = comp.on                        # AMEND1 section 1: what was BUILT (False unless --ego-perturb-with-dagger) ...
+    levers["ego_perturb_stream"] = comp.ego.stream                     # ... and the perturbation's generator stream: 0 = the original, D.EGO_PERTURB_COMPOSED_STREAM = domain-separated from the swap's (composed arms only)
     levers["ego_dagger_overlap_n"] = cmpp["overlap"]                   # ... and the composed probe's measured overlap on the probe batch (0 when off; the run total is summary.json's ego_dagger_overlap_n)
     levers["init_ckpt"] = info.get("init_ckpt")
     levers["lr_schedule"] = lr_at.built_levers()                       # the built warmup / peak / total the loop calls (G-DVB read --warmup back from it)
@@ -1757,6 +1769,8 @@ def main(argv=None):
         ck = torch.load(ck_path, map_location="cpu", weights_only=False)
         if ck["argv_sha"] != argv_sha(argv):
             raise SystemExit("ZZRESUME-REFUSEDZZ the checkpoint was written by a different argv")
+        if comp.on and int(ck.get("ego_perturb_stream", 0)) != ego.stream:        # a composed checkpoint from before the stream separation (no key = stream 0) must not be continued on another generator
+            raise SystemExit(f"ZZRESUME-REFUSEDZZ the checkpoint drew the perturbation from stream {int(ck.get('ego_perturb_stream', 0))} but this build draws stream {ego.stream}: a resume would switch generators mid-run")
         model.load_state_dict(ck["model"])
         if enc is not None:
             enc.load_lora_state_dict(ck["lora"])
@@ -1775,7 +1789,7 @@ def main(argv=None):
                 "ego_perturb": ego.built_levers(), "init_ckpt": info.get("init_ckpt"), "ego_totals": dict(ego_tot),
                 "dagger": dag.built_levers(), "dagger_totals": dict(dag_tot)}          # O-RECOVER: what was BUILT, beside the config, and the counts so far
         if comp.on:                                                     # composed arms only: a flag-off checkpoint keeps its key set
-            blob["ego_perturb_with_dagger"], blob["ego_dagger_overlap"] = True, dict(ov_tot)
+            blob["ego_perturb_with_dagger"], blob["ego_dagger_overlap"], blob["ego_perturb_stream"] = True, dict(ov_tot), ego.stream
         if enc is not None:             # `model` keeps B's layout (the unchanged v8f_mini_eval.py loads it); the LoRA matrices travel beside it
             blob["lora"], blob["encoder_levers"] = enc.lora_state_dict(), enc.built_levers()
         torch.save(blob, ck_path + ".tmp")

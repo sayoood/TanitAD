@@ -1,0 +1,63 @@
+DAG-ORC (DAG-OACC base) r2: INSTALL AND LAUNCH. NOTHING below has been run; nothing was installed into box2_ship; box 2 was never contacted; no git write.
+
+r2 re-runs ALL FOUR runs (A s0, REP s0, A s1, REP s1) from their gates, after the r1 chain stopped on K-REACH (A s0: ego 19161/76898 = 0.2492, must lie in 0.3 +- 0.02; the swap and the perturbation shared one RNG stream).
+Everything but the nine differences in NOTES.md section 2 is r1's, line for line (NOTES.md section 2 "Unchanged on purpose" lists what the self-test proves unchanged).
+
+0. PRECONDITIONS (the chain REFUSES otherwise, by design)
+   a. The trainer fix (the domain-separated perturbation stream on the composed path; staged at E:/Projects/TanitAD-artifacts/dagland/compose_fix/stage) is LANDED on the remote tip agent/arch-inf-20260803 (today: still c7963d7, NOT landed),
+      and it does NOT change the registered argv or the queue's :dagoaccorcarm line. (The staged one adds no trainer flag and no import line: NOTES.md section 3. If a landed variant adds a flag, the asserter's one-lever rule and the
+      queue stage change too: that is a regeneration of r1's asserter + queue, not an r2 edit; the gate would STOP at the one-lever assertion before any training.)
+   b. STREAM_PATTERN and STREAM_RECORD are ALREADY SET to the Master Mind's registered values (defaults of gen/make_chain_r2.py, written into the chain):
+        STREAM_PATTERN='stack/tanitad/data/v8f_mini_data.py|^EGO_PERTURB_COMPOSED_STREAM = 1[[:space:]]*$'
+        STREAM_RECORD='levers.ego_perturb_stream=1;0'      (A: EXACTLY the int 1, REP: EXACTLY the int 0, absent fails; read in the run's summary.json AND selfcheck.json)
+      To change them (never hand-edit the generated file):
+        cd E:/Projects/TanitAD-artifacts/dagorc_r2/gen
+        python make_chain_r2.py --stream-pattern 'FILE|ERE' --stream-record 'SPEC'
+        python make_chain_r2.py --check                        # rc 0 = the file on disk is a fresh regeneration
+      then re-run the self-test (gen/run_selftest.cmd), because the chain's pins and the real-tree tests read these values. A value containing a single quote is refused by the generator.
+   c. The queue on the tip carries :dagoaccorcarm (it does at c7963d7; r1 gated and trained with it) and the export list still covers the fixed trainer's imports (EXPORT = DAG-OACC r2's list, as in r1; the staged fix adds no import).
+   d. r1's log C:/Users/Admin/box2_ship/logs/chain_v8f_dagoaccorc.out is UNCHANGED (it is AFTER_OUT; fixtures/r1_chain_v8f_dagoaccorc.out is its snapshot) and C:/Users/Admin/box2_ship/BOX2_BUSY.txt is absent.
+      No dev-box process may hold files open under E:/Projects/TanitAD-artifacts/v8f-dag-orc-oacc (r1's A s0 pull) when r2 starts: the aside RENAMES that directory, and a rename Windows refuses is a clean
+      "ZZV8FMINI-STOP r2 aside: cannot rename ..." (nothing else touched, BOX2_BUSY released), not damage.
+   e. ORDER HAZARD, then the offline checks on the LANDED tip, BEFORE launching:
+        the aside is the FIRST action after BOX2_BUSY and the boot probe, the tip's lever grep runs later. Launching before the fix is landed therefore renames r1's artifacts aside (idempotent) and then stops at the lever grep.
+        OAF_SHIP_DIR=<scratch dir holding the r2 files incl. gate_dagoaccorc_r2_assert.py + the installed oaf_lib.sh / v8f_oaf_chain_checks.py / v8f_guard_dagoaccorc.sh> bash chain_v8f_dagoaccorc_r2.sh --check-tree <an export of the tip's four trainer files + the queue>
+          -> "lever check: every one of 43 patterns (the 42 lever greps + STREAM_PATTERN) is in ..."   (r1 printed 42). ON TODAY'S TIP IT REFUSES, with exactly the stream pattern missing (DRY_RUN.out section 2).
+        V8F_QUEUE=<the tip's queue> AFTER_OUT=/c/Users/Admin/box2_ship/logs/chain_v8f_dagoaccorc.out OAF_SHIP_DIR=<same dir> bash chain_v8f_dagoaccorc_r2.sh --dry-run
+          -> 4 x SAME, 4 x ONE-LEVER, the aside plan (44 box-2 items), the registered STREAM_* lines, no '!!' line      (DRY_RUN.out section 1 is this at c7963d7)
+        OAF_SHIP_DIR=<same dir> AFTER_OUT=/c/Users/Admin/box2_ship/logs/chain_v8f_dagoaccorc.out bash chain_v8f_dagoaccorc_r2.sh --wait-only          # -> ZZOAF-WAIT-GO (r1's log ended in exactly the K-REACH stop; DRY_RUN.out section 4)
+      DRY_RUN.out section 3 shows the --check-tree PASS (43 patterns) on c7963d7's files with the STAGED fix's trainer + data.
+
+1. INSTALL (copy; LF endings, the generators already wrote them): E:/Projects/TanitAD-artifacts/dagorc_r2/box2_ship/ -> C:/Users/Admin/box2_ship/
+     chain_v8f_dagoaccorc_r2.sh             -> chain_v8f_dagoaccorc_r2.sh               (the registered STREAM_* values are in it)
+     gate_dagoaccorc_r2_assert.py           -> gate_dagoaccorc_r2_assert.py              NEW FILE (r1's asserter + ego_stream_problems; pinned inside the chain, sha256 0ceb0c60...). r1's gate_dagoaccorc_assert.py stays installed, untouched.
+     oaf_dagoaccorc_r2_lib.sh               -> oaf_dagoaccorc_r2_lib.sh                  (its sha256 is pinned INSIDE the chain: install it unchanged)
+     v8f_dagoaccorc_r2_chain_checks.py      -> v8f_dagoaccorc_r2_chain_checks.py         (pinned inside the chain; it loads gate_dagoaccorc_r2_assert.py from its own directory)
+     run_chain_v8f_dagoaccorc_r2.cmd        -> run_chain_v8f_dagoaccorc_r2.cmd           (CRLF; direct start: the SPEEDREAD pull has ended, so no waiter)
+     wake_v8fdagoaccorc_r2.sh               -> wake_v8fdagoaccorc_r2.sh
+   chain_v8f_dagoaccorc_r2.sh.in is the derived TEMPLATE for review (diff it against r1's .in); do not install it.
+   Already installed and used unchanged (pinned by sha256 in the chain where marked): oaf_lib.sh (pinned), v8f_oaf_chain_checks.py (pinned), v8f_guard_dagoaccorc.sh (the guard: its end test reads
+   V8F_CHAIN_OUT, which the r2 chain sets to its own log), mk_v8f_job.py, waitjob.sh. NOT touched: r1's chain_v8f_dagoaccorc.sh, v8f_dagoaccorc_chain_checks.py and gate_dagoaccorc_assert.py (the record of r1), oaf_r2_lib.sh (DAG-OACC r2's).
+
+2. LAUNCH (dev box; no waiter needed)
+     powershell -NoProfile -Command "Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine='cmd /c C:\Users\Admin\box2_ship\run_chain_v8f_dagoaccorc_r2.cmd < NUL'}"
+   Then, as a script poller (not model turns):
+     bash /c/Users/Admin/box2_ship/wake_v8fdagoaccorc_r2.sh        # returns on the gates passing (once), each pull, a named stop (K-REACH / disk floor), a guard stop, the chain's end
+   Logs: box2_ship/logs/chain_v8f_dagoaccorc_r2.out (the chain), v8fdagoaccorc_r2_guard.out (the guard), logs/v8f_dagoaccorc_r2/ (lines, ckpt_sha256.json, telemetry).
+   Artifacts: E:/Projects/TanitAD-artifacts/v8f-dag-orc-oacc/<run>/ (DAGOACCORC_ART overrides) -- the SAME path as r1; r1's tree is renamed to v8f-dag-orc-oacc_r1_kreach_stop by the aside.
+
+3. WHAT RUNS (about 2.8 h of box 2 after a few minutes of aside + refresh + gates)
+   a. wait_predecessor (r2's): GO only if r1's log ENDED in exactly "ZZV8FMINI-STOP reached-control fail M2b_s0_dagoaccorc" (any DONE, other STOP, guard stop, disk-floor stop -> HALT), BOX2_BUSY released.
+   b. take BOX2_BUSY atomically; boot probe.
+   c. r2_aside_all (FIRST action): dev box $ART -> ${ART}_r1_kreach_stop (a rename), then $ART is re-created; box 2: ONE cmd job renames, under D:\tanitad\runs\v8f_mini_full, the 44 r1 items
+      (4 run dirs, 4 gate dirs + 4 gate logs, 4 pinned training argv + their .new / .chk, 20 eval files) to <name>_r1_kreach_stop, writes r2_aside_done.txt. NEVER a delete, NEVER an overwrite.
+   d. refresh box 2's code from the remote tip; the lever grep (42 r1 patterns + STREAM_PATTERN) on the tip; K-BUILD record, key-file sha check, v9 md5, pins (M2b_s<S>, iteration-1 banks, w_acc.txt), telemetry, guard.
+   e. the four gates (A s0, REP s0, A s1, REP s1), each pulled and asserted here (the r2 asserter: r1's assertions + the BUILT ego_perturb_stream, A = 1, REP = 0) + its launch-gate token (never by hand);
+      then train -> T0 eval -> pull -> run record (incl. STREAM_RECORD in summary.json AND selfcheck.json) -> K-REACH (bands unchanged) for A s0, REP s0, A s1, REP s1.
+   f. finish: ZZV8FMINI-DONE. B (p 0.1) is NOT queued. The T1-kin rollouts and the reader come after, on the dev box.
+
+4. RELAUNCH / RECOVERY (all idempotent; r2 never moves its own files)
+   * r2 stopped anywhere after the aside: just launch again (same command). Dev box: ${ART}_r1_kreach_stop exists -> ASIDE-KEPT, $ART is r2's progress. Box 2: r2_aside_done.txt exists -> ASIDE-ALREADY-DONE, nothing touched.
+   * the aside job died midway (no marker): the retry moves the rest (ASIDE-ABSENT for the moved ones). An ASIDE-FAIL (an item AND its aside copy both exist) is an unexpected state: the chain STOPs, nothing is overwritten or guessed; look at it by hand.
+   * a K-REACH stop again: the r2 log then ends in the same marker; launching an r3 needs ITS OWN predecessor rule (r2's accepts only r1's log).
+   * a gate refusing "built ego_perturb_stream ... must be exactly the int 1": the trainer on the tip does not build the separated stream (an unfixed trainer, or one whose gate selfcheck does not carry the field); fix the tip, not the chain.

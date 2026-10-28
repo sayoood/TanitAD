@@ -1,0 +1,68 @@
+MUTATION PROOF  2026-10-28 02:36:54  tree=F:/TanitAD-scratch/compose_fix/mut
+tests: stack/tests/test_v8f_ego_dagger_compose.py  sha256 faad3be21e1bd4d6  (the unmutated trainer 1c88828094d40a2b, data lib c117e1cf5be08b97)
+CONTROL (no mutation) -k 'composition_overlap or overlap_guard or glive_a_composed or glive_deliberate or gdvb or ego_exclude or refused or exclusivity': rc=0  [21 passed, 15 deselected in 78.59s (0:01:18)]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'equal_seeds_every_sample or selection_uniforms_are_not_one_stream or box2_shape': rc=0  [5 passed, 31 deselected in 163.08s (0:02:43)]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'equal_seeds_every_sample or selection_uniforms_are_not_one_stream or box2_shape or seed_of_stream_zero': rc=0  [6 passed, 30 deselected in 144.03s (0:02:24)]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'flag_off_reproduces': rc=0  [1 passed, 35 deselected in 29.51s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'glive_a_composed': rc=0  [1 passed, 35 deselected in 26.49s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'not_on_the_declared_stream': rc=0  [2 passed, 34 deselected in 19.38s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'not_resumed_on_another_generator': rc=0  [1 passed, 35 deselected in 37.20s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'overlap_guard': rc=0  [1 passed, 35 deselected in 17.94s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'real_composed_run': rc=0  [1 passed, 35 deselected in 34.00s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'run_record_names_the_perturbation_stream': rc=0  [1 passed, 35 deselected in 38.57s]   <- must be 0 (GREEN)
+CONTROL (no mutation) -k 'seed_of_stream_zero': rc=0  [1 passed, 35 deselected in 1.91s]   <- must be 0 (GREEN)
+M01_ego_apply_deleted_on_composed_path: RED (killed)  rule: delete the perturbation's apply on the composed path
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 15 deselected in 32.42s]
+M02_swap_deleted_on_composed_path: RED (killed)  rule: delete the swap's apply on the composed path
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 15 deselected in 36.25s]
+M03a_exclusion_not_passed: RED (killed)  rule: the composed call does not pass the swap's mask to the perturbation
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 15 deselected in 34.76s]
+M03b_exclusion_ignored_in_perturber: RED (killed)  rule: EgoPerturb.eligible_free ignores the mask (the overlap guard's other half)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 15 deselected in 38.30s]
+M03c_overlap_guard_deleted: RED (killed)  rule: delete the overlap guard (the raise) -- the exclusion intact
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_the_overlap_guard_refuses_a_perturber_that_ignores_the_exclusion   [1 failed, 35 deselected in 17.52s]
+M03d_exclusion_and_guard_both_gone: RED (killed)  rule: the exclusion ignored AND the guard deleted: only the MEASURED overlap can see it
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 15 deselected in 32.90s]
+M04_loop_call_deleted: RED (killed)  rule: delete `b = comp.apply(b, step)` in the loop
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts   [1 failed, 35 deselected in 41.82s]
+M05_loop_never_composes: RED (killed)  rule: the loop's `if comp.on:` is never true: a composed argv runs the two original lines
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts   [1 failed, 35 deselected in 37.34s]
+M06_compose_probe_not_run: RED (killed)  rule: the composed G-LIVE probe is not run
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 15 deselected in 36.93s]
+M07_gdvb_clause_deleted: RED (killed)  rule: delete the G-DVB read-back (bad_ego_dagger)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_the_flag_with_either_lever_at_p_zero_is_refused_as_a_lever_declared_without_effect[<lambda>-msgs0]   [1 failed, 2 passed, 15 deselected in 22.90s]
+M08_exclusivity_not_lifted: RED (killed)  rule: the exclusivity is not lifted by the flag
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_gdvb_the_control_reads_clean_and_the_flag_is_read_back_from_the_built_stage   [1 failed, 6 passed, 15 deselected in 22.69s]
+M09_exclusivity_always_lifted: RED (killed)  rule: the exclusivity is lifted without the flag
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_without_the_flag_the_old_exclusivity_still_fires   [1 failed, 1 passed, 15 deselected in 23.64s]
+M10_ego_probe_on_composed_deleted: RED (killed)  rule: the existing ego_perturb_probe is not run on the composed batch
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 15 deselected in 29.59s]
+M11_p0_control_is_p1: RED (killed)  rule: the probe's p = 0 control is really p = 1
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 15 deselected in 31.73s]
+M12_ego_probe_exclusion_dropped: RED (killed)  rule: ego_perturb_probe ignores the exclusion mask (runs on the composed batch as if unmasked)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 12 passed, 15 deselected in 30.59s]
+M13_off_path_changed: RED (killed)  rule: the flag-off path draws differently (eligible set shrunk when exclude is None)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_flag_off_reproduces_the_unmodified_tip_bit_for_bit   [1 failed, 35 deselected in 27.53s]
+M14_overlap_not_recorded: RED (killed)  rule: summary.json does not carry the overlap / the flag
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts   [1 failed, 35 deselected in 27.62s]
+M15_levers_flag_false: RED (killed)  rule: the selfcheck's levers.ego_perturb_with_dagger is not what was built
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_glive_a_composed_argv_passes_the_gate_and_the_selfcheck_carries_the_composed_probe   [1 failed, 35 deselected in 23.29s]
+M16_checkpoint_loses_overlap_total: RED (killed)  rule: the composed checkpoint does not carry the overlap total (a resume would lose it)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_a_real_composed_run_feeds_the_loss_the_composed_batch_and_records_the_counts   [1 failed, 35 deselected in 28.05s]
+M17a_stream_not_set_by_the_stage: RED (killed)  rule: STREAM SEPARATION REMOVED: the composed stage does not set the perturbation's stream (the perturber stays on the swap's formula)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.5-0.5-0-30]   [1 failed, 31 deselected in 15.41s]
+M17b_stream_set_and_recorded_but_not_mixed: RED (killed)  rule: STREAM SEPARATION REMOVED, RECORD INTACT: the stream is set, gated and recorded as 1, but _seed_of ignores it (the 'recorded but dead' form: only the draws can see it)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.5-0.5-0-30]   [1 failed, 31 deselected in 15.65s]
+M17c_stream_constant_zeroed: RED (killed)  rule: the composed stream constant is 0: the stage, the gate (needs 0) and the record all agree on 'no separation'
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_equal_seeds_every_sample_eligible_for_both_the_perturbed_share_of_the_not_swapped_is_its_own_p[0.5-0.5-0-30]   [1 failed, 30 deselected in 15.74s]
+M17d_stream_ignores_the_step: RED (killed)  rule: the stream's seed ignores the step (every step draws the same uniforms)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_seed_of_stream_zero_is_the_original_formula_and_a_stream_is_a_deterministic_separate_one   [1 failed, 35 deselected in 1.87s]
+M17e_stream_not_recorded: RED (killed)  rule: levers.ego_perturb_stream is not what was built
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_the_run_record_names_the_perturbation_stream_and_a_flag_off_record_names_stream_zero   [1 failed, 35 deselected in 24.52s]
+M17f_gdvb_stream_readback_deleted: RED (killed)  rule: delete the G-DVB read-back of the perturbation's stream
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_gdvb_deliberate_regression_a_perturbation_that_is_not_on_the_declared_stream_is_refused[composed_without_separation-True-<lambda>-draws from stream 0 but the declaration needs 1]   [1 failed, 34 deselected in 16.22s]
+M17g_resume_guard_deleted: RED (killed)  rule: delete the resume guard: a pre-separation composed checkpoint continues on another generator
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_a_composed_checkpoint_from_before_the_stream_separation_is_not_resumed_on_another_generator   [1 failed, 35 deselected in 34.96s]
+M17h_stream_not_in_checkpoint: RED (killed)  rule: the composed checkpoint does not carry the stream (the resume guard then reads 0)
+    first failing: FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_the_run_record_names_the_perturbation_stream_and_a_flag_off_record_names_stream_zero   [1 failed, 35 deselected in 24.97s]
+SUMMARY: 27/27 mutants killed; survivors: none
