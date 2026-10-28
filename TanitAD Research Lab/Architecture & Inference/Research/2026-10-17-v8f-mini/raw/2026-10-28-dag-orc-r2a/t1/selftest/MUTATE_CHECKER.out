@@ -1,0 +1,13 @@
+CONTROL (no mutation, no scenario): reader accepts = True, hunks 37, all PASS = True
+MC1_golden_clause_deleted: scenario on the unmutated lib -> reader accepts=False (must be False); with [the golden launch==r1 comparison] deleted -> reader accepts=True (must be True = escapes)  => KILLED by the selftest
+MC2_launch_bytes_not_compared: scenario on the unmutated lib -> reader accepts=False (must be False); with [the listed sha == launch blob comparison] deleted -> reader accepts=True (must be True = escapes)  => KILLED by the selftest
+MC3_test_file_not_required: scenario on the unmutated lib -> reader accepts=False (must be False); with [the compose test file's listed sha is not required] deleted -> reader accepts=True (must be True = escapes)  => KILLED by the selftest
+MC4_summary_not_cross_checked: scenario on the unmutated lib -> reader accepts=False (must be False); with [the SUMMARY vs per-mutant-lines cross-check] deleted -> reader accepts=True (must be True = escapes)  => KILLED by the selftest
+MC5_m13_not_required: scenario on the unmutated lib -> reader accepts=False (must be False); with [the M13 requirement] deleted -> reader accepts=True (must be True = escapes)  => KILLED by the selftest
+MC6_controls_not_checked: scenario on the unmutated lib -> reader accepts=False (must be False); with [the unmutated-controls-GREEN clause] deleted -> reader accepts=True (must be True = escapes)  => KILLED by the selftest
+MC7_log_failure_not_checked: scenario on the unmutated lib -> reader accepts=False (must be False); with [the suite log's failure regex] deleted -> reader accepts=True (must be True = escapes)  => KILLED by the selftest
+MC8_log_must_not_end_in_passed_dropped: scenario on the unmutated lib -> reader accepts=False (must be False); with [the 'log ENDS in >= 26 passed' clause] deleted -> reader accepts=True (must be True = escapes)  => KILLED by the selftest
+MC9_golden_writer_not_compared: scenario on the unmutated lib -> reader accepts=False (must be False); with [the golden-writer bytes == base blob comparison] deleted -> reader accepts=True (must be True = escapes)  => KILLED by the selftest
+MC10_conflicts_ignored: scenario on the unmutated lib -> reader accepts=False (must be False); with [an ambiguous (twice-listed, different sha) path] deleted -> reader accepts=False (must be True = escapes, or its reason 'ambiguous' lost)  => KILLED by the selftest
+MC11_flag_check_dropped: scenario on the unmutated lib -> reader accepts=False (must be False); with [the default-off flag check (shared tail)] deleted -> reader accepts=False (must be True = escapes, or its reason 'flag:' lost)  => KILLED by the selftest
+SUMMARY: 11/11 checker mutants killed; survivors: none
