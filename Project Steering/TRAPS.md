@@ -827,3 +827,17 @@ recoverable, a silent one is not.
     chain's files in the shared directory.** Keep a positive check on the first artifact (a field only the new build can write), so
     a stale artifact is refused rather than read. Same class as the shared RNG stream above: an identity copied from a sibling is
     shared with it.
+
+- ⛔ **A BATCH FILE EDITED WHILE cmd.exe RUNS IT EXECUTES THE NEW BYTES FROM THE OLD OFFSET.** MEASURED 2026-10-28 (DAG-ORC r2, A s1;
+  `raw/2026-10-28-dag-orc-r2a/R2C_NOTE.md`, banked with the DAG-ORC result).
+  * The box-2 queue `.cmd` was replaced while A s1's training stage ran inside it. When python exited, cmd.exe read on at its saved byte
+    offset in the new file and started the trainer a second time: a 3.2 s `[resume]` run of a different build. That run rewrote the run's
+    `summary.json`, `selfcheck.json` and checkpoint.
+  * The run-record check caught it (`init_ckpt.applied = false, skipped = "resume"`, plus keys only the other build writes).
+  * ⇒ **Never rewrite a `.cmd` that a live job may be executing.** Ship code to a new path, or refresh only between jobs while holding the
+    box's busy lock.
+- ⛔ **A STUB THAT RELIES ON PATH ORDER IS NOT A STUB ON GIT BASH: `/usr/bin` WINS.** MEASURED 2026-10-28. A chain self-test put stub
+  `ssh` / `scp` on PATH, but Git bash resolved the real binaries first. Its code-refresh step reached the real box 2 and replaced three files
+  in the repo there mid-run (the entry above).
+  * ⇒ **A self-test that must not reach a host fails closed.** Before any step, assert that `command -v ssh` is the stub and that the real
+    host alias does not resolve. Never rely on PATH order alone.
