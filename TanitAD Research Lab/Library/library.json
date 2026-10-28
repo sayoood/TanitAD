@@ -4537,11 +4537,13 @@
    "sha256": "a54c2013f7d991e1af80d328dc1f3484613bf1197c186b8fb474fd14d61a522b",
    "banked": "2026-08-30",
    "tags": [
+    "det-recipe-2026-10-27",
     "input-pipeline"
    ],
-   "note": "BEVDet: image-view (IDA) + BEV-space (BDA) augmentation ablation; BDA is what makes the BEV encoder trainable without overfitting | BEVDet: 1408x512 has +4.5 mAP over 704x256 (MEASURED); vertical crop is FIXED to the BOTTOM of the frame i.e. the sky is discarded",
+   "note": "BEVDet: image-view (IDA) + BEV-space (BDA) augmentation ablation; BDA is what makes the BEV encoder trainable without overfitting | BEVDet: 1408x512 has +4.5 mAP over 704x256 (MEASURED); vertical crop is FIXED to the BOTTOM of the frame i.e. the sky is discarded | BEVDet Tab.4: LSS+CenterPoint head without augmentation overfits (mAP peaks ep4 23.0, 17.4 at ep20); BEV-space aug +3.2 mAP, image+BEV aug +8.6 mAP at peak; AdamW 2e-4 bs64 20ep CBGS",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2203.17054": {
@@ -4560,13 +4562,15 @@
    "sha256": "3c2954f711175dffcd7594cc82f80a3a3e5eda6d890f6fdcbdd7c788e6ea8c91",
    "banked": "2026-08-30",
    "tags": [
+    "det-recipe-2026-10-27",
     "input-pipeline",
     "perception"
    ],
-   "note": "BEVDet4D: ego-motion alignment of the previous BEV feature before temporal fusion; removing ego-motion cuts mAVE 1.544->1.186 (-23.2%) and mATE -5.4% | input-pipeline design review: FOV/camera-count and temporal-context axes | re-cited by WP-D refcv8 perception design",
+   "note": "BEVDet4D: ego-motion alignment of the previous BEV feature before temporal fusion; removing ego-motion cuts mAVE 1.544->1.186 (-23.2%) and mATE -5.4% | input-pipeline design review: FOV/camera-count and temporal-context axes | re-cited by WP-D refcv8 perception design | BEVDet4D: temporal align + velocity-offset target NDS 39.2->47.6, mAVE 0.909->0.337; pure alignment adds only ~+0.9 mAP (Tab.3 row B) - temporal buys velocity/orientation first",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2005.10420": {
@@ -4615,14 +4619,16 @@
    "sha256": "641561d0e4c1d46d6883a3d38c68b475030de5bbbcdf747af268366f47f97a6b",
    "banked": "2026-08-30",
    "tags": [
+    "bev-map",
     "input-pipeline",
     "perception",
     "resnet-trunk"
    ],
-   "note": "input-pipeline design review: FOV/camera-count and temporal-context axes | resnet-trunk review 2026-09-15: BEVFormer R101-DCN init from FCOS3D, V2-99 from DD3D (§4.2); nuScenes 1000 scenes x ~20 s (§4.1) | re-cited by WP-D refcv8 perception design",
+   "note": "input-pipeline design review: FOV/camera-count and temporal-context axes | resnet-trunk review 2026-09-15: BEVFormer R101-DCN init from FCOS3D, V2-99 from DD3D (§4.2); nuScenes 1000 scenes x ~20 s (§4.1) | re-cited by WP-D refcv8 perception design | BEVFormer - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-08-30-input-pipeline-design-review/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
    ]
   },
   "2104.10133": {
@@ -12602,10 +12608,12 @@
    "sha256": "f9f063e4328c0610182d9d606541979776f887be23d2d8defcb99a3ca251cc3a",
    "banked": "2026-09-05",
    "tags": [
-    "A3_vision_encoders"
+    "A3_vision_encoders",
+    "det-recipe-2026-10-27"
    ],
-   "note": "Frozen DINOv2 + LSS beats BEV baseline by +7.4 IoU on half the data/iters; RESOLVES empty E1 at the 4th probe",
+   "note": "Frozen DINOv2 + LSS beats BEV baseline by +7.4 IoU on half the data/iters; RESOLVES empty E1 at the 4th probe | LSS vehicle-seg (BEV seg, not detection): frozen DINOv2+Metric3Dv2 Giant +8.9 IoU full data, +7.4 over full-data baseline with HALF the data; Small models do not",
    "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md",
     "TanitAD Research Lab/Frontier Scan/Daily/2026-09-05/RESULT.md"
    ]
   },
@@ -15305,13 +15313,15 @@
    "sha256": "ba1c6a9403c4f0511ca19442ed2c042cc82141622caf6a9dcd15e45128b123f5",
    "banked": "2026-09-20",
    "tags": [
+    "det-recipe-2026-10-27",
     "perception",
     "refe-sizing"
    ],
-   "note": "PETR: 3D position embedding = MLP (1x1 conv, 192->4C->C) over ANALYTIC camera-frustum 3D coords, not a learned per-token table; Table 3: 3D PE alone 0.305 mAP vs 2D learned PE 0.069 | re-cited by WP-D refcv8 perception design",
+   "note": "PETR: 3D position embedding = MLP (1x1 conv, 192->4C->C) over ANALYTIC camera-frustum 3D coords, not a learned per-token table; Table 3: 3D PE alone 0.305 mAP vs 2D learned PE 0.069 | re-cited by WP-D refcv8 perception design | PETR Tab.3: 3D position embedding vs 2D PE mAP 0.069->0.305 (NDS .208->.356); Tab.5c no anchor points = query head does not converge; AdamW 2e-4 cosine 24ep bs8, lambda_cls 2.0",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/MODULE_SIZING_STUDY.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2206.01256": {
@@ -15988,13 +15998,15 @@
    "sha256": "2e6f45b97007009f32b82a3c19f35638d8da7022d8d4e4416b9078de91339f71",
    "banked": "2026-09-27",
    "tags": [
+    "bev-map",
     "box-head",
     "perception"
    ],
-   "note": "Focal loss / RetinaNet: FL = -alpha (1-p)^gamma log p; classification bias prior init 0.01 (refcv7 A9 R1) | re-cited by WP-D refcv8 perception design",
+   "note": "Focal loss / RetinaNet: FL = -alpha (1-p)^gamma log p; classification bias prior init 0.01 (refcv7 A9 R1) | re-cited by WP-D refcv8 perception design | Focal Loss - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
    ]
   },
   "2012.05780": {
@@ -16071,12 +16083,14 @@
    "banked": "2026-09-27",
    "tags": [
     "box-head",
+    "det-recipe-2026-10-27",
     "perception"
    ],
-   "note": "MonoDLE: discarding distant / hard samples improves monocular 3-D detection training | Delving into Localization Errors for Monocular 3D Object Detection: depth/localisation error dominates monocular 3D AP; distant objects hurt training",
+   "note": "MonoDLE: discarding distant / hard samples improves monocular 3-D detection training | Delving into Localization Errors for Monocular 3D Object Detection: depth/localisation error dominates monocular 3D AP; distant objects hurt training | MonoDLE Tab.1: swapping in GT depth 11.12->38.01 AP3D while GT size/orientation barely move (11.96/11.88) - depth/centre localisation is the bottleneck; Tab.8 dropping GT beyond 60 m +0.7 Mod AP, beyond 40 m hurts",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2203.13310": {
@@ -16104,12 +16118,14 @@
    "banked": "2026-09-27",
    "tags": [
     "box-head",
+    "det-recipe-2026-10-27",
     "perception"
    ],
-   "note": "MonoDETR: depth-guided DETR for monocular 3-D detection | re-cited by WP-D refcv8 perception design",
+   "note": "MonoDETR: depth-guided DETR for monocular 3-D detection | re-cited by WP-D refcv8 perception design | MonoDETR: KITTI Car val Mod AP3D 20.61 vs 15.15 without depth-guided transformer (Tab.5); foreground-object depth map beats dense depth (Tab.8); 195ep bs16 lr2e-4 50 queries; 3,712-img train split",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2203.01305": {
@@ -16192,12 +16208,14 @@
    "banked": "2026-09-27",
    "tags": [
     "box-head",
+    "det-recipe-2026-10-27",
     "perception"
    ],
-   "note": "StreamPETR: temporal query propagation in a camera 3-D head; focal + DN recipe | StreamPETR: object-centric temporal propagation of queries across frames at near-zero cost",
+   "note": "StreamPETR: temporal query propagation in a camera 3-D head; focal + DN recipe | StreamPETR: object-centric temporal propagation of queries across frames at near-zero cost | StreamPETR Tab.5: training on 1->8 frames mAP 31.7->40.2, mAVE .885->.316; Tab.6 implicit ego-pose motion-aware LN +2.0 mAP; recipe AdamW 4e-4 bs16 cosine 24ep no CBGS",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2311.11722": {
@@ -16220,12 +16238,14 @@
    "banked": "2026-09-27",
    "tags": [
     "box-head",
+    "det-recipe-2026-10-27",
     "perception"
    ],
-   "note": "Sparse4D v3: temporal instance denoising + quality estimation; geometry-grounded feature access | re-cited by WP-D refcv8 perception design",
+   "note": "Sparse4D v3: temporal instance denoising + quality estimation; geometry-grounded feature access | re-cited by WP-D refcv8 perception design | Sparse4Dv3 Tab.5: 0.439->0.469 mAP: single-frame DN +0.8, decoupled attention +1.1, temporal DN +0.4, centerness+yawness quality +0.8 mAP and -2.8pt mATE; 100ep AdamW no CBGS; dense-depth aux kept",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2211.10581": {
@@ -16273,12 +16293,14 @@
    "banked": "2026-09-27",
    "tags": [
     "box-head",
+    "det-recipe-2026-10-27",
     "perception"
    ],
-   "note": "FCOS3D: fully-convolutional monocular 3-D detector baseline | re-cited by WP-D refcv8 perception design",
+   "note": "FCOS3D: fully-convolutional monocular 3-D detector baseline | re-cited by WP-D refcv8 perception design | FCOS3D Tab.3 ablation chain 22.7->34.3 mAP: depth-loss in original space +2.3, distance-based assign +NDS, disentangled heads AOE .81->.64, depth weight 0.2->1.0 finetune +2.1, DCN +1.5; SGD lr .002 bs32",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2006.11275": {
@@ -16299,12 +16321,14 @@
    "banked": "2026-09-27",
    "tags": [
     "box-head",
+    "det-recipe-2026-10-27",
     "perception"
    ],
-   "note": "CenterPoint: centre-heatmap 3-D detection; heatmap proposals as queries | CenterPoint: BEV centre-heatmap head + regression; anchor-free dense head for 3D detection",
+   "note": "CenterPoint: centre-heatmap 3-D detection; heatmap proposals as queries | CenterPoint: BEV centre-heatmap head + regression; anchor-free dense head for 3D detection | CenterPoint: center heatmap head (Gaussian radius max(f(w,l),2), focal loss) beats anchor head +3.8-4.1 mAP/+1.1-1.8 NDS on nuScenes val (Tab.6)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2206.07705": {
@@ -16404,11 +16428,13 @@
    "sha256": "2dc9e3c975d1e6ee5a7c3926a9fa12f180b56088be5799e894681373dce02998",
    "banked": "2026-09-27",
    "tags": [
-    "box-head"
+    "box-head",
+    "det-recipe-2026-10-27"
    ],
-   "note": "CBGS: class-balanced grouping and sampling for nuScenes 3-D detection",
+   "note": "CBGS: class-balanced grouping and sampling for nuScenes 3-D detection | CBGS: class-balanced grouping+sampling; nuScenes mAP 29.5->52.8 vs PointPillars with all changes (Tab.2), bicycle 1.6->22.3; Tab.4 caption: database sampling (GT paste) and Res-encoder matter most",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-09-27-box-head-literature/RESULT.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2002.09437": {
@@ -16705,11 +16731,13 @@
    "sha256": "a92b446a45a05764d18f79ca6f3347624db3c3ec78101c6345c91af6b0e0ecc7",
    "banked": "2026-10-04",
    "tags": [
+    "det-recipe-2026-10-27",
     "perception"
    ],
-   "note": "BEVDepth: explicit LiDAR-projected depth supervision of the LSS view transform + camera-aware depth; depth quality is the bottleneck of camera 3D detection",
+   "note": "BEVDepth: explicit LiDAR-projected depth supervision of the LSS view transform + camera-aware depth; depth quality is the bottleneck of camera 3D detection | BEVDepth Tab.4: LiDAR depth loss +2.2 mAP, camera-aware DepthNet +1.0, depth refinement +0.8 (total +4.0 mAP/+4.0 NDS); Tab.1 frozen random depth costs only -3.7 mAP",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2206.07959": {
@@ -16731,11 +16759,15 @@
    "sha256": "81a635343ff997a74190fc19a808edf4e46877c6d7be89226ccdc646409b3b20",
    "banked": "2026-10-04",
    "tags": [
+    "bev-map",
+    "det-recipe-2026-10-27",
     "perception"
    ],
-   "note": "Simple-BEV: parameter-free bilinear multi-height sampling lift matches depth-based lifts; input resolution and batch size are the dominant levers; ResNet-101 layer3 upsampled+concat layer2 at stride 8",
+   "note": "Simple-BEV: parameter-free bilinear multi-height sampling lift matches depth-based lifts; input resolution and batch size are the dominant levers; ResNet-101 layer3 upsampled+concat layer2 at stride 8 | Simple-BEV (BEV vehicle seg): batch 2->40 ~+14 IoU; 448x800 47.4 -> 672x1200 49.3 IoU; lifting strategy matters little | Simple-BEV - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2008.13367": {
@@ -16927,11 +16959,13 @@
    "sha256": "919e4ce3de7a8046867086730ed7bc12aeb55550ae9a4d8242f742dd2b93c1b9",
    "banked": "2026-10-04",
    "tags": [
+    "bev-map",
     "perception"
    ],
-   "note": "MapTR: vectorised HD-map construction as permutation-equivalent point sets with hierarchical bipartite matching",
+   "note": "MapTR: vectorised HD-map construction as permutation-equivalent point sets with hierarchical bipartite matching | MapTR - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
    ]
   },
   "2308.05736": {
@@ -16956,11 +16990,13 @@
    "sha256": "fda81a85db6c7e534d7a34d4c268d6a970aeaadb9e8a4637210e9148b08c0f8a",
    "banked": "2026-10-04",
    "tags": [
+    "bev-map",
     "perception"
    ],
-   "note": "MapTRv2: auxiliary dense supervision (BEV/PV segmentation, depth) and one-to-many matching improve vectorised map heads",
+   "note": "MapTRv2: auxiliary dense supervision (BEV/PV segmentation, depth) and one-to-many matching improve vectorised map heads | MapTRv2 - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
    ]
   },
   "2107.06307": {
@@ -16981,11 +17017,13 @@
    "sha256": "5f521e3749ec7b193bf6216a9d931b999a1307f0d848e17dc9a121c85588d2cb",
    "banked": "2026-10-04",
    "tags": [
+    "bev-map",
     "perception"
    ],
-   "note": "HDMapNet: raster semantic map + instance embedding + direction heads, vectorised by post-processing",
+   "note": "HDMapNet: raster semantic map + instance embedding + direction heads, vectorised by post-processing | HDMapNet (7-page ICRA version) - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
    ]
   },
   "2210.02443": {
@@ -17009,11 +17047,13 @@
    "sha256": "fc1035cdaafc26f50a976793585baaa990b24a962ce1182213b510520af69d0b",
    "banked": "2026-10-04",
    "tags": [
+    "det-recipe-2026-10-27",
     "perception"
    ],
-   "note": "SOLOFusion: long-term temporal stereo + short-term fusion; temporal history improves camera 3D detection localisation",
+   "note": "SOLOFusion: long-term temporal stereo + short-term fusion; temporal history improves camera 3D detection localisation | SOLOFusion Tab.6: high-res short-term fusion +2.2 mAP, low-res long-term (16 frames) +6.5 mAP, both +8.3; Tab.7 R50 256x704 beats BEVDepth 512x1408",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2108.06417": {
@@ -17035,11 +17075,13 @@
    "sha256": "715e14870edf1aa94ad6cf00b8058d259e9d86107a425d38d14686c517b3487e",
    "banked": "2026-10-04",
    "tags": [
+    "det-recipe-2026-10-27",
     "perception"
    ],
-   "note": "DD3D: large-scale depth pretraining of the image backbone improves monocular 3D detection",
+   "note": "DD3D: large-scale depth pretraining of the image backbone improves monocular 3D detection | DD3D: removing depth pretraining -5.3 (DLA34) / -10.7 (V2-99) Car BEV AP on KITTI val (Tab.3); depth vs 2D-det pretrain on same 137k nuScenes images 21.8 vs 20.5 (Tab.6)",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
    ]
   },
   "2304.04742": {
@@ -17124,11 +17166,13 @@
    "sha256": "2e952692e01cb534b8851712e27846ab5d0dc06dfd170c9c64daf4e70d7f3170",
    "banked": "2026-10-04",
    "tags": [
+    "bev-map",
     "perception"
    ],
-   "note": "clDice: topology-preserving loss for thin tubular structures (soft skeleton)",
+   "note": "clDice: topology-preserving loss for thin tubular structures (soft skeleton) | clDice - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
    ]
   },
   "1812.07032": {
@@ -17151,11 +17195,13 @@
    "sha256": "9746e5741c759ba10e05d9b18245f4d7f580f58ae8eb4812bfc73992dde1bf40",
    "banked": "2026-10-04",
    "tags": [
+    "bev-map",
     "perception"
    ],
-   "note": "Boundary loss: distance-transform based loss for highly unbalanced segmentation",
+   "note": "Boundary loss: distance-transform based loss for highly unbalanced segmentation | Boundary loss - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
    ]
   },
   "1705.08790": {
@@ -17175,11 +17221,13 @@
    "sha256": "82bdd01cacbab500abab94c78d6c27e2c1f2a7fafee16c9b302f8d1225c38b1e",
    "banked": "2026-10-04",
    "tags": [
+    "bev-map",
     "perception"
    ],
-   "note": "Lovasz-Softmax: tractable convex surrogate for direct IoU optimisation in segmentation",
+   "note": "Lovasz-Softmax: tractable convex surrogate for direct IoU optimisation in segmentation | Lovasz-Softmax - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
    ]
   },
   "2308.02236": {
@@ -17225,11 +17273,13 @@
    "sha256": "b853e73904c1a61fdbfd843190dcff6c5b3a594ee947fab4939a68ff1617cd67",
    "banked": "2026-10-04",
    "tags": [
+    "bev-map",
     "perception"
    ],
-   "note": "Lift-Splat-Shoot: categorical depth distribution lift of image features into BEV",
+   "note": "Lift-Splat-Shoot: categorical depth distribution lift of image features into BEV | Lift, Splat, Shoot - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
    "cited_by": [
-    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md"
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv8-perception-architecture/PERCEPTION_DESIGN.md",
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
    ]
   },
   "2203.11089": {
@@ -18876,6 +18926,1254 @@
    "note": "SV-WAM: surround-view world-action model, NAVSIM v2 navtest entry (latest WAM class)",
    "cited_by": [
     "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-25-navsim-scope/NAVSIM_SCOPE.md"
+   ]
+  },
+  "2211.10439": {
+   "key": "2211.10439",
+   "kind": "arxiv",
+   "title": "BEVFormer v2: Adapting Modern Image Backbones to Bird's-Eye-View Recognition via Perspective Supervision",
+   "authors": [
+    "Chenyu Yang",
+    "Yuntao Chen",
+    "Hao Tian",
+    "Chenxin Tao",
+    "Xizhou Zhu",
+    "Zhaoxiang Zhang",
+    "Gao Huang",
+    "Hongyang Li",
+    "Yu Qiao",
+    "Lewei Lu",
+    "Jie Zhou",
+    "Jifeng Dai"
+   ],
+   "published": "2022-11-18",
+   "abstract": "We present a novel bird's-eye-view (BEV) detector with perspective supervision, which converges faster and better suits modern image backbones. Existing state-of-the-art BEV detectors are often tied to certain depth pre-trained backbones like VoVNet, hindering the synergy between booming image backbones and BEV detectors. To address this limitation, we prioritize easing the optimization of BEV detectors by introducing perspective space supervision. To this end, we propose a two-stage BEV detector, where proposals from the perspective head are fed into the bird's-eye-view head for final predictions. To evaluate the effectiveness of our model, we conduct extensive ablation studies focusing on the form of supervision and the generality of the proposed detector. The proposed method is verified with a wide spectrum of traditional and modern image backbones and achieves new SoTA results on the",
+   "url": "https://arxiv.org/abs/2211.10439",
+   "path": "TanitAD Research Lab/Library/papers/2211.10439_BEVFormer-v2-Adapting-Modern-Image-Backbones-to-Bird-s-Eye-V.pdf",
+   "bytes": 1497428,
+   "sha256": "bbd7a441b040868399836414f1aeee4a1519316fabb66885599f65ecf29c4d02",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "BEVFormer v2 Tab.2: adding a perspective (FCOS3D-like) 3D head to the BEV head +1.9 mAP/+2.5 NDS (R101,48ep); a second BEV head (BEV&BEV control) gives nothing; removes need for depth-pretrained backbone",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2305.14018": {
+   "key": "2305.14018",
+   "kind": "arxiv",
+   "title": "Sparse4D v2: Recurrent Temporal Fusion with Sparse Model",
+   "authors": [
+    "Xuewu Lin",
+    "Tianwei Lin",
+    "Zixiang Pei",
+    "Lichao Huang",
+    "Zhizhong Su"
+   ],
+   "published": "2023-05-23",
+   "abstract": "Sparse algorithms offer great flexibility for multi-view temporal perception tasks. In this paper, we present an enhanced version of Sparse4D, in which we improve the temporal fusion module by implementing a recursive form of multi-frame feature sampling. By effectively decoupling image features and structured anchor features, Sparse4D enables a highly efficient transformation of temporal features, thereby facilitating temporal fusion solely through the frame-by-frame transmission of sparse features. The recurrent temporal fusion approach provides two main benefits. Firstly, it reduces the computational complexity of temporal fusion from $O(T)$ to $O(1)$, resulting in significant improvements in inference speed and memory usage. Secondly, it enables the fusion of long-term information, leading to more pronounced performance improvements due to temporal fusion. Our proposed approach, Spar",
+   "url": "https://arxiv.org/abs/2305.14018",
+   "path": "TanitAD Research Lab/Library/papers/2305.14018_Sparse4D-v2-Recurrent-Temporal-Fusion-with-Sparse-Model.pdf",
+   "bytes": 1641261,
+   "sha256": "911acd51fdbf7b7ecfab9c344405ab87d04b7e9bb2b8d01debf1b3763b8d4d3b",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "Sparse4Dv2 Tab.3: removing dense depth supervision mAP .439->.354 (-8.5), NDS -10.4, training collapse with ImageNet init - depth aux is a convergence stabiliser for query heads",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2308.09244": {
+   "key": "2308.09244",
+   "kind": "arxiv",
+   "title": "SparseBEV: High-Performance Sparse 3D Object Detection from Multi-Camera Videos",
+   "authors": [
+    "Haisong Liu",
+    "Yao Teng",
+    "Tao Lu",
+    "Haiguang Wang",
+    "Limin Wang"
+   ],
+   "published": "2023-08-18",
+   "abstract": "Camera-based 3D object detection in BEV (Bird's Eye View) space has drawn great attention over the past few years. Dense detectors typically follow a two-stage pipeline by first constructing a dense BEV feature and then performing object detection in BEV space, which suffers from complex view transformations and high computation cost. On the other side, sparse detectors follow a query-based paradigm without explicit dense BEV feature construction, but achieve worse performance than the dense counterparts. In this paper, we find that the key to mitigate this performance gap is the adaptability of the detector in both BEV and image space. To achieve this goal, we propose SparseBEV, a fully sparse 3D object detector that outperforms the dense counterparts. SparseBEV contains three key designs, which are (1) scale-adaptive self attention to aggregate features with adaptive receptive field in",
+   "url": "https://arxiv.org/abs/2308.09244",
+   "path": "TanitAD Research Lab/Library/papers/2308.09244_SparseBEV-High-Performance-Sparse-3D-Object-Detection-from-M.pdf",
+   "bytes": 4109737,
+   "sha256": "f7115c03706e6336cff287ab40b9f27da03a255fd1e730788d8feecc4a551f22",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "SparseBEV recipe: Hungarian + focal + L1, xy weight 2.0, query denoising, AdamW 2e-4 cosine, 24ep no CBGS; BEV-pillar queries 45.4 vs 3D ref-point queries 44.0 mAP (Tab.3)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2308.09616": {
+   "key": "2308.09616",
+   "kind": "arxiv",
+   "title": "Far3D: Expanding the Horizon for Surround-view 3D Object Detection",
+   "authors": [
+    "Xiaohui Jiang",
+    "Shuailin Li",
+    "Yingfei Liu",
+    "Shihao Wang",
+    "Fan Jia",
+    "Tiancai Wang",
+    "Lijin Han",
+    "Xiangyu Zhang"
+   ],
+   "published": "2023-08-18",
+   "abstract": "Recently 3D object detection from surround-view images has made notable advancements with its low deployment cost. However, most works have primarily focused on close perception range while leaving long-range detection less explored. Expanding existing methods directly to cover long distances poses challenges such as heavy computation costs and unstable convergence. To address these limitations, this paper proposes a novel sparse query-based framework, dubbed Far3D. By utilizing high-quality 2D object priors, we generate 3D adaptive queries that complement the 3D global queries. To efficiently capture discriminative features across different views and scales for long-range objects, we introduce a perspective-aware aggregation module. Additionally, we propose a range-modulated 3D denoising approach to address query error propagation and mitigate convergence issues in long-range tasks. Sig",
+   "url": "https://arxiv.org/abs/2308.09616",
+   "path": "TanitAD Research Lab/Library/papers/2308.09616_Far3D-Expanding-the-Horizon-for-Surround-view-3D-Object-Dete.pdf",
+   "bytes": 7126482,
+   "sha256": "ae1a0626dd29a4717d2d1eccd8dace2350dc8415797d590b829aeaaf15b9e539",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "Far3D Tab.3 (Argoverse2, 150 m): 2D-detector adaptive queries +2.1 mAP, perspective-aware aggregation +1.0, range-modulated 3D denoising +1.0 (20.3->24.4)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2107.14160": {
+   "key": "2107.14160",
+   "kind": "arxiv",
+   "title": "Probabilistic and Geometric Depth: Detecting Objects in Perspective",
+   "authors": [
+    "Tai Wang",
+    "Xinge Zhu",
+    "Jiangmiao Pang",
+    "Dahua Lin"
+   ],
+   "published": "2021-07-29",
+   "abstract": "3D object detection is an important capability needed in various practical applications such as driver assistance systems. Monocular 3D detection, as a representative general setting among image-based approaches, provides a more economical solution than conventional settings relying on LiDARs but still yields unsatisfactory results. This paper first presents a systematic study on this problem. We observe that the current monocular 3D detection can be simplified as an instance depth estimation problem: The inaccurate instance depth blocks all the other 3D attribute predictions from improving the overall detection performance. Moreover, recent methods directly estimate the depth based on isolated instances or pixels while ignoring the geometric relations across different objects. To this end, we construct geometric relation graphs across predicted objects and use the graph to facilitate de",
+   "url": "https://arxiv.org/abs/2107.14160",
+   "path": "TanitAD Research Lab/Library/papers/2107.14160_Probabilistic-and-Geometric-Depth-Detecting-Objects-in-Persp.pdf",
+   "bytes": 22680110,
+   "sha256": "8eddd0d02f7ba2c83cfa4bb59370395f4a9770b1b9fa6b7742055c0a0f8332e4",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "PGD: KITTI val Mod AP3D@.7 5.51->16.60 via local consistency + probabilistic depth + geometric depth propagation (Tab.3); nuScenes mAP .319->.348 (Tab.5)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2103.01100": {
+   "key": "2103.01100",
+   "kind": "arxiv",
+   "title": "Categorical Depth Distribution Network for Monocular 3D Object Detection",
+   "authors": [
+    "Cody Reading",
+    "Ali Harakeh",
+    "Julia Chae",
+    "Steven L. Waslander"
+   ],
+   "published": "2021-03-01",
+   "abstract": "Monocular 3D object detection is a key problem for autonomous vehicles, as it provides a solution with simple configuration compared to typical multi-sensor systems. The main challenge in monocular 3D detection lies in accurately predicting object depth, which must be inferred from object and scene cues due to the lack of direct range measurement. Many methods attempt to directly estimate depth to assist in 3D detection, but show limited performance as a result of depth inaccuracy. Our proposed solution, Categorical Depth Distribution Network (CaDDN), uses a predicted categorical depth distribution for each pixel to project rich contextual feature information to the appropriate depth interval in 3D space. We then use the computationally efficient bird's-eye-view projection and single-stage detector to produce the final output bounding boxes. We design CaDDN as a fully differentiable end-",
+   "url": "https://arxiv.org/abs/2103.01100",
+   "path": "TanitAD Research Lab/Library/papers/2103.01100_Categorical-Depth-Distribution-Network-for-Monocular-3D-Obje.pdf",
+   "bytes": 1129890,
+   "sha256": "3970e26ca935056169e6e91e5bdf832cacfa551dc1d18eeee896a36265a6c33b",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "CaDDN (KITTI 3,712 train imgs, one camera, LSS-type lift): depth-distribution supervision +10.40/+7.60/+6.54 AP3D (E/M/H), fg-weighted depth loss +0.67/+1.07/+0.91, LID bins +3.17/+1.21/+1.09 (Sec 4.3)",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2303.08498": {
+   "key": "2303.08498",
+   "kind": "arxiv",
+   "title": "BEVHeight: A Robust Framework for Vision-based Roadside 3D Object Detection",
+   "authors": [
+    "Lei Yang",
+    "Kaicheng Yu",
+    "Tao Tang",
+    "Jun Li",
+    "Kun Yuan",
+    "Li Wang",
+    "Xinyu Zhang",
+    "Peng Chen"
+   ],
+   "published": "2023-03-15",
+   "abstract": "While most recent autonomous driving system focuses on developing perception methods on ego-vehicle sensors, people tend to overlook an alternative approach to leverage intelligent roadside cameras to extend the perception ability beyond the visual range. We discover that the state-of-the-art vision-centric bird's eye view detection methods have inferior performances on roadside cameras. This is because these methods mainly focus on recovering the depth regarding the camera center, where the depth difference between the car and the ground quickly shrinks while the distance increases. In this paper, we propose a simple yet effective approach, dubbed BEVHeight, to address this issue. In essence, instead of predicting the pixel-wise depth, we regress the height to the ground to achieve a distance-agnostic formulation to ease the optimization process of camera-only perception methods. On pop",
+   "url": "https://arxiv.org/abs/2303.08498",
+   "path": "TanitAD Research Lab/Library/papers/2303.08498_BEVHeight-A-Robust-Framework-for-Vision-based-Roadside-3D-Ob.pdf",
+   "bytes": 24746325,
+   "sha256": "f1c74408f3801c3820818a79aaa5bbce42c4db2c2d6f52dd96e35cb03370a877",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "BEVHeight Tab.7: height-instead-of-depth lift on nuScenes ego-vehicle camera mAP .291 vs BEVDepth .315 - NOT a lever for a ~1.5 m-high vehicle camera",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2312.01696": {
+   "key": "2312.01696",
+   "kind": "arxiv",
+   "title": "BEVNeXt: Reviving Dense BEV Frameworks for 3D Object Detection",
+   "authors": [
+    "Zhenxin Li",
+    "Shiyi Lan",
+    "Jose M. Alvarez",
+    "Zuxuan Wu"
+   ],
+   "published": "2023-12-04",
+   "abstract": "Recently, the rise of query-based Transformer decoders is reshaping camera-based 3D object detection. These query-based decoders are surpassing the traditional dense BEV (Bird's Eye View)-based methods. However, we argue that dense BEV frameworks remain important due to their outstanding abilities in depth estimation and object localization, depicting 3D scenes accurately and comprehensively. This paper aims to address the drawbacks of the existing dense BEV-based 3D object detectors by introducing our proposed enhanced components, including a CRF-modulated depth estimation module enforcing object-level consistencies, a long-term temporal aggregation module with extended receptive fields, and a two-stage object decoder combining perspective techniques with CRF-modulated depth embedding. These enhancements lead to a \"modernized\" dense BEV framework dubbed BEVNeXt. On the nuScenes benchmar",
+   "url": "https://arxiv.org/abs/2312.01696",
+   "path": "TanitAD Research Lab/Library/papers/2312.01696_BEVNeXt-Reviving-Dense-BEV-Frameworks-for-3D-Object-Detectio.pdf",
+   "bytes": 4273034,
+   "sha256": "d79666a6d29a7330711a7b12a3597d697b26b2889bedcce079ce422d4816d863",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "BEVNeXt Tab.5: CRF depth + Res2Fusion + refinement +3.1 mAP/+2.2 NDS over BEVPoolv2 baseline; Tab.4 caption: CRF modulation minor once depth supervision is dense; CBGS 12ep",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2104.02323": {
+   "key": "2104.02323",
+   "kind": "arxiv",
+   "title": "Objects are Different: Flexible Monocular 3D Object Detection",
+   "authors": [
+    "Yunpeng Zhang",
+    "Jiwen Lu",
+    "Jie Zhou"
+   ],
+   "published": "2021-04-06",
+   "abstract": "The precise localization of 3D objects from a single image without depth information is a highly challenging problem. Most existing methods adopt the same approach for all objects regardless of their diverse distributions, leading to limited performance for truncated objects. In this paper, we propose a flexible framework for monocular 3D object detection which explicitly decouples the truncated objects and adaptively combines multiple approaches for object depth estimation. Specifically, we decouple the edge of the feature map for predicting long-tail truncated objects so that the optimization of normal objects is not influenced. Furthermore, we formulate the object depth estimation as an uncertainty-guided ensemble of directly regressed object depth and solved depths from different groups of keypoints. Experiments demonstrate that our method outperforms the state-of-the-art method by r",
+   "url": "https://arxiv.org/abs/2104.02323",
+   "path": "TanitAD Research Lab/Library/papers/2104.02323_Objects-are-Different-Flexible-Monocular-3D-Object-Detection.pdf",
+   "bytes": 6544624,
+   "sha256": "5075ea53e3485e8290df428064f56176d62616a5e5aa8934761dabd35522095d",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "MonoFlex Tab.4 (KITTI val): uncertainty-weighted depth +2.2 Mod AP3D, adaptive direct+keypoint depth ensemble +4.9 over direct regression; edge-fusion for truncated objects; flip-only aug, 34k iters bs7",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2505.04594": {
+   "key": "2505.04594",
+   "kind": "arxiv",
+   "title": "Unleashing the Power of Chain-of-Prediction for Monocular 3D Object Detection",
+   "authors": [
+    "Zhihao Zhang",
+    "Abhinav Kumar",
+    "Girish Chandar Ganesan",
+    "Xiaoming Liu"
+   ],
+   "published": "2025-05-07",
+   "abstract": "Monocular 3D detection (Mono3D) aims to infer 3D bounding boxes from a single RGB image. Without auxiliary sensors such as LiDAR, this task is inherently ill-posed since the 3D-to-2D projection introduces depth ambiguity. Previous works often predict 3D attributes (e.g., depth, size, and orientation) in parallel, overlooking that these attributes are inherently correlated through the 3D-to-2D projection. However, simply enforcing such correlations through sequential prediction can propagate errors across attributes, especially when objects are occluded or truncated, where inaccurate size or orientation predictions can further amplify depth errors. Therefore, neither parallel nor sequential prediction is optimal. In this paper, we propose MonoCoP, an adaptive framework that learns when and how to leverage inter-attribute correlations with two complementary designs. A Chain-of-Prediction (",
+   "url": "https://arxiv.org/abs/2505.04594",
+   "path": "TanitAD Research Lab/Library/papers/2505.04594_Unleashing-the-Power-of-Chain-of-Prediction-for-Monocular-3D.pdf",
+   "bytes": 12055526,
+   "sha256": "0474bb99c3c28c3c4ac8e97973af1741bbcf29f218cd761056d12c887ee960a2",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "MonoCoP App.C.1: replacing ResNet by DINOv2 (frozen or finetuned) gave NO gain on small Mono3D data (KITTI 3,712 / nuScenes front 28,130 imgs); 250ep lr2e-4",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2502.00315": {
+   "key": "2502.00315",
+   "kind": "arxiv",
+   "title": "MonoDINO-DETR: Depth-Enhanced Monocular 3D Object Detection Using a Vision Foundation Model",
+   "authors": [
+    "Jihyeok Kim",
+    "Seongwoo Moon",
+    "Sungwon Nah",
+    "David Hyunchul Shim"
+   ],
+   "published": "2025-02-01",
+   "abstract": "This paper proposes novel methods to enhance the performance of monocular 3D object detection models by leveraging the generalized feature extraction capabilities of a vision foundation model. Unlike traditional CNN-based approaches, which often suffer from inaccurate depth estimation and rely on multi-stage object detection pipelines, this study employs a Vision Transformer (ViT)-based foundation model as the backbone, which excels at capturing global features for depth estimation. It integrates a detection transformer (DETR) architecture to improve both depth estimation and object detection performance in a one-stage manner. Specifically, a hierarchical feature fusion block is introduced to extract richer visual features from the foundation model, further enhancing feature extraction capabilities. Depth estimation accuracy is further improved by incorporating a relative depth estimatio",
+   "url": "https://arxiv.org/abs/2502.00315",
+   "path": "TanitAD Research Lab/Library/papers/2502.00315_MonoDINO-DETR-Depth-Enhanced-Monocular-3D-Object-Detection-U.pdf",
+   "bytes": 2971986,
+   "sha256": "dc6e86b7433d6dc616553b1b842399a6a04dc334ce059eaaed56efb928348106",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "MonoDINO-DETR Tab.III KITTI Car val Mod AP3D: MonoDETR 17.52 -> +DINOv2+DPT depth head 18.69 -> full w/ hierarchical fusion block 19.19",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2512.16818": {
+   "key": "2512.16818",
+   "kind": "arxiv",
+   "title": "DenseBEV: Transforming BEV Grid Cells into 3D Objects",
+   "authors": [
+    "Marius Dähling",
+    "Sebastian Krebs",
+    "J. Marius Zöllner"
+   ],
+   "published": "2025-12-18",
+   "abstract": "In current research, Bird's-Eye-View (BEV)-based transformers are increasingly utilized for multi-camera 3D object detection. Traditional models often employ random queries as anchors, optimizing them successively. Recent advancements complement or replace these random queries with detections from auxiliary networks. We propose a more intuitive and efficient approach by using BEV feature cells directly as anchors. This end-to-end approach leverages the dense grid of BEV queries, considering each cell as a potential object for the final detection task. As a result, we introduce a novel two-stage anchor generation method specifically designed for multi-camera 3D object detection. To address the scaling issues of attention with a large number of queries, we apply BEV-based Non-Maximum Suppression, allowing gradients to flow only through non-suppressed objects. This ensures efficient trainin",
+   "url": "https://arxiv.org/abs/2512.16818",
+   "path": "TanitAD Research Lab/Library/papers/2512.16818_DenseBEV-Transforming-BEV-Grid-Cells-into-3D-Objects.pdf",
+   "bytes": 30738431,
+   "sha256": "095aa529fb961a1299812cf466caa6def15b09dc40fd74e349f2425140b8381d",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "DenseBEV: BEV cells as two-stage queries + BEV-NMS in training; NMS tau 0.1 vs 0.8 = +1.7 mAP/+1.8 NDS (Tab.5a); pedestrian +3.8 mAP nuScenes",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2504.12643": {
+   "key": "2504.12643",
+   "kind": "arxiv",
+   "title": "RoPETR: Improving Temporal Camera-Only 3D Detection by Integrating Enhanced Rotary Position Embedding",
+   "authors": [
+    "Hang Ji",
+    "Tao Ni",
+    "Xufeng Huang",
+    "Zhan Shi",
+    "Tao Luo",
+    "Xin Zhan",
+    "Junbo Chen"
+   ],
+   "published": "2025-04-17",
+   "abstract": "This technical report introduces a targeted improvement to the StreamPETR framework, specifically aimed at enhancing velocity estimation, a critical factor influencing the overall NuScenes Detection Score. While StreamPETR exhibits strong 3D bounding box detection performance as reflected by its high mean Average Precision our analysis identified velocity estimation as a substantial bottleneck when evaluated on the NuScenes dataset. To overcome this limitation, we propose a customized positional embedding strategy tailored to enhance temporal modeling capabilities. Experimental evaluations conducted on the NuScenes test set demonstrate that our improved approach achieves a state-of-the-art NDS of 70.86% using the ViT-L backbone, setting a new benchmark for camera-only 3D object detection.",
+   "url": "https://arxiv.org/abs/2504.12643",
+   "path": "TanitAD Research Lab/Library/papers/2504.12643_RoPETR-Improving-Temporal-Camera-Only-3D-Detection-by-Integr.pdf",
+   "bytes": 149387,
+   "sha256": "99899d22a9c11d4c17b135b1e4e067790cfe828abf2e49de96ca5a4318a8dcbb",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "RoPETR: StreamPETR velocity fix via rotary PE; test NDS 70.86 ViT-L - temporal/velocity work, not a localisation lever",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2604.17024": {
+   "key": "2604.17024",
+   "kind": "arxiv",
+   "title": "CAM3DNet: Comprehensively mining the multi-scale features for 3D Object Detection with Multi-View Cameras",
+   "authors": [
+    "Mingxi Pang",
+    "Dingheng Wang",
+    "Zekun Li",
+    "Zhenping Sun",
+    "Bo Wang",
+    "Zhihang Wang",
+    "Zhao-Xu Yang"
+   ],
+   "published": "2026-04-18",
+   "abstract": "Query-based 3D object detection methods using multi-view images often struggle to efficiently leverage dynamic multi-scale information, e.g., the relationship between the object features and the geometric of the queries are not sufficiently learned, directly exploring the multi-scale spatiotemporal features will pay too many costs. To address these challenges, we propose CAM3DNet, a novel sparse query-based framework which combines three new modules, composite query (CQ), adaptive self-attention (ASA), and multi-scale hybrid sampling (MSHS). First, the core idea in the CQ module is a multi-scale projection strategy to transform 2D queries into 3D space. Second, the ASA module learns the interactions between the spatiotemporal multi-scale queries. Third, the MSHS module uses the deformable attention mechanism to sample multi-scale object information by considering multi-scales queries, py",
+   "url": "https://arxiv.org/abs/2604.17024",
+   "path": "TanitAD Research Lab/Library/papers/2604.17024_CAM3DNet-Comprehensively-mining-the-multi-scale-features-for.pdf",
+   "bytes": 2036004,
+   "sha256": "c276df8bd57c0b30d06dc528ec4e29c3ed67eac0baceaaf8801e6716430cc47f",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "CAM3DNet: sparse-query detector with YOLOX/DepthNet ROI composite queries (2D-proposal-guided queries, Far3D family); banked, no number used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2512.17620": {
+   "key": "2512.17620",
+   "kind": "arxiv",
+   "title": "StereoMV2D: A Sparse Temporal Stereo-Enhanced Framework for Robust Multi-View 3D Object Detection",
+   "authors": [
+    "Di Wu",
+    "Feng Yang",
+    "Wenhui Zhao",
+    "Jinwen Yu",
+    "Pan Liao",
+    "Benlian Xu",
+    "Dingwen Zhang"
+   ],
+   "published": "2025-12-19",
+   "abstract": "Multi-view 3D object detection is a fundamental task in autonomous driving perception, where achieving a balance between detection accuracy and computational efficiency remains crucial. Sparse query-based 3D detectors efficiently aggregate object-relevant features from multi-view images through a set of learnable queries, offering a concise and end-to-end detection paradigm. Building on this foundation, MV2D leverages 2D detection results to provide high-quality object priors for query initialization, enabling higher precision and recall. However, the inherent depth ambiguity in single-frame 2D detections still limits the accuracy of 3D query generation. To address this issue, we propose StereoMV2D, a unified framework that integrates temporal stereo modeling into the 2D detection-guided multi-view 3D detector. By exploiting cross-temporal disparities of the same object across adjacent f",
+   "url": "https://arxiv.org/abs/2512.17620",
+   "path": "TanitAD Research Lab/Library/papers/2512.17620_StereoMV2D-A-Sparse-Temporal-Stereo-Enhanced-Framework-for-R.pdf",
+   "bytes": 4270467,
+   "sha256": "96d2b01263913d1212446f7f145c7b377301f90f6f999efd9c43400dc87ebdff",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "StereoMV2D: temporal stereo + 2D-detection-guided query init; banked, no number used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2310.15624": {
+   "key": "2310.15624",
+   "kind": "arxiv",
+   "title": "GUPNet++: Geometry Uncertainty Propagation Network for Monocular 3D Object Detection",
+   "authors": [
+    "Yan Lu",
+    "Xinzhu Ma",
+    "Lei Yang",
+    "Tianzhu Zhang",
+    "Yating Liu",
+    "Qi Chu",
+    "Tong He",
+    "Yonghui Li",
+    "Wanli Ouyang"
+   ],
+   "published": "2023-10-24",
+   "abstract": "Geometry plays a significant role in monocular 3D object detection. It can be used to estimate object depth by using the perspective projection between object's physical size and 2D projection in the image plane, which can introduce mathematical priors into deep models. However, this projection process also introduces error amplification, where the error of the estimated height is amplified and reflected into the projected depth. It leads to unreliable depth inferences and also impairs training stability. To tackle this problem, we propose a novel Geometry Uncertainty Propagation Network (GUPNet++) by modeling geometry projection in a probabilistic manner. This ensures depth predictions are well-bounded and associated with a reasonable uncertainty. The significance of introducing such geometric uncertainty is two-fold: (1). It models the uncertainty propagation relationship of the geomet",
+   "url": "https://arxiv.org/abs/2310.15624",
+   "path": "TanitAD Research Lab/Library/papers/2310.15624_GUPNet-Geometry-Uncertainty-Propagation-Network-for-Monocula.pdf",
+   "bytes": 18782006,
+   "sha256": "dffc516b99432a70c2303b637468fb14de5b351ca03d4fcd23771ee193b6b4b0",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "GUPNet++: geometry-uncertainty propagation for monocular 3D; banked, no number used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2002.10111": {
+   "key": "2002.10111",
+   "kind": "arxiv",
+   "title": "SMOKE: Single-Stage Monocular 3D Object Detection via Keypoint Estimation",
+   "authors": [
+    "Zechen Liu",
+    "Zizhang Wu",
+    "Roland Tóth"
+   ],
+   "published": "2020-02-24",
+   "abstract": "Estimating 3D orientation and translation of objects is essential for infrastructure-less autonomous navigation and driving. In case of monocular vision, successful methods have been mainly based on two ingredients: (i) a network generating 2D region proposals, (ii) a R-CNN structure predicting 3D object pose by utilizing the acquired regions of interest. We argue that the 2D detection network is redundant and introduces non-negligible noise for 3D detection. Hence, we propose a novel 3D object detection method, named SMOKE, in this paper that predicts a 3D bounding box for each detected object by combining a single keypoint estimate with regressed 3D variables. As a second contribution, we propose a multi-step disentangling approach for constructing the 3D bounding box, which significantly improves both training convergence and detection accuracy. In contrast to previous 3D detection te",
+   "url": "https://arxiv.org/abs/2002.10111",
+   "path": "TanitAD Research Lab/Library/papers/2002.10111_SMOKE-Single-Stage-Monocular-3D-Object-Detection-via-Keypoin.pdf",
+   "bytes": 4674702,
+   "sha256": "8b6f717c357b2c335e59bd8c1c8b89536fa4f3c2c078e769ef0a03b130b40b1c",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "SMOKE: keypoint-based single-stage monocular 3D detection with disentangled loss; banked, no number used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2406.09414": {
+   "key": "2406.09414",
+   "kind": "arxiv",
+   "title": "Depth Anything V2",
+   "authors": [
+    "Lihe Yang",
+    "Bingyi Kang",
+    "Zilong Huang",
+    "Zhen Zhao",
+    "Xiaogang Xu",
+    "Jiashi Feng",
+    "Hengshuang Zhao"
+   ],
+   "published": "2024-06-13",
+   "abstract": "This work presents Depth Anything V2. Without pursuing fancy techniques, we aim to reveal crucial findings to pave the way towards building a powerful monocular depth estimation model. Notably, compared with V1, this version produces much finer and more robust depth predictions through three key practices: 1) replacing all labeled real images with synthetic images, 2) scaling up the capacity of our teacher model, and 3) teaching student models via the bridge of large-scale pseudo-labeled real images. Compared with the latest models built on Stable Diffusion, our models are significantly more efficient (more than 10x faster) and more accurate. We offer models of different scales (ranging from 25M to 1.3B params) to support extensive scenarios. Benefiting from their strong generalization capability, we fine-tune them with metric depth labels to obtain our metric depth models. In addition t",
+   "url": "https://arxiv.org/abs/2406.09414",
+   "path": "TanitAD Research Lab/Library/papers/2406.09414_Depth-Anything-V2.pdf",
+   "bytes": 47749421,
+   "sha256": "b156a023aa9a5e33bda60489962af809a67e748797d4357c790d063739fed2d7",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "Depth Anything V2: relative-depth foundation model used as depth branch in MonoDINO-DETR; banked for the depth-prior option",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2304.07193": {
+   "key": "2304.07193",
+   "kind": "arxiv",
+   "title": "DINOv2: Learning Robust Visual Features without Supervision",
+   "authors": [
+    "Maxime Oquab",
+    "Timothée Darcet",
+    "Théo Moutakanni",
+    "Huy Vo",
+    "Marc Szafraniec",
+    "Vasil Khalidov",
+    "Pierre Fernandez",
+    "Daniel Haziza",
+    "Francisco Massa",
+    "Alaaeldin El-Nouby",
+    "Mahmoud Assran",
+    "Nicolas Ballas"
+   ],
+   "published": "2023-04-14",
+   "abstract": "The recent breakthroughs in natural language processing for model pretraining on large quantities of data have opened the way for similar foundation models in computer vision. These models could greatly simplify the use of images in any system by producing all-purpose visual features, i.e., features that work across image distributions and tasks without finetuning. This work shows that existing pretraining methods, especially self-supervised methods, can produce such features if trained on enough curated data from diverse sources. We revisit existing approaches and combine different techniques to scale our pretraining in terms of data and model size. Most of the technical contributions aim at accelerating and stabilizing the training at scale. In terms of data, we propose an automatic pipeline to build a dedicated, diverse, and curated image dataset instead of uncurated data, as typicall",
+   "url": "https://arxiv.org/abs/2304.07193",
+   "path": "TanitAD Research Lab/Library/papers/2304.07193_DINOv2-Learning-Robust-Visual-Features-without-Supervision.pdf",
+   "bytes": 8049044,
+   "sha256": "3add205547f3ece5fb1ac7a91720aa9fabf02d9cde29a096643ff022449f3e91",
+   "banked": "2026-10-27",
+   "tags": [
+    "det-recipe-2026-10-27"
+   ],
+   "note": "DINOv2: self-supervised ViT features; banked for backbone comparison",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_DETECTION.md"
+   ]
+  },
+  "2205.02833": {
+   "key": "2205.02833",
+   "kind": "arxiv",
+   "title": "Cross-view Transformers for real-time Map-view Semantic Segmentation",
+   "authors": [
+    "Brady Zhou",
+    "Philipp Krähenbühl"
+   ],
+   "published": "2022-05-05",
+   "abstract": "We present cross-view transformers, an efficient attention-based model for map-view semantic segmentation from multiple cameras. Our architecture implicitly learns a mapping from individual camera views into a canonical map-view representation using a camera-aware cross-view attention mechanism. Each camera uses positional embeddings that depend on its intrinsic and extrinsic calibration. These embeddings allow a transformer to learn the mapping across different views without ever explicitly modeling it geometrically. The architecture consists of a convolutional image encoder for each view and cross-view transformer layers to infer a map-view semantic segmentation. Our model is simple, easily parallelizable, and runs in real-time. The presented architecture performs at state-of-the-art on the nuScenes dataset, with 4x faster inference speeds. Code is available at https://github.com/brady",
+   "url": "https://arxiv.org/abs/2205.02833",
+   "path": "TanitAD Research Lab/Library/papers/2205.02833_Cross-view-Transformers-for-real-time-Map-view-Semantic-Segm.pdf",
+   "bytes": 5452825,
+   "sha256": "a600a4a50703b89a1ee4d44cc4b5b23dff46720db25b4b024b1b7bc94deff118",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "Cross-view Transformers (CVT) - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2205.13542": {
+   "key": "2205.13542",
+   "kind": "arxiv",
+   "title": "BEVFusion: Multi-Task Multi-Sensor Fusion with Unified Bird's-Eye View Representation",
+   "authors": [
+    "Zhijian Liu",
+    "Haotian Tang",
+    "Alexander Amini",
+    "Xinyu Yang",
+    "Huizi Mao",
+    "Daniela Rus",
+    "Song Han"
+   ],
+   "published": "2022-05-26",
+   "abstract": "Multi-sensor fusion is essential for an accurate and reliable autonomous driving system. Recent approaches are based on point-level fusion: augmenting the LiDAR point cloud with camera features. However, the camera-to-LiDAR projection throws away the semantic density of camera features, hindering the effectiveness of such methods, especially for semantic-oriented tasks (such as 3D scene segmentation). In this paper, we break this deeply-rooted convention with BEVFusion, an efficient and generic multi-task multi-sensor fusion framework. It unifies multi-modal features in the shared bird's-eye view (BEV) representation space, which nicely preserves both geometric and semantic information. To achieve this, we diagnose and lift key efficiency bottlenecks in the view transformation with optimized BEV pooling, reducing latency by more than 40x. BEVFusion is fundamentally task-agnostic and seam",
+   "url": "https://arxiv.org/abs/2205.13542",
+   "path": "TanitAD Research Lab/Library/papers/2205.13542_BEVFusion-Multi-Task-Multi-Sensor-Fusion-with-Unified-Bird-s.pdf",
+   "bytes": 10244020,
+   "sha256": "8b2d5d3d07fdafa38119e6876487226ceeaac1e02e664f4c4f3f2d77206b428f",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "BEVFusion (MIT) - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2312.00703": {
+   "key": "2312.00703",
+   "kind": "arxiv",
+   "title": "PointBeV: A Sparse Approach to BeV Predictions",
+   "authors": [
+    "Loick Chambon",
+    "Eloi Zablocki",
+    "Mickael Chen",
+    "Florent Bartoccioni",
+    "Patrick Perez",
+    "Matthieu Cord"
+   ],
+   "published": "2023-12-01",
+   "abstract": "Bird's-eye View (BeV) representations have emerged as the de-facto shared space in driving applications, offering a unified space for sensor data fusion and supporting various downstream tasks. However, conventional models use grids with fixed resolution and range and face computational inefficiencies due to the uniform allocation of resources across all cells. To address this, we propose PointBeV, a novel sparse BeV segmentation model operating on sparse BeV cells instead of dense grids. This approach offers precise control over memory usage, enabling the use of long temporal contexts and accommodating memory-constrained platforms. PointBeV employs an efficient two-pass strategy for training, enabling focused computation on regions of interest. At inference time, it can be used with various memory/performance trade-offs and flexibly adjusts to new specific use cases. PointBeV achieves s",
+   "url": "https://arxiv.org/abs/2312.00703",
+   "path": "TanitAD Research Lab/Library/papers/2312.00703_PointBeV-A-Sparse-Approach-to-BeV-Predictions.pdf",
+   "bytes": 3541351,
+   "sha256": "215ea809f72ce71a97dd475a6956b6c72990aa430ef726feac5e6636ae41cfcb",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "PointBeV - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2003.13402": {
+   "key": "2003.13402",
+   "kind": "arxiv",
+   "title": "Predicting Semantic Map Representations from Images using Pyramid Occupancy Networks",
+   "authors": [
+    "Thomas Roddick",
+    "Roberto Cipolla"
+   ],
+   "published": "2020-03-30",
+   "abstract": "Autonomous vehicles commonly rely on highly detailed birds-eye-view maps of their environment, which capture both static elements of the scene such as road layout as well as dynamic elements such as other cars and pedestrians. Generating these map representations on the fly is a complex multi-stage process which incorporates many important vision-based elements, including ground plane estimation, road segmentation and 3D object detection. In this work we present a simple, unified approach for estimating maps directly from monocular images using a single end-to-end deep learning architecture. For the maps themselves we adopt a semantic Bayesian occupancy grid framework, allowing us to trivially accumulate information over multiple cameras and timesteps. We demonstrate the effectiveness of our approach by evaluating against several challenging baselines on the NuScenes and Argoverse datase",
+   "url": "https://arxiv.org/abs/2003.13402",
+   "path": "TanitAD Research Lab/Library/papers/2003.13402_Predicting-Semantic-Map-Representations-from-Images-using-Py.pdf",
+   "bytes": 3706465,
+   "sha256": "39747a82eb0290284c9baa2f8f5511d618cae963f6555d26900fcfe888e0fd53",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "Pyramid Occupancy Networks - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2110.00966": {
+   "key": "2110.00966",
+   "kind": "arxiv",
+   "title": "Translating Images into Maps",
+   "authors": [
+    "Avishkar Saha",
+    "Oscar Mendez Maldonado",
+    "Chris Russell",
+    "Richard Bowden"
+   ],
+   "published": "2021-10-03",
+   "abstract": "We approach instantaneous mapping, converting images to a top-down view of the world, as a translation problem. We show how a novel form of transformer network can be used to map from images and video directly to an overhead map or bird's-eye-view (BEV) of the world, in a single end-to-end network. We assume a 1-1 correspondence between a vertical scanline in the image, and rays passing through the camera location in an overhead map. This lets us formulate map generation from an image as a set of sequence-to-sequence translations. Posing the problem as translation allows the network to use the context of the image when interpreting the role of each pixel. This constrained formulation, based upon a strong physical grounding of the problem, leads to a restricted transformer network that is convolutional in the horizontal direction only. The structure allows us to make efficient use of data",
+   "url": "https://arxiv.org/abs/2110.00966",
+   "path": "TanitAD Research Lab/Library/papers/2110.00966_Translating-Images-into-Maps.pdf",
+   "bytes": 1029536,
+   "sha256": "23386ec2539387c78fd97c2e19c0723d280ccb7110fc7601f61a4c644d40f576",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "Translating Images into Maps - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2108.03227": {
+   "key": "2108.03227",
+   "kind": "arxiv",
+   "title": "Bird's-Eye-View Panoptic Segmentation Using Monocular Frontal View Images",
+   "authors": [
+    "Nikhil Gosala",
+    "Abhinav Valada"
+   ],
+   "published": "2021-08-06",
+   "abstract": "Bird's-Eye-View (BEV) maps have emerged as one of the most powerful representations for scene understanding due to their ability to provide rich spatial context while being easy to interpret and process. Such maps have found use in many real-world tasks that extensively rely on accurate scene segmentation as well as object instance identification in the BEV space for their operation. However, existing segmentation algorithms only predict the semantics in the BEV space, which limits their use in applications where the notion of object instances is also critical. In this work, we present the first BEV panoptic segmentation approach for directly predicting dense panoptic segmentation maps in the BEV, given a single monocular image in the frontal view (FV). Our architecture follows the top-down paradigm and incorporates a novel dense transformer module consisting of two distinct transformers",
+   "url": "https://arxiv.org/abs/2108.03227",
+   "path": "TanitAD Research Lab/Library/papers/2108.03227_Bird-s-Eye-View-Panoptic-Segmentation-Using-Monocular-Fronta.pdf",
+   "bytes": 32824880,
+   "sha256": "4d8f08a97e0380c371118eabf74e774b53e0a4738f1e36bcadd32ab19da540be",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "PanopticBEV - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2302.04233": {
+   "key": "2302.04233",
+   "kind": "arxiv",
+   "title": "SkyEye: Self-Supervised Bird's-Eye-View Semantic Mapping Using Monocular Frontal View Images",
+   "authors": [
+    "Nikhil Gosala",
+    "Kürsat Petek",
+    "Paulo L. J. Drews-Jr",
+    "Wolfram Burgard",
+    "Abhinav Valada"
+   ],
+   "published": "2023-02-08",
+   "abstract": "Bird's-Eye-View (BEV) semantic maps have become an essential component of automated driving pipelines due to the rich representation they provide for decision-making tasks. However, existing approaches for generating these maps still follow a fully supervised training paradigm and hence rely on large amounts of annotated BEV data. In this work, we address this limitation by proposing the first self-supervised approach for generating a BEV semantic map using a single monocular image from the frontal view (FV). During training, we overcome the need for BEV ground truth annotations by leveraging the more easily available FV semantic annotations of video sequences. Thus, we propose the SkyEye architecture that learns based on two modes of self-supervision, namely, implicit supervision and explicit supervision. Implicit supervision trains the model by enforcing spatial consistency of the scen",
+   "url": "https://arxiv.org/abs/2302.04233",
+   "path": "TanitAD Research Lab/Library/papers/2302.04233_SkyEye-Self-Supervised-Bird-s-Eye-View-Semantic-Mapping-Usin.pdf",
+   "bytes": 17719319,
+   "sha256": "2bd0c77a5669c0d1b0dd2192c94cc3831d851acdbf57565d67694bd5f5a2c875",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "SkyEye - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2405.18852": {
+   "key": "2405.18852",
+   "kind": "arxiv",
+   "title": "LetsMap: Unsupervised Representation Learning for Semantic BEV Mapping",
+   "authors": [
+    "Nikhil Gosala",
+    "Kürsat Petek",
+    "B Ravi Kiran",
+    "Senthil Yogamani",
+    "Paulo Drews-Jr",
+    "Wolfram Burgard",
+    "Abhinav Valada"
+   ],
+   "published": "2024-05-29",
+   "abstract": "Semantic Bird's Eye View (BEV) maps offer a rich representation with strong occlusion reasoning for various decision making tasks in autonomous driving. However, most BEV mapping approaches employ a fully supervised learning paradigm that relies on large amounts of human-annotated BEV ground truth data. In this work, we address this limitation by proposing the first unsupervised representation learning approach to generate semantic BEV maps from a monocular frontal view (FV) image in a label-efficient manner. Our approach pretrains the network to independently reason about scene geometry and scene semantics using two disjoint neural pathways in an unsupervised manner and then finetunes it for the task of semantic BEV mapping using only a small fraction of labels in the BEV. We achieve label-free pretraining by exploiting spatial and temporal consistency of FV images to learn scene geomet",
+   "url": "https://arxiv.org/abs/2405.18852",
+   "path": "TanitAD Research Lab/Library/papers/2405.18852_LetsMap-Unsupervised-Representation-Learning-for-Semantic-BE.pdf",
+   "bytes": 20060183,
+   "sha256": "c0226475ef937653fee9e15b2cc83819828bf73fbbc87e7e06de981b9253c173",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "LetsMap (abstract-level) - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2203.04050": {
+   "key": "2203.04050",
+   "kind": "arxiv",
+   "title": "BEVSegFormer: Bird's Eye View Semantic Segmentation From Arbitrary Camera Rigs",
+   "authors": [
+    "Lang Peng",
+    "Zhirong Chen",
+    "Zhangjie Fu",
+    "Pengpeng Liang",
+    "Erkang Cheng"
+   ],
+   "published": "2022-03-08",
+   "abstract": "Semantic segmentation in bird's eye view (BEV) is an important task for autonomous driving. Though this task has attracted a large amount of research efforts, it is still challenging to flexibly cope with arbitrary (single or multiple) camera sensors equipped on the autonomous vehicle. In this paper, we present BEVSegFormer, an effective transformer-based method for BEV semantic segmentation from arbitrary camera rigs. Specifically, our method first encodes image features from arbitrary cameras with a shared backbone. These image features are then enhanced by a deformable transformer-based encoder. Moreover, we introduce a BEV transformer decoder module to parse BEV semantic segmentation results. An efficient multi-camera deformable attention unit is designed to carry out the BEV-to-image view transformation. Finally, the queries are reshaped according the layout of grids in the BEV, and",
+   "url": "https://arxiv.org/abs/2203.04050",
+   "path": "TanitAD Research Lab/Library/papers/2203.04050_BEVSegFormer-Bird-s-Eye-View-Semantic-Segmentation-From-Arbi.pdf",
+   "bytes": 6066963,
+   "sha256": "70437388b341399d99c10f260f15184309a25784e5837b9eaa2a330e4584c62e",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "BEVSegFormer - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2602.18066": {
+   "key": "2602.18066",
+   "kind": "arxiv",
+   "title": "Faster Training, Fewer Labels: Self-Supervised Pretraining for Fine-Grained BEV Segmentation",
+   "authors": [
+    "Daniel Busch",
+    "Christian Bohn",
+    "Thomas Kurbiel",
+    "Klaus Friedrichs",
+    "Richard Meyes",
+    "Tobias Meisen"
+   ],
+   "published": "2026-02-20",
+   "abstract": "Dense Bird's Eye View (BEV) semantic maps are central to autonomous driving, yet current multi-camera methods depend on costly, inconsistently annotated BEV ground truth. We address this limitation with a two-phase training strategy for fine-grained road marking segmentation that removes full supervision during pretraining and halves the amount of training data during fine-tuning while still outperforming the comparable supervised baseline model. During the self-supervised pretraining, BEVFormer predictions are differentiably reprojected into the image plane and trained against multi-view semantic pseudo-labels generated by the widely used semantic segmentation model Mask2Former. A temporal loss encourages consistency across frames. The subsequent supervised fine-tuning phase requires only 50% of the dataset and significantly less training time. With our method, the fine-tuning benefits ",
+   "url": "https://arxiv.org/abs/2602.18066",
+   "path": "TanitAD Research Lab/Library/papers/2602.18066_Faster-Training-Fewer-Labels-Self-Supervised-Pretraining-for.pdf",
+   "bytes": 4064041,
+   "sha256": "c7632a6e542ffd4de4f5d035fac1030a66a00b764a3ba86ef0a1c50fbdfa185a",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "Busch: Faster Training, Fewer Labels - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2510.00651": {
+   "key": "2510.00651",
+   "kind": "arxiv",
+   "title": "FIN: Fast Inference Network for Map Segmentation",
+   "authors": [
+    "Ruan Bispo",
+    "Tim Brophy",
+    "Reenu Mohandas",
+    "Anthony Scanlan",
+    "Ciarán Eising"
+   ],
+   "published": "2025-10-01",
+   "abstract": "Multi-sensor fusion in autonomous vehicles is becoming more common to offer a more robust alternative for several perception tasks. This need arises from the unique contribution of each sensor in collecting data: camera-radar fusion offers a cost-effective solution by combining rich semantic information from cameras with accurate distance measurements from radar, without incurring excessive financial costs or overwhelming data processing requirements. Map segmentation is a critical task for enabling effective vehicle behaviour in its environment, yet it continues to face significant challenges in achieving high accuracy and meeting real-time performance requirements. Therefore, this work presents a novel and efficient map segmentation architecture, using cameras and radars, in the \\acrfull{bev} space. Our model introduces a real-time map segmentation architecture considering aspects such",
+   "url": "https://arxiv.org/abs/2510.00651",
+   "path": "TanitAD Research Lab/Library/papers/2510.00651_FIN-Fast-Inference-Network-for-Map-Segmentation.pdf",
+   "bytes": 6883014,
+   "sha256": "a6b710583015e33d5c895919117ca12203ddf27be3d9dff45a00f5e2bfe5699d",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "FIN - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2206.08920": {
+   "key": "2206.08920",
+   "kind": "arxiv",
+   "title": "VectorMapNet: End-to-end Vectorized HD Map Learning",
+   "authors": [
+    "Yicheng Liu",
+    "Tianyuan Yuan",
+    "Yue Wang",
+    "Yilun Wang",
+    "Hang Zhao"
+   ],
+   "published": "2022-06-17",
+   "abstract": "Autonomous driving systems require High-Definition (HD) semantic maps to navigate around urban roads. Existing solutions approach the semantic mapping problem by offline manual annotation, which suffers from serious scalability issues. Recent learning-based methods produce dense rasterized segmentation predictions to construct maps. However, these predictions do not include instance information of individual map elements and require heuristic post-processing to obtain vectorized maps. To tackle these challenges, we introduce an end-to-end vectorized HD map learning pipeline, termed VectorMapNet. VectorMapNet takes onboard sensor observations and predicts a sparse set of polylines in the bird's-eye view. This pipeline can explicitly model the spatial relation between map elements and generate vectorized maps that are friendly to downstream autonomous driving tasks. Extensive experiments s",
+   "url": "https://arxiv.org/abs/2206.08920",
+   "path": "TanitAD Research Lab/Library/papers/2206.08920_VectorMapNet-End-to-end-Vectorized-HD-Map-Learning.pdf",
+   "bytes": 13375900,
+   "sha256": "7b7e5cca0a2103079cd404bfeb6c77a16431006cd370dd373339c097b5c7e1fe",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "VectorMapNet (via MapTR Table 1) - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2308.12570": {
+   "key": "2308.12570",
+   "kind": "arxiv",
+   "title": "StreamMapNet: Streaming Mapping Network for Vectorized Online HD Map Construction",
+   "authors": [
+    "Tianyuan Yuan",
+    "Yicheng Liu",
+    "Yue Wang",
+    "Yilun Wang",
+    "Hang Zhao"
+   ],
+   "published": "2023-08-24",
+   "abstract": "High-Definition (HD) maps are essential for the safety of autonomous driving systems. While existing techniques employ camera images and onboard sensors to generate vectorized high-precision maps, they are constrained by their reliance on single-frame input. This approach limits their stability and performance in complex scenarios such as occlusions, largely due to the absence of temporal information. Moreover, their performance diminishes when applied to broader perception ranges. In this paper, we present StreamMapNet, a novel online mapping pipeline adept at long-sequence temporal modeling of videos. StreamMapNet employs multi-point attention and temporal information which empowers the construction of large-range local HD maps with high stability and further addresses the limitations of existing methods. Furthermore, we critically examine widely used online HD Map construction benchma",
+   "url": "https://arxiv.org/abs/2308.12570",
+   "path": "TanitAD Research Lab/Library/papers/2308.12570_StreamMapNet-Streaming-Mapping-Network-for-Vectorized-Online.pdf",
+   "bytes": 7478587,
+   "sha256": "59d59b9bbcf577a57158e35784e617f5ec651d3894a17b4fc9524da849460196",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "StreamMapNet - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2403.15951": {
+   "key": "2403.15951",
+   "kind": "arxiv",
+   "title": "MapTracker: Tracking with Strided Memory Fusion for Consistent Vector HD Mapping",
+   "authors": [
+    "Jiacheng Chen",
+    "Yuefan Wu",
+    "Jiaqi Tan",
+    "Hang Ma",
+    "Yasutaka Furukawa"
+   ],
+   "published": "2024-03-23",
+   "abstract": "This paper presents a vector HD-mapping algorithm that formulates the mapping as a tracking task and uses a history of memory latents to ensure consistent reconstructions over time. Our method, MapTracker, accumulates a sensor stream into memory buffers of two latent representations: 1) Raster latents in the bird's-eye-view (BEV) space and 2) Vector latents over the road elements (i.e., pedestrian-crossings, lane-dividers, and road-boundaries). The approach borrows the query propagation paradigm from the tracking literature that explicitly associates tracked road elements from the previous frame to the current, while fusing a subset of memory latents selected with distance strides to further enhance temporal consistency. A vector latent is decoded to reconstruct the geometry of a road element. The paper further makes benchmark contributions by 1) Improving processing code for existing da",
+   "url": "https://arxiv.org/abs/2403.15951",
+   "path": "TanitAD Research Lab/Library/papers/2403.15951_MapTracker-Tracking-with-Strided-Memory-Fusion-for-Consisten.pdf",
+   "bytes": 16585597,
+   "sha256": "f195c01d7d2e79ef34ab72dee479893519b4746f8320aa70d9b6120f2b0624f7",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "MapTracker - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2306.09700": {
+   "key": "2306.09700",
+   "kind": "arxiv",
+   "title": "End-to-End Vectorized HD-map Construction with Piecewise Bezier Curve",
+   "authors": [
+    "Limeng Qiao",
+    "Wenjie Ding",
+    "Xi Qiu",
+    "Chi Zhang"
+   ],
+   "published": "2023-06-16",
+   "abstract": "Vectorized high-definition map (HD-map) construction, which focuses on the perception of centimeter-level environmental information, has attracted significant research interest in the autonomous driving community. Most existing approaches first obtain rasterized map with the segmentation-based pipeline and then conduct heavy post-processing for downstream-friendly vectorization. In this paper, by delving into parameterization-based methods, we pioneer a concise and elegant scheme that adopts unified piecewise Bezier curve. In order to vectorize changeful map elements end-to-end, we elaborate a simple yet effective architecture, named Piecewise Bezier HD-map Network (BeMapNet), which is formulated as a direct set prediction paradigm and postprocessing-free. Concretely, we first introduce a novel IPM-PE Align module to inject 3D geometry prior into BEV features through common position enco",
+   "url": "https://arxiv.org/abs/2306.09700",
+   "path": "TanitAD Research Lab/Library/papers/2306.09700_End-to-End-Vectorized-HD-map-Construction-with-Piecewise-Bez.pdf",
+   "bytes": 15702655,
+   "sha256": "84fe91d0a261daae8a1647b8c77fdc84d50c639d58e2a40e86fe8c05d3f95c8f",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "BeMapNet - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2308.16477": {
+   "key": "2308.16477",
+   "kind": "arxiv",
+   "title": "PivotNet: Vectorized Pivot Learning for End-to-end HD Map Construction",
+   "authors": [
+    "Wenjie Ding",
+    "Limeng Qiao",
+    "Xi Qiu",
+    "Chi Zhang"
+   ],
+   "published": "2023-08-31",
+   "abstract": "Vectorized high-definition map online construction has garnered considerable attention in the field of autonomous driving research. Most existing approaches model changeable map elements using a fixed number of points, or predict local maps in a two-stage autoregressive manner, which may miss essential details and lead to error accumulation. Towards precise map element learning, we propose a simple yet effective architecture named PivotNet, which adopts unified pivot-based map representations and is formulated as a direct set prediction paradigm. Concretely, we first propose a novel point-to-line mask module to encode both the subordinate and geometrical point-line priors in the network. Then, a well-designed pivot dynamic matching module is proposed to model the topology in dynamic point sequences by introducing the concept of sequence matching. Furthermore, to supervise the position an",
+   "url": "https://arxiv.org/abs/2308.16477",
+   "path": "TanitAD Research Lab/Library/papers/2308.16477_PivotNet-Vectorized-Pivot-Learning-for-End-to-end-HD-Map-Con.pdf",
+   "bytes": 6777456,
+   "sha256": "cc11c931c379ab8ca0b855ba18a411673a52cf6219a5dbf92b59361f4052c218",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "PivotNet (via MapQR Table 1) - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2402.17430": {
+   "key": "2402.17430",
+   "kind": "arxiv",
+   "title": "Leveraging Enhanced Queries of Point Sets for Vectorized Map Construction",
+   "authors": [
+    "Zihao Liu",
+    "Xiaoyu Zhang",
+    "Guangwei Liu",
+    "Ji Zhao",
+    "Ningyi Xu"
+   ],
+   "published": "2024-02-27",
+   "abstract": "In autonomous driving, the high-definition (HD) map plays a crucial role in localization and planning. Recently, several methods have facilitated end-to-end online map construction in DETR-like frameworks. However, little attention has been paid to the potential capabilities of exploring the query mechanism for map elements. This paper introduces MapQR, an end-to-end method with an emphasis on enhancing query capabilities for constructing online vectorized maps. To probe desirable information efficiently, MapQR utilizes a novel query design, called scatter-and-gather query, which is modelled by separate content and position parts explicitly. The base map instance queries are scattered to different reference points and added with positional embeddings to probe information from BEV features. Then these scatted queries are gathered back to enhance information within each map instance. Toget",
+   "url": "https://arxiv.org/abs/2402.17430",
+   "path": "TanitAD Research Lab/Library/papers/2402.17430_Leveraging-Enhanced-Queries-of-Point-Sets-for-Vectorized-Map.pdf",
+   "bytes": 11504596,
+   "sha256": "ec04eeeabc5d1fb2e9d533617f870d995142020ff332da4d4a6b81038bb5562e",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "MapQR - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2503.13430": {
+   "key": "2503.13430",
+   "kind": "arxiv",
+   "title": "AugMapNet: Improving Spatial Latent Structure via BEV Grid Augmentation for Enhanced Vectorized Online HD Map Construction",
+   "authors": [
+    "Thomas Monninger",
+    "Md Zafar Anwar",
+    "Stanislaw Antol",
+    "Steffen Staab",
+    "Sihao Ding"
+   ],
+   "published": "2025-03-17",
+   "abstract": "Autonomous driving requires understanding infrastructure elements, such as lanes and crosswalks. To navigate safely, this understanding must be derived from sensor data in real-time and needs to be represented in vectorized form. Learned Bird's-Eye View (BEV) encoders are commonly used to combine a set of camera images from multiple views into one joint latent BEV grid. Traditionally, from this latent space, an intermediate raster map is predicted, providing dense spatial supervision but requiring post-processing into the desired vectorized form. More recent models directly derive infrastructure elements as polylines using vectorized map decoders, providing instance-level information. Our approach, Augmentation Map Network (AugMapNet), proposes latent BEV feature grid augmentation, a novel technique that significantly enhances the latent BEV representation. AugMapNet combines vector deco",
+   "url": "https://arxiv.org/abs/2503.13430",
+   "path": "TanitAD Research Lab/Library/papers/2503.13430_AugMapNet-Improving-Spatial-Latent-Structure-via-BEV-Grid-Au.pdf",
+   "bytes": 9767823,
+   "sha256": "f2ab3623fb5a92c82a6109b6304b7ca2da29cfed1a18048ffdce983afd8451a0",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "AugMapNet - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2510.06969": {
+   "key": "2510.06969",
+   "kind": "arxiv",
+   "title": "Learning Global Representation from Queries for Vectorized HD Map Construction",
+   "authors": [
+    "Shoumeng Qiu",
+    "Xinrun Li",
+    "Yang Long",
+    "Xiangyang Xue",
+    "Varun Ojha",
+    "Jian Pu"
+   ],
+   "published": "2025-10-08",
+   "abstract": "The online construction of vectorized high-definition (HD) maps is a cornerstone of modern autonomous driving systems. State-of-the-art approaches, particularly those based on the DETR framework, formulate this as an instance detection problem. However, their reliance on independent, learnable object queries results in a predominantly local query perspective, neglecting the inherent global representation within HD maps. In this work, we propose \\textbf{MapGR} (\\textbf{G}lobal \\textbf{R}epresentation learning for HD \\textbf{Map} construction), an architecture designed to learn and utilize a global representations from queries. Our method introduces two synergistic modules: a Global Representation Learning (GRL) module, which encourages the distribution of all queries to better align with the global map through a carefully designed holistic segmentation task, and a Global Representation Gu",
+   "url": "https://arxiv.org/abs/2510.06969",
+   "path": "TanitAD Research Lab/Library/papers/2510.06969_Learning-Global-Representation-from-Queries-for-Vectorized-H.pdf",
+   "bytes": 3773660,
+   "sha256": "7b6395b13e702bf22355cdac49c354567ba4da8d6caa3c7a6492bb197fdb182b",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "MapGR (under review) - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2610.25284": {
+   "key": "2610.25284",
+   "kind": "arxiv",
+   "title": "Learning Lane-Structured Conditioning Fields for Online HD Mapping",
+   "authors": [
+    "Andrea Bertogalli",
+    "Anthony Dell'Eva",
+    "Marcello Ceresini",
+    "Federico Pirazzoli",
+    "Lorenzo Cipelli",
+    "Filippo D'Addeo",
+    "Nicola Marinello",
+    "Massimo Bertozzi"
+   ],
+   "published": "2026-10-18",
+   "abstract": "High-definition maps provide critical structural information for downstream autonomous driving tasks. Recent methods increasingly rely on external priors to improve prediction accuracy and robustness. Yet, existing prior representations expose a trade-off: dense rasters are easy to integrate but ignore certain map geometric properties, while sparse vectors preserve geometric structure but require dedicated encoders and are difficult to plug into existing architectures. Moreover, external priors can be inaccurate, costly to acquire, or difficult to maintain, motivating a structural representation that can provide geometric guidance while remaining learnable and broadly applicable. We address this limitation with the Lane Field, a dense BEV-aligned geometric representation that encodes local lane structure at each spatial location and can be either predicted from onboard observations or co",
+   "url": "https://arxiv.org/abs/2610.25284",
+   "path": "TanitAD Research Lab/Library/papers/2610.25284_Learning-Lane-Structured-Conditioning-Fields-for-Online-HD-M.pdf",
+   "bytes": 48848621,
+   "sha256": "2f8851a2b28482f3c1a62fcce54233f6b65c3d2a9502bffd4d60834aea785425",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "Lane Field - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2401.07323": {
+   "key": "2401.07323",
+   "kind": "arxiv",
+   "title": "MapNeXt: Revisiting Training and Scaling Practices for Online Vectorized HD Map Construction",
+   "authors": [
+    "Toyota Li"
+   ],
+   "published": "2024-01-14",
+   "abstract": "High-Definition (HD) maps are pivotal to autopilot navigation. Integrating the capability of lightweight HD map construction at runtime into a self-driving system recently emerges as a promising direction. In this surge, vision-only perception stands out, as a camera rig can still perceive the stereo information, let alone its appealing signature of portability and economy. The latest MapTR architecture solves the online HD map construction task in an end-to-end fashion but its potential is yet to be explored. In this work, we present a full-scale upgrade of MapTR and propose MapNeXt, the next generation of HD map learning architecture, delivering major contributions from the model training and scaling perspectives. After shedding light on the training dynamics of MapTR and exploiting the supervision from map elements thoroughly, MapNeXt-Tiny raises the mAP of MapTR-Tiny from 49.0% to 54",
+   "url": "https://arxiv.org/abs/2401.07323",
+   "path": "TanitAD Research Lab/Library/papers/2401.07323_MapNeXt-Revisiting-Training-and-Scaling-Practices-for-Online.pdf",
+   "bytes": 206756,
+   "sha256": "746d2b03f70a4e58a5556e167bb69b5d804a7e8dc2b4b3fe32751fb125ff90d3",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "MapNeXt (single author) - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2210.06006": {
+   "key": "2210.06006",
+   "kind": "arxiv",
+   "title": "BEV-LaneDet: a Simple and Effective 3D Lane Detection Baseline",
+   "authors": [
+    "Ruihao Wang",
+    "Jian Qin",
+    "Kaiying Li",
+    "Yaochen Li",
+    "Dong Cao",
+    "Jintao Xu"
+   ],
+   "published": "2022-10-12",
+   "abstract": "3D lane detection which plays a crucial role in vehicle routing, has recently been a rapidly developing topic in autonomous driving. Previous works struggle with practicality due to their complicated spatial transformations and inflexible representations of 3D lanes. Faced with the issues, our work proposes an efficient and robust monocular 3D lane detection called BEV-LaneDet with three main contributions. First, we introduce the Virtual Camera that unifies the in/extrinsic parameters of cameras mounted on different vehicles to guarantee the consistency of the spatial relationship among cameras. It can effectively promote the learning procedure due to the unified visual space. We secondly propose a simple but efficient 3D lane representation called Key-Points Representation. This module is more suitable to represent the complicated and diverse 3D lane structures. At last, we present a l",
+   "url": "https://arxiv.org/abs/2210.06006",
+   "path": "TanitAD Research Lab/Library/papers/2210.06006_BEV-LaneDet-a-Simple-and-Effective-3D-Lane-Detection-Baselin.pdf",
+   "bytes": 36349746,
+   "sha256": "531e155d6959bcecb41562cf197cad207f523cbfd5974e5eed5cec7a6420d39b",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "BEV-LaneDet - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2606.19122": {
+   "key": "2606.19122",
+   "kind": "arxiv",
+   "title": "Monocular 3D Occupancy Perception for Robots on Sidewalks via Hybrid 2D-3D Learning",
+   "authors": [
+    "Yukai Ma",
+    "Joe Lin",
+    "Liu Liu",
+    "Honglin He",
+    "Lulu Ricketts",
+    "Brad Squicciarini",
+    "Bolei Zhou"
+   ],
+   "published": "2026-06-17",
+   "abstract": "Sidewalks in the real world are crowded, cluttered, and less structured than roads, making 3D occupancy prediction a key ingredient for the safe navigation of mobile robots such as delivery bots and electric wheelchairs. Existing occupancy learning pipelines are largely designed for on-road autonomous driving and often train on large-scale paired LiDAR-RGB datasets with dense 3D supervision and multiple camera inputs, which are costly to collect and do not adequately capture sidewalk-specific characteristics. We propose WalkOCC, a hybrid Ray-marching monocular 3D occupancy perception framework for robots operating on sidewalks. WalkOCC explicitly couples geometric grounding from LiDAR-RGB paired data with scalable learning from large-scale unpaired monocular images. It bootstraps pseudo occupancy supervision from paired sequences and jointly learns image-level representations on addition",
+   "url": "https://arxiv.org/abs/2606.19122",
+   "path": "TanitAD Research Lab/Library/papers/2606.19122_Monocular-3D-Occupancy-Perception-for-Robots-on-Sidewalks-vi.pdf",
+   "bytes": 36297645,
+   "sha256": "2c7a03ffabb2dda7fa46698401487386581aff3bad4c636e6e633db434cb3502",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "WalkOCC (SAM3 pseudo-labels) - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2508.18788": {
+   "key": "2508.18788",
+   "kind": "arxiv",
+   "title": "PseudoMapTrainer: Learning Online Mapping without HD Maps",
+   "authors": [
+    "Christian Löwens",
+    "Thorben Funke",
+    "Jingchao Xie",
+    "Alexandru Paul Condurache"
+   ],
+   "published": "2025-08-26",
+   "abstract": "Online mapping models show remarkable results in predicting vectorized maps from multi-view camera images only. However, all existing approaches still rely on ground-truth high-definition maps during training, which are expensive to obtain and often not geographically diverse enough for reliable generalization. In this work, we propose PseudoMapTrainer, a novel approach to online mapping that uses pseudo-labels generated from unlabeled sensor data. We derive those pseudo-labels by reconstructing the road surface from multi-camera imagery using Gaussian splatting and semantics of a pre-trained 2D segmentation network. In addition, we introduce a mask-aware assignment algorithm and loss function to handle partially masked pseudo-labels, allowing for the first time the training of online mapping models without any ground-truth maps. Furthermore, our pseudo-labels can be effectively used to ",
+   "url": "https://arxiv.org/abs/2508.18788",
+   "path": "TanitAD Research Lab/Library/papers/2508.18788_PseudoMapTrainer-Learning-Online-Mapping-without-HD-Maps.pdf",
+   "bytes": 18245050,
+   "sha256": "1c8ac7224cf4a942d3abc364065b11e6ed1ecf76df0bd9df2c3ad7111f90811a",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "PseudoMapTrainer - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2608.12600": {
+   "key": "2608.12600",
+   "kind": "arxiv",
+   "title": "PseudoMapLabeler: Confidence-Aware Pseudo-Label Generation for Semi-Supervised Online Mapping",
+   "authors": [
+    "Chikao Tsuchiya",
+    "Dhaval Bhanderi",
+    "David Ilstrup",
+    "Hsinmin Cheng",
+    "Christopher Ostafew"
+   ],
+   "published": "2026-08-12",
+   "abstract": "A critical challenge in deploying online HD map construction systems to real-world scenarios is the scarcity of labeled training data, which limits model generalization in diverse environments. To address this limitation, we propose a teacher-student semi-supervised learning (SSL) framework that generates high-quality pseudo-labels from unlabeled data through confidence-aware map refinement. Our approach first trains a teacher model on limited labeled data, then leverages Beta-distribution-based confidence maps to assess the reliability of predicted map elements across temporal observations. Unlike conventional filtering methods that discard entire elements, we introduce a spatial clipping technique that selectively preserves high-confidence regions while removing unreliable segments. The refined map elements serve as map priors that improve the teacher model's prediction accuracy on unl",
+   "url": "https://arxiv.org/abs/2608.12600",
+   "path": "TanitAD Research Lab/Library/papers/2608.12600_PseudoMapLabeler-Confidence-Aware-Pseudo-Label-Generation-fo.pdf",
+   "bytes": 1679159,
+   "sha256": "1f9f02e06a7781189268486700ea48f17bc33f5872cbe8d4366ccce7b84e5a2d",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "PseudoMapLabeler - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2511.19527": {
+   "key": "2511.19527",
+   "kind": "arxiv",
+   "title": "MapRF: Weakly Supervised Online HD Map Construction via NeRF-Guided Self-Training",
+   "authors": [
+    "Hongyu Lyu",
+    "Thomas Monninger",
+    "Julie Stephany Berrio Perez",
+    "Mao Shan",
+    "Zhenxing Ming",
+    "Stewart Worrall"
+   ],
+   "published": "2025-11-24",
+   "abstract": "Autonomous driving systems benefit from high-definition (HD) maps that provide critical information about road infrastructure. The online construction of HD maps offers a scalable approach to generate local maps from on-board sensors. However, existing methods typically rely on costly 3D map annotations for training, which limits their generalization and scalability across diverse driving environments. In this work, we propose MapRF, a weakly supervised framework that learns to construct 3D maps using only 2D image labels. To generate high-quality pseudo labels, we introduce a novel Neural Radiance Fields (NeRF) module conditioned on map predictions, which reconstructs view-consistent 3D geometry and semantics. These pseudo labels are then iteratively used to refine the map network in a self-training manner, enabling progressive improvement without additional supervision. Furthermore, to",
+   "url": "https://arxiv.org/abs/2511.19527",
+   "path": "TanitAD Research Lab/Library/papers/2511.19527_MapRF-Weakly-Supervised-Online-HD-Map-Construction-via-NeRF.pdf",
+   "bytes": 2326745,
+   "sha256": "5b983eb930163895a7f3b9afb06291e00e4caaa34a16705cf000eab7286e1985",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "MapRF - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2511.16719": {
+   "key": "2511.16719",
+   "kind": "arxiv",
+   "title": "SAM 3: Segment Anything with Concepts",
+   "authors": [
+    "Nicolas Carion",
+    "Laura Gustafson",
+    "Yuan-Ting Hu",
+    "Shoubhik Debnath",
+    "Ronghang Hu",
+    "Didac Suris",
+    "Chaitanya Ryali",
+    "Kalyan Vasudev Alwala",
+    "Haitham Khedr",
+    "Andrew Huang",
+    "Jie Lei",
+    "Tengyu Ma"
+   ],
+   "published": "2025-11-20",
+   "abstract": "We present Segment Anything Model (SAM) 3, a unified model that detects, segments, and tracks objects in images and videos based on concept prompts, which we define as either short noun phrases (e.g., \"yellow school bus\"), image exemplars, or a combination of both. Promptable Concept Segmentation (PCS) takes such prompts and returns segmentation masks and unique identities for all matching object instances. To advance PCS, we build a scalable data engine that produces a high-quality dataset with 4M unique concept labels, including hard negatives, across images and videos. Our model consists of an image-level detector and a memory-based video tracker that share a single backbone. Recognition and localization are decoupled with a presence head, which boosts detection accuracy. SAM 3 doubles the accuracy of existing systems in both image and video PCS, and improves previous SAM capabilities",
+   "url": "https://arxiv.org/abs/2511.16719",
+   "path": "TanitAD Research Lab/Library/papers/2511.16719_SAM-3-Segment-Anything-with-Concepts.pdf",
+   "bytes": 35521939,
+   "sha256": "19e8a44e7fc33bc6cf237f6b4ac3948a79b33f7ffc62d09012fcac6fc9fb016f",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "SAM 3 (limitations only) - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
+   ]
+  },
+  "2403.16051": {
+   "key": "2403.16051",
+   "kind": "arxiv",
+   "title": "Segment Anything Model for Road Network Graph Extraction",
+   "authors": [
+    "Congrui Hetang",
+    "Haoru Xue",
+    "Cindy Le",
+    "Tianwei Yue",
+    "Wenping Wang",
+    "Yihui He"
+   ],
+   "published": "2024-03-24",
+   "abstract": "We propose SAM-Road, an adaptation of the Segment Anything Model (SAM) for extracting large-scale, vectorized road network graphs from satellite imagery. To predict graph geometry, we formulate it as a dense semantic segmentation task, leveraging the inherent strengths of SAM. The image encoder of SAM is fine-tuned to produce probability masks for roads and intersections, from which the graph vertices are extracted via simple non-maximum suppression. To predict graph topology, we designed a lightweight transformer-based graph neural network, which leverages the SAM image embeddings to estimate the edge existence probabilities between vertices. Our approach directly predicts the graph vertices and edges for large regions without expensive and complex post-processing heuristics, and is capable of building complete road network graphs spanning multiple square kilometers in a matter of secon",
+   "url": "https://arxiv.org/abs/2403.16051",
+   "path": "TanitAD Research Lab/Library/papers/2403.16051_Segment-Anything-Model-for-Road-Network-Graph-Extraction.pdf",
+   "bytes": 19462163,
+   "sha256": "f0357f16ed477a1d47924035ffb51cdd1554a00c7adcab076fe821575431ea01",
+   "banked": "2026-10-27",
+   "tags": [
+    "bev-map"
+   ],
+   "note": "SAM-Road - cited in LIT_BEVMAP.md (BEV map extraction review); see that file for how it is used",
+   "cited_by": [
+    "TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/LIT_BEVMAP.md"
    ]
   }
  }
