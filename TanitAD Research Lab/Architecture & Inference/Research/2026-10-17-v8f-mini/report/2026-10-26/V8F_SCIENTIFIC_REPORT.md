@@ -1,6 +1,6 @@
 # v8F-mini: a three-level hierarchy over frozen visual features with a typed tactical interface, and a rigorous account of what does and does not move six-second driving error
 
-**Status:** research report, v32 of 2026-10-28, results through repository tip `ea5e3d3b` (v31: `569a9d9b`; v30: `93aa1956`; branch `agent/arch-inf-20260803`; the code line references in §10 are at `a99ca5d6`). Open-loop results only (T0, T1 and the self-action T1-kin); **no closed-loop (T2) number exists** and no published baseline exists on this split. The PI's bar of "dominant driving results" is **not met** (§8.3). v32 adds the SPEEDREAD read (§7.24), the DAgger iteration 2 read (§7.25) and the DAG-ORC read (§7.26, HARMS).
+**Status:** research report, v33 of 2026-10-28, results through repository tip `8c1e9636` (v32: `ea5e3d3b`; v31: `569a9d9b`; v30: `93aa1956`; branch `agent/arch-inf-20260803`; the code line references in §10 are at `a99ca5d6`). Open-loop results only (T0, T1 and the self-action T1-kin); **no closed-loop (T2) number exists** and no published baseline exists on this split. The PI's bar of "dominant driving results" is **not met** (§8.3). v32 adds the SPEEDREAD read (§7.24), the DAgger iteration 2 read (§7.25) and the DAG-ORC read (§7.26, HARMS). v33 adds the SPEEDSUB read (§7.27, PASS, a screening result), the SPEEDSUB-T1 read (§7.28, NULL) and the LAUNCH-INTENT read (§7.29, HARMS: arm A, W 1.58926, is not adopted; M-LAUNCH reads NOT MOVED).
 
 **Evidence classes used throughout.** **[M]** MEASURED (ours, artifact named) · **[P]** PUBLISHED (library key; the PDF is banked, but descriptions here follow the library index entry, UNVERIFIED beyond it) · **[I]** INHERITED (another document, not re-verified by me) · **[E]** ESTIMATED · **[H]** HYPOTHESIS · **[U]** UNVERIFIED. Every result carries its **tier** (T0 teacher-forced / oracle; T1 self-action open loop; T2 closed loop, unprovisioned) and its **estimator** (§5.3). Paths starting `R/` mean `TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/`.
 
@@ -40,7 +40,22 @@ Together with FLAT, this places the hierarchy's defect at the T level and its in
 * **SPEEDREAD reads NOT IN INPUT (§7.24).** The question was whether the per-window speed information O needs is present in T's own input. A ridge read-out of T's five speed cells (the PRIMARY) and a 2 × 256 MLP (the ALT), both fitted on 306,566 windows of 4,512 TRAIN clips and substituted in the code O reads, leave ADE6 where it was: −0.0097 [−0.0871, +0.0620] m at seed 0 and +0.0022 [−0.0534, +0.0564] m at seed 1, against a bar of −0.1207 m; the ALT costs +0.2122 / +0.2040 m (separated-worse). The ground-truth cells, a T0 ceiling and a control, would cut ADE6 by 0.7164 / 0.6676 m, so the read-outs capture 0.0135 / −0.0033 of what the cells are worth (CAPTURE). Tier: T1-class open loop; paired episode-cluster bootstrap, B = 2,000, 141 episodes; one read-out fit serves both seeds. The negative is scoped to the pooled four-frame summary.
 * **DAgger iteration 2 reads HARMS (§7.25).** DAG's own states used a second time (T1-kin, two seeds): the crawl rows (curvature, L2, M1, and at seed 1 yaw-rate) stay separated-worse against P10 and do not move against the control (R-MOVE fails at both seeds). The T-head, T1-kin ADE6 and T0 guards hold, and the guard that fires is a newly separated-worse yaw-rate MAE at seed 0. DAG stays the base.
 * **DAG-ORC (O-RECOVER's perturbation composed onto DAG-OACC) reads HARMS, and its crawl effects are smaller than the replicate floor (§7.26).** Arm A (p = 0.3; T1-kin, two seeds; paired episode-cluster bootstrap, B = 2,000, 141 episodes; all 162 reader controls PASS) fails the position guards: T1-kin ADE6 against DAG-OACC is +0.1434 [+0.0538, +0.2342] m at seed 0 (separated-worse) and +0.0565 [−0.0115, +0.1255] m at seed 1, and T0 ADE6 is +0.1106 / +0.0722 m against a bar of +0.0604 m. All eight crawl cells (yaw-rate, curvature, L2 and M1, both seeds) are separated-better than DAG-OACC, but each reaches only 8.8–33.8 % of its bar, so R-MOVE fails at both seeds. The replicate arm REP (the same recipe, trainer seed 10 / 11) differs from DAG-OACC by +0.4025 m of ADE6 at seed 0 (3.33 × F) and sets the floor on 17 of 19 rows. A is not adopted and DAG-OACC stays the base. The T0 four families are NOT RUN, and M-LAUNCH, the anti-echo block and M2 / L2 on the launch subset are NOT BUILT. Box 2 was used for 4.93 h by the logs against the ~3 h asked, after four stopped launches (a shared RNG stream, a shared aside marker, a self-test that replaced the box-2 queue, and a disk floor).
-* **What is next.** The open gap is the crawl set (yaw-rate, curvature, L2 and M1 against P10 for DAG-OACC). DAG-ORC (§7.26) moved those rows against DAG-OACC but not past their bars. Its committed next is arm B (p = 0.1) under the same table, which needs the PI's go, and B would have to exceed A's crawl effect by 3.0–11.4 × at a third of the dose to clear the same bars; if it does not clear them, the registered branch is NEXT-CRAWL, LAUNCH-INTENT (its PREREG is a draft). The speed line that SPEEDREAD (`PREREG_V8F_SPEEDREAD`) asked about routes to perception (`PREREG_V8F_LORA` on the A40), which waits on the PI, and nothing on box 2 remains on it.
+* **SPEEDSUB reads PASS, a screening result (§7.27).** The ego-only MLP read-out `mlp_ego` (SPEEDREAD's fit, no re-fit), put into the five speed cells O reads, cuts O's own-code ADE6 on M2b-mixo by −0.1290 [−0.2107, −0.0548] m at seed 0 and −0.0686 [−0.1151, −0.0232] m at seed 1, against a bar of −0.06035 m; the shuffled-cells control reads +6.7181 / +6.4923 m (separated-worse). Tier: T1-class open loop; paired episode-cluster bootstrap, B = 2,000, 141 episodes; two O training runs, one read-out fit, no replicate arm. The PASS was read with the declared future-speed channel `limit` (`D-SPEEDBAND-EGO-ECHO-1`): on TRAIN fold 0 the read-out's skill survives without `nav` and not without `limit` (mean hold-out RMSE 0.28032 against 0.24751 SD units for the full block).
+* **SPEEDSUB-T1 reads NULL, label NULL-ONE (§7.28).** At T1-kin on DAG-OACC, with the channel closed (a causal speed bucket), the refitted read-out `mlp_ego_c` hits the bar at 1 of 4 runs: ADE6 `egoc − identity` is −0.0233 [−0.0629, +0.0156] m (CTRL s0), −0.0076 [−0.0500, +0.0349] m (CTRL s1), −0.0333 [−0.0832, +0.0131] m (REP s1) and, the one hit, −0.1949 [−0.2619, −0.1313] m (REP s0, a slow-T training draw whose speed cells read 0.73 to 1.17 m/s slow). All 158 reader control flags PASS and no guard fires. The speed-cell channel does not bind on healthy DAG-OACC draws, and the logged-lane read-out is flat too (+0.0008 / −0.0185 m at CTRL). Paired episode-cluster bootstrap, B = 2,000, 141 episodes, per run; four training runs.
+* **LAUNCH-INTENT reads HARMS: arm A is not adopted (§7.29).** O's launch-sample along-track weight (GT-launch TRAIN samples hold one third of the along-track weight on knots 1–12, W =
+  1.58926; a label-side subset, nothing new at inference) was trained in four box-2 runs (A and A_rep at two seeds; 174 min of box 2, **[M]**, the chain log) and read at T1-kin (paired
+  episode-cluster bootstrap, B = 2,000, 141 episodes, per seed and per pair; all 206 reader controls PASS). R-MOVE is false at both seeds: 2 of the 16 crawl cells are separated-better
+  and 1 clears its bar (L2 curvature, replicate pair, seed 0: −0.0215 [−0.0423, −0.0048] against 0.0136), no crawl row moves by its bar in both pairs at either seed, and all 16 X − P10
+  crawl cells stay separated-worse. R-ADE fails at both seeds, each in one pair (ADE6 A_rep − REP s0 +0.0431 [+0.0137, +0.0711] m; A − DAG-OACC s1 +0.0483 [+0.0105, +0.0884] m), while
+  the other pair of each seed is separated the other way (−0.0294 [−0.0522, −0.0077] and −0.0341 [−0.0655, −0.0027] m): the separated ADE6 cells flip sign between the two same-seed
+  pairs, which is what the pair design is for (`H-ESTIM-SEED-1`). R-TLAT, R-TLON, R-T0 and R-NEW hold. **M-LAUNCH reads NOT MOVED** (T1-kin, paired episode-cluster bootstrap, B = 2,000,
+  over 49 episodes / 327 launch windows): X − Y +0.0348 [−0.0299, +0.0923] and +0.0282 [−0.0247, +0.0836] m/s (main pair, s0 and s1), +0.0243 [−0.0281, +0.0846] and −0.0146
+  [−0.0607, +0.0286] m/s (replicate pair), none separated, so `PREREG_V8F_LAUNCH_INTENT` §11 routes to LAUNCH-INTENT-HI. The T0 four families are NOT RUN, the anti-echo block is NOT
+  BUILT and the T-head F1 is NOT COMPUTABLE at T1-kin.
+* **What is next.** The open gap is the crawl set (yaw-rate, curvature, L2 and M1 against P10 for DAG-OACC); the adopted base stays DAG-OACC. The committed next after HARMS is
+  LAUNCH-INTENT's arm B (W 0.726175, four box-2 runs), registered with its own PI go. LAUNCH-INTENT-HI (W 4.17852, four box-2 runs) is the §11 branch that M-LAUNCH selects, also with its
+  own PI go. The PI is being asked which, if either, box 2 runs. The history-aware causal read-out stays registered and unrun (§7.28), and the speed line that SPEEDREAD
+  (`PREREG_V8F_SPEEDREAD`) asked about routes to perception (`PREREG_V8F_LORA` on the A40), which waits on the PI.
 
 ---
 
@@ -1168,7 +1183,7 @@ The second video (`v8f_evidence_v5.mp4`, 536 s, below; v5 adds chapter 8, **DAgg
     separated at either seed, and only the fast-window L2 and L3 rows move. So the speed line reaches L2 of DAG-OACC's open crawl set and not
     yaw-rate or curvature. **M1 has no cell in this read, so nothing is measured about it here (UNVERIFIED).** The lever aimed at the crawl rows is
     DAG-ORC (§7.26), which the RESULT records as running on box 2 since 2026-10-28 01:16 (that is attempt r1, which stopped; §7.26 has the history and the read, which is HARMS).
-    An ego-only speed-cell arm (the `mlp_ego` read-out, not yet run as a substitution) is ranked below it; `PREREG_V8F_SPEEDSUB` registers it (promoted at `94a47f4b`, before any SPEEDSUB number; no SPEEDSUB number exists in this version).
+    An ego-only speed-cell arm (the `mlp_ego` read-out, not yet run as a substitution) is ranked below it; `PREREG_V8F_SPEEDSUB` registers it (promoted at `94a47f4b`, before any SPEEDSUB number). It was read after this section was written: PASS at T1-class open loop, through a declared open channel (§7.27), and its T1-kin follow-up reads NULL (§7.28).
 * **Provenance.** Dev-box CPU (`CUDA_VISIBLE_DEVICES=-1`; `logs/run.out`): extract 23:21:49–00:17:14, fit 00:17:14–00:54:18, evals s0
   00:56:19–01:03:22, evals s1 01:03:22–01:09:19, read 01:09:19–01:09:25 (2026-10-27 to 2026-10-28). Data parity: 4,512 clips, 306,566 windows,
   excluded-holdout sha256 `f6a1dee0…`, grid `pool4x10`, join sha256 `978f41bf…` (equal to the trainer's `--join-train`), and the eval-141 clips
@@ -1684,6 +1699,7 @@ The second video (`v8f_evidence_v5.mp4`, 536 s, below; v5 adds chapter 8, **DAgg
   9. **Scope, as the RESULT states it.** One training run per arm and seed: the two seeds and the REP pair carry the training-run question, and no row here is an effect of the lever on its own
      (`H-ESTIM-SEED-1`). There is no lateral / longitudinal split of the perturbation's two components, and neither half is credited. B is not read: nothing here says what p = 0.1 does.
 * **Next (Rule Zero).**
+  * **Update (v33): the routing changed after this read.** The PI answered the question whether box 2 should run the redesigned LAUNCH-INTENT next and skip B with *"Yes, queue it"* (2026-10-28), recorded as `PREREG_V8F_DAG_ORC` Amendment 3 (`A3-2026-10-28`, landed `051259d4`; **[I]**, read from the PREREG). B (p = 0.1) is not trained and not read, A stays HARMS, and NEXT-CRAWL is LAUNCH-INTENT on DAG-OACC's states under its own PREREG (§7.29). The two items below that name arm B as the committed next, and the LAUNCH-INTENT PREREG as a draft, describe the state at the read. LAUNCH-INTENT has since been read (§7.29, HARMS); the B that is registered after that read is LAUNCH-INTENT's own dose B (W 0.726175), not this section's B (p = 0.1).
   * **A is not adopted, and the committed next is arm B, blocked on the PI's go.** The table's committed next, verbatim: *"A: not adopted; read B (p 0.1) under this same table (B is NOT queued: it needs its
     own PI go, A1 section 4)."* The JSON's `cascade.b_status` reads *"PENDING: train B (p = 0.1) through its gate and read it under this same table"*. What unblocks it: the PI's go, then box 2 for two runs
     through the launch gate, **[E]** about 1.4 h of box 2 (A's two trainings took 2286 s and 2293 s, `summary.json`, plus about 4 min per run for gate and eval, log minutes). The T1-kin rollouts and the read are
@@ -1719,6 +1735,1125 @@ The second video (`v8f_evidence_v5.mp4`, 536 s, below; v5 adds chapter 8, **DAgg
   * **Checkpoints and dumps (single copies, not in the repo).** The checkpoints (`ckpt_last.pt`: A `380b230d…` / `870dded7…`, REP `b03fd6ef…` / `77853e56…`) and the pulled T0 evals are on E:. The per-episode
     dumps and the tick arrays are on F: scratch only (`F:/TanitAD-scratch/dagorc_t1_out/`).
 
+### 7.27 SPEEDSUB: an ego-only read-out put into O's five speed cells cuts ADE6 on M2b-mixo (PASS, a screening result)
+
+* **Setup** (`PREREG_V8F_SPEEDSUB`, no amendment; promoted by the Master Mind and landed `94a47f4b` before any SPEEDSUB number; claim row `H-V8F-SPEEDSUB-1`).
+  The question, left open by SPEEDREAD (§7.24): that read's beside table showed that the ego-only MLP `mlp_ego` has the lowest fold-0 hold-out RMSE of the four fitted
+  read-outs and the lowest eval RMSE in all five cells, but it was never substituted. Does `mlp_ego`, put into the five speed cells O reads, cut O's own-code ADE6 by at
+  least F/2 = 0.06035 m, separated, at both seeds?
+  * **Base and arms.** X_s = `M2b-mixo_s` (the SPEEDCAL / KINDX / SPEEDREAD base; §7.24), **not** DAG-OACC. sha256 `c6a62876…` (s0) and `68a0f335…` (s1). No model is trained,
+    and the read-out is the banked one (`readout.pt`, sha256 `a205609a…`, no re-fit). Modes per seed: `own`; `identity` (control S1); `gt` (the GT cells, a T0 ceiling and a
+    control, never a result); `ego` (the arm); `egoshuf` (the same cells shuffled across the 2,399 windows by `numpy.random.default_rng(20261029).permutation(2399)`; the
+    deliberate-regression arm, which must read separated-worse at both seeds).
+  * **What `ego` reads.** The 22-dim ego block at the tick frame: the 8 P10 kinematic features, the 5 `nav` channels, the 4-wide speed-limit bucket `limit` and its validity
+    `limit_ok` (1), and 4 history-validity flags. T reads the same block at inference. No pixel, label, pose, goal or situation-classifier output enters.
+  * **Selection disclosure.** The arm was commissioned after SPEEDREAD's beside table (which holds eval-141 RMSE) was read. The selection rule was restated on TRAIN fold 0
+    only, before any SPEEDSUB number (control S13: mean fold-0 hold-out RMSE `mlp_ego` 0.2475 against `lin` 0.2724, `lin_ego` 0.2807, `mlp` 0.2920). It is still the third
+    read-out examined on these 141 episodes, so a PASS is a screening result.
+  * **Tier and estimator.** The instrument's tier stamp is *T1-class open loop (X_s's own held S / T outputs; only the five speed cells O reads are replaced)*; `gt` is T0, a
+    control. Paired episode-cluster bootstrap, B = 2,000, seed 0, 141 episodes / 2,399 windows per seed. It answers *"would another draw of EPISODES say this?"* only. There is
+    **no replicate arm**: the two seeds are O's two training runs (n = 2), and one read-out fit serves both. The planner is deterministic. F = 0.1207 m is the cross-seed
+    spread of M2b (**[I]**, `RESULT_V8F_GRID.md`).
+  * **The declared open channel (`D-SPEEDBAND-EGO-ECHO-1`) is what the PASS rests on.** The PASS was read with the logged `limit` lane. That lane is the bucket of the ego's
+    own realised future max speed, which bin plus `v0` recovers at R² 0.9702 (**[I]**, the register). By PI ruling it is admissible as a declared input and never as a
+    training signal, and T reads it too. The read-out's skill depends on it (the attribution below), and that is why SPEEDSUB-T1 (§7.28) followed: the T1-kin lane feeds a
+    causal bucket instead.
+* **Outcome [M]** (`RESULT_V8F_SPEEDSUB.md`, landed `af2dee4a`; the reader `subread` ran 08:05:36–08:05:38 and printed `ZZSPEEDSUB-DONE PASS`; all **27 control flags PASS**;
+  `SUBREAD.json` sha256 `1fe7fcb3…`; `read/REDERIVE.json` recomputes the three paired rows per seed from the per-window dumps and gets identical delta, lo and hi to 4 dp on all 18 values):
+
+| | s0 | s1 |
+|---|---|---|
+| **ARM** ADE6, `ego` − `own` (m) | **−0.1290 [−0.2107, −0.0548]** | **−0.0686 [−0.1151, −0.0232]** |
+| ADE6 mean, `own` → `ego` (m) | 2.1977 → 2.0687 | 2.1201 → 2.0515 |
+| separated-better (CI upper end < 0) | yes: upper end −0.0548 | yes: upper end −0.0232 |
+| bar: point ≤ −F/2 = −0.06035 m | yes: 0.0687 m beyond the bar | yes: 0.0083 m beyond the bar |
+| HARMS test: separated-worse (CI lower end > 0) | no: lower end −0.2107 | no: lower end −0.1151 |
+| **REGRESSION ARM** `egoshuf` − `own` (must be separated-worse) | +6.7181 [+5.6709, +7.8141], separated-worse | +6.4923 [+5.3813, +7.6678], separated-worse |
+| ADE6 mean, `own` → `egoshuf` (m) | 2.1977 → 8.9157 | 2.1201 → 8.6124 |
+| **CEILING** `gt` − `own` (T0, control only) | −0.7164 [−0.8182, −0.6234]; mean 2.1977 → 1.4813 | −0.6676 [−0.7613, −0.5753]; mean 2.1201 → 1.4526 |
+| CAPTURE = `ego` / (`gt` − `own`) | 0.1801 | 0.1028 |
+| F/2 as a share of the `gt` ceiling (derived) | 8.4 % | 9.0 % |
+
+  The pre-registered conditions (REFUSED first, then HARMS, then PASS), against the rows:
+
+| outcome | condition | this run |
+|---|---|---|
+| REFUSED | a control failed, a seed is missing, or `egoshuf` is not separated-worse at both seeds | no: all 27 flags true, both seeds present, `egoshuf` lower ends +5.6709 / +5.3813 |
+| HARMS | `ego` separated-worse at either seed | no: lower ends are below 0 at both seeds |
+| **PASS** | at **both** seeds: separated-better **and** `ego_s ≤ −0.06035` m | **yes**: upper ends −0.0548 / −0.0232 and points −0.1290 / −0.0686 |
+| NULL | anything else | not reached |
+
+  The outcome is **PASS**: at both seeds `ego − own` is separated-better and its point lies at or below −0.06035 m. The means are the dumps' `raw.traj.ade6_m.mean` (4
+  decimals), so a delta can differ from the difference of two printed means by 0.0001. CAPTURE is `ego` / (`gt` − `own`).
+  ⚠ **How to read the PASS** (none of it moves the word). (1) It is a screening result by the PREREG's own terms: a statement about two O training runs and one read-out fit at
+  T1-class open loop, not a lever claim for any trained arm and not a driving result. (2) s1 clears the bar by 0.0083 m only (−0.0686 against −0.06035); at both seeds the
+  interval's upper end (−0.0548, −0.0232) lies above −0.06035, so the intervals do not exclude an effect smaller than the bar. (3) The two seeds' effects differ by 0.0604 m
+  (−0.1290 against −0.0686): the only look this experiment has at training-run variance, a description and not an estimate. (4) `ego` recovers 18 % and 10 % of what the GT
+  cells would give (CAPTURE 0.1801 / 0.1028), so O leaves most of the 0.7 m on the table.
+* **Controls [M]** (each ran before its rows were read; 27 flags, all PASS; `egoshuf` reads separated-worse at both seeds):
+
+| id | must read (PREREG section 4) | s0 | s1 | measured detail (s0 / s1) |
+|---|---|---|---|---|
+| S1 | `identity` − `own` ADE6 max \|Δ\| = 0.0 and plans equal | yes | yes | ADE6 means `own` / `identity`: 2.1977 / 2.1977 ; 2.1201 / 2.1201; max \|Δ\| and plan equality recomputed: true |
+| S2 | non-speed cells O reads = X_s's own, max \|Δ\| = 0.0, in `identity`, `gt`, `ego`, `egoshuf` | yes | yes | `speedread.hook.nonspeed_max_abs_dev` = 0.0 in all four hooked dumps at both seeds |
+| S3 | the hook's tick slice = the model's own `_scene` pad mask (first batch) | yes | yes | `speedread.hook.tick_mirror_ok` true in all four hooked dumps at both seeds; 38 batches each |
+| S4 | episode ids equal across all five modes | yes | yes | recomputed from the dumps' `eid`: true |
+| S5 | `own` ADE6 = SPEEDREAD's banked `own`, per window max \|Δ\| ≤ 1e-5 m | yes | yes | max \|Δ\| 6.63e-06 / 7.79e-06 m (bar 1e-5; the run used 4 threads against SPEEDREAD's 8, which the bar allows) |
+| S6 | `gt` ADE6 = SPEEDREAD's banked `gt`, per window ≤ 1e-4 m | yes | yes | max \|Δ\| 4.00e-06 / 4.57e-06 m |
+| S6b | `gt` − `own` (delta, lo, hi) reproduces SPEEDREAD `READ.json` `rows.<s>.gt` within 5e-4 | yes | yes | −0.7164 [−0.8182, −0.6234] / −0.6676 [−0.7613, −0.5753], equal to the tip's SPEEDREAD READ.json |
+| S7 | what O reads in `ego` = this run's identity `pred_mlp_ego`, standardised, ≤ 1e-5 | yes | yes | max \|Δ\| 0.0 / 0.0 (std units); the preflight after s0 read the same (S7 dev 0) |
+| S7b | this run's identity `pred_mlp_ego` = SPEEDREAD's banked one, ≤ 1e-5 m/s | yes | yes | max \|Δ\| 0.0 / 0.0 m/s: the same read-out, checkpoint and windows SPEEDREAD scored |
+| S8 | `readout_sha256` in every hooked dump = `fit.json` = the pin `a205609a…` | yes | yes | all ten dumps carry the pin; `readout.pt`, `fit.json` and the pin agree (recomputed) |
+| S9 | `egoshuf`: permutation sha equals the registered one, alignment max \|Δ\| ≤ 1e-6, `n_seen` = 2,399, fixed points ≤ max(3, 1 %) | yes | yes | perm sha256 `64785f8a…` recomputed from the seed; alignment 0.0; `n_seen` 2,399; fixed points 0 |
+| S10 | `ego` moves ≥ 99 % of windows' cells away from `own`'s; `egoshuf` differs from `ego` on ≥ 95 % | yes | yes | fraction moved 1.0000 / 1.0000; `egoshuf` differs from `ego` on 1.0000 / 1.0000 |
+| S11 | train parity (4,512 / 306,566 / `f6a1dee0…`) | yes (one flag for both seeds) | | `fit.json` `train_parity_ok` true |
+| S12 | eval-141 ∩ fit clips = ∅ | yes (one flag) | | `fit.json` `eval_train_disjoint` true |
+| S13 | the section 0 selection rule applied to `fit.json` picks `mlp_ego` | yes (one flag) | | argmin of the mean fold-0 RMSE over the four read-outs = `mlp_ego` (values in section 1, point 1) |
+
+  The family tools' own controls hold at both seeds: LL-1 (identity reads exactly 0.0 on every row), LL-2 (its ADE6 row equals `SUBREAD.json`), LL-3 (per-arm values equal the
+  dump's own; largest deviation 4.99e-05 against a bar of 1e-4) and `pairfam` (identity on 45 cells, reproduction of 119 point values per arm).
+* **Attribution of the read-out's skill [M]** (FINDING_1, banked at `842ec2ac` as `R/raw/2026-10-28-speedsub-t1-prereg/speedsub_t1_prep/FINDING_1_ATTRIBUTION.md`, sha256 `e89af4a0…`; the SPEEDSUB RESULT cites it at its
+  dev-box path; TRAIN fold 0, 846 clips, not eval-141 and not ADE6; mean hold-out RMSE over the five cells in train-SD units, lower is better):
+
+| design | dim | mean fold-0 RMSE (SD units) | cost against the full block |
+|---|---|---|---|
+| full block = `mlp_ego` as banked (control refit) | 22 | 0.24751 | none |
+| no `nav`: `p10f + limit + limit_ok + frame_ok` | 17 | 0.26313 | +0.0156 |
+| no `limit`: `p10f + nav + frame_ok` | 17 | 0.28032 | +0.0328 |
+| neither: `p10f + frame_ok` | 12 | 0.30849 | +0.0610 |
+
+  The skill survives without `nav` and does not survive without `limit`: dropping `nav` costs 0.0156 SD, dropping `limit` costs 0.0328 SD, and the no-`limit` read-out (0.28032)
+  sits above the best other banked read-out on this fold (`lin`, 0.2724). No reduced read-out was substituted, so **which input carries the ADE6 cut is not measured here**.
+  **[H]** If the ADE6 cut follows the read-out's skill, it rests mostly on the declared open channel.
+* **The four families [M]** (beside the decision; per family, per seed, never pooled). Tier: T1-class open loop; the `gt − own` table is the T0 ceiling and a control.
+  Estimator: paired episode-cluster bootstrap, B = 2,000, seed 0, 141 episodes; one training run per seed and no replicate arm, so a separated cell is a pointer
+  (`H-ESTIM-SEED-1`). **STRATEGIC is reported, not paused, for v8F.** B / W = separated-better / -worse, – = not separated, S+ / S− = separated on a row with no better
+  direction (a bias or a ratio), bold = separated. Error rows are lower-better; accuracy and F1 rows are higher-better.
+
+  **ego − own** (the arm; point [95 % CI]):
+
+| family | row | s0 | s1 | n windows s0 / s1 |
+|---|---|---|---|---|
+| PRIMARY | ADE6 (m) | **−0.1290 [−0.2107, −0.0548] B** | **−0.0686 [−0.1151, −0.0232] B** | 2,399 / 2,399 |
+|  | ADE2 (m) | +0.0080 [−0.0033, +0.0181] – | +0.0039 [−0.0013, +0.0092] – | 2,399 / 2,399 |
+| LONGITUDINAL | speed MAE (m/s) | **−0.0662 [−0.1122, −0.0245] B** | **−0.0379 [−0.0638, −0.0130] B** | 2,399 / 2,399 |
+|  | along-track MAE (m) | **−0.1403 [−0.2266, −0.0641] B** | **−0.0793 [−0.1269, −0.0337] B** | 2,399 / 2,399 |
+|  | accel MAE (m/s²) | **−0.0497 [−0.0866, −0.0194] B** | **−0.0295 [−0.0456, −0.0131] B** | 2,399 / 2,399 |
+|  | DK-VIOL / DK-HW / DK-TG | UNAVAILABLE | UNAVAILABLE | n = 0 / 0; the dump's reason: "no lead-agent track supplied" |
+|  | anti-echo (hold-v0 baseline) | UNAVAILABLE | UNAVAILABLE | n = 0 / 0; 2,399 windows available; the dump's reason: "no ego speed at t0 in the window dict" |
+| LATERAL | heading MAE (deg) | **−0.1515 [−0.2900, −0.0303] B** | −0.0429 [−0.1509, +0.0491] – | 2,350 / 2,373 |
+|  | yaw-rate MAE (deg/s) | −0.2434 [−0.6091, +0.0725] – | **−0.2440 [−0.5149, −0.0133] B** | 2,328 / 2,364 |
+|  | curvature MAE (1/m) | −0.0041 [−0.0107, +0.0018] – | −0.0047 [−0.0105, +0.0005] – | 2,328 / 2,364 |
+|  | cross-track MAE (m) | +0.0020 [−0.0112, +0.0143] – | +0.0021 [−0.0134, +0.0161] – | 2,399 / 2,399 |
+|  | L1 lateral-accel MAE (m/s²) | **−0.0096 [−0.0165, −0.0028] B** | −0.0013 [−0.0048, +0.0020] – | 2,328 / 2,364 |
+|  | L2 curvature MAE, GT ≥ 5.2 m/s (1/m) | −0.0107 [−0.0319, +0.0003] – | **−0.0065 [−0.0136, −0.0006] B** | 2,096 / 2,102 |
+|  | L3 yaw-rate MAE, GT ≥ 5.2 m/s (deg/s) | **−0.5435 [−1.4547, −0.0667] B** | **−0.3193 [−0.6480, −0.0600] B** | 2,096 / 2,102 |
+| TACTICAL | TAC-LAT (lateral-decision accuracy) | +0.0013 [−0.0054, +0.0084] – | +0.0038 [−0.0021, +0.0092] – | 2,399 / 2,399 |
+|  | TAC-LON (longitudinal-decision accuracy) | −0.0042 [−0.0246, +0.0163] – | +0.0104 [−0.0100, +0.0313] – | 2,399 / 2,399 |
+|  | 5-way manoeuvre accuracy | +0.0017 [−0.0183, +0.0221] – | +0.0108 [−0.0075, +0.0300] – | 2,399 / 2,399 |
+|  | goal-point error (m) | **−0.3943 [−0.6422, −0.1651] B** | **−0.1950 [−0.3323, −0.0558] B** | 2,399 / 2,399 |
+|  | goal longitudinal bias (m) | **+0.6398 [+0.3316, +0.9665] S+** | **+0.3587 [+0.1257, +0.6058] S+** | 2,399 / 2,399 |
+|  | goal lateral bias (m) | **−0.0732 [−0.1386, −0.0091] S−** | +0.0109 [−0.0603, +0.0785] – | 2,399 / 2,399 |
+|  | goal bearing MAE (deg) | −0.0133 [−0.2417, +0.2332] – | −0.0199 [−0.1127, +0.0583] – | 2,367 / 2,367 |
+|  | goal range ratio | **+0.0153 [+0.0050, +0.0255] S+** | +0.0052 [−0.0100, +0.0208] – | 2,367 / 2,367 |
+|  | lateral head macro-F1 | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,107 / 2,107 |
+|  | longitudinal head macro-F1 | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,240 / 2,240 |
+|  | goal head macro-F1 | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,365 / 2,365 |
+| STRATEGIC | S-POS@30 (m) | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,322 / 2,322 |
+|  | S-POS@50 (m) | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,319 / 2,319 |
+|  | S-POS@80 (m) | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,294 / 2,294 |
+|  | S heading@30 (deg) | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,322 / 2,322 |
+|  | S heading@50 (deg) | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,319 / 2,319 |
+|  | S heading@80 (deg) | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,294 / 2,294 |
+
+  **gt − own** (T0 ceiling, a control only; point [95 % CI]):
+
+| family | row | s0 | s1 | n windows s0 / s1 |
+|---|---|---|---|---|
+| PRIMARY | ADE6 (m) | **−0.7164 [−0.8182, −0.6234] B** | **−0.6676 [−0.7613, −0.5753] B** | 2,399 / 2,399 |
+|  | ADE2 (m) | −0.0109 [−0.0235, +0.0011] – | **−0.0119 [−0.0196, −0.0041] B** | 2,399 / 2,399 |
+| LONGITUDINAL | speed MAE (m/s) | **−0.3544 [−0.4059, −0.3064] B** | **−0.3424 [−0.3878, −0.2990] B** | 2,399 / 2,399 |
+|  | along-track MAE (m) | **−0.7644 [−0.8685, −0.6692] B** | **−0.7122 [−0.8054, −0.6194] B** | 2,399 / 2,399 |
+|  | accel MAE (m/s²) | **−0.0536 [−0.0970, −0.0140] B** | **−0.0303 [−0.0543, −0.0084] B** | 2,399 / 2,399 |
+|  | DK-VIOL / DK-HW / DK-TG | UNAVAILABLE | UNAVAILABLE | n = 0 / 0; the dump's reason: "no lead-agent track supplied" |
+|  | anti-echo (hold-v0 baseline) | UNAVAILABLE | UNAVAILABLE | n = 0 / 0; 2,399 windows available; the dump's reason: "no ego speed at t0 in the window dict" |
+| LATERAL | heading MAE (deg) | +0.0808 [−0.1576, +0.3139] – | −0.0839 [−0.3452, +0.0962] – | 2,349 / 2,373 |
+|  | yaw-rate MAE (deg/s) | +0.0570 [−0.4042, +0.4881] – | −0.0760 [−0.3837, +0.1851] – | 2,329 / 2,364 |
+|  | curvature MAE (1/m) | +0.0005 [−0.0122, +0.0122] – | −0.0032 [−0.0099, +0.0027] – | 2,329 / 2,364 |
+|  | cross-track MAE (m) | **−0.0378 [−0.0601, −0.0183] B** | **−0.0430 [−0.0657, −0.0231] B** | 2,399 / 2,399 |
+|  | L1 lateral-accel MAE (m/s²) | −0.0044 [−0.0120, +0.0027] – | +0.0022 [−0.0029, +0.0067] – | 2,329 / 2,364 |
+|  | L2 curvature MAE, GT ≥ 5.2 m/s (1/m) | **−0.0158 [−0.0381, −0.0042] B** | **−0.0108 [−0.0220, −0.0026] B** | 2,097 / 2,104 |
+|  | L3 yaw-rate MAE, GT ≥ 5.2 m/s (deg/s) | **−0.7495 [−1.6944, −0.2279] B** | **−0.5456 [−1.0354, −0.1744] B** | 2,097 / 2,104 |
+| TACTICAL | TAC-LAT (lateral-decision accuracy) | −0.0071 [−0.0192, +0.0042] – | −0.0042 [−0.0142, +0.0054] – | 2,399 / 2,399 |
+|  | TAC-LON (longitudinal-decision accuracy) | **+0.1159 [+0.0875, +0.1450] B** | **+0.1446 [+0.1188, +0.1706] B** | 2,399 / 2,399 |
+|  | 5-way manoeuvre accuracy | **+0.0805 [+0.0513, +0.1108] B** | **+0.0988 [+0.0738, +0.1254] B** | 2,399 / 2,399 |
+|  | goal-point error (m) | **−2.2239 [−2.5417, −1.9337] B** | **−2.0637 [−2.3514, −1.7739] B** | 2,399 / 2,399 |
+|  | goal longitudinal bias (m) | **+0.6815 [+0.1831, +1.2044] S+** | +0.2837 [−0.1308, +0.7242] – | 2,399 / 2,399 |
+|  | goal lateral bias (m) | **−0.1294 [−0.2446, −0.0261] S−** | −0.0302 [−0.1403, +0.0734] – | 2,399 / 2,399 |
+|  | goal bearing MAE (deg) | −0.1541 [−0.6931, +0.3614] – | −0.2168 [−0.5473, +0.0024] – | 2,367 / 2,367 |
+|  | goal range ratio | −0.0080 [−0.0402, +0.0214] – | −0.0233 [−0.0522, +0.0034] – | 2,367 / 2,367 |
+|  | lateral head macro-F1 | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,107 / 2,107 |
+|  | longitudinal head macro-F1 | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,240 / 2,240 |
+|  | goal head macro-F1 | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,365 / 2,365 |
+| STRATEGIC | S-POS@30 (m) | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,322 / 2,322 |
+|  | S-POS@50 (m) | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,319 / 2,319 |
+|  | S-POS@80 (m) | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,294 / 2,294 |
+|  | S heading@30 (deg) | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,322 / 2,322 |
+|  | S heading@50 (deg) | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,319 / 2,319 |
+|  | S heading@80 (deg) | +0.0000 [+0.0000, +0.0000] – | +0.0000 [+0.0000, +0.0000] – | 2,294 / 2,294 |
+
+  What is not computed, per family, with the reason and n:
+
+| family | row not computed | status | n | reason |
+|---|---|---|---|---|
+| LONGITUDINAL | DK-VIOL / DK-HW / DK-TG | UNAVAILABLE | 0 | the scoring call was given no lead-agent track ("no lead-agent track supplied"). The lead block exists, but the reading tool's CLI is hard-wired to other arms: an adapter of about 60 lines (PREREG section 9, INHERITED); a work item, not built |
+| LONGITUDINAL | anti-echo (hold-v0 baseline) | UNAVAILABLE | 0 of 2,399 windows | no ego speed at t0 in the window dict ("no ego speed at t0 in the window dict") |
+| LONGITUDINAL | target-speed accuracy with an interval | point values only (section 4.4) | 2,399 windows | the family tools have no paired row for it |
+| TACTICAL | anchor selection | UNAVAILABLE | 2,399 | each dump's arm commits to ONE path per window: there is no candidate fan and no selection to score |
+| TACTICAL | selected vs executed manoeuvre | UNAVAILABLE | 2,399 | both label streams are executed manoeuvres; scoring a declared decision needs a tactical head's selection, which a trajectory dump does not carry |
+| TACTICAL | goal per-token F1: `SPEED_BAND`, `TAKE_EXIT_L`, `TRAFFIC_LIGHT_REACT` | UNAVAILABLE | 0 / 695 / 695 labelled windows, 0 positives each | no positive label for the token on this grid, so its F1 is undefined |
+| TACTICAL | goal per-token F1, 8 further cells | point values only, no interval | see `families/pairfam_ego_s0.md` | F1 undefined on at least one resample (no positive label in the drawn episodes) |
+| TACTICAL | confusion over the manoeuvre classes | not in the tool's output (it reports accuracy and kappa) | 2,399 | a work item: the dumps carry the predictions, the tool does not print the matrix |
+| LATERAL, STRATEGIC | none | computed | 2,096 to 2,399 (LATERAL); 2,294 to 2,322 (STRATEGIC) | STRATEGIC reads exactly 0.0000 by construction |
+| all four | the `egoshuf` control's family tables | not run | | the PREREG asks for its ADE6 row only |
+| all four | the T1-kin tier | not run for this arm | | it is the next arm (section 6) |
+
+* **What the rows say [M]** (beside; none of it moves the outcome). For `ego − own`, 11 of 49 cells are separated at s0 and 9 of 49 at s1, where at a nominal 5 % about 2 to 3
+  would separate with no effect, so the separated cells are pointers.
+  1. **LONGITUDINAL: the three registered rows move, at both seeds.** Speed MAE, along-track MAE and accel MAE are separated-better. The `ego` change is 18.7 % (s0) and 11.1 % (s1)
+     of the `gt` ceiling on speed MAE, 18.4 % / 11.1 % on along-track MAE and 92.7 % / 97.4 % on accel MAE (the ceiling moves accel MAE by only 0.05 and 0.03 m/s²). Distance
+     keeping and the anti-echo block are UNAVAILABLE (n = 0), so half of the LONGITUDINAL family is unmeasured for this arm: a work item, not a pass.
+  2. **LATERAL: pointers only, none worse.** L3 yaw-rate MAE (GT ≥ 5.2 m/s) is separated-better at both seeds (−0.5435 / −0.3193 deg/s); cross-track MAE is not separated
+     (+0.0020 / +0.0021 m).
+  3. **TACTICAL: the decisions do not move; the goal point does.** TAC-LAT, TAC-LON and the 5-way manoeuvre accuracy are not separated at either seed. The goal-point error is
+     separated-better at both seeds (−0.3943 / −0.1950 m). The three head macro-F1 rows read exactly +0.0000 [+0.0000, +0.0000] at both seeds, because the substitution acts on the
+     code O reads, after T has run. The goal-point cells are read from O's plan, so they are not an independent confirmation of ADE6.
+  4. **STRATEGIC: exactly zero, by construction.** All six S rows read +0.0000 [+0.0000, +0.0000] at both seeds, for `ego` and for `gt`: a property of the substitution site and
+     not evidence about strategic quality.
+  5. **The 2 s horizon does not improve.** ADE2 is not separated at either seed and its point is positive: +0.0080 [−0.0033, +0.0181] / +0.0039 [−0.0013, +0.0092] m. The gain is a
+     long-horizon gain.
+* **The read-out's own accuracy [M]** (beside; eval RMSE to the GT, m/s, on the eval-141 windows where the GT cell is present). `mlp_ego` is below `T_own` in all five cells at
+  both seeds. SPEEDREAD's ridge was also lower than `T_own` in `v_a_ms` (RMSE cut 40–59 %) and moved ADE6 by about 0 (**[I]**, `PREREG_V8F_SPEEDSUB`), so a lower cell RMSE was not
+  a sufficient condition; here it coincides with an ADE6 cut at both seeds. Which cell carries the cut is not known from this experiment.
+
+| cell | n present | `T_own` s0 | `T_own` s1 | `mlp_ego` | cut vs `T_own` s0 | cut vs `T_own` s1 |
+|---|---|---|---|---|---|---|
+| `lon_v_target_ms` | 2,334 | 2.8940 | 2.7470 | 2.5404 | 12.2 % | 7.5 % |
+| `v_a_ms` | 2,351 | 1.9190 | 1.3020 | 0.7517 | 60.8 % | 42.3 % |
+| `v_end_ms` | 2,317 | 2.7953 | 2.6916 | 2.5570 | 8.5 % | 5.0 % |
+| `v_lo_ms` | 2,351 | 2.2571 | 2.1425 | 1.8607 | 17.6 % | 13.2 % |
+| `v_hi_ms` | 2,351 | 2.0927 | 1.8020 | 1.7143 | 18.1 % | 4.9 % |
+
+* **Beside, post-hoc and not registered [M]: the plan's rule-violation rate rises under `ego`.** The harness scores every plan against constraints built from the GT (rules SPEED,
+  STOP, TURN and LEAD); rate = the share of the 2,399 windows that break the rule, lower is better; same estimator. The block decides nothing, and it is the reason SPEEDSUB-T1
+  carries a rule-violation guard (Amendment 1, §7.28):
+
+| rule | rate `own` s0 / s1 | rate `ego` s0 / s1 | rate `gt` s0 / s1 | `ego` − `own` s0 | `ego` − `own` s1 |
+|---|---|---|---|---|---|
+| any rule | 0.1642 / 0.1926 | 0.1859 / 0.2118 | 0.0825 / 0.1238 | **+0.0217 [+0.0050, +0.0404] W** | **+0.0192 [+0.0038, +0.0346] W** |
+| SPEED | 0.0975 / 0.1113 | 0.1075 / 0.1280 | 0.0375 / 0.0446 | +0.0100 [−0.0067, +0.0275] – | **+0.0167 [+0.0025, +0.0296] W** |
+| STOP | 0.0196 / 0.0279 | 0.0217 / 0.0292 | 0.0104 / 0.0263 | +0.0021 [+0.0000, +0.0046] – | +0.0013 [+0.0000, +0.0029] – |
+| TURN | 0.0067 / 0.0079 | 0.0075 / 0.0079 | 0.0067 / 0.0075 | +0.0008 [−0.0008, +0.0025] – | +0.0000 [−0.0017, +0.0025] – |
+| LEAD | 0.0775 / 0.0959 | 0.0938 / 0.1121 | 0.0379 / 0.0654 | **+0.0163 [+0.0063, +0.0263] W** | **+0.0163 [+0.0054, +0.0283] W** |
+
+  The rate of plans that break at least one rule is separated-worse at both seeds (+0.0217 [+0.0050, +0.0404] / +0.0192 [+0.0038, +0.0346]), carried by the LEAD rule at both seeds,
+  while the `gt` cells move it the other way. On the 81 stop windows `ego` is worse than `own` at both seeds (ADE6 +0.3374 / +0.1762 m, point values with no interval, because the
+  strata's window lists are not in the dumps).
+* **What this read cannot claim.** (1) It is not a driving result: T1-class open loop, five cells replaced, and ADE6 at this tier is not a capability claim. (2) It is not a lever
+  claim for any trained arm: two O training runs, one read-out fit and no replicate arm, and a separated interval from a one-seed arm is necessary and not sufficient
+  (`H-ESTIM-SEED-1`). (3) It is not a statement about DAG-OACC: the base is M2b-mixo, and DAG-trained O has seen its own rollouts. (4) It is read with an open channel, so it is not
+  a causal-bucket result. (5) The `egoshuf` control has no family run.
+* **Next (Rule Zero).** The PASS leaves a committed next, verbatim from `SUBREAD.json` `next`: *"T1-kin zero-training substitution of the banked ego read-out on the DAG-OACC / DAG-ORC
+  base, both seeds, under its own PREREG (PREREG_V8F_SPEEDSUB section 6)"*. Its prerequisites ran first: the attribution above, and the finding that the T1-kin lane feeds
+  `--limit causal`, so the follow-up is a refitted read-out. It was pre-registered as `PREREG_V8F_SPEEDSUB_T1` (landed `842ec2ac`, before its read-out was fitted and before any T1-kin
+  rollout) and is read in §7.28.
+* **Provenance.** Dev-box CPU (`CUDA_VISIBLE_DEVICES=-1`, 4 threads), 2026-10-28 07:59:08 to 08:17:43 (18 min 35 s); no stage stopped and none re-ran. Instrument
+  `stack/scripts/v8f_mini_eval_speedread.py`, sha256 `a95f4fb1…`. Banked in `R/raw/2026-10-28-speedsub-result/`. **Single copy on F: (dev-box scratch), not in the repo:** the per-mode
+  `eval_*.npz` and `speedread_cells_*.npz` dumps and the run tree; if F: is lost, controls S5, S6 and S7b and the family tools cannot be reproduced.
+
+### 7.28 SPEEDSUB-T1: the causal ego read-out does not move healthy DAG-OACC draws at T1-kin (NULL, label NULL-ONE)
+
+* **Setup** (`PREREG_V8F_SPEEDSUB_T1`, promoted and landed `842ec2ac` before any T1-kin substitution rollout and before its read-out was fitted; **Amendment 1**, `A1-2026-10-28`, landed
+  `4cec09e7` at 10:17:23, before the smoke at 10:21:44 and before any rollout of this experiment; claim row `H-V8F-SPEEDSUB-T1-1`, with the floor rule `H-V8F-SPEEDSUB-T1-2` beside it).
+  The question: SPEEDSUB's PASS (§7.27) was read with the logged `limit` lane, the declared channel that carries the ego's own future speed. The T1-kin lane that scores the adopted
+  base feeds `--limit causal`, the bucket of the past 20 rows of measured ego speed. Does a causal read-out in O's five speed cells, at every replan tick, move DAG-OACC?
+  * **Read-out and arms.** `mlp_ego_c` is the `mlp_ego` design refitted once on the causal bucket (sha256 `799f65ed…`, fitted before Amendment 1 and before any rollout; C-FIT passes
+    at 9.412e-06 m/s against the tolerance 1e-5, a thin margin that is disclosed). X = DAG-OACC at four runs: CTRL s0 / s1 (`67265ec1…`, `90b01474…`) and the DAG-ORC replicates REP s0 /
+    s1 (`b03fd6ef…`, `77853e56…`). Per run: `identity` (the paired base), `egoc` (the arm) and `egoshufc` (the cells permuted across the 2,399 windows, sha256 `64785f8a…`; the
+    deliberate-regression arm, which must read separated-worse at all four runs: K-REG). Beside, CTRL only: the logged lane with the banked `mlp_ego`.
+  * **Bar, hit and guards.** A hit at a run is `egoc − identity` ADE6 separated-better and at or below −0.06035 m (F/2). PASS needs a hit at all four runs. Guards: G-ADE (not
+    separated-worse at any run), G-WORSE (no Read-A row separated-worse at 3 or more of the 4 runs), G-NEW (no row becomes separated-worse against P10 at both CTRL seeds) and, from
+    Amendment 1, G-VIOL (`VIOL-ANY`, the executed path's rule-violation rate, not separated-worse at 3 or more of the 4 runs), added because SPEEDSUB's post-hoc block (§7.27) found
+    that rate rising under `ego`. The order is REFUSED, HARMS, PASS, PARTIAL (hits at both CTRL seeds) and NULL (anything else; NULL-ONE and NULL-FLAT describe and decide nothing).
+    The PREREG's ESTIMATED prior was that PASS is not the expected outcome, because the causal fit loses the oracle part of `limit`.
+  * **Tier and estimator.** T1-kin: a self-action open loop (m = 10, causal bucket, dead-reckoned nav, logged scene, periodic, executor plan), not T2. Paired episode-cluster
+    bootstrap, B = 2,000, seed 0, 141 episodes / 2,399 windows, per run. It answers *"would another draw of EPISODES say this?"*. The four runs (two seeds × two replicates of one
+    recipe) carry *"would another TRAINING RUN say this?"* at n = 4 (`H-ESTIM-SEED-1`). The read-out is fitted once, so *"would another READ-OUT FIT say this?"* is not answered. The
+    planner is deterministic, so there is no inference-seed term.
+* **Outcome [M]** (`RESULT_V8F_SPEEDSUB_T1.md`, landed `37d78ed1`; read committed at `266b470e` (11:12:21) by the pre-registered reader `speedsub_t1_read.py` (sha256 `9d3c2792…`), which
+  printed `ZZSPEEDSUB-T1-READ-DONE NULL NULL-ONE`; **all 158 control flags PASS**; output `raw/2026-10-28-speedsub-t1-read/SPEEDSUB_T1_READ.json`, sha256 `b3b72325…`; chain run 2026-10-28
+  10:21:41 to 11:09:29 (47 min 48 s) on the dev-box CPU, the reader's own wall 454.4 s. The word is not copied: the RESULT's generator recomputes the hits, the four guards and the floor
+  rule from the per-run cells and stops on any mismatch with the reader):
+
+| ADE6, `egoc − identity` (m; point [95 % CI]) | CTRL s0 | CTRL s1 | REP s0 | REP s1 |
+|---|---|---|---|---|
+| point [CI] | −0.0233 [−0.0629, +0.0156] | −0.0076 [−0.0500, +0.0349] | **−0.1949 [−0.2619, −0.1313]** | −0.0333 [−0.0832, +0.0131] |
+| separated-better (CI upper end < 0) | no | no | yes | no |
+| point ≤ −0.06035 | no | no | yes | no |
+| **hit** | no | no | **yes** | no |
+| point as a multiple of the bar (DERIVED) | −0.39 × | −0.13 × | −3.23 × | −0.55 × |
+| mean ADE6, `identity` → `egoc` (m) | 2.2421 → 2.2189 | 2.3201 → 2.3125 | 2.6446 → 2.4497 | 2.3317 → 2.2984 |
+| hits | 1 of 4 | | | |
+
+  The table's walk (REFUSED first, then HARMS, then PASS, PARTIAL, NULL):
+
+| step (PREREG section 6, with Amendment 1) | reading | fires |
+|---|---|---|
+| REFUSED: a control fails, or a run is missing | 158 of 158 control flags true; 4 of 4 runs present | no |
+| HARMS: a guard fires (G-ADE, G-WORSE, G-NEW or G-VIOL) | none of the four fires (guard table below) | no |
+| PASS: no guard; a hit at all four runs | 1 of 4 | no |
+| PARTIAL: no guard; hits at both CTRL seeds | CTRL s0 no, CTRL s1 no | no |
+| **NULL**: anything else | hits at 1 of 4 runs, not at both CTRL seeds: label **NULL-ONE** (the label describes, the table decides) | **yes** |
+
+  The guards, recomputed from the cells:
+
+| guard | rule (PREREG) | reading, recomputed | fires |
+|---|---|---|---|
+| G-ADE | `egoc − identity` ADE6 not separated-worse at any run | separated-worse at 0 of 4 runs | no |
+| G-WORSE | no Read-A row (19 rows, ADE6 included) has `egoc − identity` separated-worse at ≥ 3 of the 4 runs | the most any row reaches is 1 of 4 runs; three rows are separated-worse at one run each, all at CTRL s1: accel MAE +0.1598 [+0.0743, +0.2611] W, yaw-rate MAE +1.3443 [+0.2401, +2.5747] W, L1 lateral-accel MAE +0.3627 [+0.1230, +0.6572] W | no |
+| G-NEW | no row with `identity − P10` not separated-worse becomes separated-worse for `egoc − P10` at both CTRL seeds (Amendment 1 item 3: read per seed, must hold at both) | rows with `egoc − P10` separated-worse at both CTRL seeds: curvature MAE, L2 curvature MAE (GT>=5.2), M1 crawl share; each is **also separated-worse under `identity − P10` at both seeds** (the crawl gap to P10 is there before the substitution), so none is new. The reader's coded rule (identity not separated-worse at ≥ 1 CTRL seed) and the Amendment 1 reading (not separated-worse at each) both give the empty set | no |
+| G-VIOL (Amendment 1) | `VIOL-ANY` not separated-worse at ≥ 3 of the 4 runs | separated-worse at 1 of 4 runs (REP s0: +0.0421 [+0.0246, +0.0612] W) | no |
+
+  The outcome is **NULL**, label NULL-ONE: one hit of four runs, at the slow-T draw REP s0, and not at both CTRL seeds. Committed next, verbatim from the read: *"next: section 8 (a), the
+  history-aware causal read-out"*. Without G-VIOL the word is the same, and under Amendment 1's reading of G-NEW it is the same. The two halves of the hit rule name the same single run
+  (separated-better alone gives REP s0 only, and the bar alone gives REP s0 only).
+  ⚠ **How to read the NULL** (none of it moves the word). NULL means the bar was not cleared at all four runs; it does not mean the effect is zero. At CTRL s0 and REP s1 the lower ends
+  of the intervals (−0.0629, −0.0832) lie beyond −0.06035, so the data at those runs do not exclude an ADE6 cut as large as the bar; at CTRL s1 the lower end (−0.0500) lies inside the bar,
+  so a bar-sized cut is excluded there at the 95 % level (the episode question). All three points are small and their intervals include 0.
+* **Controls [M]** (each must read its known value before any row is read; any failure is REFUSED). The deliberate-regression arm reads its known value: `egoshufc − identity` ADE6 is
+  +4.2928 [+3.4386, +5.1945] (CTRL s0), +3.9857 [+3.2389, +4.7695] (CTRL s1), +4.4851 [+3.5747, +5.4322] (REP s0) and +4.1886 [+3.3996, +5.0549] m (REP s1), separated-worse at all four
+  runs, so the small `egoc` movements at the healthy draws are not a blind instrument:
+
+| control | must read | reading (MEASURED, all 4 runs) | catches |
+|---|---|---|---|
+| K-ID (4) | `identity` per-window ADE6 equals the banked own rollout within 1e-4 m | max absolute difference in ADE6 0.0 m, and over every `cl` coordinate 0.0 m (bit-equal) | hook drift, a thread-count or tool-tree change |
+| K-ZERO (4) | the reader's `identity − identity` reads exactly 0.0 on every computed row | delta = lo = hi = 0.0 on every computed row of the 4 runs (asserted here from `tables.identity-identity`) | a reader that manufactures differences |
+| K-NONSPEED (1; 12 values) | at every (window, tick) the 55 non-speed code dimensions O reads equal T's own | max absolute difference 0.0 at all 12 rollouts | a wider substitution than declared |
+| K-REC (4) | the cells O reads in `egoc` equal `mlp_ego_c` on the recorded ego block, standardised, ≤ 1e-5 | max 1.9073e-06 (O-read side 1.9073e-06); 7,197 rows per run | a substitution that is not the read-out |
+| K-REACH (4) and K-REACH-PLAN (4) | `egoc` moves the cells away from T's own on ≥ 99 % of (window, tick); `egoshufc` differs from `egoc` on ≥ 95 %; the `egoc` executed plan differs from `identity` | moved fraction 1.0, 1.0, 1.0 at all 4 runs | a substitution that never reaches O |
+| K-SHUF (4) | the permutation sha is the registered one; fixed points ≤ max(3, 1 %) | recorded = recomputed = registered `64785f8a…`; 0 fixed points of 2,399 | an unregistered shuffle |
+| K-FLOOR (12) and K-WIN (12) | the P10 floor arm, windows and GT equal the banked rollout bit for bit | max absolute difference 0.0 at all 12 rollouts; 2,399 windows / 141 episodes | a patch reaching the floor |
+| K-SHA (12) and K-ALIGN (12) | checkpoints, `mlp_ego_c`, tool, wrapper, instrument equal their pins; the tick rows align with the tool's | true at all 12 rollouts; 7,197 tick rows each (2,399 windows × 3 ticks) | a swapped file, a misaligned record |
+| K1, K2, K3, K5, K6, K7, GRID (84) | the T1 heads pipeline's own per-rollout controls (inherited from the DAG-ORC reader's layer; their definitions are in that reader and are not restated here). K7: the rebuilt executed track equals the dumped `cl` | all true at all 12 rollouts; K7 max absolute difference in `cl` 0.0, pose deviation ≤ 3.02e-05 m (float32 class) | pipeline drift |
+| **K-REG** (1) | `egoshufc − identity` ADE6 separated-worse at all four runs | CTRL s0 +4.2928 [+3.4386, +5.1945]; CTRL s1 +3.9857 [+3.2389, +4.7695]; REP s0 +4.4851 [+3.5747, +5.4322]; REP s1 +4.1886 [+3.3996, +5.0549] | an instrument that cannot see a harm |
+
+  Before any rollout (**[I]**, MEASURED in the build, `raw/2026-10-28-speedsub-t1-build/evidence/fit_c.json`): C-FIT PASS at 9.412e-06 m/s against the 1e-5 tolerance; C-CAUSAL 0 mismatches
+  against the tool's own `build_item --limit causal`; C-COVER 306,566 of 306,566 TRAIN windows carry a finite past (causal-bucket agreement with the logged bucket 76.7 %); C-DISJ eval ∩ fit
+  clips = ∅; C-PARITY 4,512 clips / 306,566 windows.
+* **The rows, `egoc − identity` per run, on every row [M]** (T1-kin; point [95 % CI]; B / W = separated-better / separated-worse, – = not separated; each cell is the paired
+  episode-cluster bootstrap of the arm minus the same run's `identity` rollout on the same windows, B = 2,000, seed 0; error rows are lower-better, TAC rows higher-better; units are those of
+  the DAG-ORC reader's rows, §7.26; † on REP s0 DK-VIOL: a rounded bound of the cell is exactly 0.0000, and the flag is the estimator's reading of the unrounded bound):
+
+| row | family | CTRL s0 | CTRL s1 | REP s0 | REP s1 |
+|---|---|---|---|---|---|
+| ADE6 | PRIMARY | −0.0233 [−0.0629, +0.0156] – | −0.0076 [−0.0500, +0.0349] – | −0.1949 [−0.2619, −0.1313] B | −0.0333 [−0.0832, +0.0131] – |
+| speed MAE | LONGITUDINAL | −0.0072 [−0.0371, +0.0209] – | +0.0179 [−0.0143, +0.0516] – | −0.1061 [−0.1495, −0.0664] B | −0.0193 [−0.0597, +0.0202] – |
+| along-track MAE | LONGITUDINAL | −0.0281 [−0.0715, +0.0146] – | −0.0119 [−0.0616, +0.0365] – | −0.2064 [−0.2785, −0.1393] B | −0.0367 [−0.0886, +0.0129] – |
+| accel MAE | LONGITUDINAL | +0.0387 [−0.0176, +0.0916] – | +0.1598 [+0.0743, +0.2611] W | −0.0732 [−0.1463, −0.0057] B | −0.0233 [−0.1388, +0.0937] – |
+| DK-VIOL | LONGITUDINAL | +0.0000 [−0.0081, +0.0076] – | −0.0034 [−0.0144, +0.0065] – | +0.0101 [+0.0000, +0.0215] – † | −0.0034 [−0.0124, +0.0043] – |
+| DK-HW | LONGITUDINAL | +0.0036 [−0.1355, +0.1564] – | +0.0091 [−0.1350, +0.1376] – | −0.0621 [−0.2061, +0.0685] – | −0.0047 [−0.1682, +0.1280] – |
+| DK-TG | LONGITUDINAL | +0.0394 [−0.0233, +0.1431] – | −0.0149 [−0.0366, +0.0062] – | −0.0133 [−0.0391, +0.0102] – | +0.0016 [−0.0342, +0.0345] – |
+| heading MAE | LATERAL | +0.1714 [−0.1698, +0.4806] – | +0.0260 [−0.2861, +0.2939] – | −0.5464 [−1.0054, −0.1855] B | +0.0769 [−0.1957, +0.3433] – |
+| yaw-rate MAE | LATERAL | −0.4443 [−2.4850, +1.1922] – | +1.3443 [+0.2401, +2.5747] W | −3.7761 [−5.9452, −1.9696] B | +0.0811 [−0.8026, +0.9589] – |
+| curvature MAE | LATERAL | −0.0071 [−0.0220, +0.0056] – | −0.0076 [−0.0337, +0.0110] – | −0.0463 [−0.0747, −0.0225] B | +0.0045 [−0.0072, +0.0173] – |
+| cross-track MAE | LATERAL | +0.0057 [−0.0111, +0.0224] – | +0.0034 [−0.0166, +0.0222] – | −0.0056 [−0.0229, +0.0124] – | −0.0064 [−0.0252, +0.0109] – |
+| L1 lateral-accel MAE | LATERAL | +0.0585 [−0.1062, +0.2145] – | +0.3627 [+0.1230, +0.6572] W | −0.1063 [−0.2761, +0.0587] – | −0.0644 [−0.3605, +0.1731] – |
+| L2 curvature MAE (GT>=5.2) | LATERAL | −0.0004 [−0.0175, +0.0145] – | +0.0104 [−0.0023, +0.0240] – | −0.0347 [−0.0674, −0.0105] B | −0.0082 [−0.0218, +0.0022] – |
+| TAC-LAT | TACTICAL | +0.0000 [−0.0092, +0.0092] – | +0.0054 [−0.0104, +0.0200] – | +0.0050 [−0.0071, +0.0187] – | +0.0063 [−0.0033, +0.0163] – |
+| TAC-LON | TACTICAL | +0.0121 [−0.0092, +0.0359] – | −0.0008 [−0.0325, +0.0321] – | +0.0158 [−0.0050, +0.0367] – | +0.0046 [−0.0179, +0.0280] – |
+| S-POS@30 | STRATEGIC | NOT COMPUTED | NOT COMPUTED | NOT COMPUTED | NOT COMPUTED |
+| S-POS@50 | STRATEGIC | NOT COMPUTED | NOT COMPUTED | NOT COMPUTED | NOT COMPUTED |
+| S-POS@80 | STRATEGIC | NOT COMPUTED | NOT COMPUTED | NOT COMPUTED | NOT COMPUTED |
+| M1 crawl share | crawl | −0.0007 [−0.0059, +0.0045] – | +0.0021 [−0.0021, +0.0063] – | −0.0052 [−0.0115, +0.0007] – | −0.0003 [−0.0049, +0.0042] – |
+| VIOL-ANY | RULES | +0.0121 [−0.0050, +0.0308] – | +0.0033 [−0.0184, +0.0267] – | +0.0421 [+0.0246, +0.0612] W | −0.0158 [−0.0371, +0.0058] – |
+| VIOL-ANY-OL | RULES | +0.0033 [−0.0050, +0.0137] – | −0.0017 [−0.0104, +0.0075] – | +0.0138 [+0.0062, +0.0208] W | −0.0063 [−0.0150, +0.0017] – |
+
+  The census of the table, per run (DERIVED; 18 computed rows per run):
+
+| run | rows separated-better | rows separated-worse | rows not separated |
+|---|---|---|---|
+| CTRL s0 | 0 | 0 | 18 |
+| CTRL s1 | 0 | 3 | 15 |
+| REP s0 | 8 | 2 | 8 |
+| REP s1 | 0 | 0 | 18 |
+
+* **The four families [M]** (T1-kin; per run, per family, never pooled; **STRATEGIC is reported, not paused, for v8F**). The rows table above carries every family row against the run's
+  own `identity`. Each family's standing against the P10 floor (`egoc − P10`, same estimator and windows):
+
+  LONGITUDINAL (speed, along-track and accel MAE; DK-VIOL / DK-HW / DK-TG on the LEAD windows):
+
+| row | CTRL s0 | CTRL s1 | REP s0 | REP s1 |
+|---|---|---|---|---|
+| speed MAE | −0.7833 [−0.9856, −0.6121] B | −0.6850 [−0.8833, −0.5135] B | −0.5449 [−0.7564, −0.3517] B | −0.6785 [−0.8810, −0.5045] B |
+| along-track MAE | −0.7091 [−0.8648, −0.5573] B | −0.5994 [−0.7792, −0.4222] B | −0.4277 [−0.6426, −0.2186] B | −0.6126 [−0.7887, −0.4456] B |
+| accel MAE | −0.7785 [−1.1532, −0.4568] B | −0.4416 [−0.7129, −0.1980] B | −0.3301 [−0.6892, −0.0099] B | −0.4242 [−0.7481, −0.1227] B |
+| DK-VIOL | +0.0017 [−0.0228, +0.0257] – | −0.0067 [−0.0286, +0.0136] – | +0.0101 [−0.0174, +0.0373] – | −0.0067 [−0.0308, +0.0161] – |
+| DK-HW | −0.2641 [−0.6818, +0.1348] – | −0.4115 [−0.7749, −0.0871] B | −0.1728 [−0.5489, +0.1538] – | −0.3812 [−0.7886, −0.0297] B |
+| DK-TG | −0.0184 [−0.1328, +0.1534] – | −0.0874 [−0.1500, −0.0307] B | −0.0468 [−0.1105, +0.0092] – | −0.0973 [−0.1557, −0.0451] B |
+
+  LATERAL:
+
+| row | CTRL s0 | CTRL s1 | REP s0 | REP s1 |
+|---|---|---|---|---|
+| heading MAE | −2.4206 [−3.1566, −1.7506] B | −2.0279 [−2.7477, −1.3526] B | −0.6310 [−1.3850, +0.1513] – | −1.7095 [−2.4988, −0.9451] B |
+| yaw-rate MAE | +3.0286 [−0.2135, +6.2640] – | +10.0287 [+6.4331, +13.9961] W | +15.5496 [+11.4219, +20.1882] W | +9.6555 [+6.0362, +13.5666] W |
+| curvature MAE | +0.0783 [+0.0549, +0.1043] W | +0.1275 [+0.0871, +0.1752] W | +0.1716 [+0.1294, +0.2209] W | +0.1388 [+0.0900, +0.1964] W |
+| cross-track MAE | −0.9563 [−1.1041, −0.8301] B | −0.9708 [−1.1133, −0.8394] B | −0.9841 [−1.1328, −0.8500] B | −0.9582 [−1.1082, −0.8190] B |
+| L1 lateral-accel MAE | −2.4032 [−3.8112, −1.2015] B | −1.4846 [−2.4589, −0.5725] B | −1.3428 [−2.5587, −0.2180] B | −1.5896 [−2.7105, −0.6001] B |
+| L2 curvature MAE (GT>=5.2) | +0.0425 [+0.0244, +0.0643] W | +0.0633 [+0.0365, +0.0971] W | +0.0967 [+0.0614, +0.1422] W | +0.0507 [+0.0296, +0.0755] W |
+
+  TACTICAL:
+
+| row | CTRL s0 | CTRL s1 | REP s0 | REP s1 |
+|---|---|---|---|---|
+| TAC-LAT | +0.1905 [+0.1513, +0.2318] B | +0.2026 [+0.1668, +0.2416] B | +0.1534 [+0.1122, +0.1971] B | +0.1772 [+0.1380, +0.2198] B |
+| TAC-LON | +0.1517 [+0.0898, +0.2127] B | +0.1363 [+0.0713, +0.1987] B | +0.0604 [−0.0100, +0.1250] – | +0.1613 [+0.0980, +0.2209] B |
+
+  STRATEGIC. S-POS@30 / 50 / 80 is the strategic head's position error within a run (S − CTRV, ticks ≥ 1; unpaired against CTRV; direction lower is better). **The paired
+  `egoc − identity` S-POS row is NOT COMPUTED**, because the reader scores S against CTRV inside each rollout and does not pair the two rollouts' S errors window by window. A
+  difference between the two columns below is therefore not a tested contrast, and STRATEGIC carries no across-arm statement in this read:
+
+| row (S − CTRV, within run) | mode | CTRL s0 | CTRL s1 | REP s0 | REP s1 |
+|---|---|---|---|---|---|
+| S-POS@30 | `identity` | −1.7428 [−2.2737, −1.2861] B | −1.8255 [−2.3433, −1.3880] B | −1.4837 [−1.9587, −1.0595] B | −1.7135 [−2.1974, −1.3049] B |
+| S-POS@30 | `egoc` | −1.6754 [−2.1616, −1.2452] B | −1.8415 [−2.3319, −1.4113] B | −1.4009 [−1.8202, −1.0285] B | −1.6566 [−2.1108, −1.2707] B |
+| S-POS@30 | `egoc − identity` | NOT COMPUTED | NOT COMPUTED | NOT COMPUTED | NOT COMPUTED |
+| S-POS@50 | `identity` | −4.5331 [−5.6695, −3.5422] B | −4.6092 [−5.6305, −3.6576] B | −4.1419 [−5.1720, −3.1830] B | −4.8481 [−5.9214, −3.8649] B |
+| S-POS@50 | `egoc` | −4.4812 [−5.5861, −3.4515] B | −4.6270 [−5.6365, −3.6953] B | −4.1583 [−5.2174, −3.2088] B | −4.6535 [−5.7059, −3.6993] B |
+| S-POS@50 | `egoc − identity` | NOT COMPUTED | NOT COMPUTED | NOT COMPUTED | NOT COMPUTED |
+| S-POS@80 | `identity` | −9.5624 [−11.6843, −7.6124] B | −9.9249 [−11.9750, −7.9686] B | −9.3703 [−11.3441, −7.5010] B | −10.4419 [−12.5718, −8.3877] B |
+| S-POS@80 | `egoc` | −9.6310 [−11.7915, −7.6545] B | −9.8671 [−11.8118, −7.9544] B | −9.5742 [−11.6457, −7.6143] B | −10.1261 [−12.2716, −8.1095] B |
+| S-POS@80 | `egoc − identity` | NOT COMPUTED | NOT COMPUTED | NOT COMPUTED | NOT COMPUTED |
+
+  What is not computed, per family, with the reason:
+
+| family | row | status | reason |
+|---|---|---|---|
+| LONGITUDINAL | anti-echo block | **NOT BUILT** | the DAG-ORC reader carries none (READ.json note; PREREG section 7 allows *"NOT BUILT with the reason"*). A work item. |
+| LONGITUDINAL | DK-VIOL / DK-HW / DK-TG | computed | on the LEAD windows only (n per cell in section 2); DK is computed in this read, unlike SPEEDSUB's T1-class path |
+| TACTICAL | goal-head F1 at T1-kin | **NOT COMPUTABLE here** | the paired tool reads eval dumps, not tick dumps (READ.json note); n not available. TAC-LAT / TAC-LON are the 3-way agreement of the executed track with the human's. A work item. |
+| STRATEGIC | S-POS paired across arms | **NOT COMPUTED** | the reader does not pair S errors across rollouts (above) |
+| all | stop-window and event strata | not computed | not registered for this read |
+
+* **What the numbers say [M]** (beside the word; none of it moves it).
+  1. **The one hit is the repair of a slow-T draw.** At REP s0 `egoc` cuts ADE6 by −0.1949 [−0.2619, −0.1313] m, 3.23 times the bar. Of the 18 computed rows, 8 are separated-better and 2
+     separated-worse. The cost is rule violation: the share of windows on which the executed path breaks a SPEED / STOP / TURN / LEAD rule rises from 0.2885 to 0.3306 (`VIOL-ANY` +0.0421
+     [+0.0246, +0.0612]), so G-VIOL, which needs 3 of the 4 runs, fires at 1. M1 crawl share does not separate (−0.0052 [−0.0115, +0.0007]): the repair is of the speed cells' draw, not
+     of the crawl as such.
+
+| row | REP s0, `egoc − identity` |
+|---|---|
+| ADE6 | −0.1949 [−0.2619, −0.1313] B |
+| speed MAE | −0.1061 [−0.1495, −0.0664] B |
+| along-track MAE | −0.2064 [−0.2785, −0.1393] B |
+| accel MAE | −0.0732 [−0.1463, −0.0057] B |
+| heading MAE | −0.5464 [−1.0054, −0.1855] B |
+| yaw-rate MAE | −3.7761 [−5.9452, −1.9696] B |
+| curvature MAE | −0.0463 [−0.0747, −0.0225] B |
+| L2 curvature MAE (GT>=5.2) | −0.0347 [−0.0674, −0.0105] B |
+| VIOL-ANY | +0.0421 [+0.0246, +0.0612] W |
+| VIOL-ANY-OL | +0.0138 [+0.0062, +0.0208] W |
+
+  Why REP s0 (**[I]**, T0 diagnostic; `raw/2026-10-28-speedsub-t1-prereg/rep_s0_diag/REP_S0_SPEED_BIAS.md`, sha256 `211601de…`): REP s0's T predicts every speed cell slow against CTRL s0
+     on the same 2,399 windows, separated: `lon_v_target_ms` −1.1097 [−1.2814, −0.9345], `v_a_ms` −0.7315 [−0.8635, −0.5901], `v_end_ms` −1.0056 [−1.1436, −0.8686], `v_lo_ms` −1.1700
+     [−1.3210, −1.0175] and `v_hi_ms` −0.9913 [−1.1383, −0.8487] m/s. REP s1 and A sit with CTRL. The diagnosis is the Master Mind's, written before this read; the substitution helps at the
+     draw whose cells are most wrong and at no other run, which is what it predicts. It is **one** slow-T draw (n = 1).
+  2. **The floor rule `H-V8F-SPEEDSUB-T1-2`: NOT COLLAPSE.** COLLAPSE needs `g_id(r) > 0` and `g_c(r) ≤ 0.5 · g_id(r)` on all three rows (g_id = REP s0 − CTRL s0 under `identity`, g_c = the
+     same under `egoc`). The REP s0 − CTRL s0 gap on ADE6 falls from 0.4025 to 0.2309 m (a drop of 42.6 %), yaw-rate MAE and curvature MAE fall by less, and no row reaches half, so the floors
+     stay DAG-ORC's (§7.26). At s0 (decisive, beside):
+
+| s0 (decisive) row | g_id | g_c | g_c / g_id | closed by `egoc` (DERIVED) | threshold 0.5 · g_id | collapses |
+|---|---|---|---|---|---|---|
+| ADE6 | +0.4025 | +0.2309 | 0.574 | 42.6 % | +0.2013 | no |
+| yaw-rate MAE | +15.8553 | +12.5214 | 0.790 | 21.0 % | +7.9276 | no |
+| curvature MAE | +0.1324 | +0.0932 | 0.704 | 29.6 % | +0.0662 | no |
+
+  At s1 (reported) the rule cannot collapse what is not there (REP s1 − CTRL s1 is about 0 under `identity`, and curvature MAE has g_id below 0):
+
+| s1 (reported) row | g_id | g_c | collapses | note |
+|---|---|---|---|---|
+| ADE6 | +0.0116 | −0.0141 | yes | g_id above 0 and g_c below half |
+| yaw-rate MAE | +0.8903 | −0.3732 | yes | g_id above 0 and g_c below half |
+| curvature MAE | −0.0008 | +0.0112 | no | g_id is not above 0: there is no gap to collapse |
+
+  3. **The healthy draws show no separated ADE6 change.** CTRL s0 and REP s1 move no row of 18. CTRL s1 moves the wrong way on three rows, each at that one run (accel MAE +0.1598
+     [+0.0743, +0.2611], yaw-rate MAE +1.3443 [+0.2401, +2.5747], L1 lateral-accel MAE +0.3627 [+0.1230, +0.6572]), so G-WORSE, which needs 3 runs per row, does not fire. **M1 crawl share moves at
+     no run.**
+
+| run | ADE6 `egoc − identity` | multiple of the bar | rows separated-better / separated-worse | note |
+|---|---|---|---|---|
+| CTRL s0 | −0.0233 [−0.0629, +0.0156] | −0.39 × | 0 / 0 | no row of 18 separates |
+| CTRL s1 | −0.0076 [−0.0500, +0.0349] | −0.13 × | 0 / 3 | accel MAE, yaw-rate MAE and L1 lateral-accel MAE separated-worse (one run each: G-WORSE needs 3 runs per row) |
+| REP s1 | −0.0333 [−0.0832, +0.0131] | −0.55 × | 0 / 0 | no row of 18 separates |
+
+  4. **How much of the crawl gap to P10 `egoc` closes** (DERIVED, in DAG-ORC's form: (identity − P10 − (egoc − P10)) / (identity − P10); negative means the gap widens; DAG-ORC's arm A for
+     reference, **[I]**, §7.26). At the healthy CTRL seeds `egoc` closes at most 12.8 % of the gap on any crawl row and widens it on 3 of 8 cells, against 27.6 % at the least for DAG-ORC's
+     perturbation. The two tables are not one experiment, so the comparison is of sizes and not a contrast:
+
+| row | CTRL s0 `egoc` | CTRL s0 DAG-ORC A | CTRL s1 `egoc` | CTRL s1 DAG-ORC A | REP s0 `egoc` | REP s1 `egoc` |
+|---|---|---|---|---|---|---|
+| yaw-rate MAE | 12.8 % | 79.9 % | −15.5 % | 66.9 % | 19.5 % | −0.8 % |
+| curvature MAE | 8.3 % | 52.1 % | 5.7 % | 52.0 % | 21.3 % | −3.4 % |
+| L2 curvature MAE (GT>=5.2) | 4.1 % | 56.4 % | −19.7 % | 58.8 % | 26.4 % | 13.9 % |
+| M1 crawl share | 1.9 % | 46.0 % | −3.5 % | 27.6 % | 5.4 % | 0.5 % |
+
+  5. **Beside, deciding nothing: the logged-lane bridge.** The banked `mlp_ego` in the `--limit logged` lane (a declared open channel), CTRL only. The read-out with the most future information
+     available moves ADE6 by +0.0008 and −0.0185 m at CTRL s0 and s1: not separated. On DAG-OACC at T1-kin the same read-out in the same lane does not move ADE6, where on M2b-mixo at T1-class
+     open loop it did (§7.27). The change has four ingredients at once (the base, the tier, the rollout machinery and the checkpoint seeds), and no arm isolates one. **[H]** (an inference from the two flat reads) Because the
+     best-informed read-out is also flat at CTRL, the causal read-out's flatness is not explained by the future information it lacks:
+
+| row | CTRL s0 `egol − identity_l` | CTRL s1 `egol − identity_l` | CTRL s0 `egoc − identity` (primary lane) | CTRL s1 `egoc − identity` (primary lane) |
+|---|---|---|---|---|
+| ADE6 | +0.0008 [−0.0374, +0.0375] – | −0.0185 [−0.0637, +0.0260] – | −0.0233 [−0.0629, +0.0156] – | −0.0076 [−0.0500, +0.0349] – |
+| speed MAE | +0.0059 [−0.0226, +0.0333] – | −0.0010 [−0.0331, +0.0305] – | −0.0072 [−0.0371, +0.0209] – | +0.0179 [−0.0143, +0.0516] – |
+| along-track MAE | +0.0015 [−0.0377, +0.0399] – | −0.0247 [−0.0753, +0.0239] – | −0.0281 [−0.0715, +0.0146] – | −0.0119 [−0.0616, +0.0365] – |
+| accel MAE | +0.0312 [−0.0256, +0.0881] – | +0.0980 [+0.0154, +0.1916] W | +0.0387 [−0.0176, +0.0916] – | +0.1598 [+0.0743, +0.2611] W |
+| heading MAE | +0.2038 [−0.1045, +0.4759] – | +0.2147 [−0.0596, +0.4457] – | +0.1714 [−0.1698, +0.4806] – | +0.0260 [−0.2861, +0.2939] – |
+| yaw-rate MAE | +0.6521 [−1.0941, +2.2367] – | +2.0000 [+1.0303, +3.1066] W | −0.4443 [−2.4850, +1.1922] – | +1.3443 [+0.2401, +2.5747] W |
+| curvature MAE | +0.0035 [−0.0097, +0.0152] – | +0.0019 [−0.0201, +0.0188] – | −0.0071 [−0.0220, +0.0056] – | −0.0076 [−0.0337, +0.0110] – |
+| L1 lateral-accel MAE | +0.1149 [−0.0623, +0.3086] – | +0.3345 [+0.1144, +0.5729] W | +0.0585 [−0.1062, +0.2145] – | +0.3627 [+0.1230, +0.6572] W |
+| L2 curvature MAE (GT>=5.2) | +0.0142 [−0.0045, +0.0319] – | +0.0146 [+0.0038, +0.0277] W | −0.0004 [−0.0175, +0.0145] – | +0.0104 [−0.0023, +0.0240] – |
+| M1 crawl share | +0.0068 [+0.0004, +0.0136] W | +0.0065 [+0.0022, +0.0109] W | −0.0007 [−0.0059, +0.0045] – | +0.0021 [−0.0021, +0.0063] – |
+| TAC-LAT | +0.0071 [−0.0042, +0.0204] – | −0.0017 [−0.0171, +0.0129] – | +0.0000 [−0.0092, +0.0092] – | +0.0054 [−0.0104, +0.0200] – |
+| TAC-LON | +0.0204 [−0.0017, +0.0475] – | +0.0263 [−0.0079, +0.0667] – | +0.0121 [−0.0092, +0.0359] – | −0.0008 [−0.0325, +0.0321] – |
+
+* **Next (Rule Zero).** The committed next, verbatim from the read: *"next: section 8 (a), the history-aware causal read-out"* (the four history frames of `p10f` plus the causal bucket and
+  nav, under its own amendment with the same table; ESTIMATED at most about 1.6 h of dev-box CPU in all, no GPU and no spend). The Master Mind's ranking, labelled ESTIMATED / INFERENCE (not
+  a measured outcome; **[I]**, `RESULT_V8F_SPEEDSUB_T1.md` §7):
+  1. **(a) stays registered and is not run now, because arithmetic predicts NULL.** The oracle bucket, the read-out with the most future information (TRAIN hold-out 0.2475 SD units against
+     0.2793 for `mlp_ego_c`), did not move healthy CTRL, and a history-aware causal read-out carries less future information than that oracle. **So the speed-cell channel is not what limits
+     healthy DAG-OACC draws.** Its measured use is repairing slow-T training draws (REP s0).
+  2. **The largest measured crawl lever is DAG-ORC's perturbation** (§7.26): arm A is separated-better on every crawl row at both seeds, while `egoc` at the same CTRL seeds moves M1 by −0.0007
+     and +0.0021, not separated. The registered crawl route is LAUNCH-INTENT on box 2 (§7.29), which waited on the PI's go.
+  3. **(a) runs if a later arm shows healthy-draw speed cells binding.** The RESULT's reading of binding, for the Master Mind to confirm: an arm whose healthy draws move ADE6 or a crawl row under
+     a speed-cell substitution, separated and above the rig's replicate floor. PREREG section 8 (b), the per-cell attribution at T1-kin, is unblocked and not routed from NULL.
+
+| lever | status | blocker, and what unblocks it |
+|---|---|---|
+| (a) the history-aware causal read-out | registered, costed, **not run** by the ranking | nothing external; its own amendment. Deprioritised by arithmetic (item 1), not blocked. |
+| (b) per-cell attribution at T1-kin | unblocked, not routed from NULL | the Master Mind's call to place it. |
+| LAUNCH-INTENT (the registered crawl route, NEXT-CRAWL) | registered | **the PI's go** and box 2 for the training runs (the Master Mind's statement, UNVERIFIED here; the route itself is INHERITED from `RESULT_V8F_DAG_ORC.md` section 6). |
+| the dominance read (Read A on the substituted CTRL, PREREG section 6.1) | **not reachable** | it is read on PASS only; the outcome is NULL. |
+| adoption of `mlp_ego_c` as a `forward_infer` speed sub-head | **not adopted** | the table adopts on PASS only. |
+
+* **What this read cannot claim, and disclosures.** It is a self-action open loop, not T2 and not a driving result for the deployed car; the read-out is not built as a sub-head. There is one
+  read-out fit. Ticks 1 and 2 read the model's own executed motion, outside the fit's distribution by construction. `egoshufc` is a global shuffle, a control with a committed reading and not an
+  estimate of the read-out's information. REP s0 is a slow-T draw, so its hit partly measures repair of that draw, and the four runs are two seeds × two replicates of one recipe, not four
+  recipes. Not computed or not built: S-POS across arms, the anti-echo block and goal-head F1 at T1-kin (work items). Amendment 1 precedes every rollout, and no guard fires under either reading
+  of G-NEW, so the word does not depend on it. The fit was reused, not re-run, in the chain (made once at build time, with its sha256 pinned before the first rollout). The rollouts took 138 to
+  141 s each against the PREREG's ESTIMATE of about 305 s; K-ID reads a maximum absolute difference of 0.0 against the banked rollouts, so the speed difference changes no number. The RESULT's
+  re-derivation tests the decision logic and the consistency of the read JSON; it does **not** recompute the cells from the per-window dumps or re-run the bootstrap.
+* **Provenance.** Dev-box CPU (`CUDA_VISIBLE_DEVICES=-1`, OMP / MKL 8, one rollout at a time), twelve decisive rollouts in 27 min 52 s, four beside rollouts. Banked in
+  `R/raw/2026-10-28-speedsub-t1-read/` (the read JSON, the beside JSON `SPEEDSUB_T1_BESIDE.json`, pins, the runs manifest, the chain log) and `R/raw/2026-10-28-speedsub-t1-result/`.
+  **Single copies.** The per-episode dumps, tick arrays and run trees are on `F:/TanitAD-scratch/speedsub_t1/out/` only; if F: is lost, the tables stay checkable against the read JSON but cannot
+  be recomputed from the dumps.
+
+### 7.29 LAUNCH-INTENT: HARMS (arm A, W 1.58926, not adopted; M-LAUNCH NOT MOVED)
+
+* **Status of this section (v33).** Read 2026-10-28 by the pre-registered reader of record `launch_intent_read.py` (sha256 `fb3d2d7d…`, the Amendment 1 reader): outcome **HARMS** (arm A, W 1.58926, not adopted) with all **206 reader controls PASS** (**[M]**, `LAUNCH_INTENT_READ.json`, sha256 `e451e1a6…`, banked at `d7dc9f11`). `RESULT_V8F_LAUNCH_INTENT.md` landed at `8c1e9636` and carries the M-LAUNCH read, **NOT MOVED** (`MLAUNCH.json`, sha256 `f5ebb4b2…`). The design, the Master Mind's redesign of the bar and arms, the outcome table and the registered routes below were committed before any LAUNCH-INTENT row existed. The bullets after them are the read, with the RESULT's tables copied line for line. Arm B and arm HI are not trained and not read.
+* **Design** (`PREREG_V8F_LAUNCH_INTENT`, claim row `H-V8F-LAUNCH-INTENT-1`; promoted by the Master Mind from its draft v2 (sha256 `aec8156a…`) and landed `77234276` as PRE-REGISTERED,
+  NOT RUN, before any LAUNCH-INTENT gate, run, rollout or row; the PREREG as landed has sha256 `469bac1f…`; its Amendment 1 (`A1-2026-10-28`, landed `e28516e8`, before any row was read)
+  appends to those bytes and gives the amended text sha256 `6ae79f2f…`, see the controls below).
+  * **Why it runs.** It is the LAUNCH-INTENT branch of `PREREG_V8F_DAG_ORC` §8 (NEXT-CRAWL), re-based on DAG-OACC. DAG-ORC read HARMS (§7.26). The PI answered the question whether box 2
+    should run the redesigned LAUNCH-INTENT next and skip B with *"Yes, queue it"* (2026-10-28), recorded as `PREREG_V8F_DAG_ORC` Amendment 3 (`A3-2026-10-28`, landed `051259d4`): B
+    (p = 0.1) is not trained and not read, A stays HARMS, and NEXT-CRAWL on DAG-OACC's states is LAUNCH-INTENT under its own PREREG. The rows it aims at are the crawl set C: DAG-OACC − P10
+    is separated-worse at both seeds on yaw-rate MAE, curvature MAE, L2 and M1 (**[I]**, `PREREG_V8F_DAG_ORC` Amendment 1). The mechanism it targets is O's own slow launch intent, v0
+    −1.78 / −0.93 m/s at tick 1 in the launch windows (**[I]**, `DIAGNOSIS.md` via `PREREG_V8F_DAG_ORC` §8). **[H]** The PREREG's hypothesis is that the 2-D ADE averages 30 knots over every
+    window, so the launch windows' along-track error is diluted about 5:1.
+  * **The lever.** One trainer flag, `--launch-intent-w` (default 0.0, off), landed `b09ac89f`: an additive term, W times the along-axis, knots 1–12 slice of ADE's own per-knot distance,
+    restricted to GT-launch TRAIN samples (v0 < 6 m/s and GT v(6 s) ≥ v0 + 1 m/s). Knots 1–12 are the executed horizon at m = 10, and nothing else gets a gradient from the term. The subset
+    is label-side (future GT speed is admissible for labels) and nothing new enters at inference. With the flag off, the run is the tip's, bit for bit.
+  * **The dose.** f = 49,618 / 306,566 = 0.161851 of the TRAIN windows are GT-launch (**[M]**, the PREREG's `f_measure.json`). Arm A gives launch samples one third of the along-track weight,
+    W_A = 1.58926. Arm B (one quarter, W_B = 0.726175) is registered and not trained; arm HI (one half, W_HI = 4.17852) is trained only from NEXT-LAUNCH, with its own PI go.
+  * **The redesign before any data (disclosed).** The draft's bar was 2 × max(F, RF0, RF), with RF the larger of the two REP draws, and REP s0 (a slow-T training draw, §7.28) set RF on 17 of
+    19 rows. Against the whole gap DAG-OACC leaves to P10 on a crawl row, that bar was 1.3 to 9.1 times the gap (**[M]**, arithmetic on the banked `P0_RF0.json`, `RF_REP.json` and
+    `DAGORC_READ.json`; the v1 bar ÷ gap column):
+
+| crawl row | v1 bar | CTRL − P10, s0 / s1 | v1 bar ÷ gap | **v2 bar** | v2 bar ÷ gap |
+|---|---|---|---|---|---|
+| yaw-rate MAE | 31.7106 | 3.4726 / 8.6844 | 9.1 / 3.7 | **1.1070** | 0.32 / 0.13 |
+| curvature MAE | 0.2648 | 0.0854 / 0.1352 | 3.1 / 2.0 | **0.0526** | 0.62 / 0.39 |
+| L2 curvature MAE (GT ≥ 5.2) | 0.1740 | 0.0443 / 0.0529 | 3.9 / 3.3 | **0.0136** | 0.31 / 0.26 |
+| M1 crawl share | 0.0776 | 0.0568 / 0.0604 | 1.4 / 1.3 | **0.0096** | 0.17 / 0.16 |
+
+  A lever that removed the crawl completely would have failed the draft's R-MOVE at both seeds: the decisive condition was unreachable by construction. The disclosure in the PREREG, verbatim:
+    *"The bar and arms were changed by the Master Mind before promotion, after DAG-ORC's floors and the REP s0 diagnosis were known, and before any LAUNCH-INTENT number existed. The change follows
+    from arithmetic on banked numbers (section 1). It is not a reaction to a LAUNCH-INTENT outcome, which does not exist."* There are two changes. (1) **The bar is 2 × max(F, RF0)**, one value per
+    row, inclusive; RF stays beside every row and decides nothing. Each v2 crawl bar is below the CTRL − P10 gap at both seeds. (2) **Two same-seed one-lever pairs per seed**, and each per-seed
+    predicate holds only when it holds in both pairs. ⚠ Stricter in one way: every guard must hold in both pairs of the seed. ⚠ Looser in one way: the size bar drops from 2 × RF to 2 × RF0,
+    which is why replication in both pairs is required. The 19 bars (v2 bar = 2 × max(F, RF0); RF and the v1 bar are beside; units are the row's own):
+
+| row | F | RF0 | **v2 bar** | RF (beside) | v1 bar |
+|---|---|---|---|---|---|
+| ADE6 | 0.1207 | 0.0138 | **0.2414** | 0.4025 | 0.8050 |
+| speed MAE | 0.0000 | 0.0796 | **0.1592** | 0.3373 | 0.6746 |
+| along-track MAE | 0.0000 | 0.0201 | **0.0402** | 0.4596 | 0.9192 |
+| accel MAE | 0.0000 | 0.1323 | **0.2646** | 0.5603 | 1.1206 |
+| DK-VIOL | 0.0000 | 0.0050 | **0.0100** | 0.0017 | 0.0100 |
+| DK-HW | 0.0000 | 0.1308 | **0.2616** | 0.2540 | 0.5080 |
+| DK-TG | 0.0000 | 0.0041 | **0.0082** | 0.1042 | 0.2084 |
+| heading MAE | 0.0000 | 0.3801 | **0.7602** | 2.5074 | 5.0148 |
+| yaw-rate MAE | 0.0000 | 0.5535 | **1.1070** | 15.8553 | 31.7106 |
+| curvature MAE | 0.0000 | 0.0263 | **0.0526** | 0.1324 | 0.2648 |
+| cross-track MAE | 0.0000 | 0.0320 | **0.0640** | 0.0224 | 0.0640 |
+| L1 lateral-accel MAE | 0.0000 | 0.3985 | **0.7970** | 1.2242 | 2.4484 |
+| L2 curvature MAE (GT>=5.2) | 0.0000 | 0.0068 | **0.0136** | 0.0870 | 0.1740 |
+| TAC-LAT | 0.0000 | 0.0183 | **0.0366** | 0.0421 | 0.0842 |
+| TAC-LON | 0.0000 | 0.0125 | **0.0250** | 0.0950 | 0.1900 |
+| S-POS@30 | 0.0000 | 0.1877 | **0.3754** | 0.2592 | 0.5184 |
+| S-POS@50 | 0.0000 | 0.4449 | **0.8898** | 0.3912 | 0.8898 |
+| S-POS@80 | 0.0000 | 1.0082 | **2.0164** | 0.5170 | 2.0164 |
+| M1 crawl share | 0.0000 | 0.0048 | **0.0096** | 0.0388 | 0.0776 |
+
+  * **Arms** (box 2; each through the trainer's own launch gate; both seeds). The main pair is A_s − CTRL_s (CTRL_s = DAG-OACC_s, banked); the replicate pair is A_rep,s − REP_s (REP_s banked from
+    DAG-ORC r2):
+
+| arm | what | role |
+|---|---|---|
+| **A_s** (LAUNCH-INTENT) | DAG-OACC_s's training argv **verbatim** (`v8f-dagoacc/M2b_s{s}_dagoacc/argv.json`: init M2b_s, 3,000 steps, `--dagger-p 0.1` on the iteration-1 bank, `--w-acc 49.6969`, `--seed s`), plus `--launch-intent-w 1.58926`, with its own `--out` | **decisive**, main pair |
+| **CTRL_s** = DAG-OACC_s | **banked, reused.** Checkpoints `67265ec1…` (s0) / `90b01474…` (s1); T1-kin dumps `v8f-dagoacc-t1/` | the main pair's control: A_s minus the lever |
+| **A_rep,s** | REP_s's argv **verbatim** (DAG-OACC_s's argv at `--seed 10 + s`, that is 10 / 11), plus `--launch-intent-w 1.58926`, with its own `--out` | **decisive**, replicate pair |
+| **REP_s** | DAG-OACC_s's argv with `--seed 10` / `--seed 11`. **Banked from DAG-ORC r2** (`M2b_s{s}_dagoaccorcrep`, checkpoints `b03fd6ef…` / `77853e56…`) under the licence below; trained new otherwise | the replicate pair's control: A_rep,s minus the lever |
+| **B_s, B_rep,s** | A_s and A_rep,s with `--launch-intent-w 0.726175` (share 1/4), the same pair design | the dose fallback. 4 runs, trained **only after A's HARMS or NOT ADOPTED, with its own PI go** |
+
+  REP is reused under a licence the reader checks (the run finished and passed its run record; its launch-gate token matches DAG-OACC's init, bank, `w_acc` and window list; the T1-kin dumps follow
+    the PREREG's settings; the build term). REP provenance: the launch-gate tokens of both REP runs bind commit `8c24823f` (**[M]**, `raw/2026-10-28-dag-orc-result/runs/M2b_s{0,1}_dagoaccorcrep/launch_gate_token.json`,
+    trainer seeds 10 and 11 in the run records), and the DAG-ORC r2 chain log that the LAUNCH-INTENT chain waited for ended in its DONE marker at tip `8c24823f` (**[M]**, `chain_v8f_launchintent.out`, 13:54). The timing is
+    the Master Mind's incident note `R2C_NOTE.md` (**[I]**, repo path `raw/2026-10-28-dag-orc-result/notes/`, sha256 `df02ff2f…`; §7.26): REP s0 trained and was evaluated before 05:56, and REP s1 was trained after the r2c
+    relaunch, which read the branch pinned at `8c24823f`. DAG-ORC and LAUNCH-INTENT share the REP runs; RF is not a bar term here, so an unusually large or small REP draw cannot loosen or block this read's bar.
+  * **Tier and estimator.** The decisive rollouts are T1-kin, a self-action open loop (m = 10, causal bucket, dead-reckoned nav, logged scene, periodic, executor plan), not T2: A_s and A_rep,s at
+    both seeds on the dev-box CPU, with CTRL, REP, DAG and P10 banked. R-T0 and the T0 four families are read on box 2's standard T0 eval (eval-141, ages cycle), a world-model diagnostic and not
+    driving performance. Paired episode-cluster bootstrap, B = 2,000, seed 0, 141 episodes / 2,399 windows, per seed and per pair. Three variances are named: *another draw of EPISODES* (the
+    bootstrap), *another TRAINING RUN* (the replicate pair at each seed; a lever effect is credited at a seed only when both pairs show it, which across both seeds is four draws) and *another
+    INFERENCE RUN* (none: the planner is deterministic).
+  * **Rows, guards and the per-seed predicates** (`PREREG_V8F_DAG_ORC` §4 with its Amendment 1, evaluated in each pair): R-CRAWL and R-MOVE are decisive; R-TLAT, R-TLON, R-ADE, R-T0 (T0 ADE6
+    point ≤ +F/2 = 0.0604 m) and R-NEW are guards; R-KEEP (T1-kin ADE6 point ≤ +0.0604 m) and R-NOBASE decide adoption. A row **clears** when X − Y is separated-better and the improvement is at
+    least the bar. It **fires** when X − P10 is separated-worse, Y − P10 is not, and X − Y is separated-worse by at least the bar. The domain D of a pair is every Read-A row not separated-worse for
+    the pair's control against P10, with no exempt rows.
+
+| per-seed predicate | holds at seed s iff |
+|---|---|
+| R-MOVE | every crawl row clears in A_s − CTRL_s **and** in A_rep,s − REP_s |
+| R-CRAWL | A_s − P10 **and** A_rep,s − P10 are each not separated-worse on every crawl row |
+| R-TLAT, R-TLON, R-ADE | not separated-worse in either pair |
+| R-T0 | the T0 ADE6 point is ≤ +F/2 = 0.0604 m in both pairs |
+| R-NEW | no row fires in either pair (fire as in §6: each pair's own control in place of DAG-OACC, and the §6 bar) |
+| R-KEEP | the T1-kin ADE6 point is ≤ +F/2 in both pairs |
+| R-NOBASE | holds in both pairs |
+
+  * **The outcome table** (committed before any LAUNCH-INTENT row; the order is REFUSED, then HARMS, then R-MOVE and R-CRAWL, adoption last):
+
+| outcome | condition | committed next |
+|---|---|---|
+| **REFUSED** | any control fails | fix and re-read; no row is reported |
+| **HARMS** | controls pass; a guard (R-TLAT, R-TLON, R-ADE, R-T0, R-NEW) fails at ≥ 1 seed | **A:** not adopted; read **B** under this table (train B first, with its own PI go). **B:** not adopted; the launch weight cannot be dosed under the guards; **NEXT-LAUNCH** (§11) |
+| **FIXED / ADOPTED** | guards held; R-MOVE and R-CRAWL at both seeds; R-KEEP and R-NOBASE at both seeds | adopt X as the base. Re-run Read A on X: DOMINANT there is the dominance claim |
+| **FIXED / NOT ADOPTED** | guards held; R-MOVE and R-CRAWL at both seeds; R-KEEP or R-NOBASE fails at ≥ 1 seed | the lever is attributed but X cannot replace DAG-OACC. **A:** B (the lower dose) under this table, with its own PI go. **B:** NEXT-LAUNCH |
+| **PARTIAL / ADOPTED** | guards held; R-MOVE at both seeds; R-CRAWL fails at ≥ 1 seed; R-KEEP and R-NOBASE at both seeds | adopt X. The crawl rows that still fail go to **NEXT-LAUNCH on X's states** |
+| **PARTIAL / NOT ADOPTED** | guards held; R-MOVE at both seeds; R-CRAWL fails at ≥ 1 seed; R-KEEP or R-NOBASE fails at ≥ 1 seed | as FIXED / NOT ADOPTED |
+| **PARTIAL / ONE SEED** | guards held; R-MOVE at exactly one seed | not adopted, and never called an effect of the lever (`H-ESTIM-SEED-1`). **NEXT-LAUNCH on DAG-OACC states** |
+| **NO EFFECT** | guards held; R-MOVE at neither seed | the along-track weight on launch samples is not the crawl's lever at this dose. **NEXT-LAUNCH on DAG-OACC states** |
+
+  The table is complete and exclusive: 524,288 cells, each matching exactly one row (REFUSED 262,144; HARMS 261,888; FIXED / ADOPTED 1; FIXED / NOT ADOPTED 15; PARTIAL / ADOPTED 3; PARTIAL / NOT
+    ADOPTED 45; PARTIAL / ONE SEED 128; NO EFFECT 64), by `enumerate_cells_li.py` (**[I]**, `PREREG_V8F_LAUNCH_INTENT` §10; the counts equal DAG-ORC's own).
+  * **NEXT-LAUNCH, registered before any row.** The routing variable is M-LAUNCH, X − Y of the mean (v_own − v_GT) at ticks 1–2 in the GT-launch windows, from the tick dumps; it is moved when it
+    is separated toward 0 in both pairs at both seeds:
+
+| M-LAUNCH | what it says | committed next |
+|---|---|---|
+| **moved** | the plan's launch speed was repaired and the crawl rows did not follow: the crawl is not in O's plan profile | **LOOP-STATE** (zero training, dev-box CPU): decompose the crawl by plan index in X's tick dumps, as `DIAGNOSIS.md` did for HACC (share of the excess in plan 2, curvature error at equal own speed, the replan-state term). Its read names the loop term; the next PREREG intervenes on it |
+| **not moved** | the lever did not reach O's launch behaviour at this dose | **LAUNCH-INTENT-HI**: the same lever at s = 1/2 (W_HI = 4.17852), under §10's table, with its own PI go. If it also leaves M-LAUNCH in place, label weighting is not a lever on O's launch |
+
+  If both branches are exhausted, the programme has no registered lever for the crawl rows on DAG-OACC (**[I]**, `PREREG_V8F_LAUNCH_INTENT` §11 names the blockers: a new diagnosis of the loop
+    term, or a PI decision on an architecture change that gives O a launch-intent input).
+  * **Controls (committed; any failure is REFUSED).** K-GATE (the trainer's own launch gate on `--launch-intent-w`, G-DVB and G-LIVE, for every trained arm); K-PAIR, one per pair (argv equal apart
+    from `--out` and the lever; REP's argv equals DAG-OACC's apart from `--out` and `--seed`); K-INIT; K-SHARE (the realised launch share of the along-track weight in 1/3 ± 0.02 per trained arm,
+    replacing DAG-ORC's K-REACH) and K-MASK (`train_window_list_sha256` equal to DAG-OACC's, `e144adcd…8168`; `launch_n / launch_eligible` within ±0.02 of f = 0.1619; the chain's own check also asserts `launch_rows` equal to `launch_eligible`, **[I]**, the chain `NOTES.md`); K-BUILD (the launch commit against `aeb54468`:
+    byte-identical, or every changed hunk behind a default-off flag whose bit-identity test passes; Amendment 1 changes that clause alone: `v8f_mini_data.py` is pinned to DAG-ORC r2's build, `c117e1cf…`, with
+    its twelve flag-gated hunks PASS); K-P0; K-RC (the reader reproduces DAG-ORC's banked tables with 0 differences); K-ZERO (every X − X
+    reads exactly 0.0, and an all-False mask reproduces the unweighted run bit for bit); K-REP-LICENCE. The trainer's own sampler, simulated, puts A's realised share at 0.3315 / 0.3307 / 0.3256 /
+    0.3281 for trainer seeds 0 / 1 / 10 / 11 (**[E]**, a simulation and not a training run).
+  * **The four families** (per seed, per pair, per family, never pooled; **STRATEGIC is not paused for v8F**). `PREREG_V8F_DAG_ORC` §5 applies to each pair at T1-kin: LONGITUDINAL (speed,
+    along-track and accel MAE; DK-VIOL / DK-HW / DK-TG on the lead windows; the anti-echo block), LATERAL (heading, yaw-rate, curvature, cross-track, L1 lateral-accel, L2), TACTICAL (TAC-LAT /
+    TAC-LON, R-TLAT / R-TLON) and STRATEGIC (S-POS@30 / 50 / 80 against CTRV, within a run). The T0 four families are specified on box 2's T0 eval. The lever acts on longitudinal (along-track)
+    pressure, so the LONGITUDINAL family and the distance-keeping rows are read first. What the reader of record computed and did not compute, per family, is in the families bullet of the read below.
+  * **Launch and pins** (**[M]**, the banked box-2 chain log `chain_v8f_launchintent.out`, sha256 `ddae7b9e…`, under `raw/2026-10-28-launch-intent-read/box2/`; the queue stage `:launchintentarm` landed at `d8c9f7bf`).
+    The chain's first stamped line is 13:54 on 2026-10-28: it finds the DAG-ORC r2 chain's DONE marker and the box released, and runs the box-2 refresh (ZZJOB-END 13:54:55, rc 0; box-2 code = tip `d8c9f7bf` at
+    13:55). It then runs the four launch gates in turn (launched 13:57, 13:58, 14:00 and 14:01; ZZJOB-END 13:58:34, 14:00:02, 14:01:33 and 14:02:37). All four print `LAUNCH-INTENT gate: PASS` and write a gate
+    token that binds commit `d8c9f7bf`. The first training (A_0) is launched at 14:02. Each run is pulled with its run record PASS and K-SHARE PASS at 14:44 (A_0), 15:25 (A_1), 16:06 (A_rep,0) and 16:48 (A_rep,1), and
+    the chain ends in its DONE marker `ZZV8FMINI-DONE` at 16:48, which reads *"B is not queued"*. Box-2 time is 13:54 to 16:48, 174 min or 2.9 h. Pins: the chain log's tip line names the landed flag `b09ac89f` as an
+    ancestor of `d8c9f7bf` and the reviewed trainer (sha256 `0d708b3c…`); PREREG sha256 `469bac1f…` and reader `launch_intent_read.py` sha256 `5e950dcf…` are the chain package's pins (`PINS_FILLED.txt`, whose stamp is
+    disclosed under Provenance); the reader's 87 tests GREEN and 245 / 245 mutants killed on the promoted text are the register row's (**[I]**), and the chain's self-test passed 390 of 390 tests with 185 / 185
+    mutants killed (**[I]**, `HANDOFF.md` of the chain package, and the message of `d8c9f7bf`). **[E]** At launch the PREREG estimated about 2.8 h of box 2 for the four runs (about 42 min each; DAG-OACC's two runs took 41
+    and 42 min with their T0 evals), where DAG-ORC took 4.93 h by the logs against the ~3 h asked (§7.26), and about 37 min of dev-box CPU for the four T1-kin rollouts (from DAG-ORC's 37 min for A and REP); the measured
+    figures are in the runs bullet of the read below.
+
+* **Outcome: HARMS, as registered [M].** Arm A (W 1.58926) is not adopted. It failed its pre-registered bar: the decisive R-MOVE is false at both seeds, and the guard R-ADE fails at both
+  seeds, each in one pair. Nothing below softens that. Tier: T1-kin, a self-action open loop (m = 10, causal bucket, dead-reckoned nav, logged scene, periodic, executor plan; plain
+  arms), not T2. The R-T0 points are T0 (teacher-forced own-code, eval-141, ages cycle: box 2's standard eval), a world-model diagnostic and not driving performance. Estimator:
+  `taniteval.ci.paired_episode_cluster_bootstrap`, B = 2,000, seed 0, 141 episodes / 2,399 windows, per seed and per pair, paired, on the same windows and matched cells. It answers
+  *"would another draw of EPISODES say this?"*; the question *"would another training run say this?"* is answered by the replicate pair at each seed (`H-ESTIM-SEED-1`), and the planner
+  is deterministic, so no inference-seed question arises. Intervals are 95 % (**[I]**, the convention of `RESULT_V8F_DAG_ORC.md`; the JSON stores the bounds only; a T0 point carries no
+  interval). X is A (main pair) or A_rep (replicate pair); Y is the pair's control, CTRL = DAG-OACC or REP. The registered table decides the word (`rows.A.<seed>.pairs.<pair>` and
+  `rows.A.<seed>` in the JSON):
+
+| predicate (PREREG section 10) | s0 main (A − CTRL) | s0 replicate (A_rep − REP) | **s0, both pairs** | s1 main (A − CTRL) | s1 replicate (A_rep − REP) | **s1, both pairs** |
+|---|---|---|---|---|---|---|
+| controls (reader, 206) | PASS | PASS | PASS | PASS | PASS | PASS |
+| R-TLAT (T head macro-F1, ticks >= 1, X − Y not separated-worse) | held | held | **held** | held | held | **held** |
+| R-TLON (T head macro-F1, ticks >= 1, X − Y not separated-worse) | held | held | **held** | held | held | **held** |
+| R-ADE (T1-kin ADE6, X − Y, not separated-worse) | held: -0.0294 B | FAILS: +0.0431 W | **FAILS** | FAILS: +0.0483 W | held: -0.0341 B | **FAILS** |
+| R-T0 (T0 own-code ADE6, X − Y, point <= +0.0604 m) | held: +0.0021 | held: +0.0179 | **held** | held: -0.0214 | held: -0.0015 | **held** |
+| R-NEW (no row of D fires) | held: 0 of 15 rows | held: 0 of 15 rows | **held** | held: 0 of 15 rows | held: 0 of 15 rows | **held** |
+| R-MOVE (every crawl row clears its bar) | false: 0 of 4 rows clear | false: 1 of 4 rows clear | **false** | false: 0 of 4 rows clear | false: 0 of 4 rows clear | **false** |
+| R-CRAWL (every crawl row of X − P10 not separated-worse) | false: 0 of 4 rows | false: 0 of 4 rows | **false** | false: 0 of 4 rows | false: 0 of 4 rows | **false** |
+| R-KEEP (T1-kin ADE6, X − Y, point <= +0.0604 m) | true: -0.0294 | true: +0.0431 | **true** | true: +0.0483 | true: -0.0341 | **true** |
+| R-NOBASE | true: 0 of 15 rows violate | true: 0 of 15 rows violate | **true** | true: 0 of 15 rows violate | true: 0 of 15 rows violate | **true** |
+
+  The table's condition, verbatim from the JSON: *"controls pass; a guard (R-TLAT, R-TLON, R-ADE, R-T0, R-NEW) fails at ≥ 1 seed"*. A guard fails at a seed when it fails in either pair,
+  so R-ADE fails at s0 and at s1; REFUSED is decided first and HARMS second, and the controls pass, so the R-MOVE and R-CRAWL flags do not change the word. The word is the reader's
+  output (`matching_rows_in_table_order`: one row, HARMS). The committed next, verbatim from the JSON: *"not adopted; read B under this table (train B first, with its own PI go)."* The
+  cascade reads `final` HARMS and `b_status` *"PENDING: train B (4 runs, share 1/4) through its gate, with its own PI go, and read it under this same table"*. ⚠ Reported as written,
+  beside the word: R-MOVE is false at both seeds and R-CRAWL is false at both seeds; the registered guard failure is R-ADE; R-TLAT, R-TLON, R-T0 and R-NEW hold, and R-KEEP and R-NOBASE
+  hold.
+* **Controls: all 206 reader controls PASS [M].** The reader of record writes its JSON only when every control passes (the T1-kin chain's own read with the launch-time reader REFUSED on
+  one control and wrote nothing, see Amendment 1 below). Wall 341.6 s. By group (`controls_PASS` in `LAUNCH_INTENT_READ.json`, every value true; names and counts): STATIC 1, K-P0 1,
+  K-BUILD 1, K-INIT 8, K-REGISTERED 8, K-PAIR 6, K-SHARE 8, K-MASK 4, K-REP-LICENCE 2, SUMMARY 8, K-GATE 8, K1 8, K2 8, K3 8, K5 8, K6 8, K7 8, GRID 8, T1-CONFIG 8, K2-logged 4,
+  K3-logged 4, GRID-logged 4, T1-CONFIG-logged 4, K4 4, T0F-CKPT 4, T0-CKPT 8, DUMP-WINDOWS 8, GRID-COUNTS 8, R2-ADE6 8, C4-WINDOWS 6, C3-FLOOR 6, K-ZERO 10, ADE-LINK 4, T0-WINDOWS 4,
+  K1-LI-ROWS 1. They include the committed K-GATE, K-PAIR, K-INIT, K-SHARE, K-MASK, K-BUILD, K-P0, K-ZERO (every X − X reads exactly 0.0) and K-REP-LICENCE (both seeds) of §9 of the
+  PREREG.
+* **Amendment 1 (`A1-2026-10-28`) was appended before any row was read, and K-BUILD is read by its registered rule.** The PREREG's K-BUILD row states a rule (against `aeb54468`, the
+  commit DAG-OACC trained at, each of the three files is byte-identical, or every changed hunk sits behind a default-off flag whose bit-identity test passes) and then adds a fact, that
+  `v8f_mini_data.py` is byte-identical. That fact had been measured against `d7208328`, not against `aeb54468`, and the reader coded it as a rule, so it refused the launch commit on the
+  data module. The amendment pins the data module to DAG-ORC r2's build (sha256 `c117e1cf…`) and lists its twelve flag-gated hunks with a PASSing bit-identity test. The reader changed in
+  that clause alone; no bar, row, outcome, predicate or other control changed. What had been seen before it: controls only, namely the T1-kin chain's dry run (where K-BUILD REFUSES),
+  A_0's run record and K-SHARE (both PASS) and the four launch-gate lines; the statement, and its time (~15:10), are the Amendment's own and the Master Mind's (**[I]**, RESULT §8.1; a
+  log cannot prove the negative that no metric line was read). It landed at `e28516e8` (15:24:46), before the read of record started (first console stamp 17:02:21); A_0's three T1-kin
+  steps ran from 15:13:04 to 15:22:14, between the writing and the landing (**[I]**, RESULT §8.1). The launch-gate tokens bind the PREREG as promoted (sha256 `469bac1f…`) and the
+  launch-time reader (sha256 `5e950dcf…`); the reader of record (sha256 `fb3d2d7d…`) ran with the amended PREREG (sha256 `6ae79f2f…`), and both readers are on record. The T1-kin chain's
+  own read with the launch-time reader REFUSED at 17:01:36 on K-BUILD alone and wrote nothing (**[M]**, the T1-kin chain log; banked as `lit1_logs/launch_intent_read_REFUSED.out`); the
+  read of record ran the amended reader on the same manifest (sha256 `98d2cd3d…`). The replicate pair is unaffected (A_rep and REP share the data module); the main pair carries DAG-ORC's
+  flag-gated data hunks on the A side, as DAG-ORC's own main pair did.
+* **The four runs [M]** (box 2, launch commit `d8c9f7bf`, 13:51:52; the chain log `chain_v8f_launchintent.out`, sha256 `ddae7b9e…`). Four launch gates PASS, four run records PASS, four
+  K-SHARE PASS. A_s is DAG-OACC_s's training argv verbatim plus `--launch-intent-w` 1.58926 (one third of the along-track weight on the launch samples). A_rep,s is REP_s's argv (trainer
+  seed 10 / 11) plus the same flag. CTRL_s = DAG-OACC_s and REP_s are banked, so no control was retrained. Checkpoint sha256 prefixes: A `deb8f28b…` (s0) / `abe0fd24…` (s1); A_rep
+  `b86f7d43…` / `2900ff73…`. **Arm B (W 0.726175) was not trained and is not read.** The lever reached the data. The realised weight share is recomputed by the run record from
+  `launch_n`, `launch_eligible` and the flag (K-SHARE: 1/3 ± 0.02; K-MASK: launch-row fraction 0.1619 ± 0.02); rows equal eligible rows in all four runs:
+
+| run | trainer seed | launch rows / rows | launch-row fraction (K-MASK: 0.1619 +- 0.02) | weight share (K-SHARE: 1/3 +- 0.02) | argv sha16 | checkpoint sha256 (12 hex) |
+|---|---|---|---|---|---|---|
+| A_0 (M2b_s0_launchintent) | 0 | 30727 / 191203 | 0.160704 | 0.331451 | `012d6f3467d0f8a5` | `deb8f28b4ea9` |
+| A_1 (M2b_s1_launchintent) | 1 | 30674 / 191396 | 0.160265 | 0.330729 | `2d5ceaf32bd7f6ff` | `abe0fd24e6f9` |
+| A_rep,0 (M2b_s0_launchintentrep) | 10 | 30068 / 191333 | 0.15715 | 0.325586 | `abd825ae017a954a` | `b86f7d4353b9` |
+| A_rep,1 (M2b_s1_launchintentrep) | 11 | 30367 / 191391 | 0.158665 | 0.328093 | `06117e7b7fab5385` | `2900ff73cd85` |
+
+  The four weight shares (0.3315, 0.3307, 0.3256, 0.3281 at four decimals) equal the PREREG's ESTIMATED shares for trainer seeds 0 / 1 / 10 / 11, simulated from the sampler stream. Each
+  run went through its own launch gate before training (G-DVB, the swap probe, the acc probe, the launch probe, and the one-lever check against its pair control's banked argv);
+  `head_o grad diff` is the gradient the launch term puts on O's head, non-zero in all four:
+
+| run | W | trainer seed | probe batch launch rows | launch probe contribution | head_o grad diff | swap probe grad diff |
+|---|---|---|---|---|---|---|
+| A_0 | 1.58926 | 0 | 11 / 64 | 0.03420829772949219 | 11.032110214233398 | 14267.4716796875 |
+| A_1 | 1.58926 | 1 | 8 / 64 | 0.03153038024902344 | 10.921006202697754 | 10972.4638671875 |
+| A_rep,0 | 1.58926 | 10 | 11 / 64 | 0.03741455078125 | 10.58016586303711 | 10940.1328125 |
+| A_rep,1 | 1.58926 | 11 | 10 / 64 | 0.02295684814453125 | 9.637072563171387 | 46505.515625 |
+
+  Box-2 run times, from the chain log (the minute stamp of the `launched` line for each job, and the job's own ZZJOB-END stamp; training, then the standard T0 eval, then the pull and the
+  run record):
+
+| run | train: launch minute | train: ZZJOB-END | T0 eval: launch minute | T0 eval: ZZJOB-END |
+|---|---|---|---|---|
+| A_0 (M2b_s0_launchintent) | 14:02 | 14:41:35 | 14:41 | 14:43:37 |
+| A_1 (M2b_s1_launchintent) | 14:44 | 15:22:52 | 15:22 | 15:24:52 |
+| A_rep,0 (M2b_s0_launchintentrep) | 15:25 | 16:04:14 | 16:04 | 16:06:27 |
+| A_rep,1 (M2b_s1_launchintentrep) | 16:06 | 16:45:37 | 16:45 | 16:47:37 |
+
+  Box-2 time is 13:54 to 16:48, **174 min or 2.9 h** (**[M]**, first stamped line to the DONE marker), against the PREREG's ESTIMATED ≈ 2.8 h. The dev-box T1-kin chain (CPU, one process
+  at a time) ran twelve steps: the causal rollouts are rows, and the logged rollouts and fresh-T0 evals are controls (K2-logged, K4). Step wall times (s):
+
+| run | causal rollout (s) | logged rollout (s) | fresh-T0 eval (s) |
+|---|---|---|---|
+| A_0 | 218 | 218 | 88 |
+| A_1 | 222 | 178 | 50 |
+| A_rep,0 | 208 | 139 | 41 |
+| A_rep,1 | 208 | 140 | 46 |
+
+  The twelve steps sum to 1756 s (**[M]**, arithmetic on the table), 29.3 min of dev-box CPU. The chain's own read ran 16:55:55 to 17:01:36 and REFUSED (Amendment 1 above). **One stop.**
+  The T1-kin chain was stopped once, on its own RAM guard, at 15:11, still waiting on the guard and before any rollout: the stopped launch's last line, 15:07:07, reads
+  *"LOW RAM available 3040 MB < 4096 MB"*, and its log holds no `start` line for a rollout (**[M]**, `lit1_logs/chain.out.prev_1028151251`). It was relaunched with a 2,048 MB guard. The
+  15:11 stop time and the 2,048 MB value are from the Master Mind's brief (**[I]**); the relaunch's log does not echo the guard value. The relaunch started at 15:12:51 and its first
+  rollout at 15:13:04, all eight rollouts in its log show attempt 1, and the template proofs (rollout argv equal to the banked argv, token for token) pass in both launches (**[M]**,
+  `lit1_logs/chain.out`). The guard gates dev-box memory; it is not a measurement gate.
+* **Bars and floors [M]** (`floors` in the JSON; T1-kin). The bars read are the committed ones: `bar_r = 2 × max(F_r, RF0_r)`, one value per row, applied at both seeds and in both pairs,
+  inclusive. F is 0.1207 m on ADE6 and 0 on every other row; RF0 is the frozen same-seed cross-build floor (`P0_RF0.json`, sha256 `1608d70b…`); RF, the larger of the two REP − DAG-OACC
+  draws, is beside every row and is not a bar term. The F, RF0, bar and RF columns equal the 19-row table committed above, cell by cell (checked by the audit). RF is the training-run
+  spread measured by REP − DAG-OACC, which the replicate pair carries per pair; RF ÷ bar runs from 0.17 (DK-VIOL) to 14.32 (yaw-rate MAE) and exceeds 1 on 13 of the 19 rows. RF decides
+  nothing here:
+
+| row | better | F | RF0 | **bar** = 2 × max(F, RF0) | RF (beside, not a bar term) | RF / bar |
+|---|---|---|---|---|---|---|
+| ADE6 | lower | 0.1207 | 0.0138 | **0.2414** | 0.4025 | 1.67 |
+| speed MAE | lower | 0.0000 | 0.0796 | **0.1592** | 0.3373 | 2.12 |
+| along-track MAE | lower | 0.0000 | 0.0201 | **0.0402** | 0.4596 | 11.43 |
+| accel MAE | lower | 0.0000 | 0.1323 | **0.2646** | 0.5603 | 2.12 |
+| DK-VIOL | lower | 0.0000 | 0.0050 | **0.0100** | 0.0017 | 0.17 |
+| DK-HW | lower | 0.0000 | 0.1308 | **0.2616** | 0.2540 | 0.97 |
+| DK-TG | lower | 0.0000 | 0.0041 | **0.0082** | 0.1042 | 12.71 |
+| heading MAE | lower | 0.0000 | 0.3801 | **0.7602** | 2.5074 | 3.30 |
+| yaw-rate MAE | lower | 0.0000 | 0.5535 | **1.1070** | 15.8553 | 14.32 |
+| curvature MAE | lower | 0.0000 | 0.0263 | **0.0526** | 0.1324 | 2.52 |
+| cross-track MAE | lower | 0.0000 | 0.0320 | **0.0640** | 0.0224 | 0.35 |
+| L1 lateral-accel MAE | lower | 0.0000 | 0.3985 | **0.7970** | 1.2242 | 1.54 |
+| L2 curvature MAE (GT>=5.2) | lower | 0.0000 | 0.0068 | **0.0136** | 0.0870 | 6.40 |
+| TAC-LAT | higher | 0.0000 | 0.0183 | **0.0366** | 0.0421 | 1.15 |
+| TAC-LON | higher | 0.0000 | 0.0125 | **0.0250** | 0.0950 | 3.80 |
+| S-POS@30 | lower | 0.0000 | 0.1877 | **0.3754** | 0.2592 | 0.69 |
+| S-POS@50 | lower | 0.0000 | 0.4449 | **0.8898** | 0.3912 | 0.44 |
+| S-POS@80 | lower | 0.0000 | 1.0082 | **2.0164** | 0.5170 | 0.26 |
+| M1 crawl share | lower | 0.0000 | 0.0048 | **0.0096** | 0.0388 | 4.04 |
+
+  The main and the replicate pair contrasts (X − Y) for all 19 rows are in the bullets below: ADE6 in the guards bullet, the four crawl rows in the crawl bullet, the 17 family rows in
+  the families bullet. Counted over those 76 cells (19 rows × 4 pair-seed cells; **[M]**, from `read_a.A_CTRL` and `read_a.Arep_REP`): **16 are separated-better, 7 separated-worse and 53
+  not separated.** Per pair and seed (better / worse / not separated): main s0 8 / 0 / 11, replicate s0 1 / 2 / 16, main s1 1 / 5 / 13, replicate s1 6 / 0 / 13. Three cells reach the bar
+  in the improving direction, and one of them is separated: DK-TG in the main pair at s1 (−0.0094) and in the replicate pair at s0 (−0.0245), neither separated, and L2 curvature in the
+  replicate pair at s0 (separated). Six cells reach it in the worsening direction and five of those are separated-worse: speed MAE, accel MAE, cross-track MAE and L1 lateral-accel MAE in
+  the main pair at s1, and along-track MAE in the replicate pair at s0 (L2 curvature in the replicate pair at s1 reaches it worsening, not separated).
+* **The crawl set (R-MOVE, R-CRAWL) [M]** (T1-kin). R-MOVE needs, in each pair, every crawl row (yaw-rate MAE, curvature MAE, L2 curvature MAE at GT ≥ 5.2, M1 crawl share)
+  separated-better with an improvement of at least its bar; improvement is −delta. **It is false at both seeds.** 2 of the 16 cells are separated-better and 1 clears its bar: L2
+  curvature in the replicate pair at s0, −0.0215 [−0.0423, −0.0048] against a bar of 0.0136 (158.1 % of it). Its main-pair partner reads −0.0075 [−0.0212, +0.0025], not separated, 55.1 %
+  of the bar. No pair clears all four rows, and no main-pair cell clears. Cells read point [95 % CI] and a flag: B = separated-better, W = separated-worse, – = not separated:
+
+| seed | pair | crawl row | X − Y | improvement | bar | improvement / bar | clears (R-MOVE row) |
+|---|---|---|---|---|---|---|---|
+| s0 | main (A − CTRL) | yaw-rate MAE | -0.7305 [-1.7042, +0.3980] – | +0.7305 | 1.1070 | 66.0 % | false |
+| s0 | main (A − CTRL) | curvature MAE | -0.0007 [-0.0109, +0.0113] – | +0.0007 | 0.0526 | 1.3 % | false |
+| s0 | main (A − CTRL) | L2 curvature MAE (GT>=5.2) | -0.0075 [-0.0212, +0.0025] – | +0.0075 | 0.0136 | 55.1 % | false |
+| s0 | main (A − CTRL) | M1 crawl share | -0.0008 [-0.0037, +0.0022] – | +0.0008 | 0.0096 | 8.3 % | false |
+| s0 | replicate (A_rep − REP) | yaw-rate MAE | +0.5729 [-0.6672, +1.7987] – | -0.5729 | 1.1070 | -51.8 % | false |
+| s0 | replicate (A_rep − REP) | curvature MAE | -0.0073 [-0.0273, +0.0122] – | +0.0073 | 0.0526 | 13.9 % | false |
+| s0 | replicate (A_rep − REP) | L2 curvature MAE (GT>=5.2) | **-0.0215 [-0.0423, -0.0048] B** | +0.0215 | 0.0136 | 158.1 % | true |
+| s0 | replicate (A_rep − REP) | M1 crawl share | +0.0042 [-0.0001, +0.0083] – | -0.0042 | 0.0096 | -43.8 % | false |
+| s1 | main (A − CTRL) | yaw-rate MAE | +0.2594 [-0.8091, +1.3427] – | -0.2594 | 1.1070 | -23.4 % | false |
+| s1 | main (A − CTRL) | curvature MAE | **-0.0387 [-0.0679, -0.0160] B** | +0.0387 | 0.0526 | 73.6 % | false |
+| s1 | main (A − CTRL) | L2 curvature MAE (GT>=5.2) | -0.0068 [-0.0204, +0.0063] – | +0.0068 | 0.0136 | 50.0 % | false |
+| s1 | main (A − CTRL) | M1 crawl share | +0.0016 [-0.0028, +0.0060] – | -0.0016 | 0.0096 | -16.7 % | false |
+| s1 | replicate (A_rep − REP) | yaw-rate MAE | -0.2191 [-1.7774, +1.2541] – | +0.2191 | 1.1070 | 19.8 % | false |
+| s1 | replicate (A_rep − REP) | curvature MAE | +0.0101 [-0.0051, +0.0291] – | -0.0101 | 0.0526 | -19.2 % | false |
+| s1 | replicate (A_rep − REP) | L2 curvature MAE (GT>=5.2) | +0.0178 [-0.0059, +0.0474] – | -0.0178 | 0.0136 | -130.9 % | false |
+| s1 | replicate (A_rep − REP) | M1 crawl share | +0.0021 [-0.0032, +0.0070] – | -0.0021 | 0.0096 | -21.9 % | false |
+
+  R-CRAWL needs X − P10 not separated-worse on every crawl row (P10 is the kinematic floor). **It is false at both seeds**: all 16 X − P10 cells (4 rows × 2 pairs × 2 seeds) are
+  separated-worse, and so are the Y − P10 cells in every pair, which is how the crawl set C was fixed. The share of the Y − P10 gap that the lever closes, (Y − P10 − (X − P10)) / (Y −
+  P10) from the point deltas (**[M]**, arithmetic on the banked JSON), is positive in 9 of the 16 cells and negative in 7 (the gap widens), from −30.2 % to +28.7 %; in the main pair it
+  lies between −3.0 % and +28.7 %:
+
+| seed | pair | crawl row | X − P10 | Y − P10 | X − P10 not separated-worse (R-CRAWL row) | share of the Y − P10 gap closed |
+|---|---|---|---|---|---|---|
+| s0 | main (A − CTRL) | yaw-rate MAE | **+2.7420 [+0.3388, +5.2598] W** | **+3.4726 [+0.6601, +6.3308] W** | false | 21.0 % |
+| s0 | main (A − CTRL) | curvature MAE | **+0.0847 [+0.0549, +0.1200] W** | **+0.0854 [+0.0580, +0.1175] W** | false | 0.8 % |
+| s0 | main (A − CTRL) | L2 curvature MAE (GT>=5.2) | **+0.0375 [+0.0201, +0.0588] W** | **+0.0443 [+0.0232, +0.0744] W** | false | 15.3 % |
+| s0 | main (A − CTRL) | M1 crawl share | **+0.0564 [+0.0374, +0.0788] W** | **+0.0568 [+0.0378, +0.0798] W** | false | 0.7 % |
+| s0 | replicate (A_rep − REP) | yaw-rate MAE | **+19.9019 [+14.5378, +25.7101] W** | **+19.3282 [+13.9956, +25.0836] W** | false | -3.0 % |
+| s0 | replicate (A_rep − REP) | curvature MAE | **+0.2107 [+0.1535, +0.2708] W** | **+0.2180 [+0.1586, +0.2848] W** | false | 3.3 % |
+| s0 | replicate (A_rep − REP) | L2 curvature MAE (GT>=5.2) | **+0.1071 [+0.0671, +0.1558] W** | **+0.1313 [+0.0797, +0.1961] W** | false | 18.4 % |
+| s0 | replicate (A_rep − REP) | M1 crawl share | **+0.0990 [+0.0727, +0.1284] W** | **+0.0957 [+0.0690, +0.1258] W** | false | -3.4 % |
+| s1 | main (A − CTRL) | yaw-rate MAE | **+8.9439 [+5.3604, +12.9899] W** | **+8.6844 [+5.1690, +12.5740] W** | false | -3.0 % |
+| s1 | main (A − CTRL) | curvature MAE | **+0.0964 [+0.0650, +0.1321] W** | **+0.1352 [+0.0889, +0.1915] W** | false | 28.7 % |
+| s1 | main (A − CTRL) | L2 curvature MAE (GT>=5.2) | **+0.0462 [+0.0260, +0.0716] W** | **+0.0529 [+0.0281, +0.0847] W** | false | 12.7 % |
+| s1 | main (A − CTRL) | M1 crawl share | **+0.0620 [+0.0415, +0.0870] W** | **+0.0604 [+0.0391, +0.0864] W** | false | -2.6 % |
+| s1 | replicate (A_rep − REP) | yaw-rate MAE | **+9.3556 [+5.7951, +13.2237] W** | **+9.5748 [+5.8282, +13.7093] W** | false | 2.3 % |
+| s1 | replicate (A_rep − REP) | curvature MAE | **+0.1445 [+0.0951, +0.2028] W** | **+0.1343 [+0.0858, +0.1912] W** | false | -7.6 % |
+| s1 | replicate (A_rep − REP) | L2 curvature MAE (GT>=5.2) | **+0.0767 [+0.0413, +0.1232] W** | **+0.0589 [+0.0334, +0.0896] W** | false | -30.2 % |
+| s1 | replicate (A_rep − REP) | M1 crawl share | **+0.0672 [+0.0457, +0.0923] W** | **+0.0652 [+0.0440, +0.0900] W** | false | -3.1 % |
+
+  A negative share means the gap to P10 widens.
+* **Guards and adoption rows [M]** (T1-kin unless a heading says T0). R-TLAT, R-TLON, R-ADE, R-T0 and R-NEW are guards, and each fails at a seed when it fails in either pair; R-KEEP and
+  R-NOBASE decide adoption. R-ADE (T1-kin ADE6, X − Y not separated-worse) fails in the replicate pair at s0 and in the main pair at s1. R-KEEP reads the point against +0.0604 m and
+  holds in all four pairs; R-ADE and R-KEEP read one contrast, as the PREREG discloses:
+
+| seed | pair | row | X − Y | mean X | mean Y | X − P10 | Y − P10 | n (windows / episodes) |
+|---|---|---|---|---|---|---|---|---|
+| s0 | main (A − CTRL) | ADE6 | **-0.0294 [-0.0522, -0.0077] B** | 2.2128 | 2.2421 | -1.2305 [-1.4302, -1.0448] B | -1.2012 [-1.3945, -1.0186] B | 2399/141 |
+| s0 | replicate (A_rep − REP) | ADE6 | **+0.0431 [+0.0137, +0.0711] W** | 2.6877 | 2.6446 | -0.7556 [-1.0164, -0.4950] B | -0.7987 [-1.0586, -0.5428] B | 2399/141 |
+| s1 | main (A − CTRL) | ADE6 | **+0.0483 [+0.0105, +0.0884] W** | 2.3684 | 2.3201 | -1.0749 [-1.2743, -0.8735] B | -1.1231 [-1.3301, -0.9159] B | 2399/141 |
+| s1 | replicate (A_rep − REP) | ADE6 | **-0.0341 [-0.0655, -0.0027] B** | 2.2976 | 2.3317 | -1.1457 [-1.3570, -0.9417] B | -1.1116 [-1.3180, -0.9119] B | 2399/141 |
+
+  R-NEW fires on a row of D when three things hold: (1) X − P10 is separated-worse, (2) Y − P10 is not (the row is in D, which has no exempt rows), and (3) X − Y is separated-worse with
+  a worsening of at least the bar. R-NOBASE reads (1) and (3). **Both hold because condition (1) fails, not because condition (3) does:**
+
+| seed | pair | control Y | rows in D | X − Y separated-worse | of those, worsening >= bar | of those, X − P10 separated-worse (R-NEW fires) |
+|---|---|---|---|---|---|---|
+| s0 | main (A − CTRL) | CTRL − P10 not separated-worse on D | 15 | none | none | none |
+| s0 | replicate (A_rep − REP) | REP − P10 not separated-worse on D | 15 | ADE6, along-track MAE | along-track MAE | none |
+| s1 | main (A − CTRL) | CTRL − P10 not separated-worse on D | 15 | ADE6, speed MAE, accel MAE, cross-track MAE, L1 lateral-accel MAE | speed MAE, accel MAE, cross-track MAE, L1 lateral-accel MAE | none |
+| s1 | replicate (A_rep − REP) | REP − P10 not separated-worse on D | 15 | none | none | none |
+
+  In the main pair at s1, four rows meet (3): speed MAE +0.1797 [+0.0998, +0.2726], accel MAE +0.7391 [+0.4366, +1.0952], cross-track MAE +0.0720 [+0.0403, +0.1109] and L1 lateral-accel
+  MAE +1.4444 [+0.6003, +2.4872], all separated-worse. None of the four has X − P10 separated-worse. In the replicate pair at s0, along-track MAE meets (3), +0.0493 [+0.0170, +0.0801],
+  and its X − P10 is not separated-worse either. The registered predicate is applied as written. R-T0 is at tier T0 (a point; the JSON stores no interval), and R-KEEP is T1-kin:
+
+| seed | pair | T0 own-code ADE6, X − Y (point; no interval in the JSON) | R-T0 (<= +0.0604 m) | T1-kin ADE6, X − Y (point) | R-KEEP (<= +0.0604 m) |
+|---|---|---|---|---|---|
+| s0 | main (A − CTRL) | +0.0021 | held | -0.0294 | true |
+| s0 | replicate (A_rep − REP) | +0.0179 | held | +0.0431 | true |
+| s1 | main (A − CTRL) | -0.0214 | held | +0.0483 | true |
+| s1 | replicate (A_rep − REP) | -0.0015 | held | -0.0341 | true |
+
+  R-TLAT and R-TLON are booleans in the JSON and read *held* in all four pairs. The T-head macro-F1 values behind them are not carried in the JSON (UNVERIFIED as numbers), and the T-head
+  F1 is NOT COMPUTABLE at T1-kin: the paired tool reads eval dumps, not tick dumps.
+* **The four families [M]** (T1-kin; per family, per seed, per pair, never pooled; STRATEGIC is not paused for v8F, PI ruling 2026-10-17). Each family block of the JSON carries the tier
+  and estimator strings, and its leaves equal the `read_a` cells cell for cell (204 cells; **[I]**, asserted by the RESULT's `check_result.py`). Each table shows X − Y, the one-lever
+  contrast of the pair; paired episode-cluster bootstrap, B = 2,000, 141 episodes. Separated cells per family, per seed, per pair (B / W / not separated; X − Y):
+
+| family (rows) | s0 main: B / W / not separated | s0 replicate: B / W / not separated | s1 main: B / W / not separated | s1 replicate: B / W / not separated |
+|---|---|---|---|---|
+| LONGITUDINAL (6) | 2 / 0 / 4 | 0 / 1 / 5 | 0 / 2 / 4 | 2 / 0 / 4 |
+| LATERAL (6) | 2 / 0 / 4 | 1 / 0 / 5 | 1 / 2 / 3 | 1 / 0 / 5 |
+| TACTICAL (2) | 0 / 0 / 2 | 0 / 0 / 2 | 0 / 0 / 2 | 1 / 0 / 1 |
+| STRATEGIC (3) | 3 / 0 / 0 | 0 / 0 / 3 | 0 / 0 / 3 | 1 / 0 / 2 |
+
+  **LONGITUDINAL** (read first: the lever acts on along-track pressure; DK-VIOL / DK-HW / DK-TG are on the lead windows, n = windows / episodes):
+
+| row | better | A − CTRL s0 | A_rep − REP s0 | A − CTRL s1 | A_rep − REP s1 | n, s0 main / s0 replicate / s1 main / s1 replicate |
+|---|---|---|---|---|---|---|
+| speed MAE | lower | **-0.0201 [-0.0393, -0.0031] B** | +0.0074 [-0.0176, +0.0310] – | **+0.1797 [+0.0998, +0.2726] W** | **-0.0744 [-0.1220, -0.0337] B** | 2399/141 ; 2399/141 ; 2399/141 ; 2399/141 |
+| along-track MAE | lower | -0.0185 [-0.0388, +0.0021] – | **+0.0493 [+0.0170, +0.0801] W** | +0.0057 [-0.0249, +0.0346] – | -0.0250 [-0.0521, +0.0059] – | 2399/141 ; 2399/141 ; 2399/141 ; 2399/141 |
+| accel MAE | lower | **-0.0568 [-0.1137, -0.0041] B** | +0.0425 [-0.0186, +0.1079] – | **+0.7391 [+0.4366, +1.0952] W** | **-0.2560 [-0.4105, -0.1222] B** | 2399/141 ; 2399/141 ; 2399/141 ; 2399/141 |
+| DK-VIOL | lower | +0.0050 [-0.0092, +0.0212] – | -0.0050 [-0.0160, +0.0037] – | -0.0034 [-0.0161, +0.0089] – | +0.0034 [-0.0039, +0.0117] – | 595/70 ; 595/70 ; 595/70 ; 595/70 |
+| DK-HW | lower | +0.0387 [-0.0882, +0.1748] – | +0.0092 [-0.0740, +0.0952] – | +0.0590 [-0.0277, +0.1582] – | -0.0382 [-0.1706, +0.0776] – | 712/72 ; 710/72 ; 710/73 ; 712/72 |
+| DK-TG | lower | +0.0070 [-0.0359, +0.0563] – | -0.0245 [-0.0605, +0.0016] – | -0.0094 [-0.0479, +0.0204] – | -0.0062 [-0.0363, +0.0189] – | 654/72 ; 652/72 ; 653/72 ; 654/72 |
+
+  Not built for this family: M-LAUNCH inside the reader (built separately, below), the anti-echo block and the M2 / L2 launch-subset rows. **LATERAL:**
+
+| row | better | A − CTRL s0 | A_rep − REP s0 | A − CTRL s1 | A_rep − REP s1 | n, s0 main / s0 replicate / s1 main / s1 replicate |
+|---|---|---|---|---|---|---|
+| heading MAE | lower | **-0.4211 [-0.6883, -0.1899] B** | +0.0892 [-0.2326, +0.3963] – | +0.1038 [-0.2848, +0.5761] – | -0.1749 [-0.5225, +0.1333] – | 2373/141 ; 2373/141 ; 2373/141 ; 2373/141 |
+| yaw-rate MAE | lower | -0.7305 [-1.7042, +0.3980] – | +0.5729 [-0.6672, +1.7987] – | +0.2594 [-0.8091, +1.3427] – | -0.2191 [-1.7774, +1.2541] – | 2366/141 ; 2367/141 ; 2366/141 ; 2367/141 |
+| curvature MAE | lower | -0.0007 [-0.0109, +0.0113] – | -0.0073 [-0.0273, +0.0122] – | **-0.0387 [-0.0679, -0.0160] B** | +0.0101 [-0.0051, +0.0291] – | 2366/141 ; 2367/141 ; 2366/141 ; 2367/141 |
+| cross-track MAE | lower | **-0.0191 [-0.0365, -0.0030] B** | +0.0053 [-0.0144, +0.0234] – | **+0.0720 [+0.0403, +0.1109] W** | -0.0270 [-0.0572, +0.0001] – | 2399/141 ; 2399/141 ; 2399/141 ; 2399/141 |
+| L1 lateral-accel MAE | lower | -0.0438 [-0.1565, +0.0921] – | +0.0906 [-0.0774, +0.2676] – | **+1.4444 [+0.6003, +2.4872] W** | **-0.3908 [-0.7329, -0.0748] B** | 2366/141 ; 2367/141 ; 2366/141 ; 2367/141 |
+| L2 curvature MAE (GT>=5.2) | lower | -0.0075 [-0.0212, +0.0025] – | **-0.0215 [-0.0423, -0.0048] B** | -0.0068 [-0.0204, +0.0063] – | +0.0178 [-0.0059, +0.0474] – | 2105/135 ; 2104/135 ; 2106/135 ; 2106/135 |
+
+  **TACTICAL** (TAC-LAT and TAC-LON are the plan-derived agreements, higher is better; the guards R-TLAT and R-TLON are in the guards bullet):
+
+| row | better | A − CTRL s0 | A_rep − REP s0 | A − CTRL s1 | A_rep − REP s1 | n, s0 main / s0 replicate / s1 main / s1 replicate |
+|---|---|---|---|---|---|---|
+| TAC-LAT | higher | +0.0063 [-0.0042, +0.0158] – | -0.0075 [-0.0221, +0.0071] – | +0.0000 [-0.0142, +0.0150] – | **+0.0217 [+0.0079, +0.0371] B** | 2399/141 ; 2399/141 ; 2399/141 ; 2399/141 |
+| TAC-LON | higher | +0.0150 [-0.0004, +0.0333] – | -0.0021 [-0.0158, +0.0117] – | +0.0013 [-0.0121, +0.0146] – | -0.0025 [-0.0204, +0.0171] – | 2399/141 ; 2399/141 ; 2399/141 ; 2399/141 |
+
+  The T1-kin goal-head F1 and head accuracy are **NOT COMPUTABLE** here: the paired tool reads eval dumps, not tick dumps (JSON note). **STRATEGIC** (S-POS@30 / 50 / 80, lower is better;
+  the X − Y cell is the difference of the two runs' (S − CTRV, ticks ≥ 1) contrasts on the same windows):
+
+| row | better | A − CTRL s0 | A_rep − REP s0 | A − CTRL s1 | A_rep − REP s1 | n, s0 main / s0 replicate / s1 main / s1 replicate |
+|---|---|---|---|---|---|---|
+| S-POS@30 | lower | **-0.1265 [-0.2605, -0.0056] B** | -0.0083 [-0.1748, +0.1592] – | +0.1814 [-0.1398, +0.5613] – | **-0.2141 [-0.4437, -0.0057] B** | 2321/141 ; 2321/141 ; 2321/141 ; 2321/141 |
+| S-POS@50 | lower | **-0.2295 [-0.4581, -0.0215] B** | -0.1178 [-0.4129, +0.1810] – | -0.1536 [-0.5723, +0.2938] – | -0.0448 [-0.3621, +0.2538] – | 2313/141 ; 2313/141 ; 2313/141 ; 2313/141 |
+| S-POS@80 | lower | **-0.4006 [-0.7914, -0.0184] B** | -0.1193 [-0.6477, +0.4084] – | -0.3352 [-1.1408, +0.5368] – | -0.0523 [-0.5763, +0.4724] – | 2290/141 ; 2290/141 ; 2290/141 ; 2290/141 |
+
+  Goal and route-setting quality is not a Read-A row; whether another tool computes it for these arms is UNVERIFIED here. **The T0 four families are NOT RUN** (box 2's standard eval):
+
+| family | what the JSON names | status | reason |
+|---|---|---|---|
+| LONGITUDINAL | the T0 LONGITUDINAL rows and distance keeping at T0 | NOT RUN | a build item the reader did not carry (`not_built.t0_four_families`) |
+| LATERAL | the T0 LATERAL rows | NOT RUN | same |
+| TACTICAL | the T0 TACTICAL rows | NOT RUN | same |
+| STRATEGIC | not named in the JSON; PREREG section 8 puts the box-2 families at T0 (`orc_families.py`, `v8f_paired_families.py`) | NOT RUN | same; the family is not paused for v8F |
+
+  `not_built.t0_four_families` reads: *"orc_families.py pointed at the arms and their controls (the T0 LONGITUDINAL / LATERAL / TACTICAL rows and distance keeping at T0): NOT RUN, a
+  build item, never a silent omission"*. The only T0 numbers in this read are the R-T0 points and the slow-draw cells; the inputs exist (each run's box-2 T0 eval JSON is in the run
+  record, and its `.npz` is in the pulled run directory on E:). **Nothing is claimed for T0 LONGITUDINAL, LATERAL, TACTICAL or STRATEGIC.** Registered rows that are NOT BUILT or NOT
+  COMPUTABLE, verbatim from the JSON `not_built` (the reader of record): `M-LAUNCH`: *"X - Y of the mean (v_own - v_GT) at ticks 1-2 in the GT-launch windows, from the tick dumps, in
+  each pair: NOT BUILT (routes NEXT-LAUNCH by hand)"*; `anti_echo_block`: *"longitudinal_claim_admissible, hold-v0, copy detector (RESULT_V8F_ORECOVER 3.1): NOT BUILT"*;
+  `M2_and_L2_launch_subset`: *"along-track MAE, speed MAE and L2 on the GT-launch subset; M2: NOT BUILT"*. By family: LONGITUDINAL carries all three; TACTICAL has the T-head F1 NOT
+  COMPUTABLE and its R-TLAT / R-TLON macro-F1 values are not in the JSON; LATERAL and STRATEGIC have every registered Read-A row computed; all four families have the T0 rows NOT RUN. The
+  JSON field `next_launch` is null (M-LAUNCH is not built in the reader; it is read separately, below). X − P10 and Y − P10 for every row (T1-kin). For the three S-POS rows the P10
+  contrast is the run's own S − CTRV, labelled in the JSON *"ticks>=1, unpaired vs CTRV (DAG_READ.json)"*: those cells are not paired across runs. **s0:**
+
+| row | better | A − P10 s0 | CTRL − P10 s0 | A_rep − P10 s0 | REP − P10 s0 |
+|---|---|---|---|---|---|
+| ADE6 | lower | **-1.2305 [-1.4302, -1.0448] B** | **-1.2012 [-1.3945, -1.0186] B** | **-0.7556 [-1.0164, -0.4950] B** | **-0.7987 [-1.0586, -0.5428] B** |
+| speed MAE | lower | **-0.7962 [-1.0078, -0.6137] B** | **-0.7761 [-0.9806, -0.5996] B** | **-0.4314 [-0.6628, -0.2286] B** | **-0.4388 [-0.6617, -0.2409] B** |
+| along-track MAE | lower | **-0.6994 [-0.8611, -0.5457] B** | **-0.6809 [-0.8443, -0.5214] B** | -0.1720 [-0.4096, +0.0640] – | -0.2213 [-0.4578, +0.0079] – |
+| accel MAE | lower | **-0.8740 [-1.2470, -0.5533] B** | **-0.8172 [-1.1770, -0.4998] B** | -0.2144 [-0.5718, +0.1072] – | -0.2569 [-0.5998, +0.0569] – |
+| DK-VIOL | lower | +0.0067 [-0.0164, +0.0314] – | +0.0017 [-0.0231, +0.0272] – | -0.0050 [-0.0338, +0.0219] – | +0.0000 [-0.0248, +0.0246] – |
+| DK-HW | lower | -0.2519 [-0.6506, +0.0829] – | **-0.3318 [-0.6942, -0.0242] B** | +0.0017 [-0.4459, +0.4482] – | -0.0980 [-0.5251, +0.3139] – |
+| DK-TG | lower | -0.0537 [-0.1320, +0.0207] – | -0.0568 [-0.1232, +0.0163] – | +0.0033 [-0.1074, +0.1580] – | +0.0279 [-0.0978, +0.2093] – |
+| heading MAE | lower | **-3.0131 [-3.7375, -2.3511] B** | **-2.5920 [-3.2391, -1.9751] B** | +0.0045 [-0.9179, +0.9648] – | -0.0846 [-0.9878, +0.8799] – |
+| yaw-rate MAE | lower | **+2.7420 [+0.3388, +5.2598] W** | **+3.4726 [+0.6601, +6.3308] W** | **+19.9019 [+14.5378, +25.7101] W** | **+19.3282 [+13.9956, +25.0836] W** |
+| curvature MAE | lower | **+0.0847 [+0.0549, +0.1200] W** | **+0.0854 [+0.0580, +0.1175] W** | **+0.2107 [+0.1535, +0.2708] W** | **+0.2180 [+0.1586, +0.2848] W** |
+| cross-track MAE | lower | **-0.9811 [-1.1264, -0.8486] B** | **-0.9620 [-1.1077, -0.8319] B** | **-0.9733 [-1.1219, -0.8367] B** | **-0.9786 [-1.1252, -0.8423] B** |
+| L1 lateral-accel MAE | lower | **-2.5056 [-3.8661, -1.3292] B** | **-2.4618 [-3.8097, -1.2924] B** | **-1.1458 [-2.4394, -0.0147] B** | **-1.2365 [-2.4350, -0.1556] B** |
+| L2 curvature MAE (GT>=5.2) | lower | **+0.0375 [+0.0201, +0.0588] W** | **+0.0443 [+0.0232, +0.0744] W** | **+0.1071 [+0.0671, +0.1558] W** | **+0.1313 [+0.0797, +0.1961] W** |
+| TAC-LAT | higher | **+0.1967 [+0.1580, +0.2378] B** | **+0.1905 [+0.1508, +0.2319] B** | **+0.1409 [+0.0985, +0.1861] B** | **+0.1484 [+0.1072, +0.1921] B** |
+| TAC-LON | higher | **+0.1546 [+0.0912, +0.2194] B** | **+0.1396 [+0.0771, +0.1997] B** | +0.0425 [-0.0292, +0.1096] – | +0.0446 [-0.0292, +0.1130] – |
+| S-POS@30 | lower | **-1.8693 [-2.4537, -1.3756] B** | **-1.7428 [-2.2737, -1.2861] B** | **-1.4919 [-1.9634, -1.0845] B** | **-1.4837 [-1.9587, -1.0595] B** |
+| S-POS@50 | lower | **-4.7626 [-5.9590, -3.7194] B** | **-4.5331 [-5.6695, -3.5422] B** | **-4.2598 [-5.2985, -3.3374] B** | **-4.1419 [-5.1720, -3.1830] B** |
+| S-POS@80 | lower | **-9.9630 [-12.0882, -7.9003] B** | **-9.5624 [-11.6843, -7.6124] B** | **-9.4896 [-11.4905, -7.6284] B** | **-9.3703 [-11.3441, -7.5010] B** |
+| M1 crawl share | lower | **+0.0564 [+0.0374, +0.0788] W** | **+0.0568 [+0.0378, +0.0798] W** | **+0.0990 [+0.0727, +0.1284] W** | **+0.0957 [+0.0690, +0.1258] W** |
+
+  **s1:**
+
+| row | better | A − P10 s1 | CTRL − P10 s1 | A_rep − P10 s1 | REP − P10 s1 |
+|---|---|---|---|---|---|
+| ADE6 | lower | **-1.0749 [-1.2743, -0.8735] B** | **-1.1231 [-1.3301, -0.9159] B** | **-1.1457 [-1.3570, -0.9417] B** | **-1.1116 [-1.3180, -0.9119] B** |
+| speed MAE | lower | **-0.5233 [-0.6966, -0.3707] B** | **-0.7030 [-0.9087, -0.5230] B** | **-0.7336 [-0.9525, -0.5426] B** | **-0.6592 [-0.8610, -0.4801] B** |
+| along-track MAE | lower | **-0.5819 [-0.7575, -0.4109] B** | **-0.5876 [-0.7702, -0.4119] B** | **-0.6009 [-0.7823, -0.4214] B** | **-0.5758 [-0.7559, -0.4022] B** |
+| accel MAE | lower | +0.1377 [-0.2067, +0.5134] – | **-0.6014 [-0.9063, -0.3345] B** | **-0.6569 [-1.0141, -0.3371] B** | **-0.4009 [-0.7081, -0.1184] B** |
+| DK-VIOL | lower | -0.0067 [-0.0302, +0.0162] – | -0.0034 [-0.0243, +0.0181] – | +0.0000 [-0.0249, +0.0254] – | -0.0034 [-0.0270, +0.0207] – |
+| DK-HW | lower | **-0.4007 [-0.7827, -0.0973] B** | **-0.4466 [-0.8200, -0.1686] B** | **-0.5136 [-0.8890, -0.1944] B** | **-0.4713 [-0.8540, -0.1546] B** |
+| DK-TG | lower | **-0.0817 [-0.1396, -0.0318] B** | **-0.0724 [-0.1384, -0.0085] B** | **-0.1051 [-0.1677, -0.0483] B** | **-0.0951 [-0.1535, -0.0468] B** |
+| heading MAE | lower | **-1.9501 [-2.6594, -1.2479] B** | **-2.0539 [-2.7092, -1.3705] B** | **-1.9614 [-2.6722, -1.2710] B** | **-1.7865 [-2.5844, -1.0282] B** |
+| yaw-rate MAE | lower | **+8.9439 [+5.3604, +12.9899] W** | **+8.6844 [+5.1690, +12.5740] W** | **+9.3556 [+5.7951, +13.2237] W** | **+9.5748 [+5.8282, +13.7093] W** |
+| curvature MAE | lower | **+0.0964 [+0.0650, +0.1321] W** | **+0.1352 [+0.0889, +0.1915] W** | **+0.1445 [+0.0951, +0.2028] W** | **+0.1343 [+0.0858, +0.1912] W** |
+| cross-track MAE | lower | **-0.9021 [-1.0493, -0.7638] B** | **-0.9742 [-1.1152, -0.8405] B** | **-0.9788 [-1.1217, -0.8478] B** | **-0.9518 [-1.0961, -0.8185] B** |
+| L1 lateral-accel MAE | lower | -0.4029 [-1.3012, +0.4388] – | **-1.8473 [-2.9617, -0.8501] B** | **-1.9161 [-3.1968, -0.8210] B** | **-1.5251 [-2.5967, -0.5934] B** |
+| L2 curvature MAE (GT>=5.2) | lower | **+0.0462 [+0.0260, +0.0716] W** | **+0.0529 [+0.0281, +0.0847] W** | **+0.0767 [+0.0413, +0.1232] W** | **+0.0589 [+0.0334, +0.0896] W** |
+| TAC-LAT | higher | **+0.1972 [+0.1593, +0.2363] B** | **+0.1972 [+0.1600, +0.2364] B** | **+0.1926 [+0.1517, +0.2331] B** | **+0.1709 [+0.1297, +0.2141] B** |
+| TAC-LON | higher | **+0.1384 [+0.0746, +0.2006] B** | **+0.1371 [+0.0751, +0.2001] B** | **+0.1542 [+0.0962, +0.2114] B** | **+0.1567 [+0.0967, +0.2155] B** |
+| S-POS@30 | lower | **-1.6440 [-2.0440, -1.2864] B** | **-1.8255 [-2.3433, -1.3880] B** | **-1.9276 [-2.4624, -1.4663] B** | **-1.7135 [-2.1974, -1.3049] B** |
+| S-POS@50 | lower | **-4.7627 [-5.7624, -3.8251] B** | **-4.6092 [-5.6305, -3.6576] B** | **-4.8929 [-5.9895, -3.8792] B** | **-4.8481 [-5.9214, -3.8649] B** |
+| S-POS@80 | lower | **-10.2601 [-12.4419, -8.1915] B** | **-9.9249 [-11.9750, -7.9686] B** | **-10.4943 [-12.6644, -8.4336] B** | **-10.4419 [-12.5718, -8.3877] B** |
+| M1 crawl share | lower | **+0.0620 [+0.0415, +0.0870] W** | **+0.0604 [+0.0391, +0.0864] W** | **+0.0672 [+0.0457, +0.0923] W** | **+0.0652 [+0.0440, +0.0900] W** |
+* **M-LAUNCH and the slow-draw flag [M].** The slow-draw flag (PREREG §7; T0; the five speed cells; per-window paired difference, episode-cluster bootstrap, B = 2,000, seed 0) labels an
+  arm a slow-T draw when all five cells are separated from the pair's control and each shift exceeds 0.5 m/s in magnitude. It decides nothing. **No arm is labelled**: the largest shift
+  in magnitude over the 20 cells is 0.1627 m/s, and 13 of the 20 cell intervals exclude 0:
+
+| arm and pair (T0, m/s) | lon_v_target_ms | v_a_ms | v_end_ms | v_lo_ms | v_hi_ms | label |
+|---|---|---|---|---|---|---|
+| s0 main (A − CTRL) | +0.0718 [+0.0195, +0.1256] | +0.0505 [+0.0012, +0.0992] | +0.0682 [+0.0181, +0.1170] | +0.0090 [-0.0465, +0.0624] | +0.0421 [-0.0157, +0.0979] | none |
+| s0 replicate (A_rep − REP) | -0.0792 [-0.1340, -0.0274] | -0.0873 [-0.1516, -0.0212] | +0.0523 [+0.0069, +0.0963] | -0.0517 [-0.1105, +0.0066] | -0.0917 [-0.1449, -0.0388] | none |
+| s1 main (A − CTRL) | +0.0901 [+0.0312, +0.1509] | +0.0842 [+0.0339, +0.1378] | +0.0109 [-0.0450, +0.0670] | +0.0731 [+0.0157, +0.1303] | +0.0890 [+0.0341, +0.1422] | none |
+| s1 replicate (A_rep − REP) | +0.1627 [+0.1074, +0.2155] | +0.0344 [-0.0179, +0.0867] | +0.0487 [+0.0009, +0.0970] | +0.0295 [-0.0280, +0.0882] | +0.0485 [-0.0046, +0.1005] | none |
+
+  **M-LAUNCH reads NOT MOVED** (T1-kin, causal lane; paired episode-cluster bootstrap, B = 2,000, seed 0, over the 49 episodes of the 327 GT-launch windows, the `hmc_read.py` definition;
+  `MLAUNCH.json`, sha256 `f5ebb4b2…`, banked in `raw/2026-10-28-launch-intent-mlaunch/` at `8c1e9636`). The cell is the mean (v_own − v_GT) at ticks 1–2, X − Y, in m/s; a negative value
+  is slower than the human:
+
+| pair | seed | X − Y [95 % CI] | separated |
+|---|---|---|---|
+| main (A − DAG-OACC) | s0 | +0.0348 [−0.0299, +0.0923] | no |
+| main (A − DAG-OACC) | s1 | +0.0282 [−0.0247, +0.0836] | no |
+| replicate (A_rep − REP) | s0 | +0.0243 [−0.0281, +0.0846] | no |
+| replicate (A_rep − REP) | s1 | −0.0146 [−0.0607, +0.0286] | no |
+
+  Section 11 label: **not moved** (moved needs all four cells separated toward 0). The route is **LAUNCH-INTENT-HI** (W_HI 4.17852, four runs, its own PI go). The controls of the
+  M-LAUNCH build read their known values (all nine groups PASS): X = Y gives exactly 0.0; tick 0 gives exactly 0 in all four pairs; shuffled GT, the complement mask and a permuted Y move
+  the number; a ±0.5 m/s injection reads back exactly. Beside, deciding nothing: the training draw alone (REP − DAG-OACC at s0) is −0.5560 [−0.6994, −0.3975] m/s, about 16 times the
+  lever's largest point (+0.0348), so a separated cell here would have been necessary and not sufficient (`H-ESTIM-SEED-1`). The readings its builder had to choose (tick indexing, the
+  v_GT rule, "toward 0" as the |X| − |Y| interval below 0, "moved" in all four cells) are in its `NOTES.md`; the Master Mind confirmed them (**[I]**). Its first control pass was badly
+  posed and refused; the cell numbers did not change, and the redesign of those controls was made after the numbers were seen, which its `NOTES.md` records (**[I]**). The verdict stays
+  not moved under the executed-chord speed reading, the sign reading of "toward 0", tick 1 alone and tick 2 alone (`NOTES.md`; **[I]**). At tick 1 alone the main pair is separated toward
+  0 at both seeds and the replicate pair is not: a post-hoc look that `NOTES.md` marks as not registered and not a finding, among eight per-tick looks without multiplicity control
+  (**[I]**).
+* **Beside, deciding nothing, not read by the RESULT: M2 in the M-LAUNCH package [M]** (`MLAUNCH.json` `beside_M2`). The RESULT lists the M2 / L2 launch-subset rows as NOT BUILT by the
+  reader of record (above). The M-LAUNCH build computed a beside block of them: along-track MAE, speed MAE and L2 on the GT-launch subset, X − Y, over the executed 30-knot horizon (not
+  ticks 1–2), T1-kin, the same paired episode-cluster bootstrap (B = 2,000, seed 0; 327 windows / 49 episodes, and 253 to 255 windows / 45 episodes for L2, which needs GT ≥ 5.2 m/s). Of
+  its 12 cells, 4 are separated: along-track MAE, main pair s0 −0.1200 [−0.1957, −0.0483] (better); speed MAE, main pair s1 +0.3824 [+0.1367, +0.6489] (worse); L2 curvature MAE,
+  replicate pair s0 −0.1880 [−0.3169, −0.0707] (better); speed MAE, replicate pair s1 −0.0975 [−0.2103, −0.0040] (better). No M2 row is separated in the same direction in both pairs at
+  the same seed, and each cell is one seed in one pair against the training-run spread above, so none is read as an effect.
+* **What the numbers say [M]** (computed from the tables above; MEASURED unless marked; T1-kin). (1) **The word is decided by the guard R-ADE, which asks only for 'not separated-worse'
+  and carries no size bar.** R-ADE fails at both seeds, each in one pair; R-MOVE and R-CRAWL are also false at both seeds. The ADE6 cells are small: the four points lie between 0.0294
+  and 0.0483 m, all inside ±0.0604 m, which is why R-KEEP (a size bar on the point) holds in all four pairs. (2) **At each seed, the separated ADE6 cells flip sign between the main pair
+  and the replicate pair.** The lever is the same in both pairs (W 1.58926); the two pairs of a seed differ in the trainer seed and the control, and the reader's K-PAIR control passes
+  for both:
+
+| seed | trainer seed (main pair / replicate pair) | main pair, A − CTRL | replicate pair, A_rep − REP |
+|---|---|---|---|
+| s0 | 0 / 10 | **-0.0294 [-0.0522, -0.0077] B** | **+0.0431 [+0.0137, +0.0711] W** |
+| s1 | 1 / 11 | **+0.0483 [+0.0105, +0.0884] W** | **-0.0341 [-0.0655, -0.0027] B** |
+
+  Beyond ADE6, the rows whose separated X − Y cells have opposite signs between the two pairs of the same seed are, at s1, speed MAE, accel MAE and L1 lateral-accel MAE (at s0 only
+  ADE6); accel MAE at s1 reads +0.7391 [+0.4366, +1.0952] in the main pair and −0.2560 [−0.4105, −0.1222] in the replicate pair. (3) **No crawl row moved by its bar in both pairs at any
+  seed.** The crawl cells that are separated-better:
+
+| seed | pair | crawl row | X − Y | improvement / bar | clears (R-MOVE row) |
+|---|---|---|---|---|---|
+| s0 | replicate (A_rep − REP) | L2 curvature MAE (GT>=5.2) | **-0.0215 [-0.0423, -0.0048] B** | 158.1 % | true |
+| s1 | main (A − CTRL) | curvature MAE | **-0.0387 [-0.0679, -0.0160] B** | 73.6 % | false |
+
+  The only cell that clears its bar is in the replicate pair at s0; its main-pair partner is not separated, and every main-pair crawl cell is below its bar (improvement ÷ bar from
+  −23.4 % to +73.6 % over the eight main-pair cells, from −130.9 % to +158.1 % over all 16). (4) **Over all 76 X − Y cells, 16 are separated-better, 7 separated-worse and 53 not
+  separated** (floors bullet), and the cells that reach the bar in the worsening direction (6) outnumber those that reach it in the improving direction (3). (5) **M-LAUNCH moved by at
+  most +0.0348 m/s, none separated,** against REP − DAG-OACC at s0 of −0.5560 m/s (+0.0199 at s1) on the same cell set. **Why the pattern is what the pair design exists to expose:** the
+  episode-cluster bootstrap resamples EPISODES with the models held fixed (`H-ESTIM-SEED-1`), so it cannot answer *"would another training run say this?"*. The replicate pair asks that
+  second question, and on ADE6 the answer is the opposite sign at each seed: a read on either pair alone would have called the lever better on ADE6 at one seed and worse at the other,
+  depending on which pair was run. Each separated cell is right about its episodes and silent about its training run, which is why a separated cell from one pair is necessary and not
+  sufficient, and why the registered predicates hold only when they hold in both pairs. The registered table does not use this reading: R-ADE counts as failed at a seed when it fails in
+  either pair, so the word stays HARMS.
+* **What this read cannot claim.** T1-kin is a self-action open loop (the lead follows its logged future and the cameras are logged), not T2; T0 is teacher-forced and is not driving performance. A one-seed R-MOVE is
+  not an effect (`H-ESTIM-SEED-1`): only R-MOVE at both seeds, each in both pairs (four training draws), attributes a crawl change to the lever, and the four draws here disagree on ADE6 (see what the numbers say). It
+  attributes to a weighting and not to a mechanism: the lever is one label-defined weight on one term, and the read does not say which of the 12 knots or which launch windows carried a cell. The mask uses future GT
+  speed, which is admissible for labels, so a result says nothing about a deployable launch detector. f, the dose, K-SHARE and K-MASK are facts about the TRAIN windows of each run, not eval facts; the eval launch subset is
+  a different, smaller set (327 windows / 49 episodes of 2,399 windows, **[M]**, `MLAUNCH.json`). B and HI are not read: nothing here says what a lower or a higher dose does. The T0 four families, the anti-echo block and the
+  M2 / L2 launch-subset rows are not computed by the reader of record, and the T-head macro-F1 behind R-TLAT and R-TLON is not in its JSON (families bullet). No bar, row, floor formula, dose or routing changed after any
+  LAUNCH-INTENT row was seen.
+* **Next (Rule Zero).** **Committed next after HARMS:** arm B, with its own PI go (PREREG §10, verbatim from the JSON: *"not adopted; read B under this table (train B first, with its own
+  PI go)."*). This B is LAUNCH-INTENT's own dose B, not DAG-ORC's B (p = 0.1): the same lever at a lower dose, W 0.726175, a launch-sample weight share of one quarter (K-SHARE band 1/4 ±
+  0.02; ESTIMATED realised shares 0.2484 / 0.2478 / 0.2435 / 0.2456 at trainer seeds 0 / 1 / 10 / 11, PREREG §3). It is four box-2 runs (B_0, B_1, B_rep,0, B_rep,1) in the same pair
+  design, read under the same table with its own seeds and never pooled with A; B's HARMS routes to NEXT-LAUNCH. **The §11 branch** is LAUNCH-INTENT-HI, the same lever at a launch-sample
+  share of one half (W_HI 4.17852, four runs), which M-LAUNCH selects (NOT MOVED, above); it too needs its own PI go. **Both routes need a PI go: B, registered after HARMS, and HI, the
+  branch M-LAUNCH selects. The PI is being asked which, if either, box 2 runs.** Cost (**[E]**, from a **[M]** span): the A chain ran 13:54 to 16:48 on box 2, 174 min or 2.9 h, against
+  the PREREG's ESTIMATED 2.8 h; B is about the same. The chain's closing line reads *"B is not queued"*.
+  * **Every remaining lever and what blocks or unblocks it.** B (W 0.726175, four runs): committed next; blocked on the PI's go for box-2 time, and unblocked by that go plus a B chain on
+    the pattern of the A chain (0 GPU to build; UNVERIFIED that nothing else is needed).
+  * LAUNCH-INTENT-HI (W 4.17852, four runs): routed by M-LAUNCH NOT MOVED; blocked on the PI's go for box 2. LOOP-STATE (zero training, dev-box CPU; decomposes the crawl by plan index in
+    X's tick dumps): the branch for M-LAUNCH moved, so it is not routed by this read; it would read the tick dumps, which are single copies on F:.
+  * T0 four families: NOT RUN; a build item (`orc_families.py` pointed at the four arms and their controls; inputs: each run's eval JSON in the repo and `.npz` on E:). The anti-echo
+    block and the M2 / L2 launch-subset rows: NOT BUILT by the reader of record; build items (M2 has a beside block in the M-LAUNCH package, above).
+  * If both NEXT-LAUNCH branches are exhausted, the programme has no registered lever for the crawl rows on DAG-OACC (PREREG §11). The blockers then are the ones that section names:
+    route extent and nav timing (eliminated as the lever by N0, **[I]**), the state-channel levers (DAgger iteration 2, **[I]**), and the zero-training post-map (it moves the crawl but
+    failed KEEP at s0, **[I]**). What would unblock: a new diagnosis of the loop term, or a PI decision on an architecture change that gives O a launch-intent input.
+* **Provenance [M].** `RESULT_V8F_LAUNCH_INTENT.md` (landed `8c1e9636`, 17:43:02; the read banked at `d7dc9f11`, 17:11:44), claim row `H-V8F-LAUNCH-INTENT-1`. The read of record is
+  `read_A1/LAUNCH_INTENT_READ.json`, sha256 `e451e1a6…` (reader `launch_intent_read.py` sha256 `fb3d2d7d…`; PREREG as amended `6ae79f2f…`; manifest `runs.json` sha256 `98d2cd3d…`; RF0
+  `P0_RF0.json` sha256 `1608d70b…`; wall 341.6 s); its console ends with the lines *"ZZLAUNCH-INTENT-READ-DONE HARMS"* and *"ZZREAD-A1-RC 0"*. M-LAUNCH is `MLAUNCH.json`, sha256
+  `f5ebb4b2…`. Run times: box 2 13:54 to 16:48 (174 min), the dev-box T1-kin chain 12 steps in 1756 s, the read of record 341.6 s. The RESULT's checker `check_result.py` re-finds every
+  quoted number (133 checks, 0 failed; **[I]**, its output in the repo), and does not recompute the cells from the per-window dumps or re-run the bootstrap (those dumps are single
+  copies, below): a defect inside the estimator or the reader's heavy layer would not show there. Every sha256 of the RESULT's provenance table is of the bytes at `d7dc9f11`; the table,
+  reduced to the read, the logs, the pins and the checkpoints (the 20 run-record rows are in the RESULT):
+
+| role | repo path (under `TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-10-28-launch-intent-read/`) | sha256 |
+|---|---|---|
+| read of record (reader output) | `read_A1/LAUNCH_INTENT_READ.json` | `e451e1a6ba44e1d30e97561456476dc4223cd916bd3be96163cec4b02844bf23` |
+| read of record, console | `read_A1/read_A1.out` | `2fd51cc833e1d3e85f3a2bb74319bcf9fc2ab736684bf87468c2bf22cf0adba7` |
+| read of record, launcher | `read_A1/run_read_A1.sh` | `6c77c388adbfba6d88894886bc4d6ca31e57b97925a9599aa4f57b6198f5945f` |
+| T1-kin chain's own read, REFUSED (launch-time reader) | `lit1_logs/launch_intent_read_REFUSED.out` | `c9028122ab0a4848c97ebd0800229cb5477b2625497fcdd0e9c4e3455ab1b543` |
+| T1-kin chain log (relaunch) | `lit1_logs/chain.out` | `8bc3a51d4f58ffea73b002fc0e96a20b33efda01b0d6f8387d720bfe62cf2782` |
+| T1-kin chain log (stopped launch) | `lit1_logs/chain.out.prev_1028151251` | `f7487872786af66f3522aa56a4667ab5c93578be9610012eeee5c5f22d865401` |
+| T1-kin chain launch log (both launches) | `lit1_logs/lit1_chain.launch.out` | `1bf5706af86b642076b55196842e4d0e6b5c3c6c5984278d1f48bab3802ca630` |
+| manifest the reader ran on | `runs.json` | `98d2cd3d3c18263396c26a12f54b5f60e7fd50e85b3b7edac6cc7eab1a4991e2` |
+| box-2 chain log | `box2/chain_v8f_launchintent.out` | `ddae7b9e3ac82f86bfe65461944e7a55923701e685ee043a66f78362466bc5da` |
+| box-2 pins | `box2/PINS.txt` | `030b77d39ed28dbd54878109a4dcc1e0e838e29fe3d37b0ec326e113ca6ef2f4` |
+| K-BUILD record | `box2/K-BUILD.txt` | `568271d43133ba25eaf0cb90a2b5a1fd118a4ad8ed95bc04b6cd9721e78b28bd` |
+| launch commit | `LAUNCH_COMMIT.txt` | `86b67b7a04f0507edecaa21b50420bdfb9a58e23ce2791f2d84892dbba2c0973` |
+| chain-file pins | `PINS_BOX2.txt` | `20a5b48ccabce9b71b54398c4f14a746da6acc7d0f47415eb34a15fa358de018` |
+| pin-fill note | `../2026-10-28-launch-intent-chain/PINS_FILLED.txt` | `fa825de89d77e6d826957bb317f068b886e2909a67382a372a1f1b6a199be6f1` |
+| PREREG as amended (read by the reader of record) | `Project Steering/PREREG_V8F_LAUNCH_INTENT.md` at `e28516e8` and `d7dc9f11` | `6ae79f2f451868e8da9d270214d6132f2fdc7c9f6ff608c0ec05c35a58ac1d34` |
+| checkpoint A_0 (not staged; E: only) | `E:/Projects/TanitAD-artifacts/v8f-launch-intent/M2b_s0_launchintent/ckpt_last.pt` | `deb8f28b4ea9b2b1571f7ebea00c286922443e1dcc15f14f62e8cbcd7e143776` |
+| checkpoint A_1 (not staged; E: only) | `E:/Projects/TanitAD-artifacts/v8f-launch-intent/M2b_s1_launchintent/ckpt_last.pt` | `abe0fd24e6f9906bb3545b5b61ad14ae916c606d969c83ef431f484dc7adc556` |
+| checkpoint A_rep,0 (not staged; E: only) | `E:/Projects/TanitAD-artifacts/v8f-launch-intent/M2b_s0_launchintentrep/ckpt_last.pt` | `b86f7d4353b9fbedaa80d8034df7e9c0f9ae16cccd95884bdf358f2c40540f3c` |
+| checkpoint A_rep,1 (not staged; E: only) | `E:/Projects/TanitAD-artifacts/v8f-launch-intent/M2b_s1_launchintentrep/ckpt_last.pt` | `2900ff73cd85571888aee2f3f76a6c46361d52b86ca4a755eee0dc5fd309c81e` |
+
+* **Disclosures carried from the RESULT (§8) that are not stated elsewhere in this section.** (a) **Pin-fill time.** `PINS_FILLED.txt` of the chain package
+  (`raw/2026-10-28-launch-intent-chain/`, sha256 `fa825de8…`) says the Master Mind filled the chain pins at ~14:10. They were filled at ~13:50 (**[I]**, the Master Mind's brief), before
+  commit `d8c9f7bf` (13:51:52) and after the PREREG was promoted at `77234276` (13:49:00); the bracket between the two commit times is **[M]**, from the commits, and the box-2 pins line
+  is stamped 13:54 (**[M]**, the chain log). The pins are the promoted ones: the PREREG blob and the reader blob at `77234276` hash to the `469bac1f…` and `5e950dcf…` that the pins carry
+  (**[M]**, re-measured by the audit). (b) **A label inside the reader.** The JSON's `provenance.prereg` reads *"Project Steering/PREREG_V8F_LAUNCH_INTENT.md (DRAFT v2,
+  MM_REDESIGN_2026-10-28)"*; that is a string inside the reader, which ran with `--prereg-sha` equal to the amended text's sha256 `6ae79f2f…`. (c) **Single copies.** The per-episode
+  dumps and tick arrays are under `F:/TanitAD-scratch/launch_intent_t1_out/` (the chain's `--out-dir` and `--dump-ticks`); the repo holds the rollout JSONs under `t1/`, the fresh-T0
+  evals under `t0fresh/` and each run's record, and no tick arrays. M-LAUNCH reads tick dumps, so it needs F:. The checkpoints are on E: only. (d) **Disclosed coupling.** DAG-ORC and
+  LAUNCH-INTENT share the REP_s runs: in DAG-ORC they set the floor RF, here they are the control of the replicate pair and RF is not a bar term, so neither read's result changes the
+  other's bar.
+
 ---
 
 ## 8. Discussion
@@ -1738,7 +2873,17 @@ The second video (`v8f_evidence_v5.mp4`, 536 s, below; v5 adds chapter 8, **DAgg
 11. **The acceleration term fixes the longitudinal family on DAG's recipe, and position comes along** (§7.23; T1-kin, same estimator). DAG-OACC is the adopted base: accel MAE falls by 56 % / 58 % against DAG (separated), ADE6 is kept, and no longitudinal row is separated-worse than P10 at either seed. The open gap is the crawl set (yaw-rate, curvature, L2 and M1 against P10); the arm aimed at it, DAG-ORC re-based on DAG-OACC, reads HARMS and is not adopted (item 14, §7.26).
 12. **The speed information O needs is not recoverable from T's pooled four-frame input by a ridge or a 2 × 256 MLP** (§7.24; T1-class open loop, paired episode-cluster bootstrap). The PRIMARY read-out leaves ADE6 where it was (−0.0097 / +0.0022 m against a bar of −0.1207 m), while the T0 ceiling of the true cells is −0.7164 / −0.6676 m. The scope is that summary on unseen clips: T's full 40-token view is not covered, and T fails on that view too (SPEEDCAL), so the two negatives together route the speed line to perception.
 13. **A second DAgger iteration on DAG's own states does not move the crawl rows** (§7.25; T1-kin). R-MOVE fails at both seeds, the crawl rows stay separated-worse against P10, and the swap costs acceleration (+0.5846 / +0.6034 m/s², separated-worse against DAG2-0). DAG stays the base.
-14. **O-RECOVER's perturbation composed onto DAG-OACC costs position and does not clear the crawl rows** (§7.26; T1-kin, with R-T0 at T0; paired episode-cluster bootstrap, B = 2,000, 141 episodes). Arm A reads HARMS: R-ADE fails at seed 0 (A − DAG-OACC ADE6 +0.1434 [+0.0538, +0.2342] m, separated-worse) and R-T0 fails at both seeds (+0.1106 / +0.0722 m against +0.0604 m). R-MOVE is false at both seeds: all eight crawl cells are separated-better against DAG-OACC, and each is 8.8–33.8 % of its bar (on the crawl rows the bar is twice the replicate arm's draw: REP s0 − DAG-OACC ADE6 is +0.4025 m, and REP − DAG-OACC is separated on 15 of 19 rows at seed 0). A closes 27.6–79.9 % of DAG-OACC's gap to P10 on the crawl rows, and seven of the eight cells stay separated-worse than P10. DAG-OACC stays the base; arm B (p = 0.1) needs the PI's go.
+14. **O-RECOVER's perturbation composed onto DAG-OACC costs position and does not clear the crawl rows** (§7.26; T1-kin, with R-T0 at T0; paired episode-cluster bootstrap, B = 2,000, 141 episodes). Arm A reads HARMS: R-ADE fails at seed 0 (A − DAG-OACC ADE6 +0.1434 [+0.0538, +0.2342] m, separated-worse) and R-T0 fails at both seeds (+0.1106 / +0.0722 m against +0.0604 m). R-MOVE is false at both seeds: all eight crawl cells are separated-better against DAG-OACC, and each is 8.8–33.8 % of its bar (on the crawl rows the bar is twice the replicate arm's draw: REP s0 − DAG-OACC ADE6 is +0.4025 m, and REP − DAG-OACC is separated on 15 of 19 rows at seed 0). A closes 27.6–79.9 % of DAG-OACC's gap to P10 on the crawl rows, and seven of the eight cells stay separated-worse than P10. DAG-OACC stays the base. (v33: the PI routed past arm B, `PREREG_V8F_DAG_ORC` Amendment 3; LAUNCH-INTENT is item 17.)
+15. **An ego-only read-out of T's five speed cells, put into O, cuts ADE6 on M2b-mixo through a declared open channel** (§7.27, SPEEDSUB; T1-class open loop, paired episode-cluster bootstrap, B = 2,000, 141 episodes; PASS, a screening result). ADE6 `ego − own` is −0.1290 [−0.2107, −0.0548] m at seed 0 and −0.0686 [−0.1151, −0.0232] m at seed 1 against a bar of −0.06035 m, and the shuffled-cells control reads +6.7181 / +6.4923 m (separated-worse). The read-out's skill rests mostly on the logged `limit` lane, which carries the ego's own future max speed (`D-SPEEDBAND-EGO-ECHO-1`; TRAIN fold 0: 0.28032 without it against 0.24751 with the full block). Two O training runs, one read-out fit, no replicate arm: this is not a lever claim, and not a statement about DAG-OACC.
+16. **With the channel closed, the same kind of read-out does not move healthy DAG-OACC draws** (§7.28, SPEEDSUB-T1; T1-kin, four training runs, paired episode-cluster bootstrap, B = 2,000, 141 episodes). The outcome is NULL, label NULL-ONE: ADE6 `egoc − identity` hits the bar (−0.06035 m, separated) at 1 of 4 runs, the slow-T draw REP s0 (−0.1949 [−0.2619, −0.1313] m); CTRL s0 −0.0233, CTRL s1 −0.0076 and REP s1 −0.0333 m are not separated, and M1 moves at no run. The logged-lane read-out is flat at CTRL too (+0.0008 / −0.0185 m). The speed-cell channel does not limit healthy DAG-OACC draws; its measured use is repairing a slow-T draw.
+17. **O's launch-sample along-track weight does not move the crawl rows and fails the position guard: HARMS, arm A is not adopted** (§7.29, LAUNCH-INTENT; T1-kin, paired episode-cluster
+   bootstrap, B = 2,000, 141 episodes, per seed and per pair; four training draws). R-MOVE is false at both seeds (1 of the 16 crawl cells clears its bar, L2 curvature in the replicate
+   pair at s0, −0.0215 [−0.0423, −0.0048] against 0.0136; no main-pair cell clears), all 16 X − P10 crawl cells stay separated-worse, and R-ADE fails at both seeds, each in one pair
+   (ADE6 +0.0431 [+0.0137, +0.0711] and +0.0483 [+0.0105, +0.0884] m), while the other pair of each seed is separated the other way (−0.0294 [−0.0522, −0.0077] and −0.0341
+   [−0.0655, −0.0027] m). **Established (MEASURED):** the registered word HARMS for arm A (W 1.58926); that the lever reached the data (the weight share on launch samples is 0.3256 to
+   0.3315 against 1/3 ± 0.02); M-LAUNCH NOT MOVED in all four cells (T1-kin, 49 episodes / 327 launch windows), which routes §11 to LAUNCH-INTENT-HI. **Not established:** an effect of
+   the lever at any dose (one training run per arm, pair and seed; the separated ADE6 cells flip sign between same-seed pairs; `H-ESTIM-SEED-1`), anything about B or HI (not read), and
+   the T0 four families, the anti-echo block and the M2 / L2 launch-subset rows (NOT RUN / NOT BUILT). Both B (registered after HARMS) and HI (the §11 branch) need their own PI go.
 
 ### 8.2 What is not established
 
@@ -1751,6 +2896,15 @@ The second video (`v8f_evidence_v5.mp4`, 536 s, below; v5 adds chapter 8, **DAgg
 * Transfer: one corpus, one recording-session split, no out-of-distribution evaluation.
 
 ### 8.3 The gap to "dominant driving results"
+
+**Update (v33).** Three items are written up here:
+* **SPEEDSUB (§7.27) reads PASS, a screening result** (T1-class open loop, on M2b-mixo): an ego-only read-out in O's five speed cells cuts ADE6 by −0.1290 [−0.2107, −0.0548] / −0.0686 [−0.1151, −0.0232] m against −0.06035 m. The PASS rests on the declared future-speed channel `limit` (`D-SPEEDBAND-EGO-ECHO-1`); it is not a driving result, and not a statement about DAG-OACC.
+* **SPEEDSUB-T1 (§7.28) reads NULL, label NULL-ONE** (T1-kin, four DAG-OACC runs): with the channel closed (a causal bucket) the read-out hits only at the slow-T draw REP s0 (−0.1949 [−0.2619, −0.1313] m). The healthy draws do not move and M1 moves at no run, so the speed-cell channel does not limit healthy DAG-OACC draws. The crawl set (yaw-rate, curvature, L2 and M1 against P10) is still open.
+* **LAUNCH-INTENT (§7.29) reads HARMS: arm A (W 1.58926) is not adopted.** On the crawl set (yaw-rate, curvature, L2 and M1 against P10) no row moves by its bar in both pairs at either
+  seed (T1-kin; paired episode-cluster bootstrap, B = 2,000, 141 episodes; 1 of the 16 crawl cells clears its bar and none of the 8 main-pair cells), and R-ADE fails at both seeds, each
+  in one pair; the separated ADE6 cells flip sign between the two same-seed pairs. M-LAUNCH reads NOT MOVED (49 episodes), which routes §11 to LAUNCH-INTENT-HI. The adopted base is
+  unchanged (DAG-OACC) and the crawl set is still open. The committed next after HARMS is LAUNCH-INTENT's arm B (W 0.726175) and the §11 branch is LAUNCH-INTENT-HI (W 4.17852); each
+  needs its own PI go, and the PI is being asked which, if either, box 2 runs.
 
 **Update (v32).** Three reads are written up here, and the adopted base is unchanged (DAG-OACC):
 * **SPEEDREAD (§7.24) reads NOT IN INPUT** (T1-class open loop). A ridge or a 2 × 256 MLP read-out of T's five speed cells, fitted on 4,512 TRAIN clips from T's pooled input, does not move O's ADE6 (−0.0097 [−0.0871, +0.0620] / +0.0022 [−0.0534, +0.0564] m against −0.1207 m). Even the true cells (T0 ceiling, a control) leave the all-speed yaw-rate and curvature MAE not separated, so the speed line reaches L2 of the open crawl set and not yaw-rate or curvature (**[I]**, the Master Mind's ranking, scoped to M2b-mixo; M1 was not computed on this rig, UNVERIFIED). Its committed next, perception on the A40, waits on the PI.
@@ -1798,9 +2952,12 @@ At v30, the levers aimed at those rows were DAgger iteration 2 and DAG-OACC, bot
 | 1t | **DAG-HACC** (zero training): HACC's rule re-fitted on DAG, read on Read A with KEEP | DOMINANT / LONGITUDINAL FIXED / NOT FIXED / COSTS POSITION (KEEP: ADE6 upper bound ≤ +F/2 vs DAG) | **COSTS POSITION** (§7.21; `RESULT_V8F_DAG_HACC.md`): every longitudinal row cleared, KEEP +0.126 m at s0. Next: DAG-OACC, DAgger iteration 2 and FLAT-DAG on box 2 (PI go); DAG-OACC and FLAT-DAG are read in rows 1u and 1v |
 | 1u | **FLAT-DAG**: FLAT given DAG's recipe (3,000 steps, `--dagger-p 0.1` on FLAT's own bank, `--o-interface cut` kept), against FLAT-DAG-0 (`--dagger-p 0`) and DAG | PRIMARY H-T1: ADE6 DAG − FLAT-DAG $\le-2F=-0.2415$ m, separated, at both seeds. HIERARCHY BEATS FLAT also needs no family row separated-worse; the order is REFUSED, BLOCKED, FLAT BETTER, HIERARCHY BEATS FLAT, NOT ESTABLISHED | **NOT ESTABLISHED** (§7.22; `RESULT_V8F_FLATDAG.md`, 91 / 91 controls PASS, T1-kin): −0.3451 [−0.4421, −0.2506] m (s0, met) / −0.0544 [−0.1605, +0.0547] m (s1, not met); separated-worse family rows: DK-TG +0.0734 and DK-VIOL +0.0370 at s0, accel MAE +0.8252 at s1. FLAT-DAG − FLAT-DAG-0 ADE6 −0.152 / −0.191 m. Next: SPEEDREAD (row 1x) |
 | 1v | **DAG-OACC**: DAG's fine-tune argv verbatim plus `--w-acc 49.6969` (OACC's acceleration term), against DAG (banked) | PRIMARY-ACC accel MAE DAG-OACC − DAG < 0, separated; KEEP ADE6 upper bound ≤ +0.0604 m (+F/2); LON-CLEAR no longitudinal row of DAG-OACC − P10 separated-worse; all at both seeds. DOMINANT also needs Read A's D1, D2 and D3 and the crawl rows (Amendment 1, `A1-2026-10-27`) | **LONGITUDINAL FIXED** (§7.23; `RESULT_V8F_DAG_OACC.md`, 60 / 60 controls PASS, T1-kin): accel MAE −1.6243 [−1.9766, −1.3236] / −2.0450 [−2.5628, −1.6227]; KEEP PASS (−0.0356 / −0.1363 m); LON-CLEAR clear at both seeds; not DOMINANT (D2 and the crawl rows fail at both seeds). Adopted as the base. Next: DAG-ORC re-based on DAG-OACC (row 1w) |
-| 1w | **DAG-ORC, re-based on DAG-OACC** (COMPOSE: DAG-OACC's argv plus O-RECOVER's perturbation behind a new default-off composition flag; CTRL = DAG-OACC, banked; REP new) | the PREREG's outcome table (`PREREG_V8F_DAG_ORC` Amendment 1, `6cd741b6`), aimed at the crawl rows: yaw-rate, curvature, L2 and M1 | **HARMS** (§7.26; `RESULT_V8F_DAG_ORC.md`, 162 reader controls PASS, T1-kin; R-T0 at T0): R-ADE fails at s0 (A − DAG-OACC ADE6 +0.1434 [+0.0538, +0.2342] m) and R-T0 at both seeds (+0.1106 / +0.0722 m against +0.0604 m); R-MOVE is false at both seeds (0 of 4 crawl rows clear; the eight cells are separated-better against DAG-OACC at 8.8–33.8 % of their bars, set by the replicate arm: REP s0 − DAG-OACC ADE6 +0.4025 m). A is not adopted; DAG-OACC stays the base. The T0 four families are NOT RUN; M-LAUNCH, the anti-echo block and M2 / L2 on the launch subset are NOT BUILT. Next: arm B (p = 0.1) under the same table, which needs the PI's go; then NEXT-CRAWL, LAUNCH-INTENT |
+| 1w | **DAG-ORC, re-based on DAG-OACC** (COMPOSE: DAG-OACC's argv plus O-RECOVER's perturbation behind a new default-off composition flag; CTRL = DAG-OACC, banked; REP new) | the PREREG's outcome table (`PREREG_V8F_DAG_ORC` Amendment 1, `6cd741b6`), aimed at the crawl rows: yaw-rate, curvature, L2 and M1 | **HARMS** (§7.26; `RESULT_V8F_DAG_ORC.md`, 162 reader controls PASS, T1-kin; R-T0 at T0): R-ADE fails at s0 (A − DAG-OACC ADE6 +0.1434 [+0.0538, +0.2342] m) and R-T0 at both seeds (+0.1106 / +0.0722 m against +0.0604 m); R-MOVE is false at both seeds (0 of 4 crawl rows clear; the eight cells are separated-better against DAG-OACC at 8.8–33.8 % of their bars, set by the replicate arm: REP s0 − DAG-OACC ADE6 +0.4025 m). A is not adopted; DAG-OACC stays the base. The T0 four families are NOT RUN; M-LAUNCH, the anti-echo block and M2 / L2 on the launch subset are NOT BUILT. Next: arm B (p = 0.1) under the same table, which needs the PI's go; then NEXT-CRAWL, LAUNCH-INTENT. Update (v33): the PI routed past B (`PREREG_V8F_DAG_ORC` Amendment 3), and NEXT-CRAWL is LAUNCH-INTENT (row 1ab) |
 | 1x | **SPEEDREAD**: is the per-window speed information O needs present in T's own input? A read-out of the 5 GT speed cells, computed from T's input and fitted on training clips only, replaces T's speed cells in the code O reads; no training of the driving model; dev-box CPU | the PREREG's decision table: INFO IN INPUT / PARTIAL / NOT IN INPUT / MIXED (`PREREG_V8F_SPEEDREAD`, claim row `H-V8F-SPEEDREAD-1`) | **NOT IN INPUT** (§7.24; `RESULT_V8F_SPEEDREAD.md`, 19 / 19 control flags PASS, T1-class open loop): ADE6 read − own −0.0097 [−0.0871, +0.0620] / +0.0022 [−0.0534, +0.0564] m against −F = −0.1207 m; ALT +0.2122 / +0.2040 m (separated-worse); T0 ceiling −0.7164 / −0.6676 m (a control). Amendment 1 (`A1-2026-10-27`) landed before any SPEEDREAD number. Commissioned by FLAT-DAG's committed next (`RESULT_V8F_FLATDAG.md` §4 (a)); it ran first because it is the cheapest experiment that separates the speed being in T's input from its not being there. Next: perception on the A40 (waits on the PI); nothing on box 2 |
 | 1y | **DAGGER2**: DAG fine-tuned 3,000 steps at `--dagger-p 0.1` on the iteration-2 bank (DAG's own T1-kin states), against DAG2-0 (`--dagger-p 0`) | `PREREG_V8F_DAGGER2` outcome table (Amendment 1, `A1-2026-10-27`): FIXED / PARTIAL / NO EFFECT / HARMS / BLOCKED / REFUSED. R-CRAWL and R-MOVE on the crawl set; guards R-TLAT, R-TLON, R-ADE, R-T0 (point ≤ +0.0604 m) and no newly separated-worse row against P10 | **HARMS** (§7.25; `RESULT_V8F_DAGGER2.md`, 199 / 199 reader controls PASS, T1-kin): R-CRAWL and R-MOVE fail at both seeds; the yaw-rate guard fires at s0. DAG stays the base. Next: DAG-ORC (row 1w) |
+| 1z | **SPEEDSUB**: `mlp_ego` (SPEEDREAD's fit, no re-fit) put into the five speed cells O reads, on M2b-mixo; zero training, dev-box CPU | `PREREG_V8F_SPEEDSUB` (claim row `H-V8F-SPEEDSUB-1`): PASS = ADE6 `ego − own` separated-better and at or below −F/2 = −0.06035 m at both seeds; HARMS if separated-worse at either seed; REFUSED if a control fails or `egoshuf` is not separated-worse | **PASS, a screening result** (§7.27; `RESULT_V8F_SPEEDSUB.md`, all 27 control flags PASS, T1-class open loop): −0.1290 [−0.2107, −0.0548] / −0.0686 [−0.1151, −0.0232] m; `egoshuf` +6.7181 / +6.4923 m. Read with the declared open channel `limit` (`D-SPEEDBAND-EGO-ECHO-1`); two O training runs, one read-out fit, no replicate arm. Next: SPEEDSUB-T1 (row 1aa) |
+| 1aa | **SPEEDSUB-T1**: the causal read-out `mlp_ego_c` (the `mlp_ego` design refitted on the causal speed bucket) in O's five speed cells at every replan tick, DAG-OACC at four runs (CTRL s0 / s1, REP s0 / s1); zero training, dev-box CPU | `PREREG_V8F_SPEEDSUB_T1` (Amendment 1, `A1-2026-10-28`): a hit is ADE6 `egoc − identity` separated-better and at or below −0.06035 m; PASS = a hit at all four runs and no guard (G-ADE, G-WORSE, G-NEW, G-VIOL); PARTIAL = hits at both CTRL seeds; NULL = anything else | **NULL, label NULL-ONE** (§7.28; `RESULT_V8F_SPEEDSUB_T1.md`, all 158 control flags PASS, no guard fires, T1-kin): one hit of four, REP s0 −0.1949 [−0.2619, −0.1313] m (a slow-T draw; VIOL-ANY +0.0421 separated-worse there); CTRL s0 −0.0233, CTRL s1 −0.0076, REP s1 −0.0333 m, not separated; M1 moves at no run. Floor rule `H-V8F-SPEEDSUB-T1-2`: NOT COLLAPSE (ADE6 gap 0.4025 → 0.2309 m). Next: section 8 (a), the history-aware read-out, ranked down and not run; the crawl lever is LAUNCH-INTENT (row 1ab) |
+| 1ab | **LAUNCH-INTENT**: O's launch-sample along-track weight on DAG-OACC's recipe (`--launch-intent-w 1.58926`: GT-launch TRAIN samples hold one third of the along-track weight on knots 1–12), two same-seed one-lever pairs per seed (A_s − DAG-OACC_s and A_rep,s − REP_s); four box-2 runs | `PREREG_V8F_LAUNCH_INTENT` (claim row `H-V8F-LAUNCH-INTENT-1`): bar 2 × max(F, RF0) (crawl rows: yaw-rate 1.1070, curvature 0.0526, L2 0.0136, M1 0.0096), RF beside; each per-seed predicate holds only when it holds in both pairs; the DAG-ORC outcome table over the per-seed booleans (524,288 cells) | **HARMS** (§7.29; `RESULT_V8F_LAUNCH_INTENT.md`, landed `8c1e9636`; all 206 reader controls PASS; T1-kin, Amendment 1 in force): arm A not adopted. R-MOVE is false at both seeds (1 of 16 crawl cells clears its bar: L2 curvature, replicate pair, s0, −0.0215 against 0.0136); R-ADE fails at both seeds, each in one pair (+0.0431 and +0.0483 m), and the other pair of each seed is separated the other way. M-LAUNCH **NOT MOVED** (none of 4 cells separated; 49 episodes), which routes section 11 to LAUNCH-INTENT-HI. T0 four families NOT RUN; anti-echo block NOT BUILT. Next: B (W 0.726175) is registered after HARMS and HI (W 4.17852) is the section 11 branch, each with its own PI go; the PI is being asked which, if either, box 2 runs. |
 | 2 | **LoRA on DINOv3** | PRIMARY $<-2F$, sep., both seeds; MECHANISM latcons RMSE fall ≥ 12.5 %. Prior **LOW [E]**: a pass needs T about 25 % of the way to the GT (≈ 0.19 m) while no lever has moved T by more than 6 % | pre-registered; AR-2 passed; 470 h/seed on box 2 ⇒ A40. Of the A40 readiness gate, AR-1 (the mini beats P10 at two seeds) now holds through HACC and AR-2 passed; AR-3 (the launch gate) is being dry-run on CPU. SPEEDCAL makes this the speed lever; the A40 go is asked for |
 | 3 | **Strategic read under `--ages fresh`** (zero training) | Q-LAYER fresh S − baseline at 50 m; Q-STALE fresh − cycle | **STALENESS ARTEFACT** (`RESULT_V8F_SFRESH.md`, `f547c11b`): Q-LAYER −2.43 / −2.53 m, Q-STALE −5.72 / −5.73 m, separated at both seeds. S adds over nav-only kinematics; the deployed tick schedule is the strategic lever |
 | 4 | **Seed replicates** of any arm that moves a headline | the cheapest discriminating experiment on this rig (§5.3) | standing |
