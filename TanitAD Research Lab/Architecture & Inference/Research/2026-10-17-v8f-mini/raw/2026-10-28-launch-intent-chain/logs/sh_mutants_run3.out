@@ -1,0 +1,21 @@
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\dagland\launch_intent_chain\gen\selftest_chain.py", line 68, in <module>
+    sys.exit(main(sys.argv[1:]))
+             ~~~~^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\launch_intent_chain\gen\selftest_chain.py", line 45, in main
+    st_sh2.run_mutants()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "E:\Projects\TanitAD-artifacts\dagland\launch_intent_chain\gen\st_sh2.py", line 385, in run_mutants
+    H.shared()
+    ~~~~~~~~^^
+  File "E:\Projects\TanitAD-artifacts\dagland\launch_intent_chain\gen\st_sh.py", line 293, in shared
+    "nostage": make_mirror(root / "m_nostage", overlay(**{QPATH: TIP_QUEUE})),
+               ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\launch_intent_chain\gen\st_sh.py", line 132, in make_mirror
+    git(work, "push", "-q", str(origin), "HEAD:refs/heads/agent/arch-inf-20260803")
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\launch_intent_chain\gen\st_sh.py", line 55, in git
+    raise RuntimeError(f"git {args}: {r.stderr.decode('utf-8', 'replace')[:300]}")
+RuntimeError: git ('push', '-q', 'F:\\TanitAD-scratch\\launch_intent_chain\\selftest\\shared\\m_nostage\\origin.git', 'HEAD:refs/heads/agent/arch-inf-20260803'): remote: error: unable to write file F:/TanitAD-scratch/launch_intent_chain/selftest/shared/m_nostage/origin.git/./objects/tmp_objdir-incoming-5EXtgJ/c2/dac3a7f1a5626c17294db7235d96c0724be8ab: Permission denied        
+remote: fatal: failed to write object        
+fatal: sha1 file '<stdout>' write er

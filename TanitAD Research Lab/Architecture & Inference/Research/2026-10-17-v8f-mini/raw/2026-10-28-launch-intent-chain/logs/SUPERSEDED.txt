@@ -1,0 +1,6 @@
+Files in this directory that belong to the superseded TWO-RUN build (before the 2026-10-28 four-run redesign and the sealed harness). Kept as history; nothing refers to them.
+  selftest_chain_result_py.json        2026-10-28 05:54
+  selftest_sh_tests.out                2026-10-28 05:54
+The current proof is: selftest_chain.out (the one-line verdict + any failures), selftest_chain_result.json (every test and mutant), and the layer files written by the same driver:
+  selftest_chain_result_py_t.json / _py_m.json (python layer), sh_tests_run2.out and sh_mutants_run4.out (the shell layer's separate runs while it was being fixed).
+Failed attempts of THIS build (harness bugs, since fixed; kept as history, not proof): sh_tests_run1.out (6 failures: guard '..' arm depth, static-scan marker, queue control P argument, nocall expectation, nostage text), sh_mutants_run2.out and sh_mutants_run3.out (a probe crashed on a removed lock; a transient git "Permission denied" on F:). selftest_chain_result_sh_t.json (run 2, 140/140) and selftest_chain_result_sh_m.json (run 4, 89/89) are the layer files of the shell-layer runs that were rerun inside the full run.

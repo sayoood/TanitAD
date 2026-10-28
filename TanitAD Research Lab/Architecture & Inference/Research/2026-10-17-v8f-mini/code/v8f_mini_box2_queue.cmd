@@ -1092,6 +1092,8 @@ if /i "%~1"=="dagorcrep" set "DAGS=dagorcrep"
 if /i "%~1"=="dagorc01" set "DAGS=dagorc01"
 if /i "%~1"=="dagoaccorc" set "DAGS=dagoaccorc"
 if /i "%~1"=="dagoaccorcrep" set "DAGS=dagoaccorcrep"
+if /i "%~1"=="launchintent" set "DAGS=launchintent"
+if /i "%~1"=="launchintentrep" set "DAGS=launchintentrep"
 if not defined DAGS (echo REFUSED: ARM must be dag or dag0, got "%~1" & exit /b 2)
 if "%~2"=="" (echo REFUSED: a SEED is needed & exit /b 2)
 if not "%~2"=="0" if not "%~2"=="1" (echo REFUSED: SEED must be 0 or 1, got "%~2" & exit /b 2)
@@ -1132,6 +1134,8 @@ if /i "%DAGS%"=="dagorcrep" goto :dagorcarm
 if /i "%DAGS%"=="dagorc01" goto :dagorcarm
 if /i "%DAGS%"=="dagoaccorc" goto :dagoaccorcarm
 if /i "%DAGS%"=="dagoaccorcrep" goto :dagoaccorcarm
+if /i "%DAGS%"=="launchintent" goto :launchintentarm
+if /i "%DAGS%"=="launchintentrep" goto :launchintentarm
 set "DAGP=0"
 set "DAGSHA="
 set "DAGF0=--init-ckpt "%RUNSM%\M2b_s%~2\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0"
@@ -1449,4 +1453,15 @@ call :dagoaccarm %~1 %~2 0.1 || exit /b 2
 if /i "%DAGS%"=="dagoaccorc" (set "DAGORCP=0.3" & set "DAGORCL= --ego-perturb-vscale 0.5 1.0 --ego-perturb-vmax 8.0 --ego-perturb-adrop 1.5 --ego-perturb-yawrate-std 2.0 --ego-perturb-seed %~2" & set "DAGORCX= --ego-perturb-with-dagger")
 if /i "%DAGS%"=="dagoaccorcrep" set "DAGSEED=1%~2"
 set "DAGF=--init-ckpt "%RUNSM%\M2b_s%~2\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p %DAGORCP%%DAGORCL% --dagger-p %DAGP% --dagger-bank "%DAGBANK%" --dagger-bank-sha256 %DAGSHA% --dagger-seed %~2 --w-acc %WACCDAG%%DAGORCX%"
+exit /b 0
+:launchintentarm
+rem PREREG_V8F_LAUNCH_INTENT section 4 as redesigned (MM_REDESIGN_2026-10-28 section 3), the decisive arm: reached ONLY from :dagarm (never called, never dispatched) with DAGS = launchintent | launchintentrep and :dagname's names set. %1 = ARM, %2 = SEED (0 | 1: the seed of M2b_s<SEED>, the init), %3 = nothing: the dose is fixed (arm B is NOT queued: it is trained only after A's HARMS or NOT ADOPTED, with its own PI go).
+rem The fine-tune is DAG-OACC's banked argv VERBATIM, obtained by CALLING :dagoaccarm (untouched: init M2b_s<SEED>, 3,000 steps, lr 1e-4, warmup 100, p_gt 0.2 to 0.2, --ego-perturb-p 0, --dagger-p 0.1, the ITERATION-1 bank %RUNSM%\dagger_bank\s<SEED> with its sha256 computed HERE, --dagger-seed <SEED>, --w-acc <the waccdag value>), plus --launch-intent-w 1.58926 at the END and nothing else.
+rem THE ARM LABEL IS THE RUN: launchintent = A_s (trainer seed SEED; its pair control is the banked DAG-OACC_s); launchintentrep = A_rep,s (trainer seed 10 + SEED, set below exactly as :dagoaccorcarm sets REP's: DAGSEED = 1<SEED>, --dagger-seed stays SEED; its pair control is the banked REP_s = DAG-ORC r2's M2b_s<SEED>_dagoaccorcrep, whose argv is DAG-OACC_s's at --seed 10 + SEED). Four runs: launchintent 0, launchintent 1, launchintentrep 0, launchintentrep 1.
+rem 1.58926 = W_A of PREREG section 3: 1 + W = (1 - f) / (2 f) with f = 49,618 / 306,566 (MEASURED, tools/measure_f.py), so launch samples hold one third of the along-track weight. The chain's one-lever asserter allows exactly this flag at exactly this value, and --out may differ.
+rem Names (all from :dagname, indexed by the init seed SEED): run M2b_s<SEED>_<ARM>, tag M2b-<ARM>_s<SEED>, gate directory gate_M2b-<ARM>_s<SEED>, pin dagpin\M2b_s<SEED>_<ARM>.train.argv.txt. The bank-hash file bank_sha_dagoacc_s<SEED>.txt is DAG-OACC's own (:dagoaccarm writes the sha256 of the SAME bank.json into it, for A_s and A_rep,s alike: one file per seed, the same bytes; the chain pins that bank sha256 independently).
+if not "%~3"=="" (echo REFUSED: %DAGS% takes no P, the dose is fixed by PREREG_V8F_LAUNCH_INTENT, got "%~3" & exit /b 2)
+call :dagoaccarm %~1 %~2 0.1 || exit /b 2
+if /i "%DAGS%"=="launchintentrep" set "DAGSEED=1%~2"
+set "DAGF=%DAGF% --launch-intent-w 1.58926"
 exit /b 0

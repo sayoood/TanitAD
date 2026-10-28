@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\dagland\launch_intent_chain\gen\selftest_chain.py", line 68, in <module>
+    sys.exit(main(sys.argv[1:]))
+             ~~~~^^^^^^^^^^^^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\launch_intent_chain\gen\selftest_chain.py", line 45, in main
+    st_sh2.run_mutants()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "E:\Projects\TanitAD-artifacts\dagland\launch_intent_chain\gen\st_sh2.py", line 401, in run_mutants
+    ok, detail = pr(v)
+                 ~~^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\launch_intent_chain\gen\st_sh.py", line 551, in p_claim_foreign
+    return "rc=1 busy_taken=0" in o and "ZZV8FMINI-STOP busy marker present: another chain's lock" in o and b.read_bytes() == b"another chain's lock\n", o[-300:]
+                                                                                                            ~~~~~~~~~~~~^^
+  File "C:\Python314\Lib\pathlib\__init__.py", line 777, in read_bytes
+    with self.open(mode='rb', buffering=0) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\pathlib\__init__.py", line 771, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\launch_intent_chain\\selftest\\ship\\H16_claim_box2_removes_a_foreign_lock_wh_ok\\BOX2_BUSY.txt'

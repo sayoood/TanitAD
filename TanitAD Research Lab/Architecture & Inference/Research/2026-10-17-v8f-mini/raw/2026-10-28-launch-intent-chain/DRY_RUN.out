@@ -1,0 +1,148 @@
+DRY_RUN.out of the LAUNCH-INTENT chain, FOUR runs (gen/make_dry_run.py). CPU only; box 2 never contacted; nothing installed into box2_ship; no git write.
+every bash step below ran behind the sealed guard (gen/sealed.py): stubs for ssh and scp first on PATH inside the shell, the box-2 alias unresolved (ssh -G), HOME = the empty scratch dir, every write path inside F:/TanitAD-scratch/launch_intent_chain
+the LANDED commit b09ac89fc9d6e81baf3977954ae638919b979e71 (coordinator message 2026-10-28; ls-remote verified) = b09ac89fc9d6e81baf3977954ae638919b979e71 (65 exported paths); overlay = that export + the STAGED files ['stack/scripts/v8f_mini_train.py', 'stack/tanitad/models/v8f_mini.py', 'stack/tests/test_v8f_launch_intent.py', 'stack/tests/launch_intent_golden.json'] + the STAGED queue (195db471625359f3)
+trainer sha256 0d708b3cb841bc1f1832b09fe61e3d8421a4d3f59769f4435c0b22bb77e268ce (pinned LAUNCH_TRAINER_SHA 0d708b3cb841bc1f1832b09fe61e3d8421a4d3f59769f4435c0b22bb77e268ce; equal: True)
+model   sha256 b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721 (pinned LAUNCH_MODEL_SHA   b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721; equal: True)
+the pre-lever tip 94a47f4b378c262002334fe55b4a3f0b579e6f9b: trainer blob sha256 1c88828094d40a2b5e3b5dce45b9fc110286c0b01db3a224faa205138e5c27bc
+
+============================== 2. --check-tree on the PRE-LEVER tip 94a47f4b export (must REFUSE: the lever and the queue stage are not there)
+MISSING in stack/scripts/v8f_mini_train.py: add_argument\("--launch-intent-w"
+MISSING in stack/scripts/v8f_mini_train.py: "launch_intent_w": "cfg:launch_intent_w"
+MISSING in stack/scripts/v8f_mini_train.py: ^def launch_intent_probe
+MISSING in stack/scripts/v8f_mini_train.py: ^def launch_weight_share
+MISSING in stack/scripts/v8f_mini_train.py: ^def launch_stage
+MISSING in stack/scripts/v8f_mini_train.py: sc\["launch_intent_probe"\] = lip
+MISSING in stack/scripts/v8f_mini_train.py: summary\["launch_weight_share"\] = launch_weight_share\(
+MISSING in stack/scripts/v8f_mini_train.py: summary\["launch_n"\], summary\["launch_eligible"\], summary\["launch_rows"\]
+MISSING in stack/scripts/v8f_mini_train.py: levers\["launch_intent"\] = \{"launch_intent_w": cfg\.launch_intent_w
+MISSING in stack/scripts/v8f_mini_train.py: lmask = launch_stage\(b\)
+MISSING in stack/scripts/v8f_mini_train.py: b\["launch"\] = lmask
+MISSING in stack/tanitad/models/v8f_mini.py: ^def launch_mask
+MISSING in stack/tanitad/models/v8f_mini.py: ^def launch_along_term
+MISSING in stack/tanitad/models/v8f_mini.py: T\["launch_along"\] = launch_along_term\(
+MISSING in stack/tanitad/models/v8f_mini.py: total = total \+ cfg\.w_traj \* cfg\.launch_intent_w \* T\["launch_along"\] / 3\.0 if cfg\.launch_intent_w > 0\.0 else total
+MISSING in stack/tanitad/models/v8f_mini.py: ^LAUNCH_V0_MAX, LAUNCH_DV, LAUNCH_DT = 6\.0, 1\.0, 0\.2
+MISSING in stack/tanitad/models/v8f_mini.py: ^LAUNCH_KNOT_LO, LAUNCH_KNOT_HI = 1, 12
+MISSING in TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd: ^:launchintentarm
+MISSING in TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd: goto :launchintentarm
+MISSING in TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd: DAGS=launchintent"
+MISSING in TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd: DAGS=launchintentrep"
+MISSING in TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd: --launch-intent-w 1\.58926"
+MISSING in TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd: launchintentrep" set "DAGSEED=1%~2"
+MISSING: stack/scripts/v8f_mini_train.py sha256 '1c88828094d40a2b5e3b5dce45b9fc110286c0b01db3a224faa205138e5c27bc' != LAUNCH_TRAINER_SHA 0d708b3cb841bc1f1832b09fe61e3d8421a4d3f59769f4435c0b22bb77e268ce (the landed trainer is not the reviewed one)
+MISSING: stack/tanitad/models/v8f_mini.py sha256 '8ec5e19037b681242a13f3642818b2a82e84395b0b5436bc5ff17f39822c5b3a' != LAUNCH_MODEL_SHA b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721 (the landed model is not the reviewed one)
+lever check: FAILED
+rc=1
+
+============================== 2b. --check-tree on the LANDED export (the flag and the model are in; the queue stage is NOT: must REFUSE for the queue stage alone)
+MISSING in TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd: ^:launchintentarm
+MISSING in TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd: goto :launchintentarm
+MISSING in TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd: DAGS=launchintent"
+MISSING in TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd: DAGS=launchintentrep"
+MISSING in TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd: --launch-intent-w 1\.58926"
+MISSING in TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd: launchintentrep" set "DAGSEED=1%~2"
+lever check: FAILED
+rc=1
+
+============================== 3. --check-tree on the OVERLAY with the SHIPPED chain (must PASS: trainer and model sha256 are the landed pins; a tree check needs neither the PREREG nor the reader pin)
+lever check: every one of 41 patterns, and the trainer's and the model's sha256 = LAUNCH_TRAINER_SHA / LAUNCH_MODEL_SHA, hold in /f/TanitAD-scratch/launch_intent_chain/dry/overlay
+rc=0
+
+============================== 4. --check-tree on the OVERLAY with a SCRATCH chain pinned to a WRONG trainer sha256 (0 x 64): must REFUSE
+LAUNCH_COMMIT = b09ac89fc9d6e81baf3977954ae638919b979e71 | LAUNCH_TRAINER_SHA = 0000000000000000000000000000000000000000000000000000000000000000 | LAUNCH_MODEL_SHA = b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721 | PREREG_SHA = (placeholder) | READER_SHA = (placeholder) | sha256 of
+MISSING: stack/scripts/v8f_mini_train.py sha256 '0d708b3cb841bc1f1832b09fe61e3d8421a4d3f59769f4435c0b22bb77e268ce' != LAUNCH_TRAINER_SHA 0000000000000000000000000000000000000000000000000000000000000000 (the landed trainer is not the reviewed one)
+lever check: FAILED
+rc=1
+
+============================== 5. --dry-run (the SHIPPED chain, V8F_QUEUE = the staged queue; AFTER_OUT = the real DAG-ORC r2 log, read only)
+== predecessor
+wait for /c/Users/Admin/box2_ship/logs/chain_v8f_dagoaccorc_r2.out: GO ONLY after the DAG-ORC r2 chain ENDED in its DONE marker (nothing after it; pred-verdict-li) with BOX2_BUSY released; HALT on a STOP, a ZZGUARD-STOP, a disk-floor stop, text after the end or a held BOX2_BUSY
+== REP licence (PREREG section 4 conditions 1 and 2, on the banked DAG-ORC r2 REP pulls; informational in the dry run, ENFORCED by the real run after the predecessor's DONE; a failure STOPs: REP must be trained anew)
+REP-LICENCE s0: PASS (conditions 1 and 2) | E:/Projects/TanitAD-artifacts/v8f-dag-orc-oacc/M2b_s0_dagoaccorcrep | NOT CHECKED HERE: condition 3 (the T1-kin dumps' settings and the reader's pins: dev box) and condition 4 (the build term: K-BUILD, the flag-off golden on the launch commit)
+REP-LICENCE s1: PASS (conditions 1 and 2) | E:/Projects/TanitAD-artifacts/v8f-dag-orc-oacc/M2b_s1_dagoaccorcrep | NOT CHECKED HERE: condition 3 (the T1-kin dumps' settings and the reader's pins: dev box) and condition 4 (the build term: K-BUILD, the flag-off golden on the launch commit)
+== the five pins (a real run REFUSES while any is a placeholder; --check-tree refuses a placeholder trainer / model pin; LAUNCH.txt)
+LAUNCH_COMMIT: b09ac89fc9d6e81baf3977954ae638919b979e71 (the landed LAUNCH-INTENT flag: the tip must descend from it)
+LAUNCH_TRAINER_SHA: 0d708b3cb841bc1f1832b09fe61e3d8421a4d3f59769f4435c0b22bb77e268ce
+LAUNCH_MODEL_SHA: b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721
+PREREG_SHA: UNSET (placeholder, the launch step fills it)
+READER_SHA: UNSET (placeholder, the launch step fills it)
+the tree /f/TanitAD-scratch/launch_intent_chain/dry/overlay carries stack/scripts/v8f_mini_train.py sha256 0d708b3cb841bc1f1832b09fe61e3d8421a4d3f59769f4435c0b22bb77e268ce and stack/tanitad/models/v8f_mini.py sha256 b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721 (the values pinned above)
+== lever greps: 41 patterns (applied to the tip by the real run, to a tree by --check-tree)
+== pinned (asserted on box 2 before the gates and after the last run; DAG-OACC's argv / summary asserted on the dev box)
+init M2b_s0 D:/tanitad/runs/v8f_mini_full/M2b_s0/ckpt_last.pt 601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8; iteration-1 bank.json 197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f
+  pair (A_0 - CTRL_0):        CTRL = DAG-OACC_s0 (checkpoint 67265ec1666fae3a6d51e924ee06dfb68b2cd0630afc62e42f3a46182b8bc45f, argv.json c0942f79cee91f255ee6e3975fbe88695eab9ae157d2b85ab31ed599b06942c0, summary.json 5e4a760729251c7698f2c0a703d83a739545b05604a11e6563b223833e585050)
+  pair (A_rep,0 - REP_0):  CTRL = REP_s0 = DAG-ORC r2 M2b_s0_dagoaccorcrep (checkpoint b03fd6efebec285f747673fa90d093cb9202a649d560ba8f5c016475f1fb4bca, argv.json 6a0e5bdf1dde12b995d7f1ef0faba51f63d268934b8b5c0ff4d43ea33a449fcf, summary.json eb091bfd3c0471f4f14386917d0062a23434abd9cb2ef59b44a0bf2fc057a661)
+init M2b_s1 D:/tanitad/runs/v8f_mini_full/M2b_s1/ckpt_last.pt 6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6; iteration-1 bank.json 36c7aea964dafe9423253aa479c2fc6cdfc93848395b593315cba812f5f04d4d
+  pair (A_1 - CTRL_1):        CTRL = DAG-OACC_s1 (checkpoint 90b01474819082a6d32a9000d63a4954e0074916140abdbbcb67b353f7ac3333, argv.json c7dc8740c4e7be230d123b876b5d718517bd2bd2ec736504ddaeb46dff067f77, summary.json 85e32d570c1461e14128ccf36b17c5fa7a5db407a23f9ddb4ffadeed6b70d614)
+  pair (A_rep,1 - REP_1):  CTRL = REP_s1 = DAG-ORC r2 M2b_s1_dagoaccorcrep (checkpoint 77853e564f52ff029cfc241042b733d75dba8191a99a7be0fc59778d511aeca2, argv.json ac26f32fa0e51ca27a6f86a0dba7bd0eaca57b1b4cd5f460b2d9d740fe817fb9, summary.json d2309e2eeb1dcd43920168d482721873d33e7326e2abfa2062a9b7afee7eac43)
+w_acc 49.6969 (w_acc.txt sha256 43a04741101853c1ace317915261850caa2afffb6c40a5ea1f945cbd47d8f9b1, box 2: D:/tanitad/runs/v8f_mini_full/dagoacc/w_acc.txt); train window list e144adcd9b6273f2b44ad7dfa162931b90e159f7b3911e0893b25777b2ae8168; K-BUILD reference aeb544683b1c6b70e29f241fe7133d4290a1b4a5; launch W 1.58926
+== the registered controls (ENFORCED on each of the 4 pulled run records)
+K-SHARE: launch_weight_share = (1+W)n/((1+W)n+eligible-n) with W 1.58926 must lie in 1/3 +- 0.02 = [0.3133, 0.3533]; launch_rows == launch_eligible; levers.launch_intent_w == 1.58926 (a record without the key is REFUSED)
+K-MASK : launch_n / launch_eligible must lie in f = 0.161851 +- 0.02 = [0.1419, 0.1819]; train_window_list_sha256 = DAG-OACC's
+at the measured f the share is 0.333333 (inside the band: True)
+== runs (order): launchintent 0 launchintent 1 launchintentrep 0 launchintentrep 1
+== launch-gate token (written by the chain, one per run, after the gate's assertions pass; never by hand)
+{"kind": "launch-gate-token", "verdict": "PASS", "prereg": "PREREG_V8F_LAUNCH_INTENT", "amendment": "arm A (launch-intent-w 1.58926), four runs", "prereg_sha256": "<PREREG_SHA>", "reader_sha256": "<READER_SHA>", "binding": {"commit": "<the remote tip, 40 hex>", "argv_sha256": "<launch_gate.argv_sha256 of THE TRAINING ARGV as pinned by box 2>", "data_sha256": "<the gate selfcheck's info.train_sha256>"}, ...}
+== A_0 = M2b_s0_launchintent (pair control DAG-OACC_s0): init D:/tanitad/runs/v8f_mini_full/M2b_s0/ckpt_last.pt (601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8), tag M2b-launchintent_s0, gate gate_M2b-launchintent_s0, bank sha256 197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f, --w-acc 49.6969, --launch-intent-w 1.58926
+-- gatedag launchintent 0
+"D:\tanitad\venv\Scripts\python.exe" "D:\tanitad\repo\stack\scripts\v8f_mini_train.py" --arm M2b --seed 0 --grid pool4x10 --out "D:\tanitad\runs\v8f_mini_full\gate_M2b-launchintent_s0" --cache-dir D:\tanitad\cache_full --v9-train D:\tanitad\data\v9\v9_labels_train.npz --v9-train-md5 83e30bd3791f0767707eade5f4671759 --lead-train D:\tanitad\data\v9\lead_train4572.npz --speed-train D:\tanitad\data\v9\refcv6_speed_max_v8_train.jsonl --join-train D:\tanitad\runs\v8f_mini_full\join_train.npz --p10 D:\tanitad\runs\v8f_mini_full\p10\p10_prior.pt --kin-mode yaw --tracks D:\tanitad\cache_full\native_tracks.pt --exclude 540:600 --batch 64 --steps-mult 4 --device cuda --init-ckpt "D:\tanitad\runs\v8f_mini_full\M2b_s0\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0 --dagger-p 0.1 --dagger-bank "D:\tanitad\runs\v8f_mini_full\dagger_bank\s0" --dagger-bank-sha256 197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f --dagger-seed 0 --w-acc 49.6969 --launch-intent-w 1.58926 --selfcheck-only 
+-- traindag launchintent 0
+"D:\tanitad\venv\Scripts\python.exe" "D:\tanitad\repo\stack\scripts\v8f_mini_train.py" --arm M2b --seed 0 --grid pool4x10 --out "D:\tanitad\runs\v8f_mini_full\M2b_s0_launchintent" --cache-dir D:\tanitad\cache_full --v9-train D:\tanitad\data\v9\v9_labels_train.npz --v9-train-md5 83e30bd3791f0767707eade5f4671759 --lead-train D:\tanitad\data\v9\lead_train4572.npz --speed-train D:\tanitad\data\v9\refcv6_speed_max_v8_train.jsonl --join-train D:\tanitad\runs\v8f_mini_full\join_train.npz --p10 D:\tanitad\runs\v8f_mini_full\p10\p10_prior.pt --kin-mode yaw --tracks D:\tanitad\cache_full\native_tracks.pt --exclude 540:600 --batch 64 --steps-mult 4 --device cuda --init-ckpt "D:\tanitad\runs\v8f_mini_full\M2b_s0\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0 --dagger-p 0.1 --dagger-bank "D:\tanitad\runs\v8f_mini_full\dagger_bank\s0" --dagger-bank-sha256 197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f --dagger-seed 0 --w-acc 49.6969 --launch-intent-w 1.58926 
+-- evaldag launchintent 0
+"D:\tanitad\venv\Scripts\python.exe" "D:\tanitad\repo\stack\scripts\v8f_mini_eval.py" run --ckpt "D:\tanitad\runs\v8f_mini_full\M2b_s0_launchintent\ckpt_last.pt" --tag M2b-launchintent_s0 --v9-eval D:\tanitad\data\v9\v9_labels_eval139.npz --lead-eval D:\tanitad\data\v9\lead_eval139.npz --speed-eval D:\tanitad\data\v9\refcv6_speed_max_v8_eval.jsonl --kin-mode yaw --p10 D:\tanitad\runs\v8f_mini_full\p10\p10_prior.pt --out-dir D:\tanitad\runs\v8f_mini_full\eval --eval-cache D:\tanitad\cache_full --tracks D:\tanitad\cache_full\native_tracks.pt --project --families 
+-- token argv_sha256 (the training argv): 0a00d65d7e60308f4f4ace9361baed54965acd57ea0792dd2055c088d0a229cf
+-- gate argv = training argv with --out and --selfcheck-only changed: SAME
+-- planned line == DAG-OACC_s0's banked argv.json argv + exactly --launch-intent-w 1.58926 (only --out differing): ONE-LEVER
+== A_1 = M2b_s1_launchintent (pair control DAG-OACC_s1): init D:/tanitad/runs/v8f_mini_full/M2b_s1/ckpt_last.pt (6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6), tag M2b-launchintent_s1, gate gate_M2b-launchintent_s1, bank sha256 36c7aea964dafe9423253aa479c2fc6cdfc93848395b593315cba812f5f04d4d, --w-acc 49.6969, --launch-intent-w 1.58926
+-- gatedag launchintent 1
+"D:\tanitad\venv\Scripts\python.exe" "D:\tanitad\repo\stack\scripts\v8f_mini_train.py" --arm M2b --seed 1 --grid pool4x10 --out "D:\tanitad\runs\v8f_mini_full\gate_M2b-launchintent_s1" --cache-dir D:\tanitad\cache_full --v9-train D:\tanitad\data\v9\v9_labels_train.npz --v9-train-md5 83e30bd3791f0767707eade5f4671759 --lead-train D:\tanitad\data\v9\lead_train4572.npz --speed-train D:\tanitad\data\v9\refcv6_speed_max_v8_train.jsonl --join-train D:\tanitad\runs\v8f_mini_full\join_train.npz --p10 D:\tanitad\runs\v8f_mini_full\p10\p10_prior.pt --kin-mode yaw --tracks D:\tanitad\cache_full\native_tracks.pt --exclude 540:600 --batch 64 --steps-mult 4 --device cuda --init-ckpt "D:\tanitad\runs\v8f_mini_full\M2b_s1\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0 --dagger-p 0.1 --dagger-bank "D:\tanitad\runs\v8f_mini_full\dagger_bank\s1" --dagger-bank-sha256 36c7aea964dafe9423253aa479c2fc6cdfc93848395b593315cba812f5f04d4d --dagger-seed 1 --w-acc 49.6969 --launch-intent-w 1.58926 --selfcheck-only 
+-- traindag launchintent 1
+"D:\tanitad\venv\Scripts\python.exe" "D:\tanitad\repo\stack\scripts\v8f_mini_train.py" --arm M2b --seed 1 --grid pool4x10 --out "D:\tanitad\runs\v8f_mini_full\M2b_s1_launchintent" --cache-dir D:\tanitad\cache_full --v9-train D:\tanitad\data\v9\v9_labels_train.npz --v9-train-md5 83e30bd3791f0767707eade5f4671759 --lead-train D:\tanitad\data\v9\lead_train4572.npz --speed-train D:\tanitad\data\v9\refcv6_speed_max_v8_train.jsonl --join-train D:\tanitad\runs\v8f_mini_full\join_train.npz --p10 D:\tanitad\runs\v8f_mini_full\p10\p10_prior.pt --kin-mode yaw --tracks D:\tanitad\cache_full\native_tracks.pt --exclude 540:600 --batch 64 --steps-mult 4 --device cuda --init-ckpt "D:\tanitad\runs\v8f_mini_full\M2b_s1\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0 --dagger-p 0.1 --dagger-bank "D:\tanitad\runs\v8f_mini_full\dagger_bank\s1" --dagger-bank-sha256 36c7aea964dafe9423253aa479c2fc6cdfc93848395b593315cba812f5f04d4d --dagger-seed 1 --w-acc 49.6969 --launch-intent-w 1.58926 
+-- evaldag launchintent 1
+"D:\tanitad\venv\Scripts\python.exe" "D:\tanitad\repo\stack\scripts\v8f_mini_eval.py" run --ckpt "D:\tanitad\runs\v8f_mini_full\M2b_s1_launchintent\ckpt_last.pt" --tag M2b-launchintent_s1 --v9-eval D:\tanitad\data\v9\v9_labels_eval139.npz --lead-eval D:\tanitad\data\v9\lead_eval139.npz --speed-eval D:\tanitad\data\v9\refcv6_speed_max_v8_eval.jsonl --kin-mode yaw --p10 D:\tanitad\runs\v8f_mini_full\p10\p10_prior.pt --out-dir D:\tanitad\runs\v8f_mini_full\eval --eval-cache D:\tanitad\cache_full --tracks D:\tanitad\cache_full\native_tracks.pt --project --families 
+-- token argv_sha256 (the training argv): 59ba1411b3f2cef7f47e4ef84f88c819d759d5cdb280c201193ba37aa1c8ec71
+-- gate argv = training argv with --out and --selfcheck-only changed: SAME
+-- planned line == DAG-OACC_s1's banked argv.json argv + exactly --launch-intent-w 1.58926 (only --out differing): ONE-LEVER
+== A_rep,0 = M2b_s0_launchintentrep (pair control REP_s0): init D:/tanitad/runs/v8f_mini_full/M2b_s0/ckpt_last.pt (601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8), tag M2b-launchintentrep_s0, gate gate_M2b-launchintentrep_s0, bank sha256 197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f, --w-acc 49.6969, --launch-intent-w 1.58926
+-- gatedag launchintentrep 0
+"D:\tanitad\venv\Scripts\python.exe" "D:\tanitad\repo\stack\scripts\v8f_mini_train.py" --arm M2b --seed 10 --grid pool4x10 --out "D:\tanitad\runs\v8f_mini_full\gate_M2b-launchintentrep_s0" --cache-dir D:\tanitad\cache_full --v9-train D:\tanitad\data\v9\v9_labels_train.npz --v9-train-md5 83e30bd3791f0767707eade5f4671759 --lead-train D:\tanitad\data\v9\lead_train4572.npz --speed-train D:\tanitad\data\v9\refcv6_speed_max_v8_train.jsonl --join-train D:\tanitad\runs\v8f_mini_full\join_train.npz --p10 D:\tanitad\runs\v8f_mini_full\p10\p10_prior.pt --kin-mode yaw --tracks D:\tanitad\cache_full\native_tracks.pt --exclude 540:600 --batch 64 --steps-mult 4 --device cuda --init-ckpt "D:\tanitad\runs\v8f_mini_full\M2b_s0\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0 --dagger-p 0.1 --dagger-bank "D:\tanitad\runs\v8f_mini_full\dagger_bank\s0" --dagger-bank-sha256 197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f --dagger-seed 0 --w-acc 49.6969 --launch-intent-w 1.58926 --selfcheck-only 
+-- traindag launchintentrep 0
+"D:\tanitad\venv\Scripts\python.exe" "D:\tanitad\repo\stack\scripts\v8f_mini_train.py" --arm M2b --seed 10 --grid pool4x10 --out "D:\tanitad\runs\v8f_mini_full\M2b_s0_launchintentrep" --cache-dir D:\tanitad\cache_full --v9-train D:\tanitad\data\v9\v9_labels_train.npz --v9-train-md5 83e30bd3791f0767707eade5f4671759 --lead-train D:\tanitad\data\v9\lead_train4572.npz --speed-train D:\tanitad\data\v9\refcv6_speed_max_v8_train.jsonl --join-train D:\tanitad\runs\v8f_mini_full\join_train.npz --p10 D:\tanitad\runs\v8f_mini_full\p10\p10_prior.pt --kin-mode yaw --tracks D:\tanitad\cache_full\native_tracks.pt --exclude 540:600 --batch 64 --steps-mult 4 --device cuda --init-ckpt "D:\tanitad\runs\v8f_mini_full\M2b_s0\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0 --dagger-p 0.1 --dagger-bank "D:\tanitad\runs\v8f_mini_full\dagger_bank\s0" --dagger-bank-sha256 197a68bb540be5a7d157942e9157e1c8e60ca60d82b1ca4fb4fcb68edccfaa8f --dagger-seed 0 --w-acc 49.6969 --launch-intent-w 1.58926 
+-- evaldag launchintentrep 0
+"D:\tanitad\venv\Scripts\python.exe" "D:\tanitad\repo\stack\scripts\v8f_mini_eval.py" run --ckpt "D:\tanitad\runs\v8f_mini_full\M2b_s0_launchintentrep\ckpt_last.pt" --tag M2b-launchintentrep_s0 --v9-eval D:\tanitad\data\v9\v9_labels_eval139.npz --lead-eval D:\tanitad\data\v9\lead_eval139.npz --speed-eval D:\tanitad\data\v9\refcv6_speed_max_v8_eval.jsonl --kin-mode yaw --p10 D:\tanitad\runs\v8f_mini_full\p10\p10_prior.pt --out-dir D:\tanitad\runs\v8f_mini_full\eval --eval-cache D:\tanitad\cache_full --tracks D:\tanitad\cache_full\native_tracks.pt --project --families 
+-- token argv_sha256 (the training argv): 5aff5b937349790f440fe4b683482a0755b52ddd525b580f80620be7652e97bb
+-- gate argv = training argv with --out and --selfcheck-only changed: SAME
+-- planned line == REP_s0's banked argv.json argv + exactly --launch-intent-w 1.58926 (only --out differing): ONE-LEVER
+== A_rep,1 = M2b_s1_launchintentrep (pair control REP_s1): init D:/tanitad/runs/v8f_mini_full/M2b_s1/ckpt_last.pt (6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6), tag M2b-launchintentrep_s1, gate gate_M2b-launchintentrep_s1, bank sha256 36c7aea964dafe9423253aa479c2fc6cdfc93848395b593315cba812f5f04d4d, --w-acc 49.6969, --launch-intent-w 1.58926
+-- gatedag launchintentrep 1
+"D:\tanitad\venv\Scripts\python.exe" "D:\tanitad\repo\stack\scripts\v8f_mini_train.py" --arm M2b --seed 11 --grid pool4x10 --out "D:\tanitad\runs\v8f_mini_full\gate_M2b-launchintentrep_s1" --cache-dir D:\tanitad\cache_full --v9-train D:\tanitad\data\v9\v9_labels_train.npz --v9-train-md5 83e30bd3791f0767707eade5f4671759 --lead-train D:\tanitad\data\v9\lead_train4572.npz --speed-train D:\tanitad\data\v9\refcv6_speed_max_v8_train.jsonl --join-train D:\tanitad\runs\v8f_mini_full\join_train.npz --p10 D:\tanitad\runs\v8f_mini_full\p10\p10_prior.pt --kin-mode yaw --tracks D:\tanitad\cache_full\native_tracks.pt --exclude 540:600 --batch 64 --steps-mult 4 --device cuda --init-ckpt "D:\tanitad\runs\v8f_mini_full\M2b_s1\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0 --dagger-p 0.1 --dagger-bank "D:\tanitad\runs\v8f_mini_full\dagger_bank\s1" --dagger-bank-sha256 36c7aea964dafe9423253aa479c2fc6cdfc93848395b593315cba812f5f04d4d --dagger-seed 1 --w-acc 49.6969 --launch-intent-w 1.58926 --selfcheck-only 
+-- traindag launchintentrep 1
+"D:\tanitad\venv\Scripts\python.exe" "D:\tanitad\repo\stack\scripts\v8f_mini_train.py" --arm M2b --seed 11 --grid pool4x10 --out "D:\tanitad\runs\v8f_mini_full\M2b_s1_launchintentrep" --cache-dir D:\tanitad\cache_full --v9-train D:\tanitad\data\v9\v9_labels_train.npz --v9-train-md5 83e30bd3791f0767707eade5f4671759 --lead-train D:\tanitad\data\v9\lead_train4572.npz --speed-train D:\tanitad\data\v9\refcv6_speed_max_v8_train.jsonl --join-train D:\tanitad\runs\v8f_mini_full\join_train.npz --p10 D:\tanitad\runs\v8f_mini_full\p10\p10_prior.pt --kin-mode yaw --tracks D:\tanitad\cache_full\native_tracks.pt --exclude 540:600 --batch 64 --steps-mult 4 --device cuda --init-ckpt "D:\tanitad\runs\v8f_mini_full\M2b_s1\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0 --dagger-p 0.1 --dagger-bank "D:\tanitad\runs\v8f_mini_full\dagger_bank\s1" --dagger-bank-sha256 36c7aea964dafe9423253aa479c2fc6cdfc93848395b593315cba812f5f04d4d --dagger-seed 1 --w-acc 49.6969 --launch-intent-w 1.58926 
+-- evaldag launchintentrep 1
+"D:\tanitad\venv\Scripts\python.exe" "D:\tanitad\repo\stack\scripts\v8f_mini_eval.py" run --ckpt "D:\tanitad\runs\v8f_mini_full\M2b_s1_launchintentrep\ckpt_last.pt" --tag M2b-launchintentrep_s1 --v9-eval D:\tanitad\data\v9\v9_labels_eval139.npz --lead-eval D:\tanitad\data\v9\lead_eval139.npz --speed-eval D:\tanitad\data\v9\refcv6_speed_max_v8_eval.jsonl --kin-mode yaw --p10 D:\tanitad\runs\v8f_mini_full\p10\p10_prior.pt --out-dir D:\tanitad\runs\v8f_mini_full\eval --eval-cache D:\tanitad\cache_full --tracks D:\tanitad\cache_full\native_tracks.pt --project --families 
+-- token argv_sha256 (the training argv): 873e31c665e0236a9d649a2238417014dc5f19ce6c1d1907c10b19a6e91ae35c
+-- gate argv = training argv with --out and --selfcheck-only changed: SAME
+-- planned line == REP_s1's banked argv.json argv + exactly --launch-intent-w 1.58926 (only --out differing): ONE-LEVER
+== not run here: the T1-kin rollouts (dev box CPU) and the reader
+rc=0
+CHECKS: rc=0 | SAME lines 4 (expected 4) | ONE-LEVER lines 4 (expected 4) | warning lines 0
+
+============================== 6. --dry-run against the LANDED commit's own queue (no :launchintentarm: must STOP, not print a plan)
+== runs (order): launchintent 0 launchintent 1 launchintentrep 0 launchintentrep 1
+ZZV8FMINI-STOP the queue prints no gate / train / eval line for M2b_s0_launchintent
+rc=1
+
+============================== 7a. the predecessor verdict on the REAL DAG-ORC r2 log (read-only; GO only after its DONE with BOX2_BUSY released)
+GO the DAG-ORC r2 chain ended DONE and released the box: ZZV8FMINI-DONE 10-28 07:44 tip 8c24823f2b1bd24332148ebe434c870bcf3662f8: PREREG_V8F_DAG_ORC Amendment 1 (DAG-OACC base)
+
+============================== 7b. --rep-licence on the REAL banked pulls of BOTH seeds (read-only)
+REP-LICENCE s0: PASS (conditions 1 and 2) | E:/Projects/TanitAD-artifacts/v8f-dag-orc-oacc/M2b_s0_dagoaccorcrep | NOT CHECKED HERE: condition 3 (the T1-kin dumps' settings and the reader's pins: dev box) and condition 4 (the build term: K-BUILD, the flag-off golden on the launch commit)
+REP-LICENCE s1: PASS (conditions 1 and 2) | E:/Projects/TanitAD-artifacts/v8f-dag-orc-oacc/M2b_s1_dagoaccorcrep | NOT CHECKED HERE: condition 3 (the T1-kin dumps' settings and the reader's pins: dev box) and condition 4 (the build term: K-BUILD, the flag-off golden on the launch commit)
+ZZLAUNCHINTENT-REP-LICENCE-OK
+rc=0
+
+============================== 8. the SHIPPED chain as a REAL run in the scratch world (stub ssh / scp): must be REFUSED at once, before the predecessor is waited for (PREREG_SHA and READER_SHA are placeholders)
+ZZV8FMINI-STOP PREREG_SHA is still the placeholder: it must be set to a 64-hex value before a real run (LAUNCH.txt says who sets it and when)
+ZZV8FMINI-STOP READER_SHA is still the placeholder: it must be set to a 64-hex value before a real run (LAUNCH.txt says who sets it and when)
+rc=1 | stub ssh/scp calls: 0 | BOX2_BUSY.txt created: False
+sealed runs in this file: 10, refused by the guard: 0

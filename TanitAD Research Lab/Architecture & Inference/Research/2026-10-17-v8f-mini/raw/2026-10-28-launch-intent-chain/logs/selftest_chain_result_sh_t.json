@@ -1,0 +1,568 @@
+{
+ "summary": "SELFTEST: 140/140 tests pass; MUTATION: 0/0 mutants killed, 0 survivors  (231 s, layer=sh)",
+ "tests": [
+  [
+   "shell layer: scratch world built (10 git mirrors from the landed export, each with the scratch landed commit as ancestor, 8 trees, 17 queue variants, 3 REP pulls)",
+   true
+  ],
+  [
+   "guard: the 2026-10-28 mechanism is real: with the stub dir first on the ENV path only, Git bash resolves `ssh` to /usr/bin/ssh, not the stub (so a PATH handed over in the environment never protects a step)",
+   true
+  ],
+  [
+   "guard arm: good world (positive control): the step runs",
+   true
+  ],
+  [
+   "guard arm: old harness: stub only on the env PATH, not exported inside the shell: REFUSED (rc 97, nothing ran, no stub call)",
+   true
+  ],
+  [
+   "guard arm: world without an scp stub: REFUSED (rc 97, nothing ran, no stub call)",
+   true
+  ],
+  [
+   "guard arm: world without an ssh stub: REFUSED (rc 97, nothing ran, no stub call)",
+   true
+  ],
+  [
+   "guard arm: a $HOME whose ssh config resolves the box-2 alias (HOME-emptiness relaxed to isolate the alias check): REFUSED (rc 97, nothing ran, no stub call)",
+   true
+  ],
+  [
+   "guard arm: $HOME is not the scratch HOME: REFUSED (rc 97, nothing ran, no stub call)",
+   true
+  ],
+  [
+   "guard arm: the scratch $HOME is not empty: REFUSED (rc 97, nothing ran, no stub call)",
+   true
+  ],
+  [
+   "guard arm: OAF_SHIP_DIR is the installed C:/Users/Admin/box2_ship: REFUSED (rc 97, nothing ran, no stub call)",
+   true
+  ],
+  [
+   "guard arm: LAUNCHINTENT_ART inside the installed ship dir's logs: REFUSED (rc 97, nothing ran, no stub call)",
+   true
+  ],
+  [
+   "guard arm: TMPDIR outside the scratch world: REFUSED (rc 97, nothing ran, no stub call)",
+   true
+  ],
+  [
+   "guard arm: a write path that climbs out of the scratch world with ..: REFUSED (rc 97, nothing ran, no stub call)",
+   true
+  ],
+  [
+   "guard arm: OAF_SHIP_DIR unset for a step that needs it (the chain would use C:/Users/Admin/box2_ship): REFUSED (rc 97, nothing ran, no stub call)",
+   true
+  ],
+  [
+   "harness: no module of the self-test (nor make_dry_run.py) starts bash except through the sealed runner",
+   true
+  ],
+  [
+   "harness: the static scan flags a module that DOES start bash directly (a positive control)",
+   true
+  ],
+  [
+   "harness: the static scan flags `C.BASH` / `bash.exe` too",
+   true
+  ],
+  [
+   "harness: the static scan skips only lines that carry its explicit marker (an unmarked line is flagged)",
+   true
+  ],
+  [
+   "queue: every label block of the landed commit's queue other than :dagname and :dagarm is byte-identical in the staged queue; the only new label is :launchintentarm",
+   true
+  ],
+  [
+   "queue: :dagname gains exactly two lines (the whitelist entries of launchintent and launchintentrep) and :dagarm exactly two (their dispatches); no line is removed",
+   true
+  ],
+  [
+   "queue: the staged file is reproducible from the landed commit's blob (make_queue_stage.derive) and is pure CRLF",
+   true
+  ],
+  [
+   "queue: the landed commit's queue blob is byte-identical to the pre-lever tip's (so the stage applies on both)",
+   true
+  ],
+  [
+   "queue A_0: gate line = the training line + --selfcheck-only, trainer --seed 0, ends `--dagger-seed 0 --w-acc 49.6969 --launch-intent-w 1.58926`, own --out M2b_s0_launchintent and gate directory",
+   true
+  ],
+  [
+   "queue A_0: eval line names the run's own checkpoint and tag",
+   true
+  ],
+  [
+   "queue A_0: the training line == the pair control's (dagoacc 0) training line with the run name swapped and `--launch-intent-w 1.58926` appended (nothing else)",
+   true
+  ],
+  [
+   "queue A_1: gate line = the training line + --selfcheck-only, trainer --seed 1, ends `--dagger-seed 1 --w-acc 49.6969 --launch-intent-w 1.58926`, own --out M2b_s1_launchintent and gate directory",
+   true
+  ],
+  [
+   "queue A_1: eval line names the run's own checkpoint and tag",
+   true
+  ],
+  [
+   "queue A_1: the training line == the pair control's (dagoacc 1) training line with the run name swapped and `--launch-intent-w 1.58926` appended (nothing else)",
+   true
+  ],
+  [
+   "queue A_rep,0: gate line = the training line + --selfcheck-only, trainer --seed 10, ends `--dagger-seed 0 --w-acc 49.6969 --launch-intent-w 1.58926`, own --out M2b_s0_launchintentrep and gate directory",
+   true
+  ],
+  [
+   "queue A_rep,0: eval line names the run's own checkpoint and tag",
+   true
+  ],
+  [
+   "queue A_rep,0: the training line == the pair control's (dagoaccorcrep 0) training line with the run name swapped and `--launch-intent-w 1.58926` appended (nothing else)",
+   true
+  ],
+  [
+   "queue A_rep,1: gate line = the training line + --selfcheck-only, trainer --seed 11, ends `--dagger-seed 1 --w-acc 49.6969 --launch-intent-w 1.58926`, own --out M2b_s1_launchintentrep and gate directory",
+   true
+  ],
+  [
+   "queue A_rep,1: eval line names the run's own checkpoint and tag",
+   true
+  ],
+  [
+   "queue A_rep,1: the training line == the pair control's (dagoaccorcrep 1) training line with the run name swapped and `--launch-intent-w 1.58926` appended (nothing else)",
+   true
+  ],
+  [
+   "queue: a P argument is REFUSED (rc-2 text, no training line)",
+   true
+  ],
+  [
+   "queue: a P argument on the replicate arm is REFUSED (rc-2 text, no training line)",
+   true
+  ],
+  [
+   "queue: seed 2 is REFUSED (rc-2 text, no training line)",
+   true
+  ],
+  [
+   "queue: seed 2 on the replicate arm is REFUSED (rc-2 text, no training line)",
+   true
+  ],
+  [
+   "queue: an unknown arm is REFUSED (rc-2 text, no training line)",
+   true
+  ],
+  [
+   "queue: an arm that is a prefix of the replicate's is REFUSED (rc-2 text, no training line)",
+   true
+  ],
+  [
+   "queue: an arm that extends the replicate's is REFUSED (rc-2 text, no training line)",
+   true
+  ],
+  [
+   "queue: no seed is REFUSED (rc-2 text, no training line)",
+   true
+  ],
+  [
+   "queue: no seed on the replicate arm is REFUSED (rc-2 text, no training line)",
+   true
+  ],
+  [
+   "queue: twelve other stage/arm lines (dagoacc, dagoaccorc, dagoaccorcrep, flatdag, dag, dag0, dag2, dagorc; gate/train/eval) are IDENTICAL on the landed commit's queue and the staged queue",
+   true
+  ],
+  [
+   "queue: the LANDED commit's queue REFUSES the arm launchintent (so the chain's stage greps are what protect against a tip without it)",
+   true
+  ],
+  [
+   "queue: the LANDED commit's queue REFUSES the arm launchintentrep (so the chain's stage greps are what protect against a tip without it)",
+   true
+  ],
+  [
+   "EOL: every .sh / .py / .in is LF",
+   true
+  ],
+  [
+   "EOL: every .cmd (the launcher, the staged queue, the landed commit's queue) is CRLF throughout",
+   true
+  ],
+  [
+   "syntax: bash -n on every generated .sh",
+   true
+  ],
+  [
+   "syntax: every generated .py and every generator / harness .py compiles",
+   true
+  ],
+  [
+   "regeneration: the chain on disk equals a fresh render (the five pins read from disk)",
+   true
+  ],
+  [
+   "regeneration: asserter, checks, lib, guard, waker, launcher on disk equal their builders' output",
+   true
+  ],
+  [
+   "pins: the shipped chain is PINNED to the landed commit (LAUNCH_COMMIT, LAUNCH_TRAINER_SHA, LAUNCH_MODEL_SHA = the coordinator's values), the staged trainer / model ARE those blobs, and PREREG_SHA / READER_SHA are NAMED PLACEHOLDERS",
+   true
+  ],
+  [
+   "pins: the landed blobs in the mirror hash to the pinned trainer and model sha256 (re-measured, not inherited)",
+   true
+  ],
+  [
+   "pins: the registered W is pinned in the chain, the asserter, the checks and the queue stage",
+   true
+  ],
+  [
+   "pins: every pinned sha256 in the chain equals the sha256 of the file it names (asserter, checks, lib, guard, installed oaf_lib.sh, installed oaf checks)",
+   true
+  ],
+  [
+   "pins: the REP pair controls' argv.json / summary.json / checkpoint sha256 in the chain equal the banked SHA256SUMS.txt of DAG-ORC r2's REP pulls (both seeds)",
+   true
+  ],
+  [
+   "run order: the chain's RUNS array is A_0, A_1, A_rep,0, A_rep,1 (arm launchintent 0, launchintent 1, launchintentrep 0, launchintentrep 1)",
+   true
+  ],
+  [
+   "--check-tree: the overlay (landed tree + staged queue) with the SHIPPED chain PASSES all 41 patterns and the trainer's and model's sha256",
+   true
+  ],
+  [
+   "--check-tree: the SAME overlay with a placeholder trainer pin is REFUSED (exactly because the pin is unset)",
+   true
+  ],
+  [
+   "--check-tree: the SAME overlay with a placeholder model pin is REFUSED",
+   true
+  ],
+  [
+   "--check-tree: a tree check needs neither the PREREG nor the reader pin (both placeholders: PASS)",
+   true
+  ],
+  [
+   "--check-tree: a trainer that differs by one line (all greps hold) is REFUSED on its sha256",
+   true
+  ],
+  [
+   "--check-tree: a model that differs by one line (all greps hold) is REFUSED on its sha256",
+   true
+  ],
+  [
+   "--check-tree: the PRE-LEVER tip's tree is REFUSED (the lever and the queue stage are not there)",
+   true
+  ],
+  [
+   "--check-tree: the LANDED commit's tree is REFUSED for the queue stage alone (the flag and the model are the pinned ones)",
+   true
+  ],
+  [
+   "--check-tree: a trainer lacking the --launch-intent-w argparse line is REFUSED by that grep",
+   true
+  ],
+  [
+   "--check-tree: a queue lacking :launchintentarm is REFUSED",
+   true
+  ],
+  [
+   "--check-tree: a model lacking the launch term in the total is REFUSED",
+   true
+  ],
+  [
+   "--check-tree: a queue lacking the replicate arm's trainer-seed line is REFUSED",
+   true
+  ],
+  [
+   "--check-tree: a queue lacking the replicate arm's whitelist entry is REFUSED",
+   true
+  ],
+  [
+   "--dry-run on the staged queue: five pins, the plan of all FOUR runs labelled A_0 A_1 A_rep,0 A_rep,1 with trainer seeds 0 / 1 / 10 / 11, SAME x4, ONE-LEVER x4, K-SHARE / K-MASK bands, the flag in all eight lines, no warning line",
+   true
+  ],
+  [
+   "--dry-run with PREREG_SHA and READER_SHA unset: still prints the plan and says UNSET (a dry run needs neither)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `tip` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `w` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `wB` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `extra` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `egoP` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `first` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `twice` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `nocall` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `nodispatch` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `nowhitelist` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `p03` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `norepseed` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `repseed2` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `repseed_all` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `repdispatch` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "--dry-run on a queue mutated as `repwhitelist` STOPs (expected text in the refusal)",
+   true
+  ],
+  [
+   "a helper changed after review is REFUSED before anything runs: gate_launchintent_assert.py",
+   true
+  ],
+  [
+   "a helper changed after review is REFUSED before anything runs: v8f_launchintent_chain_checks.py",
+   true
+  ],
+  [
+   "a helper changed after review is REFUSED before anything runs: oaf_launchintent_lib.sh",
+   true
+  ],
+  [
+   "a helper changed after review is REFUSED before anything runs: v8f_guard_launchintent.sh",
+   true
+  ],
+  [
+   "a helper changed after review is REFUSED before anything runs: oaf_lib.sh",
+   true
+  ],
+  [
+   "a helper changed after review is REFUSED before anything runs: v8f_oaf_chain_checks.py",
+   true
+  ],
+  [
+   "real run: AFTER_OUT unset -> STOP, nothing touched",
+   true
+  ],
+  [
+   "real run: a placeholder LAUNCH_TRAINER_SHA STOPs before the predecessor is waited for, box 2 is not contacted",
+   true
+  ],
+  [
+   "real run: a placeholder PREREG_SHA STOPs before the predecessor is waited for, box 2 is not contacted",
+   true
+  ],
+  [
+   "real run: a placeholder READER_SHA STOPs before the predecessor is waited for, box 2 is not contacted",
+   true
+  ],
+  [
+   "real run: a placeholder LAUNCH_MODEL_SHA STOPs before the predecessor is waited for",
+   true
+  ],
+  [
+   "real run: a placeholder LAUNCH_COMMIT STOPs before the predecessor is waited for",
+   true
+  ],
+  [
+   "real run: a predecessor that STOPPED -> HALT (oaf_lib's own rule would have GONE), no tip read, no BOX2_BUSY, box 2 not contacted",
+   true
+  ],
+  [
+   "--wait-only: a predecessor that ENDED in its DONE with BOX2_BUSY released -> ZZOAF-WAIT-GO",
+   true
+  ],
+  [
+   "--wait-only: a predecessor still running keeps WAITING (killed by timeout, no GO)",
+   true
+  ],
+  [
+   "--wait-only: a BOX2_BUSY held by another chain -> STOP after 3 re-checks and the other chain's file is left intact",
+   true
+  ],
+  [
+   "real run: a REP that fails the licence (composition flag built) -> STOP `REP must be trained anew`, tip not read, box 2 not contacted",
+   true
+  ],
+  [
+   "real run: the licence is checked at BOTH seeds (seed 1 bad, seed 0 good -> STOP)",
+   true
+  ],
+  [
+   "real run: a tip whose trainer lacks the lever is REFUSED before BOX2_BUSY is taken (no ssh / scp)",
+   true
+  ],
+  [
+   "real run: a tip whose queue lacks :launchintentarm is REFUSED before BOX2_BUSY is taken",
+   true
+  ],
+  [
+   "real run: a tip whose trainer sha256 is not LAUNCH_TRAINER_SHA (every grep holds) is REFUSED",
+   true
+  ],
+  [
+   "real run: a tip whose model sha256 is not LAUNCH_MODEL_SHA (every grep holds) is REFUSED",
+   true
+  ],
+  [
+   "real run: a tip that does NOT descend from LAUNCH_COMMIT (the landed flag) is REFUSED",
+   true
+  ],
+  [
+   "real run: a tip whose queue lacks the :dagoaccwacc stage (greps hold) is REFUSED by the stage loop",
+   true
+  ],
+  [
+   "real run: a tip whose model lacks the launch term in the total is REFUSED",
+   true
+  ],
+  [
+   "real run: a tip whose queue lacks the replicate arm's trainer-seed line is REFUSED",
+   true
+  ],
+  [
+   "real run: a tip missing an exported file is REFUSED before BOX2_BUSY is taken",
+   true
+  ],
+  [
+   "real run: a good tip is accepted (it descends from the landed commit), BOX2_BUSY is taken, the ONLY ssh calls are the boot probe and each is made WHILE holding BOX2_BUSY, nothing is shipped, the stop releases the lock",
+   true
+  ],
+  [
+   "claim_box2: ten concurrent claims -> exactly ONE wins (noclobber)",
+   true
+  ],
+  [
+   "claim_box2: an existing foreign BOX2_BUSY is neither taken nor removed, BUSY_TAKEN stays 0",
+   true
+  ],
+  [
+   "control selection, EXECUTED from the chain's own text: the four runs' label / run name / tag / gate dir / pair-control dir, name and pinned shas (DAG-OACC_s for A_s, REP_s for A_rep,s)",
+   true
+  ],
+  [
+   "waker: wakes on the chain's end (DONE)",
+   true
+  ],
+  [
+   "waker: wakes on a STOP",
+   true
+  ],
+  [
+   "waker: wakes on its OWN guard's ZZGUARD-STOP (exit 4)",
+   true
+  ],
+  [
+   "waker: wakes on ZZLAUNCHINTENT-CONTROL-FAIL",
+   true
+  ],
+  [
+   "waker: wakes on ZZDISK-FLOOR-STOP",
+   true
+  ],
+  [
+   "waker: wakes ONCE on the FOUR gates passing (a transition seen after it started)",
+   true
+  ],
+  [
+   "waker: three of the four gates passed -> it keeps waiting",
+   true
+  ],
+  [
+   "waker: wakes on the gates with the SIBLING chains' markers, guard output and logs present as decoys (and is not fooled by them)",
+   true
+  ],
+  [
+   "waker: started AFTER the gates passed it does not re-fire",
+   true
+  ],
+  [
+   "waker: wakes on a new pull",
+   true
+  ],
+  [
+   "waker: an already-seen pull does not wake it",
+   true
+  ],
+  [
+   "waker: only the sibling chains' markers, guard output and END/STOP logs present (decoys) -> it keeps waiting",
+   true
+  ],
+  [
+   "waker: a dated `waiting for ^ZZV8FMINI-STOP` echo is not an end marker",
+   true
+  ],
+  [
+   "guard: exits when its chain's log ends",
+   true
+  ],
+  [
+   "guard: a dated echo of an end marker does not switch it off",
+   true
+  ],
+  [
+   "names: no marker / lock / scratch / done-file of a sibling chain is read or written in live code; every name this chain writes is its own; the launcher's log is its own",
+   true
+  ],
+  [
+   "real ship dir: the world's copies of waitjob.sh, mk_v8f_job.py, oaf_lib.sh and the installed checks name no C:/Users/Admin/box2_ship path (a probe that reached `queue` or `waitrc` could not write there)",
+   true
+  ],
+  [
+   "static wiring of the real-run steps no fake box reaches (gate_one, runone, the dev-box control checks): each call site names its run's pair control, arm and the PREREG / reader pins",
+   true
+  ],
+  [
+   "tripwire: the self-test created or changed NO launchintent file in the REAL installed ship dir or its logs (the incident's stray files predate this run and are in the baseline)",
+   true
+  ],
+  [
+   "tripwire: the tripwire flags a new launchintent file (positive control)",
+   true
+  ]
+ ],
+ "mutants": [],
+ "failed": [],
+ "survivors": []
+}
