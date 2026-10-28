@@ -815,3 +815,15 @@ recoverable, a silent one is not.
   * The composition tests passed, because their fixture never combined equal seeds with overlapping eligibility.
   * ⇒ **Two stochastic levers in one loop get domain-separated streams, and the test reproduces the registered argv's seeds together with
     overlapping eligibility.** A count check on the real run (K-REACH) is what caught it; keep one on every composed lever.
+
+- ⛔ **TWO CHAINS THAT WRITE THE SAME MARKER INTO ONE DIRECTORY SHARE ONE MARKER.** MEASURED 2026-10-28 (DAG-ORC r2's first launch,
+  `raw/2026-10-28-dag-orc-r2a/R2A_NOTE.md`).
+  * The DAG-ORC r2 chain copied DAG-OACC r2's aside mechanism, and with it the marker name `r2_aside_done.txt`, into the same box-2
+    runs root. The aside job found DAG-OACC r2's marker from the day before, printed `ASIDE-ALREADY-DONE` and moved nothing.
+  * The queue then skipped A s0's training (r1's `summary.json` was still in place) and pulled r1's checkpoint under r2's fresh gate
+    token. The run-record check refused it because a field only the fixed trainer writes (`levers.ego_perturb_stream`) was absent.
+  * The self-test passed, because its fixture held only this chain's files.
+  * ⇒ **A marker, lock or done-file is named for its owner (`<what>_<chain>`), and the self-test fixture includes the sibling
+    chain's files in the shared directory.** Keep a positive check on the first artifact (a field only the new build can write), so
+    a stale artifact is refused rather than read. Same class as the shared RNG stream above: an identity copied from a sibling is
+    shared with it.
