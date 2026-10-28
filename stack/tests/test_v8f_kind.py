@@ -227,6 +227,7 @@ DAG_LABELS = {"dagname", "prepdag", "dagarm", "dagarm_dry", "dagarm_have", "bank
 DAG_LABELS |= {"dagoaccarm", "dagoaccarm_dry", "dagoaccarm_have", "dagoaccwacc", "dagoaccwacc_dry", "dagoaccwacc_have", "waccdag"}      # PREREG_V8F_DAG_OACC, after DAGGER2's
 DAG_LABELS |= {"flatdagarm", "flatdagarm_dry", "flatdagarm_have", "evalflatdag", "evalflatdag_1", "evalflatdag_2", "bankflat"}      # PREREG_V8F_FLATDAG, after DAG-OACC's
 DAG_LABELS |= {"dagorcarm"}      # PREREG_V8F_DAG_ORC, after FLAT-DAG's
+DAG_LABELS |= {"dagoaccorcarm"}      # PREREG_V8F_DAG_ORC Amendment 1 (DAG-OACC base), after DAG-ORC's
 OLD_DISPATCH = ("gate", "train", "eval", "floors", "compare", "tac", "tacgrp", "tacgrp2", "tacabs", "gatearm", "tacabsarm", "gatewc", "trainwc", "evalwc", "gatepgt", "trainpgt",
                 "evalpgt", "gategrid", "traingrid", "evalgrid", "gatehist", "trainhist", "evalhist", "gatedscale", "traindscale", "evaldscale", "identitylora", "smokelora")
 needs_queue = pytest.mark.skipif(not QUEUE.exists(), reason="the v8F-mini package is not in this checkout")

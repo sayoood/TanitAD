@@ -1,0 +1,185 @@
+KILLED        bar-drop-RF0           bar ignores RF0   <- FAIL B1 RF0 binds: bar = 2 * RF0 when RF0 > RF and F = 0 (non-ADE row)
+KILLED        bar-drop-RF            bar ignores RF (the floor term deleted)   <- FAIL B2 RF binds: bar = 2 * RF when RF > RF0
+KILLED        bar-drop-F             bar ignores F on ADE6   <- FAIL B4 F binds on ADE6 only: 2 * 0.1207 = 0.2414 with both floors below F
+KILLED        bar-factor-1           bar factor 1 instead of 2   <- FAIL B1 RF0 binds: bar = 2 * RF0 when RF0 > RF and F = 0 (non-ADE row)
+KILLED        bar-F-everywhere       F applied to every row   <- FAIL B1 RF0 binds: bar = 2 * RF0 when RF0 > RF and F = 0 (non-ADE row)
+KILLED        bar-no-abs-rf0         RF0 enters signed   <- FAIL B8 floors enter as magnitudes (a negative value is |value|)
+KILLED        bar-no-abs-rf          RF enters signed   <- FAIL B8 floors enter as magnitudes (a negative value is |value|)
+KILLED        F-value                F_ADE6 0.1207 -> 0.12   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        halfF-value            HALF_F 0.0604 -> 0.0605   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        clears-strict          clears is strict at the bar   <- FAIL B9 clears is inclusive at the bar and not below it
+KILLED        clears-no-sep          clears drops separation   <- FAIL B10 clears needs separation
+KILLED        fires-strict           fires is strict at the bar   <- FAIL B17 fires is inclusive at the bar
+KILLED        fires-no-domain        fires drops the domain condition   <- FAIL B18 fires needs all three: X-P10 worse, DAG-P10 NOT worse, X-CTRL worse
+KILLED        fires-no-xp10          fires drops X - P10 worse   <- FAIL B18 fires needs all three: X-P10 worse, DAG-P10 NOT worse, X-CTRL worse
+KILLED        fires-no-ctrl-sep      fires drops X - CTRL separated   <- FAIL B18 fires needs all three: X-P10 worse, DAG-P10 NOT worse, X-CTRL worse
+KILLED        domain-no-exempt       domain ignores its exempt argument   <- FAIL B21 A1: there are NO exempt rows: accel MAE and DK-VIOL are in the domain when DAG-OA
+KILLED        domain-inverted        domain keeps the DAG-OACC-worse rows   <- FAIL B20 domain drops DAG-OACC-P10 separated-worse rows (error and agreement), keeps impro
+KILLED        worsening-dir          worsening ignores direction   <- FAIL B12 direction: an agreement row (TAC-LAT) clears upward and not downward
+KILLED        worsening-dir-swap     worsening direction swapped   <- FAIL B9 clears is inclusive at the bar and not below it
+KILLED        sepworse-ge            separated-worse includes zero   <- FAIL B14 sep_worse / sep_better are strict (a zero separated delta is neither)
+KILLED        sepbetter-le           separated-better includes zero   <- FAIL B14 sep_worse / sep_better are strict (a zero separated delta is neither)
+KILLED        notcomputed-pass       a NOT COMPUTED row is judged 0   <- FAIL B16 a NOT COMPUTED row cannot be judged (it raises)
+KILLED        crawl-uses-ctrl        R-CRAWL reads X - CTRL   <- FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPT
+KILLED        crawl-inverted         R-CRAWL inverted   <- FAIL O1 the baseline reads FIXED / ADOPTED and adopts :: PARTIAL / ADOPTED
+KILLED        move-uses-p10          R-MOVE reads X - P10   <- FAIL O1 the baseline reads FIXED / ADOPTED and adopts :: NO EFFECT
+KILLED        move-no-bar            R-MOVE ignores the bar   <- FAIL O39 R-MOVE: improvement 0.06 clears a bar of 0.06 (RF0 0.03) and not 0.0601
+KILLED        crawl-any              R-CRAWL any instead of all   <- FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPT
+KILLED        move-any               R-MOVE any instead of all   <- FAIL O5 R-MOVE at neither seed (guards held) reads NO EFFECT :: FIXED / ADOPTED
+KILLED        keep-strict            R-KEEP strict   <- FAIL O20 R-KEEP is inclusive at 0.0604 and fails above it
+KILLED        keep-reads-t0          R-KEEP reads the T0 point   <- FAIL O10 same with R-KEEP failing at seed 1: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED
+KILLED        t0-strict              R-T0 strict   <- FAIL O18 R-T0 is inclusive at +F/2 = 0.0604
+KILLED        t0-reads-keep          R-T0 reads the KEEP point   <- FAIL O3 guard R-T0 failing at seed 0 alone reads HARMS (and that guard is the failed one) 
+KILLED        tlat-sign              R-TLAT/R-TLON sign flipped   <- FAIL O3 guard R-TLAT failing at seed 0 alone reads HARMS (and that guard is the failed one
+KILLED        tlat-no-sep            R-TLAT/R-TLON ignores separation   <- FAIL O24 R-TLAT: a non-separated drop is not a failure
+KILLED        ade-reads-p10          R-ADE reads X - P10   <- FAIL O3 guard R-ADE failing at seed 0 alone reads HARMS (and that guard is the failed one)
+KILLED        new-not-all            R-NEW: not all instead of not any   <- FAIL O3 guard R-NEW failing at seed 0 alone reads HARMS (and that guard is the failed one)
+KILLED        nobase-not-all         R-NOBASE: not all instead of not any   <- FAIL O11 same with R-NOBASE failing: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED
+KILLED        nobase-no-dag          R-NOBASE drops X - DAG separated-worse   <- FAIL O36 R-NOBASE needs BOTH X - P10 and X - DAG separated-worse
+KILLED        nobase-strict          R-NOBASE strict at the bar   <- FAIL O35 R-NOBASE: a violation at exactly the bar (inclusive), none below
+KILLED        nobase-no-p10          R-NOBASE drops X - P10 separated-worse   <- FAIL O36 R-NOBASE needs BOTH X - P10 and X - DAG separated-worse
+KILLED        nobase-reads-ctrl      R-NOBASE worsening from X - CTRL   <- FAIL O11 same with R-NOBASE failing: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED
+KILLED        fires-wrong-arg        R-NEW passes X - DAG as X - CTRL   <- FAIL O3 guard R-NEW failing at seed 0 alone reads HARMS (and that guard is the failed one)
+KILLED        bars-rf-twice          bars use RF for RF0   <- FAIL O28 R-NEW's bar rises with RF0 (0.03 -> bar 0.06) and with RF
+KILLED        bars-rf0-twice         bars use RF0 for RF   <- FAIL O28 R-NEW's bar rises with RF0 (0.03 -> bar 0.06) and with RF
+KILLED        crawlset-s1-yaw        C_1 drops yaw-rate (A1: both seeds carry it)   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        crawlset-pre-a1        the original C_1 loses yaw-rate (rc-DAG2 leg)   <- FAIL L16b the ORIGINAL section 4 values survive for the rc-DAG2 leg only
+KILLED        crawlset-s0-m1         C_0 drops M1   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        crawlset-s0-yaw        C_0 drops yaw-rate (A1: both seeds carry it)   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        exempt-a1              A1: EXEMPT is no longer empty (accel MAE exempt again)   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        exempt-pre-a1          the original exemption loses accel MAE (rc-DAG2 leg)   <- FAIL L16b the ORIGINAL section 4 values survive for the rc-DAG2 leg only
+KILLED        direction-tac          TAC-LON lower-is-better   <- FAIL L15 LABELS are Read A's 19 rows, 3 STRATEGIC, TAC rows higher-is-better
+KILLED        labels-drop            LABELS drops DK-TG   <- FAIL L15 LABELS are Read A's 19 rows, 3 STRATEGIC, TAC rows higher-is-better
+KILLED        domain-n               |D_1| 15 -> 14   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        domain-n-pre           the original |D_1| 13 -> 14   <- FAIL L16b the ORIGINAL section 4 values survive for the rc-DAG2 leg only
+KILLED        rep-seed               REP seed 11 -> 10   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        p-b                    P_B 0.1 -> 0.2   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        tol                    REACH_TOL 0.02 -> 0.03   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        guards-any             guards held: any instead of all   <- FAIL O3 guard R-TLAT failing at seed 0 alone reads HARMS (and that guard is the failed one
+KILLED        harms-no-ctrl          HARMS without the controls condition   <- FAIL P1 all 524,288 cells match EXACTLY ONE row of section 7 :: (261888, 524288)
+KILLED        rmboth-any             R-MOVE both: any   <- FAIL O6 R-MOVE at exactly one seed (fails at seed 0) reads PARTIAL / ONE SEED and never ad
+KILLED        rcboth-any             R-CRAWL both: any   <- FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPT
+KILLED        adopt-any              adoption: any instead of all   <- FAIL O10 same with R-KEEP failing at seed 1: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED
+KILLED        adopt-or               adoption: keep OR nobase   <- FAIL O10 same with R-KEEP failing at seed 1: PARTIAL / NOT ADOPTED :: PARTIAL / ADOPTED
+KILLED        oneseed-ge             ONE SEED: >= 1   <- FAIL O1 the baseline reads FIXED / ADOPTED and adopts :: UNPLACED
+KILLED        noeffect-le            NO EFFECT: <= 1   <- FAIL O6 R-MOVE at exactly one seed (fails at seed 0) reads PARTIAL / ONE SEED and never ad
+KILLED        refused-never          REFUSED never   <- FAIL O2 a failed control reads REFUSED (decided first; nothing else matches)
+KILLED        fixedadopted-no-rc     FIXED / ADOPTED drops R-CRAWL   <- FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPT
+KILLED        partialadopted-rc      PARTIAL / ADOPTED needs R-CRAWL   <- FAIL O1 the baseline reads FIXED / ADOPTED and adopts :: UNPLACED
+KILLED        partialnot-adopt       PARTIAL / NOT ADOPTED ignores adoption   <- FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPT
+KILLED        decide-ge              decide accepts several matches   <- FAIL M1 decide_orc: two matching rows -> UNPLACED (never the first of them) :: HARMS
+KILLED        decide-adopts          adopts = FIXED   <- FAIL O9 R-MOVE at both seeds, R-CRAWL failing at seed 0, adoption holding: PARTIAL / ADOPT
+KILLED        adopting-set           ADOPTING drops PARTIAL   <- FAIL L14 the adopting rows are exactly the two '/ ADOPTED' rows
+KILLED        cascade-eq             cascade: B decides when A is not HARMS   <- FAIL S10 the dose cascade: B decides ONLY after A's HARMS; otherwise B is beside; A HARMS 
+KILLED        cascade-final          cascade: final arm A after A's HARMS   <- FAIL S10 the dose cascade: B decides ONLY after A's HARMS; otherwise B is beside; A HARMS 
+KILLED        cascade-pending        cascade: HARMS without B is not pending   <- FAIL S10 the dose cascade: B decides ONLY after A's HARMS; otherwise B is beside; A HARMS 
+KILLED        next-swap              next_for_arm swaps A and B   <- FAIL O15 HARMS' committed next splits (A1): A reads B (needs its own PI go), B goes to NEX
+KILLED        prereg-no-tables       prereg_problems skips the tables   <- FAIL M5 prereg_problems(pin = the copy's own sha256) still reports the tab-edit (the pin i
+KILLED        prereg-no-phrases      prereg_problems skips the phrases   <- FAIL M6 prereg_problems(pin = the copy's own sha256) still reports the phr-edit (the pin i
+ANCHOR ERROR  prereg-no-sha          prereg_problems skips the raw sha256
+KILLED        prereg-pin-default     prereg_problems default pin is empty, not the pinned sha   <- FAIL L1 the real PREREG passes prereg_problems :: ['E:/Projects/TanitAD-artifacts/dagorc_r
+KILLED        table-no-cell          table_problems skips the cell compare   <- FAIL L5 every one of the 104 registered table cells, edited one at a time, is caught by ta
+KILLED        table-no-len           table_problems skips the row count   <- FAIL M8 table_problems: one extra row after the registered last row of section 7 is caught
+KILLED        table-no-heading       table_problems ignores a missing heading   <- AttributeError: 'NoneType' object has no attribute 'splitlines'
+KILLED        phrase-inverted        phrase_problems inverted   <- FAIL L1 the real PREREG passes prereg_problems :: ["section 3.: the phrase 'F = 0.1207 m' 
+KILLED        phrase-no-sec          phrase_problems ignores a missing section   <- AttributeError: 'NoneType' object has no attribute 'replace'
+KILLED        rf0-no-pin             rf0_problems skips the pin   <- FAIL F3 a CHANGED RF0 file is refused by the pin even with a matching .sha256 beside it ::
+KILLED        rf0-no-shafile         rf0_problems skips the .sha256 compare   <- FAIL F4 a .sha256 that does not match the file is refused
+KILLED        rf0-no-max             rf0_problems skips RF0 = max over seeds   <- FAIL F6 a self-consistent file with RF0 not the max over seeds is refused on content
+KILLED        rf0-no-labels          rf0_problems skips the label check   <- KeyError: 'DK-HW'
+KILLED        rf0-no-schema          rf0_problems skips the schema   <- FAIL F6 a self-consistent file with schema is refused on content
+KILLED        rf0-no-controls        rf0_problems skips P-0's controls   <- FAIL F6 a self-consistent file with a failed P-0 control is refused on content
+KILLED        rf0-pin-const          RF0_SHA256 changed   <- FAIL F1 the frozen P0_RF0.json loads (sha256 pinned, .sha256 beside it, 19 rows, RF0 = max
+KILLED        prereg-pin-const       PREREG_SHA256 changed   <- FAIL L1 the real PREREG passes prereg_problems :: ['E:/Projects/TanitAD-artifacts/dagorc_r
+KILLED        p0-strict              K-P0 mtime: < instead of <=   <- FAIL F11 K-P0: a rollout file with the same mtime fails (strictly later is required)
+KILLED        p0-never               K-P0 mtime never late   <- FAIL F10 K-P0: a rollout file older than RF0 fails (RF0 must predate every rollout)
+KILLED        pair-A-vs-ctrl         K-PAIR(A) compares with DAG2-0's argv (no lever)   <- FAIL K1 A_s0 = DAG-OACC + p 0.3 + the five law flags + --ego-perturb-with-dagger passes K-
+KILLED        pair-REP-seed          K-PAIR(REP) leaves --seed unchecked   <- FAIL K12 REP with the control's own seed fails
+KILLED        pair-B-vs-A            K-PAIR(B) skips the A-record comparison   <- FAIL K19 B must also equal A's record except p (A's record differs in a law flag -> fails)
+KILLED        pair-ignore-out        flag_diff compares --out   <- FAIL K1 A_s0 = DAG-OACC + p 0.3 + the five law flags + --ego-perturb-with-dagger passes K-
+KILLED        pair-norm              flag_diff compares strings, not numbers   <- FAIL K10 numeric normalisation: 0.30 == 0.3
+KILLED        pair-law               a_flags drops --ego-perturb-vmax   <- KeyError: '--ego-perturb-vmax'
+KILLED        pair-law-seed          a_flags: wrong --ego-perturb-seed   <- FAIL K6 A with the other seed's --ego-perturb-seed fails K-PAIR
+KILLED        reg-rep-p              registered p of REP is 0.3   <- FAIL M10 k_registered REP_s0: --seed 10, p 0 passes :: ["--ego-perturb-p '0', registered 0
+KILLED        reg-no-dagger          registered argv skips --dagger-p   <- FAIL K22 a registered flag changed (--dagger-p 0.2) fails the argv check
+KILLED        reg-dagger-zero        registered --dagger-p is 0 (the DAG-ORC value), not DAG-OACC's 0.1   <- FAIL K2b2 ... and fails the registered-argv check too; REP carrying the flag fails it; B (
+KILLED        reg-seed               registered seed of REP is the base seed   <- FAIL M10 k_registered REP_s0: --seed 10, p 0 passes :: ["--seed '10', registered 0"]
+KILLED        reg-init-tail          registered init tail unchecked   <- FAIL K23 an init that is DAG_s (not M2b_s) fails (A1: the init is M2b_s, DAG-OACC's)
+KILLED        reg-steps              registered steps 3000 -> 2999   <- FAIL K2b2 ... and fails the registered-argv check too; REP carrying the flag fails it; B (
+KILLED        init-any               K-INIT accepts any sha   <- FAIL K26 K-INIT (A1): every recorded init sha256 equal to M2b_s (DAG-OACC's token) passes;
+KILLED        init-none              K-INIT accepts no record   <- FAIL K29 K-INIT: no record fails (the init is unproven)
+KILLED        init-other-seed        K-INIT compares with the other seed's M2b   <- FAIL K26 K-INIT (A1): every recorded init sha256 equal to M2b_s (DAG-OACC's token) passes;
+KILLED        init-default-dag       K-INIT's default map is DAG_s (the pre-A1 init), not M2b_s   <- FAIL K26 K-INIT (A1): every recorded init sha256 equal to M2b_s (DAG-OACC's token) passes;
+KILLED        reach-rep              K-REACH(REP) accepts n > 0   <- FAIL K33 K-REACH REP: ego exactly 0 + swap in band + flag absent passes; ego 1 fails
+KILLED        reach-band             K-REACH band widened   <- FAIL K31 K-REACH A: the 0.02 ego band is inclusive at 0.32 and fails at 0.3201
+KILLED        reach-lower            K-REACH lower band dropped   <- FAIL K31 K-REACH A: the 0.02 ego band is inclusive at 0.32 and fails at 0.3201
+KILLED        reach-builtp           K-REACH ignores the built p   <- FAIL K34 K-REACH: built p must equal the argv p (A built at 0.0 fails: the lever never rea
+KILLED        reach-elig             K-REACH accepts eligible 0   <- ZeroDivisionError: division by zero
+KILLED        build-identical        K-BUILD ignores a changed file   <- FAIL K38 K-BUILD: a changed file with no listed hunk fails
+KILLED        build-nohunk           K-BUILD accepts a changed file with no hunk   <- FAIL K38 K-BUILD: a changed file with no listed hunk fails
+KILLED        build-bit              K-BUILD skips the bit-identity test   <- FAIL K40 K-BUILD: a hunk with bit_identity_test = 'FAIL' fails
+KILLED        build-default          K-BUILD skips default_off   <- FAIL K40 K-BUILD: a hunk with default_off = False fails
+KILLED        build-commit           K-BUILD accepts any launch commit   <- FAIL K37 K-BUILD: byte-identical files pass
+KILLED        build-base             K-BUILD accepts any base commit   <- FAIL K42 K-BUILD: a base commit other than aeb54468 (DAG-OACC's) fails, 1d4f4fbb (DAG2's) 
+KILLED        zero-hi                identity ignores the CI upper end   <- FAIL K46 identity: a nonzero CI end fails
+KILLED        zero-empty             identity accepts an empty table   <- FAIL K46 identity: a nonzero CI end fails
+KILLED        rc-tol                 RC tolerance huge   <- FAIL K48 RC: a delta off by 2e-4 is a difference (tolerance 1e-4)
+KILLED        rc-sep                 RC ignores the separated flag   <- FAIL K50 RC: a separated flip is a difference
+KILLED        rc-missing             RC ignores a missing row   <- FAIL K51 RC: a missing row is a difference; NOT COMPUTED on one side only is a difference
+KILLED        floors-min             floors_from takes min   <- FAIL K52 floors_from: max over seeds of |delta|, per row
+KILLED        floors-signed          floors_from signed   <- FAIL K52 floors_from: max over seeds of |delta|, per row
+KILLED        floors-one-seed        floors_from reads seed 0 only   <- FAIL M14 floors_from: seed 1 binding (|d| larger than seed 0's) sets the floor
+KILLED        disc-partial           discover: a short dump dir is PRESENT   <- FAIL S2 discover: a dump dir with 140 of 141 episodes is PARTIAL
+KILLED        disc-light-off         discover: the banked CTRL slot is read like a new arm (logged lane, fresh T0 demanded)   <- FAIL S6 discover (A1): the banked CTRL slot (= DAG-OACC) needs no logged lane and no fresh
+KILLED        disc-light-default     discover: the default light set is empty   <- FAIL S6 discover (A1): the banked CTRL slot (= DAG-OACC) needs no logged lane and no fresh
+KILLED        disc-light-t0          discover: the light slot needs no T0 eval   <- FAIL S6b discover (A1): ... but it DOES need box 2's standard T0 eval (R-T0's comparator) 
+KILLED        disc-noentry           discover: absent arm is PRESENT   <- FAIL S3 discover: an arm absent from the manifest is MISSING (no entry), per seed
+KILLED        rcev-sha               RC evidence accepted from another reader   <- FAIL K55 K-RC evidence produced by ANOTHER reader (any edit invalidates it) fails
+KILLED        rcev-pass              RC evidence PASS flag ignored   <- FAIL K57 K-RC evidence with PASS false fails even at 0 listed differences
+KILLED        rcev-diff              RC evidence differences ignored   <- FAIL M15 K-RC evidence claiming PASS with 1 difference fails
+KILLED        compose-rf-twice       compose_all passes RF as RF0   <- FAIL S14 compose_all: RF0 alone raises the bar over the improvement (NO EFFECT)
+KILLED        compose-rf0-twice      compose_all passes RF0 as RF   <- FAIL S15 compose_all: RF alone raises the bar over the improvement (NO EFFECT)
+KILLED        compose-ctrl-ok        compose_all hard-codes the controls flag   <- FAIL M17 compose_all(res, False) -> REFUSED (the controls flag is the caller's, never hard
+KILLED        parse-flags            parse_flags drops multi-value flags   <- FAIL S17 parse_flags keeps every value of every occurrence
+KILLED        a1-amend-no-sha        amend_problems skips the raw sha256   <- FAIL L19 an AMEND1.md with one changed number is refused by the raw-byte pin
+KILLED        a1-amend-no-phrases    amend_problems skips the phrases   <- FAIL L21 each of the 20 coded amendment phrases, edited one at a time (pin = the copy's ow
+KILLED        a1-amend-pin-default   amend_problems default pin is empty   <- FAIL L18 the real AMEND1.md passes amend_problems and hashes to AMEND1_SHA256
+KILLED        a1-amend-const         AMEND1_SHA256 changed   <- FAIL L18 the real AMEND1.md passes amend_problems and hashes to AMEND1_SHA256
+KILLED        a1-oaccread-const      OACC_READ_SHA256 changed   <- FAIL L17 every pin the reader codes equals the banked DAG-OACC artifacts (SHA256SUMS.txt, 
+KILLED        a1-m2b-const           M2B_CKPT_SHA s0 changed   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        a1-bank-const          OACC_BANK_SHA s1 changed   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        a1-ckpt-const          OACC_CKPT_SHA s0 changed   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        a1-build-const         BUILD_BASE_COMMIT is DAG2's 1d4f4fbb   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        a1-build-files         BUILD_FILES drops v8f_dagger.py   <- KeyError: 'stack/tanitad/data/v8f_dagger.py'
+KILLED        a1-wacc-const          W_ACC changed   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        a1-swap-const          SWAP_P 0.1 -> 0.2   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        a1-flag-const          COMPOSE_FLAG renamed   <- FAIL L16 the constants (A1): F 0.1207, F/2 0.0604, p 0.3 / 0.1, tolerance 0.02, REP seeds 
+KILLED        a1-bankpin-skip        banked_pin_problems never compares   <- FAIL L17b each banked pin, doctored one at a time (M2b init, bank, DAG-OACC ckpt, argv sha
+KILLED        a1-bankpin-read        banked_pin_problems ignores DAGOACC_READ.json   <- FAIL L17b each banked pin, doctored one at a time (M2b init, bank, DAG-OACC ckpt, argv sha
+KILLED        a1-aflags-compose      a_flags drops the composition flag   <- KeyError: '--ego-perturb-with-dagger'
+KILLED        a1-reg-flag-A          registered argv does not require the flag on A / B   <- FAIL K2b2 ... and fails the registered-argv check too; REP carrying the flag fails it; B (
+KILLED        a1-reg-flag-REP        registered argv lets REP / CTRL carry the flag   <- FAIL K2b2 ... and fails the registered-argv check too; REP carrying the flag fails it; B (
+KILLED        a1-reg-wacc            registered argv skips --w-acc   <- FAIL K22 a registered flag changed (--w-acc 49.0) fails the argv check
+KILLED        a1-reg-bank            registered argv skips the bank sha256   <- FAIL K22 a registered flag changed (--dagger-bank-sha256 000000000000000000000000000000000
+KILLED        a1-reg-dseed           registered argv skips --dagger-seed   <- FAIL K22 a registered flag changed (--dagger-seed 1) fails the argv check
+KILLED        a1-reach-swap-off      K-REACH skips the swap band   <- FAIL K36a K-REACH (A1): the SWAP must reach too: swap fraction 0.14 (outside 0.1 +- 0.02) 
+KILLED        a1-reach-swap-wide     K-REACH swap band widened   <- FAIL K36a K-REACH (A1): the SWAP must reach too: swap fraction 0.14 (outside 0.1 +- 0.02) 
+KILLED        a1-reach-swap-low      K-REACH swap lower band dropped   <- FAIL K36a K-REACH (A1): the SWAP must reach too: swap fraction 0.14 (outside 0.1 +- 0.02) 
+KILLED        a1-reach-swap-fake     K-REACH takes the swap ratio from the constant   <- FAIL K36a K-REACH (A1): the SWAP must reach too: swap fraction 0.14 (outside 0.1 +- 0.02) 
+KILLED        a1-reach-nodag         K-REACH accepts a missing run record   <- TypeError: unsupported operand type(s) for /: 'NoneType' and 'NoneType'
+KILLED        a1-reach-overlap-off   K-REACH skips the overlap == 0   <- FAIL K36c K-REACH (A1): the overlap must be EXACTLY 0: 1, None, 0.0-as-float-missing and a
+KILLED        a1-reach-overlap-ge    K-REACH overlap: >= 0 instead of == 0   <- FAIL K36c K-REACH (A1): the overlap must be EXACTLY 0: 1, None, 0.0-as-float-missing and a
+KILLED        a1-reach-flag-A        K-REACH does not require the built flag on A   <- FAIL K36d K-REACH (A1): the composition flag must be built on A (False / None fail) and ab
+KILLED        a1-reach-flag-REP      K-REACH lets REP build the flag   <- FAIL K36d K-REACH (A1): the composition flag must be built on A (False / None fail) and ab
+SURVIVED      a1-reach-rep-overlap   K-REACH lets REP carry an overlap
+KILLED        a1-next-swap           FIXED / NOT ADOPTED routes to DAG-ORC-SWAP again   <- FAIL O15b A1: FIXED / NOT ADOPTED no longer routes to DAG-ORC-SWAP (it cannot apply: A kee
+KILLED        a1-next-crawl          HARMS (B) routes to NEXT-CRAWL on DAG states   <- FAIL O15 HARMS' committed next splits (A1): A reads B (needs its own PI go), B goes to NEX
+KILLED        a1-next-pi-go          B needs no PI go in the amended HARMS text   <- FAIL O15 HARMS' committed next splits (A1): A reads B (needs its own PI go), B goes to NEX
+KILLED        a1-next-orig-lost      outcome_block drops the original PREREG cell   <- FAIL O16b the outcome block carries the amended next AND the original PREREG cell verbatim
+KILLED        a1-next-none           AMENDED_NEXT is ignored   <- FAIL O14 the committed next of FIXED / ADOPTED is the AMENDED cell (A1) and the original c
+KILLED        a1-compose-pre         compose_seed ignores pre_a1 for the crawl set   <- FAIL O34b the rc-DAG2 leg composes with the ORIGINAL section 4 (pre_a1): the exempt rows a
+KILLED        a1-compose-exempt      compose_seed ignores pre_a1 for the exemption   <- FAIL O34b the rc-DAG2 leg composes with the ORIGINAL section 4 (pre_a1): the exempt rows a
+KILLED        a1-compose-domain      compose_seed does not pass the exemption to domain()   <- FAIL O34b the rc-DAG2 leg composes with the ORIGINAL section 4 (pre_a1): the exempt rows a
+KILLED        a1-init-default-map    k_init default (None) ignored   <- FAIL K26 K-INIT (A1): every recorded init sha256 equal to M2b_s (DAG-OACC's token) passes;
+CONTROL rc=0 (SELFTEST 330/330 checks as expected)
+MUTATION 181/183 killed; NOT KILLED: [('prereg-no-sha', 'ANCHOR ERROR'), ('a1-reach-rep-overlap', 'SURVIVED')]; 2123.6 s

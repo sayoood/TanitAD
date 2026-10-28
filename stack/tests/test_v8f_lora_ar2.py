@@ -759,6 +759,7 @@ def test_queue_ar2_every_existing_stage_is_byte_identical():
     dag |= {"dagoaccarm", "dagoaccarm_dry", "dagoaccarm_have", "dagoaccwacc", "dagoaccwacc_dry", "dagoaccwacc_have", "waccdag"}      # PREREG_V8F_DAG_OACC, after DAGGER2's
     dag |= {"flatdagarm", "flatdagarm_dry", "flatdagarm_have", "evalflatdag", "evalflatdag_1", "evalflatdag_2", "bankflat"}      # PREREG_V8F_FLATDAG, after DAG-OACC's
     dag |= {"dagorcarm"}      # PREREG_V8F_DAG_ORC, after FLAT-DAG's
+    dag |= {"dagoaccorcarm"}      # PREREG_V8F_DAG_ORC Amendment 1 (DAG-OACC base), after DAG-ORC's
     assert set(blocks) - {"kind", "kindseed", "kindown", "kindorc"} - mixo - flat - oacc - orc - dag == set(PRE_EXISTING) | {"loraenv", "identitylora", "smokelora"}, "the only new labels are the three of this edit"
     for st in OLD_STAGES:
         assert f'if /i "%~1"=="{st}" goto :' in q, st

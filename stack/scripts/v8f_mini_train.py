@@ -90,6 +90,10 @@ FLAG_CHECKS = {
     # argv -> make_dagger (bank load + K-B2 + K-B3 + COVERAGE) -> the swap -> declared_vs_built (bad_dagger) -> G-LIVE on a swapped batch + dagger_probe (the swapped own-state tensors reach the loss
     # gradient, a p = 0 control reads EXACTLY 0.0) -> `b = dag.apply(b, step)` in the loop. With --dagger-p 0 (the default) no bank is read and no row is swapped.
     "dagger_p": "dagger:dagger_p", "dagger_bank": "dagger:dagger_bank", "dagger_bank_sha256": "dagger:dagger_bank_sha256", "dagger_seed": "dagger:dagger_seed",
+    # AMEND1 (DAG-ORC re-based on DAG-OACC) section 1: the two levers above composed in ONE arm. `compose:<k>` = equals the BUILT stage's lever (EgoDaggerCompose.built_levers(), the object the loop calls `.apply` on):
+    # argv -> make_compose -> the stage -> declared_vs_built (bad_ego_dagger; bad_dagger lifts the exclusivity ONLY for an argv that names it) -> G-LIVE on a COMPOSED batch (ego_dagger_compose_probe: both levers reach the
+    # loss gradient, the p = 0 controls read EXACTLY 0.0) -> `b = comp.apply(b, step)` in the loop. Off (the default): the stage is never called and the loop runs its two original lines.
+    "ego_perturb_with_dagger": "compose:ego_perturb_with_dagger",
     "init_ckpt": "data:init_ckpt",            # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
@@ -149,6 +153,10 @@ def build_parser():
                          "differs. Default \"\" = none")
     ap.add_argument("--dagger-seed", dest="dagger_seed", type=int, default=DG.DAGGER_DEFAULTS["seed"],
                     help="the swap's own seed: the draws of step k are a function of (seed, k) only, on a private generator (a resumed run draws what an uninterrupted run drew)")
+    ap.add_argument("--ego-perturb-with-dagger", dest="ego_perturb_with_dagger", action="store_true", default=False,
+                    help="AMEND1 section 1: lift the exclusivity of --dagger-p and --ego-perturb-p for THIS arm and compose them. The DAgger swap is drawn first; the ego perturbation is then drawn (its own p, its own seeded "
+                         "generator) ONLY on the samples the swap did not replace, so no sample is both swapped and perturbed (the run record carries ego_dagger_overlap_n, exactly 0). REFUSED unless --dagger-p > 0 AND "
+                         "--ego-perturb-p > 0 (a lever that is declared and does nothing). Default off = every earlier argv, bit for bit (K-BUILD)")
     ap.add_argument("--init-ckpt", dest="init_ckpt", default="",
                     help="O-RECOVER's start state: when set and --out holds no ckpt_last.pt, load the MODEL weights of this checkpoint (a v8f_mini_train ckpt, e.g. M2b's) STRICTLY into the freshly built model (its architecture "
                          "config must match the built one, else the launch is REFUSED), at step 0 with a FRESH optimiser and schedule. An existing ckpt_last.pt in --out still resumes as ever (resume wins). The path and the file's "
@@ -423,8 +431,8 @@ def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
     if lv.get("kin_mode") != a.kin_mode:
         bad.append(f"DAgger swap kin_mode: declared {a.kin_mode} but built {lv.get('kin_mode')}")
     bad += [f"DAgger swap: {m}" for m in dag.problems()]
-    if a.dagger_p > 0 and a.ego_perturb_p > 0:
-        bad.append(f"--dagger-p {a.dagger_p} together with --ego-perturb-p {a.ego_perturb_p}: the two levers are never combined in one arm (PREREG_V8F_DAGGER section 4)")
+    if a.dagger_p > 0 and a.ego_perturb_p > 0 and not a.ego_perturb_with_dagger:
+        bad.append(f"--dagger-p {a.dagger_p} together with --ego-perturb-p {a.ego_perturb_p}: the two levers are never combined in one arm (PREREG_V8F_DAGGER section 4; AMEND1 section 1 lifts this only for an argv that names --ego-perturb-with-dagger)")
     if a.dagger_bank_sha256 and not is_sha256_hex(a.dagger_bank_sha256):
         bad.append(f"--dagger-bank-sha256 {a.dagger_bank_sha256!r} is not a sha256 (64 hex digits): a truncated hash identifies nothing")
     if a.dagger_p > 0 and not a.dagger_bank_sha256:
@@ -477,6 +485,68 @@ def bad_dagger(a, dag, cfg=None, data_info=None) -> list:
             bad.append("K-B3 was not read against this bank's window list / with an empty eval overlap")
         if not isinstance(ctl.get("coverage"), dict) or ctl["coverage"].get("blocked") is not False:
             bad.append(f"COVERAGE is not recorded as passed: {ctl.get('coverage')!r}")
+    return bad
+
+
+class EgoDaggerCompose:
+    """AMEND1 section 1 (``--ego-perturb-with-dagger``): the training loop's ego-input stage when BOTH ego levers are on in one arm. ONE object holds the two BUILT levers the loop applies (``ego`` = O-RECOVER's
+    perturbation, ``dag`` = the DAgger swap) and the order they run in:
+
+      1. the swap is drawn first (``dag.apply``); its selection mask is ``dag.last["sel"]``;
+      2. the perturbation is then drawn, at its own p and from its own seeded generator, ONLY on the samples the swap did not replace (``ego.apply(.., exclude=<the swap's mask>)``);
+      3. no sample is both swapped and perturbed: ``overlap`` is MEASURED from the two selection masks after both applies (not inferred from the exclusion), and a nonzero count raises.
+
+    ``on`` False (the flag is not named): the loop never calls this object; it runs its two original lines (``ego.apply`` then ``dag.apply``), so every existing argv is the pre-change run."""
+
+    def __init__(self, ego, dag, on: bool = False):
+        self.ego, self.dag, self.on = ego, dag, bool(on)
+        self.overlap = 0
+
+    def built_levers(self) -> dict:
+        return {"ego_perturb_with_dagger": self.on, "order": ["dagger_swap", "ego_perturb"] if self.on else ["ego_perturb", "dagger_swap"]}
+
+    def problems(self) -> list:
+        """A composition declared without BOTH built levers on is a lever that is declared and does nothing."""
+        bad = []
+        if self.on and not self.ego.active:
+            bad.append(f"--ego-perturb-with-dagger is declared but the BUILT perturbation is off (ego_perturb_p {self.ego.p}): a lever that is declared and does nothing")
+        if self.on and not self.dag.active:
+            bad.append(f"--ego-perturb-with-dagger is declared but the BUILT swap is off (dagger_p {self.dag.p}): a lever that is declared and does nothing")
+        return bad
+
+    def apply(self, batch: dict, step: int, *, ego_p=None, dag_p=None) -> dict:
+        """The composed batch for training step ``step``. ``ego_p`` / ``dag_p`` override either probability for this call only (the launch gate's probes: 1.0 = every eligible sample, 0.0 = the control)."""
+        swapped = self.dag.apply(batch, step, p=dag_p)                                  # the swap is drawn FIRST
+        sw = self.dag.last.get("sel")
+        if sw is None:                                                                  # the swap is off for this call (dag_p = 0): no sample was replaced
+            sw = torch.zeros(int(batch["p10f"].shape[0]), dtype=torch.bool)
+        out = self.ego.apply(swapped, step, p=ego_p, exclude=sw)                        # the perturbation ONLY on the samples the swap did not replace
+        pe = self.ego.last.get("sel")
+        self.overlap = 0 if pe is None else int((sw & pe).sum())                        # measured from the two masks, after both applies
+        if self.overlap:
+            raise RuntimeError(f"ZZEGO-DAGGER-OVERLAPZZ step {step}: {self.overlap} sample(s) are both swapped and perturbed (AMEND1 section 1: exactly 0)")
+        return out
+
+
+def make_compose(a, ego, dag):
+    """argv -> the stage the training loop calls ``.apply`` on when ``--ego-perturb-with-dagger`` is named (AMEND1 section 1). The ONE place the flag becomes an object; ``bad_ego_dagger`` compares it back to the argv."""
+    return EgoDaggerCompose(ego, dag, on=a.ego_perturb_with_dagger)
+
+
+def bad_ego_dagger(a, comp, ego, dag) -> list:
+    """The composition half of the launch gate (G-DVB). Empty = pass. ``--ego-perturb-with-dagger`` is read back from the BUILT stage; with no stage built it must be at its default (a flag that builds nothing is refused,
+    not ignored); the stage holds the very perturber and swap the gate and the probes read back; and a composition whose BUILT levers are not both on (``--dagger-p 0`` or ``--ego-perturb-p 0``) is a lever that is
+    declared and does nothing -- refused."""
+    declared = bool(a.ego_perturb_with_dagger)
+    if comp is None:
+        return ["--ego-perturb-with-dagger is declared but no composed stage was built: a flag that builds nothing is refused, not ignored"] if declared else []
+    bad = []
+    got = comp.built_levers().get("ego_perturb_with_dagger")
+    if got != declared:
+        bad.append(f"lever ego_perturb_with_dagger: declared {declared!r} but built {got!r}")
+    if comp.ego is not ego or comp.dag is not dag:
+        bad.append("ego+dagger composition: the stage does not hold the perturber and the swap that the gate reads back and the probes exercise")
+    bad += [f"ego+dagger composition: {m}" for m in comp.problems()]
     return bad
 
 
@@ -570,11 +640,12 @@ def bad_schedule(a, sched) -> list:
     return bad
 
 
-def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None) -> list:
+def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None) -> list:
     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
     bad = bad_encoder(a, enc, data_info)
     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
     bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
+    bad += bad_ego_dagger(a, comp, ego, dag)                                                     # AMEND1 section 1: --ego-perturb-with-dagger read back from the BUILT stage
     parser_dests = {act.dest for act in build_parser()._actions if act.dest != "help"}
     missing = sorted(parser_dests - set(FLAG_CHECKS))
     if missing:
@@ -934,7 +1005,7 @@ def acc_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
     return res
 
 
-def ego_perturb_probe(model, batch, cfg, ego) -> dict:
+def ego_perturb_probe(model, batch, cfg, ego, exclude=None) -> dict:
     """G-LIVE for O-RECOVER (PREREG_V8F_HACC_MC section 7): the ego perturbation REACHES THE LOSS THE TRAINER BACKPROPAGATES -- read from the BUILT model's own ``loss`` on the real probe batch (a COPY, its own
     seeds), through the SAME ``ego.apply`` the training loop calls. With the lever off (the default) there is nothing to prove and nothing runs (the pre-change model and loss).
 
@@ -946,13 +1017,17 @@ def ego_perturb_probe(model, batch, cfg, ego) -> dict:
       controls     (a) the same loss twice on the unperturbed batch differs by EXACTLY 0.0 (the probe is deterministic); (b) p = 0 returns the SAME batch object and its loss / gradient differ from the
                    unperturbed ones by EXACTLY 0.0; (c) the frozen P10 prior's gradient difference is EXACTLY 0.0; (d) so is the world-model auxiliary's (``act`` is its transition record and is NOT perturbed)
 
+    ``exclude`` ([B] bool, default None = the pre-change probe): AMEND1 section 1 runs this SAME probe on a COMPOSED batch -- ``batch`` is the DAgger-swapped batch and ``exclude`` the swap's mask -- so that
+    the "unselected rows are byte-identical" clause also proves the perturbation never touched a swapped row.
+
     A violation is an AssertionError, which the caller turns into a refusal. DELETE the line in ``EgoPerturb.apply`` that applies the rebuild, or the ``ego.apply`` line in the loop's input path, and the
     batch / gradient clauses read 0.0 and the gate refuses the launch."""
     if not ego.active:
         return {"ego_perturb": "off", "pass": True, "skipped": "--ego-perturb-p 0: the perturbation is not applied; the default run is the pre-change run"}
+    xk = {} if exclude is None else {"exclude": exclude}                          # passed ONLY when given: the pre-change probe calls ``ego.apply`` exactly as before
     m = copy.deepcopy(model).cpu()
     m.train()
-    pert = ego.apply(batch, ego.PROBE_STEP, p=1.0)
+    pert = ego.apply(batch, ego.PROBE_STEP, p=1.0, **xk)
     last = dict(ego.last)
     sel = last["sel"]
     n_sel = int(sel.sum())
@@ -1033,7 +1108,7 @@ def ego_perturb_probe(model, batch, cfg, ego) -> dict:
     t0, g0, gp0 = run(batch)
     t0b, g0b, _ = run(batch)
     t1, g1, gp1 = run(pert)
-    b_zero = ego.apply(batch, ego.PROBE_STEP, p=0.0)
+    b_zero = ego.apply(batch, ego.PROBE_STEP, p=0.0, **xk)
     tz, gz, _ = run(b_zero)
     res.update({"total_unperturbed": t0, "total_perturbed": t1, "loss_diff": t1 - t0, "grad_diff_all": dsum(g1, g0, ""),
                 "grad_diff_by_group": {pre: dsum(g1, g0, pre) for pre in ("adapter", "e_ego", "read_s", "read_t", "read_o", "head_s", "head_o", "wm.")},
@@ -1194,6 +1269,114 @@ def dagger_probe(model, batch, cfg, dag) -> dict:
         raise AssertionError(f"dagger probe: the frozen P10 prior's gradient moved with the swap ({res['control_prior_grad_diff']}): the control must read exactly 0.0")
     if res["control_wm_grad_diff"] not in (0.0, None):
         raise AssertionError(f"dagger probe: the world-model auxiliary's gradient moved with the swap ({res['control_wm_grad_diff']}): act is its transition record and is kept, the control must read exactly 0.0")
+    res["pass"] = True
+    return res
+
+
+COMPOSE_PROBE_DAG_P = 0.5          # the swap's probability in the composed probe: about half of the eligible rows are swapped, the rest are left for the perturbation (at p = 1.0)
+
+
+def ego_dagger_compose_probe(model, batch, cfg, comp) -> dict:
+    """G-LIVE for AMEND1 section 1 (``--ego-perturb-with-dagger``): on a COMPOSED batch -- ``comp.apply``, the SAME call the training loop makes -- BOTH levers reach the loss the trainer backpropagates and the
+    p = 0 controls read EXACTLY 0.0. Off (the flag not named) there is nothing to prove and nothing runs.
+
+      composed   the first probe step k < 0 (-1, -2, ..., never a training step) at which the swap (p = COMPOSE_PROBE_DAG_P) AND the perturbation (p = 1.0: every eligible sample the swap did not replace) both
+                 show on this batch; the overlap, measured from the two masks, is EXACTLY 0; every ego tensor of a swapped row equals the swap's own value (the perturber never touched it)
+      ego        the EXISTING ``ego_perturb_probe`` on the swapped batch with the swap's mask excluded: its batch / law / G-LIVE / gradient / p = 0 clauses, on a composed batch
+      gradient   the loss and gradient of {logged, swap only, perturbation only (on the non-swapped rows), composed}: the swap moves them INSIDE the composed batch (composed vs perturbation-only), the
+                 perturbation moves them inside it too (composed vs swap-only), and each alone moves them
+      controls   (a) the same loss twice on the logged batch differs by EXACTLY 0.0; (b) perturbation p = 0 on the swapped batch: loss and gradient equal the swap-only ones EXACTLY; (c) both p = 0: the SAME batch
+                 object back and loss / gradient equal the logged ones EXACTLY; (d) the frozen P10 prior's and (e) the world-model auxiliary's gradient differences are EXACTLY 0.0
+
+    A violation is an AssertionError, which the caller turns into a refusal. DELETE the perturbation's apply on the composed path, or the swap's, or the exclusion, and a clause here reads 0 / a nonzero overlap."""
+    if not comp.on:
+        return {"ego_dagger_compose": "off", "pass": True, "overlap": 0, "skipped": "--ego-perturb-with-dagger not named: the two levers are not composed (the default run is the pre-change run)"}
+    ego, dag = comp.ego, comp.dag
+    step = None
+    for k in range(-1, -65, -1):
+        comp.apply(batch, k, ego_p=1.0, dag_p=COMPOSE_PROBE_DAG_P)
+        if int(dag.last["n_selected"]) >= 1 and int(ego.last["n_selected"]) >= 1:
+            step = k
+            break
+    if step is None:
+        raise AssertionError("compose probe: no probe step in -1..-64 gives a batch with a swapped row AND a perturbed row (an own state with r' = t, and a logged v0 below vmax, on a row the swap left): "
+                             "the composition cannot be seen on this batch")
+    swapped = dag.apply(batch, step, p=COMPOSE_PROBE_DAG_P)                       # the swap alone ...
+    sw = dag.last["sel"]
+    composed = comp.apply(batch, step, ego_p=1.0, dag_p=COMPOSE_PROBE_DAG_P)      # ... and the composition, through the call the loop makes
+    pe = ego.last["sel"]
+    res = {"probe_step": step, "dagger_p_probe": COMPOSE_PROBE_DAG_P, "ego_p_probe": 1.0, "n_rows": int(sw.numel()), "n_swapped": int(sw.sum()), "n_perturbed": int(pe.sum()),
+           "n_ego_eligible_nonswapped": int(ego.last["n_eligible"]), "overlap": int(comp.overlap), "overlap_recomputed": int((sw & pe).sum())}
+    if res["overlap"] != 0 or res["overlap_recomputed"] != 0:
+        raise AssertionError(f"compose probe: {res['overlap']} / {res['overlap_recomputed']} sample(s) are both swapped and perturbed: the overlap must be exactly 0")
+    ego.apply(swapped, step, p=1.0)                                               # the counterfactual: WITHOUT the exclusion, how many swapped rows would the perturbation have hit
+    res["n_swapped_rows_the_exclusion_protects"] = int((ego.last["sel"] & sw).sum())
+    ego_only = ego.apply(batch, step, p=1.0, exclude=sw)                          # the perturbation alone, on the same non-swapped rows of the logged batch
+
+    def row_same(x, y):                                                           # [B] bool: row equal (NaN == NaN)
+        same = (x == y) | (torch.isnan(x) & torch.isnan(y)) if x.is_floating_point() else (x == y)
+        return same.reshape(x.shape[0], -1).all(1)
+    for k in D.EGO_PERTURB_REBUILT:
+        if not bool(row_same(composed[k], swapped[k])[sw].all()):
+            raise AssertionError(f"compose probe: {k} of a swapped row differs from the swap's own value: the perturbation touched a swapped sample")
+        if not bool(row_same(composed[k], ego_only[k])[~sw].all()):
+            raise AssertionError(f"compose probe: {k} of a non-swapped row differs from the perturbation-only value: the swap touched a row it did not select")
+    res["ego_perturb_probe_on_composed"] = ego_perturb_probe(model, swapped, cfg, ego, exclude=sw)
+    if res["ego_perturb_probe_on_composed"]["n_selected_at_p1"] != res["n_perturbed"]:
+        raise AssertionError(f"compose probe: the existing ego probe selected {res['ego_perturb_probe_on_composed']['n_selected_at_p1']} rows on the swapped batch but the composition perturbs {res['n_perturbed']}: "
+                             "the probe is not running on the composed selection (the swap's mask was not excluded)")
+
+    m = copy.deepcopy(model).cpu()
+    m.train()
+    named = [(n, p) for n, p in m.named_parameters() if p.requires_grad]
+
+    def run(b):
+        for _, p in named:
+            p.grad = None
+        for p in m.prior.parameters():
+            p.grad = None
+        torch.manual_seed(20261026)
+        T = m.loss(b, p_gt=0.5, gen=torch.Generator().manual_seed(13))["terms"]
+        for k, v in T.items():
+            if not torch.isfinite(v):
+                raise AssertionError(f"compose probe: loss term {k} is not finite: {float(v)}")
+        T["total"].backward()
+        g = {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in named}
+        gp = torch.cat([(p.grad.detach().reshape(-1) if p.grad is not None else torch.zeros(p.numel())) for p in m.prior.parameters()])
+        return float(T["total"].detach()), g, gp
+    dsum = lambda ga, gb, pre="": float(sum((ga[n] - gb[n]).abs().sum() for n in ga if n.startswith(pre)))      # noqa: E731
+    t0, g0, gp0 = run(batch)
+    t0b, g0b, _ = run(batch)
+    ts, gs, _ = run(swapped)
+    te, ge, _ = run(ego_only)
+    tc, gc, gpc = run(composed)
+    b_ego0 = comp.apply(batch, step, ego_p=0.0, dag_p=COMPOSE_PROBE_DAG_P)       # control: the perturbation off, the swap on
+    tz, gz, _ = run(b_ego0)
+    b_both0 = comp.apply(batch, step, ego_p=0.0, dag_p=0.0)                      # control: both off
+    tzz, gzz, _ = run(b_both0)
+    res.update({"loss_logged": t0, "loss_swap_only": ts, "loss_ego_only": te, "loss_composed": tc,
+                "grad_diff_swap_alone": dsum(gs, g0), "grad_diff_ego_alone": dsum(ge, g0), "grad_diff_swap_inside_composed": dsum(gc, ge), "grad_diff_ego_inside_composed": dsum(gc, gs),
+                "loss_diff_swap_inside_composed": tc - te, "loss_diff_ego_inside_composed": tc - ts,
+                "control_repeat_loss_diff": abs(t0b - t0), "control_repeat_grad_diff": dsum(g0, g0b),
+                "control_ego_p0_loss_diff": abs(tz - ts), "control_ego_p0_grad_diff": dsum(gz, gs),
+                "control_both_p0_same_object": b_both0 is batch, "control_both_p0_loss_diff": abs(tzz - t0), "control_both_p0_grad_diff": dsum(gzz, g0),
+                "control_prior_grad_diff": float((gpc - gp0).abs().sum()), "control_wm_grad_diff": dsum(gc, g0, "wm.") if m.wm is not None else None})
+    if res["control_repeat_loss_diff"] != 0.0 or res["control_repeat_grad_diff"] != 0.0:
+        raise AssertionError(f"compose probe: the probe is not deterministic (the same loss twice differs by {res['control_repeat_loss_diff']} / {res['control_repeat_grad_diff']}): its differences mean nothing")
+    if res["control_ego_p0_loss_diff"] != 0.0 or res["control_ego_p0_grad_diff"] != 0.0:
+        raise AssertionError(f"compose probe: perturbation p = 0 on the swapped batch is not the swap alone (loss diff {res['control_ego_p0_loss_diff']}, grad diff {res['control_ego_p0_grad_diff']}): the control must read exactly 0.0")
+    if not res["control_both_p0_same_object"] or res["control_both_p0_loss_diff"] != 0.0 or res["control_both_p0_grad_diff"] != 0.0:
+        raise AssertionError(f"compose probe: both p = 0 is not the identity (same object {res['control_both_p0_same_object']}, loss diff {res['control_both_p0_loss_diff']}, grad diff {res['control_both_p0_grad_diff']}): the control must read exactly 0.0")
+    if not (res["grad_diff_swap_inside_composed"] > 0.0 and res["loss_diff_swap_inside_composed"] != 0.0):
+        raise AssertionError(f"compose probe: the swap does not move the composed batch's loss ({res['loss_diff_swap_inside_composed']}) / gradient ({res['grad_diff_swap_inside_composed']}): it does not reach the loss the trainer backpropagates")
+    if not (res["grad_diff_ego_inside_composed"] > 0.0 and res["loss_diff_ego_inside_composed"] != 0.0):
+        raise AssertionError(f"compose probe: the perturbation does not move the composed batch's loss ({res['loss_diff_ego_inside_composed']}) / gradient ({res['grad_diff_ego_inside_composed']}): it does not reach the loss the trainer backpropagates")
+    if not (res["grad_diff_swap_alone"] > 0.0 and res["grad_diff_ego_alone"] > 0.0):
+        raise AssertionError(f"compose probe: a lever alone does not move the gradient (swap {res['grad_diff_swap_alone']}, perturbation {res['grad_diff_ego_alone']})")
+    if 0.0 != res["control_prior_grad_diff"]:
+        raise AssertionError(f"compose probe: the frozen P10 prior's gradient moved with the composition ({res['control_prior_grad_diff']}): the control must read exactly 0.0")
+    if res["control_wm_grad_diff"] not in (0.0, None):
+        raise AssertionError(f"compose probe: the world-model auxiliary's gradient moved with the composition ({res['control_wm_grad_diff']}): act is its transition record and is kept, the control must read exactly 0.0")
     res["pass"] = True
     return res
 
@@ -1477,6 +1660,7 @@ def main(argv=None):
         except Exception as e:                                       # noqa: BLE001  a missing / foreign / mismatched checkpoint is a REFUSAL, not a crash
             raise SystemExit(f"ZZDVB-REFUSEDZZ init-ckpt {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
     dag = make_dagger(a, J, wins, clips, info)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
+    comp = make_compose(a, ego, dag)                                 # AMEND1 section 1: off by default; with --ego-perturb-with-dagger the loop calls THIS (swap first, then the perturbation on the samples the swap left)
     enc = None
     if a.encoder == "lora":
         enc = make_encoder(a, dev)                     # AFTER the heads: it must not move their initialisation (the global RNG is restored inside)
@@ -1493,7 +1677,7 @@ def main(argv=None):
                                max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
     # ---- the launch gate
     lr_at = LRSchedule(a.lr, a.warmup, total)                        # the loop's schedule, built BEFORE the gate so that G-DVB can read --warmup back from it
-    bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag)
+    bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag, comp)
     if bad:
         raise SystemExit("ZZDVB-REFUSEDZZ declared-vs-built: " + "; ".join(bad))
     chunk = enc_chunk(a, cfg)
@@ -1531,11 +1715,17 @@ def main(argv=None):
         dagp = dagger_probe(model, probe, cfg, dag)       # PREREG_V8F_DAGGER: G-LIVE on a SWAPPED batch; the own-state tensors reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
     except (AssertionError, ValueError) as e:
         raise SystemExit(f"ZZDVB-REFUSEDZZ dagger: {e}")
+    try:
+        cmpp = ego_dagger_compose_probe(model, probe, cfg, comp)      # AMEND1 section 1: G-LIVE on a COMPOSED batch; both levers reach the loss gradient, the p = 0 controls read EXACTLY 0.0, the overlap is exactly 0
+    except (AssertionError, ValueError) as e:
+        raise SystemExit(f"ZZDVB-REFUSEDZZ ego-dagger-compose: {e}")
     levers = model.built_levers()
     levers["ego_perturb"] = ego.built_levers()                        # recorded like every other lever (selfcheck.json, summary.json, the checkpoint)
     levers["dagger"] = dag.built_levers()                             # PREREG_V8F_DAGGER: what was BUILT (the bank's path and sha256 included) ...
     levers["dagger_p"], levers["dagger_bank_sha256"] = dag.p, dag.bank_sha256          # ... and the two values the reader keys on, flat (0.0 / None when the lever is off)
     levers["dagger_bank_sha256_declared"] = a.dagger_bank_sha256 or None              # ... and the hash the argv DECLARED (--dagger-bank-sha256); the gate has just required it to equal the built one (None when the lever is off)
+    levers["ego_perturb_with_dagger"] = comp.on                        # AMEND1 section 1: what was BUILT (False unless --ego-perturb-with-dagger) ...
+    levers["ego_dagger_overlap_n"] = cmpp["overlap"]                   # ... and the composed probe's measured overlap on the probe batch (0 when off; the run total is summary.json's ego_dagger_overlap_n)
     levers["init_ckpt"] = info.get("init_ckpt")
     levers["lr_schedule"] = lr_at.built_levers()                       # the built warmup / peak / total the loop calls (G-DVB read --warmup back from it)
     if enc is not None:
@@ -1545,6 +1735,7 @@ def main(argv=None):
           "steps_total": total, "S_steps_per_epoch_100pct": S, "info": info, "argv_sha": argv_sha(argv)}
     sc["ego_perturb_probe"] = egop
     sc["dagger_probe"] = dagp
+    sc["ego_dagger_compose_probe"] = cmpp
     if ident is not None:
         sc["identity_probe"] = ident
     json.dump(sc, open(os.path.join(a.out, "selfcheck.json"), "w"), indent=1, default=str)
@@ -1560,6 +1751,8 @@ def main(argv=None):
     ego_int = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # ... and since the last log line
     dag_tot = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # PREREG_V8F_DAGGER's run totals (samples seen, eligible = an own state with r' = t, swapped, nav frames left as logged); carried in the checkpoint
     dag_int = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # ... and since the last log line
+    ov_tot = {"n": 0}                                             # AMEND1 section 1: samples both swapped and perturbed (exactly 0), carried in the checkpoint of a composed arm only
+    ov_int = {"n": 0}                                             # ... and since the last log line
     if os.path.exists(ck_path) and not a.no_resume:
         ck = torch.load(ck_path, map_location="cpu", weights_only=False)
         if ck["argv_sha"] != argv_sha(argv):
@@ -1571,6 +1764,7 @@ def main(argv=None):
         step, ep, bi = ck["step"], ck["epoch"], ck["batch_in_epoch"]
         ego_tot.update(ck.get("ego_totals") or {})
         dag_tot.update(ck.get("dagger_totals") or {})
+        ov_tot.update(ck.get("ego_dagger_overlap") or {})
         print(f"[resume] step {step} epoch {ep} batch {bi}", flush=True)
 
     def save(final=False):
@@ -1580,6 +1774,8 @@ def main(argv=None):
                 "cfg_tuple_fields": {"wm_strides": list(cfg.wm_strides)},
                 "ego_perturb": ego.built_levers(), "init_ckpt": info.get("init_ckpt"), "ego_totals": dict(ego_tot),
                 "dagger": dag.built_levers(), "dagger_totals": dict(dag_tot)}          # O-RECOVER: what was BUILT, beside the config, and the counts so far
+        if comp.on:                                                     # composed arms only: a flag-off checkpoint keeps its key set
+            blob["ego_perturb_with_dagger"], blob["ego_dagger_overlap"] = True, dict(ov_tot)
         if enc is not None:             # `model` keeps B's layout (the unchanged v8f_mini_eval.py loads it); the LoRA matrices travel beside it
             blob["lora"], blob["encoder_levers"] = enc.lora_state_dict(), enc.built_levers()
         torch.save(blob, ck_path + ".tmp")
@@ -1599,13 +1795,18 @@ def main(argv=None):
             pf = Prefetch(gen_batches, lambda idx: D.collate_frames([ds.item(*w) for w in idx], fstore), depth=2)
         for b in pf:
             fr = (b.pop("frames_u8"), b.pop("frame_map")) if enc is not None else None      # the frames stay on the host; the encoder moves them chunk by chunk
-            b = ego.apply(b, step)                                 # O-RECOVER: the kinematic inputs of the selected samples are rebuilt from a perturbed ego state; targets and labels are untouched (off: `b` itself)
+            if comp.on:                                            # AMEND1 section 1 (--ego-perturb-with-dagger): the swap is drawn first, the perturbation only on the samples the swap did not replace; the overlap is measured (exactly 0)
+                b = comp.apply(b, step)
+                for c_ in (ov_int, ov_tot):
+                    c_["n"] += comp.overlap
+            else:                                                  # every other argv: the two original lines, in their original order
+                b = ego.apply(b, step)                                 # O-RECOVER: the kinematic inputs of the selected samples are rebuilt from a perturbed ego state; targets and labels are untouched (off: `b` itself)
+                b = dag.apply(b, step)                                 # PREREG_V8F_DAGGER: the ego tensors of the selected samples are the model's OWN T1-kin state at the matched route point; targets and labels stay the human's (off: `b` itself)
             for c_ in (ego_int, ego_tot):                          # the control counts: samples seen, eligible (logged v0 < vmax), perturbed (exactly 0 when the lever is off)
                 c_["rows"] += ego.last["n_rows"]
                 c_["eligible"] += ego.last["n_eligible"]
                 c_["n"] += ego.last["n_selected"]
                 c_["nav_kept"] += ego.last["ego_perturb_nav_kept"]
-            b = dag.apply(b, step)                                 # PREREG_V8F_DAGGER: the ego tensors of the selected samples are the model's OWN T1-kin state at the matched route point; targets and labels stay the human's (off: `b` itself)
             for c_ in (dag_int, dag_tot):                          # the control counts: samples seen, eligible (an own state with r' = t), swapped (exactly 0 when the lever is off), nav frames left as logged
                 c_["rows"] += dag.last["n_rows"]
                 c_["eligible"] += dag.last["n_eligible"]
@@ -1647,6 +1848,9 @@ def main(argv=None):
                 if dag.active:
                     rec["dagger_n"], rec["dagger_eligible"], rec["dagger_rows"], rec["dagger_nav_kept"] = dag_int["n"], dag_int["eligible"], dag_int["rows"], dag_int["nav_kept"]          # per log interval
                 dag_int.update(rows=0, eligible=0, n=0, nav_kept=0)
+                if comp.on:
+                    rec["ego_dagger_overlap_n"] = ov_int["n"]               # AMEND1 section 1: per log interval (exactly 0)
+                ov_int.update(n=0)
                 if enc is not None:
                     rec["lora_grad_norm"] = float(gn_l)
                 log.write(json.dumps(rec) + "\n"); log.flush()
@@ -1668,6 +1872,8 @@ def main(argv=None):
                "selfcheck": "selfcheck.json",
                "ego_perturb_n": ego_tot["n"], "ego_perturb_eligible": ego_tot["eligible"], "ego_perturb_rows": ego_tot["rows"], "ego_perturb_nav_kept": ego_tot["nav_kept"],
                "dagger_n": dag_tot["n"], "dagger_eligible": dag_tot["eligible"], "dagger_rows": dag_tot["rows"], "dagger_nav_kept": dag_tot["nav_kept"]}      # PREREG_V8F_DAGGER run totals: exactly 0 swapped at p = 0; swapped == eligible at p = 1      # O-RECOVER run totals: exactly 0 perturbed at p = 0; perturbed == eligible at p = 1
+    if comp.on:                                                            # AMEND1 section 1: the composed arm's run record (a flag-off summary.json keeps its key set)
+        summary["ego_dagger_overlap_n"], summary["ego_perturb_with_dagger"] = ov_tot["n"], True
     if enc is not None:
         summary["encoder"] = "lora"
     json.dump(summary, open(os.path.join(a.out, "summary.json"), "w"), indent=1, default=str)      # LAST, atomically meaningful

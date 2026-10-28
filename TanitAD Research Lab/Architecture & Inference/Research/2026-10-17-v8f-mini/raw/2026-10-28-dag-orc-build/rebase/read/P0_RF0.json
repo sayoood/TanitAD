@@ -1,0 +1,621 @@
+{
+ "schema": "p0-rf0-v1",
+ "claim_row": "H-V8F-DAG-ORC-1",
+ "prereg": "Project Steering/PREREG_V8F_DAG_ORC.md @ 3b7b404e",
+ "section": "3 (RF0_r), launch precondition 1",
+ "definition": "RF0_r = max over s in {0,1} of |d_r,s(DAG-0 - ORC-0)|, Read A's paired point of DAG-0 - ORC-0 on row r (S-POS: the difference of the two runs' banked CTRV contrasts)",
+ "pair": {
+  "X": "DAG-0 (v8f-dagger-t1/dump_DAG0_s{s}_m10_causal_heads)",
+  "Y": "ORC-0 (v8f-orecover-t1/dump_ORC0_s{s}_m10_causal_heads)",
+  "note": "banked M2b-init pair: same argv except --out and the default-off --dagger-p 0; same seed; builds b43c7a9a / 853f2fc3 (PREREG section 3)"
+ },
+ "tier": "T1-kin (self-action OPEN loop; m=10, causal bucket, dead-reckoned nav, logged scene, periodic, executor plan; plain). Never 'closed loop'.",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap, B=2000, seed 0, 141 episodes / 2,399 windows, per seed, paired. RF0 uses the POINT only; lo / hi / separated are carried for the record.",
+ "evidence_class": "MEASURED (ours; banked dumps named in `inputs`)",
+ "n_rows": 19,
+ "rows": {
+  "ADE6": {
+   "family": "PRIMARY",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": 0.0091,
+     "lo": -0.0314,
+     "hi": 0.0503,
+     "separated": false,
+     "n": "2399/141"
+    },
+    "s1": {
+     "delta": 0.0138,
+     "lo": -0.0324,
+     "hi": 0.0588,
+     "separated": false,
+     "n": "2399/141"
+    }
+   },
+   "RF0": 0.0138,
+   "RF0_seed_that_binds": "s1",
+   "F": 0.1207
+  },
+  "speed MAE": {
+   "family": "LONGITUDINAL",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": 0.0407,
+     "lo": -0.0074,
+     "hi": 0.0942,
+     "separated": false,
+     "n": "2399/141"
+    },
+    "s1": {
+     "delta": 0.0796,
+     "lo": 0.0301,
+     "hi": 0.1287,
+     "separated": true,
+     "n": "2399/141"
+    }
+   },
+   "RF0": 0.0796,
+   "RF0_seed_that_binds": "s1",
+   "F": 0.0
+  },
+  "along-track MAE": {
+   "family": "LONGITUDINAL",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": -0.0142,
+     "lo": -0.0527,
+     "hi": 0.0215,
+     "separated": false,
+     "n": "2399/141"
+    },
+    "s1": {
+     "delta": 0.0201,
+     "lo": -0.0223,
+     "hi": 0.0625,
+     "separated": false,
+     "n": "2399/141"
+    }
+   },
+   "RF0": 0.0201,
+   "RF0_seed_that_binds": "s1",
+   "F": 0.0
+  },
+  "accel MAE": {
+   "family": "LONGITUDINAL",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": 0.1323,
+     "lo": 0.0357,
+     "hi": 0.2425,
+     "separated": true,
+     "n": "2399/141"
+    },
+    "s1": {
+     "delta": 0.0597,
+     "lo": -0.0634,
+     "hi": 0.1749,
+     "separated": false,
+     "n": "2399/141"
+    }
+   },
+   "RF0": 0.1323,
+   "RF0_seed_that_binds": "s0",
+   "F": 0.0
+  },
+  "DK-VIOL": {
+   "family": "LONGITUDINAL",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": -0.0017,
+     "lo": -0.0115,
+     "hi": 0.0062,
+     "separated": false,
+     "n": "595/70"
+    },
+    "s1": {
+     "delta": -0.005,
+     "lo": -0.0116,
+     "hi": 0.0,
+     "separated": false,
+     "n": "595/70"
+    }
+   },
+   "RF0": 0.005,
+   "RF0_seed_that_binds": "s1",
+   "F": 0.0
+  },
+  "DK-HW": {
+   "family": "LONGITUDINAL",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": 0.1308,
+     "lo": -0.0033,
+     "hi": 0.3043,
+     "separated": false,
+     "n": "700/72"
+    },
+    "s1": {
+     "delta": -0.0249,
+     "lo": -0.1332,
+     "hi": 0.0779,
+     "separated": false,
+     "n": "702/72"
+    }
+   },
+   "RF0": 0.1308,
+   "RF0_seed_that_binds": "s0",
+   "F": 0.0
+  },
+  "DK-TG": {
+   "family": "LONGITUDINAL",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": -0.0041,
+     "lo": -0.0406,
+     "hi": 0.021,
+     "separated": false,
+     "n": "652/72"
+    },
+    "s1": {
+     "delta": 0.0041,
+     "lo": -0.0225,
+     "hi": 0.0303,
+     "separated": false,
+     "n": "656/72"
+    }
+   },
+   "RF0": 0.0041,
+   "RF0_seed_that_binds": "s0",
+   "F": 0.0
+  },
+  "heading MAE": {
+   "family": "LATERAL",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": -0.0195,
+     "lo": -0.358,
+     "hi": 0.2771,
+     "separated": false,
+     "n": "2373/141"
+    },
+    "s1": {
+     "delta": -0.3801,
+     "lo": -0.7215,
+     "hi": -0.042,
+     "separated": true,
+     "n": "2373/141"
+    }
+   },
+   "RF0": 0.3801,
+   "RF0_seed_that_binds": "s1",
+   "F": 0.0
+  },
+  "yaw-rate MAE": {
+   "family": "LATERAL",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": -0.5535,
+     "lo": -1.5066,
+     "hi": 0.4687,
+     "separated": false,
+     "n": "2365/141"
+    },
+    "s1": {
+     "delta": 0.2788,
+     "lo": -0.5728,
+     "hi": 1.1552,
+     "separated": false,
+     "n": "2365/141"
+    }
+   },
+   "RF0": 0.5535,
+   "RF0_seed_that_binds": "s0",
+   "F": 0.0
+  },
+  "curvature MAE": {
+   "family": "LATERAL",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": -0.0263,
+     "lo": -0.0447,
+     "hi": -0.0111,
+     "separated": true,
+     "n": "2365/141"
+    },
+    "s1": {
+     "delta": -0.012,
+     "lo": -0.0219,
+     "hi": -0.0035,
+     "separated": true,
+     "n": "2365/141"
+    }
+   },
+   "RF0": 0.0263,
+   "RF0_seed_that_binds": "s0",
+   "F": 0.0
+  },
+  "cross-track MAE": {
+   "family": "LATERAL",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": 0.032,
+     "lo": -0.0009,
+     "hi": 0.0666,
+     "separated": false,
+     "n": "2399/141"
+    },
+    "s1": {
+     "delta": -0.0005,
+     "lo": -0.0297,
+     "hi": 0.028,
+     "separated": false,
+     "n": "2399/141"
+    }
+   },
+   "RF0": 0.032,
+   "RF0_seed_that_binds": "s0",
+   "F": 0.0
+  },
+  "L1 lateral-accel MAE": {
+   "family": "LATERAL",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": 0.3149,
+     "lo": -0.0552,
+     "hi": 0.7566,
+     "separated": false,
+     "n": "2365/141"
+    },
+    "s1": {
+     "delta": 0.3985,
+     "lo": 0.1061,
+     "hi": 0.7631,
+     "separated": true,
+     "n": "2365/141"
+    }
+   },
+   "RF0": 0.3985,
+   "RF0_seed_that_binds": "s1",
+   "F": 0.0
+  },
+  "L2 curvature MAE (GT>=5.2)": {
+   "family": "LATERAL",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": -0.0068,
+     "lo": -0.0157,
+     "hi": 0.0011,
+     "separated": false,
+     "n": "2105/135"
+    },
+    "s1": {
+     "delta": 0.0006,
+     "lo": -0.0049,
+     "hi": 0.0062,
+     "separated": false,
+     "n": "2105/135"
+    }
+   },
+   "RF0": 0.0068,
+   "RF0_seed_that_binds": "s0",
+   "F": 0.0
+  },
+  "TAC-LAT": {
+   "family": "TACTICAL",
+   "direction": "higher",
+   "per_seed": {
+    "s0": {
+     "delta": -0.0183,
+     "lo": -0.0346,
+     "hi": -0.0037,
+     "separated": true,
+     "n": "2399/141"
+    },
+    "s1": {
+     "delta": -0.0154,
+     "lo": -0.0413,
+     "hi": 0.0084,
+     "separated": false,
+     "n": "2399/141"
+    }
+   },
+   "RF0": 0.0183,
+   "RF0_seed_that_binds": "s0",
+   "F": 0.0
+  },
+  "TAC-LON": {
+   "family": "TACTICAL",
+   "direction": "higher",
+   "per_seed": {
+    "s0": {
+     "delta": -0.0125,
+     "lo": -0.0271,
+     "hi": 0.0021,
+     "separated": false,
+     "n": "2399/141"
+    },
+    "s1": {
+     "delta": -0.0046,
+     "lo": -0.0171,
+     "hi": 0.0071,
+     "separated": false,
+     "n": "2399/141"
+    }
+   },
+   "RF0": 0.0125,
+   "RF0_seed_that_binds": "s0",
+   "F": 0.0
+  },
+  "S-POS@30": {
+   "family": "STRATEGIC",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": 0.1877,
+     "kind": "difference of the two runs' banked CTRV contrasts (points)",
+     "DAG0_contrast": 0.1178,
+     "ORC0_contrast": -0.0699,
+     "DAG0_separated_vs_CTRV": false,
+     "ORC0_separated_vs_CTRV": false
+    },
+    "s1": {
+     "delta": -0.0035000000000000586,
+     "kind": "difference of the two runs' banked CTRV contrasts (points)",
+     "DAG0_contrast": 0.8148,
+     "ORC0_contrast": 0.8183,
+     "DAG0_separated_vs_CTRV": true,
+     "ORC0_separated_vs_CTRV": true
+    }
+   },
+   "RF0": 0.1877,
+   "RF0_seed_that_binds": "s0",
+   "F": 0.0
+  },
+  "S-POS@50": {
+   "family": "STRATEGIC",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": 0.44489999999999996,
+     "kind": "difference of the two runs' banked CTRV contrasts (points)",
+     "DAG0_contrast": -0.9084,
+     "ORC0_contrast": -1.3533,
+     "DAG0_separated_vs_CTRV": false,
+     "ORC0_separated_vs_CTRV": true
+    },
+    "s1": {
+     "delta": 0.04870000000000002,
+     "kind": "difference of the two runs' banked CTRV contrasts (points)",
+     "DAG0_contrast": 0.3335,
+     "ORC0_contrast": 0.2848,
+     "DAG0_separated_vs_CTRV": false,
+     "ORC0_separated_vs_CTRV": false
+    }
+   },
+   "RF0": 0.44489999999999996,
+   "RF0_seed_that_binds": "s0",
+   "F": 0.0
+  },
+  "S-POS@80": {
+   "family": "STRATEGIC",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": 1.0082,
+     "kind": "difference of the two runs' banked CTRV contrasts (points)",
+     "DAG0_contrast": -3.8923,
+     "ORC0_contrast": -4.9005,
+     "DAG0_separated_vs_CTRV": true,
+     "ORC0_separated_vs_CTRV": true
+    },
+    "s1": {
+     "delta": 0.2925,
+     "kind": "difference of the two runs' banked CTRV contrasts (points)",
+     "DAG0_contrast": -1.9495,
+     "ORC0_contrast": -2.242,
+     "DAG0_separated_vs_CTRV": false,
+     "ORC0_separated_vs_CTRV": true
+    }
+   },
+   "RF0": 1.0082,
+   "RF0_seed_that_binds": "s0",
+   "F": 0.0
+  },
+  "M1 crawl share": {
+   "family": "crawl",
+   "direction": "lower",
+   "per_seed": {
+    "s0": {
+     "delta": -0.0001,
+     "lo": -0.003,
+     "hi": 0.0028,
+     "separated": false,
+     "n": "2105/135"
+    },
+    "s1": {
+     "delta": -0.0048,
+     "lo": -0.0091,
+     "hi": -0.0008,
+     "separated": true,
+     "n": "2105/135"
+    }
+   },
+   "RF0": 0.0048,
+   "RF0_seed_that_binds": "s1",
+   "F": 0.0
+  }
+ },
+ "RF0": {
+  "ADE6": 0.0138,
+  "speed MAE": 0.0796,
+  "along-track MAE": 0.0201,
+  "accel MAE": 0.1323,
+  "DK-VIOL": 0.005,
+  "DK-HW": 0.1308,
+  "DK-TG": 0.0041,
+  "heading MAE": 0.3801,
+  "yaw-rate MAE": 0.5535,
+  "curvature MAE": 0.0263,
+  "cross-track MAE": 0.032,
+  "L1 lateral-accel MAE": 0.3985,
+  "L2 curvature MAE (GT>=5.2)": 0.0068,
+  "TAC-LAT": 0.0183,
+  "TAC-LON": 0.0125,
+  "S-POS@30": 0.1877,
+  "S-POS@50": 0.44489999999999996,
+  "S-POS@80": 1.0082,
+  "M1 crawl share": 0.0048
+ },
+ "controls": {
+  "PINS": {
+   "PASS": true,
+   "detail": "15 pinned inputs re-hashed (dag2_read.PINS)"
+  },
+  "PINS-STAGED": {
+   "PASS": true,
+   "detail": "the staged copy of dag2_read.py is the sha-pinned dag2t1/dag2_read.py"
+  },
+  "PINS-TXT:DAG0": {
+   "PASS": true,
+   "detail": "9 tool files re-hashed against E:/Projects/TanitAD-artifacts/v8f-dagger-t1/PINS.txt"
+  },
+  "PINS-TXT:ORC0": {
+   "PASS": true,
+   "detail": "7 tool files re-hashed against E:/Projects/TanitAD-artifacts/v8f-orecover-t1/PINS.txt"
+  },
+  "WINDOWS:s0": {
+   "PASS": true,
+   "detail": {
+    "windows_bit_equal_to_DAG0": {
+     "ORC0": true,
+     "DAG": true
+    },
+    "n_windows": 2399,
+    "n_episodes": 141
+   }
+  },
+  "FLOOR:s0": {
+   "PASS": true,
+   "detail": "P10's tracks (fl) are bit-equal in DAG-0, ORC-0 and DAG dumps"
+  },
+  "IDENTITY:s0": {
+   "PASS": true,
+   "detail": {
+    "DAG0-DAG0 exactly 0": true,
+    "ORC0-ORC0 exactly 0": true
+   }
+  },
+  "WINDOWS:s1": {
+   "PASS": true,
+   "detail": {
+    "windows_bit_equal_to_DAG0": {
+     "ORC0": true,
+     "DAG": true
+    },
+    "n_windows": 2399,
+    "n_episodes": 141
+   }
+  },
+  "FLOOR:s1": {
+   "PASS": true,
+   "detail": "P10's tracks (fl) are bit-equal in DAG-0, ORC-0 and DAG dumps"
+  },
+  "IDENTITY:s1": {
+   "PASS": true,
+   "detail": {
+    "DAG0-DAG0 exactly 0": true,
+    "ORC0-ORC0 exactly 0": true
+   }
+  },
+  "RC-DAG": {
+   "PASS": true,
+   "detail": {
+    "differences": {
+     "s0": [],
+     "s1": []
+    },
+    "rows_compared_per_seed": 19,
+    "max_abs_diff_delta_lo_hi": 0.0,
+    "tolerance": 0.0001
+   }
+  },
+  "RC-DAG0": {
+   "PASS": true,
+   "detail": {
+    "differences": {
+     "s0": [],
+     "s1": []
+    },
+    "rows_compared_per_seed": 19,
+    "max_abs_diff_delta_lo_hi": 0.0,
+    "tolerance": 0.0001
+   }
+  },
+  "SPOS-BANKED": {
+   "PASS": true,
+   "detail": {
+    "records": 6,
+    "source": "E:/Projects/TanitAD-artifacts/v8f-dagger-t1/read/DAG_READ.json"
+   }
+  }
+ },
+ "inputs": {
+  "PINS.txt:DAG0": {
+   "path": "E:/Projects/TanitAD-artifacts/v8f-dagger-t1/PINS.txt",
+   "sha256": "ef37457b1c21da9681ef737742da42f5c1a82296a7a32c5b934f7084837d9f0d",
+   "n_files": 9
+  },
+  "PINS.txt:ORC0": {
+   "path": "E:/Projects/TanitAD-artifacts/v8f-orecover-t1/PINS.txt",
+   "sha256": "d9615373a922588d72972ed018b73c36166669511b1eba792219e5885c2a7d9c",
+   "n_files": 7
+  },
+  "dump:DAG0:s0": {
+   "sha256_of_file_hashes": "b788b6607347dc250c6b83959f0de5b76aca90e445e64b1758ccfc15181b1ce2",
+   "n_files": 141,
+   "path": "E:/Projects/TanitAD-artifacts/v8f-dagger-t1/dump_DAG0_s0_m10_causal_heads"
+  },
+  "dump:ORC0:s0": {
+   "sha256_of_file_hashes": "d4a2b979e28b07017bc517a6f0530f58c8b12eecebd15f3da533004c1908f8b1",
+   "n_files": 141,
+   "path": "E:/Projects/TanitAD-artifacts/v8f-orecover-t1/dump_ORC0_s0_m10_causal_heads"
+  },
+  "dump:DAG:s0": {
+   "sha256_of_file_hashes": "d6e54a8848d8af630d3a5b4ace76e0bad67bee2ec55a3129d6e00d074455fbc5",
+   "n_files": 141,
+   "path": "E:/Projects/TanitAD-artifacts/v8f-dagger-t1/dump_DAG_s0_m10_causal_heads"
+  },
+  "dump:DAG0:s1": {
+   "sha256_of_file_hashes": "40f2cc7ae4f26c364b08d356cbca5d8e665eb68848e570d7401021977026c79c",
+   "n_files": 141,
+   "path": "E:/Projects/TanitAD-artifacts/v8f-dagger-t1/dump_DAG0_s1_m10_causal_heads"
+  },
+  "dump:ORC0:s1": {
+   "sha256_of_file_hashes": "8f5a281c29f367076e96ebfa126732860c37bc5bb90599169444a348f8af3dc4",
+   "n_files": 141,
+   "path": "E:/Projects/TanitAD-artifacts/v8f-orecover-t1/dump_ORC0_s1_m10_causal_heads"
+  },
+  "dump:DAG:s1": {
+   "sha256_of_file_hashes": "e9b99f35bcd4eeda35696dae1552801d0865db768c30a3a638fa977f09eea6ea",
+   "n_files": 141,
+   "path": "E:/Projects/TanitAD-artifacts/v8f-dagger-t1/dump_DAG_s1_m10_causal_heads"
+  }
+ },
+ "code": {
+  "p0_rf0.py": "2b204072e6f7260b0643d8e6f45ca8514d0094ffe7d850ab58ff397b22c05787",
+  "dag2_read.py (ReadA, unchanged)": "1425e8a3895c442b9841f3bcd6fd0893021d583e06485fde171b04bfa73fbc20"
+ }
+}

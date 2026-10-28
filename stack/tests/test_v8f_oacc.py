@@ -1883,6 +1883,7 @@ DAG_LABELS = {"dagname", "prepdag", "dagarm", "dagarm_dry", "dagarm_have", "bank
 DAG_LABELS |= {"dagoaccarm", "dagoaccarm_dry", "dagoaccarm_have", "dagoaccwacc", "dagoaccwacc_dry", "dagoaccwacc_have", "waccdag"}      # PREREG_V8F_DAG_OACC, after DAGGER2's
 DAG_LABELS |= {"flatdagarm", "flatdagarm_dry", "flatdagarm_have", "evalflatdag", "evalflatdag_1", "evalflatdag_2", "bankflat"}      # PREREG_V8F_FLATDAG, after DAG-OACC's
 DAG_LABELS |= {"dagorcarm"}      # PREREG_V8F_DAG_ORC, after FLAT-DAG's
+DAG_LABELS |= {"dagoaccorcarm"}      # PREREG_V8F_DAG_ORC Amendment 1 (DAG-OACC base), after DAG-ORC's
 # PREREG_V8F_FLAT's seven labels as they stand at the tip 4f561a2c (sha256[:16] of "\n" + the text up to the next label): this edit appended AFTER them and edited none
 FLAT_PINS = {"gateflat": "cec296bd862eedcd", "trainflat": "9e28a04f9c79af1e", "evalflat": "024f6a7e06886322", "evalflat_1": "2f90baa2f624c148", "evalflat_2": "f3c16ba44e719907",
              "evalflat_3": "ea291c4013c2b747", "evalflat_4": "901e965d7b940ca4"}

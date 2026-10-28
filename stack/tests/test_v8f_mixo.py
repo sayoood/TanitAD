@@ -1297,6 +1297,7 @@ DAG_LABELS = {"dagname", "prepdag", "dagarm", "dagarm_dry", "dagarm_have", "bank
 DAG_LABELS |= {"dagoaccarm", "dagoaccarm_dry", "dagoaccarm_have", "dagoaccwacc", "dagoaccwacc_dry", "dagoaccwacc_have", "waccdag"}      # PREREG_V8F_DAG_OACC, after DAGGER2's
 DAG_LABELS |= {"flatdagarm", "flatdagarm_dry", "flatdagarm_have", "evalflatdag", "evalflatdag_1", "evalflatdag_2", "bankflat"}      # PREREG_V8F_FLATDAG, after DAG-OACC's
 DAG_LABELS |= {"dagorcarm"}      # PREREG_V8F_DAG_ORC, after FLAT-DAG's
+DAG_LABELS |= {"dagoaccorcarm"}      # PREREG_V8F_DAG_ORC Amendment 1 (DAG-OACC base), after DAG-ORC's
 OACC_LABELS = {"waccoacc", "oaccwacc", "gateoacc", "trainoacc", "evaloacc", "fitoacc"}         # PREREG_V8F_OACC appended these after FLAT's (test_v8f_oacc.py pins them); widened here, nothing else
 # PREREG_V8F_KIND's four labels as they stand at c0769eaa (sha256[:16] of "\n" + the text up to the next label): PREREG_V8F_MIXO appended AFTER them and edited none
 KIND_PINS = {"kind": "d1445aa3e2135915", "kindseed": "9c13c94705b73355", "kindown": "df45fbd31218aea9", "kindorc": "e7051ae3f70c3a4f"}

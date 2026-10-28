@@ -85,6 +85,7 @@ rem   v8f_mini_box2_queue.cmd bankflat SEED         PREREG_V8F_FLATDAG section 1
 rem   gatedag / traindag / evaldag also take ARM dagoacc (DAG's fine-tune argv verbatim + --w-acc <the waccdag value>; P is fixed at 0.1, any other P is REFUSED; same init M2b_s<SEED>, same iteration-1 bank and sha256; own run directory M2b_s<SEED>_dagoacc): PREREG_V8F_DAG_OACC section 1
 rem   gatedag / traindag / evaldag also take ARM flatdag (FLAT_s<SEED> fine-tuned with DAG's recipe, --o-interface cut named, --dagger-p 0.1 on the FLAT bank; P fixed at 0.1) and flatdag0 (the same argv with --dagger-p 0; takes no P); evaldag runs the standard eval AND the GT-code oracle (the cut identity read) for them: PREREG_V8F_FLATDAG section 1
 rem   gatedag / traindag / evaldag also take ARM dagorc (DAG_s<SEED> fine-tuned with DAG2-0's argv plus O-RECOVER's ego perturbation at p 0.3 and its five law flags), dagorcrep (DAG2-0's argv with --seed 10 / 11, the replicate; no perturbation) and dagorc01 (dagorc at p 0.1); none takes a P (any extra argument is REFUSED): PREREG_V8F_DAG_ORC section 1. Init = %RUNSM%\M2b_s<SEED>_dag\ckpt_last.pt; run M2b_s<SEED>_<ARM>; tag M2b-<ARM>_s<SEED>; pin dagpin\M2b_s<SEED>_<ARM>.train.argv.txt
+rem   gatedag / traindag / evaldag also take ARM dagoaccorc (M2b_s<SEED> fine-tuned with DAG-OACC's argv verbatim plus O-RECOVER's ego perturbation at p 0.3 with its five law flags, composed with the DAgger swap by --ego-perturb-with-dagger) and dagoaccorcrep (DAG-OACC's argv with --seed 10 / 11, the replicate; no perturbation); neither takes a P (any extra argument is REFUSED): PREREG_V8F_DAG_ORC Amendment 1 section 1. Init = %RUNSM%\M2b_s<SEED>\ckpt_last.pt; run M2b_s<SEED>_<ARM>; tag M2b-<ARM>_s<SEED>; pin dagpin\M2b_s<SEED>_<ARM>.train.argv.txt
 rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
@@ -1089,6 +1090,8 @@ if /i "%~1"=="flatdag0" set "DAGS=flatdag0"
 if /i "%~1"=="dagorc" set "DAGS=dagorc"
 if /i "%~1"=="dagorcrep" set "DAGS=dagorcrep"
 if /i "%~1"=="dagorc01" set "DAGS=dagorc01"
+if /i "%~1"=="dagoaccorc" set "DAGS=dagoaccorc"
+if /i "%~1"=="dagoaccorcrep" set "DAGS=dagoaccorcrep"
 if not defined DAGS (echo REFUSED: ARM must be dag or dag0, got "%~1" & exit /b 2)
 if "%~2"=="" (echo REFUSED: a SEED is needed & exit /b 2)
 if not "%~2"=="0" if not "%~2"=="1" (echo REFUSED: SEED must be 0 or 1, got "%~2" & exit /b 2)
@@ -1127,6 +1130,8 @@ if /i "%DAGS%"=="flatdag0" goto :flatdagarm
 if /i "%DAGS%"=="dagorc" goto :dagorcarm
 if /i "%DAGS%"=="dagorcrep" goto :dagorcarm
 if /i "%DAGS%"=="dagorc01" goto :dagorcarm
+if /i "%DAGS%"=="dagoaccorc" goto :dagoaccorcarm
+if /i "%DAGS%"=="dagoaccorcrep" goto :dagoaccorcarm
 set "DAGP=0"
 set "DAGSHA="
 set "DAGF0=--init-ckpt "%RUNSM%\M2b_s%~2\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0"
@@ -1430,4 +1435,18 @@ if /i "%DAGS%"=="dagorc" (set "DAGORCP=0.3" & set "DAGORCL= --ego-perturb-vscale
 if /i "%DAGS%"=="dagorc01" (set "DAGORCP=0.1" & set "DAGORCL= --ego-perturb-vscale 0.5 1.0 --ego-perturb-vmax 8.0 --ego-perturb-adrop 1.5 --ego-perturb-yawrate-std 2.0 --ego-perturb-seed %~2")
 if /i "%DAGS%"=="dagorcrep" set "DAGSEED=1%~2"
 set "DAGF=--init-ckpt "%RUNSM%\M2b_s%~2_dag\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p %DAGORCP%%DAGORCL% --dagger-p 0"
+exit /b 0
+:dagoaccorcarm
+rem PREREG_V8F_DAG_ORC Amendment 1 section 1: reached ONLY from :dagarm (never called, never dispatched) with DAGS = dagoaccorc | dagoaccorcrep and :dagname's names set. %1 = ARM, %2 = SEED (0 | 1: the seed of M2b_s<SEED>, the init), %3 = nothing: the dose is fixed (B is not queued).
+rem The fine-tune is DAG-OACC's banked argv VERBATIM (PREREG_V8F_DAG_OACC: init M2b_s<SEED>, 3,000 steps, lr 1e-4, warmup 100, p_gt 0.2 -> 0.2, --ego-perturb-p NAMED, --dagger-p 0.1, the ITERATION-1 bank %RUNSM%\dagger_bank\s<SEED> with its sha256 computed HERE, --dagger-seed <SEED>, --w-acc <the waccdag value>), obtained by CALLING :dagoaccarm (untouched): DAGP, DAGSHA, WACCDAG and DAGBANK come from it.
+rem dagoaccorc (A) = that with --ego-perturb-p 0.3 followed by O-RECOVER's five law flags at their registered values (vscale 0.5 1.0, vmax 8.0, adrop 1.5, yawrate-std 2.0, seed = SEED) and the bare flag --ego-perturb-with-dagger at the END (the swap is drawn first, the perturbation only on samples the swap did not replace). dagoaccorcrep (REP) = DAG-OACC's argv with the trainer seed 10 / 11 (DAGSEED = 1<SEED>; --dagger-seed stays SEED), no perturbation, no flag.
+rem Names (all from :dagname, indexed by the init seed SEED, REP too): run M2b_s<SEED>_<ARM>, tag M2b-<ARM>_s<SEED>, gate directory gate_M2b-<ARM>_s<SEED>, pin dagpin\M2b_s<SEED>_<ARM>.train.argv.txt.
+set "DAGORCP=0"
+set "DAGORCL="
+set "DAGORCX="
+if not "%~3"=="" (echo REFUSED: %DAGS% takes no P, the dose is fixed by PREREG_V8F_DAG_ORC Amendment 1, got "%~3" & exit /b 2)
+call :dagoaccarm %~1 %~2 0.1 || exit /b 2
+if /i "%DAGS%"=="dagoaccorc" (set "DAGORCP=0.3" & set "DAGORCL= --ego-perturb-vscale 0.5 1.0 --ego-perturb-vmax 8.0 --ego-perturb-adrop 1.5 --ego-perturb-yawrate-std 2.0 --ego-perturb-seed %~2" & set "DAGORCX= --ego-perturb-with-dagger")
+if /i "%DAGS%"=="dagoaccorcrep" set "DAGSEED=1%~2"
+set "DAGF=--init-ckpt "%RUNSM%\M2b_s%~2\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p %DAGORCP%%DAGORCL% --dagger-p %DAGP% --dagger-bank "%DAGBANK%" --dagger-bank-sha256 %DAGSHA% --dagger-seed %~2 --w-acc %WACCDAG%%DAGORCX%"
 exit /b 0

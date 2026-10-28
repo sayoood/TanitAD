@@ -605,7 +605,11 @@ class EgoPerturb:
     TARGETS ARE NEVER TOUCHED: ``gt``, ``gt_ok``, ``s_h``, ``lead_gap_h``, every ``lab*`` dict, ``limit`` and the scene are the SAME objects in the returned batch. ``apply`` returns the
     input batch itself (no copy, no random draw) when the lever is off, so a default run is bit-identical to a run without this class.
 
-    DETERMINISM: the draws come from a private generator seeded by (``seed``, ``step``) and never touch the global RNG, so a resumed run draws what an uninterrupted run drew."""
+    DETERMINISM: the draws come from a private generator seeded by (``seed``, ``step``) and never touch the global RNG, so a resumed run draws what an uninterrupted run drew.
+
+    COMPOSITION WITH THE DAGGER SWAP (AMEND1 section 1, ``--ego-perturb-with-dagger``): ``apply(.., exclude=mask)`` removes the ``mask`` samples (the rows the swap replaced) from the ELIGIBLE set before the
+    selection, so no sample is both swapped and perturbed, and ``n_eligible`` counts the eligible samples that were NOT excluded. The mask does not touch the draws: every sample's (selection, scale, drop, yaw
+    offset) are what they are without it. ``exclude=None`` (the default) is the pre-change path, line for line."""
 
     PROBE_STEP = -1
 
@@ -663,17 +667,28 @@ class EgoPerturb:
         import torch
         return (batch["t"] >= 1) & batch["frame_ok"][:, -1] & torch.isfinite(batch["kin3"]).all(-1) & (batch["kin3"][:, 0] < self.vmax)
 
+    def eligible_free(self, batch: dict, exclude=None):
+        """[B] bool: ``eligible`` minus the ``exclude`` mask (AMEND1 section 1: the rows the DAgger swap replaced are never perturbed). ``exclude=None`` returns ``eligible(batch)`` itself."""
+        import torch
+        elig = self.eligible(batch)
+        if exclude is None:
+            return elig
+        if tuple(exclude.shape) != tuple(elig.shape):
+            raise ValueError(f"ego perturbation REFUSED: exclude has shape {tuple(exclude.shape)} but the batch has {tuple(elig.shape)} samples")
+        return elig & ~exclude.to(device=elig.device, dtype=torch.bool)
+
     def _seed_of(self, step: int) -> int:
         return (self.seed * 1_000_003 + int(step)) % (1 << 62)
 
-    def apply(self, batch: dict, step: int, *, p=None) -> dict:
+    def apply(self, batch: dict, step: int, *, p=None, exclude=None) -> dict:
         """The perturbed batch for training step ``step`` (a shallow copy; ``batch`` is not modified), or ``batch`` itself when the lever is off. ``p`` overrides the probability for this call
-        only (the launch gate's probes: 1.0 = every eligible sample, 0.0 = the control)."""
+        only (the launch gate's probes: 1.0 = every eligible sample, 0.0 = the control). ``exclude`` ([B] bool, default None) removes those samples from the eligible set (AMEND1 section 1: the rows the
+        DAgger swap replaced); ``n_eligible`` then counts the non-excluded eligible samples and the draws are unchanged."""
         import torch
         p = self.p if p is None else float(p)
         if not p > 0.0:
             # off: the SAME batch back, no random draw, no copy. The eligible count is still taken (a read-only mask on the logged v0), so a p = 0 run reports the same control denominator as a p = 1 run
-            elig = self.eligible(batch)
+            elig = self.eligible_free(batch, exclude)
             self.last = {"step": int(step), "p": 0.0, "n_rows": int(elig.numel()), "n_eligible": int(elig.sum()), "n_selected": 0, "ego_perturb_nav_kept": 0}
             return batch
         bad = self.law_problems()
@@ -687,7 +702,7 @@ class EgoPerturb:
         z = torch.randn(B, generator=g, dtype=torch.float64)                    # yaw-rate offset (a fixed draw order: std = 0 only multiplies it by 0)
         lo, hi = self.vscale
         s, d, n = lo + (hi - lo) * u[1], self.adrop * u[2], (self.yawrate_std_deg * math.pi / 180.0) * z
-        elig = self.eligible(batch)
+        elig = self.eligible_free(batch, exclude)
         sel =(u[0] < p).to(dev) & elig
         rows = sel.nonzero(as_tuple=True)[0]
         sel_c = sel.detach().cpu()

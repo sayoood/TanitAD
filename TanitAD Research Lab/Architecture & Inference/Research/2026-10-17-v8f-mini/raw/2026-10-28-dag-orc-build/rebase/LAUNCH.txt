@@ -1,0 +1,39 @@
+DAG-ORC re-based on DAG-OACC (Amendment 1): INSTALL AND LAUNCH. NOTHING below has been run; nothing was installed into box2_ship.
+
+0. PRECONDITIONS (all must hold; the chain REFUSES otherwise, by design)
+   a. The trainer carries --ego-perturb-with-dagger (the parallel build) and is on the remote tip agent/arch-inf-20260803.
+   b. The patched queue and the six label-set tests are landed on the same tip:
+        dagorc_rebase/chain/stage/TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/code/v8f_mini_box2_queue.cmd   (queue.diff: +19 / -0 against bf404bfe...)
+        dagorc_rebase/chain/stage/stack/tests/test_v8f_{flat,oacc,kind,mixo,lora_ar2,orc_chain}.py                                         (one label, dagoaccorcarm; chain/run_label_tests.sh runs them on a scratch overlay of the tip: result in chain/logs/label_tests_edited.out (must PASS) and label_tests_negative.out (unedited tests, must go RED))
+      If a later commit changed the queue, re-run chain/build_queue.py against it (it pins the tip queue's sha256) - do not land a stale file.
+   c. After (a) and (b): chain/box2_ship/chain_v8f_dagoaccorc.sh --check-tree <an export of the tip>  must print "lever check: every one of N patterns".
+
+1. INSTALL (copy; LF endings; the generators already wrote them) - dagorc_rebase/chain/box2_ship/ -> C:/Users/Admin/box2_ship/
+     chain_v8f_dagoaccorc.sh             -> chain_v8f_dagoaccorc.sh
+     gate_dagoaccorc_assert.py           -> gate_dagoaccorc_assert.py          (its sha256 is pinned INSIDE the chain: install it unchanged)
+     v8f_dagoaccorc_chain_checks.py      -> v8f_dagoaccorc_chain_checks.py     (pinned inside the chain)
+     v8f_guard_dagoaccorc.sh             -> v8f_guard_dagoaccorc.sh
+     wake_v8fdagoaccorc.sh               -> wake_v8fdagoaccorc.sh
+     run_chain_v8f_dagoaccorc.cmd        -> run_chain_v8f_dagoaccorc.cmd       (direct start, no waiting for the SPEEDREAD pull)
+     run_dagoaccorc_after_speedread.cmd  -> run_dagoaccorc_after_speedread.cmd (the NEW waiter launcher)
+     run_dagoaccorc_after_speedread.sh   -> run_dagoaccorc_after_speedread.sh
+     wake_dagoaccorc_start.sh            -> wake_dagoaccorc_start.sh
+   Already installed and sourced unchanged (pinned by sha256 in the chain): oaf_lib.sh, v8f_oaf_chain_checks.py, mk_v8f_job.py, waitjob.sh.
+   Dev-box reader (not box2_ship): dagorc_rebase/read/ is self-contained (dag_orc_read.py, dag_orc_selftest.py, dag_orc_mutation.py, AMEND1.md, PREREG_V8F_DAG_ORC.md, P0_RF0.json, RC_OACC.json, RC_DAG2.json, ref/).
+   It does NOT replace E:/Projects/TanitAD-artifacts/dag_orc_read/ (the DAG-based reader stays as the record): install it beside, e.g. under the DAG-ORC result directory.
+
+2. LAUNCH (dev box; the waiter fires the chain once the SPEEDREAD pull has ended and BOX2_BUSY.txt is gone; AFTER_OUT = the already-DONE DAG-OACC r2 log)
+     powershell -NoProfile -Command "Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine='cmd /c C:\Users\Admin\box2_ship\run_dagoaccorc_after_speedread.cmd'}"
+   Then, as script pollers (not model turns):
+     bash /c/Users/Admin/box2_ship/wake_dagoaccorc_start.sh        # returns when the waiter goes (or stops)
+     bash /c/Users/Admin/box2_ship/wake_v8fdagoaccorc.sh           # returns on the gates passing, each pull, a named stop, the chain's end
+   Logs: box2_ship/logs/dagoaccorc_waiter.out, chain_v8f_dagoaccorc.out, v8fdagoaccorc_guard.out. Artifacts: E:/Projects/TanitAD-artifacts/v8f-dag-orc-oacc/<run>/ (DAGOACCORC_ART overrides).
+   Direct start instead of the waiter (the pull has ended, BOX2_BUSY.txt absent):
+     cmd /c C:\Users\Admin\box2_ship\run_chain_v8f_dagoaccorc.cmd
+
+3. WHAT RUNS (4 runs, ~2.8 h): gates A s0, REP s0, A s1, REP s1 (each asserted on the dev box, then its launch-gate token), then train -> T0 eval -> pull -> run record -> K-REACH for A s0, REP s0, A s1, REP s1.
+   B (p 0.1) is NOT queued. The T1-kin rollouts of A and REP at both seeds (dev-box CPU) and the reader come after.
+
+4. DRY RUN (touches nothing)
+     OAF_SHIP_DIR=<a dir holding the installed files> V8F_QUEUE=<the patched queue> AFTER_OUT=x  bash chain_v8f_dagoaccorc.sh --dry-run
+   (dagorc_rebase/chain/chain_dry_run.txt is that output: 4 x SAME, 4 x ONE-LEVER against DAG-OACC's banked argv.json.)

@@ -1,0 +1,54 @@
+F.........................                                               [100%]
+================================== FAILURES ===================================
+___________ test_flag_off_reproduces_the_unmodified_tip_bit_for_bit ___________
+
+pack = <test_v8f_dagger_train.Pack object at 0x0000014BEC5C4EC0>
+tmp_path = WindowsPath('F:/TanitAD-scratch/compose_tmp/bt2/test_flag_off_reproduces_the_u0')
+
+    def test_flag_off_reproduces_the_unmodified_tip_bit_for_bit(pack, tmp_path):
+        """K-BUILD: the golden was written by the unmodified tip (66b6c80e) for (a) a DAG-OACC-style argv, (b) an ORC-style argv and (c) plain M2b -- 4 CPU steps each on the trainer's synthetic world. With the flag
+        absent this tree must give the same log (every loss, every logged key), the same final weights and optimiser state, the same counters, and the same SET of keys in summary.json and in the checkpoint."""
+        got = {}
+        for name in ("dag", "orc", "m2b"):
+            assert TR.main(_run(tmp_path / name, argv_family(pack, name))) == 0
+            got[name] = digest(tmp_path / name)
+        got["_fixture"] = {"bank_sha256": pack.bank_sha, "torch": torch.__version__}
+        if WRITE_GOLDEN:
+            GOLDEN.write_text(json.dumps(got, indent=1, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+            pytest.skip("golden written from the unmodified tip")
+        want = json.loads(GOLDEN.read_text(encoding="utf-8"))
+>       assert want["_fixture"]["bank_sha256"] == pack.bank_sha, "the fixture bank is the golden's bank (the DATA generator and the trainer's synthetic world are unchanged)"
+E       AssertionError: the fixture bank is the golden's bank (the DATA generator and the trainer's synthetic world are unchanged)
+E       assert '1a8cec0a3eb1...976db6128069b' == '4eecafa7c93c...fa370bc4e74bc'
+E         
+E         - 4eecafa7c93c521615f36e376fe6ef0efa1f7a5c00ac47346bdfa370bc4e74bc
+E         + 1a8cec0a3eb1c2b6dd260a569391287afe9ea1654ab23d40d3b976db6128069b
+
+stack\tests\test_v8f_ego_dagger_compose.py:88: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+[1/2] ade 7.258 total 80.931 p_gt 1.00
+[2/2] ade 4.967 total 70.105 p_gt 0.60
+DONE {"steps": 2, "arm": "M2b", "seed": 5, "seconds": 1.0816645622253418}
+[200/342 windows] 8s
+[342/342 windows] 14s
+wrote F:\TanitAD-scratch\compose_tmp\bt2\dagt0\bank\shard_000of001.npz  records 684  coverage 0.6462  K-B0 {'checked': 342, 'mismatch': 0}  K-B1 {'chunks': 5, 'windows': 40, 'mismatch_chunks': 0}
+wrote F:\TanitAD-scratch\compose_tmp\bt2\dagt0\bank\bank.json  bank sha256 4eecafa7c93c521615f36e376fe6ef0efa1f7a5c00ac47346bdfa370bc4e74bc  records 684  coverage 0.6462  K-B4 True  K-B5 True
+---------------------------- Captured stdout call -----------------------------
+[1/4] ade 8.421 total 58.805 p_gt 0.20
+[2/4] ade 6.468 total 55.524 p_gt 0.20
+[3/4] ade 5.821 total 53.133 p_gt 0.20
+[4/4] ade 11.245 total 61.673 p_gt 0.20
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 2.2980265617370605}
+[1/4] ade 6.931 total 49.432 p_gt 0.20
+[2/4] ade 4.776 total 46.392 p_gt 0.20
+[3/4] ade 5.875 total 44.371 p_gt 0.20
+[4/4] ade 9.289 total 49.409 p_gt 0.20
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 1.781822681427002}
+[1/4] ade 7.258 total 80.931 p_gt 1.00
+[2/4] ade 4.967 total 70.105 p_gt 0.80
+[3/4] ade 5.664 total 73.449 p_gt 0.60
+[4/4] ade 9.301 total 82.390 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 1.9109857082366943}
+=========================== short test summary info ===========================
+FAILED stack\tests\test_v8f_ego_dagger_compose.py::test_flag_off_reproduces_the_unmodified_tip_bit_for_bit
+1 failed, 25 passed in 330.75s (0:05:30)
