@@ -86,6 +86,7 @@ rem   gatedag / traindag / evaldag also take ARM dagoacc (DAG's fine-tune argv v
 rem   gatedag / traindag / evaldag also take ARM flatdag (FLAT_s<SEED> fine-tuned with DAG's recipe, --o-interface cut named, --dagger-p 0.1 on the FLAT bank; P fixed at 0.1) and flatdag0 (the same argv with --dagger-p 0; takes no P); evaldag runs the standard eval AND the GT-code oracle (the cut identity read) for them: PREREG_V8F_FLATDAG section 1
 rem   gatedag / traindag / evaldag also take ARM dagorc (DAG_s<SEED> fine-tuned with DAG2-0's argv plus O-RECOVER's ego perturbation at p 0.3 and its five law flags), dagorcrep (DAG2-0's argv with --seed 10 / 11, the replicate; no perturbation) and dagorc01 (dagorc at p 0.1); none takes a P (any extra argument is REFUSED): PREREG_V8F_DAG_ORC section 1. Init = %RUNSM%\M2b_s<SEED>_dag\ckpt_last.pt; run M2b_s<SEED>_<ARM>; tag M2b-<ARM>_s<SEED>; pin dagpin\M2b_s<SEED>_<ARM>.train.argv.txt
 rem   gatedag / traindag / evaldag also take ARM dagoaccorc (M2b_s<SEED> fine-tuned with DAG-OACC's argv verbatim plus O-RECOVER's ego perturbation at p 0.3 with its five law flags, composed with the DAgger swap by --ego-perturb-with-dagger) and dagoaccorcrep (DAG-OACC's argv with --seed 10 / 11, the replicate; no perturbation); neither takes a P (any extra argument is REFUSED): PREREG_V8F_DAG_ORC Amendment 1 section 1. Init = %RUNSM%\M2b_s<SEED>\ckpt_last.pt; run M2b_s<SEED>_<ARM>; tag M2b-<ARM>_s<SEED>; pin dagpin\M2b_s<SEED>_<ARM>.train.argv.txt
+rem   gatedag / traindag / evaldag also take ARM dagdose (DAG-OACC's argv verbatim with --dagger-p 0.3 in place of 0.1) and dagdoserep (the same at --seed 10 / 11, as REP); neither takes a P (any extra argument is REFUSED): PREREG_V8F_DAGDOSE section 4. Init = %RUNSM%\M2b_s<SEED>\ckpt_last.pt; run M2b_s<SEED>_<ARM>; tag M2b-<ARM>_s<SEED>; pin dagpin\M2b_s<SEED>_<ARM>.train.argv.txt
 rem
 rem GRID is pool4x10 (default) or pool8x20 (plan 13.6, the first K-FAIL lever: run only on the PI's go). An 8x20 run lives in
 rem %RUNSM%\<ARM>_s<SEED>_8x20, so it can never be mistaken for, or resume, a 4x10 run.
@@ -1094,6 +1095,8 @@ if /i "%~1"=="dagoaccorc" set "DAGS=dagoaccorc"
 if /i "%~1"=="dagoaccorcrep" set "DAGS=dagoaccorcrep"
 if /i "%~1"=="launchintent" set "DAGS=launchintent"
 if /i "%~1"=="launchintentrep" set "DAGS=launchintentrep"
+if /i "%~1"=="dagdose" set "DAGS=dagdose"
+if /i "%~1"=="dagdoserep" set "DAGS=dagdoserep"
 if not defined DAGS (echo REFUSED: ARM must be dag or dag0, got "%~1" & exit /b 2)
 if "%~2"=="" (echo REFUSED: a SEED is needed & exit /b 2)
 if not "%~2"=="0" if not "%~2"=="1" (echo REFUSED: SEED must be 0 or 1, got "%~2" & exit /b 2)
@@ -1136,6 +1139,8 @@ if /i "%DAGS%"=="dagoaccorc" goto :dagoaccorcarm
 if /i "%DAGS%"=="dagoaccorcrep" goto :dagoaccorcarm
 if /i "%DAGS%"=="launchintent" goto :launchintentarm
 if /i "%DAGS%"=="launchintentrep" goto :launchintentarm
+if /i "%DAGS%"=="dagdose" goto :dagdosearm
+if /i "%DAGS%"=="dagdoserep" goto :dagdosearm
 set "DAGP=0"
 set "DAGSHA="
 set "DAGF0=--init-ckpt "%RUNSM%\M2b_s%~2\ckpt_last.pt" --steps 3000 --lr 1e-4 --warmup 100 --p-gt-start 0.2 --p-gt-end 0.2 --ego-perturb-p 0"
@@ -1464,4 +1469,14 @@ if not "%~3"=="" (echo REFUSED: %DAGS% takes no P, the dose is fixed by PREREG_V
 call :dagoaccarm %~1 %~2 0.1 || exit /b 2
 if /i "%DAGS%"=="launchintentrep" set "DAGSEED=1%~2"
 set "DAGF=%DAGF% --launch-intent-w 1.58926"
+exit /b 0
+:dagdosearm
+rem PREREG_V8F_DAGDOSE section 4: reached ONLY from :dagarm (never called, never dispatched) with DAGS = dagdose | dagdoserep and :dagname's names set. %1 = ARM, %2 = SEED (0 | 1), %3 = nothing: the dose is fixed at 0.3.
+rem The fine-tune is DAG-OACC's banked argv, obtained by CALLING :dagoaccarm (untouched, P 0.1: it sets DAGF0, DAGBANK, DAGSHA and WACCDAG and hashes the ITERATION-1 bank HERE), then DAGF is rebuilt from those same values
+rem in :dagoaccarm's own token order with DAGP = 0.3: the only token that differs from DAG-OACC's line is --dagger-p's value (and --out, from :dagname). dagdoserep = the same at trainer seed 10 + SEED (DAGSEED = 1<SEED>, REP's rule; --dagger-seed stays SEED).
+if not "%~3"=="" (echo REFUSED: %DAGS% takes no P, the dose is fixed at 0.3 by PREREG_V8F_DAGDOSE, got "%~3" & exit /b 2)
+call :dagoaccarm %~1 %~2 0.1 || exit /b 2
+if /i "%DAGS%"=="dagdoserep" set "DAGSEED=1%~2"
+set "DAGP=0.3"
+set "DAGF=%DAGF0% --dagger-p %DAGP% --dagger-bank "%DAGBANK%" --dagger-bank-sha256 %DAGSHA% --dagger-seed %~2 --w-acc %WACCDAG%"
 exit /b 0
