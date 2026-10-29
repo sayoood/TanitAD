@@ -1,0 +1,36 @@
+# argv template (one token per line; '#' lines are comments): the fresh-age T0 eval (K4's comparator).  COPIED token for token from the DAG-ORC chain's template E:/Projects/TanitAD-artifacts/dagorc_t1/argv/t0fresh.tmpl,
+# which was derived programmatically from DAG-OACC's banked rollout argv (v8f-dagoacc-t1/argv/DAGOACC_s0_m10_causal_heads.argv) / the commands that RAN for DAGGER2 and DAG-ORC r2.  Proven on every start (lit1_selftest.py and the chain's template proofs)
+# against the commands DAG-ORC r2 RAN for REP s0 (dagorc_t1/logs/chain.out.prev_*).  Only the run-specific values are @KEY@ placeholders.
+@PY@
+@TREE@/stack/scripts/v8f_mini_eval.py
+run
+--ckpt
+@CKPT@
+--tag
+@TAG@
+--ages
+fresh
+--v9-eval
+@V9@/v9_labels_eval139.npz
+--lead-eval
+@V9@/lead_eval139.npz
+--speed-eval
+@V9@/refcv6_speed_max_v8_eval.jsonl
+--kin-mode
+yaw
+--p10
+@P10@
+--out-dir
+@T0DIR@
+--eval-cache
+@CACHE@
+--tracks
+@TRACKS@
+--eval-grid
+@GRID@
+--eval-kin
+@KIN@
+--eval-join
+@JOIN@
+--project
+--families

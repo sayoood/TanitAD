@@ -1,0 +1,81 @@
+LAUNCH.txt -- PREREG_V8F_SOUP, the dev-box CPU chain (soup_chain.sh).  BUILT, DRY-RUN, SELF-TESTED.  NOT LAUNCHED: the Master Mind promotes the PREREG, lands the package and launches it.
+This file is only the procedure.  The reasoning is in PREREG_V8F_SOUP.md (section 13 / 13a); the evidence that the instrument works is in evidence/ (section 6 below).
+
+0. WHAT RUNS, AND WHAT IT COSTS   (ESTIMATED from the LAUNCH-INTENT chain log, PREREG section 13: 178-222 s per rollout, 50-88 s per fresh T0; the standard T0 is the same tool without --ages fresh)
+   One torch process at a time, CPU only (CUDA_VISIBLE_DEVICES=-1), OMP/MKL 8 threads, RAM >= 2 GB free, the output drive F: >= 5 GB, C: >= 2 GB (it WAITS when one is low, it never deletes).
+   28 steps = 6 soups x (T1-kin causal ~3.7 min, T1-kin logged ~3.7 min, fresh T0 ~1.5 min, standard T0 ~1.5 min) + the dev-box standard T0 of DAG-OACC_0, DAG-OACC_1, A_0, A_1 (~1.5 min each; K-T0DEV) + the reader (~8-10 min).
+       decisive soups SOUP_0 SOUP_1 SOUPR_0 SOUPR_1   4 x 10.4 min  ~ 42 min
+       beside      SOUP4_0 SOUP4_1                    2 x 10.4 min  ~ 21 min
+       controls    4 dev-box T0                       4 x  1.5 min  ~  6 min
+       reader                                                       ~ 8-10 min   (ESTIMATED from the LAUNCH-INTENT read of record, 341.6 s on 8 runs; the dry run's whole battery -- several full reads of 8 stand-in runs, with extra controls -- took 707-872 s)
+       TOTAL  ~ 77-79 min of CPU, say 80 min; dumps ~ 4 GB on F: (INHERITED: ~0.33 GB per rollout in the LAUNCH-INTENT chain); the soup checkpoints (~29 MB each) already exist on E:.
+   Zero training, no GPU, no box 2, no remote shell of any kind, no git write, no deletion.  The reader decides every verdict; the chain only produces the rollouts, the manifest and the reader call.
+   Order: the plan order of argv/PLAN.txt (SOUP_0, SOUP_1, SOUPR_0, SOUPR_1, SOUP4_0, SOUP4_1, then the four dev-box T0 of the controls).  ⚠ Nothing is readable until the LAST four steps are done (K-T0DEV needs them): a STOP before them leaves no partial read.
+
+0b. PRE-FLIGHT -- C: IS ALMOST FULL ON THIS BOX (MEASURED 2026-10-28 22:40-23:02, OS free space)
+   C: 0.95-1.01 GB free (it read 0 MB for a moment at 23:02), G: 0.9 GB, E: 16.1 GB, F: 161.6 GB.  The chain's C: gate is 2048 MB (SOUP_C_MIN_MB): at the start it STOPs below that, and before every step it WAITS up to 2 h.
+   That gate is deliberate (a full C: killed torch start-ups in the LAUNCH-INTENT chain: the pagefile is on C:).  The chain keeps its own temp on F: (TMP/TEMP -> <OUT>/_tmp), writes nothing to C:, and never deletes anything.
+   So BEFORE launching: get C: >= 2 GB free (the session scratchpad under C:\Users\Admin\AppData\Local\Temp\claude\...\scratchpad holds ~32 GB that this package did not create: fix_gen2 9.7 GB, lora_work 3.7 GB, ...;
+   I deleted only my own test directories there), or lower SOUP_C_MIN_MB in soup_chain.cmd ON PURPOSE (your call, not mine).  The same gate runs in --dry-run and --write-pins: with C: < 2 GB they STOP at "C: has N MB free" (ZZSOUP-STOP).
+   Output drive F: has 161.6 GB (guard 5 GB), the RAM guard is 2048 MB.
+
+1. PROMOTE AND LAND (Master Mind; this package never commits, pushes or edits a register)
+   a. Read PREREG_V8F_SOUP.md.  Section 0 now records your five decisions (items 1, 3, 4 CONFIRMED, item 5 BLOCKED and named); nothing else in the PREREG was changed in this pass (evidence/ has the earlier text).
+   b. Promote it: land it as Project Steering/PREREG_V8F_SOUP.md (change the Status line if you want it to read promoted; whatever bytes you land are the bytes the chain pins).  Register H-V8F-SOUP-1 in GOALS_AND_CLAIMS.md (PREREG section 14 lists it).
+   c. Take the sha256 of the LANDED file:   sha256sum "<landed path>"        -> <PSHA>   (64 hex)
+   d. Land the package (read/, soup_build.py, soups.json, argv/, soup_chain.sh, soup_chain_lib.py, soup_chain.cmd, wake_soup.sh, tools/, tests/, evidence/, LAUNCH.txt, MANIFEST.txt) LF-only, byte for byte.
+      The chain RUNS FROM THIS DIRECTORY (E:/Projects/TanitAD-artifacts/dagland/soup/): PINS.txt holds absolute paths and the sha256 of every input.  Run it from here and nothing needs re-pinning;
+      if you run a landed copy from another directory, re-write the pins there (step 3) before the dry run.
+
+2. SET THE TWO REQUIRED VARIABLES  in soup_chain.cmd (a WMI-launched process does not inherit your shell).  They ship UNSET and the chain REFUSES to start without them (it prints ZZSOUP-STOP and runs nothing):
+      delete the leading "rem   " of the two lines and fill them in (no quotes):
+        set SOUP_PREREG=<path of the landed PREREG_V8F_SOUP.md>
+        set SOUP_PREREG_SHA=<PSHA>
+   They become the reader's --prereg and --prereg-sha; the chain also checks that the file hashes to the sha before anything else (and again before and after the reader).
+   (soup_chain.cmd keeps CRLF line endings: edit it with an editor that preserves them, or delete the "rem   " with sed 's/^rem   set SOUP_PREREG/set SOUP_PREREG/'.)
+
+3. CHECK  (read-only, no state, ~1 min MEASURED, 55 s: it parses every command with the pinned tool's own argparse, ~2 s each; it applies the C: gate of 0b too)
+      SOUP_PREREG=<path> SOUP_PREREG_SHA=<PSHA> bash /e/Projects/TanitAD-artifacts/dagland/soup/soup_chain.sh --dry-run
+   expect the last line  ZZSOUP-DRY-OK , 28 x "parse: PARSE-OK", "PINS.txt verified", "readiness: 10 checkpoints ready", the reader command with your --prereg / --prereg-sha.
+   Any ZZSOUP-STOP / ZZSOUP-DRY-NOT-READY names its cause (an unset or wrong PREREG variable, a changed pinned file, a changed tool tree, a checkpoint that is not what its record says).
+   PINS.txt ships written for the files as they are in this package.  If you deliberately changed ANY pinned input (the reader, the lib, the chain script, a template, the plan, the spec, the builder),
+   rewrite it ON PURPOSE:   bash soup_chain.sh --write-pins   (it refuses unless the tool tree still hashes to the pinned 579183a3... and every checkpoint is ready).
+   A saved copy of a good dry run: evidence/dry_run_chain.out (made with the shipped DRAFT PREREG and SOUP_C_MIN_MB=256 because C: had 533 MB free; yours differs in the PREREG path and sha, and needs the real C: gate to pass).
+   The output layout the chain demands of each step (t1v8f_<tag>.json, ticks/ticks_<tag>.npz, argv/<tag>.argv, 141 dump_<tag>/ep*.npz; eval_<tag>.json/.npz) was checked against the banked LAUNCH-INTENT chain output and the
+   pinned tool's source; the standard-T0 variant (no --ages fresh) is checked against the tool's source only: no dev-box standard T0 of these checkpoints exists to compare.
+
+4. LAUNCH  (detached; survives the caller)
+      powershell -NoProfile -Command "([wmiclass]'Win32_Process').Create('cmd /c E:\Projects\TanitAD-artifacts\dagland\soup\soup_chain.cmd') | Select-Object ReturnValue, ProcessId"
+   WAIT with a script, not a model turn:
+      bash /e/Projects/TanitAD-artifacts/dagland/soup/wake_soup.sh          exit 0 = ZZSOUP-DONE (the reader rc is in the line) | 4 = ZZSOUP-STOP | 6 = the chain died without a marker | 5 = waker timeout (1500 polls x 60 s)
+      bash .../wake_soup.sh --status                                          once: the last log lines and the verdict (1 = still running)
+   The chain's own log: E:\Projects\TanitAD-artifacts\dagland\soup\logs\chain.out (anchored markers ZZSOUP-STEP-DONE n/28 <tag>, ZZSOUP-DONE, ZZSOUP-STOP); per-step tool logs logs\<tag>.out; the reader's logs\soup_read.out.
+   Outputs: F:\TanitAD-scratch\soup_t1_out\  (t1v8f_*.json, ticks\, dump_*\, argv\, done_*.txt, t0fresh\, t0std\, t0dev\, runs_soup.json, read\SOUP_READ.json).
+
+5. RESUME / STOP / FAILURE
+   Resume = launch the same command again.  A finished step is skipped only if its done record names THIS checkpoint (three times), THIS tool digest and THIS command, and its outputs are all there; an incomplete earlier attempt is MOVED to
+   <OUT>\_incomplete_*, never deleted; chain.out of the previous start is rotated to chain.out.prev_*, so the waker never sees an old marker.
+   Stop it: create logs\STOP (the chain exits before its next step; a running step finishes and is recorded).  Two instances cannot run (logs\chain.lock + the owner's winpid).
+   After a ZZSOUP-STOP the message names the cause.  Typical: a step failed (rc), a tool or checkpoint changed under it, a guard stayed LOW for 2 h, a PINS difference.  Fix the cause, launch again.
+   ZZSOUP-DONE ... reader rc 0 = an outcome row written | 2 = REFUSED (a control failed; nothing written: read logs\soup_read.out for which) | 3 = UNPLACED (written) | anything else = the reader crashed.
+   A REFUSED read is not a result.  Fix what the failed control names and re-read; the steps are NOT re-run (their done records stand).
+
+6. WHAT WAS PROVEN BEFORE THIS CAN RUN   (all in evidence/; zero soup was rolled out, evaluated or read)
+   - the reader (read/soup_read.py): 127 tests (evidence/pytest_reader.txt), 288 one-change mutants: 286 killed, 2 named EQUIVALENT, 0 unexplained (evidence/mutation_reader.*);
+     its heavy layer on REAL banked dumps with stand-ins (A_s -> SOUP_s, A_rep,s -> SOUPR_s): the banked LAUNCH-INTENT A_CTRL / A_P10 / Arep_P10 tables, the main pair's composition, RF, the 19 bars and the slow-draw flag
+     reproduced with 0 differences; 364 controls pass; K-RC FAILS on each of four deliberately corrupted banked copies (evidence/dry_run_soup_read.*).
+     What a stand-in run cannot test: K-SOUP-REC / K-MID / K-BASIN / K-XINIT / K-ZERO-W (they read a soup's own files; unit-tested, and exercised by soup_build's own gates) and the CONTENT of K-T0DEV (no dev-box
+     standard T0 of DAG-OACC or A exists before this chain makes it).  A first real read may therefore REFUSE on one of those: that would be the controls doing their job.
+   - the chain (soup_chain.sh + soup_chain_lib.py + soup_chain.cmd + wake_soup.sh): an end-to-end self-test in throw-away worlds with a STUB tool and a STUB reader (happy path, resume, a failed step, a native-crash retry,
+     the STOP file, an unset / wrong PREREG, every pinned input changed, readiness, each guard low, a checkpoint / tree changing during a step, one instance only, every reader exit code): 97 tests pass
+     (evidence/selftest_chain.out); 155 one-change mutants of the runner: 153 killed, 2 named EQUIVALENT, 0 unexplained (evidence/mutation_chain.json/.out; read evidence/mutation_chain_NOTES.txt -- two earlier
+     passes were thrown away because kills were being produced by a path-length limit and by a full C: rather than by the tests); the chain also runs once with every remote-shell command trapped: none is ever called.
+   - the production dry run of the chain: 28 of 28 commands PARSE-OK with the pinned tools' own argparse, PINS verified, 10 checkpoints ready (evidence/dry_run_chain.out).
+
+7. OPEN, NAMED
+   - PREREG section 0 item 5 (banking 2203.05482): BLOCKED here, the Master Mind banks it later; until then literature statements decide nothing.
+   - The reader runs in the environment its dry run was tested in (no TANITEVAL_STACK_OVERRIDE, OMP/MKL 2 threads): it reads dumps and applies taniteval's ci / floors code, which tree_li and the base tree share.
+   - Two mutants of the reader are named EQUIVALENT, not killed (evidence/mutation_reader.json: run_r2_seed, run_windows_n_unchecked), and two of the chain (evidence/mutation_chain.json: done_record_after_is_before,
+     world_not_a_dir_unchecked), each with its reason.
+   - The chain's self-test uses a STUB tool and a STUB reader: it proves the runner's logic, not the tools.  The first real step is the first time the real tools run under the chain (the dry run proves their command lines parse).
+   - C: has ~0.5-1 GB free and the chain's gate is 2 GB (0b): this is the one thing that will stop a launch today.

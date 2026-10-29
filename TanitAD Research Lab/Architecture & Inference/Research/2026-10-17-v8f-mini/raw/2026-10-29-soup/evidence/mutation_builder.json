@@ -1,0 +1,176 @@
+{
+ "baseline": {
+  "rc": 0,
+  "tail": "33 passed in 2.02s"
+ },
+ "mutants": {
+  "B1-disabled": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 15 passed in 1.59s"
+  },
+  "B2-disabled": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 15 passed in 1.59s"
+  },
+  "R_ft-max-not-median": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 17 passed in 1.59s"
+  },
+  "build-ignores-basin": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 20 passed in 1.71s"
+  },
+  "build-overwrites": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 20 passed in 1.74s"
+  },
+  "build-writes-xinit": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 20 passed in 1.71s"
+  },
+  "cfg-allowlist-widened": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 10 passed in 1.54s"
+  },
+  "clauses-ignored": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 16 passed in 1.59s"
+  },
+  "cli-regression-always-ok": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 25 passed in 1.97s"
+  },
+  "distance-includes-nonfinite": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 27 passed in 2.00s"
+  },
+  "donor-last-member": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 19 passed in 1.65s"
+  },
+  "f32-accumulate": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 1 passed in 1.53s"
+  },
+  "key-order-as-set": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 7 passed in 1.55s"
+  },
+  "kmid-no-numpy-mean": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 12 passed in 1.54s"
+  },
+  "kmid-nonfinite-unchecked": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 29 passed in 2.05s"
+  },
+  "kzero-ignores-dtype": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 32 passed in 2.03s"
+  },
+  "must-equal-drops-cons_mu": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 10 passed in 1.55s"
+  },
+  "no-dtype-check": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 7 passed in 1.55s"
+  },
+  "no-pin-check": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 22 passed in 1.83s"
+  },
+  "no-post-load-hash": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 31 passed in 2.03s"
+  },
+  "no-shape-check": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 7 passed in 1.54s"
+  },
+  "nonfinite-pattern-unchecked": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 28 passed in 2.01s"
+  },
+  "nonfinite-values-unchecked": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 28 passed in 1.98s"
+  },
+  "nonfloat-unchecked": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 8 passed in 1.55s"
+  },
+  "opt-kept": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 11 passed in 1.53s"
+  },
+  "record-drops-member-sha": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 19 passed in 1.67s"
+  },
+  "record-weights-wrong": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 21 passed in 1.76s"
+  },
+  "verify-entries-unchecked": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 24 passed in 1.92s"
+  },
+  "verify-opt-unchecked": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 24 passed in 1.90s"
+  },
+  "verify-output-hash-unchecked": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed, 23 passed in 1.83s"
+  },
+  "wrong-divisor": {
+   "rc": 1,
+   "status": "KILLED",
+   "tail": "1 failed in 1.54s"
+  }
+ },
+ "not_mutated": {
+  "K-MID: the N = 2 distance identity": "implied by the exact-mean clause; run 1 showed it as an equivalent mutant. Kept as an independent cross-check on real weights",
+  "K-MID: the member-range clause": "implied by the exact-mean clause (a correctly rounded mean of values in [min, max] lies in [min, max]); run 1 showed it as an equivalent mutant",
+  "sqdist: `if not np.isfinite(s)`": "unreachable once non-finite elements are excluded (float32 squares cannot overflow float64); it guards a future dtype",
+  "verify: `if _canon(ck.get(\"cfg\")) != _canon(donor.get(\"cfg\"))`": "redundant by design: the donor-entries loop below it compares cfg too (defence in depth)"
+ },
+ "summary": {
+  "builder_sha256": "c9d7e7b99ec554d3f45037aae4f1ab844b98f7501c0a5727382a844a4f4924cd",
+  "invalid": 0,
+  "killed": 31,
+  "mutants": 31,
+  "survived": 0
+ }
+}
