@@ -1,0 +1,850 @@
+# tables3 -- every number of RESULTS.md (MEASURED; fold-mean AUC = the mean of per-fold AUCs, primary; pooled beside; episode-cluster bootstrap B=2000 seed 0; paired on the same windows)
+
+## PSTOP  n=12000 go=6000 clips=849
+
+### pstop linear: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.626 [0.613, 0.640] | 0.593 [0.570, 0.616]
+  V+E    0.680 [0.650, 0.710] | 0.680 [0.651, 0.711]
+  G4     0.632 [0.599, 0.665] | 0.634 [0.601, 0.670]
+  G8     0.591 [0.555, 0.627] | 0.574 [0.535, 0.613]
+  G4+E   0.650 [0.618, 0.684] | 0.652 [0.621, 0.687]
+  G8+E   0.609 [0.574, 0.644] | 0.591 [0.554, 0.630]
+### pstop linear: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.042 [-0.060, -0.022] | -0.061 [-0.089, -0.036]
+  G4+E  - E     +0.024 [-0.009, +0.058] | +0.059 [+0.017, +0.102]
+  G8+E  - E     -0.017 [-0.054, +0.018] | -0.002 [-0.042, +0.040]
+  G4+E  - V+E   -0.030 [-0.049, -0.010] | -0.028 [-0.048, -0.008]
+  G8+E  - V+E   -0.071 [-0.097, -0.047] | -0.089 [-0.122, -0.058]
+  V+E   - E     +0.054 [+0.025, +0.082] | +0.087 [+0.050, +0.125]
+  G8    - G4    -0.040 [-0.061, -0.020] | -0.061 [-0.090, -0.034]
+
+### pstop mlp: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.628 [0.615, 0.641] | 0.595 [0.573, 0.617]
+  V+E    0.681 [0.651, 0.709] | 0.681 [0.652, 0.712]
+  G4     0.607 [0.571, 0.643] | 0.610 [0.574, 0.647]
+  G8     0.593 [0.556, 0.630] | 0.595 [0.558, 0.634]
+  G4+E   0.631 [0.597, 0.666] | 0.626 [0.591, 0.661]
+  G8+E   0.609 [0.572, 0.645] | 0.603 [0.566, 0.641]
+### pstop mlp: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.022 [-0.049, +0.002] | -0.022 [-0.051, +0.007]
+  G4+E  - E     +0.003 [-0.034, +0.038] | +0.030 [-0.012, +0.073]
+  G8+E  - E     -0.019 [-0.058, +0.018] | +0.008 [-0.037, +0.051]
+  G4+E  - V+E   -0.049 [-0.079, -0.020] | -0.055 [-0.090, -0.023]
+  G8+E  - V+E   -0.072 [-0.107, -0.037] | -0.078 [-0.115, -0.042]
+  V+E   - E     +0.053 [+0.024, +0.080] | +0.086 [+0.050, +0.125]
+  G8    - G4    -0.014 [-0.038, +0.010] | -0.015 [-0.039, +0.008]
+
+### pstop linear controls: ok=True all_run=False pending=['C2 band G8']
+  G4+E C1: {'pass': True, 'fold_auc': '0.4953 [0.4857, 0.5052]'}
+  G4+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G4+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5285 [0.4857, 0.5692]'}
+  G8+E C1: {'pass': True, 'fold_auc': '0.4988 [0.4882, 0.5088]'}
+  G8+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G8+E C2: {'seed2_pass': False, 'band_aucs': [0.5425893395495769], 'pass': None, 'how': 'seed 2 missed 0.5; band seeds 3-6 PENDING (1 of 5 draws)', 'seed2_fold_auc': '0.5426 [0.5012, 0.5839]'}
+  C1 paired null G8+E - G4+E under shuffled labels: {'delta': 0.0034834785376967603, 'lo': -0.006468449207255105, 'hi': 0.013466795925400319, 'pass': True}
+  E (probe-1 banked): {'C1_pass': True, 'C2_covers_0.5': True, 'C3_fold_auc': 1.0, 'C3_pass': True}
+  MLP C1 shuffle: NOT RUN: UNVERIFIED
+
+## PMOVE  n=12000 go=6000 clips=2140
+
+### pmove linear: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.732 [0.719, 0.745] | 0.731 [0.718, 0.745]
+  V+E    0.785 [0.771, 0.798] | 0.784 [0.771, 0.798]
+  G4     0.682 [0.665, 0.699] | 0.681 [0.664, 0.698]
+  G8     0.695 [0.678, 0.711] | 0.694 [0.677, 0.710]
+  G4+E   0.771 [0.757, 0.785] | 0.771 [0.757, 0.785]
+  G8+E   0.765 [0.751, 0.779] | 0.765 [0.751, 0.778]
+### pmove linear: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.006 [-0.013, +0.000] | -0.006 [-0.012, +0.000]
+  G4+E  - E     +0.039 [+0.026, +0.053] | +0.039 [+0.026, +0.053]
+  G8+E  - E     +0.033 [+0.019, +0.048] | +0.033 [+0.019, +0.049]
+  G4+E  - V+E   -0.014 [-0.020, -0.008] | -0.014 [-0.020, -0.008]
+  G8+E  - V+E   -0.020 [-0.028, -0.012] | -0.020 [-0.029, -0.012]
+  V+E   - E     +0.053 [+0.041, +0.065] | +0.053 [+0.041, +0.066]
+  G8    - G4    +0.012 [+0.007, +0.018] | +0.012 [+0.007, +0.018]
+
+### pmove mlp: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.771 [0.758, 0.784] | 0.770 [0.758, 0.783]
+  V+E    0.786 [0.773, 0.799] | 0.786 [0.773, 0.799]
+  G4     0.678 [0.661, 0.696] | 0.678 [0.661, 0.696]
+  G4+E   0.760 [0.746, 0.775] | 0.759 [0.745, 0.774]
+  G8+E   0.730 [0.713, 0.745] | 0.722 [0.706, 0.736]
+### pmove mlp: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.030 [-0.042, -0.019] | -0.037 [-0.050, -0.025]
+  G4+E  - E     -0.011 [-0.025, +0.002] | -0.011 [-0.025, +0.002]
+  G8+E  - E     -0.041 [-0.058, -0.026] | -0.049 [-0.065, -0.033]
+  G4+E  - V+E   -0.026 [-0.035, -0.017] | -0.027 [-0.036, -0.017]
+  G8+E  - V+E   -0.056 [-0.069, -0.044] | -0.064 [-0.078, -0.051]
+  V+E   - E     +0.015 [+0.006, +0.024] | +0.016 [+0.007, +0.025]
+
+### pmove linear controls: ok=False all_run=True pending=[]
+  G4+E C1: {'pass': True, 'fold_auc': '0.5054 [0.4950, 0.5158]'}
+  G4+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G4+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5071 [0.4866, 0.5276]'}
+  G8+E C1: {'pass': False, 'fold_auc': '0.5120 [0.5017, 0.5226]'}
+  G8+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G8+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5007 [0.4825, 0.5193]'}
+  C1 paired null G8+E - G4+E under shuffled labels: {'delta': 0.006629743863046711, 'lo': -0.004923308905349741, 'hi': 0.017939288400575678, 'pass': True}
+  E (probe-1 banked): {'C1_pass': True, 'C2_covers_0.5': True, 'C3_fold_auc': 1.0, 'C3_pass': True}
+  MLP C1 shuffle: NOT RUN: UNVERIFIED
+
+## DECISION (PREREG 4): dAUC(G8+E - G4+E), fold-mean, per cell
+  pstop  linear dAUC -0.0417 [-0.0604, -0.0224]  (G8+E 0.609 vs G4+E 0.650; pooled -0.0612)  HELPS-cond=False  <0.01=True  void=False  controls_unverified=True
+  pstop  mlp    dAUC -0.0225 [-0.0488, +0.0023]  (G8+E 0.609 vs G4+E 0.631; pooled -0.0224)  HELPS-cond=False  <0.01=True  void=False  controls_unverified=True
+  pmove  linear dAUC -0.0062 [-0.0125, +0.0002]  (G8+E 0.765 vs G4+E 0.771; pooled -0.0060)  HELPS-cond=False  <0.01=True  void=True  controls_unverified=False
+  pmove  mlp    dAUC -0.0302 [-0.0417, -0.0186]  (G8+E 0.730 vs G4+E 0.760; pooled -0.0374)  HELPS-cond=False  <0.01=True  void=True  controls_unverified=True
+
+## VERDICT: INCONCLUSIVE
+
+## EVAL-141 no-refit (AUC [episode-bootstrap CI]; n windows / go / episodes)
+  pstop linear: not run
+  pstop mlp: not run
+  pmove linear: not run
+  pmove mlp: not run
+
+## SPATIAL READOUT MAP (descriptive; L2 norm of each token's 16 standardised coefficients)
+  wrote readout_heatmap_G8.png
+
+## STRATA (TRAIN, linear, fold-mean; dAUC vs E and G8+E - G4+E)
+  pstop TL_ANY: n=6652 go=3157 clips=398 full-pop GO 0.547 | E 0.626 V+E 0.681 G4+E 0.643 G8+E 0.600 | G4+E-E +0.017 [-0.032, +0.059] G8+E-E -0.027 [-0.073, +0.020] G8+E-G4+E -0.043 [-0.071, -0.016]
+  pstop TL_RED: n=4986 go=1871 clips=256 full-pop GO 0.445 | E 0.609 V+E 0.708 G4+E 0.678 G8+E 0.627 | G4+E-E +0.068 [+0.013, +0.119] G8+E-E +0.018 [-0.044, +0.073] G8+E-G4+E -0.051 [-0.086, -0.016]
+  pstop TL_GREEN: n=1377 go=1173 clips=123 full-pop GO 0.886 | E 0.594 V+E 0.536 G4+E 0.478 G8+E 0.477 | G4+E-E -0.116 [-0.191, -0.005] G8+E-E -0.116 [-0.193, +0.008] G8+E-G4+E -0.000 [-0.072, +0.073]
+  pstop TL_YELLOW: n=164 clips=10 -> too small (<30
+  pstop NO_TL: n=5348 go=2843 clips=451 full-pop GO 0.607 | E 0.621 V+E 0.682 G4+E 0.664 G8+E 0.626 | G4+E-E +0.044 [-0.007, +0.087] G8+E-E +0.006 [-0.044, +0.054] G8+E-G4+E -0.038 [-0.067, -0.009]
+  pstop lead_now: n=5896 go=3049 clips=535 full-pop GO 0.59 | E 0.623 V+E 0.667 G4+E 0.636 G8+E 0.609 | G4+E-E +0.013 [-0.036, +0.057] G8+E-E -0.015 [-0.065, +0.033] G8+E-G4+E -0.027 [-0.052, +0.001]
+  pstop no_lead: n=5612 go=2824 clips=429 full-pop GO 0.575 | E 0.628 V+E 0.692 G4+E 0.662 G8+E 0.610 | G4+E-E +0.034 [-0.020, +0.081] G8+E-E -0.018 [-0.073, +0.029] G8+E-G4+E -0.052 [-0.079, -0.023]
+  pstop lead_depart: n=1741 go=1330 clips=310 full-pop GO 0.817 | E 0.663 V+E 0.644 G4+E 0.593 G8+E 0.589 | G4+E-E -0.070 [-0.168, +0.011] G8+E-E -0.074 [-0.173, +0.011] G8+E-G4+E -0.004 [-0.053, +0.052]
+  pmove TL_ANY: n=2570 go=1423 clips=553 full-pop GO 0.589 | E 0.825 V+E 0.827 G4+E 0.806 G8+E 0.787 | G4+E-E -0.019 [-0.046, +0.008] G8+E-E -0.038 [-0.069, -0.007] G8+E-G4+E -0.019 [-0.034, -0.005]
+  pmove TL_RED: n=1233 go=513 clips=302 full-pop GO 0.464 | E 0.876 V+E 0.879 G4+E 0.870 G8+E 0.842 | G4+E-E -0.006 [-0.034, +0.019] G8+E-E -0.034 [-0.067, -0.004] G8+E-G4+E -0.028 [-0.042, -0.013]
+  pmove TL_GREEN: n=1168 go=824 clips=221 full-pop GO 0.73 | E 0.729 V+E 0.735 G4+E 0.725 G8+E 0.704 | G4+E-E -0.004 [-0.058, +0.056] G8+E-E -0.025 [-0.094, +0.050] G8+E-G4+E -0.021 [-0.059, +0.016]
+  pmove TL_YELLOW: n=86 clips=16 -> too small (<30
+  pmove NO_TL: n=9430 go=4577 clips=1587 full-pop GO 0.523 | E 0.704 V+E 0.772 G4+E 0.760 G8+E 0.758 | G4+E-E +0.056 [+0.041, +0.072] G8+E-E +0.053 [+0.037, +0.071] G8+E-G4+E -0.002 [-0.010, +0.005]
+  pmove lead_now: n=5395 go=2613 clips=1102 full-pop GO 0.52 | E 0.737 V+E 0.770 G4+E 0.757 G8+E 0.744 | G4+E-E +0.020 [+0.000, +0.040] G8+E-E +0.007 [-0.014, +0.030] G8+E-G4+E -0.012 [-0.022, -0.002]
+  pmove no_lead: n=6315 go=3245 clips=1283 full-pop GO 0.554 | E 0.733 V+E 0.797 G4+E 0.783 G8+E 0.781 | G4+E-E +0.050 [+0.032, +0.068] G8+E-E +0.048 [+0.029, +0.067] G8+E-G4+E -0.002 [-0.010, +0.006]
+  pmove lead_depart: n=2010 go=1493 clips=641 full-pop GO 0.765 | E 0.739 V+E 0.749 G4+E 0.725 G8+E 0.723 | G4+E-E -0.013 [-0.050, +0.022] G8+E-E -0.016 [-0.055, +0.023] G8+E-G4+E -0.002 [-0.019, +0.015]
+
+## C5(b) content mutation (G8 source = NN upsample of G4)
+# tables3 -- every number of RESULTS.md (MEASURED; fold-mean AUC = the mean of per-fold AUCs, primary; pooled beside; episode-cluster bootstrap B=2000 seed 0; paired on the same windows)
+
+## PSTOP  n=12000 go=6000 clips=849
+
+### pstop linear: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.626 [0.613, 0.640] | 0.593 [0.570, 0.616]
+  V+E    0.680 [0.650, 0.710] | 0.680 [0.651, 0.711]
+  G4     0.632 [0.599, 0.665] | 0.634 [0.601, 0.670]
+  G8     0.591 [0.555, 0.627] | 0.574 [0.535, 0.613]
+  G4+E   0.650 [0.618, 0.684] | 0.652 [0.621, 0.687]
+  G8+E   0.609 [0.574, 0.644] | 0.591 [0.554, 0.630]
+### pstop linear: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.042 [-0.060, -0.022] | -0.061 [-0.089, -0.036]
+  G4+E  - E     +0.024 [-0.009, +0.058] | +0.059 [+0.017, +0.102]
+  G8+E  - E     -0.017 [-0.054, +0.018] | -0.002 [-0.042, +0.040]
+  G4+E  - V+E   -0.030 [-0.049, -0.010] | -0.028 [-0.048, -0.008]
+  G8+E  - V+E   -0.071 [-0.097, -0.047] | -0.089 [-0.122, -0.058]
+  V+E   - E     +0.054 [+0.025, +0.082] | +0.087 [+0.050, +0.125]
+  G8    - G4    -0.040 [-0.061, -0.020] | -0.061 [-0.090, -0.034]
+
+### pstop mlp: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.628 [0.615, 0.641] | 0.595 [0.573, 0.617]
+  V+E    0.681 [0.651, 0.709] | 0.681 [0.652, 0.712]
+  G4     0.607 [0.571, 0.643] | 0.610 [0.574, 0.647]
+  G8     0.593 [0.556, 0.630] | 0.595 [0.558, 0.634]
+  G4+E   0.631 [0.597, 0.666] | 0.626 [0.591, 0.661]
+  G8+E   0.609 [0.572, 0.645] | 0.603 [0.566, 0.641]
+### pstop mlp: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.022 [-0.049, +0.002] | -0.022 [-0.051, +0.007]
+  G4+E  - E     +0.003 [-0.034, +0.038] | +0.030 [-0.012, +0.073]
+  G8+E  - E     -0.019 [-0.058, +0.018] | +0.008 [-0.037, +0.051]
+  G4+E  - V+E   -0.049 [-0.079, -0.020] | -0.055 [-0.090, -0.023]
+  G8+E  - V+E   -0.072 [-0.107, -0.037] | -0.078 [-0.115, -0.042]
+  V+E   - E     +0.053 [+0.024, +0.080] | +0.086 [+0.050, +0.125]
+  G8    - G4    -0.014 [-0.038, +0.010] | -0.015 [-0.039, +0.008]
+
+### pstop linear controls: ok=True all_run=False pending=['C2 band G8']
+  G4+E C1: {'pass': True, 'fold_auc': '0.4953 [0.4857, 0.5052]'}
+  G4+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G4+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5285 [0.4857, 0.5692]'}
+  G8+E C1: {'pass': True, 'fold_auc': '0.4988 [0.4882, 0.5088]'}
+  G8+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G8+E C2: {'seed2_pass': False, 'band_aucs': [0.5425893395495769, 0.4833042290982614], 'pass': None, 'how': 'seed 2 missed 0.5; band seeds 3-6 PENDING (2 of 5 draws)', 'seed2_fold_auc': '0.5426 [0.5012, 0.5839]'}
+  C1 paired null G8+E - G4+E under shuffled labels: {'delta': 0.0034834785376967603, 'lo': -0.006468449207255105, 'hi': 0.013466795925400319, 'pass': True}
+  E (probe-1 banked): {'C1_pass': True, 'C2_covers_0.5': True, 'C3_fold_auc': 1.0, 'C3_pass': True}
+  MLP C1 shuffle: NOT RUN: UNVERIFIED
+
+## PMOVE  n=12000 go=6000 clips=2140
+
+### pmove linear: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.732 [0.719, 0.745] | 0.731 [0.718, 0.745]
+  V+E    0.785 [0.771, 0.798] | 0.784 [0.771, 0.798]
+  G4     0.682 [0.665, 0.699] | 0.681 [0.664, 0.698]
+  G8     0.695 [0.678, 0.711] | 0.694 [0.677, 0.710]
+  G4+E   0.771 [0.757, 0.785] | 0.771 [0.757, 0.785]
+  G8+E   0.765 [0.751, 0.779] | 0.765 [0.751, 0.778]
+### pmove linear: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.006 [-0.013, +0.000] | -0.006 [-0.012, +0.000]
+  G4+E  - E     +0.039 [+0.026, +0.053] | +0.039 [+0.026, +0.053]
+  G8+E  - E     +0.033 [+0.019, +0.048] | +0.033 [+0.019, +0.049]
+  G4+E  - V+E   -0.014 [-0.020, -0.008] | -0.014 [-0.020, -0.008]
+  G8+E  - V+E   -0.020 [-0.028, -0.012] | -0.020 [-0.029, -0.012]
+  V+E   - E     +0.053 [+0.041, +0.065] | +0.053 [+0.041, +0.066]
+  G8    - G4    +0.012 [+0.007, +0.018] | +0.012 [+0.007, +0.018]
+
+### pmove mlp: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.771 [0.758, 0.784] | 0.770 [0.758, 0.783]
+  V+E    0.786 [0.773, 0.799] | 0.786 [0.773, 0.799]
+  G4     0.678 [0.661, 0.696] | 0.678 [0.661, 0.696]
+  G8     0.665 [0.649, 0.682] | 0.661 [0.644, 0.678]
+  G4+E   0.760 [0.746, 0.775] | 0.759 [0.745, 0.774]
+  G8+E   0.730 [0.713, 0.745] | 0.722 [0.706, 0.736]
+### pmove mlp: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.030 [-0.042, -0.019] | -0.037 [-0.050, -0.025]
+  G4+E  - E     -0.011 [-0.025, +0.002] | -0.011 [-0.025, +0.002]
+  G8+E  - E     -0.041 [-0.058, -0.026] | -0.049 [-0.065, -0.033]
+  G4+E  - V+E   -0.026 [-0.035, -0.017] | -0.027 [-0.036, -0.017]
+  G8+E  - V+E   -0.056 [-0.069, -0.044] | -0.064 [-0.078, -0.051]
+  V+E   - E     +0.015 [+0.006, +0.024] | +0.016 [+0.007, +0.025]
+  G8    - G4    -0.013 [-0.026, +0.000] | -0.017 [-0.030, -0.004]
+
+### pmove linear controls: ok=False all_run=True pending=[]
+  G4+E C1: {'pass': True, 'fold_auc': '0.5054 [0.4950, 0.5158]'}
+  G4+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G4+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5071 [0.4866, 0.5276]'}
+  G8+E C1: {'pass': False, 'fold_auc': '0.5120 [0.5017, 0.5226]'}
+  G8+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G8+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5007 [0.4825, 0.5193]'}
+  C1 paired null G8+E - G4+E under shuffled labels: {'delta': 0.006629743863046711, 'lo': -0.004923308905349741, 'hi': 0.017939288400575678, 'pass': True}
+  E (probe-1 banked): {'C1_pass': True, 'C2_covers_0.5': True, 'C3_fold_auc': 1.0, 'C3_pass': True}
+  MLP C1 shuffle: NOT RUN: UNVERIFIED
+
+## DECISION (PREREG 4): dAUC(G8+E - G4+E), fold-mean, per cell
+  pstop  linear dAUC -0.0417 [-0.0604, -0.0224]  (G8+E 0.609 vs G4+E 0.650; pooled -0.0612)  HELPS-cond=False  <0.01=True  void=False  controls_unverified=True
+  pstop  mlp    dAUC -0.0225 [-0.0488, +0.0023]  (G8+E 0.609 vs G4+E 0.631; pooled -0.0224)  HELPS-cond=False  <0.01=True  void=False  controls_unverified=True
+  pmove  linear dAUC -0.0062 [-0.0125, +0.0002]  (G8+E 0.765 vs G4+E 0.771; pooled -0.0060)  HELPS-cond=False  <0.01=True  void=True  controls_unverified=False
+  pmove  mlp    dAUC -0.0302 [-0.0417, -0.0186]  (G8+E 0.730 vs G4+E 0.760; pooled -0.0374)  HELPS-cond=False  <0.01=True  void=True  controls_unverified=True
+
+## VERDICT: INCONCLUSIVE
+
+## EVAL-141 no-refit (AUC [episode-bootstrap CI]; n windows / go / episodes)
+  pstop linear: n=101 go=61 episodes=19  E 0.517 [0.413, 0.651]  G4 0.343 [0.164, 0.636]  G4+E 0.491 [0.303, 0.739]  G8 0.411 [0.224, 0.704]  G8+E 0.434 [0.250, 0.727]
+     G8+E_minus_G4+E: -0.058 [-0.165, +0.032]
+     G4+E_minus_E: -0.025 [-0.183, +0.184]
+     G8+E_minus_E: -0.083 [-0.265, +0.186]
+     G8_minus_G4: +0.068 [+0.009, +0.138]
+  pstop mlp: not run
+  pmove linear: n=507 go=266 episodes=67  E 0.708 [0.637, 0.780]  G4 0.628 [0.520, 0.721]  G4+E 0.744 [0.662, 0.821]  G8 0.631 [0.528, 0.724]  G8+E 0.744 [0.668, 0.820]
+     G8+E_minus_G4+E: -0.001 [-0.033, +0.035]
+     G4+E_minus_E: +0.036 [-0.042, +0.106]
+     G8+E_minus_E: +0.036 [-0.041, +0.103]
+     G8_minus_G4: +0.003 [-0.024, +0.032]
+  pmove mlp: not run
+
+## SPATIAL READOUT MAP (descriptive; L2 norm of each token's 16 standardised coefficients)
+  pstop G8_E 8x20: row share of squared weight [0.112, 0.138, 0.144, 0.134, 0.158, 0.121, 0.098, 0.094]  lower-half share 0.472  top-1 token share 0.0191  top-10% tokens share 0.217  argmax (r,c)=(np.int64(4), np.int64(19))
+  pstop G4_E 4x10: row share of squared weight [0.244, 0.285, 0.22, 0.251]  lower-half share 0.471  top-1 token share 0.0444  top-10% tokens share 0.167  argmax (r,c)=(np.int64(1), np.int64(0))
+  pmove G8_E 8x20: row share of squared weight [0.093, 0.096, 0.112, 0.158, 0.145, 0.167, 0.12, 0.109]  lower-half share 0.542  top-1 token share 0.0192  top-10% tokens share 0.195  argmax (r,c)=(np.int64(4), np.int64(10))
+  pmove G4_E 4x10: row share of squared weight [0.235, 0.195, 0.322, 0.247]  lower-half share 0.569  top-1 token share 0.0561  top-10% tokens share 0.193  argmax (r,c)=(np.int64(2), np.int64(9))
+  wrote readout_heatmap_G8.png
+
+## STRATA (TRAIN, linear, fold-mean; dAUC vs E and G8+E - G4+E)
+  pstop TL_ANY: n=6652 go=3157 clips=398 full-pop GO 0.547 | E 0.626 V+E 0.681 G4+E 0.643 G8+E 0.600 | G4+E-E +0.017 [-0.032, +0.059] G8+E-E -0.027 [-0.073, +0.020] G8+E-G4+E -0.043 [-0.071, -0.016]
+  pstop TL_RED: n=4986 go=1871 clips=256 full-pop GO 0.445 | E 0.609 V+E 0.708 G4+E 0.678 G8+E 0.627 | G4+E-E +0.068 [+0.013, +0.119] G8+E-E +0.018 [-0.044, +0.073] G8+E-G4+E -0.051 [-0.086, -0.016]
+  pstop TL_GREEN: n=1377 go=1173 clips=123 full-pop GO 0.886 | E 0.594 V+E 0.536 G4+E 0.478 G8+E 0.477 | G4+E-E -0.116 [-0.191, -0.005] G8+E-E -0.116 [-0.193, +0.008] G8+E-G4+E -0.000 [-0.072, +0.073]
+  pstop TL_YELLOW: n=164 clips=10 -> too small (<30
+  pstop NO_TL: n=5348 go=2843 clips=451 full-pop GO 0.607 | E 0.621 V+E 0.682 G4+E 0.664 G8+E 0.626 | G4+E-E +0.044 [-0.007, +0.087] G8+E-E +0.006 [-0.044, +0.054] G8+E-G4+E -0.038 [-0.067, -0.009]
+  pstop lead_now: n=5896 go=3049 clips=535 full-pop GO 0.59 | E 0.623 V+E 0.667 G4+E 0.636 G8+E 0.609 | G4+E-E +0.013 [-0.036, +0.057] G8+E-E -0.015 [-0.065, +0.033] G8+E-G4+E -0.027 [-0.052, +0.001]
+  pstop no_lead: n=5612 go=2824 clips=429 full-pop GO 0.575 | E 0.628 V+E 0.692 G4+E 0.662 G8+E 0.610 | G4+E-E +0.034 [-0.020, +0.081] G8+E-E -0.018 [-0.073, +0.029] G8+E-G4+E -0.052 [-0.079, -0.023]
+  pstop lead_depart: n=1741 go=1330 clips=310 full-pop GO 0.817 | E 0.663 V+E 0.644 G4+E 0.593 G8+E 0.589 | G4+E-E -0.070 [-0.168, +0.011] G8+E-E -0.074 [-0.173, +0.011] G8+E-G4+E -0.004 [-0.053, +0.052]
+  pmove TL_ANY: n=2570 go=1423 clips=553 full-pop GO 0.589 | E 0.825 V+E 0.827 G4+E 0.806 G8+E 0.787 | G4+E-E -0.019 [-0.046, +0.008] G8+E-E -0.038 [-0.069, -0.007] G8+E-G4+E -0.019 [-0.034, -0.005]
+  pmove TL_RED: n=1233 go=513 clips=302 full-pop GO 0.464 | E 0.876 V+E 0.879 G4+E 0.870 G8+E 0.842 | G4+E-E -0.006 [-0.034, +0.019] G8+E-E -0.034 [-0.067, -0.004] G8+E-G4+E -0.028 [-0.042, -0.013]
+  pmove TL_GREEN: n=1168 go=824 clips=221 full-pop GO 0.73 | E 0.729 V+E 0.735 G4+E 0.725 G8+E 0.704 | G4+E-E -0.004 [-0.058, +0.056] G8+E-E -0.025 [-0.094, +0.050] G8+E-G4+E -0.021 [-0.059, +0.016]
+  pmove TL_YELLOW: n=86 clips=16 -> too small (<30
+  pmove NO_TL: n=9430 go=4577 clips=1587 full-pop GO 0.523 | E 0.704 V+E 0.772 G4+E 0.760 G8+E 0.758 | G4+E-E +0.056 [+0.041, +0.072] G8+E-E +0.053 [+0.037, +0.071] G8+E-G4+E -0.002 [-0.010, +0.005]
+  pmove lead_now: n=5395 go=2613 clips=1102 full-pop GO 0.52 | E 0.737 V+E 0.770 G4+E 0.757 G8+E 0.744 | G4+E-E +0.020 [+0.000, +0.040] G8+E-E +0.007 [-0.014, +0.030] G8+E-G4+E -0.012 [-0.022, -0.002]
+  pmove no_lead: n=6315 go=3245 clips=1283 full-pop GO 0.554 | E 0.733 V+E 0.797 G4+E 0.783 G8+E 0.781 | G4+E-E +0.050 [+0.032, +0.068] G8+E-E +0.048 [+0.029, +0.067] G8+E-G4+E -0.002 [-0.010, +0.006]
+  pmove lead_depart: n=2010 go=1493 clips=641 full-pop GO 0.765 | E 0.739 V+E 0.749 G4+E 0.725 G8+E 0.723 | G4+E-E -0.013 [-0.050, +0.022] G8+E-E -0.016 [-0.055, +0.023] G8+E-G4+E -0.002 [-0.019, +0.015]
+
+## C5(b) content mutation (G8 source = NN upsample of G4)
+# tables3 -- every number of RESULTS.md (MEASURED; fold-mean AUC = the mean of per-fold AUCs, primary; pooled beside; episode-cluster bootstrap B=2000 seed 0; paired on the same windows)
+
+## PSTOP  n=12000 go=6000 clips=849
+
+### pstop linear: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.626 [0.613, 0.640] | 0.593 [0.570, 0.616]
+  V+E    0.680 [0.650, 0.710] | 0.680 [0.651, 0.711]
+  G4     0.632 [0.599, 0.665] | 0.634 [0.601, 0.670]
+  G8     0.591 [0.555, 0.627] | 0.574 [0.535, 0.613]
+  G4+E   0.650 [0.618, 0.684] | 0.652 [0.621, 0.687]
+  G8+E   0.609 [0.574, 0.644] | 0.591 [0.554, 0.630]
+### pstop linear: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.042 [-0.060, -0.022] | -0.061 [-0.089, -0.036]
+  G4+E  - E     +0.024 [-0.009, +0.058] | +0.059 [+0.017, +0.102]
+  G8+E  - E     -0.017 [-0.054, +0.018] | -0.002 [-0.042, +0.040]
+  G4+E  - V+E   -0.030 [-0.049, -0.010] | -0.028 [-0.048, -0.008]
+  G8+E  - V+E   -0.071 [-0.097, -0.047] | -0.089 [-0.122, -0.058]
+  V+E   - E     +0.054 [+0.025, +0.082] | +0.087 [+0.050, +0.125]
+  G8    - G4    -0.040 [-0.061, -0.020] | -0.061 [-0.090, -0.034]
+
+### pstop mlp: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.628 [0.615, 0.641] | 0.595 [0.573, 0.617]
+  V+E    0.681 [0.651, 0.709] | 0.681 [0.652, 0.712]
+  G4     0.607 [0.571, 0.643] | 0.610 [0.574, 0.647]
+  G8     0.593 [0.556, 0.630] | 0.595 [0.558, 0.634]
+  G4+E   0.631 [0.597, 0.666] | 0.626 [0.591, 0.661]
+  G8+E   0.609 [0.572, 0.645] | 0.603 [0.566, 0.641]
+### pstop mlp: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.022 [-0.049, +0.002] | -0.022 [-0.051, +0.007]
+  G4+E  - E     +0.003 [-0.034, +0.038] | +0.030 [-0.012, +0.073]
+  G8+E  - E     -0.019 [-0.058, +0.018] | +0.008 [-0.037, +0.051]
+  G4+E  - V+E   -0.049 [-0.079, -0.020] | -0.055 [-0.090, -0.023]
+  G8+E  - V+E   -0.072 [-0.107, -0.037] | -0.078 [-0.115, -0.042]
+  V+E   - E     +0.053 [+0.024, +0.080] | +0.086 [+0.050, +0.125]
+  G8    - G4    -0.014 [-0.038, +0.010] | -0.015 [-0.039, +0.008]
+
+### pstop linear controls: ok=True all_run=False pending=['C2 band G8']
+  G4+E C1: {'pass': True, 'fold_auc': '0.4953 [0.4857, 0.5052]'}
+  G4+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G4+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5285 [0.4857, 0.5692]'}
+  G8+E C1: {'pass': True, 'fold_auc': '0.4988 [0.4882, 0.5088]'}
+  G8+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G8+E C2: {'seed2_pass': False, 'band_aucs': [0.5425893395495769, 0.4833042290982614, 0.53356164426253], 'pass': None, 'how': 'seed 2 missed 0.5; band seeds 3-6 PENDING (3 of 5 draws)', 'seed2_fold_auc': '0.5426 [0.5012, 0.5839]'}
+  C1 paired null G8+E - G4+E under shuffled labels: {'delta': 0.0034834785376967603, 'lo': -0.006468449207255105, 'hi': 0.013466795925400319, 'pass': True}
+  E (probe-1 banked): {'C1_pass': True, 'C2_covers_0.5': True, 'C3_fold_auc': 1.0, 'C3_pass': True}
+  MLP C1 shuffle: NOT RUN: UNVERIFIED
+
+## PMOVE  n=12000 go=6000 clips=2140
+
+### pmove linear: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.732 [0.719, 0.745] | 0.731 [0.718, 0.745]
+  V+E    0.785 [0.771, 0.798] | 0.784 [0.771, 0.798]
+  G4     0.682 [0.665, 0.699] | 0.681 [0.664, 0.698]
+  G8     0.695 [0.678, 0.711] | 0.694 [0.677, 0.710]
+  G4+E   0.771 [0.757, 0.785] | 0.771 [0.757, 0.785]
+  G8+E   0.765 [0.751, 0.779] | 0.765 [0.751, 0.778]
+### pmove linear: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.006 [-0.013, +0.000] | -0.006 [-0.012, +0.000]
+  G4+E  - E     +0.039 [+0.026, +0.053] | +0.039 [+0.026, +0.053]
+  G8+E  - E     +0.033 [+0.019, +0.048] | +0.033 [+0.019, +0.049]
+  G4+E  - V+E   -0.014 [-0.020, -0.008] | -0.014 [-0.020, -0.008]
+  G8+E  - V+E   -0.020 [-0.028, -0.012] | -0.020 [-0.029, -0.012]
+  V+E   - E     +0.053 [+0.041, +0.065] | +0.053 [+0.041, +0.066]
+  G8    - G4    +0.012 [+0.007, +0.018] | +0.012 [+0.007, +0.018]
+
+### pmove mlp: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.771 [0.758, 0.784] | 0.770 [0.758, 0.783]
+  V+E    0.786 [0.773, 0.799] | 0.786 [0.773, 0.799]
+  G4     0.678 [0.661, 0.696] | 0.678 [0.661, 0.696]
+  G8     0.665 [0.649, 0.682] | 0.661 [0.644, 0.678]
+  G4+E   0.760 [0.746, 0.775] | 0.759 [0.745, 0.774]
+  G8+E   0.730 [0.713, 0.745] | 0.722 [0.706, 0.736]
+### pmove mlp: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.030 [-0.042, -0.019] | -0.037 [-0.050, -0.025]
+  G4+E  - E     -0.011 [-0.025, +0.002] | -0.011 [-0.025, +0.002]
+  G8+E  - E     -0.041 [-0.058, -0.026] | -0.049 [-0.065, -0.033]
+  G4+E  - V+E   -0.026 [-0.035, -0.017] | -0.027 [-0.036, -0.017]
+  G8+E  - V+E   -0.056 [-0.069, -0.044] | -0.064 [-0.078, -0.051]
+  V+E   - E     +0.015 [+0.006, +0.024] | +0.016 [+0.007, +0.025]
+  G8    - G4    -0.013 [-0.026, +0.000] | -0.017 [-0.030, -0.004]
+
+### pmove linear controls: ok=False all_run=True pending=[]
+  G4+E C1: {'pass': True, 'fold_auc': '0.5054 [0.4950, 0.5158]'}
+  G4+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G4+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5071 [0.4866, 0.5276]'}
+  G8+E C1: {'pass': False, 'fold_auc': '0.5120 [0.5017, 0.5226]'}
+  G8+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G8+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5007 [0.4825, 0.5193]'}
+  C1 paired null G8+E - G4+E under shuffled labels: {'delta': 0.006629743863046711, 'lo': -0.004923308905349741, 'hi': 0.017939288400575678, 'pass': True}
+  E (probe-1 banked): {'C1_pass': True, 'C2_covers_0.5': True, 'C3_fold_auc': 1.0, 'C3_pass': True}
+  MLP C1 shuffle: NOT RUN: UNVERIFIED
+
+## DECISION (PREREG 4): dAUC(G8+E - G4+E), fold-mean, per cell
+  pstop  linear dAUC -0.0417 [-0.0604, -0.0224]  (G8+E 0.609 vs G4+E 0.650; pooled -0.0612)  HELPS-cond=False  <0.01=True  void=False  controls_unverified=True
+  pstop  mlp    dAUC -0.0225 [-0.0488, +0.0023]  (G8+E 0.609 vs G4+E 0.631; pooled -0.0224)  HELPS-cond=False  <0.01=True  void=False  controls_unverified=True
+  pmove  linear dAUC -0.0062 [-0.0125, +0.0002]  (G8+E 0.765 vs G4+E 0.771; pooled -0.0060)  HELPS-cond=False  <0.01=True  void=True  controls_unverified=False
+  pmove  mlp    dAUC -0.0302 [-0.0417, -0.0186]  (G8+E 0.730 vs G4+E 0.760; pooled -0.0374)  HELPS-cond=False  <0.01=True  void=True  controls_unverified=True
+
+## VERDICT: INCONCLUSIVE
+
+## EVAL-141 no-refit (AUC [episode-bootstrap CI]; n windows / go / episodes)
+  pstop linear: n=101 go=61 episodes=19  E 0.517 [0.413, 0.651]  G4 0.343 [0.164, 0.636]  G4+E 0.491 [0.303, 0.739]  G8 0.411 [0.224, 0.704]  G8+E 0.434 [0.250, 0.727]
+     G8+E_minus_G4+E: -0.058 [-0.165, +0.032]
+     G4+E_minus_E: -0.025 [-0.183, +0.184]
+     G8+E_minus_E: -0.083 [-0.265, +0.186]
+     G8_minus_G4: +0.068 [+0.009, +0.138]
+  pstop mlp: n=101 go=61 episodes=19  E 0.571 [0.483, 0.681]  G4 0.626 [0.422, 0.832]  G4+E 0.644 [0.459, 0.839]  G8 0.493 [0.350, 0.692]
+  pmove linear: n=507 go=266 episodes=67  E 0.708 [0.637, 0.780]  G4 0.628 [0.520, 0.721]  G4+E 0.744 [0.662, 0.821]  G8 0.631 [0.528, 0.724]  G8+E 0.744 [0.668, 0.820]
+     G8+E_minus_G4+E: -0.001 [-0.033, +0.035]
+     G4+E_minus_E: +0.036 [-0.042, +0.106]
+     G8+E_minus_E: +0.036 [-0.041, +0.103]
+     G8_minus_G4: +0.003 [-0.024, +0.032]
+  pmove mlp: not run
+
+## SPATIAL READOUT MAP (descriptive; L2 norm of each token's 16 standardised coefficients)
+  pstop G8_E 8x20: row share of squared weight [0.112, 0.138, 0.144, 0.134, 0.158, 0.121, 0.098, 0.094]  lower-half share 0.472  top-1 token share 0.0191  top-10% tokens share 0.217  argmax (r,c)=(np.int64(4), np.int64(19))
+  pstop G4_E 4x10: row share of squared weight [0.244, 0.285, 0.22, 0.251]  lower-half share 0.471  top-1 token share 0.0444  top-10% tokens share 0.167  argmax (r,c)=(np.int64(1), np.int64(0))
+  pmove G8_E 8x20: row share of squared weight [0.093, 0.096, 0.112, 0.158, 0.145, 0.167, 0.12, 0.109]  lower-half share 0.542  top-1 token share 0.0192  top-10% tokens share 0.195  argmax (r,c)=(np.int64(4), np.int64(10))
+  pmove G4_E 4x10: row share of squared weight [0.235, 0.195, 0.322, 0.247]  lower-half share 0.569  top-1 token share 0.0561  top-10% tokens share 0.193  argmax (r,c)=(np.int64(2), np.int64(9))
+  wrote readout_heatmap_G8.png
+
+## STRATA (TRAIN, linear, fold-mean; dAUC vs E and G8+E - G4+E)
+  pstop TL_ANY: n=6652 go=3157 clips=398 full-pop GO 0.547 | E 0.626 V+E 0.681 G4+E 0.643 G8+E 0.600 | G4+E-E +0.017 [-0.032, +0.059] G8+E-E -0.027 [-0.073, +0.020] G8+E-G4+E -0.043 [-0.071, -0.016]
+  pstop TL_RED: n=4986 go=1871 clips=256 full-pop GO 0.445 | E 0.609 V+E 0.708 G4+E 0.678 G8+E 0.627 | G4+E-E +0.068 [+0.013, +0.119] G8+E-E +0.018 [-0.044, +0.073] G8+E-G4+E -0.051 [-0.086, -0.016]
+  pstop TL_GREEN: n=1377 go=1173 clips=123 full-pop GO 0.886 | E 0.594 V+E 0.536 G4+E 0.478 G8+E 0.477 | G4+E-E -0.116 [-0.191, -0.005] G8+E-E -0.116 [-0.193, +0.008] G8+E-G4+E -0.000 [-0.072, +0.073]
+  pstop TL_YELLOW: n=164 clips=10 -> too small (<30
+  pstop NO_TL: n=5348 go=2843 clips=451 full-pop GO 0.607 | E 0.621 V+E 0.682 G4+E 0.664 G8+E 0.626 | G4+E-E +0.044 [-0.007, +0.087] G8+E-E +0.006 [-0.044, +0.054] G8+E-G4+E -0.038 [-0.067, -0.009]
+  pstop lead_now: n=5896 go=3049 clips=535 full-pop GO 0.59 | E 0.623 V+E 0.667 G4+E 0.636 G8+E 0.609 | G4+E-E +0.013 [-0.036, +0.057] G8+E-E -0.015 [-0.065, +0.033] G8+E-G4+E -0.027 [-0.052, +0.001]
+  pstop no_lead: n=5612 go=2824 clips=429 full-pop GO 0.575 | E 0.628 V+E 0.692 G4+E 0.662 G8+E 0.610 | G4+E-E +0.034 [-0.020, +0.081] G8+E-E -0.018 [-0.073, +0.029] G8+E-G4+E -0.052 [-0.079, -0.023]
+  pstop lead_depart: n=1741 go=1330 clips=310 full-pop GO 0.817 | E 0.663 V+E 0.644 G4+E 0.593 G8+E 0.589 | G4+E-E -0.070 [-0.168, +0.011] G8+E-E -0.074 [-0.173, +0.011] G8+E-G4+E -0.004 [-0.053, +0.052]
+  pmove TL_ANY: n=2570 go=1423 clips=553 full-pop GO 0.589 | E 0.825 V+E 0.827 G4+E 0.806 G8+E 0.787 | G4+E-E -0.019 [-0.046, +0.008] G8+E-E -0.038 [-0.069, -0.007] G8+E-G4+E -0.019 [-0.034, -0.005]
+  pmove TL_RED: n=1233 go=513 clips=302 full-pop GO 0.464 | E 0.876 V+E 0.879 G4+E 0.870 G8+E 0.842 | G4+E-E -0.006 [-0.034, +0.019] G8+E-E -0.034 [-0.067, -0.004] G8+E-G4+E -0.028 [-0.042, -0.013]
+  pmove TL_GREEN: n=1168 go=824 clips=221 full-pop GO 0.73 | E 0.729 V+E 0.735 G4+E 0.725 G8+E 0.704 | G4+E-E -0.004 [-0.058, +0.056] G8+E-E -0.025 [-0.094, +0.050] G8+E-G4+E -0.021 [-0.059, +0.016]
+  pmove TL_YELLOW: n=86 clips=16 -> too small (<30
+  pmove NO_TL: n=9430 go=4577 clips=1587 full-pop GO 0.523 | E 0.704 V+E 0.772 G4+E 0.760 G8+E 0.758 | G4+E-E +0.056 [+0.041, +0.072] G8+E-E +0.053 [+0.037, +0.071] G8+E-G4+E -0.002 [-0.010, +0.005]
+  pmove lead_now: n=5395 go=2613 clips=1102 full-pop GO 0.52 | E 0.737 V+E 0.770 G4+E 0.757 G8+E 0.744 | G4+E-E +0.020 [+0.000, +0.040] G8+E-E +0.007 [-0.014, +0.030] G8+E-G4+E -0.012 [-0.022, -0.002]
+  pmove no_lead: n=6315 go=3245 clips=1283 full-pop GO 0.554 | E 0.733 V+E 0.797 G4+E 0.783 G8+E 0.781 | G4+E-E +0.050 [+0.032, +0.068] G8+E-E +0.048 [+0.029, +0.067] G8+E-G4+E -0.002 [-0.010, +0.006]
+  pmove lead_depart: n=2010 go=1493 clips=641 full-pop GO 0.765 | E 0.739 V+E 0.749 G4+E 0.725 G8+E 0.723 | G4+E-E -0.013 [-0.050, +0.022] G8+E-E -0.016 [-0.055, +0.023] G8+E-G4+E -0.002 [-0.019, +0.015]
+
+## C5(b) content mutation (G8 source = NN upsample of G4)
+  pstop: G8mut+E 0.641 [0.607, 0.675]  vs real G8+E 0.609 [0.574, 0.644]; |diff|>1e-4: True; G8mut+E - G4+E -0.010 [-0.020, +0.001]; G8+E - G8mut+E -0.032 [-0.048, -0.016]
+# tables3 -- every number of RESULTS.md (MEASURED; fold-mean AUC = the mean of per-fold AUCs, primary; pooled beside; episode-cluster bootstrap B=2000 seed 0; paired on the same windows)
+
+## PSTOP  n=12000 go=6000 clips=849
+
+### pstop linear: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.626 [0.613, 0.640] | 0.593 [0.570, 0.616]
+  V+E    0.680 [0.650, 0.710] | 0.680 [0.651, 0.711]
+  G4     0.632 [0.599, 0.665] | 0.634 [0.601, 0.670]
+  G8     0.591 [0.555, 0.627] | 0.574 [0.535, 0.613]
+  G4+E   0.650 [0.618, 0.684] | 0.652 [0.621, 0.687]
+  G8+E   0.609 [0.574, 0.644] | 0.591 [0.554, 0.630]
+### pstop linear: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.042 [-0.060, -0.022] | -0.061 [-0.089, -0.036]
+  G4+E  - E     +0.024 [-0.009, +0.058] | +0.059 [+0.017, +0.102]
+  G8+E  - E     -0.017 [-0.054, +0.018] | -0.002 [-0.042, +0.040]
+  G4+E  - V+E   -0.030 [-0.049, -0.010] | -0.028 [-0.048, -0.008]
+  G8+E  - V+E   -0.071 [-0.097, -0.047] | -0.089 [-0.122, -0.058]
+  V+E   - E     +0.054 [+0.025, +0.082] | +0.087 [+0.050, +0.125]
+  G8    - G4    -0.040 [-0.061, -0.020] | -0.061 [-0.090, -0.034]
+
+### pstop mlp: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.628 [0.615, 0.641] | 0.595 [0.573, 0.617]
+  V+E    0.681 [0.651, 0.709] | 0.681 [0.652, 0.712]
+  G4     0.607 [0.571, 0.643] | 0.610 [0.574, 0.647]
+  G8     0.593 [0.556, 0.630] | 0.595 [0.558, 0.634]
+  G4+E   0.631 [0.597, 0.666] | 0.626 [0.591, 0.661]
+  G8+E   0.609 [0.572, 0.645] | 0.603 [0.566, 0.641]
+### pstop mlp: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.022 [-0.049, +0.002] | -0.022 [-0.051, +0.007]
+  G4+E  - E     +0.003 [-0.034, +0.038] | +0.030 [-0.012, +0.073]
+  G8+E  - E     -0.019 [-0.058, +0.018] | +0.008 [-0.037, +0.051]
+  G4+E  - V+E   -0.049 [-0.079, -0.020] | -0.055 [-0.090, -0.023]
+  G8+E  - V+E   -0.072 [-0.107, -0.037] | -0.078 [-0.115, -0.042]
+  V+E   - E     +0.053 [+0.024, +0.080] | +0.086 [+0.050, +0.125]
+  G8    - G4    -0.014 [-0.038, +0.010] | -0.015 [-0.039, +0.008]
+
+### pstop linear controls: ok=True all_run=True pending=[]
+  G4+E C1: {'pass': True, 'fold_auc': '0.4953 [0.4857, 0.5052]'}
+  G4+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G4+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5285 [0.4857, 0.5692]'}
+  G8+E C1: {'pass': True, 'fold_auc': '0.4988 [0.4882, 0.5088]'}
+  G8+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G8+E C2: {'seed2_pass': False, 'band_aucs': [0.5425893395495769, 0.4833042290982614, 0.53356164426253, 0.5317664440316945, 0.46870753201303816], 'band_mean': 0.5119858377910201, 'pass': True, 'how': 'seed 2 missed 0.5; 5-draw band mean 0.5120 (rule: in [0.47, 0.53])', 'seed2_fold_auc': '0.5426 [0.5012, 0.5839]'}
+  C1 paired null G8+E - G4+E under shuffled labels: {'delta': 0.0034834785376967603, 'lo': -0.006468449207255105, 'hi': 0.013466795925400319, 'pass': True}
+  E (probe-1 banked): {'C1_pass': True, 'C2_covers_0.5': True, 'C3_fold_auc': 1.0, 'C3_pass': True}
+  MLP C1 shuffle: NOT RUN: UNVERIFIED
+
+## PMOVE  n=12000 go=6000 clips=2140
+
+### pmove linear: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.732 [0.719, 0.745] | 0.731 [0.718, 0.745]
+  V+E    0.785 [0.771, 0.798] | 0.784 [0.771, 0.798]
+  G4     0.682 [0.665, 0.699] | 0.681 [0.664, 0.698]
+  G8     0.695 [0.678, 0.711] | 0.694 [0.677, 0.710]
+  G4+E   0.771 [0.757, 0.785] | 0.771 [0.757, 0.785]
+  G8+E   0.765 [0.751, 0.779] | 0.765 [0.751, 0.778]
+### pmove linear: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.006 [-0.013, +0.000] | -0.006 [-0.012, +0.000]
+  G4+E  - E     +0.039 [+0.026, +0.053] | +0.039 [+0.026, +0.053]
+  G8+E  - E     +0.033 [+0.019, +0.048] | +0.033 [+0.019, +0.049]
+  G4+E  - V+E   -0.014 [-0.020, -0.008] | -0.014 [-0.020, -0.008]
+  G8+E  - V+E   -0.020 [-0.028, -0.012] | -0.020 [-0.029, -0.012]
+  V+E   - E     +0.053 [+0.041, +0.065] | +0.053 [+0.041, +0.066]
+  G8    - G4    +0.012 [+0.007, +0.018] | +0.012 [+0.007, +0.018]
+
+### pmove mlp: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.771 [0.758, 0.784] | 0.770 [0.758, 0.783]
+  V+E    0.786 [0.773, 0.799] | 0.786 [0.773, 0.799]
+  G4     0.678 [0.661, 0.696] | 0.678 [0.661, 0.696]
+  G8     0.665 [0.649, 0.682] | 0.661 [0.644, 0.678]
+  G4+E   0.760 [0.746, 0.775] | 0.759 [0.745, 0.774]
+  G8+E   0.730 [0.713, 0.745] | 0.722 [0.706, 0.736]
+### pmove mlp: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.030 [-0.042, -0.019] | -0.037 [-0.050, -0.025]
+  G4+E  - E     -0.011 [-0.025, +0.002] | -0.011 [-0.025, +0.002]
+  G8+E  - E     -0.041 [-0.058, -0.026] | -0.049 [-0.065, -0.033]
+  G4+E  - V+E   -0.026 [-0.035, -0.017] | -0.027 [-0.036, -0.017]
+  G8+E  - V+E   -0.056 [-0.069, -0.044] | -0.064 [-0.078, -0.051]
+  V+E   - E     +0.015 [+0.006, +0.024] | +0.016 [+0.007, +0.025]
+  G8    - G4    -0.013 [-0.026, +0.000] | -0.017 [-0.030, -0.004]
+
+### pmove linear controls: ok=False all_run=True pending=[]
+  G4+E C1: {'pass': True, 'fold_auc': '0.5054 [0.4950, 0.5158]'}
+  G4+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G4+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5071 [0.4866, 0.5276]'}
+  G8+E C1: {'pass': False, 'fold_auc': '0.5120 [0.5017, 0.5226]'}
+  G8+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G8+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5007 [0.4825, 0.5193]'}
+  C1 paired null G8+E - G4+E under shuffled labels: {'delta': 0.006629743863046711, 'lo': -0.004923308905349741, 'hi': 0.017939288400575678, 'pass': True}
+  E (probe-1 banked): {'C1_pass': True, 'C2_covers_0.5': True, 'C3_fold_auc': 1.0, 'C3_pass': True}
+  MLP C1 shuffle: NOT RUN: UNVERIFIED
+
+## DECISION (PREREG 4): dAUC(G8+E - G4+E), fold-mean, per cell
+  pstop  linear dAUC -0.0417 [-0.0604, -0.0224]  (G8+E 0.609 vs G4+E 0.650; pooled -0.0612)  HELPS-cond=False  <0.01=True  void=False  controls_unverified=False
+  pstop  mlp    dAUC -0.0225 [-0.0488, +0.0023]  (G8+E 0.609 vs G4+E 0.631; pooled -0.0224)  HELPS-cond=False  <0.01=True  void=False  controls_unverified=True
+  pmove  linear dAUC -0.0062 [-0.0125, +0.0002]  (G8+E 0.765 vs G4+E 0.771; pooled -0.0060)  HELPS-cond=False  <0.01=True  void=True  controls_unverified=False
+  pmove  mlp    dAUC -0.0302 [-0.0417, -0.0186]  (G8+E 0.730 vs G4+E 0.760; pooled -0.0374)  HELPS-cond=False  <0.01=True  void=True  controls_unverified=True
+
+## VERDICT: INCONCLUSIVE
+
+## EVAL-141 no-refit (AUC [episode-bootstrap CI]; n windows / go / episodes)
+  pstop linear: n=101 go=61 episodes=19  E 0.517 [0.413, 0.651]  G4 0.343 [0.164, 0.636]  G4+E 0.491 [0.303, 0.739]  G8 0.411 [0.224, 0.704]  G8+E 0.434 [0.250, 0.727]
+     G8+E_minus_G4+E: -0.058 [-0.165, +0.032]
+     G4+E_minus_E: -0.025 [-0.183, +0.184]
+     G8+E_minus_E: -0.083 [-0.265, +0.186]
+     G8_minus_G4: +0.068 [+0.009, +0.138]
+  pstop mlp: n=101 go=61 episodes=19  E 0.571 [0.483, 0.681]  G4 0.626 [0.422, 0.832]  G4+E 0.644 [0.459, 0.839]  G8 0.493 [0.350, 0.692]  G8+E 0.764 [0.614, 0.900]
+     G8+E_minus_G4+E: +0.120 [-0.090, +0.297]
+     G4+E_minus_E: +0.073 [-0.123, +0.282]
+     G8+E_minus_E: +0.193 [+0.015, +0.347]
+     G8_minus_G4: -0.134 [-0.358, +0.115]
+  pmove linear: n=507 go=266 episodes=67  E 0.708 [0.637, 0.780]  G4 0.628 [0.520, 0.721]  G4+E 0.744 [0.662, 0.821]  G8 0.631 [0.528, 0.724]  G8+E 0.744 [0.668, 0.820]
+     G8+E_minus_G4+E: -0.001 [-0.033, +0.035]
+     G4+E_minus_E: +0.036 [-0.042, +0.106]
+     G8+E_minus_E: +0.036 [-0.041, +0.103]
+     G8_minus_G4: +0.003 [-0.024, +0.032]
+  pmove mlp: n=507 go=266 episodes=67  E 0.725 [0.653, 0.799]  G4 0.622 [0.530, 0.708]  G4+E 0.759 [0.683, 0.828]
+
+## SPATIAL READOUT MAP (descriptive; L2 norm of each token's 16 standardised coefficients)
+  pstop G8_E 8x20: row share of squared weight [0.112, 0.138, 0.144, 0.134, 0.158, 0.121, 0.098, 0.094]  lower-half share 0.472  top-1 token share 0.0191  top-10% tokens share 0.217  argmax (r,c)=(np.int64(4), np.int64(19))
+  pstop G4_E 4x10: row share of squared weight [0.244, 0.285, 0.22, 0.251]  lower-half share 0.471  top-1 token share 0.0444  top-10% tokens share 0.167  argmax (r,c)=(np.int64(1), np.int64(0))
+  pmove G8_E 8x20: row share of squared weight [0.093, 0.096, 0.112, 0.158, 0.145, 0.167, 0.12, 0.109]  lower-half share 0.542  top-1 token share 0.0192  top-10% tokens share 0.195  argmax (r,c)=(np.int64(4), np.int64(10))
+  pmove G4_E 4x10: row share of squared weight [0.235, 0.195, 0.322, 0.247]  lower-half share 0.569  top-1 token share 0.0561  top-10% tokens share 0.193  argmax (r,c)=(np.int64(2), np.int64(9))
+  wrote readout_heatmap_G8.png
+
+## STRATA (TRAIN, linear, fold-mean; dAUC vs E and G8+E - G4+E)
+  pstop TL_ANY: n=6652 go=3157 clips=398 full-pop GO 0.547 | E 0.626 V+E 0.681 G4+E 0.643 G8+E 0.600 | G4+E-E +0.017 [-0.032, +0.059] G8+E-E -0.027 [-0.073, +0.020] G8+E-G4+E -0.043 [-0.071, -0.016]
+  pstop TL_RED: n=4986 go=1871 clips=256 full-pop GO 0.445 | E 0.609 V+E 0.708 G4+E 0.678 G8+E 0.627 | G4+E-E +0.068 [+0.013, +0.119] G8+E-E +0.018 [-0.044, +0.073] G8+E-G4+E -0.051 [-0.086, -0.016]
+  pstop TL_GREEN: n=1377 go=1173 clips=123 full-pop GO 0.886 | E 0.594 V+E 0.536 G4+E 0.478 G8+E 0.477 | G4+E-E -0.116 [-0.191, -0.005] G8+E-E -0.116 [-0.193, +0.008] G8+E-G4+E -0.000 [-0.072, +0.073]
+  pstop TL_YELLOW: n=164 clips=10 -> too small (<30
+  pstop NO_TL: n=5348 go=2843 clips=451 full-pop GO 0.607 | E 0.621 V+E 0.682 G4+E 0.664 G8+E 0.626 | G4+E-E +0.044 [-0.007, +0.087] G8+E-E +0.006 [-0.044, +0.054] G8+E-G4+E -0.038 [-0.067, -0.009]
+  pstop lead_now: n=5896 go=3049 clips=535 full-pop GO 0.59 | E 0.623 V+E 0.667 G4+E 0.636 G8+E 0.609 | G4+E-E +0.013 [-0.036, +0.057] G8+E-E -0.015 [-0.065, +0.033] G8+E-G4+E -0.027 [-0.052, +0.001]
+  pstop no_lead: n=5612 go=2824 clips=429 full-pop GO 0.575 | E 0.628 V+E 0.692 G4+E 0.662 G8+E 0.610 | G4+E-E +0.034 [-0.020, +0.081] G8+E-E -0.018 [-0.073, +0.029] G8+E-G4+E -0.052 [-0.079, -0.023]
+  pstop lead_depart: n=1741 go=1330 clips=310 full-pop GO 0.817 | E 0.663 V+E 0.644 G4+E 0.593 G8+E 0.589 | G4+E-E -0.070 [-0.168, +0.011] G8+E-E -0.074 [-0.173, +0.011] G8+E-G4+E -0.004 [-0.053, +0.052]
+  pmove TL_ANY: n=2570 go=1423 clips=553 full-pop GO 0.589 | E 0.825 V+E 0.827 G4+E 0.806 G8+E 0.787 | G4+E-E -0.019 [-0.046, +0.008] G8+E-E -0.038 [-0.069, -0.007] G8+E-G4+E -0.019 [-0.034, -0.005]
+  pmove TL_RED: n=1233 go=513 clips=302 full-pop GO 0.464 | E 0.876 V+E 0.879 G4+E 0.870 G8+E 0.842 | G4+E-E -0.006 [-0.034, +0.019] G8+E-E -0.034 [-0.067, -0.004] G8+E-G4+E -0.028 [-0.042, -0.013]
+  pmove TL_GREEN: n=1168 go=824 clips=221 full-pop GO 0.73 | E 0.729 V+E 0.735 G4+E 0.725 G8+E 0.704 | G4+E-E -0.004 [-0.058, +0.056] G8+E-E -0.025 [-0.094, +0.050] G8+E-G4+E -0.021 [-0.059, +0.016]
+  pmove TL_YELLOW: n=86 clips=16 -> too small (<30
+  pmove NO_TL: n=9430 go=4577 clips=1587 full-pop GO 0.523 | E 0.704 V+E 0.772 G4+E 0.760 G8+E 0.758 | G4+E-E +0.056 [+0.041, +0.072] G8+E-E +0.053 [+0.037, +0.071] G8+E-G4+E -0.002 [-0.010, +0.005]
+  pmove lead_now: n=5395 go=2613 clips=1102 full-pop GO 0.52 | E 0.737 V+E 0.770 G4+E 0.757 G8+E 0.744 | G4+E-E +0.020 [+0.000, +0.040] G8+E-E +0.007 [-0.014, +0.030] G8+E-G4+E -0.012 [-0.022, -0.002]
+  pmove no_lead: n=6315 go=3245 clips=1283 full-pop GO 0.554 | E 0.733 V+E 0.797 G4+E 0.783 G8+E 0.781 | G4+E-E +0.050 [+0.032, +0.068] G8+E-E +0.048 [+0.029, +0.067] G8+E-G4+E -0.002 [-0.010, +0.006]
+  pmove lead_depart: n=2010 go=1493 clips=641 full-pop GO 0.765 | E 0.739 V+E 0.749 G4+E 0.725 G8+E 0.723 | G4+E-E -0.013 [-0.050, +0.022] G8+E-E -0.016 [-0.055, +0.023] G8+E-G4+E -0.002 [-0.019, +0.015]
+
+## C5(b) content mutation (G8 source = NN upsample of G4)
+  pstop: G8mut+E 0.641 [0.607, 0.675]  vs real G8+E 0.609 [0.574, 0.644]; |diff|>1e-4: True; G8mut+E - G4+E -0.010 [-0.020, +0.001]; G8+E - G8mut+E -0.032 [-0.048, -0.016]
+# tables3 -- every number of RESULTS.md (MEASURED; fold-mean AUC = the mean of per-fold AUCs, primary; pooled beside; episode-cluster bootstrap B=2000 seed 0; paired on the same windows)
+
+## PSTOP  n=12000 go=6000 clips=849
+
+### pstop linear: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.626 [0.613, 0.640] | 0.593 [0.570, 0.616]
+  V+E    0.680 [0.650, 0.710] | 0.680 [0.651, 0.711]
+  G4     0.632 [0.599, 0.665] | 0.634 [0.601, 0.670]
+  G8     0.591 [0.555, 0.627] | 0.574 [0.535, 0.613]
+  G4+E   0.650 [0.618, 0.684] | 0.652 [0.621, 0.687]
+  G8+E   0.609 [0.574, 0.644] | 0.591 [0.554, 0.630]
+### pstop linear: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.042 [-0.060, -0.022] | -0.061 [-0.089, -0.036]
+  G4+E  - E     +0.024 [-0.009, +0.058] | +0.059 [+0.017, +0.102]
+  G8+E  - E     -0.017 [-0.054, +0.018] | -0.002 [-0.042, +0.040]
+  G4+E  - V+E   -0.030 [-0.049, -0.010] | -0.028 [-0.048, -0.008]
+  G8+E  - V+E   -0.071 [-0.097, -0.047] | -0.089 [-0.122, -0.058]
+  V+E   - E     +0.054 [+0.025, +0.082] | +0.087 [+0.050, +0.125]
+  G8    - G4    -0.040 [-0.061, -0.020] | -0.061 [-0.090, -0.034]
+
+### pstop mlp: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.628 [0.615, 0.641] | 0.595 [0.573, 0.617]
+  V+E    0.681 [0.651, 0.709] | 0.681 [0.652, 0.712]
+  G4     0.607 [0.571, 0.643] | 0.610 [0.574, 0.647]
+  G8     0.593 [0.556, 0.630] | 0.595 [0.558, 0.634]
+  G4+E   0.631 [0.597, 0.666] | 0.626 [0.591, 0.661]
+  G8+E   0.609 [0.572, 0.645] | 0.603 [0.566, 0.641]
+### pstop mlp: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.022 [-0.049, +0.002] | -0.022 [-0.051, +0.007]
+  G4+E  - E     +0.003 [-0.034, +0.038] | +0.030 [-0.012, +0.073]
+  G8+E  - E     -0.019 [-0.058, +0.018] | +0.008 [-0.037, +0.051]
+  G4+E  - V+E   -0.049 [-0.079, -0.020] | -0.055 [-0.090, -0.023]
+  G8+E  - V+E   -0.072 [-0.107, -0.037] | -0.078 [-0.115, -0.042]
+  V+E   - E     +0.053 [+0.024, +0.080] | +0.086 [+0.050, +0.125]
+  G8    - G4    -0.014 [-0.038, +0.010] | -0.015 [-0.039, +0.008]
+
+### pstop linear controls: ok=True all_run=True pending=[]
+  G4+E C1: {'pass': True, 'fold_auc': '0.4953 [0.4857, 0.5052]'}
+  G4+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G4+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5285 [0.4857, 0.5692]'}
+  G8+E C1: {'pass': True, 'fold_auc': '0.4988 [0.4882, 0.5088]'}
+  G8+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G8+E C2: {'seed2_pass': False, 'band_aucs': [0.5425893395495769, 0.4833042290982614, 0.53356164426253, 0.5317664440316945, 0.46870753201303816], 'band_mean': 0.5119858377910201, 'pass': True, 'how': 'seed 2 missed 0.5; 5-draw band mean 0.5120 (rule: in [0.47, 0.53])', 'seed2_fold_auc': '0.5426 [0.5012, 0.5839]'}
+  C1 paired null G8+E - G4+E under shuffled labels: {'delta': 0.0034834785376967603, 'lo': -0.006468449207255105, 'hi': 0.013466795925400319, 'pass': True}
+  E (probe-1 banked): {'C1_pass': True, 'C2_covers_0.5': True, 'C3_fold_auc': 1.0, 'C3_pass': True}
+  MLP C1 shuffle: NOT RUN: UNVERIFIED
+
+## PMOVE  n=12000 go=6000 clips=2140
+
+### pmove linear: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.732 [0.719, 0.745] | 0.731 [0.718, 0.745]
+  V+E    0.785 [0.771, 0.798] | 0.784 [0.771, 0.798]
+  G4     0.682 [0.665, 0.699] | 0.681 [0.664, 0.698]
+  G8     0.695 [0.678, 0.711] | 0.694 [0.677, 0.710]
+  G4+E   0.771 [0.757, 0.785] | 0.771 [0.757, 0.785]
+  G8+E   0.765 [0.751, 0.779] | 0.765 [0.751, 0.778]
+### pmove linear: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.006 [-0.013, +0.000] | -0.006 [-0.012, +0.000]
+  G4+E  - E     +0.039 [+0.026, +0.053] | +0.039 [+0.026, +0.053]
+  G8+E  - E     +0.033 [+0.019, +0.048] | +0.033 [+0.019, +0.049]
+  G4+E  - V+E   -0.014 [-0.020, -0.008] | -0.014 [-0.020, -0.008]
+  G8+E  - V+E   -0.020 [-0.028, -0.012] | -0.020 [-0.029, -0.012]
+  V+E   - E     +0.053 [+0.041, +0.065] | +0.053 [+0.041, +0.066]
+  G8    - G4    +0.012 [+0.007, +0.018] | +0.012 [+0.007, +0.018]
+
+### pmove mlp: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.771 [0.758, 0.784] | 0.770 [0.758, 0.783]
+  V+E    0.786 [0.773, 0.799] | 0.786 [0.773, 0.799]
+  G4     0.678 [0.661, 0.696] | 0.678 [0.661, 0.696]
+  G8     0.665 [0.649, 0.682] | 0.661 [0.644, 0.678]
+  G4+E   0.760 [0.746, 0.775] | 0.759 [0.745, 0.774]
+  G8+E   0.730 [0.713, 0.745] | 0.722 [0.706, 0.736]
+### pmove mlp: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.030 [-0.042, -0.019] | -0.037 [-0.050, -0.025]
+  G4+E  - E     -0.011 [-0.025, +0.002] | -0.011 [-0.025, +0.002]
+  G8+E  - E     -0.041 [-0.058, -0.026] | -0.049 [-0.065, -0.033]
+  G4+E  - V+E   -0.026 [-0.035, -0.017] | -0.027 [-0.036, -0.017]
+  G8+E  - V+E   -0.056 [-0.069, -0.044] | -0.064 [-0.078, -0.051]
+  V+E   - E     +0.015 [+0.006, +0.024] | +0.016 [+0.007, +0.025]
+  G8    - G4    -0.013 [-0.026, +0.000] | -0.017 [-0.030, -0.004]
+
+### pmove linear controls: ok=False all_run=True pending=[]
+  G4+E C1: {'pass': True, 'fold_auc': '0.5054 [0.4950, 0.5158]'}
+  G4+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G4+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5071 [0.4866, 0.5276]'}
+  G8+E C1: {'pass': False, 'fold_auc': '0.5120 [0.5017, 0.5226]'}
+  G8+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G8+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5007 [0.4825, 0.5193]'}
+  C1 paired null G8+E - G4+E under shuffled labels: {'delta': 0.006629743863046711, 'lo': -0.004923308905349741, 'hi': 0.017939288400575678, 'pass': True}
+  E (probe-1 banked): {'C1_pass': True, 'C2_covers_0.5': True, 'C3_fold_auc': 1.0, 'C3_pass': True}
+  MLP C1 shuffle: NOT RUN: UNVERIFIED
+
+## DECISION (PREREG 4): dAUC(G8+E - G4+E), fold-mean, per cell
+  pstop  linear dAUC -0.0417 [-0.0604, -0.0224]  (G8+E 0.609 vs G4+E 0.650; pooled -0.0612)  HELPS-cond=False  <0.01=True  void=False  controls_unverified=False
+  pstop  mlp    dAUC -0.0225 [-0.0488, +0.0023]  (G8+E 0.609 vs G4+E 0.631; pooled -0.0224)  HELPS-cond=False  <0.01=True  void=False  controls_unverified=True
+  pmove  linear dAUC -0.0062 [-0.0125, +0.0002]  (G8+E 0.765 vs G4+E 0.771; pooled -0.0060)  HELPS-cond=False  <0.01=True  void=True  controls_unverified=False
+  pmove  mlp    dAUC -0.0302 [-0.0417, -0.0186]  (G8+E 0.730 vs G4+E 0.760; pooled -0.0374)  HELPS-cond=False  <0.01=True  void=True  controls_unverified=True
+
+## VERDICT: INCONCLUSIVE
+
+## EVAL-141 no-refit (AUC [episode-bootstrap CI]; n windows / go / episodes)
+  pstop linear: n=101 go=61 episodes=19  E 0.517 [0.413, 0.651]  G4 0.343 [0.164, 0.636]  G4+E 0.491 [0.303, 0.739]  G8 0.411 [0.224, 0.704]  G8+E 0.434 [0.250, 0.727]
+     G8+E_minus_G4+E: -0.058 [-0.165, +0.032]
+     G4+E_minus_E: -0.025 [-0.183, +0.184]
+     G8+E_minus_E: -0.083 [-0.265, +0.186]
+     G8_minus_G4: +0.068 [+0.009, +0.138]
+  pstop mlp: n=101 go=61 episodes=19  E 0.571 [0.483, 0.681]  G4 0.626 [0.422, 0.832]  G4+E 0.644 [0.459, 0.839]  G8 0.493 [0.350, 0.692]  G8+E 0.764 [0.614, 0.900]
+     G8+E_minus_G4+E: +0.120 [-0.090, +0.297]
+     G4+E_minus_E: +0.073 [-0.123, +0.282]
+     G8+E_minus_E: +0.193 [+0.015, +0.347]
+     G8_minus_G4: -0.134 [-0.358, +0.115]
+  pmove linear: n=507 go=266 episodes=67  E 0.708 [0.637, 0.780]  G4 0.628 [0.520, 0.721]  G4+E 0.744 [0.662, 0.821]  G8 0.631 [0.528, 0.724]  G8+E 0.744 [0.668, 0.820]
+     G8+E_minus_G4+E: -0.001 [-0.033, +0.035]
+     G4+E_minus_E: +0.036 [-0.042, +0.106]
+     G8+E_minus_E: +0.036 [-0.041, +0.103]
+     G8_minus_G4: +0.003 [-0.024, +0.032]
+  pmove mlp: n=507 go=266 episodes=67  E 0.725 [0.653, 0.799]  G4 0.622 [0.530, 0.708]  G4+E 0.759 [0.683, 0.828]  G8 0.679 [0.605, 0.758]  G8+E 0.763 [0.689, 0.842]
+     G8+E_minus_G4+E: +0.005 [-0.051, +0.060]
+     G4+E_minus_E: +0.034 [-0.031, +0.098]
+     G8+E_minus_E: +0.039 [-0.036, +0.112]
+     G8_minus_G4: +0.057 [-0.033, +0.153]
+
+## SPATIAL READOUT MAP (descriptive; L2 norm of each token's 16 standardised coefficients)
+  pstop G8_E 8x20: row share of squared weight [0.112, 0.138, 0.144, 0.134, 0.158, 0.121, 0.098, 0.094]  lower-half share 0.472  top-1 token share 0.0191  top-10% tokens share 0.217  argmax (r,c)=(np.int64(4), np.int64(19))
+  pstop G4_E 4x10: row share of squared weight [0.244, 0.285, 0.22, 0.251]  lower-half share 0.471  top-1 token share 0.0444  top-10% tokens share 0.167  argmax (r,c)=(np.int64(1), np.int64(0))
+  pmove G8_E 8x20: row share of squared weight [0.093, 0.096, 0.112, 0.158, 0.145, 0.167, 0.12, 0.109]  lower-half share 0.542  top-1 token share 0.0192  top-10% tokens share 0.195  argmax (r,c)=(np.int64(4), np.int64(10))
+  pmove G4_E 4x10: row share of squared weight [0.235, 0.195, 0.322, 0.247]  lower-half share 0.569  top-1 token share 0.0561  top-10% tokens share 0.193  argmax (r,c)=(np.int64(2), np.int64(9))
+  wrote readout_heatmap_G8.png
+
+## STRATA (TRAIN, linear, fold-mean; dAUC vs E and G8+E - G4+E)
+  pstop TL_ANY: n=6652 go=3157 clips=398 full-pop GO 0.547 | E 0.626 V+E 0.681 G4+E 0.643 G8+E 0.600 | G4+E-E +0.017 [-0.032, +0.059] G8+E-E -0.027 [-0.073, +0.020] G8+E-G4+E -0.043 [-0.071, -0.016]
+  pstop TL_RED: n=4986 go=1871 clips=256 full-pop GO 0.445 | E 0.609 V+E 0.708 G4+E 0.678 G8+E 0.627 | G4+E-E +0.068 [+0.013, +0.119] G8+E-E +0.018 [-0.044, +0.073] G8+E-G4+E -0.051 [-0.086, -0.016]
+  pstop TL_GREEN: n=1377 go=1173 clips=123 full-pop GO 0.886 | E 0.594 V+E 0.536 G4+E 0.478 G8+E 0.477 | G4+E-E -0.116 [-0.191, -0.005] G8+E-E -0.116 [-0.193, +0.008] G8+E-G4+E -0.000 [-0.072, +0.073]
+  pstop TL_YELLOW: n=164 clips=10 -> too small (<30
+  pstop NO_TL: n=5348 go=2843 clips=451 full-pop GO 0.607 | E 0.621 V+E 0.682 G4+E 0.664 G8+E 0.626 | G4+E-E +0.044 [-0.007, +0.087] G8+E-E +0.006 [-0.044, +0.054] G8+E-G4+E -0.038 [-0.067, -0.009]
+  pstop lead_now: n=5896 go=3049 clips=535 full-pop GO 0.59 | E 0.623 V+E 0.667 G4+E 0.636 G8+E 0.609 | G4+E-E +0.013 [-0.036, +0.057] G8+E-E -0.015 [-0.065, +0.033] G8+E-G4+E -0.027 [-0.052, +0.001]
+  pstop no_lead: n=5612 go=2824 clips=429 full-pop GO 0.575 | E 0.628 V+E 0.692 G4+E 0.662 G8+E 0.610 | G4+E-E +0.034 [-0.020, +0.081] G8+E-E -0.018 [-0.073, +0.029] G8+E-G4+E -0.052 [-0.079, -0.023]
+  pstop lead_depart: n=1741 go=1330 clips=310 full-pop GO 0.817 | E 0.663 V+E 0.644 G4+E 0.593 G8+E 0.589 | G4+E-E -0.070 [-0.168, +0.011] G8+E-E -0.074 [-0.173, +0.011] G8+E-G4+E -0.004 [-0.053, +0.052]
+  pmove TL_ANY: n=2570 go=1423 clips=553 full-pop GO 0.589 | E 0.825 V+E 0.827 G4+E 0.806 G8+E 0.787 | G4+E-E -0.019 [-0.046, +0.008] G8+E-E -0.038 [-0.069, -0.007] G8+E-G4+E -0.019 [-0.034, -0.005]
+  pmove TL_RED: n=1233 go=513 clips=302 full-pop GO 0.464 | E 0.876 V+E 0.879 G4+E 0.870 G8+E 0.842 | G4+E-E -0.006 [-0.034, +0.019] G8+E-E -0.034 [-0.067, -0.004] G8+E-G4+E -0.028 [-0.042, -0.013]
+  pmove TL_GREEN: n=1168 go=824 clips=221 full-pop GO 0.73 | E 0.729 V+E 0.735 G4+E 0.725 G8+E 0.704 | G4+E-E -0.004 [-0.058, +0.056] G8+E-E -0.025 [-0.094, +0.050] G8+E-G4+E -0.021 [-0.059, +0.016]
+  pmove TL_YELLOW: n=86 clips=16 -> too small (<30
+  pmove NO_TL: n=9430 go=4577 clips=1587 full-pop GO 0.523 | E 0.704 V+E 0.772 G4+E 0.760 G8+E 0.758 | G4+E-E +0.056 [+0.041, +0.072] G8+E-E +0.053 [+0.037, +0.071] G8+E-G4+E -0.002 [-0.010, +0.005]
+  pmove lead_now: n=5395 go=2613 clips=1102 full-pop GO 0.52 | E 0.737 V+E 0.770 G4+E 0.757 G8+E 0.744 | G4+E-E +0.020 [+0.000, +0.040] G8+E-E +0.007 [-0.014, +0.030] G8+E-G4+E -0.012 [-0.022, -0.002]
+  pmove no_lead: n=6315 go=3245 clips=1283 full-pop GO 0.554 | E 0.733 V+E 0.797 G4+E 0.783 G8+E 0.781 | G4+E-E +0.050 [+0.032, +0.068] G8+E-E +0.048 [+0.029, +0.067] G8+E-G4+E -0.002 [-0.010, +0.006]
+  pmove lead_depart: n=2010 go=1493 clips=641 full-pop GO 0.765 | E 0.739 V+E 0.749 G4+E 0.725 G8+E 0.723 | G4+E-E -0.013 [-0.050, +0.022] G8+E-E -0.016 [-0.055, +0.023] G8+E-G4+E -0.002 [-0.019, +0.015]
+
+## C5(b) content mutation (G8 source = NN upsample of G4)
+  pstop: G8mut+E 0.641 [0.607, 0.675]  vs real G8+E 0.609 [0.574, 0.644]; |diff|>1e-4: True; G8mut+E - G4+E -0.010 [-0.020, +0.001]; G8+E - G8mut+E -0.032 [-0.048, -0.016]
+# tables3 -- every number of RESULTS.md (MEASURED; fold-mean AUC = the mean of per-fold AUCs, primary; pooled beside; episode-cluster bootstrap B=2000 seed 0; paired on the same windows)
+
+## PSTOP  n=12000 go=6000 clips=849
+
+### pstop linear: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.626 [0.613, 0.640] | 0.593 [0.570, 0.616]
+  V+E    0.680 [0.650, 0.710] | 0.680 [0.651, 0.711]
+  G4     0.632 [0.599, 0.665] | 0.634 [0.601, 0.670]
+  G8     0.591 [0.555, 0.627] | 0.574 [0.535, 0.613]
+  G4+E   0.650 [0.618, 0.684] | 0.652 [0.621, 0.687]
+  G8+E   0.609 [0.574, 0.644] | 0.591 [0.554, 0.630]
+### pstop linear: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.042 [-0.060, -0.022] | -0.061 [-0.089, -0.036]
+  G4+E  - E     +0.024 [-0.009, +0.058] | +0.059 [+0.017, +0.102]
+  G8+E  - E     -0.017 [-0.054, +0.018] | -0.002 [-0.042, +0.040]
+  G4+E  - V+E   -0.030 [-0.049, -0.010] | -0.028 [-0.048, -0.008]
+  G8+E  - V+E   -0.071 [-0.097, -0.047] | -0.089 [-0.122, -0.058]
+  V+E   - E     +0.054 [+0.025, +0.082] | +0.087 [+0.050, +0.125]
+  G8    - G4    -0.040 [-0.061, -0.020] | -0.061 [-0.090, -0.034]
+
+### pstop mlp: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.628 [0.615, 0.641] | 0.595 [0.573, 0.617]
+  V+E    0.681 [0.651, 0.709] | 0.681 [0.652, 0.712]
+  G4     0.607 [0.571, 0.643] | 0.610 [0.574, 0.647]
+  G8     0.593 [0.556, 0.630] | 0.595 [0.558, 0.634]
+  G4+E   0.631 [0.597, 0.666] | 0.626 [0.591, 0.661]
+  G8+E   0.609 [0.572, 0.645] | 0.603 [0.566, 0.641]
+### pstop mlp: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.022 [-0.049, +0.002] | -0.022 [-0.051, +0.007]
+  G4+E  - E     +0.003 [-0.034, +0.038] | +0.030 [-0.012, +0.073]
+  G8+E  - E     -0.019 [-0.058, +0.018] | +0.008 [-0.037, +0.051]
+  G4+E  - V+E   -0.049 [-0.079, -0.020] | -0.055 [-0.090, -0.023]
+  G8+E  - V+E   -0.072 [-0.107, -0.037] | -0.078 [-0.115, -0.042]
+  V+E   - E     +0.053 [+0.024, +0.080] | +0.086 [+0.050, +0.125]
+  G8    - G4    -0.014 [-0.038, +0.010] | -0.015 [-0.039, +0.008]
+
+### pstop linear controls: ok=True all_run=True pending=[]
+  G4+E C1: {'pass': True, 'fold_auc': '0.4953 [0.4857, 0.5052]'}
+  G4+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G4+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5285 [0.4857, 0.5692]'}
+  G8+E C1: {'pass': True, 'fold_auc': '0.4988 [0.4882, 0.5088]'}
+  G8+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G8+E C2: {'seed2_pass': False, 'band_aucs': [0.5425893395495769, 0.4833042290982614, 0.53356164426253, 0.5317664440316945, 0.46870753201303816], 'band_mean': 0.5119858377910201, 'pass': True, 'how': 'seed 2 missed 0.5; 5-draw band mean 0.5120 (rule: in [0.47, 0.53])', 'seed2_fold_auc': '0.5426 [0.5012, 0.5839]'}
+  C1 paired null G8+E - G4+E under shuffled labels: {'delta': 0.0034834785376967603, 'lo': -0.006468449207255105, 'hi': 0.013466795925400319, 'pass': True}
+  E (probe-1 banked): {'C1_pass': True, 'C2_covers_0.5': True, 'C3_fold_auc': 1.0, 'C3_pass': True}
+  MLP C1 shuffle: {'G4': {'fold_auc': 0.5002566047829006, 'lo': 0.48898870591625887, 'hi': 0.5109973030945949, 'pass': True}, 'G8': {'fold_auc': 0.5030915989343153, 'lo': 0.49245920060969667, 'hi': 0.513953999179368, 'pass': True}}
+
+## PMOVE  n=12000 go=6000 clips=2140
+
+### pmove linear: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.732 [0.719, 0.745] | 0.731 [0.718, 0.745]
+  V+E    0.785 [0.771, 0.798] | 0.784 [0.771, 0.798]
+  G4     0.682 [0.665, 0.699] | 0.681 [0.664, 0.698]
+  G8     0.695 [0.678, 0.711] | 0.694 [0.677, 0.710]
+  G4+E   0.771 [0.757, 0.785] | 0.771 [0.757, 0.785]
+  G8+E   0.765 [0.751, 0.779] | 0.765 [0.751, 0.778]
+### pmove linear: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.006 [-0.013, +0.000] | -0.006 [-0.012, +0.000]
+  G4+E  - E     +0.039 [+0.026, +0.053] | +0.039 [+0.026, +0.053]
+  G8+E  - E     +0.033 [+0.019, +0.048] | +0.033 [+0.019, +0.049]
+  G4+E  - V+E   -0.014 [-0.020, -0.008] | -0.014 [-0.020, -0.008]
+  G8+E  - V+E   -0.020 [-0.028, -0.012] | -0.020 [-0.029, -0.012]
+  V+E   - E     +0.053 [+0.041, +0.065] | +0.053 [+0.041, +0.066]
+  G8    - G4    +0.012 [+0.007, +0.018] | +0.012 [+0.007, +0.018]
+
+### pmove mlp: arms (fold-mean AUC [95% CI] | pooled AUC [CI])
+  E      0.771 [0.758, 0.784] | 0.770 [0.758, 0.783]
+  V+E    0.786 [0.773, 0.799] | 0.786 [0.773, 0.799]
+  G4     0.678 [0.661, 0.696] | 0.678 [0.661, 0.696]
+  G8     0.665 [0.649, 0.682] | 0.661 [0.644, 0.678]
+  G4+E   0.760 [0.746, 0.775] | 0.759 [0.745, 0.774]
+  G8+E   0.730 [0.713, 0.745] | 0.722 [0.706, 0.736]
+### pmove mlp: paired dAUC (fold-mean | pooled)
+  G8+E  - G4+E  -0.030 [-0.042, -0.019] | -0.037 [-0.050, -0.025]
+  G4+E  - E     -0.011 [-0.025, +0.002] | -0.011 [-0.025, +0.002]
+  G8+E  - E     -0.041 [-0.058, -0.026] | -0.049 [-0.065, -0.033]
+  G4+E  - V+E   -0.026 [-0.035, -0.017] | -0.027 [-0.036, -0.017]
+  G8+E  - V+E   -0.056 [-0.069, -0.044] | -0.064 [-0.078, -0.051]
+  V+E   - E     +0.015 [+0.006, +0.024] | +0.016 [+0.007, +0.025]
+  G8    - G4    -0.013 [-0.026, +0.000] | -0.017 [-0.030, -0.004]
+
+### pmove linear controls: ok=False all_run=True pending=[]
+  G4+E C1: {'pass': True, 'fold_auc': '0.5054 [0.4950, 0.5158]'}
+  G4+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G4+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5071 [0.4866, 0.5276]'}
+  G8+E C1: {'pass': False, 'fold_auc': '0.5120 [0.5017, 0.5226]'}
+  G8+E C3: {'fold_auc': 1.0, 'pooled_auc': 1.0, 'pass': True}
+  G8+E C2: {'seed2_pass': True, 'pass': True, 'how': 'seed 2 CI covers 0.5', 'seed2_fold_auc': '0.5007 [0.4825, 0.5193]'}
+  C1 paired null G8+E - G4+E under shuffled labels: {'delta': 0.006629743863046711, 'lo': -0.004923308905349741, 'hi': 0.017939288400575678, 'pass': True}
+  E (probe-1 banked): {'C1_pass': True, 'C2_covers_0.5': True, 'C3_fold_auc': 1.0, 'C3_pass': True}
+  MLP C1 shuffle: {'G4': {'fold_auc': 0.49713050766815725, 'lo': 0.4872020301152248, 'hi': 0.5074757053918594, 'pass': True}, 'G8': {'fold_auc': 0.5050365248878743, 'lo': 0.49496097351743024, 'hi': 0.5149322175958828, 'pass': True}}
+
+## DECISION (PREREG 4): dAUC(G8+E - G4+E), fold-mean, per cell
+  pstop  linear dAUC -0.0417 [-0.0604, -0.0224]  (G8+E 0.609 vs G4+E 0.650; pooled -0.0612)  HELPS-cond=False  <0.01=True  void=False  controls_unverified=False
+  pstop  mlp    dAUC -0.0225 [-0.0488, +0.0023]  (G8+E 0.609 vs G4+E 0.631; pooled -0.0224)  HELPS-cond=False  <0.01=True  void=False  controls_unverified=False
+  pmove  linear dAUC -0.0062 [-0.0125, +0.0002]  (G8+E 0.765 vs G4+E 0.771; pooled -0.0060)  HELPS-cond=False  <0.01=True  void=True  controls_unverified=False
+  pmove  mlp    dAUC -0.0302 [-0.0417, -0.0186]  (G8+E 0.730 vs G4+E 0.760; pooled -0.0374)  HELPS-cond=False  <0.01=True  void=True  controls_unverified=False
+
+## VERDICT: INCONCLUSIVE
+
+## EVAL-141 no-refit (AUC [episode-bootstrap CI]; n windows / go / episodes)
+  pstop linear: n=101 go=61 episodes=19  E 0.517 [0.413, 0.651]  G4 0.343 [0.164, 0.636]  G4+E 0.491 [0.303, 0.739]  G8 0.411 [0.224, 0.704]  G8+E 0.434 [0.250, 0.727]
+     G8+E_minus_G4+E: -0.058 [-0.165, +0.032]
+     G4+E_minus_E: -0.025 [-0.183, +0.184]
+     G8+E_minus_E: -0.083 [-0.265, +0.186]
+     G8_minus_G4: +0.068 [+0.009, +0.138]
+  pstop mlp: n=101 go=61 episodes=19  E 0.571 [0.483, 0.681]  G4 0.626 [0.422, 0.832]  G4+E 0.644 [0.459, 0.839]  G8 0.493 [0.350, 0.692]  G8+E 0.764 [0.614, 0.900]
+     G8+E_minus_G4+E: +0.120 [-0.090, +0.297]
+     G4+E_minus_E: +0.073 [-0.123, +0.282]
+     G8+E_minus_E: +0.193 [+0.015, +0.347]
+     G8_minus_G4: -0.134 [-0.358, +0.115]
+  pmove linear: n=507 go=266 episodes=67  E 0.708 [0.637, 0.780]  G4 0.628 [0.520, 0.721]  G4+E 0.744 [0.662, 0.821]  G8 0.631 [0.528, 0.724]  G8+E 0.744 [0.668, 0.820]
+     G8+E_minus_G4+E: -0.001 [-0.033, +0.035]
+     G4+E_minus_E: +0.036 [-0.042, +0.106]
+     G8+E_minus_E: +0.036 [-0.041, +0.103]
+     G8_minus_G4: +0.003 [-0.024, +0.032]
+  pmove mlp: n=507 go=266 episodes=67  E 0.725 [0.653, 0.799]  G4 0.622 [0.530, 0.708]  G4+E 0.759 [0.683, 0.828]  G8 0.679 [0.605, 0.758]  G8+E 0.763 [0.689, 0.842]
+     G8+E_minus_G4+E: +0.005 [-0.051, +0.060]
+     G4+E_minus_E: +0.034 [-0.031, +0.098]
+     G8+E_minus_E: +0.039 [-0.036, +0.112]
+     G8_minus_G4: +0.057 [-0.033, +0.153]
+
+## SPATIAL READOUT MAP (descriptive; L2 norm of each token's 16 standardised coefficients)
+  pstop G8_E 8x20: row share of squared weight [0.112, 0.138, 0.144, 0.134, 0.158, 0.121, 0.098, 0.094]  lower-half share 0.472  top-1 token share 0.0191  top-10% tokens share 0.217  argmax (r,c)=(np.int64(4), np.int64(19))
+  pstop G4_E 4x10: row share of squared weight [0.244, 0.285, 0.22, 0.251]  lower-half share 0.471  top-1 token share 0.0444  top-10% tokens share 0.167  argmax (r,c)=(np.int64(1), np.int64(0))
+  pmove G8_E 8x20: row share of squared weight [0.093, 0.096, 0.112, 0.158, 0.145, 0.167, 0.12, 0.109]  lower-half share 0.542  top-1 token share 0.0192  top-10% tokens share 0.195  argmax (r,c)=(np.int64(4), np.int64(10))
+  pmove G4_E 4x10: row share of squared weight [0.235, 0.195, 0.322, 0.247]  lower-half share 0.569  top-1 token share 0.0561  top-10% tokens share 0.193  argmax (r,c)=(np.int64(2), np.int64(9))
+  wrote readout_heatmap_G8.png
+
+## STRATA (TRAIN, linear, fold-mean; dAUC vs E and G8+E - G4+E)
+  pstop TL_ANY: n=6652 go=3157 clips=398 full-pop GO 0.547 | E 0.626 V+E 0.681 G4+E 0.643 G8+E 0.600 | G4+E-E +0.017 [-0.032, +0.059] G8+E-E -0.027 [-0.073, +0.020] G8+E-G4+E -0.043 [-0.071, -0.016]
+  pstop TL_RED: n=4986 go=1871 clips=256 full-pop GO 0.445 | E 0.609 V+E 0.708 G4+E 0.678 G8+E 0.627 | G4+E-E +0.068 [+0.013, +0.119] G8+E-E +0.018 [-0.044, +0.073] G8+E-G4+E -0.051 [-0.086, -0.016]
+  pstop TL_GREEN: n=1377 go=1173 clips=123 full-pop GO 0.886 | E 0.594 V+E 0.536 G4+E 0.478 G8+E 0.477 | G4+E-E -0.116 [-0.191, -0.005] G8+E-E -0.116 [-0.193, +0.008] G8+E-G4+E -0.000 [-0.072, +0.073]
+  pstop TL_YELLOW: n=164 clips=10 -> too small (<30
+  pstop NO_TL: n=5348 go=2843 clips=451 full-pop GO 0.607 | E 0.621 V+E 0.682 G4+E 0.664 G8+E 0.626 | G4+E-E +0.044 [-0.007, +0.087] G8+E-E +0.006 [-0.044, +0.054] G8+E-G4+E -0.038 [-0.067, -0.009]
+  pstop lead_now: n=5896 go=3049 clips=535 full-pop GO 0.59 | E 0.623 V+E 0.667 G4+E 0.636 G8+E 0.609 | G4+E-E +0.013 [-0.036, +0.057] G8+E-E -0.015 [-0.065, +0.033] G8+E-G4+E -0.027 [-0.052, +0.001]
+  pstop no_lead: n=5612 go=2824 clips=429 full-pop GO 0.575 | E 0.628 V+E 0.692 G4+E 0.662 G8+E 0.610 | G4+E-E +0.034 [-0.020, +0.081] G8+E-E -0.018 [-0.073, +0.029] G8+E-G4+E -0.052 [-0.079, -0.023]
+  pstop lead_depart: n=1741 go=1330 clips=310 full-pop GO 0.817 | E 0.663 V+E 0.644 G4+E 0.593 G8+E 0.589 | G4+E-E -0.070 [-0.168, +0.011] G8+E-E -0.074 [-0.173, +0.011] G8+E-G4+E -0.004 [-0.053, +0.052]
+  pmove TL_ANY: n=2570 go=1423 clips=553 full-pop GO 0.589 | E 0.825 V+E 0.827 G4+E 0.806 G8+E 0.787 | G4+E-E -0.019 [-0.046, +0.008] G8+E-E -0.038 [-0.069, -0.007] G8+E-G4+E -0.019 [-0.034, -0.005]
+  pmove TL_RED: n=1233 go=513 clips=302 full-pop GO 0.464 | E 0.876 V+E 0.879 G4+E 0.870 G8+E 0.842 | G4+E-E -0.006 [-0.034, +0.019] G8+E-E -0.034 [-0.067, -0.004] G8+E-G4+E -0.028 [-0.042, -0.013]
+  pmove TL_GREEN: n=1168 go=824 clips=221 full-pop GO 0.73 | E 0.729 V+E 0.735 G4+E 0.725 G8+E 0.704 | G4+E-E -0.004 [-0.058, +0.056] G8+E-E -0.025 [-0.094, +0.050] G8+E-G4+E -0.021 [-0.059, +0.016]
+  pmove TL_YELLOW: n=86 clips=16 -> too small (<30
+  pmove NO_TL: n=9430 go=4577 clips=1587 full-pop GO 0.523 | E 0.704 V+E 0.772 G4+E 0.760 G8+E 0.758 | G4+E-E +0.056 [+0.041, +0.072] G8+E-E +0.053 [+0.037, +0.071] G8+E-G4+E -0.002 [-0.010, +0.005]
+  pmove lead_now: n=5395 go=2613 clips=1102 full-pop GO 0.52 | E 0.737 V+E 0.770 G4+E 0.757 G8+E 0.744 | G4+E-E +0.020 [+0.000, +0.040] G8+E-E +0.007 [-0.014, +0.030] G8+E-G4+E -0.012 [-0.022, -0.002]
+  pmove no_lead: n=6315 go=3245 clips=1283 full-pop GO 0.554 | E 0.733 V+E 0.797 G4+E 0.783 G8+E 0.781 | G4+E-E +0.050 [+0.032, +0.068] G8+E-E +0.048 [+0.029, +0.067] G8+E-G4+E -0.002 [-0.010, +0.006]
+  pmove lead_depart: n=2010 go=1493 clips=641 full-pop GO 0.765 | E 0.739 V+E 0.749 G4+E 0.725 G8+E 0.723 | G4+E-E -0.013 [-0.050, +0.022] G8+E-E -0.016 [-0.055, +0.023] G8+E-G4+E -0.002 [-0.019, +0.015]
+
+## C5(b) content mutation (G8 source = NN upsample of G4)
+  pstop: G8mut+E 0.641 [0.607, 0.675]  vs real G8+E 0.609 [0.574, 0.644]; |diff|>1e-4: True; G8mut+E - G4+E -0.010 [-0.020, +0.001]; G8+E - G8mut+E -0.032 [-0.048, -0.016]
