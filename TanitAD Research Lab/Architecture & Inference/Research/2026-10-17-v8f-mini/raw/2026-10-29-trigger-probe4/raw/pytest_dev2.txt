@@ -1,0 +1,122 @@
+..........known answer: AUC 0.9734271303896418 mass per query [9.51127813e-01 2.20275164e-04 8.80399564e-01 9.63069995e-06] {'epochs_run': 40, 'best_epoch': 39, 'best_val_bce': 0.2167021973195829, 'n_fit': 7600, 'n_val': 1900}
+.live 0.9734271303896418 uniform 0.5679375314449476
+.R-MAX planted AUC 0.7575932326028327
+......F.
+================================== FAILURES ===================================
+________________ test_pipeline_end_to_end_on_synthetic_bundle _________________
+
+tmp_path = WindowsPath('C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-143/test_pipeline_end_to_end_on_sy0')
+
+    def test_pipeline_end_to_end_on_synthetic_bundle(tmp_path):
+        raw, scr = tmp_path / "raw", tmp_path / "scr"
+        raw.mkdir()
+        scr.mkdir()
+        raw, scr = str(raw).replace("\\", "/"), str(scr).replace("\\", "/")
+        B = fake_bundle("pstop")
+        logs = []
+        R.stage_arms(B, FAST, raw, scr, ram_min=0, log=logs.append)
+        oof = dict(np.load(f"{raw}/oof4_pstop.npz"))
+        for arm in P.ARMS:
+            assert f"{arm}+E" in oof and all(f"{arm}+E__s{s}" in oof for s in FAST["seeds"])
+            assert np.allclose(oof[f"{arm}+E"], np.mean([oof[f"{arm}+E__s{s}"] for s in FAST["seeds"]], 0))
+        for arm in ("G8att", "G4att"):
+            for s in FAST["seeds"]:
+                a = np.load(f"{scr}/attn4_pstop_{arm}_s{s}.npy")
+                assert a.shape == (600, 4, 160 if arm == "G8att" else 40)
+        # resumable: a second call changes nothing
+        before = {k: v.copy() for k, v in oof.items()}
+        R.stage_arms(B, FAST, raw, scr, ram_min=0, log=lambda *_: None)
+        again = dict(np.load(f"{raw}/oof4_pstop.npz"))
+        assert all(np.array_equal(before[k], again[k]) for k in before)
+        R.stage_controls(B, FAST, raw, scr, ram_min=0, log=logs.append)
+        C = dict(np.load(f"{raw}/ctrl4_pstop.npz"))
+        for arm in ("G8att", "G4att"):
+            assert f"C1__shuffle__{arm}+E" in C and f"C2__donor__{arm}+E" in C
+        R.stage_post(B, FAST, raw, scr, log=logs.append)
+        st = json.load(open(f"{raw}/results_strata4_pstop.json"))
+        assert st["strata"]["TL_YELLOW"]["auc"].startswith("too small") and isinstance(st["strata"]["TL_ANY"]["auc"], dict)
+        mp = np.load(f"{raw}/maps4_pstop.npz")
+        assert mp["G8att__ALL__GO"].shape == (8, 20) and mp["G4att__ALL__STAY"].shape == (4, 10)
+        assert os.path.exists(f"{raw}/attn_maps_pstop_G8att.png")
+        # eval-141 absent -> explicit NOT RUN
+        R.stage_eval141(B, FAST, raw, scr, p3raw=raw + "/nope", p3scr=scr + "/nope", oldraw=raw, ram_min=0, log=logs.append)
+        assert json.load(open(f"{raw}/results_eval141_4_pstop.json"))["run"] is False
+        # eval-141 present (synthetic probe-3 outputs)
+        p3r, p3s, old = tmp_path / "p3r", tmp_path / "p3s", tmp_path / "old"
+        for p in (p3r, p3s, old):
+            p.mkdir()
+        rng = np.random.default_rng(3)
+        ne = 60
+        json.dump({"gate_pass": True}, open(p3r / "eval_g_extract.json", "w"))
+        np.save(p3s / "G8_eval141.npy", rng.standard_normal((ne, 163840)).astype(np.float16))
+        np.savez(p3r / "pcaG_pstop.npz", mu8=rng.standard_normal((6, 1024)).astype(np.float32), comp8=rng.standard_normal((6, 16, 1024)).astype(np.float32),
+                 mu4=rng.standard_normal((6, 1024)).astype(np.float32), comp4=rng.standard_normal((6, 16, 1024)).astype(np.float32))
+        np.savez(old / "eval141_features.npz", E=rng.standard_normal((ne, 8)), v0=rng.random(ne) * 0.4, eid=np.repeat(np.arange(12), 5), go=rng.random(ne) < 0.4)
+        R.stage_eval141(B, FAST, raw, scr, p3raw=str(p3r).replace("\\", "/"), p3scr=str(p3s).replace("\\", "/"), oldraw=str(old).replace("\\", "/"), ram_min=0, log=logs.append)
+        ev = json.load(open(f"{raw}/results_eval141_4_pstop.json"))
+        assert ev["run"] and ev["n"] == ne and "G8att+E" in ev["arms"] and "G8att+E_minus_G4att+E" in ev["paired"]
+        # tables + verdict (only one population present -> INCOMPLETE, never a verdict)
+>       dec = R.stage_tables([B], FAST, raw, log=lambda *_: None)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+test_trigger_probe4.py:348: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+Bs = [{'pop': 'pstop', 'd': {'idx': array([  0,   1,   2,   3,   4,   5,   6,   7,   8,   9,  10,  11,  12,
+        13,  14...,  9.80978351e-01, -1.99408003e+00,
+        1.69009420e+00,  7.31595553e-01, -2.83382404e+00,  5.33382036e-01]), ...}}]
+cfg = {'lr': 0.001, 'wd': 0.01, 'batch': 256, 'max_epochs': 2, ...}
+out_raw = 'C:/Users/Admin/AppData/Local/Temp/pytest-of-Admin/pytest-143/test_pipeline_end_to_end_on_sy0/raw'
+log = <function test_pipeline_end_to_end_on_synthetic_bundle.<locals>.<lambda> at 0x0000019131237880>
+
+    def stage_tables(Bs, cfg, out_raw, log=print):
+        lines = []
+    
+        def pr(*a):
+            s = " ".join(str(x) for x in a)
+            log(s)
+            lines.append(s)
+    
+        f3 = lambda r: f"{r['auc']:.3f} [{r['lo']:.3f}, {r['hi']:.3f}]"
+        fd = lambda r: f"{r['delta']:+.3f} [{r['lo']:+.3f}, {r['hi']:+.3f}]"
+        Pdec, detail = {}, {}
+        for B in Bs:
+            pop, d = B["pop"], B["d"]
+            y, clip, outer = d["y"], d["clip"], d["outer"]
+            counts = L.boot_counts(clip, cfg["n_boot"], cfg["boot_seed"])
+            oofp = f"{out_raw}/oof4_{pop}.npz"
+            oof = dict(np.load(oofp)) if os.path.exists(oofp) else {}
+            bk = B["bk"]
+            pr(f"\n=== {pop}  n={len(y)}  GO={int(y.sum())}  clips={len(np.unique(clip))}  (TRAIN, T0-class probe of representations; fold-mean AUC, episode-cluster bootstrap B={cfg['n_boot']} seed {cfg['boot_seed']}) ===")
+            sc, spread, seedtab = {}, {}, {}
+            for nm in ("E", "V+E", "V+E(mlp)", "P3:G4+E", "P3:G8+E"):
+                if nm in bk:
+                    sc[nm] = bk[nm]
+            for arm in P.ARMS:
+                if f"{arm}+E" in oof:
+                    sc[f"{arm}+E"] = oof[f"{arm}+E"]
+                    sa = seed_aucs(oof, arm, cfg["seeds"], y, outer)
+                    seedtab[arm] = sa
+                    spread[arm] = P.seed_spread(sa)
+            for nm, v in sc.items():
+                r = P.rec(v, y, clip, outer, counts)
+                extra = f"  seeds {[round(x, 4) for x in seedtab[nm[:-2]]]} spread {spread[nm[:-2]]:.4f}" if nm[:-2] in seedtab else ""
+                pr(f"  {nm:10s} fold-mean {f3(r['fold'])}   pooled {f3(r['pooled'])}{extra}")
+            cells = {"spread": spread}
+            for tag, a, b in (("A", "G8att+E", "V+E"), ("B", "G8att+E", "G4att+E")):
+                if a in sc and b in sc:
+                    cells[tag] = P.paired(sc[a], sc[b], y, clip, outer, counts)["fold"]
+                    pr(f"  DECISION {tag}: dAUC({a} - {b}) = {fd(cells[tag])}   (pooled beside: {fd(P.paired(sc[a], sc[b], y, clip, outer, counts)['pooled'])})")
+            flags, cdet = controls_status(B, cfg, out_raw)
+            cells["ctrl"] = flags
+            pr("  controls:", json.dumps({k: v for k, v in flags.items()}))
+            for arm, dd in cdet.items():
+                for cn, v in dd.items():
+>                   pr(f"    {arm} {cn}: " + ", ".join(f"{kk}={vv}" for kk, vv in v.items() if kk in ("auc", "lo", "hi", "delta", "pass", "how")))
+                                                                                  ^^^^^^^
+E                   AttributeError: 'float' object has no attribute 'items'
+
+p4_run.py:338: AttributeError
+=========================== short test summary info ===========================
+FAILED test_trigger_probe4.py::test_pipeline_end_to_end_on_synthetic_bundle
+1 failed, 19 passed in 125.79s (0:02:05)
