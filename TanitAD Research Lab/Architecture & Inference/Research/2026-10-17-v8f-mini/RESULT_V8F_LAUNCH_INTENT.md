@@ -14,7 +14,7 @@ Claim row `H-V8F-LAUNCH-INTENT-1`. Pre-registration `Project Steering/PREREG_V8F
 * **R-MOVE is false at both seeds (section 2.3).** 2 of the 16 crawl cells are separated-better and 1 clears its bar: L2 curvature in the replicate pair at s0, -0.0215 [-0.0423, -0.0048] B against a bar of 0.0136. Its main-pair partner reads -0.0075 [-0.0212, +0.0025] –. No crawl row moves by its bar in both pairs at either seed.
 * **R-CRAWL is false at both seeds (section 2.4).** All 16 X − P10 crawl cells (4 rows × 2 pairs × 2 seeds) are separated-worse.
 * **Reading, decides nothing (section 5).** At each seed the separated ADE6 cells flip sign between the main pair and the replicate pair.
-* **Next (section 6).** Committed: B (W 0.726175, 4 box-2 runs) with its own PI go. NEXT-LAUNCH (PREREG section 11) routes by M-LAUNCH, which is built separately; its slot is open in section 6.2.
+* **Next (section 6).** Committed: B (W 0.726175, 4 box-2 runs) with its own PI go. NEXT-LAUNCH (PREREG section 11) routes by M-LAUNCH, built separately; section 6.2 holds its result, **NOT MOVED**, which routes to LAUNCH-INTENT-HI (its own PI go).
 
 ## 1. The outcome, as the table decides it
 
@@ -393,11 +393,13 @@ Both routes need a PI go: B, registered after HARMS (section 10), and HI, the br
 | lever | status | blocker, and what unblocks it |
 |---|---|---|
 | B (W 0.726175, 4 runs) | committed next | **the PI's go** for box-2 time; then a B chain |
-| M-LAUNCH (the section 11 routing variable) | NOT BUILT in the reader; being built separately | its build; it reads the tick dumps, which are single-copy on F: (section 8, item 6) |
-| LOOP-STATE (zero training) | routed from M-LAUNCH *moved* | M-LAUNCH |
-| LAUNCH-INTENT-HI (W 4.17852) | routed from M-LAUNCH *not moved* | M-LAUNCH, and its own PI go for box 2 |
+| M-LAUNCH (the section 11 routing variable) | built separately and read: **NOT MOVED** (section 6.2) | nothing; it reads the tick dumps, which are single-copy on F: (section 8, item 6) |
+| LOOP-STATE (zero training) | routed from M-LAUNCH *moved*; M-LAUNCH read *not moved*, so this route is not taken | – |
+| LAUNCH-INTENT-HI (W 4.17852) | the route M-LAUNCH selected (*not moved*) | its own PI go for box 2 |
 | T0 four families | NOT RUN | a build item: `orc_families.py` pointed at the four arms and their controls; inputs: each run's eval JSON (repo) and `.npz` (E:) |
 | anti-echo block; M2 / L2 launch subset | NOT BUILT | build items for the reader |
+
+*(Edited 2026-10-29 by the Master Mind: the M-LAUNCH, LOOP-STATE and LAUNCH-INTENT-HI rows above, and the Next bullet at the top, now state the M-LAUNCH result that section 6.2 holds. As landed, they said M-LAUNCH was being built. No number changed.)*
 
 If both NEXT-LAUNCH branches are exhausted, the programme has no registered lever for the crawl rows on DAG-OACC (PREREG section 11). The blockers then are the ones that section names: route extent and nav timing (eliminated as the lever by N0, INHERITED), the state-channel levers (DAgger iteration 2, INHERITED), and the zero-training post-map (it moves the crawl but failed KEEP at s0, INHERITED). What would unblock: a new diagnosis of the loop term, or a PI decision on an architecture change that gives O a launch-intent input.
 
