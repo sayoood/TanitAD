@@ -838,6 +838,11 @@ PROFILES["refcv8"] = dict(
         # and v8f, which take this tuple
         (("--r9-train-only",), "the refcv9 warm-start freeze (PI 2026-10-27) -- launched under profile refcv9-warm "
                                "only"),
+        # MM 2026-11-02 (refcv9 C12-E1): the E1 perception-only rig builds NO planner / tactical module -- it launches ONLY
+        # under its own profile `refcv9-e1rig`, whose G-DVB / G-LIVE / G-EVAL read the rig (this profile's would not);
+        # inherited by refcv8-nt, refcv8-mapft, v8f and refcv9-warm, which take this tuple
+        (("--r9-perc-rig",), "the refcv9 E1 perception-only rig (C7: planner / tactical NOT built) -- launched under profile "
+                             "refcv9-e1rig only"),
     ),
     #: PI Q-B: the channel's source is the label; the past-only proxies are refused by value
     #: R8-RECIPE CLOSED 2026-10-15 (PI 2026-10-14): the prior-free group is OFF -- `()` refuses the boolean's mere
@@ -1460,6 +1465,176 @@ PROFILES["refcv9-warm"] = dict(
     #: R9W-SCHEDULE (MM 2026-10-27): the schedule's literal form, its end step read off THIS argv's --steps
     alloc_force_rule=dict(_R9W_SCHED_RULE),
 )
+
+
+# --------------------------------------------------------------------------------------------- #
+# refcv9-e1rig: the E1 PERCEPTION-ONLY RIG (REFCV9_DESIGN 4.3; refcv9 C7 `--r9-perc-rig`; C12-E1) #
+# --------------------------------------------------------------------------------------------- #
+#: `tanitad/refs/refcv9_perc_rig.py`, loaded BY PATH (it imports only hashlib / pathlib at module level, so no torch and no
+#: `tanitad.refs` package import) -- the ONE definition of the rig's planner flag dests and attribute paths; None when this
+#: tree does not carry it (then the refcv9-e1rig profile is not registered)
+def _e1_rig_module():
+    p = Path(__file__).resolve().parents[1] / "tanitad" / "refs" / "refcv9_perc_rig.py"
+    if not p.is_file():
+        return None
+    spec = importlib.util.spec_from_file_location("_gate_refcv9_perc_rig", str(p))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+#: The refcv9 `refcv9-full` family (PI D5, 2026-10-28). = refcv8's profile BY SUBTRACTION (the way refcv9-warm is built): every
+#: refcv8 rule that reads a PERCEPTION / data / recipe value still binds (the 10 cm map geometry, the slot head, VIS-1, the
+#: agent / box3d inputs, the caches and sidecars, batch 16, w_map 0, w_map_hires 1.0, ...); every PLANNER / TACTICAL value is
+#: REMOVED (each removal named in `required_values_why`), because the rig builds no planner (`refcv9_perc_rig.RIG_SKIPPED_MODULES`)
+#: and a flag the rig cannot honour would be SILENTLY DROPPED (`refcv9_perc_rig.pin_args` refuses the same ones -- the gate refuses
+#: FIRST, with its own reason). The planner flag dests are IMPORTED from that module (never copied), so a new planner dest is
+#: refused automatically.
+_E1_FLAG = "--r9-perc-rig"
+_E1_MODULE = _e1_rig_module()
+#: refcv8's required_values that carry over UNCHANGED (perception / data / eval geometry). Everything else in refcv8's table is
+#: either overridden below (the E1 recipe) or REMOVED. Exhaustive: tests/test_launch_gate_e1rig.py partitions refcv8's table.
+_E1_KEEP_VALUES = (
+    "--map-hires", "--bev-source", "--map-hires-decision-rule", "--map-hires-x-max-m", "--map-hires-y-half-m",
+    "--map-hires-grad-ckpt", "--bev-planner-crop-m", "--w-map", "--slot-presence-loss", "--slot-presence-prior",
+    "--slot-query-select", "--vis1-sidecar", "--map-hires-near-lift-m", "--map-hires-near-refine-blocks",
+    "--v2-cache", "--agent-rig-extrinsics", "--pose-sync-sidecar", "--clip-clock-sidecar", "--batch", "--eval-batches",
+    "--eval-every", "--w-map-hires")
+#: the E1 RECIPE (REFCV9_DESIGN 4.3: batch 16, warm-up 200, cosine to 0 over 4,000 steps, EMA 0.999; lr 1e-4 = refcv8 launch
+#: argv's value, A's HANDOFF ARGV ADD list). `--seed` is NOT pinned (C0 = 0, C1 = 1: the replicate floor).
+_E1_RECIPE = {"--steps": "4000", "--warmup": "200", "--ema-decay": "0.999", "--lr": "1e-4"}
+_E1_RECIPE_WHY = {
+    "--steps": "REFCV9_DESIGN 4.3: cosine to 0 over 4,000 steps (an E1 arm is a one-variable screen at this length)",
+    "--warmup": "REFCV9_DESIGN 4.3: warm-up 200 (refcv8's 1,000 is the 48,852-step recipe)",
+    "--ema-decay": "REFCV9_DESIGN 4.3: EMA 0.999 (refcv8's 0.9998 averages over ~5,000 steps, longer than the whole run)",
+    "--lr": "REFCV9_DESIGN 4.3 / A's HANDOFF ARGV ADD list: lr 1e-4 (refcv8's launch value), pinned so every arm shares it",
+    "--agents": "refcv8's value: the learned agent head is the rig's detection term (compute_losses_perc_rig)"}
+#: refcv8 required_values REMOVED for the rig, each with its reason (a missing name falls back to the generic reason below)
+_E1_REMOVED_WHY = {
+    "--residual-prior": "the planner's kinematic prior (the rig builds no planner; refused unless `off`)",
+    "--r8-v9-md5": "the v9 tactical label release (supervises the tactical layer; the rig builds none)",
+    "--r8-v9-eval-md5": "the v9 tactical label release, eval side",
+    "--r8-v9-labels": "the v9 label release feeds nav / the tactical layer",
+    "--r8-v9-lat-variant": "the v9 lateral variant (tactical layer)",
+    "--r8-nav-args-dropout": "nav-argument dropout (the nav input reaches the tactical / planner layers)",
+    "--r8-speed-unknown-p": "the planner's set-speed channel",
+    "--r8-speed-input": "the planner's set-speed channel source",
+    "--speed-max-sidecar-v6": "the planner's max-speed label sidecar (train)",
+    "--speed-max-sidecar-v6-eval": "the planner's max-speed label sidecar (eval)",
+    "--r8-alloc-emit-start": "the allocated-candidate emission (planner decoder)",
+    "--r8-n-alloc": "the allocated-candidate count (planner decoder)",
+    "--r8-lat-prior-dropout": "the lateral prior dropout (planner decoder)",
+    "--w-r8-cons": "the constraint-head weight (tactical / planner)",
+    "--w-r8-alloc-l1": "the allocated-candidate L1 weight (planner)",
+    "--w-r8-listwise": "the listwise selector weight (planner)",
+    "--w-r8-sat": "the constraint-satisfaction weight (planner)",
+    "--w-r8-subscore": "the sub-score critics weight (planner)",
+    "--w-r8-v9-cons": "the v9 constraint weight (tactical)",
+    "--w-tac-v6": "the refcv6 tactical behaviour decoder weight (not built)",
+    "--nav-compliance-tau-file": "the nav-compliance graft's tau record (planner selection; not built)",
+    "--nav-compliance-tau-rad": "the nav-compliance graft's tau (planner selection; not built)",
+    "--b1-guard-ref-ap2m": "UNPINNED, OPEN for A2's argv: the B1 guard cuts the head LR on the in-run EMA box3d AP against "
+                           "refcv7's minimum on the 48,852-step recipe (eval every 500); whether it rides a 4,000-step rig "
+                           "arm is the argv's call, so the gate neither requires nor forbids it",
+    "--b1-guard-step": "UNPINNED, OPEN for A2's argv: see --b1-guard-ref-ap2m"}
+_E1_REMOVED = tuple(f for f in _R8["required_values"]
+                    if f not in _E1_KEEP_VALUES and f not in _E1_RECIPE)
+_E1_REQUIRED_FLAGS = (
+    _E1_FLAG, "--init-from", "--seed", "--steps", "--warmup", "--ema-decay", "--lr", "--out",
+    # refcv8's PERCEPTION flags the rig keeps: the slot head, VIS-1, the agent / 3-D joins, the ego-mask of the join, the
+    # pose-to-image timing correction (the dataset's labels ride it), the loss weights of the terms the rig trains
+    "--slot-deep-supervision", "--slot-vis1", "--join-defect-masks", "--pose-sync-sidecar", "--agent-join", "--join3d",
+    "--w-agent", "--w-box3d")
+_E1_REQUIRED_FLAGS_WHY = {
+    _E1_FLAG: "REFCV9_DESIGN 4.3 / C7: the perception-only rig (newest window row, K = 3 frames, planner / tactical NOT built)",
+    "--init-from": "REFCV9_DESIGN 4.3: init refcv8 EMA-48,852 (md5 bound by init_pin below)",
+    "--seed": "the replicate floor: C0 = seed 0, C1 = seed 1 (the VALUE is not pinned)",
+    "--out": "the run directory",
+    "--join-defect-masks": "refcv8's perception flag: the ego mask of the agent join (the box3d labels ride it)",
+    "--pose-sync-sidecar": "refcv8's X10 timing correction: the dataset's labels ride it",
+    "--agent-join": "the detection / box3d labels' join",
+    "--join3d": "the box3d targets' 3-D join",
+    "--w-agent": "the learned agent head's weight (a rig term: G-LIVE keeps `agent_*` live)",
+    "--w-box3d": "the 3-D box head's weight (a rig term: G-LIVE keeps `box3d` live)"}
+#: the planner / tactical flag dests the rig refuses -- IMPORTED, never copied
+_E1_PLANNER_FLAGS = tuple("--" + d.replace("_", "-") for d in (_E1_MODULE.PLANNER_FLAG_DESTS if _E1_MODULE else ()))
+_E1_PLANNER_WEIGHT_FLAGS = tuple("--" + d.replace("_", "-") for d in (_E1_MODULE.PLANNER_WEIGHT_DESTS if _E1_MODULE else ()))
+#: the `--r9-*` flags that belong to the planner side (R9-PF, the warm-start freeze's GT-in-pool schedule): the rig builds none
+_E1_R9_PLANNER_FLAGS = _R9W_PF_FLAGS + ("--r9-alloc-force-schedule", "--r9-alloc-force-seed")
+#: ⛔ the inherited overfit records (G-BOX-OVERFIT, G-MAP-OVERFIT: refcv8's literals, unchanged) cover the box head and the 10 cm
+#: map head AS refcv8 built them -- arms C0 / C1 (the replicate floor) and A1 / T1 / F1. An arm that CHANGES either head needs
+#: its OWN record. Conditional open items (`open_item_hits`): a refcv9 lever flag present in the argv keeps the token from PASS.
+_E1_OPEN_ITEMS = (
+    {"id": "E1-MAP-OWN-RECORD",
+     "what": "a map-lever arm (a `--r9-map-*` flag -- C1's banded head / channels / losses, BRIEF_C1_MAPHEAD `--r9-map-banded` -- or "
+             "`--w-map-fp`) changes the 10 cm map head or its supervision, so the INHERITED G-MAP-OVERFIT record (refcv8's head) "
+             "does not cover it",
+     "owner": "the lever's code agent (C1) -> the Master Mind (a reviewed profile edit that names the lever's record)",
+     "closes_when": "a map-overfit record for the lever's own head is bound to this profile by name; until then the token is "
+                    "INCOMPLETE, never PASS",
+     "when_prefixes": ("--r9-map-",), "when_flags": ("--w-map-fp",)},
+    {"id": "E1-BOX-OWN-RECORD",
+     "what": "a box-lever arm (any other refcv9 lever flag in the `--r9-*` namespace -- C5's decoder depth / DN / quality-aware "
+             "presence / in-loss NMS / s8 tokens / ray PE, the B-arms) changes the box head or its supervision, so the "
+             "INHERITED G-BOX-OVERFIT record (refcv8's head) does not cover it",
+     "owner": "the lever's code agent (C5) -> the Master Mind (a reviewed profile edit that names the lever's record)",
+     "closes_when": "a box-overfit record for the lever's own head is bound to this profile by name; until then the token is "
+                    "INCOMPLETE, never PASS",
+     "when_prefixes": ("--r9-",), "when_except": (_E1_FLAG, "--r9-map-")},
+)
+if _E1_MODULE is not None:
+    PROFILES["refcv9-e1rig"] = dict(
+        _R8, name="refcv9-e1rig",
+        open_items=_E1_OPEN_ITEMS,
+        required_flags=_E1_REQUIRED_FLAGS,
+        required_flags_why=dict(_E1_REQUIRED_FLAGS_WHY, **{
+            k: v for k, v in (_R8.get("required_flags_why") or {}).items() if k in _E1_REQUIRED_FLAGS
+            and k not in _E1_REQUIRED_FLAGS_WHY}),
+        required_values=dict({k: v for k, v in _R8["required_values"].items() if k in _E1_KEEP_VALUES},
+                             **_E1_RECIPE, **{"--agents": "head"}),
+        required_values_why=dict(
+            {k: v for k, v in (_R8.get("required_values_why") or {}).items() if k in _E1_KEEP_VALUES},
+            **_E1_RECIPE_WHY,
+            **{f: f"REMOVED for the rig (refcv8 required {_R8['required_values'][f]!r}): "
+                  + _E1_REMOVED_WHY.get(f, "a refcv8 planner / tactical value; the rig builds no planner")
+               for f in _E1_REMOVED}),
+        #: the rig's terms must be POSITIVE (a built head with no live weight is declared-but-inert): the agent head, the 3-D
+        #: box head, the 10 cm map head. refcv8's planner / tactical weights are gone.
+        required_positive=("--w-map-hires", "--w-agent", "--w-box3d"),
+        #: no planner group is built -> nothing is admitted dead (refcv8's rows name core.decoder.* / core.strategic.* ...)
+        live_dead_admitted=(),
+        #: refcv8's planner selection mechanisms are not built (no `--graft-*`, no ceiling filter): nothing is REQUIRED ON
+        required_on=(),
+        #: forbidden: refcv8's list (minus the entry that names this profile's own flag) + ONE entry per planner / tactical flag
+        #: dest of `refcv9_perc_rig` BY FLAG NAME + the `--r9-*` planner-side flags
+        forbidden_levers=tuple(e for e in _R8["forbidden_levers"] if _E1_FLAG not in e[0]) + tuple(
+            ((f,), "a planner / tactical lever (refcv9_perc_rig.PLANNER_FLAG_DESTS): the rig builds no planner, so it would be "
+                   "SILENTLY DROPPED") for f in _E1_PLANNER_FLAGS) + tuple(
+            ((f,), "a planner / tactical LOSS WEIGHT (refcv9_perc_rig.PLANNER_WEIGHT_DESTS): the rig builds no planner, so it "
+                   "would be SILENTLY DROPPED") for f in _E1_PLANNER_WEIGHT_FLAGS) + tuple(
+            ((f,), "a planner-side refcv9 flag (R9-PF / the warm-start freeze's GT-in-pool schedule): the rig builds no "
+                   "planner") for f in _E1_R9_PLANNER_FLAGS),
+        #: every refcv8-layer flag (`--r8-*`, `--w-r8-*`) belongs to the tactical / planner seams the rig does not build
+        forbidden_prefixes=tuple(_R8["forbidden_prefixes"]) + ("--r8-", "--w-r8-"),
+        forbidden_prefixes_why=dict(_R8.get("forbidden_prefixes_why") or {}, **{
+            "--r8-": "a refcv8 tactical / planner seam flag (the rig builds neither)",
+            "--w-r8-": "a refcv8 tactical / planner seam loss weight (the rig builds neither)"}),
+        #: refcv8's deny-list on --residual-prior would refuse `off`; the rig admits `off` ONLY (an allow-list)
+        forbidden_values={},
+        forbidden_values_why={},
+        only_values={"--residual-prior": ("off",)},
+        only_values_why={"--residual-prior": "the planner's kinematic prior; the rig builds no planner"},
+        #: ga-reach: the map branch TRAINS (all four parts > 0); `ga_bev_pool` is the PLANNER's pooled BEV, not reached when no
+        #: planner is built
+        map_hires=dict(_R8["map_hires"], ga_keys_pool=()),
+        #: `--init-from` bound by CONTENT to refcv8 EMA-48,852 (md5 b4364029...) -- `map_only_init_reasons`' own reader (no
+        #: second md5 reader); `init_pin` carries none of `map_only`'s freeze semantics (the rig freezes nothing)
+        init_pin={"flag": _E1_FLAG, "init_from_md5": _MAPFT_INIT_MD5,
+                  "init_note": "the rig would not warm-start from the shipped refcv8 EMA-48,852"},
+        #: B5 (refcv9-warm's precedent, same Thor, same tree lineage): the env-failure pin that carries the v8f-mini ENV ids
+        suite_env_failures=PROFILES["refcv9-warm"]["suite_env_failures"],
+        suite_pinned_skip_ok=PROFILES["refcv9-warm"]["suite_pinned_skip_ok"],
+    )
 
 
 class GateError(RuntimeError):
@@ -2498,10 +2673,14 @@ def forbidden_lever_reasons(prof: dict, argv: list[str], model=None) -> tuple[li
             det["argv_hits"] += hit
             reasons.append(f"{hit[0]} is passed, but it is {why}: it must be OFF for a "
                            f"{prof['name']} launch (pass none of {list(names)})")
+    pfx_why = prof.get("forbidden_prefixes_why") or {}
     for f in flags:
         if any(f.startswith(p) for p in prof.get("forbidden_prefixes", ())):
             det["argv_hits"].append(f)
-            reasons.append(f"{f} is a DrivoR-T parameter flag; a {prof['name']} launch passes "
+            own = next(((p, pfx_why[p]) for p in prof.get("forbidden_prefixes", ())
+                        if f.startswith(p) and p in pfx_why), None)
+            reasons.append(f"{f} ({own[1]}): a {prof['name']} launch passes no `{own[0]}*` flag" if own else
+                           f"{f} is a DrivoR-T parameter flag; a {prof['name']} launch passes "
                            f"none of them")
     if model is not None:
         for attr in prof.get("forbidden_built", ()):
@@ -2521,6 +2700,14 @@ def forbidden_value_reasons(prof: dict, argv: list[str]) -> list[str]:
             each = ((prof.get("forbidden_value_each_why") or {}).get(f) or {}).get(v[0] if v else None)
             out.append(f"{f} {v} is REFUSED for a {prof['name']} launch (refused values: "
                        f"{list(bad)}" + (f"; {why}" if why else "") + (f"; THIS value: {each}" if each else "") + ")")
+    # refcv9-e1rig: an ALLOW-list -- a PRESENT flag whose value is not one of the admitted values is refused (so a mode
+    # added to the trainer tomorrow is refused today); inert for a profile without `only_values`
+    for f, ok in (prof.get("only_values") or {}).items():
+        v = flag_values(argv, f)
+        if v is not None and (not v or v[0] not in ok):
+            why = (prof.get("only_values_why") or {}).get(f)
+            out.append(f"{f} {v} is REFUSED for a {prof['name']} launch (the only admitted value(s): {list(ok)}"
+                       + (f"; {why}" if why else "") + ")")
     return out
 
 
@@ -2627,8 +2814,10 @@ def _under_any(name: str, mods: Iterable[str]) -> bool:
 def map_only_init_reasons(prof: dict, argv: list[str],
                           pmap: list[tuple[str, str]] | None = None) -> tuple[list[str], dict]:
     """PI D-R9-MAPHEAD-PRECISION: the `--init-from` file IS the shipped EMA model -- its md5 (of the bytes THIS host
-    reads) equals the profile's literal. Inert for a profile without `map_only`."""
-    mo = prof.get("map_only")
+    reads) equals the profile's literal. Inert for a profile without `map_only`.
+    refcv9-e1rig: a profile that pins the warm start but freezes nothing carries `init_pin` ({flag, init_from_md5,
+    init_note}) instead -- the SAME reader, none of `map_only`'s freeze semantics (G-DVB's built set, G-LIVE's bit identity)."""
+    mo = prof.get("map_only") or prof.get("init_pin")
     if not mo:
         return [], {"on": False}
     det: dict[str, Any] = {"on": True, "md5_pinned": mo["init_from_md5"]}
@@ -2644,7 +2833,8 @@ def map_only_init_reasons(prof: dict, argv: list[str],
     det["md5"] = _md5_cached(local)
     if det["md5"] != mo["init_from_md5"]:
         return [f"{mo['flag']}: --init-from {v[0]} has md5 {det['md5']}, the profile pins {mo['init_from_md5']} (the "
-                f"shipped refcv8 EMA model ckpt_ema_48852.pt) -- the frozen planner would not be the shipped one"], det
+                f"shipped refcv8 EMA model ckpt_ema_48852.pt) -- "
+                f"{mo.get('init_note', 'the frozen planner would not be the shipped one')}"], det
     return [], det
 
 
@@ -2920,10 +3110,33 @@ def r9_schedule_reasons(prof: dict, argv: list[str]) -> tuple[list[str], dict]:
     return [], det
 
 
-def open_item_reasons(prof: dict) -> list[str]:
-    """The profile's OPEN ITEMS, one named reason each (empty when the flag set is decided)."""
-    return [f"OPEN ITEM {it.get('id')}: {it.get('what')} (owner: {it.get('owner')})"
-            for it in (prof.get("open_items") or ())]
+def open_item_hits(it: dict, argv: list[str] | None) -> list[str] | None:
+    """A CONDITIONAL open item (`when_flags` exact / `when_prefixes` prefix, minus `when_except` prefixes) applies only when
+    the ARGV carries such a flag -> the matching flags. None = unconditional (always applies). With no argv to read, a
+    conditional item applies (fail closed: [] is returned only when the argv was read and carries none)."""
+    if not (it.get("when_flags") or it.get("when_prefixes")):
+        return None
+    if argv is None:
+        return ["<argv not given>"]
+    exc = tuple(it.get("when_except") or ())
+    return [f for f, _ in flag_pairs(argv)
+            if (f in (it.get("when_flags") or ())
+                or any(f.startswith(p) for p in (it.get("when_prefixes") or ())))
+            and not any(f.startswith(e) for e in exc)]
+
+
+def open_item_reasons(prof: dict, argv: list[str] | None = None) -> list[str]:
+    """The profile's OPEN ITEMS, one named reason each (empty when the flag set is decided). refcv9-e1rig: an item may be
+    CONDITIONAL on the argv's flags (`open_item_hits`) -- the inherited records that cover the rig's heads do not cover an
+    arm that changes them; every other profile's items are unconditional and read exactly as before."""
+    out = []
+    for it in (prof.get("open_items") or ()):
+        hits = open_item_hits(it, argv)
+        if hits is not None and not hits:
+            continue
+        out.append(f"OPEN ITEM {it.get('id')}: {it.get('what')}"
+                   + (f" [triggered by {hits}]" if hits is not None else "") + f" (owner: {it.get('owner')})")
+    return out
 
 
 def residual_prior_on(argv: list[str]) -> bool:
@@ -4053,14 +4266,37 @@ LIVE_FLAG_RULES: dict[str, tuple[tuple[str, ...], str]] = {
     "f9_n_anchors": ((), "a constant of F9"),
 }
 LIVE_ALWAYS = (("loss", "traj", "cls"), "the planner objective and the anchor classifier")
+#: refcv9 C7 (`--r9-perc-rig`, the E1 perception-only rig): the rig builds NO planner, so `compute_losses_perc_rig` returns only
+#: `loss` + the perception terms. G-LIVE keyed on `args.r9_perc_rig` (INERT when off, like every switch here) replaces the planner
+#: term by this one; every LIVE_WEIGHT_RULES term whose predicate holds (agent / box3d / map_hires) still applies.
+RIG_LIVE = (("loss",), "the perception rig's summed loss (agent / box3d / map_hires terms; the rig builds no planner)")
+#: ... and a rig smoke step that emits ANY of these means the planner / tactical modules were BUILT: the planner objective
+#: (`traj`, `cls`, `cascade`, the u0 term), the selection / lat / lon / law heads, the refcv6 tactical decoder (`tac_v6`,
+#: `goal_tac`, `lat_tac`, `lon_tac`, `tac_goal`), the refcv8 seams (`r8`, `r8_*`) and DrivoR-T (`r7_*`). Exact names + prefixes;
+#: the perception terms (`agent*`, `box3d*`, `map*`, `n_map_cells*`) match none.
+RIG_ABSENT = {"exact": ("traj", "cls", "cascade", "u0", "sel_v3", "lat", "lon", "law", "tac_v6", "goal_tac", "lat_tac",
+                        "lon_tac", "tac_goal", "r8"),
+              "prefixes": ("r8_", "r7_", "tac_"),
+              "why": "the rig emitted a planner term: the planner was built (the rig builds only the encoder, the agent head, "
+                     "the perception branch and the 10 cm map branch)"}
+
+
+def rig_absent_terms(args) -> list[dict]:
+    """The must-be-ABSENT rule of G-LIVE under `--r9-perc-rig`; [] (inert) when the switch is off."""
+    if not bool(getattr(args, "r9_perc_rig", False)):
+        return []
+    return [{"id": "perc_rig_no_planner", "exact": tuple(RIG_ABSENT["exact"]),
+             "prefixes": tuple(RIG_ABSENT["prefixes"]), "why": RIG_ABSENT["why"]}]
 
 
 def declared_terms(T, args) -> tuple[list[dict], list[str]]:
     """-> (rules that apply to THIS argv, coverage problems). Nothing is hand-listed per ARM:
     the table is keyed by the TRAINER's own registries and must cover all of them."""
     problems: list[str] = []
-    terms = [{"id": "planner", "keys": list(LIVE_ALWAYS[0]), "min_frac": 1.0,
-              "why": LIVE_ALWAYS[1]}]
+    terms = ([{"id": "perc_rig", "keys": list(RIG_LIVE[0]), "min_frac": 1.0, "why": RIG_LIVE[1]}]
+             if bool(getattr(args, "r9_perc_rig", False)) else
+             [{"id": "planner", "keys": list(LIVE_ALWAYS[0]), "min_frac": 1.0,
+               "why": LIVE_ALWAYS[1]}])
     registry = getattr(T, "REFC_WEIGHT_GATES", None)
     if not isinstance(registry, dict):
         problems.append("the trainer has no REFC_WEIGHT_GATES registry to derive terms from")
@@ -4091,7 +4327,8 @@ def declared_terms(T, args) -> tuple[list[dict], list[str]]:
 def judge_live(terms: list[dict], problems: list[str], steps: list[dict], *,
                expect_steps: int, summary: dict | None, train_rows: list[dict],
                grads: dict, prior: dict | None, exit_msg: str | None,
-               admitted_dead: dict[str, str] | None = None) -> tuple[list[str], dict]:
+               admitted_dead: dict[str, str] | None = None,
+               absent_terms: list[dict] | None = None) -> tuple[list[str], dict]:
     """The pure G-LIVE verdict. `admitted_dead`: {leaf group: reason} -- the profile's
     `live_dead_admitted` rows whose FLAG is in the launch argv (the caller filters by argv). `steps`: one record per TRAINING `compute_losses_v3` call:
     {"keys": [...], "nonfinite": [...], "vals": {k: float}}."""
@@ -4133,6 +4370,21 @@ def judge_live(terms: list[dict], problems: list[str], steps: list[dict], *,
             if bad:
                 reasons.append(f"declared term `{k}` was non-finite on {bad} step(s)")
     det["terms"] = per_term
+    # refcv9-e1rig: the must-be-ABSENT rules (`rig_absent_terms`) -- a smoke step that EMITS one of the named keys means the
+    # module that computes it was built; inert (no key in `det`) without them
+    if absent_terms:
+        per_absent = []
+        for t in absent_terms:
+            hit: dict[str, int] = {}
+            for s in steps:
+                for k in s["keys"]:
+                    if k in t["exact"] or any(k.startswith(p) for p in t["prefixes"]):
+                        hit[k] = hit.get(k, 0) + 1
+            per_absent.append({"rule": t["id"], "emitted": hit, "why": t["why"]})
+            if hit:
+                reasons.append(f"{t['why']}: {sorted(hit)[:10]} emitted on up to {max(hit.values())} of {len(steps)} "
+                               f"training steps (G-LIVE must-be-absent rule {t['id']})")
+        det["absent_terms"] = per_absent
     nonfin_any = sorted({k for s in steps for k in s.get("nonfinite", ())})
     det["nonfinite_keys_any"] = nonfin_any
     if nonfin_any:
@@ -6537,6 +6789,33 @@ def latest_smoke_config(ctx: "Ctx") -> Path | None:
     return runs[-1] if runs else None
 
 
+def rig_eval_build_reasons(args_t, model_t, model_l) -> tuple[list[str], dict]:
+    """G-EVAL under `--r9-perc-rig` (the gate's OWN read of both builds): the eval loader must build the RIG from the run
+    record -- `_perc_rig` set and NO planner / tactical attribute path -- exactly as the trainer's model is. A loader that
+    builds the full model (every launch before refcv9 C7) fails here with a NAMED reason even where its load is lenient.
+    Inert (empty) when the launch does not declare the rig."""
+    if not bool(getattr(args_t, "r9_perc_rig", False)):
+        return [], {"on": False}
+    rm = _e1_rig_module()
+    paths = tuple(getattr(rm, "PLANNER_ATTR_PATHS", ())) if rm is not None else ()
+    has = (lambda m, p: bool(rm._has_path(m, p))) if rm is not None else (lambda m, p: False)
+    det: dict[str, Any] = {"on": True, "trainer_rig": bool(getattr(model_t, "_perc_rig", False)),
+                           "loader_rig": bool(getattr(model_l, "_perc_rig", False)),
+                           "trainer_planner_paths": [p for p in paths if has(model_t, p)],
+                           "loader_planner_paths": [p for p in paths if has(model_l, p)]}
+    reasons: list[str] = []
+    if rm is None:
+        reasons.append("G-EVAL rig: tanitad/refs/refcv9_perc_rig.py is not in this tree -- the planner attribute paths "
+                       "cannot be read")
+    if not det["trainer_rig"]:
+        reasons.append("G-EVAL rig: the launch declares --r9-perc-rig but the TRAINER's model is not the rig")
+    if not det["loader_rig"] or det["loader_planner_paths"]:
+        reasons.append(f"G-EVAL rig: the eval loader built the FULL model for a --r9-perc-rig launch (rig flag "
+                       f"{det['loader_rig']}, planner / tactical modules present: {det['loader_planner_paths']}) -- it must "
+                       f"build the perception rig from config.json")
+    return reasons, det
+
+
 def eval_identity(ctx: Ctx, T, model_t, args_t, scratch: Path,
                   probe_out: dict | None = None) -> tuple[list[str], dict]:
     import torch
@@ -6586,7 +6865,9 @@ def eval_identity(ctx: Ctx, T, model_t, args_t, scratch: Path,
         model_l, cfg_l, args_l, rec = L.build_model(config, str(ck), device="cpu", strict=True)
     except RuntimeError as e:
         pat.restore()
-        return [f"the eval loader's STRICT load failed: {str(e)[:600]}"], det
+        hint = (" -- the launch declares --r9-perc-rig: the loader must build the perception rig from config.json "
+                "(G-EVAL under the rig)" if bool(getattr(args_t, "r9_perc_rig", False)) else "")
+        return [f"the eval loader's STRICT load failed: {str(e)[:600]}{hint}"], det
     finally:
         pat.restore()
     sd = rec.get("state_dict", {})
@@ -6597,6 +6878,10 @@ def eval_identity(ctx: Ctx, T, model_t, args_t, scratch: Path,
                        f"{len(sd.get('unexpected') or [])} unexpected keys (must be 0/0)")
     det["loader_departures"] = rec.get("departures")
     det["loader_argv_remap"] = rec.get("argv_remap")
+    rbr, rbd = rig_eval_build_reasons(args_t, model_t, model_l)       # refcv9-e1rig only (inert otherwise)
+    if rbd.get("on"):
+        det["perc_rig"] = rbd
+    reasons += rbr
     if p10_on(ctx.argv):
         # the P10 tensors are non-persistent buffers: the state_dict comparison below cannot see them
         p10r_, p10d_ = judge_p10_eval(ctx.prof, ctx.argv, model_t, model_l)
@@ -6728,6 +7013,7 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
     parser = T.build_parser()
     args = parser.parse_args(argv1)
     terms, problems = declared_terms(T, args)
+    absent = rig_absent_terms(args)                       # refcv9-e1rig only ([] on every other launch)
     _say(f"G-LIVE smoke: {steps} steps, out {run_dir}")
     run1 = run_smoke(ctx, T, argv1, snapshot="final")
     rows1 = read_metrics(run_dir / "metrics.jsonl")
@@ -6743,7 +7029,7 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         reasons, det = judge_live(terms, problems, run1["steps"], expect_steps=steps,
                                   summary=summ1, train_rows=train_rows(rows1), grads=gt,
                                   prior=run1["prior"], exit_msg=run1.get("exit"),
-                                  admitted_dead=admitted)
+                                  admitted_dead=admitted, absent_terms=absent)
         det.update({"smoke_argv": argv1, "run_dir": str(run_dir), "elapsed_s": run1["elapsed_s"],
                     "declared_terms": terms, "eval_calls": run1["eval_calls"],
                     "out_keys": run1["out_keys"][:120],
@@ -8104,7 +8390,7 @@ def finalize(ctx: Ctx, key: bytes, import_dirs: Iterable[str] = (),
     else:
         verdict = "PASS"
     # ⛔ a profile with OPEN ITEMS is not a finished launch definition: never a PASS
-    open_items = open_item_reasons(ctx.prof)
+    open_items = open_item_reasons(ctx.prof, ctx.argv)
     if open_items:
         reasons += open_items
         if verdict in ("PASS", "PI-DECISION"):

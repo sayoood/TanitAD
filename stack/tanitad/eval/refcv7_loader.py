@@ -394,7 +394,13 @@ def _build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict
         cfg.core.lan = refc.LanConfig(k=len(args.lan_arclengths))
     # ---- train():7950 -- the model (ImageNet init is overwritten by the strict load below;
     # HF_HUB_OFFLINE keeps it local) -------------------------------------------------------- #
-    model = v3.RefCV3Model(cfg).to(device)
+    # refcv9 C7 (`--r9-perc-rig`, G-EVAL under the E1 perception rig): train() builds the perception-only rig behind this flag
+    # (refc_v3_train.py: `_r9rig.pin_args(args)`, then `RefCV3Model(cfg, perc_rig=True)`); the loader REPLAYS it, so the strict
+    # load below reads a rig state_dict into a rig. OFF (the flag absent / False) is the original line, bit for bit.
+    _r9rig_on = bool(getattr(args, "r9_perc_rig", False))
+    if _r9rig_on:
+        tr._r9rig_mod.pin_args(args)
+    model = (v3.RefCV3Model(cfg, perc_rig=True) if _r9rig_on else v3.RefCV3Model(cfg)).to(device)
     # ---- train():7955-7957 --------------------------------------------------------------- #
     model._w_agent = float(getattr(args, "w_agent", tr.AGENT_WEIGHT_DEFAULT))
     model._w_bev_aux = float(getattr(args, "w_bev_aux", 0.0))
