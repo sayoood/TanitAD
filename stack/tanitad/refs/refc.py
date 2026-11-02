@@ -4181,11 +4181,20 @@ class RefCModel(nn.Module):
         # the tap is off).
         "fmap_s8")
 
-    def __init__(self, cfg: RefCConfig):
+    def __init__(self, cfg: RefCConfig, perc_rig: bool = False):
         super().__init__()
         self.cfg = cfg
+        # refcv9 C7 (E1 perception rig): a plain bool (never a buffer / config field), False on every other build.
+        self._perc_rig = bool(perc_rig)
         self.encoder = build_encoder(cfg.encoder)
         feat = self.encoder.feat_dim
+        if self._perc_rig:
+            # refcv9 C7: trunk + the learned agent head ONLY. The planner (`decoder`), the tactical / route / law
+            # heads, the strategic ctx, the measurement encoder, the agent-token embed and every other module are NOT
+            # BUILT (`tanitad/refs/refcv9_perc_rig.py: RIG_SKIPPED_MODULES` names them); a path that reaches one
+            # raises AttributeError instead of running on a random-init copy.
+            self._build_perc_rig(cfg, feat)
+            return
         # ---- refcv6 §2b: the EGO-HISTORY encoder (PI 2026-09-16) ---------- #
         # ⛔ CONSTRUCTED ONLY WHEN ASKED. `cfg.ego_history is None` (the
         # default) builds nothing, so the RNG draw order and the state_dict are
@@ -4691,6 +4700,36 @@ class RefCModel(nn.Module):
         span = max(k - 1, 1)
         dist_pref = first.to(lan.dtype) / span * 2.0 - 1.0
         return bearing, dist_pref, any_valid
+
+    def _build_perc_rig(self, cfg: RefCConfig, feat: int) -> None:
+        self.agent_head = None
+        _ag = getattr(cfg, "agents", None)
+        if _ag is not None and bool(getattr(_ag, "enable", False)):
+            if bool(_ag.oracle):
+                raise ValueError("refcv9 C7: the perception rig trains the LEARNED agent head; --agents oracle reads "
+                                 "ground truth at inference and is refused.")
+            from tanitad.refs import refc_agents as _ra
+            _gh, _gw = cfg.encoder.grid_shape
+            self.agent_head = _ra.build_agent_head(_ag, feat, int(_gh) * int(_gw))
+
+    def forward_perc_rig(self, frames: Tensor, bev_hook=None) -> dict:
+        """refcv9 C7: the NEWEST window row only (K = 3 stacked frames), through the trunk, the learned agent head and the
+        perception hook. Emits exactly the keys the perception losses read: fmap_s16, fmap_s8, perception, agent_slots."""
+        b = frames.shape[0]
+        fmap_s8 = None
+        if bool(getattr(self.encoder, "s8_tap", False)):
+            fmap_s8, fmap_s16, fmap, pooled = self.encoder.forward_features_s8(
+                frames[:, -1], torch.arange(b, device=frames.device))
+        else:
+            fmap_s16, fmap, pooled = self.encoder.forward_features(frames[:, -1])
+        perception_out = None
+        if bev_hook is not None:
+            perception_out = (bev_hook(fmap_s16) if fmap_s8 is None else bev_hook(fmap_s16, fmap_s8=fmap_s8))
+        agent_slots = (self.agent_head(fmap.flatten(2).transpose(1, 2)) if self.agent_head is not None else None)
+        out = {"fmap_s16": fmap_s16, "fmap_s8": fmap_s8, "perception": perception_out}
+        if agent_slots is not None:
+            out["agent_slots"] = agent_slots
+        return out
 
     def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
                 v0: Tensor | None = None,

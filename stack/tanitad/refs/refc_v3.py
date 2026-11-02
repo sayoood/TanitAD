@@ -1079,9 +1079,10 @@ class RefCV3Model(nn.Module):
     a TRANSPARENT wrapper: forward defers to the core untouched, and the
     state_dict is the core's under the ``core.`` prefix — pinned by tests."""
 
-    def __init__(self, cfg: RefCV3Config):
+    def __init__(self, cfg: RefCV3Config, perc_rig: bool = False):
         super().__init__()
         self.cfg = cfg
+        self._perc_rig = bool(perc_rig)      # refcv9 C7 (E1 perception rig); a plain bool, False everywhere else
         # ⭐⭐ S7 / E15 (GP-1) — THE RANKED-SCORE SEAM'S SLOT AND SCALE ARE
         # DERIVED HERE, BEFORE THE CORE IS BUILT, AND NEVER TYPED.
         #
@@ -1144,7 +1145,9 @@ class RefCV3Model(nn.Module):
                 raise ValueError(
                     "[refcv8] plan_vmax_clamp with refcv7_select: the scorer's pick replaces the emitted plan "
                     "after the E9 block where the clamp sits -- the cap would not reach the plan.")
-        self.core = refc.RefCModel(cfg.core)
+        self.core = refc.RefCModel(cfg.core, perc_rig=self._perc_rig)
+        if self._perc_rig:
+            return                  # refcv9 C7: NO hierarchy / tactical / goal modules are built on the rig
         if not cfg.hier:
             return
         if not cfg.core.hierarchy:
@@ -2341,6 +2344,13 @@ class RefCV3Model(nn.Module):
 
         return bev_hook
 
+    def _forward_perc_rig(self, frames: Tensor, grid, valid) -> dict:
+        bh = self._bev_hook({}, grid, valid)
+        if bh is None:
+            raise ValueError("refcv9 C7: the perception rig has NO perception / 10 cm branch attached -- it would "
+                             "train nothing (add --w-box3d / --map-hires on before the build).")
+        return self.core.forward_perc_rig(frames, bev_hook=bh)
+
     def forward(self, frames: Tensor, nav_cmd: Tensor | None = None,
                 v0: Tensor | None = None, steps: int = 0,
                 lan: Tensor | None = None,
@@ -2380,6 +2390,12 @@ class RefCV3Model(nn.Module):
         E13 nav seam and the X15 flag exist to remove, and it would look like
         "the ego channels do not help" in a result table.
         """
+        if self._perc_rig:          # refcv9 C7: the perception-only forward (every planner kwarg is refused)
+            _dropped = [k for k, v in (("nav_cmd", nav_cmd), ("v0", v0), ("lan", lan), ("ego_state", ego_state),
+                                       ("agent_gt", agent_gt), ("ego_poses", ego_poses)) if v is not None]
+            if _dropped:
+                raise ValueError("refcv9 C7: the perception rig has no planner; %s would be SILENTLY DROPPED." % _dropped)
+            return self._forward_perc_rig(frames, perception_grid, perception_valid)
         # ⛔ refcv5 WP-6, the SAME rule as the `ego_state` guard below: a
         # privileged tensor that is SILENTLY DROPPED reads as "agent tokens do
         # not help" in a result table, which is a refutation manufactured by a

@@ -1,0 +1,143 @@
+"""refcv9 C7 -- the E1 PERCEPTION-ONLY RIG (REFCV9_DESIGN 4.3): init from refcv8 EMA-48,852, the NEWEST window row only
+(K = 3 stacked frames), the planner / tactical modules NOT BUILT, losses = the perception terms only (box3d, agent,
+map_hires; weights exactly as the argv sets them).
+
+Opt-in: ``refc_v3_train.py --r9-perc-rig``. OFF = nothing here is imported on the default path's hot loop and the build /
+forward / loss are the tip's (pinned by tests/test_r9_perc_rig.py and the flags-absent digest).
+
+* ``RIG_SKIPPED_MODULES`` is the NAMED list of the checkpoint's modules the rig does not build (read off the real
+  refcv8 EMA-48,852 state_dict, 1,165 keys, MEASURED 2026-11-02); ``warm_start_perc_rig`` loads WITH THAT LIST and
+  refuses any other missing / unexpected key -- never a blanket ``strict=False``.
+* ``assert_rig_built`` is the check a rig that silently builds the planner fails.
+"""
+from __future__ import annotations
+
+import hashlib
+from pathlib import Path
+
+#: modules (state_dict key roots) the rig BUILDS -- trunk, the learned agent head, the perception branch (BEV lift,
+#: map head, 3-D box head) and the 10 cm map branch.
+RIG_BUILT_ROOTS = ("core.encoder", "core.agent_head", "_perception", "_map_hires")
+
+#: modules the rig does NOT build: every other root of the refcv8 EMA-48,852 state_dict (27 roots).
+RIG_SKIPPED_MODULES = (
+    "goal_gate", "core.lat_log_prior", "core.lon_log_prior", "core.ego_hist", "core.strategic", "core.measurement",
+    "core.decoder", "core.agent_embed", "core.tactical_trunk", "core.lat_head", "core.lon_head", "core.route_head",
+    "core.law_head", "phi_tac", "str_goal_head", "gstr_embed", "gstr_film", "nav_inj", "nav_to_tac", "nav_to_str",
+    "lat_head_tac", "lon_head_tac", "tac_decoder_v6", "tac_behaviour_gate_v6", "tac_goal_head", "tac_latent_proj",
+    "scorer")
+
+#: the planner subset an assertion of "the planner is not built" must find ABSENT as an attribute path.
+PLANNER_ATTR_PATHS = ("core.decoder", "core.agent_embed", "core.strategic", "core.measurement", "core.law_head",
+                      "tac_decoder_v6", "phi_tac", "core.tactical_trunk")
+
+#: argv dests the rig REFUSES (each would be built / read only by the planner or tactical modules: silent drop).
+PLANNER_FLAG_DESTS = (
+    "tac_decoder_v6", "graft_behaviour_sel", "max_speed_input_v6", "graft_tac8_prior", "graft_nav_compliance",
+    "speed_ceiling_filter", "anchors", "anchor_v0_conditioned", "bev_coupling", "ego_history", "refcv8",
+    "r8_alloc_emit", "r8_no_rc", "f1_random_t", "f2_dd_step", "f3_per_layer", "f4_adaln", "f5_focal",
+    "f5_emitting_conf", "f6_w_u0_zero", "nav_from_v7", "r8_nav_from_v9")
+PLANNER_WEIGHT_DESTS = ("w_tac_v6", "w_r8_alloc_l1", "w_r8_cons", "w_r8_v9_cons", "w_r8_sat", "w_r8_subscore",
+                        "w_tac_goal", "w_u0", "w_bev_aux")
+
+
+def is_skipped_key(k: str) -> bool:
+    return any(k == m or k.startswith(m + ".") for m in RIG_SKIPPED_MODULES)
+
+
+def is_built_key(k: str) -> bool:
+    return any(k == m or k.startswith(m + ".") for m in RIG_BUILT_ROOTS)
+
+
+def _has_path(obj, path: str) -> bool:
+    for part in path.split("."):
+        if part not in getattr(obj, "_modules", {}) and part not in getattr(obj, "_parameters", {}) \
+                and part not in getattr(obj, "_buffers", {}):
+            return False
+        obj = getattr(obj, part)
+    return True
+
+
+def pin_args(args) -> None:
+    """Refuse every planner / tactical lever the rig cannot honour (a silent drop reads as "the lever did nothing")."""
+    if not bool(getattr(args, "r9_perc_rig", False)):
+        return
+    bad = [d for d in PLANNER_FLAG_DESTS if bool(getattr(args, d, False))]
+    bad += [d for d in PLANNER_WEIGHT_DESTS if float(getattr(args, d, 0.0) or 0.0) > 0.0]
+    if str(getattr(args, "residual_prior", "off") or "off") not in ("off", "none"):
+        bad.append("residual_prior")
+    if bad:
+        raise SystemExit("[r9-perc-rig] refused: planner / tactical flag(s) %s -- the rig builds no planner, so they "
+                         "would be SILENTLY DROPPED." % sorted(bad))
+    if float(getattr(args, "w_box3d", 0.0) or 0.0) <= 0.0 and float(getattr(args, "w_agent", 0.0) or 0.0) <= 0.0 \
+            and str(getattr(args, "map_hires", "off")) != "on":
+        raise SystemExit("[r9-perc-rig] refused: no perception term (w_box3d / w_agent / --map-hires on) -- nothing to train")
+
+
+def assert_rig_built(model) -> dict:
+    """The built model holds ONLY RIG_BUILT_ROOTS: no planner / tactical module as an attribute, no state_dict key outside
+    the built roots. Returns the record config.json carries."""
+    present = [p for p in PLANNER_ATTR_PATHS if _has_path(model, p)]
+    if present:
+        raise SystemExit("[r9-perc-rig] the planner / tactical module(s) %s were BUILT -- the rig must not build them" % present)
+    keys = list(model.state_dict().keys())
+    stray = [k for k in keys if not is_built_key(k)]
+    if stray:
+        raise SystemExit("[r9-perc-rig] %d state_dict key(s) outside the built roots, e.g. %s" % (len(stray), stray[:3]))
+    n_params = sum(p.numel() for p in model.parameters())
+    return {"built_roots": list(RIG_BUILT_ROOTS), "skipped_modules": list(RIG_SKIPPED_MODULES), "n_keys": len(keys),
+            "n_params": int(n_params)}
+
+
+def warm_start_perc_rig(model, path: str) -> dict:
+    """``--init-from`` for the rig: load the refcv8 EMA into the perception modules with the NAMED skip list. Refuses (a)
+    a source key that is neither loadable nor in RIG_SKIPPED_MODULES, (b) a rig key the source lacks, (c) a shape mismatch."""
+    import torch
+    p = Path(path)
+    if not p.is_file():
+        raise SystemExit("[r9-perc-rig] --init-from %s: no such file" % path)
+    h = hashlib.md5()
+    with open(p, "rb") as f:
+        for blk in iter(lambda: f.read(1 << 22), b""):
+            h.update(blk)
+    state = torch.load(str(p), map_location="cpu", weights_only=False)
+    sd = state.get("model", state) if isinstance(state, dict) else None
+    if not isinstance(sd, dict) or not sd:
+        raise SystemExit("[r9-perc-rig] --init-from %s: no model state_dict in the file" % path)
+    own = model.state_dict()
+    skipped = {k: v for k, v in sd.items() if is_skipped_key(k)}
+    loadable = {k: v for k, v in sd.items() if not is_skipped_key(k)}
+    unexpected = sorted(k for k in loadable if k not in own)
+    missing = sorted(k for k in own if k not in loadable)
+    if unexpected or missing:
+        raise SystemExit("[r9-perc-rig] --init-from %s: %d source key(s) neither built nor in RIG_SKIPPED_MODULES (e.g. %s); "
+                         "%d rig key(s) the source lacks (e.g. %s)" % (path, len(unexpected), unexpected[:3], len(missing), missing[:3]))
+    bad = [k for k in loadable if tuple(loadable[k].shape) != tuple(own[k].shape)]
+    if bad:
+        raise SystemExit("[r9-perc-rig] --init-from %s: shape mismatch on %s" % (path, bad[:3]))
+    model.load_state_dict(loadable, strict=True)
+    per_mod = {m: sum(1 for k in skipped if k == m or k.startswith(m + ".")) for m in RIG_SKIPPED_MODULES}
+    return {"path": str(p), "md5": h.hexdigest(), "source_step": (int(state["step"]) if isinstance(state, dict) and "step" in state else None),
+            "n_loaded": len(loadable), "n_new_refcv8_keys": 0, "n_skipped_source_keys": len(skipped),
+            "skipped_modules_key_counts": per_mod, "optimizer": "fresh (not loaded)"}
+
+
+def dvb_check(model, args) -> list:
+    """G-DVB `built` check for ``--r9-perc-rig``: declared on <=> the model holds only RIG_BUILT_ROOTS (and conversely OFF =>
+    the planner IS built). Returns Mismatch rows."""
+    from tanitad.train.declared_vs_built import Mismatch
+    declared = bool(getattr(args, "r9_perc_rig", False))
+    built = bool(getattr(model, "_perc_rig", False))
+    out = []
+    if declared != built:
+        out.append(Mismatch("r9_perc_rig", declared, built, "model._perc_rig", "argv and the build disagree"))
+    if declared:
+        try:
+            assert_rig_built(model)
+        except SystemExit as e:
+            out.append(Mismatch("r9_perc_rig", "planner / tactical NOT built", "built", "model.state_dict()", str(e)))
+    return out
+
+
+def register_dvb_levers(register) -> None:
+    register("r9_perc_rig", "built", dvb_check)

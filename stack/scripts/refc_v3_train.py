@@ -165,6 +165,8 @@ _mhr.register_dvb_levers(_dvb.register)
 # PI D-R9-MAPHEAD-PRECISION (2026-10-26): --r8-train-only-map is a `built` lever (the trainable set read off the model);
 # refcv9 warm start (PI 2026-10-27): --r9-train-only too (the trainable sets read off the model)
 _mof.register_dvb_levers(_dvb.register)
+from tanitad.refs import refcv9_perc_rig as _r9rig_mod  # noqa: E402  refcv9 C7: --r9-perc-rig (OFF: nothing)
+_r9rig_mod.register_dvb_levers(_dvb.register)
 # refcv9 warm start: --w-map-fp is a `loss` lever (the weight the 10 cm map term reads, model._w_map_fp)
 _mfp.register_dvb_levers(_dvb.register)
 # refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): the progress head is a `built` lever, its weights `loss` levers
@@ -5410,6 +5412,9 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                       mode: str = "diffusion",
                       ablate_frames: bool = False,
                       log_metrics: bool = True) -> dict:
+    if getattr(getattr(model, "core", None), "_perc_rig", False):    # refcv9 C7 (--r9-perc-rig); OFF: never entered
+        return compute_losses_perc_rig(model, batch, device, mode=mode, ablate_frames=ablate_frames,
+                                       log_metrics=log_metrics)
     # ⭐ refcv9 R9-PF CALIBRATION STAGE: the frozen model runs its INFERENCE path (eval: no ego / prior / conditioning
     # dropout, no teacher) so the head is fitted on the features it will read at deployment; only the head's own
     # BatchNorm accumulates its standardisation statistics. OFF (or not training): this block is not entered.
@@ -6788,6 +6793,410 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
             "lat_tac": loss_lat_tac, "lon_tac": loss_lon_tac,
             "anchor_acc": (out["anchor_logits"].argmax(1) == a_star)
             .float().mean(), "slot_valid_frac": sv.mean(), **extra}
+
+
+def compute_losses_perc_rig(model, batch: dict, device: str, mode: str = "diffusion",
+                           ablate_frames: bool = False, log_metrics: bool = True) -> dict:
+    """refcv9 C7 -- the E1 perception-only rig's loss: the agent / box3d / map / 10 cm-map terms, GENERATED VERBATIM from
+    compute_losses_v3's own blocks (lines 6075-6208, 6439-6659 of the tip), so a weight means what it means in refcv8.
+    The newest window row only; no planner term exists to be summed. ``mode`` is accepted for signature parity."""
+    if ablate_frames:
+        raise SystemExit("[r9-perc-rig] --ablate-frames is a planner-rig lever and is refused here")
+    cfg = model.cfg
+    core = cfg.core
+    frames = frames_to_device(batch["frames"][:, -1:], device)       # K = 3 stacked frames of the NEWEST row
+    # ⛔ RESOLVED BEFORE THE FORWARD, because the BEV encoder now runs INSIDE
+    # it. Until tonight the branch ran after `model(...)` returned and could
+    # look the geometry up itself; that ordering is precisely what kept the
+    # behaviour decoder from ever seeing a map. ⚠️ An EXPLICIT argument, not a
+    # one-shot setter: `set_ego_window`'s POP idiom exists only because
+    # `RefCV3Model.forward` could not be edited, and it can be here.
+    _pgrid = _pvalid = None
+    _pbr = getattr(model, "_perception", None)
+    if _pbr is not None and _pbr.lift is not None:
+        _bank = getattr(model, "_lift_bank", None)
+        if _bank is None:
+            raise SystemExit(
+                "[v3] ⛔ the BEV lift is built but no per-clip geometry bank "
+                "is attached. One mount pose for a corpus whose MEASURED "
+                "height spans 1.2131-1.6672 m (554 distinct values in 2,400 "
+                "clips) biases every cell the lift fills.")
+        if "map_ep" not in batch:
+            raise SystemExit(
+                "[v3] ⛔ the BEV lift needs `map_ep` and the batch carries "
+                "none — a camera would attach to the wrong clip, silently, "
+                "with every count still looking healthy.")
+        _pgrid, _pvalid = _bank.for_episodes(batch["map_ep"], device=device)
+    elif getattr(model, "_map_hires", None) is not None:
+        # ⭐ refcv7 A6: the forward's ONE lift is the 10 cm branch's (stride 8 at
+        # 0.25 m over the declared extent); its per-clip geometry is THE perception
+        # geometry, and the perception branch (the planner pool) takes none.
+        _hbank = getattr(model, "_lift_bank_hires", None)
+        if _hbank is None or "map_ep" not in batch:
+            raise SystemExit(
+                "[v3] ⛔ --map-hires on without a 0.25 m lift bank or `map_ep`: the "
+                "one lift would sample the trunk at no camera.")
+        _pgrid, _pvalid = _hbank.for_episodes(batch["map_ep"], device=device)
+    # ⭐ refcv8 WP-B: the GT hypothesis + constraint targets + the scheduled-sampling teacher (one-shot on the model)
+    out = model(frames, perception_grid=_pgrid, perception_valid=_pvalid)
+    loss = torch.zeros((), device=device)
+    extra: dict = {}
+    w_agent = float(getattr(model, "_w_agent", 0.0))
+    if w_agent > 0.0 and "agent_box" not in batch:
+        # ⛔⛔ REFUSE, DO NOT SKIP. MEASURED on the tiny rig 2026-09-05: with
+        # `--agents head --w-agent 1.0` on a dataset that carries no
+        # `obstacle.offline` join, this branch was a silent `and "agent_box" in
+        # batch` no-op -- the run trained, converged, wrote a checkpoint, and
+        # stamped `w_agent: 1.0` in config.json while THE DETECTOR WAS NEVER
+        # SUPERVISED. The head would have been shaped only by the planner loss
+        # through its token gate, and the arm would have read as "the learned
+        # agent head does not help".
+        # ⭐ This is the SAME failure the --w-agent 0 guard in
+        # `_pin_refcv5_seams` refuses, one level down: there the loss weight is
+        # missing, here the LABELS are. A guard on the flag alone is not
+        # enough, because the flag was set correctly.
+        raise SystemExit(
+            "[v3] ⛔ --w-agent > 0 but the batch carries no `agent_box`: this "
+            "dataset has no obstacle.offline join wired, so the detection loss "
+            "would be SILENTLY SKIPPED and the run would stamp w_agent > 0 "
+            "while training no detector. Wire the join into the dataset (see "
+            "`train_p8_occupancy.JoinFileReader` + "
+            "`agent_slots.targets_from_join`), or run --agents oracle / "
+            "--w-agent 0.")
+    if w_agent > 0.0 and "agent_slots" in out and "agent_box" in batch:
+        tgt_ag = {"box": batch["agent_box"].to(device),
+                  "yaw": batch["agent_yaw"].to(device),
+                  "cls": batch["agent_cls"].to(device),
+                  "valid": batch["agent_valid"].to(device),
+                  "occ": batch.get("agent_occ",
+                                   torch.full_like(batch["agent_yaw"], -1.0)
+                                   ).to(device),
+                  "rates": batch.get(
+                      "agent_rates",
+                      torch.zeros(*batch["agent_yaw"].shape, 3)).to(device),
+                  "rates_mask": batch.get(
+                      "agent_rates_mask",
+                      torch.zeros_like(batch["agent_valid"])).to(device)}
+        # ⛔⛔ NO_LABEL IS NOT "LABELLED CLEAR", AND THE DIFFERENCE IS A
+        # HALLUCINATION EITHER WAY ROUND. An absent (clip, frame) line means
+        # the join says NOTHING about that frame (the label span ends ~20 s
+        # in); an EMPTY agents list means the road really was clear. Scoring
+        # the first as the second trains the presence head to say "empty" on
+        # frames full of cars -- the `"no agents"` defect the join doc names.
+        # `agent_label` carries the distinction from the dataset and the rows
+        # are SELECTED here, so the DETR set loss never sees a NO_LABEL frame.
+        keep_ag = batch.get("agent_label")
+        ep_ag = batch.get("agent_ep")
+        n_lab = (int(keep_ag.sum()) if keep_ag is not None
+                 else int(batch["agent_valid"].shape[0]))
+        extra["agent_n_windows"] = float(batch["agent_valid"].shape[0])
+        extra["agent_n_labelled"] = float(n_lab)
+        if keep_ag is not None and n_lab:
+            sel = keep_ag.to(device).nonzero(as_tuple=False).flatten()
+            # ⛔ THE EPISODE IDS ARE SELECTED WITH THE SAME MASK. A
+            # camera list built from the UNSELECTED ids would be the
+            # right length only by accident and would attach clip k's
+            # mount pose to clip k+1's row -- silently, and with every
+            # count still looking healthy.
+            if ep_ag is not None:
+                ep_ag = ep_ag.index_select(
+                    0, keep_ag.nonzero(as_tuple=False).flatten())
+            tgt_ag = {k: v.index_select(0, sel) for k, v in tgt_ag.items()}
+            # refcv7 A9 R2: `select_slots` is the comprehension this replaced, plus the
+            # per-layer "aux" list (a list passed through unselected would misalign rows).
+            slots_ag = _slot_presence.select_slots(out["agent_slots"], sel,
+                                                   int(keep_ag.shape[0]))
+        else:
+            slots_ag = out["agent_slots"]
+        # refcv7 A9 R3: the VIS-1 block, selected with the SAME label mask.
+        vis_ag = _vis1_batch_block(model, batch, device,
+                                   keep_ag if (keep_ag is not None and n_lab) else None)
+        if "agent_n_raw" in batch:
+            extra["agent_n_raw"] = float(batch["agent_n_raw"].sum())
+        if "agent_n_truncated" in batch:
+            extra["agent_n_truncated"] = float(
+                batch["agent_n_truncated"].sum())
+    if w_agent > 0.0 and "agent_slots" in out and "agent_box" in batch \
+            and n_lab > 0:
+        ag = _refc_agents.agent_losses(
+            slots_ag, tgt_ag, core.agents,
+            cam=_resolve_rig_cameras(model, ep_ag,
+                                     int(tgt_ag["valid"].shape[0])),
+            cls_class_weight=getattr(model, "_cls_class_weight", None),
+            vis=vis_ag)
+        loss = loss + w_agent * ag["total"]
+        # ⭐ refcv8 WP-B (P-GRAD, WP-D 2026-10-04): the agent head is the LARGEST trunk driver (50.1 % of the
+        # update) and was in neither side of the conflict detector. Its UNWEIGHTED total, attached, BY KEY -- the
+        # detector and the grad-share instrument weight it themselves (`_w_agent`), like every other term.
+        extra["agent"] = ag["total"]
+        for k_ag in ("presence", "cls", "centre", "size", "yaw", "project",
+                     "ground"):
+            if f"loss_{k_ag}" in ag:
+                extra[f"agent_{k_ag}"] = ag[f"loss_{k_ag}"]
+        # ⭐ n PER TERM, in the log row. A detection number without its n is
+        # inadmissible, and `n_dropped` is how a too-small `n_queries` becomes
+        # VISIBLE instead of silently flattering the head on crowded frames.
+        extra["agent_n_target"] = float(ag["n"]["target"])
+        extra["agent_n_matched"] = float(ag["n"]["matched"])
+        extra["agent_n_dropped"] = float(ag["n"]["dropped"])
+        # ⭐ the camera scope and the rows it could not cover, IN THE
+        # LOG ROW. A monocular term computed over 12 of 32 rows is not
+        # the term the config says it trained.
+        extra["agent_rows_with_cam"] = float(ag["n"]["rows_with_cam"])
+        extra["agent_rows_no_cam"] = float(ag["n"]["rows_no_cam"])
+        # ⭐⭐ refcv7 A9: the per-layer terms (R2), the VIS-1 counts (R3), the presence
+        # saturation read (G-LIVE) and, in EVAL mode, the P0 detection pack. Emitted only
+        # on the refined path, so a pre-A9 arm's log row is unchanged.
+        if "_refine" in ag:
+            for _kl, _vl in ag.items():
+                if _kl.startswith("loss_layer") or _kl.startswith("loss_presence_layer"):
+                    extra["agent_" + _kl[5:]] = _vl
+            for _kn in ("layers", "presence_exempt", "presence_matched",
+                        "vis1_n_positive", "vis1_n_ignore", "vis1_n_in_filter",
+                        "vis1_n_in_filter_unknown_vis"):
+                if _kn in ag["n"]:
+                    extra[f"agent_n_{_kn}"] = float(ag["n"][_kn])
+            # G-LIVE-PRES (A10 §15.2): the fraction of slots with sigma >= 0.5, every row.
+            extra["agent_presence_frac_confident"] = _slot_presence.presence_sanity(
+                slots_ag["presence_logit"])["frac_confident"]
+            if vis_ag is not None and (bool(log_metrics) or not model.training):
+                # LOGGING_SPEC_BOX §1 (the cheap census) every row; in EVAL mode the pack
+                # itself too, POOLED by the eval loop (never a mean of batch ratios).
+                _pk_ag = _det_metrics.window_packs(
+                    slots_ag, tgt_ag, vis_ag,
+                    presence_cost=("focal" if str(core.agents.presence_loss) == "focal"
+                                   else "sigmoid"),
+                    match=ag.get("match"), episode_ids=ep_ag,
+                    cls_weight=getattr(model, "_cls_class_weight", None))
+                extra.update(_det_metrics.train_row_keys(_pk_ag, "agent"))
+                if not model.training:
+                    extra["_det_pack_agent"] = _pk_ag
+
+    # ---- WP-D: the BEV auxiliary loss -------------------------------------
+    # ⛔ `obstacle.offline` enters HERE, in the loss, and nowhere in the
+    # forward -- the vision-only rule enforced by WHERE the tensor is read.
+    _w_map = float(getattr(model, "_w_map", 0.0))
+    _w_b3d = float(getattr(model, "_w_box3d", 0.0))
+    if _w_map > 0.0 or _w_b3d > 0.0:
+        _br = getattr(model, "_perception", None)
+        if _br is None:
+            raise SystemExit(
+                "[v3] ⛔ --w-map/--w-box3d > 0 but no perception branch was "
+                "attached to the model. The weights would be stamped into "
+                "config.json and multiply nothing — the `--w-agent` defect "
+                "verbatim. This is a trainer wiring error, not an argv one.")
+        # ⛔ REFUSE, DO NOT SKIP — the same rule as `agent_box` above. A batch
+        # without the targets means the loader was never given the labels, and
+        # a silent skip would train the trunk on the planner alone while the
+        # record claims a jointly-trained perception branch.
+        if _w_map > 0.0 and "map_frac" not in batch:
+            raise SystemExit(
+                "[v3] ⛔ --w-map > 0 but the batch carries no `map_frac`: "
+                "this dataset has no SAM3 map GT attached "
+                "(`ds.enable_map_gt` was never called). Pass --map-gt-root.")
+        if _w_b3d > 0.0 and "agent_box" not in batch:
+            raise SystemExit(
+                "[v3] ⛔ --w-box3d > 0 but the batch carries no `agent_box`: "
+                "the 3-D set loss is the 2-D set loss plus two masked metre "
+                "terms, and without the 2-D targets there is nothing to match "
+                "against. Pass --agent-join.")
+        # ---- ONE branch forward for BOTH heads, on THIS batch's graph ----- #
+        # ⚠️ `out["fmap_s16"]` is the stride-16 map of the LAST OBSERVED frame
+        # (`refc.py:3869/3883`) — the same instant `t + w - 1` the map target
+        # and the agent target are read at.
+        # ⭐⭐⭐ PI RULING 2026-09-17 R2 — THE BRANCH ALREADY RAN, INSIDE THE
+        # FORWARD. It used to be called HERE, after `model(...)` returned; that
+        # ordering is exactly what made §4's map half unreachable (no BEV token
+        # existed when the scene hook fired). The branch now runs in
+        # `RefCV3Model._bev_hook`, so this reads its outputs off `out`.
+        # ⛔ ONE FORWARD, ONE GRAPH — never two. Re-running `_br(...)` here
+        # would build a SECOND lift/encoder/map-head graph on the same
+        # `fmap_s16`, double the perception gradient into the trunk relative to
+        # the planner's, and leave the behaviour decoder reading a DIFFERENT
+        # BEV tensor from the one the map loss scores. Both arms would look
+        # healthy and the attribution would be silently wrong.
+        _pout = out.get("perception")
+        if _pout is None:
+            raise SystemExit(
+                "[v3] ⛔ --w-map/--w-box3d > 0 but `out['perception']` is "
+                "None: the model's forward did not run the perception branch. "
+                "Either this core predates the `bev_hook` seam, or the model "
+                "is the FLAT arm whose forward returns early. The losses below "
+                "would have nothing to read while config.json stamped a "
+                "jointly-trained perception branch.")
+        if _w_map > 0.0:
+            _mlab = batch["map_label"].to(device)
+            _msel = _mlab.nonzero(as_tuple=False).flatten()
+            extra["map_n_windows"] = float(_mlab.shape[0])
+            extra["map_n_labelled"] = float(int(_mlab.sum()))
+            if int(_mlab.sum()):
+                # ⛔⛔ D-3 (MEASURED 2026-09-22): `map_seen` is a CLIP-LIFETIME mask.
+                # 90.088 % of the 590 cells outside the rig's ±60° at EVERY instant are
+                # labelled `seen`; 2,170,570 of 19,647,460 supervised cells (11.048 %)
+                # sit on cells `BEVLift.forward` has zeroed and replaced with a learned
+                # `unobserved` constant -- asking the head to name a class from it.
+                _mvalid = _pout.get("map_valid")
+                if _mvalid is not None and getattr(model, "_map_lift_valid_mask", True):
+                    _mvalid = _mvalid.index_select(0, _msel)
+                else:
+                    _mvalid = None
+                _mrow = _perc.map_loss_row(
+                    _pout["map_logits"].index_select(0, _msel),
+                    batch["map_frac"].to(device).index_select(0, _msel),
+                    batch["map_seen"].to(device).index_select(0, _msel),
+                    lift_valid=_mvalid)
+                loss = loss + _w_map * _mrow["loss"]
+                extra["map"] = _mrow["loss"]
+                # ⭐ BOTH counts, BEFORE `n_map_cells` ON PURPOSE:
+                # `test_map_iou_drivable.py` measures a CHARACTER distance from that
+                # line to `map_iou_drivable`; text inserted before it costs no headroom.
+                extra["n_map_cells_seen"] = _mrow["n_map_cells_seen"]
+                extra["n_map_cells_unobserved"] = _mrow["n_map_cells_unobserved"]
+                extra["n_map_cells"] = _mrow["n_map_cells"]
+                # ---- occupancy quality, in a form a collision gate can use --- #
+                # ⛔ A SOFT CE IS NOT A QUALITY READ. `map` falls monotonically
+                # while telling nobody whether the DRIVABLE mask is right, and a
+                # collision gate needs exactly that mask. MEASURED 2026-09-18:
+                # the no-information floor -- predict drivable everywhere -- is
+                # IoU **0.3412** over 10,068,274 seen cells, so an IoU below that
+                # is worse than a constant, and one near it is PREVALENCE rather
+                # than skill (`…/2026-09-18-occupancy-floor/`).
+                # ⭐ Computed from the SAME tensors that feed the loss, so the
+                # `map` value in this row is the instrument check: if the loss
+                # matches a banked run and the IoU does not, the IoU is wrong.
+                # ⭐ Thresholded the SAME way on both sides (>= 0.5 on the GT
+                # fraction and on the softmax probability) -- a prediction scored
+                # by argmax against a GT scored by threshold is two rules.
+                # ⚠️ ALWAYS LOGGED, never behind a flag: the D9 DAC defect hid for
+                # 600 steps x 3 arms because its term was not in the key list.
+                with torch.no_grad():
+                    _dch = _sem_map.CHANNELS.index("drivable")
+                    _sn = batch["map_seen"].to(device).index_select(0, _msel)
+                    if _mvalid is not None:      # SAME CELL SET AS THE LOSS
+                        _sn = _sn & _mvalid
+                    _gt = (batch["map_frac"].to(device).index_select(0, _msel)[:, _dch]
+                           >= 0.5) & _sn
+                    _pr = (_pout["map_logits"].index_select(0, _msel)
+                           .softmax(dim=1)[:, _dch] >= 0.5) & _sn
+                    _inter = float((_gt & _pr).sum())
+                    _union = float((_gt | _pr).sum())
+                    extra["map_iou_drivable"] = _inter / _union if _union else 0.0
+                    extra["map_pred_drivable_frac"] = (
+                        float(_pr.sum()) / float(_sn.sum()) if float(_sn.sum()) else 0.0)
+                    extra["map_gt_drivable_frac"] = (
+                        float(_gt.sum()) / float(_sn.sum()) if float(_sn.sum()) else 0.0)
+                    # ⛔ AND A THRESHOLD-FREE COMPANION, because the IoU above is
+                    # BLIND TO AN UNDER-CONFIDENT HEAD. MEASURED 2026-09-18: at
+                    # ImageNet init the softmax is ~1/9 everywhere, NOTHING crosses
+                    # 0.5, and the IoU reads EXACTLY 0.0 -- correct, but it would
+                    # read 0.0 just the same for a head that had learned the shape
+                    # and stayed at 0.45. The mean predicted drivable fraction on
+                    # seen cells moves continuously from ~0.111 toward the GT's
+                    # ~0.355, so it shows progress the IoU cannot.
+                    # ⇒ QUOTE THEM TOGETHER. The IoU says "usable by a gate yet?";
+                    # this says "is it learning at all?", and they answer
+                    # different questions.
+                    _prob = (_pout["map_logits"].index_select(0, _msel)
+                             .softmax(dim=1)[:, _dch])
+                    extra["map_pred_drivable_prob_mean"] = (
+                        float((_prob * _sn).sum()) / float(_sn.sum())
+                        if float(_sn.sum()) else 0.0)
+            else:
+                # ⛔ A COUNTED ZERO, never an absent key. `map = 0.0` with
+                # `n_map_cells = 0` is "no window in this batch had a label";
+                # a missing key would read as "the head is off".
+                extra["map"] = out["fmap_s16"].sum() * 0.0
+                extra["n_map_cells"] = 0.0
+        if _w_b3d > 0.0:
+            _b3_keep = batch.get("agent_label")
+            _b3_n = (int(_b3_keep.sum()) if _b3_keep is not None
+                     else int(batch["agent_valid"].shape[0]))
+            extra["box3d_n_windows"] = float(batch["agent_valid"].shape[0])
+            extra["box3d_n_labelled"] = float(_b3_n)
+            if _b3_n:
+                _sel3 = (_b3_keep.to(device).nonzero(as_tuple=False).flatten()
+                         if _b3_keep is not None else
+                         torch.arange(batch["agent_valid"].shape[0],
+                                      device=device))
+                _z = batch.get("agent_zh_mask")
+                _t3 = {
+                    "box": batch["agent_box"].to(device),
+                    "yaw": batch["agent_yaw"].to(device),
+                    "cls": batch["agent_cls"].to(device),
+                    "valid": batch["agent_valid"].to(device),
+                    "occ": batch.get("agent_occ",
+                                     torch.full_like(batch["agent_yaw"], -1.0)
+                                     ).to(device),
+                    "rates": batch.get(
+                        "agent_rates",
+                        torch.zeros(*batch["agent_yaw"].shape, 3)).to(device),
+                    "rates_mask": batch.get(
+                        "agent_rates_mask",
+                        torch.zeros_like(batch["agent_valid"])).to(device),
+                    # ⛔ An absent 3-D label is a MASK, never a zero. With no
+                    # --join3d this is all-False and `box3d_set_loss` reports
+                    # `n["z"] == 0` — the 2-D total EXACTLY, by its own test.
+                    "cz": batch.get(
+                        "agent_cz",
+                        torch.zeros_like(batch["agent_yaw"])).to(device),
+                    "h": batch.get(
+                        "agent_h",
+                        torch.zeros_like(batch["agent_yaw"])).to(device),
+                    "zh_mask": (torch.zeros_like(batch["agent_valid"])
+                                if _z is None else _z).to(device)}
+                _t3 = {k: v.index_select(0, _sel3) for k, v in _t3.items()}
+                # refcv7 A9 R2: `select_slots` also narrows the per-layer "aux" list.
+                _s3 = _slot_presence.select_slots(_pout["box_slots"], _sel3,
+                                                  int(_b3_keep.shape[0])) \
+                    if _b3_keep is not None else _pout["box_slots"]
+                _vis3 = _vis1_batch_block(model, batch, device, _b3_keep)
+                # ⛔⛔ D-1/D-2 (MEASURED 2026-09-22 on v7-B1, 28,958,699 boxes):
+                # until 2026-09-23 this path applied NO field cut, so 59.805 % of its
+                # targets were outside the camera and 50.038 % were BEHIND THE EGO, and
+                # `match_slots`' nearest-N then spent 50.076 % of its query slots there.
+                _brow = _perc.box3d_loss_row(
+                    _s3, _t3,
+                    cls_class_weight=getattr(model, "_cls_class_weight", None),
+                    visible_filter=bool(getattr(model, "_box3d_visible_filter", True)),
+                    presence_loss=str(_br.cfg.presence_loss), vis1=bool(_br.cfg.vis1),
+                    vis=_vis3)
+                loss = loss + _w_b3d * _brow["loss"]
+                if _vis3 is not None and (bool(log_metrics) or not model.training):
+                    # ⭐ refcv7 A9 P0: LOGGING_SPEC_BOX §1 census every row; the pack itself in
+                    # EVAL mode (pooled by the eval loop). The Hungarian set is only needed there.
+                    _pk_b3 = _det_metrics.window_packs(
+                        _s3, _t3, _vis3,
+                        presence_cost=("focal" if str(_br.cfg.presence_loss) == "focal"
+                                       else "sigmoid"),
+                        episode_ids=(batch["agent_ep"].index_select(
+                            0, _sel3.to(batch["agent_ep"].device))
+                            if "agent_ep" in batch else None),
+                        cls_weight=getattr(model, "_cls_class_weight", None),
+                        with_match=not model.training,
+                        # refcv8 WP-C I2: EVAL packs only, and only with --det-zh-trust (default: the tip's pack)
+                        with_zh_range=(bool(getattr(model, "_det_zh_range", False))
+                                       and not model.training))
+                    extra.update(_det_metrics.train_row_keys(_pk_b3, "box3d"))
+                    if not model.training:
+                        extra["_det_pack_box3d"] = _pk_b3
+                extra["box3d"] = _brow["loss"]
+                for _k3, _v3 in _brow.items():
+                    if _k3 != "loss":
+                        extra[_k3] = _v3
+            else:
+                extra["box3d"] = out["fmap_s16"].sum() * 0.0
+                extra["box3d_n_z"] = 0.0
+
+    # ---- refcv7 NEW-2 (SPEC_REFCV7 §6.2, §11): THE map, at 10 cm ------------ #
+    # ⛔ ABSENT from the graph when the branch is not built (`None` -> nothing is
+    # added, nothing logged); with it built every missing input REFUSES. Under A6
+    # there is no 0.5 m map term to sit beside it (`--w-map 0` is pinned).
+    # ⭐ step-cost lever 2: per-class signal on LOGGED train steps (and always in eval)
+    _mh_term = _map_hires_loss(model, out, batch, device, extra,
+                               with_metrics=bool(log_metrics) or not model.training)
+    if _mh_term is not None:
+        loss = loss + _mh_term
+    return {"loss": loss, **extra}
 
 
 # ============================================================================
@@ -9172,7 +9581,11 @@ def train(args) -> dict:
     if args.graft_lan or args.goal_str:
         cfg.core.lan = refc.LanConfig(k=len(args.lan_arclengths))
 
-    model = v3.RefCV3Model(cfg).to(device)
+    _r9rig_on = bool(getattr(args, "r9_perc_rig", False))      # refcv9 C7: the E1 perception-only rig (OFF: nothing)
+    if _r9rig_on:
+        _r9rig = _r9rig_mod
+        _r9rig.pin_args(args)
+    model = (v3.RefCV3Model(cfg, perc_rig=True) if _r9rig_on else v3.RefCV3Model(cfg)).to(device)
     # refcv5: the two loss weights travel ON the model, because
     # `compute_losses_v3(model, batch, device, ...)` has no `args`. PLAIN
     # attributes, never buffers -- they must not enter state_dict and change
@@ -10380,7 +10793,8 @@ def train(args) -> dict:
             _init_stamp = {"path": str(args.init_from), "applied": False,
                            "why": "resumed this run's own ckpt.pt (resume wins)"}
         else:
-            _init_stamp = dict(r8train.warm_start_from(model, args.init_from), applied=True)
+            _init_stamp = dict((_r9rig.warm_start_perc_rig if _r9rig_on else r8train.warm_start_from)(model, args.init_from),
+                               applied=True)
             print("[v3] warm start from %s (md5 %s, source step %s): %d keys loaded, %d new refcv8 keys, "
                   "optimiser fresh" % (args.init_from, _init_stamp["md5"][:8], _init_stamp["source_step"],
                                         _init_stamp["n_loaded"], _init_stamp["n_new_refcv8_keys"]), flush=True)
@@ -12737,6 +13151,11 @@ def build_parser() -> argparse.ArgumentParser:
                          "near-field corridor (x 0-20 m, |y| < 3 m) of the 10 cm head's p_sidewalk + p_edge. 0 (the "
                          "default) = no term, no key, the tip's graph. Logged as `map_fp` every training step.")
     g9 = ap.add_argument_group("refcv9 R9-PF (clean-split, regime-factored progress head; REFCV9_INMODEL_DESIGN.md)")
+    g9.add_argument("--r9-perc-rig", action="store_true",
+                    help="refcv9 C7 (REFCV9_DESIGN 4.3): the E1 PERCEPTION-ONLY rig -- init from refcv8 EMA-48,852 via "
+                         "--init-from (named skip list tanitad/refs/refcv9_perc_rig.RIG_SKIPPED_MODULES), the NEWEST window "
+                         "row only (K = 3 frames), planner / tactical modules NOT BUILT, losses = box3d / agent / map_hires "
+                         "at the argv's weights. Planner flags are REFUSED. Default OFF: the tip's build, forward and loss.")
     g9.add_argument("--r9-progress-head", action="store_true",
                     help="build the R9-PF head: [z_tac.detach(); 9 t0 scalars] -> a 3-way lon decision + one arc-length "
                          "profile per decision; at eval the SELECTED path is re-timed to the decided profile before the "
