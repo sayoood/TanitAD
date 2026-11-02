@@ -647,6 +647,65 @@ def harness_build_argv(launch_argv: list) -> tuple:
                               "decides whether the launch path needs it (Master Mind 2026-09-27)")}
 
 
+def rig_eval_dataset(L, cfg, args, config: dict, *, dataset_cls=None):
+    """refcv9 E1 rig (``--r9-perc-rig``): the TRAIN dataset the RIG reads -> (dataset, episodes, record).
+
+    ``L.build_eval_dataset`` (the VENDORED audit loader, pinned by ``AUDIT_LOADER_BLOB`` and left untouched) REFUSES an
+    argv with no ``--eval-labels`` ("the run's argv has no --eval-labels"), and the rig argv carries no ``--v7-labels``
+    by design: ``train()`` builds the rig's dataset with no tactical / nav / speed label and calls ``enable_clip_clock``
+    only under ``--v7-labels``. This is that loader's body MINUS its label block (v7 labels, label clock, nav,
+    max-speed, tactical-goal targets), taken line for line, plus ``train()``'s ``ds.newest_row_only`` (refcv9 S1: the
+    rig's loader ships the ONE row it reads). The agent join, the 0.5 m map store and the 3-D join are the loader's.
+    The caller is OFF-path-safe: only ``TrainerAdapter._build_items`` under ``args.r9_perc_rig`` reaches it."""
+    if dataset_cls is not None:
+        raise SystemExit("[gbo] the rig dataset build takes no dataset_cls (--window-starts is a planner-rig lever)")
+    if bool(getattr(args, "graft_lan", False) or getattr(args, "goal_str", None)):
+        raise SystemExit("[gbo] --graft-lan / --goal-str build a planner-side dataset the rig does not read")
+    from tanitad.data.v2_dataset import build_v2_providers
+    tr = L.trainer()
+    rec: dict = {"rig": True}
+    kw = dict(window=cfg.core.window, max_horizon=20, channels=cfg.core.encoder.in_channels)
+    e_eps = build_v2_providers([args.eval_cache], lru_size=args.v2_lru)
+    e_ds = tr.V3Dataset(e_eps, **kw)
+    u8 = bool(getattr(args, "u8_batches", False))
+    e_ds.u8_frames = u8
+    e_ds.newest_row_only = u8                      # train(): bool(_r9rig_on and u8)
+    rec["labels"] = None
+    rec["label_clock"] = ("NOT ATTACHED: the rig reads no v7 label (train() calls enable_clip_clock only under "
+                          "--v7-labels); the box labels come from the agent join")
+    if getattr(args, "agent_join", None):
+        from train_p8_occupancy import JoinFileReader as _JFR
+        pad = int(((config.get("agent_join_stats") or {}).get("train") or {}).get("agent_pad", 0))
+        if pad <= 0:
+            raise SystemExit("[gbo] config carries no train agent_pad")
+        t_j = time.time()
+        _e_rd = _JFR(args.agent_join, episode_ids={int(e.episode_id) for e in e_eps},
+                     with_rates=not bool(getattr(args, "agent_join_no_rates", False)),
+                     with_track_ids=bool(getattr(args, "join3d", None)))
+        rec["agent_join"] = e_ds.enable_agent_join(
+            _e_rd, pad=pad, allow_legacy_ids=bool(getattr(args, "agent_join_allow_legacy_ids", False)))
+        rec["agent_join"]["pad_source"] = "config.json agent_join_stats.train.agent_pad"
+        rec["agent_join"]["load_s"] = round(time.time() - t_j, 1)
+    if getattr(args, "map_gt_root", None) or getattr(args, "join3d", None):
+        _e_clip, _e_ns = tr._clip_table_for_caches([args.eval_cache])
+        if getattr(args, "map_gt_root", None):
+            rec["map_gt"] = e_ds.enable_map_gt(
+                tr._perception_targets.MapGTStore(Path(args.map_gt_root),
+                                                  max_open=int(getattr(args, "map_lru", 4) or 4)),
+                _e_clip, _e_ns, min_coverage=getattr(args, "map_min_coverage", None))
+        if getattr(args, "join3d", None) and e_ds.agent_join is not None:
+            if e_ds.map_clip_of_ep is None:
+                e_ds.map_clip_of_ep, e_ds.map_n_stack = _e_clip, _e_ns
+            t_j = time.time()
+            rec["join3d"] = e_ds.enable_join3d(tr.require_join3d(
+                tr._agent_cuboid.open_join3d(args.join3d, clips=set(_e_clip.values())),
+                args.join3d, len(set(_e_clip.values())), split="eval"))
+            rec["join3d"]["load_s"] = round(time.time() - t_j, 1)
+    rec["n_episodes"] = len(e_eps)
+    rec["n_windows"] = len(e_ds)
+    return e_ds, e_eps, rec
+
+
 class TrainerAdapter:
     """The refcv7 LAUNCH box path: the model the launch argv builds (seed 0, fresh -- ImageNet trunk init, no
     checkpoint), the 16 TRAIN windows through the trainer's dataset (the audit loader's recipe with the TRAIN
@@ -738,8 +797,11 @@ class TrainerAdapter:
                         super().__init__(*aa, **kk)
                         self.window_starts_stats = _ltr.restrict_window_starts(self, ws)
                 ds_kw["dataset_cls"] = _LaunchWindows
-            e_ds, e_eps, self.dataset_record = L.build_eval_dataset(None, cfg, a_loader, self.config,
-                                                                    with_perception_targets=True, **ds_kw)
+            if bool(getattr(a, "r9_perc_rig", False)):       # refcv9 E1 rig; OFF: the line below, unchanged
+                e_ds, e_eps, self.dataset_record = rig_eval_dataset(L, cfg, a_loader, self.config, **ds_kw)
+            else:
+                e_ds, e_eps, self.dataset_record = L.build_eval_dataset(None, cfg, a_loader, self.config,
+                                                                        with_perception_targets=True, **ds_kw)
             if ds_kw:
                 self.dataset_record["window_starts"] = e_ds.window_starts_stats
             if spd_all_unknown and getattr(a, "max_speed_input_v6", False):
@@ -813,7 +875,12 @@ class TrainerAdapter:
         tr._check_anchor_artifact_against_cfg(art, cfg, a)
         if a.graft_lan or a.goal_str:
             cfg.core.lan = refc.LanConfig(k=len(a.lan_arclengths))
-        m = v3.RefCV3Model(cfg).to(dev)
+        # refcv9 C7 / E1 rig (``--r9-perc-rig``): train() pins the args, then builds ``RefCV3Model(cfg, perc_rig=True)`` (no
+        # planner / tactical module). The replay does exactly that; OFF (the flag absent) is the original single line.
+        rig_on = bool(getattr(a, "r9_perc_rig", False))
+        if rig_on:
+            tr._r9rig_mod.pin_args(a)
+        m = (v3.RefCV3Model(cfg, perc_rig=True) if rig_on else v3.RefCV3Model(cfg)).to(dev)
         m._w_agent = float(getattr(a, "w_agent", tr.AGENT_WEIGHT_DEFAULT))
         m._w_bev_aux = float(getattr(a, "w_bev_aux", 0.0))
         m._bev_shuffle = bool(getattr(a, "bev_aux_shuffle", False))
@@ -899,6 +966,7 @@ class TrainerAdapter:
         from tanitad.train import declared_vs_built as dvb
         bad = list(dvb.check(m, a))
         self.dvb_mismatches = [str(x) for x in bad]
+        self.rig_record = tr._r9rig_mod.assert_rig_built(m) if rig_on and not bad else None
         if bad:
             raise SystemExit("[gbo] the replayed build is NOT the declared launch model:\n  - "
                              + "\n  - ".join(self.dvb_mismatches))
@@ -1094,6 +1162,8 @@ def main(argv=None) -> int:
         rec["check_build_optimizer_vs_trainer_clip"] = {
             "harness": CLIP_NORM, "trainer": trainer_clip_literal((SCRIPTS / "refc_v3_train.py").read_text(
                 encoding="utf-8"))}
+        if getattr(ad, "rig_record", None):
+            rec["rig"] = ad.rig_record
         rec["check_build"] = {"dvb_mismatches": ad.dvb_mismatches,
                               "box_decoder_params": int(sum(p.numel() for p in br.box_dec.parameters())),
                               "box_memory_params": int(sum(p.numel() for p in br.box_mem.parameters())),
@@ -1140,6 +1210,8 @@ def main(argv=None) -> int:
             rec["C4_step0"] = res["rows"][0]
         rec["arms"][arm] = res
         rec["dvb_mismatches"] = getattr(ad, "dvb_mismatches", [])
+        if getattr(ad, "rig_record", None):
+            rec["rig"] = ad.rig_record
         Path(a.out).write_text(json.dumps(rec, indent=1, default=str), encoding="utf-8")
         log(f"arm {arm}: {res['verdict']} ({res['wall_s']} s, {res['s_per_step']} s/step)")
     main_ok = rec["arms"].get("main", {}).get("verdict") == "PASS"
