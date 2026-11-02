@@ -41,7 +41,7 @@ C1 = json.loads((RUNS / "r9e1_C1.argv.json").read_text(encoding="utf-8"))["argv"
 R8_LAUNCH = json.loads((RUNS / "refcv8-r101-s0.argv.json").read_text(encoding="utf-8"))["argv"]
 THOR_INIT = "/home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt"
 SHIPPED_EMA_MD5 = "b4364029b68f29a33eeb4aebbbbd002b"
-MASKS = "/home/nvidia/r8ns/r9e1/launch_tree/stack/tanitad/configs/refcv8_join_defect_masks.json"
+MASKS = "/home/nvidia/r8ns/r9e1/launch_tree/stack/tanitad/configs/refcv8_join_label_defects_train4572.json"
 
 
 def _rig_module():
@@ -51,13 +51,13 @@ def _rig_module():
 
 @pytest.fixture(scope="module")
 def conformant(tmp_path_factory):
-    """C0 / C1 (A2's committed launch argvs) + `--join-defect-masks` (refcv8's perception flag, which they omit -- see the
-    HANDOFF) + a stand-in for the shipped EMA model, whose md5 the profile is told to expect."""
+    """C0 / C1 (the committed launch argvs, which carry `--join-defect-masks` since MM decision (a), 2026-11-02) + a stand-in
+    for the shipped EMA model, whose md5 the profile is told to expect."""
     tmp = tmp_path_factory.mktemp("e1rig")
     init = tmp / "ckpt_ema_48852.pt"
     init.write_bytes(b"stand-in for the shipped refcv8 EMA-48,852")
     prof = dict(RIG, init_pin=dict(RIG["init_pin"], init_from_md5=hashlib.md5(init.read_bytes()).hexdigest()))
-    arms = {name: LG.set_flag(a, "--join-defect-masks", [MASKS]) for name, a in (("C0", C0), ("C1", C1))}
+    arms = {"C0": list(C0), "C1": list(C1)}                  # as committed: no flag is injected any more
     return arms, prof, [("/home/nvidia/r8ns/ckpt", str(tmp))], init
 
 
@@ -444,3 +444,245 @@ def test_the_profile_is_built_by_subtraction_and_registered_only_with_the_rig_mo
     # refcv8's own table is untouched by the rig profile (the dict is copied, not shared)
     assert R8["required_values"]["--steps"] == "48852" and R8["live_dead_admitted"] != ()
     assert R8["forbidden_levers"][-1][0] == ("--r9-perc-rig",)
+
+
+
+# ============================================================================================================ #
+# phase B (MM decisions of 2026-11-02): (a) the join-defect masks are in the argvs, (d) the cost rule reads STEADY steps #
+# ============================================================================================================ #
+import r9_e1_make_argv as M  # noqa: E402  (scripts/ is on sys.path)
+
+MASKS_MD5 = "b2591cb2ec4f4089831124e4738a961c"
+MASKS_FILE = ROOT / "tanitad" / "configs" / "refcv8_join_label_defects_train4572.json"
+
+
+def test_a_C0_and_C1_carry_refcv8s_join_defect_masks_inside_the_launch_tree():
+    want = "/home/nvidia/r8ns/r9e1/launch_tree/stack/tanitad/configs/refcv8_join_label_defects_train4572.json"
+    assert MASKS == want == M.LAUNCH_TREE + "/" + M.JOIN_MASKS_REL
+    for name, a in (("C0", C0), ("C1", C1)):
+        assert LG.flag_values(a, "--join-defect-masks") == [want] and a.count("--join-defect-masks") == 1, name
+    # the file the launch tree ships IS refcv8's file (md5 pinned in the gate's own why-line and in the builder)
+    assert hashlib.md5(MASKS_FILE.read_bytes()).hexdigest() == MASKS_MD5 == M.JOIN_MASKS_MD5
+    assert MASKS_MD5 in R8["required_flags_why"]["--join-defect-masks"] and "--join-defect-masks" in RIG["required_flags"]
+    assert "--join-defect-masks" in RIG["model_input_flags"]           # G-HYG / G-DVB / G-EVAL OPEN it for real (not a sentinel)
+
+
+def test_a_RED_the_argv_without_the_mask_is_refused_and_so_is_a_tampered_or_foreign_file(conformant, tmp_path):
+    arms, prof, pmap, _ = conformant
+    ok, _p = _rules(prof, arms["C0"], pmap)
+    assert ok == []                                                       # control: the committed argv has no refusal
+    bare = LG.set_flag(arms["C0"], "--join-defect-masks", None)
+    assert "--join-defect-masks" not in bare
+    refused, _p = _rules(prof, bare, pmap)
+    assert any("--join-defect-masks" in r for r in refused), refused      # the profile REQUIRES it
+    # the builder: refuses a tampered copy of the file, a base argv naming another file, a launch tree that is not on Thor
+    bad = tmp_path / "masks.json"
+    bad.write_bytes(MASKS_FILE.read_bytes() + b" ")
+    with pytest.raises(SystemExit):
+        M.check_join_masks([], repo_file=bad)
+    assert M.check_join_masks([], repo_file=MASKS_FILE) == MASKS_MD5
+    with pytest.raises(SystemExit):
+        M.check_join_masks(["--join-defect-masks", "/x/refcv8_join_label_defects.json"], repo_file=MASKS_FILE)
+    for tree in ("C:/Program Files/Git/home/nvidia/r8ns/r9e1/launch_tree", "relative/launch_tree"):
+        with pytest.raises(SystemExit):
+            M.build(["--w-agent", "1.0"], seed=0, out="/o", launch_tree=tree)
+    built = M.build(["--w-agent", "1.0"], seed=0, out="/o", launch_tree="/home/nvidia/r8ns/x/launch_tree/")
+    assert LG.flag_values(built, "--join-defect-masks") == ["/home/nvidia/r8ns/x/launch_tree/" + M.JOIN_MASKS_REL]
+
+
+def _steady(n, base=4.7, spike_at=None, spike=195.0):
+    t = [0.0]
+    for j in range(n - 1):
+        t.append(t[-1] + (base + spike if j == spike_at else base))
+    return t
+
+
+def test_d_step_cost_reads_the_steady_step_not_the_eval_and_ckpt_row():
+    # S1's measured rig: steady 4.70 s/step; its 50-step smoke carried an eval + a ckpt save at step 25 and read 9.753 s/step
+    t = _steady(60, spike_at=24)                                           # step 25's work sits in interval 24
+    polluted = LG.step_cost(t, 10)                                         # deliberate regression: no exclusion -> a false PI
+    assert polluted["s_per_step_mean"] > 8.0 > 4.7
+    fixed = LG.step_cost(t, 10, nontrain_rows=[25])
+    assert fixed["s_per_step_mean"] == 4.7 and fixed["s_per_step_max"] == 4.7
+    assert fixed["nontrain_intervals_excluded"] == 3 and fixed["nontrain_rows"] == [25] and "reading_rows" not in fixed
+    for j in (23, 25):                                                     # the work can sit on either side of the timestamp
+        assert LG.step_cost(_steady(60, spike_at=j), 10, nontrain_rows=[25])["s_per_step_mean"] == 4.7
+    # control: a slow interval NOT on a listed row is real cost and is kept
+    assert LG.step_cost(_steady(60, spike_at=40), 10, nontrain_rows=[25])["s_per_step_mean"] > 8.0
+    # without rows the function is the tip's: same keys, no extras
+    assert set(LG.step_cost(t, 10)) == {"n_intervals", "n_used", "warmup_skipped", "s_per_step_mean", "s_per_step_median",
+                                        "s_per_step_max"}
+
+
+def test_d_nontrain_rows_literals_follow_the_trainers_own_conditions():
+    nt = LG.nontrain_rows
+    assert nt(C0) == list(range(500, 4000, 500)) and nt(C1) == nt(C0)       # eval + ckpt every 500 (7 rows; the final step is out)
+    assert nt(LG.smoke_argv(C0, 100, 50)[0]) == []                          # the gate's 100-step smoke: only the final step works
+    assert nt(["--steps", "50", "--eval-every", "25", "--eval-cache", "/x", "--save-every", "25"]) == [25]
+    assert nt(["--steps", "50", "--eval-every", "10", "--save-every", "0"]) == []          # eval needs --eval-cache
+    assert nt(["--steps", "1200"]) == [500, 1000]                           # --save-every defaults to 500
+    assert nt(["--steps", "6000", "--save-every", "0"]) == [5000]           # MILESTONES
+    assert nt(["--steps", "100", "--save-every", "0", "--snapshot-steps", "0,30,100"]) == [30]
+    assert nt(["--steps", "50", "--eval-every", "20", "--eval-cache", "/x", "--save-every", "30"]) == [20, 30, 40]
+    assert nt([]) == [] and nt(["--steps", "x"]) == []
+
+
+def test_d_the_pinned_conditions_are_the_trainers_current_source():
+    """The rule copies three trainer conditions; a trainer edit that changes one must turn this RED, not silently skew the cost."""
+    T = pytest.importorskip("refc_v3_train")
+    assert tuple(T.MILESTONES) == LG.TRAINER_MILESTONES
+    src = (ROOT / "scripts" / "refc_v3_train.py").read_text(encoding="utf-8")
+    for needle in ("if step % args.save_every == 0 or step == args.steps:",
+                   "if eval_dl is not None and (step % args.eval_every == 0",
+                   "if step in MILESTONES or step in _nt_snaps:",
+                   'ap.add_argument("--save-every", type=int, default=500)',
+                   'ap.add_argument("--eval-every", type=int, default=0,'):
+        assert needle in src, needle
+
+
+def test_d_judge_new2_live_does_not_send_a_steady_rig_step_to_the_PI_because_of_an_eval_row():
+    p = RIG
+    h = p["map_hires"]
+    ref = float(h["cost_ref_s_per_step"])
+    assert abs(float(h["cost_max_ratio"]) * ref - 8.0) < 1e-9               # the > 8.0 s/step PI-DECISION bar
+    argv = ["--steps", "60", "--eval-every", "25", "--eval-cache", "/x", "--save-every", "25"]
+    run = {"fwd_train_calls": 60, "fmap_hits": 60, "hires_first": ([], {}), "step_times": _steady(60, spike_at=24),
+           "cuda_max_mem_gb": 15.84}
+    grads = {"groups": [{"group": "core.perception.map_hires_head", "numel": 5, "params": 1, "nz_params": 1}]}
+    _r, needs_pi, det = LG.judge_new2_live(p, run, {}, argv, grads, cuda=True, approval=None)
+    assert not needs_pi and det["cost"]["s_per_step_mean"] == 4.7 and det["cost"]["verdict"] == "within +25 %"
+    assert det["cost"]["nontrain_rows"] == [25, 50]                          # steps 25 and 50 of the 60-step smoke
+    # RED arm: the same measurement with the schedule hidden from the rule (the pre-fix behaviour) IS a PI-DECISION
+    _r, needs_pi0, det0 = LG.judge_new2_live(p, run, {}, ["--steps", "60"], grads, cuda=True, approval=None)
+    assert needs_pi0 and det0["cost"]["s_per_step_mean"] > 8.0
+
+
+
+# ============================================================================================================ #
+# phase B, decision (b): G-CLOCK stays BINDING on the rig -- it times the labels the rig reads, against the sidecar #
+# ============================================================================================================ #
+G0, DT, NS = 0.05, 0.1006666, 3
+
+
+def _true(r):
+    return G0 + (r + NS - 1) * DT
+
+
+def _recs(shift=0.0, n=60, cid="c1", noise=0.004):
+    return [(cid, r, _true(r) + shift + (noise if r % 2 else -noise)) for r in range(n)]
+
+
+def _windows(recs, table=None, ns=None):
+    sid_of = {"c1": 1, "c2": 2}.get
+    return list(LG.rig_join_clock_windows(recs, sid_of, {1: (G0, DT)} if table is None else table, {1: NS, 2: NS} if ns is None else ns))
+
+
+def _judge(recs, **kw):
+    w = _windows(recs, **kw)
+    n_clips = len({x[0] for x in w}) or 1
+    return LG.judge_clock_windows(w, 0.05, n_clips=n_clips, cap=0.01)
+
+
+def test_b_the_rig_clock_passes_an_aligned_join_and_FAILS_every_shifted_clock():
+    ok = _judge(_recs())
+    assert ok["n_windows"] == 60 and ok["n_violations"] == 0 and ok["legacy_control_violations"] == 60
+    assert LG.rig_clock_reasons("agent join", ok, 0.05, 0.01) == []
+    # deliberate-regression arms: a join whose registered time is a SHIFTED clock must FAIL, with its named reason
+    for shift in (-2 * DT + 0.0058, -DT, +DT, 0.2, -0.2):      # the first is the offset MEASURED on the refcv8 join (-0.1955 s)
+        r = _judge(_recs(shift=shift))
+        reasons = LG.rig_clock_reasons("agent join", r, 0.05, 0.01)
+        assert r["n_violations"] == 60 and any("more than 0.05 s" in x for x in reasons), (shift, reasons)
+    assert _judge(_recs(shift=0.04))["n_violations"] == 0              # inside the tolerance: no false alarm
+    assert _judge(_recs(shift=0.06))["n_violations"] == 60             # outside it: the bar is the committed 0.05 s
+
+
+def test_b_unverified_clips_zero_windows_and_a_blind_control_are_refused():
+    # a train clip the sidecar does not hold is UNVERIFIED (admitted only under the cap)
+    w = _windows(_recs() + _recs(cid="c2"), table={1: (G0, DT)})
+    r = LG.judge_clock_windows(w, 0.05, n_clips=2, cap=0.01)
+    assert r["n_unverified_clips"] == 1 and r["cap_ok"] is False
+    assert any("have no measured clock" in x for x in LG.rig_clock_reasons("3-D join", r, 0.05, 0.01))
+    # an eval-only clip of the shared train+eval join is not a train window; r < 0 (the pre-trim rows) are not labelled rows
+    assert _windows([("c2", 5, 1.0)], ns={1: NS}) == [] and _windows([("c1", -1, 0.0), ("c1", -2, 0.0)]) == []
+    empty = LG.judge_clock_windows([], 0.05, n_clips=1, cap=0.01)
+    assert any("ZERO labelled windows" in x for x in LG.rig_clock_reasons("agent join", empty, 0.05, 0.01))
+    # control: an instrument that reads 0 violations for the historical clock cannot see the defect it exists for
+    blind = dict(_judge(_recs()), legacy_control_violations=0)
+    assert any("control" in x for x in LG.rig_clock_reasons("agent join", blind, 0.05, 0.01))
+
+
+def test_b_join_records_are_streamed_from_both_formats_and_a_line_without_a_time_is_an_error(tmp_path):
+    import lzma
+    lines = ['{"clip_id":"a","frame":2,"frame_idx":0,"t_s":0.1234,"agents":[{"cx":1.0,"cy":2.0}]}',
+             '{"clip_id": "b", "frame_idx": 3, "t_s": -0.0327, "agents": []}',
+             '{"frame_idx": 4, "agents": [], "t_s": 9.5, "clip_id": "c"}']                    # key order the head regex does not know
+    p = tmp_path / "j.jsonl.xz"
+    with lzma.open(p, "wt", encoding="utf-8") as fh:
+        fh.write("\n".join(lines) + "\n")
+    assert list(LG.iter_join_records(p)) == [("a", 0, 0.1234), ("b", 3, -0.0327), ("c", 4, 9.5)]
+    assert list(LG.iter_join_records(p, limit=2)) == [("a", 0, 0.1234), ("b", 3, -0.0327)]
+    q = tmp_path / "j2.jsonl"
+    q.write_text('{"clip_id":"a","agents":[]}\n', encoding="utf-8")
+    with pytest.raises(LG.GateError):
+        list(LG.iter_join_records(q))
+
+
+class _Frames:
+    def __init__(self, i):
+        self.frame_idx = [i]
+
+
+class _Store:
+    def __init__(self, drop_offset=False, missing=()):
+        self.drop_offset, self.missing = drop_offset, set(missing)
+
+    def frames_for_windows(self, cid, rows, *, n_stack):
+        if cid in self.missing:
+            raise FileNotFoundError(cid)
+        return _Frames(rows[0] if self.drop_offset else rows[0] + n_stack - 1)
+
+
+def test_b_the_map_gt_leg_checks_the_raw_frame_key_and_catches_a_dropped_offset():
+    probes = [("c%d" % (i % 5), 10 + i, 3) for i in range(40)]
+    assert LG.rig_map_key_reasons(_Store(), probes)[0] == []
+    bad, det = LG.rig_map_key_reasons(_Store(drop_offset=True), probes)            # the +n_stack-1 dropped: labelled 2 rows LATE
+    assert det["n_wrong_raw_frame"] == 40 and any("raw frame other than" in x for x in bad)
+    r, d = LG.rig_map_key_reasons(_Store(), probes[:5])                            # too few answered probes: the leg read nothing
+    assert any("the map leg read nothing" in x for x in r)
+    r2, d2 = LG.rig_map_key_reasons(_Store(missing={"c0"}), probes)                # a clip without a GT file is counted, not failed
+    assert r2 == [] and d2["n_no_gt_file"] == 8 and d2["n_ok"] == 32
+
+
+def test_b_rig_clock_check_end_to_end_on_a_synthetic_corpus_and_the_job_is_keyed_on_the_rig(tmp_path, monkeypatch):
+    import lzma
+    from types import SimpleNamespace
+    from tanitad.data import v2_dataset as v2d
+    sid = v2d.stable_episode_id("clipA")
+    side = tmp_path / "side.jsonl"
+    side.write_text(json.dumps({"sid": sid, "grid_start_s": G0, "dt_s": DT}) + "\n", encoding="utf-8")
+    monkeypatch.setattr(v2d, "load_or_build_manifest",
+                        lambda *a, **k: {"clip_id": ["clipA"], "episode_uid": [sid], "n_stack": [NS]})
+
+    def join(shift, name):
+        p = tmp_path / name
+        with lzma.open(p, "wt", encoding="utf-8") as fh:
+            for r in range(80):
+                fh.write(json.dumps({"clip_id": "clipA", "frame": r + 2, "frame_idx": r, "t_s": round(_true(r) + shift, 4),
+                                     "agents": []}) + "\n")
+        return p
+    ctx = SimpleNamespace(options={})
+    args = lambda j: SimpleNamespace(clip_clock_sidecar=str(side), v2_cache="x", agent_join=str(j), join3d=str(j), map_gt_root=None)
+    ok, det = LG.rig_clock_check(ctx, None, args(join(0.0, "ok.jsonl.xz")), 0.05, 0.01)
+    assert ok == [] and det["agent join"]["n_violations"] == 0 and det["3-D join"]["n_windows"] == 80
+    assert det["map_gt"] == {"skipped": "no --map-gt-root in argv"}
+    # RED arm: the shifted-clock join (the offset MEASURED on the refcv8 join) FAILS both sources
+    bad, det2 = LG.rig_clock_check(ctx, None, args(join(-0.1955, "bad.jsonl.xz")), 0.05, 0.01)
+    assert len(bad) == 2 and all("more than 0.05 s" in x for x in bad), bad
+    assert det2["agent join"]["signed_err_s_quantiles"][0.5] == pytest.approx(-0.1955, abs=1e-4)
+    # no sidecar: the rig's labels cannot be timed
+    nos = LG.rig_clock_check(ctx, None, SimpleNamespace(clip_clock_sidecar=None, v2_cache="x"), 0.05, 0.01)[0]
+    assert len(nos) == 1 and "both needed" in nos[0]
+    # the job is keyed on the rig (inert when off): source-level pins of the branch
+    src = inspect.getsource(LG.job_clock)
+    assert 'rig_on = bool(getattr(args, "r9_perc_rig", False))' in src and "rig_clock_check(ctx, T, args, tol, cap)" in src
+    assert 'for split in (() if rig_on else ("train", "eval")):' in src and "elif not ref:" in src

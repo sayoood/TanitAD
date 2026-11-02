@@ -33,7 +33,8 @@ DROPPED = (
     "--refcv8", "--w-r8-cons", "--r8-n-alloc", "--r8-alloc-emit", "--r8-alloc-emit-start", "--w-r8-alloc-l1",
     "--w-r8-listwise", "--w-r8-sat", "--w-r8-subscore", "--r8-lat-prior-dropout", "--r8-v9-labels",
     "--r8-v9-labels-eval", "--r8-v9-md5", "--r8-v9-eval-md5", "--r8-v9-lat-variant", "--r8-nav-from-v9", "--r8-no-rc",
-    "--r8-nav-args-dropout", "--join-defect-masks", "--r8-speed-input", "--r8-speed-unknown-p", "--w-r8-v9-cons",
+    "--r8-nav-args-dropout", "--join-defect-masks",   # the latter is a PERCEPTION flag: re-added below, re-rooted (JOIN_MASKS_REL)
+    "--r8-speed-input", "--r8-speed-unknown-p", "--w-r8-v9-cons",
     "--grad-share-every", "--grad-share-terms", "--grad-share-at",
     "--b1-guard-ref-ap2m", "--b1-guard-step",
     "--conflict-every",              # the conflict detector is OFF (below): no g_traj exists in the rig
@@ -57,6 +58,16 @@ KEPT = (
 )
 
 INIT_FROM = "/home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt"
+
+#: ``--join-defect-masks`` (MM 2026-11-02, decision (a) on phase A's open issue): a PERCEPTION label fix, NOT a planner flag -- the
+#: TRAIN join reader drops ego-as-agent boxes and masks id-switch rows (trainer help, refc_v3_train.py), and refcv8 trained with
+#: it. The base argv's value (a path under refcv8's own launch tree) is dropped like ``--arm`` and ``build`` ALWAYS re-emits the
+#: flag, with the value re-rooted under the rig's launch tree
+#: (the path must resolve INSIDE the shipped launch tree: the gate's token binds the tree sha256, so the file's bytes are bound
+#: by the same token; ``r9w_ship.sh tree`` ships ``stack/tanitad/configs/``). The file's md5 must equal refcv8's.
+LAUNCH_TREE = "/home/nvidia/r8ns/r9e1/launch_tree"
+JOIN_MASKS_REL = "stack/tanitad/configs/refcv8_join_label_defects_train4572.json"
+JOIN_MASKS_MD5 = "b2591cb2ec4f4089831124e4738a961c"          # refcv8's file (launch_gate.py `--join-defect-masks` why-line)
 
 _WINDOWS_PATH = re.compile(r"^[A-Za-z]:[\/]")
 
@@ -87,9 +98,27 @@ def split_groups(argv):
     return out
 
 
+def join_masks_value(launch_tree: str = LAUNCH_TREE) -> str:
+    return _thor_path(launch_tree, "--launch-tree").rstrip("/") + "/" + JOIN_MASKS_REL
+
+
+def check_join_masks(base_argv, repo_file: "Path | None" = None) -> str:
+    """The rig's ``--join-defect-masks`` file IS refcv8's file: the base argv names it (same basename) and the repo copy that
+    ``r9w_ship.sh tree`` ships has refcv8's md5. Returns the md5. SystemExit otherwise."""
+    base_val = [v for f, v in split_groups(base_argv) if f == "--join-defect-masks"]
+    if base_val and Path(str(base_val[0][0]).replace("\\", "/")).name != Path(JOIN_MASKS_REL).name:
+        raise SystemExit("[r9-e1-argv] the base argv's --join-defect-masks %r is not %s" % (base_val[0], Path(JOIN_MASKS_REL).name))
+    f = repo_file or (Path(__file__).resolve().parents[2] / JOIN_MASKS_REL)
+    md5 = hashlib.md5(Path(f).read_bytes()).hexdigest()
+    if md5 != JOIN_MASKS_MD5:
+        raise SystemExit("[r9-e1-argv] %s has md5 %s, refcv8's join-defect-mask file is %s" % (f, md5, JOIN_MASKS_MD5))
+    return md5
+
+
 def build(base_argv, seed: int, out: str, steps: int = 4000, eval_every: int = 500, eval_batches: int = 8,
-          save_every: int = 500, log_every: int = 50, init_from: str = INIT_FROM) -> list:
+          save_every: int = 500, log_every: int = 50, init_from: str = INIT_FROM, launch_tree: str = LAUNCH_TREE) -> list:
     out, init_from = _thor_path(out, "--out"), _thor_path(init_from, "--init-from")
+    masks = join_masks_value(launch_tree)
     groups = split_groups(base_argv)
     unknown = [f for f, _ in groups if f not in DROPPED and f not in KEPT]
     if unknown:
@@ -98,6 +127,7 @@ def build(base_argv, seed: int, out: str, steps: int = 4000, eval_every: int = 5
     for f, vals in groups:
         if f in KEPT:
             argv += [f] + vals
+    argv += ["--join-defect-masks", masks]
     argv += ["--opt", "dd", "--r9-perc-rig", "--init-from", init_from, "--batch", "16", "--warmup", "200",
              "--steps", str(int(steps)), "--ema-decay", "0.999", "--lr", "1e-4", "--seed", str(int(seed)),
              "--conflict-detector", "off", "--eval-every", str(int(eval_every)), "--eval-batches", str(int(eval_batches)),
@@ -128,11 +158,13 @@ def main(argv=None) -> int:
     ap.add_argument("--eval-batches", type=int, default=8)
     ap.add_argument("--save-every", type=int, default=500)
     ap.add_argument("--log-every", type=int, default=50)
+    ap.add_argument("--launch-tree", default=LAUNCH_TREE, help="the shipped launch tree ON THOR (the join-defect-mask file lives in it)")
     ap.add_argument("--write", required=True)
     ap.add_argument("--no-pin-check", action="store_true")
     a = ap.parse_args(argv)
     base = json.loads(Path(a.base).read_text(encoding="utf-8"))["argv"]
-    out = build(base, a.seed, a.out, a.steps, a.eval_every, a.eval_batches, a.save_every, a.log_every)
+    check_join_masks(base)
+    out = build(base, a.seed, a.out, a.steps, a.eval_every, a.eval_batches, a.save_every, a.log_every, launch_tree=a.launch_tree)
     if not a.no_pin_check:
         check_against_pins(out)
     rec = {"schema": "r9e1-argv-v1", "arm": "r9e1_C%d" % a.seed, "seed": a.seed, "steps": a.steps, "argv": out,

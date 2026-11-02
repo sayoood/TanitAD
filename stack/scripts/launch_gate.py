@@ -5085,7 +5085,8 @@ def _apply_smoke_arm(ctx: Ctx, T, pat: _Patcher, argv: list[str] | None = None) 
         _say("arm: " + _drop_from_passthrough(pat, (key,), fallback_pop=False))
 
 
-def step_cost(step_times: list[float], warmup: int, exclude_rows: Iterable[int] = ()) -> dict:
+def step_cost(step_times: list[float], warmup: int, exclude_rows: Iterable[int] = (),
+              nontrain_rows: Iterable[int] = ()) -> dict:
     """s/step from the loop's own opt.step timestamps, after `warmup` intervals (compile, cuDNN
     autotune and loader warm-up are not the run's cost).
 
@@ -5093,19 +5094,69 @@ def step_cost(step_times: list[float], warmup: int, exclude_rows: Iterable[int] 
     reading is a ~16 min fp32 replay INSIDE one step; its wall-clock is the instrument's cost, recorded separately
     (`gs_*_s`), and must not enter the projected s/step the <= 10.5 cost gate reads. Step `r` (the row's step count)
     owns `step_times[r-1]`; the replay can sit on either side of that step's `opt.step` timestamp, so the intervals
-    r-2, r-1 and r (interval j = step_times[j+1] - step_times[j]) are dropped for each reading row."""
+    r-2, r-1 and r (interval j = step_times[j+1] - step_times[j]) are dropped for each reading row.
+
+    `nontrain_rows` (C12-E1 phase B, MM decision (d) 2026-11-02): the steps after which the trainer does NON-TRAINING work
+    inside the loop -- a checkpoint write and/or an in-run eval (`nontrain_rows()`, below). They run after `opt.step` and
+    before the next step's, so their wall-clock lands in an interval the cost rule would otherwise average in. MEASURED by S1
+    (`landed_hold_r9_speed/SPEED_CARD.md`): the steady rig step is ~4.70 s; the earlier 9.753 s/step READ the eval + ckpt save
+    at step 25 -- the PI-DECISION cost rule (> 8.0 s/step) must read STEADY steps. Same three-interval drop as a reading row
+    (the work can sit on either side of the async opt.step timestamp); recorded separately, so the evidence shows which
+    exclusion removed what."""
     iv = [b - a for a, b in zip(step_times, step_times[1:])]
     drop = {j for r in exclude_rows for j in (int(r) - 2, int(r) - 1, int(r))}
-    use = [v for j, v in enumerate(iv) if j >= warmup and j not in drop]
+    drop_nt = {j for r in nontrain_rows for j in (int(r) - 2, int(r) - 1, int(r))}
+    use = [v for j, v in enumerate(iv) if j >= warmup and j not in drop and j not in drop_nt]
     n_dropped = sum(1 for j in range(len(iv)) if j >= warmup and j in drop)
     extra = {"reading_intervals_excluded": n_dropped, "reading_rows": sorted(int(r) for r in exclude_rows)} \
         if exclude_rows else {}
+    if nontrain_rows:
+        extra["nontrain_intervals_excluded"] = sum(1 for j in range(len(iv)) if j >= warmup and j in drop_nt and j not in drop)
+        extra["nontrain_rows"] = sorted(int(r) for r in nontrain_rows)
     if not use:
         return {"n_intervals": len(iv), "n_used": 0, "s_per_step_mean": None, **extra}
     s = sorted(use)
     return {"n_intervals": len(iv), "n_used": len(use), "warmup_skipped": warmup,
             "s_per_step_mean": round(sum(use) / len(use), 4),
             "s_per_step_median": round(s[len(s) // 2], 4), "s_per_step_max": round(s[-1], 4), **extra}
+
+
+#: the trainer's fixed milestone checkpoints (`refc_v3_train.MILESTONES`, pinned by tests/test_launch_gate_e1rig.py against the source)
+TRAINER_MILESTONES = (5000, 15000, 20000, 30000)
+
+
+def nontrain_rows(argv: list[str], steps: int | None = None) -> list[int]:
+    """The steps r (1 <= r < steps) after which the trainer's loop does NON-TRAINING work, read off `argv` with the trainer's own
+    conditions (refc_v3_train.py, after `opt.step()` / `step += 1`):
+      * a checkpoint write   `step % --save-every == 0` (default 500), `step in MILESTONES`, `step in --snapshot-steps`
+      * the in-run eval      `step % --eval-every == 0`, only with `--eval-cache` and `--eval-every` > 0 (default 0 = off)
+    The FINAL step is not listed: its work comes after the last `opt.step` timestamp, so no interval contains it."""
+    def _int(flag: str) -> int:
+        v = flag_values(argv, flag)
+        try:
+            return int(v[0]) if v else 0
+        except ValueError:
+            return 0
+    try:
+        n = int(steps if steps is not None else ((flag_values(argv, "--steps") or ["0"])[0]))
+    except ValueError:
+        return []
+    if n <= 1:
+        return []
+    rows: set[int] = set(m for m in TRAINER_MILESTONES if m < n)
+    se = _int("--save-every") if has_flag(argv, "--save-every") else 500
+    if se > 0:
+        rows |= set(range(se, n, se))
+    ee = _int("--eval-every")
+    if ee > 0 and has_flag(argv, "--eval-cache"):
+        rows |= set(range(ee, n, ee))
+    ss = flag_values(argv, "--snapshot-steps")
+    if ss:
+        try:
+            rows |= {int(x) for x in str(ss[0]).split(",") if x.strip()}
+        except ValueError:
+            pass                      # malformed: the trainer's own refusal names it
+    return sorted(r for r in rows if 1 <= r < n)
 
 
 def gs_reading_rows(argv: list[str], steps: int | None = None) -> list[int]:
@@ -5252,7 +5303,7 @@ def judge_new2_live(prof: dict, run1: dict, config: dict | None, argv_local: lis
     else:
         reasons.append(f"NEW-2: {h['class_weights_flag']} {cw} is not a readable file")
     cost = step_cost(run1.get("step_times") or [], int(h["cost_warmup_steps"]),
-                     exclude_rows=gs_reading_rows(argv_local))
+                     exclude_rows=gs_reading_rows(argv_local), nontrain_rows=nontrain_rows(argv_local))
     cost["cuda_max_mem_gb"] = run1.get("cuda_max_mem_gb")
     cost["ref_s_per_step"] = h["cost_ref_s_per_step"]
     cost["max_ratio"] = h["cost_max_ratio"]
@@ -6423,6 +6474,173 @@ def judge_clock_windows(windows: Iterable[tuple], tol: float, *, n_clips: int,
             "unverified_clips": sorted(unver)[:40],
             "legacy_control_violations": n_ctl}
 
+# --------------------------------------------------------------------------------------------- #
+# G-CLOCK under the E1 rig (`--r9-perc-rig`): the clock of the labels the RIG reads                 #
+# --------------------------------------------------------------------------------------------- #
+#: MM decision (b), 2026-11-02 (C12-E1 phase B): the rig reads NO tactical label, so the v7-label G-CLOCK above has nothing to
+#: time (`_clock_split` returned `skipped`, and `job_clock` turns a skipped TRAIN split into a FAIL). G-CLOCK stays BINDING and
+#: is re-pointed at what the rig does read: the agent join and the 3-D join (both keyed by the provider row `frame_idx` = r, each
+#: record carrying `t_s`, the time the join builder REGISTERED that frame's pose onto the egomotion log -- an instrument that
+#: never read the clip-clock sidecar) and the map-GT frame key. The reference is the clip-clock sidecar (A16: the clock MEASURED
+#: from the 100 Hz log), by the trainer's own G3 rule `t_true = grid_start_s + (r + n_stack - 1) * dt_s`.
+#: Keyed on `args.r9_perc_rig`: INERT when the rig is off (every existing profile's job_clock path is unchanged).
+RIG_CLOCK_RULE = ("t_true(r) = grid_start_s + (r + n_stack - 1) * dt_s (clip-clock sidecar, the trainer's G3 rule); a join "
+                  "record is the label of provider row r = frame_idx, its time is its own `t_s`; |t_s - t_true| <= tol on EVERY "
+                  "labelled record of every train clip; the map-GT store's raw frame for window r is r + n_stack - 1")
+_RIG_JOIN_HEAD = re.compile(r'^\{\s*"clip_id"\s*:\s*"([^"]+)"\s*,(?:\s*"frame"\s*:\s*-?\d+\s*,)?\s*"frame_idx"\s*:\s*(-?\d+)\s*,'
+                            r'\s*"t_s"\s*:\s*(-?[0-9.eE+-]+)')
+
+
+def iter_join_records(path: str | os.PathLike, limit: int | None = None) -> Iterable[tuple[str, int, float]]:
+    """(clip_id, frame_idx, t_s) per line of an agent / 3-D join (`.jsonl` or `.jsonl.xz`), streamed. The head of the line is
+    read by regex (the agents list is the bulk of a line and is not needed); a line the regex does not match is parsed whole,
+    and a line with no `t_s` is an error, never a skipped record."""
+    import lzma
+    op = lzma.open if str(path).endswith(".xz") else open
+    n = 0
+    with op(path, "rt", encoding="utf-8") as fh:
+        for line in fh:
+            if not line.strip():
+                continue
+            m = _RIG_JOIN_HEAD.match(line)
+            if m:
+                yield m.group(1), int(m.group(2)), float(m.group(3))
+            else:
+                d = json.loads(line)
+                if "t_s" not in d or "frame_idx" not in d:
+                    raise GateError(f"join line without clip_id/frame_idx/t_s in {path}: {line[:120]!r}")
+                yield str(d["clip_id"]), int(d["frame_idx"]), float(d["t_s"])
+            n += 1
+            if limit is not None and n >= limit:
+                return
+
+
+def rig_join_clock_windows(records: Iterable[tuple[str, int, float]], sid_of_clip: Callable[[str], int], table: dict,
+                           n_stack_of_sid: dict) -> Iterable[tuple]:
+    """join records -> `judge_clock_windows` tuples. Only TRAIN clips (those in `n_stack_of_sid`) and provider rows r >= 0.
+    t_trainer := the label's own time (`t_s`); t_true := the sidecar clock of the row; t_legacy := `r * 0.1` (the historical
+    literal -- the positive control that the arithmetic can see a slipped clock). A clip the sidecar does not hold is
+    UNVERIFIED (source `fallback`, no t_true), counted against the cap exactly as the v7-label branch counts it."""
+    for cid, r, t_s in records:
+        if r < 0:
+            continue
+        sid = int(sid_of_clip(cid))
+        if sid not in n_stack_of_sid:
+            continue                                   # an eval-only clip in the shared train+eval join
+        rr = table.get(sid)
+        if rr is None:
+            yield (sha12(cid), t_s, None, r * 0.1, "fallback")
+            continue
+        g0, dt = rr
+        yield (sha12(cid), t_s, float(g0) + (r + int(n_stack_of_sid[sid]) - 1) * float(dt), r * 0.1, "sidecar")
+
+
+def rig_clock_reasons(tag: str, r: dict, tol: float, cap: float) -> list[str]:
+    """The reasons one rig label source (`judge_clock_windows` output) fails G-CLOCK. Same four clauses as the v7 branch:
+    something was read, no violation on a MEASURED clock, the unverified clips under the cap, and the positive control."""
+    out: list[str] = []
+    if r["n_windows"] == 0:
+        out.append(f"G-CLOCK rig {tag}: ZERO labelled windows checked -- the check read nothing")
+    if r["n_violations"]:
+        out.append(f"G-CLOCK rig {tag}: {r['n_violations']} of {r['n_windows']} labelled rows carry a time more than {tol} s from the "
+                   f"clip-clock sidecar's clock for the same provider row ({r['n_violating_clips']} clips, worst "
+                   f"{r['worst_abs_s']} s)")
+    if not r["cap_ok"]:
+        out.append(f"G-CLOCK rig {tag}: {r['n_unverified_clips']} of {r['n_clips']} clips ({r['unverified_frac']:.2%}) have no "
+                   f"measured clock in the sidecar -- above the {cap:.0%} cap")
+    if r["n_windows"] and r["legacy_control_violations"] == 0:
+        out.append(f"G-CLOCK rig {tag}: control -- the historical clock also reads 0 violations, so the instrument cannot see "
+                   f"the defect it exists for")
+    return out
+
+
+def rig_map_key_reasons(store: Any, probes: Iterable[tuple[str, int, int]], *, min_probed: int = 20) -> tuple[list[str], dict]:
+    """The map-GT leg: for a window whose NOW provider row is r, the store must answer with RAW frame r + n_stack - 1 (the one
+    conversion `MapGTStore.raw_frames` owns). `probes` = (clip_id, r, n_stack). A clip without a GT file is the trainer's own
+    coverage census (not a clock defect) and is counted, not failed; fewer than `min_probed` answered probes is a FAIL (the leg
+    read nothing)."""
+    n_ok = n_bad = n_nofile = 0
+    bad: list = []
+    for cid, r, ns in probes:
+        try:
+            mf = store.frames_for_windows(cid, [int(r)], n_stack=int(ns))
+        except (FileNotFoundError, IndexError, OSError, KeyError):
+            n_nofile += 1
+            continue
+        got, want = int(mf.frame_idx[0]), int(r) + int(ns) - 1
+        if got == want:
+            n_ok += 1
+        else:
+            n_bad += 1
+            bad.append((sha12(cid), int(r), got, want))
+    det = {"n_probed": n_ok + n_bad, "n_ok": n_ok, "n_wrong_raw_frame": n_bad, "n_no_gt_file": n_nofile, "first_wrong": bad[:5]}
+    reasons: list[str] = []
+    if n_bad:
+        reasons.append(f"G-CLOCK rig map GT: {n_bad} of {n_ok + n_bad} probed windows were answered with a raw frame other than "
+                       f"r + n_stack - 1 (first (clip, r, got, want): {bad[:3]}) -- the label sits at the wrong instant")
+    if n_ok + n_bad < int(min_probed):
+        reasons.append(f"G-CLOCK rig map GT: only {n_ok + n_bad} probes were answered (< {min_probed}; {n_nofile} had no GT file) -- "
+                       f"the map leg read nothing")
+    return reasons, det
+
+
+def rig_clock_check(ctx: Ctx, T: Any, args: Any, tol: float, cap: float) -> tuple[list[str], dict]:
+    """G-CLOCK for `--r9-perc-rig` (see RIG_CLOCK_RULE). -> (reasons, details). Every source named in the argv must be read."""
+    from tanitad.data import clip_clock as _cc
+    from tanitad.data import v2_dataset as v2d
+    det: dict[str, Any] = {"rule": RIG_CLOCK_RULE, "tolerance_s": tol, "cap": cap}
+    side_p = getattr(args, "clip_clock_sidecar", None)
+    cache = getattr(args, "v2_cache", None)
+    cache = cache[0] if isinstance(cache, (list, tuple)) else cache
+    if not side_p or not cache:
+        return [f"G-CLOCK rig: --clip-clock-sidecar ({side_p!r}) and --v2-cache ({cache!r}) are both needed: the rig's labels "
+                f"cannot be timed without the clock"], det
+    table = _cc.read_clip_clock_sidecar(str(side_p)).table
+    man = v2d.load_or_build_manifest(cache, rebuild=False, verbose=False)
+    uids = man.get("episode_uid") or [v2d.stable_episode_id(c) for c in man["clip_id"]]
+    ns_of = {int(u): int(n) for u, n in zip(uids, man["n_stack"])}
+    clip_of = {int(u): str(c) for u, c in zip(uids, man["clip_id"])}
+    det["n_train_clips"], det["n_sidecar_clips"] = len(ns_of), len(table)
+    limit = ctx.options.get("rig_clock_max_records")
+    reasons: list[str] = []
+    probes: list[tuple[str, int, int]] = []
+    for flag, tag in (("agent_join", "agent join"), ("join3d", "3-D join")):
+        path = getattr(args, flag, None)
+        if not path:
+            det[tag] = {"skipped": f"no --{flag.replace('_', '-')} in argv"}
+            continue
+        path = path[0] if isinstance(path, (list, tuple)) else path
+        recs = list(iter_join_records(path, limit))
+        wins = list(rig_join_clock_windows(recs, v2d.stable_episode_id, table, ns_of))
+        res = judge_clock_windows(wins, tol, n_clips=len(ns_of), cap=cap)
+        res["path"] = str(path)
+        if wins:
+            signed = sorted(float(w[1]) - float(w[2]) for w in wins if w[2] is not None)
+            if signed:
+                res["signed_err_s_quantiles"] = {q: round(signed[min(len(signed) - 1, int(q * len(signed)))], 5)
+                                                 for q in (0.01, 0.5, 0.99)}
+        det[tag] = res
+        reasons += rig_clock_reasons(tag, res, tol, cap)
+        if tag == "agent join":
+            for i, (cid, r, _t) in enumerate(recs):
+                sid = v2d.stable_episode_id(cid)
+                if r >= 0 and sid in ns_of and i % 997 == 0 and len(probes) < 300:
+                    probes.append((cid, r, ns_of[sid]))
+        del recs, wins
+    mg = getattr(args, "map_gt_root", None)
+    if mg:
+        try:
+            store = T._sem_fine.FineMapGTStore(Path(mg), max_open=2, extent=T._mhr.declared_extent(args))
+            mr, md = rig_map_key_reasons(store, probes)
+        except Exception as e:                            # noqa: BLE001 -- a crash is not a pass
+            mr, md = [f"G-CLOCK rig map GT crashed: {type(e).__name__}: {e}"], {"traceback": traceback.format_exc()[-1500:]}
+        det["map_gt"] = md
+        reasons += mr
+    else:
+        det["map_gt"] = {"skipped": "no --map-gt-root in argv"}
+    return reasons, det
+
+
 
 # --------------------------------------------------------------------------------------------- #
 # the jobs (child side)                                                                           #
@@ -7040,7 +7258,7 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         # admissible memory reading)
         h = ctx.prof.get("map_hires") or {}
         det["cost"] = {**step_cost(run1.get("step_times") or [], int(h.get("cost_warmup_steps", 10)),
-                                   exclude_rows=gs_reading_rows(argv1)),
+                                   exclude_rows=gs_reading_rows(argv1), nontrain_rows=nontrain_rows(argv1)),
                        "cuda_max_mem_gb": run1.get("cuda_max_mem_gb"),
                        "batch": int(args.batch)}
         needs_pi = False
@@ -7344,9 +7562,16 @@ def job_clock(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
                            "(ref = an independent measurement, not the sidecar the trainer reads); "
                            "fallback-clock or unreferenced clips are UNVERIFIED and admitted up to "
                            "the cap"}
-    if not ref:
+    # refcv9-e1rig (MM decision (b), 2026-11-02): the rig reads no tactical label, so G-CLOCK times the labels it DOES read
+    # (agent / 3-D joins, map-GT frame key) against the clip-clock sidecar. Inert (rig_on False) on every other launch.
+    rig_on = bool(getattr(args, "r9_perc_rig", False))
+    if rig_on:
+        rr_, rd_ = rig_clock_check(ctx, T, args, tol, cap)
+        det["rig"] = rd_
+        reasons += rr_
+    elif not ref:
         reasons.append("no clock reference was given (--clock-reference): nothing is verifiable")
-    for split in ("train", "eval"):
+    for split in (() if rig_on else ("train", "eval")):
         r = _clock_split(ctx, T, cfg, args, split, ref, tol, cap)
         det[split] = r
         if "skipped" in r:
@@ -7406,6 +7631,8 @@ def job_clock(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         det["p10_clock"] = p10d_
         reasons += p10r_
     ins = ("--v2-cache", "--eval-cache", "--v7-labels", "--eval-labels", "--clip-clock-sidecar")
+    if rig_on:
+        ins = ins + ("--agent-join", "--join3d")
     ev["inputs_read"] = _inputs_read(ctx, ins)
     if p10_on(ctx.argv):
         ev["inputs_read"].update(_inputs_read(ctx, ("--p10-prior",)))
