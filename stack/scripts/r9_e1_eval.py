@@ -77,7 +77,9 @@ def load_window_list(path, split=None) -> list:
         if len(hit) != 1:
             raise SystemExit("[r9-e1-eval] %s: split %r not found exactly once (keys %s)" % (path, split, sorted(map(str, obj))[:8]))
         obj = obj[hit[0]]
-        if isinstance(obj, dict):
+        if isinstance(obj, dict) and isinstance(obj.get("sha12"), list):    # E0i's DEV_HOLD_SPLIT.json: {"DEV": {"sha12": [...], ...}}
+            obj = obj["sha12"]
+        elif isinstance(obj, dict):
             obj = list(obj)
     out = []
     for x in obj:
