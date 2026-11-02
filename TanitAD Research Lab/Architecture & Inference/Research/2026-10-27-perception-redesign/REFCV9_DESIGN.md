@@ -401,6 +401,8 @@ items (E0, the eval batteries, W4 / W5, R9-PF stage 2) run in parallel at 0 Thor
 **PASS = every bold bar + W1, W2, MAP-4, MAP-5.** A missed bar is reported as FAILED, as written, then the committed next
 lever below runs (Rule Zero).
 
+> **E0h note (2026-11-03; insert-only, the bars above are NOT changed by it).** E0h measured the precision the planner needs from the map. With GT-recall-1 maps carrying calibrated false sidewalk flags, MAP-1's sidewalk rate (<= 0.098) is met at corridor precision p 0.99 on 3 of 3 placement seeds, at p 0.97 on 1 of 3 and at p 0.98 on 0 of 3 ⇒ **the planner needs map precision ≈ 0.99, against the provisional 0.85 in MAP-2 above** (p 0.9 reads 0.1332 and p 0.95 reads 0.1270, one placement seed each; BASE 0.1792; the 0.85 point itself was not run). MEASURED, T1 self-action open loop on logged eval139 frames, S6c, one training seed, one inference seed; paired episode-cluster bootstrap over EPISODES, the false-flag placement draw is in no interval. Card with the per-run table: `e0/E0h_CARD.md`; raw: `e0/raw/E0H_RESULT.{json,md}`. ⚠️ The reader's interpolated `p_half` / `p_MAP1` are NOT quotable (they interpolate across placement noise; card). Caveat for how MAP-2 uses it: the false flags are random 1.0 m squares at recall 1 (a model of false alarms, not refcv8's own; refcv8's recall is 0.34-0.62), so ≈ 0.99 is a precision demand at recall 1, not a calibrated target for the in-model map head. Re-setting MAP-2's 5-20 m value stays the Master Mind's decision at sealing (§7: "replaced by E0h's planner-derived number before sealing").
+
 ### 5.3 Seed policy (`H-ESTIM-SEED-1`)
 
 * E1: every lever read against the C0 / C1 training-replicate floor (§4.3).
