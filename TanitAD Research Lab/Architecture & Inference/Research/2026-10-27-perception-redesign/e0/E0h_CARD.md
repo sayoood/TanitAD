@@ -1,0 +1,14 @@
+# E0h card -- map-quality dose-response (REFCV9_DESIGN §4.1; sets MAP-2's absolute value from the planner)
+
+**Question.** How precise must the planner's map be before MAPPATH's cross-fitted soft cost converts it into fewer sidewalk plans?
+**Frozen design (before any run was read).** MAPSEL's banked progress-matched fan (`F:/refcv9_mapsel/trace_s0_mappath.npz`, 4,754 windows) and MAPPATH's code **unchanged** (`refcv9_mapedge/mapsoft_path.py`, its seals checked by its own `main()`).
+Only the planner's map is replaced: every GT sidewalk cell flagged (recall 1) + square FALSE stamps (1.0 m) on SEEN non-sidewalk cells inside the MAP-2 corridor (|y| < 3 m) of each band 0-5 / 5-10 / 10-20 / 20-40 / 40-100 m, added until the pooled corridor
+precision TP/(TP+FP) of the band equals p (`nearfield_prec.py`'s definition, so p IS the MAP-2 quantity). p ∈ {0.5, 0.6, 0.7, 0.8, 0.9, 0.95}. pdrv = drivable-or-unjudged minus stamps; code = GT with stamps = sidewalk. GT is still the scorer's truth.
+**Readout.** S6c sidewalk rate of `MAPSOFT-G-XF` vs BASE (paired episode-cluster bootstrap, B 2000, seed 0, over EPISODES: *another draw of episodes only*; the stamp placement is a separate draw, not resampled; one training seed, one inference seed; T1 open loop, not driving performance).
+`p_half` = smallest p with rate ≤ BASE/2 (interpolated); `p_MAP1` = same for the MAP-1 bar 0.098.
+**Controls (a failure voids the readout).** K-P1: the p = 1 run (no stamps = the GT map) recovers ≥ 80 % of the banked GT-T1 gain (BASE 0.1792 → GT-T1 0.0219). K-ALL: a constant map (psw = pdrv = 255) reads the BASE rate exactly (4 dp). K-CAL: realized per-band precision within 0.02 of p.
+Unit tests (`test_e0h.py`, `test_e0h_read.py`, 7 PASS): p = 1 plane is exactly the GT sidewalk plane; the all-flag map is constant; on synthetic GT with a known 4,800-cell sidewalk the stamp loop hits FP = 4,800 / 1,200 (p = 0.5 / 0.8) literally; no false flag on a GT sidewalk cell or outside corridor × band; `p_half` interpolation = 0.8 on a literal curve.
+**Descriptive, not a bar:** stamp-size sensitivity at p = 0.7 (0.5 m and 2.0 m stamps).
+**Disclosed limits.** (1) Random false stamps are a MODEL of own-map false alarms, not refcv8's actual ones (those sit at x 0-4 m on drivable cells, 63 % of the 0-5 m flags). (2) Recall is 1 everywhere, so this isolates precision; refcv8's recall is 0.34-0.62. (3) 68 of 4,754 windows have no GT: the synthetic map has no sidewalk there. (4) The soft-cost fit includes the banked human-likeness constraint (H ≤ H0), so a perfect map may sit above GT-T1's hard filter; that is why K-P1 is a share, not an equality.
+
+**Status at hand-back: RUNNING / PENDING** — 10 runs in `F:/r9e0/e0h/runs`, chain `run_e0h.sh`, marker `ZZE0Hdone-<n>-10ZZ` in `F:/r9e0/logs/e0h_chain.log`. Result = `python e0h_read.py --runs F:/r9e0/e0h/runs --out-dir <dir>` (HANDOFF.md). Evidence class when read: MEASURED (ours).
