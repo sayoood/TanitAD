@@ -562,19 +562,24 @@ def test_d_judge_new2_live_does_not_send_a_steady_rig_step_to_the_PI_because_of_
 # phase B, decision (b): G-CLOCK stays BINDING on the rig -- it times the labels the rig reads, against the sidecar #
 # ============================================================================================================ #
 G0, DT, NS = 0.05, 0.1006666, 3
+#: r9gclk: the join's `t_s` is on the RAW clip clock = the sidecar's LABEL timeline + the clip's ts0 (the egomotion log's first
+#: timestamp; -0.1953 s median over 220 real clips, `Research/2026-11-03-label-clock/CARD.md`)
+TS0 = -0.1953
 
 
 def _true(r):
     return G0 + (r + NS - 1) * DT
 
 
-def _recs(shift=0.0, n=60, cid="c1", noise=0.004):
-    return [(cid, r, _true(r) + shift + (noise if r % 2 else -noise)) for r in range(n)]
+def _recs(shift=0.0, n=60, cid="c1", noise=0.004, ts0=None):
+    t0 = TS0 if ts0 is None else ts0
+    return [(cid, r, _true(r) + t0 + shift + (noise if r % 2 else -noise)) for r in range(n)]
 
 
-def _windows(recs, table=None, ns=None):
+def _windows(recs, table=None, ns=None, ts0_of=None):
     sid_of = {"c1": 1, "c2": 2}.get
-    return list(LG.rig_join_clock_windows(recs, sid_of, {1: (G0, DT)} if table is None else table, {1: NS, 2: NS} if ns is None else ns))
+    return list(LG.rig_join_clock_windows(recs, sid_of, {1: (G0, DT)} if table is None else table, {1: NS, 2: NS} if ns is None else ns,
+                                          (lambda cid: TS0) if ts0_of is None else ts0_of))
 
 
 def _judge(recs, **kw):
@@ -663,17 +668,21 @@ def test_b_rig_clock_check_end_to_end_on_a_synthetic_corpus_and_the_job_is_keyed
     monkeypatch.setattr(v2d, "load_or_build_manifest",
                         lambda *a, **k: {"clip_id": ["clipA"], "episode_uid": [sid], "n_stack": [NS]})
 
+    ego = _write_ego_store(tmp_path / "ego", {"clipA": TS0})
+
     def join(shift, name):
         p = tmp_path / name
         with lzma.open(p, "wt", encoding="utf-8") as fh:
             for r in range(80):
-                fh.write(json.dumps({"clip_id": "clipA", "frame": r + 2, "frame_idx": r, "t_s": round(_true(r) + shift, 4),
+                fh.write(json.dumps({"clip_id": "clipA", "frame": r + 2, "frame_idx": r, "t_s": round(_true(r) + TS0 + shift, 4),
                                      "agents": []}) + "\n")
         return p
-    ctx = SimpleNamespace(options={})
+    ctx = SimpleNamespace(options={"rig_ego_dir": str(ego)})
     args = lambda j: SimpleNamespace(clip_clock_sidecar=str(side), v2_cache="x", agent_join=str(j), join3d=str(j), map_gt_root=None)
     ok, det = LG.rig_clock_check(ctx, None, args(join(0.0, "ok.jsonl.xz")), 0.05, 0.01)
     assert ok == [] and det["agent join"]["n_violations"] == 0 and det["3-D join"]["n_windows"] == 80
+    assert det["agent join"]["abs_err_s"]["max"] <= 0.0001 and det["ego_ts0"]["n_clips_read"] == 1     # ONE clock: error ~ rounding
+    assert det["ego_ts0"]["ts0_s_quantiles"][0.5] == pytest.approx(TS0, abs=1e-9)
     assert det["map_gt"] == {"skipped": "no --map-gt-root in argv"}
     # RED arm: the shifted-clock join (the offset MEASURED on the refcv8 join) FAILS both sources
     bad, det2 = LG.rig_clock_check(ctx, None, args(join(-0.1955, "bad.jsonl.xz")), 0.05, 0.01)
@@ -686,3 +695,219 @@ def test_b_rig_clock_check_end_to_end_on_a_synthetic_corpus_and_the_job_is_keyed
     src = inspect.getsource(LG.job_clock)
     assert 'rig_on = bool(getattr(args, "r9_perc_rig", False))' in src and "rig_clock_check(ctx, T, args, tol, cap)" in src
     assert 'for split in (() if rig_on else ("train", "eval")):' in src and "elif not ref:" in src
+
+
+# ============================================================================================================ #
+# r9gclk: the rig G-CLOCK compares the join (RAW clip clock) with the sidecar (LABEL timeline) on ONE clock          #
+# ============================================================================================================ #
+def _write_ego_store(d, ts0_by_clip, n=400, shuffle=True):
+    """A per-clip egomotion store: `<clip>.parquet` with a microsecond `timestamp` column that STARTS at ts0 (100 Hz)."""
+    import numpy as np
+    import pandas as pd
+    d = Path(d)
+    d.mkdir(parents=True, exist_ok=True)
+    for cid, t0 in ts0_by_clip.items():
+        ts = np.round(t0 * 1e6) + np.arange(n) * 10_000.0
+        if shuffle:
+            ts = ts[np.random.default_rng(0).permutation(n)]               # the reader must take the MIN, not row 0
+        pd.DataFrame({"timestamp": ts.astype("int64"), "x": np.zeros(n)}).to_parquet(d / f"{cid}.parquet")
+    return d
+
+
+TS0_BY_CLIP = {"c1": -0.1953, "c2": -0.2000}
+SIDS = {"c1": 1, "c2": 2}.get
+
+
+def _two_clip_join(shift=0.0, key_shift=0, n=60):
+    """Both clips, the join on the RAW clock (= label clock + the clip's own ts0). key_shift != 0 is a MIS-KEY: the record for row r
+    is filed under frame_idx r + key_shift while still carrying row r's time."""
+    return [(c, r + key_shift, _true(r) + TS0_BY_CLIP[c] + shift + (0.004 if r % 2 else -0.004))
+            for c in TS0_BY_CLIP for r in range(n)]
+
+
+def _judge2(recs, table=None, ts0_of=None):
+    w = list(LG.rig_join_clock_windows(recs, SIDS, {1: (G0, DT), 2: (G0, DT)} if table is None else table, {1: NS, 2: NS},
+                                       TS0_BY_CLIP.get if ts0_of is None else ts0_of))
+    return LG.judge_clock_windows(w, 0.05, n_clips=2, cap=0.01)
+
+
+def test_gclk_green_a_join_that_equals_sidecar_plus_ts0_passes_on_clips_with_DIFFERENT_ts0():
+    j = _judge2(_two_clip_join())
+    assert j["n_windows"] == 120 and j["n_violations"] == 0 and j["n_unverified_clips"] == 0
+    assert j["worst_abs_s"] <= 0.0041                                     # the 4 ms jitter only: the clocks agree to it
+    assert j["legacy_control_violations"] == 120                           # the historical clock is still seen as slipped
+    assert LG.rig_clock_reasons("agent join", j, 0.05, 0.01) == []
+
+
+def test_gclk_red_a_plus_0p1_s_shifted_label_clock_FAILS():
+    j = _judge2(_two_clip_join(), table={1: (G0 + 0.1, DT), 2: (G0 + 0.1, DT)})      # the sidecar's clock is 0.1 s late
+    assert j["n_violations"] == 120 and 0.099 < j["worst_abs_s"] < 0.109
+    assert any("more than 0.05 s" in x for x in LG.rig_clock_reasons("agent join", j, 0.05, 0.01))
+    k = _judge2(_two_clip_join(shift=0.1))                                           # ... or the join's: the same arm from the other side
+    assert k["n_violations"] == 120
+
+
+def test_gclk_red_a_dropped_ts0_conversion_reproduces_the_old_defect_on_EVERY_clip():
+    """The old rig branch compared the raw join with the label-timeline sidecar: gate-2's false positive (median -0.1955 s)."""
+    j = _judge2(_two_clip_join(), ts0_of=lambda cid: 0.0)
+    assert j["n_violations"] == 120 and j["n_violating_clips"] == 2
+    assert 0.19 < j["worst_abs_s"] < 0.21                                            # = |ts0| + jitter
+    assert any("more than 0.05 s" in x for x in LG.rig_clock_reasons("agent join", j, 0.05, 0.01))
+    # MUTATION, not inspection: delete the one subtraction that emits the bridge and the green arm above must go RED
+    src = inspect.getsource(LG.rig_join_clock_windows)
+    assert src.count("t_s - float(ts0)") == 1
+    ns = dict(vars(LG))
+    exec(compile("from __future__ import annotations\n" + src.replace("t_s - float(ts0)", "t_s"), "<mutant>", "exec"), ns)
+    w = list(ns["rig_join_clock_windows"](_two_clip_join(), SIDS, {1: (G0, DT), 2: (G0, DT)}, {1: NS, 2: NS}, TS0_BY_CLIP.get))
+    assert LG.judge_clock_windows(w, 0.05, n_clips=2, cap=0.01)["n_violations"] == 120
+
+
+@pytest.mark.parametrize("key_shift", [2, -2, 1])
+def test_gclk_red_a_frame_mis_key_FAILS(key_shift):
+    """A record filed under row r + k while carrying row r's time is k*dt off: +-2 frames = 0.2013 s, 1 frame = 0.1007 s."""
+    j = _judge2(_two_clip_join(key_shift=key_shift))
+    assert j["n_violations"] > 100, j
+    assert abs(j["worst_abs_s"] - abs(key_shift) * DT) < 0.01
+    assert any("more than 0.05 s" in x for x in LG.rig_clock_reasons("3-D join", j, 0.05, 0.01))
+
+
+def test_gclk_the_0p05_s_bar_is_not_loosened():
+    assert RIG["clock_tolerance_s"] == 0.05 and R8["clock_tolerance_s"] == 0.05
+    assert _judge2(_two_clip_join(shift=0.04))["n_violations"] == 0                # inside: no false alarm
+    assert _judge2(_two_clip_join(shift=0.06))["n_violations"] == 120              # outside: the committed bar
+
+
+def test_gclk_a_clip_without_a_ts0_is_UNVERIFIED_not_passed():
+    j = _judge2(_two_clip_join(), ts0_of=lambda cid: TS0_BY_CLIP[cid] if cid == "c1" else None)
+    assert j["n_unverified_clips"] == 1 and j["n_measured_but_unreferenced"] == 1 and j["cap_ok"] is False
+    assert j["n_violations"] == 0                                                  # c1 alone is clean; c2 is simply not verified
+    assert any("have no measured clock" in x for x in LG.rig_clock_reasons("agent join", j, 0.05, 0.01))
+
+
+def test_gclk_ts0_reader_takes_the_first_timestamp_of_the_sorted_log_in_seconds(tmp_path):
+    d = _write_ego_store(tmp_path / "e", {"a": -0.195312, "b": 0.0, "c": 1.5})
+    assert LG.read_ego_ts0_s(d, "a") == pytest.approx(-0.195312, abs=1e-9)         # shuffled rows: the MIN, as the sidecar builder's t[0]
+    assert LG.read_ego_ts0_s(d, "b") == 0.0 and LG.read_ego_ts0_s(d, "c") == pytest.approx(1.5, abs=1e-9)
+    assert LG.read_ego_ts0_s(d, "nope") is None                                    # no file: None (UNVERIFIED), not 0.0
+    for bad in ("../a", "a/b", ".hidden", ""):
+        with pytest.raises(LG.GateError):
+            LG.read_ego_ts0_s(d, bad)
+    import pandas as pd
+    pd.DataFrame({"x": [1.0]}).to_parquet(d / "nocol.parquet")
+    with pytest.raises(LG.GateError):
+        LG.read_ego_ts0_s(d, "nocol")
+
+
+def test_gclk_the_provider_memoises_counts_missing_and_refuses_a_unit_error(tmp_path):
+    d = _write_ego_store(tmp_path / "e", {"ok": -0.1953, "us_as_s": -195300.0})     # microseconds written where seconds were meant
+    p = LG.RigEgoTs0(d)
+    assert p("ok") == pytest.approx(-0.1953, abs=1e-9) and p("ok") == p("ok")
+    assert p("us_as_s") is None and p("ghost") is None
+    sm = p.summary()
+    assert sm["n_clips_read"] == 1 and sm["n_clips_without_egomotion_file"] == 1 and sm["n_clips_ts0_out_of_band"] == 1
+    assert len(sm["ts0_table_sha256"]) == 64 and "ok" not in json.dumps(sm)          # ids are sha12-scrubbed in the evidence
+
+
+def _e2e_setup(tmp_path, monkeypatch, clips):
+    import lzma
+    from tanitad.data import v2_dataset as v2d
+    side = tmp_path / "side.jsonl"
+    sids = {c: v2d.stable_episode_id(c) for c in clips}
+    side.write_text("".join(json.dumps({"sid": sid, "grid_start_s": G0, "dt_s": DT}) + "\n" for sid in sids.values()), encoding="utf-8")
+    monkeypatch.setattr(v2d, "load_or_build_manifest",
+                        lambda *a, **k: {"clip_id": list(clips), "episode_uid": [sids[c] for c in clips], "n_stack": [NS] * len(clips)})
+    join = tmp_path / "j.jsonl.xz"
+    with lzma.open(join, "wt", encoding="utf-8") as fh:
+        for c, t0 in clips.items():
+            for r in range(60):
+                fh.write(json.dumps({"clip_id": c, "frame": r + 2, "frame_idx": r, "t_s": round(_true(r) + t0, 4), "agents": []}) + "\n")
+    from types import SimpleNamespace
+    return SimpleNamespace(clip_clock_sidecar=str(side), v2_cache="x", agent_join=str(join), join3d=str(join), map_gt_root=None)
+
+
+def test_gclk_check_fails_loud_without_an_egomotion_dir_or_with_a_missing_or_unit_error_ts0(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    clips = {f"k{i}": -0.1953 - 0.0005 * i for i in range(4)}
+    args = _e2e_setup(tmp_path, monkeypatch, clips)
+    ego = _write_ego_store(tmp_path / "ego", clips)
+    ok, det = LG.rig_clock_check(SimpleNamespace(options={"rig_ego_dir": str(ego)}), None, args, 0.05, 0.01)
+    assert ok == [] and det["ego_ts0"]["n_clips_read"] == 4 and det["agent join"]["abs_err_s"]["max"] < 1e-3
+    # no directory named at all: the check cannot put the two clocks on one clock -> a named FAIL (never a silent pass)
+    none, _ = LG.rig_clock_check(SimpleNamespace(options={}), None, args, 0.05, 0.01)
+    assert len(none) == 1 and "no egomotion directory" in none[0]
+    gone, _ = LG.rig_clock_check(SimpleNamespace(options={"rig_ego_dir": str(tmp_path / "nope")}), None, args, 0.05, 0.01)
+    assert len(gone) == 1 and "not a directory" in gone[0]
+    # one clip of four has no egomotion file -> UNVERIFIED 25 % > the 1 % cap -> FAIL on both joins
+    (ego / "k3.parquet").unlink()
+    miss, md = LG.rig_clock_check(SimpleNamespace(options={"rig_ego_dir": str(ego)}), None, args, 0.05, 0.01)
+    assert len(miss) == 2 and all("no ts0 to bridge" in x for x in miss) and md["ego_ts0"]["n_clips_without_egomotion_file"] == 1
+    # a ts0 in the wrong unit is refused outright
+    _write_ego_store(ego, {"k3": -195300.0})
+    unit, ud = LG.rig_clock_check(SimpleNamespace(options={"rig_ego_dir": str(ego)}), None, args, 0.05, 0.01)
+    assert any("unit error" in x for x in unit) and ud["ego_ts0"]["n_clips_ts0_out_of_band"] == 1
+
+
+def test_gclk_the_old_defect_reproduced_end_to_end_is_RED_and_the_wired_check_is_GREEN(tmp_path, monkeypatch):
+    """A raw-clock join whose ts0 the check does not know (an egomotion store with every ts0 = 0) is the OLD false positive."""
+    from types import SimpleNamespace
+    clips = {"k0": -0.1953, "k1": -0.1990}
+    args = _e2e_setup(tmp_path, monkeypatch, clips)
+    zero = _write_ego_store(tmp_path / "ego0", {c: 0.0 for c in clips})
+    bad, bd = LG.rig_clock_check(SimpleNamespace(options={"rig_ego_dir": str(zero)}), None, args, 0.05, 0.01)
+    assert len(bad) == 2 and all("more than 0.05 s" in x for x in bad)
+    assert bd["agent join"]["signed_err_s_quantiles"][0.5] == pytest.approx(-0.195, abs=0.005)
+    good = _write_ego_store(tmp_path / "ego1", clips)
+    assert LG.rig_clock_check(SimpleNamespace(options={"rig_ego_dir": str(good)}), None, args, 0.05, 0.01)[0] == []
+
+
+def test_gclk_wiring_the_option_the_profile_default_the_manifest_and_the_inert_branches(tmp_path):
+    assert RIG["rig_ego_dir_default"] == "/home/nvidia/data/obstacle/egomotion_alpamayo"
+    assert not R8.get("rig_ego_dir_default") and not LG.PROFILES["refcv9-warm"].get("rig_ego_dir_default")
+    run = LG.build_parser()._subparsers._group_actions[0].choices["run"]
+    assert any("--rig-ego-dir" in a.option_strings for a in run._actions)
+    main_src = inspect.getsource(LG.cmd_run)
+    assert 'has_flag(argv, _E1_FLAG) and "G-CLOCK" in req' in main_src and 'gin["gate:rig-egomotion-dir"] = rd_' in main_src
+    job_src = inspect.getsource(LG.job_clock)
+    assert 'if rig_on and ctx.options.get("rig_ego_dir"):' in job_src and "gate:rig-egomotion-dir" in job_src
+    # the store is a content-bound gate input (a directory LISTING) and a missing one is a named data-manifest problem
+    ego = _write_ego_store(tmp_path / "ego", {"a": -0.1953})
+    man = LG.data_manifest([], RIG, [], {"gate:rig-egomotion-dir": str(ego)})
+    assert man["gate:rig-egomotion-dir"]["kind"] == "dir" and man["gate:rig-egomotion-dir"]["n_files"] == 1
+    gone = LG.data_manifest([], RIG, [], {"gate:rig-egomotion-dir": str(tmp_path / "nope")})
+    assert any("gate:rig-egomotion-dir" in x for x in LG.data_manifest_problems(gone))
+
+
+def _run_cmd_run(tmp_path, monkeypatch, profile, argv, extra=()):
+    """Drive `cmd_run` up to the point it builds its Ctx (jobs and finalize are stubbed) and return that Ctx."""
+    seen = {}
+    monkeypatch.setattr(LG, "_harden_streams", lambda: None)
+    monkeypatch.setattr(LG, "run_job", lambda *a, **k: None)
+
+    def fake_finalize(ctx, key, imp, refusals):
+        seen["ctx"] = ctx
+        return "FAIL", tmp_path / "out" / "FAIL.json", {"checks": {}, "reasons": []}
+    monkeypatch.setattr(LG, "finalize", fake_finalize)
+    tree = tmp_path / "tree"
+    for root in LG.TREE_ROOTS:
+        (tree / root).mkdir(parents=True, exist_ok=True)
+    (tree / "stack" / "x.py").write_text("x = 1\n", encoding="utf-8")
+    argv_file = tmp_path / "argv.json"
+    argv_file.write_text(json.dumps(argv), encoding="utf-8")
+    a = LG.build_parser().parse_args(["run", "--profile", profile, "--tree", str(tree), "--commit", "a" * 40, "--argv-file", str(argv_file),
+                                      "--out-dir", str(tmp_path / "out"), "--key-file", str(tmp_path / "k.key"), "--stage", "devbox", *extra])
+    LG.cmd_run(a)
+    return seen["ctx"]
+
+
+def test_gclk_cmd_run_reaches_the_option_default_override_and_path_map_and_is_inert_off_the_rig(tmp_path, monkeypatch):
+    dflt = "/home/nvidia/data/obstacle/egomotion_alpamayo"
+    ctx = _run_cmd_run(tmp_path / "a", monkeypatch, "refcv9-e1rig", C0)                    # the profile default reaches Ctx + manifest inputs
+    assert ctx.options["rig_ego_dir"] == dflt and ctx.options["gate_inputs"]["gate:rig-egomotion-dir"] == dflt
+    own = tmp_path / "myego"
+    own.mkdir()
+    ctx = _run_cmd_run(tmp_path / "b", monkeypatch, "refcv9-e1rig", C0, ["--rig-ego-dir", str(own)])      # the CLI override wins
+    assert ctx.options["rig_ego_dir"] == str(own.resolve()) and ctx.options["gate_inputs"]["gate:rig-egomotion-dir"] == str(own.resolve())
+    ctx = _run_cmd_run(tmp_path / "c", monkeypatch, "refcv9-e1rig", C0, ["--path-map", f"/home/nvidia/data={own}"])   # the default is path-mapped
+    assert ctx.options["rig_ego_dir"].replace("\\", "/").endswith("myego/obstacle/egomotion_alpamayo"), ctx.options["rig_ego_dir"]
+    ctx = _run_cmd_run(tmp_path / "d", monkeypatch, "refcv8", R8_LAUNCH)                   # INERT off the rig: no option, no manifest input
+    assert "rig_ego_dir" not in ctx.options and "gate:rig-egomotion-dir" not in ctx.options["gate_inputs"]

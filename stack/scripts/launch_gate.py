@@ -237,6 +237,9 @@ _REFC = {
     #: the banked tau derivation a `--graft-nav-compliance` launch is bound to, when the operator
     #: names none (repo-relative; resolved against the tree's enclosing repo)
     "nav_tau_record_default": None,
+    #: refcv9-e1rig G-CLOCK: the directory of the per-clip egomotion logs (`<clip_id>.parquet`) that holds each clip's `ts0`
+    #: (r9gclk). Host-absolute (path-mapped like an argv path); `--rig-ego-dir` overrides it. None = the profile reads no rig clock.
+    "rig_ego_dir_default": None,
     #: SPEC_REFCV7 section 7: the max-speed ceiling filter acts at INFERENCE ONLY -- the smoke
     #: must show it inactive in a training step and active in an eval step. Keyed on the flag.
     "ceiling_filter_flag": "--speed-ceiling-filter",
@@ -1585,6 +1588,9 @@ _E1_OPEN_ITEMS = (
 if _E1_MODULE is not None:
     PROFILES["refcv9-e1rig"] = dict(
         _R8, name="refcv9-e1rig",
+        #: r9gclk (MEASURED by agent CLK, clk_probe_thor.py `EGO`): the Thor per-clip egomotion store whose first timestamp is each
+        #: clip's `ts0`, the bridge from the joins' RAW clock to the sidecar's label timeline (path-mapped; `--rig-ego-dir` overrides)
+        rig_ego_dir_default="/home/nvidia/data/obstacle/egomotion_alpamayo",
         open_items=_E1_OPEN_ITEMS,
         required_flags=_E1_REQUIRED_FLAGS,
         required_flags_why=dict(_E1_REQUIRED_FLAGS_WHY, **{
@@ -6484,9 +6490,21 @@ def judge_clock_windows(windows: Iterable[tuple], tol: float, *, n_clips: int,
 #: never read the clip-clock sidecar) and the map-GT frame key. The reference is the clip-clock sidecar (A16: the clock MEASURED
 #: from the 100 Hz log), by the trainer's own G3 rule `t_true = grid_start_s + (r + n_stack - 1) * dt_s`.
 #: Keyed on `args.r9_perc_rig`: INERT when the rig is off (every existing profile's job_clock path is unchanged).
-RIG_CLOCK_RULE = ("t_true(r) = grid_start_s + (r + n_stack - 1) * dt_s (clip-clock sidecar, the trainer's G3 rule); a join "
-                  "record is the label of provider row r = frame_idx, its time is its own `t_s`; |t_s - t_true| <= tol on EVERY "
-                  "labelled record of every train clip; the map-GT store's raw frame for window r is r + n_stack - 1")
+RIG_CLOCK_RULE = ("t_true(r) = grid_start_s + (r + n_stack - 1) * dt_s (clip-clock sidecar, the trainer's G3 rule) on the LABEL "
+                  "timeline (zero = the egomotion log's first sample); a join record is the label of provider row r = frame_idx, "
+                  "its time is its own `t_s` on the RAW clip clock, put on the label timeline by the per-clip bridge "
+                  "`t_s - ts0` (ts0 = the egomotion log's first timestamp / 1e6; r9clk CARD); |(t_s - ts0) - t_true| <= tol on "
+                  "EVERY labelled record of every train clip; the map-GT store's raw frame for window r is r + n_stack - 1")
+#: r9gclk (2026-11-03, MEASURED by agent CLK, `Research/2026-11-03-label-clock/CARD.md`): the join's `t_s` is on the RAW clip clock
+#: (`build_obstacle_join.py:347`, `t = timestamp / 1e6`, never zeroed) while the clip-clock sidecar is on the LABEL timeline
+#: (`egomotion_source.py:123-124` `ts - ts[0]`; `build_clip_clock_sidecar.py` `grid_start_s = a - t[0]`). They differ per clip by
+#: `ts0` = the egomotion log's first timestamp (-0.1953 s median, -0.2000 ... -0.1899 over 220 clips): compared without that
+#: bridge EVERY clip false-fails (gate-2 read 'median -0.1955 s' and took it for a 2-frame lag; `2*dt = 0.2013` was a coincidence).
+#: The two clocks are put on ONE clock here: `ts0` is read per clip from the egomotion log (the definition of
+#: `clk_probe_thor.py::Ego.ts0` / `build_clip_clock_sidecar.py`'s sorted-log `t[0]`), and the join time is moved onto the label
+#: timeline (`t_s - ts0`). The 0.05 s bar is unchanged.
+RIG_TS0_BAND_S = 1.0                   # |ts0| above this is a unit error (the sidecar reader's own |grid_start_s| <= 1 s rule)
+RIG_EGO_COLUMN = "timestamp"           # microseconds, as in every egomotion parquet the corpus ships
 _RIG_JOIN_HEAD = re.compile(r'^\{\s*"clip_id"\s*:\s*"([^"]+)"\s*,(?:\s*"frame"\s*:\s*-?\d+\s*,)?\s*"frame_idx"\s*:\s*(-?\d+)\s*,'
                             r'\s*"t_s"\s*:\s*(-?[0-9.eE+-]+)')
 
@@ -6515,12 +6533,67 @@ def iter_join_records(path: str | os.PathLike, limit: int | None = None) -> Iter
                 return
 
 
+def read_ego_ts0_s(ego_dir: str | os.PathLike, clip_id: str) -> float | None:
+    """`ts0` of one clip: the egomotion log's FIRST timestamp in seconds (`min(timestamp) / 1e6` -- the log sorted, exactly
+    `clk_probe_thor.py::Ego.ts0` and the sidecar builder's `t[0]`), read from `<ego_dir>/<clip_id>.parquet`. None when the clip has
+    no egomotion file; GateError on a file that cannot be read, has no timestamp column, or holds a non-finite timestamp."""
+    if not clip_id or any(c in clip_id for c in "/\\") or clip_id.startswith("."):
+        raise GateError(f"G-CLOCK rig: refusing to build an egomotion path from the clip id {clip_id[:40]!r}")
+    p = Path(ego_dir) / f"{clip_id}.parquet"
+    if not p.is_file():
+        return None
+    import numpy as np
+    import pandas as pd
+    try:
+        ts = pd.read_parquet(p, columns=[RIG_EGO_COLUMN])[RIG_EGO_COLUMN].to_numpy(np.float64)
+    except Exception as e:                                # noqa: BLE001 -- an unreadable log is a finding, not a skip
+        raise GateError(f"G-CLOCK rig: cannot read {RIG_EGO_COLUMN!r} from {p}: {type(e).__name__}: {e}") from e
+    if ts.size == 0 or not bool(np.all(np.isfinite(ts))):
+        raise GateError(f"G-CLOCK rig: {p} has no timestamps or a non-finite one")
+    return float(ts.min()) / 1e6
+
+
+class RigEgoTs0:
+    """The per-clip `ts0` provider of the rig G-CLOCK: memoised (each log is read once), and it keeps the evidence of what it
+    could not give -- clips with NO egomotion file (counted against the cap by the caller as UNVERIFIED) and clips whose `ts0`
+    is outside `RIG_TS0_BAND_S` (a unit error: refused, never bridged)."""
+
+    def __init__(self, ego_dir: str | os.PathLike) -> None:
+        self.ego_dir = str(ego_dir)
+        self.value: dict[str, float | None] = {}
+        self.missing: set[str] = set()
+        self.out_of_band: dict[str, float] = {}
+
+    def __call__(self, clip_id: str) -> float | None:
+        if clip_id in self.value:
+            return self.value[clip_id]
+        v = read_ego_ts0_s(self.ego_dir, clip_id)
+        if v is None:
+            self.missing.add(sha12(clip_id))
+        elif not (abs(v) <= RIG_TS0_BAND_S):
+            self.out_of_band[sha12(clip_id)] = v
+            v = None
+        self.value[clip_id] = v
+        return v
+
+    def summary(self) -> dict:
+        have = sorted((sha12(c), round(v, 9)) for c, v in self.value.items() if v is not None)
+        vals = sorted(v for _, v in have)
+        q = {k: (round(vals[min(len(vals) - 1, int(k * len(vals)))], 6) if vals else None) for k in (0.0, 0.05, 0.5, 0.95, 1.0)}
+        return {"dir": self.ego_dir, "n_clips_read": len(have), "n_clips_without_egomotion_file": len(self.missing),
+                "n_clips_ts0_out_of_band": len(self.out_of_band), "ts0_s_quantiles": q,
+                "ts0_table_sha256": sha256_bytes(canonical_json(have))}
+
+
 def rig_join_clock_windows(records: Iterable[tuple[str, int, float]], sid_of_clip: Callable[[str], int], table: dict,
-                           n_stack_of_sid: dict) -> Iterable[tuple]:
+                           n_stack_of_sid: dict, ts0_of_clip: Callable[[str], float | None]) -> Iterable[tuple]:
     """join records -> `judge_clock_windows` tuples. Only TRAIN clips (those in `n_stack_of_sid`) and provider rows r >= 0.
-    t_trainer := the label's own time (`t_s`); t_true := the sidecar clock of the row; t_legacy := `r * 0.1` (the historical
-    literal -- the positive control that the arithmetic can see a slipped clock). A clip the sidecar does not hold is
-    UNVERIFIED (source `fallback`, no t_true), counted against the cap exactly as the v7-label branch counts it."""
+    ⛔ ONE CLOCK (r9gclk): the join's `t_s` is on the RAW clip clock and the sidecar on the label timeline, which differ per clip by
+    `ts0`; the join time is moved onto the label timeline first (`t_s - ts0`, `ts0_of_clip(clip_id)` in seconds).
+    t_trainer := the label's own time on the label timeline (`t_s - ts0`); t_true := the sidecar clock of the row; t_legacy :=
+    `r * 0.1` (the historical literal -- the positive control that the arithmetic can see a slipped clock). A clip the sidecar
+    does not hold is UNVERIFIED (source `fallback`, no t_true), counted against the cap exactly as the v7-label branch counts it;
+    a clip whose `ts0` cannot be given (`None`) is UNVERIFIED too (source `sidecar`, no t_true -- measured but unreferenced)."""
     for cid, r, t_s in records:
         if r < 0:
             continue
@@ -6532,7 +6605,11 @@ def rig_join_clock_windows(records: Iterable[tuple[str, int, float]], sid_of_cli
             yield (sha12(cid), t_s, None, r * 0.1, "fallback")
             continue
         g0, dt = rr
-        yield (sha12(cid), t_s, float(g0) + (r + int(n_stack_of_sid[sid]) - 1) * float(dt), r * 0.1, "sidecar")
+        ts0 = ts0_of_clip(cid)
+        if ts0 is None:
+            yield (sha12(cid), t_s, None, r * 0.1, "sidecar")
+            continue
+        yield (sha12(cid), t_s - float(ts0), float(g0) + (r + int(n_stack_of_sid[sid]) - 1) * float(dt), r * 0.1, "sidecar")
 
 
 def rig_clock_reasons(tag: str, r: dict, tol: float, cap: float) -> list[str]:
@@ -6543,11 +6620,12 @@ def rig_clock_reasons(tag: str, r: dict, tol: float, cap: float) -> list[str]:
         out.append(f"G-CLOCK rig {tag}: ZERO labelled windows checked -- the check read nothing")
     if r["n_violations"]:
         out.append(f"G-CLOCK rig {tag}: {r['n_violations']} of {r['n_windows']} labelled rows carry a time more than {tol} s from the "
-                   f"clip-clock sidecar's clock for the same provider row ({r['n_violating_clips']} clips, worst "
-                   f"{r['worst_abs_s']} s)")
+                   f"clip-clock sidecar's clock for the same provider row, both on the label timeline after the per-clip ts0 "
+                   f"bridge ({r['n_violating_clips']} clips, worst {r['worst_abs_s']} s)")
     if not r["cap_ok"]:
         out.append(f"G-CLOCK rig {tag}: {r['n_unverified_clips']} of {r['n_clips']} clips ({r['unverified_frac']:.2%}) have no "
-                   f"measured clock in the sidecar -- above the {cap:.0%} cap")
+                   f"measured clock in the sidecar / egomotion log (no sidecar row or no ts0 to bridge the raw clock) -- above "
+                   f"the {cap:.0%} cap")
     if r["n_windows"] and r["legacy_control_violations"] == 0:
         out.append(f"G-CLOCK rig {tag}: control -- the historical clock also reads 0 violations, so the instrument cannot see "
                    f"the defect it exists for")
@@ -6595,6 +6673,14 @@ def rig_clock_check(ctx: Ctx, T: Any, args: Any, tol: float, cap: float) -> tupl
     if not side_p or not cache:
         return [f"G-CLOCK rig: --clip-clock-sidecar ({side_p!r}) and --v2-cache ({cache!r}) are both needed: the rig's labels "
                 f"cannot be timed without the clock"], det
+    ego_dir = ctx.options.get("rig_ego_dir")
+    if not ego_dir:
+        return [f"G-CLOCK rig: no egomotion directory (--rig-ego-dir / the profile's rig_ego_dir_default): the joins' `t_s` is on the "
+                f"RAW clip clock and the sidecar on the label timeline (zero = the egomotion log's first sample, ts0), so without "
+                f"each clip's ts0 the two cannot be put on one clock -- the check cannot run"], det
+    if not Path(str(ego_dir)).is_dir():
+        return [f"G-CLOCK rig: the egomotion directory {str(ego_dir)!r} is not a directory on this host -- no ts0, no bridge"], det
+    ts0_of = RigEgoTs0(ego_dir)
     table = _cc.read_clip_clock_sidecar(str(side_p)).table
     man = v2d.load_or_build_manifest(cache, rebuild=False, verbose=False)
     uids = man.get("episode_uid") or [v2d.stable_episode_id(c) for c in man["clip_id"]]
@@ -6611,7 +6697,7 @@ def rig_clock_check(ctx: Ctx, T: Any, args: Any, tol: float, cap: float) -> tupl
             continue
         path = path[0] if isinstance(path, (list, tuple)) else path
         recs = list(iter_join_records(path, limit))
-        wins = list(rig_join_clock_windows(recs, v2d.stable_episode_id, table, ns_of))
+        wins = list(rig_join_clock_windows(recs, v2d.stable_episode_id, table, ns_of, ts0_of))
         res = judge_clock_windows(wins, tol, n_clips=len(ns_of), cap=cap)
         res["path"] = str(path)
         if wins:
@@ -6619,6 +6705,8 @@ def rig_clock_check(ctx: Ctx, T: Any, args: Any, tol: float, cap: float) -> tupl
             if signed:
                 res["signed_err_s_quantiles"] = {q: round(signed[min(len(signed) - 1, int(q * len(signed)))], 5)
                                                  for q in (0.01, 0.5, 0.99)}
+                ab = sorted(abs(x) for x in signed)
+                res["abs_err_s"] = {"median": round(ab[len(ab) // 2], 6), "max": round(ab[-1], 6), "n": len(ab)}
         det[tag] = res
         reasons += rig_clock_reasons(tag, res, tol, cap)
         if tag == "agent join":
@@ -6627,6 +6715,10 @@ def rig_clock_check(ctx: Ctx, T: Any, args: Any, tol: float, cap: float) -> tupl
                 if r >= 0 and sid in ns_of and i % 997 == 0 and len(probes) < 300:
                     probes.append((cid, r, ns_of[sid]))
         del recs, wins
+    det["ego_ts0"] = ts0_of.summary()
+    if ts0_of.out_of_band:
+        reasons.append(f"G-CLOCK rig: {len(ts0_of.out_of_band)} clips have an egomotion ts0 outside +-{RIG_TS0_BAND_S} s "
+                       f"(a unit error, not a clock offset; first {sorted(ts0_of.out_of_band.items())[:3]}) -- refused, never bridged")
     mg = getattr(args, "map_gt_root", None)
     if mg:
         try:
@@ -7638,6 +7730,8 @@ def job_clock(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         ev["inputs_read"].update(_inputs_read(ctx, ("--p10-prior",)))
     for i, r_ in enumerate(refs):
         ev["inputs_read"][f"gate:clock-reference[{i}]"] = fingerprint(r_)
+    if rig_on and ctx.options.get("rig_ego_dir"):
+        ev["inputs_read"]["gate:rig-egomotion-dir"] = fingerprint(ctx.options["rig_ego_dir"])
     cm = ctx.options.get("clock_manifest") or {}
     if cm:
         # the dir itself was NOT read in manifest mode: bind a key the launch host cannot match,
@@ -8718,6 +8812,14 @@ def cmd_run(a) -> int:
         gin["gate:suite-verdict"] = options["suite_verdict"]
     options["gate_inputs"] = gin
     pmap = parse_path_map(a.path_map)
+    # refcv9-e1rig G-CLOCK (r9gclk): the per-clip ts0 bridge reads the egomotion logs. Content-bound in the token like every gate
+    # input (`gate:rig-egomotion-dir`, a directory LISTING); absent => rig_clock_check FAILS loud (it never guesses a ts0)
+    if has_flag(argv, _E1_FLAG) and "G-CLOCK" in req:
+        rd_ = (str(Path(a.rig_ego_dir).resolve()) if a.rig_ego_dir
+               else (map_path(profile["rig_ego_dir_default"], pmap) if profile.get("rig_ego_dir_default") else None))
+        if rd_:
+            options["rig_ego_dir"] = rd_
+            gin["gate:rig-egomotion-dir"] = rd_
     # ⛔ a map entry that matches NO argv path is a mangled map, not a no-op (MEASURED 2026-09-26:
     # MSYS rewrote `/home/nvidia/data=D:/kit` into `C:\Program Files\Git\home\...` and every
     # data path silently stayed unmapped)
@@ -8925,6 +9027,9 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--eval-remap-overrides", default=None,
                    help="JSON {flag: local path} handed to the eval loader (REFCV6_REMAP_OVERRIDES)")
     r.add_argument("--clock-reference", action="append", default=None)
+    r.add_argument("--rig-ego-dir", default=None,
+                   help="refcv9-e1rig G-CLOCK: the directory of per-clip egomotion logs (<clip_id>.parquet) whose first timestamp is "
+                        "each clip's ts0 (default: the profile's rig_ego_dir_default, path-mapped)")
     r.add_argument("--clock-manifest", action="append", default=None,
                    help="train=<_v2manifest.pt> (dev box: manifest mode, not launch evidence)")
     r.add_argument("--smoke-steps", type=int, default=None)
