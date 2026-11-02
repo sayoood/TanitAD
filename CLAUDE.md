@@ -785,3 +785,15 @@ The PI stopped it. From now on:
 * ⚠️ **EXEMPTION — REFe (PI, 2026-10-18: *"Exempt REFe"*).** REFe (P2, SFT-4, P6, every REFe arm) is the NAVSIM-protocol
   reproduction. Its 7-D ego input includes nuPlan's `tire_steering_angle` (`refe/model.py:185`), which is treated as a measured
   vehicle state FOR REFe ONLY. This rule keeps full force for every other model. Register: `D-PI-YAWRATE-3`.
+
+## ⛔⛔ BINDING — LEAN BUDGET RULES (PI, 2026-11-02, "Approve plan")
+
+**Why (MEASURED, `tools/token_meter/token_meter.py`):** 10-25 to 10-29 burned **931M units** and hit the weekly limit on 10-29 ~07:00, killing three agents. **68 %** was subagents, and every large transcript ran at a **mean context of 250-320k**, so each call re-read ~300k. The Master Mind session alone used 178M at a mean of 310k. ⚠️ **Three MAIN sessions share one weekly pool** (TanitAD on E:/D:, a TanitAD session on the old G: path, TanitScenarioFlyWheel).
+
+These rules **replace** the ">= 5 parallel streams" rule above:
+
+1. **The Master Mind restarts from a short state file** (`TanitAD-artifacts/dagland/LOOP_STATE_<date>.md`, <= 3k tokens) daily or at ~150k context. It never carries ~300k. Finalisation, table reading and RESULTS rewrites go to scripts or a small agent, never to the main session.
+2. **Agents:** Sonnet, the design PINNED in the brief, a HANDOFF at <= 150k context, **at most 2 concurrent**. Run `token_meter.py --days 1` (all sessions) before any fan-out.
+3. **Throughput rule:** **one box-2 job always running + at most 2 agents.** Box 2 idling while documents are built is the failure this replaces.
+4. **Two rigour tiers.** Decision-of-record reads (that adopt or reject a recipe): full PREREG, reader known-answer, checker. Zero-training probes and documents: a one-page frozen card and a known-answer test; **no mutation suite, no numbers audit.** The scientific report is rebuilt per milestone, not per result.
+5. ⛔ **The evidence bar is unchanged:** Rule Zero, the estimator rules, the four families and the tier stamps all still bind. The rules cut the cost of being right, never the standard.
