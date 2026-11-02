@@ -384,6 +384,10 @@ class MapHiresConfig:
     #: Needs ``near_lift_x_m > 0``. ``0`` (the DEFAULT) builds nothing: R2 as landed.
     #: (``--map-hires-near-refine-blocks``.)
     near_refine_blocks: int = 0
+    #: ⭐ refcv9 C1 (REFCV9_DESIGN 2.1; ``--r9-map-banded``): build the BANDED, CHANNELLED decoder (``map_banded.BandedMapHead``)
+    #: beside the refine trunk and do NOT build the 8-way readout ``refine.cls``. ``False`` (the DEFAULT) builds nothing: the branch
+    #: is refcv8's, parameter for parameter, RNG draw for RNG draw.
+    banded: bool = False
 
     def __post_init__(self) -> None:
         if str(self.decision_rule) not in DECISION_RULES:
@@ -429,6 +433,11 @@ class MapHiresConfig:
         if int(nb) > 0 and not nx > 0.0:
             raise ValueError("near_refine_blocks > 0 with near_lift_x_m 0: the block refines "
                              "the NEAR rows, and without the near lift there are none")
+        if bool(self.banded):
+            from tanitad.models import map_banded as _mb
+            _mb.band_geometry(self.x_max_m, self.y_half_m)           # refuses an extent the bands cannot tile
+            if abs(nx - 10.0) > 1e-9:
+                raise ValueError(f"banded map head needs near_lift_x_m 10 (the near band is 0-10 m @ 0.10 m), got {nx}")
 
     @property
     def extent(self) -> MapExtent:
@@ -474,7 +483,9 @@ class MapHiresConfig:
                 "near_lift_x_m": float(self.near_lift_x_m),
                 "near_lift_rows": int(self.near_rows),
                 # NEW-2 R3 (A15): 0 = no near refine block (R2 as landed)
-                "near_refine_blocks": int(self.near_refine_blocks)}
+                "near_refine_blocks": int(self.near_refine_blocks),
+                # refcv9 C1: absent (not False) for a default run, so a refcv8 stamp is unchanged
+                **({"banded": True} if bool(self.banded) else {})}
 
 
 def declared_extent(args) -> MapExtent:
@@ -617,7 +628,8 @@ class HiresRefine(nn.Module):
         self.conv2 = nn.Conv2d(d, d, 3, padding=1, bias=False)
         self.norm2 = nn.GroupNorm(g, d)
         self.act = nn.GELU()
-        self.cls = nn.Conv2d(d, int(cfg.n_classes), 1)
+        # refcv9 C1: under `banded` the 8-way readout is NOT built (nothing would train it)
+        self.cls = None if bool(cfg.banded) else nn.Conv2d(d, int(cfg.n_classes), 1)
 
     def forward(self, x: Tensor, near: Tensor | None = None, near_refine=None,
                 near_block_zero_input: bool = False) -> Tensor:
@@ -799,6 +811,13 @@ class MapHiresBranch(nn.Module):
         self.near_refine = (nn.ModuleList([NearRefineBlock(cfg)
                                            for _ in range(int(cfg.near_refine_blocks))])
                             if int(cfg.near_refine_blocks) > 0 else None)
+        # ⭐ refcv9 C1: built LAST, so every parameter above initialises exactly as without it; None = refcv8's branch.
+        if bool(cfg.banded):
+            from tanitad.models.map_banded import BandedMapHead
+            self.banded = BandedMapHead(float(cfg.x_max_m), float(cfg.y_half_m), d_up=int(cfg.d_up),
+                                        groups=int(cfg.norm_groups))
+        else:
+            self.banded = None
 
     def param_breakdown(self) -> dict:
         def n(m):
@@ -808,6 +827,8 @@ class MapHiresBranch(nn.Module):
             out["near"] = n(self.near)
         if self.near_refine is not None:
             out["near_refine"] = n(self.near_refine)
+        if self.banded is not None:
+            out["banded"] = n(self.banded)
         out["total"] = n(self)
         return out
 
@@ -821,6 +842,24 @@ class MapHiresBranch(nn.Module):
         if self.cfg.grad_ckpt and torch.is_grad_enabled():
             return torch.utils.checkpoint.checkpoint(fn, x, use_reentrant=False)
         return fn(x)
+
+    def _forward_banded(self, feats, fmap_s8, grid, valid, near_source, near_block_zeros):
+        if near_source is not None:
+            raise ValueError("near_source is a G-MAP-OVERFIT regression-arm input; the banded head does not take it")
+        src = fmap_s8
+
+        def body(f):
+            return tuple(self.banded(self.refine, self.near, self.near_refine, f, src, grid, valid,
+                                     near_block_zeros=near_block_zeros))
+        if self.cfg.grad_ckpt and torch.is_grad_enabled():
+            zs = torch.utils.checkpoint.checkpoint(body, feats, use_reentrant=False)
+        else:
+            zs = body(feats)
+        from tanitad.models.map_banded import unobs_masks
+        lv = valid.any(dim=1)                                              # [B, X4, Y4]: the lift's own validity
+        # ⛔ `map_hires_logits` is None BY DESIGN: there is no 8-way raster, and a consumer that still reads one must fail loud
+        return {"map_hires_logits": None, "map_hires_lift_valid": lv, "map_hires_bev": feats,
+                "map_banded": {"logits": list(zs), "unobs": unobs_masks(lv, self.banded.geom)}}
 
     def forward(self, fmap_s8: Tensor | None, grid: Tensor | None,
                 valid: Tensor | None, *, near_source: Tensor | None = None,
@@ -848,6 +887,8 @@ class MapHiresBranch(nn.Module):
                              f"the branch was built for {self.d_image}")
         bev = self.lift(fmap_s8, grid, valid)
         feats = self._run(self.encoder, bev)
+        if self.banded is not None:
+            return self._forward_banded(feats, fmap_s8, grid, valid, near_source, bool(near_block_zeros))
         if near_block_zeros and self.near_refine is None:
             raise ValueError("near_block_zeros given to a branch with no near refine block")
         if self.near is None:
@@ -1045,7 +1086,7 @@ def is_exact_log_key(key: str) -> bool:
     at 1e-5 RELATIVE; a loss rounded to 5 dp fails that as soon as the loss is below
     ~0.5, and a rare class's gradient norm (~1e-6) rounds to the 0.0 that reads as
     "no signal". Every other key keeps the trainer's 5 dp rounding."""
-    return key == LOG_PREFIX[:-1] or key.startswith(LOG_PREFIX)
+    return key == LOG_PREFIX[:-1] or key.startswith(LOG_PREFIX) or key.startswith("map_banded_")
 
 
 def per_class_signal(logits: Tensor, codes: Tensor, *, class_weight=None,

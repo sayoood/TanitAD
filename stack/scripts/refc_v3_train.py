@@ -104,6 +104,8 @@ from tanitad.train import map_only_ft as _mof  # noqa: E402  PI D-R9-MAPHEAD-PRE
 from tanitad.refs import refcv9_progress as _r9p  # noqa: E402  refcv9 R9-PF: --r9-progress-head (OFF: nothing)
 from tanitad.train import refcv9_alloc_force as _r9af  # noqa: E402  refcv9: --r9-alloc-force-schedule (OFF: nothing)
 from tanitad.train import map_precision as _mfp  # noqa: E402  refcv9 warm start: --w-map-fp (OFF: nothing)
+from tanitad.train import map_banded_flag as _mbf  # noqa: E402  refcv9 C1: --r9-map-banded (OFF: nothing)
+from tanitad.models import map_banded as _mband  # noqa: E402  refcv9 C1: banded targets / losses (OFF: never called)
 # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
 # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
 # absent). Its trainer integration arrived in d014414, swept in from a worktree that
@@ -169,6 +171,8 @@ from tanitad.refs import refcv9_perc_rig as _r9rig_mod  # noqa: E402  refcv9 C7:
 _r9rig_mod.register_dvb_levers(_dvb.register)
 # refcv9 warm start: --w-map-fp is a `loss` lever (the weight the 10 cm map term reads, model._w_map_fp)
 _mfp.register_dvb_levers(_dvb.register)
+# refcv9 C1: --r9-map-banded is a `built` lever (the banded head and the absent 8-way readout, read off the built branch)
+_mbf.register_dvb_levers(_dvb.register)
 # refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): the progress head is a `built` lever, its weights `loss` levers
 _r9p.register_dvb_levers(_dvb.register)
 # refcv9 GT-in-pool schedule (H-R9-ALLOC-ORACLE-1): the attached schedule's spec / seed, read off the built model
@@ -874,6 +878,7 @@ def _pin_refcv8(cfg, args) -> None:
     _mof.pin_args(args)          # PI D-R9-MAPHEAD-PRECISION: --r8-train-only-map's refusals (a no-op when off)
     #                              refcv9 warm start: --r9-train-only's refusals (the same machinery; a no-op when off)
     _mfp.pin_args(args)          # refcv9 warm start: --w-map-fp's refusals (a no-op at the default 0)
+    _mbf.pin_args(args)          # refcv9 C1: --r9-map-banded's refusals (incl. --w-map-fp, retired under it; a no-op when off)
     _gse = int(getattr(args, "grad_share_every", 0) or 0)
     if _gse < 0 or (_gse > 0 and _gse % max(1, int(getattr(args, "log_every", 50) or 50)) != 0):
         raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
@@ -5110,6 +5115,42 @@ def _bn_recalib_finish(model, loader, args, device, out_dir, run_config, step):
              else " | ⛔ " + rec["staleness_error"]), flush=True)
 
 
+def _map_banded_loss(model, out: dict, batch: dict, device, extra: dict, with_metrics: bool = True):
+    """refcv9 C1 (``--r9-map-banded``): the banded map term, WEIGHTED. Every input is REFUSED rather than skipped, as the 8-way
+    term's are: no ``map_banded`` on the forward's perception output is the D-REFCV6-F3-WHITELIST class (the branch ran, its
+    channels did not reach the loss). Targets are built on the batch's device from ``batch["map_fine"]`` (the 8-code 10 cm GT the
+    refcv8 head trains on). Returns ``w * L`` and emits one telemetry key per channel x band (``map_banded_loss_<ch>_<band>``)."""
+    br = model._map_hires
+    mb = (out.get("perception") or {}).get("map_banded")
+    if mb is None:
+        raise SystemExit(
+            "[v3] ⛔ --r9-map-banded but the forward's perception output carries no `map_banded`: the banded head did not run "
+            "(or the BEV hook did not pass its channels through). Refusing rather than training a head on nothing.")
+    if "map_fine" not in batch or "map_fine_label" not in batch:
+        raise SystemExit("[v3] ⛔ --r9-map-banded but the batch carries no `map_fine` (ds.enable_map_hires was never called).")
+    w = float(getattr(model, "_w_map_hires", 0.0) or 0.0)
+    lab = batch["map_fine_label"].to(device)
+    sel = lab.nonzero(as_tuple=False).flatten()
+    extra["map_hires_n_windows"] = float(lab.shape[0])
+    extra["map_hires_n_labelled"] = float(int(lab.sum()))
+    if not int(lab.sum()):
+        term = sum((z.sum() * 0.0 for z in mb["logits"]), mb["logits"][0].sum() * 0.0)       # a COUNTED zero on the graph
+        extra["map_hires"] = term
+        extra["n_map_hires_cells"] = 0.0
+        return term
+    sub = {"logits": [z.index_select(0, sel) for z in mb["logits"]], "unobs": [u.index_select(0, sel) for u in mb["unobs"]]}
+    tg = _mband.build_banded_targets(batch["map_fine"].to(device).index_select(0, sel),
+                                     x_max_m=float(br.cfg.x_max_m), y_half_m=float(br.cfg.y_half_m))
+    row = _mband.banded_map_loss(sub, tg, with_metrics=bool(with_metrics))
+    extra["map_hires"] = row["loss"]
+    extra["n_map_hires_cells"] = float(sum(row["map_banded_n_%s" % b] for b in _mband.BAND_NAMES))
+    extra["n_map_hires_cells_seen"] = float(sum(int(t["seen"].sum()) for t in tg))
+    for k, v in row.items():
+        if k != "loss":
+            extra[k] = v
+    return w * row["loss"]
+
+
 def _map_hires_loss(model, out: dict, batch: dict, device, extra: dict,
                     with_metrics: bool = True):
     """refcv7 NEW-2 + A6 (SPEC_REFCV7 §6.2, §11): the 10 cm map term, WEIGHTED, or None.
@@ -5144,6 +5185,8 @@ def _map_hires_loss(model, out: dict, batch: dict, device, extra: dict,
             "did not reach the loss (tap off, or the forward did not pass it "
             "through). This is the D-REFCV6-F3-WHITELIST class -- refusing rather "
             "than training a 10 cm head on nothing while config.json stamps it.")
+    if bool(getattr(model, _mbf.MODEL_ATTR, False)):          # refcv9 C1 (--r9-map-banded); OFF: never entered
+        return _map_banded_loss(model, out, batch, device, extra, with_metrics)
     pout = out.get("perception") or {}
     if pout.get("map_hires_logits") is None or pout.get("map_hires_lift_valid") is None:
         raise SystemExit(
@@ -9717,9 +9760,12 @@ def train(args) -> dict:
             near_refine_blocks=int(_mhr.declared_near_refine_blocks(args)),
             class_weights_sha256=str(_hcws["sha256"]),
             decision_rule=str(getattr(args, "map_hires_decision_rule",
-                                      _mhr.DECISION_RULES[0])))
+                                      _mhr.DECISION_RULES[0])),
+            banded=bool(_mbf.is_on(args)))                   # refcv9 C1: False (the default) builds nothing new
         model._map_hires = _mhr.build_map_hires_branch(model, _hcfg).to(device)
         model._w_map_hires = float(args.w_map_hires)
+        if _mbf.is_on(args):                                 # refcv9 C1: absent (no attribute) for a default run
+            setattr(model, _mbf.MODEL_ATTR, True)
         model._map_hires_class_weight = _hcw.to(device)
         model._map_hires_class_weight_stamp = _hcws
         model._map_hires_class_thresholds = None if _hct is None else _hct.to(device)
@@ -9764,6 +9810,12 @@ def train(args) -> dict:
             print("[v3] refcv9 map precision: --w-map-fp %g on corridor rows %s cols %s (%d cells)" % (
                 _mfp.weight(args), map_hires_stamp["map_fp"]["corridor_rows"],
                 map_hires_stamp["map_fp"]["corridor_cols"], map_hires_stamp["map_fp"]["n_corridor_cells"]), flush=True)
+        if _mbf.is_on(args):                  # refcv9 C1: absent for a default run (config.json unchanged)
+            map_hires_stamp["banded"] = _mbf.stamp(model._map_hires)
+            map_hires_stamp["loss"] = "refcv9 banded R7 loss (map_banded.banded_map_loss); the 8-way CE is NOT computed"
+            print("[v3] refcv9 C1 banded map head: %s, %d cells, params %s" % (
+                [(g["name"], g["shape"]) for g in map_hires_stamp["banded"]["bands"]],
+                map_hires_stamp["banded"]["n_cells"], model._map_hires.param_breakdown()), flush=True)
         if _hcts is not None:                 # absent (not null) for a default run: config.json unchanged
             map_hires_stamp["class_thresholds"] = {
                 k: _hcts[k] for k in ("path", "sha256", "schema", "tau_phat_logit", "provenance")}
@@ -13201,6 +13253,12 @@ def build_parser() -> argparse.ArgumentParser:
                     help="refcv9 map precision term (PI 2026-10-27): + w x mean over GT-drivable cells of the "
                          "near-field corridor (x 0-20 m, |y| < 3 m) of the 10 cm head's p_sidewalk + p_edge. 0 (the "
                          "default) = no term, no key, the tip's graph. Logged as `map_fp` every training step.")
+    g8.add_argument("--r9-map-banded", action="store_true",
+                    help="refcv9 C1 (REFCV9_DESIGN 2.1/2.2): the BANDED, CHANNELLED map head -- three bands over the same extent "
+                         "(0-10 m @ 0.10, 10-40 m @ 0.25, 40-100 m @ 0.50 m = 103,200 cells), channels drv / drv_sdf / sdw / lane "
+                         "(+2 offsets) / edge_h / xwalk / arrow / hatch, `unobs` = the lift's own validity (losses ignore it), R7 "
+                         "losses (focal + Dice, L1), band weights 1/1/0.5. Needs --map-hires on --map-hires-near-lift-m 10; "
+                         "REFUSES --w-map-fp (retired). Default OFF: the tip's build, forward and loss.")
     g9 = ap.add_argument_group("refcv9 R9-PF (clean-split, regime-factored progress head; REFCV9_INMODEL_DESIGN.md)")
     g9.add_argument("--r9-perc-rig", action="store_true",
                     help="refcv9 C7 (REFCV9_DESIGN 4.3): the E1 PERCEPTION-ONLY rig -- init from refcv8 EMA-48,852 via "

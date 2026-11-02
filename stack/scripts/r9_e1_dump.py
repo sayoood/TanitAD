@@ -171,8 +171,10 @@ def raster_name(e_i: int, ws: int) -> str:
 def write_raster(rast_dir, e_i: int, ws: int, planes: tuple, gt) -> int:
     """MAPSEL's write, line for line: ``arrs`` = pdrv/pedge/psw/code (+ ``gt`` when the window carries a label), written to
     ``<name>.tmp.npz`` with ``savez_compressed`` then ``os.replace``d. Returns the byte size."""
-    pdrv, pedge, psw, code = planes
+    pdrv, pedge, psw, code = planes[:4]
     arrs = {"pdrv": pdrv, "pedge": pedge, "psw": psw, "code": code}
+    if len(planes) > 4 and planes[4] is not None:     # refcv9 C1: the head's own `unobs` plane (uint8; absent for refcv8)
+        arrs["unobs"] = np.asarray(planes[4], np.uint8)
     if gt is not None:
         arrs["gt"] = np.asarray(gt, np.uint8)
     rast = Path(rast_dir)
@@ -477,10 +479,17 @@ def run_dump(a) -> int:
                     n_box += 1
                 det.append(rec)
                 lg = pout.get("map_hires_logits")
-                if not a.no_rasters and lg is not None and n % max(1, int(a.rast_every)) == 0:
+                mb_ = pout.get("map_banded")             # refcv9 C1 (--r9-map-banded): the banded channels + unobs, no 8-way logits
+                if not a.no_rasters and (lg is not None or mb_ is not None) and n % max(1, int(a.rast_every)) == 0:
                     tp_ = time.time()
                     ST["c"]["calls"] += 1
-                    planes = own_planes(model, lg[0:1])
+                    if mb_ is None:
+                        planes = own_planes(model, lg[0:1])
+                    else:        # the ONE adapter (tanitad/eval/map_planes.py): the 4 MAPSEL planes + `unobs`
+                        from tanitad.eval import map_planes as _MPL
+                        _cfg = model._map_hires.cfg
+                        planes = _MPL.to_u8(_MPL.planes_from_banded(
+                            {k: [t[0:1] for t in v] for k, v in mb_.items()}, x_max_m=float(_cfg.x_max_m), y_half_m=float(_cfg.y_half_m)))
                     lab = eb.get("map_fine_label")
                     gt = None
                     if lab is not None and bool(lab.reshape(-1)[0]) and eb.get("map_fine") is not None:

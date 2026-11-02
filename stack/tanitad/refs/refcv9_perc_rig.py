@@ -89,6 +89,15 @@ def assert_rig_built(model) -> dict:
             "n_params": int(n_params)}
 
 
+def banded_exemptions(model) -> tuple:
+    """(new key prefixes the source cannot carry, source key prefixes with no home) -- ``((), ())`` unless the model was built with
+    ``--r9-map-banded`` (refcv9 C1), so the OFF warm start is the tip's, check for check."""
+    br = getattr(model, "_map_hires", None)
+    if br is None or getattr(br, "banded", None) is None:
+        return (), ()
+    return ("_map_hires.banded.",), ("_map_hires.refine.cls.",)
+
+
 def warm_start_perc_rig(model, path: str) -> dict:
     """``--init-from`` for the rig: load the refcv8 EMA into the perception modules with the NAMED skip list. Refuses (a)
     a source key that is neither loadable nor in RIG_SKIPPED_MODULES, (b) a rig key the source lacks, (c) a shape mismatch."""
@@ -107,18 +116,30 @@ def warm_start_perc_rig(model, path: str) -> dict:
     own = model.state_dict()
     skipped = {k: v for k, v in sd.items() if is_skipped_key(k)}
     loadable = {k: v for k, v in sd.items() if not is_skipped_key(k)}
+    # refcv9 C1 (--r9-map-banded): the banded head's keys are NEW (the source cannot have them) and the 8-way readout
+    # `_map_hires.refine.cls.*` is NOT BUILT (the source's copy has no home). Both are NAMED, never a blanket strict=False; OFF: ().
+    new_pfx, drop_pfx = banded_exemptions(model)
+    dropped = sorted(k for k in loadable if k not in own and any(k.startswith(q) for q in drop_pfx))
+    for k in dropped:
+        del loadable[k]
     unexpected = sorted(k for k in loadable if k not in own)
-    missing = sorted(k for k in own if k not in loadable)
+    missing = sorted(k for k in own if k not in loadable and not any(k.startswith(q) for q in new_pfx))
     if unexpected or missing:
         raise SystemExit("[r9-perc-rig] --init-from %s: %d source key(s) neither built nor in RIG_SKIPPED_MODULES (e.g. %s); "
                          "%d rig key(s) the source lacks (e.g. %s)" % (path, len(unexpected), unexpected[:3], len(missing), missing[:3]))
     bad = [k for k in loadable if tuple(loadable[k].shape) != tuple(own[k].shape)]
     if bad:
         raise SystemExit("[r9-perc-rig] --init-from %s: shape mismatch on %s" % (path, bad[:3]))
-    model.load_state_dict(loadable, strict=True)
+    model.load_state_dict(loadable, strict=not new_pfx)
+    if new_pfx:        # strict=False only because of the NAMED new prefixes: prove nothing else is missing
+        miss = sorted(k for k in own if k not in loadable)
+        if any(not any(k.startswith(q) for q in new_pfx) for k in miss):
+            raise SystemExit("[r9-perc-rig] --init-from: keys missing beyond the banded head's own: %s" % miss[:3])
     per_mod = {m: sum(1 for k in skipped if k == m or k.startswith(m + ".")) for m in RIG_SKIPPED_MODULES}
     return {"path": str(p), "md5": h.hexdigest(), "source_step": (int(state["step"]) if isinstance(state, dict) and "step" in state else None),
             "n_loaded": len(loadable), "n_new_refcv8_keys": 0, "n_skipped_source_keys": len(skipped),
+            **({"banded": {"new_prefixes": list(new_pfx), "n_new_keys": sum(1 for k in own if any(k.startswith(q) for q in new_pfx)),
+                           "dropped_source_keys": dropped}} if new_pfx else {}),
             "skipped_modules_key_counts": per_mod, "optimizer": "fresh (not loaded)"}
 
 

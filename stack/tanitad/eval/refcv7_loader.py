@@ -596,7 +596,8 @@ def map_hires_config(tr, args, class_weights_sha256: str):
         near_lift_x_m=float(_mhr.declared_near_lift_m(args)),
         near_refine_blocks=int(_mhr.declared_near_refine_blocks(args)),
         class_weights_sha256=str(class_weights_sha256),
-        decision_rule=str(getattr(args, "map_hires_decision_rule", _mhr.DECISION_RULES[0])))
+        decision_rule=str(getattr(args, "map_hires_decision_rule", _mhr.DECISION_RULES[0])),
+        banded=bool(getattr(args, "r9_map_banded", False)))          # refcv9 C1 (train(): same line); False = refcv8's branch
 
 
 def build_map_hires_block(tr, model, args, device) -> dict | None:
@@ -621,6 +622,8 @@ def build_map_hires_block(tr, model, args, device) -> dict | None:
     _hcfg = map_hires_config(tr, args, _hcws["sha256"])                 # train():8019-8027
     model._map_hires = _mhr.build_map_hires_branch(model, _hcfg).to(device)   # train():8028
     model._w_map_hires = float(args.w_map_hires)                        # train():8029
+    if bool(getattr(args, "r9_map_banded", False)):                     # train(): refcv9 C1 --r9-map-banded (absent when off)
+        setattr(model, tr._mbf.MODEL_ATTR, True)
     _mfp = getattr(tr, "_mfp", None)                                    # train(): refcv9 --w-map-fp (absent at 0)
     if _mfp is not None and _mfp.is_on(args):
         setattr(model, _mfp.MODEL_ATTR, _mfp.weight(args))

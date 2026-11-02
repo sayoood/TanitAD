@@ -300,7 +300,9 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # + refcv9 WARM START (PI 2026-10-27): --r9-train-only ("built": the trainable sets read off the model,
     #   map_only_ft.dvb_check_r9) and --w-map-fp ("loss": model._w_map_fp, map_precision.dvb_check) (296 -> 298)
     # refcv9 C7: --r9-perc-rig ("built": refcv9_perc_rig.dvb_check) (298 -> 299)
-    assert len(dvb.REGISTRY) == 299
+    # refcv9 C1: --r9-map-banded ("built": map_banded_flag.dvb_check) (299 -> 300)
+    assert len(dvb.REGISTRY) == 300
+    assert dvb.REGISTRY["r9_map_banded"].kind == "built"
     assert dvb.REGISTRY["r8_train_only_map"].kind == "built"
     assert dvb.REGISTRY["r9_train_only"].kind == "built"
     assert dvb.REGISTRY["w_map_fp"].kind == "loss"
