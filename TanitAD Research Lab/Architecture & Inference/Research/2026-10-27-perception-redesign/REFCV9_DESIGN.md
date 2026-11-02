@@ -435,6 +435,17 @@ lever below runs (Rule Zero).
 | D6 | eval protocol: eval139 DEV / HOLD halves (E0i) — selection on DEV, bars on HOLD | YES; it removes the 40k-vs-48,852 test-set-selection trap at the cost of ~√2 wider CIs on the perception bars. |
 | (MM, disclosed) | retire `--w-map-fp` (the PI approved it for the warm start); K3 agent-head retirement | retire; K3 decided by E2 |
 
+### 6b. PI decisions in force (recorded 2026-11-02; D1 / D3 / D5 chosen 2026-10-28, D2 / D4 / D6 chosen 2026-11-02; verbatim choices in `PI_DECISION_QUEUE.md`)
+
+| id | PI choice (verbatim) | change to this design |
+|---|---|---|
+| D1 | "~300 Thor-h core, ≤337 with conditionals" | §4.5 envelope approved as costed (ESTIMATED); hard stops E2 GO and the D1 early read stay; the full-length seed-1 replicate (D1b, +214 h) is NOT approved, deferred until seed 0 passes. |
+| D2 | "Raise to ≤12 M + Thor latency check" | §2.4 size-cap row is in force: box3d ≤ 12 M, `PARAM_BAND` kept on agent slots only. **The latency BOUND is not chosen**: C12 must carry a number sealed before launch (OPEN, MM). |
+| D3 | "Yes, as an E1 arm first" | §4.3 arm T1 only; joins the full run iff T1 clears. The §6 conditions (past poses only, W4 / W5 bind, BEV-history-shuffled control must read worse) stand; on a T1 miss the NO branch (MAP-2 0-5 m clause read on lift-valid cells) applies. |
+| D4 | "Drop LiDAR; box-derived depth only" | **B1b is dropped.** §2.3's LiDAR bullet and the §6 D4 row are superseded: depth supervision is B1 (box-derived, E0g / C3) only. R10 (pitch head) is supervised by egomotion pitch (§2.3) and is unaffected; E0c still decides it. Dense ground depth for the map lift is forgone for refcv9. |
+| D5 | "new `refcv9-full` launch-gate profile" | C12 approved (profile + G-LIVE rules for every new weight + the share-alarm row). |
+| D6 | "eval139 DEV/HOLD split" | §5.1 split is in force. E0i is DONE: hold `hold_r9_e0`, `e0/DEV_HOLD_SPLIT.json` sha256 `ca5af0203320aba4f89e09be81a6bf079d9d4d77708ccb8a3ca2a0ea57e8db0a`, `lists_digest` `417f55c9eb5958ae...`; DEV 70 / HOLD 69 episodes, 2397 / 2357 S2 windows, 1848 / 1820 S6 windows. |
+
 ---
 
 ## 7. Conflicts, limits, UNVERIFIED
