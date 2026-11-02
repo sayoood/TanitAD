@@ -48,6 +48,7 @@ derived from the code it checks measures determinism, not correctness.
 from __future__ import annotations
 
 import dataclasses
+import re
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -1260,6 +1261,24 @@ def drivort_levers_set(args) -> list[str]:
     return out
 
 
+_RIG_ABSENT_RE = re.compile(r"has no attribute '([A-Za-z_0-9]+)'")
+
+
+def _rig_exempt(model, exc) -> bool:
+    """refcv9 C7 (--r9-perc-rig): a lever READER that raised because it reads a planner / tactical module the rig does
+    not build (``RefCModel`` has no ``decoder`` ...) is EXEMPT -- the planner levers are refused at argv by
+    ``refcv9_perc_rig.pin_args`` and the rig's own ``dvb_check`` asserts the built roots. Exempt ONLY an AttributeError
+    naming a skipped planner module on a model that declares ``_perc_rig``; any other reader failure, and any failure on
+    a non-rig model, is still a FAIL."""
+    if not bool(getattr(getattr(model, "core", model), "_perc_rig", False)) or not isinstance(exc, AttributeError):
+        return False
+    m = _RIG_ABSENT_RE.search(str(exc))
+    if m is None:
+        return False
+    from tanitad.refs import refcv9_perc_rig as _rig
+    return m.group(1) in {s.split(".")[-1] for s in _rig.RIG_SKIPPED_MODULES}
+
+
 def check(model, args, parser=None, *, forbid_kinds: tuple = ()) -> list[Mismatch]:
     """-> every declared-vs-built mismatch on the BUILT ``model``; ``[]`` == clean.
 
@@ -1279,11 +1298,15 @@ def check(model, args, parser=None, *, forbid_kinds: tuple = ()) -> list[Mismatc
                                 "tanitad.train.declared_vs_built.REGISTRY",
                                 "a trainer flag with no declared-vs-built entry is refused "
                                 "(SPEC_REFCV7 §2): register it with its built reader"))
+    _rig_skipped = []
     for lever in list(REGISTRY.values()):
         if lever.kind in ("built", "loss") and lever.check is not None:
             try:
                 out += list(lever.check(model, args) or [])
             except Exception as e:                  # a reader that cannot read is a FAIL
+                if _rig_exempt(model, e):           # refcv9 C7: reads a module the rig does not build
+                    _rig_skipped.append(lever.dest)
+                    continue
                 out.append(Mismatch(_flag(lever.dest), "readable", f"{type(e).__name__}: {e}",
                                     "G-DVB reader", "the built value could not be read"))
     if "drivort" in tuple(forbid_kinds):
@@ -1292,8 +1315,16 @@ def check(model, args, parser=None, *, forbid_kinds: tuple = ()) -> list[Mismatc
             out.append(Mismatch(f, DRIVORT_DEFAULTS[d], getattr(args, d, None), "argv",
                                 "a DrivoR-T lever on a refcv7 launch (SPEC_REFCV7 §6.1): "
                                 "refcv7 passes none of them"))
-    out += _c_selection_declaration(model, args)
-    out += check_grad_unreachable(model, args)
+    if _rig_skipped:
+        print("[g-dvb] r9-perc-rig: %d lever reader(s) read a planner module the rig does not build and are EXEMPT "
+              "(planner flags are refused at argv by refcv9_perc_rig.pin_args): %s" % (len(_rig_skipped), ", ".join(_rig_skipped)),
+              flush=True)
+    for _fn in (_c_selection_declaration, check_grad_unreachable):
+        try:
+            out += _fn(model, args)
+        except AttributeError as e:
+            if not _rig_exempt(model, e):            # refcv9 C7: only a planner-module absence on a rig model
+                raise
     cfg = getattr(model, "cfg", None)
     if cfg is not None:
         for path, cls, attr in undeclared_attributes(cfg, "model.cfg"):

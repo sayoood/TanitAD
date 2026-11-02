@@ -8175,6 +8175,9 @@ def assert_seams_are_built(model, stamp: dict) -> None:
     by knowing what ``refc_v3.py`` forces.
     """
     core = getattr(model, "core", model)
+    if getattr(core, "_perc_rig", False):         # refcv9 C7: no decoder / agent_embed / ego_hist is built
+        _r9rig_mod.assert_seams_built_perc_rig(model, stamp)
+        return
     dec = core.decoder
     bad: list[str] = []
 
@@ -8960,6 +8963,11 @@ def _apply_withheld_bank(model, args, eps, device) -> dict:
     in the train loop (warm-up), never here.
     """
     mode = str(getattr(args, "withheld_bank", "fixed"))
+    if getattr(model.core, "_perc_rig", False):      # refcv9 C7: no decoder is built -- only the default `fixed` is meaningful
+        if mode != "fixed":
+            raise SystemExit("[r9-perc-rig] --withheld-bank %s needs the planner decoder, which the rig does not build" % mode)
+        return {"mode": mode, "warmup_steps": 0, "speed_max_ms": float(getattr(args, "withheld_speed_max", 35.0)),
+                "random_pool": None, "rig": "r9-perc-rig: no decoder built"}
     dec = model.core.decoder
     stamp = {"mode": mode,
              "warmup_steps": int(getattr(args, "withheld_bank_warmup", 0)),
@@ -10837,7 +10845,8 @@ def train(args) -> dict:
     # post-mortem: a second copy of the build condition is how a record drifts
     # from the model it claims to describe.
     # ⭐ refcv6 coupling (1): the FACT, read off the constructed decoder.
-    _seams["bev_coupling"]["built"] =         model.core.decoder.bev_coupling_provenance()
+    _seams["bev_coupling"]["built"] = (None if getattr(model.core, "_perc_rig", False)     # refcv9 C7: no decoder built
+                                       else model.core.decoder.bev_coupling_provenance())
     _seams["tac_decoder_v6"]["built"] = (
         getattr(model, "tac_decoder_v6", None) is not None)
     if getattr(model, "tac_decoder_v6", None) is not None:
@@ -10909,12 +10918,12 @@ def train(args) -> dict:
         # fallback to the synthetic default is exactly what an unstamped run
         # cannot rule out afterwards, so it is stamped here by CONTENT
         # (sha256 + shape), not by the presence of a path.
-        "anchors": _anchor_stamp(
+        "anchors": (None if _r9rig_on else _anchor_stamp(      # refcv9 C7: the rig builds no decoder, hence no vocabulary
             getattr(args, "anchors", None), model.core.decoder.anchors,
             model.core.decoder.anchor_controls
             if getattr(model.core.decoder, "anchor_v0_cond", False) else None,
             getattr(args, "anchor_control_units", None) or "kappa",
-            art=art),
+            art=art)),
         # ⭐⭐ THE SEAM STAMP (2026-09-05). MEASURED 2026-09-04: none of the
         # hierarchy-seam booleans were in config.json at any nesting level,
         # so the live arm could not rebuild its own model config from its
@@ -11360,8 +11369,9 @@ def train(args) -> dict:
         # EVERY step (not once) so a resumed run lands in the right regime,
         # and logged so the record says which bank each step trained on.
         _wb_active = step >= args.withheld_bank_warmup
-        model.core.decoder.anchor_withheld_bank = (
-            args.withheld_bank if _wb_active else "fixed")
+        if not _r9rig_on:                       # refcv9 C7: no decoder to set
+            model.core.decoder.anchor_withheld_bank = (
+                args.withheld_bank if _wb_active else "fixed")
         # ⭐ step-cost lever 2: `_logged_after` is the SAME test the log block below uses (the
         # post-increment step), so every row that is written still carries every key.
         if bool(getattr(model, "r8_enabled", False)):

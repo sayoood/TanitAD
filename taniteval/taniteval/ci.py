@@ -45,6 +45,10 @@ __all__ = [
     "episode_index",
     "episode_cluster_bootstrap",
     "paired_episode_cluster_bootstrap",
+    "align_windows",
+    "paired_stat_cluster_bootstrap",
+    "stat_cluster_bootstrap",
+    "e1_floor_read",
     "bootstrap_metrics",
     "REDUCERS",
     "resolve_reducer",
@@ -329,6 +333,112 @@ def paired_episode_cluster_bootstrap(a, b, eid, n_boot=DEFAULT_N_BOOT, seed=0,
             f"The arms are effectively IDENTICAL on these windows. Do not quote "
             f"this as a result and do not let an automated gate act on it.")
     return out
+
+
+def align_windows(keys_a, items_a, keys_b, items_b, eid_of=None):
+    """Pair two arms' per-window items on their window KEYS (never on position).
+
+    Returns ``(aligned_a, aligned_b, eid, report)`` over the keys both arms hold, in sorted key order. A duplicate key in
+    either arm is REFUSED (a silent first-wins would pair the wrong windows). ``report`` carries the counts dropped from
+    each side so a mismatch of the two arms' window sets is on the record, not silent. ``eid_of(key) -> episode id``
+    (default: ``key[0]``, the clip id of a ``(clip, window_start)`` key)."""
+    keys_a, keys_b = list(keys_a), list(keys_b)
+    if len(keys_a) != len(items_a) or len(keys_b) != len(items_b):
+        raise ValueError("keys / items length mismatch")
+    for name, ks in (("a", keys_a), ("b", keys_b)):
+        if len(set(ks)) != len(ks):
+            raise ValueError("arm %s carries duplicate window keys: pairing on them would be arbitrary" % name)
+    ia, ib = dict(zip(keys_a, items_a)), dict(zip(keys_b, items_b))
+    common = sorted(set(ia) & set(ib), key=lambda k: (str(k),))
+    if not common:
+        raise ValueError("the two arms share no window key: nothing to pair")
+    eo = eid_of if eid_of is not None else (lambda k: k[0] if isinstance(k, (tuple, list)) else k)
+    return ([ia[k] for k in common], [ib[k] for k in common], [str(eo(k)) for k in common],
+            {"n_common": len(common), "n_only_a": len(ia) - len(common), "n_only_b": len(ib) - len(common)})
+
+
+def paired_stat_cluster_bootstrap(items_a, items_b, eid, stat, n_boot=DEFAULT_N_BOOT, seed=0, alpha=0.05) -> dict:
+    """Paired episode-cluster bootstrap of ``stat(arm A windows) - stat(arm B windows)`` for a statistic that is NOT a
+    mean of per-window scalars (AP over pooled detections, a ratio of pooled counts, ...).
+
+    ``items_a`` / ``items_b`` [N] are the two arms' per-window objects, ALIGNED window-for-window on the same windows (see
+    :func:`align_windows`); ``stat`` maps a list of window objects to a float and is evaluated on the SAME resampled
+    episodes for both arms each draw, so shared window difficulty cancels. Point estimates are the FULL-set values.
+    ``separated`` = the interval excludes 0 (necessary, not sufficient, for a LEVER claim: this answers *another draw of
+    EPISODES*, never *another training run* -- read the E1 floor, :func:`e1_floor_read`)."""
+    if len(items_a) != len(items_b) or len(eid) != len(items_a):
+        raise ValueError("paired_stat_cluster_bootstrap needs aligned arms: %d / %d / eid %d"
+                         % (len(items_a), len(items_b), len(eid)))
+    uniq, idx_by_ep = episode_index(eid)
+    as_d = lambda v: v if isinstance(v, dict) else {"_": v}       # noqa: E731  (a stat may return one float or a dict of them)
+    scalar = not isinstance(stat(list(items_a)), dict)
+    pa, pb = as_d(stat(list(items_a))), as_d(stat(list(items_b)))
+    keys = list(pa)
+    if set(pb) != set(keys):
+        raise ValueError("the statistic returned different keys for the two arms")
+    d = {k: np.empty(int(n_boot), dtype=np.float64) for k in keys}
+    for i, sel in enumerate(_draws(uniq, idx_by_ep, n_boot, seed)):
+        ra, rb = as_d(stat([items_a[j] for j in sel])), as_d(stat([items_b[j] for j in sel]))      # the SAME draw for both arms
+        for k in keys:
+            d[k][i] = float(ra[k]) - float(rb[k])
+    out = {}
+    for k in keys:
+        fin = d[k][np.isfinite(d[k])]
+        if fin.size == 0:        # undefined on these windows (e.g. no positive in a band): reported, never read as 0
+            out[k] = {"a": float(pa[k]), "b": float(pb[k]), "delta": float("nan"), "separated": False, "undefined": True,
+                      "n_windows": int(len(items_a)), "n_episodes": int(len(uniq)), "n_boot": int(n_boot)}
+            continue
+        lo, hi = (float(x) for x in np.percentile(fin, [100 * alpha / 2, 100 * (1 - alpha / 2)]))
+        separated = bool(lo > 0 or hi < 0)
+        dp, degenerate = _render_bounds(lo, hi, separated)
+        r = {"a": round(float(pa[k]), dp), "b": round(float(pb[k]), dp), "delta": round(float(pa[k]) - float(pb[k]), dp),
+             "lo": round(lo, dp), "hi": round(hi, dp), "p_delta_gt0": round(float((fin > 0).mean()), 4),
+             "separated": separated, "n_windows": int(len(items_a)), "n_episodes": int(len(uniq)), "n_boot": int(n_boot),
+             "n_nonfinite_draws": int(d[k].size - fin.size), "estimator": "paired_" + _NEW_ESTIMATOR + "_stat"}
+        if degenerate:
+            r["degenerate"] = True
+        out[k] = r
+    return out["_"] if scalar else out
+
+
+def stat_cluster_bootstrap(items, eid, stat, n_boot=DEFAULT_N_BOOT, seed=0, alpha=0.05) -> dict:
+    """Single-arm sibling of :func:`paired_stat_cluster_bootstrap`: percentile CI of ``stat(items)`` (a float or a dict of
+    floats) resampling EPISODES; the point estimate is the full-set value."""
+    uniq, idx_by_ep = episode_index(eid)
+    p = stat(list(items))
+    scalar = not isinstance(p, dict)
+    p = {"_": p} if scalar else p
+    d = {k: np.empty(int(n_boot)) for k in p}
+    for i, sel in enumerate(_draws(uniq, idx_by_ep, n_boot, seed)):
+        r = stat([items[j] for j in sel])
+        r = {"_": r} if scalar else r
+        for k in p:
+            d[k][i] = float(r[k])
+    out = {}
+    for k in p:
+        fin = d[k][np.isfinite(d[k])]
+        rec = {"point": float(p[k]), "n_episodes": int(len(uniq)), "n_boot": int(n_boot), "estimator": _NEW_ESTIMATOR + "_stat"}
+        if fin.size:
+            rec["lo"], rec["hi"] = (float(x) for x in np.percentile(fin, [100 * alpha / 2, 100 * (1 - alpha / 2)]))
+        else:
+            rec["undefined"] = True
+        out[k] = rec
+    return out["_"] if scalar else out
+
+
+def e1_floor_read(delta, separated, c0, c1, higher_is_better=True) -> dict:
+    """REFCV9_DESIGN 4.3 keep-rule, ONE metric: a lever's effect is read against the rig's own run-to-run floor
+    ``|C1 - C0|`` (same flags, training seeds 1 vs 0). Kept on this metric iff the paired interval is separated in the GOOD
+    direction AND ``|delta| > 2 * |C1 - C0|``. A floor of exactly 0 is NOT a floor (two runs that agree to the last digit
+    on one seed pair): it is reported ``floor_degenerate`` and the keep decision then rests on separation alone."""
+    floor = abs(float(c1) - float(c0))
+    good = (float(delta) > 0) if higher_is_better else (float(delta) < 0)
+    margin = (abs(float(delta)) / floor) if floor > 0 else float("inf")
+    return {"delta": float(delta), "floor_abs_c1_minus_c0": floor, "margin_over_floor": margin,
+            "floor_degenerate": bool(floor == 0.0), "separated_good_direction": bool(separated and good),
+            "separated_bad_direction": bool(separated and not good),
+            "exceeds_2x_floor": bool(abs(float(delta)) > 2.0 * floor),
+            "keep_on_this_metric": bool(separated and good and abs(float(delta)) > 2.0 * floor)}
 
 
 def bootstrap_metrics(components, eid, n_boot=DEFAULT_N_BOOT, seed=0,

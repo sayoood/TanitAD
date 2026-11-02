@@ -122,6 +122,35 @@ def warm_start_perc_rig(model, path: str) -> dict:
             "skipped_modules_key_counts": per_mod, "optimizer": "fresh (not loaded)"}
 
 
+def assert_seams_built_perc_rig(model, stamp: dict) -> None:
+    """The rig's subset of ``refc_v3_train.assert_seams_are_built``: the record may only claim what the BUILT rig holds.
+    The full check reads ``core.decoder`` / ``core.agent_embed`` / ``core.ego_hist``, none of which the rig builds, so it
+    cannot run here; this one asserts the seams the rig DOES have (trunk, learned agent head, bottom-row equalisation) and
+    that the stamp states no planner seam. Bidirectional, like the original."""
+    core = getattr(model, "core", model)
+    bad = []
+    enc = getattr(core, "encoder", None)
+    is_timm = type(enc).__name__ == "TimmResNetTrunk"
+    if str(stamp.get("trunk", "refc")) == "timm" and not is_timm:
+        bad.append("stamp says trunk='timm' but core.encoder is a %s" % type(enc).__name__)
+    if str(stamp.get("trunk", "refc")) != "timm" and is_timm:
+        bad.append("stamp says trunk='refc' but core.encoder IS the timm trunk")
+    has_head = getattr(core, "agent_head", None) is not None
+    if stamp.get("agents") is not None and not has_head:
+        bad.append("stamp carries an `agents` block but core.agent_head is None")
+    if stamp.get("agents") is None and has_head:
+        bad.append("stamp says agents=None but core.agent_head WAS BUILT")
+    if "trunk_equalize_bottom_rows" in stamp and is_timm:
+        built = int(getattr(getattr(enc, "cfg", None), "equalize_bottom_rows", -1))
+        if int(stamp["trunk_equalize_bottom_rows"]) != built:
+            bad.append("stamp says trunk_equalize_bottom_rows=%s but the BUILT trunk zeroes %d rows"
+                       % (stamp["trunk_equalize_bottom_rows"], built))
+    if str(stamp.get("sampler", "none")) != "none" or float(stamp.get("w_u0", 0.0) or 0.0) > 0.0 or bool(stamp.get("cross_agent", False)):
+        bad.append("stamp names a planner seam (sampler / w_u0 / cross_agent) the rig cannot hold")
+    if bad:
+        raise SystemExit("[r9-perc-rig] THE RUN RECORD DOES NOT MATCH THE MODEL: " + "; ".join(bad))
+
+
 def dvb_check(model, args) -> list:
     """G-DVB `built` check for ``--r9-perc-rig``: declared on <=> the model holds only RIG_BUILT_ROOTS (and conversely OFF =>
     the planner IS built). Returns Mismatch rows."""
