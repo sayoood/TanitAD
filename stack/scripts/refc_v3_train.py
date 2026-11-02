@@ -7495,7 +7495,13 @@ def _seam_stamp(cfg, args) -> dict:
         # by knowing what refc_v3.py forces.
         "agents": (core.agents.as_dict()
                    if getattr(core, "agents", None) is not None else None),
-        "cross_agent": bool(getattr(core.decoder, "cross_agent", False)),
+        # refcv9 C7 (A3): `--agents head` sets `cfg.core.decoder.cross_agent = True` (`_pin_refcv5_seams`), which is the
+        # CONFIG's intent for a decoder the rig does not build -- the stamp then names a planner seam and
+        # `assert_seams_built_perc_rig` refuses the record (MEASURED: smoke3 died here after 336 s). The record states
+        # what the BUILT rig holds: no decoder, hence no cross-agent attention. A planner flag that really is on
+        # (`--sampler ddim`, `--w-u0`) is NOT rewritten: it stays stamped and the checker still refuses it.
+        "cross_agent": (False if getattr(args, "r9_perc_rig", False)
+                        else bool(getattr(core.decoder, "cross_agent", False))),
         # ⭐⭐ WP-B: the waypoint index, STRUCTURALLY. ⛔ `mode` in particular
         # is what a reader needs to tell the TREATMENT from the three CONTROLS
         # (`shuffle` / `const` / `detach`), and a panel that cannot say which
@@ -9420,6 +9426,16 @@ def _verify_navc_tau_file(args) -> dict | None:
             f"{p} by {abs(given - tau):.3g} rad (> {NAVC_TAU_FILE_TOL:g}). Pass the file's value "
             f"exactly: the launch gate compares at the same tolerance.")
     return {"path": str(p), "sha256": hashlib.sha256(raw).hexdigest(), "tau": tau}
+
+
+def _step_log_line(arm: str, step: int, row: dict, rig: bool) -> str:
+    """The stdout line of one regular log row. refcv9 C7 (A3): the perception-only rig has NO trajectory term, so its row
+    carries no `traj` key; the default arm's line is the tip's, character for character (MEASURED on the dev-box
+    rig probe: reading `row['traj']` on the rig's first log row is a KeyError, raised AFTER the D3 check passes)."""
+    if rig:
+        return f"[v3:{arm}] step {step} loss {row['loss']:.4f} (perception-only rig: no traj term)"
+    return (f"[v3:{arm}] step {step} "
+            f"loss {row['loss']:.4f} traj {row['traj']:.4f}")
 
 
 def _logged_after(step: int, log_every: int, steps: int) -> bool:
@@ -11602,8 +11618,7 @@ def train(args) -> dict:
                         "[v3] ⛔ D3: a declared instrument did not reach metrics.jsonl at "
                         "the first log row (step %d):\n  - %s"
                         % (step, "\n  - ".join(str(m) for m in _d3_bad)))
-            print(f"[v3:{args.arm}] step {step} "
-                  f"loss {row['loss']:.4f} traj {row['traj']:.4f}")
+            print(_step_log_line(args.arm, step, row, bool(getattr(model.core, "_perc_rig", False))))
         elif _cd_row:
             # ⛔ A CONFLICT READING THAT FALLS ON A STEP THE LOG SKIPS GETS ITS OWN ROW, under
             # its own step. MEASURED 2026-09-23 on the launched refcv6 run: --conflict-every 10

@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -57,6 +58,21 @@ KEPT = (
 
 INIT_FROM = "/home/nvidia/r8ns/ckpt/ckpt_ema_48852.pt"
 
+_WINDOWS_PATH = re.compile(r"^[A-Za-z]:[\/]")
+
+
+def _thor_path(p: str, what: str) -> str:
+    """``--out`` / ``--init-from`` name paths ON THOR (POSIX). Run from git-bash, an argument that starts with ``/`` is
+    rewritten to ``C:/Program Files/Git/...`` (MEASURED 2026-11-02: the smoke argv and BOTH landed C0/C1 argv.json carried
+    ``--out C:/Program Files/Git/home/nvidia/r8ns/r9e1/runs/...``, which on Thor is a RELATIVE path -- the run dir was created
+    under the trainer's cwd and its metrics.jsonl was where nobody looked). Refuse a Windows-form path; run the builder with
+    ``MSYS_NO_PATHCONV=1`` or pass the path through an env var."""
+    q = str(p).replace("\\", "/")
+    if _WINDOWS_PATH.match(q) or "Program Files/Git" in q or not q.startswith("/"):
+        raise SystemExit("[r9-e1-argv] %s %r is not an absolute POSIX path on Thor (git-bash path conversion? run with "
+                         "MSYS_NO_PATHCONV=1)" % (what, p))
+    return str(p)
+
 
 def split_groups(argv):
     """[tok, ...] -> [(flag, [values]), ...]; every flag starts with '--' (no negative-number values in this argv)."""
@@ -73,6 +89,7 @@ def split_groups(argv):
 
 def build(base_argv, seed: int, out: str, steps: int = 4000, eval_every: int = 500, eval_batches: int = 8,
           save_every: int = 500, log_every: int = 50, init_from: str = INIT_FROM) -> list:
+    out, init_from = _thor_path(out, "--out"), _thor_path(init_from, "--init-from")
     groups = split_groups(base_argv)
     unknown = [f for f, _ in groups if f not in DROPPED and f not in KEPT]
     if unknown:

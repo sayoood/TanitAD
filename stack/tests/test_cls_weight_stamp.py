@@ -318,8 +318,15 @@ def test_both_loss_call_sites_pass_the_weight():
     collapse is present on BOTH (2,000/2,000 and 320/320 slots emitting one class), so a
     fix wired to only one of them would leave the scored head untouched."""
     src = _trainer_src()
-    n = src.count('cls_class_weight=getattr(model, "_cls_class_weight", None)')
-    assert n == 2, f"expected the weight at BOTH loss sites, found {n}"
+    needle = 'cls_class_weight=getattr(model, "_cls_class_weight", None)'
+    # refcv9 C7: `compute_losses_perc_rig` (the E1 rig's loss) repeats BOTH sites verbatim, so the file holds 2 + 2. The
+    # tip's pin read `== 2` and went RED when the rig landed (its targeted run did not include this file); the rig's own
+    # function is pinned separately so a rig loss that drops the weight on one head is still caught.
+    _, _, rest = src.partition("def compute_losses_perc_rig(")
+    rig_body = rest.split("\ndef ", 1)[0]
+    assert rig_body.count(needle) == 2, f"the rig loss must pass the weight at BOTH sites, found {rig_body.count(needle)}"
+    n = src.count(needle)
+    assert n == 4, f"expected the weight at BOTH loss sites of BOTH loss functions, found {n}"
 
 
 def _seam_case(weight, block):
