@@ -1,0 +1,16 @@
+SMOKEFZ cpu LoadPercentage before the runs (3 samples): [1.0, 6.0, 9.0]; threads 16; card line: PREREG_RECOVER_FT_FROZEN.md sha256 57caba3bc0cb8cff0cc1e9715d799102ea13f5343794590883085340716fe41f
+SMOKEFZ run A_logged: 12 s, 96 tick rows
+SMOKEFZ run B_hold: 14 s, 96 tick rows
+SMOKEFZ run C_hold_cv: 13 s, 96 tick rows
+SMOKEFZ (a) A (--scene logged) vs reused Y on 32 windows: max abs cl 1.448e-04 m (informational)
+SMOKEFZ (b) KFZ1 B: items_frozen 192 = 2 x 96 tick rows, max row dev 0.0, unequal elements 0, camera_motion False, strict.camera False, card ref recorded
+SMOKEFZ (b) KFZ1 C: items_frozen 192 = 2 x 96 tick rows, max row dev 0.0, unequal elements 0, camera_motion False, strict.camera False, card ref recorded
+SMOKEFZ (c) KFZ3 B vs A: max plan_raw dev at ticks >= 1 60.693 m (median 1.086, 1.000 of rows over 1e-3 m), tick 0 (shared executed state) 5.159 m (1.000 of rows over 1e-3 m)
+SMOKEFZ (c) C vs A: max plan_raw dev at ticks >= 1 206.971 m, tick 0 23.870 m
+SMOKEFZ (d) C: v0_in == v0 at tick 0; later ticks mean |v0_in - v0| 0.928 m/s, share > 0.05 0.953; B has no histswap key
+SMOKEFZ (e) KC3 B: tick-1 executed position = tick-0 pose + plan knot 10 on 32 windows, max dev 2.86e-14 m
+SMOKEFZ (e) KC3 C: tick-1 executed position = tick-0 pose + plan knot 10 on 32 windows, max dev 5.68e-14 m
+SMOKEFZ (f) windows and the P10 floor of A, B, C are equal
+SMOKEFZ (h) the freeze moved the executed path: max abs cl dev B vs A 6.207 m
+SMOKEFZ OK
+rc=0

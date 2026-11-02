@@ -1,0 +1,423 @@
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -44,6 +44,7 @@
+ 
+ from tanitad.data import v8f_dagger as DG  # noqa: E402      PREREG_V8F_DAGGER: the own-state bank + the swap (the DATA library; `--dagger-p 0` = no bank is read and no row is swapped)
+ from tanitad.data import v8f_mini_data as D  # noqa: E402
++from tanitad.data import v8f_recover as R  # noqa: E402      PREREG_RECOVER_FT: the recovery perturbation + its TRAIN-bank deviation table (`--recover-p 0` = nothing is built and nothing is applied)
+ from tanitad.models import v8f_mini as M  # noqa: E402
+ 
+ PKG = os.path.join(REPO, "TanitAD Research Lab", "Architecture & Inference", "Research", "2026-10-17-v8f-mini")
+@@ -95,6 +96,11 @@
+     # argv -> make_compose -> the stage -> declared_vs_built (bad_ego_dagger; bad_dagger lifts the exclusivity ONLY for an argv that names it) -> G-LIVE on a COMPOSED batch (ego_dagger_compose_probe: both levers reach the
+     # loss gradient, the p = 0 controls read EXACTLY 0.0) -> `b = comp.apply(b, step)` in the loop. Off (the default): the stage is never called and the loop runs its two original lines.
+     "ego_perturb_with_dagger": "compose:ego_perturb_with_dagger",
++    # PREREG_RECOVER_FT (H-RECOVER-FT-1): the recovery fine-tune. `rec:<k>` = equals the BUILT perturber's lever (R.RecoverPerturb.built_levers(), the object the training loop calls `.apply` on; the bank sha256 it reports is
++    # the LOADED manifest's, not the declared string): argv -> make_recover (bank load + K-B3 + the deviation table) -> the perturber -> declared_vs_built (bad_recover) -> G-LIVE on a RECOVERED batch (recover_probe:
++    # the perturbed tensors AND the re-expressed target reach the loss gradient, a p = 0 control reads EXACTLY 0.0) -> `b = rec.apply(b, step)` in the loop. With --recover-p 0 (the default) no bank is read and nothing is applied.
++    "recover_p": "rec:recover_p", "recover_dev_bank": "rec:recover_dev_bank", "recover_dev_bank_sha256": "rec:recover_dev_bank_sha256", "recover_dev_law": "rec:recover_dev_law",
++    "recover_target": "rec:recover_target", "recover_rejoin_steps": "rec:recover_rejoin_steps", "recover_seed": "rec:recover_seed",
+     "init_ckpt": "data:init_ckpt",            # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
+     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
+     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
+@@ -162,6 +168,27 @@
+                     help="AMEND1 section 1: lift the exclusivity of --dagger-p and --ego-perturb-p for THIS arm and compose them. The DAgger swap is drawn first; the ego perturbation is then drawn (its own p, its own seeded "
+                          "generator) ONLY on the samples the swap did not replace, so no sample is both swapped and perturbed (the run record carries ego_dagger_overlap_n, exactly 0). REFUSED unless --dagger-p > 0 AND "
+                          "--ego-perturb-p > 0 (a lever that is declared and does nothing). Default off = every earlier argv, bit for bit (K-BUILD)")
++    # ---- PREREG_RECOVER_FT (H-RECOVER-FT-1): the recovery perturbation. Every flag defaults to OFF (the defaults are R.RECOVER_DEFAULTS), and every flag has its G-DVB entry in FLAG_CHECKS and its clause in bad_recover.
++    # The arm's argv must NAME --recover-p (C0 names only `--recover-p 0`: any other recover flag declared while p is 0 is refused). Exclusive with --ego-perturb-p > 0 and --dagger-p > 0.
++    ap.add_argument("--recover-p", dest="recover_p", type=float, default=R.RECOVER_DEFAULTS["p"],
++                    help="PREREG_RECOVER_FT: the share of ELIGIBLE training samples (NOW is a real kinematic row) whose ego state is offset by ONE (dv, da, dom, dy, dpsi) deviation drawn from the law, with the GT future "
++                         "re-expressed in the deviated frame (and blended, --recover-target). 0.0 (default) = off = every earlier arm, bit for bit (no bank read, no draw, no copy). The registered arm value is 0.3. Needs --kin-mode yaw. "
++                         "Refused together with --ego-perturb-p > 0 or --dagger-p > 0")
++    ap.add_argument("--recover-dev-bank", dest="recover_dev_bank", default="",
++                    help="the TRAIN own-state bank the EMPIRICAL deviation table is derived from (the merged directory or its bank.json). Loaded, re-hashed and checked at launch (K-B3: TRAIN-only, window-list sha256, disjoint from "
++                         "eval-141); K-B2 is NOT read (the bank's generating checkpoint is not this run's init, by the card). REQUIRED with --recover-p > 0 and the empirical law; refused at p = 0. Default \"\" = none")
++    ap.add_argument("--recover-dev-bank-sha256", dest="recover_dev_bank_sha256", default="",
++                    help="the sha256 (64 hex) of the bank's bank.json that THIS arm declares it draws deviations from. REQUIRED with --recover-p > 0 and the empirical law; refused at p = 0 (a lever that is declared and does "
++                         "nothing). The bank is loaded against it, and the launch gate re-hashes bank.json from disk. Default \"\" = none")
++    ap.add_argument("--recover-dev-law", dest="recover_dev_law", choices=list(R.DEV_LAWS), default=R.RECOVER_DEFAULTS["dev_law"],
++                    help="`empirical` (registered): one record per selected sample, uniform over the bank-derived table. `apriori`: the card's fixed law (dv U[-3, 0], da U[-1, 0.5], dy N(0, 0.5 m), dpsi N(0, 3 deg), "
++                         "yaw rate N(0, 2 deg/s)); no bank is read")
++    ap.add_argument("--recover-target", dest="recover_target", choices=list(R.TARGETS), default=R.RECOVER_DEFAULTS["target"],
++                    help="`rejoin` (registered, AMENDMENT_1): the logged future re-expressed in the deviated frame, the first --recover-rejoin-steps knots blended from the logged future onto it. `logged`: the pure frame change")
++    ap.add_argument("--recover-rejoin-steps", dest="recover_rejoin_steps", type=int, default=R.RECOVER_DEFAULTS["rejoin_steps"],
++                    help="K, the number of knots the rejoin blend spans (1..30). Registered: 10")
++    ap.add_argument("--recover-seed", dest="recover_seed", type=int, default=R.RECOVER_DEFAULTS["seed"],
++                    help="the perturbation's own seed: the draws of step k are a function of (seed, k) only, on a private generator that never touches the global RNG (a resumed run draws what an uninterrupted run drew)")
+     ap.add_argument("--init-ckpt", dest="init_ckpt", default="",
+                     help="O-RECOVER's start state: when set and --out holds no ckpt_last.pt, load the MODEL weights of this checkpoint (a v8f_mini_train ckpt, e.g. M2b's) STRICTLY into the freshly built model (its architecture "
+                          "config must match the built one, else the launch is REFUSED), at step 0 with a FRESH optimiser and schedule. An existing ckpt_last.pt in --out still resumes as ever (resume wins). The path and the file's "
+@@ -656,9 +683,114 @@
+     return bad
+ 
+ 
+-def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None) -> list:
++RECOVER_DESTS = ("recover_p", "recover_dev_bank", "recover_dev_bank_sha256", "recover_dev_law", "recover_target", "recover_rejoin_steps", "recover_seed")
++
++
++def load_recover_table(a, J, wins, store, clips, info=None) -> tuple:
++    """``--recover-dev-bank`` -> (the empirical deviation table, the controls record). PREREG_RECOVER_FT section 3. The controls, each refusing with its own message (``DG.BankRefused``):
++
++      load      every shard re-hashed against the manifest, the manifest's sha256 == ``--recover-dev-bank-sha256`` (``DaggerBank.load``); a bare shard / unmerged bank is refused
++      K-B3      the bank is not PARTIAL, every bank clip is in the arm's TRAIN clip list, none is an eval-141 clip (id AND stable sid, read first), and the window-list sha256 the bank recorded == this trainer's
++      table     built deterministically from the bank's ``reason == ok`` records and THIS trainer's own clip store (``R.RecoverDevTable.from_dagger_bank``); an empty table is refused
++
++    K-B2 (on-policy against ``--init-ckpt``) is NOT read: the card draws deviations from the model family's own states (bank2 = DAG's, the init is DAG-OACC), so the bank's generating checkpoint is disclosed in the
++    record (``bank_ckpt_sha256`` beside ``init_ckpt_sha256``), never compared."""
++    bank0 = DG.DaggerBank.load(a.recover_dev_bank, expect_sha256=a.recover_dev_bank_sha256 or None)
++    if bank0.manifest is None:
++        raise DG.BankRefused(f"{a.recover_dev_bank}: a bare shard, not a merged bank (no bank.json): the bank's identity is the manifest's sha256")
++    eval_clips, eval_src = dagger_eval_clips(a, bank0.header)
++    wsha = DG.windows_sha256(J["clip"], wins)
++    kb3 = bank0.check_train_only(train_clips=clips, eval_clips=eval_clips, train_window_list_sha256=wsha)
++    bank = DG.DaggerBank(bank0.a, bank0.header, clip_names=J["clip"], manifest=bank0.manifest, sha256=bank0.sha256, path=bank0.path)
++    table, log_v = R.RecoverDevTable.from_dagger_bank(bank, store, J)
++    if len(table) == 0:
++        raise DG.BankRefused("the deviation table is EMPTY (no reason == ok record has a real logged kinematic row): a lever with nothing to draw")
++    ctl = {"bank_path": bank.path, "bank_sha256": bank.sha256, "n_records": bank.n, "reason_counts": bank.reason_counts(),
++           "kb3": {**kb3, "window_list_sha256": wsha, "eval_sources": eval_src, "n_eval_clips_checked": len(eval_clips)},
++           "kb2_read": False, "bank_ckpt_sha256": bank.header.get("ckpt_sha256"), "init_ckpt_sha256": ((info or {}).get("init_ckpt") or {}).get("sha256"),
++           "table": table.summary(log_v), "table_quantiles": table.quantiles(), "table_band_3_8": table.band_coverage(log_v)}
++    return table, ctl
++
++
++def make_recover(a, J, wins, store, clips, info):
++    """argv -> the perturber the training loop calls ``.apply`` on (PREREG_RECOVER_FT). The ONE place the seven flags become an object; ``bad_recover`` compares it back to the argv. With ``--recover-p 0`` (C0) no bank
++    is read and no table is built (a declared bank at p = 0 builds nothing and is refused by the gate: a lever that is declared and does nothing); the a-priori law reads no bank either. A refused bank stops the launch
++    before the gate. The built lever ``recover_dev_bank`` is the LOADED manifest's path and ``recover_dev_bank_sha256`` the LOADED table's source hash, so G-DVB compares the declaration with what was read."""
++    table, path = None, (a.recover_dev_bank or None)
++    if a.recover_p > 0 and a.recover_dev_law == "empirical" and a.recover_dev_bank:
++        try:
++            table, ctl = load_recover_table(a, J, wins, store, clips, info)      # info: the init checkpoint's sha256 is disclosed beside the bank's generating checkpoint (never compared: no K-B2)
++        except DG.BankRefused as e:
++            raise SystemExit(f"ZZDVB-REFUSEDZZ recover-dev-bank {a.recover_dev_bank}: {e}")
++        except Exception as e:                                       # noqa: BLE001  a missing / foreign / corrupt bank is a REFUSAL, not a crash
++            raise SystemExit(f"ZZDVB-REFUSEDZZ recover-dev-bank {a.recover_dev_bank}: {type(e).__name__}: {str(e)[:600]}")
++        info["recover"] = ctl                                        # selfcheck.json carries the controls and the table's summary
++        path = table.path
++    return R.RecoverPerturb(p=a.recover_p, dev_law=a.recover_dev_law, table=table, target=a.recover_target, rejoin_steps=a.recover_rejoin_steps, seed=a.recover_seed,
++                            kin_mode=a.kin_mode, bank_path=path, bank_sha256=(a.recover_dev_bank_sha256 or None))
++
++
++def bad_recover(a, rec, data_info=None) -> list:
++    """The recovery half of the launch gate (G-DVB). Empty = pass. Every flag is read back from the BUILT perturber (``rec``); with no perturber built every one must be at its default (a flag that builds nothing is
++    refused, not ignored). Beyond the flags: the bank's path and sha256 against the declaration (the file on disk is re-hashed), K-B3 and the table were read (the record exists and says so), exclusivity with
++    --ego-perturb-p / --dagger-p / --ego-perturb-with-dagger, and a lever declared without an effect (any recover flag at p = 0, a bank with the a-priori law) is refused."""
++    dfl = {k: build_parser().get_default(k) for k in RECOVER_DESTS}
++    declared = {k: getattr(a, k) for k in dfl}
++    if rec is None:
++        moved = sorted(k for k in dfl if declared[k] != dfl[k])
++        return [f"{moved} are set but no recovery perturber was built: a flag that builds nothing is refused, not ignored"] if moved else []
++    bad = []
++    lv = rec.built_levers()
++    for k in ("recover_p", "recover_dev_law", "recover_target", "recover_rejoin_steps", "recover_seed"):
++        if lv.get(k) != declared[k]:
++            bad.append(f"lever {k}: declared {declared[k]!r} but built {lv.get(k)!r}")
++    if lv.get("kin_mode") != a.kin_mode:
++        bad.append(f"recovery perturber kin_mode: declared {a.kin_mode} but built {lv.get('kin_mode')}")
++    bad += [f"recovery perturber: {m}" for m in rec.problems()]
++    if a.recover_dev_bank_sha256 and not is_sha256_hex(a.recover_dev_bank_sha256):
++        bad.append(f"--recover-dev-bank-sha256 {a.recover_dev_bank_sha256!r} is not a sha256 (64 hex digits): a truncated hash identifies nothing")
++    if a.recover_p > 0:
++        for flag, on in (("--ego-perturb-p", a.ego_perturb_p > 0), ("--dagger-p", a.dagger_p > 0), ("--ego-perturb-with-dagger", bool(a.ego_perturb_with_dagger))):
++            if on:
++                bad.append(f"--recover-p {a.recover_p} together with {flag}: the recovery lever is exclusive with the DAgger swap and the ego perturbation (PREREG_RECOVER_FT section 4)")
++    if a.recover_p > 0 and a.recover_dev_law == "apriori" and (a.recover_dev_bank or a.recover_dev_bank_sha256):
++        bad.append("--recover-dev-law apriori with a --recover-dev-bank / --recover-dev-bank-sha256 declared: the bank would do nothing (a lever that is declared and does nothing)")
++    if a.recover_p > 0 and a.recover_dev_law == "empirical":
++        if not a.recover_dev_bank:
++            bad.append(f"--recover-dev-bank is required when --recover-p is {a.recover_p} with the empirical law: the arm must declare which bank its deviations come from")
++        if not a.recover_dev_bank_sha256:
++            bad.append(f"--recover-dev-bank-sha256 is required when --recover-p is {a.recover_p} with the empirical law: the arm must declare which bank it draws from")
++        if a.recover_dev_bank and a.recover_dev_bank_sha256:
++            if rec.table is None:
++                bad.append(f"lever recover_dev_bank: declared {a.recover_dev_bank!r} but no table was built from it")
++                return bad
++            want = os.path.normcase(os.path.abspath(dagger_bank_manifest(a.recover_dev_bank)))
++            got = os.path.normcase(os.path.abspath(str(lv.get("recover_dev_bank"))))
++            if want != got:
++                bad.append(f"lever recover_dev_bank: declared {want!r} but built {got!r}")
++            disk = DG.sha256_file(dagger_bank_manifest(a.recover_dev_bank)) if os.path.exists(dagger_bank_manifest(a.recover_dev_bank)) else None
++            if lv.get("recover_dev_bank_sha256") != disk:
++                bad.append(f"lever recover_dev_bank_sha256: the file {a.recover_dev_bank!r} hashes to {disk!r} but the table was built from {lv.get('recover_dev_bank_sha256')!r}")
++            if a.recover_dev_bank_sha256.lower() != lv.get("recover_dev_bank_sha256"):
++                bad.append(f"lever recover_dev_bank_sha256: declared {a.recover_dev_bank_sha256.lower()!r} but built {lv.get('recover_dev_bank_sha256')!r}")
++            ctl = (data_info or {}).get("recover")
++            if not ctl:
++                bad.append("a deviation table is built but no K-B3 / table record was read (the controls did not run)")
++            else:
++                if ctl.get("bank_sha256") != lv.get("recover_dev_bank_sha256"):
++                    bad.append(f"the controls were read on bank {str(ctl.get('bank_sha256'))[:12]} but the table holds {str(lv.get('recover_dev_bank_sha256'))[:12]}")
++                kb3 = ctl.get("kb3") or {}
++                if kb3.get("window_list_sha256") != (data_info or {}).get("train_window_list_sha256") or kb3.get("overlap_with_eval") != 0:
++                    bad.append("K-B3 was not read against this trainer's TRAIN window list / with an empty eval overlap")
++                if (ctl.get("table") or {}).get("content_sha256") != rec.table.content_sha256() or not (ctl.get("table") or {}).get("n", 0) > 0:
++                    bad.append("the recorded table summary is not the BUILT table's (content sha256) or is empty")
++    return bad
++
++
++def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None) -> list:
+     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
+     bad = bad_encoder(a, enc, data_info)
++    bad += bad_recover(a, rec, data_info)                                                        # PREREG_RECOVER_FT: the seven --recover-* flags read back from the BUILT perturber (and the LOADED bank's sha256)
+     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
+     bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
+     bad += bad_ego_dagger(a, comp, ego, dag)                                                     # AMEND1 section 1: --ego-perturb-with-dagger read back from the BUILT stage
+@@ -1262,6 +1394,149 @@
+     return res
+ 
+ 
++def recover_probe(model, batch, cfg, rec) -> dict:
++    """G-LIVE for PREREG_RECOVER_FT (H-RECOVER-FT-1): the recovery perturbation REACHES THE LOSS THE TRAINER BACKPROPAGATES, in BOTH of its halves -- the perturbed ego tensors AND the re-expressed target ``gt`` -- read from
++    the BUILT model's own ``loss`` on the real probe batch (a COPY, its own seeds), through the SAME ``rec.apply`` the training loop calls, at p = 1. With the lever off (p = 0, the default) there is nothing to prove and
++    nothing runs (the pre-change model and loss).
++
++      partition    every key ``forward_infer`` reads is rebuilt (``R.RECOVER_REBUILT``) or kept (``EGO_PERTURB_KEPT``)
++      batch        at p = 1 every ELIGIBLE row is selected; every selected row differs in kin3, p10f, p10_t (a row whose drawn deviation is exactly zero is exempt and counted; a selected row AT REST may keep its
++                   kinematic base, counted); every unselected row is byte-identical in every rebuilt tensor and in gt; every other key is the SAME object; ``lab_s`` differs in rc alone
++      target       the batch's ``gt`` on the selected rows equals ``R.rejoin_target`` recomputed from the drawn (dy, dpsi) with the declared mode and K; ``lab_s.rc`` equals its frame change; at least one row moved
++      G-LIVE       ``live_check`` on the RECOVERED batch: every loss term finite, every trainable group a non-zero gradient, the frozen prior reads EXACTLY 0.0
++      gradient     INPUTS: the loss and the gradient on (recovered inputs, LOGGED target) differ from the logged batch's, and d total / d p10f on the selected rows is non-zero; TARGET: the same on (logged inputs,
++                   re-expressed target); and the whole recovered batch moves both
++      controls     (a) the same loss twice on the logged batch differs by EXACTLY 0.0 (the probe is deterministic); (b) p = 0 returns the SAME batch object and its loss / gradient differ from the logged ones by EXACTLY 0.0;
++                   (c) the frozen P10 prior's gradient difference is EXACTLY 0.0; (d) so is the world-model auxiliary's (``act`` is its transition record and is NOT perturbed)
++
++    A violation is an AssertionError, which the caller turns into a refusal. DELETE the line in ``RecoverPerturb.apply`` that applies the rebuild and the batch / target / gradient clauses read 0 and the gate refuses the
++    launch (``tests/test_v8f_recover_wiring.py`` runs that mutation); DELETE the ``rec.apply`` line in the training loop and the loop's own guard (``ZZRECOVER-NOT-APPLIEDZZ``) stops the run at its first step."""
++    if not rec.active:
++        return {"recover": "off", "pass": True, "skipped": "--recover-p 0: the perturbation is not applied; the default run is the pre-change run"}
++    m = copy.deepcopy(model).cpu()
++    m.train()
++    pert = rec.apply(batch, rec.PROBE_STEP, p=1.0)
++    last = dict(rec.last)
++    sel = last["sel"]
++    n_sel = int(sel.sum())
++    if n_sel < 1:
++        raise AssertionError(f"recover probe: no ELIGIBLE window (NOW a real kinematic row) among the {last['n_rows']} probe windows: the perturbation cannot be seen")
++    B = int(sel.numel())
++    res = {"p_declared": rec.p, "n_rows": B, "n_eligible": last["n_eligible"], "n_selected_at_p1": n_sel}
++    if n_sel != last["n_eligible"]:
++        raise AssertionError(f"recover probe: at p = 1 {n_sel} rows were selected but {last['n_eligible']} are eligible: every eligible row must be selected")
++
++    m.eval()
++    with torch.no_grad():
++        keys = set(m.forward_infer(batch)["_keys_read"])
++    m.train()
++    stray = sorted(keys - set(R.RECOVER_REBUILT) - set(D.EGO_PERTURB_KEPT))
++    if stray:
++        raise AssertionError(f"recover probe: forward_infer reads {stray}, which is neither rebuilt nor kept by the perturbation: an input the perturbation leaves unaccounted for")
++    res["keys_read"] = sorted(keys)
++
++    def changed(x, y):                                                           # [B] bool: row differs (NaN == NaN)
++        same = (x == y) | (torch.isnan(x) & torch.isnan(y)) if x.is_floating_point() else (x == y)
++        return (~same).reshape(x.shape[0], -1).any(1)
++    dev = last["dev"]
++    zero_dev = sel & (torch.stack([dev[k] == 0.0 for k in R.TABLE_FIELDS], 0).all(0))                 # a drawn deviation of exactly zero moves nothing: exempt, counted
++    res["n_zero_deviation_rows_exempt"] = int(zero_dev.sum())
++    need = sel & ~zero_dev
++    if not bool(need.any()):
++        raise AssertionError("recover probe: every selected row drew an all-zero deviation: the perturbation cannot be seen")
++    res["rows_changed"] = {}
++    for k in R.RECOVER_REBUILT + ("gt",):
++        ch = changed(pert[k], batch[k])
++        res["rows_changed"][k] = int(ch.sum())
++        if bool(ch[~sel].any()):
++            raise AssertionError(f"recover probe: {k} changed on a row the perturbation did not select")
++        if k == "base":                               # a selected row AT REST cannot move its kinematic base (v0 = 0 stays 0, the base is identically 0 before and after): exempt and counted, as ORC's probe does
++            at_rest = (need & (batch["kin3"][:, 0] == 0.0) & (batch["base"].reshape(B, -1) == 0.0).all(1) & (pert["base"].reshape(B, -1) == 0.0).all(1))
++            res["base_rows_at_rest_exempt"] = int(at_rest.sum())
++            if not bool((need & ~at_rest).any()):
++                raise AssertionError(f"recover probe: all {int(need.sum())} selected rows are at rest: the base cannot show the rebuild")
++            if not bool(ch[need & ~at_rest].all()):
++                raise AssertionError(f"recover probe: base is unchanged on {int((~ch[need & ~at_rest]).sum())} of {int((need & ~at_rest).sum())} selected rows: the rebuild did not reach it")
++        elif k in ("p10f", "kin3", "p10_t") and not bool(ch[need].all()):
++            raise AssertionError(f"recover probe: {k} is unchanged on {int((~ch[need]).sum())} of {int(need.sum())} selected rows: the rebuild did not reach it")
++        elif k == "gt" and not bool(ch.any()):
++            raise AssertionError("recover probe: gt is unchanged on every selected row: the target was not re-expressed")
++    ls0, ls1 = batch["lab_s"], pert["lab_s"]
++    lab_moved = sorted(k for k in ls0 if ls1.get(k) is not ls0[k])
++    if lab_moved not in ([], ["rc"]):
++        raise AssertionError(f"recover probe: lab_s changed in more than rc ({lab_moved}): rc is the one label tensor re-expressed")
++    kept_moved = sorted(k for k in batch if k not in R.RECOVER_REBUILT and k not in ("gt", "lab_s") and pert[k] is not batch[k])
++    if kept_moved:
++        raise AssertionError(f"recover probe: {kept_moved} are not the same objects after the perturbation: labels, record and kept inputs must not be touched")
++    gt_expect = R.rejoin_target(batch["gt"][sel].double(), dev["dy"][sel].double(), dev["dpsi"][sel].double(), mode=rec.target, steps=rec.rejoin_steps)
++    res["gt_max_abs_err_vs_rejoin_target"] = float((pert["gt"][sel].double() - gt_expect).abs().max())
++    if res["gt_max_abs_err_vs_rejoin_target"] > 1e-5:
++        raise AssertionError(f"recover probe: the batch's gt differs from R.rejoin_target({rec.target!r}, K = {rec.rejoin_steps}) of the drawn (dy, dpsi) by {res['gt_max_abs_err_vs_rejoin_target']} (> 1e-5): the target is not the registered one")
++    rc_expect = DG.rc_frame_change(ls0["rc"][sel], ls0["rc_ok"][sel], batch["pose_s"][sel], pert["pose_s"][sel])
++    res["rc_max_abs_err_vs_frame_change"] = float((torch.nan_to_num(ls1["rc"][sel]) - torch.nan_to_num(rc_expect)).abs().max())
++    if res["rc_max_abs_err_vs_frame_change"] > 1e-5 or bool(changed(ls1["rc"], ls0["rc"])[~sel].any()):
++        raise AssertionError(f"recover probe: lab_s.rc differs from its frame change by {res['rc_max_abs_err_vs_frame_change']} (> 1e-5) or moved on an unselected row")
++
++    lp = live_check(m, pert, cfg)                                                # G-LIVE on the RECOVERED batch (its own deep copy)
++    res["live_recovered"] = {"pass": lp["pass"], "terms": lp["terms"], "control_prior_grad_sum": lp["control_prior_grad_sum"], "groups_grad": lp["groups_grad"]}
++
++    named = [(n, p) for n, p in m.named_parameters() if p.requires_grad]
++
++    def run(b, grad=True):
++        for _, p in named:
++            p.grad = None
++        for p in m.prior.parameters():
++            p.grad = None
++        torch.manual_seed(20261102)
++        with torch.set_grad_enabled(grad):
++            T = m.loss(b, p_gt=0.5, gen=torch.Generator().manual_seed(13))["terms"]
++            for k, v in T.items():
++                if not torch.isfinite(v):
++                    raise AssertionError(f"recover probe: loss term {k} is not finite: {float(v)}")
++            if not grad:
++                return float(T["total"].detach()), None, None
++            T["total"].backward()
++        g = {n: (p.grad.detach().clone() if p.grad is not None else torch.zeros_like(p)) for n, p in named}
++        gp = torch.cat([(p.grad.detach().reshape(-1) if p.grad is not None else torch.zeros(p.numel())) for p in m.prior.parameters()])
++        return float(T["total"].detach()), g, gp
++    dsum = lambda ga, gb, pre: float(sum((ga[n] - gb[n]).abs().sum() for n in ga if n.startswith(pre)))      # noqa: E731
++    t0, g0, gp0 = run(batch)
++    t0b, g0b, _ = run(batch)
++    t1, g1, gp1 = run(pert)                                                      # the whole recovered batch: perturbed inputs AND re-expressed target
++    t_in, g_in, _ = run({**pert, "gt": batch["gt"]})                             # INPUTS only: recovered ego tensors, the LOGGED target
++    t_tg, g_tg, _ = run({**batch, "gt": pert["gt"]})                             # TARGET only: logged ego tensors, the re-expressed target
++    x = pert["p10f"].detach().clone().requires_grad_(True)                       # d total / d p10f on the selected rows: the recovered tensor itself is read by the loss the trainer backpropagates
++    for _, p in named:
++        p.grad = None
++    m.loss({**pert, "p10f": x}, p_gt=0.5, gen=torch.Generator().manual_seed(13))["terms"]["total"].backward()
++    d_p10f = float(x.grad[sel].abs().sum()) if x.grad is not None else 0.0
++    b_zero = rec.apply(batch, rec.PROBE_STEP, p=0.0)
++    tz, gz, _ = run(b_zero)
++    res.update({"total_logged": t0, "total_recovered": t1, "loss_diff": t1 - t0, "grad_diff_all": dsum(g1, g0, ""),
++                "loss_diff_inputs_only": t_in - t0, "grad_diff_inputs_only": dsum(g_in, g0, ""), "loss_diff_target_only": t_tg - t0, "grad_diff_target_only": dsum(g_tg, g0, ""),
++                "grad_wrt_p10f_selected_abs_sum": d_p10f,
++                "grad_diff_by_group": {pre: dsum(g1, g0, pre) for pre in ("adapter", "e_ego", "read_s", "read_t", "read_o", "head_s", "head_o", "wm.")},
++                "control_repeat_loss_diff": abs(t0b - t0), "control_repeat_grad_diff": dsum(g0, g0b, ""),
++                "control_p0_same_object": b_zero is batch, "control_p0_loss_diff": abs(tz - t0), "control_p0_grad_diff": dsum(gz, g0, ""),
++                "control_prior_grad_diff": float((gp1 - gp0).abs().sum()), "control_wm_grad_diff": dsum(g1, g0, "wm.") if m.wm is not None else None})
++    if res["control_repeat_loss_diff"] != 0.0 or res["control_repeat_grad_diff"] != 0.0:
++        raise AssertionError(f"recover probe: the probe is not deterministic (the same loss twice differs by {res['control_repeat_loss_diff']} / {res['control_repeat_grad_diff']}): its differences mean nothing")
++    if not res["control_p0_same_object"] or res["control_p0_loss_diff"] != 0.0 or res["control_p0_grad_diff"] != 0.0:
++        raise AssertionError(f"recover probe: p = 0 is not the identity (same object {res['control_p0_same_object']}, loss diff {res['control_p0_loss_diff']}, grad diff {res['control_p0_grad_diff']}): the control must read exactly 0.0")
++    if not (res["loss_diff"] != 0.0 and res["grad_diff_all"] > 0.0):
++        raise AssertionError(f"recover probe: the recovered batch moves the loss by {res['loss_diff']} and the gradient by {res['grad_diff_all']}: the perturbation does not reach the loss the trainer backpropagates")
++    if not (res["loss_diff_inputs_only"] != 0.0 and res["grad_diff_inputs_only"] > 0.0 and d_p10f > 0.0):
++        raise AssertionError(f"recover probe: the recovered ego tensors do not reach the loss gradient (loss diff {res['loss_diff_inputs_only']}, gradient diff {res['grad_diff_inputs_only']}, d total / d p10f {d_p10f})")
++    if not (res["loss_diff_target_only"] != 0.0 and res["grad_diff_target_only"] > 0.0):
++        raise AssertionError(f"recover probe: the re-expressed target does not reach the loss gradient (loss diff {res['loss_diff_target_only']}, gradient diff {res['grad_diff_target_only']})")
++    if 0.0 != res["control_prior_grad_diff"]:
++        raise AssertionError(f"recover probe: the frozen P10 prior's gradient moved with the perturbation ({res['control_prior_grad_diff']}): the control must read exactly 0.0")
++    if res["control_wm_grad_diff"] not in (0.0, None):
++        raise AssertionError(f"recover probe: the world-model auxiliary's gradient moved with the perturbation ({res['control_wm_grad_diff']}): act is its transition record and is not perturbed, the control must read exactly 0.0")
++    res["pass"] = True
++    return res
++
++
+ def dagger_probe(model, batch, cfg, dag) -> dict:
+     """G-LIVE for DAgger (PREREG_V8F_DAGGER section 6): the swapped own-state tensors REACH THE LOSS THE TRAINER BACKPROPAGATES -- read from the BUILT model's own ``loss`` on the real probe batch (a COPY, its own
+     seeds), through the SAME ``dag.apply`` the training loop calls, at p = 1. With the lever off (the default) there is nothing to prove and nothing runs (the pre-change model and loss).
+@@ -1786,6 +2061,7 @@
+         except Exception as e:                                       # noqa: BLE001  a missing / foreign / mismatched checkpoint is a REFUSAL, not a crash
+             raise SystemExit(f"ZZDVB-REFUSEDZZ init-ckpt {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
+     dag = make_dagger(a, J, wins, clips, info)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
++    rcv = make_recover(a, J, wins, store, clips, info)               # PREREG_RECOVER_FT: off by default (--recover-p 0: no bank read, no table built); with the empirical law: bank load + K-B3 + the deviation table from THIS trainer's TRAIN store here, a refusal stops the launch before the gate
+     comp = make_compose(a, ego, dag)                                 # AMEND1 section 1: off by default; with --ego-perturb-with-dagger the loop calls THIS (swap first, then the perturbation on the samples the swap left)
+     enc = None
+     if a.encoder == "lora":
+@@ -1803,7 +2079,7 @@
+                                max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
+     # ---- the launch gate
+     lr_at = LRSchedule(a.lr, a.warmup, total)                        # the loop's schedule, built BEFORE the gate so that G-DVB can read --warmup back from it
+-    bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag, comp)
++    bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag, comp, rcv)
+     if bad:
+         raise SystemExit("ZZDVB-REFUSEDZZ declared-vs-built: " + "; ".join(bad))
+     chunk = enc_chunk(a, cfg)
+@@ -1850,6 +2126,10 @@
+     except (AssertionError, ValueError) as e:
+         raise SystemExit(f"ZZDVB-REFUSEDZZ ego-dagger-compose: {e}")
+     try:
++        recp = recover_probe(model, probe, cfg, rcv)      # PREREG_RECOVER_FT: G-LIVE on a RECOVERED batch; the perturbed tensors AND the re-expressed target reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
++    except (AssertionError, ValueError) as e:
++        raise SystemExit(f"ZZDVB-REFUSEDZZ recover: {e}")
++    try:
+         lip = launch_intent_probe(model, probe, cfg)      # PREREG_V8F_LAUNCH_INTENT: G-LIVE on the loop's own mask (launch_stage); the term reaches the loss on the rows the mask names, O's head gets its gradient, an all-False mask reads EXACTLY 0.0 (off: nothing runs)
+     except (AssertionError, ValueError) as e:
+         raise SystemExit(f"ZZDVB-REFUSEDZZ launch-intent: {e}")
+@@ -1858,6 +2138,8 @@
+     levers["dagger"] = dag.built_levers()                             # PREREG_V8F_DAGGER: what was BUILT (the bank's path and sha256 included) ...
+     levers["dagger_p"], levers["dagger_bank_sha256"] = dag.p, dag.bank_sha256          # ... and the two values the reader keys on, flat (0.0 / None when the lever is off)
+     levers["dagger_bank_sha256_declared"] = a.dagger_bank_sha256 or None              # ... and the hash the argv DECLARED (--dagger-bank-sha256); the gate has just required it to equal the built one (None when the lever is off)
++    levers["recover"] = rcv.built_levers()                             # PREREG_RECOVER_FT: what was BUILT (the LOADED bank's path and sha256 included; recover_p 0.0 and every other lever at its default when the lever is off) ...
++    levers["recover_table"] = (info.get("recover") or {}).get("table")  # ... and the deviation table's build summary (n, content sha256, means, share of records with logged v in [3, 8]); None when the lever is off (the card's KR3 reads it)
+     levers["ego_perturb_with_dagger"] = comp.on                        # AMEND1 section 1: what was BUILT (False unless --ego-perturb-with-dagger) ...
+     levers["ego_perturb_stream"] = comp.ego.stream                     # ... and the perturbation's generator stream: 0 = the original, D.EGO_PERTURB_COMPOSED_STREAM = domain-separated from the swap's (composed arms only)
+     levers["ego_dagger_overlap_n"] = cmpp["overlap"]                   # ... and the composed probe's measured overlap on the probe batch (0 when off; the run total is summary.json's ego_dagger_overlap_n)
+@@ -1874,6 +2156,7 @@
+     sc["ego_perturb_probe"] = egop
+     sc["dagger_probe"] = dagp
+     sc["ego_dagger_compose_probe"] = cmpp
++    sc["recover_probe"] = recp
+     sc["launch_intent_probe"] = lip
+     if ident is not None:
+         sc["identity_probe"] = ident
+@@ -1890,6 +2173,8 @@
+     ego_int = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # ... and since the last log line
+     dag_tot = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # PREREG_V8F_DAGGER's run totals (samples seen, eligible = an own state with r' = t, swapped, nav frames left as logged); carried in the checkpoint
+     dag_int = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # ... and since the last log line
++    rec_tot = {"rows": 0, "eligible": 0, "n": 0, "changed": 0}   # PREREG_RECOVER_FT's run totals (samples seen, eligible = NOW a real kinematic row, perturbed, rows whose kin3 the BATCH-level predicate saw differ); exactly 0 at --recover-p 0; carried in the checkpoint of a lever-ON arm only
++    rec_int = {"rows": 0, "eligible": 0, "n": 0, "changed": 0}   # ... and since the last log line
+     ov_tot = {"n": 0}                                             # AMEND1 section 1: samples both swapped and perturbed (exactly 0), carried in the checkpoint of a composed arm only
+     ov_int = {"n": 0}                                             # ... and since the last log line
+     launch_on = cfg.launch_intent_w > 0.0                          # PREREG_V8F_LAUNCH_INTENT: off (the default) = the loop runs no new line
+@@ -1909,6 +2194,7 @@
+         ego_tot.update(ck.get("ego_totals") or {})
+         dag_tot.update(ck.get("dagger_totals") or {})
+         ov_tot.update(ck.get("ego_dagger_overlap") or {})
++        rec_tot.update(ck.get("recover_totals") or {})
+         launch_tot.update(ck.get("launch_totals") or {})
+         print(f"[resume] step {step} epoch {ep} batch {bi}", flush=True)
+ 
+@@ -1921,6 +2207,8 @@
+                 "dagger": dag.built_levers(), "dagger_totals": dict(dag_tot)}          # O-RECOVER: what was BUILT, beside the config, and the counts so far
+         if comp.on:                                                     # composed arms only: a flag-off checkpoint keeps its key set
+             blob["ego_perturb_with_dagger"], blob["ego_dagger_overlap"], blob["ego_perturb_stream"] = True, dict(ov_tot), ego.stream
++        if rcv.active:                                                  # lever-ON arms only: a flag-off checkpoint keeps its key set
++            blob["recover"], blob["recover_totals"] = rcv.built_levers(), dict(rec_tot)
+         if launch_on:                                                   # lever-ON arms only: a flag-off checkpoint keeps its key set
+             blob["launch_totals"] = dict(launch_tot)
+         if enc is not None:             # `model` keeps B's layout (the unchanged v8f_mini_eval.py loads it); the LoRA matrices travel beside it
+@@ -1951,6 +2239,16 @@
+             else:                                                  # every other argv: the two original lines, in their original order
+                 b = ego.apply(b, step)                                 # O-RECOVER: the kinematic inputs of the selected samples are rebuilt from a perturbed ego state; targets and labels are untouched (off: `b` itself)
+                 b = dag.apply(b, step)                                 # PREREG_V8F_DAGGER: the ego tensors of the selected samples are the model's OWN T1-kin state at the matched route point; targets and labels stay the human's (off: `b` itself)
++            if rcv.active:                                         # PREREG_RECOVER_FT (exclusive with the two stages above, refused otherwise): the ego tensors AND the target of the selected samples; p = 0 runs none of these lines
++                b_logged = b
++                b = rcv.apply(b, step)                                 # the ONE loop line that applies the recovery perturbation (a deleted line is caught by the guard below, by the counts and by the batch-level predicate)
++                if rcv.last is None or rcv.last.get("step") != step or (rcv.last["n_selected"] > 0 and b is b_logged):
++                    raise SystemExit(f"ZZRECOVER-NOT-APPLIEDZZ step {step}: --recover-p {rcv.p} is on but the batch the loss receives is the logged one (n_selected {None if rcv.last is None else rcv.last.get('n_selected')}): a lever that is declared and does nothing")
++                for c_ in (rec_int, rec_tot):                      # the control counts: samples seen, eligible (NOW a real kinematic row), perturbed (n_selected), and the batch-level count of rows whose kin3 the loss's batch holds changed
++                    c_["rows"] += rcv.last["n_rows"]
++                    c_["eligible"] += rcv.last["n_eligible"]
++                    c_["n"] += rcv.last["n_selected"]
++                    c_["changed"] += int((b["kin3"] != b_logged["kin3"]).reshape(b["kin3"].shape[0], -1).any(1).sum())
+             for c_ in (ego_int, ego_tot):                          # the control counts: samples seen, eligible (logged v0 < vmax), perturbed (exactly 0 when the lever is off)
+                 c_["rows"] += ego.last["n_rows"]
+                 c_["eligible"] += ego.last["n_eligible"]
+@@ -2006,6 +2304,9 @@
+                 if comp.on:
+                     rec["ego_dagger_overlap_n"] = ov_int["n"]               # AMEND1 section 1: per log interval (exactly 0)
+                 ov_int.update(n=0)
++                if rcv.active:                                              # PREREG_RECOVER_FT: per log interval (a flag-off log line keeps its key set)
++                    rec["recover_n"], rec["recover_eligible"], rec["recover_rows"], rec["recover_changed"] = rec_int["n"], rec_int["eligible"], rec_int["rows"], rec_int["changed"]
++                    rec_int.update(rows=0, eligible=0, n=0, changed=0)
+                 if launch_on:                                               # PREREG_V8F_LAUNCH_INTENT: per log interval (the steps since the last line)
+                     rec["launch_n"], rec["launch_eligible"], rec["launch_rows"] = launch_int["n"], launch_int["eligible"], launch_int["rows"]
+                     launch_int.update(rows=0, eligible=0, n=0)
+@@ -2030,6 +2331,8 @@
+                "selfcheck": "selfcheck.json",
+                "ego_perturb_n": ego_tot["n"], "ego_perturb_eligible": ego_tot["eligible"], "ego_perturb_rows": ego_tot["rows"], "ego_perturb_nav_kept": ego_tot["nav_kept"],
+                "dagger_n": dag_tot["n"], "dagger_eligible": dag_tot["eligible"], "dagger_rows": dag_tot["rows"], "dagger_nav_kept": dag_tot["nav_kept"]}      # PREREG_V8F_DAGGER run totals: exactly 0 swapped at p = 0; swapped == eligible at p = 1      # O-RECOVER run totals: exactly 0 perturbed at p = 0; perturbed == eligible at p = 1
++    summary["recover_p"], summary["recover_n"], summary["recover_eligible"], summary["recover_rows"], summary["recover_changed"] = rcv.p, rec_tot["n"], rec_tot["eligible"], rec_tot["rows"], rec_tot["changed"]
++    summary["recover_share"] = (rec_tot["n"] / rec_tot["eligible"]) if rec_tot["eligible"] else None        # PREREG_RECOVER_FT: the card's KR1 reads n_selected / n_eligible: [0.25, 0.35] for R, exactly 0 (n) for C0 / C0rep
+     if comp.on:                                                            # AMEND1 section 1: the composed arm's run record (a flag-off summary.json keeps its key set)
+         summary["ego_dagger_overlap_n"], summary["ego_perturb_with_dagger"] = ov_tot["n"], True
+     if launch_on:                                                          # PREREG_V8F_LAUNCH_INTENT: the lever-ON arm's run record (a flag-off summary.json keeps its key set)
