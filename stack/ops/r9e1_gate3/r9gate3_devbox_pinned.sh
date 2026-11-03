@@ -39,7 +39,10 @@ for ARM in $ARMS; do
     [ $(( $(date +%s) - t0 )) -gt 3600 ] && break; sleep 30; done
   rm -rf "$OUT" "$SW" 2>/dev/null; mkdir -p "$SW"
   say "$ARM: launch_gate run --stage devbox (argv $ARGVF)"
-  PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$T/stack;$T/stack/scripts" timeout "${R9_PINNED_TIMEOUT_S:-10800}" "$DEVPY" "$T/stack/scripts/launch_gate.py" run \
+  # MSYS_NO_PATHCONV is for THIS script's ssh / scp of Thor paths only. Exported into the gate it reaches pytest, and test_r9_e1_floor's
+  # r9e1_read.sh dry runs then hand native python an unconverted /f/... path: 6 / 28 FAIL (MM 2026-11-03, MEASURED: the same test in the same
+  # archive passes without it and fails with it). The pinned suite runs in the ordinary Git-bash environment its tests were written for.
+  PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$T/stack;$T/stack/scripts" env -u MSYS_NO_PATHCONV timeout "${R9_PINNED_TIMEOUT_S:-10800}" "$DEVPY" "$T/stack/scripts/launch_gate.py" run \
     --profile "$R9_PROFILE" --stage devbox --tree "$T" --commit "$CAND" --git-dir "$REPO/.git" \
     --argv-file "$ARGVF" --suite-work "$SW" --out-dir "$OUT" > "$LOG" 2>&1 < /dev/null
   EV="$OUT/evidence/G-SUITE-PINNED.json"; [ -s "$EV" ] || EV="$OUT/G-SUITE-PINNED.json"
