@@ -3,6 +3,13 @@
 # (launch-gate profile `refcv9-e1rig`; C12-E1 blocker 2).
 #
 #   r9e1_bind.sh [--dry-run] <map|box> <C0|C1> --commit SHA40 [--root DIR] [--code DIR] [--inputs DIR]
+#   r9e1_bind.sh [--dry-run] map-banded <C0|C1|M1|M2a|M2b> --commit SHA40 [...]     (M-GATE: the BANDED head's OWN /2-banded record)
+#
+# map-banded (E1-MAP-OWN-RECORD): the SAME lock discipline and closure_run --binding as `map`, with the template
+#   `stack/scripts/r9e1_bind_map-banded.args.tpl` (map_hires_overfit.py --banded: the A18 spec, 3 arms healthy,lane_w0,s8_zeros, near lift 10)
+#   and the record `BD/run_map-banded/g_map_overfit.json` (schema tanitad.g_map_overfit_record/2-banded) read back by the GATE'S OWN
+#   judge (`judge_map_overfit_banded` on the arm's argv) instead of the /1 assert. Needs {INPUTS}/gmo_spec_A18.json (sha256 checked)
+#   next to the frameset. ONE record per arm (the argv sha256 differs): M1, M2a, M2b.
 #
 # WHY IT EXISTS. G-MAP-OVERFIT and G-BOX-OVERFIT bind the LAUNCH ARGV sha256 (launch_gate.py _overfit_binding_reasons:
 # schema + `launch_argv_sha256`). The sha is over the WHOLE argv -- `--seed` and `--out` included -- so C0 and C1 need ONE
@@ -35,8 +42,9 @@ INPUTS="${INPUTS:-/home/nvidia/refcv7_bind/run_map/inputs}"      # the A19 MAIN 
 say() { echo "[r9e1-bind:$KIND:$ARM] $*"; }
 die() { say "REFUSED: $*"; echo "ZZR9E1BIND-REFUSEDZZ"; exit 10; }
 pyval() { "$PY" -c "$1" "${@:2}" 9>&- 200>&- | tr -d '\r'; }
-case "$KIND" in map|box) ;; *) die "kind must be map|box";; esac
-case "$ARM" in C0|C1) ;; *) die "arm must be C0|C1";; esac
+case "$KIND" in map|box|map-banded) ;; *) die "kind must be map|box|map-banded";; esac
+if [ "$KIND" = map-banded ]; then case "$ARM" in C0|C1|M1|M2a|M2b) ;; *) die "arm must be C0|C1|M1|M2a|M2b";; esac
+else case "$ARM" in C0|C1) ;; *) die "arm must be C0|C1";; esac; fi
 [ "${#COMMIT}" = 40 ] || die "--commit must be 40 chars"
 C12="${COMMIT:0:12}"; BD="$ROOT/ovf_${ARM}_$C12"; HERE="$CODE/stack/scripts"
 ARGV="$CODE/stack/ops/runs.d/r9e1_$ARM.argv.json"
@@ -45,6 +53,11 @@ ARGV="$CODE/stack/ops/runs.d/r9e1_$ARM.argv.json"
 # the rig's own template where one exists (box: the --candidate text and the data roots; map: refcv8's, unchanged)
 TPL="$HERE/r9e1_bind_$KIND.args.tpl"; [ -f "$TPL" ] || TPL="$HERE/refcv8_bind_$KIND.args.tpl"; [ -f "$TPL" ] || die "no harness template $TPL"
 mkdir -p "$BD" 2>/dev/null
+if [ "$KIND" = map-banded ]; then   # the A18 spec the record binds (its sha256 is the gate's literal), staged next to the frameset
+  A18SHA=5cb4f6fc4a8c15660237f541f077bfb334337dd287f674f8de02b7d414077c58
+  [ -f "$INPUTS/gmo_spec_A18.json" ] || die "no $INPUTS/gmo_spec_A18.json (stage TanitAD Research Lab/.../2026-09-26-refcv7-map-hires/raw/gmo_spec_A18.json)"
+  echo "$A18SHA  $INPUTS/gmo_spec_A18.json" | sha256sum -c - > /dev/null 2>&1 || die "gmo_spec_A18.json sha256 is not the registered $A18SHA"
+fi
 # the argv sha: the GATE'S OWN function on the GATE'S OWN loader (no second implementation)
 ASHA="$(pyval 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L; print(L.argv_sha256(L.load_argv_file(sys.argv[2])))' "$CODE" "$ARGV")"
 [ "${#ASHA}" = 64 ] || die "could not hash the launch argv $ARGV"
@@ -72,7 +85,7 @@ NAPPS="$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null |
 mapfile -t HARGS < "$BD/$KIND.args"; mapfile -t ROOTS < "$BD/$KIND.roots"
 DR=(); for r in "${ROOTS[@]}"; do [ -n "$r" ] && DR+=(--data-root "$r"); done
 mkdir -p "$BD/run_$KIND" 2>/dev/null
-if [ "$KIND" = map ]; then REC="$BD/run_map/g_map_overfit.json"; else REC="$BD/run_box/gbo_binding.json"; fi
+if [ "$KIND" = map ]; then REC="$BD/run_map/g_map_overfit.json"; elif [ "$KIND" = map-banded ]; then REC="$BD/run_map-banded/g_map_overfit.json"; else REC="$BD/run_box/gbo_binding.json"; fi
 T0=$(date +%s); echo "$T0" > "$BD/$KIND.TIMING"; say "lock held, GPU empty; closure_run --binding starts at $(date -u +%T)"
 ( cd "$CODE" && export PYTHONPATH="$CODE/stack" OMP_NUM_THREADS=8 PYTHONIOENCODING=utf-8 HF_HUB_OFFLINE=1 &&
   "$PY" "$CODE/stack/scripts/closure_run.py" --binding --commit "$COMMIT" --tree "$CODE" \
@@ -80,7 +93,14 @@ T0=$(date +%s); echo "$T0" > "$BD/$KIND.TIMING"; say "lock held, GPU empty; clos
 T1=$(date +%s); echo "$T0 $T1 $((T1 - T0))" > "$BD/$KIND.TIMING"; say "harness finished, wall $((T1 - T0)) s"
 "$PY" "$HERE/refcv8_assemble_argv.py" --assert-closure "$BD/${KIND}_closure.json" > "$BD/$KIND.closure.txt" 2>&1 9>&- 200>&-
 [ "$(grep -c '^ASSERT-OK' "$BD/$KIND.closure.txt")" = 1 ] || die "$KIND closure refused: $(tr -d '\r' < "$BD/$KIND.closure.txt" | head -3 | tr '\n' ' ')"
+if [ "$KIND" = map-banded ]; then   # the GATE'S OWN judge on THIS arm's argv (no second implementation); ASSERT-OK only when it has no reason
+  "$PY" -c 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L
+a = L.load_argv_file(sys.argv[3]); r, d = L.judge_map_overfit_banded(L.PROFILES["refcv9-e1rig"], sys.argv[2], sys.argv[4], argv_sha=L.argv_sha256(a), argv=a)
+print("
+".join("REFUSED: " + x for x in r) if r else "ASSERT-OK map-banded record (" + str(d.get("sha256"))[:16] + ")")' "$CODE" "$REC" "$ARGV" "$COMMIT" > "$BD/$KIND.record.txt" 2>&1 9>&- 200>&-
+else
 "$PY" "$HERE/refcv8_assemble_argv.py" --assert-record "$REC" --kind "$KIND" > "$BD/$KIND.record.txt" 2>&1 9>&- 200>&-
+fi
 [ "$(grep -c '^ASSERT-OK' "$BD/$KIND.record.txt")" = 1 ] || die "$KIND record refused: $(tr -d '\r' < "$BD/$KIND.record.txt" | head -3 | tr '\n' ' ')"
 say "$KIND binding run asserted: closure $BD/${KIND}_closure.json, record $REC (argv sha ${ASHA:0:16})"
 echo "ZZR9E1BIND-${KIND}-${ARM}-OKZZ"

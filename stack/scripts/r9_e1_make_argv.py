@@ -135,6 +135,55 @@ def build(base_argv, seed: int, out: str, steps: int = 4000, eval_every: int = 5
     return argv
 
 
+#: M-GATE: the E1 map-lever arms (REFCV9_DESIGN 2.1; BRIEF_C1_MAPHEAD): C0's argv + the banded head + its map weight, seed 0, every other
+#: flag equal to C0's (only `--out` differs: the arm's own run directory). w = the E0j-measured w* (LOOP_STATE 02:25): M2a 0.511
+#: (layer-2 share 0.05), M2b 1.018 (0.15); M1 keeps C0's 1.0.
+MAP_ARMS = {"M1": 1.0, "M2a": 0.511, "M2b": 1.018}
+BANDED_FLAG = "--r9-map-banded"
+BANDED_NEAR_LIFT_M = "10"                 # the banded near band is 0-10 m @ 0.10 m (MapHiresConfig(banded) refuses any other)
+MAP_ARM_OUT = "/home/nvidia/r8ns/r9e1/runs/r9e1-%s"
+
+
+def map_arm_argv(c0_argv, arm: str, out: str | None = None) -> list:
+    """C0's argv with EXACTLY: `--r9-map-banded` added (after `--map-hires-near-refine-blocks`), `--w-map-hires` = the arm's w,
+    `--map-hires-near-lift-m` 20 -> 10, `--out` = the arm's run directory. Anything else in C0's argv is carried verbatim."""
+    if arm not in MAP_ARMS:
+        raise SystemExit("[r9-e1-argv] map arm %r not in %s" % (arm, sorted(MAP_ARMS)))
+    out = _thor_path(out or MAP_ARM_OUT % arm, "--out")
+    groups = split_groups(c0_argv)
+    have = [f for f, _ in groups]
+    if BANDED_FLAG in have:
+        raise SystemExit("[r9-e1-argv] the base argv already carries %s -- derive map arms from C0's argv" % BANDED_FLAG)
+    for f in ("--w-map-hires", "--map-hires-near-lift-m", "--map-hires-near-refine-blocks", "--out"):
+        if have.count(f) != 1:
+            raise SystemExit("[r9-e1-argv] C0's argv must carry %s exactly once (has %d)" % (f, have.count(f)))
+    argv = []
+    for f, vals in groups:
+        if f == "--w-map-hires":
+            vals = [repr(float(MAP_ARMS[arm]))]
+        elif f == "--map-hires-near-lift-m":
+            vals = [BANDED_NEAR_LIFT_M]
+        elif f == "--out":
+            vals = [out]
+        argv += [f] + vals
+        if f == "--map-hires-near-refine-blocks":
+            argv.append(BANDED_FLAG)
+    return argv
+
+
+def check_map_arm_pins(argv) -> None:
+    """`check_against_pins` + the banded flag's own refusals (`tanitad/train/map_banded_flag.pin_args`)."""
+    check_against_pins(argv)
+    here = Path(__file__).resolve().parent
+    sys.path.insert(0, str(here.parent))
+    import refc_v3_train as T
+    from tanitad.train import map_banded_flag as MBF
+    args = T.build_parser().parse_args(argv)
+    if not MBF.is_on(args):
+        raise SystemExit("[r9-e1-argv] --r9-map-banded did not parse as on")
+    MBF.pin_args(args)
+
+
 def check_against_pins(argv) -> None:
     """The trainer's own argparse parses the argv and the rig's pin accepts it. Raises SystemExit otherwise."""
     here = Path(__file__).resolve().parent
@@ -150,9 +199,11 @@ def check_against_pins(argv) -> None:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--base", required=True, help="refcv8_launch_argv_base.json (a dict with key 'argv')")
-    ap.add_argument("--seed", type=int, required=True)
-    ap.add_argument("--out", required=True, help="the run directory on Thor")
+    ap.add_argument("--base", default=None, help="refcv8_launch_argv_base.json (a dict with key 'argv')")
+    ap.add_argument("--seed", type=int, default=None)
+    ap.add_argument("--out", default=None, help="the run directory on Thor")
+    ap.add_argument("--map-arm", choices=sorted(MAP_ARMS), default=None,
+                    help="M-GATE: emit the map-lever arm (M1 / M2a / M2b) from C0's argv.json given as --base (seed 0)")
     ap.add_argument("--steps", type=int, default=4000)
     ap.add_argument("--eval-every", type=int, default=500)
     ap.add_argument("--eval-batches", type=int, default=8)
@@ -162,6 +213,23 @@ def main(argv=None) -> int:
     ap.add_argument("--write", required=True)
     ap.add_argument("--no-pin-check", action="store_true")
     a = ap.parse_args(argv)
+    if a.map_arm:
+        if not a.base:
+            ap.error("--map-arm needs --base <C0's r9e1_C0.argv.json>")
+        c0 = json.loads(Path(a.base).read_text(encoding="utf-8"))
+        if c0.get("arm") != "r9e1_C0" or int(c0.get("seed", -1)) != 0:
+            raise SystemExit("[r9-e1-argv] --base must be r9e1_C0 (seed 0), got %r seed %r" % (c0.get("arm"), c0.get("seed")))
+        out = map_arm_argv(c0["argv"], a.map_arm, a.out)
+        if not a.no_pin_check:
+            check_map_arm_pins(out)
+        rec = {"schema": "r9e1-argv-v1", "arm": "r9e1_%s" % a.map_arm, "seed": 0, "steps": c0["steps"], "argv": out,
+               "base_sha256": hashlib.sha256(Path(a.base).read_bytes()).hexdigest(), "derived_from": "r9e1_C0",
+               "lever": {"flag": BANDED_FLAG, "w_map_hires": MAP_ARMS[a.map_arm], "near_lift_m": float(BANDED_NEAR_LIFT_M)}}
+        Path(a.write).write_text(json.dumps(rec, indent=1) + chr(10), encoding="utf-8", newline=chr(10))
+        print("wrote %s (%d tokens)" % (a.write, len(out)))
+        return 0
+    if a.base is None or a.seed is None or a.out is None:
+        ap.error("--base, --seed and --out are required (C0 / C1 mode)")
     base = json.loads(Path(a.base).read_text(encoding="utf-8"))["argv"]
     check_join_masks(base)
     out = build(base, a.seed, a.out, a.steps, a.eval_every, a.eval_batches, a.save_every, a.log_every, launch_tree=a.launch_tree)

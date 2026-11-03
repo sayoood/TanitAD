@@ -605,6 +605,388 @@ def _fingerprint_without(module, *prefixes: str) -> str:
     return h.hexdigest()
 
 
+# --------------------------------------------------------------------------- #
+# refcv9 M-GATE: ``--banded`` -- the BANDED, CHANNELLED map head's OWN overfit #
+# record (schema ``tanitad.g_map_overfit_record/2-banded``)                    #
+# --------------------------------------------------------------------------- #
+# ``E1-MAP-OWN-RECORD`` (launch_gate.py, profile ``refcv9-e1rig``): the INHERITED /1 record covers refcv8's 8-code CE head, not
+# C1's banded head (``tanitad/models/map_banded.py``). This is the SAME pre-registered protocol (PREREG_G_MAP_OVERFIT + the A18
+# spec: the 16 FIXED TRAIN frames, init, optimiser, batch, steps, seed, lr decay, the gated x band 0-20 m, the presence floor,
+# the CE ratio, the 1 ms time guard) run on the banded head, trained ONLY on ``banded_map_loss`` (the trainer's own loss).
+# ⛔ NO new free literal. The ONLY new mapping is channel <-> inherited class (REFCV9_DESIGN 2.1's code sets); each channel's
+# bar is the inherited bar of its class. Everything the module needs is imported LAZILY, so the OFF path (no ``--banded``)
+# imports, builds, trains and writes exactly what it did before (pinned by an AST digest test).
+BANDED_SCHEMA = "tanitad.g_map_overfit_record/2-banded"
+#: channel -> the inherited class whose bar it carries: drv = codes {1,2,3,4,6} (the area rule, drivable's bar), sdw = 7,
+#: lane = 2, edge_h = 5, xwalk / arrow / hatch = their codes. ``nocls`` has no banded channel (disclosed in the record).
+BANDED_CHANNEL_CLASS = {"drv": "drivable", "sdw": "sidewalk", "lane": "lane", "edge_h": "edge",
+                        "xwalk": "crosswalk", "arrow": "arrow", "hatch": "hatched"}
+BANDED_CHANNELS = tuple(BANDED_CHANNEL_CLASS)
+BANDED_THIN = ("lane", "xwalk", "arrow", "edge_h", "hatch")
+#: the gated arms (the brief): R1 lane channel weight 0 in the loss -> lane FAILS; R2 s8 zeros -> EVERY thin channel FAILS
+BANDED_MUST_FAIL = {"lane_w0": ("lane",), "s8_zeros": BANDED_THIN}
+BANDED_MUST_FAIL_ALL = ("s8_zeros",)
+BANDED_GATED_BANDS = ("near", "mid")
+BANDED_DEFAULT_ARMS = ("healthy", "lane_w0", "s8_zeros")
+#: informative arms (reported, never gated: no inherited bar for a verdict on them)
+BANDED_INFORMATIVE_ARMS = ("s8_detached", "frozen_trunk", "near_block_zeros")
+BANDED_INFORMATIVE_CHANNELS = ("drv_sdf", "lane_ox", "lane_oy")
+
+
+def banded_gate_rows(g, hi_m: float) -> int:
+    """Rows of band ``g`` that lie inside the inherited gated x band (``x < hi_m``): near (0-10 m) all of it, mid (10-40 m) its
+    first (hi_m - 10) / 0.25 rows, far (40-100 m) none. 0 = the band is INFORMATIVE (it does not overlap the gated band)."""
+    if g.x0 >= hi_m - 1e-9:
+        return 0
+    return int(round((min(g.x1, hi_m) - g.x0) / g.cell))
+
+
+def banded_hi_m(band: str, band_keys=H.BAND_KEYS) -> float:
+    """The upper x of the inherited gated band key (``0_20`` -> 20.0); ``all`` -> +inf."""
+    if band == "all":
+        return float("inf")
+    if band not in tuple(band_keys):
+        raise SystemExit(f"⛔ thresholds.band {band!r} not in {tuple(band_keys)}")
+    return float(band.split("_")[1])
+
+
+def _banded_forward(trunk, branch, data, idx, device, arm):
+    """The banded twin of :func:`_forward`: -> ``(logits [near, mid, far], unobs [near, mid, far])`` (the head's own output)."""
+    x = data["x"][idx].to(device).float() / 255.0
+    xn = trunk.normalise(x)
+    s8 = trunk.s8_from_normalised(xn, torch.arange(x.shape[0]))
+    if arm == "s8_zeros":
+        s8 = torch.zeros_like(s8)                   # BOTH the lift and the near lift (R2: no image information)
+    elif arm in ("s8_detached", "frozen_trunk"):
+        s8 = s8.detach()
+    kw = {"near_block_zeros": True} if arm == "near_block_zeros" else {}
+    out = branch(s8, data["grid"][idx].to(device), data["valid"][idx].to(device), **kw)
+    mb = out["map_banded"]
+    return list(mb["logits"]), list(mb["unobs"])
+
+
+def _band_targets(data, idx, device, extent):
+    from tanitad.models import map_banded as MB
+    return MB.build_banded_targets(data["codes"][idx].to(device), x_max_m=float(extent.x_max_m),
+                                   y_half_m=float(extent.y_half_m))
+
+
+def banded_loss(logits, unobs, targets, zero_channels=()):
+    """-> ``(loss, row)``: the trainer's own ``banded_map_loss`` and its telemetry row. ``zero_channels`` (R1): the loss with those
+    channels' TERM weight 0 -- the exact term (sigmoid focal + soft Dice per band, band-weighted) recomputed with the module's
+    own primitives and SUBTRACTED, so every other term (the other channels, the L1 channels, the max-entropy term) is
+    byte-for-byte the trainer's. ``()`` returns the trainer's loss unchanged."""
+    from tanitad.models import map_banded as MB
+    row = MB.banded_map_loss({"logits": logits, "unobs": unobs}, targets, with_metrics=False)
+    loss = row["loss"]
+    for ch in zero_channels:
+        i = MB.CHANNELS.index(ch)
+        for b in range(len(MB.BAND_NAMES)):
+            t, z = targets[b], logits[b].float()[:, i]
+            sup = MB.supervised_mask(t["seen"], unobs[b]).float()
+            focal = (MB.sigmoid_focal(z, t[ch]) * sup).sum() / sup.sum().clamp_min(1.0)
+            loss = loss - float(MB.BAND_WEIGHTS[b]) * (focal + MB.soft_dice(torch.sigmoid(z), t[ch], sup > 0.5))
+    return loss, row
+
+
+def _new_acc(geom):
+    return {ch: {g.name: {"gate": [0.0, 0.0, 0.0, 0.0], "band": [0.0, 0.0, 0.0, 0.0]} for g in geom}
+            for ch in BANDED_CHANNELS}
+
+
+def _acc_add(acc, preds, targets, unobs, geom, hi_m):
+    """Pool, per channel x band, ``[inter, union, n_pos, n_scored]`` over the SCORED cells (``seen & ~unobs`` = the GT saw it AND
+    the lift observed it) for the gated slice (rows with x < hi_m) and the whole band. ``preds[ch][b]`` is the bool decision
+    (sigmoid > 0.5) of channel ``ch`` in band ``b``; the label is the channel's own training target."""
+    from tanitad.models import map_banded as MB
+    for b, g in enumerate(geom):
+        sup = MB.supervised_mask(targets[b]["seen"], unobs[b])
+        gr = banded_gate_rows(g, hi_m)
+        for ch in BANDED_CHANNELS:
+            y = targets[b][ch] > 0.5
+            p = preds[ch][b]
+            for key, sl in (("gate", slice(0, gr)), ("band", slice(None))):
+                if key == "gate" and gr == 0:
+                    continue
+                m, pp, yy = sup[:, sl], p[:, sl], y[:, sl]
+                a = acc[ch][g.name][key]
+                a[0] += float((pp & yy & m).sum())
+                a[1] += float(((pp | yy) & m).sum())
+                a[2] += float((yy & m).sum())
+                a[3] += float(m.sum())
+
+
+def _acc_summary(acc, geom, hi_m):
+    cells = {}
+    for ch in BANDED_CHANNELS:
+        cells[ch] = {}
+        for g in geom:
+            d = {"gated": banded_gate_rows(g, hi_m) > 0}
+            for key in ("gate", "band"):
+                i_, u_, n_, s_ = acc[ch][g.name][key]
+                d[key] = {"iou": (i_ / u_) if u_ > 0 else None, "n_pos": int(n_), "n_scored": int(s_)}
+            cells[ch][g.name] = d
+    return cells
+
+
+def evaluate_banded(trunk, branch, data, device, batch, arm, extent, geom, hi_m, keep_unobs=False):
+    from tanitad.models import map_banded as MB
+    trunk.eval()
+    branch.eval()
+    acc, terms, nb, kept = _new_acc(geom), {}, 0, []
+    ch_i = {c: i for i, c in enumerate(MB.CHANNELS)}
+    with torch.no_grad():
+        for i in range(0, data["x"].shape[0], batch):
+            idx = torch.arange(i, min(i + batch, data["x"].shape[0]))
+            lg, un = _banded_forward(trunk, branch, data, idx, device, arm)
+            tg = _band_targets(data, idx, device, extent)
+            preds = {ch: [torch.sigmoid(z.float()[:, ch_i[ch]]) > 0.5 for z in lg] for ch in BANDED_CHANNELS}
+            _acc_add(acc, preds, tg, un, geom, hi_m)
+            _l, row = banded_loss(lg, un, tg)
+            for ch in MB.CHANNELS:
+                for bn in MB.BAND_NAMES:
+                    k = f"{ch}_{bn}"
+                    terms[k] = terms.get(k, 0.0) + float(row[f"map_banded_loss_{k}"])
+            nb += 1
+            if keep_unobs:
+                kept.append((idx, [u.cpu() for u in un]))
+    return {"cells": _acc_summary(acc, geom, hi_m), "loss": {k: v / max(nb, 1) for k, v in terms.items()}}, kept
+
+
+def run_arm_banded(arm, trunk0, branch0, data, spec, device, extent, geom, hi_m):
+    """Train one arm from the SHARED init on the banded loss ONLY (the inherited optimiser, batch, steps, seed, lr decay)."""
+    trunk = copy.deepcopy(trunk0).to(device)
+    branch = copy.deepcopy(branch0).to(device)
+    trunk_trains = arm in ("healthy", "lane_w0", "s8_zeros", "near_block_zeros")
+    params = list(branch.parameters()) + (_s8_params(trunk) if trunk_trains else [])
+    trunk_before = [p.detach().clone() for p in _s8_params(trunk)]
+    opt = torch.optim.AdamW(params, lr=float(spec.get("lr", 1e-3)), betas=(0.9, 0.999), eps=1e-8,
+                            weight_decay=float(spec.get("weight_decay", 0.0)))
+    steps, bs = int(spec["steps"]), int(spec.get("batch", 4))
+    lr_at = lr_multiplier(spec)
+    base_lrs = [float(g_["lr"]) for g_ in opt.param_groups]
+    every = int(spec.get("eval_every", max(1, steps // 10)))
+    n = data["x"].shape[0]
+    g = torch.Generator().manual_seed(int(spec.get("seed", 0)))
+    zero = ("lane",) if arm == "lane_w0" else ()
+    step0, _ = evaluate_banded(trunk, branch, data, device, bs, arm, extent, geom, hi_m)
+    curve, finite, t0 = [], True, time.time()
+    for step in range(1, steps + 1):
+        trunk.train()
+        branch.train()
+        idx = torch.randperm(n, generator=g)[:bs]
+        if lr_at is not None:
+            for g_, b_ in zip(opt.param_groups, base_lrs):
+                g_["lr"] = b_ * lr_at(step)
+        lg, un = _banded_forward(trunk, branch, data, idx, device, arm)
+        loss, _row = banded_loss(lg, un, _band_targets(data, idx, device, extent), zero_channels=zero)
+        if not bool(torch.isfinite(loss.detach())):
+            finite = False
+        opt.zero_grad(set_to_none=True)
+        loss.backward()
+        opt.step()
+        if step % every == 0 or step == steps:
+            ev, _ = evaluate_banded(trunk, branch, data, device, bs, arm, extent, geom, hi_m)
+            curve.append({"step": step, "train_loss": float(loss.detach()),
+                          "iou_gate": {ch: {bn: ev["cells"][ch][bn]["gate"]["iou"] for bn in BANDED_GATED_BANDS}
+                                       for ch in BANDED_CHANNELS},
+                          "s_per_step": round((time.time() - t0) / step, 4)})
+            print(json.dumps({"arm": arm, "step": step, "train_loss": curve[-1]["train_loss"]}), flush=True)
+    final, kept = evaluate_banded(trunk, branch, data, device, bs, arm, extent, geom, hi_m, keep_unobs=(arm == "healthy"))
+    moved = sum(float((p.detach().cpu() - q.cpu()).abs().sum()) for p, q in zip(_s8_params(trunk), trunk_before))
+    return {"arm": arm, "step0": step0, "final": final, "curve": curve, "loss_finite_every_step": finite,
+            "trunk_s8_abs_change": moved, "zero_channels": list(zero),
+            "s_per_step": round((time.time() - t0) / max(steps, 1), 4), "_kept": kept}
+
+
+def controls_banded(data, kept, extent, geom, hi_m, device):
+    """C1 / C2 on the SAME scored cells and the SAME accumulator as every arm. C1: ``drv`` predicted everywhere, nothing else
+    -> IoU_drv == n_pos / n_scored (1e-9), every other channel 0, and it FAILS the bars. C2: logits = +-20 from the channel's
+    own target -> IoU 1.0 on every channel with a positive. C3 (the decision-rule identity) has no banded analogue: the head
+    has no class weights and no decision rule (sigmoid > 0.5 per channel) -- recorded as null."""
+    acc1, acc2 = _new_acc(geom), _new_acc(geom)
+    for idx, un in kept:
+        un = [u.to(device) for u in un]
+        tg = _band_targets(data, idx, device, extent)
+        ones = [torch.ones_like(t["seen"]) for t in tg]
+        zeros = [torch.zeros_like(t["seen"]) for t in tg]
+        _acc_add(acc1, {ch: (ones if ch == "drv" else zeros) for ch in BANDED_CHANNELS}, tg, un, geom, hi_m)
+        _acc_add(acc2, {ch: [t[ch] > 0.5 for t in tg] for ch in BANDED_CHANNELS}, tg, un, geom, hi_m)
+    c1, c2 = _acc_summary(acc1, geom, hi_m), _acc_summary(acc2, geom, hi_m)
+    c1_ok, c2_ok = True, True
+    for g in geom:
+        for key in ("gate", "band"):
+            if key == "gate" and not c1["drv"][g.name]["gated"]:
+                continue
+            d = c1["drv"][g.name][key]
+            c1_ok &= d["n_scored"] > 0 and abs((d["iou"] or 0.0) - d["n_pos"] / d["n_scored"]) <= 1e-9
+            for ch in BANDED_CHANNELS:
+                if ch != "drv":
+                    c1_ok &= c1[ch][g.name][key]["iou"] in (None, 0.0)
+            c2_ok &= all(c2[ch][g.name][key]["iou"] in (None, 1.0) for ch in BANDED_CHANNELS)
+    c2_ok &= any(c2[ch][bn]["gate"]["iou"] == 1.0 for ch in BANDED_CHANNELS for bn in BANDED_GATED_BANDS
+                 if c2[ch][bn]["gated"])
+    return {"C1_constant_drv": {"cells": c1, "reproduced": bool(c1_ok)},
+            "C2_gt_as_logits": {"cells": c2, "reproduced": bool(c2_ok)},
+            "C3_rule_identity_w_ones": {"reproduced": None,
+                                        "why": "no decision rule / class weights in the banded head (sigmoid > 0.5 per channel)"}}
+
+
+def banded_bar(spec, ch) -> float:
+    return float(spec["thresholds"]["iou"][BANDED_CHANNEL_CLASS[ch]])
+
+
+def banded_clears(final, spec, geom, hi_m, ch) -> bool:
+    """The channel clears its inherited bar on EVERY gated band (a channel passes only if all its gated cells do)."""
+    bar = banded_bar(spec, ch)
+    cs = [final["cells"][ch][g.name]["gate"]["iou"] for g in geom if banded_gate_rows(g, hi_m) > 0]
+    return bool(cs) and all(c is not None and c >= bar for c in cs)
+
+
+def verdict_banded(results, spec, ctrl, axis_guard, geom, hi_m):
+    th = spec["thresholds"]
+    min_area = int(th["min_cells"]) * (F.FINE_CELL_M ** 2)       # the inherited floor in AREA (1,000 x 0.1 m cells = 10 m^2)
+    ce_max = th.get("per_class_ce_final_over_step0_max")
+    out = {"band": th.get("band", "0_20"), "decision_rule": "sigmoid>0.5 per channel (banded)"}
+    main = results.get("healthy")
+    if main is None:
+        out.update(MAIN={"verdict": "NOT RUN"}, regression_arms={}, controls_reproduced=False,
+                   G_MAP_OVERFIT_BANDED="FAIL")
+        return out
+    gated = [(ch, g) for ch in BANDED_CHANNELS for g in geom if banded_gate_rows(g, hi_m) > 0]
+    short, bars, ce_ok = {}, {}, {}
+    for ch, g in gated:
+        c = main["final"]["cells"][ch][g.name]["gate"]
+        k = f"{ch}_{g.name}"
+        if c["n_pos"] * g.cell * g.cell < min_area - 1e-9:        # float slack: 160 x 0.25^2 IS the 10 m^2 floor
+            short[k] = c["n_pos"]
+        bars[k] = c["iou"] is not None and c["iou"] >= banded_bar(spec, ch)
+        a, b_ = main["step0"]["loss"].get(k), main["final"]["loss"].get(k)
+        ce_ok[k] = bool(ce_max is not None and a is not None and b_ is not None and a > 0 and b_ <= float(ce_max) * a)
+    main_ok = not short and all(bars.values()) and all(ce_ok.values()) and main["loss_finite_every_step"]
+    out["MAIN"] = {"presence_short": short, "inconclusive": bool(short), "min_area_m2": min_area, "bars": bars,
+                   "loss_ratio_ok": ce_ok, "loss_finite_every_step": main["loss_finite_every_step"],
+                   "verdict": "INCONCLUSIVE" if short else "PASS" if main_ok else "FAIL"}
+    reg = {}
+    for arm, chans in BANDED_MUST_FAIL.items():
+        if arm not in results:
+            reg[arm] = {"ran": False, "failed_as_required": False}
+            continue
+        failed = [c for c in chans if not banded_clears(results[arm]["final"], spec, geom, hi_m, c)]
+        need_all = arm in BANDED_MUST_FAIL_ALL
+        ok = (len(failed) == len(chans)) if need_all else bool(failed)
+        reg[arm] = {"ran": True, "must_fail": list(chans), "failed": failed, "rule": "all" if need_all else "any",
+                    "failed_as_required": ok}
+    out["regression_arms"] = reg
+    out["informative"] = {a: ({"ran": True, "clears": {c: banded_clears(results[a]["final"], spec, geom, hi_m, c)
+                                                      for c in BANDED_CHANNELS}} if a in results else {"ran": False})
+                          for a in BANDED_INFORMATIVE_ARMS}
+    out["informative_not_gated"] = {"bands": [g.name for g in geom if banded_gate_rows(g, hi_m) == 0],
+                                    "channels": list(BANDED_INFORMATIVE_CHANNELS),
+                                    "why": "no inherited bar exists (far lies outside the gated x band; the L1 channels have "
+                                           "no IoU)"}
+    kinds = sorted({str(g_.get("kind")) for g_ in (axis_guard or {}).values()})
+    out["time_guard"] = {"kinds": kinds, "time_1ms_on_every_clip": bool(axis_guard) and kinds == ["time_1ms"]}
+    c1_fails = ctrl is not None and not all(
+        (ctrl["C1_constant_drv"]["cells"][ch][g.name]["gate"]["iou"] or 0.0) >= banded_bar(spec, ch) for ch, g in gated)
+    out["controls"] = ctrl
+    out["controls_reproduced"] = bool(ctrl is not None and ctrl["C1_constant_drv"]["reproduced"]
+                                      and ctrl["C2_gt_as_logits"]["reproduced"] and c1_fails)
+    gate = (out["MAIN"]["verdict"] == "PASS" and all(r["failed_as_required"] for r in reg.values())
+            and out["controls_reproduced"] and out["time_guard"]["time_1ms_on_every_clip"])
+    out["G_MAP_OVERFIT_BANDED"] = "PASS" if gate else "FAIL"
+    return out
+
+
+def main_banded(a) -> int:
+    """``--banded``: the banded head's overfit run (everything below the arg parse of :func:`main`, for the banded head)."""
+    from tanitad.models import map_banded as MB
+    extent = MapExtent(float(a.x_max_m), float(a.y_half_m))
+    spec = load_spec(a.spec, class_weights=(a.class_weights or "uniform"), decision_rule=a.decision_rule,
+                     band_keys=extent.band_keys)
+    if a.frameset is not None:
+        md5 = hashlib.md5(a.frameset.read_bytes()).hexdigest()
+        if spec.get("frameset_md5") and md5 != spec["frameset_md5"]:
+            raise SystemExit(f"⛔ frameset md5 {md5} != the spec's {spec['frameset_md5']}")
+    arms = [x for x in (a.arms or ",".join(BANDED_DEFAULT_ARMS)).split(",") if x]
+    for x in arms:
+        if x not in BANDED_DEFAULT_ARMS + BANDED_INFORMATIVE_ARMS:
+            raise SystemExit(f"⛔ unknown --banded arm {x!r} (gated: {BANDED_DEFAULT_ARMS}; informative: "
+                             f"{BANDED_INFORMATIVE_ARMS})")
+    for x in BANDED_DEFAULT_ARMS:
+        if x not in arms:
+            raise SystemExit(f"⛔ the gated arm {x!r} is not in --arms")
+    if float(a.near_lift_m) != float(MB.BAND_START_M[1]):
+        raise SystemExit(f"⛔ --banded needs --near-lift-m {MB.BAND_START_M[1]:g} (the near band is 0-10 m @ 0.10 m: "
+                         f"MapHiresConfig(banded) refuses any other); the spec's near_lift_m "
+                         f"{spec.get('near_lift_m')} belongs to the 8-code head")
+    if "near_block_zeros" in arms and not int(a.near_refine_blocks) > 0:
+        raise SystemExit("⛔ the near_block_zeros arm needs --near-refine-blocks > 0")
+    if spec.get("near_refine_blocks") is not None and int(spec["near_refine_blocks"]) != int(a.near_refine_blocks):
+        raise SystemExit(f"⛔ the spec registers near_refine_blocks {spec['near_refine_blocks']}, --near-refine-blocks is "
+                         f"{a.near_refine_blocks}")
+    lr_multiplier(spec)
+    from tanitad.models import timm_trunk as TT
+    from tanitad.models.trunk_shapes import frame_for_width
+    tsp = spec.get("trunk") or {}
+    hw = tuple(tsp.get("image_hw", (416, 1024)))
+    eq = int(tsp.get("equalize_bottom_rows", 43))
+    torch.manual_seed(int(spec.get("seed", 0)))
+    trunk = TT.TimmResNetTrunk(TT.TimmTrunkConfig(
+        model_name=str(tsp.get("model", "resnet101.a1_in1k")), pretrained=bool(tsp.get("pretrained", True)), frames=3,
+        image_hw=hw, frozen_bn=True, equalize_bottom_rows=eq, chunk_ckpt=int(tsp.get("chunk_ckpt", 0) or 0),
+        bf16=bool(tsp.get("bf16", False)), channels_last=bool(tsp.get("channels_last", False)),
+        fold_bn=bool(tsp.get("fold_bn", False))))
+    tap = trunk.enable_s8_tap()
+    hcfg = H.MapHiresConfig(w_map_hires=1.0, x_max_m=float(extent.x_max_m), y_half_m=float(extent.y_half_m),
+                            grad_ckpt=(a.grad_ckpt == "on"), near_lift_x_m=float(a.near_lift_m),
+                            near_refine_blocks=int(a.near_refine_blocks), decision_rule=spec["thresholds"]["decision_rule"],
+                            class_weights_sha256="", banded=True)
+    branch = H.MapHiresBranch(hcfg, d_image=trunk.s8_dim, image_hw=trunk.s8_shape)
+    geom = MB.band_geometry(extent.x_max_m, extent.y_half_m)
+    hi_m = banded_hi_m(spec["thresholds"].get("band", "0_20"), extent.band_keys)
+    fp = {"trunk_init_sha256": _fingerprint(trunk), "branch_init_sha256": _fingerprint(branch)}
+    frame = frame_for_width(int(hw[1]), int(hw[0]))
+    data = load_frames(spec, a.v2_cache, a.gt_root, a.extrinsics, frame, hcfg, eq, cam_ts_dir=a.cam_ts_dir)
+    results = {arm: run_arm_banded(arm, trunk, branch, data, spec, a.device, extent, geom, hi_m) for arm in arms}
+    ctrl = controls_banded(data, results["healthy"].pop("_kept"), extent, geom, hi_m, a.device)
+    for r in results.values():
+        r.pop("_kept", None)
+    v = verdict_banded(results, spec, ctrl, data["axis_guard"], geom, hi_m)
+    a.out.mkdir(parents=True, exist_ok=True)
+    rec = {"schema": BANDED_SCHEMA, "tool": "map_hires_overfit.py --banded",
+           "spec_sha256": hashlib.sha256(a.spec.read_bytes()).hexdigest(), "frameset_md5": spec.get("frameset_md5"),
+           "script_sha256": hashlib.sha256(HERE.read_bytes()).hexdigest(),
+           "launch_commit": a.launch_commit, "launch_argv_sha256": a.launch_argv_sha256,
+           "extent": extent.as_dict(), "branch_config": hcfg.as_dict(), "near_lift_m": float(a.near_lift_m),
+           "near_refine_blocks": int(a.near_refine_blocks), "tap": tap,
+           "trunk_levers": {k: tsp.get(k) for k in ("chunk_ckpt", "bf16", "channels_last", "fold_bn")},
+           "fingerprints": fp, "branch_params": branch.param_breakdown(), "n_frames": len(data["sha12"]),
+           "frames_sha12": data["sha12"], "raw_frames": data["raw_frame"], "axis_guard": data["axis_guard"],
+           "optimiser": {"name": "AdamW", "lr": float(spec.get("lr", 1e-3)), "betas": [0.9, 0.999], "eps": 1e-8,
+                         "weight_decay": float(spec.get("weight_decay", 0.0)), "batch": int(spec.get("batch", 4)),
+                         "steps": int(spec["steps"]), "seed": int(spec.get("seed", 0)), "lr_decay": spec.get("lr_decay")},
+           "channel_class": dict(BANDED_CHANNEL_CLASS),
+           "bars": {ch: banded_bar(spec, ch) for ch in BANDED_CHANNELS},
+           "bands": [{"name": g.name, "x0": g.x0, "x1": g.x1, "cell_m": g.cell, "gate_rows": banded_gate_rows(g, hi_m)}
+                     for g in geom],
+           "disclosure": {"nocls": "no banded channel carries the `nocls` class (inherited bar 0.85): not scored",
+                          "score_target": "each channel's own training target (build_banded_targets; lane / edge_h are the "
+                                          "dilated ~0.5 m targets the head is trained on)",
+                          "min_cells": "the inherited presence floor is 1,000 cells of 0.1 m = 10 m^2 of positive target, "
+                                       "applied per channel x gated band in area (a coarser band's cell counts for more area)",
+                          "ce_ratio": "the inherited 0.5 applies to the channel x band training-loss term "
+                                      "(focal + Dice) in place of the 8-way per-class CE",
+                          "informative_not_gated": ["far band", "drv_sdf", "lane_ox", "lane_oy"],
+                          "loss_weight": "w_map_hires is not applied (AdamW, weight decay 0: scale-invariant), as in /1",
+                          "near_lift_m": "10 = the banded head's own requirement (the spec's 20 belongs to the 8-code head)"},
+           "device": a.device, "verdict": v, "results": results}
+    (a.out / "g_map_overfit.json").write_text(json.dumps(rec, indent=1, default=float), encoding="utf-8")
+    print(json.dumps({k: v[k] for k in ("MAIN", "regression_arms", "controls_reproduced", "time_guard",
+                                         "G_MAP_OVERFIT_BANDED")}, indent=1, default=str))
+    return 0 if v["G_MAP_OVERFIT_BANDED"] == "PASS" else 2
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--spec", required=True, type=Path)
@@ -635,7 +1017,12 @@ def main(argv=None) -> int:
     ap.add_argument("--grad-ckpt", choices=("on", "off"), default="on",
                     help="the launch decoder's checkpointing (SPEC_REFCV7 §12 item 4)")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
+    ap.add_argument("--banded", action="store_true",
+                    help="refcv9 M-GATE: the BANDED map head's OWN overfit record (schema /2-banded; the same pre-registered "
+                         "protocol on tanitad/models/map_banded.py, near lift 10 m). OFF = the 8-code head, unchanged")
     a = ap.parse_args(argv)
+    if a.banded:
+        return main_banded(a)
     extent = MapExtent(float(a.x_max_m), float(a.y_half_m))
     spec = load_spec(a.spec, class_weights=a.class_weights, decision_rule=a.decision_rule,
                      band_keys=extent.band_keys)

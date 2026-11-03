@@ -1574,7 +1574,8 @@ _E1_OPEN_ITEMS = (
              "does not cover it",
      "owner": "the lever's code agent (C1) -> the Master Mind (a reviewed profile edit that names the lever's record)",
      "closes_when": "a map-overfit record for the lever's own head is bound to this profile by name; until then the token is "
-                    "INCOMPLETE, never PASS",
+                    "INCOMPLETE, never PASS. MACHINE-CHECKED since M-GATE: `E1_OWN_RECORDS` row E1-MAP-OWN-RECORD closes it for "
+                    "`--r9-map-banded` alone, when a `/2-banded` record bound to THIS argv's sha256 passes `judge_map_overfit_banded`",
      "when_prefixes": ("--r9-map-",), "when_flags": ("--w-map-fp",)},
     {"id": "E1-BOX-OWN-RECORD",
      "what": "a box-lever arm (any other refcv9 lever flag in the `--r9-*` namespace -- C5's decoder depth / DN / quality-aware "
@@ -1582,9 +1583,32 @@ _E1_OPEN_ITEMS = (
              "INHERITED G-BOX-OVERFIT record (refcv8's head) does not cover it",
      "owner": "the lever's code agent (C5) -> the Master Mind (a reviewed profile edit that names the lever's record)",
      "closes_when": "a box-overfit record for the lever's own head is bound to this profile by name; until then the token is "
-                    "INCOMPLETE, never PASS",
+                    "INCOMPLETE, never PASS. MACHINE-CHECKED once B3 fills the `E1_OWN_RECORDS` row E1-BOX-OWN-RECORD "
+                    "(`E1_BOX_OWN_FLAGS` / `E1_BOX_OWN_SCHEMA`)",
      "when_prefixes": ("--r9-",), "when_except": (_E1_FLAG, "--r9-map-")},
 )
+#: ⭐ M-GATE: the BANDED map head's OWN overfit record (schema /2-banded; `map_hires_overfit.py --banded`). Every number the
+#: record is judged against is the INHERITED G-MAP-OVERFIT literal (`PROFILES[...]["map_overfit"]`: spec sha, frames, protocol,
+#: bars, min_cells, ce_ratio_max, band); what lives here is only the channel <-> inherited-class map, the gated bands, the two
+#: regression arms and the band geometry the area-form presence floor needs. The gate holds its OWN copy (never the record's), and a
+#: test pins it to the harness's.
+_E1_MAP_BANDED = {
+    "schema": "tanitad.g_map_overfit_record/2-banded",
+    "tool": "map_hires_overfit.py --banded",
+    "channel_class": {"drv": "drivable", "sdw": "sidewalk", "lane": "lane", "edge_h": "edge", "xwalk": "crosswalk",
+                      "arrow": "arrow", "hatch": "hatched"},
+    "gated_bands": ("near", "mid"),
+    #: rows of each band inside the inherited gated x band 0-20 m (near 0-10 m @ 0.10 m, mid 10-40 m @ 0.25 m, far 40-100 m)
+    "gate_rows": {"near": 100, "mid": 40, "far": 0},
+    "cell_m": {"near": 0.10, "mid": 0.25, "far": 0.50},
+    "fine_cell_m": 0.10,
+    #: the banded head's own requirement (MapHiresConfig(banded) refuses any other near lift)
+    "near_lift_m": 10.0,
+    "must_fail_any": {"lane_w0": ("lane",)},
+    "must_fail_all": {"s8_zeros": ("lane", "xwalk", "arrow", "edge_h", "hatch")},
+    "controls": ("C1_constant_drv", "C2_gt_as_logits"),
+    "informative": ("far band", "drv_sdf", "lane_ox", "lane_oy"),
+}
 if _E1_MODULE is not None:
     PROFILES["refcv9-e1rig"] = dict(
         _R8, name="refcv9-e1rig",
@@ -1592,6 +1616,8 @@ if _E1_MODULE is not None:
         #: clip's `ts0`, the bridge from the joins' RAW clock to the sidecar's label timeline (path-mapped; `--rig-ego-dir` overrides)
         rig_ego_dir_default="/home/nvidia/data/obstacle/egomotion_alpamayo",
         open_items=_E1_OPEN_ITEMS,
+        #: M-GATE: the banded map head's OWN record (G-MAP-OVERFIT /2-banded), see `E1_OWN_RECORDS`
+        map_overfit_banded=_E1_MAP_BANDED,
         required_flags=_E1_REQUIRED_FLAGS,
         required_flags_why=dict(_E1_REQUIRED_FLAGS_WHY, **{
             k: v for k, v in (_R8.get("required_flags_why") or {}).items() if k in _E1_REQUIRED_FLAGS
@@ -3131,12 +3157,16 @@ def open_item_hits(it: dict, argv: list[str] | None) -> list[str] | None:
             and not any(f.startswith(e) for e in exc)]
 
 
-def open_item_reasons(prof: dict, argv: list[str] | None = None) -> list[str]:
+def open_item_reasons(prof: dict, argv: list[str] | None = None, closed: Iterable[str] = ()) -> list[str]:
     """The profile's OPEN ITEMS, one named reason each (empty when the flag set is decided). refcv9-e1rig: an item may be
     CONDITIONAL on the argv's flags (`open_item_hits`) -- the inherited records that cover the rig's heads do not cover an
-    arm that changes them; every other profile's items are unconditional and read exactly as before."""
+    arm that changes them; every other profile's items are unconditional and read exactly as before. `closed` (M-GATE): the ids
+    of the items whose OWN record the gate READ and passed (`own_records_closed`); they are skipped here and NEVER deleted."""
     out = []
+    closed = set(closed or ())
     for it in (prof.get("open_items") or ()):
+        if it.get("id") in closed:
+            continue
         hits = open_item_hits(it, argv)
         if hits is not None and not hits:
             continue
@@ -6123,6 +6153,244 @@ def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
     return reasons, det
 
 
+def judge_map_overfit_banded(prof: dict, record: str | None, commit: str, *, argv_sha: str = "",
+                             argv: list[str] | None = None) -> tuple[list[str], dict]:
+    """G-MAP-OVERFIT for an argv that builds the BANDED map head (refcv9-e1rig + `--r9-map-banded`): the record
+    `map_hires_overfit.py --banded` writes (schema `tanitad.g_map_overfit_record/2-banded`), RE-JUDGED against the INHERITED
+    literals (`prof["map_overfit"]`: spec sha, frames, extent, protocol, bars, min_cells, ce_ratio_max, band) and the banded
+    table (`prof["map_overfit_banded"]`) -- never against the bars the record carries:
+
+    * the record binds THIS launch argv (sha256) and the registered A18 spec / 16 frames / extent / optimiser; its near lift is
+      the banded head's 10 m and its near refine blocks equal the argv's; its branch config says `banded`;
+    * MAIN: every (channel, gated band) -- near, and mid's 10-20 m rows -- clears the INHERITED bar of the channel's class,
+      with the inherited presence floor in AREA (1,000 cells of 0.1 m = 10 m^2 of positive target; fewer is INCONCLUSIVE =>
+      FAIL), its training-loss term fell to <= the inherited ratio of step 0, and the loss was finite at every step;
+    * R1 `lane_w0` FAILS lane; R2 `s8_zeros` FAILS EVERY thin channel -- judged from the arm's own cells. An arm that did not
+      run is a FAIL (there is no A19 excusal for this record), and one that ran and passed is a VOID;
+    * C1 / C2 reproduce their known values on the record's own cells; the 1 ms label-time guard held on every clip."""
+    mo, bd = prof.get("map_overfit") or {}, prof.get("map_overfit_banded") or {}
+    tag = "G-MAP-OVERFIT"
+    if not record or not Path(record).is_file():
+        return [f"{tag}: no /2-banded overfit record ({record!r}) -- the banded head's OWN record is a launch prerequisite "
+                f"(E1-MAP-OWN-RECORD)"], {}
+    rec = read_json(record)
+    v = rec.get("verdict") if isinstance(rec.get("verdict"), dict) else {}
+    det: dict[str, Any] = {"record": record, "sha256": sha256_file(record), "schema": rec.get("schema"),
+                           "verdict": v.get("G_MAP_OVERFIT_BANDED"), "launch_argv_sha256": rec.get("launch_argv_sha256")}
+    reasons = _overfit_binding_reasons(tag, rec, commit, argv_sha, {"schema": bd.get("schema")})
+    if not argv_sha:
+        reasons.append(f"{tag}: no launch argv sha256 to bind the /2-banded record to")
+    if rec.get("tool") != bd.get("tool"):
+        reasons.append(f"{tag}: the record's tool is {rec.get('tool')!r}, not {bd.get('tool')!r}")
+    if v.get("G_MAP_OVERFIT_BANDED") != "PASS":
+        reasons.append(f"{tag}: the record's verdict is {v.get('G_MAP_OVERFIT_BANDED')!r}, not PASS")
+    if rec.get("spec_sha256") != mo.get("spec_sha256"):
+        reasons.append(f"{tag}: the record ran spec {str(rec.get('spec_sha256'))[:16]}..., not the registered A18 spec "
+                       f"{str(mo.get('spec_sha256'))[:16]}...")
+    frames = [tuple(x) for x in zip(rec.get("frames_sha12") or [], rec.get("raw_frames") or [])]
+    if frames != [tuple(x) for x in mo.get("frames", ())] or rec.get("frameset_md5") != mo.get("frameset_md5"):
+        reasons.append(f"{tag}: the record's frames are not the FROZEN 16-frame set (frameset md5 "
+                       f"{str(mo.get('frameset_md5'))[:8]}...)")
+    ext = rec.get("extent") if isinstance(rec.get("extent"), dict) else {}
+    for k, want in (mo.get("extent") or {}).items():
+        if not (_finite_num(ext.get(k)) and float(ext[k]) == float(want)):
+            reasons.append(f"{tag}: the record ran at extent {k}={ext.get(k)}, not the launch {want}")
+    opt = rec.get("optimiser") if isinstance(rec.get("optimiser"), dict) else {}
+    for k, want in (mo.get("protocol") or {}).items():
+        got = opt.get(k)
+        ok = (got == want if isinstance(want, dict)
+              else (_finite_num(got) and not isinstance(got, bool) and float(got) == float(want)))
+        if not ok:
+            reasons.append(f"{tag}: the record's optimiser {k} is {got!r}, not the registered {want!r}")
+    nl = rec.get("near_lift_m")
+    if not (_finite_num(nl) and float(nl) == float(bd.get("near_lift_m", -1))):
+        reasons.append(f"{tag}: the record ran near_lift_m={nl!r}, not the banded head's {bd.get('near_lift_m')}")
+    if not (isinstance(rec.get("branch_config"), dict) and rec["branch_config"].get("banded") is True):
+        reasons.append(f"{tag}: the record's branch config is not the BANDED head's ({rec.get('branch_config')!r})")
+    if argv is not None:
+        for flag, key in (("--map-hires-near-lift-m", "near_lift_m"), ("--map-hires-near-refine-blocks", "near_refine_blocks")):
+            fv = flag_values(argv, flag)
+            try:
+                want = float(fv[0]) if fv else None
+            except ValueError:
+                want = None
+            got = rec.get(key)
+            if want is None or not (_finite_num(got) and float(got) == want):
+                reasons.append(f"{tag}: the record ran {key}={got!r}, the launch argv {flag} is {fv}")
+    bands = {b.get("name"): b for b in (rec.get("bands") or []) if isinstance(b, dict)}
+    for bn, rows in (bd.get("gate_rows") or {}).items():
+        if (bands.get(bn) or {}).get("gate_rows") != rows:
+            reasons.append(f"{tag}: band {bn!r} is gated on {(bands.get(bn) or {}).get('gate_rows')!r} rows, not the "
+                           f"registered {rows} (the inherited 0-20 m band)")
+    band, bar_ok = v.get("band"), mo.get("band")
+    if band != bar_ok:
+        reasons.append(f"{tag}: the verdict is gated on band {band!r}, not the registered {bar_ok!r}")
+    results = rec.get("results") if isinstance(rec.get("results"), dict) else {}
+    cc, bars = bd.get("channel_class") or {}, mo.get("iou_bars") or {}
+    min_area = float(mo.get("min_cells", 0)) * float(bd.get("fine_cell_m", 0.1)) ** 2
+
+    def cell(arm, ch, band_):
+        return ((((results.get(arm) or {}).get("final") or {}).get("cells") or {}).get(ch) or {}).get(band_, {}).get("gate") or {}
+
+    def clears(arm, ch):
+        return all(_finite_num(cell(arm, ch, b_).get("iou")) and float(cell(arm, ch, b_)["iou"]) >= float(bars.get(cc.get(ch), 9.0))
+                   for b_ in bd.get("gated_bands", ()))
+    h_ = results.get("healthy") if isinstance(results.get("healthy"), dict) else {}
+    det["cells"] = {}
+    lim = float(mo.get("ce_ratio_max", 0.5))
+    for ch, cls in cc.items():
+        for b_ in bd.get("gated_bands", ()):
+            c = cell("healthy", ch, b_)
+            n, iou, bar = c.get("n_pos"), c.get("iou"), bars.get(cls)
+            det["cells"][f"{ch}_{b_}"] = {"n_pos": n, "iou": iou, "bar": bar}
+            if not (_finite_num(n) and float(n) * float(bd["cell_m"][b_]) ** 2 >= min_area - 1e-9):
+                reasons.append(f"{tag}: channel {ch!r} band {b_!r} has {n} positive cells ({min_area:g} m^2 floor) -- "
+                               f"INCONCLUSIVE => FAIL (prereg sec. 6.1, in area)")
+            if not (_finite_num(iou) and _finite_num(bar) and float(iou) >= float(bar)):
+                reasons.append(f"{tag}: channel {ch!r} band {b_!r} IoU {iou} < the registered bar {bar} (class {cls!r})")
+            l0 = ((h_.get("step0") or {}).get("loss") or {}).get(f"{ch}_{b_}")
+            l1 = ((h_.get("final") or {}).get("loss") or {}).get(f"{ch}_{b_}")
+            if not (_finite_num(l0) and _finite_num(l1) and float(l0) > 0.0 and float(l1) <= lim * float(l0)):
+                reasons.append(f"{tag}: the {ch}_{b_} loss term did not fall to <= {lim}x its step-0 value ({l0} -> {l1})")
+    if h_.get("loss_finite_every_step") is not True:
+        reasons.append(f"{tag}: the MAIN loss is not recorded finite at every step (sec. 6.5)")
+    det["must_fail"] = {}
+    for table, need_all in ((bd.get("must_fail_any") or {}, False), (bd.get("must_fail_all") or {}, True)):
+        for arm, chans in table.items():
+            ran = isinstance(results.get(arm), dict) and bool((results[arm].get("final") or {}).get("cells"))
+            failed = [c for c in chans if ran and not clears(arm, c)]
+            det["must_fail"][arm] = {"ran": ran, "failed": failed}
+            ok = ran and (set(chans) <= set(failed) if need_all else bool(set(chans) & set(failed)))
+            if not ok:
+                reasons.append(f"{tag}: must-fail arm {arm!r} must FAIL {'ALL OF ' if need_all else ''}{list(chans)} "
+                               f"({'not run' if not ran else 'failed ' + str(failed)}) -- a channel passing without its "
+                               f"training signal / image information means the harness scores something else "
+                               f"(no A19 excusal for the /2-banded record)")
+    # C1 / C2 recomputed from the record's own cells
+    ctl = v.get("controls") if isinstance(v.get("controls"), dict) else {}
+    c1 = (ctl.get("C1_constant_drv") or {}).get("cells") or {}
+    c2 = (ctl.get("C2_gt_as_logits") or {}).get("cells") or {}
+    c1_ok = bool(c1)
+    c2_ok, c2_one = bool(c2), False
+    c1_fails_bars = False
+    for ch in cc:
+        for b_ in bd.get("gated_bands", ()):
+            a = ((c1.get(ch) or {}).get(b_) or {}).get("gate") or {}
+            b2 = ((c2.get(ch) or {}).get(b_) or {}).get("gate") or {}
+            if ch == "drv":
+                c1_ok &= _finite_num(a.get("n_scored")) and float(a["n_scored"]) > 0 and _finite_num(a.get("iou")) \
+                    and abs(float(a["iou"]) - float(a["n_pos"]) / float(a["n_scored"])) <= 1e-9
+            else:
+                c1_ok &= a.get("iou") in (None, 0.0)
+            c1_fails_bars |= not (_finite_num(a.get("iou")) and float(a["iou"]) >= float(bars.get(cc[ch], 9.0)))
+            c2_ok &= b2.get("iou") in (None, 1.0)
+            c2_one |= b2.get("iou") == 1.0
+    for name, ok in (("C1", c1_ok and c1_fails_bars), ("C2", c2_ok and c2_one)):
+        if not ok:
+            reasons.append(f"{tag}: control {name} is not reproduced on the record's own cells")
+    for k in bd.get("controls", ()):
+        if (ctl.get(k) or {}).get("reproduced") is not True:
+            reasons.append(f"{tag}: control {k} is not recorded as reproduced")
+    if v.get("controls_reproduced") is not True:
+        reasons.append(f"{tag}: the harness does not record controls_reproduced = true")
+    tg = v.get("time_guard") if isinstance(v.get("time_guard"), dict) else {}
+    if tg.get("time_1ms_on_every_clip") is not True:
+        reasons.append(f"{tag}: the 1 ms label-time guard did not hold on every clip ({tg or 'absent'})")
+    det["informative_not_gated"] = list(bd.get("informative") or ())
+    return reasons, det
+
+
+def judge_own_record_generic(row: dict, record: str | None, argv_sha: str) -> tuple[list[str], dict]:
+    """The generic reader of a lever's OWN overfit record (`E1_OWN_RECORDS` rows without their own judge -- the box lever's
+    `/2-b3` record): the schema is the row's, the record binds THIS argv, its verdict key reads PASS and every registered
+    regression arm RAN and FAILED AS REQUIRED. B3 gives the row its own judge when the record needs a re-judge from numbers."""
+    tag = row.get("check", "G-OVERFIT")
+    if not record or not Path(record).is_file():
+        return [f"{tag}: no {row.get('schema')} record ({record!r})"], {}
+    rec = read_json(record)
+    v = rec.get("verdict") if isinstance(rec.get("verdict"), dict) else {}
+    reasons: list[str] = []
+    if rec.get("schema") != row.get("schema"):
+        reasons.append(f"{tag}: the record's schema is {rec.get('schema')!r}, not {row.get('schema')!r}")
+    if not argv_sha or str(_first(rec, ("launch_argv_sha256",), ("launch", "argv_sha256"))) != argv_sha:
+        reasons.append(f"{tag}: the record is bound to argv "
+                       f"{str(_first(rec, ('launch_argv_sha256',), ('launch', 'argv_sha256')))[:12] or '<none>'}, not the "
+                       f"launch argv {argv_sha[:12] or '<none>'}")
+    if v.get(row.get("verdict_key", "RESULT")) != "PASS":
+        reasons.append(f"{tag}: the record's {row.get('verdict_key', 'RESULT')} is {v.get(row.get('verdict_key', 'RESULT'))!r}, "
+                       f"not PASS")
+    reg = v.get("regression_arms") if isinstance(v.get("regression_arms"), dict) else {}
+    for arm in row.get("must_fail_arms", ()):
+        a = reg.get(arm) or {}
+        if not (a.get("ran") is True and a.get("failed_as_required") is True):
+            reasons.append(f"{tag}: regression arm {arm!r} did not RUN and FAIL AS REQUIRED ({a or 'absent'})")
+    return reasons, {"record": record, "sha256": sha256_file(record), "schema": rec.get("schema")}
+
+
+#: ⭐ THE TABLE (M-GATE): an open item of the refcv9-e1rig profile -> (the flags its own record covers, the record schema it
+#: needs). A lever closes its `E1-*-OWN-RECORD` item MACHINE-CHECKED by adding ONE row: the argv's hits of the item must all lie
+#: in `flags`, and the record named by the profile option `record_option` must pass the row's `judge` (None = the generic
+#: reader) bound to THIS argv's sha256. The item is NEVER deleted -- `open_item_reasons(..., closed=)` skips only the items this
+#: reads as closed. `switch` = the flags that make the check's job demand the lever's own record in place of the inherited one
+#: (default: `flags`).
+#: ⭐ B3 (the box lever, `g_box_overfit.py`) fills `E1_BOX_OWN_FLAGS` and `E1_BOX_OWN_SCHEMA`; empty flags = the item stays open.
+E1_MAP_OWN_SCHEMA = "tanitad.g_map_overfit_record/2-banded"
+E1_BOX_OWN_FLAGS: tuple = ()
+E1_BOX_OWN_SCHEMA = "tanitad.g_box_overfit_record/2-b3"
+E1_OWN_RECORDS = {
+    "E1-MAP-OWN-RECORD": {"flags": ("--r9-map-banded",), "schema": E1_MAP_OWN_SCHEMA, "check": "G-MAP-OVERFIT",
+                          "record_option": "map_overfit_record", "judge": "judge_map_overfit_banded"},
+    "E1-BOX-OWN-RECORD": {"flags": E1_BOX_OWN_FLAGS, "schema": E1_BOX_OWN_SCHEMA, "check": "G-BOX-OVERFIT",
+                          "record_option": "box_overfit_record", "judge": None, "verdict_key": "RESULT",
+                          "must_fail_arms": ()},
+}
+
+
+def own_record_row(prof: dict, argv: list[str] | None, check: str) -> dict | None:
+    """The `E1_OWN_RECORDS` row that makes `check`'s job demand a lever's OWN record for THIS argv, else None. Only a profile that
+    declares the item (refcv9-e1rig) is concerned, and only an argv that carries one of the row's flags."""
+    if not argv:
+        return None
+    ids = {it.get("id") for it in (prof.get("open_items") or ())}
+    for item_id, row in E1_OWN_RECORDS.items():
+        if item_id in ids and row.get("check") == check and any(f in dict(flag_pairs(argv)) for f in row.get("switch", row["flags"])):
+            return dict(row, item=item_id)
+    return None
+
+
+def own_record_closes(prof: dict, item_id: str, argv: list[str] | None, options: dict, commit: str,
+                      argv_sha: str) -> tuple[bool, list[str]]:
+    """Does the item's OWN record close it for THIS argv? True only when (1) the item's hits in the argv are non-empty and ALL
+    lie in the row's flags (any other `--r9-map-*` / `--r9-*` flag keeps the item open), and (2) the record the profile option
+    names passes the row's judge, bound to this argv's sha256. READS the record -- a hand-set flag closes nothing."""
+    row = E1_OWN_RECORDS.get(item_id)
+    item = next((it for it in (prof.get("open_items") or ()) if it.get("id") == item_id), None)
+    if row is None or item is None or not argv:
+        return False, [f"{item_id}: no table row / no argv"]
+    hits = open_item_hits(item, argv) or []
+    if not hits:
+        return False, [f"{item_id}: the argv carries no flag of the item"]
+    other = [f for f in hits if f not in row["flags"]]
+    if other:
+        return False, [f"{item_id}: {other} are not covered by the {row['schema']} record (it covers {list(row['flags'])})"]
+    record = (options or {}).get(row["record_option"])
+    if row.get("judge") == "judge_map_overfit_banded":
+        reasons, _ = judge_map_overfit_banded(prof, record, commit, argv_sha=argv_sha, argv=argv)
+    else:
+        reasons, _ = judge_own_record_generic(row, record, argv_sha)
+    return (not reasons), reasons
+
+
+def own_records_closed(prof: dict, argv: list[str] | None, options: dict, commit: str, argv_sha: str) -> dict[str, str]:
+    """{item id: record sha256} of every open item whose OWN record closes it (empty for an argv with no lever flag)."""
+    out: dict[str, str] = {}
+    for item_id, row in E1_OWN_RECORDS.items():
+        ok, _why = own_record_closes(prof, item_id, argv, options, commit, argv_sha)
+        if ok:
+            out[item_id] = sha256_file((options or {})[row["record_option"]])
+    return out
+
+
 def judge_box_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: str = "",
                       argv: list[str] | None = None) -> tuple[list[str], dict]:
     """G-BOX-OVERFIT (SPEC_REFCV7 A9, A10 sec. 15.1): the record the box-head builder's harness
@@ -8449,8 +8717,16 @@ def _job_map_overfit(ctx: Ctx) -> dict[str, dict]:
     cwv = flag_values(ctx.argv, cw_flag) if cw_flag else None
     cw_local = map_path(cwv[0], [tuple(x) for x in ctx.path_map]) if cwv else None
     cw_sha = sha256_file(cw_local) if cw_local and Path(cw_local).is_file() else None
-    reasons, det = judge_map_overfit(ctx.prof, rec, ctx.commit, argv_sha=ctx.argv_sha256,
-                                     class_weights_sha256=cw_sha)
+    own = own_record_row(ctx.prof, ctx.argv, "G-MAP-OVERFIT")
+    if own is not None:
+        # M-GATE (E1-MAP-OWN-RECORD): an argv that builds the BANDED head needs the banded head's OWN /2-banded record bound to
+        # THIS argv's sha256 -- the inherited /1 record (refcv8's 8-code head) does not cover it. The banded loss has no class weights.
+        cwv, cw_sha = None, None
+        reasons, det = judge_map_overfit_banded(ctx.prof, rec, ctx.commit, argv_sha=ctx.argv_sha256, argv=ctx.argv)
+        det["own_record"] = {"item": own["item"], "schema": own["schema"], "argv_sha256": ctx.argv_sha256}
+    else:
+        reasons, det = judge_map_overfit(ctx.prof, rec, ctx.commit, argv_sha=ctx.argv_sha256,
+                                         class_weights_sha256=cw_sha)
     if cwv and cw_sha is None:
         reasons.append(f"G-MAP-OVERFIT: the launch class-weight file {cwv[0]} is not readable "
                        f"here, so the record's weights cannot be matched to it")
@@ -8467,6 +8743,8 @@ def _job_map_overfit(ctx: Ctx) -> dict[str, dict]:
             ev["inputs_read"][k] = fingerprint(f)
     ev["details"].update(det)
     ok_text = f"G-MAP-OVERFIT PASS {OVERFIT_SCOPE}"
+    if own is not None:
+        ok_text += f"; the banded head's OWN {own['schema']} record ({own['item']})"
     if (det.get("a19") or {}).get("applied"):
         ok_text += f"; {det['a19']['statement']}"         # SPEC_REFCV7 24: what it does NOT cover
     finish_evidence(ev, "FAIL" if reasons else "PASS", reasons or [ok_text])
@@ -8744,6 +9022,9 @@ def finalize(ctx: Ctx, key: bytes, import_dirs: Iterable[str] = (),
         verdict = "PASS"
     # ⛔ a profile with OPEN ITEMS is not a finished launch definition: never a PASS
     open_items = open_item_reasons(ctx.prof, ctx.argv)
+    closed_own = own_records_closed(ctx.prof, ctx.argv, ctx.options, ctx.commit, ctx.argv_sha256)
+    if closed_own:                       # M-GATE: an item whose OWN record the gate read and passed is closed -- never deleted
+        open_items = open_item_reasons(ctx.prof, ctx.argv, closed=closed_own)
     if open_items:
         reasons += open_items
         if verdict in ("PASS", "PI-DECISION"):
@@ -8753,6 +9034,8 @@ def finalize(ctx: Ctx, key: bytes, import_dirs: Iterable[str] = (),
              "binding": binding, "checks": scrub(checks), "reasons": scrub(reasons),
              "gate_sha256": _gate_self_sha(), "host": _host(), "created_utc": utc_now(),
              "key_id": key_id(key)}
+    if closed_own:                       # M-GATE: only when an item was closed by its own record -- C0 / C1 tokens gain no key
+        token["own_records_closed"] = dict(closed_own)
     token["hmac_sha256"] = sign(token, key)
     c12 = ctx.commit[:12]
     path = out / f"{verdict}_{c12}.json"
