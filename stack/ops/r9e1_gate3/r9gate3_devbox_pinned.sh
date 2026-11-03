@@ -22,6 +22,10 @@ if [ ! -s "$T/stack/scripts/launch_gate.py" ]; then
 fi
 [ -s "$T/stack/scripts/launch_gate.py" ] || { say "extracted tree has no launch_gate.py"; mark ZZGS3-PINNED-ARCHIVE-FAILZZ; exit 2; }
 # the NT env (final_pinned_f7.sh): the CUDA-gated tests, the lidar-BEV GT dir, the calibration dir
+# CPU ONLY (MM 2026-11-03, MEASURED): with the dev-box GPU visible, tests/test_v8f_ego_dagger_compose.py fails 3/36 (device mismatch "cuda:0 and
+# cpu", golden bank, resume bit-identity) at bf2e7d22 AND 9be3211; with CUDA_VISIBLE_DEVICES=-1 the same archive reads 36/36 PASS. The one CUDA test
+# in the pinned files (test_refa_v1_precision::test_cuda_bf16_autocast...) then SKIPS "no CUDA device" -- a REGISTERED skip (launch_gate.py:515).
+export CUDA_VISIBLE_DEVICES=-1
 export TANITAD_REFAV1_CUDA_TEST=1 TANITAD_LIDAR_BEV_GT_DIR=E:/Projects/TanitAD-artifacts/bev-lidar-gt-b1eval-20260913 TANITAD_CALIB_DIR=E:/Projects/TanitAD-artifacts/hf-corpus-aug-20260915/stage/calibration
 for ARM in $ARMS; do
   ARGVF="$T/stack/ops/runs.d/r9e1_${ARM}.argv.json"; OUT="$STAGE/devbox_evidence_${C12}_${ARM}"; SW="$STAGE/gsw_${ARM}"; LOG="$STAGE/devbox_pinned_${C12}_${ARM}.log"
