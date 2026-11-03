@@ -1166,6 +1166,68 @@ def test_the_pin_table_is_exactly_the_PI_decision():
         "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
         "2026-10-26-orecover-run/runs/M2b_s1_orc0/launch_gate_token.json":
             "1a53493cbc65134a032ee3e06e1fdcdd750f4337c0fa1c020a0ac3880d543ba1",
+        # the 20 box-2 chain launch_gate_token.json records, pinned by exact bytes under the PI ruling
+        # 2026-10-22 ~12:05 "Pin exact bytes" (applied 2026-11-03, Master Mind brief)
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-27-dag-oacc/box2/M2b_s0_dagoacc/launch_gate_token.json":
+            "d9b34746e211be21b78bd5d18352da6abb7143b07be49d3d36a8d346af17b3c7",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-27-dag-oacc/box2/M2b_s1_dagoacc/launch_gate_token.json":
+            "68c5e816afc4f7278861e1122e4aae198c20026f04b0c48c75b7390fe080f6d0",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-27-dagger-run/M2b_s0_dag/launch_gate_token.json":
+            "2752a52e0172298d375d6851927dd32a87c589eafa9948ceacb3c733a6f620db",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-27-dagger-run/M2b_s0_dag0/launch_gate_token.json":
+            "e0f7a84d52b6810569cc53f1e3379ec7206a6de47138af1fd39c10842ee3a273",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-27-dagger-run/M2b_s1_dag/launch_gate_token.json":
+            "47e41624b04d44afbea46df87067f48081de1df9bdb42c82fe9d9bddd025f533",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-27-dagger-run/M2b_s1_dag0/launch_gate_token.json":
+            "b157b6fbc85ef8b7fb648f7ad15d48c4e2a779367da87aedaa0662fba5d3a2be",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-27-flatdag/box2/M2b_s0_flatdag/launch_gate_token.json":
+            "3e2f86e33129605af9827fa711825e875ad7bb6b0e8eb015311cf012d3d30a9f",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-27-flatdag/box2/M2b_s0_flatdag0/launch_gate_token.json":
+            "7be615029be2f37fc1c206520053856980cdc9b4ecee4ea1b9cfb2d93cba3c15",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-27-flatdag/box2/M2b_s1_flatdag/launch_gate_token.json":
+            "cf392ed467a980e1304024c21e41581d5e629a7f4b653616e3e7b4311a4e1914",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-27-flatdag/box2/M2b_s1_flatdag0/launch_gate_token.json":
+            "9bfa91b64084d5ce3af7cc2ccc4f248f305a98e08561ff763035795a89c18258",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-28-dag-orc-a2/r1_refused/M2b_s0_dagoaccorc/launch_gate_token.json":
+            "682dea9576e664792a40afe49e78c232c545455ef00013aefd4888428f6208a3",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-28-dag-orc-r2a/r2a_refused/M2b_s0_dagoaccorc/launch_gate_token.json":
+            "3070de22d62544274c9d3ca1bc6a9f378c92a1237651928737d3780baa9b766d",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-28-dag-orc-result/runs/M2b_s0_dagoaccorc/launch_gate_token.json":
+            "3070de22d62544274c9d3ca1bc6a9f378c92a1237651928737d3780baa9b766d",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-28-dag-orc-result/runs/M2b_s0_dagoaccorcrep/launch_gate_token.json":
+            "711c4f7f1ed6d6757143f5ac2aff4ef9562f7895ecf093e16e52c4f2071e03ea",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-28-dag-orc-result/runs/M2b_s1_dagoaccorc/launch_gate_token.json":
+            "b9db4917f0bddc24817bd91d35195e471f73942c8d4fa4ca0cccdf9e27d8e466",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-28-dag-orc-result/runs/M2b_s1_dagoaccorcrep/launch_gate_token.json":
+            "31114c4a947d21f6f264aeeaea4b2c2ea18e7c88cc2cf433799653eaee6122de",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-28-launch-intent-read/box2/M2b_s0_launchintent/launch_gate_token.json":
+            "4bf0c43cd3f94d9fc4961f3658cafcbcff09de1571f89c7e4a2836755b7f3c06",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-28-launch-intent-read/box2/M2b_s0_launchintentrep/launch_gate_token.json":
+            "4342775a42d441c1069f9534bb14598dc5a1bf7115cec2f8b43578113e1389d0",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-28-launch-intent-read/box2/M2b_s1_launchintent/launch_gate_token.json":
+            "ac9ad2920aadd1821a657d06d008ccd8cc17be4d8f9b795c1ed7cc2998c991b4",
+        "TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/"
+        "2026-10-28-launch-intent-read/box2/M2b_s1_launchintentrep/launch_gate_token.json":
+            "bd7ca2c9176b98db76d591e3213530b874dcc960b694efbcb8e5dd06547c48cc",
     }
     fr = ss.filter_rule(ss.DEFAULT_MAX_BYTES, False)["tier_b_pinned_records"]
     assert fr["releases_only_glob"] == "*token.json"
