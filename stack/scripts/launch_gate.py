@@ -1225,7 +1225,7 @@ PROFILES["refcv8-mapft"] = dict(
         (r"tests\.test_v8f_kindx_s1::test_the_running_kscore_chain_is_the_one_in_the_tree",
          r"^(the export the running chain was launched from is gone|box2_ship is not on this machine)$"),),
     suite_env_failures=("stack/ops/launch_gate_thor_env_failures_mapft.json",
-                        "1af7c5dd7e45b31f0f419e992764d31a20f72e743d55c5b971f4c79162ef02f9"),
+                        "9d23472ae3252538af0b2a495fbe11b9c59df390774d3a77b5615f01c9153f25"),
     required_flags=tuple(f for f in _R8["required_flags"] if f not in _mapft_drop) + (_MAPFT_FLAG, "--conflict-detector"),
     required_flags_why=dict({k: v for k, v in (_R8.get("required_flags_why") or {}).items() if k not in _mapft_drop}, **{
         _MAPFT_FLAG: "PI D-R9-MAPHEAD-PRECISION (2026-10-26): train ONLY refine + near + near_refine, planner bit-identical",
@@ -1413,7 +1413,7 @@ PROFILES["refcv9-warm"] = dict(
     #: would read the 160 v8f-mini ENV ids it lacks as failures; the mapft copy carries them (328 ids, 40 files). Its
     #: pinned v8f files run on the dev box too, so refcv8-mapft's one registered skip is registered here as well
     suite_env_failures=("stack/ops/launch_gate_thor_env_failures_mapft.json",
-                        "1af7c5dd7e45b31f0f419e992764d31a20f72e743d55c5b971f4c79162ef02f9"),
+                        "9d23472ae3252538af0b2a495fbe11b9c59df390774d3a77b5615f01c9153f25"),
     suite_pinned_skip_ok=tuple(_R8["suite_pinned_skip_ok"]) + (
         (r"tests\.test_v8f_kindx_s1::test_the_running_kscore_chain_is_the_one_in_the_tree",
          r"^(the export the running chain was launched from is gone|box2_ship is not on this machine)$"),),
