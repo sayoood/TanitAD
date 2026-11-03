@@ -1702,6 +1702,113 @@ if _E1_MODULE is not None:
     )
 
 
+# --------------------------------------------------------------------------------------------- #
+# refcv9-e2 / refcv9-full / refcv9-full-d1: the FULL MODEL (planner + tactical + every perception  #
+# lever) launch-gate profiles (REFCV9_DESIGN 4.2 C12-full, 4.4 E2 / E3 / D1; MM 207ebd C12-FULL)    #
+# --------------------------------------------------------------------------------------------- #
+#: = refcv8's profile BY ADDITION (the way refcv9-e1rig is built by subtraction): every refcv8 planner / perception / data / recipe
+#: value still binds. The refcv9 perception + planner-wire levers are ADMITTED AS OPTIONAL: nothing here says which subset K2 carries
+#: (E1 picks it) -- each lever the argv carries is gated by ITS OWN rule: the E1 own-record items (`_E1_OPEN_ITEMS`, reused, never
+#: copied: C1 / C2 banded head -> E1-MAP-OWN-RECORD, B3's four -> E1-BOX-OWN-RECORD, unknown `--r9-box-*` -> E1-BOX-UNKNOWN-LEVER),
+#: the lever-attach reachability needles (`lever_attach_reasons`), G-DVB / G-LIVE (the levers' own registrations and the exhaustive
+#: LIVE_WEIGHT_RULES: `w_r8_drivable`, `w_map_hires`, `w_box3d`), and the share-alarm row (`map_share_alarm`).
+#: REFUSED (each with its reason): `--r9-perc-rig` / `--r9-train-only` (refcv8's own entries, inherited: the full model is not the rig, the
+#: freeze is refcv9-warm's); the TRAINING-ONLY aux heads (B1 / B2 / B2c): their loss is called ONLY by `compute_losses_perc_rig` and
+#: `box_depth_aux_flag.pin_args` / `persp3d_aux_flag.pin_args` refuse them without `--r9-perc-rig` -- UNREACHABLE in the full model
+#: (pinned by source in tests/test_launch_gate_refcv9_full.py: wiring them into `compute_losses` flips that test and forces a re-decision);
+#: R9-PF (refcv9-warm forbids it too: the SEPARATE stage-2 fit); the D1 branch flags (only profile `refcv9-full-d1` admits them).
+#: A `--r9-*` flag in NONE of the classified sets is never silently admitted: open item R9F-UNCLASSIFIED-LEVER (token INCOMPLETE).
+_R9F_AUX_ALL = E1_BOX_AUX_FLAGS + ("--w-box-depth", "--w-box-persp", "--w-box-bev2")
+_R9F_PLAN_FLAGS = ("--r9-plan-map-channels", "--r9-plan-box-tokens")
+_R9F_BRANCH_FLAGS = ("--wsd-branch-from", "--wsd-branch-decay")
+#: lever flag -> the trainer source needle that ATTACHES its modules (G-DVB reachability: a lever the argv declares whose attach hop is
+#: gone from the trainer is declared-but-not-built). B3's four ride `_bbf.attach`, C8's two ride `_pwf.attach` (refc_v3_train build).
+_R9F_ATTACH = dict({f: "_bbf.attach(model, args)" for f in E1_BOX_OWN_FLAGS},
+                   **{f: "_pwf.attach(model, args)" for f in _R9F_PLAN_FLAGS})
+#: the share alarm (R3 / E0j): when the banded map head is ON, its gradient share of the trunk must stay >= the floor in the smoke's one
+#: `--grad-share-every` reading. E0j's target: the banded map takes >= 0.05 of layer2 (w* 0.511; at w 1.0 it took 0.146). The trainer's
+#: reading (`tanitad/train/grad_share.py` `measure`, groups `GROUP_PREFIXES`: trunk = `core.encoder.*`) has NO `layer2` group; the finest
+#: group that contains layer2 is `trunk`, so the alarm reads `gs_trunk_proj_map_hires` (the `map_hires` term must be in --grad-share-terms).
+_R9F_SHARE = {"flag": "--r9-map-banded", "row_key": "gs_trunk_proj_map_hires", "floor": 0.05, "term": "map_hires",
+              "terms_flag": "--grad-share-terms", "e0j": "w*=0.511 -> layer2 share 0.05; w=1.0 -> 0.146 (LOOP_STATE_REFCV9 02:25)"}
+_R9F_OPEN_ITEMS = (
+    next(i for i in _E1_OPEN_ITEMS if i["id"] == "E1-MAP-OWN-RECORD"),
+    dict(next(i for i in _E1_OPEN_ITEMS if i["id"] == "E1-BOX-OWN-RECORD"), when_prefixes=("--r9-box-",), when_except=(),
+         what="a B3 box-lever arm (E1_BOX_OWN_FLAGS) changes the inference box head or its supervision, so the INHERITED G-BOX-OVERFIT "
+              "record (refcv8's head) does not cover it; closed by the `/2-b3` record exactly as in refcv9-e1rig (the SAME E1_OWN_RECORDS row)"),
+    next(i for i in _E1_OPEN_ITEMS if i["id"] == "E1-BOX-UNKNOWN-LEVER"),
+    {"id": "R9F-UNCLASSIFIED-LEVER",
+     "what": "unclassified refcv9 lever: the argv carries a `--r9-*` flag that is neither a map / box lever (their own record items), a C8 planner "
+             "wire (`_R9F_PLAN_FLAGS`), nor forbidden here. It is never silently admitted",
+     "owner": "the lever's code agent -> the Master Mind (a reviewed edit of launch_gate.py that classifies the flag)",
+     "closes_when": "never by a record: only by a reviewed launch_gate.py edit (classify it admitted, or add it to forbidden_levers)",
+     "when_prefixes": ("--r9-",), "when_except": ("--r9-map-", "--r9-box-"), "when_except_exact": _R9F_PLAN_FLAGS},
+)
+
+
+def _r9f_profile(name: str, sched: dict, why: dict, *, extra_flags: tuple = (), rule: dict) -> dict:
+    """One member of the refcv9-full family. `sched` = the required schedule values (a flag -> value); `rule` = `lr_schedule_rule`."""
+    return dict(
+        _R8, name=name,
+        open_items=_R9F_OPEN_ITEMS,
+        map_overfit_banded=_E1_MAP_BANDED,
+        required_flags=tuple(_R8["required_flags"]) + ("--lr-schedule", "--wsd-decay-steps") + tuple(extra_flags),
+        required_flags_why=dict(_R8.get("required_flags_why") or {}, **{
+            "--lr-schedule": "REFCV9_DESIGN 4.4: WSD (the C6 schedule); the default `cosine` DISABLES the mechanism",
+            "--wsd-decay-steps": "REFCV9_DESIGN 4.4: the WSD decay length (required by value)"}),
+        required_values={k: v for k, v in dict(_R8["required_values"], **{"--lr-schedule": "wsd"}, **sched).items() if k != "--w-map-hires"},
+        required_values_why=dict(_R8.get("required_values_why") or {}, **{"--lr-schedule": "REFCV9_DESIGN 4.4 / C6: WSD"}, **why),
+        forbidden_levers=tuple(_R8["forbidden_levers"]) + (
+            (_R9F_AUX_ALL, "a TRAINING-ONLY aux head (B1 / B2 / B2c) or its weight: UNREACHABLE in the full model -- the aux loss is called only by "
+                           "`compute_losses_perc_rig` and the trainer's pin_args refuse it without --r9-perc-rig (which this profile forbids)"),
+            (_R9W_PF_FLAGS, "R9-PF is the SEPARATE stage-2 calibration fit (REFCV9_INMODEL_DESIGN s1, S2); refcv9-warm forbids it too"),
+        ) + (((_R9F_BRANCH_FLAGS, "the D1 decay branch launches ONLY under profile refcv9-full-d1 (its own token, the 4-flag delta)"),)
+             if name != "refcv9-full-d1" else ()),
+        #: `--init-from` bound by CONTENT to refcv8 EMA-48,852 (md5 b4364029...) -- the e1rig machinery (`map_only_init_reasons`' reader)
+        init_pin={"flag": "--init-from", "init_from_md5": _MAPFT_INIT_MD5,
+                  "init_note": "E2 / E3 warm-start from the shipped refcv8 EMA-48,852 (REFCV9_DESIGN 4.4), not another file"},
+        suite_env_failures=PROFILES["refcv9-warm"]["suite_env_failures"],
+        suite_pinned_skip_ok=PROFILES["refcv9-warm"]["suite_pinned_skip_ok"],
+        lr_schedule_rule=rule,
+        #: `--w-map-hires`: refcv8's 1.0 without the banded head; with it the E0j-chosen w* (M2a 0.511 / M2b 1.018) -- free, positive
+        w_map_hires_rule={"flag": "--r9-map-banded", "plain": "1.0"},
+        map_share_alarm=dict(_R9F_SHARE),
+        lever_attach_needles=dict(_R9F_ATTACH),
+    )
+
+
+#: the WSD probe literals (G-DVB `lr_factor_probe`): {step: factor} = the closed form of `(warmup, steps, decay)`, written as numbers
+_R9F_PROBE_E2 = {0: 0.001, 999: 1.0, 3000: 1.0, 5000: 1.0, 5999: 0.001, 6000: 0.0}
+_R9F_PROBE_FULL = {0: 0.001, 999: 1.0, 30911: 1.0, 60822: 1.0, 73279: 1.0 / 12458, 73280: 0.0}
+_R9F_PROBE_D1 = {0: 0.001, 999: 1.0, 15500: 1.0, 30000: 1.0, 35999: 1.0 / 6000, 36000: 0.0}
+PROFILES["refcv9-e2"] = _r9f_profile(
+    "refcv9-e2", {"--steps": "6000", "--wsd-decay-steps": "1000"},
+    {"--steps": "REFCV9_DESIGN 4.4 E2: 6,000 steps (refcv8's 48,852 is the full recipe)",
+     "--wsd-decay-steps": "REFCV9_DESIGN 4.4 E2: WSD decay over the last 1,000 steps"},
+    rule={"decay_flag": "--wsd-decay-steps", "probe_literal": _R9F_PROBE_E2})
+PROFILES["refcv9-full"] = _r9f_profile(
+    "refcv9-full", {"--steps": "73280", "--warmup": "1000", "--wsd-decay-steps": "12458"},
+    {"--steps": "REFCV9_DESIGN 4.4 E3: 73,280 steps", "--warmup": "REFCV9_DESIGN 4.4 E3: warm-up 1,000",
+     "--wsd-decay-steps": "REFCV9_DESIGN 4.4 E3: WSD decay 12,458 (C6 HANDOFF C12-full rows)"},
+    extra_flags=("--save-at",),
+    rule={"decay_flag": "--wsd-decay-steps", "probe_literal": _R9F_PROBE_FULL, "save_at_includes": 30000})
+_R9F_FULL = PROFILES["refcv9-full"]
+#: the D1 branch (E3's stable-phase checkpoint 30,000 decayed over 6,000): a refcv9-full argv with the 4-flag delta ONLY
+#: (--out, --steps, --wsd-branch-from, --wsd-branch-decay; --save-at is the C6 module's own exempt cadence flag)
+_R9F_BRANCH = {"src_step": 30000, "decay": 6000, "steps": 36000, "delta": ("--out", "--steps", "--wsd-branch-from", "--wsd-branch-decay"),
+               "exempt": ("--save-at",), "src_ckpt": "ckpt_full_30000.pt"}
+PROFILES["refcv9-full-d1"] = dict(
+    _R9F_FULL, name="refcv9-full-d1",
+    required_flags=tuple(f for f in _R9F_FULL["required_flags"] if f != "--save-at") + _R9F_BRANCH_FLAGS,
+    required_values=dict(_R9F_FULL["required_values"], **{"--steps": "36000", "--wsd-branch-decay": "6000"}),
+    required_values_why=dict(_R9F_FULL["required_values_why"], **{
+        "--steps": "D1: the branch ends at source step 30,000 + decay 6,000", "--wsd-branch-decay": "D1: decay the 30,000 checkpoint over 6,000"}),
+    forbidden_levers=tuple(e for e in _R9F_FULL["forbidden_levers"] if e[0] != _R9F_BRANCH_FLAGS),
+    lr_schedule_rule={"decay_flag": "--wsd-branch-decay", "probe_literal": _R9F_PROBE_D1},
+    wsd_branch_rule=dict(_R9F_BRANCH),
+)
+
+
 class GateError(RuntimeError):
     """A condition under which the gate cannot certify anything."""
 
@@ -3136,6 +3243,9 @@ def profile_argv_rules(prof: dict, argv: list[str], options: dict | None = None,
     refusals += amendment_ack_reasons(prof, pmap)[0]
     refusals += map_only_init_reasons(prof, argv, pmap)[0]
     refusals += r9_schedule_reasons(prof, argv)[0]
+    refusals += lr_schedule_reasons(prof, argv)[0]                 # refcv9-full family (inert otherwise)
+    refusals += wsd_branch_reasons(prof, argv, pmap)[0]            # refcv9-full-d1 only (inert otherwise)
+    refusals += map_weight_reasons(prof, argv)[0]                  # refcv9-full family (inert otherwise)
     return refusals, pi_pending_reasons(prof, argv)
 
 
@@ -3173,6 +3283,284 @@ def r9_schedule_reasons(prof: dict, argv: list[str]) -> tuple[list[str], dict]:
         return [f"R9W-SCHEDULE: {f} {v[0]!r} is not the rule's {want!r} (p {ru['p0']} -> {ru['p1']} from step "
                 f"{ru['start']} to floor({ru['end_of']} {n[0]} / {ru['end_div']}) = {end})"], det
     return [], det
+
+
+# --------------------------------------------------------------------------------------------- #
+# refcv9-e2 / refcv9-full / refcv9-full-d1 (C12-FULL): the WSD schedule rows, the D1 branch delta, #
+# the lever-attach reachability needles, the live rows and the share alarm                        #
+# --------------------------------------------------------------------------------------------- #
+def _wsd_probe_expected(warmup: int, steps: int, decay: int) -> dict[int, float]:
+    """The WSD factor's probe points, from CLOSED FORMS read off the argv (no shared code with `lr_schedule.wsd_factor`): the first
+    update, the last warm-up update, the middle of the stable phase, the decay start, the last update (1/decay) and `steps` (0)."""
+    start = steps - decay
+    want = {0: 1.0 / max(1, warmup)}
+    if warmup >= 1:
+        want[warmup - 1] = 1.0
+    if start > warmup:
+        want[(warmup + start) // 2] = 1.0
+    want[start] = 1.0
+    want[steps - 1] = 1.0 / decay
+    want[steps] = 0.0
+    return want
+
+
+def _wsd_factor_closed(step: int, warmup: int, steps: int, decay: int) -> float:
+    if step < warmup:
+        return (step + 1) / max(1, warmup)
+    return 1.0 if step < steps - decay else max(0.0, (steps - step) / decay)
+
+
+def _int_flag(argv: list[str], flag: str) -> int | None:
+    v = flag_values(argv, flag)
+    try:
+        return int(v[0]) if v else None
+    except ValueError:
+        return None
+
+
+def lr_schedule_reasons(prof: dict, argv: list[str]) -> tuple[list[str], dict]:
+    """The profile's `lr_schedule_rule` read off the ARGV: the profile's literal probe table must EQUAL the closed form of THIS argv's
+    `(--warmup, --steps, decay flag)` (so a table off by one value, or an argv whose schedule is not the one the table was written for,
+    is refused), and `--save-at` must name `save_at_includes` (the stable-phase checkpoint the D1 branch needs). Inert without the rule."""
+    ru = prof.get("lr_schedule_rule")
+    if not ru:
+        return [], {"on": False}
+    det: dict[str, Any] = {"on": True}
+    W, S, D = _int_flag(argv, "--warmup"), _int_flag(argv, "--steps"), _int_flag(argv, ru["decay_flag"])
+    if None in (W, S, D) or D <= 0 or S <= 0:
+        return [f"WSD-ROW: --warmup, --steps and {ru['decay_flag']} must all be present positive integers (got {W}, {S}, {D})"], det
+    out: list[str] = []
+    want = _wsd_probe_expected(W, S, D)
+    lit = {int(k): float(v) for k, v in ru["probe_literal"].items()}
+    det.update(want=want, literal=lit)
+    if set(lit) != set(want) or any(abs(lit[k] - want[k]) > 1e-12 for k in lit if k in want):
+        bad = sorted(k for k in set(lit) | set(want) if k not in lit or k not in want or abs(lit[k] - want[k]) > 1e-12)
+        out.append(f"WSD-ROW: the profile's lr_factor_probe literal {lit} is not the closed form {want} of this argv's "
+                   f"(--warmup {W}, --steps {S}, {ru['decay_flag']} {D}); differs at {bad}")
+    sa = ru.get("save_at_includes")
+    if sa is not None:
+        v = flag_values(argv, "--save-at")
+        try:
+            steps_ = {int(x) for x in str(v[0]).split(",") if x.strip()} if v else set()
+        except ValueError:
+            steps_ = set()
+        if int(sa) not in steps_:
+            out.append(f"WSD-ROW: --save-at {v[0] if v else '<absent>'} does not name {sa}: the D1 branch has no stable-phase "
+                       f"checkpoint (ckpt_full_{sa}.pt) to decay")
+    return out, det
+
+
+def map_weight_reasons(prof: dict, argv: list[str]) -> tuple[list[str], dict]:
+    """`--w-map-hires` under the refcv9-full family: refcv8's literal (`plain`) without the banded head; with `--r9-map-banded` the value is
+    the E0j-chosen w* (REFCV9_DESIGN 2.1: M2a 0.511 / M2b 1.018), so it is free but must be finite and > 0 (the share alarm then reads it live)."""
+    ru = prof.get("w_map_hires_rule")
+    if not ru:
+        return [], {"on": False}
+    v = flag_values(argv, "--w-map-hires")
+    if not v:
+        return ["W-MAP-HIRES: --w-map-hires is not passed"], {"on": True}
+    try:
+        w = float(v[0])
+    except ValueError:
+        return [f"W-MAP-HIRES: --w-map-hires {v[0]!r} is not a number"], {"on": True}
+    banded = has_flag(argv, ru["flag"])
+    if banded and not (w == w and 0.0 < w < float("inf")):
+        return [f"W-MAP-HIRES: --w-map-hires {v[0]} must be finite and > 0 with {ru['flag']}"], {"on": True, "banded": True}
+    if not banded and w != float(ru["plain"]):
+        return [f"W-MAP-HIRES: --w-map-hires {v[0]} != {ru['plain']} (refcv8's value; only {ru['flag']} frees it to the E0j-chosen w*)"], {"on": True, "banded": False}
+    return [], {"on": True, "banded": banded, "w": w}
+
+
+def wsd_branch_reasons(prof: dict, argv: list[str], pmap: list[tuple[str, str]] | None = None) -> tuple[list[str], dict]:
+    """The D1 branch row (`wsd_branch_rule`, profile refcv9-full-d1): the source checkpoint is `ckpt_full_<src_step>.pt`, `config.json` sits
+    beside it, and THIS argv equals the source's `argv_effective` except for the 4-flag delta (--out, --steps, --wsd-branch-from,
+    --wsd-branch-decay; --save-at is exempt, it is a cadence flag) with --steps == src_step + decay. The delta is read BY FLAG NAME off both
+    argvs, so a branch that also changes --lr (or any other flag) is refused. Inert without the rule."""
+    ru = prof.get("wsd_branch_rule")
+    if not ru:
+        return [], {"on": False}
+    det: dict[str, Any] = {"on": True}
+    bf = flag_values(argv, "--wsd-branch-from")
+    if not bf:
+        return ["D1-BRANCH: --wsd-branch-from is not passed"], det
+    local = Path(map_path(bf[0], pmap or []))
+    out: list[str] = []
+    if local.name != ru["src_ckpt"]:
+        out.append(f"D1-BRANCH: --wsd-branch-from {bf[0]} is not the stable-phase checkpoint {ru['src_ckpt']}")
+    S, M = _int_flag(argv, "--steps"), _int_flag(argv, "--wsd-branch-decay")
+    if S != ru["steps"] or M != ru["decay"] or ru["src_step"] + ru["decay"] != ru["steps"]:
+        out.append(f"D1-BRANCH: --steps {S} / --wsd-branch-decay {M} are not the branch's {ru['steps']} = {ru['src_step']} + {ru['decay']}")
+    cfgp = local.parent / "config.json"
+    if not cfgp.is_file():
+        return out + [f"D1-BRANCH: no config.json beside the source checkpoint ({cfgp}): the source argv cannot be read, so the delta "
+                      f"cannot be bound"], det
+    try:
+        src = json.loads(cfgp.read_text(encoding="utf-8")).get("argv_effective")
+    except (OSError, ValueError) as e:
+        return out + [f"D1-BRANCH: {cfgp} unreadable ({type(e).__name__}: {e})"], det
+    if not (isinstance(src, list) and all(isinstance(x, str) for x in src)):
+        return out + [f"D1-BRANCH: {cfgp} carries no argv_effective list"], det
+    a, b = dict(flag_pairs(argv)), dict(flag_pairs(src))
+    diff = sorted(f for f in set(a) | set(b) if a.get(f) != b.get(f))
+    det["delta"] = diff
+    bad = [f for f in diff if f not in ru["delta"] and f not in ru["exempt"]]
+    miss = [f for f in ru["delta"] if f not in diff]
+    if bad:
+        out.append(f"D1-BRANCH: the branch argv differs from its source's in {bad} -- the 4-flag delta {list(ru['delta'])} is the ONLY "
+                   f"admitted difference (a branch that changes the recipe is not a decay of that run)")
+    if miss:
+        out.append(f"D1-BRANCH: the delta flag(s) {miss} are identical to the source's -- not a new run")
+    return out, det
+
+
+def lever_attach_reasons(prof: dict, argv: list[str], trainer_src: str) -> tuple[list[str], dict]:
+    """G-DVB reachability for the profile's `lever_attach_needles`: for every lever FLAG the argv carries, the trainer source must still
+    contain the hop that attaches its modules (`_pwf.attach(model, args)` ...). A lever declared in argv whose attach hop is gone from the
+    trainer is declared-but-not-built -- the mutation (delete the line in a COPY of the trainer) turns this red."""
+    needles = prof.get("lever_attach_needles") or {}
+    src = trainer_src.replace("\r\n", "\n")
+    det = {"checked": {}}
+    out = []
+    for flag, needle in needles.items():
+        if has_flag(argv, flag):
+            ok = needle in src
+            det["checked"][flag] = ok
+            if not ok:
+                out.append(f"G-DVB reachability: {flag} is in the argv but the trainer no longer contains its attach hop `{needle}` -- "
+                           f"the lever would be DECLARED and never BUILT")
+    return out, det
+
+
+def wsd_smoke_rewrite(base: list[str], steps: int, log_every: int) -> tuple[list[str], dict]:
+    """The smoke's WSD rewrite (the B-GS-SMOKE class: a conformant launch argv could never PASS G-LIVE otherwise -- the trainer's
+    `lr_schedule.check_args` refuses `--wsd-decay-steps 12458 > --steps 50`, `--warmup 1000 > --steps - decay`, and `--save-at 30000`
+    past `--steps`). Only for `--lr-schedule wsd`: the decay branch flags are DROPPED (the smoke is a plain run; the branch itself is
+    proved by the D1 row + C6's tests), decay D_s = max(1, steps // 5), warm-up W_s = max(2, min(log_every + steps // 10, steps - D_s - 1))
+    so a LOGGED row falls inside the warm-up AND the last row inside the decay, and `--save-at` keeps the launch's steps inside the smoke
+    plus steps // 2 (the full-state write runs inside G-LIVE). Returns (argv, departures)."""
+    v = flag_values(base, "--lr-schedule")
+    if not v or v[0] != "wsd":
+        return list(base), {}
+    out = list(base)
+    dep: dict[str, Any] = {}
+    D_s = max(1, steps // 5)
+    W_s = max(2, min(int(log_every) + max(1, steps // 10), steps - D_s - 1))
+    was = {"--warmup": (flag_values(base, "--warmup") or [None])[0], "--wsd-decay-steps": (flag_values(base, "--wsd-decay-steps") or [None])[0]}
+    out = set_flag(set_flag(out, "--warmup", [str(W_s)]), "--wsd-decay-steps", [str(D_s)])
+    dep["--warmup/--wsd-decay-steps"] = f"{was} -> warm-up {W_s}, decay {D_s} inside the {steps}-step smoke (rows must cover warm-up, stable and decay)"
+    for f in ("--wsd-branch-from", "--wsd-branch-decay"):
+        if has_flag(out, f):
+            out = set_flag(out, f, None)
+            dep[f] = "dropped: the smoke is a plain WSD run (the branch is the D1 row's)"
+    sa = flag_values(base, "--save-at")
+    if sa:
+        try:
+            keep = sorted({int(x) for x in str(sa[0]).split(",") if x.strip() and 0 < int(x) <= steps} | {max(1, steps // 2)})
+        except ValueError:
+            keep = [max(1, steps // 2)]
+        out = set_flag(out, "--save-at", [",".join(str(k) for k in keep)])
+        dep["--save-at"] = f"{sa[0]} -> {','.join(str(k) for k in keep)} (the full-state write runs inside G-LIVE)"
+    return out, dep
+
+
+def full_profile_live_reasons(prof: dict, launch_argv: list[str], run_argv: list[str], rows: list[dict], cfg: dict | None,
+                              run_dir: Path | None = None) -> tuple[list[str], dict]:
+    """The refcv9-full family's rows on the SMOKE (inert for a profile with neither key):
+    (1) `lr_schedule_rule`: config.json stamps lr_schedule == wsd, wsd_decay_steps == the smoke's decay, wsd_branch None and an
+        `lr_factor_probe` EQUAL to the closed form of the SMOKE's (warmup, steps, decay); every logged row's `lr` is `initial_lr x
+        factor(step - 1)` with ONE initial_lr (the schedule REACHES the optimiser group), and the logged rows cover a warm-up row (factor < 1)
+        and a decay row (factor < 1 past the stable phase); every `--save-at` step wrote `ckpt_full_<s>.pt` with ckpt.pt's key set.
+    (2) `map_share_alarm` (R3 / E0j): with the banded map ON, the smoke's gradient-share reading of the map term on the trunk is >= floor."""
+    reasons: list[str] = []
+    det: dict[str, Any] = {}
+    ru = prof.get("lr_schedule_rule")
+    if ru:
+        S, W = _int_flag(run_argv, "--steps"), _int_flag(run_argv, "--warmup")
+        D = _int_flag(run_argv, "--wsd-decay-steps")
+        d: dict[str, Any] = {"smoke": {"steps": S, "warmup": W, "decay": D}}
+        det["lr_schedule"] = d
+        c = cfg or {}
+        if None in (S, W, D):
+            reasons.append("G-DVB lr_schedule: the smoke argv carries no integer --steps / --warmup / --wsd-decay-steps")
+        else:
+            if c.get("lr_schedule") != "wsd":
+                reasons.append(f"G-DVB lr_schedule: config.json lr_schedule is {c.get('lr_schedule')!r}, the argv declares wsd")
+            if c.get("wsd_decay_steps") != D:
+                reasons.append(f"G-DVB lr_schedule: config.json wsd_decay_steps is {c.get('wsd_decay_steps')!r}, the smoke argv declares {D}")
+            if c.get("wsd_branch") is not None:
+                reasons.append(f"G-DVB lr_schedule: config.json wsd_branch is {c.get('wsd_branch')!r}; the smoke is a plain run (None)")
+            pr = c.get("lr_factor_probe")
+            want = _wsd_probe_expected(W, S, D)
+            try:
+                got = {int(k): float(v) for k, v in pr.items()}
+            except (AttributeError, TypeError, ValueError):
+                got = None
+            d["probe_want"], d["probe_got"] = want, got
+            if got is None:
+                reasons.append("G-DVB lr_factor_probe: config.json carries no lr_factor_probe table")
+            elif set(got) != set(want) or any(abs(got[k] - want[k]) > 1e-12 for k in want if k in got):
+                reasons.append(f"G-DVB lr_factor_probe: the BUILT schedule's table {got} != the closed form {want} of the smoke argv "
+                               f"(--warmup {W}, --steps {S}, decay {D})")
+            pts = [(int(r["step"]), float(r["lr"])) for r in rows if isinstance(r.get("lr"), (int, float)) and "step" in r]
+            d["n_lr_rows"] = len(pts)
+            ratios = []
+            for st, lr in pts:
+                f = _wsd_factor_closed(st - 1, W, S, D)
+                ratios.append(lr / f if f > 0 else float("nan"))
+            if len(pts) < 2:
+                reasons.append(f"G-LIVE lr: {len(pts)} logged row(s) carry an lr -- the schedule cannot be read")
+            elif any(not (x == x) or abs(x - ratios[0]) > 1e-6 * max(abs(ratios[0]), 1e-30) for x in ratios):
+                reasons.append(f"G-LIVE lr: the rows' lr / closed-form factor is not one constant initial_lr: {ratios[:6]} -- the WSD factor "
+                               f"does not REACH the optimiser group")
+            else:
+                d["initial_lr"] = ratios[0]
+                fs = [_wsd_factor_closed(st - 1, W, S, D) for st, _ in pts]
+                if not any(f < 1.0 and st - 1 < W for (st, _), f in zip(pts, fs)):
+                    reasons.append("G-LIVE lr: no logged row falls inside the warm-up -- the warm-up was never read")
+                if not any(f < 1.0 and st - 1 >= S - D for (st, _), f in zip(pts, fs)):
+                    reasons.append("G-LIVE lr: no logged row falls inside the decay -- the decay was never read")
+            sa = flag_values(run_argv, "--save-at")
+            if sa and run_dir is not None:
+                d["save_at"] = _save_at_check(Path(run_dir), [int(x) for x in str(sa[0]).split(",") if x.strip()], reasons)
+    sh = prof.get("map_share_alarm")
+    if sh and has_flag(launch_argv, sh["flag"]):
+        vals = [float(r[sh["row_key"]]) for r in rows if isinstance(r.get(sh["row_key"]), (int, float))]
+        det["share_alarm"] = {"row_key": sh["row_key"], "floor": sh["floor"], "readings": vals}
+        terms = flag_values(launch_argv, sh["terms_flag"])
+        if terms and sh["term"] not in str(terms[0]).split(","):
+            reasons.append(f"SHARE-ALARM: {sh['terms_flag']} {terms[0]} does not separate `{sh['term']}`: the banded map's share cannot be read")
+        elif not vals:
+            reasons.append(f"SHARE-ALARM: the smoke carries no `{sh['row_key']}` reading although the banded map head is ON "
+                           f"({sh['flag']}) -- the alarm cannot be read (a missing alarm is a FAIL, never a pass)")
+        elif min(vals) < float(sh["floor"]):
+            reasons.append(f"SHARE-ALARM: the banded map takes {min(vals):.4f} of the trunk gradient (`{sh['row_key']}`), below the floor "
+                           f"{sh['floor']} (E0j: {sh['e0j']}) -- the map weight is too small to shape layer2")
+    return reasons, det
+
+
+def _save_at_check(run_dir: Path, steps_: list[int], reasons: list[str]) -> dict:
+    """Every `--save-at` step wrote `ckpt_full_<s>.pt` whose top-level key set EQUALS ckpt.pt's (the D1 branch resumes from it)."""
+    out: dict[str, Any] = {}
+    try:
+        import torch
+        ref = set(torch.load(run_dir / "ckpt.pt", map_location="cpu", weights_only=False, mmap=True))
+    except Exception as e:                                # noqa: BLE001 -- recorded, never a pass
+        reasons.append(f"G-CKPT save-at: ckpt.pt unreadable ({type(e).__name__}: {str(e)[:160]})")
+        return out
+    for s in steps_:
+        p = run_dir / ("ckpt_full_%d.pt" % s)
+        if not p.is_file():
+            reasons.append(f"G-CKPT save-at: --save-at {s} wrote no {p.name}")
+            continue
+        try:
+            keys = set(torch.load(p, map_location="cpu", weights_only=False, mmap=True))
+        except Exception as e:                            # noqa: BLE001
+            reasons.append(f"G-CKPT save-at: {p.name} unreadable ({type(e).__name__}: {str(e)[:160]})")
+            continue
+        out[str(s)] = sorted(keys)
+        if keys != ref:
+            reasons.append(f"G-CKPT save-at: {p.name} keys {sorted(keys)} != ckpt.pt's {sorted(ref)}")
+    return out
 
 
 def open_item_hits(it: dict, argv: list[str] | None) -> list[str] | None:
@@ -5321,6 +5709,10 @@ def smoke_argv(base: list[str], steps: int, log_every: int) -> tuple[list[str], 
         out = set_flag(out, "--snapshot-steps", [",".join(str(s) for s in inside)])
         dep["--snapshot-steps"] = (f"{ss[0]} -> {','.join(str(s) for s in inside)} (steps past the smoke dropped, the "
                                    f"smoke's last step added: the snapshot write runs inside G-LIVE)")
+    # MM 207ebd C12-FULL: the refcv9 WSD schedule rows (the same B-GS-SMOKE class: the launch's --wsd-decay-steps / --warmup / --save-at
+    # are numbers of the LAUNCH and the trainer's own pins refuse them inside a 50 / 100-step smoke)
+    out, wdep = wsd_smoke_rewrite(out, steps, L)
+    dep.update(wdep)
     return out, dep
 
 
@@ -7387,6 +7779,13 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         mor_, mod_ = map_only_built_reasons(ctx.prof, ctx.argv, model)     # refcv8-mapft only (inert otherwise)
         det["map_only"] = mod_
         reasons += mor_
+        try:                                              # refcv9-full family: the declared levers' attach hops still exist in the trainer
+            _tsrc = (Path(ctx.tree) / ctx.prof["trainer"]).read_bytes().decode("utf-8", "replace")
+        except OSError:
+            _tsrc = ""
+        lar_, lad_ = lever_attach_reasons(ctx.prof, ctx.argv, _tsrc)
+        det["lever_attach"] = lad_
+        reasons += lar_
         tfr, tfd = tau_file_flag_reasons(ctx.prof, ctx.argv, parser,
                                          ctx.options.get("nav_tau_record"), pmap)
         det["nav_tau_file_flag"] = tfd
@@ -7813,6 +8212,9 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         needs_pi = False
         cfg1 = read_json(run_dir / "config.json") if (run_dir / "config.json").is_file() \
             else None
+        fpr_, fpd_ = full_profile_live_reasons(ctx.prof, ctx.argv, argv1, train_rows(rows1), cfg1, run_dir)   # refcv9-full family
+        det["full_profile"] = fpd_
+        reasons += fpr_
         # SPEC_REFCV7 7: the ceiling mask at inference only, and the tau file in config.json
         cr, cd = judge_ceiling(ctx.prof, ctx.argv, run1.get("ceiling_calls", []),
                                eval_in_argv=has_flag(ctx.argv, "--eval-cache"))

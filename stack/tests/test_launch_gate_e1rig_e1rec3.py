@@ -214,7 +214,7 @@ def test_RED_an_unknown_box_lever_opens_an_item_and_is_never_silently_inherited(
 
 def test_every_other_profile_is_untouched_by_the_new_item():
     for name, p in LG.PROFILES.items():
-        if name != "refcv9-e1rig":
+        if name not in ("refcv9-e1rig", "refcv9-e2", "refcv9-full", "refcv9-full-d1"):   # the E1 rig and C12-FULL's three refcv9 profiles carry E1's lever-keyed rows by design
             assert LG.open_item_reasons(p) == LG.open_item_reasons(p, ["--r9-box-foo"]) == LG.open_item_reasons(p, [])
             assert all(it.get("id") != "E1-BOX-UNKNOWN-LEVER" for it in (p.get("open_items") or ()))
 

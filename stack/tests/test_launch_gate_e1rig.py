@@ -249,7 +249,7 @@ def test_conditional_open_items_key_on_the_lever_flags_and_never_pass(conformant
     assert "open_item_reasons(ctx.prof, ctx.argv)" in src and 'verdict in ("PASS", "PI-DECISION")' in src
     # every OTHER profile's items are unconditional and read as before (the argv changes nothing)
     for name, p in LG.PROFILES.items():
-        if name != "refcv9-e1rig":
+        if name not in ("refcv9-e1rig", "refcv9-e2", "refcv9-full", "refcv9-full-d1"):   # the E1 rig and C12-FULL's three refcv9 profiles carry E1's lever-keyed rows by design
             assert LG.open_item_reasons(p) == LG.open_item_reasons(p, ["--r9-map-banded"]) == LG.open_item_reasons(p, [])
 
 

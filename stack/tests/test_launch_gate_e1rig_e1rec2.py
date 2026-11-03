@@ -175,7 +175,7 @@ def test_C0_C1_and_the_map_arms_are_untouched_by_the_box_row(tmp_path):
         assert LG.open_item_reasons(RIG, a) == [] and LG.own_records_closed(RIG, a, {"box_overfit_record": "/nonexistent"}, COMMIT, LG.argv_sha256(a)) == {}
         assert LG.required_checks_of(RIG, a) == list(dict.fromkeys([*RIG["required_checks"], "G-MAP-OVERFIT"]))
     for name, p in LG.PROFILES.items():
-        if name != "refcv9-e1rig":
+        if name not in ("refcv9-e1rig", "refcv9-e2", "refcv9-full", "refcv9-full-d1"):   # the E1 rig and C12-FULL's three refcv9 profiles carry E1's lever-keyed rows by design
             assert LG.open_item_reasons(p) == LG.open_item_reasons(p, closed=("E1-BOX-OWN-RECORD", "E1-MAP-OWN-RECORD"))
 
 
