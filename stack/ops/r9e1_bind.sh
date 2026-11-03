@@ -2,7 +2,15 @@
 # r9e1_bind.sh -- THOR-SIDE producer of the two BINDING overfit records for the refcv9 E1 perception rig
 # (launch-gate profile `refcv9-e1rig`; C12-E1 blocker 2).
 #
-#   r9e1_bind.sh [--dry-run] <map|box|map-banded|box-b3> <ARM> --commit SHA40 [--root DIR] [--code DIR] [--inputs DIR]
+#   r9e1_bind.sh [--dry-run] <map|box|map-banded|box-b3> <ARM> --commit SHA40 [--root DIR] [--code DIR] [--inputs DIR] [--reuse-from BASE_ARM]
+#
+#   --reuse-from BASE_ARM (E1-REUSE, MM 207ebd, PINNED; kinds map and box only): take a REUSE binding instead of a 2,000 s Thor run. NO lock, NO GPU. The harness's OWN
+#   `--identity-only` runs on THIS arm's rendered invocation AND on the base's saved one ($ROOT/ovf_<BASE>_<C12>/<kind>.args: what the base ACTUALLY ran); the two
+#   identity_sha256s must be EQUAL (effective build argv after the harness's own strip, data roots, every other harness argument -- only the launch-argv references and
+#   the per-arm stamps may differ), the base record + closure must exist at the SAME C12 and pass the GATE'S OWN judge for the base argv, and the binding
+#   BD/run_<kind>/reuse_binding.json (schema tanitad.overfit_reuse/1: base arm, sha256 of the base record + closure, both identity shas, THIS argv sha256, THIS arm's
+#   stamps, commit) is written and re-judged by `launch_gate.write_reuse_binding` (the gate's `judge_overfit_reuse`). The base closure is copied to BD/<kind>_closure.json.
+#   Markers: ZZR9E1BIND-REUSE-<kind>-<ARM>-OKZZ  ZZR9E1BIND-DRYREUSE-OKZZ (--dry-run: identity only)  ZZR9E1BIND-REFUSEDZZ (every refusal names its reason).
 #
 # ARM (E1-REC2) = any `stack/ops/runs.d/r9e1_<ARM>.argv.json` of the shipped tree (C0 C1 M1 M2a M2b B3 B3p M3 ...). G-MAP-OVERFIT and G-BOX-OVERFIT bind
 # the WHOLE argv sha256, so EVERY arm needs its OWN record of BOTH kinds, and the KIND must match what the argv builds -- refused otherwise:
@@ -51,13 +59,13 @@
 set -u
 DRY=0; if [ "${1:-}" = "--dry-run" ]; then DRY=1; shift; fi
 KIND="${1:-}"; ARM="${2:-}"; shift 2 || true
-ROOT=/home/nvidia/r8ns/r9e1; CODE=""; COMMIT=""; INPUTS=""
+ROOT=/home/nvidia/r8ns/r9e1; CODE=""; COMMIT=""; INPUTS=""; REUSE=""
 LOCKF=/home/nvidia/refcv7_post/thor_gpu.lock
 _VENV_PY=/home/nvidia/venvs/tanitad-train/bin/python
 PY="${PYTHON:-$( [ -x "$_VENV_PY" ] && echo "$_VENV_PY" || echo python3 )}"
 export MSYS_NO_PATHCONV=1
 while [ $# -gt 0 ]; do case "$1" in
-  --commit) COMMIT="$2"; shift 2;; --root) ROOT="$2"; shift 2;; --code) CODE="$2"; shift 2;; --inputs) INPUTS="$2"; shift 2;;
+  --commit) COMMIT="$2"; shift 2;; --root) ROOT="$2"; shift 2;; --code) CODE="$2"; shift 2;; --inputs) INPUTS="$2"; shift 2;; --reuse-from) REUSE="$2"; shift 2;;
   *) echo "REFUSED: unknown argument $1"; echo "ZZR9E1BIND-REFUSEDZZ"; exit 2;; esac; done
 CODE="${CODE:-$ROOT/launch_tree}"
 INPUTS="${INPUTS:-/home/nvidia/refcv7_bind/run_map/inputs}"      # the A19 MAIN spec + frameset (refcv8's measured location)
@@ -110,7 +118,7 @@ ASHA="$(pyval 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); i
 [ "${#ASHA}" = 64 ] || die "could not hash the launch argv $ARGV"
 say "argv $ARGV sha256 $ASHA"
 # the BOX harness READS its prereg + frame set from {OUT}/audit/raw (refcv8_prelaunch.sh bind): copies, md5 LITERALS (blob md5s)
-if { [ "$KIND" = box ] || [ "$KIND" = box-b3 ]; } && [ "$DRY" != 1 ]; then
+if { [ "$KIND" = box ] || [ "$KIND" = box-b3 ]; } && { [ "$DRY" != 1 ] || [ -n "$REUSE" ]; }; then
   BAUD="$BD/run_$KIND/audit/raw"; BSRC="$CODE/stack/ops/refcv8_box_audit/raw"
   mkdir -p "$BAUD/visibility" 2>/dev/null
   cp -p "$BSRC/PREREG_G_BOX_OVERFIT.md" "$BAUD/" && cp -p "$BSRC/visibility/gbo_frameset.json" "$BAUD/visibility/" || die "could not prepare the box audit inputs from $BSRC"
@@ -124,6 +132,56 @@ fi
 if [ "$KIND" = map ] && [ -n "$T1F" ]; then   # E1-REC4: the /1 map harness learns the launch argv (its T1 flags -> the stamp) only for a T1 argv
   [ -z "$(tail -c1 "$BD/$KIND.args")" ] || echo >> "$BD/$KIND.args"
   printf '%s\n' --launch-argv "$ARGV" >> "$BD/$KIND.args"
+fi
+# ---- E1-REUSE: bind THIS arm to a BASE arm's PASSING record when the harness invocation is IDENTICAL (computed by the harness's own --identity-only). No lock, no GPU.
+if [ -n "$REUSE" ]; then
+  case "$REUSE" in ""|*[!A-Za-z0-9_]*) die "--reuse-from must be the NAME of a base arm (letters, digits, _)";; esac
+  [ "$REUSE" != "$ARM" ] || die "--reuse-from names the arm itself"
+  { [ "$KIND" = map ] || [ "$KIND" = box ]; } || die "--reuse-from covers the kinds map and box only: a banded / own-head argv ($KIND) needs its OWN record"
+  BASE_ARGV="$CODE/stack/ops/runs.d/r9e1_$REUSE.argv.json"; [ -f "$BASE_ARGV" ] || die "no base rig argv $BASE_ARGV in the shipped tree"
+  BBD="$ROOT/ovf_${REUSE}_$C12"; CHECK=G-BOX-OVERFIT; BREC="$BBD/run_box/gbo_binding.json"
+  if [ "$KIND" = map ]; then CHECK=G-MAP-OVERFIT; BREC="$BBD/run_map/g_map_overfit.json"; fi
+  BCLO="$BBD/${KIND}_closure.json"
+  BASHA="$(pyval 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L; print(L.argv_sha256(L.load_argv_file(sys.argv[2])))' "$CODE" "$BASE_ARGV")"
+  [ "${#BASHA}" = 64 ] || die "could not hash the base argv $BASE_ARGV"
+  idrun() {   # idrun <args-file> <out-json>: the harness's own --identity-only on EXACTLY those tokens (CPU, exits before any model / data / GPU)
+    local TK=(); mapfile -t TK < "$1"
+    ( cd "$CODE" && export PYTHONPATH="$CODE/stack:$CODE/stack/scripts" CUDA_VISIBLE_DEVICES= OMP_NUM_THREADS=2 PYTHONIOENCODING=utf-8 HF_HUB_OFFLINE=1 &&
+      "$PY" "$CODE/${TK[0]}" "${TK[@]:1}" --identity-only "$2" ) > "$2.log" 2>&1 9>&- 200>&-
+    [ -s "$2" ] || die "the harness's --identity-only wrote nothing for $1 ($2.log: $(tail -2 "$2.log" | tr -d '\r' | tr '\n' ' '))"
+  }
+  if [ -f "$BBD/$KIND.args" ]; then BARGS="$BBD/$KIND.args"; BROOTS="$BBD/$KIND.roots"; BOUT="$BBD/run_$KIND"     # what the base ACTUALLY ran
+  elif [ "$DRY" = 1 ]; then   # a dry plan on a tree with no base record dir: re-render the base's invocation with the SAME template (its OUT under THIS BD)
+    BOUT="$BD/base_run_$KIND"; BARGS="$BD/$KIND.base.args"; BROOTS="$BD/$KIND.base.roots"
+    if [ "$KIND" = box ]; then mkdir -p "$BOUT/audit/raw/visibility" && cp -p "$CODE/stack/ops/refcv8_box_audit/raw/PREREG_G_BOX_OVERFIT.md" "$BOUT/audit/raw/" &&
+      cp -p "$CODE/stack/ops/refcv8_box_audit/raw/visibility/gbo_frameset.json" "$BOUT/audit/raw/visibility/" || die "could not prepare the base's box audit inputs"; fi
+    "$PY" "$HERE/refcv8_assemble_argv.py" --render-template "$TPL" --sub "CODE=$CODE" --sub "COMMIT=$COMMIT" --sub "ARGV=$BASE_ARGV" --sub "ARGV_SHA=$BASHA" \
+        --sub "OUT=$BOUT" --sub "INPUTS=$INPUTS" --args-out "$BARGS" --data-roots-out "$BROOTS" > "$BD/$KIND.base.render.txt" 2>&1 9>&- 200>&-
+    [ "$(grep -c '^RENDERED' "$BD/$KIND.base.render.txt")" = 1 ] || die "template $TPL did not render for the base ($BD/$KIND.base.render.txt)"
+    BT1F="$(pyval 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L
+print(" ".join(sorted({x for x, _ in L.flag_pairs(L.load_argv_file(sys.argv[2])) if x in L.E1_T1_FLAGS})))' "$CODE" "$BASE_ARGV")"
+    if [ "$KIND" = map ] && [ -n "$BT1F" ]; then [ -z "$(tail -c1 "$BARGS")" ] || echo >> "$BARGS"; printf '%s\n' --launch-argv "$BASE_ARGV" >> "$BARGS"; fi
+  else die "no base record directory $BBD (the base arm's $KIND record must exist at THIS commit: the SAME C12)"; fi
+  [ -f "$BARGS" ] || die "no base harness invocation $BARGS"
+  idrun "$BD/$KIND.args" "$BD/$KIND.identity.json"; idrun "$BARGS" "$BD/$KIND.base.identity.json"
+  EQ="$(pyval 'import json, sys
+a = json.load(open(sys.argv[2])); b = json.load(open(sys.argv[3]))
+K = ("schema", "tool", "effective_build_argv", "build_facts", "data_roots", "other_args", "audit_inputs"); d = [k for k in K if a.get(k) != b.get(k)]
+print("EQUAL " + a["identity_sha256"] if a["identity_sha256"] == b["identity_sha256"] and not d else "DIFFER " + ",".join(d))' "$CODE" "$BD/$KIND.identity.json" "$BD/$KIND.base.identity.json")"
+  case "$EQ" in "EQUAL "*) say "harness invocation IDENTICAL to $REUSE's (identity ${EQ#EQUAL })";;
+    *) die "THIS argv's $KIND harness invocation is NOT identical to $REUSE's ($EQ): the base record does not describe it -- run its OWN record";; esac
+  sed "s|$BD/run_$KIND|<OUT>|" "$BD/$KIND.roots" > "$BD/$KIND.roots.norm"; sed "s|$BOUT|<OUT>|" "$BROOTS" > "$BD/$KIND.base.roots.norm" 2>/dev/null
+  cmp -s "$BD/$KIND.roots.norm" "$BD/$KIND.base.roots.norm" || die "the closure data roots differ from the base's ($BD/$KIND.roots.norm vs $BD/$KIND.base.roots.norm)"
+  if [ "$DRY" = 1 ]; then say "DRY REUSE: $KIND of $ARM would bind to $REUSE's record (identity ${EQ#EQUAL }); no record / closure read"; echo "ZZR9E1BIND-DRYREUSE-OKZZ"; exit 0; fi
+  [ -s "$BREC" ] && [ -s "$BCLO" ] || die "the base arm $REUSE has no PASSING $KIND record + closure at this commit ($BREC, $BCLO): run it first"
+  mkdir -p "$BD/run_$KIND" 2>/dev/null; cp -p "$BCLO" "$BD/${KIND}_closure.json" || die "could not copy the base closure"
+  "$PY" -c 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L
+r, d = L.write_reuse_binding("refcv9-e1rig", sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7], sys.argv[8], sys.argv[9], sys.argv[10], sys.argv[11], sys.argv[12], sys.argv[1], closure_option=sys.argv[13])
+print(chr(10).join("REFUSED: " + x for x in r) if r else "ASSERT-OK reuse binding (" + str(d.get("sha256"))[:16] + ")")' "$CODE" "$CHECK" "$ARM" "$REUSE" "$ARGV" "$BASE_ARGV" "$BREC" "$BCLO" \
+      "$BD/$KIND.identity.json" "$BD/$KIND.base.identity.json" "$COMMIT" "$BD/run_$KIND/reuse_binding.json" "$BD/${KIND}_closure.json" > "$BD/$KIND.reuse.txt" 2>&1 9>&- 200>&-
+  [ "$(grep -c '^ASSERT-OK' "$BD/$KIND.reuse.txt")" = 1 ] || die "reuse binding refused by the gate's judge: $(tr -d '\r' < "$BD/$KIND.reuse.txt" | grep '^REFUSED' | head -3 | tr '\n' ' ')"
+  say "reuse binding written and re-judged: $BD/run_$KIND/reuse_binding.json (this argv sha ${ASHA:0:16}, base $REUSE)"
+  echo "ZZR9E1BIND-REUSE-${KIND}-${ARM}-OKZZ"; exit 0
 fi
 if [ "$DRY" = 1 ]; then
   say "DRY: would hold $LOCKF (blocking <= 2 h), assert compute-apps EMPTY, then closure_run.py --binding --commit $C12 --tree $CODE -- $(wc -l < "$BD/$KIND.args") harness tokens (argv sha ${ASHA:0:16})"

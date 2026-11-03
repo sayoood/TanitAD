@@ -92,7 +92,9 @@ BANDED_NEW = {"BANDED_SCHEMA", "BANDED_CHANNEL_CLASS", "BANDED_CHANNELS", "BANDE
               # refcv9 E1-REC2 (arm M3): the launch-argv binding and the own-encoder resolution (only --banded reaches them)
               "OWN_ENC_FLAG", "BANDED_FLAG", "launch_argv_facts", "resolve_own_enc",
               # refcv9 E1-REC4 (arm T1): the temporal-BEV-warp stamp (flags, record keys, the one-line reason, the stamp builders); /1 and /2-banded both stamp
-              "T1_FLAGS", "T1_STAMP", "T1_STAMP_WHY", "T1_WHY", "t1_flags_of", "t1_stamp_fields", "t1_record_fields"}
+              "T1_FLAGS", "T1_STAMP", "T1_STAMP_WHY", "T1_WHY", "t1_flags_of", "t1_stamp_fields", "t1_record_fields",
+              # refcv9 E1-REUSE (MM 207ebd): the GPU-free identity of a harness invocation (`--identity-only`), pure functions that run BEFORE any model
+              "IDENTITY_SCHEMA", "IDENTITY_KEYS", "identity_sha256", "identity_block", "identity_harness_part", "main_identity"}
 
 
 def _key(n):
@@ -109,12 +111,14 @@ def _is_banded_addition(n):
             and isinstance(n.value.args[0], ast.Constant) and n.value.args[0].value == "--banded":
         return True
     if isinstance(n, ast.Expr) and isinstance(n.value, ast.Call) and n.value.args \
-            and isinstance(n.value.args[0], ast.Constant) and n.value.args[0].value in ("--launch-argv", "--own-enc"):
+            and isinstance(n.value.args[0], ast.Constant) and n.value.args[0].value in ("--launch-argv", "--own-enc", "--identity-only"):
         return True                                   # E1-REC2: the two --banded-only options
     if isinstance(n, ast.If) and ast.dump(n.test) == ast.dump(ast.parse("a.own_enc and not a.banded").body[0].value):
         return True                                   # E1-REC2: the own-encoder refusal without --banded (raises; OFF never enters it) -- E1-REC4 narrowed it to --own-enc
     if isinstance(n, ast.Expr) and ast.dump(n) == ast.dump(ast.parse("rec.update(t1_record_fields(a.launch_argv, a.launch_argv_sha256))").body[0]):
         return True                                   # E1-REC4: the T1 stamp ({} unless --launch-argv carries a T1 flag: the OFF record is byte-for-byte what it was)
+    if isinstance(n, ast.If) and ast.dump(n.test) == ast.dump(ast.parse("a.identity_only is not None").body[0].value):
+        return ast.dump(n.body[0]) == ast.dump(ast.parse("return main_identity(a, argv)").body[0])   # E1-REUSE: the identity exit, before ANY other work (OFF never enters it)
     return isinstance(n, ast.If) and ast.dump(n.test) == ast.dump(ast.parse("a.banded").body[0].value)
 
 
@@ -129,7 +133,11 @@ def test_OFF_is_the_tips_harness_bit_for_bit():
         got.append((_key(n), hashlib.sha256(ast.dump(n).encode()).hexdigest()[:20]))
     assert [tuple(x) for x in TIP_DIGESTS] == got                 # includes `main` (minus the two additions) and the order
     main = next(n for n in ast.parse(src).body if _key(n) == "main")
-    assert sum(_is_banded_addition(x) for x in main.body) == 6   # M-GATE 2 + E1-REC2 3 + E1-REC4 1; the pin is not satisfied by deleting the flag
+    assert sum(_is_banded_addition(x) for x in main.body) == 8   # M-GATE 2 + E1-REC2 3 + E1-REC4 1 + E1-REUSE 2 (the option and the exit); the pin is not satisfied by deleting the flag
+    ident = [i for i, x in enumerate(main.body) if isinstance(x, ast.If) and ast.dump(x.test) == ast.dump(ast.parse("a.identity_only is not None").body[0].value)]
+    assert len(ident) == 1                                      # exactly ONE identity exit in main
+    own = [i for i, x in enumerate(main.body) if isinstance(x, ast.If) and ast.dump(x.test) == ast.dump(ast.parse("a.own_enc and not a.banded").body[0].value)]
+    assert own and ident[0] == own[0] + 1                         # right after the argument checks, BEFORE the banded / OFF work
 
 
 def test_OFF_imports_nothing_new_at_module_level():

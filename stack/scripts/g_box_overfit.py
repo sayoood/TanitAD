@@ -747,6 +747,90 @@ def harness_build_argv(launch_argv: list) -> tuple:
     return build, rec
 
 
+#: refcv9 E1-REUSE (MM 207ebd, PINNED): the GPU-FREE IDENTITY of this harness invocation (`--identity-only OUT.json`: the harness's OWN argv
+#: parsing + `harness_build_argv` strip + data-root resolution, then exit BEFORE any model, data or GPU). Two launch argvs with the SAME `identity_sha256`
+#: (under the same harness arguments) make this harness compute the SAME thing -- the record of one is the record of the other, which is what lets an arm
+#: take a REUSE binding (`tanitad.overfit_reuse/1`, launch_gate.py) in place of a 2,294 s Thor run. Only the launch-argv REFERENCES differ between arms
+#: and are NOT hashed: the `--launch-argv` file, the record location `--out`, the audit-dir LOCATION (its prereg / frame-set / addendum CONTENT md5s are
+#: hashed instead), the `--candidate` label (it names the argv sha), and the per-arm stamps (`aux_heads_not_certified`, `bev_warp_not_certified`, which are
+#: reported next to the hash, never in it). The launch argv's own `--out` (the trainer's run directory) is dropped from the hash because the build path
+#: never reads it: `args.out` is read once in `refc_v3_train.train()`, which this harness never calls (tests/test_launch_gate_e1rig_reuse.py pins that).
+IDENTITY_SCHEMA = "tanitad.overfit_identity/1"
+IDENTITY_KEYS = ("schema", "tool", "effective_build_argv", "build_facts", "data_roots", "other_args", "audit_inputs")
+IDENTITY_ARGV_EXCLUDE = ("--out",)
+
+
+def _drop_argv_flags(argv: list, flags: tuple) -> tuple:
+    """-> (argv without each `flag value...` / `flag=value` group, {flag: [values]} of what was dropped)."""
+    out, dropped, i = [], {}, 0
+    while i < len(argv):
+        t = str(argv[i])
+        head = t.split("=", 1)[0] if t.startswith("--") else None
+        if head in flags:
+            vals = [t.split("=", 1)[1]] if "=" in t else []
+            i += 1
+            if "=" not in t:
+                while i < len(argv) and not str(argv[i]).startswith("--"):
+                    vals.append(argv[i])
+                    i += 1
+            dropped[head] = vals
+        else:
+            out.append(argv[i])
+            i += 1
+    return out, dropped
+
+
+def _path_like(v) -> bool:
+    v = str(v)
+    return v.startswith("/") or (len(v) > 2 and v[1] == ":" and v[2] in "/\\")
+
+
+def identity_sha256(core: dict) -> str:
+    """sha256 of the canonical JSON of the IDENTITY_KEYS (ONE formula with launch_gate.overfit_identity_sha256; a test pins the two)."""
+    return hashlib.sha256(json.dumps({k: core[k] for k in IDENTITY_KEYS}, sort_keys=True, separators=(",", ":"),
+                                     ensure_ascii=True).encode("utf-8")).hexdigest()
+
+
+def identity_block(launch_argv: list, harness: dict) -> dict:
+    """The identity of (this harness's non-argv inputs `harness` = {other_args, audit_inputs, roots}) x (the launch argv). Pure: no file, no GPU.
+    Refuses (SystemExit, as the real run does) an argv with an unknown `--r9-box-*` token."""
+    b3_record_fields(launch_argv)
+    build, tc = harness_build_argv(launch_argv)
+    ib, dropped = _drop_argv_flags(build, IDENTITY_ARGV_EXCLUDE)
+    roots = {}
+    for f, v in _flag_groups(ib):
+        if v and all(_path_like(x) for x in v):
+            roots[f] = list(v)
+    roots.update(harness.get("roots") or {})
+    core = {"schema": IDENTITY_SCHEMA, "tool": "g_box_overfit.py", "effective_build_argv": ib, "build_facts": {},
+            "data_roots": roots, "other_args": dict(harness["other_args"]), "audit_inputs": dict(harness["audit_inputs"])}
+    return dict(core, identity_sha256=identity_sha256(core),
+                launch_argv_sha256=hashlib.sha256(json.dumps(launch_argv, separators=(",", ":")).encode("utf-8")).hexdigest(),
+                effective_build_argv_exact=build, excluded_from_identity=dropped,
+                stamps={AUX_STAMP: list(tc.get("aux_flags_not_built", [])), T1_STAMP: list(tc.get("bev_warp_flags_not_built", []))},
+                harness=harness)
+
+
+def _flag_groups(argv: list) -> list:
+    out = []
+    for t in argv:
+        t = str(t)
+        if t.startswith("--"):
+            f, _, v = t.partition("=")
+            out.append((f, [v] if "=" in t else []))
+        elif out:
+            out[-1][1].append(t)
+    return out
+
+
+def identity_harness_part(a, audit_inputs: dict) -> dict:
+    """The harness arguments that are NOT the launch argv: the ones that change what it computes (the audit-dir LOCATION, `--out` and the `--candidate`
+    label are references, not inputs: see IDENTITY_SCHEMA)."""
+    return {"other_args": {"arms": a.arms, "steps": int(a.steps), "device": a.device, "binding": bool(a.binding), "commit": a.commit,
+                           "check_build": bool(a.check_build), "frameset_profile": a.frameset_profile, "one_frame": bool(a.one_frame)},
+            "audit_inputs": dict(audit_inputs), "roots": {}}
+
+
 def rig_eval_dataset(L, cfg, args, config: dict, *, dataset_cls=None):
     """refcv9 E1 rig (``--r9-perc-rig``): the TRAIN dataset the RIG reads -> (dataset, episodes, record).
 
@@ -1216,6 +1300,9 @@ def main(argv=None) -> int:
                     help="OPTION B: which frozen frame set (file, md5, C3 literals) -- the launch gate's profile")
     ap.add_argument("--one-frame", action="store_true",
                     help="A14's ONE-FRAME test (arms main + anchors_removed unless --arms says otherwise)")
+    ap.add_argument("--identity-only", default=None, metavar="OUT.json",
+                    help="refcv9 E1-REUSE: write this invocation's GPU-free identity ({effective_build_argv, data_roots, other_args, audit_inputs, "
+                         "identity_sha256, ...}) and exit BEFORE any model / data / GPU; every other argument is the real run's")
     a = ap.parse_args(argv)
     if a.binding and not a.commit:
         raise SystemExit("[gbo] --binding needs --commit (the launch commit)")
@@ -1243,6 +1330,17 @@ def main(argv=None) -> int:
     rec.update(b3_record_fields(launch_argv))              # refcv9 B3: the schema string + flags; {} for any other launch argv
     build_argv, tc_rec = harness_build_argv(launch_argv)
     rec.update(tc_rec)
+    if a.identity_only:
+        blk = identity_block(launch_argv, identity_harness_part(
+            a, {"prereg_md5": rec["prereg_md5"], "frameset_md5": rec["frameset_md5"], "addendum_md5": rec["addendum_md5"]}))
+        toks = list(argv if argv is not None else sys.argv[1:])
+        if "--identity-only" in toks:
+            i = toks.index("--identity-only")
+            del toks[i:i + 2]
+        blk["harness_tokens"] = toks
+        Path(a.identity_only).write_text(json.dumps(blk, indent=1, sort_keys=True), encoding="utf-8")
+        log(f"identity-only: {blk['identity_sha256']} (launch argv {blk['launch_argv_sha256'][:12]}); nothing built")
+        return 0
     tr = _load_by_path("refc_v3_train_for_gbo", SCRIPTS / "refc_v3_train.py")
     import tanitad
     if not os.path.normcase(os.path.abspath(tanitad.__file__)).startswith(os.path.normcase(str(STACK))):

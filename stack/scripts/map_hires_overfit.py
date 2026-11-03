@@ -1060,6 +1060,67 @@ def main_banded(a) -> int:
     return 0 if v["G_MAP_OVERFIT_BANDED"] == "PASS" else 2
 
 
+#: refcv9 E1-REUSE (MM 207ebd, PINNED): the GPU-FREE IDENTITY of this harness invocation (`--identity-only OUT.json`; see g_box_overfit.IDENTITY_SCHEMA for
+#: the contract). This harness builds its head BY HAND from its own arguments: the launch argv reaches it only through `launch_argv_facts` (does it build the
+#: banded head / the own encoder) and the T1 STAMP (reported next to the hash, never in it). So two launch argvs with the same build facts under the same
+#: harness arguments are ONE computation -- the `--launch-argv` / `--launch-argv-sha256` references and the record location `--out` are not hashed.
+IDENTITY_SCHEMA = "tanitad.overfit_identity/1"
+IDENTITY_KEYS = ("schema", "tool", "effective_build_argv", "build_facts", "data_roots", "other_args", "audit_inputs")
+
+
+def identity_sha256(core: dict) -> str:
+    """sha256 of the canonical JSON of the IDENTITY_KEYS (ONE formula with launch_gate.overfit_identity_sha256; a test pins the two)."""
+    return hashlib.sha256(json.dumps({k: core[k] for k in IDENTITY_KEYS}, sort_keys=True, separators=(",", ":"),
+                                     ensure_ascii=True).encode("utf-8")).hexdigest()
+
+
+def identity_block(launch_argv, harness: dict) -> dict:
+    """The identity of (this harness's non-argv inputs `harness` = {other_args, own_enc_manual, roots}) x (the launch argv list, or None when the invocation
+    carries no `--launch-argv`). Pure: no file, no GPU. Refuses (SystemExit) what the real run refuses."""
+    oa = dict(harness["other_args"])
+    banded, manual = bool(oa["banded"]), bool(harness.get("own_enc_manual"))
+    facts = None
+    if launch_argv is not None:
+        flags = {str(t).split("=", 1)[0] for t in launch_argv if str(t).startswith("--")}
+        facts = {"argv": list(launch_argv), "own_enc": OWN_ENC_FLAG in flags, "banded": BANDED_FLAG in flags}
+        if not banded and (facts["banded"] or facts["own_enc"]):
+            raise SystemExit(f"⛔ the launch argv carries {BANDED_FLAG} / {OWN_ENC_FLAG}: it builds the BANDED head, whose record is the /2-banded one (--banded)")
+    own_enc = bool(resolve_own_enc(manual, facts)[0]) if banded else False
+    core = {"schema": IDENTITY_SCHEMA, "tool": "map_hires_overfit.py", "effective_build_argv": [],
+            "build_facts": {"banded": banded, "own_enc": own_enc}, "data_roots": dict(harness.get("roots") or {}),
+            "other_args": oa, "audit_inputs": {}}
+    return dict(core, identity_sha256=identity_sha256(core),
+                launch_argv_sha256=(hashlib.sha256(json.dumps(list(launch_argv), ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
+                                    if launch_argv is not None else None),
+                stamps={T1_STAMP: (t1_flags_of(launch_argv) if launch_argv is not None else [])}, harness=harness)
+
+
+def identity_harness_part(a) -> dict:
+    """The harness arguments that are NOT the launch argv (the data paths are `roots`; `--out` and the launch-argv references are not inputs)."""
+    return {"other_args": {"banded": bool(a.banded), "arms": a.arms, "decision_rule": a.decision_rule, "near_lift_m": float(a.near_lift_m),
+                           "near_refine_blocks": int(a.near_refine_blocks), "x_max_m": float(a.x_max_m), "y_half_m": float(a.y_half_m),
+                           "grad_ckpt": a.grad_ckpt, "device": a.device, "launch_commit": a.launch_commit},
+            "own_enc_manual": bool(a.own_enc),
+            "roots": {k: (str(v) if v is not None else None) for k, v in (
+                ("spec", a.spec), ("frameset", a.frameset), ("class_weights", a.class_weights), ("v2_cache", a.v2_cache), ("gt_root", a.gt_root),
+                ("extrinsics", a.extrinsics), ("cam_ts_dir", a.cam_ts_dir))}}
+
+
+def main_identity(a, argv) -> int:
+    """``--identity-only``: the same launch-argv checks the real run makes (`launch_argv_facts` vs `--launch-argv-sha256`, the own-encoder rules), then the
+    identity block; nothing is built."""
+    facts = launch_argv_facts(a.launch_argv, a.launch_argv_sha256) if a.launch_argv is not None else None
+    blk = identity_block(facts["argv"] if facts else None, identity_harness_part(a))
+    toks = [str(t) for t in (argv if argv is not None else sys.argv[1:])]
+    if "--identity-only" in toks:
+        i = toks.index("--identity-only")
+        del toks[i:i + 2]
+    blk["harness_tokens"] = toks
+    a.identity_only.write_text(json.dumps(blk, indent=1, sort_keys=True), encoding="utf-8")
+    print(f"identity-only: {blk['identity_sha256']} (nothing built)")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--spec", required=True, type=Path)
@@ -1100,10 +1161,15 @@ def main(argv=None) -> int:
     ap.add_argument("--banded", action="store_true",
                     help="refcv9 M-GATE: the BANDED map head's OWN overfit record (schema /2-banded; the same pre-registered "
                          "protocol on tanitad/models/map_banded.py, near lift 10 m). OFF = the 8-code head, unchanged")
+    ap.add_argument("--identity-only", type=Path, default=None, metavar="OUT.json",
+                    help="refcv9 E1-REUSE: write this invocation's GPU-free identity ({build_facts, data_roots, other_args, identity_sha256, ...}) and "
+                         "exit BEFORE any model / data / GPU; every other argument is the real run's")
     a = ap.parse_args(argv)
     if a.own_enc and not a.banded:
         raise SystemExit("⛔ --own-enc is one of the --banded options (the 8-code head has no own encoder); --launch-argv is admitted without --banded "
                          "only for an argv that builds the 8-code head")
+    if a.identity_only is not None:
+        return main_identity(a, argv)
     if a.banded:
         return main_banded(a)
     extent = MapExtent(float(a.x_max_m), float(a.y_half_m))

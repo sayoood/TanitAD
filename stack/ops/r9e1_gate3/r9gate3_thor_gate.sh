@@ -18,6 +18,16 @@ refuse() { say "REFUSED: $*"; echo "ZZR9E1G3-${ARM}-${MODE}-REFUSEDZZ"; exit 10;
 case "$ARM" in ""|*/*|*" "*) refuse "bad arm '$ARM'";; esac   # any arm with a committed argv (checked below)
 [ "${#SHA}" = 40 ] || refuse "launch_tree.commit is not a 40-char sha"
 [ -f "$ARGV" ] || refuse "no argv $ARGV"; [ -f "$EVO" ] || refuse "no remap override file $EVO"
+# >>> E1-REUSE record pick (byte-identical in r9gate3_thor_gate.sh and r9gate3_rec_explore.sh; tests/test_launch_gate_e1rig_reuse.py runs this block)
+# An arm bound to a BASE arm's PASSING record (r9e1_bind.sh --reuse-from) has $OV/run_<kind>/reuse_binding.json INSTEAD of a run record; the gate's G-MAP-OVERFIT /
+# G-BOX-OVERFIT judges read it through the same --map-overfit-record / --box-overfit-record option. Exactly ONE must exist per kind: both = ambiguous (no silent preference).
+for _k in map box; do
+  if [ "$_k" = map ]; then _run="$MREC"; else _run="$BREC"; fi; _ru="$OV/run_$_k/reuse_binding.json"
+  if [ -e "$_ru" ] && [ -e "$_run" ]; then refuse "both a run record ($_run) and a reuse binding ($_ru) exist for the $_k kind: ambiguous, remove the stale one"; fi
+  if [ -e "$_ru" ]; then if [ "$_k" = map ]; then MREC="$_ru"; else BREC="$_ru"; fi
+  elif [ ! -e "$_run" ]; then refuse "neither a run record ($_run) nor a reuse binding ($_ru) exists for the $_k kind"; fi
+done
+# <<< E1-REUSE record pick
 for f in $MREC $MCLO $BREC $BCLO; do [ -s "$f" ] || refuse "missing overfit record/closure $f"; done
 export OMP_NUM_THREADS=8 PYTHONIOENCODING=utf-8 PYTHONPATH=$T/stack:$T/stack/scripts:$T/taniteval HF_HUB_OFFLINE=1 HF_HUB_DISABLE_IMPLICIT_TOKEN=1 HF_TOKEN_PATH=/nonexistent/hf_token
 unset HF_TOKEN HUGGING_FACE_HUB_TOKEN HUGGINGFACE_HUB_TOKEN

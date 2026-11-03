@@ -9379,6 +9379,222 @@ def job_suite_pinned(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
     return {"G-SUITE-PINNED": ev}
 
 
+# --------------------------------------------------------------------------------------------- #
+# refcv9 E1-REUSE (MM 207ebd, PINNED): an arm takes a REUSE binding in place of an overfit RUN     #
+# --------------------------------------------------------------------------------------------- #
+#: One /1 record run = 1,993 s (map) / 2,294 s (box) of the single Thor GPU (MEASURED, `ovf_C0_4e36c721d0e1`), and G-MAP-OVERFIT / G-BOX-OVERFIT bind the WHOLE
+#: launch-argv sha256, so every arm ran both harnesses. But a harness that does not BUILD the arm's lever (the training-only aux heads: E1-REC3; T1: E1-REC4 --
+#: it STRIPS those flags) computes exactly what the BASE arm's run computed. The pinned design: an arm may bind to an EXISTING, PASSING record of a BASE arm iff the
+#: harness invocation it would run is IDENTICAL to the base's, as computed by the HARNESS'S OWN `--identity-only` code (effective build argv after its own strip,
+#: data roots, every other harness argument; ONLY the launch-argv references and the per-arm stamps may differ), at the SAME commit. The binding
+#: (`tanitad.overfit_reuse/1`, written by `r9e1_bind.sh --reuse-from`) carries THIS arm's stamps, and this judge re-derives everything it can: it re-judges the base
+#: record for the BASE argv exactly as a run record is judged, recomputes BOTH identities by running the tree's harness (`main(... --identity-only)`) on the base's
+#: own recorded harness invocation (its closure's `argv`), and requires them equal. Scope: kinds `map` and `box` only (a banded / own-head argv needs its OWN record).
+REUSE_SCHEMA = "tanitad.overfit_reuse/1"
+REUSE_KINDS = {"G-MAP-OVERFIT": "map", "G-BOX-OVERFIT": "box"}
+REUSE_HARNESS = {"map": "stack/scripts/map_hires_overfit.py", "box": "stack/scripts/g_box_overfit.py"}
+REUSE_IDENTITY_KEYS = ("schema", "tool", "effective_build_argv", "build_facts", "data_roots", "other_args", "audit_inputs")
+
+
+def overfit_identity_sha256(core: dict) -> str:
+    """ONE formula with the harnesses' `identity_sha256` (a test pins the three together)."""
+    return sha256_bytes(json.dumps({k: core[k] for k in REUSE_IDENTITY_KEYS}, sort_keys=True, separators=(",", ":"),
+                                   ensure_ascii=True).encode("utf-8"))
+
+
+def reuse_binding_of(path: str | os.PathLike | None) -> dict | None:
+    """The parsed reuse binding at `path`, or None when the file is not one (absent, not JSON, another schema)."""
+    try:
+        if path and Path(path).is_file():
+            obj = read_json(path)
+            if isinstance(obj, dict) and obj.get("schema") == REUSE_SCHEMA:
+                return obj
+    except Exception:                                     # noqa: BLE001 -- a record of another shape is simply not a binding
+        pass
+    return None
+
+
+def reuse_stamp_sets(argv: list[str]) -> dict[str, list[str]]:
+    """THIS argv's per-arm stamps by the gate's own tuples (the same sets `box_aux_stamp_reasons` / `bev_warp_stamp_reasons` demand)."""
+    have = {f for f, _ in flag_pairs(argv)}
+    return {E1_BOX_AUX_STAMP: sorted(f for f in have if f in E1_BOX_AUX_FLAGS), E1_T1_STAMP: sorted(f for f in have if f in E1_T1_FLAGS)}
+
+
+def _reuse_set_flag_value(tokens: list[str], flag: str, value: str, *, add: bool = False) -> list[str]:
+    out, i, seen = list(tokens), 0, False
+    while i < len(out):
+        if out[i] == flag and i + 1 < len(out):
+            out[i + 1], seen = value, True
+            i += 1
+        i += 1
+    if add and not seen:
+        out += [flag, value]
+    return out
+
+
+def _reuse_derive_identity(tree: Path, kind: str, tokens: list[str], argv: list[str], work: Path, tag: str) -> tuple[dict | None, str | None]:
+    """The tree's OWN harness `--identity-only` on `tokens` (the base's recorded harness invocation) with the launch-argv references pointed at `argv`."""
+    rel = REUSE_HARNESS[kind]
+    p = tree / rel
+    if not p.is_file():
+        return None, f"the tree has no {rel} (cannot derive the {tag} identity)"
+    work.mkdir(parents=True, exist_ok=True)
+    af, out = work / f"{tag}.argv.json", work / f"{tag}.identity.json"
+    af.write_text(json.dumps(list(argv), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    t = _reuse_set_flag_value(tokens, "--launch-argv", str(af), add=(kind == "map" and tag == "this"))
+    t = _reuse_set_flag_value(t, "--launch-argv-sha256", argv_sha256(list(argv)))
+    t = _reuse_set_flag_value(t, "--out", str(work / f"{tag}.out"))
+    try:
+        spec = importlib.util.spec_from_file_location(f"_gate_reuse_{kind}_{tag}", str(p))
+        mod = importlib.util.module_from_spec(spec)
+        with contextlib.redirect_stdout(io.StringIO()):
+            spec.loader.exec_module(mod)
+            rc = mod.main(t + ["--identity-only", str(out)])
+        if rc != 0 or not out.is_file():
+            return None, f"the harness's --identity-only returned {rc!r} for the {tag} argv"
+        return read_json(out), None
+    except SystemExit as exc:
+        return None, f"the harness REFUSED the {tag} argv in --identity-only: {str(exc)[:300]}"
+    except Exception as exc:                              # noqa: BLE001 -- fail closed, name why
+        return None, f"could not derive the {tag} identity ({type(exc).__name__}: {str(exc)[:300]})"
+
+
+def judge_overfit_reuse(prof: dict, check: str, binding_path: str | None, commit: str, *, argv_sha: str, argv: list[str] | None,
+                        tree: str | os.PathLike, closure_option: str | None = None, class_weights_sha256: str | None = None,
+                        workdir: str | os.PathLike | None = None) -> tuple[list[str], dict, str | None, str | None]:
+    """G-MAP-OVERFIT / G-BOX-OVERFIT read from a REUSE binding. -> (reasons, details, base record path, base closure path); the caller then runs `judge_closure`
+    on the BASE record + closure (exactly as for a run record). See the block comment above for the contract."""
+    import tempfile
+    tag = check
+    kind = REUSE_KINDS.get(check)
+    b = reuse_binding_of(binding_path)
+    det: dict[str, Any] = {"reuse_binding": binding_path, "kind": kind}
+    if b is None or kind is None:
+        return [f"{tag}: no {REUSE_SCHEMA} binding ({binding_path!r})"], det, None, None
+    det["sha256"] = sha256_file(binding_path)
+    det.update(base_arm=b.get("base_arm"), this_arm=b.get("this_arm"))
+    reasons: list[str] = []
+    argv = list(argv or [])
+    if own_record_row(prof, argv, check) is not None:
+        reasons.append(f"{tag}: a REUSE binding covers only the inherited `{kind}` record; THIS argv carries a lever whose OWN record is required (E1_OWN_RECORDS)")
+    if b.get("kind") != kind:
+        reasons.append(f"{tag}: the binding is of kind {b.get('kind')!r}, THIS argv's {check} needs kind {kind!r}")
+    if not argv_sha or b.get("this_argv_sha256") != argv_sha:
+        reasons.append(f"{tag}: the binding is for argv {str(b.get('this_argv_sha256'))[:12] or '<none>'}, not the launch argv {argv_sha[:12] or '<none>'}")
+    base_argv = b.get("base_argv")
+    if not (isinstance(base_argv, list) and base_argv and all(isinstance(x, str) for x in base_argv)):
+        return reasons + [f"{tag}: the binding carries no base argv"], det, None, None
+    base_sha = argv_sha256(base_argv)
+    if b.get("base_argv_sha256") != base_sha:
+        reasons.append(f"{tag}: the binding's base argv hashes to {base_sha[:12]}, it states {str(b.get('base_argv_sha256'))[:12]}")
+    here = Path(binding_path).resolve().parent
+    paths: dict[str, str | None] = {}
+    for key in ("base_record", "base_closure"):
+        ent = b.get(key) if isinstance(b.get(key), dict) else {}
+        cand = [here / ent["relpath"]] if ent.get("relpath") else []
+        cand += [Path(ent["abspath"])] if ent.get("abspath") else []
+        hit = next((c for c in cand if c.is_file()), None)
+        paths[key] = str(hit) if hit else None
+        if hit is None:
+            reasons.append(f"{tag}: the binding's {key} {ent.get('relpath') or ent.get('abspath')!r} does not exist here")
+        elif sha256_file(hit) != ent.get("sha256"):
+            reasons.append(f"{tag}: the {key} {hit.name} hashes to {sha256_file(hit)[:16]}, the binding recorded {str(ent.get('sha256'))[:16]} -- edited after the binding")
+    rec_p, clo_p = paths["base_record"], paths["base_closure"]
+    det.update(base_record=rec_p, base_closure=clo_p)
+    if closure_option and clo_p and Path(closure_option).is_file() and sha256_file(closure_option) != sha256_file(clo_p):
+        reasons.append(f"{tag}: the closure given ({Path(closure_option).name}) is not the binding's base closure -- not the same run")
+    if not (rec_p and clo_p):
+        return reasons, det, rec_p, clo_p
+    # ---- the base record, judged EXACTLY as a run record is (for the BASE argv; THIS argv's class-weight file for map)
+    if kind == "map":
+        r_b, d_b = judge_map_overfit(prof, rec_p, commit, argv_sha=base_sha, class_weights_sha256=class_weights_sha256, argv=base_argv)
+    else:
+        r_b, d_b = judge_box_overfit(prof, rec_p, commit, argv_sha=base_sha, argv=base_argv)
+    reasons += [f"{x} [base record, re-judged for the base argv]" for x in r_b]
+    rec = read_json(rec_p)
+    r_commit = rec.get("launch_commit") if kind == "map" else rec.get("commit")
+    if not b.get("commit") or r_commit != b.get("commit"):
+        reasons.append(f"{tag}: the base record was made at commit {str(r_commit)[:12]}, the binding is at {str(b.get('commit'))[:12]} (a reuse binding is at the SAME commit)")
+    # ---- the identities, RE-DERIVED here by the tree's own harness on the base's recorded invocation (its closure's `argv`)
+    clo = read_json(clo_p)
+    cargv = clo.get("argv")
+    if not (isinstance(cargv, list) and cargv and all(isinstance(x, str) for x in cargv)):
+        return reasons + [f"{tag}: the base closure records no harness argv"], det, rec_p, clo_p
+    if hashlib.sha256(json.dumps(cargv, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()).hexdigest() != clo.get("argv_sha256"):
+        reasons.append(f"{tag}: the base closure's argv does not hash to its argv_sha256")
+    tokens = cargv[1:] if cargv[0].endswith(".py") else list(cargv)
+    wd = Path(workdir) if workdir else Path(tempfile.mkdtemp(prefix="gate_reuse_"))
+    id_b, e_b = _reuse_derive_identity(Path(tree), kind, tokens, base_argv, wd, "base")
+    id_t, e_t = _reuse_derive_identity(Path(tree), kind, tokens, argv, wd, "this")
+    for e in (e_b, e_t):
+        if e:
+            reasons.append(f"{tag}: {e}")
+    if id_b and id_t:
+        det["identity"] = {"base": id_b["identity_sha256"], "this": id_t["identity_sha256"]}
+        if id_b["identity_sha256"] != id_t["identity_sha256"]:
+            diff = [k for k in REUSE_IDENTITY_KEYS if id_b.get(k) != id_t.get(k)]
+            reasons.append(f"{tag}: THIS argv's harness invocation is NOT identical to the base's (differs in {diff}): the base record does not describe it -- "
+                           f"run its OWN record")
+        for nm, blk in (("base", id_b), ("this", id_t)):
+            if overfit_identity_sha256(blk) != blk["identity_sha256"]:
+                reasons.append(f"{tag}: the harness's {nm} identity does not re-hash to its identity_sha256 (formula drift)")
+            if b.get(f"{nm}_identity_sha256") != blk["identity_sha256"]:
+                reasons.append(f"{tag}: the binding states {nm} identity {str(b.get(f'{nm}_identity_sha256'))[:12]}, the harness derives {blk['identity_sha256'][:12]}")
+    # ---- THIS arm's stamps: the binding must carry exactly THIS argv's sets (a record never covers another arm's aux heads / temporal history)
+    want = reuse_stamp_sets(argv)
+    got = b.get("this_stamps") if isinstance(b.get("this_stamps"), dict) else {}
+    for key, w in want.items():
+        g = got.get(key)
+        if not (isinstance(g, list) and sorted(g) == w and len(set(g)) == len(g)):
+            reasons.append(f"{tag}: the binding's `{key}` is {g!r}, THIS argv's set is {w} (the stamp must EQUAL it)")
+    if want[E1_BOX_AUX_STAMP] and kind == "box":
+        det["aux_heads_not_certified"] = {"argv_aux_set": want[E1_BOX_AUX_STAMP], "record_stamp": got.get(E1_BOX_AUX_STAMP), "via": "reuse_binding"}
+    if want[E1_T1_STAMP]:
+        det["bev_warp_not_certified"] = {"argv_t1_set": want[E1_T1_STAMP], "record_stamp": got.get(E1_T1_STAMP), "via": "reuse_binding"}
+    det["base_judge"] = {k: d_b.get(k) for k in ("sha256", "result", "verdict", "launch_argv_sha256") if k in d_b}
+    return reasons, det, rec_p, clo_p
+
+
+def write_reuse_binding(profile: str, check: str, this_arm: str, base_arm: str, this_argv_file: str, base_argv_file: str, base_record: str,
+                        base_closure: str, this_identity: str, base_identity: str, commit: str, out_path: str, tree: str,
+                        closure_option: str | None = None) -> tuple[list[str], dict]:
+    """`r9e1_bind.sh --reuse-from`'s writer AND its verifier in one place: assembles the `tanitad.overfit_reuse/1` binding from the two identity files the
+    HARNESS wrote (`--identity-only`) and the base arm's record + closure, writes it, then runs THE GATE'S OWN `judge_overfit_reuse` on it (no second
+    implementation); a binding the gate would refuse is REMOVED and the reasons returned. -> (reasons, details)."""
+    prof = PROFILES[profile]
+    kind = REUSE_KINDS[check]
+    this_argv, base_argv = load_argv_file(this_argv_file), load_argv_file(base_argv_file)
+    out = Path(out_path)
+
+    def ent(p: str) -> dict:
+        try:
+            rel = os.path.relpath(str(Path(p).resolve()), str(out.resolve().parent)).replace("\\", "/")
+        except ValueError:                                # another drive: the absolute path alone
+            rel = None
+        return {"relpath": rel, "abspath": str(Path(p).resolve()), "sha256": sha256_file(p)}
+    ti, bi = read_json(this_identity), read_json(base_identity)
+    b = {"schema": REUSE_SCHEMA, "kind": kind, "check": check, "profile": profile, "commit": commit, "this_arm": this_arm, "base_arm": base_arm,
+         "this_argv_sha256": argv_sha256(this_argv), "base_argv_sha256": argv_sha256(base_argv), "base_argv": base_argv,
+         "base_record": ent(base_record), "base_closure": ent(base_closure),
+         "this_identity_sha256": ti.get("identity_sha256"), "base_identity_sha256": bi.get("identity_sha256"),
+         "this_identity": ti, "base_identity": bi, "this_stamps": reuse_stamp_sets(this_argv),
+         "created_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+         "note": "an arm whose harness invocation is IDENTICAL to a PASSING base record's binds that record (launch_gate.judge_overfit_reuse re-derives it)"}
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(b, indent=1, sort_keys=True), encoding="utf-8")
+    cw_sha = None
+    if kind == "map":
+        flag = (prof.get("map_hires") or {}).get("class_weights_flag")
+        v = flag_values(this_argv, flag) if flag else None
+        if v and Path(v[0]).is_file():
+            cw_sha = sha256_file(v[0])
+    reasons, det, _r, _c = judge_overfit_reuse(prof, check, str(out), commit, argv_sha=b["this_argv_sha256"], argv=this_argv, tree=tree,
+                                               closure_option=closure_option, class_weights_sha256=cw_sha)
+    if reasons:
+        out.unlink()
+    return reasons, det
+
+
 def job_record(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
     """The launch prerequisites read from their PASS records (no model, no data)."""
     out: dict[str, dict] = {}
@@ -9394,20 +9610,28 @@ def _job_box_overfit(ctx: Ctx) -> dict[str, dict]:
     rec = ctx.options.get("box_overfit_record")
     if arm_is(ctx, "box_overfit_missing"):
         rec = str(Path(ctx.out_dir) / "__gate_arm_missing_box_overfit_record__.json")
-    reasons, det = judge_box_overfit(ctx.prof, rec, ctx.commit, argv_sha=ctx.argv_sha256,
-                                     argv=list(ctx.argv))
     clo = ctx.options.get("box_overfit_closure")
+    binding = rec if reuse_binding_of(rec) is not None else None
+    if binding is not None:             # E1-REUSE: THIS arm binds to a BASE arm's PASSING record (the judge re-judges it for the base argv, re-derives both identities)
+        reasons, det, rec, clo = judge_overfit_reuse(ctx.prof, "G-BOX-OVERFIT", binding, ctx.commit, argv_sha=ctx.argv_sha256, argv=list(ctx.argv),
+                                                     tree=ctx.tree, closure_option=clo, workdir=Path(ctx.out_dir) / "reuse_box")
+    else:
+        reasons, det = judge_box_overfit(ctx.prof, rec, ctx.commit, argv_sha=ctx.argv_sha256,
+                                         argv=list(ctx.argv))
     cr, cd = judge_closure("G-BOX-OVERFIT", clo, rec, ctx.tree,
                            (ctx.prof.get("box_overfit") or {}).get("harness"),
                            host_env=_host_env(), pmap=[tuple(x) for x in ctx.path_map],
                            git_dir=ctx.options.get("git_dir"), commit=ctx.commit)
     reasons += cr
     det["closure"] = cd
-    for k, f in (("gate:box-overfit-record", rec), ("gate:box-overfit-closure", clo)):
+    for k, f in (("gate:box-overfit-record", rec), ("gate:box-overfit-closure", clo), ("gate:box-overfit-reuse-binding", binding)):
         if f and Path(f).is_file():
             ev["inputs_read"][k] = fingerprint(f)
     ev["details"].update(det)
     ok_text = f"G-BOX-OVERFIT PASS {OVERFIT_SCOPE}"
+    if binding is not None:
+        ok_text += (f"; REUSE of {det.get('base_arm')}'s record (identical harness invocation: identity {str((det.get('identity') or {}).get('this'))[:12]}, "
+                    f"re-derived by the harness's own --identity-only)")
     if (det.get("a19") or {}).get("applied"):
         ok_text += f"; {det['a19']['statement']}"         # SPEC_REFCV7 24: what it does NOT cover
     if det.get("aux_heads_not_certified"):                # E1-REC3: the training-only aux heads this record does NOT certify
@@ -9431,7 +9655,13 @@ def _job_map_overfit(ctx: Ctx) -> dict[str, dict]:
     cw_local = map_path(cwv[0], [tuple(x) for x in ctx.path_map]) if cwv else None
     cw_sha = sha256_file(cw_local) if cw_local and Path(cw_local).is_file() else None
     own = own_record_row(ctx.prof, ctx.argv, "G-MAP-OVERFIT")
-    if own is not None:
+    clo = ctx.options.get("map_overfit_closure")
+    binding = rec if reuse_binding_of(rec) is not None else None
+    if binding is not None:             # E1-REUSE: THIS arm binds to a BASE arm's PASSING record (class weights: THIS argv's file)
+        reasons, det, rec, clo = judge_overfit_reuse(ctx.prof, "G-MAP-OVERFIT", binding, ctx.commit, argv_sha=ctx.argv_sha256, argv=list(ctx.argv),
+                                                     tree=ctx.tree, closure_option=clo, class_weights_sha256=cw_sha, workdir=Path(ctx.out_dir) / "reuse_map")
+        own = None
+    elif own is not None:
         # M-GATE (E1-MAP-OWN-RECORD): an argv that builds the BANDED head needs the banded head's OWN /2-banded record bound to
         # THIS argv's sha256 -- the inherited /1 record (refcv8's 8-code head) does not cover it. The banded loss has no class weights.
         cwv, cw_sha = None, None
@@ -9443,7 +9673,6 @@ def _job_map_overfit(ctx: Ctx) -> dict[str, dict]:
     if cwv and cw_sha is None:
         reasons.append(f"G-MAP-OVERFIT: the launch class-weight file {cwv[0]} is not readable "
                        f"here, so the record's weights cannot be matched to it")
-    clo = ctx.options.get("map_overfit_closure")
     cr, cd = judge_closure("G-MAP-OVERFIT", clo, rec, ctx.tree,
                            (ctx.prof.get("map_overfit") or {}).get("harness"),
                            host_env=_host_env(), pmap=[tuple(x) for x in ctx.path_map],
@@ -9451,11 +9680,14 @@ def _job_map_overfit(ctx: Ctx) -> dict[str, dict]:
                            git_dir=ctx.options.get("git_dir"), commit=ctx.commit)
     reasons += cr
     det["closure"] = cd
-    for k, f in (("gate:map-overfit-record", rec), ("gate:map-overfit-closure", clo)):
+    for k, f in (("gate:map-overfit-record", rec), ("gate:map-overfit-closure", clo), ("gate:map-overfit-reuse-binding", binding)):
         if f and Path(f).is_file():
             ev["inputs_read"][k] = fingerprint(f)
     ev["details"].update(det)
     ok_text = f"G-MAP-OVERFIT PASS {OVERFIT_SCOPE}"
+    if binding is not None:
+        ok_text += (f"; REUSE of {det.get('base_arm')}'s record (identical harness invocation: identity {str((det.get('identity') or {}).get('this'))[:12]}, "
+                    f"re-derived by the harness's own --identity-only)")
     if own is not None:
         ok_text += f"; the banded head's OWN {own['schema']} record ({own['item']})"
     if (det.get("a19") or {}).get("applied"):
