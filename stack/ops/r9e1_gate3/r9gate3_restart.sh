@@ -25,6 +25,6 @@ PRE="${R9_PRECHECK_ARMS:-$ARMS}"
 for A in $PRE; do ssh -n tanitad-thor "cd $R && bash kit/r9gate3_rec_explore.sh $A; grep -c 'G-MAP-OVERFIT PASS\|G-BOX-OVERFIT PASS' $R/gate3_explore_rec_${C12}_$A.log" | tail -1 | grep -qx 2 || die "OVF records not admissible for $A at $C12 (a module in their closures changed: re-run r9e1_bind.sh)"; done
 [ -e F:/refcv9_e1/gate/pinned_status.txt ] && mv F:/refcv9_e1/gate/pinned_status.txt F:/refcv9_e1/gate/pinned_status.$(date +%H%M%S).old
 powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w $HERE/r9gate3_launch_pinned.ps1)" -Sha $SHA -Arms "$ARMS" || die "pinned launch"
-ssh -n tanitad-thor "cd $R && nohup setsid bash kit/r9gate3_thor_gate.sh explore C0 > logs/r9gate3_explore_${C12}_C0.out 2>&1 < /dev/null &" ; sleep 2
-ssh -n tanitad-thor "cd $R && nohup setsid bash kit/r9gate3_chain.sh >> logs/r9gate3_chain.out 2>&1 < /dev/null &" ; sleep 3
+ssh -n tanitad-thor "cd $R || exit 1; nohup setsid bash kit/r9gate3_thor_gate.sh explore C0 > logs/r9gate3_explore_${C12}_C0.out 2>&1 < /dev/null &" ; sleep 2
+ssh -n tanitad-thor "cd $R || exit 1; nohup setsid bash kit/r9gate3_chain.sh >> logs/r9gate3_chain.out 2>&1 < /dev/null &" ; sleep 3
 ssh -n tanitad-thor "tail -2 $R/logs/r9gate3_chain.out | cut -c1-160"; echo "ZZR9GATE3-RESTART-OKZZ $C12"
