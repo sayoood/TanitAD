@@ -102,8 +102,17 @@ def prepare(model, batch: dict, device) -> None:
 
 def box3d_row(model, perc, slots, tgt, *, cls_class_weight, visible_filter, presence_loss, vis1, vis, sel=None) -> dict:
     """The trainer's box3d loss row. No B3 lever on the loss (OFF, or ``--r9-box-class-sqrt`` alone): ``perc.box3d_loss_row`` with the
-    SAME arguments the trainer passed (the sqrt vector replaces the class weight when that lever is on)."""
+    SAME arguments the trainer passed (the sqrt vector replaces the class weight when that lever is on). In EVAL (``not model.training``) a DN
+    config is read with ``dn=False``: the eval forward carries no DN queries, so there is no DN loss to compute (and none is demanded)."""
     cfg = getattr(model, MODEL_ATTR, None)
+    if cfg is not None and cfg.dn and not getattr(model, "training", True):
+        # DN is TRAINING-ONLY: ``prepare`` is a no-op in eval and ``Box3DSlotDecoder.b3_route`` returns the plain forward, so an eval slot dict
+        # never holds a ``_dn_out``. ``refined_box3d_losses_b3`` REFUSES a DN config with no DN output (the train-time guard against a pack that
+        # never reached the forward), which in eval made every in-training / EMA / final eval of a DN arm (B3, B3p) raise and be logged as an
+        # ``eval_error`` row (MEASURED on the tiny path, BRIEF_BOX_B3). So the eval row is the row of the config with DN off -- the other levers
+        # (quality, in-loss NMS, class sqrt) are unchanged, and the TRAINING path below never takes this branch.
+        import dataclasses
+        cfg = dataclasses.replace(cfg, dn=False)
     cw = getattr(model, CLS_ATTR, None) if (cfg is not None and cfg.class_sqrt) else cls_class_weight
     if cfg is None or not cfg.any_loss_change:
         return perc.box3d_loss_row(slots, tgt, cls_class_weight=cw, visible_filter=visible_filter,

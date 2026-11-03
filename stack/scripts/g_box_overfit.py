@@ -499,15 +499,23 @@ def run_one_frame(adapter, arm: str, *, steps: int = ONE_FRAME_STEPS, every: int
     all_items = adapter.items
     adapter.items = [all_items[fi]]
     PB = adapter.tr._perc
+    # refcv9 B3: a loss-changing lever (--r9-box-quality / -dn / -inloss-nms) routes the box row to ``box_b3.box3d_loss_row_b3``
+    # (``box_b3_flag.box3d_row``, which imports it at CALL time), NOT to ``PB.box3d_loss_row`` -- so wrapping only the latter captures nothing
+    # under B3 (the ``inside`` flag never rises and every ``keep`` reads None). Both entry points are wrapped; OFF never calls the second.
+    from tanitad.models import box_b3 as _BB3
+    b3_cfg = getattr(getattr(adapter, "model", None), "_r9_box_b3", None)       # None: no own-head lever on this build
     cap = {"on": False, "inside": False, "calls": [], "pred": None}
-    o_row, o_ms, o_b3 = PB.box3d_loss_row, _AS.match_slots, _B3.match_slots
+    o_row, o_ms, o_b3, o_b3row = PB.box3d_loss_row, _AS.match_slots, _B3.match_slots, _BB3.box3d_loss_row_b3
 
-    def row(*aa, **kk):
-        cap["inside"] = True
-        try:
-            return o_row(*aa, **kk)
-        finally:
-            cap["inside"] = False
+    def _inside(fn):
+        def wrapped(*aa, **kk):
+            cap["inside"] = True
+            try:
+                return fn(*aa, **kk)
+            finally:
+                cap["inside"] = False
+        return wrapped
+    row, row_b3 = _inside(o_row), _inside(o_b3row)
 
     def ms(pred, tgt, *, presence_cost="sigmoid"):
         mm = o_ms(pred, tgt, presence_cost=presence_cost)
@@ -515,7 +523,7 @@ def run_one_frame(adapter, arm: str, *, steps: int = ONE_FRAME_STEPS, every: int
             cap["calls"].append(mm)
             cap["pred"] = pred
         return mm
-    PB.box3d_loss_row, _AS.match_slots, _B3.match_slots = row, ms, ms
+    PB.box3d_loss_row, _AS.match_slots, _B3.match_slots, _BB3.box3d_loss_row_b3 = row, ms, ms, row_b3
     rows, prev, prev_anchor, t0 = [], None, None, time.time()
     try:
         for step in range(1, steps + 1):
@@ -534,6 +542,13 @@ def run_one_frame(adapter, arm: str, *, steps: int = ONE_FRAME_STEPS, every: int
                 continue
             cur = None
             anchor_of = None
+            if b3_cfg is not None and not cap["calls"]:
+                # REFUSE, DO NOT SKIP (the tac_goal_tok_head class): under B3 the row ran but no assignment was captured, so every `keep`
+                # would read None and (ii) could never pass -- a silent failure of the instrument, not a verdict about the head.
+                raise SystemExit(f"[gbo] one-frame {arm} step {step}: --r9-box-* is on ({b3_cfg.as_dict()}) but NO assignment was captured "
+                                 f"from the box loss row: the capture wraps refcv6_perception_branch.box3d_loss_row and "
+                                 f"box_b3.box3d_loss_row_b3 and the row reached neither (or reached no match_slots); refusing instead of "
+                                 f"scoring (ii) on an empty capture")
             if cap["calls"]:
                 m = cap["calls"][-1]
                 cur = [{int(c): int(r) for r, c in zip(R.tolist(), C.tolist())} for R, C in zip(m["rows"], m["cols"])]
@@ -557,7 +572,7 @@ def run_one_frame(adapter, arm: str, *, steps: int = ONE_FRAME_STEPS, every: int
                 f"{rows[-1]['keep']} anchor-keep {rows[-1]['anchor_keep']} conf {sc['n_conf']:.0f} "
                 f"AP {sc['ap2m']:.3f} loss {rows[-1]['loss']:.3f}")
     finally:
-        PB.box3d_loss_row, _AS.match_slots, _B3.match_slots = o_row, o_ms, o_b3
+        PB.box3d_loss_row, _AS.match_slots, _B3.match_slots, _BB3.box3d_loss_row_b3 = o_row, o_ms, o_b3, o_b3row
         adapter.items = all_items
         adapter.teardown()
     final_p = rows[-1].get("p_matched_median") if rows and rows[-1]["step"] == steps else None
@@ -639,10 +654,21 @@ def load_launch_argv(path) -> tuple:
 
 #: refcv9 B3 (open item E1-BOX-OWN-RECORD): a launch argv that carries any ``--r9-box-*`` token is the B3 head. The harness runs it under
 #: the SAME inherited protocol literals (optimizer, clip, lr schedule, batch, seed, bars, frame set: ``rec["literals"]`` is not touched)
-#: -- the trainer's own ``compute_losses_v3`` already builds the B3 decoder and loss from the argv, so nothing else changes -- and the
-#: record carries this schema string plus the flags, which is what the launch gate's binding row matches.
+#: -- and the record carries this schema string plus the flags, which is what the launch gate's binding row matches.
+#: ⛔ WHO BUILDS WHAT (corrected 2026-11-03; this comment used to say "the trainer's own ``compute_losses_v3`` already builds the B3 decoder",
+#: which was WRONG -- MEASURED on Thor 18:09Z, ``r9e1_bind.sh box-b3 B3``: the replayed build ran B3 as OFF and G-DVB refused it with 5
+#: mismatches). The loss DISPATCH (``_bbf.prepare`` before the forward, ``_bbf.box3d_row`` for the row) is the trainer's own inside
+#: ``compute_losses_v3`` / ``compute_losses_perc_rig``; the decoder's B3 STATE (``enable_b3``, ``model._r9_box_b3``, the sqrt class weight) is
+#: built only by ``_bbf.attach(model, args)``, which ``train()`` calls right after ``build_perception_branch`` (refc_v3_train.py:10092) and
+#: which ``TrainerAdapter._build_model`` now calls at the same point -- the trainer's own function, never a re-implementation.
 B3_SCHEMA = "tanitad.g_box_overfit_record/2-b3"
 B3_FLAGS = ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms")
+
+
+def b3_build_fields(stamp: dict | None) -> dict:
+    """What the record says about the B3 model it BUILT, read off the built model (``box_b3_flag.stamp``): ``{}`` when no flag was built, so any
+    other launch argv's record is untouched. (The eval pass is the trainer's own row: ``box_b3_flag.box3d_row`` reads a DN config with DN off in eval.)"""
+    return {"built": stamp} if stamp else {}
 
 
 #: refcv9 E1-REC3 (MM 207ebd, PINNED): the TRAINING-ONLY auxiliary heads -- B1 depth (C3), B2 perspective and B2c BEV2 (C4). This harness
@@ -1135,6 +1161,12 @@ class TrainerAdapter:
         _pcfg = dataclasses.replace(_pcfg, **_kw)
         m._dn_gen = torch.Generator().manual_seed(int(getattr(a, "seed", 0)) + 7919)
         m._perception = _perc.build_perception_branch(m, _pcfg).to(dev)
+        # refcv9 B3 (BRIEF_BOX_B3; MEASURED on Thor 2026-11-03 18:09Z, r9e1_bind.sh box-b3 B3): train() builds the B3 decoder state with the
+        # trainer's OWN `_bbf.attach(model, args)` at this very point (refc_v3_train.py:10092, right after the perception branch is built and
+        # before the lift bank). The replay never called it, so a B3 argv built the plain decoder: no `model._r9_box_b3`, no DN parameters, no sqrt
+        # class weight -- G-DVB refused the replay (5 mismatches) and `_bbf.prepare` / `_bbf.box3d_row` would have run B3 as OFF. OFF (no
+        # `--r9-box-*` own-head flag): `attach` touches nothing, so every other argv builds exactly what it built before.
+        tr._bbf.attach(m, a)
         if m._w_map > 0.0:
             _pe, _ptable = tr._read_rig_extrinsics(str(getattr(a, "agent_rig_extrinsics", "")))
             m._lift_bank = _perc.LiftGeometryBank(_ptable, frame=_perc.frame_for_model(m), stride=int(_pcfg.stride),
@@ -1161,6 +1193,7 @@ class TrainerAdapter:
         if bad:
             raise SystemExit("[gbo] the replayed build is NOT the declared launch model:\n  - "
                              + "\n  - ".join(self.dvb_mismatches))
+        self.b3_stamp = tr._bbf.stamp(m, a)        # refcv9 B3: `config.json["r9_box_b3"]`'s stamp, read OFF the built model; None when no flag
         return m
 
     # -- the adapter protocol --------------------------------------------------------------------------- #
@@ -1370,6 +1403,8 @@ def main(argv=None) -> int:
                 encoding="utf-8"))}
         if getattr(ad, "rig_record", None):
             rec["rig"] = ad.rig_record
+        if getattr(ad, "b3_stamp", None):
+            rec.setdefault("b3", {}).update(b3_build_fields(ad.b3_stamp))
         rec["check_build"] = {"dvb_mismatches": ad.dvb_mismatches,
                               "box_decoder_params": int(sum(p.numel() for p in br.box_dec.parameters())),
                               "box_memory_params": int(sum(p.numel() for p in br.box_mem.parameters())),
@@ -1398,6 +1433,8 @@ def main(argv=None) -> int:
         # A14.1: the red arm is its own invocation (`unanchored` = the MAIN decoder); this record's RESULT is the
         # verdict of the configuration it ran (``anchors_removed``, when run, stays informative)
         rec["one_frame"]["RESULT"] = ("INCOMPLETE" if "main" not in v else "PASS" if main_ok else "FAIL")
+        if getattr(ad, "b3_stamp", None):
+            rec.setdefault("b3", {}).update(b3_build_fields(ad.b3_stamp))
         rec["one_frame"]["query_select"] = str(getattr(ad.args, "slot_query_select", "learned") or "learned")
         if red is not None:
             rec["one_frame"]["anchors_removed_informative"] = red
@@ -1418,6 +1455,8 @@ def main(argv=None) -> int:
         rec["dvb_mismatches"] = getattr(ad, "dvb_mismatches", [])
         if getattr(ad, "rig_record", None):
             rec["rig"] = ad.rig_record
+        if getattr(ad, "b3_stamp", None):
+            rec.setdefault("b3", {}).update(b3_build_fields(ad.b3_stamp))
         Path(a.out).write_text(json.dumps(rec, indent=1, default=str), encoding="utf-8")
         log(f"arm {arm}: {res['verdict']} ({res['wall_s']} s, {res['s_per_step']} s/step)")
     main_ok = rec["arms"].get("main", {}).get("verdict") == "PASS"
