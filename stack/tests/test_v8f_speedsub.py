@@ -672,7 +672,7 @@ def test_pipeline_reaches_PASS_when_the_readout_is_perfect(tmp_path, monkeypatch
         r = rep["rows"][s]
         assert r["ego"]["hi"] < 0 and r["ego"]["delta"] <= -SR.F_SUB_PASS and r["egoshuf"]["lo"] > 0 and r["regression_arm_separated_worse"] is True
     assert rep["schema"] == SR.SUB_SCHEMA and rep["claim"] == "H-V8F-SPEEDSUB-1" and rep["selected_readout"] == "mlp_ego"
-    assert open(tmp_path / "pass" / "out" / "OUTCOME.txt").read().splitlines()[0] == "PASS"
+    assert open(tmp_path / "pass" / "out" / "OUTCOME.txt", encoding="utf-8").read().splitlines()[0] == "PASS"      # the writer (v8f_mini_eval_speedread.py :819/:948) writes utf-8
 
 
 def test_pipeline_reaches_HARMS_when_the_readout_is_off(tmp_path, monkeypatch):

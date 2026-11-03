@@ -41,6 +41,21 @@ GOLDEN = Path(__file__).with_name("launch_intent_golden.json")
 WRITE_GOLDEN = os.environ.get("LAUNCH_INTENT_WRITE_GOLDEN") == "1"          # set ONLY on the unmodified tip, to (re)write the golden
 TRAIN_P = REPO / "stack" / "scripts" / "v8f_mini_train.py"
 MODEL_P = REPO / "stack" / "tanitad" / "models" / "v8f_mini.py"
+RECOVER_KEYS = {"recover_changed", "recover_eligible", "recover_n", "recover_p", "recover_rows", "recover_share"}   # RECOVER-FT (ad0bcb7): the trainer's summary block writes these six UNCONDITIONALLY (v8f_mini_train.py:2334-2335), so a flag-off summary.json carries them although the golden predates them
+RECOVER_OFF = {"recover_p": 0.0, "recover_n": 0, "recover_eligible": 0, "recover_rows": 0, "recover_changed": 0, "recover_share": None}   # their flag-off values, read off the trainer: p = RECOVER_DEFAULTS["p"] 0.0 (v8f_recover.py:23; argparse default v8f_mini_train.py:173; float() at v8f_recover.py:151; written :2334); n / eligible / rows / changed start at 0 (:2176) and grow only inside `if rcv.active` (:2242-2250); share is None while eligible is 0 (:2335)
+RECOVER_LEVERS = {"recover", "recover_table"}   # the same commit also records the BUILT perturber and the deviation table under levers (v8f_mini_train.py:2141-2142); a flag-off run records the p = 0 perturber and table None
+
+
+def assert_recover_flag_off(s, sc, name):
+    """The RECOVER-FT record at its flag-off values, EXACTLY: the six summary keys (RECOVER_OFF), the BUILT perturber under levers (p 0.0, no bank, every other field at R.RECOVER_DEFAULTS), the deviation table None, and the probe skipped (``recover_probe`` returns the 'off' record at p = 0, v8f_mini_train.py:1397-1417 / selfcheck :2159)."""
+    assert {k: s[k] for k in RECOVER_KEYS} == RECOVER_OFF, f"{name}: the six RECOVER-FT summary keys read their flag-off values (p 0.0, n / eligible / rows / changed 0, share None)"
+    lv, d = s["levers"]["recover"], TR.R.RECOVER_DEFAULTS
+    assert lv["recover_p"] == 0.0 == d["p"] and lv["recover_dev_bank"] is None and lv["recover_dev_bank_sha256"] is None, f"{name}: the built perturber is off and holds no bank"
+    assert (lv["recover_dev_law"], lv["recover_target"], lv["recover_rejoin_steps"], lv["recover_seed"]) == (d["dev_law"], d["target"], d["rejoin_steps"], d["seed"]), f"{name}: every other recover lever at its default"
+    assert s["levers"]["recover_table"] is None, f"{name}: no deviation table is built at p = 0"
+    assert sc["recover_probe"]["recover"] == "off" and sc["recover_probe"]["pass"] is True and set(sc["recover_probe"]) == {"recover", "pass", "skipped"}, f"{name}: the G-LIVE probe is skipped at p = 0"
+
+
 FT = ["--lr", "1e-4", "--p-gt-start", "0.2", "--p-gt-end", "0.2"]
 ORC_LAW = ["--ego-perturb-vscale", "0.5", "1.0", "--ego-perturb-vmax", "8.0", "--ego-perturb-adrop", "1.5", "--ego-perturb-yawrate-std", "2.0"]
 W_A = 1.58926                      # arm A's dose at the MEASURED f = 49,618 / 306,566 (tools/measure_f.py, f_measure.json): 1 + W = (1 - f) / (2 f), 6 significant digits
@@ -575,11 +590,13 @@ def test_flag_off_reproduces_the_unmodified_tip_bit_for_bit(pack, tmp_path):
         assert g["log"] == w["log"] and len(w["log"]) == 4, f"{name}: every logged number and every logged key"
         assert (g["model_sha256"], g["opt_sha256"]) == (w["model_sha256"], w["opt_sha256"]), f"{name}: final weights and optimiser state, bit for bit (torch {want['_fixture']['torch']} wrote the golden, {torch.__version__} read it)"
         assert (g["ego_totals"], g["dagger_totals"], g["counters"]) == (w["ego_totals"], w["dagger_totals"], w["counters"]), f"{name}: the counters"
-        assert g["summary_keys"] == w["summary_keys"] and g["ckpt_keys"] == w["ckpt_keys"], f"{name}: a flag-off run's summary.json / checkpoint carry no new top-level key"
+        assert set(g["summary_keys"]) - set(w["summary_keys"]) == RECOVER_KEYS and set(w["summary_keys"]) <= set(g["summary_keys"]), f"{name}: summary.json only GAINS the six RECOVER-FT record keys (PREREG_RECOVER_FT: written with p = 0 when off)"
+        assert g["ckpt_keys"] == w["ckpt_keys"], f"{name}: a flag-off checkpoint carries no new top-level key"
+        assert_recover_flag_off(_summary(tmp_path / name), _selfcheck(tmp_path / name), name)
         assert g["levers_ego"] == w["levers_ego"] and g["levers_dagger_p"] == w["levers_dagger_p"]
         assert {k: v for k, v in g["cfg"].items() if k != "launch_intent_w"} == w["cfg"] and g["cfg"]["launch_intent_w"] == 0.0 and "launch_intent_w" not in w["cfg"], f"{name}: the config gains only launch_intent_w = 0.0"
-        assert set(g["levers_keys"]) - set(w["levers_keys"]) == {"launch_intent_w", "launch_intent", "launch_n", "launch_eligible"} and set(w["levers_keys"]) <= set(g["levers_keys"]), f"{name}: levers only GAIN the four launch keys"
-        assert set(g["selfcheck_keys"]) - set(w["selfcheck_keys"]) == {"launch_intent_probe"} and set(w["selfcheck_keys"]) <= set(g["selfcheck_keys"])
+        assert set(g["levers_keys"]) - set(w["levers_keys"]) == {"launch_intent_w", "launch_intent", "launch_n", "launch_eligible"} | RECOVER_LEVERS and set(w["levers_keys"]) <= set(g["levers_keys"]), f"{name}: levers only GAIN the four launch keys and the two RECOVER-FT fields"
+        assert set(g["selfcheck_keys"]) - set(w["selfcheck_keys"]) == {"launch_intent_probe", "recover_probe"} and set(w["selfcheck_keys"]) <= set(g["selfcheck_keys"])
     assert want["dag"]["counters"]["dagger_n"] > 0 and want["orc"]["counters"]["ego_perturb_n"] > 0, "the golden is not vacuous: the DAG family swapped rows and the ORC family perturbed rows"
 
 

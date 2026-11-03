@@ -59,6 +59,10 @@ PERM_SEED = 20261028
 EXCLUDE = (540, 600)
 #: MEASURED from X_s0's own summary.json / selfcheck.json (box2_ship/logs/v8f_mixo/runs/M2b_s0_mixo): the parity the train extraction must reproduce
 TRAIN_PARITY = {"n_clips": 4512, "n_windows": 306566, "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9"}
+#: the `window_start` X_s was TRAINED with: the trainer's default `--window-start -1` (v8f_mini_train.py:235, make_config :286) = absent = hist - 1 = 3 (data/v8f_mini_data.py `effective_window_start`).
+#: MEASURED: X_s0's argv.json carries no --window-start, and its summary.json / selfcheck.json record window_start 3 and window_t_min 3. Passed spelled out (test_v8f_window_start's static
+#: check); EQUAL to the fallback `V8FMiniWindows` used when the keyword was absent, so the held-age clamp (room = max(t - 3, 0)) and every item are unchanged.
+X_S_WINDOW_START = -1
 F_M = 0.1207
 MODES = ("own", "identity", "gt", "read", "alt", "const", "perm")
 # ---- PREREG_V8F_SPEEDSUB. MODES above is NOT changed: every SPEEDREAD flow reads it.
@@ -659,7 +663,7 @@ def cmd_extract(a):
     print(f"[extract] parity {parity} -> {'OK' if ok else 'MISMATCH'}")
     if not ok and not a.allow_parity_mismatch:
         raise SystemExit("REFUSED: the train window list does not reproduce X_s's (TRAIN_PARITY)")
-    ds = D.V8FMiniWindows(store, J, wins, hist=HIST)
+    ds = D.V8FMiniWindows(store, J, wins, hist=HIST, window_start=X_S_WINDOW_START)
     ci = [M.CI[n] for n in SPEED_CELLS]
     n, grid = len(wins), (4, 10) if a.grid == "pool4x10" else (8, 20)
     os.makedirs(a.out, exist_ok=True)

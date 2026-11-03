@@ -1,0 +1,38 @@
+RECOVER-NEXT read chain DRY RUN, arm RP01 (no wait, no rollout, nothing written)
+package /e/Projects/TanitAD-artifacts/dagland/recover_next/read   write root /c/Users/Admin/rr_scratch/rnext   out /c/Users/Admin/rr_scratch/rnext/out_RP01   reused rollouts (read only) /c/Users/Admin/rr_scratch/out   pulled runs /e/Projects/TanitAD-artifacts/v8f-recover   tool /f/TanitAD-scratch/recover_read/tree_dag/stack/scripts/v8f_t1_eval_framefreeze.py   threads 16
+rollouts to ROLL (7):
+  1  RP01_s0      seed 0  ckpt M2b_s0_recft_RP01      --smooth sg72 --scene logged                     not yet rolled
+  2  KA1RP01_s0   seed 0  ckpt M2b_s0_recft_RP01      --smooth sg72 --scene logged                     not yet rolled
+  3  RP01_s1      seed 1  ckpt M2b_s1_recft_RP01      --smooth sg72 --scene logged                     not yet rolled
+  4  FZRP01_s0    seed 0  ckpt M2b_s0_recft_RP01      --smooth sg72 --scene hold_now                   not yet rolled
+  5  FZRP01_s1    seed 1  ckpt M2b_s1_recft_RP01      --smooth sg72 --scene hold_now                   not yet rolled
+  6  RP01C_s0     seed 0  ckpt M2b_s0_recft_RP01      --smooth sg72 --scene logged --feasible kbox     not yet rolled
+  7  RP01C_s1     seed 1  ckpt M2b_s1_recft_RP01      --smooth sg72 --scene logged --feasible kbox     not yet rolled
+rollouts REUSED, not re-rolled (8; done markers in /c/Users/Admin/rr_scratch/out):
+  present  C0_s0
+  present  C0_s1
+  present  C0REP_s0
+  present  C0REP_s1
+  present  FZC0_s0
+  present  FZC0_s1
+  present  C0C_s0
+  present  C0C_s1
+inputs:
+  present  composite card  18ed37bcf92491b7
+  present  RECOVER-NEXT card  01046fe694dea2ea
+  present  reader  aeee6b1b1351c811
+  present  combiner  c6b4f31551a6cde6
+  present  tool in scratch tree  0721fc014089bea6
+  present  known answer raw/KA_RARM_R.json  265a811f9ee51a16
+  present  R read (for the combiner)  b333e5c6b255a1c0
+  ABSENT   pulled M2b_s0_recft_RP01 (the chain waits for it, 6 h max; pull_rnext.sh writes it)
+  ABSENT   pulled M2b_s1_recft_RP01 (the chain waits for it, 6 h max; pull_rnext.sh writes it)
+  present  comparator M2b_s0_recft_R
+  present  comparator M2b_s0_recft_C0
+  present  comparator M2b_s0_recft_C0rep
+  present  comparator M2b_s1_recft_R
+  present  comparator M2b_s1_recft_C0
+  present  comparator M2b_s1_recft_C0rep
+estimated wall for this arm (idle box, 16 threads): rollouts ~28 min = MEASURED walls of the same seven rollout kinds on the RECOVER-FT chain (done_*.txt: logged 234 / 219 / 241 s, hold_now 255 / 417 s, kbox 156 / 158 s);
+  gates + sha checks ~3 min, pre-flight ~1.5 min, 7 extractions (~90 s each, 2 workers) ~5.5 min, file controls + rows ~7 min (ESTIMATED), combiner seconds  =>  about 45 min (+-12) per arm; three arms ~2.3 h if run back to back
+after the read: raw/RECOVER_READ_RP01.json, raw/RECOVER_NEXT.json and raw/RNEXT_RP01.done (success) or raw/RNEXT_RP01.fail

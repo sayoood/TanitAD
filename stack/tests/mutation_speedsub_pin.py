@@ -51,9 +51,9 @@ def apply(src, old, new):
 
 
 def pytest_run(tests, pin, tmp):
-    env = dict(os.environ, SPEEDSUB_PIN=pin, CUDA_VISIBLE_DEVICES="-1", PYTHONDONTWRITEBYTECODE="1")
+    env = dict(os.environ, SPEEDSUB_PIN=pin, CUDA_VISIBLE_DEVICES="-1", PYTHONDONTWRITEBYTECODE="1", PYTHONIOENCODING="utf-8")      # the child writes UTF-8 and this decodes UTF-8
     t0 = time.time()
-    p = subprocess.run([sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", "--basetemp", tmp, tests], env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=900)
+    p = subprocess.run([sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", "--basetemp", tmp, tests], env=env, capture_output=True, text=True, encoding="utf-8", errors="replace", stdin=subprocess.DEVNULL, timeout=900)
     failed = [ln.split(" - ")[0].replace("FAILED ", "").replace("ERROR ", "").strip() for ln in p.stdout.splitlines() if ln.startswith(("FAILED", "ERROR"))]
     return {"rc": p.returncode, "failed": failed, "seconds": round(time.time() - t0, 1), "tail": p.stdout.strip().splitlines()[-1] if p.stdout.strip() else ""}
 

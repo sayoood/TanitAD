@@ -57,13 +57,13 @@ def apply(src: str, old: str, new: str) -> str:
 
 
 def run_pytest(tree, wrapper, work, name, timeout):
-    env = dict(os.environ, SPEEDSUB_WRAPPER=wrapper, CUDA_VISIBLE_DEVICES="-1", OMP_NUM_THREADS="2", MKL_NUM_THREADS="2", PYTHONDONTWRITEBYTECODE="1",
+    env = dict(os.environ, SPEEDSUB_WRAPPER=wrapper, CUDA_VISIBLE_DEVICES="-1", OMP_NUM_THREADS="2", MKL_NUM_THREADS="2", PYTHONDONTWRITEBYTECODE="1", PYTHONIOENCODING="utf-8",      # the child writes UTF-8 and this decodes UTF-8
                PYTHONPATH=os.pathsep.join([f"{tree}/stack", f"{tree}/taniteval", f"{tree}/stack/scripts"]))
     base = os.path.join(work, "pytmp", name)
     os.makedirs(os.path.dirname(base), exist_ok=True)
     t0 = time.time()
     p = subprocess.run([sys.executable, "-m", "pytest", "-q", "-x", "-p", "no:cacheprovider", "--basetemp", base, f"{tree}/stack/tests/test_v8f_t1_speedsub.py"], cwd=tree, env=env,
-                       capture_output=True, text=True, timeout=timeout, stdin=subprocess.DEVNULL)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=timeout, stdin=subprocess.DEVNULL)
     failed = [ln.split(" - ")[0].replace("FAILED ", "").replace("ERROR ", "").strip() for ln in p.stdout.splitlines() if ln.startswith(("FAILED", "ERROR"))]
     return {"rc": p.returncode, "failed": failed, "seconds": round(time.time() - t0, 1), "tail": p.stdout.strip().splitlines()[-1] if p.stdout.strip() else ""}
 

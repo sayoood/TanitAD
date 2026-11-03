@@ -241,10 +241,17 @@ def test_traj_terms_is_the_losses_own_spelling_of_ade_and_fde(world):
 # =============================================================================================================================================
 # (B) w_acc = 0 IS B, BIT FOR BIT
 # =============================================================================================================================================
+# The saved pre-change module (raw/2026-10-25-oacc) predates these config keys, so its config is built from today's minus them. That is only the SAME model while
+# every one of them sits at its OFF value in the default config -- the bit-identity claim is exact only then, so `_old_pair` asserts it instead of assuming it.
+# w_acc: this PREREG (0.0 = no acceleration term in the total); launch_intent_w: PREREG_V8F_LAUNCH_INTENT, commit b09ac89 (0.0 = no launch-intent term, no new tensor op).
+PRE_OACC_OFF = {"w_acc": 0.0, "launch_intent_w": 0.0}
+
+
 def _old_pair(world, n=12, seed=2):
     J = _J(world)
     cfg = M.V8FMiniConfig(**{**_T.TINY, "wm": "off"})
-    kw = {k: v for k, v in cfg.__dict__.items() if k != "w_acc"}
+    assert {k: cfg.__dict__[k] for k in PRE_OACC_OFF} == PRE_OACC_OFF, "an excluded key is not at its OFF value: the saved module cannot be this build"
+    kw = {k: v for k, v in cfg.__dict__.items() if k not in PRE_OACC_OFF}      # the saved module predates every key in PRE_OACC_OFF
     mu, sd = M.cons_stats(J)
     torch.manual_seed(3)
     new = M.V8FMini(cfg, M.P10Prior.synthetic(0), mu, sd)
@@ -262,8 +269,9 @@ def test_w_acc_zero_builds_the_saved_pre_change_model_and_loss_and_gradients_bit
     sn, so = new.state_dict(), old.state_dict()
     assert sn.keys() == so.keys() and all(torch.equal(sn[k], so[k]) for k in sn), "identical built model"
     ln, lo = new.built_levers(), old.built_levers()
-    assert set(ln) - set(lo) == {"w_acc"} and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo and ln["w_acc"] == 0.0     # additions only
-    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == {"w_acc"}
+    assert set(ln) - set(lo) == set(PRE_OACC_OFF) and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo and ln["w_acc"] == 0.0     # additions only ...
+    assert {k: ln[k] for k in PRE_OACC_OFF} == PRE_OACC_OFF                                     # ... each BUILT at its OFF value
+    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == set(PRE_OACC_OFF)
     _wake(new), _wake(old)
     for p in (0.0, 0.3, 1.0):
         torch.manual_seed(5)
@@ -1884,6 +1892,7 @@ DAG_LABELS |= {"dagoaccarm", "dagoaccarm_dry", "dagoaccarm_have", "dagoaccwacc",
 DAG_LABELS |= {"flatdagarm", "flatdagarm_dry", "flatdagarm_have", "evalflatdag", "evalflatdag_1", "evalflatdag_2", "bankflat"}      # PREREG_V8F_FLATDAG, after DAG-OACC's
 DAG_LABELS |= {"dagorcarm"}      # PREREG_V8F_DAG_ORC, after FLAT-DAG's
 DAG_LABELS |= {"dagoaccorcarm"}      # PREREG_V8F_DAG_ORC Amendment 1 (DAG-OACC base), after DAG-ORC's
+LATER_LABELS = _load("v8f_queue_later_labels", HERE_T / "v8f_queue_later_labels.py").LATER_LABELS      # PREREG_V8F_DAGDOSE + PREREG_V8F_LAUNCH_INTENT appended these after this edit's; declared once, shared with test_v8f_flat.py
 # PREREG_V8F_FLAT's seven labels as they stand at the tip 4f561a2c (sha256[:16] of "\n" + the text up to the next label): this edit appended AFTER them and edited none
 FLAT_PINS = {"gateflat": "cec296bd862eedcd", "trainflat": "9e28a04f9c79af1e", "evalflat": "024f6a7e06886322", "evalflat_1": "2f90baa2f624c148", "evalflat_2": "f3c16ba44e719907",
              "evalflat_3": "ea291c4013c2b747", "evalflat_4": "901e965d7b940ca4"}
@@ -1957,7 +1966,8 @@ def test_queue_oacc_is_crlf_every_existing_label_is_byte_identical_and_only_the_
         assert label in blocks, f"the stage {label} was removed"
         assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
         assert "w-acc" not in blocks[label] and "oacc" not in blocks[label] and "WACC" not in blocks[label], f"{label} mentions the new stages"
-    assert set(blocks) - ORC_LABELS - DAG_LABELS == set(_K.PRE_EXISTING) | set(_MX.KIND_PINS) | set(MIXO_PINS) | set(FLAT_PINS) | OACC_LABELS and len(OACC_LABELS) == 6, "the only new labels are the six of this edit"
+    assert LATER_LABELS <= set(blocks), "a label declared as appended by a later edit is absent from the queue"
+    assert set(blocks) - ORC_LABELS - DAG_LABELS - LATER_LABELS == set(_K.PRE_EXISTING) | set(_MX.KIND_PINS) | set(MIXO_PINS) | set(FLAT_PINS) | OACC_LABELS and len(OACC_LABELS) == 6, "the only new labels are the six of this edit"
     for st in OSTAGES:
         assert q.count(f'if /i "%~1"=="{st}" goto :{st}\n') == 1, "a stage nobody dispatches never runs"
         assert q.count(f"\n:{st}\n") == 1

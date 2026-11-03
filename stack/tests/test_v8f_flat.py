@@ -178,12 +178,20 @@ def test_built_levers_record_the_built_interface_and_the_lever_adds_no_parameter
 # =============================================================================================================================================
 # (B) `full` IS TODAY, BIT FOR BIT
 # =============================================================================================================================================
+# The saved pre-change module (raw/2026-10-25-flat) predates these config keys, so its config is built from today's minus them. That is only the SAME model while
+# every one of them sits at its OFF value in the default config -- the bit-identity claim is exact only then, so `_old_pair` asserts it instead of assuming it.
+# o_interface: PREREG_V8F_FLAT ("full" = O reads S's checkpoints + T's code); w_acc: PREREG_V8F_OACC (0.0 = no acceleration term in the total);
+# launch_intent_w: PREREG_V8F_LAUNCH_INTENT, commit b09ac89 (0.0 = no launch-intent term and no new tensor op).
+PRE_FLAT_OFF = {"o_interface": "full", "w_acc": 0.0, "launch_intent_w": 0.0}
+
+
 def _old_pair(world, n=12, seed=2, mod=None):
     """The same weights and the same batch in `mod` (default: the CURRENT module, o_interface full) and in the saved pre-change module."""
     mod = mod or M
     J = _J(world)
     cfg = mod.V8FMiniConfig(**{**_T.TINY, "wm": "off"})
-    kw = {k: v for k, v in cfg.__dict__.items() if k not in ("o_interface", "w_acc")}      # w_acc: PREREG_V8F_OACC (the saved module predates both keys)
+    assert {k: cfg.__dict__[k] for k in PRE_FLAT_OFF} == PRE_FLAT_OFF, "an excluded key is not at its OFF value: the saved module cannot be this build"
+    kw = {k: v for k, v in cfg.__dict__.items() if k not in PRE_FLAT_OFF}      # the saved module predates every key in PRE_FLAT_OFF
     mu, sd = M.cons_stats(J)
     torch.manual_seed(3)
     new = mod.V8FMini(cfg, mod.P10Prior.synthetic(0), mu, sd)
@@ -216,8 +224,9 @@ def test_full_builds_the_saved_pre_change_model_and_forward_bit_for_bit_with_the
     sn, so = new.state_dict(), old.state_dict()
     assert sn.keys() == so.keys() and all(torch.equal(sn[k], so[k]) for k in sn), "identical built model"
     ln, lo = new.built_levers(), old.built_levers()
-    assert set(ln) - set(lo) == {"o_interface", "w_acc"} and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo      # w_acc: PREREG_V8F_OACC (additions only)
-    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == {"o_interface", "w_acc"}      # w_acc: PREREG_V8F_OACC (additions only)
+    assert set(ln) - set(lo) == set(PRE_FLAT_OFF) and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo      # additions only ...
+    assert {k: ln[k] for k in PRE_FLAT_OFF} == PRE_FLAT_OFF                                     # ... each BUILT at its OFF value
+    assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == set(PRE_FLAT_OFF)      # additions only
     _same_forward(_wake(new), _wake(old), b)                                                    # woken, identically: at zero-init O is blind to what it reads and the identity would be vacuous
     new, old, b, _ = _old_pair(world)
     for p in (0.3, 1.0):                                                                        # the loss
@@ -1686,6 +1695,7 @@ DAG_LABELS |= {"flatdagarm", "flatdagarm_dry", "flatdagarm_have", "evalflatdag",
 DAG_LABELS |= {"dagorcarm"}      # PREREG_V8F_DAG_ORC, after FLAT-DAG's
 DAG_LABELS |= {"dagoaccorcarm"}      # PREREG_V8F_DAG_ORC Amendment 1 (DAG-OACC base), after DAG-ORC's
 OACC_LABELS = {"waccoacc", "oaccwacc", "gateoacc", "trainoacc", "evaloacc", "fitoacc"}         # PREREG_V8F_OACC appended these after FLAT's (test_v8f_oacc.py pins them); widened here, nothing else
+LATER_LABELS = _load("v8f_queue_later_labels", HERE_T / "v8f_queue_later_labels.py").LATER_LABELS      # PREREG_V8F_DAGDOSE + PREREG_V8F_LAUNCH_INTENT appended these after OACC's; declared once, shared with test_v8f_oacc.py
 # PREREG_V8F_MIXO's ten labels as they stand at the tip 18c62306 (sha256[:16] of "\n" + the text up to the next label): this edit appended AFTER them and edited none
 MIXO_PINS = {"gatemixo": "b2ea5430b698741c", "trainmixo": "419a7db33d684844", "evalmixo": "7acc0975f2aa9ef3", "evalmixo_1": "1cc5381d64b27142", "evalmixo_2": "a70ba66191aed3cf",
              "evalmixo_3": "5d326de83e5d37b1", "evalmixo_4": "0cde88e556e0b0e4", "evalmixo_5": "479e39bc5b10065b", "evalmixo_6": "77271eba1510a820", "evalmixo_7": "901e965d7b940ca4"}
@@ -1747,7 +1757,8 @@ def test_queue_flat_is_crlf_every_existing_label_is_byte_identical_and_only_the_
         assert label in blocks, f"the stage {label} was removed"
         assert hashlib.sha256(("\n" + blocks[label]).encode()).hexdigest()[:16] == h, f"the stage {label} was edited"
         assert "o-interface" not in blocks[label] and "_flat" not in blocks[label] and "M2b-flat" not in blocks[label], f"{label} mentions the new stages"
-    assert set(blocks) - OACC_LABELS - ORC_LABELS - DAG_LABELS == set(_K.PRE_EXISTING) | set(_MX.KIND_PINS) | set(MIXO_PINS) | FLAT_LABELS and len(FLAT_LABELS) == 7, "the only new labels are the seven of this edit"
+    assert LATER_LABELS <= set(blocks), "a label declared as appended by a later edit is absent from the queue"
+    assert set(blocks) - OACC_LABELS - ORC_LABELS - DAG_LABELS - LATER_LABELS == set(_K.PRE_EXISTING) | set(_MX.KIND_PINS) | set(MIXO_PINS) | FLAT_LABELS and len(FLAT_LABELS) == 7, "the only new labels are the seven of this edit"
     for st in FSTAGES:
         assert q.count(f'if /i "%~1"=="{st}" goto :{st}\n') == 1, "a stage nobody dispatches never runs"
         assert q.count(f"\n:{st}\n") == 1
