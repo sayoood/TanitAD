@@ -19,7 +19,10 @@ W="$(cd $NS && md5sum tree_tip.tar overlay.tar plan_thor.json | cut -c1-32 | tr 
 [ "$W" = "$G" ] || die "suite files md5 differ"
 scp -q $HERE/r9gate3_chain.sh $HERE/r9gate3_thor_gate.sh $HERE/r9gate3_rec_explore.sh tanitad-thor:$R/kit/ && ssh -n tanitad-thor "chmod +x $R/kit/r9gate3_*.sh" || die "kit scp"
 ssh -n tanitad-thor "mkdir -p $R/gate3 && echo '$ARMS' > $R/gate3/ARMS && echo $REC12 > $R/gate3/REC_C12 && cat $R/gate3/REC_C12" | grep -qx "$REC12" || die "arms/records stamp"
-for A in $ARMS; do ssh -n tanitad-thor "cd $R && bash kit/r9gate3_rec_explore.sh $A; grep -c 'G-MAP-OVERFIT PASS\|G-BOX-OVERFIT PASS' $R/gate3_explore_rec_${C12}_$A.log" | tail -1 | grep -qx 2 || die "OVF records not admissible for $A at $C12 (a module in their closures changed: re-run r9e1_bind.sh)"; done
+# the early record check runs on the arms whose records EXIST now (R9_PRECHECK_ARMS, default = all arms); the chain's own final gate re-reads
+# every arm's records before it mints that arm's token, so an arm whose record is still being built only delays its own gate
+PRE="${R9_PRECHECK_ARMS:-$ARMS}"
+for A in $PRE; do ssh -n tanitad-thor "cd $R && bash kit/r9gate3_rec_explore.sh $A; grep -c 'G-MAP-OVERFIT PASS\|G-BOX-OVERFIT PASS' $R/gate3_explore_rec_${C12}_$A.log" | tail -1 | grep -qx 2 || die "OVF records not admissible for $A at $C12 (a module in their closures changed: re-run r9e1_bind.sh)"; done
 [ -e F:/refcv9_e1/gate/pinned_status.txt ] && mv F:/refcv9_e1/gate/pinned_status.txt F:/refcv9_e1/gate/pinned_status.$(date +%H%M%S).old
 powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w $HERE/r9gate3_launch_pinned.ps1)" -Sha $SHA -Arms "$ARMS" || die "pinned launch"
 ssh -n tanitad-thor "cd $R && nohup setsid bash kit/r9gate3_thor_gate.sh explore C0 > logs/r9gate3_explore_${C12}_C0.out 2>&1 < /dev/null &" ; sleep 2

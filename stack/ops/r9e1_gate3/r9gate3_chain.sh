@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# r9gate3_chain.sh -- THOR-SIDE master chain for the refcv9 E1 floor arms C0 and C1 (profile refcv9-e1rig).  GATE3, 2026-11-03.
+# r9gate3_chain.sh -- THOR-SIDE master chain for the refcv9 E1 arms (profile refcv9-e1rig).  GATE3, 2026-11-03; per-arm E-G gate5.
 #
 #   A  wait for the exploratory gate's smoke evidence (G-LIVE, G-CKPT) -> B start the commit-bound Thor full suite (CPU, nice 19, setsid)
 #   C  wait for the exploratory gate to end; ALL SIX non-suite checks must be PASS, else kill the suite and STOP
 #   D  wait for the suite -> gate_verdict -> suite-bind -> precheck with the gate's OWN judge (a FAIL STOPs: an env pin edit is the MM's call)
-#   E  wait for the dev-box G-SUITE-PINNED evidence of C0 and C1 (shipped by r9gate3_devbox_pinned.sh)
-#   F  real gate (--stage thor) for C0, then C1: $R/gate3/<ARM>/PASS_<c12>.json (written by the gate, never by hand)
-#   G  ONE detached training chain under the Thor GPU lock: C0, then C1.  Each step runs sup_refcv7.sh, which re-verifies the
-#      arm's own token (G1-G4) and REFUSES (exit 5) without it.  C1 runs after C0 ends, success or not.
+#   E-G PER ARM (gate5): wait for that arm's dev-box G-SUITE-PINNED evidence -> its real gate -> train it under the lock, release, next arm
+#      the real gate (--stage thor) writes $R/gate3/<ARM>/PASS_<c12>.json (by the gate, never by hand); training runs sup_refcv7.sh, which
+#      re-verifies the arm's own token (G1-G4) and REFUSES (exit 5) without it.  The next arm starts after this one ends, success or not.
+#      Arms come from $R/gate3/ARMS (r9gate3_restart.sh); an arm whose run dir already holds a done summary is skipped (re-entry).
 # Every verdict is read from an ARTIFACT (JSON / marker), never from $?.  No model turns poll this: it is plain bash.
 # Status: $R/gate3/CHAIN_STATUS.txt (append-only, one event per line); opaque markers ZZR9E1CHAIN-<EVENT>ZZ also go to stdout.
 set -u
@@ -70,41 +70,45 @@ tail -1 $G/precheck.out | grep -q '^G-SUITE PRECHECK: PASS' || stop SUITE-PRECHE
 ev SUITE-BOUND "suite_bound.json precheck PASS: $G/suite_bound.json"
 fi
 
-# ---- E: dev-box pinned evidence for both arms ------------------------------------------------------------------------------------
-for A in $ARMS; do
-  D=$R/devbox_evidence_${C12}_${A}
-  t0=$(date +%s); while [ ! -s "$D/evidence/G-SUITE-PINNED.json" ] && [ ! -s "$D/G-SUITE-PINNED.json" ]; do
-    [ $(( $(date +%s) - t0 )) -gt 10800 ] && break; sleep 30 9>&- 200>&-; done
-  if [ -s "$D/evidence/G-SUITE-PINNED.json" ] || [ -s "$D/G-SUITE-PINNED.json" ]; then ev PINNED-PRESENT "$A at $D"; else ev PINNED-ABSENT "$A: no G-SUITE-PINNED evidence under $D"; fi
-done
-
-# ---- F: the real gate, C0 then C1 ----------------------------------------------------------------------------------------------------
-PASSED=""
-for A in $ARMS; do
-  D=$R/devbox_evidence_${C12}_${A}
-  if [ ! -s "$D/evidence/G-SUITE-PINNED.json" ] && [ ! -s "$D/G-SUITE-PINNED.json" ]; then ev GATE-SKIPPED "$A: no dev-box pinned evidence"; continue; fi
-  if [ -s "$R/gate3/$A/PASS_$C12.json" ]; then   # re-entry: an existing token is reused only if the gate's own verify MATCHes it
-    rm -f $R/gate3/$A/verify_reentry.json; $PY $T/stack/scripts/launch_gate.py verify --token $R/gate3/$A/PASS_$C12.json --argv-file $T/stack/ops/runs.d/r9e1_${A}.argv.json --tree $T --commit $SHA --json $R/gate3/$A/verify_reentry.json > /dev/null 2>&1 9>&- 200>&-
-    if [ "$($PY -c 'import json,sys; print(json.load(open(sys.argv[1])).get("verdict","NONE"))' $R/gate3/$A/verify_reentry.json 2>/dev/null)" = MATCH ]; then
-      ev GATE-PASS "$A token reused on re-entry (verify MATCH): $R/gate3/$A/PASS_$C12.json"; PASSED="$PASSED $A"; continue; fi
-  fi
-  ( bash $KIT/r9gate3_thor_gate.sh final $A $G/suite_bound.json $D > $R/logs/r9gate3_final_$A.out 2>&1 9>&- 200>&- )
-  if grep -q "ZZR9E1G3-${A}-final-PASSZZ" $R/logs/r9gate3_final_$A.out && [ -s "$R/gate3/$A/PASS_$C12.json" ]; then
-    ev GATE-PASS "$A token $R/gate3/$A/PASS_$C12.json"; PASSED="$PASSED $A"
-  else ev GATE-NOT-PASS "$A: $(grep -h 'verdict is\|REFUSED' $R/logs/r9gate3_final_$A.out | tail -1 | cut -c1-200) (read $R/gate3/$A.timings.txt)"; fi
-done
-[ -n "$PASSED" ] || stop NO-TOKEN "neither arm passed the gate: nothing launched"
-
-# ---- G: ONE detached training chain under the Thor GPU lock, C0 then C1 ---------------------------------------------------------
+# ---- E/F/G, PER ARM (gate5, MM 2026-11-03): wait for THIS arm's dev-box pinned evidence -> its real gate -> train it under the lock -> RELEASE the
+#      lock -> next arm.  (gate4 waited for every arm's evidence, then gated every arm, then trained them all under one lock: with 5 arms and a
+#      loaded dev box (~95 min per pinned run) the GPU idled for hours.)  The lock is released between arms because the next arm's gate
+#      (r9gate3_thor_gate.sh final) takes the SAME lock itself: holding it here would deadlock that gate.
 [ -s "$R/gate3/zerograd_controls.env" ] || stop NO-ZEROGRAD-CONTROLS "$R/gate3/zerograd_controls.env is absent (the post-run zero-gradient gate must have controls)"
-exec 9>"$LOCKF"; ev LOCK-WAIT "taking the Thor GPU lock (<= 6 h)"
-flock -w 21600 9 || stop LOCK-TIMEOUT "the Thor GPU lock stayed held for 6 h; tokens are intact"
-NA="$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -c '[0-9]')"; [ "$NA" = 0 ] || stop GPU-NOT-EMPTY "$NA compute app(s) under the lock; never share the GPU"
+PINNED_WAIT_S="${R9_PINNED_WAIT_S:-14400}"
+PASSED=""; TRAINED=""
 for A in $ARMS; do
-  case " $PASSED " in *" $A "*) ;; *) ev "$A-NOT-LAUNCHED" "no PASS token"; continue;; esac
-  TOK=$R/gate3/$A/PASS_$C12.json; ARGV=$T/stack/ops/runs.d/r9e1_${A}.argv.json; ARM=r9e1_$A; VJ=$R/gate3/$A/verify_prelaunch.json
+  D=$R/devbox_evidence_${C12}_${A}; ARGV=$T/stack/ops/runs.d/r9e1_${A}.argv.json; ARM=r9e1_$A
+  OUTD="$($PY -c 'import json,sys; d=json.load(open(sys.argv[1])); a=d["argv"] if isinstance(d,dict) else d; print(a[a.index("--out")+1])' "$ARGV" 2>/dev/null)"
+  if [ -n "$OUTD" ] && [ -s "$OUTD/summary.json" ] && grep -q '"done"[[:space:]]*:[[:space:]]*true' "$OUTD/summary.json"; then
+    ev "$A-ALREADY-DONE" "$OUTD/summary.json is done: not relaunched (re-entry)"; continue; fi
+  # E: this arm's dev-box pinned evidence
+  t0=$(date +%s); while [ ! -s "$D/evidence/G-SUITE-PINNED.json" ] && [ ! -s "$D/G-SUITE-PINNED.json" ]; do
+    [ $(( $(date +%s) - t0 )) -gt "$PINNED_WAIT_S" ] && break; sleep 30 9>&- 200>&-; done
+  if [ -s "$D/evidence/G-SUITE-PINNED.json" ] || [ -s "$D/G-SUITE-PINNED.json" ]; then ev PINNED-PRESENT "$A at $D"
+  else ev PINNED-ABSENT "$A: no G-SUITE-PINNED evidence under $D"; ev GATE-SKIPPED "$A: no dev-box pinned evidence"; continue; fi
+  # F: the real gate (an existing token is reused on re-entry only if the gate's own verify MATCHes it)
+  GOT=0
+  if [ -s "$R/gate3/$A/PASS_$C12.json" ]; then
+    rm -f $R/gate3/$A/verify_reentry.json; $PY $T/stack/scripts/launch_gate.py verify --token $R/gate3/$A/PASS_$C12.json --argv-file $ARGV --tree $T --commit $SHA --json $R/gate3/$A/verify_reentry.json > /dev/null 2>&1 9>&- 200>&-
+    if [ "$($PY -c 'import json,sys; print(json.load(open(sys.argv[1])).get("verdict","NONE"))' $R/gate3/$A/verify_reentry.json 2>/dev/null)" = MATCH ]; then
+      ev GATE-PASS "$A token reused on re-entry (verify MATCH): $R/gate3/$A/PASS_$C12.json"; GOT=1; fi
+  fi
+  if [ "$GOT" = 0 ]; then
+    ( bash $KIT/r9gate3_thor_gate.sh final $A $G/suite_bound.json $D > $R/logs/r9gate3_final_$A.out 2>&1 9>&- 200>&- )
+    if grep -q "ZZR9E1G3-${A}-final-PASSZZ" $R/logs/r9gate3_final_$A.out && [ -s "$R/gate3/$A/PASS_$C12.json" ]; then
+      ev GATE-PASS "$A token $R/gate3/$A/PASS_$C12.json"; GOT=1
+    else ev GATE-NOT-PASS "$A: $(grep -h 'verdict is\|REFUSED' $R/logs/r9gate3_final_$A.out | tail -1 | cut -c1-200) (read $R/gate3/$A.timings.txt)"; continue; fi
+  fi
+  PASSED="$PASSED $A"
+  # G: train THIS arm under the Thor GPU lock, then release it
+  exec 9>"$LOCKF"; ev LOCK-WAIT "$A: taking the Thor GPU lock (<= 6 h)"
+  flock -w 21600 9 || stop LOCK-TIMEOUT "$A: the Thor GPU lock stayed held for 6 h; tokens are intact"
+  NA="$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -c '[0-9]')"; [ "$NA" = 0 ] || stop GPU-NOT-EMPTY "$NA compute app(s) under the lock; never share the GPU"
+  TOK=$R/gate3/$A/PASS_$C12.json; VJ=$R/gate3/$A/verify_prelaunch.json
   rm -f "$VJ"; $PY $T/stack/scripts/launch_gate.py verify --token "$TOK" --argv-file "$ARGV" --tree "$T" --commit "$SHA" --json "$VJ" > $R/gate3/$A/verify_prelaunch.log 2>&1 200>&-
-  if [ "$($PY -c 'import json,sys; print(json.load(open(sys.argv[1])).get("verdict","NONE"))' "$VJ" 2>/dev/null)" != MATCH ]; then ev "$A-REFUSED" "verify did not MATCH ($VJ)"; continue; fi
+  if [ "$($PY -c 'import json,sys; print(json.load(open(sys.argv[1])).get("verdict","NONE"))' "$VJ" 2>/dev/null)" != MATCH ]; then
+    ev "$A-REFUSED" "verify did not MATCH ($VJ)"; flock -u 9; exec 9>&-; continue; fi
   cat > $R/runs.d/$ARM.env <<EOF
 # $ARM -- launch manifest for stack/ops/sup_refcv7.sh (generated by r9gate3_chain.sh; sourced ONCE by the supervisor)
 export CODE=$T
@@ -119,13 +123,14 @@ MAX_RELAUNCH=4
 POLL_S=300
 EOF
   cat $R/gate3/zerograd_controls.env >> $R/runs.d/$ARM.env
-  OUTD="$($PY -c 'import json,sys; d=json.load(open(sys.argv[1])); a=d["argv"] if isinstance(d,dict) else d; print(a[a.index("--out")+1])' "$ARGV")"
   ev "$A-LAUNCH" "supervisor $T/stack/ops/sup_refcv7.sh $ARM; run dir $OUTD"
   bash $T/stack/ops/sup_refcv7.sh $ARM $R/runs.d > $R/sup_$ARM.out 2>&1 200>&-
   RC=$?
-  if [ -s "$OUTD/summary.json" ] && grep -q '"done"[[:space:]]*:[[:space:]]*true' "$OUTD/summary.json" && grep -q '"zerograd_gate"' "$OUTD/summary.json" && [ ! -e "$OUTD/ZEROGRAD_FAIL.json" ]; then ev "$A-DONE" "rc $RC; $OUTD/summary.json done + zerograd record"
+  flock -u 9; exec 9>&-     # release the GPU lock: the next arm's gate takes it
+  if [ -s "$OUTD/summary.json" ] && grep -q '"done"[[:space:]]*:[[:space:]]*true' "$OUTD/summary.json" && grep -q '"zerograd_gate"' "$OUTD/summary.json" && [ ! -e "$OUTD/ZEROGRAD_FAIL.json" ]; then ev "$A-DONE" "rc $RC; $OUTD/summary.json done + zerograd record"; TRAINED="$TRAINED $A"
   elif [ -e "$OUTD/ZEROGRAD_FAIL.json" ]; then ev "$A-ZEROGRAD-FAIL" "rc $RC; $OUTD/ZEROGRAD_FAIL.json"
   elif [ "$RC" = 5 ] || grep -q "ZZGATEREFUSED-$ARM" "$OUTD/sup_$ARM.log" 2>/dev/null; then ev "$A-REFUSED" "supervisor refused (rc $RC): $OUTD/sup_$ARM.log"
   else ev "$A-FAILED" "rc $RC: no done-marker at $OUTD (read $OUTD/sup_$ARM.log, $R/sup_$ARM.out)"; fi
 done
-ev ALLDONE "chain finished"
+[ -n "$PASSED" ] || stop NO-TOKEN "no arm passed the gate: nothing launched"
+ev ALLDONE "chain finished (gated:$PASSED; trained:$TRAINED)"

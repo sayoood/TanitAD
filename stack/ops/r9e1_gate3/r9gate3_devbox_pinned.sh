@@ -31,7 +31,7 @@ for ARM in $ARMS; do
     [ $(( $(date +%s) - t0 )) -gt 3600 ] && break; sleep 30; done
   rm -rf "$OUT" "$SW" 2>/dev/null; mkdir -p "$SW"
   say "$ARM: launch_gate run --stage devbox (argv $ARGVF)"
-  PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$T/stack;$T/stack/scripts" timeout 5400 "$DEVPY" "$T/stack/scripts/launch_gate.py" run \
+  PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$T/stack;$T/stack/scripts" timeout "${R9_PINNED_TIMEOUT_S:-10800}" "$DEVPY" "$T/stack/scripts/launch_gate.py" run \
     --profile refcv9-e1rig --stage devbox --tree "$T" --commit "$CAND" --git-dir "$REPO/.git" \
     --argv-file "$ARGVF" --suite-work "$SW" --out-dir "$OUT" > "$LOG" 2>&1 < /dev/null
   EV="$OUT/evidence/G-SUITE-PINNED.json"; [ -s "$EV" ] || EV="$OUT/G-SUITE-PINNED.json"
