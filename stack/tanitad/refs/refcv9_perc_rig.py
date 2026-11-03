@@ -111,6 +111,17 @@ def b3_exemptions(model) -> tuple:
     return names
 
 
+def own_enc_exemptions(model) -> tuple:
+    """New key prefixes the source cannot carry for refcv9 C2 ``--r9-map-own-enc`` (M3): the map's own encoder ``_map_hires.map_encoder.``
+    and the re-sized banded readout input ``_map_hires.refine.inp.`` (the source's reads the 64-channel encoder the map no longer uses).
+    NAMED; ``()`` unless the model was built with the own encoder, so the OFF warm start is the tip's, check for check. The WIDENED keys
+    (lift rows, the 64-ch encoder's stem) are NOT exempt: ``map_own_enc_flag.apply_warm_start`` zero-extends them explicitly."""
+    if getattr(getattr(model, "_map_hires", None), "map_encoder", None) is None:
+        return ()
+    from tanitad.train.map_own_enc_flag import NEW_PREFIXES
+    return tuple(NEW_PREFIXES)
+
+
 def warm_start_perc_rig(model, path: str) -> dict:
     """``--init-from`` for the rig: load the refcv8 EMA into the perception modules with the NAMED skip list. Refuses (a)
     a source key that is neither loadable nor in RIG_SKIPPED_MODULES, (b) a rig key the source lacks, (c) a shape mismatch."""
@@ -132,10 +143,14 @@ def warm_start_perc_rig(model, path: str) -> dict:
     # refcv9 C1 (--r9-map-banded): the banded head's keys are NEW (the source cannot have them) and the 8-way readout
     # `_map_hires.refine.cls.*` is NOT BUILT (the source's copy has no home). Both are NAMED, never a blanket strict=False; OFF: ().
     new_pfx, drop_pfx = banded_exemptions(model)
-    new_pfx = tuple(new_pfx) + b3_exemptions(model)       # refcv9 B3 --r9-box-dn: the DN embeddings (NAMED; OFF: ())
+    new_pfx = tuple(new_pfx) + b3_exemptions(model) + own_enc_exemptions(model)   # B3 DN embeddings; C2 own encoder (NAMED; OFF: ())
     dropped = sorted(k for k in loadable if k not in own and any(k.startswith(q) for q in drop_pfx))
     for k in dropped:
         del loadable[k]
+    own_enc_rec = {}
+    if own_enc_exemptions(model):                          # refcv9 C2 (--r9-map-own-enc); OFF: skipped
+        from tanitad.train.map_own_enc_flag import apply_warm_start as _own_ws
+        own_enc_rec = _own_ws(model, loadable)             # zero-extends the widened lift / stem keys (the pinned rule); drops the source's refine.inp.*
     unexpected = sorted(k for k in loadable if k not in own)
     missing = sorted(k for k in own if k not in loadable and not any(k.startswith(q) for q in new_pfx))
     if unexpected or missing:
@@ -154,6 +169,7 @@ def warm_start_perc_rig(model, path: str) -> dict:
             "n_loaded": len(loadable), "n_new_refcv8_keys": 0, "n_skipped_source_keys": len(skipped),
             **({"banded": {"new_prefixes": list(new_pfx), "n_new_keys": sum(1 for k in own if any(k.startswith(q) for q in new_pfx)),
                            "dropped_source_keys": dropped}} if new_pfx else {}),
+            **({"own_enc": own_enc_rec} if own_enc_rec else {}),
             "skipped_modules_key_counts": per_mod, "optimizer": "fresh (not loaded)"}
 
 

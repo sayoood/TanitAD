@@ -106,6 +106,7 @@ from tanitad.train import refcv9_alloc_force as _r9af  # noqa: E402  refcv9: --r
 from tanitad.train import map_precision as _mfp  # noqa: E402  refcv9 warm start: --w-map-fp (OFF: nothing)
 from tanitad.train import map_banded_flag as _mbf  # noqa: E402  refcv9 C1: --r9-map-banded (OFF: nothing)
 from tanitad.train import box_b3_flag as _bbf  # noqa: E402  refcv9 B3: --r9-box-quality / -dn / -class-sqrt / -inloss-nms (OFF: nothing)
+from tanitad.train import map_own_enc_flag as _moe  # noqa: E402  refcv9 C2: --r9-map-own-enc (OFF: nothing)
 from tanitad.models import map_banded as _mband  # noqa: E402  refcv9 C1: banded targets / losses (OFF: never called)
 # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
 # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
@@ -176,6 +177,8 @@ _mfp.register_dvb_levers(_dvb.register)
 _mbf.register_dvb_levers(_dvb.register)
 # refcv9 B3: the four --r9-box-* flags are `built` levers (the lever the LOSS / decoder reads, off the built model)
 _bbf.register_dvb_levers(_dvb.register)
+# refcv9 C2: --r9-map-own-enc is a `built` lever (the 128-channel own encoder and the widened lift, read off the built branch)
+_moe.register_dvb_levers(_dvb.register)
 # refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): the progress head is a `built` lever, its weights `loss` levers
 _r9p.register_dvb_levers(_dvb.register)
 # refcv9 GT-in-pool schedule (H-R9-ALLOC-ORACLE-1): the attached schedule's spec / seed, read off the built model
@@ -883,6 +886,7 @@ def _pin_refcv8(cfg, args) -> None:
     _mfp.pin_args(args)          # refcv9 warm start: --w-map-fp's refusals (a no-op at the default 0)
     _mbf.pin_args(args)          # refcv9 C1: --r9-map-banded's refusals (incl. --w-map-fp, retired under it; a no-op when off)
     _bbf.pin_args(args)          # refcv9 B3: --r9-box-*'s refusals (a no-op when every flag is off)
+    _moe.pin_args(args)          # refcv9 C2: --r9-map-own-enc's refusals (needs --r9-map-banded; a no-op when off)
     _gse = int(getattr(args, "grad_share_every", 0) or 0)
     if _gse < 0 or (_gse > 0 and _gse % max(1, int(getattr(args, "log_every", 50) or 50)) != 0):
         raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
@@ -9767,7 +9771,8 @@ def train(args) -> dict:
             class_weights_sha256=str(_hcws["sha256"]),
             decision_rule=str(getattr(args, "map_hires_decision_rule",
                                       _mhr.DECISION_RULES[0])),
-            banded=bool(_mbf.is_on(args)))                   # refcv9 C1: False (the default) builds nothing new
+            banded=bool(_mbf.is_on(args)),                   # refcv9 C1: False (the default) builds nothing new
+            own_enc=bool(_moe.is_on(args)))                  # refcv9 C2: False (the default) builds nothing new
         model._map_hires = _mhr.build_map_hires_branch(model, _hcfg).to(device)
         model._w_map_hires = float(args.w_map_hires)
         if _mbf.is_on(args):                                 # refcv9 C1: absent (no attribute) for a default run
@@ -9822,6 +9827,11 @@ def train(args) -> dict:
             print("[v3] refcv9 C1 banded map head: %s, %d cells, params %s" % (
                 [(g["name"], g["shape"]) for g in map_hires_stamp["banded"]["bands"]],
                 map_hires_stamp["banded"]["n_cells"], model._map_hires.param_breakdown()), flush=True)
+        if _moe.is_on(args):                  # refcv9 C2: absent for a default run (config.json unchanged)
+            map_hires_stamp["own_enc"] = _moe.stamp(model._map_hires)
+            print("[v3] refcv9 C2 map own encoder: lift %d -> %d channels, map_encoder params %d" % (
+                map_hires_stamp["own_enc"]["lift_width_before"], map_hires_stamp["own_enc"]["lift_width"],
+                map_hires_stamp["own_enc"]["map_encoder_params"]), flush=True)
         if _hcts is not None:                 # absent (not null) for a default run: config.json unchanged
             map_hires_stamp["class_thresholds"] = {
                 k: _hcts[k] for k in ("path", "sha256", "schema", "tau_phat_logit", "provenance")}
@@ -13282,6 +13292,11 @@ def build_parser() -> argparse.ArgumentParser:
                     help="refcv9 B3' (2.4): BEV-NMS at tau 0.1 INSIDE the loss -- NMS-suppressed slots are masked out of the others' "
                          "self-attention keys between layers and the Hungarian match is taken over the survivors. Launched only if "
                          "B3 misses <= 1.25 boxes/object. Default OFF.")
+    g8.add_argument("--r9-map-own-enc", action="store_true",
+                    help="refcv9 C2 (REFCV9_DESIGN 2.2, arm M3): the map's OWN 128-channel BEV encoder reading the shared lift, which is "
+                         "widened 64 -> 128; it feeds ONLY the banded map head, the box / agents / planner BEV keep the 64-channel "
+                         "encoder (stem input channels 64..127 ZERO at init). Needs --r9-map-banded. Warm start (--r9-perc-rig): lift "
+                         "rows 0..63 and stem input channels 0..63 from refcv8, the rest fresh / zero. Default OFF: the tip's build.")
     g9 = ap.add_argument_group("refcv9 R9-PF (clean-split, regime-factored progress head; REFCV9_INMODEL_DESIGN.md)")
     g9.add_argument("--r9-perc-rig", action="store_true",
                     help="refcv9 C7 (REFCV9_DESIGN 4.3): the E1 PERCEPTION-ONLY rig -- init from refcv8 EMA-48,852 via "

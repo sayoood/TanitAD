@@ -301,11 +301,13 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     #   map_only_ft.dvb_check_r9) and --w-map-fp ("loss": model._w_map_fp, map_precision.dvb_check) (296 -> 298)
     # refcv9 C7: --r9-perc-rig ("built": refcv9_perc_rig.dvb_check) (298 -> 299)
     # refcv9 C1: --r9-map-banded ("built": map_banded_flag.dvb_check) (299 -> 300)
-    # refcv9 B3: --r9-box-quality / -dn / -class-sqrt / -inloss-nms ("built": box_b3_flag.register_dvb_levers) (300 -> 304)
-    assert len(dvb.REGISTRY) == 304
+    # refcv9 B3: --r9-box-quality / -dn / -class-sqrt / -inloss-nms ("built": box_b3_flag.register_dvb_levers) (+4)
+    assert len(dvb.REGISTRY) == 305   # B3 (+4) and C2 (+1) on 300, merged by the MM
     for _d in ("r9_box_quality", "r9_box_dn", "r9_box_class_sqrt", "r9_box_inloss_nms"):
         assert dvb.REGISTRY[_d].kind == "built", _d
+    # refcv9 C2: --r9-map-own-enc ("built": map_own_enc_flag.dvb_check) (+1)
     assert dvb.REGISTRY["r9_map_banded"].kind == "built"
+    assert dvb.REGISTRY["r9_map_own_enc"].kind == "built"
     assert dvb.REGISTRY["r8_train_only_map"].kind == "built"
     assert dvb.REGISTRY["r9_train_only"].kind == "built"
     assert dvb.REGISTRY["w_map_fp"].kind == "loss"

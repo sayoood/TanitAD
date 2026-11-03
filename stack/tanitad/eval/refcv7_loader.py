@@ -597,7 +597,8 @@ def map_hires_config(tr, args, class_weights_sha256: str):
         near_refine_blocks=int(_mhr.declared_near_refine_blocks(args)),
         class_weights_sha256=str(class_weights_sha256),
         decision_rule=str(getattr(args, "map_hires_decision_rule", _mhr.DECISION_RULES[0])),
-        banded=bool(getattr(args, "r9_map_banded", False)))          # refcv9 C1 (train(): same line); False = refcv8's branch
+        banded=bool(getattr(args, "r9_map_banded", False)),          # refcv9 C1 (train(): same line); False = refcv8's branch
+        own_enc=bool(getattr(args, "r9_map_own_enc", False)))        # refcv9 C2 (train(): same line); False = refcv8's / M2's branch
 
 
 def build_map_hires_block(tr, model, args, device) -> dict | None:

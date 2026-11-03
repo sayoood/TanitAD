@@ -388,6 +388,12 @@ class MapHiresConfig:
     #: beside the refine trunk and do NOT build the 8-way readout ``refine.cls``. ``False`` (the DEFAULT) builds nothing: the branch
     #: is refcv8's, parameter for parameter, RNG draw for RNG draw.
     banded: bool = False
+    #: ⭐ refcv9 C2 (REFCV9_DESIGN 2.2 "Map BEV capacity (M3)"; ``--r9-map-own-enc``): the map gets its OWN ``d_map_enc``-channel BEV
+    #: encoder (``MapHiresBranch.map_encoder``) reading the shared lift, widened ``d_lift -> d_map_enc``; the existing ``d_model``-channel
+    #: encoder keeps feeding the planner BEV / box / agents. Needs ``banded``. ``False`` (the DEFAULT) builds nothing: the branch is the
+    #: tip's, parameter for parameter, RNG draw for RNG draw.
+    own_enc: bool = False
+    d_map_enc: int = 128
 
     def __post_init__(self) -> None:
         if str(self.decision_rule) not in DECISION_RULES:
@@ -438,10 +444,21 @@ class MapHiresConfig:
             _mb.band_geometry(self.x_max_m, self.y_half_m)           # refuses an extent the bands cannot tile
             if abs(nx - 10.0) > 1e-9:
                 raise ValueError(f"banded map head needs near_lift_x_m 10 (the near band is 0-10 m @ 0.10 m), got {nx}")
+        if bool(self.own_enc):
+            if not bool(self.banded):
+                raise ValueError("own_enc (the map's own BEV encoder, M3) needs banded: it feeds ONLY the banded map head")
+            if int(self.d_map_enc) % int(self.norm_groups) or not int(self.d_map_enc) > int(self.d_lift):
+                raise ValueError(f"d_map_enc {self.d_map_enc} must divide by norm_groups {self.norm_groups} and exceed d_lift "
+                                 f"{self.d_lift} (the shared lift is WIDENED d_lift -> d_map_enc)")
 
     @property
     def extent(self) -> MapExtent:
         return MapExtent(float(self.x_max_m), float(self.y_half_m))
+
+    @property
+    def lift_width(self) -> int:
+        """Output channels of the shared lift: ``d_lift``, or ``d_map_enc`` under ``own_enc`` (refcv9 C2)."""
+        return int(self.d_map_enc) if bool(self.own_enc) else int(self.d_lift)
 
     @property
     def lift_grid(self) -> BEVGrid:
@@ -485,7 +502,10 @@ class MapHiresConfig:
                 # NEW-2 R3 (A15): 0 = no near refine block (R2 as landed)
                 "near_refine_blocks": int(self.near_refine_blocks),
                 # refcv9 C1: absent (not False) for a default run, so a refcv8 stamp is unchanged
-                **({"banded": True} if bool(self.banded) else {})}
+                **({"banded": True} if bool(self.banded) else {}),
+                # refcv9 C2: absent (not False) for a default run, so a refcv8 / M2 stamp is unchanged
+                **({"own_enc": True, "d_map_enc": int(self.d_map_enc), "lift_width": self.lift_width}
+                   if bool(self.own_enc) else {})}
 
 
 def declared_extent(args) -> MapExtent:
@@ -587,16 +607,20 @@ class HiresBEVEncoder(nn.Module):
     ⭐ Its output is SHARED (A6): the map decoder (:class:`HiresRefine`) and the
     planner's pooled BEV (``refcv6_perception_branch.PlannerBEVPool``) both read it."""
 
-    def __init__(self, cfg: MapHiresConfig):
+    def __init__(self, cfg: MapHiresConfig, *, d_in: int | None = None, d_model: int | None = None):
         super().__init__()
         self.cfg = cfg
         self.grid_hw = tuple(cfg.lift_grid.shape)
         g = int(cfg.norm_groups)
+        # refcv9 C2: ``d_in`` / ``d_model`` default to the cfg's (the tip's encoder, RNG draw for RNG draw); the map's OWN encoder
+        # (``MapHiresBranch.map_encoder``) passes ``cfg.d_map_enc`` for both.
+        d_in = int(cfg.d_lift) if d_in is None else int(d_in)
+        d_model = int(cfg.d_model) if d_model is None else int(d_model)
         self.stem = nn.Sequential(
-            nn.Conv2d(int(cfg.d_lift), int(cfg.d_model), 3, padding=1, bias=False),
-            nn.GroupNorm(g, int(cfg.d_model)), nn.GELU())
+            nn.Conv2d(d_in, d_model, 3, padding=1, bias=False),
+            nn.GroupNorm(g, d_model), nn.GELU())
         self.blocks = nn.ModuleList(
-            [_DilatedBlock(int(cfg.d_model), int(d), g) for d in cfg.dilations])
+            [_DilatedBlock(d_model, int(d), g) for d in cfg.dilations])
 
     def forward(self, x: Tensor) -> Tensor:
         if tuple(x.shape[2:]) != self.grid_hw:
@@ -818,6 +842,43 @@ class MapHiresBranch(nn.Module):
                                         groups=int(cfg.norm_groups))
         else:
             self.banded = None
+        # refcv9 C2 (M3): built after EVERYTHING above, inside a forked RNG, so no tip parameter draws differently; None = M2 / refcv8.
+        self.map_encoder = None
+        if bool(cfg.own_enc):
+            self._build_own_enc()
+
+    def _build_own_enc(self) -> None:
+        """REFCV9_DESIGN 2.2 (M3): the map's OWN ``d_map_enc``-channel BEV encoder, fed by the shared lift WIDENED ``d_lift -> d_map_enc``.
+
+        The PINNED warm-start rule (BRIEF_C2 item 2), so that at step 0 the box / agent / planner path equals the un-widened branch:
+          * ``lift``: the first ``d_lift`` output channels are the OFF-shaped lift's (the refcv8 weights once ``--init-from`` lands them),
+            the extra channels are freshly initialised (``proj`` default init, ``unobserved`` N(0, 0.02));
+          * ``encoder.stem`` (the existing ``d_model``-channel encoder, which keeps feeding the planner BEV / box / agents): input
+            channels ``0..d_lift`` keep the OFF weights, input channels ``d_lift..d_map_enc`` are ZERO -- so its output is unchanged by
+            the extra lift channels at step 0 (they receive a gradient and train away from zero);
+          * ``map_encoder``: fresh, ``d_map_enc -> d_map_enc`` (the same recipe as ``encoder``), feeds ONLY ``banded`` via ``refine.inp``;
+          * ``refine.inp``'s 1x1 reads ``d_map_enc`` (fresh): the source's ``[d_up, d_model]`` weights have no meaning on the new features.
+        All draws happen inside ``fork_rng``: the global RNG stream after the build is what the OFF build leaves."""
+        cfg = self.cfg
+        d0, d1 = int(cfg.d_lift), int(cfg.d_map_enc)
+        with torch.random.fork_rng(devices=[]):
+            old_proj, old_unobs = self.lift.proj, self.lift.unobserved
+            proj = nn.Conv2d(int(self.lift.d_in) * int(self.lift.n_heights), d1, kernel_size=1)
+            unobs = torch.empty(d1)
+            nn.init.normal_(unobs, std=0.02)
+            with torch.no_grad():
+                proj.weight[:d0] = old_proj.weight
+                proj.bias[:d0] = old_proj.bias
+                unobs[:d0] = old_unobs
+            self.lift.proj, self.lift.unobserved, self.lift.d_out = proj, nn.Parameter(unobs), d1
+            old_stem = self.encoder.stem[0]
+            stem = nn.Conv2d(d1, int(old_stem.out_channels), 3, padding=1, bias=False)
+            with torch.no_grad():
+                stem.weight.zero_()
+                stem.weight[:, :d0] = old_stem.weight
+            self.encoder.stem[0] = stem
+            self.map_encoder = HiresBEVEncoder(cfg, d_in=d1, d_model=d1)
+            self.refine.inp[0] = nn.Conv2d(d1, int(cfg.d_up), 1, bias=False)
 
     def param_breakdown(self) -> dict:
         def n(m):
@@ -829,6 +890,8 @@ class MapHiresBranch(nn.Module):
             out["near_refine"] = n(self.near_refine)
         if self.banded is not None:
             out["banded"] = n(self.banded)
+        if self.map_encoder is not None:
+            out["map_encoder"] = n(self.map_encoder)          # refcv9 C2 (M3); `lift` / `encoder` / `refine` above are the WIDENED ones
         out["total"] = n(self)
         return out
 
@@ -843,18 +906,20 @@ class MapHiresBranch(nn.Module):
             return torch.utils.checkpoint.checkpoint(fn, x, use_reentrant=False)
         return fn(x)
 
-    def _forward_banded(self, feats, fmap_s8, grid, valid, near_source, near_block_zeros):
+    def _forward_banded(self, feats, fmap_s8, grid, valid, near_source, near_block_zeros, map_feats=None):
         if near_source is not None:
             raise ValueError("near_source is a G-MAP-OVERFIT regression-arm input; the banded head does not take it")
         src = fmap_s8
+        # refcv9 C2 (M3): the banded head reads the map's OWN encoder; ``feats`` (the shared-lift ``d_model`` encoder) stays the planner BEV
+        mf = feats if map_feats is None else map_feats
 
         def body(f):
             return tuple(self.banded(self.refine, self.near, self.near_refine, f, src, grid, valid,
                                      near_block_zeros=near_block_zeros))
         if self.cfg.grad_ckpt and torch.is_grad_enabled():
-            zs = torch.utils.checkpoint.checkpoint(body, feats, use_reentrant=False)
+            zs = torch.utils.checkpoint.checkpoint(body, mf, use_reentrant=False)
         else:
-            zs = body(feats)
+            zs = body(mf)
         from tanitad.models.map_banded import unobs_masks
         lv = valid.any(dim=1)                                              # [B, X4, Y4]: the lift's own validity
         # ⛔ `map_hires_logits` is None BY DESIGN: there is no 8-way raster, and a consumer that still reads one must fail loud
@@ -888,7 +953,8 @@ class MapHiresBranch(nn.Module):
         bev = self.lift(fmap_s8, grid, valid)
         feats = self._run(self.encoder, bev)
         if self.banded is not None:
-            return self._forward_banded(feats, fmap_s8, grid, valid, near_source, bool(near_block_zeros))
+            map_feats = None if self.map_encoder is None else self._run(self.map_encoder, bev)      # refcv9 C2 (M3)
+            return self._forward_banded(feats, fmap_s8, grid, valid, near_source, bool(near_block_zeros), map_feats)
         if near_block_zeros and self.near_refine is None:
             raise ValueError("near_block_zeros given to a branch with no near refine block")
         if self.near is None:
@@ -1363,6 +1429,8 @@ def grad_reach_report_hires(model, branch: MapHiresBranch | None = None) -> dict
             parts.append(("near", br.near))          # NEW-2 R2 (A12): map-only
         if getattr(br, "near_refine", None) is not None:
             parts.append(("near_refine", br.near_refine))  # NEW-2 R3 (A15): map-only
+        if getattr(br, "map_encoder", None) is not None:
+            parts.append(("map_encoder", br.map_encoder))  # refcv9 C2 (M3): map-only
         for name, m in parts:
             s, n, g = grad_abs_sum(m)
             rep[name] = {"grad_abs_sum": s, "n_params": n, "n_params_with_grad": g}
