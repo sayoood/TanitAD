@@ -328,7 +328,7 @@ def _install_stub(monkeypatch, tmp_path, rig, leak=False, label_every=2):
     L.PATH_REMAP = {"--eval-labels": "/kit/s2_labels_v8_eval.jsonl.gz"}
     L.bootstrap = lambda: None
     L.trainer = lambda: tr
-    L.load_config = lambda p: json.load(open(p))
+    L.load_config = lambda p: json.load(open(p, encoding="utf-8"))
     L.sha12 = _sha12
     L.md5_file = lambda p: hashlib.md5(open(p, "rb").read()).hexdigest()
     seen = {}

@@ -204,8 +204,11 @@ def test_R3_init_from_a_different_file_is_refused_by_the_md5_reader(conformant, 
     assert rw[0].startswith("--r9-train-only:") and rw[0].endswith("the frozen planner would not be the shipped one")
 
 
-def test_R4_a_missing_init_from_file_cannot_be_bound():
-    r, _d = LG.map_only_init_reasons(RIG, C0, [])
+def test_R4_a_missing_init_from_file_cannot_be_bound(tmp_path):
+    # host-independent: on Thor C0's real --init-from file EXISTS, so the missing file is made explicitly
+    argv = list(C0)
+    argv[argv.index("--init-from") + 1] = str(tmp_path / "absent_refcv8_ema.pt")
+    r, _d = LG.map_only_init_reasons(RIG, argv, [])
     assert len(r) == 1 and "is not readable on this host" in r[0] and r[0].startswith("--r9-perc-rig:")
 
 

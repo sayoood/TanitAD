@@ -95,7 +95,10 @@ def test_the_seam_key_rule_on_literals():
 def test_train_applies_it_only_without_a_resume_and_before_gdvb():
     T = R.trainer()
     src_txt = inspect.getsource(T.train).replace("\r\n", "\n")
-    i = src_txt.index("_init_stamp = dict(r8train.warm_start_from(model, args.init_from), applied=True)")
+    # since 21c719f (refcv9 E1 rig) the warm start dispatches on --r9-perc-rig; OFF still calls r8train.warm_start_from
+    i = src_txt.index("_init_stamp = dict((_r9rig.warm_start_perc_rig if _r9rig_on else r8train.warm_start_from)"
+                      "(model, args.init_from),")
+    assert src_txt.index("applied=True)", i) > i
     g = src_txt.index("_dvb.refuse_on_mismatch(model, args, build_parser(), where=\"train\")")
     resume = src_txt.index("if ck.exists():\n            _init_stamp")
     assert resume < i < g
