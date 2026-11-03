@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 # r9gate3_chain.sh -- THOR-SIDE master chain for the refcv9 E1 arms (profile refcv9-e1rig).  GATE3, 2026-11-03; per-arm E-G gate5.
+#   STUDY (R9_STUDY, default e1): the root, argv prefix, profile, explore arm and default arms come from r9gate3_study.sh NEXT TO THIS SCRIPT;
+#   R9_STUDY=e2 runs the same chain for the full-model arm K0 (profile refcv9-e2, root r9e2).  Opaque markers keep their ZZR9E1... names.
 #
 #   A  wait for the exploratory gate's smoke evidence (G-LIVE, G-CKPT) -> B start the commit-bound Thor full suite (CPU, nice 19, setsid)
 #   C  wait for the exploratory gate to end; ALL SIX non-suite checks must be PASS, else kill the suite and STOP
@@ -11,11 +13,13 @@
 # Every verdict is read from an ARTIFACT (JSON / marker), never from $?.  No model turns poll this: it is plain bash.
 # Status: $R/gate3/CHAIN_STATUS.txt (append-only, one event per line); opaque markers ZZR9E1CHAIN-<EVENT>ZZ also go to stdout.
 set -u
-R=/home/nvidia/r8ns/r9e1; T=$R/launch_tree; PY=/home/nvidia/venvs/tanitad-train/bin/python; LOCKF=/home/nvidia/refcv7_post/thor_gpu.lock
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/r9gate3_study.sh" || { echo "ZZR9E1CHAIN-STOP-BADSTUDYZZ"; exit 3; }    # R9_ROOT R9_PREFIX R9_PROFILE ... (one definition; refuses an unknown study)
+R=$R9_ROOT; T=$R/launch_tree; PY=/home/nvidia/venvs/tanitad-train/bin/python; LOCKF=/home/nvidia/refcv7_post/thor_gpu.lock
 SHA="$(cat $R/launch_tree.commit)"; C12="${SHA:0:12}"; G=$R/suite_$C12; STAT=$R/gate3/CHAIN_STATUS.txt
-EXP=$R/gate3_explore/${C12}_C0; KIT=$R/kit
-# the arms, in training order (written by r9gate3_restart.sh; default = the floor pair). C0 stays the explore arm.
-ARMS="$(cat $R/gate3/ARMS 2>/dev/null)"; ARMS="${ARMS:-C0 C1}"
+EXP=$R/gate3_explore/${C12}_${R9_EXPLORE_ARM}; KIT=$R/kit
+# the arms, in training order (written by r9gate3_restart.sh; default = the study's default arms: e1 the floor pair). The study's explore arm (e1: C0) stays the explore arm.
+ARMS="$(cat $R/gate3/ARMS 2>/dev/null)"; ARMS="${ARMS:-$R9_DEFAULT_ARMS}"
 mkdir -p $R/gate3 $R/runs.d
 ev() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $*" >> "$STAT"; echo "ZZR9E1CHAIN-$1ZZ $(date -u +%H:%M:%SZ) ${*:2}"; }
 stop() { ev "STOP-$1" "${@:2}"; exit 3; }
@@ -23,17 +27,17 @@ status_of() { "$PY" -c 'import json,sys; print(json.load(open(sys.argv[1],encodi
 wait_for() { # $1 = file, $2 = max seconds -> 0 when present+non-empty
   local t0=$(date +%s); while [ ! -s "$1" ]; do [ $(( $(date +%s) - t0 )) -gt "$2" ] && return 1; sleep 20 9>&- 200>&-; done; return 0; }
 [ "${#SHA}" = 40 ] || stop BADCOMMIT "launch_tree.commit"
-ev START "commit $C12 tree $T arms [$ARMS]"
+ev START "commit $C12 tree $T arms [$ARMS]$R9_STUDY_NOTE"
 
 # ---- A: wait for the exploratory smoke evidence (a crashed/refused explore ends the wait) -------------------------------------
 t0=$(date +%s)
 while :; do
   [ -s "$EXP/evidence/G-LIVE.json" ] && [ -s "$EXP/evidence/G-CKPT.json" ] && break
-  grep -q 'ZZR9E1G3-C0-explore-\(DONE\|REFUSED\)ZZ' $R/logs/r9gate3_explore_${C12}_C0.out 2>/dev/null && break
+  grep -q "ZZR9E1G3-${R9_EXPLORE_ARM}-explore-\(DONE\|REFUSED\)ZZ" $R/logs/r9gate3_explore_${C12}_${R9_EXPLORE_ARM}.out 2>/dev/null && break
   [ $(( $(date +%s) - t0 )) -gt 5400 ] && stop EXPLORE-SMOKE-TIMEOUT "no smoke evidence in 90 min"
   sleep 20 9>&- 200>&-
 done
-grep -q 'ZZR9E1G3-C0-explore-REFUSEDZZ' $R/logs/r9gate3_explore_${C12}_C0.out 2>/dev/null && stop EXPLORE-REFUSED "see $R/logs/r9gate3_explore_${C12}_C0.out"
+grep -q "ZZR9E1G3-${R9_EXPLORE_ARM}-explore-REFUSEDZZ" $R/logs/r9gate3_explore_${C12}_${R9_EXPLORE_ARM}.out 2>/dev/null && stop EXPLORE-REFUSED "see $R/logs/r9gate3_explore_${C12}_${R9_EXPLORE_ARM}.out"
 
 # ---- B: start the commit-bound Thor suite (CPU only, lowest priority) ----------------------------------------------------------
 if [ ! -e "$G/results/ALLDONE" ] && [ ! -s "$G/runner.pid" ]; then
@@ -45,13 +49,13 @@ fi
 
 # ---- C: the exploratory gate must end with six PASS ----------------------------------------------------------------------------
 t0=$(date +%s)
-while ! grep -q 'ZZR9E1G3-C0-explore-\(DONE\|REFUSED\)ZZ' $R/logs/r9gate3_explore_${C12}_C0.out 2>/dev/null; do
+while ! grep -q "ZZR9E1G3-${R9_EXPLORE_ARM}-explore-\(DONE\|REFUSED\)ZZ" $R/logs/r9gate3_explore_${C12}_${R9_EXPLORE_ARM}.out 2>/dev/null; do
   [ $(( $(date +%s) - t0 )) -gt 7200 ] && { kill -- -"$(cat $G/runner.pid)" 2>/dev/null; stop EXPLORE-TIMEOUT "explore gate did not end in 2 h"; }
   sleep 30 9>&- 200>&-
 done
 BAD=""; for c in G-HYG G-DVB G-LIVE G-CKPT G-EVAL G-CLOCK; do s="$(status_of $EXP/evidence/$c.json)"; [ "$s" = PASS ] || BAD="$BAD $c=${s:-MISSING}"; done
-if [ -n "$BAD" ]; then kill -- -"$(cat $G/runner.pid)" 2>/dev/null; stop EXPLORE-NOT-PASS "$BAD (read $EXP/evidence and $R/gate3_explore/${C12}_C0.timings.txt); suite runner killed"; fi
-ev EXPLORE-PASS "six non-suite checks PASS on C0 (non-token run)"
+if [ -n "$BAD" ]; then kill -- -"$(cat $G/runner.pid)" 2>/dev/null; stop EXPLORE-NOT-PASS "$BAD (read $EXP/evidence and $R/gate3_explore/${C12}_${R9_EXPLORE_ARM}.timings.txt); suite runner killed"; fi
+ev EXPLORE-PASS "six non-suite checks PASS on ${R9_EXPLORE_ARM} (non-token run)"
 
 # ---- D: the suite -> verdict -> suite-bind -> precheck --------------------------------------------------------------------------
 if [ -s "$G/suite_bound.json" ] && tail -1 $G/precheck.out 2>/dev/null | grep -q '^G-SUITE PRECHECK: PASS'; then ev SUITE-BOUND "already bound + precheck PASS (re-entry): $G/suite_bound.json"; else
@@ -65,7 +69,7 @@ ev SUITE-VERDICT "$V"
 case "$V" in VERDICT\ *) ;; *) stop SUITE-VERDICT-UNREADABLE "no verdict.json (read $G/verdict.out)";; esac
 ( cd $G/CAND && PYTHONPATH=$G/CAND/stack $PY stack/scripts/launch_gate.py suite-bind --verdict $G/v/verdict.json --cand-tree $G/CAND --commit $SHA --out $G/suite_bound.json > $G/suite_bind.out 2>&1 9>&- 200>&- )
 grep -q "ZZSUITE-BOUND-${C12}ZZ" $G/suite_bind.out && [ -s $G/suite_bound.json ] || stop SUITE-BIND "no bound file (read $G/suite_bind.out)"
-( cd /tmp && $PY $KIT/r9w_gsuite_precheck.py $T $G/suite_bound.json $SHA refcv9-e1rig > $G/precheck.out 2>&1 9>&- 200>&- )
+( cd /tmp && $PY $KIT/r9w_gsuite_precheck.py $T $G/suite_bound.json $SHA $R9_PROFILE > $G/precheck.out 2>&1 9>&- 200>&- )
 tail -1 $G/precheck.out | grep -q '^G-SUITE PRECHECK: PASS' || stop SUITE-PRECHECK-FAIL "the gate's own judge refuses the suite verdict: read $G/precheck.out (outside-pinned failures need a reviewed pin-file edit: MM)"
 ev SUITE-BOUND "suite_bound.json precheck PASS: $G/suite_bound.json"
 fi
@@ -78,7 +82,7 @@ fi
 PINNED_WAIT_S="${R9_PINNED_WAIT_S:-14400}"
 PASSED=""; TRAINED=""
 for A in $ARMS; do
-  D=$R/devbox_evidence_${C12}_${A}; ARGV=$T/stack/ops/runs.d/r9e1_${A}.argv.json; ARM=r9e1_$A
+  D=$R/devbox_evidence_${C12}_${A}; ARGV=$T/stack/ops/runs.d/${R9_PREFIX}_${A}.argv.json; ARM=${R9_PREFIX}_$A
   OUTD="$($PY -c 'import json,sys; d=json.load(open(sys.argv[1])); a=d["argv"] if isinstance(d,dict) else d; print(a[a.index("--out")+1])' "$ARGV" 2>/dev/null)"
   if [ -n "$OUTD" ] && [ -s "$OUTD/summary.json" ] && grep -q '"done"[[:space:]]*:[[:space:]]*true' "$OUTD/summary.json"; then
     ev "$A-ALREADY-DONE" "$OUTD/summary.json is done: not relaunched (re-entry)"; continue; fi

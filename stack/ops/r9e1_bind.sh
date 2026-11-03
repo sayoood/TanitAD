@@ -3,6 +3,14 @@
 # (launch-gate profile `refcv9-e1rig`; C12-E1 blocker 2).
 #
 #   r9e1_bind.sh [--dry-run] <map|box|map-banded|box-b3> <ARM> --commit SHA40 [--root DIR] [--code DIR] [--inputs DIR] [--reuse-from BASE_ARM]
+#                [--argv-prefix r9e1|r9e2] [--reuse-argv-prefix r9e1|r9e2] [--reuse-root DIR]
+#
+#   --argv-prefix P (default r9e1 = the E1 perception rig, EXACTLY as before): the study this arm belongs to. ARM names `stack/ops/runs.d/<P>_<ARM>.argv.json` (r9e2 resolves the full-model
+#   arm `r9e2_K0.argv.json`); the study -- root (--root's default), the gate profile the python assertions judge under (refcv9-e1rig / refcv9-e2) -- comes from
+#   `r9e1_gate3/r9gate3_study.sh` next to this script, the SAME definition the gate3 chain reads. A prefix no study owns REFUSES before any directory, lock or GPU is touched.
+#   The study is read from THIS flag only, never from R9_STUDY: a binding record is bound to a whole argv, and an ambient variable must not retarget it.
+#   --reuse-argv-prefix / --reuse-root: where the BASE arm of --reuse-from lives when it belongs to ANOTHER study (default: this arm's own prefix and --root). K0 (r9e2) reuses C0's
+#   map record: `--argv-prefix r9e2 map K0 --reuse-from C0 --reuse-argv-prefix r9e1 --reuse-root /home/nvidia/r8ns/r9e1` (the base record must exist at THIS --commit's c12).
 #
 #   --reuse-from BASE_ARM (E1-REUSE, MM 207ebd, PINNED; kinds map and box only): take a REUSE binding instead of a 2,000 s Thor run. NO lock, NO GPU. The harness's OWN
 #   `--identity-only` runs on THIS arm's rendered invocation AND on the base's saved one ($ROOT/ovf_<BASE>_<C12>/<kind>.args: what the base ACTUALLY ran); the two
@@ -58,26 +66,36 @@
 # Markers:  ZZR9E1BIND-<KIND>-<ARM>-OKZZ  ZZR9E1BIND-REFUSEDZZ  ZZR9E1BIND-DRYOKZZ
 set -u
 DRY=0; if [ "${1:-}" = "--dry-run" ]; then DRY=1; shift; fi
+AP=r9e1; if [ "${1:-}" = "--argv-prefix" ]; then AP="${2:-}"; shift 2 || true; fi   # --argv-prefix is also accepted BEFORE <kind> (every other flag follows <ARM>)
 KIND="${1:-}"; ARM="${2:-}"; shift 2 || true
-ROOT=/home/nvidia/r8ns/r9e1; CODE=""; COMMIT=""; INPUTS=""; REUSE=""
+ROOT=""; CODE=""; COMMIT=""; INPUTS=""; REUSE=""; RAP=""; RROOT=""   # ROOT "" = the study's root (resolved below; r9e1 for the default prefix)
 LOCKF=/home/nvidia/refcv7_post/thor_gpu.lock
 _VENV_PY=/home/nvidia/venvs/tanitad-train/bin/python
 PY="${PYTHON:-$( [ -x "$_VENV_PY" ] && echo "$_VENV_PY" || echo python3 )}"
 export MSYS_NO_PATHCONV=1
 while [ $# -gt 0 ]; do case "$1" in
   --commit) COMMIT="$2"; shift 2;; --root) ROOT="$2"; shift 2;; --code) CODE="$2"; shift 2;; --inputs) INPUTS="$2"; shift 2;; --reuse-from) REUSE="$2"; shift 2;;
+  --argv-prefix) AP="$2"; shift 2;; --reuse-argv-prefix) RAP="$2"; shift 2;; --reuse-root) RROOT="$2"; shift 2;;
   *) echo "REFUSED: unknown argument $1"; echo "ZZR9E1BIND-REFUSEDZZ"; exit 2;; esac; done
-CODE="${CODE:-$ROOT/launch_tree}"
-INPUTS="${INPUTS:-/home/nvidia/refcv7_bind/run_map/inputs}"      # the A19 MAIN spec + frameset (refcv8's measured location)
 say() { echo "[r9e1-bind:$KIND:$ARM] $*"; }
 die() { say "REFUSED: $*"; echo "ZZR9E1BIND-REFUSEDZZ"; exit 10; }
 pyval() { "$PY" -c "$1" "${@:2}" 9>&- 200>&- | tr -d '\r'; }
+# the study of --argv-prefix: ONE definition (r9gate3_study.sh, next to this script), read from the flag and never from R9_STUDY
+R9_STUDY_NOAUTOLOAD=1
+. "$(dirname "${BASH_SOURCE[0]}")/r9e1_gate3/r9gate3_study.sh" || die "no r9e1_gate3/r9gate3_study.sh next to this script (the study definition)"
+STUDY="$(r9_study_of_prefix "$AP")" || die "--argv-prefix '$AP' is not the argv prefix of any study (r9gate3_study.sh: $R9_STUDIES -> r9e1 / r9e2)"
+r9_study_load "$STUDY"; PREFIX="$R9_PREFIX"; export R9_PROFILE   # R9_PROFILE: the gate profile the python assertions below judge under (they default to refcv9-e1rig when it is unset)
+ROOT="${ROOT:-$R9_ROOT}"; RAP="${RAP:-$PREFIX}"
+r9_study_of_prefix "$RAP" > /dev/null || die "--reuse-argv-prefix '$RAP' is not the argv prefix of any study"
+RROOT="${RROOT:-$ROOT}"
+CODE="${CODE:-$ROOT/launch_tree}"
+INPUTS="${INPUTS:-/home/nvidia/refcv7_bind/run_map/inputs}"      # the A19 MAIN spec + frameset (refcv8's measured location)
 case "$KIND" in map|box|map-banded|box-b3) ;; *) die "kind must be map|box|map-banded|box-b3";; esac
 # E1-REC2: the arm is any r9e1_<ARM>.argv.json of the shipped tree (checked below) -- only the NAME is validated here (it builds a path)
 case "$ARM" in ""|*[!A-Za-z0-9_]*) die "arm must be the NAME of a stack/ops/runs.d/r9e1_<ARM>.argv.json (letters, digits, _)";; esac
 [ "${#COMMIT}" = 40 ] || die "--commit must be 40 chars"
 C12="${COMMIT:0:12}"; BD="$ROOT/ovf_${ARM}_$C12"; HERE="$CODE/stack/scripts"
-ARGV="$CODE/stack/ops/runs.d/r9e1_$ARM.argv.json"
+ARGV="$CODE/stack/ops/runs.d/${PREFIX}_$ARM.argv.json"
 [ -f "$ARGV" ] || die "no rig argv $ARGV in the shipped tree"
 # E1-REC2: the KIND must match what THIS argv builds (the gate demands the lever's OWN record, bound to the whole argv sha256). The flag list is read
 # by the GATE'S OWN loader + `flag_pairs` (no second parser); refused BEFORE any directory, lock or GPU is touched.
@@ -136,10 +154,10 @@ fi
 # ---- E1-REUSE: bind THIS arm to a BASE arm's PASSING record when the harness invocation is IDENTICAL (computed by the harness's own --identity-only). No lock, no GPU.
 if [ -n "$REUSE" ]; then
   case "$REUSE" in ""|*[!A-Za-z0-9_]*) die "--reuse-from must be the NAME of a base arm (letters, digits, _)";; esac
-  [ "$REUSE" != "$ARM" ] || die "--reuse-from names the arm itself"
+  { [ "$REUSE" != "$ARM" ] || [ "$RAP" != "$PREFIX" ]; } || die "--reuse-from names the arm itself"
   { [ "$KIND" = map ] || [ "$KIND" = box ]; } || die "--reuse-from covers the kinds map and box only: a banded / own-head argv ($KIND) needs its OWN record"
-  BASE_ARGV="$CODE/stack/ops/runs.d/r9e1_$REUSE.argv.json"; [ -f "$BASE_ARGV" ] || die "no base rig argv $BASE_ARGV in the shipped tree"
-  BBD="$ROOT/ovf_${REUSE}_$C12"; CHECK=G-BOX-OVERFIT; BREC="$BBD/run_box/gbo_binding.json"
+  BASE_ARGV="$CODE/stack/ops/runs.d/${RAP}_$REUSE.argv.json"; [ -f "$BASE_ARGV" ] || die "no base rig argv $BASE_ARGV in the shipped tree"
+  BBD="$RROOT/ovf_${REUSE}_$C12"; CHECK=G-BOX-OVERFIT; BREC="$BBD/run_box/gbo_binding.json"
   if [ "$KIND" = map ]; then CHECK=G-MAP-OVERFIT; BREC="$BBD/run_map/g_map_overfit.json"; fi
   BCLO="$BBD/${KIND}_closure.json"
   BASHA="$(pyval 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L; print(L.argv_sha256(L.load_argv_file(sys.argv[2])))' "$CODE" "$BASE_ARGV")"
@@ -176,7 +194,7 @@ print("EQUAL " + a["identity_sha256"] if a["identity_sha256"] == b["identity_sha
   [ -s "$BREC" ] && [ -s "$BCLO" ] || die "the base arm $REUSE has no PASSING $KIND record + closure at this commit ($BREC, $BCLO): run it first"
   mkdir -p "$BD/run_$KIND" 2>/dev/null; cp -p "$BCLO" "$BD/${KIND}_closure.json" || die "could not copy the base closure"
   "$PY" -c 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L
-r, d = L.write_reuse_binding("refcv9-e1rig", sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7], sys.argv[8], sys.argv[9], sys.argv[10], sys.argv[11], sys.argv[12], sys.argv[1], closure_option=sys.argv[13])
+r, d = L.write_reuse_binding(__import__("os").environ.get("R9_PROFILE") or "refcv9-e1rig", sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6], sys.argv[7], sys.argv[8], sys.argv[9], sys.argv[10], sys.argv[11], sys.argv[12], sys.argv[1], closure_option=sys.argv[13])
 print(chr(10).join("REFUSED: " + x for x in r) if r else "ASSERT-OK reuse binding (" + str(d.get("sha256"))[:16] + ")")' "$CODE" "$CHECK" "$ARM" "$REUSE" "$ARGV" "$BASE_ARGV" "$BREC" "$BCLO" \
       "$BD/$KIND.identity.json" "$BD/$KIND.base.identity.json" "$COMMIT" "$BD/run_$KIND/reuse_binding.json" "$BD/${KIND}_closure.json" > "$BD/$KIND.reuse.txt" 2>&1 9>&- 200>&-
   [ "$(grep -c '^ASSERT-OK' "$BD/$KIND.reuse.txt")" = 1 ] || die "reuse binding refused by the gate's judge: $(tr -d '\r' < "$BD/$KIND.reuse.txt" | grep '^REFUSED' | head -3 | tr '\n' ' ')"
@@ -205,11 +223,11 @@ T1=$(date +%s); echo "$T0 $T1 $((T1 - T0))" > "$BD/$KIND.TIMING"; say "harness f
 [ "$(grep -c '^ASSERT-OK' "$BD/$KIND.closure.txt")" = 1 ] || die "$KIND closure refused: $(tr -d '\r' < "$BD/$KIND.closure.txt" | head -3 | tr '\n' ' ')"
 if [ "$KIND" = map-banded ]; then   # the GATE'S OWN judge on THIS arm's argv (no second implementation); ASSERT-OK only when it has no reason
   "$PY" -c 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L
-a = L.load_argv_file(sys.argv[3]); r, d = L.judge_map_overfit_banded(L.PROFILES["refcv9-e1rig"], sys.argv[2], sys.argv[4], argv_sha=L.argv_sha256(a), argv=a)
+a = L.load_argv_file(sys.argv[3]); r, d = L.judge_map_overfit_banded(L.PROFILES[__import__("os").environ.get("R9_PROFILE") or "refcv9-e1rig"], sys.argv[2], sys.argv[4], argv_sha=L.argv_sha256(a), argv=a)
 print(chr(10).join("REFUSED: " + x for x in r) if r else "ASSERT-OK map-banded record (" + str(d.get("sha256"))[:16] + ")")' "$CODE" "$REC" "$ARGV" "$COMMIT" > "$BD/$KIND.record.txt" 2>&1 9>&- 200>&-
 elif [ "$KIND" = box-b3 ]; then   # the GATE'S OWN judges on THIS arm's argv: the full G-BOX-OVERFIT re-judge AND the E1-BOX-OWN-RECORD closure
   "$PY" -c 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L
-a = L.load_argv_file(sys.argv[3]); sha = L.argv_sha256(a); P = L.PROFILES["refcv9-e1rig"]
+a = L.load_argv_file(sys.argv[3]); sha = L.argv_sha256(a); P = L.PROFILES[__import__("os").environ.get("R9_PROFILE") or "refcv9-e1rig"]
 r, d = L.judge_box_overfit(P, sys.argv[2], sys.argv[4], argv_sha=sha, argv=a)
 ok, why = L.own_record_closes(P, "E1-BOX-OWN-RECORD", a, {"box_overfit_record": sys.argv[2]}, sys.argv[4], sha)
 r = list(r) + ([] if ok else list(why))
@@ -218,13 +236,13 @@ else
 "$PY" "$HERE/refcv8_assemble_argv.py" --assert-record "$REC" --kind "$KIND" > "$BD/$KIND.record.txt" 2>&1 9>&- 200>&-
 if [ "$KIND" = box ] && [ -n "$BAUX" ]; then   # E1-REC3: an aux-carrying argv: ALSO the GATE'S OWN /1 judge on THIS argv (it reads aux_heads_not_certified)
   "$PY" -c 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L
-a = L.load_argv_file(sys.argv[3]); r, d = L.judge_box_overfit(L.PROFILES["refcv9-e1rig"], sys.argv[2], sys.argv[4], argv_sha=L.argv_sha256(a), argv=a)
+a = L.load_argv_file(sys.argv[3]); r, d = L.judge_box_overfit(L.PROFILES[__import__("os").environ.get("R9_PROFILE") or "refcv9-e1rig"], sys.argv[2], sys.argv[4], argv_sha=L.argv_sha256(a), argv=a)
 print(chr(10).join("REFUSED: " + x for x in r) if r else "AUXJUDGE-OK box record with aux stamp " + str(d.get("aux_heads_not_certified")))' "$CODE" "$REC" "$ARGV" "$COMMIT" >> "$BD/$KIND.record.txt" 2>&1 9>&- 200>&-
   [ "$(grep -c '^AUXJUDGE-OK' "$BD/$KIND.record.txt")" = 1 ] || die "$KIND record refused by the gate's /1 judge (aux stamp): $(tr -d '\r' < "$BD/$KIND.record.txt" | grep '^REFUSED' | head -3 | tr '\n' ' ')"
 fi
 if [ -n "$T1F" ] && { [ "$KIND" = box ] || [ "$KIND" = map ]; }; then   # E1-REC4: a T1 argv: the GATE'S OWN stamp clause on THIS argv (box: the whole /1 judge, which calls it)
   "$PY" -c 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L
-a = L.load_argv_file(sys.argv[3]); sha = L.argv_sha256(a); P = L.PROFILES["refcv9-e1rig"]
+a = L.load_argv_file(sys.argv[3]); sha = L.argv_sha256(a); P = L.PROFILES[__import__("os").environ.get("R9_PROFILE") or "refcv9-e1rig"]
 if sys.argv[5] == "box":
     r, d = L.judge_box_overfit(P, sys.argv[2], sys.argv[4], argv_sha=sha, argv=a); s = d.get("bev_warp_not_certified")
 else:

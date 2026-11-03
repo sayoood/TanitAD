@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
-# r9gate3_thor_gate.sh -- THOR side: one launch-gate run of profile refcv9-e1rig for ONE arm.
+# r9gate3_thor_gate.sh -- THOR side: one launch-gate run of the study's profile (R9_STUDY: e1 = refcv9-e1rig, the default; e2 = refcv9-e2) for ONE arm.
+#   The study (root, argv prefix, profile) comes from r9gate3_study.sh NEXT TO THIS SCRIPT -- never from a literal here.
 #   r9gate3_thor_gate.sh explore <ARM>            non-token exploration of the GPU/data checks (G-HYG,G-DVB,G-LIVE,G-CKPT,G-EVAL,G-CLOCK) -> $R/gate3_explore/thor_<ARM>
 #   r9gate3_thor_gate.sh final   <ARM> <SUITE_BOUND_JSON> <DEVBOX_EVIDENCE_DIR>   the real --stage thor run -> $R/gate3/<ARM>/PASS_<c12>.json
 # Every verdict is read from an ARTIFACT (token / evidence JSON), never from $?.  The Thor GPU lock is held for the whole gate run
 # (G-LIVE / G-CKPT / G-EVAL use the GPU); the GPU must have NO compute app under the lock.   Markers: ZZR9E1G3-<ARM>-<MODE>-{PASS,NOTPASS,REFUSED}ZZ
 set -u
 MODE="${1:-}"; ARM="${2:-}"; SUITE="${3:-}"; DEVEV="${4:-}"
-R=/home/nvidia/r8ns/r9e1; T=$R/launch_tree; PY=/home/nvidia/venvs/tanitad-train/bin/python; LOCKF=/home/nvidia/refcv7_post/thor_gpu.lock
-SHA="$(cat $R/launch_tree.commit)"; C12="${SHA:0:12}"; ARGV=$T/stack/ops/runs.d/r9e1_${ARM}.argv.json
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+. "$HERE/r9gate3_study.sh" || { echo "ZZR9E1G3-${ARM}-${MODE}-REFUSEDZZ"; exit 10; }    # R9_ROOT R9_PREFIX R9_PROFILE ... (one definition; refuses an unknown study)
+R=$R9_ROOT; T=$R/launch_tree; PY=/home/nvidia/venvs/tanitad-train/bin/python; LOCKF=/home/nvidia/refcv7_post/thor_gpu.lock
+SHA="$(cat $R/launch_tree.commit)"; C12="${SHA:0:12}"; ARGV=$T/stack/ops/runs.d/${R9_PREFIX}_${ARM}.argv.json
 EVO=$T/stack/ops/refcv8_eval_remap_a2_thor.json
-REC12="$(cat $R/gate3/REC_C12 2>/dev/null || echo d297ba563d8f)"; OV=$R/ovf_${ARM}_$REC12
+REC12="$(cat $R/gate3/REC_C12 2>/dev/null || echo $R9_DEFAULT_REC12)"; OV=$R/ovf_${ARM}_$REC12
 # the record KIND follows the arm's argv (E1_OWN_RECORDS): a --r9-map-banded arm binds its /2-banded map record
 MREC=$OV/run_map/g_map_overfit.json; MCLO=$OV/map_closure.json; BREC=$OV/run_box/gbo_binding.json; BCLO=$OV/box_closure.json
 grep -q '"--r9-map-banded"' "$ARGV" 2>/dev/null && { MREC=$OV/run_map-banded/g_map_overfit.json; MCLO=$OV/map-banded_closure.json; }
@@ -17,6 +20,7 @@ say() { echo "[r9e1-gate3:$MODE:$ARM] $(date -u +%H:%M:%SZ) $*"; }
 refuse() { say "REFUSED: $*"; echo "ZZR9E1G3-${ARM}-${MODE}-REFUSEDZZ"; exit 10; }
 case "$ARM" in ""|*/*|*" "*) refuse "bad arm '$ARM'";; esac   # any arm with a committed argv (checked below)
 [ "${#SHA}" = 40 ] || refuse "launch_tree.commit is not a 40-char sha"
+[ -n "$REC12" ] || refuse "no $R/gate3/REC_C12 stamp and study $R9_STUDY has no default record commit (r9gate3_restart.sh writes it from its third argument)"
 [ -f "$ARGV" ] || refuse "no argv $ARGV"; [ -f "$EVO" ] || refuse "no remap override file $EVO"
 # >>> E1-REUSE record pick (byte-identical in r9gate3_thor_gate.sh and r9gate3_rec_explore.sh; tests/test_launch_gate_e1rig_reuse.py runs this block)
 # An arm bound to a BASE arm's PASSING record (r9e1_bind.sh --reuse-from) has $OV/run_<kind>/reuse_binding.json INSTEAD of a run record; the gate's G-MAP-OVERFIT /
@@ -31,7 +35,7 @@ done
 for f in $MREC $MCLO $BREC $BCLO; do [ -s "$f" ] || refuse "missing overfit record/closure $f"; done
 export OMP_NUM_THREADS=8 PYTHONIOENCODING=utf-8 PYTHONPATH=$T/stack:$T/stack/scripts:$T/taniteval HF_HUB_OFFLINE=1 HF_HUB_DISABLE_IMPLICIT_TOKEN=1 HF_TOKEN_PATH=/nonexistent/hf_token
 unset HF_TOKEN HUGGING_FACE_HUB_TOKEN HUGGINGFACE_HUB_TOKEN
-A=(run --profile refcv9-e1rig --tree "$T" --commit "$SHA" --argv-file "$ARGV" --eval-kit /home/nvidia --eval-remap-overrides "$EVO" --omp 8
+A=(run --profile "$R9_PROFILE" --tree "$T" --commit "$SHA" --argv-file "$ARGV" --eval-kit /home/nvidia --eval-remap-overrides "$EVO" --omp 8
    --map-overfit-record $MREC --map-overfit-closure $MCLO
    --box-overfit-record $BREC --box-overfit-closure $BCLO)
 case "$MODE" in
