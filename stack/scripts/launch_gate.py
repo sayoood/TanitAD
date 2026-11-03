@@ -7099,6 +7099,32 @@ def latest_smoke_config(ctx: "Ctx") -> Path | None:
     return runs[-1] if runs else None
 
 
+def rig_eval_probe_dataset(L, cfg, args) -> tuple:
+    """refcv9-e1rig G-EVAL: the held-out eval dataset the RIG reads -> (dataset, episodes, record).
+
+    `L.build_eval_dataset` (the eval loader's, vendored) raises "the run's argv has no --eval-labels" on a rig argv, which
+    carries no label flag by design. This is `train()`'s own construction of the rig's held-out eval dataset
+    (refc_v3_train.py `e_ds = dcls(e_eps, **kw)` .. `enable_pose_sync`), minus every label block that train() itself runs only
+    `if args.eval_labels`: the same provider call, the same window kwargs, `u8_frames`, `newest_row_only` (refcv9 S1: the rig
+    ships the ONE row it reads) and the pose-sync clock. The probe forward needs no agent / map / 3-D join (only the LOSS reads
+    them), exactly as the non-rig probe's `with_perception_targets=False`. Reached ONLY under `--r9-perc-rig`."""
+    from tanitad.data.v2_dataset import build_v2_providers
+    tr = L.trainer()
+    if bool(getattr(args, "eval_labels", None)):
+        raise GateError("refcv9-e1rig: the rig argv carries --eval-labels -- the rig reads no label; refusing to guess")
+    kw = dict(window=cfg.core.window, max_horizon=20, channels=cfg.core.encoder.in_channels)
+    e_eps = build_v2_providers([args.eval_cache], lru_size=args.v2_lru)
+    e_ds = tr.V3Dataset(e_eps, **kw)
+    u8 = bool(getattr(args, "u8_batches", False))
+    e_ds.u8_frames = u8
+    e_ds.newest_row_only = u8                                  # train(): bool(_r9rig_on and u8)
+    rec: dict = {"rig": True, "labels": None, "n_episodes": len(e_eps), "n_windows": len(e_ds),
+                 "newest_row_only": u8, "label_clock": "NOT ATTACHED: the rig reads no v7 label"}
+    if getattr(args, "pose_sync_sidecar", None):               # train(): refcv8 X10, the eval GT rides the SAME clock
+        rec["pose_sync"] = e_ds.enable_pose_sync(args.pose_sync_sidecar)
+    return e_ds, e_eps, rec
+
+
 def rig_eval_build_reasons(args_t, model_t, model_l) -> tuple[list[str], dict]:
     """G-EVAL under `--r9-perc-rig` (the gate's OWN read of both builds): the eval loader must build the RIG from the run
     record -- `_perc_rig` set and NO planner / tactical attribute path -- exactly as the trainer's model is. A loader that
@@ -7234,8 +7260,14 @@ def eval_identity(ctx: Ctx, T, model_t, args_t, scratch: Path,
     if pb_t != pb_l:
         reasons.append(f"param_breakdown differs: trainer {pb_t} vs loader {pb_l}")
     # the forward on a FIXED real batch
-    e_ds, e_eps, drec = L.build_eval_dataset(model_l, cfg_l, args_l, config,
-                                             with_perception_targets=False)
+    if bool(getattr(args_l, "r9_perc_rig", False)):
+        # refcv9-e1rig: the rig's argv carries no --eval-labels (it reads no tactical / nav / speed label), and the vendored
+        # loader's `build_eval_dataset` REFUSES such an argv -- so the probe batch comes from the dataset contract train()
+        # builds for the rig's held-out eval (MEASURED 2026-11-03: G-EVAL FAIL "the run's argv has no --eval-labels")
+        e_ds, e_eps, drec = rig_eval_probe_dataset(L, cfg_l, args_l)
+    else:
+        e_ds, e_eps, drec = L.build_eval_dataset(model_l, cfg_l, args_l, config,
+                                                 with_perception_targets=False)
     idx = int(L.inrun_eval_perm(e_ds, 1, 1)[0])
     item = e_ds[idx]
     batch = torch.utils.data.default_collate([item])
