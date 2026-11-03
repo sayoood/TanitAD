@@ -108,8 +108,9 @@ class RecoverDevTable:
         ci, j = bank.ci[ok], np.asarray(a["j"])[ok].astype(np.int64)
         cols = {k: np.full(len(ok), np.nan) for k in ("v", "a", "om", "x", "y", "psi")}
         names = J["clip"].tolist()
+        read = getattr(store, "get_kin", None) or store.get          # the table reads only ``pose`` and ``kin3``: ``ClipStore.get_kin`` reads just those (bit-identical to ``get``'s; the image-feature grid is not read); a store without it keeps ``get``
         for c in np.unique(ci):
-            d = store.get(str(names[int(c)]))
+            d = read(str(names[int(c)]))
             m = np.nonzero(ci == c)[0]
             jj = j[m]
             good = (jj >= 2) & (jj < len(d["pose"])) & np.isfinite(np.asarray(d["kin3"])[np.clip(jj, 0, len(d["pose"]) - 1)]).all(1)

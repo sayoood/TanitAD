@@ -397,8 +397,39 @@ class ClipStore:
         self.lru, self.grid, self._c = int(lru), grid, {}
         self.kin_mode = check_kin_mode(kin_mode)
         self.tracks = tracks
+        self.kin_fallbacks = 0          # get_kin calls whose file could not be memory-mapped and took the full load (a legacy-format file or an old torch)
         if self.kin_mode == "yaw" and not tracks:
             raise ValueError("kin_mode 'yaw' needs the native pose tracks (native_tracks.pt: --tracks); the cache holds only the even frames")
+
+    def get_kin(self, clip: str) -> dict:
+        """``{"pose": float64 [T, 4], "kin3": float64 [T, 3]}`` of ``clip`` -- EXACTLY ``get(clip)["pose"]`` and ``get(clip)["kin3"]`` and nothing else (the RECOVER deviation table reads only these two).
+
+        ``get`` does a full ``torch.load`` of the clip file, image-feature grid included (the bulk of the file, read from a USB HDD on box 2); this memory-maps the file (``torch.load(..., mmap=True)``) and touches only
+        ``pose_grid`` (and ``kin3`` in the steer mode), so the grid's pages are never read. The casts, the yaw-mode track check and ``yaw_kin_from_track`` are the ones ``get`` runs, so the arrays are bit-identical
+        (``stack/tests/test_v8f_fast_table.py`` compares them array for array). A file ``mmap`` refuses (``RuntimeError``) or a torch whose ``torch.load`` has no ``mmap`` (``TypeError``) takes the full load and is counted in ``kin_fallbacks``.
+        Reads no other cache key and does not enter the LRU; a clip already in the LRU is answered from it. The grid's row count is still checked against the pose rows (a shape read, not a data read)."""
+        if clip in self._c:
+            d = self._c[clip]
+            return {"pose": d["pose"], "kin3": d["kin3"]}
+        import torch
+        path = self.dir / f"{clip}.pt"
+        try:
+            o = torch.load(path, map_location="cpu", weights_only=True, mmap=True)
+        except (RuntimeError, TypeError):              # not mmap-loadable: ``mmap`` refuses this file (RuntimeError), or this torch's ``torch.load`` has no ``mmap`` (TypeError). A real fault (a missing file ...) re-raises from the full load below.
+            self.kin_fallbacks += 1
+            o = torch.load(path, map_location="cpu", weights_only=True)
+        pg = o["pose_grid"].numpy().astype(np.float64)
+        if self.kin_mode == "yaw":
+            if clip not in self.tracks:
+                raise KeyError(f"{clip}: no native pose track in the sidecar")
+            check_track_matches_grid(self.tracks[clip], pg, clip)
+            kin3, _ = yaw_kin_from_track(self.tracks[clip])
+        else:
+            kin3 = o["kin3"].numpy().astype(np.float64)
+        T = len(pg)
+        assert o[self.grid].shape[0] == T, f"{clip}: feats {o[self.grid].shape[0]} != pose {T}"
+        del o                                           # release the mapping (a held mapping blocks deleting the file on Windows)
+        return {"pose": pg, "kin3": kin3}
 
     def get(self, clip: str) -> dict:
         if clip in self._c:
