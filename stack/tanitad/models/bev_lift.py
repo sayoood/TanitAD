@@ -24,6 +24,11 @@ the pixels or already owns the convention:
   (``stack/scripts/v2_compressed.py:45-50``). The boresight sits at the frame
   centre for BOTH rigs (cy ~543 / ~755): the per-clip cy is inside the frame by
   construction, the per-clip pitch comes from the extrinsic.
+  R10 (refcv9, ``2026-11-03-r9-pitch-oracle``): :func:`compose_pitch_delta` composes a PER-FRAME pitch delta onto that
+  static extrinsic, about the camera's LATERAL (+x) axis, BEFORE the ray / ground intersection
+  (``build_lift_geometry(..., pitch_delta_rad=)``). Sign: NOSE-DOWN POSITIVE (right-handed rotation about the rig +y = LEFT
+  axis, x forward, z up) -- the sign of ``euler_zyx_deg`` pitch of the egomotion quaternion. ``0.0`` (the default) skips the
+  composition: the geometry is bit-identical to the tip. T0 ORACLE use only: egomotion pitch at inference is not admissible.
   In continuous pixel coordinates (pixel i spans [i, i+1)) this is the design's
   ``az = (u - W/2)/f_ref``; in index coordinates it is ``(col - (W-1)/2)/f_ref``.
 * the grid: ``tanitad.data.bev_raster.cell_centers_xy(GRID_DEFAULT)``, the same
@@ -62,7 +67,7 @@ from tanitad.data.rig_projection import RigCamera, project_cam_to_frame, rig_to_
 __all__ = [
     "HEIGHTS_M", "REFC_FEATURE_CENTRE_OFFSET_PX", "LiftGeometry", "BEVLift",
     "camera_from_extrinsics", "project_rig_points", "pixel_to_feature_grid",
-    "build_lift_geometry", "receptive_field_centre", "refc_trunk_path",
+    "build_lift_geometry", "receptive_field_centre", "refc_trunk_path", "compose_pitch_delta",
 ]
 
 #: heights above the road plane (rig z = 0 is the road, rig_projection.py:40-47)
@@ -85,6 +90,22 @@ def camera_from_extrinsics(extr, frame: CanonicalFrame = PHYSICALAI_WIDE120_256x
         extr = FrontWideExtrinsics(**{k: float(extr[k]) for k in
                                       ("qx", "qy", "qz", "qw", "x", "y", "z")})
     return RigCamera.from_extrinsics(extr, frame)
+
+
+def compose_pitch_delta(cam: RigCamera, pitch_delta_rad: float) -> RigCamera:
+    """``cam`` with its orientation rotated by ``pitch_delta_rad`` about its own LATERAL axis (camera +x = right), the
+    optical centre unchanged. R10 oracle hook (see the module docstring).
+
+    Sign: ``pitch_delta_rad > 0`` = NOSE DOWN (the boresight tilts toward the camera's +y = down): every flat-world point
+    moves UP in the image (its row falls). In the camera frame the new axes are ``x' = x``, ``y' = (0, cos d, -sin d)``,
+    ``z' = (0, sin d, cos d)``, so ``R' = R @ M`` with ``M`` the matrix below. ``d == 0`` returns ``cam`` itself."""
+    d = float(pitch_delta_rad)
+    if d == 0.0:
+        return cam
+    c, s = math.cos(d), math.sin(d)
+    R = cam.R_cam_to_rig
+    M = torch.tensor([[1.0, 0.0, 0.0], [0.0, c, s], [0.0, -s, c]], dtype=R.dtype, device=R.device)
+    return RigCamera(R_cam_to_rig=R @ M, t_cam_in_rig=cam.t_cam_in_rig, frame=cam.frame)
 
 
 def project_rig_points(p_rig: Tensor, cam: RigCamera) -> dict:
@@ -147,15 +168,21 @@ def build_lift_geometry(extr, *, frame: CanonicalFrame = PHYSICALAI_WIDE120_256x
                         stride: int = 16, heights_m=HEIGHTS_M,
                         grid: BEVGrid = GRID_DEFAULT,
                         centre_offset_px: float = REFC_FEATURE_CENTRE_OFFSET_PX,
-                        observed: Tensor | None = None) -> LiftGeometry:
+                        observed: Tensor | None = None,
+                        pitch_delta_rad: float = 0.0) -> LiftGeometry:
     """The lift geometry for ONE clip.
 
     ``extr``: the clip's front-wide extrinsics (``FrontWideExtrinsics``, a mapping
     with qx qy qz qw x y z, or a ``RigCamera`` on ``frame``). ``observed``: optional
     ``[H, W]`` bool observed-pixel mask of the cache frame (e.g.
     ``calib.cylindrical_grid(intr, intr.height, intr.width, frame)[1]``); a sample
-    is then valid only if its nearest pixel is observed."""
+    is then valid only if its nearest pixel is observed.
+
+    ``pitch_delta_rad`` (R10 oracle hook, default 0.0 = OFF = bit-identical to the tip): a per-frame body-pitch delta,
+    NOSE-DOWN POSITIVE, composed onto the extrinsic about the camera's lateral axis (:func:`compose_pitch_delta`)."""
     cam = camera_from_extrinsics(extr, frame)
+    if pitch_delta_rad:
+        cam = compose_pitch_delta(cam, pitch_delta_rad)
     hs = tuple(float(h) for h in heights_m)
     X, Y = cell_centers_xy(grid)                                   # [nx, ny] m
     xy = torch.stack([torch.as_tensor(X), torch.as_tensor(Y)], dim=-1).to(torch.float64)
