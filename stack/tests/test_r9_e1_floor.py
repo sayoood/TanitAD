@@ -278,7 +278,7 @@ def test_state_cli_writes_a_sourceable_file(tmp_path):
     bash = _bash(tmp_path)
     if bash:
         out = subprocess.run([bash, "-c", '. "$1"; printf "%s|%s" "$S_STATE" "$S_LINE"', "x", (tmp_path / "s.env").as_posix()],
-                             capture_output=True, text=True, timeout=60).stdout
+                             capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60).stdout
         assert out.startswith("ABORT|") and "it's \"bad\" $(x)" in out                     # quoting survived: nothing was executed
     assert ST.main(["--status", str(tmp_path / "absent.txt"), "--root", str(tmp_path), "--out", str(tmp_path / "s2.env")]) == 0
     assert "no status file yet" in (tmp_path / "s2.env").read_text(encoding="utf-8")
@@ -295,7 +295,7 @@ def _bash(tmp):
             continue
         try:
             r = subprocess.run([b, "-c", 'test -f "$1" && command -v sha256sum >/dev/null && command -v awk >/dev/null', "x", SH.as_posix()],
-                               capture_output=True, text=True, timeout=60)
+                               capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
         except (OSError, subprocess.SubprocessError):
             continue
         if r.returncode == 0:
@@ -304,7 +304,7 @@ def _bash(tmp):
 
 
 def _flock_in(bash):
-    return subprocess.run([bash, "-c", "command -v flock"], capture_output=True, text=True, timeout=60).returncode == 0
+    return subprocess.run([bash, "-c", "command -v flock"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60).returncode == 0
 
 
 def test_shell_script_flags_exist_in_the_scripts_it_calls():
@@ -440,7 +440,7 @@ def test_dry_run_waits_on_a_held_gpu_lock_and_runs_nothing_without_it(dry):
     dry.chain(*OLD, "C0-LAUNCH s; run dir %s" % c0.as_posix(), "C0-DONE ok", "C1-LAUNCH s; run dir %s" % c1.as_posix(), "C1-DONE ok")
     if _flock_in(dry.bash):
         import fcntl
-        fh = open(dry.lockf, "w")
+        fh = open(dry.lockf, "w", encoding="utf-8")
         fcntl.flock(fh, fcntl.LOCK_EX)
         release = lambda: (fcntl.flock(fh, fcntl.LOCK_UN), fh.close())                   # noqa: E731
     else:
