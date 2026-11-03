@@ -1,0 +1,8 @@
+SWAPCTL (READER_FIX_RREAD1 bit-identity control), 2026-11-03, dev box CPU, 16 threads
+ckpt: E:/Projects/TanitAD-artifacts/v8f-dagoacc/M2b_s0_dagoacc/ckpt_last.pt ; flags: --max-windows 6 --smooth sg72 --scene logged --feasible kbox
+module before (tree_dag original): sha256 8ec5e19037b68124...   rc=0
+module after  (ad0bcb72 blob):     sha256 b337ccecd3abfa42...   rc=0
+comparator as written: 36 arrays, differ ['tag'] -> printed "SWAPCTL FAIL"
+the 'tag' array is each run's own label: 'BEFORE' (<U6) vs 'AFTER' (<U5) -- the comparator included the run's name.
+the 35 data arrays (8,625 elements): byte-equal, shapes equal.
+reading: the swap changes no rollout output on this control (PASS on data; the printed FAIL is the self-name array, disclosed here).
