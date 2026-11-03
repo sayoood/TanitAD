@@ -1100,9 +1100,16 @@ class TrainerAdapter:
                 near_lift_x_m=float(_mhr.declared_near_lift_m(a)),
                 near_refine_blocks=int(_mhr.declared_near_refine_blocks(a)),
                 class_weights_sha256=str(_hcws["sha256"]),
-                decision_rule=str(getattr(a, "map_hires_decision_rule", _mhr.DECISION_RULES[0])))
+                decision_rule=str(getattr(a, "map_hires_decision_rule", _mhr.DECISION_RULES[0])),
+                # refcv9 C1 / C2 (BRIEF_BOX_HARNESS_BANDED; MEASURED on Thor 2026-11-03 17:21Z, r9e1_bind.sh box M1): train() declares
+                # the banded head and the map's own encoder through the FLAG MODULES' own `is_on` (refc_v3_train.py:9997-9998). The
+                # replay never passed them, so an `--r9-map-banded` argv built the 8-way branch and G-DVB refused it (2 mismatches).
+                # Both default False = the refcv8 branch (no new module, parameter or key): an argv without the flags is bit-identical.
+                banded=bool(tr._mbf.is_on(a)), own_enc=bool(tr._moe.is_on(a)))
             m._map_hires = _mhr.build_map_hires_branch(m, _hcfg).to(dev)
             m._w_map_hires = float(a.w_map_hires)
+            if tr._mbf.is_on(a):                  # train() (refc_v3_train.py:10001-10002): the attribute the LOSS reads; absent when off
+                setattr(m, tr._mbf.MODEL_ATTR, True)
             m._map_hires_class_weight, m._map_hires_class_weight_stamp = _hcw.to(dev), _hcws
             _hpe, _htable = tr._read_rig_extrinsics(str(getattr(a, "agent_rig_extrinsics", "")))
             if _htable is None:
