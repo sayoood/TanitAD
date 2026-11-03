@@ -10,6 +10,8 @@ minus every block train() runs only `if args.eval_labels`.
   P2  `newest_row_only` follows `u8_frames` (train(): bool(_r9rig_on and u8))
   P3  a rig argv that DOES carry --eval-labels is refused (no guessing)
   P4  REACHABILITY: the G-EVAL probe site calls the helper, and only under `r9_perc_rig`; the non-rig call is still the loader's
+      (T1-GEVAL, 2026-11-03: the call now hands over the LOADER-built model, `model=model_l` -- the keyword is optional, so P1-P3 are unchanged;
+      the T1 history attach is pinned in test_launch_gate_geval_t1.py)
 """
 from __future__ import annotations
 
@@ -93,8 +95,8 @@ def test_P3_a_rig_argv_with_eval_labels_is_refused(providers):
 
 def test_P4_the_probe_site_reaches_the_helper_only_under_the_rig():
     sites = [(n, f) for n, f in inspect.getmembers(LG, inspect.isfunction)
-             if "rig_eval_probe_dataset(L, cfg_l, args_l)" in inspect.getsource(f)]
+             if "rig_eval_probe_dataset(L, cfg_l, args_l, model=model_l)" in inspect.getsource(f)]
     assert len(sites) == 1, [n for n, _ in sites]
     src = inspect.getsource(sites[0][1])
-    m = re.search(r'if bool\(getattr\(args_l, "r9_perc_rig", False\)\):\s*\n(?:\s*#[^\n]*\n)+\s*e_ds, e_eps, drec = rig_eval_probe_dataset\(L, cfg_l, args_l\)\s*\n\s*else:\s*\n\s*e_ds, e_eps, drec = L\.build_eval_dataset\(', src)
+    m = re.search(r'if bool\(getattr\(args_l, "r9_perc_rig", False\)\):\s*\n(?:\s*#[^\n]*\n)+\s*e_ds, e_eps, drec = rig_eval_probe_dataset\(L, cfg_l, args_l, model=model_l\)\s*\n\s*else:\s*\n\s*e_ds, e_eps, drec = L\.build_eval_dataset\(', src)
     assert m, "the rig branch must wrap the helper and leave the non-rig call to the vendored loader"

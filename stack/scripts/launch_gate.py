@@ -8066,7 +8066,7 @@ def latest_smoke_config(ctx: "Ctx") -> Path | None:
     return runs[-1] if runs else None
 
 
-def rig_eval_probe_dataset(L, cfg, args) -> tuple:
+def rig_eval_probe_dataset(L, cfg, args, model=None) -> tuple:
     """refcv9-e1rig G-EVAL: the held-out eval dataset the RIG reads -> (dataset, episodes, record).
 
     `L.build_eval_dataset` (the eval loader's, vendored) raises "the run's argv has no --eval-labels" on a rig argv, which
@@ -8074,7 +8074,15 @@ def rig_eval_probe_dataset(L, cfg, args) -> tuple:
     (refc_v3_train.py `e_ds = dcls(e_eps, **kw)` .. `enable_pose_sync`), minus every label block that train() itself runs only
     `if args.eval_labels`: the same provider call, the same window kwargs, `u8_frames`, `newest_row_only` (refcv9 S1: the rig
     ships the ONE row it reads) and the pose-sync clock. The probe forward needs no agent / map / 3-D join (only the LOSS reads
-    them), exactly as the non-rig probe's `with_perception_targets=False`. Reached ONLY under `--r9-perc-rig`."""
+    them), exactly as the non-rig probe's `with_perception_targets=False`. Reached ONLY under `--r9-perc-rig`.
+
+    refcv9 T1 (`--r9-bev-warp`): `train()` attaches the past-frame / past-pose history to the EVAL dataset as well
+    (`_bw.attach_dataset(e_ds, model, args)`, refc_v3_train.py, after every `enable_*`), and `compute_losses_perc_rig` stages it from
+    the batch. A probe dataset WITHOUT it carries no `bw_*`, so `stage` REFUSES the T1 rig's G-EVAL forward (MEASURED 2026-11-03 on
+    the tiny CPU rig at 9be3211: "[bev-warp] ... the batch carries no ['bw_frames', 'bw_pose_now', 'bw_pose_past', 'bw_has']").
+    `model` = the LOADER-built model (the source `attach_dataset` builds the worker's lags / shuffle from, never from argv); a T1
+    argv with no model is REFUSED here, never attached from guesswork. OFF (argv declares no T1): `model` is not read, the trainer
+    module's `_bw` is not touched, and the record carries no new key."""
     from tanitad.data.v2_dataset import build_v2_providers
     tr = L.trainer()
     if bool(getattr(args, "eval_labels", None)):
@@ -8089,7 +8097,40 @@ def rig_eval_probe_dataset(L, cfg, args) -> tuple:
                  "newest_row_only": u8, "label_clock": "NOT ATTACHED: the rig reads no v7 label"}
     if getattr(args, "pose_sync_sidecar", None):               # train(): refcv8 X10, the eval GT rides the SAME clock
         rec["pose_sync"] = e_ds.enable_pose_sync(args.pose_sync_sidecar)
+    if bool(getattr(args, "r9_bev_warp", False)):              # refcv9 T1: train() attaches the history to the eval dataset too
+        if model is None:
+            raise GateError("refcv9-e1rig: the argv declares --r9-bev-warp but the probe dataset was built without the loader's model "
+                            "-- the history source (lags, shuffle) is read off the BUILT model, never guessed from argv")
+        bw = getattr(tr, "_bw", None)
+        if bw is None:
+            raise GateError("refcv9-e1rig: the argv declares --r9-bev-warp but the trainer module has no `_bw` (bev_warp_flag) -- "
+                            "cannot attach the history the T1 forward needs")
+        rec["bev_warp"] = bw.attach_dataset(e_ds, model, args)
     return e_ds, e_eps, rec
+
+
+def rig_eval_t1_build_reasons(args_t, model_t, args_l, model_l) -> tuple[list[str], dict]:
+    """refcv9 T1 (`--r9-bev-warp`) G-EVAL: the TRAINER-built and the LOADER-built model must carry THE SAME temporal warp -- the same
+    declaration, a built fuse on both, the same lags (seconds AND rows) and the same shuffle control. The lag rows reach the forward ONLY
+    through the batch (`item_fields`), and the ONE probe batch (built from the LOADER's lags) is fed to BOTH models: a trainer fuse
+    built for other lags gives the same bytes at ANY gate (MEASURED, test_launch_gate_geval_t1.py G6), so the forward comparison cannot
+    see the disagreement -- and a freshly built fuse sits at gate 0, where `out = bev + 0 * fuse(...)` is the OFF forward for ANY history.
+    The disagreement is therefore read off the two builds themselves.
+    Inert (`[]`, `{"on": False}`) when neither argv declares T1 and neither model carries the fuse."""
+    def view(args, m):
+        mh = getattr(m, "_map_hires", None)
+        fuse = getattr(mh, "bev_warp", None) if mh is not None else None
+        st = getattr(m, "_r9_bev_warp", None)
+        return {"declared": bool(getattr(args, "r9_bev_warp", False)), "fuse_built": fuse is not None,
+                "lags_s": list(st.lags_s) if st is not None else None, "lag_rows": list(st.lag_rows) if st is not None else None,
+                "shuffle": bool(st.shuffle) if st is not None else None,
+                "fuse_lag_rows": list(fuse.lag_rows) if fuse is not None else None}
+    vt, vl = view(args_t, model_t), view(args_l, model_l)
+    if not (vt["declared"] or vl["declared"] or vt["fuse_built"] or vl["fuse_built"]):
+        return [], {"on": False}
+    reasons = [f"T1 (--r9-bev-warp): {k} differs between the builds: trainer {vt[k]!r} vs loader {vl[k]!r}"
+               for k in vt if vt[k] != vl[k]]
+    return reasons, {"on": True, "trainer": vt, "loader": vl}
 
 
 def rig_eval_build_reasons(args_t, model_t, model_l) -> tuple[list[str], dict]:
@@ -8231,10 +8272,12 @@ def eval_identity(ctx: Ctx, T, model_t, args_t, scratch: Path,
         # refcv9-e1rig: the rig's argv carries no --eval-labels (it reads no tactical / nav / speed label), and the vendored
         # loader's `build_eval_dataset` REFUSES such an argv -- so the probe batch comes from the dataset contract train()
         # builds for the rig's held-out eval (MEASURED 2026-11-03: G-EVAL FAIL "the run's argv has no --eval-labels")
-        e_ds, e_eps, drec = rig_eval_probe_dataset(L, cfg_l, args_l)
+        e_ds, e_eps, drec = rig_eval_probe_dataset(L, cfg_l, args_l, model=model_l)
     else:
         e_ds, e_eps, drec = L.build_eval_dataset(model_l, cfg_l, args_l, config,
                                                  with_perception_targets=False)
+    t1r, t1d = rig_eval_t1_build_reasons(args_t, model_t, args_l, model_l)       # refcv9 T1 only ([] / {"on": False} otherwise)
+    reasons += t1r
     idx = int(L.inrun_eval_perm(e_ds, 1, 1)[0])
     item = e_ds[idx]
     batch = torch.utils.data.default_collate([item])
@@ -8247,6 +8290,10 @@ def eval_identity(ctx: Ctx, T, model_t, args_t, scratch: Path,
                     "inputs": {k: v for k, v in (drec or {}).items()
                                if k in ("labels", "label_clock", "n_episodes", "n_windows")},
                     "seed": 1234}
+    if (drec or {}).get("bev_warp") is not None:                 # refcv9 T1 only: the history the probe dataset was attached with
+        det["probe"]["bev_warp"] = drec["bev_warp"]
+    if t1d.get("on"):
+        det["bev_warp"] = t1d
     model_l.eval()
     t0 = time.time()
     raw_t = _forward_out(T, model_t, batch, args_t, 1234)
