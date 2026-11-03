@@ -1564,6 +1564,22 @@ _E1_PLANNER_FLAGS = tuple("--" + d.replace("_", "-") for d in (_E1_MODULE.PLANNE
 _E1_PLANNER_WEIGHT_FLAGS = tuple("--" + d.replace("_", "-") for d in (_E1_MODULE.PLANNER_WEIGHT_DESTS if _E1_MODULE else ()))
 #: the `--r9-*` flags that belong to the planner side (R9-PF, the warm-start freeze's GT-in-pool schedule): the rig builds none
 _E1_R9_PLANNER_FLAGS = _R9W_PF_FLAGS + ("--r9-alloc-force-schedule", "--r9-alloc-force-seed")
+#: ⭐ E1-REC3 (MM 207ebd, PINNED -- do not reopen): the `--r9-box-*` levers are of TWO classes, and a launch argv is read BY CLASS.
+#:   E1_BOX_OWN_FLAGS -- levers that CHANGE THE INFERENCE BOX HEAD or its supervision (B3's four). The inherited G-BOX-OVERFIT record
+#:                       (refcv8's head) does not cover them: the argv needs its OWN `/2-b3` record (row E1-BOX-OWN-RECORD).
+#:   E1_BOX_AUX_FLAGS -- TRAINING-ONLY auxiliary heads (B1 depth, B2 perspective, B2c BEV2). The box overfit record certifies the INFERENCE
+#:                       box head IN ISOLATION on frozen frames (`OVERFIT_SCOPE`). An aux head is never called at inference and its effect
+#:                       (shaping the trunk) cannot show in a frozen-frame overfit, so that record is NOT its certificate. Its liveness is
+#:                       G-LIVE's (its loss key finite in the smoke, every new parameter with a gradient: `LIVE_WEIGHT_RULES` w_box_depth /
+#:                       w_box_persp / w_box_bev2) and the post-run zero-gradient gate's. An aux-only arm therefore binds the INHERITED /1
+#:                       record to its OWN argv, and that record must STAMP `aux_heads_not_certified` == the argv's aux set
+#:                       (`box_aux_stamp_reasons`): it says which heads it does NOT certify.
+#: A `--r9-box-*` flag in NEITHER tuple is never silently inherited: open item E1-BOX-UNKNOWN-LEVER (classify it here, in a reviewed edit).
+E1_BOX_OWN_FLAGS: tuple = ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms")
+E1_BOX_AUX_FLAGS: tuple = ("--r9-box-depth-aux", "--r9-box-persp-aux", "--r9-box-bev2-aux")
+#: the record keys an aux-carrying argv's box record stamps (the harness writes them, `box_aux_stamp_reasons` reads them)
+E1_BOX_AUX_STAMP = "aux_heads_not_certified"
+E1_BOX_AUX_STAMP_WHY = "aux_heads_not_certified_why"
 #: ⛔ the inherited overfit records (G-BOX-OVERFIT, G-MAP-OVERFIT: refcv8's literals, unchanged) cover the box head and the 10 cm
 #: map head AS refcv8 built them -- arms C0 / C1 (the replicate floor) and A1 / T1 / F1. An arm that CHANGES either head needs
 #: its OWN record. Conditional open items (`open_item_hits`): a refcv9 lever flag present in the argv keeps the token from PASS.
@@ -1575,7 +1591,9 @@ _E1_OPEN_ITEMS = (
      "owner": "the lever's code agent (C1) -> the Master Mind (a reviewed profile edit that names the lever's record)",
      "closes_when": "a map-overfit record for the lever's own head is bound to this profile by name; until then the token is "
                     "INCOMPLETE, never PASS. MACHINE-CHECKED since M-GATE: `E1_OWN_RECORDS` row E1-MAP-OWN-RECORD closes it for "
-                    "`--r9-map-banded` alone, when a `/2-banded` record bound to THIS argv's sha256 passes `judge_map_overfit_banded`",
+                    "`--r9-map-banded` and `--r9-map-own-enc` (M3) alone, when a `/2-banded` record bound to THIS argv's sha256 passes "
+                    "`judge_map_overfit_banded` (an M3 argv also needs the record to stamp `own_enc` and its built branch to hold the "
+                    "128-channel own encoder)",
      "when_prefixes": ("--r9-map-",), "when_flags": ("--w-map-fp",)},
     {"id": "E1-BOX-OWN-RECORD",
      "what": "a box-lever arm (any other refcv9 lever flag in the `--r9-*` namespace -- C5's decoder depth / DN / quality-aware "
@@ -1583,9 +1601,21 @@ _E1_OPEN_ITEMS = (
              "INHERITED G-BOX-OVERFIT record (refcv8's head) does not cover it",
      "owner": "the lever's code agent (C5) -> the Master Mind (a reviewed profile edit that names the lever's record)",
      "closes_when": "a box-overfit record for the lever's own head is bound to this profile by name; until then the token is "
-                    "INCOMPLETE, never PASS. MACHINE-CHECKED once B3 fills the `E1_OWN_RECORDS` row E1-BOX-OWN-RECORD "
-                    "(`E1_BOX_OWN_FLAGS` / `E1_BOX_OWN_SCHEMA`)",
-     "when_prefixes": ("--r9-",), "when_except": (_E1_FLAG, "--r9-map-")},
+                    "INCOMPLETE, never PASS. MACHINE-CHECKED (E1-REC2): `E1_OWN_RECORDS` row E1-BOX-OWN-RECORD closes it for the "
+                    "`--r9-box-*` flags in `E1_BOX_OWN_FLAGS` when a `/2-b3` `g_box_overfit.py` record bound to THIS argv's sha256 "
+                    "passes `judge_box_own_record` (stamped flag set == the argv's `--r9-box-*` set, RESULT PASS, the must-fail "
+                    "arms ran and failed). E1-REC3: the TRAINING-ONLY aux heads (`E1_BOX_AUX_FLAGS`: B1 / B2 / B2c) do NOT trigger this "
+                    "item -- they change no inference head; their /1 record stamps `aux_heads_not_certified` instead "
+                    "(`box_aux_stamp_reasons`)",
+     "when_prefixes": ("--r9-",), "when_except": (_E1_FLAG, "--r9-map-"), "when_except_exact": E1_BOX_AUX_FLAGS},
+    {"id": "E1-BOX-UNKNOWN-LEVER",
+     "what": "unknown box lever: classify it -- the argv carries a `--r9-box-*` flag that is in NEITHER `E1_BOX_OWN_FLAGS` (a lever that "
+             "changes the inference box head: needs its OWN /2-b3 record) NOR `E1_BOX_AUX_FLAGS` (a training-only aux head: the "
+             "inherited /1 record plus the aux stamp). It is never silently inherited",
+     "owner": "the lever's code agent -> the Master Mind (a reviewed edit of launch_gate.py that classifies the flag)",
+     "closes_when": "never by a record: only by a reviewed launch_gate.py edit that adds the flag to ONE of the two tuples (and, for an "
+                    "own-head lever, to the harness's `B3_FLAGS`)",
+     "when_prefixes": ("--r9-box-",), "when_except_exact": E1_BOX_OWN_FLAGS + E1_BOX_AUX_FLAGS},
 )
 #: ⭐ M-GATE: the BANDED map head's OWN overfit record (schema /2-banded; `map_hires_overfit.py --banded`). Every number the
 #: record is judged against is the INHERITED G-MAP-OVERFIT literal (`PROFILES[...]["map_overfit"]`: spec sha, frames, protocol,
@@ -1604,6 +1634,9 @@ _E1_MAP_BANDED = {
     "fine_cell_m": 0.10,
     #: the banded head's own requirement (MapHiresConfig(banded) refuses any other near lift)
     "near_lift_m": 10.0,
+    #: E1-REC2 (M3): an argv carrying `flag` builds the map's OWN `d_map_enc`-channel BEV encoder; the record must STAMP `own_enc`, its
+    #: built branch config must hold it, and no other argv may carry the stamp. Pinned to `tanitad.train.map_own_enc_flag` by a test.
+    "own_enc": {"flag": "--r9-map-own-enc", "d_map_enc": 128},
     "must_fail_any": {"lane_w0": ("lane",)},
     "must_fail_all": {"s8_zeros": ("lane", "xwalk", "arrow", "edge_h", "hatch")},
     "controls": ("C1_constant_drv", "C2_gt_as_logits"),
@@ -3151,10 +3184,11 @@ def open_item_hits(it: dict, argv: list[str] | None) -> list[str] | None:
     if argv is None:
         return ["<argv not given>"]
     exc = tuple(it.get("when_except") or ())
+    exact = tuple(it.get("when_except_exact") or ())          # E1-REC3: EXACT flag names (a prefix exception would also swallow `<flag>-v2`)
     return [f for f, _ in flag_pairs(argv)
             if (f in (it.get("when_flags") or ())
                 or any(f.startswith(p) for p in (it.get("when_prefixes") or ())))
-            and not any(f.startswith(e) for e in exc)]
+            and not any(f.startswith(e) for e in exc) and f not in exact]
 
 
 def open_item_reasons(prof: dict, argv: list[str] | None = None, closed: Iterable[str] = ()) -> list[str]:
@@ -4279,6 +4313,18 @@ LIVE_WEIGHT_RULES: dict[str, tuple[Callable, tuple[str, ...], float, str]] = {
     "w_map_fp": (lambda a: _w(a, "w_map_fp") > 0 and str(getattr(a, "map_hires", "off")) == "on"
                  and _w(a, "w_map_hires") > 0, ("map_fp",), 1.0,
                  "refcv9 map precision: own sidewalk + edge mass on GT-drivable near-field corridor cells"),
+    # refcv9 E1-REC3 (arms B1 / B2 / B2c): the TRAINING-ONLY box aux heads. The box overfit record does NOT certify them (E1_BOX_AUX_FLAGS); THIS is
+    # their liveness gate: the loss key present on EVERY training step and finite whenever the weight is positive (INERT at 0), and -- through
+    # the leaf check of `judge_live` -- every new parameter receiving a gradient. The keys are the ones the heads' `loss_term` writes into the
+    # perception rig's loss dict (`box_depth_aux_flag.loss_term`, `persp3d_aux_flag.loss_term`: the unweighted loss + its parts, always emitted).
+    "w_box_depth": (lambda a: _w(a, "w_box_depth") > 0, ("box_depth",), 1.0,
+                    "refcv9 B1: the training-only box-derived depth head's soft LID cross-entropy (C3)"),
+    "w_box_persp": (lambda a: _w(a, "w_box_persp") > 0,
+                    ("box_persp", "box_persp_heat", "box_persp_depth", "box_persp_size", "box_persp_yaw", "box_persp_ctr"), 1.0,
+                    "refcv9 B2: the training-only perspective 3D aux head (C4): the summed loss and its five parts"),
+    "w_box_bev2": (lambda a: _w(a, "w_box_bev2") > 0,
+                   ("box_bev2", "box_bev2_heat", "box_bev2_pos", "box_bev2_size", "box_bev2_yaw", "box_bev2_ctr"), 1.0,
+                   "refcv9 B2c: the parameter-matched second BEV head (C4's capacity control): the summed loss and its five parts"),
 }
 #: every field of `refcv6_diffusion.DiffusionFlags` -> the loss keys it declares ( () = none,
 #: with the reason). ⛔ EXHAUSTIVE for the same reason.
@@ -6207,6 +6253,27 @@ def judge_map_overfit_banded(prof: dict, record: str | None, commit: str, *, arg
         reasons.append(f"{tag}: the record ran near_lift_m={nl!r}, not the banded head's {bd.get('near_lift_m')}")
     if not (isinstance(rec.get("branch_config"), dict) and rec["branch_config"].get("banded") is True):
         reasons.append(f"{tag}: the record's branch config is not the BANDED head's ({rec.get('branch_config')!r})")
+    oe = bd.get("own_enc") or {}
+    if argv is not None and oe:
+        # E1-REC2 (M3): the record and the argv must AGREE on the map's own encoder, both ways. The stamp is what the harness was
+        # asked to build, the branch config is what it BUILT (`MapHiresConfig.as_dict` carries `own_enc` only when ON), and the
+        # branch's parameter breakdown must show the encoder's parameters.
+        want_own = has_flag(argv, oe["flag"])
+        bc = rec["branch_config"] if isinstance(rec.get("branch_config"), dict) else {}
+        got_stamp, got_cfg = rec.get("own_enc") is True, bc.get("own_enc") is True
+        det["own_enc"] = {"argv_carries": want_own, "record_stamp": rec.get("own_enc"), "built_branch_config": bc.get("own_enc")}
+        if want_own and not has_flag(argv, "--r9-map-banded"):
+            reasons.append(f"{tag}: the argv carries {oe['flag']} without --r9-map-banded (the own encoder feeds ONLY the banded head)")
+        if want_own != got_stamp or want_own != got_cfg:
+            reasons.append(f"{tag}: the launch argv {'carries' if want_own else 'does not carry'} {oe['flag']}, but the record's "
+                           f"own_enc stamp is {rec.get('own_enc')!r} and its built branch config's own_enc is {bc.get('own_enc')!r} "
+                           f"(a banded record made {'WITHOUT' if want_own else 'WITH'} the own encoder does not cover this argv)")
+        if want_own:
+            mp = (rec.get("branch_params") or {}).get("map_encoder") if isinstance(rec.get("branch_params"), dict) else None
+            if bc.get("d_map_enc") != oe["d_map_enc"]:
+                reasons.append(f"{tag}: the record's own encoder is {bc.get('d_map_enc')!r} channels wide, the registered {oe['d_map_enc']}")
+            if not (_finite_num(mp) and float(mp) > 0):
+                reasons.append(f"{tag}: the record's branch parameter breakdown shows no own-encoder parameters (map_encoder={mp!r})")
     if argv is not None:
         for flag, key in (("--map-hires-near-lift-m", "near_lift_m"), ("--map-hires-near-refine-blocks", "near_refine_blocks")):
             fv = flag_values(argv, flag)
@@ -6327,22 +6394,105 @@ def judge_own_record_generic(row: dict, record: str | None, argv_sha: str) -> tu
     return reasons, {"record": record, "sha256": sha256_file(record), "schema": rec.get("schema")}
 
 
+def box_aux_stamp_reasons(tag: str, rec: dict, argv: list[str]) -> tuple[list[str], dict]:
+    """E1-REC3 (MM 207ebd, pinned): what a box overfit record says it does NOT certify. The record certifies the INFERENCE box head in
+    isolation; a TRAINING-ONLY aux head (`E1_BOX_AUX_FLAGS`) is never called at inference and its effect cannot show on frozen frames, so a
+    record bound to an argv that carries one must STAMP `aux_heads_not_certified` -- a list that EQUALS the argv's aux set -- and a one-line
+    `aux_heads_not_certified_why`. A record with no stamp passes only an argv with no aux flag (C0 / C1 / B3 / the M arms: unchanged); a stamp
+    that is not the argv's aux set (missing, extra, duplicated) fails, so a record never silently covers another arm's aux heads."""
+    want = sorted({f for f, _ in flag_pairs(argv) if f in E1_BOX_AUX_FLAGS})
+    stamp = rec.get(E1_BOX_AUX_STAMP)
+    why = rec.get(E1_BOX_AUX_STAMP_WHY)
+    det = {"argv_aux_set": want, "record_stamp": stamp}
+    out: list[str] = []
+    if stamp is None:
+        if want:
+            out.append(f"{tag}: the launch argv carries the training-only aux head(s) {want} but the record stamps no "
+                       f"`{E1_BOX_AUX_STAMP}` (an inherited /1 box record certifies the INFERENCE head only and must say which aux heads it "
+                       f"does NOT certify)")
+        return out, det
+    if not (isinstance(stamp, list) and all(isinstance(x, str) for x in stamp)):
+        out.append(f"{tag}: the record's `{E1_BOX_AUX_STAMP}` is {stamp!r}, not a list of flags")
+    elif sorted(stamp) != want or len(set(stamp)) != len(stamp):
+        out.append(f"{tag}: the record's `{E1_BOX_AUX_STAMP}` is {sorted(stamp)}, the launch argv's aux set is {want} "
+                   f"(the stamp must EQUAL it: a record never covers another arm's aux heads)")
+    elif stamp and not (isinstance(why, str) and why.strip()):
+        out.append(f"{tag}: the record stamps `{E1_BOX_AUX_STAMP}` {sorted(stamp)} but no one-line `{E1_BOX_AUX_STAMP_WHY}`")
+    return out, det
+
+
+def judge_box_own_record(row: dict, record: str | None, argv_sha: str, argv: list[str] | None = None) -> tuple[list[str], dict]:
+    """E1-REC2: the box lever's OWN record (`g_box_overfit.py`, schema `tanitad.g_box_overfit_record/2-b3`) as the reader of row
+    E1-BOX-OWN-RECORD. It closes the OPEN ITEM and nothing else (G-BOX-OVERFIT's full re-judge from the rows is `judge_box_overfit`,
+    unchanged). A record closes the item iff
+
+    * its schema is the row's and it is bound to THIS argv's sha256 (`_overfit_binding_reasons`, the M-GATE mechanism);
+    * its STAMPED flag set (`rec["b3"]["flags"]`, written by the harness from the argv it built from) EQUALS the argv's OWN-head
+      `--r9-box-*` set (`E1_BOX_OWN_FLAGS`; E1-REC3: the training-only aux flags are not in it) -- so a record made for B3 never closes
+      B3'; a B3 + aux argv additionally needs the aux stamp (`box_aux_stamp_reasons`);
+    * the harness's top-level `RESULT` is PASS (the box record keeps it at the top level, not under `verdict`);
+    * every registered must-fail arm RAN and its verdict reads `failed as required` (a `VOID` or an absent arm is a reason)."""
+    tag = row.get("check", "G-BOX-OVERFIT")
+    if not record or not Path(record).is_file():
+        return [f"{tag}: no {row.get('schema')} record ({record!r}) -- the box lever's OWN record is a launch prerequisite "
+                f"(E1-BOX-OWN-RECORD)"], {}
+    rec = read_json(record)
+    det: dict[str, Any] = {"record": record, "sha256": sha256_file(record), "schema": rec.get("schema"),
+                           "launch_argv_sha256": rec.get("launch_argv_sha256"), "result": rec.get("RESULT")}
+    reasons = _overfit_binding_reasons(tag, rec, "", argv_sha, {"schema": row.get("schema")})
+    if not argv_sha:
+        reasons.append(f"{tag}: no launch argv sha256 to bind the {row.get('schema')} record to")
+    if rec.get("tool") != "g_box_overfit.py":
+        reasons.append(f"{tag}: the record's tool is {rec.get('tool')!r}, not 'g_box_overfit.py'")
+    own = tuple(row.get("flags") or E1_BOX_OWN_FLAGS)           # E1-REC3: the argv's OWN-head levers only (a B3 + B1 argv compares B3's flags)
+    want = sorted({f for f, _ in flag_pairs(argv or []) if f in own})
+    path = tuple(row.get("stamp") or ("b3", "flags"))
+    stamp = rec
+    for k in path:
+        stamp = stamp.get(k) if isinstance(stamp, dict) else None
+    det["flags"] = {"argv": want, "record_stamp": stamp}
+    if argv is None:
+        reasons.append(f"{tag}: no launch argv to compare the record's stamped flag set with")
+    elif not (isinstance(stamp, list) and stamp and all(isinstance(x, str) for x in stamp) and len(set(stamp)) == len(stamp)):
+        reasons.append(f"{tag}: the record stamps no flag set (rec{''.join('[%r]' % k for k in path)} is {stamp!r})")
+    elif sorted(stamp) != want:
+        reasons.append(f"{tag}: the record was made for {sorted(stamp)}, the launch argv carries {want} "
+                       f"(a record covers exactly the own-head --r9-box-* set it was built with)")
+    if argv is not None:                                         # E1-REC3: a B3 + aux argv's record must also say what it does NOT certify
+        r_aux, d_aux = box_aux_stamp_reasons(tag, rec, argv)
+        reasons += r_aux
+        det["aux_heads_not_certified"] = d_aux
+    vk = row.get("verdict_key", "RESULT")
+    if rec.get(vk) != "PASS":
+        reasons.append(f"{tag}: the record's {vk} is {rec.get(vk)!r}, not PASS")
+    arms = rec.get("arms") if isinstance(rec.get("arms"), dict) else {}
+    for arm in row.get("must_fail_arms", ()):
+        got = arms[arm].get("verdict") if isinstance(arms.get(arm), dict) else None
+        if got != E1_BOX_ARM_FAILED:
+            reasons.append(f"{tag}: regression arm {arm!r} did not RUN and FAIL AS REQUIRED (its verdict is {got!r}, not "
+                           f"{E1_BOX_ARM_FAILED!r})")
+    return reasons, det
+
+
 #: ⭐ THE TABLE (M-GATE): an open item of the refcv9-e1rig profile -> (the flags its own record covers, the record schema it
 #: needs). A lever closes its `E1-*-OWN-RECORD` item MACHINE-CHECKED by adding ONE row: the argv's hits of the item must all lie
 #: in `flags`, and the record named by the profile option `record_option` must pass the row's `judge` (None = the generic
 #: reader) bound to THIS argv's sha256. The item is NEVER deleted -- `open_item_reasons(..., closed=)` skips only the items this
 #: reads as closed. `switch` = the flags that make the check's job demand the lever's own record in place of the inherited one
 #: (default: `flags`).
-#: ⭐ B3 (the box lever, `g_box_overfit.py`) fills `E1_BOX_OWN_FLAGS` and `E1_BOX_OWN_SCHEMA`; empty flags = the item stays open.
+#: ⭐ E1-REC3: `E1_BOX_OWN_FLAGS` (B3's four, defined with `E1_BOX_AUX_FLAGS` above the profile) is what the box row's judge can close; a flag the
+#: HARNESS cannot stamp keeps the item open. The training-only aux heads are not in it (see the comment at their definition).
 E1_MAP_OWN_SCHEMA = "tanitad.g_map_overfit_record/2-banded"
-E1_BOX_OWN_FLAGS: tuple = ()
 E1_BOX_OWN_SCHEMA = "tanitad.g_box_overfit_record/2-b3"
+#: the regression arms the box record must hold (`g_box_overfit.MUST_FAIL`) and the verdict text a failing one carries (`arm_verdict`)
+E1_BOX_MUST_FAIL: tuple = ("memory_zeros", "presence_w0")
+E1_BOX_ARM_FAILED = "failed as required"
 E1_OWN_RECORDS = {
-    "E1-MAP-OWN-RECORD": {"flags": ("--r9-map-banded",), "schema": E1_MAP_OWN_SCHEMA, "check": "G-MAP-OVERFIT",
+    "E1-MAP-OWN-RECORD": {"flags": ("--r9-map-banded", "--r9-map-own-enc"), "schema": E1_MAP_OWN_SCHEMA, "check": "G-MAP-OVERFIT",
                           "record_option": "map_overfit_record", "judge": "judge_map_overfit_banded"},
     "E1-BOX-OWN-RECORD": {"flags": E1_BOX_OWN_FLAGS, "schema": E1_BOX_OWN_SCHEMA, "check": "G-BOX-OVERFIT",
-                          "record_option": "box_overfit_record", "judge": None, "verdict_key": "RESULT",
-                          "must_fail_arms": ()},
+                          "record_option": "box_overfit_record", "judge": "judge_box_own_record", "verdict_key": "RESULT",
+                          "must_fail_arms": E1_BOX_MUST_FAIL, "stamp": ("b3", "flags"), "stamp_prefix": "--r9-box-"},
 }
 
 
@@ -6376,6 +6526,8 @@ def own_record_closes(prof: dict, item_id: str, argv: list[str] | None, options:
     record = (options or {}).get(row["record_option"])
     if row.get("judge") == "judge_map_overfit_banded":
         reasons, _ = judge_map_overfit_banded(prof, record, commit, argv_sha=argv_sha, argv=argv)
+    elif row.get("judge") == "judge_box_own_record":
+        reasons, _ = judge_box_own_record(row, record, argv_sha, argv)
     else:
         reasons, _ = judge_own_record_generic(row, record, argv_sha)
     return (not reasons), reasons
@@ -6454,6 +6606,11 @@ def judge_box_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
     if argv_sha and not hit:
         reasons.append(f"{tag}: the record is bound to argv {str(r_argv)[:12] or '<none>'}, not the "
                        f"launch argv {argv_sha[:12]}")
+    if argv is not None:                  # E1-REC3: a record bound to an argv with training-only aux heads must say it does NOT certify them
+        r_aux, d_aux = box_aux_stamp_reasons(tag, rec, argv)
+        reasons += r_aux
+        if d_aux["argv_aux_set"]:
+            det["aux_heads_not_certified"] = d_aux
     for k in ("prereg_md5", "frameset_md5"):
         if rec.get(k) != bo.get(k):
             reasons.append(f"{tag}: {k} {rec.get(k)!r} != the registered {bo.get(k)!r}")
@@ -8703,6 +8860,9 @@ def _job_box_overfit(ctx: Ctx) -> dict[str, dict]:
     ok_text = f"G-BOX-OVERFIT PASS {OVERFIT_SCOPE}"
     if (det.get("a19") or {}).get("applied"):
         ok_text += f"; {det['a19']['statement']}"         # SPEC_REFCV7 24: what it does NOT cover
+    if det.get("aux_heads_not_certified"):                # E1-REC3: the training-only aux heads this record does NOT certify
+        ok_text += (f"; does NOT certify the training-only aux head(s) {det['aux_heads_not_certified']['argv_aux_set']} (never called at "
+                    f"inference; their liveness is G-LIVE's and the post-run zero-gradient gate's)")
     finish_evidence(ev, "FAIL" if reasons else "PASS", reasons or [ok_text])
     return {"G-BOX-OVERFIT": ev}
 

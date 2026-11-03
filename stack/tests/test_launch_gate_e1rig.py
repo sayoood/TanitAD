@@ -234,12 +234,16 @@ def test_conditional_open_items_key_on_the_lever_flags_and_never_pass(conformant
     assert ids(c0) == []
     assert ids(LG.set_flag(c0, "--r9-map-banded", [])) == ["OPEN ITEM E1-MAP-OWN-RECORD"]
     assert ids(LG.set_flag(c0, "--w-map-fp", ["0.5"])) == ["OPEN ITEM E1-MAP-OWN-RECORD"]
-    assert ids(LG.set_flag(c0, "--r9-box-depth-aux", [])) == ["OPEN ITEM E1-BOX-OWN-RECORD"]
+    assert ids(LG.set_flag(c0, "--r9-box-quality", [])) == ["OPEN ITEM E1-BOX-OWN-RECORD"]          # an own-head box lever (B3's)
+    # E1-REC3: a TRAINING-ONLY aux head (B1 / B2 / B2c) changes no inference head -> it opens neither the own-record item nor anything else
+    for aux in LG.E1_BOX_AUX_FLAGS:
+        assert ids(LG.set_flag(c0, aux, [])) == [], aux
+    assert ids(LG.set_flag(c0, "--r9-box-foo", [])) == ["OPEN ITEM E1-BOX-OWN-RECORD", "OPEN ITEM E1-BOX-UNKNOWN-LEVER"]    # never silently inherited
     assert ids(LG.set_flag(LG.set_flag(c0, "--r9-map-banded", []), "--r9-dn-groups", ["3"])) == [
         "OPEN ITEM E1-MAP-OWN-RECORD", "OPEN ITEM E1-BOX-OWN-RECORD"]
     assert "[triggered by ['--r9-map-banded']]" in LG.open_item_reasons(prof, LG.set_flag(c0, "--r9-map-banded", []))[0]
-    # no argv to read => fail closed: both apply
-    assert len(LG.open_item_reasons(prof)) == 2
+    # no argv to read => fail closed: all three conditional items apply
+    assert len(LG.open_item_reasons(prof)) == 3
     # finalize reads the argv and turns PASS / PI-DECISION into INCOMPLETE on any open item
     src = inspect.getsource(LG.finalize)
     assert "open_item_reasons(ctx.prof, ctx.argv)" in src and 'verdict in ("PASS", "PI-DECISION")' in src

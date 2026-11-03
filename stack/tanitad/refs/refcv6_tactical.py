@@ -334,6 +334,9 @@ class TacticalDecoderConfig:
 # the layer
 # ---------------------------------------------------------------------------
 
+from tanitad.models.plan_wires_r9 import n_box as _pw_n_box  # refcv9 C8 W-BOX
+
+
 class _QueryFiLM(nn.Module):
     """FiLM on the QUERIES from ``[nav, max_speed, v0, a0]``.
 
@@ -381,9 +384,21 @@ class _DecoderLayer(nn.Module):
                                                 batch_first=True)
         self.ff = nn.Sequential(nn.Linear(d, cfg.ff_mult * d), nn.GELU(),
                                 nn.Linear(cfg.ff_mult * d, d))
+        #: refcv9 C8 W-BOX: the zero-init gate of the box-token mix (None = no parameter; see plan_wires_r9.gated_mix)
+        self.box_gate: nn.Parameter | None = None
+
+    def _cross(self, h: Tensor, kv: Tensor, kv_pad: Tensor | None) -> tuple[Tensor, Tensor]:
+        if kv_pad is not None:
+            empty = kv_pad.all(dim=-1)                       # [B]
+            pad = kv_pad.clone()
+            pad[empty] = False
+            a, w = self.cross_attn(h, kv, kv, key_padding_mask=pad,
+                                   need_weights=True, average_attn_weights=True)
+            return a * (~empty).to(a.dtype).view(-1, 1, 1), w * (~empty).to(w.dtype).view(-1, 1, 1)
+        return self.cross_attn(h, kv, kv, need_weights=True, average_attn_weights=True)
 
     def forward(self, q: Tensor, kv: Tensor, kv_pad: Tensor | None,
-                cond: Tensor) -> tuple[Tensor, Tensor]:
+                cond: Tensor, base: tuple | None = None) -> tuple[Tensor, Tensor]:
         q = self.film(q, cond)
         h = self.n1(q)
         q = q + self.self_attn(h, h, h, need_weights=False)[0]
@@ -393,6 +408,12 @@ class _DecoderLayer(nn.Module):
         # masked, and a NaN that reaches the loss looks like divergence rather
         # than like an empty scene. This is the `CrossAttnLayer` convention in
         # `refc.py`, followed rather than re-invented.
+        if base is not None and self.box_gate is not None:     # refcv9 C8 W-BOX: out = base + g * (full - base); g = 0 is the base bit-for-bit
+            a0, w = self._cross(h, base[0], base[1])
+            a1, _ = self._cross(h, kv, kv_pad)
+            q = q + (a0 + self.box_gate * (a1 - a0))
+            q = q + self.ff(self.n3(q))
+            return q, w
         if kv_pad is not None:
             empty = kv_pad.all(dim=-1)                       # [B]
             pad = kv_pad.clone()
@@ -607,6 +628,13 @@ class TacticalBehaviourDecoder(nn.Module):
                 "learned nothing', which is a wiring gap, not a result.")
         kv = self.kv_norm(torch.cat(kv_parts, dim=1))            # [B, K, d]
         kv_pad = torch.cat(pad_parts, dim=1)                     # [B, K]
+        _kv_base = None
+        _nb = _pw_n_box() if (agent_tokens is not None and self.layers[0].box_gate is not None) else 0
+        if _nb > 0:                                              # refcv9 C8 W-BOX: the agents-only key set the gated mix is anchored on
+            _na = int(agent_tokens.shape[1]) - _nb
+            _keep = torch.ones(kv.shape[1], dtype=torch.bool, device=kv.device)
+            _keep[_na:int(agent_tokens.shape[1])] = False
+            _kv_base = (kv[:, _keep], kv_pad[:, _keep])
         if cond_extra is not None and self.r8_film is None:
             raise ValueError('[refcv8-tac] cond_extra supplied but the refcv8 FiLM is not built -- it would be '
                              'SILENTLY DROPPED. attach_refcv8_heads() or stop passing it.')
@@ -623,7 +651,7 @@ class TacticalBehaviourDecoder(nn.Module):
                 q = self.r8_film[_li](q, cond_extra)          # zero-init: identity at step 0
             if cond_speed8 is not None:
                 q = self.r8_speed_film[_li](q, cond_speed8)   # refcv8 (B), zero-init: identity at step 0
-            q, attn = lyr(q, kv, kv_pad, cond)
+            q, attn = lyr(q, kv, kv_pad, cond, base=_kv_base)
         q = self.out_norm(q)
         g = q[:, :N_GOAL_TOKENS]
         la = q[:, N_GOAL_TOKENS:N_GOAL_TOKENS + N_LAT_ACTIONS]

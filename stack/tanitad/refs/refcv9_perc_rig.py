@@ -122,6 +122,30 @@ def own_enc_exemptions(model) -> tuple:
     return tuple(NEW_PREFIXES)
 
 
+def box_depth_exemptions(model) -> tuple:
+    """New key prefixes the source cannot carry for refcv9 C3 ``--r9-box-depth-aux`` (arm B1): the training-only depth head
+    ``_perception.box_depth_aux.`` (``box_depth_aux_flag.attach`` builds it BEFORE the warm start; refcv8 has no such head). NAMED by its
+    module path in THIS model; ``()`` unless the perception branch carries the head, so the OFF warm start is the tip's, check for check.
+    An unnamed missing key still refuses (``warm_start_perc_rig`` raises on any missing key outside the named prefixes)."""
+    br = getattr(model, "_perception", None)
+    if br is None or getattr(br, "box_depth_aux", None) is None:
+        return ()
+    from tanitad.train.box_depth_aux_flag import KEY_PREFIX
+    return (KEY_PREFIX,)
+
+
+def persp_exemptions(model) -> tuple:
+    """New key prefixes for refcv9 C4 (arm B2 ``--r9-box-persp-aux``, control B2c ``--r9-box-bev2-aux``): the training-only head
+    ``_perception.box_persp_aux.`` or ``_perception.box_bev2_aux.`` (``persp3d_aux_flag.attach`` builds it BEFORE the warm start; refcv8 has
+    neither). NAMED by its module path in THIS model; ``()`` unless the perception branch carries one, so the OFF warm start is the tip's,
+    check for check. An unnamed missing key still refuses."""
+    br = getattr(model, "_perception", None)
+    if br is None:
+        return ()
+    from tanitad.train.persp3d_aux_flag import HEAD_B, HEAD_P, KEY_PREFIX_B, KEY_PREFIX_P
+    return tuple(pfx for attr, pfx in ((HEAD_P, KEY_PREFIX_P), (HEAD_B, KEY_PREFIX_B)) if getattr(br, attr, None) is not None)
+
+
 def warm_start_perc_rig(model, path: str) -> dict:
     """``--init-from`` for the rig: load the refcv8 EMA into the perception modules with the NAMED skip list. Refuses (a)
     a source key that is neither loadable nor in RIG_SKIPPED_MODULES, (b) a rig key the source lacks, (c) a shape mismatch."""
@@ -143,7 +167,7 @@ def warm_start_perc_rig(model, path: str) -> dict:
     # refcv9 C1 (--r9-map-banded): the banded head's keys are NEW (the source cannot have them) and the 8-way readout
     # `_map_hires.refine.cls.*` is NOT BUILT (the source's copy has no home). Both are NAMED, never a blanket strict=False; OFF: ().
     new_pfx, drop_pfx = banded_exemptions(model)
-    new_pfx = tuple(new_pfx) + b3_exemptions(model) + own_enc_exemptions(model)   # B3 DN embeddings; C2 own encoder (NAMED; OFF: ())
+    new_pfx = tuple(new_pfx) + b3_exemptions(model) + own_enc_exemptions(model) + box_depth_exemptions(model) + persp_exemptions(model)   # B3 DN embeddings; C2 own encoder; C3 depth head (NAMED; OFF: ())
     dropped = sorted(k for k in loadable if k not in own and any(k.startswith(q) for q in drop_pfx))
     for k in dropped:
         del loadable[k]

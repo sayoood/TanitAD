@@ -218,15 +218,16 @@ def test_the_job_dispatches_the_banded_argv_to_the_banded_judge_and_C0_to_the_in
 # ===================================================================== the box row: ONE row, no new mechanism ==
 def test_the_box_lever_closes_its_item_by_adding_one_row_with_no_new_mechanism(tmp_path, monkeypatch):
     row = dict(LG.E1_OWN_RECORDS["E1-BOX-OWN-RECORD"])
-    assert row["flags"] == () and LG.E1_BOX_OWN_FLAGS == ()                           # B3 fills the named constants
-    box = LG.set_flag(C0, "--r9-box-synthetic", [])
+    assert row["flags"] == LG.E1_BOX_OWN_FLAGS and row["judge"] == "judge_box_own_record"   # E1-REC2 filled the named constants (was: empty)
+    row = dict(row, judge=None)                                                       # this test shows the GENERIC reader: a row with no judge of its own
+    box = LG.set_flag(C0, "--r9-xlever-synthetic", [])               # E1-REC3: not `--r9-box-*` (an unclassified box flag opens E1-BOX-UNKNOWN-LEVER too)
     sha = LG.argv_sha256(box)
     ids = lambda: [x.split(":")[0] for x in LG.open_item_reasons(RIG, box)]
     assert ids() == ["OPEN ITEM E1-BOX-OWN-RECORD"]
     synth = {"schema": "synthetic/2-b3", "launch_argv_sha256": sha,
              "verdict": {"RESULT": "PASS", "regression_arms": {"memory_zeros": {"ran": True, "failed_as_required": True}}}}
     monkeypatch.setitem(LG.E1_OWN_RECORDS, "E1-BOX-OWN-RECORD",
-                        dict(row, flags=("--r9-box-synthetic",), schema="synthetic/2-b3", must_fail_arms=("memory_zeros",)))
+                        dict(row, flags=("--r9-xlever-synthetic",), schema="synthetic/2-b3", must_fail_arms=("memory_zeros",)))
     opts = lambda rec: {"box_overfit_record": _write(tmp_path, rec)}
     assert LG.own_record_closes(RIG, "E1-BOX-OWN-RECORD", box, opts(synth), COMMIT, sha) == (True, [])
     assert LG.own_records_closed(RIG, box, opts(synth), COMMIT, sha).keys() == {"E1-BOX-OWN-RECORD"}

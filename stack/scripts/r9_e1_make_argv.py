@@ -142,17 +142,30 @@ MAP_ARMS = {"M1": 1.0, "M2a": 0.511, "M2b": 1.018}
 BANDED_FLAG = "--r9-map-banded"
 BANDED_NEAR_LIFT_M = "10"                 # the banded near band is 0-10 m @ 0.10 m (MapHiresConfig(banded) refuses any other)
 MAP_ARM_OUT = "/home/nvidia/r8ns/r9e1/runs/r9e1-%s"
+#: E1-REC2: M3 = the M2 winner's banded head + the map's OWN 128-channel BEV encoder (C2, REFCV9_DESIGN 2.2). Its `--w-map-hires` is the M2
+#: winner's, chosen AFTER M2a / M2b are read, so it is a REQUIRED argument and there is no committed `r9e1_M3.argv.json` until then.
+OWN_ENC_FLAG = "--r9-map-own-enc"
+OWN_ENC_ARMS = ("M3",)
 
 
-def map_arm_argv(c0_argv, arm: str, out: str | None = None) -> list:
+def map_arm_argv(c0_argv, arm: str, out: str | None = None, w: float | None = None) -> list:
     """C0's argv with EXACTLY: `--r9-map-banded` added (after `--map-hires-near-refine-blocks`), `--w-map-hires` = the arm's w,
-    `--map-hires-near-lift-m` 20 -> 10, `--out` = the arm's run directory. Anything else in C0's argv is carried verbatim."""
-    if arm not in MAP_ARMS:
-        raise SystemExit("[r9-e1-argv] map arm %r not in %s" % (arm, sorted(MAP_ARMS)))
+    `--map-hires-near-lift-m` 20 -> 10, `--out` = the arm's run directory. Anything else in C0's argv is carried verbatim.
+    M3 (`w` REQUIRED, > 0; refused for the fixed-w arms) additionally gets `--r9-map-own-enc` right after `--r9-map-banded`."""
+    if arm not in MAP_ARMS and arm not in OWN_ENC_ARMS:
+        raise SystemExit("[r9-e1-argv] map arm %r not in %s" % (arm, sorted(MAP_ARMS) + list(OWN_ENC_ARMS)))
+    if arm in OWN_ENC_ARMS:
+        if w is None:
+            raise SystemExit("[r9-e1-argv] map arm %s needs --w-map-hires: it is the M2 winner's weight, chosen after M2a / M2b are read "
+                             "(%s)" % (arm, ", ".join("%s %s" % kv for kv in sorted(MAP_ARMS.items()))))
+        if not float(w) > 0.0:
+            raise SystemExit("[r9-e1-argv] --w-map-hires %r must be > 0 (a map term with no weight builds a dead head)" % (w,))
+    elif w is not None:
+        raise SystemExit("[r9-e1-argv] --w-map-hires is for M3 only: %s's weight is %s" % (arm, MAP_ARMS[arm]))
     out = _thor_path(out or MAP_ARM_OUT % arm, "--out")
     groups = split_groups(c0_argv)
     have = [f for f, _ in groups]
-    if BANDED_FLAG in have:
+    if BANDED_FLAG in have or OWN_ENC_FLAG in have:
         raise SystemExit("[r9-e1-argv] the base argv already carries %s -- derive map arms from C0's argv" % BANDED_FLAG)
     for f in ("--w-map-hires", "--map-hires-near-lift-m", "--map-hires-near-refine-blocks", "--out"):
         if have.count(f) != 1:
@@ -160,7 +173,7 @@ def map_arm_argv(c0_argv, arm: str, out: str | None = None) -> list:
     argv = []
     for f, vals in groups:
         if f == "--w-map-hires":
-            vals = [repr(float(MAP_ARMS[arm]))]
+            vals = [repr(float(MAP_ARMS[arm] if arm in MAP_ARMS else w))]
         elif f == "--map-hires-near-lift-m":
             vals = [BANDED_NEAR_LIFT_M]
         elif f == "--out":
@@ -168,7 +181,89 @@ def map_arm_argv(c0_argv, arm: str, out: str | None = None) -> list:
         argv += [f] + vals
         if f == "--map-hires-near-refine-blocks":
             argv.append(BANDED_FLAG)
+            if arm in OWN_ENC_ARMS:
+                argv.append(OWN_ENC_FLAG)
     return argv
+
+
+#: E1-REC2: the E1 box-lever arms (REFCV9_DESIGN 2.4; B3's three levers, B3' = B3 + the in-loss BEV-NMS), seed 0, every other flag equal to C0's
+#: (only `--out` differs). The flags go right after `--slot-query-select` (the last slot flag).
+BOX_ARMS = {"B3": ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt"),
+            "B3p": ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms")}
+BOX_ANCHOR = "--slot-query-select"
+#: E1-REC3: the TRAINING-ONLY box aux-head arms (`launch_gate.E1_BOX_AUX_FLAGS`): B1 depth (C3), B2 perspective 3D and B2c its parameter-matched BEV
+#: control (C4). Each = C0's argv + ITS flag + ITS weight pair, right after `--slot-query-select <v>` (the flag defaults to False and the weight to
+#: 0.0, so BOTH are named in the argv -- a flag whose default disables it must be in the argv or the arm did not test it). The weight 0.1 is C3's
+#: choice and C4's default (their HANDOFFs; HYPOTHESIS, unpinned by the design); the weight flag is the head's own, never `--w-box3d`.
+AUX_W = "0.1"
+AUX_ARMS = {"B1": ("--r9-box-depth-aux", "--w-box-depth", AUX_W),
+            "B2": ("--r9-box-persp-aux", "--w-box-persp", AUX_W),
+            "B2c": ("--r9-box-bev2-aux", "--w-box-bev2", AUX_W)}
+
+
+def box_arm_tokens(arm: str) -> tuple:
+    """The tokens an arm adds to C0's argv: B3 / B3p = valueless own-head flags; B1 / B2 / B2c = (aux flag, weight flag, weight)."""
+    if arm in BOX_ARMS:
+        return tuple(BOX_ARMS[arm])
+    if arm in AUX_ARMS:
+        return tuple(AUX_ARMS[arm])
+    raise SystemExit("[r9-e1-argv] box arm %r not in %s" % (arm, sorted(BOX_ARMS) + sorted(AUX_ARMS)))
+
+
+def box_arm_argv(c0_argv, arm: str, out: str | None = None) -> list:
+    """C0's argv with EXACTLY the arm's lever tokens added (right after `--slot-query-select <v>`) and `--out` = the arm's run directory. Anything
+    else in C0's argv is carried verbatim. B3 / B3p add valueless `--r9-box-*` flags; B1 / B2 / B2c (E1-REC3) add an aux flag + its weight pair."""
+    tokens = box_arm_tokens(arm)
+    out = _thor_path(out or MAP_ARM_OUT % arm, "--out")
+    groups = split_groups(c0_argv)
+    have = [f for f, _ in groups]
+    if any(f.startswith("--r9-box-") for f in have):
+        raise SystemExit("[r9-e1-argv] the base argv already carries a --r9-box-* flag -- derive box arms from C0's argv")
+    for f in (BOX_ANCHOR, "--out"):
+        if have.count(f) != 1:
+            raise SystemExit("[r9-e1-argv] C0's argv must carry %s exactly once (has %d)" % (f, have.count(f)))
+    argv = []
+    for f, vals in groups:
+        if f == "--out":
+            vals = [out]
+        argv += [f] + vals
+        if f == BOX_ANCHOR:
+            argv += list(tokens)
+    return argv
+
+
+def check_box_arm_pins(argv) -> None:
+    """`check_against_pins` + the box lever's own refusals (`tanitad/train/box_b3_flag.pin_args`, which needs the flags to parse as on)."""
+    check_against_pins(argv)
+    here = Path(__file__).resolve().parent
+    sys.path.insert(0, str(here.parent))
+    import refc_v3_train as T
+    from tanitad.train import box_b3_flag as BF
+    args = T.build_parser().parse_args(argv)
+    if not BF.is_any(args):
+        raise SystemExit("[r9-e1-argv] no --r9-box-* flag parsed as on")
+    BF.pin_args(args)
+
+
+def check_aux_arm_pins(argv, arm: str) -> None:
+    """E1-REC3: `check_against_pins` + the aux head's own refusals (`box_depth_aux_flag.pin_args` for B1, `persp3d_aux_flag.pin_args` for B2 / B2c),
+    and the arm's head is the ONLY aux head parsed as on with NO own-head (B3) lever (the arm differs from C0 in its lever alone)."""
+    if arm not in AUX_ARMS:
+        raise SystemExit("[r9-e1-argv] %r is not an aux-head arm (%s)" % (arm, sorted(AUX_ARMS)))
+    check_against_pins(argv)
+    here = Path(__file__).resolve().parent
+    sys.path.insert(0, str(here.parent))
+    import refc_v3_train as T
+    from tanitad.train import box_b3_flag as BF
+    from tanitad.train import box_depth_aux_flag as BDA
+    from tanitad.train import persp3d_aux_flag as P3
+    args = T.build_parser().parse_args(argv)
+    on = {"B1": BDA.is_on(args), "B2": P3.is_persp(args), "B2c": P3.is_bev2(args)}
+    if on != {a: (a == arm) for a in AUX_ARMS}:
+        raise SystemExit("[r9-e1-argv] arm %s: the aux heads parsed as on are %s, expected exactly %s" % (arm, sorted(k for k, v in on.items() if v), [arm]))
+    if BF.is_any(args):
+        raise SystemExit("[r9-e1-argv] arm %s carries an own-head --r9-box-* lever (B3's): an aux arm differs from C0 in its aux lever alone" % arm)
+    (BDA if arm == "B1" else P3).pin_args(args)
 
 
 def check_map_arm_pins(argv) -> None:
@@ -182,6 +277,13 @@ def check_map_arm_pins(argv) -> None:
     if not MBF.is_on(args):
         raise SystemExit("[r9-e1-argv] --r9-map-banded did not parse as on")
     MBF.pin_args(args)
+    from tanitad.train import map_own_enc_flag as MOE
+    if OWN_ENC_FLAG in argv:                                  # E1-REC2: M3's own encoder -- parsed on + its own refusals
+        if not MOE.is_on(args):
+            raise SystemExit("[r9-e1-argv] --r9-map-own-enc did not parse as on")
+        MOE.pin_args(args)
+    elif MOE.is_on(args):
+        raise SystemExit("[r9-e1-argv] --r9-map-own-enc parsed as on without being in the argv")
 
 
 def check_against_pins(argv) -> None:
@@ -202,8 +304,14 @@ def main(argv=None) -> int:
     ap.add_argument("--base", default=None, help="refcv8_launch_argv_base.json (a dict with key 'argv')")
     ap.add_argument("--seed", type=int, default=None)
     ap.add_argument("--out", default=None, help="the run directory on Thor")
-    ap.add_argument("--map-arm", choices=sorted(MAP_ARMS), default=None,
-                    help="M-GATE: emit the map-lever arm (M1 / M2a / M2b) from C0's argv.json given as --base (seed 0)")
+    ap.add_argument("--map-arm", choices=sorted(MAP_ARMS) + list(OWN_ENC_ARMS), default=None,
+                    help="M-GATE: emit the map-lever arm (M1 / M2a / M2b; E1-REC2: M3, which needs --w-map-hires) from C0's argv.json given as "
+                         "--base (seed 0)")
+    ap.add_argument("--w-map-hires", type=float, default=None,
+                    help="E1-REC2: M3's map weight = the M2 winner's (REQUIRED for --map-arm M3, refused for the other arms)")
+    ap.add_argument("--box-arm", choices=sorted(BOX_ARMS) + sorted(AUX_ARMS), default=None,
+                    help="E1-REC2: emit the box-lever arm (B3 / B3p) from C0's argv.json given as --base (seed 0); E1-REC3: or the training-only "
+                         "aux-head arm B1 (depth) / B2 (perspective 3D) / B2c (its BEV control), each C0 + its flag + its weight pair")
     ap.add_argument("--steps", type=int, default=4000)
     ap.add_argument("--eval-every", type=int, default=500)
     ap.add_argument("--eval-batches", type=int, default=8)
@@ -213,18 +321,39 @@ def main(argv=None) -> int:
     ap.add_argument("--write", required=True)
     ap.add_argument("--no-pin-check", action="store_true")
     a = ap.parse_args(argv)
-    if a.map_arm:
+    if a.map_arm and a.box_arm:
+        ap.error("--map-arm and --box-arm are separate arms")
+    if a.w_map_hires is not None and a.map_arm is None:
+        ap.error("--w-map-hires is M3's (--map-arm M3)")
+    if a.map_arm or a.box_arm:
         if not a.base:
-            ap.error("--map-arm needs --base <C0's r9e1_C0.argv.json>")
+            ap.error("--map-arm / --box-arm need --base <C0's r9e1_C0.argv.json>")
         c0 = json.loads(Path(a.base).read_text(encoding="utf-8"))
         if c0.get("arm") != "r9e1_C0" or int(c0.get("seed", -1)) != 0:
             raise SystemExit("[r9-e1-argv] --base must be r9e1_C0 (seed 0), got %r seed %r" % (c0.get("arm"), c0.get("seed")))
-        out = map_arm_argv(c0["argv"], a.map_arm, a.out)
-        if not a.no_pin_check:
-            check_map_arm_pins(out)
-        rec = {"schema": "r9e1-argv-v1", "arm": "r9e1_%s" % a.map_arm, "seed": 0, "steps": c0["steps"], "argv": out,
-               "base_sha256": hashlib.sha256(Path(a.base).read_bytes()).hexdigest(), "derived_from": "r9e1_C0",
-               "lever": {"flag": BANDED_FLAG, "w_map_hires": MAP_ARMS[a.map_arm], "near_lift_m": float(BANDED_NEAR_LIFT_M)}}
+        name = a.map_arm or a.box_arm
+        if a.map_arm:
+            out = map_arm_argv(c0["argv"], a.map_arm, a.out, w=a.w_map_hires)
+            if not a.no_pin_check:
+                check_map_arm_pins(out)
+            w = MAP_ARMS[a.map_arm] if a.map_arm in MAP_ARMS else float(a.w_map_hires)
+            lever = {"flag": BANDED_FLAG, "w_map_hires": w, "near_lift_m": float(BANDED_NEAR_LIFT_M)}
+            if a.map_arm in OWN_ENC_ARMS:
+                lever.update(own_enc_flag=OWN_ENC_FLAG, w_map_hires_source="the M2 winner (operator-supplied --w-map-hires)")
+        else:
+            out = box_arm_argv(c0["argv"], a.box_arm, a.out)
+            if a.box_arm in AUX_ARMS:
+                if not a.no_pin_check:
+                    check_aux_arm_pins(out, a.box_arm)
+                f, wf, w = AUX_ARMS[a.box_arm]
+                lever = {"flags": [f], "weight_flag": wf, "weight": float(w), "aux_head": "training-only (not certified by the box overfit record)",
+                         "weight_source": "HYPOTHESIS: C3's choice / C4's default, unpinned by the design"}
+            else:
+                if not a.no_pin_check:
+                    check_box_arm_pins(out)
+                lever = {"flags": list(BOX_ARMS[a.box_arm])}
+        rec = {"schema": "r9e1-argv-v1", "arm": "r9e1_%s" % name, "seed": 0, "steps": c0["steps"], "argv": out,
+               "base_sha256": hashlib.sha256(Path(a.base).read_bytes()).hexdigest(), "derived_from": "r9e1_C0", "lever": lever}
         Path(a.write).write_text(json.dumps(rec, indent=1) + chr(10), encoding="utf-8", newline=chr(10))
         print("wrote %s (%d tokens)" % (a.write, len(out)))
         return 0

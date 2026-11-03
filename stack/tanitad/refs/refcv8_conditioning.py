@@ -141,9 +141,12 @@ class R8Config:
     #: feature read DETACHED from the model's own 10 cm map head, its score term zero-init
     critic_drivable: bool = False
     w_drivable: float = 0.0
+    #: refcv9 C8 (W-MAP-1, `--r9-map-banded` + `--r8-critic-drivable`): the critic reads the BANDED channels (P(drv), drv_sdf) instead of the
+    #: 8-way logits. Absent from `to_dict` while False (an OFF arm's config.json is the tip's).
+    critic_banded: bool = False
 
     def to_dict(self) -> dict:
-        return {k: getattr(self, k) for k in self.__dataclass_fields__}
+        return {k: getattr(self, k) for k in self.__dataclass_fields__ if not (k == "critic_banded" and not self.critic_banded)}
 
 
 class R8Generator:
@@ -719,9 +722,10 @@ class DrivableCritic(nn.Module):
     selection term ``w * logsigmoid(logit)`` with ``w`` ZERO-INIT (step 0 is unchanged). The logit is trained by BCE
     against `drivable_target`; ``w`` by the selection losses."""
 
-    def __init__(self, hidden: int = 32):
+    def __init__(self, hidden: int = 32, n_feats: int = DRV_FEATS):
         super().__init__()
-        self.mlp = nn.Sequential(nn.Linear(DRV_FEATS + 8, hidden), nn.GELU(), nn.Linear(hidden, 1))
+        self.n_feats = int(n_feats)                    # refcv9 C8: 5 under the banded read (plan_wires_r9.DRV_FEATS_BANDED); 3 = the tip
+        self.mlp = nn.Sequential(nn.Linear(self.n_feats + 8, hidden), nn.GELU(), nn.Linear(hidden, 1))
         self.w = nn.Parameter(torch.zeros(()))
 
     def forward(self, feat: Tensor, paths: Tensor) -> tuple[Tensor, Tensor]:

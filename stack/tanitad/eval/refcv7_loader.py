@@ -434,6 +434,8 @@ def _build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict
     # only behind w_map/w_box3d, with neither bev_source, planner_crop_m, the A9 fields nor
     # query_select) ------------------------------------------------------------------------- #
     rec["perception"] = build_perception_block(tr, model, args, device)
+    tr._bda.attach(model, args)       # refcv9 C3 (B1): the training-only depth head, so the strict load reads the trained state_dict into the same build; NEVER called by the eval forward (OFF: nothing)
+    tr._p3f.attach(model, args)       # refcv9 C4 (B2 / B2c): the training-only perspective (or parameter-matched BEV) head, so the strict load reads the trained state_dict into the same build; NEVER called by the eval forward (OFF: nothing)
     # ---- train():8140-8149 -- refcv6 sec. 6: a conflict detector that can never read anything
     # is refused (a refusal only; the detector itself is a training instrument) ------------ #
     if tr._conflict_override(args) is True and not tr._conflict_aux_weights(model):
@@ -674,6 +676,10 @@ def build_perception_block(tr, model, args, device) -> dict | None:
                            query_select=str(getattr(args, "slot_query_select", "learned")
                                             or "learned"))
     model._perception = _perc.build_perception_branch(model, _pcfg).to(device)   # train():8090
+    # refcv9 C8 (G-EVAL): train() attaches the planner wires (W-MAP-2 projection, W-BOX tokens + gates) HERE, before the stamp's
+    # `branch_params`; the loader REPLAYS it from the run's argv so the strict load reads `box_tok_r9.* / *.box_gate /
+    # bev_pool.map_chan_proj.*` into modules that exist. OFF (both flags absent): `attach` returns at once -- nothing is built.
+    tr._pwf.attach(model, args)
     _pframe = _perc.frame_for_model(model)                              # train():8091
     if model._w_map > 0.0:                                              # train():8092-8104
         _pe, _ptable = tr._read_rig_extrinsics(str(getattr(args, "agent_rig_extrinsics", "")))
@@ -685,6 +691,7 @@ def build_perception_block(tr, model, args, device) -> dict | None:
     return {**_pcfg.as_dict(),                                          # train():8105-8127
             "equalize_bottom_rows": int(getattr(args, "equalize_bottom_rows", 0) or 0),
             "branch_params": model._perception.param_breakdown(),
+            **({} if tr._pwf.stamp(model, args) is None else {"plan_wires": tr._pwf.stamp(model, args)}),   # refcv9 C8 (absent when OFF)
             "fmap_s16_channels": int(model.core.encoder.s16_dim),
             "fmap_s16_hw": list(model.core.encoder.s16_shape),
             "frame": {"height": int(_pframe.height), "width": int(_pframe.width),
@@ -745,6 +752,11 @@ def stamp_checks(model, config: dict, rec: dict, tr) -> dict:
             for k in sorted(pr):
                 if k in st and k != "lift_bank_n_clips":
                     cmp(f"refcv6_perception.{k}", st[k], pr[k])
+            # refcv9 C8: the planner wires define the model. A stamp that names them against a rebuild that has none (or the reverse)
+            # is a model the weights never were -> REFUSE (the key-by-key compare above skips a key present on one side only)
+            if ("plan_wires" in st) != ("plan_wires" in pr):
+                bad.append("refcv6_perception.plan_wires: config.json " + ("stamps" if "plan_wires" in st else "does not stamp")
+                           + " the planner wires but the argv " + ("builds none" if "plan_wires" in st else "builds them"))
     else:
         out["refcv6_perception"] = "not in config.json"
     # A2: the banked tau file (config.json seams.nav_compliance_tau_file = {path, sha256, tau})

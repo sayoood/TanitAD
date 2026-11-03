@@ -645,23 +645,67 @@ B3_SCHEMA = "tanitad.g_box_overfit_record/2-b3"
 B3_FLAGS = ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms")
 
 
+#: refcv9 E1-REC3 (MM 207ebd, PINNED): the TRAINING-ONLY auxiliary heads -- B1 depth (C3), B2 perspective and B2c BEV2 (C4). This harness
+#: certifies the INFERENCE box head in isolation on frozen frames. An aux head is never called at inference and its effect (shaping the trunk)
+#: cannot show in a frozen-frame overfit, so it is NOT built here: the harness's build argv drops the aux flag AND its weight flag
+#: (``strip_aux``), the record stamps ``aux_heads_not_certified`` (+ a one-line reason), and the launch gate's /1 judge passes such a record only
+#: when that stamp EQUALS the argv's aux set (``launch_gate.box_aux_stamp_reasons``). The aux head's liveness is G-LIVE's (its loss key finite,
+#: every new parameter with a gradient) and the post-run zero-gradient gate's. The flag set is pinned to ``launch_gate.E1_BOX_AUX_FLAGS`` by a test.
+AUX_FLAGS = ("--r9-box-depth-aux", "--r9-box-persp-aux", "--r9-box-bev2-aux")
+AUX_WEIGHT_FLAGS = {"--r9-box-depth-aux": "--w-box-depth", "--r9-box-persp-aux": "--w-box-persp", "--r9-box-bev2-aux": "--w-box-bev2"}
+AUX_STAMP = "aux_heads_not_certified"
+AUX_STAMP_WHY = "aux_heads_not_certified_why"
+AUX_WHY = ("training-only auxiliary head(s): never called at inference and not built by this harness; this record certifies the INFERENCE "
+           "box head in isolation on frozen frames -- the aux head's liveness is G-LIVE's and the post-run zero-gradient gate's")
+
+
+def strip_aux(launch_argv: list) -> tuple:
+    """-> (the argv without the aux flags and their weight flag + value, the aux flags that were present, in ``AUX_FLAGS`` order)."""
+    weights = set(AUX_WEIGHT_FLAGS.values())
+    out, i = [], 0
+    while i < len(launch_argv):
+        t = launch_argv[i]
+        if t in AUX_FLAGS:                                    # valueless
+            i += 1
+        elif t in weights:                                    # flag + its value token(s)
+            i += 1
+            while i < len(launch_argv) and not str(launch_argv[i]).startswith("--"):
+                i += 1
+        else:
+            out.append(t)
+            i += 1
+    return out, [f for f in AUX_FLAGS if f in launch_argv]
+
+
 def b3_record_fields(launch_argv: list) -> dict:
-    """``{}`` for a launch argv with no ``--r9-box-*`` token (the record is then byte-for-byte what it was); else the schema + the flags."""
-    on = [f for f in B3_FLAGS if f in launch_argv]
-    stray = [x for x in launch_argv if str(x).startswith("--r9-box-") and x not in B3_FLAGS]
+    """``{}`` for a launch argv with no ``--r9-box-*`` token (the record is then byte-for-byte what it was). B3's flags -> the ``/2-b3`` schema +
+    the flags; aux flags -> ``aux_heads_not_certified`` + its reason (a B3 + aux argv gets both). An unknown ``--r9-box-*`` token is REFUSED."""
+    stray = [x for x in launch_argv if str(x).startswith("--r9-box-") and x not in B3_FLAGS and x not in AUX_FLAGS]
     if stray:
-        raise SystemExit(f"[gbo] unknown --r9-box-* token(s) {stray}: not in {B3_FLAGS}")
-    return {"schema": B3_SCHEMA, "b3": {"flags": on, "literals": "inherited unchanged (rec['literals']): no new free literal"}} if on else {}
+        raise SystemExit(f"[gbo] unknown --r9-box-* token(s) {stray}: not in {B3_FLAGS} (own-head levers) nor {AUX_FLAGS} (training-only aux heads)")
+    out: dict = {}
+    on = [f for f in B3_FLAGS if f in launch_argv]
+    if on:
+        out.update({"schema": B3_SCHEMA, "b3": {"flags": on, "literals": "inherited unchanged (rec['literals']): no new free literal"}})
+    aux = [f for f in AUX_FLAGS if f in launch_argv]
+    if aux:
+        out.update({AUX_STAMP: aux, AUX_STAMP_WHY: AUX_WHY})
+    return out
 
 
 def harness_build_argv(launch_argv: list) -> tuple:
     """-> (the argv the harness BUILDS from, record fields): the launch argv minus ``--trunk-compile`` -- DECLARED,
-    the harness runs eager (Master Mind 2026-09-27); ``trunk_compile`` in the record is what the harness RAN."""
-    return [x for x in launch_argv if x != "--trunk-compile"], {
-        "trunk_compile": False, "trunk_compile_in_launch_argv": "--trunk-compile" in launch_argv,
-        "trunk_compile_why": ("harness: the launch argv's --trunk-compile (torch.compile of the backbone call only) is "
-                              "dropped for G-BOX-OVERFIT -- eager numerics, no compile warm-up; the binding run "
-                              "decides whether the launch path needs it (Master Mind 2026-09-27)")}
+    the harness runs eager (Master Mind 2026-09-27); ``trunk_compile`` in the record is what the harness RAN.
+    E1-REC3: minus the training-only aux flags and their weights (``strip_aux``) -- the inference box head is what is certified; the record
+    says so (``aux_flags_not_built``, only when the launch argv carries any)."""
+    build, aux = strip_aux([x for x in launch_argv if x != "--trunk-compile"])
+    rec = {"trunk_compile": False, "trunk_compile_in_launch_argv": "--trunk-compile" in launch_argv,
+           "trunk_compile_why": ("harness: the launch argv's --trunk-compile (torch.compile of the backbone call only) is "
+                                 "dropped for G-BOX-OVERFIT -- eager numerics, no compile warm-up; the binding run "
+                                 "decides whether the launch path needs it (Master Mind 2026-09-27)")}
+    if aux:
+        rec["aux_flags_not_built"] = aux
+    return build, rec
 
 
 def rig_eval_dataset(L, cfg, args, config: dict, *, dataset_cls=None):

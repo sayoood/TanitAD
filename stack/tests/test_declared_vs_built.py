@@ -302,7 +302,17 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     # refcv9 C7: --r9-perc-rig ("built": refcv9_perc_rig.dvb_check) (298 -> 299)
     # refcv9 C1: --r9-map-banded ("built": map_banded_flag.dvb_check) (299 -> 300)
     # refcv9 B3: --r9-box-quality / -dn / -class-sqrt / -inloss-nms ("built": box_b3_flag.register_dvb_levers) (+4)
-    assert len(dvb.REGISTRY) == 305   # B3 (+4) and C2 (+1) on 300, merged by the MM
+    # refcv9 C3: --r9-box-depth-aux ("built": box_depth_aux_flag.dvb_check) and --w-box-depth ("loss": dvb_check_weight) (+2)
+    # refcv9 C4: --r9-box-persp-aux / --r9-box-bev2-aux ("built": persp3d_aux_flag.dvb_check_persp / dvb_check_bev2) and --w-box-persp / --w-box-bev2 ("loss") (+4)
+    assert all(dvb.REGISTRY[_d].kind == "built" for _d in ("r9_box_persp_aux", "r9_box_bev2_aux"))
+    assert all(dvb.REGISTRY[_d].kind == "loss" for _d in ("w_box_persp", "w_box_bev2"))
+    # refcv9 C6: --lr-schedule / --wsd-decay-steps / --wsd-branch-from / --wsd-branch-decay ("elsewhere": lr_schedule.assert_sched_matches_args /
+    # branch_preflight + stage_branch) and --save-at ("runtime"), registered by lr_schedule.register_dvb_levers (+5)
+    for _d in ("lr_schedule", "wsd_decay_steps", "wsd_branch_from", "wsd_branch_decay"):
+        assert dvb.REGISTRY[_d].kind == "elsewhere", _d
+    assert dvb.REGISTRY["save_at"].kind == "runtime"
+    assert len(dvb.REGISTRY) == 318   # B3 (+4) and C2 (+1) on 300; C8 (+2) and C3 (+2); C4 (+4) and C6 (+5), merged by the MM
+    assert dvb.REGISTRY["r9_box_depth_aux"].kind == "built" and dvb.REGISTRY["w_box_depth"].kind == "loss"
     for _d in ("r9_box_quality", "r9_box_dn", "r9_box_class_sqrt", "r9_box_inloss_nms"):
         assert dvb.REGISTRY[_d].kind == "built", _d
     # refcv9 C2: --r9-map-own-enc ("built": map_own_enc_flag.dvb_check) (+1)

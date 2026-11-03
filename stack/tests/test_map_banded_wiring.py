@@ -200,9 +200,10 @@ def test_ARGV_off_is_a_noop_and_the_refusals_are_loud():
     for over, why in ((dict(map_hires="off"), "map-hires is not"), (dict(w_map_hires=0.0), "w-map-hires is 0"),
                       (dict(map_hires_near_lift_m=20.0), "near-lift-m"), (dict(map_hires_near_lift_m=None), "near-lift-m"),
                       (dict(w_map_fp=0.1), "RETIRED"), (dict(map_lift_valid_mask=False), "unobs"),
-                      (dict(map_hires_class_thresholds="x.json"), "class-thresholds"), (dict(r8_critic_drivable=True), "drivable")):
+                      (dict(map_hires_class_thresholds="x.json"), "class-thresholds")):
         with pytest.raises(SystemExit, match=why):
             MF.pin_args(_a(**over))
+    MF.pin_args(_a(r8_critic_drivable=True, w_r8_drivable=0.1))                 # refcv9 C8 W-MAP-1: the critic now reads the banded channels
 
 
 def test_the_trainer_parser_owns_the_flag_and_the_registry_has_its_entry():

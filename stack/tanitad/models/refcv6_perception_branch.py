@@ -334,8 +334,11 @@ class PlannerBEVPool(nn.Module):
         self.dst_hw = (int(dx), int(dy))
         self.proj = nn.Sequential(nn.Conv2d(self.d_in, self.d_out, 1, bias=False),
                                   nn.GroupNorm(int(norm_groups), self.d_out))
+        #: refcv9 C8 W-MAP-2 (`--r9-plan-map-channels`): a ZERO-INIT 1x1 over the detached 1 m map channels, ADDED to the pooled BEV.
+        #: None (no parameter, no state_dict key) for every other arm.
+        self.map_chan_proj = None
 
-    def forward(self, x: Tensor) -> Tensor:
+    def forward(self, x: Tensor, map_chan: Tensor | None = None) -> Tensor:
         if x.dim() != 4 or int(x.shape[1]) != self.d_in \
                 or tuple(x.shape[2:]) != self.src_hw:
             raise ValueError(f"[perception] the pool reads [B, {self.d_in}, "
@@ -347,6 +350,13 @@ class PlannerBEVPool(nn.Module):
         if tuple(out.shape[2:]) != self.dst_hw:
             raise RuntimeError(f"pooled BEV {tuple(out.shape)} is not the planner grid "
                                f"{self.dst_hw}")
+        if self.map_chan_proj is not None:                                   # refcv9 C8 W-MAP-2
+            if map_chan is None:
+                raise ValueError("[perception] ⛔ the pool has a map-channel projection (--r9-plan-map-channels) but no `map_chan` reached "
+                                 "it: the channels would be built, stamped and read by nothing")
+            out = out + self.map_chan_proj(map_chan)
+        elif map_chan is not None:
+            raise ValueError("[perception] ⛔ map channels reached a pool with no projection: they would be silently dropped")
         return out
 
 
@@ -602,7 +612,7 @@ class PerceptionBranch(nn.Module):
 
     def forward(self, fmap_s16: Tensor, grid: Tensor | None = None,
                 valid: Tensor | None = None, *,
-                bev_hires: Tensor | None = None) -> dict:
+                bev_hires: Tensor | None = None, map_banded: dict | None = None) -> dict:
         """⛔ ONE argument family, all vision. No parameter here can carry a
         label -- the ``AgentSlotDecoder.forward`` audit, extended to the branch.
 
@@ -635,7 +645,14 @@ class PerceptionBranch(nn.Module):
                     "[perception] ⛔ a lift geometry reached a 'map_hires_pool' branch: "
                     "it has no lift of its own -- a stride-16 geometry here is a "
                     "consumer still wired to the stride-16 path (A6)")
-            bev_feats = self.bev_pool(bev_hires)
+            if self.bev_pool.map_chan_proj is not None:                       # refcv9 C8 W-MAP-2: DETACHED 1 m decision channels
+                from tanitad.models import plan_wires_r9 as _pw
+                if map_banded is None:
+                    raise ValueError("[perception] ⛔ --r9-plan-map-channels but the 10 cm branch emitted no `map_banded`")
+                out["map_chan_1m"] = _pw.channels_1m(map_banded)
+                bev_feats = self.bev_pool(bev_hires, map_chan=out["map_chan_1m"])
+            else:
+                bev_feats = self.bev_pool(bev_hires)
             out["bev_feats"] = bev_feats
             out["bev_tokens"] = self.bev_tokens(bev_feats)
         elif bev_hires is not None:

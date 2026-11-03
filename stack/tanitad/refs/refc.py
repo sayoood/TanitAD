@@ -174,6 +174,7 @@ from tanitad.refs import refc_wp_index as wpi
 # Same import discipline as `wpi` above -- a leaf module whose only
 # tanitad import is `data.bev_raster`, so it cannot cycle back into refc.
 from tanitad.models import refc_bev_coupling as bevc
+from tanitad.models.plan_wires_r9 import gated_mix as _pw_gated_mix, n_box as _pw_n_box, set_n_box as _pw_set_n_box  # refcv9 C8 W-BOX
 
 
 def _feas_with_origin(x: Tensor) -> Tensor:
@@ -1598,6 +1599,8 @@ class CrossAttnLayer(nn.Module):
         # `_agent_bias` rule, that the OFF path must not reach a different
         # kernel either.
         self.bev_wp: nn.Module | None = None
+        #: refcv9 C8 W-BOX: the zero-init gate of the box-token mix (None = no parameter; plan_wires_r9.gated_mix)
+        self.box_gate: nn.Parameter | None = None
 
     def forward(self, q: Tensor, kv: Tensor, cond: Tensor,
                 agent_tokens: Tensor | None = None,
@@ -1613,8 +1616,12 @@ class CrossAttnLayer(nn.Module):
         h = self.norm_q(q)
         q = q + self.cross(h, kv, kv, need_weights=False)[0]
         if self.cross_agent is not None and agent_tokens is not None:
-            q = q + self.agent_gate * self._attend_agents(
-                q, agent_tokens, agent_pad, agent_index)
+            if self.box_gate is not None and _pw_n_box() > 0:              # refcv9 C8 W-BOX: agents + box tokens behind a zero-init gate
+                q = q + self.agent_gate * _pw_gated_mix(lambda t, p: self._attend_agents(q, t, p, None), agent_tokens, agent_pad,
+                                                        _pw_n_box(), self.box_gate)
+            else:
+                q = q + self.agent_gate * self._attend_agents(
+                    q, agent_tokens, agent_pad, agent_index)
         # ⭐ refcv6 coupling (1) -- the BEV read at the candidate's OWN
         # waypoints, recomputed on every pass because the address MOVES as the
         # trajectory is denoised. The sampler owns its zero-init gate, so this
@@ -5122,6 +5129,7 @@ class RefCModel(nn.Module):
         # such. The detection LABELS never enter here at all; they enter the
         # LOSS, in the trainer, from `batch["agent_box"]`.
         agent_slots = agent_tokens = agent_pad = None
+        _pw_set_n_box(0)                                   # refcv9 C8 W-BOX: no stale box-token count from a previous forward
         if self.agent_head is not None:
             if self.cfg.agents.oracle:
                 if agent_gt is None:
@@ -5139,6 +5147,14 @@ class RefCModel(nn.Module):
                 agent_slots = self.agent_head(
                     fmap.flatten(2).transpose(1, 2))          # [B, M, F]
             agent_tokens, agent_pad = self.agent_embed(agent_slots)
+            if getattr(self, "box_tok_r9", None) is not None:          # refcv9 C8 W-BOX (`--r9-plan-box-tokens`); OFF: never entered
+                _bs = (perception_out or {}).get("box_slots")
+                if _bs is None:
+                    raise ValueError("[refcv9] --r9-plan-box-tokens but the perception branch emitted no `box_slots`: the tokens would be "
+                                     "built from nothing (the agent head's slots are NOT a substitute)")
+                _bt, _bp = self.box_tok_r9(_bs)
+                agent_tokens, agent_pad = torch.cat([agent_tokens, _bt], 1), torch.cat([agent_pad, _bp], 1)
+                _pw_set_n_box(int(_bt.shape[1]))
         # ⭐⭐ refcv5 WP-B: the ADDRESS SOURCE. `box[..., :2]` is (cx, cy) in
         # METRES, ego frame, x forward / y left — the SAME frame and the SAME
         # units the decoder's trajectory estimate is in, which is why the

@@ -107,6 +107,9 @@ from tanitad.train import map_precision as _mfp  # noqa: E402  refcv9 warm start
 from tanitad.train import map_banded_flag as _mbf  # noqa: E402  refcv9 C1: --r9-map-banded (OFF: nothing)
 from tanitad.train import box_b3_flag as _bbf  # noqa: E402  refcv9 B3: --r9-box-quality / -dn / -class-sqrt / -inloss-nms (OFF: nothing)
 from tanitad.train import map_own_enc_flag as _moe  # noqa: E402  refcv9 C2: --r9-map-own-enc (OFF: nothing)
+from tanitad.train import plan_wires_flag as _pwf  # noqa: E402  refcv9 C8: --r9-plan-map-channels / --r9-plan-box-tokens (OFF: nothing)
+from tanitad.train import box_depth_aux_flag as _bda  # noqa: E402  refcv9 C3: --r9-box-depth-aux / --w-box-depth (OFF: nothing)
+from tanitad.train import persp3d_aux_flag as _p3f  # noqa: E402  refcv9 C4: --r9-box-persp-aux / --w-box-persp (B2) and --r9-box-bev2-aux / --w-box-bev2 (B2c) (OFF: nothing)
 from tanitad.models import map_banded as _mband  # noqa: E402  refcv9 C1: banded targets / losses (OFF: never called)
 # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
 # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
@@ -147,6 +150,8 @@ from tanitad.eval import detection_nms as _det_nms  # noqa: E402  (refcv8 WP-C I
 from tanitad.eval import detection_zh as _det_zh  # noqa: E402  (refcv8 WP-C I2/fix 5)
 from tanitad.data import join_label_hygiene as _jlh  # noqa: E402  (refcv8 WP-C I3/fixes 3+4)
 from tanitad.train import nt_guard as _nt_guard  # noqa: E402  (H-NT-DECIDE-1 K3, the NavSim held-out guard)
+from tanitad.train import lr_schedule as _lrs  # noqa: E402  refcv9 C6: --lr-schedule / --wsd-* / --save-at (default cosine: nothing changes)
+_lrs.register_dvb_levers(_dvb.register)       # refcv9 C6: the five schedule flags are G-DVB levers (`elsewhere` x4 + `runtime`)
 # --- refcv6 §2/§6: the perception branch (map + 3-D boxes) ------------------ #
 # ⛔ IMPORTED UNCONDITIONALLY, USED ONLY BEHIND A POSITIVE WEIGHT. An
 # analysis-time import that fails AFTER the rollout destroys a run whose
@@ -179,6 +184,12 @@ _mbf.register_dvb_levers(_dvb.register)
 _bbf.register_dvb_levers(_dvb.register)
 # refcv9 C2: --r9-map-own-enc is a `built` lever (the 128-channel own encoder and the widened lift, read off the built branch)
 _moe.register_dvb_levers(_dvb.register)
+# refcv9 C8: the two planner-wire flags are `built` levers (the zero-init projection / the box tokens and their gates, read off the built model)
+_pwf.register_dvb_levers(_dvb.register)
+# refcv9 C3: --r9-box-depth-aux is a `built` lever (the head on the perception branch), --w-box-depth a `loss` lever (model._w_box_depth)
+_bda.register_dvb_levers(_dvb.register)
+# refcv9 C4: --r9-box-persp-aux / --r9-box-bev2-aux are `built` levers (the head on the perception branch), --w-box-persp / --w-box-bev2 `loss` levers
+_p3f.register_dvb_levers(_dvb.register)
 # refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): the progress head is a `built` lever, its weights `loss` levers
 _r9p.register_dvb_levers(_dvb.register)
 # refcv9 GT-in-pool schedule (H-R9-ALLOC-ORACLE-1): the attached schedule's spec / seed, read off the built model
@@ -887,6 +898,9 @@ def _pin_refcv8(cfg, args) -> None:
     _mbf.pin_args(args)          # refcv9 C1: --r9-map-banded's refusals (incl. --w-map-fp, retired under it; a no-op when off)
     _bbf.pin_args(args)          # refcv9 B3: --r9-box-*'s refusals (a no-op when every flag is off)
     _moe.pin_args(args)          # refcv9 C2: --r9-map-own-enc's refusals (needs --r9-map-banded; a no-op when off)
+    _pwf.pin_args(args)          # refcv9 C8: the planner wires' refusals (a no-op when both flags are off)
+    _bda.pin_args(args)          # refcv9 C3: --r9-box-depth-aux's refusals (needs the rig, --map-hires on, the join3d cuboids; a no-op when off)
+    _p3f.pin_args(args)          # refcv9 C4: --r9-box-persp-aux / --r9-box-bev2-aux refusals (mutually exclusive; need the rig, --w-box3d > 0, the join3d cuboids; a no-op when off)
     _gse = int(getattr(args, "grad_share_every", 0) or 0)
     if _gse < 0 or (_gse > 0 and _gse % max(1, int(getattr(args, "log_every", 50) or 50)) != 0):
         raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
@@ -1093,6 +1107,7 @@ def _pin_refcv8(cfg, args) -> None:
     # ---- the drivable-area critic (MM 2026-10-04, D6 P1'): opt-in, zero-init score term, map-head feature ------- #
     r.critic_drivable = bool(getattr(args, "r8_critic_drivable", False))
     r.w_drivable = float(getattr(args, "w_r8_drivable", 0.0) or 0.0)
+    r.critic_banded = bool(r.critic_drivable and getattr(args, "r9_map_banded", False))      # refcv9 C8 W-MAP-1 (OFF: the tip's False)
     if r.critic_drivable and str(getattr(args, "map_hires", "off") or "off") != "on":
         raise SystemExit("[refcv8] --r8-critic-drivable reads the model's OWN 10 cm map head at inference and its "
                          "SAM3 target in training: pass --map-hires on")
@@ -3054,6 +3069,55 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
         "mask": None,
         "already": "_pin_refcv8 (dead flag without --refcv8; no v9 release refused) + G-DVB `w_r8_v9_cons`",
     },
+    "w_box_persp": {
+        "flag": "--w-box-persp",
+        "term": "refcv9 C4: B2 perspective 3D aux head (FCOS3D-style on s8 + s16) (TRAINING-ONLY; targets from the batch's own cuboids through the cylindrical model)",
+        # the head exists iff --r9-box-persp-aux; only the perception rig's loss calls it (persp3d_aux_flag.pin_args, the same list)
+        "gate": lambda a: (
+            bool(getattr(a, "r9_box_persp_aux", False)) and bool(getattr(a, "r9_perc_rig", False))
+            and float(getattr(a, "w_box3d", 0.0) or 0.0) > 0.0
+            and str(getattr(a, "map_hires", "off") or "off") == "on"
+            and bool(str(getattr(a, "join3d", "") or "")) and bool(str(getattr(a, "agent_join", "") or ""))
+            and str(getattr(a, "agent_rig_camera", "off") or "off") == "extrinsics",
+            "--w-box-persp needs --r9-box-persp-aux, --r9-perc-rig, --w-box3d > 0, --map-hires on, --join3d, --agent-join and "
+            "--agent-rig-camera extrinsics"),
+        "mask": None,
+        "already": "persp3d_aux_flag.pin_args (orphan weight / weight 0 with the flag / both heads / every missing input refused) "
+                   "+ G-DVB `w_box_persp`",
+    },
+    "w_box_bev2": {
+        "flag": "--w-box-bev2",
+        "term": "refcv9 C4: B2c parameter-matched second BEV head (B2's capacity control) (TRAINING-ONLY; targets from the batch's own cuboids through the cylindrical model)",
+        # the head exists iff --r9-box-bev2-aux; only the perception rig's loss calls it (persp3d_aux_flag.pin_args, the same list)
+        "gate": lambda a: (
+            bool(getattr(a, "r9_box_bev2_aux", False)) and bool(getattr(a, "r9_perc_rig", False))
+            and float(getattr(a, "w_box3d", 0.0) or 0.0) > 0.0
+            and str(getattr(a, "map_hires", "off") or "off") == "on"
+            and bool(str(getattr(a, "join3d", "") or "")) and bool(str(getattr(a, "agent_join", "") or ""))
+            and str(getattr(a, "agent_rig_camera", "off") or "off") == "extrinsics",
+            "--w-box-bev2 needs --r9-box-bev2-aux, --r9-perc-rig, --w-box3d > 0, --map-hires on, --join3d, --agent-join and "
+            "--agent-rig-camera extrinsics"),
+        "mask": None,
+        "already": "persp3d_aux_flag.pin_args (orphan weight / weight 0 with the flag / both heads / every missing input refused) "
+                   "+ G-DVB `w_box_bev2`",
+    },
+    "w_box_depth": {
+        "flag": "--w-box-depth",
+        "term": "refcv9 C3 (arm B1): the TRAINING-ONLY box-derived depth head's soft LID cross-entropy over object cells "
+                "(s8 + s16; targets ray-cast from the batch's own cuboids through the cylindrical model)",
+        # the head exists iff --r9-box-depth-aux; the loss is called only by the perception rig's loss, and the targets
+        # need the s8 tap, the join3d cuboids and the clip's own camera (box_depth_aux_flag.pin_args, the same list)
+        "gate": lambda a: (
+            bool(getattr(a, "r9_box_depth_aux", False)) and bool(getattr(a, "r9_perc_rig", False))
+            and str(getattr(a, "map_hires", "off") or "off") == "on"
+            and bool(str(getattr(a, "join3d", "") or "")) and bool(str(getattr(a, "agent_join", "") or ""))
+            and str(getattr(a, "agent_rig_camera", "off") or "off") == "extrinsics",
+            "--w-box-depth needs --r9-box-depth-aux, --r9-perc-rig, --map-hires on, --join3d, --agent-join and "
+            "--agent-rig-camera extrinsics (the head, the rig loss that calls it, and the ray-cast inputs)"),
+        "mask": None,
+        "already": "box_depth_aux_flag.pin_args (orphan weight / weight 0 with the flag / every missing input refused) + G-DVB "
+                   "`w_box_depth` (model._w_box_depth is the declared weight)",
+    },
 }
 
 
@@ -4817,6 +4881,12 @@ class V3Dataset(RouteV21Dataset):
                 if self.tac_goal_targets:
                     item["tac_goal_y"] = _j8["v9_goal_y"]
                     item["tac_goal_w"] = _j8["v9_goal_w"] * (0.0 if _x8 else 1.0)
+        # ---- refcv9 C3B (--r9-box-depth-aux): B1's depth targets are built HERE, in the DataLoader worker (off the step); OFF: ds._r9_bd is unset ---- #
+        if getattr(self, "_r9_bd", None) is not None:
+            item.update(_bda.item_targets(item, self._r9_bd))
+        # ---- refcv9 C4 (--r9-box-persp-aux / --r9-box-bev2-aux): B2's / B2c's compact targets are built HERE, in the DataLoader worker; OFF: ds._r9_p3 is unset ---- #
+        if getattr(self, "_r9_p3", None) is not None:
+            item.update(_p3f.item_targets(item, self._r9_p3))
         return item
 
 
@@ -7273,6 +7343,14 @@ def compute_losses_perc_rig(model, batch: dict, device: str, mode: str = "diffus
                                with_metrics=bool(log_metrics) or not model.training)
     if _mh_term is not None:
         loss = loss + _mh_term
+    # ---- refcv9 C3 (B1): the TRAINING-ONLY box-derived depth head on s8 + s16 (OFF / eval mode: returns None, nothing is added) ----- #
+    _bd_term = _bda.loss_term(model, out, batch, device, extra)
+    if _bd_term is not None:
+        loss = loss + _bd_term
+    # ---- refcv9 C4 (B2 / B2c): the TRAINING-ONLY perspective-3D head (or its parameter-matched BEV control); OFF / eval mode: returns None ----- #
+    _p3_term = _p3f.loss_term(model, out, batch, device, extra)
+    if _p3_term is not None:
+        loss = loss + _p3_term
     return {"loss": loss, **extra}
 
 
@@ -9631,6 +9709,8 @@ def train(args) -> dict:
     _check_nav_from_v7_args(args)
     _check_max_speed_args(args)            # E16; no-op with the flag off
     _check_goal_point_args(args)           # E15 (GP-2); no-op with the flags off
+    _lrs.check_args(args)                  # refcv9 C6: the schedule / branch / save-at refusals (defaults: nothing)
+    _wsd_src = _lrs.branch_preflight(args, build_parser())   # refcv9 C6: the branch's argv against its source run's (no flag: None)
     # ⛔ NOT REDUNDANT WITH THE `preflight` CALL. `main` runs `preflight`
     # ONLY under `--preflight` and otherwise calls `train` directly, so a
     # guard wired into `preflight` alone covers one launch path of two.
@@ -9866,6 +9946,9 @@ def train(args) -> dict:
                             query_select=str(getattr(args, "slot_query_select", "learned") or "learned"))
         model._perception = _perc.build_perception_branch(model, _pcfg).to(device)
         _bbf.attach(model, args)                             # refcv9 B3: the decoder's B3 state + the loss attributes (OFF: nothing)
+        _pwf.attach(model, args)                             # refcv9 C8: W-MAP-2 projection / W-BOX tokens + gates (OFF: nothing)
+        _bda.attach(model, args)                             # refcv9 C3: the training-only depth head on model._perception + model._w_box_depth (OFF: nothing)
+        _p3f.attach(model, args)                             # refcv9 C4: the training-only B2 head (or the B2c BEV head) on model._perception + its weight attribute (OFF: nothing)
         _pframe = _perc.frame_for_model(model)
         if model._w_map > 0.0:
             _pe, _ptable = _read_rig_extrinsics(
@@ -9885,6 +9968,7 @@ def train(args) -> dict:
             # ⛔ C26: the rows zeroed at the trunk AND marked unobserved in the lift.
             "equalize_bottom_rows": int(getattr(args, "equalize_bottom_rows", 0) or 0),
             "branch_params": model._perception.param_breakdown(),
+            **({} if _pwf.stamp(model, args) is None else {"plan_wires": _pwf.stamp(model, args)}),   # refcv9 C8 (absent when OFF)
             "fmap_s16_channels": int(model.core.encoder.s16_dim),
             "fmap_s16_hw": list(model.core.encoder.s16_shape),
             "frame": {"height": int(_pframe.height), "width": int(_pframe.width),
@@ -10870,6 +10954,8 @@ def train(args) -> dict:
           f"-> ~{n_flight * frame_batch_bytes / 1e9:.2f} GB", flush=True)
     # ⛔ NOT `shuffle=True`: its permutation comes from the global RNG, which a relaunch
     # re-seeds, so every resume replayed the start of the epoch. See ResumableEpochSampler.
+    _bda.attach_dataset(ds, model, args)    # refcv9 C3B: B1's depth targets are built in the DataLoader workers (ds._r9_bd; OFF: nothing)
+    _p3f.attach_dataset(ds, model, args)    # refcv9 C4: B2's / B2c's targets are built in the DataLoader workers (ds._r9_p3; OFF: nothing)
     _train_sampler = ResumableEpochSampler(len(ds), int(args.seed), int(args.batch))
     dl = torch.utils.data.DataLoader(
         ds, batch_size=args.batch, sampler=_train_sampler, num_workers=args.workers,
@@ -10883,14 +10969,14 @@ def train(args) -> dict:
     # `assert_optimizer_matches_recipe`: the 2026-09-22 review measured the encoder
     # multiplier destroyed every step while config.json stamped it, and no guard saw it.
     assert_optimizer_matches_recipe(opt, args, model=model)
-    sched = lambda s: (s + 1) / max(1, args.warmup) if s < args.warmup else \
-        0.5 * (1.0 + math.cos(math.pi * (s - args.warmup)
-                              / max(1, args.steps - args.warmup)))   # noqa: E731
+    sched = _lrs.make_sched(args)          # refcv9 C6: cosine (bit-identical to the lambda this replaced) | wsd
+    _sched_probe = _lrs.assert_sched_matches_args(sched, args)    # G-DVB (lr_schedule / wsd_decay_steps): the BUILT sched against argv
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
     step = 0
     ck = out_dir / "ckpt.pt"
+    _wsd_branch = _lrs.stage_branch(args, out_dir, _wsd_src)     # refcv9 C6: a branch's stable ckpt becomes THIS run's ckpt.pt (no flag: None)
     _data_order = {"scheme": ResumableEpochSampler.SCHEME, "seed": int(args.seed),
                    "resumed_from": None, "legacy_checkpoint": False}
     _ema_resume = _b1_resume = None       # refcv8 R8-WARMUP: what the resumed checkpoint carries
@@ -10986,6 +11072,7 @@ def train(args) -> dict:
     assert_seams_are_built(model, _seams)
     _run_config = {
         "arm": args.arm, "seed": args.seed, "argv": sys.argv[1:],
+        **_lrs.config_stamp(args, _wsd_branch), "lr_factor_probe": _sched_probe,    # refcv9 C6: schedule, decay length, branch source (path, md5, step)
         # ⭐ the backend setting as it IS, read back -- not the flag that asked for it
         "cudnn_benchmark": bool(torch.backends.cudnn.benchmark),
         # ⭐ the backbone levers as the BUILT trunk reports them (`bn_folded`, `bn_pinned`,
@@ -11197,6 +11284,9 @@ def train(args) -> dict:
         # ⛔ `None` for a pre-A9 arm, so its record differs by nothing a comparison acts on.
         "slot_refine": _slot_refine_block(args, model),
         **({"r9_box_b3": _bbf.stamp(model, args)} if _bbf.is_any(args) else {}),     # refcv9 B3; absent for a default run
+        **({"r9_box_depth_aux": _bda.stamp(model, args)} if _bda.is_on(args) else {}),   # refcv9 C3; absent for a default run
+        **({"r9_box_persp_aux": _p3f.stamp(model, args)} if _p3f.is_persp(args) else {}),   # refcv9 C4 (B2); absent for a default run
+        **({"r9_box_bev2_aux": _p3f.stamp(model, args)} if _p3f.is_bev2(args) else {}),     # refcv9 C4 (B2c); absent for a default run
         "vis1": ({"sidecar": vis1_stamp, "rule": _vis1.vis1_rule_dict(),
                   "train": vis1_stats, "eval": eval_vis1_stats, "calib": calib_stamp}
                  if vis1_stamp is not None else None),
@@ -11452,6 +11542,7 @@ def train(args) -> dict:
     # milestone layout). Step 0 is written HERE, before the first update, and only on a FRESH start: it is the
     # warm-start identity control K0's input (the --init-from weights exactly as this trainer loaded them).
     _nt_snaps = parse_snapshot_steps(getattr(args, "snapshot_steps", None), int(args.steps))
+    _save_at = _lrs.parse_save_at(getattr(args, "save_at", None), int(args.steps))      # refcv9 C6: --save-at (default: none)
     if 0 in _nt_snaps and step == 0:
         torch.save({"model": model.state_dict(), "step": 0}, out_dir / "ckpt_0.pt")
         if _ema is not None:
@@ -11537,6 +11628,13 @@ def train(args) -> dict:
             print("[v3] WP-D loss parity OK at step %d: "
                   "w*bev/traj = %.4f in %s" % (step, _bev_parity["ratio"],
                                                _bev_parity["band"]), flush=True)
+        if "r8_drv" in losses and float(losses.get("n_drv", 0.0)) > 0.0 and not getattr(model, "_r9_wcost_printed", False):
+            # refcv9 C8 W-COST: the step-0 (first labelled step) ratio critic-BCE / trajectory-loss; --w-r8-drivable is set from THIS (~0.1), never from eval
+            model._r9_wcost_printed = True
+            print("[v3] refcv9 W-COST at step %d: critic-BCE / trajectory-loss = %.4f  (critic BCE %.4f, traj %.4f, n_drv %d, --w-r8-drivable %.4g; "
+                  "target weighted ratio ~0.1 => w = 0.1 / ratio)" % (
+                      step, _pwf.wcost_ratio(float(losses["r8_drv"]), float(losses["traj"])), float(losses["r8_drv"]),
+                      float(losses["traj"]), int(losses["n_drv"]), float(args.w_r8_drivable)), flush=True)
         opt.zero_grad(set_to_none=True)
         # ---- SPEC_REFCV6_V2 §6: cos(g_traj, g_aux) on the shared trunk ----- #
         # ⛔ BEFORE the backward, because the two gradients must be SEPARATE;
@@ -11763,6 +11861,9 @@ def train(args) -> dict:
             # the one line that makes the order VERIFIABLE from train.log
             print(f"[v3:{args.arm}] ckpt step {step} -> {ck.name}",
                   flush=True)
+        if step in _save_at:                 # refcv9 C6: --save-at, a FULL-STATE ckpt at a named (stable-phase) step
+            torch.save(_ckpt_payload(model, opt, step, _dpos, len(ds), args, _ema, _b1), out_dir / (_lrs.FULL_CKPT_FMT % step))
+            print(f"[v3:{args.arm}] full-state ckpt step {step} -> {_lrs.FULL_CKPT_FMT % step}", flush=True)
         if step in MILESTONES or step in _nt_snaps:      # H-NT-DECIDE-1: + the --snapshot-steps (RAW, model-only)
             torch.save({"model": model.state_dict(), "step": step},
                        out_dir / f"ckpt_{step}.pt")
@@ -12768,6 +12869,23 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--batch", type=int, default=20)
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--warmup", type=int, default=2000)
+    # ---- refcv9 C6 (REFCV9_DESIGN sec. 2.6 R6): the WSD schedule + the decay branch (tanitad/train/lr_schedule.py) ---- #
+    ap.add_argument("--lr-schedule", choices=("cosine", "wsd"), default="cosine",
+                    help="cosine (default: warm-up then cosine to 0, bit-identical to the pre-C6 lambda) | wsd (warm-up, STABLE "
+                         "at the peak, then a LINEAR decay to 0 over the last --wsd-decay-steps steps).")
+    ap.add_argument("--wsd-decay-steps", type=int, default=0,
+                    help="N > 0 iff --lr-schedule wsd: the length of the linear decay (the last N of --steps). The refcv9 full "
+                         "run: --warmup 1000 --steps 73280 --wsd-decay-steps 12458; E2: --steps 6000 --wsd-decay-steps 1000.")
+    ap.add_argument("--wsd-branch-from", type=str, default=None,
+                    help="a NEW run (own --out) that resumes the FULL state of this STABLE-phase checkpoint (ckpt.pt / "
+                         "ckpt_full_<s>.pt of a --lr-schedule wsd run, config.json beside it) at step s, and decays linearly "
+                         "over s .. s+M to 0. REFUSES a warm-up/decay-phase checkpoint, an argv that differs from the source's "
+                         "(except --out/--steps/--save-at/branch flags), and --steps != s + M. Needs --wsd-branch-decay M.")
+    ap.add_argument("--wsd-branch-decay", type=int, default=0,
+                    help="M > 0 iff --wsd-branch-from: the branch's decay length; --steps must be the source step + M.")
+    ap.add_argument("--save-at", type=str, default=None,
+                    help="comma list of steps that each write a FULL-STATE ckpt_full_<step>.pt (model, optimiser, EMA, data "
+                         "position: resumable, so it can seed a --wsd-branch-from), beside ckpt.pt. Default: none.")
     # ---- refcv6 §2: the trunk and the optimiser the papers actually use --- #
     # ⛔ BOTH DEFAULT TO TODAY'S BEHAVIOUR. `--trunk refc` + `--opt adam` is
     # bit-for-bit the pre-refcv6 trainer (pinned by
@@ -13297,6 +13415,38 @@ def build_parser() -> argparse.ArgumentParser:
                          "widened 64 -> 128; it feeds ONLY the banded map head, the box / agents / planner BEV keep the 64-channel "
                          "encoder (stem input channels 64..127 ZERO at init). Needs --r9-map-banded. Warm start (--r9-perc-rig): lift "
                          "rows 0..63 and stem input channels 0..63 from refcv8, the rest fresh / zero. Default OFF: the tip's build.")
+    g8.add_argument("--r9-plan-map-channels", action="store_true",
+                    help="refcv9 C8 W-MAP-2 (REFCV9_DESIGN 2.7): the banded head's drv / drv_sdf / sdw / lane / unobs channels (DETACHED), resampled to "
+                         "1 m over 100 m x +-30 m, enter the planner BEV pool through a ZERO-INIT 1x1 projection. Needs --r9-map-banded and "
+                         "--bev-source map_hires_pool. Default OFF: the tip's build.")
+    g8.add_argument("--r9-plan-box-tokens", action="store_true",
+                    help="refcv9 C8 W-BOX (REFCV9_DESIGN 2.7): the top-32 box3d slots by presence become tokens appended to the planner's AND the "
+                         "tactical decoder's agent-token set behind a ZERO-INIT gate per consuming layer (exact: g = 0 is the agents-only output). "
+                         "Needs --agents head and --w-box3d > 0; refused with --wp-index on. K3 (retire the agent head) is NOT built. Default OFF.")
+    g8.add_argument("--r9-box-depth-aux", action="store_true",
+                    help="refcv9 C3 (REFCV9_DESIGN 2.3, arm B1): a TRAINING-ONLY box-derived depth head on the trunk's s8 + s16 maps -- LID "
+                         "bins (80) over 0-100 m, soft two-hot targets ray-cast from the batch's own box3d cuboids through the CYLINDRICAL "
+                         "model, alpha_fg 3.25 (alpha_bg inert), loss on object cells only. Needs --r9-perc-rig, --map-hires on, --agent-join, "
+                         "--join3d, --agent-rig-camera extrinsics and --w-box-depth > 0. Never called by the forward (removed at inference). "
+                         "Default OFF: the tip's build, forward and loss.")
+    g8.add_argument("--w-box-depth", type=float, default=0.0,
+                    help="refcv9 C3: the weight of the --r9-box-depth-aux term (the unweighted term is alpha_fg 3.25 x mean soft-CE over FG "
+                         "cells). Must be > 0 with the flag and 0 without it. Default 0.0 (OFF).")
+    g8.add_argument("--r9-box-persp-aux", action="store_true",
+                    help="refcv9 C4 (REFCV9_DESIGN 2.4, arm B2): a TRAINING-ONLY FCOS3D-style perspective head on the trunk's s8 + s16 maps -- projected-centre "
+                         "heatmap (Gaussian, focal), depth (80 LID bins over 0-100 m, C3's), size (log l/w/h), yaw (sin, cos), centre-ness -- with targets from "
+                         "the batch's own box3d cuboids through the CYLINDRICAL model, built in the DataLoader workers. Needs --r9-perc-rig, --w-box3d > 0, "
+                         "--map-hires on, --agent-join, --join3d, --agent-rig-camera extrinsics and --w-box-persp > 0. Never called by the forward. "
+                         "Mutually exclusive with --r9-box-bev2-aux. Default OFF: the tip's build, forward and loss.")
+    g8.add_argument("--w-box-persp", type=float, default=0.0,
+                    help="refcv9 C4: the weight of the --r9-box-persp-aux term (heat + depth + size + yaw + centre-ness, each part weight 1.0). Must be > 0 with "
+                         "the flag and 0 without it. Default 0.0 (OFF).")
+    g8.add_argument("--r9-box-bev2-aux", action="store_true",
+                    help="refcv9 C4 (REFCV9_DESIGN 4.3, arm B2c = B2's control, BEVFormer v2's BEV&BEV): a SECOND, parameter-matched (+-10 %% of B2's) "
+                         "TRAINING-ONLY head on the SHARED BEV (perception.bev_feats) with the same box targets. Same preconditions as B2 except the camera. Never "
+                         "called by the forward. Mutually exclusive with --r9-box-persp-aux. Default OFF.")
+    g8.add_argument("--w-box-bev2", type=float, default=0.0,
+                    help="refcv9 C4: the weight of the --r9-box-bev2-aux term. Must be > 0 with the flag and 0 without it. Default 0.0 (OFF).")
     g9 = ap.add_argument_group("refcv9 R9-PF (clean-split, regime-factored progress head; REFCV9_INMODEL_DESIGN.md)")
     g9.add_argument("--r9-perc-rig", action="store_true",
                     help="refcv9 C7 (REFCV9_DESIGN 4.3): the E1 PERCEPTION-ONLY rig -- init from refcv8 EMA-48,852 via "

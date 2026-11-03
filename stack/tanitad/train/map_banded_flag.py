@@ -43,9 +43,8 @@ def pin_args(args) -> None:
     if getattr(args, "map_hires_class_thresholds", None):
         bad.append("--map-hires-class-thresholds: the 8-way class-threshold rule reads logits the banded head does not emit "
                    "(per-channel, per-band thresholds are fitted on a FIT split by the eval harness)")
-    if bool(getattr(args, "r8_critic_drivable", False)) or float(getattr(args, "w_r8_drivable", 0.0) or 0.0) > 0.0:
-        bad.append("--r8-critic-drivable / --w-r8-drivable: the refcv8 drivable critic reads the 8-way logits; wiring it to the "
-                   "banded channels is C8 (W-MAP-1), not C1")
+    # refcv9 C8 (W-MAP-1): `--r8-critic-drivable` is LEGAL here -- the critic then reads the banded channels (P(drv), drv_sdf; `unobs` and
+    # out-of-extent corners = no evidence), see tanitad/models/plan_wires_r9.py and refc_v3.py's E9 block.
     from tanitad.train import map_only_ft as _mof
     if _mof.is_on(args):
         try:
@@ -88,6 +87,10 @@ def dvb_check(model, args) -> list:
         out.append(Mismatch(DEST, declared, built, "model._map_hires.banded", "argv and the build disagree"))
     if declared != attr:
         out.append(Mismatch(DEST, declared, attr, f"model.{MODEL_ATTR}", "argv and the attribute the LOSS reads disagree"))
+    drv = getattr(model, "r8_drv", None)               # refcv9 C8 W-MAP-1: the critic reads the banded channels iff both flags are declared
+    if drv is not None and (int(drv.n_feats) == 5) != declared:
+        out.append(Mismatch(DEST, "5-feature banded critic" if declared else "3-feature 8-way critic", f"{int(drv.n_feats)} features",
+                            "model.r8_drv.n_feats", "the critic's input and the declared map head disagree"))
     if built:
         if getattr(br.refine, "cls", None) is not None:
             out.append(Mismatch(DEST, "no 8-way readout", "refine.cls built", "model._map_hires.refine.cls",

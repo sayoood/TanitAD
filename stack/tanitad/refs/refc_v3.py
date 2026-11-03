@@ -2098,7 +2098,8 @@ class RefCV3Model(nn.Module):
         with torch.random.fork_rng(devices=[]):
             torch.manual_seed(int(getattr(r8cfg, "seed", 0)) + R8_INIT_SEED_OFFSET)
             if bool(getattr(r8cfg, "critic_drivable", False)):
-                self.r8_drv = r8c.DrivableCritic()
+                self.r8_drv = (r8c.DrivableCritic(n_feats=5) if bool(getattr(r8cfg, "critic_banded", False))     # refcv9 C8 W-MAP-1
+                               else r8c.DrivableCritic())
             self.r8_n_params = (self.tac_decoder_v6.attach_refcv8_heads(R8_NAV_DIMS + R8_RC_DIMS, v9_dims=_v9d,
                                                                         speed_enc8_dims=_e8)
                                 + (0 if self.r8_drv is None else sum(p.numel() for p in self.r8_drv.parameters()))
@@ -2274,7 +2275,9 @@ class RefCV3Model(nn.Module):
                         "`perception_valid=` from the 0.25 m bank "
                         "(HiresLiftGeometryBank.for_episodes).")
                 hi = mh(fmap_s8, grid, valid)       # refuses a missing fmap_s8
-                pout = {} if br is None else br(fmap_s16, bev_hires=hi["map_hires_bev"])
+                pout = {} if br is None else br(fmap_s16, bev_hires=hi["map_hires_bev"],
+                                                **({"map_banded": hi.get("map_banded")}      # refcv9 C8 W-MAP-2 only
+                                                   if getattr(getattr(br, "bev_pool", None), "map_chan_proj", None) is not None else {}))
                 pout = dict(pout)
                 pout["map_hires_logits"] = hi["map_hires_logits"]
                 pout["map_hires_lift_valid"] = hi["map_hires_lift_valid"]
@@ -2730,10 +2733,17 @@ class RefCV3Model(nn.Module):
             # refcv8 drivable critic: the feature from the model's OWN 10 cm map head, DETACHED (vision only); the
             # term w * logsigmoid(logit) with w zero-init -- step 0 is unchanged
             _pl = (out.get("perception") or {}).get("map_hires_logits")
-            if _pl is None:
+            if self.r8_drv.n_feats != r8c.DRV_FEATS:        # refcv9 C8 W-MAP-1: the BANDED read (P(drv), drv_sdf; `unobs` = no evidence)
+                _mbd = (out.get("perception") or {}).get("map_banded")
+                if _mbd is None:
+                    raise ValueError("[refcv9] the banded drivable critic is built but no `map_banded` reached E9 (--r9-map-banded)")
+                from tanitad.models import plan_wires_r9 as _pw
+                _dfeat = _pw.critic_feature_banded(fan, _mbd)
+            elif _pl is None:
                 raise ValueError("[refcv8] the drivable critic is built but no 10 cm map logits reached E9 "
                                  "(--map-hires on is required)")
-            _dfeat = r8c.drivable_feature(fan, _pl)
+            else:
+                _dfeat = r8c.drivable_feature(fan, _pl)
             _dlog, _dterm = self.r8_drv(_dfeat, fan)
             blended = blended + _dterm
             out["r8_drv_logit"], out["r8_drv_feat"] = _dlog, _dfeat

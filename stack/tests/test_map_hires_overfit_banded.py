@@ -88,7 +88,9 @@ BANDED_NEW = {"BANDED_SCHEMA", "BANDED_CHANNEL_CLASS", "BANDED_CHANNELS", "BANDE
               "BANDED_GATED_BANDS", "BANDED_DEFAULT_ARMS", "BANDED_INFORMATIVE_ARMS", "BANDED_INFORMATIVE_CHANNELS",
               "banded_gate_rows", "banded_hi_m", "_banded_forward", "_band_targets", "banded_loss", "_new_acc", "_acc_add",
               "_acc_summary", "evaluate_banded", "run_arm_banded", "controls_banded", "banded_bar", "banded_clears",
-              "verdict_banded", "main_banded"}
+              "verdict_banded", "main_banded",
+              # refcv9 E1-REC2 (arm M3): the launch-argv binding and the own-encoder resolution (only --banded reaches them)
+              "OWN_ENC_FLAG", "BANDED_FLAG", "launch_argv_facts", "resolve_own_enc"}
 
 
 def _key(n):
@@ -100,10 +102,16 @@ def _key(n):
 
 
 def _is_banded_addition(n):
-    """The two statements ``main`` gained: ``ap.add_argument("--banded", ...)`` and ``if a.banded: return main_banded(a)``."""
+    """The statements ``main`` gained: ``ap.add_argument("--banded", ...)`` and ``if a.banded: return main_banded(a)`` (M-GATE), and ``--launch-argv`` / ``--own-enc`` + their refusal without ``--banded`` (E1-REC2)."""
     if isinstance(n, ast.Expr) and isinstance(n.value, ast.Call) and n.value.args \
             and isinstance(n.value.args[0], ast.Constant) and n.value.args[0].value == "--banded":
         return True
+    if isinstance(n, ast.Expr) and isinstance(n.value, ast.Call) and n.value.args \
+            and isinstance(n.value.args[0], ast.Constant) and n.value.args[0].value in ("--launch-argv", "--own-enc"):
+        return True                                   # E1-REC2: the two --banded-only options
+    if isinstance(n, ast.If) and ast.dump(n.test) == ast.dump(ast.parse(
+            "(a.launch_argv is not None or a.own_enc) and not a.banded").body[0].value):
+        return True                                   # E1-REC2: their refusal without --banded (raises; OFF never enters it)
     return isinstance(n, ast.If) and ast.dump(n.test) == ast.dump(ast.parse("a.banded").body[0].value)
 
 
@@ -118,7 +126,7 @@ def test_OFF_is_the_tips_harness_bit_for_bit():
         got.append((_key(n), hashlib.sha256(ast.dump(n).encode()).hexdigest()[:20]))
     assert [tuple(x) for x in TIP_DIGESTS] == got                 # includes `main` (minus the two additions) and the order
     main = next(n for n in ast.parse(src).body if _key(n) == "main")
-    assert sum(_is_banded_addition(x) for x in main.body) == 2   # the pin is not satisfied by deleting the flag
+    assert sum(_is_banded_addition(x) for x in main.body) == 5   # M-GATE 2 + E1-REC2 3; the pin is not satisfied by deleting the flag
 
 
 def test_OFF_imports_nothing_new_at_module_level():
