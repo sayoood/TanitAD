@@ -284,7 +284,7 @@ def _stopped_and_uninterrupted(tmp_path, monkeypatch, reseed):
 def test_D3_a_STOPPED_wsd_run_relaunched_with_the_same_argv_reproduces_the_uninterrupted_run_bit_for_bit(tmp_path, monkeypatch):
     """The state a resume carries (model, optimiser, data position) plus the PURE factor reproduce the trajectory: every row
     of steps 5-8 (every loss scalar, lr, data position) and every final tensor are equal. The global RNG is pinned per step
-    (``_patch_batches(reseed=True)``) because the trainer does NOT restore it -- see D3b."""
+    (``_patch_batches(reseed=True)``): written when the trainer did NOT restore it (see D3b, which now pins that it does) -- kept, it pins the schedule independently of the RNG."""
     ru, rr = _stopped_and_uninterrupted(tmp_path, monkeypatch, reseed=True)
     assert [_clean(r) for r in rr] == [_clean(r) for r in ru], "the resumed rows are not the uninterrupted rows"
     assert [r["lr"] for r in rr] == [BASE_LR * L.wsd_factor(k - 1, 3, 8, 4) for k in range(1, 9)]
@@ -294,16 +294,19 @@ def test_D3_a_STOPPED_wsd_run_relaunched_with_the_same_argv_reproduces_the_unint
     assert _cfg(tmp_path / "r")["data_order"]["resumed_at_step"] == 4
 
 
-def test_D3b_CONTROL_the_lr_resumes_exactly_but_the_RNG_does_not__a_pre_existing_property_the_reseed_in_D3_removes(tmp_path, monkeypatch):
-    """MEASURED 2026-11-03 (CPU smoke rig, WSD, stop at step 4): WITHOUT the per-step reseed the resumed run's lr sequence is
-    still the uninterrupted run's EXACTLY, but its losses from step 5 differ (92.78 vs 148.98 at step 5): ``train()``
-    re-seeds the global RNG from ``--seed`` at every launch and ``ckpt.pt`` carries no RNG state, so the diffusion-noise /
-    dropout stream restarts. NOT a schedule effect (the cosine resumes the same way) and not changed by C6. If a trainer
-    change ever restores the RNG, this control starts FAILING: delete it and the reseed in D3 consciously."""
+def test_D3b_the_RNG_resumes_too__a_relaunch_equals_the_uninterrupted_run_WITHOUT_the_per_step_reseed(tmp_path, monkeypatch):
+    """WAS the control that PINNED THE DEFECT (MEASURED 2026-11-03, CPU smoke rig, WSD, stop at step 4: without the per-step
+    reseed the resumed run's losses differed from step 5 on, 92.78 vs 148.98, because ``train()`` re-seeded the global RNG from
+    ``--seed`` at every launch and ``ckpt.pt`` carried no RNG state). RNG-RESUME (2026-11-03, ``tests/test_resume_rng.py``) puts
+    the streams in the checkpoint and restores them last, so this control FLIPS -- as its own docstring said it would: with NO
+    reseed the resumed rows (lr, data position, every loss scalar) and the final tensors are the uninterrupted run's. The reseed
+    in D3 is now redundant (kept: it pins the schedule independently of the RNG)."""
     ru, rr = _stopped_and_uninterrupted(tmp_path, monkeypatch, reseed=False)
     assert [r["lr"] for r in rr] == [r["lr"] for r in ru]
     assert [_clean(r) for r in rr[:4]] == [_clean(r) for r in ru[:4]]
-    assert [r["loss"] for r in rr[4:]] != [r["loss"] for r in ru[4:]]
+    assert [_clean(r) for r in rr[4:]] == [_clean(r) for r in ru[4:]]
+    cu, cr = (torch.load(tmp_path / x / "ckpt.pt", weights_only=False) for x in ("u", "r"))
+    assert all(torch.equal(cu["model"][k], cr["model"][k]) for k in cu["model"])
 
 
 # =========================================================================== #

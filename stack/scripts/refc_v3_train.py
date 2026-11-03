@@ -5507,6 +5507,141 @@ def _opt_param_names(model, opt) -> list:
     return out
 
 
+# ---- RNG-RESUME (MM 207ebd, 2026-11-03): a resumed run must equal the uninterrupted run ------------------------- #
+# ⛔⛔ THE DEFECT, MEASURED BY C6 (superseded_by_int1_hold_r9_c6/HANDOFF.md): `ckpt.pt` carried NO RNG state and
+# `train()` re-seeds from `--seed` at launch, so a relaunched run's losses differed from the uninterrupted run's
+# (92.78 vs 148.98 at step 5, same lr). The DATA ORDER already resumed (`data_pos`); the stochastic draws did not
+# (diffusion noise, dropout, scheduled-sampling coins, the DataLoader iterator's base seed). Every arm under
+# `supervise_run.sh` (MAX_RELAUNCH=4) therefore silently became a DIFFERENT run after a relaunch -- training variance
+# the paired bootstrap cannot see (H-ESTIM-SEED-1).
+# ⭐ THE FIX, in four parts:
+#   (1) every checkpoint the trainer resumes from (`ckpt.pt`, `ckpt_full_<s>.pt`) carries `ckpt["rng"]`: the torch CPU
+#       + CUDA streams, numpy's and python's global streams, and every model-owned dedicated generator (the refcv8
+#       `R8Generator`'s `_g` dict) -- plain tensors / ints / floats, so `torch.load(weights_only=True)` reads it;
+#   (2) `train()` restores it LAST: after every launch-time seeding / consumption (`torch.manual_seed`, the model's init
+#       draws, `iter(dl)`, which DRAWS the worker base seed from the global stream even at `--workers 0`), immediately
+#       before the first step -- so the restored state is the one the next step consumes;
+#   (3) the in-training eval is STREAM-NEUTRAL (`EVAL_STREAM_NEUTRAL`): the checkpoint is written BEFORE the eval (load-
+#       bearing, see the loop) and the eval draws from the global stream, so without this a relaunch from an eval-
+#       coinciding checkpoint (every full run: --save-every 500 = --eval-every 500) resumed from a stream the
+#       uninterrupted run had already moved past. The W-BOOTSTRAP dump and the calibration pass were made neutral the
+#       same way (`_RngIsolated`); the aggregate eval was the remaining one;
+#   (4) an OLD checkpoint (no `rng`) still resumes, with a WARNING naming the missing key -- never a silent re-seed.
+# ⚠️ SCOPE. Exact on CPU (the tiny rig, `tests/test_resume_rng.py`). On CUDA the stream is restored but atomicAdd
+# kernels are not bitwise-deterministic run to run, so GPU bit-exactness is not claimed. DataLoader workers: this
+# trainer's datasets draw NO RNG in `__getitem__` (every generator in the data path is a private, seeded one), so
+# worker-side streams are inert and the resume is exact at `--workers > 0` too; a dataset that DID draw would restart
+# its worker streams at the resume (persistent workers seed once, from the base seed of the FIRST iterator).
+RNG_CKPT_KEY = "rng"
+RNG_SCHEMA = "trainer-rng/1"
+#: wrap the aggregate in-training eval (and the B1 catch-up eval) so it leaves the training stream where it found it.
+#: True = a resume from an eval-coinciding checkpoint is exact; False = the tip's behaviour (an eval-on uninterrupted run
+#: keeps the eval's draws in its training stream, and such a resume diverges). Changes eval-ON trajectories only.
+EVAL_STREAM_NEUTRAL = True
+
+
+def _dedicated_generator_owners(model) -> dict:
+    """``{"<module path>:<attr>": owner}`` for every object a module holds whose ``_g`` is a dict of ``torch.Generator``
+    (the refcv8 ``R8Generator`` duck type -- the same walk ``grad_share._dedicated_generators`` does, with a STABLE key)."""
+    out = {}
+    named = getattr(model, "named_modules", None)
+    if named is None:
+        return out
+    for mname, mod in named():
+        for attr, v in list(vars(mod).items()):
+            g = getattr(v, "_g", None)
+            if isinstance(g, dict) and hasattr(v, "get") and all(isinstance(x, torch.Generator) for x in g.values()):
+                out[f"{mname}:{attr}"] = v
+    return out
+
+
+def rng_state_capture(model=None) -> dict:
+    """Every random stream the training loop consumes, as plain data (tensors / ints / floats / strings).
+    READ-ONLY: it consumes nothing, so an uninterrupted run's stream is unchanged by saving it."""
+    import random as _r
+    npk = _np.random.get_state()
+    py = _r.getstate()
+    cuda = None
+    if torch.cuda.is_available() and torch.cuda.is_initialized():
+        cuda = [s.detach().cpu().clone() for s in torch.cuda.get_rng_state_all()]
+    return {"schema": RNG_SCHEMA,
+            "torch_cpu": torch.get_rng_state().clone(),
+            "torch_cuda": cuda,
+            "numpy": {"alg": str(npk[0]), "keys": [int(x) for x in npk[1]], "pos": int(npk[2]),
+                      "has_gauss": int(npk[3]), "cached_gaussian": float(npk[4])},
+            "python": {"version": int(py[0]), "internal": [int(x) for x in py[1]],
+                       "gauss_next": None if py[2] is None else float(py[2])},
+            "dedicated": {k: {dk: g.get_state().detach().cpu().clone() for dk, g in o._g.items()}
+                          for k, o in _dedicated_generator_owners(model).items()}}
+
+
+def rng_state_restore(state: dict, model=None) -> dict:
+    """Put every stream back as ``rng_state_capture`` found it -> ``{"restored": [...], "skipped": {stream: reason}}``.
+    Each stream is restored on its own: one that cannot be (CUDA device count changed, a generator on a device this
+    process lacks) is NAMED in ``skipped`` and never aborts the others, and never passes silently."""
+    import random as _r
+    rep = {"restored": [], "skipped": {}}
+    if not isinstance(state, dict) or state.get("schema") != RNG_SCHEMA:
+        rep["skipped"]["*"] = "unknown RNG schema %r (this build reads %r)" % (
+            state.get("schema") if isinstance(state, dict) else type(state).__name__, RNG_SCHEMA)
+        return rep
+
+    def _cpu(t):                       # `torch.load(map_location=<cuda>)` moves the state tensors; a state must be a CPU ByteTensor
+        return t.detach().to("cpu", dtype=torch.uint8)
+    try:
+        owners = _dedicated_generator_owners(model)
+        for k, saved in (state.get("dedicated") or {}).items():
+            o = owners.get(k)
+            if o is None:
+                rep["skipped"]["dedicated:" + k] = "no such generator owner in this model"
+                continue
+            for dk in [dk for dk in o._g if dk not in saved]:
+                del o._g[dk]                       # created since the checkpoint (e.g. at launch): re-created fresh on use, as it was
+            for dk, st in saved.items():
+                o.get(dk).set_state(_cpu(st))
+            rep["restored"].append("dedicated:" + k)
+    except Exception as e:                                         # noqa: BLE001 -- recorded, never silent
+        rep["skipped"]["dedicated"] = "%s: %s" % (type(e).__name__, str(e)[:160])
+    try:
+        n = state["numpy"]
+        _np.random.set_state((n["alg"], _np.asarray(n["keys"], dtype=_np.uint32), int(n["pos"]),
+                              int(n["has_gauss"]), float(n["cached_gaussian"])))
+        rep["restored"].append("numpy")
+    except Exception as e:                                         # noqa: BLE001
+        rep["skipped"]["numpy"] = "%s: %s" % (type(e).__name__, str(e)[:160])
+    try:
+        p = state["python"]
+        _r.setstate((int(p["version"]), tuple(int(x) for x in p["internal"]), p["gauss_next"]))
+        rep["restored"].append("python")
+    except Exception as e:                                         # noqa: BLE001
+        rep["skipped"]["python"] = "%s: %s" % (type(e).__name__, str(e)[:160])
+    try:
+        torch.set_rng_state(_cpu(state["torch_cpu"]))
+        rep["restored"].append("torch_cpu")
+    except Exception as e:                                         # noqa: BLE001
+        rep["skipped"]["torch_cpu"] = "%s: %s" % (type(e).__name__, str(e)[:160])
+    cu = state.get("torch_cuda")
+    if cu is not None:
+        try:
+            if not torch.cuda.is_available():
+                rep["skipped"]["torch_cuda"] = "the checkpoint carries %d CUDA stream(s); this process has no CUDA" % len(cu)
+            elif len(cu) != torch.cuda.device_count():
+                rep["skipped"]["torch_cuda"] = "the checkpoint carries %d CUDA stream(s); this process has %d device(s)" % (
+                    len(cu), torch.cuda.device_count())
+            else:
+                torch.cuda.set_rng_state_all([_cpu(s) for s in cu])
+                rep["restored"].append("torch_cuda[%d]" % len(cu))
+        except Exception as e:                                     # noqa: BLE001
+            rep["skipped"]["torch_cuda"] = "%s: %s" % (type(e).__name__, str(e)[:160])
+    return rep
+
+
+def _rng_ckpt_extra(model) -> dict:
+    """The ONE key every resumable checkpoint gains (``ckpt.pt`` and ``ckpt_full_<s>.pt`` alike, so G-CKPT's
+    key-set equality holds): ``{"rng": ...}``."""
+    return {RNG_CKPT_KEY: rng_state_capture(model)}
+
+
 def _ckpt_payload(model, opt, step, dpos, n_windows, args, ema, b1) -> dict:
     """The ``ckpt.pt`` dict for the B1 guard's RE-SAVE -- the same payload as the loop's own save (the tip's four keys
     ``model``, ``opt``, ``step``, ``data_pos`` plus ``param_names`` and ``_ema_ckpt_extra``), written a second time once the guard has
@@ -5521,7 +5656,7 @@ def _ckpt_payload(model, opt, step, dpos, n_windows, args, ema, b1) -> dict:
                          "n": n_windows, "seed": int(args.seed),
                          "batch_size": int(args.batch)},
             "param_names": _opt_param_names(model, opt),
-            **_ema_ckpt_extra(ema, b1), **_p10_ckpt_extra(model)}
+            **_ema_ckpt_extra(ema, b1), **_p10_ckpt_extra(model), **_rng_ckpt_extra(model)}
 
 
 def _ema_summary_extra(ema, b1) -> dict:
@@ -10991,6 +11126,7 @@ def train(args) -> dict:
     _data_order = {"scheme": ResumableEpochSampler.SCHEME, "seed": int(args.seed),
                    "resumed_from": None, "legacy_checkpoint": False}
     _ema_resume = _b1_resume = None       # refcv8 R8-WARMUP: what the resumed checkpoint carries
+    _rng_resume = None                    # RNG-RESUME: ckpt["rng"] of the checkpoint this run resumes (None: fresh, or an OLD checkpoint)
     if ck.exists():
         state = torch.load(ck, map_location=device, weights_only=False)
         _ema_resume, _b1_resume = _resume_ema_guard(state, args)     # refuses a mismatch BEFORE any state is loaded
@@ -11002,6 +11138,15 @@ def train(args) -> dict:
         _data_order.update(resume_data_position(state, _train_sampler, len(ds),
                                                 args.batch))
         _data_order["resumed_at_step"] = step
+        # ⭐ RNG-RESUME: the streams are restored LATER (just before the first step, see `rng_state_restore`'s call), because
+        # `iter(dl)` and every other launch-time call still consumes the freshly seeded stream. An OLD checkpoint is named.
+        _rng_resume = state.get(RNG_CKPT_KEY)
+        _data_order["rng"] = {"schema": RNG_SCHEMA, "in_ckpt": _rng_resume is not None}
+        if _rng_resume is None:
+            print(f"[v3] ⚠️ RESUMED FROM A ckpt.pt WITHOUT RNG STATE (missing key: {RNG_CKPT_KEY!r}; ckpt keys "
+                  f"{sorted(state)}): the random streams restart from --seed {int(args.seed)}, so this relaunch is NOT "
+                  f"bit-equal to the uninterrupted run (dropout / diffusion noise / sampler draws differ from step "
+                  f"{step} on).", flush=True)
     # refcv8 WP-B: --init-from (the warm start). A run that RESUMES its own ckpt.pt ignores it (resume wins).
     _init_stamp = None
     if getattr(args, "init_from", None):
@@ -11531,6 +11676,16 @@ def train(args) -> dict:
         _seed_batch = smoke_seed_batch(ds, dl, int(args.batch))
         print(f"[v3] SMOKE: the first batch is {int(_seed_batch['vis1_rekeyed'].numel())} ego-stripped windows "
               f"(re-keyed {int(_seed_batch['vis1_rekeyed'].sum())})", flush=True)
+    # ⭐⭐ RNG-RESUME: THE RESTORE. It is the LAST thing that touches the random streams before the first step -- after
+    # `torch.manual_seed(args.seed)`, the model / head init draws, the dataset and `iter(dl)` (which DRAWS the worker base seed
+    # from the global stream even at --workers 0) and the smoke seed batch -- so the state the next step consumes is the one the
+    # checkpoint was written with. Restored BEFORE the B1 catch-up below, whose re-save must carry the restored streams.
+    if _rng_resume is not None:
+        _rng_rep = rng_state_restore(_rng_resume, model)
+        _data_order["rng"].update(_rng_rep)              # `_run_config["data_order"]` IS this dict: rewrite config.json with the outcome
+        (out_dir / "config.json").write_text(json.dumps(_run_config, indent=1), encoding="utf-8")
+        print(f"[v3] RNG-RESUME: restored {_rng_rep['restored']}"
+              + (f"; ⛔ NOT restored {_rng_rep['skipped']}" if _rng_rep["skipped"] else ""), flush=True)
     # ⭐ refcv8 R8-WARMUP, B1 guard: a RESUME at or past the guard step with the guard still PENDING means the previous
     # process died between the step-N checkpoint (written BEFORE the eval) and the step-N eval -- the eval that dies
     # most often (C-REFCV3-EVAL-DEATH). The weights loaded here are exactly the ones that eval would have read, so read
@@ -11538,7 +11693,10 @@ def train(args) -> dict:
     # the uncut head rate.
     if _b1 is not None and _ema_resume is not None and not _b1["decided"] and step >= _b1["guard_step"] \
             and eval_dl is not None:
+        _gc_snap = rng_state_capture(model) if EVAL_STREAM_NEUTRAL else None      # RNG-RESUME: this eval stands where the step-N eval stood
         _gc_row = _ema_eval_row(model, _ema, eval_dl, args, device, det_gates, det_nms_cfg, det_zh_cfg)
+        if _gc_snap is not None:
+            rng_state_restore(_gc_snap, model)
         try:
             _b1_row = _wema.b1_guard_apply(_b1, step, _gc_row, opt)
         except _wema.B1GuardError as e:
@@ -11869,7 +12027,7 @@ def train(args) -> dict:
                                      "batch_size": int(args.batch)},
                         # optimizer-id-ordered names: stack/scripts/zerograd_gate.py (post-training gate)
                         "param_names": _opt_param_names(model, opt),
-                        **_ema_ckpt_extra(_ema, _b1), **_p10_ckpt_extra(model)}, ck)
+                        **_ema_ckpt_extra(_ema, _b1), **_p10_ckpt_extra(model), **_rng_ckpt_extra(model)}, ck)
             # the one line that makes the order VERIFIABLE from train.log
             print(f"[v3:{args.arm}] ckpt step {step} -> {ck.name}",
                   flush=True)
@@ -11895,6 +12053,10 @@ def train(args) -> dict:
         # after it, and to catch train-only improvement early.
         if eval_dl is not None and (step % args.eval_every == 0
                                     or step == args.steps):
+            # ⭐ RNG-RESUME: the eval draws from the global stream (sampler noise, the eval iterator's base seed), and
+            # the checkpoint above was written BEFORE it. Without this a resume from this step's checkpoint starts on a
+            # stream the uninterrupted run had already moved past. Restored at the end of the block.
+            _eval_stream = rng_state_capture(model) if EVAL_STREAM_NEUTRAL else None
             model.eval()
             acc, nb_e, eval_err = {}, 0, None
             det_packs = {}          # refcv7 A9 P0: pooled per-window detection packs
@@ -12005,6 +12167,8 @@ def train(args) -> dict:
                     print(f"[v3:eval] step {step} EMA loss {erow.get('ema_eval_loss', float('nan')):.4f} "
                           f"traj {erow.get('ema_eval_traj', float('nan')):.4f} "
                           f"box3d_ap2m {erow.get(_wema.B1_METRIC_KEY)}", flush=True)
+                if _eval_stream is not None:     # RNG-RESUME: the B1 re-save just below must carry the stream the run CONTINUES with
+                    rng_state_restore(_eval_stream, model)
                 if _b1 is not None:          # refcv8 R8-WARMUP B1 guard: decides ONCE, at the first eval >= guard_step
                     try:
                         _b1_row = _wema.b1_guard_apply(_b1, step, erow, opt)
@@ -12076,6 +12240,9 @@ def train(args) -> dict:
                 log.flush()
                 print(f"[v3:eval] window dump: {_n_win} rows -> "
                       f"{args.eval_window_dump}", flush=True)
+            if _eval_stream is not None:         # RNG-RESUME: the training stream goes on exactly as it would without the eval
+                rng_state_restore(_eval_stream, model)
+                _eval_stream = None
     # ---- A7: did the freeze hold, and how stale did it get? -------------- #
     if _bnr_loader is not None:
         _bn_recalib_finish(model, _bnr_loader, args, device, out_dir,
