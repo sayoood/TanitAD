@@ -14,6 +14,8 @@ set -u
 R=/home/nvidia/r8ns/r9e1; T=$R/launch_tree; PY=/home/nvidia/venvs/tanitad-train/bin/python; LOCKF=/home/nvidia/refcv7_post/thor_gpu.lock
 SHA="$(cat $R/launch_tree.commit)"; C12="${SHA:0:12}"; G=$R/suite_$C12; STAT=$R/gate3/CHAIN_STATUS.txt
 EXP=$R/gate3_explore/${C12}_C0; KIT=$R/kit
+# the arms, in training order (written by r9gate3_restart.sh; default = the floor pair). C0 stays the explore arm.
+ARMS="$(cat $R/gate3/ARMS 2>/dev/null)"; ARMS="${ARMS:-C0 C1}"
 mkdir -p $R/gate3 $R/runs.d
 ev() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $*" >> "$STAT"; echo "ZZR9E1CHAIN-$1ZZ $(date -u +%H:%M:%SZ) ${*:2}"; }
 stop() { ev "STOP-$1" "${@:2}"; exit 3; }
@@ -21,7 +23,7 @@ status_of() { "$PY" -c 'import json,sys; print(json.load(open(sys.argv[1],encodi
 wait_for() { # $1 = file, $2 = max seconds -> 0 when present+non-empty
   local t0=$(date +%s); while [ ! -s "$1" ]; do [ $(( $(date +%s) - t0 )) -gt "$2" ] && return 1; sleep 20 9>&- 200>&-; done; return 0; }
 [ "${#SHA}" = 40 ] || stop BADCOMMIT "launch_tree.commit"
-ev START "commit $C12 tree $T"
+ev START "commit $C12 tree $T arms [$ARMS]"
 
 # ---- A: wait for the exploratory smoke evidence (a crashed/refused explore ends the wait) -------------------------------------
 t0=$(date +%s)
@@ -69,7 +71,7 @@ ev SUITE-BOUND "suite_bound.json precheck PASS: $G/suite_bound.json"
 fi
 
 # ---- E: dev-box pinned evidence for both arms ------------------------------------------------------------------------------------
-for A in C0 C1; do
+for A in $ARMS; do
   D=$R/devbox_evidence_${C12}_${A}
   t0=$(date +%s); while [ ! -s "$D/evidence/G-SUITE-PINNED.json" ] && [ ! -s "$D/G-SUITE-PINNED.json" ]; do
     [ $(( $(date +%s) - t0 )) -gt 10800 ] && break; sleep 30 9>&- 200>&-; done
@@ -78,7 +80,7 @@ done
 
 # ---- F: the real gate, C0 then C1 ----------------------------------------------------------------------------------------------------
 PASSED=""
-for A in C0 C1; do
+for A in $ARMS; do
   D=$R/devbox_evidence_${C12}_${A}
   if [ ! -s "$D/evidence/G-SUITE-PINNED.json" ] && [ ! -s "$D/G-SUITE-PINNED.json" ]; then ev GATE-SKIPPED "$A: no dev-box pinned evidence"; continue; fi
   if [ -s "$R/gate3/$A/PASS_$C12.json" ]; then   # re-entry: an existing token is reused only if the gate's own verify MATCHes it
@@ -98,7 +100,7 @@ done
 exec 9>"$LOCKF"; ev LOCK-WAIT "taking the Thor GPU lock (<= 6 h)"
 flock -w 21600 9 || stop LOCK-TIMEOUT "the Thor GPU lock stayed held for 6 h; tokens are intact"
 NA="$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -c '[0-9]')"; [ "$NA" = 0 ] || stop GPU-NOT-EMPTY "$NA compute app(s) under the lock; never share the GPU"
-for A in C0 C1; do
+for A in $ARMS; do
   case " $PASSED " in *" $A "*) ;; *) ev "$A-NOT-LAUNCHED" "no PASS token"; continue;; esac
   TOK=$R/gate3/$A/PASS_$C12.json; ARGV=$T/stack/ops/runs.d/r9e1_${A}.argv.json; ARM=r9e1_$A; VJ=$R/gate3/$A/verify_prelaunch.json
   rm -f "$VJ"; $PY $T/stack/scripts/launch_gate.py verify --token "$TOK" --argv-file "$ARGV" --tree "$T" --commit "$SHA" --json "$VJ" > $R/gate3/$A/verify_prelaunch.log 2>&1 200>&-

@@ -6,7 +6,8 @@
 export PATH="/usr/bin:/bin:$PATH"
 export MSYS_NO_PATHCONV=1
 set -u
-CAND="${1:?usage: r9gate3_devbox_pinned.sh <SHA40 of the commit shipped to Thor>}"; C12=${CAND:0:12}
+CAND="${1:?usage: r9gate3_devbox_pinned.sh <SHA40 of the commit shipped to Thor> [ARMS, quoted]}"; C12=${CAND:0:12}
+ARMS="${2:-C0 C1}"
 REPO=C:/Users/Admin/tanitad-push
 STAGE=F:/refcv9_e1/gate
 DEVPY=/c/Users/Admin/venvs/tanitad/Scripts/python.exe
@@ -22,7 +23,7 @@ fi
 [ -s "$T/stack/scripts/launch_gate.py" ] || { say "extracted tree has no launch_gate.py"; mark ZZGS3-PINNED-ARCHIVE-FAILZZ; exit 2; }
 # the NT env (final_pinned_f7.sh): the CUDA-gated tests, the lidar-BEV GT dir, the calibration dir
 export TANITAD_REFAV1_CUDA_TEST=1 TANITAD_LIDAR_BEV_GT_DIR=E:/Projects/TanitAD-artifacts/bev-lidar-gt-b1eval-20260913 TANITAD_CALIB_DIR=E:/Projects/TanitAD-artifacts/hf-corpus-aug-20260915/stage/calibration
-for ARM in C0 C1; do
+for ARM in $ARMS; do
   ARGVF="$T/stack/ops/runs.d/r9e1_${ARM}.argv.json"; OUT="$STAGE/devbox_evidence_${C12}_${ARM}"; SW="$STAGE/gsw_${ARM}"; LOG="$STAGE/devbox_pinned_${C12}_${ARM}.log"
   [ -s "$ARGVF" ] || { say "no argv $ARGVF"; mark ZZGS3-PINNED-${ARM}-FAILZZ; continue; }
   t0=$(date +%s)
