@@ -841,3 +841,17 @@ recoverable, a silent one is not.
   in the repo there mid-run (the entry above).
   * ⇒ **A self-test that must not reach a host fails closed.** Before any step, assert that `command -v ssh` is the stub and that the real
     host alias does not resolve. Never rely on PATH order alone.
+- ⛔ **AN OPERATOR SCRIPT'S ENVIRONMENT LEAKS INTO THE SUITE THE GATE JUDGES — AND THE GATE THEN JUDGES THE OPERATOR, NOT THE CODE.**
+  MEASURED 2026-11-03 (refcv9 E1, C0's dev-box G-SUITE-PINNED at 5761cd2; `landed_hold_r9_pinned_env`, fix 870fa33).
+  * `r9gate3_devbox_pinned.sh` exports `MSYS_NO_PATHCONV=1` for its own ssh / scp of Thor paths. The export reached pytest. In
+    `tests/test_r9_e1_floor.py`, every `r9e1_read.sh` dry run then handed native Windows python an unconverted `/f/...` path ("can't open
+    ...r9e1_read_state.py: [Errno 2]"). Result: **6 / 28 FAIL ⇒ G-SUITE-PINNED FAIL**, which would have refused EVERY arm's launch gate.
+  * Same test, same archive: PASS in 0.95 s without the variable, FAIL with it. The whole file: 28 / 28 on a fresh tree without it.
+  * The test had never run in a pinned job before; it was newly pinned, and the previous run was stopped before reaching it. So "it passed
+    last time" was never true.
+  * ⇒ **A driver scopes every environment variable it needs to the commands that need it** (`env -u VAR` around the judged run, or set it
+    only on the ssh / scp lines), and never exports a shell-behaviour switch into a test run.
+  * ⇒ **When a pinned / gated test fails only under the driver, reproduce it in the gate's own archive with and without each exported
+    variable before touching the code.** The fix belongs in the driver; the evidence still binds the commit's archive.
+  * Same family as "the GOTTY PTY drops output" and the CUDA-visible dagger_compose failure (e87a932): the harness's environment is part
+    of the measurement.
