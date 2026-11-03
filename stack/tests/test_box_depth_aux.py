@@ -77,7 +77,7 @@ def test_builder_is_torch_free_at_import():
     # the module by FILE (its package __init__ may import torch; the property is the builder's own, as in the e0 test)
     code = ("import sys, importlib.util as u; s = u.spec_from_file_location('bdt', %r); m = u.module_from_spec(s); "
             "sys.modules['bdt'] = m; s.loader.exec_module(m); assert 'torch' not in sys.modules; print('ok')" % str(BD_PATH))
-    r = subprocess.run([sys.executable, "-I", "-c", code], capture_output=True, text=True)
+    r = subprocess.run([sys.executable, "-I", "-c", code], capture_output=True, text=True, encoding="utf-8")
     assert r.returncode == 0 and "ok" in r.stdout, r.stderr
 
 

@@ -376,7 +376,7 @@ def _bash_ok():
     if not BASH:
         return False
     try:
-        r = subprocess.run([BASH, "-c", "echo $BASH_VERSION"], capture_output=True, text=True, timeout=60)
+        r = subprocess.run([BASH, "-c", "echo $BASH_VERSION"], capture_output=True, text=True, encoding="utf-8", timeout=60)
         return r.returncode == 0 and bool(r.stdout.strip())
     except Exception:
         return False
@@ -390,7 +390,7 @@ def _bind(tmp_path, *args, code=CODE_TREE, inputs=None):
     cmd = [BASH, BIND.as_posix(), "--dry-run", *args, "--commit", HASH, "--root", (tmp_path / "root").as_posix(), "--code", Path(code).as_posix()]
     if inputs:
         cmd += ["--inputs", Path(inputs).as_posix()]
-    r = subprocess.run(cmd, capture_output=True, text=True, env=env, timeout=600)
+    r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", env=env, timeout=600)
     return r.stdout.replace("\r", ""), tmp_path / "root"
 
 
@@ -450,7 +450,7 @@ def test_the_box_b3_and_map_banded_assertion_snippets_run_and_refuse_a_missing_o
     foreign.write_text(json.dumps(_box_record(C0)), encoding="utf-8")                      # a record bound to C0's argv, offered for B3
     for kind, argvf in (("box-b3", argv_file), ("map-banded", RUNS / "r9e1_M1.argv.json")):
         for rec in (tmp_path / "missing.json", foreign):
-            r = subprocess.run([sys.executable, "-I", "-c", sn[kind], str(CODE_TREE), str(rec), str(argvf), HASH], capture_output=True, text=True,
+            r = subprocess.run([sys.executable, "-I", "-c", sn[kind], str(CODE_TREE), str(rec), str(argvf), HASH], capture_output=True, text=True, encoding="utf-8",
                                env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"), timeout=300)
             assert r.returncode == 0 and "REFUSED:" in r.stdout and "ASSERT-OK" not in r.stdout, (kind, rec.name, r.stdout, r.stderr[-400:])
 

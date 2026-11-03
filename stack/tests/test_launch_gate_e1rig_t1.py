@@ -562,7 +562,7 @@ def _t1_snippet_run(tmp_path, rec, arm, kind):
     import os
     code = next(c for c in R2._snippets() if "T1JUDGE-OK" in c)
     r = subprocess.run([sys.executable, "-I", "-c", code, str(R2.CODE_TREE), str(_write(tmp_path, rec, f"{kind}_{arm}.json")),
-                        str(RUNS / f"r9e1_{arm}.argv.json"), R2.HASH, kind], capture_output=True, text=True,
+                        str(RUNS / f"r9e1_{arm}.argv.json"), R2.HASH, kind], capture_output=True, text=True, encoding="utf-8",
                        env=dict(os.environ, PYTHONDONTWRITEBYTECODE="1"), timeout=300)
     assert r.returncode == 0, r.stderr[-600:]
     return r.stdout

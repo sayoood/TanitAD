@@ -42,7 +42,18 @@ torch = pytest.importorskip("torch")
 RIG = LG.PROFILES["refcv9-e1rig"]
 RUNS = ROOT / "ops" / "runs.d"
 COMMIT = "ab" * 20
-CW_SHA = "ef" * 32
+
+
+def _host_class_weights_sha() -> str:
+    """The class-weight sha the gate's G-MAP-OVERFIT job (`_job_map_overfit`) declares ON THIS HOST: the rig argv's
+    --map-hires-class-weights file, hashed only when it exists here. On Thor it EXISTS (MEASURED 2026-11-03: d70dec8087ed73ee, the same
+    path for every r9e1 arm), so a synthetic base record stamping a fake sha is refused on its class weights before the judge reaches the
+    reuse rule under test; on the dev box it is absent and the gate skips the comparison. Stamp what the gate will compare."""
+    v = LG.flag_values(LG.load_argv_file(RUNS / "r9e1_C0.argv.json"), RIG["map_hires"]["class_weights_flag"])
+    return LG.sha256_file(v[0]) if v and Path(v[0]).is_file() else "ef" * 32
+
+
+CW_SHA = _host_class_weights_sha()
 SAME_AS_C0 = ("B1", "B2", "B2c", "T1", "T1s")             # aux (E1-REC3) + T1 (E1-REC4): flags the harness STRIPS
 ALL_ARMS = ("C0", "C1", "B1", "B2", "B2c", "B3", "B3p", "T1", "T1s", "M1")
 NEEDS_ITS_OWN = ("C1", "B3", "B3p", "M1")

@@ -368,7 +368,7 @@ def test_D2_across_a_real_process_boundary(tmp_path):
 
     def _child(out, stop):
         cmd = [sys.executable, str(HERE), "--child", str(out), "8", "4", str(stop)]
-        p = subprocess.run(cmd, env=env, capture_output=True, text=True, timeout=600)
+        p = subprocess.run(cmd, env=env, capture_output=True, text=True, encoding="utf-8", timeout=600)
         return p
 
     pu = _child(ru, 0)

@@ -501,7 +501,7 @@ def test_the_aux_assertion_snippet_passes_a_stamped_record_and_refuses_a_missing
     argv_file = RUNS / "r9e1_B2.argv.json"
 
     def run(rec):
-        r = subprocess.run([sys.executable, "-I", "-c", code, str(R2.CODE_TREE), str(rec), str(argv_file), R2.HASH], capture_output=True, text=True,
+        r = subprocess.run([sys.executable, "-I", "-c", code, str(R2.CODE_TREE), str(rec), str(argv_file), R2.HASH], capture_output=True, text=True, encoding="utf-8",
                            env=dict(__import__("os").environ, PYTHONDONTWRITEBYTECODE="1"), timeout=300)
         assert r.returncode == 0, r.stderr[-600:]
         return r.stdout

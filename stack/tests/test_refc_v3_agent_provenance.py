@@ -468,6 +468,10 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
     R8_ON = ["--refcv8", "--sampler", "ddim", "--anchor-v0-conditioned", "--anchor-control-units", "alat",
              "--w-u0", "0.5", "--join-defect-masks",
              str(Path(t.__file__).resolve().parents[1] / "tanitad" / "configs" / "refcv8_join_label_defects.json")]
+    R9_AUX = ["--trunk", "timm", "--trunk-frozen-bn", "--map-gt-root", "m", "--agent-rig-camera", "extrinsics",
+              "--agent-rig-extrinsics", str(extr), "--map-hires", "on", "--map-hires-class-weights", "w.json",
+              "--w-map-hires", "1.0", "--r9-perc-rig", "--w-box3d", "1.0", "--bev-source", "map_hires_pool", "--join3d", "j3",
+              "--bev-aux", "off", "--w-bev-aux", "0.0"]
     seam = {
         "w_map": ["--trunk", "timm", "--map-gt-root", "m",
                   "--agent-rig-camera", "extrinsics",
@@ -564,6 +568,15 @@ def test_P2_every_knob_is_recoverable_from_the_stamp_BY_VALUE(tmp_path):
                                              "--agent-rig-extrinsics", str(extr), "--map-hires", "on",
                                              "--map-hires-class-weights", "w.json", "--w-map-hires", "1.0",
                                              "--r8-critic-drivable"],
+        # ⭐ refcv9 C3 / C4 (E1 arms B1 / B2 / B2c), the same shape again: each training-only aux-head weight REFUSES without its
+        # head flag, and each head REFUSES without the perception rig, `--map-hires on`, `--join3d` and `--agent-join`
+        # (`box_depth_aux_flag.pin_args`, `persp3d_aux_flag.pin_args`), and `--join3d` is refused unless a perception branch is built
+        # (`--w-box3d > 0`, the reverse refusal of M18). The rig itself (`refcv9_perc_rig.pin_args`) refuses every planner weight, so these rows turn
+        # `base`'s WP-D head off (`--bev-aux off --w-bev-aux 0`: overrides of SEAM flags, never of the knob under test). ⛔ Each refusal is
+        # CORRECT; the rows satisfy them rather than weakening one.
+        "w_box_depth": R9_AUX + ["--r9-box-depth-aux"],
+        "w_box_persp": R9_AUX + ["--r9-box-persp-aux"],
+        "w_box_bev2": R9_AUX + ["--r9-box-bev2-aux"],
     }
     # Candidates, tried in order: a knob with a DOMAIN (a mount height must be
     # a plausible height) takes the first admissible one. A per-knob table of
