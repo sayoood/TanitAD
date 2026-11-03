@@ -436,6 +436,7 @@ def _build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict
     rec["perception"] = build_perception_block(tr, model, args, device)
     tr._bda.attach(model, args)       # refcv9 C3 (B1): the training-only depth head, so the strict load reads the trained state_dict into the same build; NEVER called by the eval forward (OFF: nothing)
     tr._p3f.attach(model, args)       # refcv9 C4 (B2 / B2c): the training-only perspective (or parameter-matched BEV) head, so the strict load reads the trained state_dict into the same build; NEVER called by the eval forward (OFF: nothing)
+    tr._bw.attach(model, args)        # refcv9 T1: the zero-init fuse on model._map_hires + the hook on its lift, so the strict load reads the trained fuse into the same build; the eval caller must stage the history (bev_warp_flag.stage) before model(...) (OFF: nothing)
     # ---- train():8140-8149 -- refcv6 sec. 6: a conflict detector that can never read anything
     # is refused (a refusal only; the detector itself is a training instrument) ------------ #
     if tr._conflict_override(args) is True and not tr._conflict_aux_weights(model):

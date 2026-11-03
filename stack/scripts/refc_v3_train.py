@@ -110,6 +110,7 @@ from tanitad.train import map_own_enc_flag as _moe  # noqa: E402  refcv9 C2: --r
 from tanitad.train import plan_wires_flag as _pwf  # noqa: E402  refcv9 C8: --r9-plan-map-channels / --r9-plan-box-tokens (OFF: nothing)
 from tanitad.train import box_depth_aux_flag as _bda  # noqa: E402  refcv9 C3: --r9-box-depth-aux / --w-box-depth (OFF: nothing)
 from tanitad.train import persp3d_aux_flag as _p3f  # noqa: E402  refcv9 C4: --r9-box-persp-aux / --w-box-persp (B2) and --r9-box-bev2-aux / --w-box-bev2 (B2c) (OFF: nothing)
+from tanitad.train import bev_warp_flag as _bw  # noqa: E402  refcv9 T1: --r9-bev-warp / --r9-bev-warp-lags / --r9-bev-warp-shuffle (OFF: nothing)
 from tanitad.models import map_banded as _mband  # noqa: E402  refcv9 C1: banded targets / losses (OFF: never called)
 # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
 # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
@@ -190,6 +191,8 @@ _pwf.register_dvb_levers(_dvb.register)
 _bda.register_dvb_levers(_dvb.register)
 # refcv9 C4: --r9-box-persp-aux / --r9-box-bev2-aux are `built` levers (the head on the perception branch), --w-box-persp / --w-box-bev2 `loss` levers
 _p3f.register_dvb_levers(_dvb.register)
+# refcv9 T1: --r9-bev-warp / --r9-bev-warp-lags / --r9-bev-warp-shuffle are `built` levers (the fuse on the 10 cm branch, its lags, the dataset source's shuffle)
+_bw.register_dvb_levers(_dvb.register)
 # refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): the progress head is a `built` lever, its weights `loss` levers
 _r9p.register_dvb_levers(_dvb.register)
 # refcv9 GT-in-pool schedule (H-R9-ALLOC-ORACLE-1): the attached schedule's spec / seed, read off the built model
@@ -901,6 +904,7 @@ def _pin_refcv8(cfg, args) -> None:
     _pwf.pin_args(args)          # refcv9 C8: the planner wires' refusals (a no-op when both flags are off)
     _bda.pin_args(args)          # refcv9 C3: --r9-box-depth-aux's refusals (needs the rig, --map-hires on, the join3d cuboids; a no-op when off)
     _p3f.pin_args(args)          # refcv9 C4: --r9-box-persp-aux / --r9-box-bev2-aux refusals (mutually exclusive; need the rig, --w-box3d > 0, the join3d cuboids; a no-op when off)
+    _bw.pin_args(args)           # refcv9 T1: --r9-bev-warp's refusals (needs the rig, --map-hires on, the timm shared trunk; dead lags / shuffle refused; a no-op when off)
     _gse = int(getattr(args, "grad_share_every", 0) or 0)
     if _gse < 0 or (_gse > 0 and _gse % max(1, int(getattr(args, "log_every", 50) or 50)) != 0):
         raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
@@ -4887,6 +4891,9 @@ class V3Dataset(RouteV21Dataset):
         # ---- refcv9 C4 (--r9-box-persp-aux / --r9-box-bev2-aux): B2's / B2c's compact targets are built HERE, in the DataLoader worker; OFF: ds._r9_p3 is unset ---- #
         if getattr(self, "_r9_p3", None) is not None:
             item.update(_p3f.item_targets(item, self._r9_p3))
+        # ---- refcv9 T1 (--r9-bev-warp): the PAST frames + the PAST poses (rows <= NOW only) are read HERE, in the DataLoader worker; OFF: ds._r9_bw is unset ---- #
+        if getattr(self, "_r9_bw", None) is not None:
+            item.update(_bw.item_fields(self.episodes, e_i, t + w - 1, self._r9_bw))
         return item
 
 
@@ -6984,6 +6991,7 @@ def compute_losses_perc_rig(model, batch: dict, device: str, mode: str = "diffus
                 "one lift would sample the trunk at no camera.")
         _pgrid, _pvalid = _hbank.for_episodes(batch["map_ep"], device=device)
     # ⭐ refcv8 WP-B: the GT hypothesis + constraint targets + the scheduled-sampling teacher (one-shot on the model)
+    _bw.stage(model, batch, device)               # refcv9 T1: the past frames s8 maps + the PAST-pose transforms, staged for the lift hook BEFORE the forward (OFF: nothing)
     _bbf.prepare(model, batch, device)            # refcv9 B3 --r9-box-dn: the DN pack BEFORE the forward (training only; OFF: nothing)
     out = model(frames, perception_grid=_pgrid, perception_valid=_pvalid)
     loss = torch.zeros((), device=device)
@@ -9926,6 +9934,7 @@ def train(args) -> dict:
                  list(_hcfg.out_hw), _hcfg.grad_ckpt, float(_hcfg.near_lift_x_m),
                  int(_hcfg.near_refine_blocks), _s8,
                  model._map_hires.param_breakdown(), _hcws["sha256"][:12]), flush=True)
+    _bw.attach(model, args)                                  # refcv9 T1: the zero-init fuse on model._map_hires + the hook on its lift (OFF: nothing)
     model._perception = None
     model._lift_bank = None
     perception_stamp = None
@@ -10894,6 +10903,7 @@ def train(args) -> dict:
                     args.join3d, len(set(_e_clip.values())), split="eval"))
         if getattr(args, "slot_vis1", False) and _vis1_sc is not None:
             eval_vis1_stats = e_ds.enable_vis1(_vis1_sc, split="eval")
+        _bw.attach_dataset(e_ds, model, args)               # refcv9 T1: the EVAL forward is warped too, so the eval dataset carries the history (OFF: nothing)
         # FIXED **and REPRESENTATIVE** windows.
         # ⛔ shuffle=False ALONE IS A TRAP, and it bit this eval on its first
         # run: taking the first N windows takes them from the START of the
@@ -10956,6 +10966,7 @@ def train(args) -> dict:
     # re-seeds, so every resume replayed the start of the epoch. See ResumableEpochSampler.
     _bda.attach_dataset(ds, model, args)    # refcv9 C3B: B1's depth targets are built in the DataLoader workers (ds._r9_bd; OFF: nothing)
     _p3f.attach_dataset(ds, model, args)    # refcv9 C4: B2's / B2c's targets are built in the DataLoader workers (ds._r9_p3; OFF: nothing)
+    _bw.attach_dataset(ds, model, args)     # refcv9 T1: the history (past frames + past poses) is read in the DataLoader workers (ds._r9_bw; OFF: nothing)
     _train_sampler = ResumableEpochSampler(len(ds), int(args.seed), int(args.batch))
     dl = torch.utils.data.DataLoader(
         ds, batch_size=args.batch, sampler=_train_sampler, num_workers=args.workers,
@@ -11287,6 +11298,7 @@ def train(args) -> dict:
         **({"r9_box_depth_aux": _bda.stamp(model, args)} if _bda.is_on(args) else {}),   # refcv9 C3; absent for a default run
         **({"r9_box_persp_aux": _p3f.stamp(model, args)} if _p3f.is_persp(args) else {}),   # refcv9 C4 (B2); absent for a default run
         **({"r9_box_bev2_aux": _p3f.stamp(model, args)} if _p3f.is_bev2(args) else {}),     # refcv9 C4 (B2c); absent for a default run
+        **({"r9_bev_warp": _bw.stamp(model, args)} if _bw.is_on(args) else {}),     # refcv9 T1; absent for a default run
         "vis1": ({"sidecar": vis1_stamp, "rule": _vis1.vis1_rule_dict(),
                   "train": vis1_stats, "eval": eval_vis1_stats, "calib": calib_stamp}
                  if vis1_stamp is not None else None),
@@ -13432,6 +13444,17 @@ def build_parser() -> argparse.ArgumentParser:
     g8.add_argument("--w-box-depth", type=float, default=0.0,
                     help="refcv9 C3: the weight of the --r9-box-depth-aux term (the unweighted term is alpha_fg 3.25 x mean soft-CE over FG "
                          "cells). Must be > 0 with the flag and 0 without it. Default 0.0 (OFF).")
+    g8.add_argument("--r9-bev-warp", action="store_true",
+                    help="refcv9 T1 (REFCV9_DESIGN 4.3, D3): the temporal BEV warp -- the frames at t - lag (see --r9-bev-warp-lags) are lifted through the "
+                         "SAME shared lift (no_grad), rigidly warped into t0's ego grid by the PAST ego motion (poses at rows <= NOW only), and fused into the "
+                         "current BEV through a ZERO-INIT gated 1x1 (gate 0 = the tip's forward, exactly). Needs --r9-perc-rig, --map-hires on, --trunk timm "
+                         "--trunk-mode shared. Default OFF: the tip's build, forward and loss.")
+    g8.add_argument("--r9-bev-warp-lags", type=str, default="0.5,1.0",
+                    help="refcv9 T1: the past-frame lags in seconds (whole multiples of 0.1 s, strictly increasing). Default 0.5,1.0 (the design's pair). "
+                         "A non-default value without --r9-bev-warp is refused.")
+    g8.add_argument("--r9-bev-warp-shuffle", action="store_true",
+                    help="refcv9 T1 CONTROL (D3: the BEV-history-SHUFFLED control must read worse): the history FRAMES come from a DIFFERENT episode "
+                         "(fixed derangement, seed 0); the item's own poses are kept. Without --r9-bev-warp it is refused. Default OFF.")
     g8.add_argument("--r9-box-persp-aux", action="store_true",
                     help="refcv9 C4 (REFCV9_DESIGN 2.4, arm B2): a TRAINING-ONLY FCOS3D-style perspective head on the trunk's s8 + s16 maps -- projected-centre "
                          "heatmap (Gaussian, focal), depth (80 LID bins over 0-100 m, C3's), size (log l/w/h), yaw (sin, cos), centre-ness -- with targets from "
