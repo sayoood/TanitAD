@@ -649,6 +649,41 @@ def resolve_own_enc(own_enc_flag: bool, facts: dict | None) -> tuple:
     if own_enc_flag and not facts["own_enc"]:
         raise SystemExit(f"⛔ --own-enc is given but the launch argv does not carry {OWN_ENC_FLAG}: the record would not be this argv's")
     return bool(facts["own_enc"]), ("launch_argv" if facts["own_enc"] else "off")
+
+
+#: refcv9 E1-REC4 (MM 207ebd, PINNED): T1, the TEMPORAL BEV WARP (``--r9-bev-warp`` + lags + shuffle control), changes the heads' INPUT, not their structure.
+#: This harness builds the map head on FROZEN frames with no staged history, so a T1 flag in the launch argv is NOT built (it never was: the trunk + branch are
+#: built by hand here) and the record STAMPS ``bev_warp_not_certified`` (+ a one-line reason) == the argv's T1 flag set, which the launch gate's judges
+#: (``launch_gate.bev_warp_stamp_reasons``) require. Both the /1 record (a C0 base) and the /2-banded record (a banded base) stamp it; ``--launch-argv`` is how
+#: the harness learns the argv (admitted WITHOUT ``--banded`` only for an argv that builds the 8-code head). Pinned to ``launch_gate.E1_T1_FLAGS`` by a test.
+T1_FLAGS = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle")
+T1_STAMP = "bev_warp_not_certified"
+T1_STAMP_WHY = "bev_warp_not_certified_why"
+T1_WHY = ("temporal BEV warp (T1): changes the heads' INPUT, not their structure; not built by this harness (frozen frames, no staged history) -- this "
+          "record certifies the base head as built without it; T1's liveness is G-LIVE's and the post-run zero-gradient gate's")
+
+
+def t1_flags_of(argv) -> list:
+    """The T1 flags the argv carries, in ``T1_FLAGS`` order (a ``--flag=value`` token counts as its flag)."""
+    have = {str(t).split("=", 1)[0] for t in argv if str(t).startswith("--")}
+    return [f for f in T1_FLAGS if f in have]
+
+
+def t1_stamp_fields(facts) -> dict:
+    """``{}`` for no argv / an argv with no T1 flag (the record is then byte-for-byte what it was); else the stamp + its reason."""
+    t1 = t1_flags_of(facts["argv"]) if facts else []
+    return {T1_STAMP: t1, T1_STAMP_WHY: T1_WHY} if t1 else {}
+
+
+def t1_record_fields(path, argv_sha256: str = "") -> dict:
+    """The /1 (8-code head) harness's stamp: ``--launch-argv`` (None -> ``{}``) is verified against ``--launch-argv-sha256`` and REFUSED when it builds the
+    banded head (a banded argv needs ``--banded``: its record is the /2-banded one)."""
+    if path is None:
+        return {}
+    facts = launch_argv_facts(path, argv_sha256)
+    if facts["banded"] or facts["own_enc"]:
+        raise SystemExit(f"⛔ the launch argv carries {BANDED_FLAG} / {OWN_ENC_FLAG}: it builds the BANDED head, whose record is the /2-banded one (--banded)")
+    return t1_stamp_fields(facts)
 #: channel -> the inherited class whose bar it carries: drv = codes {1,2,3,4,6} (the area rule, drivable's bar), sdw = 7,
 #: lane = 2, edge_h = 5, xwalk / arrow / hatch = their codes. ``nocls`` has no banded channel (disclosed in the record).
 BANDED_CHANNEL_CLASS = {"drv": "drivable", "sdw": "sidewalk", "lane": "lane", "edge_h": "edge",
@@ -1018,6 +1053,7 @@ def main_banded(a) -> int:
                           "loss_weight": "w_map_hires is not applied (AdamW, weight decay 0: scale-invariant), as in /1",
                           "near_lift_m": "10 = the banded head's own requirement (the spec's 20 belongs to the 8-code head)"},
            "device": a.device, "verdict": v, "results": results}
+    rec.update(t1_stamp_fields(facts))                       # E1-REC4: a banded base + T1: the record says T1's history is NOT certified ({} otherwise)
     (a.out / "g_map_overfit.json").write_text(json.dumps(rec, indent=1, default=float), encoding="utf-8")
     print(json.dumps({k: v[k] for k in ("MAIN", "regression_arms", "controls_reproduced", "time_guard",
                                          "G_MAP_OVERFIT_BANDED")}, indent=1, default=str))
@@ -1055,8 +1091,9 @@ def main(argv=None) -> int:
                     help="the launch decoder's checkpointing (SPEC_REFCV7 §12 item 4)")
     ap.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
     ap.add_argument("--launch-argv", type=Path, default=None,
-                    help="refcv9 E1-REC2 (--banded only): the launch argv (runs.d/<run>.argv.json) the record is bound to; its sha256 must equal "
-                         "--launch-argv-sha256, and the argv DECIDES whether the map's own encoder (--r9-map-own-enc, arm M3) is built")
+                    help="refcv9 E1-REC2 / E1-REC4: the launch argv (runs.d/<run>.argv.json) the record is bound to; its sha256 must equal "
+                         "--launch-argv-sha256. With --banded the argv DECIDES whether the map's own encoder (--r9-map-own-enc, arm M3) is built; "
+                         "without --banded it is admitted for an argv that builds the 8-code head only, and feeds the T1 stamp (bev_warp_not_certified)")
     ap.add_argument("--own-enc", action="store_true",
                     help="refcv9 E1-REC2 (--banded only): build the map's OWN 128-channel BEV encoder by hand (M3's head); a binding run "
                          "passes --launch-argv instead and the argv decides")
@@ -1064,8 +1101,9 @@ def main(argv=None) -> int:
                     help="refcv9 M-GATE: the BANDED map head's OWN overfit record (schema /2-banded; the same pre-registered "
                          "protocol on tanitad/models/map_banded.py, near lift 10 m). OFF = the 8-code head, unchanged")
     a = ap.parse_args(argv)
-    if (a.launch_argv is not None or a.own_enc) and not a.banded:
-        raise SystemExit("⛔ --launch-argv / --own-enc are --banded options (the 8-code head has no own encoder)")
+    if a.own_enc and not a.banded:
+        raise SystemExit("⛔ --own-enc is one of the --banded options (the 8-code head has no own encoder); --launch-argv is admitted without --banded "
+                         "only for an argv that builds the 8-code head")
     if a.banded:
         return main_banded(a)
     extent = MapExtent(float(a.x_max_m), float(a.y_half_m))
@@ -1169,6 +1207,7 @@ def main(argv=None) -> int:
                          "seed": int(spec.get("seed", 0)),
                          "lr_decay": spec.get("lr_decay")},
            "device": a.device, "verdict": v, "results": results}
+    rec.update(t1_record_fields(a.launch_argv, a.launch_argv_sha256))        # E1-REC4: the T1 stamp ({} unless --launch-argv carries a T1 flag)
     (a.out / "g_map_overfit.json").write_text(json.dumps(rec, indent=1, default=float),
                                               encoding="utf-8")
     print(json.dumps({k: v[k] for k in ("MAIN", "regression_arms", "controls_reproduced",

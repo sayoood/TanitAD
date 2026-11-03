@@ -659,6 +659,39 @@ AUX_WHY = ("training-only auxiliary head(s): never called at inference and not b
            "box head in isolation on frozen frames -- the aux head's liveness is G-LIVE's and the post-run zero-gradient gate's")
 
 
+#: refcv9 E1-REC4 (MM 207ebd, PINNED): T1, the TEMPORAL BEV WARP (``--r9-bev-warp`` + its lags + its shuffle control) changes the heads' INPUT, not their
+#: structure. This harness replays ``train()``'s build on FROZEN frames: a T1-built model would hit the lift hook with no staged history (T1 refuses a
+#: forward without it), and a frozen-frame overfit cannot show a temporal effect anyway. So a T1 flag in the launch argv is NOT built (the build argv drops
+#: the flag and the lags' value tokens: ``strip_t1``), the record stamps ``bev_warp_not_certified`` (+ a one-line reason), and the launch gate's judges pass
+#: such a record only when that stamp EQUALS the argv's T1 flag set (``launch_gate.bev_warp_stamp_reasons``). At gate 0 the certified head IS the base's
+#: (tests/test_bev_warp.py); T1's liveness is G-LIVE's and the post-run zero-gradient gate's. Pinned to ``launch_gate.E1_T1_FLAGS`` by a test.
+T1_FLAGS = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle")
+T1_STAMP = "bev_warp_not_certified"
+T1_STAMP_WHY = "bev_warp_not_certified_why"
+T1_WHY = ("temporal BEV warp (T1): changes the heads' INPUT, not their structure; not built by this harness (frozen frames, no staged history) -- this "
+          "record certifies the base head as built without it; T1's liveness is G-LIVE's and the post-run zero-gradient gate's")
+
+
+def strip_t1(launch_argv: list) -> tuple:
+    """-> (the argv without the T1 flags and the lags flag's value tokens, the T1 flags that were present, in ``T1_FLAGS`` order). A ``--flag=value`` token
+    is one token. Nothing else is touched (a value token is dropped only when it follows ``--r9-bev-warp-lags``)."""
+    out, i, present = [], 0, []
+    while i < len(launch_argv):
+        t = launch_argv[i]
+        head = str(t).split("=", 1)[0] if str(t).startswith("--") else None
+        if head in T1_FLAGS:
+            if head not in present:
+                present.append(head)
+            i += 1
+            if head == "--r9-bev-warp-lags" and "=" not in str(t):         # flag + its value token(s)
+                while i < len(launch_argv) and not str(launch_argv[i]).startswith("--"):
+                    i += 1
+        else:
+            out.append(t)
+            i += 1
+    return out, [f for f in T1_FLAGS if f in present]
+
+
 def strip_aux(launch_argv: list) -> tuple:
     """-> (the argv without the aux flags and their weight flag + value, the aux flags that were present, in ``AUX_FLAGS`` order)."""
     weights = set(AUX_WEIGHT_FLAGS.values())
@@ -690,6 +723,9 @@ def b3_record_fields(launch_argv: list) -> dict:
     aux = [f for f in AUX_FLAGS if f in launch_argv]
     if aux:
         out.update({AUX_STAMP: aux, AUX_STAMP_WHY: AUX_WHY})
+    t1 = strip_t1(launch_argv)[1]
+    if t1:                                                    # E1-REC4: the temporal BEV warp is not built here; the record says so
+        out.update({T1_STAMP: t1, T1_STAMP_WHY: T1_WHY})
     return out
 
 
@@ -697,14 +733,17 @@ def harness_build_argv(launch_argv: list) -> tuple:
     """-> (the argv the harness BUILDS from, record fields): the launch argv minus ``--trunk-compile`` -- DECLARED,
     the harness runs eager (Master Mind 2026-09-27); ``trunk_compile`` in the record is what the harness RAN.
     E1-REC3: minus the training-only aux flags and their weights (``strip_aux``) -- the inference box head is what is certified; the record
-    says so (``aux_flags_not_built``, only when the launch argv carries any)."""
+    says so (``aux_flags_not_built``, only when the launch argv carries any). E1-REC4: minus T1's flags (``strip_t1``; ``bev_warp_flags_not_built``)."""
     build, aux = strip_aux([x for x in launch_argv if x != "--trunk-compile"])
+    build, t1 = strip_t1(build)                              # E1-REC4: T1's flags (and the lags' value) are not built either
     rec = {"trunk_compile": False, "trunk_compile_in_launch_argv": "--trunk-compile" in launch_argv,
            "trunk_compile_why": ("harness: the launch argv's --trunk-compile (torch.compile of the backbone call only) is "
                                  "dropped for G-BOX-OVERFIT -- eager numerics, no compile warm-up; the binding run "
                                  "decides whether the launch path needs it (Master Mind 2026-09-27)")}
     if aux:
         rec["aux_flags_not_built"] = aux
+    if t1:
+        rec["bev_warp_flags_not_built"] = t1
     return build, rec
 
 

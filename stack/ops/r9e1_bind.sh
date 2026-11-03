@@ -15,6 +15,11 @@
 #   are NOT own-head levers: B1/B2/B2c take `map` + `box` (the inherited /1 record bound to their OWN argv; the harness does not build the aux
 #   head and the record STAMPS `aux_heads_not_certified` == the argv's aux set -- the gate's /1 judge reads it, and this script asserts it after the
 #   run). A `--r9-box-*` flag in NEITHER tuple is REFUSED ("unknown box lever: classify it" in launch_gate.py). Both tuples are READ from the gate.
+#   E1-REC4 (MM 207ebd, pinned): T1 (`--r9-bev-warp`, `--r9-bev-warp-lags`, `--r9-bev-warp-shuffle` = launch_gate.E1_T1_FLAGS, read from the gate) changes the
+#   heads' INPUT, not their structure: T1 / T1s take `map` + `box` (the inherited /1 record bound to their OWN argv; a banded base would take
+#   map-banded / box-b3 the same way). The harness does NOT build T1 (frozen frames, no staged history: the build argv strips it) and the record STAMPS
+#   `bev_warp_not_certified` == the argv's T1 set -- the gate's judges read it, and this script asserts it after the run (T1JUDGE-OK). Kind `map` hands the /1 map
+#   harness the launch argv (`--launch-argv`, appended for a T1 argv only: every other arm's `map` args are byte-identical to what they were).
 #
 # box-b3 (E1-BOX-OWN-RECORD): the SAME lock discipline and closure_run --binding as `box`, with the template `stack/scripts/r9e1_bind_box-b3.args.tpl`
 #   (g_box_overfit.py, arms main,memory_zeros,presence_w0 -- the /2-b3 record needs RESULT PASS, which the harness writes only when BOTH must-fail
@@ -78,6 +83,9 @@ f = [x for x, _ in L.flag_pairs(L.load_argv_file(sys.argv[2])) if x.startswith("
 print(" ".join(x for x in f if x in L.E1_BOX_OWN_FLAGS) + ";" + " ".join(x for x in f if x in L.E1_BOX_AUX_FLAGS) + ";" + " ".join(x for x in f if x not in L.E1_BOX_OWN_FLAGS + L.E1_BOX_AUX_FLAGS))' "$CODE" "$ARGV")"
 case "$BCLS" in *";"*";"*) ;; *) die "could not classify the --r9-box-* flags of $ARGV (the gate's E1_BOX_OWN_FLAGS / E1_BOX_AUX_FLAGS)";; esac
 BOWN="${BCLS%%;*}"; _r="${BCLS#*;}"; BAUX="${_r%%;*}"; BUNK="${_r#*;}"
+# E1-REC4: the argv's temporal-BEV-warp flags, read from the GATE'S OWN tuple (no second list). Empty for every arm but T1 / T1s.
+T1F="$(pyval 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L
+print(" ".join(sorted({x for x, _ in L.flag_pairs(L.load_argv_file(sys.argv[2])) if x in L.E1_T1_FLAGS})))' "$CODE" "$ARGV")"
 case "$KIND" in
   map)        a_has --r9-map-banded && die "kind map (the inherited /1 8-code head) on an argv carrying --r9-map-banded: use map-banded";;
   map-banded) a_has --r9-map-banded || die "kind map-banded on an argv WITHOUT --r9-map-banded: it builds the 8-code head, use map";;
@@ -87,6 +95,7 @@ case "$KIND" in
               [ -n "$BOWN" ] || die "kind box-b3 on an argv WITHOUT any --r9-box-* own-head lever (B3's four; an aux-only arm is kind box + the aux stamp): it builds the inherited box head, use box";;
 esac
 [ -n "$BAUX" ] && case "$KIND" in box|box-b3) say "training-only aux head(s) $BAUX: not built by the box harness; the record will stamp aux_heads_not_certified (read by the gate's /1 judge)";; esac
+[ -n "$T1F" ] && say "temporal BEV warp flag(s) $T1F: not built by the overfit harness (frozen frames, no staged history); the record will stamp bev_warp_not_certified (read by the gate's judges)"
 [ -f "$HERE/refcv8_assemble_argv.py" ] && [ -f "$HERE/closure_run.py" ] || die "no refcv8_assemble_argv.py / closure_run.py under $HERE"
 # the rig's own template where one exists (box: the --candidate text and the data roots; map: refcv8's, unchanged)
 TPL="$HERE/r9e1_bind_$KIND.args.tpl"; [ -f "$TPL" ] || TPL="$HERE/refcv8_bind_$KIND.args.tpl"; [ -f "$TPL" ] || die "no harness template $TPL"
@@ -112,6 +121,10 @@ fi
     --sub "ARGV_SHA=$ASHA" --sub "OUT=$BD/run_$KIND" --sub "INPUTS=$INPUTS" \
     --args-out "$BD/$KIND.args" --data-roots-out "$BD/$KIND.roots" > "$BD/$KIND.render.txt" 2>&1 9>&- 200>&-
 [ "$(grep -c '^RENDERED' "$BD/$KIND.render.txt")" = 1 ] || die "template $TPL did not render ($BD/$KIND.render.txt)"
+if [ "$KIND" = map ] && [ -n "$T1F" ]; then   # E1-REC4: the /1 map harness learns the launch argv (its T1 flags -> the stamp) only for a T1 argv
+  [ -z "$(tail -c1 "$BD/$KIND.args")" ] || echo >> "$BD/$KIND.args"
+  printf '%s\n' --launch-argv "$ARGV" >> "$BD/$KIND.args"
+fi
 if [ "$DRY" = 1 ]; then
   say "DRY: would hold $LOCKF (blocking <= 2 h), assert compute-apps EMPTY, then closure_run.py --binding --commit $C12 --tree $CODE -- $(wc -l < "$BD/$KIND.args") harness tokens (argv sha ${ASHA:0:16})"
   echo "ZZR9E1BIND-DRYOKZZ"; exit 0
@@ -150,6 +163,17 @@ if [ "$KIND" = box ] && [ -n "$BAUX" ]; then   # E1-REC3: an aux-carrying argv: 
 a = L.load_argv_file(sys.argv[3]); r, d = L.judge_box_overfit(L.PROFILES["refcv9-e1rig"], sys.argv[2], sys.argv[4], argv_sha=L.argv_sha256(a), argv=a)
 print(chr(10).join("REFUSED: " + x for x in r) if r else "AUXJUDGE-OK box record with aux stamp " + str(d.get("aux_heads_not_certified")))' "$CODE" "$REC" "$ARGV" "$COMMIT" >> "$BD/$KIND.record.txt" 2>&1 9>&- 200>&-
   [ "$(grep -c '^AUXJUDGE-OK' "$BD/$KIND.record.txt")" = 1 ] || die "$KIND record refused by the gate's /1 judge (aux stamp): $(tr -d '\r' < "$BD/$KIND.record.txt" | grep '^REFUSED' | head -3 | tr '\n' ' ')"
+fi
+if [ -n "$T1F" ] && { [ "$KIND" = box ] || [ "$KIND" = map ]; }; then   # E1-REC4: a T1 argv: the GATE'S OWN stamp clause on THIS argv (box: the whole /1 judge, which calls it)
+  "$PY" -c 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L
+a = L.load_argv_file(sys.argv[3]); sha = L.argv_sha256(a); P = L.PROFILES["refcv9-e1rig"]
+if sys.argv[5] == "box":
+    r, d = L.judge_box_overfit(P, sys.argv[2], sys.argv[4], argv_sha=sha, argv=a); s = d.get("bev_warp_not_certified")
+else:
+    rec = L.read_json(sys.argv[2]); r, s = L.bev_warp_stamp_reasons("G-MAP-OVERFIT", rec, a)
+    r = list(r) + ([] if rec.get("launch_argv_sha256") == sha else ["G-MAP-OVERFIT: the record is bound to argv " + str(rec.get("launch_argv_sha256"))[:12] + ", not " + sha[:12]])
+print(chr(10).join("REFUSED: " + x for x in r) if r else "T1JUDGE-OK " + sys.argv[5] + " record with the T1 stamp " + str(s))' "$CODE" "$REC" "$ARGV" "$COMMIT" "$KIND" >> "$BD/$KIND.record.txt" 2>&1 9>&- 200>&-
+  [ "$(grep -c '^T1JUDGE-OK' "$BD/$KIND.record.txt")" = 1 ] || die "$KIND record refused by the gate's judge (T1 stamp): $(tr -d '\r' < "$BD/$KIND.record.txt" | grep '^REFUSED' | head -3 | tr '\n' ' ')"
 fi
 fi
 [ "$(grep -c '^ASSERT-OK' "$BD/$KIND.record.txt")" = 1 ] || die "$KIND record refused: $(tr -d '\r' < "$BD/$KIND.record.txt" | head -3 | tr '\n' ' ')"

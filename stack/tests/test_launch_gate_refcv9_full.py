@@ -114,7 +114,7 @@ def test_full_and_d1_argvs_pass(env):
 def test_R8_the_refcv8_family_profiles_are_unchanged():
     fp = lambda n: hashlib.sha256(repr(sorted((k, repr(v)) for k, v in LG.PROFILES[n].items())).encode()).hexdigest()[:16]   # noqa: E731
     assert {n: fp(n) for n in ("refcv8", "refcv9-warm", "refcv9-e1rig", "refcv8-nt", "refcv8-mapft", "v8f")} == {
-        "refcv8": "4841b2a6f0758b95", "refcv9-warm": "da759242444c1cda", "refcv9-e1rig": "ab1a1941851099cd",
+        "refcv8": "4841b2a6f0758b95", "refcv9-warm": "da759242444c1cda", "refcv9-e1rig": "9f378403d53ca63b",     # E1-REC4: e1rig re-pinned (open items: T1 exceptions)
         "refcv8-nt": "a24d2c1a71042711", "refcv8-mapft": "a46c58caf1911e86", "v8f": "52860dd82f3a79af"}
     for f in ("--r9-perc-rig", "--r9-train-only"):                                    # refcv8 still refuses the two mode flags
         assert any(f in e[0] for e in R8["forbidden_levers"])

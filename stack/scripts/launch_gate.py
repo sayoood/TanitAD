@@ -1580,6 +1580,17 @@ E1_BOX_AUX_FLAGS: tuple = ("--r9-box-depth-aux", "--r9-box-persp-aux", "--r9-box
 #: the record keys an aux-carrying argv's box record stamps (the harness writes them, `box_aux_stamp_reasons` reads them)
 E1_BOX_AUX_STAMP = "aux_heads_not_certified"
 E1_BOX_AUX_STAMP_WHY = "aux_heads_not_certified_why"
+#: ⭐ E1-REC4 (MM 207ebd, PINNED -- do not reopen): T1, the TEMPORAL BEV WARP (`--r9-bev-warp` + its lags + its shuffle control), changes both
+#: heads' INPUT (the fused BEV that the shared encoder, the M3 map encoder, the banded head, the planner pool and the box head all read), not their
+#: structure; at gate 0 the certified head IS the base's (tests/test_bev_warp.py: the gate-0 forward equals the OFF forward bit for bit). The overfit
+#: harnesses replay a head on FROZEN frames with no staged history, so a T1 flag in the launch argv is NOT built there (the build argv drops it) and
+#: the record STAMPS `bev_warp_not_certified` == the argv's T1 flag set (`bev_warp_stamp_reasons`): the inherited record (map `/1`, or `/2-banded`
+#: for a banded base; box `/1`) binds to the T1 argv's own sha256 and says what it does NOT certify. T1's liveness is G-LIVE's (`judge_bev_warp_live`:
+#: the gate and the fuse weight moved over the smoke, `bw_has` on a majority of windows) and the post-run zero-gradient gate's. Profile decision:
+#: refcv9-e1rig ADMITS T1; refcv9-e2 / refcv9-full / refcv9-full-d1 REFUSE it (not crowned yet).
+E1_T1_FLAGS: tuple = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle")
+E1_T1_STAMP = "bev_warp_not_certified"
+E1_T1_STAMP_WHY = "bev_warp_not_certified_why"
 #: ⛔ the inherited overfit records (G-BOX-OVERFIT, G-MAP-OVERFIT: refcv8's literals, unchanged) cover the box head and the 10 cm
 #: map head AS refcv8 built them -- arms C0 / C1 (the replicate floor) and A1 / T1 / F1. An arm that CHANGES either head needs
 #: its OWN record. Conditional open items (`open_item_hits`): a refcv9 lever flag present in the argv keeps the token from PASS.
@@ -1606,8 +1617,9 @@ _E1_OPEN_ITEMS = (
                     "passes `judge_box_own_record` (stamped flag set == the argv's `--r9-box-*` set, RESULT PASS, the must-fail "
                     "arms ran and failed). E1-REC3: the TRAINING-ONLY aux heads (`E1_BOX_AUX_FLAGS`: B1 / B2 / B2c) do NOT trigger this "
                     "item -- they change no inference head; their /1 record stamps `aux_heads_not_certified` instead "
-                    "(`box_aux_stamp_reasons`)",
-     "when_prefixes": ("--r9-",), "when_except": (_E1_FLAG, "--r9-map-"), "when_except_exact": E1_BOX_AUX_FLAGS},
+                    "(`box_aux_stamp_reasons`). E1-REC4: T1's three flags (`E1_T1_FLAGS`) do NOT trigger it either -- they change the heads' INPUT, "
+                    "not the heads; the inherited record stamps `bev_warp_not_certified` instead (`bev_warp_stamp_reasons`)",
+     "when_prefixes": ("--r9-",), "when_except": (_E1_FLAG, "--r9-map-"), "when_except_exact": E1_BOX_AUX_FLAGS + E1_T1_FLAGS},
     {"id": "E1-BOX-UNKNOWN-LEVER",
      "what": "unknown box lever: classify it -- the argv carries a `--r9-box-*` flag that is in NEITHER `E1_BOX_OWN_FLAGS` (a lever that "
              "changes the inference box head: needs its OWN /2-b3 record) NOR `E1_BOX_AUX_FLAGS` (a training-only aux head: the "
@@ -1713,7 +1725,7 @@ if _E1_MODULE is not None:
 #: the lever-attach reachability needles (`lever_attach_reasons`), G-DVB / G-LIVE (the levers' own registrations and the exhaustive
 #: LIVE_WEIGHT_RULES: `w_r8_drivable`, `w_map_hires`, `w_box3d`), and the share-alarm row (`map_share_alarm`).
 #: REFUSED (each with its reason): `--r9-perc-rig` / `--r9-train-only` (refcv8's own entries, inherited: the full model is not the rig, the
-#: freeze is refcv9-warm's); the TRAINING-ONLY aux heads (B1 / B2 / B2c): their loss is called ONLY by `compute_losses_perc_rig` and
+#: freeze is refcv9-warm's); T1's three flags (`E1_T1_FLAGS`, E1-REC4: not crowned yet); the TRAINING-ONLY aux heads (B1 / B2 / B2c): their loss is called ONLY by `compute_losses_perc_rig` and
 #: `box_depth_aux_flag.pin_args` / `persp3d_aux_flag.pin_args` refuse them without `--r9-perc-rig` -- UNREACHABLE in the full model
 #: (pinned by source in tests/test_launch_gate_refcv9_full.py: wiring them into `compute_losses` flips that test and forces a re-decision);
 #: R9-PF (refcv9-warm forbids it too: the SEPARATE stage-2 fit); the D1 branch flags (only profile `refcv9-full-d1` admits them).
@@ -1742,7 +1754,7 @@ _R9F_OPEN_ITEMS = (
              "wire (`_R9F_PLAN_FLAGS`), nor forbidden here. It is never silently admitted",
      "owner": "the lever's code agent -> the Master Mind (a reviewed edit of launch_gate.py that classifies the flag)",
      "closes_when": "never by a record: only by a reviewed launch_gate.py edit (classify it admitted, or add it to forbidden_levers)",
-     "when_prefixes": ("--r9-",), "when_except": ("--r9-map-", "--r9-box-"), "when_except_exact": _R9F_PLAN_FLAGS},
+     "when_prefixes": ("--r9-",), "when_except": ("--r9-map-", "--r9-box-"), "when_except_exact": _R9F_PLAN_FLAGS + E1_T1_FLAGS},
 )
 
 
@@ -1762,6 +1774,8 @@ def _r9f_profile(name: str, sched: dict, why: dict, *, extra_flags: tuple = (), 
             (_R9F_AUX_ALL, "a TRAINING-ONLY aux head (B1 / B2 / B2c) or its weight: UNREACHABLE in the full model -- the aux loss is called only by "
                            "`compute_losses_perc_rig` and the trainer's pin_args refuse it without --r9-perc-rig (which this profile forbids)"),
             (_R9W_PF_FLAGS, "R9-PF is the SEPARATE stage-2 calibration fit (REFCV9_INMODEL_DESIGN s1, S2); refcv9-warm forbids it too"),
+            (E1_T1_FLAGS, "T1, the temporal BEV warp (E1-REC4): refcv9-e1rig ADMITS it (an E1 arm); the full model does not carry it until E1 has crowned it "
+                          "-- the trainer's pin_args also refuses it without --r9-perc-rig, which this profile forbids"),
         ) + (((_R9F_BRANCH_FLAGS, "the D1 decay branch launches ONLY under profile refcv9-full-d1 (its own token, the 4-flag delta)"),)
              if name != "refcv9-full-d1" else ()),
         #: `--init-from` bound by CONTENT to refcv8 EMA-48,852 (md5 b4364029...) -- the e1rig machinery (`map_only_init_reasons`' reader)
@@ -4937,6 +4951,89 @@ def judge_live(terms: list[dict], problems: list[str], steps: list[dict], *,
     return reasons, det
 
 
+#: ⭐ E1-REC4 (T1 / `--r9-bev-warp`): the two parameters T1 adds and the batch key the smoke must see. T1 adds NO `--w-*` weight (its loss is the heads' own),
+#: so LIVE_WEIGHT_RULES has nothing to say; liveness is read from the gradient record. The fuse is ReZero: its weight's gradient is EXACTLY 0.0 at step 0
+#: BY CONSTRUCTION (gate = 0), so it is judged on the nonzero-gradient count ACCUMULATED over the smoke's optimiser steps (`nz_steps`), never at step 0.
+BEV_WARP_LIVE = {"flag": "--r9-bev-warp", "gate": "_map_hires.bev_warp.gate", "fuse": "_map_hires.bev_warp.fuse.weight", "batch_key": "bw_has",
+                 "min_frac": 0.5}
+
+
+def bev_warp_observe(rec: dict, batch: Any) -> None:
+    """The smoke's observer (called per TRAINING loss call): accumulate, over the batch's windows, how many carry each lag's history (`bw_has`, a [B, P] bool
+    the dataset hook adds: False before the clip start). Pure bookkeeping into `rec["bw_has"]`; a batch without the key is ignored (every non-T1 launch), a
+    malformed one is RECORDED (`error`) and judged, never raised into the training step."""
+    has = batch.get(BEV_WARP_LIVE["batch_key"]) if isinstance(batch, dict) else None
+    if has is None:
+        return
+    st = rec.setdefault("bw_has", {"calls": 0, "windows": 0, "per_lag_true": [], "all_lags_true": 0, "any_lag_true": 0})
+    try:
+        h = has.detach().cpu().bool()
+        if h.ndim != 2:
+            raise ValueError(f"bw_has has shape {tuple(h.shape)}, expected [B, P]")
+        n, p = int(h.shape[0]), int(h.shape[1])
+        if st["per_lag_true"] and len(st["per_lag_true"]) != p:
+            raise ValueError(f"bw_has has {p} lag columns, an earlier call had {len(st['per_lag_true'])}")
+        st["per_lag_true"] = st["per_lag_true"] or [0] * p
+        for i, c in enumerate(h.sum(0).tolist()):
+            st["per_lag_true"][i] += int(c)
+        st["windows"] += n
+        st["calls"] += 1
+        st["all_lags_true"] += int(h.all(dim=1).sum())
+        st["any_lag_true"] += int(h.any(dim=1).sum())
+    except Exception as e:                                # noqa: BLE001 -- recorded, judged
+        st["error"] = f"{type(e).__name__}: {e}"[:200]
+
+
+def judge_bev_warp_live(argv: list[str], grads: dict, bw: dict | None, *, expect_steps: int = 0) -> tuple[list[str], dict]:
+    """E1-REC4, G-LIVE for an argv that carries `--r9-bev-warp` (INERT otherwise: ([], {})). `grads` = the smoke's per-parameter record
+    ({name: {"steps", "nz_steps", ...}}, `run_smoke`'s `rec["grads"]`), `bw` = `rec["bw_has"]` (`bev_warp_observe`).
+
+    * the GATE (`_map_hires.bev_warp.gate`) and the FUSE weight (`_map_hires.bev_warp.fuse.weight`) are both TRACKED trainable parameters and each saw a
+      nonzero gradient on at least one optimiser step. The fuse reads exactly 0.0 at step 0 by construction (ReZero), so it is judged on the count
+      ACCUMULATED over the smoke -- and a smoke with fewer than 2 optimiser steps cannot judge it at all (a reason, never a pass);
+    * `bw_has` is True on a MAJORITY (> 50 %) of the smoke's windows in EVERY lag column: a smoke whose windows carry no history reads zero gradient
+      on both parameters for a harmless reason, and the leaf check would then blame the wiring."""
+    if not has_flag(argv, BEV_WARP_LIVE["flag"]):
+        return [], {}
+    reasons: list[str] = []
+    det: dict[str, Any] = {"on": True, "rule": "G-LIVE T1 dead-group (E1-REC4)"}
+    for role in ("gate", "fuse"):
+        name = BEV_WARP_LIVE[role]
+        r = grads.get(name) if isinstance(grads, dict) else None
+        if not isinstance(r, dict):
+            det[role] = {"param": name, "tracked": False}
+            reasons.append(f"G-LIVE T1: `{name}` is not among the trainable parameters the smoke tracked at opt.step ({len(grads or {})}) -- "
+                           f"{BEV_WARP_LIVE['flag']} is in the argv but its {role} was not built or is not in the optimiser")
+            continue
+        steps_, nz = int(r.get("steps", 0) or 0), int(r.get("nz_steps", 0) or 0)
+        det[role] = {"param": name, "tracked": True, "opt_steps": steps_, "nz_steps": nz}
+        if role == "fuse" and steps_ < 2:
+            reasons.append(f"G-LIVE T1: the smoke made {steps_} optimiser step(s); `{name}` is exactly 0.0 at step 0 BY CONSTRUCTION (ReZero gate), so "
+                           f"fewer than 2 steps cannot judge it")
+        elif nz == 0:
+            reasons.append(f"G-LIVE T1: `{name}` received ZERO gradient on all {steps_} optimiser steps of the smoke (nz_steps 0)"
+                           + (" -- the ReZero fuse stays at 0.0 until the gate moves; a fuse that never moves means the history never reached the "
+                              "loss (disconnected branch or no history in any window)" if role == "fuse"
+                              else " -- the gate multiplies the fused history; zero here means no history reached the fuse"))
+    d_bw: dict[str, Any] = dict(bw) if isinstance(bw, dict) else {}
+    det["bw_has"] = d_bw
+    if d_bw.get("error"):
+        reasons.append(f"G-LIVE T1: `bw_has` could not be read on every training call ({d_bw['error']})")
+    elif not d_bw or not int(d_bw.get("windows", 0) or 0):
+        reasons.append("G-LIVE T1: the smoke's training batches carried no `bw_has` (the dataset hook did not reach the batch, or no training call "
+                       "was observed): T1's history was never exercised")
+    else:
+        n = int(d_bw["windows"])
+        fr = [round(int(c) / n, 4) for c in d_bw.get("per_lag_true") or []]
+        det["bw_has_per_lag_frac"] = fr
+        det["bw_has_all_lags_frac"] = round(int(d_bw.get("all_lags_true", 0)) / n, 4)
+        thin = [(i, f) for i, f in enumerate(fr) if not f > float(BEV_WARP_LIVE["min_frac"])]
+        if not fr or thin:
+            reasons.append(f"G-LIVE T1: `bw_has` is True on only {[f for _, f in thin] or fr} of {n} smoke windows (lag column(s) {[i for i, _ in thin]}); "
+                           f"a MAJORITY (> {BEV_WARP_LIVE['min_frac']:.0%}) must carry history in every lag")
+    return reasons, det
+
+
 def grad_table(records: dict, model_names: dict) -> dict:
     """records: {param_name: {"numel", "steps", "nz_steps", "nonfinite", "requires_grad"}}."""
     groups: dict[str, dict] = {}
@@ -5337,6 +5434,7 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
                                     if state["opt"] is not None else None}
             pl = batch.get("pose_last") if isinstance(batch, dict) else None
             cur_v0["v0"] = pl[:, 3] if pl is not None else None
+            bev_warp_observe(rec, batch)                     # E1-REC4 (T1): which windows carry history; a batch without `bw_has` is ignored
         out = _orig(model, batch, device, *a, **k)
         h = ctx.prof.get("map_hires") or {}
         if arm_is(ctx, "map_drivable_only_logging") and isinstance(out, dict):
@@ -6411,7 +6509,7 @@ def _host_env() -> dict:
 
 
 def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: str = "",
-                      class_weights_sha256: str | None = None) -> tuple[list[str], dict]:
+                      class_weights_sha256: str | None = None, argv: list[str] | None = None) -> tuple[list[str], dict]:
     """G-MAP-OVERFIT: the PASS record the NEW-2 builder's harness (`map_hires_overfit.py`, schema
     `tanitad.g_map_overfit_record/1`) writes for the PRE-REGISTERED protocol
     (`…/2026-09-26-map-signal-audit/raw/PREREG_G_MAP_OVERFIT.md` + `gmo_spec.json`; SPEC 9 item
@@ -6467,6 +6565,11 @@ def judge_map_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
     elif v.get("G_MAP_OVERFIT") != "PASS":
         reasons.append(f"{tag}: the record's verdict is {v.get('G_MAP_OVERFIT')!r}, not PASS")
     reasons += _overfit_binding_reasons(tag, rec, commit, argv_sha, mo)
+    if argv is not None:                  # E1-REC4: a record bound to a T1 argv must say T1's history is NOT certified (no argv: skipped)
+        r_t1, d_t1 = bev_warp_stamp_reasons(tag, rec, argv)
+        reasons += r_t1
+        if d_t1["argv_t1_set"] or d_t1["record_stamp"] is not None:
+            det["bev_warp_not_certified"] = d_t1
     cw = rec.get("class_weights") if isinstance(rec.get("class_weights"), dict) else {}
     det["class_weights"] = cw
     if cw.get("uniform") or cw.get("dry_run") or not cw.get("sha256"):
@@ -6618,6 +6721,11 @@ def judge_map_overfit_banded(prof: dict, record: str | None, commit: str, *, arg
     reasons = _overfit_binding_reasons(tag, rec, commit, argv_sha, {"schema": bd.get("schema")})
     if not argv_sha:
         reasons.append(f"{tag}: no launch argv sha256 to bind the /2-banded record to")
+    if argv is not None:                  # E1-REC4: a banded base + T1: the /2-banded record must say T1's history is NOT certified
+        r_t1, d_t1 = bev_warp_stamp_reasons(tag, rec, argv)
+        reasons += r_t1
+        if d_t1["argv_t1_set"] or d_t1["record_stamp"] is not None:
+            det["bev_warp_not_certified"] = d_t1
     if rec.get("tool") != bd.get("tool"):
         reasons.append(f"{tag}: the record's tool is {rec.get('tool')!r}, not {bd.get('tool')!r}")
     if v.get("G_MAP_OVERFIT_BANDED") != "PASS":
@@ -6813,6 +6921,33 @@ def box_aux_stamp_reasons(tag: str, rec: dict, argv: list[str]) -> tuple[list[st
     return out, det
 
 
+def bev_warp_stamp_reasons(tag: str, rec: dict, argv: list[str]) -> tuple[list[str], dict]:
+    """E1-REC4 (MM 207ebd, pinned): what an overfit record says it does NOT certify about T1, the temporal BEV warp. A record certifies a head on
+    FROZEN frames with no staged history, so a T1 flag (`E1_T1_FLAGS`) in the launch argv is never built by the harness and its effect cannot show
+    there: a record bound to an argv that carries one must STAMP `bev_warp_not_certified` -- a list that EQUALS the argv's T1 flag set -- and a
+    one-line `bev_warp_not_certified_why`. A record with no stamp passes only an argv with no T1 flag (C0 / C1 / the M and B arms: unchanged); a
+    stamp that is not the argv's T1 set (missing, extra, duplicated, offered to another arm) fails, so a record never silently covers another
+    arm's temporal history. Used by all four overfit judges (map /1, map /2-banded, box /1, box /2-b3)."""
+    want = sorted({f for f, _ in flag_pairs(argv) if f in E1_T1_FLAGS})
+    stamp = rec.get(E1_T1_STAMP)
+    why = rec.get(E1_T1_STAMP_WHY)
+    det = {"argv_t1_set": want, "record_stamp": stamp}
+    out: list[str] = []
+    if stamp is None:
+        if want:
+            out.append(f"{tag}: the launch argv carries the temporal BEV warp flag(s) {want} but the record stamps no `{E1_T1_STAMP}` (an "
+                       f"overfit record certifies the head on frozen frames and must say that T1's history is NOT certified)")
+        return out, det
+    if not (isinstance(stamp, list) and all(isinstance(x, str) for x in stamp)):
+        out.append(f"{tag}: the record's `{E1_T1_STAMP}` is {stamp!r}, not a list of flags")
+    elif sorted(stamp) != want or len(set(stamp)) != len(stamp):
+        out.append(f"{tag}: the record's `{E1_T1_STAMP}` is {sorted(stamp)}, the launch argv's T1 set is {want} "
+                   f"(the stamp must EQUAL it: a record never covers another arm's temporal history)")
+    elif stamp and not (isinstance(why, str) and why.strip()):
+        out.append(f"{tag}: the record stamps `{E1_T1_STAMP}` {sorted(stamp)} but no one-line `{E1_T1_STAMP_WHY}`")
+    return out, det
+
+
 def judge_box_own_record(row: dict, record: str | None, argv_sha: str, argv: list[str] | None = None) -> tuple[list[str], dict]:
     """E1-REC2: the box lever's OWN record (`g_box_overfit.py`, schema `tanitad.g_box_overfit_record/2-b3`) as the reader of row
     E1-BOX-OWN-RECORD. It closes the OPEN ITEM and nothing else (G-BOX-OVERFIT's full re-judge from the rows is `judge_box_overfit`,
@@ -6854,6 +6989,10 @@ def judge_box_own_record(row: dict, record: str | None, argv_sha: str, argv: lis
         r_aux, d_aux = box_aux_stamp_reasons(tag, rec, argv)
         reasons += r_aux
         det["aux_heads_not_certified"] = d_aux
+        r_t1, d_t1 = bev_warp_stamp_reasons(tag, rec, argv)         # E1-REC4: ... and a T1 argv's record must say T1's history is NOT certified
+        reasons += r_t1
+        if d_t1["argv_t1_set"] or d_t1["record_stamp"] is not None:
+            det["bev_warp_not_certified"] = d_t1
     vk = row.get("verdict_key", "RESULT")
     if rec.get(vk) != "PASS":
         reasons.append(f"{tag}: the record's {vk} is {rec.get(vk)!r}, not PASS")
@@ -7003,6 +7142,10 @@ def judge_box_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
         reasons += r_aux
         if d_aux["argv_aux_set"]:
             det["aux_heads_not_certified"] = d_aux
+        r_t1, d_t1 = bev_warp_stamp_reasons(tag, rec, argv)         # E1-REC4: a record bound to a T1 argv must say T1's history is NOT certified
+        reasons += r_t1
+        if d_t1["argv_t1_set"] or d_t1["record_stamp"] is not None:
+            det["bev_warp_not_certified"] = d_t1
     for k in ("prereg_md5", "frameset_md5"):
         if rec.get(k) != bo.get(k):
             reasons.append(f"{tag}: {k} {rec.get(k)!r} != the registered {bo.get(k)!r}")
@@ -8281,6 +8424,11 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
                                         run1.get("grads") or {}, int(run1.get("fwd_train_calls") or 0), cfg1)
             det["p10_live"] = p10d
             reasons += p10r
+        if has_flag(ctx.argv, BEV_WARP_LIVE["flag"]):
+            # E1-REC4 (T1): the gate and the fuse weight moved over the smoke (ACCUMULATED: the fuse is exactly 0.0 at step 0), history in a majority of windows
+            btr, btd = judge_bev_warp_live(ctx.argv, run1.get("grads") or {}, run1.get("bw_has"), expect_steps=steps)
+            det["bev_warp_live"] = btd
+            reasons += btr
         if det["map_hires"]["on"]:
             # G-MAP (LOGGING_SPEC_MAP10 sec. 6): per-class signal at the logits (the gate's own
             # hook), the eval row's 24 IoU + 24 loss shares + counts, the train rows' loss
@@ -9265,6 +9413,9 @@ def _job_box_overfit(ctx: Ctx) -> dict[str, dict]:
     if det.get("aux_heads_not_certified"):                # E1-REC3: the training-only aux heads this record does NOT certify
         ok_text += (f"; does NOT certify the training-only aux head(s) {det['aux_heads_not_certified']['argv_aux_set']} (never called at "
                     f"inference; their liveness is G-LIVE's and the post-run zero-gradient gate's)")
+    if det.get("bev_warp_not_certified") and det["bev_warp_not_certified"]["argv_t1_set"]:    # E1-REC4: the temporal BEV warp this record does NOT certify
+        ok_text += (f"; does NOT certify the temporal BEV warp {det['bev_warp_not_certified']['argv_t1_set']} (the head is certified on frozen "
+                    f"frames with no staged history; T1's liveness is G-LIVE's and the post-run zero-gradient gate's)")
     finish_evidence(ev, "FAIL" if reasons else "PASS", reasons or [ok_text])
     return {"G-BOX-OVERFIT": ev}
 
@@ -9288,7 +9439,7 @@ def _job_map_overfit(ctx: Ctx) -> dict[str, dict]:
         det["own_record"] = {"item": own["item"], "schema": own["schema"], "argv_sha256": ctx.argv_sha256}
     else:
         reasons, det = judge_map_overfit(ctx.prof, rec, ctx.commit, argv_sha=ctx.argv_sha256,
-                                         class_weights_sha256=cw_sha)
+                                         class_weights_sha256=cw_sha, argv=list(ctx.argv))
     if cwv and cw_sha is None:
         reasons.append(f"G-MAP-OVERFIT: the launch class-weight file {cwv[0]} is not readable "
                        f"here, so the record's weights cannot be matched to it")
@@ -9309,6 +9460,9 @@ def _job_map_overfit(ctx: Ctx) -> dict[str, dict]:
         ok_text += f"; the banded head's OWN {own['schema']} record ({own['item']})"
     if (det.get("a19") or {}).get("applied"):
         ok_text += f"; {det['a19']['statement']}"         # SPEC_REFCV7 24: what it does NOT cover
+    if det.get("bev_warp_not_certified") and det["bev_warp_not_certified"]["argv_t1_set"]:    # E1-REC4: the temporal BEV warp this record does NOT certify
+        ok_text += (f"; does NOT certify the temporal BEV warp {det['bev_warp_not_certified']['argv_t1_set']} (the head is certified on frozen "
+                    f"frames with no staged history; T1's liveness is G-LIVE's and the post-run zero-gradient gate's)")
     finish_evidence(ev, "FAIL" if reasons else "PASS", reasons or [ok_text])
     return {"G-MAP-OVERFIT": ev}
 
