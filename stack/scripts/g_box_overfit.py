@@ -637,6 +637,23 @@ def load_launch_argv(path) -> tuple:
                   .hexdigest()}
 
 
+#: refcv9 B3 (open item E1-BOX-OWN-RECORD): a launch argv that carries any ``--r9-box-*`` token is the B3 head. The harness runs it under
+#: the SAME inherited protocol literals (optimizer, clip, lr schedule, batch, seed, bars, frame set: ``rec["literals"]`` is not touched)
+#: -- the trainer's own ``compute_losses_v3`` already builds the B3 decoder and loss from the argv, so nothing else changes -- and the
+#: record carries this schema string plus the flags, which is what the launch gate's binding row matches.
+B3_SCHEMA = "tanitad.g_box_overfit_record/2-b3"
+B3_FLAGS = ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms")
+
+
+def b3_record_fields(launch_argv: list) -> dict:
+    """``{}`` for a launch argv with no ``--r9-box-*`` token (the record is then byte-for-byte what it was); else the schema + the flags."""
+    on = [f for f in B3_FLAGS if f in launch_argv]
+    stray = [x for x in launch_argv if str(x).startswith("--r9-box-") and x not in B3_FLAGS]
+    if stray:
+        raise SystemExit(f"[gbo] unknown --r9-box-* token(s) {stray}: not in {B3_FLAGS}")
+    return {"schema": B3_SCHEMA, "b3": {"flags": on, "literals": "inherited unchanged (rec['literals']): no new free literal"}} if on else {}
+
+
 def harness_build_argv(launch_argv: list) -> tuple:
     """-> (the argv the harness BUILDS from, record fields): the launch argv minus ``--trunk-compile`` -- DECLARED,
     the harness runs eager (Master Mind 2026-09-27); ``trunk_compile`` in the record is what the harness RAN."""
@@ -1140,6 +1157,7 @@ def main(argv=None) -> int:
     frameset = json.loads(fs_bytes.decode("utf-8"))
     launch_argv, argv_rec = load_launch_argv(a.launch_argv)
     rec.update(argv_rec)
+    rec.update(b3_record_fields(launch_argv))              # refcv9 B3: the schema string + flags; {} for any other launch argv
     build_argv, tc_rec = harness_build_argv(launch_argv)
     rec.update(tc_rec)
     tr = _load_by_path("refc_v3_train_for_gbo", SCRIPTS / "refc_v3_train.py")

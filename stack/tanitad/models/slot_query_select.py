@@ -247,6 +247,10 @@ def anchored_forward(dec, memory: Tensor, anchors_xy: Tensor, qpos: Tensor) -> d
     """The slot decoder's forward with anchored queries: the SAME memory projection, query table, layers, norm and
     head as ``dec.forward``; ``qpos`` [B, K, d_model] added at every layer; per-layer outputs under ``"aux"`` when
     ``dec.deep_supervision`` (each decoded against the same anchors)."""
+    _r = dec.b3_route() if hasattr(dec, "b3_route") else None        # refcv9 B3: None (the plain path below) unless a B3 lever is live
+    if _r is not None:
+        from tanitad.models.box_b3 import run_decoder
+        return run_decoder(dec, memory, anchors_xy=anchors_xy, qpos=qpos, **_r)
     if memory.ndim != 3 or memory.shape[1] != dec.n_memory or memory.shape[2] != dec.d_memory:
         raise ValueError(f"memory must be [B, {dec.n_memory}, {dec.d_memory}], got {tuple(memory.shape)}")
     if dec.blocks.norm is not None:

@@ -158,6 +158,7 @@ def window_item(pk, thresholds, gate, nms_cfg=None) -> dict:
             item["cls"] = np.array([[int(pk["gt_cls"][g]), int(pk["cls"][s])] for (_c, k, _b, s, g) in rr if k == 1], np.int64).reshape(-1, 2)
     if gate is not None:
         item["census"] = census_one(pk, gate, None)
+        item["census_band"] = census_band(pk, gate)
         if nms_cfg is not None:
             item["census_nms"] = census_one(pk, gate, nms_cfg)
             from tanitad.eval import detection_nms as nms
@@ -186,7 +187,7 @@ def clip_item(items) -> dict:
     out = {"ngt": sum(i["ngt"] for i in items), "rows": {}}
     for t in items[0]["rows"]:
         out["rows"][t] = np.concatenate([i["rows"][t] for i in items])
-    for key in ("census", "census_nms"):
+    for key in ("census", "census_nms", "census_band"):
         if key in items[0]:
             out[key] = sum(i[key] for i in items)
     out["dx"] = np.concatenate([i["dx"] for i in items]) if "dx" in items[0] else np.zeros(0)
@@ -194,6 +195,26 @@ def clip_item(items) -> dict:
     if "rows_nms" in items[0]:
         out["rows_nms"] = np.concatenate([i["rows_nms"] for i in items])
         out["ngt_nms"] = sum(i["ngt_nms"] for i in items)
+    return out
+
+
+def census_band(pk, gate):
+    """refcv9 B3: the P=R census's boxes-per-detected-object, BY RANGE. ``[n_bands, 2]`` = ``(sum_cnt, n_det)`` per range band of the
+    GT's x (``detection_metrics.BANDS_X_M``), NO NMS, the SAME arithmetic as :func:`census_one` (``sum_cnt / n_det`` pooled over
+    windows is the boxes per detected object of that band). Additive: nothing existing reads it."""
+    from tanitad.eval import detection_metrics as dm
+    names = [b[0] for b in dm.BANDS_X_M]
+    out = np.zeros((len(names), 2), np.float64)
+    gt = np.asarray(pk["gt_xy"])[np.asarray(pk["pos"], bool)].astype(np.float64)
+    if not len(gt):
+        return out
+    p = _sig(pk["logit"])
+    d = np.sqrt(((np.asarray(pk["xy"])[None, :, :].astype(np.float64) - gt[:, None, :]) ** 2).sum(-1))
+    cnt = ((d <= dm.PR_DIST_M) & (p >= float(gate))[None]).sum(1)
+    for g in range(len(gt)):
+        b = dm._band_of(float(gt[g, 0]))
+        if b in names and cnt[g] >= 1:
+            out[names.index(b)] += (float(cnt[g]), 1.0)
     return out
 
 
@@ -220,6 +241,11 @@ def box_stats(clips: list, thresholds=(1.0, 2.0)) -> dict:
             out["rec_gate_" + tag] = float(tp / n_pos) if n_pos else float("nan")
             out["boxes_per_object_" + tag] = float(sum_cnt / n_det) if n_det else float("nan")
             out["frac_objects_ge2_" + tag] = float(n_ge2 / n_det) if n_det else float("nan")
+    if "census_band" in clips[0]:                      # refcv9 B3: boxes per detected object at P=R, NO NMS, BY RANGE (additive keys)
+        cb = sum(c["census_band"] for c in clips)
+        for i, b in enumerate(BAND_NAMES):
+            out["boxes_per_object_noNMS_" + b] = float(cb[i, 0] / cb[i, 1]) if cb[i, 1] else float("nan")
+            out["n_det_noNMS_" + b] = float(cb[i, 1])
     if "rows_nms" in clips[0]:
         out["ap2m_all_NMS"] = fast_ap(np.concatenate([c["rows_nms"] for c in clips]), sum(c["ngt_nms"] for c in clips))
     return out

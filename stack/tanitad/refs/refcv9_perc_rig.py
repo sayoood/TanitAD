@@ -98,6 +98,19 @@ def banded_exemptions(model) -> tuple:
     return ("_map_hires.banded.",), ("_map_hires.refine.cls.",)
 
 
+def b3_exemptions(model) -> tuple:
+    """New key prefixes the source cannot carry for refcv9 B3 ``--r9-box-dn`` (``box_b3_flag.attach`` builds the DN query embeddings
+    ``dn_embed`` / ``dn_cls_embed`` BEFORE the warm start, and refcv8 has no DN): named by their module path in THIS model, ``()``
+    unless the model carries ``_r9_box_b3`` with ``dn`` on, so the OFF warm start is the tip's, check for check."""
+    cfg = getattr(model, "_r9_box_b3", None)
+    if cfg is None or not getattr(cfg, "dn", False):
+        return ()
+    names = tuple(sorted(n + "." for n, _ in model.named_modules() if n.rsplit(".", 1)[-1] in ("dn_embed", "dn_cls_embed")))
+    if not names:
+        raise SystemExit("[r9-perc-rig] --r9-box-dn is on but the model has no dn_embed / dn_cls_embed module")
+    return names
+
+
 def warm_start_perc_rig(model, path: str) -> dict:
     """``--init-from`` for the rig: load the refcv8 EMA into the perception modules with the NAMED skip list. Refuses (a)
     a source key that is neither loadable nor in RIG_SKIPPED_MODULES, (b) a rig key the source lacks, (c) a shape mismatch."""
@@ -119,6 +132,7 @@ def warm_start_perc_rig(model, path: str) -> dict:
     # refcv9 C1 (--r9-map-banded): the banded head's keys are NEW (the source cannot have them) and the 8-way readout
     # `_map_hires.refine.cls.*` is NOT BUILT (the source's copy has no home). Both are NAMED, never a blanket strict=False; OFF: ().
     new_pfx, drop_pfx = banded_exemptions(model)
+    new_pfx = tuple(new_pfx) + b3_exemptions(model)       # refcv9 B3 --r9-box-dn: the DN embeddings (NAMED; OFF: ())
     dropped = sorted(k for k in loadable if k not in own and any(k.startswith(q) for q in drop_pfx))
     for k in dropped:
         del loadable[k]
@@ -134,7 +148,7 @@ def warm_start_perc_rig(model, path: str) -> dict:
     if new_pfx:        # strict=False only because of the NAMED new prefixes: prove nothing else is missing
         miss = sorted(k for k in own if k not in loadable)
         if any(not any(k.startswith(q) for q in new_pfx) for k in miss):
-            raise SystemExit("[r9-perc-rig] --init-from: keys missing beyond the banded head's own: %s" % miss[:3])
+            raise SystemExit("[r9-perc-rig] --init-from: keys missing beyond the NAMED new modules (banded head, B3 DN): %s" % miss[:3])
     per_mod = {m: sum(1 for k in skipped if k == m or k.startswith(m + ".")) for m in RIG_SKIPPED_MODULES}
     return {"path": str(p), "md5": h.hexdigest(), "source_step": (int(state["step"]) if isinstance(state, dict) and "step" in state else None),
             "n_loaded": len(loadable), "n_new_refcv8_keys": 0, "n_skipped_source_keys": len(skipped),

@@ -65,6 +65,20 @@ def test_gt_as_prediction_reads_the_known_answer():
     assert s["tp_class_acc"] == 1.0 and s["dx_0_40_mean"] == 0.0 and s["n_pos"] == 48.0
 
 
+def test_boxes_per_object_by_range_known_answers():
+    """refcv9 B3: GT-as-prediction reads 1.00 boxes/object in EVERY range band; two boxes per object read 2.00 in every band; the
+    per-band pooled count agrees with the all-range figure (sum_cnt / n_det); a band with no GT reads NaN, never 0."""
+    s = _stats(_records())
+    assert all(s["boxes_per_object_noNMS_" + b] == 1.0 for b in E.BAND_NAMES)
+    assert [s["n_det_noNMS_" + b] for b in E.BAND_NAMES] == [16.0, 16.0, 16.0]
+    d = _stats(_records(dup=1))
+    assert all(d["boxes_per_object_noNMS_" + b] == 2.0 for b in E.BAND_NAMES) and d["boxes_per_object_noNMS"] == 2.0
+    far = _stats([("%012x" % 1, 0, _pack([[5.0, 1.0], [12.0, -2.0]]))])
+    assert far["boxes_per_object_noNMS_0_20"] == 1.0 and far["boxes_per_object_noNMS_40_60"] != far["boxes_per_object_noNMS_40_60"]
+    w = _stats(_records(dx=10.0))                                                       # wrong position: no detected object, in any band
+    assert all(w["n_det_noNMS_" + b] == 0.0 for b in E.BAND_NAMES)
+
+
 def test_wrong_position_control_reads_zero():
     s = _stats(_records(dx=10.0))                         # every box 10 m off: no TP at 2 m
     assert s["ap2m_all"] == 0.0 and s["rec_gate_noNMS"] == 0.0

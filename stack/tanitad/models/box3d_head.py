@@ -266,6 +266,40 @@ class Box3DSlotDecoder(AgentSlotDecoder):
                     f"rule, unchanged: a bigger head stops measuring what the "
                     f"LATENT carries). Pass enforce_band=False for shape tests.")
 
+    # ---- refcv9 B3 (box_b3.py): opt-in, OFF = this class exactly as it was ------------------------------------------ #
+    #: the NMS tau of the B3' between-layer key mask; ``None`` = off. Set by :meth:`enable_b3` only.
+    b3_nms_tau: float | None = None
+    _dn_pending = None
+
+    def enable_b3(self, *, dn: bool = False, nms_tau: float | None = None) -> None:
+        """Build the B3 state. ``dn=True`` adds ``dn_embed`` (Linear 6 -> d_model) and ``dn_cls_embed`` (Embedding) -- the only new
+        parameters; OFF builds nothing, so a default model's state_dict is the tip's."""
+        from tanitad.models.box_b3 import DN_FEAT_DIM
+        if dn and getattr(self, "dn_embed", None) is None:
+            self.dn_embed = nn.Linear(DN_FEAT_DIM, self.d_model)
+            self.dn_cls_embed = nn.Embedding(len(AGENT_CLASSES), self.d_model)
+        self.b3_nms_tau = None if nms_tau is None else float(nms_tau)
+
+    def set_dn(self, pack: dict | None) -> None:
+        """One-shot: the DN pack for the NEXT training forward (consumed, or discarded in eval, by :meth:`b3_route`)."""
+        self._dn_pending = pack
+
+    def b3_route(self) -> dict | None:
+        """``None`` = the plain forward. In eval a pending pack is DISCARDED and the NMS mask is off: the eval forward never sees B3."""
+        dn, self._dn_pending = self._dn_pending, None
+        if not self.training:
+            return None
+        if dn is None and self.b3_nms_tau is None:
+            return None
+        return {"dn": dn, "nms_tau": self.b3_nms_tau}
+
+    def forward(self, memory: Tensor) -> dict:
+        r = self.b3_route()
+        if r is None:
+            return super().forward(memory)
+        from tanitad.models.box_b3 import run_decoder
+        return run_decoder(self, memory, **r)
+
     def decode(self, raw: Tensor) -> dict:
         """2-D contract + ``box3d``/``cz``/``h``.
 

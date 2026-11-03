@@ -105,6 +105,7 @@ from tanitad.refs import refcv9_progress as _r9p  # noqa: E402  refcv9 R9-PF: --
 from tanitad.train import refcv9_alloc_force as _r9af  # noqa: E402  refcv9: --r9-alloc-force-schedule (OFF: nothing)
 from tanitad.train import map_precision as _mfp  # noqa: E402  refcv9 warm start: --w-map-fp (OFF: nothing)
 from tanitad.train import map_banded_flag as _mbf  # noqa: E402  refcv9 C1: --r9-map-banded (OFF: nothing)
+from tanitad.train import box_b3_flag as _bbf  # noqa: E402  refcv9 B3: --r9-box-quality / -dn / -class-sqrt / -inloss-nms (OFF: nothing)
 from tanitad.models import map_banded as _mband  # noqa: E402  refcv9 C1: banded targets / losses (OFF: never called)
 # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
 # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
@@ -173,6 +174,8 @@ _r9rig_mod.register_dvb_levers(_dvb.register)
 _mfp.register_dvb_levers(_dvb.register)
 # refcv9 C1: --r9-map-banded is a `built` lever (the banded head and the absent 8-way readout, read off the built branch)
 _mbf.register_dvb_levers(_dvb.register)
+# refcv9 B3: the four --r9-box-* flags are `built` levers (the lever the LOSS / decoder reads, off the built model)
+_bbf.register_dvb_levers(_dvb.register)
 # refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): the progress head is a `built` lever, its weights `loss` levers
 _r9p.register_dvb_levers(_dvb.register)
 # refcv9 GT-in-pool schedule (H-R9-ALLOC-ORACLE-1): the attached schedule's spec / seed, read off the built model
@@ -879,6 +882,7 @@ def _pin_refcv8(cfg, args) -> None:
     #                              refcv9 warm start: --r9-train-only's refusals (the same machinery; a no-op when off)
     _mfp.pin_args(args)          # refcv9 warm start: --w-map-fp's refusals (a no-op at the default 0)
     _mbf.pin_args(args)          # refcv9 C1: --r9-map-banded's refusals (incl. --w-map-fp, retired under it; a no-op when off)
+    _bbf.pin_args(args)          # refcv9 B3: --r9-box-*'s refusals (a no-op when every flag is off)
     _gse = int(getattr(args, "grad_share_every", 0) or 0)
     if _gse < 0 or (_gse > 0 and _gse % max(1, int(getattr(args, "log_every", 50) or 50)) != 0):
         raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
@@ -5683,6 +5687,7 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         _svv = torch.stack([fut_valid[:, h - 1] for h in core.trajectory.horizons], dim=1)
         _r8_prep = r8train.r8_before_forward(model, batch, device, _tt, _svv, pose_last, fut_ext,
                                              fut_valid, v0)
+    _bbf.prepare(model, batch, device)            # refcv9 B3 --r9-box-dn: the DN pack BEFORE the forward (training only; OFF: nothing)
     # refcv8: the r8 inputs ride a wrapper, so the refcv7 call below -- and the pinned mutation anchor of
     # test_refc_v3_agent_gt_reaches_forward -- is byte-for-byte the tip's. None -> the model itself.
     # X3: `fwd` may carry the TREATED v_max_ms / v_max_valid (dropout / roll / legal row); they REPLACE the batch's.
@@ -6687,12 +6692,12 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                 # until 2026-09-23 this path applied NO field cut, so 59.805 % of its
                 # targets were outside the camera and 50.038 % were BEHIND THE EGO, and
                 # `match_slots`' nearest-N then spent 50.076 % of its query slots there.
-                _brow = _perc.box3d_loss_row(
-                    _s3, _t3,
+                _brow = _bbf.box3d_row(          # refcv9 B3: OFF = `_perc.box3d_loss_row` with exactly these arguments
+                    model, _perc, _s3, _t3,
                     cls_class_weight=getattr(model, "_cls_class_weight", None),
                     visible_filter=bool(getattr(model, "_box3d_visible_filter", True)),
                     presence_loss=str(_br.cfg.presence_loss), vis1=bool(_br.cfg.vis1),
-                    vis=_vis3)
+                    vis=_vis3, sel=_sel3)
                 loss = loss + _w_b3d * _brow["loss"]
                 if _vis3 is not None and (bool(log_metrics) or not model.training):
                     # ⭐ refcv7 A9 P0: LOGGING_SPEC_BOX §1 census every row; the pack itself in
@@ -6905,6 +6910,7 @@ def compute_losses_perc_rig(model, batch: dict, device: str, mode: str = "diffus
                 "one lift would sample the trunk at no camera.")
         _pgrid, _pvalid = _hbank.for_episodes(batch["map_ep"], device=device)
     # ⭐ refcv8 WP-B: the GT hypothesis + constraint targets + the scheduled-sampling teacher (one-shot on the model)
+    _bbf.prepare(model, batch, device)            # refcv9 B3 --r9-box-dn: the DN pack BEFORE the forward (training only; OFF: nothing)
     out = model(frames, perception_grid=_pgrid, perception_valid=_pvalid)
     loss = torch.zeros((), device=device)
     extra: dict = {}
@@ -7221,12 +7227,12 @@ def compute_losses_perc_rig(model, batch: dict, device: str, mode: str = "diffus
                 # until 2026-09-23 this path applied NO field cut, so 59.805 % of its
                 # targets were outside the camera and 50.038 % were BEHIND THE EGO, and
                 # `match_slots`' nearest-N then spent 50.076 % of its query slots there.
-                _brow = _perc.box3d_loss_row(
-                    _s3, _t3,
+                _brow = _bbf.box3d_row(          # refcv9 B3: OFF = `_perc.box3d_loss_row` with exactly these arguments
+                    model, _perc, _s3, _t3,
                     cls_class_weight=getattr(model, "_cls_class_weight", None),
                     visible_filter=bool(getattr(model, "_box3d_visible_filter", True)),
                     presence_loss=str(_br.cfg.presence_loss), vis1=bool(_br.cfg.vis1),
-                    vis=_vis3)
+                    vis=_vis3, sel=_sel3)
                 loss = loss + _w_b3d * _brow["loss"]
                 if _vis3 is not None and (bool(log_metrics) or not model.training):
                     # ⭐ refcv7 A9 P0: LOGGING_SPEC_BOX §1 census every row; the pack itself in
@@ -9849,6 +9855,7 @@ def train(args) -> dict:
         _pcfg = _dc.replace(_pcfg, **_slot_refine_kwargs(args),
                             query_select=str(getattr(args, "slot_query_select", "learned") or "learned"))
         model._perception = _perc.build_perception_branch(model, _pcfg).to(device)
+        _bbf.attach(model, args)                             # refcv9 B3: the decoder's B3 state + the loss attributes (OFF: nothing)
         _pframe = _perc.frame_for_model(model)
         if model._w_map > 0.0:
             _pe, _ptable = _read_rig_extrinsics(
@@ -11179,6 +11186,7 @@ def train(args) -> dict:
         # ⭐⭐ refcv7 A9: the refined slot heads AS BUILT, and the VIS-1 sidecar BY DIGEST.
         # ⛔ `None` for a pre-A9 arm, so its record differs by nothing a comparison acts on.
         "slot_refine": _slot_refine_block(args, model),
+        **({"r9_box_b3": _bbf.stamp(model, args)} if _bbf.is_any(args) else {}),     # refcv9 B3; absent for a default run
         "vis1": ({"sidecar": vis1_stamp, "rule": _vis1.vis1_rule_dict(),
                   "train": vis1_stats, "eval": eval_vis1_stats, "calib": calib_stamp}
                  if vis1_stamp is not None else None),
@@ -13259,6 +13267,21 @@ def build_parser() -> argparse.ArgumentParser:
                          "(+2 offsets) / edge_h / xwalk / arrow / hatch, `unobs` = the lift's own validity (losses ignore it), R7 "
                          "losses (focal + Dice, L1), band weights 1/1/0.5. Needs --map-hires on --map-hires-near-lift-m 10; "
                          "REFUSES --w-map-fp (retired). Default OFF: the tip's build, forward and loss.")
+    g8.add_argument("--r9-box-quality", action="store_true",
+                    help="refcv9 B3 (REFCV9_DESIGN 2.4): QUALITY-AWARE presence -- a matched slot's presence target is "
+                         "exp(-d_centre / 1 m) x yawness instead of 1 (unmatched 0), quality focal form. Needs --w-box3d > 0 and "
+                         "--slot-presence-loss focal. Default OFF: the tip's loss.")
+    g8.add_argument("--r9-box-dn", action="store_true",
+                    help="refcv9 B3 (2.4): QUERY DENOISING -- 3 DN groups, a noised positive + 2 range-modulated negatives per GT, "
+                         "TRAINING ONLY, in ONE decoder forward under a block-diagonal attention mask (no leak either way). Adds "
+                         "dn_embed / dn_cls_embed to the box decoder. Default OFF: no new parameter, the tip's forward and loss.")
+    g8.add_argument("--r9-box-class-sqrt", action="store_true",
+                    help="refcv9 B3 (R11): the box head's CE class weights = sqrt(inverse-frequency) / mean, replacing the pure "
+                         "inverse-frequency vector. Needs --agent-cls-weight != off. Default OFF.")
+    g8.add_argument("--r9-box-inloss-nms", action="store_true",
+                    help="refcv9 B3' (2.4): BEV-NMS at tau 0.1 INSIDE the loss -- NMS-suppressed slots are masked out of the others' "
+                         "self-attention keys between layers and the Hungarian match is taken over the survivors. Launched only if "
+                         "B3 misses <= 1.25 boxes/object. Default OFF.")
     g9 = ap.add_argument_group("refcv9 R9-PF (clean-split, regime-factored progress head; REFCV9_INMODEL_DESIGN.md)")
     g9.add_argument("--r9-perc-rig", action="store_true",
                     help="refcv9 C7 (REFCV9_DESIGN 4.3): the E1 PERCEPTION-ONLY rig -- init from refcv8 EMA-48,852 via "
