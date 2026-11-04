@@ -9521,6 +9521,38 @@ def reuse_binding_of(path: str | os.PathLike | None) -> dict | None:
     return None
 
 
+def reuse_base_paths(binding_path: str | os.PathLike, b: dict | None = None) -> dict[str, Path | None]:
+    """The BASE record / closure a reuse binding names, resolved as the gate judges it: `relpath` next to the binding first, then `abspath`;
+    None for one that does not exist here.  ONE resolution for `judge_overfit_reuse` and `overfit_record_gate_inputs` (what the job reads is
+    what the token binds)."""
+    b = reuse_binding_of(binding_path) if b is None else b
+    here = Path(binding_path).resolve().parent
+    out: dict[str, Path | None] = {}
+    for key in ("base_record", "base_closure"):
+        ent = (b or {}).get(key) if isinstance((b or {}).get(key), dict) else {}
+        cand = [here / ent["relpath"]] if ent.get("relpath") else []
+        cand += [Path(ent["abspath"])] if ent.get("abspath") else []
+        out[key] = next((c for c in cand if c.is_file()), None)
+    return out
+
+
+def overfit_record_gate_inputs(kind: str, rec_opt: str) -> dict[str, str]:
+    """The gate inputs a --<kind>-overfit-record option binds in the token: EXACTLY the files `_job_<kind>_overfit` fingerprints, because
+    `finalize` rejects evidence whose `inputs_read` key is absent from the manifest or carries another fingerprint (`evidence_rejections`).
+    A run record: the record.  A REUSE binding (E1-REUSE): the job reads the BASE record through it (`judge_overfit_reuse` returns it) and the
+    binding itself -- so the record key names the BASE record and the binding gets its own key.  (The closure option is already the base
+    closure: the judge refuses a closure whose sha256 is not the base closure's.)  MEASURED on Thor 2026-11-04T13:20:30Z (arm T1 at 5761cd2):
+    the record key bound the BINDING and the binding key was not bound at all, so a reuse-bound arm's G-MAP / G-BOX-OVERFIT evidence (PASS)
+    was rejected "read with a different fingerprint" and the token read INCOMPLETE -- every reuse-bound arm (B1 B2 B2c T1 T1s B3p, K0's map)."""
+    if reuse_binding_of(rec_opt) is None:
+        return {f"gate:{kind}-overfit-record": rec_opt}
+    out = {f"gate:{kind}-overfit-reuse-binding": rec_opt}
+    base = reuse_base_paths(rec_opt).get("base_record")
+    if base is not None:                                  # an unresolvable base: the judge refuses the check, nothing to bind
+        out[f"gate:{kind}-overfit-record"] = str(base)
+    return out
+
+
 def reuse_stamp_sets(argv: list[str]) -> dict[str, list[str]]:
     """THIS argv's per-arm stamps by the gate's own tuples (the same sets `box_aux_stamp_reasons` / `bev_warp_stamp_reasons` demand)."""
     have = {f for f, _ in flag_pairs(argv)}
@@ -9594,13 +9626,11 @@ def judge_overfit_reuse(prof: dict, check: str, binding_path: str | None, commit
     base_sha = argv_sha256(base_argv)
     if b.get("base_argv_sha256") != base_sha:
         reasons.append(f"{tag}: the binding's base argv hashes to {base_sha[:12]}, it states {str(b.get('base_argv_sha256'))[:12]}")
-    here = Path(binding_path).resolve().parent
+    found = reuse_base_paths(binding_path, b)
     paths: dict[str, str | None] = {}
     for key in ("base_record", "base_closure"):
         ent = b.get(key) if isinstance(b.get(key), dict) else {}
-        cand = [here / ent["relpath"]] if ent.get("relpath") else []
-        cand += [Path(ent["abspath"])] if ent.get("abspath") else []
-        hit = next((c for c in cand if c.is_file()), None)
+        hit = found[key]
         paths[key] = str(hit) if hit else None
         if hit is None:
             reasons.append(f"{tag}: the binding's {key} {ent.get('relpath') or ent.get('abspath')!r} does not exist here")
@@ -10018,6 +10048,21 @@ def _collect_evidence(out_dir: Path, import_dirs: Iterable[str]) -> dict[str, li
     return found
 
 
+def evidence_rejections(ev: dict, binding: dict, data: dict) -> list[str]:
+    """Why `finalize` will not use this evidence for the token (empty = usable): another binding, a regression arm, or an input it read whose
+    fingerprint is absent from / differs in the token's data manifest."""
+    why = []
+    if ev.get("binding") != binding:
+        why.append("binding differs")
+    if ev.get("arm"):
+        why.append(f"arm {ev['arm']}")
+    for f, fp in (ev.get("inputs_read") or {}).items():
+        mine = data.get(f)
+        if mine is None or fp_key(mine) != fp_key(fp):
+            why.append(f"input {f} read with a different fingerprint")
+    return why
+
+
 def finalize(ctx: Ctx, key: bytes, import_dirs: Iterable[str] = (),
              profile_refusals: Iterable[str] = ()) -> tuple[str, Path, dict]:
     out = Path(ctx.out_dir)
@@ -10042,15 +10087,7 @@ def finalize(ctx: Ctx, key: bytes, import_dirs: Iterable[str] = (),
     for c in required:
         cands = []
         for p, ev in found.get(c, []):
-            why = []
-            if ev.get("binding") != ctx.binding():
-                why.append("binding differs")
-            if ev.get("arm"):
-                why.append(f"arm {ev['arm']}")
-            for f, fp in (ev.get("inputs_read") or {}).items():
-                mine = data.get(f)
-                if mine is None or fp_key(mine) != fp_key(fp):
-                    why.append(f"input {f} read with a different fingerprint")
+            why = evidence_rejections(ev, ctx.binding(), data)
             cands.append((str(ev.get("finished_utc", "")), p, ev, why))
         usable = sorted([x for x in cands if not x[3]], key=lambda x: x[0])
         if not usable:
@@ -10172,9 +10209,9 @@ def cmd_run(a) -> int:
         gin["gate:nav-tau-record"] = options["nav_tau_record"]
     req = required_checks_of(profile, argv)
     if options["map_overfit_record"] and "G-MAP-OVERFIT" in req:
-        gin["gate:map-overfit-record"] = options["map_overfit_record"]
+        gin.update(overfit_record_gate_inputs("map", options["map_overfit_record"]))
     if options["box_overfit_record"] and "G-BOX-OVERFIT" in req:
-        gin["gate:box-overfit-record"] = options["box_overfit_record"]
+        gin.update(overfit_record_gate_inputs("box", options["box_overfit_record"]))
     if options["map_overfit_closure"] and "G-MAP-OVERFIT" in req:
         gin["gate:map-overfit-closure"] = options["map_overfit_closure"]
     if options["box_overfit_closure"] and "G-BOX-OVERFIT" in req:
