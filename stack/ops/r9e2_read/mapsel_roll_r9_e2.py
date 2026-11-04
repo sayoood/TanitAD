@@ -12,7 +12,15 @@ NEW file (E2-S6C, 2026-11-04).  The FlyWheels module is NOT copied or edited: it
   (iv)  NO DEV-BOX DEFAULT -- the 7 env pins of the E2 roll (R8_LAUNCH_TREE, PF_R8_CODE, PF_NF_HOLD, R8_EVAL_KIT, R9E2_REMAP, R9E2_SPLIT, R9E2_PF_CODE) are required;
         ``L2_PF_CODE`` / ``L2_R8_CODE`` are set from R9E2_PF_CODE / PF_R8_CODE, and the dev-box remap ``mapsel_roll`` assigns to ``r8_repoint.REMAP_OVERRIDES`` is IGNORED (module pinned to
         R9E2_REMAP; the attempt is recorded).  The trace's meta gains an ``r9e2`` block (infer seed, dev filter census, stage census, remap pin).
-UNVERIFIED end to end: no real K2 / K0 roll exists; ``main`` is exercised only against fake modules (test_r9e2_s6c.py).
+  (v)   ``--own-planes skip|require`` (K2SAFE / S1; default ``require`` == the unchanged roll).  A C1-banded K2 (``--r9-map-banded``) has NO 8-way raster BY DESIGN
+        (map_head_hires.py ``_forward_banded``: ``map_hires_logits`` is None; refc_v3.py:2283-2286 copies it into ``out["perception"]``), so the UNCHANGED ``MapSelProxy.__call__``
+        raises at mapsel_roll.py:197-200 (``lg is None``) at the FIRST forward -- BEFORE ``own_planes`` (:202).  ``skip`` defuses BOTH: a ``_Base.__call__`` post-processor swaps the
+        None logits for a ``[B,1,1,1]`` placeholder (banded outputs only) and ``own_planes`` is replaced by a function returning four ZERO ``[H, W]`` uint8 planes (H, W =
+        ``model._map_hires.cfg.out_hw``).  WHAT S6c READS: the emitted plan (trace ``plan`` / ``sel`` / fan, untouched) + the GT raster ``gt`` of each window's npz (``map_fine``, untouched;
+        mapsel_score pass 2 :296-318) + one raster file per window (K_RAST).  WHAT IT DOES NOT: the own planes ``pdrv / pedge / psw / code`` (pass 1: the OWN-/CAL-arm flags, K_LIVE,
+        TAU_CAL) -- they are still WRITTEN (mapsel_score indexes the keys) but are zeros, so K_LIVE FAILS by design and every OWN-* / CAL arm of that trace is meaningless; ``s6c_dev``
+        gates on K_BASE + K_RAST only.  ``require`` on a banded K2 refuses with the cause named instead of the stock message.  The trace meta ``r9e2.own_planes`` records mode + counts.
+UNVERIFIED end to end: no real K2 / K0 roll exists; ``main`` is exercised only against fake modules (test_r9e2_s6c.py, test_r9e2_k2safe_s6c.py).
 
     python mapsel_roll_r9_e2.py --mapsel-code <FlyWheels .../2026-10-25-refcv9-mapsel/code> --infer-seed 0 --trace-out T.npz --rast-dir R --map-gt-root G --require-seal \
         -- --ckpt <run>/model_ema.pt --config <run>/config.json --dump-dir D --windows-json W.json --device cuda --out-json O.json --os-only
@@ -32,7 +40,9 @@ sys.path.insert(0, str(HERE))
 import run_battery_r9_e2 as R9  # noqa: E402  (the E2 roll's pins / DEV filter / staging proxy)
 
 STAGE_CLS_NAME = "StagingRefcv6Proxy"
-OWN_FLAGS = ("--mapsel-code", "--split", "--infer-seed")
+OWN_FLAGS = ("--mapsel-code", "--split", "--infer-seed", "--own-planes")
+OWN_PLANES_MODES = ("skip", "require")
+OWN_PLANE_KEYS = ("pdrv", "pedge", "psw", "code")
 
 
 def _sha256_file(p) -> str:
@@ -131,6 +141,58 @@ def guard_first_call(M):
     proxy.__call__ = call
 
 
+def own_planes_mode(own) -> str:
+    mode = str(own.get("--own-planes", "require"))
+    if mode not in OWN_PLANES_MODES:
+        raise SystemExit(f"[mapsel-r9e2] --own-planes must be one of {OWN_PLANES_MODES}, got {mode!r}")
+    return mode
+
+
+def banded_without_raster(out) -> bool:
+    """True iff the forward's output is a C1-banded head's: ``perception.map_hires_logits`` is None AND ``perception.map_banded`` is present (refc_v3.py:2283-2286)."""
+    p = out.get("perception") if isinstance(out, dict) else None
+    return isinstance(p, dict) and p.get("map_hires_logits") is None and p.get("map_banded") is not None
+
+
+def out_hw_of(model) -> tuple:
+    try:
+        return tuple(int(v) for v in model._map_hires.cfg.out_hw)
+    except AttributeError as e:
+        raise SystemExit(f"[mapsel-r9e2] --own-planes skip cannot size the zero planes: model._map_hires.cfg.out_hw is unreadable ({e})") from None
+
+
+def apply_own_planes(M, mode: str) -> dict:
+    """Install the ``--own-planes`` behaviour on the loaded mapsel_roll module ``M``; returns the live counters (mode, n_skipped, n_placeholder).  ``skip``: ``M._Base.__call__``
+    is wrapped (a banded output's None logits -> a ``[B,1,1,1]`` zero placeholder so the UNCHANGED ``lg is None`` check passes) and ``M.own_planes`` returns four zero ``[H, W]``
+    uint8 planes.  ``require``: ``M.own_planes`` is left alone; ``M._Base.__call__`` only turns the stock raise on a BANDED output into one that names the cause."""
+    import numpy as np
+    import torch
+    counters = {"mode": mode, "n_skipped": 0, "n_placeholder": 0, "n_banded_refused": 0}
+    base_call = M._Base.__call__
+
+    def call(self, frames, *a, **kw):
+        out = base_call(self, frames, *a, **kw)
+        if banded_without_raster(out):
+            if mode != "skip":
+                counters["n_banded_refused"] += 1
+                raise SystemExit("[mapsel-r9e2] refusing: this K2 has a C1-banded map head (perception.map_hires_logits is None BY DESIGN, no 8-way raster), so MAPSEL's own "
+                                 "raster planes cannot be built; S6c needs only the plan and the GT raster -- re-run with --own-planes skip (K_LIVE then fails by design)")
+            counters["n_placeholder"] += 1
+            out = dict(out)
+            out["perception"] = dict(out["perception"], map_hires_logits=torch.zeros(int(frames.shape[0]), 1, 1, 1))
+        return out
+
+    def skip_own_planes(model, logits_r):
+        h, w = out_hw_of(model)
+        counters["n_skipped"] += 1
+        return tuple(np.zeros((h, w), np.uint8) for _ in OWN_PLANE_KEYS)
+
+    M._Base.__call__ = call
+    if mode == "skip":
+        M.own_planes = skip_own_planes
+    return counters
+
+
 def load_mapsel(path):
     spec = importlib.util.spec_from_file_location("mapsel_roll", str(path))
     M = importlib.util.module_from_spec(spec)
@@ -141,6 +203,7 @@ def load_mapsel(path):
 
 def main(argv=None) -> int:
     own, pre, child = split_argv(sys.argv[1:] if argv is None else argv)
+    mode = own_planes_mode(own)
     pins = R9.require_env()
     dev, hold, split = R9.load_dev_hold(pins["R9E2_SPLIT"])
     code = Path(own["--mapsel-code"])
@@ -161,13 +224,15 @@ def main(argv=None) -> int:
     stager = getattr(sys.modules.get("r7_roll"), "R9E2_STAGER", None)
     require_staging(M, stager)
     guard_first_call(M)
+    op = apply_own_planes(M, mode)
     M.REMAP_REC.update(file=pins["R9E2_REMAP"], sha256=_sha256_file(pins["R9E2_REMAP"]), r9e2_pinned=True,
                        mapsel_devbox_remap_ignored=[a[1] for a in getattr(RP, "_r9e2_attempts", [])])
     orig_save = M.save
 
     def save(final, extra=None):
         return orig_save(final, {**(extra or {}), "r9e2": {"infer_seed": own["--infer-seed"], "split": pins["R9E2_SPLIT"], "dev_filter": census, "stage": stager.census(),
-                                                            "remap_pin": pins["R9E2_REMAP"], "wrapper": Path(__file__).name}})
+                                                            "remap_pin": pins["R9E2_REMAP"], "wrapper": Path(__file__).name,
+                                                            "own_planes": dict(op)}})
     M.save = save
     rc = M.main()
     if rc in (0, None) and stager.n_forwards == 0:
