@@ -4,7 +4,7 @@
 # Launch DETACHED through WMI (CreateFlags 0x08000200) -- see memory devbox-drive-letter-and-detached-jobs.
 # STUDY (R9_STUDY, default e1; set by r9gate3_launch_pinned.ps1 -Study from r9gate3_restart.sh): root / argv prefix / profile / default arms / stage dir come from
 #   r9gate3_study.sh NEXT TO THIS SCRIPT (e1: F:/refcv9_e1/gate, refcv9-e1rig, r9e1; e2: F:/refcv9_e2/gate, refcv9-e2, r9e2).
-# Markers (status file <stage>/pinned_status.txt, e1: F:/refcv9_e1/gate/pinned_status.txt, one line per event):  ZZGS3-PINNED-<ARM>-OKZZ | ZZGS3-PINNED-<ARM>-FAILZZ | ZZGS3-PINNED-ALLDONEZZ
+# Markers (status file <stage>/pinned_status.txt, e1: F:/refcv9_e1/gate/pinned_status.txt, one line per event):  ZZGS3-PINNED-<ARM>-OKZZ | ZZGS3-PINNED-<ARM>-FAILZZ [DISK-LOW] | ZZGS3-PINNED-ALLDONEZZ
 export PATH="/usr/bin:/bin:$PATH"
 export MSYS_NO_PATHCONV=1
 set -u
@@ -19,6 +19,11 @@ HOST=tanitad-thor; ROOT=$R9_ROOT
 ST="$STAGE/pinned_status.txt"
 say() { echo "[r9gate3-pinned] $(date +%H:%M:%S) $*" | tee -a "$STAGE/pinned_driver.log"; }
 mark() { echo "$1" | tee -a "$ST"; }
+free_gb() { df -BG "$1" 2>/dev/null | awk 'NR==2 {gsub("G","",$4); print $4}'; }   # free GB on the drive holding $1 (an integer; empty if df fails)
+# suite-work dirs of SHIPPED arms not yet fully deleted. One rm is not enough (MEASURED 2026-11-03: gsw_B2 took 3 passes over ~7 min to go, the first
+# ~4.5 min long), so a residue is retried before every later arm and at the end. Paths are <stage>/gsw_<ARM>: no spaces.
+PENDING=""
+purge() { local d left=""; for d in $PENDING; do rm -rf "${d:?}" 2>/dev/null; [ -e "$d" ] && left="$left $d"; done; PENDING="$left"; }
 mkdir -p "$STAGE" || exit 1
 T="$STAGE/ntlt_$C12"
 if [ ! -s "$T/stack/scripts/launch_gate.py" ]; then
@@ -37,7 +42,14 @@ for ARM in $ARMS; do
   t0=$(date +%s)
   until [ "$(powershell -NoProfile -Command "[math]::Floor((Get-CimInstance Win32_OperatingSystem).FreeVirtualMemory/1MB)" 2>/dev/null | tr -d '\r')" -ge 6 ] 2>/dev/null; do
     [ $(( $(date +%s) - t0 )) -gt 3600 ] && break; sleep 30; done
-  rm -rf "$OUT" "$SW" 2>/dev/null; mkdir -p "$SW"
+  # a re-run keeps the previous evidence (a FAIL is a record; ~1 MB) and frees the previous suite-work archive before the disk check below
+  [ -d "$OUT" ] && mv "$OUT" "$OUT.prev_$(date +%Y%m%dT%H%M%S)"
+  purge; rm -rf "$SW" 2>/dev/null
+  # G-SUITE-PINNED extracts a ~12.5 GB full-commit archive into $SW: wait (<= 1 h) for room on the stage drive, else refuse the arm by name
+  # rather than run a suite into a full disk, whose failures would read as test failures.
+  t1=$(date +%s); until [ "$(free_gb "$STAGE")" -ge "${R9_PINNED_MIN_FREE_GB:-20}" ] 2>/dev/null; do [ $(( $(date +%s) - t1 )) -gt 3600 ] && break; sleep 60; done
+  [ "$(free_gb "$STAGE")" -ge "${R9_PINNED_MIN_FREE_GB:-20}" ] 2>/dev/null || { say "$ARM: only $(free_gb "$STAGE") GB free under $STAGE"; mark "ZZGS3-PINNED-${ARM}-FAILZZ DISK-LOW"; continue; }
+  mkdir -p "$SW"
   say "$ARM: launch_gate run --stage devbox (argv $ARGVF)"
   # MSYS_NO_PATHCONV is for THIS script's ssh / scp of Thor paths only. Exported into the gate it reaches pytest, and test_r9_e1_floor's
   # r9e1_read.sh dry runs then hand native python an unconverted /f/... path: 6 / 28 FAIL (MM 2026-11-03, MEASURED: the same test in the same
@@ -57,5 +69,10 @@ for ARM in $ARMS; do
   ssh -n -o BatchMode=yes $HOST "rm -rf $D && mkdir -p $D && tar -xf $ROOT/ev_${C12}_${ARM}.tar -C $D && ls $D/evidence/G-SUITE-PINNED.json $D/G-SUITE-PINNED.json 2>/dev/null | head -1" | tr -d '\r' | grep -q G-SUITE-PINNED \
     || { say "evidence unreadable on Thor under $D"; mark ZZGS3-PINNED-${ARM}-FAILZZ; continue; }
   say "$ARM: evidence on Thor: $D"; mark "ZZGS3-PINNED-${ARM}-OKZZ $D"
+  # the evidence is on Thor: the suite-work archive (~12.5 GB per arm) is dead weight -- F: fell 120 -> 43 GB in ~2.5 h on 2026-11-03 while every
+  # arm's stayed. A FAILed arm (the `continue`s above) keeps its own for diagnosis; that arm's next run frees it before its disk check.
+  PENDING="$PENDING $SW"; purge; [ -n "$PENDING" ] && say "$ARM: suite-work not fully deleted yet (retried before the next arm):$PENDING"
 done
+for _i in $(seq 1 20); do purge; [ -z "$PENDING" ] && break; sleep 30; done
+[ -n "$PENDING" ] && say "suite-work NOT deleted after 10 min of retries:$PENDING"
 mark ZZGS3-PINNED-ALLDONEZZ
