@@ -1,0 +1,18 @@
+# AMEND_A1_PROPOSED: what it takes to make HLVL-PRED executable (NOT part of the frozen card; NOT executed; NOT frozen)
+
+Status: PROPOSAL by the executing agent, for the Master Mind / PI. Nothing in this file has been run. If approved it is frozen under its own sha256 (`AMEND_A1_FROZEN.txt`, which also pins the level file; `levelprobe_chain.sh` runs HLVL-PRED only when that file exists) BEFORE any fit on the extended population.
+
+## Why (F1, MEASURED, `raw/F1_coverage.json`)
+Probe 3's G8 features exist for 24,000 train windows with v0 in [0, 6) and the 608 eval windows with v0 < 6. The T1 rig rolls out 2,399 windows; 1,791 (74.7 %) have v0 >= 6 and they are 1,791 of the 2,104 M1-contributing windows (85.1 %). The card defines HLVL-PRED as "stage 1's prediction for that window", so it is undefined on those windows, and a ridge trained on labels in [0, 6) could not predict them anyway (its output range is the label range). The committed outcome therefore cannot be produced as written.
+
+## A1 (the minimal extension; it keeps the card's feature definition, model, controls, thresholds, estimator and outcome rule word for word)
+1. **Eval side:** extract the frozen `pool8x20` row t0 (= `ws`) for ALL 2,399 eval-141 windows from `E:/Projects/TanitAD-artifacts/sfresh_inputs/cache/eval/clips` (the cache probe 3's eval extraction used; gate = probe 3's relative-L2 alignment gate against the cache's own `pool4x10`), pooled to G2x4 (ERRATA_1 E1) on the fly (2,399 x 8,192 x 4 B = 79 MB).
+2. **Train side:** add a third TRAIN population **P-FAST** = 12,000 windows drawn uniformly (`numpy.random.default_rng(2026)`, without replacement) from the canonical windows with v0 >= 6 (`windows_train.npz`), features extracted from `F:/TanitAD-scratch/speedread/cache/train/clips/<clip>.pt` row t exactly as `trigger_probe3/extract_g8.py` does, pooled to G2x4 on the fly. Fit on P-STOP + P-MOVE + P-FAST (36,000 windows). The mixture weights (1/3 each) are a choice of this amendment, not of the card.
+3. **Stage 1 unchanged otherwise:** target v_logged(t0), ridge, alpha by episode-grouped 5-fold CV (same grid, same fold function), K1 / K2 / K3 as written, fit/score clip sets asserted disjoint; scored on all 2,399 eval windows (overall, M1 windows, per class, and per v0 band < 0.5 / 0.5-6 / >= 6).
+4. **Stage 2:** HLVL-PRED level = max(prediction, 0) per window (the tool refuses negative levels), written to a level file keyed by (clip_index, ws); `--histswap cv_pred --level-file` on the 4 cells; read by `code/levelprobe_read.py` (already built; the card's SUPPORTED / NOT SUPPORTED / INCONCLUSIVE rule is `level_outcome`).
+5. **Cost (ESTIMATED):** extraction ~20-40 min on a quiet disk (reads one frame per window from ~4,000 clip files), fit ~15 min, 4 rollouts ~12-15 min, read ~15 min. Memory: the pooled matrices are 36,000 x 8,192 x 4 B = 1.2 GB.
+
+## Alternatives considered and set aside
+* **A2, run HLVL-PRED only on the 608 covered windows** (leave the other 1,791 windows' history unchanged): this changes the M1 denominator (the share is over windows with GT-fast pairs, 85 % of them uncovered), so "M1 share closed exactly as the HISTSWAP-LF card defines it" would not hold.
+* **A3, fill the uncovered windows with the logged t0 speed:** the uncovered windows would then carry an oracle, and the arm would not be vision-derived; the 0.5 x HLVL-T0 comparison would be partly self-comparison.
+* **A4, train on the v0 < 6 windows only and predict v0 >= 6 by extrapolation:** the output cannot exceed the label range, so the high-speed windows would receive a slow constant history by construction (a guaranteed harm, not a measurement of the image's information).
