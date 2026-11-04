@@ -1747,6 +1747,11 @@ if _E1_MODULE is not None:
 _R9F_AUX_ALL = E1_BOX_AUX_FLAGS + ("--w-box-depth", "--w-box-persp", "--w-box-bev2")
 _R9F_PLAN_FLAGS = ("--r9-plan-map-channels", "--r9-plan-box-tokens")
 _R9F_BRANCH_FLAGS = ("--wsd-branch-from", "--wsd-branch-decay")
+#: C10 (REFCV9_DESIGN 2.5; E0a => photometric only, no flip arm): the training-only, label-invariant per-sample photometric jitter. ADMITTED in
+#: the full family (it is E3's augmentation): no own record (it changes no head and no target), gated by its G-DVB registration
+#: (`r9_photometric.register_dvb_levers`) and its attach needle below. Not classified for refcv9-e1rig (A1 is not run): there an argv
+#: carrying it still hits E1-BOX-OWN-RECORD (fail closed).
+_R9F_AUG_FLAGS = ("--r9-photometric",)
 #: lever flag -> the trainer source needle that ATTACHES its modules (G-DVB reachability: a lever the argv declares whose attach hop is
 #: gone from the trainer is declared-but-not-built). B3's four ride `_bbf.attach`, C8's two ride `_pwf.attach` (refc_v3_train build).
 #: ⭐ C5-S8: NOT every own-head flag rides `_bbf.attach`. B3's `is_any` does not cover `--r9-box-layers`, so on a layers-only argv `_bbf.attach` is a NO-OP and its
@@ -1754,7 +1759,8 @@ _R9F_BRANCH_FLAGS = ("--wsd-branch-from", "--wsd-branch-decay")
 #: `_bbf.attach` in the trainer's build (and in the harness replay, same order). Deleting that line must turn `lever_attach_reasons` red FOR THIS FLAG.
 _R9F_ATTACH = dict({f: "_bbf.attach(model, args)" for f in E1_BOX_OWN_FLAGS if f not in ("--r9-box-layers", "--r9-box-s8-horizon", "--r9-box-perframe-queries")},
                    **{"--r9-box-layers": "_bc5.attach(model, args)", "--r9-box-s8-horizon": "_bc5.attach(model, args)", "--r9-box-perframe-queries": "_bc5.attach(model, args)"},
-                   **{f: "_pwf.attach(model, args)" for f in _R9F_PLAN_FLAGS})
+                   **{f: "_pwf.attach(model, args)" for f in _R9F_PLAN_FLAGS},
+                   **{"--r9-photometric": "_r9ph.attach(model, args)"})          # C10: model._r9_photometric (seed + step); no parameter
 #: the share alarm (R3 / E0j): when the banded map head is ON, its gradient share of the trunk must stay >= the floor in the smoke's one
 #: `--grad-share-every` reading. E0j's target: the banded map takes >= 0.05 of layer2 (w* 0.511; at w 1.0 it took 0.146). The trainer's
 #: reading (`tanitad/train/grad_share.py` `measure`, groups `GROUP_PREFIXES`: trunk = `core.encoder.*`) has NO `layer2` group; the finest
@@ -1769,10 +1775,10 @@ _R9F_OPEN_ITEMS = (
     next(i for i in _E1_OPEN_ITEMS if i["id"] == "E1-BOX-UNKNOWN-LEVER"),
     {"id": "R9F-UNCLASSIFIED-LEVER",
      "what": "unclassified refcv9 lever: the argv carries a `--r9-*` flag that is neither a map / box lever (their own record items), a C8 planner "
-             "wire (`_R9F_PLAN_FLAGS`), nor forbidden here. It is never silently admitted",
+             "wire (`_R9F_PLAN_FLAGS`), a C10 augmentation (`_R9F_AUG_FLAGS`), nor forbidden here. It is never silently admitted",
      "owner": "the lever's code agent -> the Master Mind (a reviewed edit of launch_gate.py that classifies the flag)",
      "closes_when": "never by a record: only by a reviewed launch_gate.py edit (classify it admitted, or add it to forbidden_levers)",
-     "when_prefixes": ("--r9-",), "when_except": ("--r9-map-", "--r9-box-"), "when_except_exact": _R9F_PLAN_FLAGS + E1_T1_FLAGS},
+     "when_prefixes": ("--r9-",), "when_except": ("--r9-map-", "--r9-box-"), "when_except_exact": _R9F_PLAN_FLAGS + E1_T1_FLAGS + _R9F_AUG_FLAGS},
 )
 
 

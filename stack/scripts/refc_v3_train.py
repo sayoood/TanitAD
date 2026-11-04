@@ -112,6 +112,7 @@ from tanitad.train import box_depth_aux_flag as _bda  # noqa: E402  refcv9 C3: -
 from tanitad.train import persp3d_aux_flag as _p3f  # noqa: E402  refcv9 C4: --r9-box-persp-aux / --w-box-persp (B2) and --r9-box-bev2-aux / --w-box-bev2 (B2c) (OFF: nothing)
 from tanitad.train import bev_warp_flag as _bw  # noqa: E402  refcv9 T1: --r9-bev-warp / --r9-bev-warp-lags / --r9-bev-warp-shuffle (OFF: nothing)
 from tanitad.train import box_c5_flag as _bc5  # noqa: E402  refcv9 C5-REST (arm B4): --r9-box-layers (OFF: nothing)
+from tanitad.train import r9_photometric as _r9ph  # noqa: E402  refcv9 C10: --r9-photometric, the training-only per-sample photometric jitter (OFF: nothing)
 from tanitad.models import map_banded as _mband  # noqa: E402  refcv9 C1: banded targets / losses (OFF: never called)
 # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
 # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
@@ -196,6 +197,8 @@ _p3f.register_dvb_levers(_dvb.register)
 _bw.register_dvb_levers(_dvb.register)
 # refcv9 C5-REST: --r9-box-layers is a `built` lever (the box3d decoder's depth, read off the built decoder)
 _bc5.register_dvb_levers(_dvb.register)
+# refcv9 C10: --r9-photometric is a `built` lever (model._r9_photometric, attached by train() AND the eval loader; only the training forward augments)
+_r9ph.register_dvb_levers(_dvb.register)
 # refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): the progress head is a `built` lever, its weights `loss` levers
 _r9p.register_dvb_levers(_dvb.register)
 # refcv9 GT-in-pool schedule (H-R9-ALLOC-ORACLE-1): the attached schedule's spec / seed, read off the built model
@@ -5730,6 +5733,7 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
     # the contract's own /255 (frames_to_device). Float batches pass through.
     frames = frames_to_device(batch["frames"], device)
     fut_frames = frames_to_device(batch["future_frames"], device)
+    _r9ph.maybe_apply_(model, frames, fut_frames)       # refcv9 C10 --r9-photometric: IN PLACE, one draw per sample, TRAINING forward only (OFF / eval: nothing)
     # ⛔⛔ THE DELIBERATE-REGRESSION LEVER (rig only, `--ablate-frames`).
     # Replace the OBSERVED window with a scalar constant, so every sample sees
     # the SAME information-free image. The arm keeps every ego channel and
@@ -7117,6 +7121,7 @@ def compute_losses_perc_rig(model, batch: dict, device: str, mode: str = "diffus
     cfg = model.cfg
     core = cfg.core
     frames = frames_to_device(batch["frames"][:, -1:], device)       # K = 3 stacked frames of the NEWEST row
+    _r9ph.maybe_apply_(model, frames)                                # refcv9 C10 --r9-photometric: IN PLACE, one draw per sample, TRAINING forward only (OFF / eval: nothing)
     # ⛔ RESOLVED BEFORE THE FORWARD, because the BEV encoder now runs INSIDE
     # it. Until tonight the branch ran after `model(...)` returned and could
     # look the geometry up itself; that ordering is precisely what kept the
@@ -10102,6 +10107,7 @@ def train(args) -> dict:
                  int(_hcfg.near_refine_blocks), _s8,
                  model._map_hires.param_breakdown(), _hcws["sha256"][:12]), flush=True)
     _bw.attach(model, args)                                  # refcv9 T1: the zero-init fuse on model._map_hires + the hook on its lift (OFF: nothing)
+    _r9ph.attach(model, args)                                # refcv9 C10: model._r9_photometric (the seed + the step the loop sets); no parameter, no state_dict key (OFF: nothing)
     model._perception = None
     model._lift_bank = None
     perception_stamp = None
@@ -11482,6 +11488,7 @@ def train(args) -> dict:
         **({_bc5.STAMP_KEY: _bc5.stamp(model, args)} if _bc5.is_any(args) else {}),         # refcv9 C5-REST (B4); absent for a default run
         **({"r9_box_bev2_aux": _p3f.stamp(model, args)} if _p3f.is_bev2(args) else {}),     # refcv9 C4 (B2c); absent for a default run
         **({"r9_bev_warp": _bw.stamp(model, args)} if _bw.is_on(args) else {}),     # refcv9 T1; absent for a default run
+        **({_r9ph.STAMP_KEY: _r9ph.stamp(model, args)} if _r9ph.is_on(args) else {}),     # refcv9 C10; absent for a default run
         "vis1": ({"sidecar": vis1_stamp, "rule": _vis1.vis1_rule_dict(),
                   "train": vis1_stats, "eval": eval_vis1_stats, "calib": calib_stamp}
                  if vis1_stamp is not None else None),
@@ -11804,6 +11811,7 @@ def train(args) -> dict:
         # refcv8 X4 + WP-B 2026-10-05: under a bf16 trunk the gradient-share statistic is read on an fp32 REPLAY of
         # this very step (grad_share.fp32_replay restores RNG, dedicated generators and buffers), BEFORE the training
         # forward -- a bf16 backward cannot meet the linearity control (MEASURED 5.9e-3 vs the 1e-4 bar on Thor).
+        _r9ph.set_step(model, step)                         # refcv9 C10: the augmentation draw is a pure function of (seed, step) -- also for the fp32 replay below (OFF: nothing)
         _gs_due = (_gs_every > 0 and _logged_after(step, args.log_every, args.steps)
                    and _gshare.due(step + 1, _gs_every, _gs_at))
         _gs_replay = None
@@ -11816,6 +11824,7 @@ def train(args) -> dict:
                                    ablate_frames=args.ablate_frames,
                                    log_metrics=_logged_after(step, args.log_every, args.steps))
         losses["withheld_bank_active"] = float(_wb_active)
+        losses.update(_r9ph.metrics(model))                 # refcv9 C10: `aug/photometric_frac` (the fraction of this batch's samples jittered); {} when OFF
         # ⛔⛔ WP-D: THE LOSS-SCALE PARITY GATE, AT THE FIRST SUPERVISED STEP.
         # `E-DEC-18b` MEASURED the sibling PSG term sitting 10-30x above the
         # objective it was meant to support, at EVERY weight tested, and
@@ -13687,6 +13696,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="refcv9 C5 lever 4 (REFCV9_DESIGN 2.4 row queries, arm B4): 200 PER-FRAME seeds (the perspective head's s8 centre heat, 3x3 NMS, DETACHED, lifted through the clip's rig "
                          "camera by E[LID range]) + 100 learned GLOBAL anchors (normalised [0,1], LR x10 as a third optimizer group `box_anchor`) = 300 anchored slots (the HQS decode). REFUSED "
                          "without --r9-box-persp-aux (+ --w-box-persp > 0); needs --opt dd, --map-hires on, --agent-rig-camera extrinsics, --slot-query-select learned. Default OFF: bit-identical.")
+    g8.add_argument("--r9-photometric", action="store_true",
+                    help="refcv9 C10 (REFCV9_DESIGN 2.5): per-SAMPLE photometric augmentation of the training frames AND future frames (brightness / contrast / saturation +-0.2, hue +-0.02 as a YIQ "
+                         "rotation, a light 3x3 blur p=0.2, clamp [0,1]); one draw per sample from (--seed, step) -- nothing to checkpoint; IN PLACE; training forward only (eval, dump and BN "
+                         "recalibration never augment); every label is untouched. Stamped in config.json[r9_photometric]; logs `aug/photometric_frac`. Default OFF: bit-identical.")
     g9 = ap.add_argument_group("refcv9 R9-PF (clean-split, regime-factored progress head; REFCV9_INMODEL_DESIGN.md)")
     g9.add_argument("--r9-perc-rig", action="store_true",
                     help="refcv9 C7 (REFCV9_DESIGN 4.3): the E1 PERCEPTION-ONLY rig -- init from refcv8 EMA-48,852 via "
