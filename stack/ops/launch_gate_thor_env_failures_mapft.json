@@ -6,7 +6,7 @@
   "verdict_sha256": "70c66cba4d4f8f902cc6b7ee491eb7f3473c42b69b4a09da8cfa5162ec13f573",
   "tip": "06380de73d82673433db79bcdfd266e417a32063"
  },
- "n_ids": 349,
+ "n_ids": 370,
  "ids": [
   "tests.test_amp_and_threads::test_the_reordering_ACTUALLY_changes_the_thread_pool",
   "tests.test_anchor_prefilter::test_prefilter_is_BIT_EXACT_on_every_candidate_it_decodes",
@@ -87,6 +87,19 @@
   "tests.test_perception_floor_homogeneity::test_the_local_and_far_side_censuses_are_the_same_predicate",
   "tests.test_perception_floor_homogeneity::test_the_manifest_cannot_lie_about_its_own_coverage",
   "tests.test_perception_floor_homogeneity::test_the_perception_layer_covers_the_whole_cohort",
+  "tests.test_r9_e1_arm_read::test_dry_run_aborts_on_a_failed_arm_with_the_chain_line_and_never_touches_the_lock[B1-FAILED rc 137: no done-marker at /x (read y)]",
+  "tests.test_r9_e1_arm_read::test_dry_run_aborts_on_a_failed_arm_with_the_chain_line_and_never_touches_the_lock[B1-REFUSED supervisor refused]",
+  "tests.test_r9_e1_arm_read::test_dry_run_aborts_on_a_failed_arm_with_the_chain_line_and_never_touches_the_lock[B1-ZEROGRAD-FAIL rc 0; /x/ZEROGRAD_FAIL.json]",
+  "tests.test_r9_e1_arm_read::test_dry_run_aborts_when_the_arm_was_dumped_on_other_windows",
+  "tests.test_r9_e1_arm_read::test_dry_run_reads_b4_against_the_b2_winner_dumping_the_non_floor_reference_once",
+  "tests.test_r9_e1_arm_read::test_dry_run_refuses_floor_arms_unknown_references_and_a_split_whose_sha_does_not_match",
+  "tests.test_r9_e1_arm_read::test_dry_run_waits_on_a_held_gpu_lock_and_runs_nothing_without_it",
+  "tests.test_r9_e1_arm_read::test_dry_run_waits_on_the_floor_and_aborts_on_a_refused_floor",
+  "tests.test_r9_e1_arm_read::test_dry_run_waits_then_reads_a_lever_arm_against_the_floors_c0_without_redumping_it",
+  "tests.test_r9_e1_arm_read::test_lift_valid_set_against_a_floor_read_without_a_mask_is_refused_by_the_verdict",
+  "tests.test_r9_e1_arm_read::test_lift_valid_set_is_passed_to_both_evals_the_paired_eval_and_the_verdict_and_the_verdict_is_read_on_it",
+  "tests.test_r9_e1_arm_read::test_lift_valid_set_to_a_missing_path_aborts_before_the_lock_is_taken",
+  "tests.test_r9_e1_arm_read::test_lift_valid_unset_passes_no_lift_valid_anywhere_and_the_argv_is_the_earlier_one",
   "tests.test_r9_e1_dump::test_rasters_have_mapsel_layout_and_are_read_by_the_nearfield_reader",
   "tests.test_r9_e1_eval::test_nearfield_copy_equals_the_original_script_output",
   "tests.test_r9_e1_floor::test_c0_vs_a_copy_of_c0_reads_exactly_zero",
@@ -99,6 +112,14 @@
   "tests.test_r9_e1_floor::test_lever_read_is_taniteval_ci_e1_floor_read",
   "tests.test_r9_e1_floor::test_map_row_shift_has_the_right_sign",
   "tests.test_r9_e1_floor::test_markdown_states_every_family_and_stamps_every_table",
+  "tests.test_r9_e1_verdict::test_end_to_end_a_clean_winner_keeps",
+  "tests.test_r9_e1_verdict::test_end_to_end_clean_winner_on_a_maskless_rig_says_covered_by_proxies",
+  "tests.test_r9_e1_verdict::test_end_to_end_not_computable_arm_says_what_would_compute_it",
+  "tests.test_r9_e1_verdict::test_end_to_end_records_floor_provenance_and_the_four_families",
+  "tests.test_r9_e1_verdict::test_end_to_end_refuses_a_bad_floor_a_floor_arm_and_unresolvable_references",
+  "tests.test_r9_e1_verdict::test_end_to_end_the_same_windows_are_enforced",
+  "tests.test_r9_e1_verdict::test_end_to_end_unchanged_lever_drops_on_clause_1_or_2_with_the_next_lever_named",
+  "tests.test_r9_e1_verdict::test_end_to_end_winner_that_is_worse_on_a_map_row_is_dropped_by_clause3",
   "tests.test_refa_v1_ema_targets::test_OFF_path_identity_state_dict_keys_and_fixed_seed_loss_unchanged[hier]",
   "tests.test_refa_v1_ema_targets::test_OFF_path_identity_state_dict_keys_and_fixed_seed_loss_unchanged[nohier]",
   "tests.test_refa_v1_precision::test_OFF_path_identity_every_step1_instrument_matches_the_pre_edit_trainer[default]",
@@ -371,7 +392,7 @@
    "proposed_fix": "insert `torch.manual_seed(0)` as the first statement of the test (the pattern test_flagship_v4.py already uses at its line 432)"
   }
  ],
- "n_files": 47,
+ "n_files": 49,
  "files": [
   {
    "sub": "stack",
@@ -560,6 +581,14 @@
   {
    "sub": "stack",
    "file": "tests/test_r9_e1_floor.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_verdict.py"
   }
  ],
  "id_to_file": {
@@ -1958,6 +1987,90 @@
   "tests.test_map_hires_overfit_banded::test_OFF_is_the_tips_harness_bit_for_bit": {
    "sub": "stack",
    "file": "tests/test_map_hires_overfit_banded.py"
+  },
+  "tests.test_r9_e1_arm_read::test_dry_run_aborts_on_a_failed_arm_with_the_chain_line_and_never_touches_the_lock[B1-FAILED rc 137: no done-marker at /x (read y)]": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  "tests.test_r9_e1_arm_read::test_dry_run_aborts_on_a_failed_arm_with_the_chain_line_and_never_touches_the_lock[B1-REFUSED supervisor refused]": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  "tests.test_r9_e1_arm_read::test_dry_run_aborts_on_a_failed_arm_with_the_chain_line_and_never_touches_the_lock[B1-ZEROGRAD-FAIL rc 0; /x/ZEROGRAD_FAIL.json]": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  "tests.test_r9_e1_arm_read::test_dry_run_aborts_when_the_arm_was_dumped_on_other_windows": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  "tests.test_r9_e1_arm_read::test_dry_run_reads_b4_against_the_b2_winner_dumping_the_non_floor_reference_once": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  "tests.test_r9_e1_arm_read::test_dry_run_refuses_floor_arms_unknown_references_and_a_split_whose_sha_does_not_match": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  "tests.test_r9_e1_arm_read::test_dry_run_waits_on_a_held_gpu_lock_and_runs_nothing_without_it": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  "tests.test_r9_e1_arm_read::test_dry_run_waits_on_the_floor_and_aborts_on_a_refused_floor": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  "tests.test_r9_e1_arm_read::test_dry_run_waits_then_reads_a_lever_arm_against_the_floors_c0_without_redumping_it": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  "tests.test_r9_e1_arm_read::test_lift_valid_set_against_a_floor_read_without_a_mask_is_refused_by_the_verdict": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  "tests.test_r9_e1_arm_read::test_lift_valid_set_is_passed_to_both_evals_the_paired_eval_and_the_verdict_and_the_verdict_is_read_on_it": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  "tests.test_r9_e1_arm_read::test_lift_valid_set_to_a_missing_path_aborts_before_the_lock_is_taken": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  "tests.test_r9_e1_arm_read::test_lift_valid_unset_passes_no_lift_valid_anywhere_and_the_argv_is_the_earlier_one": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_arm_read.py"
+  },
+  "tests.test_r9_e1_verdict::test_end_to_end_a_clean_winner_keeps": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_verdict.py"
+  },
+  "tests.test_r9_e1_verdict::test_end_to_end_clean_winner_on_a_maskless_rig_says_covered_by_proxies": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_verdict.py"
+  },
+  "tests.test_r9_e1_verdict::test_end_to_end_not_computable_arm_says_what_would_compute_it": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_verdict.py"
+  },
+  "tests.test_r9_e1_verdict::test_end_to_end_records_floor_provenance_and_the_four_families": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_verdict.py"
+  },
+  "tests.test_r9_e1_verdict::test_end_to_end_refuses_a_bad_floor_a_floor_arm_and_unresolvable_references": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_verdict.py"
+  },
+  "tests.test_r9_e1_verdict::test_end_to_end_the_same_windows_are_enforced": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_verdict.py"
+  },
+  "tests.test_r9_e1_verdict::test_end_to_end_unchanged_lever_drops_on_clause_1_or_2_with_the_next_lever_named": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_verdict.py"
+  },
+  "tests.test_r9_e1_verdict::test_end_to_end_winner_that_is_worse_on_a_map_row_is_dropped_by_clause3": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_verdict.py"
   }
  },
  "amendments": [
@@ -2210,6 +2323,42 @@
    ],
    "class": "ENV (no scipy in the Thor training venv; the class this file's header already admits): tests.test_r9_e1_floor::test_c0_vs_a_copy_of_c0_reads_exactly_zero, tests.test_r9_e1_floor::test_deliberate_plus_005_shift_reads_separated_and_exact, tests.test_r9_e1_floor::test_dry_run_with_the_scipy_shim_reads_the_same_map_numbers_as_real_scipy, tests.test_r9_e1_floor::test_floor_refuses_when_it_is_not_one_read_of_the_same_windows[kw0-same windows], tests.test_r9_e1_floor::test_floor_refuses_when_it_is_not_one_read_of_the_same_windows[kw1-first arm is the C1 dump], tests.test_r9_e1_floor::test_floor_refuses_when_it_is_not_one_read_of_the_same_windows[kw2-P=R gate], tests.test_r9_e1_floor::test_floor_refuses_when_it_is_not_one_read_of_the_same_windows[kw3-raster name sets differ], tests.test_r9_e1_floor::test_lever_read_is_taniteval_ci_e1_floor_read, tests.test_r9_e1_floor::test_map_row_shift_has_the_right_sign, tests.test_r9_e1_floor::test_markdown_states_every_family_and_stamps_every_table | ENV (tree scope: gmo_spec_A18.json lives in the Research Lab package that a stack/taniteval-only Thor gate tree does not carry; FileNotFoundError): tests.test_map_hires_overfit_banded::test_presence_is_the_inherited_floor_in_area_inconclusive_is_fail, tests.test_map_hires_overfit_banded::test_the_arms_are_what_they_say_on_the_banded_head, tests.test_map_hires_overfit_banded::test_the_channel_class_table_reaches_the_A18_bars_and_the_codes_of_the_design, tests.test_map_hires_overfit_banded::test_the_flag_is_wired_and_refuses_the_wrong_near_lift_and_a_missing_gated_arm, tests.test_map_hires_overfit_banded::test_the_verdict_is_reachable_in_every_direction | ENV (interpreter: the AST digests are pinned on the dev box's CPython 3.13.5; Thor's venv is CPython 3.12.3, whose ast.dump also prints empty args=[] / keywords=[], so a node holding a call hashes differently; MEASURED on the identical file: HERE node 9b47380b6ea02e93182e on 3.13 vs 59a1f2b187a5c644106e on 3.12): tests.test_map_hires_overfit_banded::test_OFF_is_the_tips_harness_bit_for_bit",
    "measured": "Thor suite for e8b0b0524bcf (/home/nvidia/r8ns/r9e1/suite_e8b0b0524bcf, both stages done; verdict sha256 e012eba8fb334e38): precheck FAIL on 18 outside-pinned ids, each classified from its junit message; plus a Thor delta run of the 53 test files that name a module changed e8b0b05..23fbf8f (/home/nvidia/r8ns/r9e1/delta_23fbf8f7e2b1, the suite's own runner on the 23fbf8f tree). Pinned here: the 16 ENV ids. Not admitted (CODE, fixed in this commit): test_refc_v3_agent_provenance P2 (no seam rows for refcv9 C3/C4's aux weights), test_text_encoding_is_explicit (7 text-mode subprocess calls in five E1 test files), and 4 x test_launch_gate_e1rig_reuse (a host-dependent fixture: the gate hashes the argv's class-weights file where it exists, MEASURED present on Thor at d70dec8087ed73ee and absent on the dev box). Dev box (x86, CPython 3.13.5) on a 23fbf8f export with the map-hires research dir: test_r9_e1_floor + test_map_hires_overfit_banded = 38 passed.",
+   "dev_box_half": "G-SUITE (b) now also runs the added files on the full-commit archive, where they must PASS",
+   "authorized": "Master Mind review under the PI's standing instruction of 2026-11-03 ('Dont stop until the goals are achieved and refcv9 can be trained. Do this effectively and quickly without asking me'); ENV-classified ids only, each from its junit message"
+  },
+  {
+   "date": "2026-11-04",
+   "by": "Master Mind (4a3d05)",
+   "scope": "this file (refcv8-mapft, refcv9-warm, refcv9-e1rig)",
+   "added_ids": [
+    "tests.test_r9_e1_arm_read::test_dry_run_aborts_on_a_failed_arm_with_the_chain_line_and_never_touches_the_lock[B1-FAILED rc 137: no done-marker at /x (read y)]",
+    "tests.test_r9_e1_arm_read::test_dry_run_aborts_on_a_failed_arm_with_the_chain_line_and_never_touches_the_lock[B1-REFUSED supervisor refused]",
+    "tests.test_r9_e1_arm_read::test_dry_run_aborts_on_a_failed_arm_with_the_chain_line_and_never_touches_the_lock[B1-ZEROGRAD-FAIL rc 0; /x/ZEROGRAD_FAIL.json]",
+    "tests.test_r9_e1_arm_read::test_dry_run_aborts_when_the_arm_was_dumped_on_other_windows",
+    "tests.test_r9_e1_arm_read::test_dry_run_reads_b4_against_the_b2_winner_dumping_the_non_floor_reference_once",
+    "tests.test_r9_e1_arm_read::test_dry_run_refuses_floor_arms_unknown_references_and_a_split_whose_sha_does_not_match",
+    "tests.test_r9_e1_arm_read::test_dry_run_waits_on_a_held_gpu_lock_and_runs_nothing_without_it",
+    "tests.test_r9_e1_arm_read::test_dry_run_waits_on_the_floor_and_aborts_on_a_refused_floor",
+    "tests.test_r9_e1_arm_read::test_dry_run_waits_then_reads_a_lever_arm_against_the_floors_c0_without_redumping_it",
+    "tests.test_r9_e1_arm_read::test_lift_valid_set_against_a_floor_read_without_a_mask_is_refused_by_the_verdict",
+    "tests.test_r9_e1_arm_read::test_lift_valid_set_is_passed_to_both_evals_the_paired_eval_and_the_verdict_and_the_verdict_is_read_on_it",
+    "tests.test_r9_e1_arm_read::test_lift_valid_set_to_a_missing_path_aborts_before_the_lock_is_taken",
+    "tests.test_r9_e1_arm_read::test_lift_valid_unset_passes_no_lift_valid_anywhere_and_the_argv_is_the_earlier_one",
+    "tests.test_r9_e1_verdict::test_end_to_end_a_clean_winner_keeps",
+    "tests.test_r9_e1_verdict::test_end_to_end_clean_winner_on_a_maskless_rig_says_covered_by_proxies",
+    "tests.test_r9_e1_verdict::test_end_to_end_not_computable_arm_says_what_would_compute_it",
+    "tests.test_r9_e1_verdict::test_end_to_end_records_floor_provenance_and_the_four_families",
+    "tests.test_r9_e1_verdict::test_end_to_end_refuses_a_bad_floor_a_floor_arm_and_unresolvable_references",
+    "tests.test_r9_e1_verdict::test_end_to_end_the_same_windows_are_enforced",
+    "tests.test_r9_e1_verdict::test_end_to_end_unchanged_lever_drops_on_clause_1_or_2_with_the_next_lever_named",
+    "tests.test_r9_e1_verdict::test_end_to_end_winner_that_is_worse_on_a_map_row_is_dropped_by_clause3"
+   ],
+   "added_files": [
+    "tests/test_r9_e1_arm_read.py",
+    "tests/test_r9_e1_verdict.py"
+   ],
+   "class": "ENV (no scipy in the Thor training venv; the class this file's header already admits): every added id ERRORS in setup with \"ModuleNotFoundError: No module named 'scipy'\" at scripts/r9_e1_eval.py:384 (`from scipy.ndimage import binary_dilation`), read from its own junit message.",
+   "measured": "Thor suite for c3140a46033f (/home/nvidia/r8ns/r9e1/suite_c3140a46033f, TIP and CAND done; gate_verdict FAIL regressions 0 new_fail 45; the gate's own precheck FAIL on 30 outside-pinned ids, each classified from its junit message: 21 SCIPY, 6 GPU, 2 shim, 1 ENC). Pinned here: the 21 ENV ids. Not admitted (CODE, fixed in this commit): the 8 test_r9gate3_study / test_r9gate3_lock_waits ids (the sandbox shims were written 0644, so Linux PATH lookup ran the REAL nvidia-smi against the training GPU and `$PY` could not run; made executable + a POSIX test that a lookup finds them) and test_text_encoding_is_explicit (4 text-mode calls in tests/test_devbox_pinned_env.py).",
    "dev_box_half": "G-SUITE (b) now also runs the added files on the full-commit archive, where they must PASS",
    "authorized": "Master Mind review under the PI's standing instruction of 2026-11-03 ('Dont stop until the goals are achieved and refcv9 can be trained. Do this effectively and quickly without asking me'); ENV-classified ids only, each from its junit message"
   }

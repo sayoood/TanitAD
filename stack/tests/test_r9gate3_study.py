@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -139,6 +140,8 @@ def _sandbox(tmp: Path, study_text: str | None = None) -> Path:
     py = sb / "home/nvidia/venvs/tanitad-train/bin/python"
     py.parent.mkdir(parents=True)
     py.write_text(_PY_SHIM, encoding="utf-8", newline="\n")
+    for shim in (sb / "bin" / "flock", sb / "bin" / "nvidia-smi", py):         # EXECUTABLE: on Linux (Thor) a PATH lookup skips a non-executable shim and
+        shim.chmod(0o755)                                                      # runs the REAL flock / nvidia-smi (the training GPU refused the gate), and `$PY` fails
     (sb / "home/nvidia/refcv7_post").mkdir(parents=True)
     return sb
 
@@ -363,3 +366,13 @@ def test_every_bind_snippet_that_names_a_profile_reads_the_studys_and_defaults_t
 def test_the_bind_script_and_the_study_file_stay_LF_only():
     for p in (R2.BIND, STUDY, *[GATE3 / f for f in FAMILY]):
         assert b"\r" not in p.read_bytes(), p.name
+
+
+@pytest.mark.skipif(os.name == "nt", reason="no executable bit on Windows: every file is runnable there, which is why the dev box never saw this")
+def test_the_sandbox_shims_are_executable_so_a_linux_path_lookup_finds_them(tmp_path):
+    """MEASURED on Thor 2026-11-04 (suite_c3140a46033f): the shims were written 0644, so PATH skipped them -- the REAL nvidia-smi read the training
+    GPU ("the GPU is not empty under the lock") and `$PY` could not run: 8 ids of this file and test_r9gate3_lock_waits failed on Thor only."""
+    sb = _sandbox(tmp_path)
+    for name in ("flock", "nvidia-smi"):
+        assert shutil.which(name, path=(sb / "bin").as_posix()) == (sb / "bin" / name).as_posix(), name
+    assert os.access(sb / "home/nvidia/venvs/tanitad-train/bin/python", os.X_OK)

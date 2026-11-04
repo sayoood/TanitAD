@@ -52,7 +52,7 @@ def test_a_mutated_driver_without_the_unset_is_caught():
 @R2.needs_bash
 def test_env_u_really_removes_the_variable_for_the_child():
     out = subprocess.run([R2.BASH, "-c", 'export MSYS_NO_PATHCONV=1; env -u MSYS_NO_PATHCONV bash -c \'echo "[${MSYS_NO_PATHCONV-unset}]"\''],
-                         capture_output=True, text=True, timeout=60)
+                         capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert out.returncode == 0, out.stderr
     assert out.stdout.strip() == "[unset]", out.stdout
 
@@ -127,12 +127,12 @@ def test_purge_deletes_queued_dirs_and_keeps_a_residue_queued(tmp_path):
         (d / "x" / "f.py").write_text("1")
     (a / "x" / "f.py").chmod(0o444)                                             # a read-only file, as in the archive
     script = _purge_defs() + '\nPENDING="$PENDING $1 $2"; purge; echo "[${PENDING# }]"'
-    out = subprocess.run([R2.BASH, "-c", script, "_", a.as_posix(), b.as_posix()], capture_output=True, text=True, timeout=60)
+    out = subprocess.run([R2.BASH, "-c", script, "_", a.as_posix(), b.as_posix()], capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert out.returncode == 0, out.stderr
     assert out.stdout.strip() == "[]" and not a.exists() and not b.exists(), (out.stdout, a.exists(), b.exists())
     (a / "x").mkdir(parents=True)
     stuck = _purge_defs() + '\nrm() { return 1; }\nPENDING=" $1"; purge; echo "[${PENDING# }]"'   # an rm that cannot delete (a held tree)
-    out = subprocess.run([R2.BASH, "-c", stuck, "_", a.as_posix()], capture_output=True, text=True, timeout=60)
+    out = subprocess.run([R2.BASH, "-c", stuck, "_", a.as_posix()], capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert out.returncode == 0, out.stderr
     assert out.stdout.strip() == f"[{a.as_posix()}]" and a.exists(), out.stdout   # the residue stays queued for the next pass
 
@@ -141,6 +141,6 @@ def test_purge_deletes_queued_dirs_and_keeps_a_residue_queued(tmp_path):
 def test_free_gb_reads_an_integer_on_this_platform(tmp_path):
     src = DRIVER.read_text(encoding="utf-8")
     fn = next(l for l in src.splitlines() if l.startswith("free_gb() {"))      # the driver's OWN definition, executed
-    out = subprocess.run([R2.BASH, "-c", fn + '\nfree_gb "$1"', "_", str(tmp_path)], capture_output=True, text=True, timeout=60)
+    out = subprocess.run([R2.BASH, "-c", fn + '\nfree_gb "$1"', "_", str(tmp_path)], capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert out.returncode == 0, out.stderr
     assert out.stdout.strip().isdigit(), repr(out.stdout)
