@@ -1,0 +1,469 @@
+{
+ "declared_vs_built": "PASS",
+ "live": {
+  "terms": {
+   "ckpt": 0.658967912197113,
+   "goal": 0.06056628376245499,
+   "lat": 0.04256875813007355,
+   "lon": 0.33425071835517883,
+   "cons": 0.12425974011421204,
+   "ade": 1.8806791305541992,
+   "fde": 5.733870983123779,
+   "acc": 0.0052495659328997135,
+   "pen_SPEED": 0.1940486580133438,
+   "pens_SPEED": 0.30050382018089294,
+   "pen_STOP": 0.0043396614491939545,
+   "pens_STOP": 0.0,
+   "pen_TURN": 0.002651530783623457,
+   "pens_TURN": 0.006950558628886938,
+   "pen_LEAD": 0.11528134346008301,
+   "pens_LEAD": 0.1394728124141693,
+   "wm": 141.0255126953125,
+   "total": 16.708120346069336
+  },
+  "missing_terms": [],
+  "unexpected_terms": [],
+  "dead_params": [],
+  "declared_dead": [],
+  "unexpected_dead": [],
+  "declared_dead_but_alive": [],
+  "control_prior_grad_sum": 0.0,
+  "head_o_grad_step0": 200.0287039130926,
+  "n_trainable": 252,
+  "groups_grad": {
+   "adapter": 9789.409498214722,
+   "S": 1813.2513624876738,
+   "T": 1093.244512135163,
+   "O": 6709.945407573134,
+   "head_s": 657.8666071146727,
+   "head_o": 2285.690837547183,
+   "wm": 7390.520629105973
+  },
+  "pass": true
+ },
+ "code_mix_probe": {
+  "code_mix": "whole",
+  "p_gt": 0.5,
+  "n_labelled": 64,
+  "n_draws_samples": 256,
+  "n_partial": 0,
+  "n_all_gt": 118,
+  "n_all_own": 138,
+  "unit_gt_rate": {
+   "decisions": 0.4609375,
+   "speed": 0.4609375,
+   "angle": 0.4609375,
+   "tte": 0.4609375,
+   "timegap": 0.4609375,
+   "geom": 0.4609375,
+   "leadgap": 0.4609375
+  },
+  "pass": true
+ },
+ "o_interface_probe": {
+  "o_interface": "full",
+  "shift": 2.5,
+  "n_windows": 64,
+  "perturbations": {
+   "donor_code": {
+    "max_abs_dtraj60": 27.886051177978516,
+    "o_read_code_abs_max": 13.02419662475586,
+    "o_read_ck_minus_nominal_abs_max": 71.35304260253906,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "gt_code": {
+    "max_abs_dtraj60": 5.518882751464844,
+    "o_read_code_abs_max": 3.526653528213501,
+    "o_read_ck_minus_nominal_abs_max": 71.35304260253906,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "random_code": {
+    "max_abs_dtraj60": 27.887123107910156,
+    "o_read_code_abs_max": 0.9999334216117859,
+    "o_read_ck_minus_nominal_abs_max": 71.35304260253906,
+    "o_read_ck_ok_abs_max": 1.0
+   },
+   "shifted_checkpoints": {
+    "max_abs_dtraj60": 11.945388793945312,
+    "o_read_code_abs_max": 10.728323936462402,
+    "o_read_ck_minus_nominal_abs_max": 68.85259246826172,
+    "o_read_ck_ok_abs_max": 1.0,
+    "max_abs_d_ckpt": 2.500001907348633,
+    "t_reads_s_max_abs_dgoal_logits": 11.86911678314209
+   }
+  },
+  "pass": true
+ },
+ "acc_probe": {
+  "w_acc_declared": 49.6969,
+  "w_probe": 49.6969,
+  "acc": 0.0036719930358231068,
+  "acc_at_zero_weight": 0.0036719930358231068,
+  "total_w": 18.263595581054688,
+  "total_0": 18.08111000061035,
+  "contribution": 0.18248558044433594,
+  "w_x_acc": 0.18248667070199734,
+  "head_o_grad_diff": 81.63412475585938,
+  "read_o_grad_diff": 98.21346282958984,
+  "control_repeat_total_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "control_wm_grad_diff": 0.0,
+  "pass": true
+ },
+ "admissibility": {
+  "allowed": [
+   "a_s",
+   "a_t",
+   "act",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ]
+ },
+ "levers": {
+  "navonly": false,
+  "consistency": true,
+  "wm": "b",
+  "cons_absent": "mask",
+  "code_mix": "whole",
+  "o_interface": "full",
+  "w_acc": 49.6969,
+  "launch_intent_w": 0.0,
+  "wm_idm_gamma": 100.0,
+  "kin_mode": "yaw",
+  "wm_ch1_scale": 0.4,
+  "p_gt_start": 0.2,
+  "p_gt_end": 0.2,
+  "hist": 4,
+  "hmax": 16,
+  "window_start": 3,
+  "prior_frozen": true,
+  "residual_zero_init": false,
+  "params": {
+   "adapter": 275712,
+   "cond": 25088,
+   "S": 1321737,
+   "T": 1463868,
+   "O": 2120216,
+   "WM": 2007874
+  },
+  "n_params_trainable": 7214495,
+  "w": {
+   "w_pen": 0.5,
+   "w_pen_self": 0.25,
+   "w_wm": 0.1,
+   "w_tac": 1.0,
+   "w_cons": 0.5
+  },
+  "ego_perturb": {
+   "ego_perturb_p": 0.0,
+   "ego_perturb_vscale": [
+    0.5,
+    1.0
+   ],
+   "ego_perturb_vmax": 8.0,
+   "ego_perturb_adrop": 1.5,
+   "ego_perturb_yawrate_std": 0.0,
+   "ego_perturb_seed": 0,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ]
+  },
+  "dagger": {
+   "dagger_p": 0.0,
+   "dagger_seed": 0,
+   "dagger_bank": null,
+   "dagger_bank_sha256": null,
+   "kin_mode": "yaw",
+   "bank_hmax": null,
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav"
+   ],
+   "kept": [
+    "feats",
+    "frame_ok",
+    "limit",
+    "limit_ok",
+    "a_t",
+    "a_s",
+    "pose_now"
+   ],
+   "record": [
+    "act"
+   ],
+   "labels_re_expressed": [
+    "lab_s.rc"
+   ],
+   "nav_rebuild_invalid": false,
+   "constants_sha256": "8f94b3b5e35f4457be51d695842457a340d1228ab48c5862f4db1e5063f3ffaf"
+  },
+  "dagger_p": 0.0,
+  "dagger_bank_sha256": null,
+  "dagger_bank_sha256_declared": null,
+  "recover": {
+   "recover_p": 0.1,
+   "recover_dev_law": "apriori",
+   "recover_dev_bank": null,
+   "recover_dev_bank_sha256": null,
+   "recover_target": "rejoin",
+   "recover_rejoin_steps": 10,
+   "recover_seed": 1,
+   "kin_mode": "yaw",
+   "rebuilt": [
+    "p10f",
+    "base",
+    "kin3",
+    "p10_t",
+    "pose",
+    "pose_t",
+    "pose_s",
+    "nav",
+    "pose_now"
+   ],
+   "retargeted": [
+    "gt",
+    "lab_s.rc"
+   ]
+  },
+  "recover_table": null,
+  "ego_perturb_with_dagger": false,
+  "ego_perturb_stream": 0,
+  "ego_dagger_overlap_n": 0,
+  "launch_intent": {
+   "launch_intent_w": 0.0,
+   "v0_max": 6.0,
+   "dv": 1.0,
+   "dt": 0.2,
+   "knots": [
+    1,
+    12
+   ],
+   "axis": "along (x of the ego frame at NOW)",
+   "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"
+  },
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "init_ckpt": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s1_dagoacc\\ckpt_last.pt",
+   "sha256": "90b01474819082a6d32a9000d63a4954e0074916140abdbbcb67b353f7ac3333",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 3000,
+   "source_arm": "M2b",
+   "source_seed": 1,
+   "source_argv_sha": "2d846e7c9fbcc28b"
+  },
+  "lr_schedule": {
+   "lr": 0.0001,
+   "warmup": 100,
+   "total": 3000
+  }
+ },
+ "steps_total": 3000,
+ "S_steps_per_epoch_100pct": 4791,
+ "info": {
+  "batch": 64,
+  "md5_overridden": false,
+  "n_clips": 4512,
+  "n_clips_expected": 4512,
+  "n_clips_all": 4512,
+  "n_excluded": 60,
+  "n_excluded_declared": 60,
+  "excluded_in_train": 0,
+  "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9",
+  "train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1",
+  "lru": 174,
+  "kin_mode": "yaw",
+  "n_windows_all_clips": 306566,
+  "n_windows": 306566,
+  "window_start": 3,
+  "window_t_min": 3,
+  "train_window_list_sha256": "e144adcd9b6273f2b44ad7dfa162931b90e159f7b3911e0893b25777b2ae8168",
+  "p10_units": "pose_kappa",
+  "ds_window_start": 3,
+  "init_ckpt": {
+   "path": "D:\\tanitad\\runs\\v8f_mini_full\\M2b_s1_dagoacc\\ckpt_last.pt",
+   "sha256": "90b01474819082a6d32a9000d63a4954e0074916140abdbbcb67b353f7ac3333",
+   "applied": true,
+   "skipped": null,
+   "n_tensors": 276,
+   "n_mismatch_after_load": 0,
+   "source_step": 3000,
+   "source_arm": "M2b",
+   "source_seed": 1,
+   "source_argv_sha": "2d846e7c9fbcc28b"
+  }
+ },
+ "argv_sha": "bb43de10287b0622",
+ "ego_perturb_probe": {
+  "ego_perturb": "off",
+  "pass": true,
+  "skipped": "--ego-perturb-p 0: the perturbation is not applied; the default run is the pre-change run"
+ },
+ "dagger_probe": {
+  "dagger": "off",
+  "pass": true,
+  "skipped": "--dagger-p 0: no row is swapped; the default run is the pre-change run"
+ },
+ "ego_dagger_compose_probe": {
+  "ego_dagger_compose": "off",
+  "pass": true,
+  "overlap": 0,
+  "skipped": "--ego-perturb-with-dagger not named: the two levers are not composed (the default run is the pre-change run)"
+ },
+ "recover_probe": {
+  "p_declared": 0.1,
+  "n_rows": 64,
+  "n_eligible": 64,
+  "n_selected_at_p1": 64,
+  "keys_read": [
+   "a_s",
+   "a_t",
+   "base",
+   "feats",
+   "frame_ok",
+   "limit",
+   "limit_ok",
+   "nav",
+   "p10f",
+   "pose_now",
+   "pose_s",
+   "pose_t"
+  ],
+  "n_zero_deviation_rows_exempt": 0,
+  "rows_changed": {
+   "p10f": 64,
+   "base": 61,
+   "kin3": 64,
+   "p10_t": 64,
+   "pose": 64,
+   "pose_t": 64,
+   "pose_s": 64,
+   "nav": 17,
+   "pose_now": 64,
+   "gt": 64
+  },
+  "base_rows_at_rest_exempt": 3,
+  "gt_max_abs_err_vs_rejoin_target": 7.069770788348251e-06,
+  "rc_max_abs_err_vs_frame_change": 0.0,
+  "live_recovered": {
+   "pass": true,
+   "terms": {
+    "ckpt": 0.7135006785392761,
+    "goal": 0.059686485677957535,
+    "lat": 0.03863844648003578,
+    "lon": 0.6585747599601746,
+    "cons": 0.13220077753067017,
+    "ade": 3.129490375518799,
+    "fde": 6.334416389465332,
+    "acc": 0.009372620843350887,
+    "pen_SPEED": 0.1551295965909958,
+    "pens_SPEED": 0.6233223080635071,
+    "pen_STOP": 0.11986847966909409,
+    "pens_STOP": 0.0,
+    "pen_TURN": 0.012271969579160213,
+    "pens_TURN": 0.032344527542591095,
+    "pen_LEAD": 0.17777062952518463,
+    "pens_LEAD": 0.12390702217817307,
+    "wm": 143.23863220214844,
+    "total": 17.97599220275879
+   },
+   "control_prior_grad_sum": 0.0,
+   "groups_grad": {
+    "adapter": 10615.115233421326,
+    "S": 1408.9241371154785,
+    "T": 3232.755105279386,
+    "O": 16506.51960927993,
+    "head_s": 619.3818072229624,
+    "head_o": 9299.978866100311,
+    "wm": 7453.964905454894
+   }
+  },
+  "total_logged": 18.10087776184082,
+  "total_recovered": 20.0450382232666,
+  "loss_diff": 1.9441604614257812,
+  "grad_diff_all": 4918.5458984375,
+  "loss_diff_inputs_only": 1.8044319152832031,
+  "grad_diff_inputs_only": 5097.91796875,
+  "loss_diff_target_only": 0.55279541015625,
+  "grad_diff_target_only": 896.0250244140625,
+  "grad_wrt_p10f_selected_abs_sum": 60.40415573120117,
+  "grad_diff_by_group": {
+   "adapter": 737.111572265625,
+   "e_ego": 35.459922790527344,
+   "read_s": 386.2151184082031,
+   "read_t": 538.693115234375,
+   "read_o": 1583.5908203125,
+   "head_s": 124.52263641357422,
+   "head_o": 475.896484375,
+   "wm.": 0.0
+  },
+  "control_repeat_loss_diff": 0.0,
+  "control_repeat_grad_diff": 0.0,
+  "control_p0_same_object": true,
+  "control_p0_loss_diff": 0.0,
+  "control_p0_grad_diff": 0.0,
+  "control_prior_grad_diff": 0.0,
+  "control_wm_grad_diff": 0.0,
+  "pass": true
+ },
+ "launch_intent_probe": {
+  "launch_intent": "off",
+  "pass": true,
+  "launch_n": 0,
+  "launch_eligible": 0,
+  "skipped": "--launch-intent-w not named: the term is not in the loss (the default run is the pre-change run)"
+ }
+}
