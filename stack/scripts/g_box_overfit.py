@@ -662,13 +662,25 @@ def load_launch_argv(path) -> tuple:
 #: built only by ``_bbf.attach(model, args)``, which ``train()`` calls right after ``build_perception_branch`` (refc_v3_train.py:10092) and
 #: which ``TrainerAdapter._build_model`` now calls at the same point -- the trainer's own function, never a re-implementation.
 B3_SCHEMA = "tanitad.g_box_overfit_record/2-b3"
-B3_FLAGS = ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms")
+#: ⭐ C5-S8: `--r9-box-layers` (B4's decoder depth) joins the own-head set -- pinned equal to ``launch_gate.E1_BOX_OWN_FLAGS`` by a test. It is a VALUED flag
+#: (``--r9-box-layers 6`` or ``--r9-box-layers=6``): every membership test below reads the flag HEAD (``_flag_head``), never a bare token.
+B3_FLAGS = ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms", "--r9-box-layers")
 
 
-def b3_build_fields(stamp: dict | None) -> dict:
+def _flag_head(tok) -> str | None:
+    """``--flag=value`` -> ``--flag``; a plain ``--flag`` -> itself; a value token / non-flag -> None."""
+    t = str(tok)
+    return t.split("=", 1)[0] if t.startswith("--") else None
+
+
+def b3_build_fields(stamp: dict | None, c5_stamp: dict | None = None) -> dict:
     """What the record says about the B3 model it BUILT, read off the built model (``box_b3_flag.stamp``): ``{}`` when no flag was built, so any
-    other launch argv's record is untouched. (The eval pass is the trainer's own row: ``box_b3_flag.box3d_row`` reads a DN config with DN off in eval.)"""
-    return {"built": stamp} if stamp else {}
+    other launch argv's record is untouched. (The eval pass is the trainer's own row: ``box_b3_flag.box3d_row`` reads a DN config with DN off in eval.)
+    C5-S8: ``c5_stamp`` = ``box_c5_flag.stamp`` read off the built model (the decoder's BUILT depth + params); ``built_c5`` only when ``--r9-box-layers`` was built."""
+    out = {"built": stamp} if stamp else {}
+    if c5_stamp:
+        out["built_c5"] = c5_stamp
+    return out
 
 
 #: refcv9 E1-REC3 (MM 207ebd, PINNED): the TRAINING-ONLY auxiliary heads -- B1 depth (C3), B2 perspective and B2c BEV2 (C4). This harness
@@ -739,11 +751,12 @@ def strip_aux(launch_argv: list) -> tuple:
 def b3_record_fields(launch_argv: list) -> dict:
     """``{}`` for a launch argv with no ``--r9-box-*`` token (the record is then byte-for-byte what it was). B3's flags -> the ``/2-b3`` schema +
     the flags; aux flags -> ``aux_heads_not_certified`` + its reason (a B3 + aux argv gets both). An unknown ``--r9-box-*`` token is REFUSED."""
-    stray = [x for x in launch_argv if str(x).startswith("--r9-box-") and x not in B3_FLAGS and x not in AUX_FLAGS]
+    stray = [x for x in launch_argv if str(x).startswith("--r9-box-") and _flag_head(x) not in B3_FLAGS and _flag_head(x) not in AUX_FLAGS]
     if stray:
         raise SystemExit(f"[gbo] unknown --r9-box-* token(s) {stray}: not in {B3_FLAGS} (own-head levers) nor {AUX_FLAGS} (training-only aux heads)")
     out: dict = {}
-    on = [f for f in B3_FLAGS if f in launch_argv]
+    heads = {_flag_head(x) for x in launch_argv}                       # C5-S8: a valued flag (`--r9-box-layers 6` / `=6`) is read by its HEAD
+    on = [f for f in B3_FLAGS if f in heads]
     if on:
         out.update({"schema": B3_SCHEMA, "b3": {"flags": on, "literals": "inherited unchanged (rec['literals']): no new free literal"}})
     aux = [f for f in AUX_FLAGS if f in launch_argv]
@@ -1167,6 +1180,11 @@ class TrainerAdapter:
         # class weight -- G-DVB refused the replay (5 mismatches) and `_bbf.prepare` / `_bbf.box3d_row` would have run B3 as OFF. OFF (no
         # `--r9-box-*` own-head flag): `attach` touches nothing, so every other argv builds exactly what it built before.
         tr._bbf.attach(m, a)
+        # ⭐ C5-S8 (BRIEF_C5_S8): `--r9-box-layers N` (B4's decoder depth) is attached by the trainer's OWN `_bc5.attach(model, args)` (refc_v3_train.py:10119, right
+        # after `_bbf.attach` / `_pwf.attach` / `_bda.attach` / `_p3f.attach` and before the optimizer and any warm start). The replay builds the SAME depth the trainer
+        # does, or G-DVB refuses it (`r9_box_layers: declared 6 but BUILT 3`, the B3 defect again). `_pwf` / `_bda` / `_p3f` are not replayed (no C8 flags in the rig; the aux
+        # heads are stripped), so their relative order to `_bc5` cannot matter here. OFF (`--r9-box-layers` unnamed): `attach` touches nothing.
+        tr._bc5.attach(m, a)
         if m._w_map > 0.0:
             _pe, _ptable = tr._read_rig_extrinsics(str(getattr(a, "agent_rig_extrinsics", "")))
             m._lift_bank = _perc.LiftGeometryBank(_ptable, frame=_perc.frame_for_model(m), stride=int(_pcfg.stride),
@@ -1194,6 +1212,7 @@ class TrainerAdapter:
             raise SystemExit("[gbo] the replayed build is NOT the declared launch model:\n  - "
                              + "\n  - ".join(self.dvb_mismatches))
         self.b3_stamp = tr._bbf.stamp(m, a)        # refcv9 B3: `config.json["r9_box_b3"]`'s stamp, read OFF the built model; None when no flag
+        self.c5_stamp = tr._bc5.stamp(m, a)        # refcv9 C5-S8: `config.json["r9_box_c5"]`'s stamp, read OFF the built decoder; None when unnamed
         return m
 
     # -- the adapter protocol --------------------------------------------------------------------------- #
@@ -1403,8 +1422,8 @@ def main(argv=None) -> int:
                 encoding="utf-8"))}
         if getattr(ad, "rig_record", None):
             rec["rig"] = ad.rig_record
-        if getattr(ad, "b3_stamp", None):
-            rec.setdefault("b3", {}).update(b3_build_fields(ad.b3_stamp))
+        if getattr(ad, "b3_stamp", None) or getattr(ad, "c5_stamp", None):          # C5-S8: a layers-only argv has no B3 stamp
+            rec.setdefault("b3", {}).update(b3_build_fields(ad.b3_stamp, getattr(ad, "c5_stamp", None)))
         rec["check_build"] = {"dvb_mismatches": ad.dvb_mismatches,
                               "box_decoder_params": int(sum(p.numel() for p in br.box_dec.parameters())),
                               "box_memory_params": int(sum(p.numel() for p in br.box_mem.parameters())),
@@ -1433,8 +1452,8 @@ def main(argv=None) -> int:
         # A14.1: the red arm is its own invocation (`unanchored` = the MAIN decoder); this record's RESULT is the
         # verdict of the configuration it ran (``anchors_removed``, when run, stays informative)
         rec["one_frame"]["RESULT"] = ("INCOMPLETE" if "main" not in v else "PASS" if main_ok else "FAIL")
-        if getattr(ad, "b3_stamp", None):
-            rec.setdefault("b3", {}).update(b3_build_fields(ad.b3_stamp))
+        if getattr(ad, "b3_stamp", None) or getattr(ad, "c5_stamp", None):          # C5-S8: a layers-only argv has no B3 stamp
+            rec.setdefault("b3", {}).update(b3_build_fields(ad.b3_stamp, getattr(ad, "c5_stamp", None)))
         rec["one_frame"]["query_select"] = str(getattr(ad.args, "slot_query_select", "learned") or "learned")
         if red is not None:
             rec["one_frame"]["anchors_removed_informative"] = red
@@ -1455,8 +1474,8 @@ def main(argv=None) -> int:
         rec["dvb_mismatches"] = getattr(ad, "dvb_mismatches", [])
         if getattr(ad, "rig_record", None):
             rec["rig"] = ad.rig_record
-        if getattr(ad, "b3_stamp", None):
-            rec.setdefault("b3", {}).update(b3_build_fields(ad.b3_stamp))
+        if getattr(ad, "b3_stamp", None) or getattr(ad, "c5_stamp", None):          # C5-S8: a layers-only argv has no B3 stamp
+            rec.setdefault("b3", {}).update(b3_build_fields(ad.b3_stamp, getattr(ad, "c5_stamp", None)))
         Path(a.out).write_text(json.dumps(rec, indent=1, default=str), encoding="utf-8")
         log(f"arm {arm}: {res['verdict']} ({res['wall_s']} s, {res['s_per_step']} s/step)")
     main_ok = rec["arms"].get("main", {}).get("verdict") == "PASS"
