@@ -439,6 +439,11 @@ def _build_model(config: dict, ckpt_path: str, device: str = "cuda", remap: dict
     tr._p3f.attach(model, args)       # refcv9 C4 (B2 / B2c): the training-only perspective (or parameter-matched BEV) head, so the strict load reads the trained state_dict into the same build; NEVER called by the eval forward (OFF: nothing)
     tr._r9ph.attach(model, args)      # refcv9 C10: model._r9_photometric so G-DVB reads the same build as train(); the eval forward never augments (compute_losses_* augment only under model.training) (OFF: nothing)
     tr._bw.attach(model, args)        # refcv9 T1: the zero-init fuse on model._map_hires + the hook on its lift, so the strict load reads the trained fuse into the same build; the eval caller must stage the history (bev_warp_flag.stage) before model(...) (OFF: nothing)
+    # refcv9 GEVAL-AUXSTAMP: the trainer stamps `perception.branch_params` AFTER every attach (train(): `_bbf/_pwf/_bda/_p3f/_bc5.attach`, then
+    # `"branch_params": model._perception.param_breakdown()`); `build_perception_block` stamped it BEFORE `_bda` / `_bc5` / `_p3f`, so every arm whose
+    # attach adds parameters to `model._perception` (B1 depth head, B2 / B2c head, B4 decoder depth + pfq) failed G-EVAL's stamp check by exactly
+    # those parameters. Re-read it HERE, after the last attach, so the rebuilt stamp is taken at the trainer's build point. OFF: a no-op re-read.
+    refresh_perception_stamp(model, rec)
     # ---- train():8140-8149 -- refcv6 sec. 6: a conflict detector that can never read anything
     # is refused (a refusal only; the detector itself is a training instrument) ------------ #
     if tr._conflict_override(args) is True and not tr._conflict_aux_weights(model):
@@ -679,6 +684,10 @@ def build_perception_block(tr, model, args, device) -> dict | None:
                            query_select=str(getattr(args, "slot_query_select", "learned")
                                             or "learned"))
     model._perception = _perc.build_perception_branch(model, _pcfg).to(device)   # train():8090
+    # refcv9 B3 (MM, GEVAL-AUXSTAMP): train() runs `_bbf.attach` right here, straight after building the branch. `--r9-box-dn` adds
+    # `box_dec.dn_embed` / `dn_cls_embed` and the B3 cfg (quality-aware presence, in-loss NMS) drives the decode: without this replay a B3
+    # checkpoint's strict load refuses its DN keys and its eval would decode as C0. OFF (no --r9-box-* B3 flag): returns at once.
+    tr._bbf.attach(model, args)
     # refcv9 C8 (G-EVAL): train() attaches the planner wires (W-MAP-2 projection, W-BOX tokens + gates) HERE, before the stamp's
     # `branch_params`; the loader REPLAYS it from the run's argv so the strict load reads `box_tok_r9.* / *.box_gate /
     # bev_pool.map_chan_proj.*` into modules that exist. OFF (both flags absent): `attach` returns at once -- nothing is built.
@@ -700,6 +709,21 @@ def build_perception_block(tr, model, args, device) -> dict | None:
             "frame": {"height": int(_pframe.height), "width": int(_pframe.width),
                       "projection": str(_pframe.projection), "f_ref": float(_pframe.f_ref)},
             "lift_bank_n_clips": 0 if model._lift_bank is None else len(model._lift_bank)}
+
+
+def refresh_perception_stamp(model, rec: dict) -> None:
+    """refcv9 GEVAL-AUXSTAMP -- ``rec["perception"]["branch_params"]`` re-read from the BUILT branch, to be called AFTER every attach.
+
+    train() stamps ``"branch_params": model._perception.param_breakdown()`` after ``_bbf / _pwf / _bda / _p3f / _bc5 .attach`` (the training-only depth
+    head, the B2 / B2c head, the deepened box decoder, the per-frame queries all hang on ``model._perception``); ``build_perception_block`` reads it
+    straight after ``_pwf.attach`` and the loader's ``_bda / _bc5 / _p3f`` attaches run later, so without this re-read the rebuilt count is short by
+    exactly those parameters and ``stamp_checks`` refuses a correct rebuild. Only ``branch_params`` is order-dependent (every other compared
+    ``perception`` field is a config / argv / encoder read the attaches never touch -- see HANDOFF). No perception block, or an argv that attaches
+    nothing: the value is unchanged. The model is never written."""
+    pr = rec.get("perception")
+    if pr is None or getattr(model, "_perception", None) is None:
+        return
+    pr["branch_params"] = model._perception.param_breakdown()
 
 
 def stamp_checks(model, config: dict, rec: dict, tr) -> dict:
