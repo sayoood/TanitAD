@@ -1,0 +1,141 @@
+{
+ "card": "PREREG_RECOVER_NEXT_FROZEN.md sections 3 and 4",
+ "card_sha256": "01046fe694dea2eacd0df7cb31bdbc4b4580cfc741af40630e735d7d4cc46b1c",
+ "tier": "T1-kin",
+ "estimator": "each arm's read: paired episode-cluster bootstrap, B=2000, seed 0 (answers another draw of EPISODES only); the combiner adds no interval",
+ "run_clock": "2026-11-04T01:33:06+0100",
+ "combiner_sha256": "c6b4f31551a6cde651f00659dc8e4c6ea46e863ba863e5cb876adc6d28f1d6c8",
+ "inputs": {
+  "RAPR": {
+   "path": "E:/Projects/TanitAD-artifacts/dagland/recover_next/read/raw/RECOVER_READ_RAPR.json",
+   "sha256": null
+  },
+  "RTL": {
+   "path": "E:/Projects/TanitAD-artifacts/dagland/recover_next/read/raw/RECOVER_READ_RTL.json",
+   "sha256": "7cd53477ab39ffcafeb7e8c6a3e3cb83dadc86edd3599bd07ec46939715b689f"
+  },
+  "RP01": {
+   "path": "E:/Projects/TanitAD-artifacts/dagland/recover_next/read/raw/RECOVER_READ_RP01.json",
+   "sha256": null
+  },
+  "R": {
+   "path": "E:/Projects/TanitAD-artifacts/dagland/recover_read/raw/RECOVER_READ.json",
+   "sha256": "b333e5c6b255a1c099d936e35706eda6a5ddc093d8bdedb0afdd2682306166b5"
+  }
+ },
+ "per_arm": {
+  "RAPR": {
+   "arm": "RAPR",
+   "usable": false,
+   "why": "ABSENT"
+  },
+  "RTL": {
+   "arm": "RTL",
+   "usable": true,
+   "label": "HARMS",
+   "primary_PASS": false,
+   "guards_PASS": false,
+   "floor_PASS": false,
+   "freeze_reading": "PARTIAL",
+   "composite_status": "NOT DOMINANT",
+   "composite_counts": false,
+   "composite_attribution_vs_C0C": "R-SPECIFIC",
+   "m1_share_closed": {
+    "s0": 0.21307820256526444,
+    "s1": 0.1933135983436787
+   },
+   "m1_mean_share_closed": 0.20319590045447156,
+   "guards_per_seed": {
+    "s0": {
+     "ade6_delta": 0.14915764650857674,
+     "ade6_within_guard": false,
+     "non_crawl_separated_worse": [
+      "ADE6",
+      "along-track MAE"
+     ]
+    },
+    "s1": {
+     "ade6_delta": 0.09252336433185704,
+     "ade6_within_guard": false,
+     "non_crawl_separated_worse": [
+      "DK-HW",
+      "DK-VIOL",
+      "along-track MAE"
+     ]
+    }
+   },
+   "controls_failed": [],
+   "reader_sha256": "aeee6b1b1351c811ea01f3e6e72dd7c8e7a3d867a914d0b7b208b9e0957352f2"
+  },
+  "RP01": {
+   "arm": "RP01",
+   "usable": false,
+   "why": "ABSENT"
+  }
+ },
+ "R_reference": {
+  "label": "HARMS",
+  "m1_share_closed": {
+   "s0": 0.21980446093744016,
+   "s1": 0.13176592983360877
+  },
+  "mean_share_closed": 0.17578519538552445,
+  "source": "E:/Projects/TanitAD-artifacts/dagland/recover_read/raw/RECOVER_READ.json"
+ },
+ "attribution_q1": {
+  "question": "Q1 (committed HARMS question): did the rejoin blend or the dose harm?",
+  "R_label": "HARMS",
+  "rule": "blend harmed iff RTL's guards PASS at both seeds; dose harmed iff RP01's guards PASS at both seeds; both / neither otherwise",
+  "RTL_usable": [
+   true,
+   null
+  ],
+  "RP01_usable": [
+   false,
+   "ABSENT"
+  ],
+  "RTL_m1_share_closed": {
+   "s0": 0.21307820256526444,
+   "s1": 0.1933135983436787
+  },
+  "RP01_m1_share_closed": {
+   "s0": null,
+   "s1": null
+  },
+  "RTL_m1_mean_share_closed": 0.20319590045447156,
+  "RP01_m1_mean_share_closed": null,
+  "answer": "INCOMPLETE",
+  "note": "both RTL and RP01 reads are needed (RP01: ABSENT)",
+  "blend_harmed": false,
+  "dose_harmed": null
+ },
+ "rapr_secondary": {
+  "rule": "RAPR's M1 share closed exceeds R's (0.220 / 0.132 in the RECOVER-FT read, read from its JSON) at each seed",
+  "R_m1_share_closed": {
+   "s0": 0.21980446093744016,
+   "s1": 0.13176592983360877
+  },
+  "usable": false,
+  "why": "ABSENT",
+  "exceeds_at": null,
+  "exceeds_at_both": null,
+  "exceeds_at_neither": null
+ },
+ "next_arm": {
+  "matching_rows": [],
+  "selected_row": null,
+  "facts": {
+   "XC_dominant_counted": [],
+   "RAPRC_d2_profile": null,
+   "RAPR_closure_exceeds_R": {
+    "exceeds_at_both": null,
+    "exceeds_at_neither": null,
+    "exceeds_at_exactly_one": null
+   }
+  },
+  "selected": null,
+  "status": "UNCOVERED: no row of card section 4 matches",
+  "why_uncovered": "RAPR has no usable read",
+  "rule_zero": "the Master Mind names the next arm; this is a gap in the card's table, reported, not filled"
+ }
+}
