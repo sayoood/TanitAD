@@ -635,6 +635,16 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
   * ⚠ **When pinning a checkout against a git blob, strip CR first.** `git archive` under autocrlf writes CRLF, so the raw hash never equals the blob's. The same chain's first guard refused a correct tree on exactly that.
   * ⚠ **The same family:** a `git checkout` or pull in a tree a job runs from, and a `uv pip install` into a venv a job is using.
 
+- ⛔ **A NEW TEST FILE THAT PASSES IN A MULTI-FILE RUN CAN FAIL ALONE -- AND THE THOR G-SUITE RUNS EVERY FILE ALONE.** MEASURED
+  2026-11-04: `test_r9e2_s6c.py` imported `mapsel_roll_r9_e2` (it lives in `stack/ops/r9e2_read`) with no `sys.path` setup of its own. On
+  the dev box it passed 9 / 9 -- because it was collected in ONE pytest process after `test_r9e2_k2safe.py`, which inserts that directory.
+  The Thor runner gives each file its own process: `ModuleNotFoundError` at collection, ONE id outside the pinned environment list, and the
+  6f9f857 restart gate stayed CLOSED (one more 1.5 h suite cycle).
+  * ⇒ **Verify every new or changed test file RUN ALONE** (`pytest tests/<file>.py`, one process per file), the way the judged suite runs it.
+  * ⇒ A test that imports a module outside `stack/` and `stack/scripts` inserts that directory itself; never rely on a sibling module or
+    the order of collection.
+  * Same family as the driver-environment trap above: the harness's process layout is part of the measurement.
+
 ## Git hygiene — the mistake that has now happened twice
 
 **`git commit` and `git commit --amend` both commit the ENTIRE INDEX, not the files you
