@@ -1583,6 +1583,14 @@ E1_BOX_AUX_FLAGS: tuple = ("--r9-box-depth-aux", "--r9-box-persp-aux", "--r9-box
 #: the record keys an aux-carrying argv's box record stamps (the harness writes them, `box_aux_stamp_reasons` reads them)
 E1_BOX_AUX_STAMP = "aux_heads_not_certified"
 E1_BOX_AUX_STAMP_WHY = "aux_heads_not_certified_why"
+#: ⭐ C5-INTEG (MM 207ebd, PINNED -- do not reopen): `--r9-box-perframe-queries` is an OWN-head lever (it needs its `/2-b3` record) but its 200 SEEDS come from the
+#: perspective head -- an AUX head the replay harness STRIPS and cannot train on frozen frames -- so the replay builds a RANDOM FROZEN stand-in seed head. The own record
+#: therefore certifies the DECODE path (300 anchored slots, global anchors, the LR x10 `box_anchor` group, the staged camera) under ARBITRARY seeds and NEVER the seeds'
+#: quality. The harness (`g_box_overfit.PFQ_STAMP`) STAMPS `perframe_seeds_not_certified` == [the flag]; `box_pfq_stamp_reasons` is its judge, built exactly like
+#: `box_aux_stamp_reasons`. Seed QUALITY is a READ of the first B4 dump (seed recall), not a gate: see the C5-INTEG HANDOFF.
+E1_PFQ_FLAG = "--r9-box-perframe-queries"
+E1_PFQ_STAMP = "perframe_seeds_not_certified"
+E1_PFQ_STAMP_WHY = "perframe_seeds_not_certified_why"
 #: ⭐ E1-REC4 (MM 207ebd, PINNED -- do not reopen): T1, the TEMPORAL BEV WARP (`--r9-bev-warp` + its lags + its shuffle control), changes both
 #: heads' INPUT (the fused BEV that the shared encoder, the M3 map encoder, the banded head, the planner pool and the box head all read), not their
 #: structure; at gate 0 the certified head IS the base's (tests/test_bev_warp.py: the gate-0 forward equals the OFF forward bit for bit). The overfit
@@ -1621,7 +1629,10 @@ _E1_OPEN_ITEMS = (
                     "arms ran and failed). E1-REC3: the TRAINING-ONLY aux heads (`E1_BOX_AUX_FLAGS`: B1 / B2 / B2c) do NOT trigger this "
                     "item -- they change no inference head; their /1 record stamps `aux_heads_not_certified` instead "
                     "(`box_aux_stamp_reasons`). E1-REC4: T1's three flags (`E1_T1_FLAGS`) do NOT trigger it either -- they change the heads' INPUT, "
-                    "not the heads; the inherited record stamps `bev_warp_not_certified` instead (`bev_warp_stamp_reasons`)",
+                    "not the heads; the inherited record stamps `bev_warp_not_certified` instead (`bev_warp_stamp_reasons`). "
+                    "C5-INTEG: a `--r9-box-perframe-queries` argv's `/2-b3` record must ALSO stamp `perframe_seeds_not_certified` == "
+                    "[the flag] (`box_pfq_stamp_reasons`): the replay's seed head is a random frozen stand-in, so the record certifies "
+                    "the decode path under ARBITRARY seeds and NOT the seeds' quality (that is a READ of the first B4 dump, not a gate)",
      "when_prefixes": ("--r9-",), "when_except": (_E1_FLAG, "--r9-map-"), "when_except_exact": E1_BOX_AUX_FLAGS + E1_T1_FLAGS},
     {"id": "E1-BOX-UNKNOWN-LEVER",
      "what": "unknown box lever: classify it -- the argv carries a `--r9-box-*` flag that is in NEITHER `E1_BOX_OWN_FLAGS` (a lever that "
@@ -6928,6 +6939,34 @@ def box_aux_stamp_reasons(tag: str, rec: dict, argv: list[str]) -> tuple[list[st
     return out, det
 
 
+def box_pfq_stamp_reasons(tag: str, rec: dict, argv: list[str]) -> tuple[list[str], dict]:
+    """C5-INTEG (MM 207ebd, pinned): what a box overfit record says it does NOT certify about lever 4's per-frame SEEDS. The replay harness cannot train the
+    perspective head the seeds come from, so it builds a random frozen stand-in: a record bound to an argv that carries `--r9-box-perframe-queries`
+    must STAMP `perframe_seeds_not_certified` -- a list that EQUALS the argv's pfq set (`[E1_PFQ_FLAG]`) -- and a one-line
+    `perframe_seeds_not_certified_why`. A record with no stamp passes only an argv without the flag (C0 / C1 / B3 / the aux arms: unchanged); a stamp
+    that is not the argv's pfq set (missing, extra, duplicated, offered to an argv WITHOUT the flag) fails, so a record never silently covers another
+    arm's seeds. Mirrors `box_aux_stamp_reasons` line for line."""
+    want = sorted({f for f, _ in flag_pairs(argv) if f == E1_PFQ_FLAG})
+    stamp = rec.get(E1_PFQ_STAMP)
+    why = rec.get(E1_PFQ_STAMP_WHY)
+    det = {"argv_pfq_set": want, "record_stamp": stamp}
+    out: list[str] = []
+    if stamp is None:
+        if want:
+            out.append(f"{tag}: the launch argv carries the per-frame query lever {want} but the record stamps no `{E1_PFQ_STAMP}` (the replay's "
+                       f"seed head is a random frozen stand-in: the record certifies the decode path under ARBITRARY seeds and must say it does "
+                       f"NOT certify the seeds)")
+        return out, det
+    if not (isinstance(stamp, list) and all(isinstance(x, str) for x in stamp)):
+        out.append(f"{tag}: the record's `{E1_PFQ_STAMP}` is {stamp!r}, not a list of flags")
+    elif sorted(stamp) != want or len(set(stamp)) != len(stamp):
+        out.append(f"{tag}: the record's `{E1_PFQ_STAMP}` is {sorted(stamp)}, the launch argv's pfq set is {want} "
+                   f"(the stamp must EQUAL it: a record never covers another arm's seeds)")
+    elif stamp and not (isinstance(why, str) and why.strip()):
+        out.append(f"{tag}: the record stamps `{E1_PFQ_STAMP}` {sorted(stamp)} but no one-line `{E1_PFQ_STAMP_WHY}`")
+    return out, det
+
+
 def bev_warp_stamp_reasons(tag: str, rec: dict, argv: list[str]) -> tuple[list[str], dict]:
     """E1-REC4 (MM 207ebd, pinned): what an overfit record says it does NOT certify about T1, the temporal BEV warp. A record certifies a head on
     FROZEN frames with no staged history, so a T1 flag (`E1_T1_FLAGS`) in the launch argv is never built by the harness and its effect cannot show
@@ -6996,6 +7035,10 @@ def judge_box_own_record(row: dict, record: str | None, argv_sha: str, argv: lis
         r_aux, d_aux = box_aux_stamp_reasons(tag, rec, argv)
         reasons += r_aux
         det["aux_heads_not_certified"] = d_aux
+        r_pfq, d_pfq = box_pfq_stamp_reasons(tag, rec, argv)         # C5-INTEG: ... and a per-frame-query argv's record must say the SEEDS are NOT certified
+        reasons += r_pfq
+        if d_pfq["argv_pfq_set"] or d_pfq["record_stamp"] is not None:
+            det["perframe_seeds_not_certified"] = d_pfq
         r_t1, d_t1 = bev_warp_stamp_reasons(tag, rec, argv)         # E1-REC4: ... and a T1 argv's record must say T1's history is NOT certified
         reasons += r_t1
         if d_t1["argv_t1_set"] or d_t1["record_stamp"] is not None:
@@ -7149,6 +7192,10 @@ def judge_box_overfit(prof: dict, record: str | None, commit: str, *, argv_sha: 
         reasons += r_aux
         if d_aux["argv_aux_set"]:
             det["aux_heads_not_certified"] = d_aux
+        r_pfq, d_pfq = box_pfq_stamp_reasons(tag, rec, argv)         # C5-INTEG: a record bound to a per-frame-query argv must say the SEEDS are NOT certified
+        reasons += r_pfq
+        if d_pfq["argv_pfq_set"] or d_pfq["record_stamp"] is not None:
+            det["perframe_seeds_not_certified"] = d_pfq
         r_t1, d_t1 = bev_warp_stamp_reasons(tag, rec, argv)         # E1-REC4: a record bound to a T1 argv must say T1's history is NOT certified
         reasons += r_t1
         if d_t1["argv_t1_set"] or d_t1["record_stamp"] is not None:
@@ -9691,6 +9738,9 @@ def _job_box_overfit(ctx: Ctx) -> dict[str, dict]:
     if det.get("aux_heads_not_certified"):                # E1-REC3: the training-only aux heads this record does NOT certify
         ok_text += (f"; does NOT certify the training-only aux head(s) {det['aux_heads_not_certified']['argv_aux_set']} (never called at "
                     f"inference; their liveness is G-LIVE's and the post-run zero-gradient gate's)")
+    if (det.get("perframe_seeds_not_certified") or {}).get("argv_pfq_set"):       # C5-INTEG: the per-frame seeds this record does NOT certify
+        ok_text += (f"; does NOT certify the per-frame query SEEDS {det['perframe_seeds_not_certified']['argv_pfq_set']} (the replay's seed head is a random frozen "
+                    f"stand-in: the decode path is certified under ARBITRARY seeds; seed quality is a READ of the first dump)")
     if det.get("bev_warp_not_certified") and det["bev_warp_not_certified"]["argv_t1_set"]:    # E1-REC4: the temporal BEV warp this record does NOT certify
         ok_text += (f"; does NOT certify the temporal BEV warp {det['bev_warp_not_certified']['argv_t1_set']} (the head is certified on frozen "
                     f"frames with no staged history; T1's liveness is G-LIVE's and the post-run zero-gradient gate's)")

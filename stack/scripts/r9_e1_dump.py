@@ -131,6 +131,24 @@ def collate(e_ds, idx_list, law_idx):
     return eb
 
 
+# ---- refcv9 C5 lever 4 (--r9-box-perframe-queries): the per-row rig camera, staged BEFORE every forward --------------------------
+def stage_perframe_queries(model, eb, device) -> bool:
+    """Stage the clip's own rig camera on the 300-slot seed module (``box_c5_flag.stage``, ONE-SHOT) BEFORE a forward.
+
+    ONLY a built model that carries per-frame queries (``model._perception.box_pfq``) is touched: for every other arm this is a pure attribute probe that
+    returns False, so the default dump's argv, forward and outputs are byte-identical to the tip's.  The batch is the collated eval window, whose
+    ``agent_ep`` the eval dataset emits alongside the agent join (``refcv7_loader.build_eval_dataset`` with ``with_perception_targets=True``); a pfq model
+    given a batch WITHOUT it REFUSES inside ``stage`` (SystemExit), and a forward that nothing staged RAISES in ``PerFrameQueries.forward`` (RuntimeError):
+    the contract is fail-loud, never a silent global-anchor-only dump.  ``compute_losses_v3`` stages too (same call, idempotent overwrite); this call is the
+    dump's OWN guarantee, so the dump no longer depends on which trainer function it happens to drive."""
+    br = getattr(model, "_perception", None)
+    if br is None or getattr(br, "box_pfq", None) is None:
+        return False
+    from tanitad.train import box_c5_flag as _bc5
+    _bc5.stage(model, eb, device)
+    return True
+
+
 # ---- mapsel_roll.py -------------------------------------------------------------------------------------------------------------
 #: the counters ``own_planes`` writes (mapsel_roll's ``ST["c"]``); the dump reads them back into dump.json
 ST = {"c": {"calls": 0, "rule_seen": set(), "decide_checked": 0, "decide_mismatch_cells": 0}}
@@ -407,8 +425,12 @@ def run_dump(a) -> int:
     mode = getattr(args, "mode", "diffusion")
     abl = bool(getattr(args, "ablate_frames", False))
 
+    pfq_staged = {"n": 0}
+
     def fwd_losses(eb):
         cap.clear()
+        if stage_perframe_queries(model, eb, device):            # C5 lever 4: before EVERY forward (control windows included); a no-op for every other arm
+            pfq_staged["n"] += 1
         return tr.compute_losses_v3(model, eb, device, mode=mode, ablate_frames=abl)
 
     # ---- the future-frame control (perc_pass_r7's LAW-frame control; a rig has no law term, so only equality is required) ---- #
@@ -533,6 +555,10 @@ def run_dump(a) -> int:
             "cuda_max_memory_allocated_gib": (round(_t.cuda.max_memory_allocated() / 2 ** 30, 3) if _t.cuda.is_available() and _t.cuda.is_initialized() else None),
             "SMOKE_RESTRICTED": bool(a.max_windows) or int(a.every) > 1 or int(a.rast_every) > 1,
             "torch": _t.__version__, "tree_commit": _tree_commit(stack.parent)}
+    if pfq_staged["n"]:
+        _pfq = model._perception.box_pfq
+        meta["perframe_queries"] = {"staged_forwards": pfq_staged["n"], "n_seeds": int(_pfq.n_seeds), "n_global": int(_pfq.n_global),
+                                    "staged_before": "every forward (control windows + main loop)"}
     (out_dir / "dump.json").write_text(json.dumps(meta, indent=1, default=str), encoding="utf-8")
     print("[dump] done: " + json.dumps({k: meta[k] for k in ("rig", "n_windows", "n_box3d_windows", "n_rasters", "loop_s", "wall_s")}), flush=True)
     return 0
