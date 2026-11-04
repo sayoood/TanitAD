@@ -154,6 +154,63 @@ def bev_warp_exemptions(model) -> tuple:
     return warm_start_prefixes(model)
 
 
+def plan_wires_exemptions(model) -> tuple:
+    """New keys the source cannot carry for refcv9 C8 (``plan_wires_flag.attach`` builds them BEFORE the warm start; refcv8 has none):
+    W-MAP-2 ``--r9-plan-map-channels`` -> the zero-init 1x1 ``map_chan_proj`` on the planner BEV pool; W-BOX ``--r9-plan-box-tokens`` -> the box
+    tokens ``box_tok_r9`` and the zero-init ``box_gate`` of every consuming planner / tactical layer (each gate NAMED by its full key).
+    FULL MODEL ONLY: the rig builds no planner (``pin_args`` refuses both flags there), so on the rig, and with both OFF, this is ``()`` and the
+    warm start is the tip's, check for check. An unnamed missing key still refuses."""
+    pool = getattr(getattr(model, "_perception", None), "bev_pool", None)
+    core = getattr(model, "core", None)
+    mods = [m for m in (getattr(pool, "map_chan_proj", None), getattr(core, "box_tok_r9", None)) if m is not None]
+    if not mods:
+        return ()
+    names = sorted(n + "." for n, m in model.named_modules() if any(m is q for q in mods))
+    if len(names) != len(mods):
+        raise SystemExit("[r9-warm] a C8 plan-wire module is built but is not a registered submodule of the model")
+    if getattr(core, "box_tok_r9", None) is not None:
+        gates = sorted(n for n, _ in model.named_parameters() if n.rsplit(".", 1)[-1] == "box_gate")
+        if not gates:
+            raise SystemExit("[r9-warm] --r9-plan-box-tokens is on but the model has no box_gate parameter")
+        names += gates
+    return tuple(names)
+
+
+def refcv9_warm_exemptions(model) -> tuple:
+    """THE one list of what a refcv9 build may carry that the refcv8 source cannot -- used by BOTH ``--init-from`` warm starts
+    (``warm_start_perc_rig`` here and ``refcv8_train.warm_start_from`` for the full model), so the two can never disagree about a lever.
+
+    -> ``(new_pfx, drop_pfx, widen)``:
+      * ``new_pfx``  -- key prefixes a missing key may sit under (each NAMED by its module path in THIS model, by declared flag: banded head,
+        B3 DN embeddings, C2 own encoder, B1 / B2 / B2c aux heads, T1 fuse, and -- full model only -- the C8 plan wires);
+      * ``drop_pfx`` -- source key prefixes with no home in this build (the banded head replaces the 8-way ``_map_hires.refine.cls.*``);
+      * ``widen``    -- ``None``, or the own-encoder warm-start rule (``map_own_enc_flag.apply_warm_start``: zero-extends the widened lift / stem keys).
+    Every lever OFF => ``((), (), None)``: the OFF warm start is the tip's, check for check. Nothing here is a blanket ``strict=False``."""
+    new_pfx, drop_pfx = banded_exemptions(model)
+    new_pfx = tuple(new_pfx) + b3_exemptions(model) + own_enc_exemptions(model) + box_depth_exemptions(model) + persp_exemptions(model) + bev_warp_exemptions(model)   # B3 DN embeddings; C2 own encoder; C3 depth head; T1 fuse (NAMED; OFF: ())
+    new_pfx += plan_wires_exemptions(model)                # C8 plan wires (full model only; the rig and OFF: ())
+    widen = None
+    if own_enc_exemptions(model):                          # refcv9 C2 (--r9-map-own-enc); OFF: skipped
+        from tanitad.train.map_own_enc_flag import apply_warm_start as widen
+    return new_pfx, tuple(drop_pfx), widen
+
+
+def apply_refcv9_exemptions(model, loadable: dict, own: dict = None) -> tuple:
+    """Apply ``refcv9_warm_exemptions(model)`` to the dict of source tensors a warm start is about to load. MUTATES ``loadable``: the declared
+    source keys with no home are removed (only those the build does not have), the own encoder's widening is applied. -> ``(new_pfx, dropped,
+    own_enc_rec)``. ``own`` is ``model.state_dict()`` (passed by a caller that already holds it)."""
+    new_pfx, drop_pfx, widen = refcv9_warm_exemptions(model)
+    if own is None:
+        own = model.state_dict()
+    dropped = sorted(k for k in loadable if k not in own and any(k.startswith(q) for q in drop_pfx))
+    for k in dropped:
+        del loadable[k]
+    own_enc_rec = {}
+    if widen is not None:
+        own_enc_rec = widen(model, loadable)               # zero-extends the widened lift / stem keys (the pinned rule); drops the source's refine.inp.*
+    return new_pfx, dropped, own_enc_rec
+
+
 def warm_start_perc_rig(model, path: str) -> dict:
     """``--init-from`` for the rig: load the refcv8 EMA into the perception modules with the NAMED skip list. Refuses (a)
     a source key that is neither loadable nor in RIG_SKIPPED_MODULES, (b) a rig key the source lacks, (c) a shape mismatch."""
@@ -174,15 +231,8 @@ def warm_start_perc_rig(model, path: str) -> dict:
     loadable = {k: v for k, v in sd.items() if not is_skipped_key(k)}
     # refcv9 C1 (--r9-map-banded): the banded head's keys are NEW (the source cannot have them) and the 8-way readout
     # `_map_hires.refine.cls.*` is NOT BUILT (the source's copy has no home). Both are NAMED, never a blanket strict=False; OFF: ().
-    new_pfx, drop_pfx = banded_exemptions(model)
-    new_pfx = tuple(new_pfx) + b3_exemptions(model) + own_enc_exemptions(model) + box_depth_exemptions(model) + persp_exemptions(model) + bev_warp_exemptions(model)   # B3 DN embeddings; C2 own encoder; C3 depth head; T1 fuse (NAMED; OFF: ())
-    dropped = sorted(k for k in loadable if k not in own and any(k.startswith(q) for q in drop_pfx))
-    for k in dropped:
-        del loadable[k]
-    own_enc_rec = {}
-    if own_enc_exemptions(model):                          # refcv9 C2 (--r9-map-own-enc); OFF: skipped
-        from tanitad.train.map_own_enc_flag import apply_warm_start as _own_ws
-        own_enc_rec = _own_ws(model, loadable)             # zero-extends the widened lift / stem keys (the pinned rule); drops the source's refine.inp.*
+    # (the list + the drop + the own-encoder widening are `refcv9_warm_exemptions` / `apply_refcv9_exemptions`: ONE list, shared with the full model's warm start)
+    new_pfx, dropped, own_enc_rec = apply_refcv9_exemptions(model, loadable, own)
     unexpected = sorted(k for k in loadable if k not in own)
     missing = sorted(k for k in own if k not in loadable and not any(k.startswith(q) for q in new_pfx))
     if unexpected or missing:

@@ -5,7 +5,8 @@ The modules live in ``tanitad/models/map_head_hires.py`` (``MapHiresConfig.own_e
 ``MapHiresBranch._build_own_enc``); this module is the flag's contract with the trainer, in the shape ``map_banded_flag.py`` set:
 ``pin_args`` (refusals at argv time, a no-op when OFF), ``dvb_check`` (G-DVB ``built`` lever: the argv's declaration equals what the BUILT
 branch holds), ``register_dvb_levers`` (called by the trainer at import; the registry is pinned two-way against its parser), ``stamp``
-(``config.json["map_hires"]["own_enc"]``, absent when OFF) and ``apply_warm_start`` (called by ``refcv9_perc_rig.warm_start_perc_rig``).
+(``config.json["map_hires"]["own_enc"]``, absent when OFF) and ``apply_warm_start`` (called through ``refcv9_perc_rig.apply_refcv9_exemptions`` by
+BOTH warm starts: the rig's ``warm_start_perc_rig`` and the full model's ``refcv8_train.warm_start_from``).
 
 WHAT IT BUILDS (ON; OFF builds nothing and is bit-identical to the tip):
   * the shared lift's output is widened ``d_lift`` (64) -> ``d_map_enc`` (128);
@@ -48,10 +49,8 @@ def pin_args(args) -> None:
     bad = []
     if not bool(getattr(args, "r9_map_banded", False)):
         bad.append("--r9-map-banded is absent: the own encoder feeds ONLY the banded map head (M3 = the M2 winner + this flag)")
-    if getattr(args, "init_from", None) and not bool(getattr(args, "r9_perc_rig", False)):
-        bad.append("--init-from without --r9-perc-rig: the pinned widening warm start (lift rows 0..63 / stem input channels 0..63 from "
-                   "refcv8, the extra stem input channels ZERO) lives in refcv9_perc_rig.warm_start_perc_rig; the non-rig warm start "
-                   "would refuse on the shape mismatch")
+    # (FULL-WARM: the former rig-only `--init-from` refusal is LIFTED -- the pinned widening below is applied by BOTH warm starts, through
+    #  refcv9_perc_rig.apply_refcv9_exemptions: the rig's warm_start_perc_rig and the full model's refcv8_train.warm_start_from)
     from tanitad.train import map_only_ft as _mof
     if _mof.is_on(args):
         try:
@@ -82,7 +81,7 @@ def stamp(branch) -> dict:
 
 
 def apply_warm_start(model, loadable: dict) -> dict:
-    """Called by ``refcv9_perc_rig.warm_start_perc_rig`` on the dict of source tensors it is about to load. Mutates ``loadable``: each
+    """Called (via ``refcv9_perc_rig.apply_refcv9_exemptions``) by BOTH warm starts on the dict of source tensors they are about to load. Mutates ``loadable``: each
     WIDENED key becomes a full-shape tensor (the model's own tensor with the source's slice written into ``[:d_lift]``, the stem's extra
     input channels zeroed), the source's ``refine.inp.*`` is removed. Returns the record ``{}`` when the model has no own encoder (OFF)."""
     br = getattr(model, "_map_hires", None)

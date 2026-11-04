@@ -11,7 +11,7 @@ perception branch; NO rig):
   OFF        flags off -> the full model's loss dict and EVERY gradient are bit-identical to the loss function without the two calls (torch.equal);
              the tip-vs-hold form of this check is the cross-tree run recorded in the hold's evidence/
   PIN / GATE pin_args admits the full model when every input is present and still refuses each missing one; REFC_WEIGHT_GATES do not name the rig
-  WARM START the full model's `--init-from` refuses a head the refcv8 source cannot carry; `_AuxHeadsHeldOut` is the (tested) way around it
+  WARM START the full model's `--init-from` admits a head the refcv8 source cannot carry as a NAMED new prefix of the rig's ONE exemption list
   MUTATION   `test_red_arm_*` below; the real one (the two calls deleted from compute_losses_v3) is recorded in the hold's HANDOFF.md
 """
 from __future__ import annotations
@@ -355,55 +355,52 @@ def _source(model, path):
 
 
 @pytest.mark.parametrize("kind", ALL_KINDS)
-def test_warm_start_the_full_models_key_check_refuses_a_head_and_the_hold_is_the_way_around_it(kind, tmp_path):
+def test_warm_start_the_full_model_admits_the_declared_head_through_the_ONE_shared_list(kind, tmp_path):
+    """FULL-WARM: this test formerly proved the per-head workaround (`_AuxHeadsHeldOut`); the head is now a NAMED new prefix of the rig's list
+    (`refcv9_perc_rig.box_depth_exemptions` / `persp_exemptions`), admitted by `refcv8_train.warm_start_from` exactly as by the rig's."""
     mod, key, wattr, hattr, pfx, wdest, fdest = KINDS[kind]
     src_model, _ = R._build()                                                                # the refcv8-like source: no aux head
     p = tmp_path / "src.pt"
     _source(src_model, p)
     model, cfg, args = _full(kind)
-    # CONTROL: unprotected, the full model's warm start refuses the head's keys (they are not r8_* seams)
-    with pytest.raises(SystemExit, match="NOT refcv8 seams"):
-        r8train.warm_start_from(model, str(p))
+    assert rig.refcv9_warm_exemptions(model)[0] == (pfx,)                                    # the head is a DECLARED new prefix of the shared list
     before = {n: t.detach().clone() for n, t in model.state_dict().items() if n.startswith(pfx)}
     order = list(model.state_dict())
     head = _head(model, kind)
-    with T._AuxHeadsHeldOut(model, enabled=True) as hold:
-        assert hold.held == [hattr] and _head(model, kind) is None and not any(n.startswith(pfx) for n in model.state_dict())
-        rec = r8train.warm_start_from(model, str(p))
+    rec = r8train.warm_start_from(model, str(p))
     assert rec["n_new_refcv8_keys"] == 0 and rec["n_loaded"] == len(src_model.state_dict())
-    assert _head(model, kind) is head                                                        # the SAME module is back ...
-    assert list(model.state_dict()) == order                                                 # ... in the SAME place (checkpoint key order unchanged)
+    assert rec["r9_declared_new"]["new_prefixes"] == [pfx] and rec["r9_declared_new"]["n_new_keys"] == len(before) > 0
+    assert rec["r9_declared_new"]["dropped_source_keys"] == []
+    assert _head(model, kind) is head and list(model.state_dict()) == order                  # the module tree was never touched (no hold)
     after = {n: t for n, t in model.state_dict().items() if n.startswith(pfx)}
-    assert set(after) == set(before) and all(torch.equal(before[n], after[n]) for n in before)   # ... with its own init untouched by the warm start
+    assert set(after) == set(before) and all(torch.equal(before[n], after[n]) for n in before)   # ... the head keeps its own init
     sd = model.state_dict()
     src_sd = src_model.state_dict()
     assert all(torch.equal(sd[n], src_sd[n]) for n in src_sd)                                # everything the source carries WAS loaded
 
 
-def test_warm_start_hold_is_a_noop_under_the_rig_without_a_head_and_it_restores_on_an_exception(tmp_path):
-    plain, _ = R._build()
-    order = list(plain.state_dict())
-    with T._AuxHeadsHeldOut(plain, enabled=True) as h:
-        assert h.held == []
-    assert list(plain.state_dict()) == order
-    model, _, _ = _full("depth")
-    with T._AuxHeadsHeldOut(model, enabled=False) as h:                                      # the rig names its own exemptions: nothing held
-        assert h.held == [] and _head(model, "depth") is not None
-    pre = list(model.state_dict())
-    with pytest.raises(RuntimeError, match="boom"):
-        with T._AuxHeadsHeldOut(model, enabled=True):
-            assert _head(model, "depth") is None
-            raise RuntimeError("boom")                                                       # a refusal inside the warm start still puts the head back
-    assert _head(model, "depth") is not None and list(model.state_dict()) == pre
+@pytest.mark.parametrize("kind", ALL_KINDS)
+def test_warm_start_RED_a_head_whose_prefix_is_not_in_the_shared_list_still_refuses(kind, tmp_path, monkeypatch):
+    mod, key, wattr, hattr, pfx, wdest, fdest = KINDS[kind]
+    src_model, _ = R._build()
+    p = tmp_path / "src.pt"
+    _source(src_model, p)
+    model, cfg, args = _full(kind)
+    real = rig.refcv9_warm_exemptions
+
+    def without_the_head(m):
+        new, drop, widen = real(m)
+        return tuple(q for q in new if q != pfx), drop, widen
+    monkeypatch.setattr(rig, "refcv9_warm_exemptions", without_the_head)
+    with pytest.raises(SystemExit, match="NOT refcv8 seams"):
+        r8train.warm_start_from(model, str(p))
 
 
-def test_the_hold_wraps_the_tips_warm_start_statement_and_stamps_it():
+def test_the_trainer_has_no_per_head_workaround_any_more_and_the_warm_start_statement_is_the_tips():
+    assert "_AuxHeadsHeldOut" not in TRAINER_SRC and "aux_heads_fresh_init" not in TRAINER_SRC     # subsumed by the shared list
     stmt = ("_init_stamp = dict((_r9rig.warm_start_perc_rig if _r9rig_on else r8train.warm_start_from)"
             "(model, args.init_from),")
-    i = TRAINER_SRC.index(stmt)                                                              # the statement the tip's pin reads is unchanged
-    w = TRAINER_SRC.rindex("with _AuxHeadsHeldOut(model, enabled=not _r9rig_on) as _aux_hold:", 0, i)
-    assert 0 < i - w < 400 and TRAINER_SRC.count("_AuxHeadsHeldOut(") == 1                    # the one call site (the class is `class _AuxHeadsHeldOut:`)
-    assert '_init_stamp["aux_heads_fresh_init"] = list(_aux_hold.held)' in TRAINER_SRC
+    assert TRAINER_SRC.count(stmt) == 1                                                      # the statement test_refcv8_init_from reads, unchanged
 
 
 # ===================================================================================================================== #

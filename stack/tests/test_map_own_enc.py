@@ -320,8 +320,8 @@ def test_ARGV_off_is_a_noop_and_the_refusals_are_loud():
     MO.pin_args(_a(init_from="x.pt", r9_perc_rig=True))
     with pytest.raises(SystemExit, match="--r9-map-banded is absent"):
         MO.pin_args(_a(r9_map_banded=False))
-    with pytest.raises(SystemExit, match="without --r9-perc-rig"):
-        MO.pin_args(_a(init_from="x.pt"))
+    MO.pin_args(_a(init_from="x.pt"))                          # FULL-WARM: the full model's `--init-from` is ADMITTED (it applies the same pinned widening
+    #                                                            as the rig's: refcv9_perc_rig.apply_refcv9_exemptions; tests/test_full_model_warm_start_r9.py)
     with pytest.raises(SystemExit, match="freeze trains"):
         MO.pin_args(_a(r8_train_only_map=True))                # the map-only freeze trains refine / near, not the own encoder or the lift
 

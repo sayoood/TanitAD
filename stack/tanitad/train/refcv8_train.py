@@ -935,7 +935,13 @@ def warm_start_from(model, path: str) -> dict:
     shape mismatch REFUSES), and every key the source LACKS must be a declared refcv8 seam key (``is_refcv8_key``) --
     any other missing key means the build is not refcv7 + seams, and is REFUSED. The seams are zero-init / gated, so
     step 0 reproduces the source (pinned by tests/test_refcv8_warm_start.py). The optimiser is NOT loaded: fresh
-    AdamW moments, the run's own warmup (the DESIGN sec. 3.7 decision, stated). Returns the config.json record."""
+    AdamW moments, the run's own warmup (the DESIGN sec. 3.7 decision, stated). Returns the config.json record.
+
+    refcv9 (FULL-WARM): a build that DECLARES a refcv9 lever by flag (banded map head, B3 DN embeddings, own map encoder, B1 / B2 / B2c aux
+    heads, T1 fuse, C8 plan wires) carries modules the refcv8 source cannot. They are admitted through the SAME list the perception rig uses
+    (``refcv9_perc_rig.refcv9_warm_exemptions``: ONE list, two warm starts): a missing key under a NAMED new prefix is admitted, the banded head's
+    replaced ``refine.cls.*`` source keys are dropped, and the own encoder's pinned widening is applied. Nothing else changes: a stray source
+    key, a shape mismatch and an UNDECLARED missing key still REFUSE. Every lever OFF => ``((), (), None)`` => the tip's check, record and load."""
     import hashlib
     from pathlib import Path
     p = Path(path)
@@ -949,21 +955,32 @@ def warm_start_from(model, path: str) -> dict:
     sd = state.get("model", state) if isinstance(state, dict) else None
     if not isinstance(sd, dict) or not sd:
         raise SystemExit(f"[refcv8] --init-from {path}: no model state_dict in the file")
+    from tanitad.refs import refcv9_perc_rig as _rig         # refcv9 FULL-WARM: the rig's ONE exemption list (OFF: nothing declared)
+    loadable = dict(sd)
+    new_pfx, dropped, own_enc_rec = _rig.apply_refcv9_exemptions(model, loadable)
     try:
-        missing, unexpected = model.load_state_dict(sd, strict=False)
+        missing, unexpected = model.load_state_dict(loadable, strict=False)
     except RuntimeError as e:                        # a SHAPE mismatch: the build is not the source's architecture
         raise SystemExit(f"[refcv8] --init-from {path}: {str(e).splitlines()[0][:400]}") from None
     if unexpected:
         raise SystemExit(f"[refcv8] --init-from {path}: {len(unexpected)} source key(s) the build does not have, "
                          f"e.g. {sorted(unexpected)[:3]} -- the build is not a superset of the source")
     from tanitad.refs.refcv9_progress import is_refcv9_key   # refcv9 R9-PF: the progress head is a new seam too
-    undeclared = [k for k in missing if not is_refcv8_key(k) and not is_refcv9_key(k)]
+    declared_new = [k for k in missing if any(k.startswith(q) for q in new_pfx)]    # NAMED new modules of a declared refcv9 lever
+    _dn = set(declared_new)
+    undeclared = [k for k in missing if not is_refcv8_key(k) and not is_refcv9_key(k) and k not in _dn]
     if undeclared:
         raise SystemExit(f"[refcv8] --init-from {path}: {len(undeclared)} key(s) missing from the source are NOT "
                          f"refcv8 seams, e.g. {sorted(undeclared)[:3]} -- they would start from random init")
-    return {"path": str(p), "md5": h.hexdigest(), "source_step": (int(state["step"]) if isinstance(state, dict)
-                                                                  and "step" in state else None),
-            "n_loaded": len(sd), "n_new_refcv8_keys": len(missing), "optimizer": "fresh (not loaded)"}
+    rec = {"path": str(p), "md5": h.hexdigest(), "source_step": (int(state["step"]) if isinstance(state, dict)
+                                                                 and "step" in state else None),
+           "n_loaded": len(loadable), "n_new_refcv8_keys": len(missing) - len(declared_new), "optimizer": "fresh (not loaded)"}
+    if new_pfx:                                      # a refcv9 lever is declared: the record names exactly what was admitted / dropped
+        rec["r9_declared_new"] = {"new_prefixes": list(new_pfx), "n_new_keys": len(declared_new),
+                                  "dropped_source_keys": dropped}
+    if own_enc_rec:
+        rec["own_enc"] = own_enc_rec
+    return rec
 
 
 def load_v9_join(npz_path: str, *, expect_md5: str, rc_variant: str = "A50", lat_variant: str = "a") -> R8LabelJoin:

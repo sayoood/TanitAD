@@ -4912,44 +4912,6 @@ def _nullctx():
     return contextlib.nullcontext()
 
 
-class _AuxHeadsHeldOut:
-    """refcv9 AUX-FULL: hold the TRAINING-ONLY aux heads (B1 ``box_depth_aux`` / B2 ``box_persp_aux`` / B2c ``box_bev2_aux``) OUT of the FULL
-    model's ``--init-from`` warm start, and put them back (same modules, SAME ORDER: ``state_dict`` key order is unchanged) on exit.
-
-    WHY: ``refcv8_train.warm_start_from`` REFUSES every key the source lacks that is not an ``r8_*`` seam or an R9-PF key, and the heads
-    (built by ``attach`` BEFORE the warm start, as in the rig) are new to the refcv8 source -- so, built into the full model, they would refuse
-    every E2 / E3 launch. The perception rig NAMES the prefixes instead (``refcv9_perc_rig.box_depth_exemptions`` / ``persp_exemptions``);
-    the full model's warm start has no such list and is not this file's to edit, so the heads are simply not in the module tree while it runs.
-    Everything ELSE is checked exactly as before (a source key the build lacks, a shape mismatch, any other missing key still REFUSES).
-    The heads keep their own seeded init (``attach`` draws it inside ``fork_rng``); ``enabled=False`` (the rig) and a model with no head touch
-    nothing, so the OFF warm start is the tip's, check for check."""
-
-    def __init__(self, model, enabled: bool = True):
-        self.model, self.enabled = model, bool(enabled)
-        self.held: list = []                                   # the head attribute names that were held out (read by the config.json stamp)
-        self._order = None
-
-    def __enter__(self):
-        br = getattr(self.model, "_perception", None) if self.enabled else None
-        if br is None:
-            return self
-        names = tuple(n for n in (_bda.HEAD_ATTR, _p3f.HEAD_P, _p3f.HEAD_B) if n in br._modules)
-        if names:
-            self._order = list(br._modules.items())
-            for n in names:
-                del br._modules[n]
-            self.held = list(names)
-        return self
-
-    def __exit__(self, *exc):
-        if self._order is not None:
-            br = self.model._perception
-            br._modules.clear()
-            br._modules.update(self._order)
-            self._order = None
-        return False
-
-
 def _synth_episodes(n: int, cfg: refc.RefCConfig, seed: int = 0,
                     min_frames: int = 40, clip_ids=None):
     """CI-only synthetic corpus (unicycle drives, tiny frames). NEVER a
@@ -11208,13 +11170,10 @@ def train(args) -> dict:
             _init_stamp = {"path": str(args.init_from), "applied": False,
                            "why": "resumed this run's own ckpt.pt (resume wins)"}
         else:
-            # refcv9 AUX-FULL: in the FULL model the training-only aux heads (new to the refcv8 source) are held out of the key check and keep
-            # their own init; the rig names them in its exemption list instead (`_AuxHeadsHeldOut`: a no-op with no head / under the rig)
-            with _AuxHeadsHeldOut(model, enabled=not _r9rig_on) as _aux_hold:
-                _init_stamp = dict((_r9rig.warm_start_perc_rig if _r9rig_on else r8train.warm_start_from)(model, args.init_from),
-                                   applied=True)
-            if _aux_hold.held:
-                _init_stamp["aux_heads_fresh_init"] = list(_aux_hold.held)
+            # refcv9 FULL-WARM: BOTH warm starts admit the declared refcv9 modules (banded head, B3 DN, own encoder, B1 / B2 / B2c aux heads,
+            # T1 fuse) through ONE list, `refcv9_perc_rig.refcv9_warm_exemptions`; config.json["init_from"] records them (`r9_declared_new`)
+            _init_stamp = dict((_r9rig.warm_start_perc_rig if _r9rig_on else r8train.warm_start_from)(model, args.init_from),
+                               applied=True)
             print("[v3] warm start from %s (md5 %s, source step %s): %d keys loaded, %d new refcv8 keys, "
                   "optimiser fresh" % (args.init_from, _init_stamp["md5"][:8], _init_stamp["source_step"],
                                         _init_stamp["n_loaded"], _init_stamp["n_new_refcv8_keys"]), flush=True)
