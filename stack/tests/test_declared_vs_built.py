@@ -313,7 +313,7 @@ def test_GDVB_every_trainer_flag_has_an_entry_and_every_entry_is_well_formed():
     assert dvb.REGISTRY["save_at"].kind == "runtime"
     # refcv9 T1: --r9-bev-warp / --r9-bev-warp-lags / --r9-bev-warp-shuffle ("built": bev_warp_flag.register_dvb_levers) (+3)
     assert all(dvb.REGISTRY[_d].kind == "built" for _d in ("r9_bev_warp", "r9_bev_warp_lags", "r9_bev_warp_shuffle"))
-    assert len(dvb.REGISTRY) == 321   # B3 (+4) and C2 (+1) on 300; C8 (+2) and C3 (+2); C4 (+4) and C6 (+5), merged by the MM; T1 (+3)
+    assert len(dvb.REGISTRY) == 322   # B3 (+4) and C2 (+1) on 300; C8 (+2) and C3 (+2); C4 (+4) and C6 (+5), merged by the MM; T1 (+3); C5-REST (+1: r9_box_layers)
     assert dvb.REGISTRY["r9_box_depth_aux"].kind == "built" and dvb.REGISTRY["w_box_depth"].kind == "loss"
     for _d in ("r9_box_quality", "r9_box_dn", "r9_box_class_sqrt", "r9_box_inloss_nms"):
         assert dvb.REGISTRY[_d].kind == "built", _d

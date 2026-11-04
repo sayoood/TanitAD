@@ -81,7 +81,7 @@ from tanitad.models.agent_slots import (
 __all__ = [
     "SLOT3D_FIELDS", "SLOT3D_SLICES", "SLOT3D_WIDTH", "N_EXTRA_3D",
     "MATCH_INCLUDES_Z", "Z_RANGE_M", "H_RANGE_M", "BOX3D_LOSS_W",
-    "Box3DSlotDecoder", "Box3DMemory", "box3d_set_loss", "box3d_ap",
+    "BOX3D_PARAM_CAP", "Box3DSlotDecoder", "Box3DMemory", "box3d_set_loss", "box3d_ap",
     "random_ap_base_rate", "ground_standing_z", "zh_targets",
 ]
 
@@ -124,6 +124,13 @@ H_RANGE_M: float = 2.0
 
 #: Loss weights for the two new terms, in METRES like ``centre``/``size``.
 BOX3D_LOSS_W: dict[str, float] = {"z": 1.0, "h": 1.0}
+
+#: ⭐ refcv9 D2 (PI 2026-11-02, verbatim choice *"Raise to <=12 M + Thor latency check"*; REFCV9_DESIGN 2.4 row *size cap*, 6b D2): the box3d
+#: decoder REFUSES AT CONSTRUCTION above this many trainable parameters. It REPLACES ``agent_slots.PARAM_BAND`` (2-4 M) for box3d ONLY -- the
+#: agent slots (``AgentSlotDecoder``) keep ``PARAM_BAND``. There is NO floor: the band's 2 M floor was a "probe the latent" rule (D6), not a
+#: detection rule. ⚠️ The latency BOUND is OPEN (design 6b: "C12 must carry a number sealed before launch"); per the PI's latency ruling it is
+#: MEASURED and RECORDED on Thor, never a gate on a research arm -- nothing here reads a latency. ESTIMATED by the design: 6 layers ~ 7.0 M.
+BOX3D_PARAM_CAP: int = 12_000_000
 
 
 # --------------------------------------------------------------------------- #
@@ -256,15 +263,38 @@ class Box3DSlotDecoder(AgentSlotDecoder):
             self.head.bias[SLOT3D_SLICES["h"]] = math.log(
                 math.expm1(1.594 / self.h_range_m))
             self.head.bias[SLOT3D_SLICES["cz"]] = 0.0
-        if enforce_band:
-            from tanitad.models.agent_slots import PARAM_BAND
-            n = self.n_params
-            if not (PARAM_BAND[0] <= n <= PARAM_BAND[1]):
-                raise ValueError(
-                    f"Box3DSlotDecoder has {n:,} params -- outside the §6 "
-                    f"pre-registered band {PARAM_BAND} (the AgentSlotDecoder "
-                    f"rule, unchanged: a bigger head stops measuring what the "
-                    f"LATENT carries). Pass enforce_band=False for shape tests.")
+        #: refcv9 D2: ``enforce_band`` keeps its name (every caller passes it) and now means "enforce the D2 cap" (:data:`BOX3D_PARAM_CAP`)
+        self._enforce_cap = bool(enforce_band)
+        self._check_cap()
+
+    @property
+    def n_trainable(self) -> int:
+        """The D2 cap's count: trainable parameters of THIS decoder (the module the old ``PARAM_BAND`` counted)."""
+        return int(sum(p.numel() for p in self.parameters() if p.requires_grad))
+
+    def _check_cap(self) -> None:
+        if not getattr(self, "_enforce_cap", False):
+            return
+        n = self.n_trainable
+        if n > BOX3D_PARAM_CAP:
+            raise ValueError(
+                f"Box3DSlotDecoder has {n:,} trainable params -- above the refcv9 D2 cap {BOX3D_PARAM_CAP:,} (PI 2026-11-02: box3d <= 12 M; "
+                f"the agent slots keep PARAM_BAND). Pass enforce_band=False for shape tests.")
+
+    def extend_depth(self, depth: int) -> None:
+        """refcv9 C5 (``--r9-box-layers``): grow the stack IN PLACE to ``depth`` layers. The new layers are deep copies of layer 0 -- exactly
+        what ``nn.TransformerDecoder(layer, num_layers=depth)`` builds from its one template layer -- and nothing draws from the RNG, so the
+        result equals a from-scratch ``depth``-layer build (pinned by tests/test_r9_c5rest.py). Only called at BUILD time, before any load or
+        optimizer; shrinking is refused. Re-checks the D2 cap."""
+        import copy
+        depth = int(depth)
+        cur = len(self.blocks.layers)
+        if depth < cur:
+            raise ValueError(f"extend_depth({depth}) < the current depth {cur}: a decoder is only ever deepened")
+        for _ in range(depth - cur):
+            self.blocks.layers.append(copy.deepcopy(self.blocks.layers[0]))
+        self.blocks.num_layers = len(self.blocks.layers)
+        self._check_cap()
 
     # ---- refcv9 B3 (box_b3.py): opt-in, OFF = this class exactly as it was ------------------------------------------ #
     #: the NMS tau of the B3' between-layer key mask; ``None`` = off. Set by :meth:`enable_b3` only.

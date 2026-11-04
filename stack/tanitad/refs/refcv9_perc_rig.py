@@ -146,6 +146,17 @@ def persp_exemptions(model) -> tuple:
     return tuple(pfx for attr, pfx in ((HEAD_P, KEY_PREFIX_P), (HEAD_B, KEY_PREFIX_B)) if getattr(br, attr, None) is not None)
 
 
+def box_c5_exemptions(model) -> tuple:
+    """New key prefixes for refcv9 C5-REST ``--r9-box-layers N`` (N > 3, arm B4): the decoder layers 3 .. N-1 (``box_c5_flag.attach`` deepens the
+    decoder BEFORE the warm start; the refcv8 source has exactly 3). NAMED by their module path in THIS model; ``()`` unless the box3d decoder is
+    deeper than the tip's, so the OFF warm start is the tip's, check for check. The first 3 layers (and everything else) still load strictly."""
+    dec = getattr(getattr(model, "_perception", None), "box_dec", None)
+    if dec is None:
+        return ()
+    from tanitad.train.box_c5_flag import TIP_DEPTH
+    return tuple(f"_perception.box_dec.blocks.layers.{i}." for i in range(TIP_DEPTH, len(dec.blocks.layers)))
+
+
 def bev_warp_exemptions(model) -> tuple:
     """New key prefixes the source cannot carry for refcv9 T1 ``--r9-bev-warp``: the zero-init fuse ``_map_hires.bev_warp.`` (``bev_warp_flag.attach`` builds
     it BEFORE the warm start; refcv8 has no such module). NAMED by its module path in THIS model; ``()`` unless the 10 cm branch carries the fuse, so the
@@ -187,7 +198,7 @@ def refcv9_warm_exemptions(model) -> tuple:
       * ``widen``    -- ``None``, or the own-encoder warm-start rule (``map_own_enc_flag.apply_warm_start``: zero-extends the widened lift / stem keys).
     Every lever OFF => ``((), (), None)``: the OFF warm start is the tip's, check for check. Nothing here is a blanket ``strict=False``."""
     new_pfx, drop_pfx = banded_exemptions(model)
-    new_pfx = tuple(new_pfx) + b3_exemptions(model) + own_enc_exemptions(model) + box_depth_exemptions(model) + persp_exemptions(model) + bev_warp_exemptions(model)   # B3 DN embeddings; C2 own encoder; C3 depth head; T1 fuse (NAMED; OFF: ())
+    new_pfx = tuple(new_pfx) + b3_exemptions(model) + own_enc_exemptions(model) + box_depth_exemptions(model) + persp_exemptions(model) + bev_warp_exemptions(model) + box_c5_exemptions(model)   # C5-REST deeper box decoder layers; B3 DN embeddings; C2 own encoder; C3 depth head; T1 fuse (NAMED; OFF: ())
     new_pfx += plan_wires_exemptions(model)                # C8 plan wires (full model only; the rig and OFF: ())
     widen = None
     if own_enc_exemptions(model):                          # refcv9 C2 (--r9-map-own-enc); OFF: skipped

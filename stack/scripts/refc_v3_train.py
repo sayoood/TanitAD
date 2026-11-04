@@ -111,6 +111,7 @@ from tanitad.train import plan_wires_flag as _pwf  # noqa: E402  refcv9 C8: --r9
 from tanitad.train import box_depth_aux_flag as _bda  # noqa: E402  refcv9 C3: --r9-box-depth-aux / --w-box-depth (OFF: nothing)
 from tanitad.train import persp3d_aux_flag as _p3f  # noqa: E402  refcv9 C4: --r9-box-persp-aux / --w-box-persp (B2) and --r9-box-bev2-aux / --w-box-bev2 (B2c) (OFF: nothing)
 from tanitad.train import bev_warp_flag as _bw  # noqa: E402  refcv9 T1: --r9-bev-warp / --r9-bev-warp-lags / --r9-bev-warp-shuffle (OFF: nothing)
+from tanitad.train import box_c5_flag as _bc5  # noqa: E402  refcv9 C5-REST (arm B4): --r9-box-layers (OFF: nothing)
 from tanitad.models import map_banded as _mband  # noqa: E402  refcv9 C1: banded targets / losses (OFF: never called)
 # ⛔⛔ refcv7's two modules are NOT ON THIS BRANCH (MEASURED 2026-09-23 on a clean
 # `git archive` of the tip: `refcv7_heads.py` / `refcv7_oracle.py` / `refcv7_toad.py`
@@ -193,6 +194,8 @@ _bda.register_dvb_levers(_dvb.register)
 _p3f.register_dvb_levers(_dvb.register)
 # refcv9 T1: --r9-bev-warp / --r9-bev-warp-lags / --r9-bev-warp-shuffle are `built` levers (the fuse on the 10 cm branch, its lags, the dataset source's shuffle)
 _bw.register_dvb_levers(_dvb.register)
+# refcv9 C5-REST: --r9-box-layers is a `built` lever (the box3d decoder's depth, read off the built decoder)
+_bc5.register_dvb_levers(_dvb.register)
 # refcv9 R9-PF (REFCV9_INMODEL_DESIGN.md): the progress head is a `built` lever, its weights `loss` levers
 _r9p.register_dvb_levers(_dvb.register)
 # refcv9 GT-in-pool schedule (H-R9-ALLOC-ORACLE-1): the attached schedule's spec / seed, read off the built model
@@ -904,6 +907,7 @@ def _pin_refcv8(cfg, args) -> None:
     _pwf.pin_args(args)          # refcv9 C8: the planner wires' refusals (a no-op when both flags are off)
     _bda.pin_args(args)          # refcv9 C3: --r9-box-depth-aux's refusals (needs the rig, --map-hires on, the join3d cuboids; a no-op when off)
     _p3f.pin_args(args)          # refcv9 C4: --r9-box-persp-aux / --r9-box-bev2-aux refusals (mutually exclusive; need the rig, --w-box3d > 0, the join3d cuboids; a no-op when off)
+    _bc5.pin_args(args)          # refcv9 C5-REST: --r9-box-layers's refusals (needs --w-box3d > 0, no freeze; a no-op when unnamed)
     _bw.pin_args(args)           # refcv9 T1: --r9-bev-warp's refusals (--map-hires on, the timm shared trunk, no freeze / --ablate-frames; dead lags / shuffle refused; the rig OR the full model; a no-op when off)
     _gse = int(getattr(args, "grad_share_every", 0) or 0)
     if _gse < 0 or (_gse > 0 and _gse % max(1, int(getattr(args, "log_every", 50) or 50)) != 0):
@@ -10112,6 +10116,7 @@ def train(args) -> dict:
         _pwf.attach(model, args)                             # refcv9 C8: W-MAP-2 projection / W-BOX tokens + gates (OFF: nothing)
         _bda.attach(model, args)                             # refcv9 C3: the training-only depth head on model._perception + model._w_box_depth (OFF: nothing)
         _p3f.attach(model, args)                             # refcv9 C4: the training-only B2 head (or the B2c BEV head) on model._perception + its weight attribute (OFF: nothing)
+        _bc5.attach(model, args)                             # refcv9 C5-REST: the box3d decoder deepened to --r9-box-layers N, D2 cap re-checked (OFF: nothing)
         _pframe = _perc.frame_for_model(model)
         if model._w_map > 0.0:
             _pe, _ptable = _read_rig_extrinsics(
@@ -11463,6 +11468,7 @@ def train(args) -> dict:
         **({"r9_box_b3": _bbf.stamp(model, args)} if _bbf.is_any(args) else {}),     # refcv9 B3; absent for a default run
         **({"r9_box_depth_aux": _bda.stamp(model, args)} if _bda.is_on(args) else {}),   # refcv9 C3; absent for a default run
         **({"r9_box_persp_aux": _p3f.stamp(model, args)} if _p3f.is_persp(args) else {}),   # refcv9 C4 (B2); absent for a default run
+        **({_bc5.STAMP_KEY: _bc5.stamp(model, args)} if _bc5.is_any(args) else {}),         # refcv9 C5-REST (B4); absent for a default run
         **({"r9_box_bev2_aux": _p3f.stamp(model, args)} if _p3f.is_bev2(args) else {}),     # refcv9 C4 (B2c); absent for a default run
         **({"r9_bev_warp": _bw.stamp(model, args)} if _bw.is_on(args) else {}),     # refcv9 T1; absent for a default run
         "vis1": ({"sidecar": vis1_stamp, "rule": _vis1.vis1_rule_dict(),
@@ -13658,6 +13664,10 @@ def build_parser() -> argparse.ArgumentParser:
                          "called by the forward. Mutually exclusive with --r9-box-persp-aux. Default OFF.")
     g8.add_argument("--w-box-bev2", type=float, default=0.0,
                     help="refcv9 C4: the weight of the --r9-box-bev2-aux term. Must be > 0 with the flag and 0 without it. Default 0.0 (OFF).")
+    g8.add_argument("--r9-box-layers", type=int, default=0,
+                    help="refcv9 C5-REST (REFCV9_DESIGN 2.4 row depth, arm B4): the box3d decoder's depth N (B4 names 6). 0 (the default) = not named = the "
+                         "tip's depth 3, bit-identical. The decoder is deepened in place (new layers = copies of the template layer, no RNG draw); the D2 "
+                         "cap (box3d <= 12 M trainable parameters) is re-checked. Needs --w-box3d > 0; refused under a train-only freeze.")
     g9 = ap.add_argument_group("refcv9 R9-PF (clean-split, regime-factored progress head; REFCV9_INMODEL_DESIGN.md)")
     g9.add_argument("--r9-perc-rig", action="store_true",
                     help="refcv9 C7 (REFCV9_DESIGN 4.3): the E1 PERCEPTION-ONLY rig -- init from refcv8 EMA-48,852 via "
