@@ -30,7 +30,13 @@ ssh -n tanitad-thor "mkdir -p $R/gate3 && echo '$ARMS' > $R/gate3/ARMS && echo $
 # the early record check runs on the arms whose records EXIST now (R9_PRECHECK_ARMS, default = all arms); the chain's own final gate re-reads
 # every arm's records before it mints that arm's token, so an arm whose record is still being built only delays its own gate
 PRE="${R9_PRECHECK_ARMS:-$ARMS}"
-for A in $PRE; do ssh -n tanitad-thor "cd $R && $SE bash kit/r9gate3_rec_explore.sh $A; grep -c 'G-MAP-OVERFIT PASS\|G-BOX-OVERFIT PASS' $R/gate3_explore_rec_${C12}_$A.log" | tail -1 | grep -qx 2 || die "OVF records not admissible for $A at $C12 (a module in their closures changed: re-run r9e1_bind.sh)"; done
+# a refusal names the cause the explore log RECORDS (its first REFUSED / non-PASS OVERFIT line), never an assumed one: B3 was dropped on 2026-11-04 as
+# "a module in their closures changed" while its log said the pick found no record in run_box/ (the box-b3 kind defect, MM 2026-11-05)
+for A in $PRE; do
+  ssh -n tanitad-thor "cd $R && $SE bash kit/r9gate3_rec_explore.sh $A; grep -c 'G-MAP-OVERFIT PASS\|G-BOX-OVERFIT PASS' $R/gate3_explore_rec_${C12}_$A.log" | tail -1 | grep -qx 2 && continue
+  why="$(ssh -n tanitad-thor "awk '/REFUSED/ || (/OVERFIT/ && !/PASS/) {print; exit}' $R/gate3_explore_rec_${C12}_$A.log" 2>/dev/null | tr -d '\r' | cut -c1-300)"
+  die "OVF records not admissible for $A at $C12 (${why:-no REFUSED / OVERFIT line: read $R/gate3_explore_rec_${C12}_$A.log})"
+done
 [ -e $R9_DEVSTAGE/pinned_status.txt ] && mv $R9_DEVSTAGE/pinned_status.txt $R9_DEVSTAGE/pinned_status.$(date +%H%M%S).old
 powershell -NoProfile -ExecutionPolicy Bypass -File "$(cygpath -w $HERE/r9gate3_launch_pinned.ps1)" -Sha $SHA -Arms "$ARMS" -Study "$R9_STUDY" -Stage "$DEVSTAGE_W" || die "pinned launch"
 ssh -n tanitad-thor "cd $R || exit 1; $SE nohup setsid bash kit/r9gate3_thor_gate.sh explore $R9_EXPLORE_ARM > logs/r9gate3_explore_${C12}_${R9_EXPLORE_ARM}.out 2>&1 < /dev/null &" ; sleep 2

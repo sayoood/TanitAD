@@ -150,7 +150,11 @@ def _arm_files(sb: Path, root: str, prefix: str, arm: str, rec12: str | None, re
     r = sb / "home/nvidia/r8ns" / root
     (r / "launch_tree/stack/ops/runs.d").mkdir(parents=True, exist_ok=True)
     (r / "launch_tree.commit").write_text(SHA + "\n", encoding="utf-8")
-    (r / "launch_tree/stack/ops/runs.d" / f"{prefix}_{arm}.argv.json").write_text("[]", encoding="utf-8")
+    # a NON-EMPTY argv and the gate's own launch_gate.py: the scripts' E1 record-kind block classifies the argv with the gate's E1_BOX_OWN_FLAGS
+    # (load_argv_file refuses []) and REFUSES when it cannot (MM 2026-11-05, test_r9gate3_record_kind.py)
+    (r / "launch_tree/stack/ops/runs.d" / f"{prefix}_{arm}.argv.json").write_text('["--seed", "0"]', encoding="utf-8")
+    (r / "launch_tree/stack/scripts").mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ROOT / "scripts" / "launch_gate.py", r / "launch_tree/stack/scripts/launch_gate.py")
     (r / "launch_tree/stack/ops/refcv8_eval_remap_a2_thor.json").write_text("{}", encoding="utf-8")
     (r / "gate3").mkdir(exist_ok=True)
     if rec_file and rec12:
