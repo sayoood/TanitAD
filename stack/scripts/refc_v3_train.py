@@ -904,7 +904,7 @@ def _pin_refcv8(cfg, args) -> None:
     _pwf.pin_args(args)          # refcv9 C8: the planner wires' refusals (a no-op when both flags are off)
     _bda.pin_args(args)          # refcv9 C3: --r9-box-depth-aux's refusals (needs the rig, --map-hires on, the join3d cuboids; a no-op when off)
     _p3f.pin_args(args)          # refcv9 C4: --r9-box-persp-aux / --r9-box-bev2-aux refusals (mutually exclusive; need the rig, --w-box3d > 0, the join3d cuboids; a no-op when off)
-    _bw.pin_args(args)           # refcv9 T1: --r9-bev-warp's refusals (needs the rig, --map-hires on, the timm shared trunk; dead lags / shuffle refused; a no-op when off)
+    _bw.pin_args(args)           # refcv9 T1: --r9-bev-warp's refusals (--map-hires on, the timm shared trunk, no freeze / --ablate-frames; dead lags / shuffle refused; the rig OR the full model; a no-op when off)
     _gse = int(getattr(args, "grad_share_every", 0) or 0)
     if _gse < 0 or (_gse > 0 and _gse % max(1, int(getattr(args, "log_every", 50) or 50)) != 0):
         raise SystemExit(f"[refcv8] --grad-share-every {_gse} must be 0 or a positive multiple of --log-every "
@@ -5907,6 +5907,9 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         _svv = torch.stack([fut_valid[:, h - 1] for h in core.trajectory.horizons], dim=1)
         _r8_prep = r8train.r8_before_forward(model, batch, device, _tt, _svv, pose_last, fut_ext,
                                              fut_valid, v0)
+    if ablate_frames:
+        _bw.refuse_ablate(model)                  # refcv9 T1: the information-free control cannot run with a history built (OFF: nothing)
+    _bw.stage(model, batch, device)               # refcv9 T1 (FULL model): the past frames s8 maps + the PAST-pose transforms, staged for the lift hook BEFORE the forward (OFF: nothing)
     _bbf.prepare(model, batch, device)            # refcv9 B3 --r9-box-dn: the DN pack BEFORE the forward (training only; OFF: nothing)
     # refcv8: the r8 inputs ride a wrapper, so the refcv7 call below -- and the pinned mutation anchor of
     # test_refc_v3_agent_gt_reaches_forward -- is byte-for-byte the tip's. None -> the model itself.

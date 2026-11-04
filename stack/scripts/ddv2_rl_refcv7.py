@@ -190,6 +190,7 @@ class Ctx:
             _pgrid, _pvalid = model._lift_bank.for_episodes(batch["map_ep"], device=dev)
         elif getattr(model, "_map_hires", None) is not None:
             _pgrid, _pvalid = model._lift_bank_hires.for_episodes(batch["map_ep"], device=dev)
+        tr._bw.stage(model, batch, dev)      # refcv9 T1 (--r9-bev-warp): the history of a T1-built model, as compute_losses_v3 stages it (OFF: nothing)
         return model(frames, nav_cmd=nav_cmd, v0=v0, steps=steps, lan=lan, ego_state=ego_state,
                      nav_args=nav_args, v_max_ms=v_max_ms, v_max_valid=v_max_valid, agent_gt=None,
                      perception_grid=_pgrid, perception_valid=_pvalid)

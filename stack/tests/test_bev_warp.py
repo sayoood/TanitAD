@@ -562,10 +562,13 @@ def test_argv_defaults_and_the_registry():
 def test_pin_args_refusals():
     BF.pin_args(argparse.Namespace(r9_bev_warp=False, r9_bev_warp_lags="0.5,1.0", r9_bev_warp_shuffle=False))          # OFF + defaults: fine
     BF.pin_args(_args())
+    BF.pin_args(_args(r9_perc_rig=False))                                   # T1-FULL: the rig is NOT required (the full model's loss stages the history too);
+    #                                                                         tests/test_bev_warp_full_model.py proves the full model's path
     for over, match in ((dict(r9_bev_warp_lags="0.5,2.0", r9_bev_warp=False), "dead flag"), (dict(r9_bev_warp_shuffle=True, r9_bev_warp=False), "dead flag"),
-                        (dict(r9_perc_rig=False), "perc-rig"), (dict(map_hires="off"), "map-hires"), (dict(r9_bev_warp_lags="0.55"), "whole number"),
+                        (dict(map_hires="off"), "map-hires"), (dict(r9_bev_warp_lags="0.55"), "whole number"),
                         (dict(r9_bev_warp_lags="1.0,0.5"), "increasing"), (dict(trunk_mode="inflate"), "trunk-mode"),
-                        (dict(r8_train_only_map=True), "freeze")):
+                        (dict(r8_train_only_map=True), "freeze"), (dict(ablate_frames=True), "ablate-frames"),
+                        (dict(r9_perc_rig=False, ablate_frames=True), "ablate-frames")):
         with pytest.raises(SystemExit, match=match):
             BF.pin_args(_args(**over))
 

@@ -13,9 +13,15 @@ REACHABILITY (the CLAUDE.md class "built, tested and unreachable from its caller
   argv ``--r9-bev-warp`` (default False -- NAMED in the arm's argv)  -> ``args.r9_bev_warp``  -> ``pin_args`` (refusals)
   -> ``attach`` (train() after the 10 cm branch: ``model._map_hires.bev_warp`` + a forward hook on ``model._map_hires.lift``)
   -> ``attach_dataset`` (train(): ``ds._r9_bw`` and ``e_ds._r9_bw``) -> V3Dataset.__getitem__ -> ``item_fields`` (IN THE WORKER: ``bw_*``)
-  -> default collate -> ``compute_losses_perc_rig`` -> ``stage`` (BEFORE ``model(...)``) -> ``RefCV3Model.forward`` -> ``MapHiresBranch.forward``
+  -> default collate -> ``compute_losses_perc_rig`` (the perception rig) OR ``compute_losses_v3`` (the FULL model; refcv9 T1-FULL) -> ``stage``
+  (BEFORE ``model(...)``, in both) -> ``RefCV3Model.forward`` -> ``MapHiresBranch.forward``
   -> ``self.lift(fmap_s8, grid, valid)`` -> ``BevWarpFuse.lift_hook`` -> the FUSED BEV -> the shared encoder / the M3 map encoder / the banded head
   / the planner pool / the box head -> the loss -> ``.backward()`` (gate and fuse).
+
+EVERY forward of a T1-built model stages its history or REFUSES (never a silent un-warped forward): the loss functions stage; the eval loader's
+``build_eval_dataset`` attaches the history to the eval dataset; a bare ``model(...)`` with nothing staged raises in ``BevWarpFuse.lift_hook``.
+``--ablate-frames`` (the information-free control) is REFUSED with T1 built (``refuse_ablate``): it replaces only the CURRENT window, so the
+history would still carry the scene and the control would no longer be information-free.
 """
 from __future__ import annotations
 
@@ -72,8 +78,26 @@ def _fuse(model):
     return None if mh is None else getattr(mh, HEAD_ATTR, None)
 
 
+def is_built(model) -> bool:
+    """True iff the temporal BEV warp (the fuse on ``model._map_hires``) is built into ``model``."""
+    return _fuse(model) is not None
+
+
+ABLATE_MSG = ("--ablate-frames replaces only the CURRENT window with a constant; the T1 history (past frames) would still carry the scene, so the "
+              "information-free control would no longer be information-free")
+
+
+def refuse_ablate(model) -> None:
+    """The runtime half of the ``--ablate-frames`` refusal (``compute_losses_v3`` calls it when ``ablate_frames`` is set; ``pin_args`` is the argv half --
+    the loader-parsed argv of an eval entry point never passes through ``pin_args``).  A model with no fuse: nothing."""
+    if is_built(model):
+        raise SystemExit("[bev-warp] %s" % ABLATE_MSG)
+
+
 def pin_args(args) -> None:
-    """The flag's refusals, at argv time. OFF: a non-default ``--r9-bev-warp-lags`` or ``--r9-bev-warp-shuffle`` alone is refused (a dead flag)."""
+    """The flag's refusals, at argv time. OFF: a non-default ``--r9-bev-warp-lags`` or ``--r9-bev-warp-shuffle`` alone is refused (a dead flag).
+    ON: the 10 cm branch, the timm shared trunk, no freeze, no ``--ablate-frames``.  The perception RIG is NOT required any more (refcv9 T1-FULL: the full
+    model's loss function stages the history too)."""
     if not is_on(args):
         dead = []
         if str(getattr(args, LAGS_DEST, LAGS_DEFAULT) or LAGS_DEFAULT) != LAGS_DEFAULT:
@@ -88,9 +112,8 @@ def pin_args(args) -> None:
         lag_rows_of(args)
     except SystemExit as e:
         bad.append(str(e))
-    if not bool(getattr(args, "r9_perc_rig", False)):
-        bad.append("--r9-perc-rig is off: T1 stages its history in the perception rig's loss function (compute_losses_perc_rig); the full "
-                   "model's loss function does not, and the hook would refuse every forward")
+    if bool(getattr(args, "ablate_frames", False)):
+        bad.append(ABLATE_MSG)
     if str(getattr(args, "map_hires", "off") or "off") != "on":
         bad.append("--map-hires is not `on`: the shared lift T1 fuses into exists only in the 10 cm branch")
     if str(getattr(args, "trunk", "") or "") != "timm" or str(getattr(args, "trunk_mode", "shared") or "shared") != "shared":
@@ -174,7 +197,7 @@ def attach_dataset(ds, model, args) -> dict:
 
 # ---- the step side --------------------------------------------------------------------------------------------------------------- #
 def stage(model, batch: dict, device) -> None:
-    """Called by ``compute_losses_perc_rig`` BEFORE ``model(...)``.  Reads ONLY ``BATCH_KEYS``.  Runs the past frames through the trunk's stride-8
+    """Called by ``compute_losses_perc_rig`` AND by ``compute_losses_v3`` (the FULL model) BEFORE ``model(...)``.  Reads ONLY ``BATCH_KEYS``.  Runs the past frames through the trunk's stride-8
     tap (``no_grad``) and stages ``(s8_past, T, has)`` on the fuse for the lift hook.  OFF (no fuse built): nothing.  A batch without the keys while
     the fuse is built REFUSES (never skips)."""
     fuse = _fuse(model)
