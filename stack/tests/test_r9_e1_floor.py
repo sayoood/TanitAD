@@ -105,12 +105,13 @@ def test_c0_vs_a_copy_of_c0_reads_exactly_zero(selfpair):
     assert {r["family"] for r in rows.values()} == {"BOXES", "MAP"}
     assert "ap2m_all" in rows and "ap1m_0_20" in rows and "nf_prec_5_10" in rows
     defined = [r for r in rows.values() if not r["undefined"]]
-    assert len(rows) == 30 and len(defined) == 30                      # 22 box rows (n_pos is a count; B3 added boxes/object + AP no-NMS by range) + 8 map rows
+    assert len(rows) == 33 and len(defined) == 33                      # 24 box rows (n_pos is a count; B3 added boxes/object + AP no-NMS by range; refcv9
+    #                                                                    B2 added the pooled ap1m / ap2m 20_60) + 9 map rows (T1 added the pooled nf_prec_0_10)
     for r in defined:
         assert r["delta"] == 0.0 and r["ci_lo"] == 0.0 and r["ci_hi"] == 0.0, r["metric"]
         assert r["separated"] is False and r["floor"] == 0.0 and r["keep_threshold"] == 0.0 and r["floor_degenerate"] is True, r["metric"]
     assert rows["ap2m_all"]["c0"] == rows["ap2m_all"]["c1"] == pytest.approx(0.95)
-    assert fl["summary"]["n_separated_c1_vs_c0"] == 0 and fl["summary"]["n_floor_degenerate"] == fl["summary"]["n_defined"] == 29   # 30 rows minus the n_pos count row
+    assert fl["summary"]["n_separated_c1_vs_c0"] == 0 and fl["summary"]["n_floor_degenerate"] == fl["summary"]["n_defined"] == 32   # 33 rows minus the n_pos count row
 
 
 # ------------------------------------------------------------------------------------------------------ KNOWN ANSWER 2

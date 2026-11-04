@@ -229,6 +229,10 @@ def box_stats(clips: list, thresholds=(1.0, 2.0)) -> dict:
         out["ap%sm_all" % tag] = fast_ap(rows, ngt[0])
         for i, b in enumerate(BAND_NAMES):
             out["ap%sm_%s" % (tag, b)] = fast_ap(rows[rows[:, 2] == i], ngt[1 + i])
+        # refcv9 B2's primary "AP@2 m 20-60 m" (REFCV9_DESIGN 4.3): ONE AP over the union of the 20_40 and 40_60 rows and their pooled GT,
+        # never the mean of the two band APs (additive key, MM 2026-11-04)
+        far = (rows[:, 2] == 1) | (rows[:, 2] == 2)
+        out["ap%sm_20_60" % tag] = fast_ap(rows[far], ngt[2] + ngt[3])
     dx = np.concatenate([c["dx"] for c in clips])
     out["dx_0_40_mean"] = float(dx.mean()) if dx.size else float("nan")
     out["dx_0_40_median"] = float(np.median(dx)) if dx.size else float("nan")
@@ -325,6 +329,11 @@ def nearfield_stats(units) -> dict:
         P, TP, TPn, G_, TPr, S_ = [float(x) for x in acc[i]]
         out["nf_prec_%d_%d" % (lo, hi)] = TP / P if P > 0 else float("nan")
         out["nf_prec05_%d_%d" % (lo, hi)] = TPn / P if P > 0 else float("nan")
+    # refcv9 T1's primary "corridor precision 0-10 m" (REFCV9_DESIGN 4.3): the 0-5 and 5-10 bands POOLED (counts summed, not the mean of the
+    # two precisions). Cells are masked only by GT-seen (gt != 255), never by lift validity, so lift-invalid cells are included (additive key)
+    assert NEARFIELD_BANDS[:2] == ((0, 5), (5, 10)), NEARFIELD_BANDS
+    P, TP = float(acc[0][0] + acc[1][0]), float(acc[0][1] + acc[1][1])
+    out["nf_prec_0_10"] = TP / P if P > 0 else float("nan")
     return out
 
 
