@@ -1660,6 +1660,9 @@ _E1_MAP_BANDED = {
     "fine_cell_m": 0.10,
     #: the banded head's own requirement (MapHiresConfig(banded) refuses any other near lift)
     "near_lift_m": 10.0,
+    #: BANDED-NL: the map weights a banded argv may carry = the E1 map arms' own (`r9_e1_make_argv.MAP_ARMS`: M1 = C0's 1.0, M2a / M2b =
+    #: the E0j-measured w* 0.511 / 1.018; M3 = the M2 winner, one of those). A test pins the set to MAP_ARMS.
+    "w_map_hires_admitted": (1.0, 0.511, 1.018),
     #: E1-REC2 (M3): an argv carrying `flag` builds the map's OWN `d_map_enc`-channel BEV encoder; the record must STAMP `own_enc`, its
     #: built branch config must hold it, and no other argv may carry the stamp. Pinned to `tanitad.train.map_own_enc_flag` by a test.
     "own_enc": {"flag": "--r9-map-own-enc", "d_map_enc": 128},
@@ -1689,6 +1692,17 @@ if _E1_MODULE is not None:
             **{f: f"REMOVED for the rig (refcv8 required {_R8['required_values'][f]!r}): "
                   + _E1_REMOVED_WHY.get(f, "a refcv8 planner / tactical value; the rig builds no planner")
                for f in _E1_REMOVED}),
+        #: BANDED-NL (MM 2026-11-04): the banded map head (C1 `--r9-map-banded`) REFUSES any near lift but 10 m (MapHiresConfig(banded);
+        #: `_E1_MAP_BANDED["near_lift_m"]`, the value its own G-MAP-OVERFIT record is held to), so an argv carrying the flag is held to
+        #: 10 and every other to refcv8's 20. Before this the unconditional 20 refused M1 / M2a / M2b at the gate (the f078b7e dev-box
+        #: run, 2026-11-04): the banded lever was built, tested and record-bound, and unreachable from the launch.
+        required_values_when={"--r9-map-banded": {"--map-hires-near-lift-m": f"{_E1_MAP_BANDED['near_lift_m']:g}"}},
+        required_values_when_why={"--r9-map-banded": "the banded map head's own near lift (MapHiresConfig(banded) refuses any "
+                                                     "other; _E1_MAP_BANDED['near_lift_m'], the value its /2-banded record ran) and "
+                                                     "the E1 map arms' pre-registered map weights (_E1_MAP_BANDED['w_map_hires_admitted'])"},
+        #: BANDED-NL: refcv8's `--w-map-hires 1.0` (PI 2026-10-14, R8-BUDGET) stays REQUIRED for every non-banded arm; a banded arm is a
+        #: map-weight screen (REFCV9_DESIGN 4.3 / E0j) and may carry ONE of the pre-registered weights, never a free value.
+        admitted_values_when={"--r9-map-banded": {"--w-map-hires": tuple(f"{w:g}" for w in _E1_MAP_BANDED["w_map_hires_admitted"])}},
         #: the rig's terms must be POSITIVE (a built head with no live weight is declared-but-inert): the agent head, the 3-D
         #: box head, the 10 cm map head. refcv8's planner / tactical weights are gone.
         required_positive=("--w-map-hires", "--w-agent", "--w-box3d"),
@@ -4407,18 +4421,47 @@ def required_on_reasons(prof: dict, argv: list[str], D=None, model=None,
     that requires nothing."""
     req = tuple(prof.get("required_on", ()))
     vals = dict(prof.get("required_values") or {})
+    # `required_values_when` {trigger flag: {flag: value}}: an argv that PASSES the trigger is held to the override instead
+    # (BANDED-NL: the banded map head requires near lift 10, every other arm refcv8's 20). An override is checked exactly like
+    # a plain required value, and the trigger is named in the refusal.
+    over_why: dict[str, str] = {}
+    for trig, over in (prof.get("required_values_when") or {}).items():
+        if has_flag(argv, trig):
+            for f, v in dict(over).items():
+                vals[f] = v
+                over_why[f] = f"{trig} is passed: " + (prof.get("required_values_when_why") or {}).get(trig, "a recorded ruling")
+    # `admitted_values_when` {trigger flag: {flag: (v1, v2, ...)}}: an argv that PASSES the trigger must carry exactly ONE value and it
+    # must equal (as a float) one of the admitted ones -- a pre-registered SET, never a free value (BANDED-NL: the E1 map arms' weights)
+    adm: dict[str, tuple[str, tuple]] = {}
+    for trig, over in (prof.get("admitted_values_when") or {}).items():
+        if has_flag(argv, trig):
+            for f, allowed in dict(over).items():
+                adm[f] = (trig, tuple(allowed))
+                vals.pop(f, None)
     if not req and not vals and not prof.get("required_positive"):
         return [], {"required_on": []}
     det: dict[str, Any] = {"required_on": list(req), "required_values": vals}
+    if adm:
+        det["admitted_values"] = {f: [str(x) for x in al] for f, (_, al) in adm.items()}
     reasons = [f"{f} is REQUIRED ON for a {prof['name']} launch (SPEC_REFCV7 7, PI ruling E1) "
                f"and the argv does not pass it" for f in req if not has_flag(argv, f)]
     for f, v in vals.items():
         got = flag_values(argv, f)
         want = [str(x) for x in v] if isinstance(v, (list, tuple)) else [str(v)]
         if got != want:
-            why = (prof.get("required_values_why") or {}).get(f, "a recorded ruling")
+            why = over_why.get(f) or (prof.get("required_values_why") or {}).get(f, "a recorded ruling")
             reasons.append(f"{f} {' '.join(want)} is REQUIRED for a {prof['name']} launch "
                            f"({why}) and the argv has {got}")
+    for f, (trig, allowed) in adm.items():
+        got = flag_values(argv, f)
+        try:
+            ok = len(got) == 1 and any(float(got[0]) == float(x) for x in allowed)
+        except ValueError:
+            ok = False
+        if not ok:
+            why = (prof.get("required_values_when_why") or {}).get(trig, "a recorded ruling")
+            reasons.append(f"{f} must be ONE of {[str(x) for x in allowed]} for a {prof['name']} launch ({trig} is passed: "
+                           f"{why}) and the argv has {got}")
     for f in prof.get("required_positive", ()):
         got = flag_values(argv, f)
         try:

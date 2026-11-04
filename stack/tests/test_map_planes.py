@@ -59,7 +59,9 @@ def test_refcv8_scores_identically_through_the_nearfield_reader(tmp_path):
     fb = sorted(str(p) for p in rb.glob("*.npz"))
     na, acca, ca = E.nearfield_per_file(fa)
     nb, accb, cb = E.nearfield_per_file(fb)
-    assert na == nb and np.array_equal(acca, accb) and np.array_equal(ca, cb) and acca.sum() > 0
+    # the accumulator carries NaN columns since the M1 map primary (3d5d5eb: the lift-valid counts, honestly absent without a mask):
+    # equality is NaN-aware, and the 'something was counted' check reads the finite part only
+    assert na == nb and np.array_equal(acca, accb, equal_nan=True) and np.array_equal(ca, cb, equal_nan=True) and np.nansum(acca) > 0
     assert MP.read_raster(fb[0])["unobs_source"] == "absent" and MP.read_raster(fb[0])["schema"] == "refcv8"
 
 
