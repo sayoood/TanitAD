@@ -664,7 +664,17 @@ def load_launch_argv(path) -> tuple:
 B3_SCHEMA = "tanitad.g_box_overfit_record/2-b3"
 #: ⭐ C5-S8: `--r9-box-layers` (B4's decoder depth) joins the own-head set -- pinned equal to ``launch_gate.E1_BOX_OWN_FLAGS`` by a test. It is a VALUED flag
 #: (``--r9-box-layers 6`` or ``--r9-box-layers=6``): every membership test below reads the flag HEAD (``_flag_head``), never a bare token.
-B3_FLAGS = ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms", "--r9-box-layers", "--r9-box-s8-horizon")
+B3_FLAGS = ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms", "--r9-box-layers", "--r9-box-s8-horizon", "--r9-box-perframe-queries")
+#: ⭐ C5-PFQ (lever 4, `--r9-box-perframe-queries`): the SEEDS come from the perspective head (`--r9-box-persp-aux`, an AUX flag this harness STRIPS and cannot train on frozen frames),
+#: so the replay builds the per-frame-query head with a RANDOM, FROZEN, deterministic stand-in seed head (`_bc5.attach(m, a, seed_standin=True)`; stamped `seed_source` in `built_c5`).
+#: What the overfit therefore certifies is the DECODE path (300 anchored slots, the global anchors + position embed, the LR x10 `box_anchor` group, the staged camera) under ARBITRARY
+#: seeds -- NEVER the seeds' quality. The record says so (`PFQ_STAMP`); the launch gate must require seed QUALITY elsewhere (see C5-PFQ HANDOFF: G-LIVE with the real persp head + a
+#: seed-recall read of the first dump), and a /1 judge for this stamp is the MM's (launch_gate.py is classification-only for this brief).
+PFQ_FLAG = "--r9-box-perframe-queries"
+PFQ_STAMP = "perframe_seeds_not_certified"
+PFQ_STAMP_WHY = "perframe_seeds_not_certified_why"
+PFQ_WHY = ("per-frame query seeds come from the perspective head, which this harness neither builds nor trains (frozen frames): the replay uses a RANDOM FROZEN stand-in head; "
+           "this record certifies the decode path / global anchors / box_anchor LR group under arbitrary seeds, NOT the seeds' quality")
 
 
 def _flag_head(tok) -> str | None:
@@ -762,6 +772,8 @@ def b3_record_fields(launch_argv: list) -> dict:
     aux = [f for f in AUX_FLAGS if f in launch_argv]
     if aux:
         out.update({AUX_STAMP: aux, AUX_STAMP_WHY: AUX_WHY})
+    if PFQ_FLAG in heads:                                      # C5-PFQ: the seeds are a stand-in in this replay; the record says so
+        out.update({PFQ_STAMP: [PFQ_FLAG], PFQ_STAMP_WHY: PFQ_WHY})
     t1 = strip_t1(launch_argv)[1]
     if t1:                                                    # E1-REC4: the temporal BEV warp is not built here; the record says so
         out.update({T1_STAMP: t1, T1_STAMP_WHY: T1_WHY})
@@ -1189,6 +1201,7 @@ class TrainerAdapter:
         # ("needs the rig camera") instead of silently building a memory without the band. OFF: nothing. (`_build_rig_camera` is called again at the end of this build, as before.)
         if tr._bc5.s8_named(a):
             m._rig_camera, _ = tr._build_rig_camera(cfg, a)
+        m._pfq_seed_standin = True                # C5-PFQ: --r9-box-persp-aux is stripped from the replay argv, so `_bc5.attach` builds the per-frame seeds' RANDOM FROZEN stand-in head (OFF: nothing)
         tr._bc5.attach(m, a)
         if m._w_map > 0.0:
             _pe, _ptable = tr._read_rig_extrinsics(str(getattr(a, "agent_rig_extrinsics", "")))

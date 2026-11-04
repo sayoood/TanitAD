@@ -330,7 +330,7 @@ def _hops(trainer: str, refc_v3: str, branch: str, loader: str) -> dict:
             "camera_then_attach_in_train": int(bool(cam) and train.lineno < cam_ln < train.end_lineno),
             "pin": trainer.count("_bc5.pin_args(args)"), "stamp": trainer.count("_bc5.stamp(model, args)"), "register": trainer.count("_bc5.register_dvb_levers(_dvb.register)"),
             "bev_hook_passes_fmap_s8": refc_v3.count('**({"fmap_s8": fmap_s8} if getattr(br, "wants_s8", False) else {}))'),
-            "branch_passes_s8_to_memory": branch.count('self.box_mem(fmap_s16, bev_feats, **({"s8": fmap_s8} if self.wants_s8 else {}))'),
+            "branch_passes_s8_to_memory": branch.count('self.box_mem(fmap_s16, bev_feats, **({"s8": fmap_s8} if self.mem_wants_s8 else {}))'),
             "branch_takes_fmap_s8": branch.count("map_banded: dict | None = None, fmap_s8: Tensor | None = None) -> dict:"),
             "loader_attach_with_stamp": loader.count("tr._bc5.attach(model, args, stamped=config.get(tr._bc5.STAMP_KEY))")}
 
@@ -343,7 +343,7 @@ def test_trainer_reaches_the_lever_and_each_mutation_FAILS():
             (0, "model._rig_camera, _ = _build_rig_camera(cfg, args)", "pass"), (0, "        _bc5.attach(model, args) ", "        pass  # "),
             (0, "_bc5.pin_args(args)", "pass"), (0, "_bc5.stamp(model, args)", "None"),
             (1, '**({"fmap_s8": fmap_s8} if getattr(br, "wants_s8", False) else {}))', ")"),
-            (2, '**({"s8": fmap_s8} if self.wants_s8 else {})', ""), (3, "stamped=config.get(tr._bc5.STAMP_KEY)", "")]
+            (2, '**({"s8": fmap_s8} if self.mem_wants_s8 else {})', ""), (3, "stamped=config.get(tr._bc5.STAMP_KEY)", "")]
     for i, old, new in muts:
         s = list(srcs)
         assert s[i].count(old) >= 1, old

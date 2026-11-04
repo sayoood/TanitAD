@@ -157,6 +157,8 @@ def box_c5_exemptions(model) -> tuple:
     out = [f"_perception.box_dec.blocks.layers.{i}." for i in range(TIP_DEPTH, len(dec.blocks.layers))]
     if getattr(dec, "mem_pos_s8", None) is not None:   # refcv9 C5 lever 3 (--r9-box-s8-horizon): the s8 band's NEW keys (the refcv8 source has none); an unnamed missing key still refuses
         out += ["_perception.box_dec.mem_pos_s8", "_perception.box_mem.s8_proj.", "_perception.box_mem.src_embed_s8"]
+    if getattr(getattr(model, "_perception", None), "box_pfq", None) is not None:   # refcv9 C5 lever 4 (--r9-box-perframe-queries): the global anchors, the anchor position embed (+ the replay's stand-in head)
+        out += ["_perception.box_pfq.", "_perception.box_qpos."]
     return tuple(out)
 
 

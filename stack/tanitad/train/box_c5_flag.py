@@ -15,6 +15,10 @@ LEVERS IN THIS MODULE (bank order = the brief's priority order; each lever lands
                       the rig geometry at attach time (``horizon_row0``: the median horizon row of the camera bank, ``row_px = (H-1)/2 + f_ref * v_h``,
                       ``v_h = -R[2,2] / R[2,1]``) and STAMPED in ``config.json["r9_box_c5"]["s8_horizon"]``, so the eval loader rebuilds the identical
                       model WITHOUT the camera bank.
+  --r9-box-perframe-queries (lever 4)  B4's per-frame query seeding: 200 per-frame seeds (the perspective head's s8 heat/depth, 3x3-NMS top-200, DETACHED, lifted through the
+                      clip's own rig camera by E[LID range] along the cell's ray) + 100 learned GLOBAL anchors (normalised [0,1], a THIRD optimizer group
+                      ``box_anchor`` at LR x10) = 300 slots, decoded by ``slot_query_select.anchored_forward`` (the HQS path).  REFUSED without ``--r9-box-persp-aux``.
+                      The camera is STAGED before the forward (``stage``: train, eval/dump AND the harness replay).
   (lever 1, the D2 size cap, lives in ``box3d_head.BOX3D_PARAM_CAP`` -- it is a construction-time refusal, not a flag.)
 
 REACHABILITY (CLAUDE.md "built, tested and unreachable from its caller"), one hop per line:
@@ -27,10 +31,15 @@ REACHABILITY (CLAUDE.md "built, tested and unreachable from its caller"), one ho
   ``.box_dec.mem_pos_s8``) -> ``RefCV3Model._bev_hook`` hands ``fmap_s8`` to the branch (``br.wants_s8``) -> ``PerceptionBranch.forward`` ->
   ``Box3DMemory.forward(.., s8=fmap_s8)`` -> ``Box3DSlotDecoder.forward`` / ``box_b3.run_decoder`` / ``slot_query_select.anchored_forward``
   (``dec.memory_pos(memory)``) -> the box3d loss -> ``.backward()``.  Eval: ``refcv7_loader`` -> ``attach(.., stamped=config["r9_box_c5"])``.
+  argv ``--r9-box-perframe-queries`` (build_parser, g8 group, store_true) -> ``args.r9_box_perframe_queries`` -> ``pin_args`` (``_pin_refcv8``) -> train(): ``attach`` (after
+  ``_p3f.attach``) -> ``model._perception.box_pfq`` (``PerFrameQueries``) + ``box_qpos`` -> ``stage(model, batch, device)`` (``compute_losses_v3`` / ``compute_losses_perc_rig``,
+  BEFORE the forward) -> ``RefCV3Model._bev_hook`` hands ``fmap_s8`` (``br.wants_s8``) -> ``PerceptionBranch.forward`` -> ``box_pfq(persp_head, fmap_s8, fmap_s16)``
+  (seeds under ``no_grad`` + the global anchors) -> ``anchored_forward`` -> the box3d loss -> ``.backward()`` -> the global anchors' grad -> ``build_optimizer``'s
+  ``box_anchor`` group (``split_anchor_group``; ``assert_optimizer_matches_recipe`` reads lr ratio ``box_anchor / head`` == 10 after ``apply_lr_schedule``).
 """
 from __future__ import annotations
 
-FLAGS = {"layers": "--r9-box-layers", "s8_horizon": "--r9-box-s8-horizon"}
+FLAGS = {"layers": "--r9-box-layers", "s8_horizon": "--r9-box-s8-horizon", "perframe_queries": "--r9-box-perframe-queries"}
 DESTS = {k: "r9_box_" + k for k in FLAGS}
 #: the depth of the tip's box decoder (``Box3DSlotDecoder(depth=3)`` as ``PerceptionBranch`` builds it) -- what an unnamed flag means
 TIP_DEPTH: int = 3
@@ -53,8 +62,13 @@ def s8_named(args) -> bool:
     return bool(getattr(args, DESTS["s8_horizon"], False))
 
 
+def pfq_named(args) -> bool:
+    """``--r9-box-perframe-queries`` is on the argv (a store_true flag; absent from an older config.json's namespace = off)."""
+    return bool(getattr(args, DESTS["perframe_queries"], False))
+
+
 def is_any(args) -> bool:
-    return layers_named(args) > 0 or s8_named(args)
+    return layers_named(args) > 0 or s8_named(args) or pfq_named(args)
 
 
 def pin_args(args) -> None:
@@ -76,6 +90,24 @@ def pin_args(args) -> None:
             bad.append("a --r8-train-only-map / --r9-train-only freeze is declared: the NEW decoder layers would stay at their template init")
         if bad:
             raise SystemExit("[box-c5] --r9-box-layers refused:\n  - " + "\n  - ".join(bad))
+    if pfq_named(args):
+        bad = []
+        if not float(getattr(args, "w_box3d", 0.0) or 0.0) > 0.0:
+            bad.append("--w-box3d is 0: there is no box3d decoder for the per-frame queries to seed (a dead flag)")
+        if not bool(getattr(args, "r9_box_persp_aux", False)) or not float(getattr(args, "w_box_persp", 0.0) or 0.0) > 0.0:
+            bad.append("--r9-box-persp-aux (with --w-box-persp > 0) is not on the argv: the seeds are the perspective head's s8 heat/depth -- an untrained head would seed nothing")
+        if str(getattr(args, "map_hires", "off") or "off") != "on":
+            bad.append("--map-hires is not 'on': the stride-8 tap the seed head reads exists only behind it")
+        if str(getattr(args, "agent_rig_camera", "off") or "off") != "extrinsics":
+            bad.append("--agent-rig-camera is not 'extrinsics': the seeds are lifted through the clip's own camera (a nominal one mis-places every seed)")
+        if str(getattr(args, "opt", "adam") or "adam") != "dd":
+            bad.append("--opt is not 'dd': the global anchors' LR x10 is a third group split out of `build_optimizer`'s dd groups; `adam` has a single group")
+        if str(getattr(args, "slot_query_select", "learned") or "learned") != "learned":
+            bad.append("--slot-query-select is not 'learned': heatmap / learned_ref are other anchor suppliers for the SAME slots (two suppliers = a non-attributable arm)")
+        if _mof.is_on(args):
+            bad.append("a --r8-train-only-map / --r9-train-only freeze is declared: the NEW anchors / position embed would stay at their init")
+        if bad:
+            raise SystemExit("[box-c5] --r9-box-perframe-queries refused:\n  - " + "\n  - ".join(bad))
     if s8_named(args):
         bad = []
         if not float(getattr(args, "w_box3d", 0.0) or 0.0) > 0.0:
@@ -171,7 +203,86 @@ def _attach_s8(model, args, stamped) -> None:
     mem.s8_info = info
 
 
-def attach(model, args, *, stamped=None) -> None:
+def _attach_pfq(model, args, seed_standin: bool) -> None:
+    import torch
+    from tanitad.models import slot_query_select as _sqs
+    br = getattr(model, "_perception", None)
+    dec = _box_dec(model)
+    if br is None or dec is None:
+        raise SystemExit("[box-c5] --r9-box-perframe-queries but the model has no box3d decoder (--w-box3d > 0 builds it)")
+    if int(dec.n_queries) != _sqs.PFQ_N_SEEDS + _sqs.PFQ_N_GLOBAL:
+        raise SystemExit(f"[box-c5] --r9-box-perframe-queries: the box decoder has {dec.n_queries} queries, the design's slots are {_sqs.PFQ_N_SEEDS} seeds + "
+                         f"{_sqs.PFQ_N_GLOBAL} global anchors = {_sqs.PFQ_N_SEEDS + _sqs.PFQ_N_GLOBAL}")
+    enc = model.core.encoder
+    if not getattr(enc, "s8_tap", False) or getattr(enc, "s8_dim", None) is None:
+        raise SystemExit("[box-c5] --r9-box-perframe-queries: the trunk has no stride-8 tap (--trunk timm --map-hires on)")
+    if getattr(br, "box_heat", None) is not None or getattr(br, "box_refpts", None) is not None:
+        raise SystemExit("[box-c5] --r9-box-perframe-queries: the branch already has another anchor supplier (heatmap / learned_ref)")
+    dev = next(br.parameters()).device
+    with torch.random.fork_rng(devices=[]):        # no other parameter's init draw moves (B4 vs B4-minus-pfq share every shared init)
+        torch.manual_seed(0)
+        pfq = _sqs.PerFrameQueries(br.cfg.planner_grid)
+        qpos = _sqs.AnchorPosEmbed(int(br.cfg.d_model), br.cfg.planner_grid)
+        if getattr(br, "box_persp_aux", None) is None:
+            # train(): `_p3f.attach` ran first, so the head exists.  The eval loader attaches the head AFTER this call (dvb_check_pfq reports a head that never arrives).
+            # `seed_standin=True` is the harness REPLAY only (it strips --r9-box-persp-aux): a random, FROZEN, deterministic stand-in -- stamped as such.
+            if seed_standin:
+                from tanitad.models import persp3d_aux as P
+                pfq.standin = P.Persp3DAuxHead(int(enc.s8_dim), int(enc.s16_dim))
+                for p_ in pfq.standin.parameters():
+                    p_.requires_grad_(False)
+    br.box_pfq = pfq.to(dev)
+    br.box_qpos = qpos.to(dev)
+
+
+def stage(model, batch: dict, device) -> None:
+    """Called by ``compute_losses_perc_rig`` AND ``compute_losses_v3`` BEFORE ``model(...)`` (and by an eval / dump caller): stages the per-row rig camera on
+    the seed module, one-shot.  OFF (no ``box_pfq``): nothing.  A batch without ``agent_ep``, a row with no camera, or cameras on different frames REFUSES."""
+    import torch
+    br = getattr(model, "_perception", None)
+    pfq = None if br is None else getattr(br, "box_pfq", None)
+    if pfq is None:
+        return
+    from tanitad.refs import refc_agents as RA
+    ep = batch.get("agent_ep")
+    if ep is None:
+        raise SystemExit("[box-c5] --r9-box-perframe-queries: the batch carries no `agent_ep` (--agent-join): no camera to lift the seeds through")
+    cam = getattr(model, "_rig_camera", None)
+    cams = cam.for_episodes(ep) if isinstance(cam, RA.RigCameraBank) else RA.row_cameras(cam, int(ep.shape[0]))
+    if any(c is None for c in cams):
+        raise SystemExit("[box-c5] --r9-box-perframe-queries: a batch row has no rig camera (the extrinsics table does not cover its clip)")
+    fr = cams[0].frame
+    if any((c.frame.height, c.frame.width, float(c.frame.f_ref), c.frame.projection) != (fr.height, fr.width, float(fr.f_ref), fr.projection) for c in cams):
+        raise SystemExit("[box-c5] --r9-box-perframe-queries: the batch's cameras are on different canonical frames")
+    R = torch.stack([c.R_cam_to_rig for c in cams]).to(device).float()
+    t = torch.stack([c.t_cam_in_rig for c in cams]).to(device).float()
+    pfq.stage(R, t, fr)
+
+
+def expected_groups(args) -> set:
+    """The optimizer's param-group names the recipe demands: ``--opt dd``'s encoder / head, plus ``box_anchor`` when the per-frame queries are named."""
+    return {"encoder", "head"} | ({"box_anchor"} if pfq_named(args) else set())
+
+
+def split_anchor_group(model, groups: list, args, lr: float) -> list:
+    """``build_optimizer``'s hook: move the global anchors out of the ``head`` group into their own ``box_anchor`` group at ``lr`` x ``PFQ_ANCHOR_LR_MULT``
+    (same weight decay).  Identity-based (never a name guess).  OFF: ``groups`` unchanged."""
+    if not pfq_named(args):
+        return groups
+    from tanitad.models.slot_query_select import PFQ_ANCHOR_LR_MULT
+    br = getattr(model, "_perception", None)
+    pfq = None if br is None else getattr(br, "box_pfq", None)
+    if pfq is None:
+        raise SystemExit("[box-c5] --r9-box-perframe-queries but the model has no box_pfq: the anchors' LR group would not exist")
+    head = next(g for g in groups if g.get("name") == "head")
+    keep = [p for p in head["params"] if p is not pfq.anchors]
+    if len(keep) != len(head["params"]) - 1:
+        raise SystemExit("[box-c5] the global anchors are not in the head group (frozen, or already split)")
+    head["params"] = keep
+    return groups + [{"params": [pfq.anchors], "lr": float(lr) * PFQ_ANCHOR_LR_MULT, "weight_decay": head["weight_decay"], "name": "box_anchor"}]
+
+
+def attach(model, args, *, stamped=None, seed_standin: bool = False) -> None:
     """Build-time wiring, called by the trainer (and the eval loader) once the perception branch exists and BEFORE the optimizer is built and
     before any warm start.  OFF: touches nothing.  ``stamped`` = the run's ``config.json["r9_box_c5"]`` (eval loader): the s8 band's row is read from it
     instead of from a camera bank (which the eval does not have)."""
@@ -184,6 +295,8 @@ def attach(model, args, *, stamped=None) -> None:
         dec.extend_depth(layers_named(args))             # raises ValueError above the D2 cap (BOX3D_PARAM_CAP)
     if s8_named(args):
         _attach_s8(model, args, stamped)
+    if pfq_named(args):
+        _attach_pfq(model, args, bool(seed_standin or getattr(model, "_pfq_seed_standin", False)))
 
 
 def stamp(model, args) -> dict | None:
@@ -200,6 +313,20 @@ def stamp(model, args) -> dict | None:
                          "box_decoder_params": None if dec is None else int(dec.n_params), "d2_cap": int(BOX3D_PARAM_CAP),
                          "d2_scope": "Box3DSlotDecoder (the decoder module); box_memory and the training-only aux heads are reported separately "
                                      "in perception.branch_params"}
+    if pfq_named(args):
+        from tanitad.models.slot_query_select import PFQ_ANCHOR_LR_MULT
+        br = getattr(model, "_perception", None)
+        pfq = None if br is None else getattr(br, "box_pfq", None)
+        out["flags"][FLAGS["perframe_queries"]] = True
+        out["perframe_queries"] = None if pfq is None else {
+            "n_seeds": int(pfq.n_seeds), "n_global": int(pfq.n_global), "n_queries": int(dec.n_queries),
+            "seed_source": "replay_standin_random_frozen_head" if pfq.standin is not None else "perspective_head_s8 (box_persp_aux)",
+            "seed_rule": "3x3 max-pool NMS top-200 of sigmoid(s8 heat); cell centre ((j+.5)*8-.5, (i+.5)*8-.5) -> frame_to_cam_ray (unit) x E[LID range] -> RigCamera.to_rig -> (x, y) clamped to the planner grid",
+            "seed_grad": "DETACHED (no_grad): the box loss never reaches the perspective head or the trunk through the seeds",
+            "global_anchors": "nn.Parameter [100, 2], normalised [0,1] (x / x_fwd, (y + y_half) / (2 y_half)), init torch.rand seed 0",
+            "anchor_lr_mult": float(PFQ_ANCHOR_LR_MULT), "anchor_group": "box_anchor (third optimizer group, split from head; --opt dd)",
+            "anchor_offset_m": 4.0, "new_params": {"box_pfq.anchors": int(pfq.anchors.numel()),
+                                                   "box_qpos": int(sum(p.numel() for p in br.box_qpos.parameters()))}}
     if s8_named(args):
         out["flags"][FLAGS["s8_horizon"]] = True
         mem = _mem(model)
@@ -288,7 +415,33 @@ def dvb_check_s8(model, args) -> list:
     return out
 
 
+def dvb_check_pfq(model, args) -> list:
+    """declared <=> the BUILT branch holds ``box_pfq`` (100 x 2 global anchors, 300 slots = 200 + 100), its position embed, a seed head and the s8 hand-in."""
+    dest = DESTS["perframe_queries"]
+    want = pfq_named(args)
+    br = getattr(model, "_perception", None)
+    pfq = None if br is None else getattr(br, "box_pfq", None)
+    out = []
+    if want and br is None:
+        return [_mm(dest, True, "no perception branch", "model._perception", "argv names the per-frame queries and the model has no perception branch")]
+    if want != (pfq is not None):
+        out.append(_mm(dest, want, pfq is not None, "model._perception.box_pfq", "argv and the BUILT branch disagree about the per-frame queries"))
+    if pfq is None:
+        return out
+    if getattr(br, "box_qpos", None) is None:
+        out.append(_mm(dest, True, False, "model._perception.box_qpos", "the per-frame queries have no anchor position embed"))
+    if tuple(pfq.anchors.shape) != (pfq.n_global, 2) or pfq.n_seeds + pfq.n_global != int(br.box_dec.n_queries):
+        out.append(_mm(dest, f"{pfq.n_seeds}+{pfq.n_global}={br.box_dec.n_queries} slots, anchors ({pfq.n_global}, 2)", f"anchors {tuple(pfq.anchors.shape)}",
+                       "model._perception.box_pfq.anchors", "the global anchors / seed count do not fill the decoder's queries"))
+    if pfq.standin is None and getattr(br, "box_persp_aux", None) is None:
+        out.append(_mm(dest, "a perspective seed head", None, "model._perception.box_persp_aux", "no seed head: --r9-box-persp-aux was not built"))
+    if not getattr(br, "wants_s8", False):
+        out.append(_mm(dest, True, False, "model._perception.wants_s8", "the branch would not be handed fmap_s8 (the seed head reads it)"))
+    return out
+
+
 def register_dvb_levers(register) -> None:
     """Called by the trainer at import (the registry is pinned two-way against its parser)."""
     register(DESTS["layers"], "built", dvb_check_layers)
     register(DESTS["s8_horizon"], "built", dvb_check_s8)
+    register(DESTS["perframe_queries"], "built", dvb_check_pfq)

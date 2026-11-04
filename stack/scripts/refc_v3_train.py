@@ -5915,6 +5915,7 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
         _bw.refuse_ablate(model)                  # refcv9 T1: the information-free control cannot run with a history built (OFF: nothing)
     _bw.stage(model, batch, device)               # refcv9 T1 (FULL model): the past frames s8 maps + the PAST-pose transforms, staged for the lift hook BEFORE the forward (OFF: nothing)
     _bbf.prepare(model, batch, device)            # refcv9 B3 --r9-box-dn: the DN pack BEFORE the forward (training only; OFF: nothing)
+    _bc5.stage(model, batch, device)              # refcv9 C5 lever 4 --r9-box-perframe-queries: the per-row rig camera for the seed lift, BEFORE the forward (OFF: nothing)
     # refcv8: the r8 inputs ride a wrapper, so the refcv7 call below -- and the pinned mutation anchor of
     # test_refc_v3_agent_gt_reaches_forward -- is byte-for-byte the tip's. None -> the model itself.
     # X3: `fwd` may carry the TREATED v_max_ms / v_max_valid (dropout / roll / legal row); they REPLACE the batch's.
@@ -7151,6 +7152,7 @@ def compute_losses_perc_rig(model, batch: dict, device: str, mode: str = "diffus
     # ⭐ refcv8 WP-B: the GT hypothesis + constraint targets + the scheduled-sampling teacher (one-shot on the model)
     _bw.stage(model, batch, device)               # refcv9 T1: the past frames s8 maps + the PAST-pose transforms, staged for the lift hook BEFORE the forward (OFF: nothing)
     _bbf.prepare(model, batch, device)            # refcv9 B3 --r9-box-dn: the DN pack BEFORE the forward (training only; OFF: nothing)
+    _bc5.stage(model, batch, device)              # refcv9 C5 lever 4 --r9-box-perframe-queries: the per-row rig camera for the seed lift, BEFORE the forward (OFF: nothing)
     out = model(frames, perception_grid=_pgrid, perception_valid=_pvalid)
     loss = torch.zeros((), device=device)
     extra: dict = {}
@@ -9068,9 +9070,9 @@ def assert_optimizer_matches_recipe(opt, args, model=None) -> dict:
     if type(opt).__name__ != "AdamW":
         bad.append(f"optimizer is {type(opt).__name__}, the recipe is AdamW")
     names = {g.get("name") for g in opt.param_groups}
-    if names != {"encoder", "head"}:
+    if names != _bc5.expected_groups(args):
         bad.append(f"param groups are {sorted(map(str, names))}, the recipe needs "
-                   f"exactly an 'encoder' and a 'head' group")
+                   f"exactly {sorted(_bc5.expected_groups(args))} (an 'encoder' and a 'head' group, plus 'box_anchor' under --r9-box-perframe-queries)")
     want_wd = float(getattr(args, "weight_decay", 1e-4))
     for g in opt.param_groups:
         if abs(float(g.get("weight_decay", 0.0)) - want_wd) > 1e-12:
@@ -9085,6 +9087,7 @@ def assert_optimizer_matches_recipe(opt, args, model=None) -> dict:
         apply_lr_schedule(opt, args, lambda _s: 0.5, 0)
         want = float(getattr(args, "encoder_lr_mult", 0.5))
         got = float(by["encoder"]["lr"]) / max(float(by["head"]["lr"]), 1e-30)
+        got_a = (float(by["box_anchor"]["lr"]) / max(float(by["head"]["lr"]), 1e-30)) if "box_anchor" in by else None     # refcv9 C5 lever 4: read in the SAME probe, before the restore
         for g, pr in zip(opt.param_groups, _probe):          # restore exactly
             g["lr"] = pr["lr"]
             if pr["initial_lr"] is None:
@@ -9095,6 +9098,11 @@ def assert_optimizer_matches_recipe(opt, args, model=None) -> dict:
             bad.append(f"encoder/head lr ratio after one schedule step is {got:.6f}, the "
                        f"recipe is {want} -- the schedule is overwriting the multiplier")
         info["encoder_head_ratio_after_step"] = got
+        if got_a is not None or _bc5.pfq_named(args):       # refcv9 C5 lever 4: the anchors' LR x10 after one schedule step (a declared lever with no group is a defect)
+            from tanitad.models.slot_query_select import PFQ_ANCHOR_LR_MULT
+            if got_a is None or abs(got_a - PFQ_ANCHOR_LR_MULT) > 1e-9:
+                bad.append(f"box_anchor/head lr ratio after one schedule step is {got_a}, the recipe is {PFQ_ANCHOR_LR_MULT} -- the anchors' multiplier is absent or overwritten")
+            info["box_anchor_head_ratio_after_step"] = got_a
     if bad:
         raise SystemExit("[v3] ⛔ THE OPTIMIZER THAT WILL RUN IS NOT THE RECIPE THE RUN "
                          "CLAIMS:\n  - " + "\n  - ".join(bad))
@@ -9269,6 +9277,7 @@ def build_optimizer(model, args):
             model, float(args.lr), encoder_attr=_enc_attr,
             encoder_lr_mult=float(getattr(args, "encoder_lr_mult", 0.5)),
             weight_decay=float(getattr(args, "weight_decay", 1e-4)))
+        groups = _bc5.split_anchor_group(model, groups, args, float(args.lr))     # refcv9 C5 lever 4: the global anchors leave `head` for `box_anchor` (LR x10); OFF: unchanged
         opt = torch.optim.AdamW(groups, lr=float(args.lr))
         print(f"[v3] opt=dd AdamW wd={getattr(args, 'weight_decay', 1e-4)} "
               f"encoder_lr={groups[0]['lr']:.3e} ({len(groups[0]['params'])} "
@@ -13674,6 +13683,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="refcv9 C5 lever 3 (REFCV9_DESIGN 2.4 row memory, arm B4): append the 16 stride-8 rows around the rig's horizon row (x the s8 width = 2,048 tokens) to the box memory, "
                          "with their own projection + embedding. The horizon row is derived from the rig camera bank and stamped in config.json. Needs --w-box3d > 0, --map-hires on (the s8 tap) and "
                          "--agent-rig-camera extrinsics. Default OFF: the tip's memory, bit-identical.")
+    g8.add_argument("--r9-box-perframe-queries", action="store_true",
+                    help="refcv9 C5 lever 4 (REFCV9_DESIGN 2.4 row queries, arm B4): 200 PER-FRAME seeds (the perspective head's s8 centre heat, 3x3 NMS, DETACHED, lifted through the clip's rig "
+                         "camera by E[LID range]) + 100 learned GLOBAL anchors (normalised [0,1], LR x10 as a third optimizer group `box_anchor`) = 300 anchored slots (the HQS decode). REFUSED "
+                         "without --r9-box-persp-aux (+ --w-box-persp > 0); needs --opt dd, --map-hires on, --agent-rig-camera extrinsics, --slot-query-select learned. Default OFF: bit-identical.")
     g9 = ap.add_argument_group("refcv9 R9-PF (clean-split, regime-factored progress head; REFCV9_INMODEL_DESIGN.md)")
     g9.add_argument("--r9-perc-rig", action="store_true",
                     help="refcv9 C7 (REFCV9_DESIGN 4.3): the E1 PERCEPTION-ONLY rig -- init from refcv8 EMA-48,852 via "

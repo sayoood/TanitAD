@@ -282,3 +282,83 @@ def heat_term(heat_logits: Tensor, box: Tensor, pos: Tensor, ign: Tensor | None,
     loss = centernet_focal(heat_logits, t["heat"], t["ignore"])
     return {"loss": loss, "n_pos": t["n_pos"], "n_pos_outside": t["n_pos_outside"],
             "n_ignore_cells": int(t["ignore"].sum())}
+
+
+# --------------------------------------------------------------------------------------------------------- #
+# refcv9 C5 lever 4 -- PER-FRAME QUERY SEEDING + NORMALISED GLOBAL ANCHORS (arm B4)                         #
+# --------------------------------------------------------------------------------------------------------- #
+#: REFCV9_DESIGN 2.4 row *queries* (lines 180-181): 200 per-frame seeds (the perspective head's s8 centre heat, 3x3 NMS, lifted to the rig plane by the
+#: expected LID range along the cell's camera ray) + 100 LEARNED global anchors (normalised [0,1] planner-grid coordinates, LR x10) = 300 slots.
+PFQ_N_SEEDS, PFQ_N_GLOBAL, PFQ_ANCHOR_LR_MULT = 200, 100, 10.0
+
+
+class PerFrameQueries(nn.Module):
+    """The anchors of the 300 box slots: ``[B, 300, 2]`` rig-frame metres = 200 per-frame SEEDS (DETACHED: ``no_grad`` + ``.detach()``, never a gradient path
+    into the perspective head or the trunk) followed by the 100 learned GLOBAL anchors (``anchors`` [100, 2] in [0, 1]: x / x_fwd, (y + y_half) / (2 y_half);
+    the only parameter here and the only one the optimizer's ``box_anchor`` group (LR x10) holds).  The slots are then decoded by ``anchored_forward``
+    (content = the learned table, position = ``AnchorPosEmbed(anchor)``, centre = anchor + tanh x 4 m) exactly as HQS does.
+
+    The seed source is the perspective head (``Persp3DAuxHead``, B2) handed in by the branch; its s8 branch gives a centre heat [B,1,H,W] and 80 LID depth
+    logits [B,80,H,W]. Cell (i, j) -> canonical-frame pixel (col, row) = ((j+.5)*8-.5, (i+.5)*8-.5) -> ``frame_to_cam_ray`` (unit) x E[range]
+    (softmax over the LID centres) -> the clip's ``RigCamera.to_rig`` -> (x, y), clamped to the planner grid.  The per-row camera is STAGED (``stage``)
+    BEFORE the forward by ``box_c5_flag.stage`` (train AND eval); a forward with nothing staged REFUSES (one-shot: ``forward`` consumes it)."""
+
+    def __init__(self, grid, n_seeds: int = PFQ_N_SEEDS, n_global: int = PFQ_N_GLOBAL, seed: int = 0, lr_mult: float = PFQ_ANCHOR_LR_MULT):
+        super().__init__()
+        self.n_seeds, self.n_global, self.lr_mult = int(n_seeds), int(n_global), float(lr_mult)
+        self.x_fwd_m, self.y_half_m = float(grid.x_fwd_m), float(grid.y_half_m)
+        g = torch.Generator().manual_seed(int(seed))
+        self.anchors = nn.Parameter(torch.rand(self.n_global, 2, generator=g))
+        self.standin = None                      # replay only (``box_c5_flag.attach(seed_standin=True)``): a random FROZEN Persp3DAuxHead
+        self._staged = None
+
+    def global_xy(self) -> Tensor:
+        """The global anchors in rig metres ``[n_global, 2]`` (differentiable in ``self.anchors``)."""
+        return torch.stack([self.anchors[:, 0] * self.x_fwd_m, (self.anchors[:, 1] * 2.0 - 1.0) * self.y_half_m], dim=-1)
+
+    def stage(self, R: Tensor, t: Tensor, frame) -> None:
+        """One-shot: per-row ``R_cam_to_rig`` [B,3,3], ``t_cam_in_rig`` [B,3] and the canonical frame (shared by the rows)."""
+        self._staged = (R, t, frame)
+
+    @torch.no_grad()
+    def seeds(self, head, fmap_s8: Tensor, fmap_s16: Tensor, R: Tensor, t: Tensor, frame) -> Tensor:
+        from tanitad.data import box_depth_targets as BD
+        from tanitad.data.rig_projection import frame_to_cam_ray
+        o = head(fmap_s8.detach(), fmap_s16.detach())[8]
+        heat, depth = o["heat"].float()[:, 0], o["depth"].float()
+        B, H, W = int(heat.shape[0]), int(heat.shape[-2]), int(heat.shape[-1])
+        if H * W < self.n_seeds:
+            raise ValueError(f"top-{self.n_seeds} seeds over a {H}x{W} s8 map")
+        p = torch.sigmoid(heat)
+        pooled = F.max_pool2d(p[:, None], NMS_KERNEL, stride=1, padding=NMS_KERNEL // 2)[:, 0]
+        p_nms = torch.where(p == pooled, p, torch.zeros_like(p))
+        _, idx = torch.topk(p_nms.reshape(B, -1), self.n_seeds, dim=1, sorted=True)
+        ii, jj = idx // W, idx % W
+        col, row = (jj.float() + 0.5) * 8.0 - 0.5, (ii.float() + 0.5) * 8.0 - 0.5
+        ray = frame_to_cam_ray(col, row, frame).to(R.dtype)
+        ray = ray / ray.norm(dim=-1, keepdim=True)
+        logit = depth.reshape(B, depth.shape[1], H * W).gather(2, idx[:, None, :].expand(-1, depth.shape[1], -1))     # [B,80,K]
+        centres = torch.as_tensor(BD.lid_centres(), dtype=logit.dtype, device=logit.device)
+        rng = (torch.softmax(logit, dim=1) * centres[None, :, None]).sum(1)                                           # E[range] [B,K]
+        p_cam = ray * rng[..., None].to(ray.dtype)
+        p_rig = torch.einsum("bij,bkj->bki", R, p_cam) + t[:, None, :]
+        x = p_rig[..., 0].clamp(0.0, self.x_fwd_m)
+        y = p_rig[..., 1].clamp(-self.y_half_m, self.y_half_m)
+        return torch.stack([x, y], dim=-1).detach()
+
+    def forward(self, head, fmap_s8: Tensor, fmap_s16: Tensor) -> Tensor:
+        if self._staged is None:
+            raise RuntimeError("[pfq] no camera staged: `box_c5_flag.stage(model, batch, device)` must run BEFORE every forward (train AND eval / dump) -- "
+                               "the seeds are lifted through the clip's own rig camera")
+        R, t, frame = self._staged
+        self._staged = None
+        if head is None:
+            raise RuntimeError("[pfq] no seed head (the perspective head): --r9-box-perframe-queries needs --r9-box-persp-aux")
+        if fmap_s8 is None:
+            raise RuntimeError("[pfq] no fmap_s8 reached the branch (the s8 tap / `wants_s8`)")
+        b = int(fmap_s16.shape[0])
+        if int(R.shape[0]) != b:
+            raise RuntimeError(f"[pfq] {int(R.shape[0])} staged cameras for a batch of {b}")
+        seeds = self.seeds(head, fmap_s8, fmap_s16, R.to(fmap_s16.device), t.to(fmap_s16.device), frame)
+        glob = self.global_xy()[None].expand(b, -1, -1).to(seeds.dtype)
+        return torch.cat([seeds, glob], dim=1)

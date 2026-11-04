@@ -394,7 +394,7 @@ def _trainer_reaches(src: str) -> dict:
             "pin": src.count("_bbf.pin_args(args)"), "attach": src.count("_bbf.attach(model, args)"),
             "prepare": src.count("_bbf.prepare(model, batch, device)"), "dispatch": src.count("_bbf.box3d_row("),
             "stamp": src.count("_bbf.stamp(model, args)"), "flags": sum(src.count('"%s"' % f) for f in BF.FLAGS.values()),
-            "prepare_before_forward": int(bool(re.search(r"_bbf\.prepare\(model, batch, device\)[^\n]*\n\s*out = model\(frames, perception_grid", src))),
+            "prepare_before_forward": int(bool(re.search(r"_bbf\.prepare\(model, batch, device\)[^\n]*\n(?:\s*_bc5\.stage\(model, batch, device\)[^\n]*\n)?\s*out = model\(frames, perception_grid", src))),   # C5-PFQ: its camera stage may sit between
             "no_old_call": src.count("_perc.box3d_loss_row(")}
 
 

@@ -79,7 +79,7 @@ def _judge(tmp_path, rec, argv):
 
 # ================================================================================ the tuples are ONE fact ==
 def test_the_two_flag_classes_are_pinned_across_gate_harness_emitter_and_trainer():
-    assert LG.E1_BOX_OWN_FLAGS == ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms", "--r9-box-layers", "--r9-box-s8-horizon") == tuple(G.B3_FLAGS)
+    assert LG.E1_BOX_OWN_FLAGS == ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms", "--r9-box-layers", "--r9-box-s8-horizon", "--r9-box-perframe-queries") == tuple(G.B3_FLAGS)
     assert LG.E1_BOX_AUX_FLAGS == ("--r9-box-depth-aux", "--r9-box-persp-aux", "--r9-box-bev2-aux") == tuple(G.AUX_FLAGS)
     assert not set(LG.E1_BOX_OWN_FLAGS) & set(LG.E1_BOX_AUX_FLAGS)
     assert (LG.E1_BOX_AUX_STAMP, LG.E1_BOX_AUX_STAMP_WHY) == (G.AUX_STAMP, G.AUX_STAMP_WHY)

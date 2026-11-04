@@ -75,10 +75,10 @@ def _box_closes(tmp_path, rec, argv):
 
 # ============================================================================================== the box row ==
 def test_the_box_row_is_filled_and_pinned_to_the_harness():
-    assert LG.E1_BOX_OWN_FLAGS == BOX_FLAGS + ("--r9-box-layers", "--r9-box-s8-horizon")   # E1-REC3: B3's four (the aux heads are LG.E1_BOX_AUX_FLAGS) + C5-S8's valued depth flag + C5-S8B's s8 horizon band
+    assert LG.E1_BOX_OWN_FLAGS == BOX_FLAGS + ("--r9-box-layers", "--r9-box-s8-horizon", "--r9-box-perframe-queries")   # C5-PFQ (lever 4) joins the own-head set; E1-REC3: B3's four (the aux heads are LG.E1_BOX_AUX_FLAGS) + C5-S8's valued depth flag + C5-S8B's s8 horizon band
     row = LG.E1_OWN_RECORDS["E1-BOX-OWN-RECORD"]
     assert row["flags"] == LG.E1_BOX_OWN_FLAGS and row["judge"] == "judge_box_own_record" and row["schema"] == G.B3_SCHEMA
-    assert tuple(G.B3_FLAGS) == BOX_FLAGS + ("--r9-box-layers", "--r9-box-s8-horizon") and tuple(row["must_fail_arms"]) == tuple(G.MUST_FAIL) == LG.E1_BOX_MUST_FAIL
+    assert tuple(G.B3_FLAGS) == BOX_FLAGS + ("--r9-box-layers", "--r9-box-s8-horizon", "--r9-box-perframe-queries") and tuple(row["must_fail_arms"]) == tuple(G.MUST_FAIL) == LG.E1_BOX_MUST_FAIL
     assert LG.E1_BOX_OWN_SCHEMA == G.B3_SCHEMA == "tanitad.g_box_overfit_record/2-b3"
     # the verdict text a failing must-fail arm carries is the harness's own (arm_verdict), not a second spelling
     fail = {k: {"pass": False} for k in ("1", "2", "3")}

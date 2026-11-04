@@ -115,7 +115,7 @@ def test_R8_the_refcv8_family_profiles_are_unchanged():
     fp = lambda n: hashlib.sha256(repr(sorted((k, repr(v)) for k, v in LG.PROFILES[n].items())).encode()).hexdigest()[:16]   # noqa: E731
     assert {n: fp(n) for n in ("refcv8", "refcv9-warm", "refcv9-e1rig", "refcv8-nt", "refcv8-mapft", "v8f")} == {
         # 9be3211 (pin2, PI-approved) re-shaed the Thor-ENV pin list in refcv8-mapft and refcv9-warm (e1rig inherits it): those three re-pinned
-        "refcv8": "4841b2a6f0758b95", "refcv9-warm": "91259ab94b2a92e9", "refcv9-e1rig": "3baeb8ef3a8b7a66",     # E1-REC4 (T1 exceptions); C5-S8B: + --r9-box-s8-horizon OWN (only open_items moves)
+        "refcv8": "4841b2a6f0758b95", "refcv9-warm": "91259ab94b2a92e9", "refcv9-e1rig": "74921a58ab8f37f2",     # E1-REC4 (T1 exceptions); C5-PFQ: + --r9-box-perframe-queries OWN (only open_items moves)
         "refcv8-nt": "a24d2c1a71042711", "refcv8-mapft": "c2870bbcea21ce72", "v8f": "52860dd82f3a79af"}
     for f in ("--r9-perc-rig", "--r9-train-only"):                                    # refcv8 still refuses the two mode flags
         assert any(f in e[0] for e in R8["forbidden_levers"])

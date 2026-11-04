@@ -501,6 +501,8 @@ class PerceptionBranch(nn.Module):
         self.box_heat = None
         self.box_refpts = None
         self.box_qpos = None
+        #: refcv9 C5 lever 4 (``--r9-box-perframe-queries``): the per-frame seeds + global anchors (``box_c5_flag.attach`` builds it, plus ``box_qpos``); None by default
+        self.box_pfq = None
         if float(cfg.w_box3d) > 0.0:
             self.box_mem = Box3DMemory(
                 d_image=self.d_image, d_bev=int(cfg.bev_cfg.d_out),
@@ -611,9 +613,14 @@ class PerceptionBranch(nn.Module):
         return d
 
     @property
-    def wants_s8(self) -> bool:
-        """refcv9 C5 lever 3: True when the box memory carries the s8 horizon band (the bev hook then hands ``fmap_s8`` in)."""
+    def mem_wants_s8(self) -> bool:
+        """refcv9 C5 lever 3: True when the box memory carries the s8 horizon band (``fmap_s8`` joins the memory)."""
         return self.box_mem is not None and getattr(self.box_mem, "s8_proj", None) is not None
+
+    @property
+    def wants_s8(self) -> bool:
+        """True when ``fmap_s8`` must reach this branch's forward (the bev hook then hands it in): the memory's s8 band (lever 3) OR the per-frame seeds' perspective head (lever 4)."""
+        return self.mem_wants_s8 or getattr(self, "box_pfq", None) is not None
 
     def forward(self, fmap_s16: Tensor, grid: Tensor | None = None,
                 valid: Tensor | None = None, *,
@@ -692,8 +699,14 @@ class PerceptionBranch(nn.Module):
             # `.detach()` here would silently refuse a ruling the PI made.
             out["bev_tokens"] = self.bev_tokens(bev_feats)
         if self.box_dec is not None:
-            mem = self.box_mem(fmap_s16, bev_feats, **({"s8": fmap_s8} if self.wants_s8 else {}))        # refcv9 C5 lever 3: s8 only when the memory asks
-            if self.box_heat is None and self.box_refpts is None:
+            mem = self.box_mem(fmap_s16, bev_feats, **({"s8": fmap_s8} if self.mem_wants_s8 else {}))        # refcv9 C5 lever 3: s8 only when the memory asks
+            if self.box_pfq is not None:
+                # ⭐ refcv9 C5 lever 4 (B4): 200 per-frame seeds (the perspective head's s8 heat/depth, DETACHED, lifted through the staged rig camera) + 100 learned
+                # global anchors (the only gradient-carrying part) = 300 anchored slots, decoded exactly as HQS does.
+                from tanitad.models import slot_query_select as _sqs
+                _anc = self.box_pfq(self.box_pfq.standin if self.box_pfq.standin is not None else getattr(self, "box_persp_aux", None), fmap_s8, fmap_s16)
+                out["box_slots"] = _sqs.anchored_forward(self.box_dec, mem, _anc, self.box_qpos(_anc))
+            elif self.box_heat is None and self.box_refpts is None:
                 out["box_slots"] = self.box_dec(mem)
             elif self.box_refpts is not None:
                 # refcv7 A14 (learned_ref): one trainable anchor per query (DAB-DETR static anchors)

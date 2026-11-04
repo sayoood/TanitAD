@@ -285,7 +285,7 @@ def test_G8_the_call_site_hands_over_the_loaders_model_and_reads_the_build_reaso
     assert "T.compute_losses_v3(model, batch, \"cpu\"" in fo and "_bw" not in fo and "stage" not in fo   # the TRAINER stages; G-EVAL certifies that
     ts = inspect.getsource(T.compute_losses_v3)
     assert "compute_losses_perc_rig(model, batch, device" in ts.split("cfg = model.cfg")[0]       # the rig dispatch the forward rides
-    assert re.search(r"_bw\.stage\(model, batch, device\)\s+#[^\n]*\n[^\n]*\n\s*out = model\(frames", inspect.getsource(T.compute_losses_perc_rig))
+    assert re.search(r"_bw\.stage\(model, batch, device\)\s+#[^\n]*\n[^\n]*\n(?:\s*_bc5\.stage\(model, batch, device\)[^\n]*\n)?\s*out = model\(frames", inspect.getsource(T.compute_losses_perc_rig))   # C5-PFQ: + its camera stage
 
 
 def test_G8_the_attribute_names_the_gate_reads_are_the_flags_own():
