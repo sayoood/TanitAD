@@ -523,7 +523,8 @@ def _structure(out: str) -> list:
     marks = [m.group(1) for ln in lines for m in [re.match(r"ZZR9E2ROLL-([A-Z0-9-]+)ZZ", ln)] if m]
     want = ["START", "INPUTS-OK", "LOCK-WAIT", "LOCK-TAKEN", "GPU-CHECK", "ROLL-START", "ROLL-DONE", "ROLL-START", "ROLL-DONE",
             "CAMBLIND-START", "CAMBLIND-DONE", "CAMBLIND-START", "CAMBLIND-DONE", "DUMP-START", "DUMP-DONE", "DUMP-START", "DUMP-DONE",
-            "LOCK-RELEASED", "FAMILIES-DONE", "CAMBLIND-READ-DONE", "FAMILIES-DONE", "CAMBLIND-READ-DONE", "EVAL-DONE", "EVAL-DONE", "INPUTS-WRITTEN", "DRY-DONE"]
+            "LOCK-RELEASED", "FAMILIES-DONE", "DISTKEEP-DONE", "CAMBLIND-READ-DONE", "FAMILIES-DONE", "DISTKEEP-DONE", "CAMBLIND-READ-DONE",
+            "EVAL-DONE", "EVAL-DONE", "INPUTS-WRITTEN", "DRY-DONE"]
     if marks != want:
         bad.append(f"marker-order {marks}")
     rolls = cmds("run_battery_r9_e2.py")
@@ -552,6 +553,10 @@ def _structure(out: str) -> list:
     for f in fams:
         if "--dev-split" not in f or "--a-dump" not in f or "--b-dump" not in f:
             bad.append("families-flags")
+    dks = cmds("r9_e2_distkeep.py")                                # LONGITUDINAL distance-keeping, merged into THAT seed's families.json
+    if len(dks) != 2 or not all("--merge-into" in d and f"families_s{s}.json" in d.split("--merge-into", 1)[1] and "--lead-block" in d
+                                 and f"E2_K2_pf/dump_s{s}" in d and f"E2_K0_pf/dump_s{s}" in d and "--dev-split" in d for s, d in zip((0, 1), dks)):
+        bad.append("distkeep-merge")
     evs = cmds("r9_e1_eval.py")
     if len(evs) != 2 or not all("--lift-valid" in e and "--split dev" in e for e in evs):
         bad.append("eval-lift-valid-dev")
@@ -563,7 +568,7 @@ def _structure(out: str) -> list:
     iflock = next((i for i, ln in enumerate(dry) if "flock -w" in ln), None)
     ifrel = next((i for i, ln in enumerate(dry) if "release the GPU lock" in ln), None)
     gpu = [i for i, ln in enumerate(dry) if any(n in ln for n in ("run_battery_r9_e2.py", "camblind_roll_r9_e2.py", "r9_e1_dump.py")) and not ln.startswith("[dry] require")]
-    cpu = [i for i, ln in enumerate(dry) if any(n in ln for n in ("r9_e2_families.py", "r9_e1_eval.py", "r9e2_inputs.py", "r9_e2_verdict.py")) and not ln.startswith("[dry] require")]
+    cpu = [i for i, ln in enumerate(dry) if any(n in ln for n in ("r9_e2_families.py", "r9_e2_distkeep.py", "r9_e1_eval.py", "r9e2_inputs.py", "r9_e2_verdict.py")) and not ln.startswith("[dry] require")]
     if iflock is None or ifrel is None or not gpu or not (iflock < min(gpu) and max(gpu) < ifrel < min(cpu)):
         bad.append("one-lock-hold-around-every-gpu-step")
     return bad
@@ -610,7 +615,7 @@ def test_dry_run_battery_parent_runs_in_the_baseline_cwd_when_one_is_named(tmp_p
 
 @needs_bash
 @pytest.mark.parametrize("pin", ["R9E2_K0_RUN", "R9E2_K2_RUN", "R9E2_TREE", "R9E2_PF_CODE", "PF_R8_CODE", "PF_NF_HOLD", "R8_EVAL_KIT", "R9E2_REMAP", "R9E2_SPLIT", "R9E2_S2",
-                                 "R9E2_LIFT_VALID", "R9E2_OUT", "L1_PF_CODE", "L1_R8_CODE"])
+                                 "R9E2_LIFT_VALID", "R9E2_OUT", "L1_PF_CODE", "L1_R8_CODE", "R9E2_LEAD_BLOCK"])
 def test_shell_refuses_each_unset_pin(tmp_path, pin):
     assert pin in _sh_pins(SH.read_text(encoding="utf-8"))
     rc, out, err, outdir = _dry(SH, tmp_path, drop=(pin,))
@@ -632,6 +637,8 @@ def test_shell_refuses_the_standalone_pose_clock(tmp_path):
     ("--lift-valid \"$R9E2_LIFT_VALID\" --out", "--out", "eval-lift-valid-dev"),
     ("--k2-label K2 --k0-label K0", "--k2-label K2 --k0-label K0 --s6c-k2 /fake", "inputs-s6c-k2-must-be-absent"),
     ("roll_arm K2 \"$RUN2\"\n", "\n", "rolls-K0-then-K2"),
+    ('--out "$RD/distkeep_s$S.json" --merge-into "$RD/families_s$S.json"', '--out "$RD/distkeep_s$S.json"', "distkeep-merge"),
+    ('--lead-block "$R9E2_LEAD_BLOCK" ', '', "distkeep-merge"),
 ])
 def test_RED_each_mutation_of_the_driver_makes_the_structure_check_fail(tmp_path, old, new, claim):
     rc, out, err, _ = _dry(_mutated(tmp_path, old, new), tmp_path)
@@ -659,6 +666,7 @@ def test_every_flag_the_shell_passes_exists_in_the_callee(tmp_path):
     dry = [ln for ln in out.splitlines() if ln.startswith("[dry] ") and not ln.startswith("[dry] require")]
     callees = {"r9_e1_dump.py": ROOT / "scripts" / "r9_e1_dump.py", "r9_e1_eval.py": ROOT / "scripts" / "r9_e1_eval.py",
                "r9_e2_families.py": ROOT / "scripts" / "r9_e2_families.py", "r9_e2_verdict.py": ROOT / "scripts" / "r9_e2_verdict.py",
+               "r9_e2_distkeep.py": ROOT / "scripts" / "r9_e2_distkeep.py",
                "r9e2_inputs.py": R9DIR / "r9e2_inputs.py"}
     cbr9 = ROOT.parent / "FlyWheels" / "TanitAD_EvalFlyWheel" / "incoming" / "2026-11-03-refcv9-camblind" / "code" / "camblind_roll_r9.py"
     if cbr9.is_file():
@@ -674,6 +682,7 @@ def test_every_flag_the_shell_passes_exists_in_the_callee(tmp_path):
                 seen.add((name, f))
                 assert f'"{f}"' in text or f"'{f}'" in text, f"{name} has no {f}"
     assert ("r9_e1_eval.py", "--lift-valid") in seen and ("r9_e1_dump.py", "--require-ema") in seen and ("r9_e2_verdict.py", "--inputs") in seen
+    assert ("r9_e2_distkeep.py", "--merge-into") in seen and ("r9_e2_distkeep.py", "--lead-block") in seen
 
 
 def test_the_pins_the_python_entry_points_need_reach_them_from_the_shell():

@@ -8,7 +8,8 @@
 #     (1) the DEV-filtered, staged battery roll of K0 then K2:  run_battery_r9_e2.py --no-g0 --no-baselines --infer-seeds 0,1 --lock-held
 #     (2) per seed the K2 CAMERA-BLIND roll (W4 preview):       camblind_roll_r9_e2.py -> camblind_roll_r9.py (UNCHANGED) --camera derange --require-seal --os-only
 #     (3) the perception dumps of K2 then K0:                    r9_e1_dump.py --require-ema --split dev     (the only other GPU step)
-#   lock released; then CPU only: per seed r9_e2_families.py (families, camblind); r9_e1_eval.py (K2, K0); r9e2_inputs.py -> INPUTS.json;
+#   lock released; then CPU only: per seed r9_e2_families.py (families, camblind) + r9_e2_distkeep.py --merge-into families (LONGITUDINAL
+#   distance-keeping rows); r9_e1_eval.py (K2, K0); r9e2_inputs.py -> INPUTS.json;
 #   r9_e2_verdict.py -> E2_VERDICT.json / .md.   Markers ZZR9E2ROLL-<EVENT>ZZ on stdout and in $OUT/ROLL_STATUS.txt.
 #   S6c-DEV is NOT BUILT: INPUTS.json carries "s6c_k2": null (the judge reads clause (c) NOT-COMPUTABLE => NO-GO that names it); never a placeholder number.
 #
@@ -18,6 +19,7 @@
 #   PF_NF_HOLD                2026-10-20-refcv8-nav-feed-fix                   R8_EVAL_KIT eval139 cache + s2_labels_v8_eval.jsonl.gz
 #   R9E2_REMAP                an EMPTY {} json (Thor)                          R9E2_SPLIT  DEV_HOLD_SPLIT.json     R9E2_S2  s2_windows.json
 #   R9E2_LIFT_VALID           the arm-independent lift-valid mask (map primary) R9E2_OUT   output root
+#   R9E2_LEAD_BLOCK           the B1 EVAL lead block on the roll's 0.5 s grid (taniteval/tools/build_lead_block_b1.py --k 4 --dt 0.5)
 #   L1_PF_CODE L1_R8_CODE     camblind_roll_r9.py's own pins (== R9E2_PF_CODE / PF_R8_CODE)
 # OPTIONAL: R9E2_S6C_K0 (a real S6c json of K0), R9E2_PY, R9E2_LOCKF, R9E2_LOCK_MAX_S, R9E2_PATHSEP, R9E2_PYTHONPATH, R9E2_OPS, R9E2_CAMBLIND_SCRIPT, R9E2_CB_CWD,
 #   R9E2_SPLIT_SHA_FILE, R9E2_GATES / R9E2_GATE_ARGS, R9E2_OS_ONLY_ALL=1 (battery --os-only-all: only `os` + controls are rolled; the families / W4 read use `os` only),
@@ -30,7 +32,7 @@
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DRY="${R9E2_DRY:-0}"
-PINS="R9E2_K0_RUN R9E2_K2_RUN R9E2_TREE R9E2_PF_CODE PF_R8_CODE PF_NF_HOLD R8_EVAL_KIT R9E2_REMAP R9E2_SPLIT R9E2_S2 R9E2_LIFT_VALID R9E2_OUT L1_PF_CODE L1_R8_CODE"
+PINS="R9E2_K0_RUN R9E2_K2_RUN R9E2_TREE R9E2_PF_CODE PF_R8_CODE PF_NF_HOLD R8_EVAL_KIT R9E2_REMAP R9E2_SPLIT R9E2_S2 R9E2_LIFT_VALID R9E2_OUT L1_PF_CODE L1_R8_CODE R9E2_LEAD_BLOCK"
 MISS=""
 for _p in $PINS; do [ -n "${!_p:-}" ] || MISS="$MISS $_p"; done
 if [ -n "$MISS" ]; then echo "[r9e2_roll] refusing: unset env pin(s):$MISS -- no dev-box default is taken on Thor" >&2; exit 4; fi
@@ -121,6 +123,9 @@ need "$INC/2026-10-27-refcv9-anticheat/code/anticheat_common.py" "camblind PKG s
 need "$OPS/run_battery_r9_e2.py" "staged battery driver"; need "$OPS/camblind_roll_r9_e2.py" "staged camblind launcher"; need "$OPS/r9e2_inputs.py" "INPUTS writer"
 need "$T/stack/scripts/r9_e1_dump.py" "dump"; need "$T/stack/scripts/r9_e1_eval.py" "eval"
 need "$T/stack/scripts/r9_e2_families.py" "families"; need "$T/stack/scripts/r9_e2_verdict.py" "judge"
+need "$T/stack/scripts/r9_e2_distkeep.py" "distance-keeping rows"
+if [ ! -s "$R9E2_LEAD_BLOCK" ] && [ "$DRY" != 1 ]; then abort NO-LEAD-BLOCK "R9E2_LEAD_BLOCK=$R9E2_LEAD_BLOCK is not a file"; fi
+[ "$DRY" = 1 ] && echo "[dry] require exists $R9E2_LEAD_BLOCK  (the lead block on the roll's 0.5 s grid)"
 if [ ! -e "$R9E2_LIFT_VALID" ] && [ "$DRY" != 1 ]; then abort NO-LIFT-VALID "R9E2_LIFT_VALID=$R9E2_LIFT_VALID is neither a sidecar .npz nor a raster directory"; fi
 [ "$DRY" = 1 ] && echo "[dry] require exists $R9E2_LIFT_VALID  (the arm-independent lift-valid mask)"
 if [ "$DRY" = 1 ]; then echo "[dry] require sha256($SPLIT) == ${R9E2_SPLIT_SHA_FILE:-$(dirname "$SPLIT")/DEV_HOLD_SPLIT.sha256 if present, else the pin} ($SPLIT_SHA_PIN)"; else
@@ -211,6 +216,11 @@ for S in 0 1; do
       --a-dump "$OUT/E2_K2_pf/dump_s$S" --b-dump "$OUT/E2_K0_pf/dump_s$S" --dev-split "$SPLIT" --out "$RD/families_s$S.json"; rc=$?
   if [ "$DRY" != 1 ]; then [ -s "$RD/families_s$S.json" ] || abort FAMILIES-FAILED "seed $S rc=$rc (read $LOGS/families_s$S.err)"; fi
   ev FAMILIES-DONE "seed $S rc=$rc $RD/families_s$S.json"
+  XL "$LOGS/distkeep_s$S" penv "$PYPATH_CPU" CUDA_VISIBLE_DEVICES= "$PY" -X utf8 "$T/stack/scripts/r9_e2_distkeep.py" \
+      --a-dump "$OUT/E2_K2_pf/dump_s$S" --b-dump "$OUT/E2_K0_pf/dump_s$S" --dev-split "$SPLIT" --lead-block "$R9E2_LEAD_BLOCK" \
+      --out "$RD/distkeep_s$S.json" --merge-into "$RD/families_s$S.json"; rc=$?
+  if [ "$DRY" != 1 ]; then { [ "$rc" = 0 ] && [ -s "$RD/distkeep_s$S.json" ]; } || abort DISTKEEP-FAILED "seed $S rc=$rc (read $LOGS/distkeep_s$S.err)"; fi
+  ev DISTKEEP-DONE "seed $S rc=$rc $RD/distkeep_s$S.json (merged into families_s$S.json under LONGITUDINAL)"
   XL "$LOGS/camblind_read_s$S" penv "$PYPATH_CPU" CUDA_VISIBLE_DEVICES= "$PY" -X utf8 "$T/stack/scripts/r9_e2_families.py" --mode camblind \
       --a-dump "$OUT/E2_K2_pf/dump_s$S" --b-dump "$CBD/dump_s$S" --dev-split "$SPLIT" --out "$RD/camblind_s$S.json"; rc=$?
   if [ "$DRY" != 1 ]; then [ -s "$RD/camblind_s$S.json" ] || abort CAMBLIND-READ-FAILED "seed $S rc=$rc (read $LOGS/camblind_read_s$S.err)"; fi
