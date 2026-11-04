@@ -26,6 +26,11 @@ so the kept terms' ``proj`` / ``norm`` and every ``norm_total`` / ``lin_rel_err`
 drops to ``len(keep) + 2``; and the timing keys ``{prefix}n_passes`` / ``{prefix}measure_s`` / ``{prefix}pass_s_max``
 (+ ``{prefix}fp32_fwd_s`` / ``{prefix}fp32_replay_s`` on a replay). ``TANITAD_GS_TIMING=1`` also prints every pass to
 stderr, so a stall is localised while it happens instead of after a timeout.
+
+GROUPS: ``trunk`` / ``bev025`` / ``bev_pool`` (pairwise disjoint) and ``layer2`` -- E0j's decision group, NESTED INSIDE
+``trunk`` (see ``GROUP_PREFIXES``). Each group's keys are read on that group's own parameters, so ``gs_layer2_proj_map_hires``
+is the quantity E0j's design number was measured on and ``gs_trunk_proj_map_hires`` is its containing, DIFFERENT, whole-trunk
+quantity (E0j, banded map at w_map = 1: layer2 +0.1459, trunk +0.0659 -- ``e0/E0j_CARD.md`` lines 56-57).
 """
 from __future__ import annotations
 
@@ -44,9 +49,21 @@ __all__ = ["TERMS", "GROUP_PREFIXES", "term_tensors", "param_groups", "measure",
 #: the named terms, in the order P-GRAD reports them; ``rest`` is derived
 TERMS = ("traj", "agent", "box3d", "map_hires", "tac_v6", "r8")
 #: parameter groups (name prefix on ``model.named_parameters()``); P-GRAD's ``trunk`` = the encoder stem..temporal fuse
+#:
+#: ``layer2`` (added 2026-11-03, hold r9_gs_layer2) is E0j's decision group, the quantity the refcv9 map-weight design number
+#: was MEASURED on: ``TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-redesign/e0/pgrad_gram.py``
+#: lines 204-205 file every ``core.encoder.*`` parameter by ``grad_conflict.default_group_of`` (the backbone's own stage token)
+#: and ``e0j_read.py:38-39`` reads its decision group ``layer2`` as the group ``stage_layer2`` -- on the timm ResNet trunk
+#: (``core.encoder.net.layer2.*``, 1,219,584 parameters on resnet101, ``raw/E0J_RESULT.json`` ``"stage_layer2"``) that set is
+#: EXACTLY the name prefix below. ⚠️ It lies INSIDE ``trunk`` (every layer2 parameter is also a ``trunk`` parameter):
+#: ``param_groups`` puts a parameter in EVERY group whose prefix it matches and ``measure`` reads each group on its OWN
+#: members, so ``gs_layer2_*`` is the layer2 share and ``gs_trunk_*`` stays the whole-trunk share, unchanged. It is a
+#: stage of the trunk, not a replacement for it, and it is absent (an empty group is dropped) on a trunk with no ``layer2``.
 GROUP_PREFIXES = {"trunk": ("core.encoder.",),
                   "bev025": ("_map_hires.lift.", "_map_hires.encoder."),
-                  "bev_pool": ("_perception.bev_pool.",)}
+                  "bev_pool": ("_perception.bev_pool.",),
+                  "layer2": ("core.encoder.net.layer2.",),
+                  }
 
 
 def parse_keep(spec) -> Optional[tuple]:
@@ -127,7 +144,11 @@ def term_tensors(losses: Mapping[str, Tensor], weights: Mapping[str, float], kee
 
 
 def param_groups(model, prefixes: Mapping[str, tuple] = GROUP_PREFIXES) -> dict:
-    """``{group: [params]}`` over the parameters that REQUIRE grad, non-empty groups only."""
+    """``{group: [params]}`` over the parameters that REQUIRE grad, non-empty groups only.
+
+    A parameter joins EVERY group whose prefix it matches (no first-match ``break``): the ``layer2`` group lies inside
+    ``trunk``, so a layer2 parameter is listed in both. The three original groups are pairwise disjoint, so for them
+    this is exactly the first-match grouping the tip had. :func:`measure` reads each group on its own members."""
     g: dict = {}
     for n, p in model.named_parameters():
         if not p.requires_grad:
@@ -135,7 +156,6 @@ def param_groups(model, prefixes: Mapping[str, tuple] = GROUP_PREFIXES) -> dict:
         for name, pre in prefixes.items():
             if n.startswith(pre):
                 g.setdefault(name, []).append(p)
-                break
     return g
 
 
@@ -162,6 +182,11 @@ def measure(terms: Mapping[str, Tensor], total: Tensor, groups: Mapping[str, lis
     ``{prefix}n_passes`` / ``{prefix}measure_s`` / ``{prefix}pass_s_max`` (wall seconds, CUDA-synchronised)."""
     if not total.requires_grad:
         return {f"{prefix}skipped_no_graph": 1.0}
+    # `flat` is one ENTRY per (group, parameter) pair, so a parameter listed in two groups (layer2 inside trunk) is
+    # requested twice from `autograd.grad` -- which returns the identical gradient for both entries (MEASURED, torch
+    # 2.x CPU: the same tensor) -- and every sum below is keyed by `owner`, i.e. over that group's OWN members only.
+    # A group's reading therefore does not depend on whether another group overlaps it, and the original three groups
+    # (disjoint) read bit-for-bit what they read before `layer2` existed (pinned: tests/test_grad_share_layer2.py).
     flat, owner = [], []
     for gname, ps in groups.items():
         for p in ps:
