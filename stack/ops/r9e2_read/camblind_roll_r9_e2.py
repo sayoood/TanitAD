@@ -34,6 +34,17 @@ BW_KEYS = ("bw_frames", "bw_pose_now", "bw_pose_past", "bw_has")
 #: the four CB.* entry points camblind_roll_r9.py calls (camblind_roll_r9.py:120 / :158 / :213); each takes ``census=`` as a keyword
 PATCHED = ("make_camblind_dataset_cls", "other_inputs_digest", "camera_keys", "census_sha256")
 
+#: AUXCENSUS (E2-AUXCENSUS) -- the C4 box-aux TARGET keys (``--r9-box-persp-aux`` B2 -> ``p3_*``, ``--r9-box-bev2-aux`` B2c -> ``b2_*``), emitted by
+#: ``persp3d_aux_flag.item_targets`` (refc_v3_train.py:4902-4904, iff ``ds._r9_p3``).  TRAINING-ONLY targets built from the GT cuboids + the rig camera + the BEV grid,
+#: NEVER from ``item["frames"]``; no forward reads them (the heads are called only by ``loss_term``, which returns None unless ``model.training``) => LABEL, pass through
+#: untouched (the same class as the stock census' ``bd_*`` rows).  The two ``*_build_s`` keys are wall-clock telemetry (META) and are dropped from control (c)'s digest.
+AUX_SRC = "tanitad/train/persp3d_aux_flag.py"
+P3_KEYS = ("p3_heat8", "p3_own8", "p3_ctr8", "p3_ign8", "p3_heat16", "p3_own16", "p3_ctr16", "p3_ign16", "p3_i0", "p3_w1",
+           "p3_n_boxes", "p3_n_visible", "p3_n_heat_pos", "p3_build_s")
+B2_KEYS = ("b2_heat", "b2_own", "b2_ctr", "b2_ign", "b2_n_boxes", "b2_n_heat_pos", "b2_build_s")
+AUX_KEYS = P3_KEYS + B2_KEYS
+AUX_TELEMETRY = ("p3_build_s", "b2_build_s")
+
 
 def _load_cb():
     try:
@@ -62,6 +73,34 @@ def k2safe_census(CB) -> tuple:
     return tuple(CB.CENSUS) + tuple(e for e in bw_entries(CB) if ("item", e.name) not in have)
 
 
+def aux_entries(CB) -> tuple:
+    """The 21 census rows of the C4 aux target keys, each pinned to the line of ``persp3d_aux_flag.item_targets`` that emits it (``CB.verify_census`` resolves them)."""
+    why = ("refcv9 C4 (--r9-box-persp-aux / --r9-box-bev2-aux) TRAINING-ONLY target built in the DataLoader worker (persp3d_aux_flag.item_targets <- refc_v3_train.py:4902-4904) "
+           "from the GT cuboids + the rig camera / BEV grid, never from the frames; read only by loss_term (model.training): ")
+    pins = (("p3_heat8", 'out[f"p3_heat{s}"], out[f"p3_own{s}"] ='), ("p3_own8", 'out[f"p3_heat{s}"], out[f"p3_own{s}"] ='),
+            ("p3_heat16", 'out[f"p3_heat{s}"], out[f"p3_own{s}"] ='), ("p3_own16", 'out[f"p3_heat{s}"], out[f"p3_own{s}"] ='),
+            ("p3_ctr8", 'out[f"p3_ctr{s}"], out[f"p3_ign{s}"] ='), ("p3_ign8", 'out[f"p3_ctr{s}"], out[f"p3_ign{s}"] ='),
+            ("p3_ctr16", 'out[f"p3_ctr{s}"], out[f"p3_ign{s}"] ='), ("p3_ign16", 'out[f"p3_ctr{s}"], out[f"p3_ign{s}"] ='),
+            ("p3_i0", 'out["p3_i0"], out["p3_w1"] ='), ("p3_w1", 'out["p3_i0"], out["p3_w1"] ='),
+            ("p3_n_boxes", 'out["p3_n_boxes"], out["p3_n_visible"], out["p3_n_heat_pos"] ='),
+            ("p3_n_visible", 'out["p3_n_boxes"], out["p3_n_visible"], out["p3_n_heat_pos"] ='),
+            ("p3_n_heat_pos", 'out["p3_n_boxes"], out["p3_n_visible"], out["p3_n_heat_pos"] ='), ("p3_build_s", 'out["p3_build_s"] ='),
+            ("b2_heat", 'out["b2_heat"], out["b2_own"], out["b2_ctr"] ='), ("b2_own", 'out["b2_heat"], out["b2_own"], out["b2_ctr"] ='),
+            ("b2_ctr", 'out["b2_heat"], out["b2_own"], out["b2_ctr"] ='), ("b2_ign", 'out["b2_ign"] ='), ("b2_n_boxes", 'out["b2_n_boxes"] ='),
+            ("b2_n_heat_pos", 'out["b2_n_heat_pos"] ='), ("b2_build_s", 'out["b2_build_s"] ='))
+    pd = dict(pins)
+    assert len(pins) == len(pd) == len(AUX_KEYS) and set(pd) == set(AUX_KEYS)
+    return tuple(CB.Entry(n, "item", CB.META if n in AUX_TELEMETRY else CB.LABEL, False, False, AUX_SRC, pd[n], "",
+                          why + ("wall-clock telemetry (perf_counter), logged never fed; DROPPED from control (c)'s digest" if n in AUX_TELEMETRY else "a GT-derived target")) for n in AUX_KEYS)
+
+
+def auxcensus(CB) -> tuple:
+    """``k2safe_census(CB)`` (CENSUS + the four ``bw_*``) + the 21 aux rows (idempotent).  ``k2safe_census`` itself is unchanged (the K2SAFE test pins it)."""
+    base = k2safe_census(CB)
+    have = {(e.kind, e.name) for e in base}
+    return base + tuple(e for e in aux_entries(CB) if ("item", e.name) not in have)
+
+
 def bw_donor_item_fn(ds, j: int) -> dict:
     """The DONOR window's camera-derived T1 history: ``{"bw_frames": [P, 3, H, W]}`` = the DONOR episode's newest raw frame at rows ``row_d - lag`` (``row_d`` = the donor
     window's NOW row ``t_d + w - 1``, the lags of THIS dataset's ``_r9_bw`` source).  Past rows only; a row before the donor clip starts is CLAMPED to its first frame (a real
@@ -81,8 +120,8 @@ def bw_donor_item_fn(ds, j: int) -> dict:
 def patch_camblind(CB, census=None):
     """Rebind ``CB``'s four entry points (``PATCHED``) to the K2SAFE census; returns ``(census, undo)``.  REFUSES a census whose extra CAMERA keys are not exactly {bw_frames}
     (the donor fn knows no other).  ``undo()`` restores the originals (idempotent)."""
-    census = k2safe_census(CB) if census is None else tuple(census)
-    extra = tuple(k for k in CB.camera_keys("item", census) if k not in CB.WINDOW_CAMERA_KEYS)
+    census = auxcensus(CB) if census is None else tuple(census)
+    extra =tuple(k for k in CB.camera_keys("item", census) if k not in CB.WINDOW_CAMERA_KEYS)
     if extra != (BW_FRAMES,):
         raise SystemExit(f"[r9e2-cb] the extended census has CAMERA keys {extra} beyond the window pixels; this launcher can donor-swap only {(BW_FRAMES,)}")
     orig = {n: getattr(CB, n) for n in PATCHED}
@@ -103,8 +142,18 @@ def patch_camblind(CB, census=None):
         return orig["make_camblind_dataset_cls"](base, **kw)
 
     make_cls.__wrapped__, make_cls.__name__ = orig["make_camblind_dataset_cls"], "make_camblind_dataset_cls"
+    def _bind_digest(fn):                                                               # AUXCENSUS: control (c) must not hash wall-clock telemetry
+        bound_ = _bind(fn)
+
+        def digest(item, *a, **kw):
+            if any(k in item for k in AUX_TELEMETRY):
+                item = {k: v for k, v in item.items() if k not in AUX_TELEMETRY}
+            return bound_(item, *a, **kw)
+        digest.__wrapped__, digest.__name__ = fn, fn.__name__
+        return digest
+
     for n in PATCHED[1:]:
-        setattr(CB, n, _bind(orig[n]))
+        setattr(CB, n, _bind_digest(orig[n]) if n == "other_inputs_digest" else _bind(orig[n]))
     CB.make_camblind_dataset_cls = make_cls
 
     def undo():
@@ -123,7 +172,7 @@ def main() -> int:
     R9.require_env(pins=("R8_LAUNCH_TREE", "PF_R8_CODE", "R8_EVAL_KIT", "L1_PF_CODE", "L1_R8_CODE"))
     R9.child_stage_hook()
     census, undo = patch_camblind(_load_cb())
-    print(f"[r9e2-cb] K2SAFE census: {len(census)} entries (+{len(BW_KEYS)} bw_*; bw_frames CAMERA -> donor)", flush=True)
+    print(f"[r9e2-cb] K2SAFE+AUX census: {len(census)} entries (+{len(BW_KEYS)} bw_*; bw_frames CAMERA -> donor; +{len(AUX_KEYS)} C4 aux targets LABEL/META)", flush=True)
     sys.argv = [str(script)] + argv
     try:
         runpy.run_path(str(script), run_name="__main__")
