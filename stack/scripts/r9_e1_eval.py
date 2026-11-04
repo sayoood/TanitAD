@@ -11,6 +11,12 @@ It CONSUMES dumps, it does not run a model:
             flag, >= 128 = flagged) at 10 cm; the near-field corridor |y| < 3 m, bands 0-5 / 5-10 / 10-20 / 20-40 m.
   * ``--windows <file>`` restricts BOTH to the listed clips (sha12; one per line, a JSON list, or a JSON dict holding the
     split under ``--split dev|hold``); raster names are ``e<episode>_w<ws>.npz`` and are restricted by ``--rast-names``.
+  * MAP PRIMARY (REFCV9_DESIGN 4.3, M1): ``nf_swedge_prec_lv_*`` = corridor precision of the UNION of the sidewalk (``psw``) and
+    edge (``pedge``) flags against the GT union {5 edge, 7 sidewalk}, on GT-seen AND lift-valid cells. ``--lift-valid`` supplies the
+    ARM-INDEPENDENT mask (a sidecar ``.npz``, or the rasters of any arm that wrote an ``unobs`` plane); WITHOUT it NO ``nf_swedge_*`` key
+    is emitted at all (absent = NOT-COMPUTABLE; never an unmasked number under a lift-valid name, and the row set of a run that does not
+    ask for the primary is unchanged). The historical ``nearfield_prec`` (``nf_prec_*``) is SIDEWALK-ONLY: GT class 7, flag ``psw``,
+    GT-seen cells.
 
 Reuse, not re-implementation: ``greedy_rows`` / ``_ap`` / ``_band_of`` / ``BANDS_X_M`` / ``pr_equal_gate`` come from
 ``tanitad.eval.detection_metrics`` and the post-hoc NMS from ``tanitad.eval.detection_nms``. The two things that were SCRIPTS
@@ -24,6 +30,7 @@ says so.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import pickle
 import re
@@ -37,6 +44,13 @@ BAND_NAMES = ("0_20", "20_40", "40_60")                   # == detection_metrics
 NEARFIELD_BANDS = ((0, 5), (5, 10), (10, 20), (20, 40))   # metres ahead; the script's own
 CORRIDOR_COLS = (270, 330)                                # |y| < 3 m at 10 cm / cell
 SIDEWALK_CLASS = 7
+EDGE_CLASS = 5                                            # GT "non-drivable edge" (MAPSEL: 0 nocls 1 drv 2 lane 3 xwalk 4 arrow 5 edge 6 hatch 7 sw)
+EDGE_KEY = "pedge"                                        # the edge probability plane every dump writes (r9_e1_dump.write_raster)
+# nearfield_per_file's per-band count row: the first 6 are MAPSEL's (``nearfield_prec.py``), the rest are the union / lift-valid counts
+NF_BASE_COLS = 6
+NF_COLS = 11                                              # 6 + [U_P, U_TP, L_P, L_TP, L_S] -- see nearfield_per_file_ex
+LV_ROWS = NEARFIELD_BANDS[-1][1] * 10                     # 0-40 m at 10 cm: the rows a lift-valid mask is stored for
+LV_SHAPE = (LV_ROWS, CORRIDOR_COLS[1] - CORRIDOR_COLS[0])
 _HEX12 = re.compile(r"^[0-9a-f]{12}$")
 
 
@@ -270,49 +284,182 @@ def pool_by_clip(keys, items):
 
 
 # --------------------------------------------------------------------------------------------------- near-field map
-def nearfield_per_file(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLASS):
-    """PINNED COPY of the counting in MAPSEL's ``nearfield_prec.py`` (``F:/refcv9_mapsel/...mapedge/diag``): per raster file,
-    per band, ``[own flags, flags on GT sidewalk, flags within 0.5 m of one, GT sidewalk cells, GT sidewalk flagged, seen
-    cells]`` and the GT class histogram of the own flags. ``files`` is the script's ``sorted(os.listdir(R))`` order and the
-    script's ``[::6]`` is ``stride=6``. A file without a ``gt`` plane is skipped, as in the script.
-    Returns ``(names, acc [n, 4, 6], gtcls [n, 4, 9])``."""
+class LiftValidError(RuntimeError):
+    """A lift-valid mask that is missing, malformed, or contradicted by a raster's own ``unobs`` plane. Never swallowed: a wrong
+    mask would be read as a map result."""
+
+
+class LiftValid:
+    """The ARM-INDEPENDENT lift-validity mask the MAP PRIMARY is read on: ``{episode index e_i: bool [400, 60]}`` (True = the lift
+    OBSERVED the cell; 0-40 m ahead at 10 cm, the corridor columns only). It is a property of the CLIP (the rig extrinsics -> the
+    lift geometry ``valid.any(dim=1)`` -> ``lift_valid_to_fine``), not of the arm: every arm is scored on the SAME object.
+    ``source`` and ``sha256`` (over the sorted masks) go into the output, so two reads on different masks are visible."""
+
+    def __init__(self, masks: dict, source: str):
+        self.masks = {}
+        for k, v in dict(masks).items():
+            v = np.asarray(v, dtype=bool)
+            if v.shape != LV_SHAPE:
+                raise LiftValidError("lift-valid mask of episode %s has shape %s, expected %s" % (k, tuple(v.shape), LV_SHAPE))
+            self.masks[int(k)] = v
+        if not self.masks:
+            raise LiftValidError("an empty lift-valid mask set (%s)" % source)
+        self.source = str(source)
+        h = hashlib.sha256()
+        for k in sorted(self.masks):
+            h.update(("e%d:" % k).encode())
+            h.update(np.packbits(self.masks[k]).tobytes())
+        self.sha256 = h.hexdigest()
+
+    def record(self) -> dict:
+        lo = float(np.mean([m[:50].mean() for m in self.masks.values()]))
+        return {"source": self.source, "sha256": self.sha256, "n_episodes": len(self.masks),
+                "mean_observed_frac_0_5m": lo, "rows_m": LV_ROWS // 10, "cols": list(CORRIDOR_COLS)}
+
+
+def _episode_index(name: str) -> int:
+    m = re.match(r"^e(\d+)_w", str(name))
+    if not m:
+        raise LiftValidError("raster name %r is not e<episode>_w<ws>: no episode to look a lift-valid mask up by" % (name,))
+    return int(m.group(1))
+
+
+def harvest_lift_valid(files, source: str = "harvest") -> LiftValid:
+    """Read the mask OFF the rasters of an arm that wrote an ``unobs`` plane (r9_e1_dump.write_raster, the C1 adapter): the lift's
+    own per-clip validity, which does not depend on the arm. Every raster of one episode must agree (the geometry is per CLIP; a
+    disagreement means the mask is NOT a clip property and is refused). Rasters without ``unobs`` are skipped; none at all is an error."""
+    c0, c1 = CORRIDOR_COLS
+    masks, n_seen = {}, 0
+    for f in files:
+        z = np.load(f)
+        if "unobs" not in z.files:
+            continue
+        un = np.asarray(z["unobs"])
+        if un.ndim != 2 or un.shape[0] < LV_ROWS or un.shape[1] < c1:
+            raise LiftValidError("%s: unobs plane %s is smaller than the 0-40 m corridor" % (f, tuple(un.shape)))
+        lv = ~un[:LV_ROWS, c0:c1].astype(bool)
+        e = _episode_index(Path(str(f)).name)
+        n_seen += 1
+        if e in masks and not np.array_equal(masks[e], lv):
+            raise LiftValidError("%s: the unobs plane of episode e%d differs from an earlier window of the same episode "
+                                 "(%d cells): the lift validity is a per-clip geometry and must not move" % (f, e, int((masks[e] != lv).sum())))
+        masks.setdefault(e, lv)
+    if not masks:
+        raise LiftValidError("no raster under %s carries an `unobs` plane: nothing to harvest a lift-valid mask from" % source)
+    return LiftValid(masks, "%s (%d rasters, %d episodes)" % (source, n_seen, len(masks)))
+
+
+def save_lift_valid(lv: LiftValid, path) -> None:
+    np.savez_compressed(str(path), **{"e%d" % k: v for k, v in lv.masks.items()})
+
+
+def load_lift_valid(path) -> LiftValid:
+    """``path`` = a sidecar ``.npz`` (keys ``e<episode>``, bool [400, 60]) OR a directory of rasters of an arm with ``unobs`` planes."""
+    p = Path(str(path))
+    if p.is_dir():
+        return harvest_lift_valid(sorted(str(q) for q in p.glob("*.npz")), "harvest:%s" % p.as_posix())
+    if not p.is_file():
+        raise LiftValidError("--lift-valid %s is neither a sidecar .npz nor a raster directory" % p)
+    z = np.load(p)
+    masks = {}
+    for k in z.files:
+        if not re.fullmatch(r"e\d+", k):
+            raise LiftValidError("%s: key %r is not e<episode>" % (p, k))
+        masks[int(k[1:])] = z[k]
+    return LiftValid(masks, "sidecar:%s" % p.name)
+
+
+def nearfield_per_file_ex(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLASS, lift_valid=None, edge_key=EDGE_KEY):
+    """:func:`nearfield_per_file` plus the SIDEWALK+EDGE union counts and an ``info`` record.
+
+    ``acc [n, 4, 11]`` per file / band: columns 0-5 are MAPSEL's, UNCHANGED (``[own flags, flags on GT sidewalk, flags within 0.5 m
+    of one, GT sidewalk cells, GT sidewalk flagged, seen cells]``, sidewalk flag ``psw >= 128``, GT class ``gt_class``, GT-seen
+    cells); columns 6-10 are the M1 map-primary counts, with
+      * UNION flag ``f = (psw >= 128) | (pedge >= 128)`` -- the edge plane is used where the raster HAS one, else ``f`` is the
+        sidewalk flag alone (``info["edge_plane"]`` says which), scored against the SAME GT union ``{edge 5, sidewalk gt_class}``;
+      * 6 ``U_P`` = |f & seen|, 7 ``U_TP`` = |f & seen & GT union| (lift-INDEPENDENT);
+      * 8 ``L_P`` = |f & seen & lift-valid|, 9 ``L_TP`` = |f & seen & lift-valid & GT union|, 10 ``L_S`` = |seen & lift-valid|
+        -- NaN in every file when no ``lift_valid`` was given (a count that was not measured is not 0).
+    A raster that carries its own ``unobs`` plane must AGREE with the supplied mask (0-40 m corridor) or this raises."""
     from scipy.ndimage import binary_dilation
     c0, c1 = CORRIDOR_COLS
     names, accs, cls_ = [], [], []
+    n_edge = n_checked = 0
     for f in list(files)[::int(stride)]:
         z = np.load(f)
         if "gt" not in z.files:
             continue
         gt, psw = z["gt"], z[psw_key]
+        has_edge = edge_key in z.files
+        n_edge += int(has_edge)
         sw = gt == gt_class
+        gtu = sw | (gt == EDGE_CLASS)
+        flag_u = ((psw >= 128) | (z[edge_key] >= 128)) if has_edge else (psw >= 128)
         near_sw = binary_dilation(sw, iterations=5)          # within 0.5 m of a GT sidewalk cell
-        a = np.zeros((len(NEARFIELD_BANDS), 6))
+        name = Path(str(f)).name
+        lvf = None
+        if lift_valid is not None:
+            e = _episode_index(name)
+            lvf = lift_valid.masks.get(e)
+            if lvf is None:
+                raise LiftValidError("no lift-valid mask for episode e%d (raster %s) in %s" % (e, name, lift_valid.source))
+            if "unobs" in z.files:                            # an arm that wrote its own validity must agree with the shared mask
+                own = ~np.asarray(z["unobs"])[:LV_ROWS, c0:c1].astype(bool)
+                if own.shape != lvf.shape or not np.array_equal(own, lvf):
+                    raise LiftValidError("%s: its own `unobs` plane disagrees with the supplied lift-valid mask (%s) on %d of %d cells"
+                                         % (name, lift_valid.source, int((own != lvf).sum()) if own.shape == lvf.shape else -1, lvf.size))
+                n_checked += 1
+        a = np.zeros((len(NEARFIELD_BANDS), NF_COLS))
         g9 = np.zeros((len(NEARFIELD_BANDS), 9))
         for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
             sl = (slice(lo * 10, hi * 10), slice(c0, c1))
             p, g, seen, ns = psw[sl] >= 128, sw[sl], gt[sl] != 255, near_sw[sl]
             p = p & seen
-            a[i] = [p.sum(), (p & g).sum(), (p & ns).sum(), g.sum(), (g & p).sum(), seen.sum()]
+            a[i, :NF_BASE_COLS] = [p.sum(), (p & g).sum(), (p & ns).sum(), g.sum(), (g & p).sum(), seen.sum()]
+            fu = flag_u[sl] & seen
+            a[i, 6], a[i, 7] = fu.sum(), (fu & gtu[sl]).sum()
+            if lvf is None:
+                a[i, 8:11] = np.nan
+            else:
+                lvb = lvf[lo * 10:hi * 10]
+                fl = fu & lvb
+                a[i, 8], a[i, 9], a[i, 10] = fl.sum(), (fl & gtu[sl]).sum(), (seen & lvb).sum()
             cls = gt[sl][p]
             for c in range(8):
                 g9[i, c] = (cls == c).sum()
-        names.append(Path(str(f)).name)
+        names.append(name)
         accs.append(a)
         cls_.append(g9)
     n = len(names)
-    return names, (np.stack(accs) if n else np.zeros((0, 4, 6))), (np.stack(cls_) if n else np.zeros((0, 4, 9)))
+    info = {"n_files": n, "n_with_edge_plane": n_edge,
+            "edge_plane": ("none: the union flag is the SIDEWALK flag alone" if n_edge == 0 else "all" if n_edge == n else "MIXED"),
+            "n_unobs_checked": n_checked, "lift_valid": None if lift_valid is None else lift_valid.record()}
+    return (names, (np.stack(accs) if n else np.zeros((0, 4, NF_COLS))), (np.stack(cls_) if n else np.zeros((0, 4, 9))), info)
+
+
+def nearfield_per_file(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLASS, lift_valid=None):
+    """PINNED COPY of the counting in MAPSEL's ``nearfield_prec.py`` (``F:/refcv9_mapsel/...mapedge/diag``): per raster file,
+    per band, ``[own flags, flags on GT sidewalk, flags within 0.5 m of one, GT sidewalk cells, GT sidewalk flagged, seen
+    cells]`` and the GT class histogram of the own flags. ``files`` is the script's ``sorted(os.listdir(R))`` order and the
+    script's ``[::6]`` is ``stride=6``. A file without a ``gt`` plane is skipped, as in the script.
+    Returns ``(names, acc [n, 4, 11], gtcls [n, 4, 9])``: columns 0-5 of ``acc`` are the script's, 6-10 the sidewalk+edge union /
+    lift-valid counts of :func:`nearfield_per_file_ex` (which also returns the ``info`` record)."""
+    return nearfield_per_file_ex(files, stride, psw_key, gt_class, lift_valid)[:3]
 
 
 def nearfield_table(acc, gtcls) -> dict:
     """band -> the script's printed row: own flag rate, precision exact, precision within 0.5 m, recall, class histogram."""
     out = {}
     for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
-        P, TP, TPn, G_, TPr, S_ = [float(x) for x in acc[:, i].sum(0)]
+        P, TP, TPn, G_, TPr, S_ = [float(x) for x in acc[:, i, :NF_BASE_COLS].sum(0)]
         d = gtcls[:, i].sum(0)[:8]
         d = d / max(d.sum(), 1)
         out["%d-%d" % (lo, hi)] = {"flag_rate": P / S_ if S_ else float("nan"), "precision_exact": TP / max(P, 1),
                                    "precision_within_0p5m": TPn / max(P, 1), "recall": TPr / max(G_, 1),
                                    "gt_class_of_flags": [float(x) for x in d], "n_flags": P, "n_seen": S_}
+        if acc.shape[2] >= NF_COLS and np.isfinite(acc[:, i, 10]).all() and S_:       # the mask's coverage of the GT-seen cells
+            sl_ = float(acc[:, i, 10].sum())
+            out["%d-%d" % (lo, hi)].update({"n_seen_lift_valid": sl_, "lift_invalid_frac_of_seen": 1.0 - sl_ / S_})
     return out
 
 
@@ -326,7 +473,7 @@ def nearfield_stats(units) -> dict:
     acc = sum(u for u in units)
     out = {}
     for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
-        P, TP, TPn, G_, TPr, S_ = [float(x) for x in acc[i]]
+        P, TP, TPn, G_, TPr, S_ = [float(x) for x in acc[i][:NF_BASE_COLS]]
         out["nf_prec_%d_%d" % (lo, hi)] = TP / P if P > 0 else float("nan")
         out["nf_prec05_%d_%d" % (lo, hi)] = TPn / P if P > 0 else float("nan")
     # refcv9 T1's primary "corridor precision 0-10 m" (REFCV9_DESIGN 4.3): the 0-5 and 5-10 bands POOLED (counts summed, not the mean of the
@@ -334,6 +481,18 @@ def nearfield_stats(units) -> dict:
     assert NEARFIELD_BANDS[:2] == ((0, 5), (5, 10)), NEARFIELD_BANDS
     P, TP = float(acc[0][0] + acc[1][0]), float(acc[0][1] + acc[1][1])
     out["nf_prec_0_10"] = TP / P if P > 0 else float("nan")
+    # refcv9 M1's MAP PRIMARY (REFCV9_DESIGN 4.3 / 4.4): corridor precision of the sidewalk+edge UNION (flags) against the GT union {5, 7},
+    # the 5-10 and 10-20 m bands POOLED by counts (never the mean of two precisions). ``nf_swedge_prec_*`` = GT-seen cells only (lift-INDEPENDENT,
+    # includes the camera blind zone); ``nf_swedge_prec_lv_*`` = GT-seen AND lift-valid cells (MAP-2's "on lift-valid cells"). BOTH sets exist
+    # only for a block measured WITH a mask (finite lift-valid columns): a legacy 6-column block, or one measured without a mask (NaN columns),
+    # emits none of them -- so a run that never asked for the primary has exactly the rows it had (test_r9_e1_floor pins the row count).
+    if acc.shape[1] >= NF_COLS and np.isfinite(acc[:, 8:11]).all():
+        assert NEARFIELD_BANDS[1:3] == ((5, 10), (10, 20)), NEARFIELD_BANDS
+        ratio = lambda tp, p: float(tp) / float(p) if p > 0 else float("nan")                                  # noqa: E731
+        for tag, (cp, ctp) in (("", (6, 7)), ("lv_", (8, 9))):
+            for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
+                out["nf_swedge_prec_%s%d_%d" % (tag, lo, hi)] = ratio(acc[i][ctp], acc[i][cp])
+            out["nf_swedge_prec_%s5_20" % tag] = ratio(acc[1][ctp] + acc[2][ctp], acc[1][cp] + acc[2][cp])
     return out
 
 
@@ -366,6 +525,10 @@ def main(argv=None) -> int:
     ap.add_argument("--rast-names", help="text file of raster stems to keep (e<ep>_w<ws>)")
     ap.add_argument("--rast-stride", type=int, default=1)
     ap.add_argument("--psw-key", default="psw")
+    ap.add_argument("--lift-valid", help="the ARM-INDEPENDENT lift-validity mask for the MAP PRIMARY (nf_swedge_prec_lv_*): a sidecar .npz "
+                                         "(keys e<episode>, bool [400, 60]) or a directory of rasters of an arm that wrote `unobs` planes; "
+                                         "absent -> the _lv_ keys are not emitted")
+    ap.add_argument("--lift-valid-save", help="write the mask that --lift-valid resolved to as a sidecar .npz (a harvest -> a sidecar)")
     ap.add_argument("--boot", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", required=True)
@@ -407,13 +570,30 @@ def main(argv=None) -> int:
         if a.rast_names:
             keep = {ln.strip() for ln in Path(a.rast_names).read_text(encoding="utf-8").splitlines() if ln.strip()}
             files = [f for f in files if Path(f).stem in keep]
-        names, acc, gtcls = nearfield_per_file(files, a.rast_stride, a.psw_key)
+        try:
+            lvm = load_lift_valid(a.lift_valid) if a.lift_valid else None
+            names, acc, gtcls, nfinfo = nearfield_per_file_ex(files, a.rast_stride, a.psw_key, lift_valid=lvm)
+        except LiftValidError as e:
+            raise SystemExit("[r9-e1-eval] lift-valid mask refused: %s" % e)
         if not names:
             raise SystemExit("[r9-e1-eval] no raster with a gt plane")
+        if nfinfo["edge_plane"] == "MIXED":
+            raise SystemExit("[r9-e1-eval] %d of %d rasters carry a `%s` plane: one arm, one plane set" % (
+                nfinfo["n_with_edge_plane"], nfinfo["n_files"], EDGE_KEY))
+        if a.lift_valid_save:
+            if lvm is None:
+                raise SystemExit("[r9-e1-eval] --lift-valid-save needs --lift-valid")
+            save_lift_valid(lvm, a.lift_valid_save)
         eps = [nearfield_episode_of(n) for n in names]
         ue = sorted(set(eps))
         units = [sum(acc[i] for i in range(len(names)) if eps[i] == e) for e in ue]
         out["nearfield"] = {"table": nearfield_table(acc, gtcls), "n_files": len(names), "n_episodes": len(ue),
+                            "edge_plane": nfinfo["edge_plane"], "lift_valid": nfinfo["lift_valid"], "n_unobs_checked": nfinfo["n_unobs_checked"],
+                            "definition": {"nf_prec_*": "SIDEWALK only: flag psw >= 128, GT class 7, GT-seen cells (MAPSEL nearfield_prec.py, the historical figure)",
+                                           "nf_swedge_prec_*": "UNION: flag (psw >= 128) | (pedge >= 128) [sidewalk alone when the raster has no edge plane], "
+                                                               "GT {5 edge, 7 sidewalk}, GT-seen cells (includes the camera blind zone)",
+                                           "nf_swedge_prec_lv_*": "as nf_swedge_prec_* AND lift-valid cells only (the --lift-valid mask); every nf_swedge_* key is absent without a mask",
+                                           "*_5_20": "the 5-10 and 10-20 m bands pooled by counts"},
                             "ci": ci.stat_cluster_bootstrap(units, ue, nearfield_stats, n_boot=a.boot, seed=a.seed)}
     Path(a.out).write_text(json.dumps(out, indent=1, default=float) + "\n", encoding="utf-8")
     print("wrote %s: %d windows / %d clips; AP@2m %.4f" % (a.out, len(keys), len(ids), out["boxes"]["ap2m_all"]["point"]))

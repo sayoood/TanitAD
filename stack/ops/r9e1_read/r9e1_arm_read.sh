@@ -21,6 +21,9 @@
 #
 # DRY RUN (dev box, no GPU, no flock): R9E1_DRY=1 + R9E1_ROOT / R9E1_READ_DIR / R9E1_TREE pointing at SYNTHETIC dirs, R9E1_DUMP_SCRIPT=<r9e1_read_stub_dump.py>,
 #   R9E1_PYTHONPATH, R9E1_PY, R9E1_GATE_ARGS="--gate 0.5", R9E1_SPLIT, R9E1_SPLIT_SHA_FILE, R9E1_BOOT, R9E1_POLL_S, R9E1_LOCKF -- exactly r9e1_read.sh's.
+# R9E1_LIFT_VALID=<sidecar .npz | raster dir of an unobs-writing arm> (OPTIONAL): the ARM-INDEPENDENT lift-valid mask of the M1 MAP PRIMARY (nf_swedge_prec_lv_*).  When set it is
+#   passed as `--lift-valid <path>` to BOTH eval calls (the single evals and the paired one) and to the verdict, which REFUSES unless the mask's sha256 equals the one the FLOOR
+#   was read on (so the FLOOR must have been read with the same mask).  Unset => no `--lift-valid` anywhere: the argv is exactly the earlier one (test_r9_e1_arm_read.py pins it).
 # TRAPS: no `pgrep -f` on a pattern this command line contains; detach with `nohup setsid ... < /dev/null &`; ssh with `-n`; the Thor python needs `-X utf8`.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -139,6 +142,12 @@ for f in "$EVAL_SCRIPT"; do [ -s "$f" ] || abort NO-SCRIPT "$f is missing"; done
 [ -s "$RD/dump_C0/dump.json" ] || abort NO-FLOOR-DUMP "$RD/dump_C0/dump.json is missing: the floor's windows cannot be compared"
 case "$REF" in C0|C1) [ -s "$(dump_dir "$REF")/dump.json" ] && [ -s "$(eval_json "$REF")" ] || abort NO-REF-DUMP "reference $REF: $(dump_dir "$REF")/dump.json or $(eval_json "$REF") is missing; a floor arm is never re-dumped here";; esac
 ev INPUTS-OK "split sha256 ${GOT:0:12} matches ${SPLIT_SHA_FILE##*/}; gate args: $GATEARGS; arm run $ARM_RUN; reference $REF ${REF_RUN:+run $REF_RUN}"
+LVA=()
+if [ -n "${R9E1_LIFT_VALID:-}" ]; then          # the map primary's mask: it must exist; the verdict itself refuses a mask that is not the floor's (sha256)
+  [ -e "$R9E1_LIFT_VALID" ] || abort NO-LIFT-VALID "R9E1_LIFT_VALID=$R9E1_LIFT_VALID is neither a sidecar .npz nor a raster directory"
+  LVA=(--lift-valid "$R9E1_LIFT_VALID")
+  ev LIFT-VALID "the map primary is read on the arm-independent mask $R9E1_LIFT_VALID (--lift-valid to the evals and the verdict; its sha256 must equal the floor's)"
+fi
 
 penv() {           # $1 = PYTHONPATH, rest = the command
   local pp="$1"; shift
@@ -198,15 +207,15 @@ run_eval() {       # $1 = tag, $2 = out json, rest = r9_e1_eval.py args
   ev EVAL-DONE "$tag rc=$rc $outj"
 }
 EVC="--windows $SPLIT --split dev $GATEARGS --boot $BOOT --seed $SEED"
-run_eval "$ARM" "$(eval_json "$ARM")" --packs "$DA/perc_det.pkl" --rast-dir "$DA/rast" $EVC
-run_eval "$REF" "$(eval_json "$REF")" --packs "$DR/perc_det.pkl" --rast-dir "$DR/rast" $EVC
+run_eval "$ARM" "$(eval_json "$ARM")" --packs "$DA/perc_det.pkl" --rast-dir "$DA/rast" $EVC ${LVA[@]+"${LVA[@]}"}
+run_eval "$REF" "$(eval_json "$REF")" --packs "$DR/perc_det.pkl" --rast-dir "$DR/rast" $EVC ${LVA[@]+"${LVA[@]}"}
 PAIRED="$AD/EVAL_${ARM}_vs_${REF}.json"
-run_eval "${ARM}_vs_${REF}" "$PAIRED" --packs "$DA/perc_det.pkl" --packs-b "$DR/perc_det.pkl" $EVC
+run_eval "${ARM}_vs_${REF}" "$PAIRED" --packs "$DA/perc_det.pkl" --packs-b "$DR/perc_det.pkl" $EVC ${LVA[@]+"${LVA[@]}"}
 
 # ---- VERDICT (CPU) -------------------------------------------------------------------------------------------------------------------
 ( cd "$AD" && penv "$PYPATH_CPU" CUDA_VISIBLE_DEVICES= "$PY" -X utf8 "$VERDICT_SCRIPT" --floor "$RD/FLOOR.json" --floor-eval-c0 "$RD/EVAL_C0.json" \
     --paired "$PAIRED" --eval-arm "$(eval_json "$ARM")" --eval-ref "$(eval_json "$REF")" --arm "$ARM" --ref "$REF" \
-    --rast-arm "$DA/rast" --rast-ref "$DR/rast" --boot "$BOOT" --seed "$SEED" --out-dir "$AD" > "$AD/logs/verdict.out" 2> "$AD/logs/verdict.err" ); rc=$?
+    --rast-arm "$DA/rast" --rast-ref "$DR/rast" ${LVA[@]+"${LVA[@]}"} --boot "$BOOT" --seed "$SEED" --out-dir "$AD" > "$AD/logs/verdict.out" 2> "$AD/logs/verdict.err" ); rc=$?
 VST="$("$PY" -I -X utf8 -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); print(d.get("status"), d.get("verdict"))' "$AD/VERDICT_$ARM.json" 2>/dev/null)"
 case "$VST" in "OK "*) ;; *) abort VERDICT-NOT-OK "VERDICT_$ARM.json status/verdict ${VST:-MISSING} rc=$rc" "read $AD/VERDICT_$ARM.md and $AD/logs/verdict.err";; esac
 ev VERDICT-DONE "$AD/VERDICT_$ARM.json $AD/VERDICT_$ARM.md -> ${VST#OK }"

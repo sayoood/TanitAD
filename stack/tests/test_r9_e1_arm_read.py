@@ -63,9 +63,9 @@ def test_arm_read_script_flags_exist_in_the_scripts_it_calls():
         return set(re.findall(r'add_argument\(\s*"(--[\w-]+)"', Path(p).read_text(encoding="utf-8")))
     want = {
         "r9_e1_dump.py": ["--ckpt", "--config", "--windows", "--split", "--s2-windows", "--require-ema", "--out"],
-        "r9_e1_eval.py": ["--packs", "--packs-b", "--rast-dir", "--windows", "--split", "--boot", "--seed", "--out", "--gates-json", "--gate"],
+        "r9_e1_eval.py": ["--packs", "--packs-b", "--rast-dir", "--windows", "--split", "--boot", "--seed", "--out", "--gates-json", "--gate", "--lift-valid"],
         "r9_e1_verdict.py": ["--floor", "--floor-eval-c0", "--paired", "--eval-arm", "--eval-ref", "--arm", "--ref", "--rast-arm", "--rast-ref", "--boot",
-                             "--seed", "--out-dir", "--status", "--root", "--read-dir", "--out", "--dump"],
+                             "--seed", "--out-dir", "--status", "--root", "--read-dir", "--out", "--dump", "--lift-valid"],
     }
     for name, fl in want.items():
         have = flags(_STACK / "scripts" / name)
@@ -103,12 +103,22 @@ def _run_dir(root, arm, spec, *, done=True):
     return d
 
 
-def _build_floor_template(tpl):
+def _write_mask(path):
+    """A sidecar lift-valid mask for the six episodes of CLIPS (all cells observed): ``e<episode>`` -> bool [400, 60]."""
+    import numpy as np
+    np.savez_compressed(str(path), **{"e%d" % i: np.ones(E.LV_SHAPE, bool) for i in range(len(CLIPS))})
+
+
+def _build_floor_template(tpl, with_mask=False):
     """The floor read, in the real layout, built ONCE per module (the dry tests copy it): the SAME flags the shell uses (--windows as the
     POSIX string the shell passes, so the floor's recorded window file equals the arm evals')."""
     tpl = Path(tpl)
     rd = tpl / "read"
     rd.mkdir(parents=True)
+    lv = []
+    if with_mask:                                                                   # the floor AND its evals on ONE mask (the shell must use the same)
+        _write_mask(tpl / "mask.npz")
+        lv = ["--lift-valid", (tpl / "mask.npz").as_posix()]
     split = tpl / "split.json"
     split.write_text(json.dumps({"DEV": {"sha12": CLIPS}, "HOLD": {"sha12": ["%012x" % 0xb00]}}), encoding="utf-8")
     (tpl / "s2.json").write_text("{}", encoding="utf-8")
@@ -119,12 +129,12 @@ def _build_floor_template(tpl):
         ck.write_text(json.dumps(dict({"step": 4000}, **spec)), encoding="utf-8")
         assert STUB.main(["--ckpt", str(ck), "--config", str(tpl / "config.json"), "--windows", str(split), "--split", "dev",
                           "--s2-windows", str(tpl / "s2.json"), "--out", str(rd / ("dump_" + name)), "--require-ema"]) == 0
-        assert E.main(["--packs", str(rd / ("dump_" + name) / "perc_det.pkl"), "--rast-dir", str(rd / ("dump_" + name) / "rast"), *com,
+        assert E.main(["--packs", str(rd / ("dump_" + name) / "perc_det.pkl"), "--rast-dir", str(rd / ("dump_" + name) / "rast"), *com, *lv,
                        "--out", str(rd / ("EVAL_%s.json" % name))]) == 0
-    assert E.main(["--packs", str(rd / "dump_C1" / "perc_det.pkl"), "--packs-b", str(rd / "dump_C0" / "perc_det.pkl"), *com,
+    assert E.main(["--packs", str(rd / "dump_C1" / "perc_det.pkl"), "--packs-b", str(rd / "dump_C0" / "perc_det.pkl"), *com, *lv,
                    "--out", str(rd / "EVAL_C1_vs_C0.json")]) == 0
     assert F.main(["--eval-c0", str(rd / "EVAL_C0.json"), "--eval-c1", str(rd / "EVAL_C1.json"), "--paired", str(rd / "EVAL_C1_vs_C0.json"),
-                   "--rast-c0", str(rd / "dump_C0" / "rast"), "--rast-c1", str(rd / "dump_C1" / "rast"), "--boot", BOOT, "--out-dir", str(rd)]) == 0
+                   "--rast-c0", str(rd / "dump_C0" / "rast"), "--rast-c1", str(rd / "dump_C1" / "rast"), "--boot", BOOT, *lv, "--out-dir", str(rd)]) == 0
     return tpl
 
 
@@ -350,3 +360,106 @@ def test_dry_run_aborts_when_the_arm_was_dumped_on_other_windows(dry):
     assert dry.wait(lambda: (dry.ad("B1") / "READ_ABORTED").exists(), 90) and dry.proc.wait(timeout=60) == 3
     txt = (dry.ad("B1") / "READ_ABORTED").read_text(encoding="utf-8")
     assert "DUMP-MISMATCH" in txt and "order_digest" in txt and "EVAL-DONE" not in dry.events("B1")
+
+
+# ------------------------------------------------------------------------------------------------------------------ MAPWIRE: R9E1_LIFT_VALID
+@pytest.fixture(scope="module")
+def floor_template_lv(tmp_path_factory):
+    """The same floor read, but on ONE shared lift-valid mask (``tpl/mask.npz``): FLOOR.json carries the nf_swedge_prec_lv_* rows and the mask sha256."""
+    return _build_floor_template(tmp_path_factory.mktemp("armread_floor_lv") / "tpl", with_mask=True)
+
+
+@pytest.fixture
+def dry_lv(tmp_path, floor_template_lv):
+    b = _bash()
+    if not b:
+        pytest.skip("no usable bash on this box")
+    d = Dry(tmp_path, b, floor_template_lv)
+    d.mask = floor_template_lv / "mask.npz"
+    yield d
+    d.stop()
+
+
+def _recorder(dry):
+    """A bash shim for R9E1_PY: it appends every argv to a log, then runs the real interpreter -- the shell's calls are read, not guessed."""
+    w = dry.tmp / "pyrec.sh"
+    w.write_text('#!/usr/bin/env bash\nprintf \'%s\\n\' "$*" >> "$R9E1_ARGV_LOG"\nexec "$R9E1_REAL_PY" "$@"\n', encoding="utf-8", newline="\n")
+    log = dry.tmp / "argv.log"
+    return dict(R9E1_PY=w.as_posix(), R9E1_REAL_PY=sys.executable, R9E1_ARGV_LOG=log.as_posix()), log
+
+
+def _calls(log):
+    toks = [ln.split() for ln in Path(log).read_text(encoding="utf-8").splitlines() if ln.strip()]
+    ev = [t for t in toks if any(x.endswith("r9_e1_eval.py") for x in t)]
+    vd = [t for t in toks if any(x.endswith("r9_e1_verdict.py") for x in t) and "--floor" in t]
+    return ev, vd
+
+
+def _flags(toks):
+    return [t for t in toks if t.startswith("--")]
+
+
+def _read_b4(dry, **env):
+    b2 = dry.run_dir("B2", {"miss": [7, 8, 9]})
+    b4 = dry.run_dir("B4", {"miss": []})
+    dry.chain("START commit bbb tree /t arms [B2 B4]", "B2-LAUNCH s; run dir %s" % b2.as_posix(), "B2-DONE rc 0; ok",
+              "B4-LAUNCH s; run dir %s" % b4.as_posix(), "B4-DONE rc 0; ok")
+    dry.start("B4", **env)
+    assert dry.wait(lambda: "DONE" in dry.events("B4") or (dry.ad("B4") / "READ_ABORTED").exists(), 420), (dry.events("B4"), dry.stdout()[-2500:])
+    assert dry.proc.wait(timeout=60) == 0, (dry.log("B4"), dry.stdout()[-2500:])
+
+
+EVAL_FLAGS = ["--packs", "--rast-dir", "--windows", "--split", "--gate", "--boot", "--seed", "--out"]
+PAIRED_FLAGS = ["--packs", "--packs-b", "--windows", "--split", "--gate", "--boot", "--seed", "--out"]
+VERDICT_FLAGS = ["--floor", "--floor-eval-c0", "--paired", "--eval-arm", "--eval-ref", "--arm", "--ref", "--rast-arm", "--rast-ref", "--boot", "--seed", "--out-dir"]
+
+
+def test_lift_valid_unset_passes_no_lift_valid_anywhere_and_the_argv_is_the_earlier_one(dry):
+    env, log = _recorder(dry)
+    _read_b4(dry, **env)
+    ev, vd = _calls(log)
+    # B4 vs B2: the arm single, the (non-floor) reference single, the paired eval -- three eval calls -- and ONE verdict call
+    assert [_flags(t) for t in ev] == [EVAL_FLAGS, EVAL_FLAGS, PAIRED_FLAGS] and [_flags(t) for t in vd] == [VERDICT_FLAGS], (ev, vd)
+    assert not [t for t in ev + vd if "--lift-valid" in t] and "LIFT-VALID" not in dry.events("B4")
+    v = _strict_json(dry.ad("B4") / "VERDICT_B4.json")
+    assert v["status"] == "OK" and v["verdict"] == "KEEP" and v["lift_valid"] == {"verdict": None, "floor": None, "same_mask": True}
+
+
+def test_lift_valid_set_is_passed_to_both_evals_the_paired_eval_and_the_verdict_and_the_verdict_is_read_on_it(dry_lv):
+    env, log = _recorder(dry_lv)
+    _read_b4(dry_lv, R9E1_LIFT_VALID=dry_lv.mask.as_posix(), **env)
+    ev, vd = _calls(log)
+    with_lv = lambda fl, after: fl[:fl.index(after) + 1] + ["--lift-valid"] + fl[fl.index(after) + 1:]            # noqa: E731
+    assert [_flags(t) for t in ev] == [with_lv(EVAL_FLAGS, "--seed"), with_lv(EVAL_FLAGS, "--seed"), with_lv(PAIRED_FLAGS, "--seed")], ev    # before --out
+    assert [_flags(t) for t in vd] == [with_lv(VERDICT_FLAGS, "--rast-ref")], vd
+    for t in ev + vd:
+        assert t[t.index("--lift-valid") + 1].endswith("/mask.npz") and t.count("--lift-valid") == 1
+    assert "LIFT-VALID" in dry_lv.events("B4") and dry_lv.events("B4").index("LIFT-VALID") < dry_lv.events("B4").index("LOCK-WAIT")       # checked BEFORE the GPU lock
+    v = _strict_json(dry_lv.ad("B4") / "VERDICT_B4.json")
+    assert v["status"] == "OK" and v["verdict"] == "KEEP", (v["verdict"], v["failing_clauses"], v["not_computable"], v.get("problems"))
+    fl = _strict_json(dry_lv.rd / "FLOOR.json")
+    assert v["lift_valid"]["same_mask"] is True and v["lift_valid"]["verdict"]["sha256"] == fl["map_inputs"]["lift_valid"]["sha256"]
+    assert "nf_swedge_prec_lv_5_20" in fl["rows"] and v["clause3"]["missing_from_floor"] == []                       # the floor HAS the row: nothing is missing
+    assert "EQUAL to the floor's" in (dry_lv.ad("B4") / "VERDICT_B4.md").read_text(encoding="utf-8")
+
+
+def test_lift_valid_set_against_a_floor_read_without_a_mask_is_refused_by_the_verdict(dry, tmp_path):
+    """The shell passes the mask; the verdict REFUSES (the floor was read without one) and the shell aborts from the artifact, not from $?."""
+    mask = tmp_path / "mask_for_a_maskless_floor.npz"
+    _write_mask(mask)
+    b1 = dry.run_dir("B1", {"miss": []})
+    dry.chain("START commit bbb", "B1-LAUNCH s; run dir %s" % b1.as_posix(), "B1-DONE ok")
+    dry.start("B1", R9E1_LIFT_VALID=mask.as_posix())
+    assert dry.wait(lambda: (dry.ad("B1") / "READ_ABORTED").exists() or "DONE" in dry.events("B1"), 420), (dry.events("B1"), dry.stdout()[-2500:])
+    assert dry.proc.wait(timeout=60) == 3 and "VERDICT-NOT-OK" in (dry.ad("B1") / "READ_ABORTED").read_text(encoding="utf-8")
+    v = _strict_json(dry.ad("B1") / "VERDICT_B1.json")
+    assert v["status"] == "REFUSED" and "lift-valid mask" in " ".join(v["problems"]) and not (dry.ad("B1") / "READ_DONE").exists()
+
+
+def test_lift_valid_set_to_a_missing_path_aborts_before_the_lock_is_taken(dry, tmp_path):
+    b1 = dry.run_dir("B1", {"miss": []})
+    dry.chain("START commit bbb", "B1-LAUNCH s; run dir %s" % b1.as_posix(), "B1-DONE ok")
+    dry.start("B1", R9E1_LIFT_VALID=(tmp_path / "no_such_mask.npz").as_posix())
+    assert dry.wait(lambda: (dry.ad("B1") / "READ_ABORTED").exists(), 90) and dry.proc.wait(timeout=60) == 3
+    assert "NO-LIFT-VALID" in (dry.ad("B1") / "READ_ABORTED").read_text(encoding="utf-8")
+    assert "LOCK-WAIT" not in dry.events("B1") and "DUMP-START" not in dry.events("B1") and not (dry.ad("B1") / "dump_B1").exists()

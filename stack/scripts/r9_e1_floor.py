@@ -107,6 +107,10 @@ def metric_group(metric: str) -> str:
         return "localisation / class of the 2 m greedy TPs"
     if metric.startswith(("prec_gate", "rec_gate", "boxes_per_object", "frac_objects_ge2")):
         return "P=R census at the FIXED gate (same gate for both arms)"
+    if metric.startswith("nf_swedge_prec_lv"):
+        return "corridor sidewalk+edge precision, GT {edge, sidewalk}, lift-valid cells (the M1 map primary)"
+    if metric.startswith("nf_swedge_prec"):
+        return "corridor sidewalk+edge precision, GT {edge, sidewalk}, GT-seen cells (incl. the camera blind zone)"
     if metric.startswith("nf_prec05"):
         return "corridor sidewalk precision, within 0.5 m of a GT sidewalk cell"
     if metric.startswith("nf_prec"):
@@ -205,7 +209,7 @@ def box_rows(e0: dict, e1: dict, ep: dict, problems: list, seed: int = DEFAULT_S
 
 
 def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw", boot=DEFAULT_BOOT, seed=DEFAULT_SEED,
-                   e0=None, e1=None, problems=None) -> tuple[dict, dict]:
+                   e0=None, e1=None, problems=None, lift_valid=None) -> tuple[dict, dict]:
     """The paired near-field corridor precision: the SAME ``nearfield_stats`` over per-EPISODE count blocks that r9_e1_eval's
     single-arm ``nearfield.ci`` bootstraps, through ``ci.paired_stat_cluster_bootstrap``. -> (rows, meta)."""
     ci = ev._import_ci()
@@ -226,8 +230,15 @@ def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw"
         problems.append("raster name sets differ (only C0 %d, only C1 %d, common %d): not the same windows"
                         % (meta["only_c0"], meta["only_c1"], len(common)))
         return {}, meta
-    n0, acc0, _ = ev.nearfield_per_file([f0[n] for n in common], stride, psw_key)
-    n1, acc1, _ = ev.nearfield_per_file([f1[n] for n in common], stride, psw_key)
+    lvm = None
+    try:        # the ONE arm-independent lift-valid mask both arms are scored on (r9_e1_eval.load_lift_valid); absent -> no `_lv_` rows
+        lvm = ev.load_lift_valid(lift_valid) if lift_valid else None
+        n0, acc0, _ = ev.nearfield_per_file([f0[n] for n in common], stride, psw_key, lift_valid=lvm)
+        n1, acc1, _ = ev.nearfield_per_file([f1[n] for n in common], stride, psw_key, lift_valid=lvm)
+    except ev.LiftValidError as e:
+        problems.append("lift-valid mask refused: %s" % e)
+        return {}, meta
+    meta["lift_valid"] = None if lvm is None else lvm.record()
     if n0 != n1 or not n0:
         problems.append("rasters with a gt plane differ between the arms (%d vs %d): the GT plane is the label and must be the same"
                         % (len(n0), len(n1)))
@@ -252,7 +263,14 @@ def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw"
             problems.append("%s eval's nearfield saw %s files / %s episodes, the floor read %d / %d (a different --rast-names / "
                             "--rast-stride?)" % (tag, nf.get("n_files"), nf.get("n_episodes"), len(n0), len(ue)))
             continue
+        lv_e = nf.get("lift_valid")
+        if (lv_e or {}).get("sha256") != (meta["lift_valid"] or {}).get("sha256") and (lv_e or meta["lift_valid"]):
+            problems.append("%s eval's lift-valid mask (%s) is not the floor's (%s): the _lv_ rows would be read on different cells"
+                            % (tag, (lv_e or {}).get("sha256", "none")[:12], (meta["lift_valid"] or {}).get("sha256", "none")[:12]))
+            continue
         for m, r in rows.items():
+            if m not in nf["ci"]:
+                continue
             pt = nf["ci"][m].get("point")
             want = r["c0"] if tag == "C0" else r["c1"]
             if _finite(pt) and _finite(want) and abs(pt - want) > 1e-9:
@@ -262,7 +280,7 @@ def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw"
 
 # --------------------------------------------------------------------------------------------------- the read
 def build_floor(eval_c0: str, eval_c1: str, paired: str, *, rast_c0=None, rast_c1=None, rast_names=None, rast_stride=1,
-                psw_key="psw", boot=DEFAULT_BOOT, seed=DEFAULT_SEED) -> dict:
+                psw_key="psw", boot=DEFAULT_BOOT, seed=DEFAULT_SEED, lift_valid=None) -> dict:
     e0, e1, ep = _load_eval(eval_c0), _load_eval(eval_c1), _load_eval(paired)
     out = {"schema": SCHEMA, "tier": TIER, "status": "OK", "keep_rule": KEEP_RULE, "keep_factor": KEEP_FACTOR,
            "estimator": {"name": ESTIMATOR, "B": boot, "seed": seed,
@@ -281,7 +299,7 @@ def build_floor(eval_c0: str, eval_c1: str, paired: str, *, rast_c0=None, rast_c
         problems.append("--rast-c0 and --rast-c1 go together")
     elif rast_c0 is not None and not problems:
         mrows, meta = nearfield_rows(rast_c0, rast_c1, names_file=rast_names, stride=rast_stride, psw_key=psw_key, boot=boot,
-                                     seed=seed, e0=e0, e1=e1, problems=problems)
+                                     seed=seed, e0=e0, e1=e1, problems=problems, lift_valid=lift_valid)
         rows.update(mrows)
     out["map_inputs"] = meta
     out["rows"] = rows
@@ -365,8 +383,9 @@ def render_md(f: dict) -> str:
           "rig: it is the proof (H-ESTIM-SEED-1) that a separated interval alone cannot certify a lever -- which is why the keep rule "
           "adds the 2 x floor clause." % (s.get("n_separated_c1_vs_c0"), s.get("n_defined")),
           "* %s defined metrics have floor exactly 0 (degenerate)." % s.get("n_floor_degenerate"),
-          "* Map rows are what `r9_e1_eval.py` emits: sidewalk-flag (`psw`) precision on GT-seen cells of the corridor; the lift-valid "
-          "subset and a sidewalk+edge union are NOT computed here (not emitted by the evaluator).",
+          "* Map rows are what `r9_e1_eval.py` emits: `nf_prec_*` = sidewalk-flag (`psw`) precision on GT-seen cells of the corridor (the "
+          "historical figure); `nf_swedge_prec_*` = the sidewalk+edge union vs GT {edge, sidewalk}; `nf_swedge_prec_lv_*` (the M1 map "
+          "primary) = the same on lift-valid cells. Both exist only when `--lift-valid` gave the shared mask.",
           "* The census rows (`prec_gate_*`, `rec_gate_*`, `boxes_per_object_*`, `frac_objects_ge2_*`) are read at the fixed gate in "
           "the header for both arms, not at each arm's own P=R point.",
           "* Inputs: " + "; ".join("%s sha256 %s" % (k, v["sha256"][:12]) for k, v in f["inputs"].items()) + "."]
@@ -384,6 +403,7 @@ def main(argv=None) -> int:
     ap.add_argument("--rast-names")
     ap.add_argument("--rast-stride", type=int, default=1)
     ap.add_argument("--psw-key", default="psw")
+    ap.add_argument("--lift-valid", help="r9_e1_eval.py's --lift-valid (sidecar .npz or an unobs-carrying raster dir): adds the nf_swedge_prec_lv_* rows")
     ap.add_argument("--boot", type=int, default=DEFAULT_BOOT)
     ap.add_argument("--seed", type=int, default=DEFAULT_SEED)
     ap.add_argument("--out-dir", required=True)
@@ -392,7 +412,7 @@ def main(argv=None) -> int:
     od.mkdir(parents=True, exist_ok=True)
     try:
         floor = build_floor(a.eval_c0, a.eval_c1, a.paired, rast_c0=a.rast_c0, rast_c1=a.rast_c1, rast_names=a.rast_names,
-                            rast_stride=a.rast_stride, psw_key=a.psw_key, boot=a.boot, seed=a.seed)
+                            rast_stride=a.rast_stride, psw_key=a.psw_key, boot=a.boot, seed=a.seed, lift_valid=a.lift_valid)
     except FloorRefused as e:
         floor = {"schema": SCHEMA, "tier": TIER, "status": "REFUSED", "problems": [str(e)], "rows": {}}
     (od / "FLOOR.json").write_text(json.dumps(floor, indent=1, default=float, allow_nan=False) + "\n", encoding="utf-8")

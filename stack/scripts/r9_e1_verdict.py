@@ -3,7 +3,7 @@
 arm -> the pre-registered keep rule against the C0/C1 replicate FLOOR.  Tier T0 (label level), perception only.
 
     python r9_e1_verdict.py --floor FLOOR.json --paired EVAL_<ARM>_vs_<REF>.json --eval-arm EVAL_<ARM>.json --eval-ref EVAL_<REF>.json \\
-                            --arm <ARM> [--ref <REF>] [--rast-arm <dir> --rast-ref <dir>] [--floor-eval-c0 EVAL_C0.json] --out-dir <dir>
+                            --arm <ARM> [--ref <REF>] [--rast-arm <dir> --rast-ref <dir>] [--lift-valid <mask>] [--floor-eval-c0 EVAL_C0.json] --out-dir <dir>
                                                                    # -> VERDICT_<ARM>.json + VERDICT_<ARM>.md   (rc 0 OK, rc 2 REFUSED)
     python r9_e1_verdict.py mapping [--json]                       # the arm -> reference -> primary -> emitted-key table (from this file)
     python r9_e1_verdict.py ref --arm <ARM>                        # the arm's default reference (rc 3 when the design names none)
@@ -13,7 +13,10 @@ arm -> the pre-registered keep rule against the C0/C1 replicate FLOOR.  Tier T0 
 NO SECOND KEEP RULE, NO SECOND ESTIMATOR.  Every judgement is ``r9_e1_floor.lever_read`` -> ``taniteval.ci.e1_floor_read``; the
 paired intervals are ``r9_e1_floor.box_rows`` / ``r9_e1_floor.nearfield_rows`` (-> ``taniteval.ci.paired_stat_cluster_bootstrap``).  This
 file adds only (1) the arm -> reference -> primary MAPPING, (2) the "no other perception primary separated worse beyond 2 x its floor"
-CLAUSE swept over the table's perception primaries (other floor rows reported, never a veto), (3) the overall KEEP / DROP / NOT-COMPUTABLE with the failing clause named, and (4) the refusals.
+CLAUSE swept over the table's perception primaries but the arm's own primary keys AND own proxies (other floor rows reported, never a veto; a scope key the floor
+has NO row for is COVERED by the primary's named proxies or makes clause 3 incomplete -> never KEEP), (3) the overall KEEP / DROP / NOT-COMPUTABLE with the
+failing clause named, and (4) the refusals (incl. a --lift-valid mask whose sha256 differs from the floor's: the `nf_swedge_prec_lv_*` rows would be read on
+different cells).  The M1 MAP PRIMARY is `nf_swedge_prec_lv_5_20` (hold_r9_e1_mapprim) and exists only on a lift-valid mask.
 
 THE KEEP RULE (REFCV9_DESIGN 4.3, verbatim in ``KEEP_RULE``): keep a lever iff its primary is separated in the good direction (clause 1)
 AND |delta| > 2 x |C1 - C0| on that metric (clause 2) AND no other perception primary is separated worse beyond 2 x its floor (clause 3).
@@ -72,23 +75,26 @@ def _fl():
 #: key family -> (file, line, needle that must be on that line). ``tests/test_r9_e1_verdict.py`` opens each and checks the needle.
 _EVAL = "stack/scripts/r9_e1_eval.py"
 KEY_SRC = (
-    (r"^n_pos$", _EVAL, 225, '"n_pos"'),
-    (r"^ap(1|2)m_all$", _EVAL, 229, '"ap%sm_all"'),
-    (r"^ap(1|2)m_(0_20|20_40|40_60)$", _EVAL, 231, '"ap%sm_%s"'),
-    (r"^ap(1|2)m_20_60$", _EVAL, 235, '"ap%sm_20_60"'),
-    (r"^dx_0_40_mean$", _EVAL, 237, '"dx_0_40_mean"'),
-    (r"^dx_0_40_median$", _EVAL, 238, '"dx_0_40_median"'),
-    (r"^tp_class_acc$", _EVAL, 240, '"tp_class_acc"'),
-    (r"^prec_gate_(noNMS|NMS)$", _EVAL, 244, '"prec_gate_"'),
-    (r"^rec_gate_(noNMS|NMS)$", _EVAL, 245, '"rec_gate_"'),
-    (r"^boxes_per_object_(noNMS|NMS)$", _EVAL, 246, '"boxes_per_object_"'),
-    (r"^frac_objects_ge2_(noNMS|NMS)$", _EVAL, 247, '"frac_objects_ge2_"'),
-    (r"^boxes_per_object_noNMS_(0_20|20_40|40_60)$", _EVAL, 251, '"boxes_per_object_noNMS_"'),
-    (r"^n_det_noNMS_(0_20|20_40|40_60)$", _EVAL, 252, '"n_det_noNMS_"'),
-    (r"^ap2m_all_NMS$", _EVAL, 254, '"ap2m_all_NMS"'),
-    (r"^nf_prec_(0_5|5_10|10_20|20_40)$", _EVAL, 330, '"nf_prec_%d_%d"'),
-    (r"^nf_prec05_(0_5|5_10|10_20|20_40)$", _EVAL, 331, '"nf_prec05_%d_%d"'),
-    (r"^nf_prec_0_10$", _EVAL, 336, '"nf_prec_0_10"'),
+    (r"^n_pos$", _EVAL, 239, '"n_pos"'),
+    (r"^ap(1|2)m_all$", _EVAL, 243, '"ap%sm_all"'),
+    (r"^ap(1|2)m_(0_20|20_40|40_60)$", _EVAL, 245, '"ap%sm_%s"'),
+    (r"^ap(1|2)m_20_60$", _EVAL, 249, '"ap%sm_20_60"'),
+    (r"^dx_0_40_mean$", _EVAL, 251, '"dx_0_40_mean"'),
+    (r"^dx_0_40_median$", _EVAL, 252, '"dx_0_40_median"'),
+    (r"^tp_class_acc$", _EVAL, 254, '"tp_class_acc"'),
+    (r"^prec_gate_(noNMS|NMS)$", _EVAL, 258, '"prec_gate_"'),
+    (r"^rec_gate_(noNMS|NMS)$", _EVAL, 259, '"rec_gate_"'),
+    (r"^boxes_per_object_(noNMS|NMS)$", _EVAL, 260, '"boxes_per_object_"'),
+    (r"^frac_objects_ge2_(noNMS|NMS)$", _EVAL, 261, '"frac_objects_ge2_"'),
+    (r"^boxes_per_object_noNMS_(0_20|20_40|40_60)$", _EVAL, 265, '"boxes_per_object_noNMS_"'),
+    (r"^n_det_noNMS_(0_20|20_40|40_60)$", _EVAL, 266, '"n_det_noNMS_"'),
+    (r"^ap2m_all_NMS$", _EVAL, 268, '"ap2m_all_NMS"'),
+    (r"^nf_prec_(0_5|5_10|10_20|20_40)$", _EVAL, 477, '"nf_prec_%d_%d"'),
+    (r"^nf_prec05_(0_5|5_10|10_20|20_40)$", _EVAL, 478, '"nf_prec05_%d_%d"'),
+    (r"^nf_prec_0_10$", _EVAL, 483, '"nf_prec_0_10"'),
+    # the M1 map primary (hold_r9_e1_mapprim): per band, then the 5-10 + 10-20 m pooled key; each exists ONLY when a --lift-valid mask was given
+    (r"^nf_swedge_prec_(lv_)?(0_5|5_10|10_20|20_40)$", _EVAL, 494, '"nf_swedge_prec_%s%d_%d"'),
+    (r"^nf_swedge_prec_(lv_)?5_20$", _EVAL, 495, '"nf_swedge_prec_%s5_20"'),
 )
 
 
@@ -108,20 +114,19 @@ def _spec(mid, text, role, keys=(), better="higher", proxies=(), reason="", woul
             "status": "COMPUTABLE" if keys else "NOT-COMPUTABLE", "reason": reason, "would_compute": would_compute}
 
 
-_MAP_NC_REASON = ("r9_e1_eval emits corridor SIDEWALK-ONLY precision per band (nf_prec_5_10, nf_prec_10_20; r9_e1_eval.py:326): no edge class, "
-                  "no lift-valid mask, no pooled 5-20 m band; and the PAIRED map interval exists only in r9_e1_floor.nearfield_rows "
-                  "(r9_e1_floor.py:239), r9_e1_eval has no paired near-field block (r9_e1_eval.py:394-408)")
-_MAP_NC_HOW = ("r9_e1_eval.nearfield_per_file / nearfield_stats: (1) GT and flag UNION of class 5 (edge; raster plane `pedge`) and class 7 "
-               "(`psw`); (2) a lift-valid mask that is ARM-INDEPENDENT -- C0 is refcv8 and its raster has no `unobs` plane (the refcv9 banded "
-               "arms' dump writes one, r9_e1_dump.py:176-177), so the mask must come from the lift geometry (the model's "
-               "`_map_hires.lift.unobserved` buffer, launch_gate.py:446), or the two arms are masked differently; (3) a pooled 5-20 m band "
-               "`nf_prec_5_20` (counts exist per 5-10 / 10-20 band: acc[i] in nearfield_stats); (4) the paired block through "
-               "r9_e1_floor.nearfield_rows. Then add the keys to r9_e1_verdict.ARMS (M1.primary.keys) -- the keep rule needs no change.")
+#: The M1 MAP PRIMARY (REFCV9_DESIGN 4.3: "corridor sidewalk+edge precision 5-20 m (lift-valid)") as r9_e1_eval emits it since hold_r9_e1_mapprim:
+#: flag (psw >= 128) | (pedge >= 128) against GT {5 edge, 7 sidewalk}, GT-seen AND lift-valid cells, the 5-10 and 10-20 m bands pooled by COUNTS.
+#: The key exists ONLY when a --lift-valid mask was given (floor read, evals and this verdict on the SAME mask).  ``proxies`` = the historical
+#: SIDEWALK-ONLY, lift-UNMASKED per-band precisions: a different quantity, never the primary, but they stay in clause 3's scope so a lever of
+#: ANOTHER family is still vetoed on the map family when no mask exists -- an arm's OWN primary excludes its own proxies (clause3_vetoes).
+MAP_PRIMARY_KEY = "nf_swedge_prec_lv_5_20"
+MAP_PROXIES = ("nf_prec_5_10", "nf_prec_10_20")
+LV_FLOOR_HINT = (" -- the floor has no lift-valid map rows: it was read without --lift-valid (or by an evaluator that predates the map primary); "
+                 "re-read the floor with the current eval and --lift-valid <mask>")
 
 
 def _map_primary(mid="map_primary", role="primary"):
-    return _spec(mid, "corridor sidewalk+edge precision 5-20 m (lift-valid)", role, (), "higher",
-                 ("nf_prec_5_10", "nf_prec_10_20"), _MAP_NC_REASON, _MAP_NC_HOW)
+    return _spec(mid, "corridor sidewalk+edge precision 5-20 m (lift-valid)", role, (MAP_PRIMARY_KEY,), "higher", MAP_PROXIES)
 
 
 _AP2_ALL = ("ap2m_all", "AP@2 m, head output, no NMS (all ranges)")
@@ -143,7 +148,13 @@ ARMS = {
                              "recall of GT edge cells (class 5) within 0.3 m of an own boundary cell (`pedge` / `pdrv` planes), in r9_e1_eval")),
            "next_lever": "the `--w-map-fp` fallback E1 arm ('kept only as a fallback E1 arm if M1 misses at 5-20 m', sec. 2.1 line 111); Q1 branch (a): M2 "
                          "gradient share second (sec. 3 line 263); branch (b2): (1) M2, (2) F1, (3) B1, (4) T1 (sec. 3 line 265)",
-           "argv_flags": ("--r9-map-banded",), "ambiguities": ("'lift-valid' needs a mask the evaluator does not read (see the NC reason)",)},
+           "argv_flags": ("--r9-map-banded",),
+           "ambiguities": ("the primary `nf_swedge_prec_lv_5_20` exists only when the FLOOR read, both evals and this verdict ran with the SAME arm-independent "
+                           "--lift-valid mask (sha256 cross-checked; a floor without the row reads NO-FLOOR -> NOT-COMPUTABLE, never a guess)",
+                           "the design's inherited 'sidewalk+edge' 0.251 / 0.733 / 0.716 / 0.744 are SIDEWALK-ONLY, GT-seen, lift-UNMASKED numbers "
+                           "(hold_r9_e1_mapprim HANDOFF): a different quantity from this primary, so they are no baseline for it",
+                           "UNVERIFIED: exact-cell precision against a 1-cell GT edge penalises a banded arm's dilated (~0.5 m) `pedge` heatmap; flags use "
+                           "probability planes >= 128, not the FIT-split per-channel thresholds",)},
     "M2a": {"kind": "lever", "variable": "M1 + --w-map-hires 0.511 (the 0.05 layer2-share dose; argv lever block)", "ref": "M1", "allowed": ("M1",),
             "metrics": (_map_primary("M2a.primary"), _spec("M2a.guard.ap2", "box AP@2 m not worse (the ladder's cost)", "guard", ("ap2m_all",))),
             "next_lever": "read M2b (the other dose; sec. 2.2 line 143: 'the weight falls back to the E1 dose arms'); if both doses fail M1 stands and "
@@ -254,6 +265,18 @@ def clause3_scope() -> set:
     return table_keys() | {p for a in ARMS.values() for m in a["metrics"] for p in m["proxies"]}
 
 
+def primary_proxies() -> dict:
+    """``{emitted primary key: its named proxies}`` for the sec. 4.3 primaries that HAVE proxies (today the map primary only). A missing
+    floor row of such a key is covered when every proxy has a usable floor row (``clause3_vetoes``)."""
+    return {k: tuple(m["proxies"]) for a in ARMS.values() for m in a["metrics"] if m["role"] == "primary" and m["proxies"] for k in m["keys"]}
+
+
+def own_primary_keys(arm: str) -> set:
+    """What an arm's own primary EXCLUDES from clause 3: its primary's emitted keys AND its named proxies (a map arm must not be vetoed by the
+    sidewalk-only stand-in of its OWN primary).  The arm's guards and every other key stay in the sweep."""
+    return {x for m in ARMS[arm]["metrics"] if m["role"] == "primary" for x in (*m["keys"], *m["proxies"])}
+
+
 def default_ref(arm: str):
     return ARMS[arm]["ref"]
 
@@ -337,7 +360,7 @@ def _read_key(floor: dict, pair_rows: dict, key: str) -> dict:
     frow = floor["rows"].get(key)
     rec = {"key": key}
     if frow is None:
-        rec.update(state="NO-FLOOR", why="%s is not a row of the floor" % key)
+        rec.update(state="NO-FLOOR", why="%s is not a row of the floor%s" % (key, LV_FLOOR_HINT if key.startswith("nf_swedge_prec_lv_") else ""))
         return rec
     if frow.get("undefined") or frow.get("higher_is_better") is None:
         rec.update(state="NO-FLOOR", why="%s has no floor (undefined on the floor's windows / a count)" % key)
@@ -358,16 +381,37 @@ def _read_key(floor: dict, pair_rows: dict, key: str) -> dict:
     return rec
 
 
+def _usable_floor_row(floor: dict, key: str) -> bool:
+    r = floor["rows"].get(key)
+    return r is not None and not r.get("undefined") and r.get("higher_is_better") is not None
+
+
 def clause3_vetoes(floor: dict, pair_rows: dict, exclude: set, in_table: set) -> dict:
     """Clause 3 over the sec. 4.3 table's PERCEPTION PRIMARIES (``clause3_scope()``: every key some arm names + the named proxies of the
-    primaries not emitted yet) but the arm's own primary: veto iff
+    primaries that have them) but the arm's own primary KEYS and its own PROXIES (``own_primary_keys``): veto iff
     separated in the BAD direction AND |delta| > 2 x that row's floor.  Every OTHER floor row (census counts at the fixed gate, per-class
     cells, ...) is still swept, and one separated worse beyond 2 x its floor is listed under ``informative_worse`` -- reported, NEVER a veto.
     (MM 2026-11-04, before any arm was read: the design says "no other PERCEPTION PRIMARY is separated worse"; the first brief said "every
-    floor row", which would let a census row at a fixed gate veto B3, whose quality-aware presence moves exactly those rows by design.)"""
+    floor row", which would let a census row at a fixed gate veto B3, whose quality-aware presence moves exactly those rows by design.)
+    The sweep walks the FLOOR's rows; a scope key the floor has NO row for is reported as ``missing_from_floor`` (see the block below):
+    ``missing_covered`` (a primary's key whose named proxies all have floor rows) vs ``missing_uncovered`` (clause 3 is then INCOMPLETE)."""
     fl = _fl()
     out = {"vetoes": [], "informative_worse": [], "unread": [], "undefined_in_pair": [], "no_floor": [], "checked": 0,
-           "excluded": sorted(exclude), "scope": "sec. 4.3 table keys + the named proxies of non-emitted primaries"}
+           "excluded": sorted(exclude), "scope": "sec. 4.3 table keys + the named proxies of the primaries that have them"}
+    # COMPLETENESS (MM 2026-11-04): the loop below walks the FLOOR's rows, so a scope key the floor has NO row for would be silently unchecked.
+    # It is listed, and it is COVERED only when it is a primary's key whose named proxies all have a usable floor row (the map primary on a
+    # mask-less floor, covered by the sidewalk-only nf_prec_5_10 / nf_prec_10_20); any other missing key leaves clause 3 INCOMPLETE.
+    cover = primary_proxies()
+    out["missing_from_floor"], out["missing_covered"], out["missing_uncovered"] = [], [], []
+    for k in sorted(set(in_table) - set(exclude)):
+        if k in floor["rows"]:
+            continue
+        out["missing_from_floor"].append(k)
+        px = cover.get(k, ())
+        if px and all(_usable_floor_row(floor, p) for p in px):
+            out["missing_covered"].append({"key": k, "covered_by_proxies": list(px)})
+        else:
+            out["missing_uncovered"].append(k)
     for m in sorted(floor["rows"]):
         if m in exclude:
             continue
@@ -433,7 +477,7 @@ def judge(arm: str, ref: str, floor: dict, pair_rows: dict) -> dict:
             if rec["state"] != "READ":
                 unevaluable_guards.append(rec)
         reads.append(rec)
-    exclude = {primary["key"]} if primary and primary.get("key") and primary["state"] != "NOT-COMPUTABLE" else set()
+    exclude = own_primary_keys(arm)                          # the arm's own primary keys AND its own proxies (a map arm is not vetoed by its stand-in)
     c3 = clause3_vetoes(floor, pair_rows, exclude, clause3_scope())
     failing, notes = [], []
     if c3["vetoes"]:
@@ -457,6 +501,8 @@ def judge(arm: str, ref: str, floor: dict, pair_rows: dict) -> dict:
         not_computable.append("named guard '%s' is %s: %s" % (g["text"], g["state"], g.get("why", "")))
     if c3["unread"]:
         not_computable.append("clause 3 not complete: %d floor row(s) were not read for this arm (%s)" % (len(c3["unread"]), ", ".join(c3["unread"][:6])))
+    for k in c3["missing_uncovered"]:                        # a scope key with no floor row and no covering proxies: clause 3 cannot be complete
+        not_computable.append("clause 3 not complete: floor has no row for %s: re-read the floor with the current eval" % k)
     alt = None
     if prim_ok or named_guards:
         listed = [r for r in reads if r["role"] in ("primary", "guard")]
@@ -507,7 +553,7 @@ def resolve_ref(arm: str, ref):
 
 
 def build_verdict(floor_path, paired, eval_arm, eval_ref, arm, ref=None, *, rast_arm=None, rast_ref=None, rast_names=None, rast_stride=1,
-                  psw_key="psw", floor_eval_c0=None, boot=None, seed=None) -> dict:
+                  psw_key="psw", floor_eval_c0=None, boot=None, seed=None, lift_valid=None) -> dict:
     out = {"schema": SCHEMA, "tier": TIER, "arm": arm, "keep_rule": KEEP_RULE, "keep_factor": KEEP_FACTOR, "status": "OK", "verdict": None,
            "estimator": {"answers": "another draw of EPISODES, NOT another training run: the floor |C1-C0| is ONE seed pair (n = 1) and "
                                     "the arm is ONE training run"}}
@@ -531,6 +577,8 @@ def build_verdict(floor_path, paired, eval_arm, eval_ref, arm, ref=None, *, rast
         out["inputs"] = {k: {"path": str(p), "sha256": _sha256(p)} for k, p in (("eval_arm", eval_arm), ("eval_ref", eval_ref), ("paired", paired))}
         if (rast_arm is None) != (rast_ref is None):
             raise Refused("--rast-arm and --rast-ref go together")
+        if lift_valid is not None and rast_arm is None:
+            raise Refused("--lift-valid needs --rast-arm / --rast-ref: a mask with no rasters would be silently ignored")
         fe_path = floor_eval_c0
         fe_rec = (floor.get("inputs") or {}).get("eval_c0") or {}
         if fe_path is None and fe_rec.get("path") and Path(fe_rec["path"]).is_file():
@@ -548,8 +596,17 @@ def build_verdict(floor_path, paired, eval_arm, eval_ref, arm, ref=None, *, rast
         rast_meta = None
         if rast_arm is not None:
             mrows, rast_meta = fl.nearfield_rows(rast_ref, rast_arm, names_file=rast_names, stride=rast_stride, psw_key=psw_key, boot=boot,
-                                                 seed=seed, e0=e_ref, e1=e_arm, problems=problems)
+                                                 seed=seed, e0=e_ref, e1=e_arm, problems=problems, lift_valid=lift_valid)
             pair_rows.update(_pair_rows_from(mrows))
+            if "lift_valid" in (rast_meta or {}):            # set once the mask step ran: the nf_swedge_*lv rows were read on THIS mask
+                lv_v, lv_f = rast_meta["lift_valid"], (floor.get("map_inputs") or {}).get("lift_valid")
+                sv, sf = (lv_v or {}).get("sha256"), (lv_f or {}).get("sha256")
+                out["lift_valid"] = {"verdict": lv_v, "floor": lv_f, "same_mask": sv == sf}
+                _check(checks, "lift-valid mask equals the floor's (the _lv_ rows are read on the same cells)", sv == sf,
+                       "verdict %s vs floor %s" % ((sv or "none")[:12], (sf or "none")[:12]) +
+                       ("" if sv == sf else " -- one side has a mask the other lacks, or the masks differ: re-read the floor and the verdict on ONE --lift-valid"))
+                if not checks[-1]["ok"]:
+                    problems.append("comparability: %s -- %s" % (checks[-1]["check"], checks[-1]["detail"]))
             if "n_files" in (rast_meta or {}) and floor.get("map_inputs"):
                 fm = floor["map_inputs"]
                 _check(checks, "raster file / episode counts equal the floor's",
@@ -596,6 +653,23 @@ def _f(x, nd=6) -> str:
     return "n/a" if x is None else "%.*g" % (nd, x)
 
 
+def _proxy_note(r: dict) -> str:
+    return ("*Emitted proxy keys (sidewalk-only, lift-unmasked; they NEVER stand in for this primary in clauses 1-2, and stay in clause 3's scope for "
+            "levers of other families):* " + ", ".join("`%s`" % k for k in r["proxies"]))
+
+
+def _lift_valid_line(v: dict) -> str:
+    lv = v.get("lift_valid")
+    if not lv:
+        return ("Map primary mask: none given to this verdict (no rasters, or no --lift-valid): the `nf_swedge_*` rows exist only when the floor, both "
+                "evals and the verdict ran on ONE arm-independent mask.")
+    m = lv.get("verdict")
+    if not m:
+        return "Map primary mask: none, and the floor has none: no `nf_swedge_*` row exists (the map primary reads NO-FLOOR -> NOT-COMPUTABLE)."
+    return ("Map primary mask (arm-independent lift-valid): sha256 `%s` (%s, %s episodes) -- %s the floor's." %
+            (m.get("sha256"), m.get("source"), m.get("n_episodes"), "EQUAL to" if lv.get("same_mask") else "NOT EQUAL to"))
+
+
 def render_md(v: dict) -> str:
     L = ["# E1 verdict -- arm %s%s, DEV" % (v.get("arm"), (" vs " + v["ref"]) if v.get("ref") else ""), ""]
     if v["status"] != "OK":
@@ -619,7 +693,7 @@ def render_md(v: dict) -> str:
           "## The keep rule (REFCV9_DESIGN 4.3)", "", v["keep_rule"], "",
           "## Floor provenance", "", "FLOOR.json sha256 `%s` (status %s, %s rows, B %s seed %s). Floor = |C1 - C0|, ONE seed pair (n = 1)."
           % (v["floor"]["sha256"], v["floor"]["status"], v["floor"]["n_rows"], (v["floor"].get("estimator") or {}).get("B"),
-             (v["floor"].get("estimator") or {}).get("seed")), "",
+             (v["floor"].get("estimator") or {}).get("seed")), _lift_valid_line(v), "",
           "## The four metric families (CLAUDE.md, binding)", "", "| family | status |", "|---|---|"]
     L += ["| %s | %s |" % (x["family"], x["status"]) for x in v["families"]]
     L += ["", "Perception is the family this rig reads: boxes and the near-field map raster.", "", "## The pre-registered primary (and named guards)", "",
@@ -635,20 +709,22 @@ def render_md(v: dict) -> str:
     for r in v["reads"]:
         if r["state"] in ("UNREAD", "UNDEFINED", "NO-FLOOR"):
             L += ["", "**%s -- %s.** %s" % (r["text"], r["state"], r.get("why", ""))]
+            if r["proxies"]:
+                L += ["", _proxy_note(r)]
     for r in v["reads"]:
         if r["state"] == "NOT-COMPUTABLE":
             L += ["", "**%s -- NOT-COMPUTABLE.** %s" % (r["text"], r["why"]), "",
                   "*What would compute it:* %s" % r["would_compute"]]
             if r["proxies"]:
-                L.append("*Emitted proxy keys (diagnostic only; NEVER decide the verdict):* " + ", ".join("`%s`" % k for k in r["proxies"]))
+                L.append(_proxy_note(r))
     if v.get("alternative_reading"):
         L += ["", "Alternative (conjunction) reading, NOT the decision: every listed primary kept -> **%s**." % v["alternative_reading"]["all_listed_primaries_kept"]]
     c3 = v["clause3"]
     L += ["", "## Clause 3 -- no other perception primary separated worse beyond 2 x its floor", "",
-          "Swept over the sec. 4.3 table's perception primaries but the arm's own primary: %d rows checked; %d vetoes; %d not read; %d undefined on "
-          "the pair; %d without a floor. Other floor rows separated worse beyond 2 x their floor (INFORMATIVE, never a veto): %d."
-          % (c3["checked"], len(c3["vetoes"]), len(c3["unread"]), len(c3["undefined_in_pair"]), len(c3["no_floor"]),
-             len(c3.get("informative_worse", [])))]
+          "Swept over the sec. 4.3 table's perception primaries but the arm's own primary keys and named proxies (excluded: %s): %d rows checked; %d vetoes; "
+          "%d not read; %d undefined on the pair; %d without a floor. Other floor rows separated worse beyond 2 x their floor (INFORMATIVE, never a veto): %d."
+          % (", ".join("`%s`" % k for k in c3["excluded"]) or "none", c3["checked"], len(c3["vetoes"]), len(c3["unread"]), len(c3["undefined_in_pair"]),
+             len(c3["no_floor"]), len(c3.get("informative_worse", [])))]
     if c3.get("informative_worse"):
         L += ["", "Informative (not a veto): " + ", ".join("`%s` %+.6g (2 x floor %s)" % (x["metric"], x["delta"], _f(x["keep_threshold"]))
                                                            for x in c3["informative_worse"])]
@@ -660,6 +736,14 @@ def render_md(v: dict) -> str:
         L.append("")
     if c3["unread"]:
         L += ["", "Not read (clause 3 incomplete): " + ", ".join("`%s`" % m for m in c3["unread"])]
+    if c3.get("missing_from_floor"):
+        L += ["", "Scope keys the floor has NO row for (%d): %s." % (len(c3["missing_from_floor"]), ", ".join("`%s`" % k for k in c3["missing_from_floor"]))]
+        for x in c3["missing_covered"]:
+            L.append("* `%s` -- covered by proxies %s (the floor has their rows, so a lever of another family is still vetoed on the map family)."
+                     % (x["key"], ", ".join("`%s`" % p for p in x["covered_by_proxies"])))
+        for k in c3["missing_uncovered"]:
+            L.append("* `%s` -- **UNCOVERED**: floor has no row for %s: re-read the floor with the current eval. Clause 3 is incomplete, so this verdict "
+                     "cannot be KEEP (a DROP from another clause still stands)." % (k, k))
     if v.get("boxes_per_object_noNMS_info") and v["arm"] in ("B3", "B3p"):
         b = v["boxes_per_object_noNMS_info"]
         L += ["", "Information (not the keep rule): boxes per detected object, no NMS, at the fixed gate -- arm %s, reference %s. %s"
@@ -840,6 +924,9 @@ def main(argv=None) -> int:
     ap.add_argument("--rast-stride", type=int, default=1)
     ap.add_argument("--psw-key", default="psw")
     ap.add_argument("--floor-eval-c0", help="the floor's own C0 single eval (window file / split are compared against it)")
+    ap.add_argument("--lift-valid", help="the ARM-INDEPENDENT lift-validity mask of the MAP PRIMARY (nf_swedge_prec_lv_*; r9_e1_eval.load_lift_valid): a sidecar "
+                                         ".npz or a raster dir of an unobs-writing arm.  Its sha256 must equal the FLOOR's map_inputs.lift_valid (one side with a "
+                                         "mask and the other without REFUSES); absent -> the map primary is read only if the floor has the row (it cannot without a mask)")
     ap.add_argument("--boot", type=int, help="must equal the floor's B (default: the floor's)")
     ap.add_argument("--seed", type=int, help="must equal the floor's seed (default: the floor's)")
     ap.add_argument("--out-dir", required=True)
@@ -847,7 +934,8 @@ def main(argv=None) -> int:
     od = Path(a.out_dir)
     od.mkdir(parents=True, exist_ok=True)
     v = build_verdict(a.floor, a.paired, a.eval_arm, a.eval_ref, a.arm, a.ref, rast_arm=a.rast_arm, rast_ref=a.rast_ref, rast_names=a.rast_names,
-                      rast_stride=a.rast_stride, psw_key=a.psw_key, floor_eval_c0=a.floor_eval_c0, boot=a.boot, seed=a.seed)
+                      rast_stride=a.rast_stride, psw_key=a.psw_key, floor_eval_c0=a.floor_eval_c0, boot=a.boot, seed=a.seed,
+                      lift_valid=a.lift_valid)
     stem = "VERDICT_%s" % a.arm
     (od / (stem + ".json")).write_text(json.dumps(v, indent=1, default=float, allow_nan=False) + "\n", encoding="utf-8", newline="\n")
     (od / (stem + ".md")).write_text(render_md(v), encoding="utf-8", newline="\n")
