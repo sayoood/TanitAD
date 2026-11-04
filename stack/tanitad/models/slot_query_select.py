@@ -251,15 +251,15 @@ def anchored_forward(dec, memory: Tensor, anchors_xy: Tensor, qpos: Tensor) -> d
     if _r is not None:
         from tanitad.models.box_b3 import run_decoder
         return run_decoder(dec, memory, anchors_xy=anchors_xy, qpos=qpos, **_r)
-    if memory.ndim != 3 or memory.shape[1] != dec.n_memory or memory.shape[2] != dec.d_memory:
-        raise ValueError(f"memory must be [B, {dec.n_memory}, {dec.d_memory}], got {tuple(memory.shape)}")
+    if memory.ndim != 3 or memory.shape[1] != dec.n_memory_in or memory.shape[2] != dec.d_memory:
+        raise ValueError(f"memory must be [B, {dec.n_memory_in}, {dec.d_memory}], got {tuple(memory.shape)}")
     if dec.blocks.norm is not None:
         raise RuntimeError("HQS assumes no stack-level norm (as deep supervision does)")
     b = int(memory.shape[0])
     if tuple(anchors_xy.shape) != (b, dec.n_queries, 2) or tuple(qpos.shape) != (b, dec.n_queries, dec.d_model):
         raise ValueError(f"anchors {tuple(anchors_xy.shape)} / qpos {tuple(qpos.shape)} do not fit "
                          f"[{b}, {dec.n_queries}, 2] / [{b}, {dec.n_queries}, {dec.d_model}]")
-    mem = dec.mem_proj(memory) + dec.mem_pos.to(memory.dtype)
+    mem = dec.mem_proj(memory) + dec.memory_pos(memory).to(memory.dtype)
     x = dec.queries.to(memory.dtype).expand(b, -1, -1)
     qpos = qpos.to(memory.dtype)
     raws = []

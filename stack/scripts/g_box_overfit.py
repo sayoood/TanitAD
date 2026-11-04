@@ -664,7 +664,7 @@ def load_launch_argv(path) -> tuple:
 B3_SCHEMA = "tanitad.g_box_overfit_record/2-b3"
 #: ⭐ C5-S8: `--r9-box-layers` (B4's decoder depth) joins the own-head set -- pinned equal to ``launch_gate.E1_BOX_OWN_FLAGS`` by a test. It is a VALUED flag
 #: (``--r9-box-layers 6`` or ``--r9-box-layers=6``): every membership test below reads the flag HEAD (``_flag_head``), never a bare token.
-B3_FLAGS = ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms", "--r9-box-layers")
+B3_FLAGS = ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms", "--r9-box-layers", "--r9-box-s8-horizon")
 
 
 def _flag_head(tok) -> str | None:
@@ -676,7 +676,7 @@ def _flag_head(tok) -> str | None:
 def b3_build_fields(stamp: dict | None, c5_stamp: dict | None = None) -> dict:
     """What the record says about the B3 model it BUILT, read off the built model (``box_b3_flag.stamp``): ``{}`` when no flag was built, so any
     other launch argv's record is untouched. (The eval pass is the trainer's own row: ``box_b3_flag.box3d_row`` reads a DN config with DN off in eval.)
-    C5-S8: ``c5_stamp`` = ``box_c5_flag.stamp`` read off the built model (the decoder's BUILT depth + params); ``built_c5`` only when ``--r9-box-layers`` was built."""
+    C5-S8: ``c5_stamp`` = ``box_c5_flag.stamp`` read off the built model (the decoder's BUILT depth + params); ``built_c5`` only when ``--r9-box-layers`` or ``--r9-box-s8-horizon`` was built (the latter carries the band row0 + its evidence)."""
     out = {"built": stamp} if stamp else {}
     if c5_stamp:
         out["built_c5"] = c5_stamp
@@ -1184,6 +1184,11 @@ class TrainerAdapter:
         # after `_bbf.attach` / `_pwf.attach` / `_bda.attach` / `_p3f.attach` and before the optimizer and any warm start). The replay builds the SAME depth the trainer
         # does, or G-DVB refuses it (`r9_box_layers: declared 6 but BUILT 3`, the B3 defect again). `_pwf` / `_bda` / `_p3f` are not replayed (no C8 flags in the rig; the aux
         # heads are stripped), so their relative order to `_bc5` cannot matter here. OFF (`--r9-box-layers` unnamed): `attach` touches nothing.
+        # ⭐ C5-S8B (lever 3, `--r9-box-s8-horizon`): the s8 band's row is read off the rig camera bank, so the replay builds `m._rig_camera` BEFORE `_bc5.attach`
+        # exactly as train() does (refc_v3_train.py, the `_bc5.s8_named(args)` line right before `_bc5.attach(model, args)`); without it `attach` refuses loudly
+        # ("needs the rig camera") instead of silently building a memory without the band. OFF: nothing. (`_build_rig_camera` is called again at the end of this build, as before.)
+        if tr._bc5.s8_named(a):
+            m._rig_camera, _ = tr._build_rig_camera(cfg, a)
         tr._bc5.attach(m, a)
         if m._w_map > 0.0:
             _pe, _ptable = tr._read_rig_extrinsics(str(getattr(a, "agent_rig_extrinsics", "")))

@@ -2277,7 +2277,8 @@ class RefCV3Model(nn.Module):
                 hi = mh(fmap_s8, grid, valid)       # refuses a missing fmap_s8
                 pout = {} if br is None else br(fmap_s16, bev_hires=hi["map_hires_bev"],
                                                 **({"map_banded": hi.get("map_banded")}      # refcv9 C8 W-MAP-2 only
-                                                   if getattr(getattr(br, "bev_pool", None), "map_chan_proj", None) is not None else {}))
+                                                   if getattr(getattr(br, "bev_pool", None), "map_chan_proj", None) is not None else {}),
+                                                **({"fmap_s8": fmap_s8} if getattr(br, "wants_s8", False) else {}))     # refcv9 C5 lever 3 only
                 pout = dict(pout)
                 pout["map_hires_logits"] = hi["map_hires_logits"]
                 pout["map_hires_lift_valid"] = hi["map_hires_lift_valid"]

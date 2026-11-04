@@ -1578,7 +1578,7 @@ _E1_R9_PLANNER_FLAGS = _R9W_PF_FLAGS + ("--r9-alloc-force-schedule", "--r9-alloc
 #: ⭐ C5-S8 (MM 207ebd): `--r9-box-layers` (B4's decoder depth, a VALUED flag: `--r9-box-layers 6` / `--r9-box-layers=6`) is an OWN-head lever -- it changes
 #: the INFERENCE box head's structure (6 decoder layers, 7.0 M params), so the inherited /1 record certifies nothing about it. Every consumer reads the FLAG NAME
 #: (`flag_pairs` strips the value), never a bare token. Its attach hop is `_bc5.attach` (box_c5_flag), NOT B3's `_bbf.attach` (see `_R9F_ATTACH`).
-E1_BOX_OWN_FLAGS: tuple = ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms", "--r9-box-layers")
+E1_BOX_OWN_FLAGS: tuple = ("--r9-box-quality", "--r9-box-dn", "--r9-box-class-sqrt", "--r9-box-inloss-nms", "--r9-box-layers", "--r9-box-s8-horizon")
 E1_BOX_AUX_FLAGS: tuple = ("--r9-box-depth-aux", "--r9-box-persp-aux", "--r9-box-bev2-aux")
 #: the record keys an aux-carrying argv's box record stamps (the harness writes them, `box_aux_stamp_reasons` reads them)
 E1_BOX_AUX_STAMP = "aux_heads_not_certified"
@@ -1741,8 +1741,8 @@ _R9F_BRANCH_FLAGS = ("--wsd-branch-from", "--wsd-branch-decay")
 #: ⭐ C5-S8: NOT every own-head flag rides `_bbf.attach`. B3's `is_any` does not cover `--r9-box-layers`, so on a layers-only argv `_bbf.attach` is a NO-OP and its
 #: needle would prove nothing about the depth; the layers flag is attached by `_bc5.attach` (box_c5_flag: `Box3DSlotDecoder.extend_depth`), called right after
 #: `_bbf.attach` in the trainer's build (and in the harness replay, same order). Deleting that line must turn `lever_attach_reasons` red FOR THIS FLAG.
-_R9F_ATTACH = dict({f: "_bbf.attach(model, args)" for f in E1_BOX_OWN_FLAGS if f != "--r9-box-layers"},
-                   **{"--r9-box-layers": "_bc5.attach(model, args)"},
+_R9F_ATTACH = dict({f: "_bbf.attach(model, args)" for f in E1_BOX_OWN_FLAGS if f not in ("--r9-box-layers", "--r9-box-s8-horizon")},
+                   **{"--r9-box-layers": "_bc5.attach(model, args)", "--r9-box-s8-horizon": "_bc5.attach(model, args)"},
                    **{f: "_pwf.attach(model, args)" for f in _R9F_PLAN_FLAGS})
 #: the share alarm (R3 / E0j): when the banded map head is ON, its gradient share of the trunk must stay >= the floor in the smoke's one
 #: `--grad-share-every` reading. E0j's target: the banded map takes >= 0.05 of layer2 (w* 0.511; at w 1.0 it took 0.146). The trainer's

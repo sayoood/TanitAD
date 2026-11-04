@@ -272,12 +272,12 @@ def run_decoder(dec, memory: Tensor, *, dn: dict | None = None, nms_tau: float |
     """The slot decoder's forward with (a) DN queries appended under :func:`dn_attn_mask` and/or (b) between-layer BEV-NMS key masks.
     Returns the usual decoded dict of the MATCHING queries (``aux`` when ``dec.deep_supervision``) and returns the DN decode under
     ``out["_dn_out"]`` for the loss (``select_slots`` passes a non-tensor entry through; the loss selects with ``sel``). ``anchors_xy``/``qpos`` given = the learned_ref (anchored) mode."""
-    if memory.ndim != 3 or memory.shape[1] != dec.n_memory or memory.shape[2] != dec.d_memory:
-        raise ValueError(f"memory must be [B, {dec.n_memory}, {dec.d_memory}], got {tuple(memory.shape)}")
+    if memory.ndim != 3 or memory.shape[1] != dec.n_memory_in or memory.shape[2] != dec.d_memory:
+        raise ValueError(f"memory must be [B, {dec.n_memory_in}, {dec.d_memory}], got {tuple(memory.shape)}")
     if dec.blocks.norm is not None:
         raise RuntimeError("B3 assumes no stack-level norm (as deep supervision does)")
     b, dt = int(memory.shape[0]), memory.dtype
-    mem = dec.mem_proj(memory) + dec.mem_pos.to(dt)
+    mem = dec.mem_proj(memory) + dec.memory_pos(memory).to(dt)
     xm = dec.queries.to(dt).expand(b, -1, -1)
     n = int(xm.shape[1])
     qm = qpos.to(dt) if qpos is not None else torch.zeros_like(xm)

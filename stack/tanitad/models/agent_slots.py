@@ -664,6 +664,15 @@ class AgentSlotDecoder(nn.Module):
     def n_params(self) -> int:
         return sum(p.numel() for p in self.parameters())
 
+    @property
+    def n_memory_in(self) -> int:
+        """How many memory tokens ``forward`` takes: ``n_memory`` (refcv9 C5 lever 3: ``Box3DSlotDecoder`` adds its s8 band when ``mem_pos_s8`` is built)."""
+        return self.n_memory
+
+    def memory_pos(self, memory: Tensor) -> Tensor:
+        """The positional table added to the projected memory: ``self.mem_pos`` EXACTLY (refcv9 C5 lever 3: the one hook ``Box3DSlotDecoder`` overrides)."""
+        return self.mem_pos
+
     def forward(self, memory: Tensor) -> dict:
         """``memory`` [B, M, d_memory] -> per-slot fields [B, N, ·].
 
@@ -673,15 +682,15 @@ class AgentSlotDecoder(nn.Module):
         if memory.ndim != 3:
             raise ValueError(f"memory must be [B, M, d_memory], got "
                              f"{tuple(memory.shape)}")
-        if memory.shape[1] != self.n_memory or \
+        if memory.shape[1] != self.n_memory_in or \
                 memory.shape[2] != self.d_memory:
             raise ValueError(
-                f"memory must be [B, {self.n_memory}, {self.d_memory}], got "
+                f"memory must be [B, {self.n_memory_in}, {self.d_memory}], got "
                 f"{tuple(memory.shape)} — the decoder's positional table is "
                 f"per-token, so a memory of a different length is a geometry "
                 f"mismatch, not a resize.")
         b = memory.shape[0]
-        mem = self.mem_proj(memory) + self.mem_pos.to(memory.dtype)
+        mem = self.mem_proj(memory) + self.memory_pos(memory).to(memory.dtype)
         q = self.queries.to(memory.dtype).expand(b, -1, -1)
         if not getattr(self, "deep_supervision", False):
             raw = self.head(self.norm(self.blocks(q, mem)))      # [B, N, W]

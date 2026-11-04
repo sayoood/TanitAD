@@ -610,9 +610,14 @@ class PerceptionBranch(nn.Module):
             d = {**{k: v for k, v in d.items() if k != "total"}, **_x, "total": d["total"]}
         return d
 
+    @property
+    def wants_s8(self) -> bool:
+        """refcv9 C5 lever 3: True when the box memory carries the s8 horizon band (the bev hook then hands ``fmap_s8`` in)."""
+        return self.box_mem is not None and getattr(self.box_mem, "s8_proj", None) is not None
+
     def forward(self, fmap_s16: Tensor, grid: Tensor | None = None,
                 valid: Tensor | None = None, *,
-                bev_hires: Tensor | None = None, map_banded: dict | None = None) -> dict:
+                bev_hires: Tensor | None = None, map_banded: dict | None = None, fmap_s8: Tensor | None = None) -> dict:
         """⛔ ONE argument family, all vision. No parameter here can carry a
         label -- the ``AgentSlotDecoder.forward`` audit, extended to the branch.
 
@@ -687,7 +692,7 @@ class PerceptionBranch(nn.Module):
             # `.detach()` here would silently refuse a ruling the PI made.
             out["bev_tokens"] = self.bev_tokens(bev_feats)
         if self.box_dec is not None:
-            mem = self.box_mem(fmap_s16, bev_feats)
+            mem = self.box_mem(fmap_s16, bev_feats, **({"s8": fmap_s8} if self.wants_s8 else {}))        # refcv9 C5 lever 3: s8 only when the memory asks
             if self.box_heat is None and self.box_refpts is None:
                 out["box_slots"] = self.box_dec(mem)
             elif self.box_refpts is not None:

@@ -154,7 +154,10 @@ def box_c5_exemptions(model) -> tuple:
     if dec is None:
         return ()
     from tanitad.train.box_c5_flag import TIP_DEPTH
-    return tuple(f"_perception.box_dec.blocks.layers.{i}." for i in range(TIP_DEPTH, len(dec.blocks.layers)))
+    out = [f"_perception.box_dec.blocks.layers.{i}." for i in range(TIP_DEPTH, len(dec.blocks.layers))]
+    if getattr(dec, "mem_pos_s8", None) is not None:   # refcv9 C5 lever 3 (--r9-box-s8-horizon): the s8 band's NEW keys (the refcv8 source has none); an unnamed missing key still refuses
+        out += ["_perception.box_dec.mem_pos_s8", "_perception.box_mem.s8_proj.", "_perception.box_mem.src_embed_s8"]
+    return tuple(out)
 
 
 def bev_warp_exemptions(model) -> tuple:

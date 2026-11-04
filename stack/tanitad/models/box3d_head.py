@@ -132,6 +132,9 @@ BOX3D_LOSS_W: dict[str, float] = {"z": 1.0, "h": 1.0}
 #: MEASURED and RECORDED on Thor, never a gate on a research arm -- nothing here reads a latency. ESTIMATED by the design: 6 layers ~ 7.0 M.
 BOX3D_PARAM_CAP: int = 12_000_000
 
+#: refcv9 C5 lever 3 (``--r9-box-s8-horizon``, REFCV9_DESIGN 2.4 row *memory*): the s8 band = 16 stride-8 rows around the rig's horizon row (x the s8 width = 2,048 tokens at 416x1024)
+S8_BAND_ROWS: int = 16
+
 
 # --------------------------------------------------------------------------- #
 # memory: stride-16 tokens (+ BEV features)                                    #
@@ -193,7 +196,32 @@ class Box3DMemory(nn.Module):
         self.src_embed = nn.Parameter(torch.zeros(1, 2, self.d_model))
         nn.init.trunc_normal_(self.src_embed, std=0.02)
 
-    def forward(self, image: Tensor, bev: Tensor | None = None) -> Tensor:
+    def enable_s8(self, d_s8: int, s8_hw: tuple[int, int], row0: int, n_rows: int = S8_BAND_ROWS) -> None:
+        """refcv9 C5 lever 3: add the s8 horizon band to the memory. The ONLY new parameters are ``s8_proj`` (Linear d_s8 -> d_model) and ``src_embed_s8`` ([1, 1, d_model]);
+        every existing parameter keeps its shape (``src_embed`` stays [1, 2, d]). The s8 tokens are appended LAST. OFF builds nothing (a default model's state_dict is the tip's)."""
+        h8, w8 = int(s8_hw[0]), int(s8_hw[1])
+        if not 0 <= int(row0) <= h8 - int(n_rows):
+            raise ValueError(f"s8 band row0 {row0} outside [0, {h8 - int(n_rows)}] for an s8 map of {h8} rows")
+        dev, dt = self.src_embed.device, self.src_embed.dtype
+        self.s8_hw, self.s8_rows, self.s8_n_tokens = (h8, w8), (int(row0), int(n_rows)), int(n_rows) * w8
+        self.s8_proj = nn.Linear(int(d_s8), self.d_model).to(device=dev, dtype=dt)        # built on CPU (the RNG stream), then moved to the branch's device
+        p = torch.zeros(1, 1, self.d_model)
+        nn.init.trunc_normal_(p, std=0.02)
+        self.src_embed_s8 = nn.Parameter(p.to(device=dev, dtype=dt))
+
+    def _append_s8(self, mem: Tensor, s8: Tensor | None) -> Tensor:
+        proj = getattr(self, "s8_proj", None)
+        if proj is None:
+            return mem                                        # OFF: exactly the tip's memory
+        if s8 is None:
+            raise ValueError("[box-c5] this Box3DMemory has the s8 horizon band (--r9-box-s8-horizon) but no fmap_s8 reached it")
+        r0, nr = self.s8_rows
+        band = s8[:, :, r0:r0 + nr, :]
+        if band.shape[1] != proj.in_features or tuple(band.shape[2:]) != (nr, self.s8_hw[1]):
+            raise ValueError(f"[box-c5] fmap_s8 band is {tuple(band.shape[1:])}, built for ({proj.in_features}, {nr}, {self.s8_hw[1]}); s8 map {tuple(s8.shape[1:])}")
+        return torch.cat([mem, proj(band.flatten(2).transpose(1, 2)) + self.src_embed_s8], dim=1)
+
+    def forward(self, image: Tensor, bev: Tensor | None = None, s8: Tensor | None = None) -> Tensor:
         if image.shape[1] != self.img_proj.in_features:
             raise ValueError(
                 f"image feature map has {image.shape[1]} channels, the box head "
@@ -219,13 +247,13 @@ class Box3DMemory(nn.Module):
         tok = self.img_proj(image.flatten(2).transpose(1, 2))
         tok = tok + self.src_embed[:, 0:1]
         if not self.use_bev:
-            return tok
+            return self._append_s8(tok, s8)
         if bev is None:
             raise ValueError("this Box3DMemory was built with use_bev=True but "
                              "no BEV features were passed")
         bt = F.adaptive_avg_pool2d(bev, self.bev_tokens_hw)
         bt = self.bev_proj(bt.flatten(2).transpose(1, 2)) + self.src_embed[:, 1:2]
-        return torch.cat([tok, bt], dim=1)
+        return self._append_s8(torch.cat([tok, bt], dim=1), s8)
 
 
 # --------------------------------------------------------------------------- #
@@ -280,6 +308,22 @@ class Box3DSlotDecoder(AgentSlotDecoder):
             raise ValueError(
                 f"Box3DSlotDecoder has {n:,} trainable params -- above the refcv9 D2 cap {BOX3D_PARAM_CAP:,} (PI 2026-11-02: box3d <= 12 M; "
                 f"the agent slots keep PARAM_BAND). Pass enforce_band=False for shape tests.")
+
+    def enable_s8_memory(self, n_tokens: int) -> None:
+        """refcv9 C5 lever 3: the NEW positional table ``mem_pos_s8`` [1, n_tokens, d_model] for the s8 band; ``mem_pos`` keeps its shape. Re-checks the D2 cap."""
+        p = torch.zeros(1, int(n_tokens), self.d_model)
+        nn.init.trunc_normal_(p, std=0.02)
+        self.mem_pos_s8 = nn.Parameter(p.to(device=self.mem_pos.device, dtype=self.mem_pos.dtype))
+        self._check_cap()
+
+    @property
+    def n_memory_in(self) -> int:
+        extra = getattr(self, "mem_pos_s8", None)
+        return int(self.n_memory) + (0 if extra is None else int(extra.shape[1]))
+
+    def memory_pos(self, memory: Tensor) -> Tensor:
+        extra = getattr(self, "mem_pos_s8", None)
+        return self.mem_pos if extra is None else torch.cat([self.mem_pos, extra], dim=1)
 
     def extend_depth(self, depth: int) -> None:
         """refcv9 C5 (``--r9-box-layers``): grow the stack IN PLACE to ``depth`` layers. The new layers are deep copies of layer 0 -- exactly

@@ -299,7 +299,9 @@ def _hops(src: str) -> dict:
             "pin_in_pin_refcv8": int(bool(re.search(r"def _pin_refcv8\(cfg, args\).*?_bc5\.pin_args\(args\)", src, re.S))),
             "attach_after_perception_build": int(bool(re.search(
                 r"model\._perception = _perc\.build_perception_branch\(model, _pcfg\)\.to\(device\)\n\s*_bbf\.attach\(model, args\)[^\n]*\n"
-                r"(?:\s*_[a-z0-9]+\.attach\(model, args\)[^\n]*\n)*?\s*_bc5\.attach\(model, args\)", src)))}
+                r"(?:\s*_[a-z0-9]+\.attach\(model, args\)[^\n]*\n)*?"
+                r"(?:\s*if _bc5\.s8_named\(args\):[^\n]*\n\s*model\._rig_camera, _ = _build_rig_camera\(cfg, args\)[^\n]*\n)?"      # C5-S8B: lever 3 builds the rig camera right before the attach
+                r"\s*_bc5\.attach\(model, args\)", src)))}
 
 
 def _ok(h: dict) -> bool:
@@ -314,7 +316,7 @@ def test_trainer_reaches_the_lever_and_each_mutation_FAILS():
         assert not _ok(_hops(src.replace(needle, "pass  # " + needle[:8], 1))), needle
     # the eval loader (G-EVAL: strict load of a depth-N state_dict into the same build) calls the same attach
     lsrc = LOADER.read_bytes().decode("utf-8")
-    assert lsrc.count("tr._bc5.attach(model, args)") == 1
+    assert lsrc.count("tr._bc5.attach(model, args") == 1      # C5-S8B: now `attach(model, args, stamped=config.get(...))` (lever 3 reads the s8 band row from the stamp)
 
 
 def test_stamp_reads_the_built_decoder_and_is_absent_when_off():

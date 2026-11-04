@@ -10116,6 +10116,8 @@ def train(args) -> dict:
         _pwf.attach(model, args)                             # refcv9 C8: W-MAP-2 projection / W-BOX tokens + gates (OFF: nothing)
         _bda.attach(model, args)                             # refcv9 C3: the training-only depth head on model._perception + model._w_box_depth (OFF: nothing)
         _p3f.attach(model, args)                             # refcv9 C4: the training-only B2 head (or the B2c BEV head) on model._perception + its weight attribute (OFF: nothing)
+        if _bc5.s8_named(args):                              # refcv9 C5 lever 3: the horizon row is read off the rig camera bank (built again below, M18); OFF: nothing
+            model._rig_camera, _ = _build_rig_camera(cfg, args)
         _bc5.attach(model, args)                             # refcv9 C5-REST: the box3d decoder deepened to --r9-box-layers N, D2 cap re-checked (OFF: nothing)
         _pframe = _perc.frame_for_model(model)
         if model._w_map > 0.0:
@@ -13668,6 +13670,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="refcv9 C5-REST (REFCV9_DESIGN 2.4 row depth, arm B4): the box3d decoder's depth N (B4 names 6). 0 (the default) = not named = the "
                          "tip's depth 3, bit-identical. The decoder is deepened in place (new layers = copies of the template layer, no RNG draw); the D2 "
                          "cap (box3d <= 12 M trainable parameters) is re-checked. Needs --w-box3d > 0; refused under a train-only freeze.")
+    g8.add_argument("--r9-box-s8-horizon", action="store_true",
+                    help="refcv9 C5 lever 3 (REFCV9_DESIGN 2.4 row memory, arm B4): append the 16 stride-8 rows around the rig's horizon row (x the s8 width = 2,048 tokens) to the box memory, "
+                         "with their own projection + embedding. The horizon row is derived from the rig camera bank and stamped in config.json. Needs --w-box3d > 0, --map-hires on (the s8 tap) and "
+                         "--agent-rig-camera extrinsics. Default OFF: the tip's memory, bit-identical.")
     g9 = ap.add_argument_group("refcv9 R9-PF (clean-split, regime-factored progress head; REFCV9_INMODEL_DESIGN.md)")
     g9.add_argument("--r9-perc-rig", action="store_true",
                     help="refcv9 C7 (REFCV9_DESIGN 4.3): the E1 PERCEPTION-ONLY rig -- init from refcv8 EMA-48,852 via "
