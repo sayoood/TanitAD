@@ -10,7 +10,8 @@ REACHABILITY (the CLAUDE.md class "built, tested and unreachable from its caller
   -> ``args.r9_box_depth_aux`` / ``args.w_box_depth``  -> ``pin_args`` (refusals) -> ``attach`` (train(), after the perception branch:
   ``model._perception.box_depth_aux`` + ``model._w_box_depth``) -> ``attach_dataset`` (train(), before the DataLoader: ``ds._r9_bd``)
   -> V3Dataset.__getitem__ -> ``item_targets`` (IN THE DATALOADER WORKER: the cylindrical ray-cast targets of the item's own cuboids)
-  -> default collate -> ``compute_losses_perc_rig`` -> ``loss_term`` (reads ``out["fmap_s8"]``, ``out["fmap_s16"]`` and the batch's ``bd_*``
+  -> default collate -> ``compute_losses_perc_rig`` (the rig) OR ``compute_losses_v3`` (the full model, AUX-FULL: the same call, right
+  after the 10 cm map term) -> ``loss_term`` (reads ``out["fmap_s8"]``, ``out["fmap_s16"]`` and the batch's ``bd_*``
   targets) -> ``loss = loss + term`` -> the trainer's ``.backward()``.
 The head is NEVER called by ``RefCV3Model.forward``: the eval forward is the OFF forward, bit for bit (tests/test_box_depth_aux.py).
 
@@ -53,7 +54,8 @@ def _head(model):
 
 
 def pin_args(args) -> None:
-    """The flag's refusals, at argv time. OFF: nothing is checked (an orphan ``--w-box-depth`` alone is refused too)."""
+    """The flag's refusals, at argv time. OFF: nothing is checked (an orphan ``--w-box-depth`` alone is refused too). Admits the perception
+    rig (``--r9-perc-rig``) AND the full model (AUX-FULL: ``--w-box3d > 0``, its perception branch) when every input the head reads is present."""
     w = float(getattr(args, W_DEST, 0.0) or 0.0)
     if not is_on(args):
         if w != 0.0:
@@ -62,9 +64,11 @@ def pin_args(args) -> None:
     bad = []
     if not w > 0.0:
         bad.append(f"{W_FLAG} is {w:g}: the depth term (weight = {W_FLAG}) would not exist; name a positive weight in the argv")
-    if not bool(getattr(args, "r9_perc_rig", False)):
-        bad.append("--r9-perc-rig is off: B1 is wired into the perception rig's loss (compute_losses_perc_rig) only; the full "
-                   "model's loss function does not call it, so the head would sit in the optimiser untrained")
+    if not bool(getattr(args, "r9_perc_rig", False)) and not float(getattr(args, "w_box3d", 0.0) or 0.0) > 0.0:
+        # AUX-FULL: the full model's loss (compute_losses_v3) calls the head too; the perception branch it hangs on is built there by --w-box3d > 0
+        # (the rig builds it by its own pin). Without either, `attach` has nowhere to hang the head.
+        bad.append("--r9-perc-rig is off and --w-box3d is not > 0: the head hangs on the perception branch, which the full model builds only "
+                   "with --w-box3d > 0 (the perception rig builds it itself); no branch, nowhere to attach the head")
     if str(getattr(args, "map_hires", "off") or "off") != "on":
         bad.append("--map-hires is not `on`: the stride-8 map the head reads exists only with the s8 tap (--map-hires on)")
     if not str(getattr(args, "join3d", "") or ""):
@@ -198,7 +202,7 @@ def targets_from_batch(batch: dict, device):
 
 def loss_term(model, out: dict, batch: dict, device, extra: dict):
     """The weighted depth term, or ``None`` (head not built, or the model is in EVAL mode: training-only). Writes ``extra["box_depth"]``
-    (the unweighted loss) and its census. Called by ``compute_losses_perc_rig``; the head is called HERE and nowhere else."""
+    (the unweighted loss) and its census. Called by ``compute_losses_perc_rig`` and (AUX-FULL) ``compute_losses_v3``; the head is called HERE and nowhere else."""
     head = _head(model)
     if head is None or not model.training:
         return None
@@ -242,7 +246,7 @@ def stamp(model, args) -> dict | None:
             "targets_from": "the batch's own box3d cuboids (agent_box, agent_yaw, agent_cz, agent_h, agent_valid & agent_zh_mask), clip camera "
                             "from model._rig_camera", "builder": "tanitad/data/box_depth_targets.py (byte copy of e0 e0g_depth_targets.py, "
                             "blob 6fff1d3a15d9e66fa8ef82256654a30ca26f21d6)",
-            "targets_built": "in the DataLoader workers, per item, single-threaded (item_targets; byte-identical to the batch build)", "training_only": "head called only by compute_losses_perc_rig; never by RefCV3Model.forward"}
+            "targets_built": "in the DataLoader workers, per item, single-threaded (item_targets; byte-identical to the batch build)", "training_only": "head called only by the loss functions (compute_losses_perc_rig, and since AUX-FULL compute_losses_v3); never by RefCV3Model.forward"}
 
 
 # ---- G-DVB -------------------------------------------------------------------------------------------------------------------- #

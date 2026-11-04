@@ -269,11 +269,19 @@ def test_the_aux_heads_and_R9PF_are_refused_and_the_aux_unreachability_is_pinned
         for f in ("--r9-box-depth-aux", "--w-box-persp", "--r9-box-bev2-aux", "--r9-progress-head", "--w-r9-prog"):
             r, _ = _rules(env, prof, list(argv) + [f] + ([] if f.startswith("--r9") else ["0.1"]))
             assert any(x.startswith(f + " is passed") for x in r), (f, r)
-    body = TRAINER.split("def compute_losses_perc_rig(")[1].split("\ndef ")[0]
-    assert "_bda.loss_term(" in body and "_p3f.loss_term(" in body                       # the ONLY callers are inside the perception rig's loss
-    assert TRAINER.count("_bda.loss_term(") == 1 and TRAINER.count("_p3f.loss_term(") == 1
-    for mod in ("box_depth_aux_flag", "persp3d_aux_flag"):
-        assert 'getattr(args, "r9_perc_rig", False)' in (ROOT / "tanitad" / "train" / (mod + ".py")).read_text(encoding="utf-8")
+    # AUX-FULL (hold_r9_aux_full): the trainer NOW reaches the aux heads from the full model -- the callers are the perception rig's loss AND
+    # compute_losses_v3, each exactly once -- so the unreachability half of this pin flipped on purpose; the PROFILE still forbids the levers
+    # (the loop above) until the MM drops `_R9F_AUX_ALL` from refcv9-full's forbidden_levers after E1 has crowned a head.
+    rig = TRAINER.split("def compute_losses_perc_rig(")[1].split("\ndef ")[0]
+    full = TRAINER.split("def compute_losses_v3(")[1].split("\ndef ")[0]
+    for call in ("_bda.loss_term(", "_p3f.loss_term("):
+        assert call in rig and call in full and TRAINER.count(call) == 2, call
+    import argparse
+    from tanitad.train import box_depth_aux_flag as BDF
+    base = dict(r9_box_depth_aux=True, w_box_depth=0.1, r9_perc_rig=False, map_hires="on", join3d="j3", agent_join="aj", agent_rig_camera="extrinsics")
+    BDF.pin_args(argparse.Namespace(**{**base, "w_box3d": 1.0}))                                  # the full model's perception branch admits it
+    with pytest.raises(SystemExit, match="r9-perc-rig"):
+        BDF.pin_args(argparse.Namespace(**base))                                                  # no rig, no perception branch: refused
 
 
 def test_G_SUITE_has_no_per_file_list_it_runs_the_whole_stack_and_this_file_is_in_it():

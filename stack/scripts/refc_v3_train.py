@@ -3076,14 +3076,15 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
     "w_box_persp": {
         "flag": "--w-box-persp",
         "term": "refcv9 C4: B2 perspective 3D aux head (FCOS3D-style on s8 + s16) (TRAINING-ONLY; targets from the batch's own cuboids through the cylindrical model)",
-        # the head exists iff --r9-box-persp-aux; only the perception rig's loss calls it (persp3d_aux_flag.pin_args, the same list)
+        # the head exists iff --r9-box-persp-aux; the loss is called by the perception rig's loss AND (AUX-FULL) the full model's, so the
+        # gate does not name the rig: --w-box3d > 0 builds the perception branch the head hangs on (persp3d_aux_flag.pin_args, the same list)
         "gate": lambda a: (
-            bool(getattr(a, "r9_box_persp_aux", False)) and bool(getattr(a, "r9_perc_rig", False))
+            bool(getattr(a, "r9_box_persp_aux", False))
             and float(getattr(a, "w_box3d", 0.0) or 0.0) > 0.0
             and str(getattr(a, "map_hires", "off") or "off") == "on"
             and bool(str(getattr(a, "join3d", "") or "")) and bool(str(getattr(a, "agent_join", "") or ""))
             and str(getattr(a, "agent_rig_camera", "off") or "off") == "extrinsics",
-            "--w-box-persp needs --r9-box-persp-aux, --r9-perc-rig, --w-box3d > 0, --map-hires on, --join3d, --agent-join and "
+            "--w-box-persp needs --r9-box-persp-aux, --w-box3d > 0, --map-hires on, --join3d, --agent-join and "
             "--agent-rig-camera extrinsics"),
         "mask": None,
         "already": "persp3d_aux_flag.pin_args (orphan weight / weight 0 with the flag / both heads / every missing input refused) "
@@ -3092,14 +3093,15 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
     "w_box_bev2": {
         "flag": "--w-box-bev2",
         "term": "refcv9 C4: B2c parameter-matched second BEV head (B2's capacity control) (TRAINING-ONLY; targets from the batch's own cuboids through the cylindrical model)",
-        # the head exists iff --r9-box-bev2-aux; only the perception rig's loss calls it (persp3d_aux_flag.pin_args, the same list)
+        # the head exists iff --r9-box-bev2-aux; the loss is called by the perception rig's loss AND (AUX-FULL) the full model's, so the
+        # gate does not name the rig: --w-box3d > 0 builds the perception branch the head hangs on (persp3d_aux_flag.pin_args, the same list)
         "gate": lambda a: (
-            bool(getattr(a, "r9_box_bev2_aux", False)) and bool(getattr(a, "r9_perc_rig", False))
+            bool(getattr(a, "r9_box_bev2_aux", False))
             and float(getattr(a, "w_box3d", 0.0) or 0.0) > 0.0
             and str(getattr(a, "map_hires", "off") or "off") == "on"
             and bool(str(getattr(a, "join3d", "") or "")) and bool(str(getattr(a, "agent_join", "") or ""))
             and str(getattr(a, "agent_rig_camera", "off") or "off") == "extrinsics",
-            "--w-box-bev2 needs --r9-box-bev2-aux, --r9-perc-rig, --w-box3d > 0, --map-hires on, --join3d, --agent-join and "
+            "--w-box-bev2 needs --r9-box-bev2-aux, --w-box3d > 0, --map-hires on, --join3d, --agent-join and "
             "--agent-rig-camera extrinsics"),
         "mask": None,
         "already": "persp3d_aux_flag.pin_args (orphan weight / weight 0 with the flag / both heads / every missing input refused) "
@@ -3109,15 +3111,17 @@ REFC_WEIGHT_GATES: dict[str, dict] = {
         "flag": "--w-box-depth",
         "term": "refcv9 C3 (arm B1): the TRAINING-ONLY box-derived depth head's soft LID cross-entropy over object cells "
                 "(s8 + s16; targets ray-cast from the batch's own cuboids through the cylindrical model)",
-        # the head exists iff --r9-box-depth-aux; the loss is called only by the perception rig's loss, and the targets
-        # need the s8 tap, the join3d cuboids and the clip's own camera (box_depth_aux_flag.pin_args, the same list)
+        # the head exists iff --r9-box-depth-aux; the loss is called by the perception rig's loss AND (AUX-FULL) the full model's, and the
+        # targets need the s8 tap, the join3d cuboids and the clip's own camera (box_depth_aux_flag.pin_args, the same list). The head hangs
+        # on the perception branch: the rig builds it as before; the full model builds it with --w-box3d > 0
         "gate": lambda a: (
-            bool(getattr(a, "r9_box_depth_aux", False)) and bool(getattr(a, "r9_perc_rig", False))
+            bool(getattr(a, "r9_box_depth_aux", False))
+            and (bool(getattr(a, "r9_perc_rig", False)) or float(getattr(a, "w_box3d", 0.0) or 0.0) > 0.0)
             and str(getattr(a, "map_hires", "off") or "off") == "on"
             and bool(str(getattr(a, "join3d", "") or "")) and bool(str(getattr(a, "agent_join", "") or ""))
             and str(getattr(a, "agent_rig_camera", "off") or "off") == "extrinsics",
-            "--w-box-depth needs --r9-box-depth-aux, --r9-perc-rig, --map-hires on, --join3d, --agent-join and "
-            "--agent-rig-camera extrinsics (the head, the rig loss that calls it, and the ray-cast inputs)"),
+            "--w-box-depth needs --r9-box-depth-aux, (--r9-perc-rig or --w-box3d > 0), --map-hires on, --join3d, --agent-join and "
+            "--agent-rig-camera extrinsics (the head, the perception branch it hangs on, and the ray-cast inputs)"),
         "mask": None,
         "already": "box_depth_aux_flag.pin_args (orphan weight / weight 0 with the flag / every missing input refused) + G-DVB "
                    "`w_box_depth` (model._w_box_depth is the declared weight)",
@@ -4906,6 +4910,44 @@ R8_V9_NAV_TO_NAV_CMD = {0: 0, 1: 1, 2: 2}
 def _nullctx():
     import contextlib
     return contextlib.nullcontext()
+
+
+class _AuxHeadsHeldOut:
+    """refcv9 AUX-FULL: hold the TRAINING-ONLY aux heads (B1 ``box_depth_aux`` / B2 ``box_persp_aux`` / B2c ``box_bev2_aux``) OUT of the FULL
+    model's ``--init-from`` warm start, and put them back (same modules, SAME ORDER: ``state_dict`` key order is unchanged) on exit.
+
+    WHY: ``refcv8_train.warm_start_from`` REFUSES every key the source lacks that is not an ``r8_*`` seam or an R9-PF key, and the heads
+    (built by ``attach`` BEFORE the warm start, as in the rig) are new to the refcv8 source -- so, built into the full model, they would refuse
+    every E2 / E3 launch. The perception rig NAMES the prefixes instead (``refcv9_perc_rig.box_depth_exemptions`` / ``persp_exemptions``);
+    the full model's warm start has no such list and is not this file's to edit, so the heads are simply not in the module tree while it runs.
+    Everything ELSE is checked exactly as before (a source key the build lacks, a shape mismatch, any other missing key still REFUSES).
+    The heads keep their own seeded init (``attach`` draws it inside ``fork_rng``); ``enabled=False`` (the rig) and a model with no head touch
+    nothing, so the OFF warm start is the tip's, check for check."""
+
+    def __init__(self, model, enabled: bool = True):
+        self.model, self.enabled = model, bool(enabled)
+        self.held: list = []                                   # the head attribute names that were held out (read by the config.json stamp)
+        self._order = None
+
+    def __enter__(self):
+        br = getattr(self.model, "_perception", None) if self.enabled else None
+        if br is None:
+            return self
+        names = tuple(n for n in (_bda.HEAD_ATTR, _p3f.HEAD_P, _p3f.HEAD_B) if n in br._modules)
+        if names:
+            self._order = list(br._modules.items())
+            for n in names:
+                del br._modules[n]
+            self.held = list(names)
+        return self
+
+    def __exit__(self, *exc):
+        if self._order is not None:
+            br = self.model._perception
+            br._modules.clear()
+            br._modules.update(self._order)
+            self._order = None
+        return False
 
 
 def _synth_episodes(n: int, cfg: refc.RefCConfig, seed: int = 0,
@@ -6950,6 +6992,18 @@ def compute_losses_v3(model: v3.RefCV3Model, batch: dict, device: str,
                                with_metrics=bool(log_metrics) or not model.training)
     if _mh_term is not None:
         loss = loss + _mh_term
+    # ---- refcv9 AUX-FULL (C3 B1 / C4 B2, B2c): the TRAINING-ONLY aux heads in the FULL model's loss ---------------------------------- #
+    # ⭐ The SAME `loss_term` functions, in the SAME order and at the SAME place as `compute_losses_perc_rig` (no second formula): E2 / E3
+    # train the head INSIDE the full model when E1 crowns B1 / B2 / B2c. DORMANT: with `--r9-box-depth-aux` / `--r9-box-persp-aux` /
+    # `--r9-box-bev2-aux` absent no head is built, `loss_term` returns None, and nothing is added (bit-identical to the tip). ⛔ Both
+    # REFUSE rather than skip: a built head whose batch carries no targets, no `fmap_s8` / `fmap_s16` or no pooled BEV is a SystemExit.
+    # The launch gate keeps forbidding the flags for refcv9-full until the MM flips the profile (`launch_gate._R9F_AUX_ALL`).
+    _bd_term = _bda.loss_term(model, out, batch, device, extra)
+    if _bd_term is not None:
+        loss = loss + _bd_term
+    _p3_term = _p3f.loss_term(model, out, batch, device, extra)
+    if _p3_term is not None:
+        loss = loss + _p3_term
 
     # ---- refcv7 (PI 2026-09-19): WTA proposals + the disentangled scorer ----
     # ⛔ Both terms are ABSENT from the graph at weight 0 (not multiplied by 0),
@@ -11154,8 +11208,13 @@ def train(args) -> dict:
             _init_stamp = {"path": str(args.init_from), "applied": False,
                            "why": "resumed this run's own ckpt.pt (resume wins)"}
         else:
-            _init_stamp = dict((_r9rig.warm_start_perc_rig if _r9rig_on else r8train.warm_start_from)(model, args.init_from),
-                               applied=True)
+            # refcv9 AUX-FULL: in the FULL model the training-only aux heads (new to the refcv8 source) are held out of the key check and keep
+            # their own init; the rig names them in its exemption list instead (`_AuxHeadsHeldOut`: a no-op with no head / under the rig)
+            with _AuxHeadsHeldOut(model, enabled=not _r9rig_on) as _aux_hold:
+                _init_stamp = dict((_r9rig.warm_start_perc_rig if _r9rig_on else r8train.warm_start_from)(model, args.init_from),
+                                   applied=True)
+            if _aux_hold.held:
+                _init_stamp["aux_heads_fresh_init"] = list(_aux_hold.held)
             print("[v3] warm start from %s (md5 %s, source step %s): %d keys loaded, %d new refcv8 keys, "
                   "optimiser fresh" % (args.init_from, _init_stamp["md5"][:8], _init_stamp["source_step"],
                                         _init_stamp["n_loaded"], _init_stamp["n_new_refcv8_keys"]), flush=True)

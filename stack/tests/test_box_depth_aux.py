@@ -447,7 +447,7 @@ def test_red_arm_a_dropped_call_in_the_loss_makes_the_reachability_check_red(mon
 def test_trainer_hops_are_present_in_the_source():
     src = (ROOT / "scripts" / "refc_v3_train.py").read_text(encoding="utf-8")
     for needle in ("from tanitad.train import box_depth_aux_flag as _bda", "_bda.register_dvb_levers(_dvb.register)", "_bda.pin_args(args)",
-                   "_bda.attach(model, args)", "_bd_term = _bda.loss_term(model, out, batch, device, extra)", "loss = loss + _bd_term",
+                   "_bda.attach(model, args)",
                    '"r9_box_depth_aux": _bda.stamp(model, args)', '"--r9-box-depth-aux"', 'g8.add_argument("--w-box-depth"', '"w_box_depth": {',
                    "_bda.attach_dataset(ds, model, args)", "item.update(_bda.item_targets(item, self._r9_bd))"):
         assert src.count(needle) == 1, needle
@@ -458,9 +458,14 @@ def test_trainer_hops_are_present_in_the_source():
     a = src.index("_bda.attach_dataset(ds, model, args)")
     assert a < src.index("ds, batch_size=args.batch, sampler=_train_sampler, num_workers=args.workers,")
     assert src.index("_bda.attach(model, args)") < a
-    # the loss call sits inside compute_losses_perc_rig (between its def and the next top-level def)
+    # the loss call sits inside compute_losses_perc_rig (between its def and the next top-level def) AND -- AUX-FULL -- inside compute_losses_v3
+    # (the full model's loss), each exactly once, each followed by its own `loss = loss + _bd_term`
     i, j = src.index("def compute_losses_perc_rig("), src.index("def _lan_arm_preflight(")
-    assert i < src.index("_bda.loss_term(model, out, batch, device, extra)") < j
+    k = src.index("def compute_losses_v3(")
+    assert k < i
+    for body in (src[k:i], src[i:j]):
+        assert body.count("_bd_term = _bda.loss_term(model, out, batch, device, extra)") == 1 and body.count("loss = loss + _bd_term") == 1
+    assert src.count("_bda.loss_term(") == 2 and src.count("loss = loss + _bd_term") == 2
     ld = (ROOT / "tanitad" / "eval" / "refcv7_loader.py").read_text(encoding="utf-8")
     assert ld.count("tr._bda.attach(model, args)") == 1
 

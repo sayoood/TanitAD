@@ -399,14 +399,22 @@ def test_pin_args_refusals():
     F.pin_args(argparse.Namespace(**base))                                               # the complete B2 argv is admitted
     b2c = {**base, "r9_box_persp_aux": False, "w_box_persp": 0.0, "r9_box_bev2_aux": True, "w_box_bev2": 0.1, "agent_rig_camera": "off"}
     F.pin_args(argparse.Namespace(**b2c))                                                # B2c needs no camera
-    for k, v, frag in (("w_box_persp", 0.0, "positive weight"), ("r9_perc_rig", False, "r9-perc-rig"), ("w_box3d", 0.0, "w-box3d"),
+    for k, v, frag in (("w_box_persp", 0.0, "positive weight"), ("w_box3d", 0.0, "w-box3d"),
                        ("map_hires", "off", "map-hires"), ("join3d", "", "join3d"), ("agent_join", "", "agent-join"),
                        ("agent_rig_camera", "off", "agent-rig-camera")):
         with pytest.raises(SystemExit, match=frag):
             F.pin_args(argparse.Namespace(**{**base, k: v}))
-    for k, v, frag in (("w_box_bev2", 0.0, "positive weight"), ("w_box3d", 0.0, "w-box3d"), ("r9_perc_rig", False, "r9-perc-rig")):
+    for k, v, frag in (("w_box_bev2", 0.0, "positive weight"), ("w_box3d", 0.0, "w-box3d")):
         with pytest.raises(SystemExit, match=frag):
             F.pin_args(argparse.Namespace(**{**b2c, k: v}))
+    # AUX-FULL: the FULL model (no --r9-perc-rig) is admitted when every input is present (its perception branch = --w-box3d > 0) -- this used to be
+    # a refusal ("r9-perc-rig"); it is refused again, by the same w-box3d bullet, as soon as the perception branch would not be built
+    nr = {"r9_perc_rig": False}
+    F.pin_args(argparse.Namespace(**{**base, **nr}))
+    F.pin_args(argparse.Namespace(**{**b2c, **nr}))
+    for d in (base, b2c):
+        with pytest.raises(SystemExit, match="w-box3d"):
+            F.pin_args(argparse.Namespace(**{**d, **nr, "w_box3d": 0.0}))
     with pytest.raises(SystemExit, match="MUTUALLY EXCLUSIVE"):                          # both flags: refused
         F.pin_args(argparse.Namespace(**{**base, "r9_box_bev2_aux": True, "w_box_bev2": 0.1}))
     for kw in ({"w_box_persp": 0.2, "r9_box_persp_aux": False}, {"w_box_bev2": 0.2}):    # a weight with no flag: a dead flag
@@ -485,7 +493,7 @@ def test_stamp_states_the_unpinned_definitions(monkeypatch):
 def test_trainer_hops_are_present_in_the_source():
     src = (ROOT / "scripts" / "refc_v3_train.py").read_text(encoding="utf-8")
     for needle in ("from tanitad.train import persp3d_aux_flag as _p3f", "_p3f.register_dvb_levers(_dvb.register)", "_p3f.pin_args(args)",
-                   "_p3f.attach(model, args)", "_p3_term = _p3f.loss_term(model, out, batch, device, extra)", "loss = loss + _p3_term",
+                   "_p3f.attach(model, args)",
                    '"r9_box_persp_aux": _p3f.stamp(model, args)', '"r9_box_bev2_aux": _p3f.stamp(model, args)', '"--r9-box-persp-aux"',
                    'g8.add_argument("--w-box-persp"', '"--r9-box-bev2-aux"', 'g8.add_argument("--w-box-bev2"', '"w_box_persp": {', '"w_box_bev2": {', "_p3f.attach_dataset(ds, model, args)",
                    "item.update(_p3f.item_targets(item, self._r9_p3))"):
@@ -495,8 +503,13 @@ def test_trainer_hops_are_present_in_the_source():
     a = src.index("_p3f.attach_dataset(ds, model, args)")
     assert a < src.index("ds, batch_size=args.batch, sampler=_train_sampler, num_workers=args.workers,")
     assert src.index("_p3f.attach(model, args)") < a
+    # the loss call sits inside compute_losses_perc_rig AND -- AUX-FULL -- inside compute_losses_v3 (the full model's loss), each exactly once
     i, j = src.index("def compute_losses_perc_rig("), src.index("def _lan_arm_preflight(")
-    assert i < src.index("_p3f.loss_term(model, out, batch, device, extra)") < j
+    k = src.index("def compute_losses_v3(")
+    assert k < i
+    for body in (src[k:i], src[i:j]):
+        assert body.count("_p3_term = _p3f.loss_term(model, out, batch, device, extra)") == 1 and body.count("loss = loss + _p3_term") == 1
+    assert src.count("_p3f.loss_term(") == 2 and src.count("loss = loss + _p3_term") == 2
     assert (ROOT / "tanitad" / "eval" / "refcv7_loader.py").read_text(encoding="utf-8").count("tr._p3f.attach(model, args)") == 1
 
 

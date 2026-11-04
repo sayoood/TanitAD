@@ -11,7 +11,8 @@ REACHABILITY (the CLAUDE.md class "built, tested and unreachable from its caller
   argv ``--r9-box-persp-aux`` / ``--w-box-persp`` (refc_v3_train.py build_parser, defaults False / 0.0 -- BOTH named in the arm's argv)
   -> ``args.r9_box_persp_aux`` / ``args.w_box_persp`` -> ``pin_args`` -> ``attach`` (train(), after the perception branch:
   ``model._perception.box_persp_aux`` + ``model._w_box_persp``) -> ``attach_dataset`` (train(), before the DataLoader: ``ds._r9_p3``)
-  -> V3Dataset.__getitem__ -> ``item_targets`` (IN THE DATALOADER WORKER) -> default collate -> ``compute_losses_perc_rig`` -> ``loss_term``
+  -> V3Dataset.__getitem__ -> ``item_targets`` (IN THE DATALOADER WORKER) -> default collate -> ``compute_losses_perc_rig`` (the rig) OR
+  ``compute_losses_v3`` (the full model, AUX-FULL: the same call after the 10 cm map term) -> ``loss_term``
   (reads ``out["fmap_s8"]``, ``out["fmap_s16"]``, the batch's ``p3_*`` targets and ``agent_*`` fields) -> ``loss = loss + term`` -> ``.backward()``.
 B2c is the same chain with ``box_bev2_aux`` / ``_w_box_bev2`` / ``b2_*`` and ``out["perception"]["bev_feats"]`` as the head's input.
 Neither head is EVER called by ``RefCV3Model.forward``: the eval forward is the OFF forward, bit for bit (tests/test_persp3d_aux.py).
@@ -60,7 +61,8 @@ def _head_b(model):
 
 
 def pin_args(args) -> None:
-    """The flags' refusals, at argv time.  OFF (both): nothing is checked except an orphan weight, which is refused."""
+    """The flags' refusals, at argv time.  OFF (both): nothing is checked except an orphan weight, which is refused.  Admits the perception
+    rig AND the full model (AUX-FULL) when every input the head reads is present; both heads at once is refused in either."""
     wp = float(getattr(args, W_DEST_P, 0.0) or 0.0)
     wb = float(getattr(args, W_DEST_B, 0.0) or 0.0)
     if is_persp(args) and is_bev2(args):
@@ -75,11 +77,11 @@ def pin_args(args) -> None:
     bad = []
     if not w > 0.0:
         bad.append(f"{wflag} is {w:g}: the term (weight = {wflag}) would not exist; name a positive weight in the argv")
-    if not bool(getattr(args, "r9_perc_rig", False)):
-        bad.append("--r9-perc-rig is off: the head is wired into the perception rig's loss (compute_losses_perc_rig) only; the full "
-                   "model's loss does not call it, so the head would sit in the optimiser untrained")
+    # AUX-FULL: no rig bullet. The head's loss is called by the perception rig's loss AND the full model's (compute_losses_v3); the perception
+    # branch it hangs on exists in BOTH exactly when --w-box3d > 0 (the box3d branch this auxiliary exists to help).
     if not float(getattr(args, "w_box3d", 0.0) or 0.0) > 0.0:
-        bad.append("--w-box3d is not > 0: the box3d branch (the thing this auxiliary exists to help) is not trained")
+        bad.append("--w-box3d is not > 0: the box3d branch (the thing this auxiliary exists to help) is not trained, and the perception "
+                   "branch the head hangs on is not built")
     if str(getattr(args, "map_hires", "off") or "off") != "on":
         bad.append("--map-hires is not `on`: the stride-8 map and the pooled BEV the heads read exist only with the 10 cm branch")
     if not str(getattr(args, "join3d", "") or ""):
@@ -252,7 +254,7 @@ def bev2_from_batch(batch: dict, device):
 def loss_term(model, out: dict, batch: dict, device, extra: dict):
     """The weighted term, or ``None`` (neither head built, or EVAL mode: training-only).  B2 writes ``extra["box_persp"]`` (+ ``_heat`` /
     ``_depth`` / ``_size`` / ``_yaw`` / ``_ctr``), B2c ``extra["box_bev2"]`` (+ ``_heat`` / ``_pos`` / ``_size`` / ``_yaw`` / ``_ctr``).
-    Called by ``compute_losses_perc_rig``; the heads are called HERE and nowhere else."""
+    Called by ``compute_losses_perc_rig`` and (AUX-FULL) ``compute_losses_v3``; the heads are called HERE and nowhere else."""
     hp, hb = _head_p(model), _head_b(model)
     if (hp is None and hb is None) or not model.training:
         return None
@@ -313,14 +315,14 @@ def stamp(model, args) -> dict | None:
                            "FCOS centre-ness, depth two-hot of the CENTRE range (C3's LID bins); size / yaw gathered on the device from agent_*",
                 "visibility": f">= {P.VIS_MIN_PIX} nearest-surface pixels (E0g raycast); regression positives = FG cells (>= 50 %) + the centre cell",
                 "sigma": f"max({P.SIGMA_MIN}, {P.SIGMA_ALPHA} * extent_cells / 6) per axis (HYPOTHESIS: CenterNet/TTFNet style)",
-                "yaw": "rig-frame yaw as (sin, cos)", "training_only": "head called only by compute_losses_perc_rig; never by RefCV3Model.forward"}
+                "yaw": "rig-frame yaw as (sin, cos)", "training_only": "head called only by the loss functions (compute_losses_perc_rig, and since AUX-FULL compute_losses_v3); never by RefCV3Model.forward"}
     if hb is not None:
         return {"flag": FLAG_B, "weight": float(getattr(model, WEIGHT_ATTR_B)), "weight_flag": W_FLAG_B, "n_params": P.n_params(hb),
                 "ref_params_b2": int(hb.ref_params), "match_tol": P.MATCH_TOL,
                 "head": {"d_bev": hb.d_bev, "mid": hb.mid, "key_prefix": KEY_PREFIX_B}, "outputs": dict(P.BEV2_CH),
                 "part_weights": dict(P.BEV2_PART_W), "grid": "GRID_DEFAULT 120 x 64, 0.5 m",
                 "targets": "the same cuboids as B2 (agent_valid & agent_zh_mask, labelled rows) on the BEV grid; no occlusion filter",
-                "training_only": "head called only by compute_losses_perc_rig; never by RefCV3Model.forward"}
+                "training_only": "head called only by the loss functions (compute_losses_perc_rig, and since AUX-FULL compute_losses_v3); never by RefCV3Model.forward"}
     return None
 
 
