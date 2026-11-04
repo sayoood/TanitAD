@@ -45,7 +45,7 @@ final)   OUT=$R/gate3/$ARM; [ -s "$SUITE" ] || refuse "no suite-bound verdict '$
          A+=(--stage thor --suite-verdict "$SUITE" --import-evidence "$DEVEV" --out-dir "$OUT");;
 *) refuse "mode must be explore|final";; esac
 mkdir -p "$OUT"; rm -rf "$OUT"/evidence "$OUT"/logs 2>/dev/null
-exec 9>"$LOCKF"; say "waiting for the Thor GPU lock (<= 3 h)"; flock -w 10800 9 || refuse "the Thor GPU lock stayed held for 3 h"
+exec 9>"$LOCKF"; say "waiting for the Thor GPU lock (<= ${R9_LOCK_WAIT_S} s)"; flock -w "$R9_LOCK_WAIT_S" 9 || refuse "the Thor GPU lock stayed held for ${R9_LOCK_WAIT_S} s"
 NA="$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -c '[0-9]')"; [ "$NA" = 0 ] || refuse "the GPU is not empty under the lock ($NA compute app(s))"
 say "gate command: $PY $T/stack/scripts/launch_gate.py ${A[*]}"; t0=$(date +%s)
 "$PY" "$T/stack/scripts/launch_gate.py" "${A[@]}" > "$OUT.gate.log" 2>&1 9>&- 200>&-

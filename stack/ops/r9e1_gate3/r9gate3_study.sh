@@ -19,6 +19,15 @@
 #   R9_STUDY_NOTE is "" for e1 and " study=e2 ..." for the others: it is appended to a status line so an e1 line stays what it was.
 # R9_STUDY_NOAUTOLOAD=1 sources the functions only (r9e1_bind.sh: it must not read R9_STUDY).
 R9_STUDIES="e1 e2"
+# THE GPU-LOCK WAIT (seconds), ONE value for every gate3 waiter of the ONE Thor lock: r9gate3_thor_gate.sh (explore + final) waits this long; the chain's
+#   training wait is 2x (a timeout there STOPS the whole chain) and its explore deadlines (stage A smoke, stage C end) are extended by it, because the
+#   explore itself may be waiting for the lock.  Why (MM 2026-11-04): two studies' chains (e1 arms, e2 K0) and the record queues share a NON-FIFO lock
+#   and an arm trains ~5 h, so the old 3 h gate wait (6 h training, 90 min / 2 h explore) handed the loser of a boundary race a refusal -- a lost arm
+#   -- instead of a later turn.  12 h > any single holder.  Not study-specific: set here, outside r9_study_load.  A non-integer or empty value REFUSES (return 10).
+R9_LOCK_WAIT_S="${R9_LOCK_WAIT_S-43200}"      # UNSET = 12 h; an EMPTY value is refused, like an empty R9_STUDY
+case "$R9_LOCK_WAIT_S" in
+  ""|*[!0-9]*) echo "REFUSED: R9_LOCK_WAIT_S '$R9_LOCK_WAIT_S' is not a whole number of seconds"; echo "ZZR9LOCKWAIT-REFUSEDZZ"; return 10 2>/dev/null || exit 10;;
+esac
 r9_study_load() {   # r9_study_load <name>: set the R9_* variables of a study (and export R9_STUDY); return 1, setting NOTHING, on an unknown name
   case "${1-}" in
     e1) R9_ROOT=/home/nvidia/r8ns/r9e1; R9_PREFIX=r9e1; R9_PROFILE=refcv9-e1rig; R9_EXPLORE_ARM=C0; R9_DEFAULT_ARMS="C0 C1"

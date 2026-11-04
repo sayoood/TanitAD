@@ -34,7 +34,7 @@ t0=$(date +%s)
 while :; do
   [ -s "$EXP/evidence/G-LIVE.json" ] && [ -s "$EXP/evidence/G-CKPT.json" ] && break
   grep -q "ZZR9E1G3-${R9_EXPLORE_ARM}-explore-\(DONE\|REFUSED\)ZZ" $R/logs/r9gate3_explore_${C12}_${R9_EXPLORE_ARM}.out 2>/dev/null && break
-  [ $(( $(date +%s) - t0 )) -gt 5400 ] && stop EXPLORE-SMOKE-TIMEOUT "no smoke evidence in 90 min"
+  [ $(( $(date +%s) - t0 )) -gt $(( 5400 + R9_LOCK_WAIT_S )) ] && stop EXPLORE-SMOKE-TIMEOUT "no smoke evidence in 90 min + the ${R9_LOCK_WAIT_S} s lock wait"
   sleep 20 9>&- 200>&-
 done
 grep -q "ZZR9E1G3-${R9_EXPLORE_ARM}-explore-REFUSEDZZ" $R/logs/r9gate3_explore_${C12}_${R9_EXPLORE_ARM}.out 2>/dev/null && stop EXPLORE-REFUSED "see $R/logs/r9gate3_explore_${C12}_${R9_EXPLORE_ARM}.out"
@@ -50,7 +50,7 @@ fi
 # ---- C: the exploratory gate must end with six PASS ----------------------------------------------------------------------------
 t0=$(date +%s)
 while ! grep -q "ZZR9E1G3-${R9_EXPLORE_ARM}-explore-\(DONE\|REFUSED\)ZZ" $R/logs/r9gate3_explore_${C12}_${R9_EXPLORE_ARM}.out 2>/dev/null; do
-  [ $(( $(date +%s) - t0 )) -gt 7200 ] && { kill -- -"$(cat $G/runner.pid)" 2>/dev/null; stop EXPLORE-TIMEOUT "explore gate did not end in 2 h"; }
+  [ $(( $(date +%s) - t0 )) -gt $(( 7200 + R9_LOCK_WAIT_S )) ] && { kill -- -"$(cat $G/runner.pid)" 2>/dev/null; stop EXPLORE-TIMEOUT "explore gate did not end in 2 h + the ${R9_LOCK_WAIT_S} s lock wait"; }
   sleep 30 9>&- 200>&-
 done
 BAD=""; for c in G-HYG G-DVB G-LIVE G-CKPT G-EVAL G-CLOCK; do s="$(status_of $EXP/evidence/$c.json)"; [ "$s" = PASS ] || BAD="$BAD $c=${s:-MISSING}"; done
@@ -106,8 +106,8 @@ for A in $ARMS; do
   fi
   PASSED="$PASSED $A"
   # G: train THIS arm under the Thor GPU lock, then release it
-  exec 9>"$LOCKF"; ev LOCK-WAIT "$A: taking the Thor GPU lock (<= 6 h)"
-  flock -w 21600 9 || stop LOCK-TIMEOUT "$A: the Thor GPU lock stayed held for 6 h; tokens are intact"
+  exec 9>"$LOCKF"; ev LOCK-WAIT "$A: taking the Thor GPU lock (<= $(( 2 * R9_LOCK_WAIT_S )) s)"
+  flock -w $(( 2 * R9_LOCK_WAIT_S )) 9 || stop LOCK-TIMEOUT "$A: the Thor GPU lock stayed held for $(( 2 * R9_LOCK_WAIT_S )) s; tokens are intact"
   NA="$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -c '[0-9]')"; [ "$NA" = 0 ] || stop GPU-NOT-EMPTY "$NA compute app(s) under the lock; never share the GPU"
   TOK=$R/gate3/$A/PASS_$C12.json; VJ=$R/gate3/$A/verify_prelaunch.json
   rm -f "$VJ"; $PY $T/stack/scripts/launch_gate.py verify --token "$TOK" --argv-file "$ARGV" --tree "$T" --commit "$SHA" --json "$VJ" > $R/gate3/$A/verify_prelaunch.log 2>&1 200>&-
