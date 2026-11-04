@@ -61,6 +61,15 @@ def sha12(clip_id) -> str:
     return hashlib.sha256(str(clip_id).encode()).hexdigest()[:12]
 
 
+def window_set_sha256(keys) -> str:
+    """sha256 over the sorted ``(clip_id, ws)`` keys of the PAIRED window set -- byte-identical to ``r9_e2_distkeep.window_set_sha256``, so the distance-keeping merge
+    (``r9_e2_distkeep.merge_into``) checks that both readers scored the SAME windows (a families.json without it made that check vacuous)."""
+    h = hashlib.sha256()
+    for c, w in sorted((str(c), int(w)) for c, w in keys):
+        h.update(f"{c}\t{w}\n".encode())
+    return h.hexdigest()
+
+
 def _ci():
     from taniteval import ci
     return ci
@@ -162,7 +171,8 @@ def align(a: dict, b: dict, gt_tol: float = 1e-4) -> tuple[dict, dict, list, dic
     gd = float(np.abs(a["G"][xa] - b["G"][xb]).max())
     if not gd <= gt_tol:
         _fail(f"the two arms' GT (`g`) differ by up to {gd:.6g} m on the paired windows (tol {gt_tol}): different label clocks / corpora; pairing them would compare different futures")
-    return ({"P": a["P"][xa], "G": a["G"][xa]}, {"P": b["P"][xb], "G": b["G"][xb]}, eid, {**rep, "gt_max_abs_diff_m": gd})
+    return ({"P": a["P"][xa], "G": a["G"][xa]}, {"P": b["P"][xb], "G": b["G"][xb]}, eid,
+            {**rep, "gt_max_abs_diff_m": gd, "window_set_sha256": window_set_sha256([a["keys"][i] for i in xa])})
 
 
 def paired_rows(ra: dict, rb: dict, eid: list, n_boot: int = 2000, seed: int = 0) -> tuple[dict, dict]:
@@ -197,7 +207,7 @@ def build(a_dir, b_dir, *, mode: str = "families", dev_split=None, dev=None, arm
     pa, pb, eid, rep = align(A, B)
     rows, omitted = paired_rows(window_rows(pa["P"], pa["G"]), window_rows(pb["P"], pb["G"]), eid, n_boot, seed)
     meta = {"schema": SCHEMA, "mode": mode, "labels": f"{labels[0]} - {labels[1]}", "tier": TIER, "estimator": ESTIMATOR, "delta": "A - B (A = " + labels[0] + ")",
-            "windows": "DEV (DEV_HOLD_SPLIT.json); HOLD is never read", "n_windows_paired": rep["n_common"], "pairing": rep, "a": {**ca, "dir": A["dir"]},
+            "windows": "DEV (DEV_HOLD_SPLIT.json); HOLD is never read", "n_windows_paired": rep["n_common"], "window_set_sha256": rep["window_set_sha256"], "pairing": rep, "a": {**ca, "dir": A["dir"]},
             "b": {**cb, "dir": B["dir"]}, "omitted_rows": omitted, "n_boot": n_boot, "boot_seed": seed,
             "caveat": "H-ESTIM-SEED-1: the paired interval answers another draw of EPISODES, not another training run and not another INFERENCE draw; one call = one inference seed."}
     if mode == "families":

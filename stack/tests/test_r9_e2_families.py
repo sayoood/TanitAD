@@ -245,3 +245,20 @@ def test_per_window_rows_reproduce_t1_eval_pooled_points(dumps):
         pt = m[tk].get("point", m[tk].get("mean"))
         mine = rows[rk][np.isfinite(rows[rk])].mean()
         assert pt is not None and abs(float(pt) - float(mine)) < 5e-3 * max(1.0, abs(float(pt))), (tk, pt, mine)
+
+
+def test_window_set_sha256_is_stamped_and_equals_the_distance_keeping_hash(dumps, dev_split):
+    """families.json carries the paired window set's identity, computed exactly as r9_e2_distkeep does, so the merge's window-set check has teeth."""
+    import r9_e2_distkeep as D
+    doc = fam(dumps, dev_split, "good", "bad")
+    keys = F.restrict_dev(F.load_dump(dumps["good"]), F.load_dev(dev_split))[0]["keys"]
+    assert len(doc["window_set_sha256"]) == 64 and doc["window_set_sha256"] == doc["pairing"]["window_set_sha256"]
+    assert doc["window_set_sha256"] == D.window_set_sha256(keys) == F.window_set_sha256(list(reversed(keys)))
+    assert fam(dumps, dev_split, "bad", "good")["window_set_sha256"] == doc["window_set_sha256"]         # an identity of the WINDOWS, not of the arm order
+
+
+def test_RED_a_different_dev_window_set_gives_a_different_hash(dumps, dev_split, tmp_path):
+    full = fam(dumps, dev_split, "good", "bad")["window_set_sha256"]
+    sub = tmp_path / "sub_split.json"                                                                    # one DEV clip fewer, both arms alike
+    sub.write_text(json.dumps({"DEV": {"sha12": [sha12(c) for c in DEV_CLIPS[:-1]]}, "HOLD": {"sha12": [sha12(c) for c in HOLD_CLIPS]}}), encoding="utf-8")
+    assert F.build(dumps["good"], dumps["bad"], mode="families", dev_split=sub, n_boot=50)["window_set_sha256"] != full
