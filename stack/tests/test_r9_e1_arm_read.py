@@ -94,7 +94,7 @@ def _bash():
 def _run_dir(root, arm, spec, *, done=True):
     d = Path(root) / "runs" / ("r9e1-" + arm)
     d.mkdir(parents=True, exist_ok=True)
-    s = {"done": done, "step": 4000, "arm": "flat"}
+    s = {"done": done, "final_step": 4000, "steps_requested": 4000, "arm": "flat"}      # the SUPERVISOR's done-marker fields (sup_refcv7.sh)
     if done:
         s["zerograd_gate"] = {"ok": True}
     (d / "summary.json").write_text(json.dumps(s), encoding="utf-8")

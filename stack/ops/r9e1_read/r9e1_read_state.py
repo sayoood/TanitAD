@@ -91,9 +91,11 @@ def checkpoint_problems(runs: dict, root: Path) -> list:
         if not (run / "config.json").is_file():
             out.append("%s: %s is absent (the dump builds the model from it)" % (arm, run / "config.json"))
         try:
-            steps[arm] = int(json.loads((run / "summary.json").read_text(encoding="utf-8"))["step"])
+            # `final_step` is the field the supervisor's done-marker carries (sup_refcv7.sh `write_done_marker`); there is no `step`:
+            # reading `step` ABORTED the first real floor read (2026-11-04T07:28:03Z) on two healthy 4,000-step arms.
+            steps[arm] = int(json.loads((run / "summary.json").read_text(encoding="utf-8"))["final_step"])
         except (OSError, ValueError, KeyError, TypeError):
-            out.append("%s: summary.json has no integer `step`" % arm)
+            out.append("%s: summary.json has no integer `final_step` (the field sup_refcv7.sh writes)" % arm)
     if len(steps) == 2 and steps["C0"] != steps["C1"]:
         out.append("the arms stopped at different steps: C0 %d vs C1 %d" % (steps["C0"], steps["C1"]))
     for arm, st in steps.items():

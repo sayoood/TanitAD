@@ -931,7 +931,7 @@ def _lines(*ev):
 def _run(root, arm, *, done=True, zerograd=True, fail=False, step=4000, ckpt=True, cfg=True):
     d = Path(root) / "runs" / ("r9e1-" + arm)
     d.mkdir(parents=True, exist_ok=True)
-    s = {"done": done, "step": step, "arm": "flat"}
+    s = {"done": done, "final_step": step, "steps_requested": 4000, "arm": "flat"}      # the SUPERVISOR's done-marker fields (sup_refcv7.sh)
     if zerograd:
         s["zerograd_gate"] = {"ok": True}
     (d / "summary.json").write_text(json.dumps(s), encoding="utf-8")

@@ -199,7 +199,7 @@ def _lines(*ev):
 def _run(root, arm, *, done=True, zerograd=True, fail=False, step=4000, ckpt=True, cfg=True):
     d = Path(root) / "runs" / ("r9e1-" + arm)
     d.mkdir(parents=True, exist_ok=True)
-    s = {"done": done, "step": step, "arm": "flat"}
+    s = {"done": done, "final_step": step, "steps_requested": 4000, "arm": "flat"}      # the SUPERVISOR's done-marker fields (sup_refcv7.sh)
     if zerograd:
         s["zerograd_gate"] = {"ok": True}
     (d / "summary.json").write_text(json.dumps(s), encoding="utf-8")
@@ -505,3 +505,27 @@ def test_scipy_shim_equals_scipy_binary_dilation():
     for bad in ({"iterations": 0}, {"structure": np.ones((3, 3))}, {"border_value": 1}, {"mask": np.ones((500, 600), bool)}):
         with pytest.raises(NotImplementedError):
             m.binary_dilation(gt == 7, **dict({"iterations": 5}, **bad))
+
+
+# ---- 2026-11-04: the done-marker field (the first real read ABORTED on `summary.json has no integer `step``) ---------------------------- #
+def test_the_step_field_is_the_one_the_supervisor_writes():
+    sup = (_STACK / "ops" / "sup_refcv7.sh").read_text(encoding="utf-8")
+    src = (_STACK / "ops" / "r9e1_read" / "r9e1_read_state.py").read_text(encoding="utf-8")
+    assert '"final_step": int(final_step)' in sup and '["final_step"]' in src
+    assert '"step": int(' not in sup                                                  # control: the supervisor writes no bare `step`
+
+
+def test_RED_a_marker_with_only_step_is_refused_and_the_real_marker_shape_reads(tmp_path):
+    r0, r1 = tmp_path / "runs" / "r9e1-C0", tmp_path / "runs" / "r9e1-C1"
+    both = _lines(*OLD, "C0-LAUNCH s; run dir %s" % r0, "C0-DONE ok", "C1-LAUNCH s; run dir %s" % r1, "C1-DONE ok")
+    _run(tmp_path, "C0")
+    _run(tmp_path, "C1")
+    real = {"done": True, "arm": "r9e1_C1", "final_step": 4000, "steps_requested": 4000, "out_dir": str(r1), "gate_token": "/x/PASS.json",
+            "zerograd_gate": {"status": "PASS"}, "written_utc": "2026-11-04T07:27:56Z", "note": "Written by sup_refcv7.sh"}   # C1's marker, 07:27:56Z
+    (r1 / "summary.json").write_text(json.dumps(real), encoding="utf-8")
+    assert ST.classify(both, tmp_path)["state"] == "READY"
+    old = dict(real, step=4000)
+    del old["final_step"]
+    (r1 / "summary.json").write_text(json.dumps(old), encoding="utf-8")
+    s = ST.classify(both, tmp_path)
+    assert s["state"] == "ABORT" and "no integer `final_step`" in s["reason"], s["reason"]
