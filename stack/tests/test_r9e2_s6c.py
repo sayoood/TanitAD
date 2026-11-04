@@ -10,6 +10,13 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+# the modules under test live in stack/ops/r9e2_read, which no runner puts on sys.path: the file must set it up itself (it passed only when
+# collected after a module that did -- the Thor G-SUITE runs each file ALONE and failed it at collection, 6f9f857)
+ROOT = Path(__file__).resolve().parents[1]
+for _p in (str(ROOT), str(ROOT / "scripts"), str(ROOT / "ops" / "r9e2_read")):
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 import mapsel_roll_r9_e2 as MR  # noqa: E402
 import run_battery_r9_e2 as R9  # noqa: E402
 import s6c_dev as SD  # noqa: E402
