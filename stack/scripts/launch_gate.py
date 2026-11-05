@@ -6628,12 +6628,13 @@ def banded_decision_rule_reasons(prof: dict, config: dict | None) -> tuple[list[
 def banded_watch_reasons(prof: dict, artifact: str | None) -> tuple[list[str], dict]:
     """The refcv7 Training Watch is still a launch ARTIFACT of the smoke (built by the gate from its metrics.jsonl; a missing one is a named
     FAIL, as before). Its 24 per-class IoU series and thin-class alarm tile are the 8-way head's and have no banded meaning: they are recorded
-    as not applicable, not passed. ⚠️ The Watch builder (`build_watch_refcv7.py`) reads no `map_banded_*` key, so no banded series can be
-    required of it -- a Watch work item, not a launch gate."""
+    as not applicable, not passed. The Watch builder (`build_watch_refcv7.py`) renders the banded head's own series since 0eda7b1 (its
+    `map_banded` section, spelling pinned to map_banded.py by taniteval/tests/test_build_watch_banded.py); the gate requires the artifact,
+    not its banded section (recorded, not gated)."""
     det: dict[str, Any] = {"artifact": artifact,
                            "per_class_series_and_alarm": f"{BANDED_NA}: the Watch's 24 per-class IoU series (`eval_map_hires_iou_*`, null under "
                                                           f"the banded head) and thin-class alarm tile are the 8-way head's",
-                           "banded_series": "the Watch builder renders no `map_banded_*` series (gap, not gated)"}
+                           "banded_series": "the Watch builder renders the `map_banded_*` series (its map_banded section, 0eda7b1); recorded, not gated"}
     if not artifact:
         return ["G-MAP: no refcv7 Training Watch artifact (--map-watch-artifact) built from the smoke's metrics.jsonl -- the Watch is a launch "
                 "artifact (LOGGING_SPEC_MAP10 sec. 6 item 4) and cannot be seen"], det

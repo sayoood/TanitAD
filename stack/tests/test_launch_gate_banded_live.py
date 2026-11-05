@@ -151,7 +151,7 @@ def test_P_the_not_applicable_items_say_so_never_a_silent_pass(rows, tmp_path):
     w.write_text("<html>watch</html>", encoding="utf-8")
     r, wd = LG.banded_watch_reasons(RIG, str(w))
     assert r == [] and wd["per_class_series_and_alarm"].startswith(LG.BANDED_NA) and wd["sha256"] == LG.sha256_file(w)
-    assert "no `map_banded_*` series" in wd["banded_series"]
+    assert "renders the `map_banded_*` series" in wd["banded_series"] and "not gated" in wd["banded_series"]
 
 
 # ======================================================================================== R: the RED arms (by name) ==
