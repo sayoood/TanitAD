@@ -100,6 +100,7 @@ FLAG_CHECKS = {
     # the LOADED manifest's, not the declared string): argv -> make_recover (bank load + K-B3 + the deviation table) -> the perturber -> declared_vs_built (bad_recover) -> G-LIVE on a RECOVERED batch (recover_probe:
     # the perturbed tensors AND the re-expressed target reach the loss gradient, a p = 0 control reads EXACTLY 0.0) -> `b = rec.apply(b, step)` in the loop. With --recover-p 0 (the default) no bank is read and nothing is applied.
     "recover_p": "rec:recover_p", "recover_dev_bank": "rec:recover_dev_bank", "recover_dev_bank_sha256": "rec:recover_dev_bank_sha256", "recover_dev_law": "rec:recover_dev_law",
+    "recover_dev_shape": "rec:recover_dev_shape",
     "recover_target": "rec:recover_target", "recover_rejoin_steps": "rec:recover_rejoin_steps", "recover_seed": "rec:recover_seed",
     "init_ckpt": "data:init_ckpt",            # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
@@ -183,6 +184,9 @@ def build_parser():
     ap.add_argument("--recover-dev-law", dest="recover_dev_law", choices=list(R.DEV_LAWS), default=R.RECOVER_DEFAULTS["dev_law"],
                     help="`empirical` (registered): one record per selected sample, uniform over the bank-derived table. `apriori`: the card's fixed law (dv U[-3, 0], da U[-1, 0.5], dy N(0, 0.5 m), dpsi N(0, 3 deg), "
                          "yaw rate N(0, 2 deg/s)); no bank is read")
+    ap.add_argument("--recover-dev-shape", dest="recover_dev_shape", choices=list(R.DEV_SHAPES), default=R.RECOVER_DEFAULTS["dev_shape"],
+                    help="`constant` (default, every earlier arm bit for bit): the drawn record's (dv, da, dom) offsets all history frames alike. `pertick`: history frame k is offset by the record's own per-tick deviation "
+                         "(dv_t[k], da_t[k], dom_t[k]) and the pose / nav history moves by the cumulative effect (needs the empirical law; the table is built with per-tick columns; refused with the a-priori law and at --recover-p 0)")
     ap.add_argument("--recover-target", dest="recover_target", choices=list(R.TARGETS), default=R.RECOVER_DEFAULTS["target"],
                     help="`rejoin` (registered, AMENDMENT_1): the logged future re-expressed in the deviated frame, the first --recover-rejoin-steps knots blended from the logged future onto it. `logged`: the pure frame change")
     ap.add_argument("--recover-rejoin-steps", dest="recover_rejoin_steps", type=int, default=R.RECOVER_DEFAULTS["rejoin_steps"],
@@ -683,7 +687,7 @@ def bad_schedule(a, sched) -> list:
     return bad
 
 
-RECOVER_DESTS = ("recover_p", "recover_dev_bank", "recover_dev_bank_sha256", "recover_dev_law", "recover_target", "recover_rejoin_steps", "recover_seed")
+RECOVER_DESTS = ("recover_p", "recover_dev_bank", "recover_dev_bank_sha256", "recover_dev_law", "recover_dev_shape", "recover_target", "recover_rejoin_steps", "recover_seed")
 
 
 def load_recover_table(a, J, wins, store, clips, info=None) -> tuple:
@@ -702,10 +706,10 @@ def load_recover_table(a, J, wins, store, clips, info=None) -> tuple:
     wsha = DG.windows_sha256(J["clip"], wins)
     kb3 = bank0.check_train_only(train_clips=clips, eval_clips=eval_clips, train_window_list_sha256=wsha)
     bank = DG.DaggerBank(bank0.a, bank0.header, clip_names=J["clip"], manifest=bank0.manifest, sha256=bank0.sha256, path=bank0.path)
-    table, log_v = R.RecoverDevTable.from_dagger_bank(bank, store, J)
+    table, log_v = R.RecoverDevTable.from_dagger_bank(bank, store, J, per_tick=(a.recover_dev_shape == "pertick"))     # pertick: the table also carries the [N, F] profiles
     if len(table) == 0:
         raise DG.BankRefused("the deviation table is EMPTY (no reason == ok record has a real logged kinematic row): a lever with nothing to draw")
-    ctl = {"bank_path": bank.path, "bank_sha256": bank.sha256, "n_records": bank.n, "reason_counts": bank.reason_counts(),
+    ctl = {"bank_path": bank.path, "bank_sha256": bank.sha256, "n_records": bank.n, "reason_counts": bank.reason_counts(), "dev_shape": a.recover_dev_shape,
            "kb3": {**kb3, "window_list_sha256": wsha, "eval_sources": eval_src, "n_eval_clips_checked": len(eval_clips)},
            "kb2_read": False, "bank_ckpt_sha256": bank.header.get("ckpt_sha256"), "init_ckpt_sha256": ((info or {}).get("init_ckpt") or {}).get("sha256"),
            "table": table.summary(log_v), "table_quantiles": table.quantiles(), "table_band_3_8": table.band_coverage(log_v)}
@@ -713,7 +717,7 @@ def load_recover_table(a, J, wins, store, clips, info=None) -> tuple:
 
 
 def make_recover(a, J, wins, store, clips, info):
-    """argv -> the perturber the training loop calls ``.apply`` on (PREREG_RECOVER_FT). The ONE place the seven flags become an object; ``bad_recover`` compares it back to the argv. With ``--recover-p 0`` (C0) no bank
+    """argv -> the perturber the training loop calls ``.apply`` on (PREREG_RECOVER_FT). The ONE place the eight flags become an object; ``bad_recover`` compares it back to the argv. With ``--recover-p 0`` (C0) no bank
     is read and no table is built (a declared bank at p = 0 builds nothing and is refused by the gate: a lever that is declared and does nothing); the a-priori law reads no bank either. A refused bank stops the launch
     before the gate. The built lever ``recover_dev_bank`` is the LOADED manifest's path and ``recover_dev_bank_sha256`` the LOADED table's source hash, so G-DVB compares the declaration with what was read."""
     table, path = None, (a.recover_dev_bank or None)
@@ -727,7 +731,7 @@ def make_recover(a, J, wins, store, clips, info):
         info["recover"] = ctl                                        # selfcheck.json carries the controls and the table's summary
         path = table.path
     return R.RecoverPerturb(p=a.recover_p, dev_law=a.recover_dev_law, table=table, target=a.recover_target, rejoin_steps=a.recover_rejoin_steps, seed=a.recover_seed,
-                            kin_mode=a.kin_mode, bank_path=path, bank_sha256=(a.recover_dev_bank_sha256 or None))
+                            kin_mode=a.kin_mode, bank_path=path, bank_sha256=(a.recover_dev_bank_sha256 or None), dev_shape=a.recover_dev_shape)
 
 
 def bad_recover(a, rec, data_info=None) -> list:
@@ -741,7 +745,7 @@ def bad_recover(a, rec, data_info=None) -> list:
         return [f"{moved} are set but no recovery perturber was built: a flag that builds nothing is refused, not ignored"] if moved else []
     bad = []
     lv = rec.built_levers()
-    for k in ("recover_p", "recover_dev_law", "recover_target", "recover_rejoin_steps", "recover_seed"):
+    for k in ("recover_p", "recover_dev_law", "recover_dev_shape", "recover_target", "recover_rejoin_steps", "recover_seed"):
         if lv.get(k) != declared[k]:
             bad.append(f"lever {k}: declared {declared[k]!r} but built {lv.get(k)!r}")
     if lv.get("kin_mode") != a.kin_mode:
@@ -755,6 +759,8 @@ def bad_recover(a, rec, data_info=None) -> list:
                 bad.append(f"--recover-p {a.recover_p} together with {flag}: the recovery lever is exclusive with the DAgger swap and the ego perturbation (PREREG_RECOVER_FT section 4)")
     if a.recover_p > 0 and a.recover_dev_law == "apriori" and (a.recover_dev_bank or a.recover_dev_bank_sha256):
         bad.append("--recover-dev-law apriori with a --recover-dev-bank / --recover-dev-bank-sha256 declared: the bank would do nothing (a lever that is declared and does nothing)")
+    if a.recover_p > 0 and a.recover_dev_shape == "pertick" and a.recover_dev_law == "apriori":
+        bad.append("--recover-dev-shape pertick with --recover-dev-law apriori: the a-priori law has no per-tick profile to draw (a lever that is declared and does nothing)")
     if a.recover_p > 0 and a.recover_dev_law == "empirical":
         if not a.recover_dev_bank:
             bad.append(f"--recover-dev-bank is required when --recover-p is {a.recover_p} with the empirical law: the arm must declare which bank its deviations come from")
@@ -790,7 +796,7 @@ def bad_recover(a, rec, data_info=None) -> list:
 def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None) -> list:
     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
     bad = bad_encoder(a, enc, data_info)
-    bad += bad_recover(a, rec, data_info)                                                        # PREREG_RECOVER_FT: the seven --recover-* flags read back from the BUILT perturber (and the LOADED bank's sha256)
+    bad += bad_recover(a, rec, data_info)                                                        # PREREG_RECOVER_FT: the eight --recover-* flags read back from the BUILT perturber (and the LOADED bank's sha256)
     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
     bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
     bad += bad_ego_dagger(a, comp, ego, dag)                                                     # AMEND1 section 1: --ego-perturb-with-dagger read back from the BUILT stage
@@ -1461,6 +1467,16 @@ def recover_probe(model, batch, cfg, rec) -> dict:
             raise AssertionError(f"recover probe: {k} is unchanged on {int((~ch[need]).sum())} of {int(need.sum())} selected rows: the rebuild did not reach it")
         elif k == "gt" and not bool(ch.any()):
             raise AssertionError("recover probe: gt is unchanged on every selected row: the target was not re-expressed")
+    if rec.dev_shape == "pertick":                                               # the PROFILE reaches the batch: every real history frame of v is max(v + dv_t[k], 0) of the drawn record, and the drawn profiles are not all flat
+        prof = last["dev_t"]["dv_t"][sel]
+        if not bool((prof[:, :-1] != prof[:, 1:]).any()):
+            raise AssertionError("recover probe: every selected row drew a flat dv profile: the per-tick shape cannot be told from the constant one")
+        vm_sel = D.EgoPerturb._hist_valid(batch, sel.nonzero(as_tuple=True)[0])
+        want = torch.clamp(batch["p10f"][sel][..., 0].double() + prof, min=0.0)
+        diff = torch.where(vm_sel, (pert["p10f"][sel][..., 0].double() - want).abs(), torch.zeros_like(want))
+        res["pertick_v_max_abs_err"] = float(diff.max())
+        if not res["pertick_v_max_abs_err"] <= 1e-4:
+            raise AssertionError(f"recover probe: the history speeds of the selected rows differ from max(v + dv_t, 0) of the drawn per-tick profile by {res['pertick_v_max_abs_err']} (> 1e-4): the profile did not reach the batch")
     ls0, ls1 = batch["lab_s"], pert["lab_s"]
     lab_moved = sorted(k for k in ls0 if ls1.get(k) is not ls0[k])
     if lab_moved not in ([], ["rc"]):

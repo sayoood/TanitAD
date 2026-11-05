@@ -51,7 +51,7 @@ def assert_recover_flag_off(s, sc, name):
     assert {k: s[k] for k in RECOVER_KEYS} == RECOVER_OFF, f"{name}: the six RECOVER-FT summary keys read their flag-off values (p 0.0, n / eligible / rows / changed 0, share None)"
     lv, d = s["levers"]["recover"], TR.R.RECOVER_DEFAULTS
     assert lv["recover_p"] == 0.0 == d["p"] and lv["recover_dev_bank"] is None and lv["recover_dev_bank_sha256"] is None, f"{name}: the built perturber is off and holds no bank"
-    assert (lv["recover_dev_law"], lv["recover_target"], lv["recover_rejoin_steps"], lv["recover_seed"]) == (d["dev_law"], d["target"], d["rejoin_steps"], d["seed"]), f"{name}: every other recover lever at its default"
+    assert (lv["recover_dev_law"], lv["recover_dev_shape"], lv["recover_target"], lv["recover_rejoin_steps"], lv["recover_seed"]) == (d["dev_law"], d["dev_shape"], d["target"], d["rejoin_steps"], d["seed"]), f"{name}: every other recover lever at its default"
     assert s["levers"]["recover_table"] is None, f"{name}: no deviation table is built at p = 0"
     assert sc["recover_probe"]["recover"] == "off" and sc["recover_probe"]["pass"] is True and set(sc["recover_probe"]) == {"recover", "pass", "skipped"}, f"{name}: the G-LIVE probe is skipped at p = 0"
 

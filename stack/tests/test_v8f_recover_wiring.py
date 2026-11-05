@@ -100,7 +100,7 @@ def table_perturb(p=0.3, seed=1, **kw):
 # ------------------------------------------------------------------------------------------------ flags: entries, defaults, G-DVB
 FLAGS = {"recover_p": ["--recover-p", "0.3"], "recover_dev_law": ["--recover-dev-law", "apriori"], "recover_target": ["--recover-target", "logged"],
          "recover_rejoin_steps": ["--recover-rejoin-steps", "5"], "recover_seed": ["--recover-seed", "7"]}
-ALL = ("recover_p", "recover_dev_bank", "recover_dev_bank_sha256", "recover_dev_law", "recover_target", "recover_rejoin_steps", "recover_seed")
+ALL = ("recover_p", "recover_dev_bank", "recover_dev_bank_sha256", "recover_dev_law", "recover_dev_shape", "recover_target", "recover_rejoin_steps", "recover_seed")
 
 
 def test_every_recover_flag_has_a_declared_vs_built_entry_and_the_defaults_are_off():
@@ -109,7 +109,7 @@ def test_every_recover_flag_has_a_declared_vs_built_entry_and_the_defaults_are_o
     for k in ALL:
         assert TR.FLAG_CHECKS[k] == f"rec:{k}", k
     assert dests == set(TR.FLAG_CHECKS), "a flag without an entry, or an entry without a flag, is a launch blocker"
-    assert (a.recover_p, a.recover_dev_bank, a.recover_dev_bank_sha256, a.recover_dev_law, a.recover_target, a.recover_rejoin_steps, a.recover_seed) == (0.0, "", "", "empirical", "rejoin", 10, 0)
+    assert (a.recover_p, a.recover_dev_bank, a.recover_dev_bank_sha256, a.recover_dev_law, a.recover_dev_shape, a.recover_target, a.recover_rejoin_steps, a.recover_seed) == (0.0, "", "", "empirical", "constant", "rejoin", 10, 0)
     assert tuple(TR.RECOVER_DESTS) == ALL
 
 
