@@ -46,6 +46,12 @@ unset HF_TOKEN HUGGING_FACE_HUB_TOKEN HUGGINGFACE_HUB_TOKEN
 A=(run --profile "$R9_PROFILE" --tree "$T" --commit "$SHA" --argv-file "$ARGV" --eval-kit /home/nvidia --eval-remap-overrides "$EVO" --omp 8
    --map-overfit-record $MREC --map-overfit-closure $MCLO
    --box-overfit-record $BREC --box-overfit-closure $BCLO)
+# SPEC 6.2 item 5: a measured s/step above refcv6's +25 % is PI-DECISION unless the PI's RECORDED approval covers it. An arm's approval is committed
+# beside its argv (runs.d/<prefix>_<ARM>.pi_cost_approval.json: {max_s_per_step, pi_verbatim, date}) and handed to the gate in BOTH modes (the
+# gate binds its sha256 into the G-LIVE evidence). MM 2026-11-05: K0's explore read 9.40 s/step (1.47x) and the e2 chain STOPPED EXPLORE-NOT-PASS
+# because this script had no way to pass one. No file = no approval: the cost rule applies unchanged.
+PICOST=$T/stack/ops/runs.d/${R9_PREFIX}_${ARM}.pi_cost_approval.json
+[ -f "$PICOST" ] && A+=(--pi-cost-approval "$PICOST")
 case "$MODE" in
 explore) OUT=$R/gate3_explore/${C12}_$ARM; A+=(--checks G-HYG,G-DVB,G-LIVE,G-CKPT,G-EVAL,G-CLOCK --out-dir "$OUT");;
 final)   OUT=$R/gate3/$ARM; [ -s "$SUITE" ] || refuse "no suite-bound verdict '$SUITE'"; [ -s "$DEVEV/G-SUITE-PINNED.json" ] || [ -s "$DEVEV/evidence/G-SUITE-PINNED.json" ] || refuse "no G-SUITE-PINNED.json under '$DEVEV'"

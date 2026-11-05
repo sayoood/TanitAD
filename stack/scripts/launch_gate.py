@@ -1835,6 +1835,12 @@ def _r9f_profile(name: str, sched: dict, why: dict, *, extra_flags: tuple = (), 
         w_map_hires_rule={"flag": "--r9-map-banded", "plain": "1.0"},
         map_share_alarm=dict(_R9F_SHARE),
         lever_attach_needles=dict(_R9F_ATTACH),
+        #: the admitted dead groups: refcv8's + the ONE parameter row refcv9-warm added after NT A1 (2026-10-26): core.decoder.r8_rc_gate, the
+        #: zero-init route-checkpoint gate refc.py applies only when r8['rc'] is not None -- --r8-no-rc (PI Q-A 2026-10-11) feeds none, so it takes
+        #: exactly zero gradient by construction. MEASURED on E2 K0's explore smoke (384e79f, zerograd_gate: 3 untrained = r8_rc_gate +
+        #: r8_rc_to_cond.{weight,bias}): without the row the e2 chain STOPs NO-ZEROGRAD-CONTROLS (MM 2026-11-05, PI "Train K0"). Reused, not
+        #: re-typed: the row and its reason are refcv9-warm's.
+        live_dead_admitted=tuple(_R8["live_dead_admitted"]) + tuple(r for r in _R9W_LIVE_DEAD if r[0] == "core.decoder.r8_rc_gate"),
     )
 
 
