@@ -1,0 +1,1 @@
+{{LLR_RESULT_PENDING}}
