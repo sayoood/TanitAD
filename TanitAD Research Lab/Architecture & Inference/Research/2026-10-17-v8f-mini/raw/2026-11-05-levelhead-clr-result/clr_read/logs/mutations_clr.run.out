@@ -1,0 +1,47 @@
+CLEAN (reader)   rc=0  19 passed, 9 deselected in 21.91s
+m01_P_mean_form_instead_of_per_seed: RED  rc=1  [test_P_is_per_seed_not_the_mean]  1 failed, 27 deselected in 0.13s
+m02_P_bar_exclusive: RED  rc=1  [test_P_edges]  1 failed, 27 deselected in 0.13s
+m03_leak_without_positive_logged_share: RED  rc=1  [test_leak_borne_rule]  1 failed, 27 deselected in 0.13s
+m04_leak_not_strict: RED  rc=1  [test_leak_borne_rule]  1 failed, 27 deselected in 0.13s
+m05_D_without_P_and_G: RED  rc=1  [test_D_needs_read_a_at_both_seeds_and_P_and_G]  1 failed, 27 deselected in 0.14s
+m06_D_three_family_form_decides: RED  rc=1  [test_D3_includes_the_strategic_family]  1 failed, 27 deselected in 0.13s
+m07_F_logged_effect_decides: RED  rc=1  [test_floor_beside_is_the_replicate_pair]  1 failed, 27 deselected in 14.63s
+m08_leak_does_not_override: RED  rc=1  [test_leak_borne_overrides_the_label]  1 failed, 27 deselected in 0.13s
+m09_attribution_needs_both_seeds: RED  rc=1  [test_decision_table_a2_outcomes]  1 failed, 27 deselected in 0.12s
+m10_guards_always_pass: RED  rc=1  [test_G_ade6_edge_and_noncrawl_rows]  1 failed, 27 deselected in 0.13s
+m11_share_against_the_wrong_excess: RED  rc=1  [test_designed_arm_closes_exactly_alpha]  1 failed, 27 deselected in 14.27s
+m12_logged_contrast_against_the_replicate: RED  rc=1  [test_reader_known_answers]  1 failed, 25 deselected in 1.94s
+m13_no_refusal_on_failed_controls: RED  rc=1  [test_production_without_cl_rollouts_refuses]  1 failed, 27 deselected in 5.99s
+m14_strategic_family_dropped_from_the_table: RED  rc=5  [test_family_table_counts_the_four_families]  28 deselected in 0.07s
+m15_card_rules_pin_unchecked: RED  rc=1  [test_card_rules_control_fails_on_a_changed_card]  1 failed, 27 deselected in 0.14s
+m16_attribution_against_the_c0_base: RED  rc=1  [test_branch_P_fails_attribution_not_separated_better_when_the_base_moved_as_much]  1 failed, 27 deselected in 14.05s
+m17_logged_attribution_decides: RED  rc=1  [test_the_reindexed_attribution_decides_not_the_logged_one]  1 failed, 27 deselected in 13.16s
+m18_attribution_base_rolled_from_clr: RED  rc=1  [test_expected_flags_are_the_cards_scene_modes]  1 failed, 27 deselected in 0.13s
+m19_a2_card_unchecked: RED  rc=1  [test_a2_card_control_fails_on_a_changed_card]  1 failed, 27 deselected in 0.14s
+m20_uncommitted_cell_collapsed_into_the_committed_one: RED  rc=1  [test_decision_table_a2_outcomes]  1 failed, 27 deselected in 0.13s
+CLEAN (precheck)   rc=0  7 passed, 24 deselected in 27.15s
+p01_sha_vs_SHA256SUMS_unchecked: RED  rc=1  [test_precheck_refuses_sha_mismatch_with_sums_or_marker]  1 failed, 30 deselected in 12.84s
+p02_sha_vs_box2_marker_unchecked: RED  rc=1  [test_precheck_refuses_sha_mismatch_with_sums_or_marker]  1 failed, 30 deselected in 15.23s
+p03_argv_change_unchecked: RED  rc=1  [test_precheck_argv_audit_is_exact]  1 failed, 30 deselected in 15.01s
+p04_W_in_argv_unchecked: RED  rc=1  [test_precheck_argv_audit_is_exact]  1 failed, 30 deselected in 15.49s
+p05_cfg_level_head_unchecked: RED  rc=1  [test_precheck_refuses_a_checkpoint_whose_cfg_has_no_level_head]  1 failed, 30 deselected in 17.63s
+p06_absent_ckpt_not_distinguished: RED  rc=1  [test_precheck_refuses_an_absent_checkpoint]  1 failed, 30 deselected in 14.53s
+p07_recovery_lever_unchecked: RED  rc=1  [test_precheck_refuses_an_argv_without_the_recovery_lever]  1 failed, 30 deselected in 15.23s
+p08_marker_recover_n_unchecked: RED  rc=1  [test_precheck_refuses_a_marker_without_recovery_evidence]  1 failed, 30 deselected in 19.32s
+p09_attribution_base_sha_unchecked: RED  rc=1  [test_precheck_checks_the_attribution_base_checkpoint]  1 failed, 30 deselected in 14.76s
+p10_attribution_base_level_head_unchecked: RED  rc=1  [test_precheck_checks_the_attribution_base_checkpoint]  1 failed, 30 deselected in 15.22s
+CLEAN (controls)   rc=0  7 passed, 24 deselected in 0.29s
+c01_one_ckpt_per_seed_unchecked: RED  rc=1  [refuse_each_inconsistency and ckpt_two_shas]  1 failed, 30 deselected in 0.27s
+c02_flags_unchecked: RED  rc=1  [refuse_each_inconsistency and flags]  1 failed, 30 deselected in 0.19s
+c03_header_scene_unchecked: RED  rc=1  [refuse_each_inconsistency and scene_header]  1 failed, 30 deselected in 0.17s
+c04_precheck_ckpt_vs_rollouts_unchecked: RED  rc=1  [refuse_each_inconsistency and attribution_ckpt_vs_precheck]  1 failed, 30 deselected in 0.18s
+c05_expected_run_dir_unchecked: RED  rc=1  [refuse_each_inconsistency and (cl_not_clr_run or attribution_base_ckpt or wrong_run_dir)]  1 failed, 28 deselected in 0.17s
+CLEAN (wiring)   rc=0  6 passed, 3 deselected in 0.03s
+w01_sensitive_edge_exclusive: RED  rc=1  [test_thresholds_are_A1s]  1 failed, 8 deselected in 0.04s
+w02_insensitive_edge_inclusive: RED  rc=1  [test_thresholds_are_A1s]  1 failed, 8 deselected in 0.04s
+w03_one_sensitive_seed_is_enough: RED  rc=1  [test_a_mixed_or_weak_reading]  1 failed, 5 deselected in 0.04s
+w04_one_insensitive_seed_is_enough: RED  rc=1  [test_a_mixed_or_weak_reading]  1 failed, 5 deselected in 0.04s
+w05_readout_controls_unchecked: RED  rc=1  [test_main_refuses_when_the_readouts_own_controls_failed]  1 failed, 8 deselected in 0.05s
+40 mutations
+MUTATIONS ALL RED
+
