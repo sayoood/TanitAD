@@ -1,0 +1,241 @@
+{
+ "seed": 0,
+ "n_windows": 2399,
+ "n_episodes": 141,
+ "full_eval_set": true,
+ "ckpt_sha256": "5a52b28bcf3e2f153baeb0835f1e9dd44eb918319b51b1e804a5d686276817bc",
+ "ckpt_cfg": {
+  "level_head": "on",
+  "w_level": 0.2027,
+  "lead_head": "on",
+  "w_lead": 3.362,
+  "aux_cond": "token"
+ },
+ "n_frame_ok_false_now": 0,
+ "statistic": "plan mean speed over 0..3 s from traj60 rows 0..29 (origin first), step length / 0.1 s; change = changed - baseline, per window; episode-cluster bootstrap B=2000 seed 0",
+ "mean_plan_speed_baseline": 11.419922084632,
+ "level": {
+  "plus3": {
+   "mean_signed_change_ms": {
+    "point": 0.01604796437232769,
+    "ci95": [
+     0.014715924596252416,
+     0.01735235461601993
+    ],
+    "n_boot_finite": 2000
+   },
+   "mean_abs_change_ms": {
+    "point": 0.016487853526374743,
+    "ci95": [
+     0.015232335199305292,
+     0.017760447034269832
+    ],
+    "n_boot_finite": 2000
+   },
+   "median_signed_change_ms": 0.01390816062488831,
+   "p95_abs_change_ms": 0.040077306003745324,
+   "max_abs_change_ms": 0.07565142830751981
+  },
+  "minus3": {
+   "mean_signed_change_ms": {
+    "point": -0.01519436997386481,
+    "ci95": [
+     -0.01641285770415927,
+     -0.013923195417588153
+    ],
+    "n_boot_finite": 2000
+   },
+   "mean_abs_change_ms": {
+    "point": 0.015574123410475857,
+    "ci95": [
+     0.014370133595075088,
+     0.016767050946412506
+    ],
+    "n_boot_finite": 2000
+   },
+   "median_signed_change_ms": -0.013357040321710478,
+   "p95_abs_change_ms": 0.038036952444900685,
+   "max_abs_change_ms": 0.0685269302035767
+  },
+  "label": "O-INSENSITIVE",
+  "label_alt_mean_abs_reading": "O-INSENSITIVE",
+  "label_rule": "A1's committed rule: O-SENSITIVE iff |mean signed plan-speed change| for v_hat +3 m/s >= 0.5; O-INSENSITIVE iff < 0.1; else WEAK (the mean-of-absolute reading is label_alt_mean_abs_reading)"
+ },
+ "lead": {
+  "presence_0_vs_baseline": {
+   "mean_signed_change_ms": {
+    "point": -0.001585510638537329,
+    "ci95": [
+     -0.0035733162072624893,
+     0.0005552149159139865
+    ],
+    "n_boot_finite": 2000
+   },
+   "mean_abs_change_ms": {
+    "point": 0.011303797818878289,
+    "ci95": [
+     0.009344390115680742,
+     0.013476913570260084
+    ],
+    "n_boot_finite": 2000
+   },
+   "median_signed_change_ms": -0.0006602561522814909,
+   "p95_abs_change_ms": 0.04582711636600665,
+   "max_abs_change_ms": 0.38835303690116696
+  },
+  "presence_1_vs_baseline": {
+   "mean_signed_change_ms": {
+    "point": 0.001736272400156251,
+    "ci95": [
+     -0.003133608508374904,
+     0.006259730768879407
+    ],
+    "n_boot_finite": 2000
+   },
+   "mean_abs_change_ms": {
+    "point": 0.02826826461985587,
+    "ci95": [
+     0.024730366095505066,
+     0.03214067005204639
+    ],
+    "n_boot_finite": 2000
+   },
+   "median_signed_change_ms": 0.006046934568061602,
+   "p95_abs_change_ms": 0.08658516853283373,
+   "max_abs_change_ms": 0.4657880228786766
+  },
+  "flip_1_minus_0": {
+   "mean_signed_change_ms": {
+    "point": 0.003321783038693579,
+    "ci95": [
+     -0.0023837399821033433,
+     0.00879779029960684
+    ],
+    "n_boot_finite": 2000
+   },
+   "mean_abs_change_ms": {
+    "point": 0.03943082598214255,
+    "ci95": [
+     0.035754895675454236,
+     0.043408567971324453
+    ],
+    "n_boot_finite": 2000
+   },
+   "median_signed_change_ms": 0.013034714023913985,
+   "p95_abs_change_ms": 0.11326122194928576,
+   "max_abs_change_ms": 0.46821385708127217
+  },
+  "label_by_analogy": "O-INSENSITIVE",
+  "label_alt_mean_abs_reading": "O-INSENSITIVE",
+  "label_rule": "the A2 card commits no threshold for the lead input; A1's thresholds (0.5 / 0.1 m/s) are applied BY ANALOGY to the presence 0 -> 1 flip and labelled as such"
+ },
+ "beside": {
+  "gap_0p75_minus_0p25_at_presence_1": {
+   "mean_signed_change_ms": {
+    "point": -0.04017569614123838,
+    "ci95": [
+     -0.044486944457413774,
+     -0.035795080896537906
+    ],
+    "n_boot_finite": 2000
+   },
+   "mean_abs_change_ms": {
+    "point": 0.04094544736228275,
+    "ci95": [
+     0.03680900125004547,
+     0.04510298201386279
+    ],
+    "n_boot_finite": 2000
+   },
+   "median_signed_change_ms": -0.028488803230839466,
+   "p95_abs_change_ms": 0.1219508365372105,
+   "max_abs_change_ms": 0.3180748457527347
+  },
+  "e_aux_output_zeroed": {
+   "mean_signed_change_ms": {
+    "point": -0.024955285633421947,
+    "ci95": [
+     -0.03138371966516455,
+     -0.018725753754476746
+    ],
+    "n_boot_finite": 2000
+   },
+   "mean_abs_change_ms": {
+    "point": 0.04809132437385059,
+    "ci95": [
+     0.04446915074896372,
+     0.05164305629579563
+    ],
+    "n_boot_finite": 2000
+   },
+   "median_signed_change_ms": -0.024656720646823338,
+   "p95_abs_change_ms": 0.13055216190853905,
+   "max_abs_change_ms": 0.35048608356195743
+  },
+  "note": "beside, not committed measurements: the gap column at presence 1 (10 m vs 30 m), and e_aux's output replaced by zeros at inference (attribution)"
+ },
+ "controls": {
+  "zero_shift_change_max_abs": 0.0,
+  "zero_shift_traj_max_abs_diff_m": 0.0,
+  "a_in_equals_vhat10_sigmoid_logit_sigmoid_gaplogit_where_frame_ok_max_abs_dev": 8.343304458424683e-08,
+  "a_in_zero_where_frame_not_ok_max_abs": null,
+  "level_shift_reaches_column0_max_abs_dev_from_0p3": 5.960464477539063e-08,
+  "level_shift_leaves_columns_1_2_max_abs_dev": 0.0,
+  "presence_set_reaches_column1_exact": true,
+  "presence_set_leaves_columns_0_2_max_abs_dev": 0.0,
+  "gap_set_reaches_column2_exact": true,
+  "level_v_equals_hook_vhat_max_abs_dev": 0.0,
+  "reach_control_big_e_aux_output_perturbation": {
+   "mean_abs_plan_speed_change_ms": 0.14079382071814828,
+   "max_abs_ms": 1.1831955276686976,
+   "note": "instrument control: a norm-8 perturbation of e_aux's output must move the plan (reads > 0 iff the aux token is wired into O's plan in this harness)"
+  }
+ },
+ "context": {
+  "e_aux_abs_weight_sum_per_input_column_level_presence_gap": [
+   73.10417938232422,
+   73.33456420898438,
+   75.37222290039062
+  ],
+  "e_aux_abs_bias_sum": 70.91967010498047,
+  "e_aux_over_ego_norm_mean_of_per_window_ratio": {
+   "point": 1.5338437351188148,
+   "ci95": [
+    1.4404476513512885,
+    1.6280288035476664
+   ],
+   "n_boot_finite": 2000
+  },
+  "mean_e_aux_norm": 8.992256164550781,
+  "mean_ego_token_norm": 7.3230180740356445,
+  "head_outputs": {
+   "v_hat_range": [
+    -3.7517049312591553,
+    33.61048126220703
+   ],
+   "presence_prob_mean": 0.30457704207925,
+   "gap_hat_mean": 0.6083857376061805
+  }
+ },
+ "labels": {
+  "level": "O-INSENSITIVE",
+  "lead_by_analogy": "O-INSENSITIVE",
+  "level_same_under_both_readings": true,
+  "lead_same_under_both_readings": true
+ },
+ "banked_tick0_check": {
+  "status": "computed",
+  "path": "F:/TanitAD-scratch/motion_c/llr_read/out/LLR_s0/ticks/ticks_LLR_s0.npz",
+  "n_compared": 2399,
+  "max_abs_dev_m": 3.0517578125e-05,
+  "mean_abs_dev_m": 3.027985864036806e-07,
+  "note": "banked rollout: 16 or 12 threads, batch 32; a different thread count / batch changes float rounding only (1e-5 m class); a gap >> 1e-3 m would mean a different tick-0 batch"
+ },
+ "control_failures": [],
+ "wall_s": 48.63216686248779,
+ "prereg": {
+  "card": "PREREG_LEVELHEAD_A2.md (Reads: O-sensitivity by A1's measurement; wiring token per FROZEN_LLR.txt)",
+  "bootstrap": "episode-cluster, B=2000, seed 0",
+  "helpers": "clr_readout.py sha256 5526ad97"
+ }
+}
