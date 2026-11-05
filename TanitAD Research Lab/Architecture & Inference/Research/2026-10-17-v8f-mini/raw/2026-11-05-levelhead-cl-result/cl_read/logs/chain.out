@@ -1,0 +1,46 @@
+2026-11-05T13:44:44 ZZCL-GATE0 pins, tests, known answers ok (tool 0417c838, model a3634276, trainer 9ffdf1b4)
+PRECHECK FAIL: s0: E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_CL/ckpt_last.pt is absent
+PRECHECK FAIL: s0: E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_CL/SHA256SUMS.txt is absent
+PRECHECK FAIL: s0: E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s0_recft_CL/argv.json is absent
+PRECHECK FAIL: s0: box-2 marker E:/Projects/TanitAD-artifacts/v8f-recover/cl_markers/RUN_CL_0.done is absent
+PRECHECK FAIL: s1: E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_CL/ckpt_last.pt is absent
+PRECHECK FAIL: s1: E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_CL/SHA256SUMS.txt is absent
+PRECHECK FAIL: s1: E:/Projects/TanitAD-artifacts/v8f-recover/M2b_s1_recft_CL/argv.json is absent
+PRECHECK FAIL: s1: box-2 marker E:/Projects/TanitAD-artifacts/v8f-recover/cl_markers/RUN_CL_1.done is absent
+PRECHECK FAIL
+2026-11-05T13:44:44 ZZCL-FAIL pulled-file controls refuse the read (rc 5): see logs/precheck.out and raw/CL_PRECHECK.json
+2026-11-05T15:04:24 ZZCL-GATE0 pins, tests, known answers ok (tool 0417c838, model a3634276, trainer 9ffdf1b4)
+PRECHECK PASS
+2026-11-05T15:04:26 ZZCL-GATE1 CL checkpoints present, sha256 == SHA256SUMS.txt == box-2 marker, argv = C0's + the two level tokens, cfg level_head on
+2026-11-05T15:04:26 ZZCL-GATE2 reused arrays (12) and the card's rules match their pins
+2026-11-05T15:04:39 ZZCL-PREFLIGHT-OK PRE_CL_s0_ri_kbox
+2026-11-05T15:04:48 ZZCL-PREFLIGHT-OK PRE_CL_s1_hold
+2026-11-05T15:04:48 ZZCL-START tool 0417c838 threads reindexed=12 logged=16
+2026-11-05T15:04:48 ZZCL-RUN RICL_s0 flags=--smooth sg72 --scene reindexed threads=12
+2026-11-05T15:08:39 ZZCL-RUN-DONE RICL_s0 wall=231s
+2026-11-05T15:08:39 ZZCL-RUN RICL_s1 flags=--smooth sg72 --scene reindexed threads=12
+2026-11-05T15:11:17 ZZCL-RUN-DONE RICL_s1 wall=158s
+2026-11-05T15:11:17 ZZCL-RUN CL_s0 flags=--smooth sg72 --scene logged threads=16
+2026-11-05T15:13:48 ZZCL-RUN-DONE CL_s0 wall=151s
+2026-11-05T15:13:48 ZZCL-RUN CL_s1 flags=--smooth sg72 --scene logged threads=16
+2026-11-05T15:16:19 ZZCL-RUN-DONE CL_s1 wall=151s
+2026-11-05T15:16:19 ZZCL-RUN RICLC_s0 flags=--smooth sg72 --scene reindexed --feasible kbox threads=12
+2026-11-05T15:18:59 ZZCL-RUN-DONE RICLC_s0 wall=160s
+2026-11-05T15:18:59 ZZCL-RUN RICLC_s1 flags=--smooth sg72 --scene reindexed --feasible kbox threads=12
+2026-11-05T15:21:40 ZZCL-RUN-DONE RICLC_s1 wall=161s
+2026-11-05T15:21:40 ZZCL-RUN CLC_s0 flags=--smooth sg72 --scene logged --feasible kbox threads=16
+2026-11-05T15:24:11 ZZCL-RUN-DONE CLC_s0 wall=151s
+2026-11-05T15:24:11 ZZCL-RUN CLC_s1 flags=--smooth sg72 --scene logged --feasible kbox threads=16
+2026-11-05T15:26:42 ZZCL-RUN-DONE CLC_s1 wall=151s
+2026-11-05T15:26:42 ZZCL-RUN FZCL_s0 flags=--smooth sg72 --scene hold_now threads=16
+2026-11-05T15:30:51 ZZCL-RUN-DONE FZCL_s0 wall=249s
+2026-11-05T15:30:51 ZZCL-RUN FZCL_s1 flags=--smooth sg72 --scene hold_now threads=16
+2026-11-05T15:35:02 ZZCL-RUN-DONE FZCL_s1 wall=251s
+2026-11-05T15:35:02 ZZCL-ROLLOUTS-DONE nfail=0
+2026-11-05T15:35:02 ZZCL-CLRO-DONE
+2026-11-05T15:35:02 ZZCL-READ start
+2026-11-05T15:35:56 ZZCL-READ rc=0
+s0 M1 RICL-RIC0 -0.0016 [-0.0042, +0.0011] sep False | RIC0-P10 +0.0533 | share 0.029582322928672557 | logged share 0.03814366705162973 | ADE6 RICL-RIC0 +0.0007 | RICLC read A DOMINANT False
+s1 M1 RICL-RIC0 -0.0003 [-0.0026, +0.0020] sep False | RIC0-P10 +0.0596 | share 0.00566825178753876 | logged share 0.005906187338516898 | ADE6 RICL-RIC0 -0.0206 | RICLC read A DOMINANT False
+OUTCOME P-FAILS-M1-NOT-MOVED | the head's level does not reach O's decision: next is the head read-out check (does v_hat track the logged speed on eval at T0? R2 and the M1-window R2) and, if it does, O's use of it (attribution read with e_level zeroed at inference); if it does not, a lead-aware head (lead presence and distance from the frame, CRAWL-LEAD: half the crawl sits behind a lead)
+2026-11-05T15:35:56 ZZCL-CHAIN-DONE
