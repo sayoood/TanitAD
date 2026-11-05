@@ -1753,9 +1753,10 @@ if _E1_MODULE is not None:
 #: the lever-attach reachability needles (`lever_attach_reasons`), G-DVB / G-LIVE (the levers' own registrations and the exhaustive
 #: LIVE_WEIGHT_RULES: `w_r8_drivable`, `w_map_hires`, `w_box3d`), and the share-alarm row (`map_share_alarm`).
 #: REFUSED (each with its reason): `--r9-perc-rig` / `--r9-train-only` (refcv8's own entries, inherited: the full model is not the rig, the
-#: freeze is refcv9-warm's); T1's three flags (`E1_T1_FLAGS`, E1-REC4: not crowned yet); the TRAINING-ONLY aux heads (B1 / B2 / B2c): their loss is called ONLY by `compute_losses_perc_rig` and
-#: `box_depth_aux_flag.pin_args` / `persp3d_aux_flag.pin_args` refuse them without `--r9-perc-rig` -- UNREACHABLE in the full model
-#: (pinned by source in tests/test_launch_gate_refcv9_full.py: wiring them into `compute_losses` flips that test and forces a re-decision);
+#: freeze is refcv9-warm's); T1's three flags (`E1_T1_FLAGS`, E1-REC4: not crowned yet); the aux heads (B1 / B2 / B2c): REACHABLE from the
+#: full model since AUX-FULL (`compute_losses_v3` calls their loss, `box_depth_aux_flag.pin_args` admits `--w-box3d > 0`; T1 likewise since
+#: T1-FULL) and REFUSED BY DECISION until E1 crowns one (tests/test_launch_gate_refcv9_full.py pins both halves; the MM drops a crowned
+#: head's flags here -- the FLIP);
 #: R9-PF (refcv9-warm forbids it too: the SEPARATE stage-2 fit); the D1 branch flags (only profile `refcv9-full-d1` admits them).
 #: A `--r9-*` flag in NONE of the classified sets is never silently admitted: open item R9F-UNCLASSIFIED-LEVER (token INCOMPLETE).
 _R9F_AUX_ALL = E1_BOX_AUX_FLAGS + ("--w-box-depth", "--w-box-persp", "--w-box-bev2")
@@ -1809,11 +1810,11 @@ def _r9f_profile(name: str, sched: dict, why: dict, *, extra_flags: tuple = (), 
         required_values={k: v for k, v in dict(_R8["required_values"], **{"--lr-schedule": "wsd"}, **sched).items() if k != "--w-map-hires"},
         required_values_why=dict(_R8.get("required_values_why") or {}, **{"--lr-schedule": "REFCV9_DESIGN 4.4 / C6: WSD"}, **why),
         forbidden_levers=tuple(_R8["forbidden_levers"]) + (
-            (_R9F_AUX_ALL, "a TRAINING-ONLY aux head (B1 / B2 / B2c) or its weight: UNREACHABLE in the full model -- the aux loss is called only by "
-                           "`compute_losses_perc_rig` and the trainer's pin_args refuse it without --r9-perc-rig (which this profile forbids)"),
+            (_R9F_AUX_ALL, "an aux head (B1 / B2 / B2c) or its weight: not crowned by E1 yet (REFCV9_DESIGN 4.3) -- the full model REACHES it "
+                           "since AUX-FULL (compute_losses_v3), so this is a decision, not a wiring gap; the MM drops it after E1 crowns a head"),
             (_R9W_PF_FLAGS, "R9-PF is the SEPARATE stage-2 calibration fit (REFCV9_INMODEL_DESIGN s1, S2); refcv9-warm forbids it too"),
             (E1_T1_FLAGS, "T1, the temporal BEV warp (E1-REC4): refcv9-e1rig ADMITS it (an E1 arm); the full model does not carry it until E1 has crowned it "
-                          "-- the trainer's pin_args also refuses it without --r9-perc-rig, which this profile forbids"),
+                          "(reachable since T1-FULL: a decision, not a wiring gap)"),
         ) + (((_R9F_BRANCH_FLAGS, "the D1 decay branch launches ONLY under profile refcv9-full-d1 (its own token, the 4-flag delta)"),)
              if name != "refcv9-full-d1" else ()),
         #: `--init-from` bound by CONTENT to refcv8 EMA-48,852 (md5 b4364029...) -- the e1rig machinery (`map_only_init_reasons`' reader)
