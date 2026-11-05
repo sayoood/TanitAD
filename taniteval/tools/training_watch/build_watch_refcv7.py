@@ -98,6 +98,41 @@ PLAIN_BANDS = ("60_80", "80_100")
 HEAT_EDGES = (0.05, 0.2, 0.4, 0.6, 0.8)
 BAND_COLORS = ("s1", "s2", "s3", "s4", "s5")      # fixed order, never cycled (validated palette)
 
+# ---- the BANDED map head (refcv9 C1, `--r9-map-banded`) -------------------------------------------------
+#: A run is BANDED when its rows carry `map_banded_*` keys. The banded head logs those INSTEAD of the 8-class
+#: `map_hires_{iou,lshare,gno,n}_<cls>_<band>` ones (under it the `eval_map_hires_iou_*` / `_lshare_*` keys are
+#: JSON null), so everything above this block reads nothing from such a run. The SPELLING below is
+#: `stack/tanitad/models/map_banded.py`'s (`telemetry_keys`, BAND_NAMES, CHANNELS, PROB_CHANNELS, BAND_WEIGHTS,
+#: MAXENT_W) and the launch gate's (`BANDED_KEY_FMT`, `banded_train_keys`, `banded_metric_keys`). ⛔ This tool is
+#: stdlib-only and imports neither: `taniteval/tests/test_build_watch_banded.py` imports BOTH and goes RED if any
+#: literal here drifts, so a rename in the head cannot silently blank this page again.
+BANDED_FAMILY = "map_banded_"
+BANDED_BANDS = ("near", "mid", "far")
+BANDED_BAND_START_M = (0.0, 10.0, 40.0)           # map_banded.BAND_START_M (the far band runs to the run's extent)
+BANDED_BAND_CELL_CM = (10, 25, 50)                # map_banded.BAND_CELL_M (0.10 / 0.25 / 0.50 m)
+BANDED_BAND_WEIGHTS = (1.0, 1.0, 0.5)             # map_banded.BAND_WEIGHTS (R7: the far field cannot dominate)
+BANDED_CHANNELS = ("drv", "drv_sdf", "sdw", "lane", "lane_ox", "lane_oy", "edge_h", "xwalk", "arrow", "hatch")
+BANDED_PROB_CHANNELS = ("drv", "sdw", "lane", "edge_h", "xwalk", "arrow", "hatch")      # sigmoid: carry pos/inter/union
+BANDED_L1_CHANNELS = ("drv_sdf", "lane_ox", "lane_oy")                                  # L1, metres: loss only
+#: a tooltip gloss per channel, from the module docstring of `map_banded.py` (a label only: nothing reads it)
+BANDED_GLOSS = {"drv": "drivable surface (codes 1 2 3 4 6)", "drv_sdf": "signed distance to the drv boundary, m, clipped ±2",
+                "sdw": "sidewalk / verge (code 7)", "lane": "lane lines, dilated heatmap (code 2)",
+                "lane_ox": "lane offset x to the nearest GT lane position, m", "lane_oy": "lane offset y, m",
+                "edge_h": "non-drivable edge, dilated heatmap (code 5)", "xwalk": "crosswalk", "arrow": "arrow / text",
+                "hatch": "hatched area"}
+BANDED_STATS = ("pos", "inter", "union")          # supervised cells: ground truth / predicted AND GT / predicted OR GT
+BANDED_MAXENT_W = 1e-3                            # map_banded.MAXENT_W: the max-entropy term on the unobserved cells
+BANDED_KEY_FMT = {"loss": BANDED_FAMILY + "loss_{ch}_{band}", "maxent": BANDED_FAMILY + "maxent_{band}",
+                  "n": BANDED_FAMILY + "n_{band}", "unobs": BANDED_FAMILY + "unobs_frac_{band}",
+                  "stat": BANDED_FAMILY + "{st}_{ch}_{band}"}
+#: the in-run eval row carries every banded key under `eval_`, and again under `ema_eval_` when the run keeps an EMA
+BANDED_EVAL_PREFIXES = ("eval_", "ema_eval_")
+#: the loss-sum identity the gate checks on the TRAIN rows (`banded_train_row_reasons`): sum_b w_b (sum_c L_cb +
+#: MAXENT_W * maxent_b) == the logged `map_hires`, within `profile["map_hires"]["lc_sum_rel_tol"]` x |loss| plus the
+#: rounding slack of the 30 terms (half a unit in the sixth decimal each)
+BANDED_SUM_REL_TOL = 1e-5
+BANDED_SUM_SLACK = 0.5e-5 * (len(BANDED_CHANNELS) * len(BANDED_BANDS) + 1)
+
 # ---- the box heads (A9 P0, A10) ------------------------------------------------------------------------
 #: ⚠️ UNVERIFIED until the box-head package lands: the spelling is the box builder's in-progress
 #: `stack/tanitad/eval/detection_metrics.py` (`metric_keys`, `calib_key_names`), read 2026-09-27 03:34.
@@ -549,6 +584,482 @@ def share_table(m: dict) -> str:
         body.append(f"<tr><td>{esc(c)}</td>{''.join(tds)}</tr>")
     return ('<div style="overflow-x:auto"><table><tr><th>class · loss share</th>' + head + "</tr>"
             + "".join(body) + "</table></div>")
+
+
+# ------------------------------------------------------------------ the BANDED map head ----
+def mb_key(kind: str, *, ch=None, band=None, st=None, pre: str = "") -> str:
+    """One banded telemetry key. kind: loss | maxent | n | unobs | stat; `pre` is "" (a train row), "eval_" or "ema_eval_"."""
+    return pre + BANDED_KEY_FMT[kind].format(ch=ch, band=band, st=st)
+
+
+def banded_train_keys() -> list:
+    """The 39 keys a TRAIN row with a labelled window carries: 30 loss terms (channel x band), then per band the
+    max-entropy term, the supervised-cell count and the unobserved fraction (the gate's `banded_train_keys`, same order)."""
+    ks = [mb_key("loss", ch=c, band=b) for c in BANDED_CHANNELS for b in BANDED_BANDS]
+    for k in ("maxent", "n", "unobs"):
+        ks += [mb_key(k, band=b) for b in BANDED_BANDS]
+    return ks
+
+
+def banded_stat_keys() -> list:
+    """The 63 pos / inter / union counts per probability channel x band (the gate's `banded_metric_keys`, same order)."""
+    return [mb_key("stat", st=s, ch=c, band=b) for s in BANDED_STATS for c in BANDED_PROB_CHANNELS for b in BANDED_BANDS]
+
+
+def banded_run(rows: list) -> bool:
+    """True when ANY row carries a banded key (train `map_banded_*`, eval `eval_map_banded_*` / `ema_eval_map_banded_*`).
+    A non-banded run carries none, and then nothing below this line is evaluated: its page is the one it always was."""
+    heads = tuple(p + BANDED_FAMILY for p in ("",) + BANDED_EVAL_PREFIXES)
+    return any(k.startswith(heads) for r in rows for k in r)
+
+
+def banded_band_label(b: str) -> str:
+    i = BANDED_BANDS.index(b)
+    lo = BANDED_BAND_START_M[i]
+    span = (f"{lo:g}–{BANDED_BAND_START_M[i + 1]:g} m" if i + 1 < len(BANDED_BANDS) else f"≥ {lo:g} m")
+    return f"{b} · {span} · {BANDED_BAND_CELL_CM[i]} cm"
+
+
+def _bval(row, k):
+    """('value', v) | ('missing', None) -- the key is absent | ('bad', None) -- present but null / non-finite / not a number.
+    ⛔ Unlike the 8-class `_cell`, a banded key is NEVER legitimately null (the gate demands every one finite): an
+    undefined IoU is a RATIO with an empty denominator, derived in `banded_derive`, never a null key."""
+    if row is None or k not in row:
+        return "missing", None
+    v = _num(row[k])
+    return ("value", float(v)) if v is not None else ("bad", None)
+
+
+def banded_derive(row, ch: str, band: str, pre: str) -> dict:
+    """IoU, recall and precision of one probability channel x band from the row's OWN counts, which are over the
+    SUPERVISED cells only (seen and not unobserved): IoU = inter / union, recall = inter / pos, precision =
+    inter / |pred| with |pred| = union - pos + inter. Each is ('value', v) | ('undef', None) -- an empty denominator,
+    never 0 -- | ('missing' | 'bad', None). `consistent` is the set identity inter <= pos <= union."""
+    got = {s: _bval(row, mb_key("stat", st=s, ch=ch, band=band, pre=pre)) for s in BANDED_STATS}
+    kinds = [k for k, _ in got.values()]
+    bad = "missing" if "missing" in kinds else "bad" if "bad" in kinds else None
+    if bad:
+        return {"iou": (bad, None), "recall": (bad, None), "precision": (bad, None), "pos": got["pos"],
+                "consistent": None}
+    pos, inter, union = (got[s][1] for s in BANDED_STATS)
+    pred = union - pos + inter
+    eps = 1e-6 * max(1.0, union)
+    return {"iou": ("value", inter / union) if union > 0 else ("undef", None),
+            "recall": ("value", inter / pos) if pos > 0 else ("undef", None),
+            "precision": ("value", inter / pred) if pred > 1e-6 else ("undef", None),
+            "pos": got["pos"],
+            "consistent": (-eps <= inter <= pos + eps) and (pos <= union + eps) and (inter <= union + eps)}
+
+
+def banded_iou_of(row, ch: str, band: str, pre: str = "eval_"):
+    """The derived IoU of one row, or None when it is not a value (absent, bad or undefined)."""
+    kind, v = banded_derive(row, ch, band, pre)["iou"]
+    return v if kind == "value" else None
+
+
+def banded_eval_read(row: dict, pre: str) -> dict:
+    """One eval row's banded readings under one prefix: the contract (every key present and finite), the loss terms,
+    the per-band supervision, and IoU / recall / precision per probability channel x band."""
+    keys = [pre + k for k in banded_train_keys() + banded_stat_keys()]
+    kinds = [_bval(row, k)[0] for k in keys]
+    d = {"prefix": pre, "step": row.get("step"), "expected": len(keys),
+         "missing": [k for k, kd in zip(keys, kinds) if kd == "missing"],
+         "bad": [k for k, kd in zip(keys, kinds) if kd == "bad"],
+         "loss": {}, "band": {}, "iou": {}, "recall": {}, "precision": {}, "pos": {}, "count_checked": 0,
+         "count_bad": []}
+    d["present"] = d["expected"] - len(d["missing"]) - len(d["bad"])
+    for c in BANDED_CHANNELS:
+        for b in BANDED_BANDS:
+            d["loss"][(c, b)] = _bval(row, mb_key("loss", ch=c, band=b, pre=pre))
+    for b in BANDED_BANDS:
+        d["band"][b] = {"n": _bval(row, mb_key("n", band=b, pre=pre)),
+                        "maxent": _bval(row, mb_key("maxent", band=b, pre=pre)),
+                        "unobs": _bval(row, mb_key("unobs", band=b, pre=pre))}
+    for c in BANDED_PROB_CHANNELS:
+        for b in BANDED_BANDS:
+            x = banded_derive(row, c, b, pre)
+            for s in ("iou", "recall", "precision", "pos"):
+                d[s][(c, b)] = x[s]
+            if x["consistent"] is not None:
+                d["count_checked"] += 1
+                if not x["consistent"]:
+                    d["count_bad"].append((c, b))
+    return d
+
+
+def banded_read(ev: list) -> dict:
+    """The banded head on the in-run EVAL rows: the key contract on every row, the latest readings, a verdict.
+
+    The contract is the launch gate's (`banded_eval_key_reasons`): every banded key under `eval_` -- and under
+    `ema_eval_` when the run keeps an EMA -- present and finite, and every band carries supervised cells. There is NO
+    registered banded IoU bar (the thin-class alarm is the 8-class head's), so no value is judged here: only a broken
+    contract is an alarm, and an empty band is amber. An EMA prefix is read from the latest row that carries it."""
+    ema_on = any(k.startswith(BANDED_EVAL_PREFIXES[1] + BANDED_FAMILY) for r in ev for k in r)
+    pres = (BANDED_EVAL_PREFIXES[0],) + ((BANDED_EVAL_PREFIXES[1],) if ema_on else ())
+    keys = banded_train_keys() + banded_stat_keys()
+    out = {"n_evals": len(ev), "latest_step": ev[-1]["step"] if ev else None, "state": "pending", "alarm": False,
+           "reasons": [], "prefixes": list(pres), "expected": len(keys), "read": {}, "rows_bad": [],
+           "bands_without_cells": [], "ema_on": ema_on, "ema_error": None}
+    if not ev:
+        out["reasons"].append(f"no in-run eval row yet: the {len(keys)}-key banded contract cannot be read")
+        return out
+
+    def carries(r, pre):
+        return any(k.startswith(pre + BANDED_FAMILY) for k in r)
+    for r in ev:
+        for pre in pres:
+            if pre != pres[0] and not carries(r, pre):
+                continue                          # an eval row the EMA weights were not scored on
+            n_bad = sum(1 for k in keys if _bval(r, pre + k)[0] != "value")
+            if n_bad:
+                out["rows_bad"].append((r["step"], pre, n_bad))
+    last = ev[-1]
+    for pre in pres:
+        out["read"][pre] = banded_eval_read(last if pre == pres[0] else [r for r in ev if carries(r, pre)][-1], pre)
+    live = out["read"][pres[0]]
+    if last.get("ema_eval_error"):
+        out["ema_error"] = (last["step"], str(last["ema_eval_error"])[:160])
+    n_bad_latest = sum(len(d["missing"]) + len(d["bad"]) for d in out["read"].values())
+    count_bad = sum(len(d["count_bad"]) for d in out["read"].values())
+    src = {(d["step"], p) for p, d in out["read"].items()}
+    older = [x for x in out["rows_bad"] if (x[0], x[1]) not in src]
+    out["bands_without_cells"] = [b for b in BANDED_BANDS
+                                  if live["band"][b]["n"][0] == "value" and not live["band"][b]["n"][1] > 0]
+    if n_bad_latest:
+        out["reasons"].append(f"{n_bad_latest} banded key(s) ABSENT or non-finite in the latest eval row(s) "
+                              f"(of {len(keys) * len(pres)} expected: {len(keys)} per prefix {', '.join(pres)})")
+    if older:
+        out["reasons"].append(f"{len(older)} earlier eval row(s) lacked or garbled banded keys (first: step "
+                              f"{older[0][0]:,} {older[0][1]}, {older[0][2]} bad; latched)")
+    if count_bad:
+        out["reasons"].append(f"{count_bad} channel x band cell(s) break the count identity inter ≤ pos ≤ union "
+                              "(the IoU read from them is not trustworthy)")
+    if out["bands_without_cells"]:
+        out["reasons"].append("no supervised cells in the latest eval for band(s) " + ", ".join(out["bands_without_cells"])
+                              + " (the gate requires every band to carry cells)")
+    if out["ema_error"]:
+        out["reasons"].append(f"the EMA in-run eval failed at step {out['ema_error'][0]:,}: {esc(out['ema_error'][1])}")
+    drv = [live["iou"][("drv", b)] for b in BANDED_BANDS]
+    if all(k == "value" for k, _ in drv):
+        out["reasons"].append(f"now (step {last['step']:,}, live weights): drivable IoU over the supervised cells "
+                              + " / ".join(f"{b} {v:.3f}" for b, (_, v) in zip(BANDED_BANDS, drv)))
+    out["state"] = ("UNAVAILABLE" if n_bad_latest else "ALARM" if (count_bad or older)
+                    else "AMBER" if (out["bands_without_cells"] or out["ema_error"]) else "clear")
+    out["alarm"] = out["state"] in ("UNAVAILABLE", "ALARM")
+    return out
+
+
+def banded_signal(tr: list) -> dict:
+    """The banded head on the TRAIN rows (one batch each): the 39 keys on every labelled row, the loss-sum identity
+    against the logged `map_hires`, the all-ignore rows (a zero labelled windows batch logs NO banded keys and must read
+    `map_hires` exactly 0.0), per-band supervision, and each band's weighted share of the map loss. ⚠️ The banded head
+    logs NO per-band gradient norm on the train rows (the 8-class head's `map_hires_gno_*`): the pull is the launch
+    gate's smoke probe, so no 'pulled' claim is made here -- this is the telemetry contract and the loss budget."""
+    keys = banded_train_keys()
+    out = {"state": "UNAVAILABLE", "alarm": True, "reasons": [], "latest_step": None, "n_rows": 0, "n_data": 0,
+           "n_all_ignore": 0, "rows_missing": [], "rows_nonfinite": [], "sum_checked": 0, "sum_bad": [],
+           "sum_max_abs": None, "zero_bad": [], "bands": {}, "terms": {}, "bands_empty_latest": []}
+    rows = [r for r in tr if "map_hires" in r or any(k.startswith(BANDED_FAMILY) for k in r)]
+    out["n_rows"] = len(rows)
+    if not rows:
+        out["reasons"].append(f"no train row carries <code>{BANDED_FAMILY}*</code> or <code>map_hires</code>")
+        return out
+    data = []
+    for r in rows:
+        lab = _num(r.get("map_hires_n_labelled"))
+        if lab is not None and lab == 0:
+            out["n_all_ignore"] += 1
+            if _num(r.get("map_hires")) != 0.0:
+                out["zero_bad"].append((r["step"], r.get("map_hires")))
+            continue
+        miss = [k for k in keys if k not in r]
+        if miss:
+            out["rows_missing"].append((r["step"], len(miss)))
+            continue
+        vals = {k: _num(r[k]) for k in keys}
+        nf = [k for k in keys if vals[k] is None]
+        if nf:
+            out["rows_nonfinite"].append((r["step"], nf[0], len(nf)))
+            continue
+        data.append((r, vals))
+    out["n_data"] = len(data)
+    steps = [r["step"] for r, _ in data]
+    for b, w in zip(BANDED_BANDS, BANDED_BAND_WEIGHTS):
+        sum_c = [sum(v[mb_key("loss", ch=c, band=b)] for c in BANDED_CHANNELS) for _, v in data]
+        mx = [v[mb_key("maxent", band=b)] for _, v in data]
+        contrib = [w * (s + BANDED_MAXENT_W * m) for s, m in zip(sum_c, mx)]
+        nn = [v[mb_key("n", band=b)] for _, v in data]
+        un = [v[mb_key("unobs", band=b)] for _, v in data]
+        out["bands"][b] = {"weight": w, "contrib": list(zip(steps, contrib)),
+                           "contrib_ema": ema(contrib)[-1] if contrib else None,
+                           "sum_c_ema": ema(sum_c)[-1] if sum_c else None,
+                           "maxent_ema": ema(mx)[-1] if mx else None, "maxent_last": mx[-1] if mx else None,
+                           "n_last": nn[-1] if nn else None, "unobs_last": un[-1] if un else None,
+                           "n_series": list(zip(steps, nn)), "unobs_series": list(zip(steps, un)), "share": None}
+        if nn and nn[-1] == 0:
+            out["bands_empty_latest"].append(b)
+    tot = sum(d["contrib_ema"] for d in out["bands"].values() if d["contrib_ema"] is not None)
+    for d in out["bands"].values():
+        d["share"] = (d["contrib_ema"] / tot) if (d["contrib_ema"] is not None and tot > 0) else None
+    for c in BANDED_CHANNELS:
+        for b in BANDED_BANDS:
+            ys = [v[mb_key("loss", ch=c, band=b)] for _, v in data]
+            out["terms"][(c, b)] = {"series": list(zip(steps, ys)), "ema": ema(ys)[-1] if ys else None,
+                                    "last": ys[-1] if ys else None, "zero_rows": sum(1 for y in ys if y == 0.0)}
+    for r, v in data:
+        loss = _num(r.get("map_hires"))
+        if loss is None:
+            continue
+        t = sum(w * (sum(v[mb_key("loss", ch=c, band=b)] for c in BANDED_CHANNELS)
+                     + BANDED_MAXENT_W * v[mb_key("maxent", band=b)])
+                for b, w in zip(BANDED_BANDS, BANDED_BAND_WEIGHTS))
+        out["sum_checked"] += 1
+        diff = abs(t - loss)
+        out["sum_max_abs"] = diff if out["sum_max_abs"] is None else max(out["sum_max_abs"], diff)
+        if not diff <= BANDED_SUM_REL_TOL * abs(loss) + BANDED_SUM_SLACK:
+            out["sum_bad"].append((r["step"], t, loss))
+    out["latest_step"] = steps[-1] if steps else None
+    if out["rows_missing"]:
+        out["reasons"].append(f"{len(out['rows_missing'])} of {len(rows)} train rows lack banded keys (first: step "
+                              f"{out['rows_missing'][0][0]:,}, {out['rows_missing'][0][1]} of {len(keys)} missing)")
+    if out["rows_nonfinite"]:
+        out["reasons"].append(f"{len(out['rows_nonfinite'])} train row(s) carry a non-finite banded key (first: step "
+                              f"{out['rows_nonfinite'][0][0]:,}: {esc(out['rows_nonfinite'][0][1])})")
+    if out["sum_bad"]:
+        s0 = out["sum_bad"][0]
+        out["reasons"].append(f"the banded loss terms do not sum to <code>map_hires</code> on {len(out['sum_bad'])} train "
+                              f"row(s) (first: step {s0[0]:,}: {s0[1]:.7g} vs {s0[2]:.7g})")
+    if out["zero_bad"]:
+        out["reasons"].append(f"{len(out['zero_bad'])} all-ignore train row(s) do not read <code>map_hires</code> exactly 0.0 "
+                              f"(first: step {out['zero_bad'][0][0]:,})")
+    if out["bands_empty_latest"]:
+        out["reasons"].append("no supervised cells in the last labelled train row for band(s) "
+                              + ", ".join(out["bands_empty_latest"]) + " (one batch: no evidence either way)")
+    problem = bool(out["rows_missing"] or out["rows_nonfinite"] or out["sum_bad"] or out["zero_bad"])
+    if not data and not problem:
+        out["state"], out["alarm"] = "pending", False
+        out["reasons"].append(f"no labelled train row yet ({out['n_all_ignore']} all-ignore row(s))")
+    else:
+        out["state"], out["alarm"] = ("ALARM", True) if problem else ("clear", False)
+    return out
+
+
+def banded_summary(mb: dict, mbs: dict) -> dict:
+    """The JSON-safe form of the two banded reads (no tuple keys)."""
+    iou = {p: {f"{c}/{b}": d["iou"][(c, b)][1] for c in BANDED_PROB_CHANNELS for b in BANDED_BANDS
+               if d["iou"][(c, b)][0] == "value"} for p, d in mb["read"].items()}
+    return {"state": mb["state"], "alarm": mb["alarm"], "n_evals": mb["n_evals"], "latest_step": mb["latest_step"],
+            "expected_per_prefix": mb["expected"], "prefixes": mb["prefixes"], "ema_on": mb["ema_on"],
+            "present_latest": {p: d["present"] for p, d in mb["read"].items()},
+            "missing_latest": {p: d["missing"][:30] for p, d in mb["read"].items()},
+            "bad_latest": {p: d["bad"][:30] for p, d in mb["read"].items()},
+            "count_bad": {p: [list(x) for x in d["count_bad"]] for p, d in mb["read"].items()},
+            "rows_bad": [list(x) for x in mb["rows_bad"]], "bands_without_cells": mb["bands_without_cells"],
+            "iou_latest": iou,
+            "train": {"state": mbs["state"], "alarm": mbs["alarm"], "n_rows": mbs["n_rows"], "n_data": mbs["n_data"],
+                      "n_all_ignore": mbs["n_all_ignore"], "rows_missing": [list(x) for x in mbs["rows_missing"]],
+                      "rows_nonfinite": [list(x) for x in mbs["rows_nonfinite"]],
+                      "sum_checked": mbs["sum_checked"], "sum_bad": [list(x) for x in mbs["sum_bad"]],
+                      "sum_max_abs": mbs["sum_max_abs"], "zero_bad": [list(x) for x in mbs["zero_bad"]],
+                      "bands": {b: {k: d[k] for k in ("weight", "contrib_ema", "share", "n_last", "unobs_last",
+                                                       "maxent_last")} for b, d in mbs["bands"].items()}}}
+
+
+def banded_heatmap(d: dict, caption: str) -> str:
+    """Probability channel x band table of ONE eval row: the big number is the IoU over the supervised cells, the small
+    line recall / precision. No colour judges a value (no banded bar is registered): the bins are a display scale.
+    ⛔ A key absent from the row prints NO key name, says UNAVAILABLE and is never coloured as a value."""
+    pre = d["prefix"]
+    head = "".join(f'<th class="num">{esc(banded_band_label(b))}</th>' for b in BANDED_BANDS)
+    body = []
+    for c in BANDED_PROB_CHANNELS:
+        tds = []
+        for b in BANDED_BANDS:
+            (ki, iou), (kr, rec), (kp, prec), (_kn, pos) = (d[s][(c, b)] for s in ("iou", "recall", "precision", "pos"))
+            if ki in ("missing", "bad"):
+                why = "ABSENT from" if ki == "missing" else "non-finite in"
+                tds.append(f'<td class="hm unav" data-cell="{c} {b}" title="{esc(c)} · {esc(b)} · a count key is {why} '
+                           f'the eval row">UNAVAILABLE</td>')
+                continue
+            ks = "; ".join(mb_key("stat", st=s, ch=c, band=b, pre=pre) for s in BANDED_STATS)
+            ntxt = f"pos {fmt(pos, 0)}"
+            if ki == "undef":
+                tds.append(f'<td class="hm undef" data-cell="{c} {b}" data-key="{esc(ks)}" title="{esc(c)} · {esc(b)} · '
+                           f'undefined: no supervised ground-truth cell and no predicted cell · {esc(ks)}">'
+                           f'undefined<small>{ntxt}</small></td>')
+                continue
+            r_txt = f"{rec:.2f}" if kr == "value" else "—"
+            p_txt = f"{prec:.2f}" if kp == "value" else "—"
+            tds.append(f'<td class="hm hb{_hbin(iou)}" data-cell="{c} {b}" data-key="{esc(ks)}" title="{esc(c)} · {esc(b)} · '
+                       f'IoU {iou:.4f} · recall {r_txt} · precision {p_txt} · {ntxt} (mean supervised GT cells per eval '
+                       f'batch) · {esc(ks)}">{iou:.3f}<small>R {r_txt} · P {p_txt}</small></td>')
+        body.append(f'<tr><th scope="row" title="{esc(BANDED_GLOSS.get(c, ""))}">{esc(c)}</th>{"".join(tds)}</tr>')
+    return (f'<figure class="hmfig"><figcaption><b>{esc(caption)}</b></figcaption><div style="overflow-x:auto">'
+            f'<table class="hm"><tr><th>channel</th>{head}</tr>{"".join(body)}</table></div></figure>')
+
+
+def banded_legend() -> str:
+    labs = ["≤ 0.05", "0.05–0.2", "0.2–0.4", "0.4–0.6", "0.6–0.8", "> 0.8"]
+    sw = "".join(f'<span><i style="background:var(--h{i})"></i>{esc(t)}</span>' for i, t in enumerate(labs))
+    return ('<div class="hmlegend"><span>BANDED IoU over the supervised cells — a display scale only, no banded bar is '
+            f'registered:</span>{sw}<span><i class="lg-undef"></i>undefined: empty denominator</span>'
+            '<span><i class="lg-unav"></i>UNAVAILABLE: the key is absent (an alarm, never 0)</span>'
+            '<span>small line: R = recall, P = precision, derived from the same counts</span></div>')
+
+
+def banded_loss_table(d: dict) -> str:
+    """The eval row's 30 loss terms (channel x band): focal + soft Dice for the sigmoid channels, L1 in metres for the three
+    regression channels."""
+    head = "".join(f'<th class="num">{esc(banded_band_label(b))}</th>' for b in BANDED_BANDS)
+    body = []
+    for c in BANDED_CHANNELS:
+        tds = []
+        for b in BANDED_BANDS:
+            kind, v = d["loss"][(c, b)]
+            tds.append('<td class="num muted">UNAVAILABLE</td>' if kind != "value" else f'<td class="num">{v:.4f}</td>')
+        unit = "L1, metres" if c in BANDED_L1_CHANNELS else "focal + Dice"
+        body.append(f'<tr><td>{esc(c)} <span class="muted">· {unit}</span></td>{"".join(tds)}</tr>')
+    return ('<div style="overflow-x:auto"><table><tr><th>loss term · ' + esc(d["prefix"]) + 'map_banded_loss_*</th>' + head
+            + "</tr>" + "".join(body) + "</table></div>")
+
+
+def banded_band_table(d: dict) -> str:
+    """Per band, from the eval row: supervised cells, the unobserved fraction, the max-entropy term, the sum of the band's
+    loss terms and its weighted contribution w_b (sum_c L + MAXENT_W maxent_b)."""
+    rows = []
+    for b, w in zip(BANDED_BANDS, BANDED_BAND_WEIGHTS):
+        e = d["band"][b]
+        ls = [d["loss"][(c, b)] for c in BANDED_CHANNELS]
+        s = sum(v for _, v in ls) if all(k == "value" for k, _ in ls) else None
+        mx = e["maxent"][1] if e["maxent"][0] == "value" else None
+        contrib = (w * (s + BANDED_MAXENT_W * mx)) if (s is not None and mx is not None) else None
+        rows.append(f'<tr><td>{esc(banded_band_label(b))}</td><td class="num">{w:g}</td>'
+                    f'<td class="num">{fmt(e["n"][1], 0)}</td><td class="num">{fmt(e["unobs"][1], 4)}</td>'
+                    f'<td class="num">{fmt(mx, 3)}</td><td class="num">{fmt(s, 4)}</td><td class="num">{fmt(contrib, 4)}</td></tr>')
+    return ('<div style="overflow-x:auto"><table><tr><th>band</th><th class="num">weight</th>'
+            '<th class="num">supervised cells (mean / eval batch)</th><th class="num">unobserved fraction</th>'
+            '<th class="num">max-entropy</th><th class="num">Σ channel loss</th><th class="num">weighted contribution</th></tr>'
+            + "".join(rows) + "</table></div>")
+
+
+def banded_train_html(sg: dict) -> str:
+    """The training signal per band and per channel x band (train rows), plus the loss-sum identity."""
+    if sg["state"] == "UNAVAILABLE" or not sg["n_data"]:
+        return ('<h3>The BANDED training signal (train rows)</h3><p class="muted">UNAVAILABLE: '
+                + (" ".join(sg["reasons"]) if sg["reasons"] else "no labelled train row carries the banded keys yet.") + "</p>")
+    brow = []
+    for b in BANDED_BANDS:
+        e = sg["bands"][b]
+        brow.append(f'<tr><td>{esc(banded_band_label(b))}</td><td class="num">{e["weight"]:g}</td>'
+                    f'<td class="num">{fmt(e["n_last"], 0)}</td><td class="num">{fmt(e["unobs_last"], 4)}</td>'
+                    f'<td class="num">{fmt(e["maxent_ema"], 3)}</td><td class="num">{fmt(e["sum_c_ema"], 4)}</td>'
+                    f'<td class="num">{fmt(e["contrib_ema"], 4)}</td>'
+                    f'<td class="num">{("%.1f %%" % (100 * e["share"])) if e["share"] is not None else "—"}</td>'
+                    f'<td>{sparkline(e["contrib"])}</td></tr>')
+    trow = []
+    for c in BANDED_CHANNELS:
+        cells = "".join(f'<td class="num">{fmt(sg["terms"][(c, b)]["ema"], 4)}</td>' for b in BANDED_BANDS)
+        zeros = " / ".join(str(sg["terms"][(c, b)]["zero_rows"]) for b in BANDED_BANDS)
+        unit = "L1, metres" if c in BANDED_L1_CHANNELS else "focal + Dice"
+        trow.append(f'<tr><td>{esc(c)} <span class="muted">· {unit}</span></td>{cells}<td class="num">{zeros}</td></tr>')
+    if sg["sum_checked"]:
+        ident = (f"The banded loss terms sum to the logged <code>map_hires</code> on {sg['sum_checked'] - len(sg['sum_bad'])} of "
+                 f"{sg['sum_checked']} labelled train rows (largest |difference| {sg['sum_max_abs']:.2e}; tolerance "
+                 f"{BANDED_SUM_REL_TOL:g} × |loss| + {BANDED_SUM_SLACK:.2e}, the launch gate's).")
+    else:
+        ident = ("The loss-sum identity could not run: no labelled train row carries <code>map_hires</code> beside the banded "
+                 "keys (a check that reads nothing certifies nothing).")
+    return ('<h3>The BANDED training signal per band (train rows, EMA α = 0.15)</h3><div style="overflow-x:auto"><table>'
+            '<tr><th>band</th><th class="num">weight</th><th class="num">supervised cells (last row)</th>'
+            '<th class="num">unobserved fraction (last row)</th><th class="num">max-entropy (EMA)</th>'
+            '<th class="num">Σ channel loss (EMA)</th><th class="num">weighted contribution (EMA)</th>'
+            '<th class="num">share of the map loss</th><th>log10 contribution</th></tr>' + "".join(brow) + "</table></div>"
+            '<h3>Loss terms per channel × band (train rows, EMA)</h3><div style="overflow-x:auto"><table>'
+            '<tr><th>channel</th>' + "".join(f'<th class="num">{esc(banded_band_label(b))}</th>' for b in BANDED_BANDS)
+            + '<th class="num">rows exactly 0 (near / mid / far)</th></tr>' + "".join(trow) + "</table></div>"
+            f'<p class="muted">{ident} A weighted contribution is w<sub>b</sub> (Σ<sub>c</sub> L<sub>cb</sub> + {BANDED_MAXENT_W:g} '
+            'maxent<sub>b</sub>); the three contributions are the map loss, <code>map_hires</code>. ⚠️ The banded head logs '
+            'no per-band gradient norm on train rows (the 8-class head\'s <code>map_hires_gno_*</code>): whether a band is '
+            "pulled is the launch gate's smoke probe, so no \"pulled\" claim is made here. A channel × band term exactly 0 "
+            'on a row means that cell set had no supervised cell in the batch.</p>')
+
+
+def banded_charts(ev: list, sg: dict, pres: tuple, xmax) -> dict:
+    """Seven per-channel IoU charts (3 bands each, live dots + EMA dashed) and the per-band weighted-loss chart."""
+    iou = []
+    for c in BANDED_PROB_CHANNELS:
+        ser = []
+        for i, b in enumerate(BANDED_BANDS):
+            for pre in pres:
+                pts = [(r["step"], banded_iou_of(r, c, b, pre)) for r in ev]
+                pts = [p for p in pts if p[1] is not None]
+                if not pts:
+                    continue
+                live = pre == BANDED_EVAL_PREFIXES[0]
+                ser.append(dict(name=f"{b}" + ("" if live else " (EMA)"), xs=[p[0] for p in pts], ys=[p[1] for p in pts],
+                                color=BAND_COLORS[i], kind="dots" if live else "dashed",
+                                key=" / ".join(mb_key("stat", st=s, ch=c, band=b, pre=pre) for s in ("inter", "union"))))
+        iou.append(chart(f"mb_{c}", f"{c} — BANDED IoU", "inter / union over the supervised cells, per band · "
+                         "live weights dots, EMA dashed", "IoU", ser, xmax, ylo=0.0, yhi=1.0,
+                         empty="UNAVAILABLE — no eval row carries this channel's inter / union counts"))
+    ser = []
+    for i, (b, w) in enumerate(zip(BANDED_BANDS, BANDED_BAND_WEIGHTS)):
+        tc = sg["bands"].get(b, {}).get("contrib") or []
+        if tc:
+            ser.append(dict(name=f"{b} train (EMA)", xs=[s for s, _ in tc], ys=ema([v for _, v in tc]),
+                            color=BAND_COLORS[i], key=f"w_b · ({BANDED_FAMILY}loss_*_{b} + maxent_{b})"))
+        ex = []
+        for r in ev:
+            ls = [_bval(r, mb_key("loss", ch=c, band=b, pre="eval_")) for c in BANDED_CHANNELS]
+            mx = _bval(r, mb_key("maxent", band=b, pre="eval_"))
+            if all(k == "value" for k, _ in ls) and mx[0] == "value":
+                ex.append((r["step"], w * (sum(v for _, v in ls) + BANDED_MAXENT_W * mx[1])))
+        if ex:
+            ser.append(dict(name=f"{b} eval", xs=[s for s, _ in ex], ys=[v for _, v in ex], color=BAND_COLORS[i],
+                            kind="dots", key=f"eval w_b · ({BANDED_FAMILY}loss_*_{b} + maxent_{b})"))
+    band_loss = chart("mb_band_loss", "Map BANDED — loss per band",
+                      "w<sub>b</sub> (Σ<sub>c</sub> L + 1e-3 maxent) with w = 1 / 1 / 0.5 · train EMA vs eval", "loss",
+                      ser, xmax, empty="UNAVAILABLE — no row carries the banded loss terms")
+    return {"iou": iou, "band_loss": band_loss}
+
+
+def banded_section(mb: dict, sg: dict, charts: dict, cmh: str, ev_w) -> str:
+    """The map section of a BANDED run: it replaces the 8-class heatmap, loss-share and pull tables, whose keys the banded
+    head does not emit (the launch gate records them as not applicable)."""
+    lbl = '<span class="chip info"><i></i>BANDED HEAD</span> '
+    spans = " · ".join(esc(banded_band_label(b)) for b in BANDED_BANDS)
+    intro = (f"<p>{lbl}This run logs the refcv9 <b>banded</b> map head (<code>--r9-map-banded</code>): three bands over the "
+             f"same extent — {spans} — and {len(BANDED_CHANNELS)} channels (sigmoid: {esc(', '.join(BANDED_PROB_CHANNELS))}; "
+             f"L1 in metres: {esc(', '.join(BANDED_L1_CHANNELS))}). It carries <code>{BANDED_FAMILY}*</code> keys, "
+             "<b>not</b> the 8-class <code>map_hires_iou_*</code> ones, so the 8-class heatmap, the thin-class alarm and the "
+             "per-class loss-share / pull tables do not apply and are not drawn. IoU, recall and precision here are DERIVED "
+             "from the row's own <code>pos</code> / <code>inter</code> / <code>union</code> counts, which are over the "
+             "<b>supervised</b> cells only (seen, and observed by the lift). They are T0, on the in-run eval's fixed "
+             f"held-out windows (n = {esc(ev_w)}).</p>"
+             "<p><b>What is and is not an alarm here.</b> No banded IoU bar is registered, so no value is judged: a broken "
+             "contract is the alarm (a banded key absent or non-finite on an eval row, the count identity inter ≤ pos ≤ union "
+             "broken, a train row whose loss terms do not sum to <code>map_hires</code>); a band with no supervised cells is "
+             "amber. The pull on each band is not logged per row: see the launch gate's smoke probe.</p>")
+    if mb["state"] == "pending":
+        return intro + '<p class="muted">No in-run eval row yet: the banded eval series cannot be read.</p>' + \
+            '<div class="grid2 fill">' + cmh + "</div>" + banded_train_html(sg)
+    parts = [intro, banded_legend()]
+    for pre in mb["prefixes"]:
+        d = mb["read"][pre]
+        what = "live weights" if pre == BANDED_EVAL_PREFIXES[0] else "EMA weights"
+        parts.append(banded_heatmap(d, f"BANDED IoU per channel × band, {what} — eval at step {d['step']:,} "
+                                       f"({d['present']}/{d['expected']} keys finite)"))
+    chk = [d for d in mb["read"].values() if d["count_checked"]]
+    parts.append('<p class="muted">Cross-check on the counts themselves: inter ≤ pos ≤ union holds on '
+                 + (" · ".join(f"{d['count_checked'] - len(d['count_bad'])} of {d['count_checked']} cells ({esc(d['prefix'])})"
+                               for d in chk) if chk else "no cell (a check that reads nothing certifies nothing)") + ".</p>")
+    parts.append('<h3>Per channel over the run — BANDED IoU, all bands</h3><div class="grid4">' + "".join(charts["iou"])
+                 + charts["band_loss"] + cmh + "</div>")
+    live = mb["read"][BANDED_EVAL_PREFIXES[0]]
+    parts.append(f'<h3>Loss terms and per-band supervision — live weights, eval at step {live["step"]:,}</h3>'
+                 + banded_loss_table(live) + banded_band_table(live))
+    parts.append(banded_train_html(sg))
+    return "".join(parts)
 
 
 # ------------------------------------------------------------------ the box heads ----
@@ -1224,6 +1735,11 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
     # refcv6's 0.5 m keys, on ANY row (train rows carry `map_iou_drivable`, eval rows its `eval_` twin)
     m["legacy_05m"] = any("map_iou_drivable" in r or "eval_map_iou_drivable" in r for r in rows)
     ms = map_signal(tr)
+    # a BANDED run (refcv9 C1) logs `map_banded_*` instead of the 8-class keys: read those too. A non-banded run
+    # evaluates none of this (mb / mbs stay None) and its page is byte-for-byte the one it always was.
+    banded = banded_run(rows)
+    mb = banded_read(ev) if banded else None
+    mbs = banded_signal(tr) if banded else None
     bx = box_read(ev)
     ga = ga_read(tr, cfg)
     pr = prior_read(cfg, rows)
@@ -1232,7 +1748,32 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
         cls = "good" if ok else ("info" if info else "warn" if warn else "crit")
         return f'<span class="chip {cls}"><i></i>{esc(good if ok else bad)}</span>'
 
+    def banded_map_chip():
+        if mb["state"] == "pending":
+            return chip(False, "", "map BANDED: no eval yet", info=True)
+        n_bad = sum(len(d["missing"]) + len(d["bad"]) for d in mb["read"].values())
+        if n_bad:
+            return chip(False, "", f"map BANDED: {n_bad} keys UNAVAILABLE")
+        if mb["alarm"]:
+            return chip(False, "", "map BANDED ALARM: the key or count contract is broken")
+        if mb["state"] == "AMBER":
+            return chip(False, "", "map BANDED: " + ("a band has no supervised cells" if mb["bands_without_cells"]
+                                                      else "the EMA eval failed"), warn=True)
+        return chip(True, f"map BANDED: {mb['expected']}/{mb['expected']} keys finite · every band supervised", "")
+
+    def banded_signal_chip():
+        if mbs["state"] == "pending":
+            return chip(False, "", "map BANDED train: no labelled row yet", info=True)
+        if mbs["state"] == "UNAVAILABLE":
+            return chip(False, "", "map BANDED train telemetry UNAVAILABLE")
+        if mbs["alarm"]:
+            return chip(False, "", "MAP BANDED TRAIN: key or loss-sum contract broken")
+        return chip(True, f"map BANDED train: {len(banded_train_keys())} keys per row · loss sum checked on "
+                          f"{mbs['sum_checked']} row(s)", "")
+
     def map_chip():
+        if banded:
+            return banded_map_chip()
         if m["state"] == "pending":
             return chip(False, "", "map 10 cm: no eval yet", info=True)
         if m["missing_latest"]:
@@ -1278,9 +1819,10 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
                      warn=not gate_ref)
                 if sup_log is not None else "")
              + map_chip()
-             + chip(not ms["alarm"], "map signal: every class with cells is pulled",
-                    ("MAP SIGNAL: no pull on " + ", ".join(ms["dead_latest"])) if ms["dead_latest"] else
-                    "map signal UNAVAILABLE")
+             + (banded_signal_chip() if banded else
+                chip(not ms["alarm"], "map signal: every class with cells is pulled",
+                     ("MAP SIGNAL: no pull on " + ", ".join(ms["dead_latest"])) if ms["dead_latest"] else
+                     "map signal UNAVAILABLE"))
              + "".join(box_chip(h) for h in BOX_HEADS)
              + chip(not ga["alarm"], f"grad reach: {len(ga['declared'] or [])} declared keys, none dead",
                     ("grad reach declaration UNAVAILABLE" if ga["declared"] is None else
@@ -1358,6 +1900,17 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
                 "CE", [dict(name="train (EMA)", xs=tx, ys=ema(trs("map_hires")), color="s1", key="map_hires"),
                        dict(name="eval", xs=exs, ys=evs("eval_map_hires"), color="s2", kind="dots", key="eval_map_hires")],
                 xmax, empty="UNAVAILABLE — no row carries map_hires")
+    bch = None
+    if banded:
+        # under the banded head `map_hires` is the SUM of the banded terms, not the 10 cm hard-label CE
+        cmh = chart("cmh", "Map BANDED — total loss",
+                    "Σ over the near / mid / far bands of w<sub>b</sub> (Σ<sub>c</sub> L + 1e-3 maxent) = map_hires · "
+                    "train EMA vs eval",
+                    "loss", [dict(name="train (EMA)", xs=tx, ys=ema(trs("map_hires")), color="s1", key="map_hires"),
+                             dict(name="eval", xs=exs, ys=evs("eval_map_hires"), color="s2", kind="dots",
+                                  key="eval_map_hires")],
+                    xmax, empty="UNAVAILABLE — no row carries map_hires")
+        bch = banded_charts(ev, mbs, tuple(mb["prefixes"]), xmax)
 
     # boxes
     bcharts = []
@@ -1460,17 +2013,24 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
                  '<th class="num">s / step (marginal)</th><th class="num">rows</th><th>ended by</th></tr>'
                  + "".join(seg_rows) + '</table></div>')
 
+    def map_iou_tds(r):
+        if banded:           # the banded head's derived IoU (drivable / lane, near band), not the 8-class 0-20 m keys
+            return td(banded_iou_of(r, "drv", "near")) + td(banded_iou_of(r, "lane", "near"))
+        return f'{td(r.get(map_key("iou", "drivable", "0_20")))}{td(r.get(map_key("iou", "lane", "0_20")))}'
+
     eval_rows = "".join(
         f'<tr><td class="num">{r["step"]:,}</td>{td(r.get("eval_loss"),2)}{td(r.get("eval_traj"))}'
         f'{td(r.get("eval_goal2s_err_m"),2)}{td(r.get("eval_anchor_acc"))}{td(r.get("eval_tacv6_lat_ce"))}'
         f'{td(r.get("eval_tacv6_lon_ce"))}{td(r.get("eval_tacv6_goal_bce"))}{td(r.get("eval_map_hires"))}'
-        f'{td(r.get(map_key("iou", "drivable", "0_20")))}{td(r.get(map_key("iou", "lane", "0_20")))}'
+        f'{map_iou_tds(r)}'
         f'{td(r.get(bkey("box3d", "ap2m")))}{td(r.get(bkey("box3d", "conf_ratio")),2)}'
         f'{td(r.get(bkey("agent", "conf_ratio")),2)}</tr>' for r in ev)
     evals_table = ('<div style="overflow-x:auto"><table><tr><th class="num">step</th><th class="num">eval loss</th>'
                    '<th class="num">traj</th><th class="num">goal 2 s (m)</th><th class="num">anchor acc</th>'
                    '<th class="num">tac lat CE</th><th class="num">tac lon CE</th><th class="num">goal BCE</th>'
-                   '<th class="num">map 10 cm CE</th><th class="num">drivable IoU 0–20</th><th class="num">lane IoU 0–20</th>'
+                   + ('<th class="num">map BANDED loss</th><th class="num">drv IoU near</th><th class="num">lane IoU near</th>'
+                      if banded else
+                      '<th class="num">map 10 cm CE</th><th class="num">drivable IoU 0–20</th><th class="num">lane IoU 0–20</th>') +
                    '<th class="num">box3d AP@2 m</th><th class="num">box3d ratio</th><th class="num">agent ratio</th></tr>'
                    + eval_rows + '</table></div>')
 
@@ -1618,6 +2178,22 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
         sig_html = ('<p class="muted">The training signal per class is UNAVAILABLE: no train row carries '
                     '<code>map_hires_lshare_*</code> or <code>map_hires_gno_*</code>.</p>')
     map_html += sig_html
+    if banded:
+        # BANDED: the 8-class heatmap / loss-share / pull tables above read keys this head does not emit; replace them
+        map_html = banded_section(mb, mbs, bch, cmh, ev_w)
+        b_lines = [f"eval: {x}" for x in mb["reasons"]] + [f"train: {x}" for x in mbs["reasons"]]
+        b_kind = ("crit" if (mb["alarm"] or mbs["alarm"]) else "info" if mb["state"] == "pending"
+                  else "warn" if mb["state"] == "AMBER" else "good")
+        live_ = mb["read"].get(BANDED_EVAL_PREFIXES[0])
+        b_state = ("no eval yet" if live_ is None else
+                   f"{live_['present']}/{live_['expected']} keys · " + mb["state"]
+                   + ("" if not mbs["alarm"] else " · TRAIN ALARM"))
+        thin_tile = _tile(b_kind, "Banded map head (BANDED)", b_state, b_lines,
+                          "The 8-class thin-class alarm (LOGGING_SPEC_MAP10 5.3) does not apply to the banded head, and no banded "
+                          "IoU bar is registered, so no value is judged. This tile is the launch gate's own banded contract "
+                          f"(G-MAP): every {mb['expected']} eval keys finite under {', '.join(mb['prefixes'])}, every band "
+                          f"supervised, the {len(banded_train_keys())} train keys on every labelled row, the loss terms summing to map_hires.",
+                          tid="banded-map-contract")
 
     # ------------------------------------------------------------ box section --
     box_tiles, box_tables = [], []
@@ -1793,8 +2369,17 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
         red = (f"RED (latched), first red at step {m['first_red_step']:,}" if m["alarm"] else "clear")
         amb = (f"; {len(m['amber_latest'])} cell(s) at 20–60 m at or below 0.05 now (amber, informative)"
                if m["amber_latest"] else "")
-        says.append(f"<li><b>Map (10 cm).</b> {40 - len(m['missing_latest'])} of 40 keys in the latest eval; "
-                    f"0–20 m IoU drivable {cell_word(dl)}, lane {cell_word(ln)}; thin-class alarm {red}{amb}.</li>")
+        if banded:
+            lv_ = mb["read"][BANDED_EVAL_PREFIXES[0]]
+            says.append(f"<li><b>Map BANDED (near / mid / far).</b> {lv_['present']} of {lv_['expected']} keys finite in the "
+                        "latest eval; IoU over the supervised cells: drivable "
+                        + " / ".join(cell_word(lv_["iou"][("drv", b_)]) for b_ in BANDED_BANDS) + ", lane "
+                        + " / ".join(cell_word(lv_["iou"][("lane", b_)]) for b_ in BANDED_BANDS)
+                        + f"; contract {mb['state']}. No banded bar is registered and the 8-class thin-class alarm does "
+                        "not apply.</li>")
+        else:
+            says.append(f"<li><b>Map (10 cm).</b> {40 - len(m['missing_latest'])} of 40 keys in the latest eval; "
+                        f"0–20 m IoU drivable {cell_word(dl)}, lane {cell_word(ln)}; thin-class alarm {red}{amb}.</li>")
         says.append("<li><b>Boxes (P0).</b> " + "; ".join(
             f"{h}: confident/positives {fmt(bx['heads'][h]['ratio'], 2)} ({bx['heads'][h]['state']}), "
             f"AP@2 m {fmt((bx['heads'][h].get('vals') or {}).get('ap2m'))}" for h in BOX_HEADS) + ".</li>")
@@ -1829,6 +2414,10 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
               "<li><b>Train and eval are not the same distribution.</b> Training rows are one batch each (noisy); "
               "eval rows average the same fixed windows. Compare eval to eval.</li>"]
 
+    if banded:
+        doesnt.append("<li><b>No banded map bar.</b> The thin-class floor and the refcv6@38k map bars are the 8-class head's; "
+                      "they do not transfer to the banded channels, so the banded IoU is shown, not judged. A banded lever "
+                      "effect needs a paired interval and a replicate arm, not this page.</li>")
     CSS = open(os.path.join(HERE, "watch.css"), encoding="utf-8").read()
     head_stamp = (f"{esc(arm)} on Thor · read {now_b:%Y-%m-%d %H:%M} Berlin (logs are UTC)"
                   + ("" if state_read else " — no run state pulled: built from the metrics file alone")
@@ -1837,6 +2426,11 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
                   f"{ev_w} fixed held-out windows, <b>T0</b>, never a driving-performance claim")
     dcell = m["cells"].get(("drivable", "0_20"), ("missing", None)) if ev else ("missing", None)
     lcell = m["cells"].get(("lane", "0_20"), ("missing", None)) if ev else ("missing", None)
+    dlab, llab = "map 10 cm drivable IoU, 0–20 m", "map 10 cm lane IoU, 0–20 m"
+    if banded and ev:
+        dcell = mb["read"][BANDED_EVAL_PREFIXES[0]]["iou"][("drv", "near")]
+        lcell = mb["read"][BANDED_EVAL_PREFIXES[0]]["iou"][("lane", "near")]
+        dlab, llab = "map BANDED drivable IoU, near 0–10 m", "map BANDED lane IoU, near 0–10 m"
 
     def celltxt(cl):
         return f"{cl[1]:.3f}" if cl[0] == "value" else ("undefined" if cl[0] == "undef" else "UNAVAILABLE")
@@ -1844,8 +2438,8 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
                f'{fmt(_num(e_first.get("eval_traj")))} at {e_first["step"]:,}</span></div>'
                f'<div class="tile"><b>{fmt(ev_get("eval_goal2s_err_m"), 2)} m</b><span>eval 2 s goal error (first '
                f'{fmt(_num(e_first.get("eval_goal2s_err_m")), 2)})</span></div>'
-               f'<div class="tile"><b>{celltxt(dcell)}</b><span>map 10 cm drivable IoU, 0–20 m</span></div>'
-               f'<div class="tile"><b>{celltxt(lcell)}</b><span>map 10 cm lane IoU, 0–20 m</span></div>')
+               f'<div class="tile"><b>{celltxt(dcell)}</b><span>{dlab}</span></div>'
+               f'<div class="tile"><b>{celltxt(lcell)}</b><span>{llab}</span></div>')
               if ev else '<div class="tile"><b>—</b><span>no eval yet</span></div>')
     prof = []
     if argv:
@@ -1876,6 +2470,8 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
                       "(SPEC_REFCV7 25, answering the reserved item in 6.2 item 5)")
     alarms = '<div class="alarms">' + thin_tile + "".join(box_tiles) + ga_tile + pace_tile + "</div>"
 
+    map_h2 = "Map BANDED (near / mid / far) — per channel and band" if banded else "Map (10 cm) — per class and band"
+
     page = f"""<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>refcv7 Training Watch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <style>{CSS}
@@ -1904,7 +2500,7 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
 <h2>Progress — tactical</h2>
 <div class="grid2">{c5}{c6}</div>
 
-<h2>Map (10 cm) — per class and band</h2>
+<h2>{map_h2}</h2>
 {map_html}
 
 <h2>Boxes — detection (P0)</h2>
@@ -2022,6 +2618,13 @@ LOGGING_SPEC_MAP10 5.3 (the thin-class alarm), A9/A10 (P0, the ratio band), D3 (
                             for sp_, r in ns[s].items()} for s in ns_steps},
         "battery_steps": sorted(bt),
     }
+    if banded:
+        # the 8-class block is not applicable to a banded run (its keys are null or absent): say so, never "clear"
+        summary["map"].update({"head": "banded", "state": "NOT_APPLICABLE_BANDED", "alarm": False,
+                               "signal": {"state": "NOT_APPLICABLE_BANDED", "alarm": False, "dead_latest": [],
+                                          "missing_gno": []},
+                               "note": "the 8-class block is not applicable to a banded run: read map_banded"})
+        summary["map_banded"] = banded_summary(mb, mbs)
     return page, summary
 
 
