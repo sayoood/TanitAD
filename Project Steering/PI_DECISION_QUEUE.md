@@ -2754,3 +2754,17 @@ which put six decisions D1-D6 to the PI (its §6; each with the design's recomme
 **Not put to the PI (disclosed in the design, unchanged):** retire `--w-map-fp`; K3 agent-head retirement is decided by E2.
 **What this unblocks, in order (0 Thor-h first):** the E0 probes (E0i written; E0h / E0a / E0b / E0c / E0d in hold `hold_r9_e0`), code items C1-C12 to a code agent with the design as the spec,
 then E1 (perception rig, ~33 Thor-h ESTIMATED). **What stays open for the PI:** nothing from D1-D6; the latency bound above is the MM's to seal and the PI's to overrule.
+
+## ✅ DECIDED (PI, 2026-11-05 ~17:10 Berlin, in chat: "1 yes, 2 yes"; recorded ~17:45) -- D-R9-K0-LAND and D-R9-E1-T1H-RUN
+
+1. **D-R9-K0-LAND -- YES.** Land the E2 K0 hold: the gate3 kit passes K0's PI cost approval (`stack/ops/runs.d/r9e2_K0.pi_cost_approval.json`,
+   max 10.5 s/step; K0 = 6,000 steps, so <= 17.5 h on Thor) and the refcv9-full family admits `core.decoder.r8_rc_gate` (zero-init route-checkpoint
+   gate; `--r8-no-rc` feeds none, so it takes exactly zero gradient by construction). Landed `fea03ce`.
+2. **D-R9-E1-T1H-RUN -- YES.** Run T1h + its content control T1hs (~2 x 5.5 h Thor + their overfit records) after the B3 / M1 / M2a E1 segment,
+   under `Project Steering/REFCV9_E1_T1H_PREREG.md` (keep rule = REFCV9_DESIGN 4.3 unrelaxed; attribution tightened pre-data by its addendum).
+   Code landed `14e5a7e`.
+
+**Order (the PI left it open; MM choice):** T1h / T1hs first, then K0 -- the T1h verdict decides K2's composition, and the GPU total is the same
+either way. **Cost found while executing (MEASURED):** `14e5a7e` changed 6 modules every overfit-record closure holds, so the gate refuses every
+`8a95dc2` record at `fea03ce`; record queue 10 rebuilds C0 map + box and K0 box at `fea03ce` (~2.7 Thor GPU-h, fitted into lock gaps) and binds
+T1h / T1hs / K0-map as reuse of C0 (0 GPU).
