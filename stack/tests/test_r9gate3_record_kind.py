@@ -74,7 +74,7 @@ def _run(tmp_path: Path, argv: Path, *, kind_block: str | None = None, pick: boo
                       f"OV={ov.as_posix()}\nT={TREE.as_posix()}\nARGV={argv.as_posix()}\nPY='{(py or sys.executable).replace(chr(92), '/')}'\n"
                       'refuse() { echo "REFUSED: $*"; exit 10; }\n' + body +
                       'echo "K-MREC=$MREC"\necho "K-MCLO=$MCLO"\necho "K-BREC=$BREC"\necho "K-BCLO=$BCLO"\n', encoding="utf-8")
-    r = subprocess.run([BASH, script.as_posix()], capture_output=True, text=True, timeout=300)
+    r = subprocess.run([BASH, script.as_posix()], capture_output=True, text=True, encoding="utf-8", timeout=300)
     out = r.stdout.replace("\r", "")
     got = {k: v for k, _, v in (ln.partition("=") for ln in out.splitlines() if ln.startswith("K-"))}
     return r.returncode, out + r.stderr, got, ov.as_posix()
