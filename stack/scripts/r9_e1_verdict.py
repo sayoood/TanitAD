@@ -131,7 +131,7 @@ def _map_primary(mid="map_primary", role="primary"):
 
 _AP2_ALL = ("ap2m_all", "AP@2 m, head output, no NMS (all ranges)")
 
-#: The 17 arms of sec. 4.3 (+ T1s, the shuffled control of D3).  ``ref``: the default reference arm (None = the design names none);
+#: The 17 arms of sec. 4.3 (+ T1s, the shuffled control of D3; + T1h / T1hs, T1's follow-up lever and its control, REFCV9_E1_T1H_PREREG.md).  ``ref``: the default reference arm (None = the design names none);
 #: ``allowed``: the references this verdict accepts; ``kind``: lever (KEEP/DROP) or control (a control outcome).
 ARMS = {
     "C0": {"kind": "floor", "variable": "refcv8 recipe on the rig, seed 0 (the floor)", "ref": None, "allowed": (), "metrics": (),
@@ -244,6 +244,27 @@ ARMS = {
             "argv_flags": ("--r9-bev-warp", "--r9-bev-warp-shuffle"),
             "ambiguities": ("T1s is not a row of sec. 4.3's table; it is D3's control (sec. 6). Read with --ref T1 it must be separated worse than T1 beyond "
                             "2 x floor (an OPERATIONALISATION of 'must read worse' the MM must confirm)",)},
+    "T1h": {"kind": "lever", "variable": "T1 made reachable: the map loss also supervises history-reachable cells (--r9-bev-warp-supervise-hist), the fuse "
+                                         "starts as a copy of the warped past (--r9-bev-warp-fuse-init identity) and fills ONLY the cells the current lift cannot "
+                                         "see (--r9-bev-warp-fill-only)", "ref": "C0", "allowed": ("C0",),
+            "metrics": (_spec("T1h.primary", "corridor precision 0-10 m incl. lift-invalid cells", "primary", ("nf_prec_0_10",), "higher"),),
+            "next_lever": "REFCV9_E1_T1H_PREREG.md: an OPEN gate (final |gate| mean > 0.05) => longer lags 1.5 / 2.0 s; a SHUT gate => a gate lr "
+                          "multiplier / a non-zero gate init",
+            "argv_flags": ("--r9-bev-warp", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only"),
+            "ambiguities": ("T1h is not a row of sec. 4.3's table: T1's follow-up lever, pre-registered in REFCV9_E1_T1H_PREREG.md (32eda41) under 4.3's "
+                            "keep rule, unrelaxed",
+                            "a KEEP here is a HISTORY lever only if T1hs, read with --ref T1h, is AS-REQUIRED (the prereg's clause 4); otherwise it "
+                            "is a supervision / init lever")},
+    "T1hs": {"kind": "control", "variable": "T1h + --r9-bev-warp-shuffle: the same supervision set and fuse, with DONOR-episode history (only the "
+                                           "history CONTENT is wrong)",
+             "ref": "T1h", "allowed": ("T1h", "C0"),
+             "metrics": (_spec("T1hs.primary", "T1h's primary: corridor precision 0-10 m incl. lift-invalid cells", "primary", ("nf_prec_0_10",),
+                               "higher"),),
+             "next_lever": "n/a: a control; T1h's gain is a history gain only if T1hs reads worse (REFCV9_E1_T1H_PREREG.md clause 4 + its addendum)",
+             "argv_flags": ("--r9-bev-warp", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only",
+                            "--r9-bev-warp-shuffle"),
+             "ambiguities": ("read with --ref T1h it must be separated worse than T1h beyond 2 x floor: the prereg's addendum (2026-11-05, before any "
+                             "T1h data) tightens clause 4's 'separated in T1h's favour' to the T1s convention",)},
     "M1-FROZEN": {"kind": "lever", "variable": "M1 on the MAPFT frozen-feature rig (iff Q1 = a or WITHHELD)", "ref": None, "allowed": (),
                   "metrics": (_map_primary("M1-FROZEN.primary"),),
                   "next_lever": "none named for an M1-FROZEN miss -- UNVERIFIED (sec. 3 row (a) names it as 'the cheapest possible read')",
@@ -453,6 +474,13 @@ def control_outcome(arm: str, ref: str, primary: dict) -> str:
     if arm == "T1s":
         return ("AS-REQUIRED: the shuffled-history control reads worse than T1 (separated worse beyond 2 x floor)" if worse else
                 "NOT-WORSE: the shuffled-history control does NOT read worse than T1 beyond 2 x floor -- T1's gain is not attributable to the history content")
+    if arm == "T1hs":
+        if worse:
+            return "AS-REQUIRED: the shuffled-history control reads worse than T1h (separated worse beyond 2 x floor) -- T1h's gain is a HISTORY gain"
+        if lr["separated_bad_direction"]:
+            return ("NOT-WORSE-BEYOND-FLOOR: T1hs is separated worse than T1h but inside 2 x floor -- clause 4 as first written would pass, its "
+                    "addendum does not: T1h's gain is a supervision / init gain, not attributed to history")
+        return "NOT-WORSE: the shuffled-history control does NOT read worse than T1h -- T1h's gain is a supervision / init gain, not attributed to history"
     if arm == "B2c":
         return ("GAINS-LESS-THAN-B2: B2c is separated worse than B2 beyond 2 x floor -- the view, not capacity" if worse else
                 "GAINS-AS-MUCH-AS-B2: B2c is not separated worse than B2 beyond 2 x floor -- the gain was capacity, not view")

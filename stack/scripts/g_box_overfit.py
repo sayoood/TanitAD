@@ -713,7 +713,9 @@ AUX_WHY = ("training-only auxiliary head(s): never called at inference and not b
 #: the flag and the lags' value tokens: ``strip_t1``), the record stamps ``bev_warp_not_certified`` (+ a one-line reason), and the launch gate's judges pass
 #: such a record only when that stamp EQUALS the argv's T1 flag set (``launch_gate.bev_warp_stamp_reasons``). At gate 0 the certified head IS the base's
 #: (tests/test_bev_warp.py); T1's liveness is G-LIVE's and the post-run zero-gradient gate's. Pinned to ``launch_gate.E1_T1_FLAGS`` by a test.
-T1_FLAGS = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle")
+T1_FLAGS = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only")
+#: the T1 flags that carry a VALUE token (``--r9-bev-warp-lags 0.5,1.0``; T1h-INIT ``--r9-bev-warp-fuse-init identity``): ``strip_t1`` drops the value with the flag.
+T1_VALUE_FLAGS = ("--r9-bev-warp-lags", "--r9-bev-warp-fuse-init")
 T1_STAMP = "bev_warp_not_certified"
 T1_STAMP_WHY = "bev_warp_not_certified_why"
 T1_WHY = ("temporal BEV warp (T1): changes the heads' INPUT, not their structure; not built by this harness (frozen frames, no staged history) -- this "
@@ -722,7 +724,7 @@ T1_WHY = ("temporal BEV warp (T1): changes the heads' INPUT, not their structure
 
 def strip_t1(launch_argv: list) -> tuple:
     """-> (the argv without the T1 flags and the lags flag's value tokens, the T1 flags that were present, in ``T1_FLAGS`` order). A ``--flag=value`` token
-    is one token. Nothing else is touched (a value token is dropped only when it follows ``--r9-bev-warp-lags``)."""
+    is one token. Nothing else is touched (a value token is dropped only when it follows ``--r9-bev-warp-lags`` or ``--r9-bev-warp-fuse-init``)."""
     out, i, present = [], 0, []
     while i < len(launch_argv):
         t = launch_argv[i]
@@ -731,7 +733,7 @@ def strip_t1(launch_argv: list) -> tuple:
             if head not in present:
                 present.append(head)
             i += 1
-            if head == "--r9-bev-warp-lags" and "=" not in str(t):         # flag + its value token(s)
+            if head in T1_VALUE_FLAGS and "=" not in str(t):                # flag + its value token(s)
                 while i < len(launch_argv) and not str(launch_argv[i]).startswith("--"):
                     i += 1
         else:

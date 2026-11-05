@@ -2282,6 +2282,8 @@ class RefCV3Model(nn.Module):
                 pout = dict(pout)
                 pout["map_hires_logits"] = hi["map_hires_logits"]
                 pout["map_hires_lift_valid"] = hi["map_hires_lift_valid"]
+                if "map_hires_hist_valid" in hi:     # refcv9 T1h (--r9-bev-warp-supervise-hist): the warp-valid union the map loss ORs in; absent otherwise
+                    pout["map_hires_hist_valid"] = hi["map_hires_hist_valid"]
                 if "map_banded" in hi:       # refcv9 C1 (--r9-map-banded): the banded channels + unobs; absent otherwise
                     pout["map_banded"] = hi["map_banded"]
                 # no perception branch = no BEV consumer: the gate then marks the

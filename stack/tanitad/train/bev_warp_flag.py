@@ -18,6 +18,31 @@ REACHABILITY (the CLAUDE.md class "built, tested and unreachable from its caller
   -> ``self.lift(fmap_s8, grid, valid)`` -> ``BevWarpFuse.lift_hook`` -> the FUSED BEV -> the shared encoder / the M3 map encoder / the banded head
   / the planner pool / the box head -> the loss -> ``.backward()`` (gate and fuse).
 
+T1h (``--r9-bev-warp-supervise-hist``, refcv9 E1; REQUIRES ``--r9-bev-warp``): the 10 cm map loss's lift-valid mask becomes ``lift_valid_now OR hist_valid``, where
+``hist_valid`` is the UNION of the lags' warp-valid masks (``bev_warp.hist_valid_of``: GEOMETRY ONLY -- poses, the camera's own ``valid`` and ``has``; never the warped
+content, so ``--r9-bev-warp-shuffle`` has the SAME supervision set).  WHY: T1's gate never opened (|g| 0.0077) because the loss only sees cells the camera reaches NOW, and the
+cells history could fix (0-5 m: 94.7 % unobserved now, 42 % covered only by warped history) were masked out of it.  REACHABILITY, one hop per line:
+  argv ``--r9-bev-warp-supervise-hist`` (default False -- NAMED in the arm's argv) -> ``args.r9_bev_warp_supervise_hist`` -> ``pin_args`` (refusals)
+  -> ``attach`` (``fuse.emit_hist = True``; ``BevWarpState.supervise_hist``) -> ``BevWarpFuse.lift_hook`` (``self._hist_valid = hist_valid_of(masks)``)
+  -> ``MapHiresBranch.forward`` (``take_hist_valid()`` -> ``out["map_hires_hist_valid"]``) -> ``RefCV3Model._bev_hook`` (``pout["map_hires_hist_valid"]``)
+  -> ``refc_v3_train._map_hires_loss`` (``lv = _bw.supervised_lift_valid(model, pout, lv, sel)``) -> ``map_hires_loss_row(lift_valid_025=lv)`` -> the CE -> ``.backward()``.
+OFF: no key is emitted, ``supervised_lift_valid`` returns ``lv`` itself, and the loss is bit-identical.
+
+T1h-INIT (``--r9-bev-warp-fuse-init {rezero,identity}``, default ``rezero`` = today, bit-identical; REQUIRES ``--r9-bev-warp`` when not the default): MEASURED by the MM on E1 arm T1 --
+the trained 1x1 fuse stayed at its PyTorch default init and the gate random-walked (a ReZero DEAD START: random W -> no consistent gate push -> gate ~ 0 -> W's gradient ~ gate ~ 0).
+``identity`` writes the COPY init ``W[c, p*(C+1)+c] = 1/P`` (``BevWarpFuse.init_identity_``: fuse(x) = the mean of the lags' warped past BEV) at FRESH BUILD, inside ``attach``, with
+the gate still exactly 0 (the step-0 forward is the baseline's).  ``attach`` runs BEFORE every checkpoint load (train(): resume's strict ``load_state_dict`` / the ``--init-from`` warm
+start, which EXEMPTS the fuse keys; the eval loader's strict load), so a trained fuse is never overwritten by the init.  REACHABILITY: argv ``--r9-bev-warp-fuse-init`` ->
+``args.r9_bev_warp_fuse_init`` -> ``pin_args`` -> ``attach`` (``fuse.init_identity_()``: it draws NO random number, and the default init's draws stay inside the build's ``fork_rng``, so no other parameter moves) -> ``fuse.fuse.weight`` -> the lift hook's
+``mix`` -> the fused BEV -> every loss -> ``.backward()`` (G-DVB reads ``fuse.init_mode``, which only ``init_identity_`` writes).
+
+T1h-FILL (``--r9-bev-warp-fill-only``, default off = today, bit-identical; REQUIRES ``--r9-bev-warp``): MEASURED by the MM post hoc on the gradmask probes' saved per-window gate gradients
+(GADD_CONSISTENCY.txt) -- the gate gradient from the HISTORY-ONLY cells alone is sign-consistent (0.383 trained-W / 0.391 identity-W, above the sign-flip null p99 0.30 / 0.34), while the gradient over ALL
+supervised cells sits at the null because the ~10x more camera-seen cells, where history is redundant, swamp it.  So the gated history term is applied ONLY where the CURRENT lift is invalid:
+``out = bev + gate * fuse(x) * (1 - valid_now)`` (``BevWarpFuse.mix``; ``valid_now`` = the lift's own ``valid.any(dim=1)`` that ``lift_hook`` already holds and passes ONLY when ``fuse.fill_only``).
+REACHABILITY: argv ``--r9-bev-warp-fill-only`` -> ``args.r9_bev_warp_fill_only`` -> ``pin_args`` -> ``attach`` (``fuse.fill_only = True``) -> ``BevWarpFuse.lift_hook`` (``self.mix(..., valid_now=src_valid)``)
+-> ``mix`` (the ``(1 - valid_now)`` factor) -> the fused BEV -> every loss -> ``.backward()``; G-DVB reads ``fuse.fill_only``; ``mix`` REFUSES a fill-only call without ``valid_now``.
+
 EVERY forward of a T1-built model stages its history or REFUSES (never a silent un-warped forward): the loss functions stage; the eval loader's
 ``build_eval_dataset`` attaches the history to the eval dataset; a bare ``model(...)`` with nothing staged raises in ``BevWarpFuse.lift_hook``.
 ``--ablate-frames`` (the information-free control) is REFUSED with T1 built (``refuse_ablate``): it replaces only the CURRENT window, so the
@@ -38,6 +63,15 @@ LAGS_DEST = "r9_bev_warp_lags"
 LAGS_DEFAULT = "0.5,1.0"
 SHUF_FLAG = "--r9-bev-warp-shuffle"
 SHUF_DEST = "r9_bev_warp_shuffle"
+FILL_FLAG = "--r9-bev-warp-fill-only"
+FILL_DEST = "r9_bev_warp_fill_only"
+FUSE_INIT_FLAG = "--r9-bev-warp-fuse-init"
+FUSE_INIT_DEST = "r9_bev_warp_fuse_init"
+FUSE_INIT_DEFAULT = "rezero"
+SUP_FLAG = "--r9-bev-warp-supervise-hist"
+SUP_DEST = "r9_bev_warp_supervise_hist"
+#: the forward's emitted key (``MapHiresBranch.forward`` -> ``pout``): [B, X4, Y4] bool, ABSENT unless T1h is built.
+HIST_KEY = "map_hires_hist_valid"
 #: the fuse hangs on the 10 cm branch (the rig's allowed root ``_map_hires``); ``refcv9_perc_rig.bev_warp_exemptions`` NAMES the prefix.
 HEAD_ATTR = "bev_warp"
 KEY_PREFIX = "_map_hires." + HEAD_ATTR + "."
@@ -53,10 +87,19 @@ class BevWarpState:
     lags_s: tuple
     lag_rows: tuple
     shuffle: bool
+    supervise_hist: bool = False         # T1h: the map loss supervises ``lift_valid_now | hist_valid`` (``supervised_lift_valid``)
 
 
 def is_on(args) -> bool:
     return bool(getattr(args, DEST, False))
+
+
+def fuse_init_of(args) -> str:
+    """The declared fuse init (``rezero`` | ``identity``); anything else REFUSES."""
+    v = str(getattr(args, FUSE_INIT_DEST, FUSE_INIT_DEFAULT) or FUSE_INIT_DEFAULT)
+    if v not in BW.FUSE_INITS:
+        raise SystemExit("[bev-warp] %s %r: not one of %s" % (FUSE_INIT_FLAG, v, list(BW.FUSE_INITS)))
+    return v
 
 
 def parse_lags(text) -> tuple:
@@ -104,12 +147,22 @@ def pin_args(args) -> None:
             dead.append(LAGS_FLAG)
         if bool(getattr(args, SHUF_DEST, False)):
             dead.append(SHUF_FLAG)
+        if bool(getattr(args, SUP_DEST, False)):
+            dead.append(SUP_FLAG)
+        if fuse_init_of(args) != FUSE_INIT_DEFAULT:
+            dead.append(FUSE_INIT_FLAG)
+        if bool(getattr(args, FILL_DEST, False)):
+            dead.append(FILL_FLAG)
         if dead:
             raise SystemExit("[bev-warp] %s without %s: nothing would read it (a dead flag)" % (" / ".join(dead), FLAG))
         return
     bad = []
     try:
         lag_rows_of(args)
+    except SystemExit as e:
+        bad.append(str(e))
+    try:
+        fuse_init_of(args)
     except SystemExit as e:
         bad.append(str(e))
     if bool(getattr(args, "ablate_frames", False)):
@@ -121,6 +174,11 @@ def pin_args(args) -> None:
     from tanitad.train import map_only_ft as _mof
     if _mof.is_on(args):
         bad.append("a --r8-train-only-map / --r9-train-only freeze is declared: the NEW fuse would stay at its zero gate")
+    if bool(getattr(args, SUP_DEST, False)):
+        if bool(getattr(args, "r9_map_banded", False)):
+            bad.append("%s with --r9-map-banded: the banded loss masks cells by the head's own `unobs`, where this OR is not implemented (it would silently do nothing)" % SUP_FLAG)
+        if getattr(args, "map_lift_valid_mask", True) is False:
+            bad.append("%s with --no-map-lift-valid-mask: every labelled cell is already supervised, the OR has nothing to add (a dead flag)" % SUP_FLAG)
     if bad:
         raise SystemExit("[bev-warp] %s refused:\n  - " % FLAG + "\n  - ".join(bad))
 
@@ -138,9 +196,14 @@ def attach(model, args) -> None:
     dev = next(mh.parameters()).device
     with torch.random.fork_rng(devices=[]):
         fuse = BW.BevWarpFuse(int(mh.cfg.lift_width), len(rows), float(mh.cfg.x_max_m), float(mh.cfg.y_half_m), rows)
+    sup = bool(getattr(args, SUP_DEST, False))
+    fuse.emit_hist = sup                                     # T1h: the hook records the warp-valid union; OFF: nothing is computed
+    fuse.fill_only = bool(getattr(args, FILL_DEST, False))     # T1h-FILL: the history term only where the current lift is invalid; OFF: today's mix
+    if fuse_init_of(args) == "identity":
+        fuse.init_identity_()                                # T1h-INIT: the COPY init, at FRESH BUILD only (every later checkpoint load overwrites it); default: nothing
     mh.add_module(HEAD_ATTR, fuse.to(dev))
     mh.lift.register_forward_hook(fuse.lift_hook)
-    setattr(model, MODEL_ATTR, BevWarpState(tuple(lags_s), tuple(rows), bool(getattr(args, SHUF_DEST, False))))
+    setattr(model, MODEL_ATTR, BevWarpState(tuple(lags_s), tuple(rows), bool(getattr(args, SHUF_DEST, False)), sup))
 
 
 # ---- the DataLoader-worker side -------------------------------------------------------------------------------------------------- #
@@ -196,6 +259,25 @@ def attach_dataset(ds, model, args) -> dict:
 
 
 # ---- the step side --------------------------------------------------------------------------------------------------------------- #
+def supervise_hist_on(model) -> bool:
+    """True iff the built model carries T1h (``--r9-bev-warp-supervise-hist``): the loss's mask is ``lift_valid_now | hist_valid``."""
+    st = getattr(model, MODEL_ATTR, None)
+    return bool(st is not None and getattr(st, "supervise_hist", False))
+
+
+def supervised_lift_valid(model, pout: dict, lv, sel):
+    """The 10 cm map loss's lift-valid mask under T1h.  ``lv`` = the loss's CURRENT mask (``pout["map_hires_lift_valid"]`` already ``index_select(0, sel)``; ``None`` when
+    ``--no-map-lift-valid-mask`` = every labelled cell is supervised already) -> ``lv | pout["map_hires_hist_valid"].index_select(0, sel)``.  OFF (no T1h built, or ``lv`` None):
+    returns ``lv`` ITSELF (the same object: bit-identical).  ON with no ``map_hires_hist_valid`` in the forward's output REFUSES (never silently the un-widened mask)."""
+    if lv is None or not supervise_hist_on(model):
+        return lv
+    hv = pout.get(HIST_KEY)
+    if hv is None:
+        raise SystemExit("[bev-warp] %s is built but the forward's perception output carries no `%s`: the loss would silently supervise only the cells the camera "
+                         "reaches NOW (the lift hook / MapHiresBranch.forward / bev_hook did not emit it)" % (SUP_FLAG, HIST_KEY))
+    return lv | hv.index_select(0, sel)
+
+
 def stage(model, batch: dict, device) -> None:
     """Called by ``compute_losses_perc_rig`` AND by ``compute_losses_v3`` (the FULL model) BEFORE ``model(...)``.  Reads ONLY ``BATCH_KEYS``.  Runs the past frames through the trunk's stride-8
     tap (``no_grad``) and stages ``(s8_past, T, has)`` on the fuse for the lift hook.  OFF (no fuse built): nothing.  A batch without the keys while
@@ -242,7 +324,17 @@ def stamp(model, args) -> dict | None:
             "poses": "ep.poses[row] and ep.poses[row - lag] only (never a later row); PAST-only, IMU-class",
             "near_lift_note": "the 0.1 m near-lift skip (NearLiftSkip) still reads the current frame only",
             "d_bev": fuse.d_bev, "n_past": fuse.n_past, "x_max_m": fuse.x_max_m, "y_half_m": fuse.y_half_m,
-            "n_params": sum(p.numel() for p in fuse.parameters()), "key_prefix": KEY_PREFIX}
+            "n_params": sum(p.numel() for p in fuse.parameters()), "key_prefix": KEY_PREFIX,
+            **({"supervise_hist": {"flag": SUP_FLAG, "rule": "map loss lift-valid mask = lift_valid_now OR hist_valid (T1h)",
+                                   "hist_valid": "union over lags of the warp-valid mask (inb & warped past `valid` & has): GEOMETRY ONLY, content-independent (shuffle keeps it)",
+                                   "emitted_as": "pout[%r] from MapHiresBranch.forward" % HIST_KEY,
+                                   "sites": "refc_v3_train._map_hires_loss only; the legacy 0.5 m map_valid sites carry no mask under --map-hires (map_hires_pool)"}}
+               if st.supervise_hist else {}),
+            **({"fill_only": {"flag": FILL_FLAG, "rule": "out = bev + gate * fuse(x) * (1 - valid_now); valid_now = the lift's own valid.any(dim=1) at the fuse's resolution",
+                              "effect": "a cell the camera sees NOW is exactly the lift's BEV, whatever the gate"}} if fuse.fill_only else {}),
+            **({"fuse_init": {"flag": FUSE_INIT_FLAG, "mode": fuse.init_mode, "rule": "W[c, p*(C+1)+c] = 1/P, every other entry 0 (mask columns included): fuse(x) = the mean of the lags' warped past BEV; gate exactly 0",
+                                "applied": "at fresh build (attach), before any checkpoint load; a trained fuse is never overwritten"}}
+               if fuse.init_mode != FUSE_INIT_DEFAULT else {})}
 
 
 # ---- G-DVB ----------------------------------------------------------------------------------------------------------------------- #
@@ -283,8 +375,46 @@ def dvb_check_shuffle(model, args) -> list:
     return []
 
 
+def dvb_check_fuse_init(model, args) -> list:
+    """T1h-INIT ``built`` lever: the declared init == ``fuse.init_mode`` (only ``BevWarpFuse.init_identity_`` writes ``identity``, together with the weights).  No fuse: ``rezero``."""
+    from tanitad.train.declared_vs_built import Mismatch
+    declared, fuse = fuse_init_of(args), _fuse(model)
+    built = str(getattr(fuse, "init_mode", FUSE_INIT_DEFAULT)) if fuse is not None else FUSE_INIT_DEFAULT
+    if declared != built:
+        return [Mismatch(FUSE_INIT_DEST, declared, built, "model._map_hires." + HEAD_ATTR + ".init_mode", "argv and the build disagree on how the fuse was initialised")]
+    return []
+
+
+def dvb_check_fill_only(model, args) -> list:
+    """T1h-FILL ``built`` lever: declared <=> ``fuse.fill_only`` (the flag that makes ``mix`` apply the ``(1 - valid_now)`` factor).  No fuse: False."""
+    from tanitad.train.declared_vs_built import Mismatch
+    declared, fuse = bool(getattr(args, FILL_DEST, False)), _fuse(model)
+    built = bool(getattr(fuse, "fill_only", False)) if fuse is not None else False
+    if declared != built:
+        return [Mismatch(FILL_DEST, declared, built, "model._map_hires." + HEAD_ATTR + ".fill_only", "argv and the build disagree on where the history term is applied")]
+    return []
+
+
+def dvb_check_supervise_hist(model, args) -> list:
+    """T1h ``built`` lever: declared <=> the model state carries ``supervise_hist`` AND the fuse emits ``hist_valid`` (the two halves of the hop the loss reads)."""
+    from tanitad.train.declared_vs_built import Mismatch
+    declared = bool(getattr(args, SUP_DEST, False))
+    st, fuse = getattr(model, MODEL_ATTR, None), _fuse(model)
+    s_built = bool(st.supervise_hist) if st is not None else False
+    e_built = bool(getattr(fuse, "emit_hist", False)) if fuse is not None else False
+    out = []
+    if declared != s_built:
+        out.append(Mismatch(SUP_DEST, declared, s_built, "model." + MODEL_ATTR + ".supervise_hist", "argv and the state the loss reads disagree"))
+    if s_built != e_built:
+        out.append(Mismatch(SUP_DEST, s_built, e_built, "model._map_hires." + HEAD_ATTR + ".emit_hist", "the loss mask is widened but the fuse emits no hist_valid (or the reverse)"))
+    return out
+
+
 def register_dvb_levers(register) -> None:
     """Called by the trainer at import (the registry is pinned two-way against its parser)."""
     register(DEST, "built", dvb_check)
     register(LAGS_DEST, "built", dvb_check_lags)
     register(SHUF_DEST, "built", dvb_check_shuffle)
+    register(SUP_DEST, "built", dvb_check_supervise_hist)
+    register(FUSE_INIT_DEST, "built", dvb_check_fuse_init)
+    register(FILL_DEST, "built", dvb_check_fill_only)

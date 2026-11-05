@@ -270,7 +270,19 @@ def check_aux_arm_pins(argv, arm: str) -> None:
 #: `--r9-bev-warp-shuffle` (the control: the history frames come from a DONOR episode, so only the history CONTENT is wrong). The lags are NOT named: T1's
 #: default `0.5,1.0` s is the arms' lags (the default does not disable the lever, unlike the aux weights). The flags go right after
 #: `--map-hires-near-refine-blocks <v>` (the last 10 cm map flag: T1 fuses into the 10 cm branch's lift), seed 0, every other flag equal to C0's.
-T1_ARMS = {"T1": ("--r9-bev-warp",), "T1s": ("--r9-bev-warp", "--r9-bev-warp-shuffle")}
+#: T1h / T1hs (refcv9 E1, MM brief 2026-11-05): the SAME two arms plus TWO levers against T1's measured failure (the gate never opened, |g| 0.0077): `--r9-bev-warp-supervise-hist` (the 10 cm
+#: map loss supervises lift_valid_now | hist_valid: the loss never saw the cells history could fix) and `--r9-bev-warp-fuse-init identity` (the COPY init W[c, p*(C+1)+c] = 1/P: the trained fuse
+#: stayed at its random default init -- a ReZero dead start); T1hs is the content control (donor-episode history, the SAME supervision set and init). Nothing else differs from T1 / T1s.
+#: and `--r9-bev-warp-fill-only` (the gated history term applies ONLY where the current lift is invalid: the history-only cells' gate gradient is sign-consistent, the ~10x more camera-seen cells swamp it).
+#: ⚠️ T1h carries ALL THREE levers, so a T1h win is not attributable to any one alone (a single-lever ablation would be one more tuple here).
+#: A tuple holds argv TOKENS: `--r9-bev-warp-fuse-init` is followed by its value token.
+T1_ARMS = {"T1": ("--r9-bev-warp",), "T1s": ("--r9-bev-warp", "--r9-bev-warp-shuffle"),
+           "T1h": ("--r9-bev-warp", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "identity", "--r9-bev-warp-fill-only"),
+           "T1hs": ("--r9-bev-warp", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "identity", "--r9-bev-warp-fill-only")}
+T1_SHUFFLE_ARMS = ("T1s", "T1hs")
+T1_SUPERVISE_ARMS = ("T1h", "T1hs")
+T1_FUSE_INIT_ARMS = ("T1h", "T1hs")
+T1_FILL_ONLY_ARMS = ("T1h", "T1hs")
 T1_ANCHOR = "--map-hires-near-refine-blocks"
 T1_LAGS_DEFAULT_S = (0.5, 1.0)
 
@@ -314,8 +326,14 @@ def check_t1_arm_pins(argv, arm: str) -> None:
     args = T.build_parser().parse_args(argv)
     if not BWF.is_on(args):
         raise SystemExit("[r9-e1-argv] arm %s: --r9-bev-warp did not parse as on" % arm)
-    if bool(getattr(args, BWF.SHUF_DEST)) != (arm == "T1s"):
-        raise SystemExit("[r9-e1-argv] arm %s: the shuffle control parsed as %s, expected %s" % (arm, getattr(args, BWF.SHUF_DEST), arm == "T1s"))
+    if bool(getattr(args, BWF.SHUF_DEST)) != (arm in T1_SHUFFLE_ARMS):
+        raise SystemExit("[r9-e1-argv] arm %s: the shuffle control parsed as %s, expected %s" % (arm, getattr(args, BWF.SHUF_DEST), arm in T1_SHUFFLE_ARMS))
+    if BWF.fuse_init_of(args) != ("identity" if arm in T1_FUSE_INIT_ARMS else "rezero"):
+        raise SystemExit("[r9-e1-argv] arm %s: --r9-bev-warp-fuse-init parsed as %r, expected %r" % (arm, BWF.fuse_init_of(args), "identity" if arm in T1_FUSE_INIT_ARMS else "rezero"))
+    if bool(getattr(args, BWF.FILL_DEST)) != (arm in T1_FILL_ONLY_ARMS):
+        raise SystemExit("[r9-e1-argv] arm %s: --r9-bev-warp-fill-only parsed as %s, expected %s" % (arm, getattr(args, BWF.FILL_DEST), arm in T1_FILL_ONLY_ARMS))
+    if bool(getattr(args, BWF.SUP_DEST)) != (arm in T1_SUPERVISE_ARMS):
+        raise SystemExit("[r9-e1-argv] arm %s: --r9-bev-warp-supervise-hist parsed as %s, expected %s" % (arm, getattr(args, BWF.SUP_DEST), arm in T1_SUPERVISE_ARMS))
     if tuple(BWF.parse_lags(args.r9_bev_warp_lags)) != T1_LAGS_DEFAULT_S:
         raise SystemExit("[r9-e1-argv] arm %s: lags %r are not T1's default %s" % (arm, args.r9_bev_warp_lags, T1_LAGS_DEFAULT_S))
     if BF.is_any(args) or MBF.is_on(args):
@@ -371,7 +389,7 @@ def main(argv=None) -> int:
                          "aux-head arm B1 (depth) / B2 (perspective 3D) / B2c (its BEV control), each C0 + its flag + its weight pair")
     ap.add_argument("--t1-arm", choices=sorted(T1_ARMS), default=None,
                     help="E1-REC4: emit the temporal-BEV-warp arm T1 (C0 + --r9-bev-warp) or its shuffled control T1s (T1 + --r9-bev-warp-shuffle) from "
-                         "C0's argv.json given as --base (seed 0)")
+                         "C0's argv.json given as --base (seed 0); T1h / T1hs = T1 / T1s + --r9-bev-warp-supervise-hist + --r9-bev-warp-fuse-init identity + --r9-bev-warp-fill-only")
     ap.add_argument("--steps", type=int, default=4000)
     ap.add_argument("--eval-every", type=int, default=500)
     ap.add_argument("--eval-batches", type=int, default=8)
@@ -396,8 +414,14 @@ def main(argv=None) -> int:
             out = t1_arm_argv(c0["argv"], a.t1_arm, a.out)
             if not a.no_pin_check:
                 check_t1_arm_pins(out, a.t1_arm)
-            lever = {"flags": list(T1_ARMS[a.t1_arm]), "lags_s": list(T1_LAGS_DEFAULT_S), "lags_source": "T1's default (--r9-bev-warp-lags is not named)",
-                     "shuffle_control": a.t1_arm == "T1s", "bev_warp": "NOT certified by the overfit records (they stamp bev_warp_not_certified)"}
+            lever = {"flags": [t for t in T1_ARMS[a.t1_arm] if t.startswith("--")], "lags_s": list(T1_LAGS_DEFAULT_S), "lags_source": "T1's default (--r9-bev-warp-lags is not named)",
+                     "shuffle_control": a.t1_arm in T1_SHUFFLE_ARMS, "bev_warp": "NOT certified by the overfit records (they stamp bev_warp_not_certified)"}
+            if a.t1_arm in T1_SUPERVISE_ARMS:
+                lever["supervise_hist"] = "the 10 cm map loss supervises lift_valid_now | hist_valid (hist_valid = geometry only: the lags' warp-valid union; identical under shuffle)"
+            if a.t1_arm in T1_FILL_ONLY_ARMS:
+                lever["fill_only"] = "the gated history term is added only where the current lift is invalid: out = bev + gate * fuse(x) * (1 - valid_now)"
+            if a.t1_arm in T1_FUSE_INIT_ARMS:
+                lever["fuse_init"] = "identity: W[c, p*(C+1)+c] = 1/P at fresh build (fuse(x) = mean of the lags' warped past BEV), gate exactly 0; never over a loaded checkpoint"
         elif a.map_arm:
             out = map_arm_argv(c0["argv"], a.map_arm, a.out, w=a.w_map_hires)
             if not a.no_pin_check:

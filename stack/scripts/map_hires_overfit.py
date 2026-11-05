@@ -656,7 +656,7 @@ def resolve_own_enc(own_enc_flag: bool, facts: dict | None) -> tuple:
 #: built by hand here) and the record STAMPS ``bev_warp_not_certified`` (+ a one-line reason) == the argv's T1 flag set, which the launch gate's judges
 #: (``launch_gate.bev_warp_stamp_reasons``) require. Both the /1 record (a C0 base) and the /2-banded record (a banded base) stamp it; ``--launch-argv`` is how
 #: the harness learns the argv (admitted WITHOUT ``--banded`` only for an argv that builds the 8-code head). Pinned to ``launch_gate.E1_T1_FLAGS`` by a test.
-T1_FLAGS = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle")
+T1_FLAGS = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only")
 T1_STAMP = "bev_warp_not_certified"
 T1_STAMP_WHY = "bev_warp_not_certified_why"
 T1_WHY = ("temporal BEV warp (T1): changes the heads' INPUT, not their structure; not built by this harness (frozen frames, no staged history) -- this "

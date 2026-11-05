@@ -193,7 +193,7 @@ _pwf.register_dvb_levers(_dvb.register)
 _bda.register_dvb_levers(_dvb.register)
 # refcv9 C4: --r9-box-persp-aux / --r9-box-bev2-aux are `built` levers (the head on the perception branch), --w-box-persp / --w-box-bev2 `loss` levers
 _p3f.register_dvb_levers(_dvb.register)
-# refcv9 T1: --r9-bev-warp / --r9-bev-warp-lags / --r9-bev-warp-shuffle are `built` levers (the fuse on the 10 cm branch, its lags, the dataset source's shuffle)
+# refcv9 T1: --r9-bev-warp / --r9-bev-warp-lags / --r9-bev-warp-shuffle / --r9-bev-warp-supervise-hist (T1h) / --r9-bev-warp-fuse-init (T1h-INIT) / --r9-bev-warp-fill-only (T1h-FILL) are `built` levers (the fuse on the 10 cm branch, its lags, the dataset source's shuffle, the loss-mask OR, the fuse init, where the history term applies)
 _bw.register_dvb_levers(_dvb.register)
 # refcv9 C5-REST: --r9-box-layers is a `built` lever (the box3d decoder's depth, read off the built decoder)
 _bc5.register_dvb_levers(_dvb.register)
@@ -5282,6 +5282,8 @@ def _map_hires_loss(model, out: dict, batch: dict, device, extra: dict,
             "through). This is the D-REFCV6-F3-WHITELIST class -- refusing rather "
             "than training a 10 cm head on nothing while config.json stamps it.")
     if bool(getattr(model, _mbf.MODEL_ATTR, False)):          # refcv9 C1 (--r9-map-banded); OFF: never entered
+        if _bw.supervise_hist_on(model):                      # refcv9 T1h: the banded loss masks by the head's own `unobs`; the OR is not implemented there
+            raise SystemExit("[v3] \u26d4 --r9-bev-warp-supervise-hist with the banded map head: the OR is implemented in the 8-code 10 cm loss only")
         return _map_banded_loss(model, out, batch, device, extra, with_metrics)
     pout = out.get("perception") or {}
     if pout.get("map_hires_logits") is None or pout.get("map_hires_lift_valid") is None:
@@ -5310,6 +5312,10 @@ def _map_hires_loss(model, out: dict, batch: dict, device, extra: dict,
         return term
     lv = (pout["map_hires_lift_valid"].index_select(0, sel)
           if bool(getattr(model, "_map_lift_valid_mask", True)) else None)
+    _lv_now = lv
+    lv = _bw.supervised_lift_valid(model, pout, lv, sel)       # refcv9 T1h (--r9-bev-warp-supervise-hist): lift_valid_now | hist_valid; OFF: lv itself (bit-identical)
+    if lv is not _lv_now:                                      # T1h ON only: how many 0.25 m cells the history widened the supervision by (a LIVE counter in the run's own log)
+        extra["n_map_hires_hist_cells025"] = float((lv & ~_lv_now).sum())
     row = _mhr.map_hires_loss_row(
         logits.index_select(0, sel),
         batch["map_fine"].to(device).index_select(0, sel),
@@ -13666,6 +13672,22 @@ def build_parser() -> argparse.ArgumentParser:
     g8.add_argument("--r9-bev-warp-lags", type=str, default="0.5,1.0",
                     help="refcv9 T1: the past-frame lags in seconds (whole multiples of 0.1 s, strictly increasing). Default 0.5,1.0 (the design's pair). "
                          "A non-default value without --r9-bev-warp is refused.")
+    g8.add_argument("--r9-bev-warp-fill-only", action="store_true",
+                    help="refcv9 T1h-FILL: apply the gated history term ONLY on BEV cells where the CURRENT lift is invalid: out = bev + gate * fuse(x) * (1 - valid_now), valid_now = the lift's "
+                         "own valid.any(dim=1). MEASURED: the gate gradient from the history-only cells alone is sign-consistent, while the ~10x more camera-seen cells (where history is "
+                         "redundant) swamp it at the null. A cell the camera sees now is then EXACTLY the lift's BEV whatever the gate. Requires --r9-bev-warp (refused otherwise). "
+                         "Default OFF: the tip's mix, bit-identical.")
+    g8.add_argument("--r9-bev-warp-fuse-init", type=str, choices=("rezero", "identity"), default="rezero",
+                    help="refcv9 T1h-INIT: how the T1 fuse's 1x1 weight is initialised at FRESH BUILD. `rezero` (default) = today: the PyTorch default init, gate 0 -- MEASURED to be a "
+                         "ReZero dead start (the trained weight stayed at its init, the gate random-walked). `identity` = the COPY init W[c, p*(C+1)+c] = 1/P, every other entry 0 "
+                         "(fuse(x) = the mean of the lags' warped past BEV), gate still exactly 0 (the step-0 forward is the baseline's). Never applied over a loaded checkpoint "
+                         "(resume / the eval loader's strict load / --init-from, which exempts the fuse, all come after the build). A non-default value without --r9-bev-warp is "
+                         "refused. Default `rezero`: the tip's build, bit-identical.")
+    g8.add_argument("--r9-bev-warp-supervise-hist", action="store_true",
+                    help="refcv9 T1h (E1 arm T1h / T1hs): the 10 cm map loss's lift-valid mask becomes lift_valid_now OR hist_valid, hist_valid = the cells covered by at "
+                         "least one lag's warped past lift (the fuse's own warp-valid mask: GEOMETRY ONLY, identical under --r9-bev-warp-shuffle). WHY: with the default "
+                         "mask the loss never sees the cells history could fix (T1's gate stayed at |g| 0.0077). Requires --r9-bev-warp; refused with --r9-map-banded or "
+                         "--no-map-lift-valid-mask. Default OFF: the tip's build, forward and loss (bit-identical).")
     g8.add_argument("--r9-bev-warp-shuffle", action="store_true",
                     help="refcv9 T1 CONTROL (D3: the BEV-history-SHUFFLED control must read worse): the history FRAMES come from a DIFFERENT episode "
                          "(fixed derangement, seed 0); the item's own poses are kept. Without --r9-bev-warp it is refused. Default OFF.")

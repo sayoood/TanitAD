@@ -184,6 +184,11 @@ def test_control_outcomes_literal():
     assert V.control_outcome("B2c", "B2", worse).startswith("GAINS-LESS-THAN-B2")
     assert V.control_outcome("B2c", "B2", same).startswith("GAINS-AS-MUCH-AS-B2")
     assert V.control_outcome("B2c", "C0", gain).startswith("GAINS") and V.control_outcome("T1s", "C0", same).startswith("NO-GAIN")
+    inside = {"lever_read": {"separated_bad_direction": True, "exceeds_2x_floor": False, "keep_on_this_metric": False}}
+    assert V.control_outcome("T1hs", "T1h", worse).startswith("AS-REQUIRED")                 # the addendum's bar: worse beyond 2 x floor ...
+    assert V.control_outcome("T1hs", "T1h", inside).startswith("NOT-WORSE-BEYOND-FLOOR")      # ... separated but inside it does NOT attribute
+    assert V.control_outcome("T1hs", "T1h", same).startswith("NOT-WORSE:")
+    assert V.control_outcome("T1hs", "C0", same).startswith("NO-GAIN") and V.control_outcome("T1s", "T1", inside).startswith("NOT-WORSE")
     fl = base_floor(omit=("nf_prec_0_10",))
     c = V.judge("T1s", "T1", fl, neutral(fl))                                   # a floor read before the pooled key existed has no nf_prec_0_10 row
     assert c["verdict"] == "NOT-COMPUTABLE" and c["control_outcome"]
@@ -407,7 +412,7 @@ def _design_arm_names():
 
 
 def test_mapping_has_every_design_arm():
-    assert DESIGN_ROWS <= set(V.ARMS) and set(V.ARMS) - DESIGN_ROWS == {"B3p", "T1s"}   # B3p = the table's "B3'" (the argv name); T1s = D3's shuffled control
+    assert DESIGN_ROWS <= set(V.ARMS) and set(V.ARMS) - DESIGN_ROWS == {"B3p", "T1s", "T1h", "T1hs"}   # B3p = the table's "B3'" (the argv name); T1s = D3's shuffled control; T1h / T1hs = REFCV9_E1_T1H_PREREG.md
     names = _design_arm_names()
     if names is None:
         pytest.skip("REFCV9_DESIGN.md is not in this checkout")
@@ -419,7 +424,7 @@ def test_mapping_not_computable_primaries_carry_reason_and_cure():
     # since hold_r9_e1_mapprim the map primary is COMPUTABLE (nf_swedge_prec_lv_5_20): only M1's two 'beside' metrics (lane tolerance-IoU, boundary recall) remain
     assert {(a, m["id"]) for a, m in nc} == {("M1", "M1.beside.lane"), ("M1", "M1.beside.edge")}
     assert all(m["role"] == "beside" for _, m in nc)
-    assert not {a for a, _ in nc} & {"M2a", "M2b", "M3", "A1", "F1", "M1-FROZEN", "B2", "B2c", "T1", "T1s"}
+    assert not {a for a, _ in nc} & {"M2a", "M2b", "M3", "A1", "F1", "M1-FROZEN", "B2", "B2c", "T1", "T1s", "T1h", "T1hs"}
     for a, m in nc:
         assert m["keys"] == () and len(m["reason"]) > 40 and len(m["would_compute"]) > 40, (a, m["id"])
         assert "r9_e1_eval" in m["reason"]
@@ -481,12 +486,17 @@ def test_mapping_agrees_with_the_launch_argv_files():
         if a not in ("C0", "C1"):
             assert rec["derived_from"] == "r9e1_C0"
         base = json.loads((d / "r9e1_C0.argv.json").read_text(encoding="utf-8"))["argv"]
-        if a in ("B1", "B2", "B2c", "B3", "B3p", "T1", "T1s"):
+        if a in ("B1", "B2", "B2c", "B3", "B3p", "T1", "T1s", "T1h", "T1hs"):
             extra = {x for x in argv if x.startswith("--") and x not in base}
             assert extra >= set(s["argv_flags"]) - set(base), (a, extra)
     assert seen >= 11
     t1, t1s = (json.loads((d / ("r9e1_%s.argv.json" % x)).read_text(encoding="utf-8"))["argv"] for x in ("T1", "T1s"))
     assert [x for x in t1s if x.startswith("--") and x not in t1] == ["--r9-bev-warp-shuffle"]        # T1s = T1 + the shuffle, nothing else
+    t1h, t1hs = (json.loads((d / ("r9e1_%s.argv.json" % x)).read_text(encoding="utf-8"))["argv"] for x in ("T1h", "T1hs"))
+    assert [x for x in t1h if x.startswith("--") and x not in t1] == ["--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init",
+                                                                       "--r9-bev-warp-fill-only"]
+    assert t1h[t1h.index("--r9-bev-warp-fuse-init") + 1] == "identity"
+    assert [x for x in t1hs if x.startswith("--") and x not in t1h] == ["--r9-bev-warp-shuffle"]    # T1hs = T1h + the shuffle, nothing else
     b3, b3p = (json.loads((d / ("r9e1_%s.argv.json" % x)).read_text(encoding="utf-8"))["argv"] for x in ("B3", "B3p"))
     assert [x for x in b3p if x.startswith("--") and x not in b3] == ["--r9-box-inloss-nms"]          # B3p = B3 + the in-loss BEV-NMS
     m1, m2a, m2b = (json.loads((d / ("r9e1_%s.argv.json" % x)).read_text(encoding="utf-8"))["argv"] for x in ("M1", "M2a", "M2b"))
@@ -496,6 +506,7 @@ def test_mapping_agrees_with_the_launch_argv_files():
 
 def test_resolve_ref_rules():
     assert V.resolve_ref("B1", None) == "C0" and V.resolve_ref("M2a", None) == "M1" and V.resolve_ref("T1s", None) == "T1"
+    assert V.resolve_ref("T1h", None) == "C0" and V.resolve_ref("T1hs", None) == "T1h" and V.resolve_ref("T1hs", "C0") == "C0"
     assert V.resolve_ref("B3p", "B3") == "B3" and V.resolve_ref("M3", "M2b") == "M2b" and V.resolve_ref("B4", None) == "B2"
     for arm, ref in [("C0", None), ("C1", "C0"), ("M3", None), ("M3", "M1"), ("M1-FROZEN", None), ("M1-FROZEN", "C0"), ("B1", "M1"), ("nope", None)]:
         with pytest.raises(V.Refused):

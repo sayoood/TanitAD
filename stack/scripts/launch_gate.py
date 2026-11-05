@@ -1599,7 +1599,15 @@ E1_PFQ_STAMP_WHY = "perframe_seeds_not_certified_why"
 #: for a banded base; box `/1`) binds to the T1 argv's own sha256 and says what it does NOT certify. T1's liveness is G-LIVE's (`judge_bev_warp_live`:
 #: the gate and the fuse weight moved over the smoke, `bw_has` on a majority of windows) and the post-run zero-gradient gate's. Profile decision:
 #: refcv9-e1rig ADMITS T1; refcv9-e2 / refcv9-full / refcv9-full-d1 REFUSE it (not crowned yet).
-E1_T1_FLAGS: tuple = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle")
+#: ⭐ T1h (`--r9-bev-warp-supervise-hist`, refcv9 E1; MM brief 2026-11-05) is the FOURTH member: it changes NO head and NO input at inference -- it widens the 10 cm map loss's
+#: supervised cell set to `lift_valid_now | hist_valid` (TRAINING-ONLY, so the overfit harnesses -- which replay frozen frames with no staged history -- cannot build it either).
+#: It therefore rides EXACTLY T1's rule: admitted by refcv9-e1rig, REFUSED by refcv9-e2 / -full / -full-d1 (not crowned), stamped `bev_warp_not_certified` by the inherited records
+#: (`--reuse-from T1` / `T1s` binds because the harnesses strip the flag; `g_box_overfit.T1_FLAGS` / `map_hires_overfit.T1_FLAGS` are pinned to this tuple by a test).
+#: ⭐ T1h-INIT (`--r9-bev-warp-fuse-init {rezero,identity}`) is the FIFTH member and the second one that takes a VALUE (like `--r9-bev-warp-lags`): it changes the fuse's INIT only (a fresh-build
+#: weight write; the step-0 forward is the baseline's), no head and no inference input beyond what T1 already adds. Same rule as the other four; `g_box_overfit.strip_t1` drops its value token too.
+#: ⭐ T1h-FILL (`--r9-bev-warp-fill-only`) is the SIXTH member (a plain switch): it only restricts WHERE the gated history term is added (`out = bev + gate * fuse(x) * (1 - valid_now)`) -- no new head,
+#: no new inference input beyond T1's. Same rule as the other five.
+E1_T1_FLAGS: tuple = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only")
 E1_T1_STAMP = "bev_warp_not_certified"
 E1_T1_STAMP_WHY = "bev_warp_not_certified_why"
 #: ⛔ the inherited overfit records (G-BOX-OVERFIT, G-MAP-OVERFIT: refcv8's literals, unchanged) cover the box head and the 10 cm
@@ -1628,7 +1636,7 @@ _E1_OPEN_ITEMS = (
                     "passes `judge_box_own_record` (stamped flag set == the argv's `--r9-box-*` set, RESULT PASS, the must-fail "
                     "arms ran and failed). E1-REC3: the TRAINING-ONLY aux heads (`E1_BOX_AUX_FLAGS`: B1 / B2 / B2c) do NOT trigger this "
                     "item -- they change no inference head; their /1 record stamps `aux_heads_not_certified` instead "
-                    "(`box_aux_stamp_reasons`). E1-REC4: T1's three flags (`E1_T1_FLAGS`) do NOT trigger it either -- they change the heads' INPUT, "
+                    "(`box_aux_stamp_reasons`). E1-REC4: T1's six flags (`E1_T1_FLAGS`) do NOT trigger it either -- they change the heads' INPUT, "
                     "not the heads; the inherited record stamps `bev_warp_not_certified` instead (`bev_warp_stamp_reasons`). "
                     "C5-INTEG: a `--r9-box-perframe-queries` argv's `/2-b3` record must ALSO stamp `perframe_seeds_not_certified` == "
                     "[the flag] (`box_pfq_stamp_reasons`): the replay's seed head is a random frozen stand-in, so the record certifies "
@@ -1753,7 +1761,7 @@ if _E1_MODULE is not None:
 #: the lever-attach reachability needles (`lever_attach_reasons`), G-DVB / G-LIVE (the levers' own registrations and the exhaustive
 #: LIVE_WEIGHT_RULES: `w_r8_drivable`, `w_map_hires`, `w_box3d`), and the share-alarm row (`map_share_alarm`).
 #: REFUSED (each with its reason): `--r9-perc-rig` / `--r9-train-only` (refcv8's own entries, inherited: the full model is not the rig, the
-#: freeze is refcv9-warm's); T1's three flags (`E1_T1_FLAGS`, E1-REC4: not crowned yet); the aux heads (B1 / B2 / B2c): REACHABLE from the
+#: freeze is refcv9-warm's); T1's six flags (`E1_T1_FLAGS`, E1-REC4: not crowned yet); the aux heads (B1 / B2 / B2c): REACHABLE from the
 #: full model since AUX-FULL (`compute_losses_v3` calls their loss, `box_depth_aux_flag.pin_args` admits `--w-box3d > 0`; T1 likewise since
 #: T1-FULL) and REFUSED BY DECISION until E1 crowns one (tests/test_launch_gate_refcv9_full.py pins both halves; the MM drops a crowned
 #: head's flags here -- the FLIP);
@@ -8687,6 +8695,10 @@ def rig_eval_t1_build_reasons(args_t, model_t, args_l, model_l) -> tuple[list[st
         return {"declared": bool(getattr(args, "r9_bev_warp", False)), "fuse_built": fuse is not None,
                 "lags_s": list(st.lags_s) if st is not None else None, "lag_rows": list(st.lag_rows) if st is not None else None,
                 "shuffle": bool(st.shuffle) if st is not None else None,
+                "supervise_hist": bool(st.supervise_hist) if st is not None else None,                       # T1h: the loss-mask OR, a model-state fact
+                "fuse_emit_hist": bool(getattr(fuse, "emit_hist", False)) if fuse is not None else None,     # T1h: the fuse emits hist_valid
+                "fuse_init": str(getattr(fuse, "init_mode", "rezero")) if fuse is not None else None,        # T1h-INIT: how the fuse weight was built (a build-time fact)
+                "fuse_fill_only": bool(getattr(fuse, "fill_only", False)) if fuse is not None else None,     # T1h-FILL: the history term only where the current lift is invalid
                 "fuse_lag_rows": list(fuse.lag_rows) if fuse is not None else None}
     vt, vl = view(args_t, model_t), view(args_l, model_l)
     if not (vt["declared"] or vl["declared"] or vt["fuse_built"] or vl["fuse_built"]):

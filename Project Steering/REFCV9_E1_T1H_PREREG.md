@@ -36,3 +36,12 @@ TACTICAL not computable on the rig, n = 0; STRATEGIC PAUSED by PI ruling 2026-09
 * **T1h FAILS with a SHUT gate (|gate| mean ≤ 0.05)** → the dead start persists → next lever: a gate lr multiplier / non-zero gate init.
 
 Noise caveat (binding): one training run per arm; the 2 × floor clause carries run-to-run noise from ONE seed pair (H-ESTIM-SEED-1).
+
+## Addendum 2026-11-05 14:10Z — clause 4 tightened, before any T1h data
+
+Written before T1h or T1hs has been gated, trained or scored (neither arm has run; the PI has not yet approved their compute). Clause 4 is
+TIGHTENED, never relaxed: T1hs read with `--ref T1h` must be **separated worse than T1h beyond 2 × floor** on `nf_prec_0_10` — the convention
+the verdict already applies to T1s — instead of "separated in T1h's favour". Why: one run per arm, and a separated CI from one-seed arms is
+necessary, not sufficient (`H-ESTIM-SEED-1`: two runs differing in nothing cleared "separated" on 9.5 % of cells). The verdict reports the
+first-written reading too: `NOT-WORSE-BEYOND-FLOOR` = separated worse but inside 2 × floor, which clause 4 as first written would have
+attributed and this addendum does not. Implemented in `stack/scripts/r9_e1_verdict.py` (`ARMS["T1h"]`, `ARMS["T1hs"]`, `control_outcome`).

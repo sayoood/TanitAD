@@ -951,6 +951,12 @@ class MapHiresBranch(nn.Module):
             raise ValueError(f"[map-hires] fmap_s8 has {fmap_s8.shape[1]} channels, "
                              f"the branch was built for {self.d_image}")
         bev = self.lift(fmap_s8, grid, valid)
+        _bw = getattr(self, "bev_warp", None)                # refcv9 T1h: the fuse's warp-valid union; None unless --r9-bev-warp-supervise-hist (OFF: nothing below)
+        hist = _bw.take_hist_valid() if (_bw is not None and getattr(_bw, "emit_hist", False)) else None
+        if _bw is not None and getattr(_bw, "emit_hist", False) and hist is None:
+            raise RuntimeError("[map-hires] --r9-bev-warp-supervise-hist is built but the lift hook recorded no hist_valid: the loss would silently lose its history mask")
+        if hist is not None and self.banded is not None:
+            raise ValueError("[map-hires] --r9-bev-warp-supervise-hist is not implemented for the banded head (its loss masks come from the head's own `unobs`): refusing")
         feats = self._run(self.encoder, bev)
         if self.banded is not None:
             map_feats = None if self.map_encoder is None else self._run(self.map_encoder, bev)      # refcv9 C2 (M3)
@@ -975,9 +981,12 @@ class MapHiresBranch(nn.Module):
         if tuple(logits.shape[1:]) != (int(self.cfg.n_classes),) + tuple(self.cfg.out_hw):
             raise RuntimeError(f"map-hires logits {tuple(logits.shape)} are not "
                                f"[B, 8, {self.cfg.out_hw[0]}, {self.cfg.out_hw[1]}]")
-        return {"map_hires_logits": logits,
-                "map_hires_lift_valid": valid.any(dim=1),        # [B, X4, Y4]
-                "map_hires_bev": feats}                          # [B, d_model, X4, Y4]
+        out = {"map_hires_logits": logits,
+               "map_hires_lift_valid": valid.any(dim=1),        # [B, X4, Y4]
+               "map_hires_bev": feats}                          # [B, d_model, X4, Y4]
+        if hist is not None:                                    # refcv9 T1h only: [B, X4, Y4] bool, the cells a lag's warped past lift covers (the key is ABSENT otherwise)
+            out["map_hires_hist_valid"] = hist
+        return out
 
 
 def build_map_hires_branch(model, cfg: MapHiresConfig) -> MapHiresBranch:

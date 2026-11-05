@@ -29,6 +29,8 @@ DT_S = 0.1
 LAGS_S_DEFAULT = (0.5, 1.0)
 #: per-lag input channels of the fuse: the warped BEV plus ONE validity channel.
 MASK_CH = 1
+#: ``--r9-bev-warp-fuse-init``: ``rezero`` = today's build (the 1x1's PyTorch default init, gate 0); ``identity`` = the COPY init (``BevWarpFuse.init_identity_``).
+FUSE_INITS = ("rezero", "identity")
 
 
 def lags_to_rows(lags_s, dt_s: float = DT_S) -> tuple:
@@ -121,14 +123,44 @@ class BevWarpFuse(nn.Module):
         #: NO BIAS: with no history (every mask 0, every warped 0) the fuse output is EXACTLY 0, so a clip-start window is unchanged for ANY gate
         self.fuse = nn.Conv2d(self.n_past * (self.d_bev + MASK_CH), self.d_bev, 1, bias=False)
         self.gate = nn.Parameter(torch.zeros(self.d_bev))
+        #: HOW the fuse weight was built (``rezero`` = the 1x1's default init; ``identity`` = ``init_identity_``): a build-time fact G-DVB reads, NOT a state_dict entry --
+        #: ``init_identity_`` is the ONLY writer of ``"identity"``, so the string cannot be set without the weights being written.
+        self.init_mode = "rezero"
+        #: refcv9 T1h ``--r9-bev-warp-fill-only``: when True the gated history term is applied ONLY on cells the CURRENT lift does not observe
+        #: (``out = bev + gate * fuse(x) * (1 - valid_now)``); ``lift_hook`` passes ``valid_now``, ``mix`` REFUSES to run fill-only without it.  OFF: today's ``mix``, bit for bit.
+        self.fill_only = False
         #: one-shot staged context (``stage`` -> the lift hook): (s8_past [B, P, C8, h, w], T [B, P, 3], has [B, P] bool)
         self._ctx = None
+        #: refcv9 T1h (``--r9-bev-warp-supervise-hist``): when True the lift hook ALSO records ``hist_valid`` (the union of the lags' warp-valid masks, [B, X, Y] bool,
+        #: GEOMETRY ONLY) for ``MapHiresBranch.forward`` to emit as ``map_hires_hist_valid`` (``take_hist_valid``).  OFF (the default): nothing is computed or kept.
+        self.emit_hist = False
+        self._hist_valid = None
 
-    def mix(self, bev, warped, masks):
+    def init_identity_(self) -> None:
+        """refcv9 T1h ``--r9-bev-warp-fuse-init identity`` -- the COPY init: ``W[c, p*(C+1)+c] = 1/P`` for every lag ``p`` and channel ``c``, every other entry 0
+        (the mask columns included), so ``fuse(cat_p[warped_p, mask_p])`` is EXACTLY the mean over the P lags of the warped past BEV (channel order from ``mix``: the
+        ``(warped_p, mask_p)`` pairs concatenated).  The gate stays at its exact 0: the step-0 forward is the baseline's, bit for bit, and the gate's step-0 gradient is
+        ``sum_cells dL/dbev * mean_p(warped_p)`` instead of a random-W projection.  Called ONLY at fresh build (``bev_warp_flag.attach``); every checkpoint load that
+        follows (resume, the eval loader's strict load) overwrites it with the trained weights."""
+        c, p = self.d_bev, self.n_past
+        with torch.no_grad():
+            w = self.fuse.weight
+            w.zero_()
+            idx = torch.arange(c, device=w.device)
+            for k in range(p):
+                w[idx, k * (c + MASK_CH) + idx, 0, 0] = 1.0 / p
+        self.init_mode = "identity"
+
+    def mix(self, bev, warped, masks, valid_now=None):
+        """``valid_now`` ``[B, X, Y]`` bool (the lift's own ``valid.any(dim=1)``): read ONLY when ``fill_only`` (then REQUIRED); the default path never touches it."""
         if len(warped) != self.n_past or len(masks) != self.n_past:
             raise ValueError("[bev-warp] fuse built for %d past frames, got %d / %d" % (self.n_past, len(warped), len(masks)))
         x = torch.cat([t for pair in zip(warped, masks) for t in pair], dim=1)
-        return bev + self.gate.view(1, -1, 1, 1).to(bev.dtype) * self.fuse(x)
+        if not self.fill_only:
+            return bev + self.gate.view(1, -1, 1, 1).to(bev.dtype) * self.fuse(x)
+        if valid_now is None:
+            raise ValueError("[bev-warp] --r9-bev-warp-fill-only is built but no valid_now reached mix: the history would silently be added on EVERY cell")
+        return bev + self.gate.view(1, -1, 1, 1).to(bev.dtype) * self.fuse(x) * (~valid_now.bool()).unsqueeze(1).to(bev.dtype)      # (1 - valid_now): history only where the camera sees nothing now
 
     # ---- the staged context + the forward hook on the shared lift ------------------------------------------------------------ #
     def stage(self, s8_past: torch.Tensor, T: torch.Tensor, has: torch.Tensor) -> None:
@@ -157,7 +189,22 @@ class BevWarpFuse(nn.Module):
                 h = has[:, p].view(-1, 1, 1, 1).to(w.dtype)
                 warped.append(w * h)
                 masks.append(m * h)
+        self._hist_valid = hist_valid_of(masks) if self.emit_hist else None            # T1h only; the mask list is the SAME one ``mix`` reads
+        if self.fill_only:
+            return self.mix(out, warped, masks, valid_now=src_valid)        # T1h fill-only: the SAME `valid.any(dim=1)` the hook already holds
         return self.mix(out, warped, masks)
+
+    def take_hist_valid(self):
+        """ONE-SHOT read of the last lift call's ``hist_valid`` (``None`` unless ``emit_hist``); ``MapHiresBranch.forward`` calls it right after ``self.lift``."""
+        hv, self._hist_valid = self._hist_valid, None
+        return hv
+
+
+def hist_valid_of(masks) -> torch.Tensor:
+    """refcv9 T1h: the cells at least one lag's warped past lift covers -- the union of the lag masks ``warp_bev`` returned (``[B, 1, X, Y]`` float, ALREADY multiplied
+    by the lag's ``has``) -> ``[B, X, Y]`` bool.  GEOMETRY ONLY: every ingredient of a mask is ``T`` (poses), the camera's own ``valid`` and ``has``; the warped CONTENT
+    never enters it, so the shuffled-history control (same poses, donor frames) has the SAME union."""
+    return torch.stack([m[:, 0] > 0.5 for m in masks], dim=0).any(dim=0)
 
 
 def derangement(n: int, seed: int = 0) -> list:
