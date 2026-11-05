@@ -645,6 +645,23 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
     the order of collection.
   * Same family as the driver-environment trap above: the harness's process layout is part of the measurement.
 
+- ⛔ **A LAND THAT TOUCHES ONE MODULE OF AN OVERFIT RECORD'S CLOSURE INVALIDATES EVERY RECORD — for every LATER launch, not only the arm
+  it was written for.** MEASURED 2026-11-05: the T1h land (`14e5a7e`) edited `map_hires_overfit.py`, `g_box_overfit.py`, `refc_v3_train.py`,
+  `bev_warp.py`, `map_head_hires.py` and `refc_v3.py`. At `fea03ce` the gate's own G-MAP-OVERFIT / G-BOX-OVERFIT refused **T1, M1, B3 and K0's**
+  `8a95dc2` records alike: *"the launch commit differs from the harness run's code: 6 changed blob(s)"*. The segment already running was safe
+  (it launched before the land); the next two launches (T1h, K0) needed ~2.7 Thor GPU-h of rebuilt records. ⇒ **Before landing a change to
+  the model, the trainer or a harness, run the record check at the candidate tree** (`r9gate3_rec_explore.sh`, or the gate's
+  `--checks G-MAP-OVERFIT,G-BOX-OVERFIT` on a scratch tree — CPU only, no token) and **batch such lands**, so one rebuild covers all of them.
+  A reuse binding (`r9e1_bind.sh --reuse-from`, 0 GPU) copies its base's closure, so it dies with the base.
+- **Git-bash `tar` reads `E:/x.tgz` as a REMOTE `host:path`** (`E` = host) and exits with *"Error is not recoverable"*. A verifier that counts
+  `tar -tzf E:/...` entries then reads **0** and can look like an empty archive. MEASURED 2026-11-05 while moving Thor suite dirs to E: — the
+  verify-before-delete check refused (0 ≠ 7,363) and kept the source, which is why it exists. ⇒ read archives from stdin
+  (`tar -tzf - < E:/x.tgz`) or pass `--force-local`.
+- **A watcher that keys on the bare word `FAIL` in `CHAIN_STATUS.txt` raises a false chain failure** on the normal line
+  `SUITE-VERDICT VERDICT FAIL regressions 0 new_fail …`, which the chain itself follows with `SUITE-BOUND … precheck PASS` and carries on.
+  MEASURED 2026-11-05. ⇒ key on the chain's own stop markers (` STOP-`, `REFUSED`, `ABORT`, `LOCK-TIMEOUT`), never on a verdict word. Same
+  family as the polling-monitor entry at the top of this list: the matched token must be one only a failure emits.
+
 ## Git hygiene — the mistake that has now happened twice
 
 **`git commit` and `git commit --amend` both commit the ENTIRE INDEX, not the files you
