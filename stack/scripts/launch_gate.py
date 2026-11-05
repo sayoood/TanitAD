@@ -4274,9 +4274,135 @@ def _tensor_paths(out: Any, prefix: str = "out") -> list[tuple[str, tuple]]:
     return res
 
 
-def hires_output_reasons(prof: dict, out: Any, image_hw: tuple[int, int]) -> tuple[list[str], dict]:
+# --------------------------------------------------------------------------------------------- #
+# the BANDED map head (refcv9 C1, `--r9-map-banded`) under the NEW-2 / G-MAP LIVENESS checks       #
+# --------------------------------------------------------------------------------------------- #
+#: MEASURED 2026-11-05 01:12Z on Thor (E1 arm M1, profile refcv9-e1rig): a banded argv failed G-DVB, G-EVAL and G-LIVE on checks that only know
+#: the inherited 8-code `map_hires` head -- "no forward output named with 'hires' and 'logit'", "the per-class probe never ran", "160 of the 160
+#: per-class argmax COUNT keys are absent", "no labelled 0_20 m cells for [8 classes]", "2 of 2 training rows lack `map_hires_lc_{cls}_{band}`".
+#: The banded head returns `map_hires_logits: None` BY DESIGN and its output is `perception.map_banded = {"logits": [near, mid, far], "unobs":
+#: [...]}`; it logs `map_banded_*` telemetry instead of the 8-code keys. So NO banded argv (M1, M2a; later E2 K2 / E3) could ever pass.
+#: Everything below is keyed on the argv carrying `--r9-map-banded` (`banded_on`): a NON-banded argv takes the code it always took, byte for byte.
+#: Names come from the gate's OWN import of `tanitad.models.map_banded` (BAND_NAMES, CHANNELS, PROB_CHANNELS, band_geometry, telemetry_keys,
+#: BAND_WEIGHTS, MAXENT_W) -- there is no second hand-written list of channels or bands in this file.
+BANDED_FLAG = "--r9-map-banded"
+#: an 8-code G-MAP item with no banded meaning says so in its details -- it is never a silent pass
+BANDED_NA = "not applicable to the banded head"
+#: the telemetry key spellings (pinned to `map_banded.telemetry_keys` by `banded_spelling_reasons`)
+BANDED_KEY_FMT = {"loss": "map_banded_loss_{ch}_{band}", "maxent": "map_banded_maxent_{band}", "n": "map_banded_n_{band}",
+                  "unobs": "map_banded_unobs_frac_{band}", "stat": "map_banded_{st}_{ch}_{band}"}
+BANDED_STATS = ("pos", "inter", "union")
+
+
+def banded_on(prof: dict, argv: list[str]) -> bool:
+    """The argv builds the BANDED map head: the 10 cm branch is on AND the argv carries `--r9-map-banded`."""
+    return hires_on(prof, argv) and has_flag(argv, BANDED_FLAG)
+
+
+def banded_module():
+    """The gate's own import of the banded head's constants. Raises ImportError when the tree under gate lacks it (a named FAIL upstream)."""
+    return importlib.import_module("tanitad.models.map_banded")
+
+
+def banded_extent(prof: dict, argv: list[str]) -> tuple[float, float]:
+    """`(x_max_m, y_half_m)` of the run: the argv's `--map-hires-x-max-m` / `--map-hires-y-half-m` when passed and numeric, else the extent
+    the profile's 10 cm grid (`map_hires.logits_hw`, rows x cols at 10 cm) declares."""
+    lh, lw = prof["map_hires"]["logits_hw"]
+    fine = 0.1                                              # FINE_CELL_M: the 10 cm raster
+    x, y = round(lh * fine, 6), round(lw * fine / 2.0, 6)
+    for flag, slot in (("--map-hires-x-max-m", 0), ("--map-hires-y-half-m", 1)):
+        v = flag_values(argv, flag)
+        try:
+            val = float(v[0]) if v else None
+        except ValueError:
+            val = None
+        if val is not None:
+            x, y = (val, y) if slot == 0 else (x, val)
+    return x, y
+
+
+def banded_arg(prof: dict, argv: list[str]) -> tuple[float, float] | None:
+    """The `banded=` argument of `hires_output_reasons`: the run's extent for a banded argv, None for every other (the 8-code path)."""
+    return banded_extent(prof, argv) if banded_on(prof, argv) else None
+
+
+def banded_train_keys(M) -> list[str]:
+    """The keys a TRAINING row with a labelled window carries for the banded head (`telemetry_keys(with_metrics=False)`): the 30 per
+    channel x band loss terms, and per band the max-entropy term, the supervised-cell count and the unobserved fraction."""
+    ks = [BANDED_KEY_FMT["loss"].format(ch=c, band=b) for c in M.CHANNELS for b in M.BAND_NAMES]
+    for k in ("maxent", "n", "unobs"):
+        ks += [BANDED_KEY_FMT[k].format(band=b) for b in M.BAND_NAMES]
+    return ks
+
+
+def banded_metric_keys(M) -> list[str]:
+    """`pos` / `inter` / `union` per probability channel x band: the counts the per-band IoU pools from (`telemetry_keys(with_metrics=True)`)."""
+    return [BANDED_KEY_FMT["stat"].format(st=s, ch=c, band=b) for s in BANDED_STATS for c in M.PROB_CHANNELS for b in M.BAND_NAMES]
+
+
+def banded_output_reasons(out: Any, x_max_m: float, y_half_m: float) -> tuple[list[str], dict]:
+    """NEW-2 on a FORWARD's output for the BANDED head: `perception.map_hires_logits` is None (BY DESIGN: there is no 8-way raster, and a
+    tensor there would be a different head), `perception.map_banded.logits` is one FINITE `[B, 10, rows, cols]` tensor per band matching
+    `band_geometry` of the run's extent, and `perception.map_banded.unobs` is one bool `[B, rows, cols]` mask per band."""
+    import torch
+    det: dict[str, Any] = {"extent_m": [x_max_m, y_half_m]}
+    try:
+        M = banded_module()
+        geom = M.band_geometry(x_max_m, y_half_m)
+    except Exception as e:                                # noqa: BLE001 -- a named FAIL, never a skip
+        return [f"the banded head's constants cannot be read ({type(e).__name__}: {e}) -- the gate cannot judge a `{BANDED_FLAG}` forward"], det
+    pout = out.get("perception") if isinstance(out, dict) else None
+    if not isinstance(pout, dict):
+        return ["`perception` is ABSENT from the forward output -- the banded head's output (`perception.map_banded`) cannot be read"], det
+    reasons: list[str] = []
+    lg8 = pout.get("map_hires_logits")
+    det["map_hires_logits"] = "None" if lg8 is None else "tensor"
+    if lg8 is not None:
+        reasons.append(f"`perception.map_hires_logits` is not None under `{BANDED_FLAG}`: the banded head returns None BY DESIGN (it has no 8-way "
+                       f"raster) -- a tensor there means the 8-way branch ran, not the banded head")
+    mb = pout.get("map_banded")
+    lgs = mb.get("logits") if isinstance(mb, dict) else None
+    uno = mb.get("unobs") if isinstance(mb, dict) else None
+    if not isinstance(lgs, (list, tuple)):
+        reasons.append("`perception.map_banded.logits` is ABSENT from the forward output -- the banded logits were not produced (the F3 "
+                       "pass-through class: the head ran, its channels did not reach the output)")
+        return reasons, det
+    det["logits"] = [list(map(int, t.shape)) if torch.is_tensor(t) else None for t in lgs]
+    if len(lgs) != len(geom):
+        reasons.append(f"`map_banded.logits` holds {len(lgs)} tensor(s), the banded head has {len(geom)} bands {[g.name for g in geom]}")
+    batch = set()
+    for g, t in zip(geom, lgs):
+        want = (int(M.N_CHANNELS), int(g.rows), int(g.cols))
+        if not torch.is_tensor(t) or t.ndim != 4:
+            reasons.append(f"band {g.name}: the logits are not a 4-D tensor ({type(t).__name__})")
+            continue
+        batch.add(int(t.shape[0]))
+        if tuple(int(x) for x in t.shape[1:]) != want:
+            reasons.append(f"band {g.name}: logits {tuple(int(x) for x in t.shape)} are not [B, {want[0]}, {want[1]}, {want[2]}] "
+                           f"(band_geometry of the {x_max_m:g} m x +-{y_half_m:g} m extent)")
+        elif not bool(torch.isfinite(t.detach()).all()):
+            reasons.append(f"band {g.name}: the logits carry NaN / Inf")
+    if len(batch) > 1:
+        reasons.append(f"the bands' logits disagree on the batch size {sorted(batch)}")
+    if not isinstance(uno, (list, tuple)) or len(uno) != len(geom):
+        reasons.append(f"`perception.map_banded.unobs` is absent or does not hold {len(geom)} masks (found {None if uno is None else len(uno)}) -- "
+                       f"the lift's own validity must be emitted WITH the map")
+    else:
+        for g, u in zip(geom, uno):
+            if not torch.is_tensor(u) or u.dtype != torch.bool or tuple(int(x) for x in u.shape[1:]) != (int(g.rows), int(g.cols)):
+                reasons.append(f"band {g.name}: `unobs` is not a bool [B, {g.rows}, {g.cols}] mask "
+                               f"({tuple(u.shape) if torch.is_tensor(u) else type(u).__name__} {getattr(u, 'dtype', '')})")
+    return reasons, det
+
+
+def hires_output_reasons(prof: dict, out: Any, image_hw: tuple[int, int],
+                         banded: tuple[float, float] | None = None) -> tuple[list[str], dict]:
     """NEW-2 on a FORWARD's output: `fmap_s8` reaches the output (the F3 pass-through class), the
-    logits are 600 x 320, the map-only lift is 240 x 128 (0.25 m)."""
+    logits are 600 x 320, the map-only lift is 240 x 128 (0.25 m).
+
+    `banded=(x_max_m, y_half_m)` (`banded_arg`: the run's extent, for an argv carrying `--r9-map-banded`; None for every other) swaps
+    the 8-way LOGITS check for the banded head's (`banded_output_reasons`: `map_hires_logits` is None by design and
+    `perception.map_banded.logits` / `.unobs` hold the three bands at `band_geometry`); the `fmap_s8` and lift checks apply to both."""
     h = prof["map_hires"]
     tok = h["name_token"]
     reasons: list[str] = []
@@ -4293,13 +4419,18 @@ def hires_output_reasons(prof: dict, out: Any, image_hw: tuple[int, int]) -> tup
         if tuple(fm[0][-2:]) != want:
             reasons.append(f"`{fk}` spatial {tuple(fm[0][-2:])} != stride-{h['trunk_stride']} "
                            f"{want}")
-    lg = [(p, s) for p, s in paths if tok in p.lower() and "logit" in p.lower()]
-    det["logits"] = lg[:4]
-    if not lg:
-        reasons.append(f"no forward output named with '{tok}' and 'logit' -- the 10 cm logits "
-                       f"were not produced")
-    elif any(tuple(s[-2:]) != tuple(h["logits_hw"]) for _, s in lg):
-        reasons.append(f"10 cm logits {[s for _, s in lg]} are not {tuple(h['logits_hw'])}")
+    if banded is not None:
+        br_, bd_ = banded_output_reasons(out, banded[0], banded[1])
+        det["banded"] = bd_
+        reasons += br_
+    else:
+        lg = [(p, s) for p, s in paths if tok in p.lower() and "logit" in p.lower()]
+        det["logits"] = lg[:4]
+        if not lg:
+            reasons.append(f"no forward output named with '{tok}' and 'logit' -- the 10 cm logits "
+                           f"were not produced")
+        elif any(tuple(s[-2:]) != tuple(h["logits_hw"]) for _, s in lg):
+            reasons.append(f"10 cm logits {[s for _, s in lg]} are not {tuple(h['logits_hw'])}")
     lf = [(p, s) for p, s in paths if tok in p.lower() and "logit" not in p.lower()
           and ("lift" in p.lower() or "bev" in p.lower()) and len(s) >= 3]
     det["lift"] = lf[:4]
@@ -5267,7 +5398,7 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
     import torch
     cur_mode: dict[str, Any] = {"training": None}
     cur_batch: dict[str, Any] = {"b": None}
-    rec: dict[str, Any] = {"ceiling_calls": [], "map_class": {},
+    rec: dict[str, Any] = {"ceiling_calls": [], "map_class": {}, "map_banded": {},
                            "steps": [], "eval_calls": 0, "grads": {}, "sampler_iters": [],
                            "out_keys": set(), "prior": None, "exit": None, "step_times": [],
                            "fwd_train_calls": 0, "fmap_hits": 0, "hires_first": None,
@@ -5348,11 +5479,17 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
                 if rec["hires_first"] is None:
                     try:
                         hw = tuple(module.cfg.core.encoder.image_hw())
-                        rec["hires_first"] = hires_output_reasons(ctx.prof, out, hw)
+                        rec["hires_first"] = hires_output_reasons(ctx.prof, out, hw, banded=banded_arg(ctx.prof, ctx.argv))
                     except Exception as e:                # noqa: BLE001
                         rec["hires_first"] = ([f"the NEW-2 output probe crashed: {e}"], {})
             if hires:
-                _hook_map_classes(out)
+                if banded_on(ctx.prof, ctx.argv):
+                    try:                                  # the BANDED head's per-class probe (the 8-way one finds no 10 cm logits to hook)
+                        observe_banded_forward(rec["map_banded"], out, cur_batch.get("b"))
+                    except Exception as e:                # noqa: BLE001 -- recorded and judged
+                        rec["map_banded"]["probe_error"] = f"{type(e).__name__}: {str(e)[:200]}"
+                else:
+                    _hook_map_classes(out)
             lp = ctx.prof.get("live_pres")
             if lp:
                 # A9/A10 15.2: the fraction of slots at sigma >= gate, per presence tensor, at
@@ -6239,6 +6376,322 @@ def map_eval_list_reasons(prof: dict, T, model=None) -> tuple[list[str], dict]:
     return [f"G-MAP: the trainer declares no per-class map eval key list "
             f"({list(h.get('eval_key_list_attrs', ()))}) and has no eval-row builder "
             f"(`_eval_row_from_acc`) the gate can run on the built model"], {"attr": None}
+
+
+# --------------------------------------------------------------------------------------------- #
+# the BANDED map head: G-LIVE / G-DVB G-MAP items (see the note at `BANDED_FLAG`)                #
+# --------------------------------------------------------------------------------------------- #
+def ema_on(argv: list[str]) -> bool:
+    """`--ema-decay` > 0: the in-run eval row also carries the EMA weights' `ema_eval_*` keys."""
+    v = flag_values(argv, "--ema-decay")
+    try:
+        return bool(v) and float(v[0]) > 0.0
+    except ValueError:
+        return False
+
+
+def observe_banded_forward(stats: dict, out: Any, batch: Any) -> None:
+    """G-MAP (banded) per-class probe, called by the smoke's forward hook on every TRAINING forward. It records, into `stats`:
+    (1) whether the batch carries what the banded targets are built from (`map_fine`, the 10 cm uint8 raster, and a labelled window in
+    `map_fine_label`); (2) per band, that the banded logits carry a gradient, and -- by a tensor hook -- the |gradient| per channel at the
+    OBSERVED cells (`~unobs`: only the supervised terms act there; the max-entropy term acts on `unobs` cells alone, so it cannot stand in
+    for a dead supervised term) and at the unobserved cells, and any non-finite gradient. Observes only: the hook returns None."""
+    import torch
+    M = banded_module()
+    stats["_fwd"] = stats.get("_fwd", 0) + 1
+    tg = stats.setdefault("targets", {"steps": 0, "labelled_windows": 0, "raster_shape": None})
+    if isinstance(batch, dict):
+        mf, ml = batch.get("map_fine"), batch.get("map_fine_label")
+        if (torch.is_tensor(mf) and mf.ndim == 3 and mf.dtype == torch.uint8 and torch.is_tensor(ml) and int(ml.sum()) > 0):
+            tg["steps"] += 1
+            tg["labelled_windows"] += int(ml.sum())
+            tg["raster_shape"] = [int(mf.shape[1]), int(mf.shape[2])]
+    mb = (out.get("perception") or {}).get("map_banded") if isinstance(out, dict) else None
+    if not isinstance(mb, dict) or not isinstance(mb.get("logits"), (list, tuple)):
+        return
+    unobs = mb.get("unobs") if isinstance(mb.get("unobs"), (list, tuple)) else [None] * len(mb["logits"])
+    bands = stats.setdefault("bands", {})
+    for bi, (z, un) in enumerate(zip(mb["logits"], unobs)):
+        if bi >= len(M.BAND_NAMES) or not (torch.is_tensor(z) and z.ndim == 4 and z.requires_grad):
+            continue
+        e = bands.setdefault(M.BAND_NAMES[bi], {"hooked": 0, "grad_obs": {c: 0.0 for c in M.CHANNELS},
+                                                "grad_unobs": {c: 0.0 for c in M.CHANNELS}, "nonfinite": {c: 0 for c in M.CHANNELS}})
+        e["hooked"] += 1
+
+        def ghook(g, e=e, un=un):
+            try:
+                with torch.no_grad():
+                    gd = g.detach().float()
+                    fin = torch.isfinite(gd)
+                    ga = torch.where(fin, gd.abs(), torch.zeros_like(gd))
+                    obs = (~un.to(gd.device))[:, None].to(ga.dtype) if torch.is_tensor(un) else torch.ones_like(ga[:, :1])
+                    sup = (ga * obs).sum(dim=(0, 2, 3)).tolist()
+                    unb = (ga * (1.0 - obs)).sum(dim=(0, 2, 3)).tolist()
+                    nfl = (~fin).sum(dim=(0, 2, 3)).tolist()
+                    for i, c in enumerate(M.CHANNELS):
+                        e["grad_obs"][c] += float(sup[i])
+                        e["grad_unobs"][c] += float(unb[i])
+                        e["nonfinite"][c] += int(nfl[i])
+            except Exception as ex:                       # noqa: BLE001 -- recorded and judged; a hook never takes the smoke down
+                e["hook_error"] = f"{type(ex).__name__}: {str(ex)[:200]}"
+            return None
+        z.register_hook(ghook)
+
+
+def judge_banded_classes(prof: dict, stats: dict | None, train_rows: list[dict], *,
+                         extent: tuple[float, float] | None = None) -> tuple[list[str], dict]:
+    """G-MAP (G-LIVE part) for the BANDED head -- the counterpart of `judge_map_classes`. In the smoke's training steps:
+    (1) the batch carried the 10 cm raster and a labelled window the banded targets are built from (at the run's extent when given);
+    (2) every band's logits carried a gradient; none is non-finite; every band's supervised gradient is non-zero;
+    (3) every channel x band that HAS a supervised loss in the smoke (a non-zero `map_banded_loss_<ch>_<band>` in a logged training row)
+        has a non-zero gradient at its observed cells -- a dead channel reads exactly 0.0, which a live one cannot."""
+    if stats and stats.get("probe_error"):
+        return [f"G-MAP: the banded per-class probe raised in a training forward ({stats['probe_error']})"], {"stats": stats}
+    if not stats or not stats.get("bands"):
+        return ["G-MAP: the banded per-class probe never ran -- no `perception.map_banded.logits` tensor with a gradient was found in a "
+                "training step"], {"stats": stats}
+    M = banded_module()
+    lk = prof["map_hires"]["loss_key"]
+    reasons: list[str] = []
+    tg = stats.get("targets") or {}
+    det: dict[str, Any] = {"targets": tg, "n_fwd": stats.get("_fwd", 0)}
+    if not int(tg.get("steps", 0)):
+        reasons.append("G-MAP: no training step of the smoke carried the 10 cm raster `map_fine` (uint8 [B, H, W]) together with a labelled window "
+                       "(`map_fine_label`) -- the banded targets are built from it, so the banded loss would train on nothing")
+    elif extent is not None:
+        want = [int(round(extent[0] / 0.1)), int(round(2.0 * extent[1] / 0.1))]
+        det["raster_expected"] = want
+        if tg.get("raster_shape") != want:
+            reasons.append(f"G-MAP: the batch's 10 cm raster is {tg.get('raster_shape')}, the banded targets at the {extent[0]:g} m x "
+                           f"+-{extent[1]:g} m extent need {want}")
+    present = {(c, b) for r in train_rows if lk in r for c in M.CHANNELS for b in M.BAND_NAMES
+               if _finite_num(r.get(BANDED_KEY_FMT["loss"].format(ch=c, band=b)))
+               and float(r[BANDED_KEY_FMT["loss"].format(ch=c, band=b)]) != 0.0}
+    det["n_channel_band_terms_with_supervision"] = len(present)
+    unhooked, nonfinite, dead_bands, dead_terms, per_band = [], [], [], [], {}
+    for b in M.BAND_NAMES:
+        e = (stats.get("bands") or {}).get(b)
+        if not e or not int(e.get("hooked", 0)):
+            unhooked.append(b)
+            continue
+        if e.get("hook_error"):
+            reasons.append(f"G-MAP: band {b}: the gradient probe raised ({e['hook_error']})")
+        nonfinite += [f"{c}_{b}" for c in M.CHANNELS if int(e["nonfinite"].get(c, 0)) > 0]
+        tot = sum(float(v) for v in e["grad_obs"].values())
+        per_band[b] = {"hooked_steps": int(e["hooked"]), "grad_obs_total": tot,
+                       "grad_obs": {c: float(v) for c, v in e["grad_obs"].items()},
+                       "grad_unobs": {c: float(v) for c, v in e["grad_unobs"].items()}}
+        if not tot > 0.0:
+            dead_bands.append(b)
+        dead_terms += [f"{c}_{b}" for c in M.CHANNELS if (c, b) in present and not float(e["grad_obs"][c]) > 0.0]
+    det["per_band"] = per_band
+    if unhooked:
+        reasons.append(f"G-MAP: band(s) {unhooked} never carried a gradient: no `perception.map_banded.logits` tensor with requires_grad in any "
+                       f"training forward of the smoke")
+    if nonfinite:
+        reasons.append(f"G-MAP: a non-finite gradient on the banded logits of {len(nonfinite)} channel x band term(s) (first: {nonfinite[:4]})")
+    if dead_bands:
+        reasons.append(f"G-MAP: band(s) {dead_bands}: ZERO gradient at the observed cells over the smoke (the band's supervised loss reaches "
+                       f"nothing)")
+    if dead_terms:
+        reasons.append(f"G-MAP: {len(dead_terms)} banded channel x band term(s) have a supervised loss in the smoke (a non-zero "
+                       f"`map_banded_loss_<ch>_<band>`) and ZERO gradient at their observed cells (first: {dead_terms[:4]})")
+    return reasons, det
+
+
+def banded_eval_key_reasons(prof: dict, eval_rows: list[dict], *, ema: bool = False) -> tuple[list[str], dict]:
+    """G-MAP, read off the smoke's ARTIFACT, for the BANDED head -- the counterpart of `map_eval_key_reasons`. The FIRST in-run eval row
+    carries, under `eval_` (and `ema_eval_` when the run keeps an EMA), EVERY banded telemetry key (`telemetry_keys(True)`: the per
+    channel x band loss terms, `pos` / `inter` / `union` per probability channel x band, and per band the max-entropy term, the
+    supervised-cell count and the unobserved fraction), all finite -- and every band has supervised (labelled) cells."""
+    if not eval_rows:
+        return ["G-MAP: the smoke wrote no in-run eval row, so the banded map telemetry cannot be observed"], {}
+    M = banded_module()
+    row = eval_rows[0]
+    keys = banded_train_keys(M) + banded_metric_keys(M)
+    prefixes = ("eval_",) + (("ema_eval_",) if ema else ())
+    reasons: list[str] = []
+    det: dict[str, Any] = {"eval_step": row.get("step"), "expected_per_prefix": len(keys), "prefixes": list(prefixes)}
+    if ema and row.get("ema_eval_error"):
+        reasons.append(f"G-MAP: the EMA in-run eval failed ({str(row['ema_eval_error'])[:160]})")
+    for pre in prefixes:
+        miss = [pre + k for k in keys if pre + k not in row]
+        bad = [pre + k for k in keys if pre + k in row and not _finite_num(row[pre + k])]
+        det[pre] = {"n_missing": len(miss), "missing": miss[:30], "n_nonfinite": len(bad), "nonfinite": bad[:20]}
+        if miss:
+            reasons.append(f"G-MAP: the in-run eval row lacks {len(miss)} of the {len(keys)} `{pre}map_banded_*` telemetry keys "
+                           f"(first missing: {miss[:4]}) -- the per-band IoU pools from the pos / inter / union counts")
+        if bad:
+            reasons.append(f"G-MAP: {len(bad)} of the {len(keys)} `{pre}map_banded_*` keys are non-finite or non-numeric in the eval row "
+                           f"(first: {bad[:4]})")
+    nk = {b: "eval_" + BANDED_KEY_FMT["n"].format(band=b) for b in M.BAND_NAMES}
+    empty = [b for b in M.BAND_NAMES if _finite_num(row.get(nk[b])) and not float(row[nk[b]]) > 0.0]
+    det["supervised_cells_per_band"] = {b: row.get(nk[b]) for b in M.BAND_NAMES}
+    det["pos_per_channel_band"] = {b: {c: row.get("eval_" + BANDED_KEY_FMT["stat"].format(st="pos", ch=c, band=b)) for c in M.PROB_CHANNELS}
+                                   for b in M.BAND_NAMES}
+    det["bands_without_cells"] = empty
+    if empty:
+        reasons.append(f"G-MAP: the smoke's eval windows carry no labelled cells in band(s) {empty} (`eval_map_banded_n_<band>` is not > 0) -- "
+                       f"extend the eval set; the check is not waived")
+    return reasons, det
+
+
+def banded_train_row_reasons(prof: dict, train_rows: list[dict]) -> tuple[list[str], dict]:
+    """G-MAP on the smoke's TRAINING rows for the BANDED head -- the counterpart of `map_train_row_reasons`. EVERY row that carries the map
+    loss and a labelled window carries the 30 `map_banded_loss_<ch>_<band>` terms plus the per-band max-entropy / count / unobserved-fraction
+    keys, all finite, and the terms SUM to the logged `map_hires` (`sum_b w_b (sum_c L_cb + MAXENT_W * maxent_b)`, within the 8-code check's
+    own tolerance). An all-ignore batch (zero labelled windows) is the trainer's counted zero with NO banded keys: it must read exactly 0.0."""
+    h = prof["map_hires"]
+    lk, nk = h["loss_key"], h.get("n_labelled_key", "map_hires_n_labelled")
+    M = banded_module()
+    rows = [r for r in train_rows if lk in r]
+    if not rows:
+        return [f"G-MAP: no training row carries `{lk}` -- the banded map loss never reached the log"], {}
+    keys = banded_train_keys(M)
+    n_loss = len(M.CHANNELS) * len(M.BAND_NAMES)
+    slack = 0.5e-5 * (n_loss + 1)
+    missing, nonfinite, bad_sum, bad_zero, n_exempt = [], [], [], [], 0
+    for r in rows:
+        lab = r.get(nk)
+        if _finite_num(lab) and float(lab) == 0.0:
+            n_exempt += 1
+            if not (_finite_num(r.get(lk)) and float(r[lk]) == 0.0):
+                bad_zero.append((r.get("step"), r.get(lk)))
+            continue
+        miss = [k for k in keys if k not in r]
+        if miss:
+            missing.append((r.get("step"), len(miss)))
+            continue
+        nf = [k for k in keys if not _finite_num(r[k])]
+        if nf or not _finite_num(r[lk]):
+            nonfinite.append((r.get("step"), (nf or [lk])[0], len(nf) or 1))
+            continue
+        tot = sum(float(w) * (sum(float(r[BANDED_KEY_FMT["loss"].format(ch=c, band=b)]) for c in M.CHANNELS)
+                              + float(M.MAXENT_W) * float(r[BANDED_KEY_FMT["maxent"].format(band=b)]))
+                  for b, w in zip(M.BAND_NAMES, M.BAND_WEIGHTS))
+        loss = float(r[lk])
+        if not (math.isfinite(tot) and abs(tot - loss) <= float(h["lc_sum_rel_tol"]) * abs(loss) + slack):
+            bad_sum.append((r.get("step"), tot, loss))
+    det = {"n_rows": len(rows), "n_all_ignore_rows": n_exempt, "rounding_slack": slack, "rows_missing_keys": missing[:10],
+           "rows_nonfinite": nonfinite[:10], "rows_sum_mismatch": bad_sum[:10], "keys_per_row": len(keys)}
+    reasons = []
+    if missing:
+        reasons.append(f"G-MAP: {len(missing)} of {len(rows)} training rows lack the banded per-channel x band telemetry "
+                       f"(`map_banded_loss_<ch>_<band>` + per-band max-entropy / count / unobserved-fraction; first: step {missing[0][0]}, "
+                       f"{missing[0][1]} of {len(keys)} keys missing)")
+    if nonfinite:
+        reasons.append(f"G-MAP: {len(nonfinite)} training row(s) carry a non-finite banded key or loss (first: step {nonfinite[0][0]}: "
+                       f"{nonfinite[0][1]})")
+    if bad_sum:
+        reasons.append(f"G-MAP: on {len(bad_sum)} training row(s) the banded per-channel x band losses do not sum to `{lk}` "
+                       f"(first: step {bad_sum[0][0]}: {bad_sum[0][1]:.7g} vs {bad_sum[0][2]:.7g})")
+    if bad_zero:
+        reasons.append(f"G-MAP: {len(bad_zero)} all-ignore training row(s) (zero labelled windows) do not read `{lk}` exactly 0.0 "
+                       f"(first: step {bad_zero[0][0]}: {bad_zero[0][1]})")
+    return reasons, det
+
+
+def banded_spelling_reasons(prof: dict) -> tuple[list[str], dict]:
+    """The banded telemetry's spelling: the gate's key formats against the module's own `telemetry_keys` -- a drift FAILS LOUD, never
+    resolved silently. The 8-code spelling (CLASS_KEYS, the 20 m bands) is the inherited head's and has no banded meaning."""
+    det: dict[str, Any] = {"module": "tanitad.models.map_banded",
+                           "map_hires_8code_spelling": f"{BANDED_NA}: CLASS_KEYS / the 20 m bands / per_class_key spell the inherited 8-way "
+                                                       f"head's keys; the banded head spells `map_banded_*` (checked below against "
+                                                       f"`telemetry_keys`)"}
+    try:
+        M = banded_module()
+    except Exception as e:                                # noqa: BLE001 -- a named FAIL
+        return [f"G-MAP: tanitad.models.map_banded is not importable ({type(e).__name__}: {e}) -- the banded spelling cannot be checked"], det
+    reasons = []
+    for with_metrics, mine in ((False, banded_train_keys(M)), (True, banded_train_keys(M) + banded_metric_keys(M))):
+        theirs = set(M.telemetry_keys(with_metrics=with_metrics))
+        det[f"with_metrics={with_metrics}"] = {"n_gate": len(set(mine)), "n_module": len(theirs)}
+        if set(mine) != theirs:
+            reasons.append(f"G-MAP: the gate's banded key spellings differ from map_banded.telemetry_keys(with_metrics={with_metrics}): "
+                           f"only in the gate {sorted(set(mine) - theirs)[:3]}, only in the module {sorted(theirs - set(mine))[:3]} -- one "
+                           f"spelling, not two")
+    return reasons, det
+
+
+def banded_decision_rule_reasons(prof: dict, config: dict | None) -> tuple[list[str], dict]:
+    """The declared 8-way argmax rule (`raw` | `prior_corrected`) has no banded meaning: the banded head is per-channel sigmoids, thresholded
+    at 0.5, with no argmax over classes. Recorded, never silently passed."""
+    h = prof["map_hires"]
+    node: Any = config or {}
+    for k in h["decision_rule_path"]:
+        node = node.get(k) if isinstance(node, dict) else None
+    return [], {"decision_rule": node, "path": ".".join(h["decision_rule_path"]),
+                "applicability": f"{BANDED_NA}: the 8-way argmax decision rule (raw | prior_corrected) is the inherited head's; the banded "
+                                 f"head's channels are independent sigmoids thresholded at 0.5"}
+
+
+def banded_watch_reasons(prof: dict, artifact: str | None) -> tuple[list[str], dict]:
+    """The refcv7 Training Watch is still a launch ARTIFACT of the smoke (built by the gate from its metrics.jsonl; a missing one is a named
+    FAIL, as before). Its 24 per-class IoU series and thin-class alarm tile are the 8-way head's and have no banded meaning: they are recorded
+    as not applicable, not passed. ⚠️ The Watch builder (`build_watch_refcv7.py`) reads no `map_banded_*` key, so no banded series can be
+    required of it -- a Watch work item, not a launch gate."""
+    det: dict[str, Any] = {"artifact": artifact,
+                           "per_class_series_and_alarm": f"{BANDED_NA}: the Watch's 24 per-class IoU series (`eval_map_hires_iou_*`, null under "
+                                                          f"the banded head) and thin-class alarm tile are the 8-way head's",
+                           "banded_series": "the Watch builder renders no `map_banded_*` series (gap, not gated)"}
+    if not artifact:
+        return ["G-MAP: no refcv7 Training Watch artifact (--map-watch-artifact) built from the smoke's metrics.jsonl -- the Watch is a launch "
+                "artifact (LOGGING_SPEC_MAP10 sec. 6 item 4) and cannot be seen"], det
+    p = Path(artifact)
+    if not p.is_file():
+        return [f"G-MAP: the Watch artifact {artifact} does not exist"], det
+    det["sha256"] = sha256_file(p)
+    return [], det
+
+
+def banded_eval_list_reasons(T, model=None) -> tuple[list[str], dict]:
+    """G-MAP (G-DVB part) for the BANDED head: the trainer's OWN eval-row builder `_eval_row_from_acc(acc, nb_e, model)`, run on the BUILT model
+    with every banded telemetry key in `acc`, returns every `eval_map_banded_*` key finite -- the eval row cannot drop a banded key. (The
+    8-code form passes vacuously on a banded model: its builder derives the null 8-way keys from an empty `acc`.)"""
+    builder = getattr(T, "_eval_row_from_acc", None)
+    if builder is None or model is None:
+        return ["G-MAP: the trainer has no eval-row builder (`_eval_row_from_acc`) the gate can run on the built model -- the banded eval keys "
+                "cannot be read without a smoke"], {"source": None}
+    try:
+        M = banded_module()
+        keys = banded_train_keys(M) + banded_metric_keys(M)
+        row = builder({k: 1.0 for k in keys}, 1, model)
+    except Exception as e:                                # noqa: BLE001 -- a named FAIL
+        return [f"G-MAP: the trainer's eval-row builder raised on the built model with the banded telemetry: {type(e).__name__}: {e}"], {
+            "source": "_eval_row_from_acc"}
+    miss = [f"eval_{k}" for k in keys if f"eval_{k}" not in row]
+    bad = [f"eval_{k}" for k in keys if f"eval_{k}" in row and not _finite_num(row[f"eval_{k}"])]
+    det = {"source": "_eval_row_from_acc on the BUILT model, acc = every banded telemetry key", "n_expected": len(keys),
+           "n_missing": len(miss), "missing": miss[:30], "n_nonfinite": len(bad)}
+    reasons = []
+    if miss:
+        reasons.append(f"G-MAP: the trainer's eval-row builder omits {len(miss)} of the {len(keys)} banded `eval_map_banded_*` keys "
+                       f"(first: {miss[:4]})")
+    if bad:
+        reasons.append(f"G-MAP: the trainer's eval-row builder turns {len(bad)} banded key(s) non-finite (first: {bad[:4]})")
+    return reasons, det
+
+
+def map_live_items(prof: dict, argv: list[str], run1: dict, rows1: list[dict], cfg1: dict | None, *,
+                   weighted: bool = True) -> tuple[list[str], dict]:
+    """The five G-MAP items G-LIVE judges from the smoke's artifacts -- per-class probe, eval-row keys, training-row contributions, the declared
+    decision rule, the spelling -> `(reasons, {"classes", "eval_keys", "train_rows", "decision_rule", "spelling"})`. A BANDED argv
+    (`banded_on`) is judged by the banded counterparts; every other argv by the 8-code functions it always used, unchanged."""
+    eval_rows = [r for r in rows1 if any(str(k).startswith("eval_") for k in r)]
+    trows = train_rows(rows1)
+    if banded_on(prof, argv):
+        mr, md = judge_banded_classes(prof, run1.get("map_banded"), trows, extent=banded_extent(prof, argv))
+        er, ed = banded_eval_key_reasons(prof, eval_rows, ema=ema_on(argv))
+        sr, sd = banded_train_row_reasons(prof, trows)
+        dr, dd = banded_decision_rule_reasons(prof, cfg1)
+        spr, spd = banded_spelling_reasons(prof)
+    else:
+        mr, md = judge_map_classes(prof, run1.get("map_class"))
+        er, ed = map_eval_key_reasons(prof, eval_rows, weighted=weighted)
+        sr, sd = map_train_row_reasons(prof, trows)
+        dr, dd = map_decision_rule_reasons(prof, cfg1)
+        spr, spd = map_spelling_reasons(prof)
+    return mr + er + sr + dr + spr, {"classes": md, "eval_keys": ed, "train_rows": sd, "decision_rule": dd, "spelling": spd}
 
 
 def judge_ga_reach(prof: dict, rows: list[dict], *, log_every: int, final_step: int,
@@ -7984,7 +8437,8 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         det["trainer_requires_grad_matched_to_loader"] = True
         if hires and "trainer" in probe_out:
             r2, d2 = hires_output_reasons(ctx.prof, probe_out["trainer"],
-                                          tuple(cfg.core.encoder.image_hw()))
+                                          tuple(cfg.core.encoder.image_hw()),
+                                          banded=banded_arg(ctx.prof, ctx.argv))
             det["map_hires_outputs"] = d2
             reasons += [f"NEW-2: {r}" for r in r2]
         ev["details"].update(det)
@@ -8074,12 +8528,16 @@ def job_model(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
                         k: v for k, v in _b(acc, nb, m).items()
                         if not (str(k).startswith("eval_map_hires_") and any(o in str(k)
                                                                               for o in _o))}
-            lr, ld = map_eval_list_reasons(ctx.prof, T, model=model)
+            if banded_on(ctx.prof, ctx.argv):
+                lr, ld = banded_eval_list_reasons(T, model=model)
+            else:
+                lr, ld = map_eval_list_reasons(ctx.prof, T, model=model)
             det["map_hires"]["eval_key_list"] = ld
             reasons += lr
             if "trainer" in probe_out:
                 r3, d3 = hires_output_reasons(ctx.prof, probe_out["trainer"],
-                                              tuple(cfg.core.encoder.image_hw()))
+                                              tuple(cfg.core.encoder.image_hw()),
+                                              banded=banded_arg(ctx.prof, ctx.argv))
                 det["map_hires"]["outputs"] = d3
                 reasons += [f"NEW-2: {r}" for r in r3]
             else:
@@ -8591,12 +9049,8 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
                 weighted = not (isinstance(wl, list) and len(set(map(float, wl))) <= 1)
             except Exception:                             # noqa: BLE001 -- unknown => weighted
                 weighted = True
-            mr, md = judge_map_classes(ctx.prof, run1.get("map_class"))
-            er, ed = map_eval_key_reasons(ctx.prof, [r for r in rows1 if any(
-                str(k).startswith("eval_") for k in r)], weighted=weighted)
-            sr, sd = map_train_row_reasons(ctx.prof, train_rows(rows1))
-            dr, dd = map_decision_rule_reasons(ctx.prof, cfg1)
-            spr, spd = map_spelling_reasons(ctx.prof)
+            # (a BANDED argv -- `--r9-map-banded` -- is judged by the banded counterparts, see `map_live_items`)
+            items_r, items_d = map_live_items(ctx.prof, ctx.argv, run1, rows1, cfg1, weighted=weighted)
             wa, wb = ctx.options.get("map_watch_artifact"), h.get("watch_builder")
             wrun = None
             if wa is None and wb:
@@ -8613,7 +9067,7 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
                     wrun = {"cmd": cmd, "rc": None, "error": f"{type(e).__name__}: {e}"}
                     _say(f"the Watch builder failed: {type(e).__name__}: {e}")
                 wa = str(out_w) if out_w.is_file() else None
-            wr, wd = map_watch_reasons(ctx.prof, wa)
+            wr, wd = (banded_watch_reasons if banded_on(ctx.prof, ctx.argv) else map_watch_reasons)(ctx.prof, wa)
             if wrun is not None:
                 wd = {**wd, "builder_run": wrun}
                 if wrun["rc"] != 0:
@@ -8624,10 +9078,8 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
                 cwl = map_path(cwv[0], [tuple(x) for x in ctx.path_map])
                 cw_sha = sha256_file(cwl) if Path(cwl).is_file() else None
             csr, csd = class_weights_stamp_reasons(ctx.prof, cfg1, cw_sha)
-            det["g_map"] = {"classes": md, "eval_keys": ed, "train_rows": sd,
-                            "decision_rule": dd, "spelling": spd, "watch": wd,
-                            "class_weights_stamp": csd}
-            reasons += mr + er + sr + dr + spr + wr + csr
+            det["g_map"] = {**items_d, "watch": wd, "class_weights_stamp": csd}
+            reasons += items_r + wr + csr
             appr = None
             ap = ctx.options.get("pi_cost_approval")
             if ap:
