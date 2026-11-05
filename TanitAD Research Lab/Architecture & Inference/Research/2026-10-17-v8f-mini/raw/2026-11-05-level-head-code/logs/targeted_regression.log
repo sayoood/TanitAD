@@ -1,0 +1,150 @@
+................s..............................................F........ [  9%]
+.......ssssssssssssssssssssss....ss.............................ssssssss [ 19%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 28%]
+sssssssssssssssssssssssssssssssssssssssssssssssssss...ss................ [ 38%]
+.................s..Fsssssssssssssssssssssssssssssssssssssssssssssssssss [ 47%]
+ssssssssssssssssssssssssssssssssssssssss...................sssssssssssss [ 57%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 66%]
+ssssssssssssssss.sssssssssssss.......................................... [ 76%]
+........................................................................ [ 86%]
+........sss...............s....................................sssss..ss [ 95%]
+F................................                                        [100%]
+================================== FAILURES ===================================
+___________ test_flag_off_reproduces_the_unmodified_tip_bit_for_bit ___________
+
+pack = <test_v8f_dagger_train.Pack object at 0x000002396BE5D7F0>
+tmp_path = WindowsPath('F:/TanitAD-scratch/motion_c/build/pt/basetemp/targ/test_flag_off_reproduces_the_u0')
+
+    def test_flag_off_reproduces_the_unmodified_tip_bit_for_bit(pack, tmp_path):
+        """K-BUILD: the golden was written by the unmodified tip (d7208328) for (a) a DAG-OACC-style argv, (b) an ORC-style argv and (c) plain M2b -- 4 CPU steps each on the trainer's synthetic world. With the
+        flag absent this tree must give the same log (every loss, every logged key), the same final weights and optimiser state, the same counters, and the same SET of keys in summary.json and in the checkpoint
+        (the checkpoint's ``cfg`` gains ONE key, ``launch_intent_w`` = 0.0; levers gain the four launch keys; selfcheck.json gains ``launch_intent_probe``)."""
+        got = {}
+        for name in ("dag", "orc", "m2b"):
+            assert TR.main(_run(tmp_path / name, argv_family(pack, name))) == 0
+            got[name] = digest(tmp_path / name)
+        got["_fixture"] = {"bank_content_sha256": bank_identity(pack), "torch": torch.__version__}
+        if WRITE_GOLDEN:
+            GOLDEN.write_text(json.dumps(got, indent=1, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+            pytest.skip("golden written from the unmodified tip")
+        want = json.loads(GOLDEN.read_text(encoding="utf-8"))
+        assert want["_fixture"]["bank_content_sha256"] == bank_identity(pack), "the fixture bank is the golden's bank, record for record"
+        for name in ("dag", "orc", "m2b"):
+            g, w = got[name], want[name]
+            assert g["log"] == w["log"] and len(w["log"]) == 4, f"{name}: every logged number and every logged key"
+            assert (g["model_sha256"], g["opt_sha256"]) == (w["model_sha256"], w["opt_sha256"]), f"{name}: final weights and optimiser state, bit for bit (torch {want['_fixture']['torch']} wrote the golden, {torch.__version__} read it)"
+            assert (g["ego_totals"], g["dagger_totals"], g["counters"]) == (w["ego_totals"], w["dagger_totals"], w["counters"]), f"{name}: the counters"
+            assert set(g["summary_keys"]) - set(w["summary_keys"]) == RECOVER_KEYS and set(w["summary_keys"]) <= set(g["summary_keys"]), f"{name}: summary.json only GAINS the six RECOVER-FT record keys (PREREG_RECOVER_FT: written with p = 0 when off)"
+            assert g["ckpt_keys"] == w["ckpt_keys"], f"{name}: a flag-off checkpoint carries no new top-level key"
+            assert_recover_flag_off(_summary(tmp_path / name), _selfcheck(tmp_path / name), name)
+            assert g["levers_ego"] == w["levers_ego"] and g["levers_dagger_p"] == w["levers_dagger_p"]
+>           assert {k: v for k, v in g["cfg"].items() if k != "launch_intent_w"} == w["cfg"] and g["cfg"]["launch_intent_w"] == 0.0 and "launch_intent_w" not in w["cfg"], f"{name}: the config gains only launch_intent_w = 0.0"
+E           AssertionError: dag: the config gains only launch_intent_w = 0.0
+E           assert ({'d': 32, 'he...t': 1024, ...} == {'code_mix': ... 'd': 32, ...}
+E             
+E             Omitting 38 identical items, use -vv to show
+E             Left contains 2 more items:
+E             {'level_head': 'off', 'w_level': 0.0}
+E             Use -v to get more diff)
+
+tests\test_v8f_launch_intent.py:597: AssertionError
+---------------------------- Captured stdout call -----------------------------
+[1/4] ade 8.421 total 58.805 p_gt 0.20
+[2/4] ade 6.468 total 55.524 p_gt 0.20
+[3/4] ade 5.821 total 53.133 p_gt 0.20
+[4/4] ade 11.245 total 61.673 p_gt 0.20
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.9746932983398438}
+[1/4] ade 6.931 total 49.432 p_gt 0.20
+[2/4] ade 4.776 total 46.392 p_gt 0.20
+[3/4] ade 5.875 total 44.371 p_gt 0.20
+[4/4] ade 9.289 total 49.409 p_gt 0.20
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 0.9072403907775879}
+[1/4] ade 7.258 total 80.931 p_gt 1.00
+[2/4] ade 4.967 total 70.105 p_gt 0.80
+[3/4] ade 5.664 total 73.449 p_gt 0.60
+[4/4] ade 9.301 total 82.390 p_gt 0.40
+DONE {"steps": 4, "arm": "M2b", "seed": 5, "seconds": 1.0003223419189453}
+_ test_the_hx_fit_is_hblends_own_closed_form_on_the_checkpoints_held_outputs __
+
+fitworld = {'ckpt': WindowsPath('F:/TanitAD-scratch/motion_c/build/pt/basetemp/targ/oacc_fit0/b/ckpt_last.pt'), 'root': WindowsPa...g/oacc_fit0/fit_clips.json'), 'base': WindowsPath('F:/TanitAD-scratch/motion_c/build/pt/basetemp/targ/oacc_fit0'), ...}
+tmp_path = WindowsPath('F:/TanitAD-scratch/motion_c/build/pt/basetemp/targ/test_the_hx_fit_is_hblends_own0')
+
+    def test_the_hx_fit_is_hblends_own_closed_form_on_the_checkpoints_held_outputs(fitworld, tmp_path):
+        fw = fitworld
+        out, npz = tmp_path / "hx.json", tmp_path / "hx.npz"
+>       assert _no_crash(OE.main, ["hx", *_model_route_args(fw, out, ["--tag", "M2b-oacc_s0", "--fit-windows-out", str(npz)])]) == 0
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\test_v8f_oacc.py:873: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+fn = <function main at 0x00000239683EED40>
+a = (['hx', '--ckpt', 'F:\\TanitAD-scratch\\motion_c\\build\\pt\\basetemp\\targ\\oacc_fit0\\b\\ckpt_last.pt', '--fit-clips', 'F:\\TanitAD-scratch\\motion_c\\build\\pt\\basetemp\\targ\\oacc_fit0\\fit_clips.json', '--cache-dir', ...],)
+k = {}
+
+    def _no_crash(fn, *a, **k):
+        """Call ``fn``; an exception out of the instrument under test is a FAILED assertion (it crashed on an input it must judge), never an error. SystemExit (a refusal) passes through."""
+        try:
+            return fn(*a, **k)
+        except Exception as e:                                                             # noqa: BLE001
+            err = f"{getattr(fn, '__name__', fn)} raised {type(e).__name__}: {str(e)[:300]}"
+>       pytest.fail(err)                                     # outside the except: no chained context, so the first E line of the report is this Failed, not the instrument's own traceback
+        ^^^^^^^^^^^^^^^^
+E       Failed: main raised FileNotFoundError: [Errno 2] No such file or directory: 'F:\\TanitAD-scratch\\motion_c\\build\\new\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-10-17-v8f-mini\\raw\\2026-10-25-hblend\\v8f_hblend.py'
+
+tests\test_v8f_oacc.py:82: Failed
+______________ test_identity_is_bit_equal_to_the_unpatched_tool _______________
+
+runs = {'base': WindowsPath('F:/TanitAD-scratch/motion_c/build/pt/basetemp/targ/speedsub_runs0/base'), 'base_l': WindowsPath(...b_runs0/identity'), 'egoc': WindowsPath('F:/TanitAD-scratch/motion_c/build/pt/basetemp/targ/speedsub_runs0/egoc'), ...}
+
+    def test_identity_is_bit_equal_to_the_unpatched_tool(runs):
+        same_arrays(dumps(runs["identity"]), dumps(runs["base"]))
+        a, b = ticks(runs["identity"]), ticks(runs["base"])
+        assert a.keys() == b.keys()
+        for k in a:
+            if a[k].dtype.kind in "fiub":
+                assert a[k].tobytes() == b[k].tobytes(), k
+>       assert same_json(runs["identity"], runs["base"])
+E       AssertionError: assert False
+E        +  where False = same_json(WindowsPath('F:/TanitAD-scratch/motion_c/build/pt/basetemp/targ/speedsub_runs0/identity'), WindowsPath('F:/TanitAD-scratch/motion_c/build/pt/basetemp/targ/speedsub_runs0/base'))
+
+tests\test_v8f_t1_speedsub.py:205: AssertionError
+---------------------------- Captured stdout setup ----------------------------
+[6/12] 0s
+[12/12] 1s
+wrote F:\TanitAD-scratch\motion_c\build\pt\basetemp\targ\speedsub_runs0\base\t1v8f_syn.json
+[6/12] 0s
+[12/12] 1s
+wrote F:\TanitAD-scratch\motion_c\build\pt\basetemp\targ\speedsub_runs0\base_l\t1v8f_syn.json
+[6/12] 0s
+[12/12] 1s
+wrote F:\TanitAD-scratch\motion_c\build\pt\basetemp\targ\speedsub_runs0\identity\t1v8f_syn.json
+ZZSPEEDSUB-T1-WRAP-DONE identity syn rows=36 nonspeed_dev_max=0.0 wall=6.0s
+[6/12] 0s
+[12/12] 1s
+wrote F:\TanitAD-scratch\motion_c\build\pt\basetemp\targ\speedsub_runs0\egoc\t1v8f_syn.json
+ZZSPEEDSUB-T1-WRAP-DONE egoc syn rows=36 nonspeed_dev_max=0.0 wall=6.1s
+[6/12] 0s
+[12/12] 1s
+wrote F:\TanitAD-scratch\motion_c\build\pt\basetemp\targ\speedsub_runs0\identity_l\t1v8f_syn.json
+ZZSPEEDSUB-T1-WRAP-DONE identity_l syn rows=36 nonspeed_dev_max=0.0 wall=5.9s
+[6/12] 0s
+[12/12] 1s
+wrote F:\TanitAD-scratch\motion_c\build\pt\basetemp\targ\speedsub_runs0\egol\t1v8f_syn.json
+ZZSPEEDSUB-T1-WRAP-DONE egol syn rows=36 nonspeed_dev_max=0.0 wall=6.2s
+[6/12] 0s
+[12/12] 1s
+wrote F:\TanitAD-scratch\motion_c\build\pt\basetemp\targ\speedsub_runs0\egoshufc\t1v8f_syn.json
+ZZSPEEDSUB-T1-WRAP-DONE egoshufc syn rows=36 nonspeed_dev_max=0.0 wall=5.8s
+============================== warnings summary ===============================
+tests/test_v8f_mini.py::test_penalty_is_differentiable_and_zero_when_consistent
+  F:\TanitAD-scratch\motion_c\build\new\stack\tests\test_v8f_mini.py:266: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    assert float(P["pen"]["SPEED"][0]) == pytest.approx(0.5, abs=1e-6)             # 5 - 4 - tol 0.5 = 0.5 over
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_launch_intent.py::test_flag_off_reproduces_the_unmodified_tip_bit_for_bit
+FAILED tests/test_v8f_oacc.py::test_the_hx_fit_is_hblends_own_closed_form_on_the_checkpoints_held_outputs
+FAILED tests/test_v8f_t1_speedsub.py::test_identity_is_bit_equal_to_the_unpatched_tool
+3 failed, 375 passed, 375 skipped, 1 warning in 572.90s (0:09:32)

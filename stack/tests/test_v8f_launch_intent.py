@@ -594,7 +594,8 @@ def test_flag_off_reproduces_the_unmodified_tip_bit_for_bit(pack, tmp_path):
         assert g["ckpt_keys"] == w["ckpt_keys"], f"{name}: a flag-off checkpoint carries no new top-level key"
         assert_recover_flag_off(_summary(tmp_path / name), _selfcheck(tmp_path / name), name)
         assert g["levers_ego"] == w["levers_ego"] and g["levers_dagger_p"] == w["levers_dagger_p"]
-        assert {k: v for k, v in g["cfg"].items() if k != "launch_intent_w"} == w["cfg"] and g["cfg"]["launch_intent_w"] == 0.0 and "launch_intent_w" not in w["cfg"], f"{name}: the config gains only launch_intent_w = 0.0"
+        assert {k: v for k, v in g["cfg"].items() if k not in ("launch_intent_w", "level_head", "w_level")} == w["cfg"] and g["cfg"]["launch_intent_w"] == 0.0 and "launch_intent_w" not in w["cfg"], f"{name}: the config gains only launch_intent_w = 0.0 and the level-head pair"
+        assert (g["cfg"]["level_head"], g["cfg"]["w_level"]) == ("off", 0.0) and not {"level_head", "w_level"} & set(w["cfg"]), f"{name}: PREREG_V8F_LEVEL adds `level_head` = off and `w_level` = 0.0 to the checkpoint's cfg and nothing else (the golden predates it)"
         assert set(g["levers_keys"]) - set(w["levers_keys"]) == {"launch_intent_w", "launch_intent", "launch_n", "launch_eligible"} | RECOVER_LEVERS and set(w["levers_keys"]) <= set(g["levers_keys"]), f"{name}: levers only GAIN the four launch keys and the two RECOVER-FT fields"
         assert set(g["selfcheck_keys"]) - set(w["selfcheck_keys"]) == {"launch_intent_probe", "recover_probe"} and set(w["selfcheck_keys"]) <= set(g["selfcheck_keys"])
     assert want["dag"]["counters"]["dagger_n"] > 0 and want["orc"]["counters"]["ego_perturb_n"] > 0, "the golden is not vacuous: the DAG family swapped rows and the ORC family perturbed rows"

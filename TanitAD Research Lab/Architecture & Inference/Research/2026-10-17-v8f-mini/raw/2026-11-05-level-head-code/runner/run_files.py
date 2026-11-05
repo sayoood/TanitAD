@@ -1,0 +1,51 @@
+"""Run a test tree FILE BY FILE (one pytest process per file, sequential), so memory stays bounded: the dev box cannot hold the 14,859-test suite in one process (one batch of ~30 trainer files reached 5 GB).
+
+usage: python run_files.py <side: tip|new> [--only-failing-of <log of the other side>] [--files a.py b.py ...]
+Writes <ART>/logs/files_<SIDE>.log: one 'FILE <name> rc=<n> <summary>' line per file, then its FAILED / ERROR lines (pytest -rfE), and 'ALL-DONE' at the end. Resumable: files already in the log are skipped.
+Tree: F:/TanitAD-scratch/motion_c/build/<side>/stack (stack/ + taniteval/ of the tip b07982c, patched on 'new'); tmp dirs of passing tests are removed by pytest (tmp_path_retention_policy=failed)."""
+import os
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+W = Path("F:/TanitAD-scratch/motion_c/build")
+ART = Path("E:/Projects/TanitAD-artifacts/dagland/motion_c/build")
+PY = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
+side = sys.argv[1]
+stack = W / side / "stack"
+log = ART / "logs" / f"files_{side.upper()}.log"
+args = sys.argv[2:]
+files = sorted(p.name for p in (stack / "tests").glob("test_*.py"))
+if "--only-failing-of" in args:
+    other = Path(args[args.index("--only-failing-of") + 1]).read_text(encoding="utf-8", errors="replace")
+    bad = {m.group(1) for m in re.finditer(r"^FILE (\S+) rc=(?!0 |5 )", other, re.M)}
+    files = [f for f in files if f in bad]
+if "--files" in args:
+    files = args[args.index("--files") + 1:]
+done = set()
+if log.exists():
+    done = {m.group(1) for m in re.finditer(r"^FILE (\S+) rc=", log.read_text(encoding="utf-8", errors="replace"), re.M)}
+env = dict(os.environ, CUDA_VISIBLE_DEVICES="-1", PYTHONDONTWRITEBYTECODE="1", PYTHONPATH=str(stack).replace("/", "\\"))
+(W / f"pt_files_{side}").mkdir(parents=True, exist_ok=True)  # pytest's --basetemp needs its parent: without it every tmp_path test errors (run 1: 326 of 728 files)
+t_all = time.time()
+for f in files:
+    if f in done:
+        continue
+    t0 = time.time()
+    try:
+        r = subprocess.run([PY, "-m", "pytest", "-q", f"tests/{f}", "-p", "no:cacheprovider", "-rfE", "-o", "tmp_path_retention_policy=failed",
+                            f"--basetemp={W}/pt_files_{side}/{f[:-3]}"], cwd=stack, env=env, capture_output=True, text=True, errors="replace", timeout=3600, stdin=subprocess.DEVNULL)
+        out, rc = r.stdout + r.stderr, r.returncode
+    except subprocess.TimeoutExpired as e:
+        out, rc = f"TIMEOUT after 3600 s\n{(e.stdout or b'')[-500:]}", 99
+    lines = out.splitlines()
+    summ = next((ln for ln in reversed(lines) if re.search(r"\b(passed|failed|error|skipped|deselected|no tests ran)\b", ln)), "")
+    with open(log, "a", encoding="utf-8") as fh:
+        fh.write(f"FILE {f} rc={rc} {summ.strip()} [{time.time() - t0:.0f}s]\n")
+        for ln in lines:
+            if re.match(r"^(FAILED|ERROR)\s", ln):
+                fh.write(ln[:400] + "\n")
+with open(log, "a", encoding="utf-8") as fh:
+    fh.write(f"ALL-DONE {time.time() - t_all:.0f}s\n")
