@@ -182,7 +182,12 @@ def test_built_levers_record_the_built_interface_and_the_lever_adds_no_parameter
 # every one of them sits at its OFF value in the default config -- the bit-identity claim is exact only then, so `_old_pair` asserts it instead of assuming it.
 # o_interface: PREREG_V8F_FLAT ("full" = O reads S's checkpoints + T's code); w_acc: PREREG_V8F_OACC (0.0 = no acceleration term in the total);
 # launch_intent_w: PREREG_V8F_LAUNCH_INTENT, commit b09ac89 (0.0 = no launch-intent term and no new tensor op).
-PRE_FLAT_OFF = {"o_interface": "full", "w_acc": 0.0, "launch_intent_w": 0.0}
+# level_head, w_level: PREREG_V8F_LEVEL, commit 6ece77f (off = no level head and no e_level; 0.0 = no level term); lead_head, w_lead, aux_cond: PREREG_LEVELHEAD_A2, commit 83c9ee0 (off / 0.0 = no lead head; add = no conditioning token).
+PRE_FLAT_OFF = {"o_interface": "full", "w_acc": 0.0, "launch_intent_w": 0.0, "level_head": "off", "w_level": 0.0, "lead_head": "off", "w_lead": 0.0, "aux_cond": "add"}
+# level_head, w_level, lead_head, w_lead and aux_cond are reported by built_levers() ONLY when a head is built (v8f_mini.py built_levers: "a flag-off
+# model keeps its key set"), so the BUILT-lever side of the identity excludes them and asserts they are absent; the config-field side keeps all of them.
+OFF_ABSENT_FROM_BUILT = ("level_head", "w_level", "lead_head", "w_lead", "aux_cond")
+PRE_FLAT_BUILT_OFF = {k: v for k, v in PRE_FLAT_OFF.items() if k not in OFF_ABSENT_FROM_BUILT}
 
 
 def _old_pair(world, n=12, seed=2, mod=None):
@@ -224,8 +229,9 @@ def test_full_builds_the_saved_pre_change_model_and_forward_bit_for_bit_with_the
     sn, so = new.state_dict(), old.state_dict()
     assert sn.keys() == so.keys() and all(torch.equal(sn[k], so[k]) for k in sn), "identical built model"
     ln, lo = new.built_levers(), old.built_levers()
-    assert set(ln) - set(lo) == set(PRE_FLAT_OFF) and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo      # additions only ...
-    assert {k: ln[k] for k in PRE_FLAT_OFF} == PRE_FLAT_OFF                                     # ... each BUILT at its OFF value
+    assert set(ln) - set(lo) == set(PRE_FLAT_BUILT_OFF) and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo      # additions only ...
+    assert {k: ln[k] for k in PRE_FLAT_BUILT_OFF} == PRE_FLAT_BUILT_OFF                         # ... each BUILT at its OFF value
+    assert not set(ln) & set(OFF_ABSENT_FROM_BUILT)                                             # ... and the heads, off, add no built lever
     assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == set(PRE_FLAT_OFF)      # additions only
     _same_forward(_wake(new), _wake(old), b)                                                    # woken, identically: at zero-init O is blind to what it reads and the identity would be vacuous
     new, old, b, _ = _old_pair(world)

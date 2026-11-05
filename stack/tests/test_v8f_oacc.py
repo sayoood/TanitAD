@@ -244,7 +244,12 @@ def test_traj_terms_is_the_losses_own_spelling_of_ade_and_fde(world):
 # The saved pre-change module (raw/2026-10-25-oacc) predates these config keys, so its config is built from today's minus them. That is only the SAME model while
 # every one of them sits at its OFF value in the default config -- the bit-identity claim is exact only then, so `_old_pair` asserts it instead of assuming it.
 # w_acc: this PREREG (0.0 = no acceleration term in the total); launch_intent_w: PREREG_V8F_LAUNCH_INTENT, commit b09ac89 (0.0 = no launch-intent term, no new tensor op).
-PRE_OACC_OFF = {"w_acc": 0.0, "launch_intent_w": 0.0}
+# level_head, w_level: PREREG_V8F_LEVEL, commit 6ece77f (off = no level head and no e_level; 0.0 = no level term); lead_head, w_lead, aux_cond: PREREG_LEVELHEAD_A2, commit 83c9ee0 (off / 0.0 = no lead head; add = no conditioning token).
+PRE_OACC_OFF = {"w_acc": 0.0, "launch_intent_w": 0.0, "level_head": "off", "w_level": 0.0, "lead_head": "off", "w_lead": 0.0, "aux_cond": "add"}
+# level_head, w_level, lead_head, w_lead and aux_cond are reported by built_levers() ONLY when a head is built (v8f_mini.py built_levers: "a flag-off
+# model keeps its key set"), so the BUILT-lever side of the identity excludes them and asserts they are absent; the config-field side keeps all of them.
+OFF_ABSENT_FROM_BUILT = ("level_head", "w_level", "lead_head", "w_lead", "aux_cond")
+PRE_OACC_BUILT_OFF = {k: v for k, v in PRE_OACC_OFF.items() if k not in OFF_ABSENT_FROM_BUILT}
 
 
 def _old_pair(world, n=12, seed=2):
@@ -269,8 +274,9 @@ def test_w_acc_zero_builds_the_saved_pre_change_model_and_loss_and_gradients_bit
     sn, so = new.state_dict(), old.state_dict()
     assert sn.keys() == so.keys() and all(torch.equal(sn[k], so[k]) for k in sn), "identical built model"
     ln, lo = new.built_levers(), old.built_levers()
-    assert set(ln) - set(lo) == set(PRE_OACC_OFF) and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo and ln["w_acc"] == 0.0     # additions only ...
-    assert {k: ln[k] for k in PRE_OACC_OFF} == PRE_OACC_OFF                                     # ... each BUILT at its OFF value
+    assert set(ln) - set(lo) == set(PRE_OACC_BUILT_OFF) and set(lo) <= set(ln) and {k: v for k, v in ln.items() if k in lo} == lo and ln["w_acc"] == 0.0     # additions only ...
+    assert {k: ln[k] for k in PRE_OACC_BUILT_OFF} == PRE_OACC_BUILT_OFF                         # ... each BUILT at its OFF value
+    assert not set(ln) & set(OFF_ABSENT_FROM_BUILT)                                             # ... and the heads, off, add no built lever
     assert {f.name for f in dataclasses.fields(M.V8FMiniConfig)} - {f.name for f in dataclasses.fields(REF_M.V8FMiniConfig)} == set(PRE_OACC_OFF)
     _wake(new), _wake(old)
     for p in (0.0, 0.3, 1.0):
