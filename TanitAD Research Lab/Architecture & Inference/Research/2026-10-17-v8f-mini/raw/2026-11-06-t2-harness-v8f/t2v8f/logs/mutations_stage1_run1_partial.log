@@ -1,0 +1,20 @@
+baseline check_planted_missing: {'rc': 1, 'steps': ['preflight']}
+baseline check_changed_byte: {'rc': 1}
+baseline check_actor_control: {'changed_on_vs_empty': [75014, 44213, 29819]}
+baseline check_roi_shifted: {'present': [False, False, False]}
+baseline check_empty_draws_lead: {'empty_vs_off': [75014, 44213, 29819]}
+baseline check_score_e2e: {'groups': 6, 'x1': {'n_a_finite': 4, 'n_b_finite': 4, 'n_a_only': 0, 'n_b_only': 0, 'status': 'OK', 'delta': 0.0, 'lo': 0.0, 'hi': 0.0, 'separated': False, 'n_windows': 4, 'n_episodes': 2}}
+check_planted_missing[not_applied]: RED (AssertionError: (0, ['actor.done', 'gap.done', 'install.done', 'plumbing', 'plumbing.done', 'plumbing_00040136.log', 'plumbing_7c72937c.log', 'preflight.done', 'STAGE)
+check_changed_byte[not_applied]: RED (AssertionError: (0, ['preflight', 'install', 't5', 'gap', 'actor', 'plumbing']))
+check_roi_shifted[not_applied]: RED (AssertionError: {'verdict': 'PASS', 'scene': '7c72937c-c620-4776-9555-d57222c0081f', 'rows': [{'tick': 31, 'lead_xy_rig_m': [9.152, -0.111], 'roi': [825, 719, 1127, 9)
+check_empty_draws_lead[not_applied]: RED (AssertionError: {'verdict': 'PASS', 'scene': '7c72937c-c620-4776-9555-d57222c0081f', 'rows': [{'tick': 31, 'lead_xy_rig_m': [9.152, -0.111], 'roi': [825, 719, 1127, 9)
+check_score_e2e[drop_p10_record]: RED (AssertionError: {'error': 'ValueError("PAIRING GUARD: the two arms\' (scene, f0) lists differ; a contrast on misaligned starts is not a contrast")'})
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\t2v8f\code\run_mutations_stage1.py", line 21, in <module>
+    getattr(T, fn)(mut)
+    ~~~~~~~~~~~~~~^^^^^
+  File "E:\Projects\TanitAD-artifacts\dagland\motion_c\t2v8f\code\..\tests\test_t2v8f_stage1.py", line 291, in check_score_e2e
+    r_["extra"][k].pop("s_ckpt", None)
+    ~~~~~~~~~~~^^^
+TypeError: list indices must be integers or slices, not dict
+rc=1
