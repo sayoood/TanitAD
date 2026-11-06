@@ -604,7 +604,139 @@ def nearfield_stats(units) -> dict:
             for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
                 out["nf_swedge_prec_%s%d_%d" % (tag, lo, hi)] = ratio(acc[i][ctp], acc[i][cp])
             out["nf_swedge_prec_%s5_20" % tag] = ratio(acc[1][ctp] + acc[2][ctp], acc[1][cp] + acc[2][cp])
+    # the EDGE-CLASS thin-class protocol (E0d), BESIDE the primary: columns NF_COLS.. exist ONLY on a thresholded read (nearfield_per_file_ex_edge);
+    # a block without them (every unset read, every legacy block) emits none of these keys, so its rows are exactly what they were
+    if acc.shape[1] >= NF_COLS + EDGE_TOL_N and np.isfinite(acc[:, NF_COLS:NF_COLS + EDGE_TOL_N]).all():
+        eb = [acc[i][NF_COLS:NF_COLS + EDGE_TOL_N] for i in range(len(NEARFIELD_BANDS))]
+        for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
+            out.update(edge_tol_keys("%d_%d" % (lo, hi), eb[i]))
+        out.update(edge_tol_keys("5_20", eb[1] + eb[2]))
     return out
+
+
+# --------------------------------------------------------------------------------------------------- the EDGE-CLASS thin-class protocol (E0d)
+# REFCV9_DESIGN 2.1 scoring for the thin classes, as ``e0d_score.py`` (TanitAD Research Lab/Architecture & Inference/Research/2026-10-27-perception-
+# redesign/e0/) implements it. Semantics MIRRORED, not re-derived (the line numbers are of that file at tip 08a15fa1):
+#   dilate (88-101)      square structuring element of half-width r cells, ZERO padding outside the raster  -> :func:`edge_dilate`
+#   gt_static (126-146)  E = gt == 5; Edil = dilate(E, TOL_EDGE = 3); valid = gt != 255; J ("judged") = valid & gt != 0 (nocls)  -> :func:`edge_gt_masks`
+#   _edge_stats (149-157) counts per band ROW of the WHOLE-RASTER dilation: nE = |E|; hitE = |E & dilate(X)| (X is every flagged cell, seen or not);
+#                         nXJ = |X & J|; hitX = |X & J & Edil|          ->  R = hitE / nE, P = hitX / nXJ, F = 2PR / (P + R) (f_from, 492-493)
+# so a flag on a NOCLS cell far from any GT edge is NOT counted against P (it is not "judged"), and a flag on an UNSEEN cell still recalls a GT edge
+# within 0.3 m. 0.3 m = 3 cells on the 10 cm raster. The WHOLE raster width is scored (the published protocol is not a corridor read).
+EDGE_TOL_CELLS = 3                                        # e0d_score.TOL_EDGE
+EDGE_TOL_N = 4                                            # per read band: nE, hitE, nXJ, hitX
+EDGE_NOCLS = 0                                            # e0d_score.NOCLS
+EDGE_UNSEEN = 255                                         # e0d_score.UNSEEN
+
+
+def edge_dilate(mask, r=None):
+    """bool [H, W] -> bool [H, W]: square element of half-width r cells (r = 0: unchanged; default EDGE_TOL_CELLS, read at CALL time), zero padding
+    outside (``e0d_score.dilate``)."""
+    r = EDGE_TOL_CELLS if r is None else r
+    m = np.asarray(mask, dtype=bool)
+    if r <= 0:
+        return m
+    a = m.copy()
+    for s in range(1, r + 1):
+        a[s:] |= m[:-s]
+        a[:-s] |= m[s:]
+    b = a.copy()
+    for s in range(1, r + 1):
+        b[:, s:] |= a[:, :-s]
+        b[:, :-s] |= a[:, s:]
+    return b
+
+
+def edge_maxfilter(plane, r=None):
+    """uint8 [H, W] -> uint8 [H, W]: the (2r+1) x (2r+1) maximum, zero padding. ``edge_maxfilter(p)[c] >= t`` iff ``edge_dilate(p >= t)[c]`` for
+    every level t >= 1 (a max over a window is >= t iff some cell of it is) -- the identity that lets the fitter score every level from histograms."""
+    r = EDGE_TOL_CELLS if r is None else r
+    p = np.asarray(plane)
+    if r <= 0:
+        return p
+    a = p.copy()
+    for s in range(1, r + 1):
+        a[s:] = np.maximum(a[s:], p[:-s])
+        a[:-s] = np.maximum(a[:-s], p[s:])
+    b = a.copy()
+    for s in range(1, r + 1):
+        b[:, s:] = np.maximum(b[:, s:], a[:, :-s])
+        b[:, :-s] = np.maximum(b[:, :-s], a[:, s:])
+    return b
+
+
+def edge_gt_masks(gt):
+    """``(E, Edil, J)``: the GT edge cells, those dilated by 0.3 m, and the JUDGED cells (GT-seen and not nocls)."""
+    g = np.asarray(gt)
+    e = g == EDGE_CLASS
+    return e, edge_dilate(e, EDGE_TOL_CELLS), (g != EDGE_UNSEEN) & (g != EDGE_NOCLS)
+
+
+def edge_counts_brute(flag, masks, row_bands):
+    """``[len(row_bands), 4]`` = nE, hitE, nXJ, hitX of the flagged mask ``flag`` per ``(row_lo, row_hi)`` -- ``e0d_score._edge_stats`` for ONE flag
+    mask, by an explicit whole-raster dilation. The evaluator's counter AND the reference the fitter's histogram route is proven equal to."""
+    e, edil, j = masks
+    fl = np.asarray(flag, dtype=bool)
+    out = np.zeros((len(row_bands), EDGE_TOL_N))
+    xd = edge_dilate(fl, EDGE_TOL_CELLS) if fl.any() else None
+    xj = fl & j
+    for i, (a, b) in enumerate(row_bands):
+        out[i, 0] = np.count_nonzero(e[a:b])
+        if xd is not None:
+            out[i, 1], out[i, 2], out[i, 3] = np.count_nonzero((e & xd)[a:b]), np.count_nonzero(xj[a:b]), np.count_nonzero((xj & edil)[a:b])
+    return out
+
+
+def edge_tol_keys(tag, c):
+    """The beside rows of one band (or the pooled 5-20 m): ``c`` = summed [nE, hitE, nXJ, hitX] -> {key: P / R / F @ 0.3 m}. R is undefined (NaN) with no
+    GT edge cell in the band; P with no judged flag is undefined and F is then 0 (e0d_score.f_from: no flag recalls nothing, it is not a NaN)."""
+    nE, hitE, nXJ, hitX = (float(x) for x in c)
+    R = hitE / nE if nE > 0 else float("nan")
+    P = hitX / nXJ if nXJ > 0 else float("nan")
+    F = float("nan") if nE <= 0 else (2 * P * R / (P + R) if (nXJ > 0 and P + R > 0) else 0.0)
+    return {"nf_edge03_prec_" + tag: P, "nf_edge03_rec_" + tag: R, "nf_edge03_f_" + tag: F}
+
+
+def edge_tol_per_file(files, stride=1, thresholds=None, edge_key=EDGE_KEY):
+    """Per raster file (same file order and skips as :func:`nearfield_per_file_ex`): ``(names, counts [n, 4 read bands, 4])`` of
+    ``{pedge >= the arm's level}`` -- ``thresholds.level("pedge", lo, hi)``, 128 when the file has no such plane / no file -- against GT class 5.
+    A raster without a ``pedge`` plane is NaN (not measured, never 0). Read-band rows only; the dilation is of the whole raster per distinct level."""
+    names, out = [], []
+    rows = [(lo * 10, hi * 10) for lo, hi in NEARFIELD_BANDS]
+    for f in list(files)[::int(stride)]:
+        z = np.load(f)
+        if "gt" not in z.files:
+            continue
+        names.append(Path(str(f)).name)
+        if edge_key not in z.files:
+            out.append(np.full((len(NEARFIELD_BANDS), EDGE_TOL_N), np.nan))
+            continue
+        masks, pe = edge_gt_masks(z["gt"]), z[edge_key]
+        a = np.zeros((len(NEARFIELD_BANDS), EDGE_TOL_N))
+        for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
+            t = FIXED_LEVEL if thresholds is None else thresholds.level(edge_key, lo, hi)
+            a[i] = edge_counts_brute(pe >= t, masks, [rows[i]])[0]
+        out.append(a)
+    return names, (np.stack(out) if out else np.zeros((0, len(NEARFIELD_BANDS), EDGE_TOL_N)))
+
+
+def nearfield_per_file_ex_edge(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLASS, lift_valid=None, edge_key=EDGE_KEY, thresholds=None, edge_tol=False):
+    """:func:`nearfield_per_file_ex` plus, when ``edge_tol``, the four edge-class counts of :func:`edge_tol_per_file` appended as columns
+    ``NF_COLS..NF_COLS+3`` of ``acc`` (so every per-episode sum, the bootstrap and the floor carry them through :func:`nearfield_stats`) and an
+    ``info["edge_tol"]`` record. ``edge_tol`` False (every unset read) returns EXACTLY what :func:`nearfield_per_file_ex` returns."""
+    names, acc, cls_, info = nearfield_per_file_ex(files, stride, psw_key, gt_class, lift_valid, edge_key, thresholds)
+    if not edge_tol:
+        return names, acc, cls_, info
+    en, ea = edge_tol_per_file(files, stride, thresholds, edge_key)
+    if en != names:
+        raise ThresholdsError("the edge-class pass saw %d rasters, the near-field pass %d: not one file set" % (len(en), len(names)))
+    acc = np.concatenate([acc, ea], axis=2) if names else np.zeros((0, len(NEARFIELD_BANDS), NF_COLS + EDGE_TOL_N))
+    info = dict(info, edge_tol={"rule": "edge-class P / R / F @ 0.3 m (E0d, e0d_score._edge_stats): flag = pedge >= this arm's level (applied below), GT class 5, "
+                                        "3-cell square dilation on the whole raster, P over JUDGED cells (GT-seen, not nocls), whole raster width",
+                                "tol_cells": EDGE_TOL_CELLS,
+                                "levels": {"%d-%d" % (lo, hi): (FIXED_LEVEL if thresholds is None else thresholds.level(edge_key, lo, hi))
+                                           for lo, hi in NEARFIELD_BANDS}})
+    return names, acc, cls_, info
 
 
 # --------------------------------------------------------------------------------------------------- CLI
@@ -690,7 +822,8 @@ def main(argv=None) -> int:
             lvm = load_lift_valid(a.lift_valid) if a.lift_valid else None
             thr_m = load_map_thresholds(a.map_thresholds) if a.map_thresholds else None
             thr_bind = thresholds_binding(thr_m, a.rast_dir) if thr_m is not None else None
-            names, acc, gtcls, nfinfo = nearfield_per_file_ex(files, a.rast_stride, a.psw_key, lift_valid=lvm, thresholds=thr_m)
+            names, acc, gtcls, nfinfo = nearfield_per_file_ex_edge(files, a.rast_stride, a.psw_key, lift_valid=lvm, thresholds=thr_m,
+                                                                  edge_tol=thr_m is not None)       # the edge-class beside rows ride on a thresholded read
         except LiftValidError as e:
             raise SystemExit("[r9-e1-eval] lift-valid mask refused: %s" % e)
         except ThresholdsError as e:
@@ -719,6 +852,10 @@ def main(argv=None) -> int:
             out["nearfield"]["thresholds"] = dict(nfinfo["thresholds"], binding=thr_bind)
             out["nearfield"]["definition"]["flag_rule"] = ("the flags are `plane_u8 >= level` at THIS arm's own FIT-split per-band level "
                                                            "(`thresholds.applied`), not the fixed 128 the *_prec definitions above name")
+            out["nearfield"]["edge_tol"] = nfinfo["edge_tol"]
+            out["nearfield"]["definition"]["nf_edge03_*"] = ("BESIDE rows, never a primary: edge-class precision / recall / F @ 0.3 m of {pedge >= this arm's level} "
+                                                             "against GT class 5 (E0d, e0d_score._edge_stats); per read band and `*_5_20` (the 5-10 and 10-20 m bands pooled by counts); "
+                                                             "whole raster width; precision over judged cells (GT-seen, not nocls)")
     Path(a.out).write_text(json.dumps(out, indent=1, default=float) + "\n", encoding="utf-8")
     print("wrote %s: %d windows / %d clips; AP@2m %.4f" % (a.out, len(keys), len(ids), out["boxes"]["ap2m_all"]["point"]))
     return 0

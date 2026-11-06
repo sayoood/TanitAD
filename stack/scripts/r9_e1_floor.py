@@ -107,6 +107,8 @@ def metric_group(metric: str) -> str:
         return "localisation / class of the 2 m greedy TPs"
     if metric.startswith(("prec_gate", "rec_gate", "boxes_per_object", "frac_objects_ge2")):
         return "P=R census at the FIXED gate (same gate for both arms)"
+    if metric.startswith("nf_edge03"):
+        return "edge-class P / R / F @ 0.3 m of {pedge >= the arm's level} vs GT edge (E0d thin-class protocol; BESIDE, never a primary)"
     if metric.startswith("nf_swedge_prec_lv"):
         return "corridor sidewalk+edge precision, GT {edge, sidewalk}, lift-valid cells (the M1 map primary)"
     if metric.startswith("nf_swedge_prec"):
@@ -243,8 +245,9 @@ def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw"
         t1 = ev.load_map_thresholds(thr1) if thr1 else None
         b0 = ev.thresholds_binding(t0, rast_c0) if t0 is not None else None
         b1 = ev.thresholds_binding(t1, rast_c1) if t1 is not None else None
-        n0, acc0, _ = ev.nearfield_per_file([f0[n] for n in common], stride, psw_key, lift_valid=lvm, thresholds=t0)
-        n1, acc1, _ = ev.nearfield_per_file([f1[n] for n in common], stride, psw_key, lift_valid=lvm, thresholds=t1)
+        # a thresholded side also carries the EDGE-CLASS beside counts (nf_edge03_*, E0d protocol at the arm's own pedge level); an unset side is unchanged
+        n0, acc0, _, _i0 = ev.nearfield_per_file_ex_edge([f0[n] for n in common], stride, psw_key, lift_valid=lvm, thresholds=t0, edge_tol=t0 is not None)
+        n1, acc1, _, _i1 = ev.nearfield_per_file_ex_edge([f1[n] for n in common], stride, psw_key, lift_valid=lvm, thresholds=t1, edge_tol=t1 is not None)
     except ev.LiftValidError as e:
         problems.append("lift-valid mask refused: %s" % e)
         return {}, meta
