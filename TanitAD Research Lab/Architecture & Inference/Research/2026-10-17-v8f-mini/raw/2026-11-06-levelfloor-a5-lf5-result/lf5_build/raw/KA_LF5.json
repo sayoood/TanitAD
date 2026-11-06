@@ -1,0 +1,131 @@
+{
+ "card": "PREREG_LEVELFLOOR_A5 2aac1dbe...",
+ "tool_sha256": "88b275a1ca67894be01907f72b71302b72f6e0b4fa0af067f4e2c3d5286aba77",
+ "lfo_tool_sha256": "6744d3e4686e344fb72e02ad8f659c779eb73261de13c4a3844e15243667dcc6",
+ "n_windows": 64,
+ "seed": 20261106,
+ "cases": {
+  "N1": {
+   "PASS": true,
+   "n_common_fields": 35,
+   "mismatches": [],
+   "has_lf_eps": true,
+   "vlog_equals_vhat_f32": true,
+   "n_rows": 192,
+   "noise_draws_rows": 192,
+   "mutation_M1_sigma_plus_0.01": {
+    "RED": true,
+    "mismatched_fields": [
+     "P",
+     "gt",
+     "lf_bind",
+     "lf_bind_k10",
+     "lf_gap",
+     "lf_lift",
+     "lf_pi",
+     "lf_vf",
+     "lf_vhat",
+     "lf_vhat_heads",
+     "plan",
+     "plan_raw"
+    ]
+   }
+  },
+  "N2": {
+   "PASS": true,
+   "eps_identical_bare_vs_composite": true,
+   "vhat_equals_vlog_exp_sigma_eps": true,
+   "n_rows": 192,
+   "eps_mean": -0.04099453453375766,
+   "eps_std": 0.9707867445918785,
+   "bare_vs_comp_bind_rows_differ": 1,
+   "mutation_M2_draw_only_where_bound": {
+    "RED": true,
+    "eps_identical": false
+   }
+  },
+  "N3": {
+   "PASS": true,
+   "a_vs_lfo_smoke_bit_for_bit": {
+    "PASS": true,
+    "n_common_fields": 35,
+    "mismatches": []
+   },
+   "b_vs_banked_RILFO075_s0": {
+    "found_all_rows": true,
+    "n_rows": 192,
+    "n_windows": 64,
+    "n_clean_windows_plan_raw_identical_at_all_ticks": 46,
+    "n_fields_compared_on_clean_windows": 30,
+    "fields": [
+     "P",
+     "age_s",
+     "age_t",
+     "fired",
+     "gt",
+     "gt_ok",
+     "lf_bind",
+     "lf_bind_k10",
+     "lf_cap",
+     "lf_gap",
+     "lf_lift",
+     "lf_pi",
+     "lf_vf",
+     "lf_vhat",
+     "lf_vhat_heads",
+     "plan",
+     "plan_raw",
+     "pose",
+     "pose_w0",
+     "s_ckpt",
+     "s_ckpt_now",
+     "s_ckpt_w0",
+     "s_pose",
+     "t_cons_pred",
+     "t_goal_prob",
+     "t_lat_logits",
+     "t_lon_logits",
+     "t_pose",
+     "tau",
+     "v0"
+    ],
+    "bit_identical_on_clean_windows": true,
+    "mismatches": [],
+    "windows_excluded_note": "the excluded windows differ in the MODEL's float32 output (plan_raw) at identical inputs: batch composition, not the patch (the LFO tool's own smoke, bit-identical to the LF5 smoke in (a), is the same run)",
+    "window_map": "smoke window k = banked window linspace(0, 2398, 64).round()[k]"
+   },
+   "mutation_M3_default_noise_0.05": {
+    "RED": true,
+    "mismatched_fields_vs_lfo_smoke": [
+     "P",
+     "gt",
+     "lf_bind",
+     "lf_bind_k10",
+     "lf_cap",
+     "lf_gap",
+     "lf_lift",
+     "lf_pi",
+     "lf_vf",
+     "lf_vhat",
+     "lf_vhat_heads",
+     "plan"
+    ],
+    "mismatched_fields_vs_banked_clean_windows": [
+     "P",
+     "gt",
+     "lf_bind",
+     "lf_bind_k10",
+     "lf_gap",
+     "lf_lift",
+     "lf_pi",
+     "lf_vf",
+     "lf_vhat",
+     "lf_vhat_heads",
+     "plan",
+     "plan_raw"
+    ]
+   }
+  }
+ },
+ "PASS": true
+}

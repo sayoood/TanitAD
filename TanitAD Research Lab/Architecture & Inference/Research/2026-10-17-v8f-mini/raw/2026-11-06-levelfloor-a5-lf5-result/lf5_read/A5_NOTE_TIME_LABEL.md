@@ -1,0 +1,1 @@
+The A5 card's title says it was written 2026-11-06 04:5x. It was written and frozen at 04:3x: `a5_prereg/FROZEN_SHA.txt` records 04:39:36 (Europe/Berlin). The time label is the only difference; the freeze and its landing (785bfd86) precede any kappa 1 rollout and any tool change.
