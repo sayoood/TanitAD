@@ -1,0 +1,42 @@
+.{'windows': 2399, 'pooled': {'S-POS@30': (-1.7428, -2.2737, -1.2861, 2321), 'S-POS@50': (-4.5331, -5.6695, -3.5422, 2313), 'S-POS@80': (-9.5624, -11.6843, -7.6124, 2290)}, 'n_scored': {'tick0': [2322, 2319, 2294], 'tick1': [2321, 2313, 2290], 'tick2': [2170, 2159, 2137]}, 'off_route_cells': 148}
+.RED   DK         mutation no_rotation     : DK layer 2: 126b3a97 adapter changes a window state
+assert False
+RED   DK         mutation ego_time_shift  : DK layer 2: 126b3a97 adapter changes a window state
+assert False
+RED   DK         mutation width_as_length : DK layer 2: 126b3a97 lead track dev 2.84e-14 m, length dev 2.06
+assert (2.842170943040401e-14 <= 1e-09 and 2.0
+RED   DK         mutation stale           : DK layer 1: b05195bf differs from the banked block in ['leads'] (counts_equal True)
+assert (not ['leads'])
+RED   DK         mutation ts_spacing      : DK layer 1: 126b3a97 differs from the banked block in ['state', 'leads', 'lead_lens', 'is_lead'] (counts_equal
+RED   rc         mutation psi_deg         : rc pin: {'126b3a97': {'n_steps': 100, 'ok_equal': True, 'rc_bit_identical': False, 'n_not_ok_cells': 0}, 'c8a3
+RED   rc         mutation x_shift         : rc pin: {'126b3a97': {'n_steps': 100, 'ok_equal': True, 'rc_bit_identical': False, 'n_not_ok_cells': 0}, 'c8a3
+F
+================================== FAILURES ===================================
+____________________________ test_mutations_heavy _____________________________
+
+    def test_mutations_heavy():
+        missed = []
+        for name, fn, muts in MUTATIONS:
+            for m in muts:
+                try:
+>                   fn(mut=m)
+
+tests\test_t2v8f_e5b.py:265: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mut = 'kap_sign'
+
+    def check_spos(mut=None):
+        """`spos_errors` (T2-record-shaped inputs) against the reader's `analyze_run` on the banked DAGOACC_s0 heads ticks (2399 windows): the per-window S and CTRV errors are bit-identical,
+        and the pooled S-POS@30/50/80 delta, lo and hi equal the banked read's (DAGOACC_READ.json) to the 4 dp it publishes."""
+        r = S.run_sub("spos_pin", ticks=HEADS_TICKS, mut=mut)
+        keys = [k for k in r if k.endswith("bit_identical")] + ["gt_ok_equal"]
+>       bad = {k: r[k.replace("bit_identical", "max_dev")] for k in keys if not r[k] and k != "gt_ok_equal"}
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'kappa_max_dev'
+
+tests\test_t2v8f_e5b.py:79: KeyError
+=========================== short test summary info ===========================
+FAILED tests/test_t2v8f_e5b.py::test_mutations_heavy - KeyError: 'kappa_max_dev'
+1 failed, 2 passed, 4 deselected in 127.19s (0:02:07)
+EXIT 1

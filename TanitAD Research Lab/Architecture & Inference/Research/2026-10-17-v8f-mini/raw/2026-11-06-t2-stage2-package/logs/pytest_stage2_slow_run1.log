@@ -1,0 +1,91 @@
+.FF.......                                                               [100%]
+================================== FAILURES ===================================
+___________________________ test_base_equals_direct ___________________________
+
+    def test_base_equals_direct():
+>       check_base_equals_direct()
+
+tests\test_t2v8f_stage2.py:650: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mut = None
+
+    def check_base_equals_direct(mut=None):
+        """The stage-2 cell under `--executor base` is exactly `t2v8f_run.py`: scene 7c72937c (kit), T2, C0_s0, run directly in a separate process; the records equal bit for bit.
+        RED: the stage-2 cell is replaced by one run with `--executor hold --hold-eps 0.5` (a different executor must not equal base on a launch start)."""
+        fx = fixture()
+        pull, scenes2, rc, _ = positive()
+        assert rc == 0
+        kid = fx["kit_id"]
+        f = types.SimpleNamespace(pkg=fx["pkg"], kit=fx["kit"], hf=fx["hf"], encoder="stub", device="cpu", scenes2=scenes2)
+        f.scene_dir2 = lambda sc: D.Ctx2.scene_dir2(f, sc)
+        m2 = json.load(open(f"{fx['pkg']}/MANIFEST2.json", encoding="utf-8"))
+        sc = next(s for s in m2["scenes"] if s["scene"] == kid)
+        out = f"{fx['root']}/direct_{time.strftime('%H%M%S')}_{mut}"
+        os.makedirs(out)
+        env = T1.clean_env()
+        env.update(T2A_STUB="1", T2A_KIT=fx["kit"], T2V8F_TREE=f"{fx['pkg']}/tree", T2V8F_V9_DIR=f"{fx['pkg']}/v9", T2V8F_TOOL=f"{fx['pkg']}/refs/tool/v8f_t1_eval_ri_lf6.py",
+                   T2V8F_SCREEN_TABLE=f"{fx['pkg']}/refs/SCREEN_TABLE_2.json", HF_HOME=fx["hf"], HF_HUB_OFFLINE="1")
+        script, pre = (f"{fx['pkg']}/code/t2v8f_stage2_cell.py", ["--executor", "hold", "--hold-eps", "0.5"]) if mut == "hold_instead" else (f"{fx['pkg']}/code/t2v8f_run.py", [])
+        p = subprocess.run([PY, "-I", "-u", script] + pre + D.cell_argv(f, sc, "T2", "C0_s0", out), env=env, capture_output=True, text=True, timeout=900)
+        assert p.returncode == 0, p.stdout[-500:] + p.stderr[-1200:]
+        a = [json.loads(x) for x in open(f"{out}/records.jsonl", encoding="utf-8")]
+        b = [json.loads(x) for x in open(f"{pull}/rollouts/{kid[:8]}/objects/T2/C0_s0/records.jsonl", encoding="utf-8")]
+        assert len(a) == len(b) == 2
+        for x, y in zip(a, b):
+            for k in ("plans", "track", "cl", "g", "frame_md5", "v0", "purpose", "f0", "calls"):
+>               assert x[k] == y[k], f"record field {k} differs between the direct run and the stage-2 cell"
+E               AssertionError: record field plans differs between the direct run and the stage-2 cell
+E               assert [[[3.02349686...113617], ...]] == [[[3.02349686...570526], ...]]
+E                 
+E                 At index 0 diff: [[3.0234968662261963, -0.015465673059225082], [6.054149627685547, -0.00658723060041666], [9.09444522857666, -0.005813551601022482], [12.132242202758789, -0.025912363082170486], [15.17282485961914, -0.026578808203339577], [18.20308494567871, -0.034208860248327255], [21.220149993896484, -0.04868151992559433], [24.217185974121094, -0.06922551989555359], [27.185016632080078, -0.09218007326126099], [30.13794708251953, -0.13492266833782196], [33.08848190307617, -0.17597760260105133], [36.03402328491211, -0.22320014238357544], [38.97524642944336, -0.2828092575...
+E                 
+E                 ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests\test_t2v8f_stage2.py:457: AssertionError
+_____________________________ test_hold_reachable _____________________________
+
+    def test_hold_reachable():
+>       check_hold_reachable()
+
+tests\test_t2v8f_stage2.py:654: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mut = None
+
+    def check_hold_reachable(mut=None):
+        """`--executor hold` reaches the executor through the real cell entry (caller reachability): 7c72937c / T2 / C0_s0 run with hold(1e9) never updates the heading on the new rows
+        (yaw constant), hold(1e-3) equals base bit for bit. RED: the executor flag is dropped before the cell (base runs) and the yaw is NOT constant."""
+        fx = fixture()
+        pull, scenes2, rc, _ = positive()
+        kid = fx["kit_id"]
+        f = types.SimpleNamespace(pkg=fx["pkg"], kit=fx["kit"], hf=fx["hf"], encoder="stub", device="cpu", scenes2=scenes2)
+        f.scene_dir2 = lambda sc: D.Ctx2.scene_dir2(f, sc)
+        sc = next(s for s in json.load(open(f"{fx['pkg']}/MANIFEST2.json", encoding="utf-8"))["scenes"] if s["scene"] == kid)
+        env = T1.clean_env()
+        env.update(T2A_STUB="1", T2A_KIT=fx["kit"], T2V8F_TREE=f"{fx['pkg']}/tree", T2V8F_V9_DIR=f"{fx['pkg']}/v9", T2V8F_TOOL=f"{fx['pkg']}/refs/tool/v8f_t1_eval_ri_lf6.py",
+                   T2V8F_SCREEN_TABLE=f"{fx['pkg']}/refs/SCREEN_TABLE_2.json", HF_HOME=fx["hf"], HF_HUB_OFFLINE="1")
+    
+        def run(tag, flags):
+            out = f"{fx['root']}/hold_{tag}_{time.strftime('%H%M%S')}_{mut}"
+            os.makedirs(out)
+            p = subprocess.run([PY, "-I", "-u", f"{fx['pkg']}/code/t2v8f_stage2_cell.py"] + flags + D.cell_argv(f, sc, "T2", "C0_s0", out), env=env, capture_output=True, text=True, timeout=900)
+            assert p.returncode == 0, p.stdout[-500:] + p.stderr[-1200:]
+            return [json.loads(x) for x in open(f"{out}/records.jsonl", encoding="utf-8")]
+        base = [json.loads(x) for x in open(f"{pull}/rollouts/{kid[:8]}/objects/T2/C0_s0/records.jsonl", encoding="utf-8")]
+        ident = run("id", [] if mut == "flag_dropped" else ["--executor", "hold", "--hold-eps", "0.001"])
+        frozen = run("frozen", [] if mut == "flag_dropped" else ["--executor", "hold", "--hold-eps", "1e9"])
+        for x, y in zip(ident, base):
+>           assert x["track"] == y["track"] and x["cl"] == y["cl"], "hold(1e-3) differs from base through the cell entry"
+E           AssertionError: hold(1e-3) differs from base through the cell entry
+E           assert ([[0.0, 0.0, 0...0, 15.0], ...] == [[0.0, 0.0, 0...0, 15.0], ...]
+E             
+E             At index 23 diff: [34.50983263552189, -0.008287739183288068, -0.006756344007095938, 15.12804272052959] != [34.50983263552189, -0.008287738950457424, -0.0067563438531927965, 15.12804272051386]
+E             Use -v to get more diff)
+
+tests\test_t2v8f_stage2.py:484: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_t2v8f_stage2.py::test_base_equals_direct - AssertionError: ...
+FAILED tests/test_t2v8f_stage2.py::test_hold_reachable - AssertionError: hold...
+2 failed, 8 passed, 9 deselected in 198.25s (0:03:18)
+rc=1
