@@ -636,9 +636,9 @@ def s_design() -> None:
     ck("IV refe_p6 is byte-for-byte what it was (profile digest)", hashlib.sha256(repr(sorted(P6.items())).encode()).hexdigest() == HW.P6_PROFILE_SHA256)
     ck("IV refe_p6's suite and checks carry nothing of P7", "G-RESERVE" not in P6["checks"] and not any("session_reserve" in str(e) or "p7" in str(e) for e in P6["suite"]), str(P6["suite"]))
     suite = P7["suite"]
-    ck("IV refe_p7's suite = P6's + the head's static block + the reserve's own suite + this test", suite[:len(P6["suite"])] == P6["suite"]
+    ck("IV refe_p7's suite = P6's + the head's static block + the reserve's own suite + this test + the chain's test", suite[:len(P6["suite"])] == P6["suite"]
        and suite[len(P6["suite"]):] == [{"script": "test_p7_head_wiring.py", "args": ["--static"], "token": "ZZP7HEAD_PASS"}, {"script": "test_session_reserve.py", "token": "ZZSESSRES_PASS"},
-                                        {"script": "test_p7_integration.py", "token": "ZZP7INT_PASS"}], str(suite[len(P6["suite"]):]))
+                                        {"script": "test_p7_integration.py", "token": "ZZP7INT_PASS"}, {"script": "test_p7_chain.py", "token": "ZZP7CHAIN_PASS"}], str(suite[len(P6["suite"]):]))
     for e in suite[len(P6["suite"]):]:
         p = HERE / e["script"]
         ck(f"IV {e['script']} exists and its source prints its own token {e['token']} (a renamed token would fail G-SUITE on the pod, not here)", p.is_file() and e["token"] in p.read_text(encoding="utf-8"))

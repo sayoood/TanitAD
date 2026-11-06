@@ -26,3 +26,32 @@ Optional knobs: `P7_RUN`, `P7_REPO` (defaults `refe_runs/p7_reserve_head`, `Sayo
 - L40 (48 GB) vs A40: G-LIVE-MEM's 44 GB bound, the head's step time, and G-LIVE-LAB's 6.735 sets/s at 6 workers (measured on an 8.5-CPU pod) are all re-measured by the gate there; `--label-workers` is pinned, never derived from the 15.3-CPU quota.
 - SPEC_P7 section 3's HF-bank receipt (G-EGR bank leg, restore test) is **not built**; the bank is verified by G-CLOCK's content pin instead.
 - The reserve move is reversible (`p6_prep.py reserve-move --restore`); later P6 reads of reserve logs use `${MC}_reserve` / `${PIX}_reserve`.
+
+## ADDENDUM 2026-11-06 ~15:00Z (MM, session c216c849; supersedes the items it names above)
+- **The traced derive finished** (MEASURED, `_trace_run.out` here, now complete): 9/9 suite scripts rc 0, 293 files, 9 outside roots, closure `302fe5870a30`; `p7_trace.json` is the trace. The 3-line `_trace_run.out` landed in ef78c0c5 was a partial copy.
+- **`test_p7_chain.py` is now IN refe_p7's G-SUITE** (`launch_gate.py` `P7_SUITE_EXTRA`, as refe_p6 carries `test_p6_chain.py`); `test_p7_integration.py`'s IV suite pin follows. The `--extra-script test_p7_chain.py:ZZP7CHAIN_PASS` in step 1 is no longer needed.
+  - MEASURED on the dev box: `launch_gate.py suite-prerun --profile refe_p7` over the tip export + these files. Its first run FAILED on test_p7_chain (rc 1), which caught a false positive of the FD200 rule on a refusal text containing the word "curl"; the text was reworded. The re-run PASSED: 8/8 scripts rc 0, 0 skips, 735 s (`suite_prerun_PASS1.*`; the failed first run is kept as `suite_prerun_FAIL1.*`). After the ship-list fix below, a third run on exactly the landed bytes is `suite_prerun_FINAL.*`.
+  - The trace binds the suite closure, so the ship list was re-derived with a fresh `--trace` at these bytes (`_trace_run.out`, `p7_trace.json`), not with `--allow-stale-trace`.
+- **The aux label store IS on HF** (corrects step 3 and the old refusal text). MEASURED: `refe_aux_drivable_label_store_2026-10-23.tar` (353,802,240 B) in `Sayood/tanitad-refe-navtrain-banks` equals `E:/Projects/TanitAD-artifacts/aux_drivable/label_store` (the drive letter moved D: → E:): 1,196/1,196 files sha256-equal, `store_sha256` 4a17db67…, 103,139 keys. On the pod, before the chain:
+  ```
+  mkdir -p /workspace/data/refe_navtrain && cd /workspace/data/refe_navtrain
+  printf 'header = "Authorization: Bearer %s"\n' "$(cat <TOKEN_FILE>)" | curl -sS -f -L -K - -o /root/aux_store.tar https://huggingface.co/datasets/Sayood/tanitad-refe-navtrain-banks/resolve/main/refe_aux_drivable_label_store_2026-10-23.tar
+  [ "$(stat -c %s /root/aux_store.tar)" = 353802240 ] && tar -xf /root/aux_store.tar && mv label_store aux_label_store_p7
+  python3 -c "import json;m=json.load(open('aux_label_store_p7/manifest.json'));print(m['store_sha256'][:8], m['coverage_vs_navtrain_yaml']['stored_in_yaml'])"   # expect 4a17db67 103139
+  ```
+- **`P7_LABEL_WORKERS=13` on the L40, not 6.** MEASURED 2026-11-06: P6 at 6 workers REFUSED G-LIVE-LAB on this pod (stall 5.4 % > 5 %; PREREG_P6 Amendment (e), `raw/2026-11-06-p6-l40-gate/`). At 13 it trains at stall ~1 %. SPEC_P7 pins no worker count, and P7 is a fresh run with no argv sha to keep. The value stays PINNED by the env (never derived), as the chain requires.
+- **Schedule and cost (ESTIMATED from P6's MEASURED L40 rate of 50.5 s/step):**
+  - 9,075 steps × ~50.5 s ≈ 127 h, plus a gap of 2.5–4 h, ≈ 5.5 days;
+  - at $0.90/h that is about $118.
+- **Canonical files after this landing:** `PK/refe/{p7_pod.sh,p7_prep.py,p7_ship_list.py,p7_ship_list.json,test_p7_chain.py,test_p7_ship_list.py}` and `PK/refe/launch_gate.py`.
+  - The `refe/` copies in THIS directory are the morning versions (ef78c0c5). `p7_pod.sh` and `test_p7_chain.py` there predate the text fixes above. Do not ship them.
+  - `p7_ship_list.json` was derived by a fresh traced run at exactly the landed bytes: 292 files, 8 outside roots, closure `fccec3323a4b`, and `check` reads `ZZP7SHIP_OK` on the package. So step 1's "re-derive at the landed bytes" is DONE for this commit; `SHIP_MANIFEST.json` is still made at ship time.
+- **DEFECT FOUND AND FIXED before any pod time: the ship list could never pass `check` on a real package.**
+  - MEASURED 2026-11-06: `derive` pinned the sha256 of files made AFTER it ran. These were the list itself (hashed before being overwritten), its default trace sidecar `refe/p7_ship_list.json.trace.json`, and `SHIP_MANIFEST.json`, which is regenerated at ship time for the landed commit.
+  - The suite's tree readers glob `refe/` and read the manifest, so all three were traced. `check` then read `differs=1..2` on every real package.
+  - The consequence: `p7_pod.sh` line 123 refuses on that, so the P7 chain would have stopped at its first stage on the pod.
+  - The synthetic test missed it because its list sat outside the package and its suite never read the manifest.
+  - **Fix:** those files are presence-only; `REQUIRED_TOP` still requires the manifest.
+  - **Test:** `test_p7_ship_list.py` gains 5 checks (25 total), including two controls: a traced suite that really opens the manifest, and the manifest still required.
+  - **Mutation proof:** the unfixed tool goes RED on exactly the 3 new non-control checks (`differs` on `SHIP_MANIFEST.json` and the list itself).
+- **The P6 read is unaffected by this landing** (`eval/` is untouched here; its layout fix is a7ec6e84, PREREG_P6 Amendment (f)).

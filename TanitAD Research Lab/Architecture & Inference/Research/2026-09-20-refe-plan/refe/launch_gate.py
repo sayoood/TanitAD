@@ -366,7 +366,8 @@ P7_AUX_REQUIRED = {"--aux-drv": None, "--w-aux-drv": "0.1", "--aux-drv-tap": "vi
 # themselves ABSENT on a pod, never skip); `test_p7_integration.py` runs the gate's G-RESERVE against the REAL module on a synthetic P7 tree (clean PASS, planted leaks FAIL) and the pin procedure.
 P7_SUITE_EXTRA = [{"script": "test_p7_head_wiring.py", "args": ["--static"], "token": "ZZP7HEAD_PASS"},
                   {"script": "test_session_reserve.py", "token": "ZZSESSRES_PASS"},
-                  {"script": "test_p7_integration.py", "token": "ZZP7INT_PASS"}]
+                  {"script": "test_p7_integration.py", "token": "ZZP7INT_PASS"},
+                  {"script": "test_p7_chain.py", "token": "ZZP7CHAIN_PASS"}]      # the chain's own test, as refe_p6 carries test_p6_chain.py (2026-11-06, P7-LAUNCH-READY)
 PROFILES["refe_p7"] = {**PROFILES["refe_p6"], "name": "refe_p7", "p7_rules": True,
                        "data_flags": PROFILES["refe_p6"]["data_flags"] + ("--aux-drv-labels",),
                        "suite": PROFILES["refe_p6"]["suite"] + P7_SUITE_EXTRA,
