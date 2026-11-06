@@ -1,0 +1,130 @@
+{
+ "inputs": {
+  "render_ms_per_tick": {
+   "value": 20.0,
+   "class_and_source": "M banked_timing.json: mean render_ms 17.7-21.7 on box 2, 1920x1080, empty condition (objects adds actors: E +0..+50 %)"
+  },
+  "dinov3_ms_per_frame": {
+   "value": 29.0,
+   "class_and_source": "I stack/scripts/dinov3_fp8_encode_ship.py docstring: 4060 bf16 ~2.9 s/episode of ~100 grid frames; box-2 end to end 5.01 s/clip (D3_SCOPING.md)"
+  },
+  "canon_resize_ms": {
+   "value": 15.0,
+   "class_and_source": "E cylindrical_rectify to 416x1024 + bilinear to 256x640; inside refcv7's 313 ms plan, not separable"
+  },
+  "forward_ms": {
+   "value": 15.0,
+   "class_and_source": "E 7.2 M-param model + HACC post-map, batch 1, GPU; T1-kin CPU smoke 14 s / 24 windows (DESIGN_T1_V8F section 7)"
+  },
+  "contention_factor": {
+   "value": 2.5,
+   "class_and_source": "M banked_timing.json: same refcv7 arm plan_ms 314 (scene 1) vs 800 (scene 2)"
+  },
+  "load_s_per_arm_scene": {
+   "value": 15.0,
+   "class_and_source": "E scene decode 2.9 s (M preflight.json) + DINOv3-L and model load"
+  },
+  "ticks_per_rollout": {
+   "value": 50,
+   "class_and_source": "M T2-A harness: 50 ticks at 10 Hz"
+  },
+  "starts_per_scene": {
+   "value": 10,
+   "class_and_source": "E T2-A used 9 (0,17..136); 10 fits the 199-frame clip"
+  },
+  "renders_per_02s_step": {
+   "value": 2,
+   "class_and_source": "M harness renders every 0.1 s tick (set 1 if only policy ticks are rendered)"
+  }
+ },
+ "per_step_ms_0p2s": {
+  "low": 64.0,
+  "central": 99.0,
+  "note": "render x2 + DINOv3 + canon + forward"
+ },
+ "rollout_s_central": 2.475,
+ "arm_scene_s": {
+  "low": 31.0,
+  "central": 39.75,
+  "contended_high": 76.875
+ },
+ "vram_gib": {
+  "renderer_alone_M": 1.355,
+  "both_resident_with_refcv7_M": 2.127,
+  "dinov3_L_bf16_weights_E": 0.5662441253662109,
+  "v8f_fp32_E": 0.02682209014892578,
+  "dinov3_activations_canon_buffers_E": 0.4,
+  "actor_gaussians_E": 0.3,
+  "v8f_t2_total_E": 2.6480662155151364,
+  "fraction_of_8GiB": 0.33100827693939205
+ },
+ "stage1_two_scenes": {
+  "arms": [
+   "C0_s0",
+   "C0_s1",
+   "base",
+   "P10_prior",
+   "zero_control",
+   "camera_blind_control",
+   "render_replay_control"
+  ],
+  "conditions": [
+   "objects",
+   "empty"
+  ],
+  "arm_scene_runs": 28,
+  "wall_min": {
+   "low": 14.466666666666667,
+   "central": 18.55,
+   "contended_high": 35.875
+  },
+  "gates_extra_min_E": 15,
+  "download_gb": 0.0
+ },
+ "stage2_K20": {
+  "scenes": 20,
+  "arms": 8,
+  "arm_scene_runs": 160,
+  "wall_h": {
+   "low": 1.3777777777777778,
+   "central": 1.7666666666666666,
+   "contended_high": 3.4166666666666665
+  },
+  "download_gb_range_members": 12.49765625,
+  "download_gb_full_usdz": 38.0,
+  "screening_scenes_if_p_m1_0.25": 80,
+  "screening_scenes_if_p_m1_0.5": 40,
+  "screening_traffic_mb_E": 320.0
+ },
+ "stage2_K42": {
+  "scenes": 42,
+  "arms": 8,
+  "arm_scene_runs": 336,
+  "wall_h": {
+   "low": 2.8933333333333335,
+   "central": 3.71,
+   "contended_high": 7.175
+  },
+  "download_gb_range_members": 26.245078125,
+  "download_gb_full_usdz": 79.8,
+  "screening_scenes_if_p_m1_0.25": 168,
+  "screening_scenes_if_p_m1_0.5": 84,
+  "screening_traffic_mb_E": 672.0
+ },
+ "stage2_K82": {
+  "scenes": 82,
+  "arms": 8,
+  "arm_scene_runs": 656,
+  "wall_h": {
+   "low": 5.648888888888889,
+   "central": 7.243333333333333,
+   "contended_high": 14.008333333333333
+  },
+  "download_gb_range_members": 51.240390624999996,
+  "download_gb_full_usdz": 155.79999999999998,
+  "screening_scenes_if_p_m1_0.25": 328,
+  "screening_scenes_if_p_m1_0.5": 164,
+  "screening_traffic_mb_E": 1312.0
+ },
+ "download_basis": "M volume.nurec 639,393,135 and 603,238,216 B; full USDZ 1,955,916,532 and 1,835,661,788 B (ls on E:/thor_archive); I STORED zip members allow HTTP Range pulls (STRATEGIC_FAMILY.md: 39/39 members verified); rig+tracks about 2.1+0.5..1.7 MB (M ls)"
+}
