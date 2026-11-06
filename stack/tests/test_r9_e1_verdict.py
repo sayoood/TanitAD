@@ -454,7 +454,9 @@ def test_mapping_keys_are_emitted_by_the_evaluator_and_cited_lines_exist():
     assert not [k for k in legacy if k.startswith("nf_swedge")]
     masked = set(E.nearfield_stats([np.ones((4, E.NF_COLS))]))                                     # a mask-bearing count unit emits the ten swedge keys
     assert {k for k in masked if k.startswith("nf_swedge")} == {"nf_swedge_prec_%s%s" % (t, b) for t in ("", "lv_") for b in ("0_5", "5_10", "10_20", "20_40", "5_20")}
-    emitted = set(E.box_stats(cl)) | legacy | masked
+    edge = set(E.nearfield_stats([np.ones((4, E.NF_COLS + E.EDGE_TOL_N))]))                          # a thresholded read adds PREREG_M1_PEDGEFIT's nf_edge03_* beside rows
+    assert {k for k in edge if k.startswith("nf_edge03")} == {"nf_edge03_%s_%s" % (t, b) for t in ("prec", "rec", "f") for b in ("0_5", "5_10", "10_20", "20_40", "5_20")}
+    emitted = set(E.box_stats(cl)) | legacy | masked | edge
     for a, s in V.ARMS.items():
         for m in s["metrics"]:
             for k in m["keys"]:

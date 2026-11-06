@@ -17,6 +17,9 @@ CLAUSE swept over the table's perception primaries but the arm's own primary key
 has NO row for is COVERED by the primary's named proxies or makes clause 3 incomplete -> never KEEP), (3) the overall KEEP / DROP / NOT-COMPUTABLE with the
 failing clause named, and (4) the refusals (incl. a --lift-valid mask whose sha256 differs from the floor's: the `nf_swedge_prec_lv_*` rows would be read on
 different cells).  The M1 MAP PRIMARY is `nf_swedge_prec_lv_5_20` (hold_r9_e1_mapprim) and exists only on a lift-valid mask.
+BESIDE, NEVER DECIDING (hold_r9_pedgefit2): for M1 and M2a the edge-class P / R / F @ 0.3 m rows `nf_edge03_*` (PREREG_M1_PEDGEFIT; emitted only on a THRESHOLDED
+raster read) are read from this verdict's own paired bootstrap into ``beside_pedgefit`` / the md section 'Beside (PREREG_M1_PEDGEFIT rows 2/3 selector)': not in
+``reads``, clauses 1-3, ``table_keys`` or the clause-3 sweep (a floor without them is not 'uncovered'); NOT-COMPUTABLE with the reason on a read without them.
 
 THE KEEP RULE (REFCV9_DESIGN 4.3, verbatim in ``KEEP_RULE``): keep a lever iff its primary is separated in the good direction (clause 1)
 AND |delta| > 2 x |C1 - C0| on that metric (clause 2) AND no other perception primary is separated worse beyond 2 x its floor (clause 3).
@@ -95,6 +98,11 @@ KEY_SRC = (
     # the M1 map primary (hold_r9_e1_mapprim): per band, then the 5-10 + 10-20 m pooled key; each exists ONLY when a --lift-valid mask was given
     (r"^nf_swedge_prec_(lv_)?(0_5|5_10|10_20|20_40)$", _EVAL, 605, '"nf_swedge_prec_%s%d_%d"'),
     (r"^nf_swedge_prec_(lv_)?5_20$", _EVAL, 606, '"nf_swedge_prec_%s5_20"'),
+    # PREREG_M1_PEDGEFIT's BESIDE rows (hold_r9_pedgefit): edge-class P / R / F @ 0.3 m; one line emits all three kinds, per band and pooled 5-20 m,
+    # and ONLY on a thresholded read (nearfield_stats adds the columns when the evaluator was given --map-thresholds)
+    (r"^nf_edge03_prec_(0_5|5_10|10_20|20_40|5_20)$", _EVAL, 697, '"nf_edge03_prec_"'),
+    (r"^nf_edge03_rec_(0_5|5_10|10_20|20_40|5_20)$", _EVAL, 697, '"nf_edge03_rec_"'),
+    (r"^nf_edge03_f_(0_5|5_10|10_20|20_40|5_20)$", _EVAL, 697, '"nf_edge03_f_"'),
 )
 
 
@@ -106,12 +114,13 @@ def key_src(key: str):
     return None
 
 
-def _spec(mid, text, role, keys=(), better="higher", proxies=(), reason="", would_compute=""):
+def _spec(mid, text, role, keys=(), better="higher", proxies=(), reason="", would_compute="", clause3=True):
     """One metric of an arm's sec. 4.3 row.  ``keys`` are the emitted keys that REALISE it (empty = NOT-COMPUTABLE); ``role`` is
     ``primary`` (clauses 1 and 2 decide on it), ``guard`` (a named non-regression: it must be evaluable, and is covered by clause 3) or
-    ``beside`` (listed in the design 'beside', reported, never decides)."""
+    ``beside`` (listed in the design 'beside', reported, never decides).  ``clause3`` False = a beside row OUTSIDE the keep rule altogether (PREREG_M1_PEDGEFIT's
+    edge-class rows): its keys are not in ``table_keys()`` / clause 3's scope, the sweep skips them, and ``judge`` reads them into ``beside_pedgefit``, not ``reads``."""
     return {"id": mid, "text": text, "role": role, "keys": tuple(keys), "better": better, "proxies": tuple(proxies),
-            "status": "COMPUTABLE" if keys else "NOT-COMPUTABLE", "reason": reason, "would_compute": would_compute}
+            "status": "COMPUTABLE" if keys else "NOT-COMPUTABLE", "reason": reason, "would_compute": would_compute, "clause3": bool(clause3)}
 
 
 #: The M1 MAP PRIMARY (REFCV9_DESIGN 4.3: "corridor sidewalk+edge precision 5-20 m (lift-valid)") as r9_e1_eval emits it since hold_r9_e1_mapprim:
@@ -127,6 +136,26 @@ LV_FLOOR_HINT = (" -- the floor has no lift-valid map rows: it was read without 
 
 def _map_primary(mid="map_primary", role="primary"):
     return _spec(mid, "corridor sidewalk+edge precision 5-20 m (lift-valid)", role, (MAP_PRIMARY_KEY,), "higher", MAP_PROXIES)
+
+
+#: PREREG_M1_PEDGEFIT's BESIDE rows (E0d thin-class protocol, r9_e1_eval.edge_tol_keys): edge-class P / R / F @ 0.3 m of {pedge >= the arm's own FIT level}
+#: against GT class 5, per read band and pooled 5-20 m.  They exist ONLY on a thresholded raster read.  ``clause3=False``: NEVER in clauses 1-3 -- not a primary,
+#: not a guard, not a veto, and a floor that lacks them is not ``missing_uncovered`` -- and they are read from the verdict's OWN paired bootstrap (``_read_beside``),
+#: not from the floor.  Only the pooled F row (``EDGE03_SELECTOR_KEY``) selects between rows 2 and 3 of the PREREG's committed-readings table; nothing else.
+EDGE03_BANDS = ("5_20", "0_5", "5_10", "10_20", "20_40")
+EDGE03_KINDS = (("f", "F"), ("prec", "P"), ("rec", "R"))
+EDGE03_SELECTOR_KEY = "nf_edge03_f_5_20"
+BESIDE_TITLE = "Beside (PREREG_M1_PEDGEFIT rows 2/3 selector)"
+BESIDE_NOTE = ("Edge-class precision / recall / F @ 0.3 m (E0d thin-class protocol: GT edge class 5 dilated by 3 cells; flag = pedge >= the arm's OWN FIT level; "
+               "P over judged cells) per read band and pooled 5-20 m, paired (arm - reference) on this verdict's own episode-cluster bootstrap (the primary's B and "
+               "seed). NEVER decisive: not in clauses 1-3 (not a primary, not a guard, not a veto; a floor without these rows is not 'uncovered'), and the KEEP / "
+               "DROP above does not read them.")
+
+
+def _edge03_specs(mid):
+    return tuple(_spec("%s.beside.edge03_%s_%s" % (mid, kind, band), "edge-class %s@0.3 m %s m (beside)" % (lab, band.replace("_", "-")), "beside",
+                       ("nf_edge03_%s_%s" % (kind, band),), "higher", clause3=False)
+                 for band in EDGE03_BANDS for kind, lab in EDGE03_KINDS)
 
 
 _AP2_ALL = ("ap2m_all", "AP@2 m, head output, no NMS (all ranges)")
@@ -145,7 +174,8 @@ ARMS = {
                              "a tolerance-IoU of class 2 (`code` plane) against the 0.5 m dilated GT lane, bands 0-20 m, in r9_e1_eval"),
                        _spec("M1.beside.edge", "boundary recall @0.3 m (beside)", "beside", (), "higher", (),
                              "no emitted key: r9_e1_eval has no boundary-recall metric",
-                             "recall of GT edge cells (class 5) within 0.3 m of an own boundary cell (`pedge` / `pdrv` planes), in r9_e1_eval")),
+                             "recall of GT edge cells (class 5) within 0.3 m of an own boundary cell (`pedge` / `pdrv` planes), in r9_e1_eval"),
+                       *_edge03_specs("M1")),
            "next_lever": "the `--w-map-fp` fallback E1 arm ('kept only as a fallback E1 arm if M1 misses at 5-20 m', sec. 2.1 line 111); Q1 branch (a): M2 "
                          "gradient share second (sec. 3 line 263); branch (b2): (1) M2, (2) F1, (3) B1, (4) T1 (sec. 3 line 265)",
            "argv_flags": ("--r9-map-banded",),
@@ -156,7 +186,8 @@ ARMS = {
                            "UNVERIFIED: exact-cell precision against a 1-cell GT edge penalises a banded arm's dilated (~0.5 m) `pedge` heatmap; flags use "
                            "probability planes >= 128, not the FIT-split per-channel thresholds",)},
     "M2a": {"kind": "lever", "variable": "M1 + --w-map-hires 0.511 (the 0.05 layer2-share dose; argv lever block)", "ref": "M1", "allowed": ("M1",),
-            "metrics": (_map_primary("M2a.primary"), _spec("M2a.guard.ap2", "box AP@2 m not worse (the ladder's cost)", "guard", ("ap2m_all",))),
+            "metrics": (_map_primary("M2a.primary"), _spec("M2a.guard.ap2", "box AP@2 m not worse (the ladder's cost)", "guard", ("ap2m_all",)),
+                        *_edge03_specs("M2a")),
             "next_lever": "read M2b (the other dose; sec. 2.2 line 143: 'the weight falls back to the E1 dose arms'); if both doses fail M1 stands and "
                           "a dynamic (GradNorm-style) weight is 'held as a fallback arm only' (sec. 2.2 lines 148-149)",
             "argv_flags": ("--r9-map-banded",),
@@ -276,8 +307,14 @@ DESIGN_ARMS = tuple(ARMS)
 
 
 def table_keys() -> set:
-    """Every emitted key that some sec. 4.3 arm names as primary / guard / beside (the 'perception primaries' of the table)."""
-    return {k for a in ARMS.values() for m in a["metrics"] for k in m["keys"]}
+    """Every emitted key that some sec. 4.3 arm names as primary / guard / beside (the 'perception primaries' of the table) -- but not the
+    ``clause3=False`` beside rows (PREREG_M1_PEDGEFIT's edge-class P / R / F @ 0.3 m): those are outside the keep rule (:func:`beside_only_keys`)."""
+    return {k for a in ARMS.values() for m in a["metrics"] if m["clause3"] for k in m["keys"]}
+
+
+def beside_only_keys() -> set:
+    """The emitted keys some arm reports ONLY beside (``clause3=False``): never in clause 3's scope, never swept by it (not even as informative)."""
+    return {k for a in ARMS.values() for m in a["metrics"] if not m["clause3"] for k in m["keys"]}
 
 
 def clause3_scope() -> set:
@@ -423,6 +460,7 @@ def clause3_vetoes(floor: dict, pair_rows: dict, exclude: set, in_table: set) ->
     # It is listed, and it is COVERED only when it is a primary's key whose named proxies all have a usable floor row (the map primary on a
     # mask-less floor, covered by the sidewalk-only nf_prec_5_10 / nf_prec_10_20); any other missing key leaves clause 3 INCOMPLETE.
     cover = primary_proxies()
+    beside = beside_only_keys()                              # PREREG_M1_PEDGEFIT's edge rows: reported in their own section, never swept here
     out["missing_from_floor"], out["missing_covered"], out["missing_uncovered"] = [], [], []
     for k in sorted(set(in_table) - set(exclude)):
         if k in floor["rows"]:
@@ -435,6 +473,8 @@ def clause3_vetoes(floor: dict, pair_rows: dict, exclude: set, in_table: set) ->
             out["missing_uncovered"].append(k)
     for m in sorted(floor["rows"]):
         if m in exclude:
+            continue
+        if m in beside:                                      # a thresholded floor carries nf_edge03_*: not a veto, not 'no floor', not even informative
             continue
         frow = floor["rows"][m]
         if frow.get("undefined") or frow.get("higher_is_better") is None:
@@ -487,12 +527,62 @@ def control_outcome(arm: str, ref: str, primary: dict) -> str:
     return "n/a"
 
 
-def judge(arm: str, ref: str, floor: dict, pair_rows: dict) -> dict:
-    """The verdict from LITERAL rows. ``pair_rows``: metric -> {ref, arm, delta, ci_lo, ci_hi, separated, undefined}."""
+def _beside_absent(ctx) -> str:
+    """Why a beside edge row has NO paired row in this read (state NOT-COMPUTABLE, with the reason; never a guess, never 0)."""
+    if ctx is None:
+        return ("no paired row in this read: the edge-class F@0.3 m rows are emitted only by a THRESHOLDED raster read (--rast-arm / --rast-ref with "
+                "--map-thresholds-arm / -ref); a fixed-128 read, or an evaluator that predates hold_r9_pedgefit, has none")
+    if not ctx.get("rasters"):
+        return "no raster dirs were given to this verdict (--rast-arm / --rast-ref): the edge rows are counted on the rasters"
+    if not ctx.get("thresholds"):
+        return ("this read is at the fixed 128 (no --map-thresholds-arm / -ref): the edge-class P / R / F @ 0.3 m is defined at the arm's OWN FIT pedge level, "
+                "so the evaluator emits it only on a thresholded read")
+    return "the thresholded read emitted no such row (an evaluator that predates hold_r9_pedgefit, or rasters without a pedge plane)"
+
+
+def _read_beside(floor: dict, pair_rows: dict, key: str, ctx) -> dict:
+    """Read ONE never-deciding beside row from the verdict's own PAIRED row: delta, 95 % CI, separated, direction (higher is better). The floor is
+    context only (``floor_context``, when it has a usable row for the key) and decides nothing. States: READ / UNDEFINED / NOT-COMPUTABLE."""
+    prow = pair_rows.get(key)
+    if prow is None:
+        return {"key": key, "state": "NOT-COMPUTABLE", "why": _beside_absent(ctx)}
+    if prow.get("undefined") or not _finite(prow.get("delta")):
+        return {"key": key, "state": "UNDEFINED", "why": "undefined on the arm-vs-reference windows (no GT edge cell in the band / no judged flag): never read as 0"}
+    d, sep = float(prow["delta"]), bool(prow["separated"])
+    frow = floor["rows"].get(key)
+    fc = None
+    if frow is not None and not frow.get("undefined") and frow.get("higher_is_better") is not None and _finite(frow.get("c0")) and _finite(frow.get("c1")):
+        fc = {"c0": _num(frow["c0"]), "c1": _num(frow["c1"]), "abs_c1_minus_c0": _num(abs(frow["c1"] - frow["c0"]))}
+    return {"key": key, "state": "READ", "ref_point": _num(prow.get("ref")), "arm_point": _num(prow.get("arm")), "delta": d, "ci_lo": _num(prow.get("ci_lo")),
+            "ci_hi": _num(prow.get("ci_hi")), "separated": sep, "direction": "better" if d > 0 else "worse" if d < 0 else "flat",
+            "reading": "SEPARATED WORSE" if (sep and d < 0) else "SEPARATED BETTER" if (sep and d > 0) else "NOT SEPARATED", "floor_context": fc}
+
+
+def _beside_block(arm: str, ref: str, rows: list) -> dict:
+    """The ``beside_pedgefit`` block: every ``clause3=False`` row of the arm, and the SELECTOR reading of the pooled F@0.3 m 5-20 m row (PREREG_M1_PEDGEFIT:
+    it selects between rows 2 and 3 of the committed-readings table when the decisive M1-vs-C0 verdict is a DROP on clause 1-2 -- and nothing else)."""
+    sel = next((r for r in rows if r["key"] == EDGE03_SELECTOR_KEY), None)
+    worse = None if sel is None or sel["state"] != "READ" else bool(sel["separated"] and sel["delta"] < 0)
+    applies = ("PREREG_M1_PEDGEFIT: if M1-vs-C0 is a DROP on clause 1-2, NOT separated worse -> committed-readings row 2, separated WORSE -> row 3"
+               if (arm, ref) == ("M1", "C0") else
+               "reported for %s vs %s; PREREG_M1_PEDGEFIT's rows 2/3 are the readings of the decisive M1-vs-C0 verdict" % (arm, ref))
+    return {"title": BESIDE_TITLE, "note": BESIDE_NOTE, "decides": False, "rows": rows,
+            "selector": {"key": EDGE03_SELECTOR_KEY, "state": None if sel is None else sel["state"], "reading": None if sel is None else sel.get("reading"),
+                         "separated_worse": worse, "applies": applies}}
+
+
+def judge(arm: str, ref: str, floor: dict, pair_rows: dict, ctx=None) -> dict:
+    """The verdict from LITERAL rows. ``pair_rows``: metric -> {ref, arm, delta, ci_lo, ci_hi, separated, undefined}.  ``ctx`` (optional, from
+    ``build_verdict``): ``{"rasters": bool, "thresholds": bool}``, only to word WHY a beside edge row is absent. The ``clause3=False`` specs are read
+    into ``beside_pedgefit`` and touch nothing else (not ``reads``, not a clause, not the verdict)."""
     spec = ARMS[arm]
-    reads, named_guards, unevaluable_guards = [], [], []
+    reads, named_guards, unevaluable_guards, beside = [], [], [], []
     primary = None
     for m in spec["metrics"]:
+        if not m["clause3"]:
+            beside.append(dict({"id": m["id"], "text": m["text"], "role": m["role"], "keys": list(m["keys"]), "status": m["status"]},
+                               **_read_beside(floor, pair_rows, m["keys"][0], ctx)))
+            continue
         rec = {"id": m["id"], "text": m["text"], "role": m["role"], "keys": list(m["keys"]), "status": m["status"], "proxies": list(m["proxies"])}
         if m["status"] == "COMPUTABLE":
             rec.update(_read_key(floor, pair_rows, m["keys"][0]))
@@ -542,6 +632,8 @@ def judge(arm: str, ref: str, floor: dict, pair_rows: dict) -> dict:
               for g in named_guards]
     out = {"reads": reads, "clause3": c3, "failing_clauses": failing, "not_computable": not_computable, "alternative_reading": alt,
            "named_guards": strict}
+    if beside:                                               # additive and arm-specific: an arm with no clause3=False spec has exactly the keys it had
+        out["beside_pedgefit"] = _beside_block(arm, ref, beside)
     if spec["kind"] == "control":
         if prim_ok:
             out["verdict"], out["control_outcome"] = "CONTROL-READ", control_outcome(arm, ref, primary)
@@ -696,7 +788,7 @@ def build_verdict(floor_path, paired, eval_arm, eval_ref, arm, ref=None, *, rast
             raise Refused("; ".join(problems))
         out["n_windows"], out["n_clips"], out["gate"] = e_arm.get("n_windows"), e_arm.get("n_clips"), e_arm.get("gate")
         out["boxes_per_object_noNMS_info"] = _bpo_info(e_arm, e_ref)
-        out.update(judge(arm, ref, floor, pair_rows))
+        out.update(judge(arm, ref, floor, pair_rows, ctx={"rasters": rast_arm is not None, "thresholds": bool(thr_arm)}))
         out["next_lever_on_drop"] = ARMS[arm]["next_lever"]
         out["ambiguities"] = list(ARMS[arm]["ambiguities"])
     except Refused as e:
@@ -715,8 +807,9 @@ def _mapping_entry(arm: str) -> dict:
     s = ARMS[arm]
     return {"arm": arm, "kind": s["kind"], "variable": s["variable"], "reference_default": s["ref"], "references_accepted": list(s["allowed"]),
             "argv_flags": list(s["argv_flags"]),
-            "metrics": [{"id": m["id"], "text": m["text"], "role": m["role"], "status": m["status"], "keys": list(m["keys"]),
-                         "proxies": list(m["proxies"]), "reason": m["reason"], "would_compute": m["would_compute"]} for m in s["metrics"]]}
+            "metrics": [dict({"id": m["id"], "text": m["text"], "role": m["role"], "status": m["status"], "keys": list(m["keys"]),
+                              "proxies": list(m["proxies"]), "reason": m["reason"], "would_compute": m["would_compute"]},
+                             **({} if m["clause3"] else {"clause3": False})) for m in s["metrics"]]}
 
 
 # ======================================================================================================================== rendering
@@ -749,6 +842,32 @@ def _lift_valid_line(v: dict) -> str:
         return "Map primary mask: none, and the floor has none: no `nf_swedge_*` row exists (the map primary reads NO-FLOOR -> NOT-COMPUTABLE)."
     return ("Map primary mask (arm-independent lift-valid): sha256 `%s` (%s, %s episodes) -- %s the floor's." %
             (m.get("sha256"), m.get("source"), m.get("n_episodes"), "EQUAL to" if lv.get("same_mask") else "NOT EQUAL to"))
+
+
+def _beside_md(b: dict) -> list:
+    """The short 'Beside (PREREG_M1_PEDGEFIT rows 2/3 selector)' section: READ rows as a table, every other state as one line with its reason."""
+    L = ["", "## " + b["title"], "", b["note"], ""]
+    read = [r for r in b["rows"] if r["state"] == "READ"]
+    if read:
+        L += ["| metric | emitted key | ref | arm | delta (arm - ref) | 95 % CI | separated? | direction | floor abs(C1 - C0), context only |", "|---|---|---|---|---|---|---|---|---|"]
+        for r in read:
+            fc = r.get("floor_context")
+            L.append("| %s | `%s` | %s | %s | %+.6g | [%s, %s] | %s | %s | %s |" % (r["text"], r["key"], _f(r["ref_point"]), _f(r["arm_point"]), r["delta"], _f(r["ci_lo"]),
+                                                                              _f(r["ci_hi"]), "yes" if r["separated"] else "no", r["direction"],
+                                                                              _f(fc["abs_c1_minus_c0"]) if fc else "no floor row"))
+        L.append("")
+    for st in ("NOT-COMPUTABLE", "UNDEFINED"):
+        grp = [r for r in b["rows"] if r["state"] == st]
+        for why in sorted({r["why"] for r in grp}):
+            L.append("* **%s** (%d row(s), e.g. `%s`): %s." % (st, sum(1 for r in grp if r["why"] == why), next(r["key"] for r in grp if r["why"] == why), why))
+    s = b["selector"]
+    if s["state"] == "READ":
+        r = next(x for x in b["rows"] if x["key"] == s["key"])
+        L += ["", "Selector `%s` (pooled 5-20 m F@0.3 m, paired arm - ref): delta %+.6g [%s, %s], %s -> separated worse: **%s**. %s. It selects nothing else." % (
+            s["key"], r["delta"], _f(r["ci_lo"]), _f(r["ci_hi"]), "separated" if r["separated"] else "not separated", "yes" if s["separated_worse"] else "no", s["applies"])]
+    else:
+        L += ["", "Selector `%s`: **%s**. %s." % (s["key"], s["state"], s["applies"])]
+    return L
 
 
 def render_md(v: dict) -> str:
@@ -825,6 +944,8 @@ def render_md(v: dict) -> str:
         for k in c3["missing_uncovered"]:
             L.append("* `%s` -- **UNCOVERED**: floor has no row for %s: re-read the floor with the current eval. Clause 3 is incomplete, so this verdict "
                      "cannot be KEEP (a DROP from another clause still stands)." % (k, k))
+    if v.get("beside_pedgefit"):
+        L += _beside_md(v["beside_pedgefit"])
     if v.get("boxes_per_object_noNMS_info") and v["arm"] in ("B3", "B3p"):
         b = v["boxes_per_object_noNMS_info"]
         L += ["", "Information (not the keep rule): boxes per detected object, no NMS, at the fixed gate -- arm %s, reference %s. %s"
