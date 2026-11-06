@@ -303,3 +303,16 @@ component carries a paired CI.
 5. **L40 step time (MEASURED, the G-LIVE-MEM instrument run, accum 64, 6 workers).**
    - 51.6 / 51.1 / 50.5 s per optimizer step after the first, against the A40's 58.6 s median.
    - This comes from an instrument run, not the training run. The training rate is re-measured after about 20 steps.
+
+### Note 2026-11-06 to Amendment (d) item 4: the NUL lines are now VERIFIED
+
+- MEASURED on the pod's `run/metrics.jsonl` (19,219 lines). Each NUL-padded line is a NUL run followed by an **intact `resume` event**:
+  - file line 12,660: 634 NULs + `{"event": "resume", "step": 4136, …}`;
+  - file line 13,263: 91 NULs + `{"event": "resume", "step": 4315, …}`.
+  The NULs overwrote the torn tail of the append before each resume. No step row is lost, because each segment was re-trained from its checkpoint.
+- **The read's instruments do not read this file.** `stage2_sft.py`, `stage3_full.py`, `selection_quality.py` and `command_adherence.py` read the checkpoint and the navtest dumps. `train.py`'s parse sites read banks only.
+- The readers that do read it, and how they behave, are pinned by `raw/2026-11-06-p6-l40-gate/test_metrics_nul.py`, `ZZNUL PASS 5/5`, with a control that must raise:
+  - `restage_helpers.last_ckpt` is correct;
+  - `p6_overlap.step_times` skips the lines;
+  - the strict pattern of `diag_onpolicy_train.py:305` RAISES.
+- ⚠️ **Any interruption count from this file must strip NULs.** A `startswith("{")` reader silently drops both resume events.

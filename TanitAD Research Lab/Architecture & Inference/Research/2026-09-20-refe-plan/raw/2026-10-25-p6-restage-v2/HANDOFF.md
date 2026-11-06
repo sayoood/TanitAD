@@ -13,7 +13,8 @@ Tested: `bash -n`; `RESTAGE_DRY=1` default and with `P6_RESUME_REV=fc2adb00b59e 
 5. After "training": confirm `ZZRS_ARGS_OK`, `ZZGUARD_OK` in `guard.log`, first `step` lines in `$RUN/metrics.jsonl`.
 
 ## Open risks (UNVERIFIED, all fail loud)
-* D9 file count 107,860 is INHERITED from the packer's log (`D9_FILES_EXPECT` overrides); a nonzero `built=` in the prebuild's no-op cache stage STOPS (`RS_ALLOW_D9_BUILT=1` accepts).
+* D9 file count: **103,037** (MEASURED 2026-11-06 on the extracted tar, = the rank-0 rows; the packer log's 107,860 was wrong and stopped the L40 restage once; `D9_FILES_EXPECT` overrides).
+  A nonzero `built=` in the prebuild's no-op cache stage STOPS (`RS_ALLOW_D9_BUILT=1` accepts). On the L40 the no-op stage reported `built=103037` with **0 parts rewritten** (original 2026-10-22 mtimes, 9 s): the word `built` counts parts present, not parts written.
 * Hard links on the new volume (rehearsed on the old MooseFS); `--how link` STOPS otherwise: then decide copy (~9 GB) with the MM.
 * `train_grow.tar.zst` member list (7 files, calib_table.json) not enumerated; relies on the chain's own restore.
 * DB fetch tries system python3 first (`--plan` smoke), falls back to the teacher env. Teacher-env build time, DB/pixel bandwidth: no measured rate.

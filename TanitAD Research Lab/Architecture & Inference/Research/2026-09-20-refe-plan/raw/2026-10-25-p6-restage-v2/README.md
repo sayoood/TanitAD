@@ -10,7 +10,7 @@
 | dbs (B) | 30-60 | 1,192 DBs from nuPlan S3 to **local** `/root/tad`, symlink back; the tool CRC-verifies |
 | pix (C) | 30-60, overlapped | 32 shards, authenticated `curl -f`, local disk + symlink, `.done_N` |
 | quota (E) | 3-5 | real 110 GiB write on /workspace (df cannot see the quota) |
-| d9 (D) | 10-18 | `curl -f`; size 36,282,746,880; sha256 == HF LFS oid; first member `metric_cache/`; 107,860 files; **0 lane-rank files** |
+| d9 (D) | 10-18 | `curl -f`; size 36,282,746,880; sha256 == HF LFS oid; first member `metric_cache/`; 103,037 files (MEASURED 2026-11-06; the packer log's 107,860 was wrong); **0 lane-rank files** |
 | bank3c (D) | 1-2 | size/sha; `targets_rank0` daa23b96, `rank1` 2a63acc2 (the bank P6 trained on) |
 | restore (A') | ~4 (measured) | the chain's own `p2r_sync restore` (train_grow + calib, md5-pinned) |
 | prebuild | 25-35 | bcc04b5 chain, `STOP_AFTER=cache`: mints `commands.ok`/`cache.ok`, rebuilds pre-3C `train_grow_cmd` (shas daa23b96 / 2f3e4613), cache stage must build **0** parts, resume point verified from disk |

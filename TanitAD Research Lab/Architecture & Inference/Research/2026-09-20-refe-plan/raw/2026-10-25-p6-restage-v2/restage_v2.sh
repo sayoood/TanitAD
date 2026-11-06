@@ -28,7 +28,7 @@ PKGT=$W/refe-plan-p6; PKGB=$W/refe-plan-p6-prebuild; D7PKG=$W/ops/d7fix/pkg
 BANKS_URL=https://huggingface.co/datasets/Sayood/tanitad-refe-navtrain-banks/resolve/main
 D9_NAME=refe_d9_metric_cache_newpod_2026-10-22.tar; D9_SIZE=36282746880
 D9_SHA=2bc68e31b179e134a99e53d8a16d09f67dd48a28139edecd7eecebea2d13f624    # LFS oid, MEASURED 2026-10-25 from the HF tree API (prefix 2bc68e31b179e134 = the PI's note)
-D9_FILES="${D9_FILES_EXPECT:-107860}"                                       # the packer's own `find metric_cache -type f | wc -l` (d9cache_hf.sh log, 2026-10-22)
+D9_FILES="${D9_FILES_EXPECT:-103037}"                                       # MEASURED 2026-11-06 on the extracted tar: 103,037 parts (= the rank-0 rows). The packer log's 107,860 was wrong and stopped the L40 restage
 C3_NAME=refe_train_grow_cmd_3c.tar.zst; C3_SIZE=217062290
 C3_SHA=8b965193c23a5afe78b97a125a07e162838f5479ba4dccab227f4450ace7074d
 S0=daa23b962e9513673347694e097fb714a53b646c4d402802d6d7b96354c0bc5e        # rank0, identical in the pre-3C and the 3-C bank
@@ -36,9 +36,9 @@ S1IN=2f3e461391d7bbc6c92a4153ef1837943c458d9635aad13fdb27b74a46035898      # pre
 S1OUT=2a63acc2f63404818939b21d45cfa27efb5412cbefdf38e14aeb8673598cf409     # 3-C rank1
 PODH_SHA=2d26ea957d9a15daf133d8e4bd0192e86dc26f337291b286b669f4999b7a6efa   # pod_helpers.py (repo blob at the tip, == the rehearsed twinfix copy)
 TIP_TREE12=b0fad37d9704; TIP_FILES=272                                      # SHIP_MANIFEST of the tip package on the 2026-10-21 pod (the identity P6 trained under)
-ARGS_SHA=570619873b1ebaa0                                                   # the chain's ARGS sha for the run (logged by the chain: "ARGS sha ...")
+ARGS_SHA="${RS_EXPECT_ARGS_SHA:-570619873b1ebaa0}"                            # the chain's ARGS sha (logged as "ARGS sha ..."). --label-workers is IN it but is NOT a train.py identity key (train.py:996): 13 workers -> f74aee47cf0b708f (PREREG_P6 Amendment (e))
 TWINS=21821; RANKS_WANT="1 2 3"
-NP="${RS_NP:-8}"; PIX_PAR="${RS_PIX_PAR:-2}"; DB_JOBS="${RS_DB_JOBS:-8}"; LW="${RS_LABEL_WORKERS:-6}"   # LW=6 reproduces ARGS sha 570619873b1ebaa0
+NP="${RS_NP:-8}"; PIX_PAR="${RS_PIX_PAR:-2}"; DB_JOBS="${RS_DB_JOBS:-8}"; LW="${RS_LABEL_WORKERS:-6}"   # LW=6 reproduces ARGS sha 570619873b1ebaa0. On the L40 (2026-11-06) 6 FAILED G-LIVE-LAB (stall 5.4 % > 5 %): use the chain's CORES-2 + RS_EXPECT_ARGS_SHA
 LOCAL_NEED_GB="${LOCAL_NEED_GB:-360}"; WS_NEED_GB="${WS_NEED_GB:-110}"
 TWIN_BANK="${RS_TWIN_BANK:-pre3c}"
 P6REPO="${P6_REPO:-Sayood/tanitad-refe-p6-paper-faithful}"
@@ -218,7 +218,7 @@ s_final() {
   python3 $HERE/restage_helpers.py guard --metrics $RUN/metrics.jsonl --offset "$off" --wait-s 14400 --lines 5 --alert $O/ALERT_COVERAGE.txt >> $O/guard.log 2>&1 &
   local GPID=$!
   ( for i in $(seq 1 720); do l="$(tail -c +$((coff + 1)) $P6/chain.log 2> /dev/null | grep -m1 'ARGS sha')"; [ -n "$l" ] && break; sleep 10; done
-    case "$l" in *"ARGS sha $ARGS_SHA"*) log "ZZRS_ARGS_OK $l" ;; *) echo "ARGS sha line: '$l' (expected $ARGS_SHA)" > $O/ALERT_ARGS.txt; log "ZZRS_ALERT ARGS sha differs from $ARGS_SHA: the trainer's own preflight will refuse a changed identity" ;; esac ) &
+    case "$l" in *"ARGS sha $ARGS_SHA"*) log "ZZRS_ARGS_OK $l" ;; *) echo "ARGS sha line: '$l' (expected $ARGS_SHA)" > $O/ALERT_ARGS.txt; log "ZZRS_ALERT ARGS sha differs from $ARGS_SHA: a changed --label-workers alone is NOT a changed run (not a train.py identity key); any other difference is" ;; esac ) &
   ( set -a; . $W/ops/p6_start.env; set +a
     HF_TOKEN="$(cat <TOKEN_FILE>)" bash $PKGT/refe/p6_pod.sh ) >> $P6/p6_stdout.log 2>&1 < /dev/null
   local rc=$?; kill $GPID 2> /dev/null
@@ -283,7 +283,7 @@ track_quota() {
   mark quota "$n GiB written"
 }
 track_d9() {
-  step d9 "10-18 min (ESTIMATED: 36 GB at >=100 MB/s + sha256 + extract of 107,860 files)" "FETCH the D9 metric-cache tar (instead of a 5.2 CPU-h rebuild), verify, extract into refe_navtrain/metric_cache" \
+  step d9 "10-18 min (ESTIMATED: 36 GB at >=100 MB/s + sha256 + extract of 103,037 files)" "FETCH the D9 metric-cache tar (instead of a 5.2 CPU-h rebuild), verify, extract into refe_navtrain/metric_cache" \
     "curl -f; size == $D9_SIZE and sha256 == $D9_SHA (HF LFS oid)|first tar member is 'metric_cache/' (layout: metric_cache/<log>/<token>.pkl.xz, measured by HTTP Range)|extracted file count == $D9_FILES|ZERO lane-rank files in the extracted cache (no wrong-route twins)" || return 0
   local f=$LOCAL/$D9_NAME; mkdir -p $NB
   fetch_file "$BANKS_URL/$D9_NAME" $f $D9_SIZE || fail "D9 tar fetch (fetch_err.log)"
