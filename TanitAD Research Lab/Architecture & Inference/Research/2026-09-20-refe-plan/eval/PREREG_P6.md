@@ -256,3 +256,27 @@ component carries a paired CI.
      - they are shown math-equivalent: fixed-batch loss, gradient and one-step parameter delta within the baseline's own run-to-run floor, and online labels bit-identical;
      - they are disclosed in a further amendment before they run.
    - A lever that changes the recipe (resolution, proposals, frozen layers, precision below bf16, schedule, sampling) is not P6. It is a new arm and a PI decision.
+
+## Amendment 2026-11-06 (d): the resume from step 6,266 on an L40, written BEFORE the L40 trains a step
+
+**The endpoint, comparators, estimator, rule, goal bar, four families and next-arm table above are UNCHANGED, and so is the training argv.** This amendment discloses the third interruption and a hardware change.
+
+1. **Interruption (MEASURED, HF `Sayood/tanitad-refe-p6-paper-faithful` main).**
+   - The Amendment (c) re-run trained from step 2,603 to step **6,266** (epoch 15 of 25) on the migrated A40. Its last push was 2026-10-27 17:57:09Z; the pod then stopped.
+   - The last `ckpt` event is step 6,266, equal to the last trained step, so no steps are lost.
+   - Scorer-target coverage over steps 2,603–6,266 was `no_parts` **0 of 944,101 sets**. The Amendment (c) defect stayed fixed for the whole segment.
+   - The median step time was 58.6 s.
+2. **Hardware change, disclosed.** The run resumes on an **NVIDIA L40** (Ada, 48 GB), not an A40 (Ampere).
+   - The pod has a cgroup CPU quota of 15.3, 133 GiB RAM, and local disk only (no network volume).
+   - Compiled kernels and bf16 accumulation order may differ by architecture. The recipe does not change: same argv, same data, same schedule.
+   - `--label-workers` stays pinned at 6 (`P6_LABEL_WORKERS=6`), the value of every earlier segment, so the argv and its sha are the run's own. The chain would otherwise derive 13 from the larger quota.
+   - Whether the resumed data order equals an uninterrupted run's is still **UNVERIFIED**, as in the earlier amendments.
+3. **Restage.** The fresh pod is rebuilt by `raw/2026-10-25-p6-restage-v2/restage_v2.sh`:
+   - the D9 metric cache and the 3-C bank are FETCHED from `Sayood/tanitad-refe-navtrain-banks` (size, sha256 and layout checked; 3-C rank0 `daa23b96…`, rank1 `2a63acc2…`);
+   - the pre-3C bank is rebuilt by the `bcc04b5` prebuild and checked against its shas;
+   - the twin parts are built, then linked into `metric_cache` with the D7 check passing at K = 1, 2, 3, before the chain starts;
+   - `P6_D7_FALLBACK=0`, and the `no_parts` guard runs on the first labeller events.
+   Pod-side deviations from the tested driver are recorded beside it (`pod_l40.diff`).
+4. **Data-integrity note for the read.** `run/metrics.jsonl` holds two NUL-padded lines (file lines 12,660 and 13,263), left by a crash during an append on the old pod's network volume.
+   - They are not training data and change nothing in the run.
+   - Every reader of `metrics.jsonl` must skip non-JSON lines. Whether the read's instruments already do is **UNVERIFIED**, and must be checked before the read.
