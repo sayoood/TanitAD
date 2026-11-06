@@ -662,6 +662,28 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
   MEASURED 2026-11-05. ⇒ key on the chain's own stop markers (` STOP-`, `REFUSED`, `ABORT`, `LOCK-TIMEOUT`), never on a verdict word. Same
   family as the polling-monitor entry at the top of this list: the matched token must be one only a failure emits.
 
+- ⛔ **A TEST RUN ON A STACK-ONLY TREE CANNOT CLEAR A CHANGE FOR THE LAUNCH GATE: tests that need the research package SKIP there and FAIL
+  on the full-commit archive the gate judges.** MEASURED 2026-11-05: v8F's `6ece77f` added `level_head` / `w_level` to `V8FMiniConfig` and
+  reported its patched suite clean, but `test_v8f_flat.py` (3) and `test_v8f_oacc.py` (2) build the SAVED pre-change module from
+  `TanitAD Research Lab/.../raw/`, which a stack-only tree lacks (`needs_ref` skips them). On the dev box's full archive all five raised
+  `TypeError: ... unexpected keyword argument 'level_head'`; `judge_pinned_run` fails on ANY pinned failure, so every RefCV9 E1 arm at
+  `6b8bf88` was refused and a whole segment trained nothing. Fixed in `f702df07` (which also had to name `lead_head` / `w_lead` / `aux_cond`
+  from `83c9ee0` and split the built-lever dict). ⇒ **verify a change to a config, a model or a saved-module test on a FULL `git archive`**,
+  or at least with the research package's `raw/` dirs and `Project Steering/` present.
+- ⛔ **A FAILED dev-box G-SUITE-PINNED IS NEVER SHIPPED TO THOR, so the chain cannot see it: it sits in its 4 h `PINNED_WAIT` per arm.**
+  `r9gate3_devbox_pinned.sh` ships only PASS evidence; `r9gate3_chain.sh` waits for a file. MEASURED 2026-11-05/06: segment `6b8bf88` would
+  have idled B3 -> M1 -> M2a until ~05:30Z on a commit that could never pass. ⇒ when the dev-box evidence is a deterministic FAIL, the MM ends
+  the segment (a `STOP-` line in `CHAIN_STATUS.txt`, then kill the sleeping chain bash) and restarts at the fixed tip; never wait it out.
+- **A WMI launch of the pinned driver WITHOUT `ProcessStartupInformation` dies at its first fork.** MEASURED 2026-11-05: two direct
+  `Invoke-CimMethod Win32_Process Create` launches died within seconds -- cygwin `child_copy ... Win32 error 299` + *"couldn't create signal
+  pipe"*, then a `^C` in the log -- while `r9gate3_launch_pinned.ps1` (CreateFlags `0x08000200`: new process group, no window) ran the same
+  command to completion. ⇒ launch the pinned driver only through `r9gate3_launch_pinned.ps1`.
+- **A restart re-runs the dev-box suite for EVERY arm and rewrites Thor's evidence dir (`rm -rf` + extract) about 80 min per arm later** --
+  including an arm whose evidence a pre-run already shipped, and possibly while that arm's final gate (~30-40 min) is reading it.
+  MEASURED 2026-11-06: B3's gate ran 03:23-03:50Z and the restart driver's B3 rewrite was due ~03:51Z; it was stopped and relaunched for the
+  other arms only. ⇒ after pre-running an arm's pinned suite, relaunch the restart's driver WITHOUT that arm
+  (`r9gate3_launch_pinned.ps1 -Arms "<the rest>"`).
+
 ## Git hygiene — the mistake that has now happened twice
 
 **`git commit` and `git commit --amend` both commit the ENTIRE INDEX, not the files you
