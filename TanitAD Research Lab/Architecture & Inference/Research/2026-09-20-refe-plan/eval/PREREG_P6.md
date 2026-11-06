@@ -280,3 +280,26 @@ component carries a paired CI.
 4. **Data-integrity note for the read.** `run/metrics.jsonl` holds two NUL-padded lines (file lines 12,660 and 13,263), left by a crash during an append on the old pod's network volume.
    - They are not training data and change nothing in the run.
    - Every reader of `metrics.jsonl` must skip non-JSON lines. Whether the read's instruments already do is **UNVERIFIED**, and must be checked before the read.
+
+## Amendment 2026-11-06 (e): `--label-workers` 6 -> 13 for the L40 segment, written BEFORE the L40 trains a step
+
+**The endpoint, comparators, estimator, rule, goal bar, four families, next-arm table and every recipe flag above are UNCHANGED.** One throughput knob changes, and this amendment discloses it.
+
+1. **The refusal (MEASURED, banked in `raw/2026-11-06-p6-l40-gate/`).**
+   - The first L40 chain ran at commit `f2f604f`, ARGS sha `570619873b1ebaa0`, `--label-workers 6`. It passed every launch-gate check except one:
+     - **G-LIVE-LAB: GPU stall 5.4 % of one window, above the 5 % bar** (`FAIL_f2f604f5d806.json`).
+   - The judged windows of the G-LIVE-MEM run (accum 64) read 0.71 / **5.36** / 3.28 / 1.48 %. The first window is excluded by the gate's rule.
+   - No PASS token was minted, so no training step was taken. The gate refused correctly.
+2. **The lever.** `--label-workers` goes from 6 to **13**, the chain's own derivation (`CORES - 2` under the pod's `cpu.max` of 15.3; `p6_pod.sh:203`).
+   - Amendment (d) pinned 6 to keep the chain's ARGS sha. That protected a log identity, not the run's: `label_workers` is **not** in `train.py`'s `IDENTITY_ARGS` (`train.py:996`), so the trainer does not treat it as part of the run's identity.
+   - The labels are per proposal. G-LIVE-LAB's identity check re-proves them bit for bit at the launch worker count before any token is minted.
+   - The 5 % bar is unchanged, and no gate check is altered.
+3. **What changes in the record.**
+   - The chain's ARGS sha changes from `570619873b1ebaa0` (steps 1-6,266) to the value the chain logs at relaunch. The read records it.
+   - Steps 6,267-10,075 train with 13 label workers. This changes throughput only: the label of any proposal is the same.
+4. **If the gate refuses again at 13, the run does not start.** The next levers, in order:
+   - the labeller's thread count;
+   - then `--label-chunks`. It is a required gate flag at 2, so changing it needs a gate re-registration and a PI decision.
+5. **L40 step time (MEASURED, the G-LIVE-MEM instrument run, accum 64, 6 workers).**
+   - 51.6 / 51.1 / 50.5 s per optimizer step after the first, against the A40's 58.6 s median.
+   - This comes from an instrument run, not the training run. The training rate is re-measured after about 20 steps.

@@ -1,0 +1,194 @@
+{
+ "binding": {
+  "argv": [
+   "--backbone",
+   "vitl16",
+   "--targets",
+   "/workspace/data/refe_navtrain/train_grow_cmd_3c",
+   "--images",
+   "/workspace/data/navtrain_pixels",
+   "--calib",
+   "/workspace/data/refe_navtrain/train_grow/calib_table.json",
+   "--metric-cache",
+   "/workspace/data/refe_navtrain/metric_cache",
+   "--scorer-sees-trunk",
+   "--yaw-wrap",
+   "off",
+   "--nav-mode",
+   "command",
+   "--labeller",
+   "online",
+   "--label-workers",
+   "6",
+   "--label-chunks",
+   "2",
+   "--epochs",
+   "25",
+   "--epoch-unit",
+   "scenes",
+   "--batch",
+   "4",
+   "--accum",
+   "64",
+   "--lr",
+   "2e-4",
+   "--weight-decay",
+   "0.01",
+   "--amp",
+   "bf16",
+   "--score-w",
+   "0.1",
+   "--tf32",
+   "--compile",
+   "--workers",
+   "2",
+   "--log-every",
+   "1",
+   "--ckpt-every-min",
+   "20",
+   "--out",
+   "/workspace/data/refe_runs/p6_paper_faithful",
+   "--resume"
+  ],
+  "argv_sha256": "20dcebecc3014930211472009f06520710a3887c81797b581b91187b678f51cf",
+  "commit": "f2f604f5d8067352287e113d90bc925f76c9641e",
+  "data": {
+   "--calib": {
+    "bytes": 2336659,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_navtrain/train_grow/calib_table.json",
+    "sha256": "772c00abfd5070f7f6ecb648e45e7d422a3aeb3c5112ab12c43bbe5eb4a8ab6f"
+   },
+   "--images": {
+    "bytes": 85872932604,
+    "kind": "dir",
+    "listing_sha256": "95155321fc232cbd371cafc9be0f868654fa6baf90b3cf0fc93989b55a85182b",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 413184,
+    "path": "/workspace/data/navtrain_pixels"
+   },
+   "--metric-cache": {
+    "bytes": 45254966540,
+    "kind": "dir",
+    "listing_sha256": "697fce4edb9e785f00bbfcf8911214787168b23c31789d369dd424dc30120396",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 124858,
+    "path": "/workspace/data/refe_navtrain/metric_cache"
+   },
+   "--targets": {
+    "bytes": 597071790,
+    "kind": "dir",
+    "listing_sha256": "6e00195f605a6d32af387c31921b443aa407093d964908901befbe0436c70532",
+    "method": "dir-listing-v1 (relpath + size of every file; contents NOT hashed; _v2manifest.pt excluded -- a cache rewrites it on first use)",
+    "n_files": 4,
+    "path": "/workspace/data/refe_navtrain/train_grow_cmd_3c"
+   },
+   "gate:egr_json": {
+    "bytes": 729,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p6/egr/g_egr_result.json",
+    "sha256": "f2b0dd3013680c444894151bc7c48fe5eab25705852c6b3402164cff979e4d3c"
+   },
+   "gate:lab_json": {
+    "bytes": 368,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p6/lab.json",
+    "sha256": "853f4595d69dee1df9f42c827ca4ddaf0df3aeff5b9ec9eb4d56c4122d6a3da3"
+   },
+   "gate:mem_metrics": {
+    "bytes": 4575,
+    "kind": "file",
+    "method": "sha256-v1",
+    "path": "/workspace/data/refe_p6/mem_metrics.jsonl",
+    "sha256": "97637a5e57a8c2d032efbd0917b465b23553142801fe69f8106d8745829c12e3"
+   }
+  },
+  "data_sha256": "356552965992c5dd8b76927282114f79a3a0b0d5d0d04766f4d389fe1a61236a",
+  "gate_inputs": {
+   "gate:egr_json": "/workspace/data/refe_p6/egr/g_egr_result.json",
+   "gate:lab_json": "/workspace/data/refe_p6/lab.json",
+   "gate:mem_metrics": "/workspace/data/refe_p6/mem_metrics.jsonl"
+  },
+  "profile": "refe_p6",
+  "trainer": "refe/train.py",
+  "tree_sha256": "b0fad37d97047edf104719ee6506de549613165c4eb2803eda2279b4174bf690"
+ },
+ "checks": {
+  "G-CKPT": {
+   "evidence_sha256": "632eb6789f4127de07e61680d6de7ece86e4cce222fdbba0069a1229798d19f9",
+   "finished_utc": "2026-11-06T12:53:29Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-CLOCK": {
+   "evidence_sha256": "9f58cb467b6c7ceabd9553b94eb737f5f5116a879b03f48fde995076b624be2b",
+   "finished_utc": "2026-11-06T12:54:47Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-DVB": {
+   "evidence_sha256": "8e274c205584de40d6771c62c68b42610300d4d4194b8f3e819cb7a958baf8be",
+   "finished_utc": "2026-11-06T12:54:33Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-EGR": {
+   "evidence_sha256": "aac2324fcbef23b4db04205e6084003684b8703e787f4517eaaab452d1aa4247",
+   "finished_utc": "2026-11-06T13:03:06Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-EVAL": {
+   "evidence_sha256": "9b378a1210ba5f96ed2b431013ec434967b41f4cd2c097c78d5ad9724bbba88f",
+   "finished_utc": "2026-11-06T12:55:00Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-HYG": {
+   "evidence_sha256": "3124f1d44499268be1544d2cb8327d3a4a376e422ec253e53830fe9401c03461",
+   "finished_utc": "2026-11-06T12:54:33Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE": {
+   "evidence_sha256": "68c341eaec9c8c8fb1e9764be7025065211c4f4de7ddc431d085187a4320b14c",
+   "finished_utc": "2026-11-06T12:54:47Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-LIVE-LAB": {
+   "evidence_sha256": "e1ae588e1f98bdbf7edc114ee2d74558ee40d62eac7b4cd1ff4757c8a94f39b5",
+   "finished_utc": "2026-11-06T13:03:06Z",
+   "reasons": [
+    "GPU stall 5.4 % of a window > 5 % (launch accum 64, max over windows after the first)"
+   ],
+   "status": "FAIL"
+  },
+  "G-LIVE-MEM": {
+   "evidence_sha256": "692db606fb461e65ddb5dc657182e6fa7f1da3f70d0b874203418adf3e48412d",
+   "finished_utc": "2026-11-06T13:03:06Z",
+   "reasons": [],
+   "status": "PASS"
+  },
+  "G-SUITE": {
+   "evidence_sha256": "f86a94acb4d575f4d7fb87dc1d5c58926b06d266dde22b3bfdddc379c1a72a68",
+   "finished_utc": "2026-11-06T13:03:06Z",
+   "reasons": [],
+   "status": "PASS"
+  }
+ },
+ "created_utc": "2026-11-06T13:03:23Z",
+ "gate_sha256": "3eb504c4632146e330868857ca9e107a6f624086dd2603595320b6910cae8385",
+ "hmac_sha256": "9852607a23bb4ca7750f5b46cfe2170d7b9c3c26e43726dfe897d6294fcdc94c",
+ "key_id": "ac8da4e921ac7dbd",
+ "kind": "launch-gate-token",
+ "reasons": [
+  "G-LIVE-LAB FAIL: GPU stall 5.4 % of a window > 5 % (launch accum 64, max over windows after the first)",
+  "checks not PASS: ['G-LIVE-LAB']"
+ ],
+ "schema": "tanitad.launch_gate/1",
+ "verdict": "FAIL"
+}
