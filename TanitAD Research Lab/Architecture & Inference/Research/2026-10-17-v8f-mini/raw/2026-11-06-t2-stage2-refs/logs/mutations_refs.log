@@ -1,0 +1,23 @@
+baseline check_real_read: {'frames': [0, 60, 120]}
+baseline check_real_caller: {'grad_ncc_on': [1.0, 1.0, 1.0]}
+baseline check_need_scales: {'full': 216, 'after_third': 144.0}
+baseline check_artifact: {'scenes': 42, 'shipped': 41}
+baseline check_positive_refs: {'ref_frames_ok': 3}
+baseline check_refused_missing: {'rc': 1}
+baseline check_refused_kit: {'rc': 1}
+baseline check_refused_changed: {'rc': 1}
+baseline check_refused_nolist: {'rc': 1}
+baseline check_refused_skip: {'rc': 1}
+check_real_read[no_npz]: RED (AssertionError: read_ref_frame(0) needed the mp4: FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/t2a_scratch/stage2_rehearsal/refs_read_20261)
+check_real_caller[no_npz]: RED (AssertionError: falsify_actors(frame 0) failed: FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\Admin\\t2a_scratch\\stage2_rehearsal\\refs_caller_)
+check_need_scales[unscaled]: RED (AssertionError: 216 != 144.0)
+check_artifact[dropped]: RED (AssertionError: tar members differ: extra [], missing ['scenes2/132ae6cb-1e58-42aa-8bf3-4381eb958e43/ref_frames.npz'])
+check_positive_refs[count]: RED (AssertionError: {'python': '3.13.5', 'platform': 'Windows-11-10.0.26300-SP0', 'numpy': '2.5.1', 'torch': '2.11.0+cu128', 'transformers': '5.15.0', 'PIL': '12.3.0', 'g)
+check_refused_missing[not_applied]: RED (AssertionError: (0, ['gate.done', 'gate.log', 'GATE_SCENES.json', 'preflight.done', 'rollouts', 'rollouts.done', 'STAGE2.done', 'STAGE2_RESULT.json']))
+check_refused_missing[driver_unchecked]: RED (AssertionError: (0, ['gate.done', 'gate.log', 'GATE_SCENES.json', 'preflight.done', 'rollouts', 'rollouts.done', 'STAGE2.done', 'STAGE2_RESULT.json']))
+check_refused_kit[not_applied]: RED (AssertionError: (0, ['gate.done', 'gate.log', 'GATE_SCENES.json', 'preflight.done', 'rollouts', 'rollouts.done', 'STAGE2.done', 'STAGE2_RESULT.json']))
+check_refused_changed[not_applied]: RED (AssertionError: (0, ['gate.done', 'gate.log', 'GATE_SCENES.json', 'preflight.done', 'rollouts', 'rollouts.done', 'STAGE2.done', 'STAGE2_RESULT.json']))
+check_refused_nolist[left_in]: RED (AssertionError: (0, ['gate.done', 'gate.log', 'GATE_SCENES.json', 'preflight.done', 'rollouts', 'rollouts.done', 'STAGE2.done', 'STAGE2_RESULT.json']))
+check_refused_skip[not_applied]: RED (AssertionError: (0, ['gate.done', 'gate.log', 'GATE_SCENES.json', 'preflight.done', 'rollouts', 'rollouts.done', 'STAGE2.done', 'STAGE2_RESULT.json']))
+mutations RED: 11 of 11
+rc=0

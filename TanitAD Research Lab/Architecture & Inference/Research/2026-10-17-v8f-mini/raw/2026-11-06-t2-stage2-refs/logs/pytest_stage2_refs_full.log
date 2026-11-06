@@ -1,0 +1,31 @@
+...............................................................F........ [ 98%]
+.                                                                        [100%]
+================================== FAILURES ===================================
+______________________________ test_real_caller _______________________________
+
+    def test_real_caller():
+>       check_real_caller()
+
+tests\test_t2v8f_stage2_refs.py:351: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+mut = None
+
+    def check_real_caller(mut=None):
+        """The kit's REAL `actor_map.falsify_actors`, with the reader installed exactly as `t2v8f_nocv2.install()` installs it, on a folder with only `ref_frames.npz`: it scores the three frames
+        against the npz (grad_ncc of the banked frame with itself is 1.0) and reaches no mp4."""
+        d, fr = scene_only_npz("caller", seed=3)
+        if mut == "no_npz":
+            os.replace(f"{d}/ref_frames.npz", f"{d}/ref_frames.npz.aside_by_test")
+        sys.path.insert(0, KIT_HARNESS)
+        try:
+            import actor_map as A
+            import gsplat_renderer as G
+>           old = (G.grad_ncc, G.read_ref_frame)
+                   ^^^^^^^^^^
+E           AttributeError: module 'gsplat_renderer' has no attribute 'grad_ncc'
+
+tests\test_t2v8f_stage2_refs.py:135: AttributeError
+=========================== short test summary info ===========================
+FAILED tests/test_t2v8f_stage2_refs.py::test_real_caller - AttributeError: mo...
+1 failed, 72 passed in 676.07s (0:11:16)
