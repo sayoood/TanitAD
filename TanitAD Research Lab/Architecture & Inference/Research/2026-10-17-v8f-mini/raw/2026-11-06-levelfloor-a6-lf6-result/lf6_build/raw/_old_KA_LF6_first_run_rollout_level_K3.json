@@ -1,0 +1,163 @@
+{
+ "card": "PREREG_LEVELFLOOR_A6 fbf5de02...",
+ "tool_sha256": "949c4b7a384943015a4b520987bc9c4267dee4a2160f566aa2225208ed3f7f01",
+ "lf5_tool_sha256": "88b275a1ca67894be01907f72b71302b72f6e0b4fa0af067f4e2c3d5286aba77",
+ "n_windows": 64,
+ "cases": {
+  "K1": {
+   "PASS": true,
+   "smokes": {
+    "D0_heads_bare": {
+     "PASS": true,
+     "vs": "OFF_bare",
+     "n_common_fields": 26,
+     "mismatches": [],
+     "F_never_binds": true,
+     "n_ticks": 192
+    },
+    "D0_heads_comp": {
+     "PASS": true,
+     "vs": "OFF_comp",
+     "n_common_fields": 27,
+     "mismatches": [],
+     "F_never_binds": true,
+     "n_ticks": 192
+    },
+    "D0_logged_bare": {
+     "PASS": true,
+     "vs": "OFF_bare",
+     "n_common_fields": 26,
+     "mismatches": [],
+     "F_never_binds": true,
+     "n_ticks": 192
+    }
+   },
+   "mutation_M1_falsy_zero": {
+    "RED": true,
+    "bind_rate_under_mutation": 0.4270833333333333,
+    "mismatched_fields": [
+     "P",
+     "gt",
+     "plan",
+     "plan_raw",
+     "pose",
+     "s_ckpt",
+     "s_ckpt_now",
+     "s_ckpt_w0",
+     "s_pose",
+     "t_cons_pred",
+     "t_goal_prob",
+     "t_lat_logits"
+    ]
+   }
+  },
+  "K2": {
+   "PASS": true,
+   "smokes": {
+    "I6_heads_bare": {
+     "PASS": true,
+     "vs": "E5_heads_bare",
+     "n_common_fields": 34,
+     "mismatches": [],
+     "bind_rate": 0.4270833333333333,
+     "dterm_ticks": 0
+    },
+    "I6_heads_comp": {
+     "PASS": true,
+     "vs": "E5_heads_comp",
+     "n_common_fields": 35,
+     "mismatches": [],
+     "bind_rate": 0.4270833333333333,
+     "dterm_ticks": 0
+    },
+    "I6_logged_bare": {
+     "PASS": true,
+     "vs": "E5_logged_bare",
+     "n_common_fields": 35,
+     "mismatches": [],
+     "bind_rate": 0.421875,
+     "dterm_ticks": 0
+    }
+   },
+   "mutation_M2_bound_stuck_at_1": {
+    "RED": true,
+    "mismatched_fields": [
+     "P",
+     "gt",
+     "lf_bind",
+     "lf_bind_k10",
+     "lf_cap",
+     "lf_gap",
+     "lf_lift",
+     "lf_pi",
+     "lf_vf",
+     "lf_vhat",
+     "plan",
+     "plan_raw"
+    ]
+   }
+  },
+  "K3": {
+   "PASS": false,
+   "smokes": {
+    "H5_heads_bare": {
+     "bind_rate_delta0": 0.0,
+     "bind_rate_delta0.5": 0.484375,
+     "bind_rate_delta1e9": 0.4270833333333333,
+     "strictly_between": false,
+     "max_over_knots_of_sp_minus_s_minus_delta_t": 2.220446049250313e-16,
+     "bound_holds_1e-6": true,
+     "sp_ge_s": true,
+     "n_bound_ticks": 93,
+     "n_ticks": 192,
+     "dterm_share_of_bound": 0.9139784946236559,
+     "mean_lift_mps_where_bound": 0.32028949803063095,
+     "unbound_ticks_have_sp_equal_s": true,
+     "PASS": false
+    },
+    "H5_heads_comp": {
+     "bind_rate_delta0": 0.0,
+     "bind_rate_delta0.5": 0.484375,
+     "bind_rate_delta1e9": 0.4270833333333333,
+     "strictly_between": false,
+     "max_over_knots_of_sp_minus_s_minus_delta_t": 4.440892098500626e-16,
+     "bound_holds_1e-6": true,
+     "sp_ge_s": true,
+     "n_bound_ticks": 93,
+     "n_ticks": 192,
+     "dterm_share_of_bound": 0.9247311827956989,
+     "mean_lift_mps_where_bound": 0.32261431604352225,
+     "unbound_ticks_have_sp_equal_s": true,
+     "independent_recomputation_from_plan_s": {
+      "max_abs_diff_sp_m": 3.307302876009999e-08,
+      "max_abs_diff_s_m": 0.0,
+      "tolerance_m": 0.001,
+      "PASS": true
+     },
+     "PASS": false
+    },
+    "H5_logged_bare": {
+     "bind_rate_delta0": 0.0,
+     "bind_rate_delta0.5": 0.4270833333333333,
+     "bind_rate_delta1e9": 0.421875,
+     "strictly_between": false,
+     "max_over_knots_of_sp_minus_s_minus_delta_t": -0.08260158945480925,
+     "bound_holds_1e-6": true,
+     "sp_ge_s": true,
+     "n_bound_ticks": 82,
+     "n_ticks": 192,
+     "dterm_share_of_bound": 0.8536585365853658,
+     "mean_lift_mps_where_bound": 0.22608112547127465,
+     "unbound_ticks_have_sp_equal_s": true,
+     "PASS": false
+    }
+   },
+   "mutation_M3_delta_term_deleted": {
+    "RED": true,
+    "bind_rate_under_mutation": 0.4739583333333333,
+    "strictly_between_under_mutation": false
+   }
+  }
+ },
+ "PASS": false
+}
