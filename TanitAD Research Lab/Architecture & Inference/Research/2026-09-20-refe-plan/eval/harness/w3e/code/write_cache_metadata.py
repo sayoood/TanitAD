@@ -34,7 +34,18 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import run_v1  # noqa: E402  (navtest_tokens: the yaml parse, pinned against yaml.safe_load)
 
-EXP = "E:/Archive/devbox-C/navsim/exp/w3_navtest_v1"
+def _navsim_root():
+    # P6 layout fix 2026-11-06 (path roots only): $TANITAD_NAVSIM_ROOT if set, else the FIRST EXISTING of E:/ F:/ D:/ Archive/devbox-C/navsim; REFUSES if none exists
+    r = os.environ.get("TANITAD_NAVSIM_ROOT")
+    cands = [r.replace("\\", "/").rstrip("/")] if r else [f"{d}:/Archive/devbox-C/navsim" for d in "EFD"]
+    for c in cands:
+        if os.path.isdir(c):
+            return c
+    raise SystemExit("REFUSING: navsim archive root not found (tried: " + ", ".join(cands) + "); set TANITAD_NAVSIM_ROOT. No silent default.")
+
+
+_NAVSIM = _navsim_root()
+EXP = f"{_NAVSIM}/exp/w3_navtest_v1"
 
 
 def main(argv=None) -> int:

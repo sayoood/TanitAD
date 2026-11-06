@@ -38,15 +38,26 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PKG = os.path.dirname(HERE)
 RAW = os.path.join(PKG, "raw")
 NV_PY = "C:/Users/Admin/navsim-crun/venv/Scripts/python.exe"
-V11_TREE = "E:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896"
-EXP = "E:/Archive/devbox-C/navsim/exp/w3_navtest_v1"
-DATA = "E:/Archive/devbox-C/navsim/data/openscene"
+def _navsim_root():
+    # P6 layout fix 2026-11-06 (path roots only): $TANITAD_NAVSIM_ROOT if set, else the FIRST EXISTING of E:/ F:/ D:/ Archive/devbox-C/navsim; REFUSES if none exists
+    r = os.environ.get("TANITAD_NAVSIM_ROOT")
+    cands = [r.replace("\\", "/").rstrip("/")] if r else [f"{d}:/Archive/devbox-C/navsim" for d in "EFD"]
+    for c in cands:
+        if os.path.isdir(c):
+            return c
+    raise SystemExit("REFUSING: navsim archive root not found (tried: " + ", ".join(cands) + "); set TANITAD_NAVSIM_ROOT. No silent default.")
+
+
+_NAVSIM = _navsim_root()
+V11_TREE = f"{_NAVSIM}/navsim-3e8291bfa89ff247231e0227778840cd0a036896"
+EXP = f"{_NAVSIM}/exp/w3_navtest_v1"
+DATA = f"{_NAVSIM}/data/openscene"
 NAVTEST_YAML = (f"{V11_TREE}/navsim/planning/script/config/common/train_test_split/"
                 f"scene_filter/navtest.yaml")
 WRAP = os.path.join(HERE, "navsim_v1_win.py")
 ENV = {
     "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
-    "NUPLAN_MAPS_ROOT": "E:/Archive/devbox-C/navsim/data/maps",
+    "NUPLAN_MAPS_ROOT": f"{_NAVSIM}/data/maps",
     "NAVSIM_EXP_ROOT": EXP,
     "NAVSIM_DEVKIT_ROOT": V11_TREE,
     "OPENSCENE_DATA_ROOT": DATA,

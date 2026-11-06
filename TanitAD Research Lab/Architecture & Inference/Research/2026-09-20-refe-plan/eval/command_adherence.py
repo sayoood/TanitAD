@@ -49,8 +49,20 @@ PKG = HERE.parent
 sys.path.insert(0, str(HERE))
 
 DATA = Path(os.environ.get("REFE_NAVTEST_DIR", "E:/Projects/TanitAD/data/refe_navtest"))
-EXPORT = os.environ.get("REFE_NAVTEST_EXPORT", "E:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz")
-P2_TABLE = os.environ.get("REFE_P2_TABLE", "D:/Projects/TanitAD-artifacts/p2_full_table/table_p2_full.npz")      # P2's banked 64-proposal table (a floor control)
+
+
+def _root(env_name: str, cands: list, what: str) -> str:
+    """P6 layout fix 2026-11-06 (path roots only; nothing computed changes): $<env_name> if set, else the FIRST EXISTING of `cands`; REFUSES (never a silent default) if none exists."""
+    r = os.environ.get(env_name)
+    cands = [r.replace("\\", "/").rstrip("/")] if r else cands
+    for c in cands:
+        if os.path.isdir(c):
+            return c
+    raise SystemExit(f"REFUSING: {what} root not found (tried: " + ", ".join(cands) + f"); set {env_name}. No silent default.")
+
+
+EXPORT = os.environ.get("REFE_NAVTEST_EXPORT") or (_root("TANITAD_NAVSIM_ROOT", [f"{d}:/Archive/devbox-C/navsim" for d in "EFD"], "navsim archive") + "/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz")
+P2_TABLE = os.environ.get("REFE_P2_TABLE") or (_root("TANITAD_ARTIFACTS_ROOT", [f"{d}:/Projects/TanitAD-artifacts" for d in "ED"], "artifacts") + "/p2_full_table/table_p2_full.npz")      # P2's banked 64-proposal table (a floor control)
 REPO = Path(os.environ.get("TANITAD_REPO") or (HERE.parents[4] if len(HERE.parents) > 4 else "E:/Projects/TanitAD"))
 
 # ---------------------------------------------------------------- the definition, as constants (each one cited)

@@ -60,14 +60,26 @@ sys.path.insert(0, str(HERE))
 import proxy_eval as PE  # noqa: E402  (the SAME estimator stage 2 uses)
 
 DATA = Path(os.environ.get("REFE_NAVTEST_DIR", "E:/Projects/TanitAD/data/refe_navtest"))
-EXPORT = "E:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
+
+
+def _navsim_root() -> str:
+    """P6 layout fix 2026-11-06 (path roots only; nothing computed changes): $TANITAD_NAVSIM_ROOT if set, else the FIRST EXISTING of E:/ F:/ D:/ Archive/devbox-C/navsim; REFUSES (never a silent default) if none exists."""
+    r = os.environ.get("TANITAD_NAVSIM_ROOT")
+    cands = [r.replace("\\", "/").rstrip("/")] if r else [f"{d}:/Archive/devbox-C/navsim" for d in "EFD"]
+    for c in cands:
+        if os.path.isdir(c):
+            return c
+    raise SystemExit("REFUSING: navsim archive root not found (tried: " + ", ".join(cands) + "); set TANITAD_NAVSIM_ROOT. No silent default.")
+
+
+EXPORT = _navsim_root() + "/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
 # stage2_sft.py writes under ITS OWN hard-coded package root (the E: mirror of this package, byte-identical to it)
 S2_RAW = Path("E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-10-05-sft-stage2")
 BANK = PKG / "raw" / "p2_r2_instrument" / "baseline"          # the in-repo copy of every baseline table
 OUT_ROOT = PKG / "raw" / "p2_readout"
 PY_T = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
 STAGE2_SFT = HERE / "stage2_sft.py"
-STAGE2_SFT_MD5 = "3a30ab4c5a122664c534f378144cb4a5"             # stage2_sft.py as of P6-READ-GAPS (2026-10-22: the banked harness + --dump-proposals; was 831a8d76bb5b8be2016288b02cd29ee5, R1's instrument, whose estimator and scoring calls are unchanged)
+STAGE2_SFT_MD5 = "74c37dd2d7dba9b03106cde5372ac0e1"             # stage2_sft.py as of the P6 layout fix (2026-11-06: path roots only, EXPORT via the root resolver; was 3a30ab4c5a122664c534f378144cb4a5) <- P6-READ-GAPS (2026-10-22: the banked harness + --dump-proposals; was 831a8d76bb5b8be2016288b02cd29ee5, R1's instrument, whose estimator and scoring calls are unchanged)
 FAMILIES6_CANDIDATES = (
     os.environ.get("REFE_FAMILIES6", ""),
     str(HERE / "harness" / "ev6e" / "families6.py"),       # G3: the banked, sha256-pinned copy (eval/harness_pins.py) the SFT-4 / C2 results used, FIRST: stage 2 runs this one, so does stage 3

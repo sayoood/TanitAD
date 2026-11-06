@@ -316,3 +316,31 @@ component carries a paired CI.
   - `p6_overlap.step_times` skips the lines;
   - the strict pattern of `diag_onpolicy_train.py:305` RAISES.
 - ⚠️ **Any interruption count from this file must strip NULs.** A `startswith("{")` reader silently drops both resume events.
+
+## Amendment 2026-11-06 (f): the read instrument's path roots (drive layout), written BEFORE any P6 checkpoint touched navtest
+
+**Path-only.** This changes no endpoint, comparator, estimator, rule, family, seam argument or scoring call. What it changes:
+
+1. **Why.** On 2026-10-25 the navsim archive moved from `E:/Archive/devbox-C/navsim` to `F:/Archive/devbox-C/navsim` (`dagland/f_audit/F_DELETION_PROPOSAL.md`), and D: is absent. The read's hard-coded roots no longer resolved.
+   - MEASURED 2026-11-06 before the fix: `test_p6_read_gaps.py` read 27/33 and `stage3_full.py --selfcheck` raised FileNotFoundError on the navtest export.
+   - The metric-cache metadata CSV lists all 12,146 cache files by absolute `D:\Archive\...` path; 0 of them existed.
+   - Copying the archive back is impossible: `openscene-v1.1` alone is 122 GB, and E: has 8.6 GiB free.
+2. **The change.**
+   - **One resolver**, inlined in `stage2_sft.py`, `stage3_full.py`, `selection_quality.py`, `command_adherence.py` and four pinned harness files: `$TANITAD_NAVSIM_ROOT`, else the first existing of E:/F:/D: `Archive/devbox-C/navsim`. It REFUSES if none exists. The artifacts root resolves the same way.
+   - **The metadata CSV** was re-rooted `D:\` → `F:\` on the path prefix only, with row order, header and line endings unchanged. The original is kept in `metadata_bak_dpaths_20261106/`, not beside the CSV, because the devkit opens the first file whose name contains ".csv".
+   - **Pins moved** (harness_pins.py: 4 files and the pins-file sha256; `STAGE2_SFT_MD5` → `74c37dd2…`). Old → new values are in the record.
+3. **Identity.** MEASURED twice: by the implementing agent, and independently by the MM on the landed bytes with no env override.
+   - `harness_pins.py --verify` ok, 21 files, NT_FIX1.
+   - `test_p6_read_gaps.py` **35/35**:
+     - G1 C2−C1 = +0.5715 [+0.0179, +1.1755] to the bit;
+     - G2 level 88.8184 [87.8611, 89.7701] to 1e-9;
+     - the repaired G3 RED arm and the new resolver RED arms (a non-existent root REFUSES).
+   - `selftest_stage3_full.py` 11/11.
+   - `stage3_full.py --selfcheck` → `R2_PRECONDITION_MET=True`, regressions failed as required.
+   - `test_command_adherence.py` 24/24.
+   - The real scoring call re-scored P2's banked seam on 401 navtest tokens (17 logs): 3,208/3,208 cells bit-equal to P2's banked csv. That is a sample of 401 of the 12,146 cache entries, not all of them. Tier T1; P2 is not a P6 checkpoint, so the ONE-look rule is untouched.
+4. **Not covered.**
+   - Step 2's no-navtest smoke code (`raw/2026-10-22-p6-read-dryrun/code/`) and the G4 builders still name `D:/Projects/...`. Run them under `subst D: E:\` (session-only, the documented dev-box fix).
+   - Off-read-path W3 scripts keep `E:/Archive` and fail loudly if run.
+
+Record: `raw/2026-11-06-p6-read-layout/` (RESULT.md, MANIFEST.tsv, logs, `harness_control/`, `mm_rerun/`).

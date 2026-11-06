@@ -41,11 +41,22 @@ from pathlib import Path
 
 import psutil
 
-V11_TREE = "E:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896"
+def _navsim_root():
+    # P6 layout fix 2026-11-06 (path roots only): $TANITAD_NAVSIM_ROOT if set, else the FIRST EXISTING of E:/ F:/ D:/ Archive/devbox-C/navsim; REFUSES if none exists
+    r = os.environ.get("TANITAD_NAVSIM_ROOT")
+    cands = [r.replace("\\", "/").rstrip("/")] if r else [f"{d}:/Archive/devbox-C/navsim" for d in "EFD"]
+    for c in cands:
+        if os.path.isdir(c):
+            return c
+    raise SystemExit("REFUSING: navsim archive root not found (tried: " + ", ".join(cands) + "); set TANITAD_NAVSIM_ROOT. No silent default.")
+
+
+_NAVSIM = _navsim_root()
+V11_TREE = f"{_NAVSIM}/navsim-3e8291bfa89ff247231e0227778840cd0a036896"
 V11_SHA = "3e8291bfa89ff247231e0227778840cd0a036896"
 NUPLAN_TREE = "C:/Users/Admin/navsim-crun/nuplan-devkit"
 NUPLAN_SHA = "ce3c323af01c0d7ec5672f7832ef53f9c679aab0"      # tag nuplan-devkit-v1.2 (v1.1 pin)
-NUPLAN_SOURCE = "E:/Archive/devbox-C/navsim/nuplan-devkit"   # the checkout the C: tree was copied from
+NUPLAN_SOURCE = f"{_NAVSIM}/nuplan-devkit"   # the checkout the C: tree was copied from
 E1_WRAPPER = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "e1", "navsim_win.py")).replace("\\", "/")  # P6-READ-GAPS G3 2026-10-22: banked copy beside this file (was a hard-coded Temp scratchpad path); the file bytes are the scratch copy's, which equal the repo original after the D:->E: sed
 
 SCRIPTS = {
@@ -56,10 +67,10 @@ SCRIPTS = {
 #: D: ONLY (PI 2026-09-19). Applied only if unset; recorded either way.
 ENV_DEFAULTS = {
     "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
-    "NUPLAN_MAPS_ROOT": "E:/Archive/devbox-C/navsim/data/maps",
-    "NAVSIM_EXP_ROOT": "E:/Archive/devbox-C/navsim/exp/w3_navtest_v1",
+    "NUPLAN_MAPS_ROOT": f"{_NAVSIM}/data/maps",
+    "NAVSIM_EXP_ROOT": f"{_NAVSIM}/exp/w3_navtest_v1",
     "NAVSIM_DEVKIT_ROOT": V11_TREE,
-    "OPENSCENE_DATA_ROOT": "E:/Archive/devbox-C/navsim/data/openscene",
+    "OPENSCENE_DATA_ROOT": f"{_NAVSIM}/data/openscene",
 }
 
 

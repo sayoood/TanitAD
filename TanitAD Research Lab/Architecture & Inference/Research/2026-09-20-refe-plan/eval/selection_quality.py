@@ -41,7 +41,19 @@ M = 64
 DATA = Path(os.environ.get("REFE_NAVTEST_DIR", "E:/Projects/TanitAD/data/refe_navtest"))
 PY_D = "C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe"
 HARNESS = HERE / "harness"
-EXPORT = "E:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
+
+
+def _navsim_root() -> str:
+    """P6 layout fix 2026-11-06 (path roots only; nothing computed changes): $TANITAD_NAVSIM_ROOT if set, else the FIRST EXISTING of E:/ F:/ D:/ Archive/devbox-C/navsim; REFUSES (never a silent default) if none exists."""
+    r = os.environ.get("TANITAD_NAVSIM_ROOT")
+    cands = [r.replace("\\", "/").rstrip("/")] if r else [f"{d}:/Archive/devbox-C/navsim" for d in "EFD"]
+    for c in cands:
+        if os.path.isdir(c):
+            return c
+    raise SystemExit("REFUSING: navsim archive root not found (tried: " + ", ".join(cands) + "); set TANITAD_NAVSIM_ROOT. No silent default.")
+
+
+EXPORT = _navsim_root() + "/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
 N_BOOT, SEED = 10000, 20260927
 SUB = ("no_at_fault_collisions", "drivable_area_compliance", "ego_progress", "time_to_collision_within_bound", "comfort", "driving_direction_compliance")
 TIER = "T1 = NAVSIM v1.1 PDMS, an ego pseudo-simulation of an open-loop plan against logged agents (self-action open loop, not closed loop)"

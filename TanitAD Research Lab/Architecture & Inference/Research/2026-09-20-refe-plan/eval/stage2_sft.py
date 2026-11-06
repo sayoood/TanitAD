@@ -47,7 +47,19 @@ HARNESS = PKG / "eval" / "harness"
 SP = str(HARNESS)
 EV6E = f"{SP}/ev6e"
 D = Path("E:/Projects/TanitAD/data/refe_navtest")
-EXPORT = "E:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
+
+
+def _navsim_root() -> str:
+    """P6 layout fix 2026-11-06 (path roots only; nothing computed changes): $TANITAD_NAVSIM_ROOT if set, else the FIRST EXISTING of E:/ F:/ D:/ Archive/devbox-C/navsim; REFUSES (never a silent default) if none exists."""
+    r = os.environ.get("TANITAD_NAVSIM_ROOT")
+    cands = [r.replace("\\", "/").rstrip("/")] if r else [f"{d}:/Archive/devbox-C/navsim" for d in "EFD"]
+    for c in cands:
+        if os.path.isdir(c):
+            return c
+    raise SystemExit("REFUSING: navsim archive root not found (tried: " + ", ".join(cands) + "); set TANITAD_NAVSIM_ROOT. No silent default.")
+
+
+EXPORT = _navsim_root() + "/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
 TOKENS = D / "a5_confirm_tokens.json"
 BASE_SEAM = D / "seams" / "refe_navtest_final_routefix.npz"
 BASE_CSV = D / "score" / "refe_navtest_final_routefix" / "refe_navtest_final_routefix.csv"
