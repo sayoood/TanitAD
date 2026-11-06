@@ -18844,3 +18844,15 @@ instruments; only an undeclared one is a finding.
 **What is true (MEASURED, `.../2026-10-17-v8f-mini/raw/2026-11-06-t2-c0c-amend/AMENDMENT.md`):** 4.0e-5 > 1.1e-5. The 1.1e-5 m is the RAW forward's batch-1 vs batch-16 movement; the 4.0e-5 m is the COMPOSITE's end-to-end maximum, compared against a declared 1e-3 m tolerance. The gate's identity rests on its exact tiers and is unaffected.
 
 **Class / rule:** before writing *inside*, *below* or *within*, put both numbers side by side with the quantity each one measures (which plan, which stage, which comparison) and check the inequality numerically. Compressing a hand-back is where two neighbouring numbers merge into one claim.
+
+
+## 2026-11-06 ~22:00 -- "yaw rate is already slot 4, so dropping slot 5 removes the action-unit channel without deleting the measured-motion information" (`D-PI-YAWRATE-3`). Class: **A FIELD READ BY ITS NAME, NOT BY ITS VALUES**
+
+**What was claimed:** in the GOALS_AND_CLAIMS row D-PI-YAWRATE-3 (2026-10-18), from source reading. REFe's slot 5 carries nuPlan's measured `tire_steering_angle` (an action-unit channel), and slot 4 carries a measured yaw rate.
+
+**What is true (MEASURED, `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/raw/2026-11-06-refe-dead-ego-slots/RESULT.md`):**
+- Both slots are exactly 0.0 in every training sample. nuPlan's DB ego state hardcodes `tire_steering_angle=0.0` and defaults `angular_vel` to 0.0.
+- In P2's trained weights both columns are a pure weight-decay shrink of their random init: residual at most 2.5e-5, against 0.045 to 0.32 for the trained controls.
+- REFe never received a steering angle, and it has no yaw-rate input.
+
+**Class / rule:** a field's name, its declared semantics and the code that copies it say nothing about its values. Before reasoning about what an input carries, read the values that actually reached the model: a banked row, or the trained weights' gradient footprint. A library default or a hardcoded constant upstream turns a named channel into a constant one. The row's own closing line ("ask what an input really is, not what it is called") was the right rule; it was applied to the name only.
