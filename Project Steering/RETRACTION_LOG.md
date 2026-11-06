@@ -18836,3 +18836,11 @@ reconciled with that list.
 launch gate's `live_dead_admitted` for that profile and argv). An offender that was declared is a wiring gap between two
 instruments; only an undeclared one is a finding.
 
+
+## 2026-11-06 ~18:10 -- "the arm agrees to 4.0e-5 m, inside the float32 batch-size noise of 1.1e-5 m" (21e3a976). Class: **AN INEQUALITY WRITTEN BETWEEN TWO DIFFERENT QUANTITIES**
+
+**What was claimed:** in the GOALS_AND_CLAIMS row D-V8F-T2-C0C-1, by the Master Mind, compressing AGENT M's hand-back: the composite arm's end-to-end difference from the banked dump (4.0e-5 m) lies inside the per-forward batch-size noise (1.1e-5 m).
+
+**What is true (MEASURED, `.../2026-10-17-v8f-mini/raw/2026-11-06-t2-c0c-amend/AMENDMENT.md`):** 4.0e-5 > 1.1e-5. The 1.1e-5 m is the RAW forward's batch-1 vs batch-16 movement; the 4.0e-5 m is the COMPOSITE's end-to-end maximum, compared against a declared 1e-3 m tolerance. The gate's identity rests on its exact tiers and is unaffected.
+
+**Class / rule:** before writing *inside*, *below* or *within*, put both numbers side by side with the quantity each one measures (which plan, which stage, which comparison) and check the inequality numerically. Compressing a hand-back is where two neighbouring numbers merge into one claim.
