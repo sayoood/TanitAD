@@ -683,6 +683,21 @@ Each entry cost hours more than once. CLAUDE.md keeps a one-line index; this fil
   MEASURED 2026-11-06: B3's gate ran 03:23-03:50Z and the restart driver's B3 rewrite was due ~03:51Z; it was stopped and relaunched for the
   other arms only. ⇒ after pre-running an arm's pinned suite, relaunch the restart's driver WITHOUT that arm
   (`r9gate3_launch_pinned.ps1 -Arms "<the rest>"`).
+- ⛔ **A PRE-REGISTRATION'S TIMESTAMP IS READ FROM A CLOCK, NEVER ESTIMATED.** MEASURED 2026-11-06: stamps the MM wrote from its own sense of
+  the time ran up to ~1 h AHEAD of the real clock. `e1/m1_diag/PREREG_M1_CALIB.md` read *"~15:55Z"*, which is AFTER its own data
+  (`M1_CALIB.json`, written 15:48:28Z); the file's mtime is 15:46:08Z, so the pre-registration was in fact first. `PREREG_M1_FITTHR.md`
+  read *"~17:10Z"* against an mtime of 16:29:34Z. A pre-registration that appears to post-date its data reads as a moved goalpost even
+  when it was not one, and only the mtime could prove the order. ⇒ **write the stamp with `date -u +%H:%M:%SZ` in the same command that
+  writes the file, and cite the mtime for a file that already exists.** A model has no clock; it can only read one. Same family as
+  *"a number carries its artifact path"*: a time is a measurement too.
+- ⛔ **A KIT EXPORTED FROM THE C: MIRROR CARRIES CRLF IN EVERY TEXT FILE (`core.autocrlf=true`): PYTHON RUNS IT, BASH REFUSES IT.**
+  MEASURED 2026-11-06: `kit_mapcal_2408e921` on Thor had a CR on every line of every script (`r9e1_arm_read.sh` 241 / 241). Its FIT dumps,
+  threshold fits and floor evals all ran clean (Python reads CRLF source like LF), and then `r9e1_arm_read.sh` died at once with
+  *"set: -: invalid option"* (line 33), leaving an EMPTY verdict marker in the status log. The Python side also stamps the WRONG source:
+  the fitter's `tool_sha256` read `91aa0ff42a47` (the CRLF copy) where the git blob is `760b6cd318ee`. ⇒ **export kits with
+  `git -c core.autocrlf=false archive <sha> <paths>`** and verify them by blob (`git hash-object --no-filters --stdin-paths` on the target
+  equal to `git ls-tree -r <sha>`: 3,357 / 3,357 for the rebuilt kit); `bash -n` a kit's shell scripts before a job depends on them.
+  Same family as the `cat-file --batch` export rule for library tests: a text conversion is a silent edit.
 
 ## Git hygiene — the mistake that has now happened twice
 
