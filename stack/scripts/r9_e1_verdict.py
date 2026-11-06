@@ -89,12 +89,12 @@ KEY_SRC = (
     (r"^boxes_per_object_noNMS_(0_20|20_40|40_60)$", _EVAL, 265, '"boxes_per_object_noNMS_"'),
     (r"^n_det_noNMS_(0_20|20_40|40_60)$", _EVAL, 266, '"n_det_noNMS_"'),
     (r"^ap2m_all_NMS$", _EVAL, 268, '"ap2m_all_NMS"'),
-    (r"^nf_prec_(0_5|5_10|10_20|20_40)$", _EVAL, 477, '"nf_prec_%d_%d"'),
-    (r"^nf_prec05_(0_5|5_10|10_20|20_40)$", _EVAL, 478, '"nf_prec05_%d_%d"'),
-    (r"^nf_prec_0_10$", _EVAL, 483, '"nf_prec_0_10"'),
+    (r"^nf_prec_(0_5|5_10|10_20|20_40)$", _EVAL, 588, '"nf_prec_%d_%d"'),
+    (r"^nf_prec05_(0_5|5_10|10_20|20_40)$", _EVAL, 589, '"nf_prec05_%d_%d"'),
+    (r"^nf_prec_0_10$", _EVAL, 594, '"nf_prec_0_10"'),
     # the M1 map primary (hold_r9_e1_mapprim): per band, then the 5-10 + 10-20 m pooled key; each exists ONLY when a --lift-valid mask was given
-    (r"^nf_swedge_prec_(lv_)?(0_5|5_10|10_20|20_40)$", _EVAL, 494, '"nf_swedge_prec_%s%d_%d"'),
-    (r"^nf_swedge_prec_(lv_)?5_20$", _EVAL, 495, '"nf_swedge_prec_%s5_20"'),
+    (r"^nf_swedge_prec_(lv_)?(0_5|5_10|10_20|20_40)$", _EVAL, 605, '"nf_swedge_prec_%s%d_%d"'),
+    (r"^nf_swedge_prec_(lv_)?5_20$", _EVAL, 606, '"nf_swedge_prec_%s5_20"'),
 )
 
 
@@ -580,8 +580,46 @@ def resolve_ref(arm: str, ref):
     return r
 
 
+def _thresholds_protocol(out, checks, problems, floor, rast_meta, e_arm, e_ref, ref) -> None:
+    """The map-threshold PROTOCOL the verdict was read on must be the floor's: both at the fixed 128, or both on each arm's OWN FIT cuts. A floor read
+    at 128 judging an arm read on its FIT cut (or the reverse) compares two different operating points and REFUSES. Also: the single evals must carry the
+    cut they were given, and a C0 reference must be cut by the very file the floor's C0 was. Adds nothing to ``out`` when neither side has thresholds."""
+    tv = (rast_meta or {}).get("thresholds")                    # {"c0": ref side, "c1": arm side} as read now
+    tf = (floor.get("map_inputs") or {}).get("thresholds")      # {"c0": the floor's C0, "c1": the floor's C1}
+    if not tv and not tf:
+        return
+    prot = lambda t: "per-arm FIT thresholds" if t else "fixed 128"          # noqa: E731
+    same = bool(tv) == bool(tf)
+    out["map_thresholds"] = {"protocol_verdict": prot(tv), "protocol_floor": prot(tf), "same_protocol": same,
+                             "arm": None if not tv else tv["c1"], "ref": None if not tv else tv["c0"],
+                             "floor_c0": None if not tf else tf["c0"], "floor_c1": None if not tf else tf["c1"]}
+    _check(checks, "map-threshold protocol equals the floor's (both fixed 128, or both each-arm-FIT)", same,
+           "verdict: %s; floor: %s" % (prot(tv), prot(tf)) + ("" if same else " -- re-read the floor (r9_e1_floor.py --map-thresholds-c0/-c1) and this verdict on ONE protocol"))
+    if not checks[-1]["ok"]:
+        problems.append("comparability: %s -- %s" % (checks[-1]["check"], checks[-1]["detail"]))
+        return
+    if not tv:
+        return
+    for tag, e, side in (("arm", e_arm, "c1"), ("ref", e_ref, "c0")):
+        nf = (e or {}).get("nearfield")
+        if nf is None:
+            continue
+        s_e, s_v = (nf.get("thresholds") or {}).get("sha256"), tv[side]["sha256"]
+        _check(checks, "%s single eval was cut at the thresholds this verdict was given" % tag, s_e == s_v,
+               "eval %s vs given %s" % ((s_e or "none")[:12], s_v[:12]))
+        if not checks[-1]["ok"]:
+            problems.append("comparability: %s -- %s" % (checks[-1]["check"], checks[-1]["detail"]))
+    if ref in ("C0", "C1"):
+        side = "c0" if ref == "C0" else "c1"
+        sf, sv = ((tf or {}).get(side) or {}).get("sha256"), tv["c0"]["sha256"]
+        _check(checks, "the %s reference is cut by the file the floor's %s was" % (ref, ref), sf == sv,
+               "verdict %s vs floor %s" % (sv[:12], (sf or "none")[:12]))
+        if not checks[-1]["ok"]:
+            problems.append("comparability: %s -- %s" % (checks[-1]["check"], checks[-1]["detail"]))
+
+
 def build_verdict(floor_path, paired, eval_arm, eval_ref, arm, ref=None, *, rast_arm=None, rast_ref=None, rast_names=None, rast_stride=1,
-                  psw_key="psw", floor_eval_c0=None, boot=None, seed=None, lift_valid=None) -> dict:
+                  psw_key="psw", floor_eval_c0=None, boot=None, seed=None, lift_valid=None, thr_arm=None, thr_ref=None) -> dict:
     out = {"schema": SCHEMA, "tier": TIER, "arm": arm, "keep_rule": KEEP_RULE, "keep_factor": KEEP_FACTOR, "status": "OK", "verdict": None,
            "estimator": {"answers": "another draw of EPISODES, NOT another training run: the floor |C1-C0| is ONE seed pair (n = 1) and "
                                     "the arm is ONE training run"}}
@@ -607,6 +645,10 @@ def build_verdict(floor_path, paired, eval_arm, eval_ref, arm, ref=None, *, rast
             raise Refused("--rast-arm and --rast-ref go together")
         if lift_valid is not None and rast_arm is None:
             raise Refused("--lift-valid needs --rast-arm / --rast-ref: a mask with no rasters would be silently ignored")
+        if bool(thr_arm) != bool(thr_ref):
+            raise Refused("--map-thresholds-arm and --map-thresholds-ref go together: the arm and its reference are each read on their OWN FIT cuts, or both at 128")
+        if thr_arm and rast_arm is None:
+            raise Refused("--map-thresholds-arm / -ref need --rast-arm / --rast-ref: thresholds with no rasters would be silently ignored")
         fe_path = floor_eval_c0
         fe_rec = (floor.get("inputs") or {}).get("eval_c0") or {}
         if fe_path is None and fe_rec.get("path") and Path(fe_rec["path"]).is_file():
@@ -624,8 +666,9 @@ def build_verdict(floor_path, paired, eval_arm, eval_ref, arm, ref=None, *, rast
         rast_meta = None
         if rast_arm is not None:
             mrows, rast_meta = fl.nearfield_rows(rast_ref, rast_arm, names_file=rast_names, stride=rast_stride, psw_key=psw_key, boot=boot,
-                                                 seed=seed, e0=e_ref, e1=e_arm, problems=problems, lift_valid=lift_valid)
+                                                 seed=seed, e0=e_ref, e1=e_arm, problems=problems, lift_valid=lift_valid, thr0=thr_ref, thr1=thr_arm)
             pair_rows.update(_pair_rows_from(mrows))
+            _thresholds_protocol(out, checks, problems, floor, rast_meta, e_arm, e_ref, ref)
             if "lift_valid" in (rast_meta or {}):            # set once the mask step ran: the nf_swedge_*lv rows were read on THIS mask
                 lv_v, lv_f = rast_meta["lift_valid"], (floor.get("map_inputs") or {}).get("lift_valid")
                 sv, sf = (lv_v or {}).get("sha256"), (lv_f or {}).get("sha256")
@@ -686,6 +729,16 @@ def _proxy_note(r: dict) -> str:
             "levers of other families):* " + ", ".join("`%s`" % k for k in r["proxies"]))
 
 
+def _thresholds_line(v: dict) -> str:
+    t = v.get("map_thresholds")
+    if not t:
+        return ""
+    if not t.get("arm"):
+        return "Map flags: fixed 128 (verdict and floor)."
+    return ("Map flags cut at each arm's OWN FIT-split thresholds (not 128): arm `%s`, reference `%s` (sha256 of the files); protocol %s the floor's." %
+            (t["arm"]["sha256"], t["ref"]["sha256"], "EQUAL to" if t.get("same_protocol") else "NOT EQUAL to"))
+
+
 def _lift_valid_line(v: dict) -> str:
     lv = v.get("lift_valid")
     if not lv:
@@ -721,7 +774,7 @@ def render_md(v: dict) -> str:
           "## The keep rule (REFCV9_DESIGN 4.3)", "", v["keep_rule"], "",
           "## Floor provenance", "", "FLOOR.json sha256 `%s` (status %s, %s rows, B %s seed %s). Floor = |C1 - C0|, ONE seed pair (n = 1)."
           % (v["floor"]["sha256"], v["floor"]["status"], v["floor"]["n_rows"], (v["floor"].get("estimator") or {}).get("B"),
-             (v["floor"].get("estimator") or {}).get("seed")), _lift_valid_line(v), "",
+             (v["floor"].get("estimator") or {}).get("seed")), _lift_valid_line(v), *([_thresholds_line(v)] if v.get("map_thresholds") else []), "",
           "## The four metric families (CLAUDE.md, binding)", "", "| family | status |", "|---|---|"]
     L += ["| %s | %s |" % (x["family"], x["status"]) for x in v["families"]]
     L += ["", "Perception is the family this rig reads: boxes and the near-field map raster.", "", "## The pre-registered primary (and named guards)", "",
@@ -955,6 +1008,9 @@ def main(argv=None) -> int:
     ap.add_argument("--lift-valid", help="the ARM-INDEPENDENT lift-validity mask of the MAP PRIMARY (nf_swedge_prec_lv_*; r9_e1_eval.load_lift_valid): a sidecar "
                                          ".npz or a raster dir of an unobs-writing arm.  Its sha256 must equal the FLOOR's map_inputs.lift_valid (one side with a "
                                          "mask and the other without REFUSES); absent -> the map primary is read only if the floor has the row (it cannot without a mask)")
+    ap.add_argument("--map-thresholds-arm", help="the ARM's OWN FIT-split map thresholds (r9_map_fit_thresholds.py fit); both -arm and -ref or neither. The floor "
+                                                 "must have been read on the same protocol (each arm on its own FIT cuts) or this verdict REFUSES")
+    ap.add_argument("--map-thresholds-ref", help="the REFERENCE arm's OWN FIT-split map thresholds")
     ap.add_argument("--boot", type=int, help="must equal the floor's B (default: the floor's)")
     ap.add_argument("--seed", type=int, help="must equal the floor's seed (default: the floor's)")
     ap.add_argument("--out-dir", required=True)
@@ -963,7 +1019,7 @@ def main(argv=None) -> int:
     od.mkdir(parents=True, exist_ok=True)
     v = build_verdict(a.floor, a.paired, a.eval_arm, a.eval_ref, a.arm, a.ref, rast_arm=a.rast_arm, rast_ref=a.rast_ref, rast_names=a.rast_names,
                       rast_stride=a.rast_stride, psw_key=a.psw_key, floor_eval_c0=a.floor_eval_c0, boot=a.boot, seed=a.seed,
-                      lift_valid=a.lift_valid)
+                      lift_valid=a.lift_valid, thr_arm=a.map_thresholds_arm, thr_ref=a.map_thresholds_ref)
     stem = "VERDICT_%s" % a.arm
     (od / (stem + ".json")).write_text(json.dumps(v, indent=1, default=float, allow_nan=False) + "\n", encoding="utf-8", newline="\n")
     (od / (stem + ".md")).write_text(render_md(v), encoding="utf-8", newline="\n")

@@ -296,6 +296,27 @@ def window_order(grid, clips, ci: dict, index_pos: dict, W: int) -> list:
     return order
 
 
+def fit_window_order(index, clip_ids, sha12_of, wanted, K: int, W: int) -> list:
+    """The FIT split's windows (``--fit-k-per-ep``): ``run_diag.py``'s train_diag picker (2026-10-21-refcv8-perc8/code/run_diag.py, the `else` branch of
+    the window-set block) VERBATIM IN ITS ARITHMETIC, restricted to the ``wanted`` clips (a set of sha12): episodes in sha12 order, and per episode the
+    ``K`` windows at ``ts[int((j + 0.5) * len(ts) / K)]`` of its sorted dataset starts ``ts``. ``index`` = the dataset's ``(episode, t)`` list, ``clip_ids`` the
+    manifest's clip ids indexed by episode. -> [(clip id, ws = t + W - 1, dataset index)] -- the same triple ``window_order`` returns. The picks come from
+    the DATASET'S OWN index, so no window can be one the dataset does not hold."""
+    by_ep = {}
+    for i, (e_i, t) in enumerate(index):
+        by_ep.setdefault(int(e_i), []).append((int(t), i))
+    order = []
+    for e_i in sorted(by_ep, key=lambda e: sha12_of(clip_ids[e])):
+        c = clip_ids[e_i]
+        if sha12_of(c) not in wanted:
+            continue
+        ts = sorted(by_ep[e_i])
+        for j in range(int(K)):
+            t, i = ts[int((j + 0.5) * len(ts) / int(K))]
+            order.append((c, int(t) + W - 1, i))
+    return order
+
+
 def order_digest(order, sha12_of) -> str:
     """sha256 over the (sha12, ws) sequence: two dumps on the SAME windows have the same digest."""
     h = hashlib.sha256()
@@ -339,6 +360,11 @@ def build_parser():
     ap.add_argument("--law-control", type=int, default=2, help="windows rolled with the REAL future frame too (perc_pass_r7's control)")
     ap.add_argument("--rig-step0-from", help="a FULL (refcv8) EMA checkpoint: build the rig from it with NO training step (KA-STEP0)")
     ap.add_argument("--require-ema", action="store_true", help="refuse a checkpoint that is not an EMA file")
+    ap.add_argument("--fit-k-per-ep", type=int, default=0,
+                    help="FIT DUMP (the map-threshold fit's rasters): K windows per clip at run_diag's evenly spaced train_diag positions, for the TRAIN clips "
+                         "listed in --windows (a sha12 list) that are present in the dataset cache; needs --exclude-split; --s2-windows is not read. 0 = off "
+                         "(every other behaviour is unchanged)")
+    ap.add_argument("--exclude-split", help="FIT dump: E0i DEV_HOLD_SPLIT.json -- the dump REFUSES a FIT clip that is in DEV or HOLD")
     ap.add_argument("--every", type=int, default=1, help="keep every n-th window of the selection (SMOKE / sample)")
     ap.add_argument("--max-windows", type=int, default=0, help="SMOKE ONLY")
     ap.add_argument("--rast-every", type=int, default=1, help="write a raster for every n-th kept window")
@@ -393,18 +419,44 @@ def run_dump(a) -> int:
     from tanitad.data.v2_dataset import load_or_build_manifest
     clip_ids = [str(c) for c in load_or_build_manifest(args_ds.eval_cache, verbose=False)["clip_id"]]
     ci = {c: i for i, c in enumerate(clip_ids)}
-    grid = load_grid(a.s2_windows)
-    grid_sha = sha256_file(a.s2_windows)
-    clips, sel_sha12, split_rec = select_clips(grid, L.sha12, a.windows, a.split)
-    if split_rec.get("split_obj") is not None and a.split:
-        split_rec["check"] = check_split_against_grid(split_rec["split_obj"], a.split, grid_sha, split_rec["counts"])
-    split_rec.pop("split_obj", None)
-    split_rec.pop("counts", None)
-    pos = {tuple(int(v) for v in x): j for j, x in enumerate(e_ds.index)}
-    unknown = [c for c in clips if c not in ci]
-    if unknown:
-        raise SystemExit(f"[r9-e1-dump] {len(unknown)} selected clip(s) are not in the eval cache")
-    order = window_order(grid, clips, ci, pos, W)
+    fit_rec = None
+    if a.fit_k_per_ep:
+        if not a.windows or not a.exclude_split:
+            raise SystemExit("[r9-e1-dump] --fit-k-per-ep needs --windows <FIT clip sha12 list> and --exclude-split <DEV_HOLD_SPLIT.json>")
+        if a.split:
+            raise SystemExit("[r9-e1-dump] --fit-k-per-ep takes a plain sha12 list in --windows: --split names DEV / HOLD, which a FIT dump never reads")
+        from r9_e1_eval import load_window_list
+        want = load_window_list(a.windows)
+        evalset = set(load_window_list(a.exclude_split, "dev")) | set(load_window_list(a.exclude_split, "hold"))
+        clash = sorted(set(want) & evalset)
+        if clash:
+            raise SystemExit(f"[r9-e1-dump] {len(clash)} FIT clip(s) are in DEV / HOLD of {Path(a.exclude_split).name} (e.g. {clash[:3]}): a FIT dump never reads eval")
+        by_sha12 = {L.sha12(c): c for c in clip_ids}
+        miss = [s for s in want if s not in by_sha12]
+        if miss:
+            raise SystemExit(f"[r9-e1-dump] {len(miss)} FIT clip(s) are not in the dataset cache {getattr(args_ds, 'eval_cache', '?')} (e.g. {miss[:3]}): "
+                             f"point --eval-cache (REFCV6_REMAP_OVERRIDES) at the TRAIN cache that holds them")
+        grid, grid_sha = None, None
+        clips = [by_sha12[s] for s in want]
+        order = fit_window_order(e_ds.index, clip_ids, L.sha12, set(want), a.fit_k_per_ep, W)
+        split_rec = {"set": "FIT", "n_clips": len(want)}
+        fit_rec = {"k_per_ep": int(a.fit_k_per_ep), "n_clips": len(want), "clips_sha12": sorted(want),
+                   "exclude_split": Path(a.exclude_split).name, "exclude_split_sha256": sha256_file(a.exclude_split),
+                   "disjoint_from_dev_and_hold": True,
+                   "rule": "TRAIN clips; K windows per clip at ts[int((j + 0.5) * len(ts) / K)] of the dataset's sorted starts (run_diag.py train_diag)"}
+    else:
+        grid = load_grid(a.s2_windows)
+        grid_sha = sha256_file(a.s2_windows)
+        clips, sel_sha12, split_rec = select_clips(grid, L.sha12, a.windows, a.split)
+        if split_rec.get("split_obj") is not None and a.split:
+            split_rec["check"] = check_split_against_grid(split_rec["split_obj"], a.split, grid_sha, split_rec["counts"])
+        split_rec.pop("split_obj", None)
+        split_rec.pop("counts", None)
+        pos = {tuple(int(v) for v in x): j for j, x in enumerate(e_ds.index)}
+        unknown = [c for c in clips if c not in ci]
+        if unknown:
+            raise SystemExit(f"[r9-e1-dump] {len(unknown)} selected clip(s) are not in the eval cache")
+        order = window_order(grid, clips, ci, pos, W)
     order = order[::max(1, int(a.every))]
     if a.max_windows:
         order = order[:a.max_windows]
@@ -555,6 +607,8 @@ def run_dump(a) -> int:
             "cuda_max_memory_allocated_gib": (round(_t.cuda.max_memory_allocated() / 2 ** 30, 3) if _t.cuda.is_available() and _t.cuda.is_initialized() else None),
             "SMOKE_RESTRICTED": bool(a.max_windows) or int(a.every) > 1 or int(a.rast_every) > 1,
             "torch": _t.__version__, "tree_commit": _tree_commit(stack.parent)}
+    if fit_rec is not None:                 # only a FIT dump carries the block: every other dump.json is unchanged
+        meta["fit"] = fit_rec
     if pfq_staged["n"]:
         _pfq = model._perception.box_pfq
         meta["perframe_queries"] = {"staged_forwards": pfq_staged["n"], "n_seeds": int(_pfq.n_seeds), "n_global": int(_pfq.n_global),

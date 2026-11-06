@@ -209,9 +209,12 @@ def box_rows(e0: dict, e1: dict, ep: dict, problems: list, seed: int = DEFAULT_S
 
 
 def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw", boot=DEFAULT_BOOT, seed=DEFAULT_SEED,
-                   e0=None, e1=None, problems=None, lift_valid=None) -> tuple[dict, dict]:
+                   e0=None, e1=None, problems=None, lift_valid=None, thr0=None, thr1=None) -> tuple[dict, dict]:
     """The paired near-field corridor precision: the SAME ``nearfield_stats`` over per-EPISODE count blocks that r9_e1_eval's
-    single-arm ``nearfield.ci`` bootstraps, through ``ci.paired_stat_cluster_bootstrap``. -> (rows, meta)."""
+    single-arm ``nearfield.ci`` bootstraps, through ``ci.paired_stat_cluster_bootstrap``. -> (rows, meta).
+
+    ``thr0`` / ``thr1`` (paths of ``tanitad.r9_map_thresholds/1`` files, default None) are each side's OWN FIT-split cuts for its first / second raster
+    dir; both or neither (a floor with one side cut and the other at 128 is not a floor). Neither => the fixed 128 and a ``meta`` with no ``thresholds``."""
     ci = ev._import_ci()
     problems = problems if problems is not None else []
 
@@ -231,14 +234,27 @@ def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw"
                         % (meta["only_c0"], meta["only_c1"], len(common)))
         return {}, meta
     lvm = None
+    t0 = t1 = b0 = b1 = None
     try:        # the ONE arm-independent lift-valid mask both arms are scored on (r9_e1_eval.load_lift_valid); absent -> no `_lv_` rows
         lvm = ev.load_lift_valid(lift_valid) if lift_valid else None
-        n0, acc0, _ = ev.nearfield_per_file([f0[n] for n in common], stride, psw_key, lift_valid=lvm)
-        n1, acc1, _ = ev.nearfield_per_file([f1[n] for n in common], stride, psw_key, lift_valid=lvm)
+        if bool(thr0) != bool(thr1):
+            raise ev.ThresholdsError("map thresholds were given for ONE side only (%s): both sides are read on their own FIT cuts, or neither" % ("first" if thr0 else "second"))
+        t0 = ev.load_map_thresholds(thr0) if thr0 else None
+        t1 = ev.load_map_thresholds(thr1) if thr1 else None
+        b0 = ev.thresholds_binding(t0, rast_c0) if t0 is not None else None
+        b1 = ev.thresholds_binding(t1, rast_c1) if t1 is not None else None
+        n0, acc0, _ = ev.nearfield_per_file([f0[n] for n in common], stride, psw_key, lift_valid=lvm, thresholds=t0)
+        n1, acc1, _ = ev.nearfield_per_file([f1[n] for n in common], stride, psw_key, lift_valid=lvm, thresholds=t1)
     except ev.LiftValidError as e:
         problems.append("lift-valid mask refused: %s" % e)
         return {}, meta
+    except ev.ThresholdsError as e:
+        problems.append("map thresholds refused: %s" % e)
+        return {}, meta
     meta["lift_valid"] = None if lvm is None else lvm.record()
+    if t0 is not None:                       # stamped only when set: an unset floor's map_inputs is unchanged
+        meta["thresholds"] = {"c0": dict(t0.record(ev.NEARFIELD_BANDS, (psw_key, ev.EDGE_KEY)), binding=b0),
+                              "c1": dict(t1.record(ev.NEARFIELD_BANDS, (psw_key, ev.EDGE_KEY)), binding=b1)}
     if n0 != n1 or not n0:
         problems.append("rasters with a gt plane differ between the arms (%d vs %d): the GT plane is the label and must be the same"
                         % (len(n0), len(n1)))
@@ -268,6 +284,11 @@ def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw"
             problems.append("%s eval's lift-valid mask (%s) is not the floor's (%s): the _lv_ rows would be read on different cells"
                             % (tag, (lv_e or {}).get("sha256", "none")[:12], (meta["lift_valid"] or {}).get("sha256", "none")[:12]))
             continue
+        th_e, th_f = ev.thresholds_sha(nf.get("thresholds")), ev.thresholds_sha(((meta.get("thresholds") or {}).get(tag.lower())))
+        if th_e != th_f:
+            problems.append("%s eval's map thresholds (%s) are not the floor read's (%s): the near-field flags would be cut at different levels"
+                            % (tag, (th_e or "none")[:12], (th_f or "none")[:12]))
+            continue
         for m, r in rows.items():
             if m not in nf["ci"]:
                 continue
@@ -280,7 +301,7 @@ def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw"
 
 # --------------------------------------------------------------------------------------------------- the read
 def build_floor(eval_c0: str, eval_c1: str, paired: str, *, rast_c0=None, rast_c1=None, rast_names=None, rast_stride=1,
-                psw_key="psw", boot=DEFAULT_BOOT, seed=DEFAULT_SEED, lift_valid=None) -> dict:
+                psw_key="psw", boot=DEFAULT_BOOT, seed=DEFAULT_SEED, lift_valid=None, thr_c0=None, thr_c1=None) -> dict:
     e0, e1, ep = _load_eval(eval_c0), _load_eval(eval_c1), _load_eval(paired)
     out = {"schema": SCHEMA, "tier": TIER, "status": "OK", "keep_rule": KEEP_RULE, "keep_factor": KEEP_FACTOR,
            "estimator": {"name": ESTIMATOR, "B": boot, "seed": seed,
@@ -297,9 +318,11 @@ def build_floor(eval_c0: str, eval_c1: str, paired: str, *, rast_c0=None, rast_c
     meta = None
     if (rast_c0 is None) != (rast_c1 is None):
         problems.append("--rast-c0 and --rast-c1 go together")
+    elif (thr_c0 or thr_c1) and rast_c0 is None:
+        problems.append("--map-thresholds-c0 / -c1 need --rast-c0 / --rast-c1: thresholds with no rasters would be silently ignored")
     elif rast_c0 is not None and not problems:
         mrows, meta = nearfield_rows(rast_c0, rast_c1, names_file=rast_names, stride=rast_stride, psw_key=psw_key, boot=boot,
-                                     seed=seed, e0=e0, e1=e1, problems=problems, lift_valid=lift_valid)
+                                     seed=seed, e0=e0, e1=e1, problems=problems, lift_valid=lift_valid, thr0=thr_c0, thr1=thr_c1)
         rows.update(mrows)
     out["map_inputs"] = meta
     out["rows"] = rows
@@ -372,6 +395,10 @@ def render_md(f: dict) -> str:
                 L += ["", "## " + title, "", "Not read: no raster directories were given (`--rast-c0` / `--rast-c1`)."]
             continue
         L += ["", "## " + title]
+        if fam == "MAP" and (f.get("map_inputs") or {}).get("thresholds"):
+            th = f["map_inputs"]["thresholds"]
+            L += ["", "Map flags cut at each arm's OWN FIT-split thresholds (not 128): C0 `%s`, C1 `%s` (sha256 of the files)."
+                  % (th["c0"]["sha256"], th["c1"]["sha256"])]
         for grp in dict.fromkeys(r["group"] for r in rows):
             sub = [r for r in rows if r["group"] == grp]
             n0 = sub[0]
@@ -404,6 +431,8 @@ def main(argv=None) -> int:
     ap.add_argument("--rast-stride", type=int, default=1)
     ap.add_argument("--psw-key", default="psw")
     ap.add_argument("--lift-valid", help="r9_e1_eval.py's --lift-valid (sidecar .npz or an unobs-carrying raster dir): adds the nf_swedge_prec_lv_* rows")
+    ap.add_argument("--map-thresholds-c0", help="C0's OWN FIT-split map thresholds (r9_map_fit_thresholds.py fit): its near-field flags are cut there, not at 128")
+    ap.add_argument("--map-thresholds-c1", help="C1's OWN FIT-split map thresholds; both or neither of -c0 / -c1")
     ap.add_argument("--boot", type=int, default=DEFAULT_BOOT)
     ap.add_argument("--seed", type=int, default=DEFAULT_SEED)
     ap.add_argument("--out-dir", required=True)
@@ -412,7 +441,8 @@ def main(argv=None) -> int:
     od.mkdir(parents=True, exist_ok=True)
     try:
         floor = build_floor(a.eval_c0, a.eval_c1, a.paired, rast_c0=a.rast_c0, rast_c1=a.rast_c1, rast_names=a.rast_names,
-                            rast_stride=a.rast_stride, psw_key=a.psw_key, boot=a.boot, seed=a.seed, lift_valid=a.lift_valid)
+                            rast_stride=a.rast_stride, psw_key=a.psw_key, boot=a.boot, seed=a.seed, lift_valid=a.lift_valid,
+                            thr_c0=a.map_thresholds_c0, thr_c1=a.map_thresholds_c1)
     except FloorRefused as e:
         floor = {"schema": SCHEMA, "tier": TIER, "status": "REFUSED", "problems": [str(e)], "rows": {}}
     (od / "FLOOR.json").write_text(json.dumps(floor, indent=1, default=float, allow_nan=False) + "\n", encoding="utf-8")

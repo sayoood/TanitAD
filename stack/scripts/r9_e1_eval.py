@@ -369,7 +369,109 @@ def load_lift_valid(path) -> LiftValid:
     return LiftValid(masks, "sidecar:%s" % p.name)
 
 
-def nearfield_per_file_ex(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLASS, lift_valid=None, edge_key=EDGE_KEY):
+# --------------------------------------------------------------------------------------------------- the FIT-split decision thresholds
+THR_SCHEMA = "tanitad.r9_map_thresholds/1"
+FIXED_LEVEL = 128                                         # the historical fixed cut: flag = plane >= 128 (what every unset run still does)
+
+
+class ThresholdsError(RuntimeError):
+    """A map-thresholds file that is missing, malformed, or cannot be applied to the read's bands. Never swallowed: a wrong cut would
+    silently move every flag."""
+
+
+class MapThresholds:
+    """Per-plane, per-BAND uint8 cut levels (REFCV9_DESIGN 2.1 decision rule: "per-channel, per-band thresholds fitted on a FIT split of TRAIN
+    clips; never on eval"), written by ``r9_map_fit_thresholds.py fit``. A flag is ``plane_u8 >= level``. ``planes`` = {plane name (``psw``,
+    ``pedge``, ``pdrv``): [level per band]}, ``bands_m`` = [[lo, hi), ...] metres ahead, contiguous from 0. A plane the file does not carry keeps
+    the fixed 128 (and :meth:`applied` says so). ``sha256`` is the FILE's: it is the protocol stamp the eval / floor / verdict compare."""
+
+    def __init__(self, planes, bands_m, sha256, source, provenance=None):
+        bands = [[float(b[0]), float(b[1])] for b in bands_m]
+        if not bands or bands[0][0] != 0.0 or any(b[1] <= b[0] for b in bands) or any(bands[i][1] != bands[i + 1][0] for i in range(len(bands) - 1)):
+            raise ThresholdsError("bands_m %s must be non-empty, start at 0 and be contiguous and increasing" % (bands_m,))
+        if not planes:
+            raise ThresholdsError("a thresholds file with no plane carries nothing")
+        self.planes = {}
+        for k, v in planes.items():
+            if not isinstance(v, (list, tuple)) or len(v) != len(bands):
+                raise ThresholdsError("plane %r: %s levels for %d bands" % (k, v if not isinstance(v, (list, tuple)) else len(v), len(bands)))
+            lv = []
+            for x in v:
+                if isinstance(x, bool) or not isinstance(x, int) or not (1 <= x <= 255):
+                    raise ThresholdsError("plane %r: level %r is not an integer in 1..255 (a uint8 cut; 0 would flag every cell)" % (k, x))
+                lv.append(int(x))
+            self.planes[str(k)] = lv
+        self.bands_m, self.sha256, self.source, self.provenance = bands, sha256, source, provenance or {}
+
+    @classmethod
+    def load(cls, path):
+        p = Path(str(path))
+        if not p.is_file():
+            raise ThresholdsError("--map-thresholds %s is not a file" % p)
+        raw = p.read_bytes()
+        try:
+            obj = json.loads(raw.decode("utf-8"))
+        except ValueError as e:
+            raise ThresholdsError("%s: not JSON (%s)" % (p, e))
+        if not isinstance(obj, dict) or obj.get("schema") != THR_SCHEMA:
+            raise ThresholdsError("%s: schema %r != %r" % (p, obj.get("schema") if isinstance(obj, dict) else None, THR_SCHEMA))
+        return cls(obj.get("planes") or {}, obj.get("bands_m") or [], hashlib.sha256(raw).hexdigest(), p.name, obj.get("provenance"))
+
+    def level(self, plane, lo_m, hi_m):
+        """The cut for ``plane`` over the read band [lo_m, hi_m). 128 for a plane the file lacks. A read band that straddles two fit bands
+        with DIFFERENT levels refuses (the cut would be ambiguous); inside one band, or across bands that agree, it is that level."""
+        if plane not in self.planes:
+            return FIXED_LEVEL
+        hit = [i for i, (a, b) in enumerate(self.bands_m) if a < hi_m and b > lo_m]
+        if not hit or lo_m < self.bands_m[0][0] or hi_m > self.bands_m[-1][1]:
+            raise ThresholdsError("read band %s-%s m is outside the thresholds' bands %s" % (lo_m, hi_m, self.bands_m))
+        lv = {self.planes[plane][i] for i in hit}
+        if len(lv) != 1:
+            raise ThresholdsError("read band %s-%s m straddles fit bands %s with different %s levels %s: fit the thresholds on bands that nest the read's"
+                                  % (lo_m, hi_m, [self.bands_m[i] for i in hit], plane, sorted(lv)))
+        return lv.pop()
+
+    def applied(self, bands, keys):
+        """{"lo-hi": {plane: level}} for the read's bands -- what the flags were actually cut at (stamped into every output)."""
+        return {"%d-%d" % (lo, hi): {k: self.level(k, lo, hi) for k in keys} for lo, hi in bands}
+
+    def record(self, bands=None, keys=None):
+        r = {"schema": THR_SCHEMA, "sha256": self.sha256, "source": self.source, "bands_m": self.bands_m, "planes": self.planes,
+             "absent_planes_keep": FIXED_LEVEL}
+        if bands is not None:
+            r["applied"] = self.applied(bands, keys)
+        return r
+
+
+def load_map_thresholds(path):
+    return MapThresholds.load(path)
+
+
+def thresholds_binding(thr, rast_dir) -> dict:
+    """A thresholds file is bound to the CHECKPOINT whose planes it was fitted on (``provenance.ckpt_md5``, from the FIT dump's dump.json): when the
+    raster dir's own ``../dump.json`` names another checkpoint this REFUSES. No dump.json beside the rasters (or an unbound file) is reported as
+    UNCHECKED -- never as bound."""
+    want = (thr.provenance or {}).get("ckpt_md5")
+    dj = Path(str(rast_dir)).parent / "dump.json"
+    if not want:
+        return {"checked": False, "why": "the thresholds file carries no provenance.ckpt_md5"}
+    if not dj.is_file():
+        return {"checked": False, "why": "no dump.json beside %s" % rast_dir}
+    got = json.loads(dj.read_text(encoding="utf-8")).get("ckpt_md5")
+    if not got:
+        return {"checked": False, "why": "dump.json carries no ckpt_md5"}
+    if got != want:
+        raise ThresholdsError("the thresholds (%s) were fitted on checkpoint md5 %s, the rasters under %s come from checkpoint md5 %s: a cut is bound to "
+                              "its own model" % (thr.source, want, rast_dir, got))
+    return {"checked": True, "ckpt_md5": got}
+
+
+def thresholds_sha(rec):
+    return None if not rec else rec.get("sha256")
+
+
+
+def nearfield_per_file_ex(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLASS, lift_valid=None, edge_key=EDGE_KEY, thresholds=None):
     """:func:`nearfield_per_file` plus the SIDEWALK+EDGE union counts and an ``info`` record.
 
     ``acc [n, 4, 11]`` per file / band: columns 0-5 are MAPSEL's, UNCHANGED (``[own flags, flags on GT sidewalk, flags within 0.5 m
@@ -380,7 +482,11 @@ def nearfield_per_file_ex(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLAS
       * 6 ``U_P`` = |f & seen|, 7 ``U_TP`` = |f & seen & GT union| (lift-INDEPENDENT);
       * 8 ``L_P`` = |f & seen & lift-valid|, 9 ``L_TP`` = |f & seen & lift-valid & GT union|, 10 ``L_S`` = |seen & lift-valid|
         -- NaN in every file when no ``lift_valid`` was given (a count that was not measured is not 0).
-    A raster that carries its own ``unobs`` plane must AGREE with the supplied mask (0-40 m corridor) or this raises."""
+    A raster that carries its own ``unobs`` plane must AGREE with the supplied mask (0-40 m corridor) or this raises.
+
+    ``thresholds`` (a :class:`MapThresholds`, default None) replaces the fixed 128 of BOTH flags with the file's per-plane, per-band level
+    (``psw_key`` / ``edge_key`` planes; a plane the file lacks keeps 128). None => every flag is ``>= 128`` exactly as before, and the
+    ``info`` record carries no ``thresholds`` key: an unset run is byte-identical to the one before this argument existed."""
     from scipy.ndimage import binary_dilation
     c0, c1 = CORRIDOR_COLS
     names, accs, cls_ = [], [], []
@@ -394,7 +500,7 @@ def nearfield_per_file_ex(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLAS
         n_edge += int(has_edge)
         sw = gt == gt_class
         gtu = sw | (gt == EDGE_CLASS)
-        flag_u = ((psw >= 128) | (z[edge_key] >= 128)) if has_edge else (psw >= 128)
+        edge = z[edge_key] if has_edge else None
         near_sw = binary_dilation(sw, iterations=5)          # within 0.5 m of a GT sidewalk cell
         name = Path(str(f)).name
         lvf = None
@@ -413,10 +519,13 @@ def nearfield_per_file_ex(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLAS
         g9 = np.zeros((len(NEARFIELD_BANDS), 9))
         for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
             sl = (slice(lo * 10, hi * 10), slice(c0, c1))
-            p, g, seen, ns = psw[sl] >= 128, sw[sl], gt[sl] != 255, near_sw[sl]
+            t_sw = FIXED_LEVEL if thresholds is None else thresholds.level(psw_key, lo, hi)
+            t_ed = FIXED_LEVEL if thresholds is None else thresholds.level(edge_key, lo, hi)
+            p0 = psw[sl] >= t_sw
+            p, g, seen, ns = p0, sw[sl], gt[sl] != 255, near_sw[sl]
             p = p & seen
             a[i, :NF_BASE_COLS] = [p.sum(), (p & g).sum(), (p & ns).sum(), g.sum(), (g & p).sum(), seen.sum()]
-            fu = flag_u[sl] & seen
+            fu = (((p0) | (edge[sl] >= t_ed)) if has_edge else p0) & seen
             a[i, 6], a[i, 7] = fu.sum(), (fu & gtu[sl]).sum()
             if lvf is None:
                 a[i, 8:11] = np.nan
@@ -434,17 +543,19 @@ def nearfield_per_file_ex(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLAS
     info = {"n_files": n, "n_with_edge_plane": n_edge,
             "edge_plane": ("none: the union flag is the SIDEWALK flag alone" if n_edge == 0 else "all" if n_edge == n else "MIXED"),
             "n_unobs_checked": n_checked, "lift_valid": None if lift_valid is None else lift_valid.record()}
+    if thresholds is not None:                                # only a thresholded read carries the stamp: an unset run's info is unchanged
+        info["thresholds"] = thresholds.record(NEARFIELD_BANDS, (psw_key, edge_key))
     return (names, (np.stack(accs) if n else np.zeros((0, 4, NF_COLS))), (np.stack(cls_) if n else np.zeros((0, 4, 9))), info)
 
 
-def nearfield_per_file(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLASS, lift_valid=None):
+def nearfield_per_file(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLASS, lift_valid=None, thresholds=None):
     """PINNED COPY of the counting in MAPSEL's ``nearfield_prec.py`` (``F:/refcv9_mapsel/...mapedge/diag``): per raster file,
     per band, ``[own flags, flags on GT sidewalk, flags within 0.5 m of one, GT sidewalk cells, GT sidewalk flagged, seen
     cells]`` and the GT class histogram of the own flags. ``files`` is the script's ``sorted(os.listdir(R))`` order and the
     script's ``[::6]`` is ``stride=6``. A file without a ``gt`` plane is skipped, as in the script.
     Returns ``(names, acc [n, 4, 11], gtcls [n, 4, 9])``: columns 0-5 of ``acc`` are the script's, 6-10 the sidewalk+edge union /
     lift-valid counts of :func:`nearfield_per_file_ex` (which also returns the ``info`` record)."""
-    return nearfield_per_file_ex(files, stride, psw_key, gt_class, lift_valid)[:3]
+    return nearfield_per_file_ex(files, stride, psw_key, gt_class, lift_valid, thresholds=thresholds)[:3]
 
 
 def nearfield_table(acc, gtcls) -> dict:
@@ -529,10 +640,15 @@ def main(argv=None) -> int:
                                          "(keys e<episode>, bool [400, 60]) or a directory of rasters of an arm that wrote `unobs` planes; "
                                          "absent -> the _lv_ keys are not emitted")
     ap.add_argument("--lift-valid-save", help="write the mask that --lift-valid resolved to as a sidecar .npz (a harvest -> a sidecar)")
+    ap.add_argument("--map-thresholds", help="tanitad.r9_map_thresholds/1 (r9_map_fit_thresholds.py fit): this arm's OWN FIT-split per-plane, per-band uint8 "
+                                             "cuts, replacing the fixed psw / pedge >= 128 of the near-field flags (a plane the file lacks keeps 128). Needs "
+                                             "--rast-dir. Unset -> the fixed 128 and an output with no `thresholds` key, exactly as before")
     ap.add_argument("--boot", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", required=True)
     a = ap.parse_args(argv)
+    if a.map_thresholds and not a.rast_dir:
+        raise SystemExit("[r9-e1-eval] --map-thresholds needs --rast-dir: thresholds with no rasters would be silently ignored")
     ci = _import_ci()
     clips = load_window_list(a.windows, a.split) if a.windows else None
     recs = load_records(a.packs, clips)
@@ -572,9 +688,13 @@ def main(argv=None) -> int:
             files = [f for f in files if Path(f).stem in keep]
         try:
             lvm = load_lift_valid(a.lift_valid) if a.lift_valid else None
-            names, acc, gtcls, nfinfo = nearfield_per_file_ex(files, a.rast_stride, a.psw_key, lift_valid=lvm)
+            thr_m = load_map_thresholds(a.map_thresholds) if a.map_thresholds else None
+            thr_bind = thresholds_binding(thr_m, a.rast_dir) if thr_m is not None else None
+            names, acc, gtcls, nfinfo = nearfield_per_file_ex(files, a.rast_stride, a.psw_key, lift_valid=lvm, thresholds=thr_m)
         except LiftValidError as e:
             raise SystemExit("[r9-e1-eval] lift-valid mask refused: %s" % e)
+        except ThresholdsError as e:
+            raise SystemExit("[r9-e1-eval] map thresholds refused: %s" % e)
         if not names:
             raise SystemExit("[r9-e1-eval] no raster with a gt plane")
         if nfinfo["edge_plane"] == "MIXED":
@@ -595,6 +715,10 @@ def main(argv=None) -> int:
                                            "nf_swedge_prec_lv_*": "as nf_swedge_prec_* AND lift-valid cells only (the --lift-valid mask); every nf_swedge_* key is absent without a mask",
                                            "*_5_20": "the 5-10 and 10-20 m bands pooled by counts"},
                             "ci": ci.stat_cluster_bootstrap(units, ue, nearfield_stats, n_boot=a.boot, seed=a.seed)}
+        if thr_m is not None:                                  # stamped only when set: an unset run's JSON is unchanged
+            out["nearfield"]["thresholds"] = dict(nfinfo["thresholds"], binding=thr_bind)
+            out["nearfield"]["definition"]["flag_rule"] = ("the flags are `plane_u8 >= level` at THIS arm's own FIT-split per-band level "
+                                                           "(`thresholds.applied`), not the fixed 128 the *_prec definitions above name")
     Path(a.out).write_text(json.dumps(out, indent=1, default=float) + "\n", encoding="utf-8")
     print("wrote %s: %d windows / %d clips; AP@2m %.4f" % (a.out, len(keys), len(ids), out["boxes"]["ap2m_all"]["point"]))
     return 0

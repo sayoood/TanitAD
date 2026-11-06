@@ -441,7 +441,7 @@ def test_mapping_not_computable_primaries_carry_reason_and_cure():
         assert len(mp) == 1 and mp[0]["keys"] == ("nf_swedge_prec_lv_5_20",) and mp[0]["better"] == "higher", a
         assert mp[0]["proxies"] == ("nf_prec_5_10", "nf_prec_10_20") and mp[0]["status"] == "COMPUTABLE", a
     assert [m["role"] for m in V.ARMS["A1"]["metrics"] if "lift-valid" in m["text"]] == ["guard"]
-    assert "nf_swedge_prec_lv_5_20 (r9_e1_eval.py:495)" in V.mapping_md().replace("`", "")
+    assert "nf_swedge_prec_lv_5_20 (r9_e1_eval.py:606)" in V.mapping_md().replace("`", "")
     assert V.own_primary_keys("M1") == {"nf_swedge_prec_lv_5_20", "nf_prec_5_10", "nf_prec_10_20"} and V.own_primary_keys("B1") == {"dx_0_40_mean"}
     assert "nf_swedge_prec_lv_5_20" in V.table_keys() and "nf_swedge_prec_lv_10_20" not in V.clause3_scope()     # the bands are informative, not in scope
 

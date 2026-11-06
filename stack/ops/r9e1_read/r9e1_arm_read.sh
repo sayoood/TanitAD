@@ -24,6 +24,11 @@
 # R9E1_LIFT_VALID=<sidecar .npz | raster dir of an unobs-writing arm> (OPTIONAL): the ARM-INDEPENDENT lift-valid mask of the M1 MAP PRIMARY (nf_swedge_prec_lv_*).  When set it is
 #   passed as `--lift-valid <path>` to BOTH eval calls (the single evals and the paired one) and to the verdict, which REFUSES unless the mask's sha256 equals the one the FLOOR
 #   was read on (so the FLOOR must have been read with the same mask).  Unset => no `--lift-valid` anywhere: the argv is exactly the earlier one (test_r9_e1_arm_read.py pins it).
+# R9E1_MAP_THR_ARM=<json> R9E1_MAP_THR_REF=<json> R9E1_MAP_THR_FLOOR_DIR=<dir> (OPTIONAL, all three together): re-read the map rows with each arm cut at its OWN FIT-split
+#   thresholds (r9_map_fit_thresholds.py fit; REFCV9_DESIGN 2.1) instead of the fixed psw / pedge >= 128.  The arm's and the reference's single evals get
+#   `--map-thresholds`, the verdict gets `--map-thresholds-arm/-ref`, and it reads the FLOOR from R9E1_MAP_THR_FLOOR_DIR (a FLOOR.json + EVAL_C0.json produced by
+#   r9_e1_floor.py --map-thresholds-c0/-c1: the verdict REFUSES a floor on another protocol).  Everything it writes goes to $AD/thr_<arm sha8>_<ref sha8>/ (the fixed-128
+#   read, its READ_DONE and its EVAL_*.json are never touched); the dumps are reused, never re-made.  Unset => the argv of every call is exactly the earlier one.
 # TRAPS: no `pgrep -f` on a pattern this command line contains; detach with `nohup setsid ... < /dev/null &`; ssh with `-n`; the Thor python needs `-X utf8`.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -94,7 +99,17 @@ if [ "$HAVE_FLOCK" = 1 ]; then          # one reader per arm only (a second star
   flock -n 8 || { echo "ZZR9E1ARMREAD-ALREADYRUNNINGZZ another r9e1_arm_read $ARM holds $AD/instance.lock"; exit 0; }
 fi
 echo $$ > "$AD/r9e1_arm_read.pid"
-if [ -e "$AD/READ_DONE" ]; then echo "ZZR9E1ARMREAD-ALREADYDONEZZ $AD/READ_DONE exists (remove it to re-read)"; exit 0; fi
+THA=(); THR=(); VTH=(); XD="$AD"; FD="$RD"; LD="$AD/logs"
+if [ -n "${R9E1_MAP_THR_ARM:-}${R9E1_MAP_THR_REF:-}${R9E1_MAP_THR_FLOOR_DIR:-}" ]; then          # the map-threshold protocol: its own output dir, its own floor
+  [ -n "${R9E1_MAP_THR_ARM:-}" ] && [ -n "${R9E1_MAP_THR_REF:-}" ] && [ -n "${R9E1_MAP_THR_FLOOR_DIR:-}" ] || abort MAP-THR-ARGS "R9E1_MAP_THR_ARM, R9E1_MAP_THR_REF and R9E1_MAP_THR_FLOOR_DIR go together"
+  [ -s "$R9E1_MAP_THR_ARM" ] && [ -s "$R9E1_MAP_THR_REF" ] || abort NO-MAP-THR "R9E1_MAP_THR_ARM=$R9E1_MAP_THR_ARM or R9E1_MAP_THR_REF=$R9E1_MAP_THR_REF is missing"
+  FD="$R9E1_MAP_THR_FLOOR_DIR"
+  [ -s "$FD/FLOOR.json" ] && [ -s "$FD/EVAL_C0.json" ] || abort NO-THR-FLOOR "$FD/FLOOR.json or $FD/EVAL_C0.json is missing: the floor must be read on the SAME threshold protocol (r9_e1_floor.py --map-thresholds-c0 / -c1)"
+  XD="$AD/thr_$(sha256sum "$R9E1_MAP_THR_ARM" | cut -c1-8)_$(sha256sum "$R9E1_MAP_THR_REF" | cut -c1-8)"; LD="$XD/logs"; mkdir -p "$LD"
+  THA=(--map-thresholds "$R9E1_MAP_THR_ARM"); THR=(--map-thresholds "$R9E1_MAP_THR_REF")
+  VTH=(--map-thresholds-arm "$R9E1_MAP_THR_ARM" --map-thresholds-ref "$R9E1_MAP_THR_REF")
+fi
+if [ -e "$XD/READ_DONE" ]; then echo "ZZR9E1ARMREAD-ALREADYDONEZZ $XD/READ_DONE exists (remove it to re-read)"; exit 0; fi
 rm -f "$AD/READ_ABORTED"
 [ -s "$VERDICT_SCRIPT" ] || abort NO-SCRIPT "$VERDICT_SCRIPT is missing"
 # the reference: the argument, else REFCV9_DESIGN 4.3's (the mapping lives in r9_e1_verdict.py: ONE definition)
@@ -104,7 +119,7 @@ fi
 ev START "pid $$ dry=$DRY arm=$ARM ref=$REF status=$STAT root=$R poll=${POLL_S}s"
 
 dump_dir() { case "$1" in C0|C1) echo "$RD/dump_$1";; *) echo "$RD/arm_$1/dump_$1";; esac; }     # the floor's layout for C0 / C1, one dir per other arm
-eval_json() { case "$1" in C0|C1) echo "$RD/EVAL_$1.json";; *) echo "$RD/arm_$1/EVAL_$1.json";; esac; }
+eval_json() { if [ "$XD" != "$AD" ]; then echo "$XD/EVAL_$1.json"; return; fi; case "$1" in C0|C1) echo "$RD/EVAL_$1.json";; *) echo "$RD/arm_$1/EVAL_$1.json";; esac; }
 
 # ---- WAIT: file-only ------------------------------------------------------------------------------------------------------------
 t0=$(date +%s); lastsig=""
@@ -140,7 +155,7 @@ fi
 for f in "$EVAL_SCRIPT"; do [ -s "$f" ] || abort NO-SCRIPT "$f is missing"; done
 [ -s "$RD/FLOOR.json" ] && [ -s "$RD/EVAL_C0.json" ] || abort NO-FLOOR "$RD/FLOOR.json or $RD/EVAL_C0.json is missing (the floor read must have finished)"
 [ -s "$RD/dump_C0/dump.json" ] || abort NO-FLOOR-DUMP "$RD/dump_C0/dump.json is missing: the floor's windows cannot be compared"
-case "$REF" in C0|C1) [ -s "$(dump_dir "$REF")/dump.json" ] && [ -s "$(eval_json "$REF")" ] || abort NO-REF-DUMP "reference $REF: $(dump_dir "$REF")/dump.json or $(eval_json "$REF") is missing; a floor arm is never re-dumped here";; esac
+case "$REF" in C0|C1) [ -s "$(dump_dir "$REF")/dump.json" ] && { [ "$XD" != "$AD" ] || [ -s "$(eval_json "$REF")" ]; } || abort NO-REF-DUMP "reference $REF: $(dump_dir "$REF")/dump.json or $(eval_json "$REF") is missing; a floor arm is never re-dumped here";; esac
 ev INPUTS-OK "split sha256 ${GOT:0:12} matches ${SPLIT_SHA_FILE##*/}; gate args: $GATEARGS; arm run $ARM_RUN; reference $REF ${REF_RUN:+run $REF_RUN}"
 LVA=()
 if [ -n "${R9E1_LIFT_VALID:-}" ]; then          # the map primary's mask: it must exist; the verdict itself refuses a mask that is not the floor's (sha256)
@@ -148,6 +163,8 @@ if [ -n "${R9E1_LIFT_VALID:-}" ]; then          # the map primary's mask: it mus
   LVA=(--lift-valid "$R9E1_LIFT_VALID")
   ev LIFT-VALID "the map primary is read on the arm-independent mask $R9E1_LIFT_VALID (--lift-valid to the evals and the verdict; its sha256 must equal the floor's)"
 fi
+
+if [ "$XD" != "$AD" ]; then ev MAP-THR "map rows re-read on each arm's OWN FIT thresholds: arm $R9E1_MAP_THR_ARM, reference $R9E1_MAP_THR_REF, floor dir $FD -> $XD"; fi
 
 penv() {           # $1 = PYTHONPATH, rest = the command
   local pp="$1"; shift
@@ -202,23 +219,23 @@ ev DUMP-CHECK "arm $ARM, reference $REF and the floor's C0: same windows (order_
 run_eval() {       # $1 = tag, $2 = out json, rest = r9_e1_eval.py args
   local tag="$1" outj="$2" rc; shift 2
   if [ -s "$outj" ]; then ev EVAL-SKIP "$tag: $outj exists"; return 0; fi
-  ( cd "$AD" && penv "$PYPATH_CPU" CUDA_VISIBLE_DEVICES= "$PY" -X utf8 "$EVAL_SCRIPT" "$@" --out "$outj" > "$AD/logs/eval_$tag.out" 2> "$AD/logs/eval_$tag.err" ); rc=$?
-  [ -s "$outj" ] || abort EVAL-FAILED "$tag rc=$rc (read $AD/logs/eval_$tag.err)"
+  ( cd "$AD" && penv "$PYPATH_CPU" CUDA_VISIBLE_DEVICES= "$PY" -X utf8 "$EVAL_SCRIPT" "$@" --out "$outj" > "$LD/eval_$tag.out" 2> "$LD/eval_$tag.err" ); rc=$?
+  [ -s "$outj" ] || abort EVAL-FAILED "$tag rc=$rc (read $LD/eval_$tag.err)"
   ev EVAL-DONE "$tag rc=$rc $outj"
 }
 EVC="--windows $SPLIT --split dev $GATEARGS --boot $BOOT --seed $SEED"
-run_eval "$ARM" "$(eval_json "$ARM")" --packs "$DA/perc_det.pkl" --rast-dir "$DA/rast" $EVC ${LVA[@]+"${LVA[@]}"}
-run_eval "$REF" "$(eval_json "$REF")" --packs "$DR/perc_det.pkl" --rast-dir "$DR/rast" $EVC ${LVA[@]+"${LVA[@]}"}
+run_eval "$ARM" "$(eval_json "$ARM")" --packs "$DA/perc_det.pkl" --rast-dir "$DA/rast" $EVC ${LVA[@]+"${LVA[@]}"} ${THA[@]+"${THA[@]}"}
+run_eval "$REF" "$(eval_json "$REF")" --packs "$DR/perc_det.pkl" --rast-dir "$DR/rast" $EVC ${LVA[@]+"${LVA[@]}"} ${THR[@]+"${THR[@]}"}
 PAIRED="$AD/EVAL_${ARM}_vs_${REF}.json"
 run_eval "${ARM}_vs_${REF}" "$PAIRED" --packs "$DA/perc_det.pkl" --packs-b "$DR/perc_det.pkl" $EVC ${LVA[@]+"${LVA[@]}"}
 
 # ---- VERDICT (CPU) -------------------------------------------------------------------------------------------------------------------
-( cd "$AD" && penv "$PYPATH_CPU" CUDA_VISIBLE_DEVICES= "$PY" -X utf8 "$VERDICT_SCRIPT" --floor "$RD/FLOOR.json" --floor-eval-c0 "$RD/EVAL_C0.json" \
+( cd "$AD" && penv "$PYPATH_CPU" CUDA_VISIBLE_DEVICES= "$PY" -X utf8 "$VERDICT_SCRIPT" --floor "$FD/FLOOR.json" --floor-eval-c0 "$FD/EVAL_C0.json" \
     --paired "$PAIRED" --eval-arm "$(eval_json "$ARM")" --eval-ref "$(eval_json "$REF")" --arm "$ARM" --ref "$REF" \
-    --rast-arm "$DA/rast" --rast-ref "$DR/rast" ${LVA[@]+"${LVA[@]}"} --boot "$BOOT" --seed "$SEED" --out-dir "$AD" > "$AD/logs/verdict.out" 2> "$AD/logs/verdict.err" ); rc=$?
-VST="$("$PY" -I -X utf8 -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); print(d.get("status"), d.get("verdict"))' "$AD/VERDICT_$ARM.json" 2>/dev/null)"
-case "$VST" in "OK "*) ;; *) abort VERDICT-NOT-OK "VERDICT_$ARM.json status/verdict ${VST:-MISSING} rc=$rc" "read $AD/VERDICT_$ARM.md and $AD/logs/verdict.err";; esac
-ev VERDICT-DONE "$AD/VERDICT_$ARM.json $AD/VERDICT_$ARM.md -> ${VST#OK }"
-date -u +%Y-%m-%dT%H:%M:%SZ > "$AD/READ_DONE"
+    --rast-arm "$DA/rast" --rast-ref "$DR/rast" ${LVA[@]+"${LVA[@]}"} ${VTH[@]+"${VTH[@]}"} --boot "$BOOT" --seed "$SEED" --out-dir "$XD" > "$LD/verdict.out" 2> "$LD/verdict.err" ); rc=$?
+VST="$("$PY" -I -X utf8 -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); print(d.get("status"), d.get("verdict"))' "$XD/VERDICT_$ARM.json" 2>/dev/null)"
+case "$VST" in "OK "*) ;; *) abort VERDICT-NOT-OK "VERDICT_$ARM.json status/verdict ${VST:-MISSING} rc=$rc" "read $XD/VERDICT_$ARM.md and $LD/verdict.err";; esac
+ev VERDICT-DONE "$XD/VERDICT_$ARM.json $XD/VERDICT_$ARM.md -> ${VST#OK }"
+date -u +%Y-%m-%dT%H:%M:%SZ > "$XD/READ_DONE"
 ev DONE "arm $ARM vs $REF read: ${VST#OK }"
 exit 0
