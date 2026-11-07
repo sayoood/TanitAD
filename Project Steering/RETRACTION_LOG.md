@@ -18868,3 +18868,12 @@ instruments; only an undeclared one is a finding.
 - P5's verdict does not depend on it: λ is 0.968 with the model's a0 and 0.974 with a 0.2 s one; FAILS either way.
 
 **Class / rule:** a parameter a hypothesis rests on is read from the code line that computes it, never from a report's prose about it, including our own. The card's own gate caught it: reproduce the input from source before measuring anything about it. Keep such a gate in every card whose prediction depends on how an input is computed.
+
+
+## 2026-11-07 ~07:34 -- "the s1 ADE6 margin of RT is 0.046" (`D-T2-ATTRIB-RT-1`; `PREREG_T2_ATTRIB.md` log, 06:08 entry). Class: **A DIFFERENCE TAKEN FROM ROUNDED CELLS**
+
+**What was claimed:** in the register row D-T2-ATTRIB-RT-1 and in the attribution card's 06:08 log entry, by the Master Mind: at s1, |RT| on ADE6 sits below MC's seed floor by 0.046 m.
+
+**What is true (MEASURED, `TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-11-07-t2-bpc-read/` `RT_VERDICT.json`):** the floor is 0.508858507438103 and RT at s1 is 0.463408725035914, so the margin is 0.04545, which is 0.045. The 0.046 came from subtracting the two cells as printed (0.5089 - 0.4634 = 0.0455) and rounding that again. The outcome RT-WITHIN-FLOOR does not change. Found by the v43 build agent's audit (`R/report/2026-11-07-v43/edits_v43.md`, NOTES item 2).
+
+**Class / rule:** a derived number is computed from the full-precision values in the raw file, never from cells already rounded for a table. Rounding twice moves the last digit, and a margin is exactly the kind of number whose last digit someone will compare against a bar.
