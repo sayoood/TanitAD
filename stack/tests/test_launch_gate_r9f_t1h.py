@@ -126,7 +126,8 @@ def test_the_bundle_is_exactly_the_crowned_T1h_argv_T1_alone_and_T1hs_are_not_ad
 
 def test_refcv9_warm_and_e1rig_are_unchanged_and_e1rig_still_admits_T1_alone_and_the_shuffle_arm():
     fp = lambda n: hashlib.sha256(repr(sorted((k, repr(v)) for k, v in LG.PROFILES[n].items())).encode()).hexdigest()[:16]   # noqa: E731
-    assert fp("refcv9-warm") == "09dbfa04d5a3ee4b" and fp("refcv9-e1rig") == "18c28c61f19f5544"        # the values test_launch_gate_refcv9_full pins (R8): no entry moved
+    # PIN6 (MM 2026-11-07, 5f47df80: the env-failure pin's sha literal sits in these profiles): refcv9-warm 09dbfa04d5a3ee4b -> 7099d75fa2f40240, refcv9-e1rig 18c28c61f19f5544 -> 0bb9664939426521
+    assert fp("refcv9-warm") == "7099d75fa2f40240" and fp("refcv9-e1rig") == "0bb9664939426521"        # the values test_launch_gate_refcv9_full pins (R8): no entry moved
     RIG = LG.PROFILES["refcv9-e1rig"]
     assert WARP not in (RIG.get("required_values_when") or {})
     for arm in ("T1", "T1s", "T1h", "T1hs"):
@@ -138,7 +139,8 @@ def test_the_family_fingerprints_moved_to_the_pinned_values():
     fp = lambda n: hashlib.sha256(repr(sorted((k, repr(v)) for k, v in LG.PROFILES[n].items())).encode()).hexdigest()[:16]   # noqa: E731
     # K2-ARGV (MM 2026-11-07): moved AGAIN, 08c84658d9e98ceb / 551545dd6c9bbacc / 9fbb9f8b7c41908d -> the values below -- the full family's `required_values_when` gained the near-lift rules
     # (`_NEAR_LIFT_WHEN`: banded -> 10, near-m=20 -> 20, the same constant refcv9-e1rig uses) and the W-MAP-2 co-requirement (`_R9F_PLAN_MAP_REQUIRED`); pinned also in test_r9e2_k2_argv.py
-    assert {n: fp(n) for n in FAMILY} == {"refcv9-e2": "20297780a454a6c0", "refcv9-full": "8c9dcff2252b11ef", "refcv9-full-d1": "eae27696e70883cd"}   # was 08c84658d9e98ceb / 551545dd6c9bbacc / 9fbb9f8b7c41908d (THE FLIP); before it 725ca7f0edac2d09 / ebcf1301de38ea4d / 97eec4e0d9d7eec6
+    # PIN6 (MM 2026-11-07, 5f47df80: the env-failure pin's sha literal sits in these profiles): refcv9-e2 20297780a454a6c0 -> 2ee6fd2473fc296d, refcv9-full 8c9dcff2252b11ef -> 0af11fbfd62e6ed1, refcv9-full-d1 eae27696e70883cd -> b48f8af8c7fe34d4
+    assert {n: fp(n) for n in FAMILY} == {"refcv9-e2": "2ee6fd2473fc296d", "refcv9-full": "0af11fbfd62e6ed1", "refcv9-full-d1": "b48f8af8c7fe34d4"}   # was 08c84658d9e98ceb / 551545dd6c9bbacc / 9fbb9f8b7c41908d (THE FLIP); before it 725ca7f0edac2d09 / ebcf1301de38ea4d / 97eec4e0d9d7eec6
 
 
 # ====================================================================== 4. liveness: the full family reaches the SAME G-LIVE rule ==

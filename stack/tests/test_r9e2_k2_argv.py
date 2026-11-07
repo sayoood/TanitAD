@@ -225,11 +225,12 @@ def _fp(n):
 
 def test_fingerprints_the_full_family_moved_and_every_other_profile_is_unchanged():
     # OLD (tree e0cc3261): refcv9-e2 08c84658d9e98ceb, refcv9-full 551545dd6c9bbacc, refcv9-full-d1 9fbb9f8b7c41908d -- required_values_when gained the near-lift rules + the W-MAP-2 co-requirement
+    # PIN6 (MM 2026-11-07, 5f47df80: the env-failure pin's sha literal sits in these profiles): refcv9-warm 09dbfa04d5a3ee4b -> 7099d75fa2f40240, refcv9-e1rig 18c28c61f19f5544 -> 0bb9664939426521, refcv8-mapft 783207af0d9e2062 -> f024877e5326f4ff, refcv9-e2 20297780a454a6c0 -> 2ee6fd2473fc296d, refcv9-full 8c9dcff2252b11ef -> 0af11fbfd62e6ed1, refcv9-full-d1 eae27696e70883cd -> b48f8af8c7fe34d4
     assert {n: _fp(n) for n in ("refcv8", "refcv9-warm", "refcv9-e1rig", "refcv8-nt", "refcv8-mapft", "v8f")} == {
-        "refcv8": "4841b2a6f0758b95", "refcv9-warm": "09dbfa04d5a3ee4b", "refcv9-e1rig": "18c28c61f19f5544",
-        "refcv8-nt": "a24d2c1a71042711", "refcv8-mapft": "783207af0d9e2062", "v8f": "52860dd82f3a79af"}
+        "refcv8": "4841b2a6f0758b95", "refcv9-warm": "7099d75fa2f40240", "refcv9-e1rig": "0bb9664939426521",
+        "refcv8-nt": "a24d2c1a71042711", "refcv8-mapft": "f024877e5326f4ff", "v8f": "52860dd82f3a79af"}
     assert {n: _fp(n) for n in ("refcv9-e2", "refcv9-full", "refcv9-full-d1")} == {
-        "refcv9-e2": "20297780a454a6c0", "refcv9-full": "8c9dcff2252b11ef", "refcv9-full-d1": "eae27696e70883cd"}
+        "refcv9-e2": "2ee6fd2473fc296d", "refcv9-full": "0af11fbfd62e6ed1", "refcv9-full-d1": "b48f8af8c7fe34d4"}
 
 
 def test_the_full_family_required_values_when_is_one_dict_holding_all_three_rule_sets_and_e1rig_shares_the_near_lift_constant():
