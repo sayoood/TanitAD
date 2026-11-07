@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+# GAP48 (README.md): the NuRec render gap on the 48 read scenes, ONE job on box 2, the way stage5_chain.sh ran a stage-5 arm. NOT RUN by its author: launch it only when the box is free.
+# usage: bash gap48_chain.sh            (env: GAP48_BUILD=<dir of the build>, GAP48_RESUME=1 to continue an existing D:/t2v8f/pull_gap48)
+# Order: claim the box ATOMICALLY (refuse if C:/Users/Admin/box2_ship/BOX2_BUSY.txt exists, the marker stage5_chain.sh uses; then ALSO refuse if D:/t2v8f/BOX2_BUSY.txt exists on box 2) ->
+#        preconditions on box 2 (no *.running marker anywhere under D:/t2v8f/pull*, scene roots, the stage-1 package, no earlier pull_gap48, D: free) -> put + verify the code tar -> extract + verify ->
+#        put the 48 clips (sftp batch from where they live) + size check -> launch -> preflight + first scene as the canary -> wait on the EXACT marker names -> pull into its own folder ->
+#        run read_gap48.py -> move the busy markers aside.
+# Every abort AFTER the claim moves OUR marker(s) aside (never deletes; never touches a marker this script did not create). Nothing on box 2 is deleted by this script.
+set -u
+PY=C:/Users/Admin/venvs/tanitad/Scripts/python.exe
+SSH="${GAP48_SSH:-ssh -o BatchMode=yes -o ConnectTimeout=20 tanitad-box2}"   # GAP48_SSH, GAP48_BUSY_MARKER and GAP48_ASIDE_DIR exist so the tests can drive the refusal paths with stand-ins; production sets none of them
+T=E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f
+G=$T/gap48
+BD="${GAP48_BUILD:-$G/build}"
+TARF=$BD/t2v8f_gap48.tar
+BR=$BD/BUILD_RESULT_GAP48.json
+B="${GAP48_BUSY_MARKER:-C:/Users/Admin/box2_ship/BOX2_BUSY.txt}"
+ASIDE="${GAP48_ASIDE_DIR:-C:/Users/Admin/box2_ship/busy_aside}"
+B2=D:/t2v8f/BOX2_BUSY.txt
+R=D:/t2v8f/pull_gap48
+F='post-quantum|store now|upgraded|pq.html'
+B2OWN=0
+TS=$(date +%Y%m%d_%H%M%S)
+ps1() { $SSH "powershell -NoProfile -Command \"$1\"" 2>&1 | grep -vE "$F" | tr -d '\r'; }
+aside() {   # $1 = reason. Moves ONLY the markers this run created.
+  mkdir -p "$ASIDE" && mv "$B" "$ASIDE/BOX2_BUSY.t2v8f_gap48.$1.$(date +%Y%m%d_%H%M%S).txt"
+  if [ "$B2OWN" = 1 ]; then ps1 "New-Item -ItemType Directory -Force D:/t2v8f/busy_aside | Out-Null; Move-Item $B2 D:/t2v8f/busy_aside/BOX2_BUSY.gap48.$1.$TS.txt" >/dev/null; fi
+}
+[ -f "$TARF" ] && [ -f "$BR" ] && [ -f "$BD/put_mp4.sftp" ] && [ -f "$BD/expect_files.txt" ] || { echo "ZZ GAP48-NO-PACKAGE $BD ZZ"; exit 2; }
+read -r WANT_TAR NEED_GIB N_CLIPS CLIP_BYTES < <($PY -I -c "
+import json
+b=json.load(open('$BR'))
+print(b['tar_sha256'].upper(), b['footprint']['d_free_gib_needed'], b['n_scenes'], b['clip_bytes'])")
+# ---- 1. claim the box atomically (noclobber: the write FAILS if the file exists)
+mkdir -p "$(dirname "$B")" "$G/logs"
+( set -C; printf 'owner=T2V8F gap48\nstart=%s\neta=0.4-0.8 h\n' "$(date '+%F %T')" > "$B" ) 2>/dev/null || { echo "ZZ GAP48-BUSY: $B exists, STOP (read it, do not delete it) ZZ"; cat "$B"; exit 3; }
+echo "[$(date +%T)] box claimed for gap48 (dev-box marker)"
+c2=$(ps1 "try { New-Item -ItemType File -Path $B2 -ErrorAction Stop | Out-Null; Set-Content -Path $B2 -Value 'owner=T2V8F gap48'; 'B2CLAIMED' } catch { 'B2EXISTS' }" | grep -xE 'B2CLAIMED|B2EXISTS' | head -1)
+if [ "$c2" = B2CLAIMED ]; then B2OWN=1; else echo "ZZ GAP48-BUSY: $B2 exists on box 2 (or the claim could not be made: '$c2'), STOP ZZ"; aside box2busy; exit 3; fi
+# ---- 2. preconditions on box 2
+run=$(ps1 "Get-ChildItem D:/t2v8f/pull*/*.running -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName" | grep -c running)
+[ "$run" = "0" ] || { echo "ZZ GAP48-NOT-STARTED: $run *.running marker(s) under D:/t2v8f/pull* (another job may be alive) ZZ"; ps1 "Get-ChildItem D:/t2v8f/pull*/*.running | Select-Object -ExpandProperty FullName"; aside precheck; exit 4; }
+roots=$(ps1 "Test-Path C:/t2v8f/scenes3, D:/t2v8f/scenes2, D:/t2v8f/pkg/code/t2v8f_stage1.py, D:/t2a/box2_kit/scenes, D:/tanitad/launch.ps1, $R" | tr '\n' ' ')
+want="True True True True True False "; [ "${GAP48_RESUME:-0}" = 1 ] && want="True True True True True True "
+[ "$roots" = "$want" ] || { echo "ZZ GAP48-NOT-STARTED roots(scenes3,scenes2,stage1 code,kit scenes,launch.ps1,pull_gap48)=$roots (want $want; an existing pull_gap48 is only resumed with GAP48_RESUME=1) ZZ"; aside precheck; exit 4; }
+fr=$(ps1 "[math]::Round((Get-PSDrive D).Free/1GB,2)" | tr ',' '.' | grep -E '^[0-9.]+$' | head -1)
+echo "free D=$fr GiB (need >= $NEED_GIB)"
+awk -v d="${fr:-0}" -v n="$NEED_GIB" 'BEGIN{exit !(d>=n)}' || { echo "ZZ GAP48-DISK-LOW free=$fr need=$NEED_GIB ZZ"; aside disklow; exit 4; }
+# the source clips must still be what the build recorded (size + sha256), checked BEFORE a 2 GB transfer
+bad=$($PY -I -c "
+import json,hashlib,os
+m=json.load(open('$BD/MANIFEST_GAP48.json'))
+src={}
+for ln in open('$BD/put_mp4.sftp'):
+    p=ln.split(' ',2); src[p[2].strip().split('/')[-2]]=p[1]
+bad=[]
+for e in m['own_files']:
+    if e['path'].startswith('mp4/'):
+        sid=e['path'].split('/')[1]; f=src.get(sid)
+        if not f or not os.path.isfile(f) or os.path.getsize(f)!=e['size']: bad.append(sid[:8]); continue
+        h=hashlib.sha256()
+        with open(f,'rb') as fh:
+            for b in iter(lambda: fh.read(1<<22), b''): h.update(b)
+        if h.hexdigest()!=e['sha256']: bad.append(sid[:8])
+print(' '.join(bad))")
+[ -z "$(echo $bad | tr -d '[:space:]')" ] || { echo "ZZ GAP48-SOURCE-CLIP-CHANGED: $bad ZZ"; aside srcclip; exit 5; }
+# ---- 3. put + verify the code tar, extract, verify its files
+sftp -b - tanitad-box2 <<EOS 2>&1 | grep -vE "$F"
+put $TARF /D:/t2v8f/t2v8f_gap48.tar
+EOS
+got=$($SSH "certutil -hashfile D:\t2v8f\t2v8f_gap48.tar SHA256" 2>&1 | grep -vE "$F" | tr -d '\r ' | sed -n 2p | tr 'a-f' 'A-F')
+echo "tar want=$WANT_TAR got=$got"
+[ -n "$WANT_TAR" ] && [ "$WANT_TAR" = "$got" ] || { echo "ZZ GAP48-TAR-MISMATCH ZZ"; aside tarmismatch; exit 5; }
+$SSH "tar -xf D:\t2v8f\t2v8f_gap48.tar -C D:\t2v8f" 2>&1 | grep -vE "$F"
+cmdline=""; want=""
+while read -r rel sha size; do
+  cmdline="$cmdline (Get-FileHash D:/t2v8f/gap48/$rel).Hash;"; want="$want$sha "
+done < "$BD/expect_files.txt"
+v=$(ps1 "$cmdline" | tr '\n' ' ')
+echo "verify want: $want"; echo "verify got : $v"
+[ "$v" = "$want" ] || { echo "ZZ GAP48-VERIFY-MISMATCH ZZ"; aside verify; exit 6; }
+# ---- 3b. the 48 clips, straight from where they live; box-2 side count + byte sum must match the build (the job's preflight then sha256-checks every clip)
+t0=$(date +%s)
+sftp -b "$BD/put_mp4.sftp" tanitad-box2 2>&1 | grep -vE "$F" | tail -2
+echo "clips put in $(( $(date +%s) - t0 )) s"
+cb=$(ps1 "@((Get-ChildItem D:/t2v8f/gap48/mp4 -Recurse -File -Filter *.mp4).Count, (Get-ChildItem D:/t2v8f/gap48/mp4 -Recurse -File -Filter *.mp4 | Measure-Object Length -Sum).Sum) -join ' '" | grep -E '^[0-9]+ [0-9]+$' | head -1)
+echo "clips on box 2 (count bytes): $cb  want: $N_CLIPS $CLIP_BYTES"
+[ "$cb" = "$N_CLIPS $CLIP_BYTES" ] || { echo "ZZ GAP48-CLIPS-MISMATCH ZZ"; aside clips; exit 6; }
+# ---- 4. launch (the job's preflight sha256-checks the clips, the shipped files, the pinned stage-1 code, the small scene files; refuses by name)
+$SSH "powershell -NoProfile -ExecutionPolicy Bypass -File D:\tanitad\launch.ps1 -Job D:\t2v8f\gap48\jobs\gap48.cmd -Log D:\t2v8f\logs\gap48.log" 2>&1 | grep -vE "$F" | tail -2
+echo "[$(date +%T)] ZZ GAP48 LAUNCHED ZZ"
+pf=""
+for i in $(seq 1 90); do                                          # preflight: ~2 min ESTIMATED (stage 1: 146 s); allow 45 min
+  sleep 30
+  pf=$(ps1 "if (Test-Path $R/preflight.fail -PathType Leaf) {'PF_FAIL'} elseif (Test-Path $R/preflight.done -PathType Leaf) {'PF_DONE'}" | grep -xE 'PF_FAIL|PF_DONE' | head -1)
+  [ -n "$pf" ] && break
+done
+echo "[$(date +%T)] preflight: ${pf:-TIMEOUT}"
+[ "$pf" = PF_DONE ] || { echo "ZZ GAP48-PREFLIGHT-NOT-PASSED (${pf:-TIMEOUT}) ZZ"; ps1 "Get-Content $R/preflight.fail -ErrorAction SilentlyContinue" | head -20; }
+can=""
+if [ "$pf" = PF_DONE ]; then
+  for i in $(seq 1 40); do                                        # the first scene is the canary (read_equiv_check is on it)
+    can=$(ps1 "Get-ChildItem $R -Name -Filter 'scene_*' -ErrorAction SilentlyContinue" | grep -E '^scene_[0-9a-f]{8}[.](done|fail)$' | head -1)
+    [ -n "$can" ] && break
+    sleep 30
+  done
+  echo "[$(date +%T)] canary (first scene marker): ${can:-NONE}"
+fi
+st=""
+for i in $(seq 1 240); do                                         # EXACT marker names: the driver renames an old GAP48.done to GAP48.done.prev, a listing pattern would match it
+  st=$(ps1 "if (Test-Path $R/GAP48.done -PathType Leaf) {'MK_DONE'} elseif (Test-Path $R/GAP48.fail -PathType Leaf) {'MK_FAIL'}" | grep -xE 'MK_(DONE|FAIL)' | head -1)
+  [ -n "$st" ] && break
+  sleep 30
+done
+echo "[$(date +%T)] gap48 marker=${st:-TIMEOUT}"
+[ -n "$st" ] || { echo "ZZ GAP48-WAIT-TIMEOUT (the box stays CLAIMED: a job may still be running) ZZ"; exit 9; }
+# ---- 5. pull into its OWN folder (C: unless it is short, then F:), read, release the box
+PB=${GAP48_PULL_BASE:-C:/Users/Admin/t2v8f_pulls/gap48}
+cfree=$($PY -I -c "import shutil;print(int(shutil.disk_usage('C:/').free//10**6))")
+[ "$cfree" -ge 1500 ] || PB=F:/TanitAD-scratch/t2v8f_pulls/gap48
+PT=$PB; [ -e "$PT" ] && PT="${PB}_$TS"
+mkdir -p "$PT"
+sftp -b - tanitad-box2 <<EOS 2>&1 | grep -vE "$F" | tail -2
+get -r /D:/t2v8f/pull_gap48 $PT
+get /D:/t2v8f/logs/gap48.log $PT/gap48.log
+EOS
+echo "pulled to $PT (C: free ${cfree} MB)"
+aside pulled
+$PY -I "$G/read_gap48.py" --pull "$PT/pull_gap48" --manifest "$BD/MANIFEST_GAP48.json" --out-dir "$G" 2>&1 | tail -3
+echo "$st $PT" > "$G/logs/CHAIN_GAP48.$st"
+echo "ZZ GAP48 PULLED $st -> $PT ZZ"

@@ -1,0 +1,23 @@
+.................F.                                                      [100%]
+================================== FAILURES ===================================
+_________ test_chain_box2_marker_present_moves_only_our_marker_aside __________
+
+    def test_chain_box2_marker_present_moves_only_our_marker_aside():
+        root = work()
+        marker = f"{root}/BOX2_BUSY.txt"                                               # absent: the chain may claim the dev-box marker
+        log = f"{root}/ssh_calls.txt"
+        stub = f"{root}/ssh_stub.sh"
+        open(stub, "w", newline="\n").write(f'#!/bin/bash\necho "$@" >> "{log}"\necho B2EXISTS\n')
+        p = run_chain({"GAP48_BUILD": stand_in_build(root), "GAP48_BUSY_MARKER": marker, "GAP48_ASIDE_DIR": f"{root}/aside", "GAP48_SSH": f"{bash_exe()} {stub}"})
+        assert p.returncode == 3 and "exists on box 2" in p.stdout
+        assert not os.path.exists(marker), "our own dev-box marker must be moved aside"
+        moved = os.listdir(f"{root}/aside")
+        assert len(moved) == 1 and "box2busy" in moved[0]
+>       calls = open(log).read().strip().split("\n")
+                ^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: 'C:/Users/Admin/t2a_scratch/gap48_rehearsal/run_051222_81432_4/ssh_calls.txt'
+
+tests\test_gap48.py:482: FileNotFoundError
+=========================== short test summary info ===========================
+FAILED tests/test_gap48.py::test_chain_box2_marker_present_moves_only_our_marker_aside
+1 failed, 18 passed in 60.75s (0:01:00)
