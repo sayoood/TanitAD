@@ -1,0 +1,277 @@
+{
+ "definition": "F = |mean ade6(s0) - mean ade6(s1)| over the 2,399 eval-141 windows (v8f_mini_eval.py:559; RESULT_V8F_GRID.md)",
+ "estimator_note": "training-seed variance from TWO seeds only (H-ESTIM-SEED-1); the episode-cluster bootstrap does not answer it; no interval is attached",
+ "F_M2b_banked_m": 0.12074012131477874,
+ "F_M2b_banked_4dp": 0.1207,
+ "2F_banked_m": 0.24148024262955747,
+ "Fprime_m": 0.12074012131477874,
+ "Fprime_4dp": 0.1207,
+ "2Fprime_m": 0.24148024262955747,
+ "Fprime_from_json_4dp_means": 0.12069999999999981,
+ "ADE6_mean_m": {
+  "M2b_s0": 2.175306138079546,
+  "M2b_s1": 2.0545660167647672,
+  "Bp_s0": 2.175306138079546,
+  "Bp_s1": 2.0545660167647672
+ },
+ "identity": {
+  "tag": "M2b_s0 on box 2's original eval cache vs banked raw/full/eval/eval_M2b_s0",
+  "tolerances": {
+   "per_window_m": 0.0001,
+   "mean_m": 1e-05,
+   "json_leaf": 0.00015
+  },
+  "checks": [
+   {
+    "name": "n_windows_equal",
+    "ok": true,
+    "value": [
+     [
+      2399
+     ],
+     [
+      2399
+     ]
+    ]
+   },
+   {
+    "name": "episode_ids_equal",
+    "ok": true,
+    "value": null
+   },
+   {
+    "name": "ade6_max_abs_window_delta",
+    "ok": true,
+    "value": 0.0
+   },
+   {
+    "name": "fde6_max_abs_window_delta",
+    "ok": true,
+    "value": 0.0
+   },
+   {
+    "name": "ade2_max_abs_window_delta",
+    "ok": true,
+    "value": 0.0
+   },
+   {
+    "name": "ade6_mean_delta",
+    "ok": true,
+    "value": 0.0
+   },
+   {
+    "name": "json_same_leaf_paths",
+    "ok": true,
+    "value": []
+   },
+   {
+    "name": "json_leaves_within_tolerance",
+    "ok": true,
+    "value": {
+     "n_leaves": 1065,
+     "n_bad": 0,
+     "first_bad": []
+    }
+   }
+  ],
+  "miss": []
+ },
+ "beside_rows_DESCRIPTIVE_decide_nothing": [
+  {
+   "row": "ADE6 m",
+   "family": "TRAJ",
+   "M2b_s0": 2.1753,
+   "Bp_s0": 2.1753,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 2.0546,
+   "Bp_s1": 2.0546,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "FDE6 m",
+   "family": "TRAJ",
+   "M2b_s0": 6.281,
+   "Bp_s0": 6.281,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 5.8582,
+   "Bp_s1": 5.8582,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "ADE2 m",
+   "family": "TRAJ",
+   "M2b_s0": 0.3155,
+   "Bp_s0": 0.3155,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 0.2914,
+   "Bp_s1": 0.2914,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "speed MAE m/s",
+   "family": "LONGITUDINAL",
+   "M2b_s0": 1.0674,
+   "Bp_s0": 1.0674,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 0.9112,
+   "Bp_s1": 0.9112,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "accel MAE m/s2",
+   "family": "LONGITUDINAL",
+   "M2b_s0": 1.2058,
+   "Bp_s0": 1.2058,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 0.9313,
+   "Bp_s1": 0.9313,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "along-track MAE m",
+   "family": "LONGITUDINAL",
+   "M2b_s0": 1.8097,
+   "Bp_s0": 1.8097,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 1.6081,
+   "Bp_s1": 1.6081,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "progress ratio mean",
+   "family": "LONGITUDINAL",
+   "M2b_s0": 0.9275,
+   "Bp_s0": 0.9275,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 1.0079,
+   "Bp_s1": 1.0079,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "heading MAE deg",
+   "family": "LATERAL",
+   "M2b_s0": 3.9773,
+   "Bp_s0": 3.9773,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 3.7148,
+   "Bp_s1": 3.7148,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "yaw-rate MAE deg/s",
+   "family": "LATERAL",
+   "M2b_s0": 6.1605,
+   "Bp_s0": 6.1605,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 5.3573,
+   "Bp_s1": 5.3573,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "curvature MAE 1/m",
+   "family": "LATERAL",
+   "M2b_s0": 0.044356,
+   "Bp_s0": 0.044356,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 0.032205,
+   "Bp_s1": 0.032205,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "cross-track MAE m",
+   "family": "LATERAL",
+   "M2b_s0": 0.7662,
+   "Bp_s0": 0.7662,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 0.8644,
+   "Bp_s1": 0.8644,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "lateral decision kappa",
+   "family": "TACTICAL",
+   "M2b_s0": 0.6652,
+   "Bp_s0": 0.6652,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 0.6324,
+   "Bp_s1": 0.6324,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "longitudinal decision kappa",
+   "family": "TACTICAL",
+   "M2b_s0": 0.3566,
+   "Bp_s0": 0.3566,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 0.3698,
+   "Bp_s1": 0.3698,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "goal point error m",
+   "family": "TACTICAL",
+   "M2b_s0": 6.281,
+   "Bp_s0": 6.281,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 5.8582,
+   "Bp_s1": 5.8582,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "T lat macro-F1",
+   "family": "TACTICAL",
+   "M2b_s0": 0.8156957183062286,
+   "Bp_s0": 0.8156957183062286,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 0.8292251400240062,
+   "Bp_s1": 0.8292251400240062,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "T lon macro-F1",
+   "family": "TACTICAL",
+   "M2b_s0": 0.49915533884637825,
+   "Bp_s0": 0.49915533884637825,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 0.509529097663864,
+   "Bp_s1": 0.509529097663864,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "S pos err @30 m",
+   "family": "STRATEGIC (PAUSED, PI ITEM 25; shown, decides nothing)",
+   "M2b_s0": 7.0231,
+   "Bp_s0": 7.0231,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 6.9802,
+   "Bp_s1": 6.9802,
+   "Bp_minus_M2b_s1": 0.0
+  },
+  {
+   "row": "S pos err @80 m",
+   "family": "STRATEGIC (PAUSED, PI ITEM 25; shown, decides nothing)",
+   "M2b_s0": 11.2059,
+   "Bp_s0": 11.2059,
+   "Bp_minus_M2b_s0": 0.0,
+   "M2b_s1": 11.2141,
+   "Bp_s1": 11.2141,
+   "Bp_minus_M2b_s1": 0.0
+  }
+ ],
+ "unavailable_in_this_eval": "distance keeping (headway / time-gap / TTC): the eval's own lead input is not built; v8f_dk_read.py reads it from the saved npz (a separate step)",
+ "selftest": false,
+ "file_sha256": {
+  "identity_json_npz": [
+   "e69946c61e567ed350f2bbece6b5515c141528f6d13e008502cbb937f5260e2e",
+   "8ddcd42c119f7ca9cc6a434103f40d017d61f809161c517310f2fb778df20501"
+  ],
+  "Bp_s0_json_npz": [
+   "e69946c61e567ed350f2bbece6b5515c141528f6d13e008502cbb937f5260e2e",
+   "8ddcd42c119f7ca9cc6a434103f40d017d61f809161c517310f2fb778df20501"
+  ],
+  "Bp_s1_json_npz": [
+   "bd9e294f91fa9df1aa18774196532e113359b3b7b8483dbaba8b9ae2d14abafe",
+   "0b9e40ff71fd363601254ebbc141cb81bba01031bc352cd7bc7894fc81309219"
+  ]
+ }
+}
