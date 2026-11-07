@@ -412,7 +412,7 @@ def _design_arm_names():
 
 
 def test_mapping_has_every_design_arm():
-    assert DESIGN_ROWS <= set(V.ARMS) and set(V.ARMS) - DESIGN_ROWS == {"B3p", "T1s", "T1h", "T1hs", "M1N20"}   # M1N20 = E1-NEAR20 (PREREG_M1_NEAR20, not a design row); B3p = the table's "B3'" (the argv name); T1s = D3's shuffled control; T1h / T1hs = REFCV9_E1_T1H_PREREG.md
+    assert DESIGN_ROWS <= set(V.ARMS) and set(V.ARMS) - DESIGN_ROWS == {"B3p", "T1s", "T1h", "T1hs", "M1N20", "M3N20"}   # M1N20 = E1-NEAR20 (PREREG_M1_NEAR20, not a design row); M3N20 = E1-M3N20 (PREREG_M3: M3 on M1N20's near band, not a design row); B3p = the table's "B3'" (the argv name); T1s = D3's shuffled control; T1h / T1hs = REFCV9_E1_T1H_PREREG.md
     names = _design_arm_names()
     if names is None:
         pytest.skip("REFCV9_DESIGN.md is not in this checkout")
@@ -425,7 +425,7 @@ def test_mapping_not_computable_primaries_carry_reason_and_cure():
     # metrics (lane tolerance-IoU, boundary recall) are too: nothing in the table is NOT-COMPUTABLE any more
     assert nc == []
     d3 = {(a, m["id"]): (m["keys"], m["clause3"], m["role"]) for a, s in V.ARMS.items() for m in s["metrics"] if m["id"].endswith((".beside.lane", ".beside.edge"))}
-    assert d3 == {(a, "%s.beside.%s" % (a, t)): ((k,), False, "beside") for a in ("M1", "M1N20")
+    assert d3 == {(a, "%s.beside.%s" % (a, t)): ((k,), False, "beside") for a in ("M1", "M1N20", "M3", "M3N20")      # E1-M3N20: M3 / M3N20 carry M1 / M1N20's two D3 beside rows (clause3=False)
                   for t, k in (("lane", "lane_tiou05_0_20"), ("edge", "drv_bnd_rec03_0_20"))}
     assert not {a for a, _ in nc} & {"M2a", "M2b", "M3", "A1", "F1", "M1-FROZEN", "B2", "B2c", "T1", "T1s", "T1h", "T1hs"}
     for a, m in nc:
@@ -516,11 +516,14 @@ def test_mapping_agrees_with_the_launch_argv_files():
 def test_resolve_ref_rules():
     assert V.resolve_ref("B1", None) == "C0" and V.resolve_ref("M2a", None) == "M1" and V.resolve_ref("T1s", None) == "T1"
     assert V.resolve_ref("T1h", None) == "C0" and V.resolve_ref("T1hs", None) == "T1h" and V.resolve_ref("T1hs", "C0") == "C0"
-    assert V.resolve_ref("B3p", "B3") == "B3" and V.resolve_ref("M3", "M2b") == "M2b" and V.resolve_ref("B4", None) == "B2"
-    for arm, ref in [("C0", None), ("C1", "C0"), ("M3", None), ("M3", "M1"), ("M1-FROZEN", None), ("M1-FROZEN", "C0"), ("B1", "M1"), ("nope", None)]:
+    assert V.resolve_ref("B3p", "B3") == "B3" and V.resolve_ref("B4", None) == "B2"
+    # E1-M3N20 (PREREG_M3): the decisive reference is the BASE (M1 for M3, M1N20 for M3N20); the CARRY read is vs C0; the M2 winner is no longer M3's reference
+    assert V.resolve_ref("M3", None) == "M1" and V.resolve_ref("M3", "C0") == "C0" and V.resolve_ref("M3N20", None) == "M1N20" and V.resolve_ref("M3N20", "C0") == "C0"
+    for arm, ref in [("C0", None), ("C1", "C0"), ("M3", "M2a"), ("M3", "M2b"), ("M3", "M1N20"), ("M3N20", "M1"), ("M3N20", "M2a"), ("M1-FROZEN", None),
+                     ("M1-FROZEN", "C0"), ("B1", "M1"), ("nope", None)]:
         with pytest.raises(V.Refused):
             V.resolve_ref(arm, ref)
-    assert V.main(["ref", "--arm", "B1"]) == 0 and V.main(["ref", "--arm", "M3"]) == 3
+    assert V.main(["ref", "--arm", "B1"]) == 0 and V.main(["ref", "--arm", "M3"]) == 0 and V.main(["ref", "--arm", "M3N20"]) == 0 and V.main(["ref", "--arm", "M1-FROZEN"]) == 3
 
 
 # ====================================================================================================================== end to end
@@ -1044,5 +1047,5 @@ def test_state_cli_writes_a_sourceable_file_and_refuses_an_unresolvable_referenc
     assert V.main(["state", "--arm", "B1", "--status", str(st / "CHAIN_STATUS.txt"), "--root", str(tmp_path), "--read-dir", str(rd), "--out", str(out)]) == 0
     env = dict(re.findall(r"^S_(\w+)=(.*)$", out.read_text(encoding="utf-8"), re.M))
     assert env["STATE"] == "WAIT" and set(env) >= {"STATE", "REASON", "LINE", "RUN", "REF_RUN", "SIG"}
-    assert V.main(["state", "--arm", "M3", "--status", str(st / "CHAIN_STATUS.txt"), "--root", str(tmp_path), "--read-dir", str(rd), "--out", str(out)]) == 0
-    assert "STATE=ABORT" in out.read_text(encoding="utf-8")                                                   # M3 with no --ref: abort at once, do not wait 14 days
+    assert V.main(["state", "--arm", "M1-FROZEN", "--status", str(st / "CHAIN_STATUS.txt"), "--root", str(tmp_path), "--read-dir", str(rd), "--out", str(out)]) == 0
+    assert "STATE=ABORT" in out.read_text(encoding="utf-8")                                                   # M1-FROZEN with no --ref: abort at once, do not wait 14 days (was M3 until E1-M3N20 gave it a default reference)

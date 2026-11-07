@@ -144,23 +144,35 @@ BANDED_NEAR_LIFT_M = "10"                 # the banded near band is 0-10 m @ 0.1
 #: E1-NEAR20 (PREREG_M1_NEAR20): M1N20 = M1's argv (w = 1.0) with the near band 0-20 m @ 0.10 m: `--r9-map-banded-near-m 20` right after
 #: `--r9-map-banded` and `--map-hires-near-lift-m` = 20 (C0's own value, carried from C0's argv). ONE lever vs M1 (the near-band end).
 NEAR_M_FLAG = "--r9-map-banded-near-m"
-NEAR20_ARMS = {"M1N20": {"w_map_hires": 1.0, "near_m": "20", "near_lift_m": "20"}}
+#: E1-M3N20 (PREREG_M3): M3N20 = M3's own encoder on M1N20's near band. It takes M3's weight (operator-supplied, REQUIRED), so its row carries NO
+#: `w_map_hires`; a row WITH one is a fixed-weight arm (M1N20).
+NEAR20_ARMS = {"M1N20": {"w_map_hires": 1.0, "near_m": "20", "near_lift_m": "20"},
+               "M3N20": {"near_m": "20", "near_lift_m": "20"}}
 
 
 def banded_near_lift_m(arm: str) -> str:
-    """The banded arm's `--map-hires-near-lift-m` (= its near-band end): 10 for M1 / M2a / M2b / M3, 20 for M1N20."""
+    """The banded arm's `--map-hires-near-lift-m` (= its near-band end): 10 for M1 / M2a / M2b / M3, 20 for M1N20 / M3N20."""
     return NEAR20_ARMS[arm]["near_lift_m"] if arm in NEAR20_ARMS else BANDED_NEAR_LIFT_M
 MAP_ARM_OUT = "/home/nvidia/r8ns/r9e1/runs/r9e1-%s"
 #: E1-REC2: M3 = the M2 winner's banded head + the map's OWN 128-channel BEV encoder (C2, REFCV9_DESIGN 2.2). Its `--w-map-hires` is the M2
 #: winner's, chosen AFTER M2a / M2b are read, so it is a REQUIRED argument and there is no committed `r9e1_M3.argv.json` until then.
 OWN_ENC_FLAG = "--r9-map-own-enc"
-OWN_ENC_ARMS = ("M3",)
+#: E1-M3N20: M3N20 = M3 + M1N20's near band (`NEAR20_ARMS`); both take an operator-supplied `--w-map-hires` (PREREG_M3: M1's 1.0, no M2 winner exists).
+OWN_ENC_ARMS = ("M3", "M3N20")
+
+
+def fixed_map_weight(arm: str):
+    """The arm's committed `--w-map-hires` (M1 / M2a / M2b / M1N20), or None for an own-encoder arm (M3 / M3N20: operator-supplied)."""
+    if arm in OWN_ENC_ARMS:
+        return None
+    return MAP_ARMS[arm] if arm in MAP_ARMS else NEAR20_ARMS[arm]["w_map_hires"]
 
 
 def map_arm_argv(c0_argv, arm: str, out: str | None = None, w: float | None = None) -> list:
     """C0's argv with EXACTLY: `--r9-map-banded` added (after `--map-hires-near-refine-blocks`), `--w-map-hires` = the arm's w,
     `--map-hires-near-lift-m` 20 -> 10, `--out` = the arm's run directory. Anything else in C0's argv is carried verbatim.
-    M3 (`w` REQUIRED, > 0; refused for the fixed-w arms) additionally gets `--r9-map-own-enc` right after `--r9-map-banded`."""
+    M3 (`w` REQUIRED, > 0; refused for the fixed-w arms) additionally gets `--r9-map-own-enc` right after `--r9-map-banded`.
+    M3N20 (E1-M3N20) = M3 with M1N20's near band: `--r9-map-own-enc` right after `--r9-map-banded`, then `--r9-map-banded-near-m 20`, near lift 20."""
     if arm not in MAP_ARMS and arm not in OWN_ENC_ARMS and arm not in NEAR20_ARMS:
         raise SystemExit("[r9-e1-argv] map arm %r not in %s" % (arm, sorted(MAP_ARMS) + list(OWN_ENC_ARMS) + sorted(NEAR20_ARMS)))
     if arm in OWN_ENC_ARMS:
@@ -170,7 +182,7 @@ def map_arm_argv(c0_argv, arm: str, out: str | None = None, w: float | None = No
         if not float(w) > 0.0:
             raise SystemExit("[r9-e1-argv] --w-map-hires %r must be > 0 (a map term with no weight builds a dead head)" % (w,))
     elif w is not None:
-        raise SystemExit("[r9-e1-argv] --w-map-hires is for M3 only: %s's weight is %s" % (arm, MAP_ARMS[arm] if arm in MAP_ARMS else NEAR20_ARMS[arm]["w_map_hires"]))
+        raise SystemExit("[r9-e1-argv] --w-map-hires is for M3 only (M3 / M3N20 take it): %s's weight is %s" % (arm, fixed_map_weight(arm)))
     out = _thor_path(out or MAP_ARM_OUT % arm, "--out")
     groups = split_groups(c0_argv)
     have = [f for f, _ in groups]
@@ -182,7 +194,7 @@ def map_arm_argv(c0_argv, arm: str, out: str | None = None, w: float | None = No
     argv = []
     for f, vals in groups:
         if f == "--w-map-hires":
-            vals = [repr(float(MAP_ARMS[arm] if arm in MAP_ARMS else NEAR20_ARMS[arm]["w_map_hires"] if arm in NEAR20_ARMS else w))]
+            vals = [repr(float(w if arm in OWN_ENC_ARMS else fixed_map_weight(arm)))]
         elif f == "--map-hires-near-lift-m":
             vals = [banded_near_lift_m(arm)]
         elif f == "--out":
@@ -190,10 +202,10 @@ def map_arm_argv(c0_argv, arm: str, out: str | None = None, w: float | None = No
         argv += [f] + vals
         if f == "--map-hires-near-refine-blocks":
             argv.append(BANDED_FLAG)
-            if arm in NEAR20_ARMS:
-                argv += [NEAR_M_FLAG, NEAR20_ARMS[arm]["near_m"]]      # E1-NEAR20: the ONE lever; an M1 / M2 argv never carries the flag
             if arm in OWN_ENC_ARMS:
-                argv.append(OWN_ENC_FLAG)
+                argv.append(OWN_ENC_FLAG)                              # M3 / M3N20: right after the banded flag
+            if arm in NEAR20_ARMS:
+                argv += [NEAR_M_FLAG, NEAR20_ARMS[arm]["near_m"]]      # E1-NEAR20: the near lever; an M1 / M2 / M3 argv never carries the flag
     return argv
 
 
@@ -354,7 +366,8 @@ def check_t1_arm_pins(argv, arm: str) -> None:
 
 def check_map_arm_pins(argv, arm: str | None = None) -> None:
     """`check_against_pins` + the banded flag's own refusals (`tanitad/train/map_banded_flag.pin_args`). With `arm`, the PARSED near-band end
-    must be the arm's (E1-NEAR20: 20 for M1N20, the default 10 with the flag ABSENT for every other map arm)."""
+    must be the arm's (E1-NEAR20: 20 for M1N20 / M3N20, the default 10 with the flag ABSENT for every other map arm) and the own-encoder flag
+    must be present exactly for the own-encoder arms (E1-M3N20: M3 / M3N20)."""
     check_against_pins(argv)
     here = Path(__file__).resolve().parent
     sys.path.insert(0, str(here.parent))
@@ -370,6 +383,9 @@ def check_map_arm_pins(argv, arm: str | None = None) -> None:
             raise SystemExit("[r9-e1-argv] arm %s: the parsed near-band end is %r (flag %s), expected %g%s" % (
                 arm, MBF.near_m(args), "present" if NEAR_M_FLAG in argv else "absent", want, " via " + NEAR_M_FLAG if arm in NEAR20_ARMS else ""))
     from tanitad.train import map_own_enc_flag as MOE
+    if arm is not None and (OWN_ENC_FLAG in argv) != (arm in OWN_ENC_ARMS):         # E1-M3N20: the flag is the arm's, both ways
+        raise SystemExit("[r9-e1-argv] arm %s: %s is %s in the argv, expected %s" % (
+            arm, OWN_ENC_FLAG, "present" if OWN_ENC_FLAG in argv else "absent", "present" if arm in OWN_ENC_ARMS else "absent"))
     if OWN_ENC_FLAG in argv:                                  # E1-REC2: M3's own encoder -- parsed on + its own refusals
         if not MOE.is_on(args):
             raise SystemExit("[r9-e1-argv] --r9-map-own-enc did not parse as on")
@@ -398,9 +414,9 @@ def main(argv=None) -> int:
     ap.add_argument("--out", default=None, help="the run directory on Thor")
     ap.add_argument("--map-arm", choices=sorted(MAP_ARMS) + list(OWN_ENC_ARMS) + sorted(NEAR20_ARMS), default=None,
                     help="M-GATE: emit the map-lever arm (M1 / M2a / M2b; E1-REC2: M3, which needs --w-map-hires; E1-NEAR20: M1N20 = M1 with the "
-                         "near band 0-20 m) from C0's argv.json given as --base (seed 0)")
+                         "near band 0-20 m; E1-M3N20: M3N20 = M3 with the near band 0-20 m, which needs --w-map-hires) from C0's argv.json given as --base (seed 0)")
     ap.add_argument("--w-map-hires", type=float, default=None,
-                    help="E1-REC2: M3's map weight = the M2 winner's (REQUIRED for --map-arm M3, refused for the other arms)")
+                    help="E1-REC2: M3's map weight = the M2 winner's (REQUIRED for --map-arm M3 / M3N20, refused for the other arms; PREREG_M3: M1's 1.0)")
     ap.add_argument("--box-arm", choices=sorted(BOX_ARMS) + sorted(AUX_ARMS), default=None,
                     help="E1-REC2: emit the box-lever arm (B3 / B3p) from C0's argv.json given as --base (seed 0); E1-REC3: or the training-only "
                          "aux-head arm B1 (depth) / B2 (perspective 3D) / B2c (its BEV control), each C0 + its flag + its weight pair")
@@ -443,12 +459,16 @@ def main(argv=None) -> int:
             out = map_arm_argv(c0["argv"], a.map_arm, a.out, w=a.w_map_hires)
             if not a.no_pin_check:
                 check_map_arm_pins(out, a.map_arm)
-            w = MAP_ARMS[a.map_arm] if a.map_arm in MAP_ARMS else NEAR20_ARMS[a.map_arm]["w_map_hires"] if a.map_arm in NEAR20_ARMS else float(a.w_map_hires)
+            w = float(a.w_map_hires) if a.map_arm in OWN_ENC_ARMS else fixed_map_weight(a.map_arm)
             lever = {"flag": BANDED_FLAG, "w_map_hires": w, "near_lift_m": float(banded_near_lift_m(a.map_arm))}
             if a.map_arm in NEAR20_ARMS:
-                lever.update(near_m_flag=NEAR_M_FLAG, near_m=float(NEAR20_ARMS[a.map_arm]["near_m"]), vs="M1: the near-band end 10 -> 20 m, nothing else")
+                lever.update(near_m_flag=NEAR_M_FLAG, near_m=float(NEAR20_ARMS[a.map_arm]["near_m"]),
+                             vs=("M3: the near-band end 10 -> 20 m, nothing else" if a.map_arm in OWN_ENC_ARMS
+                                 else "M1: the near-band end 10 -> 20 m, nothing else"))
             if a.map_arm in OWN_ENC_ARMS:
-                lever.update(own_enc_flag=OWN_ENC_FLAG, w_map_hires_source="the M2 winner (operator-supplied --w-map-hires)")
+                lever.update(own_enc_flag=OWN_ENC_FLAG,
+                             w_map_hires_source=("PREREG_M3: M1's weight (operator-supplied --w-map-hires 1.0); no M2 winner exists" if w == MAP_ARMS["M1"]
+                                                 else "the M2 winner (operator-supplied --w-map-hires)"))
         else:
             out = box_arm_argv(c0["argv"], a.box_arm, a.out)
             if a.box_arm in AUX_ARMS:

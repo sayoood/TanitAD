@@ -311,7 +311,8 @@ def test_dry_run_refuses_floor_arms_unknown_references_and_a_split_whose_sha_doe
     assert r.returncode == 4 and "FLOOR arm" in r.stderr and not (dry.rd / "arm_C0").exists()
     r = subprocess.run([dry.bash, SH.as_posix(), "../x"], env=dry.env, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
     assert r.returncode == 4
-    for arm in ("M3", "M1-FROZEN"):                                                                      # the design names no reference: abort at once, before any wait
+    # E1-M3N20 (PREREG_M3): M3 now HAS a committed reference (M1; M3N20 -> M1N20), so it no longer aborts here -- it waits for its chain like any lever.
+    for arm in ("M1-FROZEN",):                                                                           # the design names no reference: abort at once, before any wait
         r = subprocess.run([dry.bash, SH.as_posix(), arm], env=dry.env, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)
         assert r.returncode == 3 and "NO-REFERENCE" in (dry.ad(arm) / "READ_ABORTED").read_text(encoding="utf-8"), (arm, r.stdout, r.stderr)
     r = subprocess.run([dry.bash, SH.as_posix(), "B1", "M1"], env=dry.env, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=60)

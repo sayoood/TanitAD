@@ -332,7 +332,7 @@ def test_M3_template_needs_the_M2_winners_weight_and_differs_from_C0_in_exactly_
     for arm in ("M1", "M2a", "M2b"):
         with pytest.raises(SystemExit, match="M3 only"):
             MK.map_arm_argv(C0, arm, w=0.5)                                        # the fixed-w arms refuse a weight
-    assert MK.MAP_ARMS == {"M1": 1.0, "M2a": 0.511, "M2b": 1.018} and MK.OWN_ENC_ARMS == ("M3",)
+    assert MK.MAP_ARMS == {"M1": 1.0, "M2a": 0.511, "M2b": 1.018} and MK.OWN_ENC_ARMS == ("M3", "M3N20")      # E1-M3N20: + M3N20
     assert _diff(C0, M3) == {"--r9-map-banded", "--r9-map-own-enc", "--map-hires-near-lift-m", "--w-map-hires", "--out"}
     d = dict(LG.flag_pairs(M3))
     assert d["--r9-map-own-enc"] == [] and d["--w-map-hires"] == ["0.511"] and d["--map-hires-near-lift-m"] == ["10"]
@@ -352,7 +352,7 @@ def test_M3_template_needs_the_M2_winners_weight_and_differs_from_C0_in_exactly_
     assert MK.main(["--base", str(c0f), "--map-arm", "M3", "--w-map-hires", "0.511", "--write", str(out)]) == 0
     rec = json.loads(out.read_text(encoding="utf-8"))
     assert rec["argv"] == M3 and rec["arm"] == "r9e1_M3" and rec["lever"]["own_enc_flag"] == "--r9-map-own-enc" and rec["lever"]["w_map_hires"] == 0.511
-    assert not (RUNS / "r9e1_M3.argv.json").exists()                               # no committed M3 file until the winner is read
+    assert (RUNS / "r9e1_M3.argv.json").is_file()      # E1-M3N20: committed at PREREG_M3's --w-map-hires 1.0 (no M2 winner exists); the 0.511 here is a stand-in for the template check
     # a pin the own-encoder flag owns: it needs --r9-map-banded, so an argv with it alone is refused by the emitter's pin check
     lone = [t for t in M3 if t != "--r9-map-banded"]
     with pytest.raises(SystemExit):

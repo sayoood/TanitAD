@@ -200,7 +200,7 @@ def test_beside_rows_are_present_for_m1_and_m2a_and_only_for_them():
     assert V.judge("M1", "C0", fl, pair)["beside_pedgefit"]["selector"]["applies"].startswith("PREREG_M1_PEDGEFIT: if M1-vs-C0 is a DROP on clause 1-2")
     assert V.judge("M2a", "M1", fl, pair)["beside_pedgefit"]["selector"]["applies"].startswith("reported for M2a vs M1")
     for arm, s in V.ARMS.items():                                                  # no other arm gains the section
-        if s["kind"] != "floor" and arm not in ("M1", "M2a", "M1N20"):
+        if s["kind"] != "floor" and arm not in ("M1", "M2a", "M1N20", "M3", "M3N20"):
             ref = s["ref"] or (s["allowed"][0] if s["allowed"] else None)
             if ref is not None:
                 assert "beside_pedgefit" not in V.judge(arm, ref, fl, neutral(fl)), arm
@@ -244,7 +244,7 @@ def test_a_separated_worse_beside_row_does_not_change_keep_or_drop():
 
 def test_MUTATION_a_beside_row_in_clause_3_makes_the_guard_red(monkeypatch):
     assert _worse_beside_keeps(V.judge) is True
-    for a in ("M1", "M2a", "M1N20"):                                                # the rows are re-declared as ordinary clause-3 table keys
+    for a in ("M1", "M2a", "M1N20", "M3", "M3N20"):                                                # the rows are re-declared as ordinary clause-3 table keys
         for i, m in enumerate(V.ARMS[a]["metrics"]):
             if not m["clause3"]:
                 monkeypatch.setitem(V.ARMS[a]["metrics"][i], "clause3", True)
@@ -298,9 +298,9 @@ def test_the_markdown_has_its_own_short_beside_section_and_the_rest_is_unchanged
 
 def test_mapping_names_the_beside_rows_with_their_source_line():
     md = V.mapping_md().replace("`", "")
-    assert md.count("nf_edge03_f_5_20 (r9_e1_eval.py:697)") == 3 and md.count("nf_edge03_rec_20_40 (r9_e1_eval.py:697)") == 3                # M1, M2a and M1N20 (E1-NEAR20)
+    assert md.count("nf_edge03_f_5_20 (r9_e1_eval.py:697)") == 5 and md.count("nf_edge03_rec_20_40 (r9_e1_eval.py:697)") == 5                # M1, M2a, M1N20 (E1-NEAR20), M3 and M3N20 (E1-M3N20)
     assert [m["clause3"] for m in V._mapping_entry("M1")["metrics"] if "clause3" in m] == [False] * 17 and "clause3" not in V._mapping_entry("B1")["metrics"][0]
-    assert md.count("lane_tiou05_0_20 (r9_e1_eval.py:875)") == 2 and md.count("drv_bnd_rec03_0_20 (r9_e1_eval.py:880)") == 2              # M1 and M1N20
+    assert md.count("lane_tiou05_0_20 (r9_e1_eval.py:875)") == 4 and md.count("drv_bnd_rec03_0_20 (r9_e1_eval.py:880)") == 4              # M1, M1N20, M3 and M3N20 (E1-M3N20)
 
 
 def test_d3_rows_are_read_from_the_verdicts_own_paired_rows_and_never_decide():

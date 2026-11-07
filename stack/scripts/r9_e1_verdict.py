@@ -177,6 +177,21 @@ def _edge03_specs(mid):
 
 _AP2_ALL = ("ap2m_all", "AP@2 m, head output, no NMS (all ranges)")
 
+
+def _m3_metrics(mid):
+    """E1-M3N20 (PREREG_M3): M3 / M3N20 read M1's map primary, the design's box guard (`ap2m_all`, clause 3 beside `boxes_per_object_noNMS`), and M1 / M1N20's
+    beside rows (the two D3 rows and the edge F@0.3 m rows, ``clause3=False``): the same rows for the decisive read (vs BASE) and the CARRY read (vs C0)."""
+    return (_map_primary(mid + ".primary"), _spec(mid + ".guard.ap2", "box AP@2 m not worse (the ladder's cost)", "guard", ("ap2m_all",)),
+            _spec(mid + ".beside.lane", "lane tolerance-IoU 0-20 m (beside)", "beside", (D3_LANE_KEY,), "higher", clause3=False),
+            _spec(mid + ".beside.edge", "boundary recall @0.3 m (beside)", "beside", (D3_BOUNDARY_KEY,), "higher", clause3=False),
+            *_edge03_specs(mid))
+
+
+_M3_READINGS = ("PREREG_M3 committed readings (DECISIVE = vs BASE, CARRY = vs C0): KEEP/KEEP -> M3 is K2's map config -> FLIP -> K2; KEEP/DROP -> own encoder logged as a kept "
+                "lever, K2 map config = C0's head, the Cfp fallback (8-way head + --w-map-fp, needs its 50-step smoke) goes to the PI; DROP clause 1-2 -> map capacity is not the "
+                "limit on this rig at 4,000 steps, K2 map config = BASE iff BASE's own read was KEEP else C0's head, Cfp to the PI; DROP clause 3 -> the widened SHARED lift "
+                "(64 -> 128) costs a box / other primary beyond 2 x its floor, named; next arm: the own encoder on the 64-channel lift = new code + its own prereg")
+
 #: The 17 arms of sec. 4.3 (+ T1s, the shuffled control of D3; + T1h / T1hs, T1's follow-up lever and its control, REFCV9_E1_T1H_PREREG.md).  ``ref``: the default reference arm (None = the design names none);
 #: ``allowed``: the references this verdict accepts; ``kind``: lever (KEEP/DROP) or control (a control outcome).
 ARMS = {
@@ -229,12 +244,25 @@ ARMS = {
             "argv_flags": ("--r9-map-banded",),
             "ambiguities": ("UNVERIFIED: M2b's --w-map-hires (1.018) is within 2 % of M1's (1.0) -- if the share-per-weight geometry is the "
                             "same, M2b vs M1 reads a replicate-sized difference; M2a (0.511) is the only real dose contrast",)},
-    "M3": {"kind": "lever", "variable": "M2 winner + own 128-ch map encoder, lift 64 -> 128", "ref": None, "allowed": ("M2a", "M2b"),
-           "metrics": (_map_primary("M3.primary"), _spec("M3.guard.ap2", "box AP@2 m", "guard", ("ap2m_all",))),
-           "next_lever": "the next arm in the Q1 branch's order (sec. 3: branch (b1) M3, then M1, then M2 -- line 264; branch (b2) F1 then B1 then T1 -- line 265)",
-           "argv_flags": (), "ambiguities": ("the reference is 'the M2 winner' = a run-time choice: pass --ref M2a|M2b explicitly (M1 is not accepted: "
-                                              "sec. 4.3 does not say what M3 builds on when neither dose wins)",
-                                              "'box AP@2 m' is read as a not-worse guard (the M2 rows say 'not worse')")},
+    #: E1-M3N20 (PREREG_M3, MM 2026-11-07 01:31:44Z, md5 8e497d34): M3 = BASE + the map's OWN 128-channel BEV encoder (`--r9-map-own-enc`), `--w-map-hires 1.0`
+    #: (M1's: no M2 winner exists). BASE is chosen by M1N20's COMMITTED reading: M3 on M1 (near 10), M3N20 on M1N20 (near 20, `--r9-map-banded-near-m 20`).
+    #: DECISIVE: M3 vs M1 / M3N20 vs M1N20 (the design row: "M1's primary vs the M2 winner; box AP@2 m"). CARRY (decides whether the banded config enters K2): vs C0, the
+    #: SAME rule, reported for every outcome and never re-deciding the lever -- read with `--ref C0`.
+    "M3": {"kind": "lever", "variable": "M1 + the map's own 128-ch BEV encoder (lift 64 -> 128), --w-map-hires 1.0 (PREREG_M3: M1's weight; no M2 winner exists)",
+           "ref": "M1", "allowed": ("M1", "C0"), "metrics": _m3_metrics("M3"), "next_lever": _M3_READINGS,
+           "argv_flags": ("--r9-map-banded", "--r9-map-own-enc"),
+           "ambiguities": ("DECISIVE = M3 vs M1 (its BASE when M1N20 reads DROP clause 3 or DROP 1-2 with the selector not separated better); CARRY = M3 vs C0 (--ref C0), "
+                           "same rule, never re-decides the lever; the PREREG's ONE lever vs BASE is the own encoder",
+                           "the fitter's band layout stays 0-10 / 10-40 / 40-100 m for every arm (like-for-like with M1, M1N20 and C0, disclosed in the PREREG)",
+                           "one training seed per arm; the floor is ONE seed pair; separated is necessary, not sufficient (H-ESTIM-SEED-1)")},
+    "M3N20": {"kind": "lever", "variable": "M1N20 + the map's own 128-ch BEV encoder (lift 64 -> 128), --w-map-hires 1.0; near band 0-20 m @ 0.10 m (PREREG_M3: M1's weight)",
+              "ref": "M1N20", "allowed": ("M1N20", "C0"), "metrics": _m3_metrics("M3N20"), "next_lever": _M3_READINGS,
+              "argv_flags": ("--r9-map-banded", "--r9-map-own-enc", "--r9-map-banded-near-m"),
+              "ambiguities": ("DECISIVE = M3N20 vs M1N20 (its BASE when M1N20 reads KEEP or DROP 1-2 with the selector separated better); CARRY = M3N20 vs C0 (--ref C0), "
+                              "same rule, never re-decides the lever; the PREREG's ONE lever vs BASE is the own encoder",
+                              "the fitter's band layout stays 0-10 / 10-40 / 40-100 m for every arm, so M3N20's 10-20 m is cut with its 10-40 m level even though its head serves "
+                              "10-20 m at 10 cm (like-for-like with M1N20, M1 and C0, disclosed in the PREREG)",
+                              "one training seed per arm; the floor is ONE seed pair; separated is necessary, not sufficient (H-ESTIM-SEED-1)")},
     "B1": {"kind": "lever", "variable": "box-derived depth aux (--r9-box-depth-aux, --w-box-depth 0.1)", "ref": "C0", "allowed": ("C0",),
            "metrics": (_spec("B1.primary", "abs(dx) on matched TPs 0-40 m", "primary", ("dx_0_40_mean",), "lower"),
                        _spec("B1.beside.dxmed", "abs(dx) median (robust companion, same quantity)", "beside", ("dx_0_40_median",), "lower"),
