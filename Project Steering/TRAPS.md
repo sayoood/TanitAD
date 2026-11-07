@@ -919,3 +919,11 @@ recoverable, a silent one is not.
     variable before touching the code.** The fix belongs in the driver; the evidence still binds the commit's archive.
   * Same family as "the GOTTY PTY drops output" and the CUDA-visible dagger_compose failure (e87a932): the harness's environment is part
     of the measurement.
+
+- ⛔ **A BARE `"bash"` IN A PYTHON SUBPROCESS ON THE DEV BOX RUNS WSL, NOT GIT BASH, AND A MUTATION HARNESS THEN REPORTS "NOT CAUGHT" FOR ARMS THAT NEVER RAN.**
+  MEASURED 2026-11-07, pin 5 of the T2 dominance read (`raw/2026-11-07-t2-pin5/`):
+  * Windows CreateProcess searches System32 before PATH, so `subprocess.run(["bash", ...])` starts `C:\Windows\System32\bash.exe`. That is the WSL launcher, and its kernel is not configured here.
+  * It exits rc 1 with an **empty stderr**, and writes its error, in German, in **UTF-16 on stdout**. `shutil.which("bash")` meanwhile returns Git's `usr\bin\bash.EXE`, so a which-check looks fine.
+  * What it cost: both REAL-data mutation arms printed `GREEN <-- not caught; the mutated read failed rc=1:` with nothing after the colon, on two runs. That read like a flaky failure. The mutated read itself worked when run by hand.
+  * ⇒ **Call `shutil.which("bash")`, or an explicit Git bash path, and refuse any path containing `system32`. When a subprocess fails, print its stdout as well as its stderr.**
+  * With Git bash both arms read RED (2 of 2). Same family as the Windows `PYTHONPATH` separator: a Windows default resolves to the wrong tool, and nothing errors in a way that names it.
