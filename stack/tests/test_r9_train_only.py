@@ -717,20 +717,21 @@ def test_B5_the_profile_resolves_to_refcv8_mapfts_env_failure_pin():
             # re-pinned by 59d74ca (PI 2026-11-03 in chat: "Yes for pin change, commit and continue."): 333 ids / 45 files;
             # pin2 (MM, 2026-11-03, the Thor suite at e8b0b05 + the 23fbf8f delta): +16 ENV ids, +2 files -> 349 / 47
             # pin5 (MM, 2026-11-04, the Thor suite at c3140a4): +21 ENV ids (no scipy in the training venv), +2 files -> 370 / 49
-            "f26e99f4f53025c3c171047e7999e3e44276fdb8f1f34ecb65c8a374cc84808b")
+            # pin6 (MM, 2026-11-07, the Thor suite at 92e5f3a6): +24 ENV ids (21 no scipy, 3 absent Research Lab file), +4 files -> 394 / 53
+            "ee360bfb92ed61e4d440413432d555a9b4e2b5aeefb69ee7ca8b85db468b0906")
     assert R9W["suite_env_failures"] == want == LG.PROFILES["refcv8-mapft"]["suite_env_failures"]
     assert R9W["suite_pinned_skip_ok"] == LG.PROFILES["refcv8-mapft"]["suite_pinned_skip_ok"]
     assert R9W["suite_pinned_skip_ok"][-1][0] == (r"tests\.test_v8f_kindx_s1::"
                                                   r"test_the_running_kscore_chain_is_the_one_in_the_tree")
     rec, prob = LG.env_failure_pin(R9W, ROOT.parent)              # the file in THIS tree, its sha256 checked
-    assert prob is None and (len(rec["ids"]), len(rec["files"])) == (370, 49)   # 59d74ca: +3 scipy, +2 aarch64; pin2: +16 ENV; pin5: +21 ENV (scipy)
+    assert prob is None and (len(rec["ids"]), len(rec["files"])) == (394, 53)   # 59d74ca: +3 scipy, +2 aarch64; pin2: +16 ENV; pin5: +21 ENV (scipy); pin6: +24 ENV (scipy, absent Research Lab file)
     # MUTATION: the SHARED pin refcv9-warm inherited at aeb5446 -- 168 ids in 35 files, without the 160 v8f-mini ids
     shared = ("stack/ops/launch_gate_thor_env_failures.json",
               "22d8fe2c900c8654c0fce4af754ee01db52da97a93272b61acb38a1932acaf21")
     assert LG.PROFILES["refcv8"]["suite_env_failures"] == shared
     rec2, prob2 = LG.env_failure_pin(dict(R9W, suite_env_failures=shared), ROOT.parent)
     assert prob2 is None and (len(rec2["ids"]), len(rec2["files"])) == (168, 35)
-    assert len(set(rec["ids"]) - set(rec2["ids"])) == 202 and set(rec2["ids"]) <= set(rec["ids"])   # 160 v8f-mini + 59d74ca's 5 + pin2's 16 + pin5's 21
+    assert len(set(rec["ids"]) - set(rec2["ids"])) == 226 and set(rec2["ids"]) <= set(rec["ids"])   # 160 v8f-mini + 59d74ca's 5 + pin2's 16 + pin5's 21 + pin6's 24
     # a tampered literal is refused, not read
     _r, prob3 = LG.env_failure_pin(dict(R9W, suite_env_failures=(want[0], "0" * 64)), ROOT.parent)
     assert _r is None and "a changed list is a reviewed edit of the profile" in prob3

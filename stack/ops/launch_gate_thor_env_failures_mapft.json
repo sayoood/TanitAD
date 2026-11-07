@@ -6,7 +6,7 @@
   "verdict_sha256": "70c66cba4d4f8f902cc6b7ee491eb7f3473c42b69b4a09da8cfa5162ec13f573",
   "tip": "06380de73d82673433db79bcdfd266e417a32063"
  },
- "n_ids": 370,
+ "n_ids": 394,
  "ids": [
   "tests.test_amp_and_threads::test_the_reordering_ACTUALLY_changes_the_thread_pool",
   "tests.test_anchor_prefilter::test_prefilter_is_BIT_EXACT_on_every_candidate_it_decodes",
@@ -100,6 +100,10 @@
   "tests.test_r9_e1_arm_read::test_lift_valid_set_is_passed_to_both_evals_the_paired_eval_and_the_verdict_and_the_verdict_is_read_on_it",
   "tests.test_r9_e1_arm_read::test_lift_valid_set_to_a_missing_path_aborts_before_the_lock_is_taken",
   "tests.test_r9_e1_arm_read::test_lift_valid_unset_passes_no_lift_valid_anywhere_and_the_argv_is_the_earlier_one",
+  "tests.test_r9_e1_d3beside::test_cli_flag_unset_output_has_no_d3_key_and_set_has_stamp",
+  "tests.test_r9_e1_d3beside::test_edge_class_and_d3_columns_coexist",
+  "tests.test_r9_e1_d3beside::test_floor_carries_the_counts_into_the_paired_bootstrap",
+  "tests.test_r9_e1_d3beside::test_unset_identity_and_additivity",
   "tests.test_r9_e1_dump::test_rasters_have_mapsel_layout_and_are_read_by_the_nearfield_reader",
   "tests.test_r9_e1_eval::test_nearfield_copy_equals_the_original_script_output",
   "tests.test_r9_e1_floor::test_c0_vs_a_copy_of_c0_reads_exactly_zero",
@@ -120,6 +124,26 @@
   "tests.test_r9_e1_verdict::test_end_to_end_the_same_windows_are_enforced",
   "tests.test_r9_e1_verdict::test_end_to_end_unchanged_lever_drops_on_clause_1_or_2_with_the_next_lever_named",
   "tests.test_r9_e1_verdict::test_end_to_end_winner_that_is_worse_on_a_map_row_is_dropped_by_clause3",
+  "tests.test_r9_map_thresholds::test_MUTATION_an_eval_that_ignores_the_file_makes_the_guard_red",
+  "tests.test_r9_map_thresholds::test_a_thresholds_file_changes_the_flags_as_an_independent_read_says",
+  "tests.test_r9_map_thresholds::test_arm_read_thresholds_against_a_fixed_128_floor_is_refused_by_the_verdict",
+  "tests.test_r9_map_thresholds::test_arm_read_thresholds_misuse_aborts_before_the_lock[env_keys0-MAP-THR-ARGS]",
+  "tests.test_r9_map_thresholds::test_arm_read_thresholds_misuse_aborts_before_the_lock[env_keys1-MAP-THR-ARGS]",
+  "tests.test_r9_map_thresholds::test_arm_read_thresholds_misuse_aborts_before_the_lock[env_keys2-NO-MAP-THR]",
+  "tests.test_r9_map_thresholds::test_arm_read_thresholds_set_goes_to_both_arm_evals_and_the_verdict_and_never_touches_the_fixed_read",
+  "tests.test_r9_map_thresholds::test_cli_stamps_the_thresholds_and_unset_cli_has_no_key",
+  "tests.test_r9_map_thresholds::test_end_to_end_floor_then_verdict_on_one_threshold_protocol_and_the_refusals",
+  "tests.test_r9_map_thresholds::test_floor_reads_each_side_on_its_own_cut_and_stamps_it",
+  "tests.test_r9_map_thresholds::test_unset_path_is_identical_and_a_128_file_is_the_identity",
+  "tests.test_r9_pedge_beside::test_MUTATION_eval_ignores_the_pedge_level_makes_the_guard_red",
+  "tests.test_r9_pedge_beside::test_MUTATION_floor_that_drops_the_edge_counts_makes_the_row_check_red",
+  "tests.test_r9_pedge_beside::test_eval_beside_counts_and_prf_at_a_thresholds_file_equal_the_hand_values",
+  "tests.test_r9_pedge_beside::test_floor_rows_carry_the_beside_rows_only_when_both_sides_are_thresholded",
+  "tests.test_r9_pedge_beside::test_pooled_5_20_is_by_counts_not_the_mean_of_the_bands",
+  "tests.test_r9_pedge_beside::test_unset_read_is_exactly_the_old_read_and_carries_no_edge_row",
+  "tests.test_r9_pedge_fit::test_control_e0d_gt_static_masks_are_ours",
+  "tests.test_r9_pedge_fit::test_control_reproduces_e0d_edge_prf_and_threshold_choice_on_its_grid",
+  "tests.test_r9_pedge_fit::test_the_max_filter_identity_and_e0d_dilate",
   "tests.test_refa_v1_ema_targets::test_OFF_path_identity_state_dict_keys_and_fixed_seed_loss_unchanged[hier]",
   "tests.test_refa_v1_ema_targets::test_OFF_path_identity_state_dict_keys_and_fixed_seed_loss_unchanged[nohier]",
   "tests.test_refa_v1_precision::test_OFF_path_identity_every_step1_instrument_matches_the_pre_edit_trainer[default]",
@@ -392,7 +416,7 @@
    "proposed_fix": "insert `torch.manual_seed(0)` as the first statement of the test (the pattern test_flagship_v4.py already uses at its line 432)"
   }
  ],
- "n_files": 49,
+ "n_files": 53,
  "files": [
   {
    "sub": "stack",
@@ -589,6 +613,22 @@
   {
    "sub": "stack",
    "file": "tests/test_r9_e1_verdict.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_d3beside.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_r9_map_thresholds.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_r9_pedge_beside.py"
+  },
+  {
+   "sub": "stack",
+   "file": "tests/test_r9_pedge_fit.py"
   }
  ],
  "id_to_file": {
@@ -2071,6 +2111,102 @@
   "tests.test_r9_e1_verdict::test_end_to_end_winner_that_is_worse_on_a_map_row_is_dropped_by_clause3": {
    "sub": "stack",
    "file": "tests/test_r9_e1_verdict.py"
+  },
+  "tests.test_r9_e1_d3beside::test_unset_identity_and_additivity": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_d3beside.py"
+  },
+  "tests.test_r9_e1_d3beside::test_edge_class_and_d3_columns_coexist": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_d3beside.py"
+  },
+  "tests.test_r9_e1_d3beside::test_floor_carries_the_counts_into_the_paired_bootstrap": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_d3beside.py"
+  },
+  "tests.test_r9_e1_d3beside::test_cli_flag_unset_output_has_no_d3_key_and_set_has_stamp": {
+   "sub": "stack",
+   "file": "tests/test_r9_e1_d3beside.py"
+  },
+  "tests.test_r9_map_thresholds::test_unset_path_is_identical_and_a_128_file_is_the_identity": {
+   "sub": "stack",
+   "file": "tests/test_r9_map_thresholds.py"
+  },
+  "tests.test_r9_map_thresholds::test_a_thresholds_file_changes_the_flags_as_an_independent_read_says": {
+   "sub": "stack",
+   "file": "tests/test_r9_map_thresholds.py"
+  },
+  "tests.test_r9_map_thresholds::test_MUTATION_an_eval_that_ignores_the_file_makes_the_guard_red": {
+   "sub": "stack",
+   "file": "tests/test_r9_map_thresholds.py"
+  },
+  "tests.test_r9_map_thresholds::test_cli_stamps_the_thresholds_and_unset_cli_has_no_key": {
+   "sub": "stack",
+   "file": "tests/test_r9_map_thresholds.py"
+  },
+  "tests.test_r9_map_thresholds::test_floor_reads_each_side_on_its_own_cut_and_stamps_it": {
+   "sub": "stack",
+   "file": "tests/test_r9_map_thresholds.py"
+  },
+  "tests.test_r9_map_thresholds::test_end_to_end_floor_then_verdict_on_one_threshold_protocol_and_the_refusals": {
+   "sub": "stack",
+   "file": "tests/test_r9_map_thresholds.py"
+  },
+  "tests.test_r9_map_thresholds::test_arm_read_thresholds_set_goes_to_both_arm_evals_and_the_verdict_and_never_touches_the_fixed_read": {
+   "sub": "stack",
+   "file": "tests/test_r9_map_thresholds.py"
+  },
+  "tests.test_r9_map_thresholds::test_arm_read_thresholds_misuse_aborts_before_the_lock[env_keys0-MAP-THR-ARGS]": {
+   "sub": "stack",
+   "file": "tests/test_r9_map_thresholds.py"
+  },
+  "tests.test_r9_map_thresholds::test_arm_read_thresholds_misuse_aborts_before_the_lock[env_keys1-MAP-THR-ARGS]": {
+   "sub": "stack",
+   "file": "tests/test_r9_map_thresholds.py"
+  },
+  "tests.test_r9_map_thresholds::test_arm_read_thresholds_misuse_aborts_before_the_lock[env_keys2-NO-MAP-THR]": {
+   "sub": "stack",
+   "file": "tests/test_r9_map_thresholds.py"
+  },
+  "tests.test_r9_map_thresholds::test_arm_read_thresholds_against_a_fixed_128_floor_is_refused_by_the_verdict": {
+   "sub": "stack",
+   "file": "tests/test_r9_map_thresholds.py"
+  },
+  "tests.test_r9_pedge_beside::test_eval_beside_counts_and_prf_at_a_thresholds_file_equal_the_hand_values": {
+   "sub": "stack",
+   "file": "tests/test_r9_pedge_beside.py"
+  },
+  "tests.test_r9_pedge_beside::test_pooled_5_20_is_by_counts_not_the_mean_of_the_bands": {
+   "sub": "stack",
+   "file": "tests/test_r9_pedge_beside.py"
+  },
+  "tests.test_r9_pedge_beside::test_unset_read_is_exactly_the_old_read_and_carries_no_edge_row": {
+   "sub": "stack",
+   "file": "tests/test_r9_pedge_beside.py"
+  },
+  "tests.test_r9_pedge_beside::test_MUTATION_eval_ignores_the_pedge_level_makes_the_guard_red": {
+   "sub": "stack",
+   "file": "tests/test_r9_pedge_beside.py"
+  },
+  "tests.test_r9_pedge_beside::test_floor_rows_carry_the_beside_rows_only_when_both_sides_are_thresholded": {
+   "sub": "stack",
+   "file": "tests/test_r9_pedge_beside.py"
+  },
+  "tests.test_r9_pedge_beside::test_MUTATION_floor_that_drops_the_edge_counts_makes_the_row_check_red": {
+   "sub": "stack",
+   "file": "tests/test_r9_pedge_beside.py"
+  },
+  "tests.test_r9_pedge_fit::test_the_max_filter_identity_and_e0d_dilate": {
+   "sub": "stack",
+   "file": "tests/test_r9_pedge_fit.py"
+  },
+  "tests.test_r9_pedge_fit::test_control_reproduces_e0d_edge_prf_and_threshold_choice_on_its_grid": {
+   "sub": "stack",
+   "file": "tests/test_r9_pedge_fit.py"
+  },
+  "tests.test_r9_pedge_fit::test_control_e0d_gt_static_masks_are_ours": {
+   "sub": "stack",
+   "file": "tests/test_r9_pedge_fit.py"
   }
  },
  "amendments": [
@@ -2359,6 +2495,47 @@
    ],
    "class": "ENV (no scipy in the Thor training venv; the class this file's header already admits): every added id ERRORS in setup with \"ModuleNotFoundError: No module named 'scipy'\" at scripts/r9_e1_eval.py:384 (`from scipy.ndimage import binary_dilation`), read from its own junit message.",
    "measured": "Thor suite for c3140a46033f (/home/nvidia/r8ns/r9e1/suite_c3140a46033f, TIP and CAND done; gate_verdict FAIL regressions 0 new_fail 45; the gate's own precheck FAIL on 30 outside-pinned ids, each classified from its junit message: 21 SCIPY, 6 GPU, 2 shim, 1 ENC). Pinned here: the 21 ENV ids. Not admitted (CODE, fixed in this commit): the 8 test_r9gate3_study / test_r9gate3_lock_waits ids (the sandbox shims were written 0644, so Linux PATH lookup ran the REAL nvidia-smi against the training GPU and `$PY` could not run; made executable + a POSIX test that a lookup finds them) and test_text_encoding_is_explicit (4 text-mode calls in tests/test_devbox_pinned_env.py).",
+   "dev_box_half": "G-SUITE (b) now also runs the added files on the full-commit archive, where they must PASS",
+   "authorized": "Master Mind review under the PI's standing instruction of 2026-11-03 ('Dont stop until the goals are achieved and refcv9 can be trained. Do this effectively and quickly without asking me'); ENV-classified ids only, each from its junit message"
+  },
+  {
+   "date": "2026-11-07",
+   "by": "Master Mind (4a3d05)",
+   "scope": "this file (refcv8-mapft, refcv9-warm, refcv9-e1rig)",
+   "added_ids": [
+    "tests.test_r9_e1_d3beside::test_cli_flag_unset_output_has_no_d3_key_and_set_has_stamp",
+    "tests.test_r9_e1_d3beside::test_edge_class_and_d3_columns_coexist",
+    "tests.test_r9_e1_d3beside::test_floor_carries_the_counts_into_the_paired_bootstrap",
+    "tests.test_r9_e1_d3beside::test_unset_identity_and_additivity",
+    "tests.test_r9_map_thresholds::test_MUTATION_an_eval_that_ignores_the_file_makes_the_guard_red",
+    "tests.test_r9_map_thresholds::test_a_thresholds_file_changes_the_flags_as_an_independent_read_says",
+    "tests.test_r9_map_thresholds::test_arm_read_thresholds_against_a_fixed_128_floor_is_refused_by_the_verdict",
+    "tests.test_r9_map_thresholds::test_arm_read_thresholds_misuse_aborts_before_the_lock[env_keys0-MAP-THR-ARGS]",
+    "tests.test_r9_map_thresholds::test_arm_read_thresholds_misuse_aborts_before_the_lock[env_keys1-MAP-THR-ARGS]",
+    "tests.test_r9_map_thresholds::test_arm_read_thresholds_misuse_aborts_before_the_lock[env_keys2-NO-MAP-THR]",
+    "tests.test_r9_map_thresholds::test_arm_read_thresholds_set_goes_to_both_arm_evals_and_the_verdict_and_never_touches_the_fixed_read",
+    "tests.test_r9_map_thresholds::test_cli_stamps_the_thresholds_and_unset_cli_has_no_key",
+    "tests.test_r9_map_thresholds::test_end_to_end_floor_then_verdict_on_one_threshold_protocol_and_the_refusals",
+    "tests.test_r9_map_thresholds::test_floor_reads_each_side_on_its_own_cut_and_stamps_it",
+    "tests.test_r9_map_thresholds::test_unset_path_is_identical_and_a_128_file_is_the_identity",
+    "tests.test_r9_pedge_beside::test_MUTATION_eval_ignores_the_pedge_level_makes_the_guard_red",
+    "tests.test_r9_pedge_beside::test_MUTATION_floor_that_drops_the_edge_counts_makes_the_row_check_red",
+    "tests.test_r9_pedge_beside::test_eval_beside_counts_and_prf_at_a_thresholds_file_equal_the_hand_values",
+    "tests.test_r9_pedge_beside::test_floor_rows_carry_the_beside_rows_only_when_both_sides_are_thresholded",
+    "tests.test_r9_pedge_beside::test_pooled_5_20_is_by_counts_not_the_mean_of_the_bands",
+    "tests.test_r9_pedge_beside::test_unset_read_is_exactly_the_old_read_and_carries_no_edge_row",
+    "tests.test_r9_pedge_fit::test_control_e0d_gt_static_masks_are_ours",
+    "tests.test_r9_pedge_fit::test_control_reproduces_e0d_edge_prf_and_threshold_choice_on_its_grid",
+    "tests.test_r9_pedge_fit::test_the_max_filter_identity_and_e0d_dilate"
+   ],
+   "added_files": [
+    "tests/test_r9_e1_d3beside.py",
+    "tests/test_r9_map_thresholds.py",
+    "tests/test_r9_pedge_beside.py",
+    "tests/test_r9_pedge_fit.py"
+   ],
+   "class": "ENV, two classes this file's header already admits, each read from the id's own junit message: SCIPY (21: 16 fail and 5 error in setup with \"ModuleNotFoundError: No module named 'scipy'\" -- no scipy in the Thor training venv) and RLAB (3: \"AssertionError: e0d_score.py not found\" -- the Research Lab file is absent in the suite's stack/taniteval/tools-only tree).",
+   "measured": "Thor suite for 92e5f3a6afbf (/home/nvidia/r8ns/r9e1/suite_92e5f3a6afbf, TIP and CAND done; gate_verdict FAIL regressions 0 new_fail 61; the chain's STOP-SUITE-PRECHECK-FAIL 2026-11-07T17:20:16Z on 24 outside-pinned ids, enumerated from the CAND junit XMLs by kit/pin6_outside.py -> suite_92e5f3a6afbf/pin6_outside.json: 21 SCIPY, 3 RLAB). Pinned here: all 24. The four files landed after segment f702df07's suite, which is why no earlier pin carried them.",
    "dev_box_half": "G-SUITE (b) now also runs the added files on the full-commit archive, where they must PASS",
    "authorized": "Master Mind review under the PI's standing instruction of 2026-11-03 ('Dont stop until the goals are achieved and refcv9 can be trained. Do this effectively and quickly without asking me'); ENV-classified ids only, each from its junit message"
   }

@@ -493,7 +493,7 @@ def test_the_profile_literals():
     assert MAPFT["suite_env_failures"][0] == "stack/ops/launch_gate_thor_env_failures_mapft.json"
     assert LG.PROFILES["refcv8"]["suite_env_failures"][0] == "stack/ops/launch_gate_thor_env_failures.json"
     pin, why = LG.env_failure_pin(MAPFT, ROOT.parent)
-    assert why is None and pin["n_ids"] == 370 and len(pin["ids"]) == 370   # 59d74ca (PI-authorized re-pin) + pin2 (+16 ENV) + pin5 (+21 ENV, scipy)
+    assert why is None and pin["n_ids"] == 394 and len(pin["ids"]) == 394   # 59d74ca (PI-authorized re-pin) + pin2 (+16 ENV) + pin5 (+21 ENV, scipy) + pin6 (+24 ENV)
     assert len(MAPFT["suite_pinned_skip_ok"]) == len(LG.PROFILES["refcv8"]["suite_pinned_skip_ok"]) + 1
     assert MAPFT["suite_pinned_skip_ok"][-1][0] == r"tests\.test_v8f_kindx_s1::test_the_running_kscore_chain_is_the_one_in_the_tree"
     assert MAPFT["map_hires"]["ga_keys"] == ("ga_mh_refine", "ga_mh_near", "ga_mh_near_refine")
