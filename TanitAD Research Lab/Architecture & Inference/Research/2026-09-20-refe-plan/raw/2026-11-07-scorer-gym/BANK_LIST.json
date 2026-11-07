@@ -1,0 +1,216 @@
+{
+ "schema": "scorer-gym-bank-v1",
+ "date": "2026-11-07",
+ "note": "MM banks with tools/kb_add.py from the repo tip; 2 entries are new to the Library",
+ "entries": [
+  {
+   "arxiv_id": "2406.06978",
+   "name": "Hydra-MDP",
+   "tag": "scorer",
+   "file": "library/2406.06978.pdf",
+   "bytes": 1596072,
+   "sha256": "8927b0ffbfb0d9d5e86e168420a504dc14365131d5d31a7ede1da96e4768a8d3",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "Per-vocabulary-entry BCE on offline PDM sub-scores (8,192 vocab) + softmax imitation; distilling the AGGREGATE PDMS scores 80.2 vs per-sub-score 83.0, weighted-confidence inference 85.7, +EP target 86.5 PDMS navtest (NAVSIM v1).",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2503.12820",
+   "name": "Hydra-MDP++",
+   "tag": "scorer",
+   "file": "library/2503.12820.pdf",
+   "bytes": 2494746,
+   "sha256": "e70fea2dddbfb42a026f9e45c3651aa109997998c5e694bf33ac41e05dfae7f1",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "Expert-guided extension of Hydra multi-target distillation; cited only as GTRS/DriveSuprim baseline (not read in depth).",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2506.06664",
+   "name": "GTRS",
+   "tag": "scorer",
+   "file": "library/2506.06664.pdf",
+   "bytes": 1672617,
+   "sha256": "8ecd35af11b94ef62e3618669f55058f29b443ef8468fb90c93d83d8f12dc6da",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "Hydra-style BCE scorer trained on a 16,384 super-dense vocab with 50 % vocabulary dropout; scores unseen diffusion proposals zero-shot (navhard EPDMS 36.7 vs random 25.6); dropout 43.4; ensemble 49.4 EPDMS navhard; NAVSIM v2 challenge winner.",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2506.06659",
+   "name": "DriveSuprim",
+   "tag": "scorer",
+   "file": "library/2506.06659.pdf",
+   "bytes": 28120013,
+   "sha256": "33cf828e4a5cb7e9ae271883ce8cd2fd0596df59623f2b4d7e8492b61996e897",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "Coarse-to-fine: BCE+imitation over vocab, top-k filtering into a refinement decoder trained on hard negatives, EMA-teacher soft labels; own top-K oracle 91.9/94.5/96.1 PDMS at K=1/4/16; ablation 81.4 -> 83.1 EPDMS navtest.",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2504.01941",
+   "name": "WoTE",
+   "tag": "scorer",
+   "file": "library/2504.01941.pdf",
+   "bytes": 1557430,
+   "sha256": "04569f633b3ca9cff25f66b59be09a2838a9297a94a180a26bb252835b9dbeae",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "Reward model reads BEV-world-model-predicted future states; trained with simulator sub-score targets + imitation reward; 88.3 PDMS navtest; ablation imi-only 83.5 / sim-only 83.6 / both 85.6.",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2510.24108",
+   "name": "ZTRS / EPO",
+   "tag": "rl",
+   "file": "library/2510.24108.pdf",
+   "bytes": 6544131,
+   "sha256": "c45655ef9c277c51a67162c64e01595edc966d33cc5f9e5ffaf0ac89901793c1",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "Exhaustive Policy Optimization: one-step offline policy gradient summed over ALL 16,384 actions with advantage = normalised EPDMS minus an EC-consistency penalty on the previous pick; no human data; navtest EPDMS 85.3 vs IL 86.2 (EP 84.1 vs 88.5); argmax-EPDMS imitation 76.7.",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2504.17838",
+   "name": "CaRL",
+   "tag": "rl",
+   "file": "library/2504.17838.pdf",
+   "bytes": 3205962,
+   "sha256": "058d84e690bfef38e60a73b7eaa6a6293cc47b21893b75c05ec2238edd595e2c",
+   "source": "downloaded https://arxiv.org/pdf/2504.17838 2026-11-07, NOT yet in Library",
+   "finding": "PPO privileged planner, reward = route completion with terminations and multiplicative soft penalties; dense shaped (Roach) reward falls into a 'not driving' local minimum at large mini-batch; nuPlan Val14 CLS 91.3 NR / 90.6 R; 500M samples on one 8-GPU node.",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2306.07962",
+   "name": "PDM-Closed",
+   "tag": "rule",
+   "file": "library/2306.07962.pdf",
+   "bytes": 643282,
+   "sha256": "44ae16928e12d27a27800ada722bd57211c04d894c59dbceaed3b81bb3679acf",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "15 IDM proposals (5 target speeds x 3 lateral offsets), constant-velocity forecasts, LQR simulation, nuPlan-metric scoring, argmax; Val14 CLS-R 92 / CLS-NR 93 (OLS 42).",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2503.10434",
+   "name": "TrajHF",
+   "tag": "rlhf",
+   "file": "library/2503.10434.pdf",
+   "bytes": 7794438,
+   "sha256": "eb18c94e3eaf392b2bf6361b0ca8842e9d8d60785f3f161abbc93402f6f2a418",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "RLHF for driving-style personalisation; NAVSIM 94.3 is the PDMS-selector (ground-truth-scored, oracle) row, not a deployable selector.",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2502.13144",
+   "name": "RAD",
+   "tag": "rl",
+   "file": "library/2502.13144.pdf",
+   "bytes": 2550383,
+   "sha256": "49ceef4c6f3c6dad72213302d443b1a733bb92b61b443b760c9095c430ba3b6d",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "PPO in 3DGS digital twins with collision + position/heading deviation rewards plus an IL regulariser; collision rate 0.089 (RL+IL) vs 0.229 (IL), own closed-loop benchmark.",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2410.05582",
+   "name": "Gen-Drive",
+   "tag": "rlhf",
+   "file": "library/2410.05582.pdf",
+   "bytes": 1859743,
+   "sha256": "5b3377cf3c94873ae8d346b420ce797c655032a3234d93e582eb2ca119bfb58f",
+   "source": "downloaded https://arxiv.org/pdf/2410.05582 2026-11-07, NOT yet in Library",
+   "finding": "Scene evaluator trained on VLM-curated pairwise preferences, RL fine-tune of a diffusion generator; nuPlan reduced Val14 0.8753 (fine-tuned) vs PDM-Closed 0.9121; over-optimisation: 1,000 steps 0.8753 -> 2,000 steps 0.8123.",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2605.15120",
+   "name": "CLOVER",
+   "tag": "scorer",
+   "file": "library/2605.15120.pdf",
+   "bytes": 20186230,
+   "sha256": "cdf0b4850472e7d5b035adc1775c93983dd1a7aafa786c4b50dbfabaac6e1053",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "Scorer re-fit on true evaluator sub-scores of the CURRENT generator's proposals; defines ranking regret = oracle - selected and validates with pairwise ranking accuracy 94.72 % (>=0.95 vs <=0.50 groups) and top-K enrichment; Stage1 94.13 -> Stage2 94.48 PDMS navtest (per RL_POSTTRAIN_REVIEW).",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2509.17940",
+   "name": "DriveDPO",
+   "tag": "pref",
+   "file": "library/2509.17940.pdf",
+   "bytes": 1361439,
+   "sha256": "6d3fab2d91893ea844a392b69e4b57543bd14e2f583221c4c170aeeba3168d13",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "Safety DPO over PDMS-ranked candidate pairs; rejected = imitation-closest unsafe candidate gives 90.0 vs distance-based 89.7 PDMS navtest.",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2601.05083",
+   "name": "DrivoR",
+   "tag": "scorer",
+   "file": "library/2601.05083.pdf",
+   "bytes": 13487195,
+   "sha256": "571ddbe7456844d32baa02639fa310c8a34554e2086f9b5c15b6482305dd483f",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "REFe's reference: disentangled scorer trained by per-sub-score BCE on its own proposals; navtest PDMS 93.1 (train) / 93.7 (trainval).",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2606.07170",
+   "name": "TOAD",
+   "tag": "scorer-as-reward",
+   "file": "library/2606.07170.pdf",
+   "bytes": 3007062,
+   "sha256": "552116bd40762e0e57b21ec8793187b1ec222ed107472814f126a167fc5dc1f2",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "A fixed-vocabulary scorer (GTRS) used as a search reward drives iPad 34.7 -> 23.9 EPDMS navhard; DrivoR's disentangled scorer 49.8: scorer OOD exploitation is real.",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2406.15349",
+   "name": "NAVSIM",
+   "tag": "benchmark",
+   "file": "library/2406.15349.pdf",
+   "bytes": 3505835,
+   "sha256": "d3bc66d321cfceccc4f431113dea3f0f481d74d29dd283a33e204a4326f0403c",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "PDMS definition; non-reactive one-plan simulation correlates better with nuPlan closed-loop CLS than displacement metrics (Spearman/Pearson, Fig. 4).",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2506.04218",
+   "name": "Pseudo-simulation",
+   "tag": "benchmark",
+   "file": "library/2506.04218.pdf",
+   "bytes": 5341242,
+   "sha256": "a8431697ffa276068375c937cc2f90a2c8059a17b285fba0f0c8ba41eb877e81",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "Two-stage pseudo-sim (EPDMS) correlates with closed-loop simulation at R^2 0.8 vs 0.7 for the best open-loop metric.",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2609.06055",
+   "name": "DriveZero",
+   "tag": "rl",
+   "file": "library/2609.06055.pdf",
+   "bytes": 9392899,
+   "sha256": "82a00048648b155ecad83888b94be95a39c3f6511cb8497eb2fb435feb72797b",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "Privileged PPO teacher in mixed-agent nuPlan worlds; reward = hard-event penalty + goal bonus + (1/H) PRODUCT of six soft criteria; decomposed per-term critic + value-guided test-time reranking; camera student distilled from teacher rollouts: 95.3 PDMS navtest without human trajectories.",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  },
+  {
+   "arxiv_id": "2608.04896",
+   "name": "NAVSIM score-basis audit",
+   "tag": "benchmark",
+   "file": "library/2608.04896.pdf",
+   "bytes": 682398,
+   "sha256": "28826095e637947f9959c6f3005e96e0e75b9ab16adbc6e8afce6b1431a00d46",
+   "source": "copied from TanitAD Research Lab/Library (sha256 == library.json)",
+   "finding": "Abstract only: defensive-driving scores computed on shared reference rollouts can propagate rollout divergence; disclose the score basis and stack.",
+   "cited_by": "scorer_gym_20261107/LIT_REVIEW.md"
+  }
+ ]
+}
