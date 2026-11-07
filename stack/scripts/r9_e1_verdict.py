@@ -103,6 +103,14 @@ KEY_SRC = (
     (r"^nf_edge03_prec_(0_5|5_10|10_20|20_40|5_20)$", _EVAL, 697, '"nf_edge03_prec_"'),
     (r"^nf_edge03_rec_(0_5|5_10|10_20|20_40|5_20)$", _EVAL, 697, '"nf_edge03_rec_"'),
     (r"^nf_edge03_f_(0_5|5_10|10_20|20_40|5_20)$", _EVAL, 697, '"nf_edge03_f_"'),
+    # M1's two design BESIDE rows (hold_r9_d3beside; E0d MAP-3a / MAP-3b): lane tolerance-IoU and drivable-boundary recall @0.3 m, emitted ONLY on a
+    # read with --map-beside-d3 (r9_e1_eval._d3_stats_keys). The pooled 0-20 m lines come FIRST (key_src returns the first matching pattern).
+    (r"^lane_tiou05_0_20$", _EVAL, 875, '"lane_tiou05_0_20"'),
+    (r"^lane_tiou05_(0_5|5_10|10_20|20_40)$", _EVAL, 872, '"lane_tiou05_'),
+    (r"^drv_bnd_rec03_cells_0_20$", _EVAL, 881, '"drv_bnd_rec03_cells_0_20"'),
+    (r"^drv_bnd_rec03_cells_(0_5|5_10|10_20|20_40)$", _EVAL, 879, '"drv_bnd_rec03_cells_'),
+    (r"^drv_bnd_rec03_0_20$", _EVAL, 880, '"drv_bnd_rec03_0_20"'),
+    (r"^drv_bnd_rec03_(0_5|5_10|10_20|20_40)$", _EVAL, 878, '"drv_bnd_rec03_'),
 )
 
 
@@ -152,6 +160,15 @@ BESIDE_NOTE = ("Edge-class precision / recall / F @ 0.3 m (E0d thin-class protoc
                "DROP above does not read them.")
 
 
+#: M1's two design BESIDE rows (REFCV9_DESIGN 4.3 M1 row: "beside: lane tolerance-IoU 0-20 m, boundary recall @0.3 m"), from hold_r9_d3beside (E0d MAP-3a
+#: L-DIL lane IoU of {code == 2} vs GT lane, both 0.5 m wide; MAP-3b recall of GT edge cells within 0.3 m of the inner boundary of {pdrv >= level}, pooled
+#: window mean). ``clause3=False`` like the edge rows: read from this verdict's OWN paired bootstrap into the beside block, NEVER a clause, a guard or a veto.
+#: The rows exist ONLY on a read with ``--map-beside-d3`` (the raster counts are taken when asked; absent -> NOT-COMPUTABLE with the reason).
+D3_LANE_KEY = "lane_tiou05_0_20"
+D3_BOUNDARY_KEY = "drv_bnd_rec03_0_20"
+D3_KEY_PREFIXES = ("lane_tiou05_", "drv_bnd_rec03_")
+
+
 def _edge03_specs(mid):
     return tuple(_spec("%s.beside.edge03_%s_%s" % (mid, kind, band), "edge-class %s@0.3 m %s m (beside)" % (lab, band.replace("_", "-")), "beside",
                        ("nf_edge03_%s_%s" % (kind, band),), "higher", clause3=False)
@@ -169,12 +186,8 @@ ARMS = {
            "next_lever": "n/a: C0 / C1 are the floor (r9_e1_floor.py), not a lever", "argv_flags": (), "ambiguities": ()},
     "M1": {"kind": "lever", "variable": "sec. 2.1 representation (banded map, near lift 20 -> 10 m) + R7 losses at w = 1", "ref": "C0", "allowed": ("C0",),
            "metrics": (_map_primary("M1.primary"),
-                       _spec("M1.beside.lane", "lane tolerance-IoU 0-20 m (beside)", "beside", (), "higher", (),
-                             "no emitted key: r9_e1_eval has no lane / tolerance-IoU metric (the raster `code` plane is the only lane source)",
-                             "a tolerance-IoU of class 2 (`code` plane) against the 0.5 m dilated GT lane, bands 0-20 m, in r9_e1_eval"),
-                       _spec("M1.beside.edge", "boundary recall @0.3 m (beside)", "beside", (), "higher", (),
-                             "no emitted key: r9_e1_eval has no boundary-recall metric",
-                             "recall of GT edge cells (class 5) within 0.3 m of an own boundary cell (`pedge` / `pdrv` planes), in r9_e1_eval"),
+                       _spec("M1.beside.lane", "lane tolerance-IoU 0-20 m (beside)", "beside", (D3_LANE_KEY,), "higher", clause3=False),
+                       _spec("M1.beside.edge", "boundary recall @0.3 m (beside)", "beside", (D3_BOUNDARY_KEY,), "higher", clause3=False),
                        *_edge03_specs("M1")),
            "next_lever": "the `--w-map-fp` fallback E1 arm ('kept only as a fallback E1 arm if M1 misses at 5-20 m', sec. 2.1 line 111); Q1 branch (a): M2 "
                          "gradient share second (sec. 3 line 263); branch (b2): (1) M2, (2) F1, (3) B1, (4) T1 (sec. 3 line 265)",
@@ -191,12 +204,8 @@ ARMS = {
     "M1N20": {"kind": "lever", "variable": "M1 with the banded head's near band 0-20 m @ 0.10 m (C0's 20 m near lift; mid 20-40 m) -- the near-band end 10 -> 20 m, nothing else",
               "ref": "C0", "allowed": ("C0", "M1"),
               "metrics": (_map_primary("M1N20.primary"),
-                          _spec("M1N20.beside.lane", "lane tolerance-IoU 0-20 m (beside)", "beside", (), "higher", (),
-                                "no emitted key: r9_e1_eval has no lane / tolerance-IoU metric (the raster `code` plane is the only lane source)",
-                                "a tolerance-IoU of class 2 (`code` plane) against the 0.5 m dilated GT lane, bands 0-20 m, in r9_e1_eval"),
-                          _spec("M1N20.beside.edge", "boundary recall @0.3 m (beside)", "beside", (), "higher", (),
-                                "no emitted key: r9_e1_eval has no boundary-recall metric",
-                                "recall of GT edge cells (class 5) within 0.3 m of an own boundary cell (`pedge` / `pdrv` planes), in r9_e1_eval"),
+                          _spec("M1N20.beside.lane", "lane tolerance-IoU 0-20 m (beside)", "beside", (D3_LANE_KEY,), "higher", clause3=False),
+                          _spec("M1N20.beside.edge", "boundary recall @0.3 m (beside)", "beside", (D3_BOUNDARY_KEY,), "higher", clause3=False),
                           *_edge03_specs("M1N20")),
               "next_lever": "PREREG_M1_NEAR20 committed readings: KEEP -> M1N20 is the map config for K2, M3 builds on it; DROP clause 1-2 with the beside edge F@0.3 m "
                             "10-20 m separated BETTER vs M1 -> M3 built on M1N20 (next pre-registration); NOT separated better -> M3 (map capacity) or the Cfp fallback (PI)",
@@ -547,8 +556,15 @@ def control_outcome(arm: str, ref: str, primary: dict) -> str:
     return "n/a"
 
 
-def _beside_absent(ctx) -> str:
+def _beside_absent(ctx, key: str = "") -> str:
     """Why a beside edge row has NO paired row in this read (state NOT-COMPUTABLE, with the reason; never a guess, never 0)."""
+    if key.startswith(D3_KEY_PREFIXES):                       # hold_r9_d3beside's rows need --map-beside-d3, not thresholds
+        if ctx is None or not ctx.get("rasters"):
+            return "no raster dirs were given to this verdict (--rast-arm / --rast-ref): the lane / drivable-boundary rows are counted on the rasters"
+        if not ctx.get("beside_d3"):
+            return ("this read ran without --map-beside-d3: the lane tolerance-IoU / drivable-boundary recall counts are taken only when asked "
+                    "(hold_r9_d3beside; an unset read is byte-identical to the read before them)")
+        return "the --map-beside-d3 read emitted no such row (rasters without a code / pdrv plane)"
     if ctx is None:
         return ("no paired row in this read: the edge-class F@0.3 m rows are emitted only by a THRESHOLDED raster read (--rast-arm / --rast-ref with "
                 "--map-thresholds-arm / -ref); a fixed-128 read, or an evaluator that predates hold_r9_pedgefit, has none")
@@ -565,7 +581,7 @@ def _read_beside(floor: dict, pair_rows: dict, key: str, ctx) -> dict:
     context only (``floor_context``, when it has a usable row for the key) and decides nothing. States: READ / UNDEFINED / NOT-COMPUTABLE."""
     prow = pair_rows.get(key)
     if prow is None:
-        return {"key": key, "state": "NOT-COMPUTABLE", "why": _beside_absent(ctx)}
+        return {"key": key, "state": "NOT-COMPUTABLE", "why": _beside_absent(ctx, key)}
     if prow.get("undefined") or not _finite(prow.get("delta")):
         return {"key": key, "state": "UNDEFINED", "why": "undefined on the arm-vs-reference windows (no GT edge cell in the band / no judged flag): never read as 0"}
     d, sep = float(prow["delta"]), bool(prow["separated"])
@@ -731,7 +747,7 @@ def _thresholds_protocol(out, checks, problems, floor, rast_meta, e_arm, e_ref, 
 
 
 def build_verdict(floor_path, paired, eval_arm, eval_ref, arm, ref=None, *, rast_arm=None, rast_ref=None, rast_names=None, rast_stride=1,
-                  psw_key="psw", floor_eval_c0=None, boot=None, seed=None, lift_valid=None, thr_arm=None, thr_ref=None) -> dict:
+                  psw_key="psw", floor_eval_c0=None, boot=None, seed=None, lift_valid=None, thr_arm=None, thr_ref=None, beside_d3=False) -> dict:
     out = {"schema": SCHEMA, "tier": TIER, "arm": arm, "keep_rule": KEEP_RULE, "keep_factor": KEEP_FACTOR, "status": "OK", "verdict": None,
            "estimator": {"answers": "another draw of EPISODES, NOT another training run: the floor |C1-C0| is ONE seed pair (n = 1) and "
                                     "the arm is ONE training run"}}
@@ -778,7 +794,8 @@ def build_verdict(floor_path, paired, eval_arm, eval_ref, arm, ref=None, *, rast
         rast_meta = None
         if rast_arm is not None:
             mrows, rast_meta = fl.nearfield_rows(rast_ref, rast_arm, names_file=rast_names, stride=rast_stride, psw_key=psw_key, boot=boot,
-                                                 seed=seed, e0=e_ref, e1=e_arm, problems=problems, lift_valid=lift_valid, thr0=thr_ref, thr1=thr_arm)
+                                                 seed=seed, e0=e_ref, e1=e_arm, problems=problems, lift_valid=lift_valid, thr0=thr_ref, thr1=thr_arm,
+                                                 **({"beside_d3": True} if beside_d3 else {}))     # hold_r9_d3beside: unset = the call before it
             pair_rows.update(_pair_rows_from(mrows))
             _thresholds_protocol(out, checks, problems, floor, rast_meta, e_arm, e_ref, ref)
             if "lift_valid" in (rast_meta or {}):            # set once the mask step ran: the nf_swedge_*lv rows were read on THIS mask
@@ -808,7 +825,8 @@ def build_verdict(floor_path, paired, eval_arm, eval_ref, arm, ref=None, *, rast
             raise Refused("; ".join(problems))
         out["n_windows"], out["n_clips"], out["gate"] = e_arm.get("n_windows"), e_arm.get("n_clips"), e_arm.get("gate")
         out["boxes_per_object_noNMS_info"] = _bpo_info(e_arm, e_ref)
-        out.update(judge(arm, ref, floor, pair_rows, ctx={"rasters": rast_arm is not None, "thresholds": bool(thr_arm)}))
+        out.update(judge(arm, ref, floor, pair_rows, ctx={"rasters": rast_arm is not None, "thresholds": bool(thr_arm),
+                                                          **({"beside_d3": True} if beside_d3 else {})}))
         out["next_lever_on_drop"] = ARMS[arm]["next_lever"]
         out["ambiguities"] = list(ARMS[arm]["ambiguities"])
     except Refused as e:
@@ -1152,6 +1170,9 @@ def main(argv=None) -> int:
     ap.add_argument("--map-thresholds-arm", help="the ARM's OWN FIT-split map thresholds (r9_map_fit_thresholds.py fit); both -arm and -ref or neither. The floor "
                                                  "must have been read on the same protocol (each arm on its own FIT cuts) or this verdict REFUSES")
     ap.add_argument("--map-thresholds-ref", help="the REFERENCE arm's OWN FIT-split map thresholds")
+    ap.add_argument("--map-beside-d3", action="store_true",
+                    help="also count M1's two design beside rows on the rasters (lane tolerance-IoU, drivable-boundary recall @0.3 m; hold_r9_d3beside): "
+                         "clause3=False, never decide; unset = byte-identical")
     ap.add_argument("--boot", type=int, help="must equal the floor's B (default: the floor's)")
     ap.add_argument("--seed", type=int, help="must equal the floor's seed (default: the floor's)")
     ap.add_argument("--out-dir", required=True)
@@ -1160,7 +1181,7 @@ def main(argv=None) -> int:
     od.mkdir(parents=True, exist_ok=True)
     v = build_verdict(a.floor, a.paired, a.eval_arm, a.eval_ref, a.arm, a.ref, rast_arm=a.rast_arm, rast_ref=a.rast_ref, rast_names=a.rast_names,
                       rast_stride=a.rast_stride, psw_key=a.psw_key, floor_eval_c0=a.floor_eval_c0, boot=a.boot, seed=a.seed,
-                      lift_valid=a.lift_valid, thr_arm=a.map_thresholds_arm, thr_ref=a.map_thresholds_ref)
+                      lift_valid=a.lift_valid, thr_arm=a.map_thresholds_arm, thr_ref=a.map_thresholds_ref, beside_d3=a.map_beside_d3)
     stem = "VERDICT_%s" % a.arm
     (od / (stem + ".json")).write_text(json.dumps(v, indent=1, default=float, allow_nan=False) + "\n", encoding="utf-8", newline="\n")
     (od / (stem + ".md")).write_text(render_md(v), encoding="utf-8", newline="\n")

@@ -189,7 +189,9 @@ def test_beside_rows_are_present_for_m1_and_m2a_and_only_for_them():
         v = V.judge(arm, ref, fl, pair, ctx={"rasters": True, "thresholds": True})
         b = v["beside_pedgefit"]
         assert b["title"] == "Beside (PREREG_M1_PEDGEFIT rows 2/3 selector)" and b["decides"] is False
-        assert [r["key"] for r in b["rows"]] == [k for band in V.EDGE03_BANDS for k in ("nf_edge03_f_" + band, "nf_edge03_prec_" + band, "nf_edge03_rec_" + band)] and len(b["rows"]) == 15
+        want = ([V.D3_LANE_KEY, V.D3_BOUNDARY_KEY] if arm == "M1" else []) + \
+            [k for band in V.EDGE03_BANDS for k in ("nf_edge03_f_" + band, "nf_edge03_prec_" + band, "nf_edge03_rec_" + band)]          # M1: + its 2 design beside rows
+        assert [r["key"] for r in b["rows"]] == want and len(b["rows"]) == (17 if arm == "M1" else 15)
         f = next(r for r in b["rows"] if r["key"] == "nf_edge03_f_5_20")
         assert f["state"] == "READ" and f["role"] == "beside" and f["delta"] == pytest.approx(-0.3) and f["separated"] is True and f["direction"] == "worse"
         assert f["ci_lo"] == pytest.approx(-0.31) and f["ci_hi"] == pytest.approx(-0.29) and f["reading"] == "SEPARATED WORSE" and f["floor_context"]["abs_c1_minus_c0"] == 0.25
@@ -206,11 +208,13 @@ def test_beside_rows_are_present_for_m1_and_m2a_and_only_for_them():
 
 
 def test_beside_rows_are_outside_clause_3_even_when_the_floor_lacks_or_carries_them():
-    assert V.beside_only_keys() == set(EDGE_KEYS) and not (V.table_keys() & set(EDGE_KEYS)) and not (V.clause3_scope() & set(EDGE_KEYS))
+    D3 = {V.D3_LANE_KEY, V.D3_BOUNDARY_KEY}                                       # hold_r9_d3beside's rows: beside only, like the edge rows
+    assert V.beside_only_keys() == set(EDGE_KEYS) | D3 and not (V.table_keys() & (set(EDGE_KEYS) | D3)) and not (V.clause3_scope() & (set(EDGE_KEYS) | D3))
     old = base_floor(lv=True)                                                      # a floor read before the rows existed
     v = V.judge("M1", "C0", old, _edge_pair(with_delta(neutral(old), LV, +0.6), -0.3, True))
     assert v["verdict"] == "KEEP" and v["clause3"]["missing_uncovered"] == [] and not [k for k in v["clause3"]["missing_from_floor"] if "edge03" in k]
-    assert v["beside_pedgefit"]["rows"][0]["state"] == "READ" and v["beside_pedgefit"]["rows"][0]["floor_context"] is None        # reported without a floor, never a veto
+    e0 = next(r for r in v["beside_pedgefit"]["rows"] if r["key"].startswith("nf_edge03"))         # M1's first EDGE row (its 2 D3 rows come first)
+    assert e0["state"] == "READ" and e0["floor_context"] is None        # reported without a floor, never a veto
     new = _edge_floor(old)
     w = V.judge("M1", "C0", new, _edge_pair(with_delta(neutral(new), LV, +0.6), -0.3, True))
     assert w["verdict"] == "KEEP" and w["clause3"]["vetoes"] == [] and not [x for x in w["clause3"]["informative_worse"] if "edge03" in x["metric"]]
@@ -257,10 +261,13 @@ def test_not_computable_with_the_reason_on_a_read_without_the_rows():
     for tag, ctx in (("none", None), ("norast", {"rasters": False, "thresholds": False}), ("fixed128", {"rasters": True, "thresholds": False}),
                      ("thr", {"rasters": True, "thresholds": True})):
         v = V.judge("M1", "C0", fl, pair, ctx=ctx)
-        rows = v["beside_pedgefit"]["rows"]
-        assert v["verdict"] == "KEEP" and len(rows) == 15 and {r["state"] for r in rows} == {"NOT-COMPUTABLE"}
+        allr = v["beside_pedgefit"]["rows"]
+        rows = [r for r in allr if r["key"].startswith("nf_edge03")]
+        assert v["verdict"] == "KEEP" and len(allr) == 17 and len(rows) == 15 and {r["state"] for r in allr} == {"NOT-COMPUTABLE"}
         assert v["beside_pedgefit"]["selector"]["state"] == "NOT-COMPUTABLE" and v["beside_pedgefit"]["selector"]["separated_worse"] is None
         why[tag] = rows[0]["why"]
+        d3why = {r["why"] for r in allr if not r["key"].startswith("nf_edge03")}
+        assert len(d3why) == 1 and ("no raster dirs" in d3why.pop() if tag in ("none", "norast") else "--map-beside-d3" in [r["why"] for r in allr][0])
     assert "fixed 128" in why["fixed128"] and "no raster dirs" in why["norast"] and "emitted no such row" in why["thr"] and "THRESHOLDED" in why["none"]
     un = _edge_pair(pair)
     un["nf_edge03_f_5_20"] = {"ref": None, "arm": None, "delta": None, "ci_lo": None, "ci_hi": None, "separated": False, "undefined": True}
@@ -292,4 +299,21 @@ def test_the_markdown_has_its_own_short_beside_section_and_the_rest_is_unchanged
 def test_mapping_names_the_beside_rows_with_their_source_line():
     md = V.mapping_md().replace("`", "")
     assert md.count("nf_edge03_f_5_20 (r9_e1_eval.py:697)") == 3 and md.count("nf_edge03_rec_20_40 (r9_e1_eval.py:697)") == 3                # M1, M2a and M1N20 (E1-NEAR20)
-    assert [m["clause3"] for m in V._mapping_entry("M1")["metrics"] if "clause3" in m] == [False] * 15 and "clause3" not in V._mapping_entry("B1")["metrics"][0]
+    assert [m["clause3"] for m in V._mapping_entry("M1")["metrics"] if "clause3" in m] == [False] * 17 and "clause3" not in V._mapping_entry("B1")["metrics"][0]
+    assert md.count("lane_tiou05_0_20 (r9_e1_eval.py:875)") == 2 and md.count("drv_bnd_rec03_0_20 (r9_e1_eval.py:880)") == 2              # M1 and M1N20
+
+
+def test_d3_rows_are_read_from_the_verdicts_own_paired_rows_and_never_decide():
+    """MM 2026-11-07 (hold_r9_d3wire): with the paired D3 rows present, each reads its delta / CI / direction; a SEPARATED WORSE lane row changes
+    neither the verdict nor the clauses; without the flag (ctx) the absence names --map-beside-d3."""
+    fl = base_floor(lv=True)
+    pair = with_delta(neutral(fl), LV, +0.6)
+    base = V.judge("M1", "C0", fl, pair, ctx={"rasters": True, "thresholds": True})
+    for k, d in ((V.D3_LANE_KEY, -0.2), (V.D3_BOUNDARY_KEY, +0.1)):
+        pair[k] = {"ref": 0.5, "arm": 0.5 + d, "delta": d, "ci_lo": d - 0.01, "ci_hi": d + 0.01, "separated": True}
+    v = V.judge("M1", "C0", fl, pair, ctx={"rasters": True, "thresholds": True, "beside_d3": True})
+    r = {x["key"]: x for x in v["beside_pedgefit"]["rows"]}
+    assert r[V.D3_LANE_KEY]["state"] == "READ" and r[V.D3_LANE_KEY]["direction"] == "worse" and r[V.D3_LANE_KEY]["delta"] == pytest.approx(-0.2)
+    assert r[V.D3_BOUNDARY_KEY]["state"] == "READ" and r[V.D3_BOUNDARY_KEY]["direction"] == "better"
+    assert v["verdict"] == base["verdict"] == "KEEP" and v["reads"] == base["reads"] and v["failing_clauses"] == base["failing_clauses"]
+    assert "--map-beside-d3" in {x["key"]: x for x in base["beside_pedgefit"]["rows"]}[V.D3_LANE_KEY]["why"]

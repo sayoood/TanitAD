@@ -421,9 +421,12 @@ def test_mapping_has_every_design_arm():
 
 def test_mapping_not_computable_primaries_carry_reason_and_cure():
     nc = [(a, m) for a, s in V.ARMS.items() for m in s["metrics"] if m["status"] == "NOT-COMPUTABLE"]
-    # since hold_r9_e1_mapprim the map primary is COMPUTABLE (nf_swedge_prec_lv_5_20): only M1's two 'beside' metrics (lane tolerance-IoU, boundary recall) remain
-    assert {(a, m["id"]) for a, m in nc} == {("M1", "M1.beside.lane"), ("M1", "M1.beside.edge"), ("M1N20", "M1N20.beside.lane"), ("M1N20", "M1N20.beside.edge")}
-    assert all(m["role"] == "beside" for _, m in nc)
+    # since hold_r9_e1_mapprim the map primary is COMPUTABLE (nf_swedge_prec_lv_5_20), and since hold_r9_d3beside (+ the MM wiring) M1's two 'beside'
+    # metrics (lane tolerance-IoU, boundary recall) are too: nothing in the table is NOT-COMPUTABLE any more
+    assert nc == []
+    d3 = {(a, m["id"]): (m["keys"], m["clause3"], m["role"]) for a, s in V.ARMS.items() for m in s["metrics"] if m["id"].endswith((".beside.lane", ".beside.edge"))}
+    assert d3 == {(a, "%s.beside.%s" % (a, t)): ((k,), False, "beside") for a in ("M1", "M1N20")
+                  for t, k in (("lane", "lane_tiou05_0_20"), ("edge", "drv_bnd_rec03_0_20"))}
     assert not {a for a, _ in nc} & {"M2a", "M2b", "M3", "A1", "F1", "M1-FROZEN", "B2", "B2c", "T1", "T1s", "T1h", "T1hs"}
     for a, m in nc:
         assert m["keys"] == () and len(m["reason"]) > 40 and len(m["would_compute"]) > 40, (a, m["id"])
@@ -456,7 +459,11 @@ def test_mapping_keys_are_emitted_by_the_evaluator_and_cited_lines_exist():
     assert {k for k in masked if k.startswith("nf_swedge")} == {"nf_swedge_prec_%s%s" % (t, b) for t in ("", "lv_") for b in ("0_5", "5_10", "10_20", "20_40", "5_20")}
     edge = set(E.nearfield_stats([np.ones((4, E.NF_COLS + E.EDGE_TOL_N))]))                          # a thresholded read adds PREREG_M1_PEDGEFIT's nf_edge03_* beside rows
     assert {k for k in edge if k.startswith("nf_edge03")} == {"nf_edge03_%s_%s" % (t, b) for t in ("prec", "rec", "f") for b in ("0_5", "5_10", "10_20", "20_40", "5_20")}
-    emitted = set(E.box_stats(cl)) | legacy | masked | edge
+    d3 = set(E.nearfield_stats([np.ones((4, E.D3_OFF + E.D3_COLS))]))                              # a --map-beside-d3 read adds M1's two design beside rows
+    assert {k for k in d3 if k.startswith(("lane_tiou05_", "drv_bnd_rec03_"))} == {"%s_%s" % (t, b) for t in ("lane_tiou05", "drv_bnd_rec03", "drv_bnd_rec03_cells")
+                                                                                 for b in ("0_5", "5_10", "10_20", "20_40", "0_20")}
+    assert not [k for k in edge if k.startswith(("lane_tiou05_", "drv_bnd_rec03_"))]               # ... and only then
+    emitted = set(E.box_stats(cl)) | legacy | masked | edge | d3
     for a, s in V.ARMS.items():
         for m in s["metrics"]:
             for k in m["keys"]:
@@ -816,7 +823,25 @@ def test_end_to_end_m1_keeps_on_a_lift_masked_rig(mrig):
     assert v["clause3"]["vetoes"] == [] and v["clause3"]["missing_uncovered"] == [] and v["clause3"]["missing_from_floor"] == []
     assert v["lift_valid"]["same_mask"] is True and v["lift_valid"]["verdict"]["sha256"] == v["lift_valid"]["floor"]["sha256"]
     assert "VERDICT: KEEP" in md and "EQUAL to the floor's" in md and v["lift_valid"]["verdict"]["sha256"] in md
-    assert (v["reads"][1]["state"], v["reads"][2]["state"]) == ("NOT-COMPUTABLE", "NOT-COMPUTABLE")        # lane tol-IoU / boundary recall stay 'beside', listed, never decide
+    assert [r["id"] for r in v["reads"]] == ["M1.primary"]                     # lane tol-IoU / boundary recall are clause3=False beside rows: never in `reads`
+    d3 = {r["key"]: r for r in v["beside_pedgefit"]["rows"] if r["key"] in ("lane_tiou05_0_20", "drv_bnd_rec03_0_20")}
+    assert {k: r["state"] for k, r in d3.items()} == {"lane_tiou05_0_20": "NOT-COMPUTABLE", "drv_bnd_rec03_0_20": "NOT-COMPUTABLE"}
+    assert all("--map-beside-d3" in r["why"] for r in d3.values())               # a read without the flag says WHY, never 0
+
+
+def test_end_to_end_the_d3_flag_reaches_the_paired_rows_and_never_changes_the_verdict(mrig):
+    """MM 2026-11-07 (hold_r9_d3wire): --map-beside-d3 on the CLI -> build_verdict -> fl.nearfield_rows(beside_d3=True) -> the two rows leave
+    NOT-COMPUTABLE; the KEEP / DROP, the clauses and `reads` are byte-for-byte the unflagged read's."""
+    rc0, v0, _ = mrig.verdict("M1", "C0")
+    rc1, v1, md1 = mrig.verdict("M1", "C0", extra=("--map-beside-d3",))
+    assert rc0 == 0 and rc1 == 0 and v1["verdict"] == v0["verdict"] == "KEEP"
+    assert v1["reads"] == v0["reads"] and v1["clause3"] == v0["clause3"] and v1["failing_clauses"] == v0["failing_clauses"]
+    d3 = {r["key"]: r for r in v1["beside_pedgefit"]["rows"] if r["key"] in ("lane_tiou05_0_20", "drv_bnd_rec03_0_20")}
+    assert set(d3) == {"lane_tiou05_0_20", "drv_bnd_rec03_0_20"}
+    assert all(r["state"] != "NOT-COMPUTABLE" or "--map-beside-d3" not in r["why"] for r in d3.values()), d3   # the flag was HEARD
+    # the synthetic rig has no lane cells (UNDEFINED, never read as 0) and a drivable boundary (READ, delta 0: both arms share the rasters' boundary)
+    assert (d3["lane_tiou05_0_20"]["state"], d3["drv_bnd_rec03_0_20"]["state"]) == ("UNDEFINED", "READ") and "never read as 0" in d3["lane_tiou05_0_20"]["why"]
+    assert all(r["role"] == "beside" for r in d3.values()) and "| boundary recall @0.3 m (beside) | `drv_bnd_rec03_0_20` |" in md1
 
 
 def test_end_to_end_a_box_lever_is_vetoed_by_the_swedge_row(mrig):

@@ -611,7 +611,7 @@ def nearfield_stats(units) -> dict:
         for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
             out.update(edge_tol_keys("%d_%d" % (lo, hi), eb[i]))
         out.update(edge_tol_keys("5_20", eb[1] + eb[2]))
-    return out
+    return _d3_stats_keys(out, acc)               # the D3 beside rows (below L697): none unless the block carries the D3 columns
 
 
 # --------------------------------------------------------------------------------------------------- the EDGE-CLASS thin-class protocol (E0d)
@@ -720,23 +720,166 @@ def edge_tol_per_file(files, stride=1, thresholds=None, edge_key=EDGE_KEY):
     return names, (np.stack(out) if out else np.zeros((0, len(NEARFIELD_BANDS), EDGE_TOL_N)))
 
 
-def nearfield_per_file_ex_edge(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLASS, lift_valid=None, edge_key=EDGE_KEY, thresholds=None, edge_tol=False):
+def nearfield_per_file_ex_edge(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLASS, lift_valid=None, edge_key=EDGE_KEY, thresholds=None, edge_tol=False,
+                               beside_d3=False):
     """:func:`nearfield_per_file_ex` plus, when ``edge_tol``, the four edge-class counts of :func:`edge_tol_per_file` appended as columns
     ``NF_COLS..NF_COLS+3`` of ``acc`` (so every per-episode sum, the bootstrap and the floor carry them through :func:`nearfield_stats`) and an
-    ``info["edge_tol"]`` record. ``edge_tol`` False (every unset read) returns EXACTLY what :func:`nearfield_per_file_ex` returns."""
+    ``info["edge_tol"]`` record. ``edge_tol`` False (every unset read) returns EXACTLY what :func:`nearfield_per_file_ex` returns.
+
+    ``beside_d3`` (default False; M1's two design 'beside' rows, REFCV9_DESIGN 4.3) appends :data:`D3_COLS` more columns from :data:`D3_OFF` on (lane
+    tolerance-IoU and drivable-boundary recall counts, :func:`d3_beside_per_file`) and an ``info["d3_beside"]`` record. The edge-class columns it
+    sits behind are NaN when ``edge_tol`` is False (a count that was not measured is not 0: :func:`nearfield_stats` then emits no ``nf_edge03_*``).
+    Both False returns EXACTLY what :func:`nearfield_per_file_ex` returns."""
     names, acc, cls_, info = nearfield_per_file_ex(files, stride, psw_key, gt_class, lift_valid, edge_key, thresholds)
-    if not edge_tol:
+    if not edge_tol and not beside_d3:
         return names, acc, cls_, info
-    en, ea = edge_tol_per_file(files, stride, thresholds, edge_key)
-    if en != names:
-        raise ThresholdsError("the edge-class pass saw %d rasters, the near-field pass %d: not one file set" % (len(en), len(names)))
-    acc = np.concatenate([acc, ea], axis=2) if names else np.zeros((0, len(NEARFIELD_BANDS), NF_COLS + EDGE_TOL_N))
-    info = dict(info, edge_tol={"rule": "edge-class P / R / F @ 0.3 m (E0d, e0d_score._edge_stats): flag = pedge >= this arm's level (applied below), GT class 5, "
-                                        "3-cell square dilation on the whole raster, P over JUDGED cells (GT-seen, not nocls), whole raster width",
-                                "tol_cells": EDGE_TOL_CELLS,
-                                "levels": {"%d-%d" % (lo, hi): (FIXED_LEVEL if thresholds is None else thresholds.level(edge_key, lo, hi))
-                                           for lo, hi in NEARFIELD_BANDS}})
+    if edge_tol:
+        en, ea = edge_tol_per_file(files, stride, thresholds, edge_key)
+        if en != names:
+            raise ThresholdsError("the edge-class pass saw %d rasters, the near-field pass %d: not one file set" % (len(en), len(names)))
+        acc = np.concatenate([acc, ea], axis=2) if names else np.zeros((0, len(NEARFIELD_BANDS), NF_COLS + EDGE_TOL_N))
+        info = dict(info, edge_tol={"rule": "edge-class P / R / F @ 0.3 m (E0d, e0d_score._edge_stats): flag = pedge >= this arm's level (applied below), GT class 5, "
+                                            "3-cell square dilation on the whole raster, P over JUDGED cells (GT-seen, not nocls), whole raster width",
+                                    "tol_cells": EDGE_TOL_CELLS,
+                                    "levels": {"%d-%d" % (lo, hi): (FIXED_LEVEL if thresholds is None else thresholds.level(edge_key, lo, hi))
+                                               for lo, hi in NEARFIELD_BANDS}})
+    else:                                                     # the D3 columns sit behind the edge-class ones: not measured here -> NaN, never 0
+        acc = (np.concatenate([acc, np.full((len(names), len(NEARFIELD_BANDS), EDGE_TOL_N), np.nan)], axis=2) if names
+               else np.zeros((0, len(NEARFIELD_BANDS), NF_COLS + EDGE_TOL_N)))
+    if beside_d3:
+        dn, da, dinfo = d3_beside_per_file(files, stride, thresholds)
+        if dn != names:
+            raise ThresholdsError("the D3 beside pass saw %d rasters, the near-field pass %d: not one file set" % (len(dn), len(names)))
+        acc = np.concatenate([acc, da], axis=2) if names else np.zeros((0, len(NEARFIELD_BANDS), D3_OFF + D3_COLS))
+        info = dict(info, d3_beside=dinfo)
     return names, acc, cls_, info
+
+
+# --------------------------------------------------------------------------------------------------- the D3 BESIDE rows (M1: lane tolerance-IoU, drivable-boundary recall)
+# REFCV9_DESIGN 4.3 M1 row "beside: lane tolerance-IoU 0-20 m, boundary recall @0.3 m", scored as ``e0d_score.py`` (same directory as above; line numbers of that
+# file at tip a58a4d07) defines MAP-3a / MAP-3b. Semantics MIRRORED, not re-derived:
+#   MAP-3a (module docstring L19-21; plane_stats L175-180; f_ioudil L500-501)  the lane plane is ``code == 2`` (no lane probability is banked: the DECLARED operating
+#         point); GT lane = class 2; BOTH rendered 0.5 m wide (square dilation of 2 cells, e0d LANE_PRIMARY_R); per band ROW counts A = |Pd & Gd & v|, B = |Pd & v|,
+#         C = |Gd & v| (v = GT-seen, gt != 255; Pd / Gd = the WHOLE-raster dilations) -> pixel IoU A / (B + C - A), POOLED by counts  -> :func:`d3_beside_per_file`
+#   MAP-3b (docstring L22-24; boundary L104-112; _edge_stats L149-157; recall_comp L516-520)  boundary of {pdrv >= t} (``d & dilate(~d, 1)``, the outermost raster
+#         row / column never a boundary cell) dilated TOL_EDGE = 3 cells vs GT class 5: per WINDOW recall hitE / nE over windows with nE >= MIN_CELLS = 20 GT edge
+#         cells in the band; the headline is the pooled WINDOW MEAN = sum(recall of eligible windows) / (number of eligible windows), ``f_ratio`` of
+#         ``recall_comp``'s two components  -> :func:`d3_boundary`, :func:`d3_beside_per_file`
+# A WINDOW is one raster file (``e<episode>_w<start>.npz``). 0-20 m is e0d's own band "0-20"; the 0-5 / 5-10 / 10-20 / 20-40 m rows are this script's read bands
+# run through the SAME counters (e0d defines no sub-band of 0-20 m; they are beside the beside). The 0-20 m eligibility is judged on the 0-20 m rows as a whole
+# (nE >= 20 there), so that window mean cannot be rebuilt from the sub-bands: it has its own columns.
+D3_LANE_CLASS = 2                                         # e0d_score.LANE (the ``code`` value the lane plane is read at AND the GT lane class)
+D3_LANE_R = 2                                             # e0d_score.LANE_PRIMARY_R: both lane planes rendered 0.5 m wide
+D3_BND_TOL_CELLS = 3                                      # e0d_score.TOL_EDGE: 0.3 m
+D3_MIN_CELLS = 20                                         # e0d_score.MIN_CELLS: GT edge cells a window needs in the band to have a recall at all
+D3_BAND_COLS = 7                                          # per read band: A, B, C, hit, nE, rec_w, elig
+D3_POOL_COLS = 4                                          # the 0-20 m window-mean block (hit, nE, rec_w, elig), carried on band row 0 only
+D3_COLS = D3_BAND_COLS + D3_POOL_COLS
+D3_OFF = NF_COLS + EDGE_TOL_N                             # first D3 column of ``acc``
+D3_POOL_M = (0, 20)                                       # e0d's band "0-20"
+D3_REGIONS = tuple("%d_%d" % b for b in NEARFIELD_BANDS) + ("0_20",)
+
+
+def d3_boundary(d):
+    """inner boundary of a bool plane, ``e0d_score.boundary``: ``d & dilate(~d, 1)`` with the outermost raster row / column never a boundary cell."""
+    d = np.asarray(d, dtype=bool)
+    b = d & edge_dilate(~d, 1)
+    b[0, :] = False
+    b[-1, :] = False
+    b[:, 0] = False
+    b[:, -1] = False
+    return b
+
+
+def d3_levels(thresholds):
+    """``({region: level}, source)``: the pdrv cut of every D3 region (read band and 0-20 m). Fixed 128 when there is no thresholds file or the file carries no
+    ``pdrv`` plane; the file's own per-band level otherwise (a region straddling fit bands with different levels REFUSES, as every other plane does)."""
+    regions = list(NEARFIELD_BANDS) + [D3_POOL_M]
+    lv = {"%d_%d" % (lo, hi): (FIXED_LEVEL if thresholds is None else thresholds.level("pdrv", lo, hi)) for lo, hi in regions}
+    src = ("fixed 128 (no --map-thresholds)" if thresholds is None else
+           "the thresholds file's own pdrv plane" if "pdrv" in thresholds.planes else "fixed 128 (the thresholds file carries no pdrv plane)")
+    return lv, src
+
+
+def d3_beside_per_file(files, stride=1, thresholds=None):
+    """Per raster file (same order and skips as :func:`nearfield_per_file_ex`): ``(names, counts [n, 4 read bands, D3_COLS], info)``.
+    Per read band row: ``[A, B, C, hit, nE, rec_w, elig]``; columns 7-10 on band row 0 are the 0-20 m ``[hit, nE, rec_w, elig]`` (zeros on the other rows).
+      * A, B, C -- the lane counts of the module comment (NaN in a raster without a ``code`` plane: not measured, never 0);
+      * hit = |GT edge & dilate(boundary({pdrv >= level}), 3)| in the band's rows, nE = |GT edge| there, elig = nE >= 20, rec_w = hit / nE if elig else 0
+        (NaN in a raster without a ``pdrv`` plane).  Summed over a unit's windows, ``sum(rec_w) / sum(elig)`` is the pooled window mean."""
+    levels, src = d3_levels(thresholds)
+    rows = [(lo * 10, hi * 10) for lo, hi in NEARFIELD_BANDS]
+    p_lo, p_hi = D3_POOL_M[0] * 10, D3_POOL_M[1] * 10
+    lev_of = [levels["%d_%d" % b] for b in NEARFIELD_BANDS]
+    lev_pool = levels["%d_%d" % D3_POOL_M]
+    names, out = [], []
+    n_code = n_pdrv = 0
+    for f in list(files)[::int(stride)]:
+        z = np.load(f)
+        if "gt" not in z.files:
+            continue
+        names.append(Path(str(f)).name)
+        gt = z["gt"]
+        a = np.zeros((len(NEARFIELD_BANDS), D3_COLS))
+        if "code" in z.files:
+            n_code += 1
+            valid = gt != EDGE_UNSEEN
+            pd, gd = edge_dilate(np.asarray(z["code"]) == D3_LANE_CLASS, D3_LANE_R), edge_dilate(gt == D3_LANE_CLASS, D3_LANE_R)
+            for i, (r0, r1) in enumerate(rows):
+                a[i, 0], a[i, 1], a[i, 2] = (np.count_nonzero((pd & gd & valid)[r0:r1]), np.count_nonzero((pd & valid)[r0:r1]), np.count_nonzero((gd & valid)[r0:r1]))
+        else:
+            a[:, 0:3] = np.nan
+        if "pdrv" in z.files:
+            n_pdrv += 1
+            e, pv, hit_of = gt == EDGE_CLASS, np.asarray(z["pdrv"]), {}
+            for t in sorted(set(lev_of) | {lev_pool}):                  # one whole-raster boundary + dilation per distinct level
+                hit_of[t] = e & edge_dilate(d3_boundary(pv >= t), D3_BND_TOL_CELLS)
+            for i, (r0, r1) in enumerate(rows):
+                nE, hit = np.count_nonzero(e[r0:r1]), np.count_nonzero(hit_of[lev_of[i]][r0:r1])
+                ok = nE >= D3_MIN_CELLS
+                a[i, 3], a[i, 4], a[i, 5], a[i, 6] = hit, nE, (hit / nE if ok else 0.0), float(ok)
+            nE, hit = np.count_nonzero(e[p_lo:p_hi]), np.count_nonzero(hit_of[lev_pool][p_lo:p_hi])
+            ok = nE >= D3_MIN_CELLS
+            a[0, 7], a[0, 8], a[0, 9], a[0, 10] = hit, nE, (hit / nE if ok else 0.0), float(ok)
+        else:
+            a[:, 3:11] = np.nan
+        out.append(a)
+    n = len(names)
+    info = {"rule": "M1 beside rows (E0d MAP-3a / MAP-3b): lane tolerance-IoU = pooled pixel IoU of {code == 2} vs GT lane class 2, both dilated 2 cells (0.5 m), GT-seen "
+                    "cells; drivable-boundary recall @0.3 m = per-window recall of GT edge cells (class 5) within 3 cells of the inner boundary of {pdrv >= level}, over "
+                    "windows with >= 20 GT edge cells in the region, pooled WINDOW MEAN; whole raster width. Lane plane = the decided class (no lane probability "
+                    "is banked): a declared operating point. 0-20 m is the headline region.",
+            "n_files": n, "n_with_code_plane": n_code, "n_with_pdrv_plane": n_pdrv, "lane_r_cells": D3_LANE_R, "bnd_tol_cells": D3_BND_TOL_CELLS,
+            "min_gt_edge_cells": D3_MIN_CELLS, "pdrv_levels": levels, "pdrv_level_source": src}
+    return names, (np.stack(out) if n else np.zeros((0, len(NEARFIELD_BANDS), D3_COLS))), info
+
+
+def _d3_ratio(num, den):
+    return float(num) / float(den) if den > 0 else float("nan")
+
+
+def _d3_stats_keys(out, acc):
+    """Add the D3 beside keys to ``out`` when ``acc`` ([4 bands, columns], summed over a unit's windows) carries finite D3 columns; else return ``out``
+    untouched (a block measured without them -- every unset read, every legacy block -- emits none of these keys).  Per region ``r`` in
+    0_5 / 5_10 / 10_20 / 20_40 / 0_20:  ``lane_tiou05_r`` = A / (B + C - A) (0_20: the three bands' counts summed);  ``drv_bnd_rec03_r`` = sum(rec_w) / sum(elig),
+    the pooled WINDOW MEAN;  ``drv_bnd_rec03_cells_r`` = sum(hit) / sum(nE), the pooled CELL ratio (beside the headline, never in its place)."""
+    if acc.shape[1] < D3_OFF + D3_COLS:
+        return out
+    d = acc[:, D3_OFF:D3_OFF + D3_COLS]
+    if np.isfinite(d[:, 0:3]).all():
+        tiou = lambda c: _d3_ratio(c[0], c[1] + c[2] - c[0])                                                    # noqa: E731  (e0d f_ioudil)
+        for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
+            out["lane_tiou05_%d_%d" % (lo, hi)] = tiou(d[i, 0:3])
+        lo20 = [i for i, (lo, hi) in enumerate(NEARFIELD_BANDS) if hi <= D3_POOL_M[1]]
+        assert [NEARFIELD_BANDS[i] for i in lo20] == [(0, 5), (5, 10), (10, 20)], NEARFIELD_BANDS
+        out["lane_tiou05_0_20"] = tiou(d[lo20, 0:3].sum(0))
+    if np.isfinite(d[:, 3:11]).all():
+        for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
+            out["drv_bnd_rec03_%d_%d" % (lo, hi)] = _d3_ratio(d[i, 5], d[i, 6])
+            out["drv_bnd_rec03_cells_%d_%d" % (lo, hi)] = _d3_ratio(d[i, 3], d[i, 4])
+        out["drv_bnd_rec03_0_20"] = _d3_ratio(d[0, 9], d[0, 10])
+        out["drv_bnd_rec03_cells_0_20"] = _d3_ratio(d[0, 7], d[0, 8])
+    return out
 
 
 # --------------------------------------------------------------------------------------------------- CLI
@@ -775,12 +918,18 @@ def main(argv=None) -> int:
     ap.add_argument("--map-thresholds", help="tanitad.r9_map_thresholds/1 (r9_map_fit_thresholds.py fit): this arm's OWN FIT-split per-plane, per-band uint8 "
                                              "cuts, replacing the fixed psw / pedge >= 128 of the near-field flags (a plane the file lacks keeps 128). Needs "
                                              "--rast-dir. Unset -> the fixed 128 and an output with no `thresholds` key, exactly as before")
+    ap.add_argument("--map-beside-d3", action="store_true",
+                    help="M1's two design 'beside' rows from the rasters (E0d MAP-3a / MAP-3b): lane tolerance-IoU (`code` == 2 vs GT lane, both 0.5 m wide) "
+                         "and drivable-boundary recall @0.3 m (boundary of pdrv >= level vs GT edge, window mean). The pdrv level is the --map-thresholds "
+                         "file's pdrv plane when it has one, else 128 (stamped). Needs --rast-dir. Unset -> an output with none of these keys, exactly as before")
     ap.add_argument("--boot", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--out", required=True)
     a = ap.parse_args(argv)
     if a.map_thresholds and not a.rast_dir:
         raise SystemExit("[r9-e1-eval] --map-thresholds needs --rast-dir: thresholds with no rasters would be silently ignored")
+    if a.map_beside_d3 and not a.rast_dir:
+        raise SystemExit("[r9-e1-eval] --map-beside-d3 needs --rast-dir: the beside rows are counted on the rasters")
     ci = _import_ci()
     clips = load_window_list(a.windows, a.split) if a.windows else None
     recs = load_records(a.packs, clips)
@@ -823,7 +972,8 @@ def main(argv=None) -> int:
             thr_m = load_map_thresholds(a.map_thresholds) if a.map_thresholds else None
             thr_bind = thresholds_binding(thr_m, a.rast_dir) if thr_m is not None else None
             names, acc, gtcls, nfinfo = nearfield_per_file_ex_edge(files, a.rast_stride, a.psw_key, lift_valid=lvm, thresholds=thr_m,
-                                                                  edge_tol=thr_m is not None)       # the edge-class beside rows ride on a thresholded read
+                                                                  edge_tol=thr_m is not None,       # the edge-class beside rows ride on a thresholded read
+                                                                  beside_d3=a.map_beside_d3)
         except LiftValidError as e:
             raise SystemExit("[r9-e1-eval] lift-valid mask refused: %s" % e)
         except ThresholdsError as e:
@@ -833,6 +983,10 @@ def main(argv=None) -> int:
         if nfinfo["edge_plane"] == "MIXED":
             raise SystemExit("[r9-e1-eval] %d of %d rasters carry a `%s` plane: one arm, one plane set" % (
                 nfinfo["n_with_edge_plane"], nfinfo["n_files"], EDGE_KEY))
+        d3i = nfinfo.get("d3_beside")
+        if d3i and (0 < d3i["n_with_code_plane"] < d3i["n_files"] or 0 < d3i["n_with_pdrv_plane"] < d3i["n_files"]):
+            raise SystemExit("[r9-e1-eval] --map-beside-d3: %d of %d rasters carry a `code` plane and %d a `pdrv` plane: one arm, one plane set" % (
+                d3i["n_with_code_plane"], d3i["n_files"], d3i["n_with_pdrv_plane"]))
         if a.lift_valid_save:
             if lvm is None:
                 raise SystemExit("[r9-e1-eval] --lift-valid-save needs --lift-valid")
@@ -856,6 +1010,14 @@ def main(argv=None) -> int:
             out["nearfield"]["definition"]["nf_edge03_*"] = ("BESIDE rows, never a primary: edge-class precision / recall / F @ 0.3 m of {pedge >= this arm's level} "
                                                              "against GT class 5 (E0d, e0d_score._edge_stats); per read band and `*_5_20` (the 5-10 and 10-20 m bands pooled by counts); "
                                                              "whole raster width; precision over judged cells (GT-seen, not nocls)")
+        if a.map_beside_d3:                                    # stamped only when asked: an unset run's JSON is unchanged
+            out["nearfield"]["d3_beside"] = nfinfo["d3_beside"]
+            out["nearfield"]["definition"]["lane_tiou05_*"] = ("BESIDE rows, never a primary: lane tolerance-IoU, {code == 2} vs GT lane class 2, both rendered 0.5 m wide "
+                                                               "(2-cell dilation), GT-seen cells, pooled by counts (E0d MAP-3a, declared operating point: no lane probability "
+                                                               "is banked); per read band and `*_0_20` (e0d's band 0-20 m)")
+            out["nearfield"]["definition"]["drv_bnd_rec03_*"] = ("BESIDE rows, never a primary: recall of GT edge cells within 0.3 m of the inner boundary of {pdrv >= level} "
+                                                                 "(level: `d3_beside.pdrv_levels`, source `pdrv_level_source`), per WINDOW over windows with >= 20 GT edge cells "
+                                                                 "in the region, pooled WINDOW MEAN (E0d MAP-3b); `drv_bnd_rec03_cells_*` = the pooled CELL ratio, beside it")
     Path(a.out).write_text(json.dumps(out, indent=1, default=float) + "\n", encoding="utf-8")
     print("wrote %s: %d windows / %d clips; AP@2m %.4f" % (a.out, len(keys), len(ids), out["boxes"]["ap2m_all"]["point"]))
     return 0

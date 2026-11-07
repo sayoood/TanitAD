@@ -109,6 +109,10 @@ def metric_group(metric: str) -> str:
         return "P=R census at the FIXED gate (same gate for both arms)"
     if metric.startswith("nf_edge03"):
         return "edge-class P / R / F @ 0.3 m of {pedge >= the arm's level} vs GT edge (E0d thin-class protocol; BESIDE, never a primary)"
+    if metric.startswith("lane_tiou05"):
+        return "lane tolerance-IoU 0.5 m, {code == 2} vs GT lane (E0d MAP-3a, declared operating point; BESIDE, never a primary)"
+    if metric.startswith("drv_bnd_rec03"):
+        return "drivable-boundary recall @0.3 m of GT edge cells, window mean (E0d MAP-3b; BESIDE, never a primary)"
     if metric.startswith("nf_swedge_prec_lv"):
         return "corridor sidewalk+edge precision, GT {edge, sidewalk}, lift-valid cells (the M1 map primary)"
     if metric.startswith("nf_swedge_prec"):
@@ -211,12 +215,16 @@ def box_rows(e0: dict, e1: dict, ep: dict, problems: list, seed: int = DEFAULT_S
 
 
 def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw", boot=DEFAULT_BOOT, seed=DEFAULT_SEED,
-                   e0=None, e1=None, problems=None, lift_valid=None, thr0=None, thr1=None) -> tuple[dict, dict]:
+                   e0=None, e1=None, problems=None, lift_valid=None, thr0=None, thr1=None, beside_d3=False) -> tuple[dict, dict]:
     """The paired near-field corridor precision: the SAME ``nearfield_stats`` over per-EPISODE count blocks that r9_e1_eval's
     single-arm ``nearfield.ci`` bootstraps, through ``ci.paired_stat_cluster_bootstrap``. -> (rows, meta).
 
     ``thr0`` / ``thr1`` (paths of ``tanitad.r9_map_thresholds/1`` files, default None) are each side's OWN FIT-split cuts for its first / second raster
-    dir; both or neither (a floor with one side cut and the other at 128 is not a floor). Neither => the fixed 128 and a ``meta`` with no ``thresholds``."""
+    dir; both or neither (a floor with one side cut and the other at 128 is not a floor). Neither => the fixed 128 and a ``meta`` with no ``thresholds``.
+
+    ``beside_d3`` (default False) adds M1's two design beside rows, ``lane_tiou05_*`` and ``drv_bnd_rec03_*`` (r9_e1_eval.d3_beside_per_file), to BOTH sides' count
+    blocks, so the paired episode-cluster bootstrap applies to them like every other near-field row; ``meta["beside_d3"]`` stamps each side's pdrv levels. False =>
+    exactly the rows and the ``meta`` it had."""
     ci = ev._import_ci()
     problems = problems if problems is not None else []
 
@@ -246,8 +254,10 @@ def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw"
         b0 = ev.thresholds_binding(t0, rast_c0) if t0 is not None else None
         b1 = ev.thresholds_binding(t1, rast_c1) if t1 is not None else None
         # a thresholded side also carries the EDGE-CLASS beside counts (nf_edge03_*, E0d protocol at the arm's own pedge level); an unset side is unchanged
-        n0, acc0, _, _i0 = ev.nearfield_per_file_ex_edge([f0[n] for n in common], stride, psw_key, lift_valid=lvm, thresholds=t0, edge_tol=t0 is not None)
-        n1, acc1, _, _i1 = ev.nearfield_per_file_ex_edge([f1[n] for n in common], stride, psw_key, lift_valid=lvm, thresholds=t1, edge_tol=t1 is not None)
+        n0, acc0, _, _i0 = ev.nearfield_per_file_ex_edge([f0[n] for n in common], stride, psw_key, lift_valid=lvm, thresholds=t0, edge_tol=t0 is not None,
+                                                         beside_d3=beside_d3)
+        n1, acc1, _, _i1 = ev.nearfield_per_file_ex_edge([f1[n] for n in common], stride, psw_key, lift_valid=lvm, thresholds=t1, edge_tol=t1 is not None,
+                                                         beside_d3=beside_d3)
     except ev.LiftValidError as e:
         problems.append("lift-valid mask refused: %s" % e)
         return {}, meta
@@ -258,6 +268,13 @@ def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw"
     if t0 is not None:                       # stamped only when set: an unset floor's map_inputs is unchanged
         meta["thresholds"] = {"c0": dict(t0.record(ev.NEARFIELD_BANDS, (psw_key, ev.EDGE_KEY)), binding=b0),
                               "c1": dict(t1.record(ev.NEARFIELD_BANDS, (psw_key, ev.EDGE_KEY)), binding=b1)}
+    if beside_d3:                            # stamped only when asked: an unset floor's map_inputs is unchanged
+        meta["beside_d3"] = {"c0": _i0.get("d3_beside"), "c1": _i1.get("d3_beside")}
+        for tag, d in (("C0", meta["beside_d3"]["c0"]), ("C1", meta["beside_d3"]["c1"])):
+            if 0 < d["n_with_code_plane"] < d["n_files"] or 0 < d["n_with_pdrv_plane"] < d["n_files"]:
+                problems.append("%s side, beside_d3: %d of %d rasters carry a `code` plane and %d a `pdrv` plane: one arm, one plane set"
+                                % (tag, d["n_with_code_plane"], d["n_files"], d["n_with_pdrv_plane"]))
+                return {}, meta
     if n0 != n1 or not n0:
         problems.append("rasters with a gt plane differ between the arms (%d vs %d): the GT plane is the label and must be the same"
                         % (len(n0), len(n1)))
@@ -292,6 +309,11 @@ def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw"
             problems.append("%s eval's map thresholds (%s) are not the floor read's (%s): the near-field flags would be cut at different levels"
                             % (tag, (th_e or "none")[:12], (th_f or "none")[:12]))
             continue
+        d_e, d_f = nf.get("d3_beside"), (meta.get("beside_d3") or {}).get(tag.lower())
+        if d_e and d_f and d_e.get("pdrv_levels") != d_f.get("pdrv_levels"):
+            problems.append("%s eval's D3 beside pdrv levels (%s) are not the floor read's (%s): the boundary rows would be cut at different levels"
+                            % (tag, d_e.get("pdrv_levels"), d_f.get("pdrv_levels")))
+            continue
         for m, r in rows.items():
             if m not in nf["ci"]:
                 continue
@@ -304,7 +326,7 @@ def nearfield_rows(rast_c0, rast_c1, *, names_file=None, stride=1, psw_key="psw"
 
 # --------------------------------------------------------------------------------------------------- the read
 def build_floor(eval_c0: str, eval_c1: str, paired: str, *, rast_c0=None, rast_c1=None, rast_names=None, rast_stride=1,
-                psw_key="psw", boot=DEFAULT_BOOT, seed=DEFAULT_SEED, lift_valid=None, thr_c0=None, thr_c1=None) -> dict:
+                psw_key="psw", boot=DEFAULT_BOOT, seed=DEFAULT_SEED, lift_valid=None, thr_c0=None, thr_c1=None, beside_d3=False) -> dict:
     e0, e1, ep = _load_eval(eval_c0), _load_eval(eval_c1), _load_eval(paired)
     out = {"schema": SCHEMA, "tier": TIER, "status": "OK", "keep_rule": KEEP_RULE, "keep_factor": KEEP_FACTOR,
            "estimator": {"name": ESTIMATOR, "B": boot, "seed": seed,
@@ -323,9 +345,12 @@ def build_floor(eval_c0: str, eval_c1: str, paired: str, *, rast_c0=None, rast_c
         problems.append("--rast-c0 and --rast-c1 go together")
     elif (thr_c0 or thr_c1) and rast_c0 is None:
         problems.append("--map-thresholds-c0 / -c1 need --rast-c0 / --rast-c1: thresholds with no rasters would be silently ignored")
+    elif beside_d3 and rast_c0 is None:
+        problems.append("--map-beside-d3 needs --rast-c0 / --rast-c1: the beside rows are counted on the rasters")
     elif rast_c0 is not None and not problems:
         mrows, meta = nearfield_rows(rast_c0, rast_c1, names_file=rast_names, stride=rast_stride, psw_key=psw_key, boot=boot,
-                                     seed=seed, e0=e0, e1=e1, problems=problems, lift_valid=lift_valid, thr0=thr_c0, thr1=thr_c1)
+                                     seed=seed, e0=e0, e1=e1, problems=problems, lift_valid=lift_valid, thr0=thr_c0, thr1=thr_c1,
+                                     beside_d3=beside_d3)
         rows.update(mrows)
     out["map_inputs"] = meta
     out["rows"] = rows
@@ -436,6 +461,8 @@ def main(argv=None) -> int:
     ap.add_argument("--lift-valid", help="r9_e1_eval.py's --lift-valid (sidecar .npz or an unobs-carrying raster dir): adds the nf_swedge_prec_lv_* rows")
     ap.add_argument("--map-thresholds-c0", help="C0's OWN FIT-split map thresholds (r9_map_fit_thresholds.py fit): its near-field flags are cut there, not at 128")
     ap.add_argument("--map-thresholds-c1", help="C1's OWN FIT-split map thresholds; both or neither of -c0 / -c1")
+    ap.add_argument("--map-beside-d3", action="store_true",
+                    help="adds M1's two design beside rows (lane_tiou05_*, drv_bnd_rec03_*; r9_e1_eval --map-beside-d3) to both sides' near-field rows; needs --rast-c0 / -c1")
     ap.add_argument("--boot", type=int, default=DEFAULT_BOOT)
     ap.add_argument("--seed", type=int, default=DEFAULT_SEED)
     ap.add_argument("--out-dir", required=True)
@@ -445,7 +472,7 @@ def main(argv=None) -> int:
     try:
         floor = build_floor(a.eval_c0, a.eval_c1, a.paired, rast_c0=a.rast_c0, rast_c1=a.rast_c1, rast_names=a.rast_names,
                             rast_stride=a.rast_stride, psw_key=a.psw_key, boot=a.boot, seed=a.seed, lift_valid=a.lift_valid,
-                            thr_c0=a.map_thresholds_c0, thr_c1=a.map_thresholds_c1)
+                            thr_c0=a.map_thresholds_c0, thr_c1=a.map_thresholds_c1, beside_d3=a.map_beside_d3)
     except FloorRefused as e:
         floor = {"schema": SCHEMA, "tier": TIER, "status": "REFUSED", "problems": [str(e)], "rows": {}}
     (od / "FLOOR.json").write_text(json.dumps(floor, indent=1, default=float, allow_nan=False) + "\n", encoding="utf-8")

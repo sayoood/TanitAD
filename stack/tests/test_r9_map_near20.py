@@ -322,7 +322,8 @@ def test_verdict_has_the_M1N20_row_with_M1s_metrics_reference_C0_and_clause3_fal
     strip = lambda ms, arm: [(m["role"], m["clause3"], tuple(m["keys"])) for m in ms]            # noqa: E731
     assert strip(a["metrics"], "M1N20") == strip(m1["metrics"], "M1")                          # M1's metrics (keys, roles, clause-3 flags) unchanged
     beside = [m for m in a["metrics"] if not m["clause3"]]
-    assert len(beside) == 15 and all(m["role"] == "beside" for m in beside) and all(m["id"].startswith("M1N20.") for m in a["metrics"])
+    assert len(beside) == 17 and all(m["role"] == "beside" for m in beside)                    # 15 edge rows + the 2 D3 rows (lane, boundary)
+    assert {m["keys"][0] for m in beside} >= {V.D3_LANE_KEY, V.D3_BOUNDARY_KEY} and all(m["id"].startswith("M1N20.") for m in a["metrics"])
     assert "--r9-map-banded-near-m" in a["argv_flags"]
 
 
