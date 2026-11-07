@@ -1,0 +1,155 @@
+{
+ "label": "refe_yf3_smoke_A0",
+ "script": "pdm_score",
+ "module": "navsim.planning.script.run_pdm_score",
+ "overrides": [
+  "train_test_split=navtest",
+  "train_test_split.scene_filter.log_names=['2021.05.25.14.16.10_veh-35_02482_02649','2021.05.25.15.59.03_veh-30_01478_01643','2021.06.03.12.02.06_veh-35_01100_01227','2021.06.03.17.06.58_veh-35_03860_03992','2021.09.09.17.18.51_veh-48_00098_00328','2021.09.09.17.18.51_veh-48_01462_01552','2021.09.16.19.12.04_veh-42_01088_01192','2021.09.29.14.44.26_veh-28_01331_01485','2021.09.29.19.02.14_veh-28_02451_02708']",
+  "train_test_split.scene_filter.tokens=['051b3ee34e3b59ec','0d5b8da00d505be0','2035406a3a6955be','21e4dfb3741d529f','29e7ffa0ba1f589b','30d10a9c1f8352da','3716402a783c5689','54b1735112ed5840','57730912486a5853','602e1bc4f8575d4e','6507522e38405857','6856c3ad77315d3c','84aa4100e3cc59c4','8a8bf2275db85432','aed7c50719f959a1','bb1650a0e72e5b7d','e59b32f05f5e54f0','ed1ae68f8c0f5f3a']",
+  "metric_cache_path=F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/metric_cache_navtest",
+  "worker=sequential",
+  "experiment_name=w3_refe_yf3_smoke_A0",
+  "output_dir=F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/runs/refe_yf3_smoke_A0",
+  "agent=constant_velocity_agent",
+  "agent._target_=w3_agents_v1.SeamAgentV1",
+  "+agent.seam_file=E:/Projects/TanitAD-artifacts/yawrate_wp/YF3/smoke_run/eval/A0/seam.npz",
+  "+agent.call_log=E:/Projects/TanitAD-artifacts/yawrate_wp/YF3/smoke_run/eval/A0/score/refe_yf3_smoke_A0/refe_yf3_smoke_A0.calls.jsonl"
+ ],
+ "argv": [
+  "E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\harness\\w3e\\code\\navsim_v1_win.py",
+  "--script",
+  "pdm_score",
+  "--label",
+  "refe_yf3_smoke_A0",
+  "--out-dir",
+  "E:\\Projects\\TanitAD-artifacts\\yawrate_wp\\YF3\\smoke_run\\eval\\A0\\score\\refe_yf3_smoke_A0",
+  "--patch-loader",
+  "--record-poses",
+  "--",
+  "train_test_split=navtest",
+  "train_test_split.scene_filter.log_names=['2021.05.25.14.16.10_veh-35_02482_02649','2021.05.25.15.59.03_veh-30_01478_01643','2021.06.03.12.02.06_veh-35_01100_01227','2021.06.03.17.06.58_veh-35_03860_03992','2021.09.09.17.18.51_veh-48_00098_00328','2021.09.09.17.18.51_veh-48_01462_01552','2021.09.16.19.12.04_veh-42_01088_01192','2021.09.29.14.44.26_veh-28_01331_01485','2021.09.29.19.02.14_veh-28_02451_02708']",
+  "train_test_split.scene_filter.tokens=['051b3ee34e3b59ec','0d5b8da00d505be0','2035406a3a6955be','21e4dfb3741d529f','29e7ffa0ba1f589b','30d10a9c1f8352da','3716402a783c5689','54b1735112ed5840','57730912486a5853','602e1bc4f8575d4e','6507522e38405857','6856c3ad77315d3c','84aa4100e3cc59c4','8a8bf2275db85432','aed7c50719f959a1','bb1650a0e72e5b7d','e59b32f05f5e54f0','ed1ae68f8c0f5f3a']",
+  "metric_cache_path=F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/metric_cache_navtest",
+  "worker=sequential",
+  "experiment_name=w3_refe_yf3_smoke_A0",
+  "output_dir=F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/runs/refe_yf3_smoke_A0",
+  "agent=constant_velocity_agent",
+  "agent._target_=w3_agents_v1.SeamAgentV1",
+  "+agent.seam_file=E:/Projects/TanitAD-artifacts/yawrate_wp/YF3/smoke_run/eval/A0/seam.npz",
+  "+agent.call_log=E:/Projects/TanitAD-artifacts/yawrate_wp/YF3/smoke_run/eval/A0/score/refe_yf3_smoke_A0/refe_yf3_smoke_A0.calls.jsonl"
+ ],
+ "python": "3.9.25 (main, Oct 31 2025, 22:56:13) [MSC v.1929 64 bit (AMD64)]",
+ "executable": "C:\\Users\\Admin\\navsim-crun\\venv\\Scripts\\python.exe",
+ "cwd": "F:\\Archive\\devbox-C\\navsim\\exp\\w3_navtest_v1",
+ "PYTHONPATH": "F:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896;E:\\Projects\\TanitAD\\TanitAD Research Lab\\Architecture & Inference\\Research\\2026-09-20-refe-plan\\eval\\harness\\w3e\\code",
+ "PYTHONHASHSEED": "1",
+ "priority": "BELOW_NORMAL",
+ "env": {
+  "NUPLAN_MAP_VERSION": "nuplan-maps-v1.0",
+  "NUPLAN_MAPS_ROOT": "F:/Archive/devbox-C/navsim/data/maps",
+  "NAVSIM_EXP_ROOT": "F:/Archive/devbox-C/navsim/exp/w3_navtest_v1",
+  "NAVSIM_DEVKIT_ROOT": "F:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896",
+  "OPENSCENE_DATA_ROOT": "F:/Archive/devbox-C/navsim/data/openscene"
+ },
+ "env_defaults_applied_by_wrapper": {},
+ "navsim_v11_tree": "F:/Archive/devbox-C/navsim/navsim-3e8291bfa89ff247231e0227778840cd0a036896",
+ "navsim_v11_sha": "3e8291bfa89ff247231e0227778840cd0a036896",
+ "nuplan_tree": "C:/Users/Admin/navsim-crun/nuplan-devkit",
+ "nuplan_sha_expected": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "nuplan_sha_measured": null,
+ "nuplan_source_checkout": "F:/Archive/devbox-C/navsim/nuplan-devkit",
+ "nuplan_source_sha_measured": "ce3c323af01c0d7ec5672f7832ef53f9c679aab0",
+ "nuplan_copy_verification": "E1 raw/devkit_copy_verify.json: repos.nuplan-devkit n_blobs 1324, n_match 1321, 3 diffs explained (setup.py packaging, docs/make.bat eol, nuboard html)",
+ "e1_wrapper": "E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/harness/w3e/e1/navsim_win.py",
+ "imported_from": {
+  "navsim": "F:\\Archive\\devbox-C\\navsim\\navsim-3e8291bfa89ff247231e0227778840cd0a036896\\navsim\\__init__.py",
+  "nuplan": "C:\\Users\\Admin\\navsim-crun\\nuplan-devkit\\nuplan\\__init__.py",
+  "script": "F:\\Archive\\devbox-C\\navsim\\navsim-3e8291bfa89ff247231e0227778840cd0a036896\\navsim\\planning\\script\\run_pdm_score.py",
+  "fcntl": "C:\\Users\\Admin\\navsim-crun\\venv\\lib\\site-packages\\fcntl.py"
+ },
+ "patches": [
+  {
+   "name": "MetricCacheLoader._load_metric_cache_paths: token = re.split(r'[\\\\/]', p)[-2]",
+   "target": "navsim/common/dataloader.py:170-181 (v1.1 @ 3e8291b)",
+   "replacement": "E:/Projects/TanitAD/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/eval/harness/w3e/e1/navsim_win.py::_load_metric_cache_paths_patched (E1, imported)",
+   "original_source_sha16": "9dd27c9e1cfdee0a",
+   "patched_source_sha16": "e6f60f85ea15ed16",
+   "why": "save_cache_metadata writes str(WindowsPath) (backslashes); the original split('/')[-2] raises IndexError on Windows (control C7)"
+  }
+ ],
+ "hooks": [
+  "navsim.planning.script.run_pdm_score.pdm_score (observation only)"
+ ],
+ "started_local": "2026-11-07 01:22:59",
+ "rows_jsonl": "E:\\Projects\\TanitAD-artifacts\\yawrate_wp\\YF3\\smoke_run\\eval\\A0\\score\\refe_yf3_smoke_A0\\refe_yf3_smoke_A0_rows.jsonl",
+ "status": "OK",
+ "ended_local": "2026-11-07 01:32:12",
+ "resources": {
+  "wall_s": 553.64,
+  "peak_rss_mb": 472.2,
+  "peak_process_tree_rss_mb": 472.2,
+  "min_system_available_mb": 4632.0,
+  "n_samples": 106,
+  "n_samples_below_floor": 0,
+  "sample_interval_s": 2.0,
+  "ram_floor_mb": 3000.0,
+  "abort_policy": "available<3000MB for 60 consecutive samples, or <2000MB once",
+  "trace_every_10th_sample__t_rss_avail": [
+   [
+    0.0,
+    20.6,
+    6812.7
+   ],
+   [
+    20.4,
+    370.6,
+    6180.6
+   ],
+   [
+    40.8,
+    391.2,
+    5736.0
+   ],
+   [
+    61.2,
+    426.1,
+    5185.7
+   ],
+   [
+    81.5,
+    427.1,
+    5374.4
+   ],
+   [
+    102.1,
+    427.2,
+    5440.8
+   ],
+   [
+    123.2,
+    428.3,
+    4850.4
+   ],
+   [
+    481.4,
+    464.0,
+    6797.9
+   ],
+   [
+    501.7,
+    465.0,
+    6789.6
+   ],
+   [
+    522.0,
+    469.8,
+    7001.9
+   ],
+   [
+    542.3,
+    470.0,
+    6928.0
+   ]
+  ]
+ }
+}

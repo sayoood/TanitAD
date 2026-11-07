@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_perwindow.py", line 95, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_perwindow.py", line 87, in main
+    pw = per_window(a.seam, toks)
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_perwindow.py", line 58, in per_window
+    w = ad.scenes_to_win(pred, human, frame="ego", origin_included=False, dt_s=0.5, scene_tokens=list(toks), ego_speed_mps=v0, log_names=logs)
+  File "E:/Projects/TanitAD/taniteval/adapters/navsim.py", line 881, in scenes_to_win
+    frame_evidence = verify_frame(gt, dt_s=dt_s, speed=v0,
+                                  heading=gt_head, tol=tol)
+  File "E:/Projects/TanitAD/taniteval/adapters/navsim.py", line 507, in verify_frame
+    sign = assert_lateral_sign_convention(gt_xy, heading)
+  File "E:/Projects/TanitAD/taniteval/adapters/navsim.py", line 483, in assert_lateral_sign_convention
+    raise FrameConventionError(
+    ...<5 lines>...
+        f"or a mismatched heading channel.")
+navsim_adapter6.FrameConventionError: ⛔ LATERAL SIGN CONVENTION VIOLATED: net yaw change and net lateral displacement agree in sign on only 87.5% of 8 turning windows (need 90%). Our frame is y-LEFT with CCW-positive yaw, so a LEFT turn must give +y. A near-0 % agreement is a y-sign flip (right-handed frame); ~50 % is noise or a mismatched heading channel.

@@ -1,0 +1,37 @@
+idle after 51s (used 3282 MiB)
+[01:11:46] GPU lock taken for smoke_A0: {"pid": 20248, "owner": "yf3_yaw_eval", "t": 1794010302.4170601}
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_eval_arm.py", line 147, in main
+    eval_arm(a.name, a.ckpt, a.tokens, a.out, a.give_up_h, a.tag, a.seam_only)
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_eval_arm.py", line 130, in eval_arm
+    run_perwindow(outd, tokens)
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_eval_arm.py", line 113, in run_perwindow
+    raise RuntimeError(f"perwindow failed rc={rc}: {C.tail(outd / 'perwindow.log', 1200)}")
+RuntimeError: perwindow failed rc=1: main
+    pw = per_window(a.seam, toks)
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_perwindow.py", line 58, in per_window
+    w = ad.scenes_to_win(pred, human, frame="ego", origin_included=False, dt_s=0.5, scene_tokens=list(toks), ego_speed_mps=v0, log_names=logs)
+  File "E:/Projects/TanitAD/taniteval/adapters/navsim.py", line 881, in scenes_to_win
+    frame_evidence = verify_frame(gt, dt_s=dt_s, speed=v0,
+                                  heading=gt_head, tol=tol)
+  File "E:/Projects/TanitAD/taniteval/adapters/navsim.py", line 507, in verify_frame
+    sign = assert_lateral_sign_convention(gt_xy, heading)
+  File "E:/Projects/TanitAD/taniteval/adapters/navsim.py", line 483, in assert_lateral_sign_convention
+    raise FrameConventionError(
+    ...<5 lines>...
+        f"or a mismatched heading channel.")
+navsim_adapter6.FrameConventionError: \u26d4 LATERAL SIGN CONVENTION VIOLATED: net yaw change and net lateral displacement agree in sign on only 87.5% of 8 turning windows (need 90%). Our frame is y-LEFT with CCW-positive yaw, so a LEFT turn must give +y. A near-0 % agreement is a y-sign flip (right-handed frame); ~50 % is noise or a mismatched heading channel.
+
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_eval_arm.py", line 157, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "E:\Projects\TanitAD-artifacts\yawrate_wp\YF3\yf3_eval_arm.py", line 150, in main
+    print(f"ZZYF3EVAL {a.name} FAILED {why}")
+  File "C:\Users\Admin\AppData\Roaming\uv\python\cpython-3.11-windows-x86_64-none\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u26d4' in position 1214: character maps to <undefined>
