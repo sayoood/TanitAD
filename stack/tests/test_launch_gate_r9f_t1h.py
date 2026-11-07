@@ -136,7 +136,9 @@ def test_refcv9_warm_and_e1rig_are_unchanged_and_e1rig_still_admits_T1_alone_and
 
 def test_the_family_fingerprints_moved_to_the_pinned_values():
     fp = lambda n: hashlib.sha256(repr(sorted((k, repr(v)) for k, v in LG.PROFILES[n].items())).encode()).hexdigest()[:16]   # noqa: E731
-    assert {n: fp(n) for n in FAMILY} == {"refcv9-e2": "08c84658d9e98ceb", "refcv9-full": "551545dd6c9bbacc", "refcv9-full-d1": "9fbb9f8b7c41908d"}   # was 725ca7f0edac2d09 / ebcf1301de38ea4d / 97eec4e0d9d7eec6
+    # K2-ARGV (MM 2026-11-07): moved AGAIN, 08c84658d9e98ceb / 551545dd6c9bbacc / 9fbb9f8b7c41908d -> the values below -- the full family's `required_values_when` gained the near-lift rules
+    # (`_NEAR_LIFT_WHEN`: banded -> 10, near-m=20 -> 20, the same constant refcv9-e1rig uses) and the W-MAP-2 co-requirement (`_R9F_PLAN_MAP_REQUIRED`); pinned also in test_r9e2_k2_argv.py
+    assert {n: fp(n) for n in FAMILY} == {"refcv9-e2": "20297780a454a6c0", "refcv9-full": "8c9dcff2252b11ef", "refcv9-full-d1": "eae27696e70883cd"}   # was 08c84658d9e98ceb / 551545dd6c9bbacc / 9fbb9f8b7c41908d (THE FLIP); before it 725ca7f0edac2d09 / ebcf1301de38ea4d / 97eec4e0d9d7eec6
 
 
 # ====================================================================== 4. liveness: the full family reaches the SAME G-LIVE rule ==

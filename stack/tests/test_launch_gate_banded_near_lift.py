@@ -81,12 +81,15 @@ def test_RED_without_the_rule_the_banded_arm_is_refused_as_on_f078b7e():
 
 def test_a_profile_without_the_key_is_unchanged():
     assert "required_values_when" not in LG.PROFILES["refcv8"] and "admitted_values_when" not in LG.PROFILES["refcv8"]
-    # THE FLIP (MM 2026-11-07): the full family now carries `required_values_when` for the crowned T1h BUNDLE ONLY -- no banded trigger, no near-lift or map-weight entry,
-    # and no `admitted_values_when` (its pins: test_launch_gate_r9f_t1h.py)
+    # THE FLIP (MM 2026-11-07): the full family carries `required_values_when` for the crowned T1h BUNDLE; K2-ARGV (MM 2026-11-07) MERGES the near-lift rules into the same dict (a banded
+    # argv -> near lift 10, `--r9-map-banded-near-m=20` -> 20: `LG._NEAR_LIFT_WHEN`, the SAME constant refcv9-e1rig uses) and the W-MAP-2 co-requirement. Still no map-weight entry and
+    # no `admitted_values_when` (the weight is `map_weight_reasons`'s: free and positive with the banded head). Its pins: test_launch_gate_r9f_t1h.py, test_r9e2_k2_argv.py
     for name in ("refcv9-e2", "refcv9-full", "refcv9-full-d1"):
         rvw = LG.PROFILES[name]["required_values_when"]
-        assert set(rvw) == set(LG._R9F_T1H_ADMITTED) and FLAG not in rvw and "--r9-map-banded-near-m=20" not in rvw, name
-        assert {f for over in rvw.values() for f in over} <= set(LG._R9F_T1H_ADMITTED) and "admitted_values_when" not in LG.PROFILES[name]
+        assert set(rvw) == set(LG._R9F_T1H_ADMITTED) | {FLAG, "--r9-map-banded-near-m=20", "--r9-plan-map-channels"}, name
+        assert {k: v for k, v in rvw.items() if k in LG._NEAR_LIFT_WHEN} == LG._NEAR_LIFT_WHEN and "admitted_values_when" not in LG.PROFILES[name]
+        assert {f for k, over in rvw.items() if k in LG._R9F_T1H_ADMITTED for f in over} <= set(LG._R9F_T1H_ADMITTED)
+        assert not any("--w-map-hires" in over for over in rvw.values()), name
 
 
 # ---- the map weight: a banded arm may carry ONE of the E1 map arms' pre-registered weights; every other arm keeps refcv8's 1.0 ----

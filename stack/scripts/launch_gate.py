@@ -1683,6 +1683,21 @@ _E1_MAP_BANDED = {
     "controls": ("C1_constant_drv", "C2_gt_as_logits"),
     "informative": ("far band", "drv_sdf", "lane_ox", "lane_oy"),
 }
+#: ⭐ THE NEAR-LIFT RULES, ONE definition for refcv9-e1rig AND the full family (K2-ARGV, MM 2026-11-07; before it each profile typed its own, and the full family had none).
+#: BANDED-NL (MM 2026-11-04): the banded map head (C1 `--r9-map-banded`) REFUSES any near lift but 10 m (MapHiresConfig(banded); `_E1_MAP_BANDED["near_lift_m"]`, the value its
+#: own G-MAP-OVERFIT record is held to), so an argv carrying the flag is held to 10 and every other to refcv8's 20. Before this the unconditional 20 refused M1 / M2a / M2b at the
+#: gate (the f078b7e dev-box run, 2026-11-04): the banded lever was built, tested and record-bound, and unreachable from the launch.
+#: E1-NEAR20 (PREREG_M1_NEAR20): an M1N20 argv (`--r9-map-banded-near-m 20`) is held to near lift 20 (= its near band's end, C0's own lift); listed AFTER the banded trigger so
+#: it overrides it. An argv passing the flag with 10 stays on 10.
+#: K2-ARGV: the full family (refcv8's unconditional `--map-hires-near-lift-m 20`) admitted K2M1N20 / K2M3N20 (near lift 20) but REFUSED K2M3 (the banded head's own near lift 10): the
+#: banded-near-10 trigger is the rule the full family LACKED (the near-20 trigger alone is vacuous there: refcv8's 20 already binds). Both rules are merged with the FLIP's T1h bundle.
+_NEAR_LIFT_WHEN = {"--r9-map-banded": {"--map-hires-near-lift-m": f"{_E1_MAP_BANDED['near_lift_m']:g}"},
+                   "--r9-map-banded-near-m=20": {"--map-hires-near-lift-m": "20"}}
+_NEAR_LIFT_WHEN_WHY = {"--r9-map-banded": "the banded map head's own near lift (MapHiresConfig(banded) refuses any "
+                                          "other; _E1_MAP_BANDED['near_lift_m'], the value its /2-banded record ran) and "
+                                          "the E1 map arms' pre-registered map weights (_E1_MAP_BANDED['w_map_hires_admitted'])",
+                       "--r9-map-banded-near-m=20": "the near band 0-20 m @ 0.10 m reuses a near lift of exactly 20 m (MapHiresConfig(banded_near_m "
+                                                    "20) refuses any other; C0's own lift; PREREG_M1_NEAR20)"}
 if _E1_MODULE is not None:
     PROFILES["refcv9-e1rig"] = dict(
         _R8, name="refcv9-e1rig",
@@ -1704,19 +1719,9 @@ if _E1_MODULE is not None:
             **{f: f"REMOVED for the rig (refcv8 required {_R8['required_values'][f]!r}): "
                   + _E1_REMOVED_WHY.get(f, "a refcv8 planner / tactical value; the rig builds no planner")
                for f in _E1_REMOVED}),
-        #: BANDED-NL (MM 2026-11-04): the banded map head (C1 `--r9-map-banded`) REFUSES any near lift but 10 m (MapHiresConfig(banded);
-        #: `_E1_MAP_BANDED["near_lift_m"]`, the value its own G-MAP-OVERFIT record is held to), so an argv carrying the flag is held to
-        #: 10 and every other to refcv8's 20. Before this the unconditional 20 refused M1 / M2a / M2b at the gate (the f078b7e dev-box
-        #: run, 2026-11-04): the banded lever was built, tested and record-bound, and unreachable from the launch.
-        required_values_when={"--r9-map-banded": {"--map-hires-near-lift-m": f"{_E1_MAP_BANDED['near_lift_m']:g}"},
-                              #: E1-NEAR20 (PREREG_M1_NEAR20): an M1N20 argv (`--r9-map-banded-near-m 20`) is held to near lift 20 (= its near band's end, C0's
-                              #: own lift); listed AFTER the banded trigger so it overrides it. An argv passing the flag with 10 stays on 10.
-                              "--r9-map-banded-near-m=20": {"--map-hires-near-lift-m": "20"}},
-        required_values_when_why={"--r9-map-banded": "the banded map head's own near lift (MapHiresConfig(banded) refuses any "
-                                                     "other; _E1_MAP_BANDED['near_lift_m'], the value its /2-banded record ran) and "
-                                                     "the E1 map arms' pre-registered map weights (_E1_MAP_BANDED['w_map_hires_admitted'])",
-                                  "--r9-map-banded-near-m=20": "the near band 0-20 m @ 0.10 m reuses a near lift of exactly 20 m (MapHiresConfig(banded_near_m "
-                                                               "20) refuses any other; C0's own lift; PREREG_M1_NEAR20)"},
+        #: BANDED-NL / E1-NEAR20: the near-lift rules live in `_NEAR_LIFT_WHEN` (shared with the full family, K2-ARGV); the value is unchanged
+        required_values_when={k: dict(v) for k, v in _NEAR_LIFT_WHEN.items()},
+        required_values_when_why=dict(_NEAR_LIFT_WHEN_WHY),
         #: BANDED-NL: refcv8's `--w-map-hires 1.0` (PI 2026-10-14, R8-BUDGET) stays REQUIRED for every non-banded arm; a banded arm is a
         #: map-weight screen (REFCV9_DESIGN 4.3 / E0j) and may carry ONE of the pre-registered weights, never a free value.
         admitted_values_when={"--r9-map-banded": {"--w-map-hires": tuple(f"{w:g}" for w in _E1_MAP_BANDED["w_map_hires_admitted"])}},
@@ -1797,6 +1802,12 @@ _R9F_T1_REFUSED = ("--r9-bev-warp-lags", "--r9-bev-warp-shuffle")
 _R9F_T1H_REQUIRED = {"--r9-bev-warp": {"--r9-bev-warp-supervise-hist": (), "--r9-bev-warp-fuse-init": "identity", "--r9-bev-warp-fill-only": ()},
                      "--r9-bev-warp-supervise-hist": {"--r9-bev-warp": ()}, "--r9-bev-warp-fuse-init": {"--r9-bev-warp": ()},
                      "--r9-bev-warp-fill-only": {"--r9-bev-warp": ()}}
+#: K2-ARGV: W-MAP-2 (`--r9-plan-map-channels`) reads the BANDED head's drv / drv_sdf / sdw / lane / unobs channels (`plan_wires_flag.pin_args`: "needs --r9-map-banded"). Before this the
+#: ONLY refusal of W-MAP-2 without the banded head was the trainer's, so the gate ADMITTED such an argv (MEASURED 2026-11-07 on a K2 + `--r9-plan-map-channels` probe) and the build
+#: refused it later; the same co-required mechanism as the T1h bundle puts the refusal at the gate. (`--bev-source map_hires_pool` is already refcv8's required value.)
+_R9F_PLAN_MAP_REQUIRED = {"--r9-plan-map-channels": {"--r9-map-banded": ()}}
+_R9F_PLAN_MAP_REQUIRED_WHY = {"--r9-plan-map-channels": "W-MAP-2's channels ARE the banded head's drv / drv_sdf / sdw / lane / unobs (plan_wires_flag.pin_args: needs --r9-map-banded): "
+                                                        "without the banded head they would reach no producer"}
 _R9F_T1H_REQUIRED_WHY = {
     "--r9-bev-warp": "the crowned lever is the T1h BUNDLE (H-R9-E1-T1H KEPT); T1 alone FAILED its bar (H-R9-E1-T1), so the warp carries supervise-hist, fuse-init `identity` "
                      "and fill-only, all three",
@@ -1849,9 +1860,11 @@ def _r9f_profile(name: str, sched: dict, why: dict, *, extra_flags: tuple = (), 
             "--wsd-decay-steps": "REFCV9_DESIGN 4.4: the WSD decay length (required by value)"}),
         required_values={k: v for k, v in dict(_R8["required_values"], **{"--lr-schedule": "wsd"}, **sched).items() if k != "--w-map-hires"},
         required_values_why=dict(_R8.get("required_values_why") or {}, **{"--lr-schedule": "REFCV9_DESIGN 4.4 / C6: WSD"}, **why),
-        #: THE FLIP: the crowned T1h bundle is ADMITTED AS ONE UNIT (see `_R9F_T1H_REQUIRED`); an argv with none of the four flags is held to nothing new
-        required_values_when={k: dict(v) for k, v in _R9F_T1H_REQUIRED.items()},
-        required_values_when_why=dict(_R9F_T1H_REQUIRED_WHY),
+        #: THE FLIP: the crowned T1h bundle is ADMITTED AS ONE UNIT (see `_R9F_T1H_REQUIRED`); an argv with none of the four flags is held to nothing new.
+        #: K2-ARGV: MERGED with the near-lift rules (`_NEAR_LIFT_WHEN`: a banded argv -> near lift 10, `--r9-map-banded-near-m 20` -> 20; every other argv keeps refcv8's 20) -- one dict, both rules
+        required_values_when=dict({k: dict(v) for k, v in _R9F_T1H_REQUIRED.items()}, **{k: dict(v) for k, v in _NEAR_LIFT_WHEN.items()},
+                                  **{k: dict(v) for k, v in _R9F_PLAN_MAP_REQUIRED.items()}),
+        required_values_when_why=dict(_R9F_T1H_REQUIRED_WHY, **_NEAR_LIFT_WHEN_WHY, **_R9F_PLAN_MAP_REQUIRED_WHY),
         forbidden_levers=tuple(_R8["forbidden_levers"]) + (
             (_R9F_AUX_ALL, "an aux head (B1 / B2 / B2c) or its weight: not crowned by E1 yet (REFCV9_DESIGN 4.3) -- the full model REACHES it "
                            "since AUX-FULL (compute_losses_v3), so this is a decision, not a wiring gap; the MM drops it after E1 crowns a head"),
