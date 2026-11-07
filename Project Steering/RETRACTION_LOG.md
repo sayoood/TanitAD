@@ -18856,3 +18856,15 @@ instruments; only an undeclared one is a finding.
 - REFe never received a steering angle, and it has no yaw-rate input.
 
 **Class / rule:** a field's name, its declared semantics and the code that copies it say nothing about its values. Before reasoning about what an input carries, read the values that actually reached the model: a banked row, or the trained weights' gradient footprint. A library default or a hardcoded constant upstream turns a named channel into a constant one. The row's own closing line ("ask what an input really is, not what it is called") was the right rule; it was applied to the name only.
+
+
+## 2026-11-07 ~03:40 -- "a0 is the 0.2 s backward difference of measured speed" (`WSP_READ.md` line 31; `THEORY_CRAWL_AMEND_3.md` §1 and §2; `H-THEORY-T5-1`). Class: **A MECHANISM PARAMETER COPIED FROM A SUMMARY, NOT FROM THE LINE THAT COMPUTES IT**
+
+**What was claimed:** in the weight reading `.../raw/2026-11-06-theory-crawl/wsp_read/WSP_READ.md` line 31 ("two speed samples (v0 and the 0.2 s backward difference a0)"). The Master Mind then copied it into Amendment 3 and the register row `H-THEORY-T5-1`, where T5's regression-dilution prediction was built on it.
+
+**What is true (MEASURED, `.../2026-10-17-v8f-mini/raw/2026-11-07-p5-dilution/p5/P5_RESULT.md`):**
+- The model's a0 is the ONE-frame (0.1 s) backward difference of the native 10 Hz speed (`v8f_mini_data.py:333/323/320`, `ego_history.py:98`).
+- Reproduced from the logs with max |Δ| 0.0 on all 87,942 in-band windows. A 0.2 s reading misses by 0.66 m/s² and fails the card's gate.
+- P5's verdict does not depend on it: λ is 0.968 with the model's a0 and 0.974 with a 0.2 s one; FAILS either way.
+
+**Class / rule:** a parameter a hypothesis rests on is read from the code line that computes it, never from a report's prose about it, including our own. The card's own gate caught it: reproduce the input from source before measuring anything about it. Keep such a gate in every card whose prediction depends on how an input is computed.

@@ -1,0 +1,75 @@
+{
+ "card_sha256": "dcb82ae94c22ffbeb1353704ae6951f1fce2143eebe72d7b5544a4a1fce7f394",
+ "tol": 0.0001,
+ "n_gate_requested": 1500,
+ "gate_seed": 1,
+ "A_yaw_kin_from_track_vs_reimplementation_all_inband_windows": {
+  "lag1_0.1s_one_native_frame": {
+   "n": 87942,
+   "max_abs_diff": 0.0,
+   "median_abs_diff": 0.0,
+   "pass": true
+  },
+  "lag2_0.2s_card_prose": {
+   "n": 87942,
+   "max_abs_diff": 1.460707187652588,
+   "median_abs_diff": 0.047888755798339844,
+   "pass": false
+  },
+  "forward_diff_mutant": {
+   "n": 87942,
+   "max_abs_diff": 3.0147314071655273,
+   "median_abs_diff": 0.09464502334594727,
+   "pass": false
+  }
+ },
+ "B_real_data_path_ClipStore_yaw_V8FMiniWindows_item": {
+  "n_windows": 1500,
+  "n_clips": 1077,
+  "batch_kin3_vs_batch_p10f_a_feature_max_abs": 0.0,
+  "model_a0_range": [
+   -5.145044326782227,
+   5.723476409912109
+  ],
+  "candidates": {
+   "lag1_0.1s_one_native_frame": {
+    "max_abs_diff": 0.0,
+    "median_abs_diff": 0.0,
+    "pass": true
+   },
+   "lag2_0.2s_card_prose": {
+    "max_abs_diff": 0.6633090972900391,
+    "median_abs_diff": 0.04756927490234375,
+    "pass": false
+   },
+   "cache_kin3_steer_mode_0.2s": {
+    "max_abs_diff": 0.6633090972900391,
+    "median_abs_diff": 0.04756927490234375,
+    "pass": false
+   },
+   "forward_diff_mutant": {
+    "max_abs_diff": 2.106451988220215,
+    "median_abs_diff": 0.0956106185913086,
+    "pass": false
+   }
+  }
+ },
+ "C_sampling_rate": {
+  "native_track_hz": 10.0,
+  "cache_grid_hz": 5.0,
+  "median_over_600_clips_of_median_disp_over_v_dt0.1": 1.0066677846762238,
+  "p5_p95": [
+   1.0049895111909524,
+   1.0095190032735575
+  ],
+  "n_clips": 598,
+  "note": "1.00 = a 0.1 s frame interval. The cache keeps every second native frame (0.2 s)."
+ },
+ "GATE": {
+  "passes_with_the_model_s_own_definition": true,
+  "model_definition": "lag1_0.1s_one_native_frame",
+  "passes_with_the_card_prose_0.2s_definition": false,
+  "reading": "max |Delta| vs the model's a0: one-frame 0.1 s 0, 0.2 s 0.663, cache steer-mode kin3 0.663, forward mutant 2.11 (m/s^2; tolerance 0.0001)"
+ },
+ "wall_s": 264.67627477645874
+}
