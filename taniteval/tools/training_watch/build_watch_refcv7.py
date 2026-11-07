@@ -108,7 +108,15 @@ BAND_COLORS = ("s1", "s2", "s3", "s4", "s5")      # fixed order, never cycled (v
 #: literal here drifts, so a rename in the head cannot silently blank this page again.
 BANDED_FAMILY = "map_banded_"
 BANDED_BANDS = ("near", "mid", "far")
-BANDED_BAND_START_M = (0.0, 10.0, 40.0)           # map_banded.BAND_START_M (the far band runs to the run's extent)
+BANDED_BAND_START_M = (0.0, 10.0, 40.0)           # map_banded.BAND_START_M: the DEFAULT layout only (near 0-10 m); read a run's through banded_band_starts(near_m)
+#: E1-NEAR20 (PREREG_M1_NEAR20): the near band's END is the RUN's config, not a constant -- `map_banded.py` takes it from `near_m`
+#: (`band_starts(near_m)`, `check_near_m`) and so does this page. Mirrors `map_banded.NEAR_M_DEFAULT` / `NEAR_M_ADMITTED` and the
+#: trainer's flag (`stack/scripts/refc_v3_train.py` `--r9-map-banded-near-m`, dest `r9_map_banded_near_m`). The run's config.json
+#: carries it as `map_hires.banded.near_m` (`tanitad/train/map_banded_flag.py` `stamp()`, written ONLY when it is not the 10 m default)
+#: and as that flag in `argv`. Pinned by `taniteval/tests/test_build_watch_banded.py` (stdlib-only: map_banded is NOT imported here).
+BANDED_NEAR_M_DEFAULT = 10.0
+BANDED_NEAR_M_ADMITTED = (10.0, 20.0)
+BANDED_NEAR_M_FLAG = "--r9-map-banded-near-m"
 BANDED_BAND_CELL_CM = (10, 25, 50)                # map_banded.BAND_CELL_M (0.10 / 0.25 / 0.50 m)
 BANDED_BAND_WEIGHTS = (1.0, 1.0, 0.5)             # map_banded.BAND_WEIGHTS (R7: the far field cannot dominate)
 BANDED_CHANNELS = ("drv", "drv_sdf", "sdw", "lane", "lane_ox", "lane_oy", "edge_h", "xwalk", "arrow", "hatch")
@@ -613,11 +621,57 @@ def banded_run(rows: list) -> bool:
     return any(k.startswith(heads) for r in rows for k in r)
 
 
-def banded_band_label(b: str) -> str:
+def banded_check_near_m(near_m) -> float:
+    """The near band's end, REFUSED unless it is one of the pre-registered `BANDED_NEAR_M_ADMITTED` (10 = M1, 20 = M1N20):
+    `map_banded.check_near_m`, mirrored (this tool must not import it)."""
+    try:
+        v = float(near_m)
+    except (TypeError, ValueError):
+        raise ValueError(f"[watch] banded near_m {near_m!r} is not a number") from None
+    if not any(abs(v - a) < 1e-9 for a in BANDED_NEAR_M_ADMITTED):
+        raise ValueError(f"[watch] banded near_m {near_m!r} is not one of the admitted near-band ends {BANDED_NEAR_M_ADMITTED} m")
+    return v
+
+
+def banded_band_starts(near_m: float = BANDED_NEAR_M_DEFAULT) -> tuple:
+    """`(near.x0, mid.x0, far.x0)` for a near band ending at `near_m`: `map_banded.band_starts`, mirrored."""
+    return (BANDED_BAND_START_M[0], banded_check_near_m(near_m), BANDED_BAND_START_M[2])
+
+
+def banded_near_read(cfg) -> tuple:
+    """`(near_m, source)`: the near band's end of THIS run, from its own config.json (E1-NEAR20).
+
+    The BUILT value is the stamp `map_hires.banded.near_m` (the stamp omits it at the 10 m default); the DECLARED one is the argv flag
+    `--r9-map-banded-near-m` (absent = 10). When both exist they must agree (G-DVB makes them, so a disagreement is a config that
+    labels one band layout over another's cells): refused. No stamp -> the argv flag; neither (an older run, or no config.json) -> 10.
+    A value outside `BANDED_NEAR_M_ADMITTED` is refused loudly, never relabelled."""
+    cfg = cfg if isinstance(cfg, dict) else {}
+    mh = cfg.get("map_hires")
+    bd = mh.get("banded") if isinstance(mh, dict) else None
+    stamp = None if not isinstance(bd, dict) else banded_check_near_m(bd["near_m"] if "near_m" in bd else BANDED_NEAR_M_DEFAULT)
+    raw = _argv_val(cfg.get("argv"), BANDED_NEAR_M_FLAG)
+    argv = None if raw is None else banded_check_near_m(raw)
+    if stamp is not None:
+        declared = BANDED_NEAR_M_DEFAULT if argv is None else argv
+        if abs(declared - stamp) > 1e-9:
+            raise ValueError(f"[watch] config.json disagrees with itself on the banded near-band end: argv {BANDED_NEAR_M_FLAG} "
+                             f"declares {declared:g} m, the built head's stamp map_hires.banded says {stamp:g} m")
+        return stamp, "config.json map_hires.banded" + ("" if "near_m" in bd else " (near_m absent = the 10 m default)")
+    if argv is not None:
+        return argv, f"config.json argv {BANDED_NEAR_M_FLAG}"
+    return BANDED_NEAR_M_DEFAULT, "default 10 m (config.json carries no near-band end)"
+
+
+def banded_band_span(b: str, near_m: float) -> str:
+    """One band's extent in metres for a run whose near band ends at `near_m`: "0–20 m" / "20–40 m" / "≥ 40 m"."""
     i = BANDED_BANDS.index(b)
-    lo = BANDED_BAND_START_M[i]
-    span = (f"{lo:g}–{BANDED_BAND_START_M[i + 1]:g} m" if i + 1 < len(BANDED_BANDS) else f"≥ {lo:g} m")
-    return f"{b} · {span} · {BANDED_BAND_CELL_CM[i]} cm"
+    st = banded_band_starts(near_m)
+    return f"{st[i]:g}–{st[i + 1]:g} m" if i + 1 < len(BANDED_BANDS) else f"≥ {st[i]:g} m"
+
+
+def banded_band_label(b: str, near_m: float) -> str:
+    """`near_m` is REQUIRED, on purpose: a caller that forgot it would silently print the 10 m layout over a 20 m run's cells."""
+    return f"{b} · {banded_band_span(b, near_m)} · {BANDED_BAND_CELL_CM[BANDED_BANDS.index(b)]} cm"
 
 
 def _bval(row, k):
@@ -865,12 +919,12 @@ def banded_summary(mb: dict, mbs: dict) -> dict:
                                                        "maxent_last")} for b, d in mbs["bands"].items()}}}
 
 
-def banded_heatmap(d: dict, caption: str) -> str:
+def banded_heatmap(d: dict, caption: str, near_m: float) -> str:
     """Probability channel x band table of ONE eval row: the big number is the IoU over the supervised cells, the small
     line recall / precision. No colour judges a value (no banded bar is registered): the bins are a display scale.
     ⛔ A key absent from the row prints NO key name, says UNAVAILABLE and is never coloured as a value."""
     pre = d["prefix"]
-    head = "".join(f'<th class="num">{esc(banded_band_label(b))}</th>' for b in BANDED_BANDS)
+    head = "".join(f'<th class="num">{esc(banded_band_label(b, near_m))}</th>' for b in BANDED_BANDS)
     body = []
     for c in BANDED_PROB_CHANNELS:
         tds = []
@@ -907,10 +961,10 @@ def banded_legend() -> str:
             '<span>small line: R = recall, P = precision, derived from the same counts</span></div>')
 
 
-def banded_loss_table(d: dict) -> str:
+def banded_loss_table(d: dict, near_m: float) -> str:
     """The eval row's 30 loss terms (channel x band): focal + soft Dice for the sigmoid channels, L1 in metres for the three
     regression channels."""
-    head = "".join(f'<th class="num">{esc(banded_band_label(b))}</th>' for b in BANDED_BANDS)
+    head = "".join(f'<th class="num">{esc(banded_band_label(b, near_m))}</th>' for b in BANDED_BANDS)
     body = []
     for c in BANDED_CHANNELS:
         tds = []
@@ -923,7 +977,7 @@ def banded_loss_table(d: dict) -> str:
             + "</tr>" + "".join(body) + "</table></div>")
 
 
-def banded_band_table(d: dict) -> str:
+def banded_band_table(d: dict, near_m: float) -> str:
     """Per band, from the eval row: supervised cells, the unobserved fraction, the max-entropy term, the sum of the band's
     loss terms and its weighted contribution w_b (sum_c L + MAXENT_W maxent_b)."""
     rows = []
@@ -933,7 +987,7 @@ def banded_band_table(d: dict) -> str:
         s = sum(v for _, v in ls) if all(k == "value" for k, _ in ls) else None
         mx = e["maxent"][1] if e["maxent"][0] == "value" else None
         contrib = (w * (s + BANDED_MAXENT_W * mx)) if (s is not None and mx is not None) else None
-        rows.append(f'<tr><td>{esc(banded_band_label(b))}</td><td class="num">{w:g}</td>'
+        rows.append(f'<tr><td>{esc(banded_band_label(b, near_m))}</td><td class="num">{w:g}</td>'
                     f'<td class="num">{fmt(e["n"][1], 0)}</td><td class="num">{fmt(e["unobs"][1], 4)}</td>'
                     f'<td class="num">{fmt(mx, 3)}</td><td class="num">{fmt(s, 4)}</td><td class="num">{fmt(contrib, 4)}</td></tr>')
     return ('<div style="overflow-x:auto"><table><tr><th>band</th><th class="num">weight</th>'
@@ -942,7 +996,7 @@ def banded_band_table(d: dict) -> str:
             + "".join(rows) + "</table></div>")
 
 
-def banded_train_html(sg: dict) -> str:
+def banded_train_html(sg: dict, near_m: float) -> str:
     """The training signal per band and per channel x band (train rows), plus the loss-sum identity."""
     if sg["state"] == "UNAVAILABLE" or not sg["n_data"]:
         return ('<h3>The BANDED training signal (train rows)</h3><p class="muted">UNAVAILABLE: '
@@ -950,7 +1004,7 @@ def banded_train_html(sg: dict) -> str:
     brow = []
     for b in BANDED_BANDS:
         e = sg["bands"][b]
-        brow.append(f'<tr><td>{esc(banded_band_label(b))}</td><td class="num">{e["weight"]:g}</td>'
+        brow.append(f'<tr><td>{esc(banded_band_label(b, near_m))}</td><td class="num">{e["weight"]:g}</td>'
                     f'<td class="num">{fmt(e["n_last"], 0)}</td><td class="num">{fmt(e["unobs_last"], 4)}</td>'
                     f'<td class="num">{fmt(e["maxent_ema"], 3)}</td><td class="num">{fmt(e["sum_c_ema"], 4)}</td>'
                     f'<td class="num">{fmt(e["contrib_ema"], 4)}</td>'
@@ -975,7 +1029,7 @@ def banded_train_html(sg: dict) -> str:
             '<th class="num">Σ channel loss (EMA)</th><th class="num">weighted contribution (EMA)</th>'
             '<th class="num">share of the map loss</th><th>log10 contribution</th></tr>' + "".join(brow) + "</table></div>"
             '<h3>Loss terms per channel × band (train rows, EMA)</h3><div style="overflow-x:auto"><table>'
-            '<tr><th>channel</th>' + "".join(f'<th class="num">{esc(banded_band_label(b))}</th>' for b in BANDED_BANDS)
+            '<tr><th>channel</th>' + "".join(f'<th class="num">{esc(banded_band_label(b, near_m))}</th>' for b in BANDED_BANDS)
             + '<th class="num">rows exactly 0 (near / mid / far)</th></tr>' + "".join(trow) + "</table></div>"
             f'<p class="muted">{ident} A weighted contribution is w<sub>b</sub> (Σ<sub>c</sub> L<sub>cb</sub> + {BANDED_MAXENT_W:g} '
             'maxent<sub>b</sub>); the three contributions are the map loss, <code>map_hires</code>. ⚠️ The banded head logs '
@@ -1023,11 +1077,11 @@ def banded_charts(ev: list, sg: dict, pres: tuple, xmax) -> dict:
     return {"iou": iou, "band_loss": band_loss}
 
 
-def banded_section(mb: dict, sg: dict, charts: dict, cmh: str, ev_w) -> str:
+def banded_section(mb: dict, sg: dict, charts: dict, cmh: str, ev_w, near_m: float) -> str:
     """The map section of a BANDED run: it replaces the 8-class heatmap, loss-share and pull tables, whose keys the banded
     head does not emit (the launch gate records them as not applicable)."""
     lbl = '<span class="chip info"><i></i>BANDED HEAD</span> '
-    spans = " · ".join(esc(banded_band_label(b)) for b in BANDED_BANDS)
+    spans = " · ".join(esc(banded_band_label(b, near_m)) for b in BANDED_BANDS)
     intro = (f"<p>{lbl}This run logs the refcv9 <b>banded</b> map head (<code>--r9-map-banded</code>): three bands over the "
              f"same extent — {spans} — and {len(BANDED_CHANNELS)} channels (sigmoid: {esc(', '.join(BANDED_PROB_CHANNELS))}; "
              f"L1 in metres: {esc(', '.join(BANDED_L1_CHANNELS))}). It carries <code>{BANDED_FAMILY}*</code> keys, "
@@ -1042,13 +1096,13 @@ def banded_section(mb: dict, sg: dict, charts: dict, cmh: str, ev_w) -> str:
              "amber. The pull on each band is not logged per row: see the launch gate's smoke probe.</p>")
     if mb["state"] == "pending":
         return intro + '<p class="muted">No in-run eval row yet: the banded eval series cannot be read.</p>' + \
-            '<div class="grid2 fill">' + cmh + "</div>" + banded_train_html(sg)
+            '<div class="grid2 fill">' + cmh + "</div>" + banded_train_html(sg, near_m)
     parts = [intro, banded_legend()]
     for pre in mb["prefixes"]:
         d = mb["read"][pre]
         what = "live weights" if pre == BANDED_EVAL_PREFIXES[0] else "EMA weights"
         parts.append(banded_heatmap(d, f"BANDED IoU per channel × band, {what} — eval at step {d['step']:,} "
-                                       f"({d['present']}/{d['expected']} keys finite)"))
+                                       f"({d['present']}/{d['expected']} keys finite)", near_m))
     chk = [d for d in mb["read"].values() if d["count_checked"]]
     parts.append('<p class="muted">Cross-check on the counts themselves: inter ≤ pos ≤ union holds on '
                  + (" · ".join(f"{d['count_checked'] - len(d['count_bad'])} of {d['count_checked']} cells ({esc(d['prefix'])})"
@@ -1057,8 +1111,8 @@ def banded_section(mb: dict, sg: dict, charts: dict, cmh: str, ev_w) -> str:
                  + charts["band_loss"] + cmh + "</div>")
     live = mb["read"][BANDED_EVAL_PREFIXES[0]]
     parts.append(f'<h3>Loss terms and per-band supervision — live weights, eval at step {live["step"]:,}</h3>'
-                 + banded_loss_table(live) + banded_band_table(live))
-    parts.append(banded_train_html(sg))
+                 + banded_loss_table(live, near_m) + banded_band_table(live, near_m))
+    parts.append(banded_train_html(sg, near_m))
     return "".join(parts)
 
 
@@ -1740,6 +1794,8 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
     banded = banded_run(rows)
     mb = banded_read(ev) if banded else None
     mbs = banded_signal(tr) if banded else None
+    # E1-NEAR20: the band labels follow the RUN's near-band end (config.json), not the default layout; a non-banded run reads none of it
+    near_m, near_src = banded_near_read(cfg) if banded else (None, None)
     bx = box_read(ev)
     ga = ga_read(tr, cfg)
     pr = prior_read(cfg, rows)
@@ -2180,7 +2236,7 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
     map_html += sig_html
     if banded:
         # BANDED: the 8-class heatmap / loss-share / pull tables above read keys this head does not emit; replace them
-        map_html = banded_section(mb, mbs, bch, cmh, ev_w)
+        map_html = banded_section(mb, mbs, bch, cmh, ev_w, near_m)
         b_lines = [f"eval: {x}" for x in mb["reasons"]] + [f"train: {x}" for x in mbs["reasons"]]
         b_kind = ("crit" if (mb["alarm"] or mbs["alarm"]) else "info" if mb["state"] == "pending"
                   else "warn" if mb["state"] == "AMBER" else "good")
@@ -2430,7 +2486,8 @@ def build(watch_dir: str | None = None, metrics_path: str | None = None, arm: st
     if banded and ev:
         dcell = mb["read"][BANDED_EVAL_PREFIXES[0]]["iou"][("drv", "near")]
         lcell = mb["read"][BANDED_EVAL_PREFIXES[0]]["iou"][("lane", "near")]
-        dlab, llab = "map BANDED drivable IoU, near 0–10 m", "map BANDED lane IoU, near 0–10 m"
+        dlab = f"map BANDED drivable IoU, near {banded_band_span('near', near_m)}"
+        llab = f"map BANDED lane IoU, near {banded_band_span('near', near_m)}"
 
     def celltxt(cl):
         return f"{cl[1]:.3f}" if cl[0] == "value" else ("undefined" if cl[0] == "undef" else "UNAVAILABLE")
@@ -2624,7 +2681,7 @@ LOGGING_SPEC_MAP10 5.3 (the thin-class alarm), A9/A10 (P0, the ratio band), D3 (
                                "signal": {"state": "NOT_APPLICABLE_BANDED", "alarm": False, "dead_latest": [],
                                           "missing_gno": []},
                                "note": "the 8-class block is not applicable to a banded run: read map_banded"})
-        summary["map_banded"] = banded_summary(mb, mbs)
+        summary["map_banded"] = {**banded_summary(mb, mbs), "near_m": near_m, "near_m_source": near_src}
     return page, summary
 
 

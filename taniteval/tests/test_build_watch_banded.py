@@ -19,7 +19,11 @@ the GATE reads; the Watch's segment table needs a clock).
   F   RED ARMS  every contract failure FIRES: a key absent, a null, a broken count identity, an empty band, a train row missing keys, a
                  loss sum that does not add up, an all-ignore row that is not exactly 0.0. An absent key is never drawn as 0.
   M   MUTATION   a mutated key prefix / channel / band spelling is DETECTED by the spelling check, and stops the Watch recognising the run.
-  N   NON-BANDED a hires run carries no banded marker anywhere: no BANDED label, no `map_banded` summary key, its thin-class tile intact."""
+  N   NON-BANDED a hires run carries no banded marker anywhere: no BANDED label, no `map_banded` summary key, its thin-class tile intact.
+  L   LABELS     (E1-NEAR20) the band labels follow the RUN's near-band end, read from its own config.json (`map_hires.banded.near_m`, the
+                 stamp `map_banded_flag.stamp` writes, or the `--r9-map-banded-near-m` argv flag; absent = 10 m): a 20 m run renders
+                 "0-20 m" / "20-40 m", a default run "0-10 m" / "10-40 m", the tool's starts equal `map_banded.band_starts` and its spans the
+                 BUILT `band_geometry`; a value outside (10, 20) is REFUSED; the old hard-coded label fails the 20 m check by mutation."""
 from __future__ import annotations
 
 import ast
@@ -29,6 +33,7 @@ import json
 import re
 import sys
 import types
+from types import SimpleNamespace
 from pathlib import Path
 
 import pytest
@@ -36,6 +41,7 @@ import pytest
 torch = pytest.importorskip("torch")                     # map_banded is torch code: the spelling pin needs it, loudly
 from tanitad.models import map_banded as MB              # noqa: E402  (taniteval/conftest.py puts <repo>/stack on the path)
 import launch_gate as LG                                 # noqa: E402  (... and <repo>/stack/scripts)
+from tanitad.train import map_banded_flag as MBF         # noqa: E402  (the trainer's own writer of the near-band stamp)
 
 ROOT = Path(__file__).resolve().parents[2]
 BUILDER = ROOT / "taniteval" / "tools" / "training_watch" / "build_watch_refcv7.py"
@@ -69,8 +75,8 @@ def _fixture_rows() -> list[dict]:
     return [json.loads(l) for l in FIX.read_text(encoding="utf-8").splitlines() if l.strip()]
 
 
-def _write_run(tmp_path, rows, name="run"):
-    """A metrics.jsonl the way the gate hands it to the Watch (`--metrics`): train rows get a clock."""
+def _write_run(tmp_path, rows, name="run", config=None):
+    """A metrics.jsonl the way the gate hands it to the Watch (`--metrics`): train rows get a clock. `config` = a config.json beside it."""
     d = tmp_path / name
     d.mkdir()
     out = []
@@ -79,6 +85,8 @@ def _write_run(tmp_path, rows, name="run"):
             r = {**r, "elapsed_s": r.get("elapsed_s", 6.5 * r["step"]), "lr": 1e-4}
         out.append(r)
     (d / "metrics.jsonl").write_text("".join(json.dumps(r) + "\n" for r in out), encoding="utf-8")
+    if config is not None:
+        (d / "config.json").write_text(json.dumps(config), encoding="utf-8")
     return d
 
 
@@ -437,6 +445,182 @@ def test_MUTATION_a_wrong_prefix_stops_the_Watch_recognising_a_banded_run(monkey
     rows = _fixture_rows()
     assert _load(monkeypatch).banded_run(rows) is True
     assert _mutated(monkeypatch, 'BANDED_FAMILY = "map_banded_"', 'BANDED_FAMILY = "map_bandd_"').banded_run(rows) is False
+
+
+# ------------------------------------------------------------------ L: the labels follow the run's near-band end ----
+TRAINER = ROOT / "stack" / "scripts" / "refc_v3_train.py"
+ARGV_BASE = ["--arm", ARM, "--map-hires", "on", "--w-map-hires", "1.0", "--r9-map-banded"]
+
+
+def _stamped(near_m):
+    """The REAL `config.json["map_hires"]["banded"]` block: `map_banded_flag.stamp` (the trainer's own writer) on a built head."""
+    head = MB.BandedMapHead(100.0, 30.0, d_up=8, groups=2, near_m=near_m)
+    return MBF.stamp(SimpleNamespace(banded=head, refine=SimpleNamespace(cls=None)))
+
+
+def _cfg(near_m):
+    """A banded run's config.json whose near band ends at `near_m`: the stamp, and the argv flags only when the run passed them."""
+    argv = list(ARGV_BASE)
+    if near_m != MB.NEAR_M_DEFAULT:
+        argv += ["--map-hires-near-lift-m", f"{near_m:g}", "--r9-map-banded-near-m", f"{near_m:g}"]
+    return {"arm": ARM, "argv": argv, "map_hires": {"banded": _stamped(near_m)}}
+
+
+def _want_labels(near_m) -> dict:
+    """The label of each band, DERIVED from the BUILT geometry (`band_geometry`), never from the Watch."""
+    out = {}
+    for g in MB.band_geometry(100.0, 30.0, near_m):
+        span = f"{g.x0:g}–{g.x1:g} m" if g.name != "far" else f"≥ {g.x0:g} m"
+        out[g.name] = f"{g.name} · {span} · {round(g.cell * 100)} cm"
+    return out
+
+
+def labels_diffs(W, tmp_path, near_m, name="lab") -> list[str]:
+    """Every way the Watch module `W` fails to label a banded run whose near band ends at `near_m`. [] = labelled by the run's own end."""
+    page, s = _build(W, _write_run(tmp_path, _fixture_rows(), name=name, config=_cfg(near_m)))
+    sec = _section(page)
+    want = _want_labels(near_m)
+    out = []
+    for b, lab in want.items():
+        for pat, n in ((f'<th class="num">{lab}</th>', 4), (f'<td>{lab}</td>', 2)):     # th: heatmap x2 (live, EMA) + loss + train-channel; td: 2 band tables
+            if sec.count(pat) != n:
+                out.append(f"{pat!r}: {sec.count(pat)} site(s), want {n}")
+    if " · ".join(want.values()) not in sec:
+        out.append("the section intro does not name the three bands as " + " · ".join(want.values()))
+    other = _want_labels([a for a in MB.NEAR_M_ADMITTED if a != near_m][0])
+    for b in ("near", "mid"):
+        if other[b] in page:
+            out.append(f"the OTHER layout's label {other[b]!r} is on the page")
+    span = want["near"].split(" · ")[1]
+    for who in ("drivable", "lane"):
+        if f"<span>map BANDED {who} IoU, near {span}</span>" not in page:
+            out.append(f"the {who} tile does not say near {span}")
+    if (s["map_banded"]["near_m"], s["map_banded"]["near_m_source"].split(" (")[0]) != (
+            float(near_m), "config.json map_hires.banded"):
+        out.append(f"the summary reads {s['map_banded']['near_m']!r} from {s['map_banded']['near_m_source']!r}")
+    return out
+
+
+@pytest.mark.parametrize("near_m", MB.NEAR_M_ADMITTED)
+def test_the_band_labels_follow_the_runs_near_band_end(tmp_path, monkeypatch, near_m):
+    """(a) near 20 m renders 0–20 m / 20–40 m everywhere a band is named; the default 10 m renders 0–10 m / 10–40 m."""
+    assert labels_diffs(_load(monkeypatch), tmp_path, near_m) == []
+
+
+def test_the_labels_read_exactly_the_strings_the_PI_asked_for(tmp_path, monkeypatch):
+    W = _load(monkeypatch)
+    page20, s20 = _build(W, _write_run(tmp_path, _fixture_rows(), name="n20", config=_cfg(20.0)))
+    page10, s10 = _build(W, _write_run(tmp_path, _fixture_rows(), name="n10", config=_cfg(10.0)))
+    for page, near, mid in ((page20, "0–20 m", "20–40 m"), (page10, "0–10 m", "10–40 m")):
+        assert f"near · {near} · 10 cm" in page and f"mid · {mid} · 25 cm" in page and "far · ≥ 40 m · 50 cm" in page
+    assert "near · 0–10 m" not in page20 and "mid · 10–40 m" not in page20
+    assert "near · 0–20 m" not in page10 and "mid · 20–40 m" not in page10
+    assert (s20["map_banded"]["near_m"], s10["map_banded"]["near_m"]) == (20.0, 10.0)
+
+
+def test_an_older_run_with_no_near_band_end_in_its_config_keeps_the_10_m_labels(tmp_path, monkeypatch):
+    """No config.json, or one with no banded stamp and no flag: the default 10 m -- the page the tool always drew, and said so."""
+    W = _load(monkeypatch)
+    for name, cfg in (("nocfg", None), ("oldcfg", {"arm": ARM, "argv": ARGV_BASE})):
+        page, s = _build(W, _write_run(tmp_path, _fixture_rows(), name=name, config=cfg))
+        assert "near · 0–10 m · 10 cm" in page and "mid · 10–40 m · 25 cm" in page and "near · 0–20 m" not in page
+        assert s["map_banded"]["near_m"] == 10.0 and s["map_banded"]["near_m_source"].startswith("default 10 m")
+
+
+def test_the_near_end_is_read_from_the_stamp_the_trainer_writes_and_from_the_flag(monkeypatch):
+    W = _load(monkeypatch)
+    assert "near_m" not in _stamped(10.0)                              # map_banded_flag.stamp omits it at the default ...
+    assert _stamped(20.0)["near_m"] == 20.0                            # ... and writes it otherwise: the key the Watch reads
+    assert W.banded_near_read(_cfg(20.0))[0] == 20.0 and W.banded_near_read(_cfg(10.0))[0] == 10.0
+    # a config with only the flag (no stamp yet) is read from argv
+    assert W.banded_near_read({"argv": ARGV_BASE + ["--r9-map-banded-near-m", "20"]}) == (20.0, "config.json argv --r9-map-banded-near-m")
+    assert W.banded_near_read(None)[0] == 10.0 and W.banded_near_read({})[0] == 10.0
+
+
+def test_the_flag_name_and_the_stamp_key_are_the_trainers_own(monkeypatch):
+    W = _load(monkeypatch)
+    assert W.BANDED_NEAR_M_FLAG == MBF.NEAR_M_FLAG == "--r9-map-banded-near-m"
+    src = TRAINER.read_text(encoding="utf-8")
+    assert f'add_argument("{MBF.NEAR_M_FLAG}", type=float, default=None, dest="{MBF.NEAR_M_DEST}"' in src      # the parser declares it
+    assert 'map_hires_stamp["banded"] = _mbf.stamp(model._map_hires)' in src                                    # ... and the stamp is written
+    assert '"argv": sys.argv[1:]' in src                                                                        # ... beside the raw argv
+
+
+# (b) the tool's layout equals map_banded's, for both admitted values
+def test_the_watchs_near_band_constants_and_starts_equal_map_banded(monkeypatch):
+    W = _load(monkeypatch)
+    assert W.BANDED_NEAR_M_DEFAULT == MB.NEAR_M_DEFAULT and tuple(W.BANDED_NEAR_M_ADMITTED) == tuple(MB.NEAR_M_ADMITTED)
+    assert W.banded_band_starts() == tuple(MB.band_starts()) == tuple(W.BANDED_BAND_START_M)
+    for near_m in MB.NEAR_M_ADMITTED:
+        assert W.banded_band_starts(near_m) == tuple(MB.band_starts(near_m)), near_m
+        assert W.banded_band_starts(str(near_m)) == tuple(MB.band_starts(str(near_m)))          # an argv token is a string
+        for g in MB.band_geometry(100.0, 30.0, near_m):                                         # ... and the spans are the BUILT bands
+            want = f"{g.x0:g}–{g.x1:g} m" if g.name != "far" else f"≥ {g.x0:g} m"
+            assert W.banded_band_span(g.name, near_m) == want, (near_m, g.name)
+            assert W.banded_band_label(g.name, near_m) == _want_labels(near_m)[g.name]
+
+
+@pytest.mark.parametrize("bad", [0, 5, 15, 30, 10.5, "x", None, float("nan"), float("inf"), True])
+def test_RED_a_near_end_outside_10_20_is_refused_exactly_where_map_banded_refuses(monkeypatch, bad):
+    W = _load(monkeypatch)
+    with pytest.raises(ValueError):
+        MB.check_near_m(bad)
+    with pytest.raises(ValueError):
+        W.banded_check_near_m(bad)
+    with pytest.raises(ValueError):
+        W.banded_band_starts(bad)
+    with pytest.raises(ValueError):
+        W.banded_band_label("near", bad)
+
+
+def test_RED_a_config_with_a_bad_or_self_contradicting_near_end_stops_the_Watch(tmp_path, monkeypatch):
+    W = _load(monkeypatch)
+    stamp_bad = _cfg(20.0)
+    stamp_bad["map_hires"]["banded"]["near_m"] = 15.0
+    flag_bad = {"argv": ARGV_BASE + ["--r9-map-banded-near-m", "30"]}
+    null_stamp = _cfg(20.0)
+    null_stamp["map_hires"]["banded"]["near_m"] = None
+    declared20_built10 = {"argv": ARGV_BASE + ["--r9-map-banded-near-m", "20"], "map_hires": {"banded": _stamped(10.0)}}
+    declared10_built20 = {"argv": ARGV_BASE, "map_hires": {"banded": _stamped(20.0)}}
+    for i, cfg in enumerate((stamp_bad, flag_bad, null_stamp, declared20_built10, declared10_built20)):
+        with pytest.raises(ValueError, match=r"\[watch\]"):
+            W.banded_near_read(cfg)
+        with pytest.raises(ValueError, match=r"\[watch\]"):                      # ... and the page build refuses, never relabels
+            _build(W, _write_run(tmp_path, _fixture_rows(), name=f"bad{i}", config=cfg))
+
+
+def test_a_non_banded_run_never_reads_the_near_end(tmp_path, monkeypatch):
+    """A hires run whose config.json holds nonsense in the banded slot is not refused: the banded read is behind `banded_run`."""
+    W = _load(monkeypatch)
+    d, arm = _hires_run(tmp_path, monkeypatch)
+    cfg = json.loads((d / "config.json").read_text(encoding="utf-8")) if (d / "config.json").is_file() else {}
+    cfg.setdefault("map_hires", {})["banded"] = {"near_m": 15.0}
+    (d / "config.json").write_text(json.dumps(cfg), encoding="utf-8")
+    page, s = W.build(watch_dir=str(d), arm=arm)
+    assert "map_banded" not in s and "BANDED" not in page
+
+
+# (c) the deliberate-regression arm: the old hard-coded label must FAIL the near 20 m check
+def test_MUTATION_the_old_hard_coded_label_fails_the_near_20_m_check(tmp_path, monkeypatch):
+    assert labels_diffs(_load(monkeypatch), tmp_path, 20.0, name="real") == []
+    old_label = _mutated(monkeypatch, "    st = banded_band_starts(near_m)\n", "    st = BANDED_BAND_START_M\n")
+    d = labels_diffs(old_label, tmp_path, 20.0, name="mut_label")
+    assert d, "the hard-coded 0-10 m / 10-40 m label was NOT detected on a near 20 m run"
+    assert any("near · 0–20 m · 10 cm" in x for x in d) and any("near · 0–10 m" in x for x in d), d
+    assert labels_diffs(old_label, tmp_path, 10.0, name="mut_label10") == []     # on a default run the old label is the same page: the arm is real
+
+
+def test_MUTATION_a_Watch_that_never_reads_the_config_fails_the_near_20_m_check(tmp_path, monkeypatch):
+    never_reads = _mutated(monkeypatch, "near_m, near_src = banded_near_read(cfg) if banded else (None, None)",
+                           'near_m, near_src = (BANDED_NEAR_M_DEFAULT, "mutant") if banded else (None, None)')
+    assert labels_diffs(never_reads, tmp_path, 20.0, name="mut_cfg") != []
+
+
+def test_MUTATION_a_drifted_admitted_set_or_default_is_caught_by_the_pin(monkeypatch):
+    for old, new in (("BANDED_NEAR_M_ADMITTED = (10.0, 20.0)", "BANDED_NEAR_M_ADMITTED = (10.0, 20.0, 30.0)"),
+                     ("BANDED_NEAR_M_DEFAULT = 10.0", "BANDED_NEAR_M_DEFAULT = 20.0")):
+        m = _mutated(monkeypatch, old, new)
+        assert (tuple(m.BANDED_NEAR_M_ADMITTED) != tuple(MB.NEAR_M_ADMITTED) or m.BANDED_NEAR_M_DEFAULT != MB.NEAR_M_DEFAULT)
 
 
 # ------------------------------------------------------------------ N: a non-banded run is untouched ----
