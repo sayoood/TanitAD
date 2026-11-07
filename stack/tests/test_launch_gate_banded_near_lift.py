@@ -80,8 +80,13 @@ def test_RED_without_the_rule_the_banded_arm_is_refused_as_on_f078b7e():
 
 
 def test_a_profile_without_the_key_is_unchanged():
-    for name in ("refcv8", "refcv9-e2", "refcv9-full"):
-        assert "required_values_when" not in LG.PROFILES[name] and "admitted_values_when" not in LG.PROFILES[name]
+    assert "required_values_when" not in LG.PROFILES["refcv8"] and "admitted_values_when" not in LG.PROFILES["refcv8"]
+    # THE FLIP (MM 2026-11-07): the full family now carries `required_values_when` for the crowned T1h BUNDLE ONLY -- no banded trigger, no near-lift or map-weight entry,
+    # and no `admitted_values_when` (its pins: test_launch_gate_r9f_t1h.py)
+    for name in ("refcv9-e2", "refcv9-full", "refcv9-full-d1"):
+        rvw = LG.PROFILES[name]["required_values_when"]
+        assert set(rvw) == set(LG._R9F_T1H_ADMITTED) and FLAG not in rvw and "--r9-map-banded-near-m=20" not in rvw, name
+        assert {f for over in rvw.values() for f in over} <= set(LG._R9F_T1H_ADMITTED) and "admitted_values_when" not in LG.PROFILES[name]
 
 
 # ---- the map weight: a banded arm may carry ONE of the E1 map arms' pre-registered weights; every other arm keeps refcv8's 1.0 ----

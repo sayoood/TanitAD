@@ -497,22 +497,23 @@ def test_the_argv_builds_the_arm_the_eval_loader_path_attach_gives_the_same_stat
     assert model_t1._r9_bev_warp.supervise_hist is False and model_t1._map_hires.bev_warp.emit_hist is False and model_t1._map_hires.bev_warp.init_mode == "rezero"
 
 
-def test_refcv9_e1rig_ADMITS_T1h_and_the_full_family_REFUSES_it_by_name():
+def test_refcv9_e1rig_ADMITS_T1h_and_the_full_family_admits_it_ONLY_AS_THE_BUNDLE():
     RIG = LG.PROFILES["refcv9-e1rig"]
     for argv in (T1H, T1HS, LG.set_flag(C0, SUP, []), LG.set_flag(C0, FUSE, ["identity"]), LG.set_flag(C0, FILL, [])):
         assert LG.open_item_reasons(RIG, argv) == [], "no own-record item: the flag changes no head and no inference input"
         assert LG.own_record_row(RIG, argv, "G-MAP-OVERFIT") is None and LG.own_record_row(RIG, argv, "G-BOX-OVERFIT") is None
         assert LG.forbidden_lever_reasons(RIG, argv)[0] == LG.forbidden_lever_reasons(RIG, C0)[0] == []
     for name in ("refcv9-e2", "refcv9-full", "refcv9-full-d1"):
+        # THE FLIP (MM 2026-11-07, H-R9-E1-T1H KEPT): T1h's four flags are ADMITTED in the full family as ONE UNIT; the shuffle control (T1hs) and the lags value stay refused
         p = LG.PROFILES[name]
-        for argv in (T1H, T1HS):
-            reasons, det = LG.forbidden_lever_reasons(p, argv)
-            hit = [f for f in det["argv_hits"] if f in LG.E1_T1_FLAGS]                  # ONE reason per entry: the first T1 hit is the one it names
-            assert SUP in det["argv_hits"] and hit and any(f"{hit[0]} is passed, but it is T1, the temporal BEV warp" in r for r in reasons), (name, reasons)
-        assert any(f"{SUP} is passed, but it is T1" in r for r in LG.forbidden_lever_reasons(p, LG.set_flag(C0, SUP, []))[0]), name
-        assert any(f"{FUSE} is passed, but it is T1" in r for r in LG.forbidden_lever_reasons(p, LG.set_flag(C0, FUSE, ["identity"]))[0]), name
-        assert any(f"{FILL} is passed, but it is T1" in r for r in LG.forbidden_lever_reasons(p, LG.set_flag(C0, FILL, []))[0]), name
-        assert not any("temporal BEV warp" in r for r in LG.forbidden_lever_reasons(p, C0)[0])
+        nr = lambda a: LG.set_flag(a, "--r9-perc-rig", None)                      # the E1 arm argvs carry the rig flag, which the full family refuses on its own (refcv8's entry)  # noqa: E731
+        bw = lambda rs: [x for x in rs if "bev-warp" in x]                        # only the T1 reasons: an E1 argv differs from a full-model argv in many other values  # noqa: E731
+        assert LG.forbidden_lever_reasons(p, nr(T1H))[0] == [] and bw(LG.required_on_reasons(p, nr(T1H))[0]) == [], name
+        reasons, det = LG.forbidden_lever_reasons(p, nr(T1HS))
+        assert det["argv_hits"] == ["--r9-bev-warp-shuffle"] and any("--r9-bev-warp-shuffle is passed, but it is T1hs's CONTENT control" in r for r in reasons), (name, reasons)
+        for lone in (LG.set_flag(C0, SUP, []), LG.set_flag(C0, FUSE, ["identity"]), LG.set_flag(C0, FILL, [])):       # a bundle flag without the warp: refused by the bundle rule
+            assert bw(LG.forbidden_lever_reasons(p, nr(lone))[0]) == [] and any(x.startswith("--r9-bev-warp (a switch: no value) is REQUIRED") for x in LG.required_on_reasons(p, nr(lone))[0]), name
+        assert not any("bev-warp" in r for r in LG.forbidden_lever_reasons(p, C0)[0])
     for typo in ("--r9-bev-warp-supervise-hist2", "--r9-bev-warp-supervise"):          # the exception is EXACT
         ids = [x.split(":")[0] for x in LG.open_item_reasons(RIG, LG.set_flag(T1H, typo, []))]
         assert ids == ["OPEN ITEM E1-BOX-OWN-RECORD"], (typo, ids)

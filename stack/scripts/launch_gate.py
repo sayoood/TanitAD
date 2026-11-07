@@ -1597,16 +1597,20 @@ E1_PFQ_STAMP_WHY = "perframe_seeds_not_certified_why"
 #: harnesses replay a head on FROZEN frames with no staged history, so a T1 flag in the launch argv is NOT built there (the build argv drops it) and
 #: the record STAMPS `bev_warp_not_certified` == the argv's T1 flag set (`bev_warp_stamp_reasons`): the inherited record (map `/1`, or `/2-banded`
 #: for a banded base; box `/1`) binds to the T1 argv's own sha256 and says what it does NOT certify. T1's liveness is G-LIVE's (`judge_bev_warp_live`:
-#: the gate and the fuse weight moved over the smoke, `bw_has` on a majority of windows) and the post-run zero-gradient gate's. Profile decision:
-#: refcv9-e1rig ADMITS T1; refcv9-e2 / refcv9-full / refcv9-full-d1 REFUSE it (not crowned yet).
+#: the gate and the fuse weight moved over the smoke, `bw_has` on a majority of windows) and the post-run zero-gradient gate's. Profile decision as first
+#: pinned: refcv9-e1rig ADMITS T1; refcv9-e2 / refcv9-full / refcv9-full-d1 REFUSED it (not crowned yet).
+#: ⭐ SUPERSEDED FOR THE FULL FAMILY BY THE FLIP (MM 2026-11-07, `H-R9-E1-T1H` KEPT; `_R9F_T1H_ADMITTED` below): the crowned lever is the T1h BUNDLE, never T1 alone
+#: (T1 FAILED its bar, `H-R9-E1-T1`). refcv9-e1rig and refcv9-warm are unchanged.
 #: ⭐ T1h (`--r9-bev-warp-supervise-hist`, refcv9 E1; MM brief 2026-11-05) is the FOURTH member: it changes NO head and NO input at inference -- it widens the 10 cm map loss's
 #: supervised cell set to `lift_valid_now | hist_valid` (TRAINING-ONLY, so the overfit harnesses -- which replay frozen frames with no staged history -- cannot build it either).
-#: It therefore rides EXACTLY T1's rule: admitted by refcv9-e1rig, REFUSED by refcv9-e2 / -full / -full-d1 (not crowned), stamped `bev_warp_not_certified` by the inherited records
+#: It therefore rides EXACTLY T1's rule: admitted by refcv9-e1rig; refcv9-e2 / -full / -full-d1 REFUSED it until THE FLIP (2026-11-07: admitted there only inside the crowned T1h bundle), stamped `bev_warp_not_certified` by the inherited records
 #: (`--reuse-from T1` / `T1s` binds because the harnesses strip the flag; `g_box_overfit.T1_FLAGS` / `map_hires_overfit.T1_FLAGS` are pinned to this tuple by a test).
 #: ⭐ T1h-INIT (`--r9-bev-warp-fuse-init {rezero,identity}`) is the FIFTH member and the second one that takes a VALUE (like `--r9-bev-warp-lags`): it changes the fuse's INIT only (a fresh-build
 #: weight write; the step-0 forward is the baseline's), no head and no inference input beyond what T1 already adds. Same rule as the other four; `g_box_overfit.strip_t1` drops its value token too.
 #: ⭐ T1h-FILL (`--r9-bev-warp-fill-only`) is the SIXTH member (a plain switch): it only restricts WHERE the gated history term is added (`out = bev + gate * fuse(x) * (1 - valid_now)`) -- no new head,
 #: no new inference input beyond T1's. Same rule as the other five.
+#: ⭐ THE FLIP (MM 2026-11-07, `H-R9-E1-T1H` KEPT): in the full family the rule above is replaced for FOUR of the six -- `_R9F_T1H_ADMITTED` -- and kept for the other two
+#: (`_R9F_T1_REFUSED`: the shuffle control, the lags value). refcv9-e1rig's treatment of all six is untouched.
 E1_T1_FLAGS: tuple = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only")
 E1_T1_STAMP = "bev_warp_not_certified"
 E1_T1_STAMP_WHY = "bev_warp_not_certified_why"
@@ -1766,7 +1770,7 @@ if _E1_MODULE is not None:
 #: the lever-attach reachability needles (`lever_attach_reasons`), G-DVB / G-LIVE (the levers' own registrations and the exhaustive
 #: LIVE_WEIGHT_RULES: `w_r8_drivable`, `w_map_hires`, `w_box3d`), and the share-alarm row (`map_share_alarm`).
 #: REFUSED (each with its reason): `--r9-perc-rig` / `--r9-train-only` (refcv8's own entries, inherited: the full model is not the rig, the
-#: freeze is refcv9-warm's); T1's six flags (`E1_T1_FLAGS`, E1-REC4: not crowned yet); the aux heads (B1 / B2 / B2c): REACHABLE from the
+#: freeze is refcv9-warm's); T1's SHUFFLE control and LAGS value (THE FLIP, 2026-11-07: the other four T1 flags are the CROWNED T1h bundle, ADMITTED as one unit -- `_R9F_T1H_ADMITTED`); the aux heads (B1 / B2 / B2c): REACHABLE from the
 #: full model since AUX-FULL (`compute_losses_v3` calls their loss, `box_depth_aux_flag.pin_args` admits `--w-box3d > 0`; T1 likewise since
 #: T1-FULL) and REFUSED BY DECISION until E1 crowns one (tests/test_launch_gate_refcv9_full.py pins both halves; the MM drops a crowned
 #: head's flags here -- the FLIP);
@@ -1780,6 +1784,25 @@ _R9F_BRANCH_FLAGS = ("--wsd-branch-from", "--wsd-branch-decay")
 #: (`r9_photometric.register_dvb_levers`) and its attach needle below. Not classified for refcv9-e1rig (A1 is not run): there an argv
 #: carrying it still hits E1-BOX-OWN-RECORD (fail closed).
 _R9F_AUG_FLAGS = ("--r9-photometric",)
+#: ⭐ THE FLIP (MM 2026-11-07; `GOALS_AND_CLAIMS.md` `H-R9-E1-T1H`, KEPT: `nf_prec_0_10` +0.2951 [+0.2337, +0.3514] = 3.2 x the E1 bar; landed 2f409200;
+#: `REFCV9_E1_T1H_PREREG.md`: "the FLIP drops its flags from refcv9-full's forbidden levers"). The crowned lever is the BUNDLE T1h = T1 + supervise-hist +
+#: fuse-init `identity` + fill-only, NOT T1: T1 (`--r9-bev-warp` alone) FAILED its bar (`H-R9-E1-T1`). So the four flags are ADMITTED AS ONE UNIT: the warp demands
+#: the other three (fuse-init only as `identity`) and each of the three demands the warp -- through `required_values_when`, the profile's existing co-required
+#: mechanism (`required_on_reasons`), not a new one. Attribution (PREREG clause 4, T1h vs T1hs) is PENDING: the bundle is admitted as a supervision / init /
+#: history lever whichever way clause 4 reads (both KEPT outcomes keep it). Two T1 flags STAY refused, each with its own reason (forbidden_levers below).
+#: EXPLICIT literals, not `E1_T1_FLAGS` minus something: a seventh member of `E1_T1_FLAGS` is then in NEITHER tuple and hits R9F-UNCLASSIFIED-LEVER (fail closed,
+#: pinned by a test) instead of riding the old "all of E1_T1_FLAGS is classified" exemption into the full model silently.
+_R9F_T1H_ADMITTED = ("--r9-bev-warp", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only")
+_R9F_T1_REFUSED = ("--r9-bev-warp-lags", "--r9-bev-warp-shuffle")
+_R9F_T1H_REQUIRED = {"--r9-bev-warp": {"--r9-bev-warp-supervise-hist": (), "--r9-bev-warp-fuse-init": "identity", "--r9-bev-warp-fill-only": ()},
+                     "--r9-bev-warp-supervise-hist": {"--r9-bev-warp": ()}, "--r9-bev-warp-fuse-init": {"--r9-bev-warp": ()},
+                     "--r9-bev-warp-fill-only": {"--r9-bev-warp": ()}}
+_R9F_T1H_REQUIRED_WHY = {
+    "--r9-bev-warp": "the crowned lever is the T1h BUNDLE (H-R9-E1-T1H KEPT); T1 alone FAILED its bar (H-R9-E1-T1), so the warp carries supervise-hist, fuse-init `identity` "
+                     "and fill-only, all three",
+    "--r9-bev-warp-supervise-hist": "a T1h flag is part of the crowned BUNDLE and is a dead flag without the warp (nothing reads it)",
+    "--r9-bev-warp-fuse-init": "a T1h flag is part of the crowned BUNDLE and is a dead flag without the warp (nothing reads it)",
+    "--r9-bev-warp-fill-only": "a T1h flag is part of the crowned BUNDLE and is a dead flag without the warp (nothing reads it)"}
 #: lever flag -> the trainer source needle that ATTACHES its modules (G-DVB reachability: a lever the argv declares whose attach hop is
 #: gone from the trainer is declared-but-not-built). B3's four ride `_bbf.attach`, C8's two ride `_pwf.attach` (refc_v3_train build).
 #: ⭐ C5-S8: NOT every own-head flag rides `_bbf.attach`. B3's `is_any` does not cover `--r9-box-layers`, so on a layers-only argv `_bbf.attach` is a NO-OP and its
@@ -1788,7 +1811,11 @@ _R9F_AUG_FLAGS = ("--r9-photometric",)
 _R9F_ATTACH = dict({f: "_bbf.attach(model, args)" for f in E1_BOX_OWN_FLAGS if f not in ("--r9-box-layers", "--r9-box-s8-horizon", "--r9-box-perframe-queries")},
                    **{"--r9-box-layers": "_bc5.attach(model, args)", "--r9-box-s8-horizon": "_bc5.attach(model, args)", "--r9-box-perframe-queries": "_bc5.attach(model, args)"},
                    **{f: "_pwf.attach(model, args)" for f in _R9F_PLAN_FLAGS},
-                   **{"--r9-photometric": "_r9ph.attach(model, args)"})          # C10: model._r9_photometric (seed + step); no parameter
+                   **{"--r9-photometric": "_r9ph.attach(model, args)"},          # C10: model._r9_photometric (seed + step); no parameter
+                   #: THE FLIP (T1h bundle): the warp's fuse + lift hook are attached at the model build (`_bw.attach`, refc_v3_train.py); supervise-hist is a LOSS-side lever whose hop is
+                   #: `_bw.supervised_lift_valid` (delete it and the flag builds the state, then silently supervises only the cells the camera sees NOW). fuse-init / fill-only are applied
+                   #: INSIDE `attach` (bev_warp_flag.py), so the `_bw.attach` needle covers them; the history dataset hook and `_bw.stage` are G-LIVE's (`bw_has` / the gate and fuse gradients)
+                   **{"--r9-bev-warp": "_bw.attach(model, args)", "--r9-bev-warp-supervise-hist": "_bw.supervised_lift_valid(model, pout, lv, sel)"})
 #: the share alarm (R3 / E0j): when the banded map head is ON, its gradient share of the trunk must stay >= the floor in the smoke's one
 #: `--grad-share-every` reading. E0j's target: the banded map takes >= 0.05 of layer2 (w* 0.511; at w 1.0 it took 0.146). The trainer's
 #: reading (`tanitad/train/grad_share.py` `measure`, groups `GROUP_PREFIXES`: trunk = `core.encoder.*`) has NO `layer2` group; the finest
@@ -1806,7 +1833,7 @@ _R9F_OPEN_ITEMS = (
              "wire (`_R9F_PLAN_FLAGS`), a C10 augmentation (`_R9F_AUG_FLAGS`), nor forbidden here. It is never silently admitted",
      "owner": "the lever's code agent -> the Master Mind (a reviewed edit of launch_gate.py that classifies the flag)",
      "closes_when": "never by a record: only by a reviewed launch_gate.py edit (classify it admitted, or add it to forbidden_levers)",
-     "when_prefixes": ("--r9-",), "when_except": ("--r9-map-", "--r9-box-"), "when_except_exact": _R9F_PLAN_FLAGS + E1_T1_FLAGS + _R9F_AUG_FLAGS},
+     "when_prefixes": ("--r9-",), "when_except": ("--r9-map-", "--r9-box-"), "when_except_exact": _R9F_PLAN_FLAGS + _R9F_T1H_ADMITTED + _R9F_T1_REFUSED + _R9F_AUG_FLAGS},
 )
 
 
@@ -1822,12 +1849,17 @@ def _r9f_profile(name: str, sched: dict, why: dict, *, extra_flags: tuple = (), 
             "--wsd-decay-steps": "REFCV9_DESIGN 4.4: the WSD decay length (required by value)"}),
         required_values={k: v for k, v in dict(_R8["required_values"], **{"--lr-schedule": "wsd"}, **sched).items() if k != "--w-map-hires"},
         required_values_why=dict(_R8.get("required_values_why") or {}, **{"--lr-schedule": "REFCV9_DESIGN 4.4 / C6: WSD"}, **why),
+        #: THE FLIP: the crowned T1h bundle is ADMITTED AS ONE UNIT (see `_R9F_T1H_REQUIRED`); an argv with none of the four flags is held to nothing new
+        required_values_when={k: dict(v) for k, v in _R9F_T1H_REQUIRED.items()},
+        required_values_when_why=dict(_R9F_T1H_REQUIRED_WHY),
         forbidden_levers=tuple(_R8["forbidden_levers"]) + (
             (_R9F_AUX_ALL, "an aux head (B1 / B2 / B2c) or its weight: not crowned by E1 yet (REFCV9_DESIGN 4.3) -- the full model REACHES it "
                            "since AUX-FULL (compute_losses_v3), so this is a decision, not a wiring gap; the MM drops it after E1 crowns a head"),
             (_R9W_PF_FLAGS, "R9-PF is the SEPARATE stage-2 calibration fit (REFCV9_INMODEL_DESIGN s1, S2); refcv9-warm forbids it too"),
-            (E1_T1_FLAGS, "T1, the temporal BEV warp (E1-REC4): refcv9-e1rig ADMITS it (an E1 arm); the full model does not carry it until E1 has crowned it "
-                          "(reachable since T1-FULL: a decision, not a wiring gap)"),
+            (("--r9-bev-warp-shuffle",), "T1hs's CONTENT control (the same supervision set and fuse as T1h, but DERANGED history frames: wrong content by design, "
+                                       "PREREG clause 4's attribution arm) -- an E1 diagnostic, never a production lever; refcv9-e1rig admits it, the full model never does"),
+            (("--r9-bev-warp-lags",), "the lags value: the crowned T1h bundle (H-R9-E1-T1H) ran at the DEFAULT lags 0.5,1.0 s, which needs NO flag; any other value is "
+                                      "an uncrowned lever (longer lags 1.5 / 2.0 s are E1's next lever if T1h had failed, never run), so none is admitted -- pass no lags flag"),
         ) + (((_R9F_BRANCH_FLAGS, "the D1 decay branch launches ONLY under profile refcv9-full-d1 (its own token, the 4-flag delta)"),)
              if name != "refcv9-full-d1" else ()),
         #: `--init-from` bound by CONTENT to refcv8 EMA-48,852 (md5 b4364029...) -- the e1rig machinery (`map_only_init_reasons`' reader)
@@ -4656,7 +4688,7 @@ def required_on_reasons(prof: dict, argv: list[str], D=None, model=None,
         want = [str(x) for x in v] if isinstance(v, (list, tuple)) else [str(v)]
         if got != want:
             why = over_why.get(f) or (prof.get("required_values_why") or {}).get(f, "a recorded ruling")
-            reasons.append(f"{f} {' '.join(want)} is REQUIRED for a {prof['name']} launch "
+            reasons.append(f"{' '.join([f, *want]) if want else f + ' (a switch: no value)'} is REQUIRED for a {prof['name']} launch "
                            f"({why}) and the argv has {got}")
     for f, (trig, allowed) in adm.items():
         got = flag_values(argv, f)

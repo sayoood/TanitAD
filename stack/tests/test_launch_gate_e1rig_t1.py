@@ -114,21 +114,32 @@ def test_the_e1rig_static_argv_rules_accept_T1_exactly_as_they_accept_C0(tmp_pat
 
 
 @pytest.mark.parametrize("name", FULL_FAMILY)
-def test_RED_the_full_family_REFUSES_every_T1_flag_by_name(name):
+def test_RED_the_full_family_REFUSES_the_two_UNCROWNED_T1_flags_by_name_and_T1_ALONE(name):
+    """THE FLIP (MM 2026-11-07, H-R9-E1-T1H KEPT): this pin used to say the full family refuses ALL SIX T1 flags ("not crowned yet"). It now says what is
+    still true: the SHUFFLE control and the LAGS value are refused, and T1 ALONE (which FAILED its bar, H-R9-E1-T1) is refused by the bundle rule. The
+    admitted side (the four-flag T1h bundle) is pinned in test_launch_gate_r9f_t1h.py."""
     p = LG.PROFILES[name]
-    for argv in (T1, T1S, LG.set_flag(C0, "--r9-bev-warp-lags", ["0.5"])):
+    nr = lambda a: LG.set_flag(a, "--r9-perc-rig", None)                       # the E1 arm argvs carry the rig flag, which the full family refuses on its own (refcv8's entry)  # noqa: E731
+    bw = lambda rs: [x for x in rs if "bev-warp" in x]                         # only the T1 reasons: an E1 argv differs from a full-model argv in many other values  # noqa: E731
+    for argv in (T1S, LG.set_flag(C0, "--r9-bev-warp-lags", ["0.5"])):
         reasons, det = LG.forbidden_lever_reasons(p, argv)
         hit = [f for f in det["argv_hits"] if f in LG.E1_T1_FLAGS]
-        assert hit and f"{hit[0]} is passed, but it is T1, the temporal BEV warp" in " | ".join(reasons), reasons       # one reason per entry: the first hit is named
-    for f in LG.E1_T1_FLAGS:                                                    # every flag alone is refused, not only the pair
+        assert hit and f"{hit[0]} is passed, but it is " in " | ".join(reasons), reasons       # one reason per entry: the first hit is named
+    for f in ("--r9-bev-warp-lags", "--r9-bev-warp-shuffle"):                   # each uncrowned flag alone is refused
         argv = LG.set_flag(C0, f, [])
-        assert any(f"{f} is passed, but it is T1" in r for r in LG.forbidden_lever_reasons(p, argv)[0]), f
+        assert any(f"{f} is passed, but it is " in r for r in LG.forbidden_lever_reasons(p, argv)[0]), f
+    for f in ("--r9-bev-warp", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only"):   # the four bundle flags are NOT forbidden levers any more
+        assert not bw(LG.forbidden_lever_reasons(p, nr(LG.set_flag(C0, f, [])))[0]), f
+    # T1 ALONE: not a forbidden lever, but the bundle rule (required_values_when) refuses it
+    assert LG.forbidden_lever_reasons(p, nr(T1))[0] == []
+    r, _ = LG.required_on_reasons(p, nr(T1))
+    assert sum("--r9-bev-warp-" in x for x in r) == 3, r
     # classified, so no longer UNCLASSIFIED: the T1 flags are not a hit of that item, a sibling flag is
     it = next(i for i in p["open_items"] if i["id"] == "R9F-UNCLASSIFIED-LEVER")
     assert not set(LG.open_item_hits(it, T1S) or []) & set(LG.E1_T1_FLAGS)
     assert "--r9-bev-warp-v2" in LG.open_item_hits(it, LG.set_flag(T1, "--r9-bev-warp-v2", []))
     # control: the SAME refusal list on C0 holds nothing about T1
-    assert not any("temporal BEV warp" in r for r in LG.forbidden_lever_reasons(p, C0)[0])
+    assert not any("bev-warp" in r for r in LG.forbidden_lever_reasons(p, C0)[0])
 
 
 def test_every_profile_outside_e1rig_and_the_full_family_is_untouched_by_the_T1_flags():
