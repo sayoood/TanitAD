@@ -5215,7 +5215,9 @@ def _map_banded_loss(model, out: dict, batch: dict, device, extra: dict, with_me
     """refcv9 C1 (``--r9-map-banded``): the banded map term, WEIGHTED. Every input is REFUSED rather than skipped, as the 8-way
     term's are: no ``map_banded`` on the forward's perception output is the D-REFCV6-F3-WHITELIST class (the branch ran, its
     channels did not reach the loss). Targets are built on the batch's device from ``batch["map_fine"]`` (the 8-code 10 cm GT the
-    refcv8 head trains on). Returns ``w * L`` and emits one telemetry key per channel x band (``map_banded_loss_<ch>_<band>``)."""
+    refcv8 head trains on). Returns ``w * L`` and emits one telemetry key per channel x band (``map_banded_loss_<ch>_<band>``).
+    refcv9 K2 (``--r9-bev-warp-supervise-hist`` with the banded head): the per-band ``unobs`` the loss masks by becomes ``unobs_masks(lift_valid_now | hist_valid)``
+    (``bev_warp_flag.supervised_banded_unobs``) and one counter ``n_map_banded_hist_cells_<band>`` is logged; flag OFF: the emitted ``unobs`` itself, no counter."""
     br = model._map_hires
     mb = (out.get("perception") or {}).get("map_banded")
     if mb is None:
@@ -5235,6 +5237,11 @@ def _map_banded_loss(model, out: dict, batch: dict, device, extra: dict, with_me
         extra["n_map_hires_cells"] = 0.0
         return term
     sub = {"logits": [z.index_select(0, sel) for z in mb["logits"]], "unobs": [u.index_select(0, sel) for u in mb["unobs"]]}
+    _un_now = sub["unobs"]
+    sub["unobs"] = _bw.supervised_banded_unobs(model, out.get("perception") or {}, _un_now, sel, br.banded.geom)       # refcv9 K2 (T1h + banded): unobs_masks(lift_valid_now | hist_valid); OFF: the emitted list itself (bit-identical)
+    if sub["unobs"] is not _un_now:                                  # T1h ON only: per band, the coarse cells the history turned from unobserved to observed (a LIVE counter in the run's own log)
+        for _bn, _a, _b in zip(_mband.BAND_NAMES, _un_now, sub["unobs"]):
+            extra["n_map_banded_hist_cells_%s" % _bn] = float((_a & ~_b).sum())
     tg = _mband.build_banded_targets(batch["map_fine"].to(device).index_select(0, sel),
                                      x_max_m=float(br.cfg.x_max_m), y_half_m=float(br.cfg.y_half_m),
                                      near_m=float(br.cfg.banded_near_m))     # E1-NEAR20: the targets' bands = the BUILT head's (10 = the tip)
@@ -5282,9 +5289,7 @@ def _map_hires_loss(model, out: dict, batch: dict, device, extra: dict,
             "did not reach the loss (tap off, or the forward did not pass it "
             "through). This is the D-REFCV6-F3-WHITELIST class -- refusing rather "
             "than training a 10 cm head on nothing while config.json stamps it.")
-    if bool(getattr(model, _mbf.MODEL_ATTR, False)):          # refcv9 C1 (--r9-map-banded); OFF: never entered
-        if _bw.supervise_hist_on(model):                      # refcv9 T1h: the banded loss masks by the head's own `unobs`; the OR is not implemented there
-            raise SystemExit("[v3] \u26d4 --r9-bev-warp-supervise-hist with the banded map head: the OR is implemented in the 8-code 10 cm loss only")
+    if bool(getattr(model, _mbf.MODEL_ATTR, False)):          # refcv9 C1 (--r9-map-banded); OFF: never entered.  refcv9 K2: T1h's OR is taken INSIDE `_map_banded_loss` (`_bw.supervised_banded_unobs`)
         return _map_banded_loss(model, out, batch, device, extra, with_metrics)
     pout = out.get("perception") or {}
     if pout.get("map_hires_logits") is None or pout.get("map_hires_lift_valid") is None:

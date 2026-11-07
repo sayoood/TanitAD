@@ -964,12 +964,13 @@ class MapHiresBranch(nn.Module):
         hist = _bw.take_hist_valid() if (_bw is not None and getattr(_bw, "emit_hist", False)) else None
         if _bw is not None and getattr(_bw, "emit_hist", False) and hist is None:
             raise RuntimeError("[map-hires] --r9-bev-warp-supervise-hist is built but the lift hook recorded no hist_valid: the loss would silently lose its history mask")
-        if hist is not None and self.banded is not None:
-            raise ValueError("[map-hires] --r9-bev-warp-supervise-hist is not implemented for the banded head (its loss masks come from the head's own `unobs`): refusing")
         feats = self._run(self.encoder, bev)
         if self.banded is not None:
             map_feats = None if self.map_encoder is None else self._run(self.map_encoder, bev)      # refcv9 C2 (M3)
-            return self._forward_banded(feats, fmap_s8, grid, valid, near_source, bool(near_block_zeros), map_feats)
+            out_b = self._forward_banded(feats, fmap_s8, grid, valid, near_source, bool(near_block_zeros), map_feats)
+            if hist is not None:                                # refcv9 K2 (T1h + banded): the SAME [B, X4, Y4] bool, beside `map_banded`; the key is ABSENT otherwise (OFF: out_b is the tip's dict)
+                out_b["map_hires_hist_valid"] = hist
+            return out_b
         if near_block_zeros and self.near_refine is None:
             raise ValueError("near_block_zeros given to a branch with no near refine block")
         if self.near is None:

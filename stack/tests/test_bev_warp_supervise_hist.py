@@ -15,7 +15,7 @@ THE CLASS ("built, tested, and UNREACHABLE FROM ITS CALLER", CLAUDE.md 2026-09-1
   MUTATION    the OR line deleted from ``_map_hires_loss`` (source-level, in-process) => the LIVE check goes RED; the emission dropped between the forward and the loss => the loss REFUSES
   OFF         flag off => the loss dict, EVERY parameter gradient and the ``pout`` key set are bit-identical to ``_map_hires_loss`` WITHOUT the T1h lines (an in-process source variant)
   SHUFFLE     ``--r9-bev-warp-shuffle`` has the SAME supervision mask, while the history CONTENT differs (the control is a control)
-  GATE        a G-DVB entry (kind ``built``); the flag without ``--r9-bev-warp`` / with the banded head / with ``--no-map-lift-valid-mask`` is refused; the four-flag T1 set is ONE fact across the
+  GATE        a G-DVB entry (kind ``built``); the flag without ``--r9-bev-warp`` / with ``--no-map-lift-valid-mask`` is refused (K2: the banded head is ADMITTED -- tests/test_r9_k2_bandhist.py); the four-flag T1 set is ONE fact across the
               gate, both harnesses, the emitter and the trainer; refcv9-e1rig ADMITS the T1h argv, the full family REFUSES it; G-EVAL reads the loss-mask state off both builds
 """
 from __future__ import annotations
@@ -338,7 +338,8 @@ def test_the_hops_are_named_at_their_source_lines():
     assert loss_src.count("_bw.supervised_lift_valid(model, pout, lv, sel)") == 1
     assert loss_src.index("_bw.supervised_lift_valid(model, pout, lv, sel)") < loss_src.index("_mhr.map_hires_loss_row(") and \
         loss_src.index('if bool(getattr(model, "_map_lift_valid_mask", True))') < loss_src.index("_bw.supervised_lift_valid(")
-    assert loss_src.index("_bw.supervise_hist_on(model)") < loss_src.index("return _map_banded_loss("), "the banded dispatch REFUSES T1h before it can silently ignore it"
+    assert "_bw.supervise_hist_on(model)" not in loss_src and loss_src.count("return _map_banded_loss(") == 1, "K2: the banded dispatch no longer refuses T1h"
+    assert inspect.getsource(T._map_banded_loss).count("_bw.supervised_banded_unobs(") == 1, "K2: the banded loss takes the OR itself (tests/test_r9_k2_bandhist.py proves it reaches the gradient)"
     mh_src = inspect.getsource(H.MapHiresBranch.forward)
     assert mh_src.count("take_hist_valid()") == 1 and mh_src.count('out["map_hires_hist_valid"] = hist') == 1
     assert mh_src.index("bev = self.lift(") < mh_src.index("take_hist_valid()") < mh_src.index("feats = self._run(self.encoder, bev)")
@@ -375,8 +376,7 @@ def test_pin_args_REFUSES_the_flag_without_r9_bev_warp_and_the_dead_combinations
         BF.pin_args(FM._args(r9_bev_warp=False, r9_bev_warp_supervise_hist=True))
     with pytest.raises(SystemExit, match="dead flag"):
         BF.pin_args(FM._args(r9_bev_warp=False, r9_bev_warp_shuffle=True, r9_bev_warp_supervise_hist=True))
-    with pytest.raises(SystemExit, match="--r9-map-banded"):
-        BF.pin_args(FM._args(r9_bev_warp_supervise_hist=True, r9_map_banded=True))
+    BF.pin_args(FM._args(r9_bev_warp_supervise_hist=True, r9_map_banded=True))       # K2: accepted -- the banded loss ORs hist_valid into its `unobs` (tests/test_r9_k2_bandhist.py)
     with pytest.raises(SystemExit, match="--no-map-lift-valid-mask"):
         BF.pin_args(FM._args(r9_bev_warp_supervise_hist=True, map_lift_valid_mask=False))
     BF.pin_args(FM._args(r9_bev_warp_supervise_hist=True))                           # accepted: T1 + the flag

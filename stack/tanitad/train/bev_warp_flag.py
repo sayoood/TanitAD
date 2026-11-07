@@ -28,6 +28,19 @@ cells history could fix (0-5 m: 94.7 % unobserved now, 42 % covered only by warp
   -> ``refc_v3_train._map_hires_loss`` (``lv = _bw.supervised_lift_valid(model, pout, lv, sel)``) -> ``map_hires_loss_row(lift_valid_025=lv)`` -> the CE -> ``.backward()``.
 OFF: no key is emitted, ``supervised_lift_valid`` returns ``lv`` itself, and the loss is bit-identical.
 
+T1h + the BANDED map head (K2, ``--r9-bev-warp-supervise-hist`` WITH ``--r9-map-banded``; refcv9 E1 follow-on): the banded loss never reads ``map_hires_lift_valid``; it masks each band by the head's
+``unobs`` (``map_banded.unobs_masks(lift_valid)``: near = the 0.25 m cell its 10 cm centre falls in (nearest-exact), mid = the lift cell itself, far = observed only when ALL FOUR of its 0.25 m cells
+are), ``supervised = seen & ~unobs``, and the same ``unobs`` also gates the max-entropy term.  ``hist_valid`` is at the SAME 0.25 m lift grid ([B, X4, Y4]), so the OR is taken THERE, exactly where
+T1h defines it, and the head's OWN resampling then does the rest: ``unobs_loss = unobs_masks(lift_valid_now | hist_valid)`` (``supervised_banded_unobs``).  Consequences, all by construction: the
+near band's supervised cells are the ones T1h's 10 cm loss supervises (the same nearest-exact upsample of the same 0.25 m OR); mid is the OR itself; a far 0.5 m cell is supervised when every one of
+its four lift cells is seen NOW or in HISTORY (the head's conservative ALL rule, widened -- never "any one cell"); the supervised set only GROWS and the max-entropy set only SHRINKS by the same
+cells (a cell the loss now trusts is no longer also pulled to p = 0.5).  The head's EMITTED ``unobs`` (``perception.map_banded["unobs"]``: the plan wires and the eval dumps read it) is NOT changed --
+the OR is loss-side only.  REACHABILITY, one hop per line:
+  argv ``--r9-bev-warp-supervise-hist`` + ``--r9-map-banded`` -> ``pin_args`` (no banded refusal any more) -> ``attach`` (``fuse.emit_hist``; ``BevWarpState.supervise_hist``)
+  -> ``BevWarpFuse.lift_hook`` (``self._hist_valid``) -> ``MapHiresBranch.forward`` (``take_hist_valid()`` -> ``out_b["map_hires_hist_valid"]`` beside ``map_banded``)
+  -> ``RefCV3Model._bev_hook`` (``pout["map_hires_hist_valid"]``) -> ``refc_v3_train._map_banded_loss`` (``_bw.supervised_banded_unobs``) -> ``banded_map_loss`` (``seen & ~unobs``, the max-entropy mask) -> ``.backward()``.
+OFF: ``supervised_banded_unobs`` returns the emitted list ITSELF (bit-identical), no counter is logged.
+
 T1h-INIT (``--r9-bev-warp-fuse-init {rezero,identity}``, default ``rezero`` = today, bit-identical; REQUIRES ``--r9-bev-warp`` when not the default): MEASURED by the MM on E1 arm T1 --
 the trained 1x1 fuse stayed at its PyTorch default init and the gate random-walked (a ReZero DEAD START: random W -> no consistent gate push -> gate ~ 0 -> W's gradient ~ gate ~ 0).
 ``identity`` writes the COPY init ``W[c, p*(C+1)+c] = 1/P`` (``BevWarpFuse.init_identity_``: fuse(x) = the mean of the lags' warped past BEV) at FRESH BUILD, inside ``attach``, with
@@ -175,8 +188,7 @@ def pin_args(args) -> None:
     if _mof.is_on(args):
         bad.append("a --r8-train-only-map / --r9-train-only freeze is declared: the NEW fuse would stay at its zero gate")
     if bool(getattr(args, SUP_DEST, False)):
-        if bool(getattr(args, "r9_map_banded", False)):
-            bad.append("%s with --r9-map-banded: the banded loss masks cells by the head's own `unobs`, where this OR is not implemented (it would silently do nothing)" % SUP_FLAG)
+        # K2: `--r9-map-banded` is ADMITTED now -- `supervised_banded_unobs` ORs hist_valid into the banded loss's `unobs` (the refusal that stood here is gone; the other refusals stay)
         if getattr(args, "map_lift_valid_mask", True) is False:
             bad.append("%s with --no-map-lift-valid-mask: every labelled cell is already supervised, the OR has nothing to add (a dead flag)" % SUP_FLAG)
     if bad:
@@ -278,6 +290,32 @@ def supervised_lift_valid(model, pout: dict, lv, sel):
     return lv | hv.index_select(0, sel)
 
 
+def supervised_banded_unobs(model, pout: dict, unobs: list, sel, geom: tuple) -> list:
+    """K2 (T1h + the banded head): the banded loss's per-band ``unobs`` under T1h.  ``unobs`` = the head's EMITTED masks, already ``index_select(0, sel)`` (``[near, mid, far]``, True = NOT
+    observed); ``pout`` = the forward's perception output (``map_hires_lift_valid`` and ``map_hires_hist_valid``, both ``[B, X4, Y4]`` bool at the 0.25 m lift grid); ``geom`` = the BUILT head's
+    band geometry.  -> ``map_banded.unobs_masks(lift_valid_now | hist_valid, geom)``: the OR at the lift grid (where T1h's own OR is defined), then the head's OWN resampling (near: nearest-exact to
+    0.10 m; mid: the cell itself; far: observed only when ALL FOUR 0.25 m cells are).  OFF (no T1h built): returns ``unobs`` ITSELF (the same list: bit-identical).  ON with no
+    ``map_hires_hist_valid`` / ``map_hires_lift_valid`` in the forward's output REFUSES (never silently the un-widened mask).  Two runtime guards: the loss-side recomputation WITHOUT the history
+    must equal the head's emitted ``unobs`` exactly (else the OR is not 'in addition to what is supervised today'), and the widened mask must be a subset of it (the OR only ever ADDS observed cells)."""
+    if not supervise_hist_on(model):
+        return unobs
+    hv, lv = pout.get(HIST_KEY), pout.get("map_hires_lift_valid")
+    if hv is None or lv is None:
+        raise SystemExit("[bev-warp] %s is built with the banded head but the forward's perception output carries no `%s` / `map_hires_lift_valid`: the banded loss would silently supervise only the "
+                         "cells the camera reaches NOW (MapHiresBranch.forward / bev_hook did not emit them)" % (SUP_FLAG, HIST_KEY))
+    lv, hv = lv.index_select(0, sel), hv.index_select(0, sel)
+    if tuple(lv.shape) != tuple(hv.shape) or lv.dtype != torch.bool or hv.dtype != torch.bool:
+        raise SystemExit("[bev-warp] %s: lift_valid %s %s and hist_valid %s %s must be the same [B, X4, Y4] bool grid" % (SUP_FLAG, tuple(lv.shape), lv.dtype, tuple(hv.shape), hv.dtype))
+    from tanitad.models import map_banded as MB
+    base, wide = MB.unobs_masks(lv, geom), MB.unobs_masks(lv | hv, geom)
+    for g, e, b, w in zip(geom, unobs, base, wide):
+        if not torch.equal(e, b):
+            raise SystemExit("[bev-warp] %s: band %s -- the head's emitted `unobs` is not unobs_masks(map_hires_lift_valid): the OR would not be 'in addition to what is supervised today'" % (SUP_FLAG, g.name))
+        if bool((w & ~e).any()):
+            raise SystemExit("[bev-warp] %s: band %s -- the widened mask UN-observes a cell the head observes (the OR may only add cells)" % (SUP_FLAG, g.name))
+    return wide
+
+
 def stage(model, batch: dict, device) -> None:
     """Called by ``compute_losses_perc_rig`` AND by ``compute_losses_v3`` (the FULL model) BEFORE ``model(...)``.  Reads ONLY ``BATCH_KEYS``.  Runs the past frames through the trunk's stride-8
     tap (``no_grad``) and stages ``(s8_past, T, has)`` on the fuse for the lift hook.  OFF (no fuse built): nothing.  A batch without the keys while
@@ -328,7 +366,10 @@ def stamp(model, args) -> dict | None:
             **({"supervise_hist": {"flag": SUP_FLAG, "rule": "map loss lift-valid mask = lift_valid_now OR hist_valid (T1h)",
                                    "hist_valid": "union over lags of the warp-valid mask (inb & warped past `valid` & has): GEOMETRY ONLY, content-independent (shuffle keeps it)",
                                    "emitted_as": "pout[%r] from MapHiresBranch.forward" % HIST_KEY,
-                                   "sites": "refc_v3_train._map_hires_loss only; the legacy 0.5 m map_valid sites carry no mask under --map-hires (map_hires_pool)"}}
+                                   "sites": "refc_v3_train._map_hires_loss only; the legacy 0.5 m map_valid sites carry no mask under --map-hires (map_hires_pool)",
+                                   **({"banded": "K2: refc_v3_train._map_banded_loss -- the per-band `unobs` = unobs_masks(lift_valid_now OR hist_valid) at the 0.25 m lift grid (near nearest-exact, mid identity, "
+                                                 "far ALL FOUR cells); supervision grows and the max-entropy set shrinks by the same cells; the emitted `unobs` is unchanged"}
+                                      if getattr(getattr(model, "_map_hires", None), "banded", None) is not None else {})}}
                if st.supervise_hist else {}),
             **({"fill_only": {"flag": FILL_FLAG, "rule": "out = bev + gate * fuse(x) * (1 - valid_now); valid_now = the lift's own valid.any(dim=1) at the fuse's resolution",
                               "effect": "a cell the camera sees NOW is exactly the lift's BEV, whatever the gate"}} if fuse.fill_only else {}),
