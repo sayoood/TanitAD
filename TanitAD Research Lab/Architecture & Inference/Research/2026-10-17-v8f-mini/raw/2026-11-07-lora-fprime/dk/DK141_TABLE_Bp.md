@@ -1,0 +1,42 @@
+# dk141 table (descriptive; decides nothing)
+
+Tier: T1-class open loop (self-action: the arm is conditioned on its OWN held upper-layer outputs, never on GT); the lead's logged future does not react, so 'closes on the lead' means 'closes on where the lead was'
+Estimator: taniteval.ci.episode_cluster_bootstrap / paired_episode_cluster_bootstrap, B 2000, seed 0, over EPISODES; delta = a - b; answers 'another draw of EPISODES' only
+Lead agent layer: lead track = published PhysicalAI-AV `obstacle.offline` via taniteval/tools/build_lead_block_b1.py (B1 per-frame block, 147 v7.2 EVAL clips); NOT the augmented v7.x label release; NOT the v9 scalar lead labels of lead_eval139.npz
+
+## k10: 2.0 s horizon  (window states {'LEAD': 743, 'NO_LEAD': 561, 'NOT_STRAIGHT': 937, 'NO_LABEL': 158}; speed proof max 2.62e-05 m/s)
+
+| run | n hw | headway m | n tg | time gap s | n TTC (closing) | min-TTC s | TTC<1.5 s: n, rate | tg<1.0 s rate | LEAD-VIOL at-risk | progress |
+|---|---|---|---|---|---|---|---|---|---|---|
+| human | 719 | 27.46 [23.45, 31.49] | 653 | 4.26 [3.32, 5.43] | 719 (365) | 22.75 [21.01, 24.36] | 719, 0.003 [0.000, 0.007] | 0.073 [0.013, 0.156] | 0 by construction | 1 |
+| Bp0 | 685 | 28.13 [24.36, 32.27] | 659 | 4.15 [3.34, 5.14] | 685 (417) | 20.54 [18.60, 22.40] | 685, 0.009 [0.002, 0.017] | 0.082 [0.022, 0.163] | 6/605 = 0.99 % | 0.981 |
+| Bp1 | 707 | 27.61 [23.78, 31.80] | 662 | 4.20 [3.34, 5.34] | 707 (386) | 21.27 [19.29, 23.13] | 707, 0.007 [0.001, 0.015] | 0.080 [0.022, 0.156] | 5/605 = 0.83 % | 0.986 |
+| M0 | 705 | 27.52 [23.73, 31.62] | 661 | 4.14 [3.32, 5.16] | 705 (413) | 20.61 [18.67, 22.44] | 705, 0.009 [0.002, 0.017] | 0.080 [0.022, 0.156] | 5/605 = 0.83 % | 0.980 |
+| P10 | 723 | 27.41 [23.66, 31.59] | 661 | 4.22 [3.33, 5.41] | 723 (354) | 22.55 [20.80, 24.22] | 723, 0.008 [0.002, 0.017] | 0.080 [0.022, 0.157] | 5/605 = 0.83 % | 0.978 |
+
+Paired deltas a - b (delta [lo, hi]; sep = CI excludes 0; positive = MORE gap/time/TTC, or MORE violations on the rate rows):
+
+| a - b | headway m | time gap s | min-TTC s | TTC<1.5 s rate | tg<1.0 s rate | LEAD-VIOL at-risk |
+|---|---|---|---|---|---|---|
+| Bp0 - P10 | -0.10 [-0.30, +0.15] ns | -0.004 [-0.030, +0.031] ns | -1.60 [-2.50, -0.80] sep | +0.000 [-0.006, +0.006] ns | +0.002 [-0.003, +0.007] ns | +0.0017 [-0.0035, +0.0077] ns |
+| Bp1 - P10 | -0.05 [-0.25, +0.21] ns | +0.016 [-0.015, +0.057] ns | -1.12 [-1.87, -0.36] sep | -0.001 [-0.006, +0.003] ns | +0.000 [-0.004, +0.004] ns | +0.0000 [-0.0050, +0.0049] ns |
+| Bp0 - M0 | +0.13 [+0.03, +0.23] sep | +0.009 [-0.009, +0.029] ns | +0.20 [-0.21, +0.64] ns | +0.000 [+0.000, +0.000] ns | +0.002 [+0.000, +0.005] ns | +0.0017 [+0.0000, +0.0054] ns |
+
+## k30: 6.0 s horizon  (window states {'LEAD': 743, 'NO_LEAD': 552, 'NOT_STRAIGHT': 931, 'NO_LABEL': 173}; speed proof max 2.62e-05 m/s)
+
+| run | n hw | headway m | n tg | time gap s | n TTC (closing) | min-TTC s | TTC<1.5 s: n, rate | tg<1.0 s rate | LEAD-VIOL at-risk | progress |
+|---|---|---|---|---|---|---|---|---|---|---|
+| human | 725 | 25.66 [21.63, 29.79] | 659 | 4.00 [3.10, 5.08] | 725 (447) | 19.79 [17.41, 21.94] | 725, 0.004 [0.000, 0.010] | 0.097 [0.031, 0.176] | 0 by construction | 1 |
+| Bp0 | 720 | 25.73 [22.00, 30.00] | 663 | 4.04 [3.09, 5.21] | 720 (462) | 19.62 [17.55, 21.60] | 720, 0.040 [0.020, 0.064] | 0.128 [0.063, 0.208] | 27/595 = 4.54 % | 0.862 |
+| Bp1 | 730 | 25.77 [21.74, 30.11] | 667 | 4.00 [3.10, 5.22] | 730 (437) | 20.04 [17.80, 21.99] | 730, 0.051 [0.025, 0.086] | 0.132 [0.063, 0.215] | 30/595 = 5.04 % | 0.911 |
+| M0 | 722 | 25.62 [21.84, 29.74] | 665 | 4.02 [3.10, 5.27] | 722 (458) | 19.40 [17.31, 21.34] | 722, 0.039 [0.018, 0.065] | 0.120 [0.056, 0.201] | 21/595 = 3.53 % | 0.863 |
+| P10 | 728 | 25.12 [21.21, 29.50] | 663 | 3.83 [2.96, 4.97] | 728 (411) | 19.95 [17.71, 22.02] | 728, 0.088 [0.051, 0.132] | 0.161 [0.092, 0.243] | 48/595 = 8.07 % | 0.938 |
+
+Paired deltas a - b (delta [lo, hi]; sep = CI excludes 0; positive = MORE gap/time/TTC, or MORE violations on the rate rows):
+
+| a - b | headway m | time gap s | min-TTC s | TTC<1.5 s rate | tg<1.0 s rate | LEAD-VIOL at-risk |
+|---|---|---|---|---|---|---|
+| Bp0 - P10 | +0.74 [+0.25, +1.28] sep | +0.202 [+0.052, +0.382] sep | -0.23 [-1.39, +0.95] ns | -0.049 [-0.079, -0.023] sep | -0.033 [-0.064, -0.006] sep | -0.0353 [-0.0671, -0.0067] sep |
+| Bp1 - P10 | +0.77 [+0.29, +1.29] sep | +0.170 [+0.034, +0.322] sep | +0.08 [-0.85, +1.06] ns | -0.037 [-0.065, -0.010] sep | -0.029 [-0.056, -0.003] sep | -0.0303 [-0.0595, -0.0035] sep |
+| Bp0 - M0 | +0.23 [+0.06, +0.41] sep | +0.016 [-0.009, +0.043] ns | +0.25 [-0.22, +0.72] ns | +0.001 [-0.005, +0.010] ns | +0.007 [-0.003, +0.019] ns | +0.0101 [+0.0000, +0.0218] ns |
+
