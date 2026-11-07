@@ -3580,6 +3580,94 @@ def wsd_smoke_rewrite(base: list[str], steps: int, log_every: int) -> tuple[list
     return out, dep
 
 
+# --------------------------------------------------------------------------------------------- #
+# refcv9 W-COST (K2-WCOST): G-LIVE REFUSES a W-MAP-1 weight that is not 0.1 / R of ITS OWN smoke    #
+# --------------------------------------------------------------------------------------------- #
+#: REFCV9_DESIGN 2.7 W-COST fixes `--w-r8-drivable` BY RULE: w = 0.1 / R, R = the step-0 (first LABELLED step) ratio critic-BCE / trajectory-loss
+#: that the trainer prints once (refc_v3_train.py, `[v3] refcv9 W-COST at step N: critic-BCE / trajectory-loss = R (...)`, `plan_wires_flag.wcost_ratio`).
+#: Until this check NOTHING in the gate read that line, so a token could be minted on the PROVISIONAL placeholder. ENTERED only for the full family
+#: AND an argv carrying the critic (K0 and every other profile: not entered, no shim installed, no evidence key -- byte-identical behaviour).
+#: WHY THE LINE, AND WHERE IT IS READ: G-LIVE runs the trainer IN PROCESS (`run_smoke` -> `T.main`), so its prints go to the gate's own stdout and are
+#: kept nowhere. `run_smoke` therefore installs `wcost_print_shim` as `refc_v3_train.print` (a pass-through that records the W-COST line and prints it
+#: unchanged; `_Patcher` restores it) -- the line is the TRAINER's, not a recomputation. There is no second log path.
+#: TOL = 0.05 (RELATIVE, on the weighted ratio w * R / 0.1). R does NOT depend on `--w-r8-drivable`: `r8_drv` is the UNWEIGHTED BCE (refcv8_train.py
+#: `tele.update(r8_drv=ld.detach())`; the weight multiplies it separately in `total`), and before the first labelled step the BCE is an ATTACHED ZERO
+#: (`drivable_bce`: `logit.sum() * 0.0`), so w scales a zero gradient and no update before that step can depend on w. `smoke_argv` rewrites only `--steps` /
+#: log-cadence / step-valued flags (never `--seed` / `--batch`), and the sampler order is seed-set, so two smokes of the same argv read the same R up to
+#: kernel non-determinism and (across hosts, fp32 CPU vs bf16 CUDA) a few 1e-3 relative -- UNVERIFIED as a number: no pair of W-COST lines exists on disk.
+#: 0.05 covers the 4-significant-digit rounding of w (<= 5e-4), the printed R's 4 decimals, and that numeric spread, with margin; it cannot admit the
+#: placeholder when R is far from 1 (the placeholder 0.1 has w * R / 0.1 = R, so it passes only for R in [0.95, 1.05], where 0.1 IS the rule's value to
+#: within 5 %). The edge is INCLUSIVE (|w * R / 0.1 - 1| == TOL passes; 1e-12 float slack).
+_R9F_WCOST_PROFILES = ("refcv9-e2", "refcv9-full", "refcv9-full-d1")
+WCOST_TARGET, WCOST_TOL, WCOST_EDGE_SLACK = 0.1, 0.05, 1e-12
+WCOST_CRITIC_FLAG, WCOST_W_FLAG = "--r8-critic-drivable", "--w-r8-drivable"
+WCOST_LINE_KEY = "refcv9 W-COST at step"
+WCOST_LINE_RE = re.compile(r"refcv9 W-COST at step (\d+): critic-BCE / trajectory-loss = (\S+)")
+
+
+def wcost_in_scope(prof: dict, launch_argv: list[str]) -> bool:
+    """The W-COST check is entered ONLY for the full family (refcv9-e2 / refcv9-full / refcv9-full-d1) AND an argv carrying the drivable critic."""
+    return prof.get("name") in _R9F_WCOST_PROFILES and has_flag(launch_argv, WCOST_CRITIC_FLAG)
+
+
+def wcost_print_shim(sink: list[str]) -> Callable[..., Any]:
+    """A pass-through `print` for the trainer module: records every line holding the W-COST key into `sink`, then prints it UNCHANGED (builtins.print)."""
+    import builtins
+
+    def _print(*a: Any, **k: Any) -> Any:
+        try:
+            s = " ".join(str(x) for x in a)
+            if WCOST_LINE_KEY in s:
+                sink.append(s)
+        except Exception:                                 # noqa: BLE001 -- an observer never breaks the trainer's own print
+            pass
+        return builtins.print(*a, **k)
+    return _print
+
+
+def wcost_weight_text(ratio: float) -> str:
+    """The weight the rule writes for R, exactly as `r9_e2_make_argv.w_from_ratio` + the composer's `repr(float(w))` write it (4 significant digits)."""
+    return repr(float("%.4g" % (WCOST_TARGET / ratio)))
+
+
+def wcost_reasons(prof: dict, launch_argv: list[str], lines: list[str] | None) -> tuple[list[str], dict]:
+    """G-LIVE W-COST: `--w-r8-drivable` must equal 0.1 / R, R = the W-COST ratio the trainer printed at the first labelled step of THIS smoke
+    (`lines` = what `wcost_print_shim` recorded; None / [] = the critic never saw a labelled step). Not entered -> ([], {})."""
+    if not wcost_in_scope(prof, launch_argv):
+        return [], {}
+    det: dict[str, Any] = {"on": True, "target": WCOST_TARGET, "tol": WCOST_TOL, "n_lines": len(lines or []), "lines": list(lines or [])[:3]}
+    if not lines:
+        return [f"G-LIVE W-COST: the critic never saw a labelled step in the smoke (no '[v3] {WCOST_LINE_KEY} N: critic-BCE / trajectory-loss = R' line) -- "
+                f"R is unmeasurable, so {WCOST_W_FLAG} cannot be held to 0.1 / R; a missing reading is a FAIL, never a pass"], det
+    m = WCOST_LINE_RE.search(lines[0])
+    step, ratio = None, None
+    if m is not None:
+        try:
+            step, ratio = int(m.group(1)), float(m.group(2))
+        except ValueError:
+            step, ratio = None, None
+    if ratio is None or not (ratio == ratio and 0.0 < ratio < float("inf")):
+        return [f"G-LIVE W-COST: the smoke's W-COST line carries no finite positive ratio R (line: {lines[0][:200]!r}) -- {WCOST_W_FLAG} cannot be held to 0.1 / R"], det
+    det.update(step=step, R=ratio)
+    want = wcost_weight_text(ratio)
+    det["w_want"] = want
+    wv = flag_values(launch_argv, WCOST_W_FLAG)
+    try:
+        w = float(wv[0]) if wv else None
+    except ValueError:
+        w = None
+    if w is None or not (w == w and 0.0 < w < float("inf")):
+        return [f"G-LIVE W-COST: {WCOST_W_FLAG} is absent or not a finite positive number in the argv ({wv!r}); the critic would be built and never supervised -- "
+                f"the smoke's own R = {ratio:.4g} (step {step}) gives {WCOST_W_FLAG} {want} (= 0.1 / R at 4 significant digits)"], det
+    dev = abs(w * ratio / WCOST_TARGET - 1.0)
+    det.update(w_argv=w, weighted_ratio=w * ratio, deviation=dev)
+    if dev > WCOST_TOL + WCOST_EDGE_SLACK:
+        return [f"G-LIVE W-COST: {WCOST_W_FLAG} {wv[0]} is not 0.1 / R: the smoke's OWN W-COST ratio is R = {ratio:.4g} (critic-BCE / trajectory-loss at step {step}), "
+                f"so the weighted critic BCE is {w * ratio:.4g} x the trajectory loss, not {WCOST_TARGET:g} (|w*R/0.1 - 1| = {dev:.3g} > tol {WCOST_TOL:g}) -- "
+                f"write {WCOST_W_FLAG} {want} (= 0.1 / R at 4 significant digits; r9_e2_make_argv.py --w-cost-ratio {ratio:.4g})"], det
+    return [], det
+
+
 def full_profile_live_reasons(prof: dict, launch_argv: list[str], run_argv: list[str], rows: list[dict], cfg: dict | None,
                               run_dir: Path | None = None) -> tuple[list[str], dict]:
     """The refcv9-full family's rows on the SMOKE (inert for a profile with neither key):
@@ -5838,6 +5926,9 @@ def run_smoke(ctx: Ctx, T, argv: list[str], *, snapshot: str) -> dict:
     # G-EVAL crashed rebuilding from the smoke's record. The smoke runs as a launch would: the
     # process argv IS the trainer argv while T.main runs (restored by `pat.restore()`).
     pat.set(sys, "argv", [str(getattr(T, "__file__", None) or "refc_v3_train.py")] + list(argv))
+    if wcost_in_scope(ctx.prof, ctx.argv):                 # refcv9 full family + the drivable critic ONLY: record the trainer's own W-COST line (nothing installed elsewhere)
+        rec["wcost_lines"] = []
+        pat.set(T, "print", wcost_print_shim(rec["wcost_lines"]))
     t0 = time.time()
     try:
         T.main(list(argv))
@@ -9091,6 +9182,10 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
         fpr_, fpd_ = full_profile_live_reasons(ctx.prof, ctx.argv, argv1, train_rows(rows1), cfg1, run_dir)   # refcv9-full family
         det["full_profile"] = fpd_
         reasons += fpr_
+        wcr_, wcd_ = wcost_reasons(ctx.prof, ctx.argv, run1.get("wcost_lines"))      # refcv9 W-COST (K2-WCOST): --w-r8-drivable == 0.1 / R of THIS smoke; {} when not entered
+        if wcd_:
+            det["wcost"] = wcd_
+        reasons += wcr_
         # SPEC_REFCV7 7: the ceiling mask at inference only, and the tau file in config.json
         cr, cd = judge_ceiling(ctx.prof, ctx.argv, run1.get("ceiling_calls", []),
                                eval_in_argv=has_flag(ctx.argv, "--eval-cache"))

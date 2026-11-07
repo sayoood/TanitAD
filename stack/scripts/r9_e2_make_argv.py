@@ -20,7 +20,12 @@ smoke, never from eval". The trainer prints ``[v3] refcv9 W-COST at step N: crit
 weight is ``0.1 / R`` (``w_from_ratio``). The composer therefore takes the weight as a REQUIRED argument; a file written with ``--provisional`` is NOT the argv a token may bind.
 
   python r9_e2_make_argv.py --variant K2 --k0 <r9e2_K0.argv.json> --w-r8-drivable 0.1 --provisional --write <r9e2_K2.argv.json>
+  python r9_e2_make_argv.py --variant K2 --k0 <r9e2_K0.argv.json> --w-cost-ratio R --w-cost-source <the explore smoke's log path> --write <r9e2_K2.argv.json>
   python r9_e2_make_argv.py --check-k0 --base <refcv8-r101-s0.argv.json> --k0 <r9e2_K0.argv.json>
+
+K2-WCOST: the argv json records WHERE its weight came from, at the top level: ``w_cost_ratio`` (R) + ``w_cost_source`` (the smoke log path) with ``--w-cost-ratio``, and
+``w_cost: "provisional"`` without it. The stamp is applied by ``stamp_w_cost`` in ``main`` only -- ``variant_doc`` (and so the committed K2 files' byte-equal regeneration) and
+``regen_k0`` (K0) are untouched. The GATE does not trust the stamp: G-LIVE (``launch_gate.wcost_reasons``) holds ``--w-r8-drivable`` to 0.1 / R of ITS OWN smoke.
 """
 from __future__ import annotations
 
@@ -111,6 +116,23 @@ def w_from_ratio(ratio: float) -> float:
     return float("%.4g" % (W_COST_TARGET / ratio))
 
 
+def stamp_w_cost(rec: dict, ratio: float | None, source: str | None) -> dict:
+    """K2-WCOST: record where ``--w-r8-drivable`` came from, at the top level of the argv json. ``ratio`` given -> ``w_cost_ratio`` (R) + ``w_cost_source`` (the smoke log path the
+    W-COST line was read from; REQUIRED, a measured weight with no artifact path is not quotable); not given -> ``w_cost: "provisional"``. Mutates and returns ``rec``."""
+    if ratio is None:
+        if source is not None:
+            raise SystemExit("[r9-e2-argv] --w-cost-source needs --w-cost-ratio (a source for a weight that is not a measurement)")
+        rec["w_cost"] = "provisional"
+        return rec
+    if not (ratio == ratio and 0.0 < ratio < float("inf")):
+        raise SystemExit("[r9-e2-argv] the W-COST ratio %r must be finite and > 0" % (ratio,))
+    if not (isinstance(source, str) and source.strip()):
+        raise SystemExit("[r9-e2-argv] --w-cost-ratio needs --w-cost-source <the smoke log path the W-COST line was read from>")
+    rec["w_cost_ratio"] = float(ratio)
+    rec["w_cost_source"] = source
+    return rec
+
+
 def _check_k0(k0_doc: dict) -> list:
     if k0_doc.get("arm") != "r9e2_K0" or k0_doc.get("profile") != "refcv9-e2":
         raise SystemExit("[r9-e2-argv] --k0 must be r9e2_K0 (profile refcv9-e2), got %r / %r" % (k0_doc.get("arm"), k0_doc.get("profile")))
@@ -189,6 +211,7 @@ def main(argv=None) -> int:
     g = ap.add_mutually_exclusive_group()
     g.add_argument("--w-r8-drivable", type=float, help="W-MAP-1 critic BCE weight (W-COST: 0.1 / the step-0 critic-BCE / trajectory-loss ratio)")
     g.add_argument("--w-cost-ratio", type=float, help="the explore smoke's printed W-COST ratio R; the weight written is 0.1 / R (4 significant digits)")
+    ap.add_argument("--w-cost-source", default=None, help="with --w-cost-ratio: the smoke log path the W-COST line was read from (stamped as w_cost_source)")
     ap.add_argument("--provisional", action="store_true", help="mark the weight PROVISIONAL (a smoke-only argv: no W-COST reading exists yet)")
     ap.add_argument("--out", default=None)
     ap.add_argument("--write")
@@ -209,7 +232,8 @@ def main(argv=None) -> int:
         w, src = w_from_ratio(a.w_cost_ratio), "0.1 / %g (--w-cost-ratio: the K2 explore smoke's W-COST line)" % a.w_cost_ratio
     else:
         w, src = float(a.w_r8_drivable), ("operator-supplied PROVISIONAL placeholder (no W-COST reading exists yet)" if a.provisional else "operator-supplied")
-    write(a.write, variant_doc(k0_doc, k0_bytes, a.variant, w, provisional=bool(a.provisional) and a.w_cost_ratio is None, w_source=src, out=a.out))
+    rec = variant_doc(k0_doc, k0_bytes, a.variant, w, provisional=bool(a.provisional) and a.w_cost_ratio is None, w_source=src, out=a.out)
+    write(a.write, stamp_w_cost(rec, a.w_cost_ratio, a.w_cost_source))
     print("wrote %s" % a.write)
     return 0
 
