@@ -132,6 +132,19 @@ exhausted in ~1.5 days (Oct 4–5) and the week before (Sep 26–27) — **two p
    is **parked as a handoff file and costs zero tokens**.
 
 
+## ⛔ BINDING — DELETE WHAT IS NOT NEEDED, AUTOMATICALLY (PI, 2026-11-07)
+
+**PI, verbatim:** *"add in the rules for all agents and sessions that not needed data or tem or copires automaticalyy must be deleted to avoid running regularay out of disk space"*
+
+**Why (MEASURED 2026-11-07):** C: 1.6 GB, E: 0.98 GB and F: 2.1 GB free at the same time. A box-2 pull needed 2 GB, and one session's old scratch copies held 2.3 GB of C:.
+
+1. **Every agent and session deletes its own temporary data when nothing needs it any more**, at the end of the job that made it, not later. That covers scratch exports and tarballs, test `--basetemp` folders, pulled copies whose source still exists (box 2, a pod, HF, git), mid-run checkpoints of an analysis that finished, landed holds, and `.before_*` backups once the change is landed and verified.
+2. ⛔ **Never delete the ONLY copy of anything.** Before a delete, the data is either re-creatable (a git export, or a pulled copy whose source you have just checked still exists) or BANKED (landed and verified by `ls-remote`, or on HF and verified by sha256). If it is not banked, bank it first, then delete.
+3. ⛔ **Never delete what another session or agent owns or a running job uses.** Check the process list and the live chain scripts first. Never delete `Keys.txt`, git objects or refs, registers, cards, results, or the PI's own files.
+4. **Delete by literal absolute path** (or `"${VAR:?}"`), never through a bare variable. Log every deletion (path, size) in the handoff or `LOOP_STATE`.
+5. **Daily sweep:** with the morning token meter, the Master Mind checks free space on C:, E:, F: and box 2's D:. A drive below 5 GB is swept of its own temporary data under rules 1 to 4.
+* This replaces the "move aside, never delete" default for temporary data and copies. For data that is the only copy, nothing changes: it is never deleted.
+
 ## ⭐⭐ PROGRAMME REDESIGN (PI, 2026-08-22) — READ THESE TWO FILES FIRST
 
 **`Project Steering/TANITAD_PROGRAMME.md` is the CONSTITUTION** — the 8 products,

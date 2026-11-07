@@ -58,6 +58,12 @@ and reliably stranded the work. This standard replaces it.
       event; never a loop of check-in tool calls.
    d. HAND-BACK <= 300 WORDS + file paths. The full report lives in your package.
 
+7. DELETE YOUR OWN TEMP DATA (PI, 2026-11-07, binding). When your job ends, delete the temporary
+   files and copies YOU created that nothing needs: scratch exports, test folders, pulled copies
+   whose source still exists, mid-run checkpoints. NEVER delete the only copy of anything (bank it
+   first), anything another agent or a running job uses, or anything you did not create. Delete by
+   literal absolute path, and list each deletion (path, size) in your manifest.
+
 ## ⛔ Research banking (binding, 2026-08-18)
 
 **Cite a paper ⇒ bank the paper.** `python tools/kb_add.py <arxiv-id> --tag <topic> --cited-by
