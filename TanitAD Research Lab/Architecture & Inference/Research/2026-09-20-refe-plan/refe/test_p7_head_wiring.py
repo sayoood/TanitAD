@@ -72,7 +72,8 @@ P6_ARGS = ("--backbone vitl16 --targets /w/train_grow --images /w/pix --calib /w
            "--labeller online --label-chunks 2 --epochs 25 --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --tf32 --compile --workers 2 "
            "--log-every 1 --ckpt-every-min 20 --out /w/run --resume")
 P7_ARGS = (P6_ARGS.replace("/w/train_grow", "/w/train_grow_cmd_3c_p7")
-           + " --aux-drv --w-aux-drv 0.1 --aux-drv-tap visual --aux-drv-depth 2 --aux-drv-feed off --aux-drv-labels /w/aux_store --w-field 0.0")
+           + " --aux-drv --w-aux-drv 0.1 --aux-drv-tap visual --aux-drv-depth 2 --aux-drv-feed off --aux-drv-labels /w/aux_store --w-field 0.0"
+           + " --ego-yaw-table /w/ego_yaw.json.gz")                       # AMENDMENT YAW (SPEC_P7 section 7): refe_p7 REQUIRES the flag (default None = the dead slot)
 
 
 def argv_of(s: str) -> list:
@@ -101,7 +102,8 @@ def s_profiles() -> None:
     ck("S2 checks = P6's + G-RESERVE", P7["checks"] == P6["checks"] + ("G-RESERVE",) and "G-RESERVE" in L.CHECKS)
     ck("S2 every check the profile names is known", all(c in L.CHECKS for c in tuple(P7["checks"]) + tuple(P7.get("na_ok", ()))))
     new_req = set(P7["required_flags"]) - set(P6["required_flags"])
-    ck("S2 the head's levers + --w-field are REQUIRED on top of P6's", new_req == {"--aux-drv", "--w-aux-drv", "--aux-drv-tap", "--aux-drv-depth", "--aux-drv-feed", "--aux-drv-labels", "--w-field"}, str(new_req))
+    ck("S2 the head's levers + --w-field (+ AMENDMENT YAW's --ego-yaw-table) are REQUIRED on top of P6's",
+       new_req == {"--aux-drv", "--w-aux-drv", "--aux-drv-tap", "--aux-drv-depth", "--aux-drv-feed", "--aux-drv-labels", "--w-field", "--ego-yaw-table"}, str(new_req))
     ck("S2 every P6 requirement is kept verbatim", all(P7["required_flags"][k] == v for k, v in P6["required_flags"].items()))
     rq = P7["required_flags"]
     ck("S2 registered values", (rq["--w-aux-drv"], rq["--aux-drv-tap"], rq["--aux-drv-depth"], rq["--aux-drv-feed"], rq["--w-field"]) == ("0.1", "visual", "2", "off", "0.0")
@@ -186,7 +188,7 @@ def s_argv() -> None:
     # the registry: the head's seven dests are classified, and the table is still EQUAL to the parser's dests
     import train as T
     dests = {x.dest for x in T.build_parser()._actions if x.dest != "help"}
-    ck("S3 DVB_KINDS == the parser's dests (68)", set(C.DVB_KINDS) == dests and len(dests) == 68, str((sorted(dests - set(C.DVB_KINDS)), sorted(set(C.DVB_KINDS) - dests))))
+    ck("S3 DVB_KINDS == the parser's dests (69)", set(C.DVB_KINDS) == dests and len(dests) == 69, str((sorted(dests - set(C.DVB_KINDS)), sorted(set(C.DVB_KINDS) - dests))))
     ck("S3 the seven head dests are in the parser AND the registry", all(d in dests and C.DVB_KINDS.get(d) == "built" for d in AUX_DESTS))
     ap = T.build_parser()
     d0 = ap.parse_args(["--targets", "/x"])
@@ -519,7 +521,7 @@ def s_census() -> None:
     old_l, new_l = raw.decode("utf-8").splitlines(), src.splitlines()
     sm = difflib.SequenceMatcher(None, old_l, new_l, autojunk=False)
     hunks = [(tag, i1, i2, j1, j2) for tag, i1, i2, j1, j2 in sm.get_opcodes() if tag != "equal"]
-    stray = [(i1 + 1, "\n".join(old_l[i1:i2] + new_l[j1:j2])[:160]) for tag, i1, i2, j1, j2 in hunks if not re.search(r"aux|AUX|P7\.1", "\n".join(old_l[i1:i2] + new_l[j1:j2]))]
+    stray = [(i1 + 1, "\n".join(old_l[i1:i2] + new_l[j1:j2])[:160]) for tag, i1, i2, j1, j2 in hunks if not re.search(r"aux|AUX|P7\.1|WP YAW|ego_yaw|EYT\.|ego_t\[", "\n".join(old_l[i1:i2] + new_l[j1:j2]))]       # WP YAW (2026-11-06): the yaw-table hunks are a later, separate lever
     ck("S6 every changed hunk of train.py relative to the frozen tip mentions the head (nothing else moved)", not stray and len(hunks) >= 20, f"{len(hunks)} hunks; unrelated: {stray[:3]}")
 
 

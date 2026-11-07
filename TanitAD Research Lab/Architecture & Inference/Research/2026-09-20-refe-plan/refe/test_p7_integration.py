@@ -636,9 +636,10 @@ def s_design() -> None:
     ck("IV refe_p6 is byte-for-byte what it was (profile digest)", hashlib.sha256(repr(sorted(P6.items())).encode()).hexdigest() == HW.P6_PROFILE_SHA256)
     ck("IV refe_p6's suite and checks carry nothing of P7", "G-RESERVE" not in P6["checks"] and not any("session_reserve" in str(e) or "p7" in str(e) for e in P6["suite"]), str(P6["suite"]))
     suite = P7["suite"]
-    ck("IV refe_p7's suite = P6's + the head's static block + the reserve's own suite + this test + the chain's test", suite[:len(P6["suite"])] == P6["suite"]
+    ck("IV refe_p7's suite = P6's + the head's static block + the reserve's own suite + this test + the chain's test + the yaw lever's test (--fast: no dev-box DBs / tables / mirror)", suite[:len(P6["suite"])] == P6["suite"]
        and suite[len(P6["suite"]):] == [{"script": "test_p7_head_wiring.py", "args": ["--static"], "token": "ZZP7HEAD_PASS"}, {"script": "test_session_reserve.py", "token": "ZZSESSRES_PASS"},
-                                        {"script": "test_p7_integration.py", "token": "ZZP7INT_PASS"}, {"script": "test_p7_chain.py", "token": "ZZP7CHAIN_PASS"}], str(suite[len(P6["suite"]):]))
+                                        {"script": "test_p7_integration.py", "token": "ZZP7INT_PASS"}, {"script": "test_p7_chain.py", "token": "ZZP7CHAIN_PASS"},
+                                        {"script": "test_ego_yaw.py", "args": ["--fast"], "token": "ZZEGOYAW_PASS"}], str(suite[len(P6["suite"]):]))
     for e in suite[len(P6["suite"]):]:
         p = HERE / e["script"]
         ck(f"IV {e['script']} exists and its source prints its own token {e['token']} (a renamed token would fail G-SUITE on the pod, not here)", p.is_file() and e["token"] in p.read_text(encoding="utf-8"))
@@ -651,6 +652,13 @@ def s_design() -> None:
     tsrc = (HERE / "train.py").read_text(encoding="utf-8")
     ck("IV DESIGN (a): the trainer has NO --reserve-manifest flag, and refe_p7 neither requires nor fingerprints one (adding it later is a deliberate change: a G-DVB entry, P6 bit-identity, REQUIRED in argv)",
        "reserve-manifest" not in tsrc and "--reserve-manifest" not in P7["required_flags"] and "--reserve-manifest" not in P7["data_flags"])
+    # AMENDMENT YAW (SPEC_P7 section 7): the flag DEFAULTS to None (= the dead slot), so an arm that omitted it would train yaw-less and read as clean -- it is REQUIRED; its table is built on the pod, so its sha256 cannot be
+    # registered here and it rides the launch token as a DATA flag (the file's sha256 is fingerprinted at the gate and re-measured by `verify` before every launch).  Nothing earlier carries it.
+    ck("IV AMENDMENT YAW: refe_p7 REQUIRES --ego-yaw-table (any value) and fingerprints it as a data flag; refe_p6 and the earlier profiles carry neither",
+       P7["required_flags"].get("--ego-yaw-table", "ABSENT") is None and "--ego-yaw-table" in P7["data_flags"] and "--ego-yaw-table" not in P6["required_flags"] and "--ego-yaw-table" not in P6["data_flags"]
+       and not any("--ego-yaw-table" in (prof.get("required_flags") or {}) or "--ego-yaw-table" in (prof.get("data_flags") or ()) for nm, prof in L.PROFILES.items() if nm != "refe_p7"),
+       str(P7["required_flags"].get("--ego-yaw-table", "ABSENT")))
+    ck("IV AMENDMENT YAW: refe_p7 registers NO sha256 for the table (it exists only after the pod builds it): no `ego_yaw_sha256` key, so the data manifest is the binding", "ego_yaw_sha256" not in P7)
     ck("IV the pin procedure's tool ships beside the gate (refe/p7_pins.py) and the gate names it", (HERE / "p7_pins.py").is_file() and "p7_pins.py" in (HERE / "launch_gate.py").read_text(encoding="utf-8"))
 
 
@@ -703,6 +711,12 @@ MUTATIONS = [
     ("M23 check_run stops comparing the trainer's recorded digest", "p7_pins.py", "    elif want_sha is not None and ident[\"targets_sha256\"] != want_sha:\n", "    elif False:\n"),
     ("M24 check_run stops comparing the trainer's recorded tuple count", "p7_pins.py", "    if want_n is not None and ident.get(\"n_tuples\") != want_n:\n", "    if False:\n"),
     ("M25 the count and the digest may name different banks", "launch_gate.py", "        if reg and dig and set(reg) != set(dig):\n", "        if False:\n"),
+    # ---- AMENDMENT YAW
+    ("M26 the yaw table stops being a data flag (its sha256 is no longer in the launch token)", "launch_gate.py", '("--aux-drv-labels", "--ego-yaw-table"),', '("--aux-drv-labels",),'),
+    ("M27 refe_p7 stops requiring --ego-yaw-table (an omitted flag trains the dead slot and reads as clean)", "launch_gate.py", "**P7_AUX_REQUIRED, **P7_YAW_REQUIRED}", "**P7_AUX_REQUIRED}"),
+    ("M28 test_ego_yaw.py is dropped from refe_p7's G-SUITE", "launch_gate.py",
+     ',      # the chain\'s own test, as refe_p6 carries test_p6_chain.py (2026-11-06, P7-LAUNCH-READY)\n                  {"script": "test_ego_yaw.py", "args": ["--fast"], "token": "ZZEGOYAW_PASS"}]',
+     ']      # the chain\'s own test, as refe_p6 carries test_p6_chain.py (2026-11-06, P7-LAUNCH-READY)'),
 ]
 
 

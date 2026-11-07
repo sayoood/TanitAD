@@ -47,6 +47,7 @@ from types import SimpleNamespace
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 ARM_ENV = "TANITAD_GATE_ARM"
+EGO_YAW_SLOT = 4                         # REFeConfig.ego_dim comment: vx, vy, ax, ay, YAW_RATE, steering, speed  (== ego_yaw_table.EGO_YAW_SLOT; test_ego_yaw.py pins the two equal)
 
 # the model's parameter groups.  A parameter in NO group is a FINDING: a module was added without a declaration.
 TRAINABLE_GROUPS = ("backbone.lora", "registers", "queries", "pos3d_mlp", "reg_compress", "scene_proj", "ego_enc", "dec", "traj_head",
@@ -105,7 +106,7 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
                           metrics=[], summary=None, log=str(work / f"{mode}.log"), run_dir=None, wta_yaw_wrap=None, bank_len={}, nav_modules={},
                           field_calls=[], field_grads=[], field_first=None,
                           aux=None, aux_facts=None, aux_loss_calls=[], aux_loss_grads=[], aux_first=None, aux_tap_obs=[], aux_grads=[], aux_adam=None, opt_param_ids=None,
-                          sp_ptrs=[], sctx_ptr=None, scorer_in_width=None)
+                          sp_ptrs=[], sctx_ptr=None, scorer_in_width=None, ego4_abs_max=0.0, ego_col_grads=[])
     ap = T.build_parser()
     a, unknown = ap.parse_known_args(list(argv))
     cap.parser_unknown, cap.args = unknown, a
@@ -135,6 +136,8 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
                         p.requires_grad_(False)
 
                 def pre(_m, args, kwargs):
+                    if len(args) > 1 and hasattr(args[1], "shape") and args[1].shape[-1] > EGO_YAW_SLOT:          # WP YAW: the yaw rate the model actually RECEIVED (post-loader), not what the namespace declared
+                        cap.ego4_abs_max = max(cap.ego4_abs_max, float(args[1][..., EGO_YAW_SLOT].detach().abs().max()))
                     if cap.first_batch is None:
                         cal = kwargs.get("calib")
                         cap.first_batch = tuple((x.detach().cpu().clone() if hasattr(x, "detach") else x) for x in args[:3]) + (
@@ -186,11 +189,26 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
 
         class W(base):
             def __init__(self, *a_, **k_):
+                if name == "TargetBank" and arm_is("yaw_table_not_passed", arm):          # WP YAW arm: a call site that forgets to hand the declared table to the loader
+                    k_.pop("ego_yaw_table", None)
                 cap.banks.setdefault(name, []).append({"args": [plain(x) for x in a_], "kwargs": {k: plain(v) for k, v in k_.items()}})
                 super().__init__(*a_, **k_)
                 if hasattr(self, "scene_groups"):                       # the TargetBank: what the schedule is sized on (G-CLOCK)
                     cap.bank_len[name] = {"n_tuples": len(self.rows), "n_scenes": len(self.scene_groups)}
         W.__name__ = name
+        if name == "TargetBank" and arm_is("yaw_override_removed", arm):
+            # WP YAW arm: the flag is set and the table is LOADED, but the override line is gone -- slot 4 reaches the model as the bank has it (0.0).  Equivalent to deleting
+            # `ego_t[EYT.EGO_YAW_SLOT] = self.ego_yaw[tok]` from TargetBank.__getitem__ (test_ego_yaw.py also deletes that very line from a copy of train.py and runs the gate on it).
+            gi0 = base.__getitem__
+
+            def gi_no_override(self, i):
+                item = gi0(self, i)
+                if getattr(self, "ego_yaw", None) is None:
+                    return item
+                e = item[1].clone()
+                e[EGO_YAW_SLOT] = float(self.rows[i]["ego"][EGO_YAW_SLOT])
+                return (item[0], e) + tuple(item[2:])
+            W.__getitem__ = gi_no_override
         return W
 
     def wrap_sampler(name):
@@ -302,6 +320,11 @@ def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> 
                 r["n_zero"] += int(s == 0.0)
                 r["finite"] = r["finite"] and bool(torch.isfinite(p.grad).all())
         cap.grads.append(rec)
+        w0_ = cap.model.ego_enc[0].weight                                                          # WP YAW: the ego encoder's first layer, one input column per ego slot
+        if w0_.grad is not None and w0_.grad.shape[1] > EGO_YAW_SLOT:
+            g_ = w0_.grad.detach().double().abs()
+            cap.ego_col_grads.append({"col": float(g_[:, EGO_YAW_SLOT].sum()), "other": float(g_.sum() - g_[:, EGO_YAW_SLOT].sum()),
+                                      "finite": bool(torch.isfinite(w0_.grad).all())})
         if cap.aux is not None:
             hr = {"abs_sum": 0.0, "finite": True, "n": 0, "n_grad": 0, "n_zero": 0, "numel": 0, "n_req": 0}
             for p in cap.aux.parameters():
@@ -478,6 +501,9 @@ DVB_KINDS = {
     # P7.1 (SPEC_P7 section 1, SPEC_AUX_DRIVABLE_HEAD section 7): the training-only drivable-area head.  Each has its observed row in `aux_dvb_rows` (what the loader / the head / the loss actually
     # RECEIVED or BUILT); `aux_drv_labels` is also a profile `data_flags` entry (the PASS token fingerprints the store).  ALL default OFF: an arm that means the head NAMES --aux-drv and --w-aux-drv.
     "aux_drv": "built", "w_aux_drv": "built", "aux_drv_tap": "built", "aux_drv_depth": "built", "aux_drv_feed": "built", "aux_drv_labels": "built", "aux_drv_shuffle_seed": "built",
+    # WP YAW (TanitAD-artifacts/yawrate_wp/PLAN.md): a REAL ego[4].  Its observed row is `ego_yaw_dvb_rows` (what EVERY TargetBank construction actually RECEIVED); its EFFECT is observed by G-LIVE
+    # (`ego_yaw_live`: a non-zero gradient on ego_enc.0.weight[:, 4]; the unset control reads exactly 0.0).  Default OFF: an arm that means a real yaw rate NAMES --ego-yaw-table.
+    "ego_yaw_table": "built",
 }
 DVB_REASON = {"score_w": "weights the score BCE inside run(); observed through the live `score` term (G-LIVE), statically traced here",
               "log_every": "logging cadence", "out": "output directory", "resume": "supervised relaunch",
@@ -642,6 +668,27 @@ def aux_dvb_rows(a, b, s, profile=None) -> list:
     return rows
 
 
+def ego_yaw_dvb_rows(a, b, profile=None) -> list:
+    """G-DVB's rows for --ego-yaw-table (WP YAW).  The BUILT side is what EVERY TargetBank construction actually RECEIVED (the BUILD capture wraps the class; --grow's per-epoch rebuild is a
+    second construction site, so a call site that forgets the kwarg shows here as a row, not as a silent 0.0).  The profile MAY pin the table's content (`ego_yaw_sha256`): the file's own
+    sha256 is then compared with it, so a self-consistent table that is not the registered one is a launch blocker."""
+    declared = getattr(a, "ego_yaw_table", None) or None
+    rows = []
+    for i, tb in enumerate(b.banks.get("TargetBank") or []):
+        built = (tb.get("kwargs") or {}).get("ego_yaw_table")
+        rows.append({"dest": "ego_yaw_table", "flag": "--ego-yaw-table", "declared": declared, "built": built or None,
+                     "how": f"TargetBank(ego_yaw_table=) at construction #{i}", "ok": _close(declared, built or None)})
+    pin = (profile or {}).get("ego_yaw_sha256")
+    if declared and pin:
+        try:
+            got = hashlib.sha256(Path(declared).read_bytes()).hexdigest()
+        except OSError as e:
+            got = f"unreadable: {e}"
+        rows.append({"dest": "ego_yaw_table", "flag": "--ego-yaw-table", "declared": pin, "built": got, "how": "the table file's sha256 against the profile's registered pin",
+                     "ok": got == pin})
+    return rows
+
+
 def dvb_rows(a, b, s, field_min_coverage: float = FIELD_MIN_COVERAGE, profile=None) -> list:
     """{flag, declared, built, how, ok} for every observable lever.  `b` = BUILD capture (real levers), `s` = SMOKE capture or None."""
     from model import BACKBONES, REFeConfig
@@ -725,6 +772,7 @@ def dvb_rows(a, b, s, field_min_coverage: float = FIELD_MIN_COVERAGE, profile=No
             "dtype of the backbone's first matmul (amp_probe_module) under autocast")
     rows += field_dvb_rows(a, b, s, field_min_coverage)
     rows += aux_dvb_rows(a, b, s, profile)
+    rows += ego_yaw_dvb_rows(a, b, profile)
     return rows
 
 
@@ -1741,6 +1789,66 @@ def judge_aux_live(f: dict, w_aux: float) -> list:
     return r
 
 
+def ego_yaw_probe(cap) -> dict:
+    """The yaw-column probe's OWN control, on the built model and the first REAL batch: with ego[4] forced to exactly 0.0 the gradient on ego_enc.0.weight[:, 4] reads EXACTLY 0.0 (d/dW of a
+    product with a zero input), and with ego[4] forced to 1.0 it reads non-zero.  So a zero reading on the real run is a property of the INPUT, not of a probe that cannot see the column."""
+    m = cap.model
+    if m is None or cap.first_batch is None:
+        return {"ran": False}
+    dev = next(m.parameters()).device
+    img, ego, goal, calib = cap.first_batch
+    img, ego, goal = img[:1].to(dev), ego[:1].to(dev).clone(), goal[:1].to(dev)
+    cal = calib[:1].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
+    m.train()
+    out = {"ran": True}
+    for tag, v in (("zero", 0.0), ("one", 1.0)):
+        e = ego.clone()
+        e[..., EGO_YAW_SLOT] = v
+        m.zero_grad(set_to_none=True)
+        traj, score = m(img, e, goal, calib=cal)[:2]
+        (traj.float().sum() + score.float().sum()).backward()
+        g = m.ego_enc[0].weight.grad
+        out[tag] = float(g[:, EGO_YAW_SLOT].double().abs().sum()) if g is not None else None
+    m.zero_grad(set_to_none=True)
+    return out
+
+
+def ego_yaw_live_facts(cap) -> dict:
+    cg = cap.ego_col_grads
+    return {"flag": bool(getattr(cap.args, "ego_yaw_table", None)), "steps_observed": len(cg),
+            "ego4_abs_max_received": float(cap.ego4_abs_max),
+            "col4_grad_abs_sum_max": max((g["col"] for g in cg), default=None),
+            "other_cols_grad_abs_sum_max": max((g["other"] for g in cg), default=None),
+            "finite": all(g["finite"] for g in cg)}
+
+
+def judge_ego_yaw(f: dict, probe: dict) -> list:
+    """WP YAW's G-LIVE reasons.  With --ego-yaw-table: the model must have RECEIVED a non-zero yaw rate AND ego_enc.0.weight[:, 4] must carry a finite, non-zero gradient on some step.
+    Without it: no claim is made about the data (a bank may carry its own yaw), but a model that received exactly 0.0 must read exactly 0.0 on that column.  In both cases the probe's control
+    (ego[4] forced to 0.0 reads exactly 0.0; forced to 1.0 reads non-zero) must hold."""
+    r = []
+    if not probe.get("ran"):
+        r.append("ego-yaw probe control could not run (no built model / first batch)")
+    else:
+        if probe["zero"] is None or probe["zero"] != 0.0:
+            r.append(f"ego-yaw probe control failed: ego[4] forced to 0.0 must leave ego_enc.0.weight[:, 4] with gradient EXACTLY 0.0, read {probe['zero']}")
+        if probe["one"] is None or not probe["one"] > 0.0:
+            r.append(f"ego-yaw probe control failed: ego[4] forced to 1.0 must read a non-zero column-4 gradient, read {probe['one']}")
+    if f["steps_observed"] == 0:
+        r.append("ego-yaw: no optimiser step carried a gradient on ego_enc.0.weight (the column cannot be judged)")
+        return r
+    if not f["finite"]:
+        r.append("ego-yaw: non-finite gradient on ego_enc.0.weight")
+    if f["flag"]:
+        if not f["ego4_abs_max_received"] > 0.0:
+            r.append("--ego-yaw-table is set but the model RECEIVED ego[4] == 0.0 on every forward (the override never reached the model)")
+        if not (f["col4_grad_abs_sum_max"] or 0.0) > 0.0:
+            r.append("--ego-yaw-table is set but ego_enc.0.weight[:, 4] has gradient EXACTLY zero on every observed optimiser step (the yaw rate is declared and never trained on)")
+    elif f["ego4_abs_max_received"] == 0.0 and f["col4_grad_abs_sum_max"] != 0.0:
+        r.append(f"ego-yaw control: the model received ego[4] == 0.0 yet ego_enc.0.weight[:, 4] read a gradient of {f['col4_grad_abs_sum_max']} (must be exactly 0.0)")
+    return r
+
+
 def check_live(argv: list, cap, profile: dict, arm=None, rehearsal=False, control: bool = True) -> dict:
     reasons, det = [], {}
     if cap.rc != 0:
@@ -1802,6 +1910,15 @@ def check_live(argv: list, cap, profile: dict, arm=None, rehearsal=False, contro
                 reasons.append(f"probe control failed: zero loss read {c['zero']} (must be exactly 0.0), real loss read {c['real']} (must be > 0)")
         except Exception as e:                                                        # noqa: BLE001
             reasons.append(f"probe control could not run: {type(e).__name__}: {e}")
+    if control and not reasons and cap.model is not None and hasattr(cap.model, "ego_enc"):
+        # WP YAW: the yaw column of the ego encoder (see ego_yaw_probe / judge_ego_yaw)
+        try:
+            f_ = ego_yaw_live_facts(cap)
+            p_ = ego_yaw_probe(cap)
+            det["ego_yaw_live"] = {**f_, "probe": p_}
+            reasons += judge_ego_yaw(f_, p_)
+        except Exception as e:                                                        # noqa: BLE001
+            reasons.append(f"ego-yaw probe could not run: {type(e).__name__}: {e}")
     if float(getattr(cap.args, "w_field", 0.0) or 0.0) > 0.0 and not reasons:
         # L_field (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md): it must REACH the proposal side, must NOT reach the scorer, and the weight-0 control must read exactly 0.0
         try:

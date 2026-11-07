@@ -11,7 +11,9 @@ No pod, no GPU, no network, no NAVSIM stack.  Four layers:
        (d) --label-workers is pinned by P7_LABEL_WORKERS (unset / non-integer REFUSES; never derived from the cgroup quota);
        (e) the run dir and metric cache on a network/FUSE filesystem REFUSE;
        p7_pins.py --check-run after the first checkpoint: a mismatch REFUSES and STOPS the trainer (also with the REAL p7_pins.py against the REGISTERED pins);
-       its own run dir / HF repo / package / chain dir, never P6's; P6 over (P7_WAIT_P6); an incomplete package refused before any download.
+       its own run dir / HF repo / package / chain dir, never P6's; P6 over (P7_WAIT_P6); an incomplete package refused before any download;
+       (f) AMENDMENT YAW (stage 5b): the yaw table is built from the pod's DBs AFTER the reserve stage and BEFORE the cache / the gate, checked against the P7 bank the trainer reads at 100 % (a build that cannot cover
+           every asked token, and a table that lacks a bank token, each REFUSE), keyed + idempotent, and its path rides the trainer's ARGS (--ego-yaw-table).
   4. behavioural MUTANTS of the chain (delete the kill, flip the guard, re-add the fallback): each must make a layer-3 assertion fail.
 Run: python refe/test_p7_chain.py   -> ZZP7CHAIN_PASS <n>   (needs bash on PATH; Git Bash on the dev box).  Never prints ZZTEST_SKIP.
 """
@@ -53,9 +55,9 @@ def code_of(text):
 ARGS_REF7 = ("--backbone vitl16 --targets $CBANK --images $PIX --calib $BANK/calib_table.json --metric-cache $MC --scorer-sees-trunk --yaw-wrap $YAW_WRAP --nav-mode command "
              "--labeller online --label-workers $LW --label-chunks $LC --epochs 25 --epoch-unit scenes --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 "
              "--aux-drv --w-aux-drv 0.1 --aux-drv-tap visual --aux-drv-depth 2 --aux-drv-feed off --aux-drv-labels $P7_LABEL_STORE --w-field 0.0 "
-             "--tf32 --compile --workers 2 --log-every 1 --ckpt-every-min 20 --out $RUN --resume")
+             "--ego-yaw-table $YAWT --tf32 --compile --workers 2 --log-every 1 --ckpt-every-min 20 --out $RUN --resume")
 ORDER7 = ['"$PY0" "$PKG/refe/p7_ship_list.py" check', 'p7_prep.py" local-check', 'source "$WORK/teacher_env.sh"', '"$PY" p2r_sync.py watch', "STAGES=weights", "p2r_sync.py recover",
-          "p6_prep.py reserve-verify", "p6_prep.py reserve-filter", "build_metric_cache.py build --targets", "p6_prep.py lane-ranks", "p7_prep.py twins plan", "p7_prep.py twins apply",
+          "p6_prep.py reserve-verify", "p6_prep.py reserve-filter", "ego_yaw_table.py build", "ego_yaw_table.py check-bank", "build_metric_cache.py build --targets", "p6_prep.py lane-ranks", "p7_prep.py twins plan", "p7_prep.py twins apply",
           "p6_prep.py lane-distinct", "\nARGS=", '"$PY" diag_p6_labeller_identity.py --cache', "\nwait_clear\n", "train.py $MEM_ARGS", "hf_egress.py gate", "launch_gate.py run --profile refe_p7",
           "train.py $ARGS --preflight", "train.py $ARGS >>", "p2r_sync.py final"]
 
@@ -109,6 +111,26 @@ def check_p7(text):
         v.append("RANKS_NOT_EXACT")
     if not re.search(r'twins plan .*--reserve "\$P7_RESERVE"', code) or not re.search(r'twins apply .*--reserve "\$P7_RESERVE"', code):
         v.append("TWINS_NOT_RESERVE_AWARE")
+    # ---- AMENDMENT YAW (stage 5b): the table the trainer reads is built here, from the pod's DBs, complete, and checked against the bank the trainer reads
+    yb = re.search(r'\n[^\n]*ego_yaw_table\.py build [^\n]*\n', code)
+    yc = re.search(r'\n[^\n]*ego_yaw_table\.py check-bank [^\n]*\n', code)
+    if not yb or not yc:
+        v.append("YAW_STAGE_MISSING")
+    else:
+        if "--allow-partial" in code:
+            v.append("YAW_ALLOW_PARTIAL")
+        if "200>&-" not in yb.group(0) or "200>&-" not in yc.group(0):
+            v.append("YAW_FD200")
+        if not re.search(r'ego_yaw_table\.py build --split navtrain --yaml "\$PKG/splits/navtrain\.yaml" --db-root "\$DBS" --out "\$YAWT"', yb.group(0)):
+            v.append("YAW_BUILD_ARGS")
+        if not re.search(r'ego_yaw_table\.py check-bank --table "\$YAWT" --bank-dir "\$CBANK"', yc.group(0)):
+            v.append("YAW_CHECK_NOT_ON_THE_TRAINERS_BANK")
+        if "ZZYAWTABLE_BANK_PASS" not in code or "missing_rows=0$" not in code or '[ "$YRC" = 0 ]' not in code or not re.search(r'missing_rows=0\$" "\$P7/yaw_check\.out"; \} \\\n\s+\|\| refuse', code):
+            v.append("YAW_COVERAGE_NOT_100")
+        if "key_done yaw" not in code or "key_mark yaw" not in code or '[ -s "$YAWT" ]' not in code:
+            v.append("YAW_NOT_IDEMPOTENT")
+        if not re.search(r'\^ZZYAWTABLE_BUILT \[1-9\]\[0-9\]\* \[0-9a-f\]\\\{64\\\}\$" "\$P7/yaw_build\.out" && \[ -s "\$YAWT" \]; \} \\\n\s+\|\| refuse', code):
+            v.append("YAW_BUILD_NOT_CHECKED")
     return v
 
 
@@ -131,6 +153,16 @@ def mutations(text):
         ("RANKS_NOT_EXACT", sub('[ "$RANKS" = "$EXPECT_RANKS" ] || refuse', '[ -n "$RANKS" ] || refuse')),
         ("TWINS_NOT_RESERVE_AWARE", sub('twins apply --bank "$CBANK" --src "$TWIN_SRC" --dst "$MC" --reserve "$P7_RESERVE"', 'twins apply --bank "$CBANK" --src "$TWIN_SRC" --dst "$MC"')),
         ("ARGS_CHANGED_OR_TWICE", sub("--w-aux-drv 0.1 ", "")),
+        ("ARGS_CHANGED_OR_TWICE", sub(" --ego-yaw-table $YAWT", "")),
+        ("YAW_ALLOW_PARTIAL", sub('--db-root "$DBS" --out "$YAWT" >', '--db-root "$DBS" --out "$YAWT" --allow-partial >')),
+        ("YAW_FD200", sub('--out "$YAWT" > "$P7/yaw_build.out" 2>&1 200>&-', '--out "$YAWT" > "$P7/yaw_build.out" 2>&1')),
+        ("YAW_BUILD_ARGS", sub('--db-root "$DBS" --out "$YAWT"', '--db-root "$DBS/x" --out "$YAWT"')),
+        ("YAW_CHECK_NOT_ON_THE_TRAINERS_BANK", sub('check-bank --table "$YAWT" --bank-dir "$CBANK"', 'check-bank --table "$YAWT" --bank-dir "$BANK"')),
+        ("YAW_COVERAGE_NOT_100", sub('missing_rows=0$" "$P7/yaw_check.out"', 'missing_rows=[0-9]*$" "$P7/yaw_check.out"')),
+        ("YAW_COVERAGE_NOT_100", sub('|| refuse "the yaw-rate table does not cover', '|| log "the yaw-rate table does not cover')),
+        ("YAW_NOT_IDEMPOTENT", sub('key_mark yaw "$YAW_ID"', ':')),
+        ("YAW_BUILD_NOT_CHECKED", sub('    || refuse "the yaw-rate table build refused or failed', '    || log "the yaw-rate table build refused or failed')),
+        ("YAW_STAGE_MISSING", sub('env -u HF_TOKEN "$PY" ego_yaw_table.py check-bank', 'true')),
         ("MISSING", sub('"$PY0" "$PKG/refe/p7_ship_list.py" check', "true")),
     ]
 
@@ -161,6 +193,22 @@ elif script == "p6_prep.py":                     # reserve-* (the REAL ones are 
         Path(opt("--out")).write_text("{}"); print("ZZRESERVE_AUDIT_OK inputs=5")
 elif script == "aux_label_store.py":
     print("ZZ finalize stub")
+elif script == "ego_yaw_table.py":                 # AMENDMENT YAW: `build` is a stub that writes a REAL table (ego_yaw_table.save) over the sandbox bank's tokens; `check-bank` is the REAL tool
+    sys.path.insert(0, str(REAL))
+    if rest[0] == "build":
+        if os.environ.get("STUB_YAW_BUILD_PARTIAL") and "--allow-partial" not in rest:
+            print("REFUSED: 7 of 103,288 asked tokens (3 logs) have no DB under stub (searched ['top', 'trainval', 'test', 'mini']). Build where the DBs are, or pass --allow-partial to write a table that says it is partial.")
+            sys.exit(4)
+        import ego_yaw_table as EYT
+        out = Path(opt("--out"))
+        toks = sorted({r["token"] for r in rows(out.parent / "train_grow_cmd_3c")})
+        drop = os.environ.get("STUB_YAW_DROP_TOKEN")
+        table = {t: 0.01 * (i + 1) for i, t in enumerate(toks) if t != drop}
+        sha = EYT.save(str(out), table, {"split": "navtrain", "partial": False})
+        print(f"ZZYAWTABLE_BUILT {len(table)} {sha}")
+    else:
+        sys.argv = [str(REAL / script)] + rest
+        runpy.run_path(str(REAL / script), run_name="__main__")
 elif script == "p7_ship_list.py":
     if os.environ.get("STUB_SHIP_BAD"):
         print("ZZP7SHIP_BAD missing=1 first=['eval/rls1b_arms.json']"); sys.exit(1)
@@ -199,7 +247,7 @@ elif script == "train.py":
 FAKEPY7 = _head + STUB7 + _tail
 REQUIRED7 = ["refe/" + n for n in ("train.py p2r_sync.py hf_egress.py p6_prep.py p7_prep.py p7_pins.py session_reserve.py aux_label_store.py aux_drivable_head.py online_labeller.py build_metric_cache.py "
              "diag_p6_labeller_identity.py launch_gate.py gate_token.py gate_checks.py gate_fixture.py test_launch_gate.py test_p2r_chain.py test_p6_levers.py test_p6_chain.py "
-             "test_p7_head_wiring.py test_session_reserve.py test_p7_integration.py test_p7_chain.py p7_ship_list.py p7_ship_list.json").split()] + \
+             "test_p7_head_wiring.py test_session_reserve.py test_p7_integration.py test_p7_chain.py p7_ship_list.py p7_ship_list.json ego_yaw_table.py ego_yaw.py test_ego_yaw.py").split()] + \
     ["SHIP_MANIFEST.json", "code/pod_teacher_env.sh", "code/pod_train.sh", "code/pod_dataprep.sh", "splits/navtrain.yaml"]
 P6RUNDIR, P6REPOID = "refe_runs/p6_paper_faithful", "Sayood/tanitad-refe-p6-paper-faithful"
 
@@ -360,12 +408,15 @@ def main() -> int:
         import launch_gate as LG
         expanded = ARGS_REF7
         for k, val in (("$CBANK", "/w/train_grow_cmd_3c_p7"), ("$PIX", "/w/px"), ("$BANK", "/w/calib"), ("$MC", "/w/mc"), ("$YAW_WRAP", "off"), ("$LW", "6"), ("$LC", "2"),
-                       ("$P7_LABEL_STORE", "/w/store"), ("$RUN", "/w/run")):
+                       ("$P7_LABEL_STORE", "/w/store"), ("$RUN", "/w/run"), ("$YAWT", "/w/ego_yaw.json.gz")):
             expanded = expanded.replace(k, val)
         argv = LG.parse_args_string(expanded)
         prof = LG.PROFILES["refe_p7"]
         ok(LG.p7_refusals(prof, argv) == [], "the chain's ARGS pass p7_refusals (pins registered)")
         ok(not LG.profile_refusals(prof, argv), f"the chain's ARGS pass the refe_p7 profile's argv refusals: {LG.profile_refusals(prof, argv)[:2]}")
+        ok("--ego-yaw-table /w/ego_yaw.json.gz" in expanded, "the chain's ARGS name the yaw table (AMENDMENT YAW)")
+        bad_y = LG.parse_args_string(expanded.replace(" --ego-yaw-table /w/ego_yaw.json.gz", ""))
+        ok(any("--ego-yaw-table" in r for r in LG.profile_refusals(prof, bad_y)), "control: the same ARGS WITHOUT --ego-yaw-table are refused by refe_p7 (default-disables class)")
         bad = LG.parse_args_string(expanded.replace("--w-aux-drv 0.1 ", ""))
         ok(bool(LG.profile_refusals(prof, bad)), "control: the same ARGS WITHOUT --w-aux-drv are refused (default-disables class)")
         ok(bool(LG.p7_refusals(prof, LG.parse_args_string(expanded.replace("train_grow_cmd_3c_p7", "train_grow_cmd_3c")))), "control: the UNFILTERED 3-C bank name is refused")
@@ -399,6 +450,18 @@ def main() -> int:
         tr = next((c for c in calls if c.startswith("train.py") and "--preflight" not in c and "--steps" not in c), "")
         ok("--label-workers 6" in tr and "--aux-drv" in tr and "--w-aux-drv 0.1" in tr and "--w-field 0.0" in tr and "p7_reserve_head" in tr and "p6_paper_faithful" not in tr and "refe_p6" not in tr, "the trainer argv: pinned workers, the head's levers named, P7's run dir")
         ok(all(not (s.data / "refe_runs" / "p6_paper_faithful").exists() for _ in [0]) and s.files_containing(T6.TOKEN.encode()) == [], "P6's run dir untouched; no token written to any file")
+        # ---- AMENDMENT YAW (stage 5b)
+        yb = next((c for c in calls if c.startswith("ego_yaw_table.py build")), "")
+        yk = next((c for c in calls if c.startswith("ego_yaw_table.py check-bank")), "")
+        ok("--split navtrain" in yb and "navtrain.yaml" in yb and yb.split("--db-root ")[-1].split()[0].endswith("/navtrain_dbs") and yb.split("--out ")[-1].split()[0].endswith("/refe_navtrain/ego_yaw_navtrain.json.gz")
+           and "--allow-partial" not in yb, f"the table is built from the pod's navtrain DBs over the navtrain split file, never partial ({yb[:200]})")
+        ok(bool(yk) and yk.split("--bank-dir ")[-1].split()[0].endswith("/train_grow_cmd_3c_p7") and yk.split("--table ")[-1].split()[0].endswith("ego_yaw_navtrain.json.gz"), f"check-bank runs on the P7 (reserve-free) bank the trainer reads ({yk[:200]})")
+        i_f, i_b, i_k, i_c, i_g = (first_idx(calls, x) for x in ("p6_prep.py reserve-filter", "ego_yaw_table.py build", "ego_yaw_table.py check-bank", "build_metric_cache.py build", "launch_gate.py run"))
+        ok(-1 not in (i_f, i_b, i_k, i_c, i_g) and i_f < i_b < i_k < i_c < i_g, f"order: the reserve filter, THEN the yaw table, THEN its coverage check, THEN the cache, THEN the gate ({i_f},{i_b},{i_k},{i_c},{i_g})")
+        ok(s.stage("yaw") and (s.data / "refe_navtrain" / "ego_yaw_navtrain.json.gz").is_file() and "yaw table ok" in lg and "missing_rows=0" in lg, "the yaw stage left its marker and the table; the chain log says so")
+        yaw_flag = lambda c: "--ego-yaw-table" in c and "ego_yaw_navtrain.json.gz" in c
+        ok(yaw_flag(gate) and yaw_flag(tr) and any(yaw_flag(c) for c in calls if c.startswith("train.py") and "--steps" in c) and any(yaw_flag(c) for c in calls if c.startswith("train.py") and "--preflight" in c),
+           "the table's path is in the gate's --args, the memory run's argv, the preflight and the trainer's argv")
 
         def refused(name, extra=None, mutate=None, prep=None, why="", no_call=None, expect_rc=1):
             s2, rc2, out2, d2 = sb_run(extra, mutate, prep); dirs.append(d2)
@@ -427,6 +490,7 @@ def main() -> int:
         # ---- the package
         refused("package incomplete (ship list)", {"STUB_SHIP_BAD": "1"}, why="incomplete or stale", no_call="pod_train")
         refused("a required package file missing", prep=lambda sb: os.remove(sb.pkg / "refe" / "test_p7_integration.py"), why="missing", no_call="pod_train")
+        refused("the yaw table builder is not in the package", prep=lambda sb: os.remove(sb.pkg / "refe" / "ego_yaw_table.py"), why="missing", no_call="pod_train")
         refused("the aux label store is not on the pod", prep=lambda sb: os.remove(sb.data / "refe_navtrain" / "aux_label_store_p7" / "manifest.json"), why="NOT ON THE POD", no_call="pod_train")
         # ---- isolation from P6
         refused("run dir == P6's", {"P7_RUN": "__WS__/data/refe_runs/p6_paper_faithful"}, why="P6's run directory", no_call="pod_train")
@@ -442,6 +506,28 @@ def main() -> int:
             (sb.data / "refe_p6").mkdir(parents=True); (sb.data / "refe_p6" / "chain.log").write_text("2026-11-20T00:00:00 ZZP6_DONE\n")
         s4, rc4, out4, d4 = sb_run({"P7_WAIT_P6": "1"}, prep=p6_done); dirs.append(d4)
         ok(done(s4, rc4, out4), f"P7_WAIT_P6=1 with ZZP6_DONE and P6's lock free proceeds (rc {rc4})")
+        # ---- (f) AMENDMENT YAW: no partial table, no uncovered bank token, idempotent
+        s2, _, _ = refused("yaw table build REFUSES (a token without a DB row): no partial table is used", {"STUB_YAW_BUILD_PARTIAL": "1"}, why="no partial table is ever used", no_call="build_metric_cache.py build")
+        ok(not (s2.data / "refe_navtrain" / "ego_yaw_navtrain.json.gz").exists() and not s2.stage("yaw") and not any("launch_gate.py run" in c for c in s2.calls_list()),
+           "  ... no table, no marker, and the gate never ran")
+        s2, _, _ = refused("yaw table covers < 100 % of the P7 bank (token t1 missing)", {"STUB_YAW_DROP_TOKEN": "t1"}, why="does not cover 100 %", no_call="build_metric_cache.py build")
+        ok("missing_rows=" in s2.chain_log() and not any(c.startswith("launch_gate.py run") or c.startswith("train.py") for c in s2.calls_list()), "  ... the missing rows are named and neither the gate nor the trainer ran")
+        dy = Path(tempfile.mkdtemp(prefix="p7sb_")); dirs.append(dy)
+        sy = Sandbox7(dy, text)
+        rc1, out1 = sy.run({"P7_STOP_AFTER": "yaw"})
+        n_build = lambda: len([c for c in sy.calls_list() if c.startswith("ego_yaw_table.py build")])
+        n_check = lambda: len([c for c in sy.calls_list() if c.startswith("ego_yaw_table.py check-bank")])
+        yt = sy.data / "refe_navtrain" / "ego_yaw_navtrain.json.gz"
+        ok(rc1 == 0 and sy.stage("yaw") and yt.is_file() and (n_build(), n_check()) == (1, 1), f"yaw stage alone (P7_STOP_AFTER=yaw): built once, checked once (rc {rc1}; {sy.chain_log()[-200:]!r})")
+        rc2, out2 = sy.run({"P7_STOP_AFTER": "yaw"})
+        ok(rc2 == 0 and (n_build(), n_check()) == (1, 2), f"idempotent: a second start skips the build (keyed marker) but RE-CHECKS the coverage ({n_build()}, {n_check()})")
+        import ego_yaw_table as EYT
+        EYT.save(str(yt), {"t0": 0.5}, {"split": "navtrain", "partial": False})               # a replaced table that lacks a bank token, marker still valid
+        rc3, out3 = sy.run({"P7_STOP_AFTER": "yaw"})
+        ok(rc3 == 1 and "does not cover 100 %" in sy.chain_log() and n_build() == 1, f"a table swapped for a partial one is caught by the per-start coverage check (rc {rc3}, builds {n_build()})")
+        yt.unlink()
+        rc4, out4 = sy.run({"P7_STOP_AFTER": "yaw"})
+        ok(rc4 == 0 and n_build() == 2 and yt.is_file(), f"a deleted table is rebuilt even with the marker present (rc {rc4}, builds {n_build()})")
         # ---- the reserve audit
         refused("reserve audit leak", {"STUB_AUDIT_LEAK": "1"}, why="audit FAILED", no_call="launch_gate.py run")
         # ---- the guards
@@ -463,6 +549,12 @@ def main() -> int:
         no_kill = lambda t: t.replace('kill_pid "$pid"; return 0\n      fi\n    fi\n    if [ "$np_done"', 'return 0\n      fi\n    fi\n    if [ "$np_done"', 1)
         mutant("pins refusal without the kill", no_kill, {"STUB_PINS_BAD": "1", "STUB_TRAIN_SLEEP": "6"}, lambda s9, r, o: (s9.run_dir / "summary.json").exists())
         mutant("fallback accepted", lambda t: t.replace("  0) ;;\n  *) refuse \"P7_D7_FALLBACK", "  0|1) ;;\n  *) refuse \"P7_D7_FALLBACK", 1), {"P7_D7_FALLBACK": "1"}, lambda s9, r, o: "does not exist" not in s9.chain_log())
+        mutant("yaw coverage verdict ignored", lambda t: t.replace('|| refuse "the yaw-rate table does not cover', '|| log "the yaw-rate table does not cover', 1), {"STUB_YAW_DROP_TOKEN": "t1"},
+               lambda s9, r, o: "REFUSED" not in s9.chain_log())
+        mutant("yaw build allowed to be partial", lambda t: t.replace('--out "$YAWT" >', '--out "$YAWT" --allow-partial >', 1), {"STUB_YAW_BUILD_PARTIAL": "1"},
+               lambda s9, r, o: "no partial table is ever used" not in s9.chain_log())
+        mutant("yaw flag not passed to the trainer", lambda t: t.replace(" --ego-yaw-table $YAWT", "", 1), {},
+               lambda s9, r, o: not any("--ego-yaw-table" in c for c in s9.calls_list() if c.startswith("train.py")))
         mutant("link stage dropped", lambda t: t.replace('"$PY" p7_prep.py twins apply', 'true', 1), {}, lambda s9, r, o: not any(c.startswith("p7_prep.py twins apply") for c in s9.calls_list()))
         mutant("label workers derived from the quota", lambda t: t.replace('LW="$P7_LABEL_WORKERS"; ', 'LW="$(( CORES - 2 ))"; ', 1), {"P7_LABEL_WORKERS": "6"},
                lambda s9, r, o: "--label-workers 6" not in " ".join(c for c in s9.calls_list() if c.startswith("train.py")))

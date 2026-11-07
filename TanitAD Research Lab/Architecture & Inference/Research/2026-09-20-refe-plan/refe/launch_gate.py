@@ -362,19 +362,26 @@ P7_AUX_STORE_PINS = {"sha256": "df2ddd1ba2aa16a27ecea4251178038ffadaa65693be4adb
 P7_TARGETS_SHA256: dict = {"train_grow_cmd_3c_p7": "92af8d663ecdd04a1fe7a2ed5ec0995499ca87d48a01052da4868503a92d385f"}  # REGISTERED (P7-PINS, MEASURED): the trainer's own targets_sha256 of train_grow_cmd_3c_p7; G-CLOCK recomputes it from the --targets files at launch
 P7_RESERVE_SHA256 = "53f3bcd4684513f0ee765fbcfbaf583b587f58c97e9c8915f4e4df3ae3e32f29"
 P7_AUX_REQUIRED = {"--aux-drv": None, "--w-aux-drv": "0.1", "--aux-drv-tap": "visual", "--aux-drv-depth": "2", "--aux-drv-feed": "off", "--aux-drv-labels": None, "--w-field": "0.0"}
+# ⭐ AMENDMENT YAW (SPEC_P7 section 7, MM 2026-11-07; PI go 2026-11-06 "do 1 and 2"): ego[4] (yaw_rate) is 0.0 in every sample of P2 / SFT-4 / P6 (D-REFE-DEADSLOTS-1); P7 trains with the MEASURED one.  `--ego-yaw-table`
+# DEFAULTS to None (= the old, dead slot), so an arm that omits it would train yaw-less and read as clean: it is REQUIRED (named in the argv) exactly as `--w-aux-drv` is.  The table's sha256 is NOT registered here:
+# it exists only after the pod's chain builds it from $DATA/navtrain_dbs (p7_pod.sh stage 5b, `ego_yaw_table.py build` + `check-bank` at 100 %), so it is bound the way every pod-built input is -- a DATA flag, whose file
+# sha256 the PASS token fingerprints and `verify` re-measures before every launch -- and the trainer writes it into the checkpoint meta (`ego_yaw_table_sha256`) and the run identity.  G-DVB carries the flag
+# (gate_checks.DVB_KINDS["ego_yaw_table"]), G-LIVE asserts a non-zero gradient on ego_enc.0.weight[:, 4] (control: exactly 0.0 without the flag), and the arms yaw_override_removed / yaw_table_not_passed must FAIL.
+P7_YAW_REQUIRED = {"--ego-yaw-table": None}
 # the pod runs the STATIC block of the head test (no dev-box data); --full / --mutations are the dev box's.  `test_session_reserve.py` is the reserve's own suite (ZZSESSRES_PASS 43: its optional real-data checks list
 # themselves ABSENT on a pod, never skip); `test_p7_integration.py` runs the gate's G-RESERVE against the REAL module on a synthetic P7 tree (clean PASS, planted leaks FAIL) and the pin procedure.
 P7_SUITE_EXTRA = [{"script": "test_p7_head_wiring.py", "args": ["--static"], "token": "ZZP7HEAD_PASS"},
                   {"script": "test_session_reserve.py", "token": "ZZSESSRES_PASS"},
                   {"script": "test_p7_integration.py", "token": "ZZP7INT_PASS"},
-                  {"script": "test_p7_chain.py", "token": "ZZP7CHAIN_PASS"}]      # the chain's own test, as refe_p6 carries test_p6_chain.py (2026-11-06, P7-LAUNCH-READY)
+                  {"script": "test_p7_chain.py", "token": "ZZP7CHAIN_PASS"},      # the chain's own test, as refe_p6 carries test_p6_chain.py (2026-11-06, P7-LAUNCH-READY)
+                  {"script": "test_ego_yaw.py", "args": ["--fast"], "token": "ZZEGOYAW_PASS"}]      # AMENDMENT YAW: the table, the trainer flag, the gate entries and the deploy shim; --fast = no dev-box DBs / tables / git mirror (the SLOW block is local-only)
 PROFILES["refe_p7"] = {**PROFILES["refe_p6"], "name": "refe_p7", "p7_rules": True,
-                       "data_flags": PROFILES["refe_p6"]["data_flags"] + ("--aux-drv-labels",),
+                       "data_flags": PROFILES["refe_p6"]["data_flags"] + ("--aux-drv-labels", "--ego-yaw-table"),
                        "suite": PROFILES["refe_p6"]["suite"] + P7_SUITE_EXTRA,
                        "checks": PROFILES["refe_p6"]["checks"] + ("G-RESERVE",),
                        "live_terms": P6_TERMS + ("aux_bce", "aux_huber"),
                        "forbidden_flags": PROFILES["refe_p6"]["forbidden_flags"] + ("--aux-drv-shuffle-seed",),
-                       "required_flags": {**PROFILES["refe_p6"]["required_flags"], **P7_AUX_REQUIRED},
+                       "required_flags": {**PROFILES["refe_p6"]["required_flags"], **P7_AUX_REQUIRED, **P7_YAW_REQUIRED},
                        "expect_schedule": {"epochs": P7_EPOCHS, "steps": P7_STEPS, "epoch_len": P7_SCENES, "n_tuples_by_bank": P7_BANK_TUPLES,
                                            "targets_sha256_by_bank": P7_TARGETS_SHA256},
                        "aux_store_pins": P7_AUX_STORE_PINS, "reserve_sha256": P7_RESERVE_SHA256}

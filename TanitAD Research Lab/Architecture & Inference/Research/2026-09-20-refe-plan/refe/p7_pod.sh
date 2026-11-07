@@ -8,12 +8,14 @@
 #   (P7_LABEL_WORKERS: the value the pod's G-LIVE-LAB passes at; 13 on the 15.3-CPU L40, where 6 REFUSED for P6 -- PREREG_P6 Amendment (e))
 #   P7_LABEL_WORKERS=13 P7_WAIT_P6=1 nohup setsid bash /workspace/refe-plan-p7/refe/p7_pod.sh > /workspace/data/refe_p7/p7_stdout.log 2>&1 < /dev/null &
 # Re-running after ANY interruption is safe: finished stages leave $P7/stage/<name>.ok (a stage whose result depends on the argv carries the argv hash).
-# P7_STOP_AFTER=<env|weights|recover|inputs|reserve|cache|lanes|lab|wait|mem|egr|launch_gate> ends the chain after that stage (a cheap dry run).
+# P7_STOP_AFTER=<env|weights|recover|inputs|reserve|yaw|cache|lanes|lab|wait|mem|egr|launch_gate> ends the chain after that stage (a cheap dry run).
 #
 # What P7 changes against p6_pod.sh, and why (every item is pinned by refe/test_p7_chain.py with a deliberate-regression arm):
 #  * its OWN run dir ($P7_RUN), HF repo ($P7_REPO), chain dir ($DATA/refe_p7) and package; each REFUSES to equal P6's.
 #  * the reserve stage (p6_pod.sh 5a) is MANDATORY here, not dormant; the bank is `<P7_CBANK>_p7` (train_grow_cmd_3c_p7, pins registered in launch_gate.py).
 #  * the gate is `refe_p7` with --gate-reserve-json; the ARGS add the P7.1 head's levers (all named: --w-aux-drv defaults to 0.0).
+#  * AMENDMENT YAW (SPEC_P7 section 7): stage 5b builds the MEASURED yaw-rate table from $DBS (`ego_yaw_table.py build`, no --allow-partial), checks it against the P7 bank at 100 % (`check-bank`), and the ARGS
+#    carry `--ego-yaw-table`; the table's sha256 enters the launch token as a data flag.  A partial table or an uncovered bank token REFUSES.
 #  * R67: the kept twins' parts are LINKED into the metric cache by the chain itself (p7_prep.py twins apply: 100 % coverage or STOP), THEN `p6_prep.py lane-distinct` must read OK at every rank
 #    of P7_EXPECT_RANKS (1 2 3), BEFORE lab / mem / egr / the gate.  The chain NEVER builds a twin (no `build_metric_cache.py --lane-rank`): PDM-Closed does not consult the route patch, a build writes
 #    twins on the LOGGED route.  P7_D7_FALLBACK is 0 and any other value REFUSES (a declared fallback is a silent deviation once its reason is gone).
@@ -35,6 +37,7 @@ TWIN_SRC="${P7_TWIN_SRC:-$DATA/refe_navtrain/metric_cache_twins_3c}"   # the 44,
 DBS=$DATA/navtrain_dbs; PIX=$DATA/navtrain_pixels
 EXP_DBS="${P7_EXPECT_DBS:-1192}"; EXP_PIX="${P7_EXPECT_PIX_SHARDS:-32}"
 P7_RESERVE="${P7_RESERVE:-$PKG/refe/fixtures/p7_reserve_sessions.json}"   # sha256-PINNED in session_reserve.py; any other byte REFUSES
+YAWT="$DATA/refe_navtrain/ego_yaw_navtrain.json.gz"   # AMENDMENT YAW: the token -> ego_pose.angular_rate_z table, built by stage 5b from $DBS; never overridden (the token binds this file's bytes)
 P7_LABEL_STORE="${P7_LABEL_STORE:-$DATA/refe_navtrain/aux_label_store_p7}"   # the FULL aux store (103,139 keys) on entry; split in place, re-finalised (92,993 keys) = the trainer's --aux-drv-labels
 YAW_WRAP="${P7_YAW_WRAP-off}"                        # PI ruling P6-Y carried over (P7 = P6's recipe): `-` and not `:-`, a BLANKED variable stays blank and yaw_check refuses it
 EXPECT_RANKS="${P7_EXPECT_RANKS:-1 2 3}"
@@ -125,7 +128,7 @@ log "ship list ok: $(printf '%s' "$SHIPOUT" | tail -n 1 | cut -c1-120)"
 for f in refe/train.py refe/p2r_sync.py refe/hf_egress.py refe/p6_prep.py refe/p7_prep.py refe/p7_pins.py refe/session_reserve.py refe/aux_label_store.py refe/aux_drivable_head.py refe/online_labeller.py \
          refe/build_metric_cache.py refe/diag_p6_labeller_identity.py refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/test_launch_gate.py refe/test_p2r_chain.py \
          refe/test_p6_levers.py refe/test_p6_chain.py refe/test_p7_head_wiring.py refe/test_session_reserve.py refe/test_p7_integration.py refe/test_p7_chain.py \
-         code/pod_teacher_env.sh code/pod_train.sh code/pod_dataprep.sh splits/navtrain.yaml; do
+         refe/ego_yaw_table.py refe/ego_yaw.py refe/test_ego_yaw.py code/pod_teacher_env.sh code/pod_train.sh code/pod_dataprep.sh splits/navtrain.yaml; do
   [ -f "$PKG/$f" ] || refuse "$PKG/$f missing: ship the package first"
 done
 [ -f "$P7_RESERVE" ] || refuse "P7_RESERVE=$P7_RESERVE is not a file"
@@ -270,6 +273,27 @@ fi
 p7_audit
 log "P7 reserve ok: bank $CBANK ($(tail -n 1 "$P7D/filter.out" 2> /dev/null | cut -c1-160)); $(tail -n 1 "$P7D/audit.out" | cut -c1-160)"; stop_after reserve
 
+# ---- 5b. AMENDMENT YAW (SPEC_P7 section 7; PI go 2026-11-06 "do 1 and 2"): the MEASURED yaw rate for ego slot 4.  The token -> ego_pose.angular_rate_z TABLE is built HERE, on the pod: the pod holds all $EXP_DBS navtrain DBs
+#          ($DBS), the dev box holds 539 of the 1,192 (42.9 % of the tokens).  It runs AFTER the P6 wait (no CPU beside P6's trainer) and AFTER the reserve stage, so the bank it is checked against is the one the trainer READS
+#          (CBANK, rebound to <bank>_p7 above).  (1) `ego_yaw_table.py build` over the navtrain split file: it REFUSES (rc 4, nothing written) when any asked token has no DB row, and --allow-partial is NEVER passed;
+#          (2) `check-bank` against CBANK: every row's token in the table (100 %), or REFUSE; (3) the path enters ARGS as --ego-yaw-table, its sha256 enters the launch token's data manifest and the checkpoint meta.
+#          Idempotent: a keyed marker (the builder's bytes + the split file + the DB count) skips the build; the coverage check runs on EVERY start (seconds), because the bank may have changed since.
+YAW_ID="$(sha256sum "$PKG/refe/ego_yaw_table.py" "$PKG/splits/navtrain.yaml" | cut -c1-16 | tr -d '\n'):$EXP_DBS"
+if ! { key_done yaw "$YAW_ID" && [ -s "$YAWT" ]; }; then
+  rm -f "$YAWT" "$YAWT.report.json"
+  env -u HF_TOKEN nice -n 10 "$PY" ego_yaw_table.py build --split navtrain --yaml "$PKG/splits/navtrain.yaml" --db-root "$DBS" --out "$YAWT" > "$P7/yaw_build.out" 2>&1 200>&-
+  { grep -q "^ZZYAWTABLE_BUILT [1-9][0-9]* [0-9a-f]\{64\}$" "$P7/yaw_build.out" && [ -s "$YAWT" ]; } \
+    || refuse "the yaw-rate table build refused or failed, no partial table is ever used (yaw_build.out: $(tail -n 1 "$P7/yaw_build.out" | cut -c1-250))"
+  invalidate mem egr launch_gate
+  key_mark yaw "$YAW_ID"
+fi
+env -u HF_TOKEN "$PY" ego_yaw_table.py check-bank --table "$YAWT" --bank-dir "$CBANK" > "$P7/yaw_check.out" 2>&1 200>&-; YRC=$?
+{ [ "$YRC" = 0 ] && grep -q "^ZZYAWTABLE_BANK_PASS rows=[1-9][0-9]* distinct_tokens=[0-9]* missing_rows=0$" "$P7/yaw_check.out"; } \
+  || refuse "the yaw-rate table does not cover 100 % of the P7 bank $CBANK (check-bank rc $YRC; yaw_check.out: $(tail -n 1 "$P7/yaw_check.out" | cut -c1-250))"
+YAWSHA="$(sed -n 's/^ *"table_sha256": "\([0-9a-f]*\)".*/\1/p' "$P7/yaw_check.out" | head -n 1)"
+[ "${#YAWSHA}" = 64 ] || refuse "check-bank did not report the table's sha256 (yaw_check.out)"
+log "yaw table ok: $(tail -n 1 "$P7/yaw_check.out" | cut -c1-120), table sha256 ${YAWSHA:0:16}"; stop_after yaw
+
 # ---- 6. D9: the metric-cache PARTS of the P7 bank's rows (the logged-route part of every row; existing files are SKIPPED, so after P6 this is a scan), then the EXACTNESS check on a sample
 if ! { stage_done cache && [ -d "$MC" ]; }; then
   export NUPLAN_DATA_ROOT="$DATA" REFE_NUPLAN_DB_ROOT="$DBS" REFE_NAVTRAIN_YAML="$PKG/splits/navtrain.yaml"
@@ -319,7 +343,7 @@ p7_audit; log "P7 reserve audit (final): $(tail -n 1 "$P7D/audit.out" | cut -c1-
 # ---- 7b. THE TRAINING ARGUMENTS, defined ONCE and BEFORE every instrument and the launch gate: the token is minted over EXACTLY this string and verified against it before the preflight and before every launch.
 #          P6's argv + the P7.1 head.  ⛔ --w-aux-drv DEFAULTS to 0.0 and --w-field to a non-zero-able default: both are NAMED (a default-disables lever is not a test of the lever).
 yaw_check
-ARGS="--backbone vitl16 --targets $CBANK --images $PIX --calib $BANK/calib_table.json --metric-cache $MC --scorer-sees-trunk --yaw-wrap $YAW_WRAP --nav-mode command --labeller online --label-workers $LW --label-chunks $LC --epochs 25 --epoch-unit scenes --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --aux-drv --w-aux-drv 0.1 --aux-drv-tap visual --aux-drv-depth 2 --aux-drv-feed off --aux-drv-labels $P7_LABEL_STORE --w-field 0.0 --tf32 --compile --workers 2 --log-every 1 --ckpt-every-min 20 --out $RUN --resume"
+ARGS="--backbone vitl16 --targets $CBANK --images $PIX --calib $BANK/calib_table.json --metric-cache $MC --scorer-sees-trunk --yaw-wrap $YAW_WRAP --nav-mode command --labeller online --label-workers $LW --label-chunks $LC --epochs 25 --epoch-unit scenes --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --aux-drv --w-aux-drv 0.1 --aux-drv-tap visual --aux-drv-depth 2 --aux-drv-feed off --aux-drv-labels $P7_LABEL_STORE --w-field 0.0 --ego-yaw-table $YAWT --tf32 --compile --workers 2 --log-every 1 --ckpt-every-min 20 --out $RUN --resume"
 ARGS_SHA="$(printf '%s' "$ARGS" | sha256sum | cut -c1-16)"
 log "ARGS sha $ARGS_SHA (--yaw-wrap $YAW_WRAP, --label-workers $LW, --label-chunks $LC)"
 resume_bank_check

@@ -38,6 +38,7 @@ from model import BACKBONES, REFe, REFeConfig, param_report, wta_loss  # noqa: E
 from field_loss import field_loss  # noqa: E402  (L_field, eval/PREREG_AUX_FIELD_LOSS_DRAFT.md: only called when --w-field > 0; the label reader is imported lazily by TargetBank)
 import ckpt_io  # noqa: E402
 import nav_command as NC  # noqa: E402
+import ego_yaw_table as EYT  # noqa: E402  (WP YAW: the token -> nuPlan ego_pose.angular_rate_z table behind --ego-yaw-table; imports only the stdlib, and nothing is read unless the flag is set)
 import aux_drivable_head as AUX  # noqa: E402  (P7.1, SPEC_AUX_DRIVABLE_HEAD.md: the TRAINING-ONLY drivable-area head. Built ONLY under --aux-drv; the module imports no map API and no label-store code at import time)
 
 
@@ -646,7 +647,8 @@ class TargetBank(Dataset):
                  max_missing_frac: float = 0.001, calib: str | None = None,
                  sizes: dict | None = None, onpolicy=None, online: bool = False,
                  field_labels: str | None = None, field_shuffle_seed: int | None = None,
-                 aux_labels: str | None = None, aux_shuffle_seed: int | None = None):
+                 aux_labels: str | None = None, aux_shuffle_seed: int | None = None,
+                 ego_yaw_table: str | None = None):
         self.scorer = scorer
         # P6 / D1: the ONLINE labeller labels the model's own proposals, so each item also returns its row index (the trainer needs the row's
         # (log_name, token, rank, aug) to find the metric-cache parts). Off => the tuple is the unchanged nine elements.
@@ -818,6 +820,33 @@ class TargetBank(Dataset):
                 self.cmd_sources[k] = self.cmd_sources.get(k, 0) + 1
             print(f"  NAV COMMAND (P6): sources {self.cmd_sources}  (row = NAVSIM driving_command carried by the bank; goal_rule = nav_command.goal_to_command, "
                   f"MEASURED 0.90 agreement with NAVSIM on navtest -- below SPEC_P6 D6's 95 % bar)")
+        # ⭐ WP YAW (PLAN: TanitAD-artifacts/yawrate_wp/PLAN.md). Ego slot 4 (yaw_rate) is 0.0 in EVERY banked row (D-REFE-DEADSLOTS-1): nuPlan's DB loader never reads ego_pose.angular_rate_z.
+        # `ego_yaw_table=None` (the default) is the unchanged loader. With a table, __getitem__ replaces slot 4 by the table's value for the ROW'S TOKEN; slot 5 (steering) stays whatever the
+        # bank has. ⛔ EVERYTHING that could make the override silent is refused HERE, at construction, over the FINAL rows (after every drop above) -- not three hours in, in a worker:
+        # a row whose token the table lacks, a bank whose slot 4 is already non-zero (two sources for one slot), a model with no slot 4.
+        self.ego_yaw = None
+        self.ego_yaw_sha256 = None
+        self.ego_yaw_cov = None
+        if ego_yaw_table:
+            try:
+                self.ego_yaw, ymeta, self.ego_yaw_sha256 = EYT.load(ego_yaw_table)
+            except (OSError, ValueError, EYT.TableRefused) as e:
+                raise SystemExit(f"TargetBank: --ego-yaw-table {ego_yaw_table} is refused: {e}")
+            if cfg.ego_dim <= EYT.EGO_YAW_SLOT:
+                raise SystemExit(f"TargetBank: --ego-yaw-table needs a model with an ego slot {EYT.EGO_YAW_SLOT} (yaw_rate); this config has ego_dim {cfg.ego_dim}.")
+            lacking = [r for r in self.rows if r.get("token", "") not in self.ego_yaw]
+            if lacking:
+                ex = [(r.get("log_name", "?"), r.get("token", "?")) for r in lacking[:3]]
+                raise SystemExit(f"TargetBank: --ego-yaw-table covers {len(self.rows) - len(lacking):,}/{len(self.rows):,} rows; {len(lacking):,} rows' tokens are NOT in the table "
+                                 f"({ego_yaw_table}, sha256 {self.ego_yaw_sha256[:12]}), e.g. {ex}. REFUSED: a missing token would train on a yaw of 0.0 for that row without saying so. "
+                                 f"Rebuild the table over the bank's own logs (ego_yaw_table.py build / check-bank).")
+            nz = [r for r in self.rows if len(r.get("ego") or ()) > EYT.EGO_YAW_SLOT and float(r["ego"][EYT.EGO_YAW_SLOT]) != 0.0]
+            if nz:
+                raise SystemExit(f"TargetBank: --ego-yaw-table, but {len(nz):,} bank rows ALREADY carry a non-zero ego[{EYT.EGO_YAW_SLOT}] (e.g. {nz[0].get('log_name')} {nz[0].get('token')}): "
+                                 f"two sources for one slot. REFUSED -- drop the flag (the bank has its own yaw rate) or rebuild the bank.")
+            self.ego_yaw_cov = {"rows": len(self.rows), "covered": len(self.rows), "table_tokens": len(self.ego_yaw)}
+            print(f"  EGO YAW (WP YAW): ego[{EYT.EGO_YAW_SLOT}] <- {EYT.YAW_SCALE:g} x {EYT.FIELD} for {len(self.rows):,}/{len(self.rows):,} rows ({len(self.ego_yaw):,} table tokens, "
+                  f"sha256 {self.ego_yaw_sha256[:12]}, {ymeta.get('units', '?')})  <- {ego_yaw_table}")
         if self.field is not None:
             # coverage of the FINAL rows (after every drop above) by the label store, keyed by (log_name, token): a row the store lacks reads zeros + valid False = exactly 0 loss
             have = set(self.field.all_keys())
@@ -919,6 +948,13 @@ class TargetBank(Dataset):
                 f"{c.ego_dim}-D (log {r.get('log_name','?')} step {r.get('step','?')}). "
                 f"Rebuild the bank with build_targets.py, or set REFeConfig.ego_dim to match. "
                 f"These two must move together -- see diag_consumer_conformance.py.")
+        if self.ego_yaw is not None:
+            # WP YAW: slot 4 <- YAW_SCALE (10.0, MM 2026-11-06: raw ego inputs are ~10 / ~1 and |w| <= 0.35 rad/s) x the DB's measured yaw rate for THIS row's token (rad/s, CCW+). Slot 5 is NOT touched. The constructor already proved every row's token is in the table; this
+            # is the backstop for a row that arrives by another path (--grow's rebuilt banks pass through the same constructor, so it cannot, but a lookup that cannot fail silently is cheap).
+            tok = r.get("token", "")
+            if tok not in self.ego_yaw:
+                raise RuntimeError(f"--ego-yaw-table has no entry for token {tok!r} (log {r.get('log_name', '?')}): REFUSED rather than train this row on a yaw of 0.0.")
+            ego_t[EYT.EGO_YAW_SLOT] = EYT.YAW_SCALE * self.ego_yaw[tok]
         # float64 on purpose: the rig is a cache KEY in the model, and float32 would round every
         # vehicle's numbers differently from the table's -- same geometry, different key
         cal = (torch.tensor(r["_calib"], dtype=torch.float64) if "_calib" in r
@@ -1096,6 +1132,10 @@ def run_identity(a, ds, scorer_bank, frozen_sha256) -> dict:
     if a.aux_drv_labels:
         # P7.1: the head's label store CONTENT, beside the path in `args` -- a key present ONLY on a head run, so every other run's identity is unchanged
         ident["aux_store_sha256"] = ds.aux.manifest["store_sha256"] if getattr(ds, "aux", None) is not None else None
+    if getattr(a, "ego_yaw_table", None):
+        # WP YAW: the yaw table's CONTENT (sha256 of the file), never its path -- a key present ONLY on a yaw run, so every other run's identity is unchanged. A resume under a different table is refused.
+        ident["ego_yaw_sha256"] = getattr(ds, "ego_yaw_sha256", None)
+        ident["ego_yaw_scale"] = EYT.YAW_SCALE
     return ident
 
 
@@ -1115,7 +1155,7 @@ def _identity_diff(old: dict, new: dict, declared=(), accepted: list | None = No
             out.append(msg)
     grow = bool(new["args"].get("grow")) and bool(old["args"].get("grow"))
     for k in ("n_tuples", "n_scenes", "per_rank", "targets_sha256", "scorer_sha256",
-              "calib_sha256", "frozen_sha256", "field_store_sha256", "aux_store_sha256"):
+              "calib_sha256", "frozen_sha256", "field_store_sha256", "aux_store_sha256", "ego_yaw_sha256", "ego_yaw_scale"):
         if grow and k in GROW_EXEMPT:
             continue
         if old.get(k) != new.get(k):
@@ -1369,6 +1409,7 @@ def run(a) -> int:
     ds = TargetBank(a.targets, a.images, cfg, synthetic=a.synthetic,
                     limit=a.overfit_n if a.overfit else None, spread=a.spread,
                     scorer=scorer_bank if scorer_bank.n_rows else None,
+                    ego_yaw_table=a.ego_yaw_table or None,                    # WP YAW (None = the unchanged loader)
                     max_missing_frac=a.max_missing_images, calib=a.calib, sizes=grow_snap,
                     onpolicy=op_bank, online=online,
                     field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed,
@@ -1503,6 +1544,12 @@ def run(a) -> int:
                 "n_cameras": cfg.n_cameras, "cameras": list(cfg.cameras)}
         if cfg.nav_mode != "goal":
             meta["nav_mode"] = cfg.nav_mode         # ckpt_io.config_for_checkpoint: the planner builds the SAME model (absent => goal, every checkpoint before P6)
+        if a.ego_yaw_table:
+            # WP YAW: a checkpoint trained with a REAL ego[4] says so (refe/ego_yaw.py reads these at deploy to feed the same yaw rate); absent => ego[4] was 0.0 in training (every checkpoint before WP YAW)
+            meta["ego_yaw"] = EYT.YAW_TAG
+            meta["ego_yaw_table_sha256"] = ds.ego_yaw_sha256
+            meta["ego_yaw_scale"] = EYT.YAW_SCALE              # the model reads ego[4] = ego_yaw_scale x rad/s; ego_yaw.py multiplies by THIS value and refuses a yaw checkpoint without one
+            meta["ego_yaw_slot"] = EYT.EGO_YAW_SLOT
         ck_path = run_dir / "ckpt_last.pt"
         summ = run_dir / "summary.json"
         if summ.exists():
@@ -1622,6 +1669,7 @@ def run(a) -> int:
         d = TargetBank(a.targets, a.images, cfg, synthetic=a.synthetic,
                        limit=a.overfit_n if a.overfit else None, spread=a.spread,
                        scorer=sb if sb.n_rows else None,
+                       ego_yaw_table=a.ego_yaw_table or None,
                        max_missing_frac=a.max_missing_images, calib=a.calib, sizes=snap,
                        onpolicy=ob, field_labels=a.field_labels, field_shuffle_seed=a.field_shuffle_seed,
                        aux_labels=a.aux_drv_labels or None, aux_shuffle_seed=a.aux_drv_shuffle_seed)
@@ -2187,6 +2235,11 @@ def build_parser() -> argparse.ArgumentParser:
                          "is unchanged.")
     ap.add_argument("--field-shuffle-seed", type=int, default=None,
                     help="the label-shuffled CONTROL arm: a derangement of the label keys with this seed (registered 20261011). Needs --field-labels.")
+    # ---- WP YAW (TanitAD-artifacts/yawrate_wp/PLAN.md): a REAL ego[4]. The default (None) is the trainer without the feature, bit for bit.
+    ap.add_argument("--ego-yaw-table", default=None,
+                    help="a refe/ego_yaw_table.py table (gzipped JSON {lidar_pc token: ego_pose.angular_rate_z, rad/s CCW+}). Each sample's ego[4] (yaw_rate) is then set to YAW_SCALE (10.0) x the table value for the row's "
+                         "token; ego[5] (steering) is left as the bank has it. A bank row whose token is missing from the table REFUSES the launch. Absent = ego[4] is whatever the bank holds (0.0). "
+                         "The checkpoint's meta then carries ego_yaw='nuplan_angular_rate_z' and the table sha256.")
     # ---- P7.1 (SPEC_AUX_DRIVABLE_HEAD.md section 4): the training-only drivable-area head. EVERY default builds nothing; an arm that means the head NAMES --aux-drv AND --w-aux-drv > 0.
     AUX.add_aux_args(ap)
     ap.add_argument("--preflight", action="store_true",
