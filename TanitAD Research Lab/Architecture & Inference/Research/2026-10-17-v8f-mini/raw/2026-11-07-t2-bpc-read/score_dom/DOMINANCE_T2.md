@@ -1,0 +1,215 @@
+# DOMINANCE_T2: NOT-DOMINANT
+
+Card PREREG_T2_DOMINANCE (sha256 38aa9df3..., card sha ok: True); script sha256 7fd65ffdf62ae74f5609e3ac259588826bb84b51e3a3a84968b299332a3f35f9.
+Arm read: **BPC** (stage 5, cells BPC_s0 and BPC_s1) against the floor P10 (stages 2 and 3). argv: `--root2 E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage2/pull_box2_run2/pull2/rollouts --root3 C:/Users/Admin/t2v8f_pulls/stage3/pull_box2/pull3/rollouts --root4 C:/Users/Admin/t2v8f_pulls/stage4/pull_box2/pull4/rollouts --sources2 E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage2/SCENE_SOURCES.json --sources3 E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage3/SCENE_SOURCES3.json --g1 E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/C0C_ID_RESULT.json --result1 E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage1/pull_box2/pull/STAGE1_RESULT.json --manifest1 E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage1/t2v8f_stage1.tar::pkg/MANIFEST.json --result2 E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage2/pull_box2_run2/pull2/STAGE2_RESULT.json --result3 C:/Users/Admin/t2v8f_pulls/stage3/pull_box2/pull3/STAGE3_RESULT.json --result4 C:/Users/Admin/t2v8f_pulls/stage4/pull_box2/pull4/STAGE4_RESULT.json --exclusions2 E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage2/EXCLUSIONS2.json --exclusions3 E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage3/EXCLUSIONS3.json --exclusions4 E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage4/EXCLUSIONS4.json --out-dir E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage5/BPC/score_dom --arm BPC --arm-stage 5 --arm-root C:/Users/Admin/t2v8f_pulls/stage5_BPC/pull5_BPC/rollouts --arm-exclusions E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage5/BPC/EXCLUSIONS5.json --arm-overlay E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage5/BPC/t2v8f_stage5_overlay_BPC.tar::pkg/MANIFEST5.json --arm-gate-log E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/logs/pytest_full_Q.log`
+Tier: T2 re-perception (agents replayed at log time; not a reactive-traffic result). Estimator: paired scene-cluster bootstrap, B 2000, seed 0 (answers another draw of SCENES only).
+
+## Gates
+
+* G1: PASS 
+* G2: PASS 
+* G3: PASS 
+* G4: PASS 
+
+## Excluded scenes (rule R-SCN)
+
+Rule R-SCN, AMENDMENT_T2_SCENE_REFUSAL.md (frozen 2167a7eb). A scene the renderer refuses before any planner runs leaves the read for BOTH arms; a scene excluded in ANY stage is out of every pairing.
+The excluded scenes' starts are never re-drawn and never replaced. The result is a result on the refusal-surviving scenes, never on the 62.
+
+* Scenes read on: 48 of 62 (14 excluded in the union of stages 2, 3, 4 and 5).
+* Starts read on: 93 of 121 (launch 67 of 81, guard 26 of 40); starts lost 28 (launch 14, guard 14).
+
+| stage | scene | idx | reason | failed cells (deciding + beside) of total | starts lost |
+|---|---|---|---|---|---|
+| 2 | 00169207 | 13 | ACTOR_REFUSED | 10 + 4 of 14 | 2 |
+| 2 | 1aa48b8a | 17 | ACTOR_REFUSED | 10 + 4 of 14 | 2 |
+| 2 | 42a44314 | 33 | ACTOR_REFUSED | 10 + 4 of 14 | 2 |
+| 2 | 90a3d349 | 27 | NO_DYNAMIC_LAYER | 10 + 4 of 14 | 2 |
+| 2 | aa094af8 | 28 | ACTOR_REFUSED | 10 + 4 of 14 | 2 |
+| 2 | c67bdfef | 18 | ACTOR_REFUSED | 10 + 4 of 14 | 2 |
+| 2 | dffd4c04 | 9 | ACTOR_REFUSED | 10 + 4 of 14 | 2 |
+| 3 | 359e435d | 46 | ACTOR_REFUSED | 10 + 4 of 14 | 2 |
+| 3 | 829c55af | 42 | ACTOR_REFUSED | 10 + 4 of 14 | 2 |
+| 3 | 964e7935 | 43 | ACTOR_REFUSED | 10 + 4 of 14 | 2 |
+| 3 | aace43c1 | 45 | ACTOR_REFUSED | 10 + 4 of 14 | 2 |
+| 3 | b0ca8b13 | 44 | NO_DYNAMIC_LAYER | 10 + 4 of 14 | 2 |
+| 3 | ca2cb16e | 54 | ACTOR_REFUSED | 10 + 4 of 14 | 2 |
+| 3 | fbbadc60 | 61 | ACTOR_REFUSED | 10 + 4 of 14 | 2 |
+| 4 | 00169207 | 13 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 4 | 1aa48b8a | 17 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 4 | 359e435d | 46 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 4 | 42a44314 | 33 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 4 | 829c55af | 42 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 4 | 90a3d349 | 27 | NO_DYNAMIC_LAYER | 2 + 2 of 4 | 2 |
+| 4 | 964e7935 | 43 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 4 | aa094af8 | 28 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 4 | aace43c1 | 45 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 4 | b0ca8b13 | 44 | NO_DYNAMIC_LAYER | 2 + 2 of 4 | 2 |
+| 4 | c67bdfef | 18 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 4 | ca2cb16e | 54 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 4 | dffd4c04 | 9 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 4 | fbbadc60 | 61 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 5 | 00169207 | 13 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 5 | 1aa48b8a | 17 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 5 | 359e435d | 46 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 5 | 42a44314 | 33 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 5 | 829c55af | 42 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 5 | 90a3d349 | 27 | NO_DYNAMIC_LAYER | 2 + 2 of 4 | 2 |
+| 5 | 964e7935 | 43 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 5 | aa094af8 | 28 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 5 | aace43c1 | 45 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 5 | b0ca8b13 | 44 | NO_DYNAMIC_LAYER | 2 + 2 of 4 | 2 |
+| 5 | c67bdfef | 18 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 5 | ca2cb16e | 54 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 5 | dffd4c04 | 9 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+| 5 | fbbadc60 | 61 | ACTOR_REFUSED | 2 + 2 of 4 | 2 |
+
+| scene | idx | excluded in (stage: reason) | starts lost |
+|---|---|---|---|
+| dffd4c04 | 9 | 2: ACTOR_REFUSED, 4: ACTOR_REFUSED, 5: ACTOR_REFUSED | 2 |
+| 00169207 | 13 | 2: ACTOR_REFUSED, 4: ACTOR_REFUSED, 5: ACTOR_REFUSED | 2 |
+| 1aa48b8a | 17 | 2: ACTOR_REFUSED, 4: ACTOR_REFUSED, 5: ACTOR_REFUSED | 2 |
+| c67bdfef | 18 | 2: ACTOR_REFUSED, 4: ACTOR_REFUSED, 5: ACTOR_REFUSED | 2 |
+| 90a3d349 | 27 | 2: NO_DYNAMIC_LAYER, 4: NO_DYNAMIC_LAYER, 5: NO_DYNAMIC_LAYER | 2 |
+| aa094af8 | 28 | 2: ACTOR_REFUSED, 4: ACTOR_REFUSED, 5: ACTOR_REFUSED | 2 |
+| 42a44314 | 33 | 2: ACTOR_REFUSED, 4: ACTOR_REFUSED, 5: ACTOR_REFUSED | 2 |
+| 829c55af | 42 | 3: ACTOR_REFUSED, 4: ACTOR_REFUSED, 5: ACTOR_REFUSED | 2 |
+| 964e7935 | 43 | 3: ACTOR_REFUSED, 4: ACTOR_REFUSED, 5: ACTOR_REFUSED | 2 |
+| b0ca8b13 | 44 | 3: NO_DYNAMIC_LAYER, 4: NO_DYNAMIC_LAYER, 5: NO_DYNAMIC_LAYER | 2 |
+| aace43c1 | 45 | 3: ACTOR_REFUSED, 4: ACTOR_REFUSED, 5: ACTOR_REFUSED | 2 |
+| 359e435d | 46 | 3: ACTOR_REFUSED, 4: ACTOR_REFUSED, 5: ACTOR_REFUSED | 2 |
+| ca2cb16e | 54 | 3: ACTOR_REFUSED, 4: ACTOR_REFUSED, 5: ACTOR_REFUSED | 2 |
+| fbbadc60 | 61 | 3: ACTOR_REFUSED, 4: ACTOR_REFUSED, 5: ACTOR_REFUSED | 2 |
+
+## Actor verdict per scene (G2 e)
+
+* 00169207: {'P10@stage2': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)'}
+* 0caa5e02: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 10eef229: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 132ae6cb: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 15eaddae: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 1aa48b8a: {'P10@stage2': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)'}
+* 1b024ad1: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 26b07382: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 359e435d: {'P10@stage3': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)'}
+* 3d6a22f7: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 3e455540: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 41dadaf2: {'P10@stage3': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 42a44314: {'P10@stage2': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)'}
+* 4611c801: {'P10@stage3': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 5894f7ff: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 5ab1d9cb: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 5b94e1f5: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 5cdc4c2f: {'P10@stage3': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 5da7524e: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 6140cba2: {'P10@stage3': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 6bffbe09: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 6eaeeb45: {'P10@stage3': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 764c8a4a: {'P10@stage3': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 769e6724: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 76f7e025: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 77d5887d: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 7c72937c: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 7fd4d554: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 829c55af: {'P10@stage3': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)'}
+* 904af7cf: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 90a3d349: {'P10@stage2': 'EXCLUDED (R-SCN): NO_DYNAMIC_LAYER (stage 2), NO_DYNAMIC_LAYER (stage 4), NO_DYNAMIC_LAYER (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): NO_DYNAMIC_LAYER (stage 2), NO_DYNAMIC_LAYER (stage 4), NO_DYNAMIC_LAYER (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): NO_DYNAMIC_LAYER (stage 2), NO_DYNAMIC_LAYER (stage 4), NO_DYNAMIC_LAYER (stage 5)'}
+* 90ab8c24: {'P10@stage3': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 951ce3ff: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 964e7935: {'P10@stage3': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)'}
+* 9d73b364: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 9e17ce05: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 9e6753c2: {'P10@stage3': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* 9e792fc4: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* a2a4322c: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* a4353805: {'P10@stage3': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* a686c7d0: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* aa094af8: {'P10@stage2': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)'}
+* aace43c1: {'P10@stage3': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)'}
+* b0ca8b13: {'P10@stage3': 'EXCLUDED (R-SCN): NO_DYNAMIC_LAYER (stage 3), NO_DYNAMIC_LAYER (stage 4), NO_DYNAMIC_LAYER (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): NO_DYNAMIC_LAYER (stage 3), NO_DYNAMIC_LAYER (stage 4), NO_DYNAMIC_LAYER (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): NO_DYNAMIC_LAYER (stage 3), NO_DYNAMIC_LAYER (stage 4), NO_DYNAMIC_LAYER (stage 5)'}
+* b12fa656: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* b303ebe3: {'P10@stage3': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* bfb44da0: {'P10@stage3': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* c67bdfef: {'P10@stage2': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)'}
+* c8c798be: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* ca2cb16e: {'P10@stage3': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)'}
+* cda8a096: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* d078258b: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* d3267951: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* dd9fd9d1: {'P10@stage3': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* dffd4c04: {'P10@stage2': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 2), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)'}
+* e34fcbdc: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* e848c843: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* ec41061e: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* f58c6fa3: {'P10@stage3': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* fa035232: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+* fbbadc60: {'P10@stage3': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s0@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)', 'BPC_s1@stage5': 'EXCLUDED (R-SCN): ACTOR_REFUSED (stage 3), ACTOR_REFUSED (stage 4), ACTOR_REFUSED (stage 5)'}
+* fc41d9e9: {'P10@stage2': 'ACCEPTED', 'BPC_s0@stage5': 'ACCEPTED', 'BPC_s1@stage5': 'ACCEPTED'}
+
+## Decision
+
+Outcome: **NOT-DOMINANT**. UNDERPOWERED is tested before NOT-DOMINANT: with the card's literal order it would be unreachable (no separated row => D1 fails => NOT-DOMINANT)
+
+* s0: DOMINANT False (D1 False, D2 False, D3 False), three-family form False, rows separated 10 of 19; failing_terms: ['D1 (ADE6 not separated-better with point <= -0.2415 m; point +1.5230)', 'D2 (separated-worse: ADE6, M1 crawl share, TAC-LON, along-track MAE)', 'D3 (TACTICAL: no separated-better row)']
+* s1: DOMINANT False (D1 False, D2 False, D3 False), three-family form False, rows separated 10 of 19; failing_terms: ['D1 (ADE6 not separated-better with point <= -0.2415 m; point +1.4097)', 'D2 (separated-worse: ADE6, M1 crawl share, TAC-LON, along-track MAE, heading MAE)', 'D3 (TACTICAL: no separated-better row)', 'D3 (STRATEGIC: no separated-better row)']
+
+## Per-family table, s0
+
+| family | row | delta | lo | hi | verdict |
+|---|---|---|---|---|---|
+| LATERAL | heading MAE | +3.9653 | -2.4201 | +10.4542 | unseparated |
+| LATERAL | yaw-rate MAE | -65.1296 | -86.0976 | -44.0223 | separated-better |
+| LATERAL | curvature MAE | -0.1504 | -0.2152 | -0.0876 | separated-better |
+| LATERAL | cross-track MAE | -1.2461 | -1.5884 | -0.8890 | separated-better |
+| LATERAL | L1 lateral-accel MAE | -15.3088 | -20.6194 | -10.2661 | separated-better |
+| LATERAL | L2 curvature MAE (GT>=5.2) | +0.0013 | -0.0380 | +0.0432 | unseparated |
+| LONGITUDINAL | speed MAE | +0.0785 | -0.3136 | +0.4948 | unseparated |
+| LONGITUDINAL | along-track MAE | +2.2077 | +1.6120 | +2.8131 | separated-worse |
+| LONGITUDINAL | accel MAE | -2.5472 | -3.9960 | -1.1071 | separated-better |
+| LONGITUDINAL | DK-VIOL | +0.0000 | +0.0000 | +0.0000 | unseparated |
+| LONGITUDINAL | DK-HW | -0.2601 | -0.7293 | +0.2723 | unseparated |
+| LONGITUDINAL | DK-TG | +0.1555 | -0.0256 | +0.5106 | unseparated |
+| PRIMARY | ADE6 | +1.5230 | +0.9784 | +2.0732 | separated-worse |
+| STRATEGIC | S-POS@30 | -2.5817 | -4.3676 | -0.7084 | separated-better |
+| STRATEGIC | S-POS@50 | -2.0975 | -5.9027 | +1.5944 | unseparated |
+| STRATEGIC | S-POS@80 | -1.8161 | -12.1494 | +7.5334 | unseparated |
+| TACTICAL | TAC-LAT | +0.0968 | +0.0000 | +0.1915 | unseparated |
+| TACTICAL | TAC-LON | -0.3441 | -0.4731 | -0.2087 | separated-worse |
+| crawl | M1 crawl share | +0.3741 | +0.2917 | +0.4583 | separated-worse |
+
+## Per-family table, s1
+
+| family | row | delta | lo | hi | verdict |
+|---|---|---|---|---|---|
+| LATERAL | heading MAE | +14.0734 | +7.5298 | +21.0910 | separated-worse |
+| LATERAL | yaw-rate MAE | -62.5044 | -83.8586 | -41.7943 | separated-better |
+| LATERAL | curvature MAE | -0.1702 | -0.2329 | -0.1058 | separated-better |
+| LATERAL | cross-track MAE | -1.0638 | -1.3917 | -0.7276 | separated-better |
+| LATERAL | L1 lateral-accel MAE | -14.9152 | -20.3047 | -9.9119 | separated-better |
+| LATERAL | L2 curvature MAE (GT>=5.2) | -0.0211 | -0.0560 | +0.0119 | unseparated |
+| LONGITUDINAL | speed MAE | -0.0146 | -0.4912 | +0.4892 | unseparated |
+| LONGITUDINAL | along-track MAE | +2.0896 | +1.5684 | +2.6089 | separated-worse |
+| LONGITUDINAL | accel MAE | -2.3010 | -3.8263 | -0.8331 | separated-better |
+| LONGITUDINAL | DK-VIOL | +0.0000 | +0.0000 | +0.0000 | unseparated |
+| LONGITUDINAL | DK-HW | -0.1570 | -1.0200 | +0.8597 | unseparated |
+| LONGITUDINAL | DK-TG | +0.0671 | -0.2852 | +0.5301 | unseparated |
+| PRIMARY | ADE6 | +1.4097 | +0.9145 | +1.8875 | separated-worse |
+| STRATEGIC | S-POS@30 | -1.6038 | -4.0292 | +0.8151 | unseparated |
+| STRATEGIC | S-POS@50 | -1.5705 | -6.6770 | +3.2767 | unseparated |
+| STRATEGIC | S-POS@80 | +0.5913 | -9.7877 | +10.3704 | unseparated |
+| TACTICAL | TAC-LAT | -0.0860 | -0.2001 | +0.0323 | unseparated |
+| TACTICAL | TAC-LON | -0.2366 | -0.3542 | -0.1290 | separated-worse |
+| crawl | M1 crawl share | +0.3429 | +0.2569 | +0.4281 | separated-worse |
+
+## Seed gap beside (section 7)
+
+* accel MAE: s0 -2.5472, s1 -2.3010, gap 0.2463, margin 0.8331, margin < gap: False
+* yaw-rate MAE: s0 -65.1296, s1 -62.5044, gap 2.6252, margin 41.7943, margin < gap: False
+* curvature MAE: s0 -0.1504, s1 -0.1702, gap 0.0198, margin 0.0876, margin < gap: False
+* cross-track MAE: s0 -1.2461, s1 -1.0638, gap 0.1823, margin 0.7276, margin < gap: False
+* L1 lateral-accel MAE: s0 -15.3088, s1 -14.9152, gap 0.3937, margin 9.9119, margin < gap: False
+
+Rule R-SCN applied: this read is on the 48 refusal-surviving scenes of the 62 (93 of 121 starts).
+
+Disclosure: 62 scenes selected on the human's logs only, launch scenes over-represented (42 of 62); a result here is a result on these scenes at T2, never on PhysicalAI-AV at large.
+The render gap (gate T1 of the crawl card) is reported beside by its own record and is never deciding. A T2 DOMINANT is not a reactive-traffic result.
