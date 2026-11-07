@@ -1,0 +1,20 @@
+....................F..                                                  [100%]
+================================== FAILURES ===================================
+_____________ test_data_target_reached_within_10pct_on_toy_world ______________
+
+    def test_data_target_reached_within_10pct_on_toy_world():
+        wld = ToyWorld()
+        for tgt in ((0.93, 1.36), (1.00, 1.60), (0.95, 1.30)):
+            (m_v, m_a), (e_v, e_a), f = _toy_edit(wld, tgt, 0.3)
+            assert abs(e_v - tgt[0]) / tgt[0] <= 0.10 and abs(e_a - tgt[1]) / tgt[1] <= 0.10, (tgt, e_v, e_a)
+>           assert abs(e_v - m_v) > 0.05 and abs(e_a - m_a) > 0.05                # the edit moved the gains
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           assert (0.13962962421079972 > 0.05 and 0.029849771106944534 > 0.05)
+E            +  where 0.13962962421079972 = abs((0.9496296242107949 - 0.8099999999999952))
+E            +  and   0.029849771106944534 = abs((1.2998497711069446 - 1.27))
+
+tests\test_wsp_edit_d.py:115: AssertionError
+=========================== short test summary info ===========================
+FAILED tests/test_wsp_edit_d.py::test_data_target_reached_within_10pct_on_toy_world
+1 failed, 22 passed in 34.65s
+rc=1
