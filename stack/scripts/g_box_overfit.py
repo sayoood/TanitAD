@@ -1158,7 +1158,10 @@ class TrainerAdapter:
                 # the banded head and the map's own encoder through the FLAG MODULES' own `is_on` (refc_v3_train.py:9997-9998). The
                 # replay never passed them, so an `--r9-map-banded` argv built the 8-way branch and G-DVB refused it (2 mismatches).
                 # Both default False = the refcv8 branch (no new module, parameter or key): an argv without the flags is bit-identical.
-                banded=bool(tr._mbf.is_on(a)), own_enc=bool(tr._moe.is_on(a)))
+                banded=bool(tr._mbf.is_on(a)), own_enc=bool(tr._moe.is_on(a)),
+                # E1-NEAR20: the replay builds the launch model's near band (`--r9-map-banded-near-m`; unset = 10 m, the tip's), else an M1N20
+                # argv would replay a 10 m head under a 20 m near lift and G-DVB (or the MapHiresConfig itself) would refuse it
+                banded_near_m=float(tr._mbf.near_m(a)))
             m._map_hires = _mhr.build_map_hires_branch(m, _hcfg).to(dev)
             m._w_map_hires = float(a.w_map_hires)
             if tr._mbf.is_on(a):                  # train() (refc_v3_train.py:10001-10002): the attribute the LOSS reads; absent when off

@@ -116,7 +116,9 @@ def test_R8_the_refcv8_family_profiles_are_unchanged():
     assert {n: fp(n) for n in ("refcv8", "refcv9-warm", "refcv9-e1rig", "refcv8-nt", "refcv8-mapft", "v8f")} == {
         # 9be3211 (pin2, PI-approved) re-shaed the Thor-ENV pin list in refcv8-mapft and refcv9-warm (e1rig inherits it): those three re-pinned
         # c4debca (pin5, MM, ENV-only from junit, +21 scipy ids) re-shaed the same list again: the same three re-pinned
-        "refcv8": "4841b2a6f0758b95", "refcv9-warm": "09dbfa04d5a3ee4b", "refcv9-e1rig": "12c91131f693443b",     # T1h + T1h-INIT + T1h-FILL (E1_T1_FLAGS gained --r9-bev-warp-supervise-hist, --r9-bev-warp-fuse-init and --r9-bev-warp-fill-only: the E1-BOX-OWN-RECORD / T1 exception tuple; was 68533f6e7bebb5ff); E1-REC4 (T1 exceptions); C5-INTEG: E1-BOX-OWN-RECORD stamp (open_items); BANDED-NL: --r9-map-banded => near lift 10 + the admitted map weights
+        # E1-NEAR20 (MM 2026-11-07): refcv9-e1rig re-pinned 12c91131f693443b -> 18c28c61f19f5544 -- required_values_when gains the M1N20 trigger
+        # (`--r9-map-banded-near-m=20` -> near lift 20); refcv9-warm / -full / -e2 measured UNCHANGED
+        "refcv8": "4841b2a6f0758b95", "refcv9-warm": "09dbfa04d5a3ee4b", "refcv9-e1rig": "18c28c61f19f5544",     # T1h + T1h-INIT + T1h-FILL (E1_T1_FLAGS gained --r9-bev-warp-supervise-hist, --r9-bev-warp-fuse-init and --r9-bev-warp-fill-only: the E1-BOX-OWN-RECORD / T1 exception tuple; was 68533f6e7bebb5ff); E1-REC4 (T1 exceptions); C5-INTEG: E1-BOX-OWN-RECORD stamp (open_items); BANDED-NL: --r9-map-banded => near lift 10 + the admitted map weights
         "refcv8-nt": "a24d2c1a71042711", "refcv8-mapft": "783207af0d9e2062", "v8f": "52860dd82f3a79af"}
     for f in ("--r9-perc-rig", "--r9-train-only"):                                    # refcv8 still refuses the two mode flags
         assert any(f in e[0] for e in R8["forbidden_levers"])

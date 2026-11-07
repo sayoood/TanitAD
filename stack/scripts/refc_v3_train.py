@@ -5236,7 +5236,8 @@ def _map_banded_loss(model, out: dict, batch: dict, device, extra: dict, with_me
         return term
     sub = {"logits": [z.index_select(0, sel) for z in mb["logits"]], "unobs": [u.index_select(0, sel) for u in mb["unobs"]]}
     tg = _mband.build_banded_targets(batch["map_fine"].to(device).index_select(0, sel),
-                                     x_max_m=float(br.cfg.x_max_m), y_half_m=float(br.cfg.y_half_m))
+                                     x_max_m=float(br.cfg.x_max_m), y_half_m=float(br.cfg.y_half_m),
+                                     near_m=float(br.cfg.banded_near_m))     # E1-NEAR20: the targets' bands = the BUILT head's (10 = the tip)
     row = _mband.banded_map_loss(sub, tg, with_metrics=bool(with_metrics))
     extra["map_hires"] = row["loss"]
     extra["n_map_hires_cells"] = float(sum(row["map_banded_n_%s" % b] for b in _mband.BAND_NAMES))
@@ -10038,6 +10039,7 @@ def train(args) -> dict:
             decision_rule=str(getattr(args, "map_hires_decision_rule",
                                       _mhr.DECISION_RULES[0])),
             banded=bool(_mbf.is_on(args)),                   # refcv9 C1: False (the default) builds nothing new
+            banded_near_m=float(_mbf.near_m(args)),          # E1-NEAR20: unset = 10 m, the tip's near band (argparse -> here -> the built head)
             own_enc=bool(_moe.is_on(args)))                  # refcv9 C2: False (the default) builds nothing new
         model._map_hires = _mhr.build_map_hires_branch(model, _hcfg).to(device)
         model._w_map_hires = float(args.w_map_hires)
@@ -13627,6 +13629,10 @@ def build_parser() -> argparse.ArgumentParser:
                          "(+2 offsets) / edge_h / xwalk / arrow / hatch, `unobs` = the lift's own validity (losses ignore it), R7 "
                          "losses (focal + Dice, L1), band weights 1/1/0.5. Needs --map-hires on --map-hires-near-lift-m 10; "
                          "REFUSES --w-map-fp (retired). Default OFF: the tip's build, forward and loss.")
+    g8.add_argument("--r9-map-banded-near-m", type=float, default=None, dest="r9_map_banded_near_m",
+                    help="E1-NEAR20 (PREREG_M1_NEAR20): where the banded head's NEAR band (10 cm cells) ends: 10 (unset = the default = M1 / M2, "
+                         "byte-identical to the tip) or 20 (arm M1N20: near 0-20 m @ 0.10 m = 200 x 600, mid 20-40 m @ 0.25 m, far unchanged). "
+                         "Needs --r9-map-banded and --map-hires-near-lift-m EQUAL to it (10 with 10, 20 with 20); any other value is refused.")
     g8.add_argument("--r9-box-quality", action="store_true",
                     help="refcv9 B3 (REFCV9_DESIGN 2.4): QUALITY-AWARE presence -- a matched slot's presence target is "
                          "exp(-d_centre / 1 m) x yawness instead of 1 (unmatched 0), quality focal form. Needs --w-box3d > 0 and "

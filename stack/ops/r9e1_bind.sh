@@ -143,8 +143,16 @@ if { [ "$KIND" = box ] || [ "$KIND" = box-b3 ]; } && { [ "$DRY" != 1 ] || [ -n "
   echo "594c71196cc5bbd527fee40b2cb0e3f1  $BAUD/PREREG_G_BOX_OVERFIT.md" | md5sum -c - > /dev/null 2>&1 || die "box audit prereg md5"
   echo "b291404c36f83c3e397e3b90367e8e7b  $BAUD/visibility/gbo_frameset.json" | md5sum -c - > /dev/null 2>&1 || die "box audit frame-set md5"
 fi
+# E1-NEAR20: the banded record's near band IS the argv's near-band end (--r9-map-banded-near-m; absent = 10), read by the GATE'S OWN
+# banded_near_m_of (no second parser) into the template's {NEAR_LIFT}. MM 2026-11-07: the template's literal 10 would have built M1N20's
+# record at 10 m and bound it to its 20 m argv (the gate refuses that record, after ~74 GPU-min). The other kinds' templates have no {NEAR_LIFT}.
+NL=""
+if [ "$KIND" = map-banded ]; then
+  NL="$(pyval 'import sys; sys.path.insert(0, sys.argv[1] + "/stack/scripts"); import launch_gate as L; print("%g" % L.banded_near_m_of(L.load_argv_file(sys.argv[2])))' "$CODE" "$ARGV")"
+  case "$NL" in 10|20) say "banded near band 0-$NL m (the argv's near-band end = the record's --near-lift-m)";; *) die "could not read the banded near-band end of $ARGV (got '$NL')";; esac
+fi
 "$PY" "$HERE/refcv8_assemble_argv.py" --render-template "$TPL" --sub "CODE=$CODE" --sub "COMMIT=$COMMIT" --sub "ARGV=$ARGV" \
-    --sub "ARGV_SHA=$ASHA" --sub "OUT=$BD/run_$KIND" --sub "INPUTS=$INPUTS" \
+    --sub "ARGV_SHA=$ASHA" --sub "OUT=$BD/run_$KIND" --sub "INPUTS=$INPUTS" --sub "NEAR_LIFT=$NL" \
     --args-out "$BD/$KIND.args" --data-roots-out "$BD/$KIND.roots" > "$BD/$KIND.render.txt" 2>&1 9>&- 200>&-
 [ "$(grep -c '^RENDERED' "$BD/$KIND.render.txt")" = 1 ] || die "template $TPL did not render ($BD/$KIND.render.txt)"
 if [ "$KIND" = map ] && [ -n "$T1F" ]; then   # E1-REC4: the /1 map harness learns the launch argv (its T1 flags -> the stamp) only for a T1 argv

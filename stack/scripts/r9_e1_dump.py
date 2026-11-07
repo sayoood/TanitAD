@@ -563,7 +563,8 @@ def run_dump(a) -> int:
                         from tanitad.eval import map_planes as _MPL
                         _cfg = model._map_hires.cfg
                         planes = _MPL.to_u8(_MPL.planes_from_banded(
-                            {k: [t[0:1] for t in v] for k, v in mb_.items()}, x_max_m=float(_cfg.x_max_m), y_half_m=float(_cfg.y_half_m)))
+                            {k: [t[0:1] for t in v] for k, v in mb_.items()}, x_max_m=float(_cfg.x_max_m), y_half_m=float(_cfg.y_half_m),
+                            near_m=float(getattr(_cfg, "banded_near_m", 10.0))))     # E1-NEAR20: the CONFIG's near-band end (10 = the tip)
                     lab = eb.get("map_fine_label")
                     gt = None
                     if lab is not None and bool(lab.reshape(-1)[0]) and eb.get("map_fine") is not None:

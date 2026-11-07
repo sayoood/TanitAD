@@ -36,7 +36,8 @@ from torch import Tensor, nn
 from tanitad.data.semantic_map_gt_fine import FINE_CELL_M, FINE_CLASSES, NOT_SEEN_CODE
 
 __all__ = ["FLAG", "DEST", "BAND_NAMES", "BAND_CELL_M", "BAND_WEIGHTS", "CHANNELS", "PROB_CHANNELS", "L1_CHANNELS",
-           "DRV_CODES", "BandGeom", "band_geometry", "BandedMapHead", "unobs_masks", "build_banded_targets",
+           "DRV_CODES", "BandGeom", "band_geometry", "band_starts", "check_near_m", "NEAR_M_DEFAULT", "NEAR_M_ADMITTED",
+           "BAND_START_M", "BandedMapHead", "unobs_masks", "build_banded_targets",
            "banded_map_loss", "signed_distance", "dilate_thin", "target_fractions", "assert_target_content",
            "telemetry_keys", "N_CHANNELS", "MAXENT_W", "FOCAL_GAMMA", "SDF_CLIP_M", "THIN_RADIUS_CELLS"]
 
@@ -55,7 +56,12 @@ C_ARROW, C_EDGE, C_HATCH, C_SIDEWALK = _code("arrow / text"), _code("non-drivabl
 DRV_CODES = (C_DRIVABLE, C_LANE, C_XWALK, C_ARROW, C_HATCH)
 
 BAND_NAMES = ("near", "mid", "far")
+#: the DEFAULT layout (near 0-10 m): every band-layout consumer takes the near-band end from the CONFIG (``near_m``), this tuple is only
+#: the default's value -- read it through :func:`band_starts`, never index it for a run's geometry (E1-NEAR20, PREREG_M1_NEAR20)
 BAND_START_M = (0.0, 10.0, 40.0)
+#: E1-NEAR20: the near band's end, 10 m (the default = M1 / M2) or 20 m (arm M1N20 = C0's near lift). ONE lever, a pre-registered set.
+NEAR_M_DEFAULT = 10.0
+NEAR_M_ADMITTED = (10.0, 20.0)
 BAND_CELL_M = (0.10, 0.25, 0.50)
 #: band weights near / mid / far (2.2): the far field, with the lowest image support, cannot dominate
 BAND_WEIGHTS = (1.0, 1.0, 0.5)
@@ -89,21 +95,39 @@ class BandGeom(NamedTuple):
         return int(round(self.x0 / FINE_CELL_M)), int(round(self.x1 / FINE_CELL_M))
 
 
-def band_geometry(x_max_m: float, y_half_m: float) -> tuple:
-    """The three bands over the declared extent. REFUSES an extent the bands cannot tile (the far band must be a whole
-    number of 0.5 m rows, the width a whole number of 0.5 m cells: the far band is the 0.25 m lift 2 x 2-pooled)."""
+def check_near_m(near_m) -> float:
+    """The near band's end, REFUSED unless it is one of the pre-registered ``NEAR_M_ADMITTED`` (10 = M1, 20 = M1N20)."""
+    try:
+        v = float(near_m)
+    except (TypeError, ValueError):
+        raise ValueError(f"[map-banded] near_m {near_m!r} is not a number") from None
+    if not any(abs(v - a) < 1e-9 for a in NEAR_M_ADMITTED):
+        raise ValueError(f"[map-banded] near_m {near_m!r} is not one of the admitted near-band ends {NEAR_M_ADMITTED} m")
+    return v
+
+
+def band_starts(near_m: float = NEAR_M_DEFAULT) -> tuple:
+    """``(near.x0, mid.x0, far.x0)`` for a near band ending at ``near_m``: the default's ``BAND_START_M`` at 10 m, ``(0, 20, 40)`` at 20 m."""
+    return (BAND_START_M[0], check_near_m(near_m), BAND_START_M[2])
+
+
+def band_geometry(x_max_m: float, y_half_m: float, near_m: float = NEAR_M_DEFAULT) -> tuple:
+    """The three bands over the declared extent, the NEAR band ending at ``near_m`` (default 10 m = M1; 20 m = M1N20: near 0-20 m
+    @ 0.10 m = 200 x 600, mid 20-40 m @ 0.25 m = 80 x 240, far unchanged). REFUSES an extent the bands cannot tile (the far band
+    must be a whole number of 0.5 m rows, the width a whole number of 0.5 m cells: the far band is the 0.25 m lift 2 x 2-pooled)."""
     x_max, yh = float(x_max_m), float(y_half_m)
-    if not x_max > BAND_START_M[2] + 1e-9:
-        raise ValueError(f"[map-banded] x_max {x_max} m leaves no far band (needs > {BAND_START_M[2]} m)")
-    ends = (BAND_START_M[1], BAND_START_M[2], x_max)
+    starts = band_starts(near_m)
+    if not x_max > starts[2] + 1e-9:
+        raise ValueError(f"[map-banded] x_max {x_max} m leaves no far band (needs > {starts[2]} m)")
+    ends = (starts[1], starts[2], x_max)
     out = []
     for k in range(3):
         cell = BAND_CELL_M[k]
-        rows, cols = (ends[k] - BAND_START_M[k]) / cell, 2.0 * yh / cell
+        rows, cols = (ends[k] - starts[k]) / cell, 2.0 * yh / cell
         if abs(rows - round(rows)) > 1e-6 or abs(cols - round(cols)) > 1e-6:
-            raise ValueError(f"[map-banded] band {BAND_NAMES[k]} ({BAND_START_M[k]}-{ends[k]} m, {cell} m cells) does not tile "
+            raise ValueError(f"[map-banded] band {BAND_NAMES[k]} ({starts[k]}-{ends[k]} m, {cell} m cells) does not tile "
                              f"the extent {x_max} m x +-{yh} m")
-        out.append(BandGeom(BAND_NAMES[k], BAND_START_M[k], ends[k], cell, int(round(rows)), int(round(cols)),
+        out.append(BandGeom(BAND_NAMES[k], starts[k], ends[k], cell, int(round(rows)), int(round(cols)),
                             float(BAND_WEIGHTS[k])))
     return tuple(out)
 
@@ -134,9 +158,10 @@ class BandedMapHead(nn.Module):
     (the 10 channel 1x1) and the ``mid`` / ``far`` decoders (new, randomly initialised). ``refine.cls`` (the 8-way readout) is NOT
     built under the flag: nothing would train it. Built LAST by ``MapHiresBranch`` so every other parameter initialises as before."""
 
-    def __init__(self, x_max_m: float, y_half_m: float, *, d_up: int, groups: int):
+    def __init__(self, x_max_m: float, y_half_m: float, *, d_up: int, groups: int, near_m: float = NEAR_M_DEFAULT):
         super().__init__()
-        self.geom = band_geometry(x_max_m, y_half_m)
+        self.near_m = check_near_m(near_m)                          # E1-NEAR20: the near band's end (10 = M1, 20 = M1N20)
+        self.geom = band_geometry(x_max_m, y_half_m, self.near_m)
         self.d_up = int(d_up)
         self.head_near = nn.Conv2d(int(d_up), N_CHANNELS, 1)
         self.mid = _BandDecoder(int(d_up), int(groups))
@@ -298,14 +323,14 @@ def _lane_vectors(lane_f: Tensor, g: BandGeom, y_half_m: float):
     return off, valid
 
 
-def build_banded_targets(codes: Tensor, *, x_max_m: float, y_half_m: float) -> list:
+def build_banded_targets(codes: Tensor, *, x_max_m: float, y_half_m: float, near_m: float = NEAR_M_DEFAULT) -> list:
     """The 10 cm GT raster ``codes`` ``[B, H, W]`` uint8 (``NOT_SEEN_CODE`` 255) -> one dict per band (``near, mid, far``):
 
     ``seen`` bool; ``drv sdw lane edge_h xwalk arrow hatch`` float {0, 1}; ``sdf`` metres + ``sdf_sup`` bool; ``off``
     ``[B, 2, rows, cols]`` metres + ``off_sup`` bool. Area classes take the code at the band cell's CENTRE (the same rule as
     the lift's validity); the THIN classes (lane, edge) are dilated to ~0.5 m at 10 cm and then max-pooled onto the band grid,
     so they stay >= 0.5 m wide at every band. ``drv`` is the CODE SET (1, 2, 3, 4, 6), never an argmax of the 8-way raster."""
-    geom = band_geometry(x_max_m, y_half_m)
+    geom = band_geometry(x_max_m, y_half_m, near_m)
     H, W = int(round(float(x_max_m) / FINE_CELL_M)), int(round(2.0 * float(y_half_m) / FINE_CELL_M))
     if codes.dim() != 3 or tuple(codes.shape[1:]) != (H, W) or codes.dtype != torch.uint8:
         raise ValueError(f"[map-banded] codes must be [B, {H}, {W}] uint8, got {tuple(codes.shape)} {codes.dtype}")

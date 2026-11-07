@@ -1704,10 +1704,15 @@ if _E1_MODULE is not None:
         #: `_E1_MAP_BANDED["near_lift_m"]`, the value its own G-MAP-OVERFIT record is held to), so an argv carrying the flag is held to
         #: 10 and every other to refcv8's 20. Before this the unconditional 20 refused M1 / M2a / M2b at the gate (the f078b7e dev-box
         #: run, 2026-11-04): the banded lever was built, tested and record-bound, and unreachable from the launch.
-        required_values_when={"--r9-map-banded": {"--map-hires-near-lift-m": f"{_E1_MAP_BANDED['near_lift_m']:g}"}},
+        required_values_when={"--r9-map-banded": {"--map-hires-near-lift-m": f"{_E1_MAP_BANDED['near_lift_m']:g}"},
+                              #: E1-NEAR20 (PREREG_M1_NEAR20): an M1N20 argv (`--r9-map-banded-near-m 20`) is held to near lift 20 (= its near band's end, C0's
+                              #: own lift); listed AFTER the banded trigger so it overrides it. An argv passing the flag with 10 stays on 10.
+                              "--r9-map-banded-near-m=20": {"--map-hires-near-lift-m": "20"}},
         required_values_when_why={"--r9-map-banded": "the banded map head's own near lift (MapHiresConfig(banded) refuses any "
                                                      "other; _E1_MAP_BANDED['near_lift_m'], the value its /2-banded record ran) and "
-                                                     "the E1 map arms' pre-registered map weights (_E1_MAP_BANDED['w_map_hires_admitted'])"},
+                                                     "the E1 map arms' pre-registered map weights (_E1_MAP_BANDED['w_map_hires_admitted'])",
+                                  "--r9-map-banded-near-m=20": "the near band 0-20 m @ 0.10 m reuses a near lift of exactly 20 m (MapHiresConfig(banded_near_m "
+                                                               "20) refuses any other; C0's own lift; PREREG_M1_NEAR20)"},
         #: BANDED-NL: refcv8's `--w-map-hires 1.0` (PI 2026-10-14, R8-BUDGET) stays REQUIRED for every non-banded arm; a banded arm is a
         #: map-weight screen (REFCV9_DESIGN 4.3 / E0j) and may carry ONE of the pre-registered weights, never a free value.
         admitted_values_when={"--r9-map-banded": {"--w-map-hires": tuple(f"{w:g}" for w in _E1_MAP_BANDED["w_map_hires_admitted"])}},
@@ -4319,6 +4324,42 @@ def banded_module():
     return importlib.import_module("tanitad.models.map_banded")
 
 
+BANDED_NEAR_M_FLAG = "--r9-map-banded-near-m"
+
+
+def banded_near_m_of(argv: list[str] | None) -> float:
+    """The near band's end an argv declares (E1-NEAR20): `--r9-map-banded-near-m`, else the default 10 m. An unparseable value is NaN (every
+    comparison against it fails -- a named refusal downstream, never a silent 10)."""
+    got = flag_values(argv, BANDED_NEAR_M_FLAG) if argv else []
+    if not got:
+        return 10.0
+    try:
+        return float(got[0])
+    except ValueError:
+        return float("nan")
+
+
+def banded_table_for(bd: dict, argv: list[str] | None, mo: dict | None = None) -> dict:
+    """`prof["map_overfit_banded"]` for THIS argv. The table's literals are the DEFAULT near band (0-10 m): near lift 10, the inherited gated 0-20 m band
+    = near 100 rows + mid 40 rows. An argv with `--r9-map-banded-near-m 20` has near 0-20 m @ 0.10 m (200 rows) and a mid band that starts AT 20 m
+    (0 gated rows, informative): its record is held to those. At the default the SAME dict is returned (identity, nothing recomputed)."""
+    nm = banded_near_m_of(argv)
+    if not bd or abs(nm - 10.0) < 1e-9:
+        return bd
+    hi = 20.0
+    try:
+        hi = float(str((mo or {}).get("band", "0_20")).split("_")[1])
+    except (IndexError, ValueError):
+        pass
+    out = dict(bd)
+    out["near_lift_m"] = nm
+    if math.isfinite(nm):
+        rows = {"near": int(round(min(nm, hi) / 0.1)), "mid": int(round(max(0.0, hi - nm) / 0.25)), "far": 0}
+        out["gate_rows"] = rows
+        out["gated_bands"] = tuple(b for b in bd.get("gated_bands", ()) if rows.get(b, 0) > 0)
+    return out
+
+
 def banded_extent(prof: dict, argv: list[str]) -> tuple[float, float]:
     """`(x_max_m, y_half_m)` of the run: the argv's `--map-hires-x-max-m` / `--map-hires-y-half-m` when passed and numeric, else the extent
     the profile's 10 cm grid (`map_hires.logits_hw`, rows x cols at 10 cm) declares."""
@@ -4336,9 +4377,14 @@ def banded_extent(prof: dict, argv: list[str]) -> tuple[float, float]:
     return x, y
 
 
-def banded_arg(prof: dict, argv: list[str]) -> tuple[float, float] | None:
-    """The `banded=` argument of `hires_output_reasons`: the run's extent for a banded argv, None for every other (the 8-code path)."""
-    return banded_extent(prof, argv) if banded_on(prof, argv) else None
+def banded_arg(prof: dict, argv: list[str]) -> tuple | None:
+    """The `banded=` argument of `hires_output_reasons`: the run's extent for a banded argv, None for every other (the 8-code path).
+    E1-NEAR20: `(x_max_m, y_half_m, near_m)` when the argv's near band ends at a non-default `--r9-map-banded-near-m`; the 2-tuple (the tip's) otherwise."""
+    if not banded_on(prof, argv):
+        return None
+    ext = banded_extent(prof, argv)
+    nm = banded_near_m_of(argv)
+    return ext if abs(nm - 10.0) < 1e-9 else (ext[0], ext[1], nm)
 
 
 def banded_train_keys(M) -> list[str]:
@@ -4355,7 +4401,7 @@ def banded_metric_keys(M) -> list[str]:
     return [BANDED_KEY_FMT["stat"].format(st=s, ch=c, band=b) for s in BANDED_STATS for c in M.PROB_CHANNELS for b in M.BAND_NAMES]
 
 
-def banded_output_reasons(out: Any, x_max_m: float, y_half_m: float) -> tuple[list[str], dict]:
+def banded_output_reasons(out: Any, x_max_m: float, y_half_m: float, near_m: float = 10.0) -> tuple[list[str], dict]:
     """NEW-2 on a FORWARD's output for the BANDED head: `perception.map_hires_logits` is None (BY DESIGN: there is no 8-way raster, and a
     tensor there would be a different head), `perception.map_banded.logits` is one FINITE `[B, 10, rows, cols]` tensor per band matching
     `band_geometry` of the run's extent, and `perception.map_banded.unobs` is one bool `[B, rows, cols]` mask per band."""
@@ -4363,7 +4409,7 @@ def banded_output_reasons(out: Any, x_max_m: float, y_half_m: float) -> tuple[li
     det: dict[str, Any] = {"extent_m": [x_max_m, y_half_m]}
     try:
         M = banded_module()
-        geom = M.band_geometry(x_max_m, y_half_m)
+        geom = M.band_geometry(x_max_m, y_half_m, near_m)
     except Exception as e:                                # noqa: BLE001 -- a named FAIL, never a skip
         return [f"the banded head's constants cannot be read ({type(e).__name__}: {e}) -- the gate cannot judge a `{BANDED_FLAG}` forward"], det
     pout = out.get("perception") if isinstance(out, dict) else None
@@ -4435,7 +4481,7 @@ def hires_output_reasons(prof: dict, out: Any, image_hw: tuple[int, int],
             reasons.append(f"`{fk}` spatial {tuple(fm[0][-2:])} != stride-{h['trunk_stride']} "
                            f"{want}")
     if banded is not None:
-        br_, bd_ = banded_output_reasons(out, banded[0], banded[1])
+        br_, bd_ = banded_output_reasons(out, banded[0], banded[1], banded[2] if len(banded) > 2 else 10.0)
         det["banded"] = bd_
         reasons += br_
     else:
@@ -4553,6 +4599,20 @@ def nav_tau_reasons(prof: dict, argv: list[str], record: str | None,
     return reasons, det
 
 
+def trigger_on(argv: list[str], trig: str) -> bool:
+    """A `required_values_when` / `admitted_values_when` TRIGGER: a plain flag fires when the argv PASSES it; `FLAG=VALUE` (E1-NEAR20) fires only when
+    the argv passes FLAG with exactly that (float-equal) value -- so `--r9-map-banded-near-m=20` holds an M1N20 argv to near lift 20 while an argv that
+    passes the flag with 10 stays on the banded head's default 10."""
+    if "=" not in trig:
+        return has_flag(argv, trig)
+    flag, _, want = trig.partition("=")
+    got = flag_values(argv, flag) or []
+    try:
+        return len(got) == 1 and float(got[0]) == float(want)
+    except ValueError:
+        return got == [want]
+
+
 #: the fixes agent's frozen REQUIRED-ON helper (landed ab436ee, `declared_vs_built.py`):
 #: `check_refcv7_required(model, args, *, tau_file=None) -> list[Mismatch]`
 DVB_REQUIRED_HELPER = "check_refcv7_required"
@@ -4572,7 +4632,7 @@ def required_on_reasons(prof: dict, argv: list[str], D=None, model=None,
     # a plain required value, and the trigger is named in the refusal.
     over_why: dict[str, str] = {}
     for trig, over in (prof.get("required_values_when") or {}).items():
-        if has_flag(argv, trig):
+        if trigger_on(argv, trig):
             for f, v in dict(over).items():
                 vals[f] = v
                 over_why[f] = f"{trig} is passed: " + (prof.get("required_values_when_why") or {}).get(trig, "a recorded ruling")
@@ -4580,7 +4640,7 @@ def required_on_reasons(prof: dict, argv: list[str], D=None, model=None,
     # must equal (as a float) one of the admitted ones -- a pre-registered SET, never a free value (BANDED-NL: the E1 map arms' weights)
     adm: dict[str, tuple[str, tuple]] = {}
     for trig, over in (prof.get("admitted_values_when") or {}).items():
-        if has_flag(argv, trig):
+        if trigger_on(argv, trig):
             for f, allowed in dict(over).items():
                 adm[f] = (trig, tuple(allowed))
                 vals.pop(f, None)
@@ -7245,7 +7305,7 @@ def judge_map_overfit_banded(prof: dict, record: str | None, commit: str, *, arg
     * R1 `lane_w0` FAILS lane; R2 `s8_zeros` FAILS EVERY thin channel -- judged from the arm's own cells. An arm that did not
       run is a FAIL (there is no A19 excusal for this record), and one that ran and passed is a VOID;
     * C1 / C2 reproduce their known values on the record's own cells; the 1 ms label-time guard held on every clip."""
-    mo, bd = prof.get("map_overfit") or {}, prof.get("map_overfit_banded") or {}
+    mo, bd = prof.get("map_overfit") or {}, banded_table_for(prof.get("map_overfit_banded") or {}, argv, prof.get("map_overfit") or {})
     tag = "G-MAP-OVERFIT"
     if not record or not Path(record).is_file():
         return [f"{tag}: no /2-banded overfit record ({record!r}) -- the banded head's OWN record is a launch prerequisite "
@@ -7587,7 +7647,7 @@ E1_BOX_OWN_SCHEMA = "tanitad.g_box_overfit_record/2-b3"
 E1_BOX_MUST_FAIL: tuple = ("memory_zeros", "presence_w0")
 E1_BOX_ARM_FAILED = "failed as required"
 E1_OWN_RECORDS = {
-    "E1-MAP-OWN-RECORD": {"flags": ("--r9-map-banded", "--r9-map-own-enc"), "schema": E1_MAP_OWN_SCHEMA, "check": "G-MAP-OVERFIT",
+    "E1-MAP-OWN-RECORD": {"flags": ("--r9-map-banded", "--r9-map-own-enc", "--r9-map-banded-near-m"), "schema": E1_MAP_OWN_SCHEMA, "check": "G-MAP-OVERFIT",
                           "record_option": "map_overfit_record", "judge": "judge_map_overfit_banded"},
     "E1-BOX-OWN-RECORD": {"flags": E1_BOX_OWN_FLAGS, "schema": E1_BOX_OWN_SCHEMA, "check": "G-BOX-OVERFIT",
                           "record_option": "box_overfit_record", "judge": "judge_box_own_record", "verdict_key": "RESULT",

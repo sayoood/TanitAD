@@ -388,6 +388,10 @@ class MapHiresConfig:
     #: beside the refine trunk and do NOT build the 8-way readout ``refine.cls``. ``False`` (the DEFAULT) builds nothing: the branch
     #: is refcv8's, parameter for parameter, RNG draw for RNG draw.
     banded: bool = False
+    #: ⭐ E1-NEAR20 (PREREG_M1_NEAR20; ``--r9-map-banded-near-m``): where the banded head's NEAR band (10 cm cells) ENDS -- 10 m (the DEFAULT =
+    #: M1 / M2: build, forward, loss and stamp are the tip's) or 20 m (arm M1N20: near 0-20 m = 200 x 600, mid 20-40 m, far unchanged).
+    #: Needs ``banded``; the near lift must cover EXACTLY the near band (``near_lift_x_m == banded_near_m``).
+    banded_near_m: float = 10.0
     #: ⭐ refcv9 C2 (REFCV9_DESIGN 2.2 "Map BEV capacity (M3)"; ``--r9-map-own-enc``): the map gets its OWN ``d_map_enc``-channel BEV
     #: encoder (``MapHiresBranch.map_encoder``) reading the shared lift, widened ``d_lift -> d_map_enc``; the existing ``d_model``-channel
     #: encoder keeps feeding the planner BEV / box / agents. Needs ``banded``. ``False`` (the DEFAULT) builds nothing: the branch is the
@@ -441,9 +445,12 @@ class MapHiresConfig:
                              "the NEAR rows, and without the near lift there are none")
         if bool(self.banded):
             from tanitad.models import map_banded as _mb
-            _mb.band_geometry(self.x_max_m, self.y_half_m)           # refuses an extent the bands cannot tile
-            if abs(nx - 10.0) > 1e-9:
-                raise ValueError(f"banded map head needs near_lift_x_m 10 (the near band is 0-10 m @ 0.10 m), got {nx}")
+            _mb.band_geometry(self.x_max_m, self.y_half_m, self.banded_near_m)   # refuses an extent / a near end the bands cannot tile
+            if abs(nx - float(self.banded_near_m)) > 1e-9:
+                raise ValueError(f"banded map head needs near_lift_x_m {float(self.banded_near_m):g} (= banded_near_m: the near band is "
+                                 f"0-{float(self.banded_near_m):g} m @ 0.10 m), got {nx}")
+        elif abs(float(self.banded_near_m) - 10.0) > 1e-9:
+            raise ValueError(f"banded_near_m {self.banded_near_m!r} without banded: the near-band end exists only on the banded head")
         if bool(self.own_enc):
             if not bool(self.banded):
                 raise ValueError("own_enc (the map's own BEV encoder, M3) needs banded: it feeds ONLY the banded map head")
@@ -503,6 +510,8 @@ class MapHiresConfig:
                 "near_refine_blocks": int(self.near_refine_blocks),
                 # refcv9 C1: absent (not False) for a default run, so a refcv8 stamp is unchanged
                 **({"banded": True} if bool(self.banded) else {}),
+                # E1-NEAR20: absent at the default 10 m, so every M1 / M2 stamp is unchanged
+                **({"banded_near_m": float(self.banded_near_m)} if bool(self.banded) and abs(float(self.banded_near_m) - 10.0) > 1e-9 else {}),
                 # refcv9 C2: absent (not False) for a default run, so a refcv8 / M2 stamp is unchanged
                 **({"own_enc": True, "d_map_enc": int(self.d_map_enc), "lift_width": self.lift_width}
                    if bool(self.own_enc) else {})}
@@ -839,7 +848,7 @@ class MapHiresBranch(nn.Module):
         if bool(cfg.banded):
             from tanitad.models.map_banded import BandedMapHead
             self.banded = BandedMapHead(float(cfg.x_max_m), float(cfg.y_half_m), d_up=int(cfg.d_up),
-                                        groups=int(cfg.norm_groups))
+                                        groups=int(cfg.norm_groups), near_m=float(cfg.banded_near_m))
         else:
             self.banded = None
         # refcv9 C2 (M3): built after EVERYTHING above, inside a forked RNG, so no tip parameter draws differently; None = M2 / refcv8.

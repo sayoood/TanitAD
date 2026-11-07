@@ -44,6 +44,7 @@ needs_bash = S.needs_bash
 #: the kinds r9e1_bind.sh binds each committed arm with (its header: "M1/M2a/M2b: box + map-banded; B3/B3p: map + box-b3"; aux-only and T1 arms: map + box)
 EXPECTED = {"B3": ("map", "box-b3"), "B3p": ("map", "box-b3"),
             "M1": ("map-banded", "box"), "M2a": ("map-banded", "box"), "M2b": ("map-banded", "box"),
+            "M1N20": ("map-banded", "box"),                                    # E1-NEAR20: the banded head with its near band 0-20 m
             "C0": ("map", "box"), "C1": ("map", "box"), "B1": ("map", "box"), "B2": ("map", "box"), "B2c": ("map", "box"),
             "T1": ("map", "box"), "T1s": ("map", "box"), "T1h": ("map", "box"), "T1hs": ("map", "box")}
 MREC_OF = {"map": "run_map/g_map_overfit.json", "map-banded": "run_map-banded/g_map_overfit.json"}

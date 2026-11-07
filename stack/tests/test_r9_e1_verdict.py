@@ -412,7 +412,7 @@ def _design_arm_names():
 
 
 def test_mapping_has_every_design_arm():
-    assert DESIGN_ROWS <= set(V.ARMS) and set(V.ARMS) - DESIGN_ROWS == {"B3p", "T1s", "T1h", "T1hs"}   # B3p = the table's "B3'" (the argv name); T1s = D3's shuffled control; T1h / T1hs = REFCV9_E1_T1H_PREREG.md
+    assert DESIGN_ROWS <= set(V.ARMS) and set(V.ARMS) - DESIGN_ROWS == {"B3p", "T1s", "T1h", "T1hs", "M1N20"}   # M1N20 = E1-NEAR20 (PREREG_M1_NEAR20, not a design row); B3p = the table's "B3'" (the argv name); T1s = D3's shuffled control; T1h / T1hs = REFCV9_E1_T1H_PREREG.md
     names = _design_arm_names()
     if names is None:
         pytest.skip("REFCV9_DESIGN.md is not in this checkout")
@@ -422,7 +422,7 @@ def test_mapping_has_every_design_arm():
 def test_mapping_not_computable_primaries_carry_reason_and_cure():
     nc = [(a, m) for a, s in V.ARMS.items() for m in s["metrics"] if m["status"] == "NOT-COMPUTABLE"]
     # since hold_r9_e1_mapprim the map primary is COMPUTABLE (nf_swedge_prec_lv_5_20): only M1's two 'beside' metrics (lane tolerance-IoU, boundary recall) remain
-    assert {(a, m["id"]) for a, m in nc} == {("M1", "M1.beside.lane"), ("M1", "M1.beside.edge")}
+    assert {(a, m["id"]) for a, m in nc} == {("M1", "M1.beside.lane"), ("M1", "M1.beside.edge"), ("M1N20", "M1N20.beside.lane"), ("M1N20", "M1N20.beside.edge")}
     assert all(m["role"] == "beside" for _, m in nc)
     assert not {a for a, _ in nc} & {"M2a", "M2b", "M3", "A1", "F1", "M1-FROZEN", "B2", "B2c", "T1", "T1s", "T1h", "T1hs"}
     for a, m in nc:

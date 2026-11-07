@@ -43,7 +43,7 @@ def with_value(av: list[str], flag: str, value: str) -> list[str]:
 
 
 def test_the_rule_is_the_banded_heads_own_literal():
-    assert RIG["required_values_when"] == {FLAG: {NL: "10"}}
+    assert RIG["required_values_when"] == {FLAG: {NL: "10"}, "--r9-map-banded-near-m=20": {NL: "20"}}      # E1-NEAR20: M1N20 (near band 0-20 m) -> 20
     assert float(RIG["required_values_when"][FLAG][NL]) == LG._E1_MAP_BANDED["near_lift_m"] == 10.0
     assert RIG["required_values"][NL] == "20"                          # every non-banded arm keeps refcv8's 20
     assert FLAG in RIG["required_values_when_why"]

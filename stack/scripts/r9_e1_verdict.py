@@ -185,6 +185,26 @@ ARMS = {
                            "(hold_r9_e1_mapprim HANDOFF): a different quantity from this primary, so they are no baseline for it",
                            "UNVERIFIED: exact-cell precision against a 1-cell GT edge penalises a banded arm's dilated (~0.5 m) `pedge` heatmap; flags use "
                            "probability planes >= 128, not the FIT-split per-channel thresholds",)},
+    #: E1-NEAR20 (PREREG_M1_NEAR20, MM 2026-11-06 22:30:03Z): M1's argv with the banded head's near band 0-20 m @ 0.10 m and C0's 20 m near lift
+    #: (`--r9-map-banded-near-m 20 --map-hires-near-lift-m 20`). DECISIVE: M1N20 vs C0 under M1's keep rule and primary, UNCHANGED. SECONDARY (never decisive):
+    #: M1N20 vs M1 -- the attribution of the near-band end -- is the same arm read with `--ref M1`; its beside edge F@0.3 m 10-20 m row is the committed selector.
+    "M1N20": {"kind": "lever", "variable": "M1 with the banded head's near band 0-20 m @ 0.10 m (C0's 20 m near lift; mid 20-40 m) -- the near-band end 10 -> 20 m, nothing else",
+              "ref": "C0", "allowed": ("C0", "M1"),
+              "metrics": (_map_primary("M1N20.primary"),
+                          _spec("M1N20.beside.lane", "lane tolerance-IoU 0-20 m (beside)", "beside", (), "higher", (),
+                                "no emitted key: r9_e1_eval has no lane / tolerance-IoU metric (the raster `code` plane is the only lane source)",
+                                "a tolerance-IoU of class 2 (`code` plane) against the 0.5 m dilated GT lane, bands 0-20 m, in r9_e1_eval"),
+                          _spec("M1N20.beside.edge", "boundary recall @0.3 m (beside)", "beside", (), "higher", (),
+                                "no emitted key: r9_e1_eval has no boundary-recall metric",
+                                "recall of GT edge cells (class 5) within 0.3 m of an own boundary cell (`pedge` / `pdrv` planes), in r9_e1_eval"),
+                          *_edge03_specs("M1N20")),
+              "next_lever": "PREREG_M1_NEAR20 committed readings: KEEP -> M1N20 is the map config for K2, M3 builds on it; DROP clause 1-2 with the beside edge F@0.3 m "
+                            "10-20 m separated BETTER vs M1 -> M3 built on M1N20 (next pre-registration); NOT separated better -> M3 (map capacity) or the Cfp fallback (PI)",
+              "argv_flags": ("--r9-map-banded", "--r9-map-banded-near-m"),
+              "ambiguities": ("same primary / keep rule as M1 (PREREG_M1_NEAR20: UNCHANGED); the fitter's band layout stays 0-10 / 10-40 / 40-100 m for every arm, so M1N20's "
+                              "10-20 m is cut with its 10-40 m level even though its head serves 10-20 m at 10 cm (like-for-like with M1 and C0, disclosed in the PREREG)",
+                              "the attribution read M1N20 vs M1 is SECONDARY: C0 differs from M1N20 in the head, not only the lift; separated is necessary, not sufficient "
+                              "(one training seed per arm, H-ESTIM-SEED-1)",)},
     "M2a": {"kind": "lever", "variable": "M1 + --w-map-hires 0.511 (the 0.05 layer2-share dose; argv lever block)", "ref": "M1", "allowed": ("M1",),
             "metrics": (_map_primary("M2a.primary"), _spec("M2a.guard.ap2", "box AP@2 m not worse (the ladder's cost)", "guard", ("ap2m_all",)),
                         *_edge03_specs("M2a")),

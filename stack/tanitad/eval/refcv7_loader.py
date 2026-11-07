@@ -608,6 +608,7 @@ def map_hires_config(tr, args, class_weights_sha256: str):
         class_weights_sha256=str(class_weights_sha256),
         decision_rule=str(getattr(args, "map_hires_decision_rule", _mhr.DECISION_RULES[0])),
         banded=bool(getattr(args, "r9_map_banded", False)),          # refcv9 C1 (train(): same line); False = refcv8's branch
+        banded_near_m=float(tr._mbf.near_m(args)),                   # E1-NEAR20 (train(): same line); unset = 10 m, the tip's near band
         own_enc=bool(getattr(args, "r9_map_own_enc", False)))        # refcv9 C2 (train(): same line); False = refcv8's / M2's branch
 
 
@@ -754,6 +755,9 @@ def stamp_checks(model, config: dict, rec: dict, tr) -> dict:
         else:
             keys = [k for k in (tr._mhr.MapHiresConfig(w_map_hires=1.0).as_dict()) if k in st]
             cmp("map_hires.config", {k: st[k] for k in keys}, {k: mh[k] for k in keys})
+            # E1-NEAR20: the near band's end is absent from the default stamp (= 10 m); G-EVAL compares it BOTH ways, so a loader that
+            # rebuilds a 10 m head from a 20 m run's config (or the reverse) is refused instead of loading shape-mismatched weights
+            cmp("map_hires.banded_near_m", float(st.get("banded_near_m", 10.0)), float(mh.get("banded_near_m", 10.0)))
             for k in ("trunk_tap", "branch_params", "bev_source", "planner_crop_m",
                       "lift_valid_mask"):
                 if k in st:

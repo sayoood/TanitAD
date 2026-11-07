@@ -65,13 +65,15 @@ def critic_feature_banded(paths: Tensor, mb: dict, y_half_m: float | None = None
 
 
 def _geoms(mb: dict) -> list:
-    """(x0, x1, cell, rows, cols) per band, read OFF the logits' shapes and the declared band layout (never a literal extent)."""
-    out = []
+    """(x0, x1, cell, rows, cols) per band, read OFF the logits' shapes (never a literal extent or a literal band start): the near band
+    starts at 0 and every next band starts where the previous one ENDS, so a near band that ends at 20 m (E1-NEAR20) moves the mid band
+    to 20-40 m with no constant to keep in step. At the default layout the tuples are the old ones (0/10/40 m)."""
+    out, x0 = [], float(MB.BAND_START_M[0])
     for k, z in enumerate(mb["logits"]):
         cell = MB.BAND_CELL_M[k]
         rows, cols = int(z.shape[-2]), int(z.shape[-1])
-        x0 = MB.BAND_START_M[k]
         out.append((x0, x0 + rows * cell, cell, rows, cols))
+        x0 = x0 + rows * cell
     return out
 
 

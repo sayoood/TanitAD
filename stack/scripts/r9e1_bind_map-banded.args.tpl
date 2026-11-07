@@ -5,8 +5,9 @@
 # E1-REC2: `--launch-argv {ARGV}` hands the harness the argv the record is bound to (its sha256 must equal --launch-argv-sha256): an argv carrying
 # --r9-map-own-enc (arm M3) makes the record build the map's OWN 128-channel encoder and STAMP `own_enc`; M1 / M2 build nothing new.
 # Differences from the /1 template, all of them forced by the banded head: --banded; the A18 spec (the arms' must-fail rows live in the
-# harness); --near-lift-m 10 (the banded near band); no --class-weights (the banded loss has none); --arms healthy,lane_w0,s8_zeros.
-# {CODE} {COMMIT} {ARGV} {ARGV_SHA} {OUT} {INPUTS} are filled by `r9e1_bind.sh`.
+# harness); --near-lift-m {NEAR_LIFT} (the banded near band = the argv's near-band end, 10 or 20 m); no --class-weights (the banded loss has none); --arms healthy,lane_w0,s8_zeros.
+# {CODE} {COMMIT} {ARGV} {ARGV_SHA} {OUT} {INPUTS} {NEAR_LIFT} are filled by `r9e1_bind.sh` ({NEAR_LIFT} = the launch argv's
+# --r9-map-banded-near-m, absent = 10, read by the gate's own banded_near_m_of: E1-NEAR20; a literal 10 bound M1N20 to a 10 m record).
 stack/scripts/map_hires_overfit.py
 --banded
 --spec
@@ -16,7 +17,7 @@ stack/scripts/map_hires_overfit.py
 --decision-rule
 prior_corrected
 --near-lift-m
-10
+{NEAR_LIFT}
 --near-refine-blocks
 1
 --v2-cache

@@ -69,6 +69,8 @@ def _to_raster(x: Tensor, geom: tuple, x_max_m: float, y_half_m: float, fill) ->
     H, W = int(round(x_max_m / MB.FINE_CELL_M)), int(round(2.0 * y_half_m / MB.FINE_CELL_M))
     outs = []
     for t, g in zip(x, geom):
+        if tuple(t.shape[1:]) != (g.rows, g.cols):      # E1-NEAR20: a band layout that is not the logits' would silently resample the WRONG metres
+            raise ValueError(f"[map-planes] band {g.name} is {tuple(t.shape[1:])}, the band layout ({g.x0:g}-{g.x1:g} m) says {(g.rows, g.cols)}")
         r0, r1 = g.fine_rows
         r1 = min(r1, H)
         outs.append(F.interpolate(t[:, None].float(), size=(r1 - r0, W), mode="nearest-exact")[:, 0])
@@ -78,9 +80,16 @@ def _to_raster(x: Tensor, geom: tuple, x_max_m: float, y_half_m: float, fill) ->
     return r
 
 
-def planes_from_banded(mb: dict, *, x_max_m: float, y_half_m: float, thresholds: dict | None = None) -> MapPlanes:
-    """refcv9: the banded channels (``out["perception"]["map_banded"]``) -> planes at the 10 cm raster."""
-    geom = MB.band_geometry(x_max_m, y_half_m)
+def planes_from_banded(mb: dict, *, x_max_m: float, y_half_m: float, thresholds: dict | None = None,
+                       near_m: float | None = None) -> MapPlanes:
+    """refcv9: the banded channels (``out["perception"]["map_banded"]``) -> planes at the 10 cm raster.
+
+    ``near_m`` (E1-NEAR20): where the head's near band ends -- the CONFIG's ``banded_near_m`` (the dump passes it). ``None`` reads it OFF
+    the logits' own near-band rows (rows x 0.10 m), so a caller that predates the lever still follows the head it is handed; either way
+    ``band_geometry`` validates it against the pre-registered set and ``_to_raster`` refuses a band whose shape is not the layout's."""
+    if near_m is None:
+        near_m = round(int(mb["logits"][0].shape[-2]) * MB.BAND_CELL_M[0], 6)
+    geom = MB.band_geometry(x_max_m, y_half_m, near_m)
     ci = {c: i for i, c in enumerate(MB.CHANNELS)}
     thr = {c: 0.5 for c in MB.PROB_CHANNELS}
     thr.update(thresholds or {})
@@ -98,13 +107,13 @@ def planes_from_banded(mb: dict, *, x_max_m: float, y_half_m: float, thresholds:
 
 
 def planes_from_output(pout: dict, *, class_weight=None, rule: str | None = None, x_max_m: float | None = None,
-                       y_half_m: float | None = None, thresholds: dict | None = None) -> MapPlanes:
+                       y_half_m: float | None = None, thresholds: dict | None = None, near_m: float | None = None) -> MapPlanes:
     """THE dispatch: ``pout`` = ``out["perception"]``. ``map_banded`` -> refcv9, ``map_hires_logits`` -> refcv8; both absent is an
     error (a scorer that finds no map must say so, not score an empty one)."""
     if pout.get("map_banded") is not None:
         if x_max_m is None or y_half_m is None:
             raise ValueError("[map-planes] refcv9 output: pass the declared extent (x_max_m, y_half_m)")
-        return planes_from_banded(pout["map_banded"], x_max_m=x_max_m, y_half_m=y_half_m, thresholds=thresholds)
+        return planes_from_banded(pout["map_banded"], x_max_m=x_max_m, y_half_m=y_half_m, thresholds=thresholds, near_m=near_m)
     if pout.get("map_hires_logits") is not None:
         return planes_from_logits8(pout["map_hires_logits"], class_weight, rule, pout.get("map_hires_lift_valid"))
     raise ValueError("[map-planes] the perception output carries neither `map_banded` nor `map_hires_logits`")

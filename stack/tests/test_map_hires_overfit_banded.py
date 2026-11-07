@@ -94,7 +94,9 @@ BANDED_NEW = {"BANDED_SCHEMA", "BANDED_CHANNEL_CLASS", "BANDED_CHANNELS", "BANDE
               # refcv9 E1-REC4 (arm T1): the temporal-BEV-warp stamp (flags, record keys, the one-line reason, the stamp builders); /1 and /2-banded both stamp
               "T1_FLAGS", "T1_STAMP", "T1_STAMP_WHY", "T1_WHY", "t1_flags_of", "t1_stamp_fields", "t1_record_fields",
               # refcv9 E1-REUSE (MM 207ebd): the GPU-free identity of a harness invocation (`--identity-only`), pure functions that run BEFORE any model
-              "IDENTITY_SCHEMA", "IDENTITY_KEYS", "identity_sha256", "identity_block", "identity_harness_part", "main_identity"}
+              "IDENTITY_SCHEMA", "IDENTITY_KEYS", "identity_sha256", "identity_block", "identity_harness_part", "main_identity",
+              # refcv9 E1-NEAR20 (MM 2026-11-07): a --launch-argv whose banded near-band end is not --near-lift-m refuses (only --banded reaches them)
+              "NEAR_M_FLAG", "argv_banded_near_m", "check_near_vs_argv"}
 
 
 def _key(n):
@@ -335,7 +337,7 @@ def test_the_flag_is_wired_and_refuses_the_wrong_near_lift_and_a_missing_gated_a
     base = ["--banded", "--spec", str(A18), "--v2-cache", str(tmp_path), "--gt-root", str(tmp_path),
             "--extrinsics", str(tmp_path / "e.json"), "--out", str(tmp_path / "o"), "--decision-rule", "prior_corrected",
             "--near-refine-blocks", "1"]
-    with pytest.raises(SystemExit, match="near-lift-m 10"):
-        O.main(base + ["--near-lift-m", "20", "--arms", "healthy,lane_w0,s8_zeros"])
+    with pytest.raises(SystemExit, match="near-lift-m in"):                       # E1-NEAR20: {10, 20} are admitted; 15 is not
+        O.main(base + ["--near-lift-m", "15", "--arms", "healthy,lane_w0,s8_zeros"])
     with pytest.raises(SystemExit, match="gated arm"):
         O.main(base + ["--near-lift-m", "10", "--arms", "healthy"])

@@ -46,7 +46,11 @@ RUNS = STACK / "ops" / "runs.d"
 AUDIT = STACK / "ops" / "refcv8_box_audit"
 #: the three lines of the fix, verbatim. Reverting them from a COPY re-installs the tip's replay (the defect).
 CFG_OLD = ('                decision_rule=str(getattr(a, "map_hires_decision_rule", _mhr.DECISION_RULES[0])),\n')
-CFG_BANDED = ("                banded=bool(tr._mbf.is_on(a)), own_enc=bool(tr._moe.is_on(a)))\n")
+CFG_BANDED = ("                banded=bool(tr._mbf.is_on(a)), own_enc=bool(tr._moe.is_on(a)),\n")
+#: E1-NEAR20: the replay builds the launch model's near band (unset = 10 m, the tip's) -- the call's last keyword, after CFG_BANDED
+CFG_NEAR = ("                # E1-NEAR20: the replay builds the launch model's near band (`--r9-map-banded-near-m`; unset = 10 m, the tip's), else an M1N20\n"
+            "                # argv would replay a 10 m head under a 20 m near lift and G-DVB (or the MapHiresConfig itself) would refuse it\n"
+            "                banded_near_m=float(tr._mbf.near_m(a)))\n")
 ATTR_LINES = ("            if tr._mbf.is_on(a):", "                setattr(m, tr._mbf.MODEL_ATTR, True)\n")
 #: the extent the E1 M arms declare (stack/ops/runs.d/r9e1_M1.argv.json): the banded head tiles 100 m x +-30 m
 X_MAX, Y_HALF, NEAR_LIFT = "100", "30", "10"
@@ -93,9 +97,9 @@ def _tip_replay_edits() -> list[tuple[str, str]]:
     src = GBO_PATH.read_text(encoding="utf-8")
     old_cfg = CFG_OLD.rstrip("\n").rstrip(",") + ")\n"
     i = src.index(CFG_OLD)
-    j = src.index(CFG_BANDED) + len(CFG_BANDED)
+    j = src.index(CFG_NEAR) + len(CFG_NEAR)
     block = src[i:j]
-    assert block.count("\n") == 6 and block.endswith(CFG_BANDED), block         # the call line + 4 comment lines + the 2-keyword line
+    assert block.count("\n") == 9 and block.endswith(CFG_BANDED + CFG_NEAR), block   # the call line + 4 comment lines + the 2-keyword line + E1-NEAR20's 3
     a0 = src.index(ATTR_LINES[0])
     a1 = src.index(ATTR_LINES[1]) + len(ATTR_LINES[1])
     attr = src[a0:a1]
@@ -183,7 +187,7 @@ def test_RED_each_half_of_the_fix_is_load_bearing(rigs, tmp_path):
         NL._harness_model(G2, rigs.T, rigs.argvs["banded"])
     assert "(read from model._r9_map_banded)" in str(e2.value) and "(read from model._map_hires.banded)" not in str(e2.value)
     # (3) own_enc alone dropped on the M3 argv: the banded head is built, the own encoder is not
-    G3 = _mutated(tmp_path, "gbo_no_own_enc", [(CFG_BANDED, "                banded=bool(tr._mbf.is_on(a)))\n")])
+    G3 = _mutated(tmp_path, "gbo_no_own_enc", [(CFG_BANDED, "                banded=bool(tr._mbf.is_on(a)),\n")])
     with pytest.raises(SystemExit) as e3:
         NL._harness_model(G3, rigs.T, rigs.argvs["own_enc"])
     assert "r9_map_own_enc: declared True but BUILT False (read from model._map_hires.map_encoder)" in str(e3.value)

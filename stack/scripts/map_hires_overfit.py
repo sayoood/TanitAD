@@ -651,6 +651,32 @@ def resolve_own_enc(own_enc_flag: bool, facts: dict | None) -> tuple:
     return bool(facts["own_enc"]), ("launch_argv" if facts["own_enc"] else "off")
 
 
+#: E1-NEAR20: the trainer flag that sets the banded head's near-band end (`tanitad.train.map_banded_flag.NEAR_M_FLAG`, pinned by a test).
+NEAR_M_FLAG = "--r9-map-banded-near-m"
+
+
+def argv_banded_near_m(argv) -> float:
+    """The banded near-band end an argv builds: ``--r9-map-banded-near-m`` (or ``--r9-map-banded-near-m=V``), else 10 (the trainer's default)."""
+    for i, t in enumerate(argv):
+        if t == NEAR_M_FLAG and i + 1 < len(argv):
+            return float(argv[i + 1])
+        if t.startswith(NEAR_M_FLAG + "="):
+            return float(t.split("=", 1)[1])
+    return 10.0
+
+
+def check_near_vs_argv(near_m: float, facts: dict | None) -> None:
+    """E1-NEAR20 (MM 2026-11-07): this harness builds its head BY HAND from ``--near-lift-m``, so with a ``--launch-argv`` the record's near band must be
+    the one the argv trains. The bind template once carried a literal 10, which would have built M1N20's record at 10 m and bound it to its 20 m argv.
+    REFUSES that mismatch; no argv / a non-banded argv -> nothing to check."""
+    if facts is None or not facts["banded"]:
+        return
+    want = argv_banded_near_m(facts["argv"])
+    if abs(want - float(near_m)) > 1e-9:
+        raise SystemExit(f"⛔ --near-lift-m {float(near_m):g} but the launch argv builds the banded near band to {want:g} m ({NEAR_M_FLAG}): "
+                         f"the record would certify a head this argv does not train")
+
+
 #: refcv9 E1-REC4 (MM 207ebd, PINNED): T1, the TEMPORAL BEV WARP (``--r9-bev-warp`` + lags + shuffle control), changes the heads' INPUT, not their structure.
 #: This harness builds the map head on FROZEN frames with no staged history, so a T1 flag in the launch argv is NOT built (it never was: the trunk + branch are
 #: built by hand here) and the record STAMPS ``bev_warp_not_certified`` (+ a one-line reason) == the argv's T1 flag set, which the launch gate's judges
@@ -735,7 +761,7 @@ def _banded_forward(trunk, branch, data, idx, device, arm):
 def _band_targets(data, idx, device, extent):
     from tanitad.models import map_banded as MB
     return MB.build_banded_targets(data["codes"][idx].to(device), x_max_m=float(extent.x_max_m),
-                                   y_half_m=float(extent.y_half_m))
+                                   y_half_m=float(extent.y_half_m), near_m=float(data.get("near_m", MB.NEAR_M_DEFAULT)))   # E1-NEAR20
 
 
 def banded_loss(logits, unobs, targets, zero_channels=()):
@@ -983,10 +1009,12 @@ def main_banded(a) -> int:
     for x in BANDED_DEFAULT_ARMS:
         if x not in arms:
             raise SystemExit(f"⛔ the gated arm {x!r} is not in --arms")
-    if float(a.near_lift_m) != float(MB.BAND_START_M[1]):
-        raise SystemExit(f"⛔ --banded needs --near-lift-m {MB.BAND_START_M[1]:g} (the near band is 0-10 m @ 0.10 m: "
-                         f"MapHiresConfig(banded) refuses any other); the spec's near_lift_m "
-                         f"{spec.get('near_lift_m')} belongs to the 8-code head")
+    try:               # E1-NEAR20: the near lift IS the banded head's near-band end -- one of the pre-registered {10, 20} m (10 = M1, 20 = M1N20)
+        near_m = MB.check_near_m(a.near_lift_m)
+    except ValueError:
+        raise SystemExit(f"⛔ --banded needs --near-lift-m in {MB.NEAR_M_ADMITTED} (the near band is 0-<near-lift> m @ 0.10 m: "
+                         f"MapHiresConfig(banded) refuses any other); got {a.near_lift_m}; the spec's near_lift_m "
+                         f"{spec.get('near_lift_m')} belongs to the 8-code head") from None
     if "near_block_zeros" in arms and not int(a.near_refine_blocks) > 0:
         raise SystemExit("⛔ the near_block_zeros arm needs --near-refine-blocks > 0")
     if spec.get("near_refine_blocks") is not None and int(spec["near_refine_blocks"]) != int(a.near_refine_blocks):
@@ -996,6 +1024,7 @@ def main_banded(a) -> int:
     # E1-REC2: the argv (when given) decides the own encoder -- resolved BEFORE the trunk is built so a conflict refuses in seconds
     facts = launch_argv_facts(a.launch_argv, a.launch_argv_sha256) if a.launch_argv is not None else None
     own_enc, own_enc_source = resolve_own_enc(bool(a.own_enc), facts)
+    check_near_vs_argv(near_m, facts)                        # E1-NEAR20: the record's near band = the argv's (refuses in seconds, before the trunk)
     from tanitad.models import timm_trunk as TT
     from tanitad.models.trunk_shapes import frame_for_width
     tsp = spec.get("trunk") or {}
@@ -1011,13 +1040,15 @@ def main_banded(a) -> int:
     hcfg = H.MapHiresConfig(w_map_hires=1.0, x_max_m=float(extent.x_max_m), y_half_m=float(extent.y_half_m),
                             grad_ckpt=(a.grad_ckpt == "on"), near_lift_x_m=float(a.near_lift_m),
                             near_refine_blocks=int(a.near_refine_blocks), decision_rule=spec["thresholds"]["decision_rule"],
-                            class_weights_sha256="", banded=True, **({"own_enc": True} if own_enc else {}))
+                            class_weights_sha256="", banded=True, banded_near_m=near_m, **({"own_enc": True} if own_enc else {}))
     branch = H.MapHiresBranch(hcfg, d_image=trunk.s8_dim, image_hw=trunk.s8_shape)
-    geom = MB.band_geometry(extent.x_max_m, extent.y_half_m)
+    geom = MB.band_geometry(extent.x_max_m, extent.y_half_m, near_m)
     hi_m = banded_hi_m(spec["thresholds"].get("band", "0_20"), extent.band_keys)
     fp = {"trunk_init_sha256": _fingerprint(trunk), "branch_init_sha256": _fingerprint(branch)}
     frame = frame_for_width(int(hw[1]), int(hw[0]))
     data = load_frames(spec, a.v2_cache, a.gt_root, a.extrinsics, frame, hcfg, eq, cam_ts_dir=a.cam_ts_dir)
+    if abs(near_m - MB.NEAR_M_DEFAULT) > 1e-9:
+        data["near_m"] = near_m                       # E1-NEAR20: read by `_band_targets` (absent = the default 10 m)
     results = {arm: run_arm_banded(arm, trunk, branch, data, spec, a.device, extent, geom, hi_m) for arm in arms}
     ctrl = controls_banded(data, results["healthy"].pop("_kept"), extent, geom, hi_m, a.device)
     for r in results.values():
@@ -1051,7 +1082,9 @@ def main_banded(a) -> int:
                                       "(focal + Dice) in place of the 8-way per-class CE",
                           "informative_not_gated": ["far band", "drv_sdf", "lane_ox", "lane_oy"],
                           "loss_weight": "w_map_hires is not applied (AdamW, weight decay 0: scale-invariant), as in /1",
-                          "near_lift_m": "10 = the banded head's own requirement (the spec's 20 belongs to the 8-code head)"},
+                          "near_lift_m": ("10 = the banded head's own requirement (the spec's 20 belongs to the 8-code head)" if near_m == 10.0 else
+                                          f"{near_m:g} = the banded near-band end of the launch argv (E1-NEAR20, {NEAR_M_FLAG}); the near lift "
+                                          f"covers exactly the near band")},
            "device": a.device, "verdict": v, "results": results}
     rec.update(t1_stamp_fields(facts))                       # E1-REC4: a banded base + T1: the record says T1's history is NOT certified ({} otherwise)
     (a.out / "g_map_overfit.json").write_text(json.dumps(rec, indent=1, default=float), encoding="utf-8")
