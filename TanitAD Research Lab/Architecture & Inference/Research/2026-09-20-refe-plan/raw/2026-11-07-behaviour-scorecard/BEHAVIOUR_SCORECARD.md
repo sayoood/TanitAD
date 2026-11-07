@@ -1,0 +1,121 @@
+# BEHAVIOUR_SCORECARD -- REFe's binding behaviour acceptance protocol, v1 (stream BEHAV, 2026-11-07)
+
+**Status: FROZEN.** sha256 in `BEHAVIOUR_SCORECARD.sha256`. It is the instrument for every future REFe checkpoint. A change is an `AMENDMENT_n.md` with its own sha256, written before the result it would affect is read, and it applies only to checkpoints read after it (the old result is kept and re-read under both).
+- **Direction:** PI-approved 2026-11-07 (INHERITED from the brief). The numbers marked PI below are the PI's; the rest are mine, with an evidence class.
+- **Evidence classes:** `PI` (a number the PI stated) / `SOURCE` (read from nuPlan or NAVSIM code, path given) / `MEASURED` (ours, artifact path) / `ESTIMATED` / `HYPOTHESIS`.
+
+## 0. Tier stamp, and a vocabulary conflict the MM must rule on
+- **Closed-loop reads (sections 2-4) run in TanitScenarioFlyWheel:** the trajectory controls the ego vehicle and the sim re-renders, so the next observation is a consequence of the model's output. By `VOCABULARY.md` ("CLOSED LOOP", PI ruling 2026-09-02) that **is** a closed loop, and by `EVAL_DOCTRINE.md` (amended 2026-09-02) the only closed-loop tier is **T2**.
+- **The brief, the sim session and `PREREG_AXOFF` section 6b call it "T1-sim".** `EVAL_DOCTRINE.md` reserves T1 for self-action OPEN loop and says T2 is "NOT YET PROVISIONED". These cannot both stand.
+- **Scorecard rule until ruled:** stamp every closed-loop number **`T2-class, closed-loop sim (the sim session's "T1-sim")`**, and quote "driving" claims only with that stamp. Open-loop proxies (section 5) are **T0**. The ruling (rename the sim tier to T2, or amend the doctrine) is the MM's; it changes no definition below.
+- **Sim scope:** agents are replayed logged tracks, not reactive (the coordinator's constraint; `VOCABULARY.md` records the same limit for AlpaSim). Collision and TTC are therefore measured against non-reactive traffic.
+
+## 1. Conventions used by every rule
+- **Reference = the human log** of the same scenario (nuPlan ego track). `v_h(s)` = human speed at arc length `s` along the human path; `s(t)` = projection of the ego pose on the human path. Matched-time comparison is reported beside it, not instead.
+- **Grid:** metrics are computed on the sim's tick grid resampled to 10 Hz (linear for v, a; zero-order hold for pick and ids). `dt = 0.1 s`.
+- **Warm-up:** the first 2.0 s of each scenario are excluded from rules (a), (b), (d) (the model needs history; ESTIMATED).
+- **Agents:** `lead` = the nearest logged vehicle whose box overlaps the ego-path corridor (human path, half-width 1.5 m = ego half-width 1.15 m + 0.35 m; ESTIMATED) ahead of the ego front bumper. `gap` = bumper-to-bumper distance along the path (>= 0). `v_rel = v_ego - v_lead`. `TTC_t = gap / v_rel` if `v_rel > 0.1 m/s`, else infinity. `time_gap_t = gap / v_ego`, defined for `v_ego >= 3 m/s`.
+- **Free road at tick t** = there is no lead with `gap <= max(4.0 s * v_ego, 15 m)` and `TTC_t > 8 s`. (A lead further than that is not a cause for slowing; the 4 s/8 s horizons are ESTIMATED human-reaction scales, wider than the 1.0 s NAVSIM TTC window below so that a cause is never missed.) A free-road **interval** is a maximal run of free-road ticks of length >= 2.0 s.
+- **Human-pass status (Gate H, section 6):** a rule counts toward a scenario only if the human log itself passes it there. A rule the human fails is reported as `INFORMATIONAL` for that scenario and never enters a pass count or the adoption test.
+- **Persistence:** a violation is a run of >= 3 consecutive ticks (0.3 s, the spacing of NAVSIM's TTC samples, `pdm_scorer.py:504`). Single-tick events are logged, not scored.
+
+## 2. The closed-loop rules (per scenario; threshold, rationale, evidence class)
+| id | family | rule (PASS condition) | threshold | rationale and source |
+|---|---|---|---|---|
+| **a1** free-road speed | LONGITUDINAL | In free-road intervals, share of ticks with `0.90 <= v_ego / v_h(s) <= 1.10` | **>= 0.90** of free-road ticks | +-10 % is `PI`. The 0.90 share leaves 10 % of ticks for transients (ESTIMATED). Two-sided: over-speed fails too. Denominator `v_h` is floored at 3 m/s so a near-stop human does not make the ratio explode. |
+| **a2** phantom braking | LONGITUDINAL | Count of events = 0. **Event:** within one free-road interval, a window of 4.0 s over which `v_ego(t+4)/v_ego(t) < 0.85` AND the human's `v_h(s(t+4))/v_h(s(t)) >= 0.85`. Overlapping windows merge into one event. | **0 events** | 15 % is `PI`. 4.0 s is the planning horizon of the `v4/v0 < 0.85` slow-pick statistic (`P1_DIAG.md`), so the closed-loop event and the T0 proxy measure the same thing. The human clause removes slow-downs the road geometry explains. |
+| **b1** lead time gap | LONGITUDINAL | In steady-follow ticks (lead present >= 3 s continuously, `v_ego >= 3 m/s`, `|a_lead| <= 1.0 m/s^2`): median `time_gap` in [1.5, 2.5] s | **[1.5, 2.5] s** | `PI`. |
+| **b2** never close | LONGITUDINAL / safety | No run of >= 3 ticks with `time_gap < 1.0 s` (`v_ego >= 3 m/s`, lead present) | **0 runs** | `PI`. |
+| **c1** no stall when clear | TACTICAL | Over the approach window (first tick with the signal green or no conflicting agent and ego within 40 m of the stop line, to the tick the front bumper crosses the line), `min v_ego > 1.0 m/s` | **> 1.0 m/s** | `PREREG_AXOFF` section 6c, verbatim ("minimum speed > 1.0 m/s before the stop line while the arrow is green"). 40 m is ESTIMATED. |
+| **c2** stop on red | TACTICAL | Front bumper never crosses the stop line while the signal is red; stops with the bumper within 6 m before the line | **0 crossings** | Traffic-light compliance (NAVSIM `traffic_light_compliance`, `pdm_scorer.py:171`). The 6 m cap against a crawl-stop far short of the line is ESTIMATED. |
+| **c3** yield when not clear | TACTICAL | In the conflict zone of a scenario (protected-left or merge): the ego does not enter the zone while a conflicting agent is within 2.0 s of it, and rule f holds | **0 entries** | ESTIMATED (conflict-severity convention; no banked primary, so not quotable as PUBLISHED). |
+| **c4** launch from standstill | TACTICAL | After a stop and the lead pulling away or the light turning green: time to `v_ego > 1.0 m/s` | **<= 3.0 s, or human + 1.5 s if larger** | ESTIMATED. Targets the "creep-stall" pattern, not driver impatience. |
+| **d1** comfort | LONGITUDINAL / LATERAL | Share of sliding 4.0 s windows (stride 1.0 s) on which NAVSIM's `ego_is_comfortable` returns True on the realised states | **>= 0.95, or human share - 0.05 if smaller** | Bounds are `SOURCE`: lon accel in [-4.05, 2.40] m/s^2, |lat accel| <= 4.89, |lon jerk| <= 4.13 m/s^3, |jerk magnitude| <= 8.37, |yaw rate| <= 0.95 rad/s, |yaw accel| <= 1.93 rad/s^2 (`refe/navsim_pdm/pdm_comfort_metrics.py:12-28`; same values in nuPlan `ego_*_statistics.yaml`, `dz/DriveZero/DriveRL/nuplan-devkit/.../simulation_metric/low_level/`). The function is called as is, so the derivative estimator is NAVSIM's. |
+| **d2** no speed oscillation | LONGITUDINAL | **Oscillation event:** two consecutive speed swings, each >= 1.0 m/s, of opposite sign, completed within 6.0 s (swings found by a zig-zag filter with 0.5 m/s turning threshold on `v` smoothed over 0.5 s). Count in the scenario = 0. | **0 events** | A speed-reversal amplitude bound. 1.0 m/s / 6 s are ESTIMATED; they target creep-stall-launch hunting and plan-feedback ringing (`PREREG_AXOFF` section 0 mechanism). A single large slow-down is rule a2/c, not an oscillation. |
+| **e1** lane keeping | LATERAL | No run of >= 2.0 s with `|cross_track| > 0.5 m` to the human path | **0 runs** | NAVSIM `lane_keeping_deviation_limit = 0.5 m`, `lane_keeping_horizon_window = 2.0 s` (`pdm_scorer.py:59-60`), applied to the human path because the lifted road has no nuPlan map (the coordinator's constraint). |
+| **e2** heading and curvature | LATERAL | p95 of `|heading_error|` <= 0.087 rad (5 deg); p95 of `|kappa_ego - kappa_h(s)|` <= 0.02 1/m | as stated | ESTIMATED. The binding eval doctrine requires heading/curvature/yaw-rate error beside cross-track; the values are provisional until the oracle floor (Gate O) is read. |
+| **f1** no collision | safety | Zero at-fault collisions (NAVSIM `no_at_fault_collisions` = 1); total overlaps reported separately | **0** | `SOURCE` (`pdm_scorer.py:169`). |
+| **f2** no TTC violation | safety | No run of >= 3 ticks with `TTC_t < 1.0 s` and `v_ego > 0.005 m/s` | **0 runs** | NAVSIM `future_collision_horizon_window = 1.0 s`, `stopped_speed_threshold = 0.005 m/s` (`pdm_scorer.py:56-57`). |
+| **g** EPDMS (GUARD) | guard | Scenario EPDMS from the sim's scorer (NAVSIM v2: multiplicative NC, DAC, DDC, TLC; weighted EP 5, TTC 5, LK 2, HC 2, `pdm_scorer.py:44-48`). Candidate minus baseline, paired over scenarios, mean lower CI | **> -0.03** (EPDMS on 0-1) | A guard, never a goal; cannot ADOPT anything alone. -0.03 is ESTIMATED: scenario 720 moved 0.748 -> 0.789 (INHERITED, `PREREG_AXOFF`), so a 0.03 band is below a known effect. |
+- **Scenario score per rule:** PASS / FAIL / INFORMATIONAL (human fails it) / N/A (the scenario class has no such event). **Suite score per rule:** `passes / (passes + fails)` over the scenarios where it applies, with n shown. Never pooled across rules.
+- **Four metric families (binding, `CLAUDE.md`):** LONGITUDINAL = a1, a2, b1, b2, d1, d2, c4; LATERAL = e1, e2, d1; TACTICAL = c1, c2, c3, c4 plus **executed-decision agreement with the human log** (go / yield / stop / follow / change-lane at each event, a confusion table with n; REFe emits no tactical output, so the decision is read from the executed behaviour); **STRATEGIC = PAUSED** (PI ruling 2026-09-19, `PI_DECISION_QUEUE.md` item 25; reported as PAUSED, never a pass, never omitted). ADE is not a rule here.
+
+## 3. The suite specification for the sim session
+**Cost (coordinator, INHERITED):** about 1 h of thor3 per 15 s scenario at 720p. **Tier 1 = 10 scenarios (overnight, about 10 h): a screen that can REJECT a checkpoint, never ADOPT one. Tier 2 = the full 20-30 (about 20-30 h): the only adoption read.**
+
+| slot | tier-1 n | tier-2 n | buildable now? | source of the scenario |
+|---|---|---|---|---|
+| Cruise / free road | 3 | 6 | **yes** | navtest tokens, from the sim's 154 CRUISE tokens (`tokens_cruise.json`, sha in section 8) |
+| Steady lead | 3 | 6 | **yes** | non-cruise navtest tokens, rule below |
+| Lead braking / stop-go | 2 | 4 | **yes** | non-cruise navtest tokens, rule below |
+| Merge / cut-in (NPC lane change) | 1 | 2-4 | **yes** (as an NPC lane change on the linear road) | non-cruise navtest tokens, rule below |
+| Junction incl. protected left | 1 | 4 | **no: SYNTHETIC UNTIL MAP LIFTING EXISTS** | scenario 720 (protected left) + TanitSim signal scenarios |
+| Traffic-light stop-and-go | 0 | 4 | **no: SYNTHETIC UNTIL MAP LIFTING EXISTS** | TanitSim signal scenarios |
+| **total** | **10** | **26-28** | | |
+- **The junction and traffic-light tiers are kept, not dropped.** The lifter builds a linear road from the ego path plus logged traffic, with no nuPlan map, so it cannot build junctions or lights (needs map topology and signal states). Their results carry the label **"synthetic until map lifting exists"** in every table and every adoption statement, and they cannot be pooled with the nuPlan-seeded slots. Rules c1-c4 are scored only there for now.
+- **Overhead structures:** the lifted map breaks under canopies after about 4 s (coordinator). Handled by candidate depth and a QC gate (below), not by hand-picking.
+
+### 3.1 Token selection: a deterministic criterion over the navtest logs, not hand-picking
+Population: NAVSIM v1.1 navtest tokens (12,146) with their nuPlan DB logs (`data/nuplan/nuplan-v1.1/splits/test`). Window = `[t0 - 2 s, t0 + 15 s]`. All predicates are computed from the DB's ego track and tracked objects in the human-path frame, offline, on CPU, by one script (`select_suite_tokens.py`, written by the sim session, sha256 recorded in `SUITE_PIN.json` before any model runs).
+1. **Predicate filter per slot (all must hold; human safe in every slot: human min `TTC >= 1.0 s`, no overlap):**
+   - **Cruise / free road:** token in `tokens_cruise.json`; human `v` within +-15 % of its window median; no lead by the free-road definition of section 1 at any tick of the window; |curvature| <= 0.02 1/m.
+   - **Steady lead:** a single lead id continuously present >= 8 s, `gap <= 60 m`, lead speed >= 3 m/s, `|a_lead| <= 1.0 m/s^2`; token NOT in `tokens_cruise.json`.
+   - **Lead braking:** lead present at onset with `gap <= 50 m`; lead speed falls by >= 4 m/s within <= 6 s with peak decel >= 1.5 m/s^2; ego `v0 >= 5 m/s`; token NOT cruise.
+   - **Stop-go:** the lead's speed falls below 0.5 m/s and later exceeds 2 m/s again inside the window, with the lead in the corridor throughout; token NOT cruise.
+   - **Merge / cut-in:** a vehicle outside the corridor (lateral offset >= 2.0 m) at `t0` enters it (offset <= 0.5 m) within the window at `gap <= 30 m`; token NOT cruise.
+2. **Order:** within a slot, passing tokens are ordered by `sha256(token + "|refe-behaviour-v1")` ascending, **one token per log**. The first **5 are the slot's candidates** (3 where the predicate pool is thin; the shortfall is reported).
+3. **QC (the only reason a candidate may be skipped), applied in order:**
+   - **Overhead / lift-break:** the lifter's first-6 s render must hold: no loss of drivable-area mask and no ego-lane discontinuity in frames 0-6 s. A cheap CPU pre-screen: sky-visible fraction of the top third of `CAM_F0` >= 0.5 in >= 90 % of the first 6 s of frames (ESTIMATED threshold, UNVERIFIED that it predicts the lifter's failure; the QC render decides).
+   - Duplicate scenario (same log already used in another slot).
+4. **Fill:** run candidates in order until the slot's n is filled; log every skip with its reason. A skip for any other reason (looks easy, looks odd) is a protocol violation. The final list is written to `SUITE_TOKENS.json` BEFORE the first model run and is identical for every checkpoint.
+- **Synthetic slots:** scenario ids fixed in `SUITE_TOKENS.json` too (720 and the TanitSim signal scenarios), with the stop-line station, the signal timeline and the conflict-zone polygon as scenario fields.
+
+### 3.2 Per-tick log, seed and dtype policy
+- **Agreed per-tick fields (coordinator):** `t`, `v`, `a`, `ax_fed`, `pick`, `plan_v4_over_v0` (so `plan_v4 = v * plan_v4_over_v0`), `lead_id`, `gap`, `ttc`.
+- **Additionally REQUIRED (asked of the sim session; UNVERIFIED that its rollout record already holds them, and the rules above cannot be scored without them):** ego pose `x, y, yaw` (cross-track, heading, curvature, arc length), all agent boxes per tick (collision, corridor, `v_lead`), signal state and stop-line station for synthetic slots, the human reference path and speed `v_h(s)`, the sim's per-scenario EPDMS terms, and the fed ego vector's hash for replay.
+- **Seed policy:** one scenario seed `20261107` for renderer, NPC lane-change timing and any stochastic element, **the same for every checkpoint**. Replicate seed `20261108` for the baseline replicate (section 4). The planner is deterministic (ego probe C1: replicate bit-identical on 265/265 tokens, MEASURED), so inference variance is zero by construction; **sim variance and training variance are not**.
+- **dtype policy:** the planner runs in the dtype of the deployment path (the sim session states it); it is logged per run and must be **identical across the arms being compared**. A bf16 vs fp32 difference between arms is an uncontrolled lever.
+- **Identity gates (G-ID):** every run logs the checkpoint sha256, dtype, seed, scenario id and the `SUITE_TOKENS.json` sha. **G-REPLAY:** on 3 logged ticks per run, the offline planner re-run on the logged inputs reproduces the logged `pick` (otherwise the log does not describe the policy).
+
+## 4. Adoption rule (all three must hold; STRATEGIC stays PAUSED)
+A change (a checkpoint, a selection rule, a recipe) is **ADOPTED** only if **all** hold:
+1. **No rule gets worse with a separated interval.** For every rule in section 2 (g excluded), the paired candidate-minus-baseline difference in the bad direction has a CI (paired bootstrap, cluster = scenario/log, 10,000 draws, seed 20260927, 95 % percentile) that excludes 0 **and** exceeds the noise floor (item 3). Evaluated per family and per rule, never on a composite.
+2. **At least one failing rule is fixed:** a rule the baseline FAILS on >= 1 human-pass scenarios that the candidate PASSES, with the improvement separated and above the floor.
+3. **navtest PDMS is non-inferior:** paired log-cluster bootstrap on the full navtest (the zero-floor mix of `PREREG_SEL_CONFIRM` section 3), **lower CI > -0.5 (x100)**, the programme's bar (`PREREG_SEL.md`, `PREREG_AXOFF`).
+- **Read against the run-to-run noise floor (`H-ESTIM-SEED-1`, `CLAUDE.md`):** the episode/scenario-cluster bootstrap resamples scenarios with the models held fixed, so it is blind to training variance. MEASURED on the v7-tiny rig: a replicate arm (same flags, same seed) produced "separated" differences on **4 of 42** family cells, a **9.5 %** false-positive rate (corrected 2026-09-26; nominal 5 %). **Therefore:** (i) the baseline is run twice (seeds 20261107 and 20261108) on the full suite and the per-rule absolute difference of that pair is the **sim floor**; an effect must exceed it; (ii) a **lever** claim also needs a training-seed replicate of the candidate recipe; without one the result is labelled **ONE-SEED** and ADOPTED applies to that checkpoint only, never to the recipe; (iii) the *inference* variance is zero (deterministic planner), and the result says which of the three variances its interval answers.
+- **Power, stated:** with n = 10 scenarios (tier 1) only a large regression can be separated, so "no rule worse" is a weak claim there. **Tier 1 can REJECT (a rule is worse, separated, above the floor) and can nominate a CANDIDATE. Only tier 2 can ADOPT.** The synthetic junction/light slots are scored and reported under their label and are not pooled into a pass count with the nuPlan-seeded slots.
+- **EPDMS (g) is a guard:** it can veto (lower CI <= -0.03) and cannot adopt.
+- **A failed adoption leaves the next arm** (Rule Zero): the result names the failing rule, the proxy that should have warned (section 5), and the cheapest lever for it.
+
+## 5. Open-loop early-warning proxies (T0), each mapped to the rule it warns for
+**Status: HYPOTHESIS (H-PROXY-1).** None of these has been validated against a closed-loop read. They are cheap triggers, not verdicts, and no proxy decides an adoption. After >= 3 checkpoints carry both a proxy value and a tier-1 read, their rank agreement is tested; until then each is "a hypothesis about a lead time".
+
+| # | proxy (T0) | exact definition | u400 reference (MEASURED) | warns for | WARN when |
+|---|---|---|---|---|---|
+| P-1 | **CRUISE slow-pick share, stratum weighting fixed** | share of the 154 CRUISE tokens whose pick has `v4/v0 < 0.85`; weights W_zero = 529/12146, W_random = 11617/12146 over the zeroed/random strata of the C3 set (fixed, never re-derived) | **0.412 [0.275, 0.569]** (`u400_reference.json`; strata 0.407 / 0.413; the P1 "inflated" caveat holds on TRAIN logs only) | a1, a2 | candidate's paired CI-hi on (candidate - u400) is not < 0, or share > 0.20 |
+| P-2 | **planned v4 bias vs GT** | mean of (plan v4 - GT v4) on CRUISE, the ego probe's one-step 0.2 s chord at t = 4 s, `v0 = ego_real[:, 6]` | A0 **-0.535 [-1.391, +0.221] m/s**; non-zeroed stratum -0.746 [-1.468, -0.064] (`refe_ego_probe_20261106/RESULT.md`) | a1, a2 | `bias < -0.5 m/s` (the ego probe's own bar) with CI-hi < 0 |
+| P-3 | **decel-side ax gain** | `g- = (v4@ax=-0.5 - v4@ax=0) / (-0.5)` in m/s per m/s^2, CRUISE, from the ego probe's AXM/AX0 arms (`refe_ego_probe.py`) | all-sided +1.10 [+0.92, +1.30]; derived `g-` = 1.16 (AXM -0.581 per -0.5) | a2, c1, d2 (the plan -> realised a < 0 -> slower plan loop, `PREREG_AXOFF` section 0) | `g- > 0.5` (ESTIMATED: with a plan-to-acceleration time constant tau the loop amplifies the intrinsic bias by `1/(1 - g/tau)`; tau is UNVERIFIED, so 0.5 is a trip-wire, not a derived bound). An AXOFF-recipe checkpoint reads 0 by construction. |
+| P-4 | **scorer speed calibration per head** | `G_h` = mean over CRUISE tokens of (predicted - true) within-token Spearman against `v4/v0`, average ranks, heads TTC, NC (primary), DAC, EP; instrument and code: `P1_DIAG.md`, `p1_diag.py`, `PREREG_P6_SCORER_SPEED.md` section 4 | TTC **-0.451 [-0.565, -0.341]**, NC **-0.396 [-0.517, -0.285]**, DAC -0.257, EP -0.351 | a1, a2 (selection reads speed as danger) | `G_TTC` or `G_NC` < -0.15 (the same bar as the P6 prereg) |
+| P-5 | **NAVSIM PDMS sub-scores** | full-navtest NC, DAC, EP, TTC, C and PDMS (x100), paired log-cluster bootstrap | u400 PDMS 88.25 (`eval/RESULT_SFT4.md`, INHERITED here; the registry is the quotable source) | EP -> a1; TTC, NC -> f1, f2; DAC -> e1; C -> d1 | any sub-score lower CI < -0.5 (x100) vs baseline |
+- **Closed-loop calibration of P-1/P-2:** the per-tick `plan_v4_over_v0` gives a closed-loop "planned slow-down share on free-road ticks" (ticks with ratio < 0.85). It is reported beside rule a2 and is the bridge for testing H-PROXY-1.
+- **P-4 caveat (new, MEASURED, from this stream):** the legacy `argsort(argsort(.))` ranks in `p1_diag.py` break ties by proposal index, and the TRUE NC/TTC labels are constant within most tokens. The "true" side is defined on only 38 (NC) and 52 (TTC) of 154 tokens, with average ranks. P-4 uses average ranks.
+
+## 6. Instrument validity (gates; any red = no scorecard read)
+- **G-METRIC (CPU, synthetic per-tick logs, no sim):** every rule in section 2 has a PASS fixture and a FAIL fixture and must read both correctly. Required RED arms: a policy holding `0.5 * v_h` on free road must FAIL a1 and a2; a constant-speed policy through a braking lead must FAIL f1 and f2; a +-1.5 m/s, 5 s-period speed sine must FAIL d2 and read d1 consistently with NAVSIM's `ego_is_comfortable` on the same states; a policy that stops 3 m past the line on red must FAIL c2; a policy stopping at 0.4 m/s min speed before a clear line must FAIL c1; a policy 0.8 m off the human path for 3 s must FAIL e1. The human log itself must PASS a1, a2, e1, e2 exactly (cross-track 0).
+- **G-H (Gate H, CPU):** the human logs of the suite are scored by the same code. Each (scenario, rule) is tagged `human-pass` or `human-fail`; human-fail cells become INFORMATIONAL (section 1). A rule the human fails on > 30 % of its applicable scenarios is reported as a rule-definition defect, not applied.
+- **G-O (Gate O, sim, optional, tier-1 only, 2 scenarios = about 2 h):** an ORACLE policy that returns the logged human future as the plan runs through the full sim stack. Its rule values are the stack's own tracker/renderer floor; e2 thresholds are provisional until it is read, and an e2 amendment made after reading it is an `AMENDMENT` that applies to later checkpoints only.
+- **G-ID, G-REPLAY:** section 3.2. **G-SET:** `SUITE_TOKENS.json` sha equals the pinned value on every run.
+
+## 7. What this scorecard cannot yet say
+- Junction, traffic-light and protected-left behaviour is **synthetic** until map lifting exists (section 3). A real-intersection claim needs the lifted map.
+- Traffic is replayed, not reactive: a yield decision is scored against a fixed agent trajectory.
+- A single checkpoint on a deterministic sim has no training-variance interval; see section 4.
+- Thresholds marked ESTIMATED are mine; the PI's are marked `PI`; sourced ones carry file and line. Each ESTIMATED value can be amended, before a read, with the human log or the oracle floor as evidence.
+
+## 8. Pins (sha256)
+| file | sha256 |
+|---|---|
+| `refe_ego_probe_20261106/tokens_cruise.json` | `57db811e644218c00020cd6d25b417b604ffc9af7b81612976d0d52f02263f78` |
+| `yawrate_wp/YAX/PREREG_AXOFF.md` | `bd7325f0bb0fdcddf4ac1a41d1310a534a3f97889427f81a796b17f792bb9ba7` |
+| `refe_behaviour_20261107/u400_reference.json` | `1ad5776a19a02179cb22a63fc9d20e9a04db34d4a2ffd6b6f14796e8121682e5` |
+| `refe_behaviour_20261107/PREREG_P6_SCORER_SPEED.md` | see `PREREG_P6_SCORER_SPEED.sha256` |

@@ -18877,3 +18877,28 @@ instruments; only an undeclared one is a finding.
 **What is true (MEASURED, `TanitAD Research Lab/Architecture & Inference/Research/2026-10-17-v8f-mini/raw/2026-11-07-t2-bpc-read/` `RT_VERDICT.json`):** the floor is 0.508858507438103 and RT at s1 is 0.463408725035914, so the margin is 0.04545, which is 0.045. The 0.046 came from subtracting the two cells as printed (0.5089 - 0.4634 = 0.0455) and rounding that again. The outcome RT-WITHIN-FLOOR does not change. Found by the v43 build agent's audit (`R/report/2026-11-07-v43/edits_v43.md`, NOTES item 2).
 
 **Class / rule:** a derived number is computed from the full-precision values in the raw file, never from cells already rounded for a table. Rounding twice moves the last digit, and a margin is exactly the kind of number whose last digit someone will compare against a bar.
+
+
+## 2026-11-07 ~20:50 -- "true within-token speed rank-corr: TTC -0.05, NC -0.04" (`D-REFE-SPEEDPESS-1`; `raw/2026-11-07-selection-probe/P1_DIAG.md`). Class: **A RANK STATISTIC THAT BREAKS TIES BY SORT ORDER, ON LABELS THAT ARE MOSTLY TIES**
+
+**What was claimed:** by the Master Mind, in the P1 diagnostic and the register row `D-REFE-SPEEDPESS-1`. The TRUE per-proposal TTC and NC labels were said to be nearly uncorrelated with proposal speed (TTC -0.05, NC -0.04), against predicted -0.48 and -0.44.
+
+**What is true (MEASURED, `.../2026-09-20-refe-plan/raw/2026-11-07-behaviour-scorecard/u400_reference.json`, `MM_VERIFY.md`):**
+- P1 ranked with `np.argsort(np.argsort(x))`. That breaks ties by sort order, and the true TTC and NC labels are constant within most tokens.
+- Running the identical code a second time on identical data gave NC true +0.034 instead of -0.039, and TTC +0.018 instead of -0.049. The sign flipped. The predicted column, which has no ties, reproduced bit-identically.
+- The tie-correct estimator (average ranks) is defined only on tokens whose labels vary: TTC n 52/154, NC n 38/154. On those tokens: TTC true -0.094 vs predicted -0.546; NC true -0.094 vs predicted -0.491.
+- The conclusion stands (the heads read speed as danger far more than the truth does). The quoted "true" numbers do not.
+
+**Class / rule:** a rank statistic on discrete or saturated labels states its tie rule and its n-defined. Use average ranks, and drop tokens where the label is constant rather than letting index order invent a correlation. Re-run any estimator once before quoting it; an estimator that does not reproduce bit-for-bit on the same data is not measuring the data.
+
+
+## 2026-11-07 ~20:50 -- "the 41 % CRUISE slow-down share is inflated by stratum sampling" (`D-REFE-SPEEDPESS-1`, correction clause). Class: **A SAMPLING-BIAS CAVEAT ASSERTED WITHOUT COMPUTING THE WEIGHTED FIGURE**
+
+**What was claimed:** by the Master Mind, in the register: 91 of 154 CRUISE tokens come from the over-sampled zeroed stratum, so the 41 % is inflated.
+
+**What is true (MEASURED, same `u400_reference.json`, R1):**
+- With the strata weighted by their navtest population (529/12,146 zeroed, 11,617/12,146 random), the share is 0.412 [0.275, 0.569] (paired log-cluster bootstrap, 10,000, seed 20260927).
+- Per stratum: zeroed 0.407, random 0.413. The strata agree, so the weighting moves nothing.
+- The over-sampling claim was true of the sample's composition and false of its effect.
+
+**Class / rule:** a bias caveat about sampling weights is a number, not a sentence. Compute the re-weighted estimate before calling the raw one inflated.
