@@ -1,0 +1,751 @@
+{
+ "schema": "dk141-v1-controls",
+ "mutant_lead_metrics": null,
+ "all_pass": true,
+ "n_checks": 21,
+ "checks": [
+  {
+   "control": "C0 window states reproduce the banked read (k10)",
+   "pass": true,
+   "detail": {
+    "LEAD": 743,
+    "NO_LEAD": 561,
+    "NOT_STRAIGHT": 937,
+    "NO_LABEL": 158
+   }
+  },
+  {
+   "control": "C0 window states reproduce the banked read (k30)",
+   "pass": true,
+   "detail": {
+    "LEAD": 743,
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173
+   }
+  },
+  {
+   "control": "C0 banked read reproduced: max |dk141 - banked dk_read.json| over 126 cells",
+   "pass": true,
+   "detail": "max abs diff 0.000e+00 (tol 1e-9)"
+  },
+  {
+   "control": "C0p point values (means, n, n_viol, progress, delta points) reproduce the banked read (bootstrap-free)",
+   "pass": true,
+   "detail": "max abs diff 0.000e+00"
+  },
+  {
+   "control": "C1 kinematic contract: recomputed human headway vs the block's gt_headway_min_m",
+   "pass": true,
+   "detail": {
+    "status": "OK",
+    "median_abs_headway_diff_m": 0.01867,
+    "n_both": 718,
+    "n_block_finite": 718
+   }
+  },
+  {
+   "control": "C2b tight-gap rate is over exactly the windows with a defined time gap (n equals the banked human time-gap n)",
+   "pass": true,
+   "detail": {
+    "mine": {
+     "k10": 653,
+     "k30": 659
+    },
+    "banked": {
+     "k10": 653,
+     "k30": 659
+    }
+   }
+  },
+  {
+   "control": "C2 the human's own distribution is stated and non-degenerate (headway n>=700, p10<p50<p90)",
+   "pass": true,
+   "detail": {
+    "k10": {
+     "n": 719,
+     "p10/p50/p90": [
+      8.308,
+      22.472,
+      53.346
+     ]
+    },
+    "k30": {
+     "n": 725,
+     "p10/p50/p90": [
+      7.687,
+      20.616,
+      50.387
+     ]
+    }
+   }
+  },
+  {
+   "control": "C3 STOP headway == independent oracle, all windows, same NaN pattern (k10)",
+   "pass": true,
+   "detail": "max |diff| 0.00e+00; n finite 715"
+  },
+  {
+   "control": "C4 STOP keeps >= the human's headway on >=99 % of windows where both have one (k10)",
+   "pass": true,
+   "detail": {
+    "n_both": 708,
+    "n_stop_ge_human": 704,
+    "n_exceptions": 4,
+    "exception_max_shortfall_m": 0.4782020056135261
+   }
+  },
+  {
+   "control": "C5 STOP has ZERO TTC violations (min TTC < 1.5 s) (k10)",
+   "pass": true,
+   "detail": {
+    "n_ttc_finite": 715,
+    "n_viol": 0,
+    "n_closing": 48
+   }
+  },
+  {
+   "control": "C6 STOP has ZERO LEAD-VIOL and progress ratio EXACTLY 0.0, the crawl guard fires (k10)",
+   "pass": true,
+   "detail": {
+    "n_viol": 0,
+    "n_at_risk": 605,
+    "progress_clipped": 0.0,
+    "meets_min_progress": false
+   }
+  },
+  {
+   "control": "C7 THROUGH flags EVERY at-risk lead window (registered LEAD-VIOL) (k10)",
+   "pass": true,
+   "detail": {
+    "n_lead_windows": 743,
+    "plan_built_for": 743,
+    "n_at_risk": 605,
+    "n_flagged": 605,
+    "n_plan_lost_lead_at_risk": 0,
+    "share_of_at_risk": 1.0,
+    "share_incl_lost_lead": 0.814266
+   }
+  },
+  {
+   "control": "C8 THROUGH: >=99 % of lead windows read min TTC < 1.5 s, and every miss has a SHORT admissible span (<= 4 corridor steps) (k10)",
+   "pass": true,
+   "detail": {
+    "n_lead_with_ttc": 743,
+    "n_ttc_viol": 740,
+    "n_miss": 3,
+    "miss_n_steps_in_corridor": [
+     1,
+     1,
+     1
+    ],
+    "miss_ttc_s": [
+     30.0,
+     30.0,
+     30.0
+    ],
+    "finding": "a window whose plan has ONE admissible corridor step reads TTC censored at the cap (lead_metrics.py:190-191) although its headway is ~0; the time-gap / LEAD-VIOL rows still flag it",
+    "n_lost_lead": 0,
+    "max_headway_m": 1.0000000081333837e-06,
+    "n_tg_lt_1": 677,
+    "n_tg_defined": 677
+   }
+  },
+  {
+   "control": "C9 paired TTC-violation delta THROUGH - STOP is POSITIVE, separated, and equals the difference of the two arm rates to the estimator's 4 dp (k10)",
+   "pass": true,
+   "detail": {
+    "delta": 0.9972,
+    "lo": 0.9929,
+    "hi": 1.0,
+    "diff_of_rates": 0.9972027972027973,
+    "n_used": 715
+   }
+  },
+  {
+   "control": "C3 STOP headway == independent oracle, all windows, same NaN pattern (k30)",
+   "pass": true,
+   "detail": "max |diff| 0.00e+00; n finite 717"
+  },
+  {
+   "control": "C4 STOP keeps >= the human's headway on >=99 % of windows where both have one (k30)",
+   "pass": true,
+   "detail": {
+    "n_both": 712,
+    "n_stop_ge_human": 708,
+    "n_exceptions": 4,
+    "exception_max_shortfall_m": 1.822870716799784
+   }
+  },
+  {
+   "control": "C5 STOP has ZERO TTC violations (min TTC < 1.5 s) (k30)",
+   "pass": true,
+   "detail": {
+    "n_ttc_finite": 717,
+    "n_viol": 0,
+    "n_closing": 86
+   }
+  },
+  {
+   "control": "C6 STOP has ZERO LEAD-VIOL and progress ratio EXACTLY 0.0, the crawl guard fires (k30)",
+   "pass": true,
+   "detail": {
+    "n_viol": 0,
+    "n_at_risk": 595,
+    "progress_clipped": 0.0,
+    "meets_min_progress": false
+   }
+  },
+  {
+   "control": "C7 THROUGH flags EVERY at-risk lead window (registered LEAD-VIOL) (k30)",
+   "pass": true,
+   "detail": {
+    "n_lead_windows": 743,
+    "plan_built_for": 743,
+    "n_at_risk": 595,
+    "n_flagged": 595,
+    "n_plan_lost_lead_at_risk": 0,
+    "share_of_at_risk": 1.0,
+    "share_incl_lost_lead": 0.800808
+   }
+  },
+  {
+   "control": "C8 THROUGH: >=99 % of lead windows read min TTC < 1.5 s, and every miss has a SHORT admissible span (<= 4 corridor steps) (k30)",
+   "pass": true,
+   "detail": {
+    "n_lead_with_ttc": 743,
+    "n_ttc_viol": 738,
+    "n_miss": 5,
+    "miss_n_steps_in_corridor": [
+     1,
+     2,
+     4,
+     2,
+     1
+    ],
+    "miss_ttc_s": [
+     30.0,
+     30.0,
+     30.0,
+     30.0,
+     30.0
+    ],
+    "finding": "a window whose plan has ONE admissible corridor step reads TTC censored at the cap (lead_metrics.py:190-191) although its headway is ~0; the time-gap / LEAD-VIOL rows still flag it",
+    "n_lost_lead": 0,
+    "max_headway_m": 1.0000000072452053e-06,
+    "n_tg_lt_1": 677,
+    "n_tg_defined": 677
+   }
+  },
+  {
+   "control": "C9 paired TTC-violation delta THROUGH - STOP is POSITIVE, separated, and equals the difference of the two arm rates to the estimator's 4 dp (k30)",
+   "pass": true,
+   "detail": {
+    "delta": 0.9972,
+    "lo": 0.993,
+    "hi": 1.0,
+    "diff_of_rates": 0.99721059972106,
+    "n_used": 717
+   }
+  }
+ ],
+ "report": {
+  "C0_cells": 126,
+  "C0_max_abs_diff": 0.0,
+  "C0p_max_abs_diff": 0.0,
+  "human_own_distribution": {
+   "k10": {
+    "headway_min_m": {
+     "n": 719,
+     "p10": 8.308,
+     "p25": 14.398,
+     "p50": 22.472,
+     "p75": 37.222,
+     "p90": 53.346,
+     "mean": 27.463
+    },
+    "time_gap_min_s": {
+     "n": 653,
+     "p10": 1.202,
+     "p25": 1.776,
+     "p50": 2.734,
+     "p75": 4.587,
+     "p90": 7.311,
+     "mean": 4.26
+    },
+    "min_ttc_s": {
+     "n": 719,
+     "p10": 5.093,
+     "p25": 11.532,
+     "p50": 30.0,
+     "p75": 30.0,
+     "p90": 30.0,
+     "mean": 22.748
+    },
+    "tight_tg_rate": {
+     "n": 653,
+     "n_flagged": 48,
+     "rate": 0.0735
+    },
+    "ttc_viol_rate": {
+     "n": 719,
+     "n_flagged": 2,
+     "rate": 0.0028
+    }
+   },
+   "k30": {
+    "headway_min_m": {
+     "n": 725,
+     "p10": 7.687,
+     "p25": 12.386,
+     "p50": 20.616,
+     "p75": 34.044,
+     "p90": 50.387,
+     "mean": 25.665
+    },
+    "time_gap_min_s": {
+     "n": 659,
+     "p10": 1.042,
+     "p25": 1.585,
+     "p50": 2.649,
+     "p75": 4.425,
+     "p90": 6.778,
+     "mean": 3.995
+    },
+    "min_ttc_s": {
+     "n": 725,
+     "p10": 3.165,
+     "p25": 7.44,
+     "p50": 30.0,
+     "p75": 30.0,
+     "p90": 30.0,
+     "mean": 19.79
+    },
+    "tight_tg_rate": {
+     "n": 659,
+     "n_flagged": 64,
+     "rate": 0.0971
+    },
+    "ttc_viol_rate": {
+     "n": 725,
+     "n_flagged": 3,
+     "rate": 0.0041
+    }
+   }
+  },
+  "C3_stop_dominates_human_k10": {
+   "n_both": 708,
+   "n_stop_ge_human": 704,
+   "n_exceptions": 4,
+   "exception_max_shortfall_m": 0.4782020056135261
+  },
+  "C3_stop_dominates_human_k30": {
+   "n_both": 712,
+   "n_stop_ge_human": 708,
+   "n_exceptions": 4,
+   "exception_max_shortfall_m": 1.822870716799784
+  },
+  "synthetic": {
+   "k10": {
+    "STOP": {
+     "arm_block_metrics": {
+      "headway_min_m": {
+       "mean": 31.0261,
+       "lo": 26.6864,
+       "hi": 35.3848,
+       "ci95": 4.3492,
+       "se": 2.1756,
+       "reducer": "mean",
+       "n_windows": 715,
+       "n_episodes": 74,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 715
+      },
+      "time_gap_min_s": {
+       "mean": 4.7326,
+       "lo": 3.8002,
+       "hi": 5.8585,
+       "ci95": 1.0291,
+       "se": 0.5386,
+       "reducer": "mean",
+       "n_windows": 649,
+       "n_episodes": 73,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 649
+      },
+      "min_ttc_s": {
+       "mean": 29.779,
+       "lo": 29.5037,
+       "hi": 29.9623,
+       "ci95": 0.2293,
+       "se": 0.122,
+       "reducer": "mean",
+       "n_windows": 715,
+       "n_episodes": 74,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 715,
+       "n_closing": 48,
+       "ttc_cap_s": 30.0,
+       "censoring_note": "667 of 715 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+       "n_censored_at_cap": 705
+      }
+     },
+     "lead_viol": {
+      "status": "OK",
+      "definition": "share of lead windows whose plan's minimum time gap is < 1 s while the human's is >= 1 s",
+      "n_lead_windows": 743,
+      "n_viol": 0,
+      "share": 0.0,
+      "ci": {
+       "mean": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "ci95": 0.0,
+       "se": 0.0,
+       "reducer": "mean",
+       "n_windows": 743,
+       "n_episodes": 77,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      },
+      "n_at_risk": 605,
+      "share_of_at_risk": 0.0,
+      "share_of_at_risk_ci": {
+       "mean": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "ci95": 0.0,
+       "se": 0.0,
+       "reducer": "mean",
+       "n_windows": 605,
+       "n_episodes": 70,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      },
+      "n_human_tg_undefined": 90,
+      "n_human_tg_below_thr": 48,
+      "n_plan_lost_lead": 11,
+      "share_incl_lost_lead": 0.014805,
+      "lead_progress_ratio": 0.0,
+      "lead_progress_ratio_clipped": 0.0,
+      "progress": {
+       "status": "OK",
+       "n": 604,
+       "n_at_risk": 605,
+       "lead_progress_ratio": 0.0,
+       "lead_progress_ratio_clipped": 0.0,
+       "meets_min_progress": false,
+       "n_below_min": 604,
+       "n_human_arc_degenerate": 1
+      }
+     }
+    },
+    "THROUGH": {
+     "arm_block_metrics": {
+      "headway_min_m": {
+       "mean": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "ci95": 0.0,
+       "se": 0.0,
+       "reducer": "mean",
+       "n_windows": 743,
+       "n_episodes": 77,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 743
+      },
+      "time_gap_min_s": {
+       "mean": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "ci95": 0.0,
+       "se": 0.0,
+       "reducer": "mean",
+       "n_windows": 677,
+       "n_episodes": 76,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 677
+      },
+      "min_ttc_s": {
+       "mean": 0.4401,
+       "lo": 0.3279,
+       "hi": 0.5961,
+       "ci95": 0.1341,
+       "se": 0.0688,
+       "reducer": "mean",
+       "n_windows": 743,
+       "n_episodes": 77,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 743,
+       "n_closing": 740,
+       "ttc_cap_s": 30.0,
+       "censoring_note": "3 of 743 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+       "n_censored_at_cap": 3
+      }
+     },
+     "lead_viol": {
+      "status": "OK",
+      "definition": "share of lead windows whose plan's minimum time gap is < 1 s while the human's is >= 1 s",
+      "n_lead_windows": 743,
+      "n_viol": 605,
+      "share": 0.814266,
+      "ci": {
+       "mean": 0.8143,
+       "lo": 0.7346,
+       "hi": 0.8879,
+       "ci95": 0.0767,
+       "se": 0.0392,
+       "reducer": "mean",
+       "n_windows": 743,
+       "n_episodes": 77,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      },
+      "n_at_risk": 605,
+      "share_of_at_risk": 1.0,
+      "share_of_at_risk_ci": {
+       "mean": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "ci95": 0.0,
+       "se": 0.0,
+       "reducer": "mean",
+       "n_windows": 605,
+       "n_episodes": 70,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      },
+      "n_human_tg_undefined": 90,
+      "n_human_tg_below_thr": 48,
+      "n_plan_lost_lead": 0,
+      "share_incl_lost_lead": 0.814266,
+      "lead_progress_ratio": 5.607325256027744,
+      "lead_progress_ratio_clipped": 1.0,
+      "progress": {
+       "status": "OK",
+       "n": 604,
+       "n_at_risk": 605,
+       "lead_progress_ratio": 5.607325256027744,
+       "lead_progress_ratio_clipped": 1.0,
+       "meets_min_progress": true,
+       "n_below_min": 0,
+       "n_human_arc_degenerate": 1
+      }
+     },
+     "n_lost_lead": 0,
+     "n_lost_lead_at_risk": 0
+    }
+   },
+   "k30": {
+    "STOP": {
+     "arm_block_metrics": {
+      "headway_min_m": {
+       "mean": 31.0786,
+       "lo": 26.7257,
+       "hi": 35.4032,
+       "ci95": 4.3387,
+       "se": 2.1768,
+       "reducer": "mean",
+       "n_windows": 717,
+       "n_episodes": 74,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 717
+      },
+      "time_gap_min_s": {
+       "mean": 4.7412,
+       "lo": 3.8196,
+       "hi": 5.8697,
+       "ci95": 1.025,
+       "se": 0.5375,
+       "reducer": "mean",
+       "n_windows": 651,
+       "n_episodes": 73,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 651
+      },
+      "min_ttc_s": {
+       "mean": 29.3904,
+       "lo": 28.6992,
+       "hi": 29.8578,
+       "ci95": 0.5793,
+       "se": 0.3058,
+       "reducer": "mean",
+       "n_windows": 717,
+       "n_episodes": 74,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 717,
+       "n_closing": 86,
+       "ttc_cap_s": 30.0,
+       "censoring_note": "631 of 717 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+       "n_censored_at_cap": 693
+      }
+     },
+     "lead_viol": {
+      "status": "OK",
+      "definition": "share of lead windows whose plan's minimum time gap is < 1 s while the human's is >= 1 s",
+      "n_lead_windows": 743,
+      "n_viol": 0,
+      "share": 0.0,
+      "ci": {
+       "mean": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "ci95": 0.0,
+       "se": 0.0,
+       "reducer": "mean",
+       "n_windows": 743,
+       "n_episodes": 77,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      },
+      "n_at_risk": 595,
+      "share_of_at_risk": 0.0,
+      "share_of_at_risk_ci": {
+       "mean": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "ci95": 0.0,
+       "se": 0.0,
+       "reducer": "mean",
+       "n_windows": 595,
+       "n_episodes": 70,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      },
+      "n_human_tg_undefined": 84,
+      "n_human_tg_below_thr": 64,
+      "n_plan_lost_lead": 13,
+      "share_incl_lost_lead": 0.017497,
+      "lead_progress_ratio": 0.0,
+      "lead_progress_ratio_clipped": 0.0,
+      "progress": {
+       "status": "OK",
+       "n": 595,
+       "n_at_risk": 595,
+       "lead_progress_ratio": 0.0,
+       "lead_progress_ratio_clipped": 0.0,
+       "meets_min_progress": false,
+       "n_below_min": 595,
+       "n_human_arc_degenerate": 0
+      }
+     }
+    },
+    "THROUGH": {
+     "arm_block_metrics": {
+      "headway_min_m": {
+       "mean": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "ci95": 0.0,
+       "se": 0.0,
+       "reducer": "mean",
+       "n_windows": 743,
+       "n_episodes": 77,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 743
+      },
+      "time_gap_min_s": {
+       "mean": 0.0,
+       "lo": 0.0,
+       "hi": 0.0,
+       "ci95": 0.0,
+       "se": 0.0,
+       "reducer": "mean",
+       "n_windows": 677,
+       "n_episodes": 76,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 677
+      },
+      "min_ttc_s": {
+       "mean": 0.4062,
+       "lo": 0.2415,
+       "hi": 0.6488,
+       "ci95": 0.2037,
+       "se": 0.1079,
+       "reducer": "mean",
+       "n_windows": 743,
+       "n_episodes": 77,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "n": 743,
+       "n_closing": 738,
+       "ttc_cap_s": 30.0,
+       "censoring_note": "5 of 743 windows never close on the lead and are censored at TTC_CAP_S=30.0s. The mean is over censored data \u2014 quote n_closing beside it, never the mean alone.",
+       "n_censored_at_cap": 5
+      }
+     },
+     "lead_viol": {
+      "status": "OK",
+      "definition": "share of lead windows whose plan's minimum time gap is < 1 s while the human's is >= 1 s",
+      "n_lead_windows": 743,
+      "n_viol": 595,
+      "share": 0.800808,
+      "ci": {
+       "mean": 0.8008,
+       "lo": 0.7205,
+       "hi": 0.8725,
+       "ci95": 0.076,
+       "se": 0.0385,
+       "reducer": "mean",
+       "n_windows": 743,
+       "n_episodes": 77,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      },
+      "n_at_risk": 595,
+      "share_of_at_risk": 1.0,
+      "share_of_at_risk_ci": {
+       "mean": 1.0,
+       "lo": 1.0,
+       "hi": 1.0,
+       "ci95": 0.0,
+       "se": 0.0,
+       "reducer": "mean",
+       "n_windows": 595,
+       "n_episodes": 70,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      },
+      "n_human_tg_undefined": 84,
+      "n_human_tg_below_thr": 64,
+      "n_plan_lost_lead": 0,
+      "share_incl_lost_lead": 0.800808,
+      "lead_progress_ratio": 2.6211068837731126,
+      "lead_progress_ratio_clipped": 0.9949825830295501,
+      "progress": {
+       "status": "OK",
+       "n": 595,
+       "n_at_risk": 595,
+       "lead_progress_ratio": 2.6211068837731126,
+       "lead_progress_ratio_clipped": 0.9949825830295501,
+       "meets_min_progress": true,
+       "n_below_min": 8,
+       "n_human_arc_degenerate": 0
+      }
+     },
+     "n_lost_lead": 0,
+     "n_lost_lead_at_risk": 0
+    }
+   }
+  }
+ }
+}
