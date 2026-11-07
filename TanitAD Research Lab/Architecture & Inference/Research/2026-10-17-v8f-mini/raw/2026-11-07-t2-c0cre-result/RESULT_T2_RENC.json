@@ -1,0 +1,1401 @@
+{
+ "card": "PREREG_T2_RENC",
+ "card_prefix_bytes": 5544,
+ "card_prefix_sha256_expected": "425d3496eb52e30025c11c2609409ea1478aa2fe70ba6609c9f9477c128fd722",
+ "card_prefix_sha256_now": "425d3496eb52e30025c11c2609409ea1478aa2fe70ba6609c9f9477c128fd722",
+ "card_frozen_ok": true,
+ "tier": "T2 re-perception (agents replayed at log time; not a reactive-traffic result)",
+ "estimator": "paired scene-cluster bootstrap, B 2000, seed 0: answers another draw of SCENES only",
+ "inputs": {
+  "dominance_read": {
+   "path": "E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage5/C0C-RE/score_dom/DOMINANCE_T2.json",
+   "sha256": "26cbff29a53bb14a6b0a1700edd7ae6c0840e0c7300fbab49d29008386d82ced"
+  },
+  "pair_read": {
+   "path": "E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage5/C0C-RE/pair_C0C-RE_C0C/PAIR_T2.json",
+   "sha256": "c533b25e922793dd98e81491ee941e7e77e1e6c67db501355d9eaeb808f5a000"
+  },
+  "c0c_reference_read": {
+   "path": "E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage4/score_q_identity/DOMINANCE_T2.json",
+   "sha256": "8344b730972336ba4a580fecafbf8fa95f0cf0a9229590e55a1de96acd862376"
+  },
+  "card": {
+   "path": "E:/Projects/TanitAD-artifacts/dagland/motion_c/t2_prereg/PREREG_T2_RENC.md",
+   "sha256": "021adff47726516fd2da4481d9d9f558062a4a4dc26582129199ab2e2756049c"
+  },
+  "c0cre_outcome.py": {
+   "path": "E:/Projects/TanitAD-artifacts/dagland/motion_c/t2v8f/stage5/C0C-RE/c0cre_outcome.py",
+   "sha256": "e49254ad32cf5ac18ba20a797f718f4a29050fcb851a9794cbf844d68c0c44e2"
+  }
+ },
+ "arm_checked": "C0C-RE",
+ "rehearsal_on_other_arm": false,
+ "strategic": "PAUSED (PI ruling item 25): shown, never scored as a pass",
+ "gates": {
+  "dominance": {
+   "G4": true,
+   "G1": true,
+   "G2": true,
+   "G3": true
+  },
+  "pair": {
+   "G4": true,
+   "G1": true,
+   "G2[C0C-RE@5]": true,
+   "G3[C0C-RE@5]": true,
+   "G2[C0C@4]": true,
+   "G3[C0C@4]": true,
+   "ATTRIB": true
+  },
+  "failed": {
+   "dominance": {},
+   "pair": {}
+  }
+ },
+ "outcome": "RE-HARMS",
+ "terms": {
+  "pinned_outcome": "NOT-DOMINANT",
+  "pinned_dominant_both_seeds": false,
+  "per_seed": {
+   "s0": {
+    "pair_ADE6": {
+     "delta": -0.19561285977557913,
+     "lo": -0.43905255220132483,
+     "hi": 0.08947705699104833,
+     "verdict": "unseparated",
+     "separated_better": false,
+     "separated_worse": false
+    },
+    "pair_M1": {
+     "delta": -0.052272584360869595,
+     "lo": -0.08524468374456022,
+     "hi": -0.02486116766771863,
+     "verdict": "separated-better",
+     "not_separated_worse": true
+    },
+    "separated_worse_vs_P10": {
+     "C0C-RE": [
+      "ADE6",
+      "M1 crawl share",
+      "TAC-LON",
+      "along-track MAE",
+      "heading MAE"
+     ],
+     "C0C": [
+      "ADE6",
+      "M1 crawl share",
+      "TAC-LON",
+      "along-track MAE",
+      "heading MAE"
+     ],
+     "new_in_C0C-RE": [],
+     "none_new": true
+    },
+    "M1_vs_P10": {
+     "C0C-RE": "separated-worse",
+     "C0C": "separated-worse"
+    }
+   },
+   "s1": {
+    "pair_ADE6": {
+     "delta": -0.100162135618499,
+     "lo": -0.3434777603426339,
+     "hi": 0.15015849453096827,
+     "verdict": "unseparated",
+     "separated_better": false,
+     "separated_worse": false
+    },
+    "pair_M1": {
+     "delta": -0.014221512034355337,
+     "lo": -0.04501030172251092,
+     "hi": 0.011157667586485396,
+     "verdict": "unseparated",
+     "not_separated_worse": true
+    },
+    "separated_worse_vs_P10": {
+     "C0C-RE": [
+      "M1 crawl share",
+      "along-track MAE",
+      "heading MAE"
+     ],
+     "C0C": [
+      "ADE6",
+      "M1 crawl share",
+      "TAC-LON",
+      "along-track MAE"
+     ],
+     "new_in_C0C-RE": [
+      "heading MAE"
+     ],
+     "none_new": false
+    },
+    "M1_vs_P10": {
+     "C0C-RE": "separated-worse",
+     "C0C": "separated-worse"
+    }
+   }
+  },
+  "clause_ADE6_separated_better_both_seeds": false,
+  "clause_M1_not_separated_worse_either_seed": true,
+  "clause_no_new_separated_worse_vs_P10": false,
+  "re_moves_holds": false,
+  "harm_triggers": [
+   "s1: new separated-worse rows against P10: ['heading MAE']"
+  ],
+  "sensitivity_M1_read_against_P10": {
+   "clause_holds": false,
+   "would_change_re_moves": false
+  }
+ },
+ "integrity": {
+  "ok": true,
+  "problems": [],
+  "warnings": []
+ },
+ "next_lever": "The next lever is the planner rather than the encoder: post-training C0 on rendered on-policy states of one fold (DAgger at T2), read on the other fold, under its own card (card 6.3).",
+ "replicate_required": false,
+ "counted_as_scale_signal": false,
+ "also_satisfies_re_moves": false,
+ "three_family_form_beside": {
+  "s0": false,
+  "s1": false
+ },
+ "t1_kin_beside": "NOT READ HERE: needs the T1-kin read of C0 on eval-141 re-encoded through E' (|ADE6 delta| against F = 0.12074 m)",
+ "families": {
+  "s0": {
+   "PRIMARY": {
+    "n_rows": 1,
+    "separated_better": [],
+    "separated_worse": [],
+    "unseparated": [
+     "ADE6"
+    ]
+   },
+   "LONGITUDINAL": {
+    "n_rows": 6,
+    "separated_better": [
+     "speed MAE"
+    ],
+    "separated_worse": [
+     "DK-HW"
+    ],
+    "unseparated": [
+     "DK-TG",
+     "DK-VIOL",
+     "accel MAE",
+     "along-track MAE"
+    ]
+   },
+   "LATERAL": {
+    "n_rows": 6,
+    "separated_better": [],
+    "separated_worse": [],
+    "unseparated": [
+     "L1 lateral-accel MAE",
+     "L2 curvature MAE (GT>=5.2)",
+     "cross-track MAE",
+     "curvature MAE",
+     "heading MAE",
+     "yaw-rate MAE"
+    ]
+   },
+   "TACTICAL": {
+    "n_rows": 2,
+    "separated_better": [],
+    "separated_worse": [],
+    "unseparated": [
+     "TAC-LAT",
+     "TAC-LON"
+    ]
+   },
+   "STRATEGIC": {
+    "n_rows": 3,
+    "separated_better": [],
+    "separated_worse": [],
+    "unseparated": [
+     "S-POS@30",
+     "S-POS@50",
+     "S-POS@80"
+    ],
+    "status": "PAUSED (PI item 25): not a pass"
+   },
+   "crawl": {
+    "n_rows": 1,
+    "separated_better": [
+     "M1 crawl share"
+    ],
+    "separated_worse": [],
+    "unseparated": []
+   }
+  },
+  "s1": {
+   "PRIMARY": {
+    "n_rows": 1,
+    "separated_better": [],
+    "separated_worse": [],
+    "unseparated": [
+     "ADE6"
+    ]
+   },
+   "LONGITUDINAL": {
+    "n_rows": 6,
+    "separated_better": [
+     "speed MAE"
+    ],
+    "separated_worse": [],
+    "unseparated": [
+     "DK-HW",
+     "DK-TG",
+     "DK-VIOL",
+     "accel MAE",
+     "along-track MAE"
+    ]
+   },
+   "LATERAL": {
+    "n_rows": 6,
+    "separated_better": [],
+    "separated_worse": [],
+    "unseparated": [
+     "L1 lateral-accel MAE",
+     "L2 curvature MAE (GT>=5.2)",
+     "cross-track MAE",
+     "curvature MAE",
+     "heading MAE",
+     "yaw-rate MAE"
+    ]
+   },
+   "TACTICAL": {
+    "n_rows": 2,
+    "separated_better": [],
+    "separated_worse": [],
+    "unseparated": [
+     "TAC-LAT",
+     "TAC-LON"
+    ]
+   },
+   "STRATEGIC": {
+    "n_rows": 3,
+    "separated_better": [
+     "S-POS@30",
+     "S-POS@50",
+     "S-POS@80"
+    ],
+    "separated_worse": [],
+    "unseparated": [],
+    "status": "PAUSED (PI item 25): not a pass"
+   },
+   "crawl": {
+    "n_rows": 1,
+    "separated_better": [],
+    "separated_worse": [],
+    "unseparated": [
+     "M1 crawl share"
+    ]
+   }
+  }
+ },
+ "families_vs_P10": {
+  "s0": {
+   "PRIMARY": {
+    "n_rows": 1,
+    "separated_better": [],
+    "separated_worse": [
+     "ADE6"
+    ],
+    "unseparated": []
+   },
+   "LONGITUDINAL": {
+    "n_rows": 6,
+    "separated_better": [
+     "accel MAE",
+     "speed MAE"
+    ],
+    "separated_worse": [
+     "along-track MAE"
+    ],
+    "unseparated": [
+     "DK-HW",
+     "DK-TG",
+     "DK-VIOL"
+    ]
+   },
+   "LATERAL": {
+    "n_rows": 6,
+    "separated_better": [
+     "L1 lateral-accel MAE",
+     "L2 curvature MAE (GT>=5.2)",
+     "cross-track MAE",
+     "curvature MAE",
+     "yaw-rate MAE"
+    ],
+    "separated_worse": [
+     "heading MAE"
+    ],
+    "unseparated": []
+   },
+   "TACTICAL": {
+    "n_rows": 2,
+    "separated_better": [
+     "TAC-LAT"
+    ],
+    "separated_worse": [
+     "TAC-LON"
+    ],
+    "unseparated": []
+   },
+   "STRATEGIC": {
+    "n_rows": 3,
+    "separated_better": [
+     "S-POS@30"
+    ],
+    "separated_worse": [],
+    "unseparated": [
+     "S-POS@50",
+     "S-POS@80"
+    ],
+    "status": "PAUSED (PI item 25): not a pass"
+   },
+   "crawl": {
+    "n_rows": 1,
+    "separated_better": [],
+    "separated_worse": [
+     "M1 crawl share"
+    ],
+    "unseparated": []
+   }
+  },
+  "s1": {
+   "PRIMARY": {
+    "n_rows": 1,
+    "separated_better": [],
+    "separated_worse": [],
+    "unseparated": [
+     "ADE6"
+    ]
+   },
+   "LONGITUDINAL": {
+    "n_rows": 6,
+    "separated_better": [
+     "accel MAE",
+     "speed MAE"
+    ],
+    "separated_worse": [
+     "along-track MAE"
+    ],
+    "unseparated": [
+     "DK-HW",
+     "DK-TG",
+     "DK-VIOL"
+    ]
+   },
+   "LATERAL": {
+    "n_rows": 6,
+    "separated_better": [
+     "L1 lateral-accel MAE",
+     "L2 curvature MAE (GT>=5.2)",
+     "cross-track MAE",
+     "curvature MAE",
+     "yaw-rate MAE"
+    ],
+    "separated_worse": [
+     "heading MAE"
+    ],
+    "unseparated": []
+   },
+   "TACTICAL": {
+    "n_rows": 2,
+    "separated_better": [
+     "TAC-LAT"
+    ],
+    "separated_worse": [],
+    "unseparated": [
+     "TAC-LON"
+    ]
+   },
+   "STRATEGIC": {
+    "n_rows": 3,
+    "separated_better": [],
+    "separated_worse": [],
+    "unseparated": [
+     "S-POS@30",
+     "S-POS@50",
+     "S-POS@80"
+    ],
+    "status": "PAUSED (PI item 25): not a pass"
+   },
+   "crawl": {
+    "n_rows": 1,
+    "separated_better": [],
+    "separated_worse": [
+     "M1 crawl share"
+    ],
+    "unseparated": []
+   }
+  }
+ },
+ "seed_floor_beside": {
+  "ADE6": {
+   "gap_C0C-RE": 0.05391687892963104,
+   "gap_C0C": 0.14936760308671115,
+   "abs_delta_lt_floor": {
+    "abs_delta_lt_floor_a": {
+     "s0": false,
+     "s1": false
+    },
+    "abs_delta_lt_floor_b": {
+     "s0": false,
+     "s1": true
+    }
+   }
+  },
+  "M1 crawl share": {
+   "gap_C0C-RE": 0.03483786853905696,
+   "gap_C0C": 0.0032132037874573194,
+   "abs_delta_lt_floor": {
+    "abs_delta_lt_floor_a": {
+     "s0": false,
+     "s1": true
+    },
+    "abs_delta_lt_floor_b": {
+     "s0": false,
+     "s1": false
+    }
+   }
+  }
+ },
+ "pair_rows": {
+  "s0": {
+   "ADE6": {
+    "family": "PRIMARY",
+    "verdict": "unseparated",
+    "delta": -0.19561285977557913,
+    "lo": -0.43905255220132483,
+    "hi": 0.08947705699104833,
+    "separated": false
+   },
+   "speed MAE": {
+    "family": "LONGITUDINAL",
+    "verdict": "separated-better",
+    "delta": -0.12338827786064398,
+    "lo": -0.21573076626230564,
+    "hi": -0.026812702197420175,
+    "separated": true
+   },
+   "along-track MAE": {
+    "family": "LONGITUDINAL",
+    "verdict": "unseparated",
+    "delta": -0.09654855577618054,
+    "lo": -0.3475608355520798,
+    "hi": 0.2073665847519119,
+    "separated": false
+   },
+   "accel MAE": {
+    "family": "LONGITUDINAL",
+    "verdict": "unseparated",
+    "delta": -0.015611211545592843,
+    "lo": -0.15671008253531538,
+    "hi": 0.1346075879190033,
+    "separated": false
+   },
+   "DK-VIOL": {
+    "family": "LONGITUDINAL",
+    "verdict": "unseparated",
+    "delta": 0.03225806451612903,
+    "lo": 0.0,
+    "hi": 0.10344827586206896,
+    "separated": false
+   },
+   "DK-HW": {
+    "family": "LONGITUDINAL",
+    "verdict": "separated-worse",
+    "delta": 0.5473929766757891,
+    "lo": 0.04125424662559101,
+    "hi": 1.2069119588225576,
+    "separated": true
+   },
+   "DK-TG": {
+    "family": "LONGITUDINAL",
+    "verdict": "unseparated",
+    "delta": 0.053386074450826417,
+    "lo": -0.036501844130061176,
+    "hi": 0.17956932303246576,
+    "separated": false
+   },
+   "heading MAE": {
+    "family": "LATERAL",
+    "verdict": "unseparated",
+    "delta": -0.5722027184693336,
+    "lo": -5.531915735052964,
+    "hi": 6.2260001533127465,
+    "separated": false
+   },
+   "yaw-rate MAE": {
+    "family": "LATERAL",
+    "verdict": "unseparated",
+    "delta": 0.43229736653894846,
+    "lo": -1.2665351885499458,
+    "hi": 2.412420544379649,
+    "separated": false
+   },
+   "curvature MAE": {
+    "family": "LATERAL",
+    "verdict": "unseparated",
+    "delta": -0.005918690430107446,
+    "lo": -0.014702661670971562,
+    "hi": 0.0028067997655134265,
+    "separated": false
+   },
+   "cross-track MAE": {
+    "family": "LATERAL",
+    "verdict": "unseparated",
+    "delta": -0.11688919623723443,
+    "lo": -0.27771326676067337,
+    "hi": 0.024477325089168795,
+    "separated": false
+   },
+   "L1 lateral-accel MAE": {
+    "family": "LATERAL",
+    "verdict": "unseparated",
+    "delta": 0.11893774390524564,
+    "lo": -0.06920765597074084,
+    "hi": 0.34125102545410313,
+    "separated": false
+   },
+   "L2 curvature MAE (GT>=5.2)": {
+    "family": "LATERAL",
+    "verdict": "unseparated",
+    "delta": -0.007309855562401964,
+    "lo": -0.018148328045409074,
+    "hi": 0.0034910178377547036,
+    "separated": false
+   },
+   "TAC-LAT": {
+    "family": "TACTICAL",
+    "verdict": "unseparated",
+    "delta": 0.07526881720430108,
+    "lo": -0.010638297872340425,
+    "hi": 0.1595744680851064,
+    "separated": false
+   },
+   "TAC-LON": {
+    "family": "TACTICAL",
+    "verdict": "unseparated",
+    "delta": 0.053763440860215055,
+    "lo": -0.043478260869565216,
+    "hi": 0.1562911184210524,
+    "separated": false
+   },
+   "S-POS@30": {
+    "family": "STRATEGIC",
+    "verdict": "unseparated",
+    "delta": -0.297778180690513,
+    "lo": -0.9465474305971724,
+    "hi": 0.36704085275643933,
+    "separated": false
+   },
+   "S-POS@50": {
+    "family": "STRATEGIC",
+    "verdict": "unseparated",
+    "delta": -0.4753944357142675,
+    "lo": -1.8072194623937514,
+    "hi": 0.9355878380171718,
+    "separated": false
+   },
+   "S-POS@80": {
+    "family": "STRATEGIC",
+    "verdict": "unseparated",
+    "delta": 1.6176105319082827,
+    "lo": -2.9891817824968867,
+    "hi": 7.125339180764423,
+    "separated": false
+   },
+   "M1 crawl share": {
+    "family": "crawl",
+    "verdict": "separated-better",
+    "delta": -0.052272584360869595,
+    "lo": -0.08524468374456022,
+    "hi": -0.02486116766771863,
+    "separated": true
+   }
+  },
+  "s1": {
+   "ADE6": {
+    "family": "PRIMARY",
+    "verdict": "unseparated",
+    "delta": -0.100162135618499,
+    "lo": -0.3434777603426339,
+    "hi": 0.15015849453096827,
+    "separated": false
+   },
+   "speed MAE": {
+    "family": "LONGITUDINAL",
+    "verdict": "separated-better",
+    "delta": -0.1281978210919086,
+    "lo": -0.24397267417310736,
+    "hi": -0.014239797822969686,
+    "separated": true
+   },
+   "along-track MAE": {
+    "family": "LONGITUDINAL",
+    "verdict": "unseparated",
+    "delta": -0.020438303732294667,
+    "lo": -0.2695301674917951,
+    "hi": 0.24733692233335555,
+    "separated": false
+   },
+   "accel MAE": {
+    "family": "LONGITUDINAL",
+    "verdict": "unseparated",
+    "delta": -0.07883325547045933,
+    "lo": -0.17551808571604102,
+    "hi": 0.005122364207845614,
+    "separated": false
+   },
+   "DK-VIOL": {
+    "family": "LONGITUDINAL",
+    "verdict": "unseparated",
+    "delta": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "separated": false
+   },
+   "DK-HW": {
+    "family": "LONGITUDINAL",
+    "verdict": "unseparated",
+    "delta": 0.6043355719403206,
+    "lo": -0.005113599792033772,
+    "hi": 1.3519896612454234,
+    "separated": false
+   },
+   "DK-TG": {
+    "family": "LONGITUDINAL",
+    "verdict": "unseparated",
+    "delta": 0.1753494720218094,
+    "lo": -0.015200630673252587,
+    "hi": 0.5059650121499666,
+    "separated": false
+   },
+   "heading MAE": {
+    "family": "LATERAL",
+    "verdict": "unseparated",
+    "delta": 2.8549382882852847,
+    "lo": -1.8623347026287451,
+    "hi": 8.694854063545588,
+    "separated": false
+   },
+   "yaw-rate MAE": {
+    "family": "LATERAL",
+    "verdict": "unseparated",
+    "delta": -0.14408108111790616,
+    "lo": -1.2304853180305664,
+    "hi": 0.9448190914090869,
+    "separated": false
+   },
+   "curvature MAE": {
+    "family": "LATERAL",
+    "verdict": "unseparated",
+    "delta": -0.0026484023092657022,
+    "lo": -0.01229058929852704,
+    "hi": 0.006489668011286961,
+    "separated": false
+   },
+   "cross-track MAE": {
+    "family": "LATERAL",
+    "verdict": "unseparated",
+    "delta": -0.11838713851208114,
+    "lo": -0.2893834684554728,
+    "hi": 0.040749420606385874,
+    "separated": false
+   },
+   "L1 lateral-accel MAE": {
+    "family": "LATERAL",
+    "verdict": "unseparated",
+    "delta": -0.047095094650298104,
+    "lo": -0.14061635622940316,
+    "hi": 0.04301170669625348,
+    "separated": false
+   },
+   "L2 curvature MAE (GT>=5.2)": {
+    "family": "LATERAL",
+    "verdict": "unseparated",
+    "delta": 0.0004124923065628254,
+    "lo": -0.009974497758605611,
+    "hi": 0.011078991588933204,
+    "separated": false
+   },
+   "TAC-LAT": {
+    "family": "TACTICAL",
+    "verdict": "unseparated",
+    "delta": 0.021505376344086023,
+    "lo": -0.05434782608695652,
+    "hi": 0.10638297872340426,
+    "separated": false
+   },
+   "TAC-LON": {
+    "family": "TACTICAL",
+    "verdict": "unseparated",
+    "delta": 0.08602150537634409,
+    "lo": -0.021505376344086023,
+    "hi": 0.2,
+    "separated": false
+   },
+   "S-POS@30": {
+    "family": "STRATEGIC",
+    "verdict": "separated-better",
+    "delta": -1.540803160800477,
+    "lo": -2.5800408392975442,
+    "hi": -0.5157503513634037,
+    "separated": true
+   },
+   "S-POS@50": {
+    "family": "STRATEGIC",
+    "verdict": "separated-better",
+    "delta": -4.020185502178302,
+    "lo": -6.107394361222891,
+    "hi": -2.062180709795266,
+    "separated": true
+   },
+   "S-POS@80": {
+    "family": "STRATEGIC",
+    "verdict": "separated-better",
+    "delta": -4.624964025835561,
+    "lo": -8.11863667807936,
+    "hi": -1.1718980259556329,
+    "separated": true
+   },
+   "M1 crawl share": {
+    "family": "crawl",
+    "verdict": "unseparated",
+    "delta": -0.014221512034355337,
+    "lo": -0.04501030172251092,
+    "hi": 0.011157667586485396,
+    "separated": false
+   }
+  }
+ },
+ "vs_P10_rows": {
+  "s0": {
+   "C0C-RE": {
+    "ADE6": {
+     "family": "PRIMARY",
+     "verdict": "separated-worse",
+     "delta": 0.593657571738351,
+     "lo": 0.08829086111380899,
+     "hi": 1.0880297330056599,
+     "separated": true
+    },
+    "speed MAE": {
+     "family": "LONGITUDINAL",
+     "verdict": "separated-better",
+     "delta": -0.6893991033321845,
+     "lo": -1.0387880416155206,
+     "hi": -0.3357299216003185,
+     "separated": true
+    },
+    "along-track MAE": {
+     "family": "LONGITUDINAL",
+     "verdict": "separated-worse",
+     "delta": 1.3198364851471807,
+     "lo": 0.7790608397763992,
+     "hi": 1.8676764895671174,
+     "separated": true
+    },
+    "accel MAE": {
+     "family": "LONGITUDINAL",
+     "verdict": "separated-better",
+     "delta": -3.4749160155508907,
+     "lo": -4.737081196504656,
+     "hi": -2.268325520809512,
+     "separated": true
+    },
+    "DK-VIOL": {
+     "family": "LONGITUDINAL",
+     "verdict": "unseparated",
+     "delta": 0.03225806451612903,
+     "lo": 0.0,
+     "hi": 0.10344827586206896,
+     "separated": false
+    },
+    "DK-HW": {
+     "family": "LONGITUDINAL",
+     "verdict": "unseparated",
+     "delta": -0.06594256423048277,
+     "lo": -1.1113001950749433,
+     "hi": 0.8724824357575247,
+     "separated": false
+    },
+    "DK-TG": {
+     "family": "LONGITUDINAL",
+     "verdict": "unseparated",
+     "delta": 0.042288636328538395,
+     "lo": -0.38262064646661414,
+     "hi": 0.5261910247366306,
+     "separated": false
+    },
+    "heading MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-worse",
+     "delta": 10.806011904376032,
+     "lo": 2.8541526090553986,
+     "hi": 19.293935289548617,
+     "separated": true
+    },
+    "yaw-rate MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -65.86696387649425,
+     "lo": -86.21992388044946,
+     "hi": -45.32362971625505,
+     "separated": true
+    },
+    "curvature MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -0.18314943966343183,
+     "lo": -0.24344345347353905,
+     "hi": -0.12052034485800632,
+     "separated": true
+    },
+    "cross-track MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -1.3059860975789364,
+     "lo": -1.6365801815812457,
+     "hi": -0.9646943625021506,
+     "separated": true
+    },
+    "L1 lateral-accel MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -15.289556557373569,
+     "lo": -20.44667844654097,
+     "hi": -10.397355756399401,
+     "separated": true
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -0.04269795435634463,
+     "lo": -0.07245256852146842,
+     "hi": -0.014107155182675177,
+     "separated": true
+    },
+    "TAC-LAT": {
+     "family": "TACTICAL",
+     "verdict": "separated-better",
+     "delta": 0.1827956989247312,
+     "lo": 0.07526881720430108,
+     "hi": 0.29473684210526313,
+     "separated": true
+    },
+    "TAC-LON": {
+     "family": "TACTICAL",
+     "verdict": "separated-worse",
+     "delta": -0.17204301075268819,
+     "lo": -0.2978723404255319,
+     "hi": -0.053177491601343864,
+     "separated": true
+    },
+    "S-POS@30": {
+     "family": "STRATEGIC",
+     "verdict": "separated-better",
+     "delta": -2.6333842425489777,
+     "lo": -4.7619863587910904,
+     "hi": -0.5144114252871862,
+     "separated": true
+    },
+    "S-POS@50": {
+     "family": "STRATEGIC",
+     "verdict": "unseparated",
+     "delta": -3.339127345926446,
+     "lo": -6.746798593265205,
+     "hi": 0.43728965715839263,
+     "separated": false
+    },
+    "S-POS@80": {
+     "family": "STRATEGIC",
+     "verdict": "unseparated",
+     "delta": -2.175494093530483,
+     "lo": -7.760898692361834,
+     "hi": 2.9173294129073355,
+     "separated": false
+    },
+    "M1 crawl share": {
+     "family": "crawl",
+     "verdict": "separated-worse",
+     "delta": 0.35499797002343697,
+     "lo": 0.26281334404921786,
+     "hi": 0.45109195556272424,
+     "separated": true
+    }
+   },
+   "C0C": {
+    "ADE6": {
+     "family": "PRIMARY",
+     "verdict": "separated-worse",
+     "delta": 0.7892704315139297,
+     "lo": 0.3312531370574233,
+     "hi": 1.2386242767802471,
+     "separated": true
+    },
+    "speed MAE": {
+     "family": "LONGITUDINAL",
+     "verdict": "separated-better",
+     "delta": -0.5660108254715406,
+     "lo": -0.909572576271273,
+     "hi": -0.19904885152883317,
+     "separated": true
+    },
+    "along-track MAE": {
+     "family": "LONGITUDINAL",
+     "verdict": "separated-worse",
+     "delta": 1.4163850409233616,
+     "lo": 0.8566525030805308,
+     "hi": 1.9534773405563668,
+     "separated": true
+    },
+    "accel MAE": {
+     "family": "LONGITUDINAL",
+     "verdict": "separated-better",
+     "delta": -3.4593048040052965,
+     "lo": -4.776877227208951,
+     "hi": -2.1896467542578564,
+     "separated": true
+    },
+    "DK-VIOL": {
+     "family": "LONGITUDINAL",
+     "verdict": "unseparated",
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false
+    },
+    "DK-HW": {
+     "family": "LONGITUDINAL",
+     "verdict": "unseparated",
+     "delta": -0.5739968110489849,
+     "lo": -1.3929146049253402,
+     "hi": 0.1305044748763711,
+     "separated": false
+    },
+    "DK-TG": {
+     "family": "LONGITUDINAL",
+     "verdict": "unseparated",
+     "delta": -0.011097438122288018,
+     "lo": -0.38982819123542906,
+     "hi": 0.45349002656874376,
+     "separated": false
+    },
+    "heading MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-worse",
+     "delta": 11.378214622845364,
+     "lo": 4.274953583061109,
+     "hi": 18.98376375176363,
+     "separated": true
+    },
+    "yaw-rate MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -66.2992612430332,
+     "lo": -87.35090294548309,
+     "hi": -45.67140946309504,
+     "separated": true
+    },
+    "curvature MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -0.17723074923332444,
+     "lo": -0.2385175508768814,
+     "hi": -0.11558802148358414,
+     "separated": true
+    },
+    "cross-track MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -1.1890969013417019,
+     "lo": -1.549648488266191,
+     "hi": -0.8309087319055997,
+     "separated": true
+    },
+    "L1 lateral-accel MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -15.40849430127882,
+     "lo": -20.652830394967097,
+     "hi": -10.445438678182148,
+     "separated": true
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -0.035388098793942675,
+     "lo": -0.0677086329404995,
+     "hi": -0.005527720112463589,
+     "separated": true
+    },
+    "TAC-LAT": {
+     "family": "TACTICAL",
+     "verdict": "unseparated",
+     "delta": 0.10752688172043011,
+     "lo": -0.010638297872340425,
+     "hi": 0.23655913978494625,
+     "separated": false
+    },
+    "TAC-LON": {
+     "family": "TACTICAL",
+     "verdict": "separated-worse",
+     "delta": -0.22580645161290322,
+     "lo": -0.3517113095238095,
+     "hi": -0.0967741935483871,
+     "separated": true
+    },
+    "S-POS@30": {
+     "family": "STRATEGIC",
+     "verdict": "separated-better",
+     "delta": -2.3356060618584644,
+     "lo": -4.33710855256321,
+     "hi": -0.2416491168019843,
+     "separated": true
+    },
+    "S-POS@50": {
+     "family": "STRATEGIC",
+     "verdict": "unseparated",
+     "delta": -2.863732910212178,
+     "lo": -6.206100082105217,
+     "hi": 0.7061858198873628,
+     "separated": false
+    },
+    "S-POS@80": {
+     "family": "STRATEGIC",
+     "verdict": "unseparated",
+     "delta": -3.793104625438765,
+     "lo": -10.318989548328657,
+     "hi": 1.9946006553759605,
+     "separated": false
+    },
+    "M1 crawl share": {
+     "family": "crawl",
+     "verdict": "separated-worse",
+     "delta": 0.40727055438430665,
+     "lo": 0.31795598601659636,
+     "hi": 0.5002474600479694,
+     "separated": true
+    }
+   }
+  },
+  "s1": {
+   "C0C-RE": {
+    "ADE6": {
+     "family": "PRIMARY",
+     "verdict": "unseparated",
+     "delta": 0.53974069280872,
+     "lo": -0.045924692328600365,
+     "hi": 1.0951460165131768,
+     "separated": false
+    },
+    "speed MAE": {
+     "family": "LONGITUDINAL",
+     "verdict": "separated-better",
+     "delta": -0.5771714010048847,
+     "lo": -0.8990415483340272,
+     "hi": -0.25974418979432073,
+     "separated": true
+    },
+    "along-track MAE": {
+     "family": "LONGITUDINAL",
+     "verdict": "separated-worse",
+     "delta": 1.275783202399618,
+     "lo": 0.6192432362465476,
+     "hi": 1.9147515221209477,
+     "separated": true
+    },
+    "accel MAE": {
+     "family": "LONGITUDINAL",
+     "verdict": "separated-better",
+     "delta": -3.7339819780950876,
+     "lo": -5.041062205365549,
+     "hi": -2.4651369315616276,
+     "separated": true
+    },
+    "DK-VIOL": {
+     "family": "LONGITUDINAL",
+     "verdict": "unseparated",
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false
+    },
+    "DK-HW": {
+     "family": "LONGITUDINAL",
+     "verdict": "unseparated",
+     "delta": -0.11354964954536378,
+     "lo": -0.6425878331389306,
+     "hi": 0.383969346081372,
+     "separated": false
+    },
+    "DK-TG": {
+     "family": "LONGITUDINAL",
+     "verdict": "unseparated",
+     "delta": 0.1693351028345643,
+     "lo": -0.021987830705216017,
+     "hi": 0.47705175181972154,
+     "separated": false
+    },
+    "heading MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-worse",
+     "delta": 9.117896404932091,
+     "lo": 1.7150355377990252,
+     "hi": 17.580162903468008,
+     "separated": true
+    },
+    "yaw-rate MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -69.41897242808759,
+     "lo": -90.4740290945941,
+     "hi": -48.040876702496085,
+     "separated": true
+    },
+    "curvature MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -0.1883048512151893,
+     "lo": -0.24891126540768563,
+     "hi": -0.1255156743531887,
+     "separated": true
+    },
+    "cross-track MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -1.4037515290606342,
+     "lo": -1.7031770569707687,
+     "hi": -1.07269896912648,
+     "separated": true
+    },
+    "L1 lateral-accel MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -15.736092465805303,
+     "lo": -21.004259157072138,
+     "hi": -10.686326053677702,
+     "separated": true
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -0.04872986648742731,
+     "lo": -0.08086906872084335,
+     "hi": -0.015323369882058523,
+     "separated": true
+    },
+    "TAC-LAT": {
+     "family": "TACTICAL",
+     "verdict": "separated-better",
+     "delta": 0.10752688172043011,
+     "lo": 0.010749828414550447,
+     "hi": 0.20430107526881722,
+     "separated": true
+    },
+    "TAC-LON": {
+     "family": "TACTICAL",
+     "verdict": "unseparated",
+     "delta": -0.10752688172043011,
+     "lo": -0.24176691729323307,
+     "hi": 0.031578947368421054,
+     "separated": false
+    },
+    "S-POS@30": {
+     "family": "STRATEGIC",
+     "verdict": "unseparated",
+     "delta": -1.961269340172019,
+     "lo": -3.997204140781631,
+     "hi": 0.11684668169508004,
+     "separated": false
+    },
+    "S-POS@50": {
+     "family": "STRATEGIC",
+     "verdict": "unseparated",
+     "delta": -3.343234985915589,
+     "lo": -6.858005991224493,
+     "hi": 0.307315273760918,
+     "separated": false
+    },
+    "S-POS@80": {
+     "family": "STRATEGIC",
+     "verdict": "unseparated",
+     "delta": -4.922570115539608,
+     "lo": -12.08853184455354,
+     "hi": 1.7766986194890397,
+     "separated": false
+    },
+    "M1 crawl share": {
+     "family": "crawl",
+     "verdict": "separated-worse",
+     "delta": 0.38983583856249393,
+     "lo": 0.28158650513353756,
+     "hi": 0.4931251612645202,
+     "separated": true
+    }
+   },
+   "C0C": {
+    "ADE6": {
+     "family": "PRIMARY",
+     "verdict": "separated-worse",
+     "delta": 0.6399028284272186,
+     "lo": 0.10698344193883823,
+     "hi": 1.1504061343807828,
+     "separated": true
+    },
+    "speed MAE": {
+     "family": "LONGITUDINAL",
+     "verdict": "separated-better",
+     "delta": -0.4489735799129759,
+     "lo": -0.7712591494056414,
+     "hi": -0.14545820275159685,
+     "separated": true
+    },
+    "along-track MAE": {
+     "family": "LONGITUDINAL",
+     "verdict": "separated-worse",
+     "delta": 1.2962215061319124,
+     "lo": 0.6504190535312526,
+     "hi": 1.8949254611270105,
+     "separated": true
+    },
+    "accel MAE": {
+     "family": "LONGITUDINAL",
+     "verdict": "separated-better",
+     "delta": -3.655148722624629,
+     "lo": -4.99239580314819,
+     "hi": -2.3816532412838165,
+     "separated": true
+    },
+    "DK-VIOL": {
+     "family": "LONGITUDINAL",
+     "verdict": "unseparated",
+     "delta": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "separated": false
+    },
+    "DK-HW": {
+     "family": "LONGITUDINAL",
+     "verdict": "separated-better",
+     "delta": -0.7178852214856846,
+     "lo": -1.2745256132199083,
+     "hi": -0.19739376372033127,
+     "separated": true
+    },
+    "DK-TG": {
+     "family": "LONGITUDINAL",
+     "verdict": "unseparated",
+     "delta": -0.0060143691872451095,
+     "lo": -0.316743974961319,
+     "hi": 0.35944935046149823,
+     "separated": false
+    },
+    "heading MAE": {
+     "family": "LATERAL",
+     "verdict": "unseparated",
+     "delta": 6.262958116646809,
+     "lo": -0.6923311605595543,
+     "hi": 14.253177302274276,
+     "separated": false
+    },
+    "yaw-rate MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -69.2748913469697,
+     "lo": -90.86901288147949,
+     "hi": -47.537108943313264,
+     "separated": true
+    },
+    "curvature MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -0.18565644890592362,
+     "lo": -0.24794127678160022,
+     "hi": -0.1248922850807169,
+     "separated": true
+    },
+    "cross-track MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -1.2853643905485532,
+     "lo": -1.6165262641041118,
+     "hi": -0.93772362700277,
+     "separated": true
+    },
+    "L1 lateral-accel MAE": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -15.688997371155008,
+     "lo": -20.963279198683768,
+     "hi": -10.626841284782184,
+     "separated": true
+    },
+    "L2 curvature MAE (GT>=5.2)": {
+     "family": "LATERAL",
+     "verdict": "separated-better",
+     "delta": -0.04914235879399012,
+     "lo": -0.08200798593605589,
+     "hi": -0.01775636184137385,
+     "separated": true
+    },
+    "TAC-LAT": {
+     "family": "TACTICAL",
+     "verdict": "unseparated",
+     "delta": 0.08602150537634409,
+     "lo": -0.021052631578947368,
+     "hi": 0.19148936170212766,
+     "separated": false
+    },
+    "TAC-LON": {
+     "family": "TACTICAL",
+     "verdict": "separated-worse",
+     "delta": -0.1935483870967742,
+     "lo": -0.30851063829787234,
+     "hi": -0.0831944444444452,
+     "separated": true
+    },
+    "S-POS@30": {
+     "family": "STRATEGIC",
+     "verdict": "unseparated",
+     "delta": -0.4204661793715426,
+     "lo": -2.5083329938633323,
+     "hi": 1.5886423882372271,
+     "separated": false
+    },
+    "S-POS@50": {
+     "family": "STRATEGIC",
+     "verdict": "unseparated",
+     "delta": 0.6769505162627125,
+     "lo": -3.005759300830549,
+     "hi": 4.715256577522121,
+     "separated": false
+    },
+    "S-POS@80": {
+     "family": "STRATEGIC",
+     "verdict": "unseparated",
+     "delta": -0.297606089704048,
+     "lo": -6.297454925099401,
+     "hi": 5.7409474085809045,
+     "separated": false
+    },
+    "M1 crawl share": {
+     "family": "crawl",
+     "verdict": "separated-worse",
+     "delta": 0.40405735059684933,
+     "lo": 0.30334047103234657,
+     "hi": 0.5026551535782217,
+     "separated": true
+    }
+   }
+  }
+ },
+ "n_scenes": 48,
+ "starts_read_on": 93,
+ "exit_code": 0
+}
