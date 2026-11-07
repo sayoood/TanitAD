@@ -1,0 +1,107 @@
+{
+ "_all_killed": true,
+ "_baseline_green": true,
+ "_original_sha256_after": "b1b5a4d926ca96de9d7091b2a6e88d507468cc2ae61b30bb29e219917b06d921",
+ "_original_sha256_before": "b1b5a4d926ca96de9d7091b2a6e88d507468cc2ae61b30bb29e219917b06d921",
+ "_original_untouched": true,
+ "a1": {
+  "delete_killed": true,
+  "line": 477,
+  "neuter_killed": true,
+  "original": "status = \"PASS\" if share >= P[\"A1_SHARE\"] - EPS else \"FAIL\"  # MUT:a1",
+  "test": "test_a_phantom_braking_fails_a1_and_a2"
+ },
+ "a2": {
+  "delete_killed": true,
+  "line": 499,
+  "neuter_killed": true,
+  "original": "status = \"PASS\" if n_ev == 0 else \"FAIL\"  # MUT:a2",
+  "test": "test_a_phantom_braking_fails_a1_and_a2"
+ },
+ "b1": {
+  "delete_killed": true,
+  "line": 519,
+  "neuter_killed": true,
+  "original": "status = \"PASS\" if (P[\"B1_LO\"] - EPS <= med <= P[\"B1_HI\"] + EPS) else \"FAIL\"  # MUT:b1",
+  "test": "test_b_tailgating_at_08s_fails_b1_and_b2"
+ },
+ "b2": {
+  "delete_killed": true,
+  "line": 530,
+  "neuter_killed": true,
+  "original": "status = \"PASS\" if len(runs) == 0 else \"FAIL\"  # MUT:b2",
+  "test": "test_b_tailgating_at_08s_fails_b1_and_b2"
+ },
+ "c1": {
+  "delete_killed": true,
+  "line": 593,
+  "neuter_killed": true,
+  "original": "status = \"PASS\" if mv > P[\"C1_MINV\"] else \"FAIL\"  # MUT:c1",
+  "test": "test_c1_stall_at_clear_junction_fails"
+ },
+ "c2": {
+  "delete_killed": true,
+  "line": 617,
+  "neuter_killed": true,
+  "original": "status = \"PASS\" if ok else \"FAIL\"  # MUT:c2",
+  "test": "test_c2_stop_3m_past_line_on_red_fails"
+ },
+ "c3": {
+  "delete_killed": true,
+  "line": 632,
+  "neuter_killed": true,
+  "original": "status = \"PASS\" if (viol == 0 and f_ok) else \"FAIL\"  # MUT:c3",
+  "test": "test_c3_entering_zone_with_conflicting_agent_within_2s_fails"
+ },
+ "c4": {
+  "delete_killed": true,
+  "line": 677,
+  "neuter_killed": true,
+  "original": "status = \"FAIL\" if any_fail else \"PASS\"  # MUT:c4",
+  "test": "test_c4_creep_stall_after_green_fails"
+ },
+ "d1": {
+  "delete_killed": true,
+  "line": 714,
+  "neuter_killed": true,
+  "original": "status = \"PASS\" if share >= thr - EPS else \"FAIL\"  # MUT:d1",
+  "test": "test_d1_harsh_braking_fails_and_matches_navsim_on_the_same_states"
+ },
+ "d2": {
+  "delete_killed": true,
+  "line": 760,
+  "neuter_killed": true,
+  "original": "status = \"PASS\" if n_ev == 0 else \"FAIL\"  # MUT:d2",
+  "test": "test_d_oscillating_speed_fails_d2"
+ },
+ "e1": {
+  "delete_killed": true,
+  "line": 768,
+  "neuter_killed": true,
+  "original": "status = \"PASS\" if len(runs) == 0 else \"FAIL\"  # MUT:e1",
+  "test": "test_e1_lane_drift_08m_for_3s_fails"
+ },
+ "e2": {
+  "delete_killed": true,
+  "line": 781,
+  "neuter_killed": true,
+  "original": "status = \"PASS\" if (ok_h and ok_k) else \"FAIL\"  # MUT:e2",
+  "test": "test_e2_heading_bias_fails_and_curvature_ringing_fails_but_clean_passes"
+ },
+ "f1": {
+  "delete_killed": true,
+  "line": 853,
+  "neuter_killed": true,
+  "oldrule_killed": true,
+  "oldrule_test": "test_f1_ego_stopped_is_speed_le_0p05_not_0p005",
+  "original": "status = \"PASS\" if n_fault == 0 else \"FAIL\"  # MUT:f1",
+  "test": "test_f_overlap_with_a_stationary_agent_fails_f1_and_f2"
+ },
+ "f2": {
+  "delete_killed": true,
+  "line": 862,
+  "neuter_killed": true,
+  "original": "status = \"PASS\" if len(runs) == 0 else \"FAIL\"  # MUT:f2",
+  "test": "test_f_overlap_with_a_stationary_agent_fails_f1_and_f2"
+ }
+}

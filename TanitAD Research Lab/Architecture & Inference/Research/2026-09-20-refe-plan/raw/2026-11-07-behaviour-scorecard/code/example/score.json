@@ -1,0 +1,330 @@
+{
+ "agent_cls_defaulted": false,
+ "category": "steady_lead",
+ "derived": {
+  "duration_s": 20.0,
+  "free_road_tick_share": 0.0,
+  "human_path_knots": 201,
+  "human_path_length_m": 300.0,
+  "lead_tick_share": 1.0,
+  "max_abs_cross_track_m": 0.0,
+  "min_gap_m": 11.999999999999972,
+  "min_time_gap_s": 0.7999999999999982,
+  "n_free_intervals": 0,
+  "n_ticks_10hz": 201,
+  "n_ticks_beyond_human_path": 12
+ },
+ "epdms": {
+  "terms": null,
+  "value": 0.8
+ },
+ "families": {
+  "LATERAL": {
+   "d1": "PASS",
+   "e1": "PASS",
+   "e2": "PASS"
+  },
+  "LONGITUDINAL": {
+   "a1": "NA",
+   "a2": "NA",
+   "b1": "FAIL",
+   "b2": "FAIL",
+   "c4": "NA",
+   "d1": "PASS",
+   "d2": "PASS"
+  },
+  "STRATEGIC": "PAUSED (PI ruling 2026-09-19, PI_DECISION_QUEUE.md item 25): never a pass, never omitted",
+  "TACTICAL": {
+   "c1": "NA",
+   "c2": "NA",
+   "c3": "NA",
+   "c4": "NA"
+  }
+ },
+ "identity": {
+  "checkpoint_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "complete": true,
+  "dtype": "fp32",
+  "seed": 20261107,
+  "suite_tokens_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+ },
+ "inputs": {
+  "human": "E:\\Projects\\TanitAD-artifacts\\refe_behaviour_20261107\\code\\example\\human.npz",
+  "human_sha256": "1a02386f6af92b2d6896063bdcd7a9c0f2d7a5b371bc1a84b3697a047a1f81db",
+  "rollout": "E:\\Projects\\TanitAD-artifacts\\refe_behaviour_20261107\\code\\example\\rollout.npz",
+  "rollout_sha256": "ebdaf918b870e21e4cbaca9aea14a07d3c0d5b2c435ce533f142126f7a84cc77"
+ },
+ "log_id": "example-tailgate-0.8s",
+ "params": {
+  "A1_HI": 1.1,
+  "A1_LO": 0.9,
+  "A1_SHARE": 0.9,
+  "A1_VH_FLOOR": 3.0,
+  "A2_RATIO": 0.85,
+  "A2_V_MIN": 0.1,
+  "A2_WINDOW_S": 4.0,
+  "ALEAD_HALF_S": 0.5,
+  "B1_ALEAD_MAX": 1.0,
+  "B1_HI": 2.5,
+  "B1_LO": 1.5,
+  "B1_STEADY_S": 3.0,
+  "B2_TG": 1.0,
+  "C1_APPROACH_M": 40.0,
+  "C1_MINV": 1.0,
+  "C1_MODE": "clear_persistent",
+  "C2_STOP_CAP_M": 6.0,
+  "C3_WITHIN_S": 2.0,
+  "C4_HUMAN_PLUS_S": 1.5,
+  "C4_LAUNCH_V": 1.0,
+  "C4_LEAD_PULL_V": 2.0,
+  "C4_MAX_S": 3.0,
+  "C4_STOP_V": 1.0,
+  "CORRIDOR_HALF_WIDTH": 1.5,
+  "D1_HUMAN_MARGIN": 0.05,
+  "D1_SHARE": 0.95,
+  "D1_STRIDE_S": 1.0,
+  "D1_WINDOW_S": 4.0,
+  "D2_SMOOTH_S": 0.5,
+  "D2_SWING": 1.0,
+  "D2_TURN": 0.5,
+  "D2_WITHIN_S": 6.0,
+  "DT": 0.1,
+  "DT_IN": 0.05,
+  "E1_CT": 0.5,
+  "E1_RUN_S": 2.0,
+  "E2_HEAD": 0.087,
+  "E2_KAPPA": 0.02,
+  "E2_V_MIN": 1.0,
+  "F2_TTC": 1.0,
+  "F2_V_STOPPED": 0.005,
+  "FREE_HEADWAY_S": 4.0,
+  "FREE_MIN_GAP_M": 15.0,
+  "FREE_MIN_INTERVAL_S": 2.0,
+  "FREE_TTC_S": 8.0,
+  "LAT_FAULT_CT": 0.5,
+  "PATH_EXT_M": 150.0,
+  "PATH_KNOT_EPS": 0.05,
+  "PERSIST_TICKS": 3,
+  "REAR_AXLE_TO_CENTER": 1.461,
+  "STOPPED_V": 0.1,
+  "STOP_MIN_S": 1.0,
+  "TG_VMIN": 3.0,
+  "VREL_MIN": 0.1,
+  "WARMUP_S": 2.0
+ },
+ "rules": {
+  "a1": {
+   "details": {
+    "reason": "no free-road interval (>= 2.0 s after the 2.0 s warm-up)"
+   },
+   "human_status": "NA",
+   "human_value": null,
+   "n": 0,
+   "raw_status": "NA",
+   "status": "NA",
+   "threshold": null,
+   "value": null
+  },
+  "a2": {
+   "details": {
+    "reason": "no free-road interval"
+   },
+   "human_status": "NA",
+   "human_value": null,
+   "n": 0,
+   "raw_status": "NA",
+   "status": "NA",
+   "threshold": null,
+   "value": null
+  },
+  "b1": {
+   "details": {
+    "max_time_gap": 0.8000000000000038,
+    "min_time_gap": 0.7999999999999982
+   },
+   "human_status": "PASS",
+   "human_value": 2.0,
+   "n": 172,
+   "raw_status": "FAIL",
+   "status": "FAIL",
+   "threshold": [
+    1.5,
+    2.5
+   ],
+   "value": 0.8
+  },
+  "b2": {
+   "details": {
+    "min_time_gap": 0.7999999999999982,
+    "n_short_runs_lt3": 0
+   },
+   "human_status": "PASS",
+   "human_value": 0,
+   "n": 181,
+   "raw_status": "FAIL",
+   "status": "FAIL",
+   "threshold": 0,
+   "value": 1
+  },
+  "c1": {
+   "details": {
+    "reason": "no stop line in the scenario"
+   },
+   "human_status": "NA",
+   "human_value": null,
+   "n": 0,
+   "raw_status": "NA",
+   "status": "NA",
+   "threshold": null,
+   "value": null
+  },
+  "c2": {
+   "details": {
+    "reason": "no governing signal / stop line"
+   },
+   "human_status": "NA",
+   "human_value": null,
+   "n": 0,
+   "raw_status": "NA",
+   "status": "NA",
+   "threshold": null,
+   "value": null
+  },
+  "c3": {
+   "details": {
+    "reason": "no conflict zone"
+   },
+   "human_status": "NA",
+   "human_value": null,
+   "n": 0,
+   "raw_status": "NA",
+   "status": "NA",
+   "threshold": null,
+   "value": null
+  },
+  "c4": {
+   "details": {
+    "reason": "no stop followed by a green-light or lead-pull-away trigger"
+   },
+   "human_status": "NA",
+   "human_value": null,
+   "n": 0,
+   "raw_status": "NA",
+   "status": "NA",
+   "threshold": null,
+   "value": null
+  },
+  "d1": {
+   "details": {
+    "check_order": [
+     "lon_acc",
+     "lat_acc",
+     "jerk_mag",
+     "lon_jerk",
+     "yaw_acc",
+     "yaw_rate"
+    ],
+    "failing_checks_per_window": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "human_share": 1.0,
+    "n_human_windows": 15
+   },
+   "human_status": "PASS",
+   "human_value": 1.0,
+   "n": 15,
+   "raw_status": "PASS",
+   "status": "PASS",
+   "threshold": 0.95,
+   "value": 1.0
+  },
+  "d2": {
+   "details": {
+    "first_event_t": null,
+    "swings": []
+   },
+   "human_status": "PASS",
+   "human_value": 0,
+   "n": 0,
+   "raw_status": "PASS",
+   "status": "PASS",
+   "threshold": 0,
+   "value": 0
+  },
+  "e1": {
+   "details": {
+    "longest_run_s": 0.0,
+    "max_abs_cross_track": 0.0
+   },
+   "human_status": "PASS",
+   "human_value": 0,
+   "n": 201,
+   "raw_status": "PASS",
+   "status": "PASS",
+   "threshold": 0,
+   "value": 0
+  },
+  "e2": {
+   "details": {
+    "heading_ok": true,
+    "kappa_ok": true,
+    "n_kappa": 201
+   },
+   "human_status": "PASS",
+   "human_value": {
+    "p95_heading_err": 0.0,
+    "p95_kappa_err": 0.0
+   },
+   "n": 201,
+   "raw_status": "PASS",
+   "status": "PASS",
+   "threshold": {
+    "heading": 0.087,
+    "kappa": 0.02
+   },
+   "value": {
+    "p95_heading_err": 0.0,
+    "p95_kappa_err": 0.0
+   }
+  },
+  "f1": {
+   "details": {
+    "events": [],
+    "lane_proxy": true,
+    "n_overlap_events_total": 0,
+    "source": "NAVSIM pdm_scorer.py:363-420 + pdm_scorer_utils.py:12 via vendored navsim_pdm/pdm_collision.py (A-10)"
+   },
+   "human_status": "PASS",
+   "human_value": 0,
+   "lane_proxy": true,
+   "n": 1,
+   "raw_status": "PASS",
+   "status": "PASS",
+   "threshold": 0,
+   "value": 0
+  },
+  "f2": {
+   "details": {
+    "min_ttc": null,
+    "n_short_runs_lt3": 0
+   },
+   "human_status": "PASS",
+   "human_value": 0,
+   "n": 201,
+   "raw_status": "PASS",
+   "status": "PASS",
+   "threshold": 0,
+   "value": 0
+  }
+ },
+ "scenario_id": "example-tailgate-0.8s",
+ "schema_version": "refe-rollout-v1",
+ "scorecard_sha256": "fac6c7f150eb026de0708c6f6557df52481216f76b35f3c8c8b8045bcb8ec0c5",
+ "synthetic": false,
+ "tier_stamp": "T2 (re-perception closed-loop sim; MM ruling 2026-11-07)"
+}
