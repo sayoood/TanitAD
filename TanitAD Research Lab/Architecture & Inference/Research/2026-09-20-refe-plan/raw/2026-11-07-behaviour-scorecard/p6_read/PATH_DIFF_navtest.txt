@@ -1,0 +1,60 @@
+--- orig/eval/eval_checkpoint.py
++++ evalcode/eval/eval_checkpoint.py
+@@ -14 +14 @@
+-Writes D:/Projects/TanitAD/data/refe_navtest/points/<name>.json and prints ZZPOINT_OK <name> <PDMS>.
++Writes E:/Projects/TanitAD/data/refe_navtest/points/<name>.json and prints ZZPOINT_OK <name> <PDMS>.
+@@ -34 +34 @@
+-DATA = "D:/Projects/TanitAD/data/refe_navtest"
++DATA = "E:/Projects/TanitAD/data/refe_navtest"
+@@ -36 +36 @@
+-EXPORT = "D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
++EXPORT = "F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
+@@ -41,2 +41,2 @@
+-    e.update({"DZ_ROOT": DZ, "NUPLAN_DATA_ROOT": "D:/Projects/TanitAD/data/nuplan",
+-              "NUPLAN_MAPS_ROOT": "D:/Projects/TanitAD/data/nuplan-maps/nuplan-maps-v1.0",
++    e.update({"DZ_ROOT": DZ, "NUPLAN_DATA_ROOT": "E:/Projects/TanitAD/data/nuplan",
++              "NUPLAN_MAPS_ROOT": "E:/Projects/TanitAD/data/nuplan-maps/nuplan-maps-v1.0",
+@@ -47 +47 @@
+-              "REFE_BACKBONE_ROOT": "D:/Projects/TanitAD/data/backbones", "REFE_SIM_HZ": "10",
++              "REFE_BACKBONE_ROOT": "E:/Projects/TanitAD/data/backbones", "REFE_SIM_HZ": "10",
+--- orig/eval/refe_navtest_seam.py
++++ evalcode/eval/refe_navtest_seam.py
+@@ -17 +17 @@
+-      --frames D:/Projects/TanitAD/data/refe_navtest/frames --out <seam.npz> [--tokens <subset.json>]
++      --frames E:/Projects/TanitAD/data/refe_navtest/frames --out <seam.npz> [--tokens <subset.json>]
+@@ -38,2 +38,2 @@
+-W3_EXPORT = "D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
+-TEST_DB_DIR = "D:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/test"
++W3_EXPORT = "F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
++TEST_DB_DIR = "E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits/test"
+@@ -145 +145 @@
+-    ap.add_argument("--frames", default="D:/Projects/TanitAD/data/refe_navtest/frames")
++    ap.add_argument("--frames", default="E:/Projects/TanitAD/data/refe_navtest/frames")
+--- orig/eval/score_navtest_refe.py
++++ evalcode/eval/score_navtest_refe.py
+@@ -30 +30 @@
+-W3_CODE = ("D:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/"
++W3_CODE = ("E:/Projects/TanitAD/FlyWheels/TanitAD_EvalFlyWheel/incoming/"
+@@ -32 +32 @@
+-W3_EXPORT = "D:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
++W3_EXPORT = "F:/Archive/devbox-C/navsim/exp/w3_navtest_v1/inputs/navtest_inputs.json.gz"
+--- orig/refe/planner.py
++++ evalcode/refe/planner.py
+@@ -321 +321 @@
+-                 db_dir: str = "D:/Projects/TanitAD/data/nuplan/dblinks/driverl_val14",
++                 db_dir: str = "E:/Projects/TanitAD/data/nuplan/dblinks/driverl_val14",
+--- orig/refe/load_dinov3.py
++++ evalcode/refe/load_dinov3.py
+@@ -37 +37 @@
+-BACKBONE_ROOT = os.environ.get("REFE_BACKBONE_ROOT", "D:/Projects/TanitAD/data/backbones")  # pod portability
++BACKBONE_ROOT = os.environ.get("REFE_BACKBONE_ROOT", "E:/Projects/TanitAD/data/backbones")  # pod portability
+--- orig/refe/navtrain_scenarios.py
++++ evalcode/refe/navtrain_scenarios.py
+@@ -72 +72 @@
+-                              "D:/Archive/devbox-C/navsim/devkit/navsim/planning/script/config/common/"
++                              "F:/Archive/devbox-C/navsim/devkit/navsim/planning/script/config/common/"
+@@ -74,2 +74,2 @@
+-DEFAULT_DB_ROOT = os.environ.get("REFE_NUPLAN_DB_ROOT", "D:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits")
+-DEFAULT_MAP_ROOT = os.environ.get("NUPLAN_MAPS_ROOT", "D:/Projects/TanitAD/data/nuplan-maps/nuplan-maps-v1.0")
++DEFAULT_DB_ROOT = os.environ.get("REFE_NUPLAN_DB_ROOT", "E:/Projects/TanitAD/data/nuplan/nuplan-v1.1/splits")
++DEFAULT_MAP_ROOT = os.environ.get("NUPLAN_MAPS_ROOT", "E:/Projects/TanitAD/data/nuplan-maps/nuplan-maps-v1.0")
