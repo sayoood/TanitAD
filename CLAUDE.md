@@ -145,6 +145,22 @@ exhausted in ~1.5 days (Oct 4–5) and the week before (Sep 26–27) — **two p
 5. **Daily sweep:** with the morning token meter, the Master Mind checks free space on C:, E:, F: and box 2's D:. A drive below 5 GB is swept of its own temporary data under rules 1 to 4.
 * This replaces the "move aside, never delete" default for temporary data and copies. For data that is the only copy, nothing changes: it is never deleted.
 
+## ⛔ BINDING — THE THREE LEVELS ARE DEFINED BY TIME BANDS (PI, 2026-11-08)
+
+**PI, verbatim:** *"We need to implement clearly my definition of operative, tactical and strategic time horizons, those are clearly defined (op up to 2 s), (tac up to 6 sec iccl our tactical vocab), (6se to 30 sec incl. av checkpointsssss, detectedstrategic informtio nd derived goals from it) trajectory is a combo of op and tac and thus 6s . It makes no sense to consider 0.8 s as long term abstract level."* And: *"yes use multi hierarchacy world model based planning as baseline and compare it to other approaches"*
+
+| level | band | includes |
+|---|---|---|
+| operative | 0 to 2 s | trajectory knots to 2 s |
+| tactical | up to 6 s | the tactical vocabulary; trajectory to 6 s |
+| strategic | 6 to 30 s | AV checkpoints, detected strategic information (country, period of day, illumination, weather), goals derived from it |
+
+1. Every level, head, loss, label and eval row states its band. A level's trained reach must match its band.
+2. The 6 s trajectory is the combination of operative and tactical.
+3. Period of day and illumination are estimated from images and past frames only. Metadata builds or checks labels; it is never an inference input.
+4. **The multi-hierarchy world-model planner is the baseline**; the reactive planner, a flat world-model planner and the P10 floor are comparison arms.
+5. Spec: `…/raw/2026-11-08-hwm-horizon-review/SPEC_HWM.md`. STRATEGIC stays reported PAUSED until the PI lifts item 25.
+
 ## ⭐⭐ PROGRAMME REDESIGN (PI, 2026-08-22) — READ THESE TWO FILES FIRST
 
 **`Project Steering/TANITAD_PROGRAMME.md` is the CONSTITUTION** — the 8 products,
