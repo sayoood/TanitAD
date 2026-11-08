@@ -1,0 +1,632 @@
+diff --git a/gate_checks.py b/gate_checks.py
+index 84d7dfb..f178d47 100644
+--- a/gate_checks.py
++++ b/gate_checks.py
+@@ -869,6 +869,9 @@ DVB_KINDS_SCORER = {
+     # P6-HN-S (raw/2026-10-18-p6hn-prereg/PREREG_P6HN_SCREEN.md 4.4): both default OFF.  `data` = an input the PASS token must fingerprint (launch_gate.RLS1_DATA lists both flags); the trainer's data event
+     # also carries a BUILT block for each (`hn`, `ctx_cache`: SCORER_HN_KEYS / SCORER_CTX_KEYS), which scorer_dvb_rows compares with the argv and with the bytes the flag names.
+     "hn_bank": "data", "ctx_cache": "data",
++    # SCORER1 (PREREG_SCORER1 section 2): L_pair levers, all default OFF.  `built` = compared with the trainer's `pair` block (scorer_dvb_rows); pair_calibrate is a measuring mode, forbidden in a launch.
++    "pair_w": "built", "pair_dv": "built", "pair_heads": "built", "pair_calibrate": "control",
++    "navtest_logs": "consumed", "navtest_tokens": "consumed",       # SCORER1: check-only lists read by main(); refe_scorer1 binds their sha256 (scorer1_refusals) and asserts the data event's `navtest` block (data_expect)
+     "out": "run", "eval_every": "run", "workers": "run",
+     "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
+     "preflight": "control",
+@@ -896,12 +899,13 @@ SCORER_CTX_REGISTERED = {"dtype": "bf16"}
+ G15_MIN_SCENES = 64                                    # PREREG 4.4: G15 compares >= 64 RL-train and >= 64 RL-val scenes (a run with fewer scenes than that side holds compares all of them: see judge_g15)
+ HN_ARMS = ("lever_ignored", "hn_to_armA", "hn_in_selection", "hn_lane_target", "unmasked_pad", "fan_sees_hn", "stale_bank", "empty_bank_in_launch", "moved_lever", "stale_cache", "shuffled_cache", "epo_with_hn")
+ SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe", "aux_s1_refusals")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
++SCORER_PAIR_DESTS = ("pair_w", "pair_dv", "pair_heads")          # SCORER1: the L_pair levers, observed only when --pair-w > 0
+ SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
+ # the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
+ SCORER_GATES = {"G1": "trainable_is_exactly_the_scorer", "G2": "live", "G3": "copies_equal_model_at_step0", "G4": "identity_and_live",
+                 "G5": "ckpt_roundtrip_planner_loader", "G7": "heldout_disjoint", "G8": "lane_labels_in_bank", "G9": "pdm_targets_in_bank",
+                 "G10": "teacher_lane_in_bank", "G11": "epo_live_and_identity", "G12": "aux_drv_live_and_identity", "G13": "epo_con_live_and_identity",
+-                "G14": "hn_live_and_identity", "G15": "ctx_cache_identity"}
++                "G14": "hn_live_and_identity", "G15": "ctx_cache_identity", "G16": "pair_live_balanced"}
+ 
+ 
+ def judge_g12(g12, ns) -> list:
+@@ -963,6 +967,31 @@ def judge_g12(g12, ns) -> list:
+     return r
+ 
+ 
++def judge_g16(g16, ns) -> list:
++    """G16 (SCORER1) re-judged from its RAW fields (its own `ok` is a claim): L_pair is IN the loss (grad(w=1) - grad(w=0) finite and non-zero on every scorer module), the w = 0 control reads
++    EXACTLY 0.0, kept F == kept S on the micro-batch and on the bank sample, every named head has a non-zero share of sets with a kept pair, and no regression arm produced it."""
++    out = []
++    heads = [h for h in ns.pair_heads.split(",") if h]
++    d = g16.get("loss_grad_delta_w1_minus_w0") or {}
++    if set(d) != set(SCORER_GROUPS) or not all(isinstance(x, (int, float)) and math.isfinite(x) and x > 0.0 for x in d.values()):
++        out.append(f"G16: L_pair is not live IN the loss on every scorer module (grad(w=1) - grad(w=0) = {d})")
++    ctl = g16.get("control_w0_term_alone_grad_abs") or {}
++    if not ctl or any(x != 0.0 for x in ctl.values()) or g16.get("controls_exactly_zero") is not True:
++        out.append("G16: the --pair-w 0 control does not read EXACTLY 0.0 (the probe is not proved able to read zero)")
++    for where, blk in (("micro-batch", g16.get("micro_batch_pairs") or {}), ("bank sample", g16.get("bank_share") or {})):
++        if set(blk) != set(heads):
++            out.append(f"G16: the {where} block covers heads {sorted(blk)}, the argv names {heads}")
++        for h, v in blk.items():
++            if v.get("kept_F") != v.get("kept_S"):
++                out.append(f"G16: F/S ratio != 1 on head {h} ({where}: kept F {v.get('kept_F')} vs kept S {v.get('kept_S')}) -- the balancing step is missing or broken")
++    for h, v in (g16.get("bank_share") or {}).items():
++        if not (isinstance(v.get("share_with_pair"), float) and v["share_with_pair"] > 0.0):
++            out.append(f"G16: head {h} has share 0 of sets with a kept pair: LAUNCH BLOCKER (PREREG_SCORER1 8.1)")
++    if g16.get("balanced_built") is not True or g16.get("mutate_nobalance") or g16.get("mutate_drop_loss"):
++        out.append("G16 was produced under a regression arm (REFE_PAIR_MUTATE_*) or by an unbalanced PairLoss: it can never count")
++    return out
++
++
+ def judge_g14(g14, ns) -> list:
+     """G14 (scorer_finetune --preflight, --hn-bank) re-judged from its RAW FIELDS against the argv's namespace -- never from its own `ok`.  [] = proved.  (PREREG_P6HN_SCREEN 4.3 / 4.4)
+       table        the hard-negative term ALONE (the run's own assembly minus the stock one on one fresh forward) is finite and non-zero on arm B's score_q_mlp, score_dec and score_head rows 0-5, and
+@@ -1247,6 +1276,8 @@ def scorer_required_gates(ns) -> list:
+         req.append("G13")
+     if ns.aux_drv:
+         req.append("G12")
++    if getattr(ns, "pair_w", 0.0) and not getattr(ns, "pair_calibrate", False):         # SCORER1: G16 iff --pair-w > 0 (scorer_finetune.py's own condition)
++        req.append("G16")
+     if getattr(ns, "hn_bank", ""):                                    # P6-HN-S: G14 iff --hn-bank, G15 iff --ctx-cache (scorer_finetune.py's own conditions)
+         req.append("G14")
+     if getattr(ns, "ctx_cache", ""):
+@@ -1365,6 +1396,16 @@ def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
+         add("aux_drv_labels", AUX.PINNED_STORE_KEYS, b.get("frames"), "data event: aux_drv.frames")
+         for k, want in (("cell", AUX.CELL_M), ("x0", AUX.X0), ("y0", AUX.Y0), ("nx", int(round((AUX.X1 - AUX.X0) / AUX.CELL_M))), ("ny", int(round((AUX.Y1 - AUX.Y0) / AUX.CELL_M)))):
+             add("aux_drv", want, b.get(k), f"data event: aux_drv.{k} (the label raster's geometry)")
++    pair_named = bool(getattr(ns, "pair_w", 0.0)) or bool(getattr(ns, "pair_calibrate", False))      # SCORER1: the `pair` block exists iff a --pair-* lever is on
++    if pair_named or "pair" in data:
++        blk = data.get("pair") if isinstance(data.get("pair"), dict) else {}
++        add("pair_w", pair_named, "pair" in data, "the data event carries a `pair` block iff --pair-w > 0 (or --pair-calibrate)")
++        if pair_named:
++            add("pair_w", float(ns.pair_w), blk.get("w"), "data event: pair.w (the weight the built loss multiplies)")
++            add("pair_dv", float(ns.pair_dv), blk.get("dv"), "data event: pair.dv (the PairLoss's speed-contrast threshold)")
++            add("pair_heads", [h for h in ns.pair_heads.split(",") if h], blk.get("heads"), "data event: pair.heads (the heads the PairLoss was built for)")
++            add("pair_w", True, blk.get("balanced"), "data event: pair.balanced (the F/S balancing step is built; the NOBALANCE mutation reads False)")
++            add("pair_w", 20261107, blk.get("seed"), "data event: pair.seed (the registered sampling seed)")
+     hn_named, cc_named = bool(getattr(ns, "hn_bank", "")), bool(getattr(ns, "ctx_cache", ""))
+     if hn_named or "hn" in data:                                   # P6-HN-S: the bank, against the BUILT block of the bank the trainer holds (never an echo of the namespace)
+         blk = data.get("hn") if isinstance(data.get("hn"), dict) else {}
+@@ -1544,7 +1585,7 @@ def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -
+         for r in rows:
+             if not r["ok"]:
+                 reasons.append(f"{r['flag']}: declared {r['declared']!r} != built {r['built']!r} ({r['how']})")
+-        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS)}
++        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS)}
+         missing = sorted(expect - {r["dest"] for r in rows})
+         det["built_without_observer"] = missing
+         if missing:
+diff --git a/hnscreen_layer.py b/hnscreen_layer.py
+index 12c67f7..ae21d31 100644
+--- a/hnscreen_layer.py
++++ b/hnscreen_layer.py
+@@ -34,7 +34,10 @@ def has_layer(src: str) -> bool:
+ 
+ 
+ def peel(src: str) -> str:
+-    """undo the P6-HN-S edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged"""
++    """undo the P6-HN-S edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged.  The SCORER1 layer (refe/scorer1_layer.py) sits ON TOP of this one: it is peeled
++    first (a trainer without it passes through unchanged), so every pin that calls this function, or carvefeed_layer.peel, keeps seeing the pre-SCORER1 trainer."""
++    import scorer1_layer as SL
++    src = SL.peel(src)
+     if not has_layer(src):
+         return src
+     for new, old in HNSCREEN_FILE_REVERSALS:
+diff --git a/launch_gate.py b/launch_gate.py
+index e705ced..6f7f93b 100644
+--- a/launch_gate.py
++++ b/launch_gate.py
+@@ -443,6 +443,68 @@ PROFILES["refe_sft4r"] = {**_BASE, "name": "refe_sft4r", "runner": "scorer", "re
+                                              "--teacher-lane-heldout": None, "--lane-labels-heldout": None, "--b-mode": "expreward", "--lam": "1.0", "--tau-s": "0.1", "--lr": "1e-4"},
+                           "provisional_flags": (), "pinned_argv": tuple(SFT4R_ARGV.split()), "data_expect": SFT4R_DATA_EXPECT, "data_expect_min": SFT4R_DATA_MIN,
+                           "data_expect_updates": SFT4R_UPDATES, "egr_require_ckpt": False}
++# ============================================================================================ SCORER1 (PREREG_SCORER1 + AMENDMENT 1; chain refe/scorer1_chain.sh; pod script refe/scorer1_pod.sh)
++# Three arms from u400, ONE pinned argv each (`scorer1_argv`): C0 (same recipe, 400 more updates, seed 0), C0r (seed 1: the training-variance floor), S1 (C0 + lambda_p * L_pair on NC,DAC,TTC).  They share
++# the SFT-4R input layout and differ by --out, --seed and the --pair-* levers alone.  What the profile asserts beyond the pin (`scorer1_refusals`):
++#   * --max-updates 400 is ALLOWED (and required): Amendment 1 item 6.  --pair-calibrate is FORBIDDEN in a launch (a measuring mode: its value goes into S1's --pair-w through the chain).
++#   * the checkpoint is bound by sha256 (`SCORER1_CKPT_SHA256`, Amendment 1 item 7: the dev-box file and the HF/pod file are the SAME bytes -- md5 8e382eeb... of the registry IS sha256 8b4dba48... of the card).
++#   * NAVTEST IS NEVER TRAINING DATA (PREREG_SCORER1 section 2): (i) no data path of the argv may name navtest; (ii) the registered navtest log list (136 logs) and token list (12,146) are bound by sha256 and passed
++#     to the trainer (--navtest-logs / --navtest-tokens), whose own `data` event counts training sets and bank sets on them; G-DVB asserts every count == 0 and the list sizes == the registered ones (an empty list cannot pass).
++#   * S1 names --pair-w > 0, --pair-heads NC,DAC,TTC, --pair-dv 0.15; C0 and C0r name no --pair-* flag at all (a control with the lever named is not C0).
++SCORER1_ROOT = "/workspace/data/refe_scorer1"
++SCORER1_CKPT = SCORER1_ROOT + "/base/model_sft4_B_u400.pt"
++SCORER1_CKPT_SHA256 = "8b4dba4818b5cc96c640fe892efe114037ace7cec9dda060c5b4cdd5fb92410d"      # MEASURED 2026-11-08, dev box file 1,288,489,838 B; the registry's 8e382eeb... is its md5
++SCORER1_NAVTEST_LOGS, SCORER1_NAVTEST_TOKENS = SCORER1_ROOT + "/navtest_ids/navtest_logs.json", SCORER1_ROOT + "/navtest_ids/navtest_tokens.txt.gz"
++SCORER1_NAVTEST_SHA256 = {"--navtest-logs": "79daa3c2ba3fbf1c6d45d0e3b630f43bb26a073160a34ca5f9c98553c0bf43e0", "--navtest-tokens": "e61613ce129bb67dc654a5a575de2889a22fcfcbc64e4ec389a38295b8df9c7a"}   # raw/2026-10-22-p7-session-reserve/raw/src
++SCORER1_NAVTEST_EXPECT = {"navtest.logs": 136, "navtest.tokens": 12146, "navtest.train_rows_in_navtest_logs": 0, "navtest.train_rows_in_navtest_tokens": 0,
++                          "navtest.bank_sets_in_navtest_logs": 0, "navtest.bank_sets_in_navtest_tokens": 0}
++SCORER1_UPDATES = 400
++SCORER1_RECIPE = {**{k: v for k, v in SFT4R_RECIPE.items() if k not in ("max_updates", "eval_every", "seed")}, "max_updates": SCORER1_UPDATES, "eval_every": 200}      # seed is per ARM
++SCORER1_ARM_SEED = {"C0": 0, "C0r": 1, "S1": 0}
++SCORER1_PAIR_DV, SCORER1_PAIR_HEADS = 0.15, "NC,DAC,TTC"
++SCORER1_FORBIDDEN = tuple(f for f in SFT4R_FORBIDDEN if f != "--max-updates") + ("--pair-calibrate", "--dump-scores")
++SCORER1_SUITE = ([{"script": "test_pair_loss.py", "token": "ZZTEST_PASS"}, {"script": "test_scorer1_gate.py", "token": "ZZTEST_PASS"},
++                  {"script": "test_scorer1_mutation.py", "token": "ZZTEST_PASS"},
++                  {"script": "test_scorer1_layer.py", "token": "ZZTEST_PASS"}]
++                 + [x for x in SFT4R_SUITE if x["script"] not in ("test_sft4r_chain.py", "test_sft4r_gate.py")])
++SCORER1_DATA = RLS1_DATA + ("--navtest-logs", "--navtest-tokens")
++
++
++def scorer1_argv(arm: str, pair_w=None) -> list:
++    """The pod script's argv for one arm as it expands on the pod (`MODE=argv ARM=<arm> bash refe/scorer1_pod.sh`; test_scorer1_gate.py diffs the two copies).  S1's lambda_p is NOT in the pin (it is measured by
++    --pair-calibrate): `pair_w` None builds the pin WITHOUT it; scorer1_refusals then demands a positive finite --pair-w."""
++    toks = SFT4R_ARGV.replace("--ckpt /workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt", "--ckpt " + SCORER1_CKPT).split()
++    toks = toks[:toks.index("--out")]
++    toks += ["--navtest-logs", SCORER1_NAVTEST_LOGS, "--navtest-tokens", SCORER1_NAVTEST_TOKENS, "--max-updates", str(SCORER1_UPDATES), "--eval-every", "200", "--seed", str(SCORER1_ARM_SEED[arm])]
++    if arm == "S1":
++        toks += ["--pair-heads", SCORER1_PAIR_HEADS, "--pair-dv", str(SCORER1_PAIR_DV)] + (["--pair-w", str(pair_w)] if pair_w is not None else [])
++    return toks + ["--out", SCORER1_ROOT + "/" + arm.lower()]
++
++
++_SHA_MEMO: dict = {}
++
++
++def sha256_of_file(path: str) -> str:
++    """streamed sha256, memoised per (path, size, mtime_ns) so the several `verify` calls of one chain hash a 1.3 GB checkpoint once"""
++    import hashlib
++    st = os.stat(path)
++    k = (str(path), st.st_size, st.st_mtime_ns)
++    if k not in _SHA_MEMO:
++        h = hashlib.sha256()
++        with open(path, "rb") as fh:
++            for blk in iter(lambda: fh.read(1 << 22), b""):
++                h.update(blk)
++        _SHA_MEMO[k] = h.hexdigest()
++    return _SHA_MEMO[k]
++
++
++PROFILES["refe_scorer1"] = {**PROFILES["refe_sft4r"], "name": "refe_scorer1", "recipe_rules": None, "scorer1_rules": True, "recipe": SCORER1_RECIPE, "forbidden_flags": SCORER1_FORBIDDEN, "suite": SCORER1_SUITE,
++                            "data_flags": SCORER1_DATA, "pinned_argv": (), "data_expect": {**SFT4R_DATA_EXPECT, **SCORER1_NAVTEST_EXPECT}, "data_expect_updates": SCORER1_UPDATES,
++                            "required_flags": {**PROFILES["refe_sft4r"]["required_flags"], "--navtest-logs": None, "--navtest-tokens": None, "--max-updates": str(SCORER1_UPDATES)},
++                            "ckpt_sha256": SCORER1_CKPT_SHA256, "navtest_sha256": SCORER1_NAVTEST_SHA256,
++                            "clock_na": "SCORER1 has no label clock of its own: it trains on the SFT-4R PDM relabel of the on-policy bank (G-DVB asserts the coverage and 0 stale from the trainer's data event), "
++                                        "on a frozen generator"}
++
+ # RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
+ # rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
+ PROFILES["refe_rls1b"] = {**PROFILES["refe_rls1"], "name": "refe_rls1b", "suite": RLS1B_SUITE, "arm_class": RLS1B_ARM_CLASS, "arm_seeds": RLS1B_ARM_SEEDS,
+@@ -574,6 +636,10 @@ def profile_refusals(prof: dict, argv: list) -> list:
+         rs, extra = sft4r_refusals(prof, argv, T, parser)
+         out += rs
+         terms += extra
++    if prof.get("scorer1_rules"):
++        rs, extra = scorer1_refusals(prof, argv, T, parser)
++        out += rs
++        terms += extra
+     for t in terms:
+         if not re.search(r'["\']' + re.escape(t) + r'["\']', src):
+             out.append(f"DECLARED, NOT BUILT: {prof['name']} requires the loss term {t!r}; {trainer_src} never emits it")
+@@ -977,7 +1043,7 @@ def sft4r_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+ 
+     def how(flag):
+         return "named" if flag in argv else "the parser DEFAULT"
+-    for dest, want in SFT4R_RECIPE.items():
++    for dest, want in prof.get("recipe", SFT4R_RECIPE).items():            # SCORER1 supplies its own recipe (400 updates, eval every 200); every other profile reads SFT4R_RECIPE exactly as before
+         f = "--" + dest.replace("_", "-")
+         if not C._close(getattr(ns, dest), want):
+             out.append(f"{name} requires {f} {want} (PREREG_SFT4 'Settings', the SFT-4R recipe); the argv resolves to {getattr(ns, dest)} ({how(f)})")
+@@ -990,6 +1056,73 @@ def sft4r_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+     return out, ()
+ 
+ 
++# ============================================================================================ SCORER1 rules (refe_scorer1)
++def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
++    """(refusals, extra live terms) of the SCORER1 rules: the arm is read from the argv's --out, that arm's argv is PINNED (S1 minus the measured --pair-w), the effective recipe is asserted through
++    `sft4r_refusals` with SCORER1_RECIPE, the pair levers are asserted per arm, the checkpoint and the navtest lists are bound by sha256, and no data path may name navtest."""
++    import gate_checks as C
++    name, out = prof["name"], []
++    outs = GT.flag_values(argv, "--out") or []
++    arm = next((a for a in SCORER1_ARM_SEED if outs == [SCORER1_ROOT + "/" + a.lower()]), None)
++    if arm is None:
++        return [f"{name}: --out {' '.join(outs)} is none of the three arm dirs {[SCORER1_ROOT + '/' + a.lower() for a in SCORER1_ARM_SEED]}"], ()
++    pw = GT.flag_values(argv, "--pair-w")
++    pin_argv = list(argv)
++    if arm == "S1":
++        try:
++            wv = float(pw[0]) if pw and len(pw) == 1 else None
++        except ValueError:
++            wv = None
++        if wv is None or not math.isfinite(wv) or not wv > 0.0:
++            out.append(f"{name} (S1) requires --pair-w named, ONE finite value > 0 (lambda_p, measured by --pair-calibrate); the argv has --pair-w {' '.join(pw or [])}")
++        pin_argv = [t for f, v in GT.flag_pairs(list(argv)) if f != "--pair-w" for t in [f] + list(v)]
++    out += pinned_argv_refusals({**prof, "pinned_argv": tuple(scorer1_argv(arm))}, pin_argv)
++    ns, err = C.parse_scorer_argv(parser, argv)
++    if err:
++        return out, ()
++    rs, _ = sft4r_refusals(prof, argv, mod, parser)
++    out += rs
++    if ns.seed != SCORER1_ARM_SEED[arm]:
++        out.append(f"{name} ({arm}) requires --seed {SCORER1_ARM_SEED[arm]} (the data-order seed, Amendment 1 item 5); the argv resolves to {ns.seed}")
++    if arm == "S1":
++        if ns.pair_calibrate or ns.pair_heads != SCORER1_PAIR_HEADS or not C._close(ns.pair_dv, SCORER1_PAIR_DV):
++            out.append(f"{name} (S1) requires --pair-heads {SCORER1_PAIR_HEADS} --pair-dv {SCORER1_PAIR_DV} and no --pair-calibrate")
++        out += [f"scorer_finetune refuses this argv: {m}" for m in mod.pair_refusals(ns)]
++    else:
++        named = [f for f in ("--pair-w", "--pair-dv", "--pair-heads", "--pair-calibrate") if f in argv]
++        if named or ns.pair_w != 0.0 or ns.pair_heads:
++            out.append(f"{name} ({arm}) is a control: it names no --pair-* flag (the argv carries {named}); a control with the lever on is not C0")
++    # the checkpoint: sha256 of the bytes (Amendment 1 item 7)
++    ck = GT.flag_values(argv, "--ckpt") or []
++    if len(ck) == 1:
++        try:
++            got = sha256_of_file(ck[0])
++        except OSError as e:
++            out.append(f"{name}: cannot bind the checkpoint {ck[0]} by sha256 ({type(e).__name__}); the arm may not start from an unverified file")
++        else:
++            if got != prof["ckpt_sha256"]:
++                out.append(f"{name}: --ckpt {ck[0]} has sha256 {got[:16]}..., the registered u400 is {prof['ckpt_sha256'][:16]}... (Amendment 1 item 7)")
++    # the navtest lists: bound by sha256, and NO data path names navtest
++    for f, want in prof["navtest_sha256"].items():
++        v = GT.flag_values(argv, f) or []
++        if len(v) != 1:
++            out.append(f"{name} requires {f} named once (the registered navtest list the trainer audits the training data against)")
++            continue
++        try:
++            got = sha256_of_file(v[0])
++        except OSError as e:
++            out.append(f"{name}: cannot bind {f} {v[0]} by sha256 ({type(e).__name__}): the navtest guard would be unverifiable")
++            continue
++        if got != want:
++            out.append(f"{name}: {f} {v[0]} has sha256 {got[:16]}..., the registered list is {want[:16]}...")
++    for f in prof.get("data_flags", ()):
++        if f in ("--navtest-logs", "--navtest-tokens"):
++            continue
++        for v in GT.flag_values(argv, f) or []:
++            if "navtest" in str(v).lower():
++                out.append(f"{name}: NAVTEST IS NEVER TRAINING DATA (PREREG_SCORER1 section 2): {f} {v} names navtest")
++    return out, ()
++
+ # ============================================================================================ orchestration
+ def derived_argvs(prof: dict, argv: list, work: Path, gate_sets=None, gate_pdm=None, gate_bank=None) -> tuple:
+     """(build_argv, smoke_argv).  BUILD keeps every launch lever (the schedule is observed) and points the on-policy side at the gate's small
+@@ -1229,6 +1362,9 @@ def consume_scorer_preflight(path, argv, prof, arm=None, rehearsal=False) -> dic
+     g12 = next((v for k, v in gates.items() if prefix[k] == "G12"), None)
+     if g12 is not None:                                      # G12 (--aux-drv) is re-judged from its raw fields too: its own `ok` is a claim, the fields are the evidence
+         reasons += C.judge_g12(g12, ns)
++    g16 = next((v for k, v in gates.items() if prefix[k] == "G16"), None)
++    if g16 is not None:                                      # G16 (--pair-w): SCORER1, re-judged from its raw fields
++        reasons += C.judge_g16(g16, ns)
+     g14 = next((v for k, v in gates.items() if prefix[k] == "G14"), None)
+     g15 = next((v for k, v in gates.items() if prefix[k] == "G15"), None)
+     if arm in C.HN_ARMS:                                     # P6-HN-S deliberate-regression arms: the same preflight, with the raw fields of the defect (each must turn a judge RED)
+diff --git a/scorer_finetune.py b/scorer_finetune.py
+index 51a2816..73f3e2b 100644
+--- a/scorer_finetune.py
++++ b/scorer_finetune.py
+@@ -120,6 +120,126 @@ def expected_reward_loss(sx, tg, tau_s, sel=None):
+     return -(pi * agg_v1(tg[..., :6])).sum(1).mean()
+ 
+ 
++def load_navtest_ids(logs_path, tokens_path):
++    """SCORER1 (PREREG_SCORER1 section 2, 'a navtest log/token gate on the training data'): the registered navtest log names and tokens.  A file that is named and unreadable or empty RAISES (fail closed)."""
++    import gzip
++    logs, toks = set(), set()
++    if logs_path:
++        logs = set(json.load(open(logs_path, encoding="utf-8")).get("logs") or [])
++        if not logs:
++            raise RuntimeError(f"--navtest-logs {logs_path} lists no log")
++    if tokens_path:
++        op_ = gzip.open if str(tokens_path).endswith(".gz") else open
++        with op_(tokens_path, "rt", encoding="utf-8") as fh:
++            toks = set(fh.read().split())
++        if not toks:
++            raise RuntimeError(f"--navtest-tokens {tokens_path} lists no token")
++    return logs, toks
++
++
++def navtest_audit(train_keys, bank_keys, logs, toks):
++    """the BUILT facts of the navtest guard: list sizes, and how many TRAINING sets / how many sets of the whole on-policy bank carry a navtest log or token.  Keys are (log, token, step, rank)."""
++    tk, bk = list(train_keys), list(bank_keys)
++    return {"logs": len(logs), "tokens": len(toks),
++            "train_rows_in_navtest_logs": sum(1 for k in tk if k[0] in logs), "train_rows_in_navtest_tokens": sum(1 for k in tk if k[1] in toks),
++            "bank_sets_in_navtest_logs": sum(1 for k in bk if k[0] in logs), "bank_sets_in_navtest_tokens": sum(1 for k in bk if k[1] in toks)}
++
++
++# ---- SCORER1 (PREREG_SCORER1 section 2): L_pair, a speed-BALANCED pairwise loss on the NC / DAC / TTC heads.  ALL levers default OFF (--pair-w 0 / --pair-heads ""), the OFF path is this trainer exactly.
++PAIR_HEADS = {"NC": 0, "DAC": 1, "TTC": 3}                 # label / logit column of each head (planner.py component order NC DAC EP TTC C DDC)
++PAIR_SEED = 20261107                                       # PREREG_SCORER1 section 2 item 3: the without-replacement sampling seed
++PAIR_V_IDX, PAIR_DT = 19, 0.2                              # v4 = the 0.2 s chord at step 19 (t = 4 s) on the raw proposal, as p1_diag.py / sel_common.step_speed
++PAIR_MUTATE_ENVS = ("REFE_PAIR_MUTATE_NOBALANCE", "REFE_PAIR_MUTATE_DROP_LOSS")      # deliberate regressions: NOBALANCE must turn the F/S ratio check RED, DROP_LOSS must turn G16 RED
++
++
++def chord_speed(cxy, idx=PAIR_V_IDX, dt=PAIR_DT):
++    """[B, K, T, >=2] proposals -> [B, K] one-step chord speed at step idx (the first step is measured from the origin, as sel_common.step_speed)"""
++    xy = cxy[..., :2].float()
++    i = min(idx, xy.shape[-2] - 1)
++    prev = torch.zeros_like(xy[..., 0, :]) if i == 0 else xy[..., i - 1, :]
++    return torch.linalg.norm(xy[..., i, :] - prev, dim=-1) / dt
++
++
++class PairLoss:
++    """L_pair = mean over the KEPT pairs of -log sigmoid(s_i - s_j) on the head logits (PREREG_SCORER1 section 2).  For each labelled set and head h: candidate pairs (i, j) have y_h,i > y_h,j and
++    |v4_i - v4_j| / max(v0, 1) >= dv; F = the truly better one is the faster, S = it is the slower.  BALANCE: min(|F|, |S|) pairs from each side, without replacement (own torch.Generator, seed PAIR_SEED);
++    an empty side -> the set contributes NO pair for h.  So the loss has zero speed direction by construction.  The mean is over every kept pair of the micro-batch (all sets, all heads)."""
++
++    def __init__(self, heads, dv, seed=PAIR_SEED):
++        self.heads, self.dv, self.seed = tuple(heads), float(dv), int(seed)
++        self.balance = os.environ.get("REFE_PAIR_MUTATE_NOBALANCE") != "1"          # BUILT fact read by G-DVB / G16
++        self.gen = torch.Generator().manual_seed(self.seed)
++        self.last: dict = {}
++
++    def select(self, y, v, v0):
++        """y [K] true label of one head, v [K] v4, v0 float -> (idx_i, idx_j of the kept pairs, nF_cand, nS_cand, kept_F, kept_S).  Pure CPU, deterministic given self.gen."""
++        better = y[:, None] > y[None, :]
++        far = (v[:, None] - v[None, :]).abs() / max(float(v0), 1.0) >= self.dv
++        cand = better & far
++        fast = v[:, None] > v[None, :]
++        fi, fj = (cand & fast).nonzero(as_tuple=True)
++        si, sj = (cand & ~fast).nonzero(as_tuple=True)
++        nF, nS = int(fi.numel()), int(si.numel())
++        if not self.balance:                                    # DELIBERATE REGRESSION (REFE_PAIR_MUTATE_NOBALANCE): keep everything
++            return torch.cat([fi, si]), torch.cat([fj, sj]), nF, nS, nF, nS
++        k = min(nF, nS)
++        if k == 0:
++            e = torch.zeros(0, dtype=torch.long)
++            return e, e, nF, nS, 0, 0
++        pf = torch.randperm(nF, generator=self.gen)[:k]
++        ps = torch.randperm(nS, generator=self.gen)[:k]
++        return torch.cat([fi[pf], si[ps]]), torch.cat([fj[pf], sj[ps]]), nF, nS, k, k
++
++    def term(self, sxB, tg, cxy, v0, cm):
++        """sxB [B, K, C] arm-B logits (graph), tg [B, K, C'] labels, cxy [B, K, T, >=2] proposals, v0 [B], cm [B, K] set mask -> the UNWEIGHTED L_pair (a zero WITH graph when no pair is kept, so a
++        zero-weight control still builds the graph).  self.last = per-head counts (candidates, kept F / S, sets with a pair) for G16."""
++        v4 = chord_speed(cxy).detach().cpu()
++        ycpu = tg.detach().float().cpu()
++        cmc = cm.detach().cpu()
++        terms, st = [], {h: {"sets": 0, "sets_with_pair": 0, "cand_F": 0, "cand_S": 0, "kept_F": 0, "kept_S": 0} for h in self.heads}
++        for b in range(sxB.shape[0]):
++            if float(cmc[b].min()) <= 0.0:                      # an unlabelled set (all-zero mask) contributes nothing
++                continue
++            for h in self.heads:
++                col = PAIR_HEADS[h]
++                ii, jj, cF, cS, kF, kS = self.select(ycpu[b, :, col], v4[b], float(v0[b]))
++                d = st[h]
++                d["sets"] += 1; d["cand_F"] += cF; d["cand_S"] += cS; d["kept_F"] += kF; d["kept_S"] += kS; d["sets_with_pair"] += int(ii.numel() > 0)
++                if ii.numel():
++                    s = sxB[b, :, col]
++                    terms.append(F.softplus(-(s[ii.to(s.device)] - s[jj.to(s.device)])))
++        self.last = st
++        if not terms:
++            return sxB.sum() * 0.0
++        return torch.cat(terms).mean()
++
++
++def pair_refusals(a):
++    """SCORER1 levers named inconsistently never start (the trainer's own refusals, like epo_refusals)"""
++    out = []
++    names = [h for h in a.pair_heads.split(",") if h]
++    bad = [h for h in names if h not in PAIR_HEADS]
++    if bad:
++        out.append(f"--pair-heads names {bad}; the heads are {sorted(PAIR_HEADS)}")
++    if len(set(names)) != len(names):
++        out.append("--pair-heads names a head twice")
++    if not (a.pair_w >= 0.0 and math.isfinite(a.pair_w)):
++        out.append("--pair-w must be a finite number >= 0")
++    if not (a.pair_dv > 0.0 and math.isfinite(a.pair_dv)):
++        out.append("--pair-dv must be > 0 (a zero contrast makes every pair a candidate and lets the F/S split read noise)")
++    if a.pair_w > 0.0 and not names:
++        out.append("--pair-w > 0 needs --pair-heads (a weight on no head is a lever that does nothing)")
++    if names and a.pair_w == 0.0 and not a.pair_calibrate:
++        out.append("--pair-heads is named with --pair-w 0 and no --pair-calibrate: the heads would be configured and never trained on")
++    if a.pair_calibrate and not names:
++        out.append("--pair-calibrate needs --pair-heads")
++    if a.pair_calibrate and a.pair_w != 0.0:
++        out.append("--pair-calibrate measures the weight; it must not also be given one (--pair-w 0)")
++    if (a.pair_w > 0.0 or a.pair_calibrate) and (a.epo or a.aux_drv or a.hn_bank):
++        out.append("SCORER1 is the plain scorer fine-tune plus L_pair: --epo / --aux-drv / --hn-bank are refused with --pair-*")
++    return out
++
++
+ def key(r):
+     return (r.get("log_name", ""), r.get("token", ""), int(r.get("step", 0)), int(r.get("rank", 0)))
+ 
+@@ -1200,6 +1320,14 @@ def build_parser() -> argparse.ArgumentParser:
+                     "(the cache's trunk fingerprint must equal the checkpoint's).  '' = the live trunk forward")
+     # auxiliary drivable-area head (SPEC_AUX_DRIVABLE_HEAD.md; WIRING_PLAN.md): ALL DEFAULT OFF = this trainer exactly.  --aux-drv / --w-aux-drv / --aux-drv-tap /
+     # --aux-drv-depth / --aux-drv-feed / --aux-drv-labels / --aux-drv-shuffle-seed come from the module; the head's learning rate is this host's seventh flag.
++    # SCORER1 (PREREG_SCORER1 section 2): ALL DEFAULT OFF = this trainer exactly.
++    ap.add_argument("--pair-w", type=float, default=0.0, help="SCORER1: weight lambda_p of L_pair on arm B (0 = OFF).  Set ONCE by the gradient-norm rule (--pair-calibrate), never tuned on held-out data")
++    ap.add_argument("--pair-dv", type=float, default=0.15, help="SCORER1: minimum speed contrast |v4_i - v4_j| / max(v0, 1) of a candidate pair (registered 0.15)")
++    ap.add_argument("--pair-heads", default="", help="SCORER1: comma list of heads in {NC,DAC,TTC} that L_pair acts on ('' = none)")
++    ap.add_argument("--navtest-logs", default="", help="SCORER1: the registered navtest log list (p7-navtest-logs-v1 json: {'logs': [...]}).  CHECK ONLY: the trainer counts the training sets whose log is on it and writes the count into the data event (G-DVB asserts 0)")
++    ap.add_argument("--navtest-tokens", default="", help="SCORER1: the registered navtest token list (whitespace-separated, .gz ok).  CHECK ONLY, as --navtest-logs")
++    ap.add_argument("--pair-calibrate", action="store_true", help="SCORER1: measure lambda_p on the first 50 training micro-batches (||grad L_pair|| = 0.5 ||grad L_BCE||, gradients pooled), write <out>/pair_weight.json, "
++                    "train nothing.  A measuring mode: never part of a launch argv")
+     AUX.add_aux_args(ap)
+     ap.add_argument("--aux-drv-lr", type=float, default=None, help="the head's peak learning rate (its OWN AdamW; the scorer keeps --lr).  A pre-registered value, never tuned on "
+                     "PDMS; None = no head optimiser, and naming it without --aux-drv is refused")
+@@ -1210,6 +1338,7 @@ def main() -> int:
+     ap = build_parser()
+     a = ap.parse_args()
+     bad_cli = epo_refusals(a, ap) + epo_con_refusals(a, ap)           # RL-S1: a command line that names EPO levers inconsistently never starts (SAFEOBJ: epo_con_refusals is epo_refusals' sibling)
++    bad_cli = bad_cli + pair_refusals(a)                                 # SCORER1: --pair-* named inconsistently never starts
+     if bad_cli or AUX.aux_refusals(a) or aux_s1_refusals(a):
+         for msg in bad_cli + AUX.aux_refusals(a) + aux_s1_refusals(a):         # + the aux head's levers: named without --aux-drv, labels missing, shuffle with the feed on, no head LR ...
+             print("REFUSED: " + msg)
+@@ -1283,6 +1412,7 @@ def main() -> int:
+         print("REFUSED: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout"); return 4
+     compw = torch.tensor([float(x) for x in a.b_compw.split(",")], device=dev)
+     assert compw.numel() == 6 and (compw > 0).all(), "--b-compw needs 6 positive weights"
++    pairer = PairLoss([h for h in a.pair_heads.split(',') if h], a.pair_dv) if (a.pair_w > 0.0 or a.pair_calibrate) else None        # SCORER1 (None = OFF)
+     ds = T.TargetBank(a.targets, a.images, cfg, calib=a.calib, onpolicy=op)
+     if aux_src is not None:
+         ds.aux_src = aux_src                                 # make_train_set() wraps the TRAINING subset so each sample also carries its (label, valid)
+@@ -1404,6 +1534,12 @@ def main() -> int:
+         if cdl is not None:                                  # B8: BUILT facts of the carve feed for G-DVB (absent for the default feed: every pre-B8 data event is byte-identical)
+             info["epo_con_carve"] = {"feed": "carve", "logs": len(carve_logs), "sets": len(carve_idx), "sha256": carve_sha, "micro": a.epo_carve_micro,
+                                      "train_rows_in_carve_logs": carve_train_in, "carve_rows_in_heldout_logs": carve_in_ho}
++    if a.navtest_logs or a.navtest_tokens:                   # SCORER1: the navtest guard's BUILT facts (absent when neither list is named: every pre-SCORER1 data event is byte-identical)
++        _nl, _nt = load_navtest_ids(a.navtest_logs, a.navtest_tokens)
++        info["navtest"] = navtest_audit((key(ds.rows[i]) for i in tr_idx), op.by.keys(), _nl, _nt)
++    if pairer is not None:                                   # SCORER1: BUILT facts of the loss object the run holds (absent when OFF: every pre-SCORER1 data event is byte-identical)
++        info["pair"] = {"w": float(a.pair_w), "dv": pairer.dv, "heads": list(pairer.heads), "seed": pairer.seed, "balanced": bool(pairer.balance), "v_idx": PAIR_V_IDX,
++                        "calibrate": bool(a.pair_calibrate)}
+     if aux is not None:
+         # BUILT facts only (G-DVB compares them with the argv): read off the objects the run holds, never echoed from the namespace
+         info["aux_drv"] = {**aux.built_facts(), "tap": aux.cfg.tap, "feed": "on" if aux.feed is not None else "off", "lr": optH.param_groups[0]["lr"],
+@@ -1427,6 +1563,8 @@ def main() -> int:
+     def fwd(batch):
+         img, ego, goal, _tgt, cxy, ctg, cm, _ci, cal = batch
+         img, ego, goal, cxy, ctg = (x.to(dev, non_blocking=True) for x in (img, ego, goal, cxy, ctg))
++        if pairer is not None:                                      # SCORER1: what L_pair reads (proposals, v0 = ego slot 6, set mask); OFF (pairer None) executes nothing here: a fixture with < 7 ego slots (test_aux_s1_wiring) must not see an IndexError
++            cap["pair_in"] = (cxy, ego[:, 6].float(), cm)
+         with torch.autocast("cuda", dtype=torch.bfloat16):
+             _traj, _score, sxA = model(img, ego, goal, calib=cal if cal.numel() else None, score_extra=cxy)
+             sctx = cap["sctx"]
+@@ -1492,11 +1630,29 @@ def main() -> int:
+         R = epo_reward(tg[..., :6].detach().float().cpu().numpy(), recs, rcfg)
+         return epo_loss(sxB, sx0, torch.as_tensor(R, dtype=torch.float32, device=sxB.device), sel_score, a.epo_temp, a.epo_beta, lam_pg, epo_last)
+ 
+-    def train_losses(sx0, sxA, sxB, tg, rows, upd, lam_pg=None):
++    pair_last: dict = {}
++
++    def pair_term(sxB, tg, w=None):
++        """SCORER1: arm B's lambda_p * L_pair for one micro-batch.  w=None -> the argv's --pair-w (0 = OFF: a constant, no graph, nothing computed).  An EXPLICIT w (the G16 probe) is never
++        short-circuited, so w = 0.0 still builds the graph and its gradient must read EXACTLY 0.0.  REFE_PAIR_MUTATE_DROP_LOSS=1 is the deliberate regression: the term is computed and DROPPED."""
++        if w is None:
++            w = a.pair_w
++            if w == 0.0 or pairer is None:
++                return torch.zeros((), device=sxB.device)
++        cxy_, v0_, cm_ = cap["pair_in"]
++        raw = pairer.term(sxB, tg, cxy_, v0_, cm_)
++        pair_last["raw"] = float(raw.detach())
++        if os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") == "1":
++            return torch.zeros((), device=sxB.device)
++        return float(w) * raw
++
++    def train_losses(sx0, sxA, sxB, tg, rows, upd, lam_pg=None, pair_w=None):
+         """THE loss assembly of the run: the training loop, the speed probe and the G11 probe all call it.  losses() exactly as before, plus
+         (--epo only) the EPO term on arm B ONLY -- arm A stays the BCE-only control.  Returns (lossA, lossB incl. EPO, listnet/er, the EPO term)."""
+         lA, lB, ln = losses(sxA, sxB, tg, a.lam)
+         ep = torch.zeros((), device=sxB.device)
++        if pair_w is not None or a.pair_w != 0.0:           # SCORER1 (arm B ONLY; arm A stays the BCE-only control).  Skipped entirely when OFF: the OFF path is byte-identical.
++            lB = lB + pair_term(sxB, tg, pair_w)
+         if a.epo:
+             ep = epo_term(epo_reference(a.epo_ref, sx0, sxA), sxB, tg, rows, upd, lam_pg)
+             lB = lB + ep
+@@ -2106,6 +2262,46 @@ def main() -> int:
+                 kl_tol=(1e-2 if (a.lane_head and not native7) else 0.0), temp=dual.temp)
+         if aux is not None:                                  # G12 (aux head): live + exact-zero control + identity + tap storage + Adam state
+             gates["G12_aux_drv_live_and_identity"] = g12_probe(batch, aux_lv)
++        if pairer is not None and not a.pair_calibrate:      # G16 (SCORER1): L_pair is IN the loss (grad(w=1) - grad(w=0) != 0 on every arm-B module), its controls read EXACTLY 0.0, the F/S split is balanced, every head has pairs
++            def _flat_loss_grad(w_):
++                armB.zero_grad(set_to_none=True)
++                s0_, sA_, sB_, t_ = fwd(batch)
++                _a, lB_, _l, _e = train_losses(s0_, sA_, sB_, t_, prow, 0, pair_w=w_)        # the REAL assembly: a term dropped from `loss` cannot show here
++                lB_.backward()
++                return {m_: torch.cat([(p_.grad if p_.grad is not None else torch.zeros_like(p_)).detach().double().flatten() for p_ in getattr(armB, m_).parameters()]) for m_ in SCORER}
++            g_on, g_off = _flat_loss_grad(1.0), _flat_loss_grad(0.0)
++            st_on = {h_: dict(v_) for h_, v_ in pairer.last.items()}
++            d_on = {m_: float((g_on[m_] - g_off[m_]).abs().sum()) for m_ in SCORER}
++            armB.zero_grad(set_to_none=True)
++            s0_, sA_, sB_, t_ = fwd(batch)
++            ctl = pair_term(sB_, t_, 0.0)                                                       # the term alone, weight 0.0: graph live, factor 0
++            ctl.backward()
++            ctl_read = module_grad_abs(armB)
++            armB.zero_grad(set_to_none=True)
++            # the share of training sets with >= 1 kept pair per head (PREREG 8.1) on a fixed stride of the bank, read from the labels + proposals the trainer will train on (a fresh PairLoss: the training generator is untouched)
++            probe_pl = PairLoss(pairer.heads, pairer.dv)
++            stride = max(1, len(tr_idx) // 20000)
++            share = {h_: {"sets": 0, "with_pair": 0, "kept_F": 0, "kept_S": 0} for h_ in pairer.heads}
++            for i_ in tr_idx[::stride]:
++                r_ = ds.rows[i_]
++                got_ = op.get(r_.get("log_name", ""), r_.get("token", ""), r_.get("step", -1), int(r_.get("rank", 0)))
++                if got_ is None:
++                    continue
++                tr3_, tgl_, _c = got_
++                v4_ = chord_speed(torch.as_tensor(tr3_)[None])[0]
++                for h_ in pairer.heads:
++                    ii_, _jj, _cF, _cS, kF_, kS_ = probe_pl.select(torch.as_tensor(tgl_)[:, PAIR_HEADS[h_]].float(), v4_, float(r_["ego"][6]))
++                    sh_ = share[h_]
++                    sh_["sets"] += 1; sh_["with_pair"] += int(ii_.numel() > 0); sh_["kept_F"] += kF_; sh_["kept_S"] += kS_
++            for h_, sh_ in share.items():
++                sh_["share_with_pair"] = sh_["with_pair"] / max(sh_["sets"], 1)
++            fs_ok = all(v_["kept_F"] == v_["kept_S"] for v_ in list(share.values()) + list(st_on.values())) and pairer.balance
++            g16 = {"ok": bool(all(math.isfinite(d_on[m_]) and d_on[m_] > 0.0 for m_ in SCORER) and all(v_ == 0.0 for v_ in ctl_read.values()) and fs_ok
++                              and all(share[h_]["share_with_pair"] > 0.0 for h_ in pairer.heads) and os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") != "1"),
++                   "loss_grad_delta_w1_minus_w0": d_on, "control_w0_term_alone_grad_abs": ctl_read, "controls_exactly_zero": bool(all(v_ == 0.0 for v_ in ctl_read.values())),
++                   "micro_batch_pairs": st_on, "bank_share": share, "bank_stride": stride, "fs_balanced": bool(fs_ok), "balanced_built": bool(pairer.balance),
++                   "mutate_nobalance": os.environ.get("REFE_PAIR_MUTATE_NOBALANCE") == "1", "mutate_drop_loss": os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") == "1"}
++            gates["G16_pair_live_balanced"] = g16
+         if hn_obj is not None:                               # G14 (P6-HN-S): the hard-negative term is live on arm B only, its controls read EXACTLY 0.0, the identities hold
+             gates["G14_hn_live_and_identity"] = g14_hn_live_and_identity(hn_env)
+         if cc_obj is not None:                               # G15 (P6-HN-S): the cache IS the live trunk forward, bit for bit, and a row-shuffled cache is not
+@@ -2163,7 +2359,7 @@ def main() -> int:
+                "s_per_microbatch": round(sp, 2), "est_hours_per_epoch": round(len(tr_idx) / a.batch * sp / 3600, 2),
+                "gpu_mem_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2)}
+         log(res)
+-        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1"                 and not any(os.environ.get(k_) == "1" for k_ in AUX_MUTATE_ENVS + EPO_CON_MUTATE_ENVS):
++        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1"                 and not any(os.environ.get(k_) == "1" for k_ in AUX_MUTATE_ENVS + EPO_CON_MUTATE_ENVS + PAIR_MUTATE_ENVS):
+             json.dump(res, open(os.path.join(a.out, "PREFLIGHT_PASS.json"), "w"), indent=1, default=str)
+         print("ZZSFT_PREFLIGHT_" + ("PASS" if ok else "FAIL"))
+         return 0 if ok else 3
+@@ -2171,6 +2367,32 @@ def main() -> int:
+     # ---------------- the run
+     paramsA = [p for m in SCORER for p in getattr(model, m).parameters()]
+     paramsB = list(armB.parameters()) + (list(aux.feed.parameters()) if (aux is not None and aux.feed is not None) else [])     # H2: the feed projection is scorer-side
++    if a.pair_calibrate:                                     # SCORER1 lambda_p rule (PREREG section 2 item 5): ||grad L_pair|| = 0.5 ||grad L_BCE|| on the first 50 micro-batches, gradients POOLED (weight_rule.py's statistic); trains nothing
++        gsum_b, gsum_p, nmb, shares = [torch.zeros_like(p_) for p_ in paramsB], [torch.zeros_like(p_) for p_ in paramsB], 0, {h_: [0, 0] for h_ in pairer.heads}
++        for batch_c in dl:
++            batch_c, _rows = split_rows(batch_c, a.epo)
++            _s0, _sA, sB_c, tg_c = fwd(batch_c)
++            bce_c = F.binary_cross_entropy_with_logits(sB_c[..., :6], tg_c[..., :6]) + a.lane_weight * lane_bce(sB_c, tg_c)       # L_BCE = arm B's pointwise BCE (6 components + the lane output), WITHOUT the expected-reward term
++            gb_c = torch.autograd.grad(bce_c, paramsB, retain_graph=True, allow_unused=True)
++            pt_c = pair_term(sB_c, tg_c, 1.0)
++            gp_c = torch.autograd.grad(pt_c, paramsB, allow_unused=True) if pt_c.requires_grad else [None] * len(paramsB)
++            for acc_, g_ in ((gsum_b, gb_c), (gsum_p, gp_c)):
++                for x_, y_ in zip(acc_, g_):
++                    if y_ is not None:
++                        x_ += y_.float()
++            for h_, v_ in pairer.last.items():
++                shares[h_][0] += v_["sets"]; shares[h_][1] += v_["sets_with_pair"]
++            nmb += 1
++            if nmb >= 50:
++                break
++        nb_ = math.sqrt(sum(float((x_ / nmb).double().pow(2).sum()) for x_ in gsum_b))
++        np_ = math.sqrt(sum(float((x_ / nmb).double().pow(2).sum()) for x_ in gsum_p))
++        res_c = {"micro_batches": nmb, "grad_norm_bce": nb_, "grad_norm_pair_unit_w": np_, "ratio_target": 0.5, "pair_w": (0.5 * nb_ / np_) if np_ > 0.0 else None,
++                 "sets_with_pair_share": {h_: (v_[1] / max(v_[0], 1)) for h_, v_ in shares.items()}, "heads": list(pairer.heads), "dv": pairer.dv, "ckpt": a.ckpt, "seed": a.seed}
++        json.dump(res_c, open(os.path.join(a.out, "pair_weight.json"), "w"), indent=1)
++        log({"event": "pair_calibrated", **res_c})
++        print("ZZPAIR_CALIBRATED" if np_ > 0.0 and nb_ > 0.0 else "ZZPAIR_CALIBRATION_FAILED")
++        return 0 if (np_ > 0.0 and nb_ > 0.0) else 5
+     optA = torch.optim.AdamW(paramsA, lr=a.lr, weight_decay=0.01)
+     optB = torch.optim.AdamW(paramsB, lr=a.lr, weight_decay=0.01)
+     total = int(math.ceil(len(tr_idx) / a.batch * a.epochs / a.accum))
+diff --git a/test_dump_scores.py b/test_dump_scores.py
+index bcb70c9..14d89e4 100644
+--- a/test_dump_scores.py
++++ b/test_dump_scores.py
+@@ -262,9 +262,10 @@ def suite(src):
+         epo_dests |= {"epo_con_feed", "epo_carve_logs", "epo_carve_sha256", "epo_carve_micro"}          # B8 (raw/2026-10-18-r0e-carvefeed): the dual's FEED (default train = every arm before B8) and its three carve levers, all default-OFF
+         epo_dests |= {"epo_con_temp"}          # PICKCON (raw/2026-10-18-so-pickcon): ONE more dest, the constraint's own softmax temperature (EPO_CON_DESTS); default None = it INHERITS --epo-temp, every pre-PICKCON arm bit for bit
+         hn_dests = {"hn_bank", "ctx_cache"}          # P6-HN-S (raw/2026-10-18-p6hn-prereg; test_hn_screen_wiring.py): two default-"" dests, flags absent = this trainer bit for bit (that test's I3)
++        pair_dests = {"pair_w", "pair_dv", "pair_heads", "pair_calibrate", "navtest_logs", "navtest_tokens"}          # SCORER1 (PREREG_SCORER1; test_pair_loss.py / test_scorer1_gate.py): six default-OFF dests (--pair-*, --navtest-*), flags absent = this trainer bit for bit
+         check("parser: exactly ONE new dest from the dump edit (dump_scores); every pre-edit dest is still there",
+-              dests - set(BASE_DESTS) - aux_dests - epo_dests - hn_dests == {"dump_scores"} and set(BASE_DESTS) <= dests and (dests & aux_dests) in (set(), aux_dests)
+-              and (dests & epo_dests) in (set(), epo_dests) and (dests & hn_dests) in (set(), hn_dests) and getattr(ns_, "hn_bank", "") == "" and getattr(ns_, "ctx_cache", "") == "" and getattr(ns_, "epo_ref", "base") == "base" and getattr(ns_, "epo_con", "off") == "off"
++              dests - set(BASE_DESTS) - aux_dests - epo_dests - hn_dests - pair_dests == {"dump_scores"} and set(BASE_DESTS) <= dests and (dests & aux_dests) in (set(), aux_dests)
++              and (dests & epo_dests) in (set(), epo_dests) and (dests & hn_dests) in (set(), hn_dests) and (dests & pair_dests) in (set(), pair_dests) and getattr(ns_, "pair_w", 0.0) == 0.0 and getattr(ns_, "pair_heads", "") == "" and getattr(ns_, "navtest_logs", "") == "" and getattr(ns_, "hn_bank", "") == "" and getattr(ns_, "ctx_cache", "") == "" and getattr(ns_, "epo_ref", "base") == "base" and getattr(ns_, "epo_con", "off") == "off"
+               and getattr(ns_, "epo_con_temp", None) is None, str(sorted(dests - set(BASE_DESTS))))
+     guarded("parser", t_parser)
+ 
+diff --git a/test_launch_gate.py b/test_launch_gate.py
+index ae18f39..7be71fb 100644
+--- a/test_launch_gate.py
++++ b/test_launch_gate.py
+@@ -1009,7 +1009,7 @@ def rls1_static() -> None:
+         if k.startswith("G4_compw"):
+             continue
+         ev = cons(r0, notok=(k,))
+-        if k.startswith(("G8_", "G12_", "G13_", "G14_", "G15_")):                  # r0 carries no lane labels / no --aux-drv / no --epo-con / no --hn-bank / no --ctx-cache: G8 / G12 / G13 / G14 / G15 are not obliged, so such a flag in the fixture is simply not written
++        if k.startswith(("G8_", "G12_", "G13_", "G14_", "G15_", "G16_")):                  # r0 carries no lane labels / no --aux-drv / no --epo-con / no --hn-bank / no --ctx-cache: G8 / G12 / G13 / G14 / G15 are not obliged, so such a flag in the fixture is simply not written
+             ok(ev["status"] == "PASS", (k, ev["reasons"]))
+         else:
+             ok(ev["status"] == "FAIL" and "not ok" in " ".join(ev["reasons"]) and k in " ".join(ev["reasons"]), (k, ev["reasons"]))
+@@ -1020,7 +1020,7 @@ def rls1_static() -> None:
+     ok(ev["status"] == "FAIL" and "not PASS" in " ".join(ev["reasons"]))
+     ev = cons(c0, add={g11_key: {"ok": True}})
+     ok(ev["status"] == "FAIL" and "DIFFERENT configuration" in " ".join(ev["reasons"]))                      # a control offered an EPO run's preflight
+-    ev = cons(r0, add={"G16_something_new": {"ok": True}})                                                   # (G13 is a KNOWN gate since SAFEOBJ, G14 / G15 since P6-HN-S: the unknown-gate fixture moves to G16)
++    ev = cons(r0, add={"G17_something_new": {"ok": True}})                                                   # (G13 is a KNOWN gate since SAFEOBJ, G14 / G15 since P6-HN-S: the unknown-gate fixture moves to G17 since SCORER1 took G16)
+     ok(ev["status"] == "FAIL" and "not known to the gate" in " ".join(ev["reasons"]))
+     ok(cons(r0, add={"G8_lane_labels_in_bank": {"ok": True}})["status"] == "FAIL")                           # a gate the argv does not oblige
+     good = rls1_pf_rows(r0)[-1]["gates"][g11_key]
