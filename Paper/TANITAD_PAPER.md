@@ -1,6 +1,6 @@
 # TanitAD: A Data-Efficient, Hierarchically-Imagining, Self-Supervised Driving Stack with Built-In Self-Knowledge
 
-**Status:** living paper, **v1.5.1 (2026-10-18)**. Maintained per D-020: every gate evaluation appends
+**Status:** living paper, **v1.6 (2026-11-08)**. Maintained per D-020: every gate evaluation appends
 results; every accepted decision that changes the method updates §3–§5. Source of truth is this
 Markdown; LaTeX export is a release step. Honesty rule (P8): no number appears here without its
 instrument rows in the referenced experiment record. *(Version note: the status line was left at
@@ -204,6 +204,8 @@ trivial-proxy control that silently covered only 80 % of its rows — and they a
 
 *Reference-arm update (v1.4, §7.20):* REFe, a reproduction attempt of DriveZero's camera planner, scores **88.25 PDMS [87.05, 89.36]** on the full NAVSIM v1.1 navtest (T1 non-reactive pseudo-simulation, 12,146 tokens, 136 logs, one training seed; paired log-cluster bootstrap, which answers another draw of logs only) against a published matched row of 94.55 — the bar is **not** cleared. **65.9 % of the 6.30-point gap is a tail of 529 zero-scored tokens**, and that tail is a *selection* failure rather than a proposal failure (a non-zero proposal existed on 86.0 % [80.1, 91.7] of them), made mostly of sub-half-metre near-twin boundary grazes that the scorer's drivable-area head cannot rank (within-token AUC 0.46 against 0.92 on random tokens). The execution-side fixes we tried for the tail failed their pre-registered bar, and that measurement forced the correction of a gross "reach" figure (1.07 PDMS) that we had quoted as a lever; the next lever, a trunk-level drivable-area gradient (P6), has not yet trained.
 
+*Scope note (v1.6, 2026-11-08):* the rounds above report the generation each was measured on, and no number in them moves. For the v8F redesign the definition in force is §3.14. The operative level covers 0 to 2 s, the tactical level up to 6 s with the tactical vocabulary, and the strategic level 6 to 30 s with route checkpoints, detected context and derived goals; the trajectory is the 6 s combination of operative and tactical. The tactical layer emits goals and constraints that are the operative layer's action, and all three layers read the current measured ego state. The parameter figures above (263.4 M measured, 261 M design budget) describe the v1 flagship; for v8F the PI lifted the budget to at most 800 M on 2026-10-17 (`Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md` §13.1), and its image encoder is a frozen DINOv3 with an adapter, unlike the from-scratch encoder of the first paragraph. The PI's vision-only rule of 2026-08-03 concerns the scenario classifier and the label pipeline; the planner layers read measured ego state. The first read of the redesign is §7.22 (tier T0, oracle goal, not a driving result).
+
 ---
 
 ## 1. Introduction
@@ -231,7 +233,8 @@ Contributions (each tied to a falsifiable gate, §6):
 
 1. **The 4B architecture** — a from-scratch self-supervised hierarchical latent world model with
    operative/tactical/strategic/fallback decomposition, trained end-to-end with a single
-   anti-collapse mechanism and no teacher-student heuristics (§3).
+   anti-collapse mechanism and no teacher-student heuristics (§3). *(Scope, v1.6: the bands are operative up to 2 s, tactical up
+   to 6 s and strategic 6 to 30 s, §3.14. The ≈ 261 M envelope is the v1 generation's; v8F is budgeted at most 800 M since 2026-10-17.)*
 2. **Imagine-and-select with calibrated frozen decoding** — planning as argmin over a discrete
    maneuver vocabulary in latent space, with metric readout through probes fitted on the
    predictor's *own imagined latents*; and a cheaper forward-dynamics readout (P4) that operates in
@@ -342,11 +345,15 @@ transition graph whose nodes are VQ place-situation codes and whose edges carry 
 (topological memory of the driven network — routing and re-routing without HD maps; +58 % over
 greedy on topology tasks in the toy program, A6); the fallback brain monitors continuously and owns
 the minimal-risk manoeuvre. Two theoretical arguments support the decomposition: (i) planning
-regret grows linearly with horizon T (Cui et al. Thm 4.2), so factorizing one long horizon into
-per-level short horizons pays a strictly smaller bound at each level; (ii) hierarchical
+regret grows linearly with horizon T (Cui et al. Thm 4.2), so each per-level short horizon carries a smaller bound than the one
+long horizon; but if the bound is linear in T the per-level bounds add back to the undivided one at equal constants, so on its own
+the factorisation buys no bound, and any gain has to come from a smaller constant at a coarser level or from (ii) (the theorem was
+not re-read against its primary in this revision); (ii) hierarchical
 recombination of maneuvers and places converts sample complexity from the product to the sum of
-level cardinalities. Inference-rate layering also converts the hierarchy into an efficiency device:
-the 207 M operative path is the only component at full rate.
+level cardinalities when the level components combine independently (with interaction terms the sum is a lower bound on what is needed). Inference-rate layering also converts the hierarchy into an efficiency device:
+the 207 M operative path is the only component at full rate. *(Scope, v1.6: the horizons and rates in this
+paragraph record the generation it was written for. The definition in force is §3.14: operative up to 2 s,
+tactical up to 6 s, strategic 6 to 30 s, and a level whose horizon is 0.8 s is not a long-term abstract level.)*
 
 **Making the top-down seams load-bearing (H26).** A hierarchy only earns its parameters if the
 upper level's decision measurably steers the lower one. We instrument every seam with a
@@ -588,7 +595,8 @@ corridor at route scale. ⛔ Neither goal may carry the situation classifier's o
 2026-08-03 admissibility rule), and both are geometric, predicted from vision. `sel_gap` —
 oracle-vs-selected error at each level — is a first-class metric of the hierarchy, which §7.13
 shows was prescient: at both levels measured so far, the fans are adequate and the *selectors*
-are the defect.
+are the defect. *(Scope, v1.6: this table and the 6 to 15 s strategic horizon record the design of 2026-08-07. The strategic band
+is 6 to 30 s and the downward interface is the tactical action u_t, both stated in §3.14.)*
 
 **Control-response post-training (stage A), the mathematics.** Logged data supplies triples
 (o_t, a^human_t, o_{t+1}) only on the human action manifold; under a counterfactual action ã
@@ -723,12 +731,21 @@ with dynamics, **goals conditioning strictly downward**:
   ẑ_T(t+k) = P_T( z_T(t), a_T(t) │ g_str )
   ẑ_O(t+j) = P_O( z_O(t), (a, κ)_t │ g_tac )
 
+*Scope (v1.6).* These equations, the table above and the dimensions in it are the v6 design. The v8F stack as built differs in four
+ways, stated in §3.14: (i) the world-model predictors are goal-free at every level, so the downward conditioning lives in the
+planner cost and in the reader cascade and not inside P_ℓ; (ii) the tactical layer emits goals **and** constraints, that is the
+vocabulary code u_t over the horizon up to 6 s, and u_t is the action of the operative layer; (iii) every layer reads the current
+measured ego state, and no layer reads a state planned by another; (iv) the world model has the same small width at every level
+(dim 128, predictor width 128, depth 2, `v8f_mini.py:650-653`, MEASURED by reading, not 2048 / 512 / 256), with world-model steps of 0.2, 0.6 and
+3.0 s in the band design (0.2, 0.4 and 0.8 s in the M2b generation) and readers run as sample-and-hold at about 10, 2 and 1 Hz
+(not 10, 1 to 2 and 0.2 to 0.5 Hz).
+
 Two structural properties are asserted by construction and then *checked*, not assumed.
 
 **(1) Abstraction by temporal down-sampling under a shrinking state.** d_S < d_T < d_O and
 τ_S > τ_T > τ_O, so an upper level cannot represent the lower level's detail even if the
-objective would reward it: the level is *forced* to abstract. A strategic roll over 15 s is
-three steps of a 256-dimensional model — the hierarchy is an efficiency device as much as a
+objective would reward it: the level is *forced* to abstract. At the 0.2 Hz end of its clock range a strategic roll over 15 s is
+three steps of a 256-dimensional model (at 0.5 Hz it is about seven, and a 30 s roll is six steps at 0.2 Hz) — the hierarchy is an efficiency device as much as a
 semantic one, since only the operative path runs at full rate.
 
 **(2) The gradient-isolation matrix G.** Let 𝒫 be the set of planner/goal-head parameters and
@@ -750,6 +767,13 @@ design: a **frozen** parameter records no autograd edge, so a check run mid-stag
 because isolation is an *architecture* property, not a training-state property; and a zero-init
 head produces a zero gradient that also looks like isolation, which a dedicated test pins.
 
+*Scope of the isolation claim (v1.6).* G as written blocks the **upper** level's loss from the lower level's parameters (the
+upward links are `sg[·]`). It says nothing about the converse edge, the **lower** level's loss reaching the upper level's
+parameters, which is the edge the PI's rule needs at 0.0 (`∂L_O/∂θ_T = 0`, `∂L_T/∂θ_S = 0`). In the v8F stack that edge is the
+switch `detach_upper`, and its default is **off** (`v8f_mini.py:215`): a run that does not name the flag trains the upper layer
+through the lower layer's loss, and M2b ran that way (§3.14). So the matrix describes the v6 contract, not a property every
+v8F run has; each band arm names the flag and carries a control that removes the detach and must go red.
+
 **Why goals, not latents, are the downward interface.** A goal token is a *finite discrete type
 with typed continuous slots* — `(TYPE, args)` in physical units — so the seam is inspectable,
 loggable, and testable for the disjointness rule (§3.10, (L2)): no goal token may be derivable
@@ -766,7 +790,8 @@ of this paper.
 (a, κ) control sequence at 10 Hz integrated through one unicycle rollout, 0 → 6 s**. The 0–2 s
 band carries operative control authority and the 2–6 s band is shaped by g_tac conditioning, but
 they share one integrator, so the 2 s seam is **discontinuity-free by construction** and the seam
-metrics verify rather than repair it. Stitching two trajectories would introduce exactly the
+metrics verify rather than repair it. *(As built, one decoder of the operative layer outputs all 30 knots at 0.2 s, conditioned
+on the tactical action u_t; the band split is in the loss and the metrics, §3.14.)* Stitching two trajectories would introduce exactly the
 artefact the hierarchy is supposed to avoid. The eval consequence is binding: four families and
 oracle/selected are reported at **both** 0–2 s and 0–6 s.
 
@@ -799,11 +824,13 @@ Two readings. First, since (random − selected)/(random − oracle) = ρ exactl
 — a cost with ρ = 0.45 buys 45 % of the available gain, no matter how good the fan is; this alone
 is a strong argument against argmin as an architecture. Second, and decisively for us,
 E[e_{i\*}] under Model A **improves** with N like −ρ√(2 ln N): a noisy-but-honest cost gets
-*better* on a deeper fan. **Our measurement therefore refutes Model A.** Selection degrades as
-the fan deepens (frozen trunk K = 8/32/64 → 0.5772/0.5173/0.5319; repaired trunk N = 256 →
-3.3348; different trunks, same direction, §7.16), and the argmin's mean error-rank is 132.3 of
-256 against 128 expected under *independence* — that is not a ρ = 0.45 signal in the tail, it is
-no signal at all in the tail.
+*better* on a deeper fan. **Our measurement therefore refutes Model A at the tail.** The fan-depth series is *not* the evidence: the
+frozen-trunk K-sweep reads 0.5772/0.5173/0.5319 m at K = 8/32/64 (one seed, no interval; `w7_gate_k{8,32,64}.json`, `w7_selected_ade`),
+which improves from K = 8 to 32, worsens from 32 to 64, and ends 0.0453 m *better* at 64 than at 8, so it neither confirms nor
+refutes the model; and the repaired trunk at N = 256 (3.3348) is a different trunk and not a point on that curve (§7.16). The evidence
+is at fixed N = 256: the argmin's mean error-rank is 132.3 of 256 against 128.5 expected under *independence* — that is not a ρ = 0.45
+signal in the tail, it is no signal at all in the tail — and the flat low-cost stratum below. (Model A's ρ is the correlation of the
+normal scores; a Spearman 0.45 corresponds to ρ = 2 sin(0.45π/6) = 0.467, so "45 % of the gain" reads 46.7 % on that mapping.)
 
 **The reconciliation, and the statistic that matters.** Spearman's ρ is a **bulk** functional: it
 constrains average pairwise concordance and places no constraint on the joint law in the lower
@@ -832,12 +859,15 @@ penalises |a| and |jerk|. Let 𝒟_δ = {u : ‖displacement(u)‖ < δ} be the 
 terms → 0 on 𝒟_δ as δ → 0 (nothing moves, so nothing can disagree and nothing accelerates),
 while the realised error is bounded **away** from zero there, because the ego does move:
 E[e │ u ∈ 𝒟_δ] → ‖true displacement‖ > 0. Hence if fan candidates are drawn i.i.d. from a law
-with positive mass near 𝒟_δ,
+with positive mass near 𝒟_δ **and the cost on 𝒟_δ lies below its infimum off 𝒟_δ** (an assumption, not a derived fact: a
+candidate the world model reproduces well can also be self-consistent away from 𝒟_δ, and then only the weaker statement that the
+argmin is *drawn toward* 𝒟_δ holds),
 
   P( i\* ∈ 𝒟_δ ) → 1 as N → ∞,   so  E[e_{i\*}] → E[e │ 𝒟_δ] ≫ E[e_{(1)}] → 0.
 
 **The minimiser converges to the degenerate set while the oracle converges to zero.** This is the
-predicted monotone divergence, and it is what we observe. It also predicts the deployed
+predicted divergence in N; what we have observed is its fixed-N face (the flat low-cost stratum above), and a single-trunk sweep over N
+that would show the divergence directly has not been run (the frozen-trunk K-sweep is non-monotone). It also predicts the deployed
 decomposition exactly: argmin on c_roll **alone** scores 5.2898 m ≈ the fan mean (pure
 degeneracy), and the whole of W7-FULL's 3.3348 m comes from the λ = 0.2 kinematic term partially
 opposing it.
@@ -857,8 +887,8 @@ selected on the same windows that measured the failure.
 **Why this generalises past our stack.** Every "generate a fan, score it, take the best" planner
 — anchored-diffusion decoders, MPC over learned dynamics, best-of-N sampling from a generative
 policy — is an argmin over a surrogate. The scaling instinct in that family is to *widen the
-fan*, and widening is exactly what makes a degenerate or tail-uninformative cost worse while the
-reported oracle improves. **Publishing a fan's oracle alongside its argmin is therefore not a
+fan*, and under the degenerate-minimiser model (Model B) widening is exactly what makes a degenerate or tail-uninformative cost worse while the
+reported oracle improves; under Model A it helps, and which holds is an empirical question per cost. **Publishing a fan's oracle alongside its argmin is therefore not a
 courtesy; it is the diagnostic**, and the gap between them is the quantity a selection paper owes
 its reader.
 
@@ -885,6 +915,70 @@ not the 30 k the pre-registration wrote), and the same code must compute the tra
 monitor and the offline instrument, or the monitor and the audit will drift apart — in v6 both
 call `tanitad/eval/spectral.py`.
 
+### 3.14 The three bands and the top-down cascade, formally (added v1.6, PI rulings of 2026-11-08)
+
+This section states the v8F design against the PI's definition (`REQ_HORIZONS.md`, D-HWM-BANDS-1). Where the earlier design sections (§3.3, §3.11, §11.4) give other horizons or rates, they describe the generation they were written for, and this section is the definition in force. Each object carries its state: **[TRAINED]** a checkpoint exists, **[BUILT]** code and tests exist and nothing is trained on it, **[DESIGN]** specified only. Nothing in this section is a driving result.
+
+**Time.** Let Δ = 0.2 s be the cache step and t be NOW. The bands are
+
+  B_O = (0, 2] s,  B_T = (2, 6] s,  B_S = (6, 30] s.
+
+The output of the stack is a plan on the knots j = 1, …, 30 of the Δ grid,
+
+  X_t = (x_{t+jΔ})_{j=1..30} ∈ ℝ^{30×2},
+
+or M such plans. Knots 1–10 lie in B_O and knots 11–30 in B_T. A level's horizon has to match its band: a step or a trained reach of 0.8 s is not a long-term abstract level (R-ABS).
+
+**The cascade (inference).** Let e_t be the **current measured ego state** (ego dynamics, including yaw rate), n_t the navigation command, ℓ_t the speed limit and V_t the vision tokens of the current and past frames. Every layer reads e_t. No layer reads a state planned by another layer (R-EGO). With ages a_S, a_T ≥ 0 for the sample-and-hold outputs (S about 1 Hz, T about 2 Hz, O 10 Hz by design, read on the 0.2 s cache grid),
+
+  s_t = f_S(e_t, n_t, ℓ_t, V_t),
+  u_t = f_T(e_t, n_t, ℓ_t, V_t, ŝ_{t−a_S}),
+  X_t = f_O(e_t, n_t, ℓ_t, V_t, ŝ_{t−a_S}, û_{t−a_T}),
+
+where a hat marks a held output re-expressed in the current ego frame by measured odometry. The output of T is a **tactical action**
+
+  u_t = (g_t, lat_t, lon_t, c_t),
+
+goal probabilities over the 22 tactical goal tokens, the lateral and longitudinal classes, and the 26 constraint values, all over the horizon up to 6 s (R-T2O). T has no trajectory head. u_t conditions O as its action: O is a function of the plan's context **given** u_t. A single decoder produces all 30 knots, so the plan is continuous at knot 10 by construction, and the two bands differ only in the loss and the metrics:
+
+  L_O = w_op · ℓ(X^{1:10}, X*^{1:10}) + w_tac · ℓ(X^{11:30}, X*^{11:30}).
+
+For M hypotheses, X_t^{(m)} = f_O(· | û^{(m)}), m = 1, …, M, with û^{(m)} the M best tactical actions. M = 1 is the arm of record. [The cascade is TRAINED on M2b as written, with knots weighted equally and T's labels on 2–8 s. The band losses and the 2–6 s labels are BUILT.]
+
+The strategic output s_t today is three route checkpoints at the arcs 30, 50 and 80 m, whose median arrival is 3, 5 and 8 s (MEASURED, eval-141, 2,399 windows). They do not cover B_S in seconds. The strategic extension [BUILT] is
+
+  σ_t = (C_t, p_t, γ_t),
+
+with C_t the checkpoints at τ ∈ {6, 9, …, 30} s, p_t the posteriors of the detected context (country, illumination, weather, road surface, visibility), read from V_t and past frames only (R-VIS), and γ_t the derived goals, which read the strategic world-model state, n_t and the detached p_t. σ_t enters f_T as a further detached input, so the strategic goals reach O through u_t. No situation-classifier output enters any goal path (§3.10).
+
+**Gradients.** Downward conditioning is an inference statement. The training statement is separate: with `detach_upper` set, ∂L_O/∂θ_T = 0 and ∂L_T/∂θ_S = 0 through the conditioning inputs. Its default is off, so a run that does not name the flag trains the upper layer through the lower layer's loss when the lower layer reads the upper layer's own prediction, and M2b ran that way. The band arms name the flag.
+
+**The world model, level by level.** The levels l = 1, 2, 3 have cumulative strides S_1 = 1, S_2 = 3, S_3 = 15 and steps τ_l = S_l Δ = 0.2, 0.6, 3.0 s. With window 1 (the same form as H-JEPA Eq. 1),
+
+  z^1_i = π(V̄_i),  z^l_i = E^l(z^{l−1}_{i·s_l}),  a^l_i = A^l(a^{l−1}_{i·s_l : (i+1)·s_l}),  s_2 = 3, s_3 = 5,
+
+with V̄_i the mean token of frame i. Predictors are action-conditioned and goal-free at every level. The objective of a level adds a k-step free-run term to the H-JEPA objective:
+
+  𝓛^l = L^l_pred + β · SIGReg(Z^l) + γ · L^l_idm + w_r · L^l_k,
+
+  L^l_k = (1/|𝒱_l|) Σ_{(i,h)∈𝒱_l} (1/D) ‖ ẑ^l_{i,h} − z^l_{i+h+1} ‖²,
+
+where ẑ^l_{i,h} is the (h+1)-step rollout from the single state z^l_i under the logged actions and 𝒱_l = {(i,h): i an anchor, 0 ≤ h < k_l, i+h+1 ≤ T_l − 1}, so a step whose target frame does not exist contributes exactly zero. The trained reach is R_l = k_l τ_l. With k = (10, 10, 6) it is 2, 6 and 18 s, and a window needs
+
+  F = 1 + max_l k_l S_l = 1 + max(10, 30, 90) = 91 frames.
+
+The term is absent at k = 1, where the loss equals the earlier loss bit for bit. Before this change the loss was one-step, so the trained reach was 0.2, 0.4 and 0.8 s at strides (2, 2). Camera frames end at about 20.17 s per clip, so latent targets cannot pass 20 s; 18 to 30 s is carried by C_t, decoded from rolled level-3 states and supervised by egomotion, which runs a median of about 140 s. [Ladder runs at (3, 5) are TRAINING as world-model-only runs, with the adapter, readers and planner frozen. No band read exists yet.]
+
+**The world-model planner, top-down.** Following H-JEPA Eqs. 4–6, with z^l_0 the encoded current state at each level, g the goal latent and T_3 the level-3 horizon:
+
+  a^{3,*} = argmin_{a^3} ‖ ẑ^3_{T_3} − g ‖²,
+
+  a^{l,*} = argmin_{a^l} ‖ z̃^{l+1}_{K} − ẑ^{l+1,*}_{K} ‖² + λ Σ_{i<K} ‖ z̃^{l+1}_{i} − ẑ^{l+1,*}_{i} ‖²,  l = 2, 1,
+
+with z̃^{l+1}_i = E^{l+1}(ẑ^l_{i·s_{l+1}}) the rollout lifted to the level above, and horizon H_l = K_{l+1} s_{l+1}. Each level plans from its own encoded current state, and the only downward signal is the predicted state of the level above. T_3 = 4 places the goal at 12 s, the band end the ladder is read at; T_3 = 2 (6 s) is the control. The tactical vocabulary seeds level-2 candidates, and u_t's constraints enter the level-2 and level-1 costs through differentiable kinematics. g is the output of a goal head on the current latents, nav and p_t, never a true-future latent at inference; the true-future goal is a T0 ceiling. The output is the 6 s plan: knots 1–10 from level 1, knots 11–30 from level 2's macro-actions, or all 30 from level 1 as a compared arm. [BUILT. Read on the earlier (2, 2) models: §7.22.]
+
+**Where this follows H-JEPA and where it does not.** Followed: a latent, encoder, macro-action encoder and predictor per level; SIGReg and inverse dynamics at every level; end-to-end gradients within the world model; Eqs. 4–6 with λ = 0.5 and the App. E solver. Not followed: the image encoder is frozen DINOv3 plus an adapter (PI, 2026-10-17; the LoRA arm is the lever); the k-step term (required by the bands; arm S35 is the one-step control); the planner rolls out from one state while the k-step term feeds back up to three states, so both planning contexts are read; a single 6 s plan per window is scored, not a committed-prefix replanning schedule.
+
 ## 4. Why less data suffices: theoretical grounding
 
 Three independent arguments, one measured corroboration.
@@ -893,12 +987,15 @@ Three independent arguments, one measured corroboration.
    a spectral-contrastive objective, pretraining risk equals a rank-k factorization error of the
    action-conditioned co-occurrence operator; downstream planning regret is bounded by
    O(T·√(Σ_{i>k} σ_i² + C(k)/√n)) with approximation error falling and estimation error rising in
-   the latent dimension k. Latent models win precisely when moderate k captures task dynamics while
-   pixels carry nuisance — the driving regime by construction. Pixel-level prediction is the
-   degenerate k = n endpoint paying maximal sample complexity.
+   the latent dimension k. The bound favours latent models when moderate k captures task dynamics while
+   pixels carry nuisance, which is the driving regime we argue for (an argument about the bound's trade-off, not a measurement that
+   it holds here). Pixel-level prediction can be read as the k = n endpoint of the same trade-off, with the largest estimation term;
+   the cited theory is stated for the rank-k factorisation, not for a pixel decoder, so that reading is an analogy.
 2. **Consequence dominance concentrates gradient.** In egocentric video every action moves every
-   pixel; the action's consequence is a dominant, predictable fraction of frame change (measured
-   0.05–0.11 per step on our corpora). The toy program demonstrated a 0.19 → 0.69/0.76 control jump
+   pixel; the action's consequence is taken to be the dominant, predictable part of frame change. What was measured
+   is the per-step frame-change fraction, 0.05 to 0.11 on our corpora (A8, §3.2): most of each frame is static, which is what makes a
+   change-weighted loss concentrate gradient. That the changing part is the action's consequence is the premise, and the causal
+   panel of §7.3 is the evidence for it, not this number. The toy program demonstrated a 0.19 → 0.69/0.76 control jump
    from the observation model alone (A11) — driving's default observation model is the one in which
    action-conditioned dynamics are cheap to learn.
 3. **Hierarchy recombines instead of memorizing.** Maneuvers learned once recombine across routes
@@ -2558,7 +2655,7 @@ runs on existing corpora, and in its first two days it changed the programme's d
   honestly to hindsight-geometry corridor intent), G2 schema compliance ≥ 0.9, G3 geometric
   consistency reported with CI as a baseline. The admissibility rules travel into the schema:
   **labels may use ego/future** (offline hindsight is the design), **inference stays
-  vision-only** (nothing from this pipeline is ever an inference-time input), and **goal/
+  vision-only for this pipeline** (nothing from it is ever an inference-time input; the planner layers separately read measured ego state, §3.14), and **goal/
   situation disjointness** is enforced at label time — every strategic field carries its
   derivation source (`path|signage|vlm-fused`), and any field derivable only from the scenario
   classification is inadmissible as goal supervision. **Sequencing (revised by the PI
@@ -2642,15 +2739,15 @@ And the decomposition of the deployed number: **argmin on the roll-consistency t
 deployed 3.3348 comes from the **kinematic term at weight 0.2**, not from world-model roll
 consistency. A rank-blend of the two terms scores 5.4615 m, no better.
 
-**Why the fan gets *worse* to minimise over as it deepens, and the model this refutes.** §3.12
+**Why a deeper fan does not help to minimise over, and the model this refutes.** §3.12
 gives the formalism; the empirical shape is: on the frozen trunk the K-sweep read 0.5772 /
 0.5173 / 0.5319 m at K = 8/32/64 (`w7_gate_k{8,32,64}.json`, T0) and W7-FULL reads 3.3348 at
 K = 256 on the **repaired** trunk. ⚠️ Those are two different trunks and therefore **not one
-curve** — the direction agrees, the series does not, and we do not draw it as one. What the
+curve** — the frozen-trunk series is non-monotone and ends better at K = 64 than at K = 8, so the two do not even agree in direction, and we do not draw them as one. What the
 numbers *do* settle is a model comparison stated in §3.12: under a homoscedastic Gaussian-copula
 model of a noisy-but-honest cost, deepening the fan would make the argmin *better*
-(E[error | argmin] scales with −ρ·√(2 ln N)); the measured degradation therefore **refutes that
-model** and requires the alternative — a cost with a **degenerate minimiser**. The
+(E[error | argmin] scales with −ρ·√(2 ln N)); the measured tail behaviour at fixed N (mean error-rank 132.3 of 256, flat low-cost stratum) therefore **refutes that
+model** (the K-sweep itself is non-monotone, 0.5772 / 0.5173 / 0.5319, net better at K = 64 than at K = 8, and does not carry the argument; v1.6) and requires the alternative — a cost with a **degenerate minimiser**. The
 roll-consistency term is a *self-consistency* functional: it is minimised by a candidate the
 world model can trivially reproduce, and a near-stationary candidate is exactly that. As the fan
 deepens, the probability that it contains such a candidate goes to one, so the argmin converges
@@ -3612,6 +3709,27 @@ one of three states, and R0d's own val-side E_π[TTC] was never computed. (vi) T
 an endpoint, and no (c) number is T1. (ix) Of the literature, only the CLOVER row of (a) was re-read; the rest of
 LAB-RUN-019 is inadmissible here until each row is. (x) STRATEGIC is paused and distance-keeping unmeasured.
 
+### 7.22 The redesign's first planning read (2026-11-08)
+
+**Tier T0, oracle goal, zero training. This is a world-model diagnostic and never a driving result.** It asks whether the hierarchical latent space of the earlier generation, the (2, 2)-stride M2b models, can be planned in at all: the top-down planner `plan_topdown` (TD3, three levels, §3.14) and a level-1-only planner with a last-state cost (FLAT1) are given the encoded true-future frame as the goal (the oracle named in the pre-registration `PREREG_V8F_PLANTEST.md`) and asked to recover the 12 logged actions of the next 2.4 s. Evidence class MEASURED: `theory/plantest/RESULT_PLANTEST_body.md` and `RESULT_PLANTEST.json` under the dev-box artifact folder (one place only). Estimator on every interval: paired episode-cluster bootstrap over 141 episodes, B = 2,000, seed 0, 95 % percentile; windows n = 1,976. Both training seeds (M2b_s0, M2b_s1) are required by the card. The interval answers "another draw of episodes"; it is blind to training-seed and planner-seed variance, so the planner-seed floor is printed beside. The four controls (planted dynamics recovered at MAE 0.0036 for TD3 and 0.0070 for FLAT1, goal plumbing, bit-repeat, no-leak) pass for both planners, each with a mutation that goes red. The planner with the last-two-state cost failed the first control on the planted world and is reported beside, without a verdict.
+
+**The verdict, as the card committed it.** NO-GAIN for both planners, both training seeds and both families (LONGITUDINAL, LATERAL): the true goal beats a random goal (separated better) and the plan still does not beat holding the first action. HIER-ADDS (TD3 against FLAT1 under the true goal, separated better at both seeds) is NO in both families. TACTICAL was not computed (n = 0: this read has no decision output). STRATEGIC is PAUSED (PI item 25).
+
+| quantity (T0, oracle goal, MAE against the 12 logged actions) | M2b_s0 | M2b_s1 |
+|---|---|---|
+| LONGITUDINAL acceleration, TD3 true goal, m/s^2 | 1.4228 [1.3800, 1.4647] | 1.3355 [1.2882, 1.3823] |
+| LONGITUDINAL acceleration, HOLD (same windows, both rows) | 0.3296 [0.2973, 0.3623] | 0.3296 [0.2973, 0.3623] |
+| TD3 true minus HOLD (separated worse) | +1.0932 [1.0337, 1.1532] | +1.0059 [0.9476, 1.0628] |
+| TD3 true minus random goal (separated better) | -0.2270 [-0.2933, -0.1624] | -0.2056 [-0.2768, -0.1353] |
+| LATERAL yaw rate, TD3 true goal, rad/s | 0.1338 [0.1272, 0.1406] | 0.1422 [0.1361, 0.1483] |
+| LATERAL yaw rate, HOLD | 0.0224 [0.0185, 0.0263] | 0.0224 [0.0185, 0.0263] |
+| HIER-ADDS, LONGITUDINAL, TD3 minus FLAT1 (positive = TD3 worse) | +0.0302 [0.0029, 0.0559] | +0.0371 [0.0091, 0.0636] |
+| HIER-ADDS, LATERAL, TD3 minus FLAT1 | -0.0006 [-0.0048, 0.0036] | +0.0049 [0.0009, 0.0087] |
+
+Read plainly: at both seeds the TD3 acceleration error is about four times the HOLD error (M2b_s0: 1.4228 against 0.3296), and the planner's pull toward the goal is real but small (the true-minus-random gap is 0.2 m/s^2 against a 1.1 m/s^2 shortfall to HOLD). The hierarchy does not help: the three-level planner is not better than the level-1-only planner at any cell, and is separated worse in three of four. The planner-seed floor is small beside these gaps (for example M2b_s0 TD3 longitudinal 0.0066 [0.0010, 0.0126]), so the gaps are not inference noise. Beside the verdict, with no bar: two untrained stacks (seeds 5000 + r) planning on M2b_s0's latents are GOAL-BLIND under the card's rule (TD3 longitudinal, true minus random 0.0001 [-0.0008, 0.0010] and 0.0010 [-0.0015, 0.0044]), which is consistent with the small goal sensitivity above coming from the trained dynamics and not from the solver. The cost-monotonicity statistic of H-JEPA's Table 10 is high at levels 2 and 3 (0.92 and 0.90 at M2b_s0) and low at level 1 (0.26), where the plan is scored.
+
+**The next lever, as the card committed it.** NO-GAIN names the planner's cost and solver first (the cost space, the prior and the action bounds), then the world model. The levers the design adds for that are in §3.14: the goal at 12 s (`T3 = 4`) against 6 s, the tactical vocabulary as level-2 seeds, constraints in the cost through differentiable kinematics, and the level-1-only stitch as a compared arm. Every outcome of this read makes it a gate of the new ladder, run on the (3, 5)-stride models. **What this read does not establish.** (i) It is T0 with the true-future goal; a predicted goal can only do worse. (ii) It reads the earlier (2, 2)-stride models, not the band-trained ones; no band read exists. (iii) TACTICAL and STRATEGIC are not measured. (iv) The 12 logged actions are the reference, so a plan that differs from them but drives well is scored as an error; the beside rows (speed error 2.0832 [1.9482, 2.2206] m/s at 2.4 s for TD3 on M2b_s0 against 0.6796 for HOLD) say the same direction. (v) It is not a claim that hierarchical planning cannot work; it is a claim that this planner on these latents does not beat holding the action.
+
 ## 8. Discussion: self-supervision, the two-stage question, and what the honest results demand
 
 **What the 30 k results jointly say.** The causal panel (§7.3) and the OOD gap (§7.4) are not in
@@ -3693,6 +3811,8 @@ evaluating an intervention at a single post-intervention checkpoint, and it is a
 dose–response curves as a standard instrument rather than a luxury.
 
 ## 9. v3 design: hierarchical goal-vocabulary planning over the world model
+
+*Scope, v1.6: this section records the v3 design of 2026-07-19 and its gates. The bands in force are operative up to 2 s, tactical up to 6 s and strategic 6 to 30 s (§3.14); where a table below reads a strategic ADE over 8 to 30 s or a 0.8 s tactical reach, it records the design as it stood.*
 
 *Status: design contribution (2026-07-19), measurement-motivated; implementation staged (P0–P5), first
 evidence gate = the training-free planner-over-v1 experiment (§9.4). **Updated 2026-07-25:** the design
@@ -3805,6 +3925,8 @@ architecture is validated before any v3 training.
 >   standing with this note beside them rather than silently restated.
 
 ## 10. Roadmap
+
+*Scope, v1.6: the roadmap below is the v1.5 ordering. The v8F redesign adds the work of §3.14 (band-split world model, band labels and HF release, strategic heads, the top-down planner with its controls); its first read is §7.22. The ≤ 300 M envelope quoted in item 11 below is the v1 invariant; v8F is budgeted at most 800 M (PI, 2026-10-17).*
 
 The standing programme is unchanged: the full gate ladder; closed-loop evaluation for D4–D6 including
 opponent-derived weak-spot scenarios (a scenario database built from documented competitor failures,
@@ -4009,7 +4131,7 @@ numbers, not against a narrative. None of them is an experiment we can run aroun
    headline count of 263.4 M describes the v1 flagship, not the arm now training. ⏳ **The PI's call:
    restate the envelope, or rescope the model.** Whichever is chosen must be applied to §10 item 11's
    definition of dominance in the same change, or the ladder is measured against a bar the programme
-   no longer holds. *(A related scope error is worth recording beside it: the widely quoted "68.5 % of
+   no longer holds. *(Scope, v1.6: for v8F the PI set the envelope at most 800 M on 2026-10-17, `Project Steering/PLAN_V8F_REFAV1_HJEPA_2026-10-17.md` §13.1; the 336.5 M run measured here sits inside it, and the sub-300 M sentence above stays as the record of the earlier envelope.)* *(A related scope error is worth recording beside it: the widely quoted "68.5 % of
    the stack sits downstream of the pool" was computed from library **defaults**, not from the live
    checkpoint, where the operative predictor is **55.9 %** and the encoder **25.9 %** — the same class
    as reading a cluster-wide disk figure for a per-pod quota.)*
@@ -4155,12 +4277,15 @@ This is why v1 changes the objective before it changes the encoder.
 ### 11.4 The three-rate hierarchy, and why 6 s needs it
 
 The PI's requirement is a predictive horizon of 6 s at the operative and tactical levels, with the
-strategic level predicting on its own subspace. A single-rate rollout cannot serve all three.
+strategic level predicting on its own subspace. A single-rate rollout cannot serve all three. *(Scope, v1.6: this is the
+REF-A v1 requirement as it stood. The PI's definition in force is operative up to 2 s, tactical up to 6 s and strategic 6 to 30 s,
+with the trajectory the 6 s combination of operative and tactical (§3.14). The table below records REF-A v1 as built: only its
+tactical row is a band, and its operative and strategic rows reaching 6.0 s do not meet R-OP and R-STR.)*
 
 Let ε be the per-step latent error of the residual predictor and suppose errors compound
 approximately geometrically with rate λ ≥ 1 over a rollout of K steps:
 
-&nbsp;&nbsp;&nbsp;&nbsp;E(K) ≈ ε · (λ^K − 1)/(λ − 1)
+&nbsp;&nbsp;&nbsp;&nbsp;E(K) ≈ ε · (λ^K − 1)/(λ − 1)&nbsp;&nbsp; (equal to K·ε in the limit λ → 1)
 
 For a fixed horizon T, K = T/Δt, so a *finer* Δt buys resolution and pays compounding. The design
 resolves the tension by giving each level the Δt its decisions actually need:
@@ -4172,7 +4297,8 @@ resolves the tension by giving each level the Δt its decisions actually need:
 | strategic | 1.5 s | 4 | 6.0 s | 256-d | route-scale hypotheses |
 
 All three reach 6.0 s exactly (pinned by test), but the strategic level pays only K = 4 of
-compounding to get there rather than K = 30. The token counts fall with Δt for the same reason: a
+compounding to get there rather than K = 30 (if the per-step error ε did not grow with Δt; a coarser step carries a larger ε, so
+this is an upper bound on the saving, not a measured one). The token counts fall with Δt for the same reason: a
 route hypothesis at 1.5 s cadence has no use for lane-level texture, and carrying it would import
 the operative level's error into a decision that outlives it.
 
@@ -4235,7 +4361,7 @@ a fidelity check is a false comfort.**
 `MEASURED` on an RTX 4060 at the real geometry: one 10-step rollout of the 640 × 1024 operative
 field costs **160 ms per candidate**, scaling linearly (2553 / 5129 / 10519 ms at n = 16 / 32 /
 64 — the GPU is saturated at n = 16). DINO-WM's published configuration (300 samples × 30
-iterations) would therefore cost **325 s per MPC tick**. That is a batch job, not a planner.
+iterations = 9,000 candidate rollouts, which is 1,440 s at 160 ms each) would therefore cost on the order of a thousand seconds per MPC tick (the **325 s** first printed here does not reproduce from the stated factors, and its derivation is UNVERIFIED). That is a batch job, not a planner.
 
 The hierarchy already contained the remedy. Searching against the **64-query tactical field**
 costs ≈ 1/10 as much; the winner and the baselines are then re-scored on the full 640-token
@@ -4506,8 +4632,10 @@ scene. Then:
 * the participation ratio is high, because \(\eta\) occupies the remaining
   dimensions.
 
-**So \((u,\eta)\) — ego motion plus noise — is a non-collapsed optimum carrying
-no scene information.** This is not a hypothetical: it reproduces every
+**So \((u,\eta)\) — ego motion plus noise — is a non-collapsed solution that satisfies every
+term and carries no scene information.** It is not shown to be the global minimiser: a predictable, scene-encoding \(\eta\) would
+lower the O5 term by removing its irreducible noise cost, so the argument establishes that the objective does not *force* content
+and that optimisation can settle here, which the measurements say it did. This is not a hypothetical: it reproduces every
 measurement we had (healthy rank, decodable ego, absent environment, a predictor
 that works one tick out).
 
@@ -4777,7 +4905,7 @@ The opposite hypothesis was tested in the same week and at the same tiny scale:
 **physical-state grounding (PSG)** — one shared state head applied to the encoded
 *and* the predicted latent, supervised by our own 3-D cuboid labels. It is
 external and immovable like a distillation teacher while requiring no pretrained
-model, and it is training-time only, so inference remains vision-only.
+model, and it is training-time only, so inference of the latent stays image-driven. (Scope, v1.6: the planner layers of v8F also read measured ego state, §3.14; the PI's vision-only rule of 2026-08-03 concerns the scenario classifier and the labels.)
 
 | weight | predictor cos h=1 (z) | speed | `lead_gap_m` vs pixel floor | `n_agents` vs pixel floor |
 |---|---|---|---|---|
@@ -5401,7 +5529,7 @@ not contain — external content, or noise. \(r \to 1\): the transition is an
 autonomous flow of the latent's own state, \(z_{t+k} \approx F(z_t)\) — a
 representation that carries its own future and therefore needs no world. Drift is
 not collapse: a full-rank, isotropic, non-degenerate latent can drift maximally
-(§13.1's \((u,\eta)\) optimum is one construction), which is why rank instruments
+(§13.1's \((u,\eta)\) solution is one construction), which is why rank instruments
 never saw it.
 
 ### 14.2 The mechanism: a movable target admits a shortcut family
@@ -5635,8 +5763,8 @@ ablation measures the stakes — top-1 72.5 (τ = 0.99) / 69.8 (0.999) / 68.4 (0
 V-JEPA carries the same EMA-teacher core into video feature prediction
 [2404.08471]. **Our arms run fixed τ = 0.996, no ramp** (MEASURED,
 `train_v6_staged.py`, `--ema-decay` default). At 2 k steps the 250-step horizon is
-**12.5 % of the run** — proportionally 10–100× above every published operating
-point (data2vec's start ≈ 1 % of run; BYOL's constant-0.99 ≈ 0.1 %) — and **no
+**12.5 % of the run** — proportionally about 12 to 125 times above the published operating
+points it is compared with (12.5 % against data2vec's start ≈ 1 % of run, and against BYOL's constant-0.99 ≈ 0.1 %; those two fractions are not re-derived here) — and **no
 published EMA study exists at ≤ 5 k steps at all** (a named empty search of the
 banked literature pass). At 30 k the same τ is 0.83 % of the run, **inside** the
 published early-phase band. These are the scope facts the two-stage read below was
@@ -6794,3 +6922,4 @@ library key since v1.4 and which are listed here for the first time.)
   (PI, 2026-09-19). §7.20(g) gains a dated pointer; the one literature row used (CLOVER, library `2605.15120`) was
   re-read in the banked PDF; the abstract is unchanged. One-seed states throughout: no lever-effect claim.
 - **v1.5.1 (2026-10-18): a two-month-old contamination rate corrected.** The Alpamayo augmentation's overlap with the parity training corpus was printed as **4.3 %** (201 / 4,729) in §1, §7.19e and §10. That is the CATALOGUE rate. A split can only contain clips that exist, and only 257 have a w120 cache, 201 of them parity-train, so the buildable split is **78.21 %** contaminated, REF-A I-JEPA scale, not "smaller scale". The registry corrected this on 2026-08-18 (§12.4, C113). The paper did not, until the E10 recount (`FlyWheels/TanitAD_DataFlyWheel/incoming/2026-10-18-e10-alpamayo-counts/`, 114 counts re-derived from bytes, 25 of 26 paper figures matching) found it. The historical changelog line for v1.x is left as written. Root-cause class (registry): a contamination rate quoted over the catalogue rather than over the buildable set.
+- **v1.6 (2026-11-08): the three bands defined, the top-down cascade stated, the first planning read, and a mathematics audit.** **New §3.14**: the PI's definition of the horizons (operative up to 2 s, tactical up to 6 s with the tactical vocabulary, strategic 6 to 30 s with route checkpoints, detected context and derived goals; trajectory = operative + tactical = 6 s), the reader cascade in which all three layers read the current measured ego state and the tactical layer emits goals and constraints that are the operative layer's action, the k-step world-model loss and its trained reach (2, 6 and 18 s at k = 10, 10, 6; a window of 91 frames), the top-down planner after H-JEPA Eqs. 4 to 6, and the gradient statement (`detach_upper` default off, so M2b trained its upper layer through the lower layer's loss). Each object is stamped TRAINED, BUILT or DESIGN. **New §7.22**: PLANTEST, tier T0 with an oracle goal and zero training, never a driving result: NO-GAIN for both planners, both training seeds and both families, HIER-ADDS NO, M2b_s0 TD3 acceleration MAE 1.4228 [1.3800, 1.4647] against HOLD 0.3296 [0.2973, 0.3623], untrained stacks goal-blind, and the card's next lever (planner cost and solver, then the world model). **Scoped, record kept:** §3.3, §3.9, §3.11, §9, §10 and §11.4 gain one dated sentence each pointing to §3.14 where their horizons, rates, dimensions or goal-in-predictor equations record an earlier generation; the abstract and §1 gain a scope note (v8F budget at most 800 M since 2026-10-17, frozen DINOv3 encoder, vision-only rule scoped to the scenario classifier and labels). **Mathematics audit** (`MATH_AUDIT.md`; each item in `EDIT_LOG.md`): the fan-depth evidence in §3.12 and §7.16 did not support the sentence hung on it (the frozen-trunk K-sweep 0.5772 / 0.5173 / 0.5319 is non-monotone and ends better at K = 64 than at K = 8), so the refutation of the noisy-honest-cost model now rests on the fixed-N tail evidence; the Model B limit gains its stated separation condition; the §3.3 regret factorisation and product-to-sum claims gain their conditions; the §4 bound is read as a sufficient-condition trade-off; the §4 frame-change figure is named as the quantity measured; §13.1 states (u, eta) as a solution that satisfies every term, not a proven optimum; four arithmetic items fixed (§3.11 roll steps, §11.4 limit at lambda = 1, §11.6 candidate cost, §14.7 ratio). No measured number moves. STRATEGIC remains PAUSED (PI item 25). Nothing in §3.14 or §7.22 is a driving result.
