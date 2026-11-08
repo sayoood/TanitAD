@@ -1,0 +1,2415 @@
+{
+ "schema": "band-baseline-v1",
+ "tier": "T1-kin (self-action OPEN loop; m=10, causal bucket, dead-reckoned nav, logged scene; the lead follows its logged future; stated as open loop)",
+ "evidence_class": "MEASURED (ours; banked per-window dumps, zero training)",
+ "estimator": "taniteval.ci.paired_episode_cluster_bootstrap (arm - P10, same windows) and episode_cluster_bootstrap (single arm), B=2000, seed 0, 141 episodes. It answers 'would another draw of EPISODES say this?'. It is blind to training-run variance (H-ESTIM-SEED-1): the two seeds are shown side by side and no seed floor is applied.",
+ "bands": {
+  "operative_0_2s": {
+   "knots_0idx": [
+    0,
+    10
+   ],
+   "t_s": [
+    0.2,
+    2.0
+   ]
+  },
+  "tactical_2_6s": {
+   "knots_0idx": [
+    10,
+    30
+   ],
+   "t_s": [
+    2.2,
+    6.0
+   ]
+  },
+  "full_0_6s": {
+   "knots_0idx": [
+    0,
+    30
+   ],
+   "t_s": [
+    0.2,
+    6.0
+   ]
+  }
+ },
+ "inputs": {
+  "dag_oacc_s0": {
+   "dump_dir": "E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/dump_DAGOACC_s0_m10_causal_heads",
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "keys_used": [
+    "g",
+    "cl",
+    "fl",
+    "v0",
+    "eid",
+    "clip_index",
+    "ws"
+   ],
+   "lead_window_states": {
+    "LEAD": 743,
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173
+   },
+   "lead_speed_proof_max_abs_mps": 2.6242784824326293e-05
+  },
+  "dag_oacc_s1": {
+   "dump_dir": "E:/Projects/TanitAD-artifacts/v8f-dagoacc-t1/dump_DAGOACC_s1_m10_causal_heads",
+   "n_windows": 2399,
+   "n_episodes": 141,
+   "keys_used": [
+    "g",
+    "cl",
+    "fl",
+    "v0",
+    "eid",
+    "clip_index",
+    "ws"
+   ],
+   "lead_window_states": {
+    "LEAD": 743,
+    "NO_LEAD": 552,
+    "NOT_STRAIGHT": 931,
+    "NO_LABEL": 173
+   },
+   "lead_speed_proof_max_abs_mps": 2.6242784824326293e-05
+  }
+ },
+ "seeds": {
+  "s0": {
+   "operative_0_2s": {
+    "rows": {
+     "ade_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.21869528736013452,
+       "lo": 0.1981,
+       "hi": 0.245,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.22205752566375564,
+       "lo": 0.2008,
+       "hi": 0.2491,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0034,
+       "lo": -0.0097,
+       "hi": 0.0032,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "PRIMARY"
+     },
+     "fde_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.5632363791972308,
+       "lo": 0.513,
+       "hi": 0.6195,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.6088631774910089,
+       "lo": 0.5556,
+       "hi": 0.6695,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0456,
+       "lo": -0.0647,
+       "hi": -0.0257,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "PRIMARY"
+     },
+     "speed_mae_mps": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.2615332841770474,
+       "lo": 0.243,
+       "hi": 0.2803,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.26647471021739977,
+       "lo": 0.2477,
+       "hi": 0.2856,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0049,
+       "lo": -0.0128,
+       "hi": 0.003,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "along_mae_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.18228329121175765,
+       "lo": 0.1626,
+       "hi": 0.2076,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.17289704875998782,
+       "lo": 0.1534,
+       "hi": 0.1987,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.0094,
+       "lo": 0.0038,
+       "hi": 0.0153,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "accel_mae_mps2": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.5218903989864845,
+       "lo": 0.4845,
+       "hi": 0.5598,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.5910640977753373,
+       "lo": 0.5459,
+       "hi": 0.6386,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0692,
+       "lo": -0.092,
+       "hi": -0.0489,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "cross_mae_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.07714640031492245,
+       "lo": 0.0681,
+       "hi": 0.0878,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.09176150798696127,
+       "lo": 0.0807,
+       "hi": 0.1043,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0146,
+       "lo": -0.0191,
+       "hi": -0.0102,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "heading_mae_deg": {
+      "arm": {
+       "status": "OK",
+       "mean": 2.249719442262472,
+       "lo": 1.1924,
+       "hi": 4.0519,
+       "n_windows": 2314,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.530004694915606,
+       "lo": 1.4489,
+       "hi": 4.323,
+       "n_windows": 2317,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.2511,
+       "lo": -0.3047,
+       "hi": -0.199,
+       "separated": true,
+       "n_windows": 2313,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "yaw_rate_mae_degps": {
+      "arm": {
+       "status": "OK",
+       "mean": 8.059501130422419,
+       "lo": 6.4706,
+       "hi": 9.8736,
+       "n_windows": 2305,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 8.403842127826039,
+       "lo": 6.8442,
+       "hi": 10.1917,
+       "n_windows": 2306,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.329,
+       "lo": -0.4764,
+       "hi": -0.1894,
+       "separated": true,
+       "n_windows": 2303,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "curvature_mae_1pm": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.07229767936684454,
+       "lo": 0.0481,
+       "hi": 0.1019,
+       "n_windows": 2305,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.07148647898683025,
+       "lo": 0.0486,
+       "hi": 0.0992,
+       "n_windows": 2306,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.0006,
+       "lo": -0.0031,
+       "hi": 0.0042,
+       "separated": false,
+       "n_windows": 2303,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "dk_hw_abs_err_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.5540371608836421,
+       "lo": 0.3789,
+       "hi": 0.7727,
+       "n_windows": 706,
+       "n_episodes": 72
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.6592041901200255,
+       "lo": 0.4293,
+       "hi": 0.9599,
+       "n_windows": 711,
+       "n_episodes": 72
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0496,
+       "lo": -0.2681,
+       "hi": 0.1192,
+       "separated": false,
+       "n_windows": 703,
+       "n_episodes": 72
+      },
+      "family": "LONGITUDINAL"
+     },
+     "dk_tg_abs_err_s": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.11915741178394687,
+       "lo": 0.0618,
+       "hi": 0.2029,
+       "n_windows": 648,
+       "n_episodes": 72
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.1380585166516168,
+       "lo": 0.0663,
+       "hi": 0.2423,
+       "n_windows": 649,
+       "n_episodes": 72
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0111,
+       "lo": -0.0412,
+       "hi": 0.0103,
+       "separated": false,
+       "n_windows": 646,
+       "n_episodes": 72
+      },
+      "family": "LONGITUDINAL"
+     }
+    },
+    "dk_counts": {
+     "n_lead_windows": 743,
+     "n_arm_hw_finite": 706,
+     "n_p10_hw_finite": 711,
+     "n_human_hw_finite": 719,
+     "n_arm_tg_finite": 648,
+     "n_human_tg_finite": 653
+    },
+    "DK-VIOL": {
+     "arm": {
+      "status": "OK",
+      "reason": null,
+      "n_lead_windows": 743,
+      "n_viol": 7,
+      "share": 0.009421,
+      "n_at_risk": 605,
+      "share_of_at_risk": 0.01157,
+      "share_of_at_risk_ci": {
+       "mean": 0.0116,
+       "lo": 0.0031,
+       "hi": 0.0226,
+       "ci95": 0.0098,
+       "se": 0.0052,
+       "reducer": "mean",
+       "n_windows": 605,
+       "n_episodes": 70,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      }
+     },
+     "P10": {
+      "status": "OK",
+      "reason": null,
+      "n_lead_windows": 743,
+      "n_viol": 5,
+      "share": 0.006729,
+      "n_at_risk": 605,
+      "share_of_at_risk": 0.008264,
+      "share_of_at_risk_ci": {
+       "mean": 0.0083,
+       "lo": 0.0016,
+       "hi": 0.0176,
+       "ci95": 0.008,
+       "se": 0.0042,
+       "reducer": "mean",
+       "n_windows": 605,
+       "n_episodes": 70,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      }
+     }
+    }
+   },
+   "tactical_2_6s": {
+    "rows": {
+     "ade_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 3.253843682956012,
+       "lo": 2.9797,
+       "hi": 3.5507,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 5.053889757353988,
+       "lo": 4.6752,
+       "hi": 5.4652,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -1.8,
+       "lo": -2.0884,
+       "hi": -1.5273,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "PRIMARY"
+     },
+     "fde_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 6.957401610647275,
+       "lo": 6.3376,
+       "hi": 7.623,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 12.057846335409282,
+       "lo": 11.1118,
+       "hi": 13.0776,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -5.1004,
+       "lo": -5.869,
+       "hi": -4.3333,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "PRIMARY"
+     },
+     "speed_mae_mps": {
+      "arm": {
+       "status": "OK",
+       "mean": 1.5371502824416745,
+       "lo": 1.382,
+       "hi": 1.7057,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.6988088041657354,
+       "lo": 2.3672,
+       "hi": 3.0725,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -1.1617,
+       "lo": -1.4678,
+       "hi": -0.8981,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "along_mae_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 2.574663914602284,
+       "lo": 2.3581,
+       "hi": 2.8054,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 3.600772746269805,
+       "lo": 3.312,
+       "hi": 3.8882,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -1.0261,
+       "lo": -1.2707,
+       "hi": -0.7889,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "accel_mae_mps2": {
+      "arm": {
+       "status": "OK",
+       "mean": 1.6044530459819284,
+       "lo": 1.3228,
+       "hi": 1.9271,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.769630989680945,
+       "lo": 2.1421,
+       "hi": 3.5234,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -1.1652,
+       "lo": -1.7001,
+       "hi": -0.6935,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "cross_mae_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 1.3977862872085263,
+       "lo": 1.2144,
+       "hi": 1.5968,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.8334051306629653,
+       "lo": 2.5468,
+       "hi": 3.1457,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -1.4356,
+       "lo": -1.6538,
+       "hi": -1.2413,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "heading_mae_deg": {
+      "arm": {
+       "status": "OK",
+       "mean": 8.896796134195213,
+       "lo": 7.1264,
+       "hi": 10.9349,
+       "n_windows": 2348,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 12.345481998992206,
+       "lo": 10.4363,
+       "hi": 14.5091,
+       "n_windows": 2348,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -3.4487,
+       "lo": -4.3533,
+       "hi": -2.5464,
+       "separated": true,
+       "n_windows": 2348,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "yaw_rate_mae_degps": {
+      "arm": {
+       "status": "OK",
+       "mean": 30.35522335382517,
+       "lo": 22.7913,
+       "hi": 38.9087,
+       "n_windows": 2340,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 21.508742333084466,
+       "lo": 15.8279,
+       "hi": 28.1278,
+       "n_windows": 2340,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 8.8465,
+       "lo": 4.4684,
+       "hi": 13.4468,
+       "separated": true,
+       "n_windows": 2340,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "curvature_mae_1pm": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.18492954049700205,
+       "lo": 0.1317,
+       "hi": 0.2452,
+       "n_windows": 2340,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.05584285808851397,
+       "lo": 0.0412,
+       "hi": 0.0728,
+       "n_windows": 2340,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.1291,
+       "lo": 0.0873,
+       "hi": 0.1764,
+       "separated": true,
+       "n_windows": 2340,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "dk_hw_abs_err_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 2.3629211291652075,
+       "lo": 1.8697,
+       "hi": 2.9186,
+       "n_windows": 584,
+       "n_episodes": 61
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.35946862974183,
+       "lo": 1.8623,
+       "hi": 2.9681,
+       "n_windows": 525,
+       "n_episodes": 59
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.1844,
+       "lo": -0.4077,
+       "hi": 0.0489,
+       "separated": false,
+       "n_windows": 516,
+       "n_episodes": 58
+      },
+      "family": "LONGITUDINAL"
+     },
+     "dk_tg_abs_err_s": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.39591178764873175,
+       "lo": 0.2706,
+       "hi": 0.5415,
+       "n_windows": 533,
+       "n_episodes": 60
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.4386158600524159,
+       "lo": 0.2986,
+       "hi": 0.6106,
+       "n_windows": 497,
+       "n_episodes": 58
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.077,
+       "lo": -0.1285,
+       "hi": -0.0318,
+       "separated": true,
+       "n_windows": 489,
+       "n_episodes": 57
+      },
+      "family": "LONGITUDINAL"
+     }
+    },
+    "dk_counts": {
+     "n_lead_windows": 743,
+     "n_arm_hw_finite": 584,
+     "n_p10_hw_finite": 525,
+     "n_human_hw_finite": 633,
+     "n_arm_tg_finite": 533,
+     "n_human_tg_finite": 572
+    },
+    "DK-VIOL": {
+     "arm": {
+      "status": "OK",
+      "reason": null,
+      "n_lead_windows": 743,
+      "n_viol": 23,
+      "share": 0.030956,
+      "n_at_risk": 520,
+      "share_of_at_risk": 0.044231,
+      "share_of_at_risk_ci": {
+       "mean": 0.0442,
+       "lo": 0.0171,
+       "hi": 0.0758,
+       "ci95": 0.0293,
+       "se": 0.0154,
+       "reducer": "mean",
+       "n_windows": 520,
+       "n_episodes": 59,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      }
+     },
+     "P10": {
+      "status": "OK",
+      "reason": null,
+      "n_lead_windows": 743,
+      "n_viol": 22,
+      "share": 0.02961,
+      "n_at_risk": 520,
+      "share_of_at_risk": 0.042308,
+      "share_of_at_risk_ci": {
+       "mean": 0.0423,
+       "lo": 0.0186,
+       "hi": 0.072,
+       "ci95": 0.0267,
+       "se": 0.0135,
+       "reducer": "mean",
+       "n_windows": 520,
+       "n_episodes": 59,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      }
+     }
+    }
+   },
+   "full_0_6s": {
+    "rows": {
+     "ade_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 2.24212755109072,
+       "lo": 2.0565,
+       "hi": 2.4473,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 3.443279013457244,
+       "lo": 3.1895,
+       "hi": 3.7219,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -1.2012,
+       "lo": -1.3945,
+       "hi": -1.0186,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "PRIMARY"
+     },
+     "fde_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 6.957401610647275,
+       "lo": 6.3376,
+       "hi": 7.623,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 12.057846335409282,
+       "lo": 11.1118,
+       "hi": 13.0776,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -5.1004,
+       "lo": -5.869,
+       "hi": -4.3333,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "PRIMARY"
+     },
+     "speed_mae_mps": {
+      "arm": {
+       "status": "OK",
+       "mean": 1.1119446163534654,
+       "lo": 1.004,
+       "hi": 1.2301,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 1.8880307728496237,
+       "lo": 1.6663,
+       "hi": 2.1389,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.7761,
+       "lo": -0.9806,
+       "hi": -0.5996,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "along_mae_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 1.7772037068054416,
+       "lo": 1.6276,
+       "hi": 1.9354,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.4581475137665323,
+       "lo": 2.2634,
+       "hi": 2.6545,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.6809,
+       "lo": -0.8443,
+       "hi": -0.5214,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "accel_mae_mps2": {
+      "arm": {
+       "status": "OK",
+       "mean": 1.272662624182822,
+       "lo": 1.0762,
+       "hi": 1.494,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.0898610243415527,
+       "lo": 1.6628,
+       "hi": 2.5957,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.8172,
+       "lo": -1.177,
+       "hi": -0.4998,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "cross_mae_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.957572991577325,
+       "lo": 0.8328,
+       "hi": 1.0931,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 1.9195239231042973,
+       "lo": 1.727,
+       "hi": 2.1288,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.962,
+       "lo": -1.1077,
+       "hi": -0.8319,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "heading_mae_deg": {
+      "arm": {
+       "status": "OK",
+       "mean": 6.960545637745415,
+       "lo": 5.3336,
+       "hi": 8.9012,
+       "n_windows": 2373,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 9.552514477304545,
+       "lo": 7.785,
+       "hi": 11.5502,
+       "n_windows": 2373,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -2.592,
+       "lo": -3.2391,
+       "hi": -1.9751,
+       "separated": true,
+       "n_windows": 2373,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "yaw_rate_mae_degps": {
+      "arm": {
+       "status": "OK",
+       "mean": 23.409253834546544,
+       "lo": 17.7567,
+       "hi": 29.7985,
+       "n_windows": 2366,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 19.944496664348748,
+       "lo": 14.6464,
+       "hi": 26.1674,
+       "n_windows": 2367,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 3.4726,
+       "lo": 0.6601,
+       "hi": 6.3308,
+       "separated": true,
+       "n_windows": 2365,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "curvature_mae_1pm": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.16005445023605377,
+       "lo": 0.1148,
+       "hi": 0.2142,
+       "n_windows": 2366,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.07490059981484805,
+       "lo": 0.0532,
+       "hi": 0.1008,
+       "n_windows": 2367,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.0854,
+       "lo": 0.058,
+       "hi": 0.1175,
+       "separated": true,
+       "n_windows": 2365,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "dk_hw_abs_err_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 2.0688596269233095,
+       "lo": 1.5351,
+       "hi": 2.6892,
+       "n_windows": 714,
+       "n_episodes": 72
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.386853906643302,
+       "lo": 1.8108,
+       "hi": 3.0722,
+       "n_windows": 716,
+       "n_episodes": 72
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.3318,
+       "lo": -0.6942,
+       "hi": -0.0242,
+       "separated": true,
+       "n_windows": 710,
+       "n_episodes": 72
+      },
+      "family": "LONGITUDINAL"
+     },
+     "dk_tg_abs_err_s": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.36478314289543595,
+       "lo": 0.2303,
+       "hi": 0.5377,
+       "n_windows": 654,
+       "n_episodes": 72
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.42293146027740036,
+       "lo": 0.2911,
+       "hi": 0.5816,
+       "n_windows": 654,
+       "n_episodes": 72
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0568,
+       "lo": -0.1232,
+       "hi": 0.0163,
+       "separated": false,
+       "n_windows": 652,
+       "n_episodes": 72
+      },
+      "family": "LONGITUDINAL"
+     }
+    },
+    "dk_counts": {
+     "n_lead_windows": 743,
+     "n_arm_hw_finite": 714,
+     "n_p10_hw_finite": 716,
+     "n_human_hw_finite": 725,
+     "n_arm_tg_finite": 654,
+     "n_human_tg_finite": 659
+    },
+    "DK-VIOL": {
+     "arm": {
+      "status": "OK",
+      "reason": null,
+      "n_lead_windows": 743,
+      "n_viol": 29,
+      "share": 0.039031,
+      "n_at_risk": 595,
+      "share_of_at_risk": 0.048739,
+      "share_of_at_risk_ci": {
+       "mean": 0.0487,
+       "lo": 0.0225,
+       "hi": 0.0765,
+       "ci95": 0.027,
+       "se": 0.014,
+       "reducer": "mean",
+       "n_windows": 595,
+       "n_episodes": 70,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      }
+     },
+     "P10": {
+      "status": "OK",
+      "reason": null,
+      "n_lead_windows": 743,
+      "n_viol": 28,
+      "share": 0.037685,
+      "n_at_risk": 595,
+      "share_of_at_risk": 0.047059,
+      "share_of_at_risk_ci": {
+       "mean": 0.0471,
+       "lo": 0.0251,
+       "hi": 0.0738,
+       "ci95": 0.0243,
+       "se": 0.0126,
+       "reducer": "mean",
+       "n_windows": 595,
+       "n_episodes": 70,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      }
+     }
+    }
+   },
+   "TACTICAL_decision_reads": {
+    "rows": {
+     "TAC-LAT": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.783659858274281,
+       "lo": 0.7397,
+       "hi": 0.8233,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.5931638182576073,
+       "lo": 0.5552,
+       "hi": 0.6343,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.1905,
+       "lo": 0.1508,
+       "hi": 0.2319,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "statistic": "per-window indicator executed label == GT label (accuracy)"
+     },
+     "TAC-LON": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.5110462692788662,
+       "lo": 0.4704,
+       "hi": 0.5499,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.3714047519799917,
+       "lo": 0.3258,
+       "hi": 0.4173,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.1396,
+       "lo": 0.0771,
+       "hi": 0.1997,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "statistic": "per-window indicator executed label == GT label (accuracy)"
+     }
+    },
+    "label_band_of_these_reads": "labels derived from the whole 0-6 s plan (four_families.maneuver_kinematics: path tangent at the last moving knot, chord speed knot 1 vs knot 30)",
+    "T_head_label_band": "the T head's v9 labels span [NOW+2 s, NOW+8 s] (build_v9_labels.py, AUDIT_MODEL F8); the tactical band is 2-6 s: a 2 s mismatch at the far edge and a 0-2 s overlap at the near edge for the plan-derived reads",
+    "n_windows": 2399
+   }
+  },
+  "s1": {
+   "operative_0_2s": {
+    "rows": {
+     "ade_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.22479344011408905,
+       "lo": 0.2038,
+       "hi": 0.2507,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.22205752566375564,
+       "lo": 0.2008,
+       "hi": 0.2491,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.0027,
+       "lo": -0.0053,
+       "hi": 0.0112,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "PRIMARY"
+     },
+     "fde_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.5789718085540708,
+       "lo": 0.5285,
+       "hi": 0.6362,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.6088631774910089,
+       "lo": 0.5556,
+       "hi": 0.6695,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0299,
+       "lo": -0.0537,
+       "hi": -0.0044,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "PRIMARY"
+     },
+     "speed_mae_mps": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.2706439214243218,
+       "lo": 0.2502,
+       "hi": 0.2917,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.26647471021739977,
+       "lo": 0.2477,
+       "hi": 0.2856,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.0042,
+       "lo": -0.0053,
+       "hi": 0.015,
+       "separated": false,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "along_mae_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.18680718062858126,
+       "lo": 0.1661,
+       "hi": 0.2124,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.17289704875998782,
+       "lo": 0.1534,
+       "hi": 0.1987,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.0139,
+       "lo": 0.0065,
+       "hi": 0.0222,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "accel_mae_mps2": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.5498742871017983,
+       "lo": 0.5105,
+       "hi": 0.5911,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.5910640977753373,
+       "lo": 0.5459,
+       "hi": 0.6386,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0412,
+       "lo": -0.0655,
+       "hi": -0.019,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "cross_mae_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.08096363974167345,
+       "lo": 0.0709,
+       "hi": 0.0918,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.09176150798696127,
+       "lo": 0.0807,
+       "hi": 0.1043,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0108,
+       "lo": -0.0158,
+       "hi": -0.0059,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "heading_mae_deg": {
+      "arm": {
+       "status": "OK",
+       "mean": 2.2701607920944706,
+       "lo": 1.2163,
+       "hi": 4.0649,
+       "n_windows": 2313,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.530004694915606,
+       "lo": 1.4489,
+       "hi": 4.323,
+       "n_windows": 2317,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.2254,
+       "lo": -0.2914,
+       "hi": -0.1619,
+       "separated": true,
+       "n_windows": 2312,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "yaw_rate_mae_degps": {
+      "arm": {
+       "status": "OK",
+       "mean": 7.973337819176972,
+       "lo": 6.4339,
+       "hi": 9.6992,
+       "n_windows": 2304,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 8.403842127826039,
+       "lo": 6.8442,
+       "hi": 10.1917,
+       "n_windows": 2306,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.3093,
+       "lo": -0.4864,
+       "hi": -0.1335,
+       "separated": true,
+       "n_windows": 2303,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "curvature_mae_1pm": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.06910314030462245,
+       "lo": 0.0459,
+       "hi": 0.0962,
+       "n_windows": 2304,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.07148647898683025,
+       "lo": 0.0486,
+       "hi": 0.0992,
+       "n_windows": 2306,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.0008,
+       "lo": -0.0039,
+       "hi": 0.0056,
+       "separated": false,
+       "n_windows": 2303,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "dk_hw_abs_err_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.5006188885601585,
+       "lo": 0.3434,
+       "hi": 0.6869,
+       "n_windows": 702,
+       "n_episodes": 72
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.6592041901200255,
+       "lo": 0.4293,
+       "hi": 0.9599,
+       "n_windows": 711,
+       "n_episodes": 72
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.1039,
+       "lo": -0.3017,
+       "hi": 0.0278,
+       "separated": false,
+       "n_windows": 701,
+       "n_episodes": 72
+      },
+      "family": "LONGITUDINAL"
+     },
+     "dk_tg_abs_err_s": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.1258265016413176,
+       "lo": 0.0582,
+       "hi": 0.2311,
+       "n_windows": 648,
+       "n_episodes": 72
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.1380585166516168,
+       "lo": 0.0663,
+       "hi": 0.2423,
+       "n_windows": 649,
+       "n_episodes": 72
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0113,
+       "lo": -0.0402,
+       "hi": 0.0089,
+       "separated": false,
+       "n_windows": 647,
+       "n_episodes": 72
+      },
+      "family": "LONGITUDINAL"
+     }
+    },
+    "dk_counts": {
+     "n_lead_windows": 743,
+     "n_arm_hw_finite": 702,
+     "n_p10_hw_finite": 711,
+     "n_human_hw_finite": 719,
+     "n_arm_tg_finite": 648,
+     "n_human_tg_finite": 653
+    },
+    "DK-VIOL": {
+     "arm": {
+      "status": "OK",
+      "reason": null,
+      "n_lead_windows": 743,
+      "n_viol": 6,
+      "share": 0.008075,
+      "n_at_risk": 605,
+      "share_of_at_risk": 0.009917,
+      "share_of_at_risk_ci": {
+       "mean": 0.0099,
+       "lo": 0.0018,
+       "hi": 0.0192,
+       "ci95": 0.0087,
+       "se": 0.0045,
+       "reducer": "mean",
+       "n_windows": 605,
+       "n_episodes": 70,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      }
+     },
+     "P10": {
+      "status": "OK",
+      "reason": null,
+      "n_lead_windows": 743,
+      "n_viol": 5,
+      "share": 0.006729,
+      "n_at_risk": 605,
+      "share_of_at_risk": 0.008264,
+      "share_of_at_risk_ci": {
+       "mean": 0.0083,
+       "lo": 0.0016,
+       "hi": 0.0176,
+       "ci95": 0.008,
+       "se": 0.0042,
+       "reducer": "mean",
+       "n_windows": 605,
+       "n_episodes": 70,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      }
+     }
+    }
+   },
+   "tactical_2_6s": {
+    "rows": {
+     "ade_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 3.3677995083108048,
+       "lo": 3.0904,
+       "hi": 3.6539,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 5.053889757353988,
+       "lo": 4.6752,
+       "hi": 5.4652,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -1.6861,
+       "lo": -1.9959,
+       "hi": -1.3763,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "PRIMARY"
+     },
+     "fde_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 7.291031995758279,
+       "lo": 6.6684,
+       "hi": 7.9475,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 12.057846335409282,
+       "lo": 11.1118,
+       "hi": 13.0776,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -4.7668,
+       "lo": -5.5849,
+       "hi": -3.9659,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "PRIMARY"
+     },
+     "speed_mae_mps": {
+      "arm": {
+       "status": "OK",
+       "mean": 1.6422730481304597,
+       "lo": 1.472,
+       "hi": 1.8266,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.6988088041657354,
+       "lo": 2.3672,
+       "hi": 3.0725,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -1.0565,
+       "lo": -1.3646,
+       "hi": -0.7883,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "along_mae_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 2.7124798920486146,
+       "lo": 2.4707,
+       "hi": 2.9556,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 3.600772746269805,
+       "lo": 3.312,
+       "hi": 3.8882,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.8883,
+       "lo": -1.1621,
+       "hi": -0.6257,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "accel_mae_mps2": {
+      "arm": {
+       "status": "OK",
+       "mean": 1.9317005985293025,
+       "lo": 1.5573,
+       "hi": 2.3551,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.769630989680945,
+       "lo": 2.1421,
+       "hi": 3.5234,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.8379,
+       "lo": -1.2887,
+       "hi": -0.4411,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "cross_mae_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 1.3775526439834938,
+       "lo": 1.2022,
+       "hi": 1.5682,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.8334051306629653,
+       "lo": 2.5468,
+       "hi": 3.1457,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -1.4559,
+       "lo": -1.6674,
+       "hi": -1.2564,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "heading_mae_deg": {
+      "arm": {
+       "status": "OK",
+       "mean": 9.571053289059975,
+       "lo": 7.6549,
+       "hi": 11.6611,
+       "n_windows": 2348,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 12.345481998992206,
+       "lo": 10.4363,
+       "hi": 14.5091,
+       "n_windows": 2348,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -2.7744,
+       "lo": -3.7484,
+       "hi": -1.7613,
+       "separated": true,
+       "n_windows": 2348,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "yaw_rate_mae_degps": {
+      "arm": {
+       "status": "OK",
+       "mean": 37.18504009315705,
+       "lo": 27.5867,
+       "hi": 48.2356,
+       "n_windows": 2340,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 21.508742333084466,
+       "lo": 15.8279,
+       "hi": 28.1278,
+       "n_windows": 2340,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 15.6763,
+       "lo": 9.9452,
+       "hi": 22.1319,
+       "separated": true,
+       "n_windows": 2340,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "curvature_mae_1pm": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.25966093382456606,
+       "lo": 0.1804,
+       "hi": 0.3527,
+       "n_windows": 2340,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.05584285808851397,
+       "lo": 0.0412,
+       "hi": 0.0728,
+       "n_windows": 2340,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.2038,
+       "lo": 0.1358,
+       "hi": 0.2837,
+       "separated": true,
+       "n_windows": 2340,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "dk_hw_abs_err_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 2.4129055194457494,
+       "lo": 1.8949,
+       "hi": 3.0198,
+       "n_windows": 577,
+       "n_episodes": 62
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.35946862974183,
+       "lo": 1.8623,
+       "hi": 2.9681,
+       "n_windows": 525,
+       "n_episodes": 59
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.1581,
+       "lo": -0.411,
+       "hi": 0.0853,
+       "separated": false,
+       "n_windows": 508,
+       "n_episodes": 57
+      },
+      "family": "LONGITUDINAL"
+     },
+     "dk_tg_abs_err_s": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.41622986164009773,
+       "lo": 0.2835,
+       "hi": 0.569,
+       "n_windows": 532,
+       "n_episodes": 60
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.4386158600524159,
+       "lo": 0.2986,
+       "hi": 0.6106,
+       "n_windows": 497,
+       "n_episodes": 58
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0417,
+       "lo": -0.109,
+       "hi": 0.0304,
+       "separated": false,
+       "n_windows": 485,
+       "n_episodes": 57
+      },
+      "family": "LONGITUDINAL"
+     }
+    },
+    "dk_counts": {
+     "n_lead_windows": 743,
+     "n_arm_hw_finite": 577,
+     "n_p10_hw_finite": 525,
+     "n_human_hw_finite": 633,
+     "n_arm_tg_finite": 532,
+     "n_human_tg_finite": 572
+    },
+    "DK-VIOL": {
+     "arm": {
+      "status": "OK",
+      "reason": null,
+      "n_lead_windows": 743,
+      "n_viol": 22,
+      "share": 0.02961,
+      "n_at_risk": 520,
+      "share_of_at_risk": 0.042308,
+      "share_of_at_risk_ci": {
+       "mean": 0.0423,
+       "lo": 0.0205,
+       "hi": 0.0694,
+       "ci95": 0.0244,
+       "se": 0.0129,
+       "reducer": "mean",
+       "n_windows": 520,
+       "n_episodes": 59,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      }
+     },
+     "P10": {
+      "status": "OK",
+      "reason": null,
+      "n_lead_windows": 743,
+      "n_viol": 22,
+      "share": 0.02961,
+      "n_at_risk": 520,
+      "share_of_at_risk": 0.042308,
+      "share_of_at_risk_ci": {
+       "mean": 0.0423,
+       "lo": 0.0186,
+       "hi": 0.072,
+       "ci95": 0.0267,
+       "se": 0.0135,
+       "reducer": "mean",
+       "n_windows": 520,
+       "n_episodes": 59,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      }
+     }
+    }
+   },
+   "full_0_6s": {
+    "rows": {
+     "ade_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 2.3201308189119,
+       "lo": 2.1314,
+       "hi": 2.5162,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 3.443279013457244,
+       "lo": 3.1895,
+       "hi": 3.7219,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -1.1231,
+       "lo": -1.3301,
+       "hi": -0.9159,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "PRIMARY"
+     },
+     "fde_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 7.291031995758279,
+       "lo": 6.6684,
+       "hi": 7.9475,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 12.057846335409282,
+       "lo": 11.1118,
+       "hi": 13.0776,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -4.7668,
+       "lo": -5.5849,
+       "hi": -3.9659,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "PRIMARY"
+     },
+     "speed_mae_mps": {
+      "arm": {
+       "status": "OK",
+       "mean": 1.1850633392284138,
+       "lo": 1.0648,
+       "hi": 1.3111,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 1.8880307728496237,
+       "lo": 1.6663,
+       "hi": 2.1389,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.703,
+       "lo": -0.9087,
+       "hi": -0.523,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "along_mae_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 1.870588988241937,
+       "lo": 1.7051,
+       "hi": 2.0389,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.4581475137665323,
+       "lo": 2.2634,
+       "hi": 2.6545,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.5876,
+       "lo": -0.7702,
+       "hi": -0.4119,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "accel_mae_mps2": {
+      "arm": {
+       "status": "OK",
+       "mean": 1.488461265732536,
+       "lo": 1.2347,
+       "hi": 1.773,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.0898610243415527,
+       "lo": 1.6628,
+       "hi": 2.5957,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.6014,
+       "lo": -0.9063,
+       "hi": -0.3345,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LONGITUDINAL"
+     },
+     "cross_mae_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.9453563092362205,
+       "lo": 0.8254,
+       "hi": 1.076,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 1.9195239231042973,
+       "lo": 1.727,
+       "hi": 2.1288,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.9742,
+       "lo": -1.1152,
+       "hi": -0.8405,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "heading_mae_deg": {
+      "arm": {
+       "status": "OK",
+       "mean": 7.498621236358851,
+       "lo": 5.7724,
+       "hi": 9.4399,
+       "n_windows": 2373,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 9.552514477304545,
+       "lo": 7.785,
+       "hi": 11.5502,
+       "n_windows": 2373,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -2.0539,
+       "lo": -2.7092,
+       "hi": -1.3705,
+       "separated": true,
+       "n_windows": 2373,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "yaw_rate_mae_degps": {
+      "arm": {
+       "status": "OK",
+       "mean": 28.595039620155987,
+       "lo": 21.3368,
+       "hi": 36.7884,
+       "n_windows": 2366,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 19.944496664348748,
+       "lo": 14.6464,
+       "hi": 26.1674,
+       "n_windows": 2367,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 8.6844,
+       "lo": 5.169,
+       "hi": 12.574,
+       "separated": true,
+       "n_windows": 2366,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "curvature_mae_1pm": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.20876076620790143,
+       "lo": 0.1466,
+       "hi": 0.2814,
+       "n_windows": 2366,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.07490059981484805,
+       "lo": 0.0532,
+       "hi": 0.1008,
+       "n_windows": 2367,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.1352,
+       "lo": 0.0889,
+       "hi": 0.1915,
+       "separated": true,
+       "n_windows": 2366,
+       "n_episodes": 141
+      },
+      "family": "LATERAL"
+     },
+     "dk_hw_abs_err_m": {
+      "arm": {
+       "status": "OK",
+       "mean": 2.0091504601165533,
+       "lo": 1.4711,
+       "hi": 2.6052,
+       "n_windows": 713,
+       "n_episodes": 73
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 2.386853906643302,
+       "lo": 1.8108,
+       "hi": 3.0722,
+       "n_windows": 716,
+       "n_episodes": 72
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.4466,
+       "lo": -0.82,
+       "hi": -0.1686,
+       "separated": true,
+       "n_windows": 710,
+       "n_episodes": 72
+      },
+      "family": "LONGITUDINAL"
+     },
+     "dk_tg_abs_err_s": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.34645043228131467,
+       "lo": 0.2177,
+       "hi": 0.5028,
+       "n_windows": 653,
+       "n_episodes": 72
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.42293146027740036,
+       "lo": 0.2911,
+       "hi": 0.5816,
+       "n_windows": 654,
+       "n_episodes": 72
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": -0.0724,
+       "lo": -0.1384,
+       "hi": -0.0085,
+       "separated": true,
+       "n_windows": 652,
+       "n_episodes": 72
+      },
+      "family": "LONGITUDINAL"
+     }
+    },
+    "dk_counts": {
+     "n_lead_windows": 743,
+     "n_arm_hw_finite": 713,
+     "n_p10_hw_finite": 716,
+     "n_human_hw_finite": 725,
+     "n_arm_tg_finite": 653,
+     "n_human_tg_finite": 659
+    },
+    "DK-VIOL": {
+     "arm": {
+      "status": "OK",
+      "reason": null,
+      "n_lead_windows": 743,
+      "n_viol": 26,
+      "share": 0.034993,
+      "n_at_risk": 595,
+      "share_of_at_risk": 0.043697,
+      "share_of_at_risk_ci": {
+       "mean": 0.0437,
+       "lo": 0.0224,
+       "hi": 0.0693,
+       "ci95": 0.0234,
+       "se": 0.0119,
+       "reducer": "mean",
+       "n_windows": 595,
+       "n_episodes": 70,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      }
+     },
+     "P10": {
+      "status": "OK",
+      "reason": null,
+      "n_lead_windows": 743,
+      "n_viol": 28,
+      "share": 0.037685,
+      "n_at_risk": 595,
+      "share_of_at_risk": 0.047059,
+      "share_of_at_risk_ci": {
+       "mean": 0.0471,
+       "lo": 0.0251,
+       "hi": 0.0738,
+       "ci95": 0.0243,
+       "se": 0.0126,
+       "reducer": "mean",
+       "n_windows": 595,
+       "n_episodes": 70,
+       "n_boot": 2000,
+       "estimator": "episode_cluster_bootstrap",
+       "question_answered": "would another draw of EPISODES say this? It does NOT answer 'another training run' or 'another inference run' (H-ESTIM-SEED-1): a replicate arm is still required."
+      }
+     }
+    }
+   },
+   "TACTICAL_decision_reads": {
+    "rows": {
+     "TAC-LAT": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.7903293038766153,
+       "lo": 0.7503,
+       "hi": 0.8266,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.5931638182576073,
+       "lo": 0.5552,
+       "hi": 0.6343,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.1972,
+       "lo": 0.16,
+       "hi": 0.2364,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "statistic": "per-window indicator executed label == GT label (accuracy)"
+     },
+     "TAC-LON": {
+      "arm": {
+       "status": "OK",
+       "mean": 0.5085452271779908,
+       "lo": 0.4658,
+       "hi": 0.5509,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "P10": {
+       "status": "OK",
+       "mean": 0.3714047519799917,
+       "lo": 0.3258,
+       "hi": 0.4173,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "arm_minus_P10": {
+       "status": "OK",
+       "delta": 0.1371,
+       "lo": 0.0751,
+       "hi": 0.2001,
+       "separated": true,
+       "n_windows": 2399,
+       "n_episodes": 141
+      },
+      "statistic": "per-window indicator executed label == GT label (accuracy)"
+     }
+    },
+    "label_band_of_these_reads": "labels derived from the whole 0-6 s plan (four_families.maneuver_kinematics: path tangent at the last moving knot, chord speed knot 1 vs knot 30)",
+    "T_head_label_band": "the T head's v9 labels span [NOW+2 s, NOW+8 s] (build_v9_labels.py, AUDIT_MODEL F8); the tactical band is 2-6 s: a 2 s mismatch at the far edge and a 0-2 s overlap at the near edge for the plan-derived reads",
+    "n_windows": 2399
+   }
+  }
+ },
+ "STRATEGIC": {
+  "status": "PAUSED",
+  "ruling": "PI item 25 (PI_DECISION_QUEUE.md ITEM 25, 2026-09-19): the strategic layer is switched off temporarily; reported as PAUSED, not as a pass and not omitted."
+ },
+ "wall_s": 32.0
+}
