@@ -194,6 +194,18 @@ _M3_READINGS = ("PREREG_M3 committed readings (DECISIVE = vs BASE, CARRY = vs C0
 
 #: The 17 arms of sec. 4.3 (+ T1s, the shuffled control of D3; + T1h / T1hs, T1's follow-up lever and its control, REFCV9_E1_T1H_PREREG.md).  ``ref``: the default reference arm (None = the design names none);
 #: ``allowed``: the references this verdict accepts; ``kind``: lever (KEEP/DROP) or control (a control outcome).
+#: REFCV9_E1_T1V_PREREG.md "Committed outcomes and next levers", VERBATIM (the four branches); `t1v_committed_outcome` returns one of them by index.
+T1V_OUTCOMES = (
+    "KEPT and replaces (1-3, R1-R2) -> K2 composes `--r9-hist-supervise-geom` INSTEAD of the four T1h flags (the full-family gate admits it; the T1h bundle stays admitted, unused). "
+    "The full-model saving is MEASURED at K2's explore smoke, never assumed from this rig.",
+    "KEPT, fails R1 or R2 -> the fused content / copy init / fill-only carries part of the gain despite the shut gate: K2 keeps the T1h bundle; T1v is logged as the supervision share of T1h's gain.",
+    "FAILS 1-2 vs C0 -> the supervision set alone does not carry the gain, which contradicts T1hs: diagnose (mask identity vs T1h on the trained run's batches; the init / fill-only path) "
+    "before any claim; K2 keeps the T1h bundle.",
+    "FAILS 3 -> the vetoing row is named; K2 keeps the T1h bundle.")
+T1V_NEXT_LEVER = "REFCV9_E1_T1V_PREREG.md, four committed outcomes: (a) " + " (b) ".join(T1V_OUTCOMES[:2]) + " (c) " + T1V_OUTCOMES[2] + " (d) " + T1V_OUTCOMES[3]
+#: (arm, ref) pairs that are a REPLACEMENT READ, not a keep read: the verdict is REPLACEMENT-READ and carries R1 / R2 (`replacement_outcome`).
+REPLACEMENT_READS = {("T1v", "T1h")}
+
 ARMS = {
     "C0": {"kind": "floor", "variable": "refcv8 recipe on the rig, seed 0 (the floor)", "ref": None, "allowed": (), "metrics": (),
            "next_lever": "n/a: C0 / C1 are the floor (r9_e1_floor.py), not a lever", "argv_flags": (), "ambiguities": ()},
@@ -353,6 +365,15 @@ ARMS = {
                             "--r9-bev-warp-shuffle"),
              "ambiguities": ("read with --ref T1h it must be separated worse than T1h beyond 2 x floor: the prereg's addendum (2026-11-05, before any "
                              "T1h data) tightens clause 4's 'separated in T1h's favour' to the T1s convention",)},
+    "T1v": {"kind": "lever", "variable": "T1h's supervision set from GEOMETRY ALONE: the map loss (and the banded loss) supervises lift_valid_now | hist_valid_geom "
+                                         "(--r9-hist-supervise-geom); NO past-frame encode / lift / feature warp / fuse and no bev_warp parameter",
+            "ref": "C0", "allowed": ("C0", "T1h"),
+            "metrics": (_spec("T1v.primary", "T1h's primary: corridor precision 0-10 m incl. lift-invalid cells", "primary", ("nf_prec_0_10",), "higher"),),
+            "next_lever": T1V_NEXT_LEVER,
+            "argv_flags": ("--r9-hist-supervise-geom",),
+            "ambiguities": ("T1v is not a row of sec. 4.3's table: pre-registered in REFCV9_E1_T1V_PREREG.md (frozen 11:15Z) under T1h's keep rule, unrelaxed (vs C0)",
+                            "read with --ref T1h it is the PREREG's REPLACEMENT READ (R1 / R2), NOT a keep read: verdict REPLACEMENT-READ; 'KEPT and replaces' needs BOTH the "
+                            "vs-C0 KEEP and R1 + R2 (r9_e1_verdict.t1v_committed_outcome joins the two verdicts)")},
     "M1-FROZEN": {"kind": "lever", "variable": "M1 on the MAPFT frozen-feature rig (iff Q1 = a or WITHHELD)", "ref": None, "allowed": (),
                   "metrics": (_map_primary("M1-FROZEN.primary"),),
                   "next_lever": "none named for an M1-FROZEN miss -- UNVERIFIED (sec. 3 row (a) names it as 'the cheapest possible read')",
@@ -584,6 +605,45 @@ def control_outcome(arm: str, ref: str, primary: dict) -> str:
     return "n/a"
 
 
+def replacement_outcome(arm: str, ref: str, primary, c3: dict) -> dict:
+    """The PREREG's replacement read (T1v vs T1h, paired on the same windows) from LITERAL rows. R1: `nf_prec_0_10` T1v - T1h is NOT separated worse beyond 2 x floor
+    (fails only when the CI's upper end is < 0 AND |delta| > 2 x floor). R2: no OTHER perception primary T1v - T1h is separated worse beyond 2 x its floor (clause 3's
+    machinery, run against T1h). ``replaces_if_kept_vs_c0`` is True / False / None (None: a row was not computable) -- it is NOT the joined outcome (that needs the
+    vs-C0 KEEP: `t1v_committed_outcome`)."""
+    out = {"arm": arm, "ref": ref, "rule": "R1 and R2 of REFCV9_E1_T1V_PREREG.md (replacement read vs T1h)"}
+    if primary is None or primary.get("state") != "READ":
+        out.update(R1={"pass": None, "why": "the primary is not computable"}, R2={"pass": None, "why": "R1's primary is not computable"}, replaces_if_kept_vs_c0=None)
+        return out
+    lr = primary["lever_read"]
+    r1_fail = bool(lr["separated_bad_direction"] and lr["exceeds_2x_floor"])
+    out["R1"] = {"pass": not r1_fail, "key": primary["key"], "delta": primary["delta"], "ci_lo": primary.get("ci_lo"), "ci_hi": primary.get("ci_hi"),
+                 "separated": primary["separated"], "two_x_floor": primary["keep_threshold"],
+                 "separated_worse": bool(lr["separated_bad_direction"]), "exceeds_2x_floor": bool(lr["exceeds_2x_floor"])}
+    complete = not c3["unread"] and not c3["missing_uncovered"]
+    r2_fail = bool(c3["vetoes"])
+    out["R2"] = {"pass": (not r2_fail) if (complete or r2_fail) else None, "vetoes": [x["metric"] for x in c3["vetoes"]], "complete": complete,
+                 "unread": list(c3["unread"]), "missing_uncovered": list(c3["missing_uncovered"])}
+    out["replaces_if_kept_vs_c0"] = False if (r1_fail or r2_fail) else (True if complete else None)
+    return out
+
+
+def t1v_committed_outcome(keep_verdict: dict, repl_verdict: dict | None) -> dict:
+    """Joins T1v's two reads into ONE of the PREREG's four committed outcomes: ``keep_verdict`` = the T1v-vs-C0 verdict dict (verdict KEEP / DROP + failing_clauses),
+    ``repl_verdict`` = the T1v-vs-T1h REPLACEMENT-READ dict. -> {"index": 0..3 | None, "outcome": T1V_OUTCOMES[i] | None, "why": ...}. None = not decidable (a read is
+    NOT-COMPUTABLE / REFUSED / missing). A DROP whose failing clauses are {3} alone is outcome 3 (FAILS 3); any DROP that fails clause 1 or 2 is outcome 2 (FAILS 1-2)."""
+    if not keep_verdict or keep_verdict.get("status") != "OK" or keep_verdict.get("verdict") not in ("KEEP", "DROP"):
+        return {"index": None, "outcome": None, "why": "the T1v-vs-C0 read is %s" % ((keep_verdict or {}).get("verdict") or "missing")}
+    if keep_verdict["verdict"] == "DROP":
+        cl = {f["clause"] for f in keep_verdict.get("failing_clauses") or []}
+        i = 3 if cl and cl <= {3} else 2
+        return {"index": i, "outcome": T1V_OUTCOMES[i], "why": "T1v vs C0 DROP, failing clauses %s" % sorted(cl)}
+    ro = (repl_verdict or {}).get("replacement_outcome") if (repl_verdict or {}).get("status") == "OK" else None
+    if not ro or ro.get("replaces_if_kept_vs_c0") is None:
+        return {"index": None, "outcome": None, "why": "T1v is KEPT vs C0 but the replacement read vs T1h is missing / not computable"}
+    i = 0 if ro["replaces_if_kept_vs_c0"] else 1
+    return {"index": i, "outcome": T1V_OUTCOMES[i], "why": "T1v KEPT vs C0; R1 %s, R2 %s" % (ro["R1"]["pass"], ro["R2"]["pass"])}
+
+
 def _beside_absent(ctx, key: str = "") -> str:
     """Why a beside edge row has NO paired row in this read (state NOT-COMPUTABLE, with the reason; never a guess, never 0)."""
     if key.startswith(D3_KEY_PREFIXES):                       # hold_r9_d3beside's rows need --map-beside-d3, not thresholds
@@ -698,7 +758,16 @@ def judge(arm: str, ref: str, floor: dict, pair_rows: dict, ctx=None) -> dict:
            "named_guards": strict}
     if beside:                                               # additive and arm-specific: an arm with no clause3=False spec has exactly the keys it had
         out["beside_pedgefit"] = _beside_block(arm, ref, beside)
-    if spec["kind"] == "control":
+    if (arm, ref) in REPLACEMENT_READS:                      # T1v vs T1h: R1 / R2, NOT clauses 1-3 (those are the vs-C0 read)
+        ro = replacement_outcome(arm, ref, primary if prim_ok else None, c3)
+        out["replacement_outcome"] = ro
+        out["failing_clauses"] = []                          # the clause machinery above ran vs T1h; its "failing" lines are not this read's
+        out["not_computable"] = [n for n in not_computable if not n.startswith("clause 3 not complete")] + (
+            ["R2 not complete: %d floor row(s) unread, %d uncovered" % (len(c3["unread"]), len(c3["missing_uncovered"]))] if ro["R2"].get("complete") is False else [])
+        out["verdict"] = "REPLACEMENT-READ" if ro["replaces_if_kept_vs_c0"] is not None else "NOT-COMPUTABLE"
+        out["control_outcome"] = ("R1 %s, R2 %s vs %s (replaces T1h in K2 iff T1v is also KEPT vs C0)" % (
+            {True: "pass", False: "FAIL", None: "n/a"}[ro["R1"]["pass"]], {True: "pass", False: "FAIL", None: "n/a"}[ro["R2"]["pass"]], ref))
+    elif spec["kind"] == "control":
         if prim_ok:
             out["verdict"], out["control_outcome"] = "CONTROL-READ", control_outcome(arm, ref, primary)
         else:
@@ -949,6 +1018,14 @@ def render_md(v: dict) -> str:
         L.append("* NOT-COMPUTABLE: " + n)
     if v["verdict"] == "KEEP":
         L.append("* all three clauses hold on the pre-registered primary; KEEP means 'cleared the E1 bar', not 'proved' (one seed, n = 1 floor).")
+    ro = v.get("replacement_outcome")
+    if ro:                                                   # T1v vs T1h: the PREREG's replacement read (R1 / R2), joined with the vs-C0 KEEP by `t1v_committed_outcome`
+        r1, r2 = ro["R1"], ro["R2"]
+        L.append("* REPLACEMENT READ vs %s: R1 (`nf_prec_0_10` not separated worse beyond 2 x floor) = **%s**%s; R2 (no other perception primary separated worse beyond 2 x its floor) = **%s**%s."
+                 % (ro["ref"], {True: "pass", False: "FAIL", None: "n/a"}[r1["pass"]],
+                    (" (delta %+.6g [%s, %s], 2 x floor %.6g)" % (r1["delta"], _f(r1["ci_lo"]), _f(r1["ci_hi"]), r1["two_x_floor"])) if "delta" in r1 else "",
+                    {True: "pass", False: "FAIL", None: "n/a"}[r2["pass"]], (" (vetoes: %s)" % ", ".join(r2["vetoes"])) if r2.get("vetoes") else ""))
+        L.append("* This is NOT a keep read: T1v replaces the T1h bundle in K2 only if it is ALSO KEPT vs C0 (clauses 1-3); the four committed outcomes are in the arm's `next_lever_on_drop`.")
     est = v["estimator"]
     g = v.get("gate") or {}
     L += ["", "Tier **%s** (perception only). Paired estimator: episode-cluster bootstrap (`paired_episode_cluster_bootstrap_stat`) -- it answers *%s*."

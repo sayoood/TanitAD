@@ -302,6 +302,10 @@ def check_aux_arm_pins(argv, arm: str) -> None:
 T1_ARMS = {"T1": ("--r9-bev-warp",), "T1s": ("--r9-bev-warp", "--r9-bev-warp-shuffle"),
            "T1h": ("--r9-bev-warp", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "identity", "--r9-bev-warp-fill-only"),
            "T1hs": ("--r9-bev-warp", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "identity", "--r9-bev-warp-fill-only")}
+#: T1v (refcv9 E1, `REFCV9_E1_T1V_PREREG.md`): C0 + `--r9-hist-supervise-geom` ONLY -- T1h's supervision set (`lift_valid_now | hist_valid`, the same lags 0.5 / 1.0 s) from GEOMETRY ALONE: NO past-frame
+#: encode / lift / feature warp / fuse and NO `bev_warp` parameter, so NONE of the four T1h flags (and no `--r9-bev-warp`, which the lever refuses). One token, no value.
+T1_ARMS["T1v"] = ("--r9-hist-supervise-geom",)
+T1_GEOM_ARMS = ("T1v",)
 T1_SHUFFLE_ARMS = ("T1s", "T1hs")
 T1_SUPERVISE_ARMS = ("T1h", "T1hs")
 T1_FUSE_INIT_ARMS = ("T1h", "T1hs")
@@ -318,8 +322,8 @@ def t1_arm_argv(c0_argv, arm: str, out: str | None = None) -> list:
     out = _thor_path(out or MAP_ARM_OUT % arm, "--out")
     groups = split_groups(c0_argv)
     have = [f for f, _ in groups]
-    if any(f.startswith("--r9-bev-warp") for f in have):
-        raise SystemExit("[r9-e1-argv] the base argv already carries a --r9-bev-warp* flag -- derive T1 arms from C0's argv")
+    if any(f.startswith("--r9-bev-warp") or f == "--r9-hist-supervise-geom" for f in have):
+        raise SystemExit("[r9-e1-argv] the base argv already carries a --r9-bev-warp* / --r9-hist-supervise-geom flag -- derive T1 arms from C0's argv")
     for f in (T1_ANCHOR, "--out"):
         if have.count(f) != 1:
             raise SystemExit("[r9-e1-argv] C0's argv must carry %s exactly once (has %d)" % (f, have.count(f)))
@@ -347,8 +351,16 @@ def check_t1_arm_pins(argv, arm: str) -> None:
     from tanitad.train import box_b3_flag as BF
     from tanitad.train import map_banded_flag as MBF
     args = T.build_parser().parse_args(argv)
-    if not BWF.is_on(args):
-        raise SystemExit("[r9-e1-argv] arm %s: --r9-bev-warp did not parse as on" % arm)
+    if arm in T1_GEOM_ARMS:                                                    # T1v: the geometry-only supervision mask is the ONE lever; the warp bundle is not on
+        if not BWF.geom_on(args):
+            raise SystemExit("[r9-e1-argv] arm %s: --r9-hist-supervise-geom did not parse as on" % arm)
+        if BWF.is_on(args):
+            raise SystemExit("[r9-e1-argv] arm %s: --r9-bev-warp parsed as on -- T1v is the ALTERNATIVE to the T1h bundle, not an add-on" % arm)
+    else:
+        if not BWF.is_on(args):
+            raise SystemExit("[r9-e1-argv] arm %s: --r9-bev-warp did not parse as on" % arm)
+        if BWF.geom_on(args):
+            raise SystemExit("[r9-e1-argv] arm %s: --r9-hist-supervise-geom parsed as on -- only T1v carries it" % arm)
     if bool(getattr(args, BWF.SHUF_DEST)) != (arm in T1_SHUFFLE_ARMS):
         raise SystemExit("[r9-e1-argv] arm %s: the shuffle control parsed as %s, expected %s" % (arm, getattr(args, BWF.SHUF_DEST), arm in T1_SHUFFLE_ARMS))
     if BWF.fuse_init_of(args) != ("identity" if arm in T1_FUSE_INIT_ARMS else "rezero"):
@@ -422,7 +434,8 @@ def main(argv=None) -> int:
                          "aux-head arm B1 (depth) / B2 (perspective 3D) / B2c (its BEV control), each C0 + its flag + its weight pair")
     ap.add_argument("--t1-arm", choices=sorted(T1_ARMS), default=None,
                     help="E1-REC4: emit the temporal-BEV-warp arm T1 (C0 + --r9-bev-warp) or its shuffled control T1s (T1 + --r9-bev-warp-shuffle) from "
-                         "C0's argv.json given as --base (seed 0); T1h / T1hs = T1 / T1s + --r9-bev-warp-supervise-hist + --r9-bev-warp-fuse-init identity + --r9-bev-warp-fill-only")
+                         "C0's argv.json given as --base (seed 0); T1h / T1hs = T1 / T1s + --r9-bev-warp-supervise-hist + --r9-bev-warp-fuse-init identity + --r9-bev-warp-fill-only; "
+                         "T1v = C0 + --r9-hist-supervise-geom (T1h's supervision mask from geometry alone, no past-frame encode / warp / fuse)")
     ap.add_argument("--steps", type=int, default=4000)
     ap.add_argument("--eval-every", type=int, default=500)
     ap.add_argument("--eval-batches", type=int, default=8)
@@ -449,6 +462,9 @@ def main(argv=None) -> int:
                 check_t1_arm_pins(out, a.t1_arm)
             lever = {"flags": [t for t in T1_ARMS[a.t1_arm] if t.startswith("--")], "lags_s": list(T1_LAGS_DEFAULT_S), "lags_source": "T1's default (--r9-bev-warp-lags is not named)",
                      "shuffle_control": a.t1_arm in T1_SHUFFLE_ARMS, "bev_warp": "NOT certified by the overfit records (they stamp bev_warp_not_certified)"}
+            if a.t1_arm in T1_GEOM_ARMS:
+                lever["bev_warp"] = "NOT BUILT: no past-frame encode / lift / feature warp / fuse and no bev_warp parameter; the inherited records stamp bev_warp_not_certified == [--r9-hist-supervise-geom]"
+                lever["hist_supervise_geom"] = "the 10 cm map loss (and the banded loss) supervises lift_valid_now | hist_valid_geom; hist_valid_geom = bev_warp.hist_valid_of over the lags' MASK-ONLY warps of the camera's own valid under the same T and has as T1h"
             if a.t1_arm in T1_SUPERVISE_ARMS:
                 lever["supervise_hist"] = "the 10 cm map loss supervises lift_valid_now | hist_valid (hist_valid = geometry only: the lags' warp-valid union; identical under shuffle)"
             if a.t1_arm in T1_FILL_ONLY_ARMS:

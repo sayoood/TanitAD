@@ -70,8 +70,8 @@ def _with_t1(argv, *flags):
 # ============================================================================ the flag set is ONE fact ==
 def test_the_T1_flag_set_and_stamp_keys_are_pinned_across_gate_harnesses_emitter_and_trainer():
     from tanitad.train import bev_warp_flag as BWF
-    assert LG.E1_T1_FLAGS == ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only") == tuple(G.T1_FLAGS) == tuple(O.T1_FLAGS)   # T1h = the 4th, T1h-INIT the 5th, T1h-FILL the 6th
-    assert (BWF.FLAG, BWF.LAGS_FLAG, BWF.SHUF_FLAG, BWF.SUP_FLAG, BWF.FUSE_INIT_FLAG, BWF.FILL_FLAG) == LG.E1_T1_FLAGS
+    assert LG.E1_T1_FLAGS == ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only", "--r9-hist-supervise-geom") == tuple(G.T1_FLAGS) == tuple(O.T1_FLAGS)   # T1h = the 4th, T1h-INIT the 5th, T1h-FILL the 6th, T1v (refcv9 E1 arm T1v) the 7th
+    assert (BWF.FLAG, BWF.LAGS_FLAG, BWF.SHUF_FLAG, BWF.SUP_FLAG, BWF.FUSE_INIT_FLAG, BWF.FILL_FLAG, BWF.GEOM_FLAG) == LG.E1_T1_FLAGS
     assert (LG.E1_T1_STAMP, LG.E1_T1_STAMP_WHY) == (G.T1_STAMP, G.T1_STAMP_WHY) == (O.T1_STAMP, O.T1_STAMP_WHY) == T1_STAMP_KEYS
     assert G.T1_WHY == O.T1_WHY and "\n" not in G.T1_WHY and "not built" in G.T1_WHY
     assert set(MK.T1_ARMS["T1"] + MK.T1_ARMS["T1s"]) <= set(LG.E1_T1_FLAGS) and MK.T1_ANCHOR == "--map-hires-near-refine-blocks"
@@ -286,7 +286,7 @@ def test_the_jobs_state_what_the_pass_does_not_certify(tmp_path, monkeypatch):
 def test_the_box_harness_stamps_the_T1_set_and_keeps_the_other_records_byte_identical():
     assert G.b3_record_fields(T1) == {G.T1_STAMP: ["--r9-bev-warp"], G.T1_STAMP_WHY: G.T1_WHY}
     assert G.b3_record_fields(T1S)[G.T1_STAMP] == ["--r9-bev-warp", "--r9-bev-warp-shuffle"]
-    assert G.b3_record_fields(_with_t1(C0, "--r9-bev-warp-fill-only", "--r9-bev-warp-fuse-init", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-shuffle", "--r9-bev-warp-lags", "--r9-bev-warp"))[G.T1_STAMP] == list(G.T1_FLAGS)     # T1_FLAGS order (all six)
+    assert G.b3_record_fields(_with_t1(C0, "--r9-bev-warp-fill-only", "--r9-bev-warp-fuse-init", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-shuffle", "--r9-bev-warp-lags", "--r9-bev-warp", "--r9-hist-supervise-geom"))[G.T1_STAMP] == list(G.T1_FLAGS)     # T1_FLAGS order (all seven; T1v = the 7th)
     assert G.b3_record_fields(_with_t1(C0, "--r9-bev-warp", "--r9-bev-warp-supervise-hist"))[G.T1_STAMP] == ["--r9-bev-warp", "--r9-bev-warp-supervise-hist"]
     assert G.b3_record_fields(C0) == {} and G.b3_record_fields(["--w-box3d", "1.0", "--trunk-compile"]) == {}
     r = G.b3_record_fields(_with_t1(LG.set_flag(LG.set_flag(B3, "--r9-box-bev2-aux", []), "--w-box-bev2", ["0.1"]), "--r9-bev-warp"))

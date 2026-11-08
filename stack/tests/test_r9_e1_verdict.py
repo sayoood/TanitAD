@@ -412,7 +412,7 @@ def _design_arm_names():
 
 
 def test_mapping_has_every_design_arm():
-    assert DESIGN_ROWS <= set(V.ARMS) and set(V.ARMS) - DESIGN_ROWS == {"B3p", "T1s", "T1h", "T1hs", "M1N20", "M3N20"}   # M1N20 = E1-NEAR20 (PREREG_M1_NEAR20, not a design row); M3N20 = E1-M3N20 (PREREG_M3: M3 on M1N20's near band, not a design row); B3p = the table's "B3'" (the argv name); T1s = D3's shuffled control; T1h / T1hs = REFCV9_E1_T1H_PREREG.md
+    assert DESIGN_ROWS <= set(V.ARMS) and set(V.ARMS) - DESIGN_ROWS == {"B3p", "T1s", "T1h", "T1hs", "T1v", "M1N20", "M3N20"}   # M1N20 = E1-NEAR20 (PREREG_M1_NEAR20, not a design row); M3N20 = E1-M3N20 (PREREG_M3: M3 on M1N20's near band, not a design row); B3p = the table's "B3'" (the argv name); T1s = D3's shuffled control; T1h / T1hs = REFCV9_E1_T1H_PREREG.md
     names = _design_arm_names()
     if names is None:
         pytest.skip("REFCV9_DESIGN.md is not in this checkout")

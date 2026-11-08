@@ -713,7 +713,7 @@ AUX_WHY = ("training-only auxiliary head(s): never called at inference and not b
 #: the flag and the lags' value tokens: ``strip_t1``), the record stamps ``bev_warp_not_certified`` (+ a one-line reason), and the launch gate's judges pass
 #: such a record only when that stamp EQUALS the argv's T1 flag set (``launch_gate.bev_warp_stamp_reasons``). At gate 0 the certified head IS the base's
 #: (tests/test_bev_warp.py); T1's liveness is G-LIVE's and the post-run zero-gradient gate's. Pinned to ``launch_gate.E1_T1_FLAGS`` by a test.
-T1_FLAGS = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only")
+T1_FLAGS = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only", "--r9-hist-supervise-geom")
 #: the T1 flags that carry a VALUE token (``--r9-bev-warp-lags 0.5,1.0``; T1h-INIT ``--r9-bev-warp-fuse-init identity``): ``strip_t1`` drops the value with the flag.
 T1_VALUE_FLAGS = ("--r9-bev-warp-lags", "--r9-bev-warp-fuse-init")
 T1_STAMP = "bev_warp_not_certified"
@@ -1197,10 +1197,18 @@ class TrainerAdapter:
         # class weight -- G-DVB refused the replay (5 mismatches) and `_bbf.prepare` / `_bbf.box3d_row` would have run B3 as OFF. OFF (no
         # `--r9-box-*` own-head flag): `attach` touches nothing, so every other argv builds exactly what it built before.
         tr._bbf.attach(m, a)
-        # ⭐ C5-S8 (BRIEF_C5_S8): `--r9-box-layers N` (B4's decoder depth) is attached by the trainer's OWN `_bc5.attach(model, args)` (refc_v3_train.py:10119, right
+        # ⭐ refcv9 C8 / E2 (MM 4a3d05; MEASURED on Thor 2026-11-07 ~19:00Z, `r9e1_bind.sh --argv-prefix r9e2 box K2`, 165 s in): train() builds the planner wires
+        # with the trainer's OWN `_pwf.attach(model, args)` (refc_v3_train.py:10145, right after `_bbf.attach` and before `_bda` / `_p3f` / `_bc5`): W-BOX
+        # (`--r9-plan-box-tokens`) -> `model.core.box_tok_r9` + a zero-init `box_gate` per consuming layer, W-MAP-2 (`--r9-plan-map-channels`) -> `pool.map_chan_proj`.
+        # The E1 replay never called it (its old comment said "no C8 flags in the rig": true for E1, false for the E2 full model), so a K2 argv built NO box tokens
+        # and G-DVB refused its own replay: `r9_plan_box_tokens: declared True but BUILT False (read from model.core.box_tok_r9) -- argv and the build disagree`.
+        # OFF (neither C8 flag named): `attach` returns before it draws or touches anything -- no parameter, no RNG draw, no `.to()` -- so C0 / K0 build exactly
+        # what they built before (pinned: tests/test_g_box_overfit_plan_wires_build.py).
+        tr._pwf.attach(m, a)
+        # ⭐ C5-S8 (BRIEF_C5_S8): `--r9-box-layers N` (B4's decoder depth) is attached by the trainer's OWN `_bc5.attach(model, args)` (refc_v3_train.py:10150, right
         # after `_bbf.attach` / `_pwf.attach` / `_bda.attach` / `_p3f.attach` and before the optimizer and any warm start). The replay builds the SAME depth the trainer
-        # does, or G-DVB refuses it (`r9_box_layers: declared 6 but BUILT 3`, the B3 defect again). `_pwf` / `_bda` / `_p3f` are not replayed (no C8 flags in the rig; the aux
-        # heads are stripped), so their relative order to `_bc5` cannot matter here. OFF (`--r9-box-layers` unnamed): `attach` touches nothing.
+        # does, or G-DVB refuses it (`r9_box_layers: declared 6 but BUILT 3`, the B3 defect again). `_bda` / `_p3f` are NOT replayed on purpose (they are the training-only
+        # aux heads, which `strip_aux` removes from the build argv); `_pwf` IS (above). OFF (`--r9-box-layers` unnamed): `attach` touches nothing.
         # ⭐ C5-S8B (lever 3, `--r9-box-s8-horizon`): the s8 band's row is read off the rig camera bank, so the replay builds `m._rig_camera` BEFORE `_bc5.attach`
         # exactly as train() does (refc_v3_train.py, the `_bc5.s8_named(args)` line right before `_bc5.attach(model, args)`); without it `attach` refuses loudly
         # ("needs the rig camera") instead of silently building a memory without the band. OFF: nothing. (`_build_rig_camera` is called again at the end of this build, as before.)

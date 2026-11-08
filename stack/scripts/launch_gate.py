@@ -1611,7 +1611,15 @@ E1_PFQ_STAMP_WHY = "perframe_seeds_not_certified_why"
 #: no new inference input beyond T1's. Same rule as the other five.
 #: ⭐ THE FLIP (MM 2026-11-07, `H-R9-E1-T1H` KEPT): in the full family the rule above is replaced for FOUR of the six -- `_R9F_T1H_ADMITTED` -- and kept for the other two
 #: (`_R9F_T1_REFUSED`: the shuffle control, the lags value). refcv9-e1rig's treatment of all six is untouched.
-E1_T1_FLAGS: tuple = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only")
+#: ⭐ T1v (`--r9-hist-supervise-geom`, refcv9 E1 arm T1v; `REFCV9_E1_T1V_PREREG.md`) is the SEVENTH member (a plain switch): T1h's supervision set (`lift_valid_now | hist_valid`) from GEOMETRY ALONE --
+#: NO past-frame encode / lift / feature warp / fuse and NO `bev_warp` module or parameter (`bev_warp_flag.dvb_check_hist_geom`). It is the ALTERNATIVE to the bundle (REFUSED with `--r9-bev-warp`) and changes no head
+#: and no input at inference, so it rides T1's rule: admitted by refcv9-e1rig; stamped `bev_warp_not_certified` by the inherited records (the harnesses strip it -- `g_box_overfit.T1_FLAGS` /
+#: `map_hires_overfit.T1_FLAGS`, pinned equal to this tuple). It is deliberately in NEITHER `_R9F_T1H_ADMITTED` nor `_R9F_T1_REFUSED`: in the full family it hits R9F-UNCLASSIFIED-LEVER (fail closed) until the MM
+#: classifies it after T1v's read. It does NOT enter `BEV_WARP_LIVE` (no gate, no fuse): its liveness is the map loss's own.
+E1_T1_FLAGS: tuple = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only", "--r9-hist-supervise-geom")
+#: the six pre-T1v members: the FULL family's copy of the E1-BOX-OWN-RECORD item (`_R9F_OPEN_ITEMS`) keeps this literal, so the full-family profiles' content (and fingerprints) do not move when a
+#: seventh flag joins `E1_T1_FLAGS` (the item fires on `--r9-box-*` only, so the exemption list is inert for any `--r9-*` T1 flag -- pinned by a test).
+_E1_T1_FLAGS_PRE_T1V: tuple = E1_T1_FLAGS[:6]
 E1_T1_STAMP = "bev_warp_not_certified"
 E1_T1_STAMP_WHY = "bev_warp_not_certified_why"
 #: ⛔ the inherited overfit records (G-BOX-OVERFIT, G-MAP-OVERFIT: refcv8's literals, unchanged) cover the box head and the 10 cm
@@ -1836,6 +1844,7 @@ _R9F_SHARE = {"flag": "--r9-map-banded", "row_key": "gs_trunk_proj_map_hires", "
 _R9F_OPEN_ITEMS = (
     next(i for i in _E1_OPEN_ITEMS if i["id"] == "E1-MAP-OWN-RECORD"),
     dict(next(i for i in _E1_OPEN_ITEMS if i["id"] == "E1-BOX-OWN-RECORD"), when_prefixes=("--r9-box-",), when_except=(),
+         when_except_exact=E1_BOX_AUX_FLAGS + _E1_T1_FLAGS_PRE_T1V,
          what="a B3 box-lever arm (E1_BOX_OWN_FLAGS) changes the inference box head or its supervision, so the INHERITED G-BOX-OVERFIT "
               "record (refcv8's head) does not cover it; closed by the `/2-b3` record exactly as in refcv9-e1rig (the SAME E1_OWN_RECORDS row)"),
     next(i for i in _E1_OPEN_ITEMS if i["id"] == "E1-BOX-UNKNOWN-LEVER"),
@@ -8879,6 +8888,15 @@ def rig_eval_probe_dataset(L, cfg, args, model=None) -> tuple:
             raise GateError("refcv9-e1rig: the argv declares --r9-bev-warp but the trainer module has no `_bw` (bev_warp_flag) -- "
                             "cannot attach the history the T1 forward needs")
         rec["bev_warp"] = bw.attach_dataset(e_ds, model, args)
+    if bool(getattr(args, "r9_hist_supervise_geom", False)):   # refcv9 T1v: train() attaches the POSE-ONLY history (with_frames=False) to the eval dataset too; else `stage` REFUSES the forward
+        if model is None:
+            raise GateError("refcv9-e1rig: the argv declares --r9-hist-supervise-geom but the probe dataset was built without the loader's model "
+                            "-- the history lag rows are read off the BUILT model (`_r9_hist_geom`), never guessed from argv")
+        bw = getattr(tr, "_bw", None)
+        if bw is None:
+            raise GateError("refcv9-e1rig: the argv declares --r9-hist-supervise-geom but the trainer module has no `_bw` (bev_warp_flag) -- "
+                            "cannot attach the pose history the T1v forward needs")
+        rec["hist_geom"] = bw.attach_dataset(e_ds, model, args)
     return e_ds, e_eps, rec
 
 
@@ -8902,12 +8920,31 @@ def rig_eval_t1_build_reasons(args_t, model_t, args_l, model_l) -> tuple[list[st
                 "fuse_init": str(getattr(fuse, "init_mode", "rezero")) if fuse is not None else None,        # T1h-INIT: how the fuse weight was built (a build-time fact)
                 "fuse_fill_only": bool(getattr(fuse, "fill_only", False)) if fuse is not None else None,     # T1h-FILL: the history term only where the current lift is invalid
                 "fuse_lag_rows": list(fuse.lag_rows) if fuse is not None else None}
+    def gview(args, m):                                           # refcv9 T1v (`--r9-hist-supervise-geom`): NO fuse, a plain-Python HistGeom on the 10 cm branch + the model-state record
+        st = getattr(m, "_r9_hist_geom", None)
+        mh = getattr(m, "_map_hires", None)
+        hg = getattr(mh, "hist_geom", None) if mh is not None else None
+        return {"declared": bool(getattr(args, "r9_hist_supervise_geom", False)), "state_built": st is not None, "branch_built": hg is not None,
+                "lags_s": list(st.lags_s) if st is not None else None, "lag_rows": list(st.lag_rows) if st is not None else None,
+                "branch_lag_rows": list(hg.lag_rows) if hg is not None else None}
+    gt, gl = gview(args_t, model_t), gview(args_l, model_l)
+    g_on = bool(gt["declared"] or gl["declared"] or gt["state_built"] or gl["state_built"] or gt["branch_built"] or gl["branch_built"])
+    g_reasons: list[str] = []
+    if g_on:
+        g_reasons = [f"T1v (--r9-hist-supervise-geom): {k} differs between the builds: trainer {gt[k]!r} vs loader {gl[k]!r}"
+                     for k in gt if gt[k] != gl[k]]
+        for side, g in (("trainer", gt), ("loader", gl)):         # a side whose argv declares T1v but whose build holds no HistGeom would feed the stage a mask nobody emits
+            if g["declared"] != (g["state_built"] and g["branch_built"]):
+                g_reasons.append(f"T1v (--r9-hist-supervise-geom): the {side}'s argv declares {g['declared']} but its build carries the model state {g['state_built']} / the 10 cm HistGeom {g['branch_built']}")
     vt, vl = view(args_t, model_t), view(args_l, model_l)
     if not (vt["declared"] or vl["declared"] or vt["fuse_built"] or vl["fuse_built"]):
-        return [], {"on": False}
+        return list(g_reasons), ({"on": False, "hist_geom": {"trainer": gt, "loader": gl}} if g_on else {"on": False})
     reasons = [f"T1 (--r9-bev-warp): {k} differs between the builds: trainer {vt[k]!r} vs loader {vl[k]!r}"
                for k in vt if vt[k] != vl[k]]
-    return reasons, {"on": True, "trainer": vt, "loader": vl}
+    det = {"on": True, "trainer": vt, "loader": vl}
+    if g_on:
+        det["hist_geom"] = {"trainer": gt, "loader": gl}
+    return reasons + g_reasons, det
 
 
 def rig_eval_build_reasons(args_t, model_t, model_l) -> tuple[list[str], dict]:
@@ -9071,6 +9108,10 @@ def eval_identity(ctx: Ctx, T, model_t, args_t, scratch: Path,
         det["probe"]["bev_warp"] = drec["bev_warp"]
     if t1d.get("on"):
         det["bev_warp"] = t1d
+    if t1d.get("hist_geom") is not None:                          # refcv9 T1v only: the pose-history attach + the trainer-vs-loader HistGeom read
+        det["hist_geom"] = t1d["hist_geom"]
+        if (drec or {}).get("hist_geom") is not None:
+            det["probe"]["hist_geom"] = drec["hist_geom"]
     model_l.eval()
     t0 = time.time()
     raw_t = _forward_out(T, model_t, batch, args_t, 1234)

@@ -276,7 +276,7 @@ def _audit(src: str) -> list:
     tree = ast.parse(src)
     bad = []
     banned = ("future", "goal", "nav", "lat_v7", "lon_v7", "tac_", "maneuver", "label", "cls", "situation")
-    for fn in [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name in ("stage", "item_fields")]:
+    for fn in [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name in ("stage", "item_fields", "_relative_T")]:   # T1v: the pose read moved into the shared helper _relative_T (stage's T1 and T1v branches both call it)
         doc = ast.get_docstring(fn, clean=False)
         for node in ast.walk(fn):
             names = []
@@ -289,7 +289,7 @@ def _audit(src: str) -> list:
             for nm in names:
                 if any(b in nm.lower() for b in banned) and nm not in BF.BATCH_KEYS:
                     bad.append((fn.name, nm))
-            if fn.name == "stage" and isinstance(node, ast.Subscript) and isinstance(node.value, ast.Name) and node.value.id == "batch" \
+            if fn.name in ("stage", "_relative_T") and isinstance(node, ast.Subscript) and isinstance(node.value, ast.Name) and node.value.id == "batch" \
                     and isinstance(node.slice, ast.Constant) and node.slice.value not in BF.BATCH_KEYS:
                 bad.append((fn.name, node.slice.value))
     return bad

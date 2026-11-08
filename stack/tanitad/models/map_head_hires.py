@@ -964,6 +964,11 @@ class MapHiresBranch(nn.Module):
         hist = _bw.take_hist_valid() if (_bw is not None and getattr(_bw, "emit_hist", False)) else None
         if _bw is not None and getattr(_bw, "emit_hist", False) and hist is None:
             raise RuntimeError("[map-hires] --r9-bev-warp-supervise-hist is built but the lift hook recorded no hist_valid: the loss would silently lose its history mask")
+        _hg = getattr(self, "hist_geom", None)               # refcv9 T1v (--r9-hist-supervise-geom): the SAME key from geometry alone (a plain-Python holder, no Module); None otherwise (OFF: nothing below)
+        if _hg is not None:
+            if hist is not None:
+                raise RuntimeError("[map-hires] --r9-hist-supervise-geom with a T1h fuse that also emits hist_valid: the alternative, never both")
+            hist = _hg.take_hist_valid(valid.any(dim=1), bev.dtype)      # None when nothing was staged (an eval forward): no key; the LOSS side refuses a missing key
         feats = self._run(self.encoder, bev)
         if self.banded is not None:
             map_feats = None if self.map_encoder is None else self._run(self.map_encoder, bev)      # refcv9 C2 (M3)

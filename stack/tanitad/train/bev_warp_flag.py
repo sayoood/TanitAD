@@ -85,6 +85,14 @@ SUP_FLAG = "--r9-bev-warp-supervise-hist"
 SUP_DEST = "r9_bev_warp_supervise_hist"
 #: the forward's emitted key (``MapHiresBranch.forward`` -> ``pout``): [B, X4, Y4] bool, ABSENT unless T1h is built.
 HIST_KEY = "map_hires_hist_valid"
+#: refcv9 T1v (``--r9-hist-supervise-geom``, E1 arm T1v; REFCV9_E1_T1V_PREREG.md): T1h's supervision set from GEOMETRY ALONE.  The alternative to the T1h bundle (REFUSED with ``--r9-bev-warp``):
+#: NO past-frame encode / lift / feature warp / fuse, NO ``bev_warp`` module or parameter.  ``attach`` hangs a plain-Python ``BW.HistGeom`` on ``model._map_hires.hist_geom``.
+GEOM_FLAG = "--r9-hist-supervise-geom"
+GEOM_DEST = "r9_hist_supervise_geom"
+GEOM_ATTR = "_r9_hist_geom"
+GEOM_BRANCH_ATTR = "hist_geom"
+#: the ONLY batch keys T1v's ``stage`` reads (the poses and ``has``: no ``bw_frames`` -- the loader drops the past IMAGES for T1v, ``ItemSource.with_frames``).
+GEOM_BATCH_KEYS = ("bw_pose_now", "bw_pose_past", "bw_has")
 #: the fuse hangs on the 10 cm branch (the rig's allowed root ``_map_hires``); ``refcv9_perc_rig.bev_warp_exemptions`` NAMES the prefix.
 HEAD_ATTR = "bev_warp"
 KEY_PREFIX = "_map_hires." + HEAD_ATTR + "."
@@ -101,6 +109,13 @@ class BevWarpState:
     lag_rows: tuple
     shuffle: bool
     supervise_hist: bool = False         # T1h: the map loss supervises ``lift_valid_now | hist_valid`` (``supervised_lift_valid``)
+
+
+@dataclass(frozen=True)
+class HistGeomState:
+    """What the built T1v model carries (``model._r9_hist_geom``; G-DVB and the G-EVAL build comparison read it; ``attach_dataset`` builds the worker's source from it, never from argv)."""
+    lags_s: tuple
+    lag_rows: tuple
 
 
 def is_on(args) -> bool:
@@ -150,10 +165,33 @@ def refuse_ablate(model) -> None:
         raise SystemExit("[bev-warp] %s" % ABLATE_MSG)
 
 
+def geom_on(args) -> bool:
+    """True iff the argv declares T1v (``--r9-hist-supervise-geom``)."""
+    return bool(getattr(args, GEOM_DEST, False))
+
+
+def _pin_geom(args) -> None:
+    """T1v's argv refusals.  OFF: nothing.  ON: REFUSED with ``--r9-bev-warp`` (T1v is the ALTERNATIVE to the T1h bundle, never an add-on: both would emit ``map_hires_hist_valid``), without the 10 cm
+    branch (no lift ``valid`` to widen), with ``--no-map-lift-valid-mask`` (every labelled cell is already supervised: a dead flag).  The lags are T1h's DEFAULT pair (0.5 / 1.0 s): a non-default
+    ``--r9-bev-warp-lags`` is REFUSED here by the existing dead-flag rule (it needs ``--r9-bev-warp``), and T1v does not widen that."""
+    if not geom_on(args):
+        return
+    bad = []
+    if is_on(args):
+        bad.append("%s with %s: T1v is the ALTERNATIVE to the T1h bundle (supervision from geometry alone), not an add-on" % (GEOM_FLAG, FLAG))
+    if str(getattr(args, "map_hires", "off") or "off") != "on":
+        bad.append("--map-hires is not `on`: the lift validity T1v widens exists only in the 10 cm branch")
+    if getattr(args, "map_lift_valid_mask", True) is False:
+        bad.append("%s with --no-map-lift-valid-mask: every labelled cell is already supervised, the OR has nothing to add (a dead flag)" % GEOM_FLAG)
+    if bad:
+        raise SystemExit("[hist-geom] %s refused:\n  - " % GEOM_FLAG + "\n  - ".join(bad))
+
+
 def pin_args(args) -> None:
     """The flag's refusals, at argv time. OFF: a non-default ``--r9-bev-warp-lags`` or ``--r9-bev-warp-shuffle`` alone is refused (a dead flag).
     ON: the 10 cm branch, the timm shared trunk, no freeze, no ``--ablate-frames``.  The perception RIG is NOT required any more (refcv9 T1-FULL: the full
     model's loss function stages the history too)."""
+    _pin_geom(args)                  # refcv9 T1v: its own refusals first (a no-op when `--r9-hist-supervise-geom` is absent)
     if not is_on(args):
         dead = []
         if str(getattr(args, LAGS_DEST, LAGS_DEFAULT) or LAGS_DEFAULT) != LAGS_DEFAULT:
@@ -198,6 +236,10 @@ def pin_args(args) -> None:
 def attach(model, args) -> None:
     """Build-time wiring, called by the trainer (and the G-EVAL loader) once the 10 cm branch exists. OFF: touches nothing.  The fuse's init draws run
     inside ``fork_rng`` so NO other parameter's draw moves (OFF / ON share every shared init)."""
+    if geom_on(args):
+        if is_on(args):
+            raise SystemExit("[hist-geom] %s with %s: refused (T1v is the alternative to the bundle)" % (GEOM_FLAG, FLAG))
+        return _attach_geom(model, args)
     if not is_on(args):
         return
     mh = getattr(model, "_map_hires", None)
@@ -218,14 +260,31 @@ def attach(model, args) -> None:
     setattr(model, MODEL_ATTR, BevWarpState(tuple(lags_s), tuple(rows), bool(getattr(args, SHUF_DEST, False)), sup))
 
 
+def _attach_geom(model, args) -> None:
+    """T1v build: a plain-Python ``BW.HistGeom`` on the 10 cm branch (NO ``nn.Module``, NO parameter, NO forward hook, NO ``bev_warp``) + the model-state record.  The lags are T1h's default pair."""
+    mh = getattr(model, "_map_hires", None)
+    if mh is None:
+        raise SystemExit("[hist-geom] no 10 cm branch is built (--map-hires on): there is no lift validity to widen")
+    rows = BW.lags_to_rows(BW.LAGS_S_DEFAULT)
+    setattr(mh, GEOM_BRANCH_ATTR, BW.HistGeom(rows, float(mh.cfg.x_max_m), float(mh.cfg.y_half_m)))
+    setattr(model, GEOM_ATTR, HistGeomState(tuple(BW.LAGS_S_DEFAULT), tuple(rows)))
+
+
+def _hist_geom(model):
+    """The built ``BW.HistGeom`` of a T1v model, else ``None``."""
+    mh = getattr(model, "_map_hires", None)
+    return None if mh is None else getattr(mh, GEOM_BRANCH_ATTR, None)
+
+
 # ---- the DataLoader-worker side -------------------------------------------------------------------------------------------------- #
 class ItemSource:
     """What a DataLoader worker needs to build ONE item's history: the lags in rows and (for the shuffled control) the episode derangement.
     Read-only, picklable (spawn) and fork-safe; stored on the dataset as ``ds._r9_bw``."""
 
-    def __init__(self, lag_rows: tuple, shuffle: bool, n_episodes: int):
+    def __init__(self, lag_rows: tuple, shuffle: bool, n_episodes: int, with_frames: bool = True):
         self.lag_rows = tuple(int(r) for r in lag_rows)
         self.shuffle = bool(shuffle)
+        self.with_frames = bool(with_frames)             # refcv9 T1v: False => the worker reads the poses only and NEVER touches a past image (``bw_frames`` is absent)
         self.perm = BW.derangement(int(n_episodes), SHUFFLE_SEED) if self.shuffle else None
 
 
@@ -242,7 +301,7 @@ def item_fields(episodes, e_i: int, row: int, src: ItemSource) -> dict:
     ep = episodes[e_i]
     donor = episodes[src.perm[e_i]] if src.shuffle else ep
     pose_now = ep.poses[_pose_row(row)][:4].float()
-    h, w = (int(s) for s in ep.frames.shape[-2:])
+    h, w = (int(s) for s in ep.frames.shape[-2:]) if src.with_frames else (0, 0)
     frames, poses, has = [], [], []
     for r in src.lag_rows:
         pr = _pose_row(row, r)
@@ -250,14 +309,22 @@ def item_fields(episodes, e_i: int, row: int, src: ItemSource) -> dict:
         ok = pr >= 0 and dr >= 0
         has.append(ok)
         poses.append(ep.poses[pr][:4].float() if ok else pose_now)
-        frames.append(donor.frames[dr][-3:] if ok else torch.zeros(3, h, w, dtype=ep.frames.dtype))      # u8 in production; the dtype of the episode
-    return {"bw_frames": torch.stack(frames), "bw_pose_now": pose_now, "bw_pose_past": torch.stack(poses),
-            "bw_has": torch.tensor(has, dtype=torch.bool)}
+        if src.with_frames:
+            frames.append(donor.frames[dr][-3:] if ok else torch.zeros(3, h, w, dtype=ep.frames.dtype))      # u8 in production; the dtype of the episode
+    out = {"bw_frames": torch.stack(frames)} if src.with_frames else {}
+    out.update({"bw_pose_now": pose_now, "bw_pose_past": torch.stack(poses), "bw_has": torch.tensor(has, dtype=torch.bool)})
+    return out
 
 
 def attach_dataset(ds, model, args) -> dict:
     """Train-time wiring (``train()``, for the TRAIN and the EVAL dataset, BEFORE their DataLoaders): ``V3Dataset.__getitem__`` then adds the
     ``bw_*`` history in the worker.  The source is built from the MODEL (lags, shuffle), never from argv.  OFF: touches nothing."""
+    if geom_on(args):                # refcv9 T1v: the POSES and `has` only -- the worker never reads a past image (with_frames=False)
+        gs = getattr(model, GEOM_ATTR, None)
+        if gs is None or _hist_geom(model) is None:
+            raise SystemExit("[hist-geom] the model carries no T1v history geometry: attach(model, args) must run before attach_dataset")
+        ds._r9_bw = ItemSource(gs.lag_rows, False, len(getattr(ds, "episodes", None) or []), with_frames=False)
+        return {"lag_rows": list(gs.lag_rows), "with_frames": False, "n_episodes": len(getattr(ds, "episodes", None) or [])}
     if not is_on(args):
         return {}
     st = getattr(model, MODEL_ATTR, None)
@@ -272,9 +339,13 @@ def attach_dataset(ds, model, args) -> dict:
 
 # ---- the step side --------------------------------------------------------------------------------------------------------------- #
 def supervise_hist_on(model) -> bool:
-    """True iff the built model carries T1h (``--r9-bev-warp-supervise-hist``): the loss's mask is ``lift_valid_now | hist_valid``."""
+    """True iff the built model carries T1h (``--r9-bev-warp-supervise-hist``) OR T1v (``--r9-hist-supervise-geom``): the loss's mask is ``lift_valid_now | hist_valid``."""
     st = getattr(model, MODEL_ATTR, None)
-    return bool(st is not None and getattr(st, "supervise_hist", False))
+    return bool((st is not None and getattr(st, "supervise_hist", False)) or _hist_geom(model) is not None)
+
+
+def _sup_flag(model) -> str:
+    return GEOM_FLAG if _hist_geom(model) is not None else SUP_FLAG
 
 
 def supervised_lift_valid(model, pout: dict, lv, sel):
@@ -286,7 +357,7 @@ def supervised_lift_valid(model, pout: dict, lv, sel):
     hv = pout.get(HIST_KEY)
     if hv is None:
         raise SystemExit("[bev-warp] %s is built but the forward's perception output carries no `%s`: the loss would silently supervise only the cells the camera "
-                         "reaches NOW (the lift hook / MapHiresBranch.forward / bev_hook did not emit it)" % (SUP_FLAG, HIST_KEY))
+                         "reaches NOW (the lift hook / MapHiresBranch.forward / bev_hook did not emit it)" % (_sup_flag(model), HIST_KEY))
     return lv | hv.index_select(0, sel)
 
 
@@ -302,7 +373,7 @@ def supervised_banded_unobs(model, pout: dict, unobs: list, sel, geom: tuple) ->
     hv, lv = pout.get(HIST_KEY), pout.get("map_hires_lift_valid")
     if hv is None or lv is None:
         raise SystemExit("[bev-warp] %s is built with the banded head but the forward's perception output carries no `%s` / `map_hires_lift_valid`: the banded loss would silently supervise only the "
-                         "cells the camera reaches NOW (MapHiresBranch.forward / bev_hook did not emit them)" % (SUP_FLAG, HIST_KEY))
+                         "cells the camera reaches NOW (MapHiresBranch.forward / bev_hook did not emit them)" % (_sup_flag(model), HIST_KEY))
     lv, hv = lv.index_select(0, sel), hv.index_select(0, sel)
     if tuple(lv.shape) != tuple(hv.shape) or lv.dtype != torch.bool or hv.dtype != torch.bool:
         raise SystemExit("[bev-warp] %s: lift_valid %s %s and hist_valid %s %s must be the same [B, X4, Y4] bool grid" % (SUP_FLAG, tuple(lv.shape), lv.dtype, tuple(hv.shape), hv.dtype))
@@ -316,12 +387,24 @@ def supervised_banded_unobs(model, pout: dict, unobs: list, sel, geom: tuple) ->
     return wide
 
 
+def _relative_T(batch: dict, device) -> torch.Tensor:
+    """``T [B, P, 3]`` from the two pose keys ALONE -- the ONE place both T1h's and T1v's ``stage`` build the relative transforms (so the two masks cannot differ in ``T``)."""
+    pn = batch["bw_pose_now"].to(device)[:, None, :3]
+    return BW.relative_se2(pn, batch["bw_pose_past"].to(device)[..., :3]).float()
+
+
 def stage(model, batch: dict, device) -> None:
     """Called by ``compute_losses_perc_rig`` AND by ``compute_losses_v3`` (the FULL model) BEFORE ``model(...)``.  Reads ONLY ``BATCH_KEYS``.  Runs the past frames through the trunk's stride-8
     tap (``no_grad``) and stages ``(s8_past, T, has)`` on the fuse for the lift hook.  OFF (no fuse built): nothing.  A batch without the keys while
     the fuse is built REFUSES (never skips)."""
     fuse = _fuse(model)
     if fuse is None:
+        hg = _hist_geom(model)
+        if hg is not None:          # refcv9 T1v: poses + `has` ONLY (no past frame is encoded, lifted, warped or fused); T is built by the SAME function T1h's stage uses
+            miss = [k for k in GEOM_BATCH_KEYS if k not in batch]
+            if miss:
+                raise SystemExit("[hist-geom] the model is built with %s but the batch carries no %s: the dataset was not attached (attach_dataset on the train AND the eval dataset)" % (GEOM_FLAG, miss))
+            hg.stage(_relative_T(batch, device), batch["bw_has"].to(device))
         return
     miss = [k for k in BATCH_KEYS if k not in batch]
     if miss:
@@ -337,9 +420,7 @@ def stage(model, batch: dict, device) -> None:
     rows = torch.arange(b, device=x.device)
     with torch.no_grad():
         s8 = [enc.s8_from_normalised(enc.normalise(x[:, i].repeat(1, k, 1, 1)), rows) for i in range(p)]
-    pn = batch["bw_pose_now"].to(device)[:, None, :3]
-    T = BW.relative_se2(pn, batch["bw_pose_past"].to(device)[..., :3]).float()
-    fuse.stage(torch.stack(s8, dim=1), T, batch["bw_has"].to(device))
+    fuse.stage(torch.stack(s8, dim=1), _relative_T(batch, device), batch["bw_has"].to(device))
 
 
 def warm_start_prefixes(model) -> tuple:
@@ -376,6 +457,19 @@ def stamp(model, args) -> dict | None:
             **({"fuse_init": {"flag": FUSE_INIT_FLAG, "mode": fuse.init_mode, "rule": "W[c, p*(C+1)+c] = 1/P, every other entry 0 (mask columns included): fuse(x) = the mean of the lags' warped past BEV; gate exactly 0",
                                 "applied": "at fresh build (attach), before any checkpoint load; a trained fuse is never overwritten"}}
                if fuse.init_mode != FUSE_INIT_DEFAULT else {})}
+
+
+def geom_stamp(model, args) -> dict | None:
+    """``config.json["r9_hist_supervise_geom"]`` -- read OFF the built T1v state; ``None`` (key absent) when the flag is OFF."""
+    gs, hg = getattr(model, GEOM_ATTR, None), _hist_geom(model)
+    if gs is None or hg is None:
+        return None
+    return {"flag": GEOM_FLAG, "rule": "map loss lift-valid mask = lift_valid_now OR hist_valid_geom (the SAME mask T1h supervises, from geometry alone)",
+            "lags_s": list(gs.lags_s), "lag_rows": list(gs.lag_rows), "dt_s": BW.DT_S,
+            "hist_valid": "bev_warp.hist_valid_of(bev_warp.lag_masks(valid.any(dim=1), T, has)): poses, the camera's own lift validity, the lags' `has`; the same warp_valid_bool code as T1h's warp_bev",
+            "not_built": "no past-frame encode, lift, feature warp or fuse; no bev_warp module / parameter / forward hook; the worker reads no past image (ItemSource.with_frames False)",
+            "emitted_as": "pout[%r] from MapHiresBranch.forward (the key T1h emits)" % HIST_KEY, "n_params": 0,
+            "banded": getattr(getattr(model, "_map_hires", None), "banded", None) is not None}
 
 
 # ---- G-DVB ----------------------------------------------------------------------------------------------------------------------- #
@@ -451,6 +545,24 @@ def dvb_check_supervise_hist(model, args) -> list:
     return out
 
 
+def dvb_check_hist_geom(model, args) -> list:
+    """T1v ``built`` lever: declared <=> the 10 cm branch carries the ``BW.HistGeom`` AND the model state records it, with T1h's default lag rows, and NO ``bev_warp`` fuse / T1 state (the alternative, never both)."""
+    from tanitad.train.declared_vs_built import Mismatch
+    declared = geom_on(args)
+    gs, hg, fuse = getattr(model, GEOM_ATTR, None), _hist_geom(model), _fuse(model)
+    out = []
+    if declared != (gs is not None):
+        out.append(Mismatch(GEOM_DEST, declared, gs is not None, "model." + GEOM_ATTR, "argv and the state the loss reads disagree"))
+    if (gs is not None) != (hg is not None):
+        out.append(Mismatch(GEOM_DEST, gs is not None, hg is not None, "model._map_hires." + GEOM_BRANCH_ATTR, "the state says T1v but the 10 cm branch holds no HistGeom (or the reverse): the forward would emit no hist_valid"))
+    if hg is not None:
+        if tuple(hg.lag_rows) != BW.lags_to_rows(BW.LAGS_S_DEFAULT) or tuple(gs.lag_rows) != tuple(hg.lag_rows):
+            out.append(Mismatch(GEOM_DEST, BW.lags_to_rows(BW.LAGS_S_DEFAULT), tuple(hg.lag_rows), "model._map_hires." + GEOM_BRANCH_ATTR + ".lag_rows", "T1v's lags are T1h's default pair"))
+        if fuse is not None or getattr(model, MODEL_ATTR, None) is not None:
+            out.append(Mismatch(GEOM_DEST, "no bev_warp fuse / T1 state", "a T1 build is present", "model._map_hires." + HEAD_ATTR, "T1v is the alternative to the T1h bundle"))
+    return out
+
+
 def register_dvb_levers(register) -> None:
     """Called by the trainer at import (the registry is pinned two-way against its parser)."""
     register(DEST, "built", dvb_check)
@@ -459,3 +571,4 @@ def register_dvb_levers(register) -> None:
     register(SUP_DEST, "built", dvb_check_supervise_hist)
     register(FUSE_INIT_DEST, "built", dvb_check_fuse_init)
     register(FILL_DEST, "built", dvb_check_fill_only)
+    register(GEOM_DEST, "built", dvb_check_hist_geom)

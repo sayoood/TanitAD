@@ -133,7 +133,7 @@
   "--r9-plan-box-tokens",
   "--r8-critic-drivable",
   "--w-r8-drivable",
-  "0.1",
+  "0.06843",
   "--opt",
   "dd",
   "--lr",
@@ -242,15 +242,17 @@
   "w_map_1": [
    "--r8-critic-drivable",
    "--w-r8-drivable",
-   "0.1"
+   "0.06843"
   ],
   "w_map_1_critic": "non-banded (the 8-code head's softmax sum)",
   "w_map_2": "NOT AVAILABLE without the banded head (plan_wires_flag.pin_args: needs --r9-map-banded)",
   "map_arm": null,
   "map_config": "C0's 8-code head",
-  "w_r8_drivable_source": "operator-supplied PROVISIONAL placeholder (no W-COST reading exists yet)",
-  "w_r8_drivable_status": "PROVISIONAL -- NOT the argv a token may bind: regenerate with --w-cost-ratio R from the K2 explore smoke's W-COST line"
+  "w_r8_drivable_source": "0.1 / 1.4613 (--w-cost-ratio: the K2 explore smoke's W-COST line)",
+  "w_r8_drivable_status": "MEASURED (0.1 / R, the explore smoke's W-COST ratio)"
  },
  "what": "K2 = K0 + the crowned E1 lever bundle T1h + the C8 planner wires (REFCV9_DESIGN 4.4 K2; map config: C0's 8-code head). Composed by stack/scripts/r9_e2_make_argv.py from stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; base_sha256 = sha256 of the K0 FILE bytes.",
- "profile": "refcv9-e2"
+ "profile": "refcv9-e2",
+ "w_cost_ratio": 1.4613,
+ "w_cost_source": "tanitad-thor:/home/nvidia/r8ns/r9e2/gate3_explore/6d0e629f37a2_K2_glive/logs/job_smoke.log"
 }

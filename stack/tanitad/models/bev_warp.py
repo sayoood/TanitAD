@@ -91,18 +91,65 @@ def warp_bev(feat: torch.Tensor, src_valid, T: torch.Tensor, x_max_m: float, y_h
     N, C, X, Y = feat.shape
     grid, inb = sample_grid(T, x_max_m, y_half_m, X, Y)
     warped = F.grid_sample(feat, grid.to(feat.dtype), mode="bilinear", padding_mode="zeros", align_corners=False)
+    m, zero = warp_valid_bool(grid, inb, T, src_valid, feat.dtype)           # refcv9 T1v: the mask half, ONE function (T1h and T1v both call it)
+    mf = m.unsqueeze(1).to(feat.dtype)
+    warped = torch.where(zero.view(-1, 1, 1, 1), feat, warped) * mf
+    return warped, mf
+
+
+def warp_valid_bool(grid: torch.Tensor, inb: torch.Tensor, T: torch.Tensor, src_valid, dtype):
+    """The MASK half of ``warp_bev`` (refcv9 T1v: factored out so T1h's warp and T1v's mask-only path run THIS code, never a copy).  ``grid, inb`` = ``sample_grid(T, ...)``;
+    ``src_valid [N, X, Y]`` bool or ``None``; ``dtype`` = the dtype the feature warp samples in (``feat.dtype``: the bilinear validity is thresholded at 0.5 in it).
+    -> ``(m [N, X, Y] bool: the NOW cell holds a real past observation, zero [N, 1, 1] bool: T == 0 EXACTLY)``.  Reads poses (through ``grid`` / ``T``) and the camera's own
+    ``valid`` ONLY -- no feature, no label."""
     m = inb
     if src_valid is not None:
-        sv = F.grid_sample(src_valid.to(feat.dtype).unsqueeze(1), grid.to(feat.dtype), mode="bilinear", padding_mode="zeros", align_corners=False)
+        sv = F.grid_sample(src_valid.to(dtype).unsqueeze(1), grid.to(dtype), mode="bilinear", padding_mode="zeros", align_corners=False)
         m = inb & (sv[:, 0] > 0.5)
     zero = (T == 0).all(dim=-1).view(-1, 1, 1)
     if src_valid is not None:
         m = torch.where(zero, src_valid.bool(), m)
     else:
         m = torch.where(zero, torch.ones_like(m), m)
-    mf = m.unsqueeze(1).to(feat.dtype)
-    warped = torch.where(zero.view(-1, 1, 1, 1), feat, warped) * mf
-    return warped, mf
+    return m, zero
+
+
+def lag_masks(src_valid: torch.Tensor, T: torch.Tensor, has: torch.Tensor, x_max_m: float, y_half_m: float, dtype) -> list:
+    """refcv9 T1v: the lags' warp-valid masks from GEOMETRY ALONE -- ``src_valid [B, X, Y]`` (the camera's own ``valid.any(dim=1)``), ``T [B, P, 3]`` (``relative_se2``), ``has [B, P]`` bool
+    -> a list of P ``[B, 1, X, Y]`` masks in ``dtype``, each ALREADY multiplied by the lag's ``has`` -- the very list ``BevWarpFuse.lift_hook`` hands ``hist_valid_of``, built through
+    ``sample_grid`` + ``warp_valid_bool`` (the code ``warp_bev`` runs) with NO past frame, NO lift, NO feature warp, NO fuse."""
+    X, Y = int(src_valid.shape[-2]), int(src_valid.shape[-1])
+    out = []
+    with torch.no_grad():
+        for p in range(int(T.shape[1])):
+            grid, inb = sample_grid(T[:, p], x_max_m, y_half_m, X, Y)
+            m, _ = warp_valid_bool(grid, inb, T[:, p], src_valid, dtype)
+            out.append(m.unsqueeze(1).to(dtype) * has[:, p].view(-1, 1, 1, 1).to(dtype))
+    return out
+
+
+class HistGeom:
+    """refcv9 T1v (``--r9-hist-supervise-geom``): the supervision-only history mask.  NOT an ``nn.Module``: no parameter, no buffer, no ``state_dict`` entry (the T1v build's state_dict
+    is C0's).  ``stage`` (the step side, before ``model(...)``) holds ``(T [B, P, 3], has [B, P])``; ``MapHiresBranch.forward`` calls ``take_hist_valid(valid.any(dim=1), dtype)`` right
+    after its lift and emits the result as ``map_hires_hist_valid`` -- the SAME key T1h emits.  ONE-SHOT; with nothing staged it returns ``None`` (an eval forward needs no mask, and
+    the loss side REFUSES a missing key, never narrows silently)."""
+
+    def __init__(self, lag_rows: tuple, x_max_m: float, y_half_m: float):
+        self.lag_rows = tuple(int(r) for r in lag_rows)
+        self.x_max_m, self.y_half_m = float(x_max_m), float(y_half_m)
+        self._ctx = None
+
+    def stage(self, T: torch.Tensor, has: torch.Tensor) -> None:
+        if tuple(T.shape) != (T.shape[0], len(self.lag_rows), 3) or tuple(has.shape) != (T.shape[0], len(self.lag_rows)):
+            raise ValueError("[hist-geom] staged shapes disagree: T %s, has %s (P = %d)" % (tuple(T.shape), tuple(has.shape), len(self.lag_rows)))
+        self._ctx = (T, has.bool())
+
+    def take_hist_valid(self, src_valid: torch.Tensor, dtype):
+        ctx, self._ctx = self._ctx, None
+        if ctx is None:
+            return None
+        T, has = ctx
+        return hist_valid_of(lag_masks(src_valid, T, has, self.x_max_m, self.y_half_m, dtype))
 
 
 class BevWarpFuse(nn.Module):

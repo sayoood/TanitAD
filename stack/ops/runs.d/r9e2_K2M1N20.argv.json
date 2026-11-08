@@ -137,7 +137,7 @@
   "--r9-plan-box-tokens",
   "--r8-critic-drivable",
   "--w-r8-drivable",
-  "0.1",
+  "0.06472",
   "--opt",
   "dd",
   "--lr",
@@ -246,14 +246,14 @@
   "w_map_1": [
    "--r8-critic-drivable",
    "--w-r8-drivable",
-   "0.1"
+   "0.06472"
   ],
   "w_map_1_critic": "banded (reads the banded head's drv / drv_sdf / unobs)",
   "w_map_2": "--r9-plan-map-channels",
   "map_arm": "M1N20",
   "map_config": "banded head",
-  "w_r8_drivable_source": "operator-supplied PROVISIONAL placeholder (no W-COST reading exists yet)",
-  "w_r8_drivable_status": "PROVISIONAL -- NOT the argv a token may bind: regenerate with --w-cost-ratio R from the K2 explore smoke's W-COST line",
+  "w_r8_drivable_source": "0.1 / 1.545 (--w-cost-ratio: the K2 explore smoke's W-COST line)",
+  "w_r8_drivable_status": "MEASURED (0.1 / R, the explore smoke's W-COST ratio)",
   "banded_flags": [
    "--r9-map-banded",
    "--r9-map-banded-near-m",
@@ -264,5 +264,7 @@
   "pending": "BUILD-LEVEL checks PENDING: the trainer refuses --r9-bev-warp-supervise-hist with --r9-map-banded today (bev_warp_flag.py:178-179; another agent implements it). The gate's STATIC admission does not read the trainer's pin."
  },
  "what": "K2M1N20 = K0 + the crowned E1 lever bundle T1h + the C8 planner wires (REFCV9_DESIGN 4.4 K2; map config: banded head). Composed by stack/scripts/r9_e2_make_argv.py from stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; base_sha256 = sha256 of the K0 FILE bytes.",
- "profile": "refcv9-e2"
+ "profile": "refcv9-e2",
+ "w_cost_ratio": 1.545,
+ "w_cost_source": "tanitad-thor:/home/nvidia/r8ns/r9e2/gate3_explore/6d0e629f37a2_K2M1N20_wcost/logs/job_smoke.log"
 }

@@ -43,6 +43,11 @@ EXPECT = {
 }
 
 
+#: MEASURED W-COST (MM 2026-11-07/08): the gate's own G-LIVE smoke of each provisional argv at 6d0e629f printed "refcv9 W-COST at step 0: ... = R"; K2M3 stays the placeholder
+MEASURED_WCOST = {"K2": (1.4613, "0.06843", "6d0e629f37a2_K2_glive/logs/job_smoke.log"),
+                  "K2M1N20": (1.545, "0.06472", "6d0e629f37a2_K2M1N20_wcost/logs/job_smoke.log"),
+                  "K2M3N20": (1.5425, "0.06483", "6d0e629f37a2_K2M3N20_wcost/logs/job_smoke.log")}
+
 def doc(v):
     return json.loads((RUNS / f"r9e2_{v}.argv.json").read_text(encoding="utf-8"))
 
@@ -85,8 +90,15 @@ def test_each_committed_variant_regenerates_byte_equal_from_K0_by_the_composer(v
     k0b = (RUNS / "r9e2_K0.argv.json").read_bytes()
     d = doc(v)
     w = float(LG.flag_values(d["argv"], "--w-r8-drivable")[0])
-    got = MK.dump(MK.variant_doc(json.loads(k0b.decode("utf-8")), k0b, v, w, provisional=True,
-                                 w_source="operator-supplied PROVISIONAL placeholder (no W-COST reading exists yet)")).encode("utf-8")
+    if "w_cost_ratio" in d:      # K2-WCOST MEASURED (MM 2026-11-07): written by main() --w-cost-ratio R --w-cost-source <the smoke log>
+        r = float(d["w_cost_ratio"])
+        assert w == MK.w_from_ratio(r)
+        rec = MK.variant_doc(json.loads(k0b.decode("utf-8")), k0b, v, w, provisional=False,
+                             w_source="0.1 / %g (--w-cost-ratio: the K2 explore smoke's W-COST line)" % r)
+        got = MK.dump(MK.stamp_w_cost(rec, r, d["w_cost_source"])).encode("utf-8")
+    else:
+        got = MK.dump(MK.variant_doc(json.loads(k0b.decode("utf-8")), k0b, v, w, provisional=True,
+                                     w_source="operator-supplied PROVISIONAL placeholder (no W-COST reading exists yet)")).encode("utf-8")
     assert got == (RUNS / f"r9e2_{v}.argv.json").read_bytes()
     assert d["arm"] == f"r9e2_{v}" and d["profile"] == "refcv9-e2" and d["steps"] == 6000 and d["derived_from"] == "r9e2_K0"
     assert d["base_sha256"] == hashlib.sha256(k0b).hexdigest()
@@ -126,6 +138,12 @@ def test_W_MAP_1_weight_is_a_measured_quantity_and_the_files_say_PROVISIONAL():
             MK.w_from_ratio(bad)
     for v in VARIANTS:
         d = doc(v)
+        if v in MEASURED_WCOST:
+            r, w_text, src = MEASURED_WCOST[v]
+            assert d["w_cost_ratio"] == r and d["w_cost_source"].endswith(src)
+            assert d["lever"]["w_r8_drivable_status"].startswith("MEASURED")
+            assert LG.flag_values(d["argv"], "--w-r8-drivable") == [repr(MK.w_from_ratio(r))] == [w_text]
+            continue
         assert d["lever"]["w_r8_drivable_status"].startswith("PROVISIONAL") and "W-COST" in d["lever"]["w_r8_drivable_status"]
         assert LG.flag_values(d["argv"], "--w-r8-drivable") == ["0.1"]
 
@@ -227,7 +245,7 @@ def test_fingerprints_the_full_family_moved_and_every_other_profile_is_unchanged
     # OLD (tree e0cc3261): refcv9-e2 08c84658d9e98ceb, refcv9-full 551545dd6c9bbacc, refcv9-full-d1 9fbb9f8b7c41908d -- required_values_when gained the near-lift rules + the W-MAP-2 co-requirement
     # PIN6 (MM 2026-11-07, 5f47df80: the env-failure pin's sha literal sits in these profiles): refcv9-warm 09dbfa04d5a3ee4b -> 7099d75fa2f40240, refcv9-e1rig 18c28c61f19f5544 -> 0bb9664939426521, refcv8-mapft 783207af0d9e2062 -> f024877e5326f4ff, refcv9-e2 20297780a454a6c0 -> 2ee6fd2473fc296d, refcv9-full 8c9dcff2252b11ef -> 0af11fbfd62e6ed1, refcv9-full-d1 eae27696e70883cd -> b48f8af8c7fe34d4
     assert {n: _fp(n) for n in ("refcv8", "refcv9-warm", "refcv9-e1rig", "refcv8-nt", "refcv8-mapft", "v8f")} == {
-        "refcv8": "4841b2a6f0758b95", "refcv9-warm": "7099d75fa2f40240", "refcv9-e1rig": "0bb9664939426521",
+        "refcv8": "4841b2a6f0758b95", "refcv9-warm": "7099d75fa2f40240", "refcv9-e1rig": "6fa39c86092dffec",     # refcv9 E1 arm T1v: E1_T1_FLAGS gained --r9-hist-supervise-geom (was 0bb9664939426521 after pin6, 18c28c61f19f5544 before it)
         "refcv8-nt": "a24d2c1a71042711", "refcv8-mapft": "f024877e5326f4ff", "v8f": "52860dd82f3a79af"}
     assert {n: _fp(n) for n in ("refcv9-e2", "refcv9-full", "refcv9-full-d1")} == {
         "refcv9-e2": "2ee6fd2473fc296d", "refcv9-full": "0af11fbfd62e6ed1", "refcv9-full-d1": "b48f8af8c7fe34d4"}
@@ -257,7 +275,8 @@ def _parse(v):
 def test_the_trainer_parses_each_variant_and_the_C8_wire_pins_accept_it(v):
     from tanitad.train import plan_wires_flag as PW
     args = _parse(v)
-    assert PW.box_on(args) and PW.map_on(args) == (v != "K2") and args.r8_critic_drivable and args.w_r8_drivable == 0.1
+    assert PW.box_on(args) and PW.map_on(args) == (v != "K2") and args.r8_critic_drivable \
+           and args.w_r8_drivable == float(LG.flag_values(doc(v)["argv"], "--w-r8-drivable")[0]) == (float(MEASURED_WCOST[v][1]) if v in MEASURED_WCOST else 0.1)
     PW.pin_args(args)
 
 

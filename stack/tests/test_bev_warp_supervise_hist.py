@@ -434,8 +434,9 @@ FILL = "--r9-bev-warp-fill-only"
 
 
 def test_the_six_flag_T1_set_is_ONE_fact_across_gate_harnesses_emitter_and_trainer():
-    assert LG.E1_T1_FLAGS == ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", SUP, FUSE, FILL) == tuple(G.T1_FLAGS) == tuple(O.T1_FLAGS)
-    assert (BF.FLAG, BF.LAGS_FLAG, BF.SHUF_FLAG, BF.SUP_FLAG, BF.FUSE_INIT_FLAG, BF.FILL_FLAG) == LG.E1_T1_FLAGS
+    # refcv9 T1v: E1_T1_FLAGS is SEVEN now (the 7th = --r9-hist-supervise-geom, the T1v arm; test_r9_e1_t1v_gate.py pins it); the SIX T1 / T1h flags are its first six
+    assert LG.E1_T1_FLAGS == ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", SUP, FUSE, FILL, BF.GEOM_FLAG) == tuple(G.T1_FLAGS) == tuple(O.T1_FLAGS)
+    assert (BF.FLAG, BF.LAGS_FLAG, BF.SHUF_FLAG, BF.SUP_FLAG, BF.FUSE_INIT_FLAG, BF.FILL_FLAG, BF.GEOM_FLAG) == LG.E1_T1_FLAGS == LG._E1_T1_FLAGS_PRE_T1V + (BF.GEOM_FLAG,)
     assert {t for t in MK.T1_ARMS["T1h"] + MK.T1_ARMS["T1hs"] if t.startswith("--")} <= set(LG.E1_T1_FLAGS)
     assert set(G.T1_VALUE_FLAGS) == {"--r9-bev-warp-lags", FUSE} <= set(LG.E1_T1_FLAGS)
     assert set(LG.E1_T1_FLAGS) <= set(T.build_parser()._option_string_actions)

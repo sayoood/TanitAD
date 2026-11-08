@@ -193,6 +193,7 @@ _pwf.register_dvb_levers(_dvb.register)
 _bda.register_dvb_levers(_dvb.register)
 # refcv9 C4: --r9-box-persp-aux / --r9-box-bev2-aux are `built` levers (the head on the perception branch), --w-box-persp / --w-box-bev2 `loss` levers
 _p3f.register_dvb_levers(_dvb.register)
+# refcv9 T1v: --r9-hist-supervise-geom (the geometry-only supervision mask, `built` lever: bev_warp_flag.dvb_check_hist_geom)
 # refcv9 T1: --r9-bev-warp / --r9-bev-warp-lags / --r9-bev-warp-shuffle / --r9-bev-warp-supervise-hist (T1h) / --r9-bev-warp-fuse-init (T1h-INIT) / --r9-bev-warp-fill-only (T1h-FILL) are `built` levers (the fuse on the 10 cm branch, its lags, the dataset source's shuffle, the loss-mask OR, the fuse init, where the history term applies)
 _bw.register_dvb_levers(_dvb.register)
 # refcv9 C5-REST: --r9-box-layers is a `built` lever (the box3d decoder's depth, read off the built decoder)
@@ -11501,6 +11502,7 @@ def train(args) -> dict:
         **({_bc5.STAMP_KEY: _bc5.stamp(model, args)} if _bc5.is_any(args) else {}),         # refcv9 C5-REST (B4); absent for a default run
         **({"r9_box_bev2_aux": _p3f.stamp(model, args)} if _p3f.is_bev2(args) else {}),     # refcv9 C4 (B2c); absent for a default run
         **({"r9_bev_warp": _bw.stamp(model, args)} if _bw.is_on(args) else {}),     # refcv9 T1; absent for a default run
+        **({"r9_hist_supervise_geom": _bw.geom_stamp(model, args)} if _bw.geom_on(args) else {}),     # refcv9 T1v; absent for a default run
         **({_r9ph.STAMP_KEY: _r9ph.stamp(model, args)} if _r9ph.is_on(args) else {}),     # refcv9 C10; absent for a default run
         "vis1": ({"sidecar": vis1_stamp, "rule": _vis1.vis1_rule_dict(),
                   "train": vis1_stats, "eval": eval_vis1_stats, "calib": calib_stamp}
@@ -13699,6 +13701,11 @@ def build_parser() -> argparse.ArgumentParser:
                          "least one lag's warped past lift (the fuse's own warp-valid mask: GEOMETRY ONLY, identical under --r9-bev-warp-shuffle). WHY: with the default "
                          "mask the loss never sees the cells history could fix (T1's gate stayed at |g| 0.0077). Requires --r9-bev-warp; refused with --r9-map-banded or "
                          "--no-map-lift-valid-mask. Default OFF: the tip's build, forward and loss (bit-identical).")
+    g8.add_argument("--r9-hist-supervise-geom", action="store_true",
+                    help="refcv9 T1v (E1 arm T1v; REFCV9_E1_T1V_PREREG.md): T1h's supervision set from GEOMETRY ALONE -- the 10 cm map loss's (and the banded loss's) lift-valid mask becomes "
+                         "lift_valid_now OR hist_valid_geom, hist_valid_geom = bev_warp.hist_valid_of over the lags' MASK-ONLY warps (poses, the camera's own lift validity, the lags' has: the "
+                         "SAME code as T1h's warp_bev mask). NO past-frame encode / lift / feature warp / fuse, NO bev_warp parameters, no past image read by the loader. The ALTERNATIVE to the "
+                         "T1h bundle: refused with --r9-bev-warp. Lags = T1h's default 0.5,1.0 s. Requires --map-hires on; refused with --no-map-lift-valid-mask. Default OFF: the tip's build, forward and loss (bit-identical).")
     g8.add_argument("--r9-bev-warp-shuffle", action="store_true",
                     help="refcv9 T1 CONTROL (D3: the BEV-history-SHUFFLED control must read worse): the history FRAMES come from a DIFFERENT episode "
                          "(fixed derangement, seed 0); the item's own poses are kept. Without --r9-bev-warp it is refused. Default OFF.")

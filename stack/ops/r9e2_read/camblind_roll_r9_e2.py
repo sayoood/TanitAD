@@ -58,7 +58,7 @@ def bw_entries(CB) -> tuple:
     """The census rows of the T1 history keys, each pinned to the line of ``bev_warp_flag.item_fields`` that emits it (``CB.verify_census`` resolves them)."""
     why = "refcv9 T1 (--r9-bev-warp) history, added in V3Dataset.__getitem__ (refc_v3_train.py:4905-4907) via bev_warp_flag.item_fields: "
     return (
-        CB.Entry("bw_frames", "item", CB.CAMERA, True, True, BW_SRC, 'return {"bw_frames": torch.stack(frames),', "",
+        CB.Entry("bw_frames", "item", CB.CAMERA, True, True, BW_SRC, 'out = {"bw_frames": torch.stack(frames)} if src.with_frames else {}', "",
                  why + "the OWN past camera frames (newest raw frame at rows row - lag): pixel-derived, read by bev_warp_flag.stage -> the trunk's stride-8 tap -> the lift -> the fused BEV"),
         CB.Entry("bw_pose_now", "item", CB.EGO, False, True, BW_SRC, '"bw_pose_now": pose_now,', "", why + "the NOW ego pose (ep.poses[row][:4]): egomotion <= NOW, IMU-class"),
         CB.Entry("bw_pose_past", "item", CB.EGO, False, True, BW_SRC, '"bw_pose_past": torch.stack(poses),', "", why + "the PAST ego poses at rows row - lag: egomotion <= NOW"),
