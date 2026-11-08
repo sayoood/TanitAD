@@ -47,6 +47,8 @@ A3_SITES = {
     "refvalid": dict(old='ref_valid = ((R["t"] - R["t"][0]) <= R["ref_until"] + EPS) | ~np.isfinite(R["ref_until"])  # MUT:refvalid',
                      new='ref_valid = np.ones(n, bool)  # MUTATED (AMENDMENT_5 human_ref_valid_until_s ignored)',
                      tests=["test_a5_human_ref_valid_until_makes_a1_a2_e1_e2_na_after_it_and_reports_the_count"]),
+    "pathext": dict(old='u1 = ext_dir if ext_dir is not None else u1  # MUT:pathext', new="u1 = u1  # MUTATED (A-6 ruling 2 reverted: extension along the last two knots)",
+                    tests=["test_a6_extension_follows_the_moving_part_not_a_stopped_humans_noisy_end"]),
     "c2x": dict(old='crossed = red[1:] & (sf[:-1] <= s0 + EPS) & (sf[1:] > s0 + EPS)  # MUT:c2x', new="crossed = (red & (sf > s0 + EPS))[1:]  # MUTATED (CH-3 reverted to any red tick past the line)",
                 tests=["test_ch3_green_pass_then_red_later_is_not_a_crossing"]),
 }

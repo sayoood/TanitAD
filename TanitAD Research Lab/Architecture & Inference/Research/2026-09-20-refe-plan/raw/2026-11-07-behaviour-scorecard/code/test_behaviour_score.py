@@ -280,6 +280,51 @@ def test_c2_stop_3m_past_line_on_red_fails():                             # G-ME
     assert st(sc, "c2") == "FAIL" and sc["rules"]["c2"]["value"] >= 1
 
 
+def _noisy_stopped_human(jitter):
+    """human drives +x at 12 m/s, stops at x=100 and sits there; with `jitter` its stopped ticks wander +-0.08 m sideways (position noise that
+    makes the last knots point along +-y).  Returns the human dict."""
+    t = S.tgrid(20.0)
+    h = S.make(t, S.stop_profile(t, 12.0, 0.0, 100.0), category="traffic_light", synthetic=True, signal=np.full(len(t), 1, np.int8), stop_line_s=110.0)
+    if jitter:
+        k = np.arange(len(t))
+        still = h["ego_v"] < 0.05
+        h["ego_y"] = np.where(still, 0.08 * np.where(k % 2 == 0, 1.0, -1.0), 0.0)   # zig-zag +-0.08 m: every stopped tick is a new knot (0.16 m > 0.05 m), so the last two knots point along +-y
+        h["ego_yaw"] = np.where(still, np.where(k % 2 == 0, 1.2, -1.2), 0.0)                              # and a noisy last heading
+    return h
+
+
+def test_a6_extension_follows_the_moving_part_not_a_stopped_humans_noisy_end():       # mutation site: MUT:pathext
+    for jitter in (False, True):
+        h = _noisy_stopped_human(jitter)
+        hp = B.HumanPath(B.build_run(h))
+        s_, lat_, _ = hp.project(np.array([[110.0, 0.0]]))                    # a point 10 m past where the human stopped, on the road axis
+        assert abs(s_[0] - hp.length - 10.0) < 0.6 and abs(lat_[0]) < 0.3, (jitter, s_, hp.length, lat_)
+        assert hp.length >= 99.0, hp.length
+
+
+def test_a6_control_a_path_that_never_needs_the_extension_scores_identically_with_and_without_stop_noise():
+    t = S.tgrid(20.0)
+    a = B.HumanPath(B.build_run(S.make(t, np.full_like(t, 15.0))))
+    q = np.array([[30.0, 0.5], [80.0, -0.3], [150.0, 0.0]])
+    sa = a.project(q)
+    b = B.HumanPath(B.build_run(S.make(t, np.full_like(t, 15.0))))
+    assert all(np.array_equal(u, w) for u, w in zip(sa, b.project(q)))
+    assert abs(sa[0][1] - 80.0) < 1e-9 and abs(sa[1][1] + 0.3) < 1e-9
+
+
+def test_a6_chord_is_the_last_5m_of_the_moving_part_and_all_of_it_when_shorter():
+    x = np.concatenate([np.arange(0, 11) * 1.0, np.full(10, 10.0), np.full(10, 10.0)])
+    y = np.concatenate([np.zeros(11), np.arange(1, 11) * 1.0, np.full(10, 10.0)])    # east 10 m, then north 10 m, then stopped
+    v = np.concatenate([np.full(21, 5.0), np.zeros(10)])
+    d = B._moving_chord_dir(x, y, v)
+    assert abs(d[0] - 0.0) < 1e-9 and abs(d[1] - 1.0) < 1e-9, d                  # the last 5 m are the northbound part
+    x2, y2, v2 = np.array([0.0, 1.0, 2.0, 2.0]), np.array([0.0, 0.0, 1.0, 1.0]), np.array([3.0, 3.0, 3.0, 0.0])
+    d2 = B._moving_chord_dir(x2, y2, v2)                                          # moving part (3 samples) shorter than 5 m: chord first->last
+    assert np.allclose(d2, np.array([2.0, 1.0]) / np.hypot(2.0, 1.0))
+    assert B._moving_chord_dir(x, y, np.zeros_like(v)) is None
+
+
+
 def test_c2_crawl_stop_far_short_of_the_line_fails_the_6m_cap():
     sc, _ = score(_red(137.6), _red(145.6))                               # stops 10 m before the line
     assert st(sc, "c2") == "FAIL" and sc["rules"]["c2"]["details"]["n_stops_beyond_6m_cap"] == 1
@@ -402,6 +447,7 @@ def test_ch1_control_a_scenario_with_no_signal_scores_bit_identically_to_before_
     }
     for k, (a, b) in cases.items():
         sc, tk = score(a, b)
+        sc["params"] = {q: w for q, w in sc["params"].items() if q not in ("PATH_EXT_V_MIN", "PATH_EXT_CHORD_M")}   # A-6 (AMENDMENT_6) added two echoed parameters; every other byte must be the pre-A3 golden
         got = (hashlib.sha256(json.dumps(sc, sort_keys=True, allow_nan=False).encode()).hexdigest(), hashlib.sha256(np.asarray(tk["free"]).tobytes()).hexdigest())
         assert got == golden[k], (k, got)
 

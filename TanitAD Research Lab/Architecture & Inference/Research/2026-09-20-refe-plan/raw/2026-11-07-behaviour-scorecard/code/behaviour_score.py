@@ -53,7 +53,7 @@ P = dict(
     D2_SMOOTH_S=0.5, D2_TURN=0.5, D2_SWING=1.0, D2_WITHIN_S=6.0,
     E1_CT=0.5, E1_RUN_S=2.0, E2_HEAD=0.087, E2_KAPPA=0.02, E2_V_MIN=1.0,   # E2_V_MIN: A-12
     F2_TTC=1.0, F2_V_STOPPED=0.005,
-    PATH_KNOT_EPS=0.05, PATH_EXT_M=150.0, ALEAD_HALF_S=0.5,    # PATH_*: A-6; ALEAD_HALF_S: A-3
+    PATH_KNOT_EPS=0.05, PATH_EXT_M=150.0, PATH_EXT_V_MIN=0.5, PATH_EXT_CHORD_M=5.0, ALEAD_HALF_S=0.5,    # PATH_*: A-6; ALEAD_HALF_S: A-3
     LAT_FAULT_CT=0.5, REAR_AXLE_TO_CENTER=1.461,               # A-10: lane-less stand-in for "ego in multiple lanes"; nuPlan Pacifica rear axle -> box centre
 )
 
@@ -272,11 +272,29 @@ def build_run(d, fallback=None):
 # ----------------------------------------------------------------------------------------------------------
 # the human path (reference corridor, v_h(s), heading and curvature references)
 # ----------------------------------------------------------------------------------------------------------
+def _moving_chord_dir(x, y, v):
+    """AMENDMENT_6 ruling 2: unit direction of the chord over the last PATH_EXT_CHORD_M of arc length of the path's moving part
+    (samples with v >= PATH_EXT_V_MIN, in order; all of it if shorter). None when the moving part has no length."""
+    m = np.asarray(v) >= P["PATH_EXT_V_MIN"]
+    mx, my = np.asarray(x)[m], np.asarray(y)[m]
+    if len(mx) < 2:
+        return None
+    a = np.concatenate([[0.0], np.cumsum(np.hypot(np.diff(mx), np.diff(my)))])
+    if a[-1] <= 1e-9:
+        return None
+    s0 = max(0.0, a[-1] - P["PATH_EXT_CHORD_M"])
+    x0, y0 = np.interp(s0, a, mx), np.interp(s0, a, my)
+    d = np.array([mx[-1] - x0, my[-1] - y0])
+    n = float(np.hypot(*d))
+    return d / n if n > 1e-9 else None
+
+
 class HumanPath:
     """Polyline through the human ego positions. Station s = cumulative Euclidean length of the RAW 10 Hz human
     positions from sample 0 (the definition ROLLOUT_SCHEMA.md gives for `stop_line_s`). Knots are the human
     samples that moved > PATH_KNOT_EPS from the previous knot; per-knot speed / yaw / curvature are group means.
-    Both ends are extended by straight tangent lines of PATH_EXT_M (A-6)."""
+    Both ends are extended by straight tangent lines of PATH_EXT_M (A-6). AMENDMENT_6 ruling 2: the END extension runs along the chord over the
+    last PATH_EXT_CHORD_M of arc length of the MOVING part (v >= PATH_EXT_V_MIN), never a stopped human's last heading; the START extension is unchanged."""
 
     def __init__(self, R):
         x, y, yaw, v = R["x"], R["y"], R["yaw"], R["v"]
@@ -304,6 +322,8 @@ class HumanPath:
             u1 = np.array([px[-1] - px[-2], py[-1] - py[-2]]); u1 /= np.hypot(*u1)
         else:
             u0 = u1 = np.array([math.cos(yaw[0]), math.sin(yaw[0])])
+        ext_dir = _moving_chord_dir(x, y, v)
+        u1 = ext_dir if ext_dir is not None else u1  # MUT:pathext
         E = P["PATH_EXT_M"]
         self.G = np.vstack([[px[0] - E * u0[0], py[0] - E * u0[1]], np.c_[px, py], [px[-1] + E * u1[0], py[-1] + E * u1[1]]])
         self.GS = np.concatenate([[self.k_s[0] - E], self.k_s, [self.k_s[-1] + E]])

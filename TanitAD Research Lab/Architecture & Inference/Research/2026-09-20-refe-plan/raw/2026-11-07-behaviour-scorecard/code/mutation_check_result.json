@@ -2,19 +2,19 @@
  "_a3_baseline_green": true,
  "_all_killed": true,
  "_baseline_green": true,
- "_original_sha256_after": "1022d65e8d7667644fc5cb4a455f85e02fd72b0dc10339ebcc7a6f8677e8dc75",
- "_original_sha256_before": "1022d65e8d7667644fc5cb4a455f85e02fd72b0dc10339ebcc7a6f8677e8dc75",
+ "_original_sha256_after": "69d13d712ca6e6edd42ea7d91f8ac13ce0ddb815f480eed4280c320bdde3192a",
+ "_original_sha256_before": "69d13d712ca6e6edd42ea7d91f8ac13ce0ddb815f480eed4280c320bdde3192a",
  "_original_untouched": true,
  "a1": {
   "delete_killed": true,
-  "line": 496,
+  "line": 516,
   "neuter_killed": true,
   "original": "status = \"PASS\" if share >= P[\"A1_SHARE\"] - EPS else \"FAIL\"  # MUT:a1",
   "test": "test_a_phantom_braking_fails_a1_and_a2"
  },
  "a2": {
   "delete_killed": true,
-  "line": 518,
+  "line": 538,
   "neuter_killed": true,
   "original": "status = \"PASS\" if n_ev == 0 else \"FAIL\"  # MUT:a2",
   "test": "test_a_phantom_braking_fails_a1_and_a2"
@@ -43,6 +43,13 @@
    "test_gate_h_stop_at_red_then_launch_on_green_reads_a1_na_or_pass_c1_na_c2_c4_pass_a2_not_fail": true
   }
  },
+ "a3_pathext": {
+  "line": "u1 = ext_dir if ext_dir is not None else u1  # MUT:pathext",
+  "revert_killed": true,
+  "tests": {
+   "test_a6_extension_follows_the_moving_part_not_a_stopped_humans_noisy_end": true
+  }
+ },
  "a3_refvalid": {
   "line": "ref_valid = ((R[\"t\"] - R[\"t\"][0]) <= R[\"ref_until\"] + EPS) | ~np.isfinite(R[\"ref_until\"])  # MUT:refvalid",
   "revert_killed": true,
@@ -52,77 +59,77 @@
  },
  "b1": {
   "delete_killed": true,
-  "line": 538,
+  "line": 558,
   "neuter_killed": true,
   "original": "status = \"PASS\" if (P[\"B1_LO\"] - EPS <= med <= P[\"B1_HI\"] + EPS) else \"FAIL\"  # MUT:b1",
   "test": "test_b_tailgating_at_08s_fails_b1_and_b2"
  },
  "b2": {
   "delete_killed": true,
-  "line": 549,
+  "line": 569,
   "neuter_killed": true,
   "original": "status = \"PASS\" if len(runs) == 0 else \"FAIL\"  # MUT:b2",
   "test": "test_b_tailgating_at_08s_fails_b1_and_b2"
  },
  "c1": {
   "delete_killed": true,
-  "line": 646,
+  "line": 666,
   "neuter_killed": true,
   "original": "status = \"PASS\" if mv > P[\"C1_MINV\"] else \"FAIL\"  # MUT:c1",
   "test": "test_c1_stall_at_clear_junction_fails"
  },
  "c2": {
   "delete_killed": true,
-  "line": 671,
+  "line": 691,
   "neuter_killed": true,
   "original": "status = \"PASS\" if ok else \"FAIL\"  # MUT:c2",
   "test": "test_c2_stop_3m_past_line_on_red_fails"
  },
  "c3": {
   "delete_killed": true,
-  "line": 686,
+  "line": 706,
   "neuter_killed": true,
   "original": "status = \"PASS\" if (viol == 0 and f_ok) else \"FAIL\"  # MUT:c3",
   "test": "test_c3_entering_zone_with_conflicting_agent_within_2s_fails"
  },
  "c4": {
   "delete_killed": true,
-  "line": 731,
+  "line": 751,
   "neuter_killed": true,
   "original": "status = \"FAIL\" if any_fail else \"PASS\"  # MUT:c4",
   "test": "test_c4_creep_stall_after_green_fails"
  },
  "d1": {
   "delete_killed": true,
-  "line": 768,
+  "line": 788,
   "neuter_killed": true,
   "original": "status = \"PASS\" if share >= thr - EPS else \"FAIL\"  # MUT:d1",
   "test": "test_d1_harsh_braking_fails_and_matches_navsim_on_the_same_states"
  },
  "d2": {
   "delete_killed": true,
-  "line": 814,
+  "line": 834,
   "neuter_killed": true,
   "original": "status = \"PASS\" if n_ev == 0 else \"FAIL\"  # MUT:d2",
   "test": "test_d_oscillating_speed_fails_d2"
  },
  "e1": {
   "delete_killed": true,
-  "line": 824,
+  "line": 844,
   "neuter_killed": true,
   "original": "status = \"PASS\" if len(runs) == 0 else \"FAIL\"  # MUT:e1",
   "test": "test_e1_lane_drift_08m_for_3s_fails"
  },
  "e2": {
   "delete_killed": true,
-  "line": 840,
+  "line": 860,
   "neuter_killed": true,
   "original": "status = \"PASS\" if (ok_h and ok_k) else \"FAIL\"  # MUT:e2",
   "test": "test_e2_heading_bias_fails_and_curvature_ringing_fails_but_clean_passes"
  },
  "f1": {
   "delete_killed": true,
-  "line": 912,
+  "line": 932,
   "neuter_killed": true,
   "oldrule_killed": true,
   "oldrule_test": "test_f1_ego_stopped_is_speed_le_0p05_not_0p005",
@@ -131,7 +138,7 @@
  },
  "f2": {
   "delete_killed": true,
-  "line": 921,
+  "line": 941,
   "neuter_killed": true,
   "original": "status = \"PASS\" if len(runs) == 0 else \"FAIL\"  # MUT:f2",
   "test": "test_f_overlap_with_a_stationary_agent_fails_f1_and_f2"
