@@ -34,6 +34,7 @@ FAMILIES = {
     "LATERAL": ("e1", "e2", "d1"),
     "TACTICAL": ("c1", "c2", "c3", "c4"),
 }
+SLOTS = ("J-UL", "J-R", "J-S", "TL-G", "TL-S")     # AMENDMENT_3 CH-4: optional descriptive per-slot label (category pools J-UL, J-R, J-S)
 SIGNAL_RED, SIGNAL_YELLOW, SIGNAL_GREEN = 1, 2, 3
 
 # Every number is the scorecard's, except the ones marked "A-n" (see AMBIGUITIES.md) which are mine.
@@ -150,6 +151,12 @@ def validate(d, kind):
                 pr.append(f"missing key {k}")
         if "category" in d and _str(d, "category") not in CATEGORIES:
             pr.append(f"category {_str(d, 'category')!r} not in {CATEGORIES}")
+        if "human_ref_valid_until_s" in d:
+            hv = np.asarray(d["human_ref_valid_until_s"], float).reshape(-1)
+            if hv.size != 1 or not (np.isfinite(hv[0]) and hv[0] >= 0):
+                pr.append("human_ref_valid_until_s must be one finite value >= 0 (seconds from the first tick)")
+        if "slot" in d and _str(d, "slot") not in SLOTS:
+            pr.append(f"slot {_str(d, 'slot')!r} not in {SLOTS}")
     if "agent_id" in d:
         for k in AGENT_KEYS:
             if k not in d:
@@ -241,6 +248,8 @@ def build_run(d, fallback=None):
     else:
         R["sig"], R["gov"] = np.zeros((n, 0), np.int64), np.zeros(0, bool)
     sl = d.get("stop_line_s", fb.get("stop_line_s", np.nan))
+    hv = d.get("human_ref_valid_until_s", fb.get("human_ref_valid_until_s"))   # AMENDMENT_5 item 2: float64 scalar from rollout.npz, seconds from the first tick; absent = every tick valid
+    R["ref_until"] = float(np.asarray(hv).reshape(-1)[0]) if hv is not None and np.asarray(hv).size else math.inf
     R["stop_s"] = float(np.asarray(sl).reshape(-1)[0]) if np.asarray(sl).size else float("nan")
     zn = d.get("conflict_zone_xy", fb.get("conflict_zone_xy", np.zeros((0, 2))))
     zn = np.asarray(zn, float).reshape(-1, 2)
@@ -406,7 +415,8 @@ def derive(R, path):
     fy = R["y"] + 0.5 * R["L"] * np.sin(R["yaw"])
     s_front, _, _ = path.project(np.c_[fx, fy])
     yawrate = np.gradient(R["yaw"], P["DT"])
-    D = dict(n=n, warm=warm, s_ego=s_ego, ct=ct, s_front=s_front, yawrate=yawrate,
+    ref_valid = ((R["t"] - R["t"][0]) <= R["ref_until"] + EPS) | ~np.isfinite(R["ref_until"])  # MUT:refvalid
+    D = dict(n=n, warm=warm, ref_valid=ref_valid, s_ego=s_ego, ct=ct, s_front=s_front, yawrate=yawrate,
              vh=path.speed_at(s_ego), head_err=_wrap(R["yaw"] - path.yaw_at(s_ego)),
              beyond_path=(s_ego > path.length + 1e-6))
     D["kappa_ego"] = np.where(R["v"] >= P["E2_V_MIN"], yawrate / np.where(R["v"] >= P["E2_V_MIN"], R["v"], 1.0), np.nan)
@@ -450,11 +460,13 @@ def derive(R, path):
     G = np.maximum(P["FREE_HEADWAY_S"] * R["v"], P["FREE_MIN_GAP_M"])
     near = has & (gap <= G)
     closing = has & (ttc <= P["FREE_TTC_S"])
-    free = ~(near | closing)   # A-1: "no lead within G, and TTC_t > 8 s"
-    fw = free & warm
+    hold = _signal_hold(R, D)   # AMENDMENT_3 CH-1 (Ruling 1): a held tick is not free road
+    # A-1: "no lead within G, and TTC_t > 8 s"; AMENDMENT_3 CH-1: and not held
+    free = ~(near | closing) & ~hold  # MUT:hold
+    fw = free & warm & ref_valid   # a1, a2: AMENDMENT_5 item 2
     ints = [(i, j) for i, j in _runs(fw) if (j - i + 1) >= nt(P["FREE_MIN_INTERVAL_S"])]
     free_idx = np.concatenate([np.arange(i, j + 1) for i, j in ints]) if ints else np.zeros(0, np.int64)
-    D.update(lead_idx=lead_idx, lead_id=lead_id, has_lead=has, gap=gap, v_lead=v_lead, a_lead=a_lead, v_rel=v_rel,
+    D.update(hold=hold, lead_idx=lead_idx, lead_id=lead_id, has_lead=has, gap=gap, v_lead=v_lead, a_lead=a_lead, v_rel=v_rel,
              ttc=ttc, time_gap=time_gap, lead_run=_run_len_same(lead_id), free=free, free_intervals=ints, free_idx=free_idx)
     return D
 
@@ -462,6 +474,13 @@ def derive(R, path):
 # ----------------------------------------------------------------------------------------------------------
 # rules. Each returns dict(status raw, value, threshold, n, details). status in PASS/FAIL/NA
 # ----------------------------------------------------------------------------------------------------------
+def _refinfo(R, D):
+    """AMENDMENT_5 item 2: report the NA count for the human-path rules; empty (output unchanged) when the key is absent"""
+    if not np.isfinite(R["ref_until"]):
+        return {}
+    return dict(human_ref_valid_until_s=R["ref_until"], n_ticks_na_after_human_ref=int((~D["ref_valid"]).sum()))
+
+
 def _na(why, **kw):
     return dict(status="NA", value=None, threshold=None, n=0, details=dict(reason=why, **kw))
 
@@ -476,7 +495,7 @@ def rule_a1(Rc, Dc, Rh, Dh, path):
     matched = float(np.mean((lambda r: (r >= P["A1_LO"] - EPS) & (r <= P["A1_HI"] + EPS))(Rc["v"][m] / np.maximum(Rh["v"][m], P["A1_VH_FLOOR"])))) if m.size else None
     status = "PASS" if share >= P["A1_SHARE"] - EPS else "FAIL"  # MUT:a1
     return dict(status=status, value=share, threshold=P["A1_SHARE"], n=int(idx.size),
-                details=dict(matched_time_share=matched, n_free_intervals=len(Dc["free_intervals"]), min_ratio=float(ratio.min()), max_ratio=float(ratio.max())))
+                details=dict(matched_time_share=matched, n_free_intervals=len(Dc["free_intervals"]), min_ratio=float(ratio.min()), max_ratio=float(ratio.max()), **_refinfo(Rc, Dc)))
 
 
 def rule_a2(Rc, Dc, Rh, Dh, path):
@@ -503,7 +522,7 @@ def rule_a2(Rc, Dc, Rh, Dh, path):
         slow = float(np.mean(pr[np.isfinite(pr)] < P["A2_RATIO"])) if np.isfinite(pr).any() else None
     return dict(status=status, value=n_ev, threshold=0, n=len(Dc["free_intervals"]),
                 details=dict(event_start_t=[round(float(Rc["t"][e[0]] - Rc["t"][0]), 3) for e in events][:20],
-                             n_violating_windows=len(starts), plan_slow_share_free_road=slow))
+                             n_violating_windows=len(starts), plan_slow_share_free_road=slow, **_refinfo(Rc, Dc)))
 
 
 def _steady(Rc, Dc):  # A-16: same lead id for >= 30 consecutive ticks ending here
@@ -544,6 +563,35 @@ def _gov_state(R):
     return out
 
 
+def _signal_hold(R, D):
+    """AMENDMENT_3 section 7 Ruling 1 + section 9 Q4. (n,) bool, True on every held tick.
+    A hold STARTS at a tick where the governing signal is red, the front bumper is at or before the stop line and within C1_APPROACH_M (40 m, Q4)
+    of it. It LATCHES until the first tick at or after a governing green at which v > C4_LAUNCH_V; that launch tick itself is not held, the ticks
+    between the green and it are. A scenario without a governing signal and a stop line never holds (bit-identical to the pre-A3 scorer)."""
+    n = R["n"]
+    hold = np.zeros(n, bool)
+    if not _scenario_has_signal(R):
+        return hold
+    g = _gov_state(R)
+    dist = R["stop_s"] - D["s_front"]
+    can_start = (g == SIGNAL_RED) & (D["s_front"] <= R["stop_s"] + EPS) & (dist <= P["C1_APPROACH_M"] + EPS)
+    held, seen_green = False, False
+    for i in range(n):
+        if not held:
+            if can_start[i]:
+                held, seen_green = True, False
+                hold[i] = True
+            continue
+        seen_green = seen_green or g[i] == SIGNAL_GREEN
+        if seen_green and R["v"][i] > P["C4_LAUNCH_V"]:
+            held = False
+            if can_start[i]:   # a red right on the launch tick starts a new hold
+                held, seen_green, hold[i] = True, False, True
+        else:
+            hold[i] = True
+    return hold
+
+
 def _conflict_in_zone(R):  # A-13
     """(n,) bool per tick: some conflicting agent's footprint overlaps the zone at this tick; also per-tick 'within 2 s' flag"""
     n = R["n"]
@@ -581,6 +629,11 @@ def rule_c1(Rc, Dc, Rh, Dh, path):
     if not cand.any():
         return _na("ego never within 40 m of the line while clear")
     i0 = int(np.argmax(cand))
+    stop_run = any(a <= i0 <= b and (b - a + 1) >= nt(P["STOP_MIN_S"]) for a, b in _runs(Rc["v"] <= P["C4_STOP_V"]))
+    # AMENDMENT_3 CH-2 (Ruling 2, Q5): "stopped" is c4's definition, v <= 1.0 m/s inside a run of >= 1.0 s
+    stopped_first = bool(Rc["v"][i0] <= P["C4_STOP_V"]) and stop_run  # MUT:c1na
+    if stopped_first:
+        return _na("stopped at the first clear tick; start-from-stop is judged by c4")
     after = np.arange(Rc["n"]) > i0
     stop_here = after & (Dc["s_front"] >= Rc["stop_s"])
     i1 = int(np.argmax(stop_here)) if stop_here.any() else Rc["n"] - 1
@@ -603,8 +656,9 @@ def rule_c2(Rc, Dc, Rh, Dh, path):
     if not red.any():
         return _na("signal never red")
     sf, s0 = Dc["s_front"], Rc["stop_s"]
-    crossed = red & (sf > s0 + EPS)
-    n_cross = int(np.sum(crossed & ~np.concatenate([[False], crossed[:-1]])))
+    # AMENDMENT_3 CH-3 (Q3): a crossing EVENT on red, not any red tick past the line
+    crossed = red[1:] & (sf[:-1] <= s0 + EPS) & (sf[1:] > s0 + EPS)  # MUT:c2x
+    n_cross = int(crossed.sum())
     stop_gaps, open_end = [], False
     for i0, i1 in _runs(red & (sf <= s0 + EPS)):   # red episodes with the bumper still before the line
         stopped = np.where(Rc["v"][i0:i1 + 1] <= P["STOPPED_V"])[0]
@@ -640,7 +694,7 @@ def rule_c4(Rc, Dc, Rh, Dh, path):
     green_edge = np.concatenate([[False], (g[1:] == SIGNAL_GREEN) & (g[:-1] != SIGNAL_GREEN)])
     lv = np.nan_to_num(Dc["v_lead"], nan=0.0)
     pull_edge = np.concatenate([[False], (Dc["has_lead"][1:] & (lv[1:] >= P["C4_LEAD_PULL_V"]) & ~(Dc["has_lead"][:-1] & (lv[:-1] >= P["C4_LEAD_PULL_V"])))])
-    trig = (green_edge | pull_edge) & stopped
+    trig = (green_edge | pull_edge) & stopped & Dc["ref_valid"]   # AMENDMENT_5 item 2: a trigger after the human reference stops being valid is NA
     mstop = nt(P["STOP_MIN_S"])
     events = []
     for s0, s1 in _runs(stopped):
@@ -650,7 +704,7 @@ def rule_c4(Rc, Dc, Rh, Dh, path):
         if w.size:
             events.append(s0 + int(w[0]))
     if not events:
-        return _na("no stop followed by a green-light or lead-pull-away trigger")
+        return _na("no stop followed by a green-light or lead-pull-away trigger", **_refinfo(Rc, Dc))
     worst, any_fail, cens = -1e9, False, 0
     det = []
     for tr in events:
@@ -673,9 +727,9 @@ def rule_c4(Rc, Dc, Rh, Dh, path):
         worst = max(worst, t_c - allowed)
         det.append(dict(trigger_t=round(float(Rc["t"][tr] - Rc["t"][0]), 3), launch_s=t_c if math.isfinite(t_c) else None, human_s=hum if math.isfinite(hum) else None, allowed_s=allowed if math.isfinite(allowed) else None))
     if cens == len(events):
-        return _na("every launch event censored by the end of the scenario", events=det)
+        return _na("every launch event censored by the end of the scenario", events=det, **_refinfo(Rc, Dc))
     status = "FAIL" if any_fail else "PASS"  # MUT:c4
-    return dict(status=status, value=worst, threshold=0.0, n=len(events) - cens, details=dict(events=det, n_censored=cens))
+    return dict(status=status, value=worst, threshold=0.0, n=len(events) - cens, details=dict(events=det, n_censored=cens, **_refinfo(Rc, Dc)))
 
 
 def _states(R):
@@ -763,16 +817,21 @@ def rule_d2(Rc, Dc, Rh, Dh, path):  # A-18 scope, A-9 no persistence
 
 
 def rule_e1(Rc, Dc, Rh, Dh, path):
-    bad = np.abs(Dc["ct"]) > P["E1_CT"]
+    if not Dc["ref_valid"].any():
+        return _na("no tick with a valid human reference", **_refinfo(Rc, Dc))
+    bad = (np.abs(Dc["ct"]) > P["E1_CT"]) & Dc["ref_valid"]   # AMENDMENT_5 item 2
     runs = [r for r in _runs(bad) if (r[1] - r[0] + 1) >= nt(P["E1_RUN_S"])]
     status = "PASS" if len(runs) == 0 else "FAIL"  # MUT:e1
     return dict(status=status, value=len(runs), threshold=0, n=int(Rc["n"]),
-                details=dict(max_abs_cross_track=float(np.abs(Dc["ct"]).max()), longest_run_s=(max([(r[1] - r[0] + 1) * P["DT"] for r in _runs(bad)]) if bad.any() else 0.0)))
+                details=dict(max_abs_cross_track=float(np.abs(Dc["ct"]).max()), longest_run_s=(max([(r[1] - r[0] + 1) * P["DT"] for r in _runs(bad)]) if bad.any() else 0.0), **_refinfo(Rc, Dc)))
 
 
 def rule_e2(Rc, Dc, Rh, Dh, path):
-    he = np.abs(Dc["head_err"])
-    ke = np.abs(Dc["kappa_ego"] - Dc["kappa_h"])
+    if not Dc["ref_valid"].any():
+        return _na("no tick with a valid human reference", **_refinfo(Rc, Dc))
+    rv = Dc["ref_valid"]
+    he = np.abs(Dc["head_err"])[rv]
+    ke = np.abs(Dc["kappa_ego"] - Dc["kappa_h"])[rv]
     ke = ke[np.isfinite(ke)]
     p95h = float(np.percentile(he, 95))
     p95k = float(np.percentile(ke, 95)) if ke.size else None
@@ -780,7 +839,7 @@ def rule_e2(Rc, Dc, Rh, Dh, path):
     ok_k = True if p95k is None else p95k <= P["E2_KAPPA"] + EPS
     status = "PASS" if (ok_h and ok_k) else "FAIL"  # MUT:e2
     return dict(status=status, value=dict(p95_heading_err=p95h, p95_kappa_err=p95k), threshold=dict(heading=P["E2_HEAD"], kappa=P["E2_KAPPA"]),
-                n=int(Rc["n"]), details=dict(heading_ok=bool(ok_h), kappa_ok=bool(ok_k), n_kappa=int(ke.size)))
+                n=int(Rc["n"]), details=dict(heading_ok=bool(ok_h), kappa_ok=bool(ok_k), n_kappa=int(ke.size), **_refinfo(Rc, Dc)))
 
 
 def _collisions(Rc, Dc):
@@ -936,6 +995,10 @@ def score_arrays(roll, hum):
                      max_abs_cross_track_m=float(np.abs(Dc["ct"]).max()), n_ticks_beyond_human_path=int(Dc["beyond_path"].sum()),
                      human_path_length_m=path.length, human_path_knots=int(path.n_knots)),
         params={k: v for k, v in P.items()})
+    if "human_ref_valid_until_s" in roll:   # AMENDMENT_5 item 2: emitted only when present
+        sc["human_ref_valid_until_s"] = float(np.asarray(roll["human_ref_valid_until_s"]).reshape(-1)[0])
+    if "slot" in roll:   # AMENDMENT_3 CH-4: emitted only when the rollout carries it, so every pre-A3 output stays byte-identical
+        sc["slot"] = _str(roll, "slot")
     ticks = dict(t=Rc["t"] - Rc["t"][0], v=Rc["v"], s_ego=Dc["s_ego"], cross_track=Dc["ct"], lead_id=Dc["lead_id"], gap=Dc["gap"], ttc=Dc["ttc"],
                  time_gap=Dc["time_gap"], free=Dc["free"], vh_at_ego=Dc["vh"], head_err=Dc["head_err"])
     return _clean(sc), ticks

@@ -85,6 +85,10 @@ def aggregate(scs):
         for c in sorted({s["category"] for s in bs}):
             cs = [s for s in bs if s["category"] == c]
             cats[c] = dict(n_scenarios=len(cs), rules={r: _count([status_of(s, r, dfx) for s in cs]) for r in RULES})
+        slots = {}   # AMENDMENT_3 CH-4: DESCRIPTIVE per-slot rows (J-UL, J-R, J-S, TL-G, TL-S); never pooled, never an adoption count
+        for sl in sorted({s["slot"] for s in bs if s.get("slot")}):
+            ss = [s for s in bs if s.get("slot") == sl]
+            slots[sl] = dict(n_scenarios=len(ss), rules={r: _count([status_of(s, r, dfx) for s in ss]) for r in RULES})
         fam = {f: {r: per_rule[r] for r in rs} for f, rs in FAMILIES.items()}
         fam["TACTICAL"] = dict(fam["TACTICAL"], executed_decision_agreement=TACTICAL_DECISION)
         fam["STRATEGIC"] = STRATEGIC
@@ -93,6 +97,7 @@ def aggregate(scs):
         res["blocks"][b] = dict(
             label=("nuPlan-seeded slots" if b == BLOCKS[0] else "SYNTHETIC UNTIL MAP LIFTING EXISTS (not pooled with nuPlan-seeded slots)"),
             n_scenarios=len(bs), per_rule=per_rule, per_category=cats, families=fam, gate_h=dfx,
+            **({"per_slot": slots} if slots else {}),
             tier_stamp=sorted({str(s.get("tier_stamp")) for s in bs}), n_agent_cls_defaulted=sum(1 for s in bs if s.get("agent_cls_defaulted")),
             epdms=dict(n=len(ep), mean=(float(np.mean(ep)) if ep else None), note="guard only; never a goal"),
             identity=dict(idn, consistent=all(len(v) == 1 for v in idn.values()), complete=all(s["identity"].get("complete") for s in bs)),

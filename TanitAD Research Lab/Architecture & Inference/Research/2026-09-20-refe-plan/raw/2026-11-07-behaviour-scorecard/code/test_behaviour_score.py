@@ -324,6 +324,201 @@ def test_c4_creep_stall_after_green_fails():
     assert st(sc, "c4") == "FAIL" and sc["rules"]["c4"]["details"]["events"][0]["launch_s"] > 5.0
 
 
+# ------------------------------------------------------------------------------------------------ AMENDMENT_3: CH-1 hold, CH-2 c1 NA, CH-3 c2 crossing event, CH-4 slot, Gate H
+def _tl(v, sig, line=LINE, governs=None, t=None, **kw):
+    t = S.tgrid(30.0) if t is None else t
+    return S.make(t, v(t) if callable(v) else v, category="traffic_light", signal=sig(t) if callable(sig) else sig, stop_line_s=line, governs=governs, **kw)
+
+
+def _stop_then_go(t, t_go=22.3, x_stop=145.6):
+    """cruise 12 m/s, brake to stand at x_stop (front bumper 2 m before a line at 150), stand until t_go, then launch at 2.5 m/s^2 to 8 m/s"""
+    return np.where(t < t_go, S.stop_profile(t, 12.0, 0.0, x_stop), np.minimum(8.0, 2.5 * (t - t_go)))
+
+
+def _red_until(t_green):
+    return lambda t: np.where(t < t_green, 1, 3).astype(np.int8)
+
+
+def test_ch1_stationary_at_red_before_the_line_has_no_free_tick_a1_na_a2_na():          # mutation site: MUT:hold
+    t = S.tgrid(20.0)
+    e = S.make(t, np.zeros_like(t), x0=0.0, category="traffic_light", signal=np.ones(len(t), np.int8), stop_line_s=10.0)
+    sc, tk = score(e, e)
+    assert not tk["free"].any(), "a held tick must not be free road"
+    assert raw(sc, "a1") == "NA" and raw(sc, "a2") == "NA", (raw(sc, "a1"), raw(sc, "a2"))
+
+
+def test_ch1_launch_ticks_between_green_and_v_gt_1_are_held_and_ticks_after_are_free():
+    t = S.tgrid(20.0)
+    v = S.kf([(0, 0), (13, 0), (14, 4), (20, 4)], t)                                 # stands at the red, green at 10.0 s, starts moving at 13 s
+    e = S.make(t, v, category="traffic_light", signal=np.where(t < 10.0, 1, 3).astype(np.int8), stop_line_s=40.0)
+    sc, tk = score(e, e)
+    tt, free = tk["t"], tk["free"]
+    i_launch = int(np.argmax((tt >= 13.0) & (tk["v"] > 1.0)))
+    assert abs(tt[i_launch] - 13.3) < 0.11, tt[i_launch]                              # v = 4 * (t-13) > 1 from 13.25 s on the 10 Hz grid
+    assert not free[:i_launch].any(), "red ticks and the green->launch ticks (incl. the stationary 10-13 s) are held"
+    assert free[i_launch:].all(), "the launch tick and everything after it is free road again"
+
+
+def test_ch1_control_past_the_line_when_it_turns_red_stays_free_and_a1_is_scored():
+    t = S.tgrid(20.0)
+    sig = np.where(t < 6.0, 3, 1).astype(np.int8)                                    # ego (12 m/s) passes a line at 30 m at ~2.3 s, red from 6 s
+    e = S.make(t, np.full_like(t, 12.0), category="traffic_light", signal=sig, stop_line_s=30.0)
+    sc, tk = score(e, e)
+    assert tk["free"][int(np.argmax(tk["t"] >= 2.0)):].all()
+    assert raw(sc, "a1") == "PASS", sc["rules"]["a1"]
+
+
+def test_ch1_control_signal_that_does_not_govern_the_ego_does_not_hold():
+    t = S.tgrid(20.0)
+    kw = dict(category="traffic_light", signal=np.ones(len(t), np.int8), stop_line_s=10.0)
+    e = S.make(t, np.zeros_like(t), governs=[False], **kw)
+    sc, tk = score(e, e)
+    assert tk["free"][int(np.argmax(tk["t"] >= 2.0)):].all()
+    assert raw(sc, "a1") == "FAIL", sc["rules"]["a1"]                               # stationary vs the 3 m/s floor: scored exactly as before A3
+    held = S.make(t, np.zeros_like(t), governs=[True], **kw)
+    assert raw(score(held, held)[0], "a1") == "NA"
+
+
+def test_ch1_hold_starts_only_within_40m_of_the_line():
+    t = S.tgrid(20.0)
+    e = S.make(t, np.zeros_like(t), category="traffic_light", signal=np.ones(len(t), np.int8), stop_line_s=60.0)    # front bumper 2.4 m, line 57.6 m ahead
+    sc, tk = score(e, e)
+    assert tk["free"][int(np.argmax(tk["t"] >= 2.0)):].all(), "a stop 57.6 m short of a red is not excused as a hold"
+    near = S.make(t, np.zeros_like(t), category="traffic_light", signal=np.ones(len(t), np.int8), stop_line_s=42.0)   # 39.6 m ahead
+    assert not score(near, near)[1]["free"].any()
+
+
+def test_ch1_control_a_scenario_with_no_signal_scores_bit_identically_to_before_amendment_3():
+    t = S.tgrid(20.0)
+    e, hh = lead_scn(T20, 18.0)
+    phantom = cruise(np.where(t < 8, 15.0, 7.5))
+    cases = {"lead": (e, hh), "conflict": (_conflict(14.8, 12.0), _conflict(14.8, 8.0)), "phantom": (phantom, cruise()),
+             "green_signal_no_red": (_junction_green([(0, 12), (8.5, 12), (11.5, 0.4), (16, 0.4)]), _junction_green())}
+    golden = {                                                                       # sha256 of json.dumps(score, sort_keys) / of the `free` series, from the PRE-A3 scorer (CODE_PIN.before_a3.json)
+        "lead": ("e9227f9f7e362869fa718f2877384d6319f14d5f8ee5c14b1540dd2e952b28c7", "ab3df617aaa3140f04dc53f65b5446f34a6b2bdbb1f7b78db8db4d067ba14db9"),
+        "conflict": ("665caf539726947af28c02b48a2ad38d408199b26f490e55d0f001ade7d83d8d", "e14e6efc585c2da5ff6283e333fe34edcf83bfbf102c027a5b0e7c552186e0cc"),
+        "phantom": ("387204f55d37da576e08a2851fcaf462f58acd6dba0200c4ee463cbbfec7af1f", "e14e6efc585c2da5ff6283e333fe34edcf83bfbf102c027a5b0e7c552186e0cc"),
+        "green_signal_no_red": ("5d587707d436fa809d2d1651565dafd485ea0ef156dc709ad182875776ef6440", "9c6b45e205361e87e516ed272f11bebcdaafc2ed0474088a5d76eafdb609c773"),
+    }
+    for k, (a, b) in cases.items():
+        sc, tk = score(a, b)
+        got = (hashlib.sha256(json.dumps(sc, sort_keys=True, allow_nan=False).encode()).hexdigest(), hashlib.sha256(np.asarray(tk["free"]).tobytes()).hexdigest())
+        assert got == golden[k], (k, got)
+
+
+def test_ch2_start_from_stop_at_green_is_c1_na_with_the_reason():                         # mutation site: MUT:c1na
+    e = _tl(lambda t: _stop_then_go(t), _red_until(22.0))
+    sc, _ = score(e, e)
+    r = sc["rules"]["c1"]
+    assert r["raw_status"] == "NA" and "stopped at the first clear tick" in r["details"]["reason"], r
+
+
+def test_ch2_control_rolling_approach_that_then_stalls_below_1_mps_while_clear_fails():
+    t = S.tgrid(16.0)
+    e = S.make(t, S.kf([(0, 12), (8.5, 12), (11.5, 0.4), (16, 0.4)], t), category="junction", signal=np.full(len(t), 3, np.int8), stop_line_s=LINE)
+    sc, _ = score(e, e)
+    assert raw(sc, "c1") == "FAIL" and abs(sc["rules"]["c1"]["value"] - 0.4) < 1e-6, sc["rules"]["c1"]
+
+
+def test_ch2_control_rolling_approach_holding_above_1_mps_passes():
+    t = S.tgrid(20.0)
+    e = S.make(t, S.kf([(0, 12), (8, 12), (11, 2.0), (14, 2.0), (18, 8)], t), category="junction", signal=np.full(len(t), 3, np.int8), stop_line_s=LINE)
+    sc, _ = score(e, e)
+    assert raw(sc, "c1") == "PASS" and sc["rules"]["c1"]["value"] >= 2.0 - 1e-6, sc["rules"]["c1"]
+
+
+def test_ch2_a_brief_stop_shorter_than_1s_at_the_first_clear_tick_is_not_na():
+    t = S.tgrid(20.0)
+    v = S.kf([(0, 12), (8.5, 12), (9.0, 0.5), (9.5, 0.5), (9.6, 5), (14, 5), (16, 12), (20, 12)], t)    # v <= 1.0 for ~0.7 s only
+    e = S.make(t, v, category="junction", signal=np.full(len(t), 3, np.int8), stop_line_s=LINE)
+    sc, _ = score(e, e)
+    assert raw(sc, "c1") != "NA", sc["rules"]["c1"]
+
+
+def test_ch3_green_pass_then_red_later_is_not_a_crossing():                               # mutation site: MUT:c2x
+    t = S.tgrid(20.0)
+    sig = np.where(t < 15.0, 3, 1).astype(np.int8)
+    e = S.make(t, np.full_like(t, 12.0), category="traffic_light", signal=sig, stop_line_s=100.0)      # passes the line at ~8.1 s, red from 15 s
+    sc, _ = score(e, e)
+    assert raw(sc, "c2") == "PASS" and sc["rules"]["c2"]["value"] == 0, sc["rules"]["c2"]
+
+
+def test_ch3_control_crossing_on_red_is_one_event_and_fails():
+    sc, _ = score(_red(150.6), _red(145.6))
+    assert st(sc, "c2") == "FAIL" and sc["rules"]["c2"]["value"] == 1, sc["rules"]["c2"]
+
+
+def test_ch4_slot_key_is_optional_validated_and_the_suite_reports_a_descriptive_per_slot_row():
+    plain = cruise()
+    with_slot = dict(plain, slot=np.array("TL-G"))
+    assert B.validate(with_slot, "rollout") == [] and B.validate(plain, "rollout") == []
+    assert any("slot" in p for p in B.validate(dict(plain, slot=np.array("nonsense")), "rollout"))
+    sc_plain, _ = score(plain)
+    sc_slot, _ = score(with_slot)
+    assert "slot" not in sc_plain and sc_slot["slot"] == "TL-G"
+    sc_slot.pop("slot")
+    assert json.dumps(sc_plain, sort_keys=True) == json.dumps(sc_slot, sort_keys=True)       # the slot key changes nothing else
+    a = dict(sc_plain, scenario_id="a", log_id="a", category="traffic_light", slot="TL-G")
+    b = dict(sc_plain, scenario_id="b", log_id="b", category="traffic_light", slot="TL-S")
+    c = dict(sc_plain, scenario_id="c", log_id="c", category="traffic_light")
+    blk = SU.aggregate([a, b, c])["blocks"]["nuplan_seeded"]
+    assert set(blk["per_slot"]) == {"TL-G", "TL-S"} and blk["per_slot"]["TL-G"]["n_scenarios"] == 1 and blk["per_category"]["traffic_light"]["n_scenarios"] == 3
+    assert "per_slot" not in SU.aggregate([c])["blocks"]["nuplan_seeded"]
+
+
+def test_gate_h_stop_at_red_then_launch_on_green_reads_a1_na_or_pass_c1_na_c2_c4_pass_a2_not_fail():
+    h = _tl(lambda t: _stop_then_go(t), _red_until(22.0))
+    sc, tk = score(h, h)
+    r = sc["rules"]
+    assert r["a1"]["human_status"] in ("PASS", "NA"), r["a1"]
+    assert r["c1"]["human_status"] == "NA" and "start-from-stop" in r["c1"]["details"]["reason"], r["c1"]
+    assert r["c2"]["human_status"] == "PASS", r["c2"]
+    assert r["c4"]["human_status"] == "PASS", r["c4"]
+    assert r["a2"]["human_status"] != "FAIL", r["a2"]
+    assert r["c2"]["details"]["stop_distances_before_line_m"][0] < 6.0
+
+
+def _ref_case(t_valid=None):
+    """ego = human until 10 s, then (rollout only) a 0.8 m lateral offset for 5 s, a 0.15 rad heading bias and half the speed; a green->stop->go trigger at 12 s"""
+    t = S.tgrid(20.0)
+    late = t >= 10.0
+    v_h = np.full_like(t, 15.0)
+    v_e = np.where(late, 7.5, 15.0)
+    h = S.make(t, v_h, category="traffic_light")
+    kw = {} if t_valid is None else dict(human_ref_valid_until_s=np.array(t_valid, float))
+    e = S.make(t, v_e, y=np.where((t >= 10.0) & (t < 15.0), 0.8, 0.0), yaw=np.where(late, 0.15, 0.0), category="traffic_light")
+    e.update(kw)
+    return e, h
+
+
+def test_a5_human_ref_valid_until_makes_a1_a2_e1_e2_na_after_it_and_reports_the_count():     # mutation site: MUT:refvalid
+    e, h = _ref_case(9.0)
+    sc, _ = score(e, h)
+    r = sc["rules"]
+    assert [r[k]["raw_status"] for k in ("a1", "a2", "e1", "e2")] == ["PASS", "PASS", "PASS", "PASS"], {k: r[k]["raw_status"] for k in ("a1", "a2", "e1", "e2")}
+    assert r["e1"]["details"]["human_ref_valid_until_s"] == 9.0 and r["e1"]["details"]["n_ticks_na_after_human_ref"] == 110, r["e1"]["details"]   # 10 Hz ticks 9.1 .. 20.0 s
+    assert sc["human_ref_valid_until_s"] == 9.0
+    # c4 is also bounded: a trigger after the valid time is NA
+    t = S.tgrid(20.0)
+    mk = lambda **kw: dict(S.make(t, S.kf([(0, 10), (2, 10), (6, 0), (10.8, 0), (14.8, 6), (20, 6)], t), category="traffic_light", signal=np.where(t < 10.0, 1, 3).astype(np.int8)), **kw)
+    assert raw(score(mk(), mk())[0], "c4") == "PASS"
+    c4 = score(mk(human_ref_valid_until_s=np.array(8.0)), mk())[0]["rules"]["c4"]
+    assert c4["raw_status"] == "NA" and c4["details"]["n_ticks_na_after_human_ref"] > 0, c4
+    # a key at or beyond the end of the run changes no verdict
+    e2, _ = _ref_case(25.0)
+    assert [score(e2, h)[0]["rules"][k]["raw_status"] for k in ("a1", "a2", "e1", "e2")] == [score(_ref_case()[0], h)[0]["rules"][k]["raw_status"] for k in ("a1", "a2", "e1", "e2")]
+    bad = dict(e, human_ref_valid_until_s=np.array(-1.0))
+    assert any("human_ref_valid_until_s" in p for p in B.validate(bad, "rollout"))
+
+
+def test_a5_control_without_the_key_the_same_rollout_fails_a1_a2_e1_e2_and_output_has_no_new_key():
+    e, h = _ref_case()
+    sc, _ = score(e, h)
+    r = sc["rules"]
+    assert [r[k]["raw_status"] for k in ("a1", "a2", "e1", "e2")] == ["FAIL", "FAIL", "FAIL", "FAIL"], {k: r[k]["raw_status"] for k in ("a1", "a2", "e1", "e2")}
+    assert "human_ref_valid_until_s" not in sc and "n_ticks_na_after_human_ref" not in json.dumps(sc)
+
+
 # ------------------------------------------------------------------------------------------------ (d) comfort and oscillation
 def _windows_share(roll):
     """independent d1 re-computation: build the NAVSIM state array from the documented mapping and call ego_is_comfortable directly"""

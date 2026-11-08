@@ -29,3 +29,6 @@
 ## Deletions (rule 4: literal path, size) -- logged by BEHAV-F1
 * `C:/Users/Admin/AppData/Local/Temp/claude/E--Projects-TanitAD/c216c849-5fe7-4d43-a3be-32429241f811/scratchpad/bf1/` (my generator, parity and splice scripts, `newtests.py`, `edit_docs.py`, `score_old.json`; all re-creatable, nothing unique): removed at the end of the job, sizes in the final report.
 * Test and mutation temp dirs (`bv_*`, `mut_*`) are removed by the scripts' own `finally`. No `__pycache__` written (PYTHONDONTWRITEBYTECODE=1).
+
+## A3-IMPL (2026-11-08): AMENDMENT_3 CH-1..CH-4 + AMENDMENT_5 item 2 applied
+Scorer sha256 `1022d65e...` (see CODE_PIN.json; previous pin `CODE_PIN.before_a3.json`). 82/82 tests (`TEST_RESULT.txt`), mutation check ALL KILLED incl. new sites `hold`, `c1na`, `c2x`, `refvalid` (`MUTATION_RESULT.txt`). No-signal scenarios and scenarios without `human_ref_valid_until_s` / `slot` score byte-identically to the pre-A3 code (golden sha256 in `test_ch1_control_a_scenario_with_no_signal_...`). Readings taken: AMBIGUITIES.md A3-1..A3-4, A5-1. Gate H case: `test_gate_h_stop_at_red_then_launch_...` (without the hold a1 reads FAIL 0.658; with it PASS 0.951).

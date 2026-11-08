@@ -27,3 +27,10 @@ Each item: what the scorecard says, the problem, **the reading implemented** (ta
 * The tier-stamp conflict is RULED (AMENDMENT_1, "Tier stamp"): every output has `tier_stamp = "T2 (re-perception closed-loop sim; MM ruling 2026-11-07)"` (constant `TIER_STAMP` in `behaviour_score.py`).
 * Gate H makes d1 and c4 trivially human-pass (their thresholds are relative to the human), so those two can never be INFORMATIONAL.
 * With n = 10 binary cells the bootstrap interval is coarse and the floor (a multiple of 0.1) is large; tier 1 can only reject large regressions, as section 4 already says.
+
+## AMENDMENT_3 / AMENDMENT_5 implementation choices (A3-n; the amendment texts are frozen, these are the readings the code takes)
+* **A3-1 (hold, Ruling 1 + Q4).** Start tick: governing red, `s_front <= stop_s + EPS`, `stop_s - s_front <= C1_APPROACH_M` (40 m, no new parameter). Latched until the first tick `i` with a governing green seen at or before `i` since the start and `v[i] > C4_LAUNCH_V`; tick `i` is free, ticks before it are held. A red on the release tick itself starts a new hold. A run-the-red ego stays held until the launch (c2 judges it). A scenario without a governing signal and a finite `stop_line_s` never holds.
+* **A3-2 (c1 NA, Ruling 2 + Q5).** The run test uses the whole maximal run of `v <= C4_STOP_V` containing the first clear tick (length >= 10 ticks), counted on both sides of that tick.
+* **A3-3 (c2, CH-3).** A crossing is a transition tick `k` with `red[k]`, `sf[k-1] <= s0`, `sf[k] > s0`. An ego already past the line at tick 0 has no crossing event.
+* **A3-4 (CH-4).** `slot` is validated against `SLOTS`; the per-slot suite row is descriptive only.
+* **A5-1 (human_ref_valid_until_s).** Valid ticks are `t - t0 <= key` on the 10 Hz grid. a1/a2: free intervals are built from valid ticks only (an interval is cut at the boundary and must still be >= 2.0 s). c4: a trigger tick after the boundary is dropped (the launch it starts is then not judged). e1: runs counted on valid ticks only. e2: percentiles over valid ticks only. If no tick is valid, e1 and e2 are NA.

@@ -37,6 +37,19 @@ TESTS = {
     "f1": "test_f_overlap_with_a_stationary_agent_fails_f1_and_f2",
     "f2": "test_f_overlap_with_a_stationary_agent_fails_f1_and_f2",
 }
+# AMENDMENT_3 sites: not a verdict line but a TERM; the single marked line is reverted to its pre-A3 form (kind "revert") and every named test must go RED.
+A3_SITES = {
+    "hold": dict(old="free = ~(near | closing) & ~hold  # MUT:hold", new="free = ~(near | closing)  # MUTATED (CH-1 hold term removed)",
+                 tests=["test_ch1_stationary_at_red_before_the_line_has_no_free_tick_a1_na_a2_na", "test_ch1_launch_ticks_between_green_and_v_gt_1_are_held_and_ticks_after_are_free",
+                        "test_gate_h_stop_at_red_then_launch_on_green_reads_a1_na_or_pass_c1_na_c2_c4_pass_a2_not_fail"]),
+    "c1na": dict(old='stopped_first = bool(Rc["v"][i0] <= P["C4_STOP_V"]) and stop_run  # MUT:c1na', new="stopped_first = False  # MUTATED (CH-2 c1 NA removed)",
+                 tests=["test_ch2_start_from_stop_at_green_is_c1_na_with_the_reason", "test_gate_h_stop_at_red_then_launch_on_green_reads_a1_na_or_pass_c1_na_c2_c4_pass_a2_not_fail"]),
+    "refvalid": dict(old='ref_valid = ((R["t"] - R["t"][0]) <= R["ref_until"] + EPS) | ~np.isfinite(R["ref_until"])  # MUT:refvalid',
+                     new='ref_valid = np.ones(n, bool)  # MUTATED (AMENDMENT_5 human_ref_valid_until_s ignored)',
+                     tests=["test_a5_human_ref_valid_until_makes_a1_a2_e1_e2_na_after_it_and_reports_the_count"]),
+    "c2x": dict(old='crossed = red[1:] & (sf[:-1] <= s0 + EPS) & (sf[1:] > s0 + EPS)  # MUT:c2x', new="crossed = (red & (sf > s0 + EPS))[1:]  # MUTATED (CH-3 reverted to any red tick past the line)",
+                tests=["test_ch3_green_pass_then_red_later_is_not_a_crossing"]),
+}
 OLDRULE_TEST = "test_f1_ego_stopped_is_speed_le_0p05_not_0p005"     # A-10: ego 0.04 m/s is stopped in NAVSIM source (the old rule's threshold was 0.005)
 
 
@@ -94,6 +107,27 @@ def main():
                 result[rule]["oldrule_test"], result[rule]["oldrule_killed"], ok = OLDRULE_TEST, bool(killed), ok and bool(killed)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    base_rc, base_out = run_tests(None, {t for v in A3_SITES.values() for t in v["tests"]})
+    result["_a3_baseline_green"] = base_rc == 0
+    ok &= base_rc == 0
+    tmp = Path(tempfile.mkdtemp(prefix="mut_"))
+    try:
+        for site, spec in A3_SITES.items():
+            src = SRC.read_text(encoding="utf-8")
+            assert src.count(spec["old"]) == 1, site
+            d = tmp / f"{site}_revert"
+            d.mkdir()
+            (d / "behaviour_score.py").write_text(src.replace(spec["old"], spec["new"]), encoding="utf-8")
+            res = {"line": spec["old"].strip(), "tests": {}}
+            for t in spec["tests"]:
+                rc, so = run_tests(d, {t})
+                k = (rc != 0) and (f"FAIL {t}" in so) and (str(d) in so)
+                res["tests"][t] = bool(k)
+            res["revert_killed"] = all(res["tests"].values())
+            ok &= res["revert_killed"]
+            result["a3_" + site] = res
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
     result["_original_sha256_before"], result["_original_sha256_after"] = sha_before, sha(SRC)
     result["_original_untouched"] = sha_before == sha(SRC)
     result["_all_killed"] = bool(ok and result["_original_untouched"])
@@ -101,6 +135,8 @@ def main():
     for r in TESTS:
         print(r, "neuter:", "KILLED" if result[r]["neuter_killed"] else "SURVIVED", "| delete:", "KILLED" if result[r]["delete_killed"] else "SURVIVED",
               ("| oldrule (A-10 +-45 deg bearing swapped back in): " + ("KILLED" if result[r]["oldrule_killed"] else "SURVIVED")) if r == "f1" else "")
+    for site in A3_SITES:
+        print("a3", site, "revert:", "KILLED" if result["a3_" + site]["revert_killed"] else "SURVIVED", {k[:40]: v for k, v in result["a3_" + site]["tests"].items()})
     print("baseline green:", result["_baseline_green"], "| original untouched:", result["_original_untouched"], "| ALL KILLED:", result["_all_killed"])
     return 0 if result["_all_killed"] else 1
 
