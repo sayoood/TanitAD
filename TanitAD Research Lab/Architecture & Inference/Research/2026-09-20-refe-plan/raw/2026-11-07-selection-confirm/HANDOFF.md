@@ -44,3 +44,11 @@ Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ Comma
 * Harness speed under today's contention was ~2x C3's (2-token calls 34-56 s); the table may pass the 12 h envelope; the verdict does not depend on it.
 * Seams + harness run dirs on `F:/TanitAD_selc_20261107/` (data dir, not for the repo). Plumbing leftovers: `F:/TanitAD_selc_20261107/_plumb/` and the
   session scratchpad (`plumb/`, `plumb2/`); harmless, never read by the chain (distinct labels `refe_selcf_*`).
+
+## ADDENDUM 2026-11-08 09:08 (stream YSEL2-FIX): AMENDMENT 1 implemented, chain relaunched
+* `selc_dump.py`: `frame_ctrl_meta` (export vs DB 4.5 s/9 rows at the export's own meta timestamps, tol 1 mm; nan = FAIL, also an all-nan log now fails) replaces the nominal-grid reference in `frame_ctrl_m`; old reference kept as `frame_ctrl_old` for the proof only.
+* `selc_analyze.py`: human-ADE secondary masks the 17 tokens of `fc_masked_tokens.json` (new, pinned); reports `n_human_masked_cruise` / `_all`. `selc_score.py`: `check_pins` also accepts the re-pin via `AMENDMENT_1_CODE_PIN.sha256` (valid only while the amendment text matches its sha). `make_pin.py` pins `fc_masked_tokens.json`.
+* Proof `fc_diag/fc_fix_result.json` (CPU, 5,877 tokens): new 5877/5877 pass (max 7.3e-15 m), old reproduces exactly the 17, RED 0.5 s shift fails 5877/5877, RED 0.05 rad rotation fails 5877/5877. GATE true.
+* CODE_PIN.json re-pinned (sha a4b84011...; old copy `CODE_PIN.before_am1.json`); pins OK, G-RULE PASS, G-ANA replay max diff 0.0. Preflight stage re-run by the chain (old record `stages/preflight.attempt1.json.bak`).
+* Relaunched 09:07:53 (chain PID 10192; dump queued on the GPU lock). Old markers kept as `selc_full.FAILED.attempt1_framectrl`, `selc_full.STARTED.attempt1`.
+* Other consumers of `human_future_poses`: meta-only count over ALL 12,146 navtest tokens (`fc_diag/fc_all_navtest_meta_count.json`): 36 tokens in 4 logs have a missing/shifted OpenScene frame in their 8-step future (17 are ours; 19 elsewhere).

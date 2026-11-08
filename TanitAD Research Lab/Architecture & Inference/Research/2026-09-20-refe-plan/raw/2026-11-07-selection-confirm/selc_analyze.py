@@ -124,6 +124,7 @@ def paired(Rd, A, pk_new):
     one, cru, gv = np.ones(n, bool), A["cruise"], A["gt_valid"]
     h8 = A["human8"]
     ade = lambda prop: np.linalg.norm(prop[..., :2] - h8[..., :2], axis=-1).mean(-1)
+    cru_h = cru & A["human_ok"] if "human_ok" in A else cru   # AMENDMENT 1: the 17 time-shifted export futures are masked in the human-ADE secondary only
     d = {"d_pdms_mix_x100": Rd.mix_stat(pd_new - pd_b),
          "d_pdms_unweighted_x100": Rd.mean_stat(pd_new - pd_b, one, 100),
          "d_pdms_random_x100": Rd.mean_stat(pd_new - pd_b, Rd.strat == "random", 100),
@@ -135,8 +136,10 @@ def paired(Rd, A, pk_new):
          "d_nc_fail": Rd.mean_stat((sub_n[:, 0] < 1).astype(float) - (sub_b[:, 0] < 1).astype(float), one),
          "d_dac_fail": Rd.mean_stat((sub_n[:, 1] < 1).astype(float) - (sub_b[:, 1] < 1).astype(float), one),
          "d_abs_y4_m_changed": Rd.mean_stat(np.abs(prop_n[:, -1, 1]) - np.abs(prop_b[:, -1, 1]), pk_new != base),
-         "d_ade_human_m_cruise": Rd.mean_stat(ade(prop_n) - ade(prop_b), cru),
-         "ade_human_m_cruise_base": Rd.mean_stat(ade(prop_b), cru),
+         "d_ade_human_m_cruise": Rd.mean_stat(ade(prop_n) - ade(prop_b), cru_h),
+         "ade_human_m_cruise_base": Rd.mean_stat(ade(prop_b), cru_h),
+         "n_human_masked_all": int((~A["human_ok"]).sum()) if "human_ok" in A else 0,
+         "n_human_masked_cruise": int((cru & ~A["human_ok"]).sum()) if "human_ok" in A else 0,
          "n_changed": int((pk_new != base).sum()), "n_changed_worse": int(((pd_new < pd_b - 1e-9) & (pk_new != base)).sum()),
          "n_changed_better": int(((pd_new > pd_b + 1e-9) & (pk_new != base)).sum())}
     return o_new, d
@@ -214,6 +217,13 @@ def replay_p2() -> dict:
 
 
 # ---------------------------------------------------------------------------------------------------------------- the fresh read
+def human_masked_tokens():
+    """AMENDMENT 1: the 17 tokens whose export future is time-shifted (fc_masked_tokens.json, pinned)."""
+    m = json.load(open(os.path.join(HERE, "fc_masked_tokens.json"), encoding="utf-8"))
+    assert m["n"] == len(m["tokens"]) == 17
+    return np.array(m["tokens"])
+
+
 def load_fresh(dump_npz, cols_npz):
     Dd = np.load(dump_npz, allow_pickle=False)
     C = np.load(cols_npz, allow_pickle=False)
@@ -242,7 +252,7 @@ def load_fresh(dump_npz, cols_npz):
         return np.where((pk == base)[:, None], sub_b, sub_r) if not (pk == rule).all() else sub_r
     A = {"pdms": np.zeros((0,)), "pdms_of": pdms_of, "sub_of": sub_of, "prop_of": lambda pk: props8[hr, pk], "v4_all": v4_all, "v0": v0, "ax0": ax0,
          "cruise": cruise_mask(gv, v0, ax0, v4_gt), "gt_valid": gv, "v4_gt": v4_gt, "gate": (v0 > 5.0) & (np.abs(ax0) < 0.3), "base": base,
-         "human8": Dd["human8"].astype(np.float64), "rule": rule, "token": tok, "log": np.array([str(x) for x in Dd["log"]]), "logits": Dd["logits"]}
+         "human8": Dd["human8"].astype(np.float64), "human_ok": ~np.isin(tok, human_masked_tokens()), "rule": rule, "token": tok, "log": np.array([str(x) for x in Dd["log"]]), "logits": Dd["logits"]}
     # pdms_of(pk) where the rule equals the banked pick on unchanged tokens: both columns are the same proposal there (asserted in the gates)
     return A
 
@@ -330,7 +340,7 @@ def write_md(r, p):
          f"| | slow-down share (v4/v0 < 0.85), CRUISE | {fmt(b['slow_share_cruise'])} | {fmt(o['slow_share_cruise'])} | {fmt(d['d_slow_share_cruise'])} |",
          f"| | overspeed share (v4/v0 > 1.15), CRUISE | {fmt(b['overspeed_share_cruise'])} | {fmt(o['overspeed_share_cruise'])} | {fmt(d['d_overspeed_share_cruise'])} |",
          f"| | mean plan v4/v0, CRUISE | {fmt(b['v4_over_v0_cruise'])} | {fmt(o['v4_over_v0_cruise'])} | -- |",
-         f"| LATERAL (what the proposals allow) | ADE to human future, CRUISE (m) | {fmt(d['ade_human_m_cruise_base'])} | -- | {fmt(d['d_ade_human_m_cruise'])} |",
+         f"| LATERAL (what the proposals allow) | ADE to human future, CRUISE (m; Amendment 1: {d['n_human_masked_cruise']} cruise / {d['n_human_masked_all']} tokens masked) | {fmt(d['ade_human_m_cruise_base'])} | -- | {fmt(d['d_ade_human_m_cruise'])} |",
          f"| | abs(y) at 4 s on changed picks (m) | -- | -- | {fmt(d['d_abs_y4_m_changed'])} |",
          f"| | DAC failure rate | {fmt(b['dac_fail_rate'])} | {fmt(o['dac_fail_rate'])} | {fmt(d['d_dac_fail'])} |",
          f"| | DDC mean | {fmt(b['ddc_mean'])} | {fmt(o['ddc_mean'])} | -- |",
@@ -373,7 +383,7 @@ def table_read(out_dir, plumbing=False):
     props8 = Dd["props8"].astype(np.float64)
     A = {"pdms": T["pdms"].astype(np.float64), "sub_of": lambda pk: T["sub"][hr, pk].astype(np.float64), "prop_of": lambda pk: props8[hr, pk],
          "v4_all": v4_all, "v0": v0, "cruise": cruise_mask(gv, v0, ax0, v4_gt), "gt_valid": gv, "v4_gt": v4_gt, "gate": GATE, "base": base,
-         "human8": Dd["human8"].astype(np.float64)}
+         "human8": Dd["human8"].astype(np.float64), "human_ok": ~np.isin(tok, human_masked_tokens())}
     log = np.array([str(x) for x in Dd["log"]])
     Rd = Reader(log, np.array(["random"] * n))
     out = {"prereg_sha256": sha, "tier": "T0", "n_tokens": n, "n_logs": int(Rd.nl)}

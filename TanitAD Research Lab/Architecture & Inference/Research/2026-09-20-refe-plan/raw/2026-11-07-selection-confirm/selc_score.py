@@ -236,7 +236,12 @@ def check_pins():
     SA.check_prereg()
     pin_sha = hashlib.sha256(open(os.path.join(HERE, "CODE_PIN.json"), "rb").read()).hexdigest()
     if pin_sha not in open(SA.PREREG, encoding="utf-8").read():
-        sys.exit(f"REFUSED: CODE_PIN.json sha256 {pin_sha} is not the one PREREG_SEL_CONFIRM.md freezes")
+        # AMENDMENT 1 (frame control): the re-pinned CODE_PIN.json sha256 is frozen in AMENDMENT_1_CODE_PIN.sha256, valid only while the amendment text matches its own sha256
+        am, amsha, amp = (os.path.join(HERE, f) for f in ("AMENDMENT_1_FRAME_CONTROL.md", "AMENDMENT_1_FRAME_CONTROL.sha256", "AMENDMENT_1_CODE_PIN.sha256"))
+        ok = (os.path.exists(amp) and hashlib.sha256(open(am, "rb").read()).hexdigest() == open(amsha).read().split()[0].strip()
+              and pin_sha == open(amp).read().split()[0].strip())
+        if not ok:
+            sys.exit(f"REFUSED: CODE_PIN.json sha256 {pin_sha} is not the one PREREG_SEL_CONFIRM.md (or its Amendment 1) freezes")
     pin = json.load(open(os.path.join(HERE, "CODE_PIN.json")))
     bad = []
     for f, h in pin["files"].items():

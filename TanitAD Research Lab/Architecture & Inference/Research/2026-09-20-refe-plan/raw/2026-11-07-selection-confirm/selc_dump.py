@@ -87,6 +87,49 @@ def gt_future(sc, ego) -> dict:
     return out
 
 
+META_DIR = navsim_root() + "/data/openscene/navsim_logs/test/"
+FC_TOL_M = 0.001
+FC_STEP_S = 0.5
+
+
+def meta_times(lg):
+    """AMENDMENT 1: {token: (anchor_time_us, [time_us of the 8 NEXT frames of the OpenScene list])} for one log (the frames the W3 export took its human_future_poses from)."""
+    import pickle
+    meta = pickle.load(open(META_DIR + lg + ".pkl", "rb"))
+    ts = [int(f["timestamp"]) for f in meta]
+    return {f["token"]: (ts[i], ts[i + 1:i + 9]) for i, f in enumerate(meta)}
+
+
+def _ego_local(states, ego):
+    px, py, pyaw = ego.rear_axle.x, ego.rear_axle.y, ego.rear_axle.heading
+    c, s = math.cos(-pyaw), math.sin(-pyaw)
+    return np.array([[(f.rear_axle.x - px) * c - (f.rear_axle.y - py) * s, (f.rear_axle.x - px) * s + (f.rear_axle.y - py) * c] for f in states])
+
+
+def frame_ctrl_old(sc, ego, theirs):
+    """The ORIGINAL reference (card section 6 as first written): export vs the DB future on the NOMINAL 0.5 s grid. Kept only to reproduce the 17 known failures."""
+    f8 = list(sc.get_ego_future_trajectory(0, 4.0, 8))[:8]
+    if len(f8) != 8:
+        return float("nan")
+    return float(np.linalg.norm(_ego_local(f8, ego) - theirs[:, :2], axis=1).max())
+
+
+def frame_ctrl_meta(sc, ego, theirs, anchor_us, next_us):
+    """AMENDMENT 1: the export vs the DB future sampled at the export's OWN meta timestamps (DB 4.5 s / 9 rows on the 0.5 s grid, slot = round(dt/0.5) - 1).
+    nan (= FAIL) if the anchor time disagrees with the DB, the meta list has < 8 next frames, a step is off the grid by > 20 ms, or a slot is outside the 9 DB rows."""
+    if next_us is None or len(next_us) != 8 or int(anchor_us) != int(ego.time_point.time_us):
+        return float("nan")
+    dts = (np.asarray(next_us, np.int64) - int(anchor_us)) / 1e6
+    q = np.rint(dts / FC_STEP_S).astype(int) - 1
+    if (np.abs(dts - (q + 1) * FC_STEP_S) > 0.02).any() or (q < 0).any() or (q > 8).any():
+        return float("nan")
+    f9 = list(sc.get_ego_future_trajectory(0, 4.5, 9))[:9]
+    if len(f9) != 9:
+        return float("nan")
+    return float(np.linalg.norm(_ego_local(f9, ego)[q] - theirs[:, :2], axis=1).max())
+
+
+
 def free_gib(path):
     import shutil
     return shutil.disk_usage(os.path.splitdrive(os.path.abspath(path))[0] + "/").free / 2 ** 30
@@ -216,6 +259,7 @@ def run_segment(a, say) -> int:
             recs = []
             db = os.path.join(a.db_dir, f"{lg}.db")
             got = set()
+            mtimes = meta_times(lg)
             for sc in NS.build_scenarios_for_log(db, toks, history_rows=1, future_rows=80):
                 tok = sc._initial_lidar_token
                 got.add(tok)
@@ -234,14 +278,8 @@ def run_segment(a, say) -> int:
                        "pick": int(k), "traj": tr.astype(np.float32), "props8": props8, "ego": ego_fed, "human8": np.asarray(exp[tok]["human_future_poses"], np.float64)}
                 rec.update(gt_future(sc, ego))
                 theirs = np.asarray(exp[tok]["human_future_poses"], dtype=np.float64)
-                px, py, pyaw = ego.rear_axle.x, ego.rear_axle.y, ego.rear_axle.heading
-                c, s = math.cos(-pyaw), math.sin(-pyaw)
-                f8 = list(sc.get_ego_future_trajectory(0, 4.0, 8))[:8]
-                if len(f8) == 8:
-                    loc = np.array([[(f.rear_axle.x - px) * c - (f.rear_axle.y - py) * s, (f.rear_axle.x - px) * s + (f.rear_axle.y - py) * c] for f in f8])
-                    rec["frame_ctrl_m"] = float(np.linalg.norm(loc - theirs[:, :2], axis=1).max())
-                else:
-                    rec["frame_ctrl_m"] = float("nan")
+                mt = mtimes.get(tok)
+                rec["frame_ctrl_m"] = frame_ctrl_meta(sc, ego, theirs, mt[0], mt[1]) if mt else float("nan")
                 assert props8.shape == (64, 8, 3) and tr.shape == (64, 20, 3) and rec["logits"].shape == (64, 7)
                 assert np.isfinite(props8).all() and np.isfinite(tr).all()
                 recs.append(rec)
@@ -274,8 +312,8 @@ def run_segment(a, say) -> int:
             t_log = time.time()
             recs = run_log(lg, by[lg])
             fc = np.array([r["frame_ctrl_m"] for r in recs])
-            if np.nanmax(fc) > 0.001:
-                raise RuntimeError(f"frame control FAILED in {lg}: max {np.nanmax(fc):.4f} m > 1 mm")
+            if not (fc <= FC_TOL_M).all():   # AMENDMENT 1: a nan is a FAIL too (the old nanmax let an all-nan log pass)
+                raise RuntimeError(f"frame control FAILED in {lg}: max {np.nanmax(fc) if np.isfinite(fc).any() else float('nan'):.4f} m > 1 mm or nan ({int((~(fc <= FC_TOL_M)).sum())} tokens)")
             save_chunk(chunk_path(a.out, lg), recs)
             nd += len(recs)
             say(f"[{li + 1}/{len(plan)}] {lg}: {len(recs)} tokens in {time.time() - t_log:.0f} s | segment {nd}/{n} | {(time.time() - t_seg) / max(nd, 1):.2f} s/token")
