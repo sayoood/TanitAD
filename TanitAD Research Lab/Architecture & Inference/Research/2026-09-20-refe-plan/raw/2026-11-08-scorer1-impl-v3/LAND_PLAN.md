@@ -1,5 +1,15 @@
 # LAND_PLAN SCORER1 v3 (for the Master Mind; written 2026-11-08; nothing here has been run against the mirror, a hold, or a pod)
 
+# Suite verdict on the v3 bytes (Master Mind, 2026-11-08 18:34Z, MEASURED, `v3/suite/`)
+
+**No failure is attributed to v3. Cleared to land once P7 has started.** 64 tests:
+- **47 pass:** 46 on the suite run, plus `rls1_queue`, which passed when rerun alone on v3 (rc 0, 1,139 s; it failed under load, as in triage).
+- **16 fail the same way on the unmodified base tree**, a machine or environment problem. Accepted before: carve_feed, p2r_chain, p7_ship_list, rls1_chain; s1aux_chain and sft4r_chain (path text only). From the rerun on base: ego_yaw, aux_navtest_forward, hn_screen_read, r0e_diagnostics, safeobj_outcome, aux_label_store, launch_gate, p6_planner_command, rl_fan_dump; aux_drivable_head (path text only).
+- **1, hnscreen_chain:** its single problem is PROBLEM N, the shared dev-box lock file changed during the test, because other jobs took the lock. The base run timed out at 2,400 s, so there is no base signature for this one. Triage passed it in 497 s with the lock quiet.
+
+**Coverage note on `test_launch_gate.py`,** which reads a file this package changes. It stops on a stale `D:` path on both trees, so it was rerun on a throwaway v3 copy with `E:` data paths and the backbone root set. On that run G-HYG, G-DVB, G-LIVE, G-EVAL and G-CKPT PASS with real trainer runs, G-CLOCK NA, and G-SUITE FAIL on `test_p2r_chain` (absent `code/pod_teacher_env.sh`, one of the accepted failures above). That file is the only reason `ZZLG_FULL_PASS` was not printed.
+
+
 Package: `E:/Projects/TanitAD-artifacts/scorer1_impl_20261108/v3/` (= v2 + 3 test-only fixes). Base blobs verified unchanged at tips `72151b85` (suite tree) and `9f7df1aa` (2026-11-08 ~16:30; the two newer commits touch only `raw/` and GOALS_AND_CLAIMS; `refe/ code/ splits/` diff = 0 files). Repo dir `PK` = `TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan`.
 Suite verdict on the final bytes: see `v3/HANDOFF.md` and `F:/scorer1_v3/res/COMPARE.txt` (read them FIRST; do not land if COMPARE.txt lists any UNEXPECTED line).
 
