@@ -1,0 +1,37 @@
+--- a/refe/navsim_pdm_targets.py	2026-11-08 09:24:40.000000000 +0100
++++ b/refe/navsim_pdm_targets.py	2026-11-08 09:38:40.000000000 +0100
+@@ -96,8 +96,11 @@
+             list(proc._pdm_closed._route_lane_dict.keys()), proc._pdm_closed._drivable_area_map)
+ 
+ 
+-def score_plans(parts, plans8: np.ndarray) -> dict:
+-    """plans8 [M, 8, 3] NAVSIM-frame poses (ego frame, 2 Hz) -> per-plan PDM targets (arrays of length M)."""
++def score_plans(parts, plans8: np.ndarray, behaviour: bool = False) -> dict:
++    """plans8 [M, 8, 3] NAVSIM-frame poses (ego frame, 2 Hz) -> per-plan PDM targets (arrays of length M).
++    behaviour=True (A2, default OFF): ADDITIONALLY return the behaviour-term labels under the key "behaviour" (behaviour_terms.behaviour_terms on the SAME simulated
++    states `sim` this function already holds).  The seven PDM keys are computed by the unchanged code above the `if behaviour` line, so with behaviour=False the result is
++    bit-identical to the pre-A2 function (tests/test_a2_off_identity.py proves it)."""
+     from navsim.common.dataclasses import Trajectory
+     from navsim.evaluate.pdm_score import transform_trajectory, get_trajectory_as_array
+     from navsim.planning.simulation.planner.pdm_planner.utils.pdm_enums import MultiMetricIndex, WeightedMetricIndex
+@@ -122,11 +125,15 @@
+         ep[j] = raw[j] / m if m > 5.0 else (1.0 if mult[j] != 0 else 0.0)
+         pdms[j] = mult[j] * (5 * ep[j] + 5 * ttc[j] + 2 * com[j]) / 12.0
+     sl = slice(1, n)                                   # drop PDM-Closed (index 0)
+-    return {"nc": sc._multi_metrics[MultiMetricIndex.NO_COLLISION][sl].copy(),
+-            "dac": sc._multi_metrics[MultiMetricIndex.DRIVABLE_AREA][sl].copy(),
+-            "ep": ep[sl], "ttc": np.asarray(ttc)[sl].copy(), "c": np.asarray(com)[sl].copy(),
+-            "ddc": np.asarray(sc._weighted_metrics[WeightedMetricIndex.DRIVING_DIRECTION])[sl].copy(),
+-            "pdms": pdms[sl]}
++    out = {"nc": sc._multi_metrics[MultiMetricIndex.NO_COLLISION][sl].copy(),
++           "dac": sc._multi_metrics[MultiMetricIndex.DRIVABLE_AREA][sl].copy(),
++           "ep": ep[sl], "ttc": np.asarray(ttc)[sl].copy(), "c": np.asarray(com)[sl].copy(),
++           "ddc": np.asarray(sc._weighted_metrics[WeightedMetricIndex.DRIVING_DIRECTION])[sl].copy(),
++           "pdms": pdms[sl]}
++    if behaviour:                                      # A2: label-only extension; reads `sim` (already computed), never writes a PDM key
++        import behaviour_terms as BT
++        out["behaviour"] = BT.behaviour_terms(sim, parts)
++    return out
+ 
+ 
+ def executed_plans8(props20: np.ndarray, repair: bool = True) -> np.ndarray:

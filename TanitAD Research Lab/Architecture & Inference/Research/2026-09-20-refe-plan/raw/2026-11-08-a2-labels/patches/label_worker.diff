@@ -1,0 +1,22 @@
+--- a/refe/label_worker.py	2026-11-08 09:24:40.000000000 +0100
++++ b/refe/label_worker.py	2026-11-08 09:38:40.000000000 +0100
+@@ -17,7 +17,7 @@
+     sys.stdout = sys.stderr                        # nothing a library prints may corrupt the frame stream
+     inp = sys.stdin.buffer
+     import online_labeller as OL
+-    OL._pdm_init(sys.argv[1])
++    OL._pdm_init(sys.argv[1], behaviour=("--behaviour" in sys.argv[2:]))
+     while True:
+         try:
+             meta, shape, raw = pickle.load(inp)
+@@ -30,6 +30,10 @@
+             if res.get("labels") is not None:                      # raw bytes back (see online_labeller._SubprocPool)
+                 res["labels_shape"] = tuple(res["labels"].shape)
+                 res["labels"] = np.ascontiguousarray(res["labels"], dtype=np.float32).tobytes()
++            if res.get("behaviour") is not None:                   # A2 (only with --behaviour): same raw-bytes rule
++                res["behaviour_shape"] = tuple(res["behaviour"].shape)
++                res["behaviour"] = np.ascontiguousarray(res["behaviour"], dtype=np.float32).tobytes()
++                res["behaviour_act"] = np.ascontiguousarray(res["behaviour_act"], dtype=np.uint8).tobytes()
+         except Exception:                          # noqa: BLE001 -- reported to the parent, which counts it and guards the rate
+             res = {"error": traceback.format_exc()[-600:]}
+         pickle.dump(res, out, protocol=4)
