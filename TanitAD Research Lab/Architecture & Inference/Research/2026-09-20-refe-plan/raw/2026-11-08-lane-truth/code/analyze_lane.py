@@ -51,6 +51,8 @@ def read_full(path):
 ctrl = read_full(W + "/out_ctrl2_ph/teacher_lane_r0.jsonl")
 real = read_full(W + "/out_ctrl2_real/teacher_lane_r0.jsonl")
 dd, dr, unequal = [], [], []
+inter = [k for k in ctrl if k in real]  # 2026-11-08: intersection of both arms (6 of 40 sets failed scenario build in both)
+ctrl = {k: ctrl[k] for k in inter}
 for k, v in ctrl.items():
     b = banked[k]
     dd.append(np.abs(v - b))
@@ -138,6 +140,15 @@ res["spearman"] = blk
 b = json.load(open("E:/Projects/TanitAD-artifacts/refe_selection_probe_20261107/p1_diag_all.json"))["Q4_within_token_spearman_vs_speed"]["lane"]
 res["G_L4_pred_repro"] = {"banked_lane_legacy": b, "mine_legacy": blk["legacy"]["pred_mean_all_defined"], "n_mine": blk["legacy"]["n_pred_defined_all_valid"]}
 
+# ---------------- read label per AMENDMENT_2 section 4 ----------------
+gl1b = json.load(open(OUT + "/gl1b.json"))
+res["G_L1b"] = {k: v for k, v in gl1b.items() if k != "per_set"}
+if res["G_L1"]["PASS"]:
+    LABEL = "AS WRITTEN"
+elif gl1b["PASS"]:
+    LABEL = "CONDITIONAL: G-L1 FAILED as written, G-L1b passed"
+else:
+    LABEL = "INVALID (G-L1 and G-L1b both failed): correlation is unlabelled diagnostic only"
 # ---------------- verdict per PREREG section 6 ----------------
 g = blk["tie"]["gap_pred_minus_true"]
 ne = blk["tie"]["n_entered"]
@@ -151,7 +162,11 @@ elif g["point"] > 0.15 and g["lo"] > 0:
     verdict = "O3"
 else:
     verdict = "O4"
-res["VERDICT"] = {"outcome": verdict, "gap": g, "n_entered": ne}
+near = min(abs(g["point"] - 0.15), abs(g["point"] + 0.15))
+res["near_threshold_within_0.03"] = bool(near <= 0.03)
+if LABEL.startswith("CONDITIONAL") and near <= 0.03 and verdict != "O4":
+    verdict = "O4 (CONDITIONAL and G within 0.03 of a threshold)"
+res["VERDICT"] = {"label": LABEL, "outcome": verdict, "gap": g, "n_entered": ne, "distance_to_nearest_threshold": near}
 
 # ---------------- margin block (p1_diag.attrib, copied) ----------------
 agg = sc.agg_np(L, np.float64)

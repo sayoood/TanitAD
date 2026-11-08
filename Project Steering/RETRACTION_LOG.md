@@ -18910,3 +18910,13 @@ instruments; only an undeclared one is a finding.
 **What is true (INHERITED from stream BATTERY, `raw/2026-11-08-scorer-battery/RESULT_u400.md`, not re-run by the MM):** the order depends on the numpy version. NC "true" reads -0.0393 on numpy 2.5.1 and +0.0336 on numpy 1.26.4, and the two runs used different interpreters. Average ranks give -0.0945 on both. The retraction of the "true" column stands; only the stated mechanism changes.
 
 **Class / rule:** "same code, same data" must include the interpreter and library versions before a difference is called non-determinism.
+
+## 2026-11-08 ~17:10Z: lane-truth control "21.9 % within 1 mm, max 1.673 m"
+
+**Retracted:** `raw/2026-11-08-lane-truth/AMENDMENT_1.md` said the relabel does not reproduce the banked lane labels. The Master Mind repeated this and called it an unexplained mismatch.
+
+**Root cause:** the comparison joined on (log, token). The banked file has rank 0 and rank 1 rows for most tokens (3,137 rows, 1,705 distinct pairs), so rank-0 labels were compared with rank-1 labels.
+
+**What is true (MEASURED, `code/gl1_key.py`):** on the same 24 sets the full-key join reads 89.5 % within 1 mm, max 0.0736 m. On the 34-set control it reads 71.8 % within 1 mm, max 0.084 m. The 99 % bar is still missed, as written.
+
+**Class / rule:** a join key narrower than the row's identity overwrites silently. Assert the row count after building a keyed lookup.

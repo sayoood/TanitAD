@@ -1,0 +1,28 @@
+# HANDOFF lane_truth (2026-11-08) -- read this, then continue; do NOT wait alive on the chains
+
+Package: `E:/Projects/TanitAD-artifacts/scorer_gym_20261107/lane_truth/`. Scratch (two deep, auto-deletable once RESULT is written and the side files are copied to the package): `F:/scratch/lane_truth_work/run/`.
+Python for analysis: `C:/Users/Admin/venvs/tanitad/Scripts/python.exe` (numpy 2, scipy, torch). Labeller venv: `C:/Users/Admin/venvs/driverl-eval/Scripts/python.exe`. CPU only, <= 4 workers, never touch the devbox GPU lock.
+
+## State
+- DONE: `PREREG_LANE_SPEED.md` (sha256 `e99b2576...a166f`, file `.sha256`) written BEFORE any correlation; `AMENDMENT_1.md` (sha `afce2519...`) changes only the control.
+- DONE: queue rows built (`code/build_queue.py`): `q_cruise` (154 CRUISE tokens, 51 logs), `q_other` (904, optional, not queued), control queues `q_ctrl2_real|ph` (40 held-out sets, 16 logs, `code/build_ctrl2.py`).
+- RUNNING (detached, mine): `code/chain_lane.cmd` stage 1 was killed after the control; the CRUISE labelling python is alive (log `logs/cruise.log`, ~5.5 s/sample, 154 samples, ends with `ZZTEACHER_LANE_DONE 154 0`, output `F:/scratch/lane_truth_work/run/out_cruise/teacher_lane_r0.jsonl`).
+  Then `code/chain_lane2.cmd` (waits for that marker) runs the 40-set control twice (`out_ctrl2_real`, `out_ctrl2_ph`; marker `logs/CHAIN2_DONE`), then `code/chain_lane3.cmd` runs two 8-row diagnostic variants (map/query caches off -> `out_ctrl3_nocache`; no `--repair-last-heading` -> `out_ctrl3_norepair`; marker `logs/CHAIN3_DONE`). Total ~30 min from 15:57. `logs/CHAIN_DONE` is an empty/stale file, ignore it.
+- FINDING SO FAR (MEASURED, `AMENDMENT_1.md`): the relabel does NOT reproduce the banked training-side labels. On the 24 smoke sets only 21.9 % of proposals match `heldout_teacher_lane_labels.jsonl.xz` within 1 mm (max 1.673 m); the TEACHER's own centre-line distance matches on 29 %; DAC/CrossLane leaves match 100 %, `center_line.reward` 59.6 %. Bit-identical to the 2026-10-12 smoke outputs (so deterministic here), and different from `raw/rl_tlane/identity_labels_smoke24_hz10.json` (max 0.074 m) for a reason not yet known. Placeholder vs real teacher: identical (G-L2 holds on 24 sets). So the centre-line leaf depends on something that differs between the banked run and this machine (candidates: map/route cache, nuPlan maps version, DB roots 3,055 vs 2,979 DBs, repair flag). The two CHAIN3 variants test the first and last.
+
+## Exact next steps
+1. When `logs/CHAIN3_DONE` exists (check `ls logs`): `cd code && C:/Users/Admin/venvs/tanitad/Scripts/python.exe analyze_lane.py` (writes `lane_speed_result.json`, `per_token_gap.npy`, prints gates and VERDICT). It already reads the ctrl2 outputs and the cruise side file.
+2. Compare the CHAIN3 variants with the banked file (same loop as in `analyze_lane.py`, G-L1 formula; 8 first rows of `q_ctrl2_real`). If a variant reproduces banked (>= 99 % within 1 mm), relabel the 154 CRUISE tokens with that setting (copy `chain_lane.cmd` stage 2 with the env change, new `--out`), re-run the analysis. If none does, report the read as INVALID under AMENDMENT_1 (correlation shown as diagnostic only) and name the cause as the blocker.
+3. Write `RESULT_LANE_SPEED.md` per PREREG (tie-correct primary, legacy regression arm, margin block with the identity check, G-L1..G-L4 table, evidence class + T0 on every number, TACTICAL n/a, STRATEGIC PAUSED), copy the label side files into the package (`lane_labels/`), write `MANIFEST.md`, then delete the scratch (log each deletion).
+4. Never read P6 output; never kill a process you did not start.
+
+## UPDATE 2026-11-08 17:10Z (Master Mind) -- supersedes the State/FINDING above where they differ
+- `chain_lane2/3` were stuck on a findstr wait that could never match (forward-slash path); replaced by `code/chain_lane4.cmd` (same env), launched 17:03Z. `logs/CHAIN3_DONE` marks the end.
+- ⛔ The 21.9 % / 1.673 m finding above is RETRACTED: the comparison joined on (log, token), but the banked file has rank 0 and rank 1 rows per token. With the full key + ckpt_step the same 24 sets read 89.5 % within 1 mm, max 0.0736 m, matching the 10-12 identity file. See `AMENDMENT_2.md` (sha in `.sha256`), read it first. `analyze_lane.py` is already patched; `code/gl1_key.py` is the measurement.
+- `ctrl2_real` logged `ZZTEACHER_LANE_DONE 34 6`: 6 of 40 sets failed. Find why from the log; G-L1/G-L2 use the sets labelled in both arms (report n, list the failures); fix `analyze_lane.py` if it would KeyError on a missing key.
+## Exact next steps (replace steps 1 to 3 above)
+1. Run `analyze_lane.py` (G-L1 now on the correct join). Report G-L1 as written.
+2. Compare the CHAIN3 variants `out_ctrl3_nocache` and `out_ctrl3_norepair` with banked, full-key join, G-L1 formula (8 rows). If one passes G-L1 as written, relabel the 154 CRUISE tokens with it and rerun.
+3. Implement G-L1b exactly as `AMENDMENT_2.md` section 3 (`code/gl1b.py`, v4 as `step_speed` idx 19 in the module `analyze_lane.py` imports as `sc`; proposal xyh from the queue rows of `q_ctrl2_ph`, in the file's order). Write its JSON before opening any correlation output.
+4. Label the read per `AMENDMENT_2.md` section 4 (as written / CONDITIONAL / INVALID). Write `RESULT_LANE_SPEED.md` per PREREG, including the join retraction, G-L1 as written, G-L1b, the tie-correct primary, the legacy arm, the margin block; evidence class and T0 on every number; TACTICAL n/a, STRATEGIC PAUSED.
+5. Copy label side files to `lane_labels/`, write `MANIFEST.md`, delete `F:/scratch/lane_truth_work/run/` only when RESULT is written and the side files are copied (log path and size). Stage nothing, push nothing; the MM lands.
