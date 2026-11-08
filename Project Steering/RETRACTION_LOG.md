@@ -18902,3 +18902,11 @@ instruments; only an undeclared one is a finding.
 - The over-sampling claim was true of the sample's composition and false of its effect.
 
 **Class / rule:** a bias caveat about sampling weights is a number, not a sentence. Compute the re-weighted estimate before calling the raw one inflated.
+
+## 2026-11-08 ~09:45 -- addendum to the 2026-11-07 ~20:50 entry on the tie-unsafe rank correlation. Class: **A MECHANISM ASSERTED WITHOUT TESTING IT**
+
+**What was claimed:** by the Master Mind, in `raw/2026-11-07-behaviour-scorecard/MM_VERIFY.md`: the legacy ranks break ties "by an order that differs between processes".
+
+**What is true (INHERITED from stream BATTERY, `raw/2026-11-08-scorer-battery/RESULT_u400.md`, not re-run by the MM):** the order depends on the numpy version. NC "true" reads -0.0393 on numpy 2.5.1 and +0.0336 on numpy 1.26.4, and the two runs used different interpreters. Average ranks give -0.0945 on both. The retraction of the "true" column stands; only the stated mechanism changes.
+
+**Class / rule:** "same code, same data" must include the interpreter and library versions before a difference is called non-determinism.
