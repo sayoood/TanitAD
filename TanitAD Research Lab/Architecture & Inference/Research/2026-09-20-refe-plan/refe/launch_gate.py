@@ -443,6 +443,68 @@ PROFILES["refe_sft4r"] = {**_BASE, "name": "refe_sft4r", "runner": "scorer", "re
                                              "--teacher-lane-heldout": None, "--lane-labels-heldout": None, "--b-mode": "expreward", "--lam": "1.0", "--tau-s": "0.1", "--lr": "1e-4"},
                           "provisional_flags": (), "pinned_argv": tuple(SFT4R_ARGV.split()), "data_expect": SFT4R_DATA_EXPECT, "data_expect_min": SFT4R_DATA_MIN,
                           "data_expect_updates": SFT4R_UPDATES, "egr_require_ckpt": False}
+# ============================================================================================ SCORER1 (PREREG_SCORER1 + AMENDMENT 1; chain refe/scorer1_chain.sh; pod script refe/scorer1_pod.sh)
+# Three arms from u400, ONE pinned argv each (`scorer1_argv`): C0 (same recipe, 400 more updates, seed 0), C0r (seed 1: the training-variance floor), S1 (C0 + lambda_p * L_pair on NC,DAC,TTC).  They share
+# the SFT-4R input layout and differ by --out, --seed and the --pair-* levers alone.  What the profile asserts beyond the pin (`scorer1_refusals`):
+#   * --max-updates 400 is ALLOWED (and required): Amendment 1 item 6.  --pair-calibrate is FORBIDDEN in a launch (a measuring mode: its value goes into S1's --pair-w through the chain).
+#   * the checkpoint is bound by sha256 (`SCORER1_CKPT_SHA256`, Amendment 1 item 7: the dev-box file and the HF/pod file are the SAME bytes -- md5 8e382eeb... of the registry IS sha256 8b4dba48... of the card).
+#   * NAVTEST IS NEVER TRAINING DATA (PREREG_SCORER1 section 2): (i) no data path of the argv may name navtest; (ii) the registered navtest log list (136 logs) and token list (12,146) are bound by sha256 and passed
+#     to the trainer (--navtest-logs / --navtest-tokens), whose own `data` event counts training sets and bank sets on them; G-DVB asserts every count == 0 and the list sizes == the registered ones (an empty list cannot pass).
+#   * S1 names --pair-w > 0, --pair-heads NC,DAC,TTC, --pair-dv 0.15; C0 and C0r name no --pair-* flag at all (a control with the lever named is not C0).
+SCORER1_ROOT = "/workspace/data/refe_scorer1"
+SCORER1_CKPT = SCORER1_ROOT + "/base/model_sft4_B_u400.pt"
+SCORER1_CKPT_SHA256 = "8b4dba4818b5cc96c640fe892efe114037ace7cec9dda060c5b4cdd5fb92410d"      # MEASURED 2026-11-08, dev box file 1,288,489,838 B; the registry's 8e382eeb... is its md5
+SCORER1_NAVTEST_LOGS, SCORER1_NAVTEST_TOKENS = SCORER1_ROOT + "/navtest_ids/navtest_logs.json", SCORER1_ROOT + "/navtest_ids/navtest_tokens.txt.gz"
+SCORER1_NAVTEST_SHA256 = {"--navtest-logs": "79daa3c2ba3fbf1c6d45d0e3b630f43bb26a073160a34ca5f9c98553c0bf43e0", "--navtest-tokens": "e61613ce129bb67dc654a5a575de2889a22fcfcbc64e4ec389a38295b8df9c7a"}   # raw/2026-10-22-p7-session-reserve/raw/src
+SCORER1_NAVTEST_EXPECT = {"navtest.logs": 136, "navtest.tokens": 12146, "navtest.train_rows_in_navtest_logs": 0, "navtest.train_rows_in_navtest_tokens": 0,
+                          "navtest.bank_sets_in_navtest_logs": 0, "navtest.bank_sets_in_navtest_tokens": 0}
+SCORER1_UPDATES = 400
+SCORER1_RECIPE = {**{k: v for k, v in SFT4R_RECIPE.items() if k not in ("max_updates", "eval_every", "seed")}, "max_updates": SCORER1_UPDATES, "eval_every": 200}      # seed is per ARM
+SCORER1_ARM_SEED = {"C0": 0, "C0r": 1, "S1": 0}
+SCORER1_PAIR_DV, SCORER1_PAIR_HEADS = 0.15, "NC,DAC,TTC"
+SCORER1_FORBIDDEN = tuple(f for f in SFT4R_FORBIDDEN if f != "--max-updates") + ("--pair-calibrate", "--dump-scores")
+SCORER1_SUITE = ([{"script": "test_pair_loss.py", "token": "ZZTEST_PASS"}, {"script": "test_scorer1_gate.py", "token": "ZZTEST_PASS"},
+                  {"script": "test_scorer1_mutation.py", "token": "ZZTEST_PASS"},
+                  {"script": "test_scorer1_layer.py", "token": "ZZTEST_PASS"}]
+                 + [x for x in SFT4R_SUITE if x["script"] not in ("test_sft4r_chain.py", "test_sft4r_gate.py")])
+SCORER1_DATA = RLS1_DATA + ("--navtest-logs", "--navtest-tokens")
+
+
+def scorer1_argv(arm: str, pair_w=None) -> list:
+    """The pod script's argv for one arm as it expands on the pod (`MODE=argv ARM=<arm> bash refe/scorer1_pod.sh`; test_scorer1_gate.py diffs the two copies).  S1's lambda_p is NOT in the pin (it is measured by
+    --pair-calibrate): `pair_w` None builds the pin WITHOUT it; scorer1_refusals then demands a positive finite --pair-w."""
+    toks = SFT4R_ARGV.replace("--ckpt /workspace/data/refe_runs/vitl16_navtrain10_grow_tau0.3/model_final.pt", "--ckpt " + SCORER1_CKPT).split()
+    toks = toks[:toks.index("--out")]
+    toks += ["--navtest-logs", SCORER1_NAVTEST_LOGS, "--navtest-tokens", SCORER1_NAVTEST_TOKENS, "--max-updates", str(SCORER1_UPDATES), "--eval-every", "200", "--seed", str(SCORER1_ARM_SEED[arm])]
+    if arm == "S1":
+        toks += ["--pair-heads", SCORER1_PAIR_HEADS, "--pair-dv", str(SCORER1_PAIR_DV)] + (["--pair-w", str(pair_w)] if pair_w is not None else [])
+    return toks + ["--out", SCORER1_ROOT + "/" + arm.lower()]
+
+
+_SHA_MEMO: dict = {}
+
+
+def sha256_of_file(path: str) -> str:
+    """streamed sha256, memoised per (path, size, mtime_ns) so the several `verify` calls of one chain hash a 1.3 GB checkpoint once"""
+    import hashlib
+    st = os.stat(path)
+    k = (str(path), st.st_size, st.st_mtime_ns)
+    if k not in _SHA_MEMO:
+        h = hashlib.sha256()
+        with open(path, "rb") as fh:
+            for blk in iter(lambda: fh.read(1 << 22), b""):
+                h.update(blk)
+        _SHA_MEMO[k] = h.hexdigest()
+    return _SHA_MEMO[k]
+
+
+PROFILES["refe_scorer1"] = {**PROFILES["refe_sft4r"], "name": "refe_scorer1", "recipe_rules": None, "scorer1_rules": True, "recipe": SCORER1_RECIPE, "forbidden_flags": SCORER1_FORBIDDEN, "suite": SCORER1_SUITE,
+                            "data_flags": SCORER1_DATA, "pinned_argv": (), "data_expect": {**SFT4R_DATA_EXPECT, **SCORER1_NAVTEST_EXPECT}, "data_expect_updates": SCORER1_UPDATES,
+                            "required_flags": {**PROFILES["refe_sft4r"]["required_flags"], "--navtest-logs": None, "--navtest-tokens": None, "--max-updates": str(SCORER1_UPDATES)},
+                            "ckpt_sha256": SCORER1_CKPT_SHA256, "navtest_sha256": SCORER1_NAVTEST_SHA256,
+                            "clock_na": "SCORER1 has no label clock of its own: it trains on the SFT-4R PDM relabel of the on-policy bank (G-DVB asserts the coverage and 0 stale from the trainer's data event), "
+                                        "on a frozen generator"}
+
 # RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
 # rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
 PROFILES["refe_rls1b"] = {**PROFILES["refe_rls1"], "name": "refe_rls1b", "suite": RLS1B_SUITE, "arm_class": RLS1B_ARM_CLASS, "arm_seeds": RLS1B_ARM_SEEDS,
@@ -572,6 +634,10 @@ def profile_refusals(prof: dict, argv: list) -> list:
         terms += extra
     if prof.get("recipe_rules") == "sft4r":
         rs, extra = sft4r_refusals(prof, argv, T, parser)
+        out += rs
+        terms += extra
+    if prof.get("scorer1_rules"):
+        rs, extra = scorer1_refusals(prof, argv, T, parser)
         out += rs
         terms += extra
     for t in terms:
@@ -977,7 +1043,7 @@ def sft4r_refusals(prof: dict, argv: list, mod, parser) -> tuple:
 
     def how(flag):
         return "named" if flag in argv else "the parser DEFAULT"
-    for dest, want in SFT4R_RECIPE.items():
+    for dest, want in prof.get("recipe", SFT4R_RECIPE).items():            # SCORER1 supplies its own recipe (400 updates, eval every 200); every other profile reads SFT4R_RECIPE exactly as before
         f = "--" + dest.replace("_", "-")
         if not C._close(getattr(ns, dest), want):
             out.append(f"{name} requires {f} {want} (PREREG_SFT4 'Settings', the SFT-4R recipe); the argv resolves to {getattr(ns, dest)} ({how(f)})")
@@ -989,6 +1055,73 @@ def sft4r_refusals(prof: dict, argv: list, mod, parser) -> tuple:
         out.append(f"{name}: --teacher-lane-* is named without --lane-head: the labels would be loaded and never trained on")
     return out, ()
 
+
+# ============================================================================================ SCORER1 rules (refe_scorer1)
+def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
+    """(refusals, extra live terms) of the SCORER1 rules: the arm is read from the argv's --out, that arm's argv is PINNED (S1 minus the measured --pair-w), the effective recipe is asserted through
+    `sft4r_refusals` with SCORER1_RECIPE, the pair levers are asserted per arm, the checkpoint and the navtest lists are bound by sha256, and no data path may name navtest."""
+    import gate_checks as C
+    name, out = prof["name"], []
+    outs = GT.flag_values(argv, "--out") or []
+    arm = next((a for a in SCORER1_ARM_SEED if outs == [SCORER1_ROOT + "/" + a.lower()]), None)
+    if arm is None:
+        return [f"{name}: --out {' '.join(outs)} is none of the three arm dirs {[SCORER1_ROOT + '/' + a.lower() for a in SCORER1_ARM_SEED]}"], ()
+    pw = GT.flag_values(argv, "--pair-w")
+    pin_argv = list(argv)
+    if arm == "S1":
+        try:
+            wv = float(pw[0]) if pw and len(pw) == 1 else None
+        except ValueError:
+            wv = None
+        if wv is None or not math.isfinite(wv) or not wv > 0.0:
+            out.append(f"{name} (S1) requires --pair-w named, ONE finite value > 0 (lambda_p, measured by --pair-calibrate); the argv has --pair-w {' '.join(pw or [])}")
+        pin_argv = [t for f, v in GT.flag_pairs(list(argv)) if f != "--pair-w" for t in [f] + list(v)]
+    out += pinned_argv_refusals({**prof, "pinned_argv": tuple(scorer1_argv(arm))}, pin_argv)
+    ns, err = C.parse_scorer_argv(parser, argv)
+    if err:
+        return out, ()
+    rs, _ = sft4r_refusals(prof, argv, mod, parser)
+    out += rs
+    if ns.seed != SCORER1_ARM_SEED[arm]:
+        out.append(f"{name} ({arm}) requires --seed {SCORER1_ARM_SEED[arm]} (the data-order seed, Amendment 1 item 5); the argv resolves to {ns.seed}")
+    if arm == "S1":
+        if ns.pair_calibrate or ns.pair_heads != SCORER1_PAIR_HEADS or not C._close(ns.pair_dv, SCORER1_PAIR_DV):
+            out.append(f"{name} (S1) requires --pair-heads {SCORER1_PAIR_HEADS} --pair-dv {SCORER1_PAIR_DV} and no --pair-calibrate")
+        out += [f"scorer_finetune refuses this argv: {m}" for m in mod.pair_refusals(ns)]
+    else:
+        named = [f for f in ("--pair-w", "--pair-dv", "--pair-heads", "--pair-calibrate") if f in argv]
+        if named or ns.pair_w != 0.0 or ns.pair_heads:
+            out.append(f"{name} ({arm}) is a control: it names no --pair-* flag (the argv carries {named}); a control with the lever on is not C0")
+    # the checkpoint: sha256 of the bytes (Amendment 1 item 7)
+    ck = GT.flag_values(argv, "--ckpt") or []
+    if len(ck) == 1:
+        try:
+            got = sha256_of_file(ck[0])
+        except OSError as e:
+            out.append(f"{name}: cannot bind the checkpoint {ck[0]} by sha256 ({type(e).__name__}); the arm may not start from an unverified file")
+        else:
+            if got != prof["ckpt_sha256"]:
+                out.append(f"{name}: --ckpt {ck[0]} has sha256 {got[:16]}..., the registered u400 is {prof['ckpt_sha256'][:16]}... (Amendment 1 item 7)")
+    # the navtest lists: bound by sha256, and NO data path names navtest
+    for f, want in prof["navtest_sha256"].items():
+        v = GT.flag_values(argv, f) or []
+        if len(v) != 1:
+            out.append(f"{name} requires {f} named once (the registered navtest list the trainer audits the training data against)")
+            continue
+        try:
+            got = sha256_of_file(v[0])
+        except OSError as e:
+            out.append(f"{name}: cannot bind {f} {v[0]} by sha256 ({type(e).__name__}): the navtest guard would be unverifiable")
+            continue
+        if got != want:
+            out.append(f"{name}: {f} {v[0]} has sha256 {got[:16]}..., the registered list is {want[:16]}...")
+    for f in prof.get("data_flags", ()):
+        if f in ("--navtest-logs", "--navtest-tokens"):
+            continue
+        for v in GT.flag_values(argv, f) or []:
+            if "navtest" in str(v).lower():
+                out.append(f"{name}: NAVTEST IS NEVER TRAINING DATA (PREREG_SCORER1 section 2): {f} {v} names navtest")
+    return out, ()
 
 # ============================================================================================ orchestration
 def derived_argvs(prof: dict, argv: list, work: Path, gate_sets=None, gate_pdm=None, gate_bank=None) -> tuple:
@@ -1229,6 +1362,9 @@ def consume_scorer_preflight(path, argv, prof, arm=None, rehearsal=False) -> dic
     g12 = next((v for k, v in gates.items() if prefix[k] == "G12"), None)
     if g12 is not None:                                      # G12 (--aux-drv) is re-judged from its raw fields too: its own `ok` is a claim, the fields are the evidence
         reasons += C.judge_g12(g12, ns)
+    g16 = next((v for k, v in gates.items() if prefix[k] == "G16"), None)
+    if g16 is not None:                                      # G16 (--pair-w): SCORER1, re-judged from its raw fields
+        reasons += C.judge_g16(g16, ns)
     g14 = next((v for k, v in gates.items() if prefix[k] == "G14"), None)
     g15 = next((v for k, v in gates.items() if prefix[k] == "G15"), None)
     if arm in C.HN_ARMS:                                     # P6-HN-S deliberate-regression arms: the same preflight, with the raw fields of the defect (each must turn a judge RED)

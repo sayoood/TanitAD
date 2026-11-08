@@ -34,7 +34,10 @@ def has_layer(src: str) -> bool:
 
 
 def peel(src: str) -> str:
-    """undo the P6-HN-S edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged"""
+    """undo the P6-HN-S edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged.  The SCORER1 layer (refe/scorer1_layer.py) sits ON TOP of this one: it is peeled
+    first (a trainer without it passes through unchanged), so every pin that calls this function, or carvefeed_layer.peel, keeps seeing the pre-SCORER1 trainer."""
+    import scorer1_layer as SL
+    src = SL.peel(src)
     if not has_layer(src):
         return src
     for new, old in HNSCREEN_FILE_REVERSALS:

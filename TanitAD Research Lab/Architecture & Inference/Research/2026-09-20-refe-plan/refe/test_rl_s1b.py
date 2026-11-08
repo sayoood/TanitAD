@@ -265,7 +265,8 @@ def suite_sf(sf_src: str, rr_bytes: bytes, tag: str) -> list:
     import test_rl_epo as TE                                             # the real-main() smoke harness (stubs only the GPU / checkpoint / corpus parts)
     bad: list = []
     M = load(sf_src, f"sf_s1b_{tag}", SF_PATH)
-    seg = segments(sf_src)
+    import scorer1_layer as SL1                                          # SCORER1 (v2): main.train_losses gained `pair_w=None` + one arm-B block; the R0 pin hashes the PRE-SCORER1 trainer (the layer peels to the tip blob, test_scorer1_layer)
+    seg = segments(SL1.peel(sf_src))
     # ---- P: the code R0 trained with, and the default that keeps refe_rls1 unchanged
     for k, h in R0_SEGMENTS.items():
         check(bad, f"P_pinned_{k}", lambda k=k, h=h: hashlib.sha256(undo_r0c(k, undo_safeobj(k, seg[k])).encode()).hexdigest() == h)

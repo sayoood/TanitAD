@@ -120,6 +120,126 @@ def expected_reward_loss(sx, tg, tau_s, sel=None):
     return -(pi * agg_v1(tg[..., :6])).sum(1).mean()
 
 
+def load_navtest_ids(logs_path, tokens_path):
+    """SCORER1 (PREREG_SCORER1 section 2, 'a navtest log/token gate on the training data'): the registered navtest log names and tokens.  A file that is named and unreadable or empty RAISES (fail closed)."""
+    import gzip
+    logs, toks = set(), set()
+    if logs_path:
+        logs = set(json.load(open(logs_path, encoding="utf-8")).get("logs") or [])
+        if not logs:
+            raise RuntimeError(f"--navtest-logs {logs_path} lists no log")
+    if tokens_path:
+        op_ = gzip.open if str(tokens_path).endswith(".gz") else open
+        with op_(tokens_path, "rt", encoding="utf-8") as fh:
+            toks = set(fh.read().split())
+        if not toks:
+            raise RuntimeError(f"--navtest-tokens {tokens_path} lists no token")
+    return logs, toks
+
+
+def navtest_audit(train_keys, bank_keys, logs, toks):
+    """the BUILT facts of the navtest guard: list sizes, and how many TRAINING sets / how many sets of the whole on-policy bank carry a navtest log or token.  Keys are (log, token, step, rank)."""
+    tk, bk = list(train_keys), list(bank_keys)
+    return {"logs": len(logs), "tokens": len(toks),
+            "train_rows_in_navtest_logs": sum(1 for k in tk if k[0] in logs), "train_rows_in_navtest_tokens": sum(1 for k in tk if k[1] in toks),
+            "bank_sets_in_navtest_logs": sum(1 for k in bk if k[0] in logs), "bank_sets_in_navtest_tokens": sum(1 for k in bk if k[1] in toks)}
+
+
+# ---- SCORER1 (PREREG_SCORER1 section 2): L_pair, a speed-BALANCED pairwise loss on the NC / DAC / TTC heads.  ALL levers default OFF (--pair-w 0 / --pair-heads ""), the OFF path is this trainer exactly.
+PAIR_HEADS = {"NC": 0, "DAC": 1, "TTC": 3}                 # label / logit column of each head (planner.py component order NC DAC EP TTC C DDC)
+PAIR_SEED = 20261107                                       # PREREG_SCORER1 section 2 item 3: the without-replacement sampling seed
+PAIR_V_IDX, PAIR_DT = 19, 0.2                              # v4 = the 0.2 s chord at step 19 (t = 4 s) on the raw proposal, as p1_diag.py / sel_common.step_speed
+PAIR_MUTATE_ENVS = ("REFE_PAIR_MUTATE_NOBALANCE", "REFE_PAIR_MUTATE_DROP_LOSS")      # deliberate regressions: NOBALANCE must turn the F/S ratio check RED, DROP_LOSS must turn G16 RED
+
+
+def chord_speed(cxy, idx=PAIR_V_IDX, dt=PAIR_DT):
+    """[B, K, T, >=2] proposals -> [B, K] one-step chord speed at step idx (the first step is measured from the origin, as sel_common.step_speed)"""
+    xy = cxy[..., :2].float()
+    i = min(idx, xy.shape[-2] - 1)
+    prev = torch.zeros_like(xy[..., 0, :]) if i == 0 else xy[..., i - 1, :]
+    return torch.linalg.norm(xy[..., i, :] - prev, dim=-1) / dt
+
+
+class PairLoss:
+    """L_pair = mean over the KEPT pairs of -log sigmoid(s_i - s_j) on the head logits (PREREG_SCORER1 section 2).  For each labelled set and head h: candidate pairs (i, j) have y_h,i > y_h,j and
+    |v4_i - v4_j| / max(v0, 1) >= dv; F = the truly better one is the faster, S = it is the slower.  BALANCE: min(|F|, |S|) pairs from each side, without replacement (own torch.Generator, seed PAIR_SEED);
+    an empty side -> the set contributes NO pair for h.  So the loss has zero speed direction by construction.  The mean is over every kept pair of the micro-batch (all sets, all heads)."""
+
+    def __init__(self, heads, dv, seed=PAIR_SEED):
+        self.heads, self.dv, self.seed = tuple(heads), float(dv), int(seed)
+        self.balance = os.environ.get("REFE_PAIR_MUTATE_NOBALANCE") != "1"          # BUILT fact read by G-DVB / G16
+        self.gen = torch.Generator().manual_seed(self.seed)
+        self.last: dict = {}
+
+    def select(self, y, v, v0):
+        """y [K] true label of one head, v [K] v4, v0 float -> (idx_i, idx_j of the kept pairs, nF_cand, nS_cand, kept_F, kept_S).  Pure CPU, deterministic given self.gen."""
+        better = y[:, None] > y[None, :]
+        far = (v[:, None] - v[None, :]).abs() / max(float(v0), 1.0) >= self.dv
+        cand = better & far
+        fast = v[:, None] > v[None, :]
+        fi, fj = (cand & fast).nonzero(as_tuple=True)
+        si, sj = (cand & ~fast).nonzero(as_tuple=True)
+        nF, nS = int(fi.numel()), int(si.numel())
+        if not self.balance:                                    # DELIBERATE REGRESSION (REFE_PAIR_MUTATE_NOBALANCE): keep everything
+            return torch.cat([fi, si]), torch.cat([fj, sj]), nF, nS, nF, nS
+        k = min(nF, nS)
+        if k == 0:
+            e = torch.zeros(0, dtype=torch.long)
+            return e, e, nF, nS, 0, 0
+        pf = torch.randperm(nF, generator=self.gen)[:k]
+        ps = torch.randperm(nS, generator=self.gen)[:k]
+        return torch.cat([fi[pf], si[ps]]), torch.cat([fj[pf], sj[ps]]), nF, nS, k, k
+
+    def term(self, sxB, tg, cxy, v0, cm):
+        """sxB [B, K, C] arm-B logits (graph), tg [B, K, C'] labels, cxy [B, K, T, >=2] proposals, v0 [B], cm [B, K] set mask -> the UNWEIGHTED L_pair (a zero WITH graph when no pair is kept, so a
+        zero-weight control still builds the graph).  self.last = per-head counts (candidates, kept F / S, sets with a pair) for G16."""
+        v4 = chord_speed(cxy).detach().cpu()
+        ycpu = tg.detach().float().cpu()
+        cmc = cm.detach().cpu()
+        terms, st = [], {h: {"sets": 0, "sets_with_pair": 0, "cand_F": 0, "cand_S": 0, "kept_F": 0, "kept_S": 0} for h in self.heads}
+        for b in range(sxB.shape[0]):
+            if float(cmc[b].min()) <= 0.0:                      # an unlabelled set (all-zero mask) contributes nothing
+                continue
+            for h in self.heads:
+                col = PAIR_HEADS[h]
+                ii, jj, cF, cS, kF, kS = self.select(ycpu[b, :, col], v4[b], float(v0[b]))
+                d = st[h]
+                d["sets"] += 1; d["cand_F"] += cF; d["cand_S"] += cS; d["kept_F"] += kF; d["kept_S"] += kS; d["sets_with_pair"] += int(ii.numel() > 0)
+                if ii.numel():
+                    s = sxB[b, :, col]
+                    terms.append(F.softplus(-(s[ii.to(s.device)] - s[jj.to(s.device)])))
+        self.last = st
+        if not terms:
+            return sxB.sum() * 0.0
+        return torch.cat(terms).mean()
+
+
+def pair_refusals(a):
+    """SCORER1 levers named inconsistently never start (the trainer's own refusals, like epo_refusals)"""
+    out = []
+    names = [h for h in a.pair_heads.split(",") if h]
+    bad = [h for h in names if h not in PAIR_HEADS]
+    if bad:
+        out.append(f"--pair-heads names {bad}; the heads are {sorted(PAIR_HEADS)}")
+    if len(set(names)) != len(names):
+        out.append("--pair-heads names a head twice")
+    if not (a.pair_w >= 0.0 and math.isfinite(a.pair_w)):
+        out.append("--pair-w must be a finite number >= 0")
+    if not (a.pair_dv > 0.0 and math.isfinite(a.pair_dv)):
+        out.append("--pair-dv must be > 0 (a zero contrast makes every pair a candidate and lets the F/S split read noise)")
+    if a.pair_w > 0.0 and not names:
+        out.append("--pair-w > 0 needs --pair-heads (a weight on no head is a lever that does nothing)")
+    if names and a.pair_w == 0.0 and not a.pair_calibrate:
+        out.append("--pair-heads is named with --pair-w 0 and no --pair-calibrate: the heads would be configured and never trained on")
+    if a.pair_calibrate and not names:
+        out.append("--pair-calibrate needs --pair-heads")
+    if a.pair_calibrate and a.pair_w != 0.0:
+        out.append("--pair-calibrate measures the weight; it must not also be given one (--pair-w 0)")
+    if (a.pair_w > 0.0 or a.pair_calibrate) and (a.epo or a.aux_drv or a.hn_bank):
+        out.append("SCORER1 is the plain scorer fine-tune plus L_pair: --epo / --aux-drv / --hn-bank are refused with --pair-*")
+    return out
+
+
 def key(r):
     return (r.get("log_name", ""), r.get("token", ""), int(r.get("step", 0)), int(r.get("rank", 0)))
 
@@ -1200,6 +1320,14 @@ def build_parser() -> argparse.ArgumentParser:
                     "(the cache's trunk fingerprint must equal the checkpoint's).  '' = the live trunk forward")
     # auxiliary drivable-area head (SPEC_AUX_DRIVABLE_HEAD.md; WIRING_PLAN.md): ALL DEFAULT OFF = this trainer exactly.  --aux-drv / --w-aux-drv / --aux-drv-tap /
     # --aux-drv-depth / --aux-drv-feed / --aux-drv-labels / --aux-drv-shuffle-seed come from the module; the head's learning rate is this host's seventh flag.
+    # SCORER1 (PREREG_SCORER1 section 2): ALL DEFAULT OFF = this trainer exactly.
+    ap.add_argument("--pair-w", type=float, default=0.0, help="SCORER1: weight lambda_p of L_pair on arm B (0 = OFF).  Set ONCE by the gradient-norm rule (--pair-calibrate), never tuned on held-out data")
+    ap.add_argument("--pair-dv", type=float, default=0.15, help="SCORER1: minimum speed contrast |v4_i - v4_j| / max(v0, 1) of a candidate pair (registered 0.15)")
+    ap.add_argument("--pair-heads", default="", help="SCORER1: comma list of heads in {NC,DAC,TTC} that L_pair acts on ('' = none)")
+    ap.add_argument("--navtest-logs", default="", help="SCORER1: the registered navtest log list (p7-navtest-logs-v1 json: {'logs': [...]}).  CHECK ONLY: the trainer counts the training sets whose log is on it and writes the count into the data event (G-DVB asserts 0)")
+    ap.add_argument("--navtest-tokens", default="", help="SCORER1: the registered navtest token list (whitespace-separated, .gz ok).  CHECK ONLY, as --navtest-logs")
+    ap.add_argument("--pair-calibrate", action="store_true", help="SCORER1: measure lambda_p on the first 50 training micro-batches (||grad L_pair|| = 0.5 ||grad L_BCE||, gradients pooled), write <out>/pair_weight.json, "
+                    "train nothing.  A measuring mode: never part of a launch argv")
     AUX.add_aux_args(ap)
     ap.add_argument("--aux-drv-lr", type=float, default=None, help="the head's peak learning rate (its OWN AdamW; the scorer keeps --lr).  A pre-registered value, never tuned on "
                     "PDMS; None = no head optimiser, and naming it without --aux-drv is refused")
@@ -1210,6 +1338,7 @@ def main() -> int:
     ap = build_parser()
     a = ap.parse_args()
     bad_cli = epo_refusals(a, ap) + epo_con_refusals(a, ap)           # RL-S1: a command line that names EPO levers inconsistently never starts (SAFEOBJ: epo_con_refusals is epo_refusals' sibling)
+    bad_cli = bad_cli + pair_refusals(a)                                 # SCORER1: --pair-* named inconsistently never starts
     if bad_cli or AUX.aux_refusals(a) or aux_s1_refusals(a):
         for msg in bad_cli + AUX.aux_refusals(a) + aux_s1_refusals(a):         # + the aux head's levers: named without --aux-drv, labels missing, shuffle with the feed on, no head LR ...
             print("REFUSED: " + msg)
@@ -1283,6 +1412,7 @@ def main() -> int:
         print("REFUSED: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout"); return 4
     compw = torch.tensor([float(x) for x in a.b_compw.split(",")], device=dev)
     assert compw.numel() == 6 and (compw > 0).all(), "--b-compw needs 6 positive weights"
+    pairer = PairLoss([h for h in a.pair_heads.split(',') if h], a.pair_dv) if (a.pair_w > 0.0 or a.pair_calibrate) else None        # SCORER1 (None = OFF)
     ds = T.TargetBank(a.targets, a.images, cfg, calib=a.calib, onpolicy=op)
     if aux_src is not None:
         ds.aux_src = aux_src                                 # make_train_set() wraps the TRAINING subset so each sample also carries its (label, valid)
@@ -1404,6 +1534,12 @@ def main() -> int:
         if cdl is not None:                                  # B8: BUILT facts of the carve feed for G-DVB (absent for the default feed: every pre-B8 data event is byte-identical)
             info["epo_con_carve"] = {"feed": "carve", "logs": len(carve_logs), "sets": len(carve_idx), "sha256": carve_sha, "micro": a.epo_carve_micro,
                                      "train_rows_in_carve_logs": carve_train_in, "carve_rows_in_heldout_logs": carve_in_ho}
+    if a.navtest_logs or a.navtest_tokens:                   # SCORER1: the navtest guard's BUILT facts (absent when neither list is named: every pre-SCORER1 data event is byte-identical)
+        _nl, _nt = load_navtest_ids(a.navtest_logs, a.navtest_tokens)
+        info["navtest"] = navtest_audit((key(ds.rows[i]) for i in tr_idx), op.by.keys(), _nl, _nt)
+    if pairer is not None:                                   # SCORER1: BUILT facts of the loss object the run holds (absent when OFF: every pre-SCORER1 data event is byte-identical)
+        info["pair"] = {"w": float(a.pair_w), "dv": pairer.dv, "heads": list(pairer.heads), "seed": pairer.seed, "balanced": bool(pairer.balance), "v_idx": PAIR_V_IDX,
+                        "calibrate": bool(a.pair_calibrate)}
     if aux is not None:
         # BUILT facts only (G-DVB compares them with the argv): read off the objects the run holds, never echoed from the namespace
         info["aux_drv"] = {**aux.built_facts(), "tap": aux.cfg.tap, "feed": "on" if aux.feed is not None else "off", "lr": optH.param_groups[0]["lr"],
@@ -1427,6 +1563,8 @@ def main() -> int:
     def fwd(batch):
         img, ego, goal, _tgt, cxy, ctg, cm, _ci, cal = batch
         img, ego, goal, cxy, ctg = (x.to(dev, non_blocking=True) for x in (img, ego, goal, cxy, ctg))
+        if pairer is not None:                                      # SCORER1: what L_pair reads (proposals, v0 = ego slot 6, set mask); OFF (pairer None) executes nothing here: a fixture with < 7 ego slots (test_aux_s1_wiring) must not see an IndexError
+            cap["pair_in"] = (cxy, ego[:, 6].float(), cm)
         with torch.autocast("cuda", dtype=torch.bfloat16):
             _traj, _score, sxA = model(img, ego, goal, calib=cal if cal.numel() else None, score_extra=cxy)
             sctx = cap["sctx"]
@@ -1492,11 +1630,29 @@ def main() -> int:
         R = epo_reward(tg[..., :6].detach().float().cpu().numpy(), recs, rcfg)
         return epo_loss(sxB, sx0, torch.as_tensor(R, dtype=torch.float32, device=sxB.device), sel_score, a.epo_temp, a.epo_beta, lam_pg, epo_last)
 
-    def train_losses(sx0, sxA, sxB, tg, rows, upd, lam_pg=None):
+    pair_last: dict = {}
+
+    def pair_term(sxB, tg, w=None):
+        """SCORER1: arm B's lambda_p * L_pair for one micro-batch.  w=None -> the argv's --pair-w (0 = OFF: a constant, no graph, nothing computed).  An EXPLICIT w (the G16 probe) is never
+        short-circuited, so w = 0.0 still builds the graph and its gradient must read EXACTLY 0.0.  REFE_PAIR_MUTATE_DROP_LOSS=1 is the deliberate regression: the term is computed and DROPPED."""
+        if w is None:
+            w = a.pair_w
+            if w == 0.0 or pairer is None:
+                return torch.zeros((), device=sxB.device)
+        cxy_, v0_, cm_ = cap["pair_in"]
+        raw = pairer.term(sxB, tg, cxy_, v0_, cm_)
+        pair_last["raw"] = float(raw.detach())
+        if os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") == "1":
+            return torch.zeros((), device=sxB.device)
+        return float(w) * raw
+
+    def train_losses(sx0, sxA, sxB, tg, rows, upd, lam_pg=None, pair_w=None):
         """THE loss assembly of the run: the training loop, the speed probe and the G11 probe all call it.  losses() exactly as before, plus
         (--epo only) the EPO term on arm B ONLY -- arm A stays the BCE-only control.  Returns (lossA, lossB incl. EPO, listnet/er, the EPO term)."""
         lA, lB, ln = losses(sxA, sxB, tg, a.lam)
         ep = torch.zeros((), device=sxB.device)
+        if pair_w is not None or a.pair_w != 0.0:           # SCORER1 (arm B ONLY; arm A stays the BCE-only control).  Skipped entirely when OFF: the OFF path is byte-identical.
+            lB = lB + pair_term(sxB, tg, pair_w)
         if a.epo:
             ep = epo_term(epo_reference(a.epo_ref, sx0, sxA), sxB, tg, rows, upd, lam_pg)
             lB = lB + ep
@@ -2106,6 +2262,46 @@ def main() -> int:
                 kl_tol=(1e-2 if (a.lane_head and not native7) else 0.0), temp=dual.temp)
         if aux is not None:                                  # G12 (aux head): live + exact-zero control + identity + tap storage + Adam state
             gates["G12_aux_drv_live_and_identity"] = g12_probe(batch, aux_lv)
+        if pairer is not None and not a.pair_calibrate:      # G16 (SCORER1): L_pair is IN the loss (grad(w=1) - grad(w=0) != 0 on every arm-B module), its controls read EXACTLY 0.0, the F/S split is balanced, every head has pairs
+            def _flat_loss_grad(w_):
+                armB.zero_grad(set_to_none=True)
+                s0_, sA_, sB_, t_ = fwd(batch)
+                _a, lB_, _l, _e = train_losses(s0_, sA_, sB_, t_, prow, 0, pair_w=w_)        # the REAL assembly: a term dropped from `loss` cannot show here
+                lB_.backward()
+                return {m_: torch.cat([(p_.grad if p_.grad is not None else torch.zeros_like(p_)).detach().double().flatten() for p_ in getattr(armB, m_).parameters()]) for m_ in SCORER}
+            g_on, g_off = _flat_loss_grad(1.0), _flat_loss_grad(0.0)
+            st_on = {h_: dict(v_) for h_, v_ in pairer.last.items()}
+            d_on = {m_: float((g_on[m_] - g_off[m_]).abs().sum()) for m_ in SCORER}
+            armB.zero_grad(set_to_none=True)
+            s0_, sA_, sB_, t_ = fwd(batch)
+            ctl = pair_term(sB_, t_, 0.0)                                                       # the term alone, weight 0.0: graph live, factor 0
+            ctl.backward()
+            ctl_read = module_grad_abs(armB)
+            armB.zero_grad(set_to_none=True)
+            # the share of training sets with >= 1 kept pair per head (PREREG 8.1) on a fixed stride of the bank, read from the labels + proposals the trainer will train on (a fresh PairLoss: the training generator is untouched)
+            probe_pl = PairLoss(pairer.heads, pairer.dv)
+            stride = max(1, len(tr_idx) // 20000)
+            share = {h_: {"sets": 0, "with_pair": 0, "kept_F": 0, "kept_S": 0} for h_ in pairer.heads}
+            for i_ in tr_idx[::stride]:
+                r_ = ds.rows[i_]
+                got_ = op.get(r_.get("log_name", ""), r_.get("token", ""), r_.get("step", -1), int(r_.get("rank", 0)))
+                if got_ is None:
+                    continue
+                tr3_, tgl_, _c = got_
+                v4_ = chord_speed(torch.as_tensor(tr3_)[None])[0]
+                for h_ in pairer.heads:
+                    ii_, _jj, _cF, _cS, kF_, kS_ = probe_pl.select(torch.as_tensor(tgl_)[:, PAIR_HEADS[h_]].float(), v4_, float(r_["ego"][6]))
+                    sh_ = share[h_]
+                    sh_["sets"] += 1; sh_["with_pair"] += int(ii_.numel() > 0); sh_["kept_F"] += kF_; sh_["kept_S"] += kS_
+            for h_, sh_ in share.items():
+                sh_["share_with_pair"] = sh_["with_pair"] / max(sh_["sets"], 1)
+            fs_ok = all(v_["kept_F"] == v_["kept_S"] for v_ in list(share.values()) + list(st_on.values())) and pairer.balance
+            g16 = {"ok": bool(all(math.isfinite(d_on[m_]) and d_on[m_] > 0.0 for m_ in SCORER) and all(v_ == 0.0 for v_ in ctl_read.values()) and fs_ok
+                              and all(share[h_]["share_with_pair"] > 0.0 for h_ in pairer.heads) and os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") != "1"),
+                   "loss_grad_delta_w1_minus_w0": d_on, "control_w0_term_alone_grad_abs": ctl_read, "controls_exactly_zero": bool(all(v_ == 0.0 for v_ in ctl_read.values())),
+                   "micro_batch_pairs": st_on, "bank_share": share, "bank_stride": stride, "fs_balanced": bool(fs_ok), "balanced_built": bool(pairer.balance),
+                   "mutate_nobalance": os.environ.get("REFE_PAIR_MUTATE_NOBALANCE") == "1", "mutate_drop_loss": os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") == "1"}
+            gates["G16_pair_live_balanced"] = g16
         if hn_obj is not None:                               # G14 (P6-HN-S): the hard-negative term is live on arm B only, its controls read EXACTLY 0.0, the identities hold
             gates["G14_hn_live_and_identity"] = g14_hn_live_and_identity(hn_env)
         if cc_obj is not None:                               # G15 (P6-HN-S): the cache IS the live trunk forward, bit for bit, and a row-shuffled cache is not
@@ -2163,7 +2359,7 @@ def main() -> int:
                "s_per_microbatch": round(sp, 2), "est_hours_per_epoch": round(len(tr_idx) / a.batch * sp / 3600, 2),
                "gpu_mem_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2)}
         log(res)
-        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1"                 and not any(os.environ.get(k_) == "1" for k_ in AUX_MUTATE_ENVS + EPO_CON_MUTATE_ENVS):
+        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1"                 and not any(os.environ.get(k_) == "1" for k_ in AUX_MUTATE_ENVS + EPO_CON_MUTATE_ENVS + PAIR_MUTATE_ENVS):
             json.dump(res, open(os.path.join(a.out, "PREFLIGHT_PASS.json"), "w"), indent=1, default=str)
         print("ZZSFT_PREFLIGHT_" + ("PASS" if ok else "FAIL"))
         return 0 if ok else 3
@@ -2171,6 +2367,32 @@ def main() -> int:
     # ---------------- the run
     paramsA = [p for m in SCORER for p in getattr(model, m).parameters()]
     paramsB = list(armB.parameters()) + (list(aux.feed.parameters()) if (aux is not None and aux.feed is not None) else [])     # H2: the feed projection is scorer-side
+    if a.pair_calibrate:                                     # SCORER1 lambda_p rule (PREREG section 2 item 5): ||grad L_pair|| = 0.5 ||grad L_BCE|| on the first 50 micro-batches, gradients POOLED (weight_rule.py's statistic); trains nothing
+        gsum_b, gsum_p, nmb, shares = [torch.zeros_like(p_) for p_ in paramsB], [torch.zeros_like(p_) for p_ in paramsB], 0, {h_: [0, 0] for h_ in pairer.heads}
+        for batch_c in dl:
+            batch_c, _rows = split_rows(batch_c, a.epo)
+            _s0, _sA, sB_c, tg_c = fwd(batch_c)
+            bce_c = F.binary_cross_entropy_with_logits(sB_c[..., :6], tg_c[..., :6]) + a.lane_weight * lane_bce(sB_c, tg_c)       # L_BCE = arm B's pointwise BCE (6 components + the lane output), WITHOUT the expected-reward term
+            gb_c = torch.autograd.grad(bce_c, paramsB, retain_graph=True, allow_unused=True)
+            pt_c = pair_term(sB_c, tg_c, 1.0)
+            gp_c = torch.autograd.grad(pt_c, paramsB, allow_unused=True) if pt_c.requires_grad else [None] * len(paramsB)
+            for acc_, g_ in ((gsum_b, gb_c), (gsum_p, gp_c)):
+                for x_, y_ in zip(acc_, g_):
+                    if y_ is not None:
+                        x_ += y_.float()
+            for h_, v_ in pairer.last.items():
+                shares[h_][0] += v_["sets"]; shares[h_][1] += v_["sets_with_pair"]
+            nmb += 1
+            if nmb >= 50:
+                break
+        nb_ = math.sqrt(sum(float((x_ / nmb).double().pow(2).sum()) for x_ in gsum_b))
+        np_ = math.sqrt(sum(float((x_ / nmb).double().pow(2).sum()) for x_ in gsum_p))
+        res_c = {"micro_batches": nmb, "grad_norm_bce": nb_, "grad_norm_pair_unit_w": np_, "ratio_target": 0.5, "pair_w": (0.5 * nb_ / np_) if np_ > 0.0 else None,
+                 "sets_with_pair_share": {h_: (v_[1] / max(v_[0], 1)) for h_, v_ in shares.items()}, "heads": list(pairer.heads), "dv": pairer.dv, "ckpt": a.ckpt, "seed": a.seed}
+        json.dump(res_c, open(os.path.join(a.out, "pair_weight.json"), "w"), indent=1)
+        log({"event": "pair_calibrated", **res_c})
+        print("ZZPAIR_CALIBRATED" if np_ > 0.0 and nb_ > 0.0 else "ZZPAIR_CALIBRATION_FAILED")
+        return 0 if (np_ > 0.0 and nb_ > 0.0) else 5
     optA = torch.optim.AdamW(paramsA, lr=a.lr, weight_decay=0.01)
     optB = torch.optim.AdamW(paramsB, lr=a.lr, weight_decay=0.01)
     total = int(math.ceil(len(tr_idx) / a.batch * a.epochs / a.accum))

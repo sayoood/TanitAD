@@ -1009,7 +1009,7 @@ def rls1_static() -> None:
         if k.startswith("G4_compw"):
             continue
         ev = cons(r0, notok=(k,))
-        if k.startswith(("G8_", "G12_", "G13_", "G14_", "G15_")):                  # r0 carries no lane labels / no --aux-drv / no --epo-con / no --hn-bank / no --ctx-cache: G8 / G12 / G13 / G14 / G15 are not obliged, so such a flag in the fixture is simply not written
+        if k.startswith(("G8_", "G12_", "G13_", "G14_", "G15_", "G16_")):                  # r0 carries no lane labels / no --aux-drv / no --epo-con / no --hn-bank / no --ctx-cache: G8 / G12 / G13 / G14 / G15 are not obliged, so such a flag in the fixture is simply not written
             ok(ev["status"] == "PASS", (k, ev["reasons"]))
         else:
             ok(ev["status"] == "FAIL" and "not ok" in " ".join(ev["reasons"]) and k in " ".join(ev["reasons"]), (k, ev["reasons"]))
@@ -1020,7 +1020,7 @@ def rls1_static() -> None:
     ok(ev["status"] == "FAIL" and "not PASS" in " ".join(ev["reasons"]))
     ev = cons(c0, add={g11_key: {"ok": True}})
     ok(ev["status"] == "FAIL" and "DIFFERENT configuration" in " ".join(ev["reasons"]))                      # a control offered an EPO run's preflight
-    ev = cons(r0, add={"G16_something_new": {"ok": True}})                                                   # (G13 is a KNOWN gate since SAFEOBJ, G14 / G15 since P6-HN-S: the unknown-gate fixture moves to G16)
+    ev = cons(r0, add={"G17_something_new": {"ok": True}})                                                   # (G13 is a KNOWN gate since SAFEOBJ, G14 / G15 since P6-HN-S: the unknown-gate fixture moves to G17 since SCORER1 took G16)
     ok(ev["status"] == "FAIL" and "not known to the gate" in " ".join(ev["reasons"]))
     ok(cons(r0, add={"G8_lane_labels_in_bank": {"ok": True}})["status"] == "FAIL")                           # a gate the argv does not oblige
     good = rls1_pf_rows(r0)[-1]["gates"][g11_key]

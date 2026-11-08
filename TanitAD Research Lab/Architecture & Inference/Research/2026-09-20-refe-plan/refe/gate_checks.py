@@ -869,6 +869,9 @@ DVB_KINDS_SCORER = {
     # P6-HN-S (raw/2026-10-18-p6hn-prereg/PREREG_P6HN_SCREEN.md 4.4): both default OFF.  `data` = an input the PASS token must fingerprint (launch_gate.RLS1_DATA lists both flags); the trainer's data event
     # also carries a BUILT block for each (`hn`, `ctx_cache`: SCORER_HN_KEYS / SCORER_CTX_KEYS), which scorer_dvb_rows compares with the argv and with the bytes the flag names.
     "hn_bank": "data", "ctx_cache": "data",
+    # SCORER1 (PREREG_SCORER1 section 2): L_pair levers, all default OFF.  `built` = compared with the trainer's `pair` block (scorer_dvb_rows); pair_calibrate is a measuring mode, forbidden in a launch.
+    "pair_w": "built", "pair_dv": "built", "pair_heads": "built", "pair_calibrate": "control",
+    "navtest_logs": "consumed", "navtest_tokens": "consumed",       # SCORER1: check-only lists read by main(); refe_scorer1 binds their sha256 (scorer1_refusals) and asserts the data event's `navtest` block (data_expect)
     "out": "run", "eval_every": "run", "workers": "run",
     "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
     "preflight": "control",
@@ -896,12 +899,13 @@ SCORER_CTX_REGISTERED = {"dtype": "bf16"}
 G15_MIN_SCENES = 64                                    # PREREG 4.4: G15 compares >= 64 RL-train and >= 64 RL-val scenes (a run with fewer scenes than that side holds compares all of them: see judge_g15)
 HN_ARMS = ("lever_ignored", "hn_to_armA", "hn_in_selection", "hn_lane_target", "unmasked_pad", "fan_sees_hn", "stale_bank", "empty_bank_in_launch", "moved_lever", "stale_cache", "shuffled_cache", "epo_with_hn")
 SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe", "aux_s1_refusals")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
+SCORER_PAIR_DESTS = ("pair_w", "pair_dv", "pair_heads")          # SCORER1: the L_pair levers, observed only when --pair-w > 0
 SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
 # the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
 SCORER_GATES = {"G1": "trainable_is_exactly_the_scorer", "G2": "live", "G3": "copies_equal_model_at_step0", "G4": "identity_and_live",
                 "G5": "ckpt_roundtrip_planner_loader", "G7": "heldout_disjoint", "G8": "lane_labels_in_bank", "G9": "pdm_targets_in_bank",
                 "G10": "teacher_lane_in_bank", "G11": "epo_live_and_identity", "G12": "aux_drv_live_and_identity", "G13": "epo_con_live_and_identity",
-                "G14": "hn_live_and_identity", "G15": "ctx_cache_identity"}
+                "G14": "hn_live_and_identity", "G15": "ctx_cache_identity", "G16": "pair_live_balanced"}
 
 
 def judge_g12(g12, ns) -> list:
@@ -961,6 +965,31 @@ def judge_g12(g12, ns) -> list:
         if not (isinstance(g12.get("feed_proj_grad_abs"), (int, float)) and g12["feed_proj_grad_abs"] > 0.0):
             r.append("G12 (feed on): the feed projection received no gradient from the score loss (the feed is built but unreachable)")
     return r
+
+
+def judge_g16(g16, ns) -> list:
+    """G16 (SCORER1) re-judged from its RAW fields (its own `ok` is a claim): L_pair is IN the loss (grad(w=1) - grad(w=0) finite and non-zero on every scorer module), the w = 0 control reads
+    EXACTLY 0.0, kept F == kept S on the micro-batch and on the bank sample, every named head has a non-zero share of sets with a kept pair, and no regression arm produced it."""
+    out = []
+    heads = [h for h in ns.pair_heads.split(",") if h]
+    d = g16.get("loss_grad_delta_w1_minus_w0") or {}
+    if set(d) != set(SCORER_GROUPS) or not all(isinstance(x, (int, float)) and math.isfinite(x) and x > 0.0 for x in d.values()):
+        out.append(f"G16: L_pair is not live IN the loss on every scorer module (grad(w=1) - grad(w=0) = {d})")
+    ctl = g16.get("control_w0_term_alone_grad_abs") or {}
+    if not ctl or any(x != 0.0 for x in ctl.values()) or g16.get("controls_exactly_zero") is not True:
+        out.append("G16: the --pair-w 0 control does not read EXACTLY 0.0 (the probe is not proved able to read zero)")
+    for where, blk in (("micro-batch", g16.get("micro_batch_pairs") or {}), ("bank sample", g16.get("bank_share") or {})):
+        if set(blk) != set(heads):
+            out.append(f"G16: the {where} block covers heads {sorted(blk)}, the argv names {heads}")
+        for h, v in blk.items():
+            if v.get("kept_F") != v.get("kept_S"):
+                out.append(f"G16: F/S ratio != 1 on head {h} ({where}: kept F {v.get('kept_F')} vs kept S {v.get('kept_S')}) -- the balancing step is missing or broken")
+    for h, v in (g16.get("bank_share") or {}).items():
+        if not (isinstance(v.get("share_with_pair"), float) and v["share_with_pair"] > 0.0):
+            out.append(f"G16: head {h} has share 0 of sets with a kept pair: LAUNCH BLOCKER (PREREG_SCORER1 8.1)")
+    if g16.get("balanced_built") is not True or g16.get("mutate_nobalance") or g16.get("mutate_drop_loss"):
+        out.append("G16 was produced under a regression arm (REFE_PAIR_MUTATE_*) or by an unbalanced PairLoss: it can never count")
+    return out
 
 
 def judge_g14(g14, ns) -> list:
@@ -1247,6 +1276,8 @@ def scorer_required_gates(ns) -> list:
         req.append("G13")
     if ns.aux_drv:
         req.append("G12")
+    if getattr(ns, "pair_w", 0.0) and not getattr(ns, "pair_calibrate", False):         # SCORER1: G16 iff --pair-w > 0 (scorer_finetune.py's own condition)
+        req.append("G16")
     if getattr(ns, "hn_bank", ""):                                    # P6-HN-S: G14 iff --hn-bank, G15 iff --ctx-cache (scorer_finetune.py's own conditions)
         req.append("G14")
     if getattr(ns, "ctx_cache", ""):
@@ -1365,6 +1396,16 @@ def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
         add("aux_drv_labels", AUX.PINNED_STORE_KEYS, b.get("frames"), "data event: aux_drv.frames")
         for k, want in (("cell", AUX.CELL_M), ("x0", AUX.X0), ("y0", AUX.Y0), ("nx", int(round((AUX.X1 - AUX.X0) / AUX.CELL_M))), ("ny", int(round((AUX.Y1 - AUX.Y0) / AUX.CELL_M)))):
             add("aux_drv", want, b.get(k), f"data event: aux_drv.{k} (the label raster's geometry)")
+    pair_named = bool(getattr(ns, "pair_w", 0.0)) or bool(getattr(ns, "pair_calibrate", False))      # SCORER1: the `pair` block exists iff a --pair-* lever is on
+    if pair_named or "pair" in data:
+        blk = data.get("pair") if isinstance(data.get("pair"), dict) else {}
+        add("pair_w", pair_named, "pair" in data, "the data event carries a `pair` block iff --pair-w > 0 (or --pair-calibrate)")
+        if pair_named:
+            add("pair_w", float(ns.pair_w), blk.get("w"), "data event: pair.w (the weight the built loss multiplies)")
+            add("pair_dv", float(ns.pair_dv), blk.get("dv"), "data event: pair.dv (the PairLoss's speed-contrast threshold)")
+            add("pair_heads", [h for h in ns.pair_heads.split(",") if h], blk.get("heads"), "data event: pair.heads (the heads the PairLoss was built for)")
+            add("pair_w", True, blk.get("balanced"), "data event: pair.balanced (the F/S balancing step is built; the NOBALANCE mutation reads False)")
+            add("pair_w", 20261107, blk.get("seed"), "data event: pair.seed (the registered sampling seed)")
     hn_named, cc_named = bool(getattr(ns, "hn_bank", "")), bool(getattr(ns, "ctx_cache", ""))
     if hn_named or "hn" in data:                                   # P6-HN-S: the bank, against the BUILT block of the bank the trainer holds (never an echo of the namespace)
         blk = data.get("hn") if isinstance(data.get("hn"), dict) else {}
@@ -1544,7 +1585,7 @@ def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -
         for r in rows:
             if not r["ok"]:
                 reasons.append(f"{r['flag']}: declared {r['declared']!r} != built {r['built']!r} ({r['how']})")
-        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS)}
+        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS)}
         missing = sorted(expect - {r["dest"] for r in rows})
         det["built_without_observer"] = missing
         if missing:
