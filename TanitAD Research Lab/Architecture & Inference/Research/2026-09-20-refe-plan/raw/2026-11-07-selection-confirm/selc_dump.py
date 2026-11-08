@@ -340,6 +340,8 @@ def consolidate(a, say) -> int:
             for k in parts:
                 parts[k].append(z[k])
     D = {k: np.concatenate(v) for k, v in parts.items()}
+    order = np.argsort(D["token"])                  # AMENDMENT 2: chunks are concatenated log by log; the assertion below and selc_score require token order
+    D = {k: v[order] for k, v in D.items()}
     tok = [str(t) for t in D["token"]]
     assert tok == sorted(doc["tokens"]) == sorted(tok) and len(set(tok)) == len(tok), "dump tokens != tokens_confirm.json"
     out = os.path.join(a.out, "dump_confirm.npz")
