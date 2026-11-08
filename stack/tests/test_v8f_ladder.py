@@ -304,6 +304,26 @@ def test_zcache_prewarm_leaves_the_windows_identical_and_reads_no_clip_file_afte
         assert np.array_equal(c["act"], g["act"]) and np.array_equal(c["zmean"], g["zmean"])
 
 
+def test_ok_windows_drops_exactly_the_windows_holding_a_frame_that_is_not_ok(world, tmp_path):
+    J, store, clips = world["J"], world["store"], world["clips"]
+    F = 25
+    wins = WW.wm_windows(store, J, clips, F=F)
+    bad_clip, bad_frame = clips[0], F + 2
+    for c in clips:
+        n = len(store.get(c)["pose"])
+        ok = np.ones(n, bool)
+        if c == bad_clip:
+            ok[bad_frame] = False
+        np.savez(tmp_path / f"{c}.npz", zmean=np.zeros((n, 32), np.float32), ok=ok, t_s=np.arange(n, dtype=np.float32) * 0.2)
+    ds = WW.V8FMiniWMWindows(store, J, wins, F=F, zcache=str(tmp_path))
+    hit = lambda w: str(J["clip"][w[0]]) == bad_clip and w[1] - F + 1 <= bad_frame <= w[1]
+    want = [w for w in wins if not hit(w)]
+    assert len(want) < len(wins)
+    assert ds.ok_windows() == want and ds.windows == want
+    for w in want[:30]:
+        ds.item(*w)
+
+
 # ------------------------------------------------------------------------------------------------ the trainer: G-DVB and a run
 @pytest.fixture(scope="module")
 def init(tmp_path_factory):

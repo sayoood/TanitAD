@@ -84,6 +84,17 @@ class V8FMiniWMWindows:
             self._z.pop(next(iter(self._z)))
         return self._z[clip]
 
+    def ok_windows(self) -> list:
+        """A zcache run keeps only the windows whose frames are all ``ok`` (the ``frame_ok`` of the M2b windows, which ``item`` refuses otherwise). Rewrites ``self.windows`` and returns it; the list is the same for every arm because ``ok`` depends on the kinematics, not on the model."""
+        keep = []
+        for w in self.windows:
+            _, ok = self._zmean(str(self.J["clip"][w[0]]))
+            lo, hi = int(w[1]) - self.F + 1, int(w[1])
+            if lo >= 0 and hi < len(ok) and ok[lo:hi + 1].all():
+                keep.append(w)
+        self.windows = keep
+        return keep
+
     def _kin_small(self, clip: str) -> dict:
         s = self._small.get(clip)
         if s is None:
