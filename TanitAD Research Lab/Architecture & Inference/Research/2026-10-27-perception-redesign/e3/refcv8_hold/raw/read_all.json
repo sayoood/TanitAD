@@ -1,0 +1,79 @@
+{
+ "subset": "all",
+ "rate": 0.17908578584846588,
+ "n": 3194,
+ "n_episodes": 136,
+ "n_windows_compliant": 3247,
+ "n_windows_with_gt": 3194,
+ "bootstrap": {
+  "mean": 0.179086,
+  "lo": 0.141506,
+  "hi": 0.220351,
+  "ci95": 0.039422,
+  "se": 0.019801,
+  "reducer": "mean",
+  "n_windows": 3194,
+  "n_episodes": 136,
+  "n_boot": 2000,
+  "estimator": "episode_cluster_bootstrap",
+  "display_dp": 6
+ },
+ "controls": {
+  "K_G_fields": false,
+  "K_B_emitted_equals_fan_at_sel_idx": true,
+  "K_C_sel_idx_is_argmax_over_e9_eligible": true,
+  "K_A_roll_equals_L1_BASEos": true,
+  "K_RAST_all_windows_have_a_raster": true,
+  "K_LC_JOIN": true,
+  "TAU_CAL": true,
+  "K_LIVE_own_map_beats_deranged_donor": true,
+  "K_DERANGED_donor_is_another_episode": true,
+  "K_BASE_arm_equals_emitted_pick": true,
+  "K_STAGE_BASE_staged_equals_banked_S2_pos": true,
+  "K_S6_alignment": true,
+  "K_HUMAN_off_drivable_le_2pct": true,
+  "K_SENS_blind_lateral_shift": false,
+  "K_GTLIVE_GT_T1_lowers_off_drivable": true
+ },
+ "hard_controls_pass": false,
+ "dev_filter": {
+  "dropped_zero_byte_raster_windows": [
+   [
+    10,
+    82
+   ],
+   [
+    10,
+    87
+   ],
+   [
+    10,
+    97
+   ],
+   [
+    10,
+    102
+   ],
+   [
+    42,
+    139
+   ]
+  ],
+  "trace_windows_all": 4754,
+  "trace_windows_kept": 4749,
+  "S6_rows_all": 3668,
+  "S6_rows_kept": 3664,
+  "S2_rows_all": 4754,
+  "S2_rows_kept": 4749
+ },
+ "infer_seed": 0,
+ "split": "C:/t/s6chold/split.json",
+ "split_sha256": "ca5af0203320aba4f89e09be81a6bf079d9d4d77708ccb8a3ca2a0ea57e8db0a",
+ "trace": "F:/refcv9_mapsel/trace_s0.npz",
+ "trace_sha256": "e0f6c22b2dc6a7a7fc9471d219367f7ed7e32dd0ac4d589b5d87366ab23e9847",
+ "scorer_sha256": "11de405b9960aa54535178290b4a02796a0cae0f75d4a5a7ba142a8021abe2f0",
+ "wrapper": "s6c_hold.py",
+ "tier": "T1 self-action open loop on logged eval139 frames (not driving performance)",
+ "estimator": "point: S6c off_drivable rate of the emitted (native) plan, BASE arm, over the subset's S6c windows (mapsel_score.py map_compliance.S6c.arms.BASE.off_drivable); interval: episode-cluster bootstrap (taniteval ci.episode_cluster_bootstrap, B 2000, seed 0) over EPISODES = another draw of episodes only, NOT another training run, NOT another inference run (one checkpoint, one inference seed)",
+ "better": "lower"
+}
