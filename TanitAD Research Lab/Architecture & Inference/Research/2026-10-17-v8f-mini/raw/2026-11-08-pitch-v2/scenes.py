@@ -386,11 +386,14 @@ def r3(cv, u, a):
         cv.text(x0 - 24, y + 34, nm, 28, TXT2, "semi", alpha=a, anchor="rm")
         pbar(cv, x0, y, v * sc, 68, k, T_C, a, 8)
         cv.text(x0 + v * sc * k + 20, y + 34, f"{MINUS}{v * k:.2f} m", 44, TXT, "bold", alpha=a * clamp(k * 3), anchor="lm")
-    cv.text(x0, 570, "Four of four metric families improved somewhere", 34, TXT, "semi", alpha=ep(u, 2.6, 3.4) * a)
+    cv.text(x0, 570, "An improved row in every family measured; strategic bars paused", 34, TXT, "semi", alpha=ep(u, 2.6, 3.4) * a)
     for i, nm in enumerate(("Longitudinal", "Lateral", "Tactical", "Strategic")):
         k = ep(u, 3.0 + 0.4 * i, 3.7 + 0.4 * i)
         x = x0 + i * 330
         cv.rrect(x, 640, x + 300, 716, 38, fill=CARD, outline=mix(MINT, BG0, 0.5), width=1.8, alpha=k * a)
+        if nm == "Strategic":
+            cv.text(x + 150, 678, "Strategic: paused", 28, TXT2, "semi", alpha=k * a, anchor="mm")
+            continue
         cv.check(x + 44, 678, 26, MINT, 4.5, alpha=k * a, frac=ep(u, 3.2 + 0.4 * i, 3.9 + 0.4 * i))
         cv.text(x + 82, 678, nm, 28, TXT, "semi", alpha=k * a, anchor="lm")
     tier_chip(cv, 110, 950, "T1-KIN", "own executed motion, logged cameras", ep(u, 1.0, 1.8) * a)
