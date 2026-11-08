@@ -832,7 +832,8 @@ class HJEPAStack(nn.Module):
         """States per level for a window of ``n_frames`` level-1 frames, MEASURED by running :meth:`encode` on zeros."""
         c1 = self.cfg[0]
         with torch.no_grad():
-            e = self.encode(torch.zeros(1, n_frames, c1.latent_dim), torch.zeros(1, n_frames - 1, c1.action_dim))
+            dev = next(self.parameters()).device
+            e = self.encode(torch.zeros(1, n_frames, c1.latent_dim, device=dev), torch.zeros(1, n_frames - 1, c1.action_dim, device=dev))
         return [int(t.shape[1]) for t in e.z]
 
     def built_rollout(self, n_frames: int, batch: int = 2) -> dict:
@@ -859,8 +860,9 @@ class HJEPAStack(nn.Module):
             c1 = self.cfg[0]
             with torch.no_grad(), torch.random.fork_rng(devices=[]):
                 torch.manual_seed(0)
-                z1 = torch.randn(batch, n_frames, c1.latent_dim)
-                a = torch.randn(batch, n_frames - 1, c1.action_dim)
+                dev = next(self.parameters()).device                         # drawn on the CPU and moved: fork_rng(devices=[]) forks only the CPU stream
+                z1 = torch.randn(batch, n_frames, c1.latent_dim).to(dev)
+                a = torch.randn(batch, n_frames - 1, c1.action_dim).to(dev)
                 self.eval()
                 out = self.loss(z1, a)
         finally:
