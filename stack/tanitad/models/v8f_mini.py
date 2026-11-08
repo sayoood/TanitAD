@@ -722,8 +722,9 @@ class WMAux(nn.Module):
         """PREREG_V8F_LFS: how many states each level holds for a window of ``n_frames`` frames -- MEASURED by running the BUILT stack's ``encode`` on zeros (no gradient, no randomness), not computed from the strides. Transitions per
         level = states - 1. ``HJEPAStack.encode`` raises when a level holds fewer than 2 states; this returns that as a count of 1 instead (the gate turns it into a refusal with the number)."""
         st = self.stack
-        z = torch.zeros(1, int(n_frames), st.cfg[0].latent_dim)
-        a = torch.zeros(1, int(n_frames) - 1, st.cfg[0].action_dim)
+        dev = next(st.parameters()).device
+        z = torch.zeros(1, int(n_frames), st.cfg[0].latent_dim, device=dev)
+        a = torch.zeros(1, int(n_frames) - 1, st.cfg[0].action_dim, device=dev)
         with torch.no_grad():
             try:
                 enc = st.encode(z, a)
