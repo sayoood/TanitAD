@@ -1,0 +1,14 @@
+..limit td3 max |plan - HOLD_c| / prior std 0.0
+limit flat1 max |plan - HOLD_c| / prior std 0.0
+.limit mutant (REG off) flat1 max dev 3.5345739946373262
+.planted td3 lambda 0.0 MAE 0.004740776959806681 baseline 0.36472758650779724
+planted td3 lambda 0.01 MAE 0.004750621970742941 baseline 0.36472758650779724
+planted flat1 lambda 0.0 MAE 0.0095687760040164 baseline 0.36472758650779724
+planted flat1 lambda 0.01 MAE 0.010310702957212925 baseline 0.36472758650779724
+.DISCONNECTED td3 lambda 0.0 MAE 0.4587971270084381 baseline 0.36472758650779724
+DISCONNECTED td3 lambda 0.01 MAE 0.4547921121120453 baseline 0.36472758650779724
+DISCONNECTED flat1 lambda 0.0 MAE 0.4547921121120453 baseline 0.36472758650779724
+DISCONNECTED flat1 lambda 0.01 MAE 0.4547921121120453 baseline 0.36472758650779724
+.split: TUNE windows 982 episodes 70 ; SCORE windows 994 episodes 71
+........
+14 passed in 1885.02s (0:31:25)

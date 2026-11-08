@@ -1,0 +1,17 @@
+## Controls (`test_plantest2_controls.py`, log `TEST_PLANTEST2.log`: **14 passed**, 1,885 s, CPU; run after `IMPL_CHOICES_PLANTEST2.md` was hashed, sha256 `b1b27f6f29e46724d7aab26c5f857f4ea0aa7cee4d774533c8122d498c2aeea4`)
+Tier T0. Evidence class MEASURED (synthetic planted world, or 16 real eval windows of M2b_s0 with no statistic read; the TUNE/SCORE tests read TUNE windows only).
+
+| control | result | deliberate-regression arm (must fail) |
+|---|---|---|
+| 1 reduction: `plan_all2(seed_mode="prior", lam=0)` against PLANTEST's own `plan_all`, 16 windows, G-TRUE, TD3 and FLAT1 | PASS: plans and every cost / init-cost / iteration / monotonicity array bit-identical | `seed_mode="hold"`, lam 0 differs from PLANTEST's plans: red as required |
+| 2 limit: lambda 1,000,000, 16 windows, TD3 and FLAT1, tolerance max abs deviation from HOLD_c <= 1e-4 prior-std units | PASS: TD3 0.0, FLAT1 0.0 | REG switched off in the cost: FLAT1 deviation 3.5346 (> tolerance): red as required |
+| 3 planted dynamics through SEED and REG (D 32, planted std 0.5, tolerance MAE <= 0.05 and <= 0.2 x the prior-mean baseline 0.3647, 64 windows) | PASS: TD3 0.00474 (lambda 0) / 0.00475 (lambda 0.01); FLAT1 0.00957 / 0.01031 | predictors ignore the action: TD3 0.4588 / 0.4548, FLAT1 0.4548 / 0.4548 (> 0.05): red as required |
+| 4 split: TUNE 70 episodes (982 windows) and SCORE 71 episodes (994 windows) share no episode; order-free; salt matters | PASS | n/a (assertions on the artifact) |
+| 4b no SCORE window read during tuning: the tuner on a ctx whose SCORE latents are NaN and SCORE logged actions are garbage returns bit-identical MAE and lambda; the driver's tune branch hands the planner only TUNE indices (982 of them) | PASS | a tuner given 8 TUNE + 8 SCORE windows reads the NaN (non-finite MAE, differs from the clean ctx): red as required |
+| 5 goal plumbing (G-TRUE and G-RAND of `plan_all2` equal the direct `run_planner2` calls bit-for-bit at lambda 0.1, TD3 and FLAT1; true differs from rand) | PASS | a pipeline that ignores the goal name differs from the direct call: red as required |
+| 5 bit-repeat (same seed: plans and all diagnostics bit-identical, TD3 and FLAT1, lambda 0.1) | PASS | a different planner seed changes the plans: red as required |
+| 5 a0-only (garbage in logged actions 1..end leaves the plans bit-identical; changing a0 changes them) | PASS | a planner seeded with all 12 logged actions differs from the clean plan and sits closer to the logged actions: red as required |
+
+**What the logged actions reach (file:line, this directory).** The planner receives the start latent, the goal latent, the generator, and HOLD_c, which is built from the FIRST logged action of each window only (`plantest2_real.py` `hold_c_of`, calling `plantest2_lib.py` `hold_scaled`, which slices `A_raw[:, :1]`). That is the card's HOLD seed, by construction; HOLD is also the reference the read compares against. The metric reads all 12 logged actions (`plantest_lib.window_metrics`). The prior is fitted on TRAIN windows only (`plantest_real.fit_priors`). Eval latents come from observations; the goal latent comes from frame 12's observation (the oracle the card names).
+
+**Disclosure.** With the HOLD seed the planner is told a0 of the very window it is scored on. A planner row that matches HOLD therefore reproduces information it was given, which is why the card scores against HOLD and flags HOLD-COLLAPSE.
