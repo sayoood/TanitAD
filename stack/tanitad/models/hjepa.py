@@ -255,13 +255,15 @@ class IDMHead(nn.Module):
 # Upper-level encoders  (Eq. 1)
 # =============================================================================================
 
-def _windows(z: Tensor, w: int, s: int) -> Tensor:
-    """``(N, T, D) -> (N, n, w*D)`` with ``n = (T - w)//s + 1``; window ``i`` = ``z[i*s : i*s+w]``."""
+def _windows(z: Tensor, w: int, s: int, d: int = 1) -> Tensor:
+    """``(N, T, D) -> (N, n, w*D)`` with ``n = (T - ((w-1)*d + 1))//s + 1``; window ``i`` = ``z[i*s + m*d]``, ``m = 0..w-1`` (oldest first).
+    ``d = 1`` is the consecutive window ``z[i*s : i*s+w]`` (every earlier call, bit for bit). PREREG_V8F_MRATE: ``d > 1`` = dilated at the level's own spacing."""
     n_, t_, d_ = z.shape
-    if t_ < w:
-        raise ValueError(f"need at least window={w} lower-level states, got {t_}")
-    n = (t_ - w) // s + 1
-    idx = torch.arange(n, device=z.device)[:, None] * s + torch.arange(w, device=z.device)[None, :]
+    span = (w - 1) * d + 1
+    if t_ < span:
+        raise ValueError(f"need at least window={w} (dilation {d}: span {span}) lower-level states, got {t_}")
+    n = (t_ - span) // s + 1
+    idx = torch.arange(n, device=z.device)[:, None] * s + torch.arange(w, device=z.device)[None, :] * d
     return z[:, idx].reshape(n_, n, w * d_)
 
 
@@ -455,6 +457,11 @@ class LevelConfig:
     beta: float = 0.08
     gamma: float = 100.0
     act_sigreg: float = 0.005
+    dilation: int = 1          # PREREG_V8F_MRATE: spacing (lower-level states) between the ``window`` states a state reads; 1 = consecutive (every earlier build)
+    causal_pad: bool = False   # PREREG_V8F_MRATE: front-pad ``(window-1)*dilation`` copies of the first lower state, so state i sits at lower index i*stride and reads only that state and earlier ones
+    rollout_k: int = 1         # PREREG_V8F_LADDER: free-run steps of the k-step loss (:meth:`HJEPAStack.rollout_loss`). 1 = the teacher-forced one-step loss only = every earlier build, bit for bit (no term, no key in the loss dict)
+    rollout_stride: int = 1    # PREREG_V8F_LADDER: the free run starts at every ``rollout_stride``-th state of the level (anchors 0, s, 2s, ..); used only when ``rollout_k`` > 1
+    rollout_w: float = 1.0     # PREREG_V8F_LADDER: weight of the k-step term in the level's loss (constant over training: no schedule); used only when ``rollout_k`` > 1
 
 
 @dataclass
@@ -500,8 +507,14 @@ class HJEPAStack(nn.Module):
         self.pred_reduction = pred_reduction
         L = len(self.cfg)
         for lv, c in enumerate(self.cfg[1:], start=2):
-            if c.stride < 1 or c.window < 1:
-                raise ValueError(f"level {lv}: stride/window must be >= 1")
+            if c.stride < 1 or c.window < 1 or c.dilation < 1:
+                raise ValueError(f"level {lv}: stride/window/dilation must be >= 1")
+        for lv, c in enumerate(self.cfg, start=1):          # PREREG_V8F_LADDER
+            if not (isinstance(c.rollout_k, int) and not isinstance(c.rollout_k, bool) and c.rollout_k >= 1
+                    and isinstance(c.rollout_stride, int) and not isinstance(c.rollout_stride, bool) and c.rollout_stride >= 1):
+                raise ValueError(f"level {lv}: rollout_k / rollout_stride must be ints >= 1, got {c.rollout_k!r} / {c.rollout_stride!r}")
+            if not (math.isfinite(c.rollout_w) and c.rollout_w >= 0.0):
+                raise ValueError(f"level {lv}: rollout_w must be a finite number >= 0, got {c.rollout_w!r}")
 
         c1 = self.cfg[0]
         if c1.act_embed_dim is None:
@@ -513,9 +526,8 @@ class HJEPAStack(nn.Module):
             e1 = c1.act_embed_dim
         self.embed_dims = [e1] + [c.action_dim for c in self.cfg[1:]]
 
-        self.encoders = nn.ModuleList([
-            LevelEncoder(self.cfg[i - 1].latent_dim, self.cfg[i].latent_dim,
-                         self.cfg[i].enc_hidden, self.cfg[i].window) for i in range(1, L)])
+        base_seed = torch.initial_seed()
+        self.encoders = nn.ModuleList([self._build_encoder(i, base_seed) for i in range(1, L)])
         self.macro_encoders = nn.ModuleList([
             MacroActionEncoder(self.embed_dims[i - 1], self.cfg[i].stride, self.cfg[i].action_dim,
                                self.cfg[i].macro_hidden, self.cfg[i].macro_mode)
@@ -541,6 +553,18 @@ class HJEPAStack(nn.Module):
             self.register_buffer(f"prior_lo_{lv}", torch.full((c.action_dim,), -math.inf))
             self.register_buffer(f"prior_hi_{lv}", torch.full((c.action_dim,), math.inf))
 
+    def _build_encoder(self, i: int, base_seed: int) -> "LevelEncoder":
+        """Level ``i + 1``'s state encoder. Window 1: built exactly as before. Window > 1 (PREREG_V8F_MRATE): weights drawn on a PRIVATE RNG stream
+        derived from the run seed, so the global stream every later module reads is the window-1 stack's (W0 and W1 share every other parameter bit for bit)."""
+        c = self.cfg[i]
+        mk = lambda w: LevelEncoder(self.cfg[i - 1].latent_dim, c.latent_dim, c.enc_hidden, w)  # noqa: E731
+        enc = mk(1)                              # the window-1 encoder ALWAYS draws from the global stream, so the stream every later module reads is the same for any window
+        if c.window == 1:
+            return enc
+        with torch.random.fork_rng(devices=[]):  # the real window-K encoder draws on a private stream derived from the run seed
+            torch.manual_seed((base_seed * 1_000_003 + 101 * (i + 1)) % (2 ** 63 - 1))
+            return mk(c.window)
+
     # ---- bookkeeping ----------------------------------------------------------------------
     @property
     def n_levels(self) -> int:
@@ -562,6 +586,10 @@ class HJEPAStack(nn.Module):
                 mac = self.macro_encoders[lv - 2]
                 row.update(stride=mac.stride, window=enc.window, act_sigreg=c.act_sigreg,
                            act_sigreg_live=c.act_sigreg > 0.0, macro_mode=mac.mode)
+                if enc.window > 1 or c.dilation > 1 or c.causal_pad:      # PREREG_V8F_MRATE: present only when moved (a window-1 stack keeps its key set)
+                    row.update(dilation=c.dilation, causal_pad=c.causal_pad, enc_in_dim=enc.net[0].in_features)
+            if c.rollout_k > 1:                                           # PREREG_V8F_LADDER: present only when moved; the G-DVB reader is :meth:`built_rollout` (the loss's own loop), not this config echo
+                row.update(rollout_k=c.rollout_k, rollout_stride=c.rollout_stride, rollout_w=c.rollout_w)
             out[lv] = row
         return out
 
@@ -603,13 +631,17 @@ class HJEPAStack(nn.Module):
         c = self.cfg[level - 1]
         lead = z.shape[:-2]
         t_, d_ = z.shape[-2:]
-        if strict and (t_ - c.window) % c.stride != 0:
+        if strict and not c.causal_pad and (t_ - ((c.window - 1) * c.dilation + 1)) % c.stride != 0:
             raise ValueError(
                 f"level {level}: a lower-level trajectory of {t_} states (incl. the initial one) "
                 f"does not end on a window boundary (window={c.window}, stride={c.stride}); the "
                 f"paper's horizon is H = K*s + w - 1, so the trailing steps would not affect the "
                 f"cost")
-        win = _windows(z.reshape(-1, t_, d_), c.window, c.stride)
+        zf = z.reshape(-1, t_, d_)
+        if c.causal_pad and c.window > 1:       # PREREG_V8F_MRATE
+            pad = (c.window - 1) * c.dilation
+            zf = torch.cat([zf[:, :1].expand(-1, pad, -1), zf], dim=1)
+        win = _windows(zf, c.window, c.stride, c.dilation)
         out = self.encoders[level - 2](win)
         return out.reshape(*lead, out.shape[-2], out.shape[-1])
 
@@ -658,7 +690,7 @@ class HJEPAStack(nn.Module):
                 raise ValueError(f"clip too short for level {lv}: only {n} state(s); need >= 2 "
                                  f"(window={c.window}, stride={c.stride})")
             e = acts[-1]
-            lo = c.window - 1
+            lo = 0 if c.causal_pad else (c.window - 1) * c.dilation
             e_sub = e[:, lo:lo + (n - 1) * c.stride]
             e_grp = e_sub.reshape(e.shape[0], n - 1, c.stride, e.shape[-1])
             a_up = self.macro_encoders[lv - 2](e_grp)
@@ -720,6 +752,10 @@ class HJEPAStack(nn.Module):
                 asg = self.sigreg(a.transpose(0, 1), generator=generator)
                 out[f"act_sigreg/L{lv}"] = asg
                 level_loss = level_loss + c.act_sigreg * asg
+            if c.rollout_k > 1:                                           # PREREG_V8F_LADDER: the k-step free-run term (k = 1: this block does not exist, the dict and the total are the earlier build's)
+                ro = self.rollout_loss(lv, z, enc.idm_target[0] if lv == 1 else a, c.rollout_k, c.rollout_stride, detach_target)
+                out[f"rollout/L{lv}"], out[f"rollout_valid/L{lv}"], out[f"rollout_masked/L{lv}"] = ro["loss"], ro["n_valid"], ro["n_masked"]
+                level_loss = level_loss + c.rollout_w * ro["loss"]
             out[f"level/L{lv}"] = level_loss
             total = total + level_loss
         out["total"] = total
@@ -759,6 +795,92 @@ class HJEPAStack(nn.Module):
             zs.append(nxt)
         out = torch.stack(zs[1:], dim=1)
         return out.reshape(*lead, h_, out.shape[-1])
+
+    def rollout_loss(self, level: int, z: Tensor, a_plan: Tensor, k: int, stride: int = 1, detach_target: bool = False,
+                     context: Optional[int] = None) -> dict:
+        """PREREG_V8F_LADDER: the k-step free-run loss of one level, through :meth:`rollout`. Anchors are the states ``0, stride, 2 stride, .. <= T - 2`` of the window; from each, the predictor is rolled ``k`` steps
+        under the logged actions (its OWN predictions fed back, ``context`` states of history; default the predictor's context), and every step is scored against the encoded state it should reach.
+        A step ``h`` of anchor ``i`` is VALID iff its target ``i + h + 1`` is a state the window holds (``<= T - 1``); a step past the window is MASKED: it contributes exactly 0.0 to the loss and the gradient and is counted.
+        The loss is the mean squared error over the valid steps (equal weight per valid step, per-dimension mean as :meth:`_pred_loss`; no per-step schedule).
+
+        ``z`` ``(B, T, D)`` the level's states; ``a_plan`` ``(B, T - 1, A)`` its PLANNING actions (RAW at level 1 -- :meth:`rollout` embeds them -- macro-action embeddings above).
+        Returns ``loss`` (scalar), ``contrib`` ``(B, A, k)`` (the masked per-step squared errors, 0.0 where masked), ``step_err`` ``(k,)`` (detached mean per step), ``n_valid`` / ``n_masked`` (counts of (sample, anchor, step))."""
+        b_, t_, _ = z.shape
+        if k < 1 or stride < 1:
+            raise ValueError("k and stride must be >= 1")
+        if t_ < 2:
+            raise ValueError("need at least 2 states")
+        idx = torch.arange(0, t_ - 1, stride, device=z.device)                       # anchors: each has >= 1 valid step
+        pos = idx[:, None] + torch.arange(k, device=z.device)[None, :]               # (A, k): the transition i + h, and the state before the step
+        valid = (pos + 1) <= (t_ - 1)                                                # the target state exists in the window
+        acts = F.pad(a_plan, (0, 0, 0, k))[:, pos]                                   # (B, A, k, E); entries past the window are zeros and are masked below
+        tgt = F.pad(z, (0, 0, 0, k))[:, pos + 1]                                     # (B, A, k, D)
+        if detach_target:
+            tgt = tgt.detach()
+        pred_mod = self.predictors[level - 1]
+        ctx = context if context is not None else (getattr(pred_mod, "context", None) or 1)
+        pred = self.rollout(level, z[:, idx], acts, context=ctx)                     # (B, A, k, D)
+        sq = (pred - tgt).pow(2)
+        per = sq.mean(dim=-1) if self.pred_reduction == "mean" else sq.sum(dim=-1)   # (B, A, k)
+        contrib = per * valid[None].to(per.dtype)                                    # a masked step contributes exactly 0.0
+        n_valid = valid.sum()
+        loss = contrib.sum() / (b_ * n_valid.clamp_min(1))
+        step_err = (contrib.sum(dim=(0, 1)) / (b_ * valid.sum(dim=0).clamp_min(1))).detach()
+        return {"loss": loss, "contrib": contrib, "step_err": step_err, "n_valid": (n_valid * b_).to(per.dtype), "n_masked": ((~valid).sum() * b_).to(per.dtype)}
+
+    def states_per_level(self, n_frames: int) -> list:
+        """States per level for a window of ``n_frames`` level-1 frames, MEASURED by running :meth:`encode` on zeros."""
+        c1 = self.cfg[0]
+        with torch.no_grad():
+            e = self.encode(torch.zeros(1, n_frames, c1.latent_dim), torch.zeros(1, n_frames - 1, c1.action_dim))
+        return [int(t.shape[1]) for t in e.z]
+
+    def built_rollout(self, n_frames: int, batch: int = 2) -> dict:
+        """PREREG_V8F_LADDER, the G-DVB reader for the k-step lever: what the BUILT loss does, measured by running it. A forward hook counts the predictor calls made INSIDE :meth:`rollout` (a wrapper marks the
+        span) while :meth:`loss` runs once on noise for a window of ``n_frames`` frames, with the global RNG forked (the probe moves no training stream). Per level: ``k`` = predictor calls in the free run
+        (0 = no free-run term was built), ``anchors`` = the free run's anchor count, ``ctx_passed`` = the context handed to ``rollout``, ``ctx_built`` = ``predictor.pos`` rows (the BUILT parameter shape),
+        ``w_in_loss`` = (level loss - its other terms) / rollout term = the weight the total really gives the term (None when no term), ``states`` = the level's state count."""
+        calls = {lv: 0 for lv in range(1, self.n_levels + 1)}
+        seen = {lv: {"anchors": 0, "ctx": None} for lv in calls}
+        flag = {"lv": None}
+        hooks = [m.register_forward_hook(lambda _m, _i, _o, _lv=lv: calls.__setitem__(_lv, calls[_lv] + (1 if flag["lv"] == _lv else 0))) for lv, m in enumerate(self.predictors, start=1)]
+        orig = self.rollout
+
+        def wrapped(level, z0, actions, *, context=1):
+            flag["lv"] = level
+            seen[level]["anchors"], seen[level]["ctx"] = (int(actions.shape[1]) if actions.dim() == 4 else 1), int(context)
+            try:
+                return orig(level, z0, actions, context=context)
+            finally:
+                flag["lv"] = None
+        self.rollout = wrapped                                                       # an instance attribute shadows the method for the span of the probe
+        was = self.training
+        try:
+            c1 = self.cfg[0]
+            with torch.no_grad(), torch.random.fork_rng(devices=[]):
+                torch.manual_seed(0)
+                z1 = torch.randn(batch, n_frames, c1.latent_dim)
+                a = torch.randn(batch, n_frames - 1, c1.action_dim)
+                self.eval()
+                out = self.loss(z1, a)
+        finally:
+            del self.rollout
+            self.train(was)
+            for h in hooks:
+                h.remove()
+        res = {"k": [], "anchors": [], "ctx_passed": [], "ctx_built": [], "w_in_loss": [], "states": self.states_per_level(n_frames)}
+        for lv, c in enumerate(self.cfg, start=1):
+            pm = self.predictors[lv - 1]
+            res["k"].append(calls[lv])
+            res["anchors"].append(seen[lv]["anchors"])
+            res["ctx_passed"].append(seen[lv]["ctx"])
+            res["ctx_built"].append(int(pm.pos.shape[0]) if hasattr(pm, "pos") else None)
+            if f"rollout/L{lv}" in out and float(out[f"rollout/L{lv}"]) != 0.0:
+                other = out[f"pred/L{lv}"] + c.beta * out[f"sigreg/L{lv}"] + c.gamma * out[f"idm/L{lv}"] + (c.act_sigreg * out[f"act_sigreg/L{lv}"] if lv >= 2 else 0.0)
+                res["w_in_loss"].append(float((out[f"level/L{lv}"] - other) / out[f"rollout/L{lv}"]))
+            else:
+                res["w_in_loss"].append(None)
+        return res
 
     def goal_cost(self, z_pred: Tensor, goal: Tensor, level: int, last_k: Optional[int] = None) -> Tensor:
         """Squared Euclidean distance of the final predicted state(s) to ``goal`` (Eq. 4).

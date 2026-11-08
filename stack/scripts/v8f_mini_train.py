@@ -44,6 +44,8 @@ for p in (os.path.join(REPO, "stack"), os.path.join(REPO, "taniteval")):
 
 from tanitad.data import v8f_dagger as DG  # noqa: E402      PREREG_V8F_DAGGER: the own-state bank + the swap (the DATA library; `--dagger-p 0` = no bank is read and no row is swapped)
 from tanitad.data import v8f_mini_data as D  # noqa: E402
+from tanitad.data import v8f_wm_windows as WW  # noqa: E402      PREREG_V8F_LADDER: the world-model-only window sampler + the pooled path's data half (`--wm-windows train` = it is never called)
+from tanitad.data import v8f_t2bank as TB  # noqa: E402       PREREG_T2_DAGGER: the T2 own-state bank + the whole-sample swap (`--t2-bank-p 0` = no bank is read and nothing is applied)
 from tanitad.data import v8f_recover as R  # noqa: E402      PREREG_RECOVER_FT: the recovery perturbation + its TRAIN-bank deviation table (`--recover-p 0` = nothing is built and nothing is applied)
 from tanitad.models import v8f_mini as M  # noqa: E402
 
@@ -101,6 +103,10 @@ FLAG_CHECKS = {
     # the perturbed tensors AND the re-expressed target reach the loss gradient, a p = 0 control reads EXACTLY 0.0) -> `b = rec.apply(b, step)` in the loop. With --recover-p 0 (the default) no bank is read and nothing is applied.
     "recover_p": "rec:recover_p", "recover_dev_bank": "rec:recover_dev_bank", "recover_dev_bank_sha256": "rec:recover_dev_bank_sha256", "recover_dev_law": "rec:recover_dev_law",
     "recover_dev_shape": "rec:recover_dev_shape",
+    # PREREG_T2_DAGGER: the T2 own-state bank. `t2:<k>` = equals the BUILT swap's lever (TB.T2BankSwap.built_levers(), the object the loop calls `.apply` on; the sha256 it reports is the LOADED manifest's): argv -> make_t2bank
+    # (bank load + sha256) -> the swap -> declared_vs_built (bad_t2bank) -> G-LIVE (t2bank_probe: bank rows carry ONLY the target law, every masked term reads EXACTLY 0.0, a p = 0 control is the same batch object) ->
+    # `b = t2b.apply(b, step)` in the loop. With --t2-bank-p 0 (the default) no bank is read and nothing is applied.
+    "t2_bank_p": "t2:t2_bank_p", "t2_bank": "t2:t2_bank", "t2_bank_sha256": "t2:t2_bank_sha256", "t2_bank_seed": "t2:t2_bank_seed",
     "recover_target": "rec:recover_target", "recover_rejoin_steps": "rec:recover_rejoin_steps", "recover_seed": "rec:recover_seed",
     # PREREG_V8F_LEVEL (lever (a) of DECISION_K2): the vision-only speed-level head. `lever:level_head` = equals built_levers().get("level_head", "off") (the BUILT model: lvl_head + e_level exist iff on); `cfg:w_level` = equals the BUILT config's
     # weight: argv -> make_config -> the BUILT model -> declared_vs_built (bad_level: a head with no loss, a weight with no head, a non-zero e_level at init, a head whose code names a non-vision input are REFUSED) -> level_head_probe (G-LIVE:
@@ -109,14 +115,29 @@ FLAG_CHECKS = {
     # PREREG_LEVELHEAD_A2 (arm LLR): the lead head + how O reads the heads. `lever:lead_head` = built_levers().get("lead_head", "off"); `cfg:w_lead` = the BUILT config's weight; `lever:aux_cond` = built_levers().get("aux_cond", "add")
     # (the BUILT wiring: e_lead / e_level exist iff add, e_aux iff token and a head is on). argv -> make_config -> the BUILT model -> declared_vs_built (bad_lead) -> lead_head_probe (G-LIVE) -> `lead_stage(b, LL)` BEFORE the ego stages.
     "lead_head": "lever:lead_head", "w_lead": "cfg:w_lead", "aux_cond": "lever:aux_cond",
-    "init_ckpt": "data:init_ckpt",            # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
+    # PREREG_V8F_MRATE: `lever:wm_k` = equals built_levers().get("wm_k", 1) (the BUILT modules' window / dilation / causal pad, WMAux.built_k); `lever:wm_only` = the record the WM-only loader read back (bad_wm_only: non-WM tensors bit-equal to the checkpoint,
+    # NO WM tensor loaded, the WM re-initialised under --seed, trainable == the WM's parameters exactly, every other lever at its default) -> wm_only_live_check (G-LIVE) + planner_identity_probe -> `model.wm_only_loss(b)` in the loop.
+    "wm_k": "lever:wm_k", "wm_only": "lever:wm_only",
+    # PREREG_V8F_LFS: `lever:wm_strides` = equals built_levers().get("wm_strides", [2, 2]) AND the BUILT modules (WMAux.built_strides: the LevelConfig strides the loss reads, the macro encoders' stride and the stride their parameter SHAPES carry) -> bad_wm_strides
+    # (the gate also refuses a stride that leaves a level fewer than 2 transitions: the arm is NOT RUN, with the count) -> `selfcheck.json levers.wm_strides_readback` (written when the argv NAMES the flag).
+    "wm_strides": "lever:wm_strides",
+    # PREREG_V8F_LADDER: `lever:wm_rollout_k` = the predictor calls the BUILT loss makes inside HJEPAStack.rollout, per level (WMAux.built_ladder: a forward-hook count while the loss runs, never the config that built it);
+    # `lever:wm_rollout_stride` = the free run's anchor count the built loss produces; `lever:wm_rollout_w` = (level loss - its other terms) / the k-step term; `lever:wm_ctx` = the predictor's parameter-shape context (pos.shape[0])
+    # AND the context the free run is handed; `data:wm_windows` = the kind, F, first t and pooled flag READ BACK from the BUILT dataset (data_info["wm_windows"]) -> bad_wm_ladder.
+    "wm_rollout_k": "lever:wm_rollout_k", "wm_rollout_stride": "lever:wm_rollout_stride", "wm_rollout_w": "lever:wm_rollout_w", "wm_ctx": "lever:wm_ctx",
+    "wm_windows": "data:wm_windows", "wm_win_stride": "data:wm_windows", "wm_pooled": "data:wm_windows", "wm_zcache": "data:wm_windows",
+    "init_ckpt": "data:init_ckpt",           # O-RECOVER's start state: the MODEL weights of an earlier checkpoint, config-checked, loaded strictly and READ BACK (load_init_ckpt) -> declared_vs_built (bad_init_ckpt)
     # PREREG_V8F_LORA: the encoder lever. `enc:<k>` = equals the BUILT encoder's lever (enc.built_levers()); with --encoder cache there is no encoder and every
     # one of these must be at its default (a declared flag that builds nothing is REFUSED, not ignored)
     "encoder": "enc:encoder", "lora_r": "enc:lora_r", "lora_alpha": "enc:lora_alpha", "lora_targets": "enc:lora_targets",
     "lora_lr": "opt:lora_lr", "frames_root": "data:frames_missing", "accum": "enc:accum", "enc_ckpt": "enc:checkpointing",
+    # AMENDMENT_V8F_LORA_5: a resume may change EXACTLY --accum and --enc-ckpt (speed and memory, not the estimator). `perf:` = bad_perf_resume reads it back: the named previous argv, with those two flags
+    # (and this flag) removed from both sides, is token for token the argv being launched; at resume the checkpoint's argv_sha must be that previous argv's.
+    "resume_perf_levers": "perf:resume_perf_levers",
 }
 
 LORA_PARSER_DEFAULTS = {"lora_r": 32, "lora_alpha": 32.0, "lora_targets": "q,v", "lora_lr": None, "frames_root": None, "accum": 1, "enc_ckpt": False}
+LIVE_PROBE_WINDOWS_WM = 8            # PREREG_V8F_LADDER: windows of the G-LIVE / identity probe batches in the wmonly mode (<= 8 x hmax frames; the CPU probes run the k-step loss)
 LIVE_PROBE_WINDOWS_LORA = 16          # G-LIVE through the real encoder: windows of the first batch (<= 16 x hmax frames), not all 64
 
 
@@ -214,6 +235,13 @@ def build_parser():
     ap.add_argument("--recover-dev-shape", dest="recover_dev_shape", choices=list(R.DEV_SHAPES), default=R.RECOVER_DEFAULTS["dev_shape"],
                     help="`constant` (default, every earlier arm bit for bit): the drawn record's (dv, da, dom) offsets all history frames alike. `pertick`: history frame k is offset by the record's own per-tick deviation "
                          "(dv_t[k], da_t[k], dom_t[k]) and the pose / nav history moves by the cumulative effect (needs the empirical law; the table is built with per-tick columns; refused with the a-priori law and at --recover-p 0)")
+    # ---- PREREG_T2_DAGGER (DT2): whole samples from the T2 own-state bank. Default OFF; the registered arm value is 0.3; exclusive with every other own-state lever.
+    ap.add_argument("--t2-bank-p", dest="t2_bank_p", type=float, default=TB.T2_DEFAULTS["p"],
+                    help="PREREG_T2_DAGGER: the share of training samples REPLACED by a whole sample of the T2 bank (tokens rendered at the executed poses, executed ego history, RECOVER-FT's target law); the ONLY supervision on a bank row "
+                         "is that target (every other loss term is masked). 0.0 (default) = off = the pre-change run, bit for bit. Registered arm value 0.3. Exclusive with --recover-p / --dagger-p / --ego-perturb-p / --encoder lora.")
+    ap.add_argument("--t2-bank", dest="t2_bank", default="", help="the bank directory (bank.json + rows.pt). REQUIRED with --t2-bank-p > 0; refused at p = 0")
+    ap.add_argument("--t2-bank-sha256", dest="t2_bank_sha256", default="", help="the sha256 (64 hex) of the bank's bank.json that THIS arm declares it draws from. REQUIRED with --t2-bank-p > 0; refused at p = 0")
+    ap.add_argument("--t2-bank-seed", dest="t2_bank_seed", type=int, default=TB.T2_DEFAULTS["seed"], help="seed of the swap's private generator (domain-separated hash of (seed, step))")
     ap.add_argument("--recover-target", dest="recover_target", choices=list(R.TARGETS), default=R.RECOVER_DEFAULTS["target"],
                     help="`rejoin` (registered, AMENDMENT_1): the logged future re-expressed in the deviated frame, the first --recover-rejoin-steps knots blended from the logged future onto it. `logged`: the pure frame change")
     ap.add_argument("--recover-rejoin-steps", dest="recover_rejoin_steps", type=int, default=R.RECOVER_DEFAULTS["rejoin_steps"],
@@ -280,6 +308,38 @@ def build_parser():
     ap.add_argument("--w-pen", type=float, default=0.5)
     ap.add_argument("--w-pen-self", type=float, default=0.25)
     ap.add_argument("--w-wm", type=float, default=0.1)
+    # ---- PREREG_V8F_MRATE: the multi-rate world model and the WM-only mode. Both default to the earlier behaviour; both have their G-DVB entry in FLAG_CHECKS and their clause in bad_wm_only.
+    ap.add_argument("--wm-k", dest="wm_k", type=int, default=1,
+                    help="PREREG_V8F_MRATE: how many past states each world-model level reads, spaced at that level's own step. 1 (default) = W0 = every earlier arm, bit for bit (no module and no state-dict key is added). "
+                         "K > 1 (W1: 3): L1 reads the adapter tokens of frames t, t-1, .., t-K+1; L2 / L3 read K states of the level below, 0.4 s / 0.8 s apart. Needs --wm b")
+    ap.add_argument("--wm-only", dest="wm_only", action="store_true", default=False,
+                    help="PREREG_V8F_MRATE: WM-only training. Needs --init-ckpt (a plain M2b s{k}): its adapter, readers and planner load strictly and bit-equal and are FROZEN; its world-model parameters are NOT loaded -- the WM is "
+                         "re-initialised under --seed (hmax is not compared: M2b trained at 16, this arm at 28); only the WM loss terms are trained. Every other lever must be at its default (a lever that is declared and does nothing is refused). Default off")
+    ap.add_argument("--wm-strides", dest="wm_strides", type=int, nargs=2, default=None, metavar=("S2", "S3"),
+                    help="PREREG_V8F_LFS: the world model's level steps, in states of the level below: S2 = L1 states per L2 step, S3 = L2 states per L3 step. Absent (default) = the arm config's (2, 2) = every earlier arm, bit for bit "
+                         "(0.2 / 0.4 / 0.8 s on the cache grid). (2, 3) = steps 0.2 / 0.4 / 1.2 s; (3, 3) = 0.2 / 0.6 / 1.8 s. Needs --wm a|b. A flag whose value leaves the strides unchanged must still be NAMED in an LFS argv "
+                         "(its selfcheck then records the BUILT strides). Every level must keep >= 2 training transitions at --hmax, else the gate refuses (NOT RUN, with the count)")
+    # ---- PREREG_V8F_LADDER: the world-model ladder levers. Every flag defaults to the earlier behaviour and has its G-DVB entry in FLAG_CHECKS and its clause in bad_wm_ladder.
+    ap.add_argument("--wm-rollout-k", dest="wm_rollout_k", type=int, nargs=3, default=None, metavar=("K1", "K2", "K3"),
+                    help="PREREG_V8F_LADDER: free-run steps of the k-step loss per WM level (through HJEPAStack.rollout, on top of the teacher-forced one-step loss). Absent = (1, 1, 1) = every earlier arm, bit for bit. "
+                         "A level with k > 1 needs hmax >= k x (its cumulative stride) + 1 frames. Needs --wm a|b")
+    ap.add_argument("--wm-rollout-stride", dest="wm_rollout_stride", type=int, nargs=3, default=None, metavar=("A1", "A2", "A3"),
+                    help="PREREG_V8F_LADDER: the free run of level l starts at every A_l-th state of the window. Absent = (1, 1, 1). Used only where that level's k > 1 (a stride > 1 declared on a k = 1 level is refused)")
+    ap.add_argument("--wm-rollout-w", dest="wm_rollout_w", type=float, default=1.0,
+                    help="PREREG_V8F_LADDER: weight of every level's k-step term in its level loss (constant over training, no schedule). Default 1.0. Only meaningful where some level's k > 1")
+    ap.add_argument("--wm-ctx", dest="wm_ctx", type=int, nargs=3, default=None, metavar=("C1", "C2", "C3"),
+                    help="PREREG_V8F_LADDER: each WM level's predictor context (states). Absent = (3, 3, 3) = every earlier arm. Changes the predictor's parameter shape (the WM is re-initialised in a --wm-only run)")
+    ap.add_argument("--wm-windows", dest="wm_windows", choices=("train", "wmonly"), default="train",
+                    help="PREREG_V8F_LADDER: the window list. train (default) = the labelled 6 s-complete windows of every earlier arm. wmonly = the world-model-only sampler: every full hmax-frame window of a clip (t >= hmax - 1), "
+                         "no label requirement. Needs --wm-only")
+    ap.add_argument("--wm-win-stride", dest="wm_win_stride", type=int, default=1,
+                    help="PREREG_V8F_LADDER: anchors of the wmonly sampler are every n-th t (default 1 = all). Used only with --wm-windows wmonly")
+    ap.add_argument("--wm-pooled", dest="wm_pooled", choices=("off", "on"), default="off",
+                    help="PREREG_V8F_LADDER: the frozen-adapter pooled path (wmonly windows only): the loader hands the token mean of the layer-normalised features and the model applies the frozen adapter after the mean "
+                         "(equal to the live adapter mean to 1e-6), so a 91-frame window never builds a [B, F, n_tok, d] tensor. Default off = the live adapter")
+    ap.add_argument("--wm-zcache", dest="wm_zcache", default="",
+                    help="PREREG_V8F_LADDER: a directory of per-clip <clip>.npz (zmean [T, D] = the frozen adapter's mean token before the WM projection, ok [T], t_s [T]) built from THIS run's init checkpoint. wmonly windows only; every clip "
+                         "of the run must have a file (else refused); a window with an ok=False frame is an error. Default empty = the pooled/live path. The adapter is then not read at all")
     ap.add_argument("--detach-upper", action="store_true")
     ap.add_argument("--synthetic", action="store_true", help="run on a tiny synthetic world (smoke / CI)")
     ap.add_argument("--selfcheck-only", action="store_true")
@@ -293,6 +353,9 @@ def build_parser():
     ap.add_argument("--frames-root", dest="frames_root", default=None, help="--encoder lora: directory of <clip>.v2ep.pt (256x640 cylindrical PNG frames) for EVERY train clip")
     ap.add_argument("--accum", type=int, default=1, help="--encoder lora: encoder micro-batches per effective batch (batch / accum windows each); the heads see the full batch")
     ap.add_argument("--enc-ckpt", dest="enc_ckpt", action="store_true", help="--encoder lora: gradient checkpointing inside the encoder (needed for 8 GB)")
+    ap.add_argument("--resume-perf-levers", dest="resume_perf_levers", default=None, metavar="PREV_ARGV_JSON",
+                    help="resume a checkpoint written by the argv in this JSON ({'argv': [...]}) although --accum and/or --enc-ckpt differ from it. Nothing else may differ: the two argvs, with "
+                         "'--accum <n>', '--enc-ckpt' and this flag removed, must be equal token for token. Writes one perf_resume record into train_log.jsonl. Default: off (a different argv refuses)")
     return ap
 
 
@@ -311,13 +374,41 @@ def declared_levers(a) -> dict:
     return spec
 
 
+WM_STRIDES_DEFAULT = tuple(M.V8FMiniConfig.__dataclass_fields__["wm_strides"].default)       # PREREG_V8F_LFS: the arm config's strides, (2, 2): what an argv that does not name --wm-strides builds
+
+
+def declared_wm_strides(a) -> tuple:
+    """PREREG_V8F_LFS: the strides the argv DECLARES: ``--wm-strides S2 S3``, or the arm config's (2, 2) when the flag is absent."""
+    return WM_STRIDES_DEFAULT if a.wm_strides is None else tuple(int(s) for s in a.wm_strides)
+
+
+WM_LADDER_DEFAULTS = {"wm_rollout_k": (1, 1, 1), "wm_rollout_stride": (1, 1, 1), "wm_ctx": (3, 3, 3)}      # PREREG_V8F_LADDER: what an argv that does not name the flag builds (= the LevelConfig defaults)
+WM_LADDER_FLAGS = ("wm_rollout_k", "wm_rollout_stride", "wm_rollout_w", "wm_ctx", "wm_windows", "wm_win_stride", "wm_pooled", "wm_zcache")
+
+
+def declared_wm_ladder(a) -> dict:
+    """PREREG_V8F_LADDER: the ladder levers the argv DECLARES (the flag's value, or the earlier default when the flag is absent)."""
+    d = {k: (WM_LADDER_DEFAULTS[k] if getattr(a, k) is None else tuple(int(x) for x in getattr(a, k))) for k in WM_LADDER_DEFAULTS}
+    d["wm_rollout_w"] = float(a.wm_rollout_w)
+    return d
+
+
+def wm_ladder_named(a) -> list:
+    """The ladder flags the argv moved off their parser defaults."""
+    dfl = build_parser()
+    return [k for k in WM_LADDER_FLAGS if getattr(a, k) != dfl.get_default(k)]
+
+
 def make_config(a) -> M.V8FMiniConfig:
     lv = declared_levers(a)
     hmax = a.hmax or (16 if lv["wm"] != "off" else 10)
     return M.V8FMiniConfig(d=a.d, ff=2 * a.d, hist=a.hist, hmax=hmax, window_start=a.window_start, n_q=a.n_q, nb=a.nb, navonly=lv["navonly"],
+                           wm_strides=declared_wm_strides(a),                                             # PREREG_V8F_LFS: the ONE line that applies --wm-strides (a mutation deletes it)
                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
-                           w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
+                           w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm, wm_k=a.wm_k,
+                           wm_rollout_k=declared_wm_ladder(a)["wm_rollout_k"], wm_rollout_stride=declared_wm_ladder(a)["wm_rollout_stride"],       # PREREG_V8F_LADDER: the lines that apply the ladder levers (a mutation deletes them)
+                           wm_rollout_w=declared_wm_ladder(a)["wm_rollout_w"], wm_ctx=declared_wm_ladder(a)["wm_ctx"],
                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w,
                            level_head=a.level_head, w_level=a.w_level,
                            lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond)
@@ -696,6 +787,319 @@ def load_init_ckpt(path, model, cfg, apply: bool = True) -> dict:
     return rec
 
 
+#: PREREG_V8F_MRATE: every other lever a WM-only argv must leave at its parser default (the readers, heads and planner are frozen and never run: a lever on them is declared and does nothing)
+WM_ONLY_DEFAULT_DESTS = ("navonly", "no_consistency", "cons_absent", "code_mix", "o_interface", "w_acc", "launch_intent_w", "level_head", "w_level", "lead_head", "w_lead", "aux_cond", "detach_upper",
+                         "ego_perturb_p", "ego_perturb_yawrate_std", "dagger_p", "dagger_bank", "dagger_bank_sha256", "ego_perturb_with_dagger", "recover_p", "recover_dev_bank", "recover_dev_bank_sha256",
+                         "encoder", "lora_lr", "frames_root", "accum", "enc_ckpt", "window_start")
+
+
+def is_wm_param(name: str) -> bool:
+    return name.startswith("wm.")
+
+
+def freeze_all_but_wm(model) -> None:
+    """PREREG_V8F_MRATE: the WM-only mode trains the world model and nothing else. Called BEFORE the optimiser is built (its decay / nodecay lists filter on requires_grad)."""
+    for n, p in model.named_parameters():
+        p.requires_grad_(is_wm_param(n))
+
+
+#: the INIT_CKPT_MATCH keys a WM-ONLY start does not compare: ``hmax`` (it only sizes the WM sequence: M2b 16, MRATE 28) and, PREREG_V8F_LFS, ``wm_strides`` (the WM is re-initialised, none of the checkpoint's WM tensors is loaded, and
+#: the strides are the WM's own geometry; M2b's (2, 2) must not block an LFS arm at (2, 3) or (3, 3)). Every other key -- ``wm``, ``wm_dim``, ``wm_beta``, ``wm_gamma``, the readers' shape -- is still compared.
+WM_ONLY_NOT_COMPARED = ("hmax", "wm_strides")
+
+
+def load_wm_only_init(path, model, cfg, seed: int, apply: bool = True) -> dict:
+    """Start state of a WM-only run (PREREG_V8F_MRATE, the Master Mind's reading of 2026-11-07 13:09). Hash the file; REFUSE a checkpoint whose architecture config differs from the BUILT one in any ``INIT_CKPT_MATCH`` key EXCEPT
+    ``hmax`` (M2b trained at 16, this arm at 28: hmax only sizes the WM sequence); then, if ``apply``, load EVERY non-``wm.`` tensor strictly (the missing keys are exactly the model's ``wm.*`` keys, nothing is unexpected), READ THEM BACK
+    (``n_mismatch_after_load``), and replace the world model by a FRESH ``WMAux`` built right after ``torch.manual_seed(seed)`` (none of the checkpoint's WM tensors is loaded; ``wm_params_equal_to_ckpt`` counts the shape-matching float
+    parameters that happen to equal the checkpoint's: it must be 0). ``apply`` is False when ``--out`` already holds a ckpt_last.pt (resume wins)."""
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for blk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(blk)
+    ck = torch.load(path, map_location="cpu", weights_only=False)
+    if not isinstance(ck, dict) or "model" not in ck or not isinstance(ck.get("cfg"), dict):
+        raise ValueError("not a v8f_mini_train checkpoint (no 'model' / 'cfg')")
+    norm = lambda v: tuple(v) if isinstance(v, (list, tuple)) else v          # noqa: E731
+    diff = {k: (norm(ck["cfg"][k]), norm(getattr(cfg, k))) for k in INIT_CKPT_MATCH if k not in WM_ONLY_NOT_COMPARED and k in ck["cfg"] and norm(ck["cfg"][k]) != norm(getattr(cfg, k))}
+    if diff:
+        raise ValueError("config mismatch between the checkpoint and the model this argv builds (checkpoint vs built; " + " and ".join(WM_ONLY_NOT_COMPARED) + " are not compared): " + "; ".join(f"{k}: {v[0]!r} != {v[1]!r}" for k, v in sorted(diff.items())))
+    sd = ck["model"]
+    rec = {"path": os.path.abspath(path), "sha256": h.hexdigest(), "applied": bool(apply), "skipped": None if apply else "resume", "n_tensors": len(sd), "n_mismatch_after_load": None,
+           "source_step": ck.get("step"), "source_arm": ck.get("arm"), "source_seed": ck.get("seed"), "source_argv_sha": ck.get("argv_sha"), "mode": "wm_only",
+           "hmax_ckpt": ck["cfg"].get("hmax"), "hmax_built": cfg.hmax, "wm_strides_ckpt": norm(ck["cfg"].get("wm_strides")), "wm_strides_built": norm(cfg.wm_strides),      # PREREG_V8F_LFS: the WM is fresh, so its strides are the argv's
+           "wm_loaded_from_ckpt": 0, "wm_reinit_seed": None, "wm_params_equal_to_ckpt": None}
+    if not apply:
+        return rec
+    rest = {k: v for k, v in sd.items() if not is_wm_param(k)}
+    res = model.load_state_dict(rest, strict=False)
+    wm_keys = sorted(k for k in model.state_dict() if is_wm_param(k))
+    if res.unexpected_keys:
+        raise ValueError(f"the checkpoint carries non-WM keys the built model does not have: {sorted(res.unexpected_keys)[:8]}")
+    if sorted(res.missing_keys) != wm_keys:
+        raise ValueError(f"the built model lacks checkpoint values for keys that are not its WM's: {sorted(set(res.missing_keys) - set(wm_keys))[:8]}")
+    cur = model.state_dict()
+    rec["n_mismatch_after_load"] = sum(1 for k in rest if not torch.equal(cur[k].detach().cpu(), rest[k].detach().cpu()))
+    dev = next(model.parameters()).device
+    torch.manual_seed(seed)                                                    # the WM is a function of (seed, cfg) only: W0 and W1 of one seed share every non-level-encoder parameter bit for bit
+    model.wm = M.WMAux(cfg).to(dev)
+    rec["wm_reinit_seed"] = seed
+    old = {k: v for k, v in sd.items() if is_wm_param(k)}
+    rec["wm_params_equal_to_ckpt"] = sum(1 for n, q in model.named_parameters() if is_wm_param(n) and n in old and old[n].shape == q.shape and torch.equal(old[n].detach().cpu(), q.detach().cpu()))
+    return rec
+
+
+def bad_wm_only(a, cfg, model, data_info) -> list:
+    """G-DVB for ``--wm-k`` and ``--wm-only`` (PREREG_V8F_MRATE). ``--wm-k`` is read back from the BUILT modules (``WMAux.built_k``: window, dilation, causal pad per level). ``--wm-only`` is read back from the loader's record and the
+    parameters' ``requires_grad``: the checkpoint's non-WM tensors are in the model bit-equal, no WM tensor was loaded, the WM was re-initialised under the run seed, the trainable set is exactly the WM's parameters, and every other
+    lever is at its default."""
+    bad = []
+    built = model.built_levers()
+    if built.get("wm_k", 1) != a.wm_k:
+        bad.append(f"lever wm_k: declared {a.wm_k} but built {built.get('wm_k', 1)}")
+    if a.wm_k > 1:
+        want = {"wm_k_levels": [a.wm_k] * 3, "wm_dilation_levels": [1, *cfg.wm_strides], "wm_causal_pad_levels": [True] * 3}
+        for k, v in want.items():
+            if built.get(k) != v:
+                bad.append(f"lever wm_k {a.wm_k}: built {k} {built.get(k)} != {v}")
+    elif model.wm is not None and (model.wm.enc1 is not None or any(k != 1 for k in model.wm.built_k()["k"])):
+        bad.append("wm_k 1 declared but a multi-frame world-model module was built")
+    rec = data_info.get("wm_only")
+    if not a.wm_only:
+        if rec:
+            bad.append("wm_only not declared but a WM-only start state was loaded")
+        return bad
+    if model.wm is None:
+        return bad + ["wm_only declared but no world model was built (--wm off)"]
+    if not a.init_ckpt:
+        bad.append("wm_only declared without --init-ckpt: nothing to freeze the readers and the planner at")
+    if not rec:
+        return bad + ["wm_only declared but no WM-only start state was loaded"]
+    if not cfg.w_wm > 0.0:
+        bad.append(f"wm_only declared but w_wm is {cfg.w_wm}: the only loss term has weight 0 -- a lever that is declared and does nothing")
+    dfl = build_parser()
+    for d in WM_ONLY_DEFAULT_DESTS:
+        if getattr(a, d) != dfl.get_default(d):
+            bad.append(f"wm_only: --{d.replace('_', '-')} is {getattr(a, d)!r} (default {dfl.get_default(d)!r}): the readers, heads and planner are frozen and never run -- a lever that is declared and does nothing")
+    if a.arm != "M2b":
+        bad.append(f"wm_only: arm {a.arm} (the card trains the world model of M2b)")
+    names = [n for n, p in model.named_parameters() if p.requires_grad]
+    wm_names = [n for n, _ in model.named_parameters() if is_wm_param(n)]
+    if not wm_names or sorted(names) != sorted(wm_names):
+        bad.append(f"wm_only: trainable parameters are not exactly the WM's ({len(names)} trainable, {len(wm_names)} WM; stray: {sorted(set(names) - set(wm_names))[:4]})")
+    if rec.get("applied"):
+        if rec.get("wm_loaded_from_ckpt") != 0:
+            bad.append(f"wm_only: {rec.get('wm_loaded_from_ckpt')} world-model tensors were loaded from the checkpoint (the card re-initialises the WM)")
+        if rec.get("wm_reinit_seed") != a.seed:
+            bad.append(f"wm_only: the WM was re-initialised under seed {rec.get('wm_reinit_seed')}, not --seed {a.seed}")
+        if rec.get("wm_params_equal_to_ckpt") != 0:
+            bad.append(f"wm_only: {rec.get('wm_params_equal_to_ckpt')} WM parameters equal the checkpoint's (the WM must be fresh)")
+        if rec.get("mode") != "wm_only":
+            bad.append(f"wm_only: the start state was loaded in mode {rec.get('mode')!r}")
+    return bad
+
+
+LFS_MIN_TRANSITIONS = 2        # PREREG_V8F_LFS: a level with fewer than this many training transitions per window is NOT RUN (reported with the count), never run at a different hmax
+
+
+def wm_strides_readback(a, cfg, model) -> dict:
+    """PREREG_V8F_LFS: the record ``selfcheck.json`` carries (``levers.wm_strides_readback``): the strides the argv DECLARED, the strides the BUILT modules use (three readers, ``WMAux.built_strides``) and the number of states and
+    transitions each level holds for a window of ``cfg.hmax`` frames, measured by running the BUILT stack's ``encode``."""
+    decl = declared_wm_strides(a)
+    if model.wm is None:
+        return {"declared": list(decl), "built": None, "states_per_level": None, "transitions_per_level": None}
+    st = model.wm.level_states(cfg.hmax)
+    return {"declared": list(decl), "built": model.wm.built_strides(), "hmax": cfg.hmax, "wm_k": a.wm_k, "states_per_level": st, "transitions_per_level": [n - 1 for n in st]}
+
+
+def bad_wm_strides(a, cfg, model) -> list:
+    """G-DVB for ``--wm-strides`` (PREREG_V8F_LFS). Empty = pass. The declared strides (the argv's, or the arm config's (2, 2) when the flag is absent) are read back from the BUILT modules -- the ``LevelConfig`` strides, the macro
+    encoders' attribute and the stride their parameter shapes carry -- and from ``built_levers()``; a flag set whose strides were not applied (the config built at (2, 2)) is refused. A flag NAMED with no world model builds nothing
+    and is refused. A stride that leaves a level fewer than ``LFS_MIN_TRANSITIONS`` training transitions at ``cfg.hmax`` is refused with the count (the arm is NOT RUN; it is not run at another hmax)."""
+    bad = []
+    decl = declared_wm_strides(a)
+    if model.wm is None:
+        if a.wm_strides is not None:
+            bad.append(f"lever wm_strides: --wm-strides {list(decl)} declared but no world model was built (--wm off): a lever that is declared and builds nothing")
+        return bad
+    if tuple(cfg.wm_strides) != decl:
+        bad.append(f"lever wm_strides: declared {list(decl)} but the built config holds {list(cfg.wm_strides)}")
+    bs = model.wm.built_strides()
+    for k in ("stride", "macro_stride", "macro_shape_stride"):
+        if tuple(bs[k]) != decl:
+            bad.append(f"lever wm_strides: declared {list(decl)} but the built world model's {k} is {bs[k]}")
+    if a.wm_k > 1 and tuple(bs["dilation"]) != decl:
+        bad.append(f"lever wm_strides: declared {list(decl)} but the built dilation is {bs['dilation']} (wm_k {a.wm_k}: the dilation of a level's window is its stride)")
+    got = tuple(model.built_levers().get("wm_strides", WM_STRIDES_DEFAULT))
+    if got != decl:
+        bad.append(f"lever wm_strides: declared {list(decl)} but built_levers() says {list(got)}")
+    tr = [n - 1 for n in model.wm.level_states(cfg.hmax)]
+    if min(tr) < LFS_MIN_TRANSITIONS:
+        bad.append(f"lever wm_strides {list(decl)}: NOT RUN -- at --hmax {cfg.hmax} the levels hold {tr} training transitions per window (L1, L2, L3), fewer than {LFS_MIN_TRANSITIONS} at level {tr.index(min(tr)) + 1}; "
+                   "the arm is not run at another hmax (a different hmax would change B's windows)")
+    return bad
+
+
+def bad_wm_ladder(a, cfg, model, data_info) -> list:
+    """G-DVB for the ladder levers (PREREG_V8F_LADDER). Empty = pass. Everything is read back from what was BUILT, never from the config that built it: ``--wm-rollout-k`` from the predictor calls the BUILT loss makes inside
+    ``HJEPAStack.rollout`` (``WMAux.built_ladder``), ``--wm-rollout-stride`` from the free run's measured anchor count, ``--wm-rollout-w`` from the weight the built level loss gives the term, ``--wm-ctx`` from the predictor's
+    parameter shape and from the context the free run is handed, ``--wm-windows`` / ``--wm-win-stride`` / ``--wm-pooled`` from the BUILT dataset's record (``data_info["wm_windows"]``). A lever that is declared and builds
+    nothing is refused: any ladder flag with no world model, a stride or a weight on levels whose k is 1, wmonly windows without ``--wm-only``, the pooled path without wmonly windows."""
+    bad = []
+    named = wm_ladder_named(a)
+    decl = declared_wm_ladder(a)
+    rec = data_info.get("wm_windows")
+    if model.wm is None:
+        return [f"lever {n}: declared but no world model was built (--wm off): a lever that is declared and builds nothing" for n in named]
+    rb = model.wm.built_ladder(cfg.hmax)
+    cum = rb["cum_stride"]
+    for i in range(3):
+        k, st, cx = decl["wm_rollout_k"][i], decl["wm_rollout_stride"][i], decl["wm_ctx"][i]
+        if rb["k"][i] != (k if k > 1 else 0):
+            bad.append(f"lever wm_rollout_k: level {i + 1} declared k={k} but the built loss runs {rb['k'][i]} free-run predictor steps (0 = no k-step term)")
+        if rb["ctx_built"][i] != cx:
+            bad.append(f"lever wm_ctx: level {i + 1} declared {cx} but the built predictor's context (pos rows) is {rb['ctx_built'][i]}")
+        if k > 1:
+            want_anchors = len(range(0, rb["states"][i] - 1, st))
+            if rb["anchors"][i] != want_anchors:
+                bad.append(f"lever wm_rollout_stride: level {i + 1} declared stride {st} (-> {want_anchors} anchors on {rb['states'][i]} states) but the built free run has {rb['anchors'][i]} anchors")
+            w = rb["w_in_loss"][i]
+            if w is None or abs(w - decl["wm_rollout_w"]) > 1e-4 * max(1.0, abs(decl["wm_rollout_w"])):
+                bad.append(f"lever wm_rollout_w: level {i + 1} declared {decl['wm_rollout_w']} but the built level loss gives the k-step term weight {w}")
+            if rb["ctx_passed"][i] != rb["ctx_built"][i]:
+                bad.append(f"lever wm_ctx: level {i + 1} free run is handed context {rb['ctx_passed'][i]} but the predictor's context is {rb['ctx_built'][i]}")
+            if cfg.hmax < k * cum[i] + 1:
+                bad.append(f"lever wm_rollout_k: level {i + 1} k={k} at cumulative stride {cum[i]} needs {k * cum[i] + 1} frames, the window holds {cfg.hmax}: the declared reach could never be trained")
+        elif st != 1:
+            bad.append(f"lever wm_rollout_stride: level {i + 1} declares stride {st} but k is 1 (no free-run term is built): a lever that is declared and does nothing")
+    if "wm_rollout_w" in named and all(k == 1 for k in decl["wm_rollout_k"]):
+        bad.append(f"lever wm_rollout_w: declared {decl['wm_rollout_w']} but every level's k is 1 (no k-step term): a lever that is declared and does nothing")
+    if decl["wm_rollout_w"] == 0.0 and any(k > 1 for k in decl["wm_rollout_k"]):
+        bad.append("lever wm_rollout_w: declared 0.0 with a k-step term built: the term would carry no gradient -- a lever that is declared and does nothing")
+    if a.wm_windows == "wmonly":
+        if not a.wm_only:
+            bad.append("lever wm_windows: wmonly declared without --wm-only (the labelled readers need labelled windows)")
+        if not rec or rec.get("kind") != "wmonly":
+            bad.append(f"lever wm_windows: wmonly declared but the built dataset is {None if not rec else rec.get('kind')}")
+        else:
+            if rec.get("F") != cfg.hmax:
+                bad.append(f"lever wm_windows: the built dataset's window is {rec.get('F')} frames, hmax is {cfg.hmax}")
+            if rec.get("t_min") is None or rec["t_min"] < cfg.hmax - 1:
+                bad.append(f"lever wm_windows: the first window t is {rec.get('t_min')}, a full {cfg.hmax}-frame window needs t >= {cfg.hmax - 1}")
+            if rec.get("stride") != a.wm_win_stride:
+                bad.append(f"lever wm_win_stride: declared {a.wm_win_stride} but the built list's stride is {rec.get('stride')}")
+            if (rec.get("zcache") or "") != (a.wm_zcache or ""):
+                bad.append(f"lever wm_zcache: declared {a.wm_zcache!r} but the built dataset reads {rec.get('zcache')!r}")
+            if rec.get("zcache_missing"):
+                bad.append(f"lever wm_zcache: {rec['zcache_missing']} clips of this run have no file in {a.wm_zcache}")
+            if rec.get("pooled") != (a.wm_pooled == "on"):
+                bad.append(f"lever wm_pooled: declared {a.wm_pooled} but the built dataset pooled={rec.get('pooled')}")
+            if not rec.get("n_windows"):
+                bad.append("lever wm_windows: the built window list is empty")
+    else:
+        if rec:
+            bad.append("lever wm_windows: train declared but a world-model-only dataset was built")
+        if a.wm_zcache:
+            bad.append("lever wm_zcache: declared without --wm-windows wmonly: a lever that is declared and builds nothing")
+        if a.wm_pooled == "on":
+            bad.append("lever wm_pooled: on declared without --wm-windows wmonly: a lever that is declared and builds nothing")
+        if a.wm_win_stride != 1:
+            bad.append(f"lever wm_win_stride: {a.wm_win_stride} declared without --wm-windows wmonly: a lever that is declared and does nothing")
+    return bad
+
+
+def wm_ladder_readback(a, cfg, model, data_info) -> dict:
+    """PREREG_V8F_LADDER: the record ``selfcheck.json`` carries (``levers.wm_ladder_readback``) when the argv NAMES a ladder flag: declared vs the BUILT measurements."""
+    decl = declared_wm_ladder(a)
+    return {"declared": {k: list(v) if isinstance(v, tuple) else v for k, v in decl.items()}, "named": wm_ladder_named(a), "windows_declared": {"kind": a.wm_windows, "stride": a.wm_win_stride, "pooled": a.wm_pooled},
+            "built": None if model.wm is None else model.wm.built_ladder(cfg.hmax), "windows_built": data_info.get("wm_windows"), "hmax": cfg.hmax}
+
+
+def wm_only_live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
+    """G-LIVE for the WM-only mode (PREREG_V8F_MRATE control 3): three optimiser steps of ``wm_only_loss`` on a real batch, on a COPY with EVERY parameter thawed (so a missing ``.detach()`` shows up as a gradient on the adapter). Every WM loss term
+    finite; every WM parameter receives a non-zero gradient at some step (a=without IDM: the IDM heads are declared dead); the adapter, the readers, the heads and the planner receive EXACTLY 0.0. ``--w-wm 0`` zeroes every WM gradient and FAILS."""
+    m = copy.deepcopy(model)
+    m.train()
+    for p in m.parameters():
+        p.requires_grad_(True)
+    wm_params = [p for n, p in m.named_parameters() if is_wm_param(n)]
+    opt = torch.optim.AdamW(wm_params, lr=lr)
+    acc = {n: 0.0 for n, _ in m.named_parameters()}
+    terms_seen = None
+    for s in range(steps):
+        opt.zero_grad(set_to_none=False)
+        for n, p in m.named_parameters():
+            if not is_wm_param(n):
+                p.grad = None
+        torch.manual_seed(s)
+        T = m.wm_only_loss(batch)["terms"]
+        for k, v in T.items():
+            if not torch.isfinite(v):
+                raise AssertionError(f"G-LIVE: WM loss term {k} is not finite at step {s}: {float(v)}")
+        terms_seen = {k: float(v.detach()) for k, v in T.items()}
+        T["total"].backward()
+        for n, p in m.named_parameters():
+            if p.grad is not None:
+                acc[n] += float(p.grad.abs().sum())
+        opt.step()
+    expect = {"wm", "total"} | {f"wm/{t}/L{l}" for t in ("pred", "sigreg", "idm", "level") for l in (1, 2, 3)} | {f"wm/act_sigreg/L{l}" for l in (2, 3)}
+    missing = sorted(expect - set(terms_seen))
+    declared_dead = [n for n in acc if cfg.wm == "a" and ".idm_heads." in n]
+    dead = sorted(n for n, g in acc.items() if is_wm_param(n) and g == 0.0)
+    unexpected_dead = sorted(set(dead) - set(declared_dead))
+    groups = {}
+    for n, g in acc.items():
+        if is_wm_param(n):
+            parts = n.split(".")                                           # wm.proj / wm.enc1 / wm.stack.act_embed / wm.stack.<encoders|macro_encoders|predictors|idm_heads>.<level>
+            key = ".".join(parts[:4] if parts[1] == "stack" and parts[2] in ("encoders", "macro_encoders", "predictors", "idm_heads") else parts[:3] if parts[1] == "stack" else parts[:2])
+            groups[key] = groups.get(key, 0.0) + g
+    dead_groups = sorted(k for k, g in groups.items() if g == 0.0 and not (cfg.wm == "a" and ".idm_heads." in k))
+    nonwm = {n: g for n, g in acc.items() if not is_wm_param(n)}
+    res = {"terms": terms_seen, "missing_terms": missing, "wm_groups_grad": groups, "dead_wm_groups": dead_groups, "dead_params": dead, "declared_dead": declared_dead, "unexpected_dead": unexpected_dead,
+           "n_wm_params": len(wm_params), "control_nonwm_grad_sum": float(sum(nonwm.values())), "control_adapter_grad_sum": float(sum(g for n, g in nonwm.items() if n.startswith("adapter.") or n == "pos")),
+           "nonwm_with_grad": sorted(n for n, g in nonwm.items() if g != 0.0)[:8], "n_nonwm_params": len(nonwm)}
+    ok = (not missing and not dead_groups and not unexpected_dead and res["control_nonwm_grad_sum"] == 0.0 and res["n_wm_params"] > 0 and res["n_nonwm_params"] > 0)
+    res["pass"] = bool(ok)
+    if not ok:
+        raise AssertionError("G-LIVE (wm_only) failed: " + json.dumps({k: v for k, v in res.items() if k != "wm_groups_grad"}, default=str)[:1500])
+    return res
+
+
+def _tensors_of(o, prefix=""):
+    if isinstance(o, torch.Tensor):
+        yield prefix, o
+    elif isinstance(o, dict):
+        for k in sorted(o, key=str):
+            yield from _tensors_of(o[k], f"{prefix}/{k}")
+
+
+def planner_identity_probe(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
+    """PREREG_V8F_MRATE control 1 (planner identity), the in-trainer form: ``forward_infer`` on a fixed batch (eval, CPU, a COPY) is compared tensor by tensor with ``torch.equal`` before and after ``steps`` WM-only optimiser steps. The WM must
+    have MOVED (the control: the steps did something) and every planner output must be bit-equal."""
+    m = copy.deepcopy(model)
+    m.eval()
+    with torch.no_grad():
+        before = {k: v.clone() for k, v in _tensors_of(m.forward_infer(batch))}
+    wm0 = {n: p.detach().clone() for n, p in m.named_parameters() if is_wm_param(n)}
+    m.train()
+    opt = torch.optim.AdamW([p for n, p in m.named_parameters() if p.requires_grad], lr=lr)
+    for s in range(steps):
+        opt.zero_grad(set_to_none=True)
+        torch.manual_seed(s)
+        m.wm_only_loss(batch)["terms"]["total"].backward()
+        opt.step()
+    m.eval()
+    with torch.no_grad():
+        after = {k: v for k, v in _tensors_of(m.forward_infer(batch))}
+    same = sorted(k for k in before if k in after and before[k].shape == after[k].shape and torch.equal(before[k], after[k]))
+    moved = sum(1 for n, p in m.named_parameters() if is_wm_param(n) and not torch.equal(p.detach(), wm0[n]))
+    res = {"n_tensors": len(before), "n_equal": len(same), "differing": sorted(set(before) - set(same))[:8], "wm_params_moved": moved, "n_wm_params": len(wm0), "steps": steps, "pass": False}
+    res["pass"] = bool(len(before) > 0 and len(same) == len(before) and set(before) == set(after) and moved > 0)
+    if not res["pass"]:
+        raise AssertionError("planner identity failed: " + json.dumps(res, default=str)[:1200])
+    return res
+
+
 class LRSchedule:
     """The loop's learning-rate schedule: linear warmup over ``warmup`` steps to ``lr``, then a cosine to 0.1 x ``lr`` at ``total``. ONE definition: the loop CALLS it and ``bad_schedule`` (G-DVB) READS IT BACK
     -- the declared ``--warmup`` is checked against the schedule that was built, not against the argv it was built from."""
@@ -836,6 +1240,75 @@ def bad_recover(a, rec, data_info=None) -> list:
     return bad
 
 
+def make_t2bank(a, info):
+    """argv -> the swap the training loop calls ``.apply`` on (PREREG_T2_DAGGER). The ONE place the four flags become an object; ``bad_t2bank`` compares it back to the argv. With ``--t2-bank-p 0`` nothing is read."""
+    bank, path = None, (a.t2_bank or None)
+    if a.t2_bank_p > 0 and a.t2_bank:
+        try:
+            bank = TB.T2Bank.load(a.t2_bank, expect_sha256=a.t2_bank_sha256 or None)
+        except (TB.BankRefused, OSError, KeyError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ t2-bank {a.t2_bank}: {type(e).__name__}: {str(e)[:600]}")
+        info["t2bank"] = {"bank_path": bank.path, "bank_sha256": bank.sha256, "n_rows": len(bank), "n_scenes": len(bank.scene_ids), "scene_ids": bank.scene_ids}
+        path = bank.path
+    return TB.T2BankSwap(p=a.t2_bank_p, bank=bank, target=a.recover_target, rejoin_steps=a.recover_rejoin_steps, seed=a.t2_bank_seed, bank_path=path, bank_sha256=(a.t2_bank_sha256 or None))
+
+
+def bad_t2bank(a, t2b, data_info=None) -> list:
+    """The T2-bank half of the launch gate (G-DVB). Empty = pass. Every flag is read back from the BUILT swap (``t2b``); a flag that builds nothing is refused; the lever is exclusive with the other own-state levers and the LoRA encoder."""
+    dfl = {k: build_parser().get_default(k) for k in ("t2_bank_p", "t2_bank", "t2_bank_sha256", "t2_bank_seed")}
+    if t2b is None:
+        moved = sorted(k for k, d in dfl.items() if getattr(a, k) != d)
+        return [f"{moved} are set but no T2 bank swap was built: a flag that builds nothing is refused, not ignored"] if moved else []
+    lv, bad = t2b.built_levers(), []
+    if lv["t2_bank_p"] != a.t2_bank_p:
+        bad.append(f"lever t2_bank_p: declared {a.t2_bank_p!r} but built {lv['t2_bank_p']!r}")
+    if lv["t2_bank_seed"] != a.t2_bank_seed:
+        bad.append(f"lever t2_bank_seed: declared {a.t2_bank_seed!r} but built {lv['t2_bank_seed']!r}")
+    bad += [f"t2 bank swap: {m}" for m in t2b.problems()]
+    if a.t2_bank_sha256 and not is_sha256_hex(a.t2_bank_sha256):
+        bad.append(f"--t2-bank-sha256 {a.t2_bank_sha256!r} is not a sha256 (64 hex digits): a truncated hash identifies nothing")
+    if a.t2_bank_p > 0:
+        for flag, on in (("--recover-p", a.recover_p > 0), ("--dagger-p", a.dagger_p > 0), ("--ego-perturb-p", a.ego_perturb_p > 0), ("--ego-perturb-with-dagger", bool(a.ego_perturb_with_dagger)), ("--encoder lora", a.encoder == "lora"), ("--wm-only", bool(a.wm_only))):
+            if on:
+                bad.append(f"--t2-bank-p {a.t2_bank_p} together with {flag}: the T2 bank lever is exclusive with the other own-state levers and the LoRA encoder (PREREG_T2_DAGGER)")
+        if not a.t2_bank or not a.t2_bank_sha256:
+            bad.append("--t2-bank and --t2-bank-sha256 are both required when --t2-bank-p > 0: the arm must declare which bank it draws from")
+        elif t2b.bank is None:
+            bad.append(f"lever t2_bank: declared {a.t2_bank!r} but no bank was built from it")
+        else:
+            want = os.path.normcase(os.path.abspath(os.path.join(a.t2_bank, "bank.json")))
+            got = os.path.normcase(os.path.abspath(str(lv.get("t2_bank"))))
+            if want != got:
+                bad.append(f"lever t2_bank: declared {want!r} but built {got!r}")
+            if lv.get("t2_bank_sha256") != a.t2_bank_sha256.lower():
+                bad.append(f"lever t2_bank_sha256: declared {a.t2_bank_sha256.lower()!r} but built {lv.get('t2_bank_sha256')!r}")
+    return bad
+
+
+def t2bank_probe(model, batch, cfg, t2b) -> dict:
+    """G-LIVE for PREREG_T2_DAGGER: a batch whose rows are ALL bank rows (p = 1) reads EXACTLY 0.0 on every masked loss term and a finite, non-zero target term (ade) whose gradient reaches the model; a p = 0 control
+    returns the SAME batch object. Violations are AssertionErrors (the caller turns them into a refusal). Delete the masking in ``T2BankSwap.apply`` / the ``aux_ok`` gating in ``V8FMini.loss`` and a term reads non-zero."""
+    if not t2b.active:
+        return {"t2_bank": "off", "pass": True, "skipped": "--t2-bank-p 0: no row is swapped; the default run is the pre-change run"}
+    import copy
+    ctl = t2b.apply(batch, TB.T2BankSwap.PROBE_STEP, p=0.0)
+    assert ctl is batch, "t2 bank probe: a p = 0 call did not return the SAME batch object"
+    allb = t2b.apply(batch, TB.T2BankSwap.PROBE_STEP, p=1.0)
+    assert int(allb["aux_ok"].sum()) == 0 and int(t2b.last["n_selected"]) == int(batch["feats"].shape[0]), "t2 bank probe: p = 1 did not select every row"
+    m = copy.deepcopy(model)
+    m.zero_grad(set_to_none=True)
+    out = m.loss(allb)
+    T = out["terms"]
+    masked = {k: float(v) for k, v in T.items() if k in ("ckpt", "goal", "lat", "lon", "cons", "acc", "wm", "launch_along", "level", "lead") or k.startswith("pen_") or k.startswith("pens_")}
+    nz = {k: v for k, v in masked.items() if v != 0.0}
+    assert not nz, f"t2 bank probe: masked terms are not exactly 0.0 on all-bank rows: {nz}"
+    assert math.isfinite(float(T["ade"])) and float(T["ade"]) > 0.0, f"t2 bank probe: the target-law term ade is {float(T['ade'])!r}"
+    T["total"].backward()
+    gsum = float(sum(p.grad.abs().sum() for p in m.parameters() if p.grad is not None))
+    assert gsum > 0.0, "t2 bank probe: the target-law term has no gradient"
+    return {"t2_bank": "on", "pass": True, "masked_terms": masked, "ade": float(T["ade"]), "grad_abs_sum": gsum}
+
+
 def bad_level(a, model, data_info=None) -> list:
     """PREREG_V8F_LEVEL, G-DVB: ``--level-head`` / ``--w-level`` read back from the BUILT model. Empty = pass. A head declared on that builds nothing, a head built that was not declared, a head with no loss (w_level 0),
     a weight with no head, a head whose code names a non-vision input and an e_level that is not zero at a fresh start are each refused."""
@@ -938,12 +1411,16 @@ def bad_lead(a, model, data_info=None) -> list:
     return bad
 
 
-def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None) -> list:
+def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None, t2b=None) -> list:
     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
     bad = bad_encoder(a, enc, data_info)
+    bad += bad_t2bank(a, t2b, data_info)                                                         # PREREG_T2_DAGGER: the four --t2-bank* flags read back from the BUILT swap (and the LOADED bank's sha256)
     bad += bad_recover(a, rec, data_info)                                                        # PREREG_RECOVER_FT: the eight --recover-* flags read back from the BUILT perturber (and the LOADED bank's sha256)
     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
     bad += bad_level(a, model, data_info)                                                        # PREREG_V8F_LEVEL: --level-head / --w-level read back from the BUILT model
+    bad += bad_wm_only(a, cfg, model, data_info)                                                 # PREREG_V8F_MRATE: --wm-k read back from the BUILT WM modules, --wm-only from the loader's record and the frozen set
+    bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
+    bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
     bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
     bad += bad_ego_dagger(a, comp, ego, dag)                                                     # AMEND1 section 1: --ego-perturb-with-dagger read back from the BUILT stage
@@ -2411,11 +2888,18 @@ def build_data(a, cfg):
         tracks = D.load_native_tracks(tpath)
     info["kin_mode"] = a.kin_mode
     store = D.ClipStore(cache, "train", lru=lru, grid=a.grid, kin_mode=a.kin_mode, tracks=tracks)
-    allw = D.train_windows(store, J, clips_all, hist=cfg.hist, start=cfg.window_start)
-    wins = D.train_windows(store, J, clips, hist=cfg.hist, start=cfg.window_start)
-    info.update({"n_windows_all_clips": len(allw), "n_windows": len(wins),
-                 "window_start": D.effective_window_start(cfg.hist, cfg.window_start),         # what train_windows was asked for ...
-                 "window_t_min": min((w[1] for w in allw), default=None)})                      # ... and what the built list actually starts at (read back)
+    if a.wm_windows == "wmonly":                                                 # PREREG_V8F_LADDER: the world-model-only sampler: every full hmax-frame window, no label requirement
+        allw = WW.wm_windows(store, J, clips_all, F=cfg.hmax, stride=a.wm_win_stride)
+        wins = WW.wm_windows(store, J, clips, F=cfg.hmax, stride=a.wm_win_stride)
+        info.update({"n_windows_all_clips": len(allw), "n_windows": len(wins)})
+        info["wm_windows"] = {"kind": "wmonly", "F": cfg.hmax, "stride": a.wm_win_stride, "n_windows": len(wins), "n_windows_all_clips": len(allw),
+                              "t_min": min((w[1] for w in allw), default=None), "t_max": max((w[1] for w in allw), default=None), "pooled": None}      # `pooled` is filled from the BUILT dataset in main
+    else:
+        allw = D.train_windows(store, J, clips_all, hist=cfg.hist, start=cfg.window_start)
+        wins = D.train_windows(store, J, clips, hist=cfg.hist, start=cfg.window_start)
+        info.update({"n_windows_all_clips": len(allw), "n_windows": len(wins),
+                     "window_start": D.effective_window_start(cfg.hist, cfg.window_start),         # what train_windows was asked for ...
+                     "window_t_min": min((w[1] for w in allw), default=None)})                      # ... and what the built list actually starts at (read back)
     info["train_window_list_sha256"] = DG.windows_sha256(J["clip"], wins)                       # the TRAIN WINDOW list's digest, recorded on EVERY run (summary.json, beside train_sha256): the bank's `window_list_sha256` is this value, and the reader (K-B3.2) compares the two on both arms
     return store, J, wins, clips, info
 
@@ -2452,6 +2936,68 @@ def argv_sha(argv) -> str:
     return hashlib.sha256(" ".join(argv).encode()).hexdigest()[:16]
 
 
+# ------------------------------------------------------------------------------------------------ AMENDMENT_V8F_LORA_5: a resume across --accum / --enc-ckpt
+def perf_strip(argv) -> list:
+    """``argv`` with EXACTLY ``--accum <n>``, ``--enc-ckpt`` and ``--resume-perf-levers <path>`` removed (exact spellings: an abbreviation or ``--accum=n`` stays in and is therefore a difference)."""
+    out, i, argv = [], 0, list(argv)
+    while i < len(argv):
+        if argv[i] in ("--accum", "--resume-perf-levers"):
+            i += 2
+        elif argv[i] == "--enc-ckpt":
+            i += 1
+        else:
+            out.append(argv[i])
+            i += 1
+    return out
+
+
+def perf_resume_plan(a, argv) -> dict:
+    """The previous argv named by ``--resume-perf-levers`` against this one. Raises ValueError (or OSError / KeyError / SystemExit from argparse) when it is not a perf-lever-only change."""
+    d = json.load(open(a.resume_perf_levers, encoding="utf-8"))
+    prev = d["argv"] if isinstance(d, dict) else d
+    if not (isinstance(prev, list) and prev and all(isinstance(t, str) for t in prev)):
+        raise ValueError("the file holds no argv list")
+    ps, ns = perf_strip(prev), perf_strip(argv)
+    if ps != ns:
+        i = next((k for k in range(min(len(ps), len(ns))) if ps[k] != ns[k]), min(len(ps), len(ns)))
+        raise ValueError(f"the argvs differ beyond --accum / --enc-ckpt: previous {ps[max(0, i - 1):i + 2]} vs this {ns[max(0, i - 1):i + 2]} (after removing those flags, token {i})")
+    p = build_parser().parse_args(list(prev))
+    return {"prev_argv": prev, "prev": {"accum": int(p.accum), "enc_ckpt": bool(p.enc_ckpt)}, "new": {"accum": int(a.accum), "enc_ckpt": bool(a.enc_ckpt)},
+            "prev_argv_sha": argv_sha(prev), "new_argv_sha": argv_sha(argv), "stripped_argv_sha": argv_sha(ns)}
+
+
+def bad_perf_resume(a, argv) -> list:
+    """G-DVB for ``--resume-perf-levers`` (empty = pass; the flag off builds nothing and asks nothing)."""
+    if a.resume_perf_levers is None:
+        return []
+    try:
+        plan = perf_resume_plan(a, argv)
+    except (ValueError, OSError, KeyError, TypeError, SystemExit) as e:
+        return [f"--resume-perf-levers {a.resume_perf_levers}: {type(e).__name__}: {str(e)[:400]}"]
+    bad = []
+    if a.encoder != "lora":
+        bad.append("--resume-perf-levers declared but --encoder is not lora: --accum and --enc-ckpt build nothing there")
+    if a.no_resume:
+        bad.append("--resume-perf-levers declared with --no-resume: it is a lever of a resume")
+    if plan["prev"] == plan["new"]:
+        bad.append(f"--resume-perf-levers declared but the previous argv has the same --accum / --enc-ckpt {plan['new']}: a flag that is declared and does nothing")
+    return bad
+
+
+def perf_resume_record(a, argv, ck_sha, step):
+    """None unless ``--resume-perf-levers`` is set AND the checkpoint was written by exactly the previous argv; then the record that goes into train_log.jsonl."""
+    if a.resume_perf_levers is None:
+        return None
+    try:
+        plan = perf_resume_plan(a, argv)
+    except (ValueError, OSError, KeyError, TypeError, SystemExit):
+        return None
+    if ck_sha != plan["prev_argv_sha"]:
+        return None
+    return {"from_step": step, "prev": plan["prev"], "new": plan["new"], "prev_argv_sha": plan["prev_argv_sha"], "new_argv_sha": plan["new_argv_sha"], "stripped_argv_sha": plan["stripped_argv_sha"],
+            "prev_argv_file": os.path.abspath(a.resume_perf_levers)}
+
+
 # ------------------------------------------------------------------------------------------------ main
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
@@ -2482,21 +3028,35 @@ def main(argv=None):
     if a.encoder == "lora":                                          # two NAMED constructions, so test_v8f_window_start's static guard can see both
         ds = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
                                    window_start=cfg.window_start)
+    elif a.wm_windows == "wmonly":                                   # PREREG_V8F_LADDER: the world-model-only dataset (pooled path = the token mean; off = the cached tokens)
+        ds = WW.V8FMiniWMWindows(store, J, wins, F=cfg.hmax, pooled=(a.wm_pooled == "on"), lru=info["lru"], zcache=a.wm_zcache)
+        info["wm_windows"]["zcache"] = ds.zcache
+        info["wm_windows"]["zcache_missing"] = len(ds.zcache_missing(clips)) if ds.zcache else 0
+        info["wm_windows"]["pooled"] = ds.pooled                     # read back from the BUILT dataset (bad_wm_ladder compares it)
+        info["wm_windows"]["F"] = ds.F
     else:
         ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
                               window_start=cfg.window_start)
-    info["ds_window_start"] = ds.window_start                       # the held-age clamp's origin, read back from the BUILT dataset (G-DVB compares it)
+    if a.wm_windows != "wmonly":
+        info["ds_window_start"] = ds.window_start                   # the held-age clamp's origin, read back from the BUILT dataset (G-DVB compares it)
     LL = make_lead_labels(a, cfg, J, info)                          # PREREG_LEVELHEAD_A2: the lead head's label arrays (None with the head off: nothing read, nothing built)
     prior = M.load_p10(a.p10) if not a.synthetic else M.P10Prior.synthetic(a.seed)
     mu, sd = M.cons_stats(J)
     model = M.V8FMini(cfg, prior, mu, sd).to(dev)
     if a.init_ckpt:                                                  # O-RECOVER's start state: the MODEL weights of an earlier checkpoint (before the optimiser, the probes and the gate); a resume of THIS run wins
         try:
-            info["init_ckpt"] = load_init_ckpt(a.init_ckpt, model, cfg, apply=not (os.path.exists(os.path.join(a.out, "ckpt_last.pt")) and not a.no_resume))
+            _apply = not (os.path.exists(os.path.join(a.out, "ckpt_last.pt")) and not a.no_resume)
+            if a.wm_only:                                            # PREREG_V8F_MRATE: the non-WM tensors load strictly and bit-equal, hmax is not compared, the WM is re-initialised under --seed
+                info["init_ckpt"] = info["wm_only"] = load_wm_only_init(a.init_ckpt, model, cfg, a.seed, apply=_apply)
+            else:
+                info["init_ckpt"] = load_init_ckpt(a.init_ckpt, model, cfg, apply=_apply)
         except Exception as e:                                       # noqa: BLE001  a missing / foreign / mismatched checkpoint is a REFUSAL, not a crash
             raise SystemExit(f"ZZDVB-REFUSEDZZ init-ckpt {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
+    if a.wm_only:
+        freeze_all_but_wm(model)                                     # PREREG_V8F_MRATE: BEFORE the optimiser below (its decay / nodecay lists filter on requires_grad); bad_wm_only reads the frozen set back
     dag = make_dagger(a, J, wins, clips, info)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
     rcv = make_recover(a, J, wins, store, clips, info)               # PREREG_RECOVER_FT: off by default (--recover-p 0: no bank read, no table built); with the empirical law: bank load + K-B3 + the deviation table from THIS trainer's TRAIN store here, a refusal stops the launch before the gate
+    t2b = make_t2bank(a, info)                                       # PREREG_T2_DAGGER: off by default (--t2-bank-p 0: no bank read); with a bank: load + sha256 here, a refusal stops the launch before the gate
     comp = make_compose(a, ego, dag)                                 # AMEND1 section 1: off by default; with --ego-perturb-with-dagger the loop calls THIS (swap first, then the perturbation on the samples the swap left)
     enc = None
     if a.encoder == "lora":
@@ -2514,20 +3074,32 @@ def main(argv=None):
                                max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s)
     # ---- the launch gate
     lr_at = LRSchedule(a.lr, a.warmup, total)                        # the loop's schedule, built BEFORE the gate so that G-DVB can read --warmup back from it
-    bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag, comp, rcv)
+    bad = declared_vs_built(a, cfg, model, opt, info, enc, ego, lr_at, dag, comp, rcv, t2b)
+    bad += bad_perf_resume(a, argv)                                  # AMENDMENT_V8F_LORA_5: --resume-perf-levers read back (the named previous argv differs from this one in --accum / --enc-ckpt only)
     if bad:
         raise SystemExit("ZZDVB-REFUSEDZZ declared-vs-built: " + "; ".join(bad))
     chunk = enc_chunk(a, cfg)
     ident = None
-    if enc is None:
+    probe_wm = None
+    if enc is None and a.wm_windows == "wmonly":                      # PREREG_V8F_LADDER: the WM batch for G-LIVE (first 16 windows); the planner identity and the admissibility check need a LABELLED batch, built from the labelled list
+        probe_wm = WW.collate_wm([ds.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_WM])
+        ds_reg = D.V8FMiniWindows(store, J, D.train_windows(store, J, clips, hist=cfg.hist, start=cfg.window_start), hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
+                                  window_start=cfg.window_start)
+        probe = D.collate([ds_reg.item(*w) for w in ds_reg.windows[:LIVE_PROBE_WINDOWS_WM]])
+    elif enc is None:
         probe = D.collate([ds.item(*w) for w in next(sampler.epoch(0))])
+    if enc is None:
         if cfg.launch_intent_w > 0.0:                    # PREREG_V8F_LAUNCH_INTENT: every probe calls model.loss on this batch, and a lever-ON loss reads b["launch"] (the loop's own call, on the LOGGED state)
             probe["launch"] = launch_stage(probe)
         if cfg.level_head == "on":                       # PREREG_V8F_LEVEL: every probe calls model.loss on this batch, and a lever-ON loss reads level_y / level_ok (the loop's own call, on the LOGGED state)
             probe["level_y"], probe["level_ok"] = level_stage(probe)
         if cfg.lead_head == "on":                        # PREREG_LEVELHEAD_A2: as above (the lead labels, looked up by the probe's own clip index and step)
             probe["lead_y"], probe["lead_has"], probe["lead_near"] = lead_stage(probe, LL)
-        live = live_check(model.cpu(), probe, cfg)
+        if a.wm_only:                                    # PREREG_V8F_MRATE: G-LIVE of the WM-only mode + the planner identity (the other probes need gradients on the frozen readers and are not run)
+            live = wm_only_live_check(model.cpu(), probe if probe_wm is None else probe_wm, cfg)
+            pid = planner_identity_probe(model.cpu(), probe, cfg)
+        else:
+            live = live_check(model.cpu(), probe, cfg)
     else:
         ds_probe = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
                                          window_start=cfg.window_start, keep_cached=True)
@@ -2542,54 +3114,68 @@ def main(argv=None):
         live = live_check_lora(model, enc, probe_f, cfg, a, dev, chunk)
         ident = identity_probe(enc, probe_f, dev, chunk)
     model.to(dev)
-    try:
-        mix = code_mix_probe(model, probe, cfg)           # PREREG_V8F_MIXO: the joint structure of the code the BUILT model hands O is the declared one (whole: all-or-nothing; kind: partial)
-    except AssertionError as e:
-        raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
-    try:
-        ocut = o_interface_probe(model, probe, cfg)       # PREREG_V8F_FLAT: what the BUILT model's O is handed under a perturbation of everything above it (cut: constants, traj60 invariant; full: it moves)
-    except AssertionError as e:
-        raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
-    try:
-        accp = acc_probe(model, probe, cfg)               # PREREG_V8F_OACC: the BUILT loss moves by exactly w_acc x the acceleration term, and O's head receives its gradient (a deleted line reads 0.0 and is refused)
-    except AssertionError as e:
-        raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
-    adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
-    model.to(dev).train()
-    try:                                                  # after the model is back on its device in train mode: the probe sees the state the acc probe saw
-        egop = ego_perturb_probe(model, probe, cfg, ego)  # O-RECOVER: G-LIVE on a PERTURBED batch; the perturbed tensors reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
-    except AssertionError as e:
-        raise SystemExit(f"ZZDVB-REFUSEDZZ ego-perturb: {e}")
-    try:
-        dagp = dagger_probe(model, probe, cfg, dag)       # PREREG_V8F_DAGGER: G-LIVE on a SWAPPED batch; the own-state tensors reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
-    except (AssertionError, ValueError) as e:
-        raise SystemExit(f"ZZDVB-REFUSEDZZ dagger: {e}")
-    try:
-        cmpp = ego_dagger_compose_probe(model, probe, cfg, comp)      # AMEND1 section 1: G-LIVE on a COMPOSED batch; both levers reach the loss gradient, the p = 0 controls read EXACTLY 0.0, the overlap is exactly 0
-    except (AssertionError, ValueError) as e:
-        raise SystemExit(f"ZZDVB-REFUSEDZZ ego-dagger-compose: {e}")
-    try:
-        recp = recover_probe(model, probe, cfg, rcv)      # PREREG_RECOVER_FT: G-LIVE on a RECOVERED batch; the perturbed tensors AND the re-expressed target reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
-    except (AssertionError, ValueError) as e:
-        raise SystemExit(f"ZZDVB-REFUSEDZZ recover: {e}")
-    try:
-        lip = launch_intent_probe(model, probe, cfg)      # PREREG_V8F_LAUNCH_INTENT: G-LIVE on the loop's own mask (launch_stage); the term reaches the loss on the rows the mask names, O's head gets its gradient, an all-False mask reads EXACTLY 0.0 (off: nothing runs)
-    except (AssertionError, ValueError) as e:
-        raise SystemExit(f"ZZDVB-REFUSEDZZ launch-intent: {e}")
-    try:
-        lvp = level_head_probe(model, probe, cfg)         # PREREG_V8F_LEVEL: G-LIVE on the loop's own label call (level_stage); the term reaches the loss with its weight, the head gets its gradient, the detach control reads EXACTLY 0.0, the token reaches O, the head is vision-only (off: nothing runs)
-    except (AssertionError, ValueError) as e:
-        raise SystemExit(f"ZZDVB-REFUSEDZZ level-head: {e}")
-    try:
-        ldp = lead_head_probe(model, probe, cfg)          # PREREG_LEVELHEAD_A2: G-LIVE on the loop's own label call (lead_stage); the term reaches the loss with its weight, BOTH outputs get their gradient, the detach control reads EXACTLY 0.0, the lead output reaches O, the head is vision-only (off: nothing run)
-    except (AssertionError, ValueError) as e:
-        raise SystemExit(f"ZZDVB-REFUSEDZZ lead-head: {e}")
+    if a.wm_only:                                                          # PREREG_V8F_MRATE: the readers, heads and planner are frozen and never run; the probes that need their gradients are skipped (and recorded as skipped)
+        mix = ocut = accp = egop = dagp = recp = t2p = lvp = ldp = {"skipped": "wm_only"}
+        lip = {"skipped": "wm_only", "launch_n": 0, "launch_eligible": 0}
+        cmpp = {"skipped": "wm_only", "overlap": 0}
+        adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
+        model.to(dev).train()
+    else:
+        try:
+            mix = code_mix_probe(model, probe, cfg)           # PREREG_V8F_MIXO: the joint structure of the code the BUILT model hands O is the declared one (whole: all-or-nothing; kind: partial)
+        except AssertionError as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
+        try:
+            ocut = o_interface_probe(model, probe, cfg)       # PREREG_V8F_FLAT: what the BUILT model's O is handed under a perturbation of everything above it (cut: constants, traj60 invariant; full: it moves)
+        except AssertionError as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
+        try:
+            accp = acc_probe(model, probe, cfg)               # PREREG_V8F_OACC: the BUILT loss moves by exactly w_acc x the acceleration term, and O's head receives its gradient (a deleted line reads 0.0 and is refused)
+        except AssertionError as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ declared-vs-built: {e}")
+        adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
+        model.to(dev).train()
+        try:                                                  # after the model is back on its device in train mode: the probe sees the state the acc probe saw
+            egop = ego_perturb_probe(model, probe, cfg, ego)  # O-RECOVER: G-LIVE on a PERTURBED batch; the perturbed tensors reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
+        except AssertionError as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ ego-perturb: {e}")
+        try:
+            dagp = dagger_probe(model, probe, cfg, dag)       # PREREG_V8F_DAGGER: G-LIVE on a SWAPPED batch; the own-state tensors reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ dagger: {e}")
+        try:
+            cmpp = ego_dagger_compose_probe(model, probe, cfg, comp)      # AMEND1 section 1: G-LIVE on a COMPOSED batch; both levers reach the loss gradient, the p = 0 controls read EXACTLY 0.0, the overlap is exactly 0
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ ego-dagger-compose: {e}")
+        try:
+            t2p = t2bank_probe(model, probe, cfg, t2b)        # PREREG_T2_DAGGER: G-LIVE on an all-bank batch; every masked term reads EXACTLY 0.0, the target law reaches the gradient, a p = 0 control is the same batch object
+            t2b.opened.clear()                                # the probe's draws are not training draws: the opened-scene record starts empty
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ t2-bank: {e}")
+        try:
+            recp = recover_probe(model, probe, cfg, rcv)      # PREREG_RECOVER_FT: G-LIVE on a RECOVERED batch; the perturbed tensors AND the re-expressed target reach the loss gradient, a p = 0 control reads EXACTLY 0.0 (a deleted apply line is refused)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ recover: {e}")
+        try:
+            lip = launch_intent_probe(model, probe, cfg)      # PREREG_V8F_LAUNCH_INTENT: G-LIVE on the loop's own mask (launch_stage); the term reaches the loss on the rows the mask names, O's head gets its gradient, an all-False mask reads EXACTLY 0.0 (off: nothing runs)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ launch-intent: {e}")
+        try:
+            lvp = level_head_probe(model, probe, cfg)         # PREREG_V8F_LEVEL: G-LIVE on the loop's own label call (level_stage); the term reaches the loss with its weight, the head gets its gradient, the detach control reads EXACTLY 0.0, the token reaches O, the head is vision-only (off: nothing runs)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ level-head: {e}")
+        try:
+            ldp = lead_head_probe(model, probe, cfg)          # PREREG_LEVELHEAD_A2: G-LIVE on the loop's own label call (lead_stage); the term reaches the loss with its weight, BOTH outputs get their gradient, the detach control reads EXACTLY 0.0, the lead output reaches O, the head is vision-only (off: nothing run)
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ lead-head: {e}")
     levers = model.built_levers()
     levers["ego_perturb"] = ego.built_levers()                        # recorded like every other lever (selfcheck.json, summary.json, the checkpoint)
     levers["dagger"] = dag.built_levers()                             # PREREG_V8F_DAGGER: what was BUILT (the bank's path and sha256 included) ...
     levers["dagger_p"], levers["dagger_bank_sha256"] = dag.p, dag.bank_sha256          # ... and the two values the reader keys on, flat (0.0 / None when the lever is off)
     levers["dagger_bank_sha256_declared"] = a.dagger_bank_sha256 or None              # ... and the hash the argv DECLARED (--dagger-bank-sha256); the gate has just required it to equal the built one (None when the lever is off)
     levers["recover"] = rcv.built_levers()                             # PREREG_RECOVER_FT: what was BUILT (the LOADED bank's path and sha256 included; recover_p 0.0 and every other lever at its default when the lever is off) ...
+    if t2b is not None and t2b.active:                                # PREREG_T2_DAGGER: lever-ON launches only (a flag-off selfcheck.json keeps its key set): what the BUILT swap does,
+        levers["t2_bank"] = t2b.built_levers()                        # ... read by dt2_check.py gate (p, seed, target, rejoin steps, the loaded bank sha256)
     levers["recover_table"] = (info.get("recover") or {}).get("table")  # ... and the deviation table's build summary (n, content sha256, means, share of records with logged v in [3, 8]); None when the lever is off (the card's KR3 reads it)
     levers["ego_perturb_with_dagger"] = comp.on                        # AMEND1 section 1: what was BUILT (False unless --ego-perturb-with-dagger) ...
     levers["ego_perturb_stream"] = comp.ego.stream                     # ... and the perturbation's generator stream: 0 = the original, D.EGO_PERTURB_COMPOSED_STREAM = domain-separated from the swap's (composed arms only)
@@ -2598,17 +3184,31 @@ def main(argv=None):
                                "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"}   # PREREG_V8F_LAUNCH_INTENT: what was BUILT (the definition the mask uses) ...
     levers["launch_n"], levers["launch_eligible"] = lip["launch_n"], lip["launch_eligible"]          # ... and the probe batch's natural launch / GT-valid row counts (0 / 0 when off; the run totals are summary.json's launch_n / launch_eligible, present when the lever is on)
     levers["init_ckpt"] = info.get("init_ckpt")
+    if a.wm_strides is not None:                                         # PREREG_V8F_LFS: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT strides and the transitions per level
+        levers["wm_strides_readback"] = wm_strides_readback(a, cfg, model)
+    if wm_ladder_named(a):                                              # PREREG_V8F_LADDER: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT measurements
+        levers["wm_ladder_readback"] = wm_ladder_readback(a, cfg, model, info)
+    if a.wm_only:                                                      # WM-only arms only (a flag-off run record keeps its key set)
+        levers["wm_only"] = {"wm_only": True, "wm_k": a.wm_k, "n_trainable": int(sum(p.numel() for p in model.parameters() if p.requires_grad)), "n_wm": int(sum(p.numel() for n, p in model.named_parameters() if is_wm_param(n))),
+                             "init": info.get("wm_only")}
     levers["lr_schedule"] = lr_at.built_levers()                       # the built warmup / peak / total the loop calls (G-DVB read --warmup back from it)
     if enc is not None:
         levers["encoder"] = enc.built_levers()
         levers["accum"] = {"accum": a.accum, "micro_windows": a.batch // a.accum, "chunk_frames": chunk}
-    sc = {"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix, "o_interface_probe": ocut, "acc_probe": accp, "admissibility": adm, "levers": levers,
+    if a.resume_perf_levers is not None:                               # AMENDMENT_V8F_LORA_5: lever-ON launches only (a flag-off selfcheck.json keeps its key set): previous vs BUILT values
+        pl = perf_resume_plan(a, argv)
+        levers["perf_resume"] = {"prev": pl["prev"], "new_built": {"accum": levers["accum"]["accum"], "enc_ckpt": levers["encoder"]["checkpointing"]}, "prev_argv_sha": pl["prev_argv_sha"],
+                                 "stripped_argv_sha": pl["stripped_argv_sha"]}
+    sc ={"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix, "o_interface_probe": ocut, "acc_probe": accp, "admissibility": adm, "levers": levers,
           "steps_total": total, "S_steps_per_epoch_100pct": S, "info": info, "argv_sha": argv_sha(argv)}
     sc["ego_perturb_probe"] = egop
     sc["dagger_probe"] = dagp
     sc["ego_dagger_compose_probe"] = cmpp
     sc["recover_probe"] = recp
+    sc["t2bank_probe"] = t2p
     sc["launch_intent_probe"] = lip
+    if a.wm_only:                                                       # WM-only arms only: a flag-off selfcheck.json keeps its key set
+        sc["planner_identity_probe"] = pid
     if cfg.level_head == "on":                                          # lever-ON arms only: a flag-off selfcheck.json keeps its key set
         sc["level_head_probe"] = lvp
     if cfg.lead_head == "on":                                           # PREREG_LEVELHEAD_A2: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
@@ -2630,6 +3230,7 @@ def main(argv=None):
     dag_tot = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # PREREG_V8F_DAGGER's run totals (samples seen, eligible = an own state with r' = t, swapped, nav frames left as logged); carried in the checkpoint
     dag_int = {"rows": 0, "eligible": 0, "n": 0, "nav_kept": 0}   # ... and since the last log line
     rec_tot = {"rows": 0, "eligible": 0, "n": 0, "changed": 0}   # PREREG_RECOVER_FT's run totals (samples seen, eligible = NOW a real kinematic row, perturbed, rows whose kin3 the BATCH-level predicate saw differ); exactly 0 at --recover-p 0; carried in the checkpoint of a lever-ON arm only
+    t2_tot, t2_int = {"rows": 0, "n": 0}, {"rows": 0, "n": 0}     # PREREG_T2_DAGGER: samples seen / replaced by a bank row (total and since the last log line); exactly 0 at --t2-bank-p 0
     rec_int = {"rows": 0, "eligible": 0, "n": 0, "changed": 0}   # ... and since the last log line
     ov_tot = {"n": 0}                                             # AMEND1 section 1: samples both swapped and perturbed (exactly 0), carried in the checkpoint of a composed arm only
     ov_int = {"n": 0}                                             # ... and since the last log line
@@ -2638,10 +3239,13 @@ def main(argv=None):
     lead_on = cfg.lead_head == "on"                                # PREREG_LEVELHEAD_A2: off (the default) = the loop runs no new line
     launch_tot = {"rows": 0, "eligible": 0, "n": 0}                # ... run totals: rows seen, GT-valid rows (the along-track label exists), GT-launch rows; carried in the checkpoint of an arm that has the lever ON only
     launch_int = {"rows": 0, "eligible": 0, "n": 0}                # ... and since the last log line
+    perf_rec = None                                                  # AMENDMENT_V8F_LORA_5: set only by a resume across --accum / --enc-ckpt under --resume-perf-levers
     if os.path.exists(ck_path) and not a.no_resume:
         ck = torch.load(ck_path, map_location="cpu", weights_only=False)
         if ck["argv_sha"] != argv_sha(argv):
-            raise SystemExit("ZZRESUME-REFUSEDZZ the checkpoint was written by a different argv")
+            perf_rec = perf_resume_record(a, argv, ck["argv_sha"], ck["step"])      # None unless the flag is set and the checkpoint is exactly the previous argv's
+            if perf_rec is None:
+                raise SystemExit("ZZRESUME-REFUSEDZZ the checkpoint was written by a different argv")
         if comp.on and int(ck.get("ego_perturb_stream", 0)) != ego.stream:        # a composed checkpoint from before the stream separation (no key = stream 0) must not be continued on another generator
             raise SystemExit(f"ZZRESUME-REFUSEDZZ the checkpoint drew the perturbation from stream {int(ck.get('ego_perturb_stream', 0))} but this build draws stream {ego.stream}: a resume would switch generators mid-run")
         model.load_state_dict(ck["model"])
@@ -2655,6 +3259,8 @@ def main(argv=None):
         rec_tot.update(ck.get("recover_totals") or {})
         launch_tot.update(ck.get("launch_totals") or {})
         print(f"[resume] step {step} epoch {ep} batch {bi}", flush=True)
+    elif a.resume_perf_levers is not None:
+        raise SystemExit(f"ZZRESUME-REFUSEDZZ --resume-perf-levers resumes a checkpoint and there is none at {ck_path}")
 
     def save(final=False):
         blob = {"model": model.state_dict(), "opt": opt.state_dict(), "step": step, "epoch": ep, "batch_in_epoch": bi,
@@ -2669,12 +3275,17 @@ def main(argv=None):
             blob["recover"], blob["recover_totals"] = rcv.built_levers(), dict(rec_tot)
         if launch_on:                                                   # lever-ON arms only: a flag-off checkpoint keeps its key set
             blob["launch_totals"] = dict(launch_tot)
+        if a.wm_only:                                                   # WM-only arms only
+            blob["wm_only"] = True
         if enc is not None:             # `model` keeps B's layout (the unchanged v8f_mini_eval.py loads it); the LoRA matrices travel beside it
             blob["lora"], blob["encoder_levers"] = enc.lora_state_dict(), enc.built_levers()
         torch.save(blob, ck_path + ".tmp")
         os.replace(ck_path + ".tmp", ck_path)
 
     log = open(os.path.join(a.out, "train_log.jsonl"), "a", encoding="utf-8")
+    if perf_rec is not None:                                           # AMENDMENT_V8F_LORA_5: the one record of the lever change (old and new values), with the resume step as its `step`
+        log.write(json.dumps({"step": step, "perf_resume": perf_rec}) + "\n"); log.flush()
+        print(f"[perf_resume] step {step}: {perf_rec['prev']} -> {perf_rec['new']}", flush=True)
     amp = a.amp and dev.type == "cuda"
     t0 = time.time()
     done = step >= total
@@ -2683,54 +3294,63 @@ def main(argv=None):
         for _ in range(bi):                                    # fast-forward within the epoch (indices only)
             next(gen_batches, None)
         if enc is None:
-            pf = Prefetch(gen_batches, lambda idx: D.collate([ds.item(*w) for w in idx]), depth=3)
+            pf = Prefetch(gen_batches, (lambda idx: WW.collate_wm([ds.item(*w) for w in idx])) if a.wm_windows == "wmonly" else (lambda idx: D.collate([ds.item(*w) for w in idx])), depth=3)
         else:
             pf = Prefetch(gen_batches, lambda idx: D.collate_frames([ds.item(*w) for w in idx], fstore), depth=2)
         for b in pf:
             fr = (b.pop("frames_u8"), b.pop("frame_map")) if enc is not None else None      # the frames stay on the host; the encoder moves them chunk by chunk
-            if launch_on:                                          # PREREG_V8F_LAUNCH_INTENT: the GT-launch mask from the LOGGED v0 and the GT future, taken BEFORE any ego stage rebuilds kin3 (a swapped sample's kin3 is the own state)
-                lmask = launch_stage(b)
-            if level_on:                                           # PREREG_V8F_LEVEL: the label is the LOGGED speed at NOW, taken BEFORE any ego stage rebuilds kin3 (the head sees the logged frame)
-                lvl_lab = level_stage(b)
-            if lead_on:                                            # PREREG_LEVELHEAD_A2: the lead label of the LOGGED frame (clip index and step), taken BEFORE any ego stage (a swapped sample's ci / t is the own one)
-                lead_lab = lead_stage(b, LL)
-            if comp.on:                                            # AMEND1 section 1 (--ego-perturb-with-dagger): the swap is drawn first, the perturbation only on the samples the swap did not replace; the overlap is measured (exactly 0)
-                b = comp.apply(b, step)
-                for c_ in (ov_int, ov_tot):
-                    c_["n"] += comp.overlap
-            else:                                                  # every other argv: the two original lines, in their original order
-                b = ego.apply(b, step)                                 # O-RECOVER: the kinematic inputs of the selected samples are rebuilt from a perturbed ego state; targets and labels are untouched (off: `b` itself)
-                b = dag.apply(b, step)                                 # PREREG_V8F_DAGGER: the ego tensors of the selected samples are the model's OWN T1-kin state at the matched route point; targets and labels stay the human's (off: `b` itself)
-            if rcv.active:                                         # PREREG_RECOVER_FT (exclusive with the two stages above, refused otherwise): the ego tensors AND the target of the selected samples; p = 0 runs none of these lines
-                b_logged = b
-                b = rcv.apply(b, step)                                 # the ONE loop line that applies the recovery perturbation (a deleted line is caught by the guard below, by the counts and by the batch-level predicate)
-                if rcv.last is None or rcv.last.get("step") != step or (rcv.last["n_selected"] > 0 and b is b_logged):
-                    raise SystemExit(f"ZZRECOVER-NOT-APPLIEDZZ step {step}: --recover-p {rcv.p} is on but the batch the loss receives is the logged one (n_selected {None if rcv.last is None else rcv.last.get('n_selected')}): a lever that is declared and does nothing")
-                for c_ in (rec_int, rec_tot):                      # the control counts: samples seen, eligible (NOW a real kinematic row), perturbed (n_selected), and the batch-level count of rows whose kin3 the loss's batch holds changed
-                    c_["rows"] += rcv.last["n_rows"]
-                    c_["eligible"] += rcv.last["n_eligible"]
-                    c_["n"] += rcv.last["n_selected"]
-                    c_["changed"] += int((b["kin3"] != b_logged["kin3"]).reshape(b["kin3"].shape[0], -1).any(1).sum())
-            for c_ in (ego_int, ego_tot):                          # the control counts: samples seen, eligible (logged v0 < vmax), perturbed (exactly 0 when the lever is off)
-                c_["rows"] += ego.last["n_rows"]
-                c_["eligible"] += ego.last["n_eligible"]
-                c_["n"] += ego.last["n_selected"]
-                c_["nav_kept"] += ego.last["ego_perturb_nav_kept"]
-            for c_ in (dag_int, dag_tot):                          # the control counts: samples seen, eligible (an own state with r' = t), swapped (exactly 0 when the lever is off), nav frames left as logged
-                c_["rows"] += dag.last["n_rows"]
-                c_["eligible"] += dag.last["n_eligible"]
-                c_["n"] += dag.last["n_selected"]
-                c_["nav_kept"] += dag.last["dagger_nav_kept"]
-            if launch_on:                                          # ... and attached AFTER the stages (they return their own batch dict): the loss reads b["launch"]
-                b["launch"] = lmask
-                for c_ in (launch_int, launch_tot):                # the control counts: rows seen, GT-valid rows (the along-track label exists), GT-launch rows
-                    c_["rows"] += int(lmask.shape[0])
-                    c_["eligible"] += int(b["gt_ok"].sum())
-                    c_["n"] += int(lmask.sum())
-            if level_on:                                           # ... and attached AFTER the stages (they return their own batch dict): the loss reads b["level_y"], b["level_ok"]
-                b["level_y"], b["level_ok"] = lvl_lab
-            if lead_on:                                            # PREREG_LEVELHEAD_A2: attached AFTER the stages: the loss reads b["lead_y"], b["lead_has"], b["lead_near"]
-                b["lead_y"], b["lead_has"], b["lead_near"] = lead_lab
+            if a.wm_windows != "wmonly":                           # PREREG_V8F_LADDER: the label stages read labelled-batch keys (kin3, p10f, ci/t labels); a world-model-only batch carries none (--wm-only forces every one of them off)
+                if launch_on:                                          # PREREG_V8F_LAUNCH_INTENT: the GT-launch mask from the LOGGED v0 and the GT future, taken BEFORE any ego stage rebuilds kin3 (a swapped sample's kin3 is the own state)
+                    lmask = launch_stage(b)
+                if level_on:                                           # PREREG_V8F_LEVEL: the label is the LOGGED speed at NOW, taken BEFORE any ego stage rebuilds kin3 (the head sees the logged frame)
+                    lvl_lab = level_stage(b)
+                if lead_on:                                            # PREREG_LEVELHEAD_A2: the lead label of the LOGGED frame (clip index and step), taken BEFORE any ego stage (a swapped sample's ci / t is the own one)
+                    lead_lab = lead_stage(b, LL)
+                if comp.on:                                            # AMEND1 section 1 (--ego-perturb-with-dagger): the swap is drawn first, the perturbation only on the samples the swap did not replace; the overlap is measured (exactly 0)
+                    b = comp.apply(b, step)
+                    for c_ in (ov_int, ov_tot):
+                        c_["n"] += comp.overlap
+                else:                                                  # every other argv: the two original lines, in their original order
+                    b = ego.apply(b, step)                                 # O-RECOVER: the kinematic inputs of the selected samples are rebuilt from a perturbed ego state; targets and labels are untouched (off: `b` itself)
+                    b = dag.apply(b, step)                                 # PREREG_V8F_DAGGER: the ego tensors of the selected samples are the model's OWN T1-kin state at the matched route point; targets and labels stay the human's (off: `b` itself)
+                if rcv.active:                                         # PREREG_RECOVER_FT (exclusive with the two stages above, refused otherwise): the ego tensors AND the target of the selected samples; p = 0 runs none of these lines
+                    b_logged = b
+                    b = rcv.apply(b, step)                                 # the ONE loop line that applies the recovery perturbation (a deleted line is caught by the guard below, by the counts and by the batch-level predicate)
+                    if rcv.last is None or rcv.last.get("step") != step or (rcv.last["n_selected"] > 0 and b is b_logged):
+                        raise SystemExit(f"ZZRECOVER-NOT-APPLIEDZZ step {step}: --recover-p {rcv.p} is on but the batch the loss receives is the logged one (n_selected {None if rcv.last is None else rcv.last.get('n_selected')}): a lever that is declared and does nothing")
+                    for c_ in (rec_int, rec_tot):                      # the control counts: samples seen, eligible (NOW a real kinematic row), perturbed (n_selected), and the batch-level count of rows whose kin3 the loss's batch holds changed
+                        c_["rows"] += rcv.last["n_rows"]
+                        c_["eligible"] += rcv.last["n_eligible"]
+                        c_["n"] += rcv.last["n_selected"]
+                        c_["changed"] += int((b["kin3"] != b_logged["kin3"]).reshape(b["kin3"].shape[0], -1).any(1).sum())
+                for c_ in (ego_int, ego_tot):                          # the control counts: samples seen, eligible (logged v0 < vmax), perturbed (exactly 0 when the lever is off)
+                    c_["rows"] += ego.last["n_rows"]
+                    c_["eligible"] += ego.last["n_eligible"]
+                    c_["n"] += ego.last["n_selected"]
+                    c_["nav_kept"] += ego.last["ego_perturb_nav_kept"]
+                for c_ in (dag_int, dag_tot):                          # the control counts: samples seen, eligible (an own state with r' = t), swapped (exactly 0 when the lever is off), nav frames left as logged
+                    c_["rows"] += dag.last["n_rows"]
+                    c_["eligible"] += dag.last["n_eligible"]
+                    c_["n"] += dag.last["n_selected"]
+                    c_["nav_kept"] += dag.last["dagger_nav_kept"]
+                if launch_on:                                          # ... and attached AFTER the stages (they return their own batch dict): the loss reads b["launch"]
+                    b["launch"] = lmask
+                    for c_ in (launch_int, launch_tot):                # the control counts: rows seen, GT-valid rows (the along-track label exists), GT-launch rows
+                        c_["rows"] += int(lmask.shape[0])
+                        c_["eligible"] += int(b["gt_ok"].sum())
+                        c_["n"] += int(lmask.sum())
+                if level_on:                                           # ... and attached AFTER the stages (they return their own batch dict): the loss reads b["level_y"], b["level_ok"]
+                    b["level_y"], b["level_ok"] = lvl_lab
+                if lead_on:                                            # PREREG_LEVELHEAD_A2: attached AFTER the stages: the loss reads b["lead_y"], b["lead_has"], b["lead_near"]
+                    b["lead_y"], b["lead_has"], b["lead_near"] = lead_lab
+                if t2b.active:                                         # PREREG_T2_DAGGER (exclusive with every stage above): whole bank samples replace a share p of the rows AFTER the label stages (it masks launch / level / lead itself); p = 0 runs none of these lines
+                    b_pre = b
+                    b = t2b.apply(b, step)
+                    if t2b.last is None or t2b.last.get("step") != step or (t2b.last["n_selected"] > 0 and b is b_pre) or "aux_ok" not in b:
+                        raise SystemExit(f"ZZT2BANK-NOT-APPLIEDZZ step {step}: --t2-bank-p {t2b.p} is on but the batch the loss receives is the logged one (n_selected {None if t2b.last is None else t2b.last.get('n_selected')}): a lever that is declared and does nothing")
+                    for c_ in (t2_int, t2_tot):
+                        c_["rows"] += t2b.last["n_rows"]
+                        c_["n"] += t2b.last["n_selected"]
             b = to_dev(b, dev)
             for g in opt.param_groups:
                 g["lr"] = lr_at(step) * g.get("lr_mult", 1.0)
@@ -2741,7 +3361,7 @@ def main(argv=None):
             model.train()
             if enc is None:
                 with torch.autocast(device_type=dev.type, dtype=torch.bfloat16, enabled=amp):
-                    out = model.loss(b, p_gt=p_gt, gen=None)
+                    out = model.wm_only_loss(b) if a.wm_only else model.loss(b, p_gt=p_gt, gen=None)       # PREREG_V8F_MRATE: ONLY the WM terms (the adapter is detached inside, the rest is frozen and not run)
                 T = out["terms"]
                 if not torch.isfinite(T["total"]):
                     raise SystemExit(f"ZZNONFINITE-LOSSZZ at step {step}: {({k: float(v) for k, v in T.items()})}")
@@ -2770,6 +3390,9 @@ def main(argv=None):
                 if comp.on:
                     rec["ego_dagger_overlap_n"] = ov_int["n"]               # AMEND1 section 1: per log interval (exactly 0)
                 ov_int.update(n=0)
+                if t2b.active:                                              # PREREG_T2_DAGGER: per log interval (a flag-off log line keeps its key set)
+                    rec["t2_bank_n"], rec["t2_bank_rows"] = t2_int["n"], t2_int["rows"]
+                    t2_int.update(rows=0, n=0)
                 if rcv.active:                                              # PREREG_RECOVER_FT: per log interval (a flag-off log line keeps its key set)
                     rec["recover_n"], rec["recover_eligible"], rec["recover_rows"], rec["recover_changed"] = rec_int["n"], rec_int["eligible"], rec_int["rows"], rec_int["changed"]
                     rec_int.update(rows=0, eligible=0, n=0, changed=0)
@@ -2779,7 +3402,7 @@ def main(argv=None):
                 if enc is not None:
                     rec["lora_grad_norm"] = float(gn_l)
                 log.write(json.dumps(rec) + "\n"); log.flush()
-                print(f"[{step}/{total}] ade {rec['ade']:.3f} total {rec['total']:.3f} p_gt {p_gt:.2f}", flush=True)
+                print(f"[{step}/{total}] ade {rec.get('ade', float('nan')):.3f} total {rec['total']:.3f} p_gt {p_gt:.2f}", flush=True)
             if step % a.ckpt_every == 0:
                 save()
             if step >= total:
@@ -2789,6 +3412,8 @@ def main(argv=None):
             ep += 1
             bi = 0
     save(final=True)
+    if t2b.active:                                                         # PREREG_T2_DAGGER: every scene id the bank opened -- the read refuses a scene that is in its model's bank
+        json.dump(t2b.opened_record(), open(os.path.join(a.out, "t2_bank_scenes_opened.json"), "w"), indent=1)
     summary = {"done": True, "steps": step, "arm": a.arm, "seed": a.seed, "data_frac": a.data_frac,
                "steps_mult": a.steps_mult, "S": S, "n_clips": info["n_clips"], "n_windows": info["n_windows"],
                "exclude": a.exclude, "excluded_sha256": info.get("excluded_sha256"), "train_sha256": info.get("train_sha256"),
@@ -2798,6 +3423,7 @@ def main(argv=None):
                "ego_perturb_n": ego_tot["n"], "ego_perturb_eligible": ego_tot["eligible"], "ego_perturb_rows": ego_tot["rows"], "ego_perturb_nav_kept": ego_tot["nav_kept"],
                "dagger_n": dag_tot["n"], "dagger_eligible": dag_tot["eligible"], "dagger_rows": dag_tot["rows"], "dagger_nav_kept": dag_tot["nav_kept"]}      # PREREG_V8F_DAGGER run totals: exactly 0 swapped at p = 0; swapped == eligible at p = 1      # O-RECOVER run totals: exactly 0 perturbed at p = 0; perturbed == eligible at p = 1
     summary["recover_p"], summary["recover_n"], summary["recover_eligible"], summary["recover_rows"], summary["recover_changed"] = rcv.p, rec_tot["n"], rec_tot["eligible"], rec_tot["rows"], rec_tot["changed"]
+    summary["t2_bank_p"], summary["t2_bank_n"], summary["t2_bank_rows"] = t2b.p, t2_tot["n"], t2_tot["rows"]
     summary["recover_share"] = (rec_tot["n"] / rec_tot["eligible"]) if rec_tot["eligible"] else None        # PREREG_RECOVER_FT: the card's KR1 reads n_selected / n_eligible: [0.25, 0.35] for R, exactly 0 (n) for C0 / C0rep
     if comp.on:                                                            # AMEND1 section 1: the composed arm's run record (a flag-off summary.json keeps its key set)
         summary["ego_dagger_overlap_n"], summary["ego_perturb_with_dagger"] = ov_tot["n"], True
@@ -2814,6 +3440,10 @@ def main(argv=None):
         summary["lead_labels"] = info["lead_labels"]
     if enc is not None:
         summary["encoder"] = "lora"
+    if a.wm_only:                                                          # PREREG_V8F_MRATE: the WM-only arm's run record (a flag-off summary.json keeps its key set)
+        summary["wm_only"], summary["wm_k"] = True, a.wm_k
+    if wm_ladder_named(a):                                                 # PREREG_V8F_LADDER: the ladder arm's run record (a flag-off summary.json keeps its key set)
+        summary["wm_ladder"] = {"declared": {k: list(v) if isinstance(v, tuple) else v for k, v in declared_wm_ladder(a).items()}, "windows": info.get("wm_windows"), "wm_windows": a.wm_windows, "wm_pooled": a.wm_pooled}
     json.dump(summary, open(os.path.join(a.out, "summary.json"), "w"), indent=1, default=str)      # LAST, atomically meaningful
     print("DONE", json.dumps({k: summary[k] for k in ("steps", "arm", "seed", "seconds")}))
     return 0

@@ -193,6 +193,12 @@ class V8FMiniConfig:
     wm: str = "off"                    # off | a (H-JEPA aux without IDM) | b (with IDM)
     wm_dim: int = 128
     wm_strides: tuple = (2, 2)
+    wm_k: int = 1                      # PREREG_V8F_MRATE (`--wm-k`): how many past states each WM level's state reads, spaced at that level's own step. 1 = W0 = every earlier arm, bit for bit (no module, no key added);
+                                       # K > 1 = W1: L1 reads the adapter tokens of frames t, t-1, .., t-K+1; L2 / L3 read K states of the level below at wm_strides[l-2] apart (hjepa LevelConfig.window / dilation / causal_pad)
+    wm_rollout_k: tuple = (1, 1, 1)    # PREREG_V8F_LADDER (`--wm-rollout-k`): free-run steps of the k-step loss per WM level. (1, 1, 1) = every earlier arm, bit for bit (no term, no key added)
+    wm_rollout_stride: tuple = (1, 1, 1)   # PREREG_V8F_LADDER (`--wm-rollout-stride`): the free run starts at every n-th state of the level (used only where the level's k > 1)
+    wm_rollout_w: float = 1.0          # PREREG_V8F_LADDER (`--wm-rollout-w`): weight of every level's k-step term (constant over training; used only where k > 1)
+    wm_ctx: tuple = (3, 3, 3)          # PREREG_V8F_LADDER (`--wm-ctx`): each WM level's predictor context (states). (3, 3, 3) = every earlier arm (the LevelConfig default); changing it changes the predictor's parameter shape
     w_ckpt: float = 1.0
     w_tac: float = 1.0
     w_cons: float = 0.5
@@ -262,8 +268,28 @@ class V8FMiniConfig:
             raise ValueError("hmax must cover hist + max_age_s")
         if self.window_start != -1 and not 0 <= self.window_start <= self.hist - 1:
             raise ValueError(f"window_start must be -1 (absent = hist - 1) or in [0, hist - 1] = [0, {self.hist - 1}], got {self.window_start}")
+        ws = self.wm_strides                                                   # PREREG_V8F_LFS (`--wm-strides`): two ints >= 1
+        if not (isinstance(ws, (tuple, list)) and len(ws) == 2 and all(isinstance(s, int) and not isinstance(s, bool) and s >= 1 for s in ws)):
+            raise ValueError(f"wm_strides must be two ints >= 1 (the L2 and the L3 step, in states of the level below), got {ws!r}")
         if self.wm != "off" and self.hmax < 2 * self.wm_strides[0] * self.wm_strides[1] + 4:
             raise ValueError("hmax too short for the WM levels")
+        if not (isinstance(self.wm_k, int) and not isinstance(self.wm_k, bool) and self.wm_k >= 1):
+            raise ValueError(f"wm_k must be an int >= 1, got {self.wm_k!r}")
+        if self.wm_k > 1 and self.wm == "off":
+            raise ValueError("wm_k > 1 needs a world model (wm a or b): a lever that is declared and builds nothing")
+        for nm in ("wm_rollout_k", "wm_rollout_stride", "wm_ctx"):               # PREREG_V8F_LADDER: three ints >= 1 (one per WM level)
+            v = getattr(self, nm)
+            if not (isinstance(v, (tuple, list)) and len(v) == 3 and all(isinstance(x, int) and not isinstance(x, bool) and x >= 1 for x in v)):
+                raise ValueError(f"{nm} must be three ints >= 1 (levels 1, 2, 3), got {v!r}")
+        if not (isinstance(self.wm_rollout_w, (int, float)) and math.isfinite(self.wm_rollout_w) and self.wm_rollout_w >= 0.0):
+            raise ValueError(f"wm_rollout_w must be a finite number >= 0, got {self.wm_rollout_w!r}")
+        if self.wm == "off" and (tuple(self.wm_rollout_k) != (1, 1, 1) or tuple(self.wm_ctx) != (3, 3, 3)):
+            raise ValueError("wm_rollout_k / wm_ctx moved with no world model (wm off): a lever that is declared and builds nothing")
+        if self.wm != "off":                                                      # the reach a level declares must fit the window: k steps of S_l frames need k * S_l + 1 frames
+            cum = (1, self.wm_strides[0], self.wm_strides[0] * self.wm_strides[1])
+            for lv in range(3):
+                if self.wm_rollout_k[lv] > 1 and self.hmax < self.wm_rollout_k[lv] * cum[lv] + 1:
+                    raise ValueError(f"hmax {self.hmax} is shorter than the {self.wm_rollout_k[lv] * cum[lv] + 1} frames level {lv + 1} needs for k = {self.wm_rollout_k[lv]} steps at stride {cum[lv]}: the declared reach could never be trained")
 
 
 # ------------------------------------------------------------------------------------------------ geometry
@@ -648,25 +674,81 @@ def _mlp(d_in, d_hid, d_out, zero_last=False):
 class WMAux(nn.Module):
     """M2: the H-JEPA world-model auxiliary (``tanitad.models.hjepa``), levels z1 / z2 / z3 on the O / T / S cycles
     (0.2 s / 0.4 s / 0.8 s on the cache grid -- the nearest multiples to 0.1 / 0.5 / 1.0 s). a = without IDM
-    (gamma 0), b = with IDM (beta 0.08, gamma 100)."""
+    (gamma 0), b = with IDM (beta 0.08, gamma 100).
+
+    PREREG_V8F_MRATE, ``cfg.wm_k`` = K. K = 1 (default) is every earlier build, bit for bit: no module and no state-dict key is added. K > 1 (W1): level 1's state reads the adapter tokens of
+    frames t, t-1, .., t-K+1 (``enc1``, an MLP over the K concatenated projections, oldest first, the first frame's projection repeated before the window start); levels 2 and 3 read K states of
+    the level below, ``wm_strides[l-2]`` of them apart (a ``LevelConfig`` with ``window=K, dilation=stride, causal_pad=True``), so every state reads only its own time and earlier ones.
+    ``enc1`` is built LAST, on a private RNG stream derived from the run seed: W0 and W1 built under one seed share every other parameter bit for bit."""
 
     def __init__(self, cfg: V8FMiniConfig):
         super().__init__()
-        from tanitad.models.hjepa import HJEPAStack, LevelConfig   # S3's module; absent => this arm cannot be built
+        from tanitad.models.hjepa import HJEPAStack, LevelConfig, LevelEncoder   # S3's module; absent => this arm cannot be built
         gamma = cfg.wm_gamma if cfg.wm == "b" else 0.0
         mk = lambda **kw: LevelConfig(latent_dim=cfg.wm_dim, beta=cfg.wm_beta, gamma=gamma, pred_width=128,
                                       pred_depth=2, pred_heads=4, enc_hidden=128, macro_hidden=32, **kw)
-        lv = [mk(action_dim=2, act_embed_dim=32),
-              mk(action_dim=32, stride=cfg.wm_strides[0]), mk(action_dim=32, stride=cfg.wm_strides[1])]
+        K = int(cfg.wm_k)
+        up = lambda i: dict(window=K, dilation=cfg.wm_strides[i], causal_pad=True) if K > 1 else {}      # K = 1: LevelConfig's defaults, i.e. the earlier build
+        lad = lambda i: dict(context=int(cfg.wm_ctx[i]), rollout_k=int(cfg.wm_rollout_k[i]), rollout_stride=int(cfg.wm_rollout_stride[i]), rollout_w=float(cfg.wm_rollout_w))   # noqa: E731  PREREG_V8F_LADDER: (3, 3, 3) / (1, 1, 1) = LevelConfig's defaults, i.e. the earlier build
+        lv = [mk(action_dim=2, act_embed_dim=32, **lad(0)),
+              mk(action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
         self.stack = HJEPAStack(lv, sigreg_projections=256)
         self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_dim))
         self.gamma = gamma
         self.ch1_scale = CH1_SCALE[cfg.kin_mode]
+        self.enc1 = None
+        if K > 1:                                                              # PREREG_V8F_MRATE: built after everything else, on a private stream (the global RNG is the W0 build's)
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed((torch.initial_seed() * 1_000_003 + 101) % (2 ** 63 - 1))
+                self.enc1 = LevelEncoder(cfg.wm_dim, cfg.wm_dim, 128, K)
+
+    def built_k(self) -> dict:
+        """What the BUILT modules read (the G-DVB reader): per level the window, the dilation and whether the window is causally padded. Level 1's window is ``enc1``'s (1 when absent)."""
+        st = self.stack
+        ks = [self.enc1.window if self.enc1 is not None else 1] + [st.encoders[i].window for i in range(2)]
+        return {"k": ks, "dilation": [1] + [st.cfg[i + 1].dilation for i in range(2)],
+                "causal_pad": [self.enc1 is not None] + [bool(st.cfg[i + 1].causal_pad) for i in range(2)]}
+
+    def built_strides(self) -> dict:
+        """PREREG_V8F_LFS, the G-DVB reader for ``--wm-strides``: what the BUILT modules use, three ways, never the config that built them. ``stride``: the ``LevelConfig`` stride of levels 2 and 3 (the one ``HJEPAStack`` slides its
+        windows by and groups the lower-level action embeddings by); ``macro_stride``: the macro-action encoder's attribute; ``macro_shape_stride``: the stride its first Linear's INPUT WIDTH carries (the parameter shapes, which a
+        loaded or mis-built module cannot fake). ``dilation``: the levels' window dilation (equal to the stride when ``wm_k`` > 1, 1 otherwise)."""
+        st = self.stack
+        macs = list(st.macro_encoders)
+        return {"stride": [int(st.cfg[i + 1].stride) for i in range(2)], "macro_stride": [int(m.stride) for m in macs],
+                "macro_shape_stride": [int(m.net[0].in_features // m.embed_dim) for m in macs], "dilation": [int(st.cfg[i + 1].dilation) for i in range(2)]}
+
+    def level_states(self, n_frames: int) -> list:
+        """PREREG_V8F_LFS: how many states each level holds for a window of ``n_frames`` frames -- MEASURED by running the BUILT stack's ``encode`` on zeros (no gradient, no randomness), not computed from the strides. Transitions per
+        level = states - 1. ``HJEPAStack.encode`` raises when a level holds fewer than 2 states; this returns that as a count of 1 instead (the gate turns it into a refusal with the number)."""
+        st = self.stack
+        z = torch.zeros(1, int(n_frames), st.cfg[0].latent_dim)
+        a = torch.zeros(1, int(n_frames) - 1, st.cfg[0].action_dim)
+        with torch.no_grad():
+            try:
+                enc = st.encode(z, a)
+            except ValueError:
+                n = [int(n_frames)]
+                for lv in (2, 3):
+                    c = st.cfg[lv - 1]
+                    n.append(max((n[-1] - 1) // c.stride + 1, 1) if n[-1] >= 2 else 1)
+                return n
+        return [int(t.shape[1]) for t in enc.z]
 
     def z1(self, adapt: Tensor) -> Tensor:
         """Level-1 latent of every cached frame: the mean-pooled adapter token, projected. ``adapt`` [B, F, n_tok, d] -> [B, F, D].
-        ONE spelling: ``forward`` (training) and rung beta's planner (``tanitad.models.v8f_beta``) both call it."""
-        return self.proj(adapt.mean(2))
+        ONE spelling: ``forward`` (training) and rung beta's planner (``tanitad.models.v8f_beta``) both call it.
+        With ``wm_k`` K > 1 (PREREG_V8F_MRATE) frame j's latent is ``enc1`` of the projections of frames j-K+1 .. j (oldest first); frames before the window's first are the first frame's projection."""
+        return self.z1_from_mean(adapt.mean(2))
+
+    def z1_from_mean(self, am: Tensor) -> Tensor:
+        """PREREG_V8F_LADDER: ``z1`` from the adapter tokens already mean-pooled over the token axis (``am`` [B, F, d]) -- the ONLY thing the WM reads of the adapter. ``z1(adapt)`` is this applied to ``adapt.mean(2)``."""
+        p = self.proj(am)
+        if self.enc1 is None:
+            return p
+        from tanitad.models.hjepa import _windows
+        K = self.enc1.window
+        return self.enc1(_windows(torch.cat([p[:, :1].expand(-1, K - 1, -1), p], dim=1), K, 1, 1))
 
     def scale_actions(self, act: Tensor) -> Tensor:
         """Raw action channels ``act`` [..., 2] = (a [m/s^2], ch1) -> the WM's action units. ch1 = the recorded steer (kin_mode steer) or
@@ -677,6 +759,18 @@ class WMAux(nn.Module):
         z1 = self.z1(adapt)                                                     # [B, F, D]
         a = self.scale_actions(act)[:, :-1]                                     # action of the transition j -> j+1
         return self.stack.loss(z1, a)
+
+    def forward_mean(self, am: Tensor, act: Tensor) -> dict:
+        """PREREG_V8F_LADDER: :meth:`forward` from the token-pooled adapter output ``am`` [B, F, d] (the frozen-adapter pooled path); the same ops after the pooling."""
+        return self.stack.loss(self.z1_from_mean(am), self.scale_actions(act)[:, :-1])
+
+    def built_ladder(self, n_frames: int) -> dict:
+        """PREREG_V8F_LADDER, the G-DVB reader for the ladder levers: the BUILT stack's own measurements (``HJEPAStack.built_rollout``: predictor calls inside the free run, anchors, the context handed to ``rollout``, the
+        predictor's parameter-shape context, the weight the loss gives the term) for a window of ``n_frames`` frames, plus the cumulative stride of each level."""
+        r = self.stack.built_rollout(int(n_frames))
+        st = self.built_strides()["stride"]
+        r["cum_stride"] = [1, int(st[0]), int(st[0]) * int(st[1])]
+        return r
 
 
 class V8FMini(nn.Module):
@@ -852,6 +946,19 @@ class V8FMini(nn.Module):
         adapt = self.adapter(b["feats"].float()) + self.pos[None, None]            # [B, F, n_tok, d]
         return adapt
 
+    def pooled_adapt_mean(self, nm: Tensor) -> Tensor:
+        """PREREG_V8F_LADDER, the frozen-adapter pooled path. ``nm`` [..., d_feat] is the token-mean of the PARAMETER-FREE layer-normalised features (``tanitad.data.v8f_wm_windows.norm_mean_tokens``). The adapter is
+        ``Linear(LayerNorm(f)) + pos`` and both are affine in the normalised feature, so ``adapter(f).mean(tokens) + pos.mean(tokens)`` = ``Linear(g * mean(norm(f)) + b) + pos.mean(0)``: the same numbers (fp32 round-off) from a
+        [B, F, d_feat] tensor instead of a [B, F, n_tok, d] one. Equal to ``_encode(b).mean(2)`` to 1e-6 (pytest-pinned). Use with a FROZEN adapter: the result carries no adapter gradient path of interest."""
+        ln, lin = self.adapter[0], self.adapter[1]
+        return lin(nm * ln.weight + ln.bias) + self.pos.mean(0)
+
+    def pooled_adapt_mean_from_feats(self, feats: Tensor, chunk: int = 8) -> Tensor:
+        """PREREG_V8F_LADDER: the same pooled tensor from the cached tokens ``feats`` [B, F, n_tok, d_feat], computed per ``chunk`` frames under no-grad -- peak memory chunk x n_tok x d_feat instead of F x n_tok x d_feat."""
+        with torch.no_grad():
+            out = [self.adapter(feats[:, i:i + chunk].float()).mean(2) + self.pos.mean(0) for i in range(0, feats.shape[1], chunk)]
+        return torch.cat(out, 1)
+
     def _code_mix_mask(self, has: Tensor, p_gt: float, gen=None) -> Tensor:
         """PREREG_V8F_MIXO, ``code_mix = kind``: [B, CODE_DIM] bool, True where O reads the GT code's value instead of T's own. ONE Bernoulli(p_gt) draw per sample AND per
         unit of :data:`CODE_MIX_UNITS` (a [B, N_CODE_UNITS] draw, independent), broadcast to the unit's indices through :data:`CODE_UNIT_OF`; a window with no T label
@@ -1009,7 +1116,8 @@ class V8FMini(nn.Module):
         # O: ADE / FDE on the 0.2 s knots
         gt, gok = batch["gt"], batch["gt_ok"].float()
         T["ade"], T["fde"] = traj_terms(out["traj30"], gt, gok)      # the same two lines as before, now ONE spelling that PREREG_V8F_OACC's w_acc rule also calls
-        T["acc"] = accel_term(out["traj30"], gt, gok)                # PREREG_V8F_OACC: always LOGGED (the G-LIVE probe and the reader read it); in the total only when w_acc > 0
+        aux = batch.get("aux_ok")                                    # PREREG_T2_DAGGER: [B] bool, False on a T2-bank row (its ONLY supervision is the target law: ade / fde); ABSENT = every row carries every term = the tip, bit for bit
+        T["acc"] = accel_term(out["traj30"], gt, gok if aux is None else gok * aux.to(gok.dtype))                # PREREG_V8F_OACC: always LOGGED (the G-LIVE probe and the reader read it); in the total only when w_acc > 0
         if cfg.launch_intent_w > 0.0:                                # PREREG_V8F_LAUNCH_INTENT: computed ONLY when declared (0.0 = no new tensor op, no new T key = the tip, bit for bit)
             if "launch" not in batch:
                 raise ValueError("launch_intent_w > 0 but the batch carries no `launch` mask: the trainer computes it from the LOGGED state before any ego stage (v8f_mini_train.py launch stage)")
@@ -1039,12 +1147,23 @@ class V8FMini(nn.Module):
             cs = pred_constraints_t(out, lim, batch["lead_gap_h"], batch["s_h"])
             ps = consistency_penalties(out["traj30"], cs)
             for r in RULES:
-                T[f"pen_{r}"] = (pg["pen"][r] / PEN_SCALE[r]).mean()
-                T[f"pens_{r}"] = (ps["pen"][r] / PEN_SCALE[r]).mean()
+                if aux is None:
+                    T[f"pen_{r}"] = (pg["pen"][r] / PEN_SCALE[r]).mean()
+                    T[f"pens_{r}"] = (ps["pen"][r] / PEN_SCALE[r]).mean()
+                else:                                                # PREREG_T2_DAGGER: the mean over the rows that carry the term (a bank row contributes exactly 0.0)
+                    af = aux.to(pg["pen"][r].dtype)
+                    T[f"pen_{r}"] = ((pg["pen"][r] / PEN_SCALE[r]) * af).sum() / af.sum().clamp_min(1.0)
+                    T[f"pens_{r}"] = ((ps["pen"][r] / PEN_SCALE[r]) * af).sum() / af.sum().clamp_min(1.0)
             out["viol"] = pg["viol"]
         if self.wm is not None:
-            wm = self.wm(out["adapt"], batch["act"])
-            T["wm"] = wm["total"]
+            if aux is None:
+                wm = self.wm(out["adapt"], batch["act"])
+                T["wm"] = wm["total"]
+            elif bool(aux.any()):                                    # PREREG_T2_DAGGER: the auxiliary sees only the rows that carry it (a bank row is not in its computation: exactly 0.0 gradient)
+                wm = self.wm(out["adapt"][aux], batch["act"][aux])
+                T["wm"] = wm["total"]
+            else:
+                T["wm"] = out["adapt"].sum() * 0.0
         total = (cfg.w_ckpt * T["ckpt"] + cfg.w_tac * (T["goal"] + 0.5 * (T["lat"] + T["lon"]) + cfg.w_cons * T["cons"])
                  + cfg.w_traj * (T["ade"] / 3.0 + 0.5 * T["fde"] / 6.0))
         total = total + cfg.w_acc * T["acc"] if cfg.w_acc > 0.0 else total          # PREREG_V8F_OACC: ONE line (a mutation deletes it); w_acc 0 adds nothing: B's total, bit for bit
@@ -1058,6 +1177,22 @@ class V8FMini(nn.Module):
         T["total"] = total
         out["terms"] = T
         return out
+
+    def wm_only_loss(self, batch: dict) -> dict:
+        """PREREG_V8F_MRATE, the WM-only mode: ONLY the world model's loss terms, on a FROZEN adapter. ``adapt`` is detached, so the adapter (and ``pos``) receive exactly 0.0 even if they are trainable; the readers,
+        the heads and the planner are never run. ``terms``: ``wm`` (the stack's total), ``wm/<stack term>`` per level, ``total`` = ``w_wm`` x ``wm``."""
+        if self.wm is None:
+            raise ValueError("wm_only_loss needs a world model (wm a or b)")
+        if "zmean" in batch:                                                    # PREREG_V8F_LADDER: the cached mean adapter token (box-2 zcache): exactly ``_encode(b).mean(2)``, read from disk
+            wm = self.wm.forward_mean(batch["zmean"].float().detach(), batch["act"])
+        elif "pool" in batch:                                                   # PREREG_V8F_LADDER: a world-model-only batch with the frozen adapter's pooled path (no [B, F, n_tok, d] tensor is ever built)
+            wm = self.wm.forward_mean(self.pooled_adapt_mean(batch["pool"].float()).detach(), batch["act"])
+        else:
+            wm = self.wm(self._encode(batch).detach(), batch["act"])
+        T = {"wm": wm["total"]}
+        T.update({f"wm/{k}": v for k, v in wm.items() if k != "total"})
+        T["total"] = self.cfg.w_wm * wm["total"]
+        return {"terms": T}
 
     @staticmethod
     def _partial_ce(logits: Tensor, allowed: Tensor, has: Tensor) -> Tensor:
@@ -1106,7 +1241,18 @@ class V8FMini(nn.Module):
                 "w": {"w_pen": cfg.w_pen if cfg.consistency else 0.0, "w_pen_self": cfg.w_pen_self if cfg.consistency else 0.0,
                       "w_wm": cfg.w_wm if self.wm is not None else 0.0,
                       "w_tac": cfg.w_tac, "w_cons": cfg.w_cons}}                       # PREREG_V8F_WC: T's constraint term is w_tac x w_cons
-        if self.lvl_head is not None:                                      # PREREG_V8F_LEVEL: present ONLY with the head built (a flag-off model keeps its key set); the gate reads built.get("level_head", "off")
+        if self.wm is not None and any(k > 1 for k in self.wm.built_k()["k"]):      # PREREG_V8F_MRATE: present ONLY with a multi-frame WM built (a W0 model keeps its key set); the gate reads built.get("wm_k", 1)
+            bk = self.wm.built_k()
+            lv["wm_k"], lv["wm_k_levels"], lv["wm_dilation_levels"], lv["wm_causal_pad_levels"] = max(bk["k"]), bk["k"], bk["dilation"], bk["causal_pad"]
+        if self.wm is not None and tuple(self.wm.built_strides()["stride"]) != tuple(V8FMiniConfig.__dataclass_fields__["wm_strides"].default):      # PREREG_V8F_LFS: present ONLY with non-default strides built (a (2, 2) model keeps its key set); the gate reads built.get("wm_strides", [2, 2])
+            lv["wm_strides"] = list(self.wm.built_strides()["stride"])
+        if self.wm is not None:                                            # PREREG_V8F_LADDER: present ONLY when moved (a default model keeps its key set); the config echo of the BUILT LevelConfigs / predictors -- the gate's reader is WMAux.built_ladder (the loss's own loop)
+            cf = self.wm.stack.cfg
+            if any(c.rollout_k > 1 for c in cf):
+                lv["wm_rollout_k"], lv["wm_rollout_stride"], lv["wm_rollout_w"] = [c.rollout_k for c in cf], [c.rollout_stride for c in cf], cf[0].rollout_w
+            if any(int(p.pos.shape[0]) != 3 for p in self.wm.stack.predictors):
+                lv["wm_ctx"] = [int(p.pos.shape[0]) for p in self.wm.stack.predictors]
+        if self.lvl_head is not None:                                     # PREREG_V8F_LEVEL: present ONLY with the head built (a flag-off model keeps its key set); the gate reads built.get("level_head", "off")
             lv["level_head"], lv["w_level"] = "on", cfg.w_level
             if self.e_level is not None:                                   # PREREG_LEVELHEAD_A2: absent under --aux-cond token (the additive path is not built)
                 lv["level_token_zero_init"] = bool(float(self.e_level.weight.detach().abs().sum()) == 0.0 and float(self.e_level.bias.detach().abs().sum()) == 0.0)
