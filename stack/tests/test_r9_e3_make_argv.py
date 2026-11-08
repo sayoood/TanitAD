@@ -495,12 +495,12 @@ def test_the_script_runs_as_a_CLI_and_writes_the_same_bytes(sources, tmp_path):
     p = sources["K2"]
     e3p, d1p = tmp_path / "cli_e3.json", tmp_path / "cli_d1.json"
     res = subprocess.run([sys.executable, str(ROOT / "scripts" / "r9_e3_make_argv.py"), "--e2", str(p), "--out", E3_OUT % "K2", "--write-e3", str(e3p), "--write-d1", str(d1p)],
-                         capture_output=True, text=True, env=dict(os.environ, MSYS_NO_PATHCONV="1", CUDA_VISIBLE_DEVICES="-1"), timeout=120)
+                         capture_output=True, text=True, encoding="utf-8", env=dict(os.environ, MSYS_NO_PATHCONV="1", CUDA_VISIBLE_DEVICES="-1"), timeout=120)
     assert res.returncode == 0, res.stderr
     _p, _b, _doc_, e3, d1 = built("K2", sources)
     assert (e3p.read_bytes(), d1p.read_bytes()) == (MK.dump(e3).encode("utf-8"), MK.dump(d1).encode("utf-8"))
     bad = subprocess.run([sys.executable, str(ROOT / "scripts" / "r9_e3_make_argv.py"), "--e2", str(p), "--out", "C:/Program Files/Git/home/nvidia/x", "--write-e3", str(tmp_path / "bad.json")],
-                         capture_output=True, text=True, env=dict(os.environ, CUDA_VISIBLE_DEVICES="-1"), timeout=120)
+                         capture_output=True, text=True, encoding="utf-8", env=dict(os.environ, CUDA_VISIBLE_DEVICES="-1"), timeout=120)
     assert bad.returncode != 0 and "absolute POSIX path" in bad.stderr and not (tmp_path / "bad.json").exists()
 
 
