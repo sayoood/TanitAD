@@ -1,0 +1,108 @@
+--- a/refe/scorer_finetune.py
++++ b/refe/scorer_finetune.py
+@@ -146,7 +146,8 @@
+ 
+ 
+ # ---- SCORER1 (PREREG_SCORER1 section 2): L_pair, a speed-BALANCED pairwise loss on the NC / DAC / TTC heads.  ALL levers default OFF (--pair-w 0 / --pair-heads ""), the OFF path is this trainer exactly.
+-PAIR_HEADS = {"NC": 0, "DAC": 1, "TTC": 3}                 # label / logit column of each head (planner.py component order NC DAC EP TTC C DDC)
++PAIR_HEADS = {"NC": 0, "DAC": 1, "TTC": 3, "lane": 6}      # label / logit column of each head (planner.py component order NC DAC EP TTC C DDC; 6 = the teacher-lane output, S1L only: refe_scorer1l)
++PAIR_LANE_MARGIN = 0.1                                     # AMENDMENT_2 "Conditions on S1L": a lane pair needs t_i - t_j >= 0.1 on the soft target t (the 0.08 m banked flip is ~0.05 in t); a target < 0 is MASKED and joins no pair
+ PAIR_SEED = 20261107                                       # PREREG_SCORER1 section 2 item 3: the without-replacement sampling seed
+ PAIR_V_IDX, PAIR_DT = 19, 0.2                              # v4 = the 0.2 s chord at step 19 (t = 4 s) on the raw proposal, as p1_diag.py / sel_common.step_speed
+ PAIR_MUTATE_ENVS = ("REFE_PAIR_MUTATE_NOBALANCE", "REFE_PAIR_MUTATE_DROP_LOSS")      # deliberate regressions: NOBALANCE must turn the F/S ratio check RED, DROP_LOSS must turn G16 RED
+@@ -171,9 +172,13 @@
+         self.gen = torch.Generator().manual_seed(self.seed)
+         self.last: dict = {}
+ 
+-    def select(self, y, v, v0):
++    def select(self, y, v, v0, head=None):
+         """y [K] true label of one head, v [K] v4, v0 float -> (idx_i, idx_j of the kept pairs, nF_cand, nS_cand, kept_F, kept_S).  Pure CPU, deterministic given self.gen."""
+-        better = y[:, None] > y[None, :]
++        if head == "lane":                                      # S1L: the soft-target margin, and an unlabelled proposal (target < 0 = -1) is in no pair
++            ok_ = y >= 0.0
++            better = ((y[:, None] - y[None, :]) >= PAIR_LANE_MARGIN) & ok_[:, None] & ok_[None, :]
++        else:
++            better = y[:, None] > y[None, :]
+         far = (v[:, None] - v[None, :]).abs() / max(float(v0), 1.0) >= self.dv
+         cand = better & far
+         fast = v[:, None] > v[None, :]
+@@ -202,7 +207,7 @@
+                 continue
+             for h in self.heads:
+                 col = PAIR_HEADS[h]
+-                ii, jj, cF, cS, kF, kS = self.select(ycpu[b, :, col], v4[b], float(v0[b]))
++                ii, jj, cF, cS, kF, kS = self.select(ycpu[b, :, col], v4[b], float(v0[b]), head=h)
+                 d = st[h]
+                 d["sets"] += 1; d["cand_F"] += cF; d["cand_S"] += cS; d["kept_F"] += kF; d["kept_S"] += kS; d["sets_with_pair"] += int(ii.numel() > 0)
+                 if ii.numel():
+@@ -227,6 +232,8 @@
+         out.append("--pair-w must be a finite number >= 0")
+     if not (a.pair_dv > 0.0 and math.isfinite(a.pair_dv)):
+         out.append("--pair-dv must be > 0 (a zero contrast makes every pair a candidate and lets the F/S split read noise)")
++    if "lane" in names and not a.lane_head:
++        out.append("--pair-heads lane needs --lane-head (the lane column is the teacher-lane output)")
+     if a.pair_w > 0.0 and not names:
+         out.append("--pair-w > 0 needs --pair-heads (a weight on no head is a lever that does nothing)")
+     if names and a.pair_w == 0.0 and not a.pair_calibrate:
+@@ -1540,6 +1547,8 @@
+     if pairer is not None:                                   # SCORER1: BUILT facts of the loss object the run holds (absent when OFF: every pre-SCORER1 data event is byte-identical)
+         info["pair"] = {"w": float(a.pair_w), "dv": pairer.dv, "heads": list(pairer.heads), "seed": pairer.seed, "balanced": bool(pairer.balance), "v_idx": PAIR_V_IDX,
+                         "calibrate": bool(a.pair_calibrate)}
++        if "lane" in pairer.heads:                           # S1L: BUILT facts of the lane pair rule (absent for S1, whose data event stays byte-identical)
++            info["pair"].update({"lane_col": PAIR_HEADS["lane"], "lane_margin": PAIR_LANE_MARGIN})
+     if aux is not None:
+         # BUILT facts only (G-DVB compares them with the argv): read off the objects the run holds, never echoed from the namespace
+         info["aux_drv"] = {**aux.built_facts(), "tap": aux.cfg.tap, "feed": "on" if aux.feed is not None else "off", "lr": optH.param_groups[0]["lr"],
+@@ -2282,6 +2291,7 @@
+             probe_pl = PairLoss(pairer.heads, pairer.dv)
+             stride = max(1, len(tr_idx) // 20000)
+             share = {h_: {"sets": 0, "with_pair": 0, "kept_F": 0, "kept_S": 0} for h_ in pairer.heads}
++            lane_idx = []
+             for i_ in tr_idx[::stride]:
+                 r_ = ds.rows[i_]
+                 got_ = op.get(r_.get("log_name", ""), r_.get("token", ""), r_.get("step", -1), int(r_.get("rank", 0)))
+@@ -2290,17 +2300,43 @@
+                 tr3_, tgl_, _c = got_
+                 v4_ = chord_speed(torch.as_tensor(tr3_)[None])[0]
+                 for h_ in pairer.heads:
+-                    ii_, _jj, _cF, _cS, kF_, kS_ = probe_pl.select(torch.as_tensor(tgl_)[:, PAIR_HEADS[h_]].float(), v4_, float(r_["ego"][6]))
++                    ii_, _jj, _cF, _cS, kF_, kS_ = probe_pl.select(torch.as_tensor(tgl_)[:, PAIR_HEADS[h_]].float(), v4_, float(r_["ego"][6]), head=h_)
+                     sh_ = share[h_]
+                     sh_["sets"] += 1; sh_["with_pair"] += int(ii_.numel() > 0); sh_["kept_F"] += kF_; sh_["kept_S"] += kS_
++                    if h_ == "lane":                         # S1L G-LIVE: how many of the sampled sets carry a lane label at all (the label is a ~1 % subset), and which ones hold a kept pair
++                        sh_["labelled"] = sh_.get("labelled", 0) + int(bool((torch.as_tensor(tgl_)[:, 6] >= 0).any()))
++                        if ii_.numel() > 0 and len(lane_idx) < a.batch:
++                            lane_idx.append(i_)
+             for h_, sh_ in share.items():
+                 sh_["share_with_pair"] = sh_["with_pair"] / max(sh_["sets"], 1)
+             fs_ok = all(v_["kept_F"] == v_["kept_S"] for v_ in list(share.values()) + list(st_on.values())) and pairer.balance
++            lane_row = None                                      # S1L G-LIVE: the lane ROW of the score head moves with L_pair iff the arm names "lane"; a lane-labelled batch is built from the sets that hold a kept lane pair
++            if "lane" in pairer.heads:
++                if lane_idx:
++                    gst_ = pairer.gen.get_state()                # the probe must not move the training generator
++                    bl0_, _al = split_aux(next(iter(DataLoader(make_train_set(ds, lane_idx, a.epo), batch_size=len(lane_idx)))), a.aux_drv)
++                    bl_, prl_ = split_rows(bl0_, a.epo)
++                    def _row6(w_):
++                        armB.zero_grad(set_to_none=True)
++                        s0l_, sAl_, sBl_, tl_ = fwd(bl_)
++                        _a2, lBl_, _l2, _e2 = train_losses(s0l_, sAl_, sBl_, tl_, prl_, 0, pair_w=w_)
++                        lBl_.backward()
++                        hd_ = armB.score_head
++                        return torch.cat([hd_.weight.grad[6].detach().double().flatten(), hd_.bias.grad[6:7].detach().double().flatten()])
++                    r1_, r0_ = _row6(1.0), _row6(0.0)
++                    armB.zero_grad(set_to_none=True)
++                    pairer.gen.set_state(gst_)
++                    lane_row = {"sets": len(lane_idx), "delta_lane_row_w1_minus_w0": float((r1_ - r0_).abs().sum())}
++                else:
++                    lane_row = {"sets": 0, "delta_lane_row_w1_minus_w0": 0.0}
+             g16 = {"ok": bool(all(math.isfinite(d_on[m_]) and d_on[m_] > 0.0 for m_ in SCORER) and all(v_ == 0.0 for v_ in ctl_read.values()) and fs_ok
+                               and all(share[h_]["share_with_pair"] > 0.0 for h_ in pairer.heads) and os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") != "1"),
+                    "loss_grad_delta_w1_minus_w0": d_on, "control_w0_term_alone_grad_abs": ctl_read, "controls_exactly_zero": bool(all(v_ == 0.0 for v_ in ctl_read.values())),
+                    "micro_batch_pairs": st_on, "bank_share": share, "bank_stride": stride, "fs_balanced": bool(fs_ok), "balanced_built": bool(pairer.balance),
+                    "mutate_nobalance": os.environ.get("REFE_PAIR_MUTATE_NOBALANCE") == "1", "mutate_drop_loss": os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") == "1"}
++            if lane_row is not None:                                     # S1L only: absent for S1, whose G16 stays byte-identical
++                g16["lane_row"] = lane_row
++                g16["ok"] = bool(g16["ok"] and lane_row["sets"] > 0 and math.isfinite(lane_row["delta_lane_row_w1_minus_w0"]) and lane_row["delta_lane_row_w1_minus_w0"] > 0.0)
+             gates["G16_pair_live_balanced"] = g16
+         if hn_obj is not None:                               # G14 (P6-HN-S): the hard-negative term is live on arm B only, its controls read EXACTLY 0.0, the identities hold
+             gates["G14_hn_live_and_identity"] = g14_hn_live_and_identity(hn_env)

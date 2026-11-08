@@ -1,0 +1,44 @@
+ZZTEST_SKIP banked generic gate not present: primitives not cross-checked here
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--targets 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--targets 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--targets 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--targets 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--targets 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--targets 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--targets 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--targets 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--targets 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--targets 0.0s)
+  [timing] finalize: tree_manifest 0.1s, data_manifest 0.0s (--targets 0.0s)
+  [timing] finalize: tree_manifest 0.1s, data_manifest 0.0s (--targets 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--targets 0.0s)
+  [timing] finalize: tree_manifest 0.0s, data_manifest 0.0s (--targets 0.0s)
+  [timing] run: tree_manifest 3.7s, data_manifest 0.0s (--targets 0.0s, --images 0.0s, --calib 0.0s, --metric-cache 0.0s)
+  G-HYG     FAIL  profile refusal: refe_p6 requires --yaw-wrap off; the argv does not carry it
+  G-DVB     FAIL  profile refusal: refe_p6 requires --yaw-wrap off; the argv does not carry it
+  G-LIVE    FAIL  profile refusal: refe_p6 requires --yaw-wrap off; the argv does not carry it
+  G-CLOCK   FAIL  profile refusal: refe_p6 requires --yaw-wrap off; the argv does not carry it
+  G-EVAL    FAIL  profile refusal: refe_p6 requires --yaw-wrap off; the argv does not carry it
+  G-CKPT    FAIL  profile refusal: refe_p6 requires --yaw-wrap off; the argv does not carry it
+  G-SUITE   FAIL  profile refusal: refe_p6 requires --yaw-wrap off; the argv does not carry it
+  G-LIVE-LAB FAIL  profile refusal: refe_p6 requires --yaw-wrap off; the argv does not carry it
+  G-LIVE-MEM FAIL  profile refusal: refe_p6 requires --yaw-wrap off; the argv does not carry it
+  G-EGR     FAIL  profile refusal: refe_p6 requires --yaw-wrap off; the argv does not carry it
+  [timing] finalize: tree_manifest 0.4s, data_manifest 0.0s (--targets 0.0s, --images 0.0s, --calib 0.0s, --metric-cache 0.0s)
+Traceback (most recent call last):
+  File "F:\tanitad_scratch\a2_wiring_20261108\a2\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_launch_gate.py", line 2385, in <module>
+    sys.exit(main())
+             ~~~~^^
+  File "F:\tanitad_scratch\a2_wiring_20261108\a2\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_launch_gate.py", line 2375, in main
+    static()
+    ~~~~~~^^
+  File "F:\tanitad_scratch\a2_wiring_20261108\a2\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_launch_gate.py", line 386, in static
+    rls1_static()
+    ~~~~~~~~~~~^^
+  File "F:\tanitad_scratch\a2_wiring_20261108\a2\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_launch_gate.py", line 792, in rls1_static
+    ok(set(C.DVB_KINDS_SCORER) == sdests, (sorted(sdests - set(C.DVB_KINDS_SCORER)), sorted(set(C.DVB_KINDS_SCORER) - sdests)))
+    ~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "F:\tanitad_scratch\a2_wiring_20261108\a2\TanitAD Research Lab\Architecture & Inference\Research\2026-09-20-refe-plan\refe\test_launch_gate.py", line 40, in ok
+    assert cond, msg
+           ^^^^
+AssertionError: (['beh_heads', 'beh_labels_heldout', 'beh_labels_train', 'beh_listwise', 'beh_listwise_stall', 'w_beh'], [])

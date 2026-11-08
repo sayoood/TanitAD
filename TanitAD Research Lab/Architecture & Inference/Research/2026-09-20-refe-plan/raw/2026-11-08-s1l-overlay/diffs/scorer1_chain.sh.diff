@@ -1,0 +1,68 @@
+--- a/refe/scorer1_chain.sh
++++ b/refe/scorer1_chain.sh
+@@ -84,11 +84,12 @@
+   done
+ }
+ arm_argv() { ARGS="$(ARM=$1 MODE=argv SCORER1_WS=$WS bash $RUN/scorer1_pod.sh)" && [ -n "$ARGS" ] || refuse "scorer1_pod.sh ARM=$1 MODE=argv printed nothing"; }
++prof_of() { if [ "$1" = "S1L" ]; then echo refe_scorer1l; else echo refe_scorer1; fi; }      # S1L (AMENDMENT_2/3) has its own launch-gate profile
+ token_ok() {          # $1 = arm, uses $ARGS.  ZZ: `launch_gate.py verify` RE-MEASURES the argv, the code tree, the checkpoint sha and the data and checks the HMAC.
+   local tok
+   tok="$(ls "$ROOT/lg_$1"/PASS_*.json 2> /dev/null | head -n 1)"
+   [ -n "$tok" ] || return 1
+-  env -u HF_TOKEN "$PY_C" "$RUN/launch_gate.py" verify --profile refe_scorer1 --token "$tok" --args "$ARGS" --pkg "$PKG" --json "$ROOT/token_verify_$1.json" >> "$ROOT/token_verify_$1.log" 2>&1 200>&-
++  env -u HF_TOKEN "$PY_C" "$RUN/launch_gate.py" verify --profile "$(prof_of "$1")" --token "$tok" --args "$ARGS" --pkg "$PKG" --json "$ROOT/token_verify_$1.json" >> "$ROOT/token_verify_$1.log" 2>&1 200>&-
+ }
+ 
+ # ---- 0. precheck: the lock, the human gates, the package
+@@ -179,9 +180,22 @@
+   stage_mark calibrate
+ fi
+ log "ZZSCORER1_CALIBRATED"; stop_after calibrate
++# ---- 3b. S1L only (SCORER1_ARMS names it): its own lambda_p, measured by the same rule on the FOUR-head loss; lives in $ROOT/calibrate_s1l (S1's calibrate/ is untouched)
++case " ${SCORER1_ARMS:-C0 C0r S1} " in *" S1L "*)
++  STAGE=calibrate_s1l
++  if ! stage_done calibrate_s1l; then
++    ARM=S1L MODE=calibrate bash $RUN/scorer1_pod.sh 200>&-
++    grep -q "^ZZPAIR_CALIBRATED" $ROOT/calibrate_s1l/calibrate.log || refuse "S1L lambda_p calibration failed ($(tail -n 2 $ROOT/calibrate_s1l/calibrate.log | tr '
++' ' ' | cut -c1-300))"
++    python3 -c 'import json,math,sys; d=json.load(open(sys.argv[1])); w=d["pair_w"]; assert w and math.isfinite(w) and w>0 and d["micro_batches"]==50 and sorted(d["heads"])==["DAC","NC","TTC","lane"] and all(v>0 for v in d["sets_with_pair_share"].values()), d' \n      $ROOT/calibrate_s1l/pair_weight.json || refuse "S1L pair_weight.json is not a finite positive lambda_p over 50 micro-batches and the four heads with a share of sets with a pair > 0 (lane included)"
++    log "S1L lambda_p = $(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["pair_w"])' $ROOT/calibrate_s1l/pair_weight.json)"
++    stage_mark calibrate_s1l
++  fi
++  log "ZZSCORER1_CALIBRATED_S1L";;
++esac
+ 
+ # ---- 4. per arm: preflight (+ S1's two regressions) -> LAUNCH GATE -> train -> check -> bank
+-for ARMN in C0 C0r S1; do
++for ARMN in ${SCORER1_ARMS:-C0 C0r S1}; do
+   LA=$(echo "$ARMN" | tr 'A-Z' 'a-z'); OUT=$ROOT/$LA; STAGE="preflight_$ARMN"
+   arm_argv "$ARMN"
+   if ! stage_done "preflight_$LA"; then
+@@ -189,14 +203,14 @@
+     rm -f $OUT/preflight.jsonl $OUT/PREFLIGHT_PASS.json
+     ARM=$ARMN MODE=preflight bash $RUN/scorer1_pod.sh 200>&-
+     grep -q "^ZZSFT_PREFLIGHT_PASS" $OUT/preflight.log || refuse "$ARMN preflight did not pass ($(tail -n 2 $OUT/preflight.log | tr '\n' ' ' | cut -c1-300))"
+-    if [ "$ARMN" = "S1" ]; then
+-      ARM=S1 MODE=mutate_nobalance bash $RUN/scorer1_pod.sh 200>&-
++    if [ "$ARMN" = "S1" ] || [ "$ARMN" = "S1L" ]; then
++      ARM=$ARMN MODE=mutate_nobalance bash $RUN/scorer1_pod.sh 200>&-
+       grep -q "^ZZSFT_PREFLIGHT_FAIL" $OUT/mutate_nobalance.log || refuse "the NOBALANCE mutation did not fail the preflight"
+       m=$(gate_is $OUT/mutate_nobalance.log G16 ok false 2>&1) || refuse "the NOBALANCE mutation did NOT turn G16 RED ($m)"
+-      ARM=S1 MODE=mutate_droploss bash $RUN/scorer1_pod.sh 200>&-
++      ARM=$ARMN MODE=mutate_droploss bash $RUN/scorer1_pod.sh 200>&-
+       grep -q "^ZZSFT_PREFLIGHT_FAIL" $OUT/mutate_droploss.log || refuse "the DROP_LOSS mutation did not fail the preflight"
+       m=$(gate_is $OUT/mutate_droploss.log G16 ok false 2>&1) || refuse "the DROP_LOSS mutation did NOT turn G16 RED ($m)"
+-      log "S1 mutations RED as required"
++      log "$ARMN mutations RED as required"
+     fi
+     stage_mark "preflight_$LA"
+   fi
+@@ -204,7 +218,7 @@
+   STAGE="gate_$ARMN"
+   if ! stage_done "gate_$LA"; then
+     rm -rf "$ROOT/lg_$ARMN"; mkdir -p "$ROOT/lg_$ARMN"
+-    env -u HF_TOKEN OMP_NUM_THREADS=4 "$PY_C" $RUN/launch_gate.py run --profile refe_scorer1 --pkg "$PKG" --args "$ARGS" --out-dir "$ROOT/lg_$ARMN" \
++    env -u HF_TOKEN OMP_NUM_THREADS=4 "$PY_C" $RUN/launch_gate.py run --profile "$(prof_of "$ARMN")" --pkg "$PKG" --args "$ARGS" --out-dir "$ROOT/lg_$ARMN" \
+       --gate-preflight-json $OUT/preflight.jsonl --gate-egr-json $ROOT/gate/g_egr_result.json > $ROOT/launch_gate_$ARMN.log 2>&1 200>&-
+     echo "ZZEXIT $?" >> $ROOT/launch_gate_$ARMN.log
+     token_ok "$ARMN" || refuse "the launch gate did not mint a PASS token that verifies for $ARMN: $(grep -E 'REASON|FAIL' $ROOT/launch_gate_$ARMN.log | head -n 3 | cut -c1-300 | tr '\n' ' ')"
