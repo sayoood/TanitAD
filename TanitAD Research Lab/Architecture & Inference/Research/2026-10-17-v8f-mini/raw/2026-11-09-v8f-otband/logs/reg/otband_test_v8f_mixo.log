@@ -1,0 +1,26 @@
+....ss...........................F.sssssssssssssssssssssssssssssssssssss [ 43%]
+ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss [ 86%]
+ssssssssssssssssssssss                                                   [100%]
+================================== FAILURES ===================================
+_____________ test_the_trainer_source_has_every_hop_of_the_trace ______________
+
+    def test_the_trainer_source_has_every_hop_of_the_trace():
+        """Static anchors, one per hop (the line numbers are printed by raw/2026-10-25-mixo/trace_reachability.py)."""
+        tr = (REPO / "stack" / "scripts" / "v8f_mini_train.py").read_text(encoding="utf-8")
+        mod = (REPO / "stack" / "tanitad" / "models" / "v8f_mini.py").read_text(encoding="utf-8")
+        assert '"--code-mix", dest="code_mix", choices=M.CODE_MIX_MODES, default="whole"' in tr
+        assert "code_mix=a.code_mix" in tr and 'FLAG_CHECKS' in tr and '"code_mix": "lever:code_mix"' in tr
+>       assert "code_mix_probe(model, probe, cfg)" in tr and 'sc = {"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix' in tr
+E       assert ('code_mix_probe(model, probe, cfg)' in '#!/usr/bin/env python3\n"""v8F-mini training (track M): S -> T -> O on the cached frozen DINOv3-L pooled features. CP... for k in ("steps", "arm", "seed", "seconds")}))\n    return 0\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n' and 'sc = {"declared_vs_built": "PASS", "live": live, "code_mix_probe": mix' in '#!/usr/bin/env python3\n"""v8F-mini training (track M): S -> T -> O on the cached frozen DINOv3-L pooled features. CP... for k in ("steps", "arm", "seed", "seconds")}))\n    return 0\n\n\nif __name__ == "__main__":\n    sys.exit(main())\n')
+
+tests\test_v8f_mixo.py:655: AssertionError
+============================== warnings summary ===============================
+tests/test_v8f_mixo.py::test_trainer_argv_reaches_the_config_the_checkpoint_the_records_and_the_gate
+  F:\TanitAD-scratch\hwm_bands\b\tree\stack\scripts\v8f_mini_train.py:3630: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.
+  Consider using tensor.detach() first. (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\pytorch\torch\csrc\autograd\generated\python_variable_methods.cpp:837.)
+    "sec": time.time() - t0, **{k: float(v) for k, v in T.items()}}
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ===========================
+FAILED tests/test_v8f_mixo.py::test_the_trainer_source_has_every_hop_of_the_trace
+1 failed, 32 passed, 133 skipped, 1 warning in 29.61s
