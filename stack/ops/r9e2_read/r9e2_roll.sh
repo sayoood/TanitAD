@@ -8,10 +8,15 @@
 #     (1) the DEV-filtered, staged battery roll of K0 then K2:  run_battery_r9_e2.py --no-g0 --no-baselines --infer-seeds 0,1 --lock-held
 #     (2) per seed the K2 CAMERA-BLIND roll (W4 preview):       camblind_roll_r9_e2.py -> camblind_roll_r9.py (UNCHANGED) --camera derange --require-seal --os-only
 #     (3) the perception dumps of K2 then K0:                    r9_e1_dump.py --require-ema --split dev     (the only other GPU step)
+#     (4) the MAPSEL roll (S6c input) of K2 then K0 at inference seeds 0 AND 1 (four rolls, DEV windows only): mapsel_roll_r9_e2.py, inside THIS hold -- no second lock.
+#         --own-planes is derived from the run's config.json: `skip` iff its argv holds `--r9-map-banded` (a C1-banded K2: K2M1N20 / K2M3N20), else `require`.
 #   lock released; then CPU only: per seed r9_e2_families.py (families, camblind) + r9_e2_distkeep.py --merge-into families (LONGITUDINAL
-#   distance-keeping rows); r9_e1_eval.py (K2, K0); r9e2_inputs.py -> INPUTS.json;
-#   r9_e2_verdict.py -> E2_VERDICT.json / .md.   Markers ZZR9E2ROLL-<EVENT>ZZ on stdout and in $OUT/ROLL_STATUS.txt.
-#   S6c-DEV is NOT BUILT: INPUTS.json carries "s6c_k2": null (the judge reads clause (c) NOT-COMPUTABLE => NO-GO that names it); never a placeholder number.
+#   distance-keeping rows); r9_e1_eval.py (K2, K0); then the S6c GATE; r9e2_inputs.py -> INPUTS.json; r9_e2_verdict.py -> E2_VERDICT.json / .md.
+#   Markers ZZR9E2ROLL-<EVENT>ZZ on stdout and in $OUT/ROLL_STATUS.txt.
+#   S6c-DEV is SCORED OFF THOR (r9e2_s6c_resume.sh, dev box: s6c_dev.py needs the banked refcv8 eval artifacts + retime stage that exist only there).  The gate: when ALL FOUR
+#   $R9E2_S6C_DIR (default $OUT/read/s6c) /S6C_{K2,K0}_s{0,1}.json are present the run goes on to INPUTS + the verdict; when ANY is missing it STOPS with the marker
+#   ZZR9E2ROLL-AWAIT-S6CZZ, writes $OUT/AWAIT_S6C (what to pull, what to run) and exits 5 -- INPUTS.json is NOT written and the judge NOT run, so a verdict with a null
+#   S6c can never be computed while the rolls exist.  Resume: pull $OUT to the dev box and run r9e2_s6c_resume.sh (scores the four traces, then INPUTS -> verdict).
 #
 # ENV PINS (all REQUIRED, exit 4 when unset -- no dev-box default is ever taken on Thor; R8_NO_POSE_SYNC must be UNSET, exit 4):
 #   R9E2_K0_RUN R9E2_K2_RUN   run dirs (model_ema.pt + config.json)         R9E2_TREE   launch tree (= R8_LAUNCH_TREE; PYTHONPATH $T/stack:$T/stack/scripts:$T/taniteval)
@@ -21,21 +26,24 @@
 #   R9E2_LIFT_VALID           the arm-independent lift-valid mask (map primary) R9E2_OUT   output root
 #   R9E2_LEAD_BLOCK           the B1 EVAL lead block on the roll's 0.5 s grid (taniteval/tools/build_lead_block_b1.py --k 4 --dt 0.5)
 #   L1_PF_CODE L1_R8_CODE     camblind_roll_r9.py's own pins (== R9E2_PF_CODE / PF_R8_CODE)
-# OPTIONAL: R9E2_S6C_K0 (a real S6c json of K0), R9E2_PY, R9E2_LOCKF, R9E2_LOCK_MAX_S, R9E2_PATHSEP, R9E2_PYTHONPATH, R9E2_OPS, R9E2_CAMBLIND_SCRIPT, R9E2_CB_CWD,
+#   R9E2_MAP_GT_ROOT          the refcv6 eval GT-map root (sam3_gt_v3_eval; the MAPSEL roll's --map-gt-root)
+# OPTIONAL: R9E2_MAPSEL_CODE (default $INC/2026-10-25-refcv9-mapsel/code), R9E2_S6C_DIR, R9E2_PY, R9E2_LOCKF, R9E2_LOCK_MAX_S, R9E2_PATHSEP, R9E2_PYTHONPATH, R9E2_OPS, R9E2_CAMBLIND_SCRIPT, R9E2_CB_CWD,
 #   R9E2_SPLIT_SHA_FILE, R9E2_GATES / R9E2_GATE_ARGS, R9E2_OS_ONLY_ALL=1 (battery --os-only-all: only `os` + controls are rolled; the families / W4 read use `os` only),
 #   R9E2_SHIM (shim_scipy dir), R9E2_DRY, R9E2_BASE_CWD (the battery parent's cwd; see HAZARD below).
 # HAZARD (r8_battery_patch.apply -> fix_baselines, UNCONDITIONAL even with --no-baselines): the battery parent REFUSES unless ALL THREE refcv5cmp baseline dumps
 #   (refcv4b_devbox_dump, refcv5-v2_dump, refcv5-v2-seed1_dump; each manifest.json + ep000.npz + decisions/ep000.npz) exist under one of D:/Projects/TanitAD-artifacts/refcv5cmp/out,
 #   E:/..., C:/Users/Admin/c_cleanup_archive_2026-10-15_b/refcv5cmp/out, C:/Users/Admin/refcv5cmp/out -- all RELATIVE paths on Thor: set R9E2_BASE_CWD to a dir holding one such tree.
-# EXIT: 0 GO | 1 NO-GO | 2 verdict REFUSED | 3 harness abort (ROLL_ABORTED written) | 4 refused to start.
+# R9E2_S6C_K0 (the old single-file S6c switch) is REFUSED (exit 4): one file would be stamped on both inference seeds.
+# EXIT: 0 GO | 1 NO-GO | 2 verdict REFUSED | 3 harness abort (ROLL_ABORTED written) | 4 refused to start | 5 rolls done, AWAITING the off-Thor S6c scoring (no verdict computed).
 # TRAPS (TRAPS.md): no `pgrep -f` on a pattern this command line contains; detach with `nohup setsid ... < /dev/null &`; the Thor python needs `-X utf8`.
 set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DRY="${R9E2_DRY:-0}"
-PINS="R9E2_K0_RUN R9E2_K2_RUN R9E2_TREE R9E2_PF_CODE PF_R8_CODE PF_NF_HOLD R8_EVAL_KIT R9E2_REMAP R9E2_SPLIT R9E2_S2 R9E2_LIFT_VALID R9E2_OUT L1_PF_CODE L1_R8_CODE R9E2_LEAD_BLOCK"
+PINS="R9E2_K0_RUN R9E2_K2_RUN R9E2_TREE R9E2_PF_CODE PF_R8_CODE PF_NF_HOLD R8_EVAL_KIT R9E2_REMAP R9E2_SPLIT R9E2_S2 R9E2_LIFT_VALID R9E2_OUT L1_PF_CODE L1_R8_CODE R9E2_LEAD_BLOCK R9E2_MAP_GT_ROOT"
 MISS=""
 for _p in $PINS; do [ -n "${!_p:-}" ] || MISS="$MISS $_p"; done
 if [ -n "$MISS" ]; then echo "[r9e2_roll] refusing: unset env pin(s):$MISS -- no dev-box default is taken on Thor" >&2; exit 4; fi
+if [ -n "${R9E2_S6C_K0:-}" ]; then echo "[r9e2_roll] refusing: R9E2_S6C_K0 names ONE S6c file for both inference seeds; seeds are separate runs -- S6c is per arm per seed (see R9E2_S6C_DIR)" >&2; exit 4; fi
 if [ -n "${R8_NO_POSE_SYNC:-}" ]; then echo "[r9e2_roll] refusing: R8_NO_POSE_SYNC is set -- E2 reads the CORRECTED pose clock (K0 trained on it); unset it" >&2; exit 4; fi
 
 T="$R9E2_TREE"; OUT="$R9E2_OUT"; RD="$OUT/read"; LOGS="$OUT/logs"
@@ -49,6 +57,8 @@ SEP="${R9E2_PATHSEP:-:}"
 PYPATH="${R9E2_PYTHONPATH:-$T/stack$SEP$T/stack/scripts$SEP$T/taniteval}"
 OPS="${R9E2_OPS:-$HERE}"
 INC="$T/FlyWheels/TanitAD_EvalFlyWheel/incoming"
+MS_CODE="${R9E2_MAPSEL_CODE:-$INC/2026-10-25-refcv9-mapsel/code}"
+S6D="${R9E2_S6C_DIR:-$RD/s6c}"
 CB_SCRIPT="${R9E2_CAMBLIND_SCRIPT:-$INC/2026-11-03-refcv9-camblind/code/camblind_roll_r9.py}"
 CB_CWD="${R9E2_CB_CWD:-$OUT/camblind_cwd}"
 CB_REMAP_REL="C:/Users/Admin/refcv8_pf/refcv9_l1/code/refcv8_eval_remap_devbox_l1.json"       # camblind_roll_r9.py hard-codes this RELATIVE-on-Thor path (EVAL_REMAP)
@@ -121,6 +131,9 @@ need "$INC/2026-10-27-refcv9-anticheat/PREREG_ANTICHEAT_REFCV8.md" "camblind PKG
 need "$INC/2026-10-27-refcv9-anticheat/PREREG_ANTICHEAT_REFCV8.sha256" "camblind PKG seal"
 need "$INC/2026-10-27-refcv9-anticheat/code/anticheat_common.py" "camblind PKG source"
 need "$OPS/run_battery_r9_e2.py" "staged battery driver"; need "$OPS/camblind_roll_r9_e2.py" "staged camblind launcher"; need "$OPS/r9e2_inputs.py" "INPUTS writer"
+need "$OPS/mapsel_roll_r9_e2.py" "staged MAPSEL roll driver (S6c)"; need "$OPS/r9e2_s6c_tools.py" "MAPSEL trace count check"
+need "$MS_CODE/mapsel_roll.py" "MAPSEL roll (refcv9-mapsel code)"; need "$MS_CODE/../PREREG_MAPSEL.md" "MAPSEL prereg (its --require-seal checks)"
+need "$MS_CODE/../PREREG_MAPSEL.sha256" "MAPSEL prereg seal"
 need "$T/stack/scripts/r9_e1_dump.py" "dump"; need "$T/stack/scripts/r9_e1_eval.py" "eval"
 need "$T/stack/scripts/r9_e2_families.py" "families"; need "$T/stack/scripts/r9_e2_verdict.py" "judge"
 need "$T/stack/scripts/r9_e2_distkeep.py" "distance-keeping rows"
@@ -140,7 +153,6 @@ if [ -n "${R9E2_GATE_ARGS:-}" ]; then GATEARGS="$R9E2_GATE_ARGS"; else
   fi
   GATEARGS="--gates-json $GATES"
 fi
-S6C0=(); [ -n "${R9E2_S6C_K0:-}" ] && S6C0=(--s6c-k0 "$R9E2_S6C_K0")
 # Thor's training venv has numpy but NO scipy (r9e1_read.sh, MEASURED 2026-11-03): the CPU steps get shim_scipy on PYTHONPATH only when the real scipy cannot be imported.
 PYPATH_CPU="$PYPATH"
 if [ "$DRY" = 1 ]; then echo "[dry] probe: import scipy.ndimage under the venv; when absent the CPU steps append $SHIM (assumed absent in a dry run)"; PYPATH_CPU="$PYPATH$SEP$SHIM"; else
@@ -207,8 +219,33 @@ dump_arm() {       # $1 = K2|K0, $2 = run dir
 }
 dump_arm K2 "$RUN2"
 dump_arm K0 "$RUN0"
+
+own_planes_mode() {   # $1 = a run's config.json -> skip iff its argv holds the exact token "--r9-map-banded" (not "--r9-map-banded-near-m"): a banded head has no 8-way raster by design
+  if grep -q -- '"--r9-map-banded"' "$1" 2>/dev/null; then echo skip; else echo require; fi
+}
+mapsel_arm() {     # $1 = K2|K0, $2 = run dir: the MAPSEL roll at inference seeds 0 and 1, DEV windows only (the wrapper restricts to DEV and refuses HOLD), inside the SAME lock hold
+  local A="$1" RUN="$2" MD="$OUT/E2_$1_mapsel" S OPM rc
+  OPM="$(own_planes_mode "$RUN/config.json")"
+  [ "$DRY" = 1 ] || mkdir -p "$MD" || abort MAPSEL-DIR "cannot create $MD"
+  for S in 0 1; do
+    if [ "$DRY" != 1 ] && [ -s "$MD/trace_s$S.npz" ] && "$PY" -X utf8 "$OPS/r9e2_s6c_tools.py" final "$MD/trace_s$S.npz" "$SPLIT" > /dev/null 2>&1; then ev MAPSEL-SKIP "$A seed $S: $MD/trace_s$S.npz is final"; continue; fi
+    ev MAPSEL-START "$A seed $S own-planes $OPM ckpt $RUN/model_ema.pt"
+    [ "$DRY" = 1 ] || rm -rf "$MD/rast_s$S" "$MD/dump_s$S"
+    XC "${R9E2_BASE_CWD:-.}" "$LOGS/mapsel_${A}_s$S" renv "$PYPATH" "$PY" -X utf8 "$OPS/mapsel_roll_r9_e2.py" --mapsel-code "$MS_CODE" --infer-seed "$S" --own-planes "$OPM" \
+        --trace-out "$MD/trace_s$S.npz" --rast-dir "$MD/rast_s$S" --map-gt-root "$R9E2_MAP_GT_ROOT" --require-seal -- \
+        --ckpt "$RUN/model_ema.pt" --config "$RUN/config.json" --dump-dir "$MD/dump_s$S" --windows-json "$OUT/E2_${A}_pf/windows_s$S.json" --device cuda \
+        --out-json "$MD/roll_s$S.json" --os-only; rc=$?
+    if [ "$DRY" != 1 ]; then
+      "$PY" -X utf8 "$OPS/r9e2_s6c_tools.py" final "$MD/trace_s$S.npz" "$SPLIT" > "$LOGS/mapsel_${A}_s$S.final" 2>&1 || abort MAPSEL-FAILED "$A seed $S rc=$rc: trace not final / not the DEV windows ($(cat "$LOGS/mapsel_${A}_s$S.final" 2>/dev/null); read $LOGS/mapsel_${A}_s$S.err)"
+      rm -rf "$MD/dump_s$S"                                          # the battery dump of the roll is a temp copy once the trace is final
+    fi
+    ev MAPSEL-DONE "$A seed $S rc=$rc $MD/trace_s$S.npz own-planes $OPM"
+  done
+}
+mapsel_arm K2 "$RUN2"
+mapsel_arm K0 "$RUN0"
 if [ "$DRY" = 1 ]; then echo "[dry] release the GPU lock $LOCKF"; else release_lock; fi
-ev LOCK-RELEASED "$LOCKF (rolls, camera-blind and dumps were the only GPU steps)"
+ev LOCK-RELEASED "$LOCKF (rolls, camera-blind, dumps and the MAPSEL rolls were the only GPU steps)"
 
 # ---- CPU only -------------------------------------------------------------------------------------------------------------------------------
 for S in 0 1; do
@@ -233,9 +270,20 @@ for A in K2 K0; do
   if [ "$DRY" != 1 ]; then [ -s "$RD/EVAL_$A.json" ] || abort EVAL-FAILED "$A rc=$rc (read $LOGS/eval_$A.err)"; fi
   ev EVAL-DONE "$A rc=$rc $RD/EVAL_$A.json"
 done
-XL "$LOGS/inputs" penv "$PYPATH_CPU" "$PY" -X utf8 "$OPS/r9e2_inputs.py" --rd "$RD" --out "$RD/INPUTS.json" --k2-label K2 --k0-label K0 ${S6C0[@]+"${S6C0[@]}"}; rc=$?
+# ---- the S6c GATE: the four per-seed, per-arm scores must exist BEFORE INPUTS / the verdict -------------------------------------------------
+S6CF="$S6D/S6C_K2_s0.json $S6D/S6C_K2_s1.json $S6D/S6C_K0_s0.json $S6D/S6C_K0_s1.json"
+if [ "$DRY" = 1 ]; then for f in $S6CF; do echo "[dry] require nonempty $f  (S6c-DEV score, scored off Thor by r9e2_s6c_resume.sh; absent => exit 5, no INPUTS, no verdict)"; done; else
+  S6MISS=""; for f in $S6CF; do [ -s "$f" ] || S6MISS="$S6MISS $f"; done
+  if [ -n "$S6MISS" ]; then
+    printf 'S6c scoring is pending (the verdict is NOT computed).\nmissing:%s\npull (dev box): %s/E2_K2_mapsel/trace_s{0,1}.npz + rast_s{0,1}/, %s/E2_K0_mapsel/..., and the whole %s\nrun: r9e2_s6c_resume.sh (R9E2_RD=<pulled read dir> R9E2_MS_ROOT=<pulled %s>)\n' "$S6MISS" "$OUT" "$OUT" "$RD" "$OUT" > "$OUT/AWAIT_S6C"
+    ev AWAIT-S6C "rolls done; S6c files missing:$S6MISS -- see $OUT/AWAIT_S6C; exit 5, INPUTS.json NOT written, judge NOT run"
+    exit 5
+  fi
+fi
+ev S6C-READY "four S6c files present under $S6D"
+XL "$LOGS/inputs" penv "$PYPATH_CPU" "$PY" -X utf8 "$OPS/r9e2_inputs.py" --rd "$RD" --out "$RD/INPUTS.json" --k2-label K2 --k0-label K0 --s6c-dir "$S6D"; rc=$?
 if [ "$DRY" != 1 ]; then [ -s "$RD/INPUTS.json" ] || abort INPUTS-FAILED "rc=$rc (read $LOGS/inputs.err)"; fi
-ev INPUTS-WRITTEN "$RD/INPUTS.json (s6c_k2 null: S6c is not built; judge reads clause (c) NOT-COMPUTABLE)"
+ev INPUTS-WRITTEN "$RD/INPUTS.json (per-seed S6c from $S6D)"
 XL "$LOGS/verdict" penv "$PYPATH_CPU" CUDA_VISIBLE_DEVICES= "$PY" -X utf8 "$T/stack/scripts/r9_e2_verdict.py" --inputs "$RD/INPUTS.json" --out-dir "$RD"; VRC=$?
 if [ "$DRY" = 1 ]; then ev DRY-DONE "nothing was run"; exit 0; fi
 ev VERDICT-DONE "rc=$VRC $RD/E2_VERDICT.json $RD/E2_VERDICT.md (0 GO / 1 NO-GO / 2 REFUSED)"
