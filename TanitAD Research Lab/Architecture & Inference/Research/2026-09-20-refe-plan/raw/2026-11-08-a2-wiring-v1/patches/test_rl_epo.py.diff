@@ -1,0 +1,14 @@
+diff --git a/base/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rl_epo.py b/a2/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rl_epo.py
+index 6fbe830..cc5dc49 100644
+--- a/base/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rl_epo.py	
++++ b/a2/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/test_rl_epo.py	
+@@ -1051,7 +1051,8 @@ MUTATIONS = [
+ 
+ 
+ def main() -> int:
+-    src = open(SRC_PATH, encoding="utf-8").read()
++    import a2_layer                                    # A2 is the outermost layer (--beh-*); this suite pins the RL-S1..SCORER1 trainer, so it reads the A2-PEELED source (test_a2_wiring.py covers the A2 text)
++    src = a2_layer.peel(open(SRC_PATH, encoding="utf-8").read().replace(chr(13) + chr(10), chr(10)))
+     n = 0
+     real = suite(Ctx(src, "sft_real"))
+     assert not real, f"the unmutated scorer_finetune.py FAILS its own checks: {real}"

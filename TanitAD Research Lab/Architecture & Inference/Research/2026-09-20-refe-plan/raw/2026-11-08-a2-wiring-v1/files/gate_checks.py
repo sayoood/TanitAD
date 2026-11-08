@@ -1,0 +1,2682 @@
+#!/usr/bin/env python3
+"""The REFe launch-gate CHECKS.  Route and the full contract: eval/REFE_LAUNCH_GATE.md.  CLI and profiles: refe/launch_gate.py.
+
+Every check inspects THE THING (the built model, the live gradient, the loaded checkpoint), never the declaration.  The trainer is run
+IN-PROCESS under instrumentation (`instrumented_run`): the real `train.run(a)` executes unchanged; the harness only RECORDS what it
+builds (model, optimiser, schedule, banks, loaders) and what flows through it (per-group gradients before every optimiser step, the
+first real batch).  Two runs per gate: BUILD (the real levers, stopped before the first step: the schedule and every constructor
+argument are observed) and SMOKE (the same levers, `--steps N`: the loss terms and the gradients are observed).
+
+  check   what must hold                                                          regression arm (TANITAD_GATE_ARM, must FAIL)
+  G-HYG   REFeConfig refuses an undeclared attribute; the trainer reads no        no_cfg_guard, undeclared_namespace_read
+          namespace attribute the parser does not declare; no foreign attribute
+  G-DVB   every argv lever equals the BUILT value (table `DVB_KINDS`); every      lever_ignored, unknown_flag, stale_registry
+          parser flag is in the table (an unknown flag FAILS)
+  G-LIVE  every declared loss term present and finite on every logged row; every  zero_score, frozen_group
+          declared trainable group has a non-zero finite gradient; the declared-
+          frozen groups read EXACTLY 0 (n_grad == 0); a zero-loss control reads
+          exactly 0.0 on every parameter and a real loss does not
+  G-EVAL  the planner's load of model_final.pt builds the identical model:        planner_cfg_differs, loader_drops_tensor
+          config fields equal (allow-list: training-only), tensors and forward
+          outputs on the first REAL batch bit-identical
+  G-CKPT  halt + resume == uninterrupted: model, optimiser state, data position   resume_drops_opt
+  G-SUITE the listed test scripts exit 0 and print their PASS token               suite_failing_test
+  G-CLOCK (P6) the realised schedule equals the registered one                    clock_wrong_epochs
+  refe_rls1 (RL-S1) trains with scorer_finetune.py: G-HYG / G-DVB run on ITS parser (`check_dvb_scorer`, table `DVB_KINDS_SCORER`, arms unknown_flag, stale_registry,
+          dead_lever, unbound_data, lever_ignored, aux_lever_ignored, con_temp_ignored, carve_feed_ignored); G-PREFLIGHT = launch_gate.consume_scorer_preflight (its own `--preflight` gates, parsed; fixtures in test_launch_gate)
+
+Evidence is written to disk (`evidence_<check>.json`); the token is minted from the files, never from a return value.
+"""
+from __future__ import annotations
+
+import ast
+import contextlib
+import copy
+import hashlib
+import importlib
+import json
+import math
+import os
+import subprocess
+import sys
+import time
+import traceback
+from pathlib import Path
+from types import SimpleNamespace
+
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+ARM_ENV = "TANITAD_GATE_ARM"
+EGO_YAW_SLOT = 4                         # REFeConfig.ego_dim comment: vx, vy, ax, ay, YAW_RATE, steering, speed  (== ego_yaw_table.EGO_YAW_SLOT; test_ego_yaw.py pins the two equal)
+
+# the model's parameter groups.  A parameter in NO group is a FINDING: a module was added without a declaration.
+TRAINABLE_GROUPS = ("backbone.lora", "registers", "queries", "pos3d_mlp", "reg_compress", "scene_proj", "ego_enc", "dec", "traj_head",
+                    "score_dec", "score_q_mlp", "score_head")
+FROZEN_GROUPS = ("backbone", "goal_freqs")
+SCORER_GROUPS = ("score_dec", "score_q_mlp", "score_head")
+
+
+def arm_is(name: str, arm: str | None) -> bool:
+    return (arm if arm is not None else os.environ.get(ARM_ENV)) == name
+
+
+def group_of(pname: str) -> str:
+    top = pname.split(".")[0]
+    if top == "backbone" and pname.rsplit(".", 1)[-1] in ("A", "B"):
+        return "backbone.lora"
+    return top
+
+
+def _finite(x) -> bool:
+    return isinstance(x, (int, float)) and math.isfinite(x)
+
+
+def _cuda() -> bool:
+    import torch
+    return torch.cuda.is_available()
+
+
+class Stop(Exception):
+    pass
+
+
+# ============================================================================================ the instrumented run
+def amp_probe_module(backbone):
+    """The module whose output dtype G-DVB reads for --amp: the backbone's FIRST nn.Linear (inside its blocks), never its output.
+    The backbone ends in a LayerNorm (model.py `self.norm`), and CUDA autocast always runs layer_norm in float32, so its OUTPUT read
+    float32 with AMP fully on.  MEASURED 2026-10-12 on the P2 pod: G-DVB FAILED a correct trainer (declared bf16 != built float32);
+    on CPU the gate declares float32, which is why no dev-box run ever saw it (test_gate_gpu_probes.py pins both)."""
+    import torch
+    blocks = getattr(backbone, "blocks", backbone)
+    return next((m for m in blocks.modules() if isinstance(m, torch.nn.Linear)), backbone)
+
+
+def instrumented_run(argv: list, *, mode: str, work, arm: str | None = None) -> SimpleNamespace:
+    """Run the REAL `train.run(a)` in this process on `argv`, recording what it builds.  mode='build' stops at the first
+    `opt.zero_grad` (everything the levers decide is built; nothing has trained); mode='smoke' runs to the end."""
+    import torch
+    import train as T
+    import load_dinov3 as LD
+    optim_mod = importlib.import_module("torch.optim.optimizer")
+    work = Path(work)
+    work.mkdir(parents=True, exist_ok=True)
+    cap = SimpleNamespace(mode=mode, model=None, cfg=None, opt=None, sched=None, steps=None, banks={}, bank_calls={}, loaders=[],
+                          samplers=[], grads=[], first_batch=None, fwd_dtype=None, warm=None, trunk_dir=None, trunk_loaded=None,
+                          rc=None, error=None, args=None, parser_unknown=[], seed=None, tf32=None, compiled=None, device=None,
+                          metrics=[], summary=None, log=str(work / f"{mode}.log"), run_dir=None, wta_yaw_wrap=None, bank_len={}, nav_modules={},
+                          field_calls=[], field_grads=[], field_first=None,
+                          aux=None, aux_facts=None, aux_loss_calls=[], aux_loss_grads=[], aux_first=None, aux_tap_obs=[], aux_grads=[], aux_adam=None, opt_param_ids=None,
+                          sp_ptrs=[], sctx_ptr=None, scorer_in_width=None, ego4_abs_max=0.0, ego_col_grads=[])
+    ap = T.build_parser()
+    a, unknown = ap.parse_known_args(list(argv))
+    cap.parser_unknown, cap.args = unknown, a
+    if unknown:
+        cap.rc, cap.error = "UNRECOGNISED_ARGUMENTS", f"the trainer's parser does not declare: {unknown}"
+        return cap
+    cap.run_dir = a.out
+    patches = []
+
+    def patch(obj, name, new):
+        patches.append((obj, name, getattr(obj, name)))
+        setattr(obj, name, new)
+
+    Orig = T.REFe
+
+    class Rec(Orig):
+        def __init__(self, cfg):
+            if arm_is("lever_ignored", arm):          # the model quietly ignores the declared --scorer-sees-trunk
+                cfg.detach_scorer_context = True
+            super().__init__(cfg)
+            if cap.model is None:
+                cap.model, cap.cfg = self, self.cfg
+                cap.nav_modules = {"cmd_embed": hasattr(self, "cmd_embed"), "goal_freqs": hasattr(self, "goal_freqs")}     # read before the BUILD model is freed
+                cap.scorer_in_width = int(self.score_q_mlp[0].in_features)                                                  # P7.1: the REAL scorer's input width (G-DVB aux_drv_feed)
+                if arm_is("frozen_group", arm):       # a group that should train is frozen after the fact
+                    for p in self.traj_head.parameters():
+                        p.requires_grad_(False)
+
+                def pre(_m, args, kwargs):
+                    if len(args) > 1 and hasattr(args[1], "shape") and args[1].shape[-1] > EGO_YAW_SLOT:          # WP YAW: the yaw rate the model actually RECEIVED (post-loader), not what the namespace declared
+                        cap.ego4_abs_max = max(cap.ego4_abs_max, float(args[1][..., EGO_YAW_SLOT].detach().abs().max()))
+                    if cap.first_batch is None:
+                        cal = kwargs.get("calib")
+                        cap.first_batch = tuple((x.detach().cpu().clone() if hasattr(x, "detach") else x) for x in args[:3]) + (
+                            cal.detach().cpu().clone() if hasattr(cal, "detach") else cal,)
+                    return None
+                self.register_forward_pre_hook(pre, with_kwargs=True)
+                amp_probe_module(self.backbone).register_forward_hook(lambda _m, _i, o: setattr(cap, "fwd_dtype", str(o.dtype)))
+                if a.aux_drv:
+                    # P7.1 tap observers, independent of the trainer's own hook: `scene_proj` runs twice per forward (call 1 = scene_ctx, call 2 = visual_ctx) and the scoring decoder's first
+                    # block receives the context the scorer reads; the head's input is compared with THESE storages (aux_dvb_rows, row `aux_drv_tap`).
+                    def _sp(_m, _i, o):
+                        cap.sp_ptrs.append((o.data_ptr(), tuple(o.shape)))
+                        del cap.sp_ptrs[:-4]
+                    self.scene_proj.register_forward_hook(_sp)
+                    self.score_dec[0].register_forward_pre_hook(lambda _m, args: setattr(cap, "sctx_ptr", (args[1].data_ptr(), tuple(args[1].shape))))
+
+    Opt0 = torch.optim.AdamW
+
+    class RecAdamW(Opt0):
+        def __init__(self, params, *a_, **k_):
+            super().__init__(params, *a_, **k_)
+            cap.opt = {"lr": self.defaults["lr"], "weight_decay": self.defaults["weight_decay"], "fused": self.defaults.get("fused"),
+                       "n_tensors": sum(len(g["params"]) for g in self.param_groups)}
+            cap.opt_param_ids = {id(p_) for g_ in self.param_groups for p_ in g_["params"]}          # P7.1: which parameters the optimiser actually holds
+
+        def zero_grad(self, *a_, **k_):
+            r = super().zero_grad(*a_, **k_)
+            if mode == "build" and cap.steps is None:
+                cap.steps = a.steps
+                cap.seed = torch.initial_seed()
+                cap.tf32 = bool(torch.backends.cuda.matmul.allow_tf32)
+                cap.device = next(cap.model.parameters()).device.type
+                cap.compiled = getattr(cap.model.backbone, "_compiled_call_impl", None) is not None
+                raise Stop()
+            return r
+
+    Sched0 = torch.optim.lr_scheduler.CosineAnnealingLR
+
+    class RecSched(Sched0):
+        def __init__(self, optimizer, T_max, *a_, **k_):
+            super().__init__(optimizer, T_max, *a_, **k_)
+            cap.sched = {"cls": "CosineAnnealingLR", "T_max": T_max, "eta_min": self.eta_min}
+
+    def plain(v):
+        return v if isinstance(v, (str, int, float, type(None), bool)) else type(v).__name__
+
+    def wrap_bank(name):
+        base = getattr(T, name)
+
+        class W(base):
+            def __init__(self, *a_, **k_):
+                if name == "TargetBank" and arm_is("yaw_table_not_passed", arm):          # WP YAW arm: a call site that forgets to hand the declared table to the loader
+                    k_.pop("ego_yaw_table", None)
+                cap.banks.setdefault(name, []).append({"args": [plain(x) for x in a_], "kwargs": {k: plain(v) for k, v in k_.items()}})
+                super().__init__(*a_, **k_)
+                if hasattr(self, "scene_groups"):                       # the TargetBank: what the schedule is sized on (G-CLOCK)
+                    cap.bank_len[name] = {"n_tuples": len(self.rows), "n_scenes": len(self.scene_groups)}
+        W.__name__ = name
+        if name == "TargetBank" and arm_is("yaw_override_removed", arm):
+            # WP YAW arm: the flag is set and the table is LOADED, but the override line is gone -- slot 4 reaches the model as the bank has it (0.0).  Equivalent to deleting
+            # `ego_t[EYT.EGO_YAW_SLOT] = self.ego_yaw[tok]` from TargetBank.__getitem__ (test_ego_yaw.py also deletes that very line from a copy of train.py and runs the gate on it).
+            gi0 = base.__getitem__
+
+            def gi_no_override(self, i):
+                item = gi0(self, i)
+                if getattr(self, "ego_yaw", None) is None:
+                    return item
+                e = item[1].clone()
+                e[EGO_YAW_SLOT] = float(self.rows[i]["ego"][EGO_YAW_SLOT])
+                return (item[0], e) + tuple(item[2:])
+            W.__getitem__ = gi_no_override
+        return W
+
+    def wrap_sampler(name):
+        base = getattr(T, name)
+
+        class W(base):
+            def __init__(self, *a_, **k_):
+                super().__init__(*a_, **k_)
+                cap.samplers.append({"cls": name, "n": int(self.n)})
+        W.__name__ = name
+        return W
+
+    DL0 = T.DataLoader
+
+    class RecDL(DL0):
+        def __init__(self, ds, *a_, **k_):
+            cap.loaders.append({"batch_size": k_.get("batch_size"), "num_workers": k_.get("num_workers")})
+            super().__init__(ds, *a_, **k_)
+
+    ws0, snap0, lstate0, mib0 = T.warm_start, T.bank_snapshot, LD.load_state, LD.map_into_backbone
+    wta0 = T.wta_loss
+
+    def rec_wta(traj, target, *a_, **k_):
+        if cap.wta_yaw_wrap is None:                                    # P6 / D5: the yaw_wrap the loss ACTUALLY received (G-DVB's observed value)
+            cap.wta_yaw_wrap = bool(k_.get("yaw_wrap", True))
+        return wta0(traj, target, *a_, **k_)
+
+    fl0 = getattr(T, "field_loss", None)
+
+    def rec_field(traj, sdf, *a_, **k_):
+        """L_field's observer: records the margin / interp / valid the term actually RECEIVED, and measures the multiplier at the graph: a hook on the term's own
+        output sees d(total loss)/d(L_field), which is `--w-field / accum` when the trainer adds `w_field * L_field` once per micro-batch (and never fires when the
+        term is computed but not added, or added detached).  The two regression arms insert the fault BETWEEN the term and the loss, downstream of that hook."""
+        cap.field_calls.append({"margin": k_.get("margin"), "interp": k_.get("interp"), "valid": k_.get("valid") is not None})
+        if cap.field_first is None:
+            cap.field_first = (sdf.detach().cpu().clone(), None if k_.get("valid") is None else k_["valid"].detach().cpu().clone())
+        r = fl0(traj, sdf, *a_, **k_)
+        out = r[0] if isinstance(r, tuple) else r
+        if out.requires_grad:
+            out.register_hook(lambda g: cap.field_grads.append(float(g)))
+        if arm_is("field_weight_off", arm):               # the multiplier wired off by a factor
+            out = out * 0.5
+        elif arm_is("field_term_detached", arm):          # the term computed, never entering the loss's graph
+            out = out.detach()
+        return (out,) + tuple(r[1:]) if isinstance(r, tuple) else out
+
+    def rec_aux_cls(base):
+        """P7.1: a recording subclass of AuxDrivable.  `predict` records WHICH tensor the head read (its storage against scene_proj's two outputs and the scorer's context); `loss` records the labels
+        it RECEIVED and measures the multiplier at the graph (a hook on the term's own output sees d(total loss)/d(L_aux) = w_aux / accum when the trainer adds `combine(l, L_aux)` once per
+        micro-batch, and never fires when the term is computed but not added or added detached).  The regression arms insert the fault BETWEEN the term and the loss, downstream of that hook."""
+        class RecAux(base):
+            def __init__(self, cfg):
+                super().__init__(cfg)
+                cap.aux = self
+                cap.aux_facts = self.built_facts()
+
+            def predict(self, ctx):
+                sp = cap.sp_ptrs[-2:]
+                cap.aux_tap_obs.append({"ctx": (ctx.data_ptr(), tuple(ctx.shape)), "scene": sp[0] if len(sp) == 2 else None, "visual": sp[1] if len(sp) == 2 else None,
+                                        "sctx": cap.sctx_ptr})
+                return super().predict(ctx)
+
+            def loss(self, logit, sdf_pred, label_i8, valid=None):
+                cap.aux_loss_calls.append({"valid": valid is not None, "labelled": int(valid.sum()) if valid is not None else int(label_i8.shape[0])})
+                if cap.aux_first is None:
+                    cap.aux_first = (label_i8.detach().cpu().clone(), None if valid is None else valid.detach().cpu().clone())
+                r = super().loss(logit, sdf_pred, label_i8, valid)
+                out = r[0]
+                if out.requires_grad:
+                    out.register_hook(lambda g: cap.aux_loss_grads.append(float(g)))
+                if arm_is("aux_weight_off", arm):                    # the multiplier wired off by a factor
+                    out = out * 0.5
+                elif arm_is("aux_term_detached", arm):               # the term computed, never entering the loss's graph
+                    out = out.detach()
+                return (out,) + tuple(r[1:])
+        RecAux.__name__ = "AuxDrivable"
+        return RecAux
+
+    def rec_warm(model, path):
+        cap.warm = path
+        return ws0(model, path)
+
+    def rec_snap(*a_, **k_):
+        cap.bank_calls["bank_snapshot"] = cap.bank_calls.get("bank_snapshot", 0) + 1
+        return snap0(*a_, **k_)
+
+    def rec_state(p):
+        cap.trunk_dir = str(p)
+        return lstate0(p)
+
+    def rec_map(bb, sd):
+        r = mib0(bb, sd)
+        cap.trunk_loaded = [len(r[0]), len(r[1]), len(r[2])]
+        return r
+
+    def step_pre(optimizer, _a, _k):
+        if cap.model is None or not isinstance(optimizer, Opt0):
+            return
+        rec: dict = {}
+        for n, p in cap.model.named_parameters():
+            r = rec.setdefault(group_of(n), {"abs_sum": 0.0, "finite": True, "n": 0, "n_grad": 0, "n_zero": 0, "numel": 0, "n_req": 0})
+            r["n"] += 1
+            r["numel"] += p.numel()
+            r["n_req"] += int(p.requires_grad)
+            if p.grad is not None:
+                s = float(p.grad.detach().double().abs().sum())
+                r["n_grad"] += 1
+                r["abs_sum"] += s
+                r["n_zero"] += int(s == 0.0)
+                r["finite"] = r["finite"] and bool(torch.isfinite(p.grad).all())
+        cap.grads.append(rec)
+        w0_ = cap.model.ego_enc[0].weight                                                          # WP YAW: the ego encoder's first layer, one input column per ego slot
+        if w0_.grad is not None and w0_.grad.shape[1] > EGO_YAW_SLOT:
+            g_ = w0_.grad.detach().double().abs()
+            cap.ego_col_grads.append({"col": float(g_[:, EGO_YAW_SLOT].sum()), "other": float(g_.sum() - g_[:, EGO_YAW_SLOT].sum()),
+                                      "finite": bool(torch.isfinite(w0_.grad).all())})
+        if cap.aux is not None:
+            hr = {"abs_sum": 0.0, "finite": True, "n": 0, "n_grad": 0, "n_zero": 0, "numel": 0, "n_req": 0}
+            for p in cap.aux.parameters():
+                hr["n"] += 1
+                hr["numel"] += p.numel()
+                hr["n_req"] += int(p.requires_grad)
+                if p.grad is not None:
+                    s_ = float(p.grad.detach().double().abs().sum())
+                    hr["n_grad"] += 1
+                    hr["abs_sum"] += s_
+                    hr["n_zero"] += int(s_ == 0.0)
+                    hr["finite"] = hr["finite"] and bool(torch.isfinite(p.grad).all())
+            cap.aux_grads.append(hr)
+
+    def step_post(optimizer, _a, _k):
+        if cap.aux is None or not isinstance(optimizer, Opt0):
+            return
+        ps = list(cap.aux.parameters())
+        cap.aux_adam = {"n": len(ps), "with_state": sum(1 for p in ps if p in optimizer.state and len(optimizer.state[p]) > 0)}
+
+    handle = handle_post = None
+    saved_tf32 = torch.backends.cuda.matmul.allow_tf32
+    try:
+        torch.backends.cuda.matmul.allow_tf32 = False
+        patch(T, "REFe", Rec)
+        patch(torch.optim, "AdamW", RecAdamW)
+        patch(torch.optim.lr_scheduler, "CosineAnnealingLR", RecSched)
+        for nm in ("TargetBank", "OnPolicyBank", "ScorerBank"):
+            patch(T, nm, wrap_bank(nm))
+        for nm in ("SceneEpochSampler", "EpochSampler"):
+            patch(T, nm, wrap_sampler(nm))
+        patch(T, "DataLoader", RecDL)
+        patch(T, "wta_loss", rec_wta)
+        if fl0 is not None:
+            patch(T, "field_loss", rec_field)
+        if a.aux_drv:
+            import aux_drivable_head as AUXm
+            patch(AUXm, "AuxDrivable", rec_aux_cls(AUXm.AuxDrivable))
+        import online_labeller as OLm
+        OL0 = OLm.OnlineLabeller
+
+        class RecLab(OL0):                                              # P6 / D1: record what the labeller was BUILT with
+            def __init__(self, *a_, **k_):
+                cap.banks.setdefault("OnlineLabeller", []).append({"args": [plain(x) for x in a_], "kwargs": {k: plain(v) for k, v in k_.items()}})
+                super().__init__(*a_, **k_)
+        RecLab.__name__ = "OnlineLabeller"
+        patch(OLm, "OnlineLabeller", RecLab)
+        patch(T, "warm_start", rec_warm)
+        patch(T, "bank_snapshot", rec_snap)
+        patch(LD, "load_state", rec_state)
+        patch(LD, "map_into_backbone", rec_map)
+        if arm_is("zero_score", arm):                 # the score term silently contributes nothing
+            patch(torch.nn.functional, "binary_cross_entropy_with_logits",
+                  lambda x, *a_, **k_: (x * 0.0).sum() if k_.get("reduction") != "none" else x * 0.0)
+        handle = optim_mod.register_optimizer_step_pre_hook(step_pre)
+        handle_post = optim_mod.register_optimizer_step_post_hook(step_post)
+        with open(cap.log, "w", encoding="utf-8") as lg, contextlib.redirect_stdout(lg), contextlib.redirect_stderr(lg):
+            try:
+                cap.rc = T.run(a)
+            except Stop:
+                cap.rc = "STOPPED_AT_BUILD"
+            except Exception:                                                # noqa: BLE001 -- recorded, judged by the check
+                cap.rc, cap.error = "EXCEPTION", traceback.format_exc()[-1800:]
+    finally:
+        if handle is not None:
+            handle.remove()
+        if handle_post is not None:
+            handle_post.remove()
+        for obj, name, orig in reversed(patches):
+            setattr(obj, name, orig)
+        torch.backends.cuda.matmul.allow_tf32 = saved_tf32
+    if a.out:
+        mp = Path(a.out) / "metrics.jsonl"
+        if mp.exists():
+            for ln in mp.read_text(encoding="utf-8").splitlines():
+                try:
+                    cap.metrics.append(json.loads(ln))
+                except json.JSONDecodeError:
+                    pass
+        sp = Path(a.out) / "summary.json"
+        if sp.exists():
+            cap.summary = json.loads(sp.read_text(encoding="utf-8"))
+    return cap
+
+
+# ============================================================================================ evidence
+def evidence(check: str, status: str, reasons: list, details: dict, *, arm=None, rehearsal=False, inputs_read=None) -> dict:
+    return {"check": check, "status": status, "reasons": reasons, "details": details, "arm": arm, "rehearsal": bool(rehearsal),
+            "inputs_read": inputs_read or {}, "finished_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
+
+
+def verdict(check, reasons, details, *, arm=None, **kw):
+    return evidence(check, "FAIL" if reasons else "PASS", reasons, details, arm=arm or os.environ.get(ARM_ENV), **kw)
+
+
+# ============================================================================================ G-HYG
+def _train_run_source() -> str:
+    return (HERE / "train.py").read_text(encoding="utf-8")
+
+
+NAMESPACE_FUNCS = ("run", "run_identity", "_g_probe")        # the trainer functions whose parameter `a` IS the argparse namespace
+
+
+def namespace_reads(src: str, funcs=None) -> set:
+    """Every `a.<attr>` the trainer's namespace-taking functions read (AST, nested closures included), i.e. every namespace attribute the
+    trainer depends on.  Scoped to those functions: elsewhere `a` is an ordinary local (e.g. `a.shape`).  `funcs` (default NAMESPACE_FUNCS =
+    train.py's) names another trainer's namespace-taking functions: the profile's `namespace_funcs` (refe_rls1: scorer_finetune.py)."""
+    funcs = NAMESPACE_FUNCS if funcs is None else funcs
+    tree = ast.parse(src)
+    out = set()
+    for fn in ast.walk(tree):
+        if isinstance(fn, ast.FunctionDef) and fn.name in funcs:
+            for node in ast.walk(fn):
+                if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id == "a":
+                    out.add(node.attr)
+    return out
+
+
+def check_hyg(arm=None, rehearsal=False, profile=None) -> dict:
+    """`profile` (optional) names ANOTHER trainer: its `parser_module` / `trainer_src` / `namespace_funcs` (refe_rls1 -> scorer_finetune).  Omitted =
+    train.py, byte-for-byte the check every other profile has always run."""
+    profile = profile or {}
+    T = importlib.import_module(profile.get("parser_module", "train"))
+    from model import REFeConfig
+    reasons, det = [], {}
+    cfg = REFeConfig.for_backbone("vits16")
+    removed = arm_is("no_cfg_guard", arm)
+    orig = REFeConfig.__dict__.get("__setattr__")
+    if removed:                                       # the D0 guard removed (a mutation of model.py)
+        REFeConfig.__setattr__ = object.__setattr__
+    try:
+        try:
+            cfg._g_hyg_probe_undeclared = 1
+            reasons.append("REFeConfig ACCEPTED an undeclared attribute (the D0 guard is absent)")
+        except AttributeError:
+            det["cfg_refuses_undeclared"] = True
+        det["foreign_in_default_cfg"] = sorted(set(vars(REFeConfig.for_backbone("vits16"))) - set(REFeConfig.__dataclass_fields__))
+        if det["foreign_in_default_cfg"]:
+            reasons.append(f"config carries non-field attributes {det['foreign_in_default_cfg']}")
+    finally:
+        if removed:
+            REFeConfig.__setattr__ = orig
+    src = (HERE / profile["trainer_src"]).read_text(encoding="utf-8") if "trainer_src" in profile else _train_run_source()
+    if arm_is("undeclared_namespace_read", arm):
+        src += "\n\ndef _g_probe(a):\n    return a.undeclared_lever_g_hyg\n"
+    dests = {x.dest for x in T.build_parser()._actions if x.dest != "help"}
+    reads = namespace_reads(src, profile.get("namespace_funcs"))
+    undeclared = sorted(reads - dests)
+    det["namespace_reads"] = len(reads)
+    det["undeclared_namespace_reads"] = undeclared
+    if undeclared:
+        reasons.append(f"the trainer reads namespace attributes its parser does not declare: {undeclared}")
+    return verdict("G-HYG", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+# ============================================================================================ G-DVB
+# kind: "built" (the observed value is compared), "consumed" (static: the trainer reads it; observed only through its effect), "run" (run
+# management; behaviour pinned by G-CKPT), "control" (an ablation/test switch: FORBIDDEN in a real launch argv, see the profile)
+DVB_KINDS = {
+    "backbone": "built", "weights": "built", "targets": "built", "scorer_targets": "built", "images": "built", "calib": "built",
+    "max_missing_images": "built", "grow": "built", "grow_scenes": "built", "synthetic": "built", "overfit": "control",
+    "overfit_n": "control", "overfit_thresh": "control", "spread": "control", "break_optimizer": "control", "steps": "built",
+    "batch": "built", "accum": "built", "n_cameras": "built", "undistort": "built", "detach_scorer_context": "built", "lr": "built",
+    "weight_decay": "built", "cosine": "built", "epoch_unit": "built", "epochs": "built", "score_w": "consumed", "log_every": "run",
+    "seed": "built", "cpu": "built", "amp": "built", "tf32": "built", "fused_adam": "built", "compile": "built", "workers": "built",
+    "out": "run", "resume": "run", "ckpt_every_min": "run", "ckpt_every_steps": "run", "halt_after_steps": "control",
+    "scorer_mode": "built", "onpolicy_targets": "built", "declare_change": "control", "init_from": "built", "pdm_labels": "built",
+    "pdm_only": "built", "preflight": "control",
+    # P6 (SPEC_P6 section 2): each new lever has its observed row in `dvb_rows`
+    "yaw_wrap": "built", "nav_mode": "built", "labeller": "built", "label_backend": "built", "label_workers": "built", "label_chunks": "built", "label_timeout_s": "built",
+    "label_python": "built", "metric_cache": "built",
+    # L_field (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md): each has its observed row in `field_dvb_rows` (what the loader / the term actually RECEIVED)
+    "w_field": "built", "field_margin": "built", "field_interp": "built", "field_labels": "built", "field_shuffle_seed": "built",
+    # P7.1 (SPEC_P7 section 1, SPEC_AUX_DRIVABLE_HEAD section 7): the training-only drivable-area head.  Each has its observed row in `aux_dvb_rows` (what the loader / the head / the loss actually
+    # RECEIVED or BUILT); `aux_drv_labels` is also a profile `data_flags` entry (the PASS token fingerprints the store).  ALL default OFF: an arm that means the head NAMES --aux-drv and --w-aux-drv.
+    "aux_drv": "built", "w_aux_drv": "built", "aux_drv_tap": "built", "aux_drv_depth": "built", "aux_drv_feed": "built", "aux_drv_labels": "built", "aux_drv_shuffle_seed": "built",
+    # WP YAW (TanitAD-artifacts/yawrate_wp/PLAN.md): a REAL ego[4].  Its observed row is `ego_yaw_dvb_rows` (what EVERY TargetBank construction actually RECEIVED); its EFFECT is observed by G-LIVE
+    # (`ego_yaw_live`: a non-zero gradient on ego_enc.0.weight[:, 4]; the unset control reads exactly 0.0).  Default OFF: an arm that means a real yaw rate NAMES --ego-yaw-table.
+    "ego_yaw_table": "built",
+}
+DVB_REASON = {"score_w": "weights the score BCE inside run(); observed through the live `score` term (G-LIVE), statically traced here",
+              "log_every": "logging cadence", "out": "output directory", "resume": "supervised relaunch",
+              "ckpt_every_min": "checkpoint cadence (resume behaviour pinned by G-CKPT)", "ckpt_every_steps": "checkpoint cadence (pinned by G-CKPT)",
+              "grow_scenes": "enters the schedule only under --grow (re-derived in the `steps` row)",
+              "accum": "enters the schedule (re-derived in the `steps` row)", "epochs": "enters the schedule (the `steps` row)"}
+
+
+def _close(x, y) -> bool:
+    if x is None or y is None:
+        return x is None and y is None
+    if isinstance(x, float) or isinstance(y, float):
+        return math.isclose(float(x), float(y), rel_tol=1e-12, abs_tol=0.0)
+    return x == y
+
+
+FIELD_MIN_COVERAGE = 0.999        # eval/PREREG_AUX_FIELD_LOSS_DRAFT.md, launch gate: label coverage of the bank's rows >= 99.9 %  (a profile may set `field_min_coverage`)
+
+
+def field_dvb_rows(a, b, s, min_coverage: float = FIELD_MIN_COVERAGE) -> list:
+    """G-DVB's rows for the five L_field levers.  The BUILT side is what the loader and the term actually RECEIVED, never the namespace:
+      field_labels / field_shuffle_seed   TargetBank's own constructor arguments (BUILD capture)
+      field_margin / field_interp         the kwargs `field_loss` was CALLED with (SMOKE capture: a wrapper around train.field_loss)
+      w_field                             the multiplier MEASURED AT THE GRAPH: a hook on the term's output reads d(total loss)/d(L_field), which is w_field / accum when the
+                                          trainer adds `w_field * L_field` once per micro-batch; a term that is computed but not added never fires the hook, one wired off by a
+                                          factor reads that factor.  Plus the trainer's own logged `field_w`.
+      the store                           the trainer's `field` event (the pinned manifest sha256, the key count, the share of the bank's rows that have a label) and the
+                                          manifest's raster constants against field_loss's (X0, X1, Y0, Y1, RES, NX, NY, SDF_UNIT_M)
+    Defaults (no --field-labels) add only the two TargetBank rows; the smoke-side rows exist only for an arm with --w-field > 0."""
+    rows = []
+
+    def add(dest, declared, built, how, ok=None):
+        rows.append({"dest": dest, "flag": "--" + dest.replace("_", "-"), "declared": declared, "built": built, "how": how,
+                     "ok": _close(declared, built) if ok is None else bool(ok)})
+    tk = ((b.banks.get("TargetBank") or [{"args": [], "kwargs": {}}])[0])["kwargs"]
+    wf = float(getattr(a, "w_field", 0.0) or 0.0)
+    add("field_labels", getattr(a, "field_labels", None), tk.get("field_labels"), "TargetBank(field_labels=)")
+    add("field_shuffle_seed", getattr(a, "field_shuffle_seed", None), tk.get("field_shuffle_seed"), "TargetBank(field_shuffle_seed=)")
+    if s is None or wf <= 0.0:
+        return rows
+    sa = s.args
+    n_micro = int(sa.steps) * int(sa.accum)
+    calls, grads = s.field_calls, s.field_grads
+
+    def uniq(vals):
+        u = sorted({v for v in vals}, key=repr)
+        return u[0] if len(u) == 1 else u
+    add("w_field", n_micro, len(calls), "field_loss is called once per micro-batch (steps x accum of the SMOKE run)")
+    add("field_margin", a.field_margin, uniq(c["margin"] for c in calls) if calls else None, "the margin kwarg field_loss actually received")
+    add("field_interp", a.field_interp, uniq(c["interp"] for c in calls) if calls else None, "the interp kwarg field_loss actually received")
+    add("w_field", True, bool(calls) and all(c["valid"] for c in calls), "field_loss received the valid mask on every call (a frame without a label contributes exactly 0)")
+    mult = [g * int(sa.accum) for g in grads]
+    add("w_field", wf, (min(mult), max(mult)) if mult else None,
+        f"the multiplier measured at the graph: d(loss)/d(L_field) x accum on {len(mult)} of {n_micro} micro-batches (a hook on the term's output)",
+        ok=len(mult) == n_micro and all(math.isclose(m_, wf, rel_tol=1e-5) for m_ in mult))
+    fw = {r["field_w"] for r in s.metrics if "field_w" in r}
+    add("w_field", wf, uniq(fw) if fw else None, "the trainer's logged field_w on every logged row")
+    ev = next((e for e in s.metrics if e.get("event") == "field"), None)
+    if ev is None:
+        add("field_labels", "a `field` event", None, "the trainer writes one `field` event (store sha256, keys, coverage) at start", ok=False)
+    else:
+        import aux_drivable_head as AUX
+        add("field_labels", AUX.PINNED_STORE_SHA256, ev.get("store_sha256"), "the `field` event: the loader's manifest sha256 is the pinned store's")
+        add("field_labels", AUX.PINNED_STORE_KEYS, ev.get("store_keys"), "the `field` event: the pinned store's key count")
+        cov = ev["rows_labelled"] / max(ev["rows"], 1)
+        add("field_labels", f">= {min_coverage}", round(cov, 6), f"label coverage: {ev['rows_labelled']}/{ev['rows']} of the bank's rows have a stored SDF", ok=cov >= min_coverage)
+        add("field_shuffle_seed", a.field_shuffle_seed, ev.get("shuffle_seed"), "the `field` event: the derangement seed")
+    import field_loss as FL
+    try:
+        man = json.loads((Path(a.field_labels) / "manifest.json").read_text(encoding="utf-8")).get("raster", {})
+    except (OSError, ValueError):
+        man = {}
+    want = {"x0": FL.X0, "x1": FL.X1, "y0": FL.Y0, "y1": FL.Y1, "res_m": FL.RES, "nx": FL.NX, "ny": FL.NY, "sdf_unit_m": FL.SDF_UNIT_M}
+    add("field_labels", want, {k: man.get(k) for k in want}, "the store manifest's raster constants == field_loss's (X0, X1, Y0, Y1, RES, NX, NY, SDF_UNIT_M)")
+    return rows
+
+
+AUX_MIN_COVERAGE = 0.999          # SPEC_P7 section 1: the head's label coverage of the bank's rows >= 99.9 % (a missing label contributes exactly 0 silently, so coverage is REPORTED and BOUNDED); a profile may set `aux_min_coverage`
+
+
+def aux_dvb_rows(a, b, s, profile=None) -> list:
+    """G-DVB's rows for the seven P7.1 levers (SPEC_P7 section 1's table).  The BUILT side is what was actually built / received, never the namespace:
+      aux_drv                  an AuxDrivable was CONSTRUCTED iff --aux-drv (the BUILD capture: a recording subclass)
+      aux_drv_labels / _shuffle_seed   TargetBank's own constructor arguments (BUILD capture)
+      aux_drv_depth            the number of CrossBlocks the built head holds (`built_facts`)
+      aux_drv_feed             off <=> the scorer's input width is 60 and no feed module exists (`built_facts`); the trunk trainer builds H1 only
+      aux_drv_tap              the storage the head's input IS: equal to scene_proj's 2nd output (visual_ctx) for `visual`, to its 1st (scene_ctx) for `scene`; and visual_ctx IS the context the scoring decoder reads
+      w_aux_drv                the multiplier MEASURED AT THE GRAPH (a hook on L_aux's own output reads d(total loss)/d(L_aux) = w_aux / accum, once per micro-batch), and the trainer's logged `aux_w`
+      the store                the trainer's `aux` event: the manifest sha256 and key count against the PROFILE's registered pins (`aux_store_pins`; none registered => the full pinned store), the label coverage of
+                               the bank's rows, the shuffle seed, and the head's built facts the trainer itself wrote
+    Defaults (no --aux-drv) add only the three BUILD rows; the SMOKE-side rows exist only for a head arm."""
+    rows = []
+
+    def add(dest, declared, built, how, ok=None):
+        rows.append({"dest": dest, "flag": "--" + dest.replace("_", "-"), "declared": declared, "built": built, "how": how,
+                     "ok": _close(declared, built) if ok is None else bool(ok)})
+    tk = ((b.banks.get("TargetBank") or [{"args": [], "kwargs": {}}])[0])["kwargs"]
+    on = bool(getattr(a, "aux_drv", False))
+    facts = getattr(b, "aux_facts", None)
+    add("aux_drv", on, facts is not None, "an AuxDrivable is constructed iff --aux-drv")
+    add("aux_drv_labels", getattr(a, "aux_drv_labels", "") or None, tk.get("aux_labels"), "TargetBank(aux_labels=)")
+    add("aux_drv_shuffle_seed", getattr(a, "aux_drv_shuffle_seed", None), tk.get("aux_shuffle_seed"), "TargetBank(aux_shuffle_seed=)")
+    if not on or facts is None:
+        return rows
+    f = facts
+    add("aux_drv_depth", a.aux_drv_depth, f.get("depth"), "AuxDrivable.built_facts(): the CrossBlocks the head holds")
+    add("aux_drv_feed", a.aux_drv_feed, "on" if (f.get("feed_built") or f.get("scorer_in_width") != 60) else "off",
+        "the scorer's input width (60 off / 63 on) and whether a feed module exists (built_facts)")
+    # ... and the REAL scorer of the BUILT model (read off `score_q_mlp[0]`, not off the head's own claim): feed off <=> its first layer reads the 60 trajectory features
+    sw = getattr(b, "scorer_in_width", None)
+    add("aux_drv_feed", 60 + (3 if a.aux_drv_feed == "on" else 0), sw, "the built model's score_q_mlp[0].in_features (60 off / 63 on): the feed is wired iff the flag says so")
+    prof = profile or {}
+    if profile is not None:
+        add("aux_drv_labels", "in the profile's data_flags", "--aux-drv-labels" if "--aux-drv-labels" in prof.get("data_flags", ()) else None,
+            "the label store is a DATA input: the PASS token must fingerprint it (a profile that does not list it cannot launch a head arm: refe_p6 carries no head)", ok="--aux-drv-labels" in prof.get("data_flags", ()))
+    if s is None:
+        return rows
+    sa = s.args
+    n_micro = int(sa.steps) * int(sa.accum)
+    calls, grads, obs = s.aux_loss_calls, s.aux_loss_grads, s.aux_tap_obs
+    add("w_aux_drv", n_micro, len(calls), "L_aux is computed once per micro-batch (steps x accum of the SMOKE run)")
+    add("w_aux_drv", True, bool(calls) and all(c["valid"] for c in calls), "L_aux received the valid mask on every call (a frame without a label contributes exactly 0)")
+    mult = [g * int(sa.accum) for g in grads]
+    wa = float(a.w_aux_drv)
+    add("w_aux_drv", wa, (min(mult), max(mult)) if mult else None,
+        f"the multiplier measured at the graph: d(loss)/d(L_aux) x accum on {len(mult)} of {n_micro} micro-batches (a hook on the term's output; a term never added, or added detached, never fires it)",
+        ok=len(mult) == n_micro and all(math.isclose(m_, wa, rel_tol=1e-5) for m_ in mult))
+    aw = {r["aux_w"] for r in s.metrics if "aux_w" in r}
+    add("w_aux_drv", wa, (sorted(aw)[0] if len(aw) == 1 else sorted(aw)) if aw else None, "the trainer's logged aux_w on every logged row")
+
+    def which(o):
+        v, sc, ctx = o.get("visual"), o.get("scene"), o.get("ctx")
+        if ctx is not None and ctx == v and ctx != sc:
+            return "visual"
+        if ctx is not None and ctx == sc and ctx != v:
+            return "scene"
+        return "NEITHER-OR-AMBIGUOUS"
+    seen = sorted({which(o) for o in obs})
+    add("aux_drv_tap", a.aux_drv_tap, seen[0] if len(seen) == 1 else (seen or None),
+        f"the storage the head's input IS, on {len(obs)} forwards: scene_proj's 2nd output (visual_ctx) for `visual`, its 1st (scene_ctx) for `scene` (data_ptr + shape, AUX.tap_is)")
+    add("aux_drv_tap", True, bool(obs) and all(o.get("visual") is not None and o.get("visual") == o.get("sctx") for o in obs),
+        "scene_proj's 2nd output IS the context the scoring decoder reads (the tensor the cross-fit evidence says lacks the visual information)")
+    ev = next((e for e in s.metrics if e.get("event") == "aux"), None)
+    if ev is None:
+        add("aux_drv_labels", "an `aux` event", None, "the trainer writes one `aux` event (built facts, store sha256, keys, coverage) at start", ok=False)
+        return rows
+    pins = prof.get("aux_store_pins")                       # ONLY the profile's registered pins: there is no fallback to the full store's (it holds the reserve's keys)
+    ok_pins = bool(pins) and pins.get("sha256") is not None and pins.get("keys") is not None
+    if not ok_pins:
+        add("aux_drv_labels", "registered pins (sha256 + key count)", None,
+            "the profile registers NO pins for this run's label store (refe_p7: P7_AUX_STORE_PINS, from the filter's report, BEFORE step 0): an unregistered store is never vouched for by another store's number", ok=False)
+    else:
+        add("aux_drv_labels", pins["sha256"], ev.get("store_sha256"), "the `aux` event: the loader's manifest sha256 is the registered store's")
+        add("aux_drv_labels", pins["keys"], ev.get("store_keys"), "the `aux` event: the registered store's key count")
+    cov = ev["rows_labelled"] / max(ev["rows"], 1)
+    mc = prof.get("aux_min_coverage", AUX_MIN_COVERAGE)
+    add("aux_drv_labels", f">= {mc}", round(cov, 6), f"label coverage: {ev['rows_labelled']}/{ev['rows']} of the bank's rows have a stored SDF", ok=cov >= mc)
+    add("aux_drv_shuffle_seed", a.aux_drv_shuffle_seed, ev.get("shuffle_seed"), "the `aux` event: the derangement seed")
+    add("aux_drv_tap", a.aux_drv_tap, ev.get("tap"), "the `aux` event: the tap the trainer built")
+    add("aux_drv_depth", a.aux_drv_depth, ev.get("depth"), "the `aux` event: the head's CrossBlocks")
+    add("w_aux_drv", wa, ev.get("w_aux"), "the `aux` event: the head's multiplier")
+    return rows
+
+
+def ego_yaw_dvb_rows(a, b, profile=None) -> list:
+    """G-DVB's rows for --ego-yaw-table (WP YAW).  The BUILT side is what EVERY TargetBank construction actually RECEIVED (the BUILD capture wraps the class; --grow's per-epoch rebuild is a
+    second construction site, so a call site that forgets the kwarg shows here as a row, not as a silent 0.0).  The profile MAY pin the table's content (`ego_yaw_sha256`): the file's own
+    sha256 is then compared with it, so a self-consistent table that is not the registered one is a launch blocker."""
+    declared = getattr(a, "ego_yaw_table", None) or None
+    rows = []
+    for i, tb in enumerate(b.banks.get("TargetBank") or []):
+        built = (tb.get("kwargs") or {}).get("ego_yaw_table")
+        rows.append({"dest": "ego_yaw_table", "flag": "--ego-yaw-table", "declared": declared, "built": built or None,
+                     "how": f"TargetBank(ego_yaw_table=) at construction #{i}", "ok": _close(declared, built or None)})
+    pin = (profile or {}).get("ego_yaw_sha256")
+    if declared and pin:
+        try:
+            got = hashlib.sha256(Path(declared).read_bytes()).hexdigest()
+        except OSError as e:
+            got = f"unreadable: {e}"
+        rows.append({"dest": "ego_yaw_table", "flag": "--ego-yaw-table", "declared": pin, "built": got, "how": "the table file's sha256 against the profile's registered pin",
+                     "ok": got == pin})
+    return rows
+
+
+def dvb_rows(a, b, s, field_min_coverage: float = FIELD_MIN_COVERAGE, profile=None) -> list:
+    """{flag, declared, built, how, ok} for every observable lever.  `b` = BUILD capture (real levers), `s` = SMOKE capture or None."""
+    from model import BACKBONES, REFeConfig
+    from load_dinov3 import BACKBONE_ROOT
+    rows = []
+
+    import train as _T
+    opt_of = {x.dest: x.option_strings[0] for x in _T.build_parser()._actions if x.option_strings}
+
+    def add(dest, declared, built, how):
+        rows.append({"dest": dest, "flag": opt_of.get(dest, "--" + dest.replace("_", "-")), "declared": declared, "built": built, "how": how,
+                     "ok": _close(declared, built)})
+    cfg = b.cfg
+    tb = (b.banks.get("TargetBank") or [{"args": [], "kwargs": {}}])[0]
+    ta, tk = tb["args"], tb["kwargs"]
+    ob = (b.banks.get("OnPolicyBank") or [None])[0]
+    sb = (b.banks.get("ScorerBank") or [{"args": [None]}])[0]
+    bb = BACKBONES[a.backbone]
+    add("backbone", a.backbone, cfg.backbone, "cfg.backbone")
+    add("backbone", (bb["width"], bb["depth"], bb["heads"]), (cfg.width, cfg.depth, cfg.heads), "cfg width/depth/heads == BACKBONES[...]")
+    add("weights", None if a.weights == "none" else (a.weights or os.path.join(BACKBONE_ROOT, bb["weights"])), b.trunk_dir,
+        "load_dinov3.load_state(path)")
+    add("targets", a.targets, ta[0] if ta else None, "TargetBank(targets)")
+    add("images", a.images, ta[1] if len(ta) > 1 else None, "TargetBank(images)")
+    add("calib", a.calib, tk.get("calib"), "TargetBank(calib=)")
+    add("max_missing_images", a.max_missing_images, tk.get("max_missing_frac"), "TargetBank(max_missing_frac=)")
+    add("synthetic", bool(a.synthetic), bool(tk.get("synthetic")), "TargetBank(synthetic=)")
+    add("scorer_targets", a.scorer_targets if (a.scorer_mode != "onpolicy" and a.labeller != "online") else None, sb["args"][0], "ScorerBank(path)")
+    # ---- P6 levers: the BUILT value is read off the built objects, never off the namespace
+    lb = (b.banks.get("OnlineLabeller") or [None])[0]
+    add("labeller", a.labeller, "online" if lb is not None else "bank", "an OnlineLabeller is built iff --labeller online")
+    if tb.get("kwargs") is not None:
+        add("labeller", a.labeller == "online", bool(tk.get("online")), "TargetBank(online=)")
+    if lb is not None:
+        lk = lb["kwargs"]
+        add("label_backend", a.label_backend, lk.get("backend"), "OnlineLabeller(backend=)")
+        add("label_workers", a.label_workers, lk.get("workers"), "OnlineLabeller(workers=)")
+        add("label_chunks", a.label_chunks, lk.get("chunks", 1), "OnlineLabeller(chunks=)")
+        add("label_timeout_s", a.label_timeout_s, lk.get("timeout_s"), "OnlineLabeller(timeout_s=)")
+        add("label_python", a.label_python or None, lk.get("python"), "OnlineLabeller(python=)")
+        add("metric_cache", a.metric_cache or None, lk.get("metric_cache"), "OnlineLabeller(metric_cache=)")
+    has_cmd, has_goal = bool(b.nav_modules.get("cmd_embed")), bool(b.nav_modules.get("goal_freqs"))
+    add("nav_mode", a.nav_mode, cfg.nav_mode, "cfg.nav_mode")
+    add("nav_mode", a.nav_mode, "command" if (has_cmd and not has_goal) else "goal" if (has_goal and not has_cmd) else "BOTH-OR-NEITHER",
+        "which navigation encoder the model BUILT (cmd_embed xor goal_freqs)")
+    if s is not None and s.wta_yaw_wrap is not None:
+        add("yaw_wrap", a.yaw_wrap == "on", bool(s.wta_yaw_wrap), "the yaw_wrap kwarg the loss function actually received")
+    add("scorer_mode", a.scorer_mode, "onpolicy" if ob is not None else "fixed", "an OnPolicyBank is built iff onpolicy")
+    if a.scorer_mode == "onpolicy":
+        add("onpolicy_targets", a.onpolicy_targets, ob["args"][0] if ob else None, "OnPolicyBank(path)")
+        add("pdm_labels", a.pdm_labels or None, ob["kwargs"].get("pdm_labels") if ob else None, "OnPolicyBank(pdm_labels=)")
+        add("pdm_only", bool(a.pdm_only), bool(ob["kwargs"].get("pdm_only")) if ob else None, "OnPolicyBank(pdm_only=)")
+    add("init_from", a.init_from, b.warm, "warm_start(path)")
+    add("grow", bool(a.grow), b.bank_calls.get("bank_snapshot", 0) > 0, "bank_snapshot() is called iff --grow")
+    add("n_cameras", a.n_cameras if a.n_cameras is not None else REFeConfig.for_backbone(a.backbone).n_cameras, cfg.n_cameras, "cfg.n_cameras")
+    add("undistort", bool(a.undistort), bool(cfg.undistort), "cfg.undistort")
+    add("detach_scorer_context", bool(a.detach_scorer_context), bool(cfg.detach_scorer_context), "cfg.detach_scorer_context")
+    add("lr", a.lr, b.opt["lr"], "AdamW lr")
+    add("weight_decay", a.weight_decay, b.opt["weight_decay"], "AdamW weight_decay")
+    add("fused_adam", bool(a.fused_adam and b.device == "cuda"), bool(b.opt["fused"]), "AdamW fused (cuda only)")
+    add("cosine", bool(a.cosine), b.sched is not None, "a CosineAnnealingLR is built iff cosine")
+    add("epoch_unit", "SceneEpochSampler" if a.epoch_unit == "scenes" else "EpochSampler",
+        b.samplers[0]["cls"] if b.samplers else None, "sampler class")
+    add("batch", a.batch, b.loaders[0]["batch_size"] if b.loaders else None, "DataLoader batch_size")
+    add("workers", a.workers, b.loaders[0]["num_workers"] if b.loaders else None, "DataLoader num_workers")
+    # the schedule: re-derived here, independently of run()
+    n = b.samplers[0]["n"] if b.samplers else 0
+    eff = max(a.batch, 1) * max(a.accum, 1)
+    sched_len = a.grow_scenes if a.grow else n
+    want_steps = a.epochs * max(math.ceil(sched_len / eff), 1) if a.epochs else a.steps
+    add("steps", want_steps, b.steps, "steps re-derived as epochs x ceil(epoch_len / (batch x accum))")
+    if a.cosine:
+        add("steps", want_steps, b.sched["T_max"] if b.sched else None, "cosine T_max spans the whole run")
+        add("cosine", 0.0, b.sched["eta_min"] if b.sched else None, "cosine decays to exactly zero")
+    add("seed", a.seed, b.seed, "torch.initial_seed()")
+    add("tf32", bool(a.tf32), bool(b.tf32), "torch.backends.cuda.matmul.allow_tf32")
+    add("cpu", "cpu" if (a.cpu or not _cuda()) else "cuda", b.device, "device of the model")
+    add("compile", bool(a.compile and b.device == "cuda"), bool(b.compiled), "backbone compiled (cuda only)")
+    if s is not None and s.fwd_dtype is not None:
+        add("amp", "torch.bfloat16" if (a.amp == "bf16" and not a.cpu and _cuda()) else "torch.float32", s.fwd_dtype,
+            "dtype of the backbone's first matmul (amp_probe_module) under autocast")
+    rows += field_dvb_rows(a, b, s, field_min_coverage)
+    rows += aux_dvb_rows(a, b, s, profile)
+    rows += ego_yaw_dvb_rows(a, b, profile)
+    return rows
+
+
+def static_consumed(src: str, dest: str) -> bool:
+    return dest in namespace_reads(src)
+
+
+def argv_flag_dest(parser, token: str):
+    for act in parser._actions:
+        if token in act.option_strings:
+            return act.dest
+    return None
+
+
+def check_dvb(argv: list, b, s, profile: dict, arm=None, rehearsal=False) -> dict:
+    """b = BUILD capture on the launch argv; s = SMOKE capture (amp observation) or None."""
+    import train as T
+    reasons, det = [], {}
+    parser = T.build_parser()
+    dests = {x.dest for x in parser._actions if x.dest != "help"}
+    table = dict(DVB_KINDS)
+    if arm_is("unknown_flag", arm):
+        dests = dests | {"g_probe_new_flag"}
+    if arm_is("stale_registry", arm):
+        table["g_probe_removed_flag"] = "built"
+    unknown = sorted(dests - set(table))
+    stale = sorted(set(table) - dests)
+    det["parser_flags"], det["registry_flags"] = len(dests), len(table)
+    det["unknown_flags"], det["stale_registry"] = unknown, stale
+    if unknown:
+        reasons.append(f"trainer flags with NO declared-vs-built entry (a new lever needs its check): {unknown}")
+    if stale:
+        reasons.append(f"registry entries for flags the parser no longer has: {stale}")
+    if b.parser_unknown:
+        reasons.append(f"argv declares lever(s) the trainer does not build (its parser rejects them): {b.parser_unknown}")
+        det["rejected_by_parser"] = b.parser_unknown
+        return verdict("G-DVB", reasons, det, arm=arm, rehearsal=rehearsal)
+    passed = [(t, argv_flag_dest(parser, t)) for t in argv if t.startswith("--")]
+    det["passed_flags"] = [t for t, _ in passed]
+    for t, d in passed:
+        if d is None or d not in table:
+            reasons.append(f"argv flag {t} is not covered by the registry")
+        elif t in profile.get("forbidden_flags", ()):
+            reasons.append(f"argv flag {t} is FORBIDDEN in a launch ({profile['name']}): "
+                           f"{'a test/ablation control' if table[d] == 'control' else 'profile rule'}")
+    if b.rc != "STOPPED_AT_BUILD":
+        reasons.append(f"the BUILD run did not reach the optimiser: rc={b.rc} {str(b.error or '')[-300:]}")
+        det["build_log"] = b.log
+        return verdict("G-DVB", reasons, det, arm=arm, rehearsal=rehearsal)
+    rows = dvb_rows(b.args, b, s, profile.get("field_min_coverage", FIELD_MIN_COVERAGE), profile=profile)
+    det["rows"] = rows
+    for r in rows:
+        if not r["ok"]:
+            reasons.append(f"{r['flag']}: declared {r['declared']!r} != built {r['built']!r} ({r['how']})")
+    src = _train_run_source()
+    for d, k in table.items():
+        if k == "consumed" and d in dests and not static_consumed(src, d):
+            reasons.append(f"--{d.replace('_', '-')} is never read by the trainer (a dead lever)")
+    det["kinds"] = {k: sum(1 for v in table.values() if v == k) for k in ("built", "consumed", "run", "control")}
+    det["observed_rows"] = len(rows)
+    det["not_observed_reasons"] = DVB_REASON
+    return verdict("G-DVB", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+# ============================================================================================ G-DVB for scorer_finetune.py (the refe_rls1 profile)
+# RL-S1 trains with scorer_finetune.py, not train.py (eval/HANDOFF_RL_S1.md finding 5).  Its flags are NOT added to DVB_KINDS: test_launch_gate S5 pins that table
+# EQUAL to train.py's parser dests (55).  A scorer flag has its own registry, and the same two regression arms (`unknown_flag`, `stale_registry`) must make it FAIL.
+#   data      an INPUT PATH: it must be one of the profile's `data_flags`, so the token fingerprints it (an input the token does not bind is a finding)
+#   built     the trainer's own `data` event (in the preflight log) records the value it BUILT: argv is compared with it (`scorer_dvb_rows`)
+#   consumed  static: the trainer READS it (`a.<dest>` in main() / epo_refusals; a flag nothing reads is a dead lever and FAILS); its effect is
+#             observed through the preflight's gates (G2 live gradients, G3/G4 identities, G9 labels, G10 lane head)
+#   run       run management (output directory, eval cadence, loader workers)
+#   control   a test / ablation switch: FORBIDDEN in a launch argv
+DVB_KINDS_SCORER = {
+    "ckpt": "data", "targets": "data", "images": "data", "calib": "data", "onpolicy": "data", "heldout": "data", "heldout_logs": "data",
+    "lane_labels_train": "data", "lane_labels_heldout": "data", "pdm_labels_train": "data", "pdm_labels_heldout": "data",
+    "teacher_lane_train": "data", "teacher_lane_heldout": "data", "epo_terms_train": "data", "epo_terms_heldout": "data",
+    "b_mode": "built", "b_compw": "built", "epo": "built", "epo_temp": "built", "epo_beta": "built", "epo_ramp": "built", "epo_lam": "built",
+    "epo_lam_d": "built", "epo_w_prog": "built", "epo_k": "built", "epo_lam_k": "built", "epo_l": "built", "epo_lam_l": "built",
+    "epo_ref": "built",                # R0c: the KL anchor's reference policy; observed through the data event's epo.ref = scorer_finetune.epo_reference_built (what the selector RETURNS)
+    # SAFEOBJ (--epo-con g5; SPEC_SAFEOBJ 5.1): all `built` -- observed through the data event's `epo_con` block (SCORER_EPO_CON_KEYS), which EpoDual.built_facts reads off the object the run holds
+    "epo_con": "built", "epo_con_eps": "built", "epo_con_lr": "built", "epo_con_max": "built", "epo_con_lam0": "built",
+    # B8 (raw/2026-10-18-r0e-carvefeed): the dual's FEED.  epo_con_feed / epo_carve_sha256 / epo_carve_micro are `built`: observed through the data event's `epo_con_carve` block, which exists iff the carve loader was BUILT.
+    # epo_carve_logs is `data` (the list's BYTES): launch_gate.RLS1_DATA lists --epo-carve-logs, so the PASS token fingerprints the file, and the BUILT block's sha256 is a second binding.
+    "epo_con_feed": "built", "epo_carve_logs": "data", "epo_carve_sha256": "built", "epo_carve_micro": "built",
+    "epo_con_temp": "built",           # PICKCON: the constraint's own softmax temperature; observed through the data event's epo_con.temp = EpoDual.temp, the object train_losses passes to epo_con_term
+    "backbone": "consumed", "batch": "consumed", "accum": "consumed", "lr": "consumed", "warmup": "consumed", "epochs": "consumed",
+    "lam": "consumed", "tau_t": "consumed", "tau_s": "consumed", "seed": "consumed", "max_updates": "consumed", "require_pdm": "consumed",
+    "lane_head": "consumed", "lane_weight": "consumed",
+    # the auxiliary drivable-area head (WIRING_PLAN.md): ALL default OFF.  `built` = the trainer's data event records the value the head was BUILT with (scorer_dvb_rows);
+    # `data` = the label store directory: it must be one of the profile's data_flags so the token fingerprints it.
+    "aux_drv": "built", "w_aux_drv": "built", "aux_drv_tap": "built", "aux_drv_depth": "built", "aux_drv_feed": "built", "aux_drv_shuffle_seed": "built",
+    "aux_drv_lr": "built", "aux_drv_labels": "data",
+    # P6-HN-S (raw/2026-10-18-p6hn-prereg/PREREG_P6HN_SCREEN.md 4.4): both default OFF.  `data` = an input the PASS token must fingerprint (launch_gate.RLS1_DATA lists both flags); the trainer's data event
+    # also carries a BUILT block for each (`hn`, `ctx_cache`: SCORER_HN_KEYS / SCORER_CTX_KEYS), which scorer_dvb_rows compares with the argv and with the bytes the flag names.
+    "hn_bank": "data", "ctx_cache": "data",
+    # SCORER1 (PREREG_SCORER1 section 2): L_pair levers, all default OFF.  `built` = compared with the trainer's `pair` block (scorer_dvb_rows); pair_calibrate is a measuring mode, forbidden in a launch.
+    "pair_w": "built", "pair_dv": "built", "pair_heads": "built", "pair_calibrate": "control",
+    # A2 (WIRING_PLAN 2, PREREG_A2): the behaviour heads, all default OFF.  `built` = compared with the trainer's `beh` block (scorer_dvb_rows); the label dirs are bound by sha256 only in a profile with `beh_profile` (a data_flags entry there).
+    "beh_labels_train": "built", "beh_labels_heldout": "built", "beh_heads": "built", "w_beh": "built", "beh_listwise": "built", "beh_listwise_stall": "built",
+    "navtest_logs": "consumed", "navtest_tokens": "consumed",       # SCORER1: check-only lists read by main(); refe_scorer1 binds their sha256 (scorer1_refusals) and asserts the data event's `navtest` block (data_expect)
+    "out": "run", "eval_every": "run", "workers": "run",
+    "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
+    "preflight": "control",
+}
+SCORER_EPO_KEYS = ("temp", "beta", "ramp", "lam", "lam_d", "w_prog", "k", "lam_k", "l", "lam_l", "ref")     # the keys of the data event's `epo` block
+SCORER_EPO_CON_KEYS = ("mode", "comps", "cols", "eps", "lr", "max", "lam0", "ref", "temp")     # the keys of the data event's `epo_con` block (SAFEOBJ; every --epo run writes it, an OFF run included)
+SCORER_EPO_CARVE_KEYS = ("feed", "logs", "sets", "sha256", "micro", "train_rows_in_carve_logs", "carve_rows_in_heldout_logs")     # B8: the keys of the data event's `epo_con_carve` block (written iff --epo-con-feed carve)
+SCORER_EPO_CON_COMPS = {"g5": ("ttc", "nc")}          # what each mode is REGISTERED to constrain (PREREG_SAFEOBJ 2): the gate's own statement, independent of the trainer's table
+SCORER_EPO_CON_DEFAULTS = {"eps": 0.0, "lr": 4.0, "max": 10.0, "lam0": 0.0}          # the registered numbers; a trainer that predates SAFEOBJ cannot have built any other
+
+
+def scorer_effective(ns, dest):
+    """The EFFECTIVE value of a scorer lever as the trainer resolves it (named OR default).  `epo_con_temp` is None by default = the constraint INHERITS --epo-temp (PICKCON); every other
+    dest is the namespace value itself.  The gate's OWN statement of the inheritance rule, independent of the trainer's (main() builds EpoDual(temp=...) from the same rule)."""
+    v = getattr(ns, dest, None)
+    if dest == "epo_con_temp" and v is None:
+        return getattr(ns, "epo_temp", None)
+    return v
+
+
+SCORER_HN_KEYS = ("sha256", "rows", "scenes_with_hn", "max_per_sample", "arm", "comps", "weight", "mask")           # P6-HN-S: the keys of the data event's `hn` block (written iff --hn-bank)
+SCORER_CTX_KEYS = ("manifest_sha256", "trunk_fingerprint", "n_scenes", "dtype")                                   # ... and of its `ctx_cache` block (written iff --ctx-cache)
+SCORER_HN_REGISTERED = {"max_per_sample": 8, "arm": "B", "comps": 6, "weight": "1/(B*64*6) per element", "mask": "hn->fan+self"}          # PREREG_P6HN_SCREEN 4.4: the gate's OWN statement of the built `hn` block
+SCORER_CTX_REGISTERED = {"dtype": "bf16"}
+G15_MIN_SCENES = 64                                    # PREREG 4.4: G15 compares >= 64 RL-train and >= 64 RL-val scenes (a run with fewer scenes than that side holds compares all of them: see judge_g15)
+HN_ARMS = ("lever_ignored", "hn_to_armA", "hn_in_selection", "hn_lane_target", "unmasked_pad", "fan_sees_hn", "stale_bank", "empty_bank_in_launch", "moved_lever", "stale_cache", "shuffled_cache", "epo_with_hn")
+SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe", "aux_s1_refusals")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
+SCORER_BEH_DESTS = ("beh_labels_train", "beh_labels_heldout", "beh_heads", "w_beh", "beh_listwise", "beh_listwise_stall")          # A2: observed only when --beh-heads is on
+SCORER_BEH_ORDER = ("q_free", "q_gap", "q_osc", "q_stall", "q_comf")           # the gate's OWN statement of the head's rows 7..11 (== behaviour_terms.ORDER)
+SCORER_BEH_COLS = {False: [0, 1, 2, 4], True: [0, 1, 2, 3, 4]}                 # the listwise product's columns, by --beh-listwise-stall (q_stall excluded by default: Master Mind ruling 2026-11-08)
+SCORER_PAIR_DESTS = ("pair_w", "pair_dv", "pair_heads")          # SCORER1: the L_pair levers, observed only when --pair-w > 0
+SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
+# the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
+SCORER_GATES = {"G1": "trainable_is_exactly_the_scorer", "G2": "live", "G3": "copies_equal_model_at_step0", "G4": "identity_and_live",
+                "G5": "ckpt_roundtrip_planner_loader", "G7": "heldout_disjoint", "G8": "lane_labels_in_bank", "G9": "pdm_targets_in_bank",
+                "G10": "teacher_lane_in_bank", "G11": "epo_live_and_identity", "G12": "aux_drv_live_and_identity", "G13": "epo_con_live_and_identity",
+                "G14": "hn_live_and_identity", "G15": "ctx_cache_identity", "G16": "pair_live_balanced", "G17": "beh_live_and_identity"}
+
+
+def judge_g12(g12, ns) -> list:
+    """G12 (scorer_finetune --preflight, --aux-drv) re-judged from its RAW FIELDS against the argv's namespace -- never from its own `ok`.  [] = proved.
+      live / control   every head sub-module has a finite non-zero gradient from the aux-only backward at the DECLARED weight (a declared 0.0 reads all-zero), and the same
+                       backward at weight 0.0 reads EXACTLY 0.0 on the same sub-modules (so a zero is a property of the head, not of a broken probe)
+      tap              the head read the storage of visual_ctx (scene_proj's second output), not a copy and not scene_ctx
+      no path          autograd.grad(score, head parameters) is None for every parameter
+      identity         feed off: two optimiser steps with the head leave the scorer bit-identical to two without, the reference replays identically and the probe reads one ulp;
+                       feed on: step 0 of the fed scorer == the base scorer exactly, a non-zero projection changes it, and the projection gets a gradient
+      adam             every head parameter holds Adam state after a step
+      memory           the head's retained activations <= 1 GB where measured (CUDA)"""
+    import math
+    if not isinstance(g12, dict):
+        return ["G12 is not a dict"]
+    r = []
+    if g12.get("ok") is not True:
+        r.append("G12 reports ok != true")
+    if g12.get("mutate"):
+        r.append(f"G12 was produced under regression switch(es) {g12['mutate']}: a regression arm can never count")
+    if not (g12.get("labelled_frames_in_batch") or 0) > 0:
+        r.append("G12: no labelled frame in the probe batch: the aux loss path was not exercised")
+    live, w0 = g12.get("per_group_declared") or {}, g12.get("per_group_w0") or {}
+    if g12.get("w_aux") != ns.w_aux_drv:
+        r.append(f"G12 probed weight {g12.get('w_aux')} != the argv's --w-aux-drv {ns.w_aux_drv}")
+    if g12.get("feed") != ns.aux_drv_feed:
+        r.append(f"G12 probed feed {g12.get('feed')!r} != the argv's --aux-drv-feed {ns.aux_drv_feed!r}")
+    if not live:
+        r.append("G12: no per-sub-module gradient read of the head")
+    elif ns.w_aux_drv > 0.0 and not all(isinstance(v, (int, float)) and math.isfinite(v) and v > 0.0 for v in live.values()):
+        r.append(f"G12: the aux-only backward is not finite and non-zero on every head sub-module: {live}")
+    elif ns.w_aux_drv == 0.0 and any(v != 0.0 for v in live.values()):
+        r.append(f"G12: --w-aux-drv 0 but the head received gradient: {live}")
+    if not w0 or set(w0) != set(live) or any(v != 0.0 for v in w0.values()):
+        r.append(f"G12: the weight-0 control does not read EXACTLY 0.0 on every sub-module (the probe is not proved able to read zero): {w0}")
+    b = g12.get("bce_declared")
+    if not (isinstance(b, (int, float)) and abs(b - math.log(2.0)) <= 0.15) or g12.get("bce_near_ln2") is not True:
+        r.append(f"G12: the initial aux BCE {b} is not within 0.15 of ln 2 (SPEC 7: a mis-scaled head or the wrong tap)")
+    if g12.get("tap_is_visual_ctx") is not True or g12.get("tap_is_scene_ctx") is not False:
+        r.append("G12: the head did not read the storage of visual_ctx (the declared tap)")
+    if g12.get("score_to_head_grads_all_none") is not True:
+        r.append("G12: an autograd path from the score to the head exists (the scorer could teach the head to game the score)")
+    n_, k_ = g12.get("adam_head_params"), g12.get("adam_head_params_with_state")
+    if not (isinstance(n_, int) and n_ > 0 and k_ == n_):
+        r.append(f"G12: {k_} of {n_} head parameters hold Adam state (a registered parameter without state never received a gradient)")
+    mem = g12.get("head_retained_gb")
+    if mem is not None and not mem <= 1.0:
+        r.append(f"G12: the head retains {mem} GB for backward (> 1 GB)")
+    if ns.aux_drv_feed == "off":
+        for k in ("reference_replay_identical", "scorer_params_bit_identical_2steps", "identity_probe_reads_one_ulp"):
+            if g12.get(k) is not True:
+                r.append(f"G12 (feed off): {k} is {g12.get(k)!r}: H1 is not proved to leave the scorer bit-identical to a head-less run")
+    else:
+        for k in ("feed_zero_init", "feed_step0_equal_base", "feed_probe_reads_difference"):
+            if g12.get(k) is not True:
+                r.append(f"G12 (feed on): {k} is {g12.get(k)!r}")
+        if not (isinstance(g12.get("feed_proj_grad_abs"), (int, float)) and g12["feed_proj_grad_abs"] > 0.0):
+            r.append("G12 (feed on): the feed projection received no gradient from the score loss (the feed is built but unreachable)")
+    return r
+
+
+def judge_g16(g16, ns) -> list:
+    """G16 (SCORER1) re-judged from its RAW fields (its own `ok` is a claim): L_pair is IN the loss (grad(w=1) - grad(w=0) finite and non-zero on every scorer module), the w = 0 control reads
+    EXACTLY 0.0, kept F == kept S on the micro-batch and on the bank sample, every named head has a non-zero share of sets with a kept pair, and no regression arm produced it."""
+    out = []
+    heads = [h for h in ns.pair_heads.split(",") if h]
+    d = g16.get("loss_grad_delta_w1_minus_w0") or {}
+    if set(d) != set(SCORER_GROUPS) or not all(isinstance(x, (int, float)) and math.isfinite(x) and x > 0.0 for x in d.values()):
+        out.append(f"G16: L_pair is not live IN the loss on every scorer module (grad(w=1) - grad(w=0) = {d})")
+    ctl = g16.get("control_w0_term_alone_grad_abs") or {}
+    if not ctl or any(x != 0.0 for x in ctl.values()) or g16.get("controls_exactly_zero") is not True:
+        out.append("G16: the --pair-w 0 control does not read EXACTLY 0.0 (the probe is not proved able to read zero)")
+    for where, blk in (("micro-batch", g16.get("micro_batch_pairs") or {}), ("bank sample", g16.get("bank_share") or {})):
+        if set(blk) != set(heads):
+            out.append(f"G16: the {where} block covers heads {sorted(blk)}, the argv names {heads}")
+        for h, v in blk.items():
+            if v.get("kept_F") != v.get("kept_S"):
+                out.append(f"G16: F/S ratio != 1 on head {h} ({where}: kept F {v.get('kept_F')} vs kept S {v.get('kept_S')}) -- the balancing step is missing or broken")
+    for h, v in (g16.get("bank_share") or {}).items():
+        if not (isinstance(v.get("share_with_pair"), float) and v["share_with_pair"] > 0.0):
+            out.append(f"G16: head {h} has share 0 of sets with a kept pair: LAUNCH BLOCKER (PREREG_SCORER1 8.1)")
+    if g16.get("balanced_built") is not True or g16.get("mutate_nobalance") or g16.get("mutate_drop_loss"):
+        out.append("G16 was produced under a regression arm (REFE_PAIR_MUTATE_*) or by an unbalanced PairLoss: it can never count")
+    return out
+
+
+def judge_g17(g17, ns) -> list:
+    """G17 (A2) re-judged from its RAW fields (its own `ok` is a claim): the behaviour heads (rows 7..11 of the score head) get a non-zero gradient from the run's own assembly on arm B, arm A and the w = 0 control read
+    EXACTLY 0.0, the BCE term alone is live, the listwise product alone is live when it is declared, the all-inapplicable batch reproduces the pre-A2 loss bit for bit, the head started at its init, and no regression arm ran."""
+    out = []
+    w, lw = float(getattr(ns, "w_beh", 0.0)), bool(getattr(ns, "beh_listwise", False))
+
+    def num(k):
+        v = g17.get(k)
+        return v if isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) else None
+    if g17.get("w_declared") != w or g17.get("listwise_declared") != lw:
+        out.append(f"G17: the probe ran with w={g17.get('w_declared')!r} listwise={g17.get('listwise_declared')!r}, the argv declares w={w} listwise={lw}")
+    act = g17.get("probe_active")
+    if not isinstance(act, list) or len(act) != len(SCORER_BEH_ORDER) or any(not isinstance(n, int) or n <= 0 for n in act) or not (num("probe_sets") or 0) > 0:
+        out.append(f"G17: the probe batch carries no active label on some term (probe_active={act!r}): a zero gradient there would prove nothing")
+    if g17.get("head_rows") != len(SCORER_BEH_ORDER) + 7:
+        out.append(f"G17: the score head has {g17.get('head_rows')!r} rows, A2 needs 12")
+    if not ((w > 0.0 or lw) and (num("grad_B_declared") or 0.0) > 0.0):
+        out.append(f"G17: the declared configuration (w={w}, listwise={lw}) leaves |grad| on score_head rows 7..11 of arm B at {g17.get('grad_B_declared')!r}: the heads are not live in the loss")
+    if num("grad_B_bce_w1") is None or not g17["grad_B_bce_w1"] > 0.0:
+        out.append(f"G17: the BCE term alone (weight 1) leaves |grad| {g17.get('grad_B_bce_w1')!r} on rows 7..11: the behaviour BCE is not in the loss")
+    if lw and (num("grad_B_listwise_only") is None or not g17["grad_B_listwise_only"] > 0.0):
+        out.append(f"G17: --beh-listwise is declared but the product alone leaves |grad| {g17.get('grad_B_listwise_only')!r} on rows 7..11 (rfac/selfac do not reach the head)")
+    for k in ("grad_A_declared", "grad_A_w0_control", "grad_B_w0_control"):
+        if g17.get(k) != 0.0 or isinstance(g17.get(k), bool):
+            out.append(f"G17: {k} reads {g17.get(k)!r}, not EXACTLY 0.0 (arm A must stay the BCE-only control; the --w-beh 0 control must read zero, or the probe is not proved able to read zero)")
+    if g17.get("id_loss_equal") is not True or g17.get("id_grad_equal") is not True:
+        out.append("G17: G-BEH-ID fails: with every entry inapplicable and the listwise product on, the loss / its gradient is not the pre-A2 one bit for bit")
+    if g17.get("weight_rows_zero_at_start") is not True or g17.get("bias_rows_equal_init") is not True:
+        out.append("G17: the grown head did not start at zero weight / the label-mean bias on rows 7..11")
+    if g17.get("mutate_drop_loss") or g17.get("mutate_leak_a") or g17.get("mutate_id"):
+        out.append("G17 was produced under a regression arm (REFE_BEH_MUTATE_*): it can never count")
+    return out
+
+def judge_g14(g14, ns) -> list:
+    """G14 (scorer_finetune --preflight, --hn-bank) re-judged from its RAW FIELDS against the argv's namespace -- never from its own `ok`.  [] = proved.  (PREREG_P6HN_SCREEN 4.3 / 4.4)
+      table        the hard-negative term ALONE (the run's own assembly minus the stock one on one fresh forward) is finite and non-zero on arm B's score_q_mlp, score_dec and score_head rows 0-5, and
+                   EXACTLY 0.0 on the lane row (the control that proves the probe can read zero: it needs a lane row to mean anything), on every arm-A parameter and on the base; the trunk has no gradient
+      controls     the bank OFF and the bank EMPTY: the term and every gradient read EXACTLY 0.0; arm A's own BCE gradient in the same probe reads non-zero
+      two steps    two optimiser steps with the bank off / empty leave B bit-identical to A; with it on B differs; the probe is shown able to read one ulp
+      identities   amendment B2: a bank row that duplicates fan row j adds exactly row j's share of the fan BCE (self-attention neutralised); junk in the pad slots changes nothing (bit for bit); the served
+                   mask equals the bank's own
+      fan          B's fan logits as the loss uses them equal the one-call path bit for bit; the masked call's fan rows do not see any hn slot (bit for bit); an hn row does not depend on the other hn rows
+      D1 / I4      the rows that entered the term equal the rows the bank holds for the served scenes; the held-out items carry no bank"""
+    if not isinstance(g14, dict):
+        return ["G14 is not a dict"]
+    r = []
+    mods = set(SCORER_GROUPS)
+    fin = lambda x: isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)          # noqa: E731
+    if g14.get("ok") is not True:
+        r.append("G14 reports ok != true")
+    if g14.get("mutate"):
+        r.append(f"G14 was produced under regression switch(es) {g14['mutate']}: a regression arm can never count")
+    gs = g14.get("grad_abs_sum") or {}
+    if not (isinstance(g14.get("n_hn"), int) and not isinstance(g14.get("n_hn"), bool) and g14["n_hn"] > 0):
+        r.append(f"G14: the probe batch held {g14.get('n_hn')!r} valid hard-negative rows: the term was not exercised")
+    if g14.get("grads_finite") is not True:
+        r.append("G14: a gradient of the hard-negative term is not finite")
+    if not (fin(g14.get("value_on")) and g14["value_on"] > 0.0):
+        r.append(f"G14: the term alone reads {g14.get('value_on')!r} at the declared setting: it is not part of arm B's loss")
+    for k in ("score_q_mlp", "score_dec", "score_head_rows_0_5"):
+        if not (fin(gs.get(k)) and gs[k] > 0.0):
+            r.append(f"G14: the term's gradient on {k} is {gs.get(k)!r}, not finite and non-zero")
+    if g14.get("lane_head") is not bool(ns.lane_head):
+        r.append(f"G14 probed lane_head {g14.get('lane_head')!r}, the argv has {bool(ns.lane_head)!r}: the lane-row control is not the declared model's")
+    if gs.get("score_head_row_6_lane") != 0.0:
+        r.append(f"G14: the hn rows trained the LANE output (score_head row 6 reads {gs.get('score_head_row_6_lane')!r}, it must be EXACTLY 0.0)")
+    if gs.get("armA_all") != 0.0:
+        r.append(f"G14: arm A received a gradient from the hard-negative term ({gs.get('armA_all')!r}); it must read EXACTLY 0.0")
+    if gs.get("base_params_with_grad") != 0 or gs.get("frozen_params_with_grad") != 0 or g14.get("trunk_requires_grad") is not False:
+        r.append(f"G14: the base ({gs.get('base_params_with_grad')!r} params) or the frozen trunk ({gs.get('frozen_params_with_grad')!r} params, requires_grad {g14.get('trunk_requires_grad')!r}) is on the gradient path")
+    a_ctrl = g14.get("A_bce_control") or {}
+    if set(a_ctrl) != mods or not all(fin(x) and x > 0.0 for x in a_ctrl.values()):
+        r.append(f"G14: arm A's own BCE gradient does not read non-zero in the same probe (a zero on A would be a property of the probe): {a_ctrl}")
+    ctl = g14.get("controls") or {}
+    if set(ctl) != {"off", "empty"} or any(not (isinstance(v, dict) and v.get("value") == 0.0 and v.get("B_all") == 0.0 and v.get("A_all") == 0.0) for v in ctl.values()):
+        r.append(f"G14: the bank-off / bank-empty controls do not read EXACTLY 0.0 (value and every gradient): {ctl}")
+    ts = g14.get("two_step") or {}
+    for k, want in (("off_equal_A", True), ("empty_equal_A", True), ("on_differs_from_A", True), ("probe_reads_one_ulp", True)):
+        if ts.get(k) is not want:
+            r.append(f"G14: two_step.{k} is {ts.get(k)!r}, not {want!r} (B == A with the bank off / empty, B != A with it on, and the equality probe reads one ulp)")
+    dup = g14.get("dup_identity") or {}
+    if not (fin(dup.get("share")) and dup["share"] > 0.0 and fin(dup.get("abs_diff")) and dup["abs_diff"] <= 1e-5 * max(1.0, dup["share"])):
+        r.append(f"G14: the analytic identity (a duplicated fan row adds exactly its share of the fan BCE) does not hold: {dup}")
+    pad = g14.get("pad") or {}
+    if pad.get("served_mask_equals_bank") is not True or not (isinstance(pad.get("pad_slots"), int) and pad["pad_slots"] > 0):
+        r.append(f"G14: the served mask is not the bank's own (or the batch had no pad slot to test): {pad}")
+    if pad.get("perturbed_loss_equal") is not True:
+        r.append("G14: junk written into the pad slots moved the term (padding can reach the loss)")
+    if g14.get("fan_call_max_abs_diff") != 0.0:
+        r.append(f"G14: B's fan logits as the loss uses them differ from the one-call path ({g14.get('fan_call_max_abs_diff')!r}); they must be bit-identical")
+    if g14.get("fan_rows_hn_isolation_max_abs") != 0.0:
+        r.append(f"G14: the fan rows of the masked call depend on the hn slots ({g14.get('fan_rows_hn_isolation_max_abs')!r}): the fan can see a hard negative (no mask)")
+    if g14.get("hn_row_independence_max_abs") != 0.0:
+        r.append(f"G14: a hard-negative row's logits depend on the OTHER hard-negative rows ({g14.get('hn_row_independence_max_abs')!r}); it must be exactly 0.0 (None = the probe batch had no scene with two rows)")
+    d1 = g14.get("d1") or {}
+    if not (isinstance(d1.get("rows_in_term"), int) and d1.get("rows_in_term") == d1.get("rows_expected") and d1["rows_expected"] > 0):
+        r.append(f"G14 (D1): the rows that entered the term ({d1.get('rows_in_term')!r}) are not the rows the bank holds for the served scenes ({d1.get('rows_expected')!r})")
+    er = g14.get("eval_reads_bank") or {}
+    if not (isinstance(er.get("held_items_checked"), int) and er["held_items_checked"] > 0 and er.get("held_items_with_hn_tail") == 0):
+        r.append(f"G14 (I4): held-out items carry a hard-negative tail (evaluation can read the bank): {er}")
+    return r
+
+
+def judge_g15(g15, ns, min_scenes: int = G15_MIN_SCENES) -> list:
+    """G15 (scorer_finetune --preflight, --ctx-cache) re-judged from its RAW FIELDS; [] = proved.  On >= `min_scenes` RL-train and >= `min_scenes` RL-val scenes (a side that holds fewer compares all of them) the cached
+    context and the base / A / B logits read from the cache equal the LIVE trunk forward's bit for bit, in micro-batches of the argv's --batch; the SAME comparison with the cache's rows rolled across the batch must
+    read > 10x the identity's (so the probe can see a wrong cache); the manifest binds the checkpoint's trunk fingerprint and the calib file; the cache covers every scene the run uses; the dtype is bf16."""
+    if not isinstance(g15, dict):
+        return ["G15 is not a dict"]
+    r = []
+    fin = lambda x: isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)          # noqa: E731
+    if g15.get("ok") is not True:
+        r.append("G15 reports ok != true")
+    if g15.get("mutate"):
+        r.append(f"G15 was produced under regression switch(es) {g15['mutate']}: a regression arm can never count")
+    nt, nv = g15.get("n_train"), g15.get("n_val")
+    if not (isinstance(nt, int) and isinstance(nv, int) and nt >= min_scenes and nv >= min_scenes):
+        r.append(f"G15 compared {nt!r} RL-train and {nv!r} RL-val scenes (PREREG 4.4 needs >= {min_scenes} of each)")
+    if g15.get("micro_batch") != ns.batch:
+        r.append(f"G15 compared in micro-batches of {g15.get('micro_batch')!r}, the argv's --batch is {ns.batch!r} (a batch-dependent kernel must show here, not in the run)")
+    ident = g15.get("logit_max_abs_diff") or {}
+    if g15.get("ctx_max_abs_diff") != 0.0:
+        r.append(f"G15: the cached context differs from the live trunk's visual_ctx (max |diff| {g15.get('ctx_max_abs_diff')!r}); it must be bit-identical")
+    if set(ident) != {"base", "A", "B"} or any(v != 0.0 for v in ident.values()):
+        r.append(f"G15: the logits read from the cache differ from the live trunk forward's: {ident} (base / A / B must each read EXACTLY 0.0)")
+    sh = g15.get("shuffled") or {}
+    sl = sh.get("logit_max_abs_diff") or {}
+    if not (fin(sh.get("ctx_max_abs_diff")) and sh["ctx_max_abs_diff"] > 0.0 and set(sl) == {"base", "A", "B"}
+            and all(fin(sl[k]) and sl[k] > 0.0 and sl[k] > 10.0 * float(ident.get(k) if fin(ident.get(k)) else 0.0) for k in sl)):
+        r.append(f"G15: a row-shuffled cache does not read > 10x the identity's difference (the probe cannot see a wrong cache): {sh}")
+    fm, fc = g15.get("trunk_fingerprint_manifest"), g15.get("trunk_fingerprint_checkpoint")
+    if not (isinstance(fm, str) and len(fm) == 64 and fm == fc):
+        r.append(f"G15: the cache manifest's trunk fingerprint {str(fm)[:16]!r} is not the checkpoint's {str(fc)[:16]!r}")
+    if g15.get("covers_run") != {"missing_train": 0, "missing_val": 0}:
+        r.append(f"G15: the cache does not cover every scene of the run: {g15.get('covers_run')}")
+    if g15.get("dtype") != SCORER_CTX_REGISTERED["dtype"]:
+        r.append(f"G15: the cache dtype is {g15.get('dtype')!r}, not {SCORER_CTX_REGISTERED['dtype']!r}")
+    cm, cr = g15.get("calib_sha256_manifest"), g15.get("calib_sha256_run")
+    if not (isinstance(cr, str) and len(cr) == 64 and cm == cr):
+        r.append(f"G15: the cache manifest's calib sha256 {str(cm)[:16]!r} is not the run's calib file's {str(cr)[:16]!r}")
+    if not (isinstance(g15.get("manifest_sha256"), str) and len(g15["manifest_sha256"]) == 64):
+        r.append("G15: the manifest's sha256 is absent")
+    return r
+
+
+def apply_hn_arm(g14, g15, arm):
+    """The deliberate-regression arms of the P6-HN-S launch gate that act on the PREFLIGHT evidence (PREREG_P6HN_SCREEN 4.4): the same preflight, with the raw fields of the defect the arm names.  Each must
+    turn judge_g14 / judge_g15 RED (test_launch_gate.py).  Returns (g14, g15) copies; an arm that acts elsewhere (G-DVB: lever_ignored, stale_bank, empty_bank_in_launch; the argv: moved_lever, epo_with_hn)
+    returns them unchanged."""
+    import copy
+    g14, g15 = copy.deepcopy(g14), copy.deepcopy(g15)
+    if isinstance(g14, dict):
+        gs = g14.setdefault("grad_abs_sum", {})
+        if arm_is("hn_to_armA", arm):                                  # the term was applied to arm A's scorer: A receives its gradient
+            gs["armA_all"] = 0.37
+        if arm_is("hn_in_selection", arm):                             # hard-negative rows reach an evaluation set (the held-out items carry the bank's tail)
+            g14["eval_reads_bank"] = {"held_items_checked": 3, "held_items_with_hn_tail": 3}
+        if arm_is("hn_lane_target", arm):                              # the hn rows train the lane output
+            gs["score_head_row_6_lane"] = 0.021
+        if arm_is("unmasked_pad", arm):                                # pad slots are served as valid rows: the term sees more rows than the bank holds, and junk in the pad slots moves it
+            d1 = g14.setdefault("d1", {})
+            d1["rows_in_term"] = int(d1.get("rows_expected", 0)) + 12
+            g14.setdefault("pad", {})["perturbed_loss_equal"] = False
+            g14["pad"]["served_mask_equals_bank"] = False
+        if arm_is("fan_sees_hn", arm):                                 # no attention mask: the fan rows read the hard negatives
+            g14["fan_rows_hn_isolation_max_abs"] = 0.31
+            g14["fan_call_max_abs_diff"] = 0.12
+    if isinstance(g15, dict):
+        if arm_is("stale_cache", arm):                                 # a cache of another trunk
+            g15["trunk_fingerprint_manifest"] = "f" * 64
+        if arm_is("shuffled_cache", arm):                              # a cache whose rows are shuffled across scenes: it differs from the live forward
+            g15["ctx_max_abs_diff"] = 0.953125
+            g15["logit_max_abs_diff"] = {k: 0.0923 for k in ("base", "A", "B")}
+    return g14, g15
+
+
+class ScorerArgvError(Exception):
+    pass
+
+
+def parse_scorer_argv(parser, argv: list):
+    """(namespace, None) or (None, message): the TRAINER'S OWN parser decides what an argv means (missing required flags, unknown flags, bad types), and
+    it never exits the gate's process."""
+    def _err(msg):
+        raise ScorerArgvError(msg)
+    parser.error = _err
+    try:
+        return parser.parse_args(list(argv)), None
+    except ScorerArgvError as e:
+        return None, str(e)
+    except SystemExit:
+        return None, "the parser exited (--help?)"
+    finally:
+        parser.__dict__.pop("error", None)
+
+
+def judge_g7_carve(g7, ns) -> list:
+    """B8: G7 (heldout_disjoint) re-judged from its RAW carve fields against the argv; [] = proved.  With the default feed G7 must carry NO carve field (a carve measurement on a train-fed arm would be another
+    measurement).  With --epo-con-feed carve: the list the trainer READ is the registered one (sha256), no training row sits in a carve log, no carve row in an RL-val log, the carve holds >= one batch, and one REAL
+    carve forward through the dual's own feed returned a finite violation for every constrained component and as many micro-batches as the argv asks."""
+    r = []
+    fin = lambda x: isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)          # noqa: E731
+    g7 = g7 if isinstance(g7, dict) else {}
+    carve_keys = sorted(k for k in g7 if k.startswith("carve_") or k == "train_rows_in_carve_logs")
+    if getattr(ns, "epo_con_feed", "train") != "carve":
+        return [f"G7: carve fields {carve_keys} on an argv whose --epo-con-feed is train"] if carve_keys else []
+    if g7.get("carve_sha256") != getattr(ns, "epo_carve_sha256", None):
+        r.append(f"G7: the carve list the trainer read ({str(g7.get('carve_sha256'))[:16]}..) is not the registered --epo-carve-sha256")
+    if g7.get("train_rows_in_carve_logs") != 0:
+        r.append(f"G7: {g7.get('train_rows_in_carve_logs')!r} training row(s) sit in a carve log (must be exactly 0): the carve is not held out")
+    if g7.get("carve_rows_in_heldout_logs") != 0:
+        r.append(f"G7: {g7.get('carve_rows_in_heldout_logs')!r} carve row(s) sit in an RL-val log (must be exactly 0)")
+    if not (fin(g7.get("carve_sets")) and g7["carve_sets"] >= getattr(ns, "batch", 1) and fin(g7.get("carve_logs")) and g7["carve_logs"] > 0):
+        r.append(f"G7: the carve is smaller than one batch or has no log: sets {g7.get('carve_sets')!r}, logs {g7.get('carve_logs')!r}")
+    if g7.get("carve_probe_n") != getattr(ns, "epo_carve_micro", None):
+        r.append(f"G7: the carve probe scored {g7.get('carve_probe_n')!r} micro-batches, not the argv's --epo-carve-micro {getattr(ns, 'epo_carve_micro', None)!r}")
+    want = list(SCORER_EPO_CON_COMPS.get(getattr(ns, "epo_con", "off"), ()))
+    pg = g7.get("carve_probe_g") if isinstance(g7.get("carve_probe_g"), dict) else {}
+    if sorted(pg) != sorted(want) or not all(fin(v) for v in pg.values()):
+        r.append(f"G7: the carve probe's violation is not finite for every constrained component {want}: {pg}")
+    return r
+
+
+def judge_g13(g13, ns) -> list:
+    """G13 (scorer_finetune --preflight, --epo-con g5) re-judged from its RAW FIELDS against the argv's namespace -- never from its own `ok`.  [] = proved.
+    The L_con-only backward is finite and non-zero on every scorer module of arm B; the lambda-0 and switch-off controls read EXACTLY 0.0 (value and gradient); arm A reads EXACTLY 0.0 from L_con
+    while its own BCE gradient (the same probe) reads non-zero; at step 0 the two policies coincide; the dual's synthetic sequences land on the closed form EXACTLY (0.3125 at the registered eta 4,
+    lambda0 0), floor at 0.0 and cap at lam_max; the EPO_CON block round-trips bit-equal; no regression switch was set."""
+    if not isinstance(g13, dict):
+        return ["G13 is not a dict"]
+    r = []
+    mods = set(SCORER_GROUPS)
+    fin = lambda x: isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)          # noqa: E731
+    if g13.get("ok") is not True:
+        r.append("G13 reports ok != true")
+    if g13.get("mutate"):
+        r.append(f"G13 was produced under regression switch(es) {g13['mutate']}: a regression arm can never count")
+    on, lam0, off = (g13.get(k) or {} for k in ("per_module_on", "per_module_lam0", "per_module_off"))
+    if set(on) != mods or not all(fin(x) and x > 0.0 for x in on.values()):
+        r.append(f"G13: the L_con-only backward is not finite and non-zero on every scorer module {sorted(mods)} of arm B: {on}")
+    if not (lam0 and off) or any(x != 0.0 for d in (lam0, off) for x in d.values()) or g13.get("value_lam0") != 0.0 or g13.get("value_off") != 0.0:
+        r.append("G13: the zero controls (lambda 0 / --epo-con off) do not read EXACTLY 0.0 (value and gradient) -- the probe is not proved able to read zero")
+    a_reads = [g13.get(k) or {} for k in ("A_per_module_on", "A_per_module_lam0", "A_per_module_off")]
+    if any(set(d) != mods or any(x != 0.0 for x in d.values()) for d in a_reads):
+        r.append(f"G13: arm A received a gradient from L_con (it must read EXACTLY 0.0 on every module): {a_reads[0]}")
+    a_ctrl = g13.get("A_bce_control") or {}
+    if set(a_ctrl) != mods or not all(fin(x) and x > 0.0 for x in a_ctrl.values()):
+        r.append(f"G13: arm A's own BCE gradient does not read non-zero in the same probe (a zero on A would be a property of the probe, not of the term): {a_ctrl}")
+    want = list(SCORER_EPO_CON_COMPS.get(getattr(ns, "epo_con", "off"), ()))
+    gap, tol = g13.get("c_gap") or {}, g13.get("c_gap_tol")
+    if sorted(gap) != sorted(want) or not fin(tol) or not all(fin(v) and v <= tol for v in gap.values()):
+        r.append(f"G13: the step-0 identity |c_A - c_B| <= {tol} does not hold on {want}: {gap}")
+    dr = g13.get("dual_reach") or {}
+    if sorted(dr.get("comps") or ()) != sorted(want):
+        r.append(f"G13: the dual probe covers {dr.get('comps')}, not the declared constraint {want}")
+    for k, flag in (("eta", "epo_con_lr"), ("lam0", "epo_con_lam0"), ("lam_max", "epo_con_max")):
+        if not (fin(dr.get(k)) and _close(dr.get(k), getattr(ns, flag, None))):
+            r.append(f"G13: the dual probe ran with {k} {dr.get(k)!r}, not the argv's --{flag.replace('_', '-')} {getattr(ns, flag, None)!r}")
+    if all(fin(dr.get(k)) for k in ("eta", "lam0", "lam_max", "viol")) and isinstance(dr.get("steps"), int) and dr["steps"] >= 1 and dr["viol"] > 0.0:
+        exp = dr["lam0"]
+        for _ in range(dr["steps"]):
+            exp = min(dr["lam_max"], max(0.0, exp + dr["eta"] * dr["viol"]))
+        if (dr["eta"], dr["lam0"], dr["lam_max"], dr["viol"], dr["steps"]) == (4.0, 0.0, 10.0, 2.0 ** -7, 10) and exp != 0.3125:
+            r.append(f"G13: the closed form of the registered dual sequence is {exp}, not 0.3125 (the judge's own arithmetic is off)")
+        for c in want:
+            if (dr.get("got") or {}).get(c) != exp:
+                r.append(f"G13: dual ascent on {c}: {(dr.get('got') or {}).get(c)!r} != the closed form {exp} -- the dual step does not reach lambda")
+            if (dr.get("floor_got") or {}).get(c) != 0.0:
+                r.append(f"G13: a negative violation did not floor lambda_{c} at EXACTLY 0.0: {(dr.get('floor_got') or {}).get(c)!r}")
+            if (dr.get("cap_got") or {}).get(c) != dr["lam_max"]:
+                r.append(f"G13: a large violation did not cap lambda_{c} at lam_max {dr['lam_max']} EXACTLY: {(dr.get('cap_got') or {}).get(c)!r}")
+    else:
+        r.append("G13: the dual probe's raw fields are missing or malformed")
+    tr = g13.get("temp_reach")
+    want_t = scorer_effective(ns, "epo_con_temp")
+    if not isinstance(tr, dict):
+        r.append("G13: the temperature-reach probe (temp_reach) is absent: nothing proves the loss reads the T the dual holds")
+    else:
+        t, t2 = tr.get("temp"), tr.get("temp2")
+        t2_on, t2_A, t_on = (tr.get(k) or {} for k in ("per_module_T2", "A_per_module_T2", "per_module_on"))
+        if not (fin(t) and fin(want_t) and _close(t, want_t)):
+            r.append(f"G13: temp_reach probed the constraint at T {t!r}, not the argv's effective constraint temperature {want_t!r} (--epo-con-temp, else --epo-temp)")
+        if not (fin(t) and fin(t2) and t2 == 2.0 * t):
+            r.append(f"G13: temp_reach's second temperature {t2!r} is not exactly twice the first {t!r}")
+        if t_on != on:
+            r.append("G13: temp_reach's reference read is not the 'on' read the rest of G13 judged (the two probes are not the same measurement)")
+        if set(t2_on) != mods or not all(fin(x) and x > 0.0 for x in t2_on.values()):
+            r.append(f"G13: temp_reach: the L_con-only backward at the doubled temperature is not finite and non-zero on every scorer module: {t2_on}")
+        elif set(t_on) == mods and all(t2_on[m] == t_on[m] for m in mods):
+            r.append("G13: temp_reach: DOUBLING the constraint's temperature did not move the L_con gradient on ANY module -- the loss does not read the T the dual holds "
+                     "(a hard-coded or inherited T): the flag cannot reach the loss")
+        if tr.get("moved") is not (set(t2_on) == mods and set(t_on) == mods and any(t2_on[m] != t_on[m] for m in mods)):
+            r.append("G13: temp_reach's `moved` does not follow from its own raw reads")
+        if set(t2_A) != mods or any(x != 0.0 for x in t2_A.values()):
+            r.append(f"G13: temp_reach: arm A received a gradient from L_con at the doubled temperature (it must read EXACTLY 0.0 on every module): {t2_A}")
+    ck = g13.get("checkpoint") or {}
+    if ck.get("block_equal") is not True or ck.get("restored_equal") is not True or not {"lam", "update", "cap_hits"} <= set(ck.get("keys") or ()):
+        r.append(f"G13: the EPO_CON checkpoint block does not round-trip bit-equal with lam/update/cap_hits: {ck}")
+    return r
+
+
+def scorer_required_gates(ns) -> list:
+    """Which preflight gates the argv obliges (mirrors scorer_finetune.py's own conditions: G8 iff lane labels, G9 iff PDM labels, G10 iff --lane-head,
+    G11 iff --epo, G12 iff --aux-drv, G13 iff --epo AND --epo-con != off, G14 iff --hn-bank, G15 iff --ctx-cache)."""
+    req = ["G1", "G2", "G3", "G4", "G5", "G7"]
+    if ns.lane_labels_train or ns.lane_labels_heldout:
+        req.append("G8")
+    if ns.pdm_labels_train or ns.pdm_labels_heldout:
+        req.append("G9")
+    if ns.lane_head:
+        req.append("G10")
+    if ns.epo:
+        req.append("G11")
+    if ns.epo and getattr(ns, "epo_con", "off") != "off":
+        req.append("G13")
+    if ns.aux_drv:
+        req.append("G12")
+    if getattr(ns, "pair_w", 0.0) and not getattr(ns, "pair_calibrate", False):         # SCORER1: G16 iff --pair-w > 0 (scorer_finetune.py's own condition)
+        req.append("G16")
+    if getattr(ns, "beh_heads", False):                               # A2: G17 iff --beh-heads (scorer_finetune.py's own condition)
+        req.append("G17")
+    if getattr(ns, "hn_bank", ""):                                    # P6-HN-S: G14 iff --hn-bank, G15 iff --ctx-cache (scorer_finetune.py's own conditions)
+        req.append("G14")
+    if getattr(ns, "ctx_cache", ""):
+        req.append("G15")
+    return req
+
+
+def load_scorer_preflight(path) -> dict:
+    """`scorer_finetune.py --preflight`'s output, PARSED (never grepped): `preflight.jsonl` (the `data` and `preflight` events, appended per run) or
+    `PREFLIGHT_PASS.json` (the `preflight` event alone, written only when every gate is ok).  The verdict is the LAST preflight event; its `data` event
+    is the last one BEFORE it.  {path, sha256, rows, data, preflight, n_preflight, error}."""
+    out = {"path": str(path) if path else None, "sha256": None, "rows": [], "data": None, "preflight": None, "n_preflight": 0, "error": None}
+    if not path or not Path(path).is_file():
+        out["error"] = f"scorer_finetune --preflight output missing: {path}"
+        return out
+    raw = Path(path).read_bytes()
+    out["sha256"] = hashlib.sha256(raw).hexdigest()
+    text = raw.decode("utf-8", errors="replace")
+    rows = None
+    try:
+        obj = json.loads(text)
+        rows = [obj] if isinstance(obj, dict) else None
+    except ValueError:
+        rows = []
+        for i, ln in enumerate(text.splitlines()):
+            if not ln.strip():
+                continue
+            try:
+                r = json.loads(ln)
+            except ValueError:
+                out["error"] = f"{path}: line {i + 1} is not JSON (a truncated preflight log)"
+                return out
+            if isinstance(r, dict):
+                rows.append(r)
+    if rows is None:
+        out["error"] = f"{path}: not a JSON object / JSON-lines preflight log"
+        return out
+    out["rows"] = rows
+    pre = [i for i, r in enumerate(rows) if r.get("event") == "preflight"]
+    out["n_preflight"] = len(pre)
+    if pre:
+        out["preflight"] = rows[pre[-1]]
+        data = [r for r in rows[:pre[-1]] if r.get("event") == "data"]
+        out["data"] = data[-1] if data else None
+    return out
+
+
+def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
+    """{dest, flag, declared, built, how, ok}: the argv's EFFECTIVE value (named, else the parser default) against what the trainer's `data` event says it BUILT."""
+    rows = []
+
+    def add(dest, declared, built, how):
+        rows.append({"dest": dest, "flag": "--" + dest.replace("_", "-"), "declared": declared, "built": built, "how": how, "ok": _close(declared, built)})
+    add("b_mode", ns.b_mode, data.get("b_mode"), "data event: b_mode")
+    add("b_compw", ns.b_compw, data.get("b_compw"), "data event: b_compw")
+    add("epo", bool(ns.epo), "epo" in data, "the data event carries an `epo` block iff --epo")
+    if ns.epo:
+        blk = data.get("epo") or {}
+        for k in SCORER_EPO_KEYS:
+            declared = getattr(ns, "epo_" + k)
+            built = blk.get(k)
+            add("epo_" + k, declared, (bool(built) if isinstance(declared, bool) and built is not None else built), f"data event: epo.{k}")
+    if ns.epo:                                       # SAFEOBJ: the constraint, compared with the BUILT facts of the EpoDual the run holds (never an echo of the namespace)
+        import rl_reward                             # the pinned component order: one source of truth with the trainer
+        mode = getattr(ns, "epo_con", "off")
+        comps = list(SCORER_EPO_CON_COMPS.get(mode, ()))
+        blk = data.get("epo_con")
+        legacy = blk is None and mode == "off" and not (profile or {}).get("epo_con_block")
+        why = " (legacy trainer: no epo_con block, so no constraint can have been built)" if legacy else ""
+        if legacy:
+            blk = {"mode": "off", "comps": [], "cols": [], "ref": "armA_detached", **SCORER_EPO_CON_DEFAULTS}
+        blk = blk or {}
+        for k in SCORER_EPO_CON_KEYS:
+            if k == "mode":
+                add("epo_con", mode, blk.get("mode"), "data event: epo_con.mode (derived from the BUILT comps tuple)" + why)
+            elif k == "comps":
+                add("epo_con", comps, blk.get("comps"), "data event: epo_con.comps (the constrained sub-scores)" + why)
+            elif k == "cols":
+                add("epo_con", [rl_reward.COMPONENTS.index(c) for c in comps], blk.get("cols"), "data event: epo_con.cols (the label columns, from rl_reward.COMPONENTS)" + why)
+            elif k == "ref":
+                add("epo_con", "armA_detached", blk.get("ref"), "data event: epo_con.ref (what epo_con_reference RETURNS: arm A's logits, detached)" + why)
+            elif k == "temp":
+                # PICKCON: the T the constraint's softmax RUNS at = EpoDual.temp.  Declared = the EFFECTIVE value (named, else --epo-temp).  A legacy block (no `temp` key: every trainer before PICKCON) is read
+                # as --epo-temp -- what that trainer's train_losses passed -- but ONLY when the argv does not name the lever (a trainer that never heard of --epo-con-temp cannot have honoured it)
+                built = blk.get("temp") if "temp" in blk else (None if ns.epo_con_temp is not None else getattr(ns, "epo_temp", None))
+                add("epo_con_temp", scorer_effective(ns, "epo_con_temp"), built,
+                    "data event: epo_con.temp (EpoDual.temp: the T train_losses passes to epo_con_term; declared = --epo-con-temp, else --epo-temp)" + ("" if "temp" in blk else " (legacy block: no `temp` key, so the constraint ran at --epo-temp)"))
+            else:
+                add("epo_con_" + k, getattr(ns, "epo_con_" + k), blk.get(k), f"data event: epo_con.{k}" + why)
+        # B8: the dual's FEED against the BUILT carve block (present iff the carve loader exists; absent = the training micro-batches feed the dual, every trainer before B8)
+        cblk = data.get("epo_con_carve") if isinstance(data.get("epo_con_carve"), dict) else None
+        cb = cblk or {}
+        feed = getattr(ns, "epo_con_feed", "train")
+        add("epo_con_feed", feed, "carve" if cb.get("feed") == "carve" else "train", "data event: epo_con_carve.feed (BUILT: the block exists iff the carve loader was built; absent = the training micro-batches feed the dual)")
+        add("epo_carve_sha256", getattr(ns, "epo_carve_sha256", ""), cb.get("sha256", ""), "data event: epo_con_carve.sha256 (the sha256 of the bytes the trainer READ; empty with no carve)")
+        add("epo_carve_micro", getattr(ns, "epo_carve_micro", 1), cb.get("micro", 1), "data event: epo_con_carve.micro (carve micro-batches per update; 1 with no carve)")
+        if feed == "carve":
+            add("epo_carve_logs", [0, 0, True], [cb.get("train_rows_in_carve_logs"), cb.get("carve_rows_in_heldout_logs"), bool(cb.get("logs", 0) > 0 and cb.get("sets", 0) > 0)],
+                "data event: no training row in a carve log, no carve row in an RL-val log, and the carve is non-empty")
+    add("aux_drv", bool(ns.aux_drv), "aux_drv" in data, "the data event carries an `aux_drv` block iff --aux-drv")
+    if ns.aux_drv:
+        import aux_drivable_head as AUX                  # the pinned constants (store sha256, key count, raster geometry): one source of truth with the trainer
+        b = data.get("aux_drv") or {}
+        add("w_aux_drv", ns.w_aux_drv, b.get("w_aux"), "data event: aux_drv.w_aux (the weight the built loss multiplies)")
+        add("aux_drv_tap", ns.aux_drv_tap, b.get("tap"), "data event: aux_drv.tap")
+        add("aux_drv_depth", ns.aux_drv_depth, b.get("depth"), "data event: aux_drv.depth (the built head's CrossBlocks)")
+        add("aux_drv_feed", ns.aux_drv_feed, ("on" if b.get("feed_built") else "off") if b else None, "data event: aux_drv.feed_built")
+        add("aux_drv_feed", 60 + (3 if ns.aux_drv_feed == "on" else 0), b.get("scorer_in_width"), "data event: aux_drv.scorer_in_width (60 off / 63 on)")
+        add("aux_drv_lr", ns.aux_drv_lr, b.get("lr"), "data event: aux_drv.lr (the head optimiser's built learning rate)")
+        add("aux_drv_lr", b.get("n_params"), b.get("head_params_in_optimiser"), "data event: every head parameter is in the head optimiser")
+        add("aux_drv_shuffle_seed", ns.aux_drv_shuffle_seed, b.get("shuffle_seed"), "data event: aux_drv.shuffle_seed")
+        if ns.aux_drv_shuffle_seed is not None:
+            add("aux_drv_shuffle_seed", 0, b.get("derangement_fixed_points"), "data event: the shuffle map has no fixed point")
+            add("aux_drv_shuffle_seed", AUX.PINNED_STORE_KEYS, b.get("shuffle_keys"), "data event: the shuffle map covers every key of the store")
+        add("aux_drv_labels", AUX.PINNED_STORE_SHA256, b.get("store_sha256"), "data event: aux_drv.store_sha256 (the pinned label store)")
+        add("aux_drv_labels", AUX.PINNED_STORE_KEYS, b.get("frames"), "data event: aux_drv.frames")
+        for k, want in (("cell", AUX.CELL_M), ("x0", AUX.X0), ("y0", AUX.Y0), ("nx", int(round((AUX.X1 - AUX.X0) / AUX.CELL_M))), ("ny", int(round((AUX.Y1 - AUX.Y0) / AUX.CELL_M)))):
+            add("aux_drv", want, b.get(k), f"data event: aux_drv.{k} (the label raster's geometry)")
+    pair_named = bool(getattr(ns, "pair_w", 0.0)) or bool(getattr(ns, "pair_calibrate", False))      # SCORER1: the `pair` block exists iff a --pair-* lever is on
+    if pair_named or "pair" in data:
+        blk = data.get("pair") if isinstance(data.get("pair"), dict) else {}
+        add("pair_w", pair_named, "pair" in data, "the data event carries a `pair` block iff --pair-w > 0 (or --pair-calibrate)")
+        if pair_named:
+            add("pair_w", float(ns.pair_w), blk.get("w"), "data event: pair.w (the weight the built loss multiplies)")
+            add("pair_dv", float(ns.pair_dv), blk.get("dv"), "data event: pair.dv (the PairLoss's speed-contrast threshold)")
+            add("pair_heads", [h for h in ns.pair_heads.split(",") if h], blk.get("heads"), "data event: pair.heads (the heads the PairLoss was built for)")
+            add("pair_w", True, blk.get("balanced"), "data event: pair.balanced (the F/S balancing step is built; the NOBALANCE mutation reads False)")
+            add("pair_w", 20261107, blk.get("seed"), "data event: pair.seed (the registered sampling seed)")
+    beh_named = bool(getattr(ns, "beh_heads", False))                  # A2: the `beh` block exists iff --beh-heads
+    if beh_named or "beh" in data:
+        blk = data.get("beh") if isinstance(data.get("beh"), dict) else {}
+        add("beh_heads", beh_named, "beh" in data, "the data event carries a `beh` block iff --beh-heads")
+        if beh_named:
+            add("beh_heads", True, bool((profile or {}).get("beh_profile")), "the profile binds the label dirs by sha256 (profile `beh_profile`; a stock profile does not fingerprint --beh-labels-*)")
+            add("beh_heads", len(SCORER_BEH_ORDER) + 7, blk.get("head_rows"), "data event: beh.head_rows (the grown score head: 6 PDM + lane + 5 behaviour)")
+            add("beh_heads", list(SCORER_BEH_ORDER), blk.get("order"), "data event: beh.order (the behaviour rows 7..11, the gate's own statement)")
+            add("w_beh", float(ns.w_beh), blk.get("w"), "data event: beh.w (the weight the built loss multiplies)")
+            add("beh_listwise", bool(ns.beh_listwise), blk.get("listwise"), "data event: beh.listwise")
+            add("beh_listwise", SCORER_BEH_COLS[bool(ns.beh_listwise_stall)], blk.get("listwise_cols"), "data event: beh.listwise_cols (the columns of the product the loss READS)")
+            add("beh_listwise_stall", bool(ns.beh_listwise_stall), blk.get("stall_in_reward"), "data event: beh.stall_in_reward")
+            for side, dest in (("train", "beh_labels_train"), ("heldout", "beh_labels_heldout")):
+                st = blk.get(side) if isinstance(blk.get(side), dict) else {}
+                add(dest, True, bool(isinstance(st.get("matched"), int) and st["matched"] > 0), f"data event: beh.{side}.matched > 0 (a lever whose labels join no set is not an experiment)")
+    hn_named, cc_named = bool(getattr(ns, "hn_bank", "")), bool(getattr(ns, "ctx_cache", ""))
+    if hn_named or "hn" in data:                                   # P6-HN-S: the bank, against the BUILT block of the bank the trainer holds (never an echo of the namespace)
+        blk = data.get("hn") if isinstance(data.get("hn"), dict) else {}
+        add("hn_bank", hn_named, "hn" in data, "the data event carries an `hn` block iff --hn-bank")
+        if hn_named:
+            add("hn_bank", sorted(SCORER_HN_KEYS), sorted(blk), "data event: the `hn` block's keys")
+            add("hn_bank", _file_sha256(ns.hn_bank) or "<the file --hn-bank names is not readable>", blk.get("sha256"), "data event: hn.sha256 (the sha256 of the bytes the trainer LOADED) vs the sha256 of the file the argv names")
+            add("hn_bank", True, bool(isinstance(blk.get("rows"), int) and blk["rows"] > 0 and isinstance(blk.get("scenes_with_hn"), int) and blk["scenes_with_hn"] > 0),
+                "data event: hn.rows > 0 and hn.scenes_with_hn > 0 (a launch whose lever has nothing to act on is not an experiment)")
+            add("hn_bank", True, bool(isinstance(blk.get("rows"), int) and isinstance(blk.get("scenes_with_hn"), int) and isinstance(data.get("train_sets"), int)
+                                      and blk["scenes_with_hn"] <= data["train_sets"] and blk["rows"] <= SCORER_HN_REGISTERED["max_per_sample"] * data["train_sets"]),
+                "data event: the bank holds no more scenes / rows than the run trains on")
+            for k, want in SCORER_HN_REGISTERED.items():
+                add("hn_bank", want, blk.get(k), f"data event: hn.{k} (registered {want!r})")
+    if cc_named or "ctx_cache" in data:                           # P6-HN-S: the cache, against the BUILT block
+        blk = data.get("ctx_cache") if isinstance(data.get("ctx_cache"), dict) else {}
+        add("ctx_cache", cc_named, "ctx_cache" in data, "the data event carries a `ctx_cache` block iff --ctx-cache")
+        if cc_named:
+            add("ctx_cache", sorted(SCORER_CTX_KEYS), sorted(blk), "data event: the `ctx_cache` block's keys")
+            add("ctx_cache", _file_sha256(os.path.join(ns.ctx_cache, "manifest.json")) or "<the manifest in --ctx-cache is not readable>", blk.get("manifest_sha256"),
+                "data event: ctx_cache.manifest_sha256 vs the sha256 of the manifest the argv's cache holds")
+            tf = blk.get("trunk_fingerprint")
+            add("ctx_cache", True, bool(isinstance(tf, str) and len(tf) == 64 and all(c in "0123456789abcdef" for c in tf)), "data event: ctx_cache.trunk_fingerprint is the checkpoint's sha256 fingerprint")
+            need = (data.get("train_sets") or 0) + (data.get("heldout_sets") or 0)
+            add("ctx_cache", True, bool(isinstance(blk.get("n_scenes"), int) and need > 0 and blk["n_scenes"] >= need), "data event: the cache holds at least every train + held-out scene the run uses")
+            add("ctx_cache", SCORER_CTX_REGISTERED["dtype"], blk.get("dtype"), "data event: ctx_cache.dtype")
+    return rows
+
+
+def _file_sha256(path):
+    """sha256 of a file's bytes, or None when the path is not a readable file (then the declared side is None and the row cannot be equal to a built hash)"""
+    try:
+        if not path or not os.path.isfile(path):
+            return None
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    except OSError:
+        return None
+
+
+def scorer_schedule_rows(ns, data: dict, arm=None) -> list:
+    """S1c (profile key `schedule_reach`): the schedule the trainer WILL build, re-derived from the data event's `train_sets` and the argv's EFFECTIVE --batch / --accum / --epochs, against the
+    --max-updates the argv DECLARES.  scorer_finetune.py:1363-1365 is `total = ceil(len(tr_idx) / batch * epochs / accum); total = min(total, max_updates)`: an --epochs that is too small ends a run SILENTLY
+    at fewer updates than declared (TL-1: `--epochs 2` ended at 500 of 1,000), and `max_updates` is only `consumed` in DVB_KINDS_SCORER, i.e. never observed.  A smaller derived total is a FAIL.
+    Deliberate-regression arm `schedule_truncated`: the same preflight with a quarter of the training sets."""
+    n = data.get("train_sets")
+    if arm_is("schedule_truncated", arm) and isinstance(n, int):
+        n = n // 4
+    rows = []
+    if not isinstance(n, int) or n <= 0 or not ns.max_updates:
+        built = None
+    else:
+        built = min(int(math.ceil(n / ns.batch * ns.epochs / ns.accum)), ns.max_updates)
+    rows.append({"dest": "max_updates", "flag": "--max-updates", "declared": ns.max_updates, "built": built,
+                 "how": f"re-derived: min(ceil(data.train_sets {n} / --batch {ns.batch} x --epochs {ns.epochs} / --accum {ns.accum}), --max-updates) = the updates the run would end at "
+                        f"(scorer_finetune.py:1363-1365); a smaller number means --epochs stops the run early",
+                 "ok": _close(ns.max_updates, built)})
+    return rows
+
+
+def _dotted(d, path):
+    """data["a.b"] -> d["a"]["b"], or None when any hop is missing."""
+    for k in path.split("."):
+        if not isinstance(d, dict) or k not in d:
+            return None
+        d = d[k]
+    return d
+
+
+def scorer_expect_rows(profile: dict, ns, data: dict, arm=None) -> list:
+    """SFT-4R (profile keys `data_expect`, `data_expect_min`, `data_expect_updates`): the trainer's OWN `data` event against the registered input counts, and the schedule re-derived from it.
+    SFT-4 launched on 146,185 of 174,912 PDM labels because "complete" was never a computed fact; under --require-pdm `train_sets` is the number of served sets that HAVE a label, so asserting
+    it equal to the served count (174,912) IS the completeness check, made on what the trainer will train on and not on a log line.  A floor (`data_expect_min`) is a registered minimum.
+    The re-derived total is scorer_finetune.py:1363-1365 (`ceil(train_sets / batch x epochs / accum)`, capped by --max-updates when given) against `data_expect_updates`.
+    Deliberate-regression arm `data_incomplete`: the same preflight with 83.6 % of the training sets and PDM labels (SFT-4's 146,185 of 174,912) -- every count row and the schedule row go RED."""
+    d = dict(data)
+    if arm_is("data_incomplete", arm):
+        d = {**d, "train_sets": int(d.get("train_sets", 0) * 0.836), "lane_labels": {**(d.get("lane_labels") or {}), "pdm_train": int((_dotted(d, "lane_labels.pdm_train") or 0) * 0.836)}}
+    rows = []
+    for path, want in profile.get("data_expect", {}).items():
+        got = _dotted(d, path)
+        rows.append({"dest": "data_expect", "flag": "data." + path, "declared": want, "built": got, "how": f"data event: {path} (registered {want})", "ok": _close(want, got)})
+    for path, floor in profile.get("data_expect_min", {}).items():
+        got = _dotted(d, path)
+        rows.append({"dest": "data_expect", "flag": "data." + path, "declared": f">= {floor}", "built": got,
+                     "how": f"data event: {path} (a registered floor)", "ok": isinstance(got, int) and not isinstance(got, bool) and got >= floor})
+    want_updates = profile.get("data_expect_updates")
+    if want_updates is not None:
+        n = d.get("train_sets")
+        derived = None
+        if isinstance(n, int) and n > 0:
+            derived = int(math.ceil(n / ns.batch * ns.epochs / ns.accum))
+            if ns.max_updates:
+                derived = min(derived, ns.max_updates)
+        rows.append({"dest": "data_expect", "flag": "schedule", "declared": want_updates, "built": derived,
+                     "how": f"re-derived: ceil(data.train_sets {n} / --batch {ns.batch} x --epochs {ns.epochs} / --accum {ns.accum}) = the updates the run ends at (scorer_finetune.py:1363-1365)",
+                     "ok": _close(want_updates, derived)})
+    return rows
+
+
+def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -> dict:
+    """G-DVB for a profile whose trainer is scorer_finetune.py.  `pf` = `load_scorer_preflight(...)` (or None: then the built side is unobservable and the
+    check FAILS -- no preflight, no declared-vs-built).  Static part: every parser dest is classified (unknown FAILS, stale FAILS), every `data` flag is
+    bound by the token, no dead lever, no forbidden flag.  Observed part: the argv's effective levers equal the trainer's own `data` event."""
+    mod = importlib.import_module(profile.get("parser_module", "scorer_finetune"))
+    reasons, det = [], {}
+    parser = mod.build_parser()
+    dests = {x.dest for x in parser._actions if x.dest != "help"}
+    table = dict(DVB_KINDS_SCORER)
+    data_flags = set(profile.get("data_flags", ()))
+    if arm_is("unknown_flag", arm):
+        dests = dests | {"g_probe_new_flag"}
+    if arm_is("stale_registry", arm):
+        table["g_probe_removed_flag"] = "built"
+    if arm_is("dead_lever", arm):
+        dests = dests | {"g_probe_dead_lever"}
+        table["g_probe_dead_lever"] = "consumed"
+    if arm_is("unbound_data", arm):
+        data_flags = data_flags - {"--onpolicy"}
+    unknown = sorted(dests - set(table))
+    stale = sorted(set(table) - dests)
+    det["parser_flags"], det["registry_flags"] = len(dests), len(table)
+    det["unknown_flags"], det["stale_registry"] = unknown, stale
+    det["declared_arm"] = profile.get("declared_arm")                          # the arm this evidence was minted for (the token binds the argv, which fixes its class)
+    if unknown:
+        reasons.append(f"trainer flags with NO declared-vs-built entry (a new lever needs its check): {unknown}")
+    if stale:
+        reasons.append(f"registry entries for flags the parser no longer has: {stale}")
+    opt_of = {x.dest: x.option_strings[0] for x in parser._actions if x.option_strings}
+    unbound = sorted(opt_of[d] for d, k in table.items() if k == "data" and d in opt_of and opt_of[d] not in data_flags)
+    det["unbound_data_flags"] = unbound
+    if unbound:
+        reasons.append(f"input flags the token would NOT fingerprint (not in {profile.get('name', 'the profile')}'s data_flags): {unbound}")
+    src = (HERE / profile.get("trainer_src", "scorer_finetune.py")).read_text(encoding="utf-8")
+    reads = namespace_reads(src, profile.get("namespace_funcs", SCORER_NAMESPACE_FUNCS))
+    for d in sorted(dests):
+        if d in table and table[d] != "control" and d not in reads:
+            reasons.append(f"--{d.replace('_', '-')} is never read by the trainer (a dead lever)")
+    for t in argv:
+        if t in profile.get("forbidden_flags", ()):
+            reasons.append(f"argv flag {t} is FORBIDDEN in a launch ({profile.get('name')}): "
+                           f"{'a test/ablation control' if table.get(argv_flag_dest(parser, t)) == 'control' else 'profile rule'}")
+    ns, err = parse_scorer_argv(parser, argv)
+    if err:
+        reasons.append(f"argv declares lever(s) the trainer does not build (its parser rejects the argv): {err}")
+        det["rejected_by_parser"] = err
+        return verdict("G-DVB", reasons, det, arm=arm, rehearsal=rehearsal)
+    data = (pf or {}).get("data")
+    if data is None:
+        reasons.append("no preflight `data` event: the BUILT side of declared-vs-built is unobservable (pass scorer_finetune's preflight.jsonl, "
+                       "not PREFLIGHT_PASS.json, which carries the preflight event alone)")
+    else:
+        if arm_is("lever_ignored", arm) and not getattr(ns, "hn_bank", ""):                  # the trainer ignored --b-mode: its data event says the other mode (a P6-HN-S argv gets the `hn` form below instead)
+            data = dict(data, b_mode=("compw" if data.get("b_mode") == "listnet" else "listnet"))
+        if arm_is("lever_ignored", arm) and getattr(ns, "hn_bank", ""):                          # P6-HN-S: the flag was parsed and NEVER added -- the trainer built no `hn` block
+            data = {k: v for k, v in data.items() if k != "hn"}
+        if arm_is("stale_bank", arm) and isinstance(data.get("hn"), dict):                       # P6-HN-S: the bank's bytes changed after minting -- the trainer holds a bank of another hash
+            _h = str(data["hn"].get("sha256", ""))
+            data = dict(data, hn=dict(data["hn"], sha256=("0" if _h[:1] != "0" else "1") + _h[1:]))
+        if arm_is("empty_bank_in_launch", arm) and isinstance(data.get("hn"), dict):             # P6-HN-S: a bank of 0 hard negatives
+            data = dict(data, hn=dict(data["hn"], rows=0, scenes_with_hn=0))
+        if arm_is("aux_lever_ignored", arm) and isinstance(data.get("aux_drv"), dict):          # the trainer built the head with another weight than the argv's
+            data = dict(data, aux_drv=dict(data["aux_drv"], w_aux=float(data["aux_drv"].get("w_aux", 0.0)) + 0.05))
+        if arm_is("con_temp_ignored", arm) and isinstance(data.get("epo_con"), dict):          # PICKCON: the trainer ignored --epo-con-temp (or --epo-temp): the constraint's T is not the argv's
+            _b = data["epo_con"]
+            _eff = scorer_effective(ns, "epo_con_temp")
+            _t = _b.get("temp") if _b.get("temp") is not None else _eff
+            data = dict(data, epo_con=dict(_b, temp=(2.0 * _t if _t is not None else 0.1)))
+        if arm_is("carve_feed_ignored", arm) and isinstance(data.get("epo_con"), dict):          # B8: the trainer built the OPPOSITE feed to the argv's (a declared carve with no carve block; a declared train with one)
+            data = ({k: v for k, v in data.items() if k != "epo_con_carve"} if isinstance(data.get("epo_con_carve"), dict)
+                    else dict(data, epo_con_carve={"feed": "carve", "logs": 1, "sets": 1, "sha256": "0" * 64, "micro": 1, "train_rows_in_carve_logs": 0, "carve_rows_in_heldout_logs": 0}))
+        rows = scorer_dvb_rows(ns, data, profile)
+        if profile.get("schedule_reach"):
+            rows = rows + scorer_schedule_rows(ns, data, arm)
+        if profile.get("data_expect"):
+            rows = rows + scorer_expect_rows(profile, ns, data, arm)
+        det["rows"], det["observed_rows"] = rows, len(rows)
+        for r in rows:
+            if not r["ok"]:
+                reasons.append(f"{r['flag']}: declared {r['declared']!r} != built {r['built']!r} ({r['how']})")
+        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS) and (bool(getattr(ns, "beh_heads", False)) or d not in SCORER_BEH_DESTS)}
+        missing = sorted(expect - {r["dest"] for r in rows})
+        det["built_without_observer"] = missing
+        if missing:
+            reasons.append(f"registry says `built` but nothing observes it: {missing}")
+    det["kinds"] = {k: sum(1 for v in table.values() if v == k) for k in ("data", "built", "consumed", "run", "control")}
+    return verdict("G-DVB", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+# ============================================================================================ G-LIVE
+def zero_loss_control(cap) -> dict:
+    """The probe's own control: on the first REAL batch, a zero loss leaves EVERY parameter's gradient exactly 0.0 (or None), and a real
+    loss leaves a non-zero one -- so a zero reading anywhere else is a property of the model, not of a broken probe."""
+    m = cap.model
+    if m is None or cap.first_batch is None:
+        return {"ran": False}
+    dev = next(m.parameters()).device
+    img, ego, goal, calib = cap.first_batch
+    img, ego, goal = img[:1].to(dev), ego[:1].to(dev), goal[:1].to(dev)
+    cal = calib[:1].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
+    m.train()
+    out = {}
+    for tag, scale in (("zero", 0.0), ("real", 1.0)):
+        m.zero_grad(set_to_none=True)
+        traj, score = m(img, ego, goal, calib=cal)[:2]
+        ((traj.float().sum() + score.float().sum()) * scale).backward()
+        out[tag] = sum(float(p.grad.double().abs().sum()) for p in m.parameters() if p.grad is not None)
+    m.zero_grad(set_to_none=True)
+    out["ran"] = True
+    return out
+
+
+FIELD_REACH_GROUPS = ("backbone.lora", "queries", "reg_compress", "scene_proj", "dec", "traj_head")     # L_field depends on `traj` only: these are its ancestors
+
+
+def field_reach(cap, arm=None) -> dict:
+    """L_field-ONLY backward through the trained model on the first REAL labelled sample of the smoke run (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md, "Gradient reach"):
+    per parameter group the |grad| sum and the number of parameters with NO autograd path (grad is None), at the DECLARED weight and at weight 0.0 (the probe's own control:
+    it must read exactly 0.0 everywhere, so a zero elsewhere is a property of the model and not of a broken probe)."""
+    import torch
+    from field_loss import field_loss
+    m = cap.model
+    if m is None or cap.first_batch is None or cap.field_first is None:
+        return {"ran": False}
+    sdf, valid = cap.field_first
+    img, ego, goal, calib = cap.first_batch
+    idx = [k for k in range(sdf.shape[0]) if valid is None or bool(valid[k])]
+    if not idx:
+        return {"ran": True, "labelled": 0}
+    sl = slice(idx[0], idx[0] + 1)
+    dev = next(m.parameters()).device
+    cal = calib[sl].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
+    m.train()
+    out = {"ran": True, "labelled": len(idx)}
+    w = 0.0 if arm_is("field_weight_zero", arm) else float(cap.args.w_field)         # arm: a trainer that ignored --w-field would read all-zero
+    for tag, scale in (("declared", w), ("zero", 0.0)):
+        m.zero_grad(set_to_none=True)
+        traj = m(img[sl].to(dev), ego[sl].to(dev), goal[sl].to(dev), calib=cal)[0]
+        loss = field_loss(traj.float(), sdf[sl].to(dev), margin=cap.args.field_margin, interp=cap.args.field_interp) * scale
+        loss.backward()
+        groups: dict = {}
+        for n, p in m.named_parameters():
+            r = groups.setdefault(group_of(n), {"abs_sum": 0.0, "n": 0, "n_none": 0})
+            r["n"] += 1
+            if p.grad is None:
+                r["n_none"] += 1
+            else:
+                r["abs_sum"] += float(p.grad.double().abs().sum())
+        out[tag] = {"loss": float(loss), "groups": groups}
+    m.zero_grad(set_to_none=True)
+    return out
+
+
+def judge_field_reach(fr: dict, w_field: float) -> list:
+    """The reach probe re-judged from its RAW FIELDS.  [] = proved: L_field-only gradient is non-zero on every ancestor group of `traj`, the scorer groups have NO autograd path
+    (grad is None, not merely zero), and the weight-0 control reads exactly 0.0 on every group."""
+    if not fr.get("ran"):
+        return ["L_field reach probe could not run (no model / first batch / recorded label): the reach is unproved"]
+    if not fr.get("labelled"):
+        return ["L_field reach probe: no labelled sample in the first micro-batch -- the term was not exercised"]
+    out = []
+    g, g0 = fr["declared"]["groups"], fr["zero"]["groups"]
+    for grp in FIELD_REACH_GROUPS:
+        if not (g.get(grp, {"abs_sum": 0.0})["abs_sum"] > 0.0):
+            out.append(f"L_field-only backward reads EXACTLY zero on {grp!r}: the term does not reach it (declared weight {w_field})")
+    for grp in SCORER_GROUPS:
+        x = g.get(grp)
+        if x is None or x["abs_sum"] != 0.0 or x["n_none"] != x["n"]:
+            out.append(f"L_field-only backward reaches the scorer group {grp!r} ({x}): it must have NO autograd path (the scorer sits downstream of `traj`)")
+    bad0 = {k: v["abs_sum"] for k, v in g0.items() if v["abs_sum"] != 0.0}
+    if bad0:
+        out.append(f"the weight-0 control does not read exactly 0.0 (the probe cannot be trusted): {bad0}")
+    return out
+
+
+# ---- P7.1: the training-only drivable-area head (SPEC_P7 section 1; SPEC_AUX_DRIVABLE_HEAD sections 2.1 and 7).  The probe reads what L_aux ALONE does to the trained model on the first REAL labelled
+# sample of the smoke run, at the DECLARED weight and at weight 0.0 (the probe's own control: every group must then read exactly 0.0, so a zero elsewhere is a property of the model).
+AUX_REACH = {"visual": ("aux_head", "backbone.lora", "scene_proj", "pos3d_mlp"),
+             "scene": ("aux_head", "backbone.lora", "scene_proj", "pos3d_mlp", "reg_compress", "registers")}                 # the ancestors of the declared tap
+AUX_NO_REACH = {"visual": ("traj_head", "reg_compress", "registers", "queries", "dec", "ego_enc", "cmd_embed") + SCORER_GROUPS,
+                "scene": ("traj_head", "queries", "dec", "ego_enc", "cmd_embed") + SCORER_GROUPS}                                 # the head reads image tokens only: nothing downstream of the proposals
+AUX_BCE_INIT_TOL = 0.15          # SPEC_AUX 7: the initial aux BCE reads ln 2 +- 0.15 (a mis-scaled head or the wrong tap reads elsewhere)
+
+
+def aux_reach(cap, arm=None) -> dict:
+    """L_aux-ONLY backward through the trained model (and the head) on the first REAL labelled sample of the smoke run: per parameter group the |grad| sum and the number of parameters with NO
+    autograd path, at the DECLARED weight and at weight 0.0; plus: no autograd path from the score to the head (feed off)."""
+    import torch
+    import aux_drivable_head as AUXm
+    m, aux = cap.model, cap.aux
+    if m is None or aux is None or cap.first_batch is None or cap.aux_first is None:
+        return {"ran": False}
+    lab, valid = cap.aux_first
+    img, ego, goal, calib = cap.first_batch
+    idx = [k for k in range(lab.shape[0]) if valid is None or bool(valid[k])]
+    if not idx:
+        return {"ran": True, "labelled": 0}
+    sl = slice(idx[0], idx[0] + 1)
+    dev = next(m.parameters()).device
+    cal = calib[sl].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
+    m.train()
+    taps: list = []
+    hk = m.scene_proj.register_forward_hook(lambda _m, _i, o: taps.append(o))
+    tap_i = 1 if cap.args.aux_drv_tap == "visual" else 0
+    w0 = float(aux.w_aux)
+    w_decl = 0.0 if arm_is("aux_weight_zero", arm) else w0                 # arm: a trainer that ignored --w-aux-drv would read all-zero
+    out = {"ran": True, "labelled": len(idx), "tap": cap.args.aux_drv_tap}
+    try:
+        for tag, w in (("declared", w_decl), ("zero", 0.0)):
+            m.zero_grad(set_to_none=True)
+            aux.zero_grad(set_to_none=True)
+            taps.clear()
+            _traj, score = m(img[sl].to(dev), ego[sl].to(dev), goal[sl].to(dev), calib=cal)[:2]
+            logit, sdf = aux.head(taps[tap_i])
+            l_aux = AUXm.aux_loss(logit, sdf, lab[sl].to(dev), None if valid is None else valid[sl].to(dev), cell=aux.cfg.cell, sdf_scale=aux.cfg.sdf_scale, w_sdf=aux.cfg.w_sdf)[0]
+            aux.w_aux = w
+            try:
+                total = aux.combine(torch.zeros((), device=dev), l_aux)
+            finally:
+                aux.w_aux = w0
+            if tag == "declared":
+                gs = torch.autograd.grad(score.float().sum(), list(aux.head.parameters()), allow_unused=True, retain_graph=True)
+                out["score_to_head_grads_all_none"] = all(g_ is None for g_ in gs)
+            total.backward()
+            groups: dict = {}
+            for n, p in list(m.named_parameters()) + [("aux_head." + n_, p_) for n_, p_ in aux.head.named_parameters()]:
+                r = groups.setdefault("aux_head" if n.startswith("aux_head.") else group_of(n), {"abs_sum": 0.0, "n": 0, "n_none": 0})
+                r["n"] += 1
+                if p.grad is None:
+                    r["n_none"] += 1
+                else:
+                    r["abs_sum"] += float(p.grad.double().abs().sum())
+            out[tag] = {"loss": float(total), "groups": groups}
+    finally:
+        hk.remove()
+        aux.w_aux = w0
+        m.zero_grad(set_to_none=True)
+        aux.zero_grad(set_to_none=True)
+    return out
+
+
+def judge_aux_reach(fr: dict, w_aux: float, tap: str = "visual") -> list:
+    """The reach probe re-judged from its RAW FIELDS.  [] = proved: L_aux-only gradient is non-zero on the head and on every ancestor of the declared tap (LoRA, scene_proj, pos3d_mlp; for `scene` also the
+    register compression), EXACTLY 0.0 on everything the head does not read (traj_head, reg_compress, the proposal decoder, the scorer), no autograd path from the score to the head, and the weight-0
+    control reads exactly 0.0 on every group (so a zero elsewhere is a property of the model, not of a broken probe)."""
+    if not fr.get("ran"):
+        return ["L_aux reach probe could not run (no model / head / first batch / recorded label): the reach is unproved"]
+    if not fr.get("labelled"):
+        return ["L_aux reach probe: no labelled sample in the first micro-batch -- the term was not exercised"]
+    out = []
+    g, g0 = fr["declared"]["groups"], fr["zero"]["groups"]
+    for grp in AUX_REACH[tap]:
+        x = g.get(grp)
+        if x is None or not (_finite(x["abs_sum"]) and x["abs_sum"] > 0.0):
+            out.append(f"L_aux-only backward reads EXACTLY zero (or is absent) on {grp!r}: the term does not reach it (declared weight {w_aux}, tap {tap})")
+    for grp in AUX_NO_REACH[tap]:
+        x = g.get(grp)
+        if x is not None and x["abs_sum"] != 0.0:
+            out.append(f"L_aux-only backward reaches {grp!r} ({x['abs_sum']:.3g}): the head reads image tokens only, so nothing downstream of the proposals may feel it (a goal / ego path would be a back door)")
+    bad0 = {k: v["abs_sum"] for k, v in g0.items() if v["abs_sum"] != 0.0}
+    if bad0:
+        out.append(f"the weight-0 control does not read exactly 0.0 (the probe cannot be trusted): {bad0}")
+    if fr.get("score_to_head_grads_all_none") is not True:
+        out.append("an autograd path from the score to the head exists (feed off: the scorer could teach the head to game the score)")
+    return out
+
+
+def aux_live_facts(cap) -> dict:
+    """The raw fields of the SMOKE run's head, for `judge_aux_live`: per-step gradients, optimiser membership, Adam state, the logged terms."""
+    steps = [r for r in cap.metrics if "traj_L1" in r]
+    ps = list(cap.aux.parameters()) if cap.aux is not None else []
+    ids = cap.opt_param_ids or set()
+    return {"built": cap.aux is not None, "n_head_params": len(ps), "grads": list(cap.aux_grads),
+            "in_optimizer": sum(1 for p in ps if id(p) in ids), "adam": cap.aux_adam,
+            "rows": [{"step": r.get("step"), "aux_bce": r.get("aux_bce"), "aux_huber": r.get("aux_huber"), "aux_w": r.get("aux_w")} for r in steps]}
+
+
+def judge_aux_live(f: dict, w_aux: float) -> list:
+    """[] = proved from the raw fields: the head EXISTS, every head parameter requires grad, holds a finite gradient on every observed optimiser step and a NON-ZERO one on at least one, is held by the
+    optimiser and has Adam state after the step (the probe_zerograd3 pattern: a registered parameter without state never trained); `aux_bce` / `aux_huber` are present and finite on EVERY logged row
+    and the first reads ln 2 +- 0.15; `aux_w` is the declared weight on every row."""
+    import math as _m
+    r = []
+    if not f.get("built"):
+        return ["--aux-drv is declared but the SMOKE run built no head (a lever declared, never built)"]
+    n = f["n_head_params"]
+    gr = f.get("grads") or []
+    if not gr:
+        r.append("no optimiser step was observed on the head")
+    else:
+        for rec in gr:
+            if rec["n_req"] != rec["n"]:
+                r.append(f"the head is FROZEN ({rec['n_req']}/{rec['n']} tensors require grad)")
+                break
+            if not rec["finite"]:
+                r.append("non-finite gradient on the head")
+                break
+            if rec["n_grad"] != rec["n"]:
+                r.append(f"only {rec['n_grad']} of {rec['n']} head tensors received a gradient (the rest have no autograd path)")
+                break
+        if not any(rec["abs_sum"] > 0.0 for rec in gr):
+            r.append(f"the head's gradient is EXACTLY zero on every observed optimiser step ({gr[0]['numel']:,} parameters never trained)")
+    if f.get("in_optimizer") != n:
+        r.append(f"{n - (f.get('in_optimizer') or 0)} of {n} head tensors are NOT held by the optimiser (the head's param group was dropped: it computes a gradient and never moves)")
+    ad = f.get("adam")
+    if not ad or ad.get("n") != n or ad.get("with_state") != n:
+        r.append(f"{(ad or {}).get('with_state')} of {n} head tensors hold Adam state after the step (a registered parameter without state never received an update)")
+    rows = f.get("rows") or []
+    if not rows:
+        r.append("no logged step rows to read the head's terms from")
+    for t in ("aux_bce", "aux_huber"):
+        miss = [x["step"] for x in rows if x.get(t) is None]
+        bad = [x["step"] for x in rows if x.get(t) is not None and not _finite(x[t])]
+        if miss:
+            r.append(f"declared loss term {t!r} ABSENT from the trainer's metrics on steps {miss[:4]}")
+        if bad:
+            r.append(f"declared loss term {t!r} not finite on steps {bad[:4]}")
+    if rows and _finite(rows[0].get("aux_bce")) and abs(rows[0]["aux_bce"] - _m.log(2.0)) > AUX_BCE_INIT_TOL:
+        r.append(f"the initial aux BCE {rows[0]['aux_bce']:.4f} is not within {AUX_BCE_INIT_TOL} of ln 2 (SPEC_AUX 7: a mis-scaled head or the wrong tap)")
+    ws = {x.get("aux_w") for x in rows}
+    if rows and ws != {float(w_aux)}:
+        r.append(f"the logged aux_w {sorted(map(str, ws))} != the declared --w-aux-drv {w_aux}")
+    return r
+
+
+def ego_yaw_probe(cap) -> dict:
+    """The yaw-column probe's OWN control, on the built model and the first REAL batch: with ego[4] forced to exactly 0.0 the gradient on ego_enc.0.weight[:, 4] reads EXACTLY 0.0 (d/dW of a
+    product with a zero input), and with ego[4] forced to 1.0 it reads non-zero.  So a zero reading on the real run is a property of the INPUT, not of a probe that cannot see the column."""
+    m = cap.model
+    if m is None or cap.first_batch is None:
+        return {"ran": False}
+    dev = next(m.parameters()).device
+    img, ego, goal, calib = cap.first_batch
+    img, ego, goal = img[:1].to(dev), ego[:1].to(dev).clone(), goal[:1].to(dev)
+    cal = calib[:1].to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
+    m.train()
+    out = {"ran": True}
+    for tag, v in (("zero", 0.0), ("one", 1.0)):
+        e = ego.clone()
+        e[..., EGO_YAW_SLOT] = v
+        m.zero_grad(set_to_none=True)
+        traj, score = m(img, e, goal, calib=cal)[:2]
+        (traj.float().sum() + score.float().sum()).backward()
+        g = m.ego_enc[0].weight.grad
+        out[tag] = float(g[:, EGO_YAW_SLOT].double().abs().sum()) if g is not None else None
+    m.zero_grad(set_to_none=True)
+    return out
+
+
+def ego_yaw_live_facts(cap) -> dict:
+    cg = cap.ego_col_grads
+    return {"flag": bool(getattr(cap.args, "ego_yaw_table", None)), "steps_observed": len(cg),
+            "ego4_abs_max_received": float(cap.ego4_abs_max),
+            "col4_grad_abs_sum_max": max((g["col"] for g in cg), default=None),
+            "other_cols_grad_abs_sum_max": max((g["other"] for g in cg), default=None),
+            "finite": all(g["finite"] for g in cg)}
+
+
+def judge_ego_yaw(f: dict, probe: dict) -> list:
+    """WP YAW's G-LIVE reasons.  With --ego-yaw-table: the model must have RECEIVED a non-zero yaw rate AND ego_enc.0.weight[:, 4] must carry a finite, non-zero gradient on some step.
+    Without it: no claim is made about the data (a bank may carry its own yaw), but a model that received exactly 0.0 must read exactly 0.0 on that column.  In both cases the probe's control
+    (ego[4] forced to 0.0 reads exactly 0.0; forced to 1.0 reads non-zero) must hold."""
+    r = []
+    if not probe.get("ran"):
+        r.append("ego-yaw probe control could not run (no built model / first batch)")
+    else:
+        if probe["zero"] is None or probe["zero"] != 0.0:
+            r.append(f"ego-yaw probe control failed: ego[4] forced to 0.0 must leave ego_enc.0.weight[:, 4] with gradient EXACTLY 0.0, read {probe['zero']}")
+        if probe["one"] is None or not probe["one"] > 0.0:
+            r.append(f"ego-yaw probe control failed: ego[4] forced to 1.0 must read a non-zero column-4 gradient, read {probe['one']}")
+    if f["steps_observed"] == 0:
+        r.append("ego-yaw: no optimiser step carried a gradient on ego_enc.0.weight (the column cannot be judged)")
+        return r
+    if not f["finite"]:
+        r.append("ego-yaw: non-finite gradient on ego_enc.0.weight")
+    if f["flag"]:
+        if not f["ego4_abs_max_received"] > 0.0:
+            r.append("--ego-yaw-table is set but the model RECEIVED ego[4] == 0.0 on every forward (the override never reached the model)")
+        if not (f["col4_grad_abs_sum_max"] or 0.0) > 0.0:
+            r.append("--ego-yaw-table is set but ego_enc.0.weight[:, 4] has gradient EXACTLY zero on every observed optimiser step (the yaw rate is declared and never trained on)")
+    elif f["ego4_abs_max_received"] == 0.0 and f["col4_grad_abs_sum_max"] != 0.0:
+        r.append(f"ego-yaw control: the model received ego[4] == 0.0 yet ego_enc.0.weight[:, 4] read a gradient of {f['col4_grad_abs_sum_max']} (must be exactly 0.0)")
+    return r
+
+
+def check_live(argv: list, cap, profile: dict, arm=None, rehearsal=False, control: bool = True) -> dict:
+    reasons, det = [], {}
+    if cap.rc != 0:
+        reasons.append(f"the SMOKE trainer run did not finish: rc={cap.rc} {str(cap.error or '')[-300:]}")
+        det["smoke_log"] = cap.log
+        return verdict("G-LIVE", reasons, det, arm=arm, rehearsal=rehearsal)
+    steps = [r for r in cap.metrics if "traj_L1" in r]
+    det["logged_step_rows"] = len(steps)
+    if not steps:
+        reasons.append("no logged step rows")
+    terms = list(profile["live_terms"])
+    for t in terms:
+        miss = [r.get("step") for r in steps if t not in r]
+        bad = [r.get("step") for r in steps if t in r and not _finite(r[t])]
+        if miss:
+            reasons.append(f"declared loss term {t!r} ABSENT from the trainer's metrics on steps {miss[:4]}")
+        if bad:
+            reasons.append(f"declared loss term {t!r} not finite on steps {bad[:4]}")
+    det["terms_checked"] = terms
+    if not cap.grads:
+        reasons.append("no optimiser step was observed")
+    else:
+        agg: dict = {}
+        for rec in cap.grads:
+            for g, r in rec.items():
+                x = agg.setdefault(g, {"max_abs_sum": 0.0, "finite": True, "n": r["n"], "numel": r["numel"], "n_req": r["n_req"], "grad_seen": 0})
+                x["max_abs_sum"] = max(x["max_abs_sum"], r["abs_sum"])
+                x["finite"] = x["finite"] and r["finite"]
+                x["grad_seen"] += r["n_grad"]
+        det["groups"] = agg
+        trainable = TRAINABLE_GROUPS + (("cmd_embed",) if getattr(cap.cfg, "nav_mode", "goal") == "command" else ())
+        for g in sorted(set(agg) - set(trainable) - set(FROZEN_GROUPS)):
+            reasons.append(f"parameter group {g!r} is neither declared trainable nor declared frozen (a module was added without a declaration)")
+        for g in trainable:
+            x = agg.get(g)
+            if x is None or x["numel"] == 0:
+                reasons.append(f"declared trainable group {g!r} is absent from the model")
+            elif x["n_req"] != x["n"]:
+                reasons.append(f"declared trainable group {g!r} is FROZEN ({x['n_req']}/{x['n']} tensors require grad)")
+            elif not x["finite"]:
+                reasons.append(f"group {g!r}: non-finite gradient")
+            elif not x["max_abs_sum"] > 0.0:
+                reasons.append(f"group {g!r}: gradient is EXACTLY zero on every observed optimiser step ({x['numel']:,} parameters never trained)")
+        for g in FROZEN_GROUPS:
+            x = agg.get(g)
+            if x is not None and (x["grad_seen"] != 0 or x["n_req"] != 0):
+                reasons.append(f"declared-frozen group {g!r} received gradient / requires grad (its control must read exactly 0)")
+        det["frozen_control_exact_zero"] = all(agg.get(g, {"grad_seen": 0})["grad_seen"] == 0 for g in FROZEN_GROUPS)
+    if cap.args.scorer_mode == "onpolicy" or getattr(cap.args, "labeller", "bank") == "online":
+        cov = steps[-1].get("scorer_cov") if steps else None
+        det["scorer_cov_last"] = cov
+        if not (cov and cov > 0):
+            reasons.append("on-policy mode: no labelled set ever reached the loss (scorer_cov == 0): the scorer groups were not exercised")
+    if control and not reasons:
+        try:
+            c = zero_loss_control(cap)
+            det["zero_loss_control"] = c
+            if c.get("ran") and not (c["zero"] == 0.0 and c["real"] > 0.0):
+                reasons.append(f"probe control failed: zero loss read {c['zero']} (must be exactly 0.0), real loss read {c['real']} (must be > 0)")
+        except Exception as e:                                                        # noqa: BLE001
+            reasons.append(f"probe control could not run: {type(e).__name__}: {e}")
+    if control and not reasons and cap.model is not None and hasattr(cap.model, "ego_enc"):
+        # WP YAW: the yaw column of the ego encoder (see ego_yaw_probe / judge_ego_yaw)
+        try:
+            f_ = ego_yaw_live_facts(cap)
+            p_ = ego_yaw_probe(cap)
+            det["ego_yaw_live"] = {**f_, "probe": p_}
+            reasons += judge_ego_yaw(f_, p_)
+        except Exception as e:                                                        # noqa: BLE001
+            reasons.append(f"ego-yaw probe could not run: {type(e).__name__}: {e}")
+    if float(getattr(cap.args, "w_field", 0.0) or 0.0) > 0.0 and not reasons:
+        # L_field (eval/PREREG_AUX_FIELD_LOSS_DRAFT.md): it must REACH the proposal side, must NOT reach the scorer, and the weight-0 control must read exactly 0.0
+        try:
+            fr = field_reach(cap, arm)
+        except Exception as e:                                                        # noqa: BLE001
+            fr = {"ran": False}
+            reasons.append(f"L_field reach probe could not run: {type(e).__name__}: {e}")
+        det["field_reach"] = {k: (v if k in ("ran", "labelled") else {"loss": v["loss"], "groups": v["groups"]}) for k, v in fr.items()}
+        det["field_inext_logged"] = [r["field_inext"] for r in steps if "field_inext" in r]
+        det["field_viol_logged"] = [r["field_viol"] for r in steps if "field_viol" in r]
+        if not reasons:
+            reasons += judge_field_reach(fr, cap.args.w_field)
+    if getattr(cap.args, "aux_drv", False) and not reasons:
+        # P7.1: the head must be BUILT, held by the optimiser, finite and non-zero, REACH its ancestors and nothing downstream, with the weight-0 control reading exactly 0.0
+        facts = aux_live_facts(cap)
+        det["aux_live"] = {k: v for k, v in facts.items() if k != "grads"} | {"grad_steps": len(facts["grads"]), "grad_abs_sum_max": max((g_["abs_sum"] for g_ in facts["grads"]), default=None)}
+        reasons += judge_aux_live(facts, cap.args.w_aux_drv)
+        if not reasons:
+            try:
+                ar = aux_reach(cap, arm)
+            except Exception as e:                                                    # noqa: BLE001
+                ar = {"ran": False}
+                reasons.append(f"L_aux reach probe could not run: {type(e).__name__}: {e}")
+            det["aux_reach"] = {k: (v if k in ("ran", "labelled", "tap", "score_to_head_grads_all_none") else {"loss": v["loss"], "groups": v["groups"]}) for k, v in ar.items()}
+            if not reasons:
+                reasons += judge_aux_reach(ar, cap.args.w_aux_drv, cap.args.aux_drv_tap)
+    return verdict("G-LIVE", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+# ============================================================================================ G-EVAL
+PLANNER_ALLOWED_CFG_DIFF = ("detach_scorer_context",)      # training-only: it changes gradients, never a forward value (proved below)
+
+
+def check_eval(argv: list, cap, profile: dict, arm=None, rehearsal=False) -> dict:
+    """The planner's own load sequence (planner.py: REFeConfig.for_backbone -> ckpt_io.config_for_checkpoint -> REFe -> ckpt_io.load_for_inference)
+    on the SMOKE run's model_final.pt: same config, same tensors as the trained model, same forward outputs as the TRAINER's own load."""
+    import torch
+    import ckpt_io
+    import train as T
+    from model import REFe, REFeConfig
+    reasons, det = [], {}
+    fin = Path(cap.run_dir or ".") / "model_final.pt"
+    if not fin.exists() or cap.model is None or cap.first_batch is None:
+        return verdict("G-EVAL", [f"no model_final.pt / trained model / first batch to compare (rc={cap.rc})"], det, arm=arm, rehearsal=rehearsal)
+    src = (HERE / "planner.py").read_text(encoding="utf-8")
+    for needle in ("REFeConfig.for_backbone(backbone)", "ckpt_io.config_for_checkpoint(self.cfg, checkpoint)", "REFe(self.cfg)",
+                   "ckpt_io.load_for_inference(self.model, checkpoint"):
+        if needle not in src:
+            reasons.append(f"planner.py no longer contains its load step {needle!r}: this gate emulates a loader that has changed")
+    pcfg = ckpt_io.config_for_checkpoint(REFeConfig.for_backbone(cap.args.backbone), str(fin))
+    allowed = tuple(PLANNER_ALLOWED_CFG_DIFF) + tuple(profile.get("eval_cfg_allowed", ()))
+    for f in profile.get("eval_cfg_allowed", ()):       # REHEARSAL ONLY: the planner cannot build a reduced rig, so the rehearsal gives it the trained one
+        setattr(pcfg, f, getattr(cap.cfg, f))
+    if arm_is("planner_cfg_differs", arm):
+        pcfg.undistort = not pcfg.undistort            # the planner builds a different forward than the trainer did
+    tcfg = cap.cfg
+    diff = sorted(f for f in REFeConfig.__dataclass_fields__ if getattr(tcfg, f) != getattr(pcfg, f))
+    det["cfg_fields_differing"] = diff
+    bad = [f for f in diff if f not in allowed]
+    if bad:
+        reasons.append("the planner builds a different config from the trainer's on " + ", ".join(
+            f"{f}: trained {getattr(tcfg, f)!r} / planner {getattr(pcfg, f)!r}" for f in bad[:4]))
+    pm = REFe(pcfg)
+    ckpt_io.load_for_inference(pm, str(fin), map_location="cpu", backbone=cap.args.backbone, meta_out={})
+    if arm_is("loader_drops_tensor", arm):             # a loader that quietly skips one tensor
+        with torch.no_grad():
+            next(p for n, p in pm.named_parameters() if group_of(n) == "dec").add_(1.0)
+    if getattr(cap.args, "aux_drv", False):
+        # P7.1: the head rides BESIDE `model` in model_final.pt (its final weights are needed for the head-IoU reads) and NEVER inside it: the planner's strict load of `model` must be unchanged
+        fsd = torch.load(fin, map_location="cpu", weights_only=False)
+        inside = sorted(k for k in fsd["model"] if k.startswith(("aux", "head.")))
+        det["aux_in_model_final"] = {"aux_drv_beside_model": "aux_drv" in fsd, "head_keys_inside_model": inside[:3]}
+        if "aux_drv" not in fsd:
+            reasons.append("model_final.pt carries no `aux_drv` head state beside `model`: the head's final weights would be lost")
+        if inside:
+            reasons.append(f"the head's tensors are INSIDE model_final.pt's `model` ({inside[:3]}): the planner's strict load would refuse the file")
+        del fsd
+    ts = {k: v.detach().cpu() for k, v in cap.model.state_dict().items()}
+    ps = {k: v.detach().cpu() for k, v in pm.state_dict().items()}
+    det["state_keys"] = {"trainer": len(ts), "planner": len(ps)}
+    if set(ts) != set(ps):
+        reasons.append(f"state-dict keys differ: trainer-only {sorted(set(ts) - set(ps))[:3]}, planner-only {sorted(set(ps) - set(ts))[:3]}")
+    neq = sorted(k for k in set(ts) & set(ps) if not torch.equal(ts[k], ps[k]))
+    det["tensors_not_bit_identical"] = len(neq)
+    if neq:
+        reasons.append(f"{len(neq)} tensor(s) differ between the trained model and the planner's load, e.g. {neq[:3]}")
+    tm = REFe(copy.deepcopy(tcfg))
+    T.warm_start(tm, str(fin))                          # the TRAINER's own load of the same file (p2_gate G1's pairing; uncompiled)
+    img, ego, goal, calib = cap.first_batch
+    dev = "cuda" if _cuda() else "cpu"
+    cal = calib.to(dev) if calib is not None and getattr(calib, "numel", lambda: 0)() else None
+    outs = []
+    for m in (tm, pm):
+        m.to(dev).eval()
+        with torch.no_grad():
+            r = m(img.to(dev), ego.to(dev), goal.to(dev), calib=cal)
+        outs.append([x.float().cpu() for x in r])
+        m.cpu()
+    dmax = [float((x - y).abs().max()) for x, y in zip(*outs)]
+    det["forward_max_abs_diff"] = dmax
+    if any(d != 0.0 for d in dmax):
+        reasons.append(f"forward outputs on the first real batch are not bit-identical (max |diff| {dmax})")
+    return verdict("G-EVAL", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+# ============================================================================================ G-CKPT
+def _set(argv, flag, value):
+    out, i, done = [], 0, False
+    while i < len(argv):
+        if argv[i] == flag:
+            out += [flag, value]
+            i += 2
+            done = True
+        else:
+            out.append(argv[i])
+            i += 1
+    return out if done else out + [flag, value]
+
+
+def _drop(argv, flag, nvalues: int = 0):
+    """argv without `flag` and its `nvalues` following tokens."""
+    out, i = [], 0
+    while i < len(argv):
+        if argv[i] == flag:
+            i += 1 + nvalues
+        else:
+            out.append(argv[i])
+            i += 1
+    return out
+
+
+# G-CKPT's three trainings run with DETERMINISTIC algorithms.  Two plain CUDA runs of the same config are NOT bit-identical (non-deterministic
+# reductions under bf16 autocast, amplified by the winner-take-all assignment), so the bitwise round trip could never pass on a GPU: MEASURED
+# 2026-10-12 on the P2 pod (U and H1 already differ at step 1, before any halt) and reproduced on the dev-box GPU.  Under this bootstrap the
+# round trip is bit-identical on CUDA and a resume that drops the optimiser state still FAILS (raw/2026-10-12-gate-gpu-defects/).  PyTorch
+# chooses deterministic attention kernels itself here; the math SDPA path is NOT forced (it would materialise ViT-L attention on the A40).
+DET_BOOT = ("import sys, runpy, torch\n"
+            "torch.use_deterministic_algorithms(True)\n"
+            "torch.backends.cudnn.deterministic = True\n"
+            "torch.backends.cudnn.benchmark = False\n"
+            "script = sys.argv[1]\n"
+            "sys.argv = sys.argv[1:]\n"
+            "runpy.run_path(script, run_name='__main__')\n")
+
+
+def _train_sub(args: list, log: Path) -> int:
+    env = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONHASHSEED="0", CUBLAS_WORKSPACE_CONFIG=":4096:8")
+    env.pop(ARM_ENV, None)
+    r = subprocess.run([sys.executable, "-c", DET_BOOT, str(HERE / "train.py")] + args, cwd=str(HERE), env=env, capture_output=True, text=True,
+                       encoding="utf-8", errors="replace")
+    log.write_text(r.stdout + r.stderr, encoding="utf-8")
+    return r.returncode
+
+
+def _digest_sd(sd) -> dict:
+    return {k: hashlib.sha256(v.detach().cpu().contiguous().numpy().tobytes()).hexdigest() for k, v in sd.items()}
+
+
+def _opt_digest(o: dict) -> str:
+    h = hashlib.sha256()
+    for pid in sorted(o.get("state", {})):
+        for k, v in sorted(o["state"][pid].items()):
+            h.update(f"{pid}:{k}:".encode())
+            h.update(v.detach().cpu().contiguous().numpy().tobytes() if hasattr(v, "detach") else repr(v).encode())
+    h.update(json.dumps(o.get("param_groups"), sort_keys=True, default=str).encode())
+    return h.hexdigest()
+
+
+def check_ckpt(argv: list, work, profile: dict, arm=None, rehearsal=False) -> dict:
+    """U: n steps uninterrupted.  H: halt at the checkpoint after step n/2, then --resume to n.  Model, optimiser state, data position
+    and the logged loss trajectory must be IDENTICAL.  `argv` is the SMOKE argv."""
+    import torch
+    work = Path(work)
+    work.mkdir(parents=True, exist_ok=True)
+    reasons, det = [], {}
+    n = int(profile["ckpt_steps"])
+    h = n // 2
+
+    def with_out(tag, extra):
+        # --compile is dropped: the resume contract is independent of it, and three compiles would cost ~6 min on the pod
+        a_ = _drop(_drop(_set(_set(argv, "--out", str(work / tag)), "--steps", str(n)), "--resume"), "--compile")
+        mb = profile.get("ckpt_micro_batch")
+        if mb:
+            # R44 (MEASURED 2026-10-16, P6 pod): under DET_BOOT's deterministic kernels P6's eager micro-batch of 4 needs >= 43.70 GiB ALLOCATED of
+            # the A40's 44.43 ALONE on the card (U died OOM with no other process; H1 survived the same step: the edge).  The resume contract
+            # (model, optimiser, data position, loss trajectory bit-identical) is independent of the micro-batch exactly as it is of --compile,
+            # so the round trip runs at micro-batch `mb` with the accumulation scaled to keep the effective batch.
+            b0, k0 = int(a_[a_.index("--batch") + 1]), int(a_[a_.index("--accum") + 1])
+            if (b0 * k0) % int(mb):
+                raise ValueError(f"ckpt_micro_batch {mb} does not divide the smoke's effective batch {b0} x {k0}")
+            a_ = _set(_set(a_, "--batch", str(mb)), "--accum", str(b0 * k0 // int(mb)))
+        return a_ + extra
+    w_ = with_out("U", [])
+    det["batch_accum"] = [int(w_[w_.index("--batch") + 1]), int(w_[w_.index("--accum") + 1])] if "--batch" in w_ and "--accum" in w_ else None
+    rc_u = _train_sub(with_out("U", []), work / "U.log")
+    rc_h1 = _train_sub(with_out("H", ["--ckpt-every-steps", str(h), "--halt-after-steps", str(h)]), work / "H1.log")
+    ck = work / "H" / "ckpt_last.pt"
+    det["rc"] = {"U": rc_u, "H1": rc_h1}
+    if rc_u != 0 or not ck.exists():
+        reasons.append(f"setup failed: U rc {rc_u}, H1 rc {rc_h1}, checkpoint exists {ck.exists()}")
+        return verdict("G-CKPT", reasons, det, arm=arm, rehearsal=rehearsal)
+    if arm_is("resume_drops_opt", arm):               # the resume starts Adam from zero moments
+        st = torch.load(ck, map_location="cpu", weights_only=False)
+        for k in st["opt"]["state"]:
+            for vv in st["opt"]["state"][k].values():
+                if hasattr(vv, "zero_"):
+                    vv.zero_()
+        torch.save(st, ck)
+    rc_h2 = _train_sub(with_out("H", ["--resume"]), work / "H2.log")
+    det["rc"]["H2"] = rc_h2
+    if rc_h2 != 0:
+        reasons.append(f"the resumed run failed (rc {rc_h2}); see H2.log")
+        return verdict("G-CKPT", reasons, det, arm=arm, rehearsal=rehearsal)
+    du = _digest_sd(torch.load(work / "U" / "model_final.pt", map_location="cpu", weights_only=False)["model"])
+    dh = _digest_sd(torch.load(work / "H" / "model_final.pt", map_location="cpu", weights_only=False)["model"])
+    bad = sorted(k for k in set(du) | set(dh) if du.get(k) != dh.get(k))
+    det["model_tensors"], det["model_tensors_differing"] = len(du), len(bad)
+    if bad:
+        reasons.append(f"resumed model != uninterrupted model on {len(bad)}/{len(du)} tensors, e.g. {bad[:3]}")
+    cu = torch.load(work / "U" / "ckpt_last.pt", map_location="cpu", weights_only=False)
+    chh = torch.load(work / "H" / "ckpt_last.pt", map_location="cpu", weights_only=False)
+    det["optimizer_state_equal"] = _opt_digest(cu["opt"]) == _opt_digest(chh["opt"])
+    if not det["optimizer_state_equal"]:
+        reasons.append("optimiser state after the resumed run != the uninterrupted run's")
+    if "aux_drv" in cu or "aux_drv" in chh:
+        # P7.1: the head's weights (the Adam state is inside `opt`, compared above: it holds the head's moments) must round-trip bit for bit, and be present on BOTH sides
+        au, ah = cu.get("aux_drv"), chh.get("aux_drv")
+        if arm_is("resume_drops_aux", arm) and ah is not None:                     # the resumed run's head is not the uninterrupted run's
+            ah = {k: v + 1.0 if v.is_floating_point() else v for k, v in ah.items()}
+        det["aux_state_equal"] = au is not None and ah is not None and _digest_sd(au) == _digest_sd(ah)
+        if not det["aux_state_equal"]:
+            reasons.append("the head's weights after the resumed run != the uninterrupted run's (or the head state is absent from a checkpoint)")
+    pos_u = {k: cu["state"][k] for k in ("step", "epoch", "pos", "micro")}
+    pos_h = {k: chh["state"][k] for k in ("step", "epoch", "pos", "micro")}
+    det["data_position"] = {"U": pos_u, "H": pos_h}
+    if pos_u != pos_h:
+        reasons.append(f"data position differs: uninterrupted {pos_u} vs resumed {pos_h}")
+
+    def losses(tag):
+        return [r.get("traj_L1") for r in map(json.loads, (work / tag / "metrics.jsonl").read_text(encoding="utf-8").splitlines()) if "traj_L1" in r]
+    lu, lh = losses("U"), losses("H")
+    det["loss_trajectory_equal"] = lu == lh
+    if lu != lh:
+        reasons.append(f"logged traj_L1 trajectories differ: {lu[:4]} vs {lh[:4]}")
+    return verdict("G-CKPT", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+# ============================================================================================ G-SUITE, G-CLOCK
+# G-SUITE REFUSES TO NEST (2026-10-16).  `REFE_GATE_NESTED` used to be set to "1" and read by nobody; a suite script that ran a command reaching G-SUITE for a profile whose suite CONTAINS that script
+# re-ran itself without end (SFT-4R: test_sft4r_gate.py -> `launch_gate.py run --profile refe_sft4r` -> G-SUITE -> test_sft4r_gate.py ..., ~80 python processes).  The sentinel is now the JSON list of the
+# suite entries running ABOVE this process, outermost first; check_suite spawns nothing when an entry is already on it, or when it is already SUITE_NEST_MAX deep.  Tests: refe/test_suite_nesting.py.
+SUITE_NEST_ENV = "REFE_GATE_NESTED"
+SUITE_NEST_MAX = 2                       # a suite script may run ONE nested suite (a stub / synthetic one); a script inside THAT one may run none
+
+
+def suite_entry_id(e: dict) -> str:
+    """Identity of a G-SUITE entry for the nesting guard: sha256[:16] of the resolved script path + its args (or of a raw argv), then the script's basename."""
+    if "raw" in e:
+        argv, base = [str(x) for x in e["raw"]], "raw"
+    else:
+        argv, base = [os.path.normcase(os.path.realpath(str(HERE / e["script"]))), *[str(x) for x in e.get("args", ())]], os.path.basename(str(e["script"]))
+    return hashlib.sha256("\0".join(argv).encode("utf-8", "replace")).hexdigest()[:16] + ":" + base
+
+
+def suite_nest_stack() -> list:
+    """The suite entries running above this process (outermost first), from the sentinel.  "" = none.  The pre-2026-10-16 value "1" = one level of unknown identity; anything unreadable
+    FAILS CLOSED (it reads as already at the limit), so a damaged sentinel can only refuse, never allow."""
+    raw = os.environ.get(SUITE_NEST_ENV, "")
+    if not raw:
+        return []
+    try:
+        v = json.loads(raw)
+    except ValueError:
+        return ["<unreadable>"] * SUITE_NEST_MAX
+    if isinstance(v, list) and all(isinstance(x, str) for x in v):
+        return v
+    if isinstance(v, int) and not isinstance(v, bool) and 0 <= v <= SUITE_NEST_MAX:
+        return ["<legacy>"] * v
+    return ["<unreadable>"] * SUITE_NEST_MAX
+
+
+def suite_nest_refusals(stack: list, entries: list) -> list:
+    """Why check_suite must spawn NOTHING (empty list = it may)."""
+    out = []
+    if len(stack) >= SUITE_NEST_MAX:
+        out.append(f"G-SUITE refuses to nest: this process is already {len(stack)} suite level(s) deep (limit {SUITE_NEST_MAX}); running above it: {stack}")
+    for e in entries:
+        if suite_entry_id(e) in stack:
+            out.append(f"G-SUITE refuses to nest: entry {e.get('script') or 'raw'} is ALREADY RUNNING above this call, so this suite contains the script that invoked it and would never end "
+                       f"(run the command with --only <checks without G-SUITE>, or give the test a stub suite)")
+    return out
+
+
+def check_suite(profile: dict, arm=None, rehearsal=False) -> dict:
+    reasons, det = [], {"scripts": []}
+    entries = [dict(e) for e in profile.get("suite", ())]
+    if arm_is("suite_failing_test", arm):
+        entries.append({"raw": [sys.executable, "-c", "import sys; print('ZZTEST_FAIL'); sys.exit(1)"], "token": "ZZTEST_PASS"})
+    stack = suite_nest_stack()
+    refused = suite_nest_refusals(stack, entries)
+    if refused:                                                                      # NOTHING is spawned: a suite that contains its own caller cannot end
+        det["nested"] = {"stack": stack, "refused": refused}
+        return verdict("G-SUITE", refused, det, arm=arm, rehearsal=rehearsal)
+    for e in entries:
+        argv = e["raw"] if "raw" in e else [sys.executable, str(HERE / e["script"]), *e.get("args", [])]
+        token = e["token"]
+        env = dict(os.environ, PYTHONIOENCODING="utf-8", **{SUITE_NEST_ENV: json.dumps(stack + [suite_entry_id(e)])})
+        env.pop(ARM_ENV, None)
+        t_script = time.perf_counter()
+        r = subprocess.run(argv, cwd=str(HERE), env=env, capture_output=True, text=True, encoding="utf-8", errors="replace")
+        ok = r.returncode == 0 and token in r.stdout
+        skipped = [ln for ln in r.stdout.splitlines() if ln.startswith("ZZTEST_SKIP")]
+        name = e.get("script", "raw")
+        det["scripts"].append({"script": name, "rc": r.returncode, "token": token, "token_seen": token in r.stdout, "skips": skipped[:4],
+                               "seconds": round(time.perf_counter() - t_script, 1)})            # where the G-SUITE time went (evidence only)
+        if not ok:
+            reasons.append(f"{name}: rc {r.returncode}, {token!r} {'seen' if token in r.stdout else 'NOT seen'}")
+        if skipped and profile.get("suite_skips_fail", True):
+            reasons.append(f"{name}: {len(skipped)} check(s) SKIPPED -- a skip is not a pass ({skipped[0][:100]})")
+    return verdict("G-SUITE", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+def check_clock(argv: list, b, profile: dict, arm=None, rehearsal=False) -> dict:
+    exp = profile.get("expect_schedule")
+    if exp is None:
+        return evidence("G-CLOCK", "NA", [profile.get("clock_na", "no label clock in this profile")], {}, arm=arm, rehearsal=rehearsal)
+    reasons, det = [], {}
+    if b.rc != "STOPPED_AT_BUILD":
+        reasons.append(f"BUILD run did not reach the optimiser (rc {b.rc})")
+    else:
+        a = b.args
+        epochs = exp["epochs"] + (1 if arm_is("clock_wrong_epochs", arm) else 0)
+        det.update({"steps": b.steps, "epochs_flag": a.epochs, "sampler_n": b.samplers[0]["n"] if b.samplers else None})
+        if a.epochs != epochs:
+            reasons.append(f"realised epochs {a.epochs} != registered {epochs}")
+        if b.steps != exp["steps"]:
+            reasons.append(f"realised steps {b.steps} != registered {exp['steps']}")
+        if b.samplers and b.samplers[0]["n"] != exp["epoch_len"]:
+            reasons.append(f"epoch length {b.samplers[0]['n']} != registered {exp['epoch_len']}")
+        want, how = clock_bank_tuples(argv, exp)
+        if how is not None:                           # P6 / D8: the FULL bank from step 0 (no --grow), not a growing one
+            bl = (b.bank_len or {}).get("TargetBank") or {}
+            det["bank"] = bl
+            det["bank_registration"] = how
+            if want is None:
+                reasons.append(f"step-0 bank: {how}")
+            elif bl.get("n_tuples") != want:
+                reasons.append(f"step-0 bank has {bl.get('n_tuples')} tuples != registered {want} ({how})")
+            if bl.get("n_scenes") != exp["epoch_len"]:
+                reasons.append(f"step-0 bank has {bl.get('n_scenes')} scenes != registered {exp['epoch_len']}")
+        # P7-WIRE-INTEGRATE-2: the bank's CONTENT.  A tuple count cannot tell two same-size banks apart; the trainer's own `targets_sha256` of the SAME files the build just loaded can.  Only a profile that
+        # registers `targets_sha256_by_bank` (refe_p7) is asked; refe_p6 has no such key and takes none of these lines (its G-CLOCK evidence is byte-for-byte what it was).
+        want_sha, how_sha = clock_bank_sha256(argv, exp, required=bool(profile.get("p7_rules")))
+        if how_sha is not None:
+            import gate_token as GT_
+            tg = (GT_.flag_values(argv, "--targets") or [None])[0]
+            got_sha = bank_targets_sha256(tg) if tg else None
+            det["bank_content"] = {"targets_sha256": got_sha, "registered": want_sha, "registration": how_sha}
+            if want_sha is None:
+                reasons.append(f"step-0 bank content: {how_sha}")
+            elif got_sha is None:
+                reasons.append(f"--targets {tg!r} holds no targets_rank*.jsonl: the bank's content cannot be pinned")
+            elif got_sha != want_sha:
+                reasons.append(f"the bank's CONTENT is not the registered one: targets_sha256 {got_sha[:16]}... != registered {want_sha[:16]}... ({how_sha}); the same tuple count is not the same bank")
+    return verdict("G-CLOCK", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+def _digest_files(paths) -> str:
+    h = hashlib.sha256()
+    for q in paths:
+        h.update(os.path.basename(str(q)).encode("utf-8"))
+        with open(q, "rb") as f:
+            for b in iter(lambda: f.read(1 << 22), b""):
+                h.update(b)
+    return h.hexdigest()
+
+
+def bank_targets_sha256(target_dir):
+    """The trainer's `targets_sha256` of a bank directory: `train._digest_files(sorted(Path(a.targets).glob("targets_rank*.jsonl")))` -- sha256 over (basename, bytes) of each rank file, sorted.  It is the value
+    `train.run_identity` records in config.json / ckpt_last.pt and that `train._identity_diff` compares on every `--resume` (train.py:1077-1125, 1525); `_digest_files` above is that function's text
+    (test_p7_integration.py compares their ASTs).  None when the directory holds no rank file."""
+    files = sorted(Path(str(target_dir)).glob("targets_rank*.jsonl"))
+    return _digest_files(files) if files else None
+
+
+def clock_bank_sha256(argv: list, exp: dict, required: bool = False):
+    """-> (registered content digest of the argv's `--targets` bank or None, how it was resolved) for G-CLOCK; (None, None) when the profile registers none and `required` is False (refe_p6, refe_p2).
+    `targets_sha256_by_bank` is keyed by the DIRECTORY NAME of `--targets`, exactly like `n_tuples_by_bank`.  `required` (refe_p7): a profile WITHOUT the key, or a bank WITHOUT an entry, is a FAIL --
+    never a skip, because a check that is silently absent reads as clean."""
+    if "targets_sha256_by_bank" not in exp:
+        return (None, "the profile registers no targets_sha256_by_bank: a bank's content is not pinned") if required else (None, None)
+    import gate_token as GT_
+    tg = (GT_.flag_values(argv, "--targets") or [None])[0]
+    name = Path(str(tg).rstrip("/\\")).name if tg else None
+    reg = exp["targets_sha256_by_bank"]
+    if name not in reg:
+        return None, f"--targets {tg!r} names bank {name!r}, which has no registered targets_sha256 (registered: {sorted(reg)})"
+    return reg[name], f"bank {name!r} per targets_sha256_by_bank"
+
+
+def clock_bank_tuples(argv: list, exp: dict):
+    """-> (registered step-0 tuple count or None, how it was resolved) for G-CLOCK; (None, None) when the profile registers no bank size.
+    `n_tuples` is ONE registered count.  `n_tuples_by_bank` registers one count PER BANK, keyed by the directory name of the argv's `--targets`: a bank's size is a
+    DERIVED constant of that bank, so a new bank gets its OWN entry (written into its pre-registration before any training data exists) and the old entry is never
+    edited.  A `--targets` bank with no entry FAILS: an unregistered bank is never vouched for by another bank's number (the 3-C bank, 2026-10-18)."""
+    if "n_tuples_by_bank" in exp:
+        import gate_token as GT_
+        tg = (GT_.flag_values(argv, "--targets") or [None])[0]
+        name = Path(str(tg).rstrip("/\\")).name if tg else None
+        reg = exp["n_tuples_by_bank"]
+        if name not in reg:
+            return None, f"--targets {tg!r} names bank {name!r}, which has no registered tuple count (registered: {sorted(reg)})"
+        return reg[name], f"bank {name!r} per n_tuples_by_bank"
+    if "n_tuples" in exp:
+        return exp["n_tuples"], "n_tuples"
+    return None, None
+
+
+# ============================================================================================ P6: G-LIVE-LAB, G-LIVE-MEM, G-EGR (POD-RUN: they consume their instruments' output)
+# These test components that need the pod (the NAVSIM stack on a D9 cache, a CUDA device, the network). The INSTRUMENTS write raw measurements --
+# refe/diag_p6_labeller_identity.py (LAB), the trainer's own metrics.jsonl from a 200-micro-batch run (MEM), refe/hf_egress.py gate (EGR) -- and the gate JUDGES them
+# (thresholds live HERE, not in the instrument), binds their sha256 into the token, and never greps. Each judge has a fixture-driven regression arm in test_p6_levers.py.
+LAB_NEED_SETS_S, LAB_MARGIN, LAB_STALL_MAX, MEM_MAX_GB, MEM_MIN_MICRO = 4.49, 1.5, 0.05, 44.0, 200
+LAB_STALL_MIN_WINDOWS = 2           # steady-state windows (after the first, which includes pool start-up) the L1 stall bar is judged on (R42)
+
+
+def judge_lab(lab: dict, smoke_metrics: list, workers_launch: int, arm=None, steady_metrics=None, launch_accum=None, chunks_launch: int = 1) -> list:
+    """lab = diag_p6_labeller_identity.py's JSON; smoke_metrics = the SMOKE trainer's metrics rows (the labeller RAN, lag 0, coverage);
+    steady_metrics = the G-LIVE-MEM run's metrics rows (the launch argv at the launch's --accum): the L1 stall bar (SPEC_P6 3.2) is judged THERE.
+    R42 (MEASURED 2026-10-16, P6 pod): train.py drains each accumulation window's LAST micro-batch before the optimizer step (D4), so one label
+    latency per window is unhidden by construction and the stall fraction scales like 1/accum.  The accum-2 smoke read 33.1 % in its only
+    post-start-up window while the launch-argv run read 2.8-5.0 %; a stall bar judged on the smoke can never pass on any pod.
+    Returns the failure reasons."""
+    r = []
+    if arm_is("lab_two_workers", arm):
+        lab = dict(lab, workers=2, throughput_sets_s=lab.get("throughput_sets_s", 0.0) * 2.0 / max(lab.get("workers", 2), 1))
+    if not lab.get("identity_ok") or lab.get("n_sets", 0) < 64 or lab.get("identity_equal_sets", 0) < 64:
+        r.append(f"D1(a) identity: {lab.get('identity_equal_sets')}/{lab.get('n_sets')} sets bit-identical to the offline labeller (need all, over >= 64 sets)")
+    if not lab.get("stale_refused"):
+        r.append("D1(c): a one-step-stale proposal was NOT refused")
+    bar = LAB_MARGIN * LAB_NEED_SETS_S
+    if not lab.get("throughput_sets_s", 0.0) >= bar:
+        r.append(f"throughput {lab.get('throughput_sets_s')} sets/s < {bar:.3f} (1.5 x {LAB_NEED_SETS_S})")
+    if lab.get("workers") != workers_launch:
+        r.append(f"throughput measured at {lab.get('workers')} workers but the launch argv says --label-workers {workers_launch}")
+    if lab.get("chunks", 1) != chunks_launch:                       # identity AND throughput are properties of the chunked path: measured at the launch value or not at all
+        r.append(f"identity / throughput measured at {lab.get('chunks', 1)} chunk(s) per set but the launch argv says --label-chunks {chunks_launch}")
+    ev = [m for m in smoke_metrics if m.get("event") == "labeller"]
+    if not ev:
+        r.append("the SMOKE run logged no `labeller` event (the online labeller did not run)")
+    else:
+        if any(set(e.get("lag_hist", {})) - {"0"} for e in ev):
+            r.append(f"label lag != 0 in the smoke run: {[e['lag_hist'] for e in ev][:2]}")
+        sets, lab_n = sum(e["sets"] for e in ev), sum(e["labelled"] for e in ev)
+        if sets == 0 or lab_n / sets <= 0.0:
+            r.append(f"coverage {lab_n}/{sets}: no set was labelled")
+    # the L1 stall bar, at the LAUNCH accumulation (R42): never on the smoke, whose 2-micro-batch windows are drain-dominated
+    sm = steady_metrics or []
+    sev = [m for m in sm if m.get("event") == "labeller"]
+    s_acc = next((m.get("accum") for m in sm if m.get("event") == "bank"), None)
+    if not sm:
+        r.append("no steady-state stall run (the G-LIVE-MEM metrics): the L1 stall is judged at the launch --accum, never on the accum-2 smoke (R42)")
+    elif launch_accum is None or s_acc != launch_accum:
+        r.append(f"the stall run's accum {s_acc} != the launch argv's --accum {launch_accum}: the stall fraction scales like 1/accum (R42)")
+    elif len(sev) < 1 + LAB_STALL_MIN_WINDOWS:
+        r.append(f"the stall run logged {len(sev)} labeller windows; need >= {1 + LAB_STALL_MIN_WINDOWS} (the first includes pool start-up)")
+    else:
+        if any(set(e.get("lag_hist", {})) - {"0"} for e in sev):
+            r.append(f"label lag != 0 in the stall run: {[e.get('lag_hist') for e in sev][:2]}")
+        stall = max(e["stall_frac"] for e in sev[1:])               # the first window includes pool start-up; steady state is judged
+        if stall > LAB_STALL_MAX:
+            r.append(f"GPU stall {100 * stall:.1f} % of a window > {100 * LAB_STALL_MAX:.0f} % (launch accum {launch_accum}, max over windows after the first)")
+    return r
+
+
+def judge_mem(rows: list, arm=None) -> list:
+    """rows = metrics.jsonl step rows of a >= 200-micro-batch run on the real card. Peak must be <= 44 GB (SPEC_P6 3.2: two live graphs on a 48 GB A40)."""
+    r = []
+    sr = [m for m in rows if "cuda_max_mem_gb" in m and "traj_L1" in m]
+    if not sr or any(m["cuda_max_mem_gb"] is None for m in sr):
+        return ["no CUDA memory reading (cuda_max_mem_gb is null): G-LIVE-MEM needs a real A40, it cannot be judged on CPU"]
+    peak = max(m["cuda_max_mem_gb"] for m in sr) + (20.0 if arm_is("mem_over_budget", arm) else 0.0)
+    n_micro = max(m.get("samples", 0) for m in sr) / max(sr[-1].get("batch", 1), 1)
+    if n_micro < MEM_MIN_MICRO:
+        r.append(f"only {n_micro:.0f} micro-batches were observed (< {MEM_MIN_MICRO})")
+    if peak > MEM_MAX_GB:
+        r.append(f"peak {peak:.2f} GB > {MEM_MAX_GB} GB: drop to micro-batch 2 x accum 128 (SPEC_P6 3.2)")
+    return r
+
+
+def judge_egr(res: dict, local_size=None, remote_size=None, arm=None) -> list:
+    """res = hf_egress.py gate's g_egr_result.json; optionally the first ckpt_last.pt push's local vs LISTING size (the spec's check)."""
+    r = []
+    if res.get("pass") is not True:
+        r.append("hf_egress.py gate did not PASS")
+    if not (res.get("main") or {}).get("ok"):
+        r.append(f"the gate JSON push failed: {(res.get('main') or {}).get('reason')}")
+    if not (res.get("regression") or {}).get("refused_by_server"):
+        r.append("the deliberate-regression push was not refused BY THE SERVER (our own pre-check proves nothing about the token)")
+    if local_size is not None:
+        want = local_size + (1 if arm_is("egr_wrong_size", arm) else 0)
+        if remote_size != want:
+            r.append(f"ckpt_last.pt: remote listing size {remote_size} != expected {want}")
+    return r
+
+
+def _consume(path):
+    if not path or not Path(path).is_file():
+        return None
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def check_live_lab(lab_json, smoke_cap, argv: list, arm=None, rehearsal=False, mem_metrics=None) -> dict:
+    import gate_token as GT_
+    lab = _consume(lab_json)
+    if lab is None:
+        return verdict("G-LIVE-LAB", [f"labeller instrument output missing: {lab_json} (run refe/diag_p6_labeller_identity.py on the pod)"], {}, arm=arm,
+                       rehearsal=rehearsal)
+    w = int((GT_.flag_values(argv, "--label-workers") or ["12"])[0])
+    ch = int((GT_.flag_values(argv, "--label-chunks") or ["1"])[0])
+    acc = (GT_.flag_values(argv, "--accum") or [None])[0]
+    launch_accum = int(acc) if acc is not None else None
+    steady = None
+    if mem_metrics and Path(mem_metrics).is_file():
+        steady = [json.loads(ln) for ln in Path(mem_metrics).read_text(encoding="utf-8").splitlines() if ln.strip()]
+    smoke = smoke_cap.metrics if smoke_cap is not None else []
+    reasons = judge_lab(lab, smoke, w, arm=arm, steady_metrics=steady, launch_accum=launch_accum, chunks_launch=ch)
+    details = {"lab": lab, "file_sha256": GT_.sha256_file(lab_json),
+               "stall_judged_on": {"mem_metrics_sha256": GT_.sha256_file(mem_metrics) if steady is not None else None, "launch_accum": launch_accum,
+                                   "stall_frac_by_window": [e.get("stall_frac") for e in (steady or []) if e.get("event") == "labeller"]},
+               "smoke_stall_frac_by_window_reported_only": [e.get("stall_frac") for e in smoke if e.get("event") == "labeller"]}
+    return verdict("G-LIVE-LAB", reasons, details, arm=arm, rehearsal=rehearsal)
+
+
+def check_live_mem(mem_metrics, arm=None, rehearsal=False) -> dict:
+    import gate_token as GT_
+    if not mem_metrics or not Path(mem_metrics).is_file():
+        return verdict("G-LIVE-MEM", [f"memory-run metrics missing: {mem_metrics}"], {}, arm=arm, rehearsal=rehearsal)
+    rows = [json.loads(ln) for ln in Path(mem_metrics).read_text(encoding="utf-8").splitlines() if ln.strip()]
+    return verdict("G-LIVE-MEM", judge_mem(rows, arm=arm), {"rows": len(rows), "file_sha256": GT_.sha256_file(mem_metrics)}, arm=arm, rehearsal=rehearsal)
+
+
+EGR_CKPT_MIN_BYTES = 50_000_000      # MEASURED ckpt_last.pt of this model class: 228,234,301 B (SPEC_P6 section 4); a probe far below it proves nothing about the real push
+
+
+# ============================================================================================ P7: G-RESERVE (SPEC_P7 section 2) -- the REAL audit, `refe/session_reserve.py` (P7-WIRE-RESERVE)
+# The gate consumes the registered reserve file (`--gate-reserve-json`, bound into the token by its sha256 and pinned in the profile) and runs
+#     reserve = session_reserve.load_reserve(<file>)                                   a frozenset of the 16 SESSION names (sha256- and content-pinned: refuses on one changed byte)
+#     session_reserve.audit_inputs(reserve, *, bank_files, metric_cache_dir, label_store, image_index, calib_rows)  ->  {ok, leaks, unresolved, counts}
+# with every input the LAUNCH argv names (the five inputs of SPEC_P7 section 2).
+# ⛔ P7-WIRE-INTEGRATE (2026-10-22, MEASURED `raw/probes/probe_before.out`): the slot's first version handed `audit_inputs` the PARSED JSON DOCUMENT (a dict of schema / reserve / sessions ...).  The real
+# module takes the SESSION SET, so G-RESERVE FAILED ON A CLEAN TREE with "'closure' is not a session name" -- a check that could never PASS, tested only with fakes that accepted whatever they were given.
+# `loader` is now the ONE seam for turning the file into the audit's first argument (default `session_reserve.load_reserve`); a fake audit in a test gets the same TYPE the real one would.
+# The audit's inputs are KEYWORDS THAT DEFAULT TO "not audited": an argv that omits one would read as clean for it, so an omitted input is itself a FAIL (`RESERVE_INPUT_FLAGS`).
+RESERVE_INPUT_FLAGS = {"bank_files": "--targets", "metric_cache_dir": "--metric-cache", "label_store": "--aux-drv-labels", "image_index": "--images", "calib_rows": "--calib"}
+RESERVE_AUDITED = ("bank", "metric_cache", "label_store", "images", "calibration")           # `counts.inputs_audited` of session_reserve.audit_inputs: all five, or the audit proved less than SPEC_P7 2 asks
+
+
+def reserve_audit_inputs(argv: list) -> dict:
+    """The keyword arguments of `audit_inputs` (other than `reserve`), read from the LAUNCH argv: the bank's rank files (`--targets`, the SAME `targets_rank*.jsonl` glob as the trainer's
+    TargetBank), the D9 metric-cache directory, the head's label store, the image root, the calibration table.  Types as `audit_inputs` documents them: a list of file paths, and four path strings."""
+    import gate_token as GT_
+
+    def val(flag):
+        v = GT_.flag_values(argv, flag)
+        return v[0] if v else None
+    tg = val("--targets")
+    return {"bank_files": sorted(str(p) for p in Path(tg).glob("targets_rank*.jsonl")) if tg else [], "metric_cache_dir": val("--metric-cache"),
+            "label_store": val("--aux-drv-labels"), "image_index": val("--images"), "calib_rows": val("--calib")}
+
+
+def _leak_summary(res: dict) -> str:
+    """The audit's own findings in one line: the true leak totals with a few keys, the unresolved counts, the inputs that examined nothing."""
+    parts = []
+    counts = res.get("counts") if isinstance(res.get("counts"), dict) else {}
+    tot = {k: n for k, n in (counts.get("leak_totals") or {}).items() if n}
+    if tot:
+        ex = {k: (res.get("leaks") or {}).get(k, [])[:2] for k in tot}
+        parts.append(f"reserve keys in {tot}, e.g. {ex}")
+    un = {k: n for k, n in (res.get("unresolved") or {}).items() if n}
+    if un:
+        parts.append(f"keys with no resolvable log {un}, e.g. {dict(list((counts.get('unresolved_examples') or {}).items())[:2])}")
+    if counts.get("empty_inputs"):
+        parts.append(f"inputs that examined ZERO keys {counts['empty_inputs']}")
+    return "; ".join(parts)
+
+
+def check_reserve(argv: list, profile: dict, reserve_json, arm=None, rehearsal=False, audit=None, loader=None) -> dict:
+    """G-RESERVE.  PASS iff the reserve file is the registered one (sha256 == the profile's `reserve_sha256`), it LOADS (`loader`, default `session_reserve.load_reserve`: its own sha256 + content pins),
+    the launch argv names ALL FIVE audited inputs, and `audit_inputs(reserve, ...)` returns `ok` True having examined all five.  `audit` / `loader` (tests only) replace the lazy imports.
+    Every other outcome FAILS: no file, a different file, an unreadable or unloadable file, the audit module absent, an input the argv does not name, the audit raising, a result that is not a dict,
+    `ok` anything but True, an audit that examined fewer than the five inputs."""
+    reasons, det = [], {}
+    pin = profile.get("reserve_sha256")
+    if not reserve_json or not Path(str(reserve_json)).is_file():
+        return verdict("G-RESERVE", [f"no reserve file (--gate-reserve-json {reserve_json!r}): the reserve cannot be audited"], det, arm=arm, rehearsal=rehearsal)
+    import gate_token as GT_
+    sha = GT_.sha256_file(reserve_json)
+    det["reserve_sha256"] = sha
+    if pin is None:
+        reasons.append("the profile registers no reserve sha256 (P7_RESERVE_SHA256): an unregistered reserve is never audited")
+    elif sha != pin:
+        reasons.append(f"the reserve file {sha[:16]}... is not the registered draw {pin[:16]}...")
+    real_audit = audit is None
+    if audit is None or loader is None:
+        try:
+            import session_reserve as SR
+            audit = audit or SR.audit_inputs
+            loader = loader or SR.load_reserve
+        except Exception as e:                                                        # noqa: BLE001 -- absent module / missing function: the check FAILS
+            return verdict("G-RESERVE", reasons + [f"session_reserve is not importable ({type(e).__name__}: {e}): the five inputs cannot be audited"], det, arm=arm, rehearsal=rehearsal)
+    try:
+        reserve = loader(reserve_json)
+    except Exception as e:                                                            # noqa: BLE001 -- a file the module refuses is not "the registered draw", whatever its sha256 says
+        return verdict("G-RESERVE", reasons + [f"the reserve file does not load ({type(e).__name__}: {str(e)[:300]})"], det, arm=arm, rehearsal=rehearsal)
+    try:
+        det["reserve_sessions"] = len(reserve)
+    except TypeError:
+        pass
+    kw = reserve_audit_inputs(argv)
+    det["inputs"] = {k: (v if not isinstance(v, list) else f"{len(v)} files") for k, v in kw.items()}
+    missing = [flag for kwarg, flag in RESERVE_INPUT_FLAGS.items() if not kw.get(kwarg)]
+    for flag in missing:
+        reasons.append(f"the launch argv gives the audit no {flag} input" + (" (no targets_rank*.jsonl under it)" if flag == "--targets" and "--targets" in argv else "")
+                       + ": audit_inputs treats an input it is not given as NOT AUDITED, which reads as clean, and SPEC_P7 2 audits all five")
+    if missing:
+        return verdict("G-RESERVE", reasons, det, arm=arm, rehearsal=rehearsal)
+    try:
+        res = audit(reserve, **kw)
+    except Exception as e:                                                            # noqa: BLE001
+        return verdict("G-RESERVE", reasons + [f"audit_inputs raised {type(e).__name__}: {str(e)[:300]}"], det, arm=arm, rehearsal=rehearsal)
+    if not isinstance(res, dict) or res.get("ok") is not True:
+        why = (res.get("reasons") or res.get("violations") or res.get("problems") or _leak_summary(res)) if isinstance(res, dict) else None
+        reasons.append(f"the reserve audit did not pass (ok={res.get('ok') if isinstance(res, dict) else type(res).__name__}): {str(why)[:400] if why else 'no reason given'}")
+    if real_audit and isinstance(res, dict):                                          # the real module reports what it examined: all five, or it proved less than the spec asks
+        done = set((res.get("counts") or {}).get("inputs_audited") or ())
+        if not set(RESERVE_AUDITED) <= done:
+            reasons.append(f"the audit examined {sorted(done)}, not all of {list(RESERVE_AUDITED)}")
+    det["audit"] = {k: v for k, v in (res.items() if isinstance(res, dict) else []) if isinstance(v, (bool, int, float, str)) or v is None}
+    if isinstance(res, dict) and isinstance(res.get("counts"), dict):
+        c = res["counts"]
+        det["audit_counts"] = {k: c.get(k) for k in ("reserve_sessions", "inputs_audited", "examined", "leak_totals", "empty_inputs") if k in c}
+    return verdict("G-RESERVE", reasons, det, arm=arm, rehearsal=rehearsal)
+
+
+def check_egr(egr_json, ckpt_sizes=None, arm=None, rehearsal=False, require_ckpt=True) -> dict:
+    """G-EGR. The first-checkpoint size comes from `ckpt_sizes=(local, listing)` if given, else from the `ckpt` record `hf_egress.py gate --ckpt <ckpt_last.pt>` wrote into the
+    SAME json (so its sha256, bound into the token, covers the sizes too). `require_ckpt`: a P6 token needs that size check; a result without it FAILS."""
+    import gate_token as GT_
+    res = _consume(egr_json)
+    if res is None:
+        return verdict("G-EGR", [f"hf_egress.py gate output missing: {egr_json}"], {}, arm=arm, rehearsal=rehearsal)
+    ls, rs = (ckpt_sizes or (None, None))
+    ck = res.get("ckpt") or {}
+    if ckpt_sizes is None and ck:
+        ls, rs = ck.get("local_size"), ck.get("remote_size")
+    reasons = judge_egr(res, ls, rs, arm=arm)
+    if require_ckpt:
+        if ls is None:
+            reasons.append("no first-checkpoint push recorded (hf_egress.py gate --ckpt <ckpt_last.pt>): SPEC_P6 section 5's size check was not made")
+        elif ls < EGR_CKPT_MIN_BYTES:
+            reasons.append(f"the pushed checkpoint is {ls} B < {EGR_CKPT_MIN_BYTES} B: not a real ckpt_last.pt of this model")
+        if ck and ck.get("push_ok") is not True:
+            reasons.append(f"the first-checkpoint push failed: {ck.get('reason')}")
+    return verdict("G-EGR", reasons, {"result": res, "file_sha256": GT_.sha256_file(egr_json)}, arm=arm, rehearsal=rehearsal)

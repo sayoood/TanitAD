@@ -120,10 +120,9 @@ def expected_reward_loss(sx, tg, tau_s, sel=None, rfac=None, selfac=None):
         sc = sc * selfac
     s = torch.log(sc.clamp_min(1e-6))
     pi = torch.softmax(s / tau_s, dim=1)
-    r = agg_v1(tg[..., :6])
     if rfac is not None:                                     # A2 (--beh-listwise): R_i = agg_v1(labels) * prod_k q_ik^act_ik
-        r = r * rfac
-    return -(pi * r).sum(1).mean()
+        return -(pi * (agg_v1(tg[..., :6]) * rfac)).sum(1).mean()
+    return -(pi * agg_v1(tg[..., :6])).sum(1).mean()
 
 
 def load_navtest_ids(logs_path, tokens_path):
@@ -260,6 +259,7 @@ BEH_GLOB = "behaviour_*.jsonl"                                       # behaviour
 BEH_TERMS_VERSION = "behaviour/1"
 BEH_REWARD_COLS = (0, 1, 2, 4)                                       # q_stall (col 3) excluded by default
 BEH_REWARD_COLS_STALL = (0, 1, 2, 3, 4)
+BEH_MUTATE_ENVS = ("REFE_BEH_MUTATE_DROP_LOSS", "REFE_BEH_MUTATE_LEAK_A", "REFE_BEH_MUTATE_ID")      # deliberate regressions: each must turn G17 RED
 BEH_PASS_Q = 1.0                                                     # held-out AUC: a proposal is 'clean' on a term iff q >= 1 (unpenalised); OPEN for PREREG_A2
 BEH_DESTS = ("beh_labels_train", "beh_labels_heldout", "w_beh", "beh_listwise", "beh_listwise_stall")
 
@@ -429,12 +429,63 @@ def beh_heldout_auc(pred, bq, bact, logs):
     return out
 
 
+def g17_probe(cur, fwd, train_losses, train_losses_stock, zero, head_a, head_b, batch, bias_init, w_decl, listwise_decl):
+    """G17 (A2 preflight, WIRING_PLAN item 7): the behaviour heads are LIVE in the run's own assembly and the identity holds.  Raw fields only (gate_checks.judge_g17 re-judges them; `ok` is a claim).
+    `batch` = a real batch whose sets carry labels.  fwd / train_losses = the REBOUND pair main() trains with, train_losses_stock = the stock assembly, zero() clears every gradient, head_a / head_b = arm A's and
+    arm B's score_head.  Rows 7:12 of the head receive gradient ONLY from the behaviour terms, so |grad| there is the whole signal.  Every control is an EXPLICIT call (never short-circuited)."""
+    R0, R1 = BEH_ROW0, BEH_HEAD_ROWS
+
+    def rows(h):
+        g = h.weight.grad
+        return 0.0 if g is None else float(g[R0:R1].detach().double().abs().sum())
+
+    def run(b, **kw):
+        zero()
+        s0, sA, sB, t = fwd(b)
+        lA, lB, _ln, _ep = train_losses(s0, sA, sB, t, None, 0, **kw)
+        (lA + lB).backward()
+        out = (rows(head_b), rows(head_a))
+        zero()
+        return out
+    bq, bact = batch[9], batch[10]
+    g_decl_b, g_decl_a = run(batch)                                              # the DECLARED configuration
+    g_bce_b, _ = run(batch, beh_w=1.0, beh_listwise=False)                       # the BCE term alone at weight 1
+    g_w0_b, g_w0_a = run(batch, beh_w=0.0, beh_listwise=False)                   # the zero control: graph live, factor 0
+    g_lw_b, _ = run(batch, beh_w=0.0, beh_listwise=True)                         # the listwise product alone
+    inactive = tuple(batch[:10]) + (torch.zeros_like(bact),)                     # G-BEH-ID: every entry inapplicable
+    zero()
+    s0, sA, sB, t = fwd(inactive)
+    lA1, lB1, ln1, _ = train_losses(s0, sA, sB, t, None, 0, beh_listwise=True)
+    g1 = torch.autograd.grad(lB1, sB, retain_graph=True)[0]
+    cur.pop("rfac", None); cur.pop("selfac", None)
+    lA0, lB0, ln0, _ = train_losses_stock(s0, sA, sB, t, None, 0)
+    g0 = torch.autograd.grad(lB0, sB)[0]
+    ncol = g0.shape[-1]
+    zero()
+    wb, bb = head_b.weight.detach(), head_b.bias.detach()
+    return {"ok": None, "probe_sets": int(bq.shape[0]), "probe_active": [int(bact[..., c].sum()) for c in range(BEH_N)], "w_declared": float(w_decl), "listwise_declared": bool(listwise_decl),
+            "head_rows": int(head_b.out_features), "grad_B_declared": g_decl_b, "grad_A_declared": g_decl_a, "grad_B_bce_w1": g_bce_b, "grad_B_w0_control": g_w0_b, "grad_A_w0_control": g_w0_a,
+            "grad_B_listwise_only": g_lw_b,
+            "id_loss_equal": bool(torch.equal(lB1.detach(), lB0.detach()) and torch.equal(ln1.detach(), ln0.detach())), "id_grad_equal": bool(torch.equal(g1[..., :ncol], g0)),
+            "weight_rows_zero_at_start": bool(float(wb[R0:R1].abs().max()) == 0.0), "bias_rows_equal_init": bool(torch.equal(bb[R0:R1].cpu(), torch.as_tensor(bias_init, dtype=bb.dtype))),
+            "mutate_drop_loss": os.environ.get("REFE_BEH_MUTATE_DROP_LOSS") == "1", "mutate_leak_a": os.environ.get("REFE_BEH_MUTATE_LEAK_A") == "1", "mutate_id": os.environ.get("REFE_BEH_MUTATE_ID") == "1"}
+
+
+def g17_ok(g, w_decl, listwise_decl):
+    """the ONE statement of G17's verdict, shared by the trainer (its `ok`) and by the tests; gate_checks.judge_g17 states it again independently"""
+    live = (g["grad_B_declared"] > 0.0) if (w_decl > 0.0 or listwise_decl) else False
+    return bool(g["probe_sets"] > 0 and all(n > 0 for n in g["probe_active"]) and g["head_rows"] == BEH_HEAD_ROWS and live and math.isfinite(g["grad_B_declared"])
+                and g["grad_A_declared"] == 0.0 and g["grad_A_w0_control"] == 0.0 and g["grad_B_w0_control"] == 0.0 and g["grad_B_bce_w1"] > 0.0
+                and ((not listwise_decl) or g["grad_B_listwise_only"] > 0.0) and g["id_loss_equal"] and g["id_grad_equal"]
+                and g["weight_rows_zero_at_start"] and g["bias_rows_equal_init"] and not (g["mutate_drop_loss"] or g["mutate_leak_a"] or g["mutate_id"]))
+
+
 def make_beh_wrappers(a, cur, fwd_stock, train_losses_stock, dev):
     """-> (fwd, train_losses): the rebound pair of an --beh-heads run.  `cur` is the run's state dict: cur['w'] (the weight the loss multiplies), cur['listwise'], cur['cols'] (the columns of the listwise product) are what
     the loss READS (the data event reports them, G-DVB compares them with the argv); cur['collect'] (a list) makes fwd() record held-out head outputs."""
     ncol = 7 if a.lane_head else 6
 
-    def fwd(batch):
+    def beh_fwd(batch):
         body, tail = tuple(batch[:9]), tuple(batch[9:])
         sx0, sxA, sxB, ctg = fwd_stock(body)
         cur["sxA_beh"], cur["sxB_beh"] = sxA[..., BEH_ROW0:BEH_HEAD_ROWS], sxB[..., BEH_ROW0:BEH_HEAD_ROWS]
@@ -455,16 +506,19 @@ def make_beh_wrappers(a, cur, fwd_stock, train_losses_stock, dev):
             raise RuntimeError("train_losses: sxB is not the output of the latest rebound fwd() (or the batch carries no behaviour labels)")
         lw = cur["listwise"] if beh_listwise is None else beh_listwise
         if lw:
-            cur["rfac"], cur["selfac"] = beh_factors(cur["bq"], cur["bact"], cur["sxB_beh"], cur["cols"])
+            cur["rfac"], cur["selfac"] = beh_factors(cur["bq"], (torch.ones_like(cur["bact"]) if os.environ.get("REFE_BEH_MUTATE_ID") == "1" else cur["bact"]), cur["sxB_beh"], cur["cols"])      # ..._ID: act ignored
         try:
             lA, lB, ln, ep = train_losses_stock(sx0, sxA, sxB, tg, rows, upd, lam_pg, pair_w)
         finally:
             cur.pop("rfac", None); cur.pop("selfac", None)
         w = cur["w"] if beh_w is None else beh_w
         if beh_w is not None or w != 0.0:
-            lB = lB + w * beh_bce(cur["sxB_beh"], cur["bq"], cur["bact"])
+            if os.environ.get("REFE_BEH_MUTATE_DROP_LOSS") != "1":           # ..._DROP_LOSS: the term is computed and DROPPED (G17 must go RED)
+                lB = lB + w * beh_bce(cur["sxB_beh"], cur["bq"], cur["bact"])
+            if os.environ.get("REFE_BEH_MUTATE_LEAK_A") == "1":              # ..._LEAK_A: arm A (the BCE-only control) also trains the heads (G17 must go RED)
+                lA = lA + w * beh_bce(cur["sxA_beh"], cur["bq"], cur["bact"])
         return lA, lB, ln, ep
-    return fwd, train_losses
+    return beh_fwd, train_losses
 
 
 def key(r):
@@ -2574,6 +2628,13 @@ def main() -> int:
                    "micro_batch_pairs": st_on, "bank_share": share, "bank_stride": stride, "fs_balanced": bool(fs_ok), "balanced_built": bool(pairer.balance),
                    "mutate_nobalance": os.environ.get("REFE_PAIR_MUTATE_NOBALANCE") == "1", "mutate_drop_loss": os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") == "1"}
             gates["G16_pair_live_balanced"] = g16
+        if a.beh_heads:                                      # G17 (A2): the behaviour heads are live in the run's own assembly (arm B only), the controls read EXACTLY 0.0, all-inapplicable == the pre-A2 loss
+            sel17 = [i_ for i_ in tr_idx if (beh_tr.get(key(ds.rows[i_])) is not None and bool(beh_tr[key(ds.rows[i_])][1].any()))][:a.batch]
+            b17 = next(iter(DataLoader(make_train_set(ds, sel17 or tr_idx[:a.batch], a.epo), batch_size=max(len(sel17), 1))))
+            g17 = g17_probe(beh_cur, fwd, train_losses, train_losses_stock_beh, lambda: (model.zero_grad(set_to_none=True), armB.zero_grad(set_to_none=True)),
+                            model.score_head, armB.score_head, b17, beh_bias, a.w_beh, a.beh_listwise)
+            g17["ok"] = g17_ok(g17, a.w_beh, a.beh_listwise)
+            gates["G17_beh_live_and_identity"] = g17
         if hn_obj is not None:                               # G14 (P6-HN-S): the hard-negative term is live on arm B only, its controls read EXACTLY 0.0, the identities hold
             gates["G14_hn_live_and_identity"] = g14_hn_live_and_identity(hn_env)
         if cc_obj is not None:                               # G15 (P6-HN-S): the cache IS the live trunk forward, bit for bit, and a row-shuffled cache is not
@@ -2631,7 +2692,7 @@ def main() -> int:
                "s_per_microbatch": round(sp, 2), "est_hours_per_epoch": round(len(tr_idx) / a.batch * sp / 3600, 2),
                "gpu_mem_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2)}
         log(res)
-        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1"                 and not any(os.environ.get(k_) == "1" for k_ in AUX_MUTATE_ENVS + EPO_CON_MUTATE_ENVS + PAIR_MUTATE_ENVS):
+        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1"                 and not any(os.environ.get(k_) == "1" for k_ in AUX_MUTATE_ENVS + EPO_CON_MUTATE_ENVS + PAIR_MUTATE_ENVS + BEH_MUTATE_ENVS):
             json.dump(res, open(os.path.join(a.out, "PREFLIGHT_PASS.json"), "w"), indent=1, default=str)
         print("ZZSFT_PREFLIGHT_" + ("PASS" if ok else "FAIL"))
         return 0 if ok else 3

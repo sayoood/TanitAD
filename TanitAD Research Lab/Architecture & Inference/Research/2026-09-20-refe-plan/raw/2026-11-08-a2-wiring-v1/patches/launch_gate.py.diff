@@ -1,0 +1,26 @@
+diff --git a/base/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py b/a2/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py
+index 6f7f93b..3ad1de1 100644
+--- a/base/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py	
++++ b/a2/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/launch_gate.py	
+@@ -505,6 +505,11 @@ PROFILES["refe_scorer1"] = {**PROFILES["refe_sft4r"], "name": "refe_scorer1", "r
+                             "clock_na": "SCORER1 has no label clock of its own: it trains on the SFT-4R PDM relabel of the on-policy bank (G-DVB asserts the coverage and 0 stale from the trainer's data event), "
+                                         "on a frozen generator"}
+ 
++# A2 (raw/2026-11-07 scorer_gym a2/WIRING_PLAN.md; PREREG_A2): refe_scorer1's checks, data flags, recipe and G-DVB, PLUS the two behaviour-label directories in the token's data fingerprint (`beh_profile`: G-DVB
++# refuses --beh-heads in a profile without it) and G17 (gate_checks.scorer_required_gates).  A NEW profile: refe_scorer1 and the 17 profiles before it do not move.  OPEN: A2's arm table / pinned argv belong to
++# PREREG_A2 (until they exist this profile inherits refe_scorer1's arm rules, which refuse a --beh-* argv, so it cannot mint a launch token).
++PROFILES["refe_a2"] = {**PROFILES["refe_scorer1"], "name": "refe_a2", "beh_profile": True, "data_flags": SCORER1_DATA + ("--beh-labels-train", "--beh-labels-heldout")}
++
+ # RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
+ # rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
+ PROFILES["refe_rls1b"] = {**PROFILES["refe_rls1"], "name": "refe_rls1b", "suite": RLS1B_SUITE, "arm_class": RLS1B_ARM_CLASS, "arm_seeds": RLS1B_ARM_SEEDS,
+@@ -1365,6 +1370,9 @@ def consume_scorer_preflight(path, argv, prof, arm=None, rehearsal=False) -> dic
+     g16 = next((v for k, v in gates.items() if prefix[k] == "G16"), None)
+     if g16 is not None:                                      # G16 (--pair-w): SCORER1, re-judged from its raw fields
+         reasons += C.judge_g16(g16, ns)
++    g17 = next((v for k, v in gates.items() if prefix[k] == "G17"), None)
++    if g17 is not None:                                      # G17 (--beh-heads): A2, re-judged from its raw fields
++        reasons += C.judge_g17(g17, ns)
+     g14 = next((v for k, v in gates.items() if prefix[k] == "G14"), None)
+     g15 = next((v for k, v in gates.items() if prefix[k] == "G15"), None)
+     if arm in C.HN_ARMS:                                     # P6-HN-S deliberate-regression arms: the same preflight, with the raw fields of the defect (each must turn a judge RED)

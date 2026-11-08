@@ -1,0 +1,14 @@
+PASS glob/prefix/version agree with scorer_finetune
+PASS side_file_name
+PASS shard_of == rl_terms_label.shard_of (a log lands in the same shard for both labellers)
+PASS record -> load_beh_terms: matched 1, q/act equal (float32, bool)
+PASS make_record refuses q > 1
+PASS make_record refuses NaN
+PASS make_record refuses wrong width
+PASS label_log (fake NAVSIM): 2 records, 0 failed, each validates through the trainer's _beh_record
+PASS NAVTEST row: label_log raises NavtestLeak BEFORE a scenario is built or scored
+PASS an unkeyed row (empty token) is refused too
+PASS REGRESSION ARM (gate switched off by REFE_LAB_MUTATE=no_navtest_gate): the navtest row IS labelled, i.e. the refusal above is the gate's doing
+PASS source order: label_log asserts the batch before _init/scenario build/make_record; main() calls BG.load() first and BG.assert_batch on every row it reads
+PASS the labeller is not imported by model.py / planner.py
+ZZTEST_PASS 0

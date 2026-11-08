@@ -1,0 +1,111 @@
+diff --git a/base/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py b/a2/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py
+index f178d47..2552f37 100644
+--- a/base/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py	
++++ b/a2/TanitAD Research Lab/Architecture & Inference/Research/2026-09-20-refe-plan/refe/gate_checks.py	
+@@ -871,6 +871,8 @@ DVB_KINDS_SCORER = {
+     "hn_bank": "data", "ctx_cache": "data",
+     # SCORER1 (PREREG_SCORER1 section 2): L_pair levers, all default OFF.  `built` = compared with the trainer's `pair` block (scorer_dvb_rows); pair_calibrate is a measuring mode, forbidden in a launch.
+     "pair_w": "built", "pair_dv": "built", "pair_heads": "built", "pair_calibrate": "control",
++    # A2 (WIRING_PLAN 2, PREREG_A2): the behaviour heads, all default OFF.  `built` = compared with the trainer's `beh` block (scorer_dvb_rows); the label dirs are bound by sha256 only in a profile with `beh_profile` (a data_flags entry there).
++    "beh_labels_train": "built", "beh_labels_heldout": "built", "beh_heads": "built", "w_beh": "built", "beh_listwise": "built", "beh_listwise_stall": "built",
+     "navtest_logs": "consumed", "navtest_tokens": "consumed",       # SCORER1: check-only lists read by main(); refe_scorer1 binds their sha256 (scorer1_refusals) and asserts the data event's `navtest` block (data_expect)
+     "out": "run", "eval_every": "run", "workers": "run",
+     "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
+@@ -899,13 +901,16 @@ SCORER_CTX_REGISTERED = {"dtype": "bf16"}
+ G15_MIN_SCENES = 64                                    # PREREG 4.4: G15 compares >= 64 RL-train and >= 64 RL-val scenes (a run with fewer scenes than that side holds compares all of them: see judge_g15)
+ HN_ARMS = ("lever_ignored", "hn_to_armA", "hn_in_selection", "hn_lane_target", "unmasked_pad", "fan_sees_hn", "stale_bank", "empty_bank_in_launch", "moved_lever", "stale_cache", "shuffled_cache", "epo_with_hn")
+ SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe", "aux_s1_refusals")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
++SCORER_BEH_DESTS = ("beh_labels_train", "beh_labels_heldout", "beh_heads", "w_beh", "beh_listwise", "beh_listwise_stall")          # A2: observed only when --beh-heads is on
++SCORER_BEH_ORDER = ("q_free", "q_gap", "q_osc", "q_stall", "q_comf")           # the gate's OWN statement of the head's rows 7..11 (== behaviour_terms.ORDER)
++SCORER_BEH_COLS = {False: [0, 1, 2, 4], True: [0, 1, 2, 3, 4]}                 # the listwise product's columns, by --beh-listwise-stall (q_stall excluded by default: Master Mind ruling 2026-11-08)
+ SCORER_PAIR_DESTS = ("pair_w", "pair_dv", "pair_heads")          # SCORER1: the L_pair levers, observed only when --pair-w > 0
+ SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
+ # the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
+ SCORER_GATES = {"G1": "trainable_is_exactly_the_scorer", "G2": "live", "G3": "copies_equal_model_at_step0", "G4": "identity_and_live",
+                 "G5": "ckpt_roundtrip_planner_loader", "G7": "heldout_disjoint", "G8": "lane_labels_in_bank", "G9": "pdm_targets_in_bank",
+                 "G10": "teacher_lane_in_bank", "G11": "epo_live_and_identity", "G12": "aux_drv_live_and_identity", "G13": "epo_con_live_and_identity",
+-                "G14": "hn_live_and_identity", "G15": "ctx_cache_identity", "G16": "pair_live_balanced"}
++                "G14": "hn_live_and_identity", "G15": "ctx_cache_identity", "G16": "pair_live_balanced", "G17": "beh_live_and_identity"}
+ 
+ 
+ def judge_g12(g12, ns) -> list:
+@@ -992,6 +997,39 @@ def judge_g16(g16, ns) -> list:
+     return out
+ 
+ 
++def judge_g17(g17, ns) -> list:
++    """G17 (A2) re-judged from its RAW fields (its own `ok` is a claim): the behaviour heads (rows 7..11 of the score head) get a non-zero gradient from the run's own assembly on arm B, arm A and the w = 0 control read
++    EXACTLY 0.0, the BCE term alone is live, the listwise product alone is live when it is declared, the all-inapplicable batch reproduces the pre-A2 loss bit for bit, the head started at its init, and no regression arm ran."""
++    out = []
++    w, lw = float(getattr(ns, "w_beh", 0.0)), bool(getattr(ns, "beh_listwise", False))
++
++    def num(k):
++        v = g17.get(k)
++        return v if isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v) else None
++    if g17.get("w_declared") != w or g17.get("listwise_declared") != lw:
++        out.append(f"G17: the probe ran with w={g17.get('w_declared')!r} listwise={g17.get('listwise_declared')!r}, the argv declares w={w} listwise={lw}")
++    act = g17.get("probe_active")
++    if not isinstance(act, list) or len(act) != len(SCORER_BEH_ORDER) or any(not isinstance(n, int) or n <= 0 for n in act) or not (num("probe_sets") or 0) > 0:
++        out.append(f"G17: the probe batch carries no active label on some term (probe_active={act!r}): a zero gradient there would prove nothing")
++    if g17.get("head_rows") != len(SCORER_BEH_ORDER) + 7:
++        out.append(f"G17: the score head has {g17.get('head_rows')!r} rows, A2 needs 12")
++    if not ((w > 0.0 or lw) and (num("grad_B_declared") or 0.0) > 0.0):
++        out.append(f"G17: the declared configuration (w={w}, listwise={lw}) leaves |grad| on score_head rows 7..11 of arm B at {g17.get('grad_B_declared')!r}: the heads are not live in the loss")
++    if num("grad_B_bce_w1") is None or not g17["grad_B_bce_w1"] > 0.0:
++        out.append(f"G17: the BCE term alone (weight 1) leaves |grad| {g17.get('grad_B_bce_w1')!r} on rows 7..11: the behaviour BCE is not in the loss")
++    if lw and (num("grad_B_listwise_only") is None or not g17["grad_B_listwise_only"] > 0.0):
++        out.append(f"G17: --beh-listwise is declared but the product alone leaves |grad| {g17.get('grad_B_listwise_only')!r} on rows 7..11 (rfac/selfac do not reach the head)")
++    for k in ("grad_A_declared", "grad_A_w0_control", "grad_B_w0_control"):
++        if g17.get(k) != 0.0 or isinstance(g17.get(k), bool):
++            out.append(f"G17: {k} reads {g17.get(k)!r}, not EXACTLY 0.0 (arm A must stay the BCE-only control; the --w-beh 0 control must read zero, or the probe is not proved able to read zero)")
++    if g17.get("id_loss_equal") is not True or g17.get("id_grad_equal") is not True:
++        out.append("G17: G-BEH-ID fails: with every entry inapplicable and the listwise product on, the loss / its gradient is not the pre-A2 one bit for bit")
++    if g17.get("weight_rows_zero_at_start") is not True or g17.get("bias_rows_equal_init") is not True:
++        out.append("G17: the grown head did not start at zero weight / the label-mean bias on rows 7..11")
++    if g17.get("mutate_drop_loss") or g17.get("mutate_leak_a") or g17.get("mutate_id"):
++        out.append("G17 was produced under a regression arm (REFE_BEH_MUTATE_*): it can never count")
++    return out
++
+ def judge_g14(g14, ns) -> list:
+     """G14 (scorer_finetune --preflight, --hn-bank) re-judged from its RAW FIELDS against the argv's namespace -- never from its own `ok`.  [] = proved.  (PREREG_P6HN_SCREEN 4.3 / 4.4)
+       table        the hard-negative term ALONE (the run's own assembly minus the stock one on one fresh forward) is finite and non-zero on arm B's score_q_mlp, score_dec and score_head rows 0-5, and
+@@ -1278,6 +1316,8 @@ def scorer_required_gates(ns) -> list:
+         req.append("G12")
+     if getattr(ns, "pair_w", 0.0) and not getattr(ns, "pair_calibrate", False):         # SCORER1: G16 iff --pair-w > 0 (scorer_finetune.py's own condition)
+         req.append("G16")
++    if getattr(ns, "beh_heads", False):                               # A2: G17 iff --beh-heads (scorer_finetune.py's own condition)
++        req.append("G17")
+     if getattr(ns, "hn_bank", ""):                                    # P6-HN-S: G14 iff --hn-bank, G15 iff --ctx-cache (scorer_finetune.py's own conditions)
+         req.append("G14")
+     if getattr(ns, "ctx_cache", ""):
+@@ -1406,6 +1446,21 @@ def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
+             add("pair_heads", [h for h in ns.pair_heads.split(",") if h], blk.get("heads"), "data event: pair.heads (the heads the PairLoss was built for)")
+             add("pair_w", True, blk.get("balanced"), "data event: pair.balanced (the F/S balancing step is built; the NOBALANCE mutation reads False)")
+             add("pair_w", 20261107, blk.get("seed"), "data event: pair.seed (the registered sampling seed)")
++    beh_named = bool(getattr(ns, "beh_heads", False))                  # A2: the `beh` block exists iff --beh-heads
++    if beh_named or "beh" in data:
++        blk = data.get("beh") if isinstance(data.get("beh"), dict) else {}
++        add("beh_heads", beh_named, "beh" in data, "the data event carries a `beh` block iff --beh-heads")
++        if beh_named:
++            add("beh_heads", True, bool((profile or {}).get("beh_profile")), "the profile binds the label dirs by sha256 (profile `beh_profile`; a stock profile does not fingerprint --beh-labels-*)")
++            add("beh_heads", len(SCORER_BEH_ORDER) + 7, blk.get("head_rows"), "data event: beh.head_rows (the grown score head: 6 PDM + lane + 5 behaviour)")
++            add("beh_heads", list(SCORER_BEH_ORDER), blk.get("order"), "data event: beh.order (the behaviour rows 7..11, the gate's own statement)")
++            add("w_beh", float(ns.w_beh), blk.get("w"), "data event: beh.w (the weight the built loss multiplies)")
++            add("beh_listwise", bool(ns.beh_listwise), blk.get("listwise"), "data event: beh.listwise")
++            add("beh_listwise", SCORER_BEH_COLS[bool(ns.beh_listwise_stall)], blk.get("listwise_cols"), "data event: beh.listwise_cols (the columns of the product the loss READS)")
++            add("beh_listwise_stall", bool(ns.beh_listwise_stall), blk.get("stall_in_reward"), "data event: beh.stall_in_reward")
++            for side, dest in (("train", "beh_labels_train"), ("heldout", "beh_labels_heldout")):
++                st = blk.get(side) if isinstance(blk.get(side), dict) else {}
++                add(dest, True, bool(isinstance(st.get("matched"), int) and st["matched"] > 0), f"data event: beh.{side}.matched > 0 (a lever whose labels join no set is not an experiment)")
+     hn_named, cc_named = bool(getattr(ns, "hn_bank", "")), bool(getattr(ns, "ctx_cache", ""))
+     if hn_named or "hn" in data:                                   # P6-HN-S: the bank, against the BUILT block of the bank the trainer holds (never an echo of the namespace)
+         blk = data.get("hn") if isinstance(data.get("hn"), dict) else {}
+@@ -1585,7 +1640,7 @@ def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -
+         for r in rows:
+             if not r["ok"]:
+                 reasons.append(f"{r['flag']}: declared {r['declared']!r} != built {r['built']!r} ({r['how']})")
+-        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS)}
++        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS) and (bool(getattr(ns, "beh_heads", False)) or d not in SCORER_BEH_DESTS)}
+         missing = sorted(expect - {r["dest"] for r in rows})
+         det["built_without_observer"] = missing
+         if missing:
