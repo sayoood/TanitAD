@@ -3032,6 +3032,8 @@ def main(argv=None):
         ds = WW.V8FMiniWMWindows(store, J, wins, F=cfg.hmax, pooled=(a.wm_pooled == "on"), lru=info["lru"], zcache=a.wm_zcache)
         info["wm_windows"]["zcache"] = ds.zcache
         info["wm_windows"]["zcache_missing"] = len(ds.zcache_missing(clips)) if ds.zcache else 0
+        if ds.zcache and not a.selfcheck_only:                        # the action arrays go to RAM at start-up, so no clip file is read during training
+            info["wm_windows"]["prewarm_clips"] = ds.prewarm()
         info["wm_windows"]["pooled"] = ds.pooled                     # read back from the BUILT dataset (bad_wm_ladder compares it)
         info["wm_windows"]["F"] = ds.F
     else:

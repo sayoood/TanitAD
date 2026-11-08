@@ -51,6 +51,7 @@ class V8FMiniWMWindows:
         self.zcache = str(zcache or "")                    # a directory of per-clip ``<clip>.npz`` with ``zmean`` [T, D] (the frozen adapter's mean token), ``ok`` [T], ``t_s`` [T]; "" = not used
         self._nm: dict = {}
         self._z: dict = {}
+        self._small: dict = {}                             # zcache runs: clip -> the action arrays and the frame count, held in RAM (see ``prewarm``)
         self.window_start = self.F - 1                     # the first t a window can have (read back by the gate)
 
     def __len__(self):
@@ -83,12 +84,26 @@ class V8FMiniWMWindows:
             self._z.pop(next(iter(self._z)))
         return self._z[clip]
 
+    def _kin_small(self, clip: str) -> dict:
+        s = self._small.get(clip)
+        if s is None:
+            d = self.store.get(clip)
+            s = self._small[clip] = {"a": d["a"], "ch1": d["ch1"], "n": len(d["pose"])}
+        return s
+
+    def prewarm(self) -> int:
+        """A zcache run needs only each clip's action arrays from the clip file, so hold them in RAM: every 20 MB clip file (mostly image features, on a USB HDD on box 2) is read once, here at start-up, and not again. The windows are unchanged."""
+        for ci in sorted({int(w[0]) for w in self.windows}):
+            self._kin_small(str(self.J["clip"][ci]))
+        return len(self._small)
+
     def item(self, ci: int, t: int, a_t: int = 0, a_s: int = 0) -> dict:
         clip = str(self.J["clip"][ci])
-        d = self.store.get(clip)
+        d = self._kin_small(clip) if self.zcache else self.store.get(clip)
+        n_frames = d["n"] if self.zcache else len(d["pose"])
         idx = np.arange(t - self.F + 1, t + 1)
-        if idx[0] < 0 or idx[-1] >= len(d["pose"]):
-            raise IndexError(f"{clip}: window t={t} F={self.F} leaves the clip ({len(d['pose'])} frames)")
+        if idx[0] < 0 or idx[-1] >= n_frames:
+            raise IndexError(f"{clip}: window t={t} F={self.F} leaves the clip ({n_frames} frames)")
         it = {"act": np.stack([np.nan_to_num(d["a"][idx]), d["ch1"][idx]], -1).astype(np.float32), "t": t, "ci": ci}
         if self.zcache:                                    # the box-2 per-frame cache of the frozen adapter's mean token: no feature tensor is read for the adapter at all
             zm, ok = self._zmean(clip)

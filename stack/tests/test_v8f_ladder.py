@@ -281,6 +281,29 @@ def test_zcache_dataset_reads_the_per_clip_file_and_refuses_a_missing_or_not_ok_
         ds.item(*w0)
 
 
+def test_zcache_prewarm_leaves_the_windows_identical_and_reads_no_clip_file_afterwards(world, tmp_path):
+    J, store, clips = world["J"], world["store"], world["clips"]
+    F = 25
+    wins = WW.wm_windows(store, J, clips, F=F)
+    for c in clips:
+        n = len(store.get(c)["pose"])
+        np.savez(tmp_path / f"{c}.npz", zmean=np.random.default_rng(1).standard_normal((n, 32)).astype(np.float32), ok=np.ones(n, bool), t_s=np.arange(n, dtype=np.float32) * 0.2)
+    cold = WW.V8FMiniWMWindows(store, J, wins, F=F, zcache=str(tmp_path))
+    warm = WW.V8FMiniWMWindows(store, J, wins, F=F, zcache=str(tmp_path))
+    assert warm.prewarm() == len(clips)
+    calls = []
+    real = store.get
+    store.get = lambda c: (calls.append(c), real(c))[1]
+    try:
+        got = [warm.item(*w) for w in wins[:40]]
+    finally:
+        store.get = real
+    assert calls == []
+    for w, g in zip(wins[:40], got):
+        c = cold.item(*w)
+        assert np.array_equal(c["act"], g["act"]) and np.array_equal(c["zmean"], g["zmean"])
+
+
 # ------------------------------------------------------------------------------------------------ the trainer: G-DVB and a run
 @pytest.fixture(scope="module")
 def init(tmp_path_factory):
