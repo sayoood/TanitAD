@@ -15,7 +15,7 @@ Output:  OUT/<NAME>/fit_logits.npz  (log, token, step, rank, logits [N,64,6] f32
 Controls (checked on EVERY batch, fail fast, and again over the assembled result at the end):
   internal   P6_control through the hook path == the planner's own score output, max |diff| EXACTLY 0.0
   reference  P6_control vs the logits stored in fit_pack.npz (stored rounded to 6 decimals): max |diff| <= --ref-tol (default 1e-3)
-  proposals  traj vs pack traj_xy / yaw (stored rounded to 5 / 6 decimals): xy <= --prop-xy-tol (2e-5), yaw <= --prop-yaw-tol (1e-6)
+  proposals  traj vs pack traj_xy / yaw (both stored rounded to 5 decimals, MEASURED on fit_pack.npz): xy <= --prop-xy-tol (2e-5), yaw <= --prop-yaw-tol (2e-5)
   guard      every state key outside the three scorer modules of every arm checkpoint is bit-equal to the base (arm_logits_pass.verify_arm), before and after
 Resumable: every --chunk sets one part file in OUT/_progress (a chunk is whole batches); the same command resumes.  Refuses a different run in the same OUT.
 """
@@ -345,7 +345,7 @@ def parse_args(argv):
     ap.add_argument("--expect-base-sha256", default=P6_SHA)
     ap.add_argument("--ref-tol", type=float, default=1e-3, help="max |control logits - pack logits|")
     ap.add_argument("--prop-xy-tol", type=float, default=2e-5, help="the pack stores xy rounded to 5 decimals (half step 5e-6) as float32 (ulp up to 7.6e-6 at 100 m): 5e-6 + 3.8e-6 worst case")
-    ap.add_argument("--prop-yaw-tol", type=float, default=1e-6, help="the pack stores yaw rounded to 6 decimals (half step 5e-7), as float32")
+    ap.add_argument("--prop-yaw-tol", type=float, default=2e-5, help="the pack stores yaw rounded to 5 decimals (half step 5e-6, MEASURED: on the 1e-5 grid; the first pod run refused at 5.007e-6 under the old 1e-6), as float32")
     return ap.parse_args(argv)
 
 
