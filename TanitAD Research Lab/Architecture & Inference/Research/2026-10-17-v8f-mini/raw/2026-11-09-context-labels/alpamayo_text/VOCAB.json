@@ -1,0 +1,39 @@
+{
+  "version": "v1",
+  "written": "2026-11-08, before any scoring against Qwen or the PI answers (only raw word counts of the CoT text had been seen)",
+  "flags": "IGNORECASE; every regex is wrapped in word boundaries by the matcher",
+  "negation": {
+    "regex": "(?:\\b(?:no|not|without|neither|nor|never|free of|absence of|lack of|lacking|absent)\\b|n't)(?:\\W+\\w+){0,2}\\W*$",
+    "rule": "applied to the text immediately before a match; a negated match is recorded as negated_<class> and is NOT counted as a positive mention"
+  },
+  "fields": {
+    "weather": {
+      "rain": "\\b(?:rain|raining|rainy|rainfall|rainstorm|drizzle|drizzling|downpour|showers?)\\b",
+      "snow": "\\b(?:snow|snowing|snowy|snowfall|snowstorm|blizzard|sleet|flurries)\\b",
+      "snow_bank": "\\bsnow ?(?:banks?|piles?|drifts?)\\b",
+      "fog": "\\b(?:fog|foggy|mist|misty|haze|hazy|smog)\\b",
+      "clear_sky": "\\b(?:clear|fair|sunny) (?:sky|skies|weather)\\b|\\bsunny\\b"
+    },
+    "surface": {
+      "wet": "\\b(?:wet|damp|puddles?|standing water|slick|rain-?soaked)\\b",
+      "snow_ice": "\\b(?:icy|ice|black ice|slippery|slush|snow-?covered|snowy road|snow on the road|packed snow|frozen)\\b",
+      "dry": "\\bdry\\b"
+    },
+    "visibility": {
+      "reduced": "\\b(?:low|poor|limited|reduced|restricted|bad|impaired) (?:visibility|sight ?distance)\\b|\\bvisibility (?:is |are )?(?:low|poor|limited|reduced)\\b|\\bglare\\b|\\bblinding\\b",
+      "good": "\\b(?:good|clear|excellent|high) visibility\\b",
+      "any_visibility": "\\bvisibility\\b"
+    },
+    "illumination": {
+      "dark": "\\b(?:dark|darkness|dimly lit|unlit|poorly lit)\\b",
+      "night": "\\b(?:night|nighttime|night-time|nocturnal)\\b",
+      "twilight": "\\b(?:dusk|dawn|twilight|sunset|sunrise|evening)\\b",
+      "day": "\\b(?:daylight|daytime|day-time|sunlight|sunshine|midday|noon|afternoon)\\b",
+      "street_light": "\\bstreet ?(?:light|lamp)s?\\b|\\bwell[- ]lit\\b|\\bartificial lighting\\b",
+      "headlights": "\\bheadlights?\\b"
+    }
+  },
+  "period_of_day_rule": "derived, no extra regex: night = illumination.night or illumination.dark; twilight = illumination.twilight; day = illumination.day; mixed hits give a multi-value string",
+  "text_fields_scanned": ["cot", "chain_of_causation", "components_analysis", "motion_analysis"],
+  "secondary_source": "VQA answers in _s2build-copy-20260919/alpamayo/records.parquet (task=vqa), one random question per clip; reported separately, not part of the weak label"
+}
