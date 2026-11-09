@@ -392,7 +392,7 @@ def test_D6_loader_downsamples_20hz_to_10hz():
 
 
 # ================================================================================ E  hygiene
-def test_E1_no_simulator_or_scorer_import():
+def test_E1_no_simulator_import_and_scorer_is_pinned():  # changed for the MM ruling of 2026-11-09 (was: no scorer import)
     src = (Path(__file__).resolve().parent / "tactical_detector.py").read_text(encoding="utf-8")
     mods = set()
     for n in ast.walk(ast.parse(src)):
@@ -400,7 +400,8 @@ def test_E1_no_simulator_or_scorer_import():
             mods |= {a.name.split(".")[0] for a in n.names}
         elif isinstance(n, ast.ImportFrom):
             mods.add((n.module or "").split(".")[0])
-    assert mods <= {"__future__", "math", "numpy"}, mods
+    assert mods <= {"__future__", "math", "numpy", "behaviour_score", "hashlib", "os", "sys", "pathlib"}, mods
+    assert td.SCORER_SHA256 == "69d13d712ca6e6edd42ea7d91f8ac13ce0ddb815f480eed4280c320bdde3192a"
 
 
 def test_E2_inputs_not_mutated():

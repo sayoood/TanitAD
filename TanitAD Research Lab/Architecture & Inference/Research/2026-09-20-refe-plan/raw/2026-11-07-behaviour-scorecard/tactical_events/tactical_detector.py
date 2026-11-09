@@ -1,8 +1,8 @@
 """tactical_detector.py -- executed-decision detector for AMENDMENT_10 (DRAFT), TACTICAL family, A-14.
 
-Pure functions of numpy arrays. CPU only. Imports nothing from the simulator and nothing from
-behaviour_score.py (the reference path and lead logic are re-implemented here from the scorecard
-text; equality with the scorer's HumanPath/lead is an OPEN ITEM, see the draft section 11).
+Pure functions of numpy arrays. CPU only. Imports nothing from the simulator. The lead and free-road logic is NOT implemented here: lead_series and free_road
+call the pinned scorer (behaviour_score.py, sha256 SCORER_SHA256; MM ruling on A-14, 2026-11-09: one definition of "lead" in the instrument). Set TSF_BEHAVIOUR_DIR
+to the scorer's folder or have it on sys.path. P["MUT_LEAD_CENTRE"] = True restores the earlier centre and half-width path, as a deliberate-regression arm only.
 
 The SAME functions are applied to the human log and to the driven trajectory:
     events = find_events(human, scene)              # scene/human-anchored, never uses the driven run
@@ -43,8 +43,55 @@ P0 = dict(
     MERGE_OFF_START=2.0, MERGE_OFF_ENTER=0.5, MERGE_GAP=30.0, MERGE_HEAD=math.radians(30.0),  # s3.1, AMENDMENT_4 AMB-10
     MIN_CLUSTERS=10, MIN_EVENTS=20,          # ESTIMATED
     BOOT_DRAWS=10000, BOOT_SEED=20260927,    # s4
-    MUT_MERGE_FLIP=False, MUT_CROSS_IGNORED=False, MUT_LANE_BEFORE_STOP=False,
+    MUT_MERGE_FLIP=False, MUT_CROSS_IGNORED=False, MUT_LANE_BEFORE_STOP=False, MUT_LEAD_CENTRE=False,
 )
+
+SCORER_SHA256 = "69d13d712ca6e6edd42ea7d91f8ac13ce0ddb815f480eed4280c320bdde3192a"
+_B = None
+
+
+def _scorer():
+    """The pinned scorer module; refuses any other version."""
+    global _B
+    if _B is None:
+        import hashlib
+        import os
+        import sys
+        from pathlib import Path
+        d = os.environ.get("TSF_BEHAVIOUR_DIR")
+        if d and d not in sys.path:
+            sys.path.insert(0, d)
+        import behaviour_score as B
+        got = hashlib.sha256(Path(B.__file__).read_bytes()).hexdigest()
+        if got != SCORER_SHA256:
+            raise RuntimeError(f"behaviour_score.py is {got}, expected the pinned {SCORER_SHA256}")
+        _B = B
+    return _B
+
+
+def _scorer_derive(traj, scene, path, P):
+    """The scorer's derive() for this trajectory on the scorer's HumanPath of the human log. Cached on the path object."""
+    key = (id(traj), id(scene))
+    hit = path.scorer_cache.get(key)
+    if hit is not None:
+        return hit
+    B = _scorer()
+    T = len(traj["t"])
+    le, we = _ego_dims(scene, P)
+    d = dict(t=traj["t"], ego_x=traj["x"], ego_y=traj["y"], ego_yaw=traj["yaw"], ego_v=traj["v"], ego_a=np.zeros(T), ego_steer=np.zeros(T), ego_length=le, ego_width=we)
+    if len(scene.get("agent_id", [])):
+        for k in ("agent_id", "agent_present", "agent_x", "agent_y", "agent_yaw", "agent_v", "agent_l", "agent_w", "agent_cls"):
+            if k in scene:
+                d[k] = scene[k]
+    for k in ("signal_state", "signal_governs_ego", "stop_line_s", "human_ref_valid_until_s"):
+        if scene.get(k) is not None:
+            d[k] = scene[k]
+    R = B.build_run(d)
+    if R["n"] != T:
+        raise ValueError(f"scorer grid has {R['n']} ticks, the trajectory {T}")
+    D = B.derive(R, path.scorer_path())
+    path.scorer_cache[key] = D
+    return D
 
 
 def to_10hz(a, axis=-1):
@@ -75,8 +122,12 @@ class RefPath:
     """Reference path = the human log (scorecard s1). 0.2 m distance filter (A-7), straight extension along the
     chord of the last 5.0 m of the MOVING part (A-6)."""
 
-    def __init__(self, x, y, v):
+    def __init__(self, x, y, v, yaw=None):
         x, y, v = (np.asarray(a, float) for a in (x, y, v))
+        yaw = np.unwrap(np.arctan2(np.gradient(y), np.gradient(x))) if yaw is None else np.unwrap(np.asarray(yaw, float))
+        self._human = dict(x=x, y=y, yaw=yaw, v=v)
+        self._hp = None
+        self.scorer_cache = {}
         keep = [0]
         for i in range(1, len(x)):
             if math.hypot(x[i] - x[keep[-1]], y[i] - y[keep[-1]]) >= 0.2:
@@ -102,6 +153,12 @@ class RefPath:
         self.cs = np.concatenate([[0.0], np.cumsum(seg)])
         self.tx = np.diff(self.px) / seg
         self.ty = np.diff(self.py) / seg
+
+    def scorer_path(self):
+        """The scorer's own HumanPath of the same human log."""
+        if self._hp is None:
+            self._hp = _scorer().HumanPath(self._human)
+        return self._hp
 
     def project(self, qx, qy):
         """-> station s (m), signed lateral offset (m, + left), tangent heading at the foot point."""
@@ -195,7 +252,10 @@ def agent_gaps(traj, scene, path, P):
 
 
 def lead_series(traj, scene, path, P):
-    """-> lead_id (T,) (-1 none), gap (T,) nan none."""
+    """-> lead_id (T,) (-1 none), gap (T,) nan none. From the pinned scorer unless MUT_LEAD_CENTRE."""
+    if not P.get("MUT_LEAD_CENTRE"):
+        D = _scorer_derive(traj, scene, path, P)
+        return np.array(D["lead_id"], np.int64), np.array(D["gap"], float)
     gap, _ = agent_gaps(traj, scene, path, P)
     T = len(traj["t"])
     lid = np.full(T, -1, np.int64)
@@ -209,7 +269,9 @@ def lead_series(traj, scene, path, P):
 
 
 def free_road(traj, scene, path, P, held=None):
-    """scorecard s1 / A-1: no lead within max(4 s*v, 15 m) AND no lead with TTC <= 8 s; held ticks excluded."""
+    """scorecard s1 / A-1: the pinned scorer's free-road flag, with its own signal hold; `held` is used only by MUT_LEAD_CENTRE."""
+    if not P.get("MUT_LEAD_CENTRE"):
+        return np.array(_scorer_derive(traj, scene, path, P)["free"], bool)
     gap, vrel = agent_gaps(traj, scene, path, P)
     T = len(traj["t"])
     G = np.maximum(P["FREE_G_S"] * traj["v"], P["FREE_G_MIN"])
@@ -266,7 +328,7 @@ def find_events(human, scene, P=P0):
     T = len(human["t"])
     w0 = int(round(P["WARMUP_S"] / P["DT"]))
     le, _ = _ego_dims(scene, P)
-    path = RefPath(human["x"], human["y"], human["v"])
+    path = RefPath(human["x"], human["y"], human["v"], human.get("yaw"))
     s_h, _, _ = path.project(human["x"], human["y"])
     front_h = s_h + le / 2
     audit = dict(n_ticks=T, ref_invalid_ticks=0, sub_persistence_runs=0, phases_without_trigger=0,
@@ -461,7 +523,7 @@ def decide(event, traj, scene, P=P0, path=None, ref_path=None):
 def score_scenario(human, driven, scene, P=P0):
     """-> (rows, audit). One row per event: human label and driven label from the SAME decide()."""
     ev, audit = find_events(human, scene, P)
-    path = RefPath(human["x"], human["y"], human["v"])
+    path = RefPath(human["x"], human["y"], human["v"], human.get("yaw"))
     rows = []
     cid = str(scene.get("log_id", scene.get("scenario_id", "scn")))
     for e in ev:
