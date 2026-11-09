@@ -1009,7 +1009,7 @@ def rls1_static() -> None:
         if k.startswith("G4_compw"):
             continue
         ev = cons(r0, notok=(k,))
-        if k.startswith(("G8_", "G12_", "G13_", "G14_", "G15_", "G16_")):                  # r0 carries no lane labels / no --aux-drv / no --epo-con / no --hn-bank / no --ctx-cache: G8 / G12 / G13 / G14 / G15 are not obliged, so such a flag in the fixture is simply not written
+        if k.startswith(("G8_", "G12_", "G13_", "G14_", "G15_", "G16_", "G18_")):                  # r0 carries no lane labels / no --aux-drv / no --epo-con / no --hn-bank / no --ctx-cache: G8 / G12 / G13 / G14 / G15 are not obliged, so such a flag in the fixture is simply not written
             ok(ev["status"] == "PASS", (k, ev["reasons"]))
         else:
             ok(ev["status"] == "FAIL" and "not ok" in " ".join(ev["reasons"]) and k in " ".join(ev["reasons"]), (k, ev["reasons"]))

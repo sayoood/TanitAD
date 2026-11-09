@@ -270,6 +270,121 @@ class PairLoss:
         return torch.stack(means).mean()
 
 
+# ---- S1Z (PREREG_S1Z_P6 section 1): L_twin, a pairwise loss on arm B's NC / DAC / TTC logits between a CLEAN proposal and a near-twin HARD NEGATIVE.  ALL levers default OFF (--twin-w 0 / --twin-heads ""), the OFF path is this trainer exactly.
+TWIN_HEADS = {"NC": 0, "DAC": 1, "TTC": 3}                 # label / logit column of each head (planner.py order NC DAC EP TTC C DDC).  EP is NOT in L_twin (card section 1)
+TWIN_ADE_REGISTERED, TWIN_TOPK_REGISTERED = 1.0, 8         # PREREG_S1Z_P6 section 1: the 1.0 m radius and the 8 are fixed there and are not searched
+TWIN_MUTATE_ENVS = ("REFE_TWIN_MUTATE_NORADIUS", "REFE_TWIN_MUTATE_NOTOPK", "REFE_TWIN_MUTATE_DROP_LOSS")      # deliberate regressions: NORADIUS (the ADE filter removed) and NOTOPK (the top-K mining removed) must turn the built-fact rows and G18 RED; DROP_LOSS must turn G18 RED
+TWIN_UNBOUNDED = 10 ** 6                                   # what a REMOVED radius / top-K reads as in the built facts (a number, so the data event stays valid JSON)
+TWIN_PREFLIGHT_MICRO = 16                                  # G18 measures the per-head share of sets with a kept pair over this many micro-batches (the real top-K rule on the live logits)
+
+
+def twin_refusals(a):
+    """S1Z (PREREG_S1Z_P6): --twin-* named inconsistently never starts.  --twin-w > 0 needs --twin-heads; heads named with --twin-w 0 are refused unless --pair-calibrate measures the weight."""
+    out = []
+    names = [h for h in a.twin_heads.split(",") if h]
+    bad = [h for h in names if h not in TWIN_HEADS]
+    if bad:
+        out.append(f"--twin-heads names {bad}; the heads are {sorted(TWIN_HEADS)} (EP is not in L_twin)")
+    if len(set(names)) != len(names):
+        out.append("--twin-heads names a head twice")
+    if not (a.twin_w >= 0.0 and math.isfinite(a.twin_w)):
+        out.append("--twin-w must be a finite number >= 0")
+    if not (a.twin_ade > 0.0 and math.isfinite(a.twin_ade)):
+        out.append("--twin-ade must be a finite radius > 0 (metres; a zero radius keeps no pair)")
+    if not (isinstance(a.twin_topk, int) and a.twin_topk >= 1):
+        out.append("--twin-topk must be an integer >= 1")
+    if a.twin_w > 0.0 and not names:
+        out.append("--twin-w > 0 needs --twin-heads (a weight on no head is a lever that does nothing)")
+    if names and a.twin_w == 0.0 and not a.pair_calibrate:
+        out.append("--twin-heads is named with --twin-w 0 and no --pair-calibrate: the heads would be configured and never trained on")
+    if names and a.twin_w > 0.0 and a.pair_calibrate:
+        out.append("--pair-calibrate measures the weight; it must not also be given one (--twin-w 0)")
+    if not names and (a.twin_ade != TWIN_ADE_REGISTERED or a.twin_topk != TWIN_TOPK_REGISTERED):
+        out.append("--twin-ade / --twin-topk are named without --twin-heads: levers of a loss that is off")
+    if names and (a.pair_w > 0.0 or a.pair_heads):
+        out.append("S1Z is the plain scorer fine-tune plus L_twin alone: --pair-w / --pair-heads are refused with --twin-*")
+    if (a.twin_w > 0.0 or (a.pair_calibrate and names)) and (a.epo or a.aux_drv or a.hn_bank):
+        out.append("S1Z is the plain scorer fine-tune plus L_twin: --epo / --aux-drv / --hn-bank are refused with --twin-*")
+    return out
+
+
+class TwinLoss:
+    """L_twin (PREREG_S1Z_P6 section 1).  For each labelled set and head h in {NC, DAC, TTC}:
+      1. the CLEAN set C = valid proposals with NC 1, DAC 1 and TTC 1 (PDM truth);
+      2. the HARD NEGATIVES of h = valid proposals j with true y_h,j < 1 among the `topk` HIGHEST valid proposals of the CURRENT arm-B rule NC*DAC*(5EP+5TTC+2C)/12 on sigmoid(logits), computed without gradient;
+      3. the PAIRS (i, j), i in C, j a hard negative, with ADE(i, j) <= `ade`, the mean over the raw poses of the Euclidean xy distance of the two proposals;
+      4. the LOSS softplus(-(s_h,i - s_h,j)) = -log sigmoid(s_h,i - s_h,j), meaned per head over its kept pairs, then over the heads with >= 1 kept pair in the micro-batch.  No speed-contrast filter, no F/S balancing.
+    A set with no pair contributes none; a micro-batch with no pair gives a zero WITH graph (a zero-weight control still builds the graph).  The rule's ties are broken by proposal index (stable sort): deterministic,
+    no RNG.  REFE_TWIN_MUTATE_NORADIUS / _NOTOPK are the deliberate regressions: the radius / the top-K mining is REMOVED and the BUILT facts (`ade_built`, `topk_built`, `radius_filter`, `mining`) say so."""
+
+    def __init__(self, heads, ade=TWIN_ADE_REGISTERED, topk=TWIN_TOPK_REGISTERED):
+        self.heads = tuple(heads)
+        assert all(h in TWIN_HEADS for h in self.heads), self.heads
+        self.ade, self.topk = float(ade), int(topk)
+        self.mut_radius = os.environ.get("REFE_TWIN_MUTATE_NORADIUS") == "1"
+        self.mut_topk = os.environ.get("REFE_TWIN_MUTATE_NOTOPK") == "1"
+        self.radius_filter, self.mining = not self.mut_radius, not self.mut_topk
+        self.ade_built = float(TWIN_UNBOUNDED) if self.mut_radius else self.ade
+        self.topk_built = int(TWIN_UNBOUNDED) if self.mut_topk else self.topk
+        self.last: dict = {}
+        self.last_head_means: dict = {}
+
+    def built_facts(self, w, calibrate=False):
+        """what the data event writes: the BUILT object's facts (G-DVB compares them with the argv)"""
+        return {"w": float(w), "heads": list(self.heads), "ade": self.ade_built, "topk": self.topk_built, "radius_filter": bool(self.radius_filter), "mining": bool(self.mining),
+                "calibrate": bool(calibrate), "ade_metric": "mean_xy_euclid_over_raw_poses", "clean": "NC=1,DAC=1,TTC=1"}
+
+    def select(self, y, score, xy, valid, head):
+        """y [K, >=4] true labels of ONE set (columns NC DAC EP TTC), score [K] the arm-B rule value (None = no mining: every unclean proposal is a hard negative), xy [K, T, 2] raw proposal poses,
+        valid [K] bool -> (idx_i, idx_j, n_clean, n_hard).  Pure CPU, deterministic."""
+        ok = valid.bool() & torch.isfinite(y[:, [0, 1, 3]]).all(-1) & torch.isfinite(xy).flatten(1).all(-1)
+        clean = ok & (y[:, 0] == 1.0) & (y[:, 1] == 1.0) & (y[:, 3] == 1.0)
+        hard = ok & (y[:, TWIN_HEADS[head]] < 1.0)
+        if score is not None and self.mining:
+            rank = torch.where(ok & torch.isfinite(score), score, torch.full_like(score, float("-inf")))
+            top = torch.argsort(rank, descending=True, stable=True)[:min(self.topk_built, rank.numel())]
+            intop = torch.zeros_like(ok)
+            intop[top] = True
+            hard = hard & intop
+        ade = (xy[:, None] - xy[None, :]).norm(dim=-1).mean(-1)
+        near = ade <= self.ade_built if self.radius_filter else torch.ones_like(ade, dtype=torch.bool)
+        ii, jj = (clean[:, None] & hard[None, :] & near).nonzero(as_tuple=True)
+        return ii, jj, int(clean.sum()), int(hard.sum())
+
+    def term(self, sxB, tg, cxy, cm):
+        """sxB [B, K, C] arm-B logits (graph), tg [B, K, C'] labels, cxy [B, K, T, >=2] proposals, cm [B, K] set mask -> the UNWEIGHTED L_twin.  self.last = per-head counts (sets, sets with a clean
+        proposal, sets with a kept pair, kept pairs, hard negatives) for the log and for G18."""
+        ycpu = tg.detach().float().cpu()
+        xy = cxy.detach()[..., :2].float().cpu()
+        cmc = cm.detach().cpu()
+        with torch.no_grad():
+            rule = agg_v1(torch.sigmoid(sxB.detach().float().cpu()))
+        by_head = {h: [] for h in self.heads}
+        st = {h: {"sets": 0, "sets_with_clean": 0, "sets_with_pair": 0, "pairs": 0, "hard": 0} for h in self.heads}
+        for b in range(sxB.shape[0]):
+            valid = cmc[b] > 0.0
+            if not bool(valid.any()):                           # an unlabelled set contributes nothing; a masked proposal of a labelled set enters no pair
+                continue
+            for h in self.heads:
+                ii, jj, nc, nh = self.select(ycpu[b], rule[b], xy[b], valid, h)
+                d = st[h]
+                d["sets"] += 1; d["sets_with_clean"] += int(nc > 0); d["sets_with_pair"] += int(ii.numel() > 0); d["pairs"] += int(ii.numel()); d["hard"] += nh
+                if ii.numel():
+                    s = sxB[b, :, TWIN_HEADS[h]]
+                    by_head[h].append(F.softplus(-(s[ii.to(s.device)] - s[jj.to(s.device)])))
+        self.last = st
+        self.last_head_means = {}
+        means = []
+        for h in self.heads:
+            if by_head[h]:
+                m_ = torch.cat(by_head[h]).mean()
+                self.last_head_means[h] = float(m_.detach())
+                means.append(m_)
+        if not means:
+            return sxB.sum() * 0.0
+        return torch.stack(means).mean()
+
+
 def pair_refusals(a):
     """SCORER1 levers named inconsistently never start (the trainer's own refusals, like epo_refusals)"""
     out = []
@@ -287,8 +402,8 @@ def pair_refusals(a):
         out.append("--pair-w > 0 needs --pair-heads (a weight on no head is a lever that does nothing)")
     if names and a.pair_w == 0.0 and not a.pair_calibrate:
         out.append("--pair-heads is named with --pair-w 0 and no --pair-calibrate: the heads would be configured and never trained on")
-    if a.pair_calibrate and not names:
-        out.append("--pair-calibrate needs --pair-heads")
+    if a.pair_calibrate and not names and not a.twin_heads:
+        out.append("--pair-calibrate needs --pair-heads (or --twin-heads)")
     if a.pair_calibrate and a.pair_w != 0.0:
         out.append("--pair-calibrate measures the weight; it must not also be given one (--pair-w 0)")
     if (a.pair_w > 0.0 or a.pair_calibrate) and (a.epo or a.aux_drv or a.hn_bank):
@@ -1408,6 +1523,11 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--pair-calibrate", action="store_true", help="SCORER1: measure lambda_p on the first 50 training micro-batches (||grad L_pair|| = 0.5 ||grad L_BCE||, gradients pooled), write <out>/pair_weight.json, "
                     "train nothing.  A measuring mode: never part of a launch argv")
     AUX.add_aux_args(ap)
+    # S1Z (PREREG_S1Z_P6 section 1): ALL DEFAULT OFF = this trainer exactly.  --twin-w 0 is OFF, so a launch argv must NAME it (and --twin-heads); the 1.0 and the 8 are registered values, not searched.
+    ap.add_argument("--twin-w", type=float, default=0.0, help="S1Z: weight lambda_z of L_twin on arm B (0 = OFF).  Set ONCE by the gradient-norm rule (--pair-calibrate with --twin-heads), never tuned on held-out data")
+    ap.add_argument("--twin-ade", type=float, default=TWIN_ADE_REGISTERED, help="S1Z: the near-twin radius in metres: a pair needs ADE(i, j) <= this, ADE = the mean over the raw proposal poses of the Euclidean xy distance (registered 1.0)")
+    ap.add_argument("--twin-topk", type=int, default=TWIN_TOPK_REGISTERED, help="S1Z: a hard negative must be among the K highest valid proposals of the current arm-B rule NC*DAC*(5EP+5TTC+2C)/12 (registered 8; no gradient)")
+    ap.add_argument("--twin-heads", default="", help="S1Z: comma list of heads in {NC,DAC,TTC} that L_twin acts on ('' = none)")
     ap.add_argument("--aux-drv-lr", type=float, default=None, help="the head's peak learning rate (its OWN AdamW; the scorer keeps --lr).  A pre-registered value, never tuned on "
                     "PDMS; None = no head optimiser, and naming it without --aux-drv is refused")
     return ap
@@ -1418,6 +1538,7 @@ def main() -> int:
     a = ap.parse_args()
     bad_cli = epo_refusals(a, ap) + epo_con_refusals(a, ap)           # RL-S1: a command line that names EPO levers inconsistently never starts (SAFEOBJ: epo_con_refusals is epo_refusals' sibling)
     bad_cli = bad_cli + pair_refusals(a)                                 # SCORER1: --pair-* named inconsistently never starts
+    bad_cli = bad_cli + twin_refusals(a)                                 # S1Z: --twin-* named inconsistently never starts
     if bad_cli or AUX.aux_refusals(a) or aux_s1_refusals(a):
         for msg in bad_cli + AUX.aux_refusals(a) + aux_s1_refusals(a):         # + the aux head's levers: named without --aux-drv, labels missing, shuffle with the feed on, no head LR ...
             print("REFUSED: " + msg)
@@ -1492,7 +1613,8 @@ def main() -> int:
     compw = torch.tensor([float(x) for x in a.b_compw.split(",")], device=dev)
     assert compw.numel() == 6 and (compw > 0).all(), "--b-compw needs 6 positive weights"
     pairer = PairLoss([h for h in a.pair_heads.split(',') if h], a.pair_dv, nobalance=[h for h in a.pair_nobalance_heads.split(',') if h], nospeed=[h for h in a.pair_nospeed_heads.split(',') if h],
-                      gaps=parse_pair_gaps(a.pair_gap_heads), reduce=a.pair_mean) if (a.pair_w > 0.0 or a.pair_calibrate) else None        # SCORER1 (None = OFF)
+                      gaps=parse_pair_gaps(a.pair_gap_heads), reduce=a.pair_mean) if (a.pair_w > 0.0 or (a.pair_calibrate and a.pair_heads)) else None        # SCORER1 (None = OFF)
+    twiner = TwinLoss([h for h in a.twin_heads.split(',') if h], a.twin_ade, a.twin_topk) if (a.twin_w > 0.0 or (a.pair_calibrate and a.twin_heads)) else None        # S1Z (None = OFF)
     ds = T.TargetBank(a.targets, a.images, cfg, calib=a.calib, onpolicy=op)
     if aux_src is not None:
         ds.aux_src = aux_src                                 # make_train_set() wraps the TRAINING subset so each sample also carries its (label, valid)
@@ -1620,6 +1742,8 @@ def main() -> int:
     if pairer is not None:                                   # SCORER1: BUILT facts of the loss object the run holds (absent when OFF: every pre-SCORER1 data event is byte-identical)
         info["pair"] = {"w": float(a.pair_w), "dv": pairer.dv, "heads": list(pairer.heads), "seed": pairer.seed, "balanced": bool(pairer.balance), "v_idx": PAIR_V_IDX,
                         "calibrate": bool(a.pair_calibrate), "rules": {h_: dict(r_) for h_, r_ in pairer.rules.items()}, "reduce": pairer.reduce}
+    if twiner is not None:                                   # S1Z: BUILT facts of the loss object the run holds (absent when OFF: every pre-S1Z data event is byte-identical)
+        info["twin"] = twiner.built_facts(a.twin_w, a.pair_calibrate)
     if getattr(getattr(model, "cfg", cfg), "nav_mode", "goal") == "command":      # P6 (PREREG_SCORER1P6): the BUILT navigation mode of the model the run holds, written for a command checkpoint ONLY (every other profile's data event is byte-identical).  G-DVB asserts it from the profile's data_expect.
         info["nav_mode"] = "command"
     if aux is not None:
@@ -1647,6 +1771,8 @@ def main() -> int:
         img, ego, goal, cxy, ctg = (x.to(dev, non_blocking=True) for x in (img, ego, goal, cxy, ctg))
         if pairer is not None:                                      # SCORER1: what L_pair reads (proposals, v0 = ego slot 6, set mask); OFF (pairer None) executes nothing here: a fixture with < 7 ego slots (test_aux_s1_wiring) must not see an IndexError
             cap["pair_in"] = (cxy, ego[:, 6].float(), cm)
+        if twiner is not None:                                      # S1Z: what L_twin reads (proposals, set mask); OFF (twiner None) executes nothing here
+            cap["twin_in"] = (cxy, cm)
         with torch.autocast("cuda", dtype=torch.bfloat16):
             _traj, _score, sxA = model(img, ego, goal, calib=cal if cal.numel() else None, score_extra=cxy)
             sctx = cap["sctx"]
@@ -1728,13 +1854,31 @@ def main() -> int:
             return sxB.sum() * 0.0                       # computed and DROPPED: a value 0 WITH a graph (a bare zeros() made G16's control backward() raise, so the regression crashed instead of reading RED)
         return float(w) * raw
 
-    def train_losses(sx0, sxA, sxB, tg, rows, upd, lam_pg=None, pair_w=None):
+    twin_last: dict = {}
+
+    def twin_term(sxB, tg, w=None):
+        """S1Z: arm B's lambda_z * L_twin for one micro-batch.  w=None -> the argv's --twin-w (0 = OFF: a constant, no graph, nothing computed).  An EXPLICIT w (the G18 probe) is never
+        short-circuited, so w = 0.0 still builds the graph and its gradient must read EXACTLY 0.0.  REFE_TWIN_MUTATE_DROP_LOSS=1 is the deliberate regression: the term is computed and DROPPED."""
+        if w is None:
+            w = a.twin_w
+            if w == 0.0 or twiner is None:
+                return torch.zeros((), device=sxB.device)
+        cxy_, cm_ = cap["twin_in"]
+        raw = twiner.term(sxB, tg, cxy_, cm_)
+        twin_last["raw"] = float(raw.detach())
+        if os.environ.get("REFE_TWIN_MUTATE_DROP_LOSS") == "1":
+            return sxB.sum() * 0.0                       # computed and DROPPED: a value 0 WITH a graph
+        return float(w) * raw
+
+    def train_losses(sx0, sxA, sxB, tg, rows, upd, lam_pg=None, pair_w=None, twin_w=None):
         """THE loss assembly of the run: the training loop, the speed probe and the G11 probe all call it.  losses() exactly as before, plus
         (--epo only) the EPO term on arm B ONLY -- arm A stays the BCE-only control.  Returns (lossA, lossB incl. EPO, listnet/er, the EPO term)."""
         lA, lB, ln = losses(sxA, sxB, tg, a.lam)
         ep = torch.zeros((), device=sxB.device)
         if pair_w is not None or a.pair_w != 0.0:           # SCORER1 (arm B ONLY; arm A stays the BCE-only control).  Skipped entirely when OFF: the OFF path is byte-identical.
             lB = lB + pair_term(sxB, tg, pair_w)
+        if twin_w is not None or a.twin_w != 0.0:           # S1Z (arm B ONLY; arm A stays the BCE-only control).  Skipped entirely when OFF: the OFF path is byte-identical.
+            lB = lB + twin_term(sxB, tg, twin_w)
         if a.epo:
             ep = epo_term(epo_reference(a.epo_ref, sx0, sxA), sxB, tg, rows, upd, lam_pg)
             lB = lB + ep
@@ -2388,6 +2532,64 @@ def main() -> int:
                    "mutate_nobalance": os.environ.get("REFE_PAIR_MUTATE_NOBALANCE") == "1", "mutate_drop_loss": os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") == "1",
                    "mutate_epbalance": os.environ.get("REFE_PAIR_MUTATE_EPBALANCE") == "1"}
             gates["G16_pair_live_balanced"] = g16
+        if twiner is not None and not a.pair_calibrate:      # G18 (S1Z): L_twin is IN the loss (grad(w=1) - grad(w=0) != 0 on every arm-B module), its control reads EXACTLY 0.0, every head has pairs on the live logits
+            def _flat_twin_grad(w_):
+                armB.zero_grad(set_to_none=True)
+                s0_, sA_, sB_, t_ = fwd(batch)
+                _a, lB_, _l, _e = train_losses(s0_, sA_, sB_, t_, prow, 0, twin_w=w_)        # the REAL assembly: a term dropped from `loss` cannot show here
+                lB_.backward()
+                return {m_: torch.cat([(p_.grad if p_.grad is not None else torch.zeros_like(p_)).detach().double().flatten() for p_ in getattr(armB, m_).parameters()]) for m_ in SCORER}
+            g_on, g_off = _flat_twin_grad(1.0), _flat_twin_grad(0.0)
+            st_on = {h_: dict(v_) for h_, v_ in twiner.last.items()}
+            d_on = {m_: float((g_on[m_] - g_off[m_]).abs().sum()) for m_ in SCORER}
+            armB.zero_grad(set_to_none=True)
+            s0_, sA_, sB_, t_ = fwd(batch)
+            ctl = twin_term(sB_, t_, 0.0)                                                       # the term alone, weight 0.0: graph live, factor 0
+            ctl.backward()
+            ctl_read = module_grad_abs(armB)
+            armB.zero_grad(set_to_none=True)
+            # the share of sets with >= 1 kept pair per head on the LIVE logits (the real top-K rule), over TWIN_PREFLIGHT_MICRO micro-batches of the training loader (no gradient)
+            share_m = {h_: {"sets": 0, "sets_with_clean": 0, "sets_with_pair": 0, "pairs": 0, "hard": 0} for h_ in twiner.heads}
+            n_m = 0
+            with torch.no_grad():
+                for batch_s in dl:
+                    batch_s, _r = split_rows(batch_s, a.epo)
+                    _s0, _sA, sB_s, tg_s = fwd(batch_s)
+                    twin_term(sB_s, tg_s, 1.0)
+                    for h_, v_ in twiner.last.items():
+                        for k_, x_ in v_.items():
+                            share_m[h_][k_] += x_
+                    n_m += 1
+                    if n_m >= TWIN_PREFLIGHT_MICRO:
+                        break
+            for h_, sh_ in share_m.items():
+                sh_["share_with_pair"] = sh_["sets_with_pair"] / max(sh_["sets"], 1)
+            # the label-only share on a fixed stride of the bank (no top-K: every unclean proposal is a hard negative; an upper bound of the live share), from the labels + proposals the trainer will train on
+            probe_tl = TwinLoss(twiner.heads, twiner.ade, twiner.topk)
+            stride = max(1, len(tr_idx) // 20000)
+            bank_share = {h_: {"sets": 0, "sets_with_clean": 0, "sets_with_pair": 0} for h_ in twiner.heads}
+            for i_ in tr_idx[::stride]:
+                r_ = ds.rows[i_]
+                got_ = op.get(r_.get("log_name", ""), r_.get("token", ""), r_.get("step", -1), int(r_.get("rank", 0)))
+                if got_ is None:
+                    continue
+                tr3_, tgl_, _c = got_
+                xy_, y_ = torch.as_tensor(tr3_)[..., :2].float(), torch.as_tensor(tgl_).float()
+                for h_ in twiner.heads:
+                    ii_, _jj, nc_, _nh = probe_tl.select(y_, None, xy_, torch.ones(y_.shape[0], dtype=torch.bool), h_)
+                    bs_ = bank_share[h_]
+                    bs_["sets"] += 1; bs_["sets_with_clean"] += int(nc_ > 0); bs_["sets_with_pair"] += int(ii_.numel() > 0)
+            for h_, bs_ in bank_share.items():
+                bs_["share_with_pair"] = bs_["sets_with_pair"] / max(bs_["sets"], 1)
+            g18 = {"ok": bool(all(math.isfinite(d_on[m_]) and d_on[m_] > 0.0 for m_ in SCORER) and all(v_ == 0.0 for v_ in ctl_read.values())
+                              and all(share_m[h_]["share_with_pair"] > 0.0 for h_ in twiner.heads) and all(bank_share[h_]["share_with_pair"] > 0.0 for h_ in twiner.heads)
+                              and twiner.radius_filter and twiner.mining and not any(os.environ.get(k_) == "1" for k_ in TWIN_MUTATE_ENVS)),
+                   "loss_grad_delta_w1_minus_w0": d_on, "control_w0_term_alone_grad_abs": ctl_read, "controls_exactly_zero": bool(all(v_ == 0.0 for v_ in ctl_read.values())),
+                   "micro_batch_pairs": st_on, "share_micro": share_m, "micro_batches": n_m, "bank_share": bank_share, "bank_stride": stride,
+                   "heads_built": list(twiner.heads), "ade_built": twiner.ade_built, "topk_built": twiner.topk_built, "radius_filter_built": bool(twiner.radius_filter), "mining_built": bool(twiner.mining),
+                   "mutate_noradius": os.environ.get("REFE_TWIN_MUTATE_NORADIUS") == "1", "mutate_notopk": os.environ.get("REFE_TWIN_MUTATE_NOTOPK") == "1",
+                   "mutate_drop_loss": os.environ.get("REFE_TWIN_MUTATE_DROP_LOSS") == "1"}
+            gates["G18_twin_live"] = g18
         if hn_obj is not None:                               # G14 (P6-HN-S): the hard-negative term is live on arm B only, its controls read EXACTLY 0.0, the identities hold
             gates["G14_hn_live_and_identity"] = g14_hn_live_and_identity(hn_env)
         if cc_obj is not None:                               # G15 (P6-HN-S): the cache IS the live trunk forward, bit for bit, and a row-shuffled cache is not
@@ -2445,7 +2647,7 @@ def main() -> int:
                "s_per_microbatch": round(sp, 2), "est_hours_per_epoch": round(len(tr_idx) / a.batch * sp / 3600, 2),
                "gpu_mem_gb": round(torch.cuda.max_memory_allocated() / 1e9, 2)}
         log(res)
-        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1"                 and not any(os.environ.get(k_) == "1" for k_ in AUX_MUTATE_ENVS + EPO_CON_MUTATE_ENVS + PAIR_MUTATE_ENVS):
+        if ok and os.environ.get("REFE_SFT_MUTATE_UNFREEZE") != "1" and os.environ.get("REFE_RL_MUTATE_EPO_DETACH") != "1"                 and not any(os.environ.get(k_) == "1" for k_ in AUX_MUTATE_ENVS + EPO_CON_MUTATE_ENVS + PAIR_MUTATE_ENVS + TWIN_MUTATE_ENVS):
             json.dump(res, open(os.path.join(a.out, "PREFLIGHT_PASS.json"), "w"), indent=1, default=str)
         print("ZZSFT_PREFLIGHT_" + ("PASS" if ok else "FAIL"))
         return 0 if ok else 3
@@ -2453,28 +2655,29 @@ def main() -> int:
     # ---------------- the run
     paramsA = [p for m in SCORER for p in getattr(model, m).parameters()]
     paramsB = list(armB.parameters()) + (list(aux.feed.parameters()) if (aux is not None and aux.feed is not None) else [])     # H2: the feed projection is scorer-side
+    cal_lever = twiner if twiner is not None else pairer         # S1Z: the same --pair-calibrate route measures lambda_z (L_twin) when --twin-heads is named
     if a.pair_calibrate:                                     # SCORER1 lambda_p rule (PREREG section 2 item 5): ||grad L_pair|| = 0.5 ||grad L_BCE|| on the first 50 micro-batches, gradients POOLED (weight_rule.py's statistic); trains nothing
-        gsum_b, gsum_p, nmb, shares = [torch.zeros_like(p_) for p_ in paramsB], [torch.zeros_like(p_) for p_ in paramsB], 0, {h_: [0, 0] for h_ in pairer.heads}
+        gsum_b, gsum_p, nmb, shares = [torch.zeros_like(p_) for p_ in paramsB], [torch.zeros_like(p_) for p_ in paramsB], 0, {h_: [0, 0] for h_ in cal_lever.heads}
         for batch_c in dl:
             batch_c, _rows = split_rows(batch_c, a.epo)
             _s0, _sA, sB_c, tg_c = fwd(batch_c)
             bce_c = F.binary_cross_entropy_with_logits(sB_c[..., :6], tg_c[..., :6]) + a.lane_weight * lane_bce(sB_c, tg_c)       # L_BCE = arm B's pointwise BCE (6 components + the lane output), WITHOUT the expected-reward term
             gb_c = torch.autograd.grad(bce_c, paramsB, retain_graph=True, allow_unused=True)
-            pt_c = pair_term(sB_c, tg_c, 1.0)
+            pt_c = twin_term(sB_c, tg_c, 1.0) if twiner is not None else pair_term(sB_c, tg_c, 1.0)
             gp_c = torch.autograd.grad(pt_c, paramsB, allow_unused=True) if pt_c.requires_grad else [None] * len(paramsB)
             for acc_, g_ in ((gsum_b, gb_c), (gsum_p, gp_c)):
                 for x_, y_ in zip(acc_, g_):
                     if y_ is not None:
                         x_ += y_.float()
-            for h_, v_ in pairer.last.items():
+            for h_, v_ in cal_lever.last.items():
                 shares[h_][0] += v_["sets"]; shares[h_][1] += v_["sets_with_pair"]
             nmb += 1
             if nmb >= 50:
                 break
         nb_ = math.sqrt(sum(float((x_ / nmb).double().pow(2).sum()) for x_ in gsum_b))
         np_ = math.sqrt(sum(float((x_ / nmb).double().pow(2).sum()) for x_ in gsum_p))
-        res_c = {"micro_batches": nmb, "grad_norm_bce": nb_, "grad_norm_pair_unit_w": np_, "ratio_target": 0.5, "pair_w": (0.5 * nb_ / np_) if np_ > 0.0 else None,
-                 "sets_with_pair_share": {h_: (v_[1] / max(v_[0], 1)) for h_, v_ in shares.items()}, "heads": list(pairer.heads), "dv": pairer.dv, "ckpt": a.ckpt, "seed": a.seed}
+        res_c = {"micro_batches": nmb, "grad_norm_bce": nb_, "grad_norm_pair_unit_w": np_, "ratio_target": 0.5, ("twin_w" if twiner is not None else "pair_w"): (0.5 * nb_ / np_) if np_ > 0.0 else None,
+                 "sets_with_pair_share": {h_: (v_[1] / max(v_[0], 1)) for h_, v_ in shares.items()}, "heads": list(cal_lever.heads), **({"ade": twiner.ade_built, "topk": twiner.topk_built, "lever": "twin"} if twiner is not None else {"dv": pairer.dv}), "ckpt": a.ckpt, "seed": a.seed}
         json.dump(res_c, open(os.path.join(a.out, "pair_weight.json"), "w"), indent=1)
         log({"event": "pair_calibrated", **res_c})
         print("ZZPAIR_CALIBRATED" if np_ > 0.0 and nb_ > 0.0 else "ZZPAIR_CALIBRATION_FAILED")
@@ -2491,6 +2694,7 @@ def main() -> int:
     accl = {"bceA": 0.0, "lossB": 0.0, "listnet": 0.0, "n": 0}
     epo_acc = {"epo": 0.0, "J": 0.0, "kl": 0.0, "n": 0}      # --epo only
     aux_acc = {"bce": 0.0, "huber": 0.0, "n": 0}              # --aux-drv only
+    twin_win, twin_run = {}, {}                               # --twin-w only: per head sets / sets with a kept pair / kept pairs, over the log window and over the run
     con_acc = {"n": 0}                                        # --epo-con only: the constraint's parts summed over THIS update's micro-batches (EpoDual.step reads it) ...
     con_log = {"n": 0}                                        # ... and over the updates since the last logged row
     carve_log = {"n": 0}                                      # B8: the carve feed's parts over the updates since the last logged row (--epo-con-feed carve only)
@@ -2506,6 +2710,12 @@ def main() -> int:
                 a_bce, a_hub = aux_backward(dl.tail, a.accum)        # the head's loss, backward SEPARATELY (the line above stays byte-identical); dl.tail = THIS batch's (label, valid)
                 aux_acc["bce"] += a_bce; aux_acc["huber"] += a_hub; aux_acc["n"] += 1
             accl["bceA"] += float(lA); accl["lossB"] += float(lB); accl["listnet"] += float(ln); accl["n"] += 1
+            if twiner is not None and a.twin_w != 0.0:       # S1Z: this micro-batch's per-head counts (sets, sets with a clean proposal, sets with a kept pair, kept pairs)
+                for h_, v_ in twiner.last.items():
+                    for acc_ in (twin_win, twin_run):
+                        d_ = acc_.setdefault(h_, {"sets": 0, "sets_with_clean": 0, "sets_with_pair": 0, "pairs": 0})
+                        for k_ in d_:
+                            d_[k_] += v_[k_]
             if a.epo:
                 epo_acc["epo"] += float(ep_t); epo_acc["J"] += epo_last.get("J", 0.0); epo_acc["kl"] += epo_last.get("kl", 0.0); epo_acc["n"] += 1
             if dual.active:                                  # SAFEOBJ: this micro-batch's parts (g, c_A, c_B, ...) -> the dual step and the logged means
@@ -2563,6 +2773,9 @@ def main() -> int:
                     na = max(aux_acc["n"], 1)
                     row.update({"aux_bce": aux_acc["bce"] / na, "aux_huber": aux_acc["huber"] / na, "w_aux": aux.w_aux, "aux_lr": optH.param_groups[0]["lr"]})       # aux_lr = the head optimiser's lr of the LAST step (read off the optimiser, not recomputed)
                     aux_acc = {"bce": 0.0, "huber": 0.0, "n": 0}
+                if twin_win:                                 # S1Z: the share of sets with >= 1 kept pair per head over this window
+                    row["twin"] = {h_: {**d_, "share_with_pair": d_["sets_with_pair"] / max(d_["sets"], 1)} for h_, d_ in twin_win.items()}
+                    twin_win = {}
                 log(row)
                 accl = {"bceA": 0.0, "lossB": 0.0, "listnet": 0.0, "n": 0}
             if upd % a.eval_every == 0 or upd == total:
@@ -2578,7 +2791,8 @@ def main() -> int:
     pA, pB = save_full("A", model), save_full("B", armB)
     if aux is not None:
         log({"event": "aux_saved", "path": save_aux(upd)})
-    log({"event": "done", "updates": upd, "model_A": pA, "model_B": pB, "hours": (time.time() - t0) / 3600, **({"epo_con": dual.state_dict()} if dual.active else {})})
+    log({"event": "done", "updates": upd, "model_A": pA, "model_B": pB, "hours": (time.time() - t0) / 3600, **({"epo_con": dual.state_dict()} if dual.active else {}),
+         **({"twin_share": {h_: {**d_, "share_with_pair": d_["sets_with_pair"] / max(d_["sets"], 1)} for h_, d_ in twin_run.items()}} if twin_run else {})})
     print("ZZSFT_DONE")
     return 0
 

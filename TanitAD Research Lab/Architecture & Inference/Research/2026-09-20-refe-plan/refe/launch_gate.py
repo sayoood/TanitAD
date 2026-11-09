@@ -571,6 +571,69 @@ PROFILES["refe_scorer1p6"] = {**PROFILES["refe_sft4r"], "name": "refe_scorer1p6"
                               "clock_na": "SCORER1P6 has no label clock of its own: it trains on the PDM labels of P6's own proposals (Jobs A + B, keyed to the proposals' ckpt_step; G-DVB asserts the coverage and 0 stale "
                                           "from the trainer's data event) on a frozen generator, from a command-mode checkpoint (G-DVB asserts the built nav_mode)"}
 
+# ============================================================================================ S1Z (PREREG_S1Z_P6, frozen 2026-11-09; chain refe/s1z_chain.sh; pod script refe/s1z_pod.sh)
+# ONE arm from P6's model_final.pt: C0's recipe exactly (SCORER1P6_RECIPE, 400 updates, seed 0, the same 60,000 train sets) plus L_twin on arm B's NC, DAC and TTC logits (radius 1.0 m, top-K 8, no EP, no
+# speed filter, no balancing).  A NEW profile `refe_s1z_p6` built as a NEW dict beside refe_scorer1p6: that profile, every other profile and every shared constant above are untouched (test_scorer1p6_gate.py
+# pins the 17 older fingerprints; test_s1z_gate.py pins refe_scorer1p6's own).  It reuses the SCORER1P6 data pin (SCORER1P6_DATA_PIN, via scorer1p6_data_expect), the P6 label layout and the navtest lists; its
+# own pod dirs (a re-ship of refe/ over a dir that holds a token voids it).  lambda_z is MEASURED (--pair-calibrate with --twin-heads) and is the one value that is not in the pin.
+S1Z_ROOT = "/workspace/data/refe_s1z"
+S1Z_PKG = "/workspace/refe-plan-s1z"
+S1Z_CARD_SHA256 = "8c7b6b697b94ccf1a4781a727ed28c10ed8b11878c33eeb2d016a507b36efa69"      # PREREG_S1Z_P6.md as frozen 2026-11-09 (the chain refuses a card with other bytes)
+S1Z_ARM_SEED = {"S1Z": 0}
+S1Z_TWIN_SPEC = {"heads": "NC,DAC,TTC", "ade": 1.0, "topk": 8}                      # PREREG_S1Z_P6 section 1: fixed there, not searched
+S1Z_UPDATES = SCORER1P6_UPDATES
+S1Z_SUITE = SCORER1P6_SUITE + [{"script": "test_s1z_loss.py", "token": "ZZTEST_PASS"}, {"script": "test_s1z_gate.py", "token": "ZZTEST_PASS"},
+                               {"script": "test_s1z_preflight.py", "token": "ZZTEST_PASS"}, {"script": "test_s1z_layer.py", "token": "ZZTEST_PASS"}]
+
+
+def s1z_argv(arm: str = "S1Z", twin_w=None) -> list:
+    """The pod script's argv for the arm as it expands on the pod (`MODE=argv bash refe/s1z_pod.sh`; test_s1z_gate.py diffs the two copies).  The P6 input layout of scorer1p6_argv, S1Z's own root, and
+    the four --twin-* levers NAMED (the weight's default 0.0 is OFF, so an argv without it is not the arm).  lambda_z is NOT in the pin: `twin_w` None builds the pin WITHOUT it; the profile then demands
+    a positive finite --twin-w."""
+    R, D, T = S1Z_ROOT, SCORER1P6_DUMP, SCORER1P6_TARGETS
+    toks = ["--ckpt", SCORER1P6_CKPT, "--targets", T, "--images", SCORER1P6_DATA + "/navtrain_pixels", "--calib", SCORER1P6_CALIB, "--onpolicy", D + "/train_sets",
+            "--heldout", D + "/heldout_sets", "--heldout-logs", D + "/logs/heldout_logs.txt", "--workers", "3", "--lr", "1e-4", "--b-mode", "expreward", "--lam", "1.0", "--tau-s", "0.1",
+            "--pdm-labels-heldout", D + "/heldout_pdm", "--pdm-labels-train", D + "/train_pdm", "--require-pdm",
+            "--navtest-logs", R + "/navtest_ids/navtest_logs.json", "--navtest-tokens", R + "/navtest_ids/navtest_tokens.txt.gz",
+            "--max-updates", str(S1Z_UPDATES), "--eval-every", "200", "--seed", str(S1Z_ARM_SEED[arm]),
+            "--twin-heads", S1Z_TWIN_SPEC["heads"], "--twin-ade", str(S1Z_TWIN_SPEC["ade"]), "--twin-topk", str(S1Z_TWIN_SPEC["topk"])]
+    if twin_w is not None:
+        toks += ["--twin-w", str(twin_w)]
+    return toks + ["--out", R + "/" + arm.lower()]
+
+
+def s1z_twin_refusals(prof: dict, argv: list, mod, parser) -> list:
+    """S1Z's own rules on top of scorer1_refusals: --twin-w named ONCE with a finite value > 0, every --twin-* lever NAMED (a default that disables or moves the term must be in the argv), the registered
+    heads / radius / top-K, no --pair-calibrate, and the trainer's own twin_refusals."""
+    import gate_checks as C
+    name, out = prof["name"], []
+    sp = prof["twin_spec"]
+    tw = GT.flag_values(argv, "--twin-w")
+    try:
+        wv = float(tw[0]) if tw and len(tw) == 1 else None
+    except ValueError:
+        wv = None
+    if wv is None or not math.isfinite(wv) or not wv > 0.0:
+        out.append(f"{name} requires --twin-w named, ONE finite value > 0 (lambda_z, measured by --pair-calibrate with --twin-heads); the argv has --twin-w {' '.join(tw or [])}")
+    for f in ("--twin-heads", "--twin-ade", "--twin-topk"):
+        if f not in argv:
+            out.append(f"{name} requires {f} NAMED: a lever whose default disables or moves the term must be in the argv, or the arm did not test it")
+    ns, err = C.parse_scorer_argv(parser, argv)
+    if err:
+        return out
+    if ns.pair_calibrate or ns.twin_heads != sp["heads"] or not C._close(ns.twin_ade, sp["ade"]) or ns.twin_topk != sp["topk"]:
+        out.append(f"{name} requires --twin-heads {sp['heads']} --twin-ade {sp['ade']} --twin-topk {sp['topk']} and no --pair-calibrate (PREREG_S1Z_P6 section 1)")
+    out += [f"scorer_finetune refuses this argv: {m}" for m in mod.twin_refusals(ns)]
+    return out
+
+
+PROFILES["refe_s1z_p6"] = {**PROFILES["refe_scorer1p6"], "name": "refe_s1z_p6", "argv_kind": "s1z", "twin_spec": dict(S1Z_TWIN_SPEC), "suite": S1Z_SUITE, "root": S1Z_ROOT,
+                           "arm_seed": dict(S1Z_ARM_SEED), "pair_spec": {}, "recipe": dict(SCORER1P6_RECIPE), "forbidden_flags": tuple(SCORER1P6_FORBIDDEN),
+                           "data_expect": scorer1p6_data_expect(SCORER1P6_DATA_PIN), "data_pin": SCORER1P6_DATA_PIN,
+                           "required_flags": {**PROFILES["refe_scorer1p6"]["required_flags"], "--twin-w": None, "--twin-heads": None, "--twin-ade": "1.0", "--twin-topk": "8"},
+                           "clock_na": "S1Z has no label clock of its own: it trains on the PDM labels of P6's own proposals (the SCORER1P6 label set, the same pin; G-DVB asserts the coverage and 0 stale from the trainer's "
+                                       "data event) on a frozen generator, from a command-mode checkpoint (G-DVB asserts the built nav_mode)"}
+
 # RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
 # rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
 PROFILES["refe_rls1b"] = {**PROFILES["refe_rls1"], "name": "refe_rls1b", "suite": RLS1B_SUITE, "arm_class": RLS1B_ARM_CLASS, "arm_seeds": RLS1B_ARM_SEEDS,
@@ -1131,7 +1194,7 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
     p6 = prof.get("scorer1_kind") == "p6"                                  # PREREG_SCORER1P6: the arm table, the pair levers per arm, the root and the pin come from the PROFILE; refe_scorer1 carries none of them and keeps the module constants
     arm_seed, root = prof.get("arm_seed", SCORER1_ARM_SEED), prof.get("root", SCORER1_ROOT)
     pair_spec = prof.get("pair_spec", {"S1": {"heads": SCORER1_PAIR_HEADS, "dv": SCORER1_PAIR_DV, "nobalance": "", "nospeed": "", "gap": "", "mean": "pooled"}})
-    argv_of = scorer1p6_argv if p6 else scorer1_argv
+    argv_of = s1z_argv if prof.get("argv_kind") == "s1z" else (scorer1p6_argv if p6 else scorer1_argv)         # S1Z (PREREG_S1Z_P6): its own argv builder, selected by a STRING in the profile (a function in a profile would make its fingerprint unstable)
     if p6 and prof.get("data_pin") is None:
         out.append(f"{name}: THE DATA PIN IS UNSET (launch_gate.SCORER1P6_DATA_PIN is None): the exact P6 label counts are not known yet, so label completeness cannot be asserted; "
                    "fill the pin from the finished Jobs A + B (pdm_label_complete.py --expect N) before any arm may be gated")
@@ -1141,6 +1204,9 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
         return out + [f"{name}: --out {' '.join(outs)} is none of the arm dirs {[root + '/' + a.lower() for a in arm_seed]}"], ()
     pw = GT.flag_values(argv, "--pair-w")
     pin_argv = list(argv)
+    if prof.get("twin_spec"):                                    # S1Z: lambda_z is MEASURED, not pinned: left out of the pin and judged by s1z_twin_refusals
+        pin_argv = [t for f, v in GT.flag_pairs(list(argv)) if f != "--twin-w" for t in [f] + list(v)]
+        out += s1z_twin_refusals(prof, argv, mod, parser)
     if arm in pair_spec:
         try:
             wv = float(pw[0]) if pw and len(pw) == 1 else None
@@ -1441,6 +1507,9 @@ def consume_scorer_preflight(path, argv, prof, arm=None, rehearsal=False) -> dic
     g16 = next((v for k, v in gates.items() if prefix[k] == "G16"), None)
     if g16 is not None:                                      # G16 (--pair-w): SCORER1, re-judged from its raw fields
         reasons += C.judge_g16(g16, ns)
+    g18 = next((v for k, v in gates.items() if prefix[k] == "G18"), None)
+    if g18 is not None:                                      # G18 (--twin-w): S1Z, re-judged from its raw fields
+        reasons += C.judge_g18(g18, ns)
     g14 = next((v for k, v in gates.items() if prefix[k] == "G14"), None)
     g15 = next((v for k, v in gates.items() if prefix[k] == "G15"), None)
     if arm in C.HN_ARMS:                                     # P6-HN-S deliberate-regression arms: the same preflight, with the raw fields of the defect (each must turn a judge RED)

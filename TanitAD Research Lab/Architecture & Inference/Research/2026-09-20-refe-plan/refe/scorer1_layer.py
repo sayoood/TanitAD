@@ -41,7 +41,10 @@ def has_layer(src: str) -> bool:
 
 
 def peel(src: str) -> str:
-    """undo the SCORER1 edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged"""
+    """undo the SCORER1 edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged.  The S1Z layer (refe/s1z_layer.py, PREREG_S1Z_P6) sits ON TOP of this one
+    and is peeled first, so every pin that peels the layers sees the same trainer as before S1Z"""
+    import s1z_layer as S1Z
+    src = S1Z.peel(src)
     if not has_layer(src):
         return src
     for new, old in SCORER1_FILE_REVERSALS:

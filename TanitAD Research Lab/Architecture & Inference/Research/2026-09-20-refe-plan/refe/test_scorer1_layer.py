@@ -15,6 +15,7 @@ sys.path.insert(0, HERE)
 import carvefeed_layer as CL  # noqa: E402
 import hnscreen_layer as HL  # noqa: E402
 import scorer1_layer as SL  # noqa: E402
+import s1z_layer as ZL  # noqa: E402
 
 
 def blob(src: str) -> str:
@@ -34,7 +35,9 @@ assert blob(CL.peel(src)) == blob(CL.peel(peeled)) and HL.peel(src) == HL.peel(p
 print("P3 ok")
 new0 = SL.SCORER1_FILE_REVERSALS[0][0]
 for k in (0, len(SL.SCORER1_FILE_REVERSALS) - 1):
-    bad = src.replace(SL.SCORER1_FILE_REVERSALS[k][0], SL.SCORER1_FILE_REVERSALS[k][0].replace("e", "E", 1), 1)
+    base_src = ZL.peel(src)                                   # the S1Z layer sits on top of this one (PREREG_S1Z_P6): mutate the SCORER1 layer's own input
+    bad = base_src.replace(SL.SCORER1_FILE_REVERSALS[k][0], SL.SCORER1_FILE_REVERSALS[k][0].replace("e", "E", 1), 1)
+    assert bad != base_src, k
     try:
         SL.peel(bad)
     except AssertionError:

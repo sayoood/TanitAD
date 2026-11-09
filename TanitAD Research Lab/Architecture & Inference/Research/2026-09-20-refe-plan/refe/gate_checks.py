@@ -873,6 +873,8 @@ DVB_KINDS_SCORER = {
     "pair_w": "built", "pair_dv": "built", "pair_heads": "built", "pair_calibrate": "control",
     # PREREG_SCORER1P6: the per-head rule of L_pair and its reduction, default = the PREREG_SCORER1 rule.  `built` = compared, head by head, with the data event's pair.rules / pair.reduce.
     "pair_nobalance_heads": "built", "pair_nospeed_heads": "built", "pair_gap_heads": "built", "pair_mean": "built",
+    # S1Z (PREREG_S1Z_P6 section 1): L_twin levers, all default OFF.  `built` = compared with the trainer's `twin` block (scorer_dvb_rows), which TwinLoss.built_facts reads off the object the run holds.
+    "twin_w": "built", "twin_ade": "built", "twin_topk": "built", "twin_heads": "built",
     "navtest_logs": "consumed", "navtest_tokens": "consumed",       # SCORER1: check-only lists read by main(); refe_scorer1 binds their sha256 (scorer1_refusals) and asserts the data event's `navtest` block (data_expect)
     "out": "run", "eval_every": "run", "workers": "run",
     "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
@@ -902,12 +904,13 @@ G15_MIN_SCENES = 64                                    # PREREG 4.4: G15 compare
 HN_ARMS = ("lever_ignored", "hn_to_armA", "hn_in_selection", "hn_lane_target", "unmasked_pad", "fan_sees_hn", "stale_bank", "empty_bank_in_launch", "moved_lever", "stale_cache", "shuffled_cache", "epo_with_hn")
 SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe", "aux_s1_refusals")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
 SCORER_PAIR_DESTS = ("pair_w", "pair_dv", "pair_heads", "pair_nobalance_heads", "pair_nospeed_heads", "pair_gap_heads", "pair_mean")          # SCORER1: the L_pair levers, observed only when --pair-w > 0
+SCORER_TWIN_DESTS = ("twin_w", "twin_ade", "twin_topk", "twin_heads")          # S1Z: the L_twin levers, observed only when --twin-w > 0
 SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
 # the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
 SCORER_GATES = {"G1": "trainable_is_exactly_the_scorer", "G2": "live", "G3": "copies_equal_model_at_step0", "G4": "identity_and_live",
                 "G5": "ckpt_roundtrip_planner_loader", "G7": "heldout_disjoint", "G8": "lane_labels_in_bank", "G9": "pdm_targets_in_bank",
                 "G10": "teacher_lane_in_bank", "G11": "epo_live_and_identity", "G12": "aux_drv_live_and_identity", "G13": "epo_con_live_and_identity",
-                "G14": "hn_live_and_identity", "G15": "ctx_cache_identity", "G16": "pair_live_balanced"}
+                "G14": "hn_live_and_identity", "G15": "ctx_cache_identity", "G16": "pair_live_balanced", "G18": "twin_live"}
 
 
 def judge_g12(g12, ns) -> list:
@@ -1027,6 +1030,43 @@ def judge_g16(g16, ns) -> list:
                     out.append(f"G16: head {h} was built with rule {got.get(h)} but the argv declares {w_} (balancing on EP / none on a safety head / a wrong filter or gap)")
         if g16.get("reduce_built") != getattr(ns, "pair_mean", "pooled"):
             out.append(f"G16: reduce_built {g16.get('reduce_built')!r} != the argv's --pair-mean {getattr(ns, 'pair_mean', 'pooled')!r}")
+    return out
+
+
+def judge_g18(g18, ns) -> list:
+    """G18 (S1Z, --twin-w > 0) re-judged from its RAW fields (its own `ok` is a claim): L_twin is IN the loss (grad(w=1) - grad(w=0) finite and non-zero on every scorer module), the w = 0 control reads
+    EXACTLY 0.0 (the proof the probe can read zero), every named head has a non-zero share of sets with a kept pair on the live logits AND on the bank's labels (0 on any head is a LAUNCH BLOCKER), the BUILT
+    radius / top-K / heads equal the argv's, both the radius filter and the top-K mining are built, and no regression arm (REFE_TWIN_MUTATE_*) produced it."""
+    out = []
+    if not isinstance(g18, dict):
+        return ["G18 is not a dict"]
+    heads = [h for h in ns.twin_heads.split(",") if h]
+    d = g18.get("loss_grad_delta_w1_minus_w0") or {}
+    if set(d) != set(SCORER_GROUPS) or not all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) and x > 0.0 for x in d.values()):
+        out.append(f"G18: L_twin is not live IN the loss on every scorer module (grad(w=1) - grad(w=0) = {d})")
+    ctl = g18.get("control_w0_term_alone_grad_abs") or {}
+    if set(ctl) != set(SCORER_GROUPS) or any(x != 0.0 for x in ctl.values()) or g18.get("controls_exactly_zero") is not True:
+        out.append("G18: the --twin-w 0 control does not read EXACTLY 0.0 (the probe is not proved able to read zero)")
+    for where in ("micro_batch_pairs", "share_micro", "bank_share"):
+        blk = g18.get(where) or {}
+        if set(blk) != set(heads):
+            out.append(f"G18: {where} covers heads {sorted(blk)}, the argv names {heads}")
+    for where in ("share_micro", "bank_share"):
+        for h, v in (g18.get(where) or {}).items():
+            if not (isinstance(v, dict) and isinstance(v.get("share_with_pair"), float) and v["share_with_pair"] > 0.0 and isinstance(v.get("sets"), int) and v["sets"] > 0):
+                out.append(f"G18: head {h} has share 0 (or no set) of sets with a kept pair in {where}: LAUNCH BLOCKER (PREREG_S1Z_P6 section 2)")
+    if not (isinstance(g18.get("micro_batches"), int) and g18["micro_batches"] >= 1):
+        out.append("G18: the live-logit share was measured over no micro-batch")
+    if g18.get("heads_built") != heads:
+        out.append(f"G18: heads_built {g18.get('heads_built')!r} != the argv's --twin-heads {heads}")
+    if not _close(g18.get("ade_built"), ns.twin_ade):
+        out.append(f"G18: ade_built {g18.get('ade_built')!r} != the argv's --twin-ade {ns.twin_ade} (the radius filter is missing or moved)")
+    if g18.get("topk_built") != ns.twin_topk:
+        out.append(f"G18: topk_built {g18.get('topk_built')!r} != the argv's --twin-topk {ns.twin_topk} (the top-K mining is missing or moved)")
+    if g18.get("radius_filter_built") is not True or g18.get("mining_built") is not True:
+        out.append("G18: the radius filter or the top-K mining is not built")
+    if g18.get("mutate_noradius") or g18.get("mutate_notopk") or g18.get("mutate_drop_loss"):
+        out.append("G18 was produced under a regression arm (REFE_TWIN_MUTATE_*): it can never count")
     return out
 
 
@@ -1316,6 +1356,8 @@ def scorer_required_gates(ns) -> list:
         req.append("G12")
     if getattr(ns, "pair_w", 0.0) and not getattr(ns, "pair_calibrate", False):         # SCORER1: G16 iff --pair-w > 0 (scorer_finetune.py's own condition)
         req.append("G16")
+    if getattr(ns, "twin_w", 0.0) and not getattr(ns, "pair_calibrate", False):         # S1Z: G18 iff --twin-w > 0 (scorer_finetune.py's own condition)
+        req.append("G18")
     if getattr(ns, "hn_bank", ""):                                    # P6-HN-S: G14 iff --hn-bank, G15 iff --ctx-cache (scorer_finetune.py's own conditions)
         req.append("G14")
     if getattr(ns, "ctx_cache", ""):
@@ -1434,7 +1476,7 @@ def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
         add("aux_drv_labels", AUX.PINNED_STORE_KEYS, b.get("frames"), "data event: aux_drv.frames")
         for k, want in (("cell", AUX.CELL_M), ("x0", AUX.X0), ("y0", AUX.Y0), ("nx", int(round((AUX.X1 - AUX.X0) / AUX.CELL_M))), ("ny", int(round((AUX.Y1 - AUX.Y0) / AUX.CELL_M)))):
             add("aux_drv", want, b.get(k), f"data event: aux_drv.{k} (the label raster's geometry)")
-    pair_named = bool(getattr(ns, "pair_w", 0.0)) or bool(getattr(ns, "pair_calibrate", False))      # SCORER1: the `pair` block exists iff a --pair-* lever is on
+    pair_named = bool(getattr(ns, "pair_w", 0.0)) or (bool(getattr(ns, "pair_calibrate", False)) and bool(getattr(ns, "pair_heads", "")))      # SCORER1: the `pair` block exists iff a --pair-* lever is on
     if pair_named or "pair" in data:
         blk = data.get("pair") if isinstance(data.get("pair"), dict) else {}
         add("pair_w", pair_named, "pair" in data, "the data event carries a `pair` block iff --pair-w > 0 (or --pair-calibrate)")
@@ -1453,6 +1495,17 @@ def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
                 add("pair_gap_heads", w_["min_gap"], g_.get("min_gap"), f"data event: pair.rules.{h_}.min_gap (the label gap a {h_} pair needs)")
             add("pair_mean", getattr(ns, "pair_mean", "pooled"), blk.get("reduce"), "data event: pair.reduce (pooled mean | per-head mean)")
             add("pair_w", 20261107, blk.get("seed"), "data event: pair.seed (the registered sampling seed)")
+    twin_named = bool(getattr(ns, "twin_w", 0.0)) or (bool(getattr(ns, "pair_calibrate", False)) and bool(getattr(ns, "twin_heads", "")))      # S1Z: the `twin` block exists iff a --twin-* lever is on
+    if twin_named or "twin" in data:
+        blk = data.get("twin") if isinstance(data.get("twin"), dict) else {}
+        add("twin_w", twin_named, "twin" in data, "the data event carries a `twin` block iff --twin-w > 0 (or --pair-calibrate with --twin-heads)")
+        if twin_named:
+            add("twin_w", float(ns.twin_w), blk.get("w"), "data event: twin.w (the weight the built loss multiplies)")
+            add("twin_ade", float(ns.twin_ade), blk.get("ade"), "data event: twin.ade (the radius the built TwinLoss applies; the NORADIUS regression reads 1e6)")
+            add("twin_ade", True, blk.get("radius_filter"), "data event: twin.radius_filter (the ADE filter is built)")
+            add("twin_topk", int(ns.twin_topk), blk.get("topk"), "data event: twin.topk (the K the built TwinLoss mines; the NOTOPK regression reads 1e6)")
+            add("twin_topk", True, blk.get("mining"), "data event: twin.mining (the top-K mining is built)")
+            add("twin_heads", [h for h in ns.twin_heads.split(",") if h], blk.get("heads"), "data event: twin.heads (the heads the TwinLoss was built for)")
     hn_named, cc_named = bool(getattr(ns, "hn_bank", "")), bool(getattr(ns, "ctx_cache", ""))
     if hn_named or "hn" in data:                                   # P6-HN-S: the bank, against the BUILT block of the bank the trainer holds (never an echo of the namespace)
         blk = data.get("hn") if isinstance(data.get("hn"), dict) else {}
@@ -1632,7 +1685,7 @@ def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -
         for r in rows:
             if not r["ok"]:
                 reasons.append(f"{r['flag']}: declared {r['declared']!r} != built {r['built']!r} ({r['how']})")
-        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS)}
+        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS) and (bool(getattr(ns, "twin_w", 0.0)) or d not in SCORER_TWIN_DESTS)}
         missing = sorted(expect - {r["dest"] for r in rows})
         det["built_without_observer"] = missing
         if missing:
