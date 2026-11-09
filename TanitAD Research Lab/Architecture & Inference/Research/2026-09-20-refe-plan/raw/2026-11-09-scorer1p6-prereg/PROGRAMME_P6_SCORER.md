@@ -39,7 +39,7 @@ Data for everything below: PDM truth on P6's proposals from the pod label job. F
 **Batch 2, L40, order set by Batch 1's Shapley split of the remaining regret (about 25 to 30 L40-h, ESTIMATED, each under its own freeze).**
 5. Dose: C0 at 1,600 updates, and all 189,888 sets labelled.
 6. RL with a safety constraint on P6: the `--epo-con g5` dual machinery. It was K3-killed on u400 three times, so it runs only with the TTC guard as its stop.
-7. Set-aware scorer: attention across the 64 proposals, so each is scored against the others.
+7. Set-aware scorer: attention across the 64 proposals, so each is scored against the others. ⚠️ **CORRECTION 2026-11-09: already built, as written.** P6's `score_dec` blocks apply self-attention across the set (`refe/model.py:430`, `:436`; the docstring at `:703` says so), so this lever as worded adds nothing. If it returns it needs a different mechanism under its own freeze, for example explicit relative features between proposals.
 8. Privileged-teacher distillation (`SCORER_GYM_DESIGN.md` section 2.7): a teacher with true agents and map trains the scorer. Inference stays vision and ego motion only.
 9. Larger ensemble, and flip test-time augmentation (latency is not a gate now, PI ruling).
 
