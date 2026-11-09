@@ -24,3 +24,6 @@ The first run is **INVALID as run**: control 2 failed on the four-frame grid run
 1. **Speed:** the probe at larger n. The PLANTEST3 decoder was fitted on these same 53 episodes, so if the read is sample-limited, that decoder was too, and PLANTEST3's NO-GAIN carries that limit. `PREREG_V8F_DECN.md` reads this first with 1,000 train clips streamed read-only (no GPU or RAM on box 2), before the full 4,572-clip job the card names.
 2. **Every outcome:** the measured-ego card (`theory/egowm/PREREG_V8F_EGOWM_DRAFT.md`), to be frozen after the ladder's T0 read.
 3. **Yaw rate:** re-read R1 when S35_s1 is banked (`launch_wmi.ps1` skips finished units).
+
+## Added 2026-11-09 09:39: S35_s1 banked
+R1 re-read with the same readers and 53 fit episodes (`runs/R1_S35_s1.json`; T0, no interval): speed 0.444, yaw rate 0.224 (best over readers; every shuffled row below 0). S35's second seed misses the yaw-rate bar of 0.50, as R35's did (0.253), while their first seeds read 0.527 and 0.523. So yaw rate clears on no ladder arm at both training seeds, and the PLANTEST3 rerun on S35 is not run. The speed read and every row above are unchanged.
