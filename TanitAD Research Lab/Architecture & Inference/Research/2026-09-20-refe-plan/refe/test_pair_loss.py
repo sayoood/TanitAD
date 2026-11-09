@@ -138,7 +138,7 @@ assert (d.pair_w, d.pair_dv, d.pair_heads, d.pair_calibrate) == (0.0, 0.15, "", 
 def refs(*extra):
     return S.pair_refusals(ap.parse_args(base_argv + list(extra)))
 assert refs("--pair-w", "0.3", "--pair-heads", "NC,TTC") == []
-assert refs("--pair-w", "0.3") and refs("--pair-heads", "NC") and refs("--pair-w", "0.3", "--pair-heads", "EP") and refs("--pair-w", "-1", "--pair-heads", "NC")
+assert refs("--pair-w", "0.3") and refs("--pair-heads", "NC") and refs("--pair-w", "0.3", "--pair-heads", "XX") and refs("--pair-w", "-1", "--pair-heads", "NC")
 assert refs("--pair-calibrate") and refs("--pair-calibrate", "--pair-heads", "NC") == [] and refs("--pair-calibrate", "--pair-heads", "NC", "--pair-w", "0.1")
 assert refs("--pair-w", "0.3", "--pair-heads", "NC", "--pair-dv", "0") and refs("--pair-w", "0.3", "--pair-heads", "NC,NC") and refs("--pair-w", "0.3", "--pair-heads", "NC", "--epo")
 print("T6 ok")

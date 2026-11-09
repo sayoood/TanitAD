@@ -871,6 +871,8 @@ DVB_KINDS_SCORER = {
     "hn_bank": "data", "ctx_cache": "data",
     # SCORER1 (PREREG_SCORER1 section 2): L_pair levers, all default OFF.  `built` = compared with the trainer's `pair` block (scorer_dvb_rows); pair_calibrate is a measuring mode, forbidden in a launch.
     "pair_w": "built", "pair_dv": "built", "pair_heads": "built", "pair_calibrate": "control",
+    # PREREG_SCORER1P6: the per-head rule of L_pair and its reduction, default = the PREREG_SCORER1 rule.  `built` = compared, head by head, with the data event's pair.rules / pair.reduce.
+    "pair_nobalance_heads": "built", "pair_nospeed_heads": "built", "pair_gap_heads": "built", "pair_mean": "built",
     "navtest_logs": "consumed", "navtest_tokens": "consumed",       # SCORER1: check-only lists read by main(); refe_scorer1 binds their sha256 (scorer1_refusals) and asserts the data event's `navtest` block (data_expect)
     "out": "run", "eval_every": "run", "workers": "run",
     "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
@@ -899,7 +901,7 @@ SCORER_CTX_REGISTERED = {"dtype": "bf16"}
 G15_MIN_SCENES = 64                                    # PREREG 4.4: G15 compares >= 64 RL-train and >= 64 RL-val scenes (a run with fewer scenes than that side holds compares all of them: see judge_g15)
 HN_ARMS = ("lever_ignored", "hn_to_armA", "hn_in_selection", "hn_lane_target", "unmasked_pad", "fan_sees_hn", "stale_bank", "empty_bank_in_launch", "moved_lever", "stale_cache", "shuffled_cache", "epo_with_hn")
 SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe", "aux_s1_refusals")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
-SCORER_PAIR_DESTS = ("pair_w", "pair_dv", "pair_heads")          # SCORER1: the L_pair levers, observed only when --pair-w > 0
+SCORER_PAIR_DESTS = ("pair_w", "pair_dv", "pair_heads", "pair_nobalance_heads", "pair_nospeed_heads", "pair_gap_heads", "pair_mean")          # SCORER1: the L_pair levers, observed only when --pair-w > 0
 SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
 # the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
 SCORER_GATES = {"G1": "trainable_is_exactly_the_scorer", "G2": "live", "G3": "copies_equal_model_at_step0", "G4": "identity_and_live",
@@ -967,11 +969,33 @@ def judge_g12(g12, ns) -> list:
     return r
 
 
+def pair_rule_expected(ns) -> dict:
+    """the per-head L_pair rule the ARGV declares (PREREG_SCORER1P6 section 2): {head: {balance, speed_contrast, min_gap}}.  The gate's OWN statement, independent of the trainer's PairLoss."""
+    heads = [h for h in ns.pair_heads.split(",") if h]
+    nb = {h for h in getattr(ns, "pair_nobalance_heads", "").split(",") if h}
+    nsp = {h for h in getattr(ns, "pair_nospeed_heads", "").split(",") if h}
+    gaps = {}
+    for tok in [t for t in getattr(ns, "pair_gap_heads", "").split(",") if t]:
+        h, _, v = tok.partition("=")
+        try:
+            gaps[h] = float(v)
+        except ValueError:
+            gaps[h] = float("nan")
+    return {h: {"balance": h not in nb, "speed_contrast": h not in nsp, "min_gap": float(gaps.get(h, 0.0))} for h in heads}
+
+
+def _rule_eq(want: dict, got) -> bool:
+    return isinstance(got, dict) and set(got) == set(want) and got.get("balance") is want["balance"] and got.get("speed_contrast") is want["speed_contrast"] and _close(want["min_gap"], got.get("min_gap"))
+
+
 def judge_g16(g16, ns) -> list:
     """G16 (SCORER1) re-judged from its RAW fields (its own `ok` is a claim): L_pair is IN the loss (grad(w=1) - grad(w=0) finite and non-zero on every scorer module), the w = 0 control reads
-    EXACTLY 0.0, kept F == kept S on the micro-batch and on the bank sample, every named head has a non-zero share of sets with a kept pair, and no regression arm produced it."""
+    EXACTLY 0.0, kept F == kept S on the micro-batch and on the bank sample FOR EVERY HEAD THE ARGV DECLARES BALANCED, every named head has a non-zero share of sets with a kept pair, and no regression arm produced it.
+    PREREG_SCORER1P6: the heads in --pair-nobalance-heads (EP) are exempt from the F/S ratio -- and instead their BUILT rule must be the declared one (`rules_built`), head by head, so a balanced EP (the
+    EPBALANCE regression) is RED just as an unbalanced safety head (NOBALANCE) is."""
     out = []
     heads = [h for h in ns.pair_heads.split(",") if h]
+    nobal = {h for h in getattr(ns, "pair_nobalance_heads", "").split(",") if h}
     d = g16.get("loss_grad_delta_w1_minus_w0") or {}
     if set(d) != set(SCORER_GROUPS) or not all(isinstance(x, (int, float)) and math.isfinite(x) and x > 0.0 for x in d.values()):
         out.append(f"G16: L_pair is not live IN the loss on every scorer module (grad(w=1) - grad(w=0) = {d})")
@@ -982,13 +1006,27 @@ def judge_g16(g16, ns) -> list:
         if set(blk) != set(heads):
             out.append(f"G16: the {where} block covers heads {sorted(blk)}, the argv names {heads}")
         for h, v in blk.items():
+            if h in nobal:
+                continue
             if v.get("kept_F") != v.get("kept_S"):
                 out.append(f"G16: F/S ratio != 1 on head {h} ({where}: kept F {v.get('kept_F')} vs kept S {v.get('kept_S')}) -- the balancing step is missing or broken")
     for h, v in (g16.get("bank_share") or {}).items():
         if not (isinstance(v.get("share_with_pair"), float) and v["share_with_pair"] > 0.0):
             out.append(f"G16: head {h} has share 0 of sets with a kept pair: LAUNCH BLOCKER (PREREG_SCORER1 8.1)")
-    if g16.get("balanced_built") is not True or g16.get("mutate_nobalance") or g16.get("mutate_drop_loss"):
+    if g16.get("balanced_built") is not True or g16.get("mutate_nobalance") or g16.get("mutate_drop_loss") or g16.get("mutate_epbalance"):
         out.append("G16 was produced under a regression arm (REFE_PAIR_MUTATE_*) or by an unbalanced PairLoss: it can never count")
+    want = pair_rule_expected(ns)
+    named = bool(nobal) or bool(getattr(ns, "pair_nospeed_heads", "")) or bool(getattr(ns, "pair_gap_heads", "")) or getattr(ns, "pair_mean", "pooled") != "pooled"
+    if "rules_built" in g16 or named:
+        got = g16.get("rules_built")
+        if not isinstance(got, dict) or set(got) != set(want):
+            out.append(f"G16: rules_built {got!r} does not cover the heads the argv names {heads}")
+        else:
+            for h, w_ in want.items():
+                if not _rule_eq(w_, got.get(h)):
+                    out.append(f"G16: head {h} was built with rule {got.get(h)} but the argv declares {w_} (balancing on EP / none on a safety head / a wrong filter or gap)")
+        if g16.get("reduce_built") != getattr(ns, "pair_mean", "pooled"):
+            out.append(f"G16: reduce_built {g16.get('reduce_built')!r} != the argv's --pair-mean {getattr(ns, 'pair_mean', 'pooled')!r}")
     return out
 
 
@@ -1404,7 +1442,16 @@ def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
             add("pair_w", float(ns.pair_w), blk.get("w"), "data event: pair.w (the weight the built loss multiplies)")
             add("pair_dv", float(ns.pair_dv), blk.get("dv"), "data event: pair.dv (the PairLoss's speed-contrast threshold)")
             add("pair_heads", [h for h in ns.pair_heads.split(",") if h], blk.get("heads"), "data event: pair.heads (the heads the PairLoss was built for)")
-            add("pair_w", True, blk.get("balanced"), "data event: pair.balanced (the F/S balancing step is built; the NOBALANCE mutation reads False)")
+            add("pair_w", True, blk.get("balanced"), "data event: pair.balanced (the F/S balancing step is built on every head the argv declares balanced; the NOBALANCE mutation reads False)")
+            # PREREG_SCORER1P6: the per-head rule and the reduction, against the BUILT `pair.rules` / `pair.reduce` (never an echo of the namespace)
+            built_rules = blk.get("rules") if isinstance(blk.get("rules"), dict) else {}
+            want_rules = pair_rule_expected(ns)
+            for h_, w_ in want_rules.items():
+                g_ = built_rules.get(h_) if isinstance(built_rules.get(h_), dict) else {}
+                add("pair_nobalance_heads", w_["balance"], g_.get("balance"), f"data event: pair.rules.{h_}.balance (F/S balancing built for {h_}; EP is declared unbalanced in PREREG_SCORER1P6)")
+                add("pair_nospeed_heads", w_["speed_contrast"], g_.get("speed_contrast"), f"data event: pair.rules.{h_}.speed_contrast (the speed-contrast filter built for {h_})")
+                add("pair_gap_heads", w_["min_gap"], g_.get("min_gap"), f"data event: pair.rules.{h_}.min_gap (the label gap a {h_} pair needs)")
+            add("pair_mean", getattr(ns, "pair_mean", "pooled"), blk.get("reduce"), "data event: pair.reduce (pooled mean | per-head mean)")
             add("pair_w", 20261107, blk.get("seed"), "data event: pair.seed (the registered sampling seed)")
     hn_named, cc_named = bool(getattr(ns, "hn_bank", "")), bool(getattr(ns, "ctx_cache", ""))
     if hn_named or "hn" in data:                                   # P6-HN-S: the bank, against the BUILT block of the bank the trainer holds (never an echo of the namespace)

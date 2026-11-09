@@ -505,6 +505,72 @@ PROFILES["refe_scorer1"] = {**PROFILES["refe_sft4r"], "name": "refe_scorer1", "r
                             "clock_na": "SCORER1 has no label clock of its own: it trains on the SFT-4R PDM relabel of the on-policy bank (G-DVB asserts the coverage and 0 stale from the trainer's data event), "
                                         "on a frozen generator"}
 
+# ============================================================================================ SCORER1 on P6 (PREREG_SCORER1P6, frozen 2026-11-09; chain refe/scorer1p6_chain.sh; pod script refe/scorer1p6_pod.sh)
+# A NEW profile `refe_scorer1p6` built as a NEW dict: PROFILES["refe_scorer1"] and every shared constant above are untouched (test_scorer1p6_gate.py proves the existing fingerprints unmoved).
+# Arms from P6's model_final.pt (sha256 below), scorer only, 400 updates, NO lane head / lane label / lane manifest: C0 (seed 0), C0r (seed 1: the training-variance floor), S1E (C0 + lambda_p * L_pair on NC,DAC,EP,TTC,
+# seed 0) and the conditional S1 (S1E without the EP head; runs only under O3).  L_pair for the P6 card: EP takes NO balancing, NO speed-contrast filter and a label gap >= 0.05; NC, DAC, TTC stay as in PREREG_SCORER1;
+# the loss is the mean per head, then over the heads with >= 1 kept pair (--pair-mean head).  Its own pod dir (gate_token.TREE_ROOTS = refe, code, splits: re-shipping refe/ over a dir that holds a token voids it).
+SCORER1P6_ROOT = "/workspace/data/refe_scorer1p6"
+SCORER1P6_PKG = "/workspace/refe-plan-scorer1p6"
+SCORER1P6_CKPT = "/workspace/data/refe_runs/p6_paper_faithful/model_final.pt"          # measured on the pod by the coordinator 2026-11-09
+SCORER1P6_CKPT_SHA256 = "968a469d5b9abdd279aff19b8031c53e9fec0e2683092bff12cfa93be6a4d3d1"      # PREREG_SCORER1P6 section 2: P6's model_final.pt
+SCORER1P6_CARD_SHA256 = "adb5aafd4fb8abdfd1a53d9cc5ff865a89bd20f9008c701cf5d308dac595abed"      # PREREG_SCORER1P6.md as frozen 2026-11-09 (the chain refuses a card with other bytes)
+SCORER1P6_DATA = "/workspace/data"
+SCORER1P6_DUMP = "/workspace/data/p6base_labels"          # Jobs A + B output (p6base/labels/p6_labels_chain.sh $OUT; labels_manifest.json beside it); layout from its HANDOFF.md.  Changed here AND in scorer1p6_pod.sh (test_scorer1p6_gate diffs the two)
+SCORER1P6_TARGETS = SCORER1P6_DATA + "/refe_navtrain/train_grow_cmd_3c_p7"                      # coordinator, measured on the pod: P7's reserve step moved the original bank's images / metric cache; these 92,896 rank-0 rows are byte-for-byte P6's
+SCORER1P6_CALIB = SCORER1P6_DATA + "/refe_navtrain/train_grow/calib_table.json"                  # P6's own calibration
+SCORER1P6_ARM_SEED = {"C0": 0, "C0r": 1, "S1E": 0, "S1": 0}
+SCORER1P6_PAIR_SPEC = {      # arm -> the L_pair levers it must carry, as the argv spells them; an arm not listed is a control and names no --pair-* flag
+    "S1E": {"heads": "NC,DAC,EP,TTC", "dv": 0.15, "nobalance": "EP", "nospeed": "EP", "gap": "EP=0.05", "mean": "head"},
+    "S1": {"heads": "NC,DAC,TTC", "dv": 0.15, "nobalance": "", "nospeed": "", "gap": "", "mean": "head"}}
+SCORER1P6_UPDATES = 400
+# THE DATA PIN, TO FILL IN ONCE THE P6 LABELS EXIST (Jobs A + B; `pdm_label_complete.py --expect N` and the trainer's own data event).  While it is None the gate REFUSES every arm
+# (scorer1_refusals): the profile cannot assert label completeness from a count nobody has.  Shape: {"train_sets": <served train sets with a PDM label>, "heldout_sets": <held-out sets>}.
+SCORER1P6_DATA_PIN = None
+SCORER1P6_RECIPE = {k: v for k, v in SCORER1_RECIPE.items() if k != "lane_weight"}              # the SFT-4 recipe without its lane term (the generator, the trunk and the lane are not trained)
+SCORER1P6_FORBIDDEN = SCORER1_FORBIDDEN + ("--lane-head", "--lane-weight", "--teacher-lane-train", "--teacher-lane-heldout", "--lane-labels-heldout")      # no lane flag, no lane manifest
+SCORER1P6_SUITE = SCORER1_SUITE + [{"script": "test_pair_loss_p6.py", "token": "ZZTEST_PASS"}, {"script": "test_scorer1p6_gate.py", "token": "ZZTEST_PASS"},
+                                   {"script": "test_scorer1p6_preflight.py", "token": "ZZTEST_PASS"}]
+
+
+def scorer1p6_data_expect(pin) -> dict:
+    """the registered G-DVB counts from the data pin (the navtest guard, the held-out log count and the BUILT navigation mode of the command checkpoint only, while the pin is unset: scorer1_refusals refuses then)"""
+    out = {**SCORER1_NAVTEST_EXPECT, "nav_mode": "command", "heldout_logs": 24, "train_rows_in_heldout_logs": 0}
+    if pin:
+        n, h = int(pin["train_sets"]), int(pin["heldout_sets"])
+        out.update({"train_sets": n, "train_sets_in_bank": n, "heldout_sets": h, "heldout_in_bank": h, "lane_labels.pdm_train": n, "lane_labels.pdm_train_stale": 0,
+                    "lane_labels.pdm_train_superseded": 0, "lane_labels.pdm_heldout": h, "lane_labels.heldout_stale": 0})
+    return out
+
+
+def scorer1p6_argv(arm: str, pair_w=None) -> list:
+    """The pod script's argv for one arm as it expands on the pod (`MODE=argv ARM=<arm> bash refe/scorer1p6_pod.sh`; test_scorer1p6_gate.py diffs the two copies).  The P6 input layout without
+    any lane flag.  lambda_p is NOT in the pin (it is measured by --pair-calibrate): `pair_w` None builds the pin WITHOUT it; scorer1_refusals then demands a positive finite --pair-w."""
+    R, D, T = SCORER1P6_ROOT, SCORER1P6_DUMP, SCORER1P6_TARGETS
+    toks = ["--ckpt", SCORER1P6_CKPT, "--targets", T, "--images", SCORER1P6_DATA + "/navtrain_pixels", "--calib", SCORER1P6_CALIB, "--onpolicy", D + "/train_sets",
+            "--heldout", D + "/heldout_sets", "--heldout-logs", D + "/logs/heldout_logs.txt", "--workers", "3", "--lr", "1e-4", "--b-mode", "expreward", "--lam", "1.0", "--tau-s", "0.1",
+            "--pdm-labels-heldout", D + "/heldout_pdm", "--pdm-labels-train", D + "/train_pdm", "--require-pdm",
+            "--navtest-logs", R + "/navtest_ids/navtest_logs.json", "--navtest-tokens", R + "/navtest_ids/navtest_tokens.txt.gz",
+            "--max-updates", str(SCORER1P6_UPDATES), "--eval-every", "200", "--seed", str(SCORER1P6_ARM_SEED[arm])]
+    sp = SCORER1P6_PAIR_SPEC.get(arm)
+    if sp:
+        toks += ["--pair-heads", sp["heads"], "--pair-dv", str(sp["dv"])]
+        for flag, key in (("--pair-nobalance-heads", "nobalance"), ("--pair-nospeed-heads", "nospeed"), ("--pair-gap-heads", "gap")):
+            if sp[key]:
+                toks += [flag, sp[key]]
+        toks += ["--pair-mean", sp["mean"]] + (["--pair-w", str(pair_w)] if pair_w is not None else [])
+    return toks + ["--out", R + "/" + arm.lower()]
+
+
+PROFILES["refe_scorer1p6"] = {**PROFILES["refe_sft4r"], "name": "refe_scorer1p6", "recipe_rules": None, "scorer1_rules": True, "scorer1_kind": "p6", "recipe": SCORER1P6_RECIPE,
+                              "forbidden_flags": SCORER1P6_FORBIDDEN, "suite": SCORER1P6_SUITE, "data_flags": SCORER1_DATA, "pinned_argv": (),
+                              "data_expect": scorer1p6_data_expect(SCORER1P6_DATA_PIN), "data_expect_updates": SCORER1P6_UPDATES, "data_pin": SCORER1P6_DATA_PIN,
+                              "required_flags": {"--pdm-labels-train": None, "--pdm-labels-heldout": None, "--require-pdm": None, "--b-mode": "expreward", "--lam": "1.0", "--tau-s": "0.1", "--lr": "1e-4",
+                                                 "--navtest-logs": None, "--navtest-tokens": None, "--max-updates": str(SCORER1P6_UPDATES)},
+                              "ckpt_sha256": SCORER1P6_CKPT_SHA256, "navtest_sha256": SCORER1_NAVTEST_SHA256, "root": SCORER1P6_ROOT, "arm_seed": SCORER1P6_ARM_SEED, "pair_spec": SCORER1P6_PAIR_SPEC,
+                              "clock_na": "SCORER1P6 has no label clock of its own: it trains on the PDM labels of P6's own proposals (Jobs A + B, keyed to the proposals' ckpt_step; G-DVB asserts the coverage and 0 stale "
+                                          "from the trainer's data event) on a frozen generator, from a command-mode checkpoint (G-DVB asserts the built nav_mode)"}
+
 # RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
 # rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
 PROFILES["refe_rls1b"] = {**PROFILES["refe_rls1"], "name": "refe_rls1b", "suite": RLS1B_SUITE, "arm_class": RLS1B_ARM_CLASS, "arm_seeds": RLS1B_ARM_SEEDS,
@@ -1062,34 +1128,44 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
     `sft4r_refusals` with SCORER1_RECIPE, the pair levers are asserted per arm, the checkpoint and the navtest lists are bound by sha256, and no data path may name navtest."""
     import gate_checks as C
     name, out = prof["name"], []
+    p6 = prof.get("scorer1_kind") == "p6"                                  # PREREG_SCORER1P6: the arm table, the pair levers per arm, the root and the pin come from the PROFILE; refe_scorer1 carries none of them and keeps the module constants
+    arm_seed, root = prof.get("arm_seed", SCORER1_ARM_SEED), prof.get("root", SCORER1_ROOT)
+    pair_spec = prof.get("pair_spec", {"S1": {"heads": SCORER1_PAIR_HEADS, "dv": SCORER1_PAIR_DV, "nobalance": "", "nospeed": "", "gap": "", "mean": "pooled"}})
+    argv_of = scorer1p6_argv if p6 else scorer1_argv
+    if p6 and prof.get("data_pin") is None:
+        out.append(f"{name}: THE DATA PIN IS UNSET (launch_gate.SCORER1P6_DATA_PIN is None): the exact P6 label counts are not known yet, so label completeness cannot be asserted; "
+                   "fill the pin from the finished Jobs A + B (pdm_label_complete.py --expect N) before any arm may be gated")
     outs = GT.flag_values(argv, "--out") or []
-    arm = next((a for a in SCORER1_ARM_SEED if outs == [SCORER1_ROOT + "/" + a.lower()]), None)
+    arm = next((a for a in arm_seed if outs == [root + "/" + a.lower()]), None)
     if arm is None:
-        return [f"{name}: --out {' '.join(outs)} is none of the three arm dirs {[SCORER1_ROOT + '/' + a.lower() for a in SCORER1_ARM_SEED]}"], ()
+        return out + [f"{name}: --out {' '.join(outs)} is none of the arm dirs {[root + '/' + a.lower() for a in arm_seed]}"], ()
     pw = GT.flag_values(argv, "--pair-w")
     pin_argv = list(argv)
-    if arm == "S1":
+    if arm in pair_spec:
         try:
             wv = float(pw[0]) if pw and len(pw) == 1 else None
         except ValueError:
             wv = None
         if wv is None or not math.isfinite(wv) or not wv > 0.0:
-            out.append(f"{name} (S1) requires --pair-w named, ONE finite value > 0 (lambda_p, measured by --pair-calibrate); the argv has --pair-w {' '.join(pw or [])}")
+            out.append(f"{name} ({arm}) requires --pair-w named, ONE finite value > 0 (lambda_p, measured by --pair-calibrate); the argv has --pair-w {' '.join(pw or [])}")
         pin_argv = [t for f, v in GT.flag_pairs(list(argv)) if f != "--pair-w" for t in [f] + list(v)]
-    out += pinned_argv_refusals({**prof, "pinned_argv": tuple(scorer1_argv(arm))}, pin_argv)
+    out += pinned_argv_refusals({**prof, "pinned_argv": tuple(argv_of(arm))}, pin_argv)
     ns, err = C.parse_scorer_argv(parser, argv)
     if err:
         return out, ()
     rs, _ = sft4r_refusals(prof, argv, mod, parser)
     out += rs
-    if ns.seed != SCORER1_ARM_SEED[arm]:
-        out.append(f"{name} ({arm}) requires --seed {SCORER1_ARM_SEED[arm]} (the data-order seed, Amendment 1 item 5); the argv resolves to {ns.seed}")
-    if arm == "S1":
-        if ns.pair_calibrate or ns.pair_heads != SCORER1_PAIR_HEADS or not C._close(ns.pair_dv, SCORER1_PAIR_DV):
-            out.append(f"{name} (S1) requires --pair-heads {SCORER1_PAIR_HEADS} --pair-dv {SCORER1_PAIR_DV} and no --pair-calibrate")
+    if ns.seed != arm_seed[arm]:
+        out.append(f"{name} ({arm}) requires --seed {arm_seed[arm]} (the data-order seed, Amendment 1 item 5); the argv resolves to {ns.seed}")
+    if arm in pair_spec:
+        sp = pair_spec[arm]
+        if (ns.pair_calibrate or ns.pair_heads != sp["heads"] or not C._close(ns.pair_dv, sp["dv"]) or ns.pair_nobalance_heads != sp["nobalance"] or ns.pair_nospeed_heads != sp["nospeed"]
+                or ns.pair_gap_heads != sp["gap"] or ns.pair_mean != sp["mean"]):
+            out.append(f"{name} ({arm}) requires --pair-heads {sp['heads']} --pair-dv {sp['dv']} --pair-nobalance-heads '{sp['nobalance']}' --pair-nospeed-heads '{sp['nospeed']}' --pair-gap-heads '{sp['gap']}' "
+                       f"--pair-mean {sp['mean']} and no --pair-calibrate")
         out += [f"scorer_finetune refuses this argv: {m}" for m in mod.pair_refusals(ns)]
     else:
-        named = [f for f in ("--pair-w", "--pair-dv", "--pair-heads", "--pair-calibrate") if f in argv]
+        named = [f for f in ("--pair-w", "--pair-dv", "--pair-heads", "--pair-calibrate", "--pair-nobalance-heads", "--pair-nospeed-heads", "--pair-gap-heads", "--pair-mean") if f in argv]
         if named or ns.pair_w != 0.0 or ns.pair_heads:
             out.append(f"{name} ({arm}) is a control: it names no --pair-* flag (the argv carries {named}); a control with the lever on is not C0")
     # the checkpoint: sha256 of the bytes (Amendment 1 item 7)
@@ -1101,7 +1177,7 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
             out.append(f"{name}: cannot bind the checkpoint {ck[0]} by sha256 ({type(e).__name__}); the arm may not start from an unverified file")
         else:
             if got != prof["ckpt_sha256"]:
-                out.append(f"{name}: --ckpt {ck[0]} has sha256 {got[:16]}..., the registered u400 is {prof['ckpt_sha256'][:16]}... (Amendment 1 item 7)")
+                out.append(f"{name}: --ckpt {ck[0]} has sha256 {got[:16]}..., the registered {'P6 checkpoint' if p6 else 'u400'} is {prof['ckpt_sha256'][:16]}... (Amendment 1 item 7)")
     # the navtest lists: bound by sha256, and NO data path names navtest
     for f, want in prof["navtest_sha256"].items():
         v = GT.flag_values(argv, f) or []

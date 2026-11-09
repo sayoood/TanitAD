@@ -146,10 +146,22 @@ def navtest_audit(train_keys, bank_keys, logs, toks):
 
 
 # ---- SCORER1 (PREREG_SCORER1 section 2): L_pair, a speed-BALANCED pairwise loss on the NC / DAC / TTC heads.  ALL levers default OFF (--pair-w 0 / --pair-heads ""), the OFF path is this trainer exactly.
-PAIR_HEADS = {"NC": 0, "DAC": 1, "TTC": 3}                 # label / logit column of each head (planner.py component order NC DAC EP TTC C DDC)
-PAIR_SEED = 20261107                                       # PREREG_SCORER1 section 2 item 3: the without-replacement sampling seed
+PAIR_HEADS = {"NC": 0, "DAC": 1, "EP": 2, "TTC": 3}        # label / logit column of each head (planner.py component order NC DAC EP TTC C DDC).  EP joined for PREREG_SCORER1P6 (its rule is set per head by the flags below)
+PAIR_SEED = 20261107                                      # PREREG_SCORER1 section 2 item 3: the without-replacement sampling seed
 PAIR_V_IDX, PAIR_DT = 19, 0.2                              # v4 = the 0.2 s chord at step 19 (t = 4 s) on the raw proposal, as p1_diag.py / sel_common.step_speed
-PAIR_MUTATE_ENVS = ("REFE_PAIR_MUTATE_NOBALANCE", "REFE_PAIR_MUTATE_DROP_LOSS")      # deliberate regressions: NOBALANCE must turn the F/S ratio check RED, DROP_LOSS must turn G16 RED
+PAIR_MUTATE_ENVS = ("REFE_PAIR_MUTATE_NOBALANCE", "REFE_PAIR_MUTATE_DROP_LOSS", "REFE_PAIR_MUTATE_EPBALANCE")      # deliberate regressions: NOBALANCE (no balancing on any head, so a safety head loses it) must turn the F/S ratio check RED; DROP_LOSS must turn G16 RED; EPBALANCE (balancing applied to EP) must turn the per-head rule check RED
+PAIR_REDUCE = ("pooled", "head")                           # --pair-mean: pooled = mean over every kept pair of the micro-batch (PREREG_SCORER1 Amendment 1, the default); head = mean per head, then over the heads with >= 1 kept pair (PREREG_SCORER1P6 section 2)
+
+
+def parse_pair_gaps(s):
+    """--pair-gap-heads 'EP=0.05,NC=0.1' -> {'EP': 0.05, 'NC': 0.1}; a malformed entry raises ValueError (pair_refusals turns it into a refusal)"""
+    out = {}
+    for tok in [t for t in str(s).split(",") if t]:
+        h, sep, v = tok.partition("=")
+        if not sep or not h or h in out:
+            raise ValueError(f"--pair-gap-heads entry {tok!r} is not HEAD=GAP (each head at most once)")
+        out[h] = float(v)
+    return out
 
 
 def chord_speed(cxy, idx=PAIR_V_IDX, dt=PAIR_DT):
@@ -163,24 +175,54 @@ def chord_speed(cxy, idx=PAIR_V_IDX, dt=PAIR_DT):
 class PairLoss:
     """L_pair = mean over the KEPT pairs of -log sigmoid(s_i - s_j) on the head logits (PREREG_SCORER1 section 2).  For each labelled set and head h: candidate pairs (i, j) have y_h,i > y_h,j and
     |v4_i - v4_j| / max(v0, 1) >= dv; F = the truly better one is the faster, S = it is the slower.  BALANCE: min(|F|, |S|) pairs from each side, without replacement (own torch.Generator, seed PAIR_SEED);
-    an empty side -> the set contributes NO pair for h.  So the loss has zero speed direction by construction.  The mean is over every kept pair of the micro-batch (all sets, all heads)."""
+    an empty side -> the set contributes NO pair for h.  So the loss has zero speed direction by construction.  The mean is over every kept pair of the micro-batch (all sets, all heads).
 
-    def __init__(self, heads, dv, seed=PAIR_SEED):
+    PREREG_SCORER1P6 section 2 adds a PER-HEAD RULE, all defaults = the rule above (so every earlier argv builds the same object):
+      nobalance  heads that keep EVERY candidate pair (no F/S balancing)         --pair-nobalance-heads
+      nospeed    heads that take no speed-contrast filter (|dv| >= dv not asked)  --pair-nospeed-heads
+      gaps       {head: g}: a pair needs y_i - y_j >= g (g = 0 keeps the strict y_i > y_j) --pair-gap-heads
+      reduce     'pooled' (the mean above) | 'head' (the mean per head over its kept pairs, then over the heads with >= 1 kept pair)   --pair-mean
+    A proposal is VALID iff its set-mask entry is > 0 and its label and its speed are finite; an invalid proposal enters no pair of any head.  `rules` is the BUILT per-head rule (G-DVB reads it)."""
+
+    def __init__(self, heads, dv, seed=PAIR_SEED, nobalance=(), nospeed=(), gaps=None, reduce="pooled"):
         self.heads, self.dv, self.seed = tuple(heads), float(dv), int(seed)
-        self.balance = os.environ.get("REFE_PAIR_MUTATE_NOBALANCE") != "1"          # BUILT fact read by G-DVB / G16
+        self.nobalance, self.nospeed, self.gaps, self.reduce = tuple(nobalance), tuple(nospeed), dict(gaps or {}), str(reduce)
+        assert self.reduce in PAIR_REDUCE, self.reduce
+        mut_nb = not (os.environ.get("REFE_PAIR_MUTATE_NOBALANCE") != "1")          # the NOBALANCE mutation (test_scorer1_mutation pins this literal once)
+        mut_ep = os.environ.get("REFE_PAIR_MUTATE_EPBALANCE") == "1"
+        self.default_rule = {"balance": not mut_nb, "speed_contrast": True, "min_gap": 0.0}          # what select() applies when no head is named (the PREREG_SCORER1 rule)
+        self.rules = {}
+        for h in self.heads:
+            bal = (h not in self.nobalance) and not mut_nb
+            if mut_ep and h == "EP":                                                              # DELIBERATE REGRESSION (REFE_PAIR_MUTATE_EPBALANCE): balancing applied to EP
+                bal = True
+            self.rules[h] = {"balance": bool(bal), "speed_contrast": h not in self.nospeed, "min_gap": float(self.gaps.get(h, 0.0))}
+        # BUILT fact read by G-DVB / G16: every head that is DECLARED balanced is built balanced (the NOBALANCE mutation reads False).  The per-head truth is `rules`.
+        self.balance = all(r["balance"] for h, r in self.rules.items() if h not in self.nobalance) and (not mut_nb)
         self.gen = torch.Generator().manual_seed(self.seed)
         self.last: dict = {}
+        self.last_head_means: dict = {}
 
-    def select(self, y, v, v0):
-        """y [K] true label of one head, v [K] v4, v0 float -> (idx_i, idx_j of the kept pairs, nF_cand, nS_cand, kept_F, kept_S).  Pure CPU, deterministic given self.gen."""
-        better = y[:, None] > y[None, :]
-        far = (v[:, None] - v[None, :]).abs() / max(float(v0), 1.0) >= self.dv
-        cand = better & far
+    def fresh(self):
+        """a new PairLoss with the same settings and a fresh generator (the G16 bank-share probe: the training generator is untouched)"""
+        return PairLoss(self.heads, self.dv, self.seed, nobalance=self.nobalance, nospeed=self.nospeed, gaps=self.gaps, reduce=self.reduce)
+
+    def select(self, y, v, v0, head=None, valid=None):
+        """y [K] true label of one head, v [K] v4, v0 float -> (idx_i, idx_j of the kept pairs, nF_cand, nS_cand, kept_F, kept_S).  Pure CPU, deterministic given self.gen.
+        head=None applies the PREREG_SCORER1 rule (balanced, speed-contrast dv, strict gap).  valid [K] bool (optional) is ANDed with finite(y) & finite(v)."""
+        rule = self.rules[head] if head is not None else self.default_rule
+        ok = torch.isfinite(y) & torch.isfinite(v)
+        if valid is not None:
+            ok = ok & valid.to(ok.device)
+        gap = float(rule["min_gap"])
+        better = (y[:, None] - y[None, :] >= gap) if gap > 0.0 else (y[:, None] > y[None, :])
+        far = ((v[:, None] - v[None, :]).abs() / max(float(v0), 1.0) >= self.dv) if rule["speed_contrast"] else torch.ones_like(better)
+        cand = better & far & ok[:, None] & ok[None, :]
         fast = v[:, None] > v[None, :]
         fi, fj = (cand & fast).nonzero(as_tuple=True)
         si, sj = (cand & ~fast).nonzero(as_tuple=True)
         nF, nS = int(fi.numel()), int(si.numel())
-        if not self.balance:                                    # DELIBERATE REGRESSION (REFE_PAIR_MUTATE_NOBALANCE): keep everything
+        if not rule["balance"]:                                 # no balancing (DELIBERATE REGRESSION on a balanced head: REFE_PAIR_MUTATE_NOBALANCE; the rule of an --pair-nobalance-heads head): keep everything
             return torch.cat([fi, si]), torch.cat([fj, sj]), nF, nS, nF, nS
         k = min(nF, nS)
         if k == 0:
@@ -192,26 +234,40 @@ class PairLoss:
 
     def term(self, sxB, tg, cxy, v0, cm):
         """sxB [B, K, C] arm-B logits (graph), tg [B, K, C'] labels, cxy [B, K, T, >=2] proposals, v0 [B], cm [B, K] set mask -> the UNWEIGHTED L_pair (a zero WITH graph when no pair is kept, so a
-        zero-weight control still builds the graph).  self.last = per-head counts (candidates, kept F / S, sets with a pair) for G16."""
+        zero-weight control still builds the graph).  self.last = per-head counts (candidates, kept F / S, sets with a pair) for G16.  reduce='pooled': the mean over every kept pair; 'head': the mean per
+        head, then over the heads with at least one kept pair."""
         v4 = chord_speed(cxy).detach().cpu()
         ycpu = tg.detach().float().cpu()
         cmc = cm.detach().cpu()
-        terms, st = [], {h: {"sets": 0, "sets_with_pair": 0, "cand_F": 0, "cand_S": 0, "kept_F": 0, "kept_S": 0} for h in self.heads}
+        terms, by_head = [], {h: [] for h in self.heads}
+        st = {h: {"sets": 0, "sets_with_pair": 0, "cand_F": 0, "cand_S": 0, "kept_F": 0, "kept_S": 0} for h in self.heads}
         for b in range(sxB.shape[0]):
-            if float(cmc[b].min()) <= 0.0:                      # an unlabelled set (all-zero mask) contributes nothing
+            valid = cmc[b] > 0.0
+            if not bool(valid.any()):                           # an unlabelled set (all-zero mask) contributes nothing; a masked proposal of a labelled set enters no pair
                 continue
             for h in self.heads:
                 col = PAIR_HEADS[h]
-                ii, jj, cF, cS, kF, kS = self.select(ycpu[b, :, col], v4[b], float(v0[b]))
+                ii, jj, cF, cS, kF, kS = self.select(ycpu[b, :, col], v4[b], float(v0[b]), head=h, valid=valid)
                 d = st[h]
                 d["sets"] += 1; d["cand_F"] += cF; d["cand_S"] += cS; d["kept_F"] += kF; d["kept_S"] += kS; d["sets_with_pair"] += int(ii.numel() > 0)
                 if ii.numel():
                     s = sxB[b, :, col]
-                    terms.append(F.softplus(-(s[ii.to(s.device)] - s[jj.to(s.device)])))
+                    t_ = F.softplus(-(s[ii.to(s.device)] - s[jj.to(s.device)]))
+                    terms.append(t_)
+                    by_head[h].append(t_)
         self.last = st
+        self.last_head_means = {}
         if not terms:
             return sxB.sum() * 0.0
-        return torch.cat(terms).mean()
+        if self.reduce == "pooled":
+            return torch.cat(terms).mean()
+        means = []
+        for h in self.heads:
+            if by_head[h]:
+                m_ = torch.cat(by_head[h]).mean()
+                self.last_head_means[h] = float(m_.detach())
+                means.append(m_)
+        return torch.stack(means).mean()
 
 
 def pair_refusals(a):
@@ -237,6 +293,25 @@ def pair_refusals(a):
         out.append("--pair-calibrate measures the weight; it must not also be given one (--pair-w 0)")
     if (a.pair_w > 0.0 or a.pair_calibrate) and (a.epo or a.aux_drv or a.hn_bank):
         out.append("SCORER1 is the plain scorer fine-tune plus L_pair: --epo / --aux-drv / --hn-bank are refused with --pair-*")
+    # PREREG_SCORER1P6: the per-head rule and the reduction.  All default to the PREREG_SCORER1 rule; naming one without the loss it configures is refused.
+    try:
+        gaps = parse_pair_gaps(a.pair_gap_heads)
+    except ValueError as e:
+        out.append(str(e))
+        gaps = {}
+    for flag, hs in (("--pair-nobalance-heads", [h for h in a.pair_nobalance_heads.split(",") if h]), ("--pair-nospeed-heads", [h for h in a.pair_nospeed_heads.split(",") if h]),
+                     ("--pair-gap-heads", list(gaps))):
+        if len(set(hs)) != len(hs):
+            out.append(f"{flag} names a head twice")
+        stray = [h for h in hs if h not in names]
+        if stray:
+            out.append(f"{flag} names {stray}, which are not in --pair-heads {names}: a rule for a head the loss does not act on")
+    if any(not (math.isfinite(g) and g >= 0.0) for g in gaps.values()):
+        out.append(f"--pair-gap-heads gaps must be finite and >= 0 (got {gaps})")
+    if a.pair_mean not in PAIR_REDUCE:
+        out.append(f"--pair-mean must be one of {PAIR_REDUCE}")
+    if a.pair_mean != "pooled" and not names:
+        out.append("--pair-mean head is named without --pair-heads: a reduction of no loss")
     return out
 
 
@@ -1323,7 +1398,11 @@ def build_parser() -> argparse.ArgumentParser:
     # SCORER1 (PREREG_SCORER1 section 2): ALL DEFAULT OFF = this trainer exactly.
     ap.add_argument("--pair-w", type=float, default=0.0, help="SCORER1: weight lambda_p of L_pair on arm B (0 = OFF).  Set ONCE by the gradient-norm rule (--pair-calibrate), never tuned on held-out data")
     ap.add_argument("--pair-dv", type=float, default=0.15, help="SCORER1: minimum speed contrast |v4_i - v4_j| / max(v0, 1) of a candidate pair (registered 0.15)")
-    ap.add_argument("--pair-heads", default="", help="SCORER1: comma list of heads in {NC,DAC,TTC} that L_pair acts on ('' = none)")
+    ap.add_argument("--pair-heads", default="", help="SCORER1: comma list of heads in {NC,DAC,EP,TTC} that L_pair acts on ('' = none)")
+    ap.add_argument("--pair-nobalance-heads", default="", help="SCORER1P6: comma list (subset of --pair-heads) of heads that keep EVERY candidate pair, with no F/S count balancing ('' = every head is balanced, the PREREG_SCORER1 rule)")
+    ap.add_argument("--pair-nospeed-heads", default="", help="SCORER1P6: comma list (subset of --pair-heads) of heads that take NO speed-contrast filter (|v4_i - v4_j| / max(v0, 1) >= --pair-dv is not asked; '' = every head is filtered, the PREREG_SCORER1 rule)")
+    ap.add_argument("--pair-gap-heads", default="", help="SCORER1P6: HEAD=GAP[,HEAD=GAP]: a pair of that head needs y_i - y_j >= GAP (a head not named keeps the strict y_i > y_j).  E.g. EP=0.05")
+    ap.add_argument("--pair-mean", default="pooled", choices=PAIR_REDUCE, help="SCORER1P6: 'pooled' = the mean over every kept pair of the micro-batch (PREREG_SCORER1 Amendment 1); 'head' = the mean per head over its kept pairs, then over the heads with >= 1 kept pair")
     ap.add_argument("--navtest-logs", default="", help="SCORER1: the registered navtest log list (p7-navtest-logs-v1 json: {'logs': [...]}).  CHECK ONLY: the trainer counts the training sets whose log is on it and writes the count into the data event (G-DVB asserts 0)")
     ap.add_argument("--navtest-tokens", default="", help="SCORER1: the registered navtest token list (whitespace-separated, .gz ok).  CHECK ONLY, as --navtest-logs")
     ap.add_argument("--pair-calibrate", action="store_true", help="SCORER1: measure lambda_p on the first 50 training micro-batches (||grad L_pair|| = 0.5 ||grad L_BCE||, gradients pooled), write <out>/pair_weight.json, "
@@ -1359,7 +1438,7 @@ def main() -> int:
             f.write(json.dumps(row) + "\n")
         print(json.dumps(row), flush=True)
 
-    if not a.preflight and not os.path.exists(os.path.join(a.out, "PREFLIGHT_PASS.json")):
+    if not a.preflight and not a.pair_calibrate and not os.path.exists(os.path.join(a.out, "PREFLIGHT_PASS.json")):      # --pair-calibrate is a measuring mode that trains nothing (forbidden in a launch argv): it runs BEFORE any preflight, in its own dir
         print("REFUSED: no PREFLIGHT_PASS.json in --out -- run --preflight first (the launch gate)"); return 4
 
     # ---------------- model: built and loaded EXACTLY as the planner does
@@ -1412,7 +1491,8 @@ def main() -> int:
         print("REFUSED: --lane-head needs --teacher-lane-train AND --teacher-lane-heldout"); return 4
     compw = torch.tensor([float(x) for x in a.b_compw.split(",")], device=dev)
     assert compw.numel() == 6 and (compw > 0).all(), "--b-compw needs 6 positive weights"
-    pairer = PairLoss([h for h in a.pair_heads.split(',') if h], a.pair_dv) if (a.pair_w > 0.0 or a.pair_calibrate) else None        # SCORER1 (None = OFF)
+    pairer = PairLoss([h for h in a.pair_heads.split(',') if h], a.pair_dv, nobalance=[h for h in a.pair_nobalance_heads.split(',') if h], nospeed=[h for h in a.pair_nospeed_heads.split(',') if h],
+                      gaps=parse_pair_gaps(a.pair_gap_heads), reduce=a.pair_mean) if (a.pair_w > 0.0 or a.pair_calibrate) else None        # SCORER1 (None = OFF)
     ds = T.TargetBank(a.targets, a.images, cfg, calib=a.calib, onpolicy=op)
     if aux_src is not None:
         ds.aux_src = aux_src                                 # make_train_set() wraps the TRAINING subset so each sample also carries its (label, valid)
@@ -1539,7 +1619,9 @@ def main() -> int:
         info["navtest"] = navtest_audit((key(ds.rows[i]) for i in tr_idx), op.by.keys(), _nl, _nt)
     if pairer is not None:                                   # SCORER1: BUILT facts of the loss object the run holds (absent when OFF: every pre-SCORER1 data event is byte-identical)
         info["pair"] = {"w": float(a.pair_w), "dv": pairer.dv, "heads": list(pairer.heads), "seed": pairer.seed, "balanced": bool(pairer.balance), "v_idx": PAIR_V_IDX,
-                        "calibrate": bool(a.pair_calibrate)}
+                        "calibrate": bool(a.pair_calibrate), "rules": {h_: dict(r_) for h_, r_ in pairer.rules.items()}, "reduce": pairer.reduce}
+    if getattr(getattr(model, "cfg", cfg), "nav_mode", "goal") == "command":      # P6 (PREREG_SCORER1P6): the BUILT navigation mode of the model the run holds, written for a command checkpoint ONLY (every other profile's data event is byte-identical).  G-DVB asserts it from the profile's data_expect.
+        info["nav_mode"] = "command"
     if aux is not None:
         # BUILT facts only (G-DVB compares them with the argv): read off the objects the run holds, never echoed from the namespace
         info["aux_drv"] = {**aux.built_facts(), "tap": aux.cfg.tap, "feed": "on" if aux.feed is not None else "off", "lr": optH.param_groups[0]["lr"],
@@ -1643,7 +1725,7 @@ def main() -> int:
         raw = pairer.term(sxB, tg, cxy_, v0_, cm_)
         pair_last["raw"] = float(raw.detach())
         if os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") == "1":
-            return torch.zeros((), device=sxB.device)
+            return sxB.sum() * 0.0                       # computed and DROPPED: a value 0 WITH a graph (a bare zeros() made G16's control backward() raise, so the regression crashed instead of reading RED)
         return float(w) * raw
 
     def train_losses(sx0, sxA, sxB, tg, rows, upd, lam_pg=None, pair_w=None):
@@ -2279,7 +2361,7 @@ def main() -> int:
             ctl_read = module_grad_abs(armB)
             armB.zero_grad(set_to_none=True)
             # the share of training sets with >= 1 kept pair per head (PREREG 8.1) on a fixed stride of the bank, read from the labels + proposals the trainer will train on (a fresh PairLoss: the training generator is untouched)
-            probe_pl = PairLoss(pairer.heads, pairer.dv)
+            probe_pl = pairer.fresh()
             stride = max(1, len(tr_idx) // 20000)
             share = {h_: {"sets": 0, "with_pair": 0, "kept_F": 0, "kept_S": 0} for h_ in pairer.heads}
             for i_ in tr_idx[::stride]:
@@ -2290,17 +2372,21 @@ def main() -> int:
                 tr3_, tgl_, _c = got_
                 v4_ = chord_speed(torch.as_tensor(tr3_)[None])[0]
                 for h_ in pairer.heads:
-                    ii_, _jj, _cF, _cS, kF_, kS_ = probe_pl.select(torch.as_tensor(tgl_)[:, PAIR_HEADS[h_]].float(), v4_, float(r_["ego"][6]))
+                    ii_, _jj, _cF, _cS, kF_, kS_ = probe_pl.select(torch.as_tensor(tgl_)[:, PAIR_HEADS[h_]].float(), v4_, float(r_["ego"][6]), head=h_)
                     sh_ = share[h_]
                     sh_["sets"] += 1; sh_["with_pair"] += int(ii_.numel() > 0); sh_["kept_F"] += kF_; sh_["kept_S"] += kS_
             for h_, sh_ in share.items():
                 sh_["share_with_pair"] = sh_["with_pair"] / max(sh_["sets"], 1)
-            fs_ok = all(v_["kept_F"] == v_["kept_S"] for v_ in list(share.values()) + list(st_on.values())) and pairer.balance
+            nobal_decl = {h_ for h_ in a.pair_nobalance_heads.split(",") if h_}          # the heads the ARGV declares unbalanced (EP in PREREG_SCORER1P6); every other named head must be balanced, and built so
+            fs_ok = (all(share[h_]["kept_F"] == share[h_]["kept_S"] and st_on[h_]["kept_F"] == st_on[h_]["kept_S"] for h_ in pairer.heads if h_ not in nobal_decl) and pairer.balance
+                     and all(pairer.rules[h_]["balance"] == (h_ not in nobal_decl) for h_ in pairer.heads))
             g16 = {"ok": bool(all(math.isfinite(d_on[m_]) and d_on[m_] > 0.0 for m_ in SCORER) and all(v_ == 0.0 for v_ in ctl_read.values()) and fs_ok
-                              and all(share[h_]["share_with_pair"] > 0.0 for h_ in pairer.heads) and os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") != "1"),
+                              and all(share[h_]["share_with_pair"] > 0.0 for h_ in pairer.heads) and os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") != "1" and os.environ.get("REFE_PAIR_MUTATE_EPBALANCE") != "1"),
                    "loss_grad_delta_w1_minus_w0": d_on, "control_w0_term_alone_grad_abs": ctl_read, "controls_exactly_zero": bool(all(v_ == 0.0 for v_ in ctl_read.values())),
                    "micro_batch_pairs": st_on, "bank_share": share, "bank_stride": stride, "fs_balanced": bool(fs_ok), "balanced_built": bool(pairer.balance),
-                   "mutate_nobalance": os.environ.get("REFE_PAIR_MUTATE_NOBALANCE") == "1", "mutate_drop_loss": os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") == "1"}
+                   "rules_built": {h_: dict(r_) for h_, r_ in pairer.rules.items()}, "reduce_built": pairer.reduce,
+                   "mutate_nobalance": os.environ.get("REFE_PAIR_MUTATE_NOBALANCE") == "1", "mutate_drop_loss": os.environ.get("REFE_PAIR_MUTATE_DROP_LOSS") == "1",
+                   "mutate_epbalance": os.environ.get("REFE_PAIR_MUTATE_EPBALANCE") == "1"}
             gates["G16_pair_live_balanced"] = g16
         if hn_obj is not None:                               # G14 (P6-HN-S): the hard-negative term is live on arm B only, its controls read EXACTLY 0.0, the identities hold
             gates["G14_hn_live_and_identity"] = g14_hn_live_and_identity(hn_env)
