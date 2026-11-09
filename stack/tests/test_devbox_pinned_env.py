@@ -57,7 +57,7 @@ def test_env_u_really_removes_the_variable_for_the_child():
     assert out.stdout.strip() == "[unset]", out.stdout
 
 
-# --- the suite-work archive (MM 2026-11-03): G-SUITE-PINNED extracts a ~12.5 GB full-commit archive per arm into gsw_<ARM> and the driver never
+# --- the suite-work archive (MM 2026-11-03): G-SUITE-PINNED extracts a ~12.5 GB full-commit archive per arm into gsw_<ARM> (sw<N> since 2026-11-09) and the driver never
 # deleted one -- F: fell 120 -> 43 GB in ~2.5 h. A SHIPPED arm now queues its own for deletion (PENDING) and purges it; a residue is retried
 # before every later arm and at the end (gsw_B2 took 3 passes over ~7 min); a FAILed arm keeps its own for diagnosis; every arm first waits
 # for room on the stage drive and is refused by name (FAILZZ DISK-LOW) rather than run a suite into a full disk.
@@ -144,3 +144,72 @@ def test_free_gb_reads_an_integer_on_this_platform(tmp_path):
     out = subprocess.run([R2.BASH, "-c", fn + '\nfree_gb "$1"', "_", str(tmp_path)], capture_output=True, text=True, encoding="utf-8", timeout=60)
     assert out.returncode == 0, out.stderr
     assert out.stdout.strip().isdigit(), repr(out.stdout)
+
+
+# --- MAX_PATH (MM 2026-11-09, MEASURED): K2M1N20's pinned run at 269f43973a46 died 165 s in -- FileNotFoundError writing
+# F:/refcv9_e2/gate/gsw_K2M1N20/f269f43973a/<the repo's longest path, 219 characters> = 261 characters, while K0's 256 passed. Windows refuses
+# 260+. The suite-work dir is now <stage>/sw<N> and an arm whose deepest extracted path would not fit is refused BY NAME before its gate.
+
+LAUNCH_GATE = ROOT / "scripts" / "launch_gate.py"
+
+
+def _path_long_ok(src: str) -> bool:
+    lines = _lines(src)
+    i, j = _loop_span(lines)
+    body = lines[i + 1:j]
+    gate = next(k for k, l in enumerate(body) if '/stack/scripts/launch_gate.py" run' in l)
+    mk = [k for k, l in enumerate(body) if l.strip() == 'mkdir -p "$SW"']
+    ref = [k for k, l in enumerate(body) if "FAILZZ PATH-LONG" in l and "continue" in l and 'path_need "$SW" "$ML"' in l and "-le 259" in l]
+    return len(mk) == 1 and len(ref) == 1 and ref[0] < mk[0] < gate
+
+
+def test_the_suite_work_dir_is_short_and_per_arm():
+    lines = _lines(DRIVER.read_text(encoding="utf-8"))
+    i, j = _loop_span(lines)
+    body = lines[i + 1:j]
+    assert not any("gsw_" in l for l in lines), [l for l in lines if "gsw_" in l]
+    sw = [l for l in body if 'SW="$STAGE/sw$NA"' in l]
+    assert len(sw) == 1 and sw[0].index("NA=$((NA + 1))") < sw[0].index('SW="$STAGE/sw$NA"'), sw
+    assert lines.index("NA=0") < i                                              # numbered per run, from 1
+    assert len("F:/refcv9_e1/gate/sw1") == len("F:/refcv9_e2/gate/sw1") == 21
+
+
+def test_every_arm_is_refused_on_path_long_before_its_gate():
+    src = DRIVER.read_text(encoding="utf-8")
+    assert _path_long_ok(src)
+    bad = "\n".join(l for l in src.splitlines() if "FAILZZ PATH-LONG" not in l)
+    assert bad != src and not _path_long_ok(bad)                                # the deliberate regression: no refusal, the 261 case runs and dies
+    ml = [l for l in _lines(src) if l.startswith('ML="$(git ')]
+    assert len(ml) == 1 and "ls-tree -r --name-only" in ml[0] and '"$CAND"' in ml[0], ml
+    assert any(l.startswith('[ "$ML" -gt 0 ]') and "exit 2" in l for l in _lines(src))   # an unreadable tree fails closed, never "0 fits"
+
+
+def test_the_constant_13_is_the_gates_own_extraction_dir():
+    # path_need adds 13 = "/f" + commit[:10] + "/": tie it to the gate's own line, so a renamed dir cannot silently move the bound
+    assert 'dest = work / f"f{commit[:10]}"' in LAUNCH_GATE.read_text(encoding="utf-8")
+    fn = [l for l in DRIVER.read_text(encoding="utf-8").splitlines() if l.startswith("path_need() {")]
+    assert len(fn) == 1 and "${#1} + 13 + $2" in fn[0], fn
+
+
+@R2.needs_bash
+def test_path_need_reproduces_the_measured_k2m1n20_failure():
+    fn = next(l for l in DRIVER.read_text(encoding="utf-8").splitlines() if l.startswith("path_need() {"))   # the driver's OWN definition
+    script = fn + '\nfor s in "$@"; do path_need "$s" 219; done'
+    out = subprocess.run([R2.BASH, "-c", script, "_", "F:/refcv9_e2/gate/gsw_K2M1N20", "F:/refcv9_e2/gate/gsw_K0", "F:/refcv9_e2/gate/sw1"],
+                         capture_output=True, text=True, encoding="utf-8", timeout=60)
+    assert out.returncode == 0, out.stderr
+    assert out.stdout.split() == ["261", "256", "253"], out.stdout              # 261 is the length the FileNotFoundError named; K0's 256 passed
+
+
+@R2.needs_bash
+def test_the_start_of_run_sweep_queues_only_earlier_sw_dirs(tmp_path):
+    src = DRIVER.read_text(encoding="utf-8")
+    defs = "\n".join(l for l in src.splitlines() if l.startswith(('PENDING=""', "purge() {")))
+    sweep = [l for l in src.splitlines() if l.startswith('for d in "$STAGE"/sw[0-9]*')]
+    assert len(sweep) == 1, sweep
+    for n in ("sw1", "sw2", "devbox_evidence_x_K0", "swap"):
+        (tmp_path / n / "x").mkdir(parents=True)
+    script = defs + '\nSTAGE="$1"\n' + sweep[0] + '\nls "$STAGE"'
+    out = subprocess.run([R2.BASH, "-c", script, "_", tmp_path.as_posix()], capture_output=True, text=True, encoding="utf-8", timeout=60)
+    assert out.returncode == 0, out.stderr
+    assert out.stdout.split() == ["devbox_evidence_x_K0", "swap"], out.stdout   # the FAIL record and a look-alike name stay

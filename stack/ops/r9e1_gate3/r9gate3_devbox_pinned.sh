@@ -21,7 +21,7 @@ say() { echo "[r9gate3-pinned] $(date +%H:%M:%S) $*" | tee -a "$STAGE/pinned_dri
 mark() { echo "$1" | tee -a "$ST"; }
 free_gb() { df -BG "$1" 2>/dev/null | awk 'NR==2 {gsub("G","",$4); print $4}'; }   # free GB on the drive holding $1 (an integer; empty if df fails)
 # suite-work dirs of SHIPPED arms not yet fully deleted. One rm is not enough (MEASURED 2026-11-03: gsw_B2 took 3 passes over ~7 min to go, the first
-# ~4.5 min long), so a residue is retried before every later arm and at the end. Paths are <stage>/gsw_<ARM>: no spaces.
+# ~4.5 min long), so a residue is retried before every later arm and at the end. Paths are <stage>/sw<N> (N = the arm's place in this run; see MAX_PATH below): no spaces.
 PENDING=""
 purge() { local d left=""; for d in $PENDING; do rm -rf "${d:?}" 2>/dev/null; [ -e "$d" ] && left="$left $d"; done; PENDING="$left"; }
 mkdir -p "$STAGE" || exit 1
@@ -30,6 +30,17 @@ if [ ! -s "$T/stack/scripts/launch_gate.py" ]; then
   rm -rf "$T"; mkdir -p "$T" && git --git-dir="$REPO/.git" -c core.autocrlf=false archive "$CAND" stack taniteval | tar --force-local -x -C "$T" || { say "git archive failed"; mark ZZGS3-PINNED-ARCHIVE-FAILZZ; exit 2; }
 fi
 [ -s "$T/stack/scripts/launch_gate.py" ] || { say "extracted tree has no launch_gate.py"; mark ZZGS3-PINNED-ARCHIVE-FAILZZ; exit 2; }
+# MAX_PATH (MM 2026-11-09, MEASURED): G-SUITE-PINNED extracts the FULL commit into <suite-work>/f<commit[:10]>/ (launch_gate.py job_suite_pinned) and
+# Windows refuses a path of 260+ characters. The longest repo path at 269f43973a46 is 219 characters, so <stage>/gsw_K2M1N20 (29) made the deepest
+# file 261 and the extraction died 165 s in with FileNotFoundError, while K0 (256) passed. The work dir is therefore <stage>/sw<N> (21 characters on
+# both stages), and an arm whose deepest extracted path would still not fit is refused BY NAME (FAILZZ PATH-LONG) before its gate runs.
+ML="$(git --git-dir="$REPO/.git" -c core.quotepath=false ls-tree -r --name-only "$CAND" | awk '{ if (length > m) m = length } END { print m + 0 }')"
+[ "$ML" -gt 0 ] 2>/dev/null || { say "cannot read the longest path of $CAND"; mark ZZGS3-PINNED-ARCHIVE-FAILZZ; exit 2; }
+path_need() { echo $(( ${#1} + 13 + $2 )); }   # <suite-work> "/f" <10 hex> "/" <longest repo path>: the deepest file the extraction writes
+# a FAILed arm keeps its sw<N> for diagnosis until the NEXT driver run, which frees every earlier sw<N> before its first arm (the archive is a git
+# export; the FAIL record itself is devbox_evidence_<C12>_<ARM>, which is kept)
+for d in "$STAGE"/sw[0-9]*; do [ -d "$d" ] && PENDING="$PENDING $d"; done; purge
+NA=0
 # the NT env (final_pinned_f7.sh): the CUDA-gated tests, the lidar-BEV GT dir, the calibration dir
 # CPU ONLY (MM 2026-11-03, MEASURED): with the dev-box GPU visible, tests/test_v8f_ego_dagger_compose.py fails 3/36 (device mismatch "cuda:0 and
 # cpu", golden bank, resume bit-identity) at bf2e7d22 AND 9be3211; with CUDA_VISIBLE_DEVICES=-1 the same archive reads 36/36 PASS. The one CUDA test
@@ -37,8 +48,9 @@ fi
 export CUDA_VISIBLE_DEVICES=-1
 export TANITAD_REFAV1_CUDA_TEST=1 TANITAD_LIDAR_BEV_GT_DIR=E:/Projects/TanitAD-artifacts/bev-lidar-gt-b1eval-20260913 TANITAD_CALIB_DIR=E:/Projects/TanitAD-artifacts/hf-corpus-aug-20260915/stage/calibration
 for ARM in $ARMS; do
-  ARGVF="$T/stack/ops/runs.d/${R9_PREFIX}_${ARM}.argv.json"; OUT="$STAGE/devbox_evidence_${C12}_${ARM}"; SW="$STAGE/gsw_${ARM}"; LOG="$STAGE/devbox_pinned_${C12}_${ARM}.log"
+  ARGVF="$T/stack/ops/runs.d/${R9_PREFIX}_${ARM}.argv.json"; OUT="$STAGE/devbox_evidence_${C12}_${ARM}"; NA=$((NA + 1)); SW="$STAGE/sw$NA"; LOG="$STAGE/devbox_pinned_${C12}_${ARM}.log"
   [ -s "$ARGVF" ] || { say "no argv $ARGVF"; mark ZZGS3-PINNED-${ARM}-FAILZZ; continue; }
+  PN=$(path_need "$SW" "$ML"); [ "$PN" -le 259 ] || { say "$ARM: the deepest extracted path would be $PN characters (> 259) under $SW"; mark "ZZGS3-PINNED-${ARM}-FAILZZ PATH-LONG $PN"; continue; }
   t0=$(date +%s)
   until [ "$(powershell -NoProfile -Command "[math]::Floor((Get-CimInstance Win32_OperatingSystem).FreeVirtualMemory/1MB)" 2>/dev/null | tr -d '\r')" -ge 6 ] 2>/dev/null; do
     [ $(( $(date +%s) - t0 )) -gt 3600 ] && break; sleep 30; done
