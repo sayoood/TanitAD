@@ -1,0 +1,16 @@
+--- a/refe/rl_fan_dump.py
++++ b/refe/rl_fan_dump.py
+@@ -559,8 +559,12 @@
+     sys.path.insert(0, str(HERE))
+     if ds_factory is None:
+         from model import REFeConfig
++        import ckpt_io
+         import train as T
+-        cfg = REFeConfig.for_backbone(a.backbone)
++        # the DATASET must be built with the checkpoint's own config, as the model is (load_model): a command-mode checkpoint (P6, meta nav_mode) needs the
++        # one-hot command in the `goal` slot, and with the default "goal" config TargetBank feeds 4 goal-point floats, which the model accepts silently
++        # because 2 * n_goal_points == n_commands == 4
++        cfg = ckpt_io.config_for_checkpoint(REFeConfig.for_backbone(a.backbone), a.ckpt)
+         n_prop, horizon = cfg.n_proposals, cfg.horizon_steps
+         # max_missing_frac=1.0: bank rows OUTSIDE the key list are none of this tool's business; the key list's own gaps are plan()'s `missing` (exit 3)
+         try:
