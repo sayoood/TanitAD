@@ -48,8 +48,10 @@ EXPECT = {
 
 
 #: MEASURED W-COST (MM 2026-11-07/08): the gate's own G-LIVE smoke of each provisional argv at 6d0e629f printed "refcv9 W-COST at step 0: ... = R"; K2M3 stays the placeholder
-MEASURED_WCOST = {"K2": (1.4613, "0.06843", "6d0e629f37a2_K2_glive/logs/job_smoke.log")}
-#: K2M1N20 / K2M3N20 were measured WITH T1h (1.545 / 1.5425); they now compose T1v, so those readings do not carry over: PROVISIONAL until the K2 explore smoke measures them with T1v
+#: K2M1N20 / K2M3N20: measured WITH T1v at 926820a981ae (2026-11-09; the T1h readings were the same two numbers, 1.545 / 1.5425, and were not carried over: each was re-measured on its own composition)
+MEASURED_WCOST = {"K2": (1.4613, "0.06843", "6d0e629f37a2_K2_glive/logs/job_smoke.log"),
+                  "K2M1N20": (1.545, "0.06472", "926820a981ae_K2M1N20_wcost/logs/job_smoke.log"),
+                  "K2M3N20": (1.5425, "0.06483", "926820a981ae_K2M3N20_wcost/logs/job_smoke.log")}
 
 def doc(v):
     return json.loads((RUNS / f"r9e2_{v}.argv.json").read_text(encoding="utf-8"))
@@ -139,8 +141,11 @@ def test_T1v_variants_carry_the_one_T1v_flag_and_NONE_of_the_four_T1h_flags(v):
         assert f not in toks, (v, f)
     assert [t for t in E1.T1_ARMS["T1v"]] == T1V and MK.T1_ARM_OF[v] == "T1v"
     d = doc(v)
-    assert "t1h_bundle" not in d["lever"] and d["lever"]["t1v"] == T1V and "T1v" in d["what"] and "PROVISIONAL" in d["what"]
-    assert d["w_cost"] == "provisional" and "w_cost_ratio" not in d
+    assert "t1h_bundle" not in d["lever"] and d["lever"]["t1v"] == T1V and "T1v" in d["what"] and "W-COST: MEASURED with T1v" in d["what"] and "PROVISIONAL" not in d["what"]
+    assert "w_cost" not in d and "w_cost_ratio" in d
+    k0b = (RUNS / "r9e2_K0.argv.json").read_bytes()
+    prov = MK.variant_doc(json.loads(k0b.decode("utf-8")), k0b, v, 0.1, provisional=True, w_source="x")      # the opposite value: an unmeasured composition still says so
+    assert "W-COST: PROVISIONAL" in prov["what"] and prov["lever"]["w_r8_drivable_status"].startswith("PROVISIONAL")
 
 
 @pytest.mark.parametrize("v", T1H_VARIANTS)

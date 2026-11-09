@@ -133,7 +133,7 @@
   "--r9-plan-box-tokens",
   "--r8-critic-drivable",
   "--w-r8-drivable",
-  "0.1",
+  "0.06472",
   "--opt",
   "dd",
   "--lr",
@@ -238,14 +238,14 @@
   "w_map_1": [
    "--r8-critic-drivable",
    "--w-r8-drivable",
-   "0.1"
+   "0.06472"
   ],
   "w_map_1_critic": "banded (reads the banded head's drv / drv_sdf / unobs)",
   "w_map_2": "--r9-plan-map-channels",
   "map_arm": "M1N20",
   "map_config": "banded head",
-  "w_r8_drivable_source": "operator-supplied PROVISIONAL placeholder (no W-COST reading exists yet)",
-  "w_r8_drivable_status": "PROVISIONAL -- NOT the argv a token may bind. The W-COST ratio R in the T1h K2 files (K2M1N20 1.545, K2M3N20 1.5425) was measured WITH T1h and is NOT carried over to this T1v composition: regenerate with --w-cost-ratio R --w-cost-source <log> from the K2 explore smoke's W-COST line (T1v)",
+  "w_r8_drivable_source": "0.1 / 1.545 (--w-cost-ratio: the K2 explore smoke's W-COST line)",
+  "w_r8_drivable_status": "MEASURED with T1v (0.1 / R, the K2 explore smoke's W-COST ratio)",
   "t1v_provenance": "REFCV9_E1_T1V_PREREG.md committed outcome 0 (2026-11-09: T1v KEEP vs C0, replacement read vs T1h passed; r9_e1_verdict.T1V_OUTCOMES): K2 composes --r9-hist-supervise-geom INSTEAD of the four T1h flags. The full-model saving is MEASURED at K2's explore smoke, never assumed from the E1 rig.",
   "banded_flags": [
    "--r9-map-banded",
@@ -254,9 +254,10 @@
   ],
   "map_near_lift_m": 20.0,
   "w_map_hires": 1.0,
-  "pending": "GATE: launch_gate (refcv9-e2 / -full / -full-d1) classifies --r9-hist-supervise-geom in NEITHER _R9F_T1H_ADMITTED nor _R9F_T1_REFUSED, so the argv raises open item R9F-UNCLASSIFIED-LEVER (fail closed) until the Master Mind's reviewed launch_gate.py edit classifies it admitted. The trainer's pin (bev_warp_flag._pin_geom) accepts it with --r9-map-banded / --r9-map-banded-near-m 20 / --r9-map-own-enc."
+  "pending": "GATE: launch_gate (refcv9-e2 / -full / -full-d1) admits --r9-hist-supervise-geom by exact name (_R9F_T1V_ADMITTED, 926820a9). The trainer's pin (bev_warp_flag._pin_geom) accepts it with --r9-map-banded / --r9-map-banded-near-m 20 / --r9-map-own-enc."
  },
- "what": "K2M1N20 = K0 + E1 lever T1v (--r9-hist-supervise-geom) INSTEAD of the four T1h flags + the C8 planner wires (REFCV9_DESIGN 4.4 K2; map config: banded head). T1v: REFCV9_E1_T1V_PREREG.md committed outcome 0, 2026-11-09 (KEEP vs C0; replacement read vs T1h passed). W-COST: PROVISIONAL until the K2 explore smoke measures it with T1v. Composed by stack/scripts/r9_e2_make_argv.py from stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; base_sha256 = sha256 of the K0 FILE bytes.",
+ "what": "K2M1N20 = K0 + E1 lever T1v (--r9-hist-supervise-geom) INSTEAD of the four T1h flags + the C8 planner wires (REFCV9_DESIGN 4.4 K2; map config: banded head). T1v: REFCV9_E1_T1V_PREREG.md committed outcome 0, 2026-11-09 (KEEP vs C0; replacement read vs T1h passed). W-COST: MEASURED with T1v at the K2 explore smoke. Composed by stack/scripts/r9_e2_make_argv.py from stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; base_sha256 = sha256 of the K0 FILE bytes.",
  "profile": "refcv9-e2",
- "w_cost": "provisional"
+ "w_cost_ratio": 1.545,
+ "w_cost_source": "tanitad-thor:/home/nvidia/r8ns/r9e2/gate3_explore/926820a981ae_K2M1N20_wcost/logs/job_smoke.log"
 }

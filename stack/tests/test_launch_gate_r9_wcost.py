@@ -88,14 +88,14 @@ def test_R_2_5_with_the_placeholder_0_1_FAILS_and_the_message_names_R_the_argv_w
 def test_the_committed_provisional_K2_files_are_refused_whenever_R_is_far_from_1_and_pass_only_inside_the_tolerance_band():
     # the placeholder has w * R / 0.1 == R: it is admitted ONLY for R in [0.95, 1.05], where 0.1 IS the rule's value to within the tolerance
     # K2-WCOST MEASURED (MM 2026-11-07): K2's committed file carries 0.06843 = 0.1 / 1.4613 (the gate's own G-LIVE smoke of K2 at 6d0e629f printed
-    # R = 1.4613): its OWN smoke's line passes and any other R fails, naming the weight to write. The banded three are still the placeholder.
-    for v, (own, w_text) in {"K2": ("1.4613", "0.06843")}.items():      # K2M1N20 / K2M3N20 (T1h: 1.5450 / 1.5425) now compose T1v: those readings do not carry over, they are placeholders again
+    # R = 1.4613): its OWN smoke's line passes and any other R fails, naming the weight to write. K2M1N20 / K2M3N20: the same, measured WITH T1v at 926820a981ae (2026-11-09). K2M3 is still the placeholder.
+    for v, (own, w_text) in {"K2": ("1.4613", "0.06843"), "K2M1N20": ("1.5450", "0.06472"), "K2M3N20": ("1.5425", "0.06483")}.items():
         assert LG.flag_values(K2_ARGV[v], "--w-r8-drivable") == [w_text]
         assert LG.wcost_reasons(LG.PROFILES["refcv9-e2"], K2_ARGV[v], [line(own)])[0] == []
         for R in ("1.0000", "2.5000"):
             r, _ = LG.wcost_reasons(LG.PROFILES["refcv9-e2"], K2_ARGV[v], [line(R)])
             assert len(r) == 1 and ("write --w-r8-drivable %s" % LG.wcost_weight_text(float(R))) in r[0], (v, R, r)
-    for v in ("K2M1N20", "K2M3", "K2M3N20"):      # still at the placeholder (K2M3: PREREG_M3, not a candidate; K2M1N20 / K2M3N20: T1v, W-COST not yet measured with it)
+    for v in ("K2M3",):      # still at the placeholder (K2M3: PREREG_M3, not a candidate)
         assert LG.flag_values(K2_ARGV[v], "--w-r8-drivable") == ["0.1"]
         for R in ("0.2000", "0.5000", "0.9000", "1.1000", "2.5000", "10.0000"):
             r, _ = LG.wcost_reasons(LG.PROFILES["refcv9-e2"], K2_ARGV[v], [line(R)])
@@ -309,8 +309,8 @@ def test_the_stamp_is_applied_by_main_only_so_the_committed_files_regenerate_byt
             if d.get("w_cost") == "provisional":      # the T1v files were written by main() without --w-cost-ratio
                 MK.stamp_w_cost(rec, None, None)
             got = MK.dump(rec).encode("utf-8")
-        assert got == (RUNS / f"r9e2_{v}.argv.json").read_bytes() and ("w_cost" in d) == (v in ("K2M1N20", "K2M3N20"))
-    assert [v for v in VARIANTS if "w_cost_ratio" in json.loads((RUNS / f"r9e2_{v}.argv.json").read_text(encoding="utf-8"))] == ["K2"]
+        assert got == (RUNS / f"r9e2_{v}.argv.json").read_bytes() and "w_cost" not in d
+    assert [v for v in VARIANTS if "w_cost_ratio" in json.loads((RUNS / f"r9e2_{v}.argv.json").read_text(encoding="utf-8"))] == ["K2", "K2M1N20", "K2M3N20"]
     k0_path, base_path = _k0_paths()
     assert MK.main(["--check-k0", "--base", base_path, "--k0", k0_path]) == 0                                # K0 regenerates BYTE-EQUAL
     assert MK.dump(MK.regen_k0(json.loads(Path(base_path).read_text(encoding="utf-8")))).encode("utf-8") == k0b

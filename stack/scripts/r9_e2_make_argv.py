@@ -207,14 +207,13 @@ def variant_doc(k0_doc: dict, k0_bytes: bytes, variant: str, w_drivable: float, 
         lever["w_map_hires"] = MAP_W
         lever["pending"] = (("BUILD-LEVEL checks PENDING: the trainer refuses --r9-bev-warp-supervise-hist with --r9-map-banded today (bev_warp_flag.py:178-179; another "
                              "agent implements it). The gate's STATIC admission does not read the trainer's pin.") if t1 == T1H_ARM else
-                            ("GATE: launch_gate (refcv9-e2 / -full / -full-d1) classifies --r9-hist-supervise-geom in NEITHER _R9F_T1H_ADMITTED nor _R9F_T1_REFUSED, so the argv raises open item "
-                             "R9F-UNCLASSIFIED-LEVER (fail closed) until the Master Mind's reviewed launch_gate.py edit classifies it admitted. The trainer's pin (bev_warp_flag._pin_geom) "
+                            ("GATE: launch_gate (refcv9-e2 / -full / -full-d1) admits --r9-hist-supervise-geom by exact name (_R9F_T1V_ADMITTED, 926820a9). The trainer's pin (bev_warp_flag._pin_geom) "
                              "accepts it with --r9-map-banded / --r9-map-banded-near-m 20 / --r9-map-own-enc."))
     what = (("%s = K0 + the crowned E1 lever bundle T1h + the C8 planner wires (REFCV9_DESIGN 4.4 K2; map config: %s). Composed by stack/scripts/r9_e2_make_argv.py from "
              "stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; base_sha256 = sha256 of the K0 FILE bytes." % (variant, lever["map_config"])) if t1 == T1H_ARM else
             ("%s = K0 + E1 lever T1v (--r9-hist-supervise-geom) INSTEAD of the four T1h flags + the C8 planner wires (REFCV9_DESIGN 4.4 K2; map config: %s). T1v: REFCV9_E1_T1V_PREREG.md "
-             "committed outcome 0, 2026-11-09 (KEEP vs C0; replacement read vs T1h passed). W-COST: PROVISIONAL until the K2 explore smoke measures it with T1v. Composed by "
-             "stack/scripts/r9_e2_make_argv.py from stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; base_sha256 = sha256 of the K0 FILE bytes." % (variant, lever["map_config"])))
+             "committed outcome 0, 2026-11-09 (KEEP vs C0; replacement read vs T1h passed). W-COST: %s. Composed by "
+             "stack/scripts/r9_e2_make_argv.py from stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; base_sha256 = sha256 of the K0 FILE bytes." % (variant, lever["map_config"], "PROVISIONAL until the K2 explore smoke measures it with T1v" if provisional else "MEASURED with T1v at the K2 explore smoke")))
     return {"schema": "r9e2-argv-v1", "arm": "r9e2_%s" % variant, "seed": 0, "steps": E2_STEPS, "argv": argv,
             "base_sha256": hashlib.sha256(k0_bytes).hexdigest(), "derived_from": "r9e2_K0", "lever": lever,
             "what": what,
