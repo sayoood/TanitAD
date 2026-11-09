@@ -307,12 +307,12 @@ def main(tmp):
             if f.endswith(".sh") and b"\r" in raw:
                 bad_files.append(f"CRLF in {f}")
             if re.search(rb"\btext\s*=\s*True", raw) and not f.startswith("test_egowm_check"):
-                bad_files.append(f"bare text=True, encoding="utf-8" in {f}")
+                bad_files.append(f"bare text=True in {f}")
             if re.search(rb"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", raw) and not f.endswith(".json"):
                 bad_files.append(f"IP-like string in {f}")
             if re.match(r"(?i)^(aux|con|prn|nul)(\.|$)", f):
                 bad_files.append(f"reserved name {f}")
-    check("package hygiene (LF scripts, no bare text=True, encoding="utf-8", no IP, no reserved names): " + "; ".join(bad_files), bad_files == [])
+    check("package hygiene (LF scripts, no bare text=True, no IP, no reserved names): " + "; ".join(bad_files), bad_files == [])
     print(f"UNIT ok={N_OK} bad={N_BAD}")
     return 0 if N_BAD == 0 else 1
 
