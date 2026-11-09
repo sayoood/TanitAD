@@ -564,7 +564,7 @@ def scorer1p6_argv(arm: str, pair_w=None) -> list:
 
 PROFILES["refe_scorer1p6"] = {**PROFILES["refe_sft4r"], "name": "refe_scorer1p6", "recipe_rules": None, "scorer1_rules": True, "scorer1_kind": "p6", "recipe": SCORER1P6_RECIPE,
                               "forbidden_flags": SCORER1P6_FORBIDDEN, "suite": SCORER1P6_SUITE, "data_flags": SCORER1_DATA, "pinned_argv": (),
-                              "data_expect": scorer1p6_data_expect(SCORER1P6_DATA_PIN), "data_expect_updates": SCORER1P6_UPDATES, "data_pin": SCORER1P6_DATA_PIN,
+                              "data_expect": scorer1p6_data_expect(SCORER1P6_DATA_PIN), "data_expect_min": {}, "data_expect_updates": SCORER1P6_UPDATES, "data_pin": SCORER1P6_DATA_PIN,
                               "required_flags": {"--pdm-labels-train": None, "--pdm-labels-heldout": None, "--require-pdm": None, "--b-mode": "expreward", "--lam": "1.0", "--tau-s": "0.1", "--lr": "1e-4",
                                                  "--navtest-logs": None, "--navtest-tokens": None, "--max-updates": str(SCORER1P6_UPDATES)},
                               "ckpt_sha256": SCORER1P6_CKPT_SHA256, "navtest_sha256": SCORER1_NAVTEST_SHA256, "root": SCORER1P6_ROOT, "arm_seed": SCORER1P6_ARM_SEED, "pair_spec": SCORER1P6_PAIR_SPEC,

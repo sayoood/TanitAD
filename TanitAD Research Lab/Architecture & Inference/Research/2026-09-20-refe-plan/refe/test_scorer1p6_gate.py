@@ -245,6 +245,7 @@ assert "refe-plan-p6" not in joined and "refe-plan-p7" not in joined, "the chain
 assert "--profile refe_scorer1p6" in joined and "refe-plan-scorer1p6" in joined and L.SCORER1P6_CARD_SHA256 in ctext and L.SCORER1P6_CKPT_SHA256 in ctext
 assert "--pair-calibrate" not in joined, "--pair-calibrate is in no launch argv"
 assert re.search(r"for ARMN in C0 C0r S1E; do", joined)
+assert L.PROFILES["refe_scorer1p6"].get("data_expect_min") == {}, "no inherited floor: refe_sft4r's teacher-lane floor cannot hold for arms that forbid every lane flag"
 card = "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p6base/PREREG_SCORER1P6.md"
 if os.path.exists(card):
     assert hashlib.sha256(open(card, "rb").read()).hexdigest() == L.SCORER1P6_CARD_SHA256, "the pinned card sha256 is not the frozen card"
@@ -258,7 +259,10 @@ if bash:
     for arm in L.SCORER1P6_ARM_SEED:
         env = dict(os.environ, ARM=arm, MODE="argv", SCORER1P6_WS="/workspace")
         out = subprocess.run([bash, pod], env=env, capture_output=True, encoding="utf-8").stdout.strip().split()
-        assert gp(out) == gp(L.scorer1p6_argv(arm)), (arm, set(gp(out)) ^ set(gp(L.scorer1p6_argv(arm))))
+        # on the pod, once the chain has calibrated, the script rightly adds the measured --pair-w; the pin is then compared WITH that value
+        cal_real = "/workspace/data/refe_scorer1p6/calibrate_" + arm.lower() + "/pair_weight.json"
+        pw_real = json.load(open(cal_real))["pair_w"] if L.SCORER1P6_PAIR_SPEC.get(arm) and os.path.exists(cal_real) else None
+        assert gp(out) == gp(L.scorer1p6_argv(arm, pair_w=pw_real)), (arm, set(gp(out)) ^ set(gp(L.scorer1p6_argv(arm, pair_w=pw_real))))
         assert "--pair-calibrate" not in out
     with tempfile.TemporaryDirectory(dir=os.environ.get("SCORER1_TMP") or None) as td:
         cal = os.path.join(td, "data", "refe_scorer1p6", "calibrate_s1e")
