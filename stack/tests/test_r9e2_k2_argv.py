@@ -33,20 +33,23 @@ RUNS = ROOT / "ops" / "runs.d"
 VARIANTS = ("K2", "K2M1N20", "K2M3", "K2M3N20")
 FAMILY = ("E2", "FULL", "D1")
 T1H = ["--r9-bev-warp", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only"]
+T1V = ["--r9-hist-supervise-geom"]
+#: the variants that compose T1v INSTEAD of the T1h bundle (REFCV9_E1_T1V_PREREG.md committed outcome 0, 2026-11-09); K2 / K2M3 keep T1h
+T1V_VARIANTS = ("K2M1N20", "K2M3N20")
+T1H_VARIANTS = ("K2", "K2M3")
 WIRES = ["--r9-plan-box-tokens", "--r8-critic-drivable", "--w-r8-drivable"]
 #: variant -> (flags ADDED to K0, flags whose VALUE changed, the open items the gate raises)
 EXPECT = {
     "K2": (T1H + WIRES, {"--out"}, []),
-    "K2M1N20": (T1H + WIRES + ["--r9-map-banded", "--r9-map-banded-near-m", "--r9-plan-map-channels"], {"--out"}, ["E1-MAP-OWN-RECORD"]),
+    "K2M1N20": (T1V + WIRES + ["--r9-map-banded", "--r9-map-banded-near-m", "--r9-plan-map-channels"], {"--out"}, ["E1-MAP-OWN-RECORD"]),
     "K2M3": (T1H + WIRES + ["--r9-map-banded", "--r9-map-own-enc", "--r9-plan-map-channels"], {"--out", "--map-hires-near-lift-m"}, ["E1-MAP-OWN-RECORD"]),
-    "K2M3N20": (T1H + WIRES + ["--r9-map-banded", "--r9-map-own-enc", "--r9-map-banded-near-m", "--r9-plan-map-channels"], {"--out"}, ["E1-MAP-OWN-RECORD"]),
+    "K2M3N20": (T1V + WIRES + ["--r9-map-banded", "--r9-map-own-enc", "--r9-map-banded-near-m", "--r9-plan-map-channels"], {"--out"}, ["E1-MAP-OWN-RECORD"]),
 }
 
 
 #: MEASURED W-COST (MM 2026-11-07/08): the gate's own G-LIVE smoke of each provisional argv at 6d0e629f printed "refcv9 W-COST at step 0: ... = R"; K2M3 stays the placeholder
-MEASURED_WCOST = {"K2": (1.4613, "0.06843", "6d0e629f37a2_K2_glive/logs/job_smoke.log"),
-                  "K2M1N20": (1.545, "0.06472", "6d0e629f37a2_K2M1N20_wcost/logs/job_smoke.log"),
-                  "K2M3N20": (1.5425, "0.06483", "6d0e629f37a2_K2M3N20_wcost/logs/job_smoke.log")}
+MEASURED_WCOST = {"K2": (1.4613, "0.06843", "6d0e629f37a2_K2_glive/logs/job_smoke.log")}
+#: K2M1N20 / K2M3N20 were measured WITH T1h (1.545 / 1.5425); they now compose T1v, so those readings do not carry over: PROVISIONAL until the K2 explore smoke measures them with T1v
 
 def doc(v):
     return json.loads((RUNS / f"r9e2_{v}.argv.json").read_text(encoding="utf-8"))
@@ -97,8 +100,11 @@ def test_each_committed_variant_regenerates_byte_equal_from_K0_by_the_composer(v
                              w_source="0.1 / %g (--w-cost-ratio: the K2 explore smoke's W-COST line)" % r)
         got = MK.dump(MK.stamp_w_cost(rec, r, d["w_cost_source"])).encode("utf-8")
     else:
-        got = MK.dump(MK.variant_doc(json.loads(k0b.decode("utf-8")), k0b, v, w, provisional=True,
-                                     w_source="operator-supplied PROVISIONAL placeholder (no W-COST reading exists yet)")).encode("utf-8")
+        rec = MK.variant_doc(json.loads(k0b.decode("utf-8")), k0b, v, w, provisional=True,
+                             w_source="operator-supplied PROVISIONAL placeholder (no W-COST reading exists yet)")
+        if d.get("w_cost") == "provisional":      # main() without --w-cost-ratio stamps it (the T1v files); the older K2M3 file predates the stamp
+            MK.stamp_w_cost(rec, None, None)
+        got = MK.dump(rec).encode("utf-8")
     assert got == (RUNS / f"r9e2_{v}.argv.json").read_bytes()
     assert d["arm"] == f"r9e2_{v}" and d["profile"] == "refcv9-e2" and d["steps"] == 6000 and d["derived_from"] == "r9e2_K0"
     assert d["base_sha256"] == hashlib.sha256(k0b).hexdigest()
@@ -112,7 +118,7 @@ def test_the_variants_delta_vs_K0_is_exactly_the_stated_flag_set_and_every_other
     assert {f for f in set(a) & set(b) if a[f] != b[f]} == changed
     assert a["--out"] == [f"/home/nvidia/r8ns/r9e2/runs/r9e2-{v}"]
     assert a["--w-map-hires"] == ["1.0"] and a["--bev-source"] == ["map_hires_pool"] and a["--steps"] == ["6000"] and a["--lr-schedule"] == ["wsd"]
-    assert a["--r9-bev-warp-fuse-init"] == ["identity"] and a["--map-hires-near-lift-m"] == (["10"] if v == "K2M3" else ["20"])
+    assert (a.get("--r9-bev-warp-fuse-init") == ["identity"]) == (v in T1H_VARIANTS) and a["--map-hires-near-lift-m"] == (["10"] if v == "K2M3" else ["20"])
     assert ("--r9-map-banded-near-m" in a) == (v in ("K2M1N20", "K2M3N20")) and a.get("--r9-map-banded-near-m", ["20"]) == ["20"]
     assert ("--r9-map-own-enc" in a) == (v in ("K2M3", "K2M3N20")) and ("--r9-plan-map-channels" in a) == (v != "K2")
 
@@ -123,6 +129,23 @@ def test_the_banded_variants_carry_exactly_the_map_flags_r9_e1_make_argv_builds(
     mine, theirs = dict(LG.flag_pairs(av(v))), dict(LG.flag_pairs(e1))
     for f in set(theirs) - set(dict(LG.flag_pairs(K0))) | {"--map-hires-near-lift-m", "--w-map-hires"}:
         assert mine[f] == theirs[f], (v, f)
+
+
+@pytest.mark.parametrize("v", T1V_VARIANTS)
+def test_T1v_variants_carry_the_one_T1v_flag_and_NONE_of_the_four_T1h_flags(v):
+    toks = av(v)
+    assert toks.count("--r9-hist-supervise-geom") == 1
+    for f in T1H + ["--r9-bev-warp-lags", "--r9-bev-warp-shuffle"]:
+        assert f not in toks, (v, f)
+    assert [t for t in E1.T1_ARMS["T1v"]] == T1V and MK.T1_ARM_OF[v] == "T1v"
+    d = doc(v)
+    assert "t1h_bundle" not in d["lever"] and d["lever"]["t1v"] == T1V and "T1v" in d["what"] and "PROVISIONAL" in d["what"]
+    assert d["w_cost"] == "provisional" and "w_cost_ratio" not in d
+
+
+@pytest.mark.parametrize("v", T1H_VARIANTS)
+def test_T1h_variants_are_unchanged_by_the_T1v_switch(v):
+    assert "--r9-hist-supervise-geom" not in av(v) and all(f in av(v) for f in T1H) and MK.T1_ARM_OF[v] == "T1h"
 
 
 def test_the_T1h_bundle_is_the_E1_arms_bundle_and_W_MAP_2_is_not_in_K2():
@@ -171,7 +194,9 @@ def test_the_full_family_admits_each_variant_statically_and_the_open_items_are_t
     a = argv_for(prof, av(v), env)
     r, p = _rules(env, prof, a)
     assert r == [] and p == [], (prof, v, r)
-    assert items(env[prof], a) == EXPECT[v][2]                       # K2: none; banded: E1-MAP-OWN-RECORD alone (no box record item, no R9F-UNCLASSIFIED-LEVER)
+    want = sorted(EXPECT[v][2])
+    # K2: none; K2M3 and the T1v variants: E1-MAP-OWN-RECORD alone. T1v is ADMITTED by the T1v FLIP (launch_gate `_R9F_T1V_ADMITTED`, MM 2026-11-09, H-R9-E1-T1V), so R9F-UNCLASSIFIED-LEVER is gone.
+    assert items(env[prof], a) == want
 
 
 def test_K0_is_still_admitted_with_no_open_item(env):
@@ -183,6 +208,8 @@ def test_K0_is_still_admitted_with_no_open_item(env):
 @pytest.mark.parametrize("v", VARIANTS)
 @pytest.mark.parametrize("missing", ["--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only"])
 def test_RED_a_variant_missing_one_T1h_flag_is_refused_naming_it(env, prof, v, missing):
+    if v in T1V_VARIANTS:
+        pytest.skip("T1v variants carry no T1h flag: see test_T1v_variants_carry_the_one_T1v_flag_and_NONE_of_the_four_T1h_flags")
     a = argv_for(prof, drop(av(v), missing), env)
     r, _ = _rules(env, prof, a)
     assert any(x.startswith(missing) and "is REQUIRED" in x and "--r9-bev-warp is passed" in x for x in r), r
@@ -248,7 +275,7 @@ def test_fingerprints_the_full_family_moved_and_every_other_profile_is_unchanged
         "refcv8": "4841b2a6f0758b95", "refcv9-warm": "7099d75fa2f40240", "refcv9-e1rig": "6fa39c86092dffec",     # refcv9 E1 arm T1v: E1_T1_FLAGS gained --r9-hist-supervise-geom (was 0bb9664939426521 after pin6, 18c28c61f19f5544 before it)
         "refcv8-nt": "a24d2c1a71042711", "refcv8-mapft": "f024877e5326f4ff", "v8f": "52860dd82f3a79af"}
     assert {n: _fp(n) for n in ("refcv9-e2", "refcv9-full", "refcv9-full-d1")} == {
-        "refcv9-e2": "2ee6fd2473fc296d", "refcv9-full": "0af11fbfd62e6ed1", "refcv9-full-d1": "b48f8af8c7fe34d4"}
+        "refcv9-e2": "acc27e87d94fe9e2", "refcv9-full": "95a02abfad8aab76", "refcv9-full-d1": "ad790da13c9c84b8"}   # T1v FLIP: was 2ee6fd2473fc296d / 0af11fbfd62e6ed1 / b48f8af8c7fe34d4
 
 
 def test_the_full_family_required_values_when_is_one_dict_holding_all_three_rule_sets_and_e1rig_shares_the_near_lift_constant():
@@ -284,6 +311,10 @@ def test_the_trainer_parses_each_variant_and_the_C8_wire_pins_accept_it(v):
 def test_BUILD_LEVEL_bev_warp_pin_K2_passes_and_the_banded_variants_are_PENDING_the_supervise_hist_hold(v):
     from tanitad.train import bev_warp_flag as BWF
     args = _parse(v)
+    if v in T1V_VARIANTS:       # T1v + --r9-map-banded [+ --r9-map-banded-near-m 20] [+ --r9-map-own-enc]: bev_warp_flag._pin_geom / pin_args accept it; T1h's flags are off
+        assert BWF.geom_on(args) is True and BWF.is_on(args) is False
+        BWF.pin_args(args)
+        return
     try:
         BWF.pin_args(args)
     except SystemExit as e:

@@ -5,7 +5,9 @@
   2  ARGV           ``r9e1_T1v.argv.json`` == the TOOL's output (byte-equal, via the CLI) == C0 + the flag + ``--out`` and nothing else; the trainer's parser reads it as geom on /
                     warp off; the emitter and ``check_t1_arm_pins`` refuse a base that already carries the flag and T1v + ``--r9-bev-warp``
   3  e1rig          ADMITS it (static rules, forbidden levers, no open item, no own-record row); T1v + warp is refused by the lever's own ``pin_args`` (the build), not by a static rule
-  4  FULL FAMILY    e2 / full / full-d1 hit R9F-UNCLASSIFIED-LEVER on it (fail closed; T1v enters K2 only by a FLIP after its read); the admitted K2 argv itself is untouched
+  4  FULL FAMILY    e2 / full / full-d1 ADMIT it (THE T1v FLIP, 2026-11-09: exempt from R9F-UNCLASSIFIED-LEVER by EXACT name; a sibling flag still hits the item); the admitted K2 argv is untouched
+  9  FULL-FAMILY T1v  the checks T1v needs on the FULL model, each proved by a MUTATION with a control reading the opposite value: G-DVB (attach needles + the built state), G-LIVE
+                    (`judge_hist_geom_live`), G-EVAL (`full_eval_hist_geom_attach`: the loader attaches no pose history), the records' stamps, no new parameter
   5  G-LIVE         T1v is NEVER entered into ``BEV_WARP_LIVE`` (no gate, no fuse); the T1h argv IS (positive control)
   6  RECORDS        every overfit judge requires the stamp ``bev_warp_not_certified == [--r9-hist-supervise-geom]``; the harnesses strip the flag from what they build
   7  G-EVAL         ``rig_eval_t1_build_reasons`` (trainer vs loader HistGeom), ``rig_eval_probe_dataset`` (the pose-only attach), and a REAL tiny rig: both builds forward alike
@@ -36,7 +38,9 @@ import r9_e1_verdict as V  # noqa: E402
 import refc_v3_train as T  # noqa: E402
 import test_bev_warp as TB  # noqa: E402
 import test_launch_gate_e1rig_t1 as E1T  # noqa: E402
+import test_bev_warp_full_model as FM  # noqa: E402
 import test_launch_gate_geval_t1 as GT  # noqa: E402
+import test_map_only_ft as R  # noqa: E402
 import test_r9_e1_verdict as TV  # noqa: E402
 from tanitad.train import bev_warp_flag as BWF  # noqa: E402
 
@@ -71,8 +75,9 @@ def test_the_flag_is_the_seventh_member_of_ONE_fact_and_the_full_family_exemptio
     assert GEOM in T.build_parser()._option_string_actions
     assert MK.T1_ARMS["T1v"] == (GEOM,) and MK.T1_GEOM_ARMS == ("T1v",)
     assert LG._E1_T1_FLAGS_PRE_T1V == PRE_T1V == LG.E1_T1_FLAGS[:6] and GEOM not in LG._E1_T1_FLAGS_PRE_T1V
-    assert GEOM not in LG._R9F_T1H_ADMITTED and GEOM not in LG._R9F_T1_REFUSED                         # classified in NEITHER: fail closed
-    assert set(LG._R9F_T1H_ADMITTED + LG._R9F_T1_REFUSED) == set(PRE_T1V)
+    assert GEOM not in LG._R9F_T1H_ADMITTED and GEOM not in LG._R9F_T1_REFUSED and LG._R9F_T1V_ADMITTED == (GEOM,)   # its OWN literal: not the bundle, not refused
+    assert set(LG._R9F_T1H_ADMITTED + LG._R9F_T1_REFUSED) == set(PRE_T1V)                                  # the six pre-T1v members: classified as before
+    assert set(LG._R9F_T1H_ADMITTED + LG._R9F_T1V_ADMITTED + LG._R9F_T1_REFUSED) == set(LG.E1_T1_FLAGS)  # THE T1v FLIP: all SEVEN are classified now
     for name in FULL_FAMILY:
         box = next(i for i in LG.PROFILES[name]["open_items"] if i["id"] == "E1-BOX-OWN-RECORD")
         assert GEOM not in box["when_except_exact"] and tuple(box["when_except_exact"]) == tuple(LG.E1_BOX_AUX_FLAGS) + PRE_T1V, name   # the fingerprint-preserving literal
@@ -143,17 +148,167 @@ def test_e1rig_ADMITS_T1v_exactly_as_it_admits_C0(tmp_path):
 
 # ============================================================================================ 4. full family ==
 @pytest.mark.parametrize("name", FULL_FAMILY)
-def test_RED_the_full_family_REFUSES_T1v_through_R9F_UNCLASSIFIED_LEVER_and_the_admitted_K2_argv_is_untouched(name):
+def test_the_full_family_ADMITS_T1v_by_EXACT_name_and_the_admitted_K2_argv_is_untouched(name):
     p = LG.PROFILES[name]
     it = next(i for i in p["open_items"] if i["id"] == "R9F-UNCLASSIFIED-LEVER")
+    sib = GEOM + "-v2"
+    assert LG._R9F_T1V_ADMITTED == (GEOM,) and GEOM in it["when_except_exact"] and sib not in it["when_except_exact"]
     assert LG.open_item_hits(it, K0) == [] and LG.open_item_hits(it, K2) == []                       # controls: the admitted argvs hit nothing
-    assert LG.open_item_hits(it, K0 + [GEOM]) == [GEOM] and LG.open_item_hits(it, K2 + [GEOM]) == [GEOM]
-    assert LG.open_item_reasons(p, K2) == []
-    for argv in (K2 + [GEOM], T1V):
-        r = LG.open_item_reasons(p, argv)
-        assert len(r) >= 1 and any(x.startswith("OPEN ITEM R9F-UNCLASSIFIED-LEVER") and GEOM in x for x in r), (name, r)
-    assert LG.open_item_reasons(p, K2 + [GEOM]).__len__() == 1                                         # exactly the one item, not a forbidden lever
-    assert LG.forbidden_lever_reasons(p, K2 + [GEOM])[0] == LG.forbidden_lever_reasons(p, K2)[0] == []
+    assert LG.open_item_hits(it, K0 + [GEOM]) == [] and LG.open_item_hits(it, K2 + [GEOM]) == [] and GEOM not in LG.open_item_hits(it, T1V)   # the flag no longer hits
+    assert LG.open_item_hits(it, K0 + [sib]) == [sib]                                                  # EXACT: a sibling flag still hits the item
+    assert LG.open_item_reasons(p, K2) == [] and LG.open_item_reasons(p, K0 + [GEOM]) == []
+    r = LG.open_item_reasons(p, K0 + [sib])
+    assert len(r) == 1 and r[0].startswith("OPEN ITEM R9F-UNCLASSIFIED-LEVER") and sib in r[0], r
+    assert LG.forbidden_lever_reasons(p, K0 + [GEOM])[0] == [] and GEOM not in [f for names, _ in p["forbidden_levers"] for f in names]
+    assert LG.required_on_reasons(p, K0 + [GEOM])[0] == LG.required_on_reasons(p, K0)[0]               # no static co-requirement: adding T1v moves NOTHING (T1v carries none of the bundle flags)
+    assert GEOM not in p["required_values_when"] and set(p["required_values_when"]) >= set(LG._R9F_T1H_ADMITTED)   # the T1h bundle rules are untouched
+    assert LG.required_on_reasons(p, K2)[0] == LG.required_on_reasons(p, K0)[0] and LG.required_on_reasons(p, K2 + [GEOM])[0] == LG.required_on_reasons(p, K2)[0]   # the T1h K2 argv reads as K0 does
+
+
+@pytest.mark.parametrize("name", FULL_FAMILY)
+def test_T1v_and_the_T1h_bundle_are_ALTERNATIVES_the_static_gate_cannot_say_so_and_the_BUILD_refuses(name):
+    p = LG.PROFILES[name]
+    both = K2 + [GEOM]                                                                                   # K2 carries the whole T1h bundle
+    # the gate's static mechanisms (`required_values_when`, `forbidden_levers`, open items) have no "absent unless" rule: both flags together pass them -- named here, not hidden
+    assert LG.open_item_reasons(p, both) == [] and LG.forbidden_lever_reasons(p, both)[0] == [] and LG.required_on_reasons(p, both)[0] == LG.required_on_reasons(p, K2)[0]
+    a = T.build_parser().parse_args(both)
+    assert BWF.geom_on(a) and BWF.is_on(a)
+    with pytest.raises(SystemExit, match="ALTERNATIVE to the T1h bundle"):                             # what G-DVB / G-LIVE's trainer build runs (`_pin_refcv8` -> `_bw.pin_args`)
+        BWF.pin_args(a)
+    BWF.pin_args(T.build_parser().parse_args(K2))                                                        # control: the T1h bundle alone builds
+
+
+# ============================================================================================ 9. full-family T1v ==
+TRAINER_SRC = Path(T.__file__).read_text(encoding="utf-8")
+
+
+@pytest.mark.parametrize("name", FULL_FAMILY)
+def test_REACH_G_DVB_the_three_T1v_hops_are_pinned_in_the_trainer_and_deleting_any_one_turns_the_gate_RED(name):
+    p = LG.PROFILES[name]
+    hops = p["lever_attach_needles"][GEOM]
+    assert isinstance(hops, tuple) and len(hops) == 3 and all(TRAINER_SRC.count(h) == 1 for h in hops)
+    argv = K0 + [GEOM]
+    r, d = LG.lever_attach_reasons(p, argv, TRAINER_SRC)
+    assert r == [] and d["checked"][GEOM] is True                                                        # control: the real trainer has all three
+    for hop in hops:
+        mutant = TRAINER_SRC.replace(hop, "pass")                                                        # MUTATE: delete the single hop
+        r, d = LG.lever_attach_reasons(p, argv, mutant)
+        assert d["checked"][GEOM] is False and len(r) == 1 and hop in r[0] and "DECLARED and never BUILT" in r[0], (hop, r)
+        assert LG.lever_attach_reasons(p, K0, mutant)[0] == []                                           # control: an argv WITHOUT the flag is not held to its hops
+    assert len(LG.lever_attach_reasons(p, argv, TRAINER_SRC.replace(hops[0], "pass").replace(hops[2], "pass"))[0]) == 2
+    str_needle = LG.lever_attach_reasons(dict(p, lever_attach_needles={GEOM: "_bw.attach(model, args)"}), argv, TRAINER_SRC)
+    assert str_needle[0] == []                                                                           # the str form of every OTHER lever still works (unchanged semantics)
+
+
+def _t1v_full():
+    """The tiny FULL model (planner + tactical + perception + 10 cm map) with T1v built exactly as the trainer builds it (pin_args -> attach)."""
+    model, cfg = R._build()
+    args = FM._args(r9_bev_warp=False, r9_hist_supervise_geom=True)
+    BWF.pin_args(args)
+    BWF.attach(model, args)
+    return model, cfg, args
+
+
+def test_REACH_G_DVB_the_built_state_check_runs_on_the_FULL_model_and_goes_RED_when_the_geometry_is_missing():
+    model, _cfg, args = _t1v_full()
+    assert not getattr(model.core, "_perc_rig", False) and hasattr(model.core, "decoder")                # the FULL model, not the rig
+    assert BWF.dvb_check_hist_geom(model, args) == []                                                    # control: declared == built
+    bare, _ = R._build()                                                                                 # MUTANT 1: declared, never attached (the 'declared lever the model does not build' class)
+    mism = BWF.dvb_check_hist_geom(bare, args)
+    assert mism and any("argv and the state the loss reads disagree" in str(m) for m in mism), mism
+    delattr(model._map_hires, BWF.GEOM_BRANCH_ATTR)                                                      # MUTANT 2: the state says T1v but the 10 cm branch holds no HistGeom
+    assert any("holds no HistGeom" in str(m) for m in BWF.dvb_check_hist_geom(model, args))
+    off = FM._args(r9_bev_warp=False, r9_hist_supervise_geom=False)
+    assert BWF.dvb_check_hist_geom(R._build()[0], off) == []                                             # control (the opposite value): neither declared nor built
+
+
+def test_T1v_adds_NO_parameter_to_the_full_model_so_the_zero_gradient_gate_has_nothing_new_to_admit():
+    on, _c, _a = _t1v_full()
+    off, _c2 = R._build()
+    assert {n: tuple(p.shape) for n, p in on.named_parameters()} == {n: tuple(p.shape) for n, p in off.named_parameters()}
+    assert not hasattr(on._map_hires, "bev_warp") and BWF.GEOM_ATTR in vars(on)                          # the model STATE is there, a module is not
+    warp, _c3 = R._build()
+    wa = FM._args()
+    BWF.pin_args(wa)
+    BWF.attach(warp, wa)
+    assert any(n.startswith("_map_hires.bev_warp") for n, _ in warp.named_parameters())                  # control: T1h DOES add parameters (gate + fuse)
+    assert not any("hist_geom" in n or "bev_warp" in n for n, _ in on.named_parameters())
+
+
+def _obs(rows):
+    rec: dict = {}
+    LG.bev_warp_observe(rec, {"bw_has": torch.tensor(rows, dtype=torch.bool)})
+    return rec["bw_has"]
+
+
+def test_REACH_G_LIVE_judge_hist_geom_live_reads_the_pose_history_and_is_RED_when_it_never_reached_the_windows():
+    live, dead = _obs([[True, True]] * 4), _obs([[False, False]] * 4)
+    assert LG.judge_hist_geom_live(K0 + [GEOM], live)[0] == []                                           # control: history in every lag
+    r, d = LG.judge_hist_geom_live(K0 + [GEOM], dead)                                                     # MUTANT: the history never reaches a window -> the OR adds no cell -> the arm IS C0
+    assert len(r) == 1 and "only [0.0, 0.0]" in r[0] and "supervision set never widens" in r[0], r
+    r, _ = LG.judge_hist_geom_live(K0 + [GEOM], _obs([[True, False], [True, False], [True, True], [True, False]]))   # one thin lag column
+    assert len(r) == 1 and "lag column(s) [1]" in r[0]
+    assert "carried no `bw_has`" in LG.judge_hist_geom_live(K0 + [GEOM], None)[0][0]                    # the hook never reached the batch
+    assert "could not be read" in LG.judge_hist_geom_live(K0 + [GEOM], {"error": "boom"})[0][0]
+    for argv in (K0, K2, T1H):                                                                           # inert without the flag (T1h keeps its own judge)
+        assert LG.judge_hist_geom_live(argv, dead) == ([], {})
+    assert LG.judge_bev_warp_live(K0 + [GEOM], {}, None, expect_steps=10) == ([], {})                    # and T1v still does NOT enter the gate/fuse judge
+    src = inspect.getsource(LG.job_smoke)
+    assert 'has_flag(ctx.argv, HIST_GEOM_LIVE["flag"])' in src and 'judge_hist_geom_live(ctx.argv, run1.get("bw_has"))' in src and "reasons += gvr" in src
+    assert LG.HIST_GEOM_LIVE["flag"] == GEOM == BWF.GEOM_FLAG
+
+
+def test_REACH_G_LIVE_the_real_pose_only_dataset_batch_of_the_full_model_passes_the_judge():
+    model, cfg, args = _t1v_full()
+    eps = T._synth_episodes(2, cfg.core, seed=0, clip_ids=[R.CLIP, R.CLIP + "-b"])
+    ds = T.V3Dataset(eps, window=cfg.core.window, max_horizon=20, channels=cfg.core.encoder.in_channels)
+    BWF.attach_dataset(ds, model, args)
+    batch = torch.utils.data.default_collate([ds[i] for i in (12, 14)])
+    assert "bw_frames" not in batch and bool(batch["bw_has"].all())
+    rec: dict = {}
+    LG.bev_warp_observe(rec, batch)
+    assert LG.judge_hist_geom_live(K0 + [GEOM], rec["bw_has"])[0] == []
+
+
+def test_REACH_G_EVAL_the_full_model_probe_gets_the_pose_history_from_the_gate_because_the_loader_attaches_none():
+    model, cfg, args = _t1v_full()
+    eps = T._synth_episodes(2, cfg.core, seed=0, clip_ids=[R.CLIP, R.CLIP + "-b"])
+    mk = lambda: T.V3Dataset(eps, window=cfg.core.window, max_horizon=20, channels=cfg.core.encoder.in_channels)   # noqa: E731  (what `L.build_eval_dataset` returns for T1v: NO history)
+    loader = GT._loader()
+    b0 = FM._batch(cfg, model, args, attach=False)                                                       # the loader-built batch
+    assert not [k for k in b0 if k.startswith("bw_")]
+    with pytest.raises(SystemExit, match=r"--r9-hist-supervise-geom but the batch carries no \['bw_pose_now', 'bw_pose_past', 'bw_has'\]"):
+        FM._loss(model, b0)                                                                              # MUTANT (the gate's call removed): the full-model forward REFUSES, by name
+    ds = mk()
+    rec = LG.full_eval_hist_geom_attach(loader, ds, model, args, {"labels": "x"})                       # the gate's helper, with the LOADER's model
+    assert rec["hist_geom"]["with_frames"] is False and rec["hist_geom"]["lag_rows"] == list(model._r9_hist_geom.lag_rows) and rec["labels"] == "x"
+    batch = FM._batch(cfg, model, args, attach=False)
+    batch.update({k: v for k, v in torch.utils.data.default_collate([ds[i] for i in (12, 14)]).items() if k.startswith("bw_")})
+    out = FM._loss(model, batch)                                                                         # control: with the helper's attach the SAME forward runs
+    assert "traj" in out and all(bool(torch.isfinite(v).all()) for v in FM._tensors(out).values())
+    # inert / guarded
+    plain = FM._args(r9_bev_warp=False, r9_hist_supervise_geom=False)
+    ds2 = mk()
+    assert LG.full_eval_hist_geom_attach(loader, ds2, model, plain, {"k": 1}) == {"k": 1} and getattr(ds2, "_r9_bw", None) is None   # no flag: untouched
+    done = {"hist_geom": {"x": 1}}
+    assert LG.full_eval_hist_geom_attach(loader, mk(), model, args, done) is done                         # a fixed loader that already attached is not attached twice
+    with pytest.raises(LG.GateError, match="built without the loader's model"):
+        LG.full_eval_hist_geom_attach(loader, mk(), None, args, {})
+    with pytest.raises(LG.GateError, match="no `_bw`"):
+        LG.full_eval_hist_geom_attach(GT._loader(types.SimpleNamespace()), mk(), model, args, {})
+    src = inspect.getsource(LG.eval_identity)
+    assert src.index("L.build_eval_dataset") < src.index("drec = full_eval_hist_geom_attach(L, e_ds, model_l, args_l, drec)") < src.index("rig_eval_t1_build_reasons(args_t")
+    assert src.count("full_eval_hist_geom_attach(") == 1
+
+
+def test_the_records_and_the_overfit_stamps_read_T1v_on_a_FULL_FAMILY_argv_exactly_as_on_the_rig_argv():
+    full = K0 + [GEOM]
+    assert LG.reuse_stamp_sets(full) == {LG.E1_BOX_AUX_STAMP: [], LG.E1_T1_STAMP: [GEOM]}
+    assert LG.reuse_stamp_sets(K2)[LG.E1_T1_STAMP] == sorted(LG._R9F_T1H_ADMITTED)                      # control: the T1h bundle's set
+    assert LG.bev_warp_stamp_reasons("X", {G.T1_STAMP: [GEOM], G.T1_STAMP_WHY: "w"}, full)[0] == []
+    assert LG.bev_warp_stamp_reasons("X", {}, full)[0] != []                                             # MUTANT: no stamp
+    assert LG.bev_warp_stamp_reasons("X", {G.T1_STAMP: sorted(LG._R9F_T1H_ADMITTED), G.T1_STAMP_WHY: "w"}, full)[0] != []   # the bundle's stamp is not T1v's
+    assert G.strip_t1(full)[1] == [GEOM] and GEOM not in G.strip_t1(full)[0] and GEOM in O.t1_flags_of(full)
 
 
 # ================================================================================================ 5. G-LIVE ==

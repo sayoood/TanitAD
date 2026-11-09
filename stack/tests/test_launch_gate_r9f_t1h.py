@@ -141,7 +141,8 @@ def test_the_family_fingerprints_moved_to_the_pinned_values():
     # K2-ARGV (MM 2026-11-07): moved AGAIN, 08c84658d9e98ceb / 551545dd6c9bbacc / 9fbb9f8b7c41908d -> the values below -- the full family's `required_values_when` gained the near-lift rules
     # (`_NEAR_LIFT_WHEN`: banded -> 10, near-m=20 -> 20, the same constant refcv9-e1rig uses) and the W-MAP-2 co-requirement (`_R9F_PLAN_MAP_REQUIRED`); pinned also in test_r9e2_k2_argv.py
     # PIN6 (MM 2026-11-07, 5f47df80: the env-failure pin's sha literal sits in these profiles): refcv9-e2 20297780a454a6c0 -> 2ee6fd2473fc296d, refcv9-full 8c9dcff2252b11ef -> 0af11fbfd62e6ed1, refcv9-full-d1 eae27696e70883cd -> b48f8af8c7fe34d4
-    assert {n: fp(n) for n in FAMILY} == {"refcv9-e2": "2ee6fd2473fc296d", "refcv9-full": "0af11fbfd62e6ed1", "refcv9-full-d1": "b48f8af8c7fe34d4"}   # was 08c84658d9e98ceb / 551545dd6c9bbacc / 9fbb9f8b7c41908d (THE FLIP); before it 725ca7f0edac2d09 / ebcf1301de38ea4d / 97eec4e0d9d7eec6
+    # T1v FLIP (MM 2026-11-09, H-R9-E1-T1V): `_R9F_T1V_ADMITTED` in the R9F-UNCLASSIFIED-LEVER exemption + the T1v attach needles: refcv9-e2 2ee6fd2473fc296d -> acc27e87d94fe9e2, refcv9-full 0af11fbfd62e6ed1 -> 95a02abfad8aab76, refcv9-full-d1 b48f8af8c7fe34d4 -> ad790da13c9c84b8
+    assert {n: fp(n) for n in FAMILY} == {"refcv9-e2": "acc27e87d94fe9e2", "refcv9-full": "95a02abfad8aab76", "refcv9-full-d1": "ad790da13c9c84b8"}   # was (before the T1v flip) 2ee6fd2473fc296d / 0af11fbfd62e6ed1 / b48f8af8c7fe34d4; before that 08c84658d9e98ceb / 551545dd6c9bbacc / 9fbb9f8b7c41908d (THE FLIP); before it 725ca7f0edac2d09 / ebcf1301de38ea4d / 97eec4e0d9d7eec6
 
 
 # ====================================================================== 4. liveness: the full family reaches the SAME G-LIVE rule ==

@@ -63,6 +63,11 @@ K0_SET_LINES = [
 #: K2 variants: name -> the E1 map arm whose banded flags the variant carries (None = C0's 8-code head, no banded head).
 VARIANTS = {"K2": None, "K2M1N20": "M1N20", "K2M3": "M3", "K2M3N20": "M3N20"}
 T1H_ARM = "T1h"
+#: variant -> the E1 T1 arm whose levers it composes. K2M1N20 / K2M3N20 compose T1v (`--r9-hist-supervise-geom`, ONE flag) INSTEAD of the four T1h flags: REFCV9_E1_T1V_PREREG.md committed outcome 0
+#: (T1v KEEP vs C0 and the replacement read vs T1h passed, 2026-11-09 -- `r9_e1_verdict.T1V_OUTCOMES`). K2 and K2M3 keep T1h (their committed files regenerate byte-equal; K2M3 is the refused-near-lift
+#: variant, K2 has no banded head).
+T1V_ARM = "T1v"
+T1_ARM_OF = {"K2": T1H_ARM, "K2M1N20": T1V_ARM, "K2M3": T1H_ARM, "K2M3N20": T1V_ARM}
 MAP_W = 1.0                      # --w-map-hires of every banded variant (E1's M1N20 fixed 1.0; M3 / M3N20 PREREG_M3: M1's 1.0) == K0's own value
 PLAN_ANCHOR = "--bev-planner-crop-m"         # the C8 wires go right after the planner crop (planner-side flags, after K0's map group)
 PLAN_MAP, PLAN_BOX = "--r9-plan-map-channels", "--r9-plan-box-tokens"
@@ -166,7 +171,7 @@ def compose(k0_doc: dict, variant: str, w_drivable: float, out: str | None = Non
     argv = _check_k0(k0_doc)
     out = E1._thor_path(out or RUN_OUT % variant, "--out")
     arm = VARIANTS[variant]
-    argv = E1.t1_arm_argv(argv, T1H_ARM, out)                       # the crowned T1h bundle, right after --map-hires-near-refine-blocks
+    argv = E1.t1_arm_argv(argv, T1_ARM_OF[variant], out)            # the crowned T1 lever (T1h bundle, or T1v's one flag), right after --map-hires-near-refine-blocks
     if arm is not None:
         w = MAP_W if arm in E1.OWN_ENC_ARMS else None
         argv = E1.map_arm_argv(argv, arm, out, w=w)                 # banded [+ own-enc] [+ near-m 20], near lift 10 / 20, --w-map-hires = the arm's
@@ -182,23 +187,37 @@ def compose(k0_doc: dict, variant: str, w_drivable: float, out: str | None = Non
 def variant_doc(k0_doc: dict, k0_bytes: bytes, variant: str, w_drivable: float, *, provisional: bool, w_source: str, out: str | None = None) -> dict:
     argv = compose(k0_doc, variant, w_drivable, out)
     arm = VARIANTS[variant]
-    lever = {"t1h_bundle": [t for t in E1.T1_ARMS[T1H_ARM]], "w_box": PLAN_BOX, "w_map_1": [CRITIC, W_CRITIC, repr(float(w_drivable))],
+    t1 = T1_ARM_OF[variant]
+    lever = {("t1h_bundle" if t1 == T1H_ARM else "t1v"): [t for t in E1.T1_ARMS[t1]], "w_box": PLAN_BOX, "w_map_1": [CRITIC, W_CRITIC, repr(float(w_drivable))],
              "w_map_1_critic": "banded (reads the banded head's drv / drv_sdf / unobs)" if arm else "non-banded (the 8-code head's softmax sum)",
              "w_map_2": PLAN_MAP if arm else "NOT AVAILABLE without the banded head (plan_wires_flag.pin_args: needs --r9-map-banded)",
              "map_arm": arm, "map_config": "banded head" if arm else "C0's 8-code head",
              "w_r8_drivable_source": w_source,
              "w_r8_drivable_status": "PROVISIONAL -- NOT the argv a token may bind: regenerate with --w-cost-ratio R from the K2 explore smoke's W-COST line" if provisional
                                      else "MEASURED (0.1 / R, the explore smoke's W-COST ratio)"}
+    if t1 == T1V_ARM:
+        lever["t1v_provenance"] = ("REFCV9_E1_T1V_PREREG.md committed outcome 0 (2026-11-09: T1v KEEP vs C0, replacement read vs T1h passed; r9_e1_verdict.T1V_OUTCOMES): K2 composes "
+                                   "--r9-hist-supervise-geom INSTEAD of the four T1h flags. The full-model saving is MEASURED at K2's explore smoke, never assumed from the E1 rig.")
+        lever["w_r8_drivable_status"] = (("PROVISIONAL -- NOT the argv a token may bind. The W-COST ratio R in the T1h K2 files (K2M1N20 1.545, K2M3N20 1.5425) was measured WITH T1h and is NOT "
+                                          "carried over to this T1v composition: regenerate with --w-cost-ratio R --w-cost-source <log> from the K2 explore smoke's W-COST line (T1v)")
+                                         if provisional else "MEASURED with T1v (0.1 / R, the K2 explore smoke's W-COST ratio)")
     if arm is not None:
         lever["banded_flags"] = [E1.BANDED_FLAG] + ([E1.OWN_ENC_FLAG] if arm in E1.OWN_ENC_ARMS else []) + ([E1.NEAR_M_FLAG, "20"] if arm in E1.NEAR20_ARMS else [])
         lever["map_near_lift_m"] = float(E1.banded_near_lift_m(arm))
         lever["w_map_hires"] = MAP_W
-        lever["pending"] = ("BUILD-LEVEL checks PENDING: the trainer refuses --r9-bev-warp-supervise-hist with --r9-map-banded today (bev_warp_flag.py:178-179; another "
-                            "agent implements it). The gate's STATIC admission does not read the trainer's pin.")
+        lever["pending"] = (("BUILD-LEVEL checks PENDING: the trainer refuses --r9-bev-warp-supervise-hist with --r9-map-banded today (bev_warp_flag.py:178-179; another "
+                             "agent implements it). The gate's STATIC admission does not read the trainer's pin.") if t1 == T1H_ARM else
+                            ("GATE: launch_gate (refcv9-e2 / -full / -full-d1) classifies --r9-hist-supervise-geom in NEITHER _R9F_T1H_ADMITTED nor _R9F_T1_REFUSED, so the argv raises open item "
+                             "R9F-UNCLASSIFIED-LEVER (fail closed) until the Master Mind's reviewed launch_gate.py edit classifies it admitted. The trainer's pin (bev_warp_flag._pin_geom) "
+                             "accepts it with --r9-map-banded / --r9-map-banded-near-m 20 / --r9-map-own-enc."))
+    what = (("%s = K0 + the crowned E1 lever bundle T1h + the C8 planner wires (REFCV9_DESIGN 4.4 K2; map config: %s). Composed by stack/scripts/r9_e2_make_argv.py from "
+             "stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; base_sha256 = sha256 of the K0 FILE bytes." % (variant, lever["map_config"])) if t1 == T1H_ARM else
+            ("%s = K0 + E1 lever T1v (--r9-hist-supervise-geom) INSTEAD of the four T1h flags + the C8 planner wires (REFCV9_DESIGN 4.4 K2; map config: %s). T1v: REFCV9_E1_T1V_PREREG.md "
+             "committed outcome 0, 2026-11-09 (KEEP vs C0; replacement read vs T1h passed). W-COST: PROVISIONAL until the K2 explore smoke measures it with T1v. Composed by "
+             "stack/scripts/r9_e2_make_argv.py from stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; base_sha256 = sha256 of the K0 FILE bytes." % (variant, lever["map_config"])))
     return {"schema": "r9e2-argv-v1", "arm": "r9e2_%s" % variant, "seed": 0, "steps": E2_STEPS, "argv": argv,
             "base_sha256": hashlib.sha256(k0_bytes).hexdigest(), "derived_from": "r9e2_K0", "lever": lever,
-            "what": ("%s = K0 + the crowned E1 lever bundle T1h + the C8 planner wires (REFCV9_DESIGN 4.4 K2; map config: %s). Composed by stack/scripts/r9_e2_make_argv.py from "
-                     "stack/ops/runs.d/r9e2_K0.argv.json -- never hand-written; base_sha256 = sha256 of the K0 FILE bytes." % (variant, lever["map_config"])),
+            "what": what,
             "profile": "refcv9-e2"}
 
 

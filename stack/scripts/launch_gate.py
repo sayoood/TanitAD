@@ -1615,7 +1615,8 @@ E1_PFQ_STAMP_WHY = "perframe_seeds_not_certified_why"
 #: NO past-frame encode / lift / feature warp / fuse and NO `bev_warp` module or parameter (`bev_warp_flag.dvb_check_hist_geom`). It is the ALTERNATIVE to the bundle (REFUSED with `--r9-bev-warp`) and changes no head
 #: and no input at inference, so it rides T1's rule: admitted by refcv9-e1rig; stamped `bev_warp_not_certified` by the inherited records (the harnesses strip it -- `g_box_overfit.T1_FLAGS` /
 #: `map_hires_overfit.T1_FLAGS`, pinned equal to this tuple). It is deliberately in NEITHER `_R9F_T1H_ADMITTED` nor `_R9F_T1_REFUSED`: in the full family it hits R9F-UNCLASSIFIED-LEVER (fail closed) until the MM
-#: classifies it after T1v's read. It does NOT enter `BEV_WARP_LIVE` (no gate, no fuse): its liveness is the map loss's own.
+#: classifies it after T1v's read. It does NOT enter `BEV_WARP_LIVE` (no gate, no fuse): its G-LIVE is `judge_hist_geom_live`.
+#: ⭐ THE T1v FLIP (MM 2026-11-09, `H-R9-E1-T1V`): in the full family it is now ADMITTED (`_R9F_T1V_ADMITTED`); the 'NEITHER tuple' sentence above is superseded for the full family.
 E1_T1_FLAGS: tuple = ("--r9-bev-warp", "--r9-bev-warp-lags", "--r9-bev-warp-shuffle", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only", "--r9-hist-supervise-geom")
 #: the six pre-T1v members: the FULL family's copy of the E1-BOX-OWN-RECORD item (`_R9F_OPEN_ITEMS`) keeps this literal, so the full-family profiles' content (and fingerprints) do not move when a
 #: seventh flag joins `E1_T1_FLAGS` (the item fires on `--r9-box-*` only, so the exemption list is inert for any `--r9-*` T1 flag -- pinned by a test).
@@ -1807,6 +1808,14 @@ _R9F_AUG_FLAGS = ("--r9-photometric",)
 #: pinned by a test) instead of riding the old "all of E1_T1_FLAGS is classified" exemption into the full model silently.
 _R9F_T1H_ADMITTED = ("--r9-bev-warp", "--r9-bev-warp-supervise-hist", "--r9-bev-warp-fuse-init", "--r9-bev-warp-fill-only")
 _R9F_T1_REFUSED = ("--r9-bev-warp-lags", "--r9-bev-warp-shuffle")
+#: ⭐ THE T1v FLIP (MM 2026-11-09; `GOALS_AND_CLAIMS.md` `H-R9-E1-T1V`, KEPT AND REPLACES T1h: outcome 0 of `REFCV9_E1_T1V_PREREG.md`'s four). MEASURED, T0, DEV, 2,308 windows / 70 episodes,
+#: paired episode-cluster bootstrap B 2000, ONE training seed: vs C0 `nf_prec_0_10` 0.3917 -> 0.7123, +0.3206 [0.2597, 0.3769] (KEEP: above 2 x floor 0.0915; 0 vetoes); vs T1h (replacement
+#: read) 0.6869 -> 0.7123, +0.0255 [0.012, 0.0372] (R1 pass, R2 pass: not claimed BETTER than T1h, admitted as the simpler EQUAL); zero-gradient gate PASS, 507 of 507 parameters trained.
+#: T1v is `lift_valid_now | hist_valid` from GEOMETRY ALONE: NO parameter, NO past-frame encode / lift / warp / fuse, so it carries none of the bundle's co-required flags. It is the ALTERNATIVE to
+#: the T1h bundle: an argv with both is refused by the trainer's build (`bev_warp_flag.py` `attach` / `_pin_geom`; G-DVB and G-LIVE run that build) -- `required_values_when` cannot express
+#: "absent", so there is no static rule for it. EXPLICIT literal, exempt from R9F-UNCLASSIFIED-LEVER BY EXACT NAME (a sibling such as `--r9-hist-supervise-geom-v2` still hits the item).
+#: Its checks on the full model: G-DVB `_R9F_ATTACH` (3 hops), G-LIVE `judge_hist_geom_live` (`bw_has`), G-EVAL `full_eval_hist_geom_attach` (the loader attaches no pose history for it).
+_R9F_T1V_ADMITTED = ("--r9-hist-supervise-geom",)
 _R9F_T1H_REQUIRED = {"--r9-bev-warp": {"--r9-bev-warp-supervise-hist": (), "--r9-bev-warp-fuse-init": "identity", "--r9-bev-warp-fill-only": ()},
                      "--r9-bev-warp-supervise-hist": {"--r9-bev-warp": ()}, "--r9-bev-warp-fuse-init": {"--r9-bev-warp": ()},
                      "--r9-bev-warp-fill-only": {"--r9-bev-warp": ()}}
@@ -1834,7 +1843,11 @@ _R9F_ATTACH = dict({f: "_bbf.attach(model, args)" for f in E1_BOX_OWN_FLAGS if f
                    #: THE FLIP (T1h bundle): the warp's fuse + lift hook are attached at the model build (`_bw.attach`, refc_v3_train.py); supervise-hist is a LOSS-side lever whose hop is
                    #: `_bw.supervised_lift_valid` (delete it and the flag builds the state, then silently supervises only the cells the camera sees NOW). fuse-init / fill-only are applied
                    #: INSIDE `attach` (bev_warp_flag.py), so the `_bw.attach` needle covers them; the history dataset hook and `_bw.stage` are G-LIVE's (`bw_has` / the gate and fuse gradients)
-                   **{"--r9-bev-warp": "_bw.attach(model, args)", "--r9-bev-warp-supervise-hist": "_bw.supervised_lift_valid(model, pout, lv, sel)"})
+                   **{"--r9-bev-warp": "_bw.attach(model, args)", "--r9-bev-warp-supervise-hist": "_bw.supervised_lift_valid(model, pout, lv, sel)"},
+                   #: THE T1v FLIP: T1v has NO fuse, so its three hops are the model build (`_bw.attach` -> `_attach_geom`: the HistGeom on the 10 cm branch + the model state), the TRAIN dataset's
+                   #: pose history (`_bw.attach_dataset(ds, ...)`; the eval dataset's is `train()`'s own line, and G-EVAL's `full_eval_hist_geom_attach`), and the LOSS hop shared with T1h
+                   #: (`_bw.supervised_lift_valid`: delete it and the flag builds the state, then silently supervises only the cells the camera sees NOW). A TUPLE: every needle must be present.
+                   **{"--r9-hist-supervise-geom": ("_bw.attach(model, args)", "_bw.attach_dataset(ds, model, args)", "_bw.supervised_lift_valid(model, pout, lv, sel)")})
 #: the share alarm (R3 / E0j): when the banded map head is ON, its gradient share of the trunk must stay >= the floor in the smoke's one
 #: `--grad-share-every` reading. E0j's target: the banded map takes >= 0.05 of layer2 (w* 0.511; at w 1.0 it took 0.146). The trainer's
 #: reading (`tanitad/train/grad_share.py` `measure`, groups `GROUP_PREFIXES`: trunk = `core.encoder.*`) has NO `layer2` group; the finest
@@ -1853,7 +1866,7 @@ _R9F_OPEN_ITEMS = (
              "wire (`_R9F_PLAN_FLAGS`), a C10 augmentation (`_R9F_AUG_FLAGS`), nor forbidden here. It is never silently admitted",
      "owner": "the lever's code agent -> the Master Mind (a reviewed edit of launch_gate.py that classifies the flag)",
      "closes_when": "never by a record: only by a reviewed launch_gate.py edit (classify it admitted, or add it to forbidden_levers)",
-     "when_prefixes": ("--r9-",), "when_except": ("--r9-map-", "--r9-box-"), "when_except_exact": _R9F_PLAN_FLAGS + _R9F_T1H_ADMITTED + _R9F_T1_REFUSED + _R9F_AUG_FLAGS},
+     "when_prefixes": ("--r9-",), "when_except": ("--r9-map-", "--r9-box-"), "when_except_exact": _R9F_PLAN_FLAGS + _R9F_T1H_ADMITTED + _R9F_T1V_ADMITTED + _R9F_T1_REFUSED + _R9F_AUG_FLAGS},
 )
 
 
@@ -3549,11 +3562,12 @@ def lever_attach_reasons(prof: dict, argv: list[str], trainer_src: str) -> tuple
     out = []
     for flag, needle in needles.items():
         if has_flag(argv, flag):
-            ok = needle in src
-            det["checked"][flag] = ok
-            if not ok:
-                out.append(f"G-DVB reachability: {flag} is in the argv but the trainer no longer contains its attach hop `{needle}` -- "
-                           f"the lever would be DECLARED and never BUILT")
+            hops = (needle,) if isinstance(needle, str) else tuple(needle)          # a lever with several hops (T1v) names a tuple: ALL must be present
+            det["checked"][flag] = all(h in src for h in hops)
+            for hop in hops:
+                if hop not in src:
+                    out.append(f"G-DVB reachability: {flag} is in the argv but the trainer no longer contains its attach hop `{hop}` -- "
+                               f"the lever would be DECLARED and never BUILT")
     return out, det
 
 
@@ -5447,6 +5461,33 @@ def judge_bev_warp_live(argv: list[str], grads: dict, bw: dict | None, *, expect
             reasons.append(f"G-LIVE T1: `bw_has` is True on only {[f for _, f in thin] or fr} of {n} smoke windows (lag column(s) {[i for i, _ in thin]}); "
                            f"a MAJORITY (> {BEV_WARP_LIVE['min_frac']:.0%}) must carry history in every lag")
     return reasons, det
+
+
+#: refcv9 T1v on the FULL model (THE T1v FLIP): T1v adds NO parameter and no gate, so `judge_bev_warp_live`'s gradient half does not apply (and stays inert for it: pinned). What can be
+#: silently dead is the HISTORY: if `bw_has` is False in the smoke's windows the OR adds no cell and the arm IS C0. So the smoke must have SEEN `bw_has` (the pose-only dataset hook reached the batch)
+#: on a MAJORITY of windows in every lag column -- the SAME bar as T1's, read from the same observer (`bev_warp_observe`).
+HIST_GEOM_LIVE = {"flag": "--r9-hist-supervise-geom", "min_frac": 0.5}
+
+
+def judge_hist_geom_live(argv: list[str], bw: Any) -> tuple[list[str], dict]:
+    """G-LIVE for T1v on the full model: `bw_has` observed on every training call and True on a majority of windows in every lag column. Inert (`[]`, `{}`) without the flag."""
+    if not has_flag(argv, HIST_GEOM_LIVE["flag"]):
+        return [], {}
+    d_bw: dict[str, Any] = dict(bw) if isinstance(bw, dict) else {}
+    det: dict[str, Any] = {"on": True, "rule": "G-LIVE T1v history reach (no parameter: the pose-only history must be present)", "bw_has": d_bw}
+    if d_bw.get("error"):
+        return [f"G-LIVE T1v: `bw_has` could not be read on every training call ({d_bw['error']})"], det
+    if not d_bw or not int(d_bw.get("windows", 0) or 0):
+        return ["G-LIVE T1v: the smoke's training batches carried no `bw_has` (the pose-history dataset hook did not reach the batch, or no training call was observed): "
+                "T1v's mask would add no cell"], det
+    n = int(d_bw["windows"])
+    fr = [round(int(c) / n, 4) for c in d_bw.get("per_lag_true") or []]
+    det["bw_has_per_lag_frac"] = fr
+    thin = [(i, f) for i, f in enumerate(fr) if not f > float(HIST_GEOM_LIVE["min_frac"])]
+    if not fr or thin:
+        return [f"G-LIVE T1v: `bw_has` is True on only {[f for _, f in thin] or fr} of {n} smoke windows (lag column(s) {[i for i, _ in thin]}); a MAJORITY "
+                f"(> {HIST_GEOM_LIVE['min_frac']:.0%}) must carry history in every lag, else the supervision set never widens"], det
+    return [], det
 
 
 def grad_table(records: dict, model_names: dict) -> dict:
@@ -8900,6 +8941,23 @@ def rig_eval_probe_dataset(L, cfg, args, model=None) -> tuple:
     return e_ds, e_eps, rec
 
 
+def full_eval_hist_geom_attach(L, e_ds, model, args, drec) -> dict:
+    """G-EVAL on the FULL model (THE T1v FLIP): the vendored loader's `build_eval_dataset` attaches the history only for `--r9-bev-warp` (`refcv7_loader.attach_t1_history`; a known defect, not
+    changed here), so a T1v model's loader-built eval batch carries NO `bw_*` keys and `_bw.stage` REFUSES the forward ("[hist-geom] ... the dataset was not attached"). `train()` attaches the
+    POSE-ONLY history to the eval dataset (`_bw.attach_dataset(e_ds, model, args)`); this does the same from the LOADER's model, once, and returns the record (the `hist_geom` key). Inert for an argv
+    without the flag (returns `drec` untouched) and for a loader that already attached (a fixed `attach_t1_history`)."""
+    if not bool(getattr(args, "r9_hist_supervise_geom", False)):
+        return drec
+    if (drec or {}).get("hist_geom") is not None:
+        return drec
+    if model is None:
+        raise GateError("G-EVAL: the argv declares --r9-hist-supervise-geom but the eval dataset was built without the loader's model -- the lag rows are read off the BUILT model")
+    bw = getattr(L.trainer(), "_bw", None)
+    if bw is None:
+        raise GateError("G-EVAL: the argv declares --r9-hist-supervise-geom but the trainer module has no `_bw` (bev_warp_flag) -- cannot attach the pose history the T1v forward needs")
+    return dict(drec or {}, hist_geom=bw.attach_dataset(e_ds, model, args))
+
+
 def rig_eval_t1_build_reasons(args_t, model_t, args_l, model_l) -> tuple[list[str], dict]:
     """refcv9 T1 (`--r9-bev-warp`) G-EVAL: the TRAINER-built and the LOADER-built model must carry THE SAME temporal warp -- the same
     declaration, a built fuse on both, the same lags (seconds AND rows) and the same shuffle control. The lag rows reach the forward ONLY
@@ -9090,6 +9148,7 @@ def eval_identity(ctx: Ctx, T, model_t, args_t, scratch: Path,
     else:
         e_ds, e_eps, drec = L.build_eval_dataset(model_l, cfg_l, args_l, config,
                                                  with_perception_targets=False)
+        drec = full_eval_hist_geom_attach(L, e_ds, model_l, args_l, drec)     # T1v on the full model: the loader attaches no pose history for it
     t1r, t1d = rig_eval_t1_build_reasons(args_t, model_t, args_l, model_l)       # refcv9 T1 only ([] / {"on": False} otherwise)
     reasons += t1r
     idx = int(L.inrun_eval_perm(e_ds, 1, 1)[0])
@@ -9298,6 +9357,11 @@ def job_smoke(ctx: Ctx, checks: list[str]) -> dict[str, dict]:
             btr, btd = judge_bev_warp_live(ctx.argv, run1.get("grads") or {}, run1.get("bw_has"), expect_steps=steps)
             det["bev_warp_live"] = btd
             reasons += btr
+        if has_flag(ctx.argv, HIST_GEOM_LIVE["flag"]):
+            # T1v (full model): no parameter to track -- the pose history must have reached the smoke's windows
+            gvr, gvd = judge_hist_geom_live(ctx.argv, run1.get("bw_has"))
+            det["hist_geom_live"] = gvd
+            reasons += gvr
         if det["map_hires"]["on"]:
             # G-MAP (LOGGING_SPEC_MAP10 sec. 6): per-class signal at the logits (the gate's own
             # hook), the eval row's 24 IoU + 24 loss shares + counts, the train rows' loss
