@@ -15,3 +15,5 @@ Beside `PREREG_V8F_PLANTEST3.md` (`1f9609b4`), deciding nothing. Tier T0, a read
 * **Structural fact (source, `tanitad/models/v8f_mini.py:666-669`):** `z1` is the mean-pooled vision adapter token, projected. The measured ego state reaches the readers S, T and O; it does not enter the world-model latent. A planner searching in that latent has weak access to the quantities its actions change.
 
 Committed next under the card (DECODER-WEAK): a nonlinear readout and multi-frame decoding on the ladder latents. HYPOTHESIS for a further card, not tested here: the measured ego state as part of the world-model state.
+
+**Exact sample counts.** The linear readouts fit 11,904 samples (744 windows, 53 episodes). The MLP fits 8,752 samples (547 windows), with 197 windows for early stopping. Held-out: 17 episodes, 238 windows, 3,808 samples.
