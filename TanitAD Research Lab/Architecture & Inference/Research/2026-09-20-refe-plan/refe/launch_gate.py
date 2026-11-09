@@ -526,7 +526,7 @@ SCORER1P6_PAIR_SPEC = {      # arm -> the L_pair levers it must carry, as the ar
 SCORER1P6_UPDATES = 400
 # THE DATA PIN, TO FILL IN ONCE THE P6 LABELS EXIST (Jobs A + B; `pdm_label_complete.py --expect N` and the trainer's own data event).  While it is None the gate REFUSES every arm
 # (scorer1_refusals): the profile cannot assert label completeness from a count nobody has.  Shape: {"train_sets": <served train sets with a PDM label>, "heldout_sets": <held-out sets>}.
-SCORER1P6_DATA_PIN = None
+SCORER1P6_DATA_PIN = {"train_sets": 60000, "heldout_sets": 1705}
 SCORER1P6_RECIPE = {k: v for k, v in SCORER1_RECIPE.items() if k != "lane_weight"}              # the SFT-4 recipe without its lane term (the generator, the trunk and the lane are not trained)
 SCORER1P6_FORBIDDEN = SCORER1_FORBIDDEN + ("--lane-head", "--lane-weight", "--teacher-lane-train", "--teacher-lane-heldout", "--lane-labels-heldout")      # no lane flag, no lane manifest
 SCORER1P6_SUITE = SCORER1_SUITE + [{"script": "test_pair_loss_p6.py", "token": "ZZTEST_PASS"}, {"script": "test_scorer1p6_gate.py", "token": "ZZTEST_PASS"},
