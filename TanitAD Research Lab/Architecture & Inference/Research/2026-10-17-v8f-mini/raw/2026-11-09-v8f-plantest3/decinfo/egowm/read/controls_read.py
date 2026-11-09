@@ -19,7 +19,7 @@ import lr_lib as L
 import eval_speed as ES
 from tanitad.models import v8f_mini as M
 
-torch.set_num_threads(2)
+torch.set_num_threads(int(os.environ.get("OMP_NUM_THREADS", "2")))
 BANK = os.path.join(S.THEORY, "ladder_read", "results", "arm_R35H_s0.json")
 R35H = f"{L.PULLS}/ladder_R35H_s0"
 SKIP = {"wall_s", "free_gb_at_start", "speed", "run_dir"}
