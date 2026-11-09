@@ -1,0 +1,6 @@
+# HANDOFF_DECINFO (agent, 2026-11-09 07:2x)
+State: card `../PREREG_V8F_DECINFO.md` implemented. `IMPL_CHOICES_DECINFO.md` + `.sha256` written before any real read. Controls: `test_decinfo_controls.py`, 15 passed (`TEST_DECINFO.log`, `TEST_DECINFO.done` rc=0). Control 4 exact (M2b s0 speed 0.27074 / yaw -0.12238; s1 0.31447 / 0.26797 against pre_M2b_s*.json).
+Real run detached via `launch_wmi.ps1` -> `job_run.cmd` -> `run_decinfo.py`; log `run_decinfo.log`; one file per rung/tag in `runs/`; marker `DECINFO.done` (`rc=<n> finished=<time>`) written last, also on failure.
+Order: R0+R2 (M2b), R1 (ladder glob), R3+R4 (M2b s0), R5+R6, R3+R4 (M2b s1). Units already present are skipped, so a rerun after a crash or after new ladder checkpoints appear continues (add a ckpt: rerun `launch_wmi.ps1`; new tags are marked "added after the freeze").
+Report (after DECINFO.done): `cmd /c "call ..\plantest3\env_plantest3.cmd && C:\Users\Admin\venvs\tanitad\Scripts\python.exe report_decinfo.py"` in this folder -> `RESULT_DECINFO.md/.json`. Read the Controls section first, then the outcome lines.
+Temp: `F:/TanitAD-scratch/decinfo_scratch/run1/` (pytest basetemp only). Do not delete `F:/TanitAD-scratch/plantest_tree`.
