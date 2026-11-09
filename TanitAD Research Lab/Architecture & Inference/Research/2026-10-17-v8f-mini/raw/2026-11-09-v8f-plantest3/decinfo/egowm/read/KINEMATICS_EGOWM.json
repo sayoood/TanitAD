@@ -1,0 +1,79 @@
+{
+ "tier": "T0 measurement beside the card (no bar)",
+ "evidence_class": "MEASURED (this script, eval141 clips of the M2b cache)",
+ "speed_source": "ClipStore.get_kin(clip)['kin3'][:, 0], kin_mode yaw, native pose track at raw frame 2j (stored in eval141_speed.npz)",
+ "accel_source": "frames_s0.npz act[:, 0] = nan_to_num(cache 'a'), the trainer's act[..., 0]",
+ "rule": "E-KIN: v(h) = max(0, v(h-1) + 0.2 * act[f0+h-1, 0]) from the measured v(f0); error against measured v(f0+n)",
+ "trainer_rule_shift0": {
+  "2s": {
+   "n_anchor": 12686,
+   "n_clips": 141,
+   "kin_mae_per_clip_mean": 8.6691817720369e-10,
+   "kin_unfloored_mae_per_clip_mean": 1.0741795818478577e-08,
+   "now_mae_per_clip_mean": 0.8938960463257758,
+   "kin_mae_per_clip_median": 0.0,
+   "kin_unfloored_mae_per_clip_median": 0.0,
+   "now_mae_per_clip_median": 0.8477152585983276,
+   "kin_mae_per_clip_max": 1.5430980259319624e-08,
+   "kin_unfloored_mae_per_clip_max": 7.976260718578487e-08,
+   "now_mae_per_clip_max": 2.791536569595337,
+   "kin_mae_pooled": 8.668481595864948e-10,
+   "kin_unfloored_mae_pooled": 1.0752530421598294e-08,
+   "now_mae_pooled": 0.8943859934806824,
+   "kin_signed_bias_pooled": 1.745670034117767e-10
+  },
+  "6s": {
+   "n_anchor": 9866,
+   "n_clips": 141,
+   "kin_mae_per_clip_mean": 2.3308137000438526e-09,
+   "kin_unfloored_mae_per_clip_mean": 7.973810115264831e-08,
+   "now_mae_per_clip_mean": 2.275286805677287,
+   "kin_mae_per_clip_median": 0.0,
+   "kin_unfloored_mae_per_clip_median": 4.7683716530855236e-08,
+   "now_mae_per_clip_median": 1.9091860055923462,
+   "kin_mae_per_clip_max": 4.3553965299790245e-08,
+   "kin_unfloored_mae_per_clip_max": 4.0190559502661927e-07,
+   "now_mae_per_clip_max": 7.581506252288818,
+   "kin_mae_pooled": 2.330415025004207e-09,
+   "kin_unfloored_mae_pooled": 7.98151233993849e-08,
+   "now_mae_pooled": 2.2768874168395996,
+   "kin_signed_bias_pooled": 6.233458747802543e-10
+  }
+ },
+ "beside_shift1": {
+  "2s": {
+   "n_anchor": 12686,
+   "n_clips": 141,
+   "kin_mae_per_clip_mean": 0.09873711258530936,
+   "kin_unfloored_mae_per_clip_mean": 0.0987720875439386,
+   "now_mae_per_clip_mean": 0.8938960463257758,
+   "kin_mae_per_clip_median": 0.09038483139541414,
+   "kin_unfloored_mae_per_clip_median": 0.09065116196870804,
+   "now_mae_per_clip_median": 0.8477152585983276,
+   "kin_mae_per_clip_max": 0.31497537679142423,
+   "kin_unfloored_mae_per_clip_max": 0.3149753510951996,
+   "now_mae_per_clip_max": 2.791536569595337,
+   "kin_mae_pooled": 0.09879167448783988,
+   "kin_unfloored_mae_pooled": 0.09882665425539017,
+   "now_mae_pooled": 0.8943859934806824,
+   "kin_signed_bias_pooled": 0.0006606924928912759
+  },
+  "6s": {
+   "n_anchor": 9866,
+   "n_clips": 141,
+   "kin_mae_per_clip_mean": 0.15295168331086675,
+   "kin_unfloored_mae_per_clip_mean": 0.15306077826873843,
+   "now_mae_per_clip_mean": 2.275286805677287,
+   "kin_mae_per_clip_median": 0.12239753859383719,
+   "kin_unfloored_mae_per_clip_median": 0.1223975345492363,
+   "now_mae_per_clip_median": 1.9091860055923462,
+   "kin_mae_per_clip_max": 0.5222348885025296,
+   "kin_unfloored_mae_per_clip_max": 0.5222349166870117,
+   "now_mae_per_clip_max": 7.581506252288818,
+   "kin_mae_pooled": 0.15304757204803807,
+   "kin_unfloored_mae_pooled": 0.15315671265125275,
+   "now_mae_pooled": 2.2768874168395996,
+   "kin_signed_bias_pooled": 0.006655973193007771
+  }
+ }
+}
