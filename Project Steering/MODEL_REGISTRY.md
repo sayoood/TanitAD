@@ -5611,7 +5611,7 @@ Every row is MEASURED from the harness CSV on the dev box, under `E:/Projects/Ta
 | field | value (MEASURED unless stated) |
 |---|---|
 | identity | `model_final.pt` sha256 `968a469d5b9abdd279aff19b8031c53e9fec0e2683092bff12cfa93be6a4d3d1`, step 10,075 (`labels_manifest.json`) |
-| params | 322,078,274 total, 18,998,850 trainable (pod run `config.json`). ⚠️ above the programme's sub-300M line in total count; the 303 M difference is the frozen DINOv3 backbone |
+| params | 322,078,274 total, 18,998,850 trainable (pod run `config.json`). 303,079,424 non-trainable. `backbone.*` holds 306,225,152 of the total by checkpoint key count, so about 3.15 M of its parameters are trainable. ⚠️ above the programme's sub-300M line in total count |
 | architecture | `--backbone vitl16` (frozen DINOv3, 4 cameras), `--nav-mode command`, `--scorer-sees-trunk`, `--yaw-wrap off`; scorer outputs NC DAC EP TTC C DDC. 64 proposals [M,20,3] at 5 Hz; executed plans [M,8,3] at 0.5 s. Selection rule `navsim_v1` = NC*DAC*(5EP+5TTC+2C)/12 |
 | training args | `--labeller online --label-workers 6 --label-chunks 2 --epochs 25 --epoch-unit scenes --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --tf32 --compile`, seed 0, no warm start; bank 103,037 scenes, 167,300 tuples. Launch gate PASS 2026-11-06T13:31:18; ZZP6_TRAIN_DONE 2026-11-08T18:49:50Z |
 | where | HF `Sayood/tanitad-refe-p6-paper-faithful`; dev box `F:/TanitAD_p6read_work/ckpt/run/model_final.pt` |
