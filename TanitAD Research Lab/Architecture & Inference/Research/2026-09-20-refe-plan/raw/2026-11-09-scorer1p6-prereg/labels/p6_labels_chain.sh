@@ -85,7 +85,7 @@ label_dir() {   # label_dir <name> <sets_dir> <pdm_dir> <expect>
         complete=0; [ -f "$OUT/dump_$name.flag" ] && complete=1
         if ls "$sets"/onpolicy_rlfan_*.jsonl >/dev/null 2>&1; then
             k=$((k + 1)); last="$OUT/logs/relabel_${name}_pass$k.log"
-            (cd "$REFE" && "$NAVSIM_PY" onpolicy_relabel_pdm.py --sets "$sets" --out "$pdm" --workers "$WORKERS" --served-only) > "$last" 2>&1 || return 1
+            (cd "$REFE" && "$NAVSIM_PY" "${RELABEL_SCRIPT:-onpolicy_relabel_pdm.py}" --sets "$sets" --out "$pdm" --workers "$WORKERS" --served-only) > "$last" 2>&1 || return 1
             if [ "$complete" = "1" ]; then break; fi
         fi
         sleep "$POLL_S"
