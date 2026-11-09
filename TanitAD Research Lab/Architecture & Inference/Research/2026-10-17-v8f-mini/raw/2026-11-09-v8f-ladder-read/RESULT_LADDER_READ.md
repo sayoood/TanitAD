@@ -5,7 +5,7 @@ Card: `theory/PREREG_V8F_LADDER.md` (Read, Committed outcomes). Implementation c
 
 ## Status and controls
 
-* Arms read: C0_s0, C0_s1, R35H_s0, R35H_s1, R35_s0, R35_s1, S35_s0, S35_s1. **R35b (the run-to-run floor): PENDING (still training on box 2; add `R35b_s0` to the arm list and rerun this report).**
+* Arms read: C0_s0, C0_s1, R35H_s0, R35H_s1, R35_s0, R35_s1, R35b_s0, S35_s0, S35_s1. **R35b (the run-to-run floor): read.**
 * Control 1, M2b reproduction through this code path (six MRR values, chance, RankMe on IMAG1B's windows): PASS (`CONTROL_M2B.json`).
 * Control 2, Copy-Last against itself, every level and reach of every arm: max |point, lo, hi| = 0.0 (must be exactly 0.0).
 * Control 3, BUILT model equals argv (strides three ways, trained k, free-run anchors, context, history K, dilation, causal pad): all arms passed (a mismatch raises and the arm is not read).
@@ -23,6 +23,7 @@ LONGITUDINAL and LATERAL appear only through the IA-2 targets (speed, lead gap, 
 | S35 (both seeds) | **BAND-MET** | L1, L2, L3 | none | yes / yes / yes |  |
 | R35 (both seeds) | **BAND-MET** | L1, L2, L3 | none | yes / yes / yes |  |
 | R35H (both seeds) | **BAND-MET** | L1, L2, L3 | none | yes / yes / yes |  |
+| R35b (seed [0] only) | **BAND-MET** | L1, L2, L3 | none | yes / yes / yes |  |
 
 Per seed:
 
@@ -34,6 +35,7 @@ Per seed:
 | R35H_s1 | BAND-MET | 0.267 [0.207, 0.321] BEATS | 0.555 [0.501, 0.599] BEATS | 0.687 [0.639, 0.728] BEATS | yes / yes / yes |
 | R35_s0 | BAND-MET | 0.178 [0.145, 0.212] BEATS | 0.419 [0.363, 0.467] BEATS | 0.535 [0.469, 0.590] BEATS | yes / yes / yes |
 | R35_s1 | BAND-MET | 0.190 [0.156, 0.225] BEATS | 0.430 [0.371, 0.479] BEATS | 0.541 [0.473, 0.597] BEATS | yes / yes / yes |
+| R35b_s0 | BAND-MET | 0.178 [0.145, 0.212] BEATS | 0.419 [0.363, 0.467] BEATS | 0.535 [0.469, 0.590] BEATS | yes / yes / yes |
 | S35_s0 | BAND-MET | 0.069 [0.028, 0.109] BEATS | 0.294 [0.229, 0.350] BEATS | 0.472 [0.409, 0.526] BEATS | yes / yes / yes |
 | S35_s1 | BAND-MET | 0.096 [0.061, 0.133] BEATS | 0.339 [0.279, 0.392] BEATS | 0.480 [0.414, 0.537] BEATS | yes / yes / yes |
 
@@ -97,6 +99,15 @@ Skill = 1 - sum|pred - oracle|^2 / sum|copy - oracle|^2 in the level's latent (0
 | R35_s1 | L3 | 12* | 12.0 (4) | True | 423 | 0 / 564 | 0.541 [0.473, 0.597] | 0.365 | True | False |
 | R35_s1 | L3 | 15 | 15.0 (5) | True | 282 | 0 / 705 | 0.559 [0.488, 0.617] | 0.470 | True | False |
 | R35_s1 | L3 | 18 | 18.0 (6) | True | 0 | 141 / 846 | not readable (fewer than 2 anchors per clip) | | | |
+| R35b_s0 | L1 | 1 | 1.0 (5) | True | 13532 | 0 / 705 | 0.092 [0.069, 0.115] | 0.088 | True | False |
+| R35b_s0 | L1 | 2* | 2.0 (10) | True | 12827 | 0 / 1410 | 0.178 [0.145, 0.212] | 0.101 | True | False |
+| R35b_s0 | L2 | 3 | 3.0 (5) | True | 4091 | 0 / 705 | 0.316 [0.262, 0.364] | 0.081 | True | False |
+| R35b_s0 | L2 | 6* | 6.0 (10) | True | 3386 | 0 / 1410 | 0.419 [0.363, 0.467] | 0.118 | True | False |
+| R35b_s0 | L3 | 6 | 6.0 (2) | True | 705 | 0 / 282 | 0.468 [0.412, 0.515] | 0.109 | True | False |
+| R35b_s0 | L3 | 9 | 9.0 (3) | True | 564 | 0 / 423 | 0.508 [0.446, 0.557] | 0.222 | True | False |
+| R35b_s0 | L3 | 12* | 12.0 (4) | True | 423 | 0 / 564 | 0.535 [0.469, 0.590] | 0.360 | True | False |
+| R35b_s0 | L3 | 15 | 15.0 (5) | True | 282 | 0 / 705 | 0.545 [0.469, 0.607] | 0.460 | True | False |
+| R35b_s0 | L3 | 18 | 18.0 (6) | True | 0 | 141 / 846 | not readable (fewer than 2 anchors per clip) | | | |
 | S35_s0 | L1 | 1 | 1.0 (5) | True | 13532 | 0 / 705 | 0.073 [0.049, 0.097] | 0.083 | False | False |
 | S35_s0 | L1 | 2* | 2.0 (10) | True | 12827 | 0 / 1410 | 0.069 [0.028, 0.109] | 0.050 | True | False |
 | S35_s0 | L2 | 3 | 3.0 (5) | True | 4091 | 0 / 705 | 0.283 [0.232, 0.332] | 0.093 | True | False |
@@ -140,6 +151,9 @@ n anchors = (clip, state) pairs scored; 'masked at clip end' = anchors whose tar
 | R35_s1 | L1 | 0.337 | 0.052 | 0.285 [0.278, 0.292] | -0.001 | True | 33.2 / 43.1 |
 | R35_s1 | L2 | 0.347 | 0.124 | 0.223 [0.211, 0.236] | -0.002 | True | 40.7 / 59.1 |
 | R35_s1 | L3 | 0.505 | 0.408 | 0.097 [0.074, 0.120] | -0.002 | True | 31.6 / 47.8 |
+| R35b_s0 | L1 | 0.336 | 0.052 | 0.284 [0.277, 0.292] | -0.001 | True | 34.3 / 44.1 |
+| R35b_s0 | L2 | 0.343 | 0.124 | 0.219 [0.207, 0.232] | -0.002 | True | 40.2 / 59.4 |
+| R35b_s0 | L3 | 0.501 | 0.408 | 0.092 [0.069, 0.117] | -0.001 | True | 31.1 / 46.9 |
 | S35_s0 | L1 | 0.339 | 0.052 | 0.287 [0.280, 0.294] | -0.001 | True | 38.6 / 44.2 |
 | S35_s0 | L2 | 0.348 | 0.124 | 0.224 [0.212, 0.237] | -0.002 | True | 51.0 / 61.7 |
 | S35_s0 | L3 | 0.505 | 0.408 | 0.097 [0.074, 0.120] | -0.003 | True | 35.8 / 51.7 |
@@ -149,34 +163,34 @@ n anchors = (clip, state) pairs scored; 'masked at clip end' = anchors whose tar
 
 ## Lever effects against the R35b run-to-run floor (band-end skill)
 
-**R35b is pending, so no difference between arms is called a lever effect yet.** The differences are printed for reference only.
+Floor per level = |skill(R35 s0) - skill(R35b s0)| (same flags, same seed): L1 0.0000, L2 0.0000, L3 0.0000. A difference counts as a lever effect only if it exceeds the floor of its level.
 
 | comparison (same seed) | level | skill A | skill B | A - B | exceeds floor |
 |---|---|---|---|---|---|
-| S35 - C0 s0 | L1 | 0.069 | 0.064 | 0.005 | R35b pending |
-| S35 - C0 s0 | L2 | 0.294 | 0.278 | 0.017 | R35b pending |
-| S35 - C0 s0 | L3 | 0.472 | 0.359 | 0.113 | R35b pending |
-| S35 - C0 s1 | L1 | 0.096 | 0.080 | 0.016 | R35b pending |
-| S35 - C0 s1 | L2 | 0.339 | 0.267 | 0.072 | R35b pending |
-| S35 - C0 s1 | L3 | 0.480 | 0.401 | 0.079 | R35b pending |
-| R35 - S35 s0 | L1 | 0.178 | 0.069 | 0.109 | R35b pending |
-| R35 - S35 s0 | L2 | 0.419 | 0.294 | 0.125 | R35b pending |
-| R35 - S35 s0 | L3 | 0.535 | 0.472 | 0.063 | R35b pending |
-| R35 - S35 s1 | L1 | 0.190 | 0.096 | 0.094 | R35b pending |
-| R35 - S35 s1 | L2 | 0.430 | 0.339 | 0.091 | R35b pending |
-| R35 - S35 s1 | L3 | 0.541 | 0.480 | 0.061 | R35b pending |
-| R35H - R35 s0 | L1 | 0.259 | 0.178 | 0.082 | R35b pending |
-| R35H - R35 s0 | L2 | 0.546 | 0.419 | 0.127 | R35b pending |
-| R35H - R35 s0 | L3 | 0.672 | 0.535 | 0.137 | R35b pending |
-| R35H - R35 s1 | L1 | 0.267 | 0.190 | 0.077 | R35b pending |
-| R35H - R35 s1 | L2 | 0.555 | 0.430 | 0.125 | R35b pending |
-| R35H - R35 s1 | L3 | 0.687 | 0.541 | 0.146 | R35b pending |
-| R35 - C0 s0 | L1 | 0.178 | 0.064 | 0.114 | R35b pending |
-| R35 - C0 s0 | L2 | 0.419 | 0.278 | 0.141 | R35b pending |
-| R35 - C0 s0 | L3 | 0.535 | 0.359 | 0.176 | R35b pending |
-| R35 - C0 s1 | L1 | 0.190 | 0.080 | 0.110 | R35b pending |
-| R35 - C0 s1 | L2 | 0.430 | 0.267 | 0.163 | R35b pending |
-| R35 - C0 s1 | L3 | 0.541 | 0.401 | 0.140 | R35b pending |
+| S35 - C0 s0 | L1 | 0.069 | 0.064 | 0.005 | yes |
+| S35 - C0 s0 | L2 | 0.294 | 0.278 | 0.017 | yes |
+| S35 - C0 s0 | L3 | 0.472 | 0.359 | 0.113 | yes |
+| S35 - C0 s1 | L1 | 0.096 | 0.080 | 0.016 | yes |
+| S35 - C0 s1 | L2 | 0.339 | 0.267 | 0.072 | yes |
+| S35 - C0 s1 | L3 | 0.480 | 0.401 | 0.079 | yes |
+| R35 - S35 s0 | L1 | 0.178 | 0.069 | 0.109 | yes |
+| R35 - S35 s0 | L2 | 0.419 | 0.294 | 0.125 | yes |
+| R35 - S35 s0 | L3 | 0.535 | 0.472 | 0.063 | yes |
+| R35 - S35 s1 | L1 | 0.190 | 0.096 | 0.094 | yes |
+| R35 - S35 s1 | L2 | 0.430 | 0.339 | 0.091 | yes |
+| R35 - S35 s1 | L3 | 0.541 | 0.480 | 0.061 | yes |
+| R35H - R35 s0 | L1 | 0.259 | 0.178 | 0.082 | yes |
+| R35H - R35 s0 | L2 | 0.546 | 0.419 | 0.127 | yes |
+| R35H - R35 s0 | L3 | 0.672 | 0.535 | 0.137 | yes |
+| R35H - R35 s1 | L1 | 0.267 | 0.190 | 0.077 | yes |
+| R35H - R35 s1 | L2 | 0.555 | 0.430 | 0.125 | yes |
+| R35H - R35 s1 | L3 | 0.687 | 0.541 | 0.146 | yes |
+| R35 - C0 s0 | L1 | 0.178 | 0.064 | 0.114 | yes |
+| R35 - C0 s0 | L2 | 0.419 | 0.278 | 0.141 | yes |
+| R35 - C0 s0 | L3 | 0.535 | 0.359 | 0.176 | yes |
+| R35 - C0 s1 | L1 | 0.190 | 0.080 | 0.110 | yes |
+| R35 - C0 s1 | L2 | 0.430 | 0.267 | 0.163 | yes |
+| R35 - C0 s1 | L3 | 0.541 | 0.401 | 0.140 | yes |
 
 ## Beside: planning-form context (context 1) band-end skill (decides nothing)
 
@@ -188,6 +202,7 @@ n anchors = (clip, state) pairs scored; 'masked at clip end' = anchors whose tar
 | R35H_s1 | -0.020 [-0.112, 0.060] | 0.449 [0.382, 0.504] above | 0.678 [0.630, 0.719] above |
 | R35_s0 | -0.059 [-0.113, -0.008] below | 0.288 [0.218, 0.347] above | 0.512 [0.439, 0.572] above |
 | R35_s1 | -0.026 [-0.080, 0.024] | 0.313 [0.239, 0.375] above | 0.512 [0.446, 0.568] above |
+| R35b_s0 | -0.059 [-0.113, -0.008] below | 0.288 [0.218, 0.347] above | 0.512 [0.439, 0.572] above |
 | S35_s0 | -0.042 [-0.094, 0.008] | 0.263 [0.192, 0.321] above | 0.467 [0.397, 0.527] above |
 | S35_s1 | -0.012 [-0.061, 0.034] | 0.303 [0.238, 0.359] above | 0.467 [0.402, 0.523] above |
 
@@ -215,6 +230,9 @@ n anchors = (clip, state) pairs scored; 'masked at clip end' = anchors whose tar
 | R35_s1 | L1 | 0.62 [0.52, 0.70] n=9596 | -0.01 [-0.50, 0.35] n=2489 | -0.06 [-0.28, 0.09] n=9596 |
 | R35_s1 | L2 | 0.59 [0.46, 0.70] n=3245 | 0.22 [-0.10, 0.45] n=819 | -0.01 [-0.23, 0.15] n=3245 |
 | R35_s1 | L3 | 0.69 [0.60, 0.77] n=705 | 0.19 [-0.16, 0.45] n=152 | 0.14 [-0.12, 0.32] n=705 |
+| R35b_s0 | L1 | 0.68 [0.59, 0.74] n=9596 | 0.13 [-0.18, 0.37] n=2489 | -0.09 [-0.29, 0.06] n=9596 |
+| R35b_s0 | L2 | 0.67 [0.54, 0.76] n=3245 | 0.05 [-0.35, 0.38] n=819 | -0.12 [-0.40, 0.08] n=3245 |
+| R35b_s0 | L3 | 0.63 [0.52, 0.72] n=705 | 0.09 [-0.41, 0.42] n=152 | 0.07 [-0.24, 0.29] n=705 |
 | S35_s0 | L1 | 0.67 [0.58, 0.74] n=9596 | 0.12 [-0.20, 0.37] n=2489 | -0.10 [-0.30, 0.05] n=9596 |
 | S35_s0 | L2 | 0.67 [0.56, 0.75] n=3245 | 0.15 [-0.22, 0.41] n=819 | -0.11 [-0.41, 0.11] n=3245 |
 | S35_s0 | L3 | 0.65 [0.54, 0.74] n=705 | 0.15 [-0.32, 0.47] n=152 | -0.04 [-0.41, 0.20] n=705 |
@@ -280,6 +298,15 @@ n anchors = (clip, state) pairs scored; 'masked at clip end' = anchors whose tar
 | R35_s1 | L3 (12 s) | speed | 0.278 [0.171, 0.432] | 0.697 | 141 |
 | R35_s1 | L3 (12 s) | lead_gap | 1.341 [0.671, 2.551] | 0.086 | 33 |
 | R35_s1 | L3 (12 s) | yaw_rate | 0.552 [0.316, 0.828] | 0.292 | 141 |
+| R35b_s0 | L1 (2 s) | speed | 0.045 [0.002, 0.094] | 0.672 | 8186 |
+| R35b_s0 | L1 (2 s) | lead_gap | -0.020 [-0.142, 0.105] | 0.140 | 2150 |
+| R35b_s0 | L1 (2 s) | yaw_rate | 0.185 [0.090, 0.303] | -0.061 | 8186 |
+| R35b_s0 | L2 (6 s) | speed | 0.171 [0.104, 0.253] | 0.653 | 1835 |
+| R35b_s0 | L2 (6 s) | lead_gap | 0.206 [-0.042, 0.476] | 0.012 | 468 |
+| R35b_s0 | L2 (6 s) | yaw_rate | 0.566 [0.376, 0.828] | -0.129 | 1835 |
+| R35b_s0 | L3 (12 s) | speed | 0.241 [0.134, 0.389] | 0.650 | 141 |
+| R35b_s0 | L3 (12 s) | lead_gap | 1.606 [0.623, 3.084] | -0.486 | 33 |
+| R35b_s0 | L3 (12 s) | yaw_rate | 0.563 [0.276, 0.874] | 0.311 | 141 |
 | S35_s0 | L1 (2 s) | speed | -0.009 [-0.057, 0.034] | 0.668 | 8186 |
 | S35_s0 | L1 (2 s) | lead_gap | 0.098 [-0.003, 0.192] | 0.130 | 2150 |
 | S35_s0 | L1 (2 s) | yaw_rate | 0.116 [0.039, 0.208] | -0.076 | 8186 |
@@ -321,6 +348,9 @@ n anchors = (clip, state) pairs scored; 'masked at clip end' = anchors whose tar
 | R35_s1 | L1 | 10 (2.0 s) | 0.301 [0.274, 0.327] | -0.036 [-0.045, -0.027] | 0.833 [0.609, 0.867] | 12827 |
 | R35_s1 | L2 | 10 (6.0 s) | 0.391 [0.361, 0.422] | 0.131 [0.116, 0.147] | 0.964 [0.889, 0.994] | 3386 |
 | R35_s1 | L3 | 4 (12.0 s) | 0.353 [0.330, 0.374] | 0.302 [0.282, 0.322] | 0.932 [0.880, 0.973] | 423 |
+| R35b_s0 | L1 | 10 (2.0 s) | 0.384 [0.348, 0.419] | -0.038 [-0.049, -0.028] | 0.825 [0.606, 0.873] | 12827 |
+| R35b_s0 | L2 | 10 (6.0 s) | 0.427 [0.403, 0.450] | 0.142 [0.123, 0.163] | 0.902 [0.803, 0.973] | 3386 |
+| R35b_s0 | L3 | 4 (12.0 s) | 0.351 [0.333, 0.370] | 0.317 [0.294, 0.342] | 0.986 [0.946, 1.000] | 423 |
 | S35_s0 | L1 | 10 (2.0 s) | 0.354 [0.322, 0.384] | -0.058 [-0.069, -0.047] | 0.227 [0.187, 0.281] | 12827 |
 | S35_s0 | L2 | 10 (6.0 s) | 0.332 [0.305, 0.359] | 0.030 [0.012, 0.048] | 0.724 [0.575, 0.889] | 3386 |
 | S35_s0 | L3 | 4 (12.0 s) | 0.333 [0.310, 0.357] | 0.233 [0.209, 0.259] | 0.991 [0.942, 1.000] | 423 |
@@ -338,6 +368,7 @@ n anchors = (clip, state) pairs scored; 'masked at clip end' = anchors whose tar
 | R35H_s1 | 0.681 | 0.527 | 0.340 | 0.553 [0.437, 0.667] (6.0 s) | 0.555 [0.472, 0.626] (6.0 s) |
 | R35_s0 | 1.063 | 0.902 | 0.585 | 0.546 [0.451, 0.646] (6.0 s) | 0.626 [0.518, 0.737] (6.0 s) |
 | R35_s1 | 0.783 | 0.899 | 0.563 | 0.487 [0.376, 0.600] (6.0 s) | 0.589 [0.508, 0.658] (6.0 s) |
+| R35b_s0 | 1.063 | 0.902 | 0.585 | 0.546 [0.451, 0.646] (6.0 s) | 0.626 [0.518, 0.737] (6.0 s) |
 | S35_s0 | 1.046 | 0.760 | 0.591 | 0.210 [0.136, 0.283] (6.0 s) | 0.582 [0.473, 0.688] (6.0 s) |
 | S35_s1 | 0.768 | 0.815 | 0.609 | 0.330 [0.242, 0.416] (6.0 s) | 0.628 [0.526, 0.723] (6.0 s) |
 
@@ -353,5 +384,6 @@ TSI uses ten IA-1 targets; labels exist at the 9,596 bank frames only (lead-gap 
 | R35H_s1 | edd7d2c00e79 | c5cf95c5ab91 | 19164 | 14.81 | 212.3 |
 | R35_s0 | 4ded69411500 | 9c54ed2041e2 | 19164 | 15.87 | 235.9 |
 | R35_s1 | 5b4e262e2f16 | c5cf95c5ab91 | 19164 | 15.0 | 214.8 |
+| R35b_s0 | a024267c0df2 | 9c54ed2041e2 | 19164 | 6.23 | 341.2 |
 | S35_s0 | 203878aef6ee | 9c54ed2041e2 | 19164 | 14.63 | 262.6 |
 | S35_s1 | 5eb14679311d | c5cf95c5ab91 | 19164 | 14.95 | 233.2 |

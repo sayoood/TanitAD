@@ -84,7 +84,15 @@ def resolve(mod, paths):
     return None
 
 
-def imports_of(src):
+def package_of(f):
+    """repo file -> its dotted package (the folder it sits in), or None when it is outside the import roots (a script)"""
+    for root, base in ROOTS:
+        if f.startswith(base + "/"):
+            return ".".join([root] + f[len(base) + 1:].split("/")[:-1])
+    return None
+
+
+def imports_of(src, pkg=None):
     out = set()
     for n in ast.walk(ast.parse(src)):
         if isinstance(n, ast.Import):
@@ -92,6 +100,13 @@ def imports_of(src):
         elif isinstance(n, ast.ImportFrom) and n.level == 0 and n.module:
             out.add(n.module)
             out.update(f"{n.module}.{a.name}" for a in n.names)                # `from pkg import sub` may name a submodule; an attribute resolves to nothing and is ignored
+        elif isinstance(n, ast.ImportFrom) and n.level > 0 and pkg:            # `from . import x`, `from .y import z`: resolved against the importing file's package
+            base = pkg.split(".")[:len(pkg.split(".")) - (n.level - 1)]
+            if not base:
+                continue
+            mod = ".".join(base + ([n.module] if n.module else []))
+            out.add(mod)
+            out.update(f"{mod}.{a.name}" for a in n.names)
     return out
 
 
@@ -103,7 +118,7 @@ def closure(blobs, paths, start):
         if f in seen:
             continue
         seen.add(f)
-        for m in imports_of(blobs.get(f)[0].decode("utf-8", "replace")):
+        for m in imports_of(blobs.get(f)[0].decode("utf-8", "replace"), package_of(f)):
             r = resolve(m, paths)
             if r and r not in seen:
                 todo.append(r)
