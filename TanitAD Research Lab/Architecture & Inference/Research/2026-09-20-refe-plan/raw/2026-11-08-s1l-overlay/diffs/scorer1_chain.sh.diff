@@ -1,9 +1,25 @@
 --- a/refe/scorer1_chain.sh
 +++ b/refe/scorer1_chain.sh
-@@ -84,11 +84,12 @@
+@@ -84,11 +84,28 @@
    done
  }
  arm_argv() { ARGS="$(ARM=$1 MODE=argv SCORER1_WS=$WS bash $RUN/scorer1_pod.sh)" && [ -n "$ARGS" ] || refuse "scorer1_pod.sh ARM=$1 MODE=argv printed nothing"; }
++# >>> lane manifest (PREREG_SCORER1 AMENDMENT 4): every arm trains on ONE lane draw.  File names + sha256, pinned once before the first arm and re-checked at the start of every arm; the row count in the inputs stage cannot see a different draw.
++LANE_DIR=$D/train_teacher_lane
++LANE_MAN=$ROOT/train_teacher_lane.manifest.sha256
++lane_list() { (cd "$LANE_DIR" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 -r sha256sum); }
++lane_pin() {
++  [ -s "$LANE_MAN" ] && return 0
++  lane_list > "$LANE_MAN.tmp"
++  [ -s "$LANE_MAN.tmp" ] || refuse "$LANE_DIR holds no files: no lane draw to pin"
++  mv "$LANE_MAN.tmp" "$LANE_MAN"
++}
++lane_check() {          # uses $ARGS (arm_argv)
++  [ -s "$LANE_MAN" ] || refuse "no lane manifest at $LANE_MAN: the inputs stage writes it before the first arm"
++  lane_list | cmp -s - "$LANE_MAN" || refuse "$LANE_DIR differs from the manifest pinned before the first arm: the arms would not share one lane draw"
++  case " $ARGS " in *" --teacher-lane-train $LANE_DIR "*) ;; *) refuse "this arm's argv does not read --teacher-lane-train $LANE_DIR";; esac
++}
++# <<< lane manifest
 +prof_of() { if [ "$1" = "S1L" ]; then echo refe_scorer1l; else echo refe_scorer1; fi; }      # S1L (AMENDMENT_2/3) has its own launch-gate profile
  token_ok() {          # $1 = arm, uses $ARGS.  ZZ: `launch_gate.py verify` RE-MEASURES the argv, the code tree, the checkpoint sha and the data and checks the HMAC.
    local tok
@@ -14,7 +30,16 @@
  }
  
  # ---- 0. precheck: the lock, the human gates, the package
-@@ -179,9 +180,22 @@
+@@ -144,6 +161,8 @@
+   [ "$(cat $D/train_teacher_lane/*.jsonl | wc -l)" -ge 2109 ] || refuse "train teacher-lane rows < 2,109"
+   stage_mark inputs
+ fi
++lane_pin
++log "lane manifest sha256 $(sha256sum "$LANE_MAN" | cut -c1-64)"; sed 's/^/lane_manifest /' "$LANE_MAN" | head -n 200 >> $L
+ log "ZZSCORER1_INPUTS_OK"; stop_after inputs
+ 
+ # ---- 2. G-EGR (the run must be able to leave the pod), a real disk write test
+@@ -179,24 +198,38 @@
    stage_mark calibrate
  fi
  log "ZZSCORER1_CALIBRATED"; stop_after calibrate
@@ -37,8 +62,9 @@
 +for ARMN in ${SCORER1_ARMS:-C0 C0r S1}; do
    LA=$(echo "$ARMN" | tr 'A-Z' 'a-z'); OUT=$ROOT/$LA; STAGE="preflight_$ARMN"
    arm_argv "$ARMN"
++  lane_check; log "ZZSCORER1_LANE_DRAW_OK $ARMN"
    if ! stage_done "preflight_$LA"; then
-@@ -189,14 +203,14 @@
+     wait_clear
      rm -f $OUT/preflight.jsonl $OUT/PREFLIGHT_PASS.json
      ARM=$ARMN MODE=preflight bash $RUN/scorer1_pod.sh 200>&-
      grep -q "^ZZSFT_PREFLIGHT_PASS" $OUT/preflight.log || refuse "$ARMN preflight did not pass ($(tail -n 2 $OUT/preflight.log | tr '\n' ' ' | cut -c1-300))"
@@ -57,7 +83,7 @@
      fi
      stage_mark "preflight_$LA"
    fi
-@@ -204,7 +218,7 @@
+@@ -204,7 +237,7 @@
    STAGE="gate_$ARMN"
    if ! stage_done "gate_$LA"; then
      rm -rf "$ROOT/lg_$ARMN"; mkdir -p "$ROOT/lg_$ARMN"

@@ -12,3 +12,6 @@
 ## Before S1L can launch
 1. Ruling on the label draw (provenance.md). 2. G-L1 on Linux + E2 lane truth (Amendment 3 conditions 1-2). 3. Land the overlay on top of v3 SCORER1 (rebase: the other overlay a2/wiring_v1 also touches scorer_finetune/launch_gate). 4. Ship list/P7 package refresh, run all launch_gate-reading tests. 5. Pod: `SCORER1_ARMS="S1L" bash refe/scorer1_chain.sh` (PI go in Amendment 3; ~3.0 L40-h ESTIMATED).
 ## Scratch deleted: F:/tanitad_scratch/s1l_20261108 (see MM report for size)
+
+## Added 2026-11-09 (Amendment 4)
+The lane-draw check is in `files/scorer1_chain.sh`: `lane_pin` writes the file-name + sha256 manifest of `train_teacher_lane` once before the first arm (also copied into the chain log), and `lane_check` re-reads it at the start of every arm and refuses if the files differ or the arm's argv reads another directory. `tests/test_lane_manifest.sh` runs the real block on a throwaway directory: 10 cases and a mutant with the compare line removed, all as required. It has not run on the pod. The result still has to state that u400 trained on a different draw that no longer exists.
