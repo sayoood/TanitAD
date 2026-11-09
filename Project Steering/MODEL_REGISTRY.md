@@ -5606,6 +5606,23 @@ Every row is MEASURED from the harness CSV on the dev box, under `E:/Projects/Ta
 | results so far (2026-10-04) | ⚠️ Launch tree ⇒ the speed ceiling does not reach the emitted plan (SPEC_REFCV7 26.1) on every planner row. **NavSim (open-loop benchmark, zero-shot):** step 5,000 BAR-R7-N1 **PASS** (navtest PDMS 65.5976 vs STOP 61.8202, paired [+1.58, +5.86]), NW1 **FAILED** (warmup 0.4487 < 0.5212), NH1 **FAILED** (navhard EPDMS 0.1624 vs STOP 0.2985); step 30,000 warmup 0.5224 vs 0.5212 NOT PROVEN; 30k navtest/navhard and 50.4k RUNNING (`FlyWheels/TanitAD_EvalFlyWheel/incoming/2026-09-28-refcv7-standard-tests/navsim/`). **Four-family battery:** none yet for any checkpoint — G0 failed at 5,000 on an estimator defect (SPEC A5, 24 seeds); the 50,400 chain is queued. **Perception at 50,400 (open-loop diagnostic, 1,112 eval windows / 139 episodes, one seed):** declared map rule hides the thin classes (edge IoU 0.000); opt-in F1 per-class thresholds give lane 0.164 / edge 0.042 / hatched 0.062; box conf_ratio 0.0059 at the 0.5 gate, 0.973 (box3d) / 0.995 (agent) at the TRAIN P=R gate (F4), AP@2m 0.248 / 0.131 (`TanitAD Research Lab/Architecture & Inference/Research/2026-10-04-refcv7-map-box-diagnostics/RESULT.md`; GOALS_AND_CLAIMS REFCV7-MAP-RULE / -MAP-LOC / -BOX-FOCAL). Frame-by-frame reel: `Media/2026-10-04-refcv7-final-reel/`. |
 | predecessor | refcv6-r101-s0 (stopped at 38,250) |
 
+### 14.3 `p6_paper_faithful` (P6): paper-faithful REFe, online PDM labeller, 6 outputs [FULL NAVTEST, T1-class, ONE SEED] (added 2026-11-09, Master Mind)
+
+| field | value (MEASURED unless stated) |
+|---|---|
+| identity | `model_final.pt` sha256 `968a469d5b9abdd279aff19b8031c53e9fec0e2683092bff12cfa93be6a4d3d1`, step 10,075 (`labels_manifest.json`) |
+| params | 322,078,274 total, 18,998,850 trainable (pod run `config.json`). ⚠️ above the programme's sub-300M line in total count; the 303 M difference is the frozen DINOv3 backbone |
+| architecture | `--backbone vitl16` (frozen DINOv3, 4 cameras), `--nav-mode command`, `--scorer-sees-trunk`, `--yaw-wrap off`; scorer outputs NC DAC EP TTC C DDC. 64 proposals [M,20,3] at 5 Hz; executed plans [M,8,3] at 0.5 s. Selection rule `navsim_v1` = NC*DAC*(5EP+5TTC+2C)/12 |
+| training args | `--labeller online --label-workers 6 --label-chunks 2 --epochs 25 --epoch-unit scenes --batch 4 --accum 64 --lr 2e-4 --weight-decay 0.01 --amp bf16 --score-w 0.1 --tf32 --compile`, seed 0, no warm start; bank 103,037 scenes, 167,300 tuples. Launch gate PASS 2026-11-06T13:31:18; ZZP6_TRAIN_DONE 2026-11-08T18:49:50Z |
+| where | HF `Sayood/tanitad-refe-p6-paper-faithful`; dev box `F:/TanitAD_p6read_work/ckpt/run/model_final.pt` |
+| result, full navtest, T1-class (NAVSIM v1.1 PDMS, 12,146 tokens, harness PASS, open loop against logged agents) | **PDMS x100 91.20 [90.41, 91.98]**, paired log-cluster bootstrap over 136 logs, 10,000 draws, seed 20260927, which answers another draw of logs only (`level_ci.json`, `raw/2026-11-09-p6-navtest-read/`) |
+| sub-scores [95 % CI] | NC 98.85 [98.50, 99.18] · DAC 97.95 [97.50, 98.39] · EP 87.03 [85.76, 88.28] · TTC 95.08 [94.18, 95.93] · C 100.00 · DDC 96.48 [95.65, 97.25] |
+| against comparators | u400 88.25: +2.95 [+2.19, +3.77] · P2 88.82: +2.38 [+1.70, +3.05] |
+| against the goal | **BELOW GOAL**: 94.55 (DriveZero Table A13, PUBLISHED); upper bound 91.98. Largest sub-score gaps to the paper: EP -5.69, DAC -1.30, TTC -0.66 |
+| verdict | `PREREG_P6` as written: **NOT PROVEN** (lower bounds above 0 on both comparators, but longitudinal and lateral components separate adversely: 9 of 21 against u400, 1 of 21 against P2). `H-P6-SPEED-1`: REFUTED as written. Detail and four families: `P6_RESULT.md`, `raw/2026-11-09-p6-navtest-read/` |
+| four families | LONGITUDINAL, LATERAL, TACTICAL in `P6_RESULT.md`. TACTICAL selection quality not yet measured on the full navtest (job re-running 2026-11-09). STRATEGIC: PAUSED (PI 2026-09-19), not a pass |
+| caveats | one training seed; deterministic planner, so inference variance does not apply and training variance is unmeasured (`H-ESTIM-SEED-1`). Not closed loop |
+
 ## 15. refcv7-r101-s0 — refcv6 + FIX-1..5 + NEW-1/NEW-2 + A9 box head [NON-PARITY · NavSim zero-shot · ONE SEED]
 
 ⚠️ **Not the DrivoR planning heads.** That scope was renamed DrivoR-T on 2026-09-26 (`SPEC_DRIVORT.md`); this
