@@ -46,3 +46,6 @@ Training on the PI's bands produces prediction inside the 6 s and 12 s bands tha
 2. **Band retrain** on box 2: its replicate `OB-BAND_rep` already uses a different seed (2), so it does measure training variance.
 3. **Measured-speed world model:** the card's replicate moves to a different seed for the reason above; its control arm is the world model of record once named.
 4. **Rule for the programme:** on a deterministic rig, a replicate changes the seed. A same-seed replicate reading 0.0 is a statement about determinism.
+
+## PI decision (2026-11-09 19:35:47)
+**R35H is the world model of record.** Both readings of "reading cost" are in the table above; R35H's weaker speed read at L3 12 s and L1 2 s (s0) stands as a known limit of that arm. The planner gates now run R35H first (`ladder_plantest/IMPL_ADDENDUM_ORDER.md`).

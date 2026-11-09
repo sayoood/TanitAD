@@ -1,0 +1,2 @@
+# Wave order changed (Master Mind, 2026-11-09, before any result of this harness exists)
+The PI named R35H the world model of record on 2026-11-09. The run was stopped and relaunched with `run_lp.py 2 w3 w1 w2 w4 w5` (was w1 w2 w4 w3 w5), so R35H's FLAT1 reads at context 1 and context 3 come first. Finished units are kept and skipped (each is written through a temp file and `os.replace`). Only the order moves: no arm, grid, window set, planner setting or seed changes. `IMPL_CHOICES_LADDER_PLANTEST.md` section 5 otherwise stands.
