@@ -1544,14 +1544,14 @@ def oband_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
     """G-LIVE for PREREG_V8F_OTBAND, from the BUILT model's own loss on the real probe batch (a COPY; head_o is woken if zero, since a zero head hides every edge below it):
 
       contribution   for each band weight, total(w) - total(0) == w x its term (rtol + float32 rounding) with the other band weight on: the weight reaches the total. DELETE a total line and this reads 0.0 -> RED
-      detach         (only with --detach-upper) backward of T['op'] alone: the gradient on S's reader / head and T's reader / trunk / heads is EXACTLY 0.0 while head_o receives gradient > 0. REMOVE the detach and it reads > 0 -> RED
+      detach         (with --detach-upper, also on the control arm that names no band weight) backward of each O term of the arm's own loss alone (op and tac, or ade and fde): the gradient on S's reader / head and T's reader / trunk / heads is EXACTLY 0.0 while head_o receives gradient > 0. REMOVE the detach and it reads > 0 -> RED
       code edge      forward_diag with T's code shifted changes O's plan (the T -> O wire through e_code is live)
       token edge     forward_infer with the strategic token rolled across the batch changes T's logits
     Any violation is an AssertionError, which the caller turns into a refusal."""
     stok = cfg.stok_dim > 0
     band = cfg.w_op > 0.0 or cfg.w_tac_traj > 0.0
-    if not (stok or band):
-        return {"otband": "off", "pass": True, "skipped": "no band lever named: the default run is the pre-change run"}
+    if not (stok or band or cfg.detach_upper):
+        return {"otband": "off", "pass": True, "skipped": "no band lever and no detach named: the default run is the pre-change run"}
     eps32 = float(torch.finfo(torch.float32).eps)
     m = copy.deepcopy(model).cpu()
     m.train()
@@ -1563,7 +1563,7 @@ def oband_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
         w_ = m.head_o[2].weight
         if float(w_.abs().sum()) == 0.0:
             w_.copy_(torch.randn(w_.shape, generator=g_) * 0.05)
-    res = {"otband": "on", "stok_dim": cfg.stok_dim, "detach_upper": cfg.detach_upper}
+    res = {"otband": "on" if (stok or band) else "detach-only", "stok_dim": cfg.stok_dim, "detach_upper": cfg.detach_upper}
     named = {n_: p_ for n_, p_ in m.named_parameters() if p_.requires_grad}
 
     def run():
@@ -1597,20 +1597,24 @@ def oband_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
         for w, v in saved.items():
             setattr(m.cfg, w, v)
         res["contribution"] = contrib
-        if cfg.detach_upper:
-            m.cfg.w_op = max(saved["w_op"], 1.0)
-            out = run()
-            up = [n_ for n_ in named if n_.startswith(("read_s.", "head_s.", "read_t.", "trunk_t.", "h_goal.", "h_lat.", "h_lon.", "h_cons.", "e_stok."))]
+    if cfg.detach_upper:                                                 # every O term of the loss this arm trains on: op and tac with band weights, ade and fde (the 30-knot term) without
+        keys = ("op", "tac") if band else ("ade", "fde")
+        if band:
+            m.cfg.w_op, m.cfg.w_tac_traj = max(saved["w_op"], 1.0), max(saved["w_tac_traj"], 1.0)
+        out = run()
+        up = [n_ for n_ in named if n_.startswith(("read_s.", "head_s.", "read_t.", "trunk_t.", "h_goal.", "h_lat.", "h_lon.", "h_cons.", "e_stok."))]
+        head = [n_ for n_ in named if n_.startswith("head_o.")]
 
-            def gsum(key, names):
-                gr = torch.autograd.grad(out["terms"][key], [named[n_] for n_ in names], retain_graph=True, allow_unused=True)
-                return float(sum(float(x.abs().sum()) for x in gr if x is not None))
-            pur = {"upper_grad_abs_sum": gsum("op", up), "head_o": gsum("op", [n_ for n_ in named if n_.startswith("head_o.")])}
-            if pur["upper_grad_abs_sum"] != 0.0:
-                raise AssertionError(f"otband probe: O's op term puts gradient {pur['upper_grad_abs_sum']!r} on S / T although --detach-upper is declared: a detach is missing")
-            if not pur["head_o"] > 0.0:
-                raise AssertionError("otband probe: O's op term gives O's head no gradient")
-            res["purity"] = pur
+        def gsum(key, names):
+            gr = torch.autograd.grad(out["terms"][key], [named[n_] for n_ in names], retain_graph=True, allow_unused=True)
+            return float(sum(float(x.abs().sum()) for x in gr if x is not None))
+        by = {k_: {"upper_grad_abs_sum": gsum(k_, up), "head_o": gsum(k_, head)} for k_ in keys}
+        for k_, v_ in by.items():
+            if v_["upper_grad_abs_sum"] != 0.0:
+                raise AssertionError(f"otband probe: O's {k_} term puts gradient {v_['upper_grad_abs_sum']!r} on S / T although --detach-upper is declared: a detach is missing")
+            if not v_["head_o"] > 0.0:
+                raise AssertionError(f"otband probe: O's {k_} term gives O's head no gradient")
+        res["purity"] = {"upper_grad_abs_sum": sum(v_["upper_grad_abs_sum"] for v_ in by.values()), "head_o": min(v_["head_o"] for v_ in by.values()), "by_term": by}
     m.eval()
     with torch.no_grad():
         base = m.forward_infer(batch)
@@ -3456,7 +3460,7 @@ def main(argv=None):
         sc["planner_identity_probe"] = pid
     if cfg.level_head == "on":                                          # lever-ON arms only: a flag-off selfcheck.json keeps its key set
         sc["level_head_probe"] = lvp
-    if cfg.stok_dim or cfg.w_op > 0.0 or cfg.w_tac_traj > 0.0:     # PREREG_V8F_OTBAND: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+    if cfg.stok_dim or cfg.w_op > 0.0 or cfg.w_tac_traj > 0.0 or cfg.detach_upper:     # PREREG_V8F_OTBAND: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
         sc["otband_probe"] = obp
         if info.get("stok"):
             sc["stok"] = info["stok"]

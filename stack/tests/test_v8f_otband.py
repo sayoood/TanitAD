@@ -13,6 +13,7 @@ as built. The PI's rule that binds every edge: (1) a test that changing the uppe
 """
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import json
 import math
@@ -433,6 +434,24 @@ def test_the_probe_is_green_with_detach_and_token_and_red_when_the_code_wire_is_
         TR.oband_probe(m, b, m.cfg)
 
 
+def test_the_probe_reads_both_band_terms_under_detach(world):
+    b, J = make_batch(world)
+    m = build(J, wake=False, detach_upper=True, **BAND)
+    by = TR.oband_probe(m, b, m.cfg)["purity"]["by_term"]
+    assert set(by) == {"op", "tac"} and all(v["upper_grad_abs_sum"] == 0.0 and v["head_o"] > 0.0 for v in by.values())
+
+
+def test_the_probe_runs_on_the_control_arm_and_goes_red_when_the_detach_is_not_built(world):
+    b, J = make_batch(world)
+    m = build(J, wake=False, detach_upper=True)
+    rec = TR.oband_probe(m, b, m.cfg)
+    assert rec["pass"] and rec["otband"] == "detach-only" and rec["detach_upper"] is True
+    assert set(rec["purity"]["by_term"]) == {"ade", "fde"} and rec["purity"]["upper_grad_abs_sum"] == 0.0 and rec["purity"]["head_o"] > 0.0
+    plain = build(J, wake=False)                                                       # the deliberate regression: the probe is told detach, the BUILT model does not detach
+    with pytest.raises(AssertionError, match="a detach is missing"):
+        TR.oband_probe(plain, b, dataclasses.replace(plain.cfg, detach_upper=True))
+
+
 def test_the_off_probe_is_a_noop(world):
     b, J = make_batch(world)
     assert TR.oband_probe(build(J), b, M.V8FMiniConfig(**TINY))["otband"] == "off"
@@ -512,6 +531,16 @@ def trained(tmp_path_factory):
     shuf = root / "shuf"
     assert TR.main(["--out", str(shuf), *RUN, "--steps", "2", *BAND_ARGV, "--t-stok-dir", str(stok), "--t-stok-shuffle", "7"]) == 0
     return types.SimpleNamespace(root=root, off=off, band=band, tok=tok, fro=fro, shuf=shuf, stok=stok)
+
+
+def test_the_selfcheck_of_every_detaching_arm_carries_the_purity_of_its_own_loss_terms(trained):
+    assert "otband_probe" not in _sc(trained.off), "a flag-off selfcheck keeps its key set"
+    assert set(_sc(trained.band)["otband_probe"]["purity"]["by_term"]) == {"op", "tac"}
+    ctl = trained.root / "ctl"
+    assert TR.main(["--out", str(ctl), *RUN, "--steps", "2", "--detach-upper", "--freeze", "S", "--init-ckpt", str(trained.off / "ckpt_last.pt"), "--lr", "1e-3"]) == 0
+    ob = _sc(ctl)["otband_probe"]
+    assert ob["pass"] and ob["otband"] == "detach-only" and ob["detach_upper"] is True
+    assert set(ob["purity"]["by_term"]) == {"ade", "fde"} and ob["purity"]["upper_grad_abs_sum"] == 0.0 and ob["purity"]["head_o"] > 0.0
 
 
 def test_init_from_an_unbanded_checkpoint_loads_every_old_key_and_only_the_token_keys_are_fresh(trained):
