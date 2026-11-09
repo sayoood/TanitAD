@@ -837,13 +837,11 @@ def attach_t1_history(tr, e_ds, model, args) -> dict | None:
     """refcv9 T1 (--r9-bev-warp), train():11057 -- the EVAL forward is warped too, so the eval dataset carries the PAST frames + the PAST poses
     (``bw_*``, added in ``V3Dataset.__getitem__``). Every full-model forward of a T1-built model (``compute_losses_v3``, ddv2's ``forward_deployed``)
     stages them from the batch and REFUSES a batch without them: without this call every loader-built eval batch would be refused. Needs the BUILT
-    model (the lags / shuffle come from ``model._r9_bev_warp``, never from argv): a T1 argv with no model REFUSES. OFF: ``None``, nothing touched.
-    refcv9 T1v (--r9-hist-supervise-geom) needs the POSE history the same way (``attach_dataset``: poses and ``has`` only, no past image). MEASURED 2026-11-09: this test read only
-    --r9-bev-warp, so T1v's first dump crashed at the forward ("the dataset was not attached") and every loader-built eval of a T1v model would have."""
-    if not tr._bw.is_on(args) and not tr._bw.geom_on(args):
+    model (the lags / shuffle come from ``model._r9_bev_warp``, never from argv): a T1 argv with no model REFUSES. OFF: ``None``, nothing touched."""
+    if not tr._bw.is_on(args):
         return None
     if model is None:
-        raise SystemExit(f"[{LOADER}] the run's argv has --r9-bev-warp or --r9-hist-supervise-geom but no model was passed: the history source is built from the MODEL's "
+        raise SystemExit(f"[{LOADER}] the run's argv has --r9-bev-warp but no model was passed: the history source is built from the MODEL's "
                          f"temporal BEV warp (lags, shuffle), so this entry point cannot build a T1 eval dataset without it")
     return tr._bw.attach_dataset(e_ds, model, args)
 
@@ -1011,10 +1009,7 @@ def build_eval_dataset(model, cfg, args, config: dict, *, with_perception_target
         rec["camera_coverage"] = cov
     _t1 = attach_t1_history(tr, e_ds, model, args)           # refcv9 T1: the eval forward is warped too (train():11057); OFF: None
     if _t1 is not None:
-        if tr._bw.geom_on(args):                             # T1v: the key launch_gate.full_eval_hist_geom_attach and r9_e1_dump read, so neither attaches a second time
-            rec["hist_geom"] = _t1
-        else:
-            rec["bev_warp"] = _t1
+        rec["bev_warp"] = _t1
     rec["n_episodes"] = len(e_eps)
     rec["n_windows"] = len(e_ds)
     return e_ds, e_eps, rec

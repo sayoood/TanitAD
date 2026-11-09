@@ -7,7 +7,7 @@
   3  e1rig          ADMITS it (static rules, forbidden levers, no open item, no own-record row); T1v + warp is refused by the lever's own ``pin_args`` (the build), not by a static rule
   4  FULL FAMILY    e2 / full / full-d1 ADMIT it (THE T1v FLIP, 2026-11-09: exempt from R9F-UNCLASSIFIED-LEVER by EXACT name; a sibling flag still hits the item); the admitted K2 argv is untouched
   9  FULL-FAMILY T1v  the checks T1v needs on the FULL model, each proved by a MUTATION with a control reading the opposite value: G-DVB (attach needles + the built state), G-LIVE
-                    (`judge_hist_geom_live`), G-EVAL (`full_eval_hist_geom_attach`: inert once the loader has attached; `attach_t1_history` attaches for T1v since the E2-read fix), the records' stamps, no new parameter
+                    (`judge_hist_geom_live`), G-EVAL (`full_eval_hist_geom_attach`: the loader attaches no pose history), the records' stamps, no new parameter
   5  G-LIVE         T1v is NEVER entered into ``BEV_WARP_LIVE`` (no gate, no fuse); the T1h argv IS (positive control)
   6  RECORDS        every overfit judge requires the stamp ``bev_warp_not_certified == [--r9-hist-supervise-geom]``; the harnesses strip the flag from what they build
   7  G-EVAL         ``rig_eval_t1_build_reasons`` (trainer vs loader HistGeom), ``rig_eval_probe_dataset`` (the pose-only attach), and a REAL tiny rig: both builds forward alike
@@ -268,34 +268,6 @@ def test_REACH_G_LIVE_the_real_pose_only_dataset_batch_of_the_full_model_passes_
     rec: dict = {}
     LG.bev_warp_observe(rec, batch)
     assert LG.judge_hist_geom_live(K0 + [GEOM], rec["bw_has"])[0] == []
-
-
-def test_REACH_the_eval_loader_attaches_the_pose_history_for_a_T1v_model_or_refuses():
-    """Regression, the E2-read blocker (MEASURED 2026-11-09, T1v's first dump crashed): `refcv7_loader.attach_t1_history` tested only `--r9-bev-warp`, so a loader-built eval of a T1v model carried no
-    `bw_*` keys and `_bw.stage` refused it. The real loader function on the real tiny FULL model: the keys appear, the forward runs, OFF touches nothing, a missing model or geometry refuses."""
-    from tanitad.eval import refcv7_loader as L
-    model, cfg, args = _t1v_full()
-    eps = T._synth_episodes(2, cfg.core, seed=0, clip_ids=[R.CLIP, R.CLIP + "-b"])
-    mk = lambda: T.V3Dataset(eps, window=cfg.core.window, max_horizon=20, channels=cfg.core.encoder.in_channels)   # noqa: E731
-    ds = mk()
-    rec = L.attach_t1_history(T, ds, model, args)
-    assert rec is not None, "attach_t1_history ignored --r9-hist-supervise-geom: the loader-built eval dataset of a T1v model has no history"
-    assert rec["with_frames"] is False and rec["lag_rows"] == list(model._r9_hist_geom.lag_rows) and rec["n_episodes"] == 2 and ds._r9_bw is not None
-    item = ds[12]
-    assert {"bw_pose_now", "bw_pose_past", "bw_has"} <= set(item) and "bw_frames" not in item              # the poses and `has`, never a past image
-    batch = FM._batch(cfg, model, args, attach=False)
-    batch.update({k: v for k, v in torch.utils.data.default_collate([ds[i] for i in (12, 14)]).items() if k.startswith("bw_")})
-    out = FM._loss(model, batch)                                                                           # the forward that refused before the fix
-    assert "traj" in out and all(bool(torch.isfinite(v).all()) for v in FM._tensors(out).values())
-    plain = FM._args(r9_bev_warp=False, r9_hist_supervise_geom=False)
-    ds2 = mk()
-    assert L.attach_t1_history(T, ds2, model, plain) is None and getattr(ds2, "_r9_bw", None) is None      # OFF: nothing touched
-    with pytest.raises(SystemExit, match="no model was passed"):
-        L.attach_t1_history(T, mk(), None, args)
-    with pytest.raises(SystemExit, match="no T1v history geometry"):
-        L.attach_t1_history(T, mk(), R._build()[0], args)                                                  # argv says T1v, the model was built without it
-    src = inspect.getsource(L.build_eval_dataset)
-    assert 'rec["hist_geom"] = _t1' in src and 'rec["bev_warp"] = _t1' in src                              # the gate's and the dump's "already attached" key; T1 keeps its own
 
 
 def test_REACH_G_EVAL_the_full_model_probe_gets_the_pose_history_from_the_gate_because_the_loader_attaches_none():

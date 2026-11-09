@@ -416,7 +416,7 @@ def run_dump(a) -> int:
         args_ds.eval_labels = fallback
     e_ds, e_eps, drec = L.build_eval_dataset(model, cfg, args_ds, config, with_perception_targets=True,
                                              dataset_cls=make_perc_dataset_cls(tr, LA))
-    if getattr(tr, "_bw", None) is not None and tr._bw.geom_on(args_ds) and (drec or {}).get("hist_geom") is None:      # refcv9 T1v: a loader older than the attach_t1_history fix (the frozen E1 read trees) attaches nothing, so without this the eval batch has no bw_pose_* / bw_has and stage() refuses it
+    if getattr(tr, "_bw", None) is not None and tr._bw.geom_on(args_ds):      # refcv9 T1v: refcv7_loader.attach_t1_history reads only --r9-bev-warp, so without this the eval batch has no bw_pose_* / bw_has and stage() refuses it
         departures.append(f"T1v (--r9-hist-supervise-geom): the loader attaches no history for this flag, so this dump attaches it: {tr._bw.attach_dataset(e_ds, model, args_ds)}")
     from tanitad.data.v2_dataset import load_or_build_manifest
     clip_ids = [str(c) for c in load_or_build_manifest(args_ds.eval_cache, verbose=False)["clip_id"]]
