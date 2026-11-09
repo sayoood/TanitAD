@@ -151,11 +151,18 @@ AUX_TOKEN_DIM = 3                          # [v_hat / LEVEL_SCALE, sigmoid(prese
 LEAD_KEY_PREFIXES = ("lead_head.", "e_lead.")
 AUX_KEY_PREFIXES = ("e_aux.",)
 #: every state-dict key a declared lever may ADD to an older checkpoint's key set (load_init_ckpt: EXACTLY these may be fresh)
-NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES
+NEW_LEVER_KEY_PREFIXES = LEVEL_KEY_PREFIXES + LEAD_KEY_PREFIXES + AUX_KEY_PREFIXES + ("e_stok.",)      # PREREG_V8F_OTBAND adds the strategic-token embedding
 #: identifiers the lead head's own code (``V8FMini._lead``) and the aux-token assembly (``V8FMini._aux_in``) must not mention (the level list + the lead labels): the head is VISION ONLY
 LEAD_FORBIDDEN_NAMES = LEVEL_FORBIDDEN_NAMES + ("lead_y", "lead_has", "lead_near", "lead_gap_h", "s_h", "pose_now")
 LEAD_ALLOWED_KEYS = frozenset({"frame_ok"})
 
+
+#: PREREG_V8F_OTBAND (`--w-op`, `--w-tac-traj`, `--t-stok-dir`; SPEC_HWM section 9.1, PI ruling: all three layers read the current measured ego state, T emits goals and constraints that condition O through ``e_code``, O keeps ONE decoder and
+#: outputs all 30 knots). The band split is in the LOSS and the METRICS only: knots 1-KNOT_BAND (0.2-2.0 s, operative) and KNOT_BAND+1-30 (2.2-6.0 s, tactical). No layer reads a state planned by another layer.
+KNOT_BAND = 10
+BAND_FDE_SCALE = 6.0                         # the 0.5 x FDE / 6 of the 30-knot term, per band
+#: the batch keys the strategic token adds to the inference inputs (only for a model built with stok_dim > 0). NOT in INFERENCE_INPUT_KEYS: that constant is pinned by tests that read other trainers' key sets.
+STOK_KEYS = frozenset({"stok", "stok_ok"})
 
 LIMITS_MS = (30 / 3.6, 50 / 3.6, 100 / 3.6, 120 / 3.6)
 #: the scale the WM auxiliary divides action channel 1 by, per kin mode (PI ruling D-PI-YAWRATE-1): the recorded steer angle
@@ -228,6 +235,9 @@ class V8FMiniConfig:
                                        # `launch_mask` marks (GT-launch: v0 < 6 m/s and the GT chord speed over the last 0.2 s of the horizon >= v0 + 1 m/s). 0.0 = the term is NOT in the total and NOT computed =
                                        # every earlier arm, bit for bit (no new tensor op, no new T key). > 0 = the batch must carry `launch` (the trainer computes it from the LOGGED state before any ego stage)
 
+    w_op: float = 0.0                  # PREREG_V8F_OTBAND (`--w-op`): weight of the operative-band term (ADE over knots 1-10 / 3 + 0.5 x FDE at knot 10 / 6). 0.0 = NOT in the total and NOT computed = every earlier arm, bit for bit
+    w_tac_traj: float = 0.0            # PREREG_V8F_OTBAND (`--w-tac-traj`): weight of the tactical-band term (ADE over knots 11-30 / 3 + 0.5 x FDE at knot 30 / 6). 0.0 = NOT in the total
+    stok_dim: int = 0                  # PREREG_V8F_OTBAND (`--t-stok-dir`): the strategic token's dimension, read from the stok file's metadata. 0 = no token = every earlier arm, bit for bit (no module, no key added)
     level_head: str = "off"            # PREREG_V8F_LEVEL (`--level-head`): off = nothing built (every earlier arm, bit for bit); on = the vision-only speed-level head + O's level conditioning (LEVEL_HEAD_MODES)
     lead_head: str = "off"             # PREREG_LEVELHEAD_A2 (`--lead-head`): off = nothing built (every earlier arm, bit for bit); on = the vision-only lead head (presence + gap) + O's lead conditioning (LEAD_HEAD_MODES)
     w_lead: float = 0.0                # PREREG_LEVELHEAD_A2 (`--w-lead`): the weight of BCE(presence) + Huber(gap_hat) in the total. Must be > 0 with the head on and exactly 0.0 with it off (checked by the launch gate)
@@ -254,6 +264,11 @@ class V8FMiniConfig:
             raise ValueError(f"w_acc must be a finite number >= 0, got {self.w_acc!r}")
         if not (math.isfinite(self.launch_intent_w) and self.launch_intent_w >= 0.0):
             raise ValueError(f"launch_intent_w must be a finite number >= 0, got {self.launch_intent_w!r}")
+        for nm in ("w_op", "w_tac_traj"):
+            if not (math.isfinite(getattr(self, nm)) and getattr(self, nm) >= 0.0):
+                raise ValueError(f"{nm} must be a finite number >= 0, got {getattr(self, nm)!r}")
+        if not (isinstance(self.stok_dim, int) and not isinstance(self.stok_dim, bool) and self.stok_dim >= 0):
+            raise ValueError(f"stok_dim must be an int >= 0, got {self.stok_dim!r}")
         if self.level_head not in LEVEL_HEAD_MODES:
             raise ValueError(f"level_head must be one of {LEVEL_HEAD_MODES}, got {self.level_head!r}")
         if not (math.isfinite(self.w_level) and self.w_level >= 0.0):
@@ -446,6 +461,30 @@ def traj_terms(traj30: Tensor, gt: Tensor, gok: Tensor) -> tuple:
     w_acc rule of PREREG_V8F_OACC (``v8f_mini_eval_oacc.py wacc``), so the trajectory loss it balances against IS the trainer's, never a re-implementation."""
     d = torch.sqrt(((traj30 - gt) ** 2).sum(-1) + 1e-9)
     return (d.mean(1) * gok).sum() / gok.sum().clamp_min(1.0), (d[:, -1] * gok).sum() / gok.sum().clamp_min(1.0)
+
+
+def band_metrics(traj30: Tensor, gt: Tensor, gok: Tensor) -> dict:
+    """PREREG_V8F_OTBAND, per-band position metrics on the 0.2 s knots, the SAME smoothed distance and GT-valid averaging as :func:`traj_terms`: ``ade_op`` (mean over knots 1-10), ``fde_op`` (knot 10), ``ade_tac`` (mean over
+    knots 11-30), ``fde_tac`` (knot 30). Pure functions of ``traj30[:, :10]`` (op) and ``traj30[:, 10:]`` (tac). ``ade_op`` / ``ade_tac`` average to :func:`traj_terms`' ADE with weights 10/30 and 20/30."""
+    d = torch.sqrt(((traj30 - gt) ** 2).sum(-1) + 1e-9)
+    n = gok.sum().clamp_min(1.0)
+    return {"ade_op": (d[:, :KNOT_BAND].mean(1) * gok).sum() / n, "fde_op": (d[:, KNOT_BAND - 1] * gok).sum() / n,
+            "ade_tac": (d[:, KNOT_BAND:].mean(1) * gok).sum() / n, "fde_tac": (d[:, -1] * gok).sum() / n}
+
+
+def topk_codes(code: Tensor, K: int):
+    """PREREG_V8F_OTBAND, eval-only ("trajectory or trajectories"): the K most probable (lat, lon) manoeuvre pairs of T's code ``[B, CODE_DIM]`` (joint = p_lat x p_lon of the softmax parts) -> ``(codes, probs)``, ``codes`` a list of K tensors equal
+    to ``code`` except that the lat part and the lon part are the one-hot of the k-th ranked pair; ``probs`` ``[B, K]``. Goal and constraint parts are T's own. No parameter, no training."""
+    a, b = N_GOAL, N_GOAL + N_LAT
+    joint = (code[:, a:b, None] * code[:, None, b:b + N_LON]).flatten(1)
+    pr, idx = joint.topk(K, 1)
+    outs = []
+    for k in range(K):
+        c = code.clone()
+        c[:, a:b] = F.one_hot(idx[:, k] // N_LON, N_LAT).to(code.dtype)
+        c[:, b:b + N_LON] = F.one_hot(idx[:, k] % N_LON, N_LON).to(code.dtype)
+        outs.append(c)
+    return outs, pr
 
 
 def second_diff_02(xy: Tensor) -> Tensor:
@@ -826,6 +865,9 @@ class V8FMini(nn.Module):
                 nn.init.zeros_(self.e_lead.bias)
         if cfg.aux_cond == "token" and (self.lvl_head is not None or self.lead_head is not None):
             self.e_aux = nn.Linear(AUX_TOKEN_DIM, d)                       # default (non-zero) init: the extra token must carry signal from step 0
+        self.e_stok = None
+        if cfg.stok_dim > 0:                                               # PREREG_V8F_OTBAND: the strategic token into T (a new conditioning token of run_t); built LAST, default (non-zero) init: it must carry signal from step 0
+            self.e_stok = nn.Linear(cfg.stok_dim + 1, d)
         self.p_gt = 1.0
 
     # ---- helpers -------------------------------------------------------------------------------------------
@@ -902,12 +944,22 @@ class V8FMini(nn.Module):
         ck = self.ck_nom[None] + o.float() * self.ck_scale
         return ck                                                          # [B, 3, 3] in S's tick-frame
 
-    def run_t(self, b, adapt, last_t, ck_t, ck_ok):
+    def _stok_tok(self, b, last_s: Tensor) -> Tensor:
+        """PREREG_V8F_OTBAND: T's strategic-token embedding ``e_stok([stok * ok, ok])`` [B, d], read at S's tick frame ``last_s`` (S's outputs are HELD: the same sample-and-hold as the checkpoints). The batch values are data
+        (stream C's token is computed offline): detached by construction. A batch with no ``stok`` key is a KeyError (never a silent zero)."""
+        v, ok = self._at(b["stok"], last_s).detach().float(), self._at(b["stok_ok"], last_s).detach()
+        okf = ok[:, None].to(v.dtype)
+        return self.e_stok(torch.cat([v * okf, okf], -1))
+
+    def run_t(self, b, adapt, last_t, ck_t, ck_ok, stok_tok=None):
         cfg = self.cfg
         i = last_t
-        cond = torch.stack([self._ego(self._at(b["p10f"], i)), self.e_nav(self._at(b["nav"], i)),
-                            self.e_lim(torch.cat([b["limit"], b["limit_ok"][:, None].float()], -1)),
-                            self._ck_cond(ck_t, ck_ok)], 1)
+        toks = [self._ego(self._at(b["p10f"], i)), self.e_nav(self._at(b["nav"], i)),
+                self.e_lim(torch.cat([b["limit"], b["limit_ok"][:, None].float()], -1)),
+                self._ck_cond(ck_t, ck_ok)]
+        if stok_tok is not None:                                        # PREREG_V8F_OTBAND: the strategic token, ONE extra conditioning token of T (absent = the earlier four-token stack, bit for bit)
+            toks.append(stok_tok)
+        cond = torch.stack(toks, 1)
         sc, pad = (self._scene(adapt, b["frame_ok"], i) if not cfg.navonly else (None, None))
         h = F.gelu(self.trunk_t(self.read_t(cond, sc, pad).flatten(1)))
         cs = self.h_cons(h).float()
@@ -993,7 +1045,11 @@ class V8FMini(nn.Module):
             ck_src = ck_src.detach()
         ck_for_t = transform_ckpt(ck_src, b["pose_s"], b["pose_t"])
         # ---- T at its tick
-        tout = self.run_t(b, adapt, last_t, ck_for_t, ck_ok)
+        stok_tok = self._stok_tok(b, last_s) if self.e_stok is not None else None      # PREREG_V8F_OTBAND: S's held strategic token, read at S's tick
+        if stok_tok is not None:
+            tout = self.run_t(b, adapt, last_t, ck_for_t, ck_ok, stok_tok=stok_tok)
+        else:
+            tout = self.run_t(b, adapt, last_t, ck_for_t, ck_ok)
         out.update(tout)
         code = self._code_pred(tout)
         if use_labels and p_gt > 0:
@@ -1020,7 +1076,7 @@ class V8FMini(nn.Module):
         return out
 
     def forward_infer(self, batch: dict) -> dict:
-        """INFERENCE: reads only :data:`INFERENCE_INPUT_KEYS` -- no label, no GT, no situation classifier.
+        """INFERENCE: reads only :data:`INFERENCE_INPUT_KEYS` (+ :data:`STOK_KEYS` for a model built with the strategic token) -- no label, no GT, no situation classifier.
 
         With the HACC post-map set (:meth:`set_hacc_weights`; ``hacc_w`` ABSENT by default) the plan is ``P + w * (O - P)`` per 0.2 s step and per axis (:meth:`_hacc_post_map`); with
         it absent the outputs are bit-identical to a model that has no such buffer. Inference stays vision + ego-dynamics only: see :meth:`_hacc_post_map`."""
@@ -1085,6 +1141,14 @@ class V8FMini(nn.Module):
         out["_keys_read"] = set(g.read)
         return self._hacc_post_map(out)                      # the same post-map as forward_infer (absent => out as is), so the identity under T's own code survives
 
+    def forward_topk(self, batch: dict, K: int = 3) -> dict:
+        """EVAL ONLY (PREREG_V8F_OTBAND, "trajectory or trajectories up to 6 s"): O decoded once per top-K tactical manoeuvre code (:func:`topk_codes` of T's own code, through :meth:`forward_diag`). Returns ``traj30`` [B, K, 30, 2] (the HACC post-map
+        applies as in inference), ``prob`` [B, K] and ``traj30_top1`` (= ``forward_infer``'s plan of T's own code). No new head, no parameter, never called by training."""
+        base = self.forward_infer(batch)
+        codes, pr = topk_codes(base["code"], K)
+        trajs = [self.forward_diag(batch, c)["traj30"] for c in codes]
+        return {"traj30": torch.stack(trajs, 1), "prob": pr, "traj30_top1": base["traj30"], "code": base["code"]}
+
     def forward(self, batch: dict, p_gt: float | None = None, gen=None) -> dict:
         return self._forward(batch, self.p_gt if p_gt is None else p_gt, True, gen)
 
@@ -1118,6 +1182,11 @@ class V8FMini(nn.Module):
         gt, gok = batch["gt"], batch["gt_ok"].float()
         T["ade"], T["fde"] = traj_terms(out["traj30"], gt, gok)      # the same two lines as before, now ONE spelling that PREREG_V8F_OACC's w_acc rule also calls
         aux = batch.get("aux_ok")                                    # PREREG_T2_DAGGER: [B] bool, False on a T2-bank row (its ONLY supervision is the target law: ade / fde); ABSENT = every row carries every term = the tip, bit for bit
+        if cfg.w_op > 0.0 or cfg.w_tac_traj > 0.0:                    # PREREG_V8F_OTBAND: the per-band terms are computed ONLY when a band weight is declared (0 = no new tensor op, no new T key = the tip, bit for bit)
+            bm = band_metrics(out["traj30"], gt, gok)
+            T.update(bm)
+            T["op"] = bm["ade_op"] / 3.0 + 0.5 * bm["fde_op"] / BAND_FDE_SCALE
+            T["tac"] = bm["ade_tac"] / 3.0 + 0.5 * bm["fde_tac"] / BAND_FDE_SCALE
         T["acc"] = accel_term(out["traj30"], gt, gok if aux is None else gok * aux.to(gok.dtype))                # PREREG_V8F_OACC: always LOGGED (the G-LIVE probe and the reader read it); in the total only when w_acc > 0
         if cfg.launch_intent_w > 0.0:                                # PREREG_V8F_LAUNCH_INTENT: computed ONLY when declared (0.0 = no new tensor op, no new T key = the tip, bit for bit)
             if "launch" not in batch:
@@ -1169,6 +1238,8 @@ class V8FMini(nn.Module):
                  + cfg.w_traj * (T["ade"] / 3.0 + 0.5 * T["fde"] / 6.0))
         total = total + cfg.w_acc * T["acc"] if cfg.w_acc > 0.0 else total          # PREREG_V8F_OACC: ONE line (a mutation deletes it); w_acc 0 adds nothing: B's total, bit for bit
         total = total + cfg.w_traj * cfg.launch_intent_w * T["launch_along"] / 3.0 if cfg.launch_intent_w > 0.0 else total      # PREREG_V8F_LAUNCH_INTENT: ONE line (a mutation deletes it); W 0 adds nothing: the tip's total
+        total = total + cfg.w_op * T["op"] if cfg.w_op > 0.0 else total                        # PREREG_V8F_OTBAND: ONE line each (a mutation deletes it); weight 0 adds nothing: the tip's total
+        total = total + cfg.w_tac_traj * T["tac"] if cfg.w_tac_traj > 0.0 else total
         total = total + cfg.w_level * T["level"] if cfg.level_head == "on" else total          # PREREG_V8F_LEVEL: ONE line (a mutation deletes it); head off adds nothing: the tip's total
         total = total + cfg.w_lead * T["lead"] if cfg.lead_head == "on" else total             # PREREG_LEVELHEAD_A2: ONE line (a mutation deletes it); head off adds nothing: the tip's total
         if cfg.consistency:
@@ -1217,6 +1288,8 @@ class V8FMini(nn.Module):
             g["LEAD"] = [self.lead_head] + ([self.e_lead] if self.e_lead is not None else [])
         if self.e_aux is not None:
             g["AUX"] = [self.e_aux]
+        if self.e_stok is not None:
+            g["STOK"] = [self.e_stok]                                               # PREREG_V8F_OTBAND: G-LIVE then requires its gradient
         return g
 
     def built_levers(self) -> dict:
@@ -1263,6 +1336,10 @@ class V8FMini(nn.Module):
             lv["lead_vision_only_source"] = not lead_head_source_problems()
             if self.e_lead is not None:
                 lv["lead_token_zero_init"] = bool(float(self.e_lead.weight.detach().abs().sum()) == 0.0 and float(self.e_lead.bias.detach().abs().sum()) == 0.0)
+        if cfg.w_op > 0.0 or cfg.w_tac_traj > 0.0:                         # PREREG_V8F_OTBAND: present ONLY when a band weight is declared (a default model keeps its key set): the weights the BUILT loss gives the band terms
+            lv["w_op"], lv["w_tac_traj"] = cfg.w_op, cfg.w_tac_traj
+        if self.e_stok is not None:
+            lv["stok_dim"] = int(self.e_stok.in_features) - 1
         if self.lead_head is not None or self.e_aux is not None:           # the BUILT wiring, read back by the gate (absent = the additive default with no head: a token declared with no head builds nothing and is refused)
             lv["aux_cond"] = "token" if self.e_aux is not None else "add"
             lv["aux_vision_only_source"] = not aux_source_problems()
@@ -1341,7 +1418,8 @@ def assert_no_situation_classifier_input(model: V8FMini | None = None, batch: di
         with torch.no_grad():
             keys = model.forward_infer(batch)["_keys_read"]
         model.train(was)
-        extra = keys - INFERENCE_INPUT_KEYS
+        allowed = INFERENCE_INPUT_KEYS | (STOK_KEYS if getattr(model, "e_stok", None) is not None else frozenset())      # PREREG_V8F_OTBAND: the strategic token's two keys, for a model built with it
+        extra = keys - allowed
         assert not extra, f"inference reads keys outside the admissible set: {sorted(extra)}"
         assert not any(k.startswith("lab") or any(t in k for t in _FORBIDDEN_TOKENS) for k in keys)
     return {"allowed": sorted(INFERENCE_INPUT_KEYS), "read": sorted(keys)}

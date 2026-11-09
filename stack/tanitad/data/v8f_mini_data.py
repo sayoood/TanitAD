@@ -67,6 +67,23 @@ LIMITS_KMH = (30, 50, 100, 120)
 ACCEPTED_TRAIN_MD5 = {"f63ece410b725febb8a5242cf2b01d3c": "v9 train, 4,369 clips",
                       "83e30bd3791f0767707eade5f4671759": "v9 train, 4,572 clips (superset; 4,369 bitwise identical)"}
 ACCEPTED_EVAL_MD5 = {"6b5c7f207cffc3b7eb3cd527fd433599": "v9 eval139"}
+#: PREREG_V8F_OTBAND: the v10 label releases (the 2-6 s tactical labels) a launch may read, by md5. EMPTY until stream A names its release in band_labels/SCHEMA.md: the Master Mind adds the md5 here
+#: (or a test registers a synthetic one with :func:`register_v10_md5`). ``--v10-md5`` is refused unless its value is in this dict; the trainer's loader still hashes the file (``load_v9_release(expect_md5=...)``).
+ACCEPTED_V10_TRAIN_MD5: dict = {}
+
+
+def register_v10_md5(md5: str, note: str = "v10 train release") -> None:
+    """Add one md5 to :data:`ACCEPTED_V10_TRAIN_MD5` (32 lowercase hex digits, else ``ValueError``). Used by the Master Mind when stream A names the release, and by the synthetic-release tests."""
+    if not (isinstance(md5, str) and len(md5) == 32 and all(c in "0123456789abcdef" for c in md5)):
+        raise ValueError(f"not an md5 (32 lowercase hex digits): {md5!r}")
+    ACCEPTED_V10_TRAIN_MD5[md5] = str(note)
+
+
+def v10_md5_problems(md5: str) -> list:
+    """Empty = the md5 is an accepted v10 release. An empty string (the flag absent) is not checked here (the caller skips it)."""
+    if md5 and md5 not in ACCEPTED_V10_TRAIN_MD5:
+        return [f"v10 release md5 {md5!r} is not in ACCEPTED_V10_TRAIN_MD5 ({sorted(ACCEPTED_V10_TRAIN_MD5) or 'empty: stream A has not named a release yet'})"]
+    return []
 
 
 def stable_episode_id(clip_id: str) -> int:
@@ -437,6 +454,78 @@ def window_kin(poses, actions, ts, kin_mode: str = "steer"):
 
 
 # ------------------------------------------------------------------------------------------------ the clip store
+# ------------------------------------------------------------------------------------------------ PREREG_V8F_OTBAND: the strategic token store
+STOK_META = "stok_meta.json"
+
+
+def stok_dim_of(root) -> int:
+    """The token dimension of a stok directory: ``stok_meta.json`` key ``stok_dim`` (stream C's metadata; the model takes its dimension from the FILE, never from a flag). A missing or non-positive value is a ``ValueError``."""
+    p = Path(root) / STOK_META
+    if not p.exists():
+        raise ValueError(f"{root}: no {STOK_META} (stream C writes stok_dim and the key list there)")
+    d = int(json.load(open(p, encoding="utf-8"))["stok_dim"])
+    if d < 1:
+        raise ValueError(f"{p}: stok_dim {d} < 1")
+    return d
+
+
+class StokStore:
+    """PREREG_V8F_OTBAND (``--t-stok-dir``): per-clip strategic tokens. ``<root>/<clip>.npz`` holds ``stok`` [T, D] float32 on the clip's 0.2 s cache grid (T = the clip's cache frames) and optionally ``ok`` [T] bool
+    (absent = every finite row is ok). INTERFACE ASSUMPTION (UNVERIFIED until stream C's dump exists): one npz per clip with those keys and ``stok_meta.json`` with ``stok_dim``.
+
+    ``shuffle_seed >= 0`` is the CONTROL (the token shuffled across episodes): clip c reads the token array of a DIFFERENT clip, a seeded cyclic derangement of the sorted clip ids (no clip keeps its own; needs >= 2
+    clips), at the same cache steps (clamped into the source clip's length). The model, the window list and everything else are unchanged. ``get`` returns ``(stok [len(idx), D], ok [len(idx)])``."""
+
+    def __init__(self, root, clips, shuffle_seed: int = -1, lru: int = 64):
+        self.root, self.lru, self._c = Path(root), int(lru), {}
+        self.dim = stok_dim_of(self.root)
+        self.clips = sorted(str(c) for c in clips)
+        missing = [c for c in self.clips if not (self.root / f"{c}.npz").exists()]
+        if missing:
+            raise FileNotFoundError(f"{len(missing)} clips have no stok file under {self.root}: {missing[:3]}")
+        self.shuffle_seed = int(shuffle_seed)
+        self.source = {c: c for c in self.clips}
+        if self.shuffle_seed >= 0:
+            if len(self.clips) < 2:
+                raise ValueError("a stok shuffle across episodes needs at least 2 clips")
+            order = [self.clips[i] for i in np.random.RandomState(self.shuffle_seed).permutation(len(self.clips))]
+            self.source = {order[i]: order[(i + 1) % len(order)] for i in range(len(order))}
+
+    def _arr(self, clip: str):
+        if clip in self._c:
+            self._c[clip] = self._c.pop(clip)
+            return self._c[clip]
+        with np.load(self.root / f"{clip}.npz", allow_pickle=False) as z:
+            v = np.asarray(z["stok"], np.float32)
+            ok = np.asarray(z["ok"], bool) if "ok" in z.files else np.ones(len(v), bool)
+        if v.ndim != 2 or v.shape[1] != self.dim or ok.shape != (len(v),):
+            raise ValueError(f"{clip}: stok {v.shape} / ok {ok.shape} do not match stok_dim {self.dim}")
+        ok = ok & np.isfinite(v).all(1)
+        self._c[clip] = (np.nan_to_num(v), ok)
+        while len(self._c) > self.lru:
+            self._c.pop(next(iter(self._c)))
+        return self._c[clip]
+
+    def length(self, clip: str) -> int:
+        return len(self._arr(clip)[0])
+
+    def get(self, clip: str, idx: np.ndarray):
+        v, ok = self._arr(self.source[clip])
+        i = np.clip(np.asarray(idx), 0, len(v) - 1)
+        return v[i], ok[i] & (np.asarray(idx) >= 0)
+
+    def built_levers(self) -> dict:
+        return {"stok_dir": str(self.root), "stok_dim": self.dim, "n_clips": len(self.clips), "stok_shuffle": self.shuffle_seed,
+                "n_self_sourced": sum(1 for c, s in self.source.items() if c == s)}
+
+
+def attach_stok(ds, root, shuffle_seed: int = -1, clips=None):
+    """Attach a :class:`StokStore` to a built window dataset (what an eval tool calls: ``D.attach_stok(ds, dir, shuffle_seed)``); returns the store. ``clips`` defaults to every clip of the dataset's join."""
+    st = StokStore(root, list(ds.J["clip"].tolist()) if clips is None else clips, shuffle_seed)
+    ds.stok = st
+    return st
+
+
 class ClipStore:
     """Lazy per-clip cache reader with an LRU. ``get(clip)`` returns float32/float16 numpy views + derived arrays."""
 
@@ -556,7 +645,8 @@ class V8FMiniWindows:
     It is the SAME number ``train_windows(start=...)`` starts each clip at, so the window list and the held-age clamp move together."""
 
     def __init__(self, store: ClipStore, J: dict, windows, *, hist: int = 4, hmax: int = 10, max_age_t: int = 2,
-                 max_age_s: int = 6, window_start=None):
+                 max_age_s: int = 6, window_start=None, stok=None):
+        self.stok = stok                                          # PREREG_V8F_OTBAND: a StokStore (or None = no token key in the batch = every earlier arm)
         self.store, self.J, self.windows = store, J, list(windows)
         self.hist, self.hmax = int(hist), int(hmax)
         self.window_start = effective_window_start(self.hist, window_start)
@@ -597,6 +687,11 @@ class V8FMiniWindows:
         it["pose_now"] = d["pose"][t][:3].astype(np.float32)
         it["pose_t"] = d["pose"][t - a_t][:3].astype(np.float32)
         it["pose_s"] = d["pose"][t - a_s][:3].astype(np.float32)
+        if self.stok is not None:                                 # PREREG_V8F_OTBAND: the strategic token of the hmax frames, read at S's tick by the model (sample-and-hold)
+            if self.stok.length(clip) != T:
+                raise ValueError(f"{clip}: stok has {self.stok.length(clip)} rows, the cache clip {T} frames")
+            sv, sok = self.stok.get(clip, idx)
+            it["stok"], it["stok_ok"] = sv, sok & okf
         return it
 
     def __getitem__(self, i):
@@ -641,6 +736,8 @@ def collate(items: list) -> dict:
     out["p10_t"] = torch.as_tensor(np.stack([np.nan_to_num(it["p10_t"]) for it in items]), dtype=torch.float32)
     for k in ("a_t", "a_s", "t", "ci"):
         out[k] = torch.as_tensor([it[k] for it in items], dtype=torch.long)
+    if "stok" in items[0]:                                       # PREREG_V8F_OTBAND: present only when a StokStore is attached
+        out["stok"], out["stok_ok"] = stack("stok", torch.float32), stack("stok_ok", torch.bool)
     for nm in ("lab", "lab_t", "lab_s"):
         L = [it[nm] for it in items]
         out[nm] = {"has": torch.as_tensor([x["has"] for x in L]), "nav": torch.as_tensor(np.stack([x["nav"] for x in L])),

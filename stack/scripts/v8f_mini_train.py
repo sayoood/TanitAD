@@ -134,6 +134,12 @@ FLAG_CHECKS = {
     # AMENDMENT_V8F_LORA_5: a resume may change EXACTLY --accum and --enc-ckpt (speed and memory, not the estimator). `perf:` = bad_perf_resume reads it back: the named previous argv, with those two flags
     # (and this flag) removed from both sides, is token for token the argv being launched; at resume the checkpoint's argv_sha must be that previous argv's.
     "resume_perf_levers": "perf:resume_perf_levers",
+    # PREREG_V8F_OTBAND (SPEC_HWM section 9): per-band trajectory loss and metrics (one decoder, 30 knots) and the strategic token into T. Every flag defaults to OFF / the earlier behaviour and has its clause in bad_oband.
+    # `cfg:w_op / w_tac_traj` = the BUILT config's weights (bad_oband: each reaches the total through ONE line, oband_probe proves it by
+    # exactly its weight); `data:stok` = the StokStore the dataset was built with (dir, dim, shuffle seed READ BACK; stok_dim in the model = the FILE's) -> bad_oband; `lever:frozen` = the groups whose BUILT parameters have
+    # requires_grad False; `data:v10_md5` = the release md5 in ACCEPTED_V10_TRAIN_MD5 AND the md5 the loader hashed. argv -> make_config -> the BUILT model -> declared_vs_built (bad_oband) -> oband_probe (G-LIVE) -> the loop.
+    "w_op": "cfg:w_op", "w_tac_traj": "cfg:w_tac_traj",
+    "t_stok_dir": "data:stok", "t_stok_shuffle": "data:stok", "freeze": "lever:frozen", "v10_md5": "data:v10_md5",
 }
 
 LORA_PARSER_DEFAULTS = {"lora_r": 32, "lora_alpha": 32.0, "lora_targets": "q,v", "lora_lr": None, "frames_root": None, "accum": 1, "enc_ckpt": False}
@@ -341,6 +347,22 @@ def build_parser():
                     help="PREREG_V8F_LADDER: a directory of per-clip <clip>.npz (zmean [T, D] = the frozen adapter's mean token before the WM projection, ok [T], t_s [T]) built from THIS run's init checkpoint. wmonly windows only; every clip "
                          "of the run must have a file (else refused); a window with an ok=False frame is an error. Default empty = the pooled/live path. The adapter is then not read at all")
     ap.add_argument("--detach-upper", action="store_true")
+    # ---- PREREG_V8F_OTBAND: every flag defaults to the earlier behaviour (bit for bit) and has its G-DVB entry in FLAG_CHECKS and its clause in bad_oband.
+    ap.add_argument("--w-op", dest="w_op", type=float, default=0.0,
+                    help="PREREG_V8F_OTBAND: weight of the operative-band term on O's single 30-knot plan (ADE over knots 1-10 / 3 + 0.5 x FDE at knot 10 / 6). 0.0 (default) = not in the total, not computed. With a band weight on, --w-traj must be 0 (the 30-knot term would count the knots twice)")
+    ap.add_argument("--w-tac-traj", dest="w_tac_traj", type=float, default=0.0,
+                    help="PREREG_V8F_OTBAND: weight of the tactical-band term on knots 11-30 (ADE / 3 + 0.5 x FDE at knot 30 / 6). 0.0 (default) = not in the total")
+    ap.add_argument("--t-stok-dir", dest="t_stok_dir", default="",
+                    help="PREREG_V8F_OTBAND: a directory of per-clip <clip>.npz (stok [T, D] on the 0.2 s cache grid, optional ok [T]) + stok_meta.json (stok_dim): the DETACHED strategic token, a new conditioning token of T "
+                         "(read at S's tick, held), carried to O through T's code. The dimension is the file's. Default empty = no token")
+    ap.add_argument("--t-stok-shuffle", dest="t_stok_shuffle", type=int, default=-1,
+                    help="PREREG_V8F_OTBAND: the token CONTROL. Seed >= 0 = every clip reads a different clip's token (a seeded cyclic derangement of the clip ids). Default -1 = off. Needs --t-stok-dir. The same switch for an eval: D.attach_stok(ds, dir, seed)")
+    ap.add_argument("--freeze", dest="freeze", nargs="*", choices=("S", "T", "adapter", "cond"), default=[],
+                    help="PREREG_V8F_OTBAND: groups whose parameters get requires_grad False BEFORE the optimiser is built (S = read_s + head_s; T = read_t + trunk_t + the four T heads; adapter = scene adapter + pos + time; cond = the shared "
+                         "conditioning embeddings). S's or T's OUTPUT stays the init checkpoint's only if the group AND adapter AND cond are frozen. Default none. Read back from the BUILT model by bad_oband")
+    ap.add_argument("--v10-md5", dest="v10_md5", default="",
+                    help="PREREG_V8F_OTBAND: this run reads the v10 label release (the 2-6 s tactical labels) whose md5 is this value. Refused unless the md5 is in ACCEPTED_V10_TRAIN_MD5 (stream A names it), equals --v9-train-md5 "
+                         "(the file --v9-train points at) and the loader hashed exactly that. Default empty = the v9 release as before")
     ap.add_argument("--synthetic", action="store_true", help="run on a tiny synthetic world (smoke / CI)")
     ap.add_argument("--selfcheck-only", action="store_true")
     # ---- PREREG_V8F_LORA (M4): LoRA on the frozen DINOv3-L, encoded on the fly. Every flag has its G-DVB entry in FLAG_CHECKS.
@@ -411,7 +433,9 @@ def make_config(a) -> M.V8FMiniConfig:
                            wm_rollout_w=declared_wm_ladder(a)["wm_rollout_w"], wm_ctx=declared_wm_ladder(a)["wm_ctx"],
                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w,
                            level_head=a.level_head, w_level=a.w_level,
-                           lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond)
+                           lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond,
+                           w_op=a.w_op, w_tac_traj=a.w_tac_traj,                      # PREREG_V8F_OTBAND: the lines that apply the band levers (a mutation deletes them)
+                           stok_dim=(D.stok_dim_of(a.t_stok_dir) if a.t_stok_dir else 0))
 
 
 def bad_encoder(a, enc, data_info) -> list:
@@ -736,8 +760,8 @@ def bad_init_ckpt(a, data_info) -> list:
     elif got.get("skipped") != "resume":
         bad.append(f"init_ckpt: declared but neither applied nor skipped for a resume ({got.get('skipped')!r})")
     if got.get("applied"):                                  # PREREG_V8F_LEVEL: only the declared lever's keys may be fresh, and a lever-ON argv must have declared them
-        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on"):          # PREREG_LEVELHEAD_A2: the lead head adds keys too
-            bad.append(f"init_ckpt: level_head {a.level_head} / lead_head {a.lead_head} declared but the load declared new keys {got.get('declared_new_keys')}")
+        if bool(got.get("declared_new_keys")) != (a.level_head == "on" or a.lead_head == "on" or bool(a.t_stok_dir)):          # PREREG_LEVELHEAD_A2: the lead head adds keys too; PREREG_V8F_OTBAND: so does the token
+            bad.append(f"init_ckpt: level_head {a.level_head} / lead_head {a.lead_head} / t_stok_dir {a.t_stok_dir!r} declared but the load declared new keys {got.get('declared_new_keys')}")
         if set(got.get("fresh_keys", [])) - set(got.get("declared_new_keys", [])):
             bad.append(f"init_ckpt: keys {sorted(set(got.get('fresh_keys', [])) - set(got.get('declared_new_keys', [])))} were left fresh but are not the declared lever's")
     return bad
@@ -750,6 +774,16 @@ INIT_CKPT_MATCH = ("d", "heads", "ff", "d_feat", "n_tok", "hist", "hmax", "n_q",
                    "o_interface")                      # PREREG_V8F_FLATDAG: a checkpoint trained under the cut must be fine-tuned under the cut (and a full one under full). The key is read only when the checkpoint HAS it:
                                                        # checkpoints written before --o-interface existed (every M2b) carry none and load exactly as before. Without it a FLAT-DAG argv that forgets `--o-interface cut`
                                                        # builds FULL, loads the cut weights and PASSES the gate (MEASURED oaccflat_check/RESULT.md F1); the run is then REFUSED only by C-F3, hours later
+
+
+#: PREREG_V8F_OTBAND: the architecture key that may go from OFF in the checkpoint to ON in the build (the declared new module is the fresh key, NEW_LEVER_KEY_PREFIXES) and never the other way: a token checkpoint is fine-tuned
+#: with the same token dimension. Read only when the checkpoint HAS the key (every M2b has none). A checkpoint value of 0 matches any build.
+INIT_CKPT_MONOTONE = ("stok_dim",)
+
+
+def monotone_diff(ck_cfg: dict, cfg) -> dict:
+    """The INIT_CKPT_MONOTONE keys whose checkpoint value is ON and differs from the build's (checkpoint vs built)."""
+    return {k: (ck_cfg[k], getattr(cfg, k)) for k in INIT_CKPT_MONOTONE if k in ck_cfg and ck_cfg[k] != 0 and ck_cfg[k] != getattr(cfg, k)}
 
 
 def load_init_ckpt(path, model, cfg, apply: bool = True) -> dict:
@@ -765,6 +799,7 @@ def load_init_ckpt(path, model, cfg, apply: bool = True) -> dict:
         raise ValueError("not a v8f_mini_train checkpoint (no 'model' / 'cfg')")
     norm = lambda v: tuple(v) if isinstance(v, (list, tuple)) else v          # noqa: E731
     diff = {k: (norm(ck["cfg"][k]), norm(getattr(cfg, k))) for k in INIT_CKPT_MATCH if k in ck["cfg"] and norm(ck["cfg"][k]) != norm(getattr(cfg, k))}
+    diff.update(monotone_diff(ck["cfg"], cfg))                                                 # PREREG_V8F_OTBAND: a token checkpoint into a build without it (or with another token dimension)
     if diff:
         raise ValueError("config mismatch between the checkpoint and the model this argv builds (checkpoint vs built): " + "; ".join(f"{k}: {v[0]!r} != {v[1]!r}" for k, v in sorted(diff.items())))
     sd = ck["model"]
@@ -790,7 +825,7 @@ def load_init_ckpt(path, model, cfg, apply: bool = True) -> dict:
 #: PREREG_V8F_MRATE: every other lever a WM-only argv must leave at its parser default (the readers, heads and planner are frozen and never run: a lever on them is declared and does nothing)
 WM_ONLY_DEFAULT_DESTS = ("navonly", "no_consistency", "cons_absent", "code_mix", "o_interface", "w_acc", "launch_intent_w", "level_head", "w_level", "lead_head", "w_lead", "aux_cond", "detach_upper",
                          "ego_perturb_p", "ego_perturb_yawrate_std", "dagger_p", "dagger_bank", "dagger_bank_sha256", "ego_perturb_with_dagger", "recover_p", "recover_dev_bank", "recover_dev_bank_sha256",
-                         "encoder", "lora_lr", "frames_root", "accum", "enc_ckpt", "window_start")
+                         "encoder", "lora_lr", "frames_root", "accum", "enc_ckpt", "window_start", "w_op", "w_tac_traj", "t_stok_dir", "t_stok_shuffle", "freeze", "v10_md5")
 
 
 def is_wm_param(name: str) -> bool:
@@ -1411,6 +1446,194 @@ def bad_lead(a, model, data_info=None) -> list:
     return bad
 
 
+# ------------------------------------------------------------------------------------------------ PREREG_V8F_OTBAND
+FREEZE_GROUPS = ("S", "T", "adapter", "cond")
+
+
+def freeze_modules(model, g: str) -> list:
+    """The modules (and bare parameters) of freeze group ``g``: S = the strategic reader + head; T = the tactical reader, trunk and the four T heads; adapter = the scene adapter, ``pos`` and ``time`` (read by S, T and O alike);
+    cond = the conditioning embeddings S, T and O share (ego, nav, limit, age, checkpoint, code). Freezing S or T alone leaves their OUTPUT free to move through the shared adapter and embeddings: a run that needs S's or T's
+    output to stay the init checkpoint's freezes the group AND ``adapter`` AND ``cond``."""
+    if g == "S":
+        return [model.read_s, model.head_s]
+    if g == "T":
+        return [model.read_t, model.trunk_t, model.h_goal, model.h_lat, model.h_lon, model.h_cons]
+    if g == "adapter":
+        return [model.adapter, model.pos, model.time]
+    if g == "cond":
+        return [model.e_ego, model.e_nav, model.e_lim, model.e_age, model.e_ck, model.e_code]
+    raise ValueError(f"unknown freeze group {g!r}")
+
+
+def _params_of(m_):
+    return list(m_.parameters()) if isinstance(m_, torch.nn.Module) else [m_]
+
+
+def freeze_groups(model, groups) -> None:
+    """PREREG_V8F_OTBAND (`--freeze`): requires_grad False on every parameter of the named groups. Called BEFORE the optimiser is built (its decay / nodecay lists filter on requires_grad)."""
+    for g in groups:
+        for m_ in freeze_modules(model, g):
+            for p_ in _params_of(m_):
+                p_.requires_grad_(False)
+
+
+def frozen_groups(model) -> list:
+    return sorted(g for g in FREEZE_GROUPS if all(not p_.requires_grad for m_ in freeze_modules(model, g) for p_ in _params_of(m_)))
+
+
+def band_expect(cfg) -> set:
+    """The loss terms PREREG_V8F_OTBAND adds to the G-LIVE `expect` set: the band terms when a band weight is declared."""
+    if not (cfg.w_op > 0.0 or cfg.w_tac_traj > 0.0):
+        return set()
+    return {"ade_op", "fde_op", "ade_tac", "fde_tac", "op", "tac"}
+
+
+def bad_oband(a, cfg, model, data_info=None) -> list:
+    """PREREG_V8F_OTBAND, G-DVB: ``--w-op`` / ``--w-tac-traj`` / ``--t-stok-dir`` / ``--t-stok-shuffle`` / ``--freeze`` / ``--v10-md5`` read back from the BUILT model and the BUILT data. Empty = pass.
+    Refused: a weight that the BUILT config does not hold, a band weight together with the 30-knot term (the knots would be counted twice), a token with no module / a module with no token, a token dimension that is not the file's,
+    a shuffle with no token, a stok store the dataset does not hold, a frozen set other than the declared one, a v10 md5 that is not accepted / not the one the loader hashed."""
+    bad, info = [], data_info or {}
+    for nm in ("w_op", "w_tac_traj"):
+        v = getattr(a, nm)
+        if not (math.isfinite(v) and v >= 0.0):
+            bad.append(f"{nm} {v!r} is not a finite number >= 0")
+        elif getattr(model.cfg, nm) != v:
+            bad.append(f"cfg.{nm}: declared {v} but built {getattr(model.cfg, nm)}")
+    built = model.built_levers()
+    for nm in ("w_op", "w_tac_traj"):
+        if getattr(a, nm) > 0.0 and built.get(nm) != getattr(a, nm):
+            bad.append(f"lever {nm}: declared {getattr(a, nm)} but built_levers says {built.get(nm)}")
+    if (a.w_op > 0.0 or a.w_tac_traj > 0.0) and a.w_traj > 0.0:
+        bad.append(f"a band weight (w_op {a.w_op}, w_tac_traj {a.w_tac_traj}) is declared with --w-traj {a.w_traj}: the 30-knot ADE/FDE would count every knot twice -- declare --w-traj 0")
+    # the strategic token
+    if a.t_stok_dir:
+        dim = D.stok_dim_of(a.t_stok_dir)
+        if model.e_stok is None or model.cfg.stok_dim != dim or built.get("stok_dim") != dim:
+            bad.append(f"--t-stok-dir declared (stok_dim {dim} from the file) but built stok_dim {built.get('stok_dim', 0)}")
+        st = info.get("stok")
+        if not st or int(st.get("stok_dim", -1)) != dim:
+            bad.append(f"--t-stok-dir declared but the dataset holds no StokStore of dimension {dim} (data_info stok = {st})")
+        else:
+            if int(st.get("stok_shuffle", -2)) != a.t_stok_shuffle:
+                bad.append(f"--t-stok-shuffle: declared {a.t_stok_shuffle} but the store was built with {st.get('stok_shuffle')}")
+            if a.t_stok_shuffle >= 0 and st.get("n_self_sourced", 1) != 0:
+                bad.append(f"--t-stok-shuffle {a.t_stok_shuffle}: {st.get('n_self_sourced')} clips still read their own token (the control is not a derangement)")
+            if not info.get("stok_attached", False):
+                bad.append("the stok store was built but the training dataset holds none: a lever that is declared and reaches nothing")
+        if a.wm_only:
+            bad.append("--t-stok-dir declared with --wm-only: T never runs there -- a lever that is declared and does nothing")
+    else:
+        if model.e_stok is not None or model.cfg.stok_dim:
+            bad.append("no --t-stok-dir declared but a strategic-token embedding was built")
+        if a.t_stok_shuffle != -1:
+            bad.append(f"--t-stok-shuffle {a.t_stok_shuffle} declared with no --t-stok-dir: nothing to shuffle -- a lever that is declared and does nothing")
+    # --freeze
+    if not a.wm_only and frozen_groups(model) != sorted(set(a.freeze)):
+        bad.append(f"--freeze: declared {sorted(set(a.freeze))} but the BUILT model has {frozen_groups(model)} frozen")
+    # the v10 release
+    if a.v10_md5:
+        bad += D.v10_md5_problems(a.v10_md5)
+        if a.v10_md5 != a.v9_train_md5:
+            bad.append(f"--v10-md5 {a.v10_md5} != --v9-train-md5 {a.v9_train_md5}: the file --v9-train points at is the one the loader reads")
+        if info.get("v9_md5") != a.v10_md5:
+            bad.append(f"--v10-md5 {a.v10_md5} but the loader hashed {info.get('v9_md5')!r} (a cached --join-train carries no md5: rebuild it with --fit-join)")
+    return bad
+
+
+def oband_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
+    """G-LIVE for PREREG_V8F_OTBAND, from the BUILT model's own loss on the real probe batch (a COPY; head_o is woken if zero, since a zero head hides every edge below it):
+
+      contribution   for each band weight, total(w) - total(0) == w x its term (rtol + float32 rounding) with the other band weight on: the weight reaches the total. DELETE a total line and this reads 0.0 -> RED
+      detach         (only with --detach-upper) backward of T['op'] alone: the gradient on S's reader / head and T's reader / trunk / heads is EXACTLY 0.0 while head_o receives gradient > 0. REMOVE the detach and it reads > 0 -> RED
+      code edge      forward_diag with T's code shifted changes O's plan (the T -> O wire through e_code is live)
+      token edge     forward_infer with the strategic token rolled across the batch changes T's logits
+    Any violation is an AssertionError, which the caller turns into a refusal."""
+    stok = cfg.stok_dim > 0
+    band = cfg.w_op > 0.0 or cfg.w_tac_traj > 0.0
+    if not (stok or band):
+        return {"otband": "off", "pass": True, "skipped": "no band lever named: the default run is the pre-change run"}
+    eps32 = float(torch.finfo(torch.float32).eps)
+    m = copy.deepcopy(model).cpu()
+    m.train()
+    for n_, p_ in m.named_parameters():
+        if not n_.startswith("prior."):
+            p_.requires_grad_(True)                      # purity is measured on the detach, never on a freeze
+    g_ = torch.Generator().manual_seed(4242)
+    with torch.no_grad():
+        w_ = m.head_o[2].weight
+        if float(w_.abs().sum()) == 0.0:
+            w_.copy_(torch.randn(w_.shape, generator=g_) * 0.05)
+    res = {"otband": "on", "stok_dim": cfg.stok_dim, "detach_upper": cfg.detach_upper}
+    named = {n_: p_ for n_, p_ in m.named_parameters() if p_.requires_grad}
+
+    def run():
+        torch.manual_seed(20261108)
+        out = m.loss(batch, p_gt=0.5, gen=torch.Generator().manual_seed(11))
+        for k, v in out["terms"].items():
+            if not torch.isfinite(v):
+                raise AssertionError(f"otband probe: loss term {k} is not finite: {float(v)}")
+        return out
+
+    if band:
+        wnames = (("w_op", "op"), ("w_tac_traj", "tac"))
+        saved = {w: getattr(m.cfg, w) for w, _ in wnames}
+        contrib = {}
+        for w, key in wnames:
+            other = "w_tac_traj" if w == "w_op" else "w_op"
+            setattr(m.cfg, w, 0.0)
+            setattr(m.cfg, other, 1.0)                                          # the other band weight on, so both terms are computed
+            t0 = float(run()["terms"]["total"].detach())
+            wv = saved[w] if saved[w] > 0.0 else 1.0
+            setattr(m.cfg, w, wv)
+            o1 = run()
+            term = float(o1["terms"][key].detach())
+            d = float(o1["terms"]["total"].detach()) - t0
+            tol = max(rtol * abs(wv * term), 8.0 * eps32 * max(abs(t0), 1.0))
+            if not abs(d - wv * term) <= tol:
+                raise AssertionError(f"otband probe: {w}={wv} moved the total by {d!r}, expected {wv * term!r} (term {key}): the weight does not reach the total")
+            if not term > 0.0:
+                raise AssertionError(f"otband probe: term {key} is {term!r} (must be > 0 on a real batch)")
+            contrib[w] = {"weight": wv, "term": term, "moved_total_by": d}
+        for w, v in saved.items():
+            setattr(m.cfg, w, v)
+        res["contribution"] = contrib
+        if cfg.detach_upper:
+            m.cfg.w_op = max(saved["w_op"], 1.0)
+            out = run()
+            up = [n_ for n_ in named if n_.startswith(("read_s.", "head_s.", "read_t.", "trunk_t.", "h_goal.", "h_lat.", "h_lon.", "h_cons.", "e_stok."))]
+
+            def gsum(key, names):
+                gr = torch.autograd.grad(out["terms"][key], [named[n_] for n_ in names], retain_graph=True, allow_unused=True)
+                return float(sum(float(x.abs().sum()) for x in gr if x is not None))
+            pur = {"upper_grad_abs_sum": gsum("op", up), "head_o": gsum("op", [n_ for n_ in named if n_.startswith("head_o.")])}
+            if pur["upper_grad_abs_sum"] != 0.0:
+                raise AssertionError(f"otband probe: O's op term puts gradient {pur['upper_grad_abs_sum']!r} on S / T although --detach-upper is declared: a detach is missing")
+            if not pur["head_o"] > 0.0:
+                raise AssertionError("otband probe: O's op term gives O's head no gradient")
+            res["purity"] = pur
+    m.eval()
+    with torch.no_grad():
+        base = m.forward_infer(batch)
+        alt = m.forward_diag(batch, base["code"] + 0.5)
+    dc = float((base["traj30"] - alt["traj30"]).abs().max())
+    if not dc > 0.0:
+        raise AssertionError("otband probe: shifting T's code does not change O's plan: the T -> O edge is cut")
+    res["code_edge_max_dknot"] = dc
+    if stok:
+        with torch.no_grad():
+            b2 = dict(batch)
+            b2["stok"] = torch.roll(batch["stok"], 1, 0)
+            if not bool((b2["stok"] != batch["stok"]).any()):
+                raise AssertionError("otband probe: the probe batch holds one distinct token: the token edge cannot be read")
+            alt = m.forward_infer(b2)
+        dl = float((base["goal_logits"] - alt["goal_logits"]).abs().max())
+        if not dl > 0.0:
+            raise AssertionError("otband probe: shuffling the strategic token does not change T's logits: the token edge is cut")
+        res["token_edge"] = {"max_dlogit": dl, "max_dtraj30": float((base["traj30"] - alt["traj30"]).abs().max())}
+    res["pass"] = True
+    return res
+
+
 def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=None, dag=None, comp=None, rec=None, t2b=None) -> list:
     """Return the list of mismatches (empty = pass). Each flag is checked against what was BUILT, by FLAG_CHECKS kind."""
     bad = bad_encoder(a, enc, data_info)
@@ -1422,6 +1645,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
     bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
     bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
+    bad += bad_oband(a, cfg, model, data_info)                                                   # PREREG_V8F_OTBAND: the band split, the band weights, the strategic token, --freeze and --v10-md5 read back from the BUILT model and data
     bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
     bad += bad_ego_dagger(a, comp, ego, dag)                                                     # AMEND1 section 1: --ego-perturb-with-dagger read back from the BUILT stage
     parser_dests = {act.dest for act in build_parser()._actions if act.dest != "help"}
@@ -1554,6 +1778,7 @@ def live_check(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
             first = {n: float(p.grad.abs().sum()) for n, p in m.named_parameters() if p.requires_grad and p.grad is not None}
         opt.step()
     expect = {"ckpt", "goal", "lat", "lon", "cons", "ade", "fde", "acc", "total"}      # + acc: PREREG_V8F_OACC (always logged)
+    expect |= band_expect(cfg)                                           # PREREG_V8F_OTBAND: the band terms (empty with the split off and no band weight)
     if cfg.consistency:
         expect |= {f"pen_{r}" for r in M.RULES} | {f"pens_{r}" for r in M.RULES}
     if cfg.wm != "off":
@@ -2800,6 +3025,7 @@ def live_check_lora(model, enc, batch, cfg, a, dev, chunk, steps: int = 3, lr: f
         for p in lora:
             p.grad = None
     expect = {"ckpt", "goal", "lat", "lon", "cons", "ade", "fde", "acc", "total"}      # + acc: PREREG_V8F_OACC (always logged)
+    expect |= band_expect(cfg)                                           # PREREG_V8F_OTBAND: the band terms (empty with the split off and no band weight)
     if cfg.consistency:
         expect |= {f"pen_{r}" for r in M.RULES} | {f"pens_{r}" for r in M.RULES}
     if cfg.wm != "off":
@@ -2888,6 +3114,9 @@ def build_data(a, cfg):
         tracks = D.load_native_tracks(tpath)
     info["kin_mode"] = a.kin_mode
     store = D.ClipStore(cache, "train", lru=lru, grid=a.grid, kin_mode=a.kin_mode, tracks=tracks)
+    if a.t_stok_dir:                                                             # PREREG_V8F_OTBAND: the strategic token store (every selected clip must have a file; shuffle seed >= 0 = the control). Off: nothing read
+        store.stok_store = D.StokStore(a.t_stok_dir, clips, shuffle_seed=a.t_stok_shuffle)
+        info["stok"] = store.stok_store.built_levers()
     if a.wm_windows == "wmonly":                                                 # PREREG_V8F_LADDER: the world-model-only sampler: every full hmax-frame window, no label requirement
         allw = WW.wm_windows(store, J, clips_all, F=cfg.hmax, stride=a.wm_win_stride)
         wins = WW.wm_windows(store, J, clips, F=cfg.hmax, stride=a.wm_win_stride)
@@ -3027,7 +3256,7 @@ def main(argv=None):
         info["frames_missing"] = len(fstore.missing(clips))
     if a.encoder == "lora":                                          # two NAMED constructions, so test_v8f_window_start's static guard can see both
         ds = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
-                                   window_start=cfg.window_start)
+                                   window_start=cfg.window_start, stok=getattr(store, "stok_store", None))
     elif a.wm_windows == "wmonly":                                   # PREREG_V8F_LADDER: the world-model-only dataset (pooled path = the token mean; off = the cached tokens)
         ds = WW.V8FMiniWMWindows(store, J, wins, F=cfg.hmax, pooled=(a.wm_pooled == "on"), lru=info["lru"], zcache=a.wm_zcache)
         info["wm_windows"]["zcache"] = ds.zcache
@@ -3044,7 +3273,9 @@ def main(argv=None):
         info["wm_windows"]["F"] = ds.F
     else:
         ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
-                              window_start=cfg.window_start)
+                              window_start=cfg.window_start, stok=getattr(store, "stok_store", None))
+    if a.t_stok_dir:                                                 # PREREG_V8F_OTBAND: read back from the BUILT dataset (bad_oband); a flag-off info keeps its key set
+        info["stok_attached"] = getattr(ds, "stok", None) is not None and getattr(ds, "stok", None) is getattr(store, "stok_store", None)
     if a.wm_windows != "wmonly":
         info["ds_window_start"] = ds.window_start                   # the held-age clamp's origin, read back from the BUILT dataset (G-DVB compares it)
     LL = make_lead_labels(a, cfg, J, info)                          # PREREG_LEVELHEAD_A2: the lead head's label arrays (None with the head off: nothing read, nothing built)
@@ -3060,6 +3291,8 @@ def main(argv=None):
                 info["init_ckpt"] = load_init_ckpt(a.init_ckpt, model, cfg, apply=_apply)
         except Exception as e:                                       # noqa: BLE001  a missing / foreign / mismatched checkpoint is a REFUSAL, not a crash
             raise SystemExit(f"ZZDVB-REFUSEDZZ init-ckpt {a.init_ckpt}: {type(e).__name__}: {str(e)[:600]}")
+    if a.freeze and not a.wm_only:
+        freeze_groups(model, a.freeze)                               # PREREG_V8F_OTBAND (`--freeze`): BEFORE the optimiser below; bad_oband reads the frozen set back from the BUILT model
     if a.wm_only:
         freeze_all_but_wm(model)                                     # PREREG_V8F_MRATE: BEFORE the optimiser below (its decay / nodecay lists filter on requires_grad); bad_wm_only reads the frozen set back
     dag = make_dagger(a, J, wins, clips, info)                       # PREREG_V8F_DAGGER: off by default (no bank read); with a bank: load + K-B2 + K-B3 + COVERAGE here, a refusal stops the launch before the gate
@@ -3092,7 +3325,7 @@ def main(argv=None):
     if enc is None and a.wm_windows == "wmonly":                      # PREREG_V8F_LADDER: the WM batch for G-LIVE (first 16 windows); the planner identity and the admissibility check need a LABELLED batch, built from the labelled list
         probe_wm = WW.collate_wm([ds.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_WM])
         ds_reg = D.V8FMiniWindows(store, J, D.train_windows(store, J, clips, hist=cfg.hist, start=cfg.window_start), hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
-                                  window_start=cfg.window_start)
+                                  window_start=cfg.window_start, stok=getattr(store, "stok_store", None))
         probe = D.collate([ds_reg.item(*w) for w in ds_reg.windows[:LIVE_PROBE_WINDOWS_WM]])
     elif enc is None:
         probe = D.collate([ds.item(*w) for w in next(sampler.epoch(0))])
@@ -3110,7 +3343,7 @@ def main(argv=None):
             live = live_check(model.cpu(), probe, cfg)
     else:
         ds_probe = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
-                                         window_start=cfg.window_start, keep_cached=True)
+                                         window_start=cfg.window_start, keep_cached=True, stok=getattr(store, "stok_store", None))
         probe_f = D.collate_frames([ds_probe.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_LORA], fstore)
         if cfg.launch_intent_w > 0.0:                    # PREREG_V8F_LAUNCH_INTENT: as above (the cached tokens stay in `probe`; the mask comes from the logged kin3 and the GT)
             probe_f["launch"] = launch_stage(probe_f)
@@ -3123,7 +3356,7 @@ def main(argv=None):
         ident = identity_probe(enc, probe_f, dev, chunk)
     model.to(dev)
     if a.wm_only:                                                          # PREREG_V8F_MRATE: the readers, heads and planner are frozen and never run; the probes that need their gradients are skipped (and recorded as skipped)
-        mix = ocut = accp = egop = dagp = recp = t2p = lvp = ldp = {"skipped": "wm_only"}
+        mix = ocut = accp = egop = dagp = recp = t2p = lvp = ldp = obp = {"skipped": "wm_only"}
         lip = {"skipped": "wm_only", "launch_n": 0, "launch_eligible": 0}
         cmpp = {"skipped": "wm_only", "overlap": 0}
         adm = M.assert_no_situation_classifier_input(model.cpu().eval(), probe)
@@ -3173,6 +3406,10 @@ def main(argv=None):
         except (AssertionError, ValueError) as e:
             raise SystemExit(f"ZZDVB-REFUSEDZZ level-head: {e}")
         try:
+            obp = oband_probe(model, probe, cfg)              # PREREG_V8F_OTBAND: G-LIVE on the BUILT loss: each band weight reaches the total by exactly its weight, O's band terms put EXACTLY 0.0 on S / T / the tactical head, the hand-over and the token edges are live
+        except (AssertionError, ValueError) as e:
+            raise SystemExit(f"ZZDVB-REFUSEDZZ otband: {e}")
+        try:
             ldp = lead_head_probe(model, probe, cfg)          # PREREG_LEVELHEAD_A2: G-LIVE on the loop's own label call (lead_stage); the term reaches the loss with its weight, BOTH outputs get their gradient, the detach control reads EXACTLY 0.0, the lead output reaches O, the head is vision-only (off: nothing run)
         except (AssertionError, ValueError) as e:
             raise SystemExit(f"ZZDVB-REFUSEDZZ lead-head: {e}")
@@ -3219,6 +3456,10 @@ def main(argv=None):
         sc["planner_identity_probe"] = pid
     if cfg.level_head == "on":                                          # lever-ON arms only: a flag-off selfcheck.json keeps its key set
         sc["level_head_probe"] = lvp
+    if cfg.stok_dim or cfg.w_op > 0.0 or cfg.w_tac_traj > 0.0:     # PREREG_V8F_OTBAND: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
+        sc["otband_probe"] = obp
+        if info.get("stok"):
+            sc["stok"] = info["stok"]
     if cfg.lead_head == "on":                                           # PREREG_LEVELHEAD_A2: lever-ON arms only (a flag-off selfcheck.json keeps its key set)
         sc["lead_head_probe"] = ldp
         sc["lead_labels"] = info["lead_labels"]
