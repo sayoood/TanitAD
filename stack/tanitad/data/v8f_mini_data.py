@@ -556,8 +556,9 @@ class V8FMiniWindows:
     It is the SAME number ``train_windows(start=...)`` starts each clip at, so the window list and the held-age clamp move together."""
 
     def __init__(self, store: ClipStore, J: dict, windows, *, hist: int = 4, hmax: int = 10, max_age_t: int = 2,
-                 max_age_s: int = 6, window_start=None):
+                 max_age_s: int = 6, window_start=None, with_v: bool = False):
         self.store, self.J, self.windows = store, J, list(windows)
+        self.with_v = bool(with_v)               # PREREG_V8F_EGOWM: also return ``v`` [hmax], the measured speed (kin3 column 0) of each window frame, for the labelled probes of a speed arm; False = the earlier item, key for key
         self.hist, self.hmax = int(hist), int(hmax)
         self.window_start = effective_window_start(self.hist, window_start)
         self.max_age_t, self.max_age_s = int(max_age_t), int(max_age_s)
@@ -597,6 +598,8 @@ class V8FMiniWindows:
         it["pose_now"] = d["pose"][t][:3].astype(np.float32)
         it["pose_t"] = d["pose"][t - a_t][:3].astype(np.float32)
         it["pose_s"] = d["pose"][t - a_s][:3].astype(np.float32)
+        if self.with_v:                                          # PREREG_V8F_EGOWM
+            it["v"] = np.nan_to_num(d["kin3"][idc, 0]).astype(np.float32)
         return it
 
     def __getitem__(self, i):
@@ -638,6 +641,8 @@ def collate(items: list) -> dict:
     for k in ("p10f", "act", "nav", "pose", "limit", "gt", "base", "kin3", "s_h", "lead_gap_h", "pose_now", "pose_t",
               "pose_s"):
         out[k] = stack(k, torch.float32)
+    if "v" in items[0]:                  # PREREG_V8F_EGOWM (with_v datasets only)
+        out["v"] = stack("v", torch.float32)
     out["p10_t"] = torch.as_tensor(np.stack([np.nan_to_num(it["p10_t"]) for it in items]), dtype=torch.float32)
     for k in ("a_t", "a_s", "t", "ci"):
         out[k] = torch.as_tensor([it[k] for it in items], dtype=torch.long)

@@ -118,6 +118,9 @@ FLAG_CHECKS = {
     # PREREG_V8F_MRATE: `lever:wm_k` = equals built_levers().get("wm_k", 1) (the BUILT modules' window / dilation / causal pad, WMAux.built_k); `lever:wm_only` = the record the WM-only loader read back (bad_wm_only: non-WM tensors bit-equal to the checkpoint,
     # NO WM tensor loaded, the WM re-initialised under --seed, trainable == the WM's parameters exactly, every other lever at its default) -> wm_only_live_check (G-LIVE) + planner_identity_probe -> `model.wm_only_loss(b)` in the loop.
     "wm_k": "lever:wm_k", "wm_only": "lever:wm_only",
+    # PREREG_V8F_EGOWM: `lever:wm_speed` = equals the mode WMAux.built_speed() MEASURES on the BUILT stack (the stack's own speed rule run on a planted ramp: constant = now, rising = kin) AND the built channels (one zero-initialised
+    # bias-free Linear per level) AND the dataset's record (data_info["wm_windows"]["ego"]: the built windows return the measured speed) -> bad_wm_speed. Default off: no module, no key, no batch key.
+    "wm_speed": "lever:wm_speed",
     # PREREG_V8F_LFS: `lever:wm_strides` = equals built_levers().get("wm_strides", [2, 2]) AND the BUILT modules (WMAux.built_strides: the LevelConfig strides the loss reads, the macro encoders' stride and the stride their parameter SHAPES carry) -> bad_wm_strides
     # (the gate also refuses a stride that leaves a level fewer than 2 transitions: the arm is NOT RUN, with the count) -> `selfcheck.json levers.wm_strides_readback` (written when the argv NAMES the flag).
     "wm_strides": "lever:wm_strides",
@@ -312,6 +315,9 @@ def build_parser():
     ap.add_argument("--wm-k", dest="wm_k", type=int, default=1,
                     help="PREREG_V8F_MRATE: how many past states each world-model level reads, spaced at that level's own step. 1 (default) = W0 = every earlier arm, bit for bit (no module and no state-dict key is added). "
                          "K > 1 (W1: 3): L1 reads the adapter tokens of frames t, t-1, .., t-K+1; L2 / L3 read K states of the level below, 0.4 s / 0.8 s apart. Needs --wm b")
+    ap.add_argument("--wm-speed", dest="wm_speed", choices=("off", "kin", "now"), default="off",
+                    help="PREREG_V8F_EGOWM: the measured-speed channel of the world model's predictors (an added, zero-initialised action-embedding channel per level; goal and target latents stay vision-only). off (default) = every earlier arm, bit for bit. "
+                         "kin = the measured speed at the anchor, integrated over the step's own actions, floored at 0. now = the measured speed at the anchor, held constant over the rollout. Needs --wm-only --wm-windows wmonly")
     ap.add_argument("--wm-only", dest="wm_only", action="store_true", default=False,
                     help="PREREG_V8F_MRATE: WM-only training. Needs --init-ckpt (a plain M2b s{k}): its adapter, readers and planner load strictly and bit-equal and are FROZEN; its world-model parameters are NOT loaded -- the WM is "
                          "re-initialised under --seed (hmax is not compared: M2b trained at 16, this arm at 28); only the WM loss terms are trained. Every other lever must be at its default (a lever that is declared and does nothing is refused). Default off")
@@ -409,6 +415,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm, wm_k=a.wm_k,
                            wm_rollout_k=declared_wm_ladder(a)["wm_rollout_k"], wm_rollout_stride=declared_wm_ladder(a)["wm_rollout_stride"],       # PREREG_V8F_LADDER: the lines that apply the ladder levers (a mutation deletes them)
                            wm_rollout_w=declared_wm_ladder(a)["wm_rollout_w"], wm_ctx=declared_wm_ladder(a)["wm_ctx"],
+                           wm_speed=a.wm_speed,                                                           # PREREG_V8F_EGOWM: the ONE line that applies --wm-speed (a mutation deletes it)
                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w,
                            level_head=a.level_head, w_level=a.w_level,
                            lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond)
@@ -1008,6 +1015,39 @@ def bad_wm_ladder(a, cfg, model, data_info) -> list:
     return bad
 
 
+def bad_wm_speed(a, cfg, model, data_info) -> list:
+    """G-DVB for ``--wm-speed`` (PREREG_V8F_EGOWM). Empty = pass. Read back from what was BUILT: the mode from :meth:`WMAux.built_speed` (the stack's own rule run on a planted ramp), the channels from the stack's modules, the data from the BUILT
+    dataset's record. A speed channel with no world-model-only windows, or on a path that cannot supply the measured speed, is a lever that is declared and builds nothing, and is refused."""
+    bad = []
+    want = a.wm_speed
+    if model.wm is None:
+        return [f"lever wm_speed: {want} declared but no world model was built (--wm off)"] if want != "off" else []
+    bs = model.wm.built_speed()
+    if bs["mode"] != want:
+        bad.append(f"lever wm_speed: declared {want} but the built stack's speed rule behaves as {bs['mode']!r}")
+    if model.cfg.wm_speed != want:
+        bad.append(f"lever wm_speed: declared {want} but the built config says {model.cfg.wm_speed}")
+    rec = data_info.get("wm_windows") or {}
+    if want == "off":
+        if rec.get("ego"):
+            bad.append("lever wm_speed: off declared but the built windows return a measured speed")
+        return bad
+    if bs["n_channels"] != 3 or not bs.get("weights_zero_at_build") or not bs.get("bias_free"):
+        bad.append(f"lever wm_speed: the built channels are {bs}: three zero-initialised bias-free channels (one per level) were declared")
+    if not a.wm_only or a.wm_windows != "wmonly":
+        bad.append("lever wm_speed: needs --wm-only --wm-windows wmonly (only those windows carry the measured speed): a lever that is declared and builds nothing")
+    if not rec.get("ego"):
+        bad.append("lever wm_speed: declared but the built windows do not return the measured speed")
+    if a.wm_k < 1 or cfg.wm == "off":
+        bad.append("lever wm_speed: needs a world model")
+    return bad
+
+
+def wm_speed_readback(a, cfg, model, data_info) -> dict:
+    """PREREG_V8F_EGOWM: the record ``selfcheck.json`` carries (``levers.wm_speed_readback``) when the argv NAMES the flag: declared vs the BUILT measurements."""
+    return {"declared": a.wm_speed, "built": None if model.wm is None else model.wm.built_speed(), "windows_built_ego": (data_info.get("wm_windows") or {}).get("ego")}
+
+
 def wm_ladder_readback(a, cfg, model, data_info) -> dict:
     """PREREG_V8F_LADDER: the record ``selfcheck.json`` carries (``levers.wm_ladder_readback``) when the argv NAMES a ladder flag: declared vs the BUILT measurements."""
     decl = declared_wm_ladder(a)
@@ -1420,6 +1460,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
     bad += bad_level(a, model, data_info)                                                        # PREREG_V8F_LEVEL: --level-head / --w-level read back from the BUILT model
     bad += bad_wm_only(a, cfg, model, data_info)                                                 # PREREG_V8F_MRATE: --wm-k read back from the BUILT WM modules, --wm-only from the loader's record and the frozen set
     bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
+    bad += bad_wm_speed(a, cfg, model, data_info)                                                # PREREG_V8F_EGOWM: --wm-speed read back from the BUILT stack (its rule, its channels) and the BUILT windows
     bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
     bad += bad_dagger(a, dag, model.cfg, data_info)                                              # PREREG_V8F_DAGGER: --dagger-p / --dagger-bank / --dagger-seed read back from the BUILT swap
@@ -3029,7 +3070,7 @@ def main(argv=None):
         ds = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
                                    window_start=cfg.window_start)
     elif a.wm_windows == "wmonly":                                   # PREREG_V8F_LADDER: the world-model-only dataset (pooled path = the token mean; off = the cached tokens)
-        ds = WW.V8FMiniWMWindows(store, J, wins, F=cfg.hmax, pooled=(a.wm_pooled == "on"), lru=info["lru"], zcache=a.wm_zcache)
+        ds = WW.V8FMiniWMWindows(store, J, wins, F=cfg.hmax, pooled=(a.wm_pooled == "on"), lru=info["lru"], zcache=a.wm_zcache, ego=(a.wm_speed != "off"))
         info["wm_windows"]["zcache"] = ds.zcache
         info["wm_windows"]["zcache_missing"] = len(ds.zcache_missing(clips)) if ds.zcache else 0
         if ds.zcache and not info["wm_windows"]["zcache_missing"]:    # windows holding a frame the cache marks not ok are dropped here, the same list for every arm
@@ -3042,6 +3083,7 @@ def main(argv=None):
             info["wm_windows"]["prewarm_clips"] = ds.prewarm()
         info["wm_windows"]["pooled"] = ds.pooled                     # read back from the BUILT dataset (bad_wm_ladder compares it)
         info["wm_windows"]["F"] = ds.F
+        info["wm_windows"]["ego"] = ds.ego                           # PREREG_V8F_EGOWM: read back from the BUILT dataset (bad_wm_speed compares it)
     else:
         ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
                               window_start=cfg.window_start)
@@ -3092,7 +3134,7 @@ def main(argv=None):
     if enc is None and a.wm_windows == "wmonly":                      # PREREG_V8F_LADDER: the WM batch for G-LIVE (first 16 windows); the planner identity and the admissibility check need a LABELLED batch, built from the labelled list
         probe_wm = WW.collate_wm([ds.item(*w) for w in next(sampler.epoch(0))][:LIVE_PROBE_WINDOWS_WM])
         ds_reg = D.V8FMiniWindows(store, J, D.train_windows(store, J, clips, hist=cfg.hist, start=cfg.window_start), hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
-                                  window_start=cfg.window_start)
+                                  window_start=cfg.window_start, with_v=(a.wm_speed != "off"))      # PREREG_V8F_EGOWM: the planner-identity probe runs wm_only_loss on this batch
         probe = D.collate([ds_reg.item(*w) for w in ds_reg.windows[:LIVE_PROBE_WINDOWS_WM]])
     elif enc is None:
         probe = D.collate([ds.item(*w) for w in next(sampler.epoch(0))])
@@ -3194,6 +3236,8 @@ def main(argv=None):
     levers["init_ckpt"] = info.get("init_ckpt")
     if a.wm_strides is not None:                                         # PREREG_V8F_LFS: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT strides and the transitions per level
         levers["wm_strides_readback"] = wm_strides_readback(a, cfg, model)
+    if a.wm_speed != "off":                                             # PREREG_V8F_EGOWM: lever-ON launches only (a flag-off selfcheck.json keeps its key set)
+        levers["wm_speed_readback"] = wm_speed_readback(a, cfg, model, info)
     if wm_ladder_named(a):                                              # PREREG_V8F_LADDER: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT measurements
         levers["wm_ladder_readback"] = wm_ladder_readback(a, cfg, model, info)
     if a.wm_only:                                                      # WM-only arms only (a flag-off run record keeps its key set)

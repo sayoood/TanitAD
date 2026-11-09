@@ -164,6 +164,150 @@ LIMITS_MS = (30 / 3.6, 50 / 3.6, 100 / 3.6, 120 / 3.6)
 CH1_SCALE = {"steer": 0.3, "yaw": 0.4}
 #: the scale the WM auxiliary divides action channel 0 (longitudinal acceleration, m/s^2) by.
 WM_ACC_SCALE = 2.0
+#: PREREG_V8F_EGOWM: the time one level-1 world-model step covers (s) -- the cache grid is 0.2 s -- and the scale the measured speed (m/s) is divided by before it enters a speed channel.
+WM_STEP_S = 0.2
+WM_SPEED_SCALE = 10.0
+WM_SPEED_MODES = ("off", "kin", "now")
+
+
+def reflect_integrate(v0: Tensor, acc: Tensor, dt: float = WM_STEP_S) -> Tensor:
+    """PREREG_V8F_EGOWM: speeds at offsets 0 .. L of a kinematic integration. ``v0`` [...] the speed at offset 0 (>= 0), ``acc`` [..., L] the acceleration of each of the L steps (m/s^2), ``dt`` s per step.
+    Returns [..., L + 1] with ``s[h] = max(0, s[h-1] + dt x acc[h-1])`` (the floor applied at EVERY step, so a vehicle that stopped stays stopped), in closed form: ``c - min(0, running min of c)`` with ``c`` the unfloored sum."""
+    c = torch.cat([v0.unsqueeze(-1), v0.unsqueeze(-1) + dt * acc.cumsum(-1)], dim=-1)
+    return c - torch.clamp(c.cummin(dim=-1).values, max=0.0)
+
+
+def anchored_speeds(mode: str, vm: Tensor, acc: Tensor, idx: Tensor, k: int, cum: int, dt: float = WM_STEP_S) -> Tensor:
+    """PREREG_V8F_EGOWM: the speed channel of a free run. ``vm`` [B, F] the MEASURED speed of each window frame, ``acc`` [B, F-1] the raw acceleration of each transition, ``idx`` [A] the anchor STATES of a level whose
+    cumulative stride is ``cum`` frames (state i is frame i x cum). Returns [B, A, k]: the speed at the START of each of the k steps (step h starts at frame i x cum + h x cum). ``now``: the measured speed at the anchor's frame,
+    held over the k steps. ``kin``: that speed, integrated over the level-1 accelerations of the frames the free run covers, floored at 0 at every level-1 step."""
+    f0 = idx * cum
+    v0 = vm[:, f0]
+    if mode == "now":
+        return v0.unsqueeze(-1).expand(-1, -1, k).contiguous()
+    if mode != "kin":
+        raise ValueError(f"speed mode {mode!r}")
+    L = (k - 1) * cum
+    pos = f0[:, None] + torch.arange(L, device=vm.device)[None]
+    accp = F.pad(acc, (0, L))[:, pos]
+    return reflect_integrate(v0, accp, dt)[..., ::cum][..., :k]
+
+
+_EGO_STACK = {}
+
+
+def ego_stack_cls():
+    """PREREG_V8F_EGOWM: ``HJEPAStack`` plus a speed channel per level (built lazily: hjepa is S3's module). The speed enters each level's predictor as an ADDED action-embedding channel
+    ``spd[l](speed / WM_SPEED_SCALE)``, a bias-free ``Linear(1, E_l)`` that is ZERO-initialised (built on a forked RNG: the global stream, hence every other parameter, is the control's bit for bit). Goal and target latents
+    are never touched. Teacher-forced steps read the MEASURED speed of the step's input frame; a free run (``rollout_loss``) reads :func:`anchored_speeds` (the arm's rule, from the anchor)."""
+    if "cls" in _EGO_STACK:
+        return _EGO_STACK["cls"]
+    from tanitad.models.hjepa import HJEPAStack
+
+    class EgoHJEPAStack(HJEPAStack):
+        def __init__(self, levels, *, mode: str, sigreg_projections: int = 256, **kw):
+            super().__init__(levels, sigreg_projections=sigreg_projections, **kw)
+            if mode not in ("kin", "now"):
+                raise ValueError(f"EgoHJEPAStack mode must be kin or now, got {mode!r}")
+            for lv in range(2, self.n_levels + 1):
+                c = self.cfg[lv - 1]
+                if c.window > 1 and not c.causal_pad:
+                    raise ValueError(f"level {lv}: the speed channel needs state i at lower frame i x stride (causal_pad) when window > 1")
+            self.ego_mode = mode
+            self.cum = [1]
+            for c in self.cfg[1:]:
+                self.cum.append(self.cum[-1] * int(c.stride))
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed((torch.initial_seed() * 1_000_003 + 313) % (2 ** 63 - 1))
+                self.spd = nn.ModuleList([nn.Linear(1, int(e), bias=False) for e in self.embed_dims])
+            for m in self.spd:
+                nn.init.zeros_(m.weight)
+            self._ego = None            # {"v": [B, F] measured speed, "acc": [B, F-1] raw acceleration} for the call in flight
+            self._ego_probe = None      # built_rollout's planted dict
+            self._free = None           # the speed-free macro embeddings of the call in flight
+            self._roll_speed = None     # [B, A, k] speed of the free run in flight
+
+        def speed_embed(self, level: int, speed: Tensor) -> Tensor:
+            return self.spd[level - 1](speed.unsqueeze(-1) / WM_SPEED_SCALE)
+
+        def loss(self, z1_seq, a_seq, *, generator=None, detach_target=False, ego=None):
+            self._ego = ego if ego is not None else self._ego_probe
+            if self._ego is None:
+                raise ValueError("EgoHJEPAStack.loss needs ego={'v', 'acc'}: a speed arm never runs without its speed")
+            try:
+                return super().loss(z1_seq, a_seq, generator=generator, detach_target=detach_target)
+            finally:
+                self._ego, self._free = None, None
+
+        def encode(self, z1_seq, a_seq):
+            enc = super().encode(z1_seq, a_seq)
+            if self._ego is None:
+                return enc
+            vm = self._ego["v"]
+            free = []
+            for i in range(self.n_levels):
+                n = enc.z[i].shape[1]
+                s = vm[:, 0:(n - 1) * self.cum[i]:self.cum[i]]
+                free.append(enc.act[i])
+                enc.act[i] = enc.act[i] + self.speed_embed(i + 1, s)
+            self._free = free
+            return enc
+
+        def rollout_loss(self, level, z, a_plan, k, stride=1, detach_target=False, context=None):
+            if self._ego is None:
+                return super().rollout_loss(level, z, a_plan, k, stride, detach_target, context)
+            idx = torch.arange(0, z.shape[1] - 1, stride, device=z.device)
+            if level >= 2:
+                a_plan = self._free[level - 1]
+            self._roll_speed = anchored_speeds(self.ego_mode, self._ego["v"], self._ego["acc"], idx, k, self.cum[level - 1])
+            try:
+                return super().rollout_loss(level, z, a_plan, k, stride, detach_target, context)
+            finally:
+                self._roll_speed = None
+
+        def rollout(self, level, z0, actions, *, context=1, speed=None):
+            speed = self._roll_speed if speed is None else speed
+            if speed is None:
+                raise ValueError("EgoHJEPAStack.rollout needs speed= [..., H] (m/s at the start of each step): a speed arm never rolls without its speed")
+            pred = self.predictors[level - 1]
+            cap = getattr(pred, "context", None)
+            if cap is not None and context > cap:
+                raise ValueError(f"context {context} exceeds level {level}'s predictor context {cap}")
+            lead, (h_, a_dim) = actions.shape[:-2], actions.shape[-2:]
+            a = actions.reshape(-1, h_, a_dim)
+            n = a.shape[0]
+            if z0.dim() == 1:
+                z = z0.expand(n, -1)
+            else:
+                if tuple(z0.shape[:-1]) != tuple(lead):
+                    raise ValueError(f"z0 {tuple(z0.shape)} must be (D,) or match actions' leading dims {tuple(lead)}")
+                z = z0.reshape(n, -1)
+            e = self.act_embed(a) if level == 1 else a
+            e = e + self.speed_embed(level, speed.reshape(n, h_))
+            zs = [z]
+            for h in range(h_):
+                lo = max(0, h + 1 - context)
+                zc = torch.stack(zs[lo:h + 1], dim=1)
+                zs.append(pred(zc, e[:, lo:h + 1])[:, -1])
+            out = torch.stack(zs[1:], dim=1)
+            return out.reshape(*lead, h_, out.shape[-1])
+
+        def built_rollout(self, n_frames, batch=2):
+            dev = next(self.parameters()).device
+            self._ego_probe = {"v": torch.full((batch, int(n_frames)), 5.0, device=dev), "acc": torch.zeros(batch, int(n_frames) - 1, device=dev)}
+            try:
+                return super().built_rollout(n_frames, batch)
+            finally:
+                self._ego_probe = None
+
+        def speed_rule(self, vm, acc, idx, k, cum):
+            """What the BUILT stack's free run feeds the speed channel (the function ``rollout_loss`` calls)."""
+            return anchored_speeds(self.ego_mode, vm, acc, idx, k, cum)
+
+    _EGO_STACK["cls"] = EgoHJEPAStack
+    return EgoHJEPAStack
+
+
 #: EXACTLY the batch keys the inference path may read. Everything else (``lab*``, ``gt``, ``s_h``, ``lead_gap_h`` ...)
 #: is a label or an evaluator-side quantity and is never touched by ``forward_infer``.
 INFERENCE_INPUT_KEYS = frozenset({"feats", "frame_ok", "p10f", "act", "nav", "pose", "limit", "limit_ok", "base",
@@ -199,6 +343,7 @@ class V8FMiniConfig:
     wm_rollout_stride: tuple = (1, 1, 1)   # PREREG_V8F_LADDER (`--wm-rollout-stride`): the free run starts at every n-th state of the level (used only where the level's k > 1)
     wm_rollout_w: float = 1.0          # PREREG_V8F_LADDER (`--wm-rollout-w`): weight of every level's k-step term (constant over training; used only where k > 1)
     wm_ctx: tuple = (3, 3, 3)          # PREREG_V8F_LADDER (`--wm-ctx`): each WM level's predictor context (states). (3, 3, 3) = every earlier arm (the LevelConfig default); changing it changes the predictor's parameter shape
+    wm_speed: str = "off"             # PREREG_V8F_EGOWM (`--wm-speed`): the measured-speed channel of the world model's predictors. off = every earlier arm, bit for bit (no module, no key added); kin = the speed integrated from the measured speed at the anchor; now = the measured speed at the anchor, held
     w_ckpt: float = 1.0
     w_tac: float = 1.0
     w_cons: float = 0.5
@@ -283,6 +428,10 @@ class V8FMiniConfig:
                 raise ValueError(f"{nm} must be three ints >= 1 (levels 1, 2, 3), got {v!r}")
         if not (isinstance(self.wm_rollout_w, (int, float)) and math.isfinite(self.wm_rollout_w) and self.wm_rollout_w >= 0.0):
             raise ValueError(f"wm_rollout_w must be a finite number >= 0, got {self.wm_rollout_w!r}")
+        if self.wm_speed not in WM_SPEED_MODES:
+            raise ValueError(f"wm_speed must be one of {WM_SPEED_MODES}, got {self.wm_speed!r}")
+        if self.wm_speed != "off" and self.wm == "off":
+            raise ValueError("wm_speed moved with no world model (wm off): a lever that is declared and builds nothing")
         if self.wm == "off" and (tuple(self.wm_rollout_k) != (1, 1, 1) or tuple(self.wm_ctx) != (3, 3, 3)):
             raise ValueError("wm_rollout_k / wm_ctx moved with no world model (wm off): a lever that is declared and builds nothing")
         if self.wm != "off":                                                      # the reach a level declares must fit the window: k steps of S_l frames need k * S_l + 1 frames
@@ -692,7 +841,8 @@ class WMAux(nn.Module):
         lad = lambda i: dict(context=int(cfg.wm_ctx[i]), rollout_k=int(cfg.wm_rollout_k[i]), rollout_stride=int(cfg.wm_rollout_stride[i]), rollout_w=float(cfg.wm_rollout_w))   # noqa: E731  PREREG_V8F_LADDER: (3, 3, 3) / (1, 1, 1) = LevelConfig's defaults, i.e. the earlier build
         lv = [mk(action_dim=2, act_embed_dim=32, **lad(0)),
               mk(action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
-        self.stack = HJEPAStack(lv, sigreg_projections=256)
+        self.speed = cfg.wm_speed                                              # PREREG_V8F_EGOWM
+        self.stack = HJEPAStack(lv, sigreg_projections=256) if self.speed == "off" else ego_stack_cls()(lv, mode=self.speed, sigreg_projections=256)
         self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_dim))
         self.gamma = gamma
         self.ch1_scale = CH1_SCALE[cfg.kin_mode]
@@ -756,14 +906,37 @@ class WMAux(nn.Module):
         the MEASURED yaw rate (kin_mode yaw, PI ruling D-PI-YAWRATE-1). ONE spelling for training and for the beta planner."""
         return torch.stack([act[..., 0] / WM_ACC_SCALE, act[..., 1] / self.ch1_scale], -1)
 
-    def forward(self, adapt: Tensor, act: Tensor) -> dict:
+    def ego_of(self, act: Tensor, v):
+        """PREREG_V8F_EGOWM: the speed side of a call: ``{"v": measured speed of every window frame [B, F] (m/s), "acc": raw acceleration of every transition [B, F-1]}``, None with the lever off."""
+        if self.speed == "off":
+            return None
+        if v is None:
+            raise ValueError("wm_speed is on but the batch carries no measured speed 'v': a speed arm never runs without its speed")
+        return {"v": v.float(), "acc": act[:, :-1, 0].float()}
+
+    def forward(self, adapt: Tensor, act: Tensor, v=None) -> dict:
         z1 = self.z1(adapt)                                                     # [B, F, D]
         a = self.scale_actions(act)[:, :-1]                                     # action of the transition j -> j+1
+        if self.speed != "off":
+            return self.stack.loss(z1, a, ego=self.ego_of(act, v))
         return self.stack.loss(z1, a)
 
-    def forward_mean(self, am: Tensor, act: Tensor) -> dict:
+    def forward_mean(self, am: Tensor, act: Tensor, v=None) -> dict:
         """PREREG_V8F_LADDER: :meth:`forward` from the token-pooled adapter output ``am`` [B, F, d] (the frozen-adapter pooled path); the same ops after the pooling."""
+        if self.speed != "off":
+            return self.stack.loss(self.z1_from_mean(am), self.scale_actions(act)[:, :-1], ego=self.ego_of(act, v))
         return self.stack.loss(self.z1_from_mean(am), self.scale_actions(act)[:, :-1])
+
+    def built_speed(self) -> dict:
+        """PREREG_V8F_EGOWM, the G-DVB reader for ``--wm-speed``: what the BUILT stack does, measured: the mode is classified by RUNNING the stack's own speed rule on a planted ramp (v0 = 5 m/s, +1 m/s^2, 4 steps at stride 1): constant = now, rising = kin."""
+        if self.speed == "off" or not hasattr(self.stack, "spd"):
+            return {"mode": "off", "n_channels": 0}
+        vm = torch.full((1, 8), 5.0)
+        acc = torch.ones(1, 7)
+        r = self.stack.speed_rule(vm, acc, torch.zeros(1, dtype=torch.long), 4, 1)[0, 0]
+        mode = "now" if bool((r == r[0]).all()) else ("kin" if bool((r[1:] > r[:-1]).all()) else "other")
+        return {"mode": mode, "n_channels": len(self.stack.spd), "widths": [int(m.out_features) for m in self.stack.spd], "cum": list(self.stack.cum), "ramp": [float(x) for x in r],
+                "weights_zero_at_build": bool(all(float(m.weight.detach().abs().sum()) == 0.0 for m in self.stack.spd)), "bias_free": all(m.bias is None for m in self.stack.spd)}
 
     def built_ladder(self, n_frames: int) -> dict:
         """PREREG_V8F_LADDER, the G-DVB reader for the ladder levers: the BUILT stack's own measurements (``HJEPAStack.built_rollout``: predictor calls inside the free run, anchors, the context handed to ``rollout``, the
@@ -1185,11 +1358,11 @@ class V8FMini(nn.Module):
         if self.wm is None:
             raise ValueError("wm_only_loss needs a world model (wm a or b)")
         if "zmean" in batch:                                                    # PREREG_V8F_LADDER: the cached mean adapter token (box-2 zcache): exactly ``_encode(b).mean(2)``, read from disk
-            wm = self.wm.forward_mean(batch["zmean"].float().detach(), batch["act"])
+            wm = self.wm.forward_mean(batch["zmean"].float().detach(), batch["act"], batch.get("v"))
         elif "pool" in batch:                                                   # PREREG_V8F_LADDER: a world-model-only batch with the frozen adapter's pooled path (no [B, F, n_tok, d] tensor is ever built)
-            wm = self.wm.forward_mean(self.pooled_adapt_mean(batch["pool"].float()).detach(), batch["act"])
+            wm = self.wm.forward_mean(self.pooled_adapt_mean(batch["pool"].float()).detach(), batch["act"], batch.get("v"))
         else:
-            wm = self.wm(self._encode(batch).detach(), batch["act"])
+            wm = self.wm(self._encode(batch).detach(), batch["act"], batch.get("v"))
         T = {"wm": wm["total"]}
         T.update({f"wm/{k}": v for k, v in wm.items() if k != "total"})
         T["total"] = self.cfg.w_wm * wm["total"]
@@ -1253,6 +1426,8 @@ class V8FMini(nn.Module):
                 lv["wm_rollout_k"], lv["wm_rollout_stride"], lv["wm_rollout_w"] = [c.rollout_k for c in cf], [c.rollout_stride for c in cf], cf[0].rollout_w
             if any(int(p.pos.shape[0]) != 3 for p in self.wm.stack.predictors):
                 lv["wm_ctx"] = [int(p.pos.shape[0]) for p in self.wm.stack.predictors]
+        if self.wm is not None and self.wm.speed != "off":               # PREREG_V8F_EGOWM: present ONLY with the channel built (a flag-off model keeps its key set); the gate's reader is WMAux.built_speed
+            lv["wm_speed"] = self.wm.built_speed()["mode"]
         if self.lvl_head is not None:                                     # PREREG_V8F_LEVEL: present ONLY with the head built (a flag-off model keeps its key set); the gate reads built.get("level_head", "off")
             lv["level_head"], lv["w_level"] = "on", cfg.w_level
             if self.e_level is not None:                                   # PREREG_LEVELHEAD_A2: absent under --aux-cond token (the additive path is not built)

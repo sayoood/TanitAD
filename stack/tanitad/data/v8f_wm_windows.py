@@ -45,8 +45,9 @@ class V8FMiniWMWindows:
     """Dataset over ``wm_windows``. ``item(ci, t, ..)`` -> numpy dict. ``pooled`` True = ``pool`` (the token-mean path); False = ``feats``. The per-clip pooled table (all frames) is computed once per clip and kept in a
     small LRU, so the ~11 windows of a clip share it."""
 
-    def __init__(self, store, J: dict, windows, *, F: int, pooled: bool = True, lru: int = 64, zcache: str = ""):
+    def __init__(self, store, J: dict, windows, *, F: int, pooled: bool = True, lru: int = 64, zcache: str = "", ego: bool = False):
         self.store, self.J, self.windows = store, J, list(windows)
+        self.ego = bool(ego)                               # PREREG_V8F_EGOWM: also return ``v`` [F], the MEASURED speed (kin3 column 0, the ego state S / T / O read) of every window frame; False = the earlier batch, key for key
         self.F, self.pooled, self.lru = int(F), bool(pooled), int(lru)
         self.zcache = str(zcache or "")                    # a directory of per-clip ``<clip>.npz`` with ``zmean`` [T, D] (the frozen adapter's mean token), ``ok`` [T], ``t_s`` [T]; "" = not used
         self._nm: dict = {}
@@ -99,7 +100,7 @@ class V8FMiniWMWindows:
         s = self._small.get(clip)
         if s is None:
             d = self.store.get(clip)
-            s = self._small[clip] = {"a": d["a"], "ch1": d["ch1"], "n": len(d["pose"])}
+            s = self._small[clip] = {"a": d["a"], "ch1": d["ch1"], "n": len(d["pose"]), "v0": np.asarray(d["kin3"][:, 0], np.float32)}
         return s
 
     def prewarm(self) -> int:
@@ -116,6 +117,11 @@ class V8FMiniWMWindows:
         if idx[0] < 0 or idx[-1] >= n_frames:
             raise IndexError(f"{clip}: window t={t} F={self.F} leaves the clip ({n_frames} frames)")
         it = {"act": np.stack([np.nan_to_num(d["a"][idx]), d["ch1"][idx]], -1).astype(np.float32), "t": t, "ci": ci}
+        if self.ego:                                       # PREREG_V8F_EGOWM: the measured speed of every frame of the window (row 0 of a clip is NaN: a window that holds it is refused, never zero-filled)
+            v = np.asarray(d["v0"] if self.zcache else d["kin3"][:, 0], np.float32)[idx]
+            if not np.isfinite(v).all():
+                raise IndexError(f"{clip}: window t={t} F={self.F} holds a frame with no measured speed")
+            it["v"] = v
         if self.zcache:                                    # the box-2 per-frame cache of the frozen adapter's mean token: no feature tensor is read for the adapter at all
             zm, ok = self._zmean(clip)
             if len(zm) <= idx[-1] or not ok[idx].all():
@@ -142,6 +148,8 @@ def collate_wm(items: list) -> dict:
         out["pool"] = torch.as_tensor(np.stack([it["pool"] for it in items]), dtype=torch.float32)
     else:
         out["feats"] = torch.as_tensor(np.stack([it["feats"] for it in items]), dtype=torch.float16)
+    if "v" in items[0]:                                    # PREREG_V8F_EGOWM
+        out["v"] = torch.as_tensor(np.stack([it["v"] for it in items]), dtype=torch.float32)
     for k in ("t", "ci"):
         out[k] = torch.as_tensor([it[k] for it in items], dtype=torch.long)
     return out
