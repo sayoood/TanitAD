@@ -2768,3 +2768,11 @@ then E1 (perception rig, ~33 Thor-h ESTIMATED). **What stays open for the PI:** 
 either way. **Cost found while executing (MEASURED):** `14e5a7e` changed 6 modules every overfit-record closure holds, so the gate refuses every
 `8a95dc2` record at `fea03ce`; record queue 10 rebuilds C0 map + box and K0 box at `fea03ce` (~2.7 Thor GPU-h, fitted into lock gaps) and binds
 T1h / T1hs / K0-map as reuse of C0 (0 GPU).
+
+## ✅ DECIDED (PI, 2026-11-09 ~20:50 Berlin, in chat; recorded ~21:00) -- D-R9-E3-LENGTH and D-R9-E1-M3N20L64
+
+**PI, verbatim:** "full run for E3, yes for M3N20L64"
+
+1. **D-R9-E3-LENGTH -- FULL RUN.** E3 trains the designed 73,280 steps (`REFCV9_DESIGN.md` 4.5: ESTIMATED ~214 Thor-h, range 203-222, plus ~17 Thor-h for the D1 early branch), not the 1.0-epoch option (48,852 steps, ~143 Thor-h).
+   The approval does not waive E2 GO, the sealed section 5 bars, the 50-step smoke or a `refcv9-full` launch-gate PASS. The PI named no s/step cap; the only cap offered in that exchange was 10.5 s/step (at most ~222 Thor-h), so the MM reads it as that cap and a measured smoke mean above 10.5 goes back to the PI. It covers V = K2M1N20. The E3 `pi_cost_approval.json` is written from this verbatim text when the E3 argv is composed.
+2. **D-R9-E1-M3N20L64 -- YES.** ~13 extra Thor-h ESTIMATED (arm 7.2 h, records ~2.7 h, FIT read ~3.3 h) after E2 is off the GPU, under `dagland/e1/m3_diag/PREREG_M3N20L64.md` (md5 114a28de). The own 64-channel encoder is 406,912 parameters (agent MEASURED), not the prereg's +0.54 M estimate. If it reads KEEP on both its decisive and carry tests, putting it into E3 in place of M1N20 is a separate PI decision, per that prereg.
