@@ -39,6 +39,7 @@ COUNTER_KEYS = ("ego_perturb_n", "ego_perturb_eligible", "ego_perturb_rows", "eg
 ORC_LAW = ["--ego-perturb-vscale", "0.5", "1.0", "--ego-perturb-vmax", "8.0", "--ego-perturb-adrop", "1.5", "--ego-perturb-yawrate-std", "2.0"]       # PREREG Amendment 3's law (the seed is the arm's)
 RECOVER_KEYS = {"recover_changed", "recover_eligible", "recover_n", "recover_p", "recover_rows", "recover_share"}   # RECOVER-FT (ad0bcb7): the trainer's summary block writes these six UNCONDITIONALLY (v8f_mini_train.py:2334-2335), so a flag-off summary.json carries them although the golden predates them
 RECOVER_OFF = {"recover_p": 0.0, "recover_n": 0, "recover_eligible": 0, "recover_rows": 0, "recover_changed": 0, "recover_share": None}   # their flag-off values, read off the trainer: p = RECOVER_DEFAULTS["p"] 0.0 (v8f_recover.py:23; argparse default v8f_mini_train.py:173; float() at v8f_recover.py:151; written :2334); n / eligible / rows / changed start at 0 (:2176) and grow only inside `if rcv.active` (:2242-2250); share is None while eligible is 0 (:2335)
+STOPBAL_LEVERS = {"goal_pos_weight_stop", "lon_class_weight_stop"}   # PREREG_V8F_STOPBAL: the BUILT loss records both weights under levers (v8f_mini.py built_levers); 1.0 when the flags are absent
 RECOVER_LEVERS = {"recover", "recover_table"}   # the same commit also records the BUILT perturber and the deviation table under levers (v8f_mini_train.py:2141-2142); a flag-off run records the p = 0 perturber and table None
 
 
@@ -116,7 +117,9 @@ def test_flag_off_reproduces_the_unmodified_tip_bit_for_bit(pack, tmp_path):
         assert_recover_flag_off(_summary(tmp_path / name), _selfcheck(tmp_path / name), name)
         assert g["levers_ego"] == w["levers_ego"] and g["levers_dagger_p"] == w["levers_dagger_p"]
         assert set(g["levers_keys"]) - set(w["levers_keys"]) <= {"ego_perturb_with_dagger", "ego_dagger_overlap_n", "ego_perturb_stream",
-                                                              "launch_intent_w", "launch_intent", "launch_n", "launch_eligible"} | RECOVER_LEVERS and set(w["levers_keys"]) <= set(g["levers_keys"]), f"{name}: levers only GAIN the three composition fields, the four launch-intent fields (PREREG_V8F_LAUNCH_INTENT: the built definition is recorded, W 0.0 when off) and the two RECOVER-FT fields"
+                                                              "launch_intent_w", "launch_intent", "launch_n", "launch_eligible"} | RECOVER_LEVERS | STOPBAL_LEVERS and set(w["levers_keys"]) <= set(g["levers_keys"]), f"{name}: levers only GAIN the three composition fields, the four launch-intent fields (PREREG_V8F_LAUNCH_INTENT: the built definition is recorded, W 0.0 when off), the two RECOVER-FT fields and the two STOPBAL weights"
+        lv = _summary(tmp_path / name)["levers"]
+        assert {k: lv[k] for k in sorted(STOPBAL_LEVERS)} == {k: 1.0 for k in sorted(STOPBAL_LEVERS)}, f"{name}: with both flags absent the BUILT loss records the two STOPBAL weights at 1.0, the tip's loss (PREREG_V8F_STOPBAL)"
     assert want["dag"]["counters"]["dagger_n"] > 0 and want["orc"]["counters"]["ego_perturb_n"] > 0, "the golden is not vacuous: the DAG family swapped rows and the ORC family perturbed rows"
     assert want["orc"]["counters"]["dagger_n"] == 0 and want["dag"]["counters"]["ego_perturb_n"] == 0 and want["m2b"]["counters"]["dagger_n"] == want["m2b"]["counters"]["ego_perturb_n"] == 0
 
