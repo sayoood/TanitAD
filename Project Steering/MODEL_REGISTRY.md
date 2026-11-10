@@ -5620,7 +5620,7 @@ Every row is MEASURED from the harness CSV on the dev box, under `E:/Projects/Ta
 | against comparators | u400 88.25: +2.95 [+2.19, +3.77] · P2 88.82: +2.38 [+1.70, +3.05] |
 | against the goal | **BELOW GOAL**: 94.55 (DriveZero Table A13, PUBLISHED); upper bound 91.98. Largest sub-score gaps to the paper: EP -5.69, DAC -1.30, TTC -0.66 |
 | verdict | `PREREG_P6` as written: **NOT PROVEN** (lower bounds above 0 on both comparators, but longitudinal and lateral components separate adversely: 9 of 21 against u400, 1 of 21 against P2). `H-P6-SPEED-1`: REFUTED as written. Detail and four families: `P6_RESULT.md`, `raw/2026-11-09-p6-navtest-read/` |
-| four families | LONGITUDINAL, LATERAL, TACTICAL in `P6_RESULT.md`. TACTICAL selection quality not yet measured on the full navtest (job re-running 2026-11-09). STRATEGIC: PAUSED (PI 2026-09-19), not a pass |
+| four families | LONGITUDINAL, LATERAL, TACTICAL in `P6_RESULT.md`. TACTICAL, MEASURED on the full navtest: command adherence turn-active 0.887 [0.863, 0.908] (the human's logged future 0.881, a random proposal from P6's fan 0.885); selection quality best of 64 97.90 [97.46, 98.33], regret 6.70 [6.14, 7.30] = zero picks with a non-zero alternative 2.81 + TTC-0 picks 1.58 + the rest 2.32 (2026-11-10, `raw/2026-11-09-p6-navtest-read/selection/`). STRATEGIC: PAUSED (PI 2026-09-19), not a pass |
 | caveats | one training seed; deterministic planner, so inference variance does not apply and training variance is unmeasured (`H-ESTIM-SEED-1`). Not closed loop |
 
 ## 15. refcv7-r101-s0 — refcv6 + FIX-1..5 + NEW-1/NEW-2 + A9 box head [NON-PARITY · NavSim zero-shot · ONE SEED]
