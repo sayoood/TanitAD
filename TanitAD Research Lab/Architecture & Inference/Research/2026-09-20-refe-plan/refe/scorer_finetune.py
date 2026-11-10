@@ -487,6 +487,45 @@ def pair_refusals(a):
     return out
 
 
+SPLIT_MIN_SETS = 25000                                       # PREREG_DIV_P6 section 2: a half below this many training sets is a launch blocker (refused, never trained)
+SPLIT_RULE = "int(sha256(log_name utf-8).hexdigest(), 16) % 2"
+SPLIT_MUTATE_ENV = "REFE_SPLIT_MUTATE_NOFILTER"              # the deliberate regression: the split filter is REMOVED; the audit below must still see the other half's rows and the preflight must REFUSE
+
+
+def split_half_of(log_name) -> int:
+    """PREREG_DIV_P6: the half a training LOG belongs to, h = int(sha256(log name), 16) % 2; every set of a log follows its log"""
+    if not isinstance(log_name, str) or not log_name:
+        raise ValueError(f"split_half_of: a training row's log_name must be a non-empty string, got {log_name!r}")
+    return int(hashlib.sha256(log_name.encode("utf-8")).hexdigest(), 16) % 2
+
+
+def split_training_index(log_of, tr_idx, half, no_filter=False):
+    """(kept index, facts).  Keeps ONLY the training rows whose log hashes to `half` (log_of(i) = row i's log name).  The facts are MEASURED on the index that results (rows_off_half re-hashes every kept row), never echoed
+    from the flag.  no_filter=True is the deliberate regression (REFE_SPLIT_MUTATE_NOFILTER): nothing is filtered, so rows_off_half is > 0 and split_refusals refuses."""
+    by = {0: [0, set()], 1: [0, set()]}
+    for i in tr_idx:
+        h_ = split_half_of(log_of(i))
+        by[h_][0] += 1
+        by[h_][1].add(log_of(i))
+    kept = list(tr_idx) if no_filter else [i for i in tr_idx if split_half_of(log_of(i)) == half]
+    kept_logs = {log_of(i) for i in kept}
+    return kept, {"half": int(half), "rule": SPLIT_RULE, "min_sets": SPLIT_MIN_SETS, "filter_built": not no_filter, "sets": len(kept), "logs": len(kept_logs),
+                  "rows_off_half": sum(1 for i in kept if split_half_of(log_of(i)) != half), "pre_split_sets": len(tr_idx),
+                  "half_sets": {"0": by[0][0], "1": by[1][0]}, "half_logs": {"0": len(by[0][1]), "1": len(by[1][1])}}
+
+
+def split_refusals(facts):
+    """PREREG_DIV_P6: every kept row's log hashes to the half; the kept sets ARE the half's sets; BOTH halves hold >= SPLIT_MIN_SETS sets (a half below that is a launch blocker)"""
+    out, h = [], str(facts["half"])
+    if facts["rows_off_half"] != 0:
+        out.append(f"{facts['rows_off_half']} kept training rows have a log that hashes to the other half (the split filter is missing or wrong)")
+    if facts["sets"] != facts["half_sets"][h] or facts["logs"] != facts["half_logs"][h]:
+        out.append(f"the kept {facts['sets']} sets / {facts['logs']} logs are not half {h}'s {facts['half_sets'][h]} sets / {facts['half_logs'][h]} logs")
+    if min(facts["half_sets"].values()) < facts["min_sets"]:
+        out.append(f"a half holds fewer than {facts['min_sets']} training sets (half 0: {facts['half_sets']['0']}, half 1: {facts['half_sets']['1']}): a launch blocker")
+    return out
+
+
 def key(r):
     return (r.get("log_name", ""), r.get("token", ""), int(r.get("step", 0)), int(r.get("rank", 0)))
 
@@ -1588,6 +1627,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--twin-speed-neutral", action="store_true", help="S1ZSM (PREREG_S1ZSM_P6 section 1): the L_twin pairs are SPEED-NEUTRAL: a pair needs |v4_i - v4_j| / max(v0, 1) < 0.15 and the kept pairs are F/S balanced (seed 20261107).  DEFAULT OFF = S1Z exactly, so a launch argv must NAME it")
     ap.add_argument("--aux-drv-lr", type=float, default=None, help="the head's peak learning rate (its OWN AdamW; the scorer keeps --lr).  A pre-registered value, never tuned on "
                     "PDMS; None = no head optimiser, and naming it without --aux-drv is refused")
+    ap.add_argument("--split-half", type=int, default=-1, choices=(-1, 0, 1), help="DIV (PREREG_DIV_P6 section 2): train ONLY on the training sets whose LOG hashes to this half, h = int(sha256(log name), 16) % 2 (every set of a log follows its log); "
+                    "the held-out monitor is unchanged.  A half below 25,000 sets is refused.  -1 = OFF = this trainer exactly, so a DV launch argv must NAME it")
     return ap
 
 
@@ -1692,6 +1733,18 @@ def main() -> int:
         print(f"REFUSED: {' '.join(empty)} named but loaded 0 labels -- a missing or empty label dir would silently mask its loss or empty the eval"); return 4
     if not tr_idx or not ho_idx:
         print(f"REFUSED: {len(tr_idx)} training sets and {len(ho_idx)} held-out sets survive the filters -- an empty side would train or evaluate on nothing"); return 4
+    split_info = None
+    if a.split_half >= 0:                                    # DIV (PREREG_DIV_P6): the split applies to the TRAINING index only; the held-out index above is untouched
+        try:
+            tr_idx, split_info = split_training_index(lambda i_: ds.rows[i_].get("log_name"), tr_idx, a.split_half, os.environ.get(SPLIT_MUTATE_ENV) == "1")
+        except ValueError as e_:
+            print(f"REFUSED: split: {e_}"); return 4
+        print("ZZSPLIT " + json.dumps(split_info), flush=True)
+        bad_split = split_refusals(split_info)
+        if bad_split:
+            for m_ in bad_split:
+                print("REFUSED: split: " + m_)
+            return 4
     # ---------------- P6-HN-S (--hn-bank / --ctx-cache; default OFF = nothing below runs).  The bank and the cache are VERIFIED here, before the first step: a bank of another partition / label_version / fan
     # fingerprint / bytes, a bank with no hard negative, a cache of another trunk, or a scene the cache does not hold REFUSES (the join is strict; nothing is skipped or defaulted).
     hn_obj = cc_obj = trunk_fp = None
@@ -1816,6 +1869,8 @@ def main() -> int:
         info["hn"] = hn_obj.hn_block(HN_ARM)
     if cc_obj is not None:                                   # ... and of the cache (the trunk fingerprint is the CHECKPOINT's: CtxCache refused the load unless it equals the manifest's)
         info["ctx_cache"] = {"manifest_sha256": CC.sha256_file(os.path.join(a.ctx_cache, "manifest.json")), "trunk_fingerprint": trunk_fp, "n_scenes": int(cc_obj.man["n_scenes"]), "dtype": cc_obj.man["dtype"]}
+    if split_info is not None:                               # DIV: the BUILT facts of the split (absent without --split-half: every pre-DIV data event is byte-identical)
+        info["split"] = split_info
     log(info)
     g = torch.Generator().manual_seed(a.seed)
     dl = DataLoader(make_train_set(ds, tr_idx, a.epo), batch_size=a.batch, shuffle=True, generator=g, num_workers=a.workers,

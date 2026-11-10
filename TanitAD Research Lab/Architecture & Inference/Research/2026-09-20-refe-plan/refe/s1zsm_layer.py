@@ -70,7 +70,9 @@ def has_layer(src: str) -> bool:
 
 
 def peel(src: str) -> str:
-    """undo the S1ZSM edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged"""
+    """undo the S1ZSM edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged.  The DIV layer (refe/div_layer.py, PREREG_DIV_P6) sits ON TOP of this one and is peeled first"""
+    import div_layer as DIV
+    src = DIV.peel(src)
     if not has_layer(src):
         return src
     for new, old in REVERSALS:

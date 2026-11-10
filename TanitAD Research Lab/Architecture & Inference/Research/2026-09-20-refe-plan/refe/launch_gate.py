@@ -810,6 +810,57 @@ PROFILES["refe_dose_s1z_p6"] = {**copy.deepcopy(PROFILES["refe_s1z_p6"]), "name"
                                 "recipe": {**SCORER1P6_RECIPE, "max_updates": DOSE_ARMS["S1ZD"]["max_updates"], **({"epochs": DOSE_EPOCHS} if DOSE_EPOCHS is not None else {})},
                                 "required_flags": {**PROFILES["refe_s1z_p6"]["required_flags"], "--max-updates": str(DOSE_ARMS["S1ZD"]["max_updates"]), **({"--epochs": str(DOSE_EPOCHS)} if DOSE_EPOCHS is not None else {})}}
 
+# ============================================================================================ DIV: data-diverse ensemble members DV0 / DV1 (PREREG_DIV_P6, frozen 2026-11-10, sha256 e5fb2f8e...; chain refe/div_chain.sh; pod script refe/div_pod.sh)
+# DV0 = C0's argv + `--split-half 0`; DV1 = C0r's argv (seed 1) + `--split-half 1` (the data-order seed is the PARENT's, so DV1 differs from C0 by the seed too).  The ONLY moved levers against the parent are the split flag and --out.
+# div_argv derives the argv FROM scorer1p6_argv (the parent's builder), so "the parent's argv + the split flag" is true by construction and test_div_gate.py proves it by a token diff.  A NEW profile `refe_div_p6`; no existing
+# profile or constant is edited (test_div_gate.py pins the 24 older digests).  The training index is the half's, so the registered `train_sets` count (60,000, the whole bank) does NOT apply: G-DVB asserts the `split` block of the
+# trainer's data event instead (half, rule, filter built, 0 off-half rows, sets == train_sets, both halves >= 25,000) and a registered FLOOR on train_sets.  The run ends at min(400, ceil(sets / 64)) updates: a half of fewer than 25,600 sets
+# stops at its epoch (the card says so); the chain's run check derives that number, G-DVB's schedule row is not registered (data_expect_updates None).
+DIV_ROOT = "/workspace/data/refe_div"
+DIV_PKG = "/workspace/refe-plan-div"
+DIV_MIN_SETS = 25000
+DIV_ARMS = {"DV0": {"parent": "C0", "family": "p6", "half": 0}, "DV1": {"parent": "C0r", "family": "p6", "half": 1}}          # div arm -> its parent (C0 / C0r: the seed is the parent's) and the half it trains on
+DIV_SUITE_EXTRA = [{"script": "test_div_gate.py", "token": "ZZTEST_PASS"}]
+
+
+def div_arm_refusals(table: dict) -> list:
+    """Refusals of a DIV table {arm: {parent, family, half}}: a parent that is not a C0 arm of family 'p6', a name that is a registered arm, a half that is not 0 or 1, two arms on one half."""
+    out, halves = [], []
+    for arm, sp in table.items():
+        if sp.get("family") != "p6" or sp.get("parent") not in ("C0", "C0r"):
+            out.append(f"div {arm}: parent {sp.get('parent')!r} is not a C0 arm of family 'p6'")
+        if any(arm in s for s in (SCORER1P6_ARM_SEED, S1Z_ARM_SEED, S1ZSM_ARM_SEED, DOSE_ARMS)) or arm in REP_ARMS:
+            out.append(f"div {arm}: the name is a registered arm")
+        h = sp.get("half")
+        if h not in (0, 1) or isinstance(h, bool):
+            out.append(f"div {arm}: half {h!r} is not 0 or 1")
+        halves.append(h)
+    if len(set(halves)) != len(halves):
+        out.append(f"div: two arms train on the same half ({halves})")
+    return out
+
+
+def div_argv(arm: str) -> list:
+    """The argv of a DIV arm: the parent's (scorer1p6_argv of C0 / C0r) with `--split-half <h>` added right after the --seed value and --out swapped; nothing else."""
+    if arm not in DIV_ARMS:
+        raise KeyError(f"{arm!r} is not a DIV arm (one of {sorted(DIV_ARMS)})")
+    sp = DIV_ARMS[arm]
+    bad = div_arm_refusals({arm: sp})
+    if bad:
+        raise ValueError("; ".join(bad))
+    toks = list(scorer1p6_argv(sp["parent"]))
+    i = toks.index("--seed")
+    toks[i + 2:i + 2] = ["--split-half", str(sp["half"])]
+    toks[toks.index("--out") + 1] = DIV_ROOT + "/" + arm.lower()
+    return toks
+
+
+PROFILES["refe_div_p6"] = {**copy.deepcopy(PROFILES["refe_scorer1p6"]), "name": "refe_div_p6", "argv_kind": "div", "root": DIV_ROOT, "suite": SCORER1P6_SUITE + DIV_SUITE_EXTRA,
+                           "div_arms": {a: dict(DIV_ARMS[a]) for a in DIV_ARMS}, "arm_seed": {"DV0": SCORER1P6_ARM_SEED["C0"], "DV1": SCORER1P6_ARM_SEED["C0r"]}, "pair_spec": {},
+                           "data_expect": {k: v for k, v in PROFILES["refe_scorer1p6"]["data_expect"].items() if k != "train_sets"}, "data_expect_min": {"train_sets": DIV_MIN_SETS}, "data_expect_updates": None,
+                           "required_flags": {**PROFILES["refe_scorer1p6"]["required_flags"], "--split-half": None}}
+
+
 # RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
 # rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
 PROFILES["refe_rls1b"] = {**PROFILES["refe_rls1"], "name": "refe_rls1b", "suite": RLS1B_SUITE, "arm_class": RLS1B_ARM_CLASS, "arm_seeds": RLS1B_ARM_SEEDS,
@@ -1370,7 +1421,7 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
     p6 = prof.get("scorer1_kind") == "p6"                                  # PREREG_SCORER1P6: the arm table, the pair levers per arm, the root and the pin come from the PROFILE; refe_scorer1 carries none of them and keeps the module constants
     arm_seed, root = prof.get("arm_seed", SCORER1_ARM_SEED), prof.get("root", SCORER1_ROOT)
     pair_spec = prof.get("pair_spec", {"S1": {"heads": SCORER1_PAIR_HEADS, "dv": SCORER1_PAIR_DV, "nobalance": "", "nospeed": "", "gap": "", "mean": "pooled"}})
-    argv_of = dose_argv if prof.get("argv_kind") == "dose" else rep_argv if prof.get("argv_kind") == "rep" else s1zsm_argv if prof.get("argv_kind") == "s1zsm" else s1z_argv if prof.get("argv_kind") == "s1z" else (scorer1p6_argv if p6 else scorer1_argv)         # S1Z (PREREG_S1Z_P6): its own argv builder, selected by a STRING in the profile (a function in a profile would make its fingerprint unstable)
+    argv_of = div_argv if prof.get("argv_kind") == "div" else dose_argv if prof.get("argv_kind") == "dose" else rep_argv if prof.get("argv_kind") == "rep" else s1zsm_argv if prof.get("argv_kind") == "s1zsm" else s1z_argv if prof.get("argv_kind") == "s1z" else (scorer1p6_argv if p6 else scorer1_argv)         # S1Z (PREREG_S1Z_P6): its own argv builder, selected by a STRING in the profile (a function in a profile would make its fingerprint unstable)
     if p6 and prof.get("data_pin") is None:
         out.append(f"{name}: THE DATA PIN IS UNSET (launch_gate.SCORER1P6_DATA_PIN is None): the exact P6 label counts are not known yet, so label completeness cannot be asserted; "
                    "fill the pin from the finished Jobs A + B (pdm_label_complete.py --expect N) before any arm may be gated")
@@ -1404,6 +1455,10 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
         rp = prof["rep_arms"][arm]
         if ns.seed == REP_PARENT_SEEDS[rp["family"]][rp["parent"]]:
             out.append(f"{name} ({arm}) resolves to --seed {ns.seed}, its parent {rp['parent']}'s seed: a replicate must move the data-order seed")
+    if prof.get("div_arms"):                                     # a DIV arm (PREREG_DIV_P6): its table is valid, the seed is the parent's (pinned above) and --split-half is the arm's half, named
+        out += div_arm_refusals({arm: prof["div_arms"][arm]})
+        if "--split-half" not in argv or ns.split_half != prof["div_arms"][arm]["half"]:
+            out.append(f"{name} ({arm}) requires --split-half {prof['div_arms'][arm]['half']} named (the half of PREREG_DIV_P6 section 2); the argv resolves to {ns.split_half} ({'named' if '--split-half' in argv else 'the parser DEFAULT, OFF'})")
     if prof.get("dose_arms"):                                    # a dose of S1Z (PREREG_DOSE_P6): its table is valid, the seed is the parent's (pinned above), --max-updates is the dose's AND the schedule can reach it
         out += dose_arm_refusals({arm: prof["dose_arms"][arm]})
         out += dose_reach_refusals(prof["dose_arms"][arm]["max_updates"], ns.epochs)

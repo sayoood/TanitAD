@@ -880,6 +880,8 @@ DVB_KINDS_SCORER = {
     # S1ZSM (PREREG_S1ZSM_P6 section 1): the speed-neutral pair rule, default OFF.  `built` = compared with the trainer's `twin` block (speed_neutral, sn_dv, sn_balance, sn_band_filter, sn_seed), observed iff --twin-speed-neutral is on
     # (or the block says it is built: a built-ON block under an argv without the flag is RED).  The default-off flag left out of an S1ZSM argv is refused by the profile (required_flags + the pinned argv).
     "twin_speed_neutral": "built",
+    # DIV (PREREG_DIV_P6 section 2): the data-split lever, default OFF (-1).  `built` = compared with the trainer's `split` block (scorer_dvb_rows), which split_training_index MEASURES on the index the run holds (every kept row re-hashed).
+    "split_half": "built",
     "navtest_logs": "consumed", "navtest_tokens": "consumed",       # SCORER1: check-only lists read by main(); refe_scorer1 binds their sha256 (scorer1_refusals) and asserts the data event's `navtest` block (data_expect)
     "out": "run", "eval_every": "run", "workers": "run",
     "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
@@ -910,6 +912,8 @@ HN_ARMS = ("lever_ignored", "hn_to_armA", "hn_in_selection", "hn_lane_target", "
 SCORER_NAMESPACE_FUNCS = ("main", "epo_refusals", "_g_probe", "aux_s1_refusals")      # scorer_finetune.py: the functions whose parameter `a` IS the argparse namespace
 SCORER_PAIR_DESTS = ("pair_w", "pair_dv", "pair_heads", "pair_nobalance_heads", "pair_nospeed_heads", "pair_gap_heads", "pair_mean")          # SCORER1: the L_pair levers, observed only when --pair-w > 0
 SCORER_TWIN_DESTS = ("twin_w", "twin_ade", "twin_topk", "twin_heads")          # S1Z: the L_twin levers, observed only when --twin-w > 0
+SPLIT_RULE_REGISTERED = "int(sha256(log_name utf-8).hexdigest(), 16) % 2"      # DIV (PREREG_DIV_P6 section 2): the gate's OWN statement of the split rule and of the floor, independent of the trainer's constants
+SPLIT_MIN_SETS_REGISTERED = 25000
 SCORER_AUX_DESTS = ("w_aux_drv", "aux_drv_tap", "aux_drv_depth", "aux_drv_feed", "aux_drv_shuffle_seed", "aux_drv_lr")          # the head's levers: observed only when --aux-drv is on
 # the preflight's gates (scorer_finetune.py `gates[...]`).  There is NO G6 -- the trainer numbers 1-5 and 7-11; test_launch_gate pins this table to the source.
 SCORER_GATES = {"G1": "trainable_is_exactly_the_scorer", "G2": "live", "G3": "copies_equal_model_at_step0", "G4": "identity_and_live",
@@ -1574,6 +1578,19 @@ def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
                     add("twin_speed_neutral", True, blk.get("sn_band_filter"), "data event: twin.sn_band_filter (the speed band is built)")
                     add("twin_speed_neutral", True, blk.get("sn_balance"), "data event: twin.sn_balance (the F/S balancing is built; the NOSNBALANCE regression reads False)")
                     add("twin_speed_neutral", 20261107, blk.get("sn_seed"), "data event: twin.sn_seed (the registered balancing seed)")
+    split_named = getattr(ns, "split_half", -1) >= 0                    # DIV: the `split` block exists iff --split-half is 0 or 1
+    if split_named or "split" in data:
+        blk = data.get("split") if isinstance(data.get("split"), dict) else {}
+        add("split_half", split_named, "split" in data, "the data event carries a `split` block iff --split-half is 0 or 1")
+        if split_named:
+            hs = blk.get("half_sets") if isinstance(blk.get("half_sets"), dict) else {}
+            add("split_half", int(ns.split_half), blk.get("half"), "data event: split.half (the half the built training index keeps)")
+            add("split_half", SPLIT_RULE_REGISTERED, blk.get("rule"), "data event: split.rule (the hash rule the trainer applied)")
+            add("split_half", True, blk.get("filter_built"), "data event: split.filter_built (the split filter is built; the NOFILTER regression reads False)")
+            add("split_half", 0, blk.get("rows_off_half"), "data event: split.rows_off_half (every KEPT training row's log re-hashed by the trainer: none may belong to the other half)")
+            add("split_half", data.get("train_sets"), blk.get("sets"), "data event: split.sets == data.train_sets (the sets the run trains on ARE the half's)")
+            add("split_half", True, bool(hs) and all(isinstance(v, int) and v >= SPLIT_MIN_SETS_REGISTERED for v in hs.values()) and len(hs) == 2,
+                f"data event: split.half_sets {hs} (BOTH halves hold >= {SPLIT_MIN_SETS_REGISTERED} sets: PREREG_DIV_P6's launch blocker)")
     hn_named, cc_named = bool(getattr(ns, "hn_bank", "")), bool(getattr(ns, "ctx_cache", ""))
     if hn_named or "hn" in data:                                   # P6-HN-S: the bank, against the BUILT block of the bank the trainer holds (never an echo of the namespace)
         blk = data.get("hn") if isinstance(data.get("hn"), dict) else {}
@@ -1753,7 +1770,7 @@ def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -
         for r in rows:
             if not r["ok"]:
                 reasons.append(f"{r['flag']}: declared {r['declared']!r} != built {r['built']!r} ({r['how']})")
-        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS) and (bool(getattr(ns, "twin_w", 0.0)) or d not in SCORER_TWIN_DESTS) and (bool(getattr(ns, "twin_speed_neutral", False)) or d != "twin_speed_neutral")}
+        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS) and (bool(getattr(ns, "twin_w", 0.0)) or d not in SCORER_TWIN_DESTS) and (bool(getattr(ns, "twin_speed_neutral", False)) or d != "twin_speed_neutral") and (getattr(ns, "split_half", -1) >= 0 or d != "split_half")}
         missing = sorted(expect - {r["dest"] for r in rows})
         det["built_without_observer"] = missing
         if missing:
