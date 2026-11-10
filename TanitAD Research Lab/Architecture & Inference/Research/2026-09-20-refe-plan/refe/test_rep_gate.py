@@ -242,12 +242,15 @@ if bash:
         env.update(extra or {})
         return subprocess.run([bash, script], env=env, capture_output=True, encoding="utf-8")
 
-    # no calibrate file: the pin without lambda, exactly rep_argv(arm)
-    for arm in L.REP_ARMS:
-        r = run_pod(arm, "/workspace")
-        assert r.returncode == 0, (arm, r.stderr[:300])
-        out = r.stdout.strip().split()
-        assert pairs(out) == pairs(L.rep_argv(arm)), (arm, set(pairs(out)) ^ set(pairs(L.rep_argv(arm))))
+    # no calibrate file: the pin without lambda, exactly rep_argv(arm).  The workspace is an EMPTY temp dir, never /workspace: on the pod /workspace holds the
+    # parents' real calibrate files, so this case read a lambda there and failed G-SUITE (MEASURED 2026-11-10 04:58Z, S1E1 --pair-w 0.10810585693683655).
+    with tempfile.TemporaryDirectory(dir=os.environ.get("SCORER1_TMP") or None) as td0:
+        ws0 = td0.replace(chr(92), "/")
+        for arm in L.REP_ARMS:
+            r = run_pod(arm, ws0)
+            assert r.returncode == 0, (arm, r.stderr[:300])
+            out = [t.replace(ws0, "/workspace") for t in r.stdout.strip().split()]
+            assert pairs(out) == pairs(L.rep_argv(arm)), (arm, set(pairs(out)) ^ set(pairs(L.rep_argv(arm))))
     with tempfile.TemporaryDirectory(dir=os.environ.get("SCORER1_TMP") or None) as td:
         wsx = td.replace(chr(92), "/")
         for rel, key, val in (("data/refe_scorer1p6/calibrate_s1e", "pair_w", WP), ("data/refe_s1z/calibrate_s1z", "twin_w", WZ)):

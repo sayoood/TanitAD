@@ -20,7 +20,9 @@ LOG = ROOT + "post_rep.log"
 P6B = "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p6base/"
 PY = "C:/Users/Admin/venvs/tanitad/Scripts/python.exe"
 BASH = "C:/Program Files/Git/bin/bash.exe"          # never a bare "bash" from Python on this box: it resolves to WSL's
-T0 = "2026-11-10T04:39:45"
+T0 = sys.argv[1] if len(sys.argv) > 1 else "2026-11-10T04:39:45"     # only chain-log lines at or after the pause start count; pass the start of the pause being read
+if not re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d", T0):
+    sys.exit(f"T0 {T0!r} is not YYYY-MM-DDTHH:MM:SS")
 ARMS = ("C0r2", "S1E1")
 REPO = "Sayood/tanitad-refe-scorer1p6"
 PASS = ROOT + "pass_rep"
