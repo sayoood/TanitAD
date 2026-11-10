@@ -151,7 +151,7 @@ def fp(n):
 
 moved = [n for n, want in PINNED_FP.items() if fp(n) != want]
 assert not moved, f"existing profile fingerprints moved: {moved}"
-assert set(L.PROFILES) - set(PINNED_FP) == {"refe_scorer1p6", "refe_s1z_p6", "refe_s1zsm_p6", "refe_rep_p6", "refe_rep_s1z_p6", "refe_rep_s1zsm_p6"}, set(L.PROFILES) - set(PINNED_FP)         # S1Z (PREREG_S1Z_P6) added a profile; the 17 older fingerprints above are unchanged
+assert set(L.PROFILES) - set(PINNED_FP) == {"refe_scorer1p6", "refe_s1z_p6", "refe_s1zsm_p6", "refe_rep_p6", "refe_rep_s1z_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6"}, set(L.PROFILES) - set(PINNED_FP)         # S1Z (PREREG_S1Z_P6) added a profile; the 17 older fingerprints above are unchanged
 assert PROF is not L.PROFILES["refe_scorer1"] and PROF["recipe"] is not L.PROFILES["refe_scorer1"]["recipe"] and "lane_weight" not in PROF["recipe"] and "lane_weight" in L.PROFILES["refe_scorer1"]["recipe"]
 assert "--lane-head" not in PROF["required_flags"] and "--lane-head" in L.PROFILES["refe_scorer1"]["required_flags"]
 print(f"T4 ok ({len(PINNED_FP)} existing fingerprints unmoved; refe_scorer1p6 = {fp('refe_scorer1p6')[:16]}...)")

@@ -741,6 +741,75 @@ PROFILES["refe_rep_s1z_p6"] = {**PROFILES["refe_s1z_p6"], "name": "refe_rep_s1z_
 PROFILES["refe_rep_s1zsm_p6"] = {**copy.deepcopy(PROFILES["refe_s1zsm_p6"]), "name": "refe_rep_s1zsm_p6", "argv_kind": "rep", "root": REP_ROOT, "suite": S1ZSM_SUITE + REP_SUITE_EXTRA,
                                  "rep_arms": {"S1ZSM1": dict(REP_ARMS["S1ZSM1"])}, "arm_seed": {"S1ZSM1": REP_ARMS["S1ZSM1"]["seed"]}}
 
+# ============================================================================================ DOSE of S1Z (PREREG_DOSE_P6, frozen 2026-11-10; chain refe/dose_chain.sh; pod script refe/dose_pod.sh)
+# S1ZD = S1Z's argv with EXACTLY THREE values moved (card amendment A1, PREREG_DOSE_P6_A1.md sha256 1aa0e702...): --max-updates 400 -> 1600, --out, and --epochs 2.0 (added right after the --max-updates value).  dose_argv derives the argv FROM s1z_argv (the parent's builder), so "two values" is true by construction and
+# test_dose_gate.py proves it by a token diff.  lambda_z is S1Z's measured value, READ by dose_pod.sh from refe_s1z/calibrate_s1z, never re-measured.  A NEW profile `refe_dose_s1z_p6`; no existing profile or constant is edited.
+# THE CARD'S ARGV CANNOT REACH 1,600 UPDATES (arithmetic on scorer_finetune.py:2786-2788): total = min(ceil(60,000 sets / batch 8 x epochs 1.0 / accum 8), --max-updates) = min(938, 1600) = 938.
+# So with the card's two tokens the run ends at update 938 (a 938-update cosine schedule, not 1,600) and G-DVB's schedule row (data_expect_updates 1600 against the re-derived 938) is RED.  `dose_reach_refusals`
+# REFUSES such an argv before any pod time.  DOSE_EPOCHS is the ONE switch that makes the dose reachable: the THIRD moved value, --epochs 2.0, is named by amendment A1 (PREREG_DOSE_P6_A1.md, sha256 1aa0e702...; the original card PREREG_DOSE_P6.md names no --epochs and stays frozen).
+# The shipped state is A1 (2.0); None would be the card's original two-value argv, which dose_reach_refusals refuses.  dose_pod.sh carries the same constant (test_dose_gate.py compares the two).
+DOSE_ROOT = "/workspace/data/refe_dose"
+DOSE_PKG = "/workspace/refe-plan-dose"
+DOSE_ARMS = {"S1ZD": {"parent": "S1Z", "family": "s1z", "max_updates": 1600}}      # dose arm -> its parent (S1Z, seed 0), the dose's --max-updates; the seed is the parent's
+DOSE_PARENT = {"S1Z": {"seed": S1Z_ARM_SEED["S1Z"], "max_updates": S1Z_UPDATES}}
+DOSE_EPOCHS = 2.0                                                                  # A1 (PREREG_DOSE_P6_A1.md, 1aa0e702): 2.0 reaches 1,600 updates exactly on 60,000 sets
+DOSE_SUITE_EXTRA = [{"script": "test_dose_gate.py", "token": "ZZTEST_PASS"}]
+
+
+def dose_arm_refusals(table: dict) -> list:
+    """Refusals of a dose table {arm: {parent, family, max_updates}}: an unknown parent, an arm name that is a registered arm, a --max-updates that is not an int above the parent's."""
+    out = []
+    for arm, sp in table.items():
+        par = DOSE_PARENT.get(sp.get("parent"))
+        if par is None or sp.get("family") != "s1z":
+            out.append(f"dose {arm}: parent {sp.get('parent')!r} is not the S1Z arm of family 's1z'")
+            continue
+        if arm == sp["parent"] or arm in S1Z_ARM_SEED or any(arm in s for s in REP_PARENT_SEEDS.values()) or arm in REP_ARMS:
+            out.append(f"dose {arm}: the name is a registered arm")
+        mu = sp.get("max_updates")
+        if not isinstance(mu, int) or isinstance(mu, bool) or mu <= par["max_updates"]:
+            out.append(f"dose {arm}: --max-updates {mu!r} is not an int above the parent's {par['max_updates']}: a dose that moves nothing is not a dose")
+    return out
+
+
+def dose_reach_total(train_sets: int, epochs: float, max_updates: int, batch: int = 8, accum: int = 8) -> int:
+    """The updates the trainer ends at (scorer_finetune.py:2786-2788): min(ceil(train_sets / batch x epochs / accum), max_updates)."""
+    return min(int(math.ceil(train_sets / batch * epochs / accum)), max_updates)
+
+
+def dose_reach_refusals(max_updates: int, epochs: float, train_sets: int = None) -> list:
+    """Refuse a dose whose schedule cannot reach its --max-updates on the pinned 60,000 train sets (the trainer stops at ceil(sets / batch x epochs / accum), silently)."""
+    n = SCORER1P6_DATA_PIN["train_sets"] if train_sets is None else train_sets
+    got = dose_reach_total(n, epochs, max_updates)
+    if got != max_updates:
+        return [f"the dose cannot reach --max-updates {max_updates}: with --epochs {epochs} on {n} train sets the trainer ends at update {got} (scorer_finetune.py:2786-2788), so the LR schedule and the run are not "
+                "the card's 1,600-update dose; the frozen card names no --epochs; amendment A1 (PREREG_DOSE_P6_A1.md, 1aa0e702) adds --epochs 2.0"]
+    return []
+
+
+def dose_argv(arm: str, w=None) -> list:
+    """The argv of a dose arm: S1Z's argv (s1z_argv) with --max-updates and --out swapped, nothing else (and, because DOSE_EPOCHS is set (A1), `--epochs <DOSE_EPOCHS>` right after the --max-updates value).
+    `w` is S1Z's measured lambda_z (--twin-w) or None for the pin without it."""
+    if arm not in DOSE_ARMS:
+        raise KeyError(f"{arm!r} is not a dose arm (one of {sorted(DOSE_ARMS)})")
+    sp = DOSE_ARMS[arm]
+    bad = dose_arm_refusals({arm: sp})
+    if bad:
+        raise ValueError("; ".join(bad))
+    toks = list(s1z_argv(sp["parent"], twin_w=w))
+    i = toks.index("--max-updates")
+    toks[i + 1] = str(sp["max_updates"])
+    if DOSE_EPOCHS is not None:
+        toks[i + 2:i + 2] = ["--epochs", str(DOSE_EPOCHS)]
+    toks[toks.index("--out") + 1] = DOSE_ROOT + "/" + arm.lower()
+    return toks
+
+
+PROFILES["refe_dose_s1z_p6"] = {**copy.deepcopy(PROFILES["refe_s1z_p6"]), "name": "refe_dose_s1z_p6", "argv_kind": "dose", "root": DOSE_ROOT, "suite": S1Z_SUITE + DOSE_SUITE_EXTRA,
+                                "dose_arms": {a: dict(DOSE_ARMS[a]) for a in DOSE_ARMS}, "arm_seed": {"S1ZD": S1Z_ARM_SEED["S1Z"]}, "data_expect_updates": DOSE_ARMS["S1ZD"]["max_updates"],
+                                "recipe": {**SCORER1P6_RECIPE, "max_updates": DOSE_ARMS["S1ZD"]["max_updates"], **({"epochs": DOSE_EPOCHS} if DOSE_EPOCHS is not None else {})},
+                                "required_flags": {**PROFILES["refe_s1z_p6"]["required_flags"], "--max-updates": str(DOSE_ARMS["S1ZD"]["max_updates"]), **({"--epochs": str(DOSE_EPOCHS)} if DOSE_EPOCHS is not None else {})}}
+
 # RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
 # rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
 PROFILES["refe_rls1b"] = {**PROFILES["refe_rls1"], "name": "refe_rls1b", "suite": RLS1B_SUITE, "arm_class": RLS1B_ARM_CLASS, "arm_seeds": RLS1B_ARM_SEEDS,
@@ -1301,7 +1370,7 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
     p6 = prof.get("scorer1_kind") == "p6"                                  # PREREG_SCORER1P6: the arm table, the pair levers per arm, the root and the pin come from the PROFILE; refe_scorer1 carries none of them and keeps the module constants
     arm_seed, root = prof.get("arm_seed", SCORER1_ARM_SEED), prof.get("root", SCORER1_ROOT)
     pair_spec = prof.get("pair_spec", {"S1": {"heads": SCORER1_PAIR_HEADS, "dv": SCORER1_PAIR_DV, "nobalance": "", "nospeed": "", "gap": "", "mean": "pooled"}})
-    argv_of = rep_argv if prof.get("argv_kind") == "rep" else s1zsm_argv if prof.get("argv_kind") == "s1zsm" else s1z_argv if prof.get("argv_kind") == "s1z" else (scorer1p6_argv if p6 else scorer1_argv)         # S1Z (PREREG_S1Z_P6): its own argv builder, selected by a STRING in the profile (a function in a profile would make its fingerprint unstable)
+    argv_of = dose_argv if prof.get("argv_kind") == "dose" else rep_argv if prof.get("argv_kind") == "rep" else s1zsm_argv if prof.get("argv_kind") == "s1zsm" else s1z_argv if prof.get("argv_kind") == "s1z" else (scorer1p6_argv if p6 else scorer1_argv)         # S1Z (PREREG_S1Z_P6): its own argv builder, selected by a STRING in the profile (a function in a profile would make its fingerprint unstable)
     if p6 and prof.get("data_pin") is None:
         out.append(f"{name}: THE DATA PIN IS UNSET (launch_gate.SCORER1P6_DATA_PIN is None): the exact P6 label counts are not known yet, so label completeness cannot be asserted; "
                    "fill the pin from the finished Jobs A + B (pdm_label_complete.py --expect N) before any arm may be gated")
@@ -1335,6 +1404,11 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
         rp = prof["rep_arms"][arm]
         if ns.seed == REP_PARENT_SEEDS[rp["family"]][rp["parent"]]:
             out.append(f"{name} ({arm}) resolves to --seed {ns.seed}, its parent {rp['parent']}'s seed: a replicate must move the data-order seed")
+    if prof.get("dose_arms"):                                    # a dose of S1Z (PREREG_DOSE_P6): its table is valid, the seed is the parent's (pinned above), --max-updates is the dose's AND the schedule can reach it
+        out += dose_arm_refusals({arm: prof["dose_arms"][arm]})
+        out += dose_reach_refusals(prof["dose_arms"][arm]["max_updates"], ns.epochs)
+        if ns.max_updates != prof["dose_arms"][arm]["max_updates"]:
+            out.append(f"{name} ({arm}) requires --max-updates {prof['dose_arms'][arm]['max_updates']}; the argv resolves to {ns.max_updates}")
     if arm in pair_spec:
         sp = pair_spec[arm]
         if (ns.pair_calibrate or ns.pair_heads != sp["heads"] or not C._close(ns.pair_dv, sp["dv"]) or ns.pair_nobalance_heads != sp["nobalance"] or ns.pair_nospeed_heads != sp["nospeed"]

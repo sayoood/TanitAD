@@ -138,7 +138,7 @@ TIP_FP = {"refe_p2": "627341286aea3506", "refe_p6": "80fa4d7ec757ad46", "refe_fi
           "refe_aux_s1c": "dcdf2dbd2a674f1c"}          # MEASURED at the tip 0c19b8fd (sha256 of repr(sorted(profile.items())), first 16 hex): the 21 profiles that exist before S1ZSM
 moved = [n for n, want in TIP_FP.items() if not fp(n).startswith(want)]
 assert not moved, f"existing profile fingerprints moved: {moved}"
-assert set(L.PROFILES) - set(TIP_FP) == {"refe_s1zsm_p6", "refe_rep_s1zsm_p6"}, set(L.PROFILES) - set(TIP_FP)          # the seed-1 replicate profile (rep_s1zsm) is the second new name
+assert set(L.PROFILES) - set(TIP_FP) == {"refe_s1zsm_p6", "refe_rep_s1zsm_p6", "refe_dose_s1z_p6"}, set(L.PROFILES) - set(TIP_FP)          # the seed-1 replicate profile (rep_s1zsm) is the second new name
 assert fp("refe_s1zsm_p6") == fp("refe_s1zsm_p6") and "function" not in repr(sorted(PROF.items())) and "0x" not in repr(sorted(PROF.items())), "the digest of the new profile must be stable"
 base = L.PROFILES["refe_s1z_p6"]
 assert PROF is not base and PROF["recipe"] is not base["recipe"] and PROF["required_flags"] is not base["required_flags"] and PROF["arm_seed"] is not base["arm_seed"] and PROF["twin_spec"] is not base["twin_spec"]

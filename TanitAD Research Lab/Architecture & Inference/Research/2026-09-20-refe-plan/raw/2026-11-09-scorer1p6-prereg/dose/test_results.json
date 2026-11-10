@@ -1,0 +1,169 @@
+{
+ "tip": "5514a6840b57ad115dcadeb7e264b10f5c1d0081",
+ "amendment": "A1 PREREG_DOSE_P6_A1.md sha256 1aa0e702...",
+ "env": "CPU, CUDA_VISIBLE_DEVICES=-1, one process at a time, tanitad from F:/tanitad_scratch/dosea1_work/stack (asserted), overlay applied; profile digests: 23 tip profiles equal (loaded tip launch_gate.py vs overlay), only refe_dose_s1z_p6 added (A1 digest 9085f9e5cf59c016; pre-A1 65a0829d02c97fed)",
+ "tests": {
+  "test_dose_gate.py": {
+   "rc": 0,
+   "seconds": 22.7,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": ""
+  },
+  "test_rep_gate.py": {
+   "rc": 0,
+   "seconds": 30.5,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": ""
+  },
+  "test_scorer1p6_gate.py": {
+   "rc": 0,
+   "seconds": 4.5,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": ""
+  },
+  "test_s1z_gate.py": {
+   "rc": 0,
+   "seconds": 3.6,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": ""
+  },
+  "test_s1zsm_gate.py": {
+   "rc": 0,
+   "seconds": 7.6,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": ""
+  },
+  "test_s1zsm_preflight.py": {
+   "rc": 0,
+   "seconds": 57.3,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": "ing: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.\nConsider using tensor.detach() first. (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\torch\\csrc\\autograd\\generated\\python_variable_methods.cpp:837.)\n  hd = copy.deepcopy(aux.head)\n"
+  },
+  "test_s1z_preflight.py": {
+   "rc": 0,
+   "seconds": 45.7,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": "ted behavior.\nConsider using tensor.detach() first. (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\torch\\csrc\\autograd\\generated\\python_variable_methods.cpp:837.)\n  meta[\"n_score_components\"] = n_out                    # the planner sizes its score head from this (ckpt_io)\n"
+  },
+  "test_scorer1p6_preflight.py": {
+   "rc": 0,
+   "seconds": 33.2,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": " with requires_grad=True to a scalar may lead to unexpected behavior.\nConsider using tensor.detach() first. (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\torch\\csrc\\autograd\\generated\\python_variable_methods.cpp:837.)\n  return ep, (dict(epo_last) if mode != \"off\" else {})\n"
+  },
+  "test_scorer1_layer.py": {
+   "rc": 0,
+   "seconds": 0.2,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": ""
+  },
+  "test_s1z_layer.py": {
+   "rc": 0,
+   "seconds": 0.1,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": ""
+  },
+  "test_s1zsm_layer.py": {
+   "rc": 0,
+   "seconds": 0.2,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": ""
+  },
+  "test_pair_loss.py": {
+   "rc": 0,
+   "seconds": 2.3,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": " may lead to unexpected behavior.\nConsider using tensor.detach() first. (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\torch\\csrc\\autograd\\generated\\python_variable_methods.cpp:837.)\n  assert torch.isfinite(raw) and float(logits.grad.abs().sum()) > 0.0 and float(raw) > 0.0\n"
+  },
+  "test_pair_loss_p6.py": {
+   "rc": 0,
+   "seconds": 2.6,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": "first. (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\torch\\csrc\\autograd\\generated\\python_variable_methods.cpp:837.)\n  print(f\"P4 ok (mean per head then over the 3 heads with a pair; EP {n_ep} pairs vs NC {n_nc}; pooled {float(pooled):.4f} != per-head {float(loss):.4f})\")\n"
+  },
+  "test_dump_scores.py": {
+   "rc": 0,
+   "seconds": 158.3,
+   "last_line": "ZZTEST_PASS 16  (1 unmutated suite of 41 checks + 14 RED mutations + coverage)",
+   "stderr_tail": "ead to unexpected behavior.\nConsider using tensor.detach() first. (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\torch\\csrc\\autograd\\generated\\python_variable_methods.cpp:837.)\n  d0A, dBA = float((sx0 - sxA[..., :sx0.shape[-1]]).abs().max()), float((sxB - sxA).abs().max())\n"
+  },
+  "test_suite_nesting.py": {
+   "rc": 0,
+   "seconds": 87.8,
+   "last_line": "ZZTEST_PASS 231",
+   "stderr_tail": ""
+  },
+  "test_s1z_loss.py": {
+   "rc": 0,
+   "seconds": 5.1,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": "lead to unexpected behavior.\nConsider using tensor.detach() first. (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\torch\\csrc\\autograd\\generated\\python_variable_methods.cpp:837.)\n  assert float(z) == 0.0 and z.requires_grad, \"a micro-batch with no pair is a zero WITH graph\"\n"
+  },
+  "test_s1zsm_loss.py": {
+   "rc": 0,
+   "seconds": 3.7,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": "() first. (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\torch\\csrc\\autograd\\generated\\python_variable_methods.cpp:837.)\n  assert float(z) == 0.0 and z.requires_grad and all(v[\"pairs\"] == 0 and v[\"sets_with_pair\"] == 0 and v[\"sets\"] == 1 for v in tq.last.values()), tq.last\n"
+  },
+  "test_scorer1_gate.py": {
+   "rc": 0,
+   "seconds": 5.0,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": ""
+  },
+  "test_scorer1_mutation.py": {
+   "rc": 0,
+   "seconds": 3.5,
+   "last_line": "ZZTEST_PASS",
+   "stderr_tail": ""
+  },
+  "test_rl_epo.py": {
+   "rc": 0,
+   "seconds": 313.8,
+   "last_line": "ZZTEST_PASS 42  (1 unmutated suite + 41 RED mutations)",
+   "stderr_tail": "s_grad=True to a scalar may lead to unexpected behavior.\nConsider using tensor.detach() first. (Triggered internally at C:\\actions-runner\\_work\\pytorch\\pytorch\\pytorch\\torch\\csrc\\autograd\\generated\\python_variable_methods.cpp:837.)\n  return float(v) == 0.0 and int(torch.count_nonzero(sx.grad)) == 0\n"
+  },
+  "test_launch_gate.py": {
+   "rc": 1,
+   "seconds": 70.6,
+   "last_line": "  G-CLOCK   FAIL  profile refusal: scorer_finetune refuses this argv: --epo-con-* levers ['epo_con_temp'] are set but --epo-con is off: their weights would belong to a term that is OFF; profile refusa",
+   "stderr_tail": "refe\\diag_onpolicy_train.py\", line 66, in carve\n    with open(src / \"targets_rank1.jsonl\", encoding=\"utf-8\") as f:\n         ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFileNotFoundError: [Errno 2] No such file or directory: 'D:\\\\Projects\\\\TanitAD\\\\data\\\\refe_consistent\\\\targets_rank1.jsonl'\n"
+  },
+  "test_sft4r_gate.py": {
+   "rc": 0,
+   "seconds": 13.4,
+   "last_line": "ZZTEST_PASS 153",
+   "stderr_tail": ""
+  },
+  "test_hn_content_fp.py": {
+   "rc": 0,
+   "seconds": 113.6,
+   "last_line": "ZZTEST_PASS 81  (62 arms on the real tree + 19 RED mutations)",
+   "stderr_tail": ""
+  },
+  "test_p7_integration.py": {
+   "rc": 0,
+   "seconds": 9.0,
+   "last_line": "ZZP7INT_PASS 225",
+   "stderr_tail": ""
+  },
+  "test_gate_suite_prerun.py": {
+   "rc": 0,
+   "seconds": 363.8,
+   "last_line": "ZZTEST_PASS 144",
+   "stderr_tail": ""
+  }
+ },
+ "test_launch_gate_note": "rc 1 on the overlay AND on the unmodified tip launch_gate.py: both 59 FAIL lines, both stop at FileNotFoundError targets_rank1.jsonl in full(); diff only in set-ordering of timing lines",
+ "mutations_red": [
+  "DOSE_EPOCHS None (launch_gate copy): argv-diff check False, card argv refused by reach rule, digest moves",
+  "dose_pod.sh DOSE_EPOCHS dropped: output loses --epochs, A1 diff RED, agreement regex RED, real profile refuses it",
+  "400 instead of 1600",
+  "pod DOSE_UPDATES 400/300",
+  "--max-updates swap removed",
+  "--out swap removed",
+  "reach rule off",
+  "required flag 400"
+ ],
+ "cli_proof": "read_dose.py read --help usage matches; build_parser().parse_args(post_dose.read_cmd(...)) parses with and without --sft-log, all 7 required flags present, all real input files exist: CLI_PROOF_OK"
+}
