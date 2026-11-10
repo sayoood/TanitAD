@@ -41,7 +41,7 @@ WIRES = ["--r9-plan-box-tokens", "--r8-critic-drivable", "--w-r8-drivable"]
 #: variant -> (flags ADDED to K0, flags whose VALUE changed, the open items the gate raises)
 EXPECT = {
     "K2": (T1H + WIRES, {"--out"}, []),
-    "K2M1N20": (T1V + WIRES + ["--r9-map-banded", "--r9-map-banded-near-m", "--r9-plan-map-channels"], {"--out"}, ["E1-MAP-OWN-RECORD"]),
+    "K2M1N20": (T1V + WIRES + ["--r9-map-banded", "--r9-map-banded-near-m", "--r9-plan-map-channels"], {"--out", "--w-map-hires"}, ["E1-MAP-OWN-RECORD"]),   # --w-map-hires 25: PREREG_K2_REDOSE
     "K2M3": (T1H + WIRES + ["--r9-map-banded", "--r9-map-own-enc", "--r9-plan-map-channels"], {"--out", "--map-hires-near-lift-m"}, ["E1-MAP-OWN-RECORD"]),
     "K2M3N20": (T1V + WIRES + ["--r9-map-banded", "--r9-map-own-enc", "--r9-map-banded-near-m", "--r9-plan-map-channels"], {"--out"}, ["E1-MAP-OWN-RECORD"]),
 }
@@ -119,7 +119,7 @@ def test_the_variants_delta_vs_K0_is_exactly_the_stated_flag_set_and_every_other
     assert set(a) - set(b) == set(added) and not (set(b) - set(a)), (v, sorted(set(a) ^ set(b)))
     assert {f for f in set(a) & set(b) if a[f] != b[f]} == changed
     assert a["--out"] == [f"/home/nvidia/r8ns/r9e2/runs/r9e2-{v}"]
-    assert a["--w-map-hires"] == ["1.0"] and a["--bev-source"] == ["map_hires_pool"] and a["--steps"] == ["6000"] and a["--lr-schedule"] == ["wsd"]
+    assert a["--w-map-hires"] == (["25.0"] if v == "K2M1N20" else ["1.0"]) and a["--bev-source"] == ["map_hires_pool"] and a["--steps"] == ["6000"] and a["--lr-schedule"] == ["wsd"]
     assert (a.get("--r9-bev-warp-fuse-init") == ["identity"]) == (v in T1H_VARIANTS) and a["--map-hires-near-lift-m"] == (["10"] if v == "K2M3" else ["20"])
     assert ("--r9-map-banded-near-m" in a) == (v in ("K2M1N20", "K2M3N20")) and a.get("--r9-map-banded-near-m", ["20"]) == ["20"]
     assert ("--r9-map-own-enc" in a) == (v in ("K2M3", "K2M3N20")) and ("--r9-plan-map-channels" in a) == (v != "K2")
@@ -130,6 +130,9 @@ def test_the_banded_variants_carry_exactly_the_map_flags_r9_e1_make_argv_builds(
     e1 = E1.map_arm_argv(K0, arm, "/home/nvidia/r8ns/r9e2/runs/r9e2-" + v, w=1.0 if arm in E1.OWN_ENC_ARMS else None)
     mine, theirs = dict(LG.flag_pairs(av(v))), dict(LG.flag_pairs(e1))
     for f in set(theirs) - set(dict(LG.flag_pairs(K0))) | {"--map-hires-near-lift-m", "--w-map-hires"}:
+        if (v, f) == ("K2M1N20", "--w-map-hires"):      # re-dosed to 25 (PREREG_K2_REDOSE_2026-11-10); E1's M1N20 builder still says 1.0
+            assert mine[f] == ["25.0"] and theirs[f] == ["1.0"]
+            continue
         assert mine[f] == theirs[f], (v, f)
 
 
@@ -280,7 +283,7 @@ def test_fingerprints_the_full_family_moved_and_every_other_profile_is_unchanged
         "refcv8": "4841b2a6f0758b95", "refcv9-warm": "7099d75fa2f40240", "refcv9-e1rig": "6fa39c86092dffec",     # refcv9 E1 arm T1v: E1_T1_FLAGS gained --r9-hist-supervise-geom (was 0bb9664939426521 after pin6, 18c28c61f19f5544 before it)
         "refcv8-nt": "a24d2c1a71042711", "refcv8-mapft": "f024877e5326f4ff", "v8f": "52860dd82f3a79af"}
     assert {n: _fp(n) for n in ("refcv9-e2", "refcv9-full", "refcv9-full-d1")} == {
-        "refcv9-e2": "acc27e87d94fe9e2", "refcv9-full": "95a02abfad8aab76", "refcv9-full-d1": "ad790da13c9c84b8"}   # T1v FLIP: was 2ee6fd2473fc296d / 0af11fbfd62e6ed1 / b48f8af8c7fe34d4
+        "refcv9-e2": "1a60c7095be5a175", "refcv9-full": "01b824851c5825d7", "refcv9-full-d1": "349a16c05861ef6d"}   # T1v FLIP: was 2ee6fd2473fc296d / 0af11fbfd62e6ed1 / b48f8af8c7fe34d4   # K2M1N20 RE-DOSE (2026-11-10, `_R9F_MAP_W_ADMITTED` admitted_values_when): moved acc27e87d94fe9e2 / 95a02abfad8aab76 / ad790da13c9c84b8 -> 1a60c7095be5a175 / 01b824851c5825d7 / 349a16c05861ef6d
 
 
 def test_the_full_family_required_values_when_is_one_dict_holding_all_three_rule_sets_and_e1rig_shares_the_near_lift_constant():

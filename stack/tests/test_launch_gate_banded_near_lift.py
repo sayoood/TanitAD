@@ -79,15 +79,19 @@ def test_RED_without_the_rule_the_banded_arm_is_refused_as_on_f078b7e():
     assert len(r) == 1 and "20 is REQUIRED" in r[0] and "['10']" in r[0]
 
 
+W_ = "--w-map-hires"
+
+
 def test_a_profile_without_the_key_is_unchanged():
     assert "required_values_when" not in LG.PROFILES["refcv8"] and "admitted_values_when" not in LG.PROFILES["refcv8"]
     # THE FLIP (MM 2026-11-07): the full family carries `required_values_when` for the crowned T1h BUNDLE; K2-ARGV (MM 2026-11-07) MERGES the near-lift rules into the same dict (a banded
     # argv -> near lift 10, `--r9-map-banded-near-m=20` -> 20: `LG._NEAR_LIFT_WHEN`, the SAME constant refcv9-e1rig uses) and the W-MAP-2 co-requirement. Still no map-weight entry and
-    # no `admitted_values_when` (the weight is `map_weight_reasons`'s: free and positive with the banded head). Its pins: test_launch_gate_r9f_t1h.py, test_r9e2_k2_argv.py
+    # K2M1N20 RE-DOSE (PREREG_K2_REDOSE_2026-11-10): the full family now carries `admitted_values_when` = E1's weights + 25 (`LG._R9F_MAP_W_ADMITTED`; was: none, the weight free and positive
+    # with the banded head in `map_weight_reasons`). Its pins: test_launch_gate_r9f_t1h.py, test_r9e2_k2_argv.py, test_r9e2_k2_redose.py
     for name in ("refcv9-e2", "refcv9-full", "refcv9-full-d1"):
         rvw = LG.PROFILES[name]["required_values_when"]
         assert set(rvw) == set(LG._R9F_T1H_ADMITTED) | {FLAG, "--r9-map-banded-near-m=20", "--r9-plan-map-channels"}, name
-        assert {k: v for k, v in rvw.items() if k in LG._NEAR_LIFT_WHEN} == LG._NEAR_LIFT_WHEN and "admitted_values_when" not in LG.PROFILES[name]
+        assert {k: v for k, v in rvw.items() if k in LG._NEAR_LIFT_WHEN} == LG._NEAR_LIFT_WHEN and LG.PROFILES[name]["admitted_values_when"] == {FLAG: {W_: ("1", "0.511", "1.018", "25")}}
         assert {f for k, over in rvw.items() if k in LG._R9F_T1H_ADMITTED for f in over} <= set(LG._R9F_T1H_ADMITTED)
         assert not any("--w-map-hires" in over for over in rvw.values()), name
 

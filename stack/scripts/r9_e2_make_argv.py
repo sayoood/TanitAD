@@ -69,6 +69,12 @@ T1H_ARM = "T1h"
 T1V_ARM = "T1v"
 T1_ARM_OF = {"K2": T1H_ARM, "K2M1N20": T1V_ARM, "K2M3": T1H_ARM, "K2M3N20": T1V_ARM}
 MAP_W = 1.0                      # --w-map-hires of every banded variant (E1's M1N20 fixed 1.0; M3 / M3N20 PREREG_M3: M1's 1.0) == K0's own value
+#: K2M1N20 RE-DOSE (MM 4a3d05, 2026-11-10): K2M1N20 failed G-LIVE's SHARE-ALARM at w 1.0 (banded map 0.00125 of the trunk gradient < 0.05); it is re-dosed to w 25, everything
+#: else unchanged. Pre-registered in E:/Projects/TanitAD-artifacts/dagland/e2/PREREG_K2_REDOSE_2026-11-10.md (sha256 2c5c147bf10368bb88677f964f9474acf2b6eef4b96dfe06f72fa8e22043b5df).
+#: K0 (1.0) and every other variant are unchanged.
+REDOSE_PREREG = "E:/Projects/TanitAD-artifacts/dagland/e2/PREREG_K2_REDOSE_2026-11-10.md"
+REDOSE_PREREG_SHA256 = "2c5c147bf10368bb88677f964f9474acf2b6eef4b96dfe06f72fa8e22043b5df"
+MAP_W_REDOSE = {"K2M1N20": 25.0}
 PLAN_ANCHOR = "--bev-planner-crop-m"         # the C8 wires go right after the planner crop (planner-side flags, after K0's map group)
 PLAN_MAP, PLAN_BOX = "--r9-plan-map-channels", "--r9-plan-box-tokens"
 CRITIC, W_CRITIC = "--r8-critic-drivable", "--w-r8-drivable"
@@ -175,6 +181,8 @@ def compose(k0_doc: dict, variant: str, w_drivable: float, out: str | None = Non
     if arm is not None:
         w = MAP_W if arm in E1.OWN_ENC_ARMS else None
         argv = E1.map_arm_argv(argv, arm, out, w=w)                 # banded [+ own-enc] [+ near-m 20], near lift 10 / 20, --w-map-hires = the arm's
+    if variant in MAP_W_REDOSE:                                     # K2M1N20 re-dose (PREREG_K2_REDOSE): the banded map weight, the ONLY value changed
+        argv = flat([(f, [repr(float(MAP_W_REDOSE[variant]))] if f == "--w-map-hires" else v) for f, v in pairs(argv)])
     wires = ([PLAN_MAP] if arm is not None else []) + [PLAN_BOX, CRITIC, W_CRITIC, repr(float(w_drivable))]
     res = []
     for f, vals in pairs(argv):
@@ -204,7 +212,9 @@ def variant_doc(k0_doc: dict, k0_bytes: bytes, variant: str, w_drivable: float, 
     if arm is not None:
         lever["banded_flags"] = [E1.BANDED_FLAG] + ([E1.OWN_ENC_FLAG] if arm in E1.OWN_ENC_ARMS else []) + ([E1.NEAR_M_FLAG, "20"] if arm in E1.NEAR20_ARMS else [])
         lever["map_near_lift_m"] = float(E1.banded_near_lift_m(arm))
-        lever["w_map_hires"] = MAP_W
+        lever["w_map_hires"] = MAP_W_REDOSE.get(variant, MAP_W)
+        if variant in MAP_W_REDOSE:
+            lever["w_map_hires_redose"] = "w_map_hires %s (re-dose, %s; sha256 %s)" % (MAP_W_REDOSE[variant], REDOSE_PREREG, REDOSE_PREREG_SHA256)
         lever["pending"] = (("BUILD-LEVEL checks PENDING: the trainer refuses --r9-bev-warp-supervise-hist with --r9-map-banded today (bev_warp_flag.py:178-179; another "
                              "agent implements it). The gate's STATIC admission does not read the trainer's pin.") if t1 == T1H_ARM else
                             ("GATE: launch_gate (refcv9-e2 / -full / -full-d1) admits --r9-hist-supervise-geom by exact name (_R9F_T1V_ADMITTED, 926820a9). The trainer's pin (bev_warp_flag._pin_geom) "
