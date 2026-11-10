@@ -1,0 +1,7 @@
+v8F oband_probe: read the acceleration term as an O term when --w-acc > 0
+
+The launch purity probe (oband_probe) checked only op/tac (band) or ade/fde, never the acceleration term that DAG-OACC's recipe adds (v8f_mini.py: total += w_acc x acc). An acceleration-only leak into S or T would have passed the gate. MEASURED on CPU at 202849da: the term is pure under --detach-upper (0.0 on S and T, 16.46 on head_o), so this changes the check, not a result.
+
+Two lines in stack/scripts/v8f_mini_train.py; new stack/tests/test_v8f_oband_acc.py (5 cases, three red without the change). Precondition of PREREG_V8F_OBD control 3 (theory/obd/PURITY_ACC_FINDING.md). Targeted tests (oband_acc, otband, ego_dagger_compose), CPU: this tree 89 passed, 1 failed; the unpatched 202849da export 84 passed, 1 failed. The failure is the same test on both, test_flag_off_reproduces_the_unmodified_tip_bit_for_bit: summary.json carries t2_bank_n/_p/_rows (T2 bank) outside its allowed key set, while weights, logs and counters match bit for bit. So 0 regressions; the full suite runs in the box-2 chain's G-SUITE.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
