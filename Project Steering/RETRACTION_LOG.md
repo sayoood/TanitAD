@@ -18921,7 +18921,7 @@ instruments; only an undeclared one is a finding.
 
 **Class / rule:** a join key narrower than the row's identity overwrites silently. Assert the row count after building a keyed lookup.
 
-## 2026-11-10 ~16:20 -- PREREAD_V8F_CONSORC's speed trigger named EGOWM as a lever on T's speed cells. Class: **A LEVER'S REACH ASSERTED WITHOUT TRACING IT TO THE QUANTITY**
+## 2026-11-10 ~16:10 -- PREREAD_V8F_CONSORC's speed trigger named EGOWM as a lever on T's speed cells. Class: **A LEVER'S REACH ASSERTED WITHOUT TRACING IT TO THE QUANTITY**
 
 **What was written (landed 71cf2308; card `PREREAD_V8F_CONSORC.md`, What each outcome triggers):** under CONS-CARRY with kind speed, "the speed-information levers in flight (EGOWM, LoRA) are the right aim on this base too, and each of their reads adds this decomposition on its own checkpoints."
 
