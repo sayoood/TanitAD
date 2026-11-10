@@ -45,6 +45,7 @@ N_GOAL, N_LAT, N_LON, N_CONS = 22, 5, 7, 26
 CODE_DIM = N_GOAL + N_LAT + N_LON + N_CONS
 TURN_L_I, TURN_R_I, STOP_I = 1, 2, 6                      # GOAL22 indices
 LON_FOLLOW = 3
+LON_STOP_I = 2                                           # index of STOP in LON9 (v8f_mini_data.LON9); PREREG_V8F_STOPBAL
 CONS_NAMES = ("lat_theta_deg", "turn_t_start_s", "turn_t_end_s", "turn_d_start_m", "turn_len_m", "turn_dyaw_deg",
               "turn_r_arc_m", "turn_exit_x_m", "turn_exit_y_m", "turn_exit_psi_deg", "lc_t_cross_s", "lc_d_cross_m",
               "lon_v_target_ms", "lon_t_reach_s", "lon_d_reach_m", "lon_t_start_s", "stop_x_m", "stop_y_m",
@@ -222,6 +223,8 @@ class V8FMiniConfig:
                                        # `launch_mask` marks (GT-launch: v0 < 6 m/s and the GT chord speed over the last 0.2 s of the horizon >= v0 + 1 m/s). 0.0 = the term is NOT in the total and NOT computed =
                                        # every earlier arm, bit for bit (no new tensor op, no new T key). > 0 = the batch must carry `launch` (the trainer computes it from the LOGGED state before any ego stage)
 
+    goal_pos_weight_stop: float = 1.0  # PREREG_V8F_STOPBAL (`--goal-pos-weight-stop`): W, the POSITIVE weight of the STOP_POINT entry (STOP_I) of T's goal BCE (-(W y log p + (1-y) log(1-p)) on that column only). 1.0 = the branch is not taken = the tip, bit for bit
+    lon_class_weight_stop: float = 1.0  # PREREG_V8F_STOPBAL (`--lon-class-weight-stop`): W, the weight of the rows whose allowed lon set contains STOP (LON_STOP_I) in T's partial lon CE (denominator stays the valid-row count). 1.0 = the tip, bit for bit
     level_head: str = "off"            # PREREG_V8F_LEVEL (`--level-head`): off = nothing built (every earlier arm, bit for bit); on = the vision-only speed-level head + O's level conditioning (LEVEL_HEAD_MODES)
     lead_head: str = "off"             # PREREG_LEVELHEAD_A2 (`--lead-head`): off = nothing built (every earlier arm, bit for bit); on = the vision-only lead head (presence + gap) + O's lead conditioning (LEAD_HEAD_MODES)
     w_lead: float = 0.0                # PREREG_LEVELHEAD_A2 (`--w-lead`): the weight of BCE(presence) + Huber(gap_hat) in the total. Must be > 0 with the head on and exactly 0.0 with it off (checked by the launch gate)
@@ -248,6 +251,9 @@ class V8FMiniConfig:
             raise ValueError(f"w_acc must be a finite number >= 0, got {self.w_acc!r}")
         if not (math.isfinite(self.launch_intent_w) and self.launch_intent_w >= 0.0):
             raise ValueError(f"launch_intent_w must be a finite number >= 0, got {self.launch_intent_w!r}")
+        for _n in ("goal_pos_weight_stop", "lon_class_weight_stop"):      # PREREG_V8F_STOPBAL: a weight < 1 would DOWN-weight the rare class; refused
+            if not (math.isfinite(getattr(self, _n)) and getattr(self, _n) >= 1.0):
+                raise ValueError(f"{_n} must be a finite number >= 1, got {getattr(self, _n)!r}")
         if self.level_head not in LEVEL_HEAD_MODES:
             raise ValueError(f"level_head must be one of {LEVEL_HEAD_MODES}, got {self.level_head!r}")
         if not (math.isfinite(self.w_level) and self.w_level >= 0.0):
@@ -995,9 +1001,11 @@ class V8FMini(nn.Module):
         # T: masked BCE / partial-label CE / Huber at T's tick frame
         w = lt["goal_w"] * lt["has"][:, None].float()
         bce = F.binary_cross_entropy_with_logits(out["goal_logits"], lt["goal_y"], reduction="none")
+        if cfg.goal_pos_weight_stop != 1.0:          # PREREG_V8F_STOPBAL: the STOP_POINT column's POSITIVE term x W (pos_weight semantics); 1.0 = this branch is not taken = the tip, bit for bit
+            bce = bce + (cfg.goal_pos_weight_stop - 1.0) * F.one_hot(torch.tensor(STOP_I, device=bce.device), bce.shape[-1]).to(bce.dtype) * lt["goal_y"] * F.softplus(-out["goal_logits"])
         T["goal"] = (bce * w).sum() / w.sum().clamp_min(1.0)
         T["lat"] = self._partial_ce(out["lat_logits"], lt["lat_al"], lt["has"])
-        T["lon"] = self._partial_ce(out["lon_logits"], lt["lon_al"], lt["has"])
+        T["lon"] = self._partial_ce(out["lon_logits"], lt["lon_al"], lt["has"], cfg.lon_class_weight_stop)
         tgt = (lt["cons"] - self.cons_mu) / self.cons_sd
         if cfg.cons_absent == "zero":                # PREREG_V8F_CZ: an absent constraint's target is the 0 O reads under teacher forcing
             m = lt["has"][:, None].expand_as(tgt)
@@ -1060,12 +1068,14 @@ class V8FMini(nn.Module):
         return out
 
     @staticmethod
-    def _partial_ce(logits: Tensor, allowed: Tensor, has: Tensor) -> Tensor:
+    def _partial_ce(logits: Tensor, allowed: Tensor, has: Tensor, stop_w: float = 1.0) -> Tensor:
         """-log sum_{c in allowed} p_c ; rows with an empty allowed set (IGNORE) or no label are masked."""
         valid = allowed.any(-1) & has
         lse = torch.logsumexp(logits, -1)
         lsa = torch.logsumexp(logits.masked_fill(~allowed, float("-inf")), -1)
         l = torch.where(valid, lse - lsa, torch.zeros_like(lse))
+        if stop_w != 1.0:                            # PREREG_V8F_STOPBAL: rows whose allowed set contains STOP (LON_STOP_I) x W; the denominator stays the valid-row count; 1.0 = not taken = the tip
+            l = l * (1.0 + (stop_w - 1.0) * (allowed[:, LON_STOP_I] & valid).to(l.dtype))
         return l.sum() / valid.float().sum().clamp_min(1.0)
 
     # ---- bookkeeping ------------------------------------------------------------------------------------------
@@ -1093,6 +1103,7 @@ class V8FMini(nn.Module):
                 "cons_absent": cfg.cons_absent, "code_mix": cfg.code_mix,        # PREREG_V8F_MIXO: the teacher-forcing granularity the BUILT model's _forward reads
                 "o_interface": cfg.o_interface,                                # PREREG_V8F_FLAT: what the BUILT model's _forward hands O (full: S's checkpoints + T's code; cut: constants)
                 "w_acc": cfg.w_acc,                                            # PREREG_V8F_OACC: the weight the BUILT loss gives the acceleration term (0.0 = not in the total)
+                "goal_pos_weight_stop": cfg.goal_pos_weight_stop, "lon_class_weight_stop": cfg.lon_class_weight_stop,   # PREREG_V8F_STOPBAL: the weights the BUILT loss applies (1.0 = the tip's loss)
                 "launch_intent_w": cfg.launch_intent_w,                       # PREREG_V8F_LAUNCH_INTENT: the extra along-track weight the BUILT loss gives GT-launch samples (0.0 = not in the total)
                 "wm_idm_gamma": 0.0 if self.wm is None else float(self.wm.gamma),
                 "kin_mode": self.cfg.kin_mode, "wm_ch1_scale": None if self.wm is None else float(self.wm.ch1_scale),

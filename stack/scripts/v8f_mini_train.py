@@ -82,6 +82,7 @@ FLAG_CHECKS = {
     "code_mix": "lever:code_mix",             # PREREG_V8F_MIXO: argv -> make_config -> the BUILT model's levers (declared_vs_built) -> the probe of the code O actually read (code_mix_probe)
     "o_interface": "lever:o_interface",       # PREREG_V8F_FLAT: argv -> make_config -> the BUILT model's levers (declared_vs_built) -> G-LIVE's dead-weight set (live_check) -> the probe of what O is handed (o_interface_probe)
     "w_acc": "cfg:w_acc",                     # PREREG_V8F_OACC: argv -> make_config -> the BUILT config AND built_levers (declared_vs_built) -> acc_probe (the BUILT loss's total moves by exactly w_acc x the acc term, and O's head receives its gradient)
+    "goal_pos_weight_stop": "cfg:goal_pos_weight_stop", "lon_class_weight_stop": "cfg:lon_class_weight_stop",   # PREREG_V8F_STOPBAL: argv -> make_config -> the BUILT config AND built_levers (declared_vs_built) -> selfcheck.json levers
     "launch_intent_w": "cfg:launch_intent_w",  # PREREG_V8F_LAUNCH_INTENT: argv -> make_config -> the BUILT config AND built_levers (declared_vs_built) -> launch_intent_probe (G-LIVE: the mask is the loop's own call `launch_stage`, the BUILT loss's total moves by exactly w_traj x W x term / 3 on launch rows, O's head receives its gradient, an all-False mask reads EXACTLY 0.0) -> `b["launch"] = lmask` in the loop
     # PREREG_V8F_HACC_MC section 7 (O-RECOVER): the ego-state perturbation. `ego:<k>` = equals the BUILT perturber's lever (D.EgoPerturb.built_levers(), the object the training loop calls
     # `.apply` on): argv -> make_ego_perturb -> the perturber -> declared_vs_built (bad_ego_perturb) -> G-LIVE on a perturbed batch + ego_perturb_probe (the perturbed tensors reach the loss
@@ -139,6 +140,10 @@ def build_parser():
     ap.add_argument("--w-acc", dest="w_acc", type=float, default=0.0,
                     help="PREREG_V8F_OACC: the weight of the acceleration-matching term on O's plan (the second difference on the 0.2 s grid, origin knot included, of O's plan minus the GT's, squared, mean over the GT-valid steps). "
                          "0.0 (default) = the term is not in the loss = every earlier arm, bit for bit. > 0 = OACC's X: the value comes from the PREREG's rule (v8f_mini_eval_oacc.py wacc), is written into the argv and never tuned")
+    ap.add_argument("--goal-pos-weight-stop", dest="goal_pos_weight_stop", type=float, default=1.0,
+                    help="PREREG_V8F_STOPBAL: W >= 1, the positive weight of the STOP_POINT entry of T's goal BCE. 1.0 (default) = the tip's loss, bit for bit")
+    ap.add_argument("--lon-class-weight-stop", dest="lon_class_weight_stop", type=float, default=1.0,
+                    help="PREREG_V8F_STOPBAL: W >= 1, the weight of the STOP-containing rows in T's lon partial CE (denominator = valid rows). 1.0 (default) = the tip's loss, bit for bit")
     ap.add_argument("--launch-intent-w", dest="launch_intent_w", type=float, default=0.0,
                     help="PREREG_V8F_LAUNCH_INTENT: W, the EXTRA weight on O's along-track distance over knots 1-12 (tau 0.2-2.4 s, the executed horizon at m = 10) for GT-launch TRAIN samples (the LOGGED v0 < 6 m/s and the GT chord speed over the "
                          "last 0.2 s of the 6 s horizon >= v0 + 1 m/s; label-side, nothing of it is read at inference). The term is W x the along-axis, knots 1-12 slice of ADE's own per-knot distance, on launch samples only: on a launch sample that slice "
@@ -318,7 +323,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
-                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w,
+                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w, goal_pos_weight_stop=a.goal_pos_weight_stop, lon_class_weight_stop=a.lon_class_weight_stop,
                            level_head=a.level_head, w_level=a.w_level,
                            lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond)
 
@@ -980,6 +985,11 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
         bad.append(f"lever launch_intent_w: declared {a.launch_intent_w} but built {built.get('launch_intent_w')}")
     if a.launch_intent_w > 0.0 and not model.cfg.w_traj > 0.0:
         bad.append(f"launch_intent_w {a.launch_intent_w} declared but w_traj is {model.cfg.w_traj}: the term enters the total scaled by w_traj -- a lever that is declared and does nothing")
+    for _n in ("goal_pos_weight_stop", "lon_class_weight_stop"):      # PREREG_V8F_STOPBAL: argv -> built (G-DVB); a weight < 1 is refused
+        if not (math.isfinite(getattr(a, _n)) and getattr(a, _n) >= 1.0):
+            bad.append(f"{_n} {getattr(a, _n)!r} is not a finite number >= 1")
+        if built.get(_n) != getattr(a, _n):
+            bad.append(f"lever {_n}: declared {getattr(a, _n)} but built {built.get(_n)}")
     if not built["prior_frozen"]:
         bad.append("the P10 prior is not frozen")
     if model.cfg.n_tok != (40 if a.grid == "pool4x10" else 160):
@@ -993,7 +1003,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
     if built["wm"] != "off" and built["wm_ch1_scale"] != M.CH1_SCALE[a.kin_mode]:
         bad.append(f"WM action channel 1 scale {built['wm_ch1_scale']} != {M.CH1_SCALE[a.kin_mode]} for kin_mode {a.kin_mode}")
     for f in ("hist", "hmax", "d", "n_q", "nb", "p_gt_start", "p_gt_end", "w_ckpt", "w_tac", "w_cons", "w_traj", "w_pen",
-              "w_pen_self", "w_wm", "detach_upper", "kin_mode", "w_acc", "launch_intent_w"):
+              "w_pen_self", "w_wm", "detach_upper", "kin_mode", "w_acc", "launch_intent_w", "goal_pos_weight_stop", "lon_class_weight_stop"):
         want = {"hist": a.hist, "hmax": cfg.hmax, "d": a.d, "n_q": a.n_q, "nb": a.nb}.get(f, getattr(a, f, None))
         got = getattr(model.cfg, f)
         if want is not None and not (got == want or (isinstance(want, float) and abs(got - want) < 1e-12)):
