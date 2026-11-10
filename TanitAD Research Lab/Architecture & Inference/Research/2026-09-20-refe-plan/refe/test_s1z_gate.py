@@ -172,6 +172,8 @@ def real_g18(mutate=None):
                 "controls_exactly_zero": True, "micro_batch_pairs": {h: {"sets": 2, "sets_with_clean": 2, "sets_with_pair": 1, "pairs": 2, "hard": 3} for h in HEADS}, "share_micro": share,
                 "micro_batches": 16, "bank_share": bank, "bank_stride": 5, "heads_built": list(tl.heads), "ade_built": tl.ade_built, "topk_built": tl.topk_built,
                 "radius_filter_built": tl.radius_filter, "mining_built": tl.mining, "mutate_noradius": mutate == "noradius", "mutate_notopk": mutate == "notopk", "mutate_drop_loss": drop_,
+                "loss_grad_noise_w0_vs_w0": {m: (0.0 if m == "score_head" else 1e-6) for m in C.SCORER_GROUPS}, "noise_factor": S.TWIN_NOISE_FACTOR,
+                "probe_batch": {"found": True, "index": 3, "searched": 4, "search_limit": S.TWIN_PROBE_SEARCH_MAX, "pairs_per_head": {h: {"pairs": 2} for h in HEADS}, "reason": None},
                 "ok": not mutate}
     finally:
         for e in S.TWIN_MUTATE_ENVS:
@@ -206,6 +208,29 @@ g = real_g18()
 g["micro_batches"] = 0
 assert any("no micro-batch" in r for r in judge(g))
 assert any("not a dict" in r for r in C.judge_g18(None, ns))
+# 2026-11-10: the noise rule and the probe batch are re-judged from the raw fields (the pod preflight probed a pairless micro-batch: delta was noise and score_head read 0.0)
+assert C.G18_NOISE_FACTOR == S.TWIN_NOISE_FACTOR == 10.0, "the gate and the trainer must hold the same noise factor"
+g = real_g18()
+g["loss_grad_noise_w0_vs_w0"]["score_dec"] = 1.5e-3                       # noise == delta: RED by the 10x rule alone
+assert any("does not exceed" in r and "score_dec" in r for r in judge(g)), judge(g)
+g = real_g18()
+g["loss_grad_noise_w0_vs_w0"]["score_q_mlp"] = 2e-4                       # delta 7.5x noise: under the 10x rule, RED
+assert any("does not exceed" in r and "score_q_mlp" in r for r in judge(g)), judge(g)
+g = real_g18()
+g["loss_grad_noise_w0_vs_w0"]["score_q_mlp"] = 1e-4                       # delta 15x noise: passes (the rule is not a switch)
+assert judge(g) == [], judge(g)
+g = real_g18()
+del g["loss_grad_noise_w0_vs_w0"]
+assert any("no finite w=0 vs w=0 noise floor" in r for r in judge(g))
+g = real_g18()
+g["noise_factor"] = 2.0
+assert any("noise_factor" in r for r in judge(g))
+g = real_g18()
+g["probe_batch"] = {"found": False, "reason": "searched 400"}
+assert any("probe ran on no micro-batch" in r for r in judge(g))
+g = real_g18()
+g["micro_batch_pairs"]["DAC"]["pairs"] = 0                               # the pod's 2026-11-10 record: 0 pairs in the probe micro-batch
+assert any("head DAC has no kept pair in the probe micro-batch" in r for r in judge(g))
 print("G5 ok")
 
 # ---- G6 G-DVB and the obliged gates

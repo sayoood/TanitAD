@@ -54,6 +54,7 @@ TRAINABLE_GROUPS = ("backbone.lora", "registers", "queries", "pos3d_mlp", "reg_c
                     "score_dec", "score_q_mlp", "score_head")
 FROZEN_GROUPS = ("backbone", "goal_freqs")
 SCORER_GROUPS = ("score_dec", "score_q_mlp", "score_head")
+G18_NOISE_FACTOR = 10.0                  # == scorer_finetune.TWIN_NOISE_FACTOR (test_s1z_gate pins the two equal): G18's w=1 vs w=0 delta must exceed this many times the w=0 vs w=0 noise
 
 
 def arm_is(name: str, arm: str | None) -> bool:
@@ -1044,6 +1045,22 @@ def judge_g18(g18, ns) -> list:
     d = g18.get("loss_grad_delta_w1_minus_w0") or {}
     if set(d) != set(SCORER_GROUPS) or not all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) and x > 0.0 for x in d.values()):
         out.append(f"G18: L_twin is not live IN the loss on every scorer module (grad(w=1) - grad(w=0) = {d})")
+    # 2026-11-10 (the pod preflight probed a pairless micro-batch): the delta must clear 10x the w=0 vs w=0 run-to-run noise on every module, on a probe batch with >= 1 kept pair on every head
+    nz = g18.get("loss_grad_noise_w0_vs_w0")
+    if not isinstance(nz, dict) or set(nz) != set(SCORER_GROUPS) or not all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) and x >= 0.0 for x in nz.values()):
+        out.append(f"G18: no finite w=0 vs w=0 noise floor on every scorer module ({nz!r})")
+    elif g18.get("noise_factor") != G18_NOISE_FACTOR:
+        out.append(f"G18: noise_factor {g18.get('noise_factor')!r} != the gate's {G18_NOISE_FACTOR}")
+    elif set(d) == set(SCORER_GROUPS):
+        weak = {m: (d[m], nz[m]) for m in SCORER_GROUPS if not (isinstance(d[m], (int, float)) and not isinstance(d[m], bool) and d[m] > G18_NOISE_FACTOR * nz[m])}
+        if weak:
+            out.append(f"G18: grad(w=1) - grad(w=0) does not exceed {G18_NOISE_FACTOR}x the w=0 vs w=0 noise on {sorted(weak)} ((delta, noise) = {weak})")
+    pb = g18.get("probe_batch")
+    if not (isinstance(pb, dict) and pb.get("found") is True):
+        out.append(f"G18: the gradient probe ran on no micro-batch with a kept pair on every head ({pb.get('reason') if isinstance(pb, dict) else pb!r})")
+    for h, v in (g18.get("micro_batch_pairs") or {}).items():
+        if not (isinstance(v, dict) and isinstance(v.get("pairs"), int) and not isinstance(v.get("pairs"), bool) and v["pairs"] > 0):
+            out.append(f"G18: head {h} has no kept pair in the probe micro-batch (L_twin is identically zero there)")
     ctl = g18.get("control_w0_term_alone_grad_abs") or {}
     if set(ctl) != set(SCORER_GROUPS) or any(x != 0.0 for x in ctl.values()) or g18.get("controls_exactly_zero") is not True:
         out.append("G18: the --twin-w 0 control does not read EXACTLY 0.0 (the probe is not proved able to read zero)")

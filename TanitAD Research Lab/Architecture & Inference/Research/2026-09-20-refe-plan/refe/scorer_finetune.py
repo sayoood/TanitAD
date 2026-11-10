@@ -276,6 +276,8 @@ TWIN_ADE_REGISTERED, TWIN_TOPK_REGISTERED = 1.0, 8         # PREREG_S1Z_P6 secti
 TWIN_MUTATE_ENVS = ("REFE_TWIN_MUTATE_NORADIUS", "REFE_TWIN_MUTATE_NOTOPK", "REFE_TWIN_MUTATE_DROP_LOSS")      # deliberate regressions: NORADIUS (the ADE filter removed) and NOTOPK (the top-K mining removed) must turn the built-fact rows and G18 RED; DROP_LOSS must turn G18 RED
 TWIN_UNBOUNDED = 10 ** 6                                   # what a REMOVED radius / top-K reads as in the built facts (a number, so the data event stays valid JSON)
 TWIN_PREFLIGHT_MICRO = 16                                  # G18 measures the per-head share of sets with a kept pair over this many micro-batches (the real top-K rule on the live logits)
+TWIN_PROBE_SEARCH_MAX = 400                              # G18 gradient probe: the micro-batches searched (no gradient) for one with a kept pair on EVERY head
+TWIN_NOISE_FACTOR = 10.0                                   # G18: the w=1 vs w=0 gradient delta must exceed this many times the w=0 vs w=0 delta (run-to-run noise of two forward passes) on every scorer module
 
 
 def twin_refusals(a):
@@ -2533,21 +2535,49 @@ def main() -> int:
                    "mutate_epbalance": os.environ.get("REFE_PAIR_MUTATE_EPBALANCE") == "1"}
             gates["G16_pair_live_balanced"] = g16
         if twiner is not None and not a.pair_calibrate:      # G18 (S1Z): L_twin is IN the loss (grad(w=1) - grad(w=0) != 0 on every arm-B module), its control reads EXACTLY 0.0, every head has pairs on the live logits
-            def _flat_twin_grad(w_):
+            # PROBE BATCH (2026-11-10 fix): L_twin is identically zero on a micro-batch with no kept pair, so the gradient probe runs on the first micro-batch of the training loader that holds >= 1 kept pair on EVERY named head
+            # under the live top-K rule (no gradient), searched up to TWIN_PROBE_SEARCH_MAX micro-batches; none found = G18 fails and says so
+            pb_batch, pb_rows, pb_idx, pb_pairs, n_srch = None, None, -1, {}, 0
+            with torch.no_grad():
+                while pb_batch is None and n_srch < TWIN_PROBE_SEARCH_MAX:
+                    seen_ = 0
+                    for batch_p in dl:
+                        seen_ += 1
+                        batch_p, rows_p = split_rows(batch_p, a.epo)
+                        _s0p, _sAp, sBp_, tgp_ = fwd(batch_p)
+                        twin_term(sBp_, tgp_, 1.0)
+                        cnt_ = {h_: dict(v_) for h_, v_ in twiner.last.items()}
+                        n_srch += 1
+                        if all(cnt_[h_]["sets_with_pair"] > 0 and cnt_[h_]["pairs"] > 0 for h_ in twiner.heads):
+                            pb_batch, pb_rows, pb_idx, pb_pairs = batch_p, rows_p, n_srch - 1, cnt_
+                            break
+                        if n_srch >= TWIN_PROBE_SEARCH_MAX:
+                            break
+                    if seen_ == 0:
+                        break
+            probe_reason = None if pb_batch is not None else f"no micro-batch with a kept pair on every head ({','.join(twiner.heads)}) under the live top-K rule within the search limit of {TWIN_PROBE_SEARCH_MAX} micro-batches (searched {n_srch})"
+            d_on = {m_: 0.0 for m_ in SCORER}
+            noise_m = {m_: 0.0 for m_ in SCORER}
+            ctl_read = {m_: 0.0 for m_ in SCORER}
+            st_on = {}
+            if pb_batch is not None:
+                def _flat_twin_grad(w_):
+                    armB.zero_grad(set_to_none=True)
+                    s0_, sA_, sB_, t_ = fwd(pb_batch)
+                    _a, lB_, _l, _e = train_losses(s0_, sA_, sB_, t_, pb_rows, 0, twin_w=w_)        # the REAL assembly: a term dropped from `loss` cannot show here
+                    lB_.backward()
+                    return {m_: torch.cat([(p_.grad if p_.grad is not None else torch.zeros_like(p_)).detach().double().flatten() for p_ in getattr(armB, m_).parameters()]) for m_ in SCORER}
+                g0a_, g0b_, g1_ = _flat_twin_grad(0.0), _flat_twin_grad(0.0), _flat_twin_grad(1.0)       # w=0 twice (the run-to-run noise floor of two separate forward passes), then w=1
+                st_on = {h_: dict(v_) for h_, v_ in twiner.last.items()}
+                noise_m = {m_: float((g0a_[m_] - g0b_[m_]).abs().sum()) for m_ in SCORER}
+                d_on = {m_: float((g1_[m_] - g0a_[m_]).abs().sum()) for m_ in SCORER}
                 armB.zero_grad(set_to_none=True)
-                s0_, sA_, sB_, t_ = fwd(batch)
-                _a, lB_, _l, _e = train_losses(s0_, sA_, sB_, t_, prow, 0, twin_w=w_)        # the REAL assembly: a term dropped from `loss` cannot show here
-                lB_.backward()
-                return {m_: torch.cat([(p_.grad if p_.grad is not None else torch.zeros_like(p_)).detach().double().flatten() for p_ in getattr(armB, m_).parameters()]) for m_ in SCORER}
-            g_on, g_off = _flat_twin_grad(1.0), _flat_twin_grad(0.0)
-            st_on = {h_: dict(v_) for h_, v_ in twiner.last.items()}
-            d_on = {m_: float((g_on[m_] - g_off[m_]).abs().sum()) for m_ in SCORER}
-            armB.zero_grad(set_to_none=True)
-            s0_, sA_, sB_, t_ = fwd(batch)
-            ctl = twin_term(sB_, t_, 0.0)                                                       # the term alone, weight 0.0: graph live, factor 0
-            ctl.backward()
-            ctl_read = module_grad_abs(armB)
-            armB.zero_grad(set_to_none=True)
+                s0_, sA_, sB_, t_ = fwd(pb_batch)
+                ctl = twin_term(sB_, t_, 0.0)                                                       # the term alone, weight 0.0: graph live, factor 0
+                ctl.backward()
+                ctl_read = module_grad_abs(armB)
+                armB.zero_grad(set_to_none=True)
+            noise_ok = all(math.isfinite(d_on[m_]) and math.isfinite(noise_m[m_]) and d_on[m_] > 0.0 and d_on[m_] > TWIN_NOISE_FACTOR * noise_m[m_] for m_ in SCORER)
             # the share of sets with >= 1 kept pair per head on the LIVE logits (the real top-K rule), over TWIN_PREFLIGHT_MICRO micro-batches of the training loader (no gradient)
             share_m = {h_: {"sets": 0, "sets_with_clean": 0, "sets_with_pair": 0, "pairs": 0, "hard": 0} for h_ in twiner.heads}
             n_m = 0
@@ -2581,10 +2611,13 @@ def main() -> int:
                     bs_["sets"] += 1; bs_["sets_with_clean"] += int(nc_ > 0); bs_["sets_with_pair"] += int(ii_.numel() > 0)
             for h_, bs_ in bank_share.items():
                 bs_["share_with_pair"] = bs_["sets_with_pair"] / max(bs_["sets"], 1)
-            g18 = {"ok": bool(all(math.isfinite(d_on[m_]) and d_on[m_] > 0.0 for m_ in SCORER) and all(v_ == 0.0 for v_ in ctl_read.values())
+            g18 = {"ok": bool(pb_batch is not None and noise_ok and all(v_ == 0.0 for v_ in ctl_read.values())
                               and all(share_m[h_]["share_with_pair"] > 0.0 for h_ in twiner.heads) and all(bank_share[h_]["share_with_pair"] > 0.0 for h_ in twiner.heads)
                               and twiner.radius_filter and twiner.mining and not any(os.environ.get(k_) == "1" for k_ in TWIN_MUTATE_ENVS)),
-                   "loss_grad_delta_w1_minus_w0": d_on, "control_w0_term_alone_grad_abs": ctl_read, "controls_exactly_zero": bool(all(v_ == 0.0 for v_ in ctl_read.values())),
+                   "loss_grad_delta_w1_minus_w0": d_on, "loss_grad_noise_w0_vs_w0": noise_m, "noise_factor": TWIN_NOISE_FACTOR, "noise_rule_ok": bool(noise_ok),
+                   "delta_over_noise": {m_: ((d_on[m_] / noise_m[m_]) if noise_m[m_] > 0.0 else None) for m_ in SCORER},
+                   "probe_batch": {"found": pb_batch is not None, "index": pb_idx, "searched": n_srch, "search_limit": TWIN_PROBE_SEARCH_MAX, "pairs_per_head": pb_pairs, "reason": probe_reason},
+                   "control_w0_term_alone_grad_abs": ctl_read, "controls_exactly_zero": bool(all(v_ == 0.0 for v_ in ctl_read.values())),
                    "micro_batch_pairs": st_on, "share_micro": share_m, "micro_batches": n_m, "bank_share": bank_share, "bank_stride": stride,
                    "heads_built": list(twiner.heads), "ade_built": twiner.ade_built, "topk_built": twiner.topk_built, "radius_filter_built": bool(twiner.radius_filter), "mining_built": bool(twiner.mining),
                    "mutate_noradius": os.environ.get("REFE_TWIN_MUTATE_NORADIUS") == "1", "mutate_notopk": os.environ.get("REFE_TWIN_MUTATE_NOTOPK") == "1",

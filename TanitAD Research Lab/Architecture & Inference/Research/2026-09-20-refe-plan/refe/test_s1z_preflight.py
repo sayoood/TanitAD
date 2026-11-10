@@ -10,6 +10,9 @@
   D --pair-calibrate with --twin-heads writes a finite positive lambda_z with every head's share > 0 over 50 micro-batches
   E inconsistent --twin-* argvs never start (rc 4)
   F the training loop: 25 updates; the per-head share of sets with a kept pair is in the trainer's log and in the done event; arm A is bit-equal to the OFF run's arm A, arm B is not
+  H G18 PROBE BATCH + NOISE FLOOR (2026-11-10 fix): the gradient probe runs on a micro-batch that holds a kept pair on EVERY head (a pairless micro-batch is never used; none within the search limit = G18 fails
+    and names the limit); delta(w=1 vs w=0) must exceed 10x the w=0 vs w=0 delta on every scorer module (seeded logit noise injected: a correct trainer passes with tiny noise, fails when noise reaches delta; a
+    dropped loss under noise has delta ~ noise and fails by the rule alone)
   G a navtest log or token among the training sets is COUNTED by the trainer's audit and the S1Z profile's G-DVB expect rows go RED
 Evidence class: MEASURED on a stub trunk; the real ViT-L trunk, the real bank and bf16 autocast are NOT exercised here (the pod preflight does that).
 """
@@ -39,6 +42,8 @@ M_PROP, T_H = 8, 20
 TWIN_ARGS = ["--twin-heads", "NC,DAC,TTC", "--twin-ade", "1.0", "--twin-topk", "8"]
 TW = TWIN_ARGS + ["--twin-w", "0.3"]
 HEADS = ("NC", "DAC", "TTC")
+SPARSE = {"keep": None}          # None = every set holds a near-twin hard negative per head; else only the sets whose index n has n % 16 in `keep` do (the others are all clean: no pair on any head)
+NOISE = {"sigma": 0.0, "gen": None}      # seeded additive noise on the score logits of EVERY forward pass (a stand-in for GPU run-to-run noise between two forward passes)
 
 
 class TwinBank(TR.StubBank):
@@ -65,6 +70,8 @@ class TwinBank(TR.StubBank):
                 elif fail == 2:
                     tg[2 * grp + 1, 3] = 0.0
                     tg[2 * grp + 1, 2] = 0.5
+            if SPARSE["keep"] is not None and (n % 16) not in SPARSE["keep"]:
+                tg[:] = [1, 1, 0.8, 1, 1, 1]
             self.by[k] = (e[0], tr, tg, e[3], e[4])
 
     def get(self, log_name, token, step, rank=0):
@@ -96,17 +103,23 @@ class TwinModel(AUXT.Stub256REFe):
         super().__init__(cfg)
         self.cfg = cfg
 
+    def score_trajectories(self, trajs, sctx):
+        s = AUXT.Stub256REFe.score_trajectories(self, trajs, sctx)
+        if NOISE["sigma"] > 0.0:
+            s = s + NOISE["sigma"] * torch.randn(s.shape, generator=NOISE["gen"])
+        return s
 
-INJECT_ANCHOR = "            ctl = twin_term(sB_, t_, 0.0)"
-INJECT = '''            armB.zero_grad(set_to_none=True)
-            _s0i, _sAi, _sBi, _ti = fwd(batch)
-            _lp = losses(_sAi, _sBi, _ti, a.lam)[1]
-            _lo = train_losses(_s0i, _sAi, _sBi, _ti, prow, 0, twin_w=0.0)[1]
-            _prm = [p_ for m_ in SCORER for p_ in getattr(armB, m_).parameters()]
-            _gp = torch.autograd.grad(_lp, _prm, retain_graph=True, allow_unused=True)
-            _go = torch.autograd.grad(_lo, _prm, retain_graph=True, allow_unused=True)
-            IDENT.append(bool(float(_lp) == float(_lo) and all(((x_ is None) == (y_ is None)) and (x_ is None or torch.equal(x_, y_)) for x_, y_ in zip(_gp, _go))))
-            armB.zero_grad(set_to_none=True)
+
+INJECT_ANCHOR = "                ctl = twin_term(sB_, t_, 0.0)"
+INJECT = '''                armB.zero_grad(set_to_none=True)
+                _s0i, _sAi, _sBi, _ti = fwd(pb_batch)
+                _lp = losses(_sAi, _sBi, _ti, a.lam)[1]
+                _lo = train_losses(_s0i, _sAi, _sBi, _ti, pb_rows, 0, twin_w=0.0)[1]
+                _prm = [p_ for m_ in SCORER for p_ in getattr(armB, m_).parameters()]
+                _gp = torch.autograd.grad(_lp, _prm, retain_graph=True, allow_unused=True)
+                _go = torch.autograd.grad(_lo, _prm, retain_graph=True, allow_unused=True)
+                IDENT.append(bool(float(_lp) == float(_lo) and all(((x_ is None) == (y_ is None)) and (x_ is None or torch.equal(x_, y_)) for x_, y_ in zip(_gp, _go))))
+                armB.zero_grad(set_to_none=True)
 '''
 DROP_LINE = "            lB = lB + twin_term(sxB, tg, twin_w)\n"
 
@@ -295,6 +308,45 @@ with tempfile.TemporaryDirectory(dir=os.environ.get("SCORER1_TMP") or None) as t
     assert set(done["twin_share"]) == set(HEADS) and all(v["share_with_pair"] == 1.0 for v in done["twin_share"].values()), done["twin_share"]
     assert not any(("twin" in r or "twin_share" in r) for r in base25["rows"]["sft.jsonl"]), "the OFF run logs no twin share"
     print("F ok (25 updates: arm A bit-equal to the OFF run, arm B moved, the per-head share is in the train row and the done event)")
+
+    # ---- H G18 probe batch and noise floor
+    def with_world(keep, sigma, tag, env=None):
+        SPARSE["keep"], NOISE["sigma"], NOISE["gen"] = keep, sigma, torch.Generator().manual_seed(4242)
+        try:
+            return run(td, tag, extra=TW, meta={"nav_mode": "command"}, env=env)
+        finally:
+            SPARSE["keep"], NOISE["sigma"], NOISE["gen"] = None, 0.0, None
+    # H1 sparse bank (1 set in 8 holds pairs): the probe batch is searched for, holds a pair on every head, and the gradient is read there
+    h1 = with_world({3, 11}, 0.0, "h1")
+    assert h1["rc_pre"] == 0 and h1["pass_json"] is not None, (h1["rc_pre"], h1.get("out_pre", "")[-400:])
+    g1 = g18_of(pre_rows(h1)[1])
+    pbk = g1["probe_batch"]
+    assert g1["ok"] is True and pbk["found"] is True and pbk["reason"] is None and pbk["search_limit"] == S.TWIN_PROBE_SEARCH_MAX == 400, g1
+    assert pbk["searched"] == pbk["index"] + 1 and set(pbk["pairs_per_head"]) == set(HEADS), pbk
+    assert all(pbk["pairs_per_head"][h_]["sets_with_pair"] > 0 and pbk["pairs_per_head"][h_]["pairs"] > 0 for h_ in HEADS), pbk      # a pairless micro-batch is never the probe batch
+    assert all(g1["micro_batch_pairs"][h_]["sets_with_pair"] > 0 for h_ in HEADS), g1["micro_batch_pairs"]                              # the w=1 pass really saw pairs
+    assert all(v == 0.0 for v in g1["loss_grad_noise_w0_vs_w0"].values()) and all(v > 0.0 for v in g1["loss_grad_delta_w1_minus_w0"].values()), g1
+    assert pbk["index"] > 0, ("the sparse bank must have forced the search past at least one pairless micro-batch", pbk)
+    # H2 a bank with no pair anywhere: no probe batch within the limit, G18 fails and says so; nothing is passed
+    h2 = with_world(set(), 0.0, "h2")
+    g2 = g18_of(pre_rows(h2)[1])
+    assert h2["pass_json"] is None and g2["ok"] is False and g2["probe_batch"]["found"] is False and g2["probe_batch"]["searched"] == 400, g2["probe_batch"]
+    assert "search limit of 400" in g2["probe_batch"]["reason"], g2["probe_batch"]
+    # H3 tiny seeded noise: a correct trainer still passes (delta is far above 10x noise); the noise is really read (non-zero)
+    h3 = with_world(None, 1e-6, "h3")
+    g3 = g18_of(pre_rows(h3)[1])
+    assert g3["ok"] is True and g3["noise_rule_ok"] is True and all(v > 0.0 for v in g3["loss_grad_noise_w0_vs_w0"].values()), g3
+    assert all(g3["delta_over_noise"][m_] > 10.0 for m_ in C.SCORER_GROUPS), g3["delta_over_noise"]
+    # H4 noise as large as the effect: the 10x rule fails on a CORRECT trainer (no mutation env), and judge-visible fields say why
+    h4 = with_world(None, 1.0, "h4")
+    g4 = g18_of(pre_rows(h4)[1])
+    assert h4["pass_json"] is None and g4["ok"] is False and g4["noise_rule_ok"] is False and not g4["mutate_drop_loss"], g4
+    assert any(g4["delta_over_noise"][m_] is not None and g4["delta_over_noise"][m_] <= 10.0 for m_ in C.SCORER_GROUPS), g4["delta_over_noise"]
+    # H5 the dropped loss under noise: delta is noise (w=1 and w=0 are the same assembly); the rule alone fails every module, with the env read as a bonus
+    h5 = with_world(None, 1e-3, "h5", env={"REFE_TWIN_MUTATE_DROP_LOSS": "1"})
+    g5 = g18_of(pre_rows(h5)[1])
+    assert h5["pass_json"] is None and g5["ok"] is False and g5["noise_rule_ok"] is False and all(g5["delta_over_noise"][m_] is not None and g5["delta_over_noise"][m_] < 10.0 for m_ in C.SCORER_GROUPS), g5
+    print("H ok (probe batch holds a pair on every head and is found past a pairless one; no pair within 400 -> explicit failure; tiny noise passes, noise == effect fails, a dropped loss under noise fails by the 10x rule)")
 
     # ---- G a navtest log / token among the training sets
     nl = os.path.join(td, "nt_logs.json")
