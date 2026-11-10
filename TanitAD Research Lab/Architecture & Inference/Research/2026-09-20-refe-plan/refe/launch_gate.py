@@ -634,6 +634,59 @@ PROFILES["refe_s1z_p6"] = {**PROFILES["refe_scorer1p6"], "name": "refe_s1z_p6", 
                            "clock_na": "S1Z has no label clock of its own: it trains on the PDM labels of P6's own proposals (the SCORER1P6 label set, the same pin; G-DVB asserts the coverage and 0 stale from the trainer's "
                                        "data event) on a frozen generator, from a command-mode checkpoint (G-DVB asserts the built nav_mode)"}
 
+# ============================================================================================ SEED REPLICATES of the P6 scorer arms (PREREG_SCORER1P6 O5, PREREG_S1Z_P6 Z1 / Z5; chain refe/rep_chain.sh; pod script refe/rep_pod.sh)
+# A replicate is its PARENT arm's argv with the data-order seed and the --out dir swapped and NOTHING else (the trainer is deterministic at a fixed seed: a replicate that changes nothing reads a floor of 0.0).
+# rep_argv derives the argv FROM the parent's builder, so "differs in the seed only" is true by construction and test_rep_gate.py proves it by a token diff.  lambda_p / lambda_z are the PARENT's measured values
+# (read from the parent's calibrate dir by rep_pod.sh), never re-measured: a re-measured lambda would move a second lever.  Navtest lists, data pin, checkpoint = the parent's.  Two NEW profiles beside the
+# 19 existing ones (a pair/control family and the twin family differ in the rules the profile carries); no existing profile or shared constant is edited.
+REP_ROOT = "/workspace/data/refe_rep"
+REP_PKG = "/workspace/refe-plan-rep"
+REP_ARMS = {      # replicate arm -> its parent arm, the parent's family and the replicate's data-order seed (it must differ from the parent's)
+    "C0r2": {"parent": "C0", "family": "p6", "seed": 2},
+    "S1E1": {"parent": "S1E", "family": "p6", "seed": 1},
+    "S1Z1": {"parent": "S1Z", "family": "s1z", "seed": 1}}
+REP_PARENT_SEEDS = {"p6": SCORER1P6_ARM_SEED, "s1z": S1Z_ARM_SEED}
+
+
+def rep_arm_refusals(table: dict) -> list:
+    """Refusals of a replicate table {arm: {parent, family, seed}}: an unknown family or parent, an arm that is its own parent or another registered arm, and a seed EQUAL to the parent's (or not an int)."""
+    out = []
+    for arm, sp in table.items():
+        fam, parent, seed = sp.get("family"), sp.get("parent"), sp.get("seed")
+        seeds = REP_PARENT_SEEDS.get(fam)
+        if seeds is None or parent not in seeds:
+            out.append(f"replicate {arm}: parent {parent!r} is not an arm of family {fam!r}")
+            continue
+        if arm == parent or any(arm in s for s in REP_PARENT_SEEDS.values()):
+            out.append(f"replicate {arm}: the name is a registered parent arm")
+        if not isinstance(seed, int) or isinstance(seed, bool):
+            out.append(f"replicate {arm}: seed {seed!r} is not an int")
+        elif seed == seeds[parent]:
+            out.append(f"replicate {arm}: seed {seed} equals its parent {parent}'s seed: the trainer is deterministic at a fixed seed, so this arm would change nothing and read a floor of 0.0")
+    return out
+
+
+def rep_argv(arm: str, w=None) -> list:
+    """The argv of a replicate arm: the PARENT's argv (scorer1p6_argv / s1z_argv) with --seed and --out swapped, nothing else.  `w` is the parent's measured lambda (--pair-w / --twin-w) or None for the pin without it."""
+    if arm not in REP_ARMS:
+        raise KeyError(f"{arm!r} is not a replicate arm (one of {sorted(REP_ARMS)})")
+    sp = REP_ARMS[arm]
+    bad = rep_arm_refusals({arm: sp})
+    if bad:
+        raise ValueError("; ".join(bad))
+    toks = list(scorer1p6_argv(sp["parent"], w) if sp["family"] == "p6" else s1z_argv(sp["parent"], twin_w=w))
+    toks[toks.index("--seed") + 1] = str(sp["seed"])
+    toks[toks.index("--out") + 1] = REP_ROOT + "/" + arm.lower()
+    return toks
+
+
+REP_SUITE_EXTRA = [{"script": "test_rep_gate.py", "token": "ZZTEST_PASS"}]
+PROFILES["refe_rep_p6"] = {**PROFILES["refe_scorer1p6"], "name": "refe_rep_p6", "argv_kind": "rep", "root": REP_ROOT, "suite": SCORER1P6_SUITE + REP_SUITE_EXTRA,
+                           "rep_arms": {a: dict(REP_ARMS[a]) for a in ("C0r2", "S1E1")}, "arm_seed": {"C0r2": REP_ARMS["C0r2"]["seed"], "S1E1": REP_ARMS["S1E1"]["seed"]},
+                           "pair_spec": {"S1E1": dict(SCORER1P6_PAIR_SPEC["S1E"])}}
+PROFILES["refe_rep_s1z_p6"] = {**PROFILES["refe_s1z_p6"], "name": "refe_rep_s1z_p6", "argv_kind": "rep", "root": REP_ROOT, "suite": S1Z_SUITE + REP_SUITE_EXTRA,
+                               "rep_arms": {"S1Z1": dict(REP_ARMS["S1Z1"])}, "arm_seed": {"S1Z1": REP_ARMS["S1Z1"]["seed"]}}
+
 # RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
 # rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
 PROFILES["refe_rls1b"] = {**PROFILES["refe_rls1"], "name": "refe_rls1b", "suite": RLS1B_SUITE, "arm_class": RLS1B_ARM_CLASS, "arm_seeds": RLS1B_ARM_SEEDS,
@@ -1194,7 +1247,7 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
     p6 = prof.get("scorer1_kind") == "p6"                                  # PREREG_SCORER1P6: the arm table, the pair levers per arm, the root and the pin come from the PROFILE; refe_scorer1 carries none of them and keeps the module constants
     arm_seed, root = prof.get("arm_seed", SCORER1_ARM_SEED), prof.get("root", SCORER1_ROOT)
     pair_spec = prof.get("pair_spec", {"S1": {"heads": SCORER1_PAIR_HEADS, "dv": SCORER1_PAIR_DV, "nobalance": "", "nospeed": "", "gap": "", "mean": "pooled"}})
-    argv_of = s1z_argv if prof.get("argv_kind") == "s1z" else (scorer1p6_argv if p6 else scorer1_argv)         # S1Z (PREREG_S1Z_P6): its own argv builder, selected by a STRING in the profile (a function in a profile would make its fingerprint unstable)
+    argv_of = rep_argv if prof.get("argv_kind") == "rep" else s1z_argv if prof.get("argv_kind") == "s1z" else (scorer1p6_argv if p6 else scorer1_argv)         # S1Z (PREREG_S1Z_P6): its own argv builder, selected by a STRING in the profile (a function in a profile would make its fingerprint unstable)
     if p6 and prof.get("data_pin") is None:
         out.append(f"{name}: THE DATA PIN IS UNSET (launch_gate.SCORER1P6_DATA_PIN is None): the exact P6 label counts are not known yet, so label completeness cannot be asserted; "
                    "fill the pin from the finished Jobs A + B (pdm_label_complete.py --expect N) before any arm may be gated")
@@ -1223,6 +1276,11 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
     out += rs
     if ns.seed != arm_seed[arm]:
         out.append(f"{name} ({arm}) requires --seed {arm_seed[arm]} (the data-order seed, Amendment 1 item 5); the argv resolves to {ns.seed}")
+    if prof.get("rep_arms"):                                     # a seed replicate: its table is valid and the argv's seed is NOT the parent's (a replicate that changes nothing is refused)
+        out += rep_arm_refusals({arm: prof["rep_arms"][arm]})
+        rp = prof["rep_arms"][arm]
+        if ns.seed == REP_PARENT_SEEDS[rp["family"]][rp["parent"]]:
+            out.append(f"{name} ({arm}) resolves to --seed {ns.seed}, its parent {rp['parent']}'s seed: a replicate must move the data-order seed")
     if arm in pair_spec:
         sp = pair_spec[arm]
         if (ns.pair_calibrate or ns.pair_heads != sp["heads"] or not C._close(ns.pair_dv, sp["dv"]) or ns.pair_nobalance_heads != sp["nobalance"] or ns.pair_nospeed_heads != sp["nospeed"]
