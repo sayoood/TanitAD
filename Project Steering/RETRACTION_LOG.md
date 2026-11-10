@@ -18920,3 +18920,11 @@ instruments; only an undeclared one is a finding.
 **What is true (MEASURED, `code/gl1_key.py`):** on the same 24 sets the full-key join reads 89.5 % within 1 mm, max 0.0736 m. On the 34-set control it reads 71.8 % within 1 mm, max 0.084 m. The 99 % bar is still missed, as written.
 
 **Class / rule:** a join key narrower than the row's identity overwrites silently. Assert the row count after building a keyed lookup.
+
+## 2026-11-10 ~16:20 -- PREREAD_V8F_CONSORC's speed trigger named EGOWM as a lever on T's speed cells. Class: **A LEVER'S REACH ASSERTED WITHOUT TRACING IT TO THE QUANTITY**
+
+**What was written (landed 71cf2308; card `PREREAD_V8F_CONSORC.md`, What each outcome triggers):** under CONS-CARRY with kind speed, "the speed-information levers in flight (EGOWM, LoRA) are the right aim on this base too, and each of their reads adds this decomposition on its own checkpoints."
+
+**What is true (source, `theory/egowm/PREREG_V8F_EGOWM.md`, Arms):** EGOWM trains the world model only, "adapter, readers and planner frozen at M2b s{k}; driving cannot change, so T0". T's code on an EGOWM checkpoint equals M2b's, so the decomposition there would read a structural zero. Only LoRA (H-V8F-LORA-1, arm L) retrains T. Found when the CONSORC read came back (2026-11-10 16:06), before any EGOWM decomposition ran; the CONS-CARRY / speed outcome itself stands.
+
+**Class / rule:** before a card names a lever as acting on a quantity, trace which parameters the lever's arms train and whether the quantity is computed from them. A lever whose arms freeze the module that computes the quantity can only read zero on it.
