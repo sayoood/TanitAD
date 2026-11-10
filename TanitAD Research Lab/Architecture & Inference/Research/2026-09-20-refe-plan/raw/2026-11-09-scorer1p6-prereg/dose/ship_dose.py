@@ -105,7 +105,12 @@ def main():
     block = re.search(r"for f in (.*?); do\n\s*\[ -f \"\$PKG/\$f\" \]", chain, re.S)
     if not block:
         refuse("could not read the chain's required-file list")
-    required = re.findall(r"[A-Za-z0-9_./-]+\.(?:py|sh|yaml|json)", block.group(1))
+    lst = block.group(1)
+    if lst.strip() == "$NEED":                         # dose_chain.sh / rep_chain.sh keep the list in NEED="..." strings (ship_rep.py's rule)
+        lst = " ".join(re.findall(r'NEED="([^"]*)"', chain, re.S))
+    required = re.findall(r"[A-Za-z0-9_./-]+\.(?:py|sh|yaml|json)", lst)
+    if not required:
+        refuse("the chain's required-file list is empty (a loop over a variable this script cannot read?)")
     gone = [f for f in required if f != "SHIP_MANIFEST.json" and f not in staged]
     if gone:
         refuse("chain-required files missing from the package: %s" % gone)
