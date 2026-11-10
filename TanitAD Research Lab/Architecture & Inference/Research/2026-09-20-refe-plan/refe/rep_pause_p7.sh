@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Runs on the pod, detached.  Usage: rep_pause_p7.sh <p7_pod.sh pid> <train.py pid> <arm> [<arm> ...]      arms: C0r2 S1E1 S1Z1  (the order given is the order run)
+# Runs on the pod, detached.  Usage: rep_pause_p7.sh <p7_pod.sh pid> <train.py pid> <arm> [<arm> ...]      arms: C0r2 S1E1 S1Z1 S1ZSM1  (the order given is the order run)
 # Style of s1z/pause_p7_s1z_b.sh.  Waits for P7's next ckpt_last.pt, stops P7 by explicit PID, confirms the GPU is empty, runs each replicate arm's chain IN SEQUENCE (rep_chain.sh <arm>; one arm per chain
 # invocation, an arm that is refused or fails does not stop the next one), then ALWAYS resumes P7 (also when this script is killed or errors after P7 was stopped), unless /workspace/data/refe_rep/HOLD_P7 exists.
-# Terminal lines in pause.log: PAUSE_STOPPED_EARLY (P7 not touched), P7_RESUMED or P7_HELD.  A parent arm's lambda (S1E, S1Z) must already be calibrated: rep_chain.sh refuses an arm whose parent has not.
+# Terminal lines in pause.log: PAUSE_STOPPED_EARLY (P7 not touched), P7_RESUMED or P7_HELD.  A parent arm's lambda (S1E, S1Z, S1ZSM) must already be calibrated: rep_chain.sh refuses an arm whose parent has not.
 set -u
 CHAIN=${1:-}; TR=${2:-}; shift 2 2>/dev/null || true
 ARMS="$*"
@@ -11,7 +11,7 @@ mkdir -p "$OUT"
 say() { echo "$(date -u +%FT%TZ) $*" >> "$L"; }
 early() { say "PAUSE_STOPPED_EARLY $*"; exit 1; }
 [ -n "$CHAIN" ] && [ -n "$TR" ] && [ -n "$ARMS" ] || early "usage: rep_pause_p7.sh <p7_pod.sh pid> <train.py pid> <arm> [<arm> ...]"
-for a in $ARMS; do case "$a" in C0r2|S1E1|S1Z1) ;; *) early "unknown arm $a (C0r2 | S1E1 | S1Z1)" ;; esac; done
+for a in $ARMS; do case "$a" in C0r2|S1E1|S1Z1|S1ZSM1) ;; *) early "unknown arm $a (C0r2 | S1E1 | S1Z1 | S1ZSM1)" ;; esac; done
 TF=$(grep -o "/root/\.[A-Za-z0-9_.]*" /workspace/data/refe_scorer1p6/after_arms.sh | head -1); [ -f "$TF" ] || early "no token file"
 tr '\0' ' ' < /proc/$CHAIN/cmdline | grep -q 'p7_pod.sh' || early "pid $CHAIN is not the launch script"
 tr '\0' ' ' < /proc/$TR/cmdline | grep -q 'train.py' || early "pid $TR is not the trainer"

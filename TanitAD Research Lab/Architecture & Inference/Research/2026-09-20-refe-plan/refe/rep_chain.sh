@@ -1,14 +1,14 @@
 #!/bin/bash
 # SEED-REPLICATE chain (PREREG_SCORER1P6 O5, PREREG_S1Z_P6 Z1/Z5): ONE replicate arm per invocation, from P6's model_final.pt, 400 updates, on the L40 pod.  NOT PLACED ON THE POD by its author; the Master Mind ships it with the landed tree.
-#   bash /workspace/refe-plan-rep/refe/rep_chain.sh <C0r2|S1E1|S1Z1>        (REP_HF_TOKEN_FILE=<the pod's HF token file> in the environment; nohup setsid ... > /workspace/data/refe_rep/chain_<arm>.out 2>&1 < /dev/null &)
-#   C0r2 = C0 with data-order seed 2, S1E1 = S1E with seed 1, S1Z1 = S1Z with seed 1.  Each differs from its parent in --seed and --out ONLY (rep_pod.sh derives the argv from the parent's pod script; test_rep_gate.py proves it).
+#   bash /workspace/refe-plan-rep/refe/rep_chain.sh <C0r2|S1E1|S1Z1|S1ZSM1>        (REP_HF_TOKEN_FILE=<the pod's HF token file> in the environment; nohup setsid ... > /workspace/data/refe_rep/chain_<arm>.out 2>&1 < /dev/null &)
+#   C0r2 = C0 with data-order seed 2, S1E1 = S1E with seed 1, S1Z1 = S1Z with seed 1, S1ZSM1 = S1ZSM (PREREG_S1ZSM_P6) with seed 1 (its speed-neutral generator seed 20261107 and its measured speed-neutral lambda_z stay the parent's).  Each differs from its parent in --seed and --out ONLY (rep_pod.sh derives the argv from the parent's pod script; test_rep_gate.py proves it).
 # Pattern: refe/s1z_chain.sh / scorer1p6_chain.sh (same fail-closed stages and the SAME wait functions, markers keyed by the SHA-256 of SHIP_MANIFEST.json, REFUSED lines in the arm's log), with the replicate differences:
 #  * OWN POD DIRECTORY: package $WS/refe-plan-rep, data $DATA/refe_rep.  gate_token.TREE_ROOTS = (refe, code, splits): shipping this refe/ over refe-plan-p6, -p7, -scorer1p6 or -s1z (a dir that holds a minted token) would VOID that token.
 #  * THE PARENT'S INPUTS: the card (by bytes), the navtest lists, the checkpoint and the label dump are the parent's; the parent's measured lambda (S1E: refe_scorer1p6/calibrate_s1e, S1Z: refe_s1z/calibrate_s1z) is READ, never re-measured
 #    (a re-measured lambda would move a second lever), so there is NO calibrate stage.  The data pin is launch_gate.SCORER1P6_DATA_PIN.  No lane, no human gate.
 #  * NO PAUSING OR RESUMING OF P7 here (refe/rep_pause_p7.sh does that).  The chain waits for NO chain lock held (the parents' included) and the GPU idle on 3 consecutive polls.
 #  * ORDER: precheck, inputs, G-EGR, dd, wait, the arm's preflight (G1-G16 / G1-G18 on the real bank), the parent's deliberate regressions (S1E1: nobalance epbalance droploss each failing the preflight and turning G16 RED;
-#    S1Z1: noradius notopk droploss each turning G18 RED; C0r2: none, C0 has none), the LAUNCH GATE (a PASS token minted by launch_gate.py, never hand-written), the run, the run check (400 updates, the pinned set count,
+#    S1Z1: noradius notopk droploss each turning G18 RED; S1ZSM1: noband nosnbalance droploss noradius notopk each turning G18 RED; C0r2: none, C0 has none), the LAUNCH GATE (a PASS token minted by launch_gate.py, never hand-written), the run, the run check (400 updates, the pinned set count,
 #    S1Z1 also every head's twin share > 0), the HF egress under the prefix rep/<arm>, ZZREP_CHAIN_DONE <arm>.
 # Markers: $ROOT/stage_<arm>/<name>.ok = date + tree sha.  REP_STOP_AFTER=<stage> ends the chain after that stage (a dry run).
 set -u
@@ -17,7 +17,8 @@ case "$ARMN" in
   C0r2) PARENT=C0;  PROOT_NAME=refe_scorer1p6; PCARD=PREREG_SCORER1P6.md; CARD_SHA=adb5aafd4fb8abdfd1a53d9cc5ff865a89bd20f9008c701cf5d308dac595abed; PROFILE=refe_rep_p6;     FAM=p6;  PPOD=scorer1p6_pod.sh ;;
   S1E1) PARENT=S1E; PROOT_NAME=refe_scorer1p6; PCARD=PREREG_SCORER1P6.md; CARD_SHA=adb5aafd4fb8abdfd1a53d9cc5ff865a89bd20f9008c701cf5d308dac595abed; PROFILE=refe_rep_p6;     FAM=p6;  PPOD=scorer1p6_pod.sh ;;
   S1Z1) PARENT=S1Z; PROOT_NAME=refe_s1z;      PCARD=PREREG_S1Z_P6.md;     CARD_SHA=8c7b6b697b94ccf1a4781a727ed28c10ed8b11878c33eeb2d016a507b36efa69; PROFILE=refe_rep_s1z_p6; FAM=s1z; PPOD=s1z_pod.sh ;;
-  *) echo "REFUSED: unknown arm '$ARMN' (usage: rep_chain.sh C0r2 | S1E1 | S1Z1)"; exit 2 ;;
+  S1ZSM1) PARENT=S1ZSM; PROOT_NAME=refe_s1zsm; PCARD=PREREG_S1ZSM_P6.md; CARD_SHA=ac75b2891e794de800102a6d5a0f0353e8092e5f976f31b543ac7700811ad6b8; PROFILE=refe_rep_s1zsm_p6; FAM=s1zsm; PPOD=s1zsm_pod.sh ;;
+  *) echo "REFUSED: unknown arm '$ARMN' (usage: rep_chain.sh C0r2 | S1E1 | S1Z1 | S1ZSM1)"; exit 2 ;;
 esac
 LA=$(echo "$ARMN" | tr 'A-Z' 'a-z')
 WS=${REP_WS:-/workspace}
@@ -37,7 +38,8 @@ CKPT_SHA=968a469d5b9abdd279aff19b8031c53e9fec0e2683092bff12cfa93be6a4d3d1
 CARD=$PROOT/$PCARD
 NTL=$PROOT/navtest_ids/navtest_logs.json;  NTL_SHA=79daa3c2ba3fbf1c6d45d0e3b630f43bb26a073160a34ca5f9c98553c0bf43e0
 NTT=$PROOT/navtest_ids/navtest_tokens.txt.gz; NTT_SHA=e61613ce129bb67dc654a5a575de2889a22fcfcbc64e4ec389a38295b8df9c7a
-case "$ARMN" in S1E1) PW_FILE=$PROOT/calibrate_s1e/pair_weight.json ;; S1Z1) PW_FILE=$PROOT/calibrate_s1z/pair_weight.json ;; *) PW_FILE="" ;; esac
+case "$ARMN" in S1E1) PW_FILE=$PROOT/calibrate_s1e/pair_weight.json ;; S1Z1) PW_FILE=$PROOT/calibrate_s1z/pair_weight.json ;; S1ZSM1) PW_FILE=$PROOT/calibrate_s1zsm/pair_weight.json ;; *) PW_FILE="" ;; esac
+case "$FAM" in s1z|s1zsm) PWKEY=twin_w ;; *) PWKEY=pair_w ;; esac
 export TANITAD_GATE_KEY_FILE=${TANITAD_GATE_KEY_FILE:-$ROOT/launch_gate.key}      # the HMAC key lives on the volume, OUTSIDE the shipped tree and anything the egress pushes
 mkdir -p $ROOT $S
 STAGE=start
@@ -71,7 +73,7 @@ gpu_busy() {          # rc 0 = a process is on the GPU, OR the GPU cannot be ask
 lock_held() { [ -e "$1/chain.lock" ] && ! ( flock -n 9 ) 9<> "$1/chain.lock"; }        # READ-WRITE fd: an exclusive flock on a read-only fd is EBADF on nfs4
 others_hold() {
   local c
-  for c in refe_p2 refe_p2rep rls1 s1aux refe_p6 refe_p7 refe_scorer1p6 refe_s1z; do
+  for c in refe_p2 refe_p2rep rls1 s1aux refe_p6 refe_p7 refe_scorer1p6 refe_s1z refe_s1zsm; do
     if lock_held "$DATA/$c"; then echo "the $c chain holds $DATA/$c/chain.lock"; return 2; fi
   done
   return 0
@@ -120,7 +122,8 @@ PY_C="${DRIVERL_EVAL_PYTHON:-}"
 HPY=${HF_PY:-$PY_C}
 NEED="refe/scorer_finetune.py refe/launch_gate.py refe/gate_token.py refe/gate_checks.py refe/gate_fixture.py refe/hf_egress.py refe/pdm_label_complete.py refe/scorer1p6_pod.sh refe/rep_pod.sh refe/rep_chain.sh refe/test_rep_gate.py \
       refe/test_pair_loss.py refe/test_pair_loss_p6.py refe/test_scorer1_gate.py refe/test_scorer1p6_gate.py refe/test_scorer1p6_preflight.py refe/test_scorer1_mutation.py refe/test_scorer1_layer.py refe/scorer1_layer.py refe/test_suite_nesting.py refe/test_launch_gate.py refe/train.py refe/model.py refe/ckpt_io.py refe/planner.py splits/navtrain.yaml SHIP_MANIFEST.json"
-[ "$FAM" = s1z ] && NEED="$NEED refe/s1z_pod.sh refe/s1z_layer.py refe/test_s1z_loss.py refe/test_s1z_gate.py refe/test_s1z_preflight.py refe/test_s1z_layer.py"
+[ "$FAM" = s1z ] || [ "$FAM" = s1zsm ] && NEED="$NEED refe/s1z_pod.sh refe/s1z_layer.py refe/test_s1z_loss.py refe/test_s1z_gate.py refe/test_s1z_preflight.py refe/test_s1z_layer.py"
+[ "$FAM" = s1zsm ] && NEED="$NEED refe/s1zsm_pod.sh refe/s1zsm_layer.py refe/test_s1zsm_loss.py refe/test_s1zsm_gate.py refe/test_s1zsm_preflight.py refe/test_s1zsm_layer.py"
 for f in $NEED; do
   [ -f "$PKG/$f" ] || refuse "$PKG/$f is missing from the shipped package"
 done
@@ -149,9 +152,9 @@ if ! stage_done inputs; then
   [ "$(sha256sum "$NTT" | cut -c1-64)" = "$NTT_SHA" ] || refuse "$NTT is not the registered navtest token list"
   if [ -n "$PW_FILE" ]; then
     # the parent's measured lambda must exist, finite and positive; it is the ONLY value read from the parent's run dir, and it is not re-measured
-    python3 -c 'import json,math,sys; d=json.load(open(sys.argv[1])); w=d[sys.argv[2]]; assert w and math.isfinite(w) and w>0, d' "$PW_FILE" "$([ "$FAM" = s1z ] && echo twin_w || echo pair_w)" \
+    python3 -c 'import json,math,sys; d=json.load(open(sys.argv[1])); w=d[sys.argv[2]]; assert w and math.isfinite(w) and w>0, d; assert sys.argv[3] != "s1zsm" or (d.get("speed_neutral") is True and d.get("sn_dv")==0.15 and d.get("sn_balance") is True and d.get("sn_seed")==20261107 and d.get("lever")=="twin"), d' "$PW_FILE" "$PWKEY" "$FAM" \
       || refuse "$PW_FILE is missing or holds no finite positive lambda: the parent $PARENT has not calibrated, so $ARMN is not a replicate of it"
-    log "lambda (the parent's, not re-measured) = $(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$PW_FILE" "$([ "$FAM" = s1z ] && echo twin_w || echo pair_w)") from $PW_FILE"
+    log "lambda (the parent's, not re-measured) = $(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])' "$PW_FILE" "$PWKEY") from $PW_FILE"
   fi
   PIN="$($PY_C -c 'import sys; sys.path.insert(0, sys.argv[1]); import launch_gate as L; p = L.SCORER1P6_DATA_PIN; print("UNSET" if p is None else "%d %d" % (p["train_sets"], p["heldout_sets"]))' "$RUN" 2> /dev/null)"
   case "$PIN" in UNSET|"") refuse "launch_gate.SCORER1P6_DATA_PIN is unset: the exact P6 label counts are not pinned" ;; esac
@@ -200,6 +203,7 @@ if ! stage_done "preflight_$LA"; then
   MUTS=""; GATEK=""
   [ "$ARMN" = "S1E1" ] && { MUTS="nobalance epbalance droploss"; GATEK=G16; }
   [ "$ARMN" = "S1Z1" ] && { MUTS="noradius notopk droploss"; GATEK=G18; }
+  [ "$ARMN" = "S1ZSM1" ] && { MUTS="noband nosnbalance droploss noradius notopk"; GATEK=G18; }
   for MUT in $MUTS; do
     ARM=$ARMN MODE=mutate_$MUT bash $RUN/rep_pod.sh 200>&-
     grep -q "^ZZSFT_PREFLIGHT_FAIL" $OUT/mutate_$MUT.log || refuse "the $MUT mutation did not fail the preflight"
@@ -251,10 +255,15 @@ if len(start) != 1 or start[0].get("updates") != 400 or start[0].get("train_sets
 for m in ("model_sft_A.pt", "model_sft_B.pt"):
     if not os.path.isfile(os.path.join(out, m)):
         bad.append("missing " + m)
-if fam == "s1z":
+if fam in ("s1z", "s1zsm"):
     ts = (done[0].get("twin_share") if done else None) or {}
     if sorted(ts) != ["DAC", "NC", "TTC"] or not all(v.get("share_with_pair", 0) > 0 and v.get("sets", 0) > 0 for v in ts.values()):
         bad.append("the done event's twin_share is %s: every head must have a share of sets with a kept pair > 0" % (ts,))
+    if fam == "s1zsm":      # PREREG_S1ZSM_P6: the speed-neutral loss ran as built (same check as s1zsm_chain.sh)
+        if ts and not all(v.get("kept_F", -1) == v.get("kept_S", -2) and v.get("kept_F", 0) > 0 and v.get("out_of_band", -1) == 0 and v.get("unbalanced_sets", -1) == 0 and v.get("pairs") == 2 * v.get("kept_F", 0) for v in ts.values()):
+            bad.append("the done event's twin_share is %s: every head must keep F == S pairs, none outside the speed band" % (ts,))
+        if not any(r.get("event") == "data" and (r.get("twin") or {}).get("speed_neutral") is True for r in rows):
+            bad.append("the data event does not say speed_neutral true")
 if bad:
     sys.exit("; ".join(bad))
 print("ZZREP_RUN_OK updates 400")

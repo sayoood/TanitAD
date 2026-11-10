@@ -693,8 +693,9 @@ REP_PKG = "/workspace/refe-plan-rep"
 REP_ARMS = {      # replicate arm -> its parent arm, the parent's family and the replicate's data-order seed (it must differ from the parent's)
     "C0r2": {"parent": "C0", "family": "p6", "seed": 2},
     "S1E1": {"parent": "S1E", "family": "p6", "seed": 1},
-    "S1Z1": {"parent": "S1Z", "family": "s1z", "seed": 1}}
-REP_PARENT_SEEDS = {"p6": SCORER1P6_ARM_SEED, "s1z": S1Z_ARM_SEED}
+    "S1Z1": {"parent": "S1Z", "family": "s1z", "seed": 1},
+    "S1ZSM1": {"parent": "S1ZSM", "family": "s1zsm", "seed": 1}}          # PREREG_S1ZSM_P6 SM1 / SM2 / SM3 name "seed 1" as the next arm
+REP_PARENT_SEEDS = {"p6": SCORER1P6_ARM_SEED, "s1z": S1Z_ARM_SEED, "s1zsm": S1ZSM_ARM_SEED}
 
 
 def rep_arm_refusals(table: dict) -> list:
@@ -723,7 +724,7 @@ def rep_argv(arm: str, w=None) -> list:
     bad = rep_arm_refusals({arm: sp})
     if bad:
         raise ValueError("; ".join(bad))
-    toks = list(scorer1p6_argv(sp["parent"], w) if sp["family"] == "p6" else s1z_argv(sp["parent"], twin_w=w))
+    toks = list(scorer1p6_argv(sp["parent"], w) if sp["family"] == "p6" else s1zsm_argv(sp["parent"], twin_w=w) if sp["family"] == "s1zsm" else s1z_argv(sp["parent"], twin_w=w))
     toks[toks.index("--seed") + 1] = str(sp["seed"])
     toks[toks.index("--out") + 1] = REP_ROOT + "/" + arm.lower()
     return toks
@@ -735,6 +736,10 @@ PROFILES["refe_rep_p6"] = {**PROFILES["refe_scorer1p6"], "name": "refe_rep_p6", 
                            "pair_spec": {"S1E1": dict(SCORER1P6_PAIR_SPEC["S1E"])}}
 PROFILES["refe_rep_s1z_p6"] = {**PROFILES["refe_s1z_p6"], "name": "refe_rep_s1z_p6", "argv_kind": "rep", "root": REP_ROOT, "suite": S1Z_SUITE + REP_SUITE_EXTRA,
                                "rep_arms": {"S1Z1": dict(REP_ARMS["S1Z1"])}, "arm_seed": {"S1Z1": REP_ARMS["S1Z1"]["seed"]}}
+# S1ZSM1 = a THIRD replicate profile: the twin rules (and the speed-neutral rules, `sn_spec`) are profile-wide, so the S1ZSM family cannot ride on refe_rep_s1z_p6 (it would lose --twin-speed-neutral from the pin).
+# A deep copy of refe_s1zsm_p6 with the replicate root, the replicate table and the replicate suite; refe_s1zsm_p6 and every other profile are untouched (test_rep_gate.py R3 / test_s1zsm_gate.py G3 pin the digests).
+PROFILES["refe_rep_s1zsm_p6"] = {**copy.deepcopy(PROFILES["refe_s1zsm_p6"]), "name": "refe_rep_s1zsm_p6", "argv_kind": "rep", "root": REP_ROOT, "suite": S1ZSM_SUITE + REP_SUITE_EXTRA,
+                                 "rep_arms": {"S1ZSM1": dict(REP_ARMS["S1ZSM1"])}, "arm_seed": {"S1ZSM1": REP_ARMS["S1ZSM1"]["seed"]}}
 
 # RL-S1b = refe_rls1 (same runner, checks, data flags, forbidden / required flags, recipe, G-DVB, G-PREFLIGHT) with ITS arm table and ONE registered value moved (epo_lam).
 # rls1_refusals reads `arm_class` / `arm_seeds` / `epo_registered` from the profile; refe_rls1 carries none of them, so it keeps the module constants above.
