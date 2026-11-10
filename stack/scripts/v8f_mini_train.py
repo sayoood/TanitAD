@@ -1599,6 +1599,8 @@ def oband_probe(model, batch, cfg, rtol: float = 1e-3) -> dict:
         res["contribution"] = contrib
     if cfg.detach_upper:                                                 # every O term of the loss this arm trains on: op and tac with band weights, ade and fde (the 30-knot term) without
         keys = ("op", "tac") if band else ("ade", "fde")
+        if cfg.w_acc > 0.0:                                              # the acceleration term is an O term of the loss (v8f_mini.py: total += w_acc x acc), so it is read like the others (theory/obd/PURITY_ACC_FINDING.md)
+            keys = (*keys, "acc")
         if band:
             m.cfg.w_op, m.cfg.w_tac_traj = max(saved["w_op"], 1.0), max(saved["w_tac_traj"], 1.0)
         out = run()
