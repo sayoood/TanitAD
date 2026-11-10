@@ -279,7 +279,7 @@ COMPW = [1.0, 2.0, 1.0, 1.0, 0.5, 1.0]
 
 
 def a_ns(b_mode: str, lane: bool, **kw):
-    d = dict(b_mode=b_mode, lane_head=lane, lane_weight=0.7, tau_t=0.1, tau_s=0.1, lam=0.3, epo=False, pair_w=0.0)
+    d = dict(b_mode=b_mode, lane_head=lane, lane_weight=0.7, tau_t=0.1, tau_s=0.1, lam=0.3, epo=False, pair_w=0.0, twin_w=0.0)
     d.update(kw)
     return types.SimpleNamespace(**d)
 
@@ -860,6 +860,8 @@ def suite(C: Ctx) -> list:
                 nxt = C.main.body[i + 1]
                 if isinstance(nxt, ast.Assign) and ast.unparse(nxt).startswith("bad_cli = bad_cli + pair_refusals("):          # SCORER1 (v2): one more refusal source, appended before the same `if bad_cli ...: return 4`
                     nxt = C.main.body[i + 2]
+                    if isinstance(nxt, ast.Assign) and ast.unparse(nxt).startswith("bad_cli = bad_cli + twin_refusals("):      # S1Z: one more refusal source, appended before the same `if bad_cli ...: return 4`
+                        nxt = C.main.body[i + 3]
                 return isinstance(nxt, ast.If) and any(isinstance(m, ast.Return) and getattr(m.value, "value", None) == 4 for m in ast.walk(nxt))
         return False
     t("p2/hop_main_refuses_on_epo_refusals", hop_refusals)
