@@ -126,7 +126,11 @@ unset HF_TOKEN HUGGING_FACE_HUB_TOKEN HUGGINGFACE_HUB_TOKEN
 MAX_RELAUNCH=4
 POLL_S=300
 EOF
-  cat $R/gate3/zerograd_controls.env >> $R/runs.d/$ARM.env
+  # the zero-gradient block = the controls env + the ALLOW derived from THIS arm's argv (r9gate3_zg_env.sh; it replaces the Thor-only r9e2_zg_auto.sh, whose derived
+  # line was only a pass/fail check while a literal ZEROGRAD_ALLOW=() reached the manifest).  A refusal REFUSES the arm: nothing is launched.
+  if ZGB="$(PY=$PY bash $KIT/r9gate3_zg_env.sh "$R9_PROFILE" "$ARGV" $R/gate3/zerograd_controls.env "$T" 2> $R/gate3/$A/zg_env.err)"; then
+    printf '%s\n' "$ZGB" >> $R/runs.d/$ARM.env
+  else ev "$A-ZGENV-REFUSED" "zero-gradient block refused: $(tail -1 $R/gate3/$A/zg_env.err | cut -c1-200) (not launched)"; rm -f $R/runs.d/$ARM.env; flock -u 9; exec 9>&-; continue; fi
   ev "$A-LAUNCH" "supervisor $T/stack/ops/sup_refcv7.sh $ARM; run dir $OUTD"
   bash $T/stack/ops/sup_refcv7.sh $ARM $R/runs.d > $R/sup_$ARM.out 2>&1 200>&-
   RC=$?

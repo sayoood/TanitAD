@@ -23,7 +23,7 @@ NS=$R9_DEVSTAGE/nts_$C12; mkdir -p $R9_DEVSTAGE
 ssh -n tanitad-thor "mkdir -p $R/suite_$C12 $R/kit $R/logs" && scp -q $NS/tree_tip.tar $NS/overlay.tar $NS/plan_thor.json tanitad-thor:$R/suite_$C12/ || die "suite files scp"
 W="$(cd $NS && md5sum tree_tip.tar overlay.tar plan_thor.json | cut -c1-32 | tr '\n' ' ')"; G="$(ssh -n tanitad-thor "cd $R/suite_$C12 && md5sum tree_tip.tar overlay.tar plan_thor.json | cut -c1-32 | tr '\n' ' '")"
 [ "$W" = "$G" ] || die "suite files md5 differ"
-scp -q $HERE/r9gate3_study.sh $HERE/r9gate3_chain.sh $HERE/r9gate3_thor_gate.sh $HERE/r9gate3_rec_explore.sh tanitad-thor:$R/kit/ && ssh -n tanitad-thor "chmod +x $R/kit/r9gate3_*.sh" || die "kit scp"
+scp -q $HERE/r9gate3_study.sh $HERE/r9gate3_chain.sh $HERE/r9gate3_thor_gate.sh $HERE/r9gate3_rec_explore.sh $HERE/r9gate3_zg_env.sh tanitad-thor:$R/kit/ && ssh -n tanitad-thor "chmod +x $R/kit/r9gate3_*.sh" || die "kit scp"
 ssh -n tanitad-thor "mkdir -p $R/gate3 && echo '$ARMS' > $R/gate3/ARMS && echo $REC12 > $R/gate3/REC_C12 && cat $R/gate3/REC_C12" | grep -qx "$REC12" || die "arms/records stamp"
 # a study other than e1 has not had its kit shipped by an earlier restart: the chain's precheck reads $R/kit/r9w_gsuite_precheck.py, so refuse HERE (not 3 h into the chain)
 [ "$R9_STUDY" = e1 ] || ssh -n tanitad-thor "test -s $R/kit/r9w_gsuite_precheck.py" || die "no $R/kit/r9w_gsuite_precheck.py on Thor: ship the kit once with  (cd $KIT && R9W_ROOT=$R bash r9w_ship.sh kit)"
