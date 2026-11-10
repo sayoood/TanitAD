@@ -1,0 +1,373 @@
+--- a/stack/tanitad/models/v8f_mini.py
++++ b/stack/tanitad/models/v8f_mini.py
+@@ -45,6 +45,7 @@
+ CODE_DIM = N_GOAL + N_LAT + N_LON + N_CONS
+ TURN_L_I, TURN_R_I, STOP_I = 1, 2, 6                      # GOAL22 indices
+ LON_FOLLOW = 3
++LON_STOP_I = 2                                           # index of STOP in LON9 (v8f_mini_data.LON9); PREREG_V8F_STOPBAL
+ CONS_NAMES = ("lat_theta_deg", "turn_t_start_s", "turn_t_end_s", "turn_d_start_m", "turn_len_m", "turn_dyaw_deg",
+               "turn_r_arc_m", "turn_exit_x_m", "turn_exit_y_m", "turn_exit_psi_deg", "lc_t_cross_s", "lc_d_cross_m",
+               "lon_v_target_ms", "lon_t_reach_s", "lon_d_reach_m", "lon_t_start_s", "stop_x_m", "stop_y_m",
+@@ -222,6 +223,8 @@
+                                        # `launch_mask` marks (GT-launch: v0 < 6 m/s and the GT chord speed over the last 0.2 s of the horizon >= v0 + 1 m/s). 0.0 = the term is NOT in the total and NOT computed =
+                                        # every earlier arm, bit for bit (no new tensor op, no new T key). > 0 = the batch must carry `launch` (the trainer computes it from the LOGGED state before any ego stage)
+ 
++    goal_pos_weight_stop: float = 1.0  # PREREG_V8F_STOPBAL (`--goal-pos-weight-stop`): W, the POSITIVE weight of the STOP_POINT entry (STOP_I) of T's goal BCE (-(W y log p + (1-y) log(1-p)) on that column only). 1.0 = the branch is not taken = the tip, bit for bit
++    lon_class_weight_stop: float = 1.0  # PREREG_V8F_STOPBAL (`--lon-class-weight-stop`): W, the weight of the rows whose allowed lon set contains STOP (LON_STOP_I) in T's partial lon CE (denominator stays the valid-row count). 1.0 = the tip, bit for bit
+     level_head: str = "off"            # PREREG_V8F_LEVEL (`--level-head`): off = nothing built (every earlier arm, bit for bit); on = the vision-only speed-level head + O's level conditioning (LEVEL_HEAD_MODES)
+     lead_head: str = "off"             # PREREG_LEVELHEAD_A2 (`--lead-head`): off = nothing built (every earlier arm, bit for bit); on = the vision-only lead head (presence + gap) + O's lead conditioning (LEAD_HEAD_MODES)
+     w_lead: float = 0.0                # PREREG_LEVELHEAD_A2 (`--w-lead`): the weight of BCE(presence) + Huber(gap_hat) in the total. Must be > 0 with the head on and exactly 0.0 with it off (checked by the launch gate)
+@@ -248,6 +251,9 @@
+             raise ValueError(f"w_acc must be a finite number >= 0, got {self.w_acc!r}")
+         if not (math.isfinite(self.launch_intent_w) and self.launch_intent_w >= 0.0):
+             raise ValueError(f"launch_intent_w must be a finite number >= 0, got {self.launch_intent_w!r}")
++        for _n in ("goal_pos_weight_stop", "lon_class_weight_stop"):      # PREREG_V8F_STOPBAL: a weight < 1 would DOWN-weight the rare class; refused
++            if not (math.isfinite(getattr(self, _n)) and getattr(self, _n) >= 1.0):
++                raise ValueError(f"{_n} must be a finite number >= 1, got {getattr(self, _n)!r}")
+         if self.level_head not in LEVEL_HEAD_MODES:
+             raise ValueError(f"level_head must be one of {LEVEL_HEAD_MODES}, got {self.level_head!r}")
+         if not (math.isfinite(self.w_level) and self.w_level >= 0.0):
+@@ -995,9 +1001,11 @@
+         # T: masked BCE / partial-label CE / Huber at T's tick frame
+         w = lt["goal_w"] * lt["has"][:, None].float()
+         bce = F.binary_cross_entropy_with_logits(out["goal_logits"], lt["goal_y"], reduction="none")
++        if cfg.goal_pos_weight_stop != 1.0:          # PREREG_V8F_STOPBAL: the STOP_POINT column's POSITIVE term x W (pos_weight semantics); 1.0 = this branch is not taken = the tip, bit for bit
++            bce = bce + (cfg.goal_pos_weight_stop - 1.0) * F.one_hot(torch.tensor(STOP_I, device=bce.device), bce.shape[-1]).to(bce.dtype) * lt["goal_y"] * F.softplus(-out["goal_logits"])
+         T["goal"] = (bce * w).sum() / w.sum().clamp_min(1.0)
+         T["lat"] = self._partial_ce(out["lat_logits"], lt["lat_al"], lt["has"])
+-        T["lon"] = self._partial_ce(out["lon_logits"], lt["lon_al"], lt["has"])
++        T["lon"] = self._partial_ce(out["lon_logits"], lt["lon_al"], lt["has"], cfg.lon_class_weight_stop)
+         tgt = (lt["cons"] - self.cons_mu) / self.cons_sd
+         if cfg.cons_absent == "zero":                # PREREG_V8F_CZ: an absent constraint's target is the 0 O reads under teacher forcing
+             m = lt["has"][:, None].expand_as(tgt)
+@@ -1060,12 +1068,14 @@
+         return out
+ 
+     @staticmethod
+-    def _partial_ce(logits: Tensor, allowed: Tensor, has: Tensor) -> Tensor:
++    def _partial_ce(logits: Tensor, allowed: Tensor, has: Tensor, stop_w: float = 1.0) -> Tensor:
+         """-log sum_{c in allowed} p_c ; rows with an empty allowed set (IGNORE) or no label are masked."""
+         valid = allowed.any(-1) & has
+         lse = torch.logsumexp(logits, -1)
+         lsa = torch.logsumexp(logits.masked_fill(~allowed, float("-inf")), -1)
+         l = torch.where(valid, lse - lsa, torch.zeros_like(lse))
++        if stop_w != 1.0:                            # PREREG_V8F_STOPBAL: rows whose allowed set contains STOP (LON_STOP_I) x W; the denominator stays the valid-row count; 1.0 = not taken = the tip
++            l = l * (1.0 + (stop_w - 1.0) * (allowed[:, LON_STOP_I] & valid).to(l.dtype))
+         return l.sum() / valid.float().sum().clamp_min(1.0)
+ 
+     # ---- bookkeeping ------------------------------------------------------------------------------------------
+@@ -1093,6 +1103,7 @@
+                 "cons_absent": cfg.cons_absent, "code_mix": cfg.code_mix,        # PREREG_V8F_MIXO: the teacher-forcing granularity the BUILT model's _forward reads
+                 "o_interface": cfg.o_interface,                                # PREREG_V8F_FLAT: what the BUILT model's _forward hands O (full: S's checkpoints + T's code; cut: constants)
+                 "w_acc": cfg.w_acc,                                            # PREREG_V8F_OACC: the weight the BUILT loss gives the acceleration term (0.0 = not in the total)
++                "goal_pos_weight_stop": cfg.goal_pos_weight_stop, "lon_class_weight_stop": cfg.lon_class_weight_stop,   # PREREG_V8F_STOPBAL: the weights the BUILT loss applies (1.0 = the tip's loss)
+                 "launch_intent_w": cfg.launch_intent_w,                       # PREREG_V8F_LAUNCH_INTENT: the extra along-track weight the BUILT loss gives GT-launch samples (0.0 = not in the total)
+                 "wm_idm_gamma": 0.0 if self.wm is None else float(self.wm.gamma),
+                 "kin_mode": self.cfg.kin_mode, "wm_ch1_scale": None if self.wm is None else float(self.wm.ch1_scale),
+--- a/stack/scripts/v8f_mini_train.py
++++ b/stack/scripts/v8f_mini_train.py
+@@ -82,6 +82,7 @@
+     "code_mix": "lever:code_mix",             # PREREG_V8F_MIXO: argv -> make_config -> the BUILT model's levers (declared_vs_built) -> the probe of the code O actually read (code_mix_probe)
+     "o_interface": "lever:o_interface",       # PREREG_V8F_FLAT: argv -> make_config -> the BUILT model's levers (declared_vs_built) -> G-LIVE's dead-weight set (live_check) -> the probe of what O is handed (o_interface_probe)
+     "w_acc": "cfg:w_acc",                     # PREREG_V8F_OACC: argv -> make_config -> the BUILT config AND built_levers (declared_vs_built) -> acc_probe (the BUILT loss's total moves by exactly w_acc x the acc term, and O's head receives its gradient)
++    "goal_pos_weight_stop": "cfg:goal_pos_weight_stop", "lon_class_weight_stop": "cfg:lon_class_weight_stop",   # PREREG_V8F_STOPBAL: argv -> make_config -> the BUILT config AND built_levers (declared_vs_built) -> selfcheck.json levers
+     "launch_intent_w": "cfg:launch_intent_w",  # PREREG_V8F_LAUNCH_INTENT: argv -> make_config -> the BUILT config AND built_levers (declared_vs_built) -> launch_intent_probe (G-LIVE: the mask is the loop's own call `launch_stage`, the BUILT loss's total moves by exactly w_traj x W x term / 3 on launch rows, O's head receives its gradient, an all-False mask reads EXACTLY 0.0) -> `b["launch"] = lmask` in the loop
+     # PREREG_V8F_HACC_MC section 7 (O-RECOVER): the ego-state perturbation. `ego:<k>` = equals the BUILT perturber's lever (D.EgoPerturb.built_levers(), the object the training loop calls
+     # `.apply` on): argv -> make_ego_perturb -> the perturber -> declared_vs_built (bad_ego_perturb) -> G-LIVE on a perturbed batch + ego_perturb_probe (the perturbed tensors reach the loss
+@@ -139,6 +140,10 @@
+     ap.add_argument("--w-acc", dest="w_acc", type=float, default=0.0,
+                     help="PREREG_V8F_OACC: the weight of the acceleration-matching term on O's plan (the second difference on the 0.2 s grid, origin knot included, of O's plan minus the GT's, squared, mean over the GT-valid steps). "
+                          "0.0 (default) = the term is not in the loss = every earlier arm, bit for bit. > 0 = OACC's X: the value comes from the PREREG's rule (v8f_mini_eval_oacc.py wacc), is written into the argv and never tuned")
++    ap.add_argument("--goal-pos-weight-stop", dest="goal_pos_weight_stop", type=float, default=1.0,
++                    help="PREREG_V8F_STOPBAL: W >= 1, the positive weight of the STOP_POINT entry of T's goal BCE. 1.0 (default) = the tip's loss, bit for bit")
++    ap.add_argument("--lon-class-weight-stop", dest="lon_class_weight_stop", type=float, default=1.0,
++                    help="PREREG_V8F_STOPBAL: W >= 1, the weight of the STOP-containing rows in T's lon partial CE (denominator = valid rows). 1.0 (default) = the tip's loss, bit for bit")
+     ap.add_argument("--launch-intent-w", dest="launch_intent_w", type=float, default=0.0,
+                     help="PREREG_V8F_LAUNCH_INTENT: W, the EXTRA weight on O's along-track distance over knots 1-12 (tau 0.2-2.4 s, the executed horizon at m = 10) for GT-launch TRAIN samples (the LOGGED v0 < 6 m/s and the GT chord speed over the "
+                          "last 0.2 s of the 6 s horizon >= v0 + 1 m/s; label-side, nothing of it is read at inference). The term is W x the along-axis, knots 1-12 slice of ADE's own per-knot distance, on launch samples only: on a launch sample that slice "
+@@ -318,7 +323,7 @@
+                            consistency=lv["consistency"], wm=lv["wm"], n_tok=40 if a.grid == "pool4x10" else 160,
+                            p_gt_start=a.p_gt_start, p_gt_end=a.p_gt_end, w_ckpt=a.w_ckpt, w_tac=a.w_tac,
+                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm,
+-                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w,
++                           detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w, goal_pos_weight_stop=a.goal_pos_weight_stop, lon_class_weight_stop=a.lon_class_weight_stop,
+                            level_head=a.level_head, w_level=a.w_level,
+                            lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond)
+ 
+@@ -980,6 +985,11 @@
+         bad.append(f"lever launch_intent_w: declared {a.launch_intent_w} but built {built.get('launch_intent_w')}")
+     if a.launch_intent_w > 0.0 and not model.cfg.w_traj > 0.0:
+         bad.append(f"launch_intent_w {a.launch_intent_w} declared but w_traj is {model.cfg.w_traj}: the term enters the total scaled by w_traj -- a lever that is declared and does nothing")
++    for _n in ("goal_pos_weight_stop", "lon_class_weight_stop"):      # PREREG_V8F_STOPBAL: argv -> built (G-DVB); a weight < 1 is refused
++        if not (math.isfinite(getattr(a, _n)) and getattr(a, _n) >= 1.0):
++            bad.append(f"{_n} {getattr(a, _n)!r} is not a finite number >= 1")
++        if built.get(_n) != getattr(a, _n):
++            bad.append(f"lever {_n}: declared {getattr(a, _n)} but built {built.get(_n)}")
+     if not built["prior_frozen"]:
+         bad.append("the P10 prior is not frozen")
+     if model.cfg.n_tok != (40 if a.grid == "pool4x10" else 160):
+@@ -993,7 +1003,7 @@
+     if built["wm"] != "off" and built["wm_ch1_scale"] != M.CH1_SCALE[a.kin_mode]:
+         bad.append(f"WM action channel 1 scale {built['wm_ch1_scale']} != {M.CH1_SCALE[a.kin_mode]} for kin_mode {a.kin_mode}")
+     for f in ("hist", "hmax", "d", "n_q", "nb", "p_gt_start", "p_gt_end", "w_ckpt", "w_tac", "w_cons", "w_traj", "w_pen",
+-              "w_pen_self", "w_wm", "detach_upper", "kin_mode", "w_acc", "launch_intent_w"):
++              "w_pen_self", "w_wm", "detach_upper", "kin_mode", "w_acc", "launch_intent_w", "goal_pos_weight_stop", "lon_class_weight_stop"):
+         want = {"hist": a.hist, "hmax": cfg.hmax, "d": a.d, "n_q": a.n_q, "nb": a.nb}.get(f, getattr(a, f, None))
+         got = getattr(model.cfg, f)
+         if want is not None and not (got == want or (isinstance(want, float) and abs(got - want) < 1e-12)):
+--- a/stack/tests/test_v8f_launch_intent.py
++++ b/stack/tests/test_v8f_launch_intent.py
+@@ -594,9 +594,9 @@
+         assert g["ckpt_keys"] == w["ckpt_keys"], f"{name}: a flag-off checkpoint carries no new top-level key"
+         assert_recover_flag_off(_summary(tmp_path / name), _selfcheck(tmp_path / name), name)
+         assert g["levers_ego"] == w["levers_ego"] and g["levers_dagger_p"] == w["levers_dagger_p"]
+-        assert {k: v for k, v in g["cfg"].items() if k not in ("launch_intent_w", "level_head", "w_level", "lead_head", "w_lead", "aux_cond")} == w["cfg"] and g["cfg"]["launch_intent_w"] == 0.0 and "launch_intent_w" not in w["cfg"], f"{name}: the config gains only launch_intent_w = 0.0, the level-head pair and the lead-head trio"
++        assert {k: v for k, v in g["cfg"].items() if k not in ("launch_intent_w", "level_head", "w_level", "lead_head", "w_lead", "aux_cond", "goal_pos_weight_stop", "lon_class_weight_stop")} == w["cfg"] and (g["cfg"]["goal_pos_weight_stop"], g["cfg"]["lon_class_weight_stop"]) == (1.0, 1.0) and g["cfg"]["launch_intent_w"] == 0.0 and "launch_intent_w" not in w["cfg"], f"{name}: the config gains only launch_intent_w = 0.0, the level-head pair and the lead-head trio"
+         assert (g["cfg"]["level_head"], g["cfg"]["w_level"]) == ("off", 0.0) and not {"level_head", "w_level"} & set(w["cfg"]) and (g["cfg"]["lead_head"], g["cfg"]["w_lead"], g["cfg"]["aux_cond"]) == ("off", 0.0, "add") and not {"lead_head", "w_lead", "aux_cond"} & set(w["cfg"]), f"{name}: PREREG_V8F_LEVEL adds `level_head` = off and `w_level` = 0.0, PREREG_LEVELHEAD_A2 adds `lead_head` = off, `w_lead` = 0.0 and `aux_cond` = add to the checkpoint's cfg and nothing else (the golden predates both)"
+-        assert set(g["levers_keys"]) - set(w["levers_keys"]) == {"launch_intent_w", "launch_intent", "launch_n", "launch_eligible"} | RECOVER_LEVERS and set(w["levers_keys"]) <= set(g["levers_keys"]), f"{name}: levers only GAIN the four launch keys and the two RECOVER-FT fields"
++        assert set(g["levers_keys"]) - set(w["levers_keys"]) == {"launch_intent_w", "launch_intent", "launch_n", "launch_eligible", "goal_pos_weight_stop", "lon_class_weight_stop"} | RECOVER_LEVERS and set(w["levers_keys"]) <= set(g["levers_keys"]), f"{name}: levers only GAIN the four launch keys and the two RECOVER-FT fields"
+         assert set(g["selfcheck_keys"]) - set(w["selfcheck_keys"]) == {"launch_intent_probe", "recover_probe"} and set(w["selfcheck_keys"]) <= set(g["selfcheck_keys"])
+     assert want["dag"]["counters"]["dagger_n"] > 0 and want["orc"]["counters"]["ego_perturb_n"] > 0, "the golden is not vacuous: the DAG family swapped rows and the ORC family perturbed rows"
+ 
+--- /dev/null
++++ b/stack/tests/test_v8f_stopbal.py
+@@ -0,0 +1,239 @@
++"""PREREG_V8F_STOPBAL (DRAFT): ``--goal-pos-weight-stop W`` and ``--lon-class-weight-stop W`` in ``stack/scripts/v8f_mini_train.py`` -- re-weighting the rare STOP class of T's goal BCE / lon CE.
++
++Both flags default 1.0 = OFF: the loss branch is not taken and the tip's loss is reproduced bit for bit (section 1, against a PRISTINE export of the tip when STOPBAL_PRISTINE points at one).
++Reachability hop by hop (CLAUDE.md: "built, tested, and unreachable from its caller" is a class):
++  argv -> make_config -> cfg.<w> -> built_levers -> declared_vs_built (G-DVB) -> selfcheck.json levers -> V8FMini.loss (the two weighting lines) -> .backward() on h_goal / h_lon.
++Every check has a control that must read EXACTLY the unweighted value (a W=1 run, a batch with no STOP row, the OTHER head's parameters). A mutation (delete a weighting line) must turn sections 2-3 RED.
++"""
++from __future__ import annotations
++
++import importlib.util
++import math
++import os
++import sys
++from pathlib import Path
++
++import numpy as np
++import pytest
++import torch
++import torch.nn.functional as F
++
++REPO = Path(__file__).resolve().parents[2]
++for p in (REPO / "stack", REPO / "taniteval", REPO / "stack" / "scripts", REPO / "stack" / "tests"):
++    if str(p) not in sys.path:
++        sys.path.insert(0, str(p))
++from tanitad.data import v8f_mini_data as D  # noqa: E402
++from tanitad.models import v8f_mini as M  # noqa: E402
++import v8f_mini_train as TR  # noqa: E402
++from test_v8f_dagger_train import TINY, _run, _selfcheck, _summary, _woken, dvb, gate_parts, pack  # noqa: E402,F401
++
++torch.set_num_threads(1)
++STOP_G, STOP_L = M.STOP_I, M.LON_STOP_I
++
++
++def real_batch(pk, n=24, seed=0):
++    J = pk.J
++    store = D.ClipStore(pk.world, "train", lru=8, kin_mode="yaw", tracks=D.load_native_tracks(pk.world / "native_tracks.pt"))
++    wins = D.train_windows(store, J, D.select_train_clips(list(map(str, J["clip"])), 1.0))
++    cfg = M.V8FMiniConfig(**{**TINY, "wm": "off"})
++    ds = D.V8FMiniWindows(store, J, wins, hmax=cfg.hmax)
++    idx = np.random.default_rng(seed).choice(len(wins), n, replace=False)
++    batch = D.collate([ds.item(wins[i][0], wins[i][1], 1, 3) for i in idx])
++    mu, sd = M.cons_stats(J)
++    model = _woken(M.V8FMini(cfg, M.P10Prior.synthetic(0), mu, sd))
++    return model, batch, cfg
++
++
++def with_stop(batch, n_pos, stop_rows=True):
++    """Label surgery: STOP_POINT observed (goal_w=1) on every row, positive on the first n_pos rows; lon allowed set = {STOP} on the first n_pos rows, {KEEP} elsewhere, every row labelled."""
++    b = {**batch, "lab_t": dict(batch["lab_t"])}
++    lt = b["lab_t"]
++    gy, gw = lt["goal_y"].clone(), lt["goal_w"].clone()
++    gw[:, STOP_G] = 1.0
++    gy[:, STOP_G] = 0.0
++    if stop_rows:
++        gy[:n_pos, STOP_G] = 1.0
++    la = torch.zeros_like(lt["lon_al"])
++    la[:, 6] = True
++    if stop_rows:
++        la[:n_pos, :] = False
++        la[:n_pos, STOP_L] = True
++    lt.update(goal_y=gy, goal_w=gw, lon_al=la, has=torch.ones_like(lt["has"]))
++    return b
++
++
++def run_loss(model, batch, gw=1.0, lw=1.0):
++    model.cfg.goal_pos_weight_stop, model.cfg.lon_class_weight_stop = gw, lw
++    torch.manual_seed(7)
++    out = model.loss(batch, p_gt=0.5, gen=torch.Generator().manual_seed(11))
++    return out["terms"], out
++
++
++def hand_goal(out, lt, W):
++    x, y, w = out["goal_logits"].detach().double(), lt["goal_y"].double(), (lt["goal_w"] * lt["has"][:, None].float()).double()
++    tot = 0.0
++    for b in range(x.shape[0]):
++        for c in range(x.shape[1]):
++            if w[b, c] == 0:
++                continue
++            pos = float(y[b, c]) * math.log1p(math.exp(-float(x[b, c])))
++            neg = float(1 - y[b, c]) * math.log1p(math.exp(float(x[b, c])))
++            tot += float(w[b, c]) * ((W if c == STOP_G else 1.0) * pos + neg)
++    return tot / max(float(w.sum()), 1.0)
++
++
++def hand_lon(out, lt, W):
++    x, al = out["lon_logits"].detach().double().numpy(), lt["lon_al"].numpy()
++    tot, nv = 0.0, 0
++    for b in range(x.shape[0]):
++        if not (al[b].any() and bool(lt["has"][b])):
++            continue
++        nv += 1
++        l = np.log(np.exp(x[b]).sum()) - np.log(np.exp(x[b][al[b]]).sum())
++        tot += l * (W if al[b][STOP_L] else 1.0)
++    return tot / max(nv, 1)
++
++
++# ---------------------------------------------------------------- 1. default = the tip, bit for bit
++def test_defaults_are_off_and_flags_have_gdvb_entries():
++    ps = TR.build_parser()
++    for n in ("goal_pos_weight_stop", "lon_class_weight_stop"):
++        assert ps.get_default(n) == 1.0 and TR.FLAG_CHECKS[n] == f"cfg:{n}"
++        assert n in {a.dest for a in ps._actions}
++        assert getattr(M.V8FMiniConfig(**TINY), n) == 1.0
++        for bad in (0.5, -1.0, float("nan"), float("inf")):
++            with pytest.raises(ValueError):
++                M.V8FMiniConfig(**{**TINY, n: bad})
++
++
++def test_default_loss_and_grads_equal_the_pristine_tip_bit_for_bit(pack):
++    pr = os.environ.get("STOPBAL_PRISTINE")
++    if not pr or not (Path(pr) / "tanitad" / "models" / "v8f_mini.py").exists():
++        pytest.skip("STOPBAL_PRISTINE (a pristine export of the tip's stack/) not set")
++    spec = importlib.util.spec_from_file_location("v8f_mini_pristine", Path(pr) / "tanitad" / "models" / "v8f_mini.py")
++    P = importlib.util.module_from_spec(spec)
++    sys.modules["v8f_mini_pristine"] = P
++    spec.loader.exec_module(P)
++    model, batch, cfg = real_batch(pack)
++    batch = with_stop(batch, 5)
++    mu, sd = M.cons_stats(pack.J)
++    ref = _woken(P.V8FMini(P.V8FMiniConfig(**{**TINY, "wm": "off"}), P.P10Prior.synthetic(0), mu, sd))
++    ref.load_state_dict(model.state_dict())
++    outs = []
++    for m in (model, ref):
++        m.zero_grad(set_to_none=True)
++        torch.manual_seed(7)
++        o = m.loss(batch, p_gt=0.5, gen=torch.Generator().manual_seed(11))
++        o["terms"]["total"].backward()
++        outs.append((o["terms"], {k: (q.grad.clone() if q.grad is not None else None) for k, q in m.named_parameters()}))
++    (T0, g0), (T1, g1) = outs
++    assert set(T0) == set(T1) and all(torch.equal(T0[k], T1[k]) for k in T0), "every loss term, bit for bit"
++    assert all((g0[k] is None and g1[k] is None) or torch.equal(g0[k], g1[k]) for k in g0), "every gradient, bit for bit"
++
++
++# ---------------------------------------------------------------- 2. the weighting, against hand values
++def test_goal_stop_positive_term_scales_by_exactly_W_and_the_rest_is_unchanged(pack):
++    model, batch, cfg = real_batch(pack)
++    b = with_stop(batch, 6)
++    T1, o1 = run_loss(model, b, 1.0, 1.0)
++    T3, o3 = run_loss(model, b, 3.5, 1.0)
++    lt = b["lab_t"]
++    assert abs(float(T1["goal"]) - hand_goal(o1, lt, 1.0)) < 1e-5 and abs(float(T3["goal"]) - hand_goal(o3, lt, 3.5)) < 1e-5, (float(T3["goal"]), hand_goal(o3, lt, 3.5))
++    pos = (lt["goal_y"][:, STOP_G] * lt["goal_w"][:, STOP_G]).double()
++    sp = F.softplus(-o1["goal_logits"].detach().double()[:, STOP_G])
++    want = (2.5 * (pos * sp).sum() / (lt["goal_w"] * lt["has"][:, None].float()).sum()).item()
++    assert abs((float(T3["goal"]) - float(T1["goal"])) - want) < 1e-5 and want > 0, "the delta is (W-1) x the STOP-positive entries' own BCE"
++    for k in T1:
++        if k not in ("goal", "total"):
++            assert float(T1[k]) == float(T3[k]), f"{k} unchanged by the goal lever"
++    assert abs((float(T3["total"]) - float(T1["total"])) - cfg.w_tac * (float(T3["goal"]) - float(T1["goal"]))) < 1e-5
++    nb = with_stop(batch, 0, stop_rows=False)                      # control: a batch with NO STOP-positive entry
++    Tn, _ = run_loss(model, nb, 1.0, 1.0)
++    Tn3, _ = run_loss(model, nb, 3.5, 1.0)
++    assert float(Tn["goal"]) == float(Tn3["goal"]) and float(Tn["total"]) == float(Tn3["total"]), "control: no STOP-positive row -> W changes nothing, EXACTLY"
++
++
++def test_lon_stop_rows_scale_by_exactly_W_and_the_rest_is_unchanged(pack):
++    model, batch, cfg = real_batch(pack)
++    b = with_stop(batch, 6)
++    T1, o1 = run_loss(model, b, 1.0, 1.0)
++    T3, o3 = run_loss(model, b, 1.0, 4.0)
++    lt = b["lab_t"]
++    assert abs(float(T1["lon"]) - hand_lon(o1, lt, 1.0)) < 1e-5 and abs(float(T3["lon"]) - hand_lon(o3, lt, 4.0)) < 1e-5, (float(T3["lon"]), hand_lon(o3, lt, 4.0))
++    assert float(T3["lon"]) > float(T1["lon"])
++    for k in T1:
++        if k not in ("lon", "total"):
++            assert float(T1[k]) == float(T3[k]), f"{k} unchanged by the lon lever"
++    assert abs((float(T3["total"]) - float(T1["total"])) - cfg.w_tac * 0.5 * (float(T3["lon"]) - float(T1["lon"]))) < 1e-5
++    nb = with_stop(batch, 0, stop_rows=False)
++    Tn, _ = run_loss(model, nb, 1.0, 1.0)
++    Tn4, _ = run_loss(model, nb, 1.0, 4.0)
++    assert float(Tn["lon"]) == float(Tn4["lon"]) and float(Tn["total"]) == float(Tn4["total"]), "control: no STOP row -> W changes nothing, EXACTLY"
++
++
++# ---------------------------------------------------------------- 3. gradients reach the heads; controls read exactly 0.0
++def grads(model, batch, gw, lw):
++    model.zero_grad(set_to_none=True)
++    T, _ = run_loss(model, batch, gw, lw)
++    T["total"].backward()
++    return {k: (p.grad.clone() if p.grad is not None else torch.zeros_like(p)) for k, p in model.named_parameters() if p.requires_grad}
++
++
++def diff(ga, gb, prefix):
++    return sum(float((ga[k] - gb[k]).abs().sum()) for k in ga if k.startswith(prefix))
++
++
++def test_gradients_reach_the_goal_and_lon_heads_and_the_other_head_reads_exactly_zero(pack):
++    model, batch, _ = real_batch(pack)
++    b = with_stop(batch, 6)
++    g0, g0b = grads(model, b, 1.0, 1.0), grads(model, b, 1.0, 1.0)
++    assert diff(g0, g0b, "") == 0.0, "control: the probe is deterministic"
++    gg, gl = grads(model, b, 3.5, 1.0), grads(model, b, 1.0, 4.0)
++    assert diff(gg, g0, "h_goal.") > 0.0, "the goal lever moves h_goal's gradient"
++    assert diff(gg, g0, "h_lon.") == 0.0, "the goal lever leaves h_lon's gradient EXACTLY 0.0 different"
++    assert diff(gl, g0, "h_lon.") > 0.0, "the lon lever moves h_lon's gradient"
++    assert diff(gl, g0, "h_goal.") == 0.0, "the lon lever leaves h_goal's gradient EXACTLY 0.0 different"
++    nb = with_stop(batch, 0, stop_rows=False)
++    n0, n1 = grads(model, nb, 1.0, 1.0), grads(model, nb, 3.5, 4.0)
++    assert diff(n1, n0, "") == 0.0, "control: no STOP row -> EVERY parameter's gradient is the unweighted one"
++
++
++# ---------------------------------------------------------------- 4. G-DVB and the selfcheck
++def test_gdvb_declared_vs_built_and_refusals(pack):
++    parts = gate_parts(pack, ["--goal-pos-weight-stop", "3.5", "--lon-class-weight-stop", "2.0"])
++    a, model = parts[0], parts[2]
++    assert [m for m in dvb(parts) if "stop" in m] == []
++    bl = model.built_levers()
++    assert bl["goal_pos_weight_stop"] == 3.5 and bl["lon_class_weight_stop"] == 2.0
++    model.cfg.goal_pos_weight_stop = 1.0                    # the build dropped the lever (the refcv6 class)
++    assert any("lever goal_pos_weight_stop: declared 3.5 but built 1.0" in m for m in dvb(parts)), dvb(parts)
++    model.cfg.goal_pos_weight_stop = 3.5
++    model.cfg.lon_class_weight_stop = 1.0
++    assert any("lever lon_class_weight_stop: declared 2.0 but built 1.0" in m for m in dvb(parts)), dvb(parts)
++    model.cfg.lon_class_weight_stop = 2.0
++    a.goal_pos_weight_stop = 0.5
++    assert any("goal_pos_weight_stop 0.5 is not a finite number >= 1" in m for m in dvb(parts))
++
++
++def test_a_flag_without_a_gdvb_entry_is_refused_by_the_gate_itself(pack, monkeypatch):
++    parts = gate_parts(pack, ["--lon-class-weight-stop", "2.0"])
++    monkeypatch.setattr(TR, "FLAG_CHECKS", {k: v for k, v in TR.FLAG_CHECKS.items() if k != "lon_class_weight_stop"})
++    assert any("flags without a declared-vs-built entry" in m and "lon_class_weight_stop" in m for m in dvb(parts))
++
++
++def test_a_real_run_records_both_levers_in_selfcheck_and_summary_and_default_records_one(pack, tmp_path):
++    assert TR.main(_run(tmp_path / "on", ["--steps", "3", "--goal-pos-weight-stop", "3.5", "--lon-class-weight-stop", "2.0"])) == 0
++    sc, s = _selfcheck(tmp_path / "on"), _summary(tmp_path / "on")
++    assert sc["levers"]["goal_pos_weight_stop"] == 3.5 and sc["levers"]["lon_class_weight_stop"] == 2.0
++    assert s["levers"]["goal_pos_weight_stop"] == 3.5 and s["levers"]["lon_class_weight_stop"] == 2.0
++    ck = torch.load(tmp_path / "on" / "ckpt_last.pt", map_location="cpu", weights_only=False)
++    assert ck["cfg"]["goal_pos_weight_stop"] == 3.5 and ck["cfg"]["lon_class_weight_stop"] == 2.0
++    assert TR.main(_run(tmp_path / "off", ["--steps", "3"])) == 0
++    sc0 = _selfcheck(tmp_path / "off")
++    assert sc0["levers"]["goal_pos_weight_stop"] == 1.0 and sc0["levers"]["lon_class_weight_stop"] == 1.0
++
++
++def test_the_two_weighting_lines_exist_exactly_once_and_the_module_is_the_export():
++    src = (REPO / "stack" / "tanitad" / "models" / "v8f_mini.py").read_text(encoding="utf-8")
++    assert src.count("cfg.goal_pos_weight_stop != 1.0") == 1 and src.count("if stop_w != 1.0:") == 1
++    assert Path(M.__file__).resolve().is_relative_to(REPO.resolve()), M.__file__
