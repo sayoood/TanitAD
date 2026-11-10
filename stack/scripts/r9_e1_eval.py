@@ -611,7 +611,7 @@ def nearfield_stats(units) -> dict:
         for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
             out.update(edge_tol_keys("%d_%d" % (lo, hi), eb[i]))
         out.update(edge_tol_keys("5_20", eb[1] + eb[2]))
-    return _d3_stats_keys(out, acc)               # the D3 beside rows (below L697): none unless the block carries the D3 columns
+    return _g_stats_keys(_d3_stats_keys(out, acc), acc)               # the D3 beside rows (below L697): none unless the block carries the D3 columns
 
 
 # --------------------------------------------------------------------------------------------------- the EDGE-CLASS thin-class protocol (E0d)
@@ -897,6 +897,105 @@ def _gate_from_args(a, records):
     raise SystemExit("[r9-e1-eval] no P=R gate: pass --gate <p> or --gates-json <fit-split gates> (or --gate-from-scored, declared)")
 
 
+# --------------------------------------------------------------------------------------------------- the E3 MAP producers (MAP-2 lift-valid, MAP-5 unobs)
+# r9_e3_verdict.py reads two inputs that no producer emitted. BOTH are additive; no existing key changes.
+#   MAP-2 0-5 m (seal row "MAP-2, instrument"): the SIDEWALK-ONLY precision (flag psw, GT class ``gt_class`` = 7, the SAME flag/level/GT-seen rule as ``nf_prec_*``)
+#         restricted to LIFT-VALID cells -- the SAME mask object as ``nf_swedge_prec_lv_*`` (the ``--lift-valid`` LiftValid, lvf[lo*10:hi*10] on the corridor).
+#         Per band columns [SL_P, SL_TP] at :data:`G_OFF` of ``acc`` (so the per-episode sum and the bootstrap carry them); key ``nf_prec_lv_<lo>_<hi>``.
+#         NaN columns (no mask) => no key. The judge reads ``nearfield.ci.nf_prec_lv_0_5``.
+#   MAP-5 (REFCV9_DESIGN 4.3 row MAP-5): the model's OWN sidewalk / edge flags on UNOBSERVED cells = 0, a structural identity. "unobs" = the raster's OWN
+#         ``unobs`` plane (the lift's validity mask the head emits WITH the map, design 2.1; nonzero = unobserved), the WHOLE raster width; flag = plane >= the
+#         per-band level the scored flags use (rows 0-40 m, :data:`FIXED_LEVEL` beyond). An exact integer count, no interval. ``nearfield.unobs_flags``.
+G_OFF = D3_OFF + D3_COLS                                  # first MAP-2-lv column of ``acc``
+G_COLS = 2                                                # per read band: SL_P, SL_TP
+
+
+def map_gates_per_file(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLASS, lift_valid=None, thresholds=None):
+    """Per raster file (same order and skips as :func:`nearfield_per_file_ex`): ``(names, counts [n, 4 read bands, G_COLS])`` -- [SL_P, SL_TP] =
+    |flag & GT-seen & lift-valid| and |... & GT class gt_class| for the sidewalk flag ``psw >= level``. NaN when ``lift_valid`` is None."""
+    c0, c1 = CORRIDOR_COLS
+    names, out = [], []
+    for f in list(files)[::int(stride)]:
+        z = np.load(f)
+        if "gt" not in z.files:
+            continue
+        name = Path(str(f)).name
+        names.append(name)
+        a = np.full((len(NEARFIELD_BANDS), G_COLS), np.nan)
+        if lift_valid is not None:
+            lvf = lift_valid.masks.get(_episode_index(name))
+            if lvf is None:
+                raise LiftValidError("no lift-valid mask for episode e%d (raster %s) in %s" % (_episode_index(name), name, lift_valid.source))
+            gt, psw = z["gt"], z[psw_key]
+            for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
+                sl = (slice(lo * 10, hi * 10), slice(c0, c1))
+                t = FIXED_LEVEL if thresholds is None else thresholds.level(psw_key, lo, hi)
+                p = (psw[sl] >= t) & (gt[sl] != 255) & lvf[lo * 10:hi * 10]
+                a[i] = [p.sum(), (p & (gt[sl] == gt_class)).sum()]
+        out.append(a)
+    return names, (np.stack(out) if out else np.zeros((0, len(NEARFIELD_BANDS), G_COLS)))
+
+
+def unobs_flags_per_file(files, stride=1, psw_key="psw", edge_key=EDGE_KEY, thresholds=None):
+    """MAP-5's exact counts over the rasters (same skips as :func:`nearfield_per_file_ex`): own sidewalk / edge flags on cells where the raster's own
+    ``unobs`` plane is nonzero. Returns a dict ``{sidewalk, edge, n_files, n_with_unobs, n_with_edge_plane, n_unobs_cells}``; ``sidewalk`` / ``edge`` are
+    None (NOT 0: not measured) when no raster carries an ``unobs`` plane, and ``edge`` also when no scored raster carries an edge plane."""
+    sw = ed = n = n_un = n_ed = cells = 0
+    for f in list(files)[::int(stride)]:
+        z = np.load(f)
+        if "gt" not in z.files:
+            continue
+        n += 1
+        if "unobs" not in z.files:
+            continue
+        n_un += 1
+        un = np.asarray(z["unobs"]) != 0
+        cells += int(un.sum())
+        planes = [(psw_key, 0)] + ([(edge_key, 1)] if edge_key in z.files else [])
+        n_ed += int(edge_key in z.files)
+        for key, which in planes:
+            pl = z[key]
+            if pl.shape != un.shape:
+                raise ValueError("%s: the `%s` plane %s and the `unobs` plane %s differ in shape" % (Path(str(f)).name, key, pl.shape, un.shape))
+            lvl = np.full(pl.shape, FIXED_LEVEL, dtype=np.int32)
+            for lo, hi in NEARFIELD_BANDS:
+                lvl[lo * 10:hi * 10, :] = FIXED_LEVEL if thresholds is None else thresholds.level(key, lo, hi)
+            cnt = int(((pl >= lvl) & un).sum())
+            if which == 0:
+                sw += cnt
+            else:
+                ed += cnt
+    return {"sidewalk": sw if n_un else None, "edge": ed if (n_un and n_ed) else None, "n_files": n, "n_with_unobs": n_un,
+            "n_with_edge_plane": n_ed, "n_unobs_cells": cells}
+
+
+def _g_stats_keys(out, acc):
+    """E3 MAP-2: ``nf_prec_lv_<lo>_<hi>`` = SL_TP / SL_P (sidewalk-only, GT-seen AND lift-valid) when ``acc`` carries finite G columns (a block measured WITH a mask
+    and ``map_gates``); else ``out`` untouched. Kept out of :func:`nearfield_stats` so no line above the pinned L697 / D3 sources moves."""
+    if acc.shape[1] >= G_OFF + G_COLS and np.isfinite(acc[:, G_OFF:G_OFF + G_COLS]).all():
+        for i, (lo, hi) in enumerate(NEARFIELD_BANDS):
+            P, TP = float(acc[i][G_OFF]), float(acc[i][G_OFF + 1])
+            out["nf_prec_lv_%d_%d" % (lo, hi)] = TP / P if P > 0 else float("nan")
+    return out
+
+def nearfield_per_file_ex_gates(files, stride=1, psw_key="psw", gt_class=SIDEWALK_CLASS, lift_valid=None, edge_key=EDGE_KEY, thresholds=None, edge_tol=False,
+                                beside_d3=False):
+    """:func:`nearfield_per_file_ex_edge` plus the E3 MAP-2 lift-valid columns at :data:`G_OFF` (``info["map_gates"]`` stamps them). Edge / D3 columns that
+    were not asked for are NaN-padded up to G_OFF (not measured is not 0: :func:`nearfield_stats` then emits none of their keys); the columns below G_OFF are
+    EXACTLY what :func:`nearfield_per_file_ex_edge` returns for the same arguments. The G columns are NaN without a ``lift_valid`` mask."""
+    names, acc, cls_, info = nearfield_per_file_ex_edge(files, stride, psw_key, gt_class, lift_valid, edge_key, thresholds, edge_tol, beside_d3)
+    if acc.shape[2] < G_OFF:
+        acc = (np.concatenate([acc, np.full((len(names), len(NEARFIELD_BANDS), G_OFF - acc.shape[2]), np.nan)], axis=2) if names
+               else np.zeros((0, len(NEARFIELD_BANDS), G_OFF)))
+    gn, ga = map_gates_per_file(files, stride, psw_key, gt_class, lift_valid, thresholds)
+    if gn != names:
+        raise ThresholdsError("the MAP-gates pass saw %d rasters, the near-field pass %d: not one file set" % (len(gn), len(names)))
+    acc = np.concatenate([acc, ga], axis=2) if names else np.zeros((0, len(NEARFIELD_BANDS), G_OFF + G_COLS))
+    info = dict(info, map_gates={"nf_prec_lv_*": "sidewalk-only (psw, GT class %d) precision on GT-seen AND lift-valid cells (the --lift-valid mask)" % gt_class,
+                                 "lift_valid": info["lift_valid"]})
+    return names, acc, cls_, info
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--packs", required=True)
@@ -971,9 +1070,10 @@ def main(argv=None) -> int:
             lvm = load_lift_valid(a.lift_valid) if a.lift_valid else None
             thr_m = load_map_thresholds(a.map_thresholds) if a.map_thresholds else None
             thr_bind = thresholds_binding(thr_m, a.rast_dir) if thr_m is not None else None
-            names, acc, gtcls, nfinfo = nearfield_per_file_ex_edge(files, a.rast_stride, a.psw_key, lift_valid=lvm, thresholds=thr_m,
+            names, acc, gtcls, nfinfo = nearfield_per_file_ex_gates(files, a.rast_stride, a.psw_key, lift_valid=lvm, thresholds=thr_m,
                                                                   edge_tol=thr_m is not None,       # the edge-class beside rows ride on a thresholded read
                                                                   beside_d3=a.map_beside_d3)
+            unobs_rec = unobs_flags_per_file(files, a.rast_stride, a.psw_key, thresholds=thr_m)
         except LiftValidError as e:
             raise SystemExit("[r9-e1-eval] lift-valid mask refused: %s" % e)
         except ThresholdsError as e:
@@ -987,6 +1087,8 @@ def main(argv=None) -> int:
         if d3i and (0 < d3i["n_with_code_plane"] < d3i["n_files"] or 0 < d3i["n_with_pdrv_plane"] < d3i["n_files"]):
             raise SystemExit("[r9-e1-eval] --map-beside-d3: %d of %d rasters carry a `code` plane and %d a `pdrv` plane: one arm, one plane set" % (
                 d3i["n_with_code_plane"], d3i["n_files"], d3i["n_with_pdrv_plane"]))
+        if 0 < unobs_rec["n_with_unobs"] < unobs_rec["n_files"]:
+            raise SystemExit("[r9-e1-eval] %d of %d rasters carry an `unobs` plane: one arm, one plane set" % (unobs_rec["n_with_unobs"], unobs_rec["n_files"]))
         if a.lift_valid_save:
             if lvm is None:
                 raise SystemExit("[r9-e1-eval] --lift-valid-save needs --lift-valid")
@@ -1002,6 +1104,12 @@ def main(argv=None) -> int:
                                            "nf_swedge_prec_lv_*": "as nf_swedge_prec_* AND lift-valid cells only (the --lift-valid mask); every nf_swedge_* key is absent without a mask",
                                            "*_5_20": "the 5-10 and 10-20 m bands pooled by counts"},
                             "ci": ci.stat_cluster_bootstrap(units, ue, nearfield_stats, n_boot=a.boot, seed=a.seed)}
+        if unobs_rec["sidewalk"] is not None:                  # E3 MAP-5 (additive): absent when no raster has an `unobs` plane -- not measured is not 0
+            out["nearfield"]["unobs_flags"] = {k: unobs_rec[k] for k in ("sidewalk", "edge", "n_files", "n_with_unobs", "n_with_edge_plane", "n_unobs_cells")}
+            out["nearfield"]["definition"]["unobs_flags"] = ("MAP-5 structural identity, an exact count: the arm's own sidewalk (psw) / edge (pedge) flags on cells where its own "
+                                                            "`unobs` plane is nonzero, whole raster width, level as the scored flags; must be 0; `edge` is null when no raster has an edge plane")
+        out["nearfield"]["definition"]["nf_prec_lv_*"] = ("MAP-2 instrument (seal): as nf_prec_* (SIDEWALK only: psw, GT class 7) AND lift-valid cells only (the --lift-valid mask, the "
+                                                          "same object as nf_swedge_prec_lv_*); absent without a mask")
         if thr_m is not None:                                  # stamped only when set: an unset run's JSON is unchanged
             out["nearfield"]["thresholds"] = dict(nfinfo["thresholds"], binding=thr_bind)
             out["nearfield"]["definition"]["flag_rule"] = ("the flags are `plane_u8 >= level` at THIS arm's own FIT-split per-band level "
