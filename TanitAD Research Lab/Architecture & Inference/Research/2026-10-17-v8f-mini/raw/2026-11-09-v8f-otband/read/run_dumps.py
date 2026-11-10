@@ -38,6 +38,18 @@ ARMS = {
     "PARITY_DAGOACC_s1": (ART + "/v8f-dagoacc/M2b_s1_dagoacc/ckpt_last.pt", ("done", ART + "/v8f-dagoacc-t1/done_DAGOACC_s1_m10_causal_heads.txt")),
     # amendment 2 (beside, post-hoc, decides nothing): the retrain's own init checkpoint, sha256 from OB-CTL_s0's summary.json levers.init_ckpt
     "INIT_M2b_s0": (ART + "/sfresh_inputs/inputs/M2b_s0/ckpt_last.pt", ("sha", "601cb435267317862539c2ba8bcce78b04eb0c31fe08a183ecb1bafc71dcc6f8")),
+    # the same for seed 1: sha256 from OB-CTL_s1's summary.json levers.init_ckpt
+    "INIT_M2b_s1": (ART + "/sfresh_inputs/inputs/M2b_s1/ckpt_last.pt", ("sha", "6104fb15dc21d524b6ed53be632b8d53ec5413526ac587734c22684c7e50c2e6")),
+    # amendment 3 (beside, post-hoc, decides nothing): DAG-OACC differs from M2b in the fine-tune schedule, the DAgger rows and the
+    # acceleration term; the banked ladder DAG0 (schedule only, --dagger-p 0) and DAG (schedule + DAgger rows, --w-acc 0) splits the three
+    "PARITY_DAG0_s0": (ART + "/v8f-dagger/M2b_s0_dag0/ckpt_last.pt", ("done", ART + "/v8f-dagger-t1/done_DAG0_s0_m10_causal_heads.txt")),
+    "PARITY_DAG0_s1": (ART + "/v8f-dagger/M2b_s1_dag0/ckpt_last.pt", ("done", ART + "/v8f-dagger-t1/done_DAG0_s1_m10_causal_heads.txt")),
+    "PARITY_DAG_s0": (ART + "/v8f-dagger/M2b_s0_dag/ckpt_last.pt", ("done", ART + "/v8f-dagger-t1/done_DAG_s0_m10_causal_heads.txt")),
+    "PARITY_DAG_s1": (ART + "/v8f-dagger/M2b_s1_dag/ckpt_last.pt", ("done", ART + "/v8f-dagger-t1/done_DAG_s1_m10_causal_heads.txt")),
+    # amendment 4 (beside, decides nothing in this card): DAG-OACC's own argv at training seed 10 / 11 (the DAG-ORC card's REP, argv differs
+    # from DAG-OACC in --seed and --out only): the run-to-run floor of the DAG-OACC recipe, sha256 from the run's SHA256SUMS.txt
+    "PARITY_DAGOACCREP_s0": (ART + "/v8f-dag-orc-oacc/M2b_s0_dagoaccorcrep/ckpt_last.pt", ("sha", "b03fd6efebec285f747673fa90d093cb9202a649d560ba8f5c016475f1fb4bca")),
+    "PARITY_DAGOACCREP_s1": (ART + "/v8f-dag-orc-oacc/M2b_s1_dagoaccorcrep/ckpt_last.pt", ("sha", "77853e564f52ff029cfc241042b733d75dba8191a99a7be0fc59778d511aeca2")),
     # control P0b (README_READ.md, amendment 1): the BASELINE's own tool tree, same checkpoint, same threads as P0
     "PARITY_BASETREE_DAGOACC_s0": (ART + "/v8f-dagoacc/M2b_s0_dagoacc/ckpt_last.pt", ("done", ART + "/v8f-dagoacc-t1/done_DAGOACC_s0_m10_causal_heads.txt")),
 }

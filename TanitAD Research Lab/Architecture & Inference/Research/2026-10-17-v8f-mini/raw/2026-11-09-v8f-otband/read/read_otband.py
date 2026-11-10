@@ -231,6 +231,9 @@ for s in (0, 1):
     init = f"INIT_M2b_s{s}"
     if have(init):              # amendment 2: beside, post-hoc, decides nothing (not in the card)
         A["INIT-M2b"] = arm_arrays(load(ddir(init), banked)["cl"], dg["g"], J, eid)
+    for lad, key in ((f"PARITY_DAG0_s{s}", "DAG0"), (f"PARITY_DAG_s{s}", "DAG")):
+        if have(lad):           # amendment 3: the banked ladder M2b -> DAG0 (schedule) -> DAG (+ DAgger rows) -> DAG-OACC (+ w_acc); beside
+            A[key] = arm_arrays(load(ddir(lad), banked)["cl"], dg["g"], J, eid)
     if s == 0:
         ARR["s0"] = (A, dg, J)
     glat, glon = labels(dg["g"])
@@ -247,6 +250,15 @@ for s in (0, 1):
             if "INIT-M2b" in A:
                 rows[m]["beside_post_hoc"] = {"INIT-M2b": single(x["INIT-M2b"], eid), "CTL_minus_INIT": paired(x["OB-CTL"], x["INIT-M2b"], eid),
                                               "DAG_minus_INIT": paired(x["DAG-OACC"], x["INIT-M2b"], eid)}
+            if "INIT-M2b" in A and "DAG0" in A and "DAG" in A:
+                rows[m]["ladder_post_hoc"] = {
+                    "DAG0": single(x["DAG0"], eid), "DAG": single(x["DAG"], eid),
+                    "step1_schedule_DAG0_minus_INIT": paired(x["DAG0"], x["INIT-M2b"], eid),
+                    "step2_dagger_rows_DAG_minus_DAG0": paired(x["DAG"], x["DAG0"], eid),
+                    "step3_w_acc_DAGOACC_minus_DAG": paired(x["DAG-OACC"], x["DAG"], eid),
+                    "CTL_minus_DAG0": paired(x["OB-CTL"], x["DAG0"], eid),
+                    "BAND_minus_DAG0": paired(x["OB-BAND"], x["DAG0"], eid),
+                    "note": "beside, post-hoc, decides nothing; the three steps sum to DAG_minus_INIT; DAG0, DAG and DAG-OACC share M2b's init, 3,000 steps, lr 1e-4, p_gt 0.2 and a fully trainable model"}
             D[bnd][m] = rows[m]["BAND_minus_CTL"]
         sd["bands"][bnd] = {"rows": rows, "DK-VIOL": {a: A[a][bnd]["_dk_viol"] for a in A}}
         print(f"s{s} {bnd} {time.time() - t0:.0f}s", flush=True)
@@ -256,6 +268,10 @@ for s in (0, 1):
         tac[nm] = {"OB-CTL": single(ind["OB-CTL"], eid), "OB-BAND": single(ind["OB-BAND"], eid), "DAG-OACC": single(ind["DAG-OACC"], eid),
                    "BAND_minus_CTL": paired(ind["OB-BAND"], ind["OB-CTL"], eid), "BAND_minus_DAG": paired(ind["OB-BAND"], ind["DAG-OACC"], eid),
                    "statistic": "per-window indicator: the plan's own 0-6 s manoeuvre label equals the GT's (accuracy)"}
+        if all(k in A for k in ("INIT-M2b", "DAG0", "DAG")):
+            tac[nm]["ladder_post_hoc"] = {k: single(ind[k], eid) for k in ("INIT-M2b", "DAG0", "DAG")}
+            tac[nm]["ladder_post_hoc"].update(step1=paired(ind["DAG0"], ind["INIT-M2b"], eid), step2=paired(ind["DAG"], ind["DAG0"], eid),
+                                              step3=paired(ind["DAG-OACC"], ind["DAG"], eid))
     sd["TACTICAL_plan_reads"] = tac
     sd["_D"] = D
     report["seeds"][f"s{s}"] = sd
