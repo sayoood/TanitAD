@@ -29,9 +29,14 @@ fine-tunes share that blind spot (pessimism over eight of them moves 26 of ~360 
 - **Upper bound, MEASURED (C3, 1,058 tokens, u400 base):** the P3 reference check fed the TRUE drivable area ranks
   proposals at AUC 0.932 (`auc_head`) vs the scorer's own DAC head 0.787 (`auc_scorer`),
   `2026-10-13-aux-s1-readout/p3_reference.json`.
-- **What failed before, MEASURED:** probes on the FROZEN trunk features reached drivable IoU 0.18 to 0.27 (0-40 m) against
-  a bar of 0.8, kill switch K2 fired (`2026-10-13-aux-p3-floor/full_1058/floor_instrument.json`). The features do not carry the drivable area
-  linearly, so this needs a TRAINED camera-to-BEV head (labels from maps are admissible; inference stays vision-only).
+- ⚠️ **CORRECTED 2026-11-11 (D-VDAC-1, `Project Steering/RETRACTION_LOG.md`):** this bullet first said "probes on the
+  FROZEN trunk features reached drivable IoU 0.18 to 0.27 against a bar of 0.8". Those IoUs are UNTRAINED initial heads
+  (`2026-10-13-aux-p3-floor/full_1058/run.json`: `update` 0, `w_aux` 0.0), not probes, and not on P6. Trained heads on u400's
+  frozen trunk reached IoU 0.72-0.82 (INHERITED from `p6base/vdac/FEASIBILITY.md`, which cites its sources); no head was ever
+  trained on P6's trunk.
+- **Left out, MEASURED (`2026-10-16-auxveto-read/AUXVETO_READ.json`):** a hard veto fed the TRUE drivable raster gained
+  +0.367 PDMS (`delta_vgt`) against a DAC oracle term of 2.546, about 14 %. The upside of a DAC-only check is therefore much
+  smaller than the AUC above suggests; the design card's stage S0 measures it on P6 before any training.
 - **It is an architecture change**, hence yours. On a go the first step costs no GPU: a design card (head, labels from the
   banked store `E:/Projects/TanitAD-artifacts/aux_drivable`, the IoU bar, and how the check enters the pick, e.g. as a
   veto that keeps NC and DAC separate from the situation classifier's output, per the goal-input rule).

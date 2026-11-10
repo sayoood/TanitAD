@@ -18928,3 +18928,11 @@ instruments; only an undeclared one is a finding.
 **What is true (source, `theory/egowm/PREREG_V8F_EGOWM.md`, Arms):** EGOWM trains the world model only, "adapter, readers and planner frozen at M2b s{k}; driving cannot change, so T0". T's code on an EGOWM checkpoint equals M2b's, so the decomposition there would read a structural zero. Only LoRA (H-V8F-LORA-1, arm L) retrains T. Found when the CONSORC read came back (2026-11-10 16:06), before any EGOWM decomposition ran; the CONS-CARRY / speed outcome itself stands.
 
 **Class / rule:** before a card names a lever as acting on a quantity, trace which parameters the lever's arms train and whether the quantity is computed from them. A lever whose arms freeze the module that computes the quantity can only read zero on it.
+
+## 2026-11-11 — R-VDAC-1: a design memo quoted UNTRAINED heads as "frozen-trunk probes" (Master Mind)
+
+**What was written (landed 97104902, `raw/2026-11-09-scorer1p6-prereg/DECISION_P6_NEXT_LEVERS.md`, and the GAC row H-VDAC-P6-1):** "probes on the FROZEN trunk features reached drivable IoU 0.18 to 0.27 (0-40 m) against a bar of 0.8", used as the reason a TRAINED head is needed.
+
+**What is true (source `raw/2026-10-13-aux-p3-floor/full_1058/run.json`):** every run there has `update` 0 and `w_aux` 0.0: the IoUs belong to untrained initial heads on u400's features, not probes, and not P6. Trained heads on u400's frozen trunk reached 0.72-0.82. The memo also omitted the October veto read (`raw/2026-10-16-auxveto-read`): the true-raster veto gained +0.367 against an oracle term of 2.546. Found by the design agent drafting `vdac/`; verified by the MM from both files.
+
+**Class / rule:** a number carried forward from a context summary lost its CONDITION (update 0). Before a design memo cites a metric as evidence for a decision, open the artifact that produced it and state the arm, the training step and the checkpoint next to the number; and search for the read that tested the same lever end to end (here the veto read) before arguing from a component metric (AUC, IoU) alone.
