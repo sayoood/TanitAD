@@ -1,0 +1,1323 @@
+{
+ "tool": "read_pess.py",
+ "card": {
+  "path": "E:/Projects/TanitAD-artifacts/scorer_gym_20261107/p6base/PREREG_PESS_P6.md",
+  "sha256_expected": "185de4067ede99ff9aca0c0f559e5a62f0989872aef07b8b7c4bd8657d42f380",
+  "sha256_actual": "185de4067ede99ff9aca0c0f559e5a62f0989872aef07b8b7c4bd8657d42f380"
+ },
+ "tier": {
+  "E3": "T1-class open loop: NAVSIM v1.1 PDMS of the arm's own pick on the full navtest (self-action open loop, not closed loop)",
+  "E2": "selection tier: PDM truth of P6's own 64 proposals on E2, the arm judged by which proposal it picks",
+  "E1": "descriptive, C3 stratum-weighted, never decisive"
+ },
+ "evidence_class": "MEASURED (ours; every input artifact and its sha256 is listed under 'inputs')",
+ "estimator": "paired log-cluster bootstrap, 10,000 draws, seed 20260927, 95 % percentile, over the evaluation set's own logs (sel_common.log_boot_idx draws via selc6_analyze.Boot). It answers 'another draw of logs' only. Training variance is read from the replicate floor F = |C0r - C0|; inference is deterministic (PREREG_P6 bit-identity check). Training variance is not resampled: ensembles of fixed members are read as fixed scorers. Inference is deterministic.",
+ "bars": {
+  "P1": "PESS - P6: CI-lo > 0 and d > t*s_p = 0.4971",
+  "P2": "PESS - ENS9: CI-lo > 0",
+  "M": "zero-pick share (pick PDMS exactly 0), PESS - ENS9: CI-hi < 0",
+  "G1": "TTC, NC, DAC sub-scores x100 of the pick, PESS - P6: each point >= -0.5",
+  "G2": "regret on E2, PESS - P6: CI-hi < +0.5",
+  "G3": "overspeed share on E2 CRUISE, PESS - P6: CI-hi < +0.10",
+  "G4": "slow-pick share on E2 CRUISE, PESS - P6: CI-hi < +0.10"
+ },
+ "strategic": "PAUSED -- PI ruling Sayed 2026-09-19, PI_DECISION_QUEUE ITEM 25: \"the strategic layer will be only switched off temporarily until we proved that both tactical and operative layers are driving with high quality. So the 4 layer rule is just temporarily paused and concerns only the strategic part.\" Not a pass; not omitted; lifting it is the PI's call.",
+ "ambiguities": [
+  "T1 P1 d is the POINT difference PESS - P6 in PDMS x100 (E3), compared strictly with the constant 0.4971 printed in the card (not recomputed as 2.776 x 0.1791 = 0.49718); CI-lo > 0 strict. The earlier readers' 2F rule is not used: the card fixes the floor.",
+  "T2 M is the share of E3 tokens whose pick has PDMS exactly 0.0 (card: 'pick PDMS exactly 0'), NOT the S1ZSM reader's M2 (PDMS 0 or TTC 0). The failure share (PDMS 0 or TTC 0) is also printed, as reported-not-deciding. CI over the same paired log-cluster draws as P1.",
+  "T3 G1 to G4 are the Batch 1 / S1Z definitions applied to PESS - P6: G1 sub-score points x100 from the table's sub-scores at the pick (each >= -0.5, EPS slack of read_scorer1p6.g1_ok); G2 regret on the 2,000 E2 tokens (best valid proposal PDMS x100 minus the pick's); G3 overspeed (plan v4/v0 > 1.15) share on E2 CRUISE, CI-hi < +0.10; G4 slow (v4/v0 < 0.85) share on E2 CRUISE, CI-hi < +0.10 (EPS slack of read_s1z.g4_ok). E2 quantities use the combined E3 logits restricted to the E2 tokens (the E2 logit files of members are not read; a member's e2 logits could differ from its E3 rows by float drift).",
+  "T4 PE labels overlap and every match is listed; the primary label follows PE1, PE2, PE3, PE4, Unnamed. PE1 = P1 and P2 and M and G1..G4; PE2 = P2 holds and P1 fails (M and the guards are not conditions of PE2); PE3 = M holds and P2 fails; PE4 = neither P2 nor M holds. P1 holds, P2 holds, M fails (or a guard fails) matches none -> Unnamed.",
+  "T5 Scoring = lookup in the full truth table at the pick; the table's valid flag must be True and the value finite at every pick (else the read stops). A gate checks that the table reproduces P6's csv scores on 100 % of tokens (G0-TABLE) and the E2 table on the E2 tokens; a check on S1ZSM's own picks vs its e3_changed_scores.csv runs in control c1.",
+  "T6 Combine in float32: mean = np.mean(axis=0, dtype=float32) (the ENS3 convention of read_scorer1p6); min = np.min; SD = ddof-0 population SD computed in float64 from the float32 member logits, LCB1 = mean32 - SD cast to float32. With one member min = mean and SD = 0 exactly, so every arm is that member's own logits bit for bit (control c1 asserts it).",
+  "T7 The ledger key is <ARM>:<sha256 of the arm's combined float32 [12146,64,6] C-contiguous logits>:E3 for each of PESS, LCB1, ENS9 (K + 3). The arm name stays ENS9 even if only eight members are present; the members used are listed in the output and the sha differs by member set.",
+  "T8 Members are loaded as given by --member; the card's nine are C0, C0r, C0r2, S1E, S1E1, S1Z, S1Z1, S1ZSM, S1ZD. If S1ZD is not given the read states it uses n members. Each member must pass G0-E3 (proposals bit-identical to P6's) and its token set must equal the table's.",
+  "T9 Family clause: the Batch 1 family tables of the arm vs P6 (paired CIs) incl. EP x100; STRATEGIC printed as PAUSED with the PI ruling. EP x100 vs P6 is reported for every arm.",
+  "T10 The Bonferroni intervals at the ledger's running K are printed per arm for best-of-K statements; P1 and P2 are PESS's own tests."
+ ],
+ "members": [
+  "S1ZSM"
+ ],
+ "n_members": 1,
+ "control": "c1",
+ "arms_scored": [
+  "ENS9",
+  "PESS",
+  "LCB1"
+ ],
+ "code_sha256": {
+  "read_pess.py": "d04122282369b12dc3df14612661fd38f3a0eb45ccaaf914712f16fd2e5b27a8",
+  "read_scorer1p6.py": "1508b383e69aa9656843774b393823a9bddc5ee5d65f2f25faddcad223618020"
+ },
+ "gates": {
+  "G0-PICK": {
+   "name": "G0-PICK",
+   "n_equal_to_banked_pick": 12146,
+   "n": 12146,
+   "PASS": true
+  },
+  "G0-P6LOGITS": {
+   "name": "G0-P6LOGITS",
+   "P6 dir logits bit-identical to the table's logits": true,
+   "PASS": true
+  },
+  "G0-TABLE": {
+   "name": "G0-TABLE",
+   "n_tokens_absent_in_p6_csv": 0,
+   "n_pdms_equal_to_p6_csv": 12146,
+   "PASS": true
+  },
+  "G0-E2": {
+   "name": "G0-E2",
+   "n_e2": 2000,
+   "n_missing_in_table": 0,
+   "n_missing_in_world": 0,
+   "n_pdms_bit_equal": 2000,
+   "n_sub_bit_equal": 2000,
+   "max_abs_pdms_diff": 0.0,
+   "formula_max_abs_diff": 0.0,
+   "all_finite_valid": true,
+   "pick_is_argmax_of_p6_logits": 2000,
+   "RED_shifted_pick_n_differ": 1402,
+   "PASS": true
+  },
+  "G0-E2-vs-TABLE": {
+   "name": "G0-E2-vs-TABLE",
+   "E2 table pdms bit-identical to the full table on the E2 tokens": true,
+   "PASS": true
+  },
+  "G0-E3[S1ZSM]": {
+   "name": "G0-E3[S1ZSM]",
+   "n": 12146,
+   "n_tokens_not_bit_identical": 0,
+   "PASS": true
+  }
+ },
+ "member_e3_logits_sha256": {
+  "S1ZSM": "ef0b7278d3a650f43c9e093c44ba020e18e280fa6f5fade0517a2bad4dc45083"
+ },
+ "arm_logits_sha256": {
+  "ENS9": "f35275d55c1309bb1bb1177ec9fd60eb821882eae94ee20834015fab1efa2558",
+  "PESS": "f35275d55c1309bb1bb1177ec9fd60eb821882eae94ee20834015fab1efa2558",
+  "LCB1": "f35275d55c1309bb1bb1177ec9fd60eb821882eae94ee20834015fab1efa2558"
+ },
+ "arm_pick_changed_vs_P6": {
+  "ENS9": 6447,
+  "PESS": 6447,
+  "LCB1": 6447
+ },
+ "arm_pick_changed_vs_ENS9": {
+  "PESS": 0,
+  "LCB1": 0
+ },
+ "outcome": {
+  "matches": [
+   "PE4"
+  ],
+  "primary": "PE4",
+  "name": "SHARED BLIND SPOT",
+  "adopted": false,
+  "failed_guards": [],
+  "next_levers": {
+   "PE4": "the perception lever: a check of each proposal against an estimate of drivable area and agents built from richer features than the scorer reads (architecture change, the PI's decision), with the zero-GPU E1 evidence of the card as its design input"
+  },
+  "inputs": {
+   "P1": false,
+   "P2": false,
+   "M": false,
+   "guards": {
+    "G1": true,
+    "G2": true,
+    "G3": true,
+    "G4": true
+   },
+   "point_PESS": 91.29707529608928
+  }
+ },
+ "goal_status_PESS": "BELOW GOAL",
+ "LCB1_reported_not_adopted": {
+  "P1": false,
+  "P2": false,
+  "M": false,
+  "guards": {
+   "G1": true,
+   "G2": true,
+   "G3": true,
+   "G4": true
+  },
+  "note": "read with the same bars; can only name the next lever (card section 2)"
+ },
+ "status": "READ",
+ "arms": {
+  "ENS9": {
+   "PDMS_x100_E3": {
+    "point": 91.29707529608928,
+    "lo": 90.50682673069231,
+    "hi": 92.09608144544993,
+    "n": 12146
+   },
+   "minus_P6": {
+    "point": 0.10059741181129256,
+    "lo": -0.09753390328492921,
+    "hi": 0.31035137203222746,
+    "n": 12146
+   },
+   "P1_vs_P6": {
+    "point": 0.10059741181129256,
+    "lo": -0.09753390328492921,
+    "hi": 0.31035137203222746,
+    "n": 12146,
+    "floor": 0.4971,
+    "clears": false
+   },
+   "EP_x100_E3": {
+    "arm_mean": 86.55495090173399,
+    "P6_mean": 87.03441689794842,
+    "minus_P6": {
+     "point": -0.4794659962144263,
+     "lo": -0.684652685503341,
+     "hi": -0.2684294776165789,
+     "n": 12146
+    }
+   },
+   "failure_share_minus_P6_reported": {
+    "point": -0.00617487238597069,
+    "lo": -0.009435663997089679,
+    "hi": -0.003016412808610213,
+    "n": 12146
+   },
+   "zero_pick_share": 0.02931006092540754,
+   "G": {
+    "G1": {
+     "per_head_points_vs_P6": {
+      "TTC": {
+       "point": 0.39519183270212416,
+       "lo": 0.11485197773608784,
+       "hi": 0.6822156019958082,
+       "n": 12146,
+       "arm_mean_x100": 95.47999341346946,
+       "P6_mean_x100": 95.08480158076733,
+       "ok": true
+      },
+      "NC": {
+       "point": 0.02469948954388276,
+       "lo": -0.10330564885869657,
+       "hi": 0.15096710628470908,
+       "n": 12146,
+       "arm_mean_x100": 98.87205664416268,
+       "P6_mean_x100": 98.8473571546188,
+       "ok": true
+      },
+      "DAC": {
+       "point": 0.20582907953235632,
+       "lo": 0.05744774156118702,
+       "hi": 0.36531923407702815,
+       "n": 12146,
+       "arm_mean_x100": 98.15577144739008,
+       "P6_mean_x100": 97.94994236785773,
+       "ok": true
+      }
+     },
+     "bar": "each point >= -0.5",
+     "ok": true,
+     "failed_heads": []
+    },
+    "G2": {
+     "delta_regret_vs_P6": {
+      "point": -0.03259321373115969,
+      "lo": -0.5190912516231014,
+      "hi": 0.4454542150892805,
+      "n": 2000,
+      "arm_regret": 5.854541432085136,
+      "P6_regret": 5.887134645816295
+     },
+     "bar": "CI-hi < +0.5 points",
+     "ok": true
+    },
+    "G3": {
+     "overspeed_diff_vs_P6": {
+      "point": -0.027131782945736434,
+      "lo": -0.05511811023622047,
+      "hi": 0.003676470588235294,
+      "n": 258,
+      "arm_share": 0.3875968992248062,
+      "P6_share": 0.41472868217054265
+     },
+     "bar": "CI-hi < +0.10",
+     "ok": true
+    },
+    "G4": {
+     "slow_diff_vs_P6": {
+      "point": 0.03488372093023256,
+      "lo": 0.006943843713956171,
+      "hi": 0.07024892403559263,
+      "n": 258,
+      "arm_share": 0.2131782945736434,
+      "P6_share": 0.17829457364341086
+     },
+     "bar": "CI-hi < +0.10",
+     "n_cruise_tokens_E2": 258,
+     "ok": true
+    },
+    "ok": {
+     "G1": true,
+     "G2": true,
+     "G3": true,
+     "G4": true
+    }
+   },
+   "family_vs_P6": {
+    "NC": {
+     "point": 0.02469948954388276,
+     "lo": -0.10330564885869657,
+     "hi": 0.15096710628470908,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 98.87205664416268,
+     "P6_mean": 98.8473571546188,
+     "adverse": false
+    },
+    "DAC": {
+     "point": 0.20582907953235632,
+     "lo": 0.05744774156118702,
+     "hi": 0.36531923407702815,
+     "n": 12146,
+     "direction": "higher",
+     "family": "lateral",
+     "arm_mean": 98.15577144739008,
+     "P6_mean": 97.94994236785773,
+     "adverse": false
+    },
+    "EP": {
+     "point": -0.4794659962144263,
+     "lo": -0.684652685503341,
+     "hi": -0.2684294776165789,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 86.55495090173399,
+     "P6_mean": 87.03441689794842,
+     "adverse": true
+    },
+    "TTC": {
+     "point": 0.39519183270212416,
+     "lo": 0.11485197773608784,
+     "hi": 0.6822156019958082,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 95.47999341346946,
+     "P6_mean": 95.08480158076733,
+     "adverse": false
+    },
+    "C": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 100.0,
+     "P6_mean": 100.0,
+     "adverse": false
+    },
+    "DDC": {
+     "point": -0.1852461715791207,
+     "lo": -0.4195405040482223,
+     "hi": 0.03132107427224525,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 96.29919315000824,
+     "P6_mean": 96.48443932158736,
+     "adverse": false
+    },
+    "speed_mae_mps": {
+     "point": -0.028401757969335275,
+     "lo": -0.036776672586692406,
+     "hi": -0.02000265076200134,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.8089785067269953,
+     "P6_mean": 0.8373802646963306,
+     "adverse": false
+    },
+    "target_speed_within_0.5mps": {
+     "point": 0.011351473736209452,
+     "lo": 0.00670225819711831,
+     "hi": 0.015973788623042277,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.5089741478676107,
+     "P6_mean": 0.49762267413140127,
+     "adverse": false
+    },
+    "target_speed_within_1.0mps": {
+     "point": 0.00990037872550634,
+     "lo": 0.005668124537661952,
+     "hi": 0.014134188029164666,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.7153486744607278,
+     "P6_mean": 0.7054482957352215,
+     "adverse": false
+    },
+    "target_speed_within_2.0mps": {
+     "point": 0.0074818870410011526,
+     "lo": 0.004743860217833814,
+     "hi": 0.01025927696344262,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.8954902848674461,
+     "P6_mean": 0.8880083978264449,
+     "adverse": false
+    },
+    "along_mae_m": {
+     "point": -0.042613291093445034,
+     "lo": -0.05437024616999494,
+     "hi": -0.03115413152017575,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 1.156713741798817,
+     "P6_mean": 1.199327032892262,
+     "adverse": false
+    },
+    "along_final_abs_m": {
+     "point": -0.10965541083590803,
+     "lo": -0.13981876706246588,
+     "hi": -0.08018298792601383,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 2.8470800477258704,
+     "P6_mean": 2.9567354585617784,
+     "adverse": false
+    },
+    "accel_mae_mps2": {
+     "point": -0.010534517864823812,
+     "lo": -0.014751660535778753,
+     "hi": -0.006304802065842247,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.5343048823272011,
+     "P6_mean": 0.5448394001920249,
+     "adverse": false
+    },
+    "heading_mae_deg": {
+     "point": -0.0175447519888654,
+     "lo": -0.06401063145949004,
+     "hi": 0.032416043192520165,
+     "n": 12082,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 2.741898995151065,
+     "P6_mean": 2.7596224259149373,
+     "adverse": false
+    },
+    "yaw_rate_mae_degps": {
+     "point": -0.021345672988690396,
+     "lo": -0.04626916562252204,
+     "hi": 0.005364605529611877,
+     "n": 11931,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 3.0360661463025314,
+     "P6_mean": 3.0602104178209193,
+     "adverse": false
+    },
+    "curvature_mae_1pm": {
+     "point": -1.2255759681855622e-05,
+     "lo": -0.00028948469658444747,
+     "hi": 0.0002883402898725074,
+     "n": 11931,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.02011921325386727,
+     "P6_mean": 0.02030395948348201,
+     "adverse": false
+    },
+    "cross_mae_m": {
+     "point": -0.0065686409741213155,
+     "lo": -0.014215584752890751,
+     "hi": 0.0013703284493171498,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.43646513518350016,
+     "P6_mean": 0.4430337761576215,
+     "adverse": false
+    },
+    "cross_final_abs_m": {
+     "point": -0.029402949980728246,
+     "lo": -0.05014115368441664,
+     "hi": -0.006741479321273473,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 1.0458556313043799,
+     "P6_mean": 1.075258581285108,
+     "adverse": false
+    },
+    "lateral_decision_acc": {
+     "point": -0.0002469948954388276,
+     "lo": -0.003056066890343521,
+     "hi": 0.002585205747380217,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.9128108019100939,
+     "P6_mean": 0.9130577968055327,
+     "adverse": false
+    },
+    "longitudinal_decision_acc": {
+     "point": 0.007986168285855426,
+     "lo": 0.0030354395863489863,
+     "hi": 0.012920004757116752,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.656100773917339,
+     "P6_mean": 0.6481146056314836,
+     "adverse": false
+    },
+    "command_adherence_all": {
+     "point": -0.0022229540589494483,
+     "lo": -0.0046746272008217835,
+     "hi": 0.0003857986298126558,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8578132718590482,
+     "P6_mean": 0.8600362259179977,
+     "adverse": false
+    },
+    "command_adherence_turn_active": {
+     "point": -0.003925417075564278,
+     "lo": -0.010132712213135203,
+     "hi": 0.0027272673673941236,
+     "n": 4076,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8829735034347399,
+     "P6_mean": 0.8868989205103042,
+     "adverse": false
+    },
+    "_distance_keeping": "UNAVAILABLE at this tier (no lead-agent block in NAVSIM open loop); read in card section 6 of PREREG_SCORER1P6"
+   },
+   "adverse_components": [
+    "EP"
+   ]
+  },
+  "PESS": {
+   "PDMS_x100_E3": {
+    "point": 91.29707529608928,
+    "lo": 90.50682673069231,
+    "hi": 92.09608144544993,
+    "n": 12146
+   },
+   "minus_P6": {
+    "point": 0.10059741181129256,
+    "lo": -0.09753390328492921,
+    "hi": 0.31035137203222746,
+    "n": 12146
+   },
+   "P1_vs_P6": {
+    "point": 0.10059741181129256,
+    "lo": -0.09753390328492921,
+    "hi": 0.31035137203222746,
+    "n": 12146,
+    "floor": 0.4971,
+    "clears": false
+   },
+   "EP_x100_E3": {
+    "arm_mean": 86.55495090173399,
+    "P6_mean": 87.03441689794842,
+    "minus_P6": {
+     "point": -0.4794659962144263,
+     "lo": -0.684652685503341,
+     "hi": -0.2684294776165789,
+     "n": 12146
+    }
+   },
+   "failure_share_minus_P6_reported": {
+    "point": -0.00617487238597069,
+    "lo": -0.009435663997089679,
+    "hi": -0.003016412808610213,
+    "n": 12146
+   },
+   "zero_pick_share": 0.02931006092540754,
+   "G": {
+    "G1": {
+     "per_head_points_vs_P6": {
+      "TTC": {
+       "point": 0.39519183270212416,
+       "lo": 0.11485197773608784,
+       "hi": 0.6822156019958082,
+       "n": 12146,
+       "arm_mean_x100": 95.47999341346946,
+       "P6_mean_x100": 95.08480158076733,
+       "ok": true
+      },
+      "NC": {
+       "point": 0.02469948954388276,
+       "lo": -0.10330564885869657,
+       "hi": 0.15096710628470908,
+       "n": 12146,
+       "arm_mean_x100": 98.87205664416268,
+       "P6_mean_x100": 98.8473571546188,
+       "ok": true
+      },
+      "DAC": {
+       "point": 0.20582907953235632,
+       "lo": 0.05744774156118702,
+       "hi": 0.36531923407702815,
+       "n": 12146,
+       "arm_mean_x100": 98.15577144739008,
+       "P6_mean_x100": 97.94994236785773,
+       "ok": true
+      }
+     },
+     "bar": "each point >= -0.5",
+     "ok": true,
+     "failed_heads": []
+    },
+    "G2": {
+     "delta_regret_vs_P6": {
+      "point": -0.03259321373115969,
+      "lo": -0.5190912516231014,
+      "hi": 0.4454542150892805,
+      "n": 2000,
+      "arm_regret": 5.854541432085136,
+      "P6_regret": 5.887134645816295
+     },
+     "bar": "CI-hi < +0.5 points",
+     "ok": true
+    },
+    "G3": {
+     "overspeed_diff_vs_P6": {
+      "point": -0.027131782945736434,
+      "lo": -0.05511811023622047,
+      "hi": 0.003676470588235294,
+      "n": 258,
+      "arm_share": 0.3875968992248062,
+      "P6_share": 0.41472868217054265
+     },
+     "bar": "CI-hi < +0.10",
+     "ok": true
+    },
+    "G4": {
+     "slow_diff_vs_P6": {
+      "point": 0.03488372093023256,
+      "lo": 0.006943843713956171,
+      "hi": 0.07024892403559263,
+      "n": 258,
+      "arm_share": 0.2131782945736434,
+      "P6_share": 0.17829457364341086
+     },
+     "bar": "CI-hi < +0.10",
+     "n_cruise_tokens_E2": 258,
+     "ok": true
+    },
+    "ok": {
+     "G1": true,
+     "G2": true,
+     "G3": true,
+     "G4": true
+    }
+   },
+   "family_vs_P6": {
+    "NC": {
+     "point": 0.02469948954388276,
+     "lo": -0.10330564885869657,
+     "hi": 0.15096710628470908,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 98.87205664416268,
+     "P6_mean": 98.8473571546188,
+     "adverse": false
+    },
+    "DAC": {
+     "point": 0.20582907953235632,
+     "lo": 0.05744774156118702,
+     "hi": 0.36531923407702815,
+     "n": 12146,
+     "direction": "higher",
+     "family": "lateral",
+     "arm_mean": 98.15577144739008,
+     "P6_mean": 97.94994236785773,
+     "adverse": false
+    },
+    "EP": {
+     "point": -0.4794659962144263,
+     "lo": -0.684652685503341,
+     "hi": -0.2684294776165789,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 86.55495090173399,
+     "P6_mean": 87.03441689794842,
+     "adverse": true
+    },
+    "TTC": {
+     "point": 0.39519183270212416,
+     "lo": 0.11485197773608784,
+     "hi": 0.6822156019958082,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 95.47999341346946,
+     "P6_mean": 95.08480158076733,
+     "adverse": false
+    },
+    "C": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 100.0,
+     "P6_mean": 100.0,
+     "adverse": false
+    },
+    "DDC": {
+     "point": -0.1852461715791207,
+     "lo": -0.4195405040482223,
+     "hi": 0.03132107427224525,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 96.29919315000824,
+     "P6_mean": 96.48443932158736,
+     "adverse": false
+    },
+    "speed_mae_mps": {
+     "point": -0.028401757969335275,
+     "lo": -0.036776672586692406,
+     "hi": -0.02000265076200134,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.8089785067269953,
+     "P6_mean": 0.8373802646963306,
+     "adverse": false
+    },
+    "target_speed_within_0.5mps": {
+     "point": 0.011351473736209452,
+     "lo": 0.00670225819711831,
+     "hi": 0.015973788623042277,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.5089741478676107,
+     "P6_mean": 0.49762267413140127,
+     "adverse": false
+    },
+    "target_speed_within_1.0mps": {
+     "point": 0.00990037872550634,
+     "lo": 0.005668124537661952,
+     "hi": 0.014134188029164666,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.7153486744607278,
+     "P6_mean": 0.7054482957352215,
+     "adverse": false
+    },
+    "target_speed_within_2.0mps": {
+     "point": 0.0074818870410011526,
+     "lo": 0.004743860217833814,
+     "hi": 0.01025927696344262,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.8954902848674461,
+     "P6_mean": 0.8880083978264449,
+     "adverse": false
+    },
+    "along_mae_m": {
+     "point": -0.042613291093445034,
+     "lo": -0.05437024616999494,
+     "hi": -0.03115413152017575,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 1.156713741798817,
+     "P6_mean": 1.199327032892262,
+     "adverse": false
+    },
+    "along_final_abs_m": {
+     "point": -0.10965541083590803,
+     "lo": -0.13981876706246588,
+     "hi": -0.08018298792601383,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 2.8470800477258704,
+     "P6_mean": 2.9567354585617784,
+     "adverse": false
+    },
+    "accel_mae_mps2": {
+     "point": -0.010534517864823812,
+     "lo": -0.014751660535778753,
+     "hi": -0.006304802065842247,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.5343048823272011,
+     "P6_mean": 0.5448394001920249,
+     "adverse": false
+    },
+    "heading_mae_deg": {
+     "point": -0.0175447519888654,
+     "lo": -0.06401063145949004,
+     "hi": 0.032416043192520165,
+     "n": 12082,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 2.741898995151065,
+     "P6_mean": 2.7596224259149373,
+     "adverse": false
+    },
+    "yaw_rate_mae_degps": {
+     "point": -0.021345672988690396,
+     "lo": -0.04626916562252204,
+     "hi": 0.005364605529611877,
+     "n": 11931,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 3.0360661463025314,
+     "P6_mean": 3.0602104178209193,
+     "adverse": false
+    },
+    "curvature_mae_1pm": {
+     "point": -1.2255759681855622e-05,
+     "lo": -0.00028948469658444747,
+     "hi": 0.0002883402898725074,
+     "n": 11931,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.02011921325386727,
+     "P6_mean": 0.02030395948348201,
+     "adverse": false
+    },
+    "cross_mae_m": {
+     "point": -0.0065686409741213155,
+     "lo": -0.014215584752890751,
+     "hi": 0.0013703284493171498,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.43646513518350016,
+     "P6_mean": 0.4430337761576215,
+     "adverse": false
+    },
+    "cross_final_abs_m": {
+     "point": -0.029402949980728246,
+     "lo": -0.05014115368441664,
+     "hi": -0.006741479321273473,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 1.0458556313043799,
+     "P6_mean": 1.075258581285108,
+     "adverse": false
+    },
+    "lateral_decision_acc": {
+     "point": -0.0002469948954388276,
+     "lo": -0.003056066890343521,
+     "hi": 0.002585205747380217,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.9128108019100939,
+     "P6_mean": 0.9130577968055327,
+     "adverse": false
+    },
+    "longitudinal_decision_acc": {
+     "point": 0.007986168285855426,
+     "lo": 0.0030354395863489863,
+     "hi": 0.012920004757116752,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.656100773917339,
+     "P6_mean": 0.6481146056314836,
+     "adverse": false
+    },
+    "command_adherence_all": {
+     "point": -0.0022229540589494483,
+     "lo": -0.0046746272008217835,
+     "hi": 0.0003857986298126558,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8578132718590482,
+     "P6_mean": 0.8600362259179977,
+     "adverse": false
+    },
+    "command_adherence_turn_active": {
+     "point": -0.003925417075564278,
+     "lo": -0.010132712213135203,
+     "hi": 0.0027272673673941236,
+     "n": 4076,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8829735034347399,
+     "P6_mean": 0.8868989205103042,
+     "adverse": false
+    },
+    "_distance_keeping": "UNAVAILABLE at this tier (no lead-agent block in NAVSIM open loop); read in card section 6 of PREREG_SCORER1P6"
+   },
+   "adverse_components": [
+    "EP"
+   ],
+   "P2_vs_ENS9": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12146,
+    "clears": false
+   },
+   "M_zero_pick_share_minus_ENS9": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12146,
+    "arm_share": 0.02931006092540754,
+    "ENS9_share": 0.02931006092540754,
+    "clears": false,
+    "n_pick_pdms_zero": 356,
+    "n_pick_pdms_zero_ENS9": 356
+   }
+  },
+  "LCB1": {
+   "PDMS_x100_E3": {
+    "point": 91.29707529608928,
+    "lo": 90.50682673069231,
+    "hi": 92.09608144544993,
+    "n": 12146
+   },
+   "minus_P6": {
+    "point": 0.10059741181129256,
+    "lo": -0.09753390328492921,
+    "hi": 0.31035137203222746,
+    "n": 12146
+   },
+   "P1_vs_P6": {
+    "point": 0.10059741181129256,
+    "lo": -0.09753390328492921,
+    "hi": 0.31035137203222746,
+    "n": 12146,
+    "floor": 0.4971,
+    "clears": false
+   },
+   "EP_x100_E3": {
+    "arm_mean": 86.55495090173399,
+    "P6_mean": 87.03441689794842,
+    "minus_P6": {
+     "point": -0.4794659962144263,
+     "lo": -0.684652685503341,
+     "hi": -0.2684294776165789,
+     "n": 12146
+    }
+   },
+   "failure_share_minus_P6_reported": {
+    "point": -0.00617487238597069,
+    "lo": -0.009435663997089679,
+    "hi": -0.003016412808610213,
+    "n": 12146
+   },
+   "zero_pick_share": 0.02931006092540754,
+   "G": {
+    "G1": {
+     "per_head_points_vs_P6": {
+      "TTC": {
+       "point": 0.39519183270212416,
+       "lo": 0.11485197773608784,
+       "hi": 0.6822156019958082,
+       "n": 12146,
+       "arm_mean_x100": 95.47999341346946,
+       "P6_mean_x100": 95.08480158076733,
+       "ok": true
+      },
+      "NC": {
+       "point": 0.02469948954388276,
+       "lo": -0.10330564885869657,
+       "hi": 0.15096710628470908,
+       "n": 12146,
+       "arm_mean_x100": 98.87205664416268,
+       "P6_mean_x100": 98.8473571546188,
+       "ok": true
+      },
+      "DAC": {
+       "point": 0.20582907953235632,
+       "lo": 0.05744774156118702,
+       "hi": 0.36531923407702815,
+       "n": 12146,
+       "arm_mean_x100": 98.15577144739008,
+       "P6_mean_x100": 97.94994236785773,
+       "ok": true
+      }
+     },
+     "bar": "each point >= -0.5",
+     "ok": true,
+     "failed_heads": []
+    },
+    "G2": {
+     "delta_regret_vs_P6": {
+      "point": -0.03259321373115969,
+      "lo": -0.5190912516231014,
+      "hi": 0.4454542150892805,
+      "n": 2000,
+      "arm_regret": 5.854541432085136,
+      "P6_regret": 5.887134645816295
+     },
+     "bar": "CI-hi < +0.5 points",
+     "ok": true
+    },
+    "G3": {
+     "overspeed_diff_vs_P6": {
+      "point": -0.027131782945736434,
+      "lo": -0.05511811023622047,
+      "hi": 0.003676470588235294,
+      "n": 258,
+      "arm_share": 0.3875968992248062,
+      "P6_share": 0.41472868217054265
+     },
+     "bar": "CI-hi < +0.10",
+     "ok": true
+    },
+    "G4": {
+     "slow_diff_vs_P6": {
+      "point": 0.03488372093023256,
+      "lo": 0.006943843713956171,
+      "hi": 0.07024892403559263,
+      "n": 258,
+      "arm_share": 0.2131782945736434,
+      "P6_share": 0.17829457364341086
+     },
+     "bar": "CI-hi < +0.10",
+     "n_cruise_tokens_E2": 258,
+     "ok": true
+    },
+    "ok": {
+     "G1": true,
+     "G2": true,
+     "G3": true,
+     "G4": true
+    }
+   },
+   "family_vs_P6": {
+    "NC": {
+     "point": 0.02469948954388276,
+     "lo": -0.10330564885869657,
+     "hi": 0.15096710628470908,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 98.87205664416268,
+     "P6_mean": 98.8473571546188,
+     "adverse": false
+    },
+    "DAC": {
+     "point": 0.20582907953235632,
+     "lo": 0.05744774156118702,
+     "hi": 0.36531923407702815,
+     "n": 12146,
+     "direction": "higher",
+     "family": "lateral",
+     "arm_mean": 98.15577144739008,
+     "P6_mean": 97.94994236785773,
+     "adverse": false
+    },
+    "EP": {
+     "point": -0.4794659962144263,
+     "lo": -0.684652685503341,
+     "hi": -0.2684294776165789,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 86.55495090173399,
+     "P6_mean": 87.03441689794842,
+     "adverse": true
+    },
+    "TTC": {
+     "point": 0.39519183270212416,
+     "lo": 0.11485197773608784,
+     "hi": 0.6822156019958082,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 95.47999341346946,
+     "P6_mean": 95.08480158076733,
+     "adverse": false
+    },
+    "C": {
+     "point": 0.0,
+     "lo": 0.0,
+     "hi": 0.0,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 100.0,
+     "P6_mean": 100.0,
+     "adverse": false
+    },
+    "DDC": {
+     "point": -0.1852461715791207,
+     "lo": -0.4195405040482223,
+     "hi": 0.03132107427224525,
+     "n": 12146,
+     "direction": "higher",
+     "family": "pdms-other",
+     "arm_mean": 96.29919315000824,
+     "P6_mean": 96.48443932158736,
+     "adverse": false
+    },
+    "speed_mae_mps": {
+     "point": -0.028401757969335275,
+     "lo": -0.036776672586692406,
+     "hi": -0.02000265076200134,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.8089785067269953,
+     "P6_mean": 0.8373802646963306,
+     "adverse": false
+    },
+    "target_speed_within_0.5mps": {
+     "point": 0.011351473736209452,
+     "lo": 0.00670225819711831,
+     "hi": 0.015973788623042277,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.5089741478676107,
+     "P6_mean": 0.49762267413140127,
+     "adverse": false
+    },
+    "target_speed_within_1.0mps": {
+     "point": 0.00990037872550634,
+     "lo": 0.005668124537661952,
+     "hi": 0.014134188029164666,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.7153486744607278,
+     "P6_mean": 0.7054482957352215,
+     "adverse": false
+    },
+    "target_speed_within_2.0mps": {
+     "point": 0.0074818870410011526,
+     "lo": 0.004743860217833814,
+     "hi": 0.01025927696344262,
+     "n": 12146,
+     "direction": "higher",
+     "family": "longitudinal",
+     "arm_mean": 0.8954902848674461,
+     "P6_mean": 0.8880083978264449,
+     "adverse": false
+    },
+    "along_mae_m": {
+     "point": -0.042613291093445034,
+     "lo": -0.05437024616999494,
+     "hi": -0.03115413152017575,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 1.156713741798817,
+     "P6_mean": 1.199327032892262,
+     "adverse": false
+    },
+    "along_final_abs_m": {
+     "point": -0.10965541083590803,
+     "lo": -0.13981876706246588,
+     "hi": -0.08018298792601383,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 2.8470800477258704,
+     "P6_mean": 2.9567354585617784,
+     "adverse": false
+    },
+    "accel_mae_mps2": {
+     "point": -0.010534517864823812,
+     "lo": -0.014751660535778753,
+     "hi": -0.006304802065842247,
+     "n": 12146,
+     "direction": "lower",
+     "family": "longitudinal",
+     "arm_mean": 0.5343048823272011,
+     "P6_mean": 0.5448394001920249,
+     "adverse": false
+    },
+    "heading_mae_deg": {
+     "point": -0.0175447519888654,
+     "lo": -0.06401063145949004,
+     "hi": 0.032416043192520165,
+     "n": 12082,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 2.741898995151065,
+     "P6_mean": 2.7596224259149373,
+     "adverse": false
+    },
+    "yaw_rate_mae_degps": {
+     "point": -0.021345672988690396,
+     "lo": -0.04626916562252204,
+     "hi": 0.005364605529611877,
+     "n": 11931,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 3.0360661463025314,
+     "P6_mean": 3.0602104178209193,
+     "adverse": false
+    },
+    "curvature_mae_1pm": {
+     "point": -1.2255759681855622e-05,
+     "lo": -0.00028948469658444747,
+     "hi": 0.0002883402898725074,
+     "n": 11931,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.02011921325386727,
+     "P6_mean": 0.02030395948348201,
+     "adverse": false
+    },
+    "cross_mae_m": {
+     "point": -0.0065686409741213155,
+     "lo": -0.014215584752890751,
+     "hi": 0.0013703284493171498,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 0.43646513518350016,
+     "P6_mean": 0.4430337761576215,
+     "adverse": false
+    },
+    "cross_final_abs_m": {
+     "point": -0.029402949980728246,
+     "lo": -0.05014115368441664,
+     "hi": -0.006741479321273473,
+     "n": 12146,
+     "direction": "lower",
+     "family": "lateral",
+     "arm_mean": 1.0458556313043799,
+     "P6_mean": 1.075258581285108,
+     "adverse": false
+    },
+    "lateral_decision_acc": {
+     "point": -0.0002469948954388276,
+     "lo": -0.003056066890343521,
+     "hi": 0.002585205747380217,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.9128108019100939,
+     "P6_mean": 0.9130577968055327,
+     "adverse": false
+    },
+    "longitudinal_decision_acc": {
+     "point": 0.007986168285855426,
+     "lo": 0.0030354395863489863,
+     "hi": 0.012920004757116752,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.656100773917339,
+     "P6_mean": 0.6481146056314836,
+     "adverse": false
+    },
+    "command_adherence_all": {
+     "point": -0.0022229540589494483,
+     "lo": -0.0046746272008217835,
+     "hi": 0.0003857986298126558,
+     "n": 12146,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8578132718590482,
+     "P6_mean": 0.8600362259179977,
+     "adverse": false
+    },
+    "command_adherence_turn_active": {
+     "point": -0.003925417075564278,
+     "lo": -0.010132712213135203,
+     "hi": 0.0027272673673941236,
+     "n": 4076,
+     "direction": "higher",
+     "family": "tactical",
+     "arm_mean": 0.8829735034347399,
+     "P6_mean": 0.8868989205103042,
+     "adverse": false
+    },
+    "_distance_keeping": "UNAVAILABLE at this tier (no lead-agent block in NAVSIM open loop); read in card section 6 of PREREG_SCORER1P6"
+   },
+   "adverse_components": [
+    "EP"
+   ],
+   "P2_vs_ENS9": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12146,
+    "clears": false
+   },
+   "M_zero_pick_share_minus_ENS9": {
+    "point": 0.0,
+    "lo": 0.0,
+    "hi": 0.0,
+    "n": 12146,
+    "arm_share": 0.02931006092540754,
+    "ENS9_share": 0.02931006092540754,
+    "clears": false,
+    "n_pick_pdms_zero": 356,
+    "n_pick_pdms_zero_ENS9": 356
+   }
+  }
+ },
+ "K_ledger": {
+  "ledger": null,
+  "K": null,
+  "note": "no ledger written: K NOT COUNTED"
+ },
+ "seconds": 6.8,
+ "control_result": {
+  "control": "c1",
+  "banked_PDMS_x100_E3": 91.29707529608928,
+  "banked_path": "F:/tanitad_scratch/s1zsmread/real/s1zsm_read.json",
+  "banked_json_sha256": "7b1d33f6e9af3c7fccdb7a0c5e27aa9bd68fd1345587316a8923c31c4ccb811e",
+  "n_members": 1,
+  "arm_logits_equal_member_bits": {
+   "ENS9": true,
+   "PESS": true,
+   "LCB1": true
+  },
+  "arm_PDMS_x100_E3": {
+   "ENS9": 91.29707529608928,
+   "PESS": 91.29707529608928,
+   "LCB1": 91.29707529608928
+  },
+  "arm_PDMS_equals_banked_exactly": {
+   "ENS9": true,
+   "PESS": true,
+   "LCB1": true
+  },
+  "table_vs_s1zsm_csv": {
+   "csv": "F:/tanitad_scratch/p6arms/pass_s1zsm/S1ZSM/e3_changed_scores.csv",
+   "csv_sha256": "3693cacb451f25079803cc44469730dd7e4186bc08ea22fffdec867dd7e395d7",
+   "n_csv_rows": 6447,
+   "n_changed_picks_vs_P6": 6447,
+   "n_rows_not_equal": 0,
+   "rows_cover_every_changed_pick": true
+  },
+  "PASS": true
+ }
+}
