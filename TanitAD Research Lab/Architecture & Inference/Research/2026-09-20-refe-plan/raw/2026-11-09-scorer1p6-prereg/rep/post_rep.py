@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""post_rep.py (dev box): from the replicate pause's pod chains (C0r2, S1E1; PREREG_REP_P6.md) to the arms' E3 logits and changed-pick scores, unattended.
+"""post_rep.py (dev box): from the replicate pauses' pod chains (C0r2, S1E1 and, when S1Z reads Z1/Z5, S1Z1; PREREG_REP_P6.md) to the arms' E3 logits and changed-pick scores, unattended.
+Usage: post_rep.py <T0 YYYY-MM-DDTHH:MM:SS> [ARM ...]   (default arms C0r2 S1E1 -> pass_rep; any other set -> pass_rep_<arms>).
 Launch detached. Steps:
 1 wait for "ZZREP_CHAIN_DONE <arm>" for every arm in the pod's chain_<arm>.log, stamped at or after the pause start (a REFUSED / ZZREP_CHAIN_FAIL line ends this script FAILED)
 2 pull rep/<arm lower>/model_sft_B.pt from the private HF repo, verify the LFS sha256 (token read in place from Keys.txt, never printed)
@@ -23,9 +24,11 @@ BASH = "C:/Program Files/Git/bin/bash.exe"          # never a bare "bash" from P
 T0 = sys.argv[1] if len(sys.argv) > 1 else "2026-11-10T04:39:45"     # only chain-log lines at or after the pause start count; pass the start of the pause being read
 if not re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d", T0):
     sys.exit(f"T0 {T0!r} is not YYYY-MM-DDTHH:MM:SS")
-ARMS = ("C0r2", "S1E1")
+ARMS = tuple(sys.argv[2:]) or ("C0r2", "S1E1")      # usage: post_rep.py <T0> [ARM ...]; one E3 pass serves every arm given (its cost does not grow with the arm count)
+if len(set(ARMS)) != len(ARMS) or not set(ARMS) <= {"C0r2", "S1E1", "S1Z1"}:
+    sys.exit(f"arms {ARMS} must be distinct and among C0r2, S1E1, S1Z1")
 REPO = "Sayood/tanitad-refe-scorer1p6"
-PASS = ROOT + "pass_rep"
+PASS = ROOT + "pass_rep" + ("" if ARMS == ("C0r2", "S1E1") else "_" + "_".join(a.lower() for a in ARMS))
 TABLE = "F:/tanitad_scratch/selq2read/table_p6final_c.npz"
 
 
