@@ -1,0 +1,403 @@
+{
+ "date": "2026-11-10",
+ "tip": "0c19b8fd69854b297e6502187ef8beb82278352d",
+ "env": "CPU, CUDA_VISIBLE_DEVICES=-1, venv C:/Users/Admin/venvs/tanitad, ONE test process at a time, PYTHONPATH = the overlay tree, eval/ code/ splits/ raw/2026-10-18-r0e-pick exported from the tip next to it; temp under F:/tanitad_scratch/s1zsm_build/tmp",
+ "evidence": "MEASURED (stub trunk, CPU); the real ViT-L trunk, bank, bf16 and the pod are NOT exercised",
+ "groups": {
+  "A": "the 16 scripts of this arm and of the S1Z / SCORER1 / REP chain it touches: all rc 0 with the pass marker ZZTEST_PASS",
+  "B": "the other scripts that read launch_gate / gate_checks / scorer_finetune / the layers: all rc 0 on the overlay",
+  "C": "11 scripts that fail on the overlay AND on the unchanged tip with the same final lines (not caused by this overlay); test_launch_gate stops inside full() at the stale D:\\Projects\\TanitAD\\data\\refe_consistent\\targets_rank1.jsonl, everything after full() is UNVERIFIED"
+ },
+ "counts": {
+  "A": 16,
+  "B": 30,
+  "C": 11
+ },
+ "results": [
+  {
+   "group": "A",
+   "script": "test_s1zsm_layer.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 0
+  },
+  {
+   "group": "A",
+   "script": "test_s1zsm_loss.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 3
+  },
+  {
+   "group": "A",
+   "script": "test_s1zsm_gate.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 5
+  },
+  {
+   "group": "A",
+   "script": "test_s1zsm_preflight.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 12
+  },
+  {
+   "group": "A",
+   "script": "test_s1z_layer.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 0
+  },
+  {
+   "group": "A",
+   "script": "test_s1z_loss.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 3
+  },
+  {
+   "group": "A",
+   "script": "test_s1z_gate.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 2
+  },
+  {
+   "group": "A",
+   "script": "test_s1z_preflight.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 14
+  },
+  {
+   "group": "A",
+   "script": "test_scorer1p6_gate.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 3
+  },
+  {
+   "group": "A",
+   "script": "test_scorer1p6_preflight.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 6
+  },
+  {
+   "group": "A",
+   "script": "test_scorer1_layer.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 0
+  },
+  {
+   "group": "A",
+   "script": "test_pair_loss.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 3
+  },
+  {
+   "group": "A",
+   "script": "test_pair_loss_p6.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 2
+  },
+  {
+   "group": "A",
+   "script": "test_rl_epo.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 98
+  },
+  {
+   "group": "A",
+   "script": "test_dump_scores.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 25
+  },
+  {
+   "group": "A",
+   "script": "test_rep_gate.py",
+   "overlay_rc": 0,
+   "pass_marker": "ZZTEST_PASS",
+   "marker_found": true,
+   "secs": 11
+  },
+  {
+   "group": "B",
+   "script": "test_aux_g12_bf16.py",
+   "overlay_rc": 0,
+   "marker_found": false
+  },
+  {
+   "group": "B",
+   "script": "test_aux_s1_wiring.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "C",
+   "script": "test_carve_feed.py",
+   "overlay_rc": 1,
+   "tip_rc": 1,
+   "note": "fails on the unchanged tip too, same final lines (environment: raw/ files not exported, stale D: path, pod-only probe)"
+  },
+  {
+   "group": "B",
+   "script": "test_carve_feed_gate.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_ego_yaw.py",
+   "overlay_rc": 0,
+   "note": "first run rc 1 only because eval/*.json was not exported into the scratch tree; rerun with the full eval/code/splits export: rc 0 on overlay AND tip (tip rc 0)"
+  },
+  {
+   "group": "B",
+   "script": "test_gate_gpu_probes.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_gate_suite_prerun.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_hn_content_fp.py",
+   "overlay_rc": 0,
+   "note": "first run rc 1 only because eval/*.json was not exported into the scratch tree; rerun with the full eval/code/splits export: rc 0 on overlay AND tip (tip rc 0)"
+  },
+  {
+   "group": "B",
+   "script": "test_hn_ctx_anchor.py",
+   "overlay_rc": 0,
+   "note": "first run rc 1 only because eval/*.json was not exported into the scratch tree; rerun with the full eval/code/splits export: rc 0 on overlay AND tip (tip rc 0)"
+  },
+  {
+   "group": "B",
+   "script": "test_hn_screen_wiring.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_hnscreen_chain.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_hnscreen_ctx_chain.py",
+   "overlay_rc": 0,
+   "note": "first run rc 1 only because eval/*.json was not exported into the scratch tree; rerun with the full eval/code/splits export: rc 0 on overlay AND tip (tip rc 0)"
+  },
+  {
+   "group": "B",
+   "script": "test_label_dir_refusal.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "C",
+   "script": "test_launch_gate.py",
+   "overlay_rc": 1,
+   "tip_rc": 1,
+   "note": "fails on the unchanged tip too, same final lines (environment: raw/ files not exported, stale D: path, pod-only probe)"
+  },
+  {
+   "group": "C",
+   "script": "test_p2r_chain.py",
+   "overlay_rc": 1,
+   "tip_rc": 1,
+   "note": "fails on the unchanged tip too, same final lines (environment: raw/ files not exported, stale D: path, pod-only probe)"
+  },
+  {
+   "group": "C",
+   "script": "test_p2rep_chain.py",
+   "overlay_rc": 1,
+   "tip_rc": 1,
+   "note": "fails on the unchanged tip too, same final lines (environment: raw/ files not exported, stale D: path, pod-only probe)"
+  },
+  {
+   "group": "B",
+   "script": "test_p6_chain.py",
+   "overlay_rc": 0,
+   "marker_found": false
+  },
+  {
+   "group": "C",
+   "script": "test_p6_cpu_probe.py",
+   "overlay_rc": 1,
+   "tip_rc": 1,
+   "note": "fails on the unchanged tip too, same final lines (environment: raw/ files not exported, stale D: path, pod-only probe)"
+  },
+  {
+   "group": "B",
+   "script": "test_p6_levers.py",
+   "overlay_rc": 0,
+   "marker_found": false
+  },
+  {
+   "group": "B",
+   "script": "test_p6_overlap.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_p7_chain.py",
+   "overlay_rc": 0,
+   "marker_found": false
+  },
+  {
+   "group": "B",
+   "script": "test_p7_head_wiring.py",
+   "overlay_rc": 0,
+   "marker_found": false
+  },
+  {
+   "group": "B",
+   "script": "test_p7_integration.py",
+   "overlay_rc": 0,
+   "marker_found": false
+  },
+  {
+   "group": "C",
+   "script": "test_p7_ship_list.py",
+   "overlay_rc": 1,
+   "tip_rc": 1,
+   "note": "fails on the unchanged tip too, same final lines (environment: raw/ files not exported, stale D: path, pod-only probe)"
+  },
+  {
+   "group": "C",
+   "script": "test_r0e_b9b10.py",
+   "overlay_rc": 1,
+   "tip_rc": 1,
+   "note": "fails on the unchanged tip too, same final lines (environment: raw/ files not exported, stale D: path, pod-only probe)"
+  },
+  {
+   "group": "B",
+   "script": "test_rl_pickcon.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_rl_r0c.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_rl_s1b.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_rl_safeobj.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_rl_terms_label.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "C",
+   "script": "test_rls1_chain.py",
+   "overlay_rc": 1,
+   "tip_rc": 1,
+   "note": "fails on the unchanged tip too, same final lines (environment: raw/ files not exported, stale D: path, pod-only probe)"
+  },
+  {
+   "group": "B",
+   "script": "test_rls1_queue.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "C",
+   "script": "test_rls1e_chain.py",
+   "overlay_rc": 1,
+   "tip_rc": 1,
+   "note": "fails on the unchanged tip too, same final lines (environment: raw/ files not exported, stale D: path, pod-only probe)"
+  },
+  {
+   "group": "C",
+   "script": "test_s1aux_chain.py",
+   "overlay_rc": 1,
+   "tip_rc": 1,
+   "note": "fails on the unchanged tip too, same final lines (environment: raw/ files not exported, stale D: path, pod-only probe)"
+  },
+  {
+   "group": "B",
+   "script": "test_s1c.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_scorer1_gate.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_scorer1_mutation.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_session_reserve.py",
+   "overlay_rc": 0,
+   "marker_found": false
+  },
+  {
+   "group": "C",
+   "script": "test_sft4r_chain.py",
+   "overlay_rc": 1,
+   "tip_rc": 1,
+   "note": "fails on the unchanged tip too, same final lines (environment: raw/ files not exported, stale D: path, pod-only probe)"
+  },
+  {
+   "group": "B",
+   "script": "test_sft4r_gate.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  },
+  {
+   "group": "B",
+   "script": "test_suite_nesting.py",
+   "overlay_rc": 0,
+   "marker_found": true
+  }
+ ]
+}

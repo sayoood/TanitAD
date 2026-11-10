@@ -149,7 +149,7 @@ for n in ("refe_rep_p6", "refe_rep_s1z_p6"):
     r = repr(sorted(L.PROFILES[n].items()))
     assert fp(n) == fp(n) and "function" not in r and "0x" not in r, n
 assert fp("refe_rep_p6") != fp("refe_rep_s1z_p6") != fp("refe_s1z_p6") and fp("refe_rep_p6") != fp("refe_scorer1p6")
-assert len(L.PROFILES) == 21 and len(set(L.PROFILES) - {"refe_rep_p6", "refe_rep_s1z_p6"}) == 19, len(L.PROFILES)
+assert len(L.PROFILES) == 22 and len(set(L.PROFILES) - {"refe_rep_p6", "refe_rep_s1z_p6", "refe_s1zsm_p6"}) == 19, len(L.PROFILES)          # S1ZSM (PREREG_S1ZSM_P6) added refe_s1zsm_p6
 assert PC["suite"][-1] == {"script": "test_rep_gate.py", "token": "ZZTEST_PASS"} and PZ["suite"][-1] == PC["suite"][-1] and PC["suite"][:-1] == L.SCORER1P6_SUITE and PZ["suite"][:-1] == L.S1Z_SUITE
 for k in ("data_pin", "data_expect", "ckpt_sha256", "navtest_sha256", "required_flags", "recipe", "forbidden_flags"):
     assert PC[k] == L.PROFILES["refe_scorer1p6"][k] and PZ[k] == L.PROFILES["refe_s1z_p6"][k], k      # data pin, checkpoint, navtest lists = the parents'

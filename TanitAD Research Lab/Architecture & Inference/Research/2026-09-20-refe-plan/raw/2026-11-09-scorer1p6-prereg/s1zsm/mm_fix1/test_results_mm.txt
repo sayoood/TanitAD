@@ -1,0 +1,13 @@
+# MM fix 1 test run, 2026-11-10, CPU (CUDA_VISIBLE_DEVICES=-1), venv tanitad, one script at a time, tree = tip b70a9000 refe/ + eval/ (git archive, autocrlf off) + the fixed overlay
+test_s1zsm_layer rc=0 pass_marker=1 1s last: ZZTEST_PASS
+test_s1zsm_loss rc=0 pass_marker=1 3s last: ZZTEST_PASS
+test_s1zsm_gate rc=0 pass_marker=1 5s last: ZZTEST_PASS
+test_s1z_layer rc=0 pass_marker=1 0s last: ZZTEST_PASS
+test_s1z_loss rc=0 pass_marker=1 3s last: ZZTEST_PASS
+test_s1z_gate rc=0 pass_marker=1 3s last: ZZTEST_PASS
+test_s1z_preflight rc=0 pass_marker=1 15s last: ZZTEST_PASS
+test_scorer1p6_gate rc=0 pass_marker=1 4s last: ZZTEST_PASS
+test_rep_gate rc=0 pass_marker=1 12s last: ZZTEST_PASS
+test_scorer1_layer rc=0 pass_marker=1 0s last: ZZTEST_PASS
+test_s1zsm_preflight rc=0 pass_marker=1 (re-run after its window assertion was updated to 50 micro-batches / 100 sets; first run failed on the old 16-batch count, as expected)
+test_dump_scores rc=0 pass_marker=1 (re-run with eval/ in the tree; first run: ModuleNotFoundError rl_val_eval, environment)

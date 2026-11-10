@@ -58,6 +58,8 @@ def has_layer(src: str) -> bool:
 
 def peel(src: str) -> str:
     """undo the S1Z edits (each `new` text must occur exactly once); a trainer without the layer is returned unchanged"""
+    import s1zsm_layer as S1ZSM                     # S1ZSM (PREREG_S1ZSM_P6) sits ON TOP of this layer and is peeled first: every pin that peels this layer still sees the pre-S1Z trainer
+    src = S1ZSM.peel(src)
     if not has_layer(src):
         return src
     for new, old in REVERSALS:

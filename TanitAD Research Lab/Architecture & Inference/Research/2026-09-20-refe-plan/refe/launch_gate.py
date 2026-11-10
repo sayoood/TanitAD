@@ -38,6 +38,7 @@ REHEARSAL evidence (tiny config, synthetic images, CPU) never counts toward a to
 from __future__ import annotations
 
 import argparse
+import copy
 import importlib
 import json
 import math
@@ -633,6 +634,54 @@ PROFILES["refe_s1z_p6"] = {**PROFILES["refe_scorer1p6"], "name": "refe_s1z_p6", 
                            "required_flags": {**PROFILES["refe_scorer1p6"]["required_flags"], "--twin-w": None, "--twin-heads": None, "--twin-ade": "1.0", "--twin-topk": "8"},
                            "clock_na": "S1Z has no label clock of its own: it trains on the PDM labels of P6's own proposals (the SCORER1P6 label set, the same pin; G-DVB asserts the coverage and 0 stale from the trainer's "
                                        "data event) on a frozen generator, from a command-mode checkpoint (G-DVB asserts the built nav_mode)"}
+
+# ============================================================================================ S1ZSM (PREREG_S1ZSM_P6, frozen 2026-11-10; chain refe/s1zsm_chain.sh; pod script refe/s1zsm_pod.sh)
+# S1Z's twin loss with SPEED-NEUTRAL pairs: S1Z's recipe exactly (the same argv layout, 400 updates, seed 0, the same 60,000 train sets, heads NC,DAC,TTC, radius 1.0 m, top-K 8) plus ONE lever, the
+# default-OFF trainer flag --twin-speed-neutral (|v4_i - v4_j| / max(v0, 1) < 0.15 and F/S balancing, seed 20261107).  A NEW profile `refe_s1zsm_p6` built as a DEEP COPY of refe_s1z_p6 with its own root, arm table,
+# suite and required flag: every existing profile and every shared constant above is untouched (test_scorer1p6_gate.py / test_s1z_gate.py / test_rep_gate.py pin their digests; test_s1zsm_gate.py pins them again
+# next to this one).  lambda_z is MEASURED again, by `--pair-calibrate --twin-heads NC,DAC,TTC --twin-speed-neutral` (S1Z's 0.026321 was measured for another loss and is never reused: the pod script and the chain
+# refuse a pair_weight.json that does not say speed_neutral true).  The flag is NAMED in the argv (it is in the pin and in required_flags): an argv that leaves the default-off flag out is S1Z, and is refused.
+S1ZSM_ROOT = "/workspace/data/refe_s1zsm"
+S1ZSM_PKG = "/workspace/refe-plan-s1zsm"
+S1ZSM_CARD_SHA256 = "ac75b2891e794de800102a6d5a0f0353e8092e5f976f31b543ac7700811ad6b8"      # PREREG_S1ZSM_P6.md as frozen 2026-11-10 (the chain refuses a card with other bytes)
+S1ZSM_ARM_SEED = {"S1ZSM": 0}
+S1ZSM_SN_SPEC = {"dv": 0.15, "seed": 20261107}                                   # PREREG_S1ZSM_P6 section 1: fixed there, not searched (scorer_finetune.TWIN_SN_DV / TWIN_SN_SEED, gate_checks.G18_SN_*)
+S1ZSM_UPDATES = SCORER1P6_UPDATES
+S1ZSM_SUITE = S1Z_SUITE + [{"script": "test_s1zsm_loss.py", "token": "ZZTEST_PASS"}, {"script": "test_s1zsm_gate.py", "token": "ZZTEST_PASS"},
+                           {"script": "test_s1zsm_preflight.py", "token": "ZZTEST_PASS"}, {"script": "test_s1zsm_layer.py", "token": "ZZTEST_PASS"}]
+
+
+def s1zsm_argv(arm: str = "S1ZSM", twin_w=None) -> list:
+    """The pod script's argv for the arm as it expands on the pod (`MODE=argv bash refe/s1zsm_pod.sh`; test_s1zsm_gate.py diffs the two copies): S1Z's argv (s1z_argv) with S1ZSM's root and seed table, and the
+    default-off --twin-speed-neutral NAMED (an argv without it is S1Z).  lambda_z is NOT in the pin: `twin_w` None builds the pin WITHOUT it; the profile then demands a positive finite --twin-w."""
+    R, D, T = S1ZSM_ROOT, SCORER1P6_DUMP, SCORER1P6_TARGETS
+    toks = ["--ckpt", SCORER1P6_CKPT, "--targets", T, "--images", SCORER1P6_DATA + "/navtrain_pixels", "--calib", SCORER1P6_CALIB, "--onpolicy", D + "/train_sets",
+            "--heldout", D + "/heldout_sets", "--heldout-logs", D + "/logs/heldout_logs.txt", "--workers", "3", "--lr", "1e-4", "--b-mode", "expreward", "--lam", "1.0", "--tau-s", "0.1",
+            "--pdm-labels-heldout", D + "/heldout_pdm", "--pdm-labels-train", D + "/train_pdm", "--require-pdm",
+            "--navtest-logs", R + "/navtest_ids/navtest_logs.json", "--navtest-tokens", R + "/navtest_ids/navtest_tokens.txt.gz",
+            "--max-updates", str(S1ZSM_UPDATES), "--eval-every", "200", "--seed", str(S1ZSM_ARM_SEED[arm]),
+            "--twin-heads", S1Z_TWIN_SPEC["heads"], "--twin-ade", str(S1Z_TWIN_SPEC["ade"]), "--twin-topk", str(S1Z_TWIN_SPEC["topk"]), "--twin-speed-neutral"]
+    if twin_w is not None:
+        toks += ["--twin-w", str(twin_w)]
+    return toks + ["--out", R + "/" + arm.lower()]
+
+
+def s1zsm_twin_refusals(prof: dict, argv: list, mod, parser) -> list:
+    """S1ZSM's own rules on top of s1z_twin_refusals: --twin-speed-neutral NAMED (a default that disables the lever must be in the argv, or the arm did not test it) and parsed ON."""
+    import gate_checks as C
+    name = prof["name"]
+    out = s1z_twin_refusals(prof, argv, mod, parser)
+    if "--twin-speed-neutral" not in argv:
+        out.append(f"{name} requires --twin-speed-neutral NAMED: its default is OFF, and an argv without it is S1Z, not this arm")
+    ns, err = C.parse_scorer_argv(parser, argv)
+    if not err and not getattr(ns, "twin_speed_neutral", False):
+        out.append(f"{name}: the parsed argv has twin_speed_neutral False (PREREG_S1ZSM_P6 section 1)")
+    return out
+
+
+PROFILES["refe_s1zsm_p6"] = {**copy.deepcopy(PROFILES["refe_s1z_p6"]), "name": "refe_s1zsm_p6", "argv_kind": "s1zsm", "sn_spec": dict(S1ZSM_SN_SPEC), "suite": S1ZSM_SUITE, "root": S1ZSM_ROOT,
+                             "arm_seed": dict(S1ZSM_ARM_SEED), "required_flags": {**PROFILES["refe_s1z_p6"]["required_flags"], "--twin-speed-neutral": None}}
+
 
 # ============================================================================================ SEED REPLICATES of the P6 scorer arms (PREREG_SCORER1P6 O5, PREREG_S1Z_P6 Z1 / Z5; chain refe/rep_chain.sh; pod script refe/rep_pod.sh)
 # A replicate is its PARENT arm's argv with the data-order seed and the --out dir swapped and NOTHING else (the trainer is deterministic at a fixed seed: a replicate that changes nothing reads a floor of 0.0).
@@ -1247,7 +1296,7 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
     p6 = prof.get("scorer1_kind") == "p6"                                  # PREREG_SCORER1P6: the arm table, the pair levers per arm, the root and the pin come from the PROFILE; refe_scorer1 carries none of them and keeps the module constants
     arm_seed, root = prof.get("arm_seed", SCORER1_ARM_SEED), prof.get("root", SCORER1_ROOT)
     pair_spec = prof.get("pair_spec", {"S1": {"heads": SCORER1_PAIR_HEADS, "dv": SCORER1_PAIR_DV, "nobalance": "", "nospeed": "", "gap": "", "mean": "pooled"}})
-    argv_of = rep_argv if prof.get("argv_kind") == "rep" else s1z_argv if prof.get("argv_kind") == "s1z" else (scorer1p6_argv if p6 else scorer1_argv)         # S1Z (PREREG_S1Z_P6): its own argv builder, selected by a STRING in the profile (a function in a profile would make its fingerprint unstable)
+    argv_of = rep_argv if prof.get("argv_kind") == "rep" else s1zsm_argv if prof.get("argv_kind") == "s1zsm" else s1z_argv if prof.get("argv_kind") == "s1z" else (scorer1p6_argv if p6 else scorer1_argv)         # S1Z (PREREG_S1Z_P6): its own argv builder, selected by a STRING in the profile (a function in a profile would make its fingerprint unstable)
     if p6 and prof.get("data_pin") is None:
         out.append(f"{name}: THE DATA PIN IS UNSET (launch_gate.SCORER1P6_DATA_PIN is None): the exact P6 label counts are not known yet, so label completeness cannot be asserted; "
                    "fill the pin from the finished Jobs A + B (pdm_label_complete.py --expect N) before any arm may be gated")
@@ -1259,7 +1308,7 @@ def scorer1_refusals(prof: dict, argv: list, mod, parser) -> tuple:
     pin_argv = list(argv)
     if prof.get("twin_spec"):                                    # S1Z: lambda_z is MEASURED, not pinned: left out of the pin and judged by s1z_twin_refusals
         pin_argv = [t for f, v in GT.flag_pairs(list(argv)) if f != "--twin-w" for t in [f] + list(v)]
-        out += s1z_twin_refusals(prof, argv, mod, parser)
+        out += (s1zsm_twin_refusals if prof.get("sn_spec") else s1z_twin_refusals)(prof, argv, mod, parser)          # S1ZSM: the speed-neutral rules on top of S1Z's
     if arm in pair_spec:
         try:
             wv = float(pw[0]) if pw and len(pw) == 1 else None

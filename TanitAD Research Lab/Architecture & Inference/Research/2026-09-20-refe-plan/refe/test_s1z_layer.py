@@ -15,6 +15,7 @@ sys.path.insert(0, HERE)
 import carvefeed_layer as CL  # noqa: E402
 import hnscreen_layer as HL  # noqa: E402
 import s1z_layer as ZL  # noqa: E402
+import s1zsm_layer as ZSM  # noqa: E402   (S1ZSM sits on top of the S1Z layer and is peeled first by ZL.peel)
 import scorer1_layer as SL  # noqa: E402
 
 
@@ -39,7 +40,7 @@ assert HL.peel(src) == HL.peel(peeled) and CL.peel(src) == CL.peel(peeled) and n
 print("L3 ok")
 for k in (0, len(ZL.REVERSALS) - 1):
     new_k = ZL.REVERSALS[k][0]
-    bad = src.replace(new_k, new_k.replace("e", "E", 1), 1)
+    bad = ZSM.peel(src).replace(new_k, new_k.replace("e", "E", 1), 1)          # the S1Z reversals are texts of the trainer WITHOUT the S1ZSM edits (ZSM.peel undoes those first)
     try:
         ZL.peel(bad)
     except AssertionError:

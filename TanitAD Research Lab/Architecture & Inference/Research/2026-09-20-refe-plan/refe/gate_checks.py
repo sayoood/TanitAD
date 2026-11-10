@@ -55,6 +55,7 @@ TRAINABLE_GROUPS = ("backbone.lora", "registers", "queries", "pos3d_mlp", "reg_c
 FROZEN_GROUPS = ("backbone", "goal_freqs")
 SCORER_GROUPS = ("score_dec", "score_q_mlp", "score_head")
 G18_NOISE_FACTOR = 10.0                  # == scorer_finetune.TWIN_NOISE_FACTOR (test_s1z_gate pins the two equal): G18's w=1 vs w=0 delta must exceed this many times the w=0 vs w=0 noise
+G18_SN_DV, G18_SN_SEED = 0.15, 20261107      # == scorer_finetune.TWIN_SN_DV / TWIN_SN_SEED (PREREG_S1ZSM_P6 section 1; test_s1zsm_gate pins the two equal): the gate's OWN statement of the speed band and the balancing seed
 
 
 def arm_is(name: str, arm: str | None) -> bool:
@@ -876,6 +877,9 @@ DVB_KINDS_SCORER = {
     "pair_nobalance_heads": "built", "pair_nospeed_heads": "built", "pair_gap_heads": "built", "pair_mean": "built",
     # S1Z (PREREG_S1Z_P6 section 1): L_twin levers, all default OFF.  `built` = compared with the trainer's `twin` block (scorer_dvb_rows), which TwinLoss.built_facts reads off the object the run holds.
     "twin_w": "built", "twin_ade": "built", "twin_topk": "built", "twin_heads": "built",
+    # S1ZSM (PREREG_S1ZSM_P6 section 1): the speed-neutral pair rule, default OFF.  `built` = compared with the trainer's `twin` block (speed_neutral, sn_dv, sn_balance, sn_band_filter, sn_seed), observed iff --twin-speed-neutral is on
+    # (or the block says it is built: a built-ON block under an argv without the flag is RED).  The default-off flag left out of an S1ZSM argv is refused by the profile (required_flags + the pinned argv).
+    "twin_speed_neutral": "built",
     "navtest_logs": "consumed", "navtest_tokens": "consumed",       # SCORER1: check-only lists read by main(); refe_scorer1 binds their sha256 (scorer1_refusals) and asserts the data event's `navtest` block (data_expect)
     "out": "run", "eval_every": "run", "workers": "run",
     "dump_scores": "run",              # the per-proposal score .npz rl_val_eval.py reads; observational (bit-identical on/off, test_dump_scores.py)
@@ -1084,6 +1088,45 @@ def judge_g18(g18, ns) -> list:
         out.append("G18: the radius filter or the top-K mining is not built")
     if g18.get("mutate_noradius") or g18.get("mutate_notopk") or g18.get("mutate_drop_loss"):
         out.append("G18 was produced under a regression arm (REFE_TWIN_MUTATE_*): it can never count")
+    out += judge_g18_speed_neutral(g18, ns, heads)
+    return out
+
+
+def judge_g18_speed_neutral(g18, ns, heads) -> list:
+    """S1ZSM (PREREG_S1ZSM_P6 section 2): G18 EXTENDED, re-judged from its RAW fields.  With --twin-speed-neutral: the probe batch's w=1 pass AND the live micro-batches hold NO kept pair outside the band
+    (out_of_band 0), kept F == kept S per head (unbalanced_sets 0, kept_F == kept_S), every head keeps pairs (a head with 0 kept pairs is a LAUNCH BLOCKER), the BUILT band / balancing / seed equal the card's,
+    and no regression arm (REFE_TWIN_MUTATE_NOBAND / _NOSNBALANCE) produced it.  Without the flag: nothing of S1ZSM may be in the record."""
+    out = []
+    if not getattr(ns, "twin_speed_neutral", False):
+        if g18.get("speed_neutral") is not None or g18.get("mutate_noband") or g18.get("mutate_nosnbalance"):
+            out.append("G18: the record carries S1ZSM fields but the argv does not name --twin-speed-neutral")
+        return out
+    if g18.get("speed_neutral") is not True:
+        out.append("G18: the argv names --twin-speed-neutral but the record is not a speed-neutral one (the flag did not reach the built loss)")
+    if not _close(g18.get("sn_dv_built"), G18_SN_DV):
+        out.append(f"G18: sn_dv_built {g18.get('sn_dv_built')!r} != the card's {G18_SN_DV} (the speed band is missing or moved)")
+    if g18.get("sn_band_filter_built") is not True or g18.get("sn_balance_built") is not True:
+        out.append("G18: the speed band or the F/S balancing is not built")
+    if g18.get("sn_seed_built") != G18_SN_SEED:
+        out.append(f"G18: sn_seed_built {g18.get('sn_seed_built')!r} != the card's {G18_SN_SEED}")
+    if g18.get("mutate_noband") or g18.get("mutate_nosnbalance"):
+        out.append("G18 was produced under a regression arm (REFE_TWIN_MUTATE_NOBAND / _NOSNBALANCE): it can never count")
+    for where in ("micro_batch_pairs", "share_micro"):
+        for h in heads:
+            v = (g18.get(where) or {}).get(h)
+            ok_keys = isinstance(v, dict) and all(isinstance(v.get(k), int) and not isinstance(v.get(k), bool) for k in ("out_of_band", "unbalanced_sets", "kept_F", "kept_S", "pairs", "band_pairs"))
+            if not ok_keys:
+                out.append(f"G18: {where}.{h} carries no speed-neutral counts (out_of_band / unbalanced_sets / kept_F / kept_S / band_pairs)")
+                continue
+            if v["out_of_band"] != 0:
+                out.append(f"G18: head {h} kept {v['out_of_band']} pair(s) OUTSIDE the speed band in {where}")
+            if v["unbalanced_sets"] != 0 or v["kept_F"] != v["kept_S"]:
+                out.append(f"G18: head {h} is not F/S balanced in {where} (kept F {v['kept_F']}, kept S {v['kept_S']}, unbalanced sets {v['unbalanced_sets']})")
+            if v["pairs"] <= 0 or v["pairs"] != v["kept_F"] + v["kept_S"]:
+                out.append(f"G18: head {h} has {v['pairs']} kept pairs in {where} (kept F + kept S = {v['kept_F'] + v['kept_S']}): a head with no kept speed-neutral pair is a LAUNCH BLOCKER")
+    for k in ("sn_probe_batch_ok", "sn_live_ok", "sn_ok"):
+        if g18.get(k) is not True:
+            out.append(f"G18: {k} is {g18.get(k)!r}")
     return out
 
 
@@ -1523,6 +1566,14 @@ def scorer_dvb_rows(ns, data: dict, profile=None) -> list:
             add("twin_topk", int(ns.twin_topk), blk.get("topk"), "data event: twin.topk (the K the built TwinLoss mines; the NOTOPK regression reads 1e6)")
             add("twin_topk", True, blk.get("mining"), "data event: twin.mining (the top-K mining is built)")
             add("twin_heads", [h for h in ns.twin_heads.split(",") if h], blk.get("heads"), "data event: twin.heads (the heads the TwinLoss was built for)")
+            sn_named = bool(getattr(ns, "twin_speed_neutral", False))
+            if sn_named or "speed_neutral" in blk:                  # S1ZSM: the BUILT speed-neutral facts (the NOBAND regression reads sn_dv 1e6 + sn_band_filter False, NOSNBALANCE reads sn_balance False)
+                add("twin_speed_neutral", sn_named, blk.get("speed_neutral") is True, "data event: twin.speed_neutral (the speed-neutral pair rule is built iff the argv names --twin-speed-neutral)")
+                if sn_named:
+                    add("twin_speed_neutral", 0.15, blk.get("sn_dv"), "data event: twin.sn_dv (the speed band the built TwinLoss applies; the NOBAND regression reads 1e6)")
+                    add("twin_speed_neutral", True, blk.get("sn_band_filter"), "data event: twin.sn_band_filter (the speed band is built)")
+                    add("twin_speed_neutral", True, blk.get("sn_balance"), "data event: twin.sn_balance (the F/S balancing is built; the NOSNBALANCE regression reads False)")
+                    add("twin_speed_neutral", 20261107, blk.get("sn_seed"), "data event: twin.sn_seed (the registered balancing seed)")
     hn_named, cc_named = bool(getattr(ns, "hn_bank", "")), bool(getattr(ns, "ctx_cache", ""))
     if hn_named or "hn" in data:                                   # P6-HN-S: the bank, against the BUILT block of the bank the trainer holds (never an echo of the namespace)
         blk = data.get("hn") if isinstance(data.get("hn"), dict) else {}
@@ -1702,7 +1753,7 @@ def check_dvb_scorer(argv: list, pf, profile: dict, arm=None, rehearsal=False) -
         for r in rows:
             if not r["ok"]:
                 reasons.append(f"{r['flag']}: declared {r['declared']!r} != built {r['built']!r} ({r['how']})")
-        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS) and (bool(getattr(ns, "twin_w", 0.0)) or d not in SCORER_TWIN_DESTS)}
+        expect = {d for d, k in table.items() if k == "built" and (ns.epo or not d.startswith("epo_")) and (ns.aux_drv or d not in SCORER_AUX_DESTS) and (bool(getattr(ns, "pair_w", 0.0)) or d not in SCORER_PAIR_DESTS) and (bool(getattr(ns, "twin_w", 0.0)) or d not in SCORER_TWIN_DESTS) and (bool(getattr(ns, "twin_speed_neutral", False)) or d != "twin_speed_neutral")}
         missing = sorted(expect - {r["dest"] for r in rows})
         det["built_without_observer"] = missing
         if missing:

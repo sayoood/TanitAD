@@ -277,7 +277,11 @@ TWIN_MUTATE_ENVS = ("REFE_TWIN_MUTATE_NORADIUS", "REFE_TWIN_MUTATE_NOTOPK", "REF
 TWIN_UNBOUNDED = 10 ** 6                                   # what a REMOVED radius / top-K reads as in the built facts (a number, so the data event stays valid JSON)
 TWIN_PREFLIGHT_MICRO = 16                                  # G18 measures the per-head share of sets with a kept pair over this many micro-batches (the real top-K rule on the live logits)
 TWIN_PROBE_SEARCH_MAX = 400                              # G18 gradient probe: the micro-batches searched (no gradient) for one with a kept pair on EVERY head
+TWIN_SN_PREFLIGHT_MICRO, TWIN_SN_PROBE_SEARCH_MAX = 128, 1000       # S1ZSM (MM fix 1, set before any run from navtrain FIT, s1zsm/why/sn_risk.py): speed-neutral pairs are rarer, so with --twin-speed-neutral G18's live share window is 128 micro-batches (16 would read a head at 0 by chance in about 40 % of correct runs) and the probe search goes to 1,000; S1Z keeps 16 and 400
 TWIN_NOISE_FACTOR = 10.0                                   # G18: the w=1 vs w=0 gradient delta must exceed this many times the w=0 vs w=0 delta (run-to-run noise of two forward passes) on every scorer module
+TWIN_SN_DV, TWIN_SN_SEED = 0.15, 20261107                  # PREREG_S1ZSM_P6 section 1: the speed band |v4_i - v4_j| / max(v0, 1) < 0.15 (the complement of SCORER1's registered contrast) and the F/S balancing seed (SCORER1's): registered, not searched
+TWIN_SN_MUTATE_ENVS = ("REFE_TWIN_MUTATE_NOBAND", "REFE_TWIN_MUTATE_NOSNBALANCE")      # S1ZSM deliberate regressions (they act ONLY with --twin-speed-neutral): NOBAND = the speed band removed, NOSNBALANCE = the F/S balancing removed; both must turn the built facts, G-DVB and G18 RED
+TWIN_SN_KEYS = ("band_pairs", "kept_F", "kept_S", "out_of_band", "unbalanced_sets")       # per-head counts S1ZSM adds to TwinLoss.last (ONLY with --twin-speed-neutral): pairs inside the band, kept F / S, kept pairs OUTSIDE the band (must be 0), sets with kept F != kept S (must be 0)
 
 
 def twin_refusals(a):
@@ -307,6 +311,8 @@ def twin_refusals(a):
         out.append("S1Z is the plain scorer fine-tune plus L_twin alone: --pair-w / --pair-heads are refused with --twin-*")
     if (a.twin_w > 0.0 or (a.pair_calibrate and names)) and (a.epo or a.aux_drv or a.hn_bank):
         out.append("S1Z is the plain scorer fine-tune plus L_twin: --epo / --aux-drv / --hn-bank are refused with --twin-*")
+    if getattr(a, "twin_speed_neutral", False) and not names:
+        out.append("--twin-speed-neutral needs --twin-heads (S1ZSM: a speed-neutral pair rule on no head is a lever that does nothing)")
     return out
 
 
@@ -319,7 +325,7 @@ class TwinLoss:
     A set with no pair contributes none; a micro-batch with no pair gives a zero WITH graph (a zero-weight control still builds the graph).  The rule's ties are broken by proposal index (stable sort): deterministic,
     no RNG.  REFE_TWIN_MUTATE_NORADIUS / _NOTOPK are the deliberate regressions: the radius / the top-K mining is REMOVED and the BUILT facts (`ade_built`, `topk_built`, `radius_filter`, `mining`) say so."""
 
-    def __init__(self, heads, ade=TWIN_ADE_REGISTERED, topk=TWIN_TOPK_REGISTERED):
+    def __init__(self, heads, ade=TWIN_ADE_REGISTERED, topk=TWIN_TOPK_REGISTERED, speed_neutral=False):
         self.heads = tuple(heads)
         assert all(h in TWIN_HEADS for h in self.heads), self.heads
         self.ade, self.topk = float(ade), int(topk)
@@ -328,15 +334,28 @@ class TwinLoss:
         self.radius_filter, self.mining = not self.mut_radius, not self.mut_topk
         self.ade_built = float(TWIN_UNBOUNDED) if self.mut_radius else self.ade
         self.topk_built = int(TWIN_UNBOUNDED) if self.mut_topk else self.topk
+        # S1ZSM (PREREG_S1ZSM_P6 section 1): speed-neutral pairs.  OFF (speed_neutral False) = S1Z exactly: none of the attributes below is read, no key is added to `last` or to the built facts.
+        self.speed_neutral = bool(speed_neutral)
+        self.mut_band = self.speed_neutral and os.environ.get("REFE_TWIN_MUTATE_NOBAND") == "1"
+        self.mut_snbal = self.speed_neutral and os.environ.get("REFE_TWIN_MUTATE_NOSNBALANCE") == "1"
+        self.sn_band_filter, self.sn_balance = not self.mut_band, not self.mut_snbal
+        self.sn_dv_built = float(TWIN_UNBOUNDED) if self.mut_band else TWIN_SN_DV
+        self.sn_seed = TWIN_SN_SEED
+        self.gen = torch.Generator().manual_seed(TWIN_SN_SEED)         # the F/S balancing draw: its own generator, held by the loss object (SCORER1's rule and seed)
+        self.sn_sel: dict = {}
         self.last: dict = {}
         self.last_head_means: dict = {}
 
     def built_facts(self, w, calibrate=False):
         """what the data event writes: the BUILT object's facts (G-DVB compares them with the argv)"""
-        return {"w": float(w), "heads": list(self.heads), "ade": self.ade_built, "topk": self.topk_built, "radius_filter": bool(self.radius_filter), "mining": bool(self.mining),
-                "calibrate": bool(calibrate), "ade_metric": "mean_xy_euclid_over_raw_poses", "clean": "NC=1,DAC=1,TTC=1"}
+        out = {"w": float(w), "heads": list(self.heads), "ade": self.ade_built, "topk": self.topk_built, "radius_filter": bool(self.radius_filter), "mining": bool(self.mining),
+               "calibrate": bool(calibrate), "ade_metric": "mean_xy_euclid_over_raw_poses", "clean": "NC=1,DAC=1,TTC=1"}
+        if self.speed_neutral:                                   # S1ZSM: the BUILT speed-neutral facts (G-DVB compares them with the card; the NOBAND / NOSNBALANCE regressions read 1e6 / False); absent when OFF
+            out.update({"speed_neutral": True, "sn_dv": self.sn_dv_built, "sn_balance": bool(self.sn_balance), "sn_seed": self.sn_seed, "sn_band_filter": bool(self.sn_band_filter),
+                        "sn_v_idx": PAIR_V_IDX, "sn_v0": "ego_slot_6"})
+        return out
 
-    def select(self, y, score, xy, valid, head):
+    def select(self, y, score, xy, valid, head, v4=None, v0=None):
         """y [K, >=4] true labels of ONE set (columns NC DAC EP TTC), score [K] the arm-B rule value (None = no mining: every unclean proposal is a hard negative), xy [K, T, 2] raw proposal poses,
         valid [K] bool -> (idx_i, idx_j, n_clean, n_hard).  Pure CPU, deterministic."""
         ok = valid.bool() & torch.isfinite(y[:, [0, 1, 3]]).all(-1) & torch.isfinite(xy).flatten(1).all(-1)
@@ -351,26 +370,62 @@ class TwinLoss:
         ade = (xy[:, None] - xy[None, :]).norm(dim=-1).mean(-1)
         near = ade <= self.ade_built if self.radius_filter else torch.ones_like(ade, dtype=torch.bool)
         ii, jj = (clean[:, None] & hard[None, :] & near).nonzero(as_tuple=True)
+        if self.speed_neutral and v4 is not None:                  # S1ZSM: v4 [K] the 0.2 s chord speed at step 19 of the raw proposals, v0 the ego speed (slot 6); the bank-share probe passes no v4 and so reads the pre-band upper bound
+            ii, jj = self._speed_neutral(ii, jj, v4, v0)
         return ii, jj, int(clean.sum()), int(hard.sum())
 
-    def term(self, sxB, tg, cxy, cm):
+    def _speed_neutral(self, ii, jj, v4, v0):
+        """S1ZSM (PREREG_S1ZSM_P6 section 1) on the pairs (i clean, j hard negative) of ONE set and head: (a) keep a pair only if |v4_i - v4_j| / max(v0, 1) < TWIN_SN_DV; (b) F = v4_i > v4_j, S = otherwise,
+        keep min(|F|, |S|) of each side, without replacement, from the loss object's own generator (seed TWIN_SN_SEED); an empty side -> no pair.  Writes self.sn_sel (counts, incl. the kept pairs OUTSIDE the
+        band and whether kept F != kept S, both computed on the FINAL pairs and against the registered constant, so a removed band / balancing shows in them).  REFE_TWIN_MUTATE_NOBAND / _NOSNBALANCE skip (a) / (b)."""
+        den = max(float(v0), 1.0)
+        if self.sn_band_filter:
+            inb = (v4[ii] - v4[jj]).abs() / den < TWIN_SN_DV
+            ii, jj = ii[inb], jj[inb]
+        n_band = int(ii.numel())
+        fast = v4[ii] > v4[jj]
+        fi, fj, si, sj = ii[fast], jj[fast], ii[~fast], jj[~fast]
+        nF, nS = int(fi.numel()), int(si.numel())
+        if self.sn_balance:
+            k = min(nF, nS)
+            if k == 0:
+                e = torch.zeros(0, dtype=torch.long)
+                fi = fj = si = sj = e
+                nF = nS = 0
+            else:
+                pf = torch.randperm(nF, generator=self.gen)[:k]
+                ps = torch.randperm(nS, generator=self.gen)[:k]
+                fi, fj, si, sj = fi[pf], fj[pf], si[ps], sj[ps]
+                nF = nS = k
+        ii, jj = torch.cat([fi, si]), torch.cat([fj, sj])
+        oob = int(((v4[ii] - v4[jj]).abs() / den >= TWIN_SN_DV).sum())
+        self.sn_sel = {"band_pairs": n_band, "kept_F": nF, "kept_S": nS, "out_of_band": oob, "unbalanced_sets": int(nF != nS)}
+        return ii, jj
+
+    def term(self, sxB, tg, cxy, cm, v0=None):
         """sxB [B, K, C] arm-B logits (graph), tg [B, K, C'] labels, cxy [B, K, T, >=2] proposals, cm [B, K] set mask -> the UNWEIGHTED L_twin.  self.last = per-head counts (sets, sets with a clean
         proposal, sets with a kept pair, kept pairs, hard negatives) for the log and for G18."""
         ycpu = tg.detach().float().cpu()
         xy = cxy.detach()[..., :2].float().cpu()
+        if self.speed_neutral:                                   # S1ZSM: v4 from the raw proposals, v0 = ego slot 6 (cap["twin_in"] carries it only when ON)
+            assert v0 is not None, "TwinLoss(speed_neutral=True).term needs v0 (ego slot 6)"
+            v4_, v0c_ = chord_speed(cxy).detach().cpu(), v0.detach().float().cpu()
         cmc = cm.detach().cpu()
         with torch.no_grad():
             rule = agg_v1(torch.sigmoid(sxB.detach().float().cpu()))
         by_head = {h: [] for h in self.heads}
-        st = {h: {"sets": 0, "sets_with_clean": 0, "sets_with_pair": 0, "pairs": 0, "hard": 0} for h in self.heads}
+        st = {h: {"sets": 0, "sets_with_clean": 0, "sets_with_pair": 0, "pairs": 0, "hard": 0, **({k: 0 for k in TWIN_SN_KEYS} if self.speed_neutral else {})} for h in self.heads}
         for b in range(sxB.shape[0]):
             valid = cmc[b] > 0.0
             if not bool(valid.any()):                           # an unlabelled set contributes nothing; a masked proposal of a labelled set enters no pair
                 continue
             for h in self.heads:
-                ii, jj, nc, nh = self.select(ycpu[b], rule[b], xy[b], valid, h)
+                ii, jj, nc, nh = self.select(ycpu[b], rule[b], xy[b], valid, h, *((v4_[b], float(v0c_[b])) if self.speed_neutral else ()))
                 d = st[h]
                 d["sets"] += 1; d["sets_with_clean"] += int(nc > 0); d["sets_with_pair"] += int(ii.numel() > 0); d["pairs"] += int(ii.numel()); d["hard"] += nh
+                if self.speed_neutral:                          # S1ZSM: the per-set counts of the speed-neutral step
+                    for k_sn in TWIN_SN_KEYS:
+                        d[k_sn] += self.sn_sel[k_sn]
                 if ii.numel():
                     s = sxB[b, :, TWIN_HEADS[h]]
                     by_head[h].append(F.softplus(-(s[ii.to(s.device)] - s[jj.to(s.device)])))
@@ -1530,6 +1585,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--twin-ade", type=float, default=TWIN_ADE_REGISTERED, help="S1Z: the near-twin radius in metres: a pair needs ADE(i, j) <= this, ADE = the mean over the raw proposal poses of the Euclidean xy distance (registered 1.0)")
     ap.add_argument("--twin-topk", type=int, default=TWIN_TOPK_REGISTERED, help="S1Z: a hard negative must be among the K highest valid proposals of the current arm-B rule NC*DAC*(5EP+5TTC+2C)/12 (registered 8; no gradient)")
     ap.add_argument("--twin-heads", default="", help="S1Z: comma list of heads in {NC,DAC,TTC} that L_twin acts on ('' = none)")
+    ap.add_argument("--twin-speed-neutral", action="store_true", help="S1ZSM (PREREG_S1ZSM_P6 section 1): the L_twin pairs are SPEED-NEUTRAL: a pair needs |v4_i - v4_j| / max(v0, 1) < 0.15 and the kept pairs are F/S balanced (seed 20261107).  DEFAULT OFF = S1Z exactly, so a launch argv must NAME it")
     ap.add_argument("--aux-drv-lr", type=float, default=None, help="the head's peak learning rate (its OWN AdamW; the scorer keeps --lr).  A pre-registered value, never tuned on "
                     "PDMS; None = no head optimiser, and naming it without --aux-drv is refused")
     return ap
@@ -1616,7 +1672,7 @@ def main() -> int:
     assert compw.numel() == 6 and (compw > 0).all(), "--b-compw needs 6 positive weights"
     pairer = PairLoss([h for h in a.pair_heads.split(',') if h], a.pair_dv, nobalance=[h for h in a.pair_nobalance_heads.split(',') if h], nospeed=[h for h in a.pair_nospeed_heads.split(',') if h],
                       gaps=parse_pair_gaps(a.pair_gap_heads), reduce=a.pair_mean) if (a.pair_w > 0.0 or (a.pair_calibrate and a.pair_heads)) else None        # SCORER1 (None = OFF)
-    twiner = TwinLoss([h for h in a.twin_heads.split(',') if h], a.twin_ade, a.twin_topk) if (a.twin_w > 0.0 or (a.pair_calibrate and a.twin_heads)) else None        # S1Z (None = OFF)
+    twiner = TwinLoss([h for h in a.twin_heads.split(',') if h], a.twin_ade, a.twin_topk, speed_neutral=a.twin_speed_neutral) if (a.twin_w > 0.0 or (a.pair_calibrate and a.twin_heads)) else None        # S1Z (None = OFF)
     ds = T.TargetBank(a.targets, a.images, cfg, calib=a.calib, onpolicy=op)
     if aux_src is not None:
         ds.aux_src = aux_src                                 # make_train_set() wraps the TRAINING subset so each sample also carries its (label, valid)
@@ -1774,7 +1830,7 @@ def main() -> int:
         if pairer is not None:                                      # SCORER1: what L_pair reads (proposals, v0 = ego slot 6, set mask); OFF (pairer None) executes nothing here: a fixture with < 7 ego slots (test_aux_s1_wiring) must not see an IndexError
             cap["pair_in"] = (cxy, ego[:, 6].float(), cm)
         if twiner is not None:                                      # S1Z: what L_twin reads (proposals, set mask); OFF (twiner None) executes nothing here
-            cap["twin_in"] = (cxy, cm)
+            cap["twin_in"] = (cxy, cm) + ((ego[:, 6].float(),) if twiner.speed_neutral else ())          # S1ZSM: + v0 = ego slot 6, ONLY when speed-neutral
         with torch.autocast("cuda", dtype=torch.bfloat16):
             _traj, _score, sxA = model(img, ego, goal, calib=cal if cal.numel() else None, score_extra=cxy)
             sctx = cap["sctx"]
@@ -1865,8 +1921,8 @@ def main() -> int:
             w = a.twin_w
             if w == 0.0 or twiner is None:
                 return torch.zeros((), device=sxB.device)
-        cxy_, cm_ = cap["twin_in"]
-        raw = twiner.term(sxB, tg, cxy_, cm_)
+        cxy_, cm_, *v0_ = cap["twin_in"]
+        raw = twiner.term(sxB, tg, cxy_, cm_, *v0_)
         twin_last["raw"] = float(raw.detach())
         if os.environ.get("REFE_TWIN_MUTATE_DROP_LOSS") == "1":
             return sxB.sum() * 0.0                       # computed and DROPPED: a value 0 WITH a graph
@@ -2539,7 +2595,7 @@ def main() -> int:
             # under the live top-K rule (no gradient), searched up to TWIN_PROBE_SEARCH_MAX micro-batches; none found = G18 fails and says so
             pb_batch, pb_rows, pb_idx, pb_pairs, n_srch = None, None, -1, {}, 0
             with torch.no_grad():
-                while pb_batch is None and n_srch < TWIN_PROBE_SEARCH_MAX:
+                while pb_batch is None and n_srch < (TWIN_SN_PROBE_SEARCH_MAX if twiner.speed_neutral else TWIN_PROBE_SEARCH_MAX):
                     seen_ = 0
                     for batch_p in dl:
                         seen_ += 1
@@ -2551,11 +2607,11 @@ def main() -> int:
                         if all(cnt_[h_]["sets_with_pair"] > 0 and cnt_[h_]["pairs"] > 0 for h_ in twiner.heads):
                             pb_batch, pb_rows, pb_idx, pb_pairs = batch_p, rows_p, n_srch - 1, cnt_
                             break
-                        if n_srch >= TWIN_PROBE_SEARCH_MAX:
+                        if n_srch >= (TWIN_SN_PROBE_SEARCH_MAX if twiner.speed_neutral else TWIN_PROBE_SEARCH_MAX):
                             break
                     if seen_ == 0:
                         break
-            probe_reason = None if pb_batch is not None else f"no micro-batch with a kept pair on every head ({','.join(twiner.heads)}) under the live top-K rule within the search limit of {TWIN_PROBE_SEARCH_MAX} micro-batches (searched {n_srch})"
+            probe_reason = None if pb_batch is not None else f"no micro-batch with a kept pair on every head ({','.join(twiner.heads)}) under the live top-K rule within the search limit of {TWIN_SN_PROBE_SEARCH_MAX if twiner.speed_neutral else TWIN_PROBE_SEARCH_MAX} micro-batches (searched {n_srch})"
             d_on = {m_: 0.0 for m_ in SCORER}
             noise_m = {m_: 0.0 for m_ in SCORER}
             ctl_read = {m_: 0.0 for m_ in SCORER}
@@ -2579,7 +2635,7 @@ def main() -> int:
                 armB.zero_grad(set_to_none=True)
             noise_ok = all(math.isfinite(d_on[m_]) and math.isfinite(noise_m[m_]) and d_on[m_] > 0.0 and d_on[m_] > TWIN_NOISE_FACTOR * noise_m[m_] for m_ in SCORER)
             # the share of sets with >= 1 kept pair per head on the LIVE logits (the real top-K rule), over TWIN_PREFLIGHT_MICRO micro-batches of the training loader (no gradient)
-            share_m = {h_: {"sets": 0, "sets_with_clean": 0, "sets_with_pair": 0, "pairs": 0, "hard": 0} for h_ in twiner.heads}
+            share_m = {h_: {"sets": 0, "sets_with_clean": 0, "sets_with_pair": 0, "pairs": 0, "hard": 0, **({k_: 0 for k_ in TWIN_SN_KEYS} if twiner.speed_neutral else {})} for h_ in twiner.heads}
             n_m = 0
             with torch.no_grad():
                 for batch_s in dl:
@@ -2590,7 +2646,7 @@ def main() -> int:
                         for k_, x_ in v_.items():
                             share_m[h_][k_] += x_
                     n_m += 1
-                    if n_m >= TWIN_PREFLIGHT_MICRO:
+                    if n_m >= (TWIN_SN_PREFLIGHT_MICRO if twiner.speed_neutral else TWIN_PREFLIGHT_MICRO):
                         break
             for h_, sh_ in share_m.items():
                 sh_["share_with_pair"] = sh_["sets_with_pair"] / max(sh_["sets"], 1)
@@ -2611,17 +2667,27 @@ def main() -> int:
                     bs_["sets"] += 1; bs_["sets_with_clean"] += int(nc_ > 0); bs_["sets_with_pair"] += int(ii_.numel() > 0)
             for h_, bs_ in bank_share.items():
                 bs_["share_with_pair"] = bs_["sets_with_pair"] / max(bs_["sets"], 1)
+            sn_ok, sn_extra = True, {}
+            if twiner.speed_neutral:                       # G18 extended (S1ZSM): on the probe batch AND on the live micro-batches every kept pair is inside the band and kept F == kept S per set and head; every head keeps pairs
+                def _sn_clean(c_):
+                    return bool(isinstance(c_, dict) and c_.get("out_of_band") == 0 and c_.get("unbalanced_sets") == 0 and c_.get("kept_F") == c_.get("kept_S") and c_.get("pairs", 0) > 0)
+                sn_pb_ok = bool(pb_batch is not None and all(_sn_clean(st_on.get(h_)) for h_ in twiner.heads))
+                sn_live_ok = bool(all(share_m[h_].get("out_of_band") == 0 and share_m[h_].get("unbalanced_sets") == 0 and share_m[h_].get("kept_F") == share_m[h_].get("kept_S") for h_ in twiner.heads))
+                sn_ok = bool(twiner.sn_band_filter and twiner.sn_balance and sn_pb_ok and sn_live_ok)
+                sn_extra = {"speed_neutral": True, "sn_dv_built": twiner.sn_dv_built, "sn_band_filter_built": bool(twiner.sn_band_filter), "sn_balance_built": bool(twiner.sn_balance), "sn_seed_built": twiner.sn_seed,
+                            "sn_probe_batch_ok": sn_pb_ok, "sn_live_ok": sn_live_ok, "sn_ok": sn_ok,
+                            "mutate_noband": os.environ.get("REFE_TWIN_MUTATE_NOBAND") == "1", "mutate_nosnbalance": os.environ.get("REFE_TWIN_MUTATE_NOSNBALANCE") == "1"}
             g18 = {"ok": bool(pb_batch is not None and noise_ok and all(v_ == 0.0 for v_ in ctl_read.values())
                               and all(share_m[h_]["share_with_pair"] > 0.0 for h_ in twiner.heads) and all(bank_share[h_]["share_with_pair"] > 0.0 for h_ in twiner.heads)
-                              and twiner.radius_filter and twiner.mining and not any(os.environ.get(k_) == "1" for k_ in TWIN_MUTATE_ENVS)),
+                              and twiner.radius_filter and twiner.mining and sn_ok and not any(os.environ.get(k_) == "1" for k_ in TWIN_MUTATE_ENVS + TWIN_SN_MUTATE_ENVS)),
                    "loss_grad_delta_w1_minus_w0": d_on, "loss_grad_noise_w0_vs_w0": noise_m, "noise_factor": TWIN_NOISE_FACTOR, "noise_rule_ok": bool(noise_ok),
                    "delta_over_noise": {m_: ((d_on[m_] / noise_m[m_]) if noise_m[m_] > 0.0 else None) for m_ in SCORER},
-                   "probe_batch": {"found": pb_batch is not None, "index": pb_idx, "searched": n_srch, "search_limit": TWIN_PROBE_SEARCH_MAX, "pairs_per_head": pb_pairs, "reason": probe_reason},
+                   "probe_batch": {"found": pb_batch is not None, "index": pb_idx, "searched": n_srch, "search_limit": (TWIN_SN_PROBE_SEARCH_MAX if twiner.speed_neutral else TWIN_PROBE_SEARCH_MAX), "pairs_per_head": pb_pairs, "reason": probe_reason},
                    "control_w0_term_alone_grad_abs": ctl_read, "controls_exactly_zero": bool(all(v_ == 0.0 for v_ in ctl_read.values())),
                    "micro_batch_pairs": st_on, "share_micro": share_m, "micro_batches": n_m, "bank_share": bank_share, "bank_stride": stride,
                    "heads_built": list(twiner.heads), "ade_built": twiner.ade_built, "topk_built": twiner.topk_built, "radius_filter_built": bool(twiner.radius_filter), "mining_built": bool(twiner.mining),
                    "mutate_noradius": os.environ.get("REFE_TWIN_MUTATE_NORADIUS") == "1", "mutate_notopk": os.environ.get("REFE_TWIN_MUTATE_NOTOPK") == "1",
-                   "mutate_drop_loss": os.environ.get("REFE_TWIN_MUTATE_DROP_LOSS") == "1"}
+                   "mutate_drop_loss": os.environ.get("REFE_TWIN_MUTATE_DROP_LOSS") == "1", **sn_extra}
             gates["G18_twin_live"] = g18
         if hn_obj is not None:                               # G14 (P6-HN-S): the hard-negative term is live on arm B only, its controls read EXACTLY 0.0, the identities hold
             gates["G14_hn_live_and_identity"] = g14_hn_live_and_identity(hn_env)
@@ -2710,7 +2776,7 @@ def main() -> int:
         nb_ = math.sqrt(sum(float((x_ / nmb).double().pow(2).sum()) for x_ in gsum_b))
         np_ = math.sqrt(sum(float((x_ / nmb).double().pow(2).sum()) for x_ in gsum_p))
         res_c = {"micro_batches": nmb, "grad_norm_bce": nb_, "grad_norm_pair_unit_w": np_, "ratio_target": 0.5, ("twin_w" if twiner is not None else "pair_w"): (0.5 * nb_ / np_) if np_ > 0.0 else None,
-                 "sets_with_pair_share": {h_: (v_[1] / max(v_[0], 1)) for h_, v_ in shares.items()}, "heads": list(cal_lever.heads), **({"ade": twiner.ade_built, "topk": twiner.topk_built, "lever": "twin"} if twiner is not None else {"dv": pairer.dv}), "ckpt": a.ckpt, "seed": a.seed}
+                 "sets_with_pair_share": {h_: (v_[1] / max(v_[0], 1)) for h_, v_ in shares.items()}, "heads": list(cal_lever.heads), **({"ade": twiner.ade_built, "topk": twiner.topk_built, "lever": "twin", **({"speed_neutral": True, "sn_dv": twiner.sn_dv_built, "sn_balance": bool(twiner.sn_balance), "sn_seed": twiner.sn_seed} if twiner.speed_neutral else {})} if twiner is not None else {"dv": pairer.dv}), "ckpt": a.ckpt, "seed": a.seed}
         json.dump(res_c, open(os.path.join(a.out, "pair_weight.json"), "w"), indent=1)
         log({"event": "pair_calibrated", **res_c})
         print("ZZPAIR_CALIBRATED" if np_ > 0.0 and nb_ > 0.0 else "ZZPAIR_CALIBRATION_FAILED")
@@ -2746,7 +2812,7 @@ def main() -> int:
             if twiner is not None and a.twin_w != 0.0:       # S1Z: this micro-batch's per-head counts (sets, sets with a clean proposal, sets with a kept pair, kept pairs)
                 for h_, v_ in twiner.last.items():
                     for acc_ in (twin_win, twin_run):
-                        d_ = acc_.setdefault(h_, {"sets": 0, "sets_with_clean": 0, "sets_with_pair": 0, "pairs": 0})
+                        d_ = acc_.setdefault(h_, {"sets": 0, "sets_with_clean": 0, "sets_with_pair": 0, "pairs": 0, **({k_sn: 0 for k_sn in TWIN_SN_KEYS} if twiner.speed_neutral else {})})
                         for k_ in d_:
                             d_[k_] += v_[k_]
             if a.epo:
