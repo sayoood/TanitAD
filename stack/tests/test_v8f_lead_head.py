@@ -42,6 +42,7 @@ torch.set_num_threads(1)
 TINY = dict(d=32, ff=64, heads=4, n_q=2, depth_s=1, depth_t=1, depth_o=1, nb=6)
 SNAP = Path(__file__).with_name("v8f_mini_tip_snapshot_lead.txt")
 SNAP_SHA = "a363427677c881cb7c82cf20fcfad317e864a9cde58cf58306e9fed24ef3658e"      # sha256 of the tip's (219f6c7) stack/tanitad/models/v8f_mini.py (the model WITH the level head)
+STOPBAL_DEFAULTS = {"goal_pos_weight_stop": 1.0, "lon_class_weight_stop": 1.0}   # PREREG_V8F_STOPBAL (5ecdd7e6's parent 2bca1c52): built_levers gains these two keys after the snapshot was taken; off = 1.0 = the tip's loss
 TRAIN_P = REPO / "stack" / "scripts" / "v8f_mini_train.py"
 C0_INIT = Path("E:/Projects/TanitAD-artifacts/v8f-dagoacc/M2b_s0_dagoacc/ckpt_last.pt")        # the C0 init checkpoint (dev box only)
 RUN = ["--synthetic", "--batch", "16", "--d", "32", "--n-q", "2", "--log-every", "1", "--warmup", "2", "--ckpt-every", "100", "--threads", "1", "--kin-mode", "yaw", "--seed", "5", "--arm", "M2b"]
@@ -278,7 +279,9 @@ def test_off_is_the_tip_bit_for_bit(world, level, wm):
     sa, sb = tip.state_dict(), new.state_dict()
     assert list(sa) == list(sb), "state-dict keys and their order"
     assert all(torch.equal(sa[k], sb[k]) for k in sa), "every tensor"
-    assert tip.built_levers() == new.built_levers() and set(new.trainable_groups()) == set(tip.trainable_groups())
+    nl = new.built_levers()
+    assert {k: nl[k] for k in STOPBAL_DEFAULTS} == STOPBAL_DEFAULTS, "PREREG_V8F_STOPBAL: both stop weights are built at their default 1.0 (the tip's loss)"
+    assert tip.built_levers() == {k: v for k, v in nl.items() if k not in STOPBAL_DEFAULTS} and set(new.trainable_groups()) == set(tip.trainable_groups()), "levers equal the tip's, apart from the two STOPBAL weights the snapshot predates"
     assert not {"lead_head", "w_lead", "aux_cond", "lead_vision_only_source", "aux_vision_only_source"} & set(new.built_levers())
     bb = with_both(b, LL)
     oa, ob = run_loss(tip, bb), run_loss(new, bb)

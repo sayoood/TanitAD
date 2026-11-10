@@ -44,6 +44,7 @@ torch.set_num_threads(1)
 TINY = dict(d=32, ff=64, heads=4, n_q=2, depth_s=1, depth_t=1, depth_o=1, nb=6)
 SNAP = Path(__file__).with_name("v8f_mini_tip_snapshot_level.txt")
 SNAP_SHA = "b337ccecd3abfa4250a77e233502d9d3464a280dbafdc86b1e94ecbeef682721"      # sha256 of the tip's (b07982c) stack/tanitad/models/v8f_mini.py
+STOPBAL_DEFAULTS = {"goal_pos_weight_stop": 1.0, "lon_class_weight_stop": 1.0}   # PREREG_V8F_STOPBAL (5ecdd7e6's parent 2bca1c52): built_levers gains these two keys after the snapshot was taken; off = 1.0 = the tip's loss
 TRAIN_P = REPO / "stack" / "scripts" / "v8f_mini_train.py"
 C0_INIT = Path("E:/Projects/TanitAD-artifacts/v8f-dagoacc/M2b_s0_dagoacc/ckpt_last.pt")        # the C0 init checkpoint (dev box only)
 RUN = ["--synthetic", "--batch", "16", "--d", "32", "--n-q", "2", "--log-every", "1", "--warmup", "2", "--ckpt-every", "100", "--threads", "1", "--kin-mode", "yaw", "--seed", "5", "--arm", "M2b"]
@@ -156,7 +157,9 @@ def test_off_is_the_tip_bit_for_bit(world, wm):
     sa, sb = tip.state_dict(), new.state_dict()
     assert list(sa) == list(sb), "state-dict keys and their order"
     assert all(torch.equal(sa[k], sb[k]) for k in sa), "every tensor"
-    assert tip.built_levers() == new.built_levers() and set(new.trainable_groups()) == set(tip.trainable_groups())
+    nl = new.built_levers()
+    assert {k: nl[k] for k in STOPBAL_DEFAULTS} == STOPBAL_DEFAULTS, "PREREG_V8F_STOPBAL: both stop weights are built at their default 1.0 (the tip's loss)"
+    assert tip.built_levers() == {k: v for k, v in nl.items() if k not in STOPBAL_DEFAULTS} and set(new.trainable_groups()) == set(tip.trainable_groups()), "levers equal the tip's, apart from the two STOPBAL weights the snapshot predates"
     assert "level" not in new.built_levers().get("params", {}) and "level_head" not in new.built_levers()
     oa, ob = run_loss(tip, b), run_loss(new, b)
     assert list(oa["terms"]) == list(ob["terms"]) and all(torch.equal(oa["terms"][k], ob["terms"][k]) for k in oa["terms"]), "the loss terms, same keys, bit for bit"
