@@ -1,0 +1,570 @@
+{
+ "tool": "stoptau_read.py --stage tau",
+ "card": "theory/stopbal/oracle/PREREAD_V8F_STOPTAU.md",
+ "card_sha256": "e940a0a206afd9ea66a4f2006c9719e7381da4387b8bdde473d49bee28460cee",
+ "evidence_class": "MEASURED (this file on the banked training-window npz; sha256 below)",
+ "rule": "tau = smallest value of the grid 0.50, 0.55, ..., 0.95 at which the arm's training false-positive rate (firing on training windows that are not stop-point windows) is at most the matching NULL arm's rate at the unhardened rule (goal p(STOP_POINT) >= 0.5; lon argmax == STOP); none meets it -> 0.95 and reported; matching NULL = same seed, a NULL arm is its own reference",
+ "tau_grid": [
+  0.5,
+  0.55,
+  0.6,
+  0.65,
+  0.7,
+  0.75,
+  0.8,
+  0.85,
+  0.9,
+  0.95
+ ],
+ "window_rule": "t in range(3, n-30), t % 4 == 3 per clip (equal to eval_grid_windows.json on all 141 eval clips, see selfcheck)",
+ "windows": {
+  "n_windows": 2396,
+  "n_ok_has_and_present": 2382,
+  "n_stop_point": 114,
+  "n_non_stop_point": 2268
+ },
+ "stop_point_definition": "GT STOP_POINT window = STOPDEC's `tlstop == STOP_POINT` stratum (goal_y/goal_w STOP_POINT hit, no traffic-light goal hit) from the join_train labels, among has-and-present windows; the same definition as the eval S set",
+ "train_clips": {
+  "n": 141,
+  "clips141_sha256": "e9e0e2c49c317d55d524bbb8bdf59d6e2b849997c54c9549067ddc9d4e6d3629",
+  "disjoint_from_eval141": true,
+  "peak_pulled_bytes_on_disk": 20904597
+ },
+ "ckpt_sha256": {
+  "BAL-NULL_s0": "5169ea9554bf74004f801b2d594358355363ba47fe07aa8cac052d1da9aa2fdf",
+  "BAL-NULL_s1": "0c14c4871b65d8e6b6b1e78fbfd76aa93b6d3a01ba2b79016bfe84f3a6564f81",
+  "BAL-NULL_rep": "2dd2910968e7eb2531137864584200c116454cdc01ef7ee4646849091916e3c3",
+  "BAL-G_s0": "7f172e81282d59db27f50d53aa7642c5c0eb8392d95d137e4f3e1a757dbfb61a",
+  "BAL-G_s1": "c099f531e16dc8b73c4b24198d4d0ccb6ba1ab66f9f4a1345fb589bd89b084ac",
+  "BAL-L_s0": "3427661df4e03a7065f0d1012ffd9470d2a4ef59abeec2a5bdd944882178a5e4",
+  "BAL-L_s1": "7df4da731a0e43c33770e1d0234d74cf3460f0f034c601b7bfaa94f4842960f9"
+ },
+ "banked_train_windows_npz_sha256": "a6945d0676673f93e1bac403ab4b72d06250c5166192f63c36786c9fa59369f7",
+ "arms": {
+  "BAL-NULL_s0": {
+   "null_reference_arm": "BAL-NULL_s0",
+   "n_non_stop_point_windows": 2268,
+   "n_stop_point_windows": 114,
+   "false_positive_counts": {
+    "goal": {
+     "0.5": 16,
+     "0.55": 14,
+     "0.6": 12,
+     "0.65": 9,
+     "0.7": 5,
+     "0.75": 3,
+     "0.8": 2,
+     "0.85": 1,
+     "0.9": 1,
+     "0.95": 0
+    },
+    "lon": {
+     "0.5": 13,
+     "0.55": 10,
+     "0.6": 6,
+     "0.65": 6,
+     "0.7": 2,
+     "0.75": 1,
+     "0.8": 1,
+     "0.85": 1,
+     "0.9": 0,
+     "0.95": 0
+    }
+   },
+   "false_positive_rates": {
+    "goal": {
+     "0.5": 0.007054673721340388,
+     "0.55": 0.006172839506172839,
+     "0.6": 0.005291005291005291,
+     "0.65": 0.003968253968253968,
+     "0.7": 0.002204585537918871,
+     "0.75": 0.0013227513227513227,
+     "0.8": 0.0008818342151675485,
+     "0.85": 0.0004409171075837742,
+     "0.9": 0.0004409171075837742,
+     "0.95": 0.0
+    },
+    "lon": {
+     "0.5": 0.005731922398589065,
+     "0.55": 0.004409171075837742,
+     "0.6": 0.0026455026455026454,
+     "0.65": 0.0026455026455026454,
+     "0.7": 0.0008818342151675485,
+     "0.75": 0.0004409171075837742,
+     "0.8": 0.0004409171075837742,
+     "0.85": 0.0004409171075837742,
+     "0.9": 0.0,
+     "0.95": 0.0
+    }
+   },
+   "reference_counts": {
+    "goal_unhardened_0.5": 16,
+    "lon_unhardened_argmax": 24
+   },
+   "own_unhardened": {
+    "goal_fp": 16,
+    "lon_fp": 24,
+    "goal_tp": 12,
+    "lon_tp": 22
+   },
+   "tau_goal": 0.5,
+   "tau_goal_fallback_no_grid_value_meets_rule": false,
+   "tau_lon": 0.5,
+   "tau_lon_fallback_no_grid_value_meets_rule": false,
+   "tp_at_tau_on_stop_point": {
+    "goal": 12,
+    "lon": 10
+   }
+  },
+  "BAL-NULL_s1": {
+   "null_reference_arm": "BAL-NULL_s1",
+   "n_non_stop_point_windows": 2268,
+   "n_stop_point_windows": 114,
+   "false_positive_counts": {
+    "goal": {
+     "0.5": 15,
+     "0.55": 10,
+     "0.6": 8,
+     "0.65": 7,
+     "0.7": 5,
+     "0.75": 3,
+     "0.8": 1,
+     "0.85": 0,
+     "0.9": 0,
+     "0.95": 0
+    },
+    "lon": {
+     "0.5": 12,
+     "0.55": 8,
+     "0.6": 7,
+     "0.65": 5,
+     "0.7": 4,
+     "0.75": 1,
+     "0.8": 1,
+     "0.85": 0,
+     "0.9": 0,
+     "0.95": 0
+    }
+   },
+   "false_positive_rates": {
+    "goal": {
+     "0.5": 0.006613756613756613,
+     "0.55": 0.004409171075837742,
+     "0.6": 0.003527336860670194,
+     "0.65": 0.0030864197530864196,
+     "0.7": 0.002204585537918871,
+     "0.75": 0.0013227513227513227,
+     "0.8": 0.0004409171075837742,
+     "0.85": 0.0,
+     "0.9": 0.0,
+     "0.95": 0.0
+    },
+    "lon": {
+     "0.5": 0.005291005291005291,
+     "0.55": 0.003527336860670194,
+     "0.6": 0.0030864197530864196,
+     "0.65": 0.002204585537918871,
+     "0.7": 0.001763668430335097,
+     "0.75": 0.0004409171075837742,
+     "0.8": 0.0004409171075837742,
+     "0.85": 0.0,
+     "0.9": 0.0,
+     "0.95": 0.0
+    }
+   },
+   "reference_counts": {
+    "goal_unhardened_0.5": 15,
+    "lon_unhardened_argmax": 35
+   },
+   "own_unhardened": {
+    "goal_fp": 15,
+    "lon_fp": 35,
+    "goal_tp": 26,
+    "lon_tp": 40
+   },
+   "tau_goal": 0.5,
+   "tau_goal_fallback_no_grid_value_meets_rule": false,
+   "tau_lon": 0.5,
+   "tau_lon_fallback_no_grid_value_meets_rule": false,
+   "tp_at_tau_on_stop_point": {
+    "goal": 26,
+    "lon": 24
+   }
+  },
+  "BAL-NULL_rep": {
+   "null_reference_arm": "BAL-NULL_rep",
+   "n_non_stop_point_windows": 2268,
+   "n_stop_point_windows": 114,
+   "false_positive_counts": {
+    "goal": {
+     "0.5": 25,
+     "0.55": 17,
+     "0.6": 14,
+     "0.65": 11,
+     "0.7": 7,
+     "0.75": 4,
+     "0.8": 2,
+     "0.85": 2,
+     "0.9": 2,
+     "0.95": 0
+    },
+    "lon": {
+     "0.5": 20,
+     "0.55": 17,
+     "0.6": 12,
+     "0.65": 7,
+     "0.7": 3,
+     "0.75": 2,
+     "0.8": 2,
+     "0.85": 2,
+     "0.9": 1,
+     "0.95": 0
+    }
+   },
+   "false_positive_rates": {
+    "goal": {
+     "0.5": 0.011022927689594356,
+     "0.55": 0.007495590828924162,
+     "0.6": 0.006172839506172839,
+     "0.65": 0.0048500881834215165,
+     "0.7": 0.0030864197530864196,
+     "0.75": 0.001763668430335097,
+     "0.8": 0.0008818342151675485,
+     "0.85": 0.0008818342151675485,
+     "0.9": 0.0008818342151675485,
+     "0.95": 0.0
+    },
+    "lon": {
+     "0.5": 0.008818342151675485,
+     "0.55": 0.007495590828924162,
+     "0.6": 0.005291005291005291,
+     "0.65": 0.0030864197530864196,
+     "0.7": 0.0013227513227513227,
+     "0.75": 0.0008818342151675485,
+     "0.8": 0.0008818342151675485,
+     "0.85": 0.0008818342151675485,
+     "0.9": 0.0004409171075837742,
+     "0.95": 0.0
+    }
+   },
+   "reference_counts": {
+    "goal_unhardened_0.5": 25,
+    "lon_unhardened_argmax": 42
+   },
+   "own_unhardened": {
+    "goal_fp": 25,
+    "lon_fp": 42,
+    "goal_tp": 23,
+    "lon_tp": 34
+   },
+   "tau_goal": 0.5,
+   "tau_goal_fallback_no_grid_value_meets_rule": false,
+   "tau_lon": 0.5,
+   "tau_lon_fallback_no_grid_value_meets_rule": false,
+   "tp_at_tau_on_stop_point": {
+    "goal": 23,
+    "lon": 22
+   }
+  },
+  "BAL-G_s0": {
+   "null_reference_arm": "BAL-NULL_s0",
+   "n_non_stop_point_windows": 2268,
+   "n_stop_point_windows": 114,
+   "false_positive_counts": {
+    "goal": {
+     "0.5": 50,
+     "0.55": 44,
+     "0.6": 31,
+     "0.65": 28,
+     "0.7": 25,
+     "0.75": 18,
+     "0.8": 16,
+     "0.85": 10,
+     "0.9": 3,
+     "0.95": 3
+    },
+    "lon": {
+     "0.5": 12,
+     "0.55": 9,
+     "0.6": 6,
+     "0.65": 3,
+     "0.7": 1,
+     "0.75": 1,
+     "0.8": 1,
+     "0.85": 1,
+     "0.9": 0,
+     "0.95": 0
+    }
+   },
+   "false_positive_rates": {
+    "goal": {
+     "0.5": 0.02204585537918871,
+     "0.55": 0.019400352733686066,
+     "0.6": 0.013668430335097001,
+     "0.65": 0.012345679012345678,
+     "0.7": 0.011022927689594356,
+     "0.75": 0.007936507936507936,
+     "0.8": 0.007054673721340388,
+     "0.85": 0.004409171075837742,
+     "0.9": 0.0013227513227513227,
+     "0.95": 0.0013227513227513227
+    },
+    "lon": {
+     "0.5": 0.005291005291005291,
+     "0.55": 0.003968253968253968,
+     "0.6": 0.0026455026455026454,
+     "0.65": 0.0013227513227513227,
+     "0.7": 0.0004409171075837742,
+     "0.75": 0.0004409171075837742,
+     "0.8": 0.0004409171075837742,
+     "0.85": 0.0004409171075837742,
+     "0.9": 0.0,
+     "0.95": 0.0
+    }
+   },
+   "reference_counts": {
+    "goal_unhardened_0.5": 16,
+    "lon_unhardened_argmax": 24
+   },
+   "own_unhardened": {
+    "goal_fp": 50,
+    "lon_fp": 21,
+    "goal_tp": 44,
+    "lon_tp": 23
+   },
+   "tau_goal": 0.8,
+   "tau_goal_fallback_no_grid_value_meets_rule": false,
+   "tau_lon": 0.5,
+   "tau_lon_fallback_no_grid_value_meets_rule": false,
+   "tp_at_tau_on_stop_point": {
+    "goal": 16,
+    "lon": 10
+   }
+  },
+  "BAL-G_s1": {
+   "null_reference_arm": "BAL-NULL_s1",
+   "n_non_stop_point_windows": 2268,
+   "n_stop_point_windows": 114,
+   "false_positive_counts": {
+    "goal": {
+     "0.5": 92,
+     "0.55": 75,
+     "0.6": 63,
+     "0.65": 53,
+     "0.7": 37,
+     "0.75": 26,
+     "0.8": 13,
+     "0.85": 10,
+     "0.9": 5,
+     "0.95": 2
+    },
+    "lon": {
+     "0.5": 9,
+     "0.55": 8,
+     "0.6": 7,
+     "0.65": 3,
+     "0.7": 2,
+     "0.75": 1,
+     "0.8": 0,
+     "0.85": 0,
+     "0.9": 0,
+     "0.95": 0
+    }
+   },
+   "false_positive_rates": {
+    "goal": {
+     "0.5": 0.04056437389770723,
+     "0.55": 0.03306878306878307,
+     "0.6": 0.027777777777777776,
+     "0.65": 0.023368606701940034,
+     "0.7": 0.016313932980599646,
+     "0.75": 0.01146384479717813,
+     "0.8": 0.005731922398589065,
+     "0.85": 0.004409171075837742,
+     "0.9": 0.002204585537918871,
+     "0.95": 0.0008818342151675485
+    },
+    "lon": {
+     "0.5": 0.003968253968253968,
+     "0.55": 0.003527336860670194,
+     "0.6": 0.0030864197530864196,
+     "0.65": 0.0013227513227513227,
+     "0.7": 0.0008818342151675485,
+     "0.75": 0.0004409171075837742,
+     "0.8": 0.0,
+     "0.85": 0.0,
+     "0.9": 0.0,
+     "0.95": 0.0
+    }
+   },
+   "reference_counts": {
+    "goal_unhardened_0.5": 15,
+    "lon_unhardened_argmax": 35
+   },
+   "own_unhardened": {
+    "goal_fp": 92,
+    "lon_fp": 35,
+    "goal_tp": 60,
+    "lon_tp": 39
+   },
+   "tau_goal": 0.8,
+   "tau_goal_fallback_no_grid_value_meets_rule": false,
+   "tau_lon": 0.5,
+   "tau_lon_fallback_no_grid_value_meets_rule": false,
+   "tp_at_tau_on_stop_point": {
+    "goal": 30,
+    "lon": 26
+   }
+  },
+  "BAL-L_s0": {
+   "null_reference_arm": "BAL-NULL_s0",
+   "n_non_stop_point_windows": 2268,
+   "n_stop_point_windows": 114,
+   "false_positive_counts": {
+    "goal": {
+     "0.5": 18,
+     "0.55": 15,
+     "0.6": 9,
+     "0.65": 8,
+     "0.7": 4,
+     "0.75": 4,
+     "0.8": 2,
+     "0.85": 1,
+     "0.9": 1,
+     "0.95": 0
+    },
+    "lon": {
+     "0.5": 51,
+     "0.55": 44,
+     "0.6": 37,
+     "0.65": 30,
+     "0.7": 28,
+     "0.75": 19,
+     "0.8": 15,
+     "0.85": 12,
+     "0.9": 4,
+     "0.95": 1
+    }
+   },
+   "false_positive_rates": {
+    "goal": {
+     "0.5": 0.007936507936507936,
+     "0.55": 0.006613756613756613,
+     "0.6": 0.003968253968253968,
+     "0.65": 0.003527336860670194,
+     "0.7": 0.001763668430335097,
+     "0.75": 0.001763668430335097,
+     "0.8": 0.0008818342151675485,
+     "0.85": 0.0004409171075837742,
+     "0.9": 0.0004409171075837742,
+     "0.95": 0.0
+    },
+    "lon": {
+     "0.5": 0.022486772486772486,
+     "0.55": 0.019400352733686066,
+     "0.6": 0.016313932980599646,
+     "0.65": 0.013227513227513227,
+     "0.7": 0.012345679012345678,
+     "0.75": 0.00837742504409171,
+     "0.8": 0.006613756613756613,
+     "0.85": 0.005291005291005291,
+     "0.9": 0.001763668430335097,
+     "0.95": 0.0004409171075837742
+    }
+   },
+   "reference_counts": {
+    "goal_unhardened_0.5": 16,
+    "lon_unhardened_argmax": 24
+   },
+   "own_unhardened": {
+    "goal_fp": 18,
+    "lon_fp": 84,
+    "goal_tp": 16,
+    "lon_tp": 54
+   },
+   "tau_goal": 0.55,
+   "tau_goal_fallback_no_grid_value_meets_rule": false,
+   "tau_lon": 0.75,
+   "tau_lon_fallback_no_grid_value_meets_rule": false,
+   "tp_at_tau_on_stop_point": {
+    "goal": 9,
+    "lon": 14
+   }
+  },
+  "BAL-L_s1": {
+   "null_reference_arm": "BAL-NULL_s1",
+   "n_non_stop_point_windows": 2268,
+   "n_stop_point_windows": 114,
+   "false_positive_counts": {
+    "goal": {
+     "0.5": 17,
+     "0.55": 11,
+     "0.6": 9,
+     "0.65": 5,
+     "0.7": 4,
+     "0.75": 2,
+     "0.8": 1,
+     "0.85": 1,
+     "0.9": 0,
+     "0.95": 0
+    },
+    "lon": {
+     "0.5": 88,
+     "0.55": 75,
+     "0.6": 64,
+     "0.65": 53,
+     "0.7": 38,
+     "0.75": 27,
+     "0.8": 19,
+     "0.85": 14,
+     "0.9": 5,
+     "0.95": 1
+    }
+   },
+   "false_positive_rates": {
+    "goal": {
+     "0.5": 0.007495590828924162,
+     "0.55": 0.0048500881834215165,
+     "0.6": 0.003968253968253968,
+     "0.65": 0.002204585537918871,
+     "0.7": 0.001763668430335097,
+     "0.75": 0.0008818342151675485,
+     "0.8": 0.0004409171075837742,
+     "0.85": 0.0004409171075837742,
+     "0.9": 0.0,
+     "0.95": 0.0
+    },
+    "lon": {
+     "0.5": 0.03880070546737213,
+     "0.55": 0.03306878306878307,
+     "0.6": 0.02821869488536155,
+     "0.65": 0.023368606701940034,
+     "0.7": 0.01675485008818342,
+     "0.75": 0.011904761904761904,
+     "0.8": 0.00837742504409171,
+     "0.85": 0.006172839506172839,
+     "0.9": 0.002204585537918871,
+     "0.95": 0.0004409171075837742
+    }
+   },
+   "reference_counts": {
+    "goal_unhardened_0.5": 15,
+    "lon_unhardened_argmax": 35
+   },
+   "own_unhardened": {
+    "goal_fp": 17,
+    "lon_fp": 136,
+    "goal_tp": 27,
+    "lon_tp": 68
+   },
+   "tau_goal": 0.55,
+   "tau_goal_fallback_no_grid_value_meets_rule": false,
+   "tau_lon": 0.75,
+   "tau_lon_fallback_no_grid_value_meets_rule": false,
+   "tp_at_tau_on_stop_point": {
+    "goal": 23,
+    "lon": 37
+   }
+  }
+ }
+}
