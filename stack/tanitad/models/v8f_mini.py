@@ -164,6 +164,8 @@ LIMITS_MS = (30 / 3.6, 50 / 3.6, 100 / 3.6, 120 / 3.6)
 CH1_SCALE = {"steer": 0.3, "yaw": 0.4}
 #: the scale the WM auxiliary divides action channel 0 (longitudinal acceleration, m/s^2) by.
 WM_ACC_SCALE = 2.0
+WM_BASIS_KINDS = ("adapter", "slow", "pca")      # PREREG_V8F_SLOWWM (`--wm-basis`)
+WM_BASIS_DIM = 256                          # PREREG_V8F_SLOWWM: width of the SLOW / PCA-B basis = cfg.d = the input width of WMAux.proj
 #: EXACTLY the batch keys the inference path may read. Everything else (``lab*``, ``gt``, ``s_h``, ``lead_gap_h`` ...)
 #: is a label or an evaluator-side quantity and is never touched by ``forward_infer``.
 INFERENCE_INPUT_KEYS = frozenset({"feats", "frame_ok", "p10f", "act", "nav", "pose", "limit", "limit_ok", "base",
@@ -198,6 +200,7 @@ class V8FMiniConfig:
     wm_rollout_k: tuple = (1, 1, 1)    # PREREG_V8F_LADDER (`--wm-rollout-k`): free-run steps of the k-step loss per WM level. (1, 1, 1) = every earlier arm, bit for bit (no term, no key added)
     wm_rollout_stride: tuple = (1, 1, 1)   # PREREG_V8F_LADDER (`--wm-rollout-stride`): the free run starts at every n-th state of the level (used only where the level's k > 1)
     wm_rollout_w: float = 1.0          # PREREG_V8F_LADDER (`--wm-rollout-w`): weight of every level's k-step term (constant over training; used only where k > 1)
+    wm_basis: str = "adapter"          # PREREG_V8F_SLOWWM (`--wm-basis`): what z1 reads of the frozen DINOv3 features. "adapter" = the M2b adapter token mean (R35H, every earlier arm, bit for bit: no state-dict key, no batch key). "slow" / "pca" = the 256-d whitened closed-form basis of the token mean `nm` (SLOW: temporal CCA at lag 1.0 s; PCA-B: PCA), cached per frame, then `proj`
     wm_ctx: tuple = (3, 3, 3)          # PREREG_V8F_LADDER (`--wm-ctx`): each WM level's predictor context (states). (3, 3, 3) = every earlier arm (the LevelConfig default); changing it changes the predictor's parameter shape
     w_ckpt: float = 1.0
     w_tac: float = 1.0
@@ -277,6 +280,10 @@ class V8FMiniConfig:
             raise ValueError(f"wm_k must be an int >= 1, got {self.wm_k!r}")
         if self.wm_k > 1 and self.wm == "off":
             raise ValueError("wm_k > 1 needs a world model (wm a or b): a lever that is declared and builds nothing")
+        if self.wm_basis not in WM_BASIS_KINDS:                                   # PREREG_V8F_SLOWWM
+            raise ValueError(f"wm_basis must be one of {WM_BASIS_KINDS}, got {self.wm_basis!r}")
+        if self.wm_basis != "adapter" and (self.wm == "off" or self.d != WM_BASIS_DIM):
+            raise ValueError(f"wm_basis {self.wm_basis} needs a world model and d == {WM_BASIS_DIM} (the basis is {WM_BASIS_DIM}-d and enters proj): a lever that is declared and builds nothing")
         for nm in ("wm_rollout_k", "wm_rollout_stride", "wm_ctx"):               # PREREG_V8F_LADDER: three ints >= 1 (one per WM level)
             v = getattr(self, nm)
             if not (isinstance(v, (tuple, list)) and len(v) == 3 and all(isinstance(x, int) and not isinstance(x, bool) and x >= 1 for x in v)):
@@ -694,6 +701,7 @@ class WMAux(nn.Module):
               mk(action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
         self.stack = HJEPAStack(lv, sigreg_projections=256)
         self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_dim))
+        self.wm_basis = cfg.wm_basis                                            # PREREG_V8F_SLOWWM: a plain string, no parameter and no RNG: z1 reads the cached basis `u` ("slow" / "pca") instead of the adapter token mean
         self.gamma = gamma
         self.ch1_scale = CH1_SCALE[cfg.kin_mode]
         self.enc1 = None
@@ -740,10 +748,17 @@ class WMAux(nn.Module):
         """Level-1 latent of every cached frame: the mean-pooled adapter token, projected. ``adapt`` [B, F, n_tok, d] -> [B, F, D].
         ONE spelling: ``forward`` (training) and rung beta's planner (``tanitad.models.v8f_beta``) both call it.
         With ``wm_k`` K > 1 (PREREG_V8F_MRATE) frame j's latent is ``enc1`` of the projections of frames j-K+1 .. j (oldest first); frames before the window's first are the first frame's projection."""
+        if self.wm_basis != "adapter":                                          # PREREG_V8F_SLOWWM: the live tokens carry no `nm`; refused rather than silently reading the adapter
+            raise ValueError(f"wm_basis {self.wm_basis}: z1 is built from the cached basis u (z1_from_basis), not from adapter tokens")
         return self.z1_from_mean(adapt.mean(2))
 
     def z1_from_mean(self, am: Tensor) -> Tensor:
         """PREREG_V8F_LADDER: ``z1`` from the adapter tokens already mean-pooled over the token axis (``am`` [B, F, d]) -- the ONLY thing the WM reads of the adapter. ``z1(adapt)`` is this applied to ``adapt.mean(2)``."""
+        if self.wm_basis != "adapter":                                          # PREREG_V8F_SLOWWM: a token mean handed to a basis model would silently run the adapter arm
+            raise ValueError(f"wm_basis {self.wm_basis}: z1 is built from the cached basis u (z1_from_basis), not from a token mean")
+        return self._z1_post(am)
+
+    def _z1_post(self, am: Tensor) -> Tensor:
         p = self.proj(am)
         if self.enc1 is None:
             return p
@@ -760,6 +775,34 @@ class WMAux(nn.Module):
         z1 = self.z1(adapt)                                                     # [B, F, D]
         a = self.scale_actions(act)[:, :-1]                                     # action of the transition j -> j+1
         return self.stack.loss(z1, a)
+
+    def z1_from_basis(self, u: Tensor) -> Tensor:
+        """PREREG_V8F_SLOWWM: ``z1`` from the cached basis ``u`` [B, F, 256] (``slow_basis.py``: the whitened SLOW / PCA-B coordinates of the token mean ``nm`` of the frozen DINOv3 features): ``proj`` then the same tail as :meth:`z1_from_mean` (the ONE ``_z1_post``)."""
+        if self.wm_basis == "adapter":
+            raise ValueError("z1_from_basis needs wm_basis slow or pca")
+        return self._z1_post(u)
+
+    def forward_basis(self, u: Tensor, act: Tensor) -> dict:
+        """PREREG_V8F_SLOWWM: :meth:`forward` from the cached basis ``u`` [B, F, 256]."""
+        return self.stack.loss(self.z1_from_basis(u), self.scale_actions(act)[:, :-1])
+
+    def built_basis(self) -> dict:
+        """PREREG_V8F_SLOWWM, the G-DVB reader: what the BUILT module DOES, measured on a planted ``u``: the mean path and the live-token path must be refused and the basis path accepted for slow / pca, the reverse for adapter; ``in_dim`` is the width ``proj`` takes."""
+        d = int(self.proj[0].normalized_shape[0])
+        u = torch.randn(1, 4, d, generator=torch.Generator().manual_seed(0))
+
+        def refused(fn):
+            try:
+                fn()
+            except ValueError:
+                return True
+            return False
+        with torch.no_grad():
+            mean_refused = refused(lambda: self.z1_from_mean(u))
+            tok_refused = refused(lambda: self.z1(u[:, :, None, :].expand(-1, -1, 40, -1)))
+            basis_refused = refused(lambda: self.z1_from_basis(u))
+            same = None if basis_refused else bool(torch.equal(self.z1_from_basis(u), self._z1_post(u)))
+        return {"mode": self.wm_basis, "in_dim": d, "mean_path_refused": mean_refused, "token_path_refused": tok_refused, "basis_path_refused": basis_refused, "basis_path_is_proj_tail": same}
 
     def forward_mean(self, am: Tensor, act: Tensor) -> dict:
         """PREREG_V8F_LADDER: :meth:`forward` from the token-pooled adapter output ``am`` [B, F, d] (the frozen-adapter pooled path); the same ops after the pooling."""
@@ -1184,7 +1227,9 @@ class V8FMini(nn.Module):
         the heads and the planner are never run. ``terms``: ``wm`` (the stack's total), ``wm/<stack term>`` per level, ``total`` = ``w_wm`` x ``wm``."""
         if self.wm is None:
             raise ValueError("wm_only_loss needs a world model (wm a or b)")
-        if "zmean" in batch:                                                    # PREREG_V8F_LADDER: the cached mean adapter token (box-2 zcache): exactly ``_encode(b).mean(2)``, read from disk
+        if "zbasis" in batch:                                                   # PREREG_V8F_SLOWWM: the cached SLOW / PCA-B coordinates; detached cache data, `proj` and the stack are what trains
+            wm = self.wm.forward_basis(batch["zbasis"].float().detach(), batch["act"])
+        elif "zmean" in batch:                                                    # PREREG_V8F_LADDER: the cached mean adapter token (box-2 zcache): exactly ``_encode(b).mean(2)``, read from disk
             wm = self.wm.forward_mean(batch["zmean"].float().detach(), batch["act"])
         elif "pool" in batch:                                                   # PREREG_V8F_LADDER: a world-model-only batch with the frozen adapter's pooled path (no [B, F, n_tok, d] tensor is ever built)
             wm = self.wm.forward_mean(self.pooled_adapt_mean(batch["pool"].float()).detach(), batch["act"])
@@ -1253,6 +1298,8 @@ class V8FMini(nn.Module):
                 lv["wm_rollout_k"], lv["wm_rollout_stride"], lv["wm_rollout_w"] = [c.rollout_k for c in cf], [c.rollout_stride for c in cf], cf[0].rollout_w
             if any(int(p.pos.shape[0]) != 3 for p in self.wm.stack.predictors):
                 lv["wm_ctx"] = [int(p.pos.shape[0]) for p in self.wm.stack.predictors]
+        if self.wm is not None and self.wm.wm_basis != "adapter":          # PREREG_V8F_SLOWWM: present ONLY with a basis model (an adapter model keeps its key set)
+            lv["wm_basis"] = self.wm.wm_basis
         if self.lvl_head is not None:                                     # PREREG_V8F_LEVEL: present ONLY with the head built (a flag-off model keeps its key set); the gate reads built.get("level_head", "off")
             lv["level_head"], lv["w_level"] = "on", cfg.w_level
             if self.e_level is not None:                                   # PREREG_LEVELHEAD_A2: absent under --aux-cond token (the additive path is not built)

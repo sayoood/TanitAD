@@ -118,6 +118,9 @@ FLAG_CHECKS = {
     # PREREG_V8F_MRATE: `lever:wm_k` = equals built_levers().get("wm_k", 1) (the BUILT modules' window / dilation / causal pad, WMAux.built_k); `lever:wm_only` = the record the WM-only loader read back (bad_wm_only: non-WM tensors bit-equal to the checkpoint,
     # NO WM tensor loaded, the WM re-initialised under --seed, trainable == the WM's parameters exactly, every other lever at its default) -> wm_only_live_check (G-LIVE) + planner_identity_probe -> `model.wm_only_loss(b)` in the loop.
     "wm_k": "lever:wm_k", "wm_only": "lever:wm_only",
+    # PREREG_V8F_SLOWWM: `lever:wm_basis` = equals the mode WMAux.built_basis() MEASURES on the BUILT module (the mean path and the live-token path refused, the basis path accepted and equal to the proj tail, proj takes 256 inputs), the config, the BUILT dataset's record
+    # (data_info["wm_windows"]["basis"], the kind / basis sha / dim of its manifest and the first real item's shape) AND the cache manifest on disk (kind, 256, float32, the basis file's sha) -> bad_wm_basis. Default adapter: no key, no batch key.
+    "wm_basis": "lever:wm_basis",
     # PREREG_V8F_LFS: `lever:wm_strides` = equals built_levers().get("wm_strides", [2, 2]) AND the BUILT modules (WMAux.built_strides: the LevelConfig strides the loss reads, the macro encoders' stride and the stride their parameter SHAPES carry) -> bad_wm_strides
     # (the gate also refuses a stride that leaves a level fewer than 2 transitions: the arm is NOT RUN, with the count) -> `selfcheck.json levers.wm_strides_readback` (written when the argv NAMES the flag).
     "wm_strides": "lever:wm_strides",
@@ -312,6 +315,9 @@ def build_parser():
     ap.add_argument("--wm-k", dest="wm_k", type=int, default=1,
                     help="PREREG_V8F_MRATE: how many past states each world-model level reads, spaced at that level's own step. 1 (default) = W0 = every earlier arm, bit for bit (no module and no state-dict key is added). "
                          "K > 1 (W1: 3): L1 reads the adapter tokens of frames t, t-1, .., t-K+1; L2 / L3 read K states of the level below, 0.4 s / 0.8 s apart. Needs --wm b")
+    ap.add_argument("--wm-basis", dest="wm_basis", choices=("adapter", "slow", "pca"), default="adapter",
+                    help="PREREG_V8F_SLOWWM: what the world model's z1 reads of the frozen DINOv3 features. adapter (default) = the M2b adapter token mean, every earlier arm bit for bit (no state-dict key). slow / pca = the 256-d whitened closed-form basis of the "
+                         "token mean nm (SLOW: temporal CCA at lag 1.0 s; PCA-B: PCA), then proj. Needs --wm-only --wm-windows wmonly and --wm-zcache = a BASIS cache (slow_basis.py cache; BASIS_MANIFEST.json of this kind); refused otherwise")
     ap.add_argument("--wm-only", dest="wm_only", action="store_true", default=False,
                     help="PREREG_V8F_MRATE: WM-only training. Needs --init-ckpt (a plain M2b s{k}): its adapter, readers and planner load strictly and bit-equal and are FROZEN; its world-model parameters are NOT loaded -- the WM is "
                          "re-initialised under --seed (hmax is not compared: M2b trained at 16, this arm at 28); only the WM loss terms are trained. Every other lever must be at its default (a lever that is declared and does nothing is refused). Default off")
@@ -409,6 +415,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm, wm_k=a.wm_k,
                            wm_rollout_k=declared_wm_ladder(a)["wm_rollout_k"], wm_rollout_stride=declared_wm_ladder(a)["wm_rollout_stride"],       # PREREG_V8F_LADDER: the lines that apply the ladder levers (a mutation deletes them)
                            wm_rollout_w=declared_wm_ladder(a)["wm_rollout_w"], wm_ctx=declared_wm_ladder(a)["wm_ctx"],
+                           wm_basis=a.wm_basis,                                                           # PREREG_V8F_SLOWWM: the ONE line that applies --wm-basis (a mutation deletes it)
                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w,
                            level_head=a.level_head, w_level=a.w_level,
                            lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond)
@@ -1008,6 +1015,78 @@ def bad_wm_ladder(a, cfg, model, data_info) -> list:
     return bad
 
 
+def basis_sha256_of_file(path: str) -> str:
+    """PREREG_V8F_SLOWWM: the basis matrices' sha256 = ``slow_basis.py basis_sha256``: sha256 over name + shape + dtype + bytes of the arrays ``kind``, ``mean``, ``proj`` (sorted), read from the ``.npz`` WITHOUT pickle."""
+    h = hashlib.sha256()
+    with np.load(path, allow_pickle=False) as z:
+        for k in sorted(("kind", "mean", "proj")):
+            t = np.ascontiguousarray(z[k])
+            h.update(k.encode() + str(tuple(t.shape)).encode() + str(t.dtype).encode() + t.tobytes())
+    return h.hexdigest()
+
+
+def basis_cache_problems(a) -> list:
+    """PREREG_V8F_SLOWWM: why ``--wm-basis`` cannot run (empty = fine), from the arguments and the cache manifest on disk (no model needed): the windows kind, a cache directory with a ``BASIS_MANIFEST.json`` of THIS kind (256-d float32),
+    and the basis file named by the manifest (when present beside the cache) hashing to the manifest's sha. An adapter run refuses a basis cache (a lever that is declared and does nothing)."""
+    bm = os.path.join(a.wm_zcache, WW.BASIS_MANIFEST) if a.wm_zcache else ""
+    if a.wm_basis == "adapter":
+        return [f"--wm-basis adapter with a BASIS cache in --wm-zcache ({bm}): the arm would read the wrong cache"] if bm and os.path.exists(bm) else []
+    bad = []
+    if not a.wm_only or a.wm_windows != "wmonly":
+        bad.append(f"--wm-basis {a.wm_basis} needs --wm-only --wm-windows wmonly (the only path that reads the cache): a lever that is declared and builds nothing")
+    if not a.wm_zcache:
+        bad.append(f"--wm-basis {a.wm_basis} needs --wm-zcache = a BASIS cache directory (slow_basis.py cache): none given")
+        return bad
+    try:
+        man = WW.read_basis_manifest(a.wm_zcache, a.wm_basis)
+    except ValueError as e:
+        return bad + [f"--wm-basis {a.wm_basis}: {e}"]
+    bf = man.get("basis_file")
+    if bf:
+        bp = os.path.join(a.wm_zcache, bf)
+        if os.path.exists(bp):
+            got = basis_sha256_of_file(bp)
+            if got != man["basis_sha256"]:
+                bad.append(f"--wm-basis {a.wm_basis}: {bp} hashes to {got[:12]}, the manifest says {man['basis_sha256'][:12]}")
+    return bad
+
+
+def bad_wm_basis(a, cfg, model, data_info) -> list:
+    """G-DVB for ``--wm-basis`` (PREREG_V8F_SLOWWM). Empty = pass. Read back from what was BUILT: the module's behaviour (:meth:`WMAux.built_basis`), the config, the BUILT dataset's record and the cache manifest on disk."""
+    bad = []
+    want = a.wm_basis
+    if model.wm is None:
+        return [f"lever wm_basis: {want} declared but no world model was built (--wm off)"] if want != "adapter" else []
+    bb = model.wm.built_basis()
+    if bb["mode"] != want:
+        bad.append(f"lever wm_basis: declared {want} but the built module says {bb['mode']!r}")
+    if model.cfg.wm_basis != want:
+        bad.append(f"lever wm_basis: declared {want} but the built config says {model.cfg.wm_basis}")
+    rec = data_info.get("wm_windows") or {}
+    if want == "adapter":
+        if bb["basis_path_refused"] is not True or bb["mean_path_refused"] or bb["token_path_refused"]:
+            bad.append(f"lever wm_basis: adapter declared but the built module reads {bb}")
+        if rec.get("basis", "adapter") != "adapter":
+            bad.append(f"lever wm_basis: adapter declared but the built dataset serves {rec.get('basis')!r}")
+        return bad + basis_cache_problems(a)
+    if bb["in_dim"] != 256 or bb["basis_path_refused"] or not bb["mean_path_refused"] or not bb["token_path_refused"] or bb["basis_path_is_proj_tail"] is not True:
+        bad.append(f"lever wm_basis: the built module is {bb}: the 256-d basis path (proj tail) accepted, the token-mean and live-token paths refused were declared")
+    if rec.get("basis") != want:
+        bad.append(f"lever wm_basis: {want} declared but the built dataset serves {rec.get('basis')!r}")
+    if rec.get("basis_manifest_kind") != want:
+        bad.append(f"lever wm_basis: {want} declared but the built dataset's manifest kind is {rec.get('basis_manifest_kind')!r}")
+    if rec.get("zbasis_shape") != [cfg.hmax, 256]:
+        bad.append(f"lever wm_basis: the built dataset's first item has basis shape {rec.get('zbasis_shape')}, expected {[cfg.hmax, 256]}")
+    return bad + basis_cache_problems(a)
+
+
+def wm_basis_readback(a, cfg, model, data_info) -> dict:
+    """PREREG_V8F_SLOWWM: the record ``selfcheck.json`` carries (``levers.wm_basis_readback``) when the argv NAMES the flag: declared vs the BUILT measurements, the kind and the basis sha the BUILT dataset read from the manifest, dim 256, the cache problems."""
+    rec = data_info.get("wm_windows") or {}
+    return {"declared": a.wm_basis, "built": None if model.wm is None else model.wm.built_basis(), "config": cfg.wm_basis, "dataset_basis": rec.get("basis"), "kind": rec.get("basis_manifest_kind"),
+            "basis_sha256": rec.get("basis_sha256"), "dim": rec.get("basis_dim"), "dataset_zbasis_shape": rec.get("zbasis_shape"), "zcache": a.wm_zcache, "cache_problems": basis_cache_problems(a)}
+
+
 def wm_ladder_readback(a, cfg, model, data_info) -> dict:
     """PREREG_V8F_LADDER: the record ``selfcheck.json`` carries (``levers.wm_ladder_readback``) when the argv NAMES a ladder flag: declared vs the BUILT measurements."""
     decl = declared_wm_ladder(a)
@@ -1073,9 +1152,9 @@ def _tensors_of(o, prefix=""):
             yield from _tensors_of(o[k], f"{prefix}/{k}")
 
 
-def planner_identity_probe(model, batch, cfg, steps: int = 3, lr: float = 1e-3) -> dict:
+def planner_identity_probe(model, batch, cfg, steps: int = 3, lr: float = 1e-3, wm_batch=None) -> dict:
     """PREREG_V8F_MRATE control 1 (planner identity), the in-trainer form: ``forward_infer`` on a fixed batch (eval, CPU, a COPY) is compared tensor by tensor with ``torch.equal`` before and after ``steps`` WM-only optimiser steps. The WM must
-    have MOVED (the control: the steps did something) and every planner output must be bit-equal."""
+    have MOVED (the control: the steps did something) and every planner output must be bit-equal. ``wm_batch`` (PREREG_V8F_SLOWWM): the batch the WM-only steps read when it is not ``batch`` (a basis model's loss reads the cached ``zbasis``, which a labelled feature batch does not carry); None = ``batch``."""
     m = copy.deepcopy(model)
     m.eval()
     with torch.no_grad():
@@ -1086,7 +1165,7 @@ def planner_identity_probe(model, batch, cfg, steps: int = 3, lr: float = 1e-3) 
     for s in range(steps):
         opt.zero_grad(set_to_none=True)
         torch.manual_seed(s)
-        m.wm_only_loss(batch)["terms"]["total"].backward()
+        m.wm_only_loss(batch if wm_batch is None else wm_batch)["terms"]["total"].backward()
         opt.step()
     m.eval()
     with torch.no_grad():
@@ -1418,6 +1497,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
     bad += bad_recover(a, rec, data_info)                                                        # PREREG_RECOVER_FT: the eight --recover-* flags read back from the BUILT perturber (and the LOADED bank's sha256)
     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
     bad += bad_level(a, model, data_info)                                                        # PREREG_V8F_LEVEL: --level-head / --w-level read back from the BUILT model
+    bad += bad_wm_basis(a, cfg, model, data_info)                                                # PREREG_V8F_SLOWWM: --wm-basis read back from the BUILT module, the BUILT dataset and the cache manifest
     bad += bad_wm_only(a, cfg, model, data_info)                                                 # PREREG_V8F_MRATE: --wm-k read back from the BUILT WM modules, --wm-only from the loader's record and the frozen set
     bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
     bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
@@ -3002,6 +3082,9 @@ def perf_resume_record(a, argv, ck_sha, step):
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     a = build_parser().parse_args(argv)
+    _bp = basis_cache_problems(a)                                    # PREREG_V8F_SLOWWM: refuse before anything is built (the BUILT-model half runs in G-DVB)
+    if _bp:
+        raise SystemExit("ZZDVB-REFUSEDZZ " + "; ".join(_bp))
     if a.p10 is None:
         a.p10 = os.path.join(PKG, "raw", "p10_yaw" if a.kin_mode == "yaw" else "p10", "p10_prior.pt")
     if a.threads:
@@ -3029,7 +3112,7 @@ def main(argv=None):
         ds = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
                                    window_start=cfg.window_start)
     elif a.wm_windows == "wmonly":                                   # PREREG_V8F_LADDER: the world-model-only dataset (pooled path = the token mean; off = the cached tokens)
-        ds = WW.V8FMiniWMWindows(store, J, wins, F=cfg.hmax, pooled=(a.wm_pooled == "on"), lru=info["lru"], zcache=a.wm_zcache)
+        ds = WW.V8FMiniWMWindows(store, J, wins, F=cfg.hmax, pooled=(a.wm_pooled == "on"), lru=info["lru"], zcache=a.wm_zcache, basis=a.wm_basis)
         info["wm_windows"]["zcache"] = ds.zcache
         info["wm_windows"]["zcache_missing"] = len(ds.zcache_missing(clips)) if ds.zcache else 0
         if ds.zcache and not info["wm_windows"]["zcache_missing"]:    # windows holding a frame the cache marks not ok are dropped here, the same list for every arm
@@ -3041,6 +3124,11 @@ def main(argv=None):
         if ds.zcache and not a.selfcheck_only:                        # the action arrays go to RAM at start-up, so no clip file is read during training
             info["wm_windows"]["prewarm_clips"] = ds.prewarm()
         info["wm_windows"]["pooled"] = ds.pooled                     # read back from the BUILT dataset (bad_wm_ladder compares it)
+        info["wm_windows"]["basis"] = ds.basis                       # PREREG_V8F_SLOWWM: read back from the BUILT dataset (bad_wm_basis compares it)
+        if ds.basis != "adapter":
+            info["wm_windows"].update({"basis_manifest_kind": ds.basis_manifest["kind"], "basis_sha256": ds.basis_manifest["basis_sha256"], "basis_dim": ds.basis_manifest["dim"]})
+            if ds.windows and not info["wm_windows"]["zcache_missing"]:
+                info["wm_windows"]["zbasis_shape"] = list(ds.item(*ds.windows[0])["zbasis"].shape)       # the first REAL item's shape
         info["wm_windows"]["F"] = ds.F
     else:
         ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
@@ -3105,7 +3193,7 @@ def main(argv=None):
             probe["lead_y"], probe["lead_has"], probe["lead_near"] = lead_stage(probe, LL)
         if a.wm_only:                                    # PREREG_V8F_MRATE: G-LIVE of the WM-only mode + the planner identity (the other probes need gradients on the frozen readers and are not run)
             live = wm_only_live_check(model.cpu(), probe if probe_wm is None else probe_wm, cfg)
-            pid = planner_identity_probe(model.cpu(), probe, cfg)
+            pid = planner_identity_probe(model.cpu(), probe, cfg, wm_batch=probe_wm if a.wm_basis != "adapter" else None)      # PREREG_V8F_SLOWWM: a basis model's WM steps read the cached zbasis batch
         else:
             live = live_check(model.cpu(), probe, cfg)
     else:
@@ -3192,6 +3280,8 @@ def main(argv=None):
                                "mask_from": "the LOGGED kin3[:, 0] and the GT future, taken before any ego stage"}   # PREREG_V8F_LAUNCH_INTENT: what was BUILT (the definition the mask uses) ...
     levers["launch_n"], levers["launch_eligible"] = lip["launch_n"], lip["launch_eligible"]          # ... and the probe batch's natural launch / GT-valid row counts (0 / 0 when off; the run totals are summary.json's launch_n / launch_eligible, present when the lever is on)
     levers["init_ckpt"] = info.get("init_ckpt")
+    if a.wm_basis != build_parser().get_default("wm_basis"):          # PREREG_V8F_SLOWWM: lever-NAMED launches only
+        levers["wm_basis_readback"] = wm_basis_readback(a, cfg, model, info)
     if a.wm_strides is not None:                                         # PREREG_V8F_LFS: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT strides and the transitions per level
         levers["wm_strides_readback"] = wm_strides_readback(a, cfg, model)
     if wm_ladder_named(a):                                              # PREREG_V8F_LADDER: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT measurements
