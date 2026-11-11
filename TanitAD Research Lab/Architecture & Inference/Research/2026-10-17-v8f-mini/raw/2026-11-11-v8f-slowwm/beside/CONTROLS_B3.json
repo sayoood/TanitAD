@@ -1,0 +1,98 @@
+{
+ "protocol": "B3",
+ "rules": "BESIDE_RULES_SLOWWM.md",
+ "rules_sha256": "d222f9d4f360b3239fe3054a2d7c0da80032af873ade932455c0b03c8d4013d0",
+ "tier": "T1-kin planner form (B3, BESIDE_RULES_SLOWWM.md)",
+ "arm": "planted SLOW arm (R35H s0 checkpoint, planted basis, planted token means, PLANTED train frames)",
+ "iii_jacobian": {
+  "n_windows": 256,
+  "window_K": 3,
+  "step": 0.001,
+  "tolerance_rel_frobenius": 0.001,
+  "rel_joint_shift": 2.878206979748165e-09,
+  "rel_newest_frame": 1.96814105240684e-09,
+  "max_abs_joint": 1.7316823530677539e-09,
+  "jbar_fro_norm": 7.643915008155239,
+  "window_form_vs_clip_form_max_abs": 7.993605777301127e-15,
+  "red_arms": {
+   "autograd_columns_shifted_by_one_rel": 1.4193828338485954,
+   "red_shift_fails": true,
+   "newest_frame_form_vs_joint_fd_rel": 1.5964225444500222,
+   "red_current_fails": true
+  },
+  "train_frames": "PLANTED (planted basis applied to random token means)",
+  "wall_s": 3.4,
+  "pass": true
+ },
+ "i_identity": {
+  "windows_c1_prior": 64,
+  "bit_equal_c1_prior_64": {
+   "plan_raw": true,
+   "cost1": true,
+   "init1": true,
+   "iters1": true
+  },
+  "windows_c3_hold_lam0p3": 8,
+  "bit_equal_c3_hold_8": {
+   "plan_raw": true,
+   "cost1": true,
+   "init1": true,
+   "iters1": true
+  },
+  "third_run_after_exit_bit_equal": {
+   "plan_raw": true,
+   "cost1": true,
+   "init1": true,
+   "iters1": true
+  },
+  "wrapper_removed_from_instance": true,
+  "red_arm_one_diagonal_zeroed": {
+   "cost_differs": true,
+   "plan_differs": true,
+   "max_abs_plan_diff": 3.439340591430664
+  },
+  "pass": true
+ },
+ "ii_bottom64_red_arm": {
+  "windows": 64,
+  "rank_top": 64,
+  "rank_bottom": 64,
+  "bottom_plan_vs_fullwidth_max_abs": 3.439340591430664,
+  "bottom_plan_vs_top64_max_abs": 3.439340591430664,
+  "top64_plan_vs_fullwidth_max_abs": 3.439340591430664,
+  "principal_angle_top_vs_bottom_deg": {
+   "min": 0.00022956193657584849,
+   "median": 4.256496716831459,
+   "max": 89.52639259494036
+  },
+  "red_arm_bottom_mutated_to_top_columns": {
+   "plan_equals_top64_plan": true,
+   "makes_control_fail": true
+  },
+  "pass": true
+ },
+ "builder_planted": {
+  "npz": "F:/TanitAD-scratch/slowwm_beside_build/b3\\proj_SLOW_s0.npz",
+  "rank": 64,
+  "window_K": 3,
+  "n_frames": 4096,
+  "idempotence_max_abs": 7.771561172376096e-16,
+  "symmetry_max_abs": 0.0,
+  "inputs_sha256_recomputed_equal": true,
+  "beside": {
+   "rank": 64,
+   "variance_share_in_S": 0.9538794719758763,
+   "variance_share_top64_pca": 0.98514964420963,
+   "angle_min": 0.0014155942957796862,
+   "angle_median": 8.020066932118675,
+   "angle_max": 87.17276317138625,
+   "n_eval_frames": 14237,
+   "z1_dim": 128
+  },
+  "wall_s": 20.8,
+  "train_frames": "PLANTED",
+  "pass": true
+ },
+ "wall_s_planner_controls": 256.4,
+ "all_pass": true
+}
