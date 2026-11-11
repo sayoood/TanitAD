@@ -1,0 +1,18 @@
+== 1 normal flow: wait check, ship, cells, pilot, 72 h permit, three runs, banks, cleanups
+== 2 the box-side pin refuses a changed token (checker run directly on the fake box, no transport)
+== 3 the STOPBAL wait: not ended, busy marker, bad marker, STOP busy (waits), STOP not busy (goes on), GPU limits
+== 4 disk gates (dev-box reads and the box-side cells check)
+== 5 projected total above 72 h
+== 6 cells-stage refusals (a deliberate-regression arm per refusal; nothing is trained, the pilot never starts)
+== 7 gate refusals at the pilot (BUILT levers planted wrong in the stand-in trainer; the pilot gates all three argvs)
+-- an arm refused at its OWN gate after the pilot (ARM_REFUSED, the chain goes on)
+== 8 failures after the gate stop the chain (no next arm)
+== 9 bank sha mismatch must go red (a pull that arrives altered)
+== 10 commit, tag and package refusals
+== 11 transport variable unset, relative, absent, the wrong kind, or test mode with a real client (fail closed)
+== 12 hygiene
+DRYRUN ok=153 failed=0
+
+real	13m11.323s
+user	3m50.964s
+sys	4m26.593s

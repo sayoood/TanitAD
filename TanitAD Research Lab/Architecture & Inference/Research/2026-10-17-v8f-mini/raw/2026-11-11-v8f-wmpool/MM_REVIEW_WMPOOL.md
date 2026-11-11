@@ -23,3 +23,11 @@ One zero-initialised query `pool_q` [256]; weights `softmax(cells . q / sqrt(256
 3. The read side (`READSIDE_WMPOOL.md`, about 35 lines in `lr_lib` / `lp_lib`).
 4. A commit carrying the patch for the box-2 tree ship. `stack/tanitad` is held by another session (RefCV9) until it reports K2M1N20 launched, so the patch is banked here as a diff, as EGOWM's was.
 5. The box-2 slot after STOPBAL is the PI's ordering call.
+
+## 6. Box-2 package (`box2/`, Sonnet agent; reviewed 2026-11-11 ~04:30, before any WMPOOL run)
+* `PACKAGE_MANIFEST.sha256`: 27 files, `sha256sum -c` clean. Unit tests rerun by the Master Mind: `UNIT ok=379 bad=0`, as the agent's `tests/UNIT_RESULT.log`. The stub dry run (153 ok, 0 failed, 13 min) was not rerun.
+* Chain: wait for STOPBAL's end (DONE, or a STOP that is not a busy / GPU stop, rc=12), then ship (tree of `abc01481`), cells (`zcells.py build`, `manifest`, `check3` = card control 3), pilot (200 steps of P-ATT_s0, gates all three argvs, 72 h rule), P-ATT_s0, P-ATT_s1, P-ATT_rep_s2. GPU idle line `WMPOOL_GPU_IDLE_MIB`, default 3,500 MiB.
+* Package constants fixed before any data (the card states no tolerance): check3 recomputed-cell identity 1e-5; stored fp16 cells vs the cached token mean 5e-3 max abs per element (`wmpool_check.py:49`); the measured values are recorded either way.
+* **Named risk, box-2 D: space (ESTIMATED):** D: read 10 GB free at the OBD pilot (2026-11-11 01:24, chain log). OBD and STOPBAL leave 14 checkpoints of 47-74 MB each on box 2 (banked sizes). The cells stage asks for 10 GB (cache 2 x 2.36 GB + the 5 GB a run needs), and after the cache each run still asks for 5 GB. If D: is short when WMPOOL's turn comes, the cells stage refuses before building anything, and a run that finds less than 5 GB refuses before training; the measured D: free then decides between building one seed's cells at a time and removing box-2 copies of runs whose banks are verified.
+* Item 5.4 is done: the patch commit `abc01481` (tree = `1faa1a06` + `wmpool.diff`, checked by a fresh apply) is on branch `agent/v8f-wmpool-20261111`, verified by `ls-remote`.
+* Cost note: the package agent used ~373k tokens against a ~150k brief; a package of this size is split into two agents next time.
