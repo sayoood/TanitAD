@@ -1,0 +1,250 @@
+{
+ "tree": "F:/TanitAD-scratch/wmpool/tree",
+ "base": "F:/TanitAD-scratch/wmpool/base",
+ "batch": {
+  "source": "F:/TanitAD-scratch/ladder_read/cache/frames_s0.npz",
+  "windows": 2,
+  "F": 91,
+  "note": "act and the frame-level zmean are REAL val frames; the 40 tokens per frame are PLANTED (zmean + noise); cells = their 2 x 2 block means"
+ },
+ "control1_off_identity": {
+  "n_arrays": 579,
+  "n_bit_equal": 579,
+  "keys_only_in_patched": [],
+  "differing": [],
+  "pass": true
+ },
+ "control1_on_zero_query": {
+  "extra_state_keys": [
+   "wm.pool_q"
+  ],
+  "shared_tensors_bit_equal_at_init": true,
+  "weights_exactly_uniform_0.1": true,
+  "z1_on_vs_proj_mean_max_abs": 2.980232238769531e-07,
+  "z1_scale_max_abs": 0.4428534507751465,
+  "z1_rel": 6.729612772697369e-07,
+  "bit_exact": false,
+  "z1_fp16_cells_vs_proj_mean_max_abs": 3.732740879058838e-05,
+  "live_tokens_equal_cached_cells_max_abs": 0.0,
+  "loss_terms_max_abs_diff": 7.62939453125e-06,
+  "n_terms": 25,
+  "tolerance": 1e-05,
+  "statement": "NOT bit-exact: the sum of ten 0.1 x cell terms differs from the mean of 40 tokens at fp32 round-off; measured gap above",
+  "mutation_nonzero_query_init": {
+   "max_abs_diff": 0.024213403463363647,
+   "went_red": true
+  },
+  "pass": true
+ },
+ "control2_reachability": {
+  "live_pass": true,
+  "dead_wm_groups": [],
+  "pool_q_grad_abs_sum": 0.0026261266320943832,
+  "pool_q_grad_nonzero": true,
+  "control_nonwm_grad_sum_must_be_exactly_0.0": 0.0,
+  "outside_graph_params_read_exactly_zero": true,
+  "default_argv": {
+   "wm_pool": "mean",
+   "cfg": "mean",
+   "has_pool_q": true,
+   "built_mode": "mean",
+   "parser_default": "mean"
+  },
+  "default_off_pass": true,
+  "named_in_argv_arm": {
+   "argv_has_flag": true,
+   "parsed": "att25"
+  },
+  "hops": [
+   {
+    "hop": "argparse --wm-pool",
+    "file:line": "stack/scripts/v8f_mini_train.py:318"
+   },
+   {
+    "hop": "gate entry FLAG_CHECKS",
+    "file:line": "stack/scripts/v8f_mini_train.py:123"
+   },
+   {
+    "hop": "namespace -> config (the one line)",
+    "file:line": "stack/scripts/v8f_mini_train.py:418"
+   },
+   {
+    "hop": "config field",
+    "file:line": "stack/tanitad/models/v8f_mini.py:201"
+   },
+   {
+    "hop": "model attribute: the query",
+    "file:line": "stack/tanitad/models/v8f_mini.py:703"
+   },
+   {
+    "hop": "data: pool kind handed to the dataset",
+    "file:line": "stack/scripts/v8f_mini_train.py:3108"
+   },
+   {
+    "hop": "data: cells served",
+    "file:line": "stack/tanitad/data/v8f_wm_windows.py:132"
+   },
+   {
+    "hop": "batch: collate",
+    "file:line": "stack/tanitad/data/v8f_wm_windows.py:149"
+   },
+   {
+    "hop": "loss entry: batch -> forward_cells",
+    "file:line": "stack/tanitad/models/v8f_mini.py:1251"
+   },
+   {
+    "hop": "forward_cells -> z1_from_cells",
+    "file:line": "stack/tanitad/models/v8f_mini.py:815"
+   },
+   {
+    "hop": "attention weights (the pool line)",
+    "file:line": "stack/tanitad/models/v8f_mini.py:785"
+   },
+   {
+    "hop": "pooled -> proj",
+    "file:line": "stack/tanitad/models/v8f_mini.py:786"
+   }
+  ],
+  "all_hops_found": true,
+  "mutation_pool_line_deleted": {
+   "went_red": true,
+   "why": "G-LIVE (wm_only) failed: {\"terms\": {\"wm\": 200.7822265625, \"wm/pred/L1\": 0.03438654541969299, \"wm/sigreg/L1\": 0.8171343207359314, \"wm/idm/L1\": 0.09685175120830536, \"wm/rollout/L1\": 0.03564709424972534, \"wm/rollout_valid/L1\": 350.0, \"wm/rollo"
+  },
+  "mutation_flag_not_applied": {
+   "went_red": true,
+   "refusal": [
+    "lever wm_pool: declared att25 but the built module behaves as 'mean'",
+    "lever wm_pool: declared att25 but the built config says mean"
+   ]
+  },
+  "pass": true
+ },
+ "control3_synthetic_cell_identity": {
+  "cells_of_tokens_equals_WMAux_cells_of_adapt_max_abs": 0.0,
+  "mean_of_cells_vs_token_mean_fp32_max_abs": 8.940696716308594e-08,
+  "layout_cell_map_ok": true,
+  "layout_cells": {
+   "0": 5.5,
+   "4": 13.5,
+   "5": 25.5,
+   "9": 33.5
+  },
+  "fp16_cell_max_abs_err": 0.0004868507385253906,
+  "fp16_cell_max_rel_err_of_max": 0.00022636186622548848,
+  "fp16_mean_of_stored_cells_vs_token_mean_max_abs": 0.00013023614883422852,
+  "token_scale_max_abs": 4.276604652404785,
+  "builder_cells_mean_vs_zcache_zmean_max_abs": 5.960464477539063e-08,
+  "builder_zmean_scale_max_abs": 0.3661927580833435,
+  "wrong_seed_adapter_max_abs": 0.5100283026695251,
+  "mutation_block_drops_half_the_tokens": {
+   "mean_vs_token_mean_max_abs": 0.5660257339477539,
+   "went_red": true
+  },
+  "pass": true,
+  "note": "control 3 on 8 REAL clips (cached cells vs the cached zmean on disk) needs box 2: `zcells.py check3`; this is the synthetic half"
+ },
+ "control4_echo_guard": {
+  "target_latents_max_abs_off_vs_on_zero_query": [
+   2.980232238769531e-07,
+   5.21540641784668e-08,
+   1.862645149230957e-08
+  ],
+  "target_latents_bit_equal_under_changed_actions": [
+   true,
+   true,
+   true
+  ],
+  "goal_latents_max_abs_off_vs_on_zero_query": [
+   5.21540641784668e-08,
+   1.4901161193847656e-08
+  ],
+  "z1_from_cells_signature": [
+   "self",
+   "cells"
+  ],
+  "only_cells_enter_the_pool": true,
+  "pool_parameters": [
+   "wm.pool_q"
+  ],
+  "tolerance": 1e-05,
+  "no_speed_or_action_channel": true,
+  "nonzero_query_targets_bit_equal_under_changed_actions": [
+   true,
+   true,
+   true
+  ],
+  "nonzero_query_moves_the_target_vs_off": [
+   0.027648143470287323,
+   0.003299567848443985,
+   0.0005401093512773514
+  ],
+  "mutation_speed_scalar_leaks_into_pool": {
+   "went_red": true
+  },
+  "pass": true
+ },
+ "control5_launch_readback_refusal": {
+  "good_cache_bad_list": [],
+  "att25_readback": {
+   "mode": "att25",
+   "n_params": 256,
+   "q_shape": [
+    256
+   ],
+   "q_zero_at_build": true,
+   "n_cells": 10,
+   "cell_map_ok": true,
+   "uniform_at_build": true,
+   "attends_when_set": true
+  },
+  "refuse_no_cache": [
+   "--wm-pool att25 needs --wm-zcache = a CELL cache directory (zcells.py): none given"
+  ],
+  "refuse_mean_cache_dir_without_manifest": [
+   "--wm-pool att25: F:/TanitAD-scratch/wmpool/ctl\\CELL_MANIFEST.json does not exist (a mean cache is not a cell cache)"
+  ],
+  "refuse_wrong_adapter_sha": [
+   "--wm-pool att25: the cell cache was built from adapter 000000000000, the built model's adapter is 76cc929040b0"
+  ],
+  "refuse_no_wm_only": [
+   "--wm-pool att25 needs --wm-only --wm-windows wmonly (the only path that reads cells): a lever that is declared and builds nothing"
+  ],
+  "main_refuses_att25_with_mean_cache_argv": {
+   "returncode": 1,
+   "message": "ZZDVB-REFUSEDZZ --wm-pool att25: D:\\tanitad\\zcache\\M2b_s0\\train\\CELL_MANIFEST.json does not exist (a mean cache is not a cell cache)"
+  },
+  "dataset_refuses_no_dir": "pool att25 needs a cell cache directory (--wm-zcache): a lever that is declared and builds nothing",
+  "mean_cache_read_as_cells_fails": "KeyError 'zcell is not a file in the archive'",
+  "cell_cache_read_as_mean_fails": "KeyError 'zmean is not a file in the archive'",
+  "batch_keys_and_shapes": {
+   "act": [
+    2,
+    91,
+    2,
+    "torch.float32"
+   ],
+   "zcell": [
+    2,
+    91,
+    10,
+    256,
+    "torch.float16"
+   ],
+   "t": [
+    2,
+    "torch.int64"
+   ],
+   "ci": [
+    2,
+    "torch.int64"
+   ]
+  },
+  "control_R35H_argv": {
+   "declared": "mean",
+   "built": "mean",
+   "bad": []
+  },
+  "pass": true
+ },
+ "all_pass": true
+}
