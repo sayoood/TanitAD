@@ -107,6 +107,7 @@ from tanitad.train import map_precision as _mfp  # noqa: E402  refcv9 warm start
 from tanitad.train import map_banded_flag as _mbf  # noqa: E402  refcv9 C1: --r9-map-banded (OFF: nothing)
 from tanitad.train import box_b3_flag as _bbf  # noqa: E402  refcv9 B3: --r9-box-quality / -dn / -class-sqrt / -inloss-nms (OFF: nothing)
 from tanitad.train import map_own_enc_flag as _moe  # noqa: E402  refcv9 C2: --r9-map-own-enc (OFF: nothing)
+from tanitad.train import map_own_enc_lift64_flag as _moe64  # noqa: E402  refcv9 E1-M3N20L64: --r9-map-own-enc-lift64 (OFF: nothing)
 from tanitad.train import plan_wires_flag as _pwf  # noqa: E402  refcv9 C8: --r9-plan-map-channels / --r9-plan-box-tokens (OFF: nothing)
 from tanitad.train import box_depth_aux_flag as _bda  # noqa: E402  refcv9 C3: --r9-box-depth-aux / --w-box-depth (OFF: nothing)
 from tanitad.train import persp3d_aux_flag as _p3f  # noqa: E402  refcv9 C4: --r9-box-persp-aux / --w-box-persp (B2) and --r9-box-bev2-aux / --w-box-bev2 (B2c) (OFF: nothing)
@@ -187,6 +188,8 @@ _mbf.register_dvb_levers(_dvb.register)
 _bbf.register_dvb_levers(_dvb.register)
 # refcv9 C2: --r9-map-own-enc is a `built` lever (the 128-channel own encoder and the widened lift, read off the built branch)
 _moe.register_dvb_levers(_dvb.register)
+# refcv9 E1-M3N20L64: --r9-map-own-enc-lift64 is a `built` lever (the 64-channel own encoder on the unwidened lift, read off the built branch)
+_moe64.register_dvb_levers(_dvb.register)
 # refcv9 C8: the two planner-wire flags are `built` levers (the zero-init projection / the box tokens and their gates, read off the built model)
 _pwf.register_dvb_levers(_dvb.register)
 # refcv9 C3: --r9-box-depth-aux is a `built` lever (the head on the perception branch), --w-box-depth a `loss` lever (model._w_box_depth)
@@ -908,6 +911,7 @@ def _pin_refcv8(cfg, args) -> None:
     _mbf.pin_args(args)          # refcv9 C1: --r9-map-banded's refusals (incl. --w-map-fp, retired under it; a no-op when off)
     _bbf.pin_args(args)          # refcv9 B3: --r9-box-*'s refusals (a no-op when every flag is off)
     _moe.pin_args(args)          # refcv9 C2: --r9-map-own-enc's refusals (needs --r9-map-banded; a no-op when off)
+    _moe64.pin_args(args)        # refcv9 E1-M3N20L64: --r9-map-own-enc-lift64's refusals (needs --r9-map-banded, exclusive with --r9-map-own-enc; a no-op when off)
     _pwf.pin_args(args)          # refcv9 C8: the planner wires' refusals (a no-op when both flags are off)
     _bda.pin_args(args)          # refcv9 C3: --r9-box-depth-aux's refusals (needs the rig, --map-hires on, the join3d cuboids; a no-op when off)
     _p3f.pin_args(args)          # refcv9 C4: --r9-box-persp-aux / --r9-box-bev2-aux refusals (mutually exclusive; need the rig, --w-box3d > 0, the join3d cuboids; a no-op when off)
@@ -10044,6 +10048,7 @@ def train(args) -> dict:
             class_weights_sha256=str(_hcws["sha256"]),
             decision_rule=str(getattr(args, "map_hires_decision_rule",
                                       _mhr.DECISION_RULES[0])),
+            own_enc_lift64=bool(_moe64.is_on(args)),         # refcv9 E1-M3N20L64: False (the default) builds nothing new
             banded=bool(_mbf.is_on(args)),                   # refcv9 C1: False (the default) builds nothing new
             banded_near_m=float(_mbf.near_m(args)),          # E1-NEAR20: unset = 10 m, the tip's near band (argparse -> here -> the built head)
             own_enc=bool(_moe.is_on(args)))                  # refcv9 C2: False (the default) builds nothing new
@@ -10106,6 +10111,10 @@ def train(args) -> dict:
             print("[v3] refcv9 C2 map own encoder: lift %d -> %d channels, map_encoder params %d" % (
                 map_hires_stamp["own_enc"]["lift_width_before"], map_hires_stamp["own_enc"]["lift_width"],
                 map_hires_stamp["own_enc"]["map_encoder_params"]), flush=True)
+        if _moe64.is_on(args):                # refcv9 E1-M3N20L64: absent for a default run (config.json unchanged)
+            map_hires_stamp["own_enc_lift64"] = _moe64.stamp(model._map_hires)
+            print("[v3] refcv9 E1-M3N20L64 map own encoder (unwidened lift %d): map_encoder params %d" % (
+                map_hires_stamp["own_enc_lift64"]["lift_width"], map_hires_stamp["own_enc_lift64"]["map_encoder_params"]), flush=True)
         if _hcts is not None:                 # absent (not null) for a default run: config.json unchanged
             map_hires_stamp["class_thresholds"] = {
                 k: _hcts[k] for k in ("path", "sha256", "schema", "tau_phat_logit", "provenance")}
@@ -13660,6 +13669,11 @@ def build_parser() -> argparse.ArgumentParser:
                          "widened 64 -> 128; it feeds ONLY the banded map head, the box / agents / planner BEV keep the 64-channel "
                          "encoder (stem input channels 64..127 ZERO at init). Needs --r9-map-banded. Warm start (--r9-perc-rig): lift "
                          "rows 0..63 and stem input channels 0..63 from refcv8, the rest fresh / zero. Default OFF: the tip's build.")
+    g8.add_argument("--r9-map-own-enc-lift64", action="store_true",
+                    help="refcv9 E1-M3N20L64 (PREREG_M3N20L64, md5 114a28de): the map's OWN 64-channel BEV encoder reading the shared lift UNCHANGED (64 "
+                         "channels, nothing widened); it feeds ONLY the banded map head, the box / agents / planner BEV keep `encoder`. Needs "
+                         "--r9-map-banded; exclusive with --r9-map-own-enc. Warm start (--r9-perc-rig or the full model): map_encoder.* = a COPY "
+                         "of the source's _map_hires.encoder.* (no widening, nothing fresh; a missing source key REFUSES). Default OFF: the tip's build.")
     g8.add_argument("--r9-plan-map-channels", action="store_true",
                     help="refcv9 C8 W-MAP-2 (REFCV9_DESIGN 2.7): the banded head's drv / drv_sdf / sdw / lane / unobs channels (DETACHED), resampled to "
                          "1 m over 100 m x +-30 m, enter the planner BEV pool through a ZERO-INIT 1x1 projection. Needs --r9-map-banded and "

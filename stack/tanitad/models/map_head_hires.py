@@ -398,6 +398,11 @@ class MapHiresConfig:
     #: tip's, parameter for parameter, RNG draw for RNG draw.
     own_enc: bool = False
     d_map_enc: int = 128
+    #: ⭐ refcv9 E1-M3N20L64 (PREREG_M3N20L64; ``--r9-map-own-enc-lift64``): the map's OWN encoder on the UNWIDENED lift. ``MapHiresBranch.map_encoder`` is a
+    #: ``d_lift -> d_model`` (64 -> 64) ``HiresBEVEncoder``, the SAME recipe as ``encoder``, reading the shared lift unchanged and feeding ONLY the banded
+    #: head; ``lift`` / ``encoder`` / ``refine.inp`` keep their shapes. Needs ``banded``; exclusive with ``own_enc`` (the 128-channel M3 build).
+    #: ``False`` (the DEFAULT) builds nothing: the branch is the tip's, parameter for parameter, RNG draw for RNG draw.
+    own_enc_lift64: bool = False
 
     def __post_init__(self) -> None:
         if str(self.decision_rule) not in DECISION_RULES:
@@ -451,6 +456,12 @@ class MapHiresConfig:
                                  f"0-{float(self.banded_near_m):g} m @ 0.10 m), got {nx}")
         elif abs(float(self.banded_near_m) - 10.0) > 1e-9:
             raise ValueError(f"banded_near_m {self.banded_near_m!r} without banded: the near-band end exists only on the banded head")
+        if bool(self.own_enc_lift64):
+            if not bool(self.banded):
+                raise ValueError("own_enc_lift64 (the map's own 64-channel BEV encoder, M3N20L64) needs banded: it feeds ONLY the banded map head")
+            if bool(self.own_enc):
+                raise ValueError("own_enc_lift64 and own_enc are exclusive: one is the 64-channel own encoder on the unwidened lift, the other the "
+                                 "128-channel one on the widened lift")
         if bool(self.own_enc):
             if not bool(self.banded):
                 raise ValueError("own_enc (the map's own BEV encoder, M3) needs banded: it feeds ONLY the banded map head")
@@ -514,7 +525,9 @@ class MapHiresConfig:
                 **({"banded_near_m": float(self.banded_near_m)} if bool(self.banded) and abs(float(self.banded_near_m) - 10.0) > 1e-9 else {}),
                 # refcv9 C2: absent (not False) for a default run, so a refcv8 / M2 stamp is unchanged
                 **({"own_enc": True, "d_map_enc": int(self.d_map_enc), "lift_width": self.lift_width}
-                   if bool(self.own_enc) else {})}
+                   if bool(self.own_enc) else {}),
+                # E1-M3N20L64: absent (not False) for every other build, so every refcv8 / M1 / M2 / M3 stamp is unchanged
+                **({"own_enc_lift64": True} if bool(self.own_enc_lift64) else {})}
 
 
 def declared_extent(args) -> MapExtent:
@@ -855,6 +868,17 @@ class MapHiresBranch(nn.Module):
         self.map_encoder = None
         if bool(cfg.own_enc):
             self._build_own_enc()
+        if bool(cfg.own_enc_lift64):
+            self._build_own_enc_lift64()
+
+    def _build_own_enc_lift64(self) -> None:
+        """E1-M3N20L64 (PREREG_M3N20L64): the map's OWN encoder on the UNWIDENED lift -- ``HiresBEVEncoder(cfg)``, ``d_lift -> d_model`` (64 -> 64), the SAME
+        recipe as ``encoder``, reading the shared lift unchanged and feeding ONLY the banded head (``forward`` already routes ``map_feats`` there).
+        ``lift`` / ``encoder`` / ``refine.inp`` are NOT touched. The draws happen inside ``fork_rng``: the global RNG stream after the build is what the
+        OFF build leaves. Its weights are overwritten by the pinned warm start (a COPY of the source's ``_map_hires.encoder.*``,
+        ``map_own_enc_lift64_flag.apply_warm_start``); a from-scratch build is the random init of the same recipe."""
+        with torch.random.fork_rng(devices=[]):
+            self.map_encoder = HiresBEVEncoder(self.cfg)
 
     def _build_own_enc(self) -> None:
         """REFCV9_DESIGN 2.2 (M3): the map's OWN ``d_map_enc``-channel BEV encoder, fed by the shared lift WIDENED ``d_lift -> d_map_enc``.

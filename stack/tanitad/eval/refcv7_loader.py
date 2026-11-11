@@ -609,7 +609,8 @@ def map_hires_config(tr, args, class_weights_sha256: str):
         decision_rule=str(getattr(args, "map_hires_decision_rule", _mhr.DECISION_RULES[0])),
         banded=bool(getattr(args, "r9_map_banded", False)),          # refcv9 C1 (train(): same line); False = refcv8's branch
         banded_near_m=float(tr._mbf.near_m(args)),                   # E1-NEAR20 (train(): same line); unset = 10 m, the tip's near band
-        own_enc=bool(getattr(args, "r9_map_own_enc", False)))        # refcv9 C2 (train(): same line); False = refcv8's / M2's branch
+        own_enc=bool(getattr(args, "r9_map_own_enc", False)),        # refcv9 C2 (train(): same line); False = refcv8's / M2's branch
+        own_enc_lift64=bool(getattr(args, "r9_map_own_enc_lift64", False)))   # refcv9 E1-M3N20L64 (train(): same line); False = the tip's branch
 
 
 def build_map_hires_block(tr, model, args, device) -> dict | None:

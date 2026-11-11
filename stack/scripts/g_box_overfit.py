@@ -1153,6 +1153,7 @@ class TrainerAdapter:
                 near_lift_x_m=float(_mhr.declared_near_lift_m(a)),
                 near_refine_blocks=int(_mhr.declared_near_refine_blocks(a)),
                 class_weights_sha256=str(_hcws["sha256"]),
+                own_enc_lift64=bool(tr._moe64.is_on(a)),     # E1-M3N20L64: default False builds nothing new (its own line: the 3-line fix block stays verbatim)
                 decision_rule=str(getattr(a, "map_hires_decision_rule", _mhr.DECISION_RULES[0])),
                 # refcv9 C1 / C2 (BRIEF_BOX_HARNESS_BANDED; MEASURED on Thor 2026-11-03 17:21Z, r9e1_bind.sh box M1): train() declares
                 # the banded head and the map's own encoder through the FLAG MODULES' own `is_on` (refc_v3_train.py:9997-9998). The

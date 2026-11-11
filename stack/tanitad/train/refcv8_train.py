@@ -979,7 +979,7 @@ def warm_start_from(model, path: str) -> dict:
         rec["r9_declared_new"] = {"new_prefixes": list(new_pfx), "n_new_keys": len(declared_new),
                                   "dropped_source_keys": dropped}
     if own_enc_rec:
-        rec["own_enc"] = own_enc_rec
+        rec["own_enc_lift64" if "copied_keys" in own_enc_rec else "own_enc"] = own_enc_rec     # E1-M3N20L64: its own record key
     return rec
 
 

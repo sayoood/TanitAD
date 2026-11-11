@@ -412,7 +412,7 @@ def _design_arm_names():
 
 
 def test_mapping_has_every_design_arm():
-    assert DESIGN_ROWS <= set(V.ARMS) and set(V.ARMS) - DESIGN_ROWS == {"B3p", "T1s", "T1h", "T1hs", "T1v", "M1N20", "M3N20"}   # M1N20 = E1-NEAR20 (PREREG_M1_NEAR20, not a design row); M3N20 = E1-M3N20 (PREREG_M3: M3 on M1N20's near band, not a design row); B3p = the table's "B3'" (the argv name); T1s = D3's shuffled control; T1h / T1hs = REFCV9_E1_T1H_PREREG.md
+    assert DESIGN_ROWS <= set(V.ARMS) and set(V.ARMS) - DESIGN_ROWS == {"B3p", "T1s", "T1h", "T1hs", "T1v", "M1N20", "M3N20", "M3N20L64"}   # M1N20 = E1-NEAR20 (PREREG_M1_NEAR20, not a design row); M3N20 = E1-M3N20 (PREREG_M3: M3 on M1N20's near band, not a design row); B3p = the table's "B3'" (the argv name); T1s = D3's shuffled control; T1h / T1hs = REFCV9_E1_T1H_PREREG.md
     names = _design_arm_names()
     if names is None:
         pytest.skip("REFCV9_DESIGN.md is not in this checkout")
@@ -425,7 +425,7 @@ def test_mapping_not_computable_primaries_carry_reason_and_cure():
     # metrics (lane tolerance-IoU, boundary recall) are too: nothing in the table is NOT-COMPUTABLE any more
     assert nc == []
     d3 = {(a, m["id"]): (m["keys"], m["clause3"], m["role"]) for a, s in V.ARMS.items() for m in s["metrics"] if m["id"].endswith((".beside.lane", ".beside.edge"))}
-    assert d3 == {(a, "%s.beside.%s" % (a, t)): ((k,), False, "beside") for a in ("M1", "M1N20", "M3", "M3N20")      # E1-M3N20: M3 / M3N20 carry M1 / M1N20's two D3 beside rows (clause3=False)
+    assert d3 == {(a, "%s.beside.%s" % (a, t)): ((k,), False, "beside") for a in ("M1", "M1N20", "M3", "M3N20", "M3N20L64")      # E1-M3N20: M3 / M3N20 carry M1 / M1N20's two D3 beside rows (clause3=False)
                   for t, k in (("lane", "lane_tiou05_0_20"), ("edge", "drv_bnd_rec03_0_20"))}
     assert not {a for a, _ in nc} & {"M2a", "M2b", "M3", "A1", "F1", "M1-FROZEN", "B2", "B2c", "T1", "T1s", "T1h", "T1hs"}
     for a, m in nc:

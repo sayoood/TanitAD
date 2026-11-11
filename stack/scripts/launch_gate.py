@@ -1692,6 +1692,9 @@ _E1_MAP_BANDED = {
     "controls": ("C1_constant_drv", "C2_gt_as_logits"),
     "informative": ("far band", "drv_sdf", "lane_ox", "lane_oy"),
 }
+#: E1-M3N20L64 (PREREG_M3N20L64) -- refcv9-e1rig ONLY (the tip's `_E1_MAP_BANDED` literal stays byte-identical for the refcv9-full family, whose profile fingerprints are bound to records for other runs): an argv carrying `flag` builds the map's OWN 64-channel encoder on the UNWIDENED lift; the record must STAMP `own_enc_lift64`,
+#: its built branch config must hold it and show map_encoder parameters, and no other argv may carry the stamp. Pinned to `tanitad.train.map_own_enc_lift64_flag`.
+_E1_MAP_BANDED_L64 = {**_E1_MAP_BANDED, "own_enc_lift64": {"flag": "--r9-map-own-enc-lift64"}}
 #: K2M1N20 RE-DOSE (MM 4a3d05, 2026-11-10): the FULL family (refcv9-e2 / refcv9-full / refcv9-full-d1; E3 inherits the E2 GO arm's argv) admits a banded argv's map weight from E1's own set PLUS 25 --
 #: K2M1N20 failed G-LIVE's SHARE-ALARM at 1.0 (banded map 0.00125 of the trunk gradient < 0.05) and is re-dosed to 25 by E:/Projects/TanitAD-artifacts/dagland/e2/PREREG_K2_REDOSE_2026-11-10.md
 #: (sha256 2c5c147bf10368bb88677f964f9474acf2b6eef4b96dfe06f72fa8e22043b5df). `_E1_MAP_BANDED["w_map_hires_admitted"]` (the E1 arms') is UNCHANGED; the share floor and every E2 / E3 bar stay as written.
@@ -1719,7 +1722,7 @@ if _E1_MODULE is not None:
         rig_ego_dir_default="/home/nvidia/data/obstacle/egomotion_alpamayo",
         open_items=_E1_OPEN_ITEMS,
         #: M-GATE: the banded map head's OWN record (G-MAP-OVERFIT /2-banded), see `E1_OWN_RECORDS`
-        map_overfit_banded=_E1_MAP_BANDED,
+        map_overfit_banded=_E1_MAP_BANDED_L64,
         required_flags=_E1_REQUIRED_FLAGS,
         required_flags_why=dict(_E1_REQUIRED_FLAGS_WHY, **{
             k: v for k, v in (_R8.get("required_flags_why") or {}).items() if k in _E1_REQUIRED_FLAGS
@@ -7562,6 +7565,28 @@ def judge_map_overfit_banded(prof: dict, record: str | None, commit: str, *, arg
                 reasons.append(f"{tag}: the record's own encoder is {bc.get('d_map_enc')!r} channels wide, the registered {oe['d_map_enc']}")
             if not (_finite_num(mp) and float(mp) > 0):
                 reasons.append(f"{tag}: the record's branch parameter breakdown shows no own-encoder parameters (map_encoder={mp!r})")
+    ol = bd.get("own_enc_lift64") or {}
+    if argv is not None and ol:
+        # E1-M3N20L64: the same both-ways agreement for the 64-channel own encoder on the unwidened lift. A record made WITHOUT it (an M1N20 record) or with the
+        # 128-channel M3 encoder does not cover this argv, and an argv without it is not covered by a record that stamps it.
+        want_l64 = has_flag(argv, ol["flag"])
+        bc = rec["branch_config"] if isinstance(rec.get("branch_config"), dict) else {}
+        got_stamp, got_cfg = rec.get("own_enc_lift64") is True, bc.get("own_enc_lift64") is True
+        det["own_enc_lift64"] = {"argv_carries": want_l64, "record_stamp": rec.get("own_enc_lift64"), "built_branch_config": bc.get("own_enc_lift64")}
+        if want_l64 and not has_flag(argv, "--r9-map-banded"):
+            reasons.append(f"{tag}: the argv carries {ol['flag']} without --r9-map-banded (the own encoder feeds ONLY the banded head)")
+        if want_l64 and has_flag(argv, (bd.get("own_enc") or {}).get("flag", "--r9-map-own-enc")):
+            reasons.append(f"{tag}: the argv carries {ol['flag']} together with the 128-channel own encoder flag (exclusive)")
+        if want_l64 != got_stamp or want_l64 != got_cfg:
+            reasons.append(f"{tag}: the launch argv {'carries' if want_l64 else 'does not carry'} {ol['flag']}, but the record's own_enc_lift64 stamp is "
+                           f"{rec.get('own_enc_lift64')!r} and its built branch config's own_enc_lift64 is {bc.get('own_enc_lift64')!r} "
+                           f"(a banded record made {'WITHOUT' if want_l64 else 'WITH'} the 64-channel own encoder does not cover this argv)")
+        if want_l64:
+            mp = (rec.get("branch_params") or {}).get("map_encoder") if isinstance(rec.get("branch_params"), dict) else None
+            if bc.get("own_enc") is True or bc.get("lift_width") not in (None,):
+                reasons.append(f"{tag}: the record's branch config carries the widened-lift own encoder keys ({bc.get('own_enc')!r}, lift_width {bc.get('lift_width')!r})")
+            if not (_finite_num(mp) and float(mp) > 0):
+                reasons.append(f"{tag}: the record's branch parameter breakdown shows no own-encoder parameters (map_encoder={mp!r})")
     if argv is not None:
         for flag, key in (("--map-hires-near-lift-m", "near_lift_m"), ("--map-hires-near-refine-blocks", "near_refine_blocks")):
             fv = flag_values(argv, flag)
@@ -7839,7 +7864,7 @@ E1_BOX_OWN_SCHEMA = "tanitad.g_box_overfit_record/2-b3"
 E1_BOX_MUST_FAIL: tuple = ("memory_zeros", "presence_w0")
 E1_BOX_ARM_FAILED = "failed as required"
 E1_OWN_RECORDS = {
-    "E1-MAP-OWN-RECORD": {"flags": ("--r9-map-banded", "--r9-map-own-enc", "--r9-map-banded-near-m"), "schema": E1_MAP_OWN_SCHEMA, "check": "G-MAP-OVERFIT",
+    "E1-MAP-OWN-RECORD": {"flags": ("--r9-map-banded", "--r9-map-own-enc", "--r9-map-own-enc-lift64", "--r9-map-banded-near-m"), "schema": E1_MAP_OWN_SCHEMA, "check": "G-MAP-OVERFIT",
                           "record_option": "map_overfit_record", "judge": "judge_map_overfit_banded"},
     "E1-BOX-OWN-RECORD": {"flags": E1_BOX_OWN_FLAGS, "schema": E1_BOX_OWN_SCHEMA, "check": "G-BOX-OVERFIT",
                           "record_option": "box_overfit_record", "judge": "judge_box_own_record", "verdict_key": "RESULT",

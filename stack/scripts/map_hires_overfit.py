@@ -620,6 +620,9 @@ BANDED_SCHEMA = "tanitad.g_map_overfit_record/2-banded"
 #: refcv9 E1-REC2 (arm M3): the argv flag that makes the banded head read the map's OWN 128-channel BEV encoder (C2's ``map_own_enc_flag.FLAG``;
 #: a test pins the two). ``--launch-argv`` lets the harness build from the argv the record is bound to, ``--own-enc`` is the manual form.
 OWN_ENC_FLAG = "--r9-map-own-enc"
+#: refcv9 E1-M3N20L64 (PREREG_M3N20L64): the argv flag that gives the banded head its OWN 64-channel encoder on the UNWIDENED lift (``map_own_enc_lift64_flag.FLAG``;
+#: a test pins the two). ARGV-ONLY: the harness has no manual form of it (the record must be built from the argv it is bound to).
+OWN_ENC_L64_FLAG = "--r9-map-own-enc-lift64"
 BANDED_FLAG = "--r9-map-banded"
 
 
@@ -636,7 +639,19 @@ def launch_argv_facts(path, argv_sha256: str = "") -> dict:
         raise SystemExit(f"⛔ --launch-argv {path} hashes to {sha[:12]}, --launch-argv-sha256 is {argv_sha256[:12]}: the record would be "
                          f"built from one argv and bound to another")
     flags = {t.split("=", 1)[0] for t in argv if t.startswith("--")}
-    return {"argv": argv, "sha256": sha, "own_enc": OWN_ENC_FLAG in flags, "banded": BANDED_FLAG in flags}
+    return {"argv": argv, "sha256": sha, "own_enc": OWN_ENC_FLAG in flags, "banded": BANDED_FLAG in flags, "own_enc_lift64": OWN_ENC_L64_FLAG in flags}
+
+
+def resolve_own_enc_lift64(facts: dict | None) -> bool:
+    """E1-M3N20L64: does the launch argv carry ``--r9-map-own-enc-lift64``? (No argv -> False: there is no manual form.) REFUSES it without
+    ``--r9-map-banded`` and together with ``--r9-map-own-enc`` (the trainer refuses both too)."""
+    if facts is None or not facts.get("own_enc_lift64"):
+        return False
+    if not facts["banded"]:
+        raise SystemExit(f"⛔ the launch argv carries {OWN_ENC_L64_FLAG} without {BANDED_FLAG}: the own encoder feeds ONLY the banded head")
+    if facts["own_enc"]:
+        raise SystemExit(f"⛔ the launch argv carries {OWN_ENC_L64_FLAG} together with {OWN_ENC_FLAG}: they are exclusive")
+    return True
 
 
 def resolve_own_enc(own_enc_flag: bool, facts: dict | None) -> tuple:
@@ -707,8 +722,8 @@ def t1_record_fields(path, argv_sha256: str = "") -> dict:
     if path is None:
         return {}
     facts = launch_argv_facts(path, argv_sha256)
-    if facts["banded"] or facts["own_enc"]:
-        raise SystemExit(f"⛔ the launch argv carries {BANDED_FLAG} / {OWN_ENC_FLAG}: it builds the BANDED head, whose record is the /2-banded one (--banded)")
+    if facts["banded"] or facts["own_enc"] or facts["own_enc_lift64"]:
+        raise SystemExit(f"⛔ the launch argv carries {BANDED_FLAG} / {OWN_ENC_FLAG} / {OWN_ENC_L64_FLAG}: it builds the BANDED head, whose record is the /2-banded one (--banded)")
     return t1_stamp_fields(facts)
 #: channel -> the inherited class whose bar it carries: drv = codes {1,2,3,4,6} (the area rule, drivable's bar), sdw = 7,
 #: lane = 2, edge_h = 5, xwalk / arrow / hatch = their codes. ``nocls`` has no banded channel (disclosed in the record).
@@ -1024,6 +1039,7 @@ def main_banded(a) -> int:
     # E1-REC2: the argv (when given) decides the own encoder -- resolved BEFORE the trunk is built so a conflict refuses in seconds
     facts = launch_argv_facts(a.launch_argv, a.launch_argv_sha256) if a.launch_argv is not None else None
     own_enc, own_enc_source = resolve_own_enc(bool(a.own_enc), facts)
+    own_enc_l64 = resolve_own_enc_lift64(facts)             # E1-M3N20L64: the argv decides (no manual form)
     check_near_vs_argv(near_m, facts)                        # E1-NEAR20: the record's near band = the argv's (refuses in seconds, before the trunk)
     from tanitad.models import timm_trunk as TT
     from tanitad.models.trunk_shapes import frame_for_width
@@ -1040,7 +1056,8 @@ def main_banded(a) -> int:
     hcfg = H.MapHiresConfig(w_map_hires=1.0, x_max_m=float(extent.x_max_m), y_half_m=float(extent.y_half_m),
                             grad_ckpt=(a.grad_ckpt == "on"), near_lift_x_m=float(a.near_lift_m),
                             near_refine_blocks=int(a.near_refine_blocks), decision_rule=spec["thresholds"]["decision_rule"],
-                            class_weights_sha256="", banded=True, banded_near_m=near_m, **({"own_enc": True} if own_enc else {}))
+                            class_weights_sha256="", banded=True, banded_near_m=near_m, **({"own_enc": True} if own_enc else {}),
+                            **({"own_enc_lift64": True} if own_enc_l64 else {}))
     branch = H.MapHiresBranch(hcfg, d_image=trunk.s8_dim, image_hw=trunk.s8_shape)
     geom = MB.band_geometry(extent.x_max_m, extent.y_half_m, near_m)
     hi_m = banded_hi_m(spec["thresholds"].get("band", "0_20"), extent.band_keys)
@@ -1061,6 +1078,7 @@ def main_banded(a) -> int:
            "launch_commit": a.launch_commit, "launch_argv_sha256": a.launch_argv_sha256 or (facts or {}).get("sha256", ""),
            #: E1-REC2: what the harness was asked to build (the gate also reads `branch_config`, which is what it BUILT)
            "own_enc": own_enc, "own_enc_source": own_enc_source,
+           **({"own_enc_lift64": True} if own_enc_l64 else {}),         # E1-M3N20L64: absent for every other record (byte-for-byte what it was)
            "extent": extent.as_dict(), "branch_config": hcfg.as_dict(), "near_lift_m": float(a.near_lift_m),
            "near_refine_blocks": int(a.near_refine_blocks), "tap": tap,
            "trunk_levers": {k: tsp.get(k) for k in ("chunk_ckpt", "bf16", "channels_last", "fold_bn")},
@@ -1115,12 +1133,13 @@ def identity_block(launch_argv, harness: dict) -> dict:
     facts = None
     if launch_argv is not None:
         flags = {str(t).split("=", 1)[0] for t in launch_argv if str(t).startswith("--")}
-        facts = {"argv": list(launch_argv), "own_enc": OWN_ENC_FLAG in flags, "banded": BANDED_FLAG in flags}
-        if not banded and (facts["banded"] or facts["own_enc"]):
-            raise SystemExit(f"⛔ the launch argv carries {BANDED_FLAG} / {OWN_ENC_FLAG}: it builds the BANDED head, whose record is the /2-banded one (--banded)")
+        facts = {"argv": list(launch_argv), "own_enc": OWN_ENC_FLAG in flags, "banded": BANDED_FLAG in flags, "own_enc_lift64": OWN_ENC_L64_FLAG in flags}
+        if not banded and (facts["banded"] or facts["own_enc"] or facts["own_enc_lift64"]):
+            raise SystemExit(f"⛔ the launch argv carries {BANDED_FLAG} / {OWN_ENC_FLAG} / {OWN_ENC_L64_FLAG}: it builds the BANDED head, whose record is the /2-banded one (--banded)")
     own_enc = bool(resolve_own_enc(manual, facts)[0]) if banded else False
+    own_enc_l64 = bool(resolve_own_enc_lift64(facts)) if banded else False
     core = {"schema": IDENTITY_SCHEMA, "tool": "map_hires_overfit.py", "effective_build_argv": [],
-            "build_facts": {"banded": banded, "own_enc": own_enc}, "data_roots": dict(harness.get("roots") or {}),
+            "build_facts": {"banded": banded, "own_enc": own_enc, **({"own_enc_lift64": True} if own_enc_l64 else {})}, "data_roots": dict(harness.get("roots") or {}),
             "other_args": oa, "audit_inputs": {}}
     return dict(core, identity_sha256=identity_sha256(core),
                 launch_argv_sha256=(hashlib.sha256(json.dumps(list(launch_argv), ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()

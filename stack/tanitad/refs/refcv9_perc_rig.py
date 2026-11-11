@@ -118,6 +118,8 @@ def own_enc_exemptions(model) -> tuple:
     (lift rows, the 64-ch encoder's stem) are NOT exempt: ``map_own_enc_flag.apply_warm_start`` zero-extends them explicitly."""
     if getattr(getattr(model, "_map_hires", None), "map_encoder", None) is None:
         return ()
+    if bool(getattr(model._map_hires.cfg, "own_enc_lift64", False)):      # E1-M3N20L64: its map_encoder is a COPY of `encoder` (apply_warm_start), nothing is NEW
+        return ()
     from tanitad.train.map_own_enc_flag import NEW_PREFIXES
     return tuple(NEW_PREFIXES)
 
@@ -208,6 +210,8 @@ def refcv9_warm_exemptions(model) -> tuple:
     widen = None
     if own_enc_exemptions(model):                          # refcv9 C2 (--r9-map-own-enc); OFF: skipped
         from tanitad.train.map_own_enc_flag import apply_warm_start as widen
+    elif bool(getattr(getattr(getattr(model, "_map_hires", None), "cfg", None), "own_enc_lift64", False)):   # E1-M3N20L64: map_encoder.* := a copy of encoder.* (no NEW prefix)
+        from tanitad.train.map_own_enc_lift64_flag import apply_warm_start as widen
     return new_pfx, tuple(drop_pfx), widen
 
 
@@ -267,7 +271,7 @@ def warm_start_perc_rig(model, path: str) -> dict:
             "n_loaded": len(loadable), "n_new_refcv8_keys": 0, "n_skipped_source_keys": len(skipped),
             **({"banded": {"new_prefixes": list(new_pfx), "n_new_keys": sum(1 for k in own if any(k.startswith(q) for q in new_pfx)),
                            "dropped_source_keys": dropped}} if new_pfx else {}),
-            **({"own_enc": own_enc_rec} if own_enc_rec else {}),
+            **({("own_enc_lift64" if "copied_keys" in own_enc_rec else "own_enc"): own_enc_rec} if own_enc_rec else {}),
             "skipped_modules_key_counts": per_mod, "optimizer": "fresh (not loaded)"}
 
 

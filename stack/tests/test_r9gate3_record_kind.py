@@ -45,7 +45,7 @@ needs_bash = S.needs_bash
 EXPECTED = {"B3": ("map", "box-b3"), "B3p": ("map", "box-b3"),
             "M1": ("map-banded", "box"), "M2a": ("map-banded", "box"), "M2b": ("map-banded", "box"),
             "M1N20": ("map-banded", "box"),                                    # E1-NEAR20: the banded head with its near band 0-20 m
-            "M3": ("map-banded", "box"), "M3N20": ("map-banded", "box"),     # E1-M3N20: + the map's own encoder (the record builds it from the argv); M3N20 also the 0-20 m near band
+            "M3": ("map-banded", "box"), "M3N20": ("map-banded", "box"), "M3N20L64": ("map-banded", "box"),     # E1-M3N20: + the map's own encoder (the record builds it from the argv); M3N20 also the 0-20 m near band
             "C0": ("map", "box"), "C1": ("map", "box"), "B1": ("map", "box"), "B2": ("map", "box"), "B2c": ("map", "box"),
             "T1": ("map", "box"), "T1s": ("map", "box"), "T1h": ("map", "box"), "T1hs": ("map", "box"),
             "T1v": ("map", "box")}                                             # refcv9 E1 T1v (--r9-hist-supervise-geom): the T1 family's kinds -- the inherited /1 records bound to its OWN argv, stamped bev_warp_not_certified

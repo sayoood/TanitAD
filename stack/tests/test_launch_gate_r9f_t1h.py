@@ -128,7 +128,7 @@ def test_the_bundle_is_exactly_the_crowned_T1h_argv_T1_alone_and_T1hs_are_not_ad
 def test_refcv9_warm_and_e1rig_are_unchanged_and_e1rig_still_admits_T1_alone_and_the_shuffle_arm():
     fp = lambda n: hashlib.sha256(repr(sorted((k, repr(v)) for k, v in LG.PROFILES[n].items())).encode()).hexdigest()[:16]   # noqa: E731
     # PIN6 (MM 2026-11-07, 5f47df80: the env-failure pin's sha literal sits in these profiles): refcv9-warm 09dbfa04d5a3ee4b -> 7099d75fa2f40240, refcv9-e1rig 18c28c61f19f5544 -> 0bb9664939426521
-    assert fp("refcv9-warm") == "7099d75fa2f40240" and fp("refcv9-e1rig") == "6fa39c86092dffec"        # the values test_launch_gate_refcv9_full pins (R8); e1rig 0bb9664939426521 (pin6; 18c28c61f19f5544 before it) -> 6fa39c86092dffec only because E1_T1_FLAGS gained --r9-hist-supervise-geom (T1v)
+    assert fp("refcv9-warm") == "7099d75fa2f40240" and fp("refcv9-e1rig") == "1ff41b0acf93ee4f"        # the values test_launch_gate_refcv9_full pins (R8); e1rig 0bb9664939426521 (pin6; 18c28c61f19f5544 before it) -> 6fa39c86092dffec only because E1_T1_FLAGS gained --r9-hist-supervise-geom (T1v)
     RIG = LG.PROFILES["refcv9-e1rig"]
     assert WARP not in (RIG.get("required_values_when") or {})
     for arm in ("T1", "T1s", "T1h", "T1hs"):

@@ -192,6 +192,13 @@ _M3_READINGS = ("PREREG_M3 committed readings (DECISIVE = vs BASE, CARRY = vs C0
                 "limit on this rig at 4,000 steps, K2 map config = BASE iff BASE's own read was KEEP else C0's head, Cfp to the PI; DROP clause 3 -> the widened SHARED lift "
                 "(64 -> 128) costs a box / other primary beyond 2 x its floor, named; next arm: the own encoder on the 64-channel lift = new code + its own prereg")
 
+#: E1-M3N20L64 (PREREG_M3N20L64, md5 114a28de) committed readings, DECISIVE = vs M1N20, CARRY = vs C0 (reported for every outcome, never re-deciding the lever).
+_M3L64_READINGS = ("PREREG_M3N20L64 committed readings (DECISIVE = vs M1N20, CARRY = vs C0): KEEP/KEEP -> decoupling the map's encoder buys precision with no box cost: logged as a "
+                   "kept lever and the map config candidate AFTER E2 (not through E2: entering E3 is the PI's decision); KEEP/DROP -> helps M1N20 but the config does not clear C0, "
+                   "logged, map config stays K2M1N20; DROP clause 1-2 -> sharing the encoder is not the limit on this rig at 4,000 steps: the own-encoder line closes, map config "
+                   "stays K2M1N20, remaining named levers (longer map training; Cfp only if the design's condition still holds) go to the PI; DROP clause 3 -> decoupling costs "
+                   "another perception primary: named, map config stays K2M1N20, diagnose which head paid before any further arm")
+
 #: The 17 arms of sec. 4.3 (+ T1s, the shuffled control of D3; + T1h / T1hs, T1's follow-up lever and its control, REFCV9_E1_T1H_PREREG.md).  ``ref``: the default reference arm (None = the design names none);
 #: ``allowed``: the references this verdict accepts; ``kind``: lever (KEEP/DROP) or control (a control outcome).
 #: REFCV9_E1_T1V_PREREG.md "Committed outcomes and next levers", VERBATIM (the four branches); `t1v_committed_outcome` returns one of them by index.
@@ -275,6 +282,16 @@ ARMS = {
                               "the fitter's band layout stays 0-10 / 10-40 / 40-100 m for every arm, so M3N20's 10-20 m is cut with its 10-40 m level even though its head serves "
                               "10-20 m at 10 cm (like-for-like with M1N20, M1 and C0, disclosed in the PREREG)",
                               "one training seed per arm; the floor is ONE seed pair; separated is necessary, not sufficient (H-ESTIM-SEED-1)")},
+    #: E1-M3N20L64 (PREREG_M3N20L64, MM 2026-11-09, md5 114a28de): M1N20 + ONE flag (`--r9-map-own-enc-lift64`): the map's own 64-channel encoder on the UNWIDENED lift,
+    #: warm-started as a COPY of the source's shared encoder. DECISIVE = vs M1N20; CARRY = vs C0 (`--ref C0`); same metrics as M3N20. NOT cleared to train before E2 finishes
+    #: on Thor: the MM asks the PI first.
+    "M3N20L64": {"kind": "lever", "variable": "M1N20 + the map's own 64-ch BEV encoder on the UNWIDENED 64-ch lift, warm-started as a copy of the shared encoder; --w-map-hires 1.0; near band 0-20 m @ 0.10 m",
+                 "ref": "M1N20", "allowed": ("M1N20", "C0"), "metrics": _m3_metrics("M3N20L64"), "next_lever": _M3L64_READINGS,
+                 "argv_flags": ("--r9-map-banded", "--r9-map-own-enc-lift64", "--r9-map-banded-near-m"),
+                 "ambiguities": ("DECISIVE = M3N20L64 vs M1N20; CARRY = M3N20L64 vs C0 (--ref C0), same rule, never re-decides the lever; the PREREG's ONE lever vs M1N20 is the decoupled encoder",
+                                 "the fitter's band layout stays 0-10 / 10-40 / 40-100 m for every arm, so M3N20L64's 10-20 m is cut with its 10-40 m level (like-for-like with M1N20 and C0)",
+                                 "M3N20 (the 128-channel own encoder) is context only, never a reference of this read",
+                                 "one training seed per arm; the floor is ONE seed pair; separated is necessary, not sufficient (H-ESTIM-SEED-1)")},
     "B1": {"kind": "lever", "variable": "box-derived depth aux (--r9-box-depth-aux, --w-box-depth 0.1)", "ref": "C0", "allowed": ("C0",),
            "metrics": (_spec("B1.primary", "abs(dx) on matched TPs 0-40 m", "primary", ("dx_0_40_mean",), "lower"),
                        _spec("B1.beside.dxmed", "abs(dx) median (robust companion, same quantity)", "beside", ("dx_0_40_median",), "lower"),

@@ -26,7 +26,7 @@
 #     map-banded  the BANDED head's /2-banded record REFUSED on an argv WITHOUT --r9-map-banded
 #     box         the inherited box record           REFUSED on an argv carrying an OWN-HEAD --r9-box-* lever (E1_BOX_OWN_FLAGS: "use box-b3")
 #     box-b3      the B3 head's /2-b3 record         REFUSED on an argv WITHOUT any own-head --r9-box-* lever
-#   => M1/M2a/M2b/M1N20: `box` + `map-banded`;  M3/M3N20: `box` + `map-banded` (the record builds the own encoder from the argv, M3N20 also its 0-20 m near band);  B3/B3p: `map` + `box-b3`.
+#   => M1/M2a/M2b/M1N20: `box` + `map-banded`;  M3/M3N20: `box` + `map-banded` (the record builds the own encoder from the argv, M3N20 also its 0-20 m near band);  M3N20L64 (E1-M3N20L64, PREREG_M3N20L64): `box` + `map-banded` (the record builds the 64-channel own encoder on the unwidened lift from the argv's --r9-map-own-enc-lift64 and STAMPS own_enc_lift64);  B3/B3p: `map` + `box-b3`.
 #   E1-REC3 (MM 207ebd, pinned): the TRAINING-ONLY aux heads (E1_BOX_AUX_FLAGS: B1 --r9-box-depth-aux, B2 --r9-box-persp-aux, B2c --r9-box-bev2-aux)
 #   are NOT own-head levers: B1/B2/B2c take `map` + `box` (the inherited /1 record bound to their OWN argv; the harness does not build the aux
 #   head and the record STAMPS `aux_heads_not_certified` == the argv's aux set -- the gate's /1 judge reads it, and this script asserts it after the
@@ -44,10 +44,10 @@
 #   `own_record_closes`) instead of the /1 assert. THREE arms train on the Thor GPU (MEASURED for `box`: MAIN alone 5,065.7 s) -- a detached call of its own.
 #
 # map-banded (E1-MAP-OWN-RECORD): the SAME lock discipline and closure_run --binding as `map`, with the template
-#   `stack/scripts/r9e1_bind_map-banded.args.tpl` (map_hires_overfit.py --banded: the A18 spec, 3 arms healthy,lane_w0,s8_zeros, near lift 10; 20 for M1N20 / M3N20)
+#   `stack/scripts/r9e1_bind_map-banded.args.tpl` (map_hires_overfit.py --banded: the A18 spec, 3 arms healthy,lane_w0,s8_zeros, near lift 10; 20 for M1N20 / M3N20 / M3N20L64)
 #   and the record `BD/run_map-banded/g_map_overfit.json` (schema tanitad.g_map_overfit_record/2-banded) read back by the GATE'S OWN
 #   judge (`judge_map_overfit_banded` on the arm's argv) instead of the /1 assert. Needs {INPUTS}/gmo_spec_A18.json (sha256 checked)
-#   next to the frameset. ONE record per arm (the argv sha256 differs): M1, M2a, M2b, M1N20, M3, M3N20.
+#   next to the frameset. ONE record per arm (the argv sha256 differs): M1, M2a, M2b, M1N20, M3, M3N20, M3N20L64.
 #
 # WHY IT EXISTS. G-MAP-OVERFIT and G-BOX-OVERFIT bind the LAUNCH ARGV sha256 (launch_gate.py _overfit_binding_reasons:
 # schema + `launch_argv_sha256`). The sha is over the WHOLE argv -- `--seed` and `--out` included -- so C0 and C1 need ONE

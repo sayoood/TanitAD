@@ -202,7 +202,7 @@ def _m3_record(argv, **over):
 
 
 def test_the_banded_row_covers_both_map_flags_and_the_gate_literals_equal_the_harness_and_the_flag_module():
-    assert LG.E1_OWN_RECORDS["E1-MAP-OWN-RECORD"]["flags"] == ("--r9-map-banded", "--r9-map-own-enc", "--r9-map-banded-near-m")   # + E1-NEAR20
+    assert LG.E1_OWN_RECORDS["E1-MAP-OWN-RECORD"]["flags"] == ("--r9-map-banded", "--r9-map-own-enc", "--r9-map-own-enc-lift64", "--r9-map-banded-near-m")   # + E1-NEAR20
     import map_hires_overfit as O
     from tanitad.train import map_own_enc_flag as MOE
     assert BD["own_enc"] == {"flag": O.OWN_ENC_FLAG, "d_map_enc": MOE.D_MAP_ENC} and O.OWN_ENC_FLAG == MOE.FLAG == MK.OWN_ENC_FLAG

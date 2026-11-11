@@ -118,7 +118,7 @@ def dvb_check(model, args) -> list:
     declared = is_on(args)
     br = getattr(model, "_map_hires", None)
     me = None if br is None else getattr(br, "map_encoder", None)
-    built = me is not None
+    built = me is not None and not bool(getattr(getattr(br, "cfg", None), "own_enc_lift64", False))   # E1-M3N20L64: that arm's map_encoder is not this flag's
     out = []
     if declared != built:
         out.append(Mismatch(DEST, declared, built, "model._map_hires.map_encoder", "argv and the build disagree"))
