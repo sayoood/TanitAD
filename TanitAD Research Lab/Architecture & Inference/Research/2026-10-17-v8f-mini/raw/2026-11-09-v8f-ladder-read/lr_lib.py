@@ -173,6 +173,54 @@ def zmean_of(model, feats16, ch=16):
     return torch.cat(out, 0).float()
 
 
+def is_pattn(model_or_wm):
+    """PREREG_V8F_WMPOOL: True for a P-ATT world model (``wm_pool att25``, the ``pool_q`` query is built); every earlier arm has no such attribute."""
+    wm = getattr(model_or_wm, "wm", model_or_wm)
+    return getattr(wm, "pool_q", None) is not None
+
+
+@torch.no_grad()
+def zcell_of(model, feats16, ch=16):
+    """PREREG_V8F_WMPOOL: the frozen adapter's 2 x 5 cells per frame (chunks of 16, as ``zmean_of``): feats16 [T, 40, d_feat] -> [T, 10, d], ``WMAux.cells_of_adapt`` (wmpool/zcells.py)."""
+    out = []
+    for s in range(0, feats16.shape[0], ch):
+        f = torch.as_tensor(feats16[s:s + ch]).float()[None]
+        out.append(model.wm.cells_of_adapt(model.adapter(f) + model.pos[None, None])[0])
+    return torch.cat(out, 0).float()
+
+
+def z_in(model, fr, ci):
+    """The per-frame input z1 is built from, chosen by the MODEL (never by the file): the cells for a P-ATT model, else the token mean. A P-ATT model on frames loaded without cells raises."""
+    if is_pattn(model):
+        if "zcell" not in fr:
+            raise LadderMismatch("a P-ATT (wm_pool att25) model reads the 2 x 5 cells: load the frames with cells= (build_eval_cells)")
+        return fr["zcell"][ci]
+    return fr["zmean"][ci]
+
+
+@torch.no_grad()
+def pool_stats(model, fr):
+    """PREREG_V8F_WMPOOL beside, no bar: the ONE query's weights over the 10 cells on every eval frame -> entropy (uniform = ln 10 = 2.3026), its 5th percentile, the mean largest weight, and the mean
+    weight per cell (cell R*5 + C: top / bottom half of the frame, five sectors left to right). The pool sits only at the level-1 input, so there is one weight set for the whole stack, not one per level."""
+    wm = model.wm
+    ws = torch.cat([wm.pool_weights(torch.as_tensor(c)[None])[0] for c in fr["zcell"]], 0).double()
+    H = -(ws * ws.clamp_min(1e-30).log()).sum(-1)
+    return {"entropy_mean": float(H.mean()), "entropy_p05": float(torch.quantile(H, 0.05)), "entropy_uniform": math.log(10), "max_weight_mean": float(ws.max(-1).values.mean()),
+            "weight_mean_per_cell": [round(float(x), 6) for x in ws.mean(0)], "n_frames": int(ws.shape[0]), "q_norm": float(wm.pool_q.detach().float().norm())}
+
+
+def build_eval_cells(model, out_path):
+    """PREREG_V8F_WMPOOL: zcell [sum T, 10, d] for every eval clip, in its own file beside the frames file, with the clip list, T and the adapter hash."""
+    tracks = D.load_native_tracks(f"{SF}/inputs/native_tracks.pt")
+    store = D.ClipStore(f"{SF}/cache", "eval", lru=2, grid="pool4x10", kin_mode="yaw", tracks=tracks)
+    clips = list_eval_clips()
+    cs = [zcell_of(model, store.get(c)["feats"]).numpy().astype(np.float32) for c in clips]
+    part = out_path[:-4] + ".part.npz"                                  # written whole, then renamed: a killed build leaves no file under the final name
+    np.savez(part, clips=np.array(clips), T=np.array([len(z) for z in cs]), zcell=np.concatenate(cs), adapter_sha=adapter_sha(model))
+    os.replace(part, out_path)
+    return out_path
+
+
 def list_eval_clips():
     d = f"{SF}/cache/eval/clips"
     return sorted(f[:-3] for f in os.listdir(d) if f.endswith(".pt"))
@@ -196,12 +244,19 @@ def build_eval_frames(model, out_path):
     return out_path
 
 
-def load_eval_frames(path):
+def load_eval_frames(path, cells=None):
+    """``cells`` (PREREG_V8F_WMPOOL): a ``build_eval_cells`` file; its clips, T and adapter hash must equal the frames file's, and ``zcell`` is split like ``zmean``."""
     z = np.load(path, allow_pickle=False)
     T = z["T"]
     cut = np.cumsum(T)[:-1]
-    return {"clips": [str(c) for c in z["clips"]], "T": [int(t) for t in T], "zmean": np.split(z["zmean"], cut), "act": np.split(z["act"], cut), "ok": np.split(z["ok"], cut),
-            "adapter_sha": str(z["adapter_sha"])}
+    fr = {"clips": [str(c) for c in z["clips"]], "T": [int(t) for t in T], "zmean": np.split(z["zmean"], cut), "act": np.split(z["act"], cut), "ok": np.split(z["ok"], cut),
+          "adapter_sha": str(z["adapter_sha"])}
+    if cells is not None:
+        c = np.load(cells, allow_pickle=False)
+        if [str(x) for x in c["clips"]] != fr["clips"] or [int(t) for t in c["T"]] != fr["T"] or str(c["adapter_sha"]) != fr["adapter_sha"]:
+            raise LadderMismatch(f"cells file {cells} does not match the frames file {path} (clips, T or adapter hash)")
+        fr["zcell"] = np.split(c["zcell"], cut)
+    return fr
 
 
 def build_label_frames(clips, T):
@@ -230,13 +285,20 @@ def roll_cells(stack, level, z, act, anchors, kmax, ctx):
 
 @torch.no_grad()
 def encode_clip(model, zmean, act, contrast=None):
-    """One clip (zmean [T, d], act [T, 2] raw) -> (z list per level [1, T_l, D], planning actions per level [1, T_l-1, A])."""
+    """One clip (zmean [T, d], act [T, 2] raw) -> (z list per level [1, T_l, D], planning actions per level [1, T_l-1, A]).
+    PREREG_V8F_WMPOOL: for a P-ATT model ``zmean`` is the clip's cells [T, 10, d] (``z_in``), read by ``z1_from_cells``."""
     wm = model.wm
     a = torch.as_tensor(act).clone()
     if contrast is not None:
         ch, dv = contrast
         a[..., ch] += dv
-    z1 = wm.z1_from_mean(torch.as_tensor(zmean)[None])
+    x = torch.as_tensor(zmean)[None]
+    if is_pattn(wm):
+        if x.dim() != 4:
+            raise LadderMismatch(f"a P-ATT model reads cells [T, 10, d], got shape {tuple(x.shape[1:])}")
+        z1 = wm.z1_from_cells(x)
+    else:
+        z1 = wm.z1_from_mean(x)
     a_sc = wm.scale_actions(a[None])[:, :-1]
     enc = wm.stack.encode(z1, a_sc)
     plan = [a_sc] + [enc.act[l] for l in (1, 2)]
@@ -349,7 +411,7 @@ def gather(model, fr, ctx_modes=(None, 1)):
     cells, states = {}, {lv: [] for lv in (1, 2, 3)}
     acc = {}
     for ci in range(nclip):
-        z, pl = encode_clip(model, fr["zmean"][ci], fr["act"][ci])
+        z, pl = encode_clip(model, z_in(model, fr, ci), fr["act"][ci])
         ok = fr["ok"][ci]
         for lv in (1, 2, 3):
             zl, al = z[lv - 1], pl[lv - 1]
@@ -603,7 +665,7 @@ def slope_arm(model, fr, probes_by_level, fold, cum, plan, W):
     for a, b, h, ka, kb in pairs:
         xs, ys, ps = [], [], []
         for ci in range(n_ep):
-            z, pl = encode_clip(model, fr["zmean"][ci], fr["act"][ci])
+            z, pl = encode_clip(model, z_in(model, fr, ci), fr["act"][ci])
             nb = z[b - 1].shape[1]
             jb = np.arange(0, nb - kb)
             if len(jb) == 0:
@@ -638,7 +700,7 @@ def ia3_arm(model, fr, probes_by_level, fold, cum, plan, W, smoke=False):
     acc = {}                                                    # (lv, k, tag) -> list over clips of {cn: decoded (speed, yaw) arrays}
     for ci in range(n_ep):
         for cn, ctr in CONTRAST.items():
-            z, pl = encode_clip(model, fr["zmean"][ci], fr["act"][ci], contrast=ctr)
+            z, pl = encode_clip(model, z_in(model, fr, ci), fr["act"][ci], contrast=ctr)
             for lv in (1, 2, 3):
                 zl, al = z[lv - 1], pl[lv - 1]
                 n_st = zl.shape[1]
@@ -679,5 +741,5 @@ def ia3_arm(model, fr, probes_by_level, fold, cum, plan, W, smoke=False):
 
 def encoded_states_ok(model, fr):
     """Sanity: the encode of every clip gives the states the horizon plan assumes (states per level)."""
-    z, _ = encode_clip(model, fr["zmean"][0], fr["act"][0])
+    z, _ = encode_clip(model, z_in(model, fr, 0), fr["act"][0])
     return [int(t.shape[1]) for t in z]

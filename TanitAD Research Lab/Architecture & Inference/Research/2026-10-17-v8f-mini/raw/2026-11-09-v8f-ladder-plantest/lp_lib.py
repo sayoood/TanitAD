@@ -276,9 +276,11 @@ def fit_priors3(st, wm, tr_A, upper, tr_Z1=None):
 def clip_z1(wm, fr):
     """{clip: [T, D]} level-1 latents of the WHOLE clip through the built model: wm.z1_from_mean (proj, enc1 when K = 3) of the frozen-adapter mean tokens (every frame has its real history)."""
     out = {}
+    pattn = LR.is_pattn(wm)                                             # PREREG_V8F_WMPOOL: a P-ATT model reads the clip's cells (LR.z_in) through z1_from_cells
     with torch.no_grad():
-        for c, zm in zip(fr["clips"], fr["zmean"]):
-            out[c] = wm.z1_from_mean(torch.as_tensor(zm)[None])[0].float()
+        for ci, c in enumerate(fr["clips"]):
+            x = torch.as_tensor(LR.z_in(wm, fr, ci))[None]
+            out[c] = (wm.z1_from_cells(x) if pattn else wm.z1_from_mean(x))[0].float()
     return out
 
 
@@ -329,7 +331,7 @@ def prepare_arm(name):
     model, cfg, argv, ck = LR.load_arm(f"{LR.PULLS}/ladder_{name}")
     built = LR.built_values(model)
     checked = LR.check_built_vs_argv(built, argv)
-    fr = LR.load_eval_frames(f"{FRAMES}/frames_s{seed_of(name)}.npz")
+    fr = LR.load_eval_frames(f"{FRAMES}/frames_s{seed_of(name)}.npz", cells=f"{FRAMES}/cells_s{seed_of(name)}.npz" if LR.is_pattn(model) else None)   # PREREG_V8F_WMPOOL
     sha = LR.adapter_sha(model)
     if sha != fr["adapter_sha"]:
         raise LR.LadderMismatch(f"{name}: adapter hash {sha[:12]} != cached frames {fr['adapter_sha'][:12]}")

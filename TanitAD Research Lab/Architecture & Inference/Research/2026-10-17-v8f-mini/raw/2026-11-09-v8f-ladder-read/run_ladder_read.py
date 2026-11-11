@@ -23,7 +23,12 @@ def frames_for(model, seed):
     if not os.path.exists(p):
         os.makedirs(CACHE, exist_ok=True)
         L.build_eval_frames(model, p)
-    fr = L.load_eval_frames(p)
+    cp = None
+    if L.is_pattn(model):                                               # PREREG_V8F_WMPOOL: the 2 x 5 cells, in their own file beside the frames
+        cp = f"{CACHE}/cells_s{seed}.npz"
+        if not os.path.exists(cp):
+            L.build_eval_cells(model, cp)
+    fr = L.load_eval_frames(p, cells=cp)
     got = L.adapter_sha(model)
     if got != fr["adapter_sha"]:
         raise L.LadderMismatch(f"frozen adapter of this run differs from the cached frames' adapter for seed {seed}: {got[:12]} vs {fr['adapter_sha'][:12]}")
@@ -58,6 +63,8 @@ def read_arm(name, smoke=False):
            "ia0": ia0, "ia0_planning_context1": ia0_ctx1, "passes": L.level_passes(ia0), "beside": beside,
            "bootstrap": {"estimator": "episode-cluster bootstrap over the 141 eval clips", "B": L.B_BOOT, "seed": 0}, "reference_draws": 19 if smoke else L.R_REF,
            "free_gb_at_start": round(free, 2), "wall_s": round(time.time() - t0, 1)}
+    if L.is_pattn(model):                                               # PREREG_V8F_WMPOOL beside, no bar: how far the pool moved from uniform
+        res["pool_beside"] = L.pool_stats(model, fr)
     return res
 
 
