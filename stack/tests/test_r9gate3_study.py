@@ -69,7 +69,7 @@ def test_study_resolution_table_unset_is_e1_and_e2_is_the_full_model(env, want):
 
 
 @needs_bash
-@pytest.mark.parametrize("val", ["bogus", "", "E1", " e1", "e1 e2", "r9e1", "e3"])
+@pytest.mark.parametrize("val", ["bogus", "", "E1", " e1", "e1 e2", "r9e1", "e4"])
 def test_an_unknown_or_empty_study_REFUSES_and_never_falls_back_to_e1(val):
     rc, got, out = _resolve(STUDY, {"R9_STUDY": val})
     assert rc == 10 and "ZZR9STUDY-REFUSEDZZ" in out and "REFUSED: unknown R9_STUDY" in out and "R9_ROOT" not in got, (val, rc, out)
@@ -77,9 +77,9 @@ def test_an_unknown_or_empty_study_REFUSES_and_never_falls_back_to_e1(val):
 
 @needs_bash
 def test_the_prefix_lookup_is_the_same_table_and_a_foreign_prefix_has_no_study():
-    prog = "R9_STUDY_NOAUTOLOAD=1; . '%s'; for p in r9e1 r9e2 r9e3 ''; do echo \"p=$p->$(r9_study_of_prefix \"$p\" || echo NONE)\"; done" % STUDY.as_posix()
+    prog = "R9_STUDY_NOAUTOLOAD=1; . '%s'; for p in r9e1 r9e2 r9e3 r9e4 ''; do echo \"p=$p->$(r9_study_of_prefix \"$p\" || echo NONE)\"; done" % STUDY.as_posix()
     rc, out, _ = _run(["-c", prog])
-    assert rc == 0 and out.split() == ["p=r9e1->e1", "p=r9e2->e2", "p=r9e3->NONE", "p=->NONE"], out
+    assert rc == 0 and out.split() == ["p=r9e1->e1", "p=r9e2->e2", "p=r9e3->e3", "p=r9e4->NONE", "p=->NONE"], out
 
 
 def _mutant(tmp_path, old, new):
@@ -322,7 +322,7 @@ def test_bind_resolves_the_K0_argv_under_the_r9e2_prefix_and_a_dry_run_needs_no_
 
 
 @needs_bash
-@pytest.mark.parametrize("prefix", ["r9e3", "", "r9e1_", "R9E1", "r9e1;ls"])
+@pytest.mark.parametrize("prefix", ["r9e4", "", "r9e1_", "R9E1", "r9e1;ls"])
 def test_bind_refuses_a_prefix_no_study_owns_before_touching_anything(tmp_path, prefix):
     out, root = R2._bind(tmp_path, "--argv-prefix", prefix, "box", "K0")
     assert "ZZR9E1BIND-REFUSEDZZ" in out and "is not the argv prefix of any study" in out and "DRYOK" not in out, out

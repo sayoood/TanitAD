@@ -17,6 +17,7 @@ say() { echo "[r9e1-gate3:$MODE:$ARM] $(date -u +%H:%M:%SZ) $*"; }
 refuse() { say "REFUSED: $*"; echo "ZZR9E1G3-${ARM}-${MODE}-REFUSEDZZ"; exit 10; }
 case "$ARM" in ""|*/*|*" "*) refuse "bad arm '$ARM'";; esac   # any arm with a committed argv (checked below)
 [ "${#SHA}" = 40 ] || refuse "launch_tree.commit is not a 40-char sha"
+R9_PROFILE="$(r9_profile_of_arm "$ARM")"    # e3: a `<V>_d1` arm is gated under the D1 profile; every other arm (and all of e1 / e2) under the study's profile
 [ -n "$REC12" ] || refuse "no $R/gate3/REC_C12 stamp and study $R9_STUDY has no default record commit (r9gate3_restart.sh writes it from its third argument)"
 [ -f "$ARGV" ] || refuse "no argv $ARGV"; [ -f "$EVO" ] || refuse "no remap override file $EVO"
 # >>> E1 record kind (byte-identical in r9gate3_thor_gate.sh and r9gate3_rec_explore.sh; tests/test_r9gate3_record_kind.py runs this block)

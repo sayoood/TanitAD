@@ -20,6 +20,9 @@ SHA="$(cat $R/launch_tree.commit)"; C12="${SHA:0:12}"; G=$R/suite_$C12; STAT=$R/
 EXP=$R/gate3_explore/${C12}_${R9_EXPLORE_ARM}; KIT=$R/kit
 # the arms, in training order (written by r9gate3_restart.sh; default = the study's default arms: e1 the floor pair). The study's explore arm (e1: C0) stays the explore arm.
 ARMS="$(cat $R/gate3/ARMS 2>/dev/null)"; ARMS="${ARMS:-$R9_DEFAULT_ARMS}"
+# an arm-agnostic study (e3) has no default arm and no fixed explore arm: the arms come from $R/gate3/ARMS, the explore arm is the first non-D1 one (r9_resolve_explore_arm; a no-op for e1 / e2)
+r9_resolve_explore_arm "$ARMS" || { echo "ZZR9E1CHAIN-STOP-NO-ARMSZZ study $R9_STUDY has no arm to explore: $R/gate3/ARMS is empty"; exit 3; }
+EXP=$R/gate3_explore/${C12}_${R9_EXPLORE_ARM}
 mkdir -p $R/gate3 $R/runs.d
 ev() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $*" >> "$STAT"; echo "ZZR9E1CHAIN-$1ZZ $(date -u +%H:%M:%SZ) ${*:2}"; }
 stop() { ev "STOP-$1" "${@:2}"; exit 3; }
@@ -82,6 +85,7 @@ fi
 PINNED_WAIT_S="${R9_PINNED_WAIT_S:-14400}"
 PASSED=""; TRAINED=""
 for A in $ARMS; do
+  R9_PROFILE="$(r9_profile_of_arm "$A")"      # THIS arm's gate profile (e3 D1 branch: the D1 profile); the zero-gradient derivation below reads it. e1 / e2: unchanged
   D=$R/devbox_evidence_${C12}_${A}; ARGV=$T/stack/ops/runs.d/${R9_PREFIX}_${A}.argv.json; ARM=${R9_PREFIX}_$A
   OUTD="$($PY -c 'import json,sys; d=json.load(open(sys.argv[1])); a=d["argv"] if isinstance(d,dict) else d; print(a[a.index("--out")+1])' "$ARGV" 2>/dev/null)"
   if [ -n "$OUTD" ] && [ -s "$OUTD/summary.json" ] && grep -q '"done"[[:space:]]*:[[:space:]]*true' "$OUTD/summary.json"; then

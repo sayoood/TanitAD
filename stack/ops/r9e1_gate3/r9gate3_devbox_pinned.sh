@@ -48,6 +48,9 @@ NA=0
 export CUDA_VISIBLE_DEVICES=-1
 export TANITAD_REFAV1_CUDA_TEST=1 TANITAD_LIDAR_BEV_GT_DIR=E:/Projects/TanitAD-artifacts/bev-lidar-gt-b1eval-20260913 TANITAD_CALIB_DIR=E:/Projects/TanitAD-artifacts/hf-corpus-aug-20260915/stage/calibration
 for ARM in $ARMS; do
+  R9_PROFILE="$(r9_profile_of_arm "$ARM")"   # e3: a `<V>_d1` arm runs under the D1 profile (its argv carries --wsd-branch-from, which only that profile admits)
+  # a D1 arm's `--wsd-branch-from` names a Thor path whose config.json the gate reads: <stage>/pathmap_<ARM>.txt (one line FROM=TO, optional, absent for every other arm) maps it to a local copy
+  PMAP="$(cat "$STAGE/pathmap_${ARM}.txt" 2>/dev/null | tr -d '\r' | head -1)"
   ARGVF="$T/stack/ops/runs.d/${R9_PREFIX}_${ARM}.argv.json"; OUT="$STAGE/devbox_evidence_${C12}_${ARM}"; NA=$((NA + 1)); SW="$STAGE/sw$NA"; LOG="$STAGE/devbox_pinned_${C12}_${ARM}.log"
   [ -s "$ARGVF" ] || { say "no argv $ARGVF"; mark ZZGS3-PINNED-${ARM}-FAILZZ; continue; }
   PN=$(path_need "$SW" "$ML"); [ "$PN" -le 259 ] || { say "$ARM: the deepest extracted path would be $PN characters (> 259) under $SW"; mark "ZZGS3-PINNED-${ARM}-FAILZZ PATH-LONG $PN"; continue; }
@@ -68,7 +71,7 @@ for ARM in $ARMS; do
   # archive passes without it and fails with it). The pinned suite runs in the ordinary Git-bash environment its tests were written for.
   PYTHONDONTWRITEBYTECODE=1 PYTHONPATH="$T/stack;$T/stack/scripts" env -u MSYS_NO_PATHCONV timeout "${R9_PINNED_TIMEOUT_S:-10800}" "$DEVPY" "$T/stack/scripts/launch_gate.py" run \
     --profile "$R9_PROFILE" --stage devbox --tree "$T" --commit "$CAND" --git-dir "$REPO/.git" \
-    --argv-file "$ARGVF" --suite-work "$SW" --out-dir "$OUT" > "$LOG" 2>&1 < /dev/null
+    --argv-file "$ARGVF" ${PMAP:+--path-map "$PMAP"} --suite-work "$SW" --out-dir "$OUT" > "$LOG" 2>&1 < /dev/null
   EV="$OUT/evidence/G-SUITE-PINNED.json"; [ -s "$EV" ] || EV="$OUT/G-SUITE-PINNED.json"
   PST="$([ -s "$EV" ] && "$DEVPY" -I -c "import json,sys; d=json.load(open(sys.argv[1],encoding='utf-8')); print(d.get('status'), d.get('started_utc'), d.get('finished_utc'))" "$EV" 2>/dev/null | tr -d '\r')"
   say "$ARM: G-SUITE-PINNED evidence: ${PST:-MISSING} ($EV) wall $(( $(date +%s) - t0 )) s"

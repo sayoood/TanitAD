@@ -5,6 +5,7 @@ ARM=$1; HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 R=$R9_ROOT; T=$R/launch_tree; SHA=$(cat $R/launch_tree.commit); C12=${SHA:0:12}
 ARGV=$T/stack/ops/runs.d/${R9_PREFIX}_${ARM}.argv.json; PY=/home/nvidia/venvs/tanitad-train/bin/python
 REC12="$(cat $R/gate3/REC_C12 2>/dev/null || echo $R9_DEFAULT_REC12)"; OV=$R/ovf_${ARM}_$REC12
+R9_PROFILE="$(r9_profile_of_arm "$ARM")"    # e3: a `<V>_d1` arm is judged under the D1 profile; every other arm (and all of e1 / e2) under the study's profile
 refuse() { LOGF=$R/gate3_explore_rec_${C12}_$ARM.log; { echo "REFUSED: $*"; echo "rc=10"; } > "$LOGF"; echo "ZZR9E1G3-${ARM}-rec-explore-REFUSEDZZ"; exit 10; }
 [ -n "$REC12" ] || refuse "no $R/gate3/REC_C12 stamp and study $R9_STUDY has no default record commit (r9gate3_restart.sh writes it from its third argument)"
 # >>> E1 record kind (byte-identical in r9gate3_thor_gate.sh and r9gate3_rec_explore.sh; tests/test_r9gate3_record_kind.py runs this block)

@@ -14,6 +14,8 @@ R=$R9_ROOT; SE="R9_STUDY=$R9_STUDY"; DEVSTAGE_W="$(echo "$R9_DEVSTAGE" | sed 's|
 DEVPY=/c/Users/Admin/venvs/tanitad/Scripts/python.exe; TIPBASE=d297ba563d8fddc0ce9cfb8380408878a3778fb2
 die() { echo "REFUSED: $*"; exit 10; }
 ARMS="${2:-$R9_DEFAULT_ARMS}"; REC12="${3:-$R9_DEFAULT_REC12}"
+[ -n "$ARMS" ] || die "study $R9_STUDY has no default arm: name the arms (2nd argument, e.g. 'V' or 'V V_d1' for e3)"
+r9_resolve_explore_arm "$ARMS" || die "study $R9_STUDY: ARMS '$ARMS' has no arm to explore"
 echo "$REC12" | grep -qx "[0-9a-f]\{12\}" || die "REC12 must be 12 hex chars"
 git --git-dir=$GD cat-file -e "$SHA^{commit}" || die "commit $SHA not in the mirror"
 [ "$(git --git-dir=$GD ls-remote origin agent/arch-inf-20260803 | cut -c1-40)" = "$SHA" ] || die "$SHA is not the remote tip (git ls-remote)"
