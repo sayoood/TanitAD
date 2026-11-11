@@ -56,6 +56,14 @@ b2_gpu_used_mib() { b2_ssh 'nvidia-smi --query-gpu=memory.used --format=csv,nohe
 need_free_gb() {   # need_free_gb <GB>: assert D: free on box 2 BEFORE a stage; unreadable is a refusal, not a pass
   local free; free="$(b2_free_gb)"; case "$free" in ''|*[!0-9]*) die 19 "box 2 D: free space unreadable (got '$free')";; esac
   [ "$free" -ge "$1" ] || die 13 "box 2 D: free ${free} GB < $1 GB (disk-low)"; say "D: free ${free} GB (need $1)"; }
+b2_free_bytes() { b2_ssh "powershell -NoProfile -Command \"[string][int64](Get-PSDrive D).Free\"" 2>/dev/null | tr -d '\r' | tail -1; }
+b2_held_basis_bytes() { b2_ssh "powershell -NoProfile -Command \"if (Test-Path D:\\tanitad\\zbasis) { [string][int64]((Get-ChildItem D:\\tanitad\\zbasis -Recurse -File | Measure-Object Length -Sum).Sum) } else { '0' }\"" 2>/dev/null | tr -d '\r' | tail -1; }
+need_basis_disk() {   # the basis rule of slowwm_check.py (basis_need_bytes): 6 GB less the bytes already under D:\tanitad\zbasis, at least 1 GB; unreadable is a refusal, not a pass
+  local free held out rc; free="$(b2_free_bytes)"; held="$(b2_held_basis_bytes)"
+  case "$free" in ''|*[!0-9]*) die 19 "box 2 D: free bytes unreadable (got '$free')";; esac
+  case "$held" in ''|*[!0-9]*) die 19 "box 2 basis bytes unreadable (got '$held')";; esac
+  out="$("$PY" -I "$PKG/slowwm_check.py" disk-basis --free-bytes "$free" --held-bytes "$held" 2>&1)"; rc=$?
+  [ "$rc" -eq 0 ] || die 13 "box 2 $out"; say "$out"; }
 need_gpu_idle() {  # no python.exe and GPU memory below the idle threshold; unreadable is a refusal
   local n m; n="$(b2_python_count)"; case "$n" in ''|*[!0-9]*) die 19 "box 2 python count unreadable (got '$n')";; esac
   [ "$n" = 0 ] || die 14 "a python process runs on box 2: another job owns the GPU; this chain starts nothing beside it"

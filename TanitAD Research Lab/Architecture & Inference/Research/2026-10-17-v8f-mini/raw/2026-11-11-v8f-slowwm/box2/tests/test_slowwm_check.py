@@ -237,6 +237,44 @@ ok("verify-basis refuses slow == pca", CK.cmd_verify_basis(args) == 11)
 basis_rec(check3_sha256="0" * 64)
 ok("verify-basis refuses a check3 file that differs from the recorded sha256", CK.cmd_verify_basis(args) == 11)
 
+# ---- the basis disk rule (2026-11-11): 6 GB less the bytes already under zbasis (reused or replaced in place), at least 1 GB
+HELD, FREE = 2977042027, 6431051776                       # MEASURED on box 2, 2026-11-11 21:28 (bytes)
+ok("a fresh build (nothing held) still needs 6 GB", CK.basis_need_bytes(0) == 6e9)
+ok("the measured held bytes lower the need to 6 GB less them", abs(CK.basis_need_bytes(HELD) - (6e9 - HELD)) < 1)
+ok("the need never falls below 1 GB", CK.basis_need_bytes(10e9) == 1e9)
+ok("a negative held count cannot raise the need above 6 GB", CK.basis_need_bytes(-5) == 6e9)
+ok("box 2's measured state passes", CK.basis_disk_problems(FREE, HELD) == [])
+ok("RED: too little free space is refused even with the credit", any("disk-low" in p for p in CK.basis_disk_problems(2.9e9, HELD)))
+ok("RED: the old case (5.9 GB free, nothing held) is still refused", any("disk-low" in p for p in CK.basis_disk_problems(5.9e9, 0)))
+with tempfile.TemporaryDirectory() as td_:
+    os.makedirs(os.path.join(td_, "spool")); os.makedirs(os.path.join(td_, "slow", "train"))
+    open(os.path.join(td_, "spool", "a.npz"), "wb").write(b"x" * 1000)
+    open(os.path.join(td_, "slow", "train", "b.npz"), "wb").write(b"y" * 234)
+    ok("held_basis_bytes sums every file under the root", CK.held_basis_bytes(td_) == 1234)
+    ok("held_basis_bytes of a missing root is 0", CK.held_basis_bytes(os.path.join(td_, "none")) == 0)
+ok("CLI disk-basis passes box 2's measured state (rc 0)", CK.main(["disk-basis", "--free-bytes", str(FREE), "--held-bytes", str(HELD)]) == 0)
+ok("RED: CLI disk-basis refuses too little free space (rc 13)", CK.main(["disk-basis", "--free-bytes", "2900000000", "--held-bytes", str(HELD)]) == 13)
+ok("CLI disk-basis: a non-number is unreadable (rc 19)", CK.main(["disk-basis", "--free-bytes", "abc", "--held-bytes", str(HELD)]) == 19)
+ok("CLI disk-basis: a negative or missing value is unreadable (rc 19)", CK.main(["disk-basis", "--free-bytes", "-5", "--held-bytes", str(HELD)]) == 19 and CK.main(["disk-basis", "--held-bytes", str(HELD)]) == 19)
+# wiring: cmd_basis's own preflight uses the rule (a fake root; the preflight fails for other reasons, the test reads only whether disk-low is among them)
+_env = {k: os.environ.get(k) for k in ("SLOWWM_ROOT", "SLOWWM_DRY", "SLOWWM_FAKE_FREE_GB")}
+_held = CK.held_basis_bytes
+with tempfile.TemporaryDirectory() as td_:
+    os.environ.update(SLOWWM_ROOT=td_, SLOWWM_DRY="1", SLOWWM_FAKE_FREE_GB="3.5")
+    def _fail_text(gid):
+        CK.cmd_basis(gid)
+        return open(os.path.join(CK.basis_dir(), f"BASIS_{gid}.fail"), encoding="utf-8").read()
+    CK.held_basis_bytes = lambda root=None: HELD
+    ok("cmd_basis credits the held basis bytes (3.5 GB free, 2.98 GB held: no disk-low)", "disk-low" not in _fail_text("t1"))
+    CK.held_basis_bytes = lambda root=None: 0
+    ok("RED: cmd_basis with nothing held refuses 3.5 GB free as disk-low", "disk-low" in _fail_text("t2"))
+CK.held_basis_bytes = _held
+for k, v in _env.items():
+    if v is None:
+        os.environ.pop(k, None)
+    else:
+        os.environ[k] = v
+
 # ---- the wait-state function of the chain (pure shell; extracted by running the chain's own pred_state) is covered by tests/test_slowwm_wait.sh
 print(f"UNIT ok={OK} bad={BAD}")
 sys.exit(1 if BAD else 0)

@@ -26,6 +26,9 @@ V9_MD5 = "83e30bd3791f0767707eade5f4671759"
 DATA = {"train_sha256": "37f4f9ee468e0872134074a82d63c2915458596fdbcf3d0fcf5b09f1fe0d8cc1", "excluded_sha256": "f6a1dee02af0b96f815416bfef9bc11a04554702525135aa75a740942d7750f9", "n_clips": 4512, "n_excluded": 60}
 RUN_STEPS, PILOT_STEPS, LIMIT_H, EXPECT_WINDOWS = 19164, 200, 72.0, 40358
 NEED_GB_RUN, NEED_GB_SHIP, NEED_GB_BASIS = 1, 1, 6          # a run writes ~47 MB (MEASURED, EGOWM banks); basis: spool ~1.9 GB + 2 kinds x 2 splits ~1.0 GB (ESTIMATED, HANDOFF_SLOWWM.md) -> 6 asked
+# Basis disk rule (2026-11-11 ~22:00, after the first basis run): the 6 GB counts bytes the stage would ALLOCATE. A re-run reads the spool files that exist (slow_basis.py Source.inputs) and replaces every
+# cache and fit file in place (a .tmp then os.replace, one file at a time), so the bytes already under D:\tanitad\zbasis are not new allocation. MEASURED on box 2 after the first run: 2.77 GiB in
+# 14,152 files (spool 1.82, slow 0.46, pca 0.46, fit 0.03 GiB). Need = max(1 GB, 6 GB - held bytes), the same rule on box 2 (cmd_basis) and on the dev box (`disk-basis`, slowwm_basis.sh).
 DECL_D = r"D:\tanitad"
 HOME_DECL, REPO_DECL, M2B_DECL = DECL_D + r"\slowwm", DECL_D + r"\slowwm\repo", DECL_D + r"\runs\v8f_mini_full"
 ZB_DECL, FIT_DECL, SPOOL_DECL = DECL_D + r"\zbasis", DECL_D + r"\zbasis\fit", DECL_D + r"\zbasis\spool"
@@ -433,6 +436,21 @@ def disk_floor_problems():
     return [f"disk floor: {free_bytes()} bytes free < {floor}"] if free_bytes() < floor else []
 
 
+def held_basis_bytes(root=None):
+    """Bytes of every file under the basis root (D:\\tanitad\\zbasis): the files a basis re-run reuses (spool) or replaces in place (caches, fit)."""
+    r = root or loc(ZB_DECL)
+    return sum(os.path.getsize(os.path.join(d, f)) for d, _, fs in os.walk(r) for f in fs) if os.path.isdir(r) else 0
+
+
+def basis_need_bytes(held):
+    return max(NEED_GB_RUN * 1e9, NEED_GB_BASIS * 1e9 - max(0, held))
+
+
+def basis_disk_problems(free, held):
+    need = basis_need_bytes(held)
+    return [f"D: free {free / 1e9:.2f} GB < {need / 1e9:.2f} GB needed ({NEED_GB_BASIS} GB less {held / 1e9:.2f} GB of basis files reused or replaced in place) (disk-low)"] if free < need else []
+
+
 def run_dir(tag):
     return os.path.join(home(), "runs", tag)
 
@@ -713,7 +731,7 @@ def run_py(args, log_path):
 def cmd_basis(gid):
     os.makedirs(basis_dir(), exist_ok=True)
     cc = loc(CODE_DECL)
-    bad = ([f"D: free {free_bytes() / 1e9:.2f} GB < {NEED_GB_BASIS} GB (disk-low)"] if free_bytes() < NEED_GB_BASIS * 1e9 else []) + tree_problems()
+    bad = basis_disk_problems(free_bytes(), held_basis_bytes()) + tree_problems()
     for k in (0, 1):
         ic = loc(M2B_DECL + rf"\M2b_s{k}\ckpt_last.pt")
         if not os.path.exists(ic) or sha_file(ic) != init_sha(k):
@@ -1033,6 +1051,17 @@ def main(argv):
         return 0
     table = {"render": lambda: cmd_render(a), "verify-basis": lambda: cmd_verify_basis(a), "basis": lambda: cmd_basis(a["gid"]), "stage": lambda: cmd_stage(a["tag"], a["gid"]),
              "cleanup": lambda: cmd_cleanup(a["tag"], a["gid"]), "verify-token": lambda: cmd_verify_token(a), "project": lambda: cmd_project(a), "permit": lambda: cmd_permit(a)}
+    if cmd == "disk-basis":               # dev box, before the basis job: --free-bytes and --held-bytes read from box 2; 0 = enough, 13 = disk-low, 19 = unreadable
+        try:
+            if not all(isinstance(a.get(k), str) and a[k].isdigit() for k in ("free-bytes", "held-bytes")):
+                raise ValueError("not a whole number of bytes")
+            free, held = float(a["free-bytes"]), float(a["held-bytes"])
+        except (KeyError, TypeError, ValueError):
+            print("disk-basis: --free-bytes / --held-bytes missing or not a number")
+            return 19
+        bad = basis_disk_problems(free, held)
+        print(f"disk-basis OK: free {free / 1e9:.2f} GB >= {basis_need_bytes(held) / 1e9:.2f} GB needed (held {held / 1e9:.2f} GB)" if not bad else bad[0])
+        return 0 if not bad else 13
     if cmd == "preflight":
         bad = disk_floor_problems() + tree_problems()
         print("preflight OK" if not bad else "SLOWWM-PREFLIGHT-FAIL " + " | ".join(bad))

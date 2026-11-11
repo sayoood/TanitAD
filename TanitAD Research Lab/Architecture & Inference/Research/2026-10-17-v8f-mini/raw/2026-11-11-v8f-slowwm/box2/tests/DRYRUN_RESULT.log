@@ -1,15 +1,21 @@
-bash tests/test_slowwm_dryrun.sh   (2026-11-11, dev box; stub transport reaches nothing; wait, STOPBAL dose-2 relaunch, resume and refusal paths only, see README for what is not covered)
+bash tests/test_slowwm_dryrun.sh   (2026-11-11 ~21:42, dev box; stub transport reaches nothing; wait, STOPBAL dose-2 relaunch, resume and refusal paths only, see README for what is not covered; the 'No such file' lines are probes of files a waiting chain has not written yet)
 == 1 wait: OBD seed-3 chain RUNNING (no DONE, no STOP) -> waits, then times out rc 12
+grep: F:/TanitAD-scratch/slowwm_box2_build/slowwm_dry_run_1444650/st_w1/chain.log: No such file or directory
 == 2 wait: DONE.txt (ZZ OBD3-DONE) -> proceeds (the stub box then fails the ship stage: rc 11, STOP, marker released)
 == 3 wait: a DONE.txt without the OBD3 prefix is not DONE
 == 4 wait: a busy STOP (head ends rc=12) keeps waiting
 == 5 wait: a non-busy STOP (rc=4) counts as ended -> proceeds
 == 6 wait: DONE but the shared busy marker exists -> keeps waiting, the marker is untouched
+grep: F:/TanitAD-scratch/slowwm_box2_build/slowwm_dry_run_1444650/st_w6/chain.log: No such file or directory
 == 7 SLOWWM_DRY refusals
 == 8 commit refusals
 == 9 a standing STOP refuses a rerun without SLOWWM_RESUME
-tests/test_slowwm_dryrun.sh: line 57: F:/TanitAD-scratch/slowwm_amend2_build/slowwm_dry_run_1/st_r1/STOP.txt: No such file or directory
+tests/test_slowwm_dryrun.sh: line 57: F:/TanitAD-scratch/slowwm_box2_build/slowwm_dry_run_1444650/st_r1/STOP.txt: No such file or directory
 == 10 relaunch behind the STOPBAL second dose (SLOWWM_PRED_STATE + SLOWWM_PRED_DONE_PREFIX): it WAITS for that chain
+grep: F:/TanitAD-scratch/slowwm_box2_build/slowwm_dry_run_1444650/st_p1/chain.log: No such file or directory
+grep: F:/TanitAD-scratch/slowwm_box2_build/slowwm_dry_run_1444650/st_p3/chain.log: No such file or directory
+grep: F:/TanitAD-scratch/slowwm_box2_build/slowwm_dry_run_1444650/st_p4/chain.log: No such file or directory
+grep: F:/TanitAD-scratch/slowwm_box2_build/slowwm_dry_run_1444650/st_p5/chain.log: No such file or directory
 == 11 relaunch after the basis STOP (SLOWWM_RESUME=1): own STOP renamed (never deleted); the amended checker is shipped again; a ship done for this checker is skipped
 == 12 hygiene
 DRYRUN ok=33 failed=0
