@@ -48,7 +48,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 import numpy as np  # noqa: E402
 
 CARD_SHA_PREFIX = "see PREREG_V8F_STOPBAL.sha256"
-CODE_OF_RECORD = "5ecdd7e605109e7cda3cad58fcfcebcf6174a946"
+CODE_OF_RECORD = "715ef8fcdf439fedfb42b5b495c28a6f1fc68ccf"   # AMENDMENT_2_CODE.md; read paths byte-identical to 5ecdd7e6 (READ_NOTE_COMMIT.md)
 NB, SEED = 2000, 0
 # ---- the card's constants ----
 HIT_MIN, FPR_MAX = 0.30, 0.05

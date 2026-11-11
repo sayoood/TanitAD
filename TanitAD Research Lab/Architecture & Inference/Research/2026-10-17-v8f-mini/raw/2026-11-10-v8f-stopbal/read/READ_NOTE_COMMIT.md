@@ -1,0 +1,5 @@
+# STOPBAL read: the commit pin follows AMENDMENT 2 (Master Mind, 2026-11-11 ~17:35, after the seven banks, before any read number)
+
+* The read package was built at ~19:30 on 2026-11-10 against AMENDMENT 1's code of record `5ecdd7e6`. AMENDMENT 2 (~20:05 the same evening, before any run) moved the code of record to `715ef8fcdf439fedfb42b5b495c28a6f1fc68ccf`, and the seven banks name that commit in `BANK_MANIFEST.json` (MEASURED 17:32 on all seven). `run_dumps_stopbal.py` refuses a bank whose commit is not `CODE_OF_RECORD`, so the read would have refused every arm.
+* `git diff --stat 5ecdd7e6 715ef8fc -- stack/tanitad stack/scripts taniteval` on the mirror: **empty** (MEASURED). The whole diff is `stack/tests/test_v8f_lead_head.py` and `stack/tests/test_v8f_level_head.py`, outside the exported paths. So the read tree is byte-identical at both commits.
+* Change: `CODE_OF_RECORD` in `stopbal_read.py` and `COMMIT` in `make_tree.py` now read `715ef8fc…`. Nothing else in the package changed: no rule, threshold, window set or outcome. The original `READ_PINS.sha256` is left as written; the two changed files are re-pinned in `READ_PINS_AMD2.sha256`.

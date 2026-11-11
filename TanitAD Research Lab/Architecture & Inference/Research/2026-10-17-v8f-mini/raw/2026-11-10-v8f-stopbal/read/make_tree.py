@@ -12,7 +12,7 @@ import os
 import subprocess
 import tarfile
 
-COMMIT = "5ecdd7e605109e7cda3cad58fcfcebcf6174a946"    # the STOPBAL code of record (AMENDMENT_1_CODE.md)
+COMMIT = "715ef8fcdf439fedfb42b5b495c28a6f1fc68ccf"    # the STOPBAL code of record (AMENDMENT_2_CODE.md; PATHS byte-identical to 5ecdd7e6, READ_NOTE_COMMIT.md)
 MIRROR = "C:/Users/Admin/tanitad-push"
 TREE = "F:/TanitAD-scratch/stopbal_read/tree"
 HERE = os.path.dirname(os.path.abspath(__file__))
