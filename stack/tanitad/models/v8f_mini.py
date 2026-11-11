@@ -198,6 +198,7 @@ class V8FMiniConfig:
     wm_rollout_k: tuple = (1, 1, 1)    # PREREG_V8F_LADDER (`--wm-rollout-k`): free-run steps of the k-step loss per WM level. (1, 1, 1) = every earlier arm, bit for bit (no term, no key added)
     wm_rollout_stride: tuple = (1, 1, 1)   # PREREG_V8F_LADDER (`--wm-rollout-stride`): the free run starts at every n-th state of the level (used only where the level's k > 1)
     wm_rollout_w: float = 1.0          # PREREG_V8F_LADDER (`--wm-rollout-w`): weight of every level's k-step term (constant over training; used only where k > 1)
+    wm_pool: str = "mean"              # PREREG_V8F_WMPOOL (`--wm-pool`): how z1 reads the adapter tokens. "mean" = the token mean (R35H, every earlier arm, bit for bit: no module, no state-dict key). "att25" = P-ATT: the 4 x 10 grid pooled to 2 x 5 cells, ONE zero-initialised learned query attends over the 10 cells
     wm_ctx: tuple = (3, 3, 3)          # PREREG_V8F_LADDER (`--wm-ctx`): each WM level's predictor context (states). (3, 3, 3) = every earlier arm (the LevelConfig default); changing it changes the predictor's parameter shape
     w_ckpt: float = 1.0
     w_tac: float = 1.0
@@ -277,6 +278,10 @@ class V8FMiniConfig:
             raise ValueError(f"wm_k must be an int >= 1, got {self.wm_k!r}")
         if self.wm_k > 1 and self.wm == "off":
             raise ValueError("wm_k > 1 needs a world model (wm a or b): a lever that is declared and builds nothing")
+        if self.wm_pool not in ("mean", "att25"):                                 # PREREG_V8F_WMPOOL
+            raise ValueError(f"wm_pool must be 'mean' or 'att25', got {self.wm_pool!r}")
+        if self.wm_pool == "att25" and (self.wm == "off" or self.n_tok != 40):
+            raise ValueError("wm_pool att25 needs a world model and the 4 x 10 grid (n_tok 40): a lever that is declared and builds nothing")
         for nm in ("wm_rollout_k", "wm_rollout_stride", "wm_ctx"):               # PREREG_V8F_LADDER: three ints >= 1 (one per WM level)
             v = getattr(self, nm)
             if not (isinstance(v, (tuple, list)) and len(v) == 3 and all(isinstance(x, int) and not isinstance(x, bool) and x >= 1 for x in v)):
@@ -694,6 +699,8 @@ class WMAux(nn.Module):
               mk(action_dim=32, stride=cfg.wm_strides[0], **up(0), **lad(1)), mk(action_dim=32, stride=cfg.wm_strides[1], **up(1), **lad(2))]
         self.stack = HJEPAStack(lv, sigreg_projections=256)
         self.proj = nn.Sequential(nn.LayerNorm(cfg.d), nn.Linear(cfg.d, cfg.wm_dim))
+        self.wm_pool = cfg.wm_pool
+        self.pool_q = nn.Parameter(torch.zeros(cfg.d)) if cfg.wm_pool == "att25" else None   # PREREG_V8F_WMPOOL: ONE zero-initialised query (uniform weights at build: P-ATT starts at the token mean); no RNG is consumed
         self.gamma = gamma
         self.ch1_scale = CH1_SCALE[cfg.kin_mode]
         self.enc1 = None
@@ -740,16 +747,72 @@ class WMAux(nn.Module):
         """Level-1 latent of every cached frame: the mean-pooled adapter token, projected. ``adapt`` [B, F, n_tok, d] -> [B, F, D].
         ONE spelling: ``forward`` (training) and rung beta's planner (``tanitad.models.v8f_beta``) both call it.
         With ``wm_k`` K > 1 (PREREG_V8F_MRATE) frame j's latent is ``enc1`` of the projections of frames j-K+1 .. j (oldest first); frames before the window's first are the first frame's projection."""
+        if self.pool_q is not None:                                             # PREREG_V8F_WMPOOL: the live tokens go through the SAME cells the cache holds
+            return self.z1_from_cells(self.cells_of_adapt(adapt))
         return self.z1_from_mean(adapt.mean(2))
 
     def z1_from_mean(self, am: Tensor) -> Tensor:
-        """PREREG_V8F_LADDER: ``z1`` from the adapter tokens already mean-pooled over the token axis (``am`` [B, F, d]) -- the ONLY thing the WM reads of the adapter. ``z1(adapt)`` is this applied to ``adapt.mean(2)``."""
+        """PREREG_V8F_LADDER: ``z1`` from the adapter tokens already mean-pooled over the token axis (``am`` [B, F, d]) -- the ONLY thing the WM reads of the adapter. ``z1(adapt)`` is this applied to ``adapt.mean(2)``.
+        PREREG_V8F_WMPOOL: refused on a P-ATT model (a token mean handed to it would silently run the mean pool)."""
+        if self.pool_q is not None:
+            raise ValueError("wm_pool att25: z1 is built from the 2 x 5 cells (z1_from_cells), not from a token mean")
+        return self._z1_post(am)
+
+    def _z1_post(self, am: Tensor) -> Tensor:
         p = self.proj(am)
         if self.enc1 is None:
             return p
         from tanitad.models.hjepa import _windows
         K = self.enc1.window
         return self.enc1(_windows(torch.cat([p[:, :1].expand(-1, K - 1, -1), p], dim=1), K, 1, 1))
+
+    @staticmethod
+    def cells_of_adapt(adapt: Tensor) -> Tensor:
+        """PREREG_V8F_WMPOOL: ``adapt`` [B, F, 40, d] (the 4 x 10 grid, token ``r*10 + c``) -> [B, F, 10, d]: cell ``R*5 + C`` = the mean of the 2 x 2 block of tokens ``(2R+r', 2C+c')`` (the reshape of ``v8f_mini_eval_speedread.scene_raw``)."""
+        B, F, N, d = adapt.shape
+        if N != 40:
+            raise ValueError(f"cells_of_adapt needs the 4 x 10 grid (40 tokens), got {N}")
+        return adapt.reshape(B, F, 2, 2, 5, 2, d).mean(dim=(3, 5)).reshape(B, F, 10, d)
+
+    def pool_weights(self, cells: Tensor) -> Tensor:
+        """PREREG_V8F_WMPOOL: the attention weights [B, F, 10] of the ONE query over the cells (fp32); uniform (0.1) while the query is zero."""
+        return torch.softmax((cells.float() @ self.pool_q.float()) / math.sqrt(cells.shape[-1]), dim=-1)
+
+    def z1_from_cells(self, cells: Tensor) -> Tensor:
+        """PREREG_V8F_WMPOOL: ``z1`` from the cached 2 x 5 cells ``cells`` [B, F, 10, d]: ``proj`` of the attention-weighted cell sum (see :meth:`pool_weights`), then the same tail as :meth:`z1_from_mean`."""
+        if self.pool_q is None:
+            raise ValueError("z1_from_cells needs wm_pool att25")
+        w = self.pool_weights(cells)
+        return self._z1_post((w.unsqueeze(-1) * cells.float()).sum(-2))
+
+    def built_pool(self) -> dict:
+        """PREREG_V8F_WMPOOL, the G-DVB reader: what the BUILT module DOES, measured on planted inputs (a deep copy carries the probe query, so the built parameter is never touched)."""
+        import copy
+        d = int(self.proj[0].normalized_shape[0])
+        out = {"mode": "mean", "n_params": 0, "q_shape": None, "q_zero_at_build": None, "n_cells": None, "cell_map_ok": None, "uniform_at_build": None, "attends_when_set": None}
+        if self.pool_q is None:
+            return out
+        with torch.no_grad():
+            g = torch.zeros(1, 1, 40, d)
+            g[0, 0, :, 0] = torch.arange(40, dtype=torch.float32)                         # channel 0 of token i holds i
+            cells = self.cells_of_adapt(g)
+            want = [sum(20 * R + 10 * a + 2 * C + b for a in (0, 1) for b in (0, 1)) / 4.0 for R in (0, 1) for C in range(5)]
+            rnd = torch.randn(1, 1, 10, d, generator=torch.Generator().manual_seed(0))
+            w0 = self.pool_weights(rnd)
+            probe = copy.deepcopy(self)
+            probe.pool_q.data.zero_()
+            probe.pool_q.data[0] = 1.0e3                                                   # a query along channel 0: the cell with the largest token indices wins
+            wp = probe.pool_weights(cells)
+            zero = float(self.pool_q.detach().abs().sum()) == 0.0
+            out.update(mode="att25", n_params=int(self.pool_q.numel()), q_shape=list(self.pool_q.shape), q_zero_at_build=bool(zero),
+                       n_cells=int(cells.shape[2]), cell_map_ok=bool(torch.allclose(cells[0, 0, :, 0], torch.tensor(want), atol=1e-5)),
+                       uniform_at_build=bool(float((w0 - 0.1).abs().max()) < 1e-6) if zero else None,
+                       attends_when_set=bool(int(wp[0, 0].argmax()) == 9 and float(wp[0, 0].max()) > 0.99))
+        return out
+
+    def forward_cells(self, cells: Tensor, act: Tensor) -> dict:
+        """PREREG_V8F_WMPOOL: :meth:`forward` from the cached cells ``cells`` [B, F, 10, d]."""
+        return self.stack.loss(self.z1_from_cells(cells), self.scale_actions(act)[:, :-1])
 
     def scale_actions(self, act: Tensor) -> Tensor:
         """Raw action channels ``act`` [..., 2] = (a [m/s^2], ch1) -> the WM's action units. ch1 = the recorded steer (kin_mode steer) or
@@ -763,7 +826,7 @@ class WMAux(nn.Module):
 
     def forward_mean(self, am: Tensor, act: Tensor) -> dict:
         """PREREG_V8F_LADDER: :meth:`forward` from the token-pooled adapter output ``am`` [B, F, d] (the frozen-adapter pooled path); the same ops after the pooling."""
-        return self.stack.loss(self.z1_from_mean(am), self.scale_actions(act)[:, :-1])
+        return self.stack.loss(self.z1_from_mean(am), self.scale_actions(act)[:, :-1])          # PREREG_V8F_WMPOOL: raises on a P-ATT model
 
     def built_ladder(self, n_frames: int) -> dict:
         """PREREG_V8F_LADDER, the G-DVB reader for the ladder levers: the BUILT stack's own measurements (``HJEPAStack.built_rollout``: predictor calls inside the free run, anchors, the context handed to ``rollout``, the
@@ -1184,7 +1247,9 @@ class V8FMini(nn.Module):
         the heads and the planner are never run. ``terms``: ``wm`` (the stack's total), ``wm/<stack term>`` per level, ``total`` = ``w_wm`` x ``wm``."""
         if self.wm is None:
             raise ValueError("wm_only_loss needs a world model (wm a or b)")
-        if "zmean" in batch:                                                    # PREREG_V8F_LADDER: the cached mean adapter token (box-2 zcache): exactly ``_encode(b).mean(2)``, read from disk
+        if "zcell" in batch:                                                    # PREREG_V8F_WMPOOL: the cached 2 x 5 cells (P-ATT); detached like zmean, the query is the only thing trained here
+            wm = self.wm.forward_cells(batch["zcell"].float().detach(), batch["act"])
+        elif "zmean" in batch:                                                    # PREREG_V8F_LADDER: the cached mean adapter token (box-2 zcache): exactly ``_encode(b).mean(2)``, read from disk
             wm = self.wm.forward_mean(batch["zmean"].float().detach(), batch["act"])
         elif "pool" in batch:                                                   # PREREG_V8F_LADDER: a world-model-only batch with the frozen adapter's pooled path (no [B, F, n_tok, d] tensor is ever built)
             wm = self.wm.forward_mean(self.pooled_adapt_mean(batch["pool"].float()).detach(), batch["act"])
@@ -1253,6 +1318,8 @@ class V8FMini(nn.Module):
                 lv["wm_rollout_k"], lv["wm_rollout_stride"], lv["wm_rollout_w"] = [c.rollout_k for c in cf], [c.rollout_stride for c in cf], cf[0].rollout_w
             if any(int(p.pos.shape[0]) != 3 for p in self.wm.stack.predictors):
                 lv["wm_ctx"] = [int(p.pos.shape[0]) for p in self.wm.stack.predictors]
+        if self.wm is not None and self.wm.pool_q is not None:             # PREREG_V8F_WMPOOL: present ONLY with the pool built (a mean model keeps its key set)
+            lv["wm_pool"] = "att25"
         if self.lvl_head is not None:                                     # PREREG_V8F_LEVEL: present ONLY with the head built (a flag-off model keeps its key set); the gate reads built.get("level_head", "off")
             lv["level_head"], lv["w_level"] = "on", cfg.w_level
             if self.e_level is not None:                                   # PREREG_LEVELHEAD_A2: absent under --aux-cond token (the additive path is not built)

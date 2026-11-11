@@ -15,6 +15,7 @@ __all__ = ["norm_mean_tokens", "wm_windows", "V8FMiniWMWindows", "collate_wm", "
 
 WM_BATCH_KEYS_POOLED = ("pool", "act", "t", "ci")
 WM_BATCH_KEYS_ZCACHE = ("zmean", "act", "t", "ci")
+WM_BATCH_KEYS_ZCELL = ("zcell", "act", "t", "ci")        # PREREG_V8F_WMPOOL: the 2 x 5 cell cache (P-ATT)
 WM_BATCH_KEYS_FEATS = ("feats", "act", "t", "ci")
 
 
@@ -45,13 +46,18 @@ class V8FMiniWMWindows:
     """Dataset over ``wm_windows``. ``item(ci, t, ..)`` -> numpy dict. ``pooled`` True = ``pool`` (the token-mean path); False = ``feats``. The per-clip pooled table (all frames) is computed once per clip and kept in a
     small LRU, so the ~11 windows of a clip share it."""
 
-    def __init__(self, store, J: dict, windows, *, F: int, pooled: bool = True, lru: int = 64, zcache: str = ""):
+    def __init__(self, store, J: dict, windows, *, F: int, pooled: bool = True, lru: int = 64, zcache: str = "", pool: str = "mean"):
         self.store, self.J, self.windows = store, J, list(windows)
         self.F, self.pooled, self.lru = int(F), bool(pooled), int(lru)
         self.zcache = str(zcache or "")                    # a directory of per-clip ``<clip>.npz`` with ``zmean`` [T, D] (the frozen adapter's mean token), ``ok`` [T], ``t_s`` [T]; "" = not used
         self._nm: dict = {}
         self._z: dict = {}
         self._small: dict = {}                             # zcache runs: clip -> the action arrays and the frame count, held in RAM (see ``prewarm``)
+        if pool not in ("mean", "att25"):
+            raise ValueError(f"pool must be 'mean' or 'att25', got {pool!r}")
+        if pool == "att25" and not self.zcache:
+            raise ValueError("pool att25 needs a cell cache directory (--wm-zcache): a lever that is declared and builds nothing")
+        self.pool = pool                                   # PREREG_V8F_WMPOOL: "att25" = the per-clip files in ``zcache`` hold ``zcell`` float16 [T, 10, D] (the 2 x 5 cells) instead of ``zmean``; items return ``zcell``
         self.window_start = self.F - 1                     # the first t a window can have (read back by the gate)
 
     def __len__(self):
@@ -78,7 +84,10 @@ class V8FMiniWMWindows:
             return self._z[clip]
         import os
         with np.load(os.path.join(self.zcache, f"{clip}.npz")) as f:
-            zm, ok = np.asarray(f["zmean"], np.float32), np.asarray(f["ok"], bool)
+            if self.pool == "att25":                       # PREREG_V8F_WMPOOL: a mean cache has no ``zcell`` key -> KeyError (loud); kept fp16 in RAM, widened per batch
+                zm, ok = np.asarray(f["zcell"], np.float16), np.asarray(f["ok"], bool)
+            else:
+                zm, ok = np.asarray(f["zmean"], np.float32), np.asarray(f["ok"], bool)
         self._z[clip] = (zm, ok)
         while len(self._z) > self.lru:
             self._z.pop(next(iter(self._z)))
@@ -120,7 +129,7 @@ class V8FMiniWMWindows:
             zm, ok = self._zmean(clip)
             if len(zm) <= idx[-1] or not ok[idx].all():
                 raise IndexError(f"{clip}: zcache holds {len(zm)} frames / ok={bool(ok[idx].all()) if len(ok) > idx[-1] else None} for window t={t} F={self.F}")
-            it["zmean"] = zm[idx]
+            it["zcell" if self.pool == "att25" else "zmean"] = zm[idx]
         elif self.pooled:
             it["pool"] = self._table(clip, d)[idx]
         else:
@@ -136,7 +145,9 @@ def collate_wm(items: list) -> dict:
     """numpy items -> a dict of torch tensors (``pool`` float32, ``feats`` float16, ``act`` float32, ``t`` / ``ci`` long)."""
     import torch
     out = {"act": torch.as_tensor(np.stack([it["act"] for it in items]), dtype=torch.float32)}
-    if "zmean" in items[0]:
+    if "zcell" in items[0]:                            # PREREG_V8F_WMPOOL
+        out["zcell"] = torch.as_tensor(np.stack([it["zcell"] for it in items]), dtype=torch.float16)
+    elif "zmean" in items[0]:
         out["zmean"] = torch.as_tensor(np.stack([it["zmean"] for it in items]), dtype=torch.float32)
     elif "pool" in items[0]:
         out["pool"] = torch.as_tensor(np.stack([it["pool"] for it in items]), dtype=torch.float32)

@@ -118,6 +118,9 @@ FLAG_CHECKS = {
     # PREREG_V8F_MRATE: `lever:wm_k` = equals built_levers().get("wm_k", 1) (the BUILT modules' window / dilation / causal pad, WMAux.built_k); `lever:wm_only` = the record the WM-only loader read back (bad_wm_only: non-WM tensors bit-equal to the checkpoint,
     # NO WM tensor loaded, the WM re-initialised under --seed, trainable == the WM's parameters exactly, every other lever at its default) -> wm_only_live_check (G-LIVE) + planner_identity_probe -> `model.wm_only_loss(b)` in the loop.
     "wm_k": "lever:wm_k", "wm_only": "lever:wm_only",
+    # PREREG_V8F_WMPOOL: `lever:wm_pool` = equals the mode WMAux.built_pool() MEASURES on the BUILT module (the cell map on a planted grid, uniform weights at a zero query, attention under a probe query, ONE zero-initialised [d] parameter), the BUILT dataset's record
+    # (data_info["wm_windows"]["pool"]) AND the cell cache's manifest (kind / grid / dtype / adapter sha == the BUILT adapter's) -> bad_wm_pool. Default mean: no module, no key, no batch key.
+    "wm_pool": "lever:wm_pool",
     # PREREG_V8F_LFS: `lever:wm_strides` = equals built_levers().get("wm_strides", [2, 2]) AND the BUILT modules (WMAux.built_strides: the LevelConfig strides the loss reads, the macro encoders' stride and the stride their parameter SHAPES carry) -> bad_wm_strides
     # (the gate also refuses a stride that leaves a level fewer than 2 transitions: the arm is NOT RUN, with the count) -> `selfcheck.json levers.wm_strides_readback` (written when the argv NAMES the flag).
     "wm_strides": "lever:wm_strides",
@@ -312,6 +315,9 @@ def build_parser():
     ap.add_argument("--wm-k", dest="wm_k", type=int, default=1,
                     help="PREREG_V8F_MRATE: how many past states each world-model level reads, spaced at that level's own step. 1 (default) = W0 = every earlier arm, bit for bit (no module and no state-dict key is added). "
                          "K > 1 (W1: 3): L1 reads the adapter tokens of frames t, t-1, .., t-K+1; L2 / L3 read K states of the level below, 0.4 s / 0.8 s apart. Needs --wm b")
+    ap.add_argument("--wm-pool", dest="wm_pool", choices=("mean", "att25"), default="mean",
+                    help="PREREG_V8F_WMPOOL: how the world model's z1 reads the adapter tokens. mean (default) = the token mean, every earlier arm bit for bit (no module, no state-dict key). att25 = P-ATT: the 4 x 10 grid pooled to 2 x 5 cells (each the mean of a 2 x 2 block), "
+                         "ONE zero-initialised learned query attends over the 10 cells (uniform weights at build = the token mean), then proj. Needs --wm-only --wm-windows wmonly and --wm-zcache = a CELL cache (zcells.py; CELL_MANIFEST.json with this adapter's sha); refused otherwise")
     ap.add_argument("--wm-only", dest="wm_only", action="store_true", default=False,
                     help="PREREG_V8F_MRATE: WM-only training. Needs --init-ckpt (a plain M2b s{k}): its adapter, readers and planner load strictly and bit-equal and are FROZEN; its world-model parameters are NOT loaded -- the WM is "
                          "re-initialised under --seed (hmax is not compared: M2b trained at 16, this arm at 28); only the WM loss terms are trained. Every other lever must be at its default (a lever that is declared and does nothing is refused). Default off")
@@ -409,6 +415,7 @@ def make_config(a) -> M.V8FMiniConfig:
                            w_cons=a.w_cons, w_traj=a.w_traj, w_pen=a.w_pen, w_pen_self=a.w_pen_self, w_wm=a.w_wm, wm_k=a.wm_k,
                            wm_rollout_k=declared_wm_ladder(a)["wm_rollout_k"], wm_rollout_stride=declared_wm_ladder(a)["wm_rollout_stride"],       # PREREG_V8F_LADDER: the lines that apply the ladder levers (a mutation deletes them)
                            wm_rollout_w=declared_wm_ladder(a)["wm_rollout_w"], wm_ctx=declared_wm_ladder(a)["wm_ctx"],
+                           wm_pool=a.wm_pool,                                                             # PREREG_V8F_WMPOOL: the ONE line that applies --wm-pool (a mutation deletes it)
                            detach_upper=a.detach_upper, kin_mode=a.kin_mode, cons_absent=lv["cons_absent"], code_mix=a.code_mix, o_interface=a.o_interface, w_acc=a.w_acc, launch_intent_w=a.launch_intent_w,
                            level_head=a.level_head, w_level=a.w_level,
                            lead_head=a.lead_head, w_lead=a.w_lead, aux_cond=a.aux_cond)
@@ -1008,6 +1015,71 @@ def bad_wm_ladder(a, cfg, model, data_info) -> list:
     return bad
 
 
+def adapter_state_sha256(state: dict) -> str:
+    """PREREG_V8F_WMPOOL: sha256 over name + shape + dtype + bytes of the sorted keys ``adapter.*`` and ``pos`` of a model state dict: the SAME formula as ``theory/ladder/zcache.py adapter_sha``."""
+    h = hashlib.sha256()
+    for k in sorted(k for k in state if k.startswith("adapter.") or k == "pos"):
+        t = state[k].detach().cpu().contiguous()
+        h.update(k.encode() + str(tuple(t.shape)).encode() + str(t.dtype).encode() + t.numpy().tobytes())
+    return h.hexdigest()
+
+
+def pool_cache_problems(a, adapter_sha: str | None = None) -> list:
+    """PREREG_V8F_WMPOOL: why ``--wm-pool att25`` cannot run (empty = fine). Static part (no model): the windows kind and a cell cache directory with a matching ``CELL_MANIFEST.json``; with ``adapter_sha`` (the BUILT model's adapter) also the manifest's adapter sha."""
+    if a.wm_pool != "att25":
+        return []
+    bad = []
+    if not a.wm_only or a.wm_windows != "wmonly":
+        bad.append("--wm-pool att25 needs --wm-only --wm-windows wmonly (the only path that reads cells): a lever that is declared and builds nothing")
+    if not a.wm_zcache:
+        bad.append("--wm-pool att25 needs --wm-zcache = a CELL cache directory (zcells.py): none given")
+        return bad
+    mp = os.path.join(a.wm_zcache, "CELL_MANIFEST.json")
+    if not os.path.exists(mp):
+        bad.append(f"--wm-pool att25: {mp} does not exist (a mean cache is not a cell cache)")
+        return bad
+    man = json.load(open(mp, encoding="utf-8"))
+    for k, v in (("kind", "zcell"), ("grid", "pool4x10->2x5"), ("n_cells", 10), ("dtype", "float16"), ("d", 256)):
+        if man.get(k) != v:
+            bad.append(f"--wm-pool att25: CELL_MANIFEST {k} is {man.get(k)!r}, expected {v!r}")
+    if adapter_sha is not None and man.get("adapter_state_sha256") != adapter_sha:
+        bad.append(f"--wm-pool att25: the cell cache was built from adapter {str(man.get('adapter_state_sha256'))[:12]}, the built model's adapter is {adapter_sha[:12]}")
+    return bad
+
+
+def bad_wm_pool(a, cfg, model, data_info) -> list:
+    """G-DVB for ``--wm-pool`` (PREREG_V8F_WMPOOL). Empty = pass. Read back from what was BUILT: the mode and the query from :meth:`WMAux.built_pool` (planted-input measurements), the config, the BUILT dataset's record and the cache manifest vs the BUILT adapter."""
+    bad = []
+    want = a.wm_pool
+    if model.wm is None:
+        return [f"lever wm_pool: {want} declared but no world model was built (--wm off)"] if want != "mean" else []
+    bp = model.wm.built_pool()
+    if bp["mode"] != want:
+        bad.append(f"lever wm_pool: declared {want} but the built module behaves as {bp['mode']!r}")
+    if model.cfg.wm_pool != want:
+        bad.append(f"lever wm_pool: declared {want} but the built config says {model.cfg.wm_pool}")
+    rec = data_info.get("wm_windows") or {}
+    if want == "mean":
+        if rec.get("pool", "mean") != "mean":
+            bad.append(f"lever wm_pool: mean declared but the built dataset serves {rec.get('pool')!r}")
+        return bad
+    if bp["n_cells"] != 10 or not bp["cell_map_ok"] or bp["n_params"] != 256 or bp["q_shape"] != [256] or not bp["q_zero_at_build"] or not bp["uniform_at_build"] or not bp["attends_when_set"]:
+        bad.append(f"lever wm_pool: the built pool is {bp}: 10 cells, the 2 x 2 block map, ONE zero-initialised [256] query, uniform weights at build and attention under a probe query were declared")
+    if rec.get("pool") != "att25":
+        bad.append(f"lever wm_pool: att25 declared but the built dataset serves {rec.get('pool')!r}")
+    if rec.get("zcell_shape") != [cfg.hmax, 10, 256]:
+        bad.append(f"lever wm_pool: the built dataset's first item has cell shape {rec.get('zcell_shape')}, expected {[cfg.hmax, 10, 256]}")
+    bad += pool_cache_problems(a, adapter_state_sha256(model.state_dict()))
+    return bad
+
+
+def wm_pool_readback(a, cfg, model, data_info) -> dict:
+    """PREREG_V8F_WMPOOL: the record ``selfcheck.json`` carries (``levers.wm_pool_readback``) when the argv NAMES the flag: declared vs the BUILT measurements."""
+    rec = data_info.get("wm_windows") or {}
+    return {"declared": a.wm_pool, "built": None if model.wm is None else model.wm.built_pool(), "dataset_pool": rec.get("pool"), "dataset_zcell_shape": rec.get("zcell_shape"), "zcache": a.wm_zcache,
+            "cache_problems": pool_cache_problems(a, adapter_state_sha256(model.state_dict()))}
+
+
 def wm_ladder_readback(a, cfg, model, data_info) -> dict:
     """PREREG_V8F_LADDER: the record ``selfcheck.json`` carries (``levers.wm_ladder_readback``) when the argv NAMES a ladder flag: declared vs the BUILT measurements."""
     decl = declared_wm_ladder(a)
@@ -1419,6 +1491,7 @@ def declared_vs_built(a, cfg, model, opt, data_info, enc=None, ego=None, sched=N
     bad += bad_ego_perturb(a, ego) + bad_init_ckpt(a, data_info) + bad_schedule(a, sched)          # O-RECOVER (PREREG_V8F_HACC_MC section 7); bad_schedule: --warmup read back from the built schedule
     bad += bad_level(a, model, data_info)                                                        # PREREG_V8F_LEVEL: --level-head / --w-level read back from the BUILT model
     bad += bad_wm_only(a, cfg, model, data_info)                                                 # PREREG_V8F_MRATE: --wm-k read back from the BUILT WM modules, --wm-only from the loader's record and the frozen set
+    bad += bad_wm_pool(a, cfg, model, data_info)                                                 # PREREG_V8F_WMPOOL: --wm-pool read back from the BUILT pool module, the BUILT dataset and the cache manifest vs the BUILT adapter
     bad += bad_wm_ladder(a, cfg, model, data_info)                                               # PREREG_V8F_LADDER: the seven ladder flags read back from the BUILT loss / predictor shapes / dataset
     bad += bad_wm_strides(a, cfg, model)                                                         # PREREG_V8F_LFS: --wm-strides read back from the BUILT WM modules (and the >= 2 transitions per level rule)
     bad += bad_lead(a, model, data_info)                                                         # PREREG_LEVELHEAD_A2: --lead-head / --w-lead / --aux-cond read back from the BUILT model and the built label arrays
@@ -3004,6 +3077,9 @@ def main(argv=None):
     a = build_parser().parse_args(argv)
     if a.p10 is None:
         a.p10 = os.path.join(PKG, "raw", "p10_yaw" if a.kin_mode == "yaw" else "p10", "p10_prior.pt")
+    _pp = pool_cache_problems(a)                                     # PREREG_V8F_WMPOOL: refuse before anything is built (the adapter-sha half runs in G-DVB, where the built model exists)
+    if _pp:
+        raise SystemExit("ZZDVB-REFUSEDZZ " + "; ".join(_pp))
     if a.threads:
         torch.set_num_threads(a.threads)
     os.makedirs(a.out, exist_ok=True)
@@ -3029,7 +3105,7 @@ def main(argv=None):
         ds = D.V8FMiniFrameWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
                                    window_start=cfg.window_start)
     elif a.wm_windows == "wmonly":                                   # PREREG_V8F_LADDER: the world-model-only dataset (pooled path = the token mean; off = the cached tokens)
-        ds = WW.V8FMiniWMWindows(store, J, wins, F=cfg.hmax, pooled=(a.wm_pooled == "on"), lru=info["lru"], zcache=a.wm_zcache)
+        ds = WW.V8FMiniWMWindows(store, J, wins, F=cfg.hmax, pooled=(a.wm_pooled == "on"), lru=info["lru"], zcache=a.wm_zcache, pool=a.wm_pool)
         info["wm_windows"]["zcache"] = ds.zcache
         info["wm_windows"]["zcache_missing"] = len(ds.zcache_missing(clips)) if ds.zcache else 0
         if ds.zcache and not info["wm_windows"]["zcache_missing"]:    # windows holding a frame the cache marks not ok are dropped here, the same list for every arm
@@ -3041,6 +3117,9 @@ def main(argv=None):
         if ds.zcache and not a.selfcheck_only:                        # the action arrays go to RAM at start-up, so no clip file is read during training
             info["wm_windows"]["prewarm_clips"] = ds.prewarm()
         info["wm_windows"]["pooled"] = ds.pooled                     # read back from the BUILT dataset (bad_wm_ladder compares it)
+        info["wm_windows"]["pool"] = ds.pool                         # PREREG_V8F_WMPOOL: read back from the BUILT dataset (bad_wm_pool compares it)
+        if ds.pool == "att25" and ds.windows and not info["wm_windows"]["zcache_missing"]:
+            info["wm_windows"]["zcell_shape"] = list(ds.item(*ds.windows[0])["zcell"].shape)   # PREREG_V8F_WMPOOL: the first REAL item's cell shape
         info["wm_windows"]["F"] = ds.F
     else:
         ds = D.V8FMiniWindows(store, J, wins, hist=cfg.hist, hmax=cfg.hmax, max_age_t=cfg.max_age_t, max_age_s=cfg.max_age_s,
@@ -3194,6 +3273,8 @@ def main(argv=None):
     levers["init_ckpt"] = info.get("init_ckpt")
     if a.wm_strides is not None:                                         # PREREG_V8F_LFS: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT strides and the transitions per level
         levers["wm_strides_readback"] = wm_strides_readback(a, cfg, model)
+    if a.wm_pool != build_parser().get_default("wm_pool"):             # PREREG_V8F_WMPOOL: lever-NAMED launches only
+        levers["wm_pool_readback"] = wm_pool_readback(a, cfg, model, info)
     if wm_ladder_named(a):                                              # PREREG_V8F_LADDER: lever-NAMED launches only (a flag-off selfcheck.json keeps its key set): declared vs the BUILT measurements
         levers["wm_ladder_readback"] = wm_ladder_readback(a, cfg, model, info)
     if a.wm_only:                                                      # WM-only arms only (a flag-off run record keeps its key set)
